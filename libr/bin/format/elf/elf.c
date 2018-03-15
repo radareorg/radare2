@@ -34,6 +34,26 @@
 
 #define round_up(a) ((((a) + (4) - (1)) / (4)) * (4))
 
+enum {
+	X86,
+	X86_64,
+	ARM,
+	AARCH64,
+	ARCH_LEN
+};
+
+typedef struct reginfo {
+	ut32 regsize;
+	ut32 regdelta;
+}reginfo_t;
+
+static reginfo_t reginf[ARCH_LEN] = {
+					{160, 0x5c},
+					{216, 0x84},
+					{0, 0},
+					{272, 0x84}
+				};
+
 static inline int __strnlen(const char *str, int len) {
 	int l = 0;
 	while (IS_PRINTABLE (*str) && --len) {
@@ -1129,18 +1149,20 @@ static int elf_init(ELFOBJ *bin) {
 	if (!init_phdr (bin)) {
 		bprintf ("Warning: Cannot initialize program headers\n");
 	}
-	if (!init_shdr (bin)) {
-		bprintf ("Warning: Cannot initialize section headers\n");
+	if (bin->ehdr.e_type != ET_CORE) {
+		if (!init_shdr (bin)) {
+			bprintf ("Warning: Cannot initialize section headers\n");
+		}
+		if (!init_strtab (bin)) {
+			bprintf ("Warning: Cannot initialize strings table\n");
+		}
+		if (!init_dynstr (bin)) {
+			bprintf ("Warning: Cannot initialize dynamic strings\n");
+		}
+		bin->baddr = Elf_(r_bin_elf_get_baddr) (bin);
+		if (!init_dynamic_section (bin) && !Elf_(r_bin_elf_get_static)(bin))
+			bprintf ("Warning: Cannot initialize dynamic section\n");
 	}
-	if (!init_strtab (bin)) {
-		bprintf ("Warning: Cannot initialize strings table\n");
-	}
-	if (!init_dynstr (bin)) {
-		bprintf ("Warning: Cannot initialize dynamic strings\n");
-	}
-	bin->baddr = Elf_(r_bin_elf_get_baddr) (bin);
-	if (!init_dynamic_section (bin) && !Elf_(r_bin_elf_get_static)(bin))
-		bprintf ("Warning: Cannot initialize dynamic section\n");
 
 	bin->imports_by_ord_size = 0;
 	bin->imports_by_ord = NULL;
@@ -2217,8 +2239,26 @@ ut8 *Elf_(r_bin_elf_grab_regstate)(ELFOBJ *bin, int *len) {
 				}
 			}
 
-			int regdelta = (bits == 64)? 0x84: 0x5c; // x64 vs x32
-			int regsize = 160; // for x86-64
+			int regdelta = 0;
+			int regsize = 0;
+			switch (bin->ehdr.e_machine) {
+				case EM_AARCH64:
+					regsize = reginf[AARCH64].regsize;
+					regdelta = reginf[AARCH64].regdelta;
+					break;
+				case EM_ARM:
+					regsize = reginf[ARM].regsize;
+					regdelta = reginf[ARM].regdelta;
+					break;
+				case EM_386:
+					regsize = reginf[X86].regsize;
+					regdelta = reginf[X86].regdelta;
+					break;
+				case EM_X86_64:
+					regsize = reginf[X86_64].regsize;
+					regdelta = reginf[X86_64].regdelta;
+					break;
+			}
 			ut8 *buf = malloc (regsize);
 			if (r_buf_read_at (bin->b, bin->phdr[i].p_offset + offset + regdelta, buf, regsize) != regsize) {
 				free (buf);
@@ -3252,4 +3292,116 @@ ut64 Elf_(r_bin_elf_v2p) (ELFOBJ *bin, ut64 vaddr) {
 		}
 	}
 	return vaddr;
+}
+
+static bool get_nt_file_maps (ELFOBJ *bin, RList *core_maps) {
+	ut16 ph_num = bin->ehdr.e_phnum;
+	ut16 ph;
+
+	for (ph = 0; ph < ph_num; ph++) {
+		Elf_(Phdr) *p = &bin->phdr[ph];
+		if (p->p_type == PT_NOTE) {
+			int bits = Elf_(r_bin_elf_get_bits)(bin);
+			int elf_nhdr_size = (bits == 64) ? sizeof (Elf64_Nhdr) : sizeof (Elf32_Nhdr);
+			int size_of = (bits == 64) ? sizeof (ut64) : sizeof (ut32);
+			void *elf_nhdr = calloc (elf_nhdr_size, 1);
+			ut64 offset = 0;
+			bool found = false;
+
+			while (!found) {
+				int ret;
+				ut32 n_descsz, n_namesz, n_type;
+				ret = r_buf_read_at (bin->b,
+							bin->phdr[ph].p_offset + offset,
+							elf_nhdr, elf_nhdr_size);
+				if (ret != elf_nhdr_size) {
+					eprintf ("Cannot read NOTES header from CORE\n");
+					free (elf_nhdr);
+					goto fail;
+				}
+				if (bits == 64) {
+					n_descsz = round_up (((Elf64_Nhdr *)elf_nhdr)->n_descsz);
+					n_namesz = round_up (((Elf64_Nhdr *)elf_nhdr)->n_namesz);
+					n_type = ((Elf64_Nhdr *)elf_nhdr)->n_type;
+				} else {
+					n_descsz = round_up (((Elf32_Nhdr *)elf_nhdr)->n_descsz);
+					n_namesz = round_up (((Elf32_Nhdr *)elf_nhdr)->n_namesz);
+					n_type = ((Elf32_Nhdr *)elf_nhdr)->n_type;
+				}
+
+				if (n_type == NT_FILE) {
+					found = true;
+					offset += elf_nhdr_size + n_namesz;
+					free (elf_nhdr);
+				} else {
+					offset += elf_nhdr_size + n_descsz + n_namesz;
+				}
+			}
+			ut64 i = bin->phdr[ph].p_offset + offset;
+			ut64 n_maps;
+			ut64 page_size;
+			if (bits == 64) {
+				n_maps = READ64 (bin->b->buf, i);
+				page_size = READ64 (bin->b->buf, i);
+			} else {
+				n_maps = READ32 (bin->b->buf, i);
+				page_size = READ32 (bin->b->buf, i);
+			}
+			ut64 jump = ((size_of * 3) * n_maps) + i;
+			int len_str = 0;
+			while (n_maps > 0) {
+				ut64 addr;
+				char str[512] = {0};
+
+				if (bits == 64) {
+					addr = READ64 (bin->b->buf, i);
+				} else {
+					addr = READ32 (bin->b->buf, i);
+				}
+				r_buf_read_at (bin->b, jump + len_str , str, sizeof (str) -1);
+				RListIter *iter;
+				RBinMap *p;
+				r_list_foreach (core_maps, iter, p) {
+					if (p->addr == addr) {
+						p->file = strdup (str);
+					 }
+				}
+				len_str += strlen (str) + 1;
+				n_maps--;
+				i += (size_of * 2);
+			}
+		}
+	}
+
+	return true;
+fail:
+	return false;
+}
+
+bool *Elf_(r_bin_elf_get_maps)(ELFOBJ *bin, RList *core_maps) {
+	ut16 ph;
+	ut16 ph_num = bin->ehdr.e_phnum; //Skip PT_NOTE
+
+	for (ph = 0; ph < ph_num; ph++) {
+		Elf_(Phdr) *p = &bin->phdr[ph];
+		if (p->p_type == PT_LOAD) {
+			RBinMap *map = R_NEW0 (RBinMap);
+			if (map) {
+				map->addr = p->p_vaddr;
+				map->size = p->p_memsz;
+				map->perms = p->p_flags;
+				map->offset = p->p_offset;
+				map->file = NULL;
+				r_list_append (core_maps, map);
+			}
+		}
+	}
+
+	if (core_maps->head) {
+		if (!get_nt_file_maps (bin, core_maps)) {
+			eprintf ("Could not retrieve maps from NT_FILE\n");
+		}
+	}
+
+	return (core_maps->head) ? true : false;
 }

@@ -90,6 +90,7 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	RBinObject *old_o;
 	RBinPlugin *cp;
 	int i, minlen;
+	int type;
 
 	if (!binfile || !o || !o->plugin) {
 		return false;
@@ -99,6 +100,19 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	cp = o->plugin;
 	minlen = (binfile->rbin->minstrlen > 0) ? binfile->rbin->minstrlen : cp->minstrlen;
 	binfile->o = o;
+
+	if (cp->file_type) {
+		int type = cp->file_type (binfile);
+		if (type == R_BIN_TYPE_CORE) {
+			if (cp->regstate) {
+				o->regstate = cp->regstate (binfile);
+			}
+			if (cp->maps) {
+				o->maps = cp->maps (binfile);
+			}
+		}
+	}
+
 	if (cp->baddr) {
 		ut64 old_baddr = o->baddr;
 		o->baddr = cp->baddr (binfile);
@@ -212,6 +226,7 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	if (bin->filter_rules & (R_BIN_REQ_SYMBOLS | R_BIN_REQ_IMPORTS)) {
 		o->lang = r_bin_load_languages (binfile);
 	}
+beach:
 	binfile->o = old_o;
 	return true;
 }

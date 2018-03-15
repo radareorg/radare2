@@ -644,10 +644,60 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	if (!va) {
 		r_config_set_i (r->config, "io.va", 0);
 	}
+
+	//If type == R_BIN_TYPE_CORE, we need to create all the maps
+	if (plugin && binfile && plugin->file_type
+		 && plugin->file_type (binfile) == R_BIN_TYPE_CORE) {
+		ut64 sp_addr = (ut64)-1;
+		RIOMap *stack_map = NULL;
+
+		// Setting the right arch and bits, so regstate will be shown correctly
+		if (plugin->info) {
+			RBinInfo *inf = plugin->info (binfile);
+			eprintf ("Setting up coredump: asm.arch <-> %s and asm.bits <-> %d\n",
+									inf->arch,
+									inf->bits);
+			r_config_set (r->config, "asm.arch", inf->arch);
+			r_config_set_i (r->config, "asm.bits", inf->bits);
+                }
+		if (binfile->o->regstate) {
+			if (r_reg_arena_set_bytes (r->anal->reg, binfile->o->regstate)) {
+				eprintf ("Setting up coredump: Problem while setting the registers\n");
+			} else {
+				eprintf ("Setting up coredump: Registers have been set\n");
+				const char *regname = r_reg_get_name (r->anal->reg, R_REG_NAME_SP);
+				RRegItem *reg = r_reg_get (r->anal->reg, regname, -1);
+				sp_addr = r_reg_get_value (r->anal->reg, reg);
+				stack_map = r_io_map_get (r->io, sp_addr);
+			}
+			free (binfile->o->regstate);
+                }
+
+		RBinObject *o = binfile->o;
+		int map = 0;
+		if (o && o->maps) {
+			RList *maps = o->maps;
+			RListIter *iter;
+			RBinMap *mapcore;
+
+			r_list_foreach (maps, iter, mapcore) {
+				RIOMap *iomap = r_io_map_get (r->io, mapcore->addr);
+				if (iomap && (mapcore->file || stack_map == iomap)) {
+					r_io_map_set_name (iomap, mapcore->file ? mapcore->file : "[stack]");
+				}
+				map++;
+			}
+			r_list_free (maps);
+		}
+		eprintf ("Setting up coredump: %d maps have been found and created\n", map);
+		goto beach;
+	}
+
 	//workaround to map correctly malloc:// and raw binaries
 	if (!plugin || !strcmp (plugin->name, "any") || r_io_desc_is_dbg (desc) || (obj && (!obj->sections || !va))) {
 		r_io_map_new (r->io, desc->fd, desc->flags, 0LL, laddr, r_io_desc_size (desc), true);
 	}
+beach:
 	return true;
 }
 

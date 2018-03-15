@@ -136,6 +136,11 @@ enum {
 	R_BIN_RELOC_64 = 64
 };
 
+enum {
+	R_BIN_TYPE_DEFAULT = 0,
+	R_BIN_TYPE_CORE = 1
+};
+
 typedef struct r_bin_addr_t {
 	ut64 vaddr;
 	ut64 paddr;
@@ -212,6 +217,8 @@ typedef struct r_bin_object_t {
 	RList/*<RBinClass>*/ *classes;
 	RList/*<RBinDwarfRow>*/ *lines;
 	RList/*<??>*/ *mem;	//RBinMem maybe?
+	RList/*<BinMap*/ *maps;
+	char *regstate;
 	RBinInfo *info;
 	RBinAddr *binsym[R_BIN_SYM_LAST];
 	struct r_bin_plugin_t *plugin;
@@ -372,6 +379,7 @@ typedef struct r_bin_plugin_t {
 	RList/*<RBinClass>*/* (*classes)(RBinFile *arch);
 	RList/*<RBinMem>*/* (*mem)(RBinFile *arch);
 	RList/*<RBinReloc>*/* (*patch_relocs)(RBin *bin);
+	RList/*<RBinMap>*/* (*maps)(RBinFile *arch);
 	void (*header)(RBinFile *arch);
 	char* (*signature)(RBinFile *arch, bool json);
 	int (*demangle_type)(const char *str);
@@ -382,6 +390,8 @@ typedef struct r_bin_plugin_t {
 	ut64 (*get_vaddr)(RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr);
 	RBuffer* (*create)(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen);
 	char* (*demangle)(const char *str);
+	char* (*regstate)(RBinFile *arch);
+	int (*file_type)(RBinFile *arch);
 	/* default value if not specified by user */
 	int minstrlen;
 	char strfilter;
@@ -514,6 +524,14 @@ typedef struct r_bin_mem_t {	//new toy for esil-init
 	int perms;
 	RList *mirrors;		//for mirror access; stuff here should only create new maps not new fds
 } RBinMem;
+
+typedef struct r_bin_map_t {
+	ut64 addr;
+	ut64 offset;
+	int size;
+	int perms;
+	char *file;
+} RBinMap;
 
 typedef struct r_bin_dbginfo_t {
 	int (*get_line)(RBinFile *arch, ut64 addr, char *file, int len, int *line);
