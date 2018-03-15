@@ -30,7 +30,7 @@ static int show_analinfo(const char *arg, ut64 offset) {
 	}
 	for (ret = 0; ret < len;) {
 		aop.size = 0;
-		if (r_anal_op (anal, &aop, offset, buf + ret, len - ret) > 0) {
+		if (r_anal_op (anal, &aop, offset, buf + ret, len - ret, R_ANAL_OP_MASK_ALL) > 0) {
 			//printf ("%s\n", R_STRBUF_SAFEGET (&aop.esil));
 		}
 		if (aop.size < 1) {
@@ -148,7 +148,7 @@ static int showanal(RAnal *lanal, RAnalOp *op, ut64 offset, ut8 *buf, int len, b
 	char *bytes, *stackop = NULL;
 	int ret;
 
-	ret = r_anal_op (anal, op, offset, buf, len);
+	ret = r_anal_op (anal, op, offset, buf, len, R_ANAL_OP_MASK_ALL);
 	if (ret) {
 		stackop = stackop2str (op->stackop);
 		optype = r_anal_optype_to_string (op->type);
@@ -273,7 +273,7 @@ static int rasm_disasm(char *buf, ut64 offset, int len, int bits, int ascii, int
 		RAnalOp aop = { 0 };
 		while (ret < len) {
 			aop.size = 0;
-			if (r_anal_op (anal, &aop, offset, data + ret, len - ret) > 0) {
+			if (r_anal_op (anal, &aop, offset, data + ret, len - ret, R_ANAL_OP_MASK_ALL) > 0) {
 				printf ("%s\n", R_STRBUF_SAFEGET (&aop.esil));
 			}
 			if (aop.size < 1) {

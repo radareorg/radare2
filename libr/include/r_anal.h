@@ -465,6 +465,11 @@ typedef enum {
 #endif
 } _RAnalOpType;
 
+typedef enum {
+	R_ANAL_OP_MASK_ESIL       = 1,
+	R_ANAL_OP_MASK_ALL        = R_ANAL_OP_MASK_ESIL
+} RAnalOpMask;
+
 /* TODO: what to do with signed/unsigned conditionals? */
 typedef enum {
 	R_ANAL_COND_AL = 0,        // Always executed (no condition)
@@ -1302,7 +1307,7 @@ R_API bool r_anal_op_fini(RAnalOp *op);
 R_API bool r_anal_op_is_eob (RAnalOp *op);
 R_API RList *r_anal_op_list_new(void);
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr,
-		const ut8 *data, int len);
+		const ut8 *data, int len, int mask);
 R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr,
 		const char *hexstr);
 R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op);

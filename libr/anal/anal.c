@@ -329,7 +329,7 @@ R_API ut8 *r_anal_mask(RAnal *anal, int size, const ut8 *data, ut64 at) {
 	memset (ret, 0xff, size);
 
 	while (idx < size) {
-		if ((oplen = r_anal_op (anal, op, at, data + idx, size - idx)) < 1) {
+		if ((oplen = r_anal_op (anal, op, at, data + idx, size - idx, R_ANAL_OP_MASK_ALL)) < 1) {
 			break;
 		}
 		if ((op->ptr != UT64_MAX || op->jump != UT64_MAX) && op->nopcode != 0) {
@@ -384,7 +384,7 @@ R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *str) {
 		return NULL;
 	}
 	len = r_hex_str2bin (str, buf);
-	r_anal_op (anal, op, addr, buf, len);
+	r_anal_op (anal, op, addr, buf, len, R_ANAL_OP_MASK_ALL);
 	free (buf);
 	return op;
 }
@@ -591,7 +591,7 @@ bool noreturn_recurse(RAnal *anal, ut64 addr) {
 		return false;
 	}
 	// TODO: check return value
-	(void)r_anal_op (anal, &op, addr, bbuf, sizeof (bbuf));
+	(void)r_anal_op (anal, &op, addr, bbuf, sizeof (bbuf), R_ANAL_OP_MASK_ALL);
 	switch (op.type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_JMP:
 		if (op.jump == UT64_MAX) {

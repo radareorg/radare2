@@ -788,7 +788,7 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 	r_core_read_at (core, base, buf, sizeof (buf));
 	for (i = 0; i < sizeof (buf); i++) {
 		ret = r_anal_op (core->anal, &op, base + i,
-			buf + i, sizeof (buf) - i);
+			buf + i, sizeof (buf) - i, R_ANAL_OP_MASK_ALL);
 		if (!ret) {
 			continue;
 		}

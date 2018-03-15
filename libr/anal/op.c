@@ -77,11 +77,14 @@ static RAnalVar *get_used_var(RAnal *anal, RAnalOp *op) {
 	return res;
 }
 
-R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, int mask) {
 	//len will end up in memcmp so check for negative
 	if (!anal || len < 0) {
 		return -1;
 	}
+
+	anal->decode = mask & R_ANAL_OP_MASK_ESIL ? true : false;
+
 	if (anal->pcalign) {
 		if (addr % anal->pcalign) {
 			memset (op, 0, sizeof (RAnalOp));
