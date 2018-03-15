@@ -144,7 +144,7 @@ typedef struct xtensa_relax_info_struct xtensa_relax_info;
 
 #endif
 
-xtensa_isa xtensa_default_isa;
+R_API xtensa_isa xtensa_default_isa;
     // xtensa_default_isa = xtensa_isa_init (0, 0);
 
 int

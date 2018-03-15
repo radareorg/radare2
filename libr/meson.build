@@ -38,6 +38,7 @@ anal = [
   'x86_cs',
   'xap',
   'xcore_cs',
+  'xtensa',
   'z80',
 ]
 
@@ -95,6 +96,7 @@ asm = [
   'x86_nz',
   'xap',
   'xcore_cs',
+  'xtensa',
   'z80',
 ]
 
