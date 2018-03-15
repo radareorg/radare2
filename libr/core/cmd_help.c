@@ -96,6 +96,7 @@ static const char *help_msg_question[] = {
 	"?O", " [id]", "List mnemonics for current asm.arch / asm.bits",
 	"?p", " vaddr", "get physical address for given virtual address",
 	"?P", " paddr", "get virtual address for given physical one",
+	"?q", " eip-0x804800", "compute expression like ? or ?v but in quiet mode",
 	"?r", " [from] [to]", "generate random number between from-to",
 	"?s", " from to step", "sequence of numbers from to by steps",
 	"?S", " addr", "return section name of given address",
@@ -516,6 +517,23 @@ static int cmd_help(void *data, const char *input) {
 			}
 			free (inputs);
 			r_list_free (list);
+		}
+		break;
+	case 'q': // "?q"
+		if (core->num->dbz) {
+			eprintf ("RNum ERROR: Division by Zero\n");
+		}
+		if (input[1] == '?') {
+			r_cons_printf ("|Usage: ?q [num]  # Update $? without printing anything\n"
+				"|?q 123; ?? x    # hexdump if 123 != 0");
+		} else {
+			const char *space = strchr (input, ' ');
+			if (space) {
+				n = r_num_math (core->num, space + 1);
+			} else {
+				n = r_num_math (core->num, "$?");
+			}
+			core->num->value = n; // redundant
 		}
 		break;
 	case 'v': // "?v"
