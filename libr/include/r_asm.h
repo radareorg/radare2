@@ -118,6 +118,7 @@ typedef struct r_asm_t {
 	int bitshift;
 	bool immdisp; // Display immediates with # symbol (for arm stuff).
 	SdbHash *flags;
+	int seggrn;
 } RAsm;
 
 typedef int (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);

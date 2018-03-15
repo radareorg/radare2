@@ -1,6 +1,6 @@
 ec call rgb:ffff00
 ec comment rgb:32302f
-ec usercmt rgb:ffc5f3
+ec usrcmt rgb:ffc5f3
 ec ret rgb:fb4934
 ec args rgb:a89984
 ec fname rgb:fad200
@@ -39,7 +39,7 @@ ec ai.write rgb:0000ff
 ec ai.exec rgb:ff0000
 ec ai.seq rgb:ff00ff
 ec ai.ascii rgb:ffff00
-ec gbox raph.box=rgb:9e9e9e
+ec graph.box=rgb:9e9e9e
 ec graph.box2 rgb:5f87d7
 ec graph.box3 rgb:af5f87
 ec graph.box4 rgb:303030

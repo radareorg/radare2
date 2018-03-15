@@ -2056,22 +2056,23 @@ tok_identifier:
 		}
 		if (!s) {
 			tcc_error ("invalid declaration '%s'", get_tok_str (t, NULL));
-		}
-		if ((s->type.t & (VT_STATIC | VT_INLINE | VT_BTYPE)) ==
-		    (VT_STATIC | VT_INLINE | VT_FUNC)) {
-			/* if referencing an inline function, then we generate a
-			   symbol to it if not already done. It will have the
-			   effect to generate code for it at the end of the
-			   compilation unit. */
-			r = VT_SYM | VT_CONST;
 		} else {
-			r = s->r;
-		}
-		vset (&s->type, r, s->c);
-		/* if forward reference, we must point to s */
-		if (vtop->r & VT_SYM) {
-			vtop->sym = s;
-			vtop->c.ul = 0;
+			if ((s->type.t & (VT_STATIC | VT_INLINE | VT_BTYPE)) ==
+			    (VT_STATIC | VT_INLINE | VT_FUNC)) {
+				/* if referencing an inline function, then we generate a
+				   symbol to it if not already done. It will have the
+				   effect to generate code for it at the end of the
+				   compilation unit. */
+				r = VT_SYM | VT_CONST;
+			} else {
+				r = s->r;
+			}
+			vset (&s->type, r, s->c);
+			/* if forward reference, we must point to s */
+			if (vtop->r & VT_SYM) {
+				vtop->sym = s;
+				vtop->c.ul = 0;
+			}
 		}
 		break;
 	}

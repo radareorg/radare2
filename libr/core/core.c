@@ -1786,6 +1786,8 @@ R_API bool r_core_init(RCore *core) {
 	core->egg = r_egg_new ();
 	r_egg_setup (core->egg, R_SYS_ARCH, R_SYS_BITS, 0, R_SYS_OS);
 
+	core->undos = r_list_newf ((RListFree)r_core_undo_free);
+
 	/* initialize libraries */
 	core->cons = r_cons_new ();
 	if (core->cons->refcnt == 1) {
@@ -1827,7 +1829,7 @@ R_API bool r_core_init(RCore *core) {
 	core->anal->cb.on_fcn_new = on_fcn_new;
 	core->anal->cb.on_fcn_delete = on_fcn_delete;
 	core->anal->cb.on_fcn_rename = on_fcn_rename;
-	core->assembler->syscall = core->anal->syscall; // BIND syscall anal/asm
+	core->assembler->syscall = r_syscall_ref (core->anal->syscall); // BIND syscall anal/asm
 	r_anal_set_user_ptr (core->anal, core);
 	core->anal->cb_printf = (void *) r_cons_printf;
 	core->parser = r_parse_new ();
@@ -1921,6 +1923,8 @@ R_API RCore *r_core_fini(RCore *c) {
 	//update_sdb (c);
 	// avoid double free
 	r_core_free_autocomplete (c);
+	R_FREE (c->cmdlog);
+	r_th_lock_free (c->lock);
 	R_FREE (c->lastsearch);
 	c->cons->pager = NULL;
 	r_core_task_join (c, NULL);
@@ -1934,6 +1938,7 @@ R_API RCore *r_core_fini(RCore *c) {
 		c->cons->num = c->old_num;
 		c->old_num = NULL;
 	}
+	r_list_free (c->undos);
 	r_num_free (c->num);
 	// TODO: sync or not? sdb_sync (c->sdb);
 	// TODO: sync all dbs?
@@ -2080,8 +2085,9 @@ static void set_prompt (RCore *r) {
 	// TODO: also in visual prompt and disasm/hexdump ?
 	if (r_config_get_i (r->config, "asm.segoff")) {
 		ut32 a, b;
+		unsigned int seggrn = r_config_get_i (r->config, "asm.seggrn");
 
-		a = ((r->offset >> 16) << 12);
+		a = ((r->offset >> 16) << (16 - seggrn));
 		b = (r->offset & 0xffff);
 		snprintf (tmp, 128, "%04x:%04x", a, b);
 	} else {

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2018 - nibble, pancake */
 #if 0
 * Use RList
 * Support callback for null command (why?)
@@ -241,6 +241,7 @@ static const char *help_msg_u[] = {
 	"u", "", "show system uname",
 	"uw", "", "alias for wc (requires: e io.cache=true)",
 	"us", "", "alias for s- (seek history)",
+	"uc", "", "undo core commands (uc?, ucl, uc*, ..)",
 	NULL
 };
 
@@ -345,9 +346,51 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 }
 
 static int cmd_uname(void *data, const char *input) {
+	RCore *core = data;
 	switch (input[0]) {
 	case '?': // "u?"
 		r_core_cmd_help (data, help_msg_u);
+		return 1;
+	case 'c': // "uc"
+		switch (input[1]) {
+		case ' ': {
+			char *cmd = strdup (input + 2);
+			char *rcmd = strchr (cmd, ',');
+			if (rcmd) {
+				*rcmd++ = 0;
+				RCoreUndo *undo = r_core_undo_new (core->offset, cmd, rcmd);
+				r_core_undo_push (core, undo);
+			} else {
+				eprintf ("Usage: uc [cmd] [revert-cmd]");
+			}
+			free (cmd);
+			}
+			break;
+		case '?':
+			eprintf ("Usage: uc [cmd],[revert-cmd]\n");
+			eprintf (" uc. - list all reverts in current\n");
+			eprintf (" uc* - list all core undos\n");
+			eprintf (" uc  - list all core undos\n");
+			eprintf (" uc- - undo last action\n");
+			break;
+		case '.': {
+			RCoreUndoCondition cond = {
+				.addr = core->offset,
+				.minstamp = 0,
+				.glob = NULL
+			};
+			r_core_undo_print (core, 1, &cond);
+			} break;
+		case '*':
+			r_core_undo_print (core, 1, NULL);
+			break;
+		case '-':
+			r_core_undo_pop (core);
+			break;
+		default:
+			r_core_undo_print (core, 0, NULL);
+			break;
+		}
 		return 1;
 	case 's': // "us"
 		r_core_cmdf (data, "s-%s", input + 1);
@@ -1930,6 +1973,11 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 			return r_cmd_call (core->rcmd, cmd);
 		}
 		break;
+	case '?':
+		if (cmd[1] == '>') {
+			r_core_cmd_help (core, help_msg_greater_sign);
+			return true;
+		}
 	}
 
 // TODO must honor `
@@ -2125,6 +2173,10 @@ next:
 	ptr = (char *)r_str_firstbut (cmd, '>', "\"");
 	// TODO honor `
 	if (ptr) {
+		if (ptr[0] && ptr[1] == '?') {
+			r_core_cmd_help (core, help_msg_greater_sign);
+			return true;
+		}
 		int fdn = 1;
 		int pipecolor = r_config_get_i (core->config, "scr.pipecolor");
 		int use_editor = false;

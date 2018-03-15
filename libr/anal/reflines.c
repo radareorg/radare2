@@ -483,7 +483,7 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	if (core->cons->use_utf8 || opts & R_ANAL_REFLINE_TYPE_UTF8) {
 		str = r_str_replace (str, "<", c->vline[ARROW_LEFT], 1);
 		str = r_str_replace (str, ">", c->vline[ARROW_RIGHT], 1);
-		str = r_str_replace (str, "!", c->vline[LINE_UP], 1);
+		str = r_str_replace (str, ":", c->vline[LINE_UP], 1);
 		str = r_str_replace (str, "|", c->vline[LINE_VERT], 1);
 		str = r_str_replace (str, "=", c->vline[LINE_HORIZ], 1);
 		str = r_str_replace (str, "-", c->vline[LINE_HORIZ], 1);

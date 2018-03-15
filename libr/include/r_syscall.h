@@ -44,6 +44,7 @@ typedef struct r_syscall_t {
 	RSyscallPort *sysport;
 	Sdb *db;
 	Sdb *srdb;
+	int refs;
 } RSyscall;
 
 #if 0
@@ -91,6 +92,7 @@ R_API void r_syscall_item_free(RSyscallItem *si);
 
 R_API RSyscall *r_syscall_new(void);
 R_API void r_syscall_free(RSyscall *ctx);
+R_API RSyscall* r_syscall_ref(RSyscall *sc);
 R_API bool r_syscall_setup(RSyscall *s, const char *arch, int bits, const char *cpu, const char *os);
 R_API RSyscallItem *r_syscall_get(RSyscall *ctx, int num, int swi);
 R_API int r_syscall_get_num(RSyscall *ctx, const char *str);

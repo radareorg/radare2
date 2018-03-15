@@ -53,10 +53,9 @@ R_API int r_egg_add (REgg *a, REggPlugin *foo) {
 	RListIter *iter;
 	RAsmPlugin *h;
 	// TODO: cache foo->name length and use memcmp instead of strcmp
-	if (!foo->name)
+	if (!foo->name) {
 		return false;
-	//if (foo->init)
-	//	foo->init (a->user);
+	}
 	r_list_foreach (a->plugins, iter, h) {
 		if (!strcmp (h->name, foo->name)) {
 			return false;
@@ -71,18 +70,19 @@ R_API char *r_egg_to_string (REgg *egg) {
 }
 
 R_API void r_egg_free (REgg *egg) {
-	if (!egg) return;
-	r_buf_free (egg->src);
-	r_buf_free (egg->buf);
-	r_buf_free (egg->bin);
-	r_list_free (egg->list);
-	r_asm_free (egg->rasm);
-	r_syscall_free (egg->syscall);
-	sdb_free (egg->db);
-	r_list_free (egg->plugins);
-	r_list_free (egg->patches);
-	r_egg_lang_free (egg);
-	free (egg);
+	if (egg) {
+		r_buf_free (egg->src);
+		r_buf_free (egg->buf);
+		r_buf_free (egg->bin);
+		r_list_free (egg->list);
+		r_asm_free (egg->rasm);
+		r_syscall_free (egg->syscall);
+		sdb_free (egg->db);
+		r_list_free (egg->plugins);
+		r_list_free (egg->patches);
+		r_egg_lang_free (egg);
+		free (egg);
+	}
 }
 
 R_API void r_egg_reset (REgg *egg) {

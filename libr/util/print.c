@@ -314,6 +314,7 @@ R_API RPrint* r_print_free(RPrint *p) {
 	}
 	sdb_free (p->formats);
 	p->formats = NULL;
+	R_FREE (p->strconv_mode);
 	if (p->zoom) {
 		free (p->zoom->buf);
 		free (p->zoom);

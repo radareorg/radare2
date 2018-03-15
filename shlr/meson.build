@@ -428,25 +428,6 @@ libr2windbg = static_library('libr2windbg', windbg_files,
   implicit_include_directories: false
 )
 
-udis86_files = [
-  'udis86/decode.c',
-  'udis86/itab.c',
-  'udis86/syn.c',
-  'udis86/syn-att.c',
-  'udis86/syn-intel.c',
-  'udis86/udis86.c',
-]
-
-libr2udis86 = static_library('libr2udis86', udis86_files,
-  include_directories: [
-    platform_inc,
-    include_directories([
-      'udis86'
-    ])
-  ],
-  implicit_include_directories: false
-)
-
 ar_files = [
   'ar/ar.c'
 ]
@@ -463,6 +444,6 @@ libr2ar = static_library('libr2ar', ar_files,
 
 libr_shlr = [
   libr2ar, libr2bochs, libr2capstone, libr2gdb, libr2grub, libr2java, libr2lz4,
-  libr2qnx, libr2sdb, libr2spp, libr2spp, libr2tcc, libr2udis86, libr2windbg,
+  libr2qnx, libr2sdb, libr2spp, libr2spp, libr2tcc, libr2windbg,
   libr2zip
 ]

@@ -341,7 +341,7 @@ static inline void *r_new_copy(int size, void *data) {
 #define R_ABS(x) (((x)<0)?-(x):(x))
 #define R_BTW(x,y,z) (((x)>=(y))&&((y)<=(z)))?y:x
 
-#define R_FREE(x) { free(x); x = NULL; }
+#define R_FREE(x) { free((void *)x); x = NULL; }
 
 #if __WINDOWS__
 #define HAVE_REGEXP 0
@@ -354,6 +354,10 @@ static inline void *r_new_copy(int size, void *data) {
 #define PFMT64d "I64d"
 #define PFMT64u "I64u"
 #define PFMT64o "I64o"
+#define PFMTSZx "Ix"
+#define PFMTSZd "Id"
+#define PFMTSZu "Iu"
+#define PFMTSZo "Io"
 #define LDBLFMT "f"
 #define HHXFMT  "x"
 #else
@@ -361,6 +365,10 @@ static inline void *r_new_copy(int size, void *data) {
 #define PFMT64d "lld"
 #define PFMT64u "llu"
 #define PFMT64o "llo"
+#define PFMTSZx "zx"
+#define PFMTSZd "zd"
+#define PFMTSZu "zu"
+#define PFMTSZo "zo"
 #define LDBLFMT "Lf"
 #define HHXFMT  "hhx"
 #endif

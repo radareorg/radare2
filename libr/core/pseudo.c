@@ -162,6 +162,11 @@ static void find_and_change (char* in, int len) {
 }
 
 R_API int r_core_pseudo_code(RCore *core, const char *input) {
+	const char *cmdPdc = r_config_get (core->config, "cmd.pdc");
+	if (cmdPdc && *cmdPdc && !strstr (cmdPdc, "pdc")) {
+		return r_core_cmdf (core, "%s%s", cmdPdc, input);
+	}
+
 	Sdb *db;
 	ut64 queuegoto = 0LL;
 	const char *blocktype = "else";

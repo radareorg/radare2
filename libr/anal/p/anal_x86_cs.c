@@ -2004,8 +2004,10 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_SHRX:
 		// TODO: Set CF: See case X86_INS_SAL for more details.
 		op->type = R_ANAL_OP_TYPE_SHR;
-		op->src[0] = r_anal_value_new ();
-		op->src[0]->imm = INSOP(1).imm;
+		op->val = INSOP(1).imm;
+		// XXX this should be op->imm
+		//op->src[0] = r_anal_value_new ();
+		//op->src[0]->imm = INSOP(1).imm;
 		break;
 	case X86_INS_CMP:
 	case X86_INS_CMPPD:
@@ -2262,7 +2264,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 				ut64 seg = INSOP(0).imm;
 				ut64 off = INSOP(1).imm;
 				op->ptr = INSOP (0).mem.disp;
-				op->jump = (seg << 4) + off;
+				op->jump = (seg << a->seggrn) + off;
 			} else {
 				op->jump = INSOP(0).imm;
 			}
@@ -2686,6 +2688,12 @@ static int esil_x86_cs_init (RAnalEsil *esil) {
 	return true;
 }
 
+static int fini (void *p) {
+	cs_close (&handle);
+	handle = 0;
+	return true;
+}
+
 static int esil_x86_cs_fini (RAnalEsil *esil) {
 	return true;
 }
@@ -3093,6 +3101,7 @@ RAnalPlugin r_anal_plugin_x86_cs = {
 	.op = &analop,
 	.archinfo = archinfo,
 	.get_reg_profile = &get_reg_profile,
+	.fini = fini,
 	.esil_init = esil_x86_cs_init,
 	.esil_fini = esil_x86_cs_fini,
 //	.esil_intr = esil_x86_cs_intr,

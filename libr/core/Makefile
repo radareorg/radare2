@@ -11,7 +11,7 @@ PCLIBS=@SSL_LDFLAGS@ @CAPSTONE_LDFLAGS@
 OBJS=core.o cmd.o file.o cconfig.o visual.o cio.o yank.o libs.o graph.o
 OBJS+=fortune.o hack.o vasm.o patch.o cbin.o log.o rtr.o cmd_api.o
 OBJS+=carg.o canal.o project.o gdiff.o asm.o vmenus.o disasm.o plugin.o
-OBJS+=task.o panels.o pseudo.o vmarks.o anal_tp.o blaze.o
+OBJS+=task.o panels.o pseudo.o vmarks.o anal_tp.o blaze.o cundo.o
 
 CFLAGS+=-I../../shlr/heap/include
 CFLAGS+=-DCORELIB -I../../shlr

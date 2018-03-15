@@ -70,6 +70,7 @@ R_API RAnal *r_anal_new() {
 	anal->decode = true; // slow slow if not used
 	anal->gp = 0LL;
 	anal->sdb = sdb_new0 ();
+	anal->cpp_abi = R_ANAL_CPP_ABI_ITANIUM;
 	anal->opt.depth = 32;
 	anal->opt.noncode = false; // do not analyze data by default
 	r_space_new (&anal->meta_spaces, "CS", meta_unset_for, meta_count_for, NULL, anal);
@@ -138,6 +139,7 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	r_space_free (&a->zign_spaces);
 	r_anal_pin_fini (a);
 	r_list_free (a->refs);
+	r_syscall_free (a->syscall);
 	r_list_free (a->types);
 	r_reg_free (a->reg);
 	r_anal_op_free (a->queued);

@@ -96,7 +96,11 @@ static void do_hash_print(RHash *ctx, ut64 hash, int dlen, int rad, int ule) {
 			printf ("0x%08"PFMT64x "-0x%08"PFMT64x " %s: ",
 				from, to > 0? to - 1: 0, hname);
 		}
-		do_hash_hexprint (c, dlen, ule, rad);
+		if (dlen == R_HASH_SIZE_ENTROPY) {
+			printf("%.8f\n", ctx->entropy);
+		} else {
+			do_hash_hexprint (c, dlen, ule, rad);
+		}
 		break;
 	case 1:
 		printf ("e file.%s=", hname);
@@ -124,28 +128,13 @@ static int do_hash_internal(RHash *ctx, ut64 hash, const ut8 *buf, int len, int 
 		return 0;
 	}
 	dlen = r_hash_calculate (ctx, hash, buf, len);
-	if (!dlen) {
-		return 0;
-	}
 	if (!print) {
 		return 1;
 	}
-	if (hash == R_HASH_ENTROPY) {
-		double e = r_hash_entropy (buf, len);
-		if (rad) {
-			eprintf ("entropy: %10f\n", e);
-		} else {
-			printf ("0x%08"PFMT64x "-0x%08"PFMT64x " %10f: ",
-				from, to > 0? to - 1: 0, e);
-			r_print_progressbar (NULL, 12.5 * e, 60);
-			printf ("\n");
-		}
-	} else {
-		if (iterations > 0) {
-			r_hash_do_spice (ctx, hash, iterations, _s);
-		}
-		do_hash_print (ctx, hash, dlen, rad, le);
+	if (iterations > 0) {
+		r_hash_do_spice (ctx, hash, iterations, _s);
 	}
+	do_hash_print (ctx, hash, dlen, rad, le);
 	return 1;
 }
 

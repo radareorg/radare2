@@ -57,7 +57,6 @@ files = [
   'p/asm_x86_cs.c',
   'p/asm_x86_nasm.c',
   'p/asm_x86_nz.c',
-  'p/asm_x86_udis.c',
   'p/asm_xap.c',
   'p/asm_xcore_cs.c',
   'p/asm_xtensa.c',

@@ -22,21 +22,8 @@ static const char *help_msg_g[] = {
 	NULL
 };
 
-static RList *configList = NULL;
-
 static void cmd_egg_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, g);
-
-	if (!(configList = r_list_new ())) {
-		return;
-	}
-	r_list_append (configList, "egg.shellcode");
-	r_list_append (configList, "egg.encoder");
-	r_list_append (configList, "egg.padding");
-	r_list_append (configList, "key");
-	r_list_append (configList, "cmd");
-	r_list_append (configList, "suid");
-
 }
 
 static void cmd_egg_option(REgg *egg, const char *key, const char *input) {
@@ -60,7 +47,7 @@ static void showBuffer(RBuffer *b) {
 		for (i = 0; i < b->length; i++) {
 			r_cons_printf ("%02x", b->buf[i]);
 		}
-		r_cons_printf ("\n");
+		r_cons_newline ();
 	}
 }
 
@@ -244,10 +231,19 @@ static int cmd_egg(void *data, const char *input) {
 	break;
 	case 'S': // "gS"
 	{
-		RListIter *iter;
-		char *p;
+		static const char *configList[] = {
+			"egg.shellcode",
+			"egg.encoder",
+			"egg.padding",
+			"key",
+			"cmd",
+			"suid",
+			NULL
+		};
 		r_cons_printf ("Configuration options\n");
-		r_list_foreach (configList, iter, p) {
+		int i;
+		for (i = 0; configList[i]; i++) {
+			const char *p = configList[i];
 			if (r_egg_option_get (egg, p)) {
 				r_cons_printf ("%s : %s\n", p, r_egg_option_get (egg, p));
 			} else {

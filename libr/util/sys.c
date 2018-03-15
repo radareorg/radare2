@@ -1021,15 +1021,17 @@ R_API bool r_sys_tts(const char *txt, bool bg) {
 	return false;
 }
 
-static char *prefix = NULL;
+static char prefix[128] = {0};
 
 R_API const char *r_sys_prefix(const char *pfx) {
-	if (pfx) {
-		free (prefix);
-		prefix = strdup (pfx);
+	if (!*prefix) {
+		r_str_ncpy (prefix, R2_PREFIX, sizeof (prefix));
 	}
-	if (!prefix) {
-		prefix = strdup (R2_PREFIX);
+	if (pfx) {
+		if (strlen (pfx) >= sizeof (prefix) -1) {
+			return NULL;
+		}
+		r_str_ncpy (prefix, pfx, sizeof (prefix) - 1);
 	}
 	return prefix;
 }

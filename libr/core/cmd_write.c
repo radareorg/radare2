@@ -351,7 +351,7 @@ static void cmd_write_op (RCore *core, const char *input) {
 				}
 			}
 			algo = args;
-			if (algo && *algo) {
+			if (algo && *algo && key) {
 				encrypt_or_decrypt_block (core, algo, key, direction, iv);
 			} else {
 				eprintf ("Usage: wo%c [algo] [key] [IV]\n", ((!direction)?'E':'D'));

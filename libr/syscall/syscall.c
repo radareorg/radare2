@@ -13,6 +13,11 @@ R_LIB_VERSION (r_syscall);
 extern RSyscallPort sysport_x86[];
 extern RSyscallPort sysport_avr[];
 
+R_API RSyscall* r_syscall_ref(RSyscall *sc) {
+	sc->refs++;
+	return sc;
+}
+
 R_API RSyscall* r_syscall_new() {
 	RSyscall *rs = R_NEW0 (RSyscall);
 	if (rs) {
@@ -26,6 +31,11 @@ R_API RSyscall* r_syscall_new() {
 
 R_API void r_syscall_free(RSyscall *s) {
 	if (s) {
+		if (s->refs > 0) {
+			s->refs--;
+			return;
+		}
+		sdb_free (s->srdb);
 		sdb_free (s->db);
 		free (s->os);
 		free (s);
@@ -108,13 +118,13 @@ R_API bool r_syscall_setup(RSyscall *s, const char *arch, int bits, const char *
 	free (dbName);
 
 	dbName = r_str_newf ("sysregs/%s-%d-%s", arch, bits, cpu ? cpu: arch);
+	sdb_free (s->srdb);
 	s->srdb = openDatabase (s->srdb, dbName);
 	free (dbName);
-
 	if (s->fd) {
 		fclose (s->fd);
+		s->fd = NULL;
 	}
-	s->fd = NULL;
 	return true;
 }
 
@@ -124,16 +134,21 @@ R_API RSyscallItem *r_syscall_item_new_from_string(const char *name, const char 
 	if (!name || !s) {
 		return NULL;
 	}
+	o = strdup (s);
+	int cols = r_str_split (o, ',');
+	if (cols < 3) {
+		free (o);
+		return NULL;
+	}
+
 	si = R_NEW0 (RSyscallItem);
 	if (!si) {
 		return NULL;
 	}
-	o = strdup (s);
-	r_str_split (o, ',');
 	si->name = strdup (name);
-	si->swi = r_num_get (NULL, r_str_word_get0 (o, 0));
-	si->num = r_num_get (NULL, r_str_word_get0 (o, 1));
-	si->args = r_num_get (NULL, r_str_word_get0 (o, 2));
+	si->swi = (int)r_num_get (NULL, r_str_word_get0 (o, 0));
+	si->num = (int)r_num_get (NULL, r_str_word_get0 (o, 1));
+	si->args = (int)r_num_get (NULL, r_str_word_get0 (o, 2));
 	//in a definition such as syscall=0x80,0,4,
 	//the string at index 3 is 0 causing oob read afterwards
 	si->sargs = calloc (si->args + 1, sizeof (char));
@@ -216,7 +231,7 @@ static int callback_list(void *u, const char *k, const char *v) {
 	if (!strchr (k, '.')) {
 		RSyscallItem *si = r_syscall_item_new_from_string (k, v);
 		if (!si) {
-			return 0;
+			return 1;
 		}
 		if (!strchr (si->name, '.')) {
 			r_list_append (list, si);
