@@ -136,7 +136,7 @@ static int vtable_is_addr_vtable_start(RVTableContext *context, ut64 curAddress)
 			context->anal->iob.read_at (context->anal->iob.io, xref->addr, buf, sizeof(buf));
 
 			RAnalOp analop = { 0 };
-			r_anal_op (context->anal, &analop, xref->addr, buf, sizeof(buf));
+			r_anal_op (context->anal, &analop, xref->addr, buf, sizeof(buf), R_ANAL_OP_MASK_ALL);
 
 			if (analop.type == R_ANAL_OP_TYPE_MOV
 				|| analop.type == R_ANAL_OP_TYPE_LEA) {

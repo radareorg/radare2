@@ -87,7 +87,7 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 			eprintf ("Error: new (op)\n");
 			return R_ANAL_RET_ERROR;
 		}
-		if ((oplen = r_anal_op (anal, op, addr + idx, buf + idx, len - idx)) == 0) {
+		if ((oplen = r_anal_op (anal, op, addr + idx, buf + idx, len - idx, R_ANAL_OP_MASK_ALL)) == 0) {
 			r_anal_op_free (op);
 			op = NULL;
 			if (idx == 0) {

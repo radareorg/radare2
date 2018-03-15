@@ -660,7 +660,7 @@ static int cmd_seek(void *data, const char *input) {
 				RAnalOp op;
 
 				ret = r_anal_op (core->anal, &op,
-					core->offset, core->block, core->blocksize);
+					core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_ALL);
 				if (ret < 1) {
 					ret = 1;
 				}

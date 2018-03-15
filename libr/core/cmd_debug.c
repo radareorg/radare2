@@ -842,7 +842,7 @@ static int step_until_optype(RCore *core, const char *_optypes) {
 			res = false;
 			goto cleanup_after_push;
 		}
-		if (!r_anal_op (core->dbg->anal, &op, pc, buf, sizeof (buf))) {
+		if (!r_anal_op (core->dbg->anal, &op, pc, buf, sizeof (buf), R_ANAL_OP_MASK_ALL)) {
 			eprint("ERROR\n");
 			res = false;
 			goto cleanup_after_push;
@@ -1110,7 +1110,7 @@ static void cmd_debug_backtrace(RCore *core, const char *input) {
 			/* XXX Bottleneck..we need to reuse the bytes read by traptrace */
 			// XXX Do asm.arch should define the max size of opcode?
 			r_core_read_at (core, addr, buf, 32); // XXX longer opcodes?
-			r_anal_op (core->anal, &analop, addr, buf, sizeof (buf));
+			r_anal_op (core->anal, &analop, addr, buf, sizeof (buf), R_ANAL_OP_MASK_ALL);
 		} while (r_bp_traptrace_at (core->dbg->bp, addr, analop.size));
 		r_bp_traptrace_enable (core->dbg->bp, false);
 	}
@@ -3403,7 +3403,7 @@ static void do_debug_trace_calls(RCore *core, ut64 from, ut64 to, ut64 final_add
 		addr_in_range = addr >= from && addr < to;
 
 		r_io_read_at (core->io, addr, buf, sizeof (buf));
-		r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
+		r_anal_op (core->anal, &aop, addr, buf, sizeof (buf), R_ANAL_OP_MASK_ALL);
 		eprintf ("%d %"PFMT64x"\r", n++, addr);
 		switch (aop.type) {
 		case R_ANAL_OP_TYPE_UCALL:
@@ -3995,7 +3995,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 			addr = r_debug_reg_get (core->dbg, "PC");
 			r_io_read_at (core->io, addr, buf, sizeof (buf));
-			r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
+			r_anal_op (core->anal, &aop, addr, buf, sizeof (buf), R_ANAL_OP_MASK_ALL);
 			if (aop.type == R_ANAL_OP_TYPE_CALL) {
 				RIOSection *s = r_io_section_vget (core->io, aop.jump);
 				if (!s) {
@@ -4016,7 +4016,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 			for (i = 0; i < times; i++) {
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 				r_io_read_at (core->io, addr, buf, sizeof (buf));
-				r_anal_op (core->anal, &aop, addr, buf, sizeof (buf));
+				r_anal_op (core->anal, &aop, addr, buf, sizeof (buf), R_ANAL_OP_MASK_ALL);
 				if (aop.jump != UT64_MAX && aop.fail != UT64_MAX) {
 					eprintf ("Don't know how to skip this instruction\n");
 					if (bpi) r_core_cmd0 (core, delb);

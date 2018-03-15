@@ -489,7 +489,7 @@ static ut64 search_reg_val(RAnal *anal, ut8 *buf, ut64 len, ut64 addr, char *reg
 	const int addrbytes = anal->iob.io ? anal->iob.io->addrbytes : 1;
 	for (offs = 0; offs < len; offs += addrbytes * oplen) {
 		r_anal_op_fini (&op);
-		if ((oplen = r_anal_op (anal, &op, addr + offs, buf + offs, len - offs)) < 1) {
+		if ((oplen = r_anal_op (anal, &op, addr + offs, buf + offs, len - offs, R_ANAL_OP_MASK_ALL)) < 1) {
 			break;
 		}
 		if (op.dst && op.dst->reg && op.dst->reg->name && !strcmp (op.dst->reg->name, regsz)) {
@@ -588,7 +588,7 @@ static bool is_delta_pointer_table(RAnal *anal, ut64 addr, ut64 ptr) {
 	RAnalOp aop = {0};
 	bool isValid = false;
 	for (i = 0; i + 8 < 64; i++) {
-		int len = r_anal_op (anal, &aop, addr + i, buf + i, 64 - i);
+		int len = r_anal_op (anal, &aop, addr + i, buf + i, 64 - i, R_ANAL_OP_MASK_ALL);
 		if (len < 1) {
 			len = 1;
 		}
@@ -647,7 +647,7 @@ R_API int r_anal_case(RAnal *anal, RAnalFunction *fcn, ut64 addr_bbsw, ut64 addr
 			break;
 		}
 		r_anal_op_fini (&op);
-		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + idx, len - idx)) < 1) {
+		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + idx, len - idx, R_ANAL_OP_MASK_ALL)) < 1) {
 			return 0;
 		}
 		switch (op.type) {
@@ -765,7 +765,7 @@ repeat:
 		}
 		// check if opcode is in another basic block
 		// in that case we break
-		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + addrbytes * idx, len - addrbytes * idx)) < 1) {
+		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + addrbytes * idx, len - addrbytes * idx, 0)) < 1) {
 			VERBOSE_ANAL eprintf ("Unknown opcode at 0x%08"PFMT64x "\n", addr + idx);
 			if (!idx) {
 				gotoBeach (R_ANAL_RET_END);
@@ -1307,7 +1307,7 @@ R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 l
 	}
 	for (i = 0; i < bufsz && opcnt < 10; i += oplen, opcnt++) {
 		r_anal_op_fini (&op);
-		if ((oplen = r_anal_op (anal, &op, addr + i, buf + i, bufsz - i)) < 1) {
+		if ((oplen = r_anal_op (anal, &op, addr + i, buf + i, bufsz - i, R_ANAL_OP_MASK_ALL)) < 1) {
 			return false;
 		}
 		switch (op.type) {
@@ -1990,7 +1990,7 @@ R_API ut32 r_anal_fcn_cost(RAnal *anal, RAnalFunction *fcn) {
 		int idx = 0;
 		for (at = bb->addr; at < end;) {
 			memset (&op, 0, sizeof (op));
-			(void) r_anal_op (anal, &op, at, buf + idx, bb->size - idx);
+			(void) r_anal_op (anal, &op, at, buf + idx, bb->size - idx, R_ANAL_OP_MASK_ALL);
 			if (op.size < 1) {
 				op.size = 1;
 			}

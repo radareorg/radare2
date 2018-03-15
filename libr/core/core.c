@@ -497,7 +497,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			*ok = 1;
 		}
 		// TODO: group analop-dependant vars after a char, so i can filter
-		r_anal_op (core->anal, &op, core->offset, core->block, core->blocksize);
+		r_anal_op (core->anal, &op, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_ALL);
 		r_anal_op_fini (&op); // we dont need strings or pointers, just values, which are not nullified in fini
 		switch (str[1]) {
 		case '.': // can use pc, sp, a0, a1, ...
@@ -2242,7 +2242,7 @@ R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr) {
 	ut8 buf[64];
 	RAnalOp *op = R_NEW (RAnalOp);
 	r_core_read_at (core, addr, buf, sizeof (buf));
-	r_anal_op (core->anal, op, addr, buf, sizeof (buf));
+	r_anal_op (core->anal, op, addr, buf, sizeof (buf), R_ANAL_OP_MASK_ALL);
 	return op;
 }
 
