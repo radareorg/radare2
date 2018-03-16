@@ -802,6 +802,9 @@ R_API bool r_core_autocomplete_remove(RCoreAutocomplete *parent, const char* cmd
 extern RCorePlugin r_core_plugin_java;
 extern RCorePlugin r_core_plugin_a2f;
 
+/* binr mains functions */
+R_API int rabin_main(int argc, char **argv);
+
 #endif
 
 

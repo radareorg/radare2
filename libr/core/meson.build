@@ -51,6 +51,7 @@ files = [
   'project.c',
   'pseudo.c',
   'rtr.c',
+  'r_core_rabin2.c',
   'task.c',
   'vasm.c',
   'visual.c',

@@ -10,6 +10,7 @@ OBJS=core.o cmd.o cfile.o cconfig.o visual.o cio.o yank.o libs.o graph.o
 OBJS+=fortune.o hack.o vasm.o patch.o cbin.o log.o rtr.o cmd_api.o
 OBJS+=carg.o canal.o project.o gdiff.o asm.o vmenus.o disasm.o plugin.o
 OBJS+=task.o panels.o pseudo.o vmarks.o anal_tp.o blaze.o cundo.o
+OBJS+=r_core_rabin2.o
 
 CFLAGS+=-I../../shlr/heap/include
 CFLAGS+=-DCORELIB -I../../shlr
