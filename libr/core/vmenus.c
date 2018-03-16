@@ -139,12 +139,13 @@ R_API bool r_core_visual_esil(RCore *core) {
 	RAsmOp asmop;
 	RAnalOp analop;
 	ut8 buf[sizeof (ut64)];
+	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 
 	if (core->blocksize < sizeof (ut64)) {
 		return false;
 	}
 	memcpy (buf, core->block, sizeof (ut64));
-	esil = r_anal_esil_new (20, 0);
+	esil = r_anal_esil_new (20, 0, addrsize);
 	esil->anal = core->anal;
 	r_anal_esil_set_pc (esil, core->offset);
 	for (;;) {

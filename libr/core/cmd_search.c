@@ -1537,8 +1537,9 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		ut64 nres, addr;
 		ut64 from = map->itv.addr;
 		ut64 to = r_itv_end (map->itv);
+		unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 		if (!core->anal->esil) {
-			core->anal->esil = r_anal_esil_new (stacksize, iotrap);
+			core->anal->esil = r_anal_esil_new (stacksize, iotrap, addrsize);
 		}
 		/* hook addrinfo */
 		core->anal->esil->cb.user = core;
@@ -1691,8 +1692,9 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	int align = core->search->align;
 	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");
+	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 
-	if (!(esil = r_anal_esil_new (stacksize, iotrap))) {
+	if (!(esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
 		return;
 	}
 	int *previnstr = calloc (MAXINSTR + 1, sizeof (int));
