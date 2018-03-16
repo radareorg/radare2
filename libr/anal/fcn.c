@@ -1794,6 +1794,8 @@ R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
 }
 
 R_API RAnalFunction *r_anal_get_fcn_at(RAnal *anal, ut64 addr, int type) {
+#if 0
+	// Linear scan
 	RAnalFunction *fcn, *ret = NULL;
 	RListIter *iter;
 	if (type == R_ANAL_FCN_TYPE_ROOT) {
@@ -1812,6 +1814,22 @@ R_API RAnalFunction *r_anal_get_fcn_at(RAnal *anal, ut64 addr, int type) {
 		}
 	}
 	return ret;
+#else
+	// Interval tree query
+	RAnalFunction *fcn;
+	FcnTreeIter it;
+	if (type == R_ANAL_FCN_TYPE_ROOT) {
+		return _fcn_tree_find_addr (anal->fcn_tree, addr);
+	}
+	fcn_tree_foreach_intersect (anal->fcn_tree, it, fcn, addr, addr + 1) {
+		if (!type || (fcn && fcn->type & type)) {
+			if (addr == fcn->addr) {
+				return fcn;
+			}
+		}
+	}
+	return NULL;
+#endif
 }
 
 R_API RAnalFunction *r_anal_fcn_next(RAnal *anal, ut64 addr) {
