@@ -3358,7 +3358,8 @@ static bool get_nt_file_maps (ELFOBJ *bin, RList *core_maps) {
 				} else {
 					addr = READ32 (bin->b->buf, i);
 				}
-				r_buf_read_at (bin->b, jump + len_str , str, sizeof (str) -1);
+				r_buf_read_at (bin->b, jump + len_str,
+					(ut8*)str, sizeof (str) -1);
 				RListIter *iter;
 				RBinMap *p;
 				r_list_foreach (core_maps, iter, p) {
@@ -3378,9 +3379,9 @@ fail:
 	return false;
 }
 
-bool *Elf_(r_bin_elf_get_maps)(ELFOBJ *bin, RList *core_maps) {
-	ut16 ph;
-	ut16 ph_num = bin->ehdr.e_phnum; //Skip PT_NOTE
+RList *Elf_(r_bin_elf_get_maps)(ELFOBJ *bin) {
+	ut16 ph, ph_num = bin->ehdr.e_phnum; //Skip PT_NOTE
+	RList *maps = r_list_newf (free); // we need r_bin_map_free
 
 	for (ph = 0; ph < ph_num; ph++) {
 		Elf_(Phdr) *p = &bin->phdr[ph];
@@ -3392,16 +3393,16 @@ bool *Elf_(r_bin_elf_get_maps)(ELFOBJ *bin, RList *core_maps) {
 				map->perms = p->p_flags;
 				map->offset = p->p_offset;
 				map->file = NULL;
-				r_list_append (core_maps, map);
+				r_list_append (maps, map);
 			}
 		}
 	}
 
-	if (core_maps->head) {
-		if (!get_nt_file_maps (bin, core_maps)) {
+	if (!r_list_empty (maps)) {
+		if (!get_nt_file_maps (bin, maps)) {
 			eprintf ("Could not retrieve the names of all maps from NT_FILE\n");
 		}
 	}
 
-	return (core_maps->head) ? true : false;
+	return maps;
 }

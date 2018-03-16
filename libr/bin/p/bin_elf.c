@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2018 - nibble, pancake */
 
 #include <assert.h>
 #include <stdio.h>
@@ -17,24 +17,14 @@ static RBinInfo* info(RBinFile *bf);
 static int get_file_type(RBinFile *bf) {
 	struct Elf_(r_bin_elf_obj_t) *obj = bf->o->bin_obj;
 	char *type = Elf_(r_bin_elf_get_file_type (obj));
-
-	if (type) {
-		return (!strncmp (type, "CORE", 4)) ? R_BIN_TYPE_CORE : R_BIN_TYPE_DEFAULT;
-	}
-	return -1;
+	return type? ((!strncmp (type, "CORE", 4)) ? R_BIN_TYPE_CORE : R_BIN_TYPE_DEFAULT) : -1;
 }
 
 static RList *maps(RBinFile *bf) {
-	struct Elf_(r_bin_elf_obj_t) *obj = bf->o->bin_obj;
-	RList *core_maps = r_list_new();
-	bool ret;
-
-	ret = Elf_(r_bin_elf_get_maps)(obj, core_maps);
-	if (!ret) {
-		eprintf ("An error has ocurred while trying to read the coredump\n");
-		r_list_free (core_maps);
+	if (bf && bf->o) {
+		return Elf_(r_bin_elf_get_maps)(bf->o->bin_obj);
 	}
-	return core_maps;
+	return NULL;
 }
 
 static char* regstate(RBinFile *bf) {
