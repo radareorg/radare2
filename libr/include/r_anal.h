@@ -37,8 +37,6 @@ R_LIB_VERSION_HEADER(r_anal);
    bb_has_ops=1 -> 600M
    bb_has_ops=0 -> 350MB
  */
-/* TODO: work in progress */
-#define USE_NEW_FCN_STORE 0
 
 // TODO: Remove this define? /cc @nibble_ds
 #define VERBOSE_ANAL if(0)

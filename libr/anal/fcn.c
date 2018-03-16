@@ -1419,10 +1419,6 @@ R_API int r_anal_fcn_insert(RAnal *anal, RAnalFunction *fcn) {
 	if (f) {
 		return false;
 	}
-#if USE_NEW_FCN_STORE
-	r_listrange_add (anal->fcnstore, fcn);
-	// HUH? store it here .. for backweird compatibility
-#endif
 	/* TODO: sdbization */
 	r_list_append (anal->fcns, fcn);
 	r_anal_fcn_tree_insert (&anal->fcn_tree, fcn);
@@ -1470,9 +1466,6 @@ R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {
 	RListIter *iter, *iter2;
 	RAnalFunction *fcn, *f = r_anal_get_fcn_in (anal, addr,
 		R_ANAL_FCN_TYPE_ROOT);
-#if USE_NEW_FCN_STORE
-#warning TODO: r_anal_fcn_del_locs not implemented for newstore
-#endif
 	if (!f) {
 		return false;
 	}
@@ -1491,24 +1484,12 @@ R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {
 
 R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
 	if (addr == UT64_MAX) {
-#if USE_NEW_FCN_STORE
-		r_listrange_free (a->fcnstore);
-		a->fcnstore = r_listrange_new ();
-#else
 		r_list_free (a->fcns);
 		a->fcn_tree = NULL;
 		if (!(a->fcns = r_anal_fcn_list_new ())) {
 			return false;
 		}
-#endif
 	} else {
-#if USE_NEW_FCN_STORE
-		// XXX: must only get the function if starting at 0?
-		RAnalFunction *f = r_listrange_find_in_range (a->fcnstore, addr);
-		if (f) {
-			r_listrange_del (a->fcnstore, f);
-		}
-#else
 		RAnalFunction *fcni;
 		RListIter *iter, *iter_tmp;
 		r_list_foreach_safe (a->fcns, iter, iter_tmp, fcni) {
@@ -1522,19 +1503,12 @@ R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
 				r_list_delete (a->fcns, iter);
 			}
 		}
-#endif
 	}
 	return true;
 }
 
 R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
-#if USE_NEW_FCN_STORE
-	// TODO: type is ignored here? wtf.. we need more work on fcnstore
-	// if (root) return r_listrange_find_root (anal->fcnstore, addr);
-	return r_listrange_find_in_range (anal->fcnstore, addr);
-#else
-
-# if 0
+#if 0
   // Linear scan
 	RAnalFunction *fcn, *ret = NULL;
 	RListIter *iter;
@@ -1556,7 +1530,7 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 	}
 	return ret;
 
-# else
+#else
 	// Interval tree query
 	RAnalFunction *fcn;
 	FcnTreeIter it;
@@ -1571,8 +1545,7 @@ R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type) {
 		}
 	}
 	return NULL;
-# endif
-#endif // USE_NEW_FCN_STORE
+#endif
 }
 
 R_API bool r_anal_fcn_in(RAnalFunction *fcn, ut64 addr) {
@@ -1580,12 +1553,6 @@ R_API bool r_anal_fcn_in(RAnalFunction *fcn, ut64 addr) {
 }
 
 R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type) {
-#if USE_NEW_FCN_STORE
-#warning TODO: r_anal_get_fcn_in_bounds
-	// TODO: type is ignored here? wtf.. we need more work on fcnstore
-	// if (root) return r_listrange_find_root (anal->fcnstore, addr);
-	return r_listrange_find_in_range (anal->fcnstore, addr);
-#else
 	RAnalFunction *fcn, *ret = NULL;
 	RListIter *iter;
 	if (type == R_ANAL_FCN_TYPE_ROOT) {
@@ -1604,7 +1571,6 @@ R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type) 
 		}
 	}
 	return ret;
-#endif
 }
 
 R_API RAnalFunction *r_anal_fcn_find_name(RAnal *anal, const char *name) {
@@ -1828,11 +1794,6 @@ R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
 }
 
 R_API RAnalFunction *r_anal_get_fcn_at(RAnal *anal, ut64 addr, int type) {
-#if USE_NEW_FCN_STORE
-	// TODO: type is ignored here? wtf.. we need more work on fcnstore
-	// if (root) return r_listrange_find_root (anal->fcnstore, addr);
-	return r_listrange_find_root (anal->fcnstore, addr);
-#else
 	RAnalFunction *fcn, *ret = NULL;
 	RListIter *iter;
 	if (type == R_ANAL_FCN_TYPE_ROOT) {
@@ -1851,7 +1812,6 @@ R_API RAnalFunction *r_anal_get_fcn_at(RAnal *anal, ut64 addr, int type) {
 		}
 	}
 	return ret;
-#endif
 }
 
 R_API RAnalFunction *r_anal_fcn_next(RAnal *anal, ut64 addr) {
