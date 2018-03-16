@@ -103,9 +103,6 @@ R_API RAnal *r_anal_new() {
 	anal->lineswidth = 0;
 	anal->fcns = r_anal_fcn_list_new ();
 	anal->fcn_tree = NULL;
-#if USE_NEW_FCN_STORE
-	anal->fcnstore = r_listrange_new ();
-#endif
 	anal->refs = r_anal_ref_list_new ();
 	anal->types = r_anal_type_list_new ();
 	r_anal_set_bits (anal, 32);
@@ -418,10 +415,6 @@ R_API int r_anal_purge (RAnal *anal) {
 	r_list_free (anal->fcns);
 	anal->fcns = r_anal_fcn_list_new ();
 	anal->fcn_tree = NULL;
-#if USE_NEW_FCN_STORE
-	r_listrange_free (anal->fcnstore);
-	anal->fcnstore = r_listrange_new ();
-#endif
 	r_list_free (anal->refs);
 	anal->refs = r_anal_ref_list_new ();
 	r_list_free (anal->types);

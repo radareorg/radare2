@@ -13,7 +13,6 @@ files = [
   'esil_stats.c',
   'esil_trace.c',
   'fcn.c',
-  'fcnstore.c',
   'flirt.c',
   'hint.c',
   'labels.c',
