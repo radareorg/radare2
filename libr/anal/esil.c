@@ -78,7 +78,7 @@ static bool popRN(RAnalEsil *esil, ut64 *n) {
 
 /* R_ANAL_ESIL API */
 
-R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap, int addrsize) {
+R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
 	RAnalEsil *esil = R_NEW0 (RAnalEsil);
 	if (!esil) {
 		return NULL;
@@ -239,7 +239,7 @@ static bool alignCheck(RAnalEsil *esil, ut64 addr) {
 }
 
 static int internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
-	addr = addr & esil->addrmask;
+	addr &= esil->addrmask;
 	if (!esil || !esil->anal || !esil->anal->iob.io) {
 		return 0;
 	}
@@ -272,7 +272,7 @@ static int internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len)
 }
 
 static int internal_esil_mem_read_no_null(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
-	addr = addr & esil->addrmask;
+	addr &= esil->addrmask;
 	if (!esil || !esil->anal || !esil->anal->iob.io || !addr) {
 		return 0;
 	}
@@ -296,7 +296,7 @@ static int internal_esil_mem_read_no_null(RAnalEsil *esil, ut64 addr, ut8 *buf, 
 
 R_API int r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	int i, ret = 0;
-	addr = addr & esil->addrmask;
+	addr &= esil->addrmask;
 	if (!buf || !esil) {
 		return 0;
 	}
@@ -329,7 +329,7 @@ R_API int r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 
 static int internal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	int ret = 0;
-	addr = addr & esil->addrmask;
+	addr &= esil->addrmask;
 	if (!esil || !esil->anal || !esil->anal->iob.io || esil->nowrite) {
 		return 0;
 	}
@@ -364,7 +364,7 @@ static int internal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, i
 
 static int internal_esil_mem_write_no_null(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	int ret = 0;
-	addr = addr & esil->addrmask;
+	addr &= esil->addrmask;
 	if (!esil || !esil->anal || !esil->anal->iob.io || !addr) {
 		return 0;
 	}
@@ -387,7 +387,7 @@ static int internal_esil_mem_write_no_null(RAnalEsil *esil, ut64 addr, const ut8
 
 R_API int r_anal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	int i, ret = 0;
-	addr = addr & esil->addrmask;
+	addr &= esil->addrmask;
 	if (!buf || !esil) {
 		return 0;
 	}
