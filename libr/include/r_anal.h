@@ -1307,7 +1307,7 @@ R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr,
 		const char *hexstr);
 R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op);
 
-R_API RAnalEsil *r_anal_esil_new (int stacksize, int iotrap, int addrsize);
+R_API RAnalEsil *r_anal_esil_new (int stacksize, int iotrap, unsigned int addrsize);
 R_API void r_anal_esil_trace (RAnalEsil *esil, RAnalOp *op);
 R_API void r_anal_esil_trace_list (RAnalEsil *esil);
 R_API void r_anal_esil_trace_show (RAnalEsil *esil, int idx);
