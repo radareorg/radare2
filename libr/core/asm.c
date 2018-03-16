@@ -76,7 +76,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	int matches = 0;
 	const int addrbytes = core->io->addrbytes;
 
-	if (!*input) {
+	if (!input || !*input) {
 		return NULL;
 	}
 	if (core->blocksize <= OPSZ) {
