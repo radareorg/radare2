@@ -688,6 +688,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 				map++;
 			}
 			r_list_free (maps);
+			o->maps = NULL;
 		}
 		eprintf ("Setting up coredump: %d maps have been found and created\n", map);
 		goto beach;
