@@ -4186,7 +4186,7 @@ static int cmd_debug(void *data, const char *input) {
 				int stats = r_config_get_i (core->config, "esil.stats");
 				int iotrap = r_config_get_i (core->config, "esil.iotrap");
 				int nonull = r_config_get_i (core->config, "esil.nonull");
-				int addrsize = r_config_get_i (core->config, "asm.bits");
+				unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 				if (!(core->anal->esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
 					return 0;
 				}

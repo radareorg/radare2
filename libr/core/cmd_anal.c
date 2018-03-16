@@ -1267,7 +1267,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	RAnalOp op;
 	ut64 addr;
 	bool isFirst = true;
-	int addrsize = r_config_get_i (core->config, "asm.bits");
+	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 
 
 	// Variables required for setting up ESIL to REIL conversion
@@ -3084,7 +3084,7 @@ static ut64 initializeEsil(RCore *core) {
 	int exectrap = r_config_get_i (core->config, "esil.exectrap");
 	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
 	int noNULL = r_config_get_i (core->config, "esil.noNULL");
-	int addrsize = r_config_get_i (core->config, "asm.bits");
+	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 	if (!(core->anal->esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
 		return UT64_MAX;
 	}
@@ -3125,7 +3125,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		int stats = r_config_get_i (core->config, "esil.stats");
 		int noNULL = r_config_get_i (core->config, "esil.noNULL");
 		int verbose = r_config_get_i (core->config, "esil.verbose");
-		int addrsize = r_config_get_i (core->config, "asm.bits");
+		unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 		if (!(esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
 			return 0;
 		}
@@ -3442,7 +3442,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		int stats = r_config_get_i (core->config, "esil.stats");
 		int noNULL = r_config_get_i (core->config, "esil.noNULL");
 		int verbose = r_config_get_i (core->config, "esil.verbose");
-		int addrsize = r_config_get_i (core->config, "asm.bits");
+		unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 		if (!(esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
 			return;
 		}
@@ -3598,7 +3598,7 @@ static void esil_init (RCore *core) {
 	if (!core->anal->esil) {
 		int iotrap = r_config_get_i (core->config, "esil.iotrap");
 		ut64 stackSize = r_config_get_i (core->config, "esil.stack.size");
-		int addrsize = r_config_get_i (core->config, "asm.bits");
+		unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 		if (!(core->anal->esil = r_anal_esil_new (stackSize, iotrap, addrsize))) {
 			R_FREE (regstate);
 			return;
@@ -3793,7 +3793,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	int romem = r_config_get_i (core->config, "esil.romem");
 	int stats1 = r_config_get_i (core->config, "esil.stats");
 	int noNULL = r_config_get_i (core->config, "esil.noNULL");
-	int addrsize = r_config_get_i (core->config, "asm.bits");
+	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 	esil = r_anal_esil_new (stacksize, iotrap, addrsize);
 	r_anal_esil_setup (esil, core->anal, romem, stats1, noNULL); // setup io
 #	define hasNext(x) (x&1) ? (addr<addr_end) : (ops<ops_end)
@@ -3914,7 +3914,7 @@ static void cmd_aespc(RCore *core, ut64 addr, int off) {
 	RRegItem *r = r_reg_get (core->dbg->reg, pc, -1);
 	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");
-	int addrsize = r_config_get_i (core->config, "asm.bits");
+	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 
 	if (!esil) {
 		if (!(esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
@@ -3969,7 +3969,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	int stats = r_config_get_i (core->config, "esil.stats");
 	int noNULL = r_config_get_i (core->config, "esil.noNULL");
 	ut64 until_addr = UT64_MAX;
-	int addrsize = r_config_get_i (core->config, "asm.bits");
+	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 
 	const char *until_expr = NULL;
 	RAnalOp *op;

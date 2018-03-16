@@ -139,7 +139,7 @@ R_API bool r_core_visual_esil(RCore *core) {
 	RAsmOp asmop;
 	RAnalOp analop;
 	ut8 buf[sizeof (ut64)];
-	int addrsize = r_config_get_i (core->config, "asm.bits");
+	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 
 	if (core->blocksize < sizeof (ut64)) {
 		return false;
