@@ -3379,9 +3379,16 @@ fail:
 	return false;
 }
 
+static void r_bin_elf_map_free (RBinMap *map) {
+	if (map) {
+		free (map->file);
+		free (map);
+	}
+}
+
 RList *Elf_(r_bin_elf_get_maps)(ELFOBJ *bin) {
 	ut16 ph, ph_num = bin->ehdr.e_phnum; //Skip PT_NOTE
-	RList *maps = r_list_newf (free); // we need r_bin_map_free
+	RList *maps = r_list_newf ((RListFree)r_bin_elf_map_free);
 
 	for (ph = 0; ph < ph_num; ph++) {
 		Elf_(Phdr) *p = &bin->phdr[ph];
