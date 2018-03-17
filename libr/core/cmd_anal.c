@@ -2098,13 +2098,13 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 			if (fcn) {
-				r_anal_fcn_resize (fcn, addr_end - addr);
+				r_anal_fcn_resize (core->anal, fcn, addr_end - addr);
 			}
 			r_core_anal_fcn (core, addr, UT64_MAX,
 					R_ANAL_REF_TYPE_NULL, depth);
 			fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 			if (fcn) {
-				r_anal_fcn_resize (fcn, addr_end - addr);
+				r_anal_fcn_resize (core->anal, fcn, addr_end - addr);
 			}
 			r_config_set_i (core->config, "anal.from", a);
 			r_config_set_i (core->config, "anal.to", b);
@@ -2701,7 +2701,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 						f = r_anal_get_fcn_in (core->anal, fcn->addr, 0);
 						if (f) {
 							/* cut function */
-							r_anal_fcn_resize (f, addr - fcn->addr);
+							r_anal_fcn_resize (core->anal, f, addr - fcn->addr);
 							r_core_anal_fcn (core, ref->addr, fcn->addr,
 									R_ANAL_REF_TYPE_CALL, depth);
 							f = r_anal_get_fcn_at (core->anal, fcn->addr, 0);

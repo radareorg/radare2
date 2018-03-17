@@ -42,6 +42,7 @@ typedef struct r_rb_iter_t {
 // to calculate extra information such as size, sum, ...
 R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, RBNodeFree freefn, RBNodeSum sum);
 R_API void r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBComparator cmp, RBNodeSum sum);
+R_API bool r_rbtree_aug_update_sum(RBNode *root, void *data, RBNode *node, RBComparator cmp, RBNodeSum sum);
 
 R_API bool r_rbtree_delete(RBNode **root, void *data, RBComparator cmp, RBNodeFree freefn);
 R_API RBNode *r_rbtree_find(RBNode *root, void *data, RBComparator cmp);

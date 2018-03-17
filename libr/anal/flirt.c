@@ -591,7 +591,7 @@ static int module_match_buffer(const RAnal *anal, const RFlirtModule *module,
 						r_anal_fcn_del ((RAnal *) anal, fcn->addr);
 					}
 				}
-				r_anal_fcn_resize (next_module_function, flirt_fcn_size);
+				r_anal_fcn_resize (anal, next_module_function, flirt_fcn_size);
 				next_module_function_size = r_anal_fcn_size (next_module_function);
 				r_anal_trim_jmprefs (next_module_function);
 			}
