@@ -151,6 +151,53 @@ R_API void r_anal_fcn_tree_insert(RBNode **root, RAnalFunction *fcn) {
 	r_rbtree_aug_insert (root, fcn, &(fcn->rb), _fcn_tree_cmp_addr, _fcn_tree_calc_max_addr);
 }
 
+
+static bool _fcn_tree_print_dot_node(RBNode *n) {
+	int i;
+	RAnalFunction *fcn = FCN_CONTAINER (n);
+
+	ut64 max_addr = fcn->addr + (fcn->_size == 0 ? 0 : fcn->_size - 1);
+	for (i = 0; i < 2; i++) {
+		if (n->child[i]) {
+			RAnalFunction *fcn1 = FCN_CONTAINER (n->child[i]);
+			if (fcn1->rb_max_addr > max_addr) {
+				max_addr = fcn1->rb_max_addr;
+			}
+		}
+	}
+
+	bool valid = max_addr == fcn->rb_max_addr;
+
+	r_cons_printf ("  \"%p\" [label=\"%p\\naddr: 0x%08"PFMT64x"\\nmax_addr: 0x%08"PFMT64x"\"%s];\n",
+				   n, fcn, fcn->addr, fcn->rb_max_addr, valid ? "" : ", color=\"red\", fillcolor=\"white\"");
+
+	for (i=0; i<2; i++) {
+		if (n->child[i]) {
+			_fcn_tree_print_dot_node (n->child[i]);
+			bool valid = true;
+			if (n->child[i]) {
+				RAnalFunction *childfcn = FCN_CONTAINER (n->child[i]);
+				if ((i == 0 && childfcn->addr >= fcn->addr) || (i == 1 && childfcn->addr <= fcn->addr)) {
+					valid = false;
+				}
+			}
+			r_cons_printf ("  \"%p\" -> \"%p\" [label=\"%d\"%s];\n", n, n->child[i], i, valid ? "" : ", style=\"bold\", color=\"red\"");
+		} else {
+			r_cons_printf ("  \"null_%p_%d\" [shape=point];\n", n, i);
+			r_cons_printf ("  \"%p\" -> \"null_%p_%d\" [label=\"%d\"];\n", n, n, i, i);
+		}
+	}
+
+}
+
+static bool _fcn_tree_print_dot(RBNode *n) {
+	r_cons_print ("digraph fcn_tree {\n");
+	if (n) {
+		_fcn_tree_print_dot_node (n);
+	}
+	r_cons_print ("}\n");
+}
+
 // Find RAnalFunction whose addr is equal to addr
 static RAnalFunction *_fcn_tree_find_addr(RBNode *x_, ut64 addr) {
 	while (x_) {
