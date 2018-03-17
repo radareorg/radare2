@@ -151,6 +151,10 @@ R_API void r_anal_fcn_tree_insert(RBNode **root, RAnalFunction *fcn) {
 	r_rbtree_aug_insert (root, fcn, &(fcn->rb), _fcn_tree_cmp_addr, _fcn_tree_calc_max_addr);
 }
 
+static void _fcn_tree_update_size(RBNode *root, RAnalFunction *fcn) {
+	r_rbtree_aug_update_sum (root, fcn, &(fcn->rb), _fcn_tree_cmp_addr, _fcn_tree_calc_max_addr);
+}
+
 
 static bool _fcn_tree_print_dot_node(RBNode *n) {
 	int i;
@@ -247,14 +251,14 @@ static void _fcn_tree_iter_next(FcnTreeIter *it, ut64 from, ut64 to) {
 	}
 }
 
-R_API int r_anal_fcn_resize(RAnalFunction *fcn, int newsize) {
+R_API int r_anal_fcn_resize(const RAnal *anal, RAnalFunction *fcn, int newsize) {
 	ut64 eof; /* end of function */
 	RAnalBlock *bb;
 	RListIter *iter, *iter2;
 	if (!fcn || newsize < 1) {
 		return false;
 	}
-	r_anal_fcn_set_size (fcn, newsize);
+	r_anal_fcn_set_size (anal, fcn, newsize);
 	eof = fcn->addr + r_anal_fcn_size (fcn);
 	r_list_foreach_safe (fcn->bbs, iter, iter2, bb) {
 		if (bb->addr >= eof) {
@@ -441,10 +445,10 @@ static RAnalBlock *appendBasicBlock(RAnal *anal, RAnalFunction *fcn, ut64 addr) 
 
 #define FITFCNSZ() {\
 		st64 n = bb->addr + bb->size - fcn->addr;\
-		if (n >= 0 && r_anal_fcn_size (fcn) < n) { r_anal_fcn_set_size (fcn, n); } }\
+		if (n >= 0 && r_anal_fcn_size (fcn) < n) { r_anal_fcn_set_size (NULL, fcn, n); } }\
 	if (r_anal_fcn_size (fcn) > MAX_FCN_SIZE) {\
 		/* eprintf ("Function too big at 0x%"PFMT64x" + %d\n", bb->addr, fcn->size); */\
-		r_anal_fcn_set_size (fcn, 0);\
+		r_anal_fcn_set_size (NULL, fcn, 0);\
 		return R_ANAL_RET_ERROR; }
 
 // ETOOSLOW
@@ -1386,7 +1390,7 @@ static void fcnfit(RAnal *a, RAnalFunction *f) {
 	RAnalFunction *next = r_anal_fcn_next (a, f->addr);
 	if (next) {
 		if ((f->addr + r_anal_fcn_size (f)) > next->addr) {
-			r_anal_fcn_resize (f, (next->addr - f->addr));
+			r_anal_fcn_resize (a, f, (next->addr - f->addr));
 		}
 	}
 }
@@ -1416,7 +1420,7 @@ R_API void r_anal_trim_jmprefs(RAnalFunction *fcn) {
 
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
 	int ret;
-	r_anal_fcn_set_size (fcn, 0);
+	r_anal_fcn_set_size (NULL, fcn, 0); // fcn is not yet in anal => pass NULL
 	/* defines fcn. or loc. prefix */
 	fcn->type = (reftype == R_ANAL_REF_TYPE_CODE)
 	? R_ANAL_FCN_TYPE_LOC
@@ -1452,7 +1456,8 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 			}
 		}
 #if !JAYRO_04
-		r_anal_fcn_resize (fcn, endaddr - fcn->addr);
+		// fcn is not yet in anal => pass NULL
+		r_anal_fcn_resize (NULL, fcn, endaddr - fcn->addr);
 #endif
 		r_anal_trim_jmprefs (fcn);
 	}
@@ -1487,7 +1492,7 @@ R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int t
 	fcn->addr = addr;
 	fcn->cc = r_str_const (r_anal_cc_default (a));
 	fcn->bits = a->bits;
-	r_anal_fcn_set_size (fcn, size);
+	r_anal_fcn_set_size (append ? NULL : a, fcn, size);
 	free (fcn->name);
 	if (!name) {
 		fcn->name = r_str_newf ("fcn.%08"PFMT64x, fcn->addr);
@@ -1684,10 +1689,7 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 	n = bb->addr + bb->size - fcn->addr;
 	if (n >= 0 && r_anal_fcn_size (fcn) < n) {
 		// If fcn is in anal->fcn_tree (which reflects anal->fcns), update fcn_tree because fcn->_size has changed.
-		if (r_anal_fcn_tree_delete (&anal->fcn_tree, fcn)) {
-			r_anal_fcn_set_size (fcn, n);
-			r_anal_fcn_tree_insert (&anal->fcn_tree, fcn);
-		}
+		r_anal_fcn_set_size (anal, fcn, n);
 	}
 	return true;
 }
@@ -1950,10 +1952,19 @@ R_API bool r_anal_fcn_bbadd(RAnalFunction *fcn, RAnalBlock *bb) {
 	return true;
 }
 
-/* directly set the size of the function */
-R_API void r_anal_fcn_set_size(RAnalFunction *fcn, ut32 size) {
-	if (fcn) {
-		fcn->_size = size;
+
+/* directly set the size of the function
+ * if fcn is in ana RAnal's fcn_tree, the anal MUST be passed,
+ * otherwise it can be NULL */
+R_API void r_anal_fcn_set_size(const RAnal *anal, RAnalFunction *fcn, ut32 size) {
+	if (!fcn) {
+		return;
+	}
+
+	fcn->_size = size;
+
+	if (anal) {
+		_fcn_tree_update_size (anal->fcn_tree, fcn);
 	}
 }
 

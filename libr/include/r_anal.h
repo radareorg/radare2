@@ -1405,7 +1405,7 @@ R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type);
 /* vars // globals. not here  */
 R_API bool r_anal_var_display(RAnal *anal, int delta, char kind, const char *type);
 R_API ut32 r_anal_fcn_size(const RAnalFunction *fcn);
-R_API void r_anal_fcn_set_size(RAnalFunction *fcn, ut32 size);
+R_API void r_anal_fcn_set_size(const RAnal *anal, RAnalFunction *fcn, ut32 size);
 R_API ut32 r_anal_fcn_contsize(const RAnalFunction *fcn);
 R_API ut32 r_anal_fcn_realsize(const RAnalFunction *fcn);
 R_API int r_anal_fcn_cc(RAnalFunction *fcn);
@@ -1421,7 +1421,7 @@ R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *_str);
 R_API int r_anal_fcn_count (RAnal *a, ut64 from, ut64 to);
 R_API RAnalBlock *r_anal_fcn_bbget(RAnalFunction *fcn, ut64 addr);
 R_API bool r_anal_fcn_bbadd(RAnalFunction *fcn, RAnalBlock *bb);
-R_API int r_anal_fcn_resize (RAnalFunction *fcn, int newsize);
+R_API int r_anal_fcn_resize (const RAnal *anal, RAnalFunction *fcn, int newsize);
 
 #if 0
 #define r_anal_fcn_get_refs(x) x->refs

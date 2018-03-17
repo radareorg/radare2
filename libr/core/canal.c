@@ -545,7 +545,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 		fcn->bits = core->anal->bits;
 	}
 	fcn->addr = at;
-	r_anal_fcn_set_size (fcn, 0);
+	r_anal_fcn_set_size (NULL, fcn, 0);
 	fcn->name = getFunctionName (core, at);
 
 	if (!fcn->name) {
@@ -1475,7 +1475,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			return true;
 		}
 		// split function if overlaps
-		r_anal_fcn_resize (fcn, at - fcn->addr);
+		r_anal_fcn_resize (core->anal, fcn, at - fcn->addr);
 	}
 	return core_anal_fcn (core, at, from, reftype, depth);
 }
@@ -3436,7 +3436,7 @@ R_API void r_core_anal_fcn_merge (RCore *core, ut64 addr, ut64 addr2) {
 	// TODO: import data/code/refs
 	// update size
 	f1->addr = R_MIN (addr, addr2);
-	r_anal_fcn_set_size (f1, max - min);
+	r_anal_fcn_set_size (core->anal, f1, max - min);
 	// resize
 	f2->bbs = NULL;
 	r_anal_fcn_tree_delete (&core->anal->fcn_tree, f2);

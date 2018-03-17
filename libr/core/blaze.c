@@ -190,7 +190,7 @@ static void createFunction(RCore *core, fcn_t* fcn, const char *name) {
 	f->addr = fcn->addr;
 	f->bits = core->anal->bits;
 	f->cc = r_str_const (r_anal_cc_default (core->anal));
-	r_anal_fcn_set_size (f, fcn->size);
+	r_anal_fcn_set_size (NULL, f, fcn->size);
 	f->type = R_ANAL_FCN_TYPE_FCN;
 
 	r_list_foreach (fcn->bbs, fcn_iter, cur) {

@@ -481,7 +481,7 @@ static int analyze_from_code_buffer(RAnal *anal, RAnalFunction *fcn, ut64 addr, 
 
 	fcn->name = strdup (gen_name);
 	fcn->dsc = strdup ("unknown");
-	r_anal_fcn_set_size (fcn, code_length);
+	r_anal_fcn_set_size (NULL, fcn, code_length);
 	fcn->type = R_ANAL_FCN_TYPE_FCN;
 	fcn->addr = addr;
 	state = r_anal_state_new (addr, (ut8*) code_buf, code_length);
@@ -493,7 +493,7 @@ static int analyze_from_code_buffer(RAnal *anal, RAnalFunction *fcn, ut64 addr, 
 	r_list_foreach (fcn->bbs, bb_iter, bb) {
 		actual_size += bb->size;
 	}
-	r_anal_fcn_set_size (fcn, state->bytes_consumed);
+	r_anal_fcn_set_size (NULL, fcn, state->bytes_consumed);
 	result = state->anal_ret_val;
 	r_list_free (nodes->cfg_node_addrs);
 	free (nodes);
@@ -520,7 +520,7 @@ static int analyze_from_code_attr (RAnal *anal, RAnalFunction *fcn, RBinJavaFiel
 	if (!code_attr) {
 		fcn->name = strdup ("sym.UNKNOWN");
 		fcn->dsc = strdup ("unknown");
-		r_anal_fcn_set_size (fcn, code_length);
+		r_anal_fcn_set_size (NULL, fcn, code_length);
 		fcn->type = R_ANAL_FCN_TYPE_FCN;
 		fcn->addr = 0;
 		return R_ANAL_RET_ERROR;
