@@ -769,7 +769,7 @@ static bool dump_elf_map_content(RDebug *dbg, RBuffer *dest, linux_map_entry_t *
 		}
 		ret = dbg->iob.read_at (dbg->iob.io, p->start_addr, map_content, size);
 		if (!ret) {
-			eprintf ("Problems reading %"PFMTSZd" bytes at %"PFMT64x"\n", (ut64)size, (ut64)p->start_addr);
+			eprintf ("Problems reading %"PFMTSZd" bytes at %"PFMT64x"\n", size, (ut64)p->start_addr);
 		} else {
 			ret = r_buf_append_bytes (dest, (const ut8*)map_content, size);
 			if (!ret) {
