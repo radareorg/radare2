@@ -12,13 +12,14 @@ CFLAGS_OPT0=-O0
 CFLAGS_OPT1=-O1
 CFLAGS_OPT2=-O2
 CFLAGS_OPT3=-O3
+LD?=ld
 
 ifeq ($(OSTYPE),darwin)
-PARTIALLD=ld -r -all_load
+PARTIALLD=${LD} -r -all_load
 LDFLAGS_LIB=-dynamiclib
 LDFLAGS_SONAME=-Wl,-install_name,
 else
-PARTIALLD=ld -r --whole-archive
+PARTIALLD=${LD} -r --whole-archive
 LDFLAGS_LIB=-shared
 LDFLAGS_LIB+=-Dxx
 #Wl,-soname,lib${NAME}.${EXT_SO}.${VERSION}
