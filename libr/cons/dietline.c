@@ -291,7 +291,7 @@ R_API int cmd_history_up(RLine *line) {
 	if (!line->history.data) {
 		inithist ();
 	}
-	if (line->history.index > 0) {
+	if (line->history.index > 0 && line->history.data) {
 		strncpy (line->buffer.data, line->history.data[--line->history.index], R_LINE_BUFSIZE - 1);
 		line->buffer.index = line->buffer.length = strlen (line->buffer.data);
 		return true;
@@ -316,7 +316,7 @@ R_API int cmd_history_down(RLine *line) {
 		line->buffer.index = line->buffer.length = 0;
 		return false;
 	}
-	if (line->history.data[line->history.index]) {
+	if (line->history.data && line->history.data[line->history.index]) {
 		strncpy (line->buffer.data, line->history.data[line->history.index], R_LINE_BUFSIZE - 1);
 		line->buffer.index = line->buffer.length = strlen (line->buffer.data);
 	}

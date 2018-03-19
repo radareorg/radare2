@@ -239,10 +239,10 @@ static bool alignCheck(RAnalEsil *esil, ut64 addr) {
 }
 
 static int internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
-	addr &= esil->addrmask;
 	if (!esil || !esil->anal || !esil->anal->iob.io) {
 		return 0;
 	}
+	addr &= esil->addrmask;
 	if (!alignCheck (esil, addr)) {
 		esil->trap = R_ANAL_TRAP_READ_ERR;
 		esil->trap_code = addr;
@@ -272,10 +272,10 @@ static int internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len)
 }
 
 static int internal_esil_mem_read_no_null(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
-	addr &= esil->addrmask;
 	if (!esil || !esil->anal || !esil->anal->iob.io || !addr) {
 		return 0;
 	}
+	addr &= esil->addrmask;
 	if (!alignCheck (esil, addr)) {
 		esil->trap = R_ANAL_TRAP_READ_ERR;
 		esil->trap_code = addr;
@@ -296,10 +296,10 @@ static int internal_esil_mem_read_no_null(RAnalEsil *esil, ut64 addr, ut8 *buf, 
 
 R_API int r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	int i, ret = 0;
-	addr &= esil->addrmask;
 	if (!buf || !esil) {
 		return 0;
 	}
+	addr &= esil->addrmask;
 	if (esil->cb.hook_mem_read) {
 		ret = esil->cb.hook_mem_read (esil, addr, buf, len);
 	}
@@ -329,10 +329,10 @@ R_API int r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 
 static int internal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	int ret = 0;
-	addr &= esil->addrmask;
 	if (!esil || !esil->anal || !esil->anal->iob.io || esil->nowrite) {
 		return 0;
 	}
+	addr &= esil->addrmask;
 	if (!alignCheck (esil, addr)) {
 		esil->trap = R_ANAL_TRAP_READ_ERR;
 		esil->trap_code = addr;
@@ -364,13 +364,13 @@ static int internal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, i
 
 static int internal_esil_mem_write_no_null(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	int ret = 0;
-	addr &= esil->addrmask;
 	if (!esil || !esil->anal || !esil->anal->iob.io || !addr) {
 		return 0;
 	}
 	if (esil->nowrite) {
 		return 0;
 	}
+	addr &= esil->addrmask;
 	if (esil->anal->iob.write_at (esil->anal->iob.io, addr, buf, len)) {
 		ret = len;
 	}
@@ -387,10 +387,10 @@ static int internal_esil_mem_write_no_null(RAnalEsil *esil, ut64 addr, const ut8
 
 R_API int r_anal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 	int i, ret = 0;
-	addr &= esil->addrmask;
 	if (!buf || !esil) {
 		return 0;
 	}
+	addr &= esil->addrmask;
 	IFDBG {
 		eprintf ("0x%08" PFMT64x " <W ", addr);
 		for (i = 0; i < len; i++) {

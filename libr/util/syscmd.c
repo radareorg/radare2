@@ -257,7 +257,9 @@ R_API char *r_syscmd_mkdir(const char *dir) {
 	}
 	if (!ret) {
 		if (r_sys_mkdir_failed ()) {
-			return r_str_newf ("Cannot create \"%s\"\n", dirname);
+			char *res = r_str_newf ("Cannot create \"%s\"\n", dirname);
+			free (dirname);
+			return res;
 		}
 	}
 	free (dirname);

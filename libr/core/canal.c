@@ -159,6 +159,7 @@ static char *is_string_at(RCore *core, ut64 addr, int *olen) {
 	} else if (olen) {
 		*olen = len;
 	}
+	// NOTE: coverity says that ret is always 0 here, so str is dead code
 	return ret? (char *)str: NULL;
 }
 

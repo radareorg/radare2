@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2017 pancake */
+/* radare2 - LGPL - Copyright 2009-2018 pancake */
 
 #include "r_hash.h"
 
@@ -64,7 +64,7 @@ R_API int r_hash_calculate(RHash *ctx, ut64 algobit, const ut8 *buf, int len) {
 		return R_HASH_SIZE_PARITY;
 	}
 	if (algobit & R_HASH_ENTROPY) {
-		memset (ctx->digest, 0, R_HASH_SIZE_ENTROPY);
+		memset (ctx->digest, 0, sizeof (ctx->entropy));
 		ctx->entropy = r_hash_entropy (buf, len);
 		return R_HASH_SIZE_ENTROPY;
 	}

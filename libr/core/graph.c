@@ -3593,6 +3593,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	int movspeed;
 	int ret, invscroll;
 	RConfigHold *hc = r_config_hold_new (core->config);
+	if (!hc) {
+		return false;
+	}
 	r_config_save_num (hc, "asm.pseudo", "asm.esil", "asm.cmt.right", NULL);
 	if (!hc) {
 		return false;

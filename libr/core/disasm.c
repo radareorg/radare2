@@ -3962,8 +3962,8 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 						ds_comment_esil (ds, false, false, nextele?", ":")");
 					}
 				}
+				// ds_comment_esil (ds, false, true, "");
 				break;
-				ds_comment_esil (ds, false, true, "");
 			} else {
 				// function name not resolved
 				nargs = DEFAULT_NARGS;

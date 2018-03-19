@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2017 - nibble, pancake, alvaro_fe */
+/* radare - LGPL - Copyright 2008-2018 - nibble, pancake, alvaro_fe */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -3360,6 +3360,7 @@ static bool get_nt_file_maps (ELFOBJ *bin, RList *core_maps) {
 				}
 				r_buf_read_at (bin->b, jump + len_str,
 					(ut8*)str, sizeof (str) -1);
+				str[sizeof(str) -1] = 0; // null terminate string
 				RListIter *iter;
 				RBinMap *p;
 				r_list_foreach (core_maps, iter, p) {

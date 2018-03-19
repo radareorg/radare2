@@ -876,7 +876,9 @@ R_API RList *r_bin_file_get_strings(RBinFile *a, int min, int dump) {
 			}
 		}
 	} else {
-		r_bin_file_get_strings_range (a, ret, min, 0, a->size);
+		if (a) {
+			r_bin_file_get_strings_range (a, ret, min, 0, a->size);
+		}
 	}
 	return ret;
 }

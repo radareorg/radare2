@@ -143,6 +143,7 @@ R_API RSyscallItem *r_syscall_item_new_from_string(const char *name, const char 
 
 	si = R_NEW0 (RSyscallItem);
 	if (!si) {
+		free (o);
 		return NULL;
 	}
 	si->name = strdup (name);

@@ -72,7 +72,7 @@ static inline void r_cons_write(const char *buf, int len) {
 }
 
 R_API RColor r_cons_color_random(ut8 alpha) {
-	RColor rcolor;
+	RColor rcolor = {0};
 	if (I.color > COLOR_MODE_16) {
 		rcolor.r = r_num_rand (0xff);
 		rcolor.g = r_num_rand (0xff);

@@ -39,8 +39,6 @@ typedef struct rtti_type_descriptor_t {
 	char *name;
 } rtti_type_descriptor;
 
-
-
 static void rtti_type_descriptor_fini(rtti_type_descriptor *td) {
 	free (td->name);
 }
@@ -147,14 +145,13 @@ static bool rtti_msvc_read_base_class_descriptor(RVTableContext *context, ut64 a
 
 static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_base_classes, ut64 base, ut32 offset) {
 	if (base == UT64_MAX || offset == UT32_MAX) {
-		return false;
+		return NULL;
 	}
 
-	RList *ret = r_list_new ();
+	RList *ret = r_list_newf (free);
 	if (!ret) {
 		return NULL;
 	}
-	ret->free = free;
 
 	ut64 addr = base + offset;
 	ut64 stride = R_MIN (context->word_size, 4);
@@ -172,9 +169,10 @@ static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_
 			}
 		} else {
 			// special offset calculation for 64bit
-			ut8 tmp[4];
-			if(!context->anal->iob.read_at(context->anal->iob.io, addr, tmp, 4)) {
-				return false;
+			ut8 tmp[4] = {0};
+			if (!context->anal->iob.read_at(context->anal->iob.io, addr, tmp, 4)) {
+				r_list_free (ret);
+				return NULL;
 			}
 			ut32 (*read_32)(const void *src) = context->anal->big_endian ? r_read_be32 : r_read_le32;
 			ut32 bcdOffset = read_32 (tmp);

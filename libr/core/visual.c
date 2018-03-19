@@ -855,12 +855,12 @@ R_API int offset_history_up(RLine *line) {
 	char *command;
 	if (f && f->offset == off && f->offset > 0) {
 		command = r_str_newf ("%s", f->name);
-	}
-	else {
+	} else {
 		command = r_str_newf ("0x%"PFMT64x, off);
 	}
 	strncpy (line->buffer.data, command, R_LINE_BUFSIZE - 1);
 	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
+	free (command);
 	return true;
 }
 
@@ -881,12 +881,12 @@ R_API int offset_history_down(RLine *line) {
 	char *command;
 	if (f && f->offset == off && f->offset > 0) {
 		command = r_str_newf ("%s", f->name);
-	}
-	else {
+	} else {
 		command = r_str_newf ("0x%"PFMT64x, off);
 	}
 	strncpy (line->buffer.data, command, R_LINE_BUFSIZE - 1);
 	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
+	free (command);
 	return true;
 }
 

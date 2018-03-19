@@ -594,13 +594,15 @@ R_API bool r_file_dump(const char *file, const ut8 *buf, int len, bool append) {
 		eprintf ("Cannot open '%s' for writing\n", file);
 		return false;
 	}
-	if (len < 0) {
-		len = strlen ((const char *)buf);
-	}
-	if (len > 0 && fwrite (buf, len, 1, fd) != 1) {
-		r_sys_perror ("r_file_dump: fwrite: error\n");
-		fclose (fd);
-		return false;
+	if (buf) {
+		if (len < 0) {
+			len = strlen ((const char *)buf);
+		}
+		if (len > 0 && fwrite (buf, len, 1, fd) != 1) {
+			r_sys_perror ("r_file_dump: fwrite: error\n");
+			fclose (fd);
+			return false;
+		}
 	}
 	fclose (fd);
 	return true;

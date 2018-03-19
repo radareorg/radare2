@@ -274,6 +274,7 @@ R_API bool r_rbtree_aug_update_sum(RBNode *root, void *data, RBNode *node, RBCom
 	for(; dep > 0; dep--) {
 		sum (path[dep-1]);
 	}
+	return true;
 }
 
 R_API bool r_rbtree_delete(RBNode **root, void *data, RBComparator cmp, RBNodeFree freefn) {

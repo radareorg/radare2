@@ -3164,7 +3164,9 @@ R_API void r_core_visual_colors(RCore *core) {
 		char * res = r_core_cmd_str (core, "pd $r");
 		int h, w = r_cons_get_size (&h);
 		char *body = r_str_ansi_crop (res, 0, 0, w, h - 4);
-		r_cons_printf("%s", body);
+		if (body) {
+			r_cons_printf ("%s", body);
+		}
 		r_cons_flush ();
 		ch = r_cons_readchar ();
 		ch = r_cons_arrow_to_hjkl (ch);
@@ -3176,7 +3178,9 @@ R_API void r_core_visual_colors(RCore *core) {
 		CASE_RGB ('G','g',rcolor.g);
 		CASE_RGB ('B','b',rcolor.b);
 		case 'Q':
-		case 'q': return;
+		case 'q': 
+			free (body);
+			return;
 		case 'k': opt--; break;
 		case 'j': opt++; break;
 		case 'K': opt=0; break;
