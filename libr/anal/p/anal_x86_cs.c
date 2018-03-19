@@ -1377,16 +1377,17 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 // Divides (signed) the value in the AX, DX:AX, or EDX:EAX registers (dividend) by the source operand (divisor) and stores the result in the AX (AH:AL), DX:AX, or EDX:EAX registers. The source operand can be a general-purpose register or a memory location. The action of this instruction depends on the operand size (dividend/divisor), as shown in the following table:
 // IDIV RBX    ==   RDX:RAX /= RBX
 				if (arg0) {
-					switch (arg0[0]) {
-					case 'r':
-						esilprintf (op, "%s,rax,/=", arg0);
-						break;
-					case 'e':
-						esilprintf (op, "%s,eax,/=", arg0);
-						break;
-					default:
-						esilprintf (op, "%s,al,/=", arg0);
-						break;
+					int width = INSOP(0).size;
+					const char *r_quot = (width==1)?"al": (width==2)?"ax": (width==4)?"eax":"rax";
+					const char *r_rema = (width==1)?"ah": (width==2)?"dx": (width==4)?"edx":"rdx";
+					const char *r_nume = (width==1)?"ax": r_quot;
+
+					if ( width == 1 ) {
+						esilprintf(op, "0xffffff00,eflags,&=,%s,%s,%%,eflags,|=,%s,%s,/,%s,=,0xff,eflags,&,%s,=,0xffffff00,eflags,&=,2,eflags,|=",
+							arg0, r_nume, arg0, r_nume, r_quot, r_rema);
+					} else {
+						esilprintf (op, "%s,%s,%%,%s,=,%s,%s,/,%s,=",
+								arg0, r_nume, r_rema, arg0, r_nume, r_quot);
 					}
 				}
 				else {
@@ -1427,16 +1428,17 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 					esilprintf (op, "%s,%s,*=", arg1, arg0);
 				} else {
 					if (arg0) {
-						switch (arg0[0]) {
-						case 'r':
-							esilprintf (op, "%s,rax,*=", arg0);
-							break;
-						case 'e':
-							esilprintf (op, "%s,eax,*=", arg0);
-							break;
-						default:
-							esilprintf (op, "%s,al,*=", arg0);
-							break;
+						int width = INSOP(0).size;
+						const char *r_quot = (width==1)?"al": (width==2)?"ax": (width==4)?"eax":"rax";
+						const char *r_rema = (width==1)?"ah": (width==2)?"dx": (width==4)?"edx":"rdx";
+						const char *r_nume = (width==1)?"ax": r_quot;
+
+						if ( width == 1 ) {
+							esilprintf(op, "0xffffff00,eflags,&=,%s,%s,%%,eflags,|=,%s,%s,*,%s,=,0xff,eflags,&,%s,=,0xffffff00,eflags,&=,2,eflags,|=",
+								arg0, r_nume, arg0, r_nume, r_quot, r_rema);
+						} else {
+							esilprintf (op, "%d,%s,%s,*,>>,%s,=,%s,%s,*=",
+									width*8, arg0, r_nume, r_rema, arg0, r_nume);
 						}
 					}
 					else {
@@ -1450,16 +1452,17 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		{
 			src = getarg (&gop, 0, 0, NULL, SRC_AR);
 			if (src) {
-				switch (src[0]) {
-				case 'r':
-					esilprintf (op, "%s,rax,*=", src);
-					break;
-				case 'e':
-					esilprintf (op, "%s,eax,*=", src);
-					break;
-				default:
-					esilprintf (op, "%s,al,*=", src);
-					break;
+				int width = INSOP(0).size;
+				const char *r_quot = (width==1)?"al": (width==2)?"ax": (width==4)?"eax":"rax";
+				const char *r_rema = (width==1)?"ah": (width==2)?"dx": (width==4)?"edx":"rdx";
+				const char *r_nume = (width==1)?"ax": r_quot;
+
+				if ( width == 1 ) {
+					esilprintf(op, "0xffffff00,eflags,&=,%s,%s,%%,eflags,|=,%s,%s,*,%s,=,0xff,eflags,&,%s,=,0xffffff00,eflags,&=,2,eflags,|=",
+						src, r_nume, src, r_nume, r_quot, r_rema);
+				} else {
+					esilprintf (op, "%d,%s,%s,*,>>,%s,=,%s,%s,*=",
+							width*8, src, r_nume, r_rema, src, r_nume);
 				}
 			} else {
 				/* should never happen */
