@@ -156,7 +156,7 @@ static void _fcn_tree_update_size(RBNode *root, RAnalFunction *fcn) {
 }
 
 
-static bool _fcn_tree_print_dot_node(RBNode *n) {
+static void _fcn_tree_print_dot_node(RBNode *n) {
 	int i;
 	RAnalFunction *fcn = FCN_CONTAINER (n);
 
@@ -191,10 +191,9 @@ static bool _fcn_tree_print_dot_node(RBNode *n) {
 			r_cons_printf ("  \"%p\" -> \"null_%p_%d\" [label=\"%d\"];\n", n, n, i, i);
 		}
 	}
-
 }
 
-static bool _fcn_tree_print_dot(RBNode *n) {
+static void _fcn_tree_print_dot(RBNode *n) {
 	r_cons_print ("digraph fcn_tree {\n");
 	if (n) {
 		_fcn_tree_print_dot_node (n);
