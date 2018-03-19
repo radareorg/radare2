@@ -4361,7 +4361,7 @@ static int parseOpcode(RAsm *a, const char *op, Opcode *out) {
 	}
 	parseOperand (a, args, &(out->operands[0]), isrepop);
 	out->operands_count = 1;
-	while (out->operands_count <= MAX_OPERANDS) {
+	while (out->operands_count < MAX_OPERANDS) {
 		args = strchr (args, ',');
 		if (!args) {
 			break;

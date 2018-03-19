@@ -3230,7 +3230,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				int flagspace = core->flags->space_idx;
 				/* for all flags in current flagspace */
 				// XXX: dont ask why, but this only works with _prev..
-				r_list_foreach (core->flags->flags, iter, flag) {
+				r_list_foreach_safe (core->flags->flags, iter, flag) {
 					if (r_cons_is_breaked ()) {
 						break;
 					}

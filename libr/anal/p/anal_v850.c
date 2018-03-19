@@ -244,7 +244,6 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 		update_flags (op, V850_FLAG_CY | V850_FLAG_S | V850_FLAG_Z);
 		clear_flags (op, V850_FLAG_OV);
 		break;
-
 	case V850_BCOND:
 	case V850_BCOND2:
 	case V850_BCOND3:
