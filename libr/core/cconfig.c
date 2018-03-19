@@ -1807,6 +1807,7 @@ static int cb_seggrn(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	core->assembler->seggrn = node->i_value;
 	core->anal->seggrn = node->i_value;
+	core->print->seggrn = node->i_value;
 	return true;
 }
 
