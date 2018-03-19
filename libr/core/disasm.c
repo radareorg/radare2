@@ -3240,9 +3240,6 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		if (ref->type == R_ANAL_REF_TYPE_STRING || ref->type == R_ANAL_REF_TYPE_DATA) {
 			if ((f = r_flag_get_i (core->flags, ref->addr))) {
 				refaddr = ref->addr;
-				if (p == UT64_MAX) {
-					p = 0;
-				}
 				break;
 			}
 		}
@@ -3260,7 +3257,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	bool flag_printed = false;
 	bool refaddr_printed = false;
 	bool string_printed = false;
-	if (p == UT64_MAX) {
+	if (refaddr == UT64_MAX) {
 		/* do nothing */
 	} else if (((st64)p) > 0 || ((st64)refaddr) > 0) {
 		const char *kind;
