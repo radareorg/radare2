@@ -3848,13 +3848,18 @@ static int cmd_print(void *data, const char *input) {
 				int buf_len;
 				r_str_bits (buf, block, size, NULL);
 				buf_len = strlen (buf);
-				if (from >= buf_len) {
-					from = buf_len;
+				if (from < 0 || to < 0) {
+					// do nothing
+				} else {
+					if (from >= buf_len) {
+						from = buf_len;
+					}
+					if (to >= 0 && to < buf_len) {
+						buf[to] = 0;
+						//buf[buf_len - 1] = 0;
+					}
+					r_cons_println (buf + from);
 				}
-				if (to < buf_len) {
-					buf[to] = 0;
-				}
-				r_cons_println (buf + from);
 				free (buf);
 			} else {
 				eprintf ("ERROR: Cannot malloc %d byte(s)\n", size);
