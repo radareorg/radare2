@@ -1,1 +1,20 @@
+#define NONE 0x0
+#define REG 0x1
+#define CONST 0x2
+#define OTHER 0xf
+#define REG_REG 0x11
 #define REG_CONST 0x21
+#define OTHER_CONST 0x2f
+#define REG_REG_REG 0x111
+#define REG_REG_CONST 0x211
+#define REG_CONST_CONST 0x221
+#define REG_REG_SHIFT 0x311
+#define REG_REG_CONST_CONST 0x2211
+#define REG_REG_REG_SHIFT 0x3111
+#define COPROC_CONST_REG_REG_REG 0x11124
+#define COPROC_CONST_REG_REG_REG_CONST 0x211124
+
+#define NOSUFFIX 0x0
+#define LSUFFIX 0x100
+#define XSUFFIX 0x200
+#define LXSUFFIX 0x300
