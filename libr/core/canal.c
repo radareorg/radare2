@@ -835,6 +835,9 @@ static void print_hint_h_format(RAnalHint* hint) {
 	HINTCMD (hint, syntax, " syntax='%s'", false);
 	HINTCMD (hint, immbase, " immbase=%d", false);
 	HINTCMD (hint, esil, " esil='%s'", false);
+	if (hint->jump != UT64_MAX) {
+		r_cons_printf (" jump: 0x%"PFMT64x, hint->jump);
+	}
 	r_cons_newline ();
 }
 
@@ -853,6 +856,9 @@ static int cb(void *p, const char *k, const char *v) {
 		HINTCMD_ADDR (hint, syntax, "ahS %s");
 		HINTCMD_ADDR (hint, immbase, "ahi %d");
 		HINTCMD_ADDR (hint, esil, "ahe %s");
+		if (hint->jump != UT64_MAX) {
+			r_cons_printf ("ahc 0x%"PFMT64x" @ 0x%"PFMT64x"\n", hint->jump, hint->addr);
+		}
 		break;
 	case 'j':
 		r_cons_printf ("%s{\"from\":%"PFMT64d",\"to\":%"PFMT64d,
@@ -865,6 +871,9 @@ static int cb(void *p, const char *k, const char *v) {
 		HINTCMD (hint, immbase, ",\"immbase\":%d", true);
 		HINTCMD (hint, esil, ",\"esil\":\"%s\"", true);
 		HINTCMD (hint, ptr, ",\"ptr\":\"0x%"PFMT64x"x\"", true);
+		if (hint->jump != UT64_MAX) {
+			r_cons_printf (",\"jump\":\"0x%"PFMT64x"\"", hint->jump);
+		}
 		r_cons_print ("}");
 		break;
 	default:
