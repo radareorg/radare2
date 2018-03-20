@@ -276,6 +276,13 @@ static void rtti_msvc_print_complete_object_locator(rtti_complete_object_locator
 				   prefix, col->object_base);
 }
 
+static void rtti_msvc_print_complete_object_locator_json(rtti_complete_object_locator *col) {
+	r_cons_printf ("{\"signature\":%"PFMT32u",\"vftable_offset\":%"PFMT32u",\"cd_offset\":%"PFMT32u","
+				   "\"type_desc_addr\":%"PFMT32u",\"class_desc_addr\":%"PFMT32u",\"object_base\":%"PFMT32u"}",
+				   col->signature, col->vtable_offset, col->cd_offset, col->type_descriptor_addr,
+				   col->class_descriptor_addr, col->object_base);
+}
+
 static void rtti_msvc_print_type_descriptor(rtti_type_descriptor *td, ut64 addr, const char *prefix) {
 	r_cons_printf ("%sType Descriptor at 0x%08"PFMT64x":\n"
 				   "%s\tvtableAddr: 0x%08"PFMT64x"\n"
@@ -285,6 +292,11 @@ static void rtti_msvc_print_type_descriptor(rtti_type_descriptor *td, ut64 addr,
 				   prefix, td->vtable_addr,
 				   prefix, td->spare,
 				   prefix, td->name);
+}
+
+static void rtti_msvc_print_type_descriptor_json(rtti_type_descriptor *td) {
+	r_cons_printf ("{\"vtable_addr\":%"PFMT32u",\"spare\":%"PFMT32u",\"name\":\"%s\"}",
+				   td->vtable_addr, td->spare, td->name);
 }
 
 static void rtti_msvc_print_class_hierarchy_descriptor(rtti_class_hierarchy_descriptor *chd, ut64 addr, const char *prefix) {
@@ -298,6 +310,12 @@ static void rtti_msvc_print_class_hierarchy_descriptor(rtti_class_hierarchy_desc
 				   prefix, chd->attributes,
 				   prefix, chd->num_base_classes,
 				   prefix, chd->base_class_array_addr);
+}
+
+static void rtti_msvc_print_class_hierarchy_descriptor_json(rtti_class_hierarchy_descriptor *chd) {
+	r_cons_printf ("{\"signature\":%"PFMT32u",\"attributes\":%"PFMT32u",\"num_base_classes\":%"PFMT32u","
+				   "\"base_class_array_addr\":%"PFMT32u"}",
+				   chd->signature, chd->attributes, chd->num_base_classes, chd->base_class_array_addr);
 }
 
 static void rtti_msvc_print_base_class_descriptor(rtti_base_class_descriptor *bcd, const char *prefix) {
@@ -319,13 +337,26 @@ static void rtti_msvc_print_base_class_descriptor(rtti_base_class_descriptor *bc
 				   prefix, bcd->attributes);
 }
 
+static void rtti_msvc_print_base_class_descriptor_json(rtti_base_class_descriptor *bcd) {
+	r_cons_printf ("{\"type_desc_addr\":%"PFMT32u",\"num_contained_bases\":%"PFMT32u","
+				   "\"where\":{\"mdisp\":%"PFMT32d",\"pdisp\":%"PFMT32d",\"vdisp\":%"PFMT32d"},"
+				   "\"attributes\":%"PFMT32u"}",
+				   bcd->type_descriptor_addr, bcd->num_contained_bases,
+				   bcd->where.mdisp, bcd->where.pdisp, bcd->where.vdisp, bcd->attributes);
+}
+
 R_API void r_anal_rtti_msvc_print_complete_object_locator(RVTableContext *context, ut64 addr, int mode) {
 	rtti_complete_object_locator col;
 	if (!rtti_msvc_read_complete_object_locator (context, addr, &col)) {
 		eprintf ("Failed to parse Complete Object Locator at 0x%08"PFMT64x"\n", addr);
 		return;
 	}
-	rtti_msvc_print_complete_object_locator (&col, addr, "");
+
+	if (mode == 'j') {
+		rtti_msvc_print_complete_object_locator_json (&col);
+	} else {
+		rtti_msvc_print_complete_object_locator (&col, addr, "");
+	}
 }
 
 R_API void r_anal_rtti_msvc_print_type_descriptor(RVTableContext *context, ut64 addr, int mode) {
@@ -334,7 +365,13 @@ R_API void r_anal_rtti_msvc_print_type_descriptor(RVTableContext *context, ut64 
 		eprintf ("Failed to parse Type Descriptor at 0x%08"PFMT64x"\n", addr);
 		return;
 	}
-	rtti_msvc_print_type_descriptor (&td, addr, "");
+
+	if (mode == 'j') {
+		rtti_msvc_print_type_descriptor_json (&td);
+	} else {
+		rtti_msvc_print_type_descriptor (&td, addr, "");
+	}
+
 	rtti_type_descriptor_fini (&td);
 }
 
@@ -344,7 +381,12 @@ R_API void r_anal_rtti_msvc_print_class_hierarchy_descriptor(RVTableContext *con
 		eprintf ("Failed to parse Class Hierarchy Descriptor at 0x%08"PFMT64x"\n", addr);
 		return;
 	}
-	rtti_msvc_print_class_hierarchy_descriptor (&chd, addr, "");
+
+	if (mode == 'j') {
+		rtti_msvc_print_class_hierarchy_descriptor_json (&chd);
+	} else {
+		rtti_msvc_print_class_hierarchy_descriptor (&chd, addr, "");
+	}
 }
 
 R_API void r_anal_rtti_msvc_print_base_class_descriptor(RVTableContext *context, ut64 addr, int mode) {
@@ -353,22 +395,35 @@ R_API void r_anal_rtti_msvc_print_base_class_descriptor(RVTableContext *context,
 		eprintf ("Failed to parse Base Class Descriptor at 0x%08"PFMT64x"\n", addr);
 		return;
 	}
-	rtti_msvc_print_base_class_descriptor (&bcd, "");
+
+	if (mode == 'j') {
+		rtti_msvc_print_base_class_descriptor_json (&bcd);
+	} else {
+		rtti_msvc_print_base_class_descriptor (&bcd, "");
+	}
 }
 
-static void rtti_msvc_print_complete_object_locator_recurse(RVTableContext *context, ut64 atAddress) {
+static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *context, ut64 atAddress, int mode) {
+	bool use_json = mode == 'j';
+
 	ut64 colRefAddr = atAddress - context->word_size;
 	ut64 colAddr;
 	if (!context->read_addr (context->anal, colRefAddr, &colAddr)) {
-		return;
+		return false;
 	}
 
 	rtti_complete_object_locator col;
 	if (!rtti_msvc_read_complete_object_locator (context, colAddr, &col)) {
 		eprintf ("Failed to parse Complete Object Locator at 0x%08"PFMT64x" (referenced from 0x%08"PFMT64x")\n", colAddr, colRefAddr);
-		return;
+		return false;
 	}
-	rtti_msvc_print_complete_object_locator (&col, colAddr, "");
+
+	if (use_json) {
+		r_cons_print ("{\"complete_object_locator\":");
+		rtti_msvc_print_complete_object_locator_json (&col);
+	} else {
+		rtti_msvc_print_complete_object_locator (&col, colAddr, "");
+	}
 
 	ut64 typeDescriptorAddr = col.type_descriptor_addr;
 	if (context->word_size == 8) {
@@ -376,7 +431,12 @@ static void rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 	}
 	rtti_type_descriptor td = { 0 };
 	if (rtti_msvc_read_type_descriptor (context, typeDescriptorAddr, &td)) {
-		rtti_msvc_print_type_descriptor (&td, typeDescriptorAddr, "\t");
+		if (use_json) {
+			r_cons_print (",\"type_desc\":");
+			rtti_msvc_print_type_descriptor_json (&td);
+		} else {
+			rtti_msvc_print_type_descriptor (&td, typeDescriptorAddr, "\t");
+		}
 		rtti_type_descriptor_fini (&td);
 	} else {
 		eprintf ("Failed to parse Type Descriptor at 0x%08"PFMT64x"\n", typeDescriptorAddr);
@@ -388,7 +448,12 @@ static void rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 	}
 	rtti_class_hierarchy_descriptor chd;
 	if (rtti_msvc_read_class_hierarchy_descriptor (context, classHierarchyDescriptorAddr, &chd)) {
-		rtti_msvc_print_class_hierarchy_descriptor (&chd, classHierarchyDescriptorAddr, "\t");
+		if (use_json) {
+			r_cons_print (",\"class_hierarchy_desc\":");
+			rtti_msvc_print_class_hierarchy_descriptor_json (&chd);
+		} else {
+			rtti_msvc_print_class_hierarchy_descriptor (&chd, classHierarchyDescriptorAddr, "\t");
+		}
 
 		ut64 base = chd.base_class_array_addr;
 		ut32 baseClassArrayOffset = 0;
@@ -399,10 +464,28 @@ static void rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 
 		RList *baseClassArray = rtti_msvc_read_base_class_array (context, chd.num_base_classes, base, baseClassArrayOffset);
 		if (baseClassArray) {
+			bool json_first = true;
+			if (use_json) {
+				r_cons_print (",\"base_classes\":[");
+			}
+
 			RListIter *bcdIter;
 			rtti_base_class_descriptor *bcd;
 			r_list_foreach (baseClassArray, bcdIter, bcd) {
-				rtti_msvc_print_base_class_descriptor (bcd, "\t\t");
+				if (use_json) {
+					if (json_first) {
+						r_cons_print ("{\"desc\":");
+						json_first = false;
+					} else {
+						r_cons_print (",{\"desc\":");
+					}
+				}
+
+				if (use_json) {
+					rtti_msvc_print_base_class_descriptor_json (bcd);
+				} else {
+					rtti_msvc_print_base_class_descriptor (bcd, "\t\t");
+				}
 
 				ut64 baseTypeDescriptorAddr = bcd->type_descriptor_addr;
 				if (context->word_size == 8) {
@@ -411,11 +494,23 @@ static void rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 
 				rtti_type_descriptor btd = { 0 };
 				if (rtti_msvc_read_type_descriptor (context, baseTypeDescriptorAddr, &btd)) {
-					rtti_msvc_print_type_descriptor (&btd, baseTypeDescriptorAddr, "\t\t\t");
+					if (use_json) {
+						r_cons_print (",\"type_desc\":");
+						rtti_msvc_print_type_descriptor_json (&btd);
+					} else {
+						rtti_msvc_print_type_descriptor (&btd, baseTypeDescriptorAddr, "\t\t\t");
+					}
 					rtti_type_descriptor_fini (&btd);
 				} else {
 					eprintf ("Failed to parse Type Descriptor at 0x%08"PFMT64x"\n", baseTypeDescriptorAddr);
 				}
+
+				if(use_json) {
+					r_cons_print ("}");
+				}
+			}
+			if (use_json) {
+				r_cons_print ("]");
 			}
 		} else {
 			eprintf ("Failed to parse Base Class Array starting at 0x%08"PFMT64x"\n", base + baseClassArrayOffset);
@@ -423,8 +518,14 @@ static void rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 	} else {
 		eprintf ("Failed to parse Class Hierarchy Descriptor at 0x%08"PFMT64x"\n", classHierarchyDescriptorAddr);
 	}
+
+	if (use_json) {
+		r_cons_print ("}");
+	}
+
+	return true;
 }
 
 R_API void r_anal_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr, int mode) {
-	rtti_msvc_print_complete_object_locator_recurse (context, addr);
+	rtti_msvc_print_complete_object_locator_recurse (context, addr, mode);
 }
