@@ -198,7 +198,7 @@ ut32 opmask(char *input, char *opcode) {
 	if (strlen (opcode) > strlen (input)) {
 		return 0;
 	}
-	if (!r_str_startswith (input, opcode)) {
+	if (r_str_startswith (input, opcode)) {
 		input += strlen (opcode);
 		res |= M_BIT;
 		if (*input == 's') {
@@ -1354,7 +1354,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	if (( m = opmask (ao->op, "b") )) {
 		ut64 argt = thumb_selector (ao->a);
 		switch ( ((L_BIT | X_BIT) & m)) {
-		case (0x300): {
+		case 0x300: {
 			switch (argt) {
 			case 0x1: {
 				ut32 reg1 = getreg (ao->a[0]);
@@ -1379,7 +1379,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			        }
 		        }
 			break;
-		case (0x200): {
+		case 0x200: {
 			switch (argt) {
 			case 0x1: {
 				ut32 reg1 = getreg (ao->a[0]);
@@ -1393,7 +1393,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			        }
 		        }
 			break;
-		case (0x100): {
+		case 0x100: {
 			switch (argt) {
 			case 0x2: {
 				st32 offset = thumb_getoffset (ao->a[0], off);
@@ -1409,7 +1409,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				return -1;
 			        }
 		        }
-		case (0): {
+		case 0: {
 			if (!(argt == 0x2)) {
 				return -1;
 			}
@@ -1815,7 +1815,6 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			return -1;
 		}
 	} else
-
 	if (( m = opmask (ao->op, "cps") )) {
 		ut64 argt = thumb_selector (ao->a);
 		switch (argt) {
