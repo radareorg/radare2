@@ -5,6 +5,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <r_util.h>
+#include "armass16_const.h"
 
 // TODO: only lo registers accessible in thumb arm
 
@@ -1090,13 +1091,13 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	if ((m = opmask (ao->op, "adc"))) {
 		ut64 argt = thumb_selector(ao->a);
 		switch (argt) {
-		case 0x21: {
+		case THUMB_REG_CONST: {
 			ao->a[2] = ao->a[1];
 			ao->a[1] = ao->a[0];
 		        }
 			// intentional fallthrough
 			// a bit naughty, perhaps?
-		case 0x211: {
+		case THUMB_REG_REG_CONST: {
 			if (m & DOTN_BIT) {
 				// this is explicitly an error
 				return -1;
@@ -1111,7 +1112,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			return 4;
 		        }
 			break;
-		case 0x11: {
+		case THUMB_REG_REG: {
 			ut8 reg1 = getreg (ao->a[0]);
 			ut8 reg2 = getreg (ao->a[1]);
 			if ( (reg1 < 8) && (reg2 < 8) && !(m & DOTW_BIT)) {
@@ -1125,7 +1126,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		        }
 			// intentional fallthrough
 			// a bit naughty, perhaps?
-		case 0x111: {
+		case THUMB_REG_REG_REG: {
 			if (m & DOTN_BIT) {
 				// this is explicitly an error
 				return -1;
@@ -1140,14 +1141,14 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			return 4;
 		        }
 			break;
-		case 0x311: {
+		case THUMB_REG_REG_SHIFT: {
 			ao->a[3] = ao->a[2];
 			ao->a[2] = ao->a[1];
 			ao->a[1] = ao->a[0];
 		        }
 			// intentional fallthrough
 			// a bit naughty, perhaps?
-		case 0x3111: {
+		case THUMB_REG_REG_REG_SHIFT: {
 			if (m & DOTN_BIT) {
 				// this is explicitly an error
 				return -1;
@@ -1170,7 +1171,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	if ((m = opmask (ao->op, "adr"))) {
 		ut64 argt = thumb_selector(ao->a);
 		switch (argt) {
-		case 0x21: {
+		case THUMB_REG_CONST: {
 			ut8 reg = getreg(ao->a[0]);
 			st32 label = getnum (ao->a[1]);
 			if ( !(m & DOTW_BIT) && (reg < 8) && (label < 1024) && (label >= 0) && (label % 4 == 0)) {
@@ -1207,7 +1208,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	if ((m = opmask (ao->op, "and"))) {
 		ut64 argt = thumb_selector(ao->a);
 		switch (argt) {
-		case 0x11: {
+		case THUMB_REG_REG: {
 			ut8 reg1 = getreg (ao->a[0]);
 			ut8 reg2 = getreg (ao->a[1]);
 			if (( !(m & DOTW_BIT)) && (reg1 < 8) && (reg2 < 8)) {
@@ -1220,7 +1221,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			ao->a[1] = ao->a[0];
 		        }
 			// intentional fallthrough
-		case 0x111: {
+		case THUMB_REG_REG_REG: {
 			if (m & DOTN_BIT) {
 				// this is explicitly an error
 				return -1;
@@ -1238,12 +1239,12 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			return 4;
 		        }
 			break;
-		case 0x21: {
+		case THUMB_REG_CONST: {
 			ao->a[2] = ao->a[1];
 			ao->a[1] = ao->a[0];
 		        }
 			// intentional fallthrough
-		case 0x211: {
+		case THUMB_REG_REG_CONST: {
 			if (m & DOTN_BIT) {
 				// this is explicitly an error
 				return -1;
@@ -1261,13 +1262,13 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			return 4;
 		        }
 			break;
-		case 0x311: {
+		case THUMB_REG_REG_SHIFT: {
 			ao->a[3] = ao->a[2];
 			ao->a[2] = ao->a[1];
 			ao->a[1] = ao->a[0];
 		        }
 			// intentional fallthrough
-		case 0x3111: {
+		case THUMB_REG_REG_REG_SHIFT: {
 			if (m & DOTN_BIT) {
 				// this is explicitly an error
 				return -1;
@@ -1294,7 +1295,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	if ((m = opmask (ao->op, "asr"))) {
 		ut64 argt = thumb_selector (ao->a);
 		switch (argt) {
-		case 0x211: {
+		case THUMB_REG_REG_CONST: {
 			ut8 reg1 = getreg (ao->a[0]);
 			ut8 reg2 = getreg (ao->a[1]);
 			ut32 imm = getnum (ao->a[2]);
@@ -1320,7 +1321,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			return 4;
 		        }
 			break;
-		case 0x11: {
+		case THUMB_REG_REG: {
 			ut8 reg1 = getreg (ao->a[0]);
 			ut8 reg2 = getreg (ao->a[1]);
 			if ((reg1 < 8) && (reg2 < 8) && (!(m & DOTW_BIT))) {
@@ -1333,7 +1334,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			ao->a[1] = ao->a[0];
 		        }
 			// intentional fallthrough
-		case 0x111: {
+		case THUMB_REG_REG_REG: {
 			ut8 reg1 = getreg (ao->a[0]);
 			ut8 reg2 = getreg (ao->a[1]);
 			ut8 reg3 = getreg (ao->a[2]);
@@ -1354,16 +1355,16 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	if (( m = opmask (ao->op, "b") )) {
 		ut64 argt = thumb_selector (ao->a);
 		switch ( ((L_BIT | X_BIT) & m)) {
-		case 0x300: {
+		case THUMB_LXSUFFIX: {
 			switch (argt) {
-			case 0x1: {
+			case THUMB_REG: {
 				ut32 reg1 = getreg (ao->a[0]);
 				ao->o = 0x8047;
 				ao->o |= reg1 << 11;
 				return 2;
 			        }
 				break;
-			case 0x2: {
+			case THUMB_CONST: {
 				st32 offset = thumb_getoffset (ao->a[0], off);
 				ao->o = 0x00f000c0;
 				if ((offset > 16777214) || (offset < -16777216) || (offset % 2 != 0)) {
@@ -1379,9 +1380,9 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			        }
 		        }
 			break;
-		case 0x200: {
+		case THUMB_XSUFFIX: {
 			switch (argt) {
-			case 0x1: {
+			case THUMB_REG: {
 				ut32 reg1 = getreg (ao->a[0]);
 				ao->o = 0x0047;
 				ao->o |= reg1 << 11;
@@ -1393,9 +1394,9 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			        }
 		        }
 			break;
-		case 0x100: {
+		case THUMB_LSUFFIX: {
 			switch (argt) {
-			case 0x2: {
+			case THUMB_CONST: {
 				st32 offset = thumb_getoffset (ao->a[0], off);
 				ao->o = 0x00f000d0;
 				if ((offset > 16777214) || (offset < -16777216) || (offset % 2 != 0)) {
@@ -1409,7 +1410,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				return -1;
 			        }
 		        }
-		case 0: {
+		case THUMB_NOSUFFIX: {
 			if (!(argt == 0x2)) {
 				return -1;
 			}
@@ -1465,7 +1466,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	if (( m = opmask (ao->op, "bfc") )) {
 		ut64 argt = thumb_selector (ao->a);
 		switch (argt) {
-		case 0x221: {
+		case THUMB_REG_CONST_CONST: {
 			if (m & DOTN_BIT) {
 				// this is explicitly an error
 				return -1;
@@ -1492,7 +1493,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	if (( m = opmask (ao->op, "bfi") )) {
 		ut64 argt = thumb_selector (ao->a);
 		switch (argt) {
-		case 0x2211: {
+		case THUMB_REG_REG_CONST_CONST: {
 			if (m & DOTN_BIT) {
 				// this is explicitly an error
 				return -1;
@@ -1521,7 +1522,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	if (( m = opmask (ao->op, "bic") )) {
 		ut64 argt = thumb_selector (ao->a);
 		switch (argt) {
-		case 0x11: {
+		case THUMB_REG_REG: {
 			ut8 reg1 = getreg (ao->a[0]);
 			ut8 reg2 = getreg (ao->a[1]);
 			if ((reg1 < 8) && (reg2 < 8) && (!(m & DOTW_BIT))) {
@@ -1534,7 +1535,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			ao->a[1]=ao->a[0];
 		        }
 			// intentional fallthrough
-		case 0x111: {
+		case THUMB_REG_REG_REG: {
 			if (m & DOTN_BIT) {
 				// this is explicitly an error
 				return -1;
@@ -1552,12 +1553,12 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			return 4;
 		        }
 			break;
-		case 0x21: {
+		case THUMB_REG_CONST: {
 			ao->a[2]=ao->a[1];
 			ao->a[1]=ao->a[0];
 		        }
 			// intentional fallthrough
-		case 0x211: {
+		case THUMB_REG_REG_CONST: {
 			if (m & DOTN_BIT) {
 				// this is explicitly an error
 				return -1;
@@ -1574,13 +1575,13 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			return 4;
 		        }
 			break;
-		case 0x311: {
+		case THUMB_REG_REG_SHIFT: {
 			ao->a[3]=ao->a[2];
 			ao->a[2]=ao->a[1];
 			ao->a[1]=ao->a[0];
 		        }
 			// intentional fallthrough
-		case 0x3111: {
+		case THUMB_REG_REG_REG_SHIFT: {
 			if (m & DOTN_BIT) {
 				// this is explicitly an error
 				return -1;
@@ -1606,7 +1607,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	if (( m = opmask (ao->op, "bkpt") )) {
 		ut64 argt = thumb_selector (ao->a);
 		switch (argt) {
-		case 0x2: {
+		case THUMB_CONST: {
 			ut32 num = getnum (ao->a[0]);
 			if (num > 255) {
 				return -1;
@@ -1623,7 +1624,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	if (( m = opmask (ao->op, "cbnz") )) {
 		ut64 argt = thumb_selector (ao->a);
 		switch (argt) {
-		case 0x21: {
+		case THUMB_REG_CONST: {
 			ut8 reg1 = getreg (ao->a[0]);
 			ut32 offset = thumb_getoffset (ao->a[1], off);
 			if ((reg1 > 7) || (offset > 127) || (offset % 2 != 0)) {
@@ -1643,7 +1644,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	if (( m = opmask (ao->op, "cbz") )) {
 		ut64 argt = thumb_selector (ao->a);
 		switch (argt) {
-		case 0x21: {
+		case THUMB_REG_CONST: {
 			ut8 reg1 = getreg (ao->a[0]);
 			ut32 offset = thumb_getoffset (ao->a[1], off);
 			if ((reg1 > 7) || (offset > 127) || (offset % 2 != 0)) {
@@ -1663,11 +1664,11 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	if (( m = opmask (ao->op, "cdp") )) {
 		ut64 argt = thumb_selector (ao->a);
 		switch (argt) {
-		case 0x11124: {
+		case THUMB_COPROC_CONST_REG_REG_REG: {
 			ao->a[5] = 0;
 		        }
 			//intentional fallthrough
-		case 0x211124: {
+		case THUMB_COPROC_CONST_REG_REG_REG_CONST: {
 			ut32 coproc = getcoproc (ao->a[0]);
 			ut32 opc1 = getnum (ao->a[1]);
 			ut8 reg1 = getreg (ao->a[2]);
@@ -1697,7 +1698,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	if (( m = opmask (ao->op, "clrex") )) {
 		ut64 argt = thumb_selector (ao->a);
 		switch (argt) {
-		case 0x0: {
+		case THUMB_NONE: {
 			ao->o = 0xbff32f8f;
 			return 4;
 		        }
@@ -1709,7 +1710,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	if (( m = opmask (ao->op, "clz") )) {
 		ut64 argt = thumb_selector (ao->a);
 		switch (argt) {
-		case 0x11: {
+		case THUMB_REG_REG: {
 			ut8 reg1 = getreg (ao->a[0]);
 			ut8 reg2 = getreg (ao->a[1]);
 			ao->o = 0xb0fa80f0;
@@ -1726,7 +1727,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	if (( m = opmask (ao->op, "cmn") )) {
 		ut64 argt = thumb_selector (ao->a);
 		switch (argt) {
-		case 0x21: {
+		case THUMB_REG_CONST: {
 			ut8 reg1 = getreg (ao->a[0]);
 			ut32 num = getthimmed12 (ao->a[1]);
 			ao->o = 0x10f1000f;
@@ -1735,7 +1736,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			return 4;
 		        }
 			break;
-		case 0x11: {
+		case THUMB_REG_REG: {
 			ut8 reg1 = getreg (ao->a[0]);
 			ut8 reg2 = getreg (ao->a[1]);
 			if ((reg1 < 8) && (reg2 < 8) && (!(m & DOTW_BIT))) {
@@ -1747,7 +1748,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			ao->a[2] = "lsl 0";
 		        }
 			// intentional fallthrough
-		case 0x311: {
+		case THUMB_REG_REG_SHIFT: {
 			ut8 reg1 = getreg (ao->a[0]);
 			ut8 reg2 = getreg (ao->a[1]);
 			ut32 shift = thumb_getshift (ao->a[2]);
@@ -1765,7 +1766,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	if (( m = opmask (ao->op, "cmp") )) {
 		ut64 argt = thumb_selector (ao->a);
 		switch (argt) {
-		case 0x21: {
+		case THUMB_REG_CONST: {
 			ut8 reg1 = getreg (ao->a[0]);
 			ut32 num = getnum(ao->a[1]);
 			if ((num < 256) && (!(m & DOTW_BIT))) {
@@ -1781,7 +1782,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			return 4;
 		        }
 			break;
-		case 0x11: {
+		case THUMB_REG_REG: {
 			ut8 reg1 = getreg (ao->a[0]);
 			ut8 reg2 = getreg (ao->a[1]);
 			if ((reg1 < 8) && (reg2 < 8) && (!(m & DOTW_BIT))) {
@@ -1800,7 +1801,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			ao->a[2] = "lsl 0";
 		        }
 			// intentional fallthrough
-		case 0x311: {
+		case THUMB_REG_REG_SHIFT: {
 			ut8 reg1 = getreg (ao->a[0]);
 			ut8 reg2 = getreg (ao->a[1]);
 			ut32 shift = thumb_getshift (ao->a[2]);
@@ -1818,7 +1819,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	if (( m = opmask (ao->op, "cps") )) {
 		ut64 argt = thumb_selector (ao->a);
 		switch (argt) {
-		case 0xf: {
+		case THUMB_OTHER: {
 			st8 aif = iflag(ao->a[0]);
 			if (aif == -1) {
 				return -1;
@@ -1834,7 +1835,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			ao->a[1] = "0";
 		        }
 			// intentional fallthrough
-		case 0x2f: {
+		case THUMB_OTHER_CONST: {
 			st8 aif = iflag(ao->a[0]);
 			ut8 mode = getnum (ao->a[1]);
 			if ((mode > 31) || (aif == -1)) {
@@ -1849,7 +1850,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			return 4;
 		        }
 			break;
-		case 0x2: {
+		case THUMB_CONST: {
 			ut8 mode = getnum (ao->a[0]);
 			if ((m & ID_BIT) || (m & IE_BIT) || (mode > 31)) {
 				return -1;
