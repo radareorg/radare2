@@ -5,6 +5,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <r_util.h>
+#include "armass16_const.h"
 
 // TODO: only lo registers accessible in thumb arm
 
@@ -1090,7 +1091,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	if ((m = opmask (ao->op, "adc"))) {
 		ut64 argt = thumb_selector(ao->a);
 		switch (argt) {
-		case 0x21: {
+		case REG_CONST: {
 			ao->a[2] = ao->a[1];
 			ao->a[1] = ao->a[0];
 		        }
