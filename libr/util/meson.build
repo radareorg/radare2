@@ -4,6 +4,7 @@
 # 'iconv.c',
 
 files = [
+  'ascii_table.c',
   'base85.c',
   'base91.c',
   'bdiff.c',
