@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2016 - inisider */
+/* radare - LGPL - Copyright 2015-2018 - inisider */
 
 #include "mach0_classes.h"
 
@@ -307,6 +307,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 			} else {
 				type = calloc (1, left);
 				r_buf_read_at (bf->buf, r, (ut8 *)type, left);
+				type[left - 1] = 0;
 			}
       			field->type = strdup (type);
 			R_FREE (type);
