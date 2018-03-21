@@ -33,7 +33,8 @@ r_fs = library('r_fs', files,
   c_args: ['-DCORELIB=1'],
   link_with: [r_util, libr_shlr],
   install: true,
-  implicit_include_directories: false
+  implicit_include_directories: false,
+  soversion: r2version
 )
 
 pkgconfig_mod.generate(

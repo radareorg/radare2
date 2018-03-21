@@ -27,7 +27,8 @@ r_parse = library('r_parse', files,
   c_args: ['-DCORELIB=1'],
   link_with: [r_util, r_flag, r_syscall, r_reg, libr_shlr],
   install: true,
-  implicit_include_directories: false
+  implicit_include_directories: false,
+  soversion: r2version
 )
 
 pkgconfig_mod.generate(

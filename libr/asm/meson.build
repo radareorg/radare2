@@ -167,7 +167,8 @@ r_asm = library('r_asm', files,
     r_util, r_syscall, r_parse, r_lang, r_flag, r_socket, libr_shlr
   ],
   install: true,
-  implicit_include_directories: false
+  implicit_include_directories: false,
+  soversion: r2version
 )
 
 pkgconfig_mod.generate(

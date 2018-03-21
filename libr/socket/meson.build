@@ -15,7 +15,8 @@ r_socket = library('r_socket', files,
   link_with: [r_util],
   c_args: ['-DCORELIB=1'],
   install: true,
-  implicit_include_directories: false
+  implicit_include_directories: false,
+  soversion: r2version
 )
 
 pkgconfig_mod.generate(

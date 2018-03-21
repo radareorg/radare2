@@ -112,7 +112,8 @@ r_anal = library('r_anal', files,
     r_util, r_reg, r_asm, r_syscall, r_search, r_cons, r_flag, libr_shlr
   ],
   install: true,
-  implicit_include_directories: false
+  implicit_include_directories: false,
+  soversion: r2version
 )
 
 pkgconfig_mod.generate(

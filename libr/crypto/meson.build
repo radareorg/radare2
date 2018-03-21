@@ -25,7 +25,8 @@ r_crypto = library('r_crypto', files,
   link_with: [r_util],
   c_args: ['-DCORELIB=1'],
   install: true,
-  implicit_include_directories: false
+  implicit_include_directories: false,
+  soversion: r2version
 )
 
 pkg = import('pkgconfig')
