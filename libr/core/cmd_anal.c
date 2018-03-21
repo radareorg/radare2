@@ -6010,7 +6010,7 @@ static bool archIsArmOrThumb(RCore *core) {
 			return true;
 		}
 		if (r_str_startswith (as->cur->arch, "arm")) {
-			if (as->cur->bits < 64) {
+			if (as->bits < 64) {
 				return true;
 			}
 		}
