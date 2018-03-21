@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2011-2017 - pancake */
+/* radare2 - LGPL - Copyright 2011-2018 - pancake */
 
 #include <r_fs.h>
 #include "config.h"
@@ -702,28 +702,34 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 	}
 
 	for (;;) {
-		snprintf (prompt, sizeof (prompt), "[%.*s]> ", sizeof (prompt) - 5, 
-		  path);
-
-		if (shell == NULL) {
-			printf ("%s", prompt);
-			fgets (buf, sizeof (buf) - 1, stdin);
-			
-			if (feof (stdin)) {
-				break;
+		snprintf (prompt, sizeof (prompt), "[%.*s]> ", sizeof (prompt) - 5, path);
+		if (shell) {
+			if (shell->set_prompt) {
+				shell->set_prompt (prompt);
 			}
-
-			buf[strlen (buf) - 1] = '\0';
-		} else {
-			shell->set_prompt (prompt);
-			ptr = shell->readline ();
-			shell->hist_add (ptr);
-
+			if (shell->readline) {
+				ptr = shell->readline ();
+			} else {
+				fgets (buf, sizeof (buf) - 1, stdin);
+				if (feof (stdin)) {
+					break;
+				}
+				buf[strlen (buf) - 1] = '\0';
+			}
+			if (shell->hist_add) {
+				shell->hist_add (ptr);
+			}
 			if (!ptr) {
 				break;
 			}
-
 			r_str_ncpy (buf, ptr, sizeof (buf) - 1);
+		} else {
+			printf ("%s", prompt);
+			fgets (buf, sizeof (buf) - 1, stdin);
+			if (feof (stdin)) {
+				break;
+			}
+			buf[strlen (buf) - 1] = '\0';
 		}
 
 		if (!strcmp (buf, "q") || !strcmp (buf, "exit")) {
