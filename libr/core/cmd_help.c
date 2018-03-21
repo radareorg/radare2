@@ -77,6 +77,7 @@ static const char *help_msg_question[] = {
 	"??", " [cmd]", "run cmd if $? != 0",
 	"??", "", "show value of operation",
 	"?_", " hudfile", "load hud menu with given file",
+	"?a", "show ascii table",
 	"?b", " [num]", "show binary value of number",
 	"?b64[-]", " [str]", "encode/decode in base64",
 	"?btw", " num|expr num|expr num|expr", "returns boolean value of a <= b <= c",
@@ -318,6 +319,9 @@ static int cmd_help(void *data, const char *input) {
 		core->num->value = (ut64) (b + r_num_rand (r));
 		r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
 		}
+		break;
+	case 'a': // "?a"
+		printf("%s", ret_ascii_table());
 		break;
 	case 'b': // "?b"
 		if (input[1] == '6' && input[2] == '4') {
