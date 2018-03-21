@@ -6,7 +6,7 @@
 static const char *help_msg_a[] = {
 	"Usage:", "a", "[abdefFghoprxstc] [...]",
 	"aa", "[?]", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
-	"ab", " [hexpairs]", "analyze bytes",
+	"a8", " [hexpairs]", "analyze bytes",
 	"abb", " [len]", "analyze N basic blocks in [len] (section.size by default)",
 	"ac", " [cycles]", "analyze which op could be executed in [cycles]",
 	"ad", "[?]", "analyze data trampoline (wip)",
@@ -59,11 +59,11 @@ static const char *help_msg_aar[] = {
 	NULL
 };
 
-static const char *help_msg_ab[] = {
-	"Usage:", "ab", "",
-	"ab", " [hexpair-bytes]", "analyze N bytes",
-	"abj", " [hexpair-bytes]", "analyze N bytes (display in JSON)",
-	"abb", " [length]", "analyze N bytes and extract basic blocks",
+static const char *help_msg_a8[] = {
+	"Usage:", "a8", "",
+	"a8", " [hexpair-bytes]", "analyze N bytes",
+	"a8j", " [hexpair-bytes]", "analyze N bytes (display in JSON)",
+	"a8b", " [length]", "analyze N bytes and extract basic blocks",
 	NULL
 };
 
@@ -577,7 +577,7 @@ static void cmd_anal_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, a);
 	DEFINE_CMD_DESCRIPTOR (core, aa);
 	DEFINE_CMD_DESCRIPTOR (core, aar);
-	DEFINE_CMD_DESCRIPTOR (core, ab);
+	DEFINE_CMD_DESCRIPTOR (core, a8);
 	DEFINE_CMD_DESCRIPTOR (core, ad);
 	DEFINE_CMD_DESCRIPTOR (core, ae);
 	DEFINE_CMD_DESCRIPTOR (core, aea);
@@ -6489,10 +6489,10 @@ static int cmd_anal(void *data, const char *input) {
 			free (buf);
 		}
 		break;
-	case 'b':
-		if (input[1] == 'b') { // "abb"
+	case '8':
+		if (input[1] == 'b') { // "a8b"
 			core_anal_bbs (core, input + 2);
-		} else if (input[1] == 'r') { // "abr"
+		} else if (input[1] == 'r') { // "a8r"
 			core_anal_bbs_range (core, input + 2);
 		} else if (input[1] == ' ' || input[1] == 'j') {
 			ut8 *buf = malloc (strlen (input) + 1);
@@ -6502,7 +6502,7 @@ static int cmd_anal(void *data, const char *input) {
 			}
 			free (buf);
 		} else {
-			r_core_cmd_help (core, help_msg_ab);
+			r_core_cmd_help (core, help_msg_a8);
 		}
 		break;
 	case 'i': cmd_anal_info (core, input + 1); break; // "ai"
