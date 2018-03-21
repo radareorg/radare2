@@ -51,6 +51,7 @@ typedef struct {
 	int sy; // scroll-y
 	char *cmd;
 	char *text;
+	bool refresh;
 } Panel;
 
 static Panel *panels = NULL;
@@ -130,6 +131,10 @@ static const char **menus_sub[] = {
 static int curnode = 0;
 
 static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
+	if (!n->refresh) {
+		return;
+	}
+	n->refresh = false;
 	char title[128];
 	int delta_x, delta_y;
 	if (!n || !can) {
@@ -137,7 +142,7 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 	}
 	delta_x = n->sx;
 	delta_y = n->sy;
-	// clear
+	// clear the canvas first
 	r_cons_canvas_fill (can, n->x, n->y, n->w, n->h, ' ', 0);
 	if (n->type == PANEL_TYPE_FRAME) {
 		if (cur) {
@@ -156,48 +161,36 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 	(void) r_cons_canvas_gotoxy (can, n->x + 2, n->y + 2);
 // TODO: only refresh if n->refresh is set
 // TODO: temporary crop depending on out of screen offsets
-	if (n->cmd && *n->cmd) {
-		char *foo = r_core_cmd_str (_core, n->cmd);
-		char *text;
-		if (delta_y < 0) {
-			delta_y = 0;
-		}
-		if (delta_x < 0) {
-			char white[128];
-			int idx = -delta_x;
-			memset (white, ' ', sizeof(white));
-			if (idx >= sizeof (white)) {
-				idx = sizeof (white) - 1;
-			}
-			white[idx] = 0;
-			text = r_str_ansi_crop (foo,
-				0, delta_y, n->w + delta_x - 2, n->h - 2 + delta_y);
-			char *newText = r_str_prefix_all (text, white);
-			if (newText) {
-				free (text);
-				text = newText;
-			}
-		} else {
-			text = r_str_ansi_crop (foo,
-				delta_x, delta_y, n->w + delta_x - 2, n->h - 2 + delta_y);
-		}
-		if (text) {
-			r_cons_canvas_write (can, text);
-			free (text);
-		} else {
-			r_cons_canvas_write (can, n->text);
-		}
-		free (foo);
-	} else {
-		char *text = r_str_ansi_crop (n->text,
-			delta_x, delta_y, n->w + 5, n->h - delta_y);
-		if (text) {
-			r_cons_canvas_write (can, text);
-			free (text);
-		} else {
-			r_cons_canvas_write (can, n->text);
-		}
+	char *foo = r_core_cmd_str (_core, n->cmd);
+	char *text;
+	if (delta_y < 0) {
+		delta_y = 0;
 	}
+	if (delta_x < 0) {
+		char *white = r_str_pad (' ', 128);;
+		int idx = -delta_x;
+		if (idx >= sizeof (white)) {
+			idx = sizeof (white) - 1;
+		}
+		white[idx] = 0;
+		text = r_str_ansi_crop (foo,
+				0, delta_y, n->w + delta_x - 2, n->h - 2 + delta_y);
+		char *newText = r_str_prefix_all (text, white);
+		if (newText) {
+			free (text);
+			text = newText;
+		}
+	} else {
+		text = r_str_ansi_crop (foo,
+				delta_x, delta_y, n->w + delta_x - 2, n->h - 2 + delta_y);
+	}
+	if (text) {
+		r_cons_canvas_write (can, text);
+		free (text);
+	} else {
+		r_cons_canvas_write (can, n->text);
+	}
+	free (foo);
 	RCons *cons = r_cons_singleton ();
 	if (cur) {
 		r_cons_canvas_box (can, n->x, n->y, n->w, n->h, cons->pal.graph_box2);
@@ -330,6 +323,7 @@ static void addPanelFrame(const char *title, const char *cmd) {
 	panels[n_panels].text = strdup (title);
 	panels[n_panels].cmd = r_str_newf (cmd);
 	panels[n_panels].type = PANEL_TYPE_FRAME;
+	panels[n_panels].refresh = true;
 	panels[n_panels + 1].text = NULL;
 	n_panels++;
 	curnode = n_panels - 1;
@@ -345,6 +339,7 @@ static bool initPanel() {
 	menu_pos = 0;
 	panels[n_panels].text = strdup ("");
 	panels[n_panels].type = PANEL_TYPE_MENU;
+	panels[n_panels].refresh = true;
 	n_panels++;
 
 	addPanelFrame (PANEL_TITLE_SYMBOLS, PANEL_CMD_SYMBOLS);
@@ -366,11 +361,15 @@ static void r_core_panels_refresh(RCore *core) {
 	const char *color = curnode? core->cons->pal.graph_box : core->cons->pal.graph_box2;
 	char str[1024];
 	int i, j, h, w = r_cons_get_size (&h);
-	r_cons_clear00 ();
+	r_cons_gotoxy (0, 0);
 	if (!can) {
 		return;
 	}
-	r_cons_canvas_resize (can, w, h);
+	//temporarily turns this off
+	//resize the canvas only when it's needed
+	//this essentially replaces the whole canvas with the new resized one
+	//i will get my hands on this later - vane11ope 
+	//r_cons_canvas_resize (can, w, h);
 #if 0
 	/* avoid flickering */
 	r_cons_canvas_clear (can);
@@ -841,6 +840,7 @@ repeat:
 		}
 		break;
 	case 'j':
+		panels[curnode].refresh = true;
 		if (curnode == 0) {
 			if (panels[curnode].type == PANEL_TYPE_MENU) {
 				if (menus_sub[menu_x][menu_y]) {
@@ -872,6 +872,7 @@ repeat:
 		}
 		break;
 	case 'k':
+		panels[curnode].refresh = true;
 		if (curnode == 0) {
 			if (panels[curnode].type == PANEL_TYPE_MENU) {
 				menu_y--;
@@ -899,7 +900,8 @@ repeat:
 	case 'J':
 		menu_y = 0;
 		menu_x = -1;
-		curnode++;
+		panels[curnode++].refresh = true;
+		panels[curnode].refresh = true;
 		if (!panels[curnode].text) {
 			curnode = 0;
 			menu_x = 0;
@@ -948,6 +950,7 @@ repeat:
 		}
 		break;
 	case 'h':
+		panels[curnode].refresh = true;
 		if (curnode == 0) {
 			if (menu_x) {
 				menu_x--;
@@ -959,6 +962,7 @@ repeat:
 		}
 		break;
 	case 'l':
+		panels[curnode].refresh = true;
 		if (curnode == 0) {
 			if (menus[menu_x + 1]) {
 				menu_x++;
