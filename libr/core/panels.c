@@ -131,7 +131,9 @@ static const char **menus_sub[] = {
 static int curnode = 0;
 
 static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
-	if (!n->refresh) return;
+	if (!n->refresh) {
+		return;
+	}
 	n->refresh = false;
 	char title[128];
 	int delta_x, delta_y;
@@ -165,9 +167,8 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 		delta_y = 0;
 	}
 	if (delta_x < 0) {
-		char white[128];
+		char *white = r_str_pad (' ', 128);;
 		int idx = -delta_x;
-		memset (white, ' ', sizeof(white));
 		if (idx >= sizeof (white)) {
 			idx = sizeof (white) - 1;
 		}
