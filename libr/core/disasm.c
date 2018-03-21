@@ -2944,6 +2944,22 @@ static void ds_print_shortcut(RDisasmState *ds, ut64 addr, int pos) {
 	}
 }
 
+static bool ds_print_core_vmode_jump_hit(RDisasmState *ds, int pos) {
+	RCore *core = ds->core;
+	RAnal *a = core->anal;
+	RAnalHint *hint = r_anal_hint_get (a, ds->at);
+
+	if (hint) {
+		if (hint->jump != UT64_MAX) {
+			ds_print_shortcut (ds, hint->jump, pos);
+			r_anal_hint_free (hint);
+			return true;
+		}
+		r_anal_hint_free (hint);
+	}
+	return false;
+}
+
 static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 	RCore *core = ds->core;
 	bool gotShortcut = false;
@@ -2990,6 +3006,10 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 		case R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_CALL:
 			ds_print_shortcut (ds, ds->analop.jump, pos);
 			gotShortcut = true;
+			break;
+		default:
+			if (ds_print_core_vmode_jump_hit (ds, pos))
+				gotShortcut = true;
 			break;
 		}
 		if (!gotShortcut) {
