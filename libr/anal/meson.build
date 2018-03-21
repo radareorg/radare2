@@ -70,7 +70,7 @@ files = [
   'reflines.c',
   'rtti.c',
   'rtti_msvc.c',
-  'rtti_gcc.c',
+  'rtti_itanium.c',
   'session.c',
   'sign.c',
   'state.c',
