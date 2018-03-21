@@ -676,11 +676,13 @@ R_API char* r_fs_name(RFS* fs, ut64 offset) {
 
 #define PROMT_PATH_BUFSIZE 1024
 
-R_API int r_fs_prompt(RFS* fs, const char* root) {
+R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 	char buf[PROMT_PATH_BUFSIZE];
 	char path[PROMT_PATH_BUFSIZE];
+	char prompt[PROMT_PATH_BUFSIZE];
 	char str[2048];
 	char* input;
+	const char* ptr;
 	RList* list = NULL;
 	RListIter* iter;
 	RFSFile* file = NULL;
@@ -700,13 +702,30 @@ R_API int r_fs_prompt(RFS* fs, const char* root) {
 	}
 
 	for (;;) {
-		printf ("[%s]> ", path);
-		fflush (stdout);
-		fgets (buf, sizeof (buf) - 1, stdin);
-		if (feof (stdin)) {
-			break;
+		snprintf (prompt, sizeof (prompt), "[%.*s]> ", sizeof (prompt) - 5, 
+		  path);
+
+		if (shell == NULL) {
+			printf ("%s", prompt);
+			fgets (buf, sizeof (buf) - 1, stdin);
+			
+			if (feof (stdin)) {
+				break;
+			}
+
+			buf[strlen (buf) - 1] = '\0';
+		} else {
+			shell->set_prompt (prompt);
+			ptr = shell->readline ();
+			shell->hist_add (ptr);
+
+			if (!ptr) {
+				break;
+			}
+
+			r_str_ncpy (buf, ptr, sizeof (buf) - 1);
 		}
-		buf[strlen (buf) - 1] = '\0';
+
 		if (!strcmp (buf, "q") || !strcmp (buf, "exit")) {
 			r_list_free (list);
 			return true;
