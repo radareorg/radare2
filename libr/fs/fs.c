@@ -704,20 +704,28 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 	for (;;) {
 		snprintf (prompt, sizeof (prompt), "[%.*s]> ", sizeof (prompt) - 5, 
 		  path);
-		if (!shell->set_prompt ||
-		  	!shell->readline ||
-			!shell->hist_add) {	    
-				goto beach;
-		}
-		shell->set_prompt (prompt);
-		ptr = shell->readline ();
-		shell->hist_add (ptr);
 
-		if (!ptr) {
-			break;
+		if (shell == NULL) {
+			printf ("%s", prompt);
+			fgets (buf, sizeof (buf) - 1, stdin);
+			
+			if (feof (stdin)) {
+				break;
+			}
+
+			buf[strlen (buf) - 1] = '\0';
+		} else {
+			shell->set_prompt (prompt);
+			ptr = shell->readline ();
+			shell->hist_add (ptr);
+
+			if (!ptr) {
+				break;
+			}
+
+			r_str_ncpy (buf, ptr, sizeof (buf) - 1);
 		}
-	
-		r_str_ncpy (buf, ptr, sizeof (buf) - 1);
+
 		if (!strcmp (buf, "q") || !strcmp (buf, "exit")) {
 			r_list_free (list);
 			return true;
