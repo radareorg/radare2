@@ -471,11 +471,14 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (a->ofilter) {
 		r_parse_parse (a->ofilter, op->buf_asm, op->buf_asm);
 	}
-	//XXX check against R_ASM_BUFSIZE other oob write
-	memcpy (op->buf, buf, R_MIN (R_ASM_BUFSIZE - 1, oplen));
-	const int addrbytes = a->user ? ((RCore *)a->user)->io->addrbytes : 1;
-	r_hex_bin2str (buf, R_MIN (addrbytes * oplen,
-		(sizeof (op->buf_hex) - 1) / 2), op->buf_hex);
+	int dstlen = R_MIN ((R_ASM_BUFSIZE -1), oplen);
+	int cpylen = R_MIN (dstlen, len);
+	if (cpylen > 0) {
+		memcpy (op->buf, buf, cpylen);
+		const int addrbytes = a->user ? ((RCore *)a->user)->io->addrbytes : 1;
+		r_hex_bin2str (buf, R_MIN (addrbytes * oplen,
+					(sizeof (op->buf_hex) - 1) / 2), op->buf_hex);
+	}
 	return ret;
 }
 
