@@ -3597,9 +3597,6 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		return false;
 	}
 	r_config_save_num (hc, "asm.pseudo", "asm.esil", "asm.cmt.right", NULL);
-	if (!hc) {
-		return false;
-	}
 
 	int h, w = r_cons_get_size (&h);
 	can = r_cons_canvas_new (w, h);
@@ -3608,8 +3605,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		h = 25;
 		can = r_cons_canvas_new (w, h);
 		if (!can) {
-			eprintf (
-					"Cannot create RCons.canvas context. Invalid screen "
+			eprintf ("Cannot create RCons.canvas context. Invalid screen "
 					"size? See scr.columns + scr.rows\n");
 			r_config_hold_free (hc);
 			return false;

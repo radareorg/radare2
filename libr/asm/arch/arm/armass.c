@@ -699,7 +699,7 @@ static void thumb_swap (ut32 *a) {
 static ut64 thumb_getoffset(char *label, ut64 cur) {
 	ut64 res = r_num_math (NULL, label);
 	res -= 4;
-	res -= cur;
+	res -= cur; // possible integer underflow
 	//printf("thumb_getoffset: %s, %lld, %lld\n", label, res, cur);
 	return res;
 }
@@ -1299,7 +1299,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			ut8 reg1 = getreg (ao->a[0]);
 			ut8 reg2 = getreg (ao->a[1]);
 			ut32 imm = getnum (ao->a[2]);
-			if ((imm < 1) && (imm > 32)) {
+			if (((int)imm < 1) && ((int)imm > 32)) {
 				return -1;
 			}
 			if ((reg1 < 8) && (reg2 < 8) && (!(m & DOTW_BIT))) {
