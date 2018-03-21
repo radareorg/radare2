@@ -167,7 +167,7 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 		delta_y = 0;
 	}
 	if (delta_x < 0) {
-		char *white = r_str_pad (' ', 128);;
+		char *white = (char*)r_str_pad (' ', 128);;
 		int idx = -delta_x;
 		if (idx >= sizeof (white)) {
 			idx = sizeof (white) - 1;

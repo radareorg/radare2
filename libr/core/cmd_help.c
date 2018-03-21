@@ -321,7 +321,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'a': // "?a"
-		printf("%s", ret_ascii_table());
+		r_cons_printf ("%s", ret_ascii_table());
 		break;
 	case 'b': // "?b"
 		if (input[1] == '6' && input[2] == '4') {
