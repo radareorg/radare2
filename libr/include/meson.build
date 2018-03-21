@@ -66,6 +66,7 @@ r_util_files = [
   'r_util/r_spaces.h',
   'r_util/r_tree.h',
   'r_util/r_str.h',
+  'r_util/r_ascii_table.h',
   'r_util/r_base91.h',
   'r_util/r_signal.h',
   'r_util/r_cache.h',
