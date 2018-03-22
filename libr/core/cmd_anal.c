@@ -498,7 +498,7 @@ static const char *help_msg_ar[] = {
 	"ar", " <type>", "Show all registers of given type",
 	"arC", "", "Display register profile comments",
 	"arr", "", "Show register references (telescoping)",
-	"ar=", "", "Show register values in columns",
+	"ar=", "([size])(:[regs])", "Show register values in columns",
 	"ar?", " <reg>", "Show register value",
 	"arb", " <type>", "Display hexdump of the given arena",
 	"arc", " <name>", "Conditional flag registers",
@@ -3004,13 +3004,44 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		break;
 	case '=': // "ar="
 		{
+			char *p = NULL;
+			char *bits = NULL;
 			if (str[1]) {
-				st64 sz = r_num_math (core->num, str + 1);
-				if (sz > 0) {
-					size = sz;
+				p = strdup (str + 1);
+				if (str[1] != ':') {
+					// Bits were specified
+					bits = strtok (p, ":");
+					if (r_str_isnumber (bits)) {
+						st64 sz = r_num_math (core->num, bits);
+						if (sz > 0) {
+							size = sz;
+						}
+					} else {
+						r_core_cmd_help (core, help_msg_ar);
+						break;
+					}
+				}
+				int len = bits ? strlen (bits) : 0;
+				if (str[len + 1] == ':') {
+					// We have some regs
+					char *regs = bits ? strtok (NULL, ":") : strtok (str + 1, ":");
+					char *reg = strtok (regs, " ");
+					RList *q_regs = r_list_new ();
+					if (q_regs) {
+						while (reg) {
+							r_list_append (q_regs, reg);
+							reg = strtok (NULL, " ");
+						}
+						core->dbg->q_regs = q_regs;
+					}
 				}
 			}
 			__anal_reg_list (core, type, size, 2);
+			if (!r_list_empty (core->dbg->q_regs)) {
+				r_list_free (core->dbg->q_regs);
+			}
+			core->dbg->q_regs = NULL;
+			free (p);
 		}
 		break;
 	case '-': // "ar-"

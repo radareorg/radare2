@@ -146,6 +146,28 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 					continue;
 				}
 			}
+			// Is this register being asked?
+			if (dbg->q_regs) {
+				if (!r_list_empty (dbg->q_regs)) {
+					RListIter *iterreg;
+					RList *q_reg = dbg->q_regs;
+					char *q_name;
+					bool found = false;
+					r_list_foreach (q_reg, iterreg, q_name) {
+						if (!strcmp (item->name, q_name)) {
+							found = true;
+							break;
+						}
+					}
+					if (!found) {
+					        continue;
+					}
+					r_list_delete (q_reg, iterreg);
+				} else {
+					// List is empty, all requested regs were taken, no need to go further
+					goto beach;
+				}
+			}
 			int regSize = item->size;
 			if (regSize < 80) {
 				value = r_reg_get_value (dbg->reg, item);
@@ -253,6 +275,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 			n++;
 		}
 	}
+beach:
 	if (rad == 'j') {
 		dbg->cb_printf ("}\n");
 	} else if (n > 0 && rad == 2 && ((n%cols))) {
