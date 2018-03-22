@@ -64,6 +64,7 @@ static int menu_pos = 0;
 static int menu_x = 0;
 static int menu_y = 0;
 static int callgraph = 0;
+static bool isResizing = false;
 
 static const char *menus[] = {
 	"File", "Edit", "View", "Tools", "Search", "Debug", "Analyze", "Help",
@@ -365,11 +366,13 @@ static void r_core_panels_refresh(RCore *core) {
 	if (!can) {
 		return;
 	}
-	//temporarily turns this off
-	//resize the canvas only when it's needed
-	//this essentially replaces the whole canvas with the new resized one
-	//i will get my hands on this later - vane11ope 
-	//r_cons_canvas_resize (can, w, h);
+	if (isResizing) {
+		isResizing = false;
+		r_cons_canvas_resize (can, w, h);
+		for (i = 0; i < n_panels; i++) {
+			panels[i].refresh = true;
+		}
+	}
 #if 0
 	/* avoid flickering */
 	r_cons_canvas_clear (can);
@@ -505,6 +508,7 @@ static bool init (RCore *core, int w, int h) {
 	menu_pos = 0;
 	menu_x = 0;
 	callgraph = 0;
+	isResizing = false;
 	can = r_cons_canvas_new (w, h);
 	if (!can) {
 		eprintf ("Cannot create RCons.canvas context\n");
@@ -942,9 +946,11 @@ repeat:
 		break;
 	case 'H':
 		COLW += 4;
+		isResizing = true;
 		break;
 	case 'L':
 		COLW -= 4;
+		isResizing = true;
 		if (COLW < 0) {
 			COLW = 0;
 		}
