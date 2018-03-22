@@ -1109,7 +1109,7 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case X86_INS_CALL:
 		{
-			if (a->read_at) {
+			if (a->read_at && a->bits != 16) {
 				ut8 thunk[4] = {0};
 				if (a->read_at (a, (ut64)INSOP (0).imm, thunk, sizeof (thunk))) {
 					/* 8b 34 24    mov esi, dword [esp]
