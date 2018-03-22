@@ -2092,7 +2092,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		r_flag_space_set (r->flags, "sections");
 	}
 	r_list_foreach (sections, iter, section) {
-		char perms[] = "-----";
+		char perms[] = "----";
 		int va_sect = va;
 		ut64 addr;
 
@@ -2115,11 +2115,10 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			continue;
 		}
 
-		if (section->srwx & R_BIN_SCN_MAP) perms[0] = 'm';
-		if (section->srwx & R_BIN_SCN_SHAREABLE) perms[1] = 's';
-		if (section->srwx & R_BIN_SCN_READABLE) perms[2] = 'r';
-		if (section->srwx & R_BIN_SCN_WRITABLE) perms[3] = 'w';
-		if (section->srwx & R_BIN_SCN_EXECUTABLE) perms[4] = 'x';
+		if (section->srwx & R_BIN_SCN_SHAREABLE) perms[0] = 's';
+		if (section->srwx & R_BIN_SCN_READABLE) perms[1] = 'r';
+		if (section->srwx & R_BIN_SCN_WRITABLE) perms[2] = 'w';
+		if (section->srwx & R_BIN_SCN_EXECUTABLE) perms[3] = 'x';
 
 		if (IS_MODE_SET (mode)) {
 #if LOAD_BSS_MALLOC

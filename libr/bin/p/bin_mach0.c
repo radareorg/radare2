@@ -130,7 +130,7 @@ static RList* sections(RBinFile *bf) {
 		if (!ptr->vaddr) {
 			ptr->vaddr = ptr->paddr;
 		}
-		ptr->srwx = sections[i].srwx | R_BIN_SCN_MAP;
+		ptr->srwx = sections[i].srwx;
 		r_list_append (ret, ptr);
 	}
 	free (sections);

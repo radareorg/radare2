@@ -178,7 +178,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize;
 	ptr->paddr = readLE32 (b, NSO_OFF (text_memoffset));
 	ptr->vaddr = readLE32 (b, NSO_OFF (text_loc)) + ba;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;	// r-x
+	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE;	// r-x
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -191,7 +191,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize;
 	ptr->paddr = readLE32 (b, NSO_OFF (ro_memoffset));
 	ptr->vaddr = readLE32 (b, NSO_OFF (ro_loc)) + ba;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;	// r--
+	ptr->srwx = R_BIN_SCN_READABLE;	// r--
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -204,7 +204,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize;
 	ptr->paddr = readLE32 (b, NSO_OFF (data_memoffset));
 	ptr->vaddr = readLE32 (b, NSO_OFF (data_loc)) + ba;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_MAP;	// rw-
+	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE;	// rw-
 	ptr->add = true;
 	eprintf ("BSS Size 0x%08"PFMT64x "\n", (ut64)
 		readLE32 (bf->buf, NSO_OFF (bss_size)));

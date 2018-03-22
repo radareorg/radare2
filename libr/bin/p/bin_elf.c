@@ -198,9 +198,6 @@ static RList* sections(RBinFile *bf) {
 			}
 			if (R_BIN_ELF_SCN_IS_READABLE (section[i].flags)) {
 				ptr->srwx |= R_BIN_SCN_READABLE;
-				if (obj->ehdr.e_type == ET_REL) {
-					ptr->srwx |= R_BIN_SCN_MAP;
-				}
 			}
 			r_list_append (ret, ptr);
 		}
@@ -220,7 +217,7 @@ static RList* sections(RBinFile *bf) {
 			ptr->vsize = phdr[i].p_memsz;
 			ptr->paddr = phdr[i].p_offset;
 			ptr->vaddr = phdr[i].p_vaddr;
-			ptr->srwx = phdr[i].p_flags | R_BIN_SCN_MAP;
+			ptr->srwx = phdr[i].p_flags;
 			switch (phdr[i].p_type) {
 			case PT_DYNAMIC:
 				strncpy (ptr->name, "DYNAMIC", R_BIN_SIZEOF_STRINGS);
@@ -276,7 +273,7 @@ static RList* sections(RBinFile *bf) {
 			ptr->vaddr = 0x10000;
 			ptr->add = true;
 			ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE |
-				R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
+				R_BIN_SCN_EXECUTABLE;
 			r_list_append (ret, ptr);
 		}
 	}
@@ -296,7 +293,7 @@ static RList* sections(RBinFile *bf) {
 		if (obj->ehdr.e_type == ET_REL) {
 			ptr->add = true;
 		}
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_MAP;
+		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE;
 		r_list_append (ret, ptr);
 	}
 	return ret;
@@ -929,7 +926,7 @@ static RList* patch_relocs(RBin *b) {
 	n_vaddr = g->vaddr + g->vsize;
 	//reserve at least that space
 	size = bin->reloc_num * 4;
-	if (!b->iob.section_add (io, n_off, n_vaddr, size, size, R_BIN_SCN_READABLE|R_BIN_SCN_MAP, ".got.r2", 0, io->desc->fd)) {
+	if (!b->iob.section_add (io, n_off, n_vaddr, size, size, R_BIN_SCN_READABLE, ".got.r2", 0, io->desc->fd)) {
 		return NULL;
 	}
 	if (!(relcs = Elf_(r_bin_elf_get_relocs) (bin))) {
