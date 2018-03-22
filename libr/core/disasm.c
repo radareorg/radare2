@@ -2895,6 +2895,9 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 			// print label
 			delta = ds->analop.jump - f->addr;
 			label = r_anal_fcn_label_at (core->anal, f, ds->analop.jump);
+			if (!ds->show_comment_right) {
+				ds_begin_json_line (ds);
+			}
 			if (label) {
 				ALIGN;
 				ds_comment (ds, true, "; %s.%s", f->name, label);
