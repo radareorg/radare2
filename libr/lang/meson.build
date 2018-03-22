@@ -16,14 +16,14 @@ r_lang = library('r_lang', files,
   implicit_include_directories: false
 )
 
-
-pkg = import('pkgconfig')
-pkg.generate(libraries: [r_lang],
-             subdirs: 'libr',
-             version: r2version,
-             name: 'r_lang',
-             filebase: 'r_lang',
-             requires: [
-               'r_util', 'r_cons'
-             ],
-             description: 'radare foundation libraries')
+pkgconfig_mod.generate(
+  libraries: [r_lang],
+  subdirs: 'libr',
+  version: r2version,
+  name: 'r_lang',
+  filebase: 'r_lang',
+  requires: [
+    'r_util', 'r_cons'
+  ],
+  description: 'radare foundation libraries'
+)

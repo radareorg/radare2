@@ -12,14 +12,14 @@ r_flag = library('r_flag', files,
   implicit_include_directories: false
 )
 
-
-pkg = import('pkgconfig')
-pkg.generate(libraries: [r_flag],
-             subdirs: 'libr',
-             version: r2version,
-             name: 'r_flag',
-             filebase: 'r_flag',
-             requires: [
-               'r_util'
-             ],
-             description: 'radare foundation libraries')
+pkgconfig_mod.generate(
+  libraries: [r_flag],
+  subdirs: 'libr',
+  version: r2version,
+  name: 'r_flag',
+  filebase: 'r_flag',
+  requires: [
+    'r_util'
+  ],
+  description: 'radare foundation libraries'
+)
