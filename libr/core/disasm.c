@@ -3793,7 +3793,8 @@ static void delete_last_comment(RDisasmState *ds) {
 			if (begin) {
 				// const int cstrlen = begin + len - ll;
 				// r_cons_drop (cstrlen - (int)(begin - ll));
-				r_cons_newline();
+				ds_newline (ds);
+				ds_begin_json_line (ds);
 			}
 		}
 	}
