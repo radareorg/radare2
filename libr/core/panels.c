@@ -136,6 +136,7 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 		return;
 	}
 	n->refresh = false;
+	char *text;
 	char title[128];
 	int delta_x, delta_y;
 	if (!n || !can) {
@@ -145,7 +146,18 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 	delta_y = n->sy;
 	// clear the canvas first
 	r_cons_canvas_fill (can, n->x, n->y, n->w, n->h, ' ', 0);
-	if (n->type == PANEL_TYPE_FRAME) {
+	// for menu
+	if (n->type == PANEL_TYPE_MENU) {
+		(void) r_cons_canvas_gotoxy (can, n->x + 2, n->y + 2);
+		text = r_str_ansi_crop (n->text,
+				delta_x, delta_y, n->w + 5, n->h - delta_y);
+		if (text) {
+			r_cons_canvas_write (can, text);
+			free (text);
+		} else {
+			r_cons_canvas_write (can, n->text);
+		}
+	} else {
 		if (cur) {
 			RCons * cons = r_cons_singleton ();
 			const char *k = cons->pal.graph_box;
@@ -158,40 +170,37 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 		if (r_cons_canvas_gotoxy (can, n->x + 1, n->y + 1)) {
 			r_cons_canvas_write (can, title); // delta_x
 		}
-	}
-	(void) r_cons_canvas_gotoxy (can, n->x + 2, n->y + 2);
-// TODO: only refresh if n->refresh is set
-// TODO: temporary crop depending on out of screen offsets
-	char *foo = r_core_cmd_str (_core, n->cmd);
-	char *text;
-	if (delta_y < 0) {
-		delta_y = 0;
-	}
-	if (delta_x < 0) {
-		char *white = (char*)r_str_pad (' ', 128);;
-		int idx = -delta_x;
-		if (idx >= sizeof (white)) {
-			idx = sizeof (white) - 1;
+		(void) r_cons_canvas_gotoxy (can, n->x + 2, n->y + 2);
+		char *foo = r_core_cmd_str (_core, n->cmd);
+		if (delta_y < 0) {
+			delta_y = 0;
 		}
-		white[idx] = 0;
-		text = r_str_ansi_crop (foo,
-				0, delta_y, n->w + delta_x - 2, n->h - 2 + delta_y);
-		char *newText = r_str_prefix_all (text, white);
-		if (newText) {
+		if (delta_x < 0) {
+			char *white = (char*)r_str_pad (' ', 128);;
+			int idx = -delta_x;
+			if (idx >= sizeof (white)) {
+				idx = sizeof (white) - 1;
+			}
+			white[idx] = 0;
+			text = r_str_ansi_crop (foo,
+					0, delta_y, n->w + delta_x - 2, n->h - 2 + delta_y);
+			char *newText = r_str_prefix_all (text, white);
+			if (newText) {
+				free (text);
+				text = newText;
+			}
+		} else {
+			text = r_str_ansi_crop (foo,
+					delta_x, delta_y, n->w + delta_x - 2, n->h - 2 + delta_y);
+		}
+		if (text) {
+			r_cons_canvas_write (can, text);
 			free (text);
-			text = newText;
+		} else {
+			r_cons_canvas_write (can, n->text);
 		}
-	} else {
-		text = r_str_ansi_crop (foo,
-				delta_x, delta_y, n->w + delta_x - 2, n->h - 2 + delta_y);
+		free (foo);
 	}
-	if (text) {
-		r_cons_canvas_write (can, text);
-		free (text);
-	} else {
-		r_cons_canvas_write (can, n->text);
-	}
-	free (foo);
 	RCons *cons = r_cons_singleton ();
 	if (cur) {
 		r_cons_canvas_box (can, n->x, n->y, n->w, n->h, cons->pal.graph_box2);
@@ -320,6 +329,13 @@ static void zoom() {
 	}
 }
 
+static void refreshAll() {
+	int i;
+	for (i = 0; i < n_panels; i++) {
+		panels[i].refresh = true;
+	}
+}
+
 static void addPanelFrame(const char *title, const char *cmd) {
 	panels[n_panels].text = strdup (title);
 	panels[n_panels].cmd = r_str_newf (cmd);
@@ -369,9 +385,7 @@ static void r_core_panels_refresh(RCore *core) {
 	if (isResizing) {
 		isResizing = false;
 		r_cons_canvas_resize (can, w, h);
-		for (i = 0; i < n_panels; i++) {
-			panels[i].refresh = true;
-		}
+		refreshAll ();
 	}
 #if 0
 	/* avoid flickering */
@@ -409,12 +423,12 @@ static void r_core_panels_refresh(RCore *core) {
 	if (menu_y) {
 		curnode = menu_pos;
 	}
-	// redraw current node to make it appear on top
 	if (panels) {
-		if (curnode > 0) {
-			Panel_print (can, &panels[curnode], 1);
-		} else {
+		if (panels[curnode].type == PANEL_TYPE_MENU) {
+			refreshAll ();
 			Panel_print (can, &panels[menu_pos], menu_y);
+		} else {
+			Panel_print (can, &panels[curnode], 1);
 		}
 	}
 
