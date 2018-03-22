@@ -3630,11 +3630,13 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 				}
 #endif
 				char *escstr = ds_esc_str (ds, str, (int)len, &prefix);
+				const char *escquote = ds->use_json ? "\\\"" : "\"";
 				if (escstr) {
 					if (ds->show_color) {
-						msg = r_str_newf ("%s%s"Color_INVERT"\"%s\""Color_RESET, prefix, type? type: "", escstr);
+						msg = r_str_newf ("%s%s"Color_INVERT"%s%s%s"Color_RESET,
+										  prefix, type? type: "", escquote, escstr, escquote);
 					} else {
-						msg = r_str_newf ("%s%s\"%s\"", prefix, type? type: "", escstr);
+						msg = r_str_newf ("%s%s%s%s%s", prefix, type? type: "", escquote, escstr, escquote);
 					}
 					free (escstr);
 				}
@@ -3791,7 +3793,8 @@ static void delete_last_comment(RDisasmState *ds) {
 			if (begin) {
 				// const int cstrlen = begin + len - ll;
 				// r_cons_drop (cstrlen - (int)(begin - ll));
-				r_cons_newline();
+				ds_newline (ds);
+				ds_begin_json_line (ds);
 			}
 		}
 	}
