@@ -284,6 +284,7 @@ typedef struct r_debug_t {
 	RTree *tree;
 
 	RReg *reg;
+	RList *q_regs;
 	const char *creg; // current register value
 	RBreakpoint *bp;
 	void *user; // XXX(jjd): unused?? meant for caller's use??

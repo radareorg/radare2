@@ -323,6 +323,7 @@ R_API RDebug *r_debug_new(int hard) {
 	/* TODO: needs a redesign? */
 	dbg->maps = r_debug_map_list_new ();
 	dbg->maps_user = r_debug_map_list_new ();
+	dbg->q_regs = NULL;
 	r_debug_signal_init (dbg);
 	if (hard) {
 		dbg->bp = r_bp_new ();
