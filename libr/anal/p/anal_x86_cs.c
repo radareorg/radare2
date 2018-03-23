@@ -1118,11 +1118,12 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			if (a->read_at && a->bits != 16) {
 				ut8 thunk[4] = {0};
 				if (a->read_at (a, (ut64)INSOP (0).imm, thunk, sizeof (thunk))) {
-					/* 8b xx 24    mov <reg>, dword [esp]
+					/* 8b xx x4    mov <reg>, dword [esp]
 					   c3          ret
 					*/
-					if (thunk[0] == 0x8b && thunk[2] == 0x24 && thunk[3] == 0xc3
-					    && (thunk[1] & 0xc7) == 4) {  /* 00rrr100 */
+					if (thunk[0] == 0x8b && thunk[3] == 0xc3
+					    && (thunk[1] & 0xc7) == 4        /* 00rrr100 */
+					    && (thunk[2] & 0x3f) == 0x24) {  /* --100100: ignore scale in SIB byte */
 						ut8 reg = (thunk[1] & 0x38) >> 3;
 						esilprintf (op, "0x%"PFMT64x",%s,=", addr + op->size,
 						            reg32_to_name (reg));
