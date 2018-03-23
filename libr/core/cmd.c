@@ -2026,9 +2026,10 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 					eprintf (" pd|H   - enable scr.html, respect scr.color\n");
 					eprintf (" pi 1|T - use scr.tts to speak out the stdout\n");
 					return ret;
-				} else if (!strcmp (ptr + 1, "H")) { // "|H"
+				} else if (!strncmp (ptr + 1, "H", 1)) { // "|H"
 					scr_html = r_config_get_i (core->config, "scr.html");
 					r_config_set_i (core->config, "scr.html", true);
+					//r_config_set_i (core->config, "scr.pipecolor", true);
 				} else if (!strcmp (ptr + 1, "T")) { // "|T"
 					scr_color = r_config_get_i (core->config, "scr.color");
 					r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);

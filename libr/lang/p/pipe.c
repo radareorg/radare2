@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015 pancake */
+/* radare2 - LGPL - Copyright 2015-2018 pancake */
 
 #include "r_lib.h"
 #include "r_core.h"
@@ -29,10 +29,12 @@ static HANDLE  myCreateChildProcess(const char * szCmdline) {
 	//CloseHandle (piProcInfo.hThread);
 	return bSuccess? piProcInfo.hProcess: NULL;
 }
+
 static BOOL bStopPipeLoop = FALSE;
 static HANDLE hPipeInOut = NULL;
 static HANDLE hproc = NULL;
 #define PIPE_BUF_SIZE 4096
+
 static DWORD WINAPI WaitForProcThread(LPVOID lParam) {
 	WaitForSingleObject(hproc, INFINITE);
 	bStopPipeLoop = TRUE;
@@ -56,9 +58,10 @@ static void lang_pipe_run_win(RLang *lang) {
 		}
 		memset (buf, 0, PIPE_BUF_SIZE);
 		bSuccess = ReadFile (hPipeInOut, buf, PIPE_BUF_SIZE, &dwRead, NULL);
-		if (bStopPipeLoop)
+		if (bStopPipeLoop) {
 			break;
-		if (bSuccess && dwRead>0) {
+		}
+		if (bSuccess && dwRead > 0) {
 			buf[sizeof (buf)-1] = 0;
 			char *res = lang->cmd_str ((RCore*)lang->user, buf);
 			if (res) {
@@ -89,7 +92,7 @@ static void lang_pipe_run_win(RLang *lang) {
 				WriteFile (hPipeInOut, "", 1, &dwWritten, NULL);
 			}
 		}
-	} while(!bStopPipeLoop);
+	} while (!bStopPipeLoop);
 	r_cons_break_pop ();
 }
 #else
@@ -139,7 +142,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 				break;
 			}
 			memset (buf, 0, sizeof (buf));
-			ret = read (output[0], buf, sizeof (buf)-1);
+			ret = read (output[0], buf, sizeof (buf) - 1);
 			if (ret < 1 || !buf[0]) {
 				break;
 			}
@@ -147,7 +150,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 			res = lang->cmd_str ((RCore*)lang->user, buf);
 			//eprintf ("%d %s\n", ret, buf);
 			if (res) {
-				write (input[1], res, strlen (res)+1);
+				write (input[1], res, strlen (res) + 1);
 				free (res);
 			} else {
 				eprintf ("r_lang_pipe: NULL reply for (%s)\n", buf);
@@ -209,7 +212,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 #endif
 }
 
-static struct r_lang_plugin_t r_lang_plugin_pipe = {
+static RLangPlugin r_lang_plugin_pipe = {
 	.name = "pipe",
 	.ext = "pipe",
 	.license = "LGPL",

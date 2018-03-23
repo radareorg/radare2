@@ -489,24 +489,29 @@ static void handle_crc64_iso (const ut8 * block, int len) {
 
 static int cmd_hash_bang (RCore *core, const char *input) {
 	char *p;
-	const char *lang = input+1;
+	const char *lang = input + 1;
 	if (r_sandbox_enable (0)) {
 		eprintf ("hashbang disabled in sandbox mode\n");
 		return false;
 	}
 	if (*lang=='/') {
-		const char *ptr = lang+1;
+		const char *ptr = lang + 1;
 		while (*lang) {
-			if (*lang=='/')
-				ptr = lang+1;
+			if (*lang=='/') {
+				ptr = lang + 1;
+			}
 			lang++;
 		}
 		RLangPlugin *p = r_lang_get_by_extension (core->lang, ptr);
-		if (p && p->name) lang = p->name;
+		if (p && p->name) {
+			lang = p->name;
+		}
 	}
-	if (*lang==' ') {
-		RLangPlugin *p = r_lang_get_by_extension (core->lang, input+2);
-		if (p && p->name) lang = p->name;
+	if (*lang == ' ') {
+		RLangPlugin *p = r_lang_get_by_extension (core->lang, input + 2);
+		if (p && p->name) {
+			lang = p->name;
+		}
 	} else if (input[1]=='?' || input[1]=='*' || input[1]=='\0') {
 		r_lang_list (core->lang);
 		return true;
@@ -534,7 +539,9 @@ static int cmd_hash_bang (RCore *core, const char *input) {
 		} else {
 			if (r_config_get_i (core->config, "scr.interactive")) {
 				r_lang_prompt (core->lang);
-			} else eprintf ("Error: scr.interactive required to run the rlang prompt\n");
+			} else {
+				eprintf ("Error: scr.interactive required to run the rlang prompt\n");
+			}
 		}
 	} else {
 		eprintf ("Invalid hashbang. See '#!' for help.\n");
