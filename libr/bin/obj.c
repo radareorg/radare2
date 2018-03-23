@@ -210,18 +210,20 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 			r_bin_filter_classes (o->classes);
 		}
 		// cache addr=class+method
-		RList *klasses = cp->classes (binfile);
-		RListIter *iter, *iter2;
-		RBinClass *klass;
-		RBinSymbol *method;
-		if (!o->addr2klassmethod) {
-			// this is slow. must be optimized, but at least its cached
-			o->addr2klassmethod = sdb_new0 ();
-			r_list_foreach (klasses, iter, klass) {
-				r_list_foreach (klass->methods, iter2, method) {
-					char *km = sdb_fmt (-1, "method.%s.%s", klass->name, method->name);
-					char *at = sdb_fmt (-1, "0x%08"PFMT64x, method->vaddr);
-					sdb_set (o->addr2klassmethod, at, km, 0);
+		if (cp->classes) {
+			RList *klasses = cp->classes (binfile);
+			RListIter *iter, *iter2;
+			RBinClass *klass;
+			RBinSymbol *method;
+			if (!o->addr2klassmethod) {
+				// this is slow. must be optimized, but at least its cached
+				o->addr2klassmethod = sdb_new0 ();
+				r_list_foreach (klasses, iter, klass) {
+					r_list_foreach (klass->methods, iter2, method) {
+						char *km = sdb_fmt (-1, "method.%s.%s", klass->name, method->name);
+						char *at = sdb_fmt (-1, "0x%08"PFMT64x, method->vaddr);
+						sdb_set (o->addr2klassmethod, at, km, 0);
+					}
 				}
 			}
 		}
