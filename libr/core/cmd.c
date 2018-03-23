@@ -2386,7 +2386,6 @@ repeat_arroba:
 				eprintf ("TODO: what do you expect for @. import offset from file maybe?\n");
 			}
 		} else if (ptr[0] && ptr[1] == ':' && ptr[2]) {
-			usemyblock = true;
 			switch (ptr[0]) {
 			case 'F': // "@F:" // temporary flag space
 				flgspc = r_flag_space_get (core->flags, ptr + 2);
@@ -2406,6 +2405,7 @@ repeat_arroba:
 							ut16 inst_off = r_anal_bb_offset_inst (bb, index);
 							r_core_seek (core, bb->addr + inst_off, 1);
 							core->tmpseek = true;
+							usemyblock = true;
 						} else {
 							eprintf("The current basic block has %d instructions\n", bb->ninstr);
 						}
@@ -2424,6 +2424,7 @@ repeat_arroba:
 						core->block = buf;
 						core->blocksize = sz;
 						memcpy (core->block, f, sz);
+						usemyblock = true;
 					} else {
 						eprintf ("cannot alloc %d", sz);
 					}
@@ -2450,6 +2451,7 @@ repeat_arroba:
 					}
 					r_core_seek (core, regval, 1);
 					free (mander);
+					usemyblock = true;
 				}
 				break;
 			case 'b': // "@b:" // bits
@@ -2460,6 +2462,7 @@ repeat_arroba:
 					ut64 addr = r_num_math (core->num, ptr + 2);
 					if (addr) {
 						r_core_cmdf (core, "so %s", ptr + 2);
+						usemyblock = true;
 					}
 				}
 				break;
@@ -2482,6 +2485,7 @@ repeat_arroba:
 						r_core_block_size (core, R_ABS(len));
 						memcpy (core->block, buf, core->blocksize);
 						core->fixedblock = true;
+						usemyblock = true;
 						free (buf);
 					} else {
 						eprintf ("cannot allocate\n");
@@ -2496,6 +2500,7 @@ repeat_arroba:
 					if (out) {
 						r_core_seek (core, r_num_math (core->num, out), 1);
 						free (out);
+						usemyblock = true;
 					}
 				 }
 				break;
@@ -2522,6 +2527,7 @@ repeat_arroba:
 				len = strlen (ptr + 2);
 				r_core_block_size (core, len);
 				memcpy (core->block, ptr + 2, len);
+				usemyblock = true;
 				break;
 			default:
 				goto ignore;
