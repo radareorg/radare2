@@ -828,6 +828,7 @@ repeat:
 		} else {
 			panel_single_step_in (core);
 		}
+		refreshAll ();
 		break;
 	case 'S':
 		if (r_config_get_i (core->config, "cfg.debug")) {
@@ -835,6 +836,7 @@ repeat:
 		} else {
 			panel_single_step_over (core);
 		}
+		refreshAll ();
 		break;
 	case ':':
 		core->vmode = false;
@@ -918,7 +920,8 @@ repeat:
 	case 'J':
 		menu_y = 0;
 		menu_x = -1;
-		panels[curnode++].refresh = true;
+		panels[curnode].refresh = true;
+		curnode++;
 		panels[curnode].refresh = true;
 		if (!panels[curnode].text) {
 			curnode = 0;
@@ -929,7 +932,9 @@ repeat:
 	case 'K':
 		menu_y = 0;
 		menu_x = -1;
+		panels[curnode].refresh = true;
 		curnode--;
+		panels[curnode].refresh = true;
 		if (curnode < 0) {
 			curnode = n_panels - 1;
 		}
