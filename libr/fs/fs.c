@@ -702,7 +702,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 	}
 
 	for (;;) {
-		snprintf (prompt, sizeof (prompt), "[%.*s]> ", sizeof (prompt) - 5, path);
+		snprintf (prompt, sizeof (prompt), "[%.*s]> ", (int)sizeof (prompt) - 5, path);
 		if (shell) {
 			if (shell->set_prompt) {
 				shell->set_prompt (prompt);
@@ -715,14 +715,17 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 					break;
 				}
 				buf[strlen (buf) - 1] = '\0';
-			}
-			if (shell->hist_add) {
-				shell->hist_add (ptr);
+				ptr = buf;
 			}
 			if (!ptr) {
 				break;
 			}
-			r_str_ncpy (buf, ptr, sizeof (buf) - 1);
+			if (shell->hist_add) {
+				shell->hist_add (ptr);
+			}
+			if (ptr != buf) {
+				r_str_ncpy (buf, ptr, sizeof (buf) - 1);
+			}
 		} else {
 			printf ("%s", prompt);
 			fgets (buf, sizeof (buf) - 1, stdin);
@@ -740,6 +743,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			r_sandbox_system (buf + 1, 1);
 		} else if (!memcmp (buf, "ls", 2)) {
 			char *ptr = str;
+			r_list_free (list);
 			if (buf[2] == ' ') {
 				if (buf[3] != '/') {
 					strncpy (str, path, sizeof (str) - 1);
@@ -805,6 +809,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				path[sizeof (path) - 1] = 0;
 			}
 			r_str_trim_path (path);
+			r_list_free (list);
 			list = r_fs_dir (fs, path);
 			if (r_list_empty (list)) {
 				RFSRoot *root;
@@ -870,7 +875,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				strcpy (s, path);
 			}
 			if (!s) {
-				s = malloc (strlen (input) + 32);
+				s = calloc (strlen (input) + 32, 1);
 				if (!s) {
 					goto beach;
 				}

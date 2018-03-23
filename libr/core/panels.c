@@ -132,16 +132,13 @@ static const char **menus_sub[] = {
 static int curnode = 0;
 
 static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
-	if (!n->refresh) {
+	if (!n || !can || !n->refresh) {
 		return;
 	}
 	n->refresh = false;
 	char *text;
 	char title[128];
 	int delta_x, delta_y;
-	if (!n || !can) {
-		return;
-	}
 	delta_x = n->sx;
 	delta_y = n->sy;
 	// clear the canvas first
