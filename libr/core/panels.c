@@ -966,6 +966,7 @@ repeat:
 		break;
 	case 'x':
 		delcurpanel ();
+		refreshAll ();
 		break;
 	case 9: // TAB
 	case 'J':
