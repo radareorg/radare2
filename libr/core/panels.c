@@ -1,4 +1,4 @@
-/* Copyright radare2 2014-2017 - Author: pancake */
+/* Copyright radare2 2014-2018 - Author: pancake, vane11ope */
 
 // pls move the typedefs into roons and rename it -> RConsPanel
 
@@ -408,8 +408,7 @@ static void r_core_panels_refresh(RCore *core) {
 				} else {
 					strcat (panels[menu_pos].text, "  ");
 				}
-				strcat (panels[menu_pos].text,
-					menus_sub[menu_x][j]);
+				strcat (panels[menu_pos].text, menus_sub[menu_x][j]);
 				strcat (panels[menu_pos].text, "          \n");
 			}
 		}
@@ -419,6 +418,8 @@ static void r_core_panels_refresh(RCore *core) {
 			}
 		}
 	}
+	// always refresh first panel or can be trashed
+	panels[1].refresh = true;
 
 	if (menu_y) {
 		curnode = menu_pos;
@@ -461,6 +462,12 @@ static void r_core_panels_refresh(RCore *core) {
 
 	r_cons_canvas_print (can);
 	r_cons_flush ();
+}
+
+static void dorefresh(RCore *core) {
+	isResizing = true;
+	Layout_run (panels);
+	r_core_panels_refresh (core);
 }
 
 static int havePanel(const char *s) {
@@ -560,7 +567,8 @@ R_API int r_core_visual_panels(RCore *core) {
 
 repeat:
 	core->cons->event_data = core;
-	core->cons->event_resize = (RConsEvent) r_core_panels_refresh;
+	// core->cons->event_resize = (RConsEvent) r_core_panels_refresh;
+	core->cons->event_resize = (RConsEvent) dorefresh;
 	Layout_run (panels);
 	r_core_panels_refresh (core);
 	wheel = r_config_get_i (core->config, "scr.wheel");
@@ -591,6 +599,7 @@ repeat:
 		} else {
 			r_core_cmd0 (core, "s entry0; px");
 		}
+		dorefresh (core);
 		break;
 	case ' ':
 	case '\r':
@@ -610,6 +619,10 @@ repeat:
 					free (res);
 				}
 				r_cons_enable_mouse (true);
+			} else if (strstr (action, "RegisterRefs")) {
+				addPanelFrame ("drr", "drr");
+			} else if (strstr (action, "Registers")) {
+				addPanelFrame ("dr=", "dr=");
 			} else if (strstr (action, "Info")) {
 				addPanelFrame (PANEL_TITLE_INFO, "i");
 			} else if (strstr (action, "Database")) {
@@ -796,6 +809,7 @@ repeat:
 				menu_y = 1;
 			}
 		}
+		dorefresh (core);
 		break;
 	case '?':
 		r_cons_clear00 ();
@@ -846,11 +860,13 @@ repeat:
 		// FIX: Issue with visual mode instruction highlighter
 		// not updating after 'ds' or 'dcu' commands.
 		r_core_cmd0 (core, ".dr*");
+		dorefresh (core);
 		break;
 	case 'C':
 		can->color = !can->color;
 		// r_config_toggle (core->config, "scr.color");
 		// refresh graph
+		dorefresh (core);
 		break;
 	case 'R':
 		if (r_config_get_i (core->config, "scr.randpal")) {
@@ -858,6 +874,7 @@ repeat:
 		} else {
 			r_core_cmd0 (core, "ecn");
 		}
+		dorefresh (core);
 		break;
 	case 'j':
 		panels[curnode].refresh = true;
