@@ -2636,8 +2636,9 @@ next_arroba:
 						r_core_seek (core, addr, 1);
 						r_core_block_read (core);
 					}
-					ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
 				}
+				ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
+
 			}
 			if (tmpseek) {
 				// restore ranges
