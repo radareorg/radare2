@@ -1124,7 +1124,7 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 					if (thunk[0] == 0x8b && thunk[2] == 0x24 && thunk[3] == 0xc3
 					    && (thunk[1] & 0xc7) == 4) {  /* 00rrr100 */
 						ut8 reg = (thunk[1] & 0x38) >> 3;
-						esilprintf (op, "0x%llx,%s,=", addr + op->size,
+						esilprintf (op, "0x%"PFMT64x",%s,=", addr + op->size,
 						            reg32_to_name (reg));
 						break;
 					}
