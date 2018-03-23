@@ -224,6 +224,7 @@ typedef struct r_bin_object_t {
 	int referenced;
 	int lang;
 	Sdb *kv;
+	Sdb *addr2klassmethod;
 	void *bin_obj; // internal pointer used by formats
 } RBinObject;
 

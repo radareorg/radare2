@@ -31,15 +31,14 @@ static void loganal(ut64 from, ut64 to, int depth) {
 }
 
 static char *getFunctionName(RCore *core, ut64 addr) {
-	RBinClass *klass;
-	RBinSymbol *method;
-	RListIter *iter, *iter2;
-        RList *klasses = r_bin_get_classes (core->bin);
-	r_list_foreach (klasses, iter, klass) {
-		r_list_foreach (klass->methods, iter2, method) {
-			if (method->vaddr == addr) {
-				return r_str_newf ("method.%s.%s", klass->name, method->name);
-			}
+	RBinFile *bf = r_bin_cur (core->bin);
+	RBinObject *bo = r_bin_file_object_get_cur (bf);
+	if (bo) {
+		Sdb *kv = bo->addr2klassmethod;
+		char *at = sdb_fmt (-1, "0x%08"PFMT64x, addr);
+		char *res = sdb_get (kv, at, 0);
+		if (res) {
+			return strdup (res);
 		}
 	}
 	RFlagItem *fi = r_flag_get_at (core->flags, addr, false);
