@@ -2061,7 +2061,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	/* bool conditions */
 	ptr = (char *)r_str_lastbut (cmd, '&', quotestr);
 	//ptr = strchr (cmd, '&');
-	while (ptr && ptr[1] == '&') {
+	while (ptr && *ptr && ptr[1] == '&') {
 		*ptr = '\0';
 		ret = r_cmd_call (core->rcmd, cmd);
 		if (ret == -1) {
