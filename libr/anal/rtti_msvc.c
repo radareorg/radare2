@@ -1,9 +1,9 @@
 /* radare - LGPL - Copyright 2009-2018 - pancake, maijin, thestr4ng3r */
 
-#include <r_anal.h>
 #include "r_anal.h"
 
-#define NAME_BUF_SIZE 64
+#define NAME_BUF_SIZE    64
+#define BASE_CLASSES_MAX 32
 
 
 typedef struct rtti_complete_object_locator_t {
@@ -144,7 +144,7 @@ static bool rtti_msvc_read_base_class_descriptor(RVTableContext *context, ut64 a
 }
 
 static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_base_classes, ut64 base, ut32 offset) {
-	if (base == UT64_MAX || offset == UT32_MAX) {
+	if (base == UT64_MAX || offset == UT32_MAX || num_base_classes == UT32_MAX) {
 		return NULL;
 	}
 
@@ -155,6 +155,11 @@ static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_
 
 	ut64 addr = base + offset;
 	ut64 stride = R_MIN (context->word_size, 4);
+
+	if (num_base_classes > BASE_CLASSES_MAX) {
+		eprintf ("WARNING: Length of base class array at 0x%08"PFMT64x" exceeds %d.\n", addr, BASE_CLASSES_MAX);
+		num_base_classes = BASE_CLASSES_MAX;
+	}
 
 	r_cons_break_push (NULL, NULL);
 	while (num_base_classes > 0) {
@@ -167,6 +172,9 @@ static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_
 			if (!context->read_addr (context->anal, addr, &bcdAddr)) {
 				break;
 			}
+			if (bcdAddr == UT32_MAX) {
+				break;
+			}
 		} else {
 			// special offset calculation for 64bit
 			ut8 tmp[4] = {0};
@@ -176,6 +184,9 @@ static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_
 			}
 			ut32 (*read_32)(const void *src) = context->anal->big_endian ? r_read_be32 : r_read_le32;
 			ut32 bcdOffset = read_32 (tmp);
+			if (bcdOffset == UT32_MAX) {
+				break;
+			}
 			bcdAddr = base + bcdOffset;
 		}
 
