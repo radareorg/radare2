@@ -337,8 +337,13 @@ static void refreshAll() {
 }
 
 static void addPanelFrame(const char *title, const char *cmd) {
-	panels[n_panels].text = strdup (title);
-	panels[n_panels].cmd = r_str_newf (cmd);
+	if (title) {
+		panels[n_panels].text = strdup (title);
+		panels[n_panels].cmd = r_str_newf (cmd);
+	} else {
+		panels[n_panels].text = r_core_cmd_str (_core, cmd);
+		panels[n_panels].cmd = NULL;
+	}
 	panels[n_panels].type = PANEL_TYPE_FRAME;
 	panels[n_panels].refresh = true;
 	panels[n_panels + 1].text = NULL;
@@ -346,6 +351,7 @@ static void addPanelFrame(const char *title, const char *cmd) {
 	curnode = n_panels - 1;
 	zoom ();
 	menu_y = 0;
+	refreshAll ();
 }
 
 static bool initPanel() {
@@ -587,10 +593,37 @@ repeat:
 		r_core_cmd0 (core, "s+");
 		break;
 	case 'n':
-		r_core_cmd0 (core, "sn");
+		{
+			r_cons_enable_mouse (false);
+			char *res = r_cons_input ("New panel with command: ");
+			if (res) {
+				if (*res) {
+					addPanelFrame (res, res);
+					// do not refresh stuff 
+				}
+				free (res);
+			}
+			r_cons_enable_mouse (true);
+		}
+		break;
+	case 'N':
+		{
+			r_cons_enable_mouse (false);
+			char *res = r_cons_input ("New panel with command: ");
+			if (res) {
+				if (*res) {
+					addPanelFrame (NULL, res);
+				}
+				free (res);
+			}
+			r_cons_enable_mouse (true);
+		}
 		break;
 	case 'p':
 		r_core_cmd0 (core, "sp");
+		break;
+	case 'P':
+		r_core_cmd0 (core, "sn");
 		break;
 	case '.':
 		if (r_config_get_i (core->config, "cfg.debug")) {
@@ -816,9 +849,9 @@ repeat:
 		r_cons_printf ("Visual Ascii Art Panels:\n"
 			" !    - run r2048 game\n"
 			" .    - seek to PC or entrypoint\n"
-			":    - run r2 command in prompt\n"
+			" :    - run r2 command in prompt\n"
 			" _    - start the hud input mode\n"
-			"?    - show this help\n"
+			" ?    - show this help\n"
 			" x    - close current panel\n"
 			" m    - open menubar\n"
 			" V    - view graph\n"
@@ -830,7 +863,8 @@ repeat:
 			" JK   - select prev/next panels (same as TAB)\n"
 			" sS   - step in / step over\n"
 			" uU   - undo / redo seek\n"
-			" np   - seek to next or previous scr.nkey\n"
+			" pP   - seek to next or previous scr.nkey\n"
+			" nN   - create new panel with given command\n"
 			" q    - quit, back to visual mode\n"
 			);
 		r_cons_flush ();
@@ -1131,11 +1165,10 @@ repeat:
 	case '!':
 	case 'q':
 	case -1: // EOF
-		if (menu_y > 0) {
-			menu_y = 0;
-		} else {
+		if (menu_y < 1) {
 			goto beach;
 		}
+		menu_y = 0;
 		break;
 #if 0
 	case 27: // ESC
