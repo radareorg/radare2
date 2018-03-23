@@ -17,14 +17,14 @@ r_magic = library('r_magic', files,
   implicit_include_directories: false
 )
 
-
-pkg = import('pkgconfig')
-pkg.generate(libraries: [r_magic],
-             subdirs: 'libr',
-             version: r2version,
-             name: 'r_magic',
-             filebase: 'r_magic',
-             requires: [
-               'r_util'
-             ],
-             description: 'radare foundation libraries')
+pkgconfig_mod.generate(
+  libraries: [r_magic],
+  subdirs: 'libr',
+  version: r2version,
+  name: 'r_magic',
+  filebase: 'r_magic',
+  requires: [
+    'r_util'
+  ],
+  description: 'radare foundation libraries'
+)

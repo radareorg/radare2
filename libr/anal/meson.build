@@ -115,14 +115,14 @@ r_anal = library('r_anal', files,
   implicit_include_directories: false
 )
 
-
-pkg = import('pkgconfig')
-pkg.generate(libraries: [r_anal],
-             subdirs: 'libr',
-             version: r2version,
-             name: 'r_anal',
-             filebase: 'r_anal',
-             requires: [
-               'r_util', 'r_reg', 'r_asm', 'r_syscall', 'r_search', 'r_cons', 'r_flag'
-             ],
-             description: 'radare foundation libraries')
+pkgconfig_mod.generate(
+  libraries: [r_anal],
+  subdirs: 'libr',
+  version: r2version,
+  name: 'r_anal',
+  filebase: 'r_anal',
+  requires: [
+    'r_util', 'r_reg', 'r_asm', 'r_syscall', 'r_search', 'r_cons', 'r_flag'
+  ],
+  description: 'radare foundation libraries'
+)

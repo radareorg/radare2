@@ -2,6 +2,8 @@ project('radare2', 'c', meson_version: '>=0.45.0')
 
 py3_exe = import('python3').find_python()
 git_exe = find_program('git')
+pkgconfig_mod = import('pkgconfig')
+glob_cmd = [py3_exe, '-c', 'from sys import argv; print(";".join(__import__("glob").glob(argv[1])))']
 
 # Get r2 version
 r2version = run_command(py3_exe, 'sys/version.py')
@@ -68,19 +70,11 @@ pth = cc.find_library('pthread', required: false)
 utl = cc.find_library('util', required: false)
 mth = cc.find_library('m', required: false)
 
-# detect OS
-if cc.get_define('__linux__') == '1'
-  host_os = 'linux'
-else
-  host_os = 'darwin'
-endif
-
 platform_deps = []
 platform_inc = include_directories(['.', 'libr/include'])
 if host_machine.system() == 'windows'
   platform_deps = [cc.find_library('ws2_32')]
   platform_inc = include_directories(['.', 'libr/include', 'libr/include/msvc'])
-  host_os = 'windows'
   if get_option('default_library') == 'static'
     if get_option('buildtype') == 'release' and not meson.is_subproject()
       add_project_arguments('/MT', language: 'c')
@@ -113,9 +107,11 @@ conf_data.set('plugins_debug', '&r_debug_plugin_' + ',&r_debug_plugin_'.join(deb
 conf_data.set('plugins_egg', '&r_egg_plugin_' + ',&r_egg_plugin_'.join(egg) + ', 0')
 conf_data.set('plugins_lang', '&r_lang_plugin_' + ',&r_lang_plugin_'.join(lang) + ', 0')
 conf_data.set('plugins_parse', '&r_parse_plugin_' + ',&r_parse_plugin_'.join(parse) + ', 0')
-config_h = configure_file(input: 'libr/config.h.in',
-                          output: 'config.h',
-                          configuration: conf_data)
+config_h = configure_file(
+  input: 'libr/config.h.in',
+  output: 'config.h',
+  configuration: conf_data
+)
 
 userconf = configuration_data()
 userconf.set('DEBUGGER', 1)
@@ -133,9 +129,11 @@ if host_machine.system() == 'windows'
 else
   userconf.set('HAVE_JEMALLOC', 1)
 endif
-r_userconf_h = configure_file(input: 'libr/include/r_userconf.h.in',
-                              output: 'r_userconf.h',
-                              configuration: userconf)
+r_userconf_h = configure_file(
+  input: 'libr/include/r_userconf.h.in',
+  output: 'r_userconf.h',
+  configuration: userconf
+)
 install_headers(r_userconf_h, subdir: 'libr')
 
 versionconf = configuration_data()
@@ -144,9 +142,11 @@ versionconf.set('R2_VERSION', r2version)
 versionconf.set('R2_GITTAP', gittap)
 versionconf.set('R2_GITTIP', gittip)
 versionconf.set('R2_BIRTH', r2birth)
-r_version_h = configure_file(input: 'libr/include/r_version.h.in',
-                             output: 'r_version.h',
-                             configuration: versionconf)
+r_version_h = configure_file(
+  input: 'libr/include/r_version.h.in',
+  output: 'r_version.h',
+  configuration: versionconf
+)
 install_headers(r_version_h, subdir: 'libr')
 
 # Copy missing header
@@ -154,14 +154,17 @@ run_command(py3_exe, '-c', '__import__("shutil").copyfile("shlr/spp/config.def.h
 
 pcconf = configuration_data()
 pcconf.set('PREFIX', get_option('prefix'))
-pcconf.set('LIBDIR', get_option('libdir'))
+pcconf.set('LIBDIR', join_paths(get_option('prefix'), get_option('libdir')))
 pcconf.set('VERSION', r2version)
-libr_pc = configure_file(input: 'libr/libr.pc.acr',
-                         output: 'libr.pc',
-                         configuration: userconf)
+libr_pc = configure_file(
+  input: 'libr/libr.pc.acr',
+  output: 'libr.pc',
+  configuration: userconf
+)
 install_data(libr_pc, install_dir: join_paths(get_option('libdir'), 'pkgconfig'))
 
 subdir('shlr/')
+
 subdir('libr/util')
 subdir('libr/hash')
 subdir('libr/crypto')
@@ -185,14 +188,12 @@ subdir('libr/fs')
 subdir('libr/debug')
 subdir('libr/core')
 
-subdir('libr/include')
-
 subdir('shlr/sdb')
+
 subdir('libr/anal/d')
 subdir('libr/asm/d')
 subdir('libr/bin/d')
 subdir('libr/syscall/d')
-
 subdir('libr/cons/d')
 subdir('libr/magic/d')
 
@@ -225,19 +226,17 @@ install_subdir('shlr/www',
   install_dir: join_paths(get_option('prefix'), get_option('datadir'), 'radare2', r2version)
 )
 
-patterned_filelist = [py3_exe, '-c', 'from sys import argv; print(";".join(__import__("glob").glob(argv[1])))']
-
-fortunes_files = run_command(patterned_filelist + ['doc/fortunes.*']).stdout().strip().split(';')
+fortunes_files = run_command(glob_cmd + ['doc/fortunes.*']).stdout().strip().split(';')
 install_data(fortunes_files,
   install_dir: join_paths(get_option('datadir'), 'doc/radare2')
 )
 
-man1_files = run_command(patterned_filelist + ['man/*.1']).stdout().strip().split(';')
+man1_files = run_command(glob_cmd + ['man/*.1']).stdout().strip().split(';')
 install_data(man1_files,
   install_dir: join_paths(get_option('mandir'), 'man1')
 )
 
-man7_files = run_command(patterned_filelist + ['man/*.7']).stdout().strip().split(';')
+man7_files = run_command(glob_cmd + ['man/*.7']).stdout().strip().split(';')
 install_data(man7_files,
   install_dir: join_paths(get_option('mandir'), 'man7')
 )

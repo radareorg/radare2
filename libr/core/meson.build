@@ -82,15 +82,16 @@ r_core = library('r_core', files,
   implicit_include_directories: false
 )
 
-pkg = import('pkgconfig')
-pkg.generate(libraries: [r_core],
-             subdirs: 'libr',
-             version: r2version,
-             name: 'r_core',
-             filebase: 'r_core',
-             requires: [
-               'r_util', 'r_reg', 'r_syscall', 'r_search', 'r_cons', 'r_anal', 'r_socket', 'r_io', 'r_fs',
-               'r_lang', 'r_hash', 'r_flag', 'r_parse', 'r_egg', 'r_debug', 'r_magic', 'r_crypto', 'r_config',
-               'r_bin', 'r_asm', 'r_bp'
-             ],
-             description: 'radare foundation libraries')
+pkgconfig_mod.generate(
+  libraries: [r_core],
+  subdirs: 'libr',
+  version: r2version,
+  name: 'r_core',
+  filebase: 'r_core',
+  requires: [
+    'r_util', 'r_reg', 'r_syscall', 'r_search', 'r_cons', 'r_anal', 'r_socket', 'r_io', 'r_fs',
+    'r_lang', 'r_hash', 'r_flag', 'r_parse', 'r_egg', 'r_debug', 'r_magic', 'r_crypto', 'r_config',
+    'r_bin', 'r_asm', 'r_bp'
+  ],
+  description: 'radare foundation libraries'
+)

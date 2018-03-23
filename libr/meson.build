@@ -243,7 +243,7 @@ io = [
   'winedbg'
 ]
 
-if host_os == 'windows'
+if host_machine.system() == 'windows'
   io += [
     'w32dbg',
     'w32',
@@ -267,3 +267,40 @@ parse = [
   'avr_pseudo',
   'x86_pseudo',
 ]
+
+include_files = run_command(glob_cmd + ['include/*.h']).stdout().strip().split(';')
+install_headers(include_files, subdir: 'libr')
+
+r_util_files = run_command(glob_cmd + ['include/r_util/*.h']).stdout().strip().split(';')
+install_headers(r_util_files, subdir: 'libr/r_util')
+
+sdb_files = run_command(glob_cmd + ['include/sdb/*.h']).stdout().strip().split(';')
+install_headers(sdb_files, subdir: 'libr/sdb')
+
+sflib_common_files = [
+  'include/sflib/common/sftypes.h',
+  'include/sflib/common/sfsocketcall.h'
+]
+
+sflib_arch = [
+  'linux-x86-64',
+  'linux-x86-32',
+  'linux-arm-64',
+  'linux-arm-32',
+  'darwin-x86-64',
+  'darwin-x86-32',
+  'darwin-arm-64'
+]
+
+sflib_arch_files = [
+  'sflib.h',
+  'sfsyscall.h',
+  'sfsysnr.h'
+]
+
+install_headers(sflib_common_files, subdir: 'libr/sflib/common')
+foreach arch : sflib_arch
+  foreach file : sflib_arch_files
+    install_headers(join_paths('include/sflib', arch, file), subdir: join_paths('libr/sflib', arch))
+  endforeach
+endforeach
