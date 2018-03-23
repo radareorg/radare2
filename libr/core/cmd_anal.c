@@ -3024,7 +3024,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 				int len = bits ? strlen (bits) : 0;
 				if (str[len + 1] == ':') {
 					// We have some regs
-					char *regs = bits ? strtok (NULL, ":") : strtok (str + 1, ":");
+					char *regs = bits ? strtok (NULL, ":") : strtok ((char *)str + 1, ":");
 					char *reg = strtok (regs, " ");
 					RList *q_regs = r_list_new ();
 					if (q_regs) {
@@ -4643,7 +4643,7 @@ ctrl_c:
 
 static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 	RAnalOp op;
-	int bufi, minop = 1; // 4
+	int bufi;
 	int depth = r_config_get_i (core->config, "anal.depth");
 	const int addrbytes = core->io->addrbytes;
 	const int bsz = 4096;
@@ -4661,6 +4661,8 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 		free (block);
 		return;
 	}
+
+	int minop = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	while (addr < addr_end) {
 		if (r_cons_is_breaked ()) {
 			break;
@@ -4686,7 +4688,6 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 		}
 		if (r_anal_op (core->anal, &op, addr, buf + bufi, bsz - bufi, 0)) {
 			if (op.size < 1) {
-				// XXX must be +4 on arm/mips/.. like we do in disasm.c
 				op.size = minop;
 			}
 			if (op.type == R_ANAL_OP_TYPE_CALL) {
