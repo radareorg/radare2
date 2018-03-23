@@ -2007,6 +2007,81 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 			//r_cons_flush ();
 		}
 	}
+	/* pipe console to file */
+	ptr = (char *)r_str_firstbut (cmd, '>', "\"");
+	// TODO honor `
+	if (ptr) {
+		int fdn = 1;
+		bool pipecolor = r_config_get_i (core->config, "scr.pipecolor");
+		if (r_config_get_i (core->config, "scr.html")) {
+			pipecolor = true;
+		}
+		int use_editor = false;
+		int ocolor = r_config_get_i (core->config, "scr.color");
+		*ptr = '\0';
+		str = r_str_trim_head_tail (ptr + 1 + (ptr[1] == '>'));
+		if (!*str) {
+			eprintf ("No output?\n");
+			goto next2;
+		}
+		/* r_cons_flush() handles interactive output (to the terminal)
+		 * differently (e.g. asking about too long output). This conflicts
+		 * with piping to a file. Disable it while piping. */
+		if (ptr > (cmd + 1) && ISWHITECHAR (ptr[-2])) {
+			char *fdnum = ptr - 1;
+			if (*fdnum == 'H') { // "H>"
+				scr_html = r_config_get_i (core->config, "scr.html");
+				r_config_set_i (core->config, "scr.html", true);
+				pipecolor = true;
+				*fdnum = 0;
+			} else {
+				if (IS_DIGIT(*fdnum)) {
+					fdn = *fdnum - '0';
+				}
+				*fdnum = 0;
+			}
+		}
+		r_cons_set_interactive (false);
+		if (!strcmp (str, "-")) {
+			use_editor = true;
+			str = r_file_temp ("dumpedit");
+			r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
+		}
+		if (fdn > 0) {
+			pipefd = r_cons_pipe_open (str, fdn, ptr[1] == '>');
+			if (pipefd != -1) {
+				if (!pipecolor) {
+					r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
+				}
+				ret = r_core_cmd_subst (core, cmd);
+				r_cons_flush ();
+				r_cons_pipe_close (pipefd);
+			}
+		}
+		r_cons_set_last_interactive ();
+		if (!pipecolor) {
+			r_config_set_i (core->config, "scr.color", ocolor);
+		}
+		if (use_editor) {
+			const char *editor = r_config_get (core->config, "cfg.editor");
+			if (editor && *editor) {
+				r_sys_cmdf ("%s '%s'", editor, str);
+				r_file_rm (str);
+			} else {
+				eprintf ("No cfg.editor configured\n");
+			}
+			r_config_set_i (core->config, "scr.color", ocolor);
+			free (str);
+		}
+		if (scr_html != -1) {
+			r_config_set_i (core->config, "scr.html", scr_html);
+		}
+		if (scr_color != -1) {
+			r_config_set_i (core->config, "scr.color", scr_color);
+		}
+		core->cons->use_tts = false;
+		return ret;
+	}
 
 	// TODO must honor " and `
 	/* pipe console to shell process */
@@ -2170,82 +2245,6 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	}
 next:
 #endif
-	/* pipe console to file */
-	ptr = (char *)r_str_firstbut (cmd, '>', "\"");
-	// TODO honor `
-	if (ptr) {
-		if (ptr[0] && ptr[1] == '?') {
-			r_core_cmd_help (core, help_msg_greater_sign);
-			return true;
-		}
-		int fdn = 1;
-		int pipecolor = r_config_get_i (core->config, "scr.pipecolor");
-		int use_editor = false;
-		int ocolor = r_config_get_i (core->config, "scr.color");
-		*ptr = '\0';
-		str = r_str_trim_head_tail (ptr + 1 + (ptr[1] == '>'));
-		if (!*str) {
-			eprintf ("No output?\n");
-			goto next2;
-		}
-		/* r_cons_flush() handles interactive output (to the terminal)
-		 * differently (e.g. asking about too long output). This conflicts
-		 * with piping to a file. Disable it while piping. */
-		if (ptr > (cmd + 1) && ISWHITECHAR (ptr[-2])) {
-			char *fdnum = ptr - 1;
-			if (*fdnum == 'H') { // "H>"
-				scr_html = r_config_get_i (core->config, "scr.html");
-				r_config_set_i (core->config, "scr.html", true);
-				pipecolor = true;
-				*fdnum = 0;
-			} else {
-				if (IS_DIGIT(*fdnum)) {
-					fdn = *fdnum - '0';
-				}
-				*fdnum = 0;
-			}
-		}
-		r_cons_set_interactive (false);
-		if (!strcmp (str, "-")) {
-			use_editor = true;
-			str = r_file_temp ("dumpedit");
-			r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
-		}
-		if (fdn > 0) {
-			pipefd = r_cons_pipe_open (str, fdn, ptr[1] == '>');
-			if (pipefd != -1) {
-				if (!pipecolor) {
-					r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
-				}
-				ret = r_core_cmd_subst (core, cmd);
-				r_cons_flush ();
-				r_cons_pipe_close (pipefd);
-			}
-		}
-		r_cons_set_last_interactive ();
-		if (!pipecolor) {
-			r_config_set_i (core->config, "scr.color", ocolor);
-		}
-		if (use_editor) {
-			const char *editor = r_config_get (core->config, "cfg.editor");
-			if (editor && *editor) {
-				r_sys_cmdf ("%s '%s'", editor, str);
-				r_file_rm (str);
-			} else {
-				eprintf ("No cfg.editor configured\n");
-			}
-			r_config_set_i (core->config, "scr.color", ocolor);
-			free (str);
-		}
-		if (scr_html != -1) {
-			r_config_set_i (core->config, "scr.html", scr_html);
-		}
-		if (scr_color != -1) {
-			r_config_set_i (core->config, "scr.color", scr_color);
-		}
-		core->cons->use_tts = false;
-		return ret;
-	}
 next2:
 	/* sub commands */
 	ptr = strchr (cmd, '`');
