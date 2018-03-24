@@ -22,7 +22,7 @@ files = [
   'p/anal_8051.c',
   'p/anal_arc.c',
   'p/anal_arm_cs.c',
-  # 'p/anal_arm_gnu.c',
+  'p/anal_arm_gnu.c',
   'p/anal_avr.c',
   'p/anal_bf.c',
   'p/anal_cr16.c',
