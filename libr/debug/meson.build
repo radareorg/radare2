@@ -69,7 +69,8 @@ r_debug = library('r_debug', files,
     r_cons, r_lang, r_egg, r_socket, libr_shlr
   ],
   install: true,
-  implicit_include_directories: false
+  implicit_include_directories: false,
+  soversion: r2version
 )
 
 pkgconfig_mod.generate(

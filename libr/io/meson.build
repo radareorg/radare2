@@ -72,7 +72,8 @@ r_io = library('r_io', files,
   ],
   c_args: ['-DCORELIB=1'],
   install: true,
-  implicit_include_directories: false
+  implicit_include_directories: false,
+  soversion: r2version
 )
 
 pkgconfig_mod.generate(
