@@ -2531,11 +2531,12 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 }
 
 R_API char *r_core_editor (const RCore *core, const char *file, const char *str) {
+	const bool interactive = r_config_get_i (core->config, "scr.interactive");
 	const char *editor = r_config_get (core->config, "cfg.editor");
 	char *name, *ret = NULL;
 	int len, fd;
 
-	if (!editor || !*editor) {
+	if (!interactive || !editor || !*editor) {
 		return NULL;
 	}
 	if (file) {
