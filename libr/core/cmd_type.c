@@ -32,6 +32,7 @@ static const char *help_msg_t[] = {
 	"tp", " <type>  = <address>", "cast data at <address> to <type> and print it",
 	"ts", "[?]", "print loaded struct types",
 	"tu", "[?]", "print loaded union types",
+	"tt", "[?]", "List all loaded typedefs",
 	//"| ts k=v k=v @ link.addr set fields at given linked type\n"
 	NULL
 };
@@ -74,6 +75,15 @@ static const char *help_msg_te[] = {
 	"te", "", "List all loaded enums",
 	"te", " <enum> <value>", "Show name for given enum number",
 	"te?", "", "show this help",
+	NULL
+};
+
+
+static const char *help_msg_tt[] = {
+	"USAGE tt[...]", "", "",
+	"tt", "", "List all loaded typedefs",
+	"tt", " <typename>", "Show name for given type alias",
+	"tt?", "", "show this help",
 	NULL
 };
 
@@ -125,6 +135,7 @@ static void cmd_type_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, tn);
 	DEFINE_CMD_DESCRIPTOR (core, ts);
 	DEFINE_CMD_DESCRIPTOR (core, tu);
+	DEFINE_CMD_DESCRIPTOR (core, tt);
 }
 
 static void show_help(RCore *core) {
@@ -199,7 +210,7 @@ static void save_parsed_type(RCore *core, const char *parsed) {
 	if (type) {
 		char *name = NULL;
 		if ((name = strstr (type, "=type")) || (name = strstr (type, "=struct")) || (name = strstr (type, "=union")) ||
-			(name = strstr (type, "=enum")) || (name = strstr (type, "=func"))) {
+			(name = strstr (type, "=enum")) || (name = strstr (type, "=typedef")) ||(name = strstr (type, "=func"))) {
 			*name = 0;
 			while (name - 1 >= type && *(name - 1) != '\n') {
 				name--;
@@ -813,6 +824,42 @@ static int cmd_type(void *data, const char *input) {
 	case 'f':
 		sdb_foreach (core->anal->sdb_types, stdprintiffunc, core);
 		break;
+	case 't': {
+		if (!input[1]) {
+			char *name = NULL;
+			SdbKv *kv;
+			SdbListIter *iter;
+			SdbList *l = sdb_foreach_list (core->anal->sdb_types, true);
+			ls_foreach (l, iter, kv) {
+				if (!strcmp (kv->value, "typedef")) {
+					if (!name || strcmp (kv->value, name)) {
+						free (name);
+						name = strdup (kv->key);
+						r_cons_println (name);
+					}
+				}
+			}
+			free (name);
+			ls_free (l);
+			break;
+		}
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_tt);
+			break;
+		}
+		char *s = strdup (input + 2);
+		const char *istypedef;
+		istypedef = sdb_const_get (core->anal->sdb_types, s, 0);
+		if (istypedef && !strncmp (istypedef, "typedef", 7)) {
+			const char *q = sdb_fmt (0, "typedef.%s", s);
+			const char *res = sdb_const_get (core->anal->sdb_types, q, 0);
+			if (res)
+				r_cons_println (res);
+		} else {
+			eprintf ("This is not an typedef\n");
+		}
+		free (s);
+	} break;
 	case '?':
 		show_help (core);
 		break;
