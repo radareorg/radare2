@@ -269,14 +269,14 @@ static void choose_bits_anal_hints(RCore *core, ut64 addr, int *bits) {
 R_API void r_core_seek_archbits(RCore *core, ut64 addr) {
 	int bits = 0;
 	const char *arch = r_io_section_get_archbits (core->io, addr, &bits);
-	if (!bits) {
+	if (!bits && !core->fixedbits) {
 		//if we found bits related with anal hints pick it up
 		choose_bits_anal_hints (core, addr, &bits);
 	}
-	if (bits) {
+	if (bits && !core->fixedbits) {
 		r_config_set_i (core->config, "asm.bits", bits);
 	}
-	if (arch) {
+	if (arch && !core->fixedarch) {
 		r_config_set (core->config, "asm.arch", arch);
 	}
 }

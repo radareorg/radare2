@@ -1787,39 +1787,25 @@ static void tmpenvs_free(void *item) {
 	free (item);
 }
 
-static bool set_tmp_arch(RCore *core, char *arch, char **tmparch, char **tmphintarch) {
-	if (tmparch == NULL || tmphintarch == NULL) {
-		eprintf ("tmparch and tmphintarch should be set\n");
+static bool set_tmp_arch(RCore *core, char *arch, char **tmparch) {
+	if (tmparch == NULL ) {
+		eprintf ("tmparch should be set\n");
 	}
-
-	RAnalHint *hint = r_anal_hint_get (core->anal, core->offset);
-	// temporarily overwrite anal hints if there's any
-	if (hint) {
-		*tmphintarch = hint->arch ? strdup (hint->arch) : NULL;
-		r_anal_hint_set_arch (core->anal, core->offset, arch);
-	}
-	r_anal_hint_free (hint);
 
 	*tmparch = strdup (r_config_get (core->config, "asm.arch"));
 	r_config_set (core->config, "asm.arch", arch);
+	core->fixedarch = true;
 	return true;
 }
 
-static bool set_tmp_bits(RCore *core, int bits, char **tmpbits, int *tmphintbits) {
-	if (tmpbits == NULL || tmphintbits == NULL) {
-		eprintf ("tmpbits and tmphintbits should be set\n");
+static bool set_tmp_bits(RCore *core, int bits, char **tmpbits) {
+	if (tmpbits == NULL) {
+		eprintf ("tmpbits should be set\n");
 	}
-
-	RAnalHint *hint = r_anal_hint_get (core->anal, core->offset);
-	// temporarily overwrite bits hint if there's any
-	if (hint) {
-		*tmphintbits = hint->bits;
-		r_anal_hint_set_bits (core->anal, core->offset, bits);
-	}
-	r_anal_hint_free (hint);
 
 	*tmpbits = strdup (r_config_get (core->config, "asm.bits"));
 	r_config_set_i (core->config, "asm.bits", bits);
+	core->fixedbits = true;
 	return true;
 }
 
@@ -2334,8 +2320,7 @@ next2:
 		bool is_bits_set = false;
 		bool is_arch_set = false;
 		char *tmpeval = NULL;
-		char *tmpasm = NULL, *tmphintasm = NULL;
-		int tmphintbits = -1;
+		char *tmpasm = NULL;
 		int flgspc = -123;
 		int tmpfd = -1;
 		int sz, len;
@@ -2456,7 +2441,7 @@ repeat_arroba:
 				}
 				break;
 			case 'b': // "@b:" // bits
-				is_bits_set = set_tmp_bits (core, r_num_math (core->num, ptr + 2), &tmpbits, &tmphintbits);
+				is_bits_set = set_tmp_bits (core, r_num_math (core->num, ptr + 2), &tmpbits);
 				break;
 			case 'i': // "@i:"
 				{
@@ -2517,9 +2502,9 @@ repeat_arroba:
 					if (q) {
 						*q++ = 0;
 						int bits = r_num_math (core->num, q);
-						is_bits_set = set_tmp_bits (core, bits, &tmpbits, &tmphintbits);
+						is_bits_set = set_tmp_bits (core, bits, &tmpbits);
 					}
-					is_arch_set = set_tmp_arch (core, ptr + 2, &tmpasm, &tmphintasm);
+					is_arch_set = set_tmp_arch (core, ptr + 2, &tmpasm);
 				} else {
 					eprintf ("Usage: pd 10 @a:arm:32\n");
 				}
@@ -2656,14 +2641,9 @@ next_arroba:
 			r_core_block_size (core, tmpbsz);
 		}
 		if (is_arch_set) {
+			core->fixedarch = false;
 			r_config_set (core->config, "asm.arch", tmpasm);
-			if (tmphintasm) {
-				r_anal_hint_set_arch (core->anal, core->offset, tmphintasm);
-			} else {
-				r_anal_hint_unset_arch (core->anal, core->offset);
-			}
 			R_FREE (tmpasm);
-			R_FREE (tmphintasm);
 			is_arch_set = false;
 		}
 		if (tmpfd != -1) {
@@ -2671,14 +2651,8 @@ next_arroba:
 		}
 		if (is_bits_set) {
 			r_config_set (core->config, "asm.bits", tmpbits);
-			if (tmphintbits != -1) {
-				r_anal_hint_set_bits (core->anal, core->offset, tmphintbits);
-			} else {
-				r_anal_hint_unset_bits (core->anal, core->offset);
-			}
-			R_FREE (tmpbits);
-			tmphintbits = -1;
 			is_bits_set = false;
+			core->fixedbits = false;
 		}
 		if (tmpeval) {
 			r_core_cmd0 (core, tmpeval);
@@ -2705,6 +2679,8 @@ beach:
 	}
 	r_list_free (tmpenvs);
 	core->fixedblock = false;
+	core->fixedarch = false;
+	core->fixedbits = false;
 	return rc;
 fail:
 	rc = -1;

@@ -203,6 +203,8 @@ typedef struct r_core_t {
 	bool break_loop;
 	RThreadLock *lock;
 	RList *undos;
+	bool fixedbits;
+	bool fixedarch;
 } RCore;
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd);

@@ -1010,13 +1010,13 @@ R_API RAnalHint *r_core_hint_begin(RCore *core, RAnalHint* hint, ut64 at) {
 	}
 	if (hint) {
 		/* arch */
-		if (hint->arch) {
+		if (hint->arch && !core->fixedarch) {
 			if (!hint_arch) {
 				hint_arch = strdup (r_config_get (core->config, "asm.arch"));
 			}
 			r_config_set (core->config, "asm.arch", hint->arch);
 		}
-		/* arch */
+		/* syntax */
 		if (hint->syntax) {
 			if (!hint_syntax) {
 				hint_syntax = strdup (r_config_get (core->config, "asm.syntax"));
