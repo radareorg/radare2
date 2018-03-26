@@ -1438,6 +1438,17 @@ the_end:
 		}
 	}
 	type->t = t;
+
+	/* Provide SDB with typedefs' info */
+	if (t & VT_TYPEDEF) {
+		const char *alias = NULL;
+		char buf[500];
+		alias = get_tok_str(tok, NULL);
+		type_to_str(buf, sizeof(buf), type, NULL);
+		tcc_appendf("%s=typedef\n",alias);
+		tcc_appendf("typedef.%s=%s\n",alias, buf);
+	}
+
 	return type_found;
 }
 
