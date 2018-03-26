@@ -421,9 +421,10 @@ static void r_core_panels_refresh(RCore *core) {
 			}
 		}
 	}
-	// always refresh first panel or can be trashed
-	panels[1].refresh = true;
-
+	if (panels && n_panels > 1) {
+		// always refresh first panel or can be trashed
+		panels[1].refresh = true;
+	}
 	if (menu_y) {
 		curnode = menu_pos;
 	}
