@@ -1465,7 +1465,7 @@ R_API bool r_debug_is_dead (RDebug *dbg) {
 		return false;
 	}
 	bool is_dead = (dbg->pid == -1 && strncmp (dbg->h->name, "gdb", 3)) || (dbg->reason.type == R_DEBUG_REASON_DEAD);
-	if (dbg->pid > 0) {
+	if (dbg->pid > 0 && dbg->h && dbg->h->kill) {
 		is_dead = !dbg->h->kill (dbg, dbg->pid, false, 0);
 	}
 #if 0

@@ -2542,24 +2542,20 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 }
 
 static int core_anal_followptr(RCore *core, int type, ut64 at, ut64 ptr, ut64 ref, int code, int depth) {
-	ut64 dataptr;
-	int wordsize;
 	// SLOW Operation try to reduce as much as possible -- eprintf ("READ %d %llx\n", wordsize, ptr);
 	if (!ptr) {
 		return false;
 	}
 	if (ref == UT64_MAX || ptr == ref) {
-		if (code) {
-			r_anal_ref_add (core->anal, ptr, at, type? type: 'c');
-		} else {
-			r_anal_ref_add (core->anal, ptr, at, 'd');
-		}
+		const int t = code? type? type: 'c': 'd';
+		r_anal_ref_add (core->anal, ptr, at, t);
 		return true;
 	}
 	if (depth < 1) {
 		return false;
 	}
-	wordsize = (int)(core->anal->bits / 8);
+	int wordsize = (int)(core->anal->bits / 8);
+	ut64 dataptr;
 	if (!r_io_read_i (core->io, ptr, &dataptr, wordsize, false)) {
 		// eprintf ("core_anal_followptr: Cannot read word at destination\n");
 		return false;
