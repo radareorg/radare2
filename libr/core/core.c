@@ -1787,6 +1787,8 @@ R_API bool r_core_init(RCore *core) {
 	r_egg_setup (core->egg, R_SYS_ARCH, R_SYS_BITS, 0, R_SYS_OS);
 
 	core->undos = r_list_newf ((RListFree)r_core_undo_free);
+	core->fixedarch = false;
+	core->fixedbits = false;
 
 	/* initialize libraries */
 	core->cons = r_cons_new ();

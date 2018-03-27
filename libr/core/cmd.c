@@ -1822,6 +1822,8 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	int scr_color = -1;
 	bool eos = false;
 	bool haveQuote = false;
+	bool oldfixedarch = core->fixedarch;
+	bool oldfixedbits = core->fixedbits;
 
 	if (!cmd) {
 		return 0;
@@ -2641,7 +2643,7 @@ next_arroba:
 			r_core_block_size (core, tmpbsz);
 		}
 		if (is_arch_set) {
-			core->fixedarch = false;
+			core->fixedarch = oldfixedarch;
 			r_config_set (core->config, "asm.arch", tmpasm);
 			R_FREE (tmpasm);
 			is_arch_set = false;
@@ -2652,7 +2654,7 @@ next_arroba:
 		if (is_bits_set) {
 			r_config_set (core->config, "asm.bits", tmpbits);
 			is_bits_set = false;
-			core->fixedbits = false;
+			core->fixedbits = oldfixedbits;
 		}
 		if (tmpeval) {
 			r_core_cmd0 (core, tmpeval);
@@ -2679,8 +2681,8 @@ beach:
 	}
 	r_list_free (tmpenvs);
 	core->fixedblock = false;
-	core->fixedarch = false;
-	core->fixedbits = false;
+	core->fixedarch = oldfixedarch;
+	core->fixedbits = oldfixedbits;
 	return rc;
 fail:
 	rc = -1;
