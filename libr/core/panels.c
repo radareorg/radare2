@@ -37,29 +37,29 @@
 
 static RConsCanvas *can;
 
+typedef enum {
+	PANEL_TYPE_FRAME = 0,
+	PANEL_TYPE_MENU = 1
+} PanelType;
+
+enum {
+	LAYOUT_DEFAULT = 0,
+	LAYOUT_BALANCE = 1
+};
+
 typedef struct {
 	int x;
 	int y;
 	int w;
 	int h;
 	int depth;
-	int type;
 	int sx; // scroll-x
 	int sy; // scroll-y
 	char *cmd;
 	char *text;
 	bool refresh;
+	PanelType type;
 } Panel;
-
-enum {
-	PANEL_TYPE_FRAME,
-	PANEL_TYPE_MENU
-};
-
-enum {
-	LAYOUT_DEFAULT,
-	LAYOUT_BALANCE
-};
 
 static Panel *panels = NULL;
 static int n_panels = 0;
