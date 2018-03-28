@@ -1787,6 +1787,8 @@ R_API bool r_core_init(RCore *core) {
 	r_egg_setup (core->egg, R_SYS_ARCH, R_SYS_BITS, 0, R_SYS_OS);
 
 	core->undos = r_list_newf ((RListFree)r_core_undo_free);
+	core->fixedarch = false;
+	core->fixedbits = false;
 
 	/* initialize libraries */
 	core->cons = r_cons_new ();
@@ -2531,11 +2533,12 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 }
 
 R_API char *r_core_editor (const RCore *core, const char *file, const char *str) {
+	const bool interactive = r_config_get_i (core->config, "scr.interactive");
 	const char *editor = r_config_get (core->config, "cfg.editor");
 	char *name, *ret = NULL;
 	int len, fd;
 
-	if (!editor || !*editor) {
+	if (!interactive || !editor || !*editor) {
 		return NULL;
 	}
 	if (file) {

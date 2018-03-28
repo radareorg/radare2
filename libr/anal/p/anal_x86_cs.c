@@ -334,7 +334,7 @@ static const char *reg32_to_name(ut8 reg) {
 	return reg < R_ARRAY_SIZE (names) ? names[reg] : "unk";
 }
 
-static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
+static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	int rs = a->bits/8;
 	const char *pc = (a->bits==16)?"ip":
 		(a->bits==32)?"eip":"rip";
@@ -2649,7 +2649,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 }
 
 #if 0
-static int x86_int_0x80 (RAnalEsil *esil, int interrupt) {
+static int x86_int_0x80(RAnalEsil *esil, int interrupt) {
 	int syscall;
 	ut64 eax, ebx, ecx, edx;
 	if (!esil || (interrupt != 0x80))
@@ -2683,14 +2683,14 @@ static int x86_int_0x80 (RAnalEsil *esil, int interrupt) {
 #endif
 
 #if 0
-static int esil_x86_cs_intr (RAnalEsil *esil, int intr) {
+static int esil_x86_cs_intr(RAnalEsil *esil, int intr) {
 	if (!esil) return false;
 	eprintf ("INTERRUPT 0x%02x HAPPENS\n", intr);
 	return true;
 }
 #endif
 
-static int esil_x86_cs_init (RAnalEsil *esil) {
+static int esil_x86_cs_init(RAnalEsil *esil) {
 	if (!esil) {
 		return false;
 	}
@@ -2701,13 +2701,13 @@ static int esil_x86_cs_init (RAnalEsil *esil) {
 	return true;
 }
 
-static int fini (void *p) {
+static int fini(void *p) {
 	cs_close (&handle);
 	handle = 0;
 	return true;
 }
 
-static int esil_x86_cs_fini (RAnalEsil *esil) {
+static int esil_x86_cs_fini(RAnalEsil *esil) {
 	return true;
 }
 
