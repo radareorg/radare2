@@ -4,9 +4,6 @@
 
 #include <r_core.h>
 
-#define PANEL_TYPE_FRAME 0
-#define PANEL_TYPE_MENU  1
-
 #define LIMIT 256
 
 #define PANEL_TITLE_SYMBOLS      "Symbols"
@@ -54,9 +51,19 @@ typedef struct {
 	bool refresh;
 } Panel;
 
+enum {
+	PANEL_TYPE_FRAME,
+	PANEL_TYPE_MENU
+};
+
+enum {
+	LAYOUT_DEFAULT,
+	LAYOUT_BALANCE
+};
+
 static Panel *panels = NULL;
 static int n_panels = 0;
-static int COLW = 80;
+static int columnWidth = 80;
 static const int layoutCount = 2;
 static int layout = 0;
 static RCore *_core;
@@ -144,6 +151,7 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 	// clear the canvas first
 	r_cons_canvas_fill (can, n->x, n->y, n->w, n->h, ' ', 0);
 	// for menu
+	RCons *cons = r_cons_singleton ();
 	if (n->type == PANEL_TYPE_MENU) {
 		(void) r_cons_canvas_gotoxy (can, n->x + 2, n->y + 2);
 		text = r_str_ansi_crop (n->text,
@@ -156,7 +164,6 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 		}
 	} else {
 		if (cur) {
-			RCons * cons = r_cons_singleton ();
 			const char *k = cons->pal.graph_box;
 			snprintf (title, sizeof (title) - 1,
 				"%s[x] %s"Color_RESET, k, n->text);
@@ -198,7 +205,6 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 		}
 		free (foo);
 	}
-	RCons *cons = r_cons_singleton ();
 	if (cur) {
 		r_cons_canvas_box (can, n->x, n->y, n->w, n->h, cons->pal.graph_box2);
 	} else {
@@ -209,17 +215,14 @@ static void Panel_print(RConsCanvas *can, Panel *n, int cur) {
 static void Layout_run(Panel *panels) {
 	int h, w = r_cons_get_size (&h);
 	int i, j;
-	int colpos = w - COLW;
+	int colpos = w - columnWidth;
 	if (colpos < 0) {
-		COLW = w;
+		columnWidth = w;
 		colpos = 0;
-	}
-	if (layout >= layoutCount) {
-		layout = 0;
 	}
 	can->sx = 0;
 	can->sy = 0;
-	for (i = j = 0; panels[i].text; i++) {
+	for (i = j = 0; i < n_panels; i++) {
 		switch (panels[i].type) {
 		case PANEL_TYPE_MENU:
 			panels[i].w = r_str_bounds (
@@ -229,7 +232,7 @@ static void Layout_run(Panel *panels) {
 			break;
 		case PANEL_TYPE_FRAME:
 			switch (layout) {
-			case 0:
+			case LAYOUT_DEFAULT:
 				if (j == 0) {
 					panels[i].x = 0;
 					panels[i].y = 1;
@@ -257,7 +260,7 @@ static void Layout_run(Panel *panels) {
 					}
 				}
 				break;
-			case 1:
+			case LAYOUT_BALANCE:
 				if (j == 0) {
 					panels[i].x = 0;
 					panels[i].y = 1;
@@ -404,6 +407,12 @@ static void r_core_panels_refresh(RCore *core) {
 		for (i = 0; menus_sub[i]; i++) {
 			maxsub = i;
 		}
+		if (menu_x < 0) {
+			menu_x = 0;
+		}
+		if (menu_x > maxsub) {
+			menu_x = maxsub;
+		}
 		if (menu_x >= 0 && menu_x <= maxsub && menus_sub[menu_x]) {
 			for (j = 0; menus_sub[menu_x][j]; j++) {
 				if (menu_y - 1 == j) {
@@ -415,7 +424,7 @@ static void r_core_panels_refresh(RCore *core) {
 				strcat (panels[menu_pos].text, "          \n");
 			}
 		}
-		for (i = 0; panels[i].text; i++) {
+		for (i = 0; i < n_panels; i++) {
 			if (i != curnode) {
 				Panel_print (can, &panels[i], 0);
 			}
@@ -430,8 +439,8 @@ static void r_core_panels_refresh(RCore *core) {
 	}
 	if (panels) {
 		if (panels[curnode].type == PANEL_TYPE_MENU) {
-			refreshAll ();
-			Panel_print (can, &panels[menu_pos], menu_y);
+			panels[curnode].refresh = true;
+			Panel_print (can, &panels[curnode], menu_y);
 		} else {
 			Panel_print (can, &panels[curnode], 1);
 		}
@@ -468,7 +477,7 @@ static void r_core_panels_refresh(RCore *core) {
 	r_cons_flush ();
 }
 
-static void dorefresh(RCore *core) {
+static void doRefresh(RCore *core) {
 	isResizing = true;
 	Layout_run (panels);
 	r_core_panels_refresh (core);
@@ -542,7 +551,7 @@ static bool init (RCore *core, int w, int h) {
 	can->linemode = r_config_get_i (core->config, "graph.linemode");
 	can->color = r_config_get_i (core->config, "scr.color");
 	if (w < 140) {
-		COLW = w / 3;
+		columnWidth = w / 3;
 	}
 	if (!initPanel ()) {
 		return false;
@@ -572,7 +581,7 @@ R_API int r_core_visual_panels(RCore *core) {
 repeat:
 	core->cons->event_data = core;
 	// core->cons->event_resize = (RConsEvent) r_core_panels_refresh;
-	core->cons->event_resize = (RConsEvent) dorefresh;
+	core->cons->event_resize = (RConsEvent) doRefresh;
 	Layout_run (panels);
 	r_core_panels_refresh (core);
 	wheel = r_config_get_i (core->config, "scr.wheel");
@@ -630,7 +639,7 @@ repeat:
 		} else {
 			r_core_cmd0 (core, "s entry0; px");
 		}
-		dorefresh (core);
+		doRefresh (core);
 		break;
 	case ' ':
 	case '\r':
@@ -840,7 +849,7 @@ repeat:
 				menu_y = 1;
 			}
 		}
-		dorefresh (core);
+		doRefresh (core);
 		break;
 	case '?':
 		r_cons_clear00 ();
@@ -892,13 +901,13 @@ repeat:
 		// FIX: Issue with visual mode instruction highlighter
 		// not updating after 'ds' or 'dcu' commands.
 		r_core_cmd0 (core, ".dr*");
-		dorefresh (core);
+		doRefresh (core);
 		break;
 	case 'C':
 		can->color = !can->color;
 		// r_config_toggle (core->config, "scr.color");
 		// refresh graph
-		dorefresh (core);
+		doRefresh (core);
 		break;
 	case 'R':
 		if (r_config_get_i (core->config, "scr.randpal")) {
@@ -906,7 +915,7 @@ repeat:
 		} else {
 			r_core_cmd0 (core, "ecn");
 		}
-		dorefresh (core);
+		doRefresh (core);
 		break;
 	case 'j':
 		panels[curnode].refresh = true;
@@ -1014,14 +1023,14 @@ repeat:
 		menu_y = 1;
 		break;
 	case 'H':
-		COLW += 4;
+		columnWidth += 4;
 		isResizing = true;
 		break;
 	case 'L':
-		COLW -= 4;
+		columnWidth -= 4;
 		isResizing = true;
-		if (COLW < 0) {
-			COLW = 0;
+		if (columnWidth < 0) {
+			columnWidth = 0;
 		}
 		break;
 	case 'h':
@@ -1076,10 +1085,10 @@ repeat:
 		break;
 	case 'w':
 		layout++;
-		Layout_run (panels);
-		r_core_panels_refresh (core);
-		r_cons_canvas_print (can);
-		r_cons_flush ();
+		if (layout >= layoutCount) {
+			layout = 0;
+		}
+		refreshAll ();
 		break;
 	case R_CONS_KEY_F1:
 		cmd = r_config_get (core->config, "key.f1");
