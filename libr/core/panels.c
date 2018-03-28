@@ -40,7 +40,7 @@ static RConsCanvas *can;
 typedef enum {
 	PANEL_TYPE_FRAME = 0,
 	PANEL_TYPE_MENU = 1
-} panel_type;
+} PanelType;
 
 enum {
 	LAYOUT_DEFAULT = 0,
@@ -58,7 +58,7 @@ typedef struct {
 	char *cmd;
 	char *text;
 	bool refresh;
-	panel_type type;
+	PanelType type;
 } Panel;
 
 static Panel *panels = NULL;
