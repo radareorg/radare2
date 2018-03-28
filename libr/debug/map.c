@@ -6,6 +6,7 @@
 R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 	int i;
 	char buf[128];
+	bool notfirst = false;
 	RListIter *iter;
 	RDebugMap *map;
 	if (!dbg) {
@@ -21,7 +22,7 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 		r_list_foreach (maps, iter, map) {
 			switch (rad) {
 			case 'j':
-				dbg->cb_printf ("{");
+				dbg->cb_printf ("%s{", notfirst? ",": "");
 				if (map->name && *map->name) {
 					char *escaped_name = r_str_escape (map->name);
 					dbg->cb_printf ("\"name\":\"%s\",", escaped_name);
@@ -36,7 +37,8 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 				dbg->cb_printf ("\"addr_end\":%"PFMT64u",", map->addr_end);
 				dbg->cb_printf ("\"type\":\"%c\",", map->user?'u':'s');
 				dbg->cb_printf ("\"perm\":\"%s\"", r_str_rwx_i (map->perm));
-				dbg->cb_printf ("}%s", iter->n? ",": "");
+				dbg->cb_printf ("}");
+				notfirst = true;
 				break;
 			case '*':
 				{
