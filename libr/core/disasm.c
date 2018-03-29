@@ -3034,11 +3034,7 @@ static void ds_align_comment(RDisasmState *ds) {
 			if (cstrlen < 20) {
 				ds_print_pre (ds);
 			}
-#if __WINDOWS__ && !__CYGWIN__
-			cols = 1024;
-#else
 			cols = ds->interactive ? ds->core->cons->columns : 1024;
-#endif
 			if (cells < cmtcol) {
 				int len = cmtcol - cells;
 				if (len < cols && len > 0) {
