@@ -137,7 +137,7 @@ countDown() {
 }
 
 commitSuicide() {
-	confirm "Do you wanna purge r2 completely from your system and home? (y/N)?"
+	confirm "Do you wanna purge r2 completely from your system and home?"
 	if [ $? != 0 ]; then
 		echo "Aborted." > /dev/stderr
 		exit 1
