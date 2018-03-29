@@ -1439,16 +1439,6 @@ the_end:
 	}
 	type->t = t;
 
-	/* Provide SDB with typedefs' info */
-	if (t & VT_TYPEDEF) {
-		const char *alias = NULL;
-		char buf[500];
-		alias = get_tok_str(tok, NULL);
-		type_to_str(buf, sizeof(buf), type, NULL);
-		tcc_appendf("%s=typedef\n",alias);
-		tcc_appendf("typedef.%s=%s\n",alias, buf);
-	}
-
 	return type_found;
 }
 
@@ -3163,8 +3153,19 @@ func_error1:
 				if (btype.t & VT_TYPEDEF) {
 					/* save typedefed type  */
 					/* XXX: test storage specifiers ? */
+					if (tok != ';') {
+						v = tok;
+						next();
+					}
 					sym = sym_push (v, &type, INT_ATTR (&ad), 0);
 					sym->type.t |= VT_TYPEDEF;
+					/* Provide SDB with typedefs' info */
+					const char *alias = NULL;
+					char buf[500];
+					alias = get_tok_str(v, NULL);
+					type_to_str(buf, sizeof(buf), &sym->type, NULL);
+					tcc_appendf("%s=typedef\n",alias);
+					tcc_appendf("typedef.%s=%s\n",alias, buf);
 				} else {
 					r = 0;
 					if ((type.t & VT_BTYPE) == VT_FUNC) {
