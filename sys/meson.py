@@ -168,11 +168,12 @@ def win_dist(args):
     PATH_FMT['BUILDDIR'] = builddir
 
     makedirs(r'{DIST}')
-    copy(r'{BUILDDIR}\binr\**\*.exe', r'{DIST}')
-    copy(r'{BUILDDIR}\libr\**\*.dll', r'{DIST}')
+    copy(r'{BUILDDIR}\binr\*\*.exe', r'{DIST}')
+    copy(r'{BUILDDIR}\libr\*\*.dll', r'{DIST}')
     if args.copylib:
-        copy(r'{BUILDDIR}\libr\**\*.lib', r'{DIST}')
-        copy(r'{BUILDDIR}\libr\**\*.a', r'{DIST}')
+        makedirs(r'{DIST}\lib')
+        copy(r'{BUILDDIR}\libr\*\*.lib', r'{DIST}\lib')
+        copy(r'{BUILDDIR}\libr\*\*.a', r'{DIST}\lib')
     win_dist_libr2()
 
 def win_dist_libr2(**path_fmt):
@@ -190,16 +191,15 @@ def win_dist_libr2(**path_fmt):
     makedirs(r'{DIST}\include\libr\sdb')
     makedirs(r'{DIST}\include\libr\r_util')
     copy(r'{ROOT}\libr\include\*.h', r'{DIST}\include\libr')
+    copy(r'{BUILDDIR}\r_version.h', r'{DIST}\include\libr')
+    copy(r'{BUILDDIR}\r_userconf.h', r'{DIST}\include\libr')
     copy(r'{ROOT}\libr\include\sdb\*.h', r'{DIST}\include\libr\sdb')
     copy(r'{ROOT}\libr\include\r_util\*.h', r'{DIST}\include\libr\r_util')
     makedirs(r'{DIST}\share\doc\radare2')
     copy(r'{ROOT}\doc\fortunes.*', r'{DIST}\share\doc\radare2')
+    copytree(r'{ROOT}\libr\bin\d', r'{DIST}\share\radare2\{R2_VERSION}\format',
+             exclude=('Makefile', 'meson.build', 'dll'))
     makedirs(r'{DIST}\share\radare2\{R2_VERSION}\format\dll')
-    copy(r'{ROOT}\libr\bin\d\elf32', r'{DIST}\share\radare2\{R2_VERSION}\format')
-    copy(r'{ROOT}\libr\bin\d\elf64', r'{DIST}\share\radare2\{R2_VERSION}\format')
-    copy(r'{ROOT}\libr\bin\d\elf_enums', r'{DIST}\share\radare2\{R2_VERSION}\format')
-    copy(r'{ROOT}\libr\bin\d\pe32', r'{DIST}\share\radare2\{R2_VERSION}\format')
-    copy(r'{ROOT}\libr\bin\d\trx', r'{DIST}\share\radare2\{R2_VERSION}\format')
     copy(r'{BUILDDIR}\libr\bin\d\*.sdb', r'{DIST}\share\radare2\{R2_VERSION}\format\dll')
     copytree(r'{ROOT}\libr\cons\d', r'{DIST}\share\radare2\{R2_VERSION}\cons',
              exclude=('Makefile', 'meson.build'))
@@ -210,9 +210,10 @@ def build(args):
     """ Build radare2 """
     log.info('Building radare2')
     r2_builddir = os.path.join(ROOT, args.dir)
+    options = ['-D%s' % x for x in args.options]
     if not os.path.exists(r2_builddir):
         meson(ROOT, r2_builddir, prefix=args.prefix, backend=args.backend,
-              release=args.release, shared=args.shared)
+              release=args.release, shared=args.shared, options=options)
     if args.backend != 'ninja':
         vs_dedup(r2_builddir)
         if args.xp:
@@ -261,6 +262,7 @@ def main():
     else:
         parser.add_argument('--install', action='store_true',
             help='Install radare2 after building')
+    parser.add_argument('--options', nargs='*', default=[])
     args = parser.parse_args()
 
     # Check arguments
@@ -275,6 +277,10 @@ def main():
         sys.exit(1)
     if os.name == 'nt' and not args.prefix:
         args.prefix = os.path.join(ROOT, args.dir, 'priv_install_dir')
+    for o in args.options:
+        if not '=' in o:
+            log.error('Invalid option: %s', o)
+            sys.exit(1)
 
     # Build it!
     log.debug('Arguments: %s', args)

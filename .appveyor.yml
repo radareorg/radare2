@@ -71,9 +71,9 @@ build_script:
   - appveyor AddMessage "Compiling radare2 %R2_VERSION% (%builder%)"
   - if %builder% == msvc_cccl_64 ( sys\msvc.bat && make windist WINBITS=%builder% )
 
-  - cmd: if %builder% == vs2015_64 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64 && python sys\meson.py --backend vs2015 --release --xp --install="%DIST_FOLDER%" && zip -r %ARTIFACT_ZIP% %DIST_FOLDER% )
+  - cmd: if %builder% == vs2015_64 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64 && python sys\meson.py --backend vs2015 --release --xp --install="%DIST_FOLDER%" --options static_runtime=true && zip -r %ARTIFACT_ZIP% %DIST_FOLDER% )
 
-  - cmd: if %builder% == vs2015_32 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86 && python sys\meson.py --backend vs2015 --release --xp --install="%DIST_FOLDER%" && zip -r %ARTIFACT_ZIP% %DIST_FOLDER% )
+  - cmd: if %builder% == vs2015_32 ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86 && python sys\meson.py --backend vs2015 --release --xp --install="%DIST_FOLDER%" --options static_runtime=true && zip -r %ARTIFACT_ZIP% %DIST_FOLDER% )
 
   - cmd: if %builder% == vs2015_64_dyn ( set "PATH=C:\mingw\bin;C:\mingw\msys\1.0\bin;%PYTHON%;%PATH%" && call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x64 && python sys\meson.py --release --shared --install="%DIST_FOLDER%" && zip -r %ARTIFACT_ZIP% %DIST_FOLDER% )
 

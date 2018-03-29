@@ -71,23 +71,16 @@ utl = cc.find_library('util', required: false)
 mth = cc.find_library('m', required: false)
 
 platform_deps = []
-platform_inc = include_directories(['.', 'libr/include'])
+platform_inc = ['.', 'libr/include']
 if host_machine.system() == 'windows'
   platform_deps = [cc.find_library('ws2_32')]
-  platform_inc = include_directories(['.', 'libr/include', 'libr/include/msvc'])
-  if get_option('default_library') == 'static'
-    if get_option('buildtype') == 'release' and not meson.is_subproject()
-      add_project_arguments('/MT', language: 'c')
-    endif
-    message(' ------ WINDOWS VERSION: BUILD STATIC ------')
-  else
-    message(' ------ WINDOWS VERSION: BUILD SHARED ------')
-  endif
-elif host_machine.system() == 'linux'
-  if get_option('default_library') == 'static'
-    message(' ------ LINUX VERSION: BUILD STATIC ------')
-  else
-    message(' ------ LINUX VERSION: BUILD SHARED ------')
+  platform_inc += ['libr/include/msvc']
+endif
+platform_inc = include_directories(platform_inc)
+
+if get_option('static_runtime')
+  if cc.get_id() == 'msvc'
+    add_project_arguments('/MT', language: 'c')
   endif
 endif
 
@@ -163,7 +156,7 @@ libr_pc = configure_file(
 )
 install_data(libr_pc, install_dir: join_paths(get_option('libdir'), 'pkgconfig'))
 
-subdir('shlr/')
+subdir('shlr')
 
 subdir('libr/util')
 subdir('libr/hash')
