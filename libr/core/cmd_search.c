@@ -1235,6 +1235,8 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	RIOMap *map;
 	RAsmOp asmop;
 
+	Sdb *gadgetSdb = sdb_ns (core->sdb, "gadget_sdb", true);
+
 	if (max_count == 0) {
 		max_count = -1;
 	}
@@ -1450,6 +1452,22 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 					if (align && (0 != ((from + i) % align))) {
 						continue;
 					}
+
+					RListIter *iter;
+
+					// Converts addr from hex to str
+					RCoreAsmHit *hit = (RCoreAsmHit *) hitlist->head->data;
+					char *headAddr = malloc (2 + ceil (log (hit->addr) / log (16)));
+					sprintf (headAddr, "%"PFMT64x, hit->addr); 
+
+					r_list_foreach (hitlist, iter, hit) {
+						char *addr = malloc (2 + ceil (log (hit->addr) / log (16)));
+						sprintf (addr, "%"PFMT64x"(%"PFMT32d")", hit->addr, hit->len); 
+						sdb_concat (gadgetSdb, headAddr, addr, 0);
+						free (addr);
+					}
+					free (headAddr);
+
 					if (json) {
 						mode = 'j';
 					}
@@ -2606,7 +2624,22 @@ reread:
 				rop_kuery (core, input + 2);
 			}
 		} else {
-			r_core_search_rop (core, search_itv, 0, input + 1, 0);
+			Sdb *gadgetSdb = sdb_ns (core->sdb, "gadget_sdb", false);
+
+			if (!gadgetSdb) {
+				r_core_search_rop (core, search_itv, 0, input + 1, 0);
+			} else {
+				SdbKv *kv;
+				SdbListIter *sdb_iter;
+				SdbList *sdb_list = sdb_foreach_list (gadgetSdb, true);
+
+				ls_foreach (sdb_list, sdb_iter, kv) {
+					printf ("key: %s, value: %s\n", kv->key, kv->value);
+					// the idea is to craft a hitlist with kv, and then call print_rop
+					// print_rop (core, hitlist, mode, json_first);
+				}
+			}
+
 		}
 		goto beach;
 	case 'r': // "/r" and "/re"
