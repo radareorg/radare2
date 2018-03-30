@@ -9,7 +9,7 @@ bochs_files = [
   'bochs/src/libbochs.c'
 ]
 
-libr2bochs = static_library('libr2bochs', bochs_files,
+libr2bochs = static_library('r2bochs', bochs_files,
   include_directories: [
     platform_inc,
     include_directories([
@@ -33,7 +33,7 @@ gdb_files = [
   'gdb/src/gdbserver/core.c',
 ]
 
-libr2gdb = static_library('libr2gdb', gdb_files,
+libr2gdb = static_library('r2gdb', gdb_files,
   include_directories: [
     platform_inc,
     include_directories([
@@ -53,7 +53,7 @@ java_files = [
   #'java/main.c',
 ]
 
-libr2java = static_library('libr2java', java_files,
+libr2java = static_library('r2java', java_files,
   include_directories: [
     platform_inc,
     include_directories([
@@ -71,7 +71,7 @@ qnx_files = [
   'qnx/src/utils.c',
 ]
 
-libr2qnx = static_library('libr2qnx', qnx_files,
+libr2qnx = static_library('r2qnx', qnx_files,
   include_directories: [
     platform_inc,
     include_directories([
@@ -87,7 +87,7 @@ tcc_files = [
   'tcc/tccpp.c'
 ]
 
-libr2tcc = static_library('libr2tcc', tcc_files,
+libr2tcc = static_library('r2tcc', tcc_files,
   include_directories: [
     platform_inc,
     include_directories([
@@ -101,7 +101,7 @@ spp_files = [
   'spp/spp.c'
 ]
 
-libr2spp = static_library('libr2spp', spp_files,
+libr2spp = static_library('r2spp', spp_files,
   include_directories: [
     platform_inc,
     include_directories([
@@ -135,7 +135,7 @@ sdb_files = [
   'sdb/src/util.c'
 ]
 
-libr2sdb = static_library('libr2sdb', sdb_files,
+libr2sdb = static_library('r2sdb', sdb_files,
   include_directories: [
     platform_inc,
     include_directories([
@@ -150,7 +150,7 @@ lz4_files = [
   'lz4/lz4.c',
 ]
 
-libr2lz4 = static_library('libr2lz4', lz4_files,
+libr2lz4 = static_library('r2lz4', lz4_files,
   include_directories: [
     platform_inc,
     include_directories([
@@ -260,7 +260,7 @@ zlib_files = [
   'zip/zlib/zutil.c'
 ]
 
-libr2zip = static_library('libr2zip', zlib_files,
+libr2zip = static_library('r2zip', zlib_files,
   include_directories: [
     platform_inc,
     include_directories([
@@ -322,7 +322,7 @@ cs_files = [
   'capstone/utils.c',
 ]
 
-libr2capstone = static_library('libr2capstone', cs_files,
+libr2capstone = static_library('r2capstone', cs_files,
   c_args: [
     '-DCAPSTONE_X86_ATT_DISABLE_NO',
     '-DCAPSTONE_X86_REDUCE_NO',
@@ -400,7 +400,7 @@ grub_files = [
   'grub/partmap/sunpc.c',
 ]
 
-libr2grub = static_library('libr2grub', grub_files,
+libr2grub = static_library('r2grub', grub_files,
   include_directories: [
     platform_inc,
     include_directories([
@@ -418,7 +418,7 @@ windbg_files = [
   'windbg/windbg.c',
 ]
 
-libr2windbg = static_library('libr2windbg', windbg_files,
+libr2windbg = static_library('r2windbg', windbg_files,
   include_directories: [
     platform_inc,
     include_directories([
@@ -432,7 +432,7 @@ ar_files = [
   'ar/ar.c'
 ]
 
-libr2ar = static_library('libr2ar', ar_files,
+libr2ar = static_library('r2ar', ar_files,
   include_directories: [
     platform_inc,
     include_directories([
