@@ -50,6 +50,10 @@ static void pair_int(const char *a, int n, int mode, bool last) {
 	pair (a, sdb_fmt (0, "%d", n), mode, last);
 }
 
+static void pair_ut64(const char *a, ut64 n, int mode, bool last) {
+	pair (a, sdb_fmt (0, "%"PFMT64d, n), mode, last);
+}
+
 static void pair_str(const char *a, const char *b, int mode, int last) {
 	if (IS_MODE_JSON (mode)) {
 		if (!b) {
@@ -686,7 +690,7 @@ static int bin_info(RCore *r, int mode) {
 		if (info->cpu && *info->cpu) {
 			pair_str ("cpu", info->cpu, mode, false);
 		}
-		pair_int ("binsz", r_bin_get_size (r->bin), mode, false);
+		pair_ut64 ("binsz", r_bin_get_size (r->bin), mode, false);
 		pair_str ("bintype", info->rclass, mode, false);
 		pair_int ("bits", info->bits, mode, false);
 		pair_bool ("canary", info->has_canary, mode, false);
