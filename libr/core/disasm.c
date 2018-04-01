@@ -3599,7 +3599,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 			}
 		}
 
-		if (*str && !r_bin_strpurge (ds->core->bin, str, *val) && r_str_is_printable (str)
+		if (*str && !r_bin_strpurge (ds->core->bin, str, *val) && r_str_is_printable_incl_newlines (str)
 		    && (ds->printed_str_addr == UT64_MAX || *val != ds->printed_str_addr)) {
 			bool jump_op = false;
 			bool ignored = false;
