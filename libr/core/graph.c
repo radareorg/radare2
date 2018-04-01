@@ -180,7 +180,6 @@ static void update_node_dimension(const RGraph *g, int is_mini, int zoom) {
 	RGraphNode *gn;
 	RListIter *it;
 	RANode *n;
-
 	graph_foreach_anode (nodes, it, gn, n) {
 		if (is_mini) {
 			n->h = 1;
@@ -2855,18 +2854,27 @@ static void agraph_toggle_callgraph(RAGraph *g) {
 }
 
 static void agraph_set_zoom(RAGraph *g, int v) {
-	g->is_tiny = false;
-	if (v == 0) {
-		g->mode = R_AGRAPH_MODE_MINI;
-	} else if (v < 0) {
-		g->mode = R_AGRAPH_MODE_TINY;
-		g->is_tiny = true;
-	} else {
-		g->mode = R_AGRAPH_MODE_NORMAL;
+	if (v >= -10) {
+		g->is_tiny = false;
+		if (v == 0) {
+			g->mode = R_AGRAPH_MODE_MINI;
+		} else if (v < 0) {
+			g->mode = R_AGRAPH_MODE_TINY;
+			g->is_tiny = true;
+		} else {
+			g->mode = R_AGRAPH_MODE_NORMAL;
+		}
+		const int K = 920;
+		if (g->zoom < v) {
+			g->can->sy = (g->can->sy * K) / 1000;
+		}
+		else {
+			g->can->sy = (g->can->sy * 1000) / K;
+		}
+		g->zoom = v;
+		g->need_update_dim = true;
+		g->need_set_layout = true;
 	}
-	g->zoom = R_MAX (-10, v);
-	g->need_update_dim = true;
-	g->need_set_layout = true;
 }
 
 /* reload all the info in the nodes, depending on the type of the graph
@@ -3707,18 +3715,15 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			movspeed = g->movspeed;
 		}
 		const char *cmd;
-		const int K = 920;
 		switch (key) {
 		case '-':
 			agraph_set_zoom (g, g->zoom - ZOOM_STEP);
-				//		agraph_update_seek (g, get_anode (g->curnode), true);
+			// agraph_update_seek (g, get_anode (g->curnode), true);
 			// agraph_refresh (r_cons_singleton ()->event_data);
 			// agraph_update_seek (g, get_anode (g->curnode), false);
-			can->sy = (can->sy * K) / 1000;
 			break;
 		case '+':
 			agraph_set_zoom (g, g->zoom + ZOOM_STEP);
-			can->sy = (can->sy * 1000) / K;
 			// agraph_update_seek (g, get_anode (g->curnode), false);
 			// agraph_update_seek (g, get_anode (g->curnode), true);
 			break;
