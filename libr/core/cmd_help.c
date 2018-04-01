@@ -77,7 +77,7 @@ static const char *help_msg_question[] = {
 	"??", " [cmd]", "run cmd if $? != 0",
 	"??", "", "show value of operation",
 	"?_", " hudfile", "load hud menu with given file",
-	"?a", "show ascii table",
+	"?a", "", "show ascii table",
 	"?b", " [num]", "show binary value of number",
 	"?b64[-]", " [str]", "encode/decode in base64",
 	"?btw", " num|expr num|expr num|expr", "returns boolean value of a <= b <= c",
