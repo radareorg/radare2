@@ -1235,7 +1235,13 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	RIOMap *map;
 	RAsmOp asmop;
 
-	Sdb *gadgetSdb = sdb_ns (core->sdb, "gadget_sdb", true);
+	Sdb *gadgetSdb;
+	if (!(gadgetSdb = sdb_ns (core->sdb, "gadget_sdb", false))) {
+		gadgetSdb = sdb_ns (core->sdb, "gadget_sdb", true);
+	} else {
+		gadgetSdb = NULL;
+	}
+
 
 	if (max_count == 0) {
 		max_count = -1;
@@ -1453,20 +1459,22 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 						continue;
 					}
 
-					RListIter *iter;
+					if (gadgetSdb) {
+						RListIter *iter;
 
-					// Converts addr from hex to str
-					RCoreAsmHit *hit = (RCoreAsmHit *) hitlist->head->data;
-					char *headAddr = malloc (2 + ceil (log (hit->addr) / log (16)));
-					sprintf (headAddr, "%"PFMT64x, hit->addr); 
+						// Converts addr from hex to str
+						RCoreAsmHit *hit = (RCoreAsmHit *) hitlist->head->data;
+						char *headAddr = malloc (2 + ceil (log (hit->addr) / log (16)));
+						sprintf (headAddr, "%"PFMT64x, hit->addr); 
 
-					r_list_foreach (hitlist, iter, hit) {
-						char *addr = malloc (2 + ceil (log (hit->addr) / log (16)));
-						sprintf (addr, "%"PFMT64x"(%"PFMT32d")", hit->addr, hit->len); 
-						sdb_concat (gadgetSdb, headAddr, addr, 0);
-						free (addr);
+						r_list_foreach (hitlist, iter, hit) {
+							char *addr = malloc (2 + ceil (log (hit->addr) / log (16)));
+							sprintf (addr, "%"PFMT64x"(%"PFMT32d")", hit->addr, hit->len); 
+							sdb_concat (gadgetSdb, headAddr, addr, 0);
+							free (addr);
+						}
+						free (headAddr);
 					}
-					free (headAddr);
 
 					if (json) {
 						mode = 'j';
@@ -2634,9 +2642,28 @@ reread:
 				SdbList *sdb_list = sdb_foreach_list (gadgetSdb, true);
 
 				ls_foreach (sdb_list, sdb_iter, kv) {
-					printf ("key: %s, value: %s\n", kv->key, kv->value);
-					// the idea is to craft a hitlist with kv, and then call print_rop
-					// print_rop (core, hitlist, mode, json_first);
+					RList *hitlist = r_core_asm_hit_list_new ();
+
+					char *s = kv->value;
+					ut64 addr;
+					int opsz;
+					int mode = 0;
+					bool json_first = true;
+
+					// Options, like JSON, linear, ...
+					if (input + 1) {
+						mode = *(input + 1);
+					}
+
+					do {
+						RCoreAsmHit *hit = r_core_asm_hit_new ();
+						sscanf (s, "%"PFMT64x"(%"PFMT32d")", &addr, &opsz);
+						hit->addr = addr;
+						hit->len = opsz;
+						r_list_append (hitlist, hit);
+					} while (*(s = strchr(s, ')') + 1) != '\0');
+
+					print_rop (core, hitlist, mode, &json_first);
 				}
 			}
 
