@@ -14,6 +14,13 @@
 #define st8 signed char
 #define boolt int
 
+typedef union {
+	ut8 v8;
+	ut16 v16;
+	ut32 v32;
+	ut64 v64;
+} utAny;
+
 typedef struct _ut80 {
 	ut64 Low;
 	ut16 High;

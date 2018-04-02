@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include "r_core.h"
 
@@ -150,39 +150,44 @@ R_API int r_core_cmpwatch_revert(RCore *core, ut64 addr) {
 	return ret;
 }
 
-typedef union {
-	ut8 v8;
-	ut16 v16;
-	ut32 v32;
-	ut64 v64;
-} utAny;
-
 static int radare_compare_words(RCore *core, ut64 of, ut64 od, int len, int ws) {
 	int i;
+	bool useColor = r_config_get_i (core->config, "scr.color") != 0;
 	utAny v0, v1;
 	for (i = 0; i < len; i+=ws) {
-		r_cons_printf ("0x%08" PFMT64x"  ", of + i);
 		memset (&v0, 0, sizeof (v0));
 		memset (&v1, 0, sizeof (v1));
 		r_io_read_at (core->io, of + i, (ut8*)&v0, ws);
 		r_io_read_at (core->io, od + i, (ut8*)&v1, ws);
 		char ch = (v0.v64 == v1.v64)? '=': '!';
+		const char *color = useColor? ch == '='? "": Color_RED: "";
+		const char *colorEnd = useColor? Color_RESET: "";
+
+		if (useColor) {
+			r_cons_printf (Color_YELLOW"0x%08" PFMT64x"  "Color_RESET, of + i);
+		} else {
+			r_cons_printf ("0x%08" PFMT64x"  ", of + i);
+		}
 		switch (ws) {
 		case 1:
-			r_cons_printf ("0x%02x %c 0x%02x\n", (ut32)(v0.v8 & 0xff), ch, (ut32)(v1.v8 & 0xff));
+			r_cons_printf ("%s0x%02x %c 0x%02x%s\n", color,
+				(ut32)(v0.v8 & 0xff), ch, (ut32)(v1.v8 & 0xff), colorEnd);
 			break;
 		case 2:
-			r_cons_printf ("0x%04hx %c 0x%04hx\n", v0.v16, ch, v1.v16);
+			r_cons_printf ("%s0x%04hx %c 0x%04hx%s\n", color,
+				v0.v16, ch, v1.v16, colorEnd);
 			break;
 		case 4:
-			r_cons_printf ("0x%08"PFMT32x" %c 0x%08"PFMT32x"  ", v0.v32, ch, v1.v32);
+			r_cons_printf ("%s0x%08"PFMT32x" %c 0x%08"PFMT32x"%s\n", color,
+				v0.v32, ch, v1.v32, colorEnd);
 			//r_core_cmdf (core, "fd@0x%"PFMT64x, v0.v32);
 			if (v0.v32 != v1.v32) {
 			//	r_core_cmdf (core, "fd@0x%"PFMT64x, v1.v32);
 			}
 			break;
 		case 8:
-			r_cons_printf ("0x%016"PFMT64x" %c 0x%016"PFMT64x"  ", v0.v64, ch, v1.v64);
+			r_cons_printf ("%s0x%016"PFMT64x" %c 0x%016"PFMT64x"%s\n",
+				color, v0.v64, ch, v1.v64, colorEnd);
 			//r_core_cmdf (core, "fd@0x%"PFMT64x, v0.v64);
 			if (v0.v64 != v1.v64) {
 			//	r_core_cmdf (core, "fd@0x%"PFMT64x, v1.v64);
