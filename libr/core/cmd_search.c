@@ -1242,7 +1242,6 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 		gadgetSdb = NULL;
 	}
 
-
 	if (max_count == 0) {
 		max_count = -1;
 	}
@@ -1311,12 +1310,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 		map = R_NEW0 (RIOMap);
 		if (!map) {
 			eprintf ("Cannot allocate map\n");
-			free (gregexp);
-			r_list_free (rx_list);
-			r_list_free (end_list);
-			r_list_free (badstart);
-			r_list_free (list);
-			return false;
+			goto bad;
 		}
 		map->fd = core->io->desc->fd;
 		map->itv.addr = from;
@@ -1343,12 +1337,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 		delta = to - from;
 		buf = calloc (1, delta);
 		if (!buf) {
-			free (gregexp);
-			r_list_free (rx_list);
-			r_list_free (end_list);
-			r_list_free (badstart);
-			r_list_free (list);
-			return -1;
+			goto bad;
 		}
 		(void) r_io_read_at (core->io, from, buf, delta);
 
@@ -1462,14 +1451,18 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 					if (gadgetSdb) {
 						RListIter *iter;
 
-						// Converts addr from hex to str
 						RCoreAsmHit *hit = (RCoreAsmHit *) hitlist->head->data;
-						char *headAddr = malloc (2 + ceil (log (hit->addr) / log (16)));
-						sprintf (headAddr, "%"PFMT64x, hit->addr); 
+						char *headAddr = r_str_newf ("%"PFMT64x, hit->addr);
+						if (!headAddr) {
+							goto bad;
+						}
 
 						r_list_foreach (hitlist, iter, hit) {
-							char *addr = malloc (2 + ceil (log (hit->addr) / log (16)));
-							sprintf (addr, "%"PFMT64x"(%"PFMT32d")", hit->addr, hit->len); 
+							char *addr = r_str_newf ("%"PFMT64x"(%"PFMT32d")", hit->addr, hit->len);
+							if (!addr) {
+								free (headAddr);
+								goto bad;
+							}
 							sdb_concat (gadgetSdb, headAddr, addr, 0);
 							free (addr);
 						}
@@ -1517,6 +1510,14 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	free (gregexp);
 
 	return true;
+
+bad:
+	r_list_free (list);
+	r_list_free (rx_list);
+	r_list_free (end_list);
+	r_list_free (badstart);
+	free (gregexp);
+	return false;
 }
 
 static int esil_addrinfo(RAnalEsil *esil) {
@@ -2661,7 +2662,7 @@ reread:
 						hit->addr = addr;
 						hit->len = opsz;
 						r_list_append (hitlist, hit);
-					} while (*(s = strchr(s, ')') + 1) != '\0');
+					} while (*(s = strchr (s, ')') + 1) != '\0');
 
 					print_rop (core, hitlist, mode, &json_first);
 				}
