@@ -2549,23 +2549,37 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 	case 'x': // "afx"
 		switch (input[2]) {
 		case '\0': // "afx"
+		case 'j': // "afxj"
 		case ' ': // "afx "
 #if FCN_OLD
+			if (input[2] == 'j') {
+				r_cons_printf ("[");
+			}
 			// TODO: sdbize!
 			// list xrefs from current address
 			{
-				ut64 addr = input[2]? r_num_math (core->num, input + 2): core->offset;
+				ut64 addr = input[2]==' '? r_num_math (core->num, input + 2): core->offset;
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 				if (fcn) {
 					RAnalRef *ref;
 					RListIter *iter;
 					RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
 					r_list_foreach (refs, iter, ref) {
-						r_cons_printf ("%c 0x%08" PFMT64x " -> 0x%08" PFMT64x "\n",
-							ref->type, ref->at, ref->addr);
+						if (input[2] == 'j') {
+							r_cons_printf ("{\"type\":\"%c\",\"from\":%"PFMT64d",\"to\":%"PFMT64d"}%s",
+									ref->type, ref->at, ref->addr, iter->n? ",": "");
+						} else {
+							r_cons_printf ("%c 0x%08" PFMT64x " -> 0x%08" PFMT64x "\n",
+									ref->type, ref->at, ref->addr);
+						}
 					}
 					r_list_free (refs);
-				} else eprintf ("Cannot find function\n");
+				} else {
+					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", addr);
+				}
+			}
+			if (input[2] == 'j') {
+				r_cons_printf ("]\n");
 			}
 #else
 #warning TODO_ FCNOLD sdbize xrefs here
