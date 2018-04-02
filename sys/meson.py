@@ -170,10 +170,12 @@ def win_dist(args):
     makedirs(r'{DIST}')
     copy(r'{BUILDDIR}\binr\*\*.exe', r'{DIST}')
     copy(r'{BUILDDIR}\libr\*\*.dll', r'{DIST}')
-    if args.copylib:
-        makedirs(r'{DIST}\lib')
+    makedirs(r'{DIST}\lib')
+    if args.shared:
         copy(r'{BUILDDIR}\libr\*\*.lib', r'{DIST}\lib')
+    else:
         copy(r'{BUILDDIR}\libr\*\*.a', r'{DIST}\lib')
+    copy(r'{BUILDDIR}\shlr\libr_shlr.a', r'{DIST}\lib')
     win_dist_libr2()
 
 def win_dist_libr2(**path_fmt):
@@ -257,8 +259,6 @@ def main():
             help='Adds support for Windows XP')
     if os.name == 'nt':
         parser.add_argument('--install', help='Installation directory')
-        parser.add_argument('--copylib', action='store_true',
-            help='Copy static libraries to the installation directory')
     else:
         parser.add_argument('--install', action='store_true',
             help='Install radare2 after building')

@@ -444,6 +444,21 @@ libr2ar = static_library('r2ar', ar_files,
 
 libr_shlr = [
   libr2ar, libr2bochs, libr2capstone, libr2gdb, libr2grub, libr2java, libr2lz4,
-  libr2qnx, libr2sdb, libr2spp, libr2spp, libr2tcc, libr2windbg,
-  libr2zip
+  libr2qnx, libr2sdb, libr2spp, libr2spp, libr2tcc, libr2windbg, libr2zip
 ]
+
+if cc.get_id() == 'msvc'
+  cmd = ['lib', '/OUT:@OUTPUT@', '@INPUT@']
+else
+  cmd = ['ar', 'csr', '@OUTPUT@', '@INPUT@']
+endif
+
+custom_target('libr_shlr',
+  input: libr_shlr,
+  output: 'libr_shlr.a',
+  command: cmd,
+  build_by_default: true,
+  build_always: false,
+  install: true,
+  install_dir: get_option('libdir')
+)
