@@ -2644,6 +2644,9 @@ reread:
 
 				ls_foreach (sdb_list, sdb_iter, kv) {
 					RList *hitlist = r_core_asm_hit_list_new ();
+					if (!hitlist) {
+						goto beach;
+					}
 
 					char *s = kv->value;
 					ut64 addr;
@@ -2658,6 +2661,10 @@ reread:
 
 					do {
 						RCoreAsmHit *hit = r_core_asm_hit_new ();
+						if (!hit) {
+							r_list_free (hitlist);
+							goto beach;
+						}
 						sscanf (s, "%"PFMT64x"(%"PFMT32d")", &addr, &opsz);
 						hit->addr = addr;
 						hit->len = opsz;
@@ -2665,6 +2672,7 @@ reread:
 					} while (*(s = strchr (s, ')') + 1) != '\0');
 
 					print_rop (core, hitlist, mode, &json_first);
+					r_list_free (hitlist);
 				}
 			}
 
