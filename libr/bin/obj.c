@@ -23,6 +23,8 @@ R_API RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 	if (!o) {
 		return NULL;
 	}
+	//ut8 *bytes = calloc (80000, 1);
+	//r_buf_read_at (binfile->buf, 0, bytes, 80000);
 	o->obj_size = bytes && (bytes_sz >= sz + offset)? sz: 0;
 	o->boffset = offset;
 	o->id = r_num_rand (0xfffff000);
@@ -32,11 +34,22 @@ R_API RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 	o->plugin = plugin;
 	o->loadaddr = loadaddr != UT64_MAX ? loadaddr : 0;
 
-	// XXX more checking will be needed here
-	// only use LoadBytes if buffer offset != 0
-	// if (offset != 0 && bytes && plugin && plugin->load_bytes && (bytes_sz
-	// >= sz + offset) ) {
-	if (bytes && plugin && plugin->load_bytes && (bytes_sz >= sz + offset)) {
+	if (bytes && plugin && plugin->load_buffer) {
+		o->bin_obj = plugin->load_buffer (binfile, binfile->buf, loadaddr, sdb); // bytes + offset, sz, loadaddr, sdb);
+		if (!o->bin_obj) {
+			bprintf (
+				"Error in r_bin_object_new: load_bytes failed "
+				"for %s plugin\n",
+				plugin->name);
+			sdb_free (o->kv);
+			free (o);
+			return NULL;
+		}
+	} else if (bytes && plugin && plugin->load_bytes && (bytes_sz >= sz + offset)) {
+		// XXX more checking will be needed here
+		// only use LoadBytes if buffer offset != 0
+		// if (offset != 0 && bytes && plugin && plugin->load_bytes && (bytes_sz
+		// >= sz + offset) ) {
 		ut64 bsz = bytes_sz - offset;
 		if (sz < bsz) {
 			bsz = sz;
@@ -90,7 +103,7 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	RBinObject *old_o;
 	RBinPlugin *cp;
 	int i, minlen;
-	int type;
+	// int type;
 
 	if (!binfile || !o || !o->plugin) {
 		return false;
