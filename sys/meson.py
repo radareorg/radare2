@@ -174,6 +174,7 @@ def win_dist(args):
         makedirs(r'{DIST}\lib')
         copy(r'{BUILDDIR}\libr\*\*.lib', r'{DIST}\lib')
         copy(r'{BUILDDIR}\libr\*\*.a', r'{DIST}\lib')
+        copy(r'{BUILDDIR}\shlr\libr_shlr.a', r'{DIST}\lib')
     win_dist_libr2()
 
 def win_dist_libr2(**path_fmt):
