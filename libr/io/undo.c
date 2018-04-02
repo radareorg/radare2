@@ -44,6 +44,10 @@ R_API RIOUndos *r_io_sundo(RIO *io, ut64 offset) {
 		undo->cursor = 0;
 	}
 
+	// hack to fix undo seek
+	if (io->undo.redos == 0) {
+		io->undo.idx--;
+	}
 	io->undo.idx = (io->undo.idx - 1 + R_IO_UNDOS) % R_IO_UNDOS;
 	io->undo.undos--;
 	io->undo.redos++;
