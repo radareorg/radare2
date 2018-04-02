@@ -4888,11 +4888,10 @@ static int cmd_print(void *data, const char *input) {
 				ut64 from = r_config_get_i (core->config, "diff.from");
 				ut64 to = r_config_get_i (core->config, "diff.to");
 				if (from == to && !from) {
-					if (!r_core_block_size (core, len)) {
-						len = core->blocksize;
-					}
+					r_core_block_size (core, len);
+					len = core->blocksize;
 					r_print_hexdump (core->print, core->offset,
-						core->block, len, 16, 1, 1);
+						core->block, core->blocksize, 16, 1, 1);
 				} else {
 					r_core_print_cmp (core, from, to);
 				}
