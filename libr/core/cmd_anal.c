@@ -6218,7 +6218,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		r_core_cmd0 (core, "af @@= `isq~[0]`");
 		r_core_cmd0 (core, "af @@ entry*");
 		break;
-	case 'n':
+	case 'n': // "aan"
 		r_core_anal_autoname_all_fcns (core);
 		break; //aan
 	case 'p': // "aap"

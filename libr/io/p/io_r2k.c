@@ -1,4 +1,4 @@
-/* io_r2k - radare2 - LGPL - Copyright 2016 - SkUaTeR + panda */
+/* io_r2k - radare2 - LGPL - Copyright 2016-2018 - SkUaTeR + panda */
 
 #include <r_io.h>
 #include <r_lib.h>
