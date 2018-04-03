@@ -820,7 +820,21 @@ int run_new_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			run_old_command (io, iodesc, cmd);
 			free (cmd);
 		} else {
-			run_old_command (io, iodesc, "dp");
+			run_new_command (io, iodesc, "dp");
+		}
+		return 1;
+	}
+	if (r_str_startswith (buf, "e r2k.wp")) {
+		if (strchr (buf, '?')) {
+			io->cb_printf ("<bool> enable write protection (disabled by default)\n");
+			return 1;
+		}
+		const char *eq = strchr (buf, '=');
+		if (eq) {
+			int v = atoi (eq + 1);
+			r2k_struct.wp = (ut8)v;
+		} else {
+			io->cb_printf ("%s", r_str_bool (r2k_struct.wp));
 		}
 		return 1;
 	}
