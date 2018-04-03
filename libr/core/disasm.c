@@ -3633,7 +3633,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 				const char *escquote = ds->use_json ? "\\\"" : "\"";
 				if (escstr) {
 					if (ds->show_color) {
-						msg = r_str_newf ("%s%s"Color_INVERT"%s%s%s"Color_RESET,
+						msg = r_str_newf ("%s%s"Color_INVERT"%s%s%s"Color_INVERT_RESET,
 										  prefix, type? type: "", escquote, escstr, escquote);
 					} else {
 						msg = r_str_newf ("%s%s%s%s%s", prefix, type? type: "", escquote, escstr, escquote);
