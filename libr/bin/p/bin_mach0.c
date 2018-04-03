@@ -47,6 +47,18 @@ static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, S
 	return res;
 }
 
+static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb){
+	struct MACH0_(obj_t) *res = NULL;
+	if (!buf) {
+		return NULL;
+	}
+	res = MACH0_(new_buf) (buf, bf->rbin->verbose);
+	if (res) {
+		sdb_ns_set (sdb, "info", res->kv);
+	}
+	return res;
+}
+
 static bool load(RBinFile *bf) {
 	void *res;
 	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
@@ -838,6 +850,7 @@ RBinPlugin r_bin_plugin_mach0 = {
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,

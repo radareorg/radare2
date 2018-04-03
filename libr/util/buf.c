@@ -187,6 +187,10 @@ R_API ut64 r_buf_size (RBuffer *b) {
 	if (!b) {
 		return 0LL;
 	}
+	if (b->iob) {
+		RIOBind *iob = b->iob;
+		return iob->fd_size (iob->io, b->fd);
+	}
 	if (b->fd != -1) {
 		return b->length;
 	}
