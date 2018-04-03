@@ -233,9 +233,11 @@ static void print_help (RIO *io, char *cmd, int p_usage) {
 		"\\dR              Print control registers in detailed mode",
 		"\\dp [pid]        Print current selected pid or change it",
 		"\\e r2k.io=[012]  Read/Write from 0: Linear, 1: Process, 2: Physical addresses"
-#if 0
+	};
+	const char *help_msg_old[] = {
 		"\\M                      Print kernel memory map",
-		"\\b      beid [pid]      Change r2k backend. pid is required when beid is 1. Possible beid 0: linear address; 1: process address; 2: physical address",
+		"\\b      beid [pid]      Change r2k backend. pid is required when beid is 1.",
+		"                         0: linear address; 1: process address; 2: physical address",
 		"\\p      pid             Print process information",
 		"\\rl     addr len        Read from linear address",
 		"\\rp     pid addr len    Read from process address",
@@ -245,14 +247,19 @@ static void print_help (RIO *io, char *cmd, int p_usage) {
 		"\\wp[x]  pid addr input  Write at process address. Use =!wpx for input in hex",
 		"\\wP[x]  addr input      Write at physical address. Use =!wPx for input in hex",
 		"\\W      1|0             Honor arch write protect (1 enable WP, 0 disable WP)"
-#endif
 	};
 	if (p_usage) {
 		io->cb_printf ("%s\n", usage);
 	}
 	for (i = 0; i < (sizeof (help_msg) / sizeof (char*)); i++) {
 		if (!cmd || !strncmp (cmd, help_msg[i]+1, cmd_len)) {
-			io->cb_printf ("%s\n",help_msg[i]);
+			io->cb_printf ("%s\n", help_msg[i]);
+		}
+	}
+	printf ("\nOld Commands: (deprecated)\n");
+	for (i = 0; i < (sizeof (help_msg_old) / sizeof (char*)); i++) {
+		if (!cmd || !strncmp (cmd, help_msg_old[i]+1, cmd_len)) {
+			io->cb_printf ("%s\n", help_msg_old[i]);
 		}
 	}
 }
