@@ -746,7 +746,7 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 					    nextstart > 0 && nextstart - 1 < buffsize) {
 						break;
 					}
-					io->cb_printf ("0x%08"PFMT64x"-0x%08"PFMT64x" %c%c%c%c 0x%08"PFMT64x" %02x:%02x %-8"PFMT64u"",
+					io->cb_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %c%c%c%c 0x%08"PFMT64x" %02x:%02x %-8"PFMT64u"",
 							(ut64) proc_data.vmareastruct[i], (ut64) proc_data.vmareastruct[i+1],
 							proc_data.vmareastruct[i + 2] & VM_READ ? 'r' : '-',
 							proc_data.vmareastruct[i + 2] & VM_WRITE ? 'w' : '-',

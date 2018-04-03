@@ -67,29 +67,27 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 	ut8 tmp[R_STRING_SCAN_BUFFER_SIZE];
 	ut64 str_start, needle = from;
 	int count = 0, i, rc, runes;
-	// const ut8 *buf = r_buf_buffer (bf->buf);
 	int str_type = R_STRING_TYPE_DETECT;
 
 	if (type == -1) {
 		type = R_STRING_TYPE_DETECT;
 	}
 	if (from >= to) {
+		eprintf ("Invalid range to find strings 0x%llx .. 0x%llx\n", from, to);
 		return -1;
 	}
 	ut8 *buf = calloc (to - from, 1);
 	if (!buf || !min) {
 		return -1;
 	}
-	// bf->rbin->iob.fd_read_at (bf->rbin->iob.io, bf->buf->fd, from, buf, to - from);
 	r_buf_read_at (bf->buf, from, buf, to - from);
 	// may oobread
-	while (needle  + 1 < to) {
+	while (needle < to) {
 		rc = r_utf8_decode (buf + needle - from, to - needle, NULL);
 		if (!rc) {
 			needle++;
 			continue;
 		}
-
 		if (type == R_STRING_TYPE_DETECT) {
 			char *w = (char *)buf + needle + rc - from;
 			if ((to - needle) > 4) {
@@ -955,7 +953,7 @@ R_API void r_bin_file_get_strings_range(RBinFile *bf, RList *list, int min, ut64
 	RBinString *ptr;
 	RListIter *it;
 
-	if (!bf || !bf->buf || !bf->buf->buf) {
+	if (!bf || !bf->buf) {
 		return;
 	}
 	if (!bf->rawstr) {
@@ -975,6 +973,10 @@ R_API void r_bin_file_get_strings_range(RBinFile *bf, RList *list, int min, ut64
 	}
 	if (!to || to > bf->buf->length) {
 		to = r_buf_size (bf->buf);
+	}
+	if (!to) {
+		eprintf ("Empty file with fd %d?\n", bf->buf->fd);
+		return;
 	}
 	if (bf->rawstr != 2) {
 		ut64 size = to - from;

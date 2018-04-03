@@ -282,6 +282,7 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 		res = false;
 		goto error;
 	}
+// TODO: deprecate, the code in the else should be enough
 #if 1
 	if (sz == UT64_MAX && iob->fd_is_dbg (iob->io, fd)) {
 		// attempt a local open and read
