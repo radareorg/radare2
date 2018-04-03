@@ -3987,3 +3987,80 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	// restore register
 	r_reg_arena_pop (core->anal->reg);
 }
+
+typedef struct {
+	dict visited;
+	RList *path;
+	RCore *core;
+	ut64 from;
+	RAnalBlock *fromBB;
+	ut64 to;
+	RAnalBlock *toBB;
+	RAnalBlock *cur;
+} RCoreAnalPaths;
+
+static void printAnalPaths(RCoreAnalPaths *p) {
+	RListIter *iter;
+	RAnalBlock *path;
+	r_cons_printf ("pdb @@= ");
+	r_list_foreach (p->path, iter, path) {
+	//	eprintf ("-> 0x%08"PFMT64x" ", path->addr);
+		r_cons_printf ("0x%08"PFMT64x" ", path->addr);
+	}
+	//eprintf ("-> 0x%08"PFMT64x"\n", p->to);
+	r_cons_printf ("0x%08"PFMT64x"\n", p->to);
+}
+
+static void analPaths (RCoreAnalPaths *p) {
+	RAnalBlock *cur = p->cur;
+	if (!cur) {
+		//eprintf ("eof\n");
+		return;
+	}
+	dict_set (&p->visited, cur->addr, 1, NULL);
+	r_list_append (p->path, cur);
+	if (cur->addr == p->toBB->addr) {
+		printAnalPaths (p);
+	} else {
+		if (cur->jump != UT64_MAX) {
+			if (!dict_get (&p->visited, cur->jump)) {
+				p->cur = r_anal_bb_from_offset (p->core->anal, cur->jump);
+				analPaths (p);
+			}
+		}
+		if (cur->fail != UT64_MAX) {
+			if (!dict_get (&p->visited, cur->fail)) {
+				p->cur = r_anal_bb_from_offset (p->core->anal, cur->fail);
+				analPaths (p);
+			}
+		}
+		// TODO: follow calls in this basic block
+	}
+	p->cur = r_list_pop (p->path);
+	dict_del (&p->visited, cur->addr);
+}
+
+R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to) {
+	RAnalBlock *b0 = r_anal_bb_from_offset (core->anal, from);
+	RAnalBlock *b1 = r_anal_bb_from_offset (core->anal, to);
+	if (!b0) {
+		eprintf ("Cannot find basic block for 0x%08"PFMT64x"\n", from);
+	}
+	if (!b1) {
+		eprintf ("Cannot find basic block for 0x%08"PFMT64x"\n", to);
+	}
+	RCoreAnalPaths rcap = {0};
+	dict_init (&rcap.visited, 32, free);
+	rcap.path = r_list_new ();
+	rcap.core = core;
+	rcap.from = from;
+	rcap.fromBB = b0;
+	rcap.to = to;
+	rcap.toBB = b1;
+	rcap.cur = b0;
+
+	analPaths (&rcap);
+
+        dict_fini (&rcap.visited);
+	r_list_free (rcap.path);
+}

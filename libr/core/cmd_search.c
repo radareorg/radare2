@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2017 - pancake */
+/* radare - LGPL - Copyright 2010-2018 - pancake */
 
 #include <stddef.h>
 
@@ -29,6 +29,8 @@ static const char *help_msg_slash[] = {
 	"/E", " esil-expr", "offset matching given esil expressions %%= here",
 	"/f", "", "search forwards, command modifier, followed by other command",
 	"/F", " file [off] [sz]", "search contents of file with offset and size",
+	// TODO: add subcommands to find paths between functions and filter only function names instead of offsets, etc
+	"/g", " [from]", "find all graph paths from A to current offset (inside current function)",
 	"/h", "[t] [hash] [len]", "find block matching this hash. See /#?",
 	"/i", " foo", "search for string 'foo' ignoring case",
 	"/m", " magicfile", "search for matching magic file (use blocksize)",
@@ -3086,6 +3088,12 @@ reread:
 			} else {
 				search_itv = r_itv_intersect (search_itv, itv);
 			}
+		}
+		break;
+	case 'g': // "/g" graph search
+		{
+			ut64 addr = r_num_math (core->num, input + 1);
+			r_core_anal_paths (core, addr, core->offset);
 		}
 		break;
 	case 'F': // "/F" search file /F [file] ([offset] ([sz]))
