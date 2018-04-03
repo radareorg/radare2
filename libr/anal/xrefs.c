@@ -139,7 +139,7 @@ static void setxref(dict *m, ut64 from, ut64 to, int type) {
 	} else {
 		d = R_NEW0 (dict);
 		if (d) {
-			dict_init (d, 9, dict_free);
+			dict_init (d, 9, NULL);
 			dict_set (m, from, to, d);
 		}
 	}
@@ -149,7 +149,7 @@ static void setxref(dict *m, ut64 from, ut64 to, int type) {
 }
 
 static void delref(dict *m, ut64 from, ut64 to, int type) {
-	dict_del (m, to);
+	dict_del (m, from);
 #if 0
 	dictkv *kv = dict_getr (m, from);
 	if (kv) {
@@ -248,8 +248,6 @@ R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 to) {
 	if (!list) {
 		return NULL;
 	}
-	// listrefs (anal->dict_refs, to, list);
-// XXX, one or the other?
 	listxrefs (anal->dict_xrefs, to, list);
 	// listrefs (anal->dict_xrefs, to, list);
 	if (r_list_empty (list)) {
@@ -264,7 +262,7 @@ R_API RList *r_anal_refs_get (RAnal *anal, ut64 from) {
 	if (!list) {
 		return NULL;
 	}
-	listxrefs (anal->dict_xrefs, from, list);
+	listrefs (anal->dict_refs, from, list);
 	if (r_list_empty (list)) {
 		r_list_free (list);
 		list = NULL;
