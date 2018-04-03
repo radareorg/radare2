@@ -276,7 +276,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->vaddr += baddr;
 	}
 	ptr->size = ptr->vsize = bf->buf->length - ptr->paddr;
-	ptr->srwx = R_BIN_SCN_EXECUTABLE;
+	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 	return ret;
@@ -305,7 +305,7 @@ RBinPlugin r_bin_plugin_smd = {
 	.load_bytes = &load_bytes,
 	.check_bytes = &check_bytes,
 	.entries = &entries,
-	.sections = sections,
+	.sections = &sections,
 	.symbols = &symbols,
 	.info = &info,
 	.minstrlen = 10,
