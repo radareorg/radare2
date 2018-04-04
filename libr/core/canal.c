@@ -4008,7 +4008,7 @@ static void printAnalPaths(RCoreAnalPaths *p) {
 		r_cons_printf ("0x%08"PFMT64x" ", path->addr);
 	}
 	//eprintf ("-> 0x%08"PFMT64x"\n", p->to);
-	r_cons_printf ("0x%08"PFMT64x"\n", p->to);
+	r_cons_printf ("\n");
 }
 
 static void analPaths (RCoreAnalPaths *p) {
