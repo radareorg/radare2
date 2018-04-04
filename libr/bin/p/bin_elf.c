@@ -883,7 +883,7 @@ static void _patch_reloc (ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 
 static bool ht_insert_intu64(SdbHash* ht, int key, ut64 value) {
 	ut64 *mvalue = malloc(sizeof(ut64));
 	*mvalue = value;
-	return ht_insert (ht, sdb_fmt (-1, "%d", key), (void *)value);
+	return ht_insert (ht, sdb_fmt (-1, "%d", key), (void *)mvalue);
 }
 
 static ut64 ht_find_intu64(SdbHash* ht, int key, bool* found) {
