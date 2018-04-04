@@ -3391,6 +3391,9 @@ RList *Elf_(r_bin_elf_get_maps)(ELFOBJ *bin) {
 	ut16 ph, ph_num = bin->ehdr.e_phnum; //Skip PT_NOTE
 	RList *maps = r_list_newf ((RListFree)r_bin_elf_map_free);
 
+	if (!bin->phdr) {
+		return NULL;
+	}
 	for (ph = 0; ph < ph_num; ph++) {
 		Elf_(Phdr) *p = &bin->phdr[ph];
 		if (p->p_type == PT_LOAD) {
