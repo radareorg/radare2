@@ -218,7 +218,7 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 			op->stackptr = (st64) word2;
 			op->val = op->stackptr;
 		}
-		r_strbuf_appendf (&op->esil, "%hd,%s,+,%s,=", word2, F6_RN1 (word1), F6_RN2 (word1));
+		r_strbuf_appendf (&op->esil, "%hd,%s,+,%s,=", (st32) word2, F6_RN1 (word1), F6_RN2 (word1));
 		update_flags (op, -1);
 		break;
 	case V850_SHR_IMM5:
