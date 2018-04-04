@@ -2320,7 +2320,18 @@ static int cond_cs2r2(int cc) {
 	return cc;
 }
 
-static void anop32(RAnal *a, csh handle, RAnalOp *op, cs_insn *insn, bool thumb) {
+static ut64 lookahead(csh handle, const ut64 addr, const ut8 *buf, int len, int distance) {
+	cs_insn *insn = NULL;
+	int n = cs_disasm (handle, buf, len, addr, distance, &insn);
+	if (n < 1) {
+		return UT64_MAX;
+	}
+	ut64 result = insn[n - 1].address;
+	cs_free (insn, n);
+	return result;
+}
+
+static void anop32(RAnal *a, csh handle, RAnalOp *op, cs_insn *insn, bool thumb, const ut8 *buf, int len) {
 	const ut64 addr = op->addr;
 	int i;
 	op->cond = cond_cs2r2 (insn->detail->arm.cc);
@@ -2376,11 +2387,13 @@ jmp $$ + 4 + ( [delta] * 2 )
 		}
 		break;
 	case ARM_INS_IT:
+	{
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = addr + insn->size;
-		op->fail = addr + insn->size + 4; // XXX must be next_insn->size;
-			// XXX what if instruction is 4
+		int distance = r_str_nlen (insn->mnemonic, 5);
+		op->fail = lookahead (handle, addr + insn->size, buf + insn->size, len - insn->size, distance);
 		break;
+	}
 	case ARM_INS_NOP:
 		op->type = R_ANAL_OP_TYPE_NOP;
 		op->cycles = 1;
@@ -2656,7 +2669,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				analop64_esil (a, op, addr, buf, len, &handle, insn);
 			}
 		} else {
-			anop32 (a, handle, op, insn, thumb);
+			anop32 (a, handle, op, insn, thumb, (ut8*)buf, len);
 			if (a->decode) {
 				analop_esil (a, op, addr, buf, len, &handle, insn, thumb);
 			}
