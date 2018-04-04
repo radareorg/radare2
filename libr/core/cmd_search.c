@@ -3160,9 +3160,21 @@ reread:
 		}
 		break;
 	case 'g': // "/g" graph search
-		{
-			ut64 addr = r_num_math (core->num, input + 1);
-			r_core_anal_paths (core, addr, core->offset);
+		if (input[1] == '?') {
+			r_cons_printf ("Usage: /g[g] [fromaddr] @ [toaddr]\n");
+		} else {
+			ut64 addr;
+			if (input[1]) {
+				addr = r_num_math (core->num, input + 2);
+			} else {
+				RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, addr, 0);
+				if (fcn) {
+					addr = fcn->addr;
+				} else {
+					addr = core->offset;
+				}
+			}
+			r_core_anal_paths (core, addr, core->offset, input[1] == 'g');
 		}
 		break;
 	case 'F': // "/F" search file /F [file] ([offset] ([sz]))

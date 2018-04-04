@@ -3997,50 +3997,92 @@ typedef struct {
 	ut64 to;
 	RAnalBlock *toBB;
 	RAnalBlock *cur;
+	bool followCalls;
+	int count;
 } RCoreAnalPaths;
 
-static void printAnalPaths(RCoreAnalPaths *p) {
+static bool printAnalPaths(RCoreAnalPaths *p) {
 	RListIter *iter;
 	RAnalBlock *path;
 	r_cons_printf ("pdb @@= ");
 	r_list_foreach (p->path, iter, path) {
-	//	eprintf ("-> 0x%08"PFMT64x" ", path->addr);
 		r_cons_printf ("0x%08"PFMT64x" ", path->addr);
 	}
-	//eprintf ("-> 0x%08"PFMT64x"\n", p->to);
 	r_cons_printf ("\n");
+	return (p->count < 1 || --p->count > 0);
+}
+
+static void append64(RList *list, ut64 num) {
+	if (num == UT64_MAX) {
+		return;
+	}
+	ut64 *n = R_NEW (ut64);
+	*n = num;
+	r_list_append (list, n);
+}
+
+static RList *analBlockDestinations(RAnalBlock *bb) {
+	RList *list = r_list_newf (free);
+	append64 (list, bb->jump);
+	append64 (list, bb->fail);
+	return list;
+}
+
+static void analPaths (RCoreAnalPaths *p);
+
+static void analPathFollow(RCoreAnalPaths *p, ut64 addr) {
+	if (addr == UT64_MAX) {
+		return;
+	}
+	if (!dict_get (&p->visited, addr)) {
+		p->cur = r_anal_bb_from_offset (p->core->anal, addr);
+		analPaths (p);
+	}
 }
 
 static void analPaths (RCoreAnalPaths *p) {
 	RAnalBlock *cur = p->cur;
 	if (!cur) {
-		//eprintf ("eof\n");
+		// eprintf ("eof\n");
+		return;
+	}
+	/* handle ^C */
+	if (r_cons_is_breaked ()) {
 		return;
 	}
 	dict_set (&p->visited, cur->addr, 1, NULL);
 	r_list_append (p->path, cur);
-	if (cur->addr == p->toBB->addr) {
-		printAnalPaths (p);
+	if (p->toBB && cur->addr == p->toBB->addr) {
+		if (!printAnalPaths (p)) {
+			return;
+		}
 	} else {
-		if (cur->jump != UT64_MAX) {
-			if (!dict_get (&p->visited, cur->jump)) {
-				p->cur = r_anal_bb_from_offset (p->core->anal, cur->jump);
-				analPaths (p);
+		RAnalBlock *c = cur;
+		ut64 j = cur->jump;
+		ut64 f = cur->fail;
+		analPathFollow (p, j);
+		cur = c;
+		analPathFollow (p, f);
+		if (p->followCalls) {
+			int i;
+			for (i = 0; i < cur->op_pos_size; i++) {
+				ut64 addr = cur->addr + cur->op_pos[i];
+				RAnalOp *op = r_core_anal_op (p->core, addr);
+				if (op && op->type == R_ANAL_OP_TYPE_CALL) {
+					cur = c;
+					analPathFollow (p, op->jump);
+				}
+				cur = c;
+				r_anal_op_free (op);
 			}
 		}
-		if (cur->fail != UT64_MAX) {
-			if (!dict_get (&p->visited, cur->fail)) {
-				p->cur = r_anal_bb_from_offset (p->core->anal, cur->fail);
-				analPaths (p);
-			}
-		}
-		// TODO: follow calls in this basic block
 	}
+end:
 	p->cur = r_list_pop (p->path);
 	dict_del (&p->visited, cur->addr);
 }
 
-R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to) {
+R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls) {
 	RAnalBlock *b0 = r_anal_bb_from_offset (core->anal, from);
 	RAnalBlock *b1 = r_anal_bb_from_offset (core->anal, to);
 	if (!b0) {
@@ -4058,6 +4100,8 @@ R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to) {
 	rcap.to = to;
 	rcap.toBB = b1;
 	rcap.cur = b0;
+	rcap.count = r_config_get_i (core->config, "search.maxhits");;
+	rcap.followCalls = followCalls;
 
 	analPaths (&rcap);
 
