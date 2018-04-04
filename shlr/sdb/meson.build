@@ -14,6 +14,7 @@ files = [
   'src/buffer.c',
   'src/cdb.c',
   'src/cdb_make.c',
+  'src/dict.c',
   'src/disk.c',
   'src/fmt.c',
   'src/ht.c',
