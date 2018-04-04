@@ -892,7 +892,6 @@ static bool ht_insert_intu64(SdbHash* ht, int key, ut64 value) {
 
 static ut64 ht_find_intu64(SdbHash* ht, int key, bool* found) {
 	ut64 *mvalue = (ut64 *)ht_find (ht, sdb_fmt (-1, "%d", key), found);
-	assert (mvalue != NULL);
 	return *mvalue;
 }
 
