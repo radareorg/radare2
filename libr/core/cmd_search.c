@@ -1237,6 +1237,13 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	RIOMap *map;
 	RAsmOp asmop;
 
+	Sdb *gadgetSdb;
+	if (!(gadgetSdb = sdb_ns (core->sdb, "gadget_sdb", false))) {
+		gadgetSdb = sdb_ns (core->sdb, "gadget_sdb", true);
+	} else {
+		gadgetSdb = NULL;
+	}
+
 	if (max_count == 0) {
 		max_count = -1;
 	}
@@ -1305,12 +1312,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 		map = R_NEW0 (RIOMap);
 		if (!map) {
 			eprintf ("Cannot allocate map\n");
-			free (gregexp);
-			r_list_free (rx_list);
-			r_list_free (end_list);
-			r_list_free (badstart);
-			r_list_free (list);
-			return false;
+			goto bad;
 		}
 		map->fd = core->io->desc->fd;
 		map->itv.addr = from;
@@ -1337,12 +1339,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 		delta = to - from;
 		buf = calloc (1, delta);
 		if (!buf) {
-			free (gregexp);
-			r_list_free (rx_list);
-			r_list_free (end_list);
-			r_list_free (badstart);
-			r_list_free (list);
-			return -1;
+			goto bad;
 		}
 		(void) r_io_read_at (core->io, from, buf, delta);
 
@@ -1452,6 +1449,28 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 					if (align && (0 != ((from + i) % align))) {
 						continue;
 					}
+
+					if (gadgetSdb) {
+						RListIter *iter;
+
+						RCoreAsmHit *hit = (RCoreAsmHit *) hitlist->head->data;
+						char *headAddr = r_str_newf ("%"PFMT64x, hit->addr);
+						if (!headAddr) {
+							goto bad;
+						}
+
+						r_list_foreach (hitlist, iter, hit) {
+							char *addr = r_str_newf ("%"PFMT64x"(%"PFMT32d")", hit->addr, hit->len);
+							if (!addr) {
+								free (headAddr);
+								goto bad;
+							}
+							sdb_concat (gadgetSdb, headAddr, addr, 0);
+							free (addr);
+						}
+						free (headAddr);
+					}
+
 					if (json) {
 						mode = 'j';
 					}
@@ -1493,6 +1512,14 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	free (gregexp);
 
 	return true;
+
+bad:
+	r_list_free (list);
+	r_list_free (rx_list);
+	r_list_free (end_list);
+	r_list_free (badstart);
+	free (gregexp);
+	return false;
 }
 
 static int esil_addrinfo(RAnalEsil *esil) {
@@ -2608,7 +2635,49 @@ reread:
 				rop_kuery (core, input + 2);
 			}
 		} else {
-			r_core_search_rop (core, search_itv, 0, input + 1, 0);
+			Sdb *gadgetSdb = sdb_ns (core->sdb, "gadget_sdb", false);
+
+			if (!gadgetSdb) {
+				r_core_search_rop (core, search_itv, 0, input + 1, 0);
+			} else {
+				SdbKv *kv;
+				SdbListIter *sdb_iter;
+				SdbList *sdb_list = sdb_foreach_list (gadgetSdb, true);
+
+				ls_foreach (sdb_list, sdb_iter, kv) {
+					RList *hitlist = r_core_asm_hit_list_new ();
+					if (!hitlist) {
+						goto beach;
+					}
+
+					char *s = kv->value;
+					ut64 addr;
+					int opsz;
+					int mode = 0;
+					bool json_first = true;
+
+					// Options, like JSON, linear, ...
+					if (input + 1) {
+						mode = *(input + 1);
+					}
+
+					do {
+						RCoreAsmHit *hit = r_core_asm_hit_new ();
+						if (!hit) {
+							r_list_free (hitlist);
+							goto beach;
+						}
+						sscanf (s, "%"PFMT64x"(%"PFMT32d")", &addr, &opsz);
+						hit->addr = addr;
+						hit->len = opsz;
+						r_list_append (hitlist, hit);
+					} while (*(s = strchr (s, ')') + 1) != '\0');
+
+					print_rop (core, hitlist, mode, &json_first);
+					r_list_free (hitlist);
+				}
+			}
+
 		}
 		goto beach;
 	case 'r': // "/r" and "/re"
