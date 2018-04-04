@@ -115,7 +115,7 @@ typedef struct {
 	bool show_emu;
 	bool pre_emu;
 	bool show_emu_str;
-	bool show_emu_stroff;
+	bool show_emu_str_off;
 	bool show_emu_stack;
 	bool show_emu_write;
 	bool show_section;
@@ -609,7 +609,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_symbols_col = r_config_get_i (core->config, "asm.symbol.col");
 	ds->show_emu = r_config_get_i (core->config, "asm.emu");
 	ds->show_emu_str = r_config_get_i (core->config, "asm.emu.str");
-	ds->show_emu_stroff = r_config_get_i (core->config, "asm.emu.stroff");
+	ds->show_emu_str_off = r_config_get_i (core->config, "asm.emu.str.off");
 	ds->show_emu_write = r_config_get_i (core->config, "asm.emu.write");
 	ds->show_emu_stack = r_config_get_i (core->config, "asm.emu.stack");
 	ds->stackFd = -1;
@@ -3662,7 +3662,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	}
 	if (ds->show_emu_str) {
 		if (msg && *msg) {
-			if (ds->show_emu_stroff && *msg == '"') {
+			if (ds->show_emu_str_off && *msg == '"') {
 				ds_comment_esil (ds, true, false, "; 0x%"PFMT64x" %s", *val, msg);
 			} else {
 				ds_comment_esil (ds, true, false, "; %s", msg);
