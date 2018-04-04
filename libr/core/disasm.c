@@ -116,6 +116,7 @@ typedef struct {
 	bool pre_emu;
 	bool show_emu_str;
 	bool show_emu_stroff;
+	bool show_emu_strinvert;
 	bool show_emu_stack;
 	bool show_emu_write;
 	bool show_section;
@@ -610,6 +611,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_emu = r_config_get_i (core->config, "asm.emu");
 	ds->show_emu_str = r_config_get_i (core->config, "asm.emu.str");
 	ds->show_emu_stroff = r_config_get_i (core->config, "asm.emu.stroff");
+	ds->show_emu_strinvert = r_config_get_i (core->config, "asm.emu.strinvert");
 	ds->show_emu_write = r_config_get_i (core->config, "asm.emu.write");
 	ds->show_emu_stack = r_config_get_i (core->config, "asm.emu.stack");
 	ds->stackFd = -1;
@@ -3197,8 +3199,10 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refadd
 	}
 	char *escstr = ds_esc_str (ds, str, len, &prefix);
 	if (escstr) {
+		bool invert = ds->show_color && !ds->show_emu_strinvert;
 		ds_begin_comment (ds);
-		ds_comment (ds, true, "; %s\"%s\"", prefix, escstr);
+		ds_comment (ds, true, "; %s%s\"%s\"%s", invert ? Color_INVERT : "", prefix, escstr,
+		            invert ? Color_INVERT_RESET : "");
 		ds->printed_str_addr = refaddr;
 		free (escstr);
 	}
@@ -3633,8 +3637,10 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 				const char *escquote = ds->use_json ? "\\\"" : "\"";
 				if (escstr) {
 					if (ds->show_color) {
-						msg = r_str_newf ("%s%s"Color_INVERT"%s%s%s"Color_INVERT_RESET,
-										  prefix, type? type: "", escquote, escstr, escquote);
+						bool invert = ds->show_emu_strinvert;
+						msg = r_str_newf ("%s%s%s%s%s%s%s",
+						                  prefix, type ? type : "", invert ? Color_INVERT : "",
+						                  escquote, escstr, escquote, invert ? Color_INVERT_RESET : "");
 					} else {
 						msg = r_str_newf ("%s%s%s%s%s", prefix, type? type: "", escquote, escstr, escquote);
 					}
