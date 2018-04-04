@@ -881,11 +881,23 @@ static void _patch_reloc (ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 
 }
 
 static bool ht_insert_intu64(SdbHash* ht, int key, ut64 value) {
-	return ht_insert (ht, sdb_fmt (-1, "%d", key), (void *)value);
+	ut64 *mvalue = malloc (sizeof (ut64));
+	if (!mvalue) {
+		return false;
+	}
+
+	*mvalue = value;
+	return ht_insert (ht, sdb_fmt (-1, "%d", key), (void *)mvalue);
 }
 
 static ut64 ht_find_intu64(SdbHash* ht, int key, bool* found) {
-	return (ut64)ht_find (ht, sdb_fmt (-1, "%d", key), found);
+	ut64 *mvalue = (ut64 *)ht_find (ht, sdb_fmt (-1, "%d", key), found);
+	return *mvalue;
+}
+
+static void relocs_by_sym_free(HtKv *kv) {
+	free (kv->key);
+	free (kv->value);
 }
 
 static RList* patch_relocs(RBin *b) {
@@ -947,7 +959,7 @@ static RList* patch_relocs(RBin *b) {
 		free (relcs);
 		return NULL;
 	}
-	if (!(relocs_by_sym = ht_new (NULL, NULL, NULL))) {
+	if (!(relocs_by_sym = ht_new (NULL, relocs_by_sym_free, NULL))) {
 		r_list_free (ret);
 		free (relcs);
 		return NULL;
