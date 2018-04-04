@@ -112,6 +112,7 @@ typedef struct {
 	bool show_offset;
 	bool show_offdec; // dupe for r_print->flags
 	bool show_bbline;
+	bool emu_reached_pc;
 	bool show_emu;
 	bool pre_emu;
 	bool show_emu_str;
@@ -607,6 +608,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_section_col = r_config_get_i (core->config, "asm.section.col");
 	ds->show_symbols = r_config_get_i (core->config, "asm.symbol");
 	ds->show_symbols_col = r_config_get_i (core->config, "asm.symbol.col");
+	ds->emu_reached_pc = false;
 	ds->show_emu = r_config_get_i (core->config, "asm.emu");
 	ds->show_emu_str = r_config_get_i (core->config, "asm.emu.str");
 	ds->show_emu_stroff = r_config_get_i (core->config, "asm.emu.stroff");
@@ -3847,7 +3849,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	const char *pc;
 	int (*hook_mem_write)(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) = NULL;
 	int i, nargs;
-	ut64 at = p2v (ds, ds->at);
+	ut64 pc_val, at = p2v (ds, ds->at);
 	RConfigHold *hc = r_config_hold_new (core->config);
 	/* apply hint */	
 	RAnalHint *hint = r_anal_hint_get (core->anal, at);
@@ -3871,6 +3873,13 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	}
 	esil = core->anal->esil;
 	pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	pc_val = r_reg_getv (core->anal->reg, pc);
+	if (at == pc_val) {
+		ds->emu_reached_pc = true;
+	}
+	if (!ds->emu_reached_pc) {
+		goto beach;
+	}
 	r_reg_setv (core->anal->reg, pc, at + ds->analop.size);
 	esil->cb.user = ds;
 	esil->cb.hook_reg_write = myregwrite;
