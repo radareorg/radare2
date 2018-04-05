@@ -1,6 +1,5 @@
 /* radare - LGPL - Copyright 2007-2017 - pancake */
 
-#include <assert.h>
 #include <r_flag.h>
 #include <r_util.h>
 #include <r_cons.h>
