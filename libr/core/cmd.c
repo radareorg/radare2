@@ -3215,6 +3215,9 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			{
 				int flagspace = core->flags->space_idx;
 				RList *match_flag_items = r_list_newf ((RListFree)r_flag_item_free);
+				if (!match_flag_items) {
+					break;
+				}
 
 				/* duplicate flags that match word, to be sure
 				   the command is going to be executed on flags
@@ -3228,6 +3231,9 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 
 					if (r_str_glob (flag->name, word)) {
 						RFlagItem *cloned_item = r_flag_item_clone (flag);
+						if (!cloned_item) {
+							break;
+						}
 						r_list_append (match_flag_items, cloned_item);
 					}
 				}

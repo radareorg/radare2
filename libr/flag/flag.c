@@ -157,9 +157,15 @@ R_API RFlag * r_flag_new() {
 }
 
 R_API RFlagItem *r_flag_item_clone(RFlagItem *item) {
-	assert (item != NULL);
+	if (!item) {
+		return NULL;
+	}
 
 	RFlagItem *n = R_NEW0 (RFlagItem);
+	if (!n) {
+		return NULL;
+	}
+
 	n->color = item->color ? strdup (item->color) : NULL;
 	n->comment = item->comment ? strdup (item->comment) : NULL;
 	n->alias = item->alias ? strdup (item->alias) : NULL;

@@ -651,7 +651,7 @@ static void cmd_pCx(RCore *core, const char *input, const char *xcmd) {
 	r_cons_push ();
 	RConsCanvas *c = r_cons_canvas_new (w, rows);
 	if (!c) {
-		eprintf("Couldn't allocate a canvas with %d rows\n", rows);
+		eprintf ("Couldn't allocate a canvas with %d rows\n", rows);
 		goto err;
 	}
 
