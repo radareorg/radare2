@@ -118,6 +118,7 @@ sdb_files = [
   'sdb/src/buffer.c',
   'sdb/src/cdb.c',
   'sdb/src/cdb_make.c',
+  'sdb/src/dict.c',
   'sdb/src/disk.c',
   'sdb/src/fmt.c',
   'sdb/src/ht.c',

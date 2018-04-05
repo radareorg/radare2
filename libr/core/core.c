@@ -719,7 +719,7 @@ static const char *radare_argv[] = {
 	"q", "q!",
 	"f", "fl", "fr", "f-", "f*", "fs", "fS", "fr", "fo", "f?",
 	"m", "m*", "ml", "m-", "my", "mg", "md", "mp", "m?",
-	"o", "o+", "oc", "on", "op", "o-", "x", "wf", "wF", "wta", "wtf", "wp",
+	"o", "o+", "oc", "on", "op", "o-", "x", "wf", "wF", "wt", "wta", "wtf", "wp",
 	"t", "to", "t-", "tf", "td", "td-", "tb", "tn", "te", "tl", "tk", "ts", "tu",
 	"(", "(*", "(-", "()", ".", ".!", ".(", "./",
 	"r", "r+", "r-",
@@ -827,8 +827,12 @@ out:
 static void autocompleteFilename(RLine *line, char **extra_paths, int narg) {
 	char *args = NULL, *input = NULL;
 	int n = 0, i = 0;
-
-	args = r_str_new (line->buffer.data);
+	char *pipe = strchr (line->buffer.data, '>');
+	if (pipe) {
+		args = r_str_new (pipe + 1);
+	} else {
+		args = r_str_new (line->buffer.data);
+	}
 	if (!args) {
 		goto out;
 	}
@@ -872,8 +876,11 @@ static int autocomplete(RLine *line) {
 	RFlagItem *flag;
 	if (core) {
 		r_core_free_autocomplete (core);
+		char *pipe = strchr (line->buffer.data, '>');
 		char *ptr = strchr (line->buffer.data, '@');
-		if (ptr && strchr (ptr + 1, ' ') && line->buffer.data+line->buffer.index >= ptr) {
+		if (pipe && strchr (pipe + 1, ' ') && line->buffer.data+line->buffer.index >= pipe) {
+			autocompleteFilename (line, NULL, 1);
+		} else if (ptr && strchr (ptr + 1, ' ') && line->buffer.data+line->buffer.index >= ptr) {
 			int sdelta, n, i = 0;
 			ptr = (char *)r_str_trim_ro (ptr+1);
 			n = strlen (ptr);//(line->buffer.data+sdelta);
