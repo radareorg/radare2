@@ -3214,29 +3214,49 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			str[i] = ch;
 			{
 				int flagspace = core->flags->space_idx;
-				/* for all flags in current flagspace */
-				// XXX: dont ask why, but this only works with _prev..
+				RList *match_flag_items = r_list_newf ((RListFree)r_flag_item_free);
+				if (!match_flag_items) {
+					break;
+				}
+
+				/* duplicate flags that match word, to be sure
+				   the command is going to be executed on flags
+				   values at the moment the command is called
+				   (without side effects) */
 				r_list_foreach (core->flags->flags, iter, flag) {
-					if (r_cons_is_breaked ()) {
-						break;
-					}
 					/* filter per flag spaces */
 					if ((flagspace != -1) && (flag->space != flagspace)) {
 						continue;
 					}
+
 					if (r_str_glob (flag->name, word)) {
-						char *buf = NULL;
-						const char *tmp = NULL;
-						r_core_seek (core, flag->offset, 1);
-						r_cons_push ();
-						r_core_cmd (core, cmd, 0);
-						tmp = r_cons_get_buffer ();
-						buf = tmp? strdup (tmp): NULL;
-						r_cons_pop ();
-						r_cons_strcat (buf);
-						free (buf);
+						RFlagItem *cloned_item = r_flag_item_clone (flag);
+						if (!cloned_item) {
+							break;
+						}
+						r_list_append (match_flag_items, cloned_item);
 					}
 				}
+
+				/* for all flags that match */
+				r_list_foreach (match_flag_items, iter, flag) {
+					if (r_cons_is_breaked ()) {
+						break;
+					}
+
+					char *buf = NULL;
+					const char *tmp = NULL;
+					r_core_seek (core, flag->offset, 1);
+					r_cons_push ();
+					r_core_cmd (core, cmd, 0);
+					tmp = r_cons_get_buffer ();
+					buf = tmp? strdup (tmp): NULL;
+					r_cons_pop ();
+					r_cons_strcat (buf);
+					free (buf);
+				}
+
+				r_list_free (match_flag_items);
 				core->flags->space_idx = flagspace;
 				core->rcmd->macro.counter++ ;
 				free (word);

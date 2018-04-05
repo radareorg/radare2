@@ -650,6 +650,11 @@ static void cmd_pCx(RCore *core, const char *input, const char *xcmd) {
 	}
 	r_cons_push ();
 	RConsCanvas *c = r_cons_canvas_new (w, rows);
+	if (!c) {
+		eprintf ("Couldn't allocate a canvas with %d rows\n", rows);
+		goto err;
+	}
+
 	ut64 tsek = core->offset;
 	c->color = r_config_get_i (core->config, "scr.color");
 	int bsize = hex_cols * rows;
@@ -666,9 +671,10 @@ static void cmd_pCx(RCore *core, const char *input, const char *xcmd) {
 		tsek += bsize - 32;
 	}
 
-	r_cons_pop ();
 	r_cons_canvas_print (c);
 	r_cons_canvas_free (c);
+ err:
+	r_cons_pop ();
 	r_config_set_i (core->config, "hex.cols", hex_cols);
 }
 
