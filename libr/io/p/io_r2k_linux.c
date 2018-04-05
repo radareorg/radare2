@@ -563,9 +563,10 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			ioctl_n = IOCTL_WRITE_PHYSICAL_ADDR;
 			break;
 		default:
-			print_help(io, "w", 0);
+			print_help (io, "w", 0);
 			goto end;
 		}
+		// coverity says this cant happen, but it doesnt hurts to add a check
 		if (!buf) {
 			break;
 		}
@@ -720,7 +721,7 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			buffsize = (ut64) (sizeof (proc_data.vmareastruct) / sizeof (proc_data.vmareastruct[0]));
 			if (fflag) {
 				int j = 0;
-				for (i = 0; i < buffsize;) {
+				for (i = 0; i + 1 < buffsize;) {
 					nextstart = 0;
 					if (i + 7 < buffsize) {
 						nextstart = i + 7 + (strlen ((const char *)&(proc_data.vmareastruct[i + 7])) - 1 + sizeof (size_t)) / sizeof (size_t);
