@@ -169,6 +169,7 @@ static const ut32 T_BIT = 0x8000;
 static const ut32 BYTE_BIT = 0x10000;
 static const ut32 HALFWORD_BIT = 0x20000;
 static const ut32 DOUBLEWORD_BIT = 0x40000;
+static const ut32 W_BIT = 0x80000;
 
 static char *parse_hints(char *input) {
 	if (!strcmpnull (input, "unst")) {
@@ -250,6 +251,10 @@ static ut32 opmask(char *input, char *opcode) {
 		}
 		if (*input == 't') {
 			res |= T_BIT;
+			input++;
+		}
+		if (*input == 'w') {
+			res |= W_BIT;
 			input++;
 		}
 		if (*input == 's') {
@@ -435,6 +440,15 @@ static ut32 getthzeroimmed12(ut32 number) {
 	res |= (number & 0x800) << 7;
 	res |= (number & 0x700) >> 4;
 	res |= (number & 0x0ff) << 8;
+	return res;
+}
+
+static ut32 getthzeroimmed16(ut32 number) {
+	ut32 res = 0;
+	res |= (number & 0xf000) << 12;
+	res |= (number & 0x0800) << 7;
+	res |= (number & 0x0700) >> 4;
+	res |= (number & 0x00ff) << 8;
 	return res;
 }
 
@@ -707,6 +721,44 @@ static int getcoprocreg(const char *str) {
 	return -1;
 }
 
+static ut8 interpret_msrbank (char *str, ut8 *spsr) {
+	const char *fields[] = {"c", "x", "s", "f", 0};
+	int res = 0;
+	int i, j;
+	if (r_str_startswith (str, "spsr_")) {
+		*spsr = 1;
+	} else {
+		*spsr = 0;
+	}		
+	
+	if (r_str_startswith (str, "apsr_")) {
+		if (!(strcmp (str+5, "g"))) {
+			return 0x4;
+		}
+		if (!(strcmp (str+5, "nzcvq"))) {
+			return 0x8;
+		}
+		if (!(strcmp (str+5, "nzcvqg"))) {
+			return 0xc;
+		}
+	}
+	if (r_str_startswith (str, "cpsr_") || r_str_startswith (str, "spsr_")) {
+		for (i = 0; str+5+i; i++) {
+			for (j = 0; fields[j]; j++) {
+				if (!(strcmp(str+5+i, fields[j]))) {
+					break;
+				}
+			}
+			if (!(fields[j])) {
+				return 0;
+			}
+			res |= 1 << j;
+		}
+		return res;
+	}
+	return 0;
+}
+		
 static int thumb_getreg(const char *str) {
 	if (!str)
 		return -1;
@@ -1094,10 +1146,12 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		ao->o |= getlist(ao->opstr) << 8;
 		return 2;
 	} else
+#if 0
 	if (!strcmpnull (ao->op, "nop")) {
 		ao->o = 0xbf;
 		return 2;
 	} else
+#endif
 	if (!strcmpnull (ao->op, "yield")) {
 		ao->o = 0x10bf;
 		return 2;
@@ -1124,6 +1178,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		ao->o |= (0xff & getnum (ao->a[0])) << 8;
 		return 2;
 	} else
+#if 0
 	if (!strcmpnull (ao->op, "mov")) {
 		int reg = getreg (ao->a[1]);
 		if (reg != -1) {
@@ -1175,6 +1230,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		}
 		return 8;
 	} else
+#endif
 	if (!strncmp (ao->op, "str", 3)) {
 		getrange (ao->a[1]);
 		getrange (ao->a[2]);
@@ -1246,6 +1302,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		ao->o |= getreg (ao->a[1]) << 11;
 		return 2;
 	} else
+#if 0
 	if (!strcmpnull (ao->op, "mul") || !strcmpnull (ao->op, "mul.w")) {
 		int reg0 = getreg (ao->a[0]);
 		int reg1 = getreg (ao->a[1]);
@@ -1267,6 +1324,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			return 4;
 		}
 	} else
+#endif
 	if (!strcmpnull (ao->op, "add")) {
 		// XXX: signed unsigned ??
 		// add r, r = 44[7bits,7bits]
@@ -1393,7 +1451,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		}
 	} else
 	if ((m = opmask (ao->op, "adr"))) {
-		ut64 argt = thumb_selector(ao->a);
+		ut64 argt = thumb_selector (ao->a);
 		switch (argt) {
 		case THUMB_REG_CONST: {
 			ut8 reg = getreg (ao->a[0]);
@@ -1430,7 +1488,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		}
 	} else
 	if ((m = opmask (ao->op, "and"))) {
-		ut64 argt = thumb_selector(ao->a);
+		ut64 argt = thumb_selector (ao->a);
 		switch (argt) {
 		case THUMB_REG_REG: {
 			ut8 reg1 = getreg (ao->a[0]);
@@ -3054,7 +3112,651 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else		
+	} else
+	if ((m = opmask (ao->op, "mcr"))) {
+		ut64 argt = thumb_selector (ao->a);
+		switch (argt) {
+		case THUMB_COPROC_CONST_REG_COREG_COREG: {
+			ao->a[5] = "0";
+		        }
+			// intentional fallthrough
+		case THUMB_COPROC_CONST_REG_COREG_COREG_CONST: {
+			ut32 coproc = getcoproc (ao->a[0]);
+			ut32 opc1 = getnum (ao->a[1]);
+			ut32 reg1 = getreg (ao->a[2]);
+			ut32 coreg1 = getcoprocreg (ao->a[3]);
+			ut32 coreg2 = getcoprocreg (ao->a[4]);
+			ut32 opc2 = getnum (ao->a[5]);
+
+			if (m & TWO_BIT) {
+				ao->o |= 1 << 20;
+			}
+
+			if ((coproc > 15) || (opc1 > 7) || (reg1 > 15) || (coreg1 > 15) || (coreg2 > 15) || (opc2 > 7)) {
+				return -1;
+			}
+
+			ao->o = 0x00ee1000;
+			ao->o |= coproc;
+			ao->o |= opc1 << 29;
+			ao->o |= reg1 << 4;
+			ao->o |= coreg1 << 24;
+			ao->o |= coreg2 << 8;
+			ao->o |= opc2 << 13;
+			return 4;
+		        }
+			break;
+		default:
+			return -1;
+		}
+	} else
+	if ((m = opmask (ao->op, "mcrr"))) {
+		ut64 argt = thumb_selector (ao->a);
+		switch (argt) {
+		case THUMB_COPROC_CONST_REG_REG_COREG: {
+			ut32 coproc = getcoproc (ao->a[0]);
+			ut32 opc = getnum (ao->a[1]);
+			ut32 reg1 = getreg (ao->a[2]);
+			ut32 reg2 = getreg (ao->a[3]);
+			ut32 coreg = getcoprocreg (ao->a[4]);
+
+			if (m & TWO_BIT) {
+				ao->o |= 1 << 20;
+			}
+
+			if ((coproc > 15) || (opc > 15) || (reg1 > 15) || (reg2 > 15) || (coreg > 15)) {
+				return -1;
+			}
+
+			ao->o = 0x40ec0000;
+			ao->o |= coproc;
+			ao->o |= opc << 12;
+			ao->o |= reg1 << 4;
+			ao->o |= reg2 << 24;
+			ao->o |= coreg << 8;
+			return 4;
+		        }
+			break;
+		default:
+			return -1;
+		}
+	} else
+	if ((m = opmask (ao->op, "mla"))) {
+		ut64 argt = thumb_selector (ao->a);
+		switch (argt) {
+		case THUMB_REG_REG_REG_REG: {
+			ut32 reg1 = getreg (ao->a[0]);
+			ut32 reg2 = getreg (ao->a[1]);
+			ut32 reg3 = getreg (ao->a[2]);
+			ut32 reg4 = getreg (ao->a[3]);
+
+			if ((reg1 > 15) || (reg2 > 15) || (reg3 > 15) || (reg4 > 15)) {
+				return -1;
+			}
+
+			ao->o = 0x00fb0000;
+
+			ao->o |= reg1;
+			ao->o |= reg2 << 24;
+			ao->o |= reg3 << 8;
+			ao->o |= reg4 << 4;
+			return 4;
+		        }
+			break;
+		default:
+			return -1;
+		}
+	} else
+	if ((m = opmask (ao->op, "mls"))) {
+		ut64 argt = thumb_selector (ao->a);
+		switch (argt) {
+		case THUMB_REG_REG_REG_REG: {
+			ut32 reg1 = getreg (ao->a[0]);
+			ut32 reg2 = getreg (ao->a[1]);
+			ut32 reg3 = getreg (ao->a[2]);
+			ut32 reg4 = getreg (ao->a[3]);
+
+			if ((reg1 > 15) || (reg2 > 15) || (reg3 > 15) || (reg4 > 15)) {
+				return -1;
+			}
+
+			ao->o = 0x00fb1000;
+
+			ao->o |= reg1;
+			ao->o |= reg2 << 24;
+			ao->o |= reg3 << 8;
+			ao->o |= reg4 << 4;
+			return 4;
+		        }
+			break;
+		default:
+			return -1;
+		}
+	} else
+	if ((m = opmask (ao->op, "mov"))) {
+		ut64 argt = thumb_selector (ao->a);
+		switch (argt) {
+		case THUMB_REG_CONST: {
+			ut32 reg1 = getreg (ao->a[0]);
+			err = false;
+			ut32 num = getthimmed12 (ao->a[1]);
+
+			if (reg1 > 15) {
+				return -1;
+			}
+			
+			if ((m & W_BIT) || (m & T_BIT)) {
+				ut32 wnum = getnum (ao->a[1]);
+				if (wnum > 65535) {
+					return -1;
+				}
+				ao->o = 0x40f20000;
+				if (m & T_BIT) {
+					ao->o |= 1 << 31;
+				}
+				ao->o |= reg1;
+				ao->o |= getthzeroimmed16 (wnum);
+				return 4;
+			}
+			
+			if (err) {
+				return -1;
+			}
+			
+			if ((num < 256) && (reg1 < 8)) {
+				ao->o = 0x0020;
+				ao->o |= reg1;
+				ao->o |= num;
+				return 2;
+			}
+				
+			ao->o = 0x4ff00000;
+			ao->o |= reg1;
+			ao->o |= num;
+			if (m & S_BIT) {
+				ao->o |= 1 << 28;
+			}
+			return 4;
+		        }
+			break;
+		case THUMB_REG_REG: {
+			ut32 reg1 = getreg (ao->a[0]);
+			ut32 reg2 = getreg (ao->a[1]);
+			
+			if ((reg1 > 15) || (reg2 > 15)) {
+				return -1;
+			}
+
+			if ((!(m & S_BIT)) && (!(m & DOTW_BIT))) {
+				ao->o = 0x0046;
+				ao->o |= (reg1 & 0x7) << 8;
+				ao->o |= (reg1 & 0x8) << 12;
+				ao->o |= reg2 << 11;
+				return 2;
+			}
+			
+			if ((reg1 < 8) && (reg2 < 8)) {
+				ao->o = 0;
+				ao->o |= reg1 << 8;
+				ao->o |= reg2 << 11;
+				return 2;
+			}
+			
+			ao->o = 0x4fea0000;
+			ao->o |= reg1;
+			ao->o |= reg2 << 8;
+			if (m & S_BIT) {
+				ao->o |= 1 << 28;
+			}
+			return 4;
+		        }
+			break;
+		default:
+			return -1;
+		}
+	} else 
+	if ((m = opmask (ao->op, "mrc"))) {
+		ut64 argt = thumb_selector (ao->a);
+		switch (argt) {
+		case THUMB_COPROC_CONST_REG_COREG_COREG: {
+			ao->a[5] = "0";
+		        }
+			// intentional fallthrough
+		case THUMB_COPROC_CONST_REG_COREG_COREG_CONST: {
+			ut32 coproc = getcoproc (ao->a[0]);
+			ut32 opc1 = getnum (ao->a[1]);
+			ut32 reg1 = getreg (ao->a[2]);
+			ut32 coreg1 = getcoprocreg (ao->a[3]);
+			ut32 coreg2 = getcoprocreg (ao->a[4]);
+			ut32 opc2 = getnum (ao->a[5]);
+
+			if (m & TWO_BIT) {
+				ao->o |= 1 << 20;
+			}
+
+			if ((coproc > 15) || (opc1 > 7) || (reg1 > 15) || (coreg1 > 15) || (coreg2 > 15) || (opc2 > 7)) {
+				return -1;
+			}
+
+			ao->o = 0x10ee1000;
+			ao->o |= coproc;
+			ao->o |= opc1 << 29;
+			ao->o |= reg1 << 4;
+			ao->o |= coreg1 << 24;
+			ao->o |= coreg2 << 8;
+			ao->o |= opc2 << 13;
+			return 4;
+		        }
+			break;
+		default:
+			return -1;
+		}
+	} else
+	if ((m = opmask (ao->op, "mrrc"))) {
+		ut64 argt = thumb_selector (ao->a);
+		switch (argt) {
+		case THUMB_COPROC_CONST_REG_REG_COREG: {
+			ut32 coproc = getcoproc (ao->a[0]);
+			ut32 opc = getnum (ao->a[1]);
+			ut32 reg1 = getreg (ao->a[2]);
+			ut32 reg2 = getreg (ao->a[3]);
+			ut32 coreg = getcoprocreg (ao->a[4]);
+
+			if (m & TWO_BIT) {
+				ao->o |= 1 << 20;
+			}
+
+			if ((coproc > 15) || (opc > 15) || (reg1 > 15) || (reg2 > 15) || (coreg > 15)) {
+				return -1;
+			}
+
+			ao->o = 0x50ec0000;
+			ao->o |= coproc;
+			ao->o |= opc << 12;
+			ao->o |= reg1 << 4;
+			ao->o |= reg2 << 24;
+			ao->o |= coreg << 8;
+			return 4;
+		        }
+			break;
+		default:
+			return -1;
+		}
+	} else
+	if ((m = opmask (ao->op, "mrs"))) {
+		ut64 argt = thumb_selector (ao->a);
+		switch (argt) {
+		case THUMB_REG_OTHER: {
+			ut32 reg1 = getreg (ao->a[0]);
+			r_str_case (ao->a[1], false);
+
+			if (reg1 > 15) {
+				return -1;
+			}
+
+			if ((!strcmp(ao->a[1], "cpsr")) || (!strcmp(ao->a[1], "apsr"))) {
+				ao->o = 0xeff30080;
+				ao->o |= reg1;
+				return 4;
+			}
+
+			if (!strcmp(ao->a[1], "spsr")) {
+				ao->o = 0xfff30080;
+				ao->o |= reg1;
+				return 4;
+			}
+			
+			return -1;
+		        }
+			break;
+		default:
+			return -1;
+		}
+	} else 
+	if ((m = opmask (ao->op, "msr"))) {
+		ut64 argt = thumb_selector (ao->a);
+		switch (argt) {
+		case THUMB_REG_OTHER: {
+			ut32 reg1 = getreg (ao->a[0]);
+			r_str_case (ao->a[1], false);
+			ut8 spsr = 0;
+			ut8 bank = interpret_msrbank (ao->a[1], &spsr);
+
+			if ((bank == 0) || (reg1 > 15)) {
+				return -1;
+			}
+			
+			ao->o = 0x80f30080;
+			ao->o |= reg1 << 24;
+			ao->o |= bank;
+			if (spsr != 0) {
+				ao->o |= 1 << 28;
+			}
+			return 4;
+		        }
+			break;
+		default:
+			return -1;
+		}
+	} else
+	if ((m = opmask (ao->op, "mul"))) {
+		ut64 argt = thumb_selector (ao->a);
+		switch (argt) {
+		case THUMB_REG_REG: {
+			ao->a[2] = ao->a[1];
+			ao->a[1] = ao->a[0];
+		        }
+			// intentional fallthrough
+		case THUMB_REG_REG_REG: {
+			ut8 reg1 = getreg (ao->a[0]);
+			ut8 reg2 = getreg (ao->a[1]);
+			ut8 reg3 = getreg (ao->a[2]);
+
+			if ((reg1 > 15) || (reg2 > 15) || (reg3 > 15)) {
+				return -1;
+			}
+			
+			if (!(m & DOTW_BIT) && (reg1 < 8) && (reg2 < 8) && (reg1 == reg3)) {
+				ao->o = 0x4043;
+				ao->o |= reg1 << 8;
+				ao->o |= reg2 << 11;
+				return 2;
+			}
+
+			if (m & S_BIT) {
+				// mul oddly does not support this
+				return -1;
+			}
+
+			ao->o = 0x00fb00f0;
+			ao->o |= reg1;
+			ao->o |= reg2 << 24;
+			ao->o |= reg3 << 8;
+			return 4;
+		        }
+			break;
+		default:
+			return -1;
+		}
+	} else
+	if ((m = opmask (ao->op, "mvn"))) {
+		ut64 argt = thumb_selector (ao->a);
+		switch (argt) {
+		case THUMB_REG_CONST: {
+			ut8 reg1 = getreg (ao->a[0]);
+			err = false;
+			ut32 num = getthimmed12 (ao->a[1]);
+			
+			if ((reg1 > 15) || err) {
+				return -1;
+			}
+
+			ao->o = 0x6ff00000;
+			ao->o |= reg1;
+			ao->o |= num;
+			if (m & S_BIT) {
+				ao->o |= 1 << 28;
+			}
+			return 4;
+		        }
+			break;
+		case THUMB_REG_REG: {
+			ao->a[2] = "lsl 0";
+		        }
+			// intentional fallthrough
+		case THUMB_REG_REG_SHIFT: {
+			ut8 reg1 = getreg (ao->a[0]);
+			ut8 reg2 = getreg (ao->a[1]);
+			ut32 shift = thumb_getshift (ao->a[2]);
+
+			if ((reg1 > 15) || (reg2 > 15)) {
+				return -1;
+			}
+			
+			if ((reg1 < 8) && (reg2 < 8) && (shift == 0)) {
+				ao->o = 0xc043;
+				ao->o |= reg1 << 8;
+				ao->o |= reg2 << 11;
+				return 2;
+			}
+
+			ao->o = 0x6fea0000;
+			ao->o |= reg1;
+			ao->o |= reg2;
+			ao->o |= shift;
+			if (m & S_BIT) {
+				ao->o |= 1 << 28;
+			}
+			return 4;
+		        }
+			break;
+		default:
+			return -1;
+		}
+	} else
+	if ((m = opmask (ao->op, "nop"))) {
+		ut64 argt = thumb_selector (ao->a);
+		switch (argt) {
+		case THUMB_NONE: {
+			if (m & DOTW_BIT) {
+				ao->o = 0xaff30080;
+				return 4;
+			}
+			ao->o = 0x00bf;
+			return 2;
+		        }
+			break;
+		default:
+			return -1;
+		}
+	} else
+	if ((m = opmask (ao->op, "orn"))) {
+		ut64 argt = thumb_selector (ao->a);
+		switch (argt) {
+		case THUMB_REG_CONST: {
+			ao->a[2] = ao->a[1];
+			ao->a[1] = ao->a[0];
+		        }
+			// intentional fallthrough
+		case THUMB_REG_REG_CONST: {
+			ut8 reg1 = getreg (ao->a[0]);
+			ut8 reg2 = getreg (ao->a[1]);
+			err = false;
+			ut32 num = getthimmed12 (ao->a[2]);
+
+			if ((reg1 > 15) || (reg2 > 15) || err) {
+				return -1;
+			}
+
+			ao->o = 0x60f00000;
+			ao->o |= reg1;
+			ao->o |= reg2 << 24;
+			ao->o |= num;
+			if (m & S_BIT) {
+				ao->o |= 1 << 28;
+			}
+			return 4;
+		        }
+			break;
+		case THUMB_REG_REG: {
+			ao->a[2] = ao->a[1];
+			ao->a[1] = ao->a[0];
+		        }
+			// intentional fallthrough
+		case THUMB_REG_REG_REG: {
+			ao->a[3] = "lsl 0";
+		        }
+			// intentional fallthrough
+		case THUMB_REG_REG_SHIFT: {
+			if (ao->a[3] == NULL) { // double fallthrough
+				ao->a[3] = ao->a[2];
+				ao->a[2] = ao->a[1];
+				ao->a[1] = ao->a[0];
+			}
+		        }
+			// intentional fallthrough
+		case THUMB_REG_REG_REG_SHIFT: {
+			ut8 reg1 = getreg (ao->a[0]);
+			ut8 reg2 = getreg (ao->a[1]);
+			ut8 reg3 = getreg (ao->a[2]);
+			ut32 shift = thumb_getshift (ao->a[3]);
+			
+			if ((reg1 > 15) || (reg2 > 15) || (reg3 > 15)) {
+				return -1;
+			}
+
+			ao->o = 0x60ea0000;
+			ao->o |= reg1;
+			ao->o |= reg2 << 24;
+			ao->o |= reg3 << 8;
+			ao->o |= shift;
+			if (m & S_BIT) {
+				ao->o |= 1 << 28;
+			}
+			return 4;
+		        }
+			break;
+		default:
+			return -1;
+		}
+	} else 
+	if ((m = opmask (ao->op, "orr"))) {
+		ut64 argt = thumb_selector (ao->a);
+		switch (argt) {
+		case THUMB_REG_CONST: {
+			ao->a[2] = ao->a[1];
+			ao->a[1] = ao->a[0];
+		        }
+			// intentional fallthrough
+		case THUMB_REG_REG_CONST: {
+			ut8 reg1 = getreg (ao->a[0]);
+			ut8 reg2 = getreg (ao->a[1]);
+			err = false;
+			ut32 num = getthimmed12 (ao->a[2]);
+
+			if ((reg1 > 15) || (reg2 > 15) || err) {
+				return -1;
+			}
+
+			ao->o = 0x40f00000;
+			ao->o |= reg1;
+			ao->o |= reg2 << 24;
+			ao->o |= num;
+			if (m & S_BIT) {
+				ao->o |= 1 << 28;
+			}
+			return 4;
+		        }
+			break;
+		case THUMB_REG_REG: {
+			ut8 reg1 = getreg (ao->a[0]);
+			ut8 reg2 = getreg (ao->a[1]);
+
+			if ((reg1 < 8) && (reg2 < 8) && (!(m & DOTW_BIT))) {
+				ao->o = 0x0043;
+				ao->o |= reg1 << 8;
+				ao->o |= reg2 << 11;
+				return 2;
+			}
+			ao->a[2] = ao->a[1];
+			ao->a[1] = ao->a[0];
+		        }
+			// intentional fallthrough
+		case THUMB_REG_REG_REG: {
+			ao->a[3] = "lsl 0";
+		        }
+			// intentional fallthrough
+		case THUMB_REG_REG_SHIFT: {
+			if (ao->a[3] == NULL) { // double fallthrough
+				ao->a[3] = ao->a[2];
+				ao->a[2] = ao->a[1];
+				ao->a[1] = ao->a[0];
+			}
+		        }
+			// intentional fallthrough
+		case THUMB_REG_REG_REG_SHIFT: {
+			ut8 reg1 = getreg (ao->a[0]);
+			ut8 reg2 = getreg (ao->a[1]);
+			ut8 reg3 = getreg (ao->a[2]);
+			ut32 shift = thumb_getshift (ao->a[3]);
+			
+			if ((reg1 > 15) || (reg2 > 15) || (reg3 > 15)) {
+				return -1;
+			}
+
+			ao->o = 0x40ea0000;
+			ao->o |= reg1;
+			ao->o |= reg2 << 24;
+			ao->o |= reg3 << 8;
+			ao->o |= shift;
+			if (m & S_BIT) {
+				ao->o |= 1 << 28;
+			}
+			return 4;
+		        }
+			break;
+		default:
+			return -1;
+		}
+	} else 
+	if ((m = opmask (ao->op, "pkhtb"))) {
+		ut64 argt = thumb_selector (ao->a);
+		switch (argt) {
+		case THUMB_REG_REG_REG: {
+			ao->a[4] = "asr 0";
+		        }
+			// intentional fallthrough
+		case THUMB_REG_REG_REG_SHIFT: {
+			ut8 reg1 = getreg (ao->a[0]);
+			ut8 reg2 = getreg (ao->a[1]);
+			ut8 reg3 = getreg (ao->a[2]);
+			ut32 shift = thumb_getshift (ao->a[3]);
+
+			if ((reg1 > 15) || (reg2 > 15) || (reg3 > 15) || ((shift & 0x00003000) != 0x00002000)) {
+				return -1;
+			}
+
+			ao->o = 0xc0ea0000;
+			ao->o |= reg1;
+			ao->o |= reg2 << 24;
+			ao->o |= reg3 << 8;
+			ao->o |= shift;
+			return 4;
+		        }
+			break;
+		default:
+			return -1;
+		}
+	} else
+	if ((m = opmask (ao->op, "pkhbt"))) {
+		ut64 argt = thumb_selector (ao->a);
+		switch (argt) {
+		case THUMB_REG_REG_REG: {
+			ao->a[4] = "lsl 0";
+		        }
+			// intentional fallthrough
+		case THUMB_REG_REG_REG_SHIFT: {
+			ut8 reg1 = getreg (ao->a[0]);
+			ut8 reg2 = getreg (ao->a[1]);
+			ut8 reg3 = getreg (ao->a[2]);
+			ut32 shift = thumb_getshift (ao->a[3]);
+
+			if ((reg1 > 15) || (reg2 > 15) || (reg3 > 15) || ((shift & 0x00003000) != 0)) {
+				return -1;
+			}
+
+			ao->o = 0xc0ea0000;
+			ao->o |= reg1;
+			ao->o |= reg2 << 24;
+			ao->o |= reg3 << 8;
+			ao->o |= shift;
+			return 4;
+		        }
+			break;
+		default:
+			return -1;
+		}
+	} else
 	if (!strcmpnull (ao->op, "sub")) {
 		int reg = getreg (ao->a[1]);
 		if (reg != -1) {
