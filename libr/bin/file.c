@@ -765,7 +765,6 @@ R_API void r_bin_file_free(void /*RBinFile*/ *bf_) {
 	if (!a) {
 		return;
 	}
-
 	// Binary format objects are connected to the
 	// RBinObject, so the plugin must destroy the
 	// format data first
@@ -781,11 +780,13 @@ R_API void r_bin_file_free(void /*RBinFile*/ *bf_) {
 		sdb_free (a->sdb_addrinfo);
 		a->sdb_addrinfo = NULL;
 	}
-	free (a->file);
+	R_FREE (a->file);
 	a->o = NULL;
 	r_list_free (a->objs);
 	r_list_free (a->xtr_data);
-	r_id_pool_kick_id (a->rbin->file_ids, a->id);
+	if (a->id != -1) {
+		r_id_pool_kick_id (a->rbin->file_ids, a->id);
+	}
 	memset (a, 0, sizeof (RBinFile));
 	free (a);
 }

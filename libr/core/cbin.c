@@ -383,7 +383,7 @@ static bool bin_raw_strings(RCore *r, int mode, int va) {
 			free (bf);
 			return false;
 		}
-		bf->file = desc->name;
+		bf->file = strdup (desc->name);
 		bf->size = r_io_desc_size (desc);
 		if (bf->size == UT64_MAX) {
 			free (bf);
@@ -416,7 +416,8 @@ static bool bin_raw_strings(RCore *r, int mode, int va) {
 	if (new_bf) {
 		r_buf_free (bf->buf);
 		bf->buf = NULL;
-	//	r_bin_file_free (bf);
+		bf->id = -1;
+		r_bin_file_free (bf);
 	}
 	return true;
 }

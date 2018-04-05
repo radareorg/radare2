@@ -322,7 +322,11 @@ static void cmd_open_bin(RCore *core, const char *input) {
 	case 'b': // "obb"
 		{
 			ut32 fd;
-			value = *(input + 3) ? input + 3 : NULL;
+			if (input[2] && input[3]) {
+				value = *(input + 3) ? input + 3 : NULL;
+			} else {
+				value = NULL;
+			}
 			if (!value) {
 				eprintf ("Invalid fd number.");
 				break;

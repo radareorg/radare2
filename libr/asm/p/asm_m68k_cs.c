@@ -94,7 +94,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			insn->op_str[0]?" ":"",
 			insn->op_str);
 	}
-	{
+	if (op) {
 		char *p = r_str_replace (strdup (op->buf_asm),
 			"$", "0x", true);
 		if (p) {
