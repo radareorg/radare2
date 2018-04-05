@@ -1817,7 +1817,14 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	r_config_set_i (core->config, "asm.tabs", 0);
 	r_config_set_i (core->config, "asm.cmt.right", true);
 r_cons_push();
-	if (!strncmp (input, "dsf", 3) || !strncmp (input, "dsr", 3)) {
+line = NULL;
+	s = NULL;
+	if (!strncmp (input, "dsb", 3)) {
+		RAnalBlock *bb = r_anal_bb_from_offset (core->anal, core->offset);
+		if (bb) {
+			line = s = r_core_cmd_strf (core, "pD %"PFMT64d" @ 0x%08"PFMT64x, bb->size, bb->addr);
+		}
+	} else if (!strncmp (input, "dsf", 3) || !strncmp (input, "dsr", 3)) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 		if (fcn) {
 			line = s = r_core_cmd_str (core, "pdr");
@@ -1828,9 +1835,7 @@ r_cons_push();
 			goto restore_conf;
 		}
 	} else if (!strncmp (input, "ds ", 3)) {
-		char *cmd = r_str_newf ("pD %s", input + 3);
-		line = s = r_core_cmd_strf (core, cmd);
-		free (cmd);
+		line = s = r_core_cmd_strf (core, "pD %s", input + 3);
 	} else {
 		line = s = r_core_cmd_str (core, "pd");
 	}
@@ -1839,7 +1844,7 @@ r_cons_pop();
 	r_config_set_i (core->config, "asm.cmt.right", asm_cmt_right);
 	count = r_str_split (s, '\n');
 	if (!line || !*line || count < 1) {
-		free (s);
+	//	R_FREE (s);
 		goto restore_conf;
 	}
 	for (i = 0; i < count; i++) {
@@ -4110,7 +4115,7 @@ static int cmd_print(void *data, const char *input) {
 		case 's': // "pds" and "pdsf"
 			processed_cmd = true;
 			if (input[2] == '?') {
-				r_cons_printf ("Usage: pds[f]  - sumarize N bytes or function (pdfs)\n");
+				r_cons_printf ("Usage: pds[bf]  - sumarize N bytes or function (pdfs)\n");
 			} else {
 				disasm_strings (core, input, NULL);
 			}

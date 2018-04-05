@@ -6,8 +6,8 @@
 static const char *help_msg_a[] = {
 	"Usage:", "a", "[abdefFghoprxstc] [...]",
 	"aa", "[?]", "analyze all (fcns + bbs) (aa0 to avoid sub renaming)",
-	"ab", " [addr]", "analyze block at given address",
-	"abx", " [hexpairs]", "analyze bytes",
+	"a8", " [hexpairs]", "analyze bytes",
+	"ab", "[b] [addr]", "analyze block at given address",
 	"abb", " [len]", "analyze N basic blocks in [len] (section.size by default)",
 	"ac", " [cycles]", "analyze which op could be executed in [cycles]",
 	"ad", "[?]", "analyze data trampoline (wip)",
@@ -6189,8 +6189,10 @@ static bool should_aav(RCore *core) {
 static int cmd_anal_all(RCore *core, const char *input) {
 	switch (*input) {
 	case '?': r_core_cmd_help (core, help_msg_aa); break;
-	case 'b': cmd_anal_blocks (core, input + 1); break; // "aab"
-	case 'c':
+	case 'b': // "aab"
+		cmd_anal_blocks (core, input + 1);
+		break; // "aab"
+	case 'c': // "aac"
 		switch (input[1]) {
 		case '*':
 			cmd_anal_calls (core, input + 1, true); break; // "aac*"
@@ -6198,7 +6200,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			cmd_anal_calls (core, input + 1, false); break; // "aac"
 		}
 	case 'j': cmd_anal_jumps (core, input + 1); break; // "aaj"
-	case '*':
+	case '*': // "aa*"
 		r_core_cmd0 (core, "af @@ sym.*");
 		r_core_cmd0 (core, "af @@ entry*");
 		break;
@@ -6214,7 +6216,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	case 'i': // "aai"
 		r_core_anal_info (core, input + 1);
 		break;
-	case 's':
+	case 's': // "aas"
 		r_core_cmd0 (core, "af @@= `isq~[0]`");
 		r_core_cmd0 (core, "af @@ entry*");
 		break;
@@ -6535,20 +6537,23 @@ static int cmd_anal(void *data, const char *input) {
 			free (buf);
 		}
 		break;
-	case 'b':
-		if (input[1] == 'b') { // "abb"
-			core_anal_bbs (core, input + 2);
-		} else if (input[1] == 'r') { // "abr"
-			core_anal_bbs_range (core, input + 2);
-		} else if (input[1] == 'x') { // "abx"
+	case '8':
+		{
 			ut8 *buf = malloc (strlen (input) + 1);
 			if (buf) {
-				int len = r_hex_str2bin (input + 2, buf);
+				int len = r_hex_str2bin (input + 1, buf);
 				if (len > 0) {
 					core_anal_bytes (core, buf, len, 0, input[1]);
 				}
 				free (buf);
 			}
+		}
+		break;
+	case 'b':
+		if (input[1] == 'b') { // "abb"
+			core_anal_bbs (core, input + 2);
+		} else if (input[1] == 'r') { // "abr"
+			core_anal_bbs_range (core, input + 2);
 		} else if (input[1] == ' ' || !input[1]) {
 			// find block
 			ut64 addr = core->offset;

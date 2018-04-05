@@ -3998,7 +3998,8 @@ typedef struct {
 	RAnalBlock *toBB;
 	RAnalBlock *cur;
 	bool followCalls;
-	int count;
+	int followDepth;
+	int count; // max number of results
 } RCoreAnalPaths;
 
 static bool printAnalPaths(RCoreAnalPaths *p) {
@@ -4011,23 +4012,6 @@ static bool printAnalPaths(RCoreAnalPaths *p) {
 	r_cons_printf ("\n");
 	return (p->count < 1 || --p->count > 0);
 }
-
-static void append64(RList *list, ut64 num) {
-	if (num == UT64_MAX) {
-		return;
-	}
-	ut64 *n = R_NEW (ut64);
-	*n = num;
-	r_list_append (list, n);
-}
-
-static RList *analBlockDestinations(RAnalBlock *bb) {
-	RList *list = r_list_newf (free);
-	append64 (list, bb->jump);
-	append64 (list, bb->fail);
-	return list;
-}
-
 static void analPaths (RCoreAnalPaths *p);
 
 static void analPathFollow(RCoreAnalPaths *p, ut64 addr) {
@@ -4052,6 +4036,9 @@ static void analPaths (RCoreAnalPaths *p) {
 	}
 	dict_set (&p->visited, cur->addr, 1, NULL);
 	r_list_append (p->path, cur);
+	if (p->followDepth && --p->followDepth == 0) {
+		return;
+	}
 	if (p->toBB && cur->addr == p->toBB->addr) {
 		if (!printAnalPaths (p)) {
 			return;
@@ -4077,12 +4064,14 @@ static void analPaths (RCoreAnalPaths *p) {
 			}
 		}
 	}
-end:
 	p->cur = r_list_pop (p->path);
 	dict_del (&p->visited, cur->addr);
+	if (p->followDepth) {
+		p->followDepth++;
+	}
 }
 
-R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls) {
+R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, int followDepth) {
 	RAnalBlock *b0 = r_anal_bb_from_offset (core->anal, from);
 	RAnalBlock *b1 = r_anal_bb_from_offset (core->anal, to);
 	if (!b0) {
@@ -4102,6 +4091,7 @@ R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls) 
 	rcap.cur = b0;
 	rcap.count = r_config_get_i (core->config, "search.maxhits");;
 	rcap.followCalls = followCalls;
+	rcap.followDepth = followDepth;
 
 	analPaths (&rcap);
 

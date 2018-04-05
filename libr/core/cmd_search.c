@@ -30,7 +30,7 @@ static const char *help_msg_slash[] = {
 	"/f", "", "search forwards, command modifier, followed by other command",
 	"/F", " file [off] [sz]", "search contents of file with offset and size",
 	// TODO: add subcommands to find paths between functions and filter only function names instead of offsets, etc
-	"/g", " [from]", "find all graph paths from A to current offset (inside current function)",
+	"/g", "[g] [from]", "find all graph paths A to B (/gg follow jumps, see search.count and anal.depth)",
 	"/h", "[t] [hash] [len]", "find block matching this hash. See /#?",
 	"/i", " foo", "search for string 'foo' ignoring case",
 	"/m", " magicfile", "search for matching magic file (use blocksize)",
@@ -3162,8 +3162,9 @@ reread:
 	case 'g': // "/g" graph search
 		if (input[1] == '?') {
 			r_cons_printf ("Usage: /g[g] [fromaddr] @ [toaddr]\n");
+			r_cons_printf ("(find all graph paths A to B (/gg follow jumps, see search.count and anal.depth)");
 		} else {
-			ut64 addr;
+			ut64 addr = UT64_MAX;
 			if (input[1]) {
 				addr = r_num_math (core->num, input + 2);
 			} else {
@@ -3174,7 +3175,8 @@ reread:
 					addr = core->offset;
 				}
 			}
-			r_core_anal_paths (core, addr, core->offset, input[1] == 'g');
+			const int depth = r_config_get_i (core->config, "anal.depth");
+			r_core_anal_paths (core, addr, core->offset, input[1] == 'g', depth);
 		}
 		break;
 	case 'F': // "/F" search file /F [file] ([offset] ([sz]))
