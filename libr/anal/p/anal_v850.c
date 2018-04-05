@@ -65,7 +65,7 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 		if (opcode != V850_MOV_IMM5) { // Format I
 			r_strbuf_appendf (&op->esil, "%s,%s,=", F1_RN1(word1), F1_RN2(word1));
 		} else { // Format II
-			r_strbuf_appendf (&op->esil, "%"PFMT64d",%s,=", F2_IMM(word1), F2_RN2(word1));
+			r_strbuf_appendf (&op->esil, "%"PFMT64d",%s,=", (st64)(F2_IMM(word1)), F2_RN2(word1));
 		}
 		break;
 	case V850_MOVEA:
