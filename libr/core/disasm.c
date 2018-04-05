@@ -4686,7 +4686,9 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 					r_core_read_at (core, core->offset, core->block, nb_bytes);
 				} else {
 					eprintf ("Cannot read that much!\n");
-					memset (core->block, 0xff, nb_bytes);
+					r_core_block_size (core, obsz);
+					len = -1;
+					goto err_offset;
 				}
 				r_core_block_size (core, obsz);
 			} else {
@@ -4844,6 +4846,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 	}
 	r_cons_break_pop ();
 	ds_free (ds);
+ err_offset:
 	core->offset = old_offset;
 	r_reg_arena_pop (core->anal->reg);
 
