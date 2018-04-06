@@ -3194,7 +3194,7 @@ static void agraph_init(RAGraph *g) {
 	g->need_reload_nodes = true;
 	g->force_update_seek = true;
 	g->graph = r_graph_new ();
-	g->nodes = sdb_new0 (); // XXX leak
+	g->nodes = sdb_new0 ();
 	g->edgemode = 2;
 	g->zoom = ZOOM_DEFAULT;
 	g->movspeed = DEFAULT_SPEED; // r_config_get_i (g->core->config, "graph.scroll");
@@ -3215,6 +3215,8 @@ static void agraph_free_nodes(const RAGraph *g) {
 	graph_foreach_anode (r_graph_get_nodes (g->graph), it, n, a) {
 		free_anode (a);
 	}
+
+	sdb_free (g->nodes);
 }
 
 static void sdb_set_enc(Sdb *db, const char *key, const char *v, ut32 cas) {
