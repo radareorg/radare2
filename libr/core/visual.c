@@ -315,7 +315,13 @@ static void prompt_read(const char *p, char *buf, int buflen) {
 	showcursor (NULL, false);
 }
 
+static void reset_print_cur(RPrint *p) {
+	p->cur = 0;
+	p->ocur = -1;
+}
+
 R_API void r_core_visual_prompt_input(RCore *core) {
+	bool restore_seek = true;
 	int ret;
 	ut64 addr = core->offset;
 	ut64 bsze = core->blocksize;
@@ -340,14 +346,28 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 	}
 	do {
 		ret = r_core_visual_prompt (core);
-		if (core->offset != newaddr) {
-			// do not restore seek anymore
-			newaddr = addr;
+	} while (ret);
+
+	if (core->offset != newaddr) {
+		bool cursor_moved = false;
+		// when new address is in the screen bounds, just move
+		// the cursor if enabled and restore seek
+		if (core->print->cur != -1 && core->print->screen_bounds > 1) {
+			if (core->offset >= addr &&
+			    core->offset < core->print->screen_bounds) {
+				core->print->ocur = -1;
+				core->print->cur = core->offset - addr;
+				cursor_moved = true;
+			}
+		}
+
+		if (!cursor_moved) {
+			restore_seek = false;
 			reset_print_cur (core->print);
 		}
-	} while (ret);
+	}
 	if (core->print->cur_enabled) {
-		if (addr != newaddr) {
+		if (restore_seek) {
 			r_core_seek (core, addr, 1);
 			r_core_block_size (core, bsze);
 		}
@@ -837,11 +857,6 @@ R_API ut64 r_core_prevop_addr_force(RCore *core, ut64 start_addr, int numinstrs)
 		start_addr = prevop_addr (core, start_addr);
 	}
 	return start_addr;
-}
-
-static void reset_print_cur(RPrint *p) {
-	p->cur = 0;
-	p->ocur = -1;
 }
 
 R_API int offset_history_up(RLine *line) {
