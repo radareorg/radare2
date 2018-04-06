@@ -81,7 +81,8 @@ static bool rtti_itanium_read_vmi_class_type_info (RVTableContext *context, ut64
         vmi_cti->vmi_bases = malloc (sizeof (base_class_type_info) * vmi_cti->vmi_base_count);
         ut64 tmp_addr = addr + 3 * context->word_size;
 
-        for(int i = 0; i < vmi_cti->vmi_base_count; i++) {
+        int i;
+        for(i = 0; i < vmi_cti->vmi_base_count; i++) {
                 tmp_addr += context->word_size;
                 if (!context->read_addr (context->anal, tmp_addr, &vmi_cti->vmi_bases[i].base_class_addr)) {
                     return false;
