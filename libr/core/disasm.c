@@ -117,6 +117,7 @@ typedef struct {
 	bool show_emu_str;
 	bool show_emu_stroff;
 	bool show_emu_strinv;
+	bool show_emu_strflag;
 	bool show_emu_stack;
 	bool show_emu_write;
 	bool show_section;
@@ -612,6 +613,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_emu_str = r_config_get_i (core->config, "asm.emu.str");
 	ds->show_emu_stroff = r_config_get_i (core->config, "asm.emu.stroff");
 	ds->show_emu_strinv = r_config_get_i (core->config, "asm.emu.strinv");
+	ds->show_emu_strflag = r_config_get_i (core->config, "asm.emu.strflag");
 	ds->show_emu_write = r_config_get_i (core->config, "asm.emu.write");
 	ds->show_emu_stack = r_config_get_i (core->config, "asm.emu.stack");
 	ds->stackFd = -1;
@@ -3574,6 +3576,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 	}
 	memset (str, 0, sizeof (str));
 	if (*val) {
+		bool emu_str_printed = false;
 		char *type = NULL;
 		(void)r_io_read_at (esil->anal->iob.io, *val, (ut8*)str, sizeof (str)-1);
 		str[sizeof (str)-1] = 0;
@@ -3644,6 +3647,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 					} else {
 						msg = r_str_newf ("%s%s%s%s%s", prefix, type? type: "", escquote, escstr, escquote);
 					}
+					emu_str_printed = true;
 					free (escstr);
 				}
 			}
@@ -3659,7 +3663,8 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 			}
 		}
 		R_FREE (type);
-		if (ds->printed_flag_addr == UT64_MAX || *val != ds->printed_flag_addr) {
+		if ((ds->printed_flag_addr == UT64_MAX || *val != ds->printed_flag_addr)
+		    && (ds->show_emu_strflag || !emu_str_printed)) {
 			RFlagItem *fi = r_flag_get_i (esil->anal->flb.f, *val);
 			if (fi && (!ds->opstr || !strstr (ds->opstr, fi->name))) {
 				msg = r_str_appendf (msg, "%s%s", msg && *msg ? " " : "", fi->name);
