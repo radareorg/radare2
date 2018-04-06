@@ -619,7 +619,7 @@ static void create_dummy_nodes(RAGraph *g) {
 	const RListIter *it;
 	const RGraphEdge *e;
 
-	g->long_edges = r_list_new ();
+	g->long_edges = r_list_newf ((RListFree)free);
 	dummy_vis.data = g->long_edges;
 	dummy_vis.tree_edge = (RGraphEdgeCallback) view_dummy;
 	dummy_vis.fcross_edge = (RGraphEdgeCallback) view_dummy;
