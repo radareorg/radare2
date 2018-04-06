@@ -106,9 +106,6 @@ static const char **menus_sub[] = {
 	NULL
 };
 
-// TODO: handle mouse wheel
-//static int curnode = 0;
-
 static void Panel_print(RConsCanvas *can, RPanel *n, int color) {
 	if (!n || !can || !n->refresh) {
 		return;
