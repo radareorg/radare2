@@ -320,34 +320,23 @@ static void reset_print_cur(RPrint *p) {
 	p->ocur = -1;
 }
 
-R_API void r_core_visual_prompt_input(RCore *core) {
-	bool restore_seek = true;
-	int ret;
-	ut64 addr = core->offset;
-	ut64 bsze = core->blocksize;
-	int h;
-	(void) r_cons_get_size (&h);
-	r_cons_enable_mouse (false);
-	r_cons_gotoxy (0, h - 2);
-	r_cons_reset_colors ();
-	r_cons_printf ("\nPress <enter> to return to Visual mode.\n");
-	r_cons_show_cursor (true);
-	core->vmode = false;
-	ut64 newaddr = addr;
+static void backup_current_addr(RCore *core, ut64 *addr, ut64 *bsze, ut64 *newaddr) {
+	*addr = core->offset;
+	*bsze = core->blocksize;
 	if (core->print->cur_enabled) {
 		if (core->print->ocur != -1) {
 			int newsz = core->print->cur - core->print->ocur;
-			newaddr = core->offset + core->print->ocur;
+			*newaddr = core->offset + core->print->ocur;
 			r_core_block_size (core, newsz);
 		} else {
-			newaddr = core->offset + core->print->cur;
+			*newaddr = core->offset + core->print->cur;
 		}
-		r_core_seek (core, newaddr, 1);
+		r_core_seek (core, *newaddr, 1);
 	}
-	do {
-		ret = r_core_visual_prompt (core);
-	} while (ret);
+}
 
+static void restore_current_addr(RCore *core, ut64 addr, ut64 bsze, ut64 newaddr) {
+	bool restore_seek = true;
 	if (core->offset != newaddr) {
 		bool cursor_moved = false;
 		// when new address is in the screen bounds, just move
@@ -366,12 +355,32 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 			reset_print_cur (core->print);
 		}
 	}
+
 	if (core->print->cur_enabled) {
 		if (restore_seek) {
 			r_core_seek (core, addr, 1);
 			r_core_block_size (core, bsze);
 		}
 	}
+}
+
+R_API void r_core_visual_prompt_input(RCore *core) {
+	ut64 addr, bsze, newaddr;
+	int ret, h;
+	(void) r_cons_get_size (&h);
+	r_cons_enable_mouse (false);
+	r_cons_gotoxy (0, h - 2);
+	r_cons_reset_colors ();
+	r_cons_printf ("\nPress <enter> to return to Visual mode.\n");
+	r_cons_show_cursor (true);
+	core->vmode = false;
+
+	backup_current_addr (core, &addr, &bsze, &newaddr);
+	do {
+		ret = r_core_visual_prompt (core);
+	} while (ret);
+	restore_current_addr (core, addr, bsze, newaddr);
+
 	r_cons_show_cursor (false);
 	core->vmode = true;
 	r_cons_enable_mouse (true);
@@ -907,7 +916,10 @@ R_API int offset_history_down(RLine *line) {
 }
 
 static void visual_offset(RCore *core) {
+	ut64 addr, bsze, newaddr;
 	char buf[256];
+
+	backup_current_addr (core, &addr, &bsze, &newaddr);
 	core->cons->line->offset_prompt = true;
 	r_line_set_hist_callback (core->cons->line, &offset_history_up, &offset_history_down);
 	r_line_set_prompt ("[offset]> ");
@@ -917,7 +929,7 @@ static void visual_offset(RCore *core) {
 			buf[1] = '.';
 		}
 		r_core_cmd0 (core, buf);
-		reset_print_cur (core->print);
+		restore_current_addr (core, addr, bsze, newaddr);
 		r_line_set_hist_callback (core->cons->line, &cmd_history_up, &cmd_history_down);
 		core->cons->line->offset_prompt = false;
 	}
