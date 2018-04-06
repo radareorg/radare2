@@ -926,6 +926,24 @@ R_API void r_agraph_foreach_edge(RAGraph *g, RAEdgeCallback cb, void *user);
 R_API void r_agraph_set_curnode(RAGraph *g, RANode *node);
 #endif
 
+typedef struct r_panels_t {
+	RConsCanvas *can;
+	RPanel *panel;
+	int n_panels;
+	int columnWidth;
+	int layout;
+	int menu_pos;
+	int menu_x;
+	int menu_y;
+	int callgraph;
+	int curnode;
+	bool isResizing;
+} RPanels;
+#ifdef R_API
+R_API RPanels *r_panels_new();
+R_API void r_panels_free(RPanels *panels);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

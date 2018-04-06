@@ -1833,7 +1833,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		}
 		break;
 		case '!':
-			r_core_visual_panels (core);
+			r_core_visual_panels (core, NULL);
 			break;
 		case 'o':
 		{
