@@ -14,9 +14,6 @@
 #include <tchar.h>
 #include <windows.h>
 #else
-#if __linux__
-#include <stropts.h>
-#endif
 #include <termios.h>
 #endif
 
