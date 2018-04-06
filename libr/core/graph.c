@@ -3207,18 +3207,14 @@ static void free_anode(RANode *n) {
 	free (n);
 }
 
-static int free_anode_cb(void *user UNUSED, const char *k UNUSED, const char *v) {
-	RANode *n = (RANode *) (size_t) sdb_atoi (v);
-	if (!n) {
-		return 0;
-	}
-	free_anode (n);
-	return 1;
-}
-
 static void agraph_free_nodes(const RAGraph *g) {
-	sdb_foreach (g->nodes, (SdbForeachCallback) free_anode_cb, NULL);
-	sdb_free (g->nodes);
+	RListIter *it;
+	RGraphNode *n;
+	RANode *a;
+
+	graph_foreach_anode (r_graph_get_nodes (g->graph), it, n, a) {
+		free_anode (a);
+	}
 }
 
 static void sdb_set_enc(Sdb *db, const char *key, const char *v, ut32 cas) {
@@ -3413,8 +3409,8 @@ R_API void r_agraph_del_edge(const RAGraph *g, RANode *a, RANode *b) {
 }
 
 R_API void r_agraph_reset(RAGraph *g) {
-	r_graph_reset (g->graph);
 	agraph_free_nodes (g);
+	r_graph_reset (g->graph);
 	r_agraph_set_title (g, NULL);
 	sdb_reset (g->db);
 	r_list_purge (g->edges);
@@ -3428,9 +3424,9 @@ R_API void r_agraph_reset(RAGraph *g) {
 
 R_API void r_agraph_free(RAGraph *g) {
 	if (g) {
+		agraph_free_nodes (g);
 		r_graph_free (g->graph);
 		r_list_free (g->edges);
-		agraph_free_nodes (g);
 		r_agraph_set_title (g, NULL);
 		sdb_free (g->db);
 		r_cons_canvas_free (g->can);
