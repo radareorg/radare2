@@ -343,6 +343,7 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 		if (core->offset != newaddr) {
 			// do not restore seek anymore
 			newaddr = addr;
+			reset_print_cur (core->print);
 		}
 	} while (ret);
 	if (core->print->cur_enabled) {
