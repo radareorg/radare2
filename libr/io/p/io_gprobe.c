@@ -14,7 +14,7 @@
 #include <tchar.h>
 #include <windows.h>
 #else
-#if __linux__
+#if !__linux__ && !__APPLE__
 #include <stropts.h>
 #endif
 #include <termios.h>
