@@ -3962,7 +3962,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			get_bbupdate (g, core, fcn);
 			break;
 		case '!':
-			r_core_visual_panels (core);
+			r_core_visual_panels (core, NULL);
 			break;
 		case '\'':
 			if (fcn) {
