@@ -911,7 +911,7 @@ err_w32_break_process:
 	}
 }
 
-static int GetAVX (HANDLE hThread, ut128 * xmm, ut128 * ymm) {
+static int GetAVX (HANDLE hThread, ut128 xmm[16], ut128 ymm[16]) {
 	BOOL Success;
 	int nRegs = 0, Index = 0;
 	DWORD ContextSize = 0;
@@ -1051,7 +1051,7 @@ static void printwincontext(HANDLE hThread, CONTEXT * ctx) {
 		eprintf ("XMM%i %016"PFMT64x" %016"PFMT64x"\n", x, xmm[x].High, xmm[x].Low);
 	}
 	// show Ymm regs
-	nymm = GetAVX (hThread, &xmm, &ymm);
+	nymm = GetAVX (hThread, xmm, ymm);
 	if (nymm) {
 		for (x = 0; x < nymm; x++) {
 			eprintf ("Ymm%d: %016"PFMT64x" %016"PFMT64x" %016"PFMT64x" %016"PFMT64x"\n", x, ymm[x].High, ymm[x].Low, xmm[x].High, xmm[x].Low );
