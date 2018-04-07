@@ -190,10 +190,9 @@ R_API void r_anal_rtti_itanium_print_class_type_info(RVTableContext *context, ut
                 eprintf ("Failed to parse Type Info at 0x%08"PFMT64x"\n", addr);
                 return;
         }
-        if (mode == 'j'){
+        if (mode == 'j') {
                 rtti_itanium_print_class_type_info_json (&cti, addr);
-        }
-        else {
+        } else {
                 rtti_itanium_print_class_type_info (&cti, addr, "");
         }
 }
@@ -206,8 +205,7 @@ R_API void r_anal_rtti_itanium_print_si_class_type_info(RVTableContext *context,
         }
         if (mode == 'j') {
                 rtti_itanium_print_si_class_type_info_json (&si_cti, addr);
-        }
-        else {
+        } else {
                 rtti_itanium_print_si_class_type_info (&si_cti, addr, "");
         }
 }
@@ -220,8 +218,7 @@ R_API void r_anal_rtti_itanium_print_vmi_class_type_info(RVTableContext *context
         }
         if (mode == 'j') {
                 rtti_itanium_print_vmi_class_type_info_json (&vmi_cti, addr);
-        }
-        else {
+        } else {
                 rtti_itanium_print_vmi_class_type_info (&vmi_cti, addr, "");
         }
 }
@@ -263,8 +260,7 @@ static bool rtti_itanium_print_class_type_info_recurse(RVTableContext *context, 
                 }
                 if (use_json) {
                         rtti_itanium_print_vmi_class_type_info_json (&vmi_cti, colAddr);
-                }
-                else {
+                } else {
                         rtti_itanium_print_vmi_class_type_info (&vmi_cti, colAddr, "");
                 }
         }
@@ -277,8 +273,7 @@ static bool rtti_itanium_print_class_type_info_recurse(RVTableContext *context, 
                 }
                 if (use_json) {
                         rtti_itanium_print_si_class_type_info_json (&si_cti, colAddr);
-                }
-                else {
+                } else {
                         rtti_itanium_print_si_class_type_info (&si_cti, colAddr, "");
                 }
         }
@@ -291,8 +286,7 @@ static bool rtti_itanium_print_class_type_info_recurse(RVTableContext *context, 
                 }
                 if (use_json) {
                         rtti_itanium_print_class_type_info_json (&cti, colAddr);
-                }
-                else {
+                } else {
                         rtti_itanium_print_class_type_info (&cti, colAddr, "");
                 }
         }
