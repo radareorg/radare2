@@ -2406,6 +2406,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("asm.emu.str", "false", &cb_emustr, "Show only strings if any in the asm.emu output");
 	SETPREF ("asm.emu.stroff", "false", "Always show offset when printing asm.emu strings");
 	SETPREF ("asm.emu.strinv", "true", "Color-invert asm.emu strings");
+	SETPREF ("asm.emu.strflag", "true", "Also show flag (if any) for asm.emu string");
 	SETPREF ("asm.emu.write", "false", "Allow asm.emu to modify memory (WARNING)");
 	n = NODECB ("asm.emu.skip", "ds", &cb_emuskip);
 	SETDESC (n, "Skip metadata of given types in asm.emu");
