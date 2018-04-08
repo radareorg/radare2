@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2018 - pancake, nibble, defragger */
 
 #include <r_anal.h>
 #include <r_cons.h>
@@ -60,7 +60,7 @@ static void appendRef(RList *list, dicti k, dicti v, void *u) {
 }
 
 static void mylistrefs(dict *m, ut64 addr, RList *list) {
-	int i, j;
+	int i;
 	for (i = 0; i < m->size; i++) {
 		dictkv *kv = m->table[i];
 		if (!kv) {
@@ -143,9 +143,7 @@ static void setxref(dict *m, ut64 from, ut64 to, int type) {
 			dict_set (m, from, to, d);
 		}
 	}
-	if (d) {
-		dict_set (d, from, to, r_anal_xrefs_type_tostring (type));
-	}
+	dict_set (d, from, to, (void *)r_anal_xrefs_type_tostring (type));
 }
 
 static void delref(dict *m, ut64 from, ut64 to, int type) {
@@ -162,7 +160,6 @@ static void delref(dict *m, ut64 from, ut64 to, int type) {
 }
 
 R_API int r_anal_xrefs_set (RAnal *anal, const RAnalRefType type, ut64 from, ut64 to) {
-	char key[33];
 	if (!anal) {
 		return false;
 	}
@@ -182,7 +179,6 @@ R_API int r_anal_xrefs_set (RAnal *anal, const RAnalRefType type, ut64 from, ut6
 }
 
 R_API int r_anal_xrefs_deln (RAnal *anal, const RAnalRefType type, ut64 from, ut64 to) {
-	char key[33];
 	if (!anal) {
 		return false;
 	}
@@ -198,17 +194,18 @@ R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const R
 }
 
 static void mylistrefs_cb(dict *m, RAnalRefCmp cmp, void *data, RList *list) {
-	int i, j;
+	int i;
 	for (i = 0; i < m->size; i++) {
 		dictkv *kv = m->table[i];
 		if (!kv) {
 			continue;
 		}
 		while (kv->k != MHTNO) {
-			RAnalRef ref;
-			ref.at = kv->k;
-			ref.addr = kv->v;
-			ref.type = kv->u;
+			RAnalRef ref = {
+				.at = kv->k,
+				.addr = kv->v,
+				.type = (size_t)kv->u
+			};
 			if (cmp (&ref, data)) {
 				appendRef (list, kv->k, kv->v, kv->u);
 			}
