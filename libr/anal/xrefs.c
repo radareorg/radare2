@@ -162,6 +162,9 @@ R_API int r_anal_xrefs_set (RAnal *anal, const RAnalRefType type, ut64 from, ut6
 	if (!anal) {
 		return false;
 	}
+	if (!anal->iob.is_valid_offset (anal->iob.io, from, 0)) {
+		return false;
+	}
 	if (!anal->iob.is_valid_offset (anal->iob.io, to, 0)) {
 		return false;
 	}
