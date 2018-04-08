@@ -696,7 +696,7 @@ R_API RCore *r_core_new() {
 }
 
 /*-----------------------------------*/
-#define CMDS (sizeof (radare_argv)/sizeof(const char*))
+#define radare_argc (sizeof (radare_argv)/sizeof(const char*))
 static const char *radare_argv[] = {
 	"?", "?v", "whereis", "which", "ls", "rm", "mkdir", "pwd", "cat", "less",
 	"dH", "ds", "dso", "dsl", "dc", "dd", "dm",
@@ -726,7 +726,9 @@ static const char *radare_argv[] = {
 	"b", "bf", "b?",
 	"/", "//", "/a", "/c", "/h", "/m", "/x", "/v", "/v2", "/v4", "/v8", "/r", "/re",
 	"y", "yy", "y?",
-	"wx", "ww", "w?", "wxf",
+	"wa", "waf", "wao", 
+	"wv", "wv1", "wv2",  "wv4", "wv8",
+	"wx", "wxf", "ww", "w?",
 	"p6d", "p6e", "p8", "pb", "pc",
 	"pd", "pda", "pdb", "pdc", "pdj", "pdr", "pdf", "pdi", "pdl", "pds", "pdt",
 	"pD", "px", "pX", "po", "pf", "pf.", "pf*", "pf*.", "pfd", "pfd.", "pv", "p=", "p-",
@@ -1360,7 +1362,7 @@ static int autocomplete(RLine *line) {
 				}
 				// fallback to old command completion
 			}
-			for (i = j = 0; i < CMDS && radare_argv[i]; i++)
+			for (i = j = 0; i < radare_argc && radare_argv[i]; i++)
 				if (!strncmp (radare_argv[i], line->buffer.data, line->buffer.index))
 					tmp_argv[j++] = radare_argv[i];
 			tmp_argv[j] = NULL;
@@ -1369,7 +1371,7 @@ static int autocomplete(RLine *line) {
 		}
 	} else {
 			int i, j;
-			for (i=j=0; i<CMDS && radare_argv[i]; i++) {
+			for (i = j = 0; i < radare_argc&& radare_argv[i]; i++) {
 				if (!strncmp (radare_argv[i], line->buffer.data, line->buffer.index)) {
 					tmp_argv[j++] = radare_argv[i];
 				}
@@ -1388,9 +1390,9 @@ R_API int r_core_fgets(char *buf, int len) {
 	if (rli->completion.argv != radare_argv) {
 		r_line_free_autocomplete (rli);
 	}
-	rli->completion.argc = CMDS;
+	rli->completion.argc = radare_argc;
 	rli->completion.argv = radare_argv;
-	rli->completion.run = autocomplete;
+ 	rli->completion.run = autocomplete;
 	ptr = r_line_readline ();
 	if (!ptr) {
 		return -1;

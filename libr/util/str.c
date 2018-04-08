@@ -235,11 +235,13 @@ R_API const char *r_str_bool(int b) {
 R_API void r_str_case(char *str, bool up) {
 	if (up) {
 		char oc = 0;
-		for (; *str; oc = *str++)
+		for (; *str; oc = *str++) {
 			*str = (*str=='x' && oc=='0') ? 'x': toupper ((int)(ut8)*str);
+		}
 	} else {
-		for (; *str; str++)
+		for (; *str; str++) { 
 			*str = tolower ((int)(ut8)*str);
+		}
 	}
 }
 
@@ -2929,8 +2931,7 @@ R_API int r_snprintf(char *string, int len, const char *fmt, ...) {
 }
 
 // Strips all the lines in str that contain key
-R_API void r_str_stripLine(char *str, const char *key)
-{
+R_API void r_str_stripLine(char *str, const char *key) {
 	size_t i, j, klen, slen, off;
 	const char *ptr; 
 
@@ -2963,6 +2964,5 @@ R_API void r_str_stripLine(char *str, const char *key)
 			i += off;
 		}
 	}
-	return;
 }
 

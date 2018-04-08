@@ -1,6 +1,7 @@
 files = [
   'file.c',
   'fs.c',
+  'shell.c',
   #'p/fs_cpio.c',
   'p/fs_ext2.c',
   'p/fs_fat.c',

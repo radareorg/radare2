@@ -1,4 +1,9 @@
-/* radare - LGPL - Copyright 2009-2017 // pancake */
+/* radare - LGPL - Copyright 2009-2018 // pancake */
+
+#define ms_argc (sizeof (ms_argv)/sizeof(const char*))
+static const char *ms_argv[] = {
+	"?", "!", "ls", "cd", "cat", "get", "mount", "help", "q", "exit", NULL
+};
 
 static const char *help_msg_m[] = {
 	"Usage:", "m[-?*dgy] [...] ", "Mountpoints management",
@@ -36,6 +41,80 @@ static int cmd_mkdir(void *data, const char *input) {
 
 static int cmd_mv(void *data, const char *input) {
 	return r_syscmd_mv (input)? 1: 0;
+}
+
+static char * av[1024] = {NULL};
+#define av_max 1024
+
+static char **getFilesFor(RLine *line, const char *path, int *ac) {
+	RCore *core = line->user;
+	RFS *fs = core->fs;
+	RListIter *iter;
+	RFSFile *file;
+	eprintf ("autocompleting for path '%s'\n", path);
+
+	RList *list = r_fs_dir (fs, path);
+	int count = 0;
+	if (list) {
+		r_list_foreach (list, iter, file) {
+			eprintf ("==> %c %s\n", file->type, file->name);
+			if (count >= av_max) {
+				break;
+			}
+			av[count++] = file->name;
+		}
+		r_list_free (list);
+	}
+	// autocomplete mountpoints
+	// mountpoints if any
+	RFSRoot *r;
+	char *me = strdup (path);
+	r_list_foreach (fs->roots, iter, r) {
+		char *base = strdup (r->path);
+		char *ls = (char *)r_str_lchr (base, '/');
+		if (ls) {
+			ls++;
+			*ls = 0;
+		}
+		// TODO: adjust contents between //
+		if (!strcmp (me, base)) {
+			//eprintf ("m %s\n", (r->path && r->path[0]) ? r->path + 1: "");
+			if (count >= av_max) {
+				break;
+			}
+			av[count++] = r->path;
+		}
+		free (base);
+	}
+	free (me);
+	av[count] = NULL;
+	if (ac) {
+		*ac = count;
+	}
+	av[3] = NULL;
+	return av;
+}
+
+static int ms_autocomplete(RLine *line) {
+	const char *data = line->buffer.data;
+	line->completion.argc = ms_argc;
+	line->completion.argv = ms_argv;
+	if (!strncmp (data, "ls ", 3)
+		|| !strncmp (data, "cd ", 3)
+		|| !strncmp (data, "cat ", 4)
+	 	|| !strncmp (data, "get ", 4)) {
+		const char *file = strchr (data, ' ');
+		if (file++) {
+			//eprintf ("FILE (%s)\n", file);
+			int tmp_argc = 0;
+			// TODO: handle abs vs rel
+			char **tmp_argv = getFilesFor (line, file, &tmp_argc);
+			line->completion.argc = tmp_argc;
+			line->completion.argv = (const char **)tmp_argv;
+		}
+		return true;
+	}
+	return false;
 }
 
 static int cmd_mount(void *data, const char *_input) {
@@ -101,7 +180,8 @@ static int cmd_mount(void *data, const char *_input) {
 				root->p->name, root->delta, root->path);
 		}
 		break;
-	case 'l': // list of plugins
+	case 'L': // "ml" list of plugins .. should be mL
+	case 'l': // "ml" list of plugins .. should be mL
 		r_list_foreach (core->fs->plugins, iter, plug) {
 			r_cons_printf ("%10s  %s\n", plug->name, plug->desc);
 		}
@@ -270,7 +350,14 @@ static int cmd_mount(void *data, const char *_input) {
 				.readline = r_line_readline,
 				.hist_add = r_line_hist_add
 			};
+			RLine *rli = r_line_singleton ();
+			RLineCompletion c;
+			memcpy (&c, &rli->completion, sizeof (c));
+			rli->completion.run = ms_autocomplete;
+			rli->completion.argc = ms_argc;
+			rli->completion.argv = ms_argv;
 			r_fs_shell_prompt (&shell, core->fs, input);
+			memcpy (&rli->completion, &c, sizeof (c));
 		}
 		break;
 	case 'y':
