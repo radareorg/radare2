@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2016 - pancake & Skia */
+/* radare - LGPL - Copyright 2007-2018 - pancake & Skia */
 
 #include "r_cons.h"
 #include "r_util.h"
@@ -583,10 +583,13 @@ static void r_print_format_int(const RPrint* p, int endian, int mode,
 		p->cb_printf ("}");
 	}
 }
+
 static int r_print_format_disasm(const RPrint* p, ut64 seeki, int size) {
 	ut64 prevseeki = seeki;
 
-	if (!p->disasm || !p->user) return 0;
+	if (!p->disasm || !p->user) {
+		return 0;
+	}
 
 	size = R_MAX (1, size);
 
@@ -889,6 +892,7 @@ static void r_print_format_double(const RPrint* p, int endian, int mode,
 				p->cb_printf ("[ ");
 			}
 			while (size--) {
+				// XXX this 999 is scary
 				updateAddr (buf + i, 9999, endian, &addr, NULL);
 				r_mem_swaporcopy ((ut8*)&val_f, buf + i, sizeof (double), endian);
 				if (elem == -1 || elem == 0) {
@@ -1716,6 +1720,9 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				} else {
 					updateAddr (buf + i, len - i, endian, &addr, &addr64);
 				}
+				if (p->bits == 64) {
+					addr = addr64;
+				}
 			} else {
 				// eprintf ("Format strings is too big for this buffer\n");
 				goto beach;
@@ -1805,7 +1812,11 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 						but len make it doesnt work... */
 					p->iob.read_at (p->iob.io, (ut64)addr, buf, len-4);
 					if ( (i + 3) < len || (i + 7) < len) {
-						updateAddr (buf + i, len - i, endian, &addr, &addr64);
+						// XXX this breaks pf *D
+						if (tmp != 'D') {
+
+							updateAddr (buf + i, len - i, endian, &addr, &addr64);
+						}
 					} else {
 						eprintf ("Likely a heap buffer overflow.\n");
 						goto beach;
@@ -2003,7 +2014,15 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					i+= (size==-1) ? 4 : 4*size;
 					break;
 				case 'D':
-					i += r_print_format_disasm (p, seeki, size);
+					if (isptr) {
+						if (p->bits == 64) {
+							i += r_print_format_disasm (p, addr64, size);
+						} else {
+							i += r_print_format_disasm (p, addr, size);
+						}
+					} else {
+						i += r_print_format_disasm (p, seeki, size);
+					}
 					break;
 				case 'o':
 					r_print_format_octal (p, endian, mode, setval, seeki, buf, i, size);

@@ -561,7 +561,6 @@ R_API void r_panels_free(RPanels *panels) {
 
 R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 	int okey, key, wheel;
-	int w, h;
 	int asm_comments = 0;
 	int asm_bytes = 0;
 	int have_utf8 = 0;
