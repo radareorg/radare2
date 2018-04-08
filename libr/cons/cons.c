@@ -97,7 +97,7 @@ R_API RColor r_cons_color_random(ut8 alpha) {
 	return rcolor;
 }
 
-R_API void r_cons_color (int fg, int r, int g, int b) {
+R_API void r_cons_color(int fg, int r, int g, int b) {
 	int k;
 	r = R_DIM (r, 0, 255);
 	g = R_DIM (g, 0, 255);
@@ -140,7 +140,7 @@ R_API void r_cons_strcat_justify(const char *str, int j, char c) {
 	}
 }
 
-R_API RCons *r_cons_singleton () {
+R_API RCons *r_cons_singleton() {
 	return &I;
 }
 
@@ -240,7 +240,7 @@ static BOOL __w32_control(DWORD type) {
 	return false;
 }
 #elif __UNIX__ || __CYGWIN__
-static void resize (int sig) {
+static void resize(int sig) {
 	if (I.event_resize) {
 		I.event_resize (I.event_data);
 	}
@@ -686,7 +686,7 @@ static int real_strlen(const char *ptr, int len) {
 	return ansilen - diff;
 }
 
-R_API void r_cons_visual_write (char *buffer) {
+R_API void r_cons_visual_write(char *buffer) {
 	char white[1024];
 	int cols = I.columns;
 	int alen, plen, lines = I.rows;
@@ -1009,7 +1009,7 @@ R_API int r_cons_get_size(int *rows) {
 	return R_MAX (0, I.columns);
 }
 
-R_API void r_cons_show_cursor (int cursor) {
+R_API void r_cons_show_cursor(int cursor) {
 #if __WINDOWS__ && !__CYGWIN__
 	// TODO
 #else
@@ -1142,7 +1142,7 @@ R_API void r_cons_zero() {
 	write (1, "", 1);
 }
 
-R_API void r_cons_highlight (const char *word) {
+R_API void r_cons_highlight(const char *word) {
 	int l, *cpos;
 	char *rword, *res, *clean;
 	char *inv[2] = {
@@ -1193,7 +1193,7 @@ R_API void r_cons_highlight (const char *word) {
 	}
 }
 
-R_API char *r_cons_lastline (int *len) {
+R_API char *r_cons_lastline(int *len) {
 	char *b = I.buffer + I.buffer_len;
 	while (b > I.buffer) {
 		if (*b == '\n') {
@@ -1230,7 +1230,7 @@ R_API char *r_cons_swap_ground(const char *col) {
 	return strdup (col);
 }
 
-R_API bool r_cons_drop (int n) {
+R_API bool r_cons_drop(int n) {
 	if (n > I.buffer_len) {
 		I.buffer_len = 0;
 		return false;
@@ -1239,7 +1239,7 @@ R_API bool r_cons_drop (int n) {
 	return true;
 }
 
-R_API void r_cons_chop () {
+R_API void r_cons_chop() {
 	while (I.buffer_len > 0) {
 		char ch = I.buffer[I.buffer_len - 1];
 		if (ch != '\n' && !IS_WHITESPACE (ch)) {
