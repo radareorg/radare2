@@ -512,24 +512,25 @@ static int r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) {
 	RAnalRef *ref;
 	RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
 
-	r_list_foreach_safe (refs, iter, tmp, ref) {
-		if (ref->addr != UT64_MAX) {
-			switch (ref->type) {
-			case 'd':
-				if (core->anal->opt.followdatarefs) {
-					r_anal_try_get_fcn (core, ref, depth, 2);
-				}
-				break;
-			case R_ANAL_REF_TYPE_CODE:
-			case R_ANAL_REF_TYPE_CALL:
-				r_core_anal_fcn (core, ref->addr, ref->at, ref->type, depth-1);
-				break;
-			default:
-				break;
-			}
-			// TODO: fix memleak here, fcn not freed even though it is
-			// added in core->anal->fcns which is freed in r_anal_free()
+	r_list_foreach (refs, iter, ref) {
+		if (ref->addr == UT64_MAX) {
+			continue;
 		}
+		switch (ref->type) {
+		case 'd':
+			if (core->anal->opt.followdatarefs) {
+				r_anal_try_get_fcn (core, ref, depth, 2);
+			}
+			break;
+		case R_ANAL_REF_TYPE_CODE:
+		case R_ANAL_REF_TYPE_CALL:
+			r_core_anal_fcn (core, ref->addr, ref->at, ref->type, depth-1);
+			break;
+		default:
+			break;
+		}
+		// TODO: fix memleak here, fcn not freed even though it is
+		// added in core->anal->fcns which is freed in r_anal_free()
 	}
 
 	return 1;
