@@ -2218,7 +2218,9 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 			print_search_progress (at, to1, search->nhits);
 			r_cons_clear_line (1);
 			core->num->value = search->nhits;
-			eprintf ("hits: %" PFMT64d "\n", search->nhits - saved_nhits);
+			if (!json) {
+				eprintf ("hits: %" PFMT64d "\n", search->nhits - saved_nhits);
+			}
 		}
 done:
 		r_cons_break_pop ();
@@ -2403,7 +2405,15 @@ void _CbInRangeSearchV(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk
 			to--;
 		}
 	}
-	r_cons_printf ("0x%"PFMT64x ": 0x%"PFMT64x"\n", from, to);
+	if (!json) {
+		r_cons_printf ("0x%"PFMT64x ": 0x%"PFMT64x"\n", from, to);
+	} else {
+		if (count >= 1) {
+			r_cons_printf (",");
+		}
+		r_cons_printf ("{\"offset\":%"PFMT64d ",\"value\":%"PFMT64d "}",
+				from, to);
+	}
 	r_core_cmdf (core, "f %s.0x%08"PFMT64x" %d = 0x%08"PFMT64x "# from 0x%"PFMT64x "\n", prefix, to, vsize, to, from);
 	const char *cmdHit = r_config_get (core->config, "cmd.hit");
 	if (cmdHit && *cmdHit) {
@@ -2842,20 +2852,25 @@ reread:
 		dosearch = false;
 		if (input[1] == 'e') { // "/me"
 			r_cons_printf ("* r2 thinks%s\n", input + 2);
-		} else if (input[1] == ' ' || input[1] == '\0') {
+		} else if (input[1] == ' ' || input[1] == '\0' || json) {
 			int ret;
-			const char *file = input[1]? input + 2: NULL;
+			const char *file = input[param_offset - 1]? input + param_offset: NULL;
 			ut64 addr = search_itv.addr;
 			RListIter *iter;
 			RIOMap *map;
+			if (json) {
+				r_cons_printf ("[");
+			}
 			r_list_foreach (param.boundaries, iter, map) {
-				eprintf ("-- %llx %llx\n", map->itv.addr, r_itv_end (map->itv));
+				if (!json) {
+					eprintf ("-- %llx %llx\n", map->itv.addr, r_itv_end (map->itv));
+				}
 				r_cons_break_push (NULL, NULL);
 				for (addr = map->itv.addr; addr < r_itv_end (map->itv); addr++) {
 					if (r_cons_is_breaked ()) {
 						break;
 					}
-					ret = r_core_magic_at (core, file, addr, 99, false);
+					ret = r_core_magic_at (core, file, addr, 99, false, json);
 					if (ret == -1) {
 						// something went terribly wrong.
 						break;
@@ -2864,6 +2879,9 @@ reread:
 				}
 				r_cons_clear_line (1);
 				r_cons_break_pop ();
+			}
+			if (json) {
+				r_cons_printf ("]");
 			}
 		} else {
 			eprintf ("Usage: /m [file]\n");
@@ -2898,15 +2916,22 @@ reread:
 		dosearch = false;
 		break;
 	case 'V': // "/V"
-		// TODO: add support for json
 		{
+			if (input[2] == 'j') {
+				json = true;
+				param_offset++;
+			}
 			int err = 1, vsize = atoi (input + 1);
 			bool asterisk = strchr (input + 1, '*');
-			if (vsize && input[2] && input[3]) {
-				char *w = strchr (input + 3, ' ');
+			const char *num_str = input + param_offset + 1;
+			if (vsize && input[2] && num_str) {
+				if (json) {
+					r_cons_printf ("[");
+				}
+				char *w = strchr (num_str, ' ');
 				if (w) {
 					*w++ = 0;
-					ut64 vmin = r_num_math (core->num, input + 3);
+					ut64 vmin = r_num_math (core->num, num_str);
 					ut64 vmax = r_num_math (core->num, w);
 					if (vsize > 0) {
 						RIOMap *map;
@@ -2917,9 +2942,14 @@ reread:
 							int hits = r_core_search_value_in_range (core, map->itv,
 									vmin, vmax, vsize, asterisk,
 									_CbInRangeSearchV);
-							eprintf ("hits: %d\n", hits);
+							if (!json) {
+								eprintf ("hits: %d\n", hits);
+							}
 						}
 					}
+				}
+				if (json) {
+					r_cons_printf ("]");
 				}
 			}
 			if (err) {
@@ -2942,7 +2972,7 @@ reread:
 		r_search_reset (core->search, R_SEARCH_KEYWORD);
 		r_search_set_distance (core->search, (int)
 			r_config_get_i (core->config, "search.distance"));
-		char *v_str = (char *)r_str_trim_ro (input + 2);
+		char *v_str = (char *)r_str_trim_ro (input + param_offset);
 		RList *nums = r_num_str_split_list (v_str);
 		int len = r_list_length (nums);
 		int bsize = 0;
