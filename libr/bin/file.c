@@ -90,7 +90,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 		}
 		if (type == R_STRING_TYPE_DETECT) {
 			char *w = (char *)buf + needle + rc - from;
-			if ((to - needle) > 4) {
+			if ((to - needle) > 5) {
 				bool is_wide32 = needle + rc + 2 < to && !w[0] && !w[1] && !w[2] && w[3] && !w[4];
 				if (is_wide32) {
 					str_type = R_STRING_TYPE_WIDE32;
