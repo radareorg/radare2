@@ -74,7 +74,21 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return NULL;
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+
+static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	struct r_bin_java_obj_t *bin_obj = NULL;
+	if (!buf) {
+		return NULL;
+	}
+	void *res = bin_obj = r_bin_java_new_buf (buf, loadaddr, sdb);
+	add_bin_obj_to_sdb (bin_obj);
+	if (bf && bf->file) {
+		bin_obj->file = strdup (bf->file);
+	}
+	return res;
+}
+
+static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	struct r_bin_java_obj_t *bin_obj = NULL;
 	RBuffer *tbuf = NULL;
 	void *res = NULL;
@@ -253,6 +267,7 @@ RBinPlugin r_bin_plugin_java = {
 	.fini = fini,
 	.get_sdb = &get_sdb,
 	.load = &load,
+	.load_buffer = &load_buffer,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
 	.check_bytes = &check_bytes,

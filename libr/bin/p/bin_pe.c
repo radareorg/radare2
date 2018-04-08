@@ -16,6 +16,18 @@ static Sdb* get_sdb (RBinFile *bf) {
 	return bin? bin->kv: NULL;
 }
 
+static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	struct PE_(r_bin_pe_obj_t) *res = NULL;
+	if (!buf) {
+		return NULL;
+	}
+	res = PE_(r_bin_pe_new_buf) (buf, bf->rbin->verbose);
+	if (res) {
+		sdb_ns_set (sdb, "info", res->kv);
+	}
+	return res;
+}
+
 static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	struct PE_(r_bin_pe_obj_t) *res = NULL;
 	RBuffer *tbuf = NULL;
@@ -801,6 +813,7 @@ RBinPlugin r_bin_plugin_pe = {
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
 	.load = &load,
+	.load_buffer = &load_buffer,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
 	.check_bytes = &check_bytes,

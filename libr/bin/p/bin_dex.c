@@ -696,7 +696,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 	free (params);
 }
 
-static Sdb *get_sdb (RBinFile *bf) {
+static Sdb * get_sdb (RBinFile *bf) {
 	RBinObject *o = bf->o;
 	if (!o || !o->bin_obj) {
 		return NULL;
@@ -705,7 +705,11 @@ static Sdb *get_sdb (RBinFile *bf) {
 	return bin? bin->kv: NULL;
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	return buf ? r_bin_dex_new_buf(buf): NULL;
+}
+
+static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	void *res = NULL;
 	RBuffer *tbuf = NULL;
 	if (!buf || !sz || sz == UT64_MAX) {
@@ -2010,7 +2014,8 @@ RBinPlugin r_bin_plugin_dex = {
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
 	.load = &load,
-	.load_bytes = load_bytes,
+	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.check_bytes = check_bytes,
 	.baddr = baddr,
 	.entries = entries,
