@@ -296,41 +296,42 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 	r_list_foreach (list, iter, ref) {
 		int t = ref->type ? ref->type: ' ';
 		switch (rad) {
-			case '*':
-				anal->cb_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", ref->at, ref->addr);
-				break;
-			case '\0':
-				{
-					char *name = anal->coreb.getNameDelta (anal->coreb.core, ref->at);
-					r_str_replace_char (name, ' ', 0);
-					anal->cb_printf ("%40s", name? name: "");
-					free (name);
-					anal->cb_printf (" 0x%"PFMT64x" -> %9s -> 0x%"PFMT64x, ref->at, analref_toString (t), ref->addr);
-					name = anal->coreb.getNameDelta (anal->coreb.core, ref->addr);
-					r_str_replace_char (name, ' ', 0);
-					if (name && *name) {
-						anal->cb_printf (" %s\n", name);
-					} else {
-						anal->cb_printf ("\n");
-					}
-					free (name);
+		case '*':
+			anal->cb_printf ("ax%c 0x%"PFMT64x" 0x%"PFMT64x"\n",
+				ref->type, ref->at, ref->addr);
+			break;
+		case '\0':
+			{
+				char *name = anal->coreb.getNameDelta (anal->coreb.core, ref->at);
+				r_str_replace_char (name, ' ', 0);
+				anal->cb_printf ("%40s", name? name: "");
+				free (name);
+				anal->cb_printf (" 0x%"PFMT64x" -> %9s -> 0x%"PFMT64x, ref->at, analref_toString (t), ref->addr);
+				name = anal->coreb.getNameDelta (anal->coreb.core, ref->addr);
+				r_str_replace_char (name, ' ', 0);
+				if (name && *name) {
+					anal->cb_printf (" %s\n", name);
+				} else {
+					anal->cb_printf ("\n");
 				}
-				break;
-			case 'q':
-				anal->cb_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x"  %s\n", ref->at, ref->addr, analref_toString (t));
-				break;
-			case 'j':
-				{
-					if (is_first) {
-						is_first = false;
-					} else {
-						anal->cb_printf (",");
-					}
-					anal->cb_printf ("\"%"PFMT64d"\":%"PFMT64d, ref->at, ref->addr);
+				free (name);
+			}
+			break;
+		case 'q':
+			anal->cb_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x"  %s\n", ref->at, ref->addr, analref_toString (t));
+			break;
+		case 'j':
+			{
+				if (is_first) {
+					is_first = false;
+				} else {
+					anal->cb_printf (",");
 				}
-				break;
-			default:
-				break;
+				anal->cb_printf ("\"%"PFMT64d"\":%"PFMT64d, ref->at, ref->addr);
+			}
+			break;
+		default:
+			break;
 		}
 	}
 	if (rad == 'j') {
