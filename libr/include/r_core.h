@@ -137,7 +137,7 @@ typedef struct r_core_t {
 	ut8 *oobi; /* out of band input ; used for multiline or file input */
 	int oobi_len;
 	RBuffer *yank_buf;
-	int tmpseek;
+	bool tmpseek;
 	bool vmode;
 	int interrupted; // XXX IS THIS DUPPED SOMEWHERE?
 	/* files */
