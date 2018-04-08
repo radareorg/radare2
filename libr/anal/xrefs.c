@@ -258,7 +258,8 @@ R_API RList *r_anal_refs_get (RAnal *anal, ut64 from) {
 	if (!list) {
 		return NULL;
 	}
-	listrefs (anal->dict_refs, from, list);
+	// listrefs (anal->dict_refs, from, list);
+	listxrefs (anal->dict_xrefs, from, list);
 	if (r_list_empty (list)) {
 		r_list_free (list);
 		list = NULL;
@@ -271,7 +272,8 @@ R_API RList *r_anal_xrefs_get_from (RAnal *anal, ut64 to) {
 	if (!list) {
 		return NULL;
 	}
-	listxrefs (anal->dict_xrefs, to, list);
+	// listxrefs (anal->dict_xrefs, to, list);
+	listxrefs (anal->dict_refs, to, list);
 	if (r_list_empty (list)) {
 		r_list_free (list);
 		list = NULL;

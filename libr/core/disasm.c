@@ -1084,7 +1084,6 @@ static void ds_pre_xrefs(RDisasmState *ds, bool no_fcnlines) {
 }
 
 static void ds_show_refs(RDisasmState *ds) {
-	RList *list;
 	RAnalRef *ref;
 	RListIter *iter;
 	RFlagItem *flagi, *flagat;
@@ -1092,7 +1091,26 @@ static void ds_show_refs(RDisasmState *ds) {
 	if (!ds->show_cmtrefs) {
 		return;
 	}
-	list = r_anal_xrefs_get_from (ds->core->anal, ds->at);
+#if 0
+	if (ds->analop.type == R_ANAL_REF_TYPE_CALL) {
+		RAnalOp aop;
+		ut8 buf[12];
+		r_core_read_at (ds->core, ref->at, buf, sizeof (buf));
+		r_anal_op (ds->core->anal, &aop, ref->at, buf, sizeof (buf), R_ANAL_OP_MASK_ALL);
+		if ((aop.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_UCALL) {
+			RAnalFunction * fcn = r_anal_get_fcn_at (ds->core->anal,
+					ref->addr, R_ANAL_FCN_TYPE_NULL);
+			_ds_comment_align_ (ds, true, false);
+			if (fcn) {
+				ds_comment (ds, true, "; %s", fcn->name);
+			} else {
+				ds_comment (ds, true, "; 0x%" PFMT64x"", ref->addr);
+			}
+		}
+	}
+#endif
+	RList *list = r_anal_xrefs_get_from (ds->core->anal, ds->at);
+
 	r_list_foreach (list, iter, ref) {
 		char *cmt = r_meta_get_string (ds->core->anal, R_META_TYPE_COMMENT, ref->addr);
 		flagi = r_flag_get_i (ds->core->flags, ref->addr);
