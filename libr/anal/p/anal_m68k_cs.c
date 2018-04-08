@@ -119,7 +119,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		opsize = -1;
 		goto beach;
 	}
-	if (!memcmp (buf, "\xff\xff", 2)) {
+	if (!memcmp (buf, "\xff\xff", R_MIN (len, 2))) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		op->size = 2;
 		opsize = -1;

@@ -58,7 +58,14 @@ static int riscv_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	op->addr = addr;
 	op->type = R_ANAL_OP_TYPE_UNK;
 
-	word = (len >= sizeof (ut64))? r_read_ble64 (data, anal->big_endian): r_read_ble16 (data, anal->big_endian);
+	if (len >= sizeof (ut64)) {
+		word = r_read_ble64 (data, anal->big_endian);
+	} else if (len >= sizeof (ut32)) {
+		word = r_read_ble16 (data, anal->big_endian);
+	} else {
+		op->type = R_ANAL_OP_TYPE_ILL;
+		return -1;
+	}
 
 	o = get_opcode (word);
 	if (word == UT64_MAX) {

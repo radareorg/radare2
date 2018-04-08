@@ -33,7 +33,7 @@ typedef struct _cpu_model_tag {
 	CPU_CONST *consts[10];
 } CPU_MODEL;
 
-typedef void (*inst_handler_t) (RAnal *anal, RAnalOp *op, const ut8 *buf, int *fail, CPU_MODEL *cpu);
+typedef void (*inst_handler_t) (RAnal *anal, RAnalOp *op, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu);
 
 typedef struct _opcodes_tag_ {
 	const char *const name;
@@ -45,7 +45,7 @@ typedef struct _opcodes_tag_ {
 	ut64 type;
 } OPCODE_DESC;
 
-static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, CPU_MODEL *cpu);
+static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, CPU_MODEL *cpu);
 
 #define CPU_MODEL_DECL(model, pc, consts)				\
 	{								\
@@ -57,11 +57,11 @@ static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut
 #define CPU_PC_MASK(cpu)		MASK((cpu)->pc)
 #define CPU_PC_SIZE(cpu)		((((cpu)->pc) >> 3) + ((((cpu)->pc) & 0x07) ? 1 : 0))
 
-#define INST_HANDLER(OPCODE_NAME)	static void _inst__ ## OPCODE_NAME (RAnal *anal, RAnalOp *op, const ut8 *buf, int *fail, CPU_MODEL *cpu)
+#define INST_HANDLER(OPCODE_NAME)	static void _inst__ ## OPCODE_NAME (RAnal *anal, RAnalOp *op, const ut8 *buf, int len, int *fail, CPU_MODEL *cpu)
 #define INST_DECL(OP, M, SL, C, SZ, T)	{ #OP, (M), (SL), _inst__ ## OP, (C), (SZ), R_ANAL_OP_TYPE_ ## T }
 #define INST_LAST			{ "unknown", 0, 0, (void *) 0, 2, 1, R_ANAL_OP_TYPE_UNK }
 
-#define INST_CALL(OPCODE_NAME)		_inst__ ## OPCODE_NAME (anal, op, buf, fail, cpu)
+#define INST_CALL(OPCODE_NAME)		_inst__ ## OPCODE_NAME (anal, op, buf, len, fail, cpu)
 #define INST_INVALID			{ *fail = 1; return; }
 #define INST_ASSERT(x)			{ if (!(x)) { INST_INVALID; } }
 
@@ -428,6 +428,9 @@ INST_HANDLER (adiw) {	// ADIW Rd+1:Rd, K
 
 INST_HANDLER (and) {	// AND Rd, Rr
 			// TST Rd
+	if (len < 2) {
+		return;
+	}
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
 	int r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
 	ESIL_A ("r%d,r%d,&,", r, d);				// 0: Rd & Rr
@@ -437,6 +440,9 @@ INST_HANDLER (and) {	// AND Rd, Rr
 
 INST_HANDLER (andi) {	// ANDI Rd, K
 			// CBR Rd, K (= ANDI Rd, 1-K)
+	if (len < 2) {
+		return;
+	}
 	int d = ((buf[0] >> 4) & 0xf) + 16;
 	int k = ((buf[1] & 0x0f) << 4) | (buf[0] & 0x0f);
 	op->val = k;
@@ -446,6 +452,9 @@ INST_HANDLER (andi) {	// ANDI Rd, K
 }
 
 INST_HANDLER (asr) {	// ASR Rd
+	if (len < 2) {
+		return;
+	}
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
 	ESIL_A ("1,r%d,>>,r%d,0x80,&,|,", d, d);		// 0: R=(Rd >> 1) | Rd7
 	ESIL_A ("r%d,0x1,&,!,!,cf,=,", d);			// C = Rd0
@@ -471,6 +480,9 @@ INST_HANDLER (bclr) {	// BCLR s
 }
 
 INST_HANDLER (bld) {	// BLD Rd, b
+	if (len < 2) {
+		return;
+	}
 	int d = ((buf[1] & 0x01) << 4) | ((buf[0] >> 4) & 0xf);
 	int b = buf[0] & 0x7;
 	ESIL_A ("r%d,%d,1,<<,0xff,^,&,", d, b);			// Rd/b = 0
@@ -525,12 +537,18 @@ INST_HANDLER (bset) {	// BSET s
 }
 
 INST_HANDLER (bst) {	// BST Rd, b
+	if (len < 2) {
+		return;
+	}
 	ESIL_A ("r%d,%d,1,<<,&,!,!,tf,=,",			// tf = Rd/b
 		((buf[1] & 1) << 4) | ((buf[0] >> 4) & 0xf),	// r
 		buf[0] & 0x7);					// b
 }
 
 INST_HANDLER (call) {	// CALL k
+	if (len < 4) {
+		return;
+	}
 	op->jump = (buf[2] << 1)
 		 | (buf[3] << 9)
 		 | (buf[1] & 0x01) << 23
@@ -607,7 +625,7 @@ INST_HANDLER (cpse) {	// CPSE Rd, Rr
 	// and free next_op's esil string (we dont need it now)
 	avr_op_analyze (anal,
 			&next_op,
-			op->addr + op->size, buf + op->size,
+			op->addr + op->size, buf + op->size, len - op->size,
 			cpu);
 	r_strbuf_fini (&next_op.esil);
 	op->jump = op->addr + next_op.size + 2;
@@ -1226,6 +1244,7 @@ INST_HANDLER (sbix) {	// SBIC A, b
 	avr_op_analyze (anal,
 			&next_op,
 			op->addr + op->size, buf + op->size,
+			len - op->size,
 			cpu);
 	r_strbuf_fini (&next_op.esil);
 	op->jump = op->addr + next_op.size + 2;
@@ -1274,7 +1293,7 @@ INST_HANDLER (sbrx) {	// SBRC Rr, b
 	// and free next_op's esil string (we dont need it now)
 	avr_op_analyze (anal,
 			&next_op,
-			op->addr + op->size, buf + op->size,
+			op->addr + op->size, buf + op->size, len - op->size,
 			cpu);
 	r_strbuf_fini (&next_op.esil);
 	op->jump = op->addr + next_op.size + 2;
@@ -1505,7 +1524,7 @@ OPCODE_DESC opcodes[] = {
 	INST_LAST
 };
 
-static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, CPU_MODEL *cpu) {
+static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, CPU_MODEL *cpu) {
 	OPCODE_DESC *opcode_desc;
 	ut16 ins = (buf[1] << 8) | buf[0];
 	int fail;
@@ -1536,7 +1555,7 @@ static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut
 			r_strbuf_setf (&op->esil, "");
 
 			// handle opcode
-			opcode_desc->handler (anal, op, buf, &fail, cpu);
+			opcode_desc->handler (anal, op, buf, len, &fail, cpu);
 			if (fail) {
 				goto INVALID_OP;
 			}
@@ -1614,7 +1633,7 @@ static int avr_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		r_anal_esil_reg_write (anal->esil, "_page", offset);
 	}
 	// process opcode
-	avr_op_analyze (anal, op, addr, buf, cpu);
+	avr_op_analyze (anal, op, addr, buf, len, cpu);
 
 	return op->size;
 }
@@ -1978,7 +1997,7 @@ static ut8 *anal_mask_avr(RAnal *anal, int size, const ut8 *data, ut64 at) {
 	CPU_MODEL *cpu = get_cpu_model (anal->cpu);
 
 	for (idx = 0; idx + 1 < size; idx += op->size) {
-		OPCODE_DESC* opcode_desc = avr_op_analyze (anal, op, at + idx, data + idx, cpu);
+		OPCODE_DESC* opcode_desc = avr_op_analyze (anal, op, at + idx, data + idx, size - idx, cpu);
 
 		if (op->size < 1) {
 			break;
