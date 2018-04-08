@@ -483,6 +483,7 @@ static const char *help_msg_ao[] = {
 	"aoj", " N", "display opcode analysis information in JSON for N opcodes",
 	"aoe", " N", "display esil form for N opcodes",
 	"aor", " N", "display reil form for N opcodes",
+	"aos", " N", "display size of N opcodes",
 	"ao", " 5", "display opcode analysis of 5 opcodes",
 	"ao*", "", "display opcode in r commands",
 	NULL
@@ -1269,7 +1270,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	ut64 addr;
 	bool isFirst = true;
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
-
+	int totalsize = 0;
 
 	// Variables required for setting up ESIL to REIL conversion
 	if (use_color) {
@@ -1331,6 +1332,8 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 					r_cons_printf ("0x%" PFMT64x " %s\n", core->offset + idx, esilstr);
 				}
 			}
+		} else if (fmt == 's') {
+			totalsize += op.size;
 		} else if (fmt == 'r') {
 			if (*esilstr) {
 				if (use_color) {
@@ -1535,10 +1538,11 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		free (mnem);
 		r_anal_hint_free (hint);
 	}
-
 	if (fmt == 'j') {
 		r_cons_printf ("]");
 		r_cons_newline ();
+	} else if (fmt == 's') {
+		r_cons_printf ("%d\n", totalsize);
 	}
 	r_anal_esil_free (esil);
 }
@@ -4458,6 +4462,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 	case '?':
 		r_core_cmd_help (core, help_msg_ao);
 		break;
+	case 's': // "aos"
 	case 'j': // "aoj"
 	case 'e': // "aoe"
 	case 'r': {
@@ -4469,7 +4474,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 			}
 			if (l > tbs) {
 				r_core_block_size (core, l * 4);
-				//len = l;
+			//	len = l;
 			}
 		} else {
 			len = l = core->blocksize;
