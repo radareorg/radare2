@@ -62,9 +62,9 @@ static const char *help_msg_db[] = {
 	//
 	"dbi", "", "List breakpoint indexes",
 	"dbic", " <index> <cmd>", "Run command at breakpoint index",
-	"dbie", " <index>", "Enable breakpoint by index for count hits",
+	"dbie", " <index> [count]", "Enable breakpoint by index for count hits",
 	"dbid", " <index> [count]", "Disable breakpoint by index for count hits",
-	"dbis", " <index> [count]", "Swap Nth breakpoint",
+	"dbis", " <index>", "Swap Nth breakpoint",
 	"dbite", " <index>", "Enable breakpoint Trace by index",
 	"dbitd", " <index>", "Disable breakpoint Trace by index",
 	"dbits", " <index>", "Swap Nth breakpoint trace",
@@ -3075,12 +3075,18 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	case 'e':
 		for (p = input + 2; *p == ' '; p++);
 		if (*p == '*') r_bp_enable_all (core->dbg->bp,true);
-		r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), true, 0);
+		else {
+			for (; *p && *p != ' '; p++);
+			r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), true, r_num_math (core->num, p));
+		}
 		break;
 	case 'd':
 		for (p = input + 2; *p == ' '; p++);
 		if (*p == '*') r_bp_enable_all (core->dbg->bp, false);
-		r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), false, 0);
+		else {
+			for (; *p && *p != ' '; p++);
+			r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), false, r_num_math (core->num, p));
+		}
 		break;
 	case 'h':
 		switch (input[2]) {
