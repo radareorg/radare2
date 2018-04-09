@@ -201,6 +201,7 @@ static const char *help_msg_pd[] = {
 	"pdJ", "", "formatted disassembly like pd as json",
 	"pdk", "", "disassemble all methods of a class",
 	"pdl", "", "show instruction sizes",
+	"pdp", "", "disassemble by following pointers to read ropchains",
 	"pdr", "", "recursive disassemble across the function graph",
 	"pdr.", "", "recursive disassemble across the function graph (from current basic block)",
 	"pdR", "", "recursive disassemble block size bytes without analyzing functions",
@@ -2997,6 +2998,54 @@ r_cons_printf ("base:\n");
 }
 #endif
 
+static void disasm_until_ret(RCore *core, ut64 addr, char type_print) {
+	int p = 0;
+	ut8 *buf = calloc (core->blocksize, 1);
+	if (!buf) {
+		return;
+	}
+	(void)r_io_read_at (core->io, addr, buf, core->blocksize);
+	while (p + 4 < core->blocksize) {
+		RAnalOp *op = r_core_anal_op (core, addr + p);
+		if (op) {
+			r_cons_printf ("0x%08"PFMT64x"  %10s %s\n", addr + p, "", op->mnemonic);
+			if (op->type == R_ANAL_OP_TYPE_RET) {
+				break;
+			}
+			p += op->size;
+		} else {
+			eprintf ("[pdp] Cannot get op at 0x%08"PFMT64x"\n", addr + p);
+			r_anal_op_free (op);
+			break;
+		}
+		//r_io_read_at (core->io, n, rbuf, 512);
+		r_anal_op_free (op);
+	}
+	free (buf);
+}
+
+static void disasm_ropchain(RCore *core, ut64 addr, char type_print) {
+	int p = 0;
+	ut64 n = 0;
+	ut8 *buf = calloc (core->blocksize, 1);
+	(void)r_io_read_at (core->io, addr, buf, core->blocksize);
+	while (p + 4 < core->blocksize) {
+		if (core->assembler->bits == 64) {
+			n = r_read_ble64 (buf + p, core->print->big_endian);
+		} else {
+			n = r_read_ble32 (buf + p, core->print->big_endian);
+		}
+		r_cons_printf ("[0x%08"PFMT64x"] 0x%08"PFMT64x"\n", addr + p, n);
+		disasm_until_ret (core, n, type_print);
+		if (core->assembler->bits == 64) {
+			p += 8;
+		} else {
+			p += 4;
+		}
+	}
+	free (buf);
+}
+
 static void disasm_recursive(RCore *core, ut64 addr, char type_print) {
 	RAnalOp aop = {0};
 	int ret;
@@ -4243,7 +4292,12 @@ static int cmd_print(void *data, const char *input) {
 			}
 			l = 0;
 			break;
-		case 'l': // pdl
+		case 'p': // "pdp"
+			processed_cmd = true;
+			disasm_ropchain (core, core->offset, 'D');
+			pd_result = true;
+			break;
+		case 'l': // "pdl"
 			processed_cmd = true;
 			{
 				RAsmOp asmop;
