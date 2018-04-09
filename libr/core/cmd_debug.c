@@ -4,7 +4,6 @@
 #include "r_util.h"
 #include "r_cons.h"
 #include "sdb/sdb.h"
-
 #define TN_KEY_LEN 32
 #define TN_KEY_FMT "%"PFMT64u
 
@@ -53,8 +52,8 @@ static const char *help_msg_db[] = {
 	// "dbi", " 0x848 ecx=3", "stop execution when condition matches",
 	"dbc", " <addr> <cmd>", "Run command when breakpoint is hit",
 	"dbC", " <addr> <cmd>", "Run command but continue until <cmd> returns zero",
-	"dbd", " <addr>", "Disable breakpoint",
-	"dbe", " <addr>", "Enable breakpoint",
+	"dbd", " <addr> [count]", "Disable breakpoint for count hits",
+	"dbe", " <addr> [count]", "Enable breakpoint for count hits",
 	"dbs", " <addr>", "Toggle breakpoint",
 	"dbf", "", "Put a breakpoint into every no-return function",
 	//
@@ -63,8 +62,8 @@ static const char *help_msg_db[] = {
 	//
 	"dbi", "", "List breakpoint indexes",
 	"dbic", " <index> <cmd>", "Run command at breakpoint index",
-	"dbie", " <index>", "Enable breakpoint by index",
-	"dbid", " <index>", "Disable breakpoint by index",
+	"dbie", " <index> [count]", "Enable breakpoint by index for count hits",
+	"dbid", " <index> [count]", "Disable breakpoint by index for count hits",
 	"dbis", " <index>", "Swap Nth breakpoint",
 	"dbite", " <index>", "Enable breakpoint Trace by index",
 	"dbitd", " <index>", "Disable breakpoint Trace by index",
@@ -3055,7 +3054,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			bpi = r_debug_bp_add (core->dbg, addr, hwbp, false, 0, NULL, 0);
 			if (!bpi) eprintf ("Cannot set breakpoint (%s)\n", input + 2);
 		}
-		r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), true);
+		r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), true, 0);
 		break;
 	case 'n': // "dbn"
 		bpi = r_bp_get_at (core->dbg->bp, core->offset);
@@ -3076,12 +3075,18 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	case 'e':
 		for (p = input + 2; *p == ' '; p++);
 		if (*p == '*') r_bp_enable_all (core->dbg->bp,true);
-		else r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), true);
+		else {
+			for (; *p && *p != ' '; p++);
+			r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), true, r_num_math (core->num, p));
+		}
 		break;
 	case 'd':
 		for (p = input + 2; *p == ' '; p++);
 		if (*p == '*') r_bp_enable_all (core->dbg->bp, false);
-		r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), false);
+		else {
+			for (; *p && *p != ' '; p++);
+			r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), false, r_num_math (core->num, p));
+		}
 		break;
 	case 'h':
 		switch (input[2]) {

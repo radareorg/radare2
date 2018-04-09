@@ -119,10 +119,11 @@ R_API RBreakpointItem *r_bp_get_in(RBreakpoint *bp, ut64 addr, int rwx) {
 	return NULL;
 }
 
-R_API RBreakpointItem *r_bp_enable(RBreakpoint *bp, ut64 addr, int set) {
+R_API RBreakpointItem *r_bp_enable(RBreakpoint *bp, ut64 addr, int set, int count) {
 	RBreakpointItem *b = r_bp_get_in (bp, addr, 0);
 	if (b) {
 		b->enabled = set;
+		b->togglehits = count;
 		return b;
 	}
 	return NULL;
