@@ -692,6 +692,7 @@ R_API int r_cons_controlz(int ch);
 R_API int r_cons_readchar(void);
 R_API bool r_cons_readpush(const char *str, int len);
 R_API void r_cons_readflush();
+R_API void r_cons_switchbuf(bool active);
 R_API int r_cons_readchar_timeout(ut32 usec);
 R_API int r_cons_any_key(const char *msg);
 R_API int r_cons_eof(void);

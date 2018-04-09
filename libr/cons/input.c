@@ -428,6 +428,7 @@ R_API int r_cons_readchar_timeout(ut32 usec) {
 // TODO: support binary? buf+len
 static char *readbuffer = NULL;
 static int readbuffer_length = 0;
+static bool bufactive = true;
 
 R_API bool r_cons_readpush(const char *str, int len) {
 	char *res = (len + readbuffer_length > 0) ? realloc (readbuffer, len + readbuffer_length) : NULL;
@@ -443,6 +444,10 @@ R_API bool r_cons_readpush(const char *str, int len) {
 R_API void r_cons_readflush() {
 	R_FREE (readbuffer);
 	readbuffer_length = 0;
+}
+
+R_API void r_cons_switchbuf(bool active) {
+	bufactive = active;
 }
 
 R_API int r_cons_readchar() {
@@ -475,7 +480,9 @@ R_API int r_cons_readchar() {
 	if (read (0, buf, 1) == -1) {
 		return -1;
 	}
-	r_cons_set_raw (0);
+	if (bufactive) {
+		r_cons_set_raw (0);
+	}
 #endif
 	return r_cons_controlz (buf[0]);
 }
