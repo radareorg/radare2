@@ -52,8 +52,8 @@ static const char *help_msg_db[] = {
 	// "dbi", " 0x848 ecx=3", "stop execution when condition matches",
 	"dbc", " <addr> <cmd>", "Run command when breakpoint is hit",
 	"dbC", " <addr> <cmd>", "Run command but continue until <cmd> returns zero",
-	"dbd", " <addr>", "Disable breakpoint for count hits",
-	"dbe", " <addr>", "Enable breakpoint for count hits",
+	"dbd", " <addr>", "Disable breakpoint",
+	"dbe", " <addr>", "Enable breakpoint",
 	"dbs", " <addr>", "Toggle breakpoint",
 	"dbf", "", "Put a breakpoint into every no-return function",
 	//
@@ -62,8 +62,8 @@ static const char *help_msg_db[] = {
 	//
 	"dbi", "", "List breakpoint indexes",
 	"dbic", " <index> <cmd>", "Run command at breakpoint index",
-	"dbie", " <index>", "Enable breakpoint by index for count hits",
-	"dbid", " <index>", "Disable breakpoint by index for count hits",
+	"dbie", " <index>", "Enable breakpoint by index",
+	"dbid", " <index>", "Disable breakpoint by index",
 	"dbis", " <index>", "Swap Nth breakpoint",
 	"dbite", " <index>", "Enable breakpoint Trace by index",
 	"dbitd", " <index>", "Disable breakpoint Trace by index",
