@@ -2343,18 +2343,20 @@ static int read_reloc(ELFOBJ *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
 	if (offset + sizeof (Elf_ (Rela)) > bin->size || offset + sizeof (Elf_(Rela)) < offset) {
 		return -1;
 	}
-	ut64 i = offset;
-	// TODO makke a single read and work with the buffer
+	ut8 buf[sizeof (Elf_(Rela))] = {0};
+	int res = r_buf_read_at (bin->b, offset, buf, sizeof (Elf_(Rela)));
+	// TODO make a single read and work with the buffer
+	size_t i = 0;
 	if (is_rela == DT_RELA) {
 		Elf_(Rela) rela;
 #if R_BIN_ELF64
-		rela.r_offset = BREAD64 (bin->b, i)
-		rela.r_info = BREAD64 (bin->b, i)
-		rela.r_addend = BREAD64 (bin->b, i)
+		rela.r_offset = READ64 (buf, i)
+		rela.r_info = READ64 (buf, i)
+		rela.r_addend = READ64 (buf, i)
 #else
-		rela.r_offset = BREAD32 (bin->b, i)
-		rela.r_info = BREAD32 (bin->b, i)
-		rela.r_addend = BREAD32 (bin->b, i)
+		rela.r_offset = READ32 (buf, i)
+		rela.r_info = READ32 (buf, i)
+		rela.r_addend = READ32 (buf, i)
 #endif
 		r->is_rela = is_rela;
 		r->offset = rela.r_offset;
@@ -2366,11 +2368,11 @@ static int read_reloc(ELFOBJ *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
 	} else {
 		Elf_(Rel) rel;
 #if R_BIN_ELF64
-		rel.r_offset = BREAD64 (bin->b, i)
-		rel.r_info = BREAD64 (bin->b, i)
+		rel.r_offset = READ64 (buf, i)
+		rel.r_info = READ64 (buf, i)
 #else
-		rel.r_offset = BREAD32 (bin->b, i)
-		rel.r_info = BREAD32 (bin->b, i)
+		rel.r_offset = READ32 (buf, i)
+		rel.r_info = READ32 (buf, i)
 #endif
 		r->is_rela = is_rela;
 		r->offset = rel.r_offset;
@@ -2383,13 +2385,12 @@ static int read_reloc(ELFOBJ *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
 
 RBinElfReloc* Elf_(r_bin_elf_get_relocs)(ELFOBJ *bin) {
 	int res, rel, rela, i, j;
-	size_t reloc_num = 0;
 	RBinElfReloc *ret = NULL;
 
 	if (!bin || !bin->g_sections) {
 		return NULL;
 	}
-	reloc_num = get_relocs_num (bin);
+	size_t reloc_num = get_relocs_num (bin);
 	if (!reloc_num)	{
 		return NULL;
 	}
