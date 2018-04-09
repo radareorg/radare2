@@ -30,8 +30,10 @@
 #define READ32(x, i) r_read_ble32(x + i, bin->endian); i += 4;
 #define READ64(x, i) r_read_ble64(x + i, bin->endian); i += 8;
 
-#define BREAD32(x, i) r_read_ble32(r_buf_get_at (x, i, NULL), bin->endian); i += 8;
-#define BREAD64(x, i) r_read_ble64(r_buf_get_at (x, i, NULL), bin->endian); i += 8;
+#define BREAD8(x, i) r_read_ble8(r_buf_get_at (x, (i), NULL)); i += 1;
+#define BREAD16(x, i) r_read_ble16(r_buf_get_at (x, (i), NULL), bin->endian); i += 2;
+#define BREAD32(x, i) r_read_ble32(r_buf_get_at (x, (i), NULL), bin->endian); i += 8;
+#define BREAD64(x, i) r_read_ble64(r_buf_get_at (x, (i), NULL), bin->endian); i += 8;
 
 #define GROWTH_FACTOR (1.5)
 
@@ -48,7 +50,7 @@ enum {
 typedef struct reginfo {
 	ut32 regsize;
 	ut32 regdelta;
-}reginfo_t;
+} reginfo_t;
 
 static reginfo_t reginf[ARCH_LEN] = {
 					{160, 0x5c},
@@ -981,7 +983,7 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 		ut32 vn_cnt = entry->vn_cnt;
 		for (j = 0, isum = i + entry->vn_aux; j < vn_cnt && vstart + sizeof (Elf_(Vernaux)) <= end; ++j) {
 			int k;
-			Elf_(Vernaux) * aux = NULL;
+			Elf_(Vernaux) *aux = NULL;
 			Elf_(Vernaux) vaux = {0};
 			aux = (Elf_(Vernaux)*)&vaux;
 			k = 0;
@@ -2338,22 +2340,21 @@ static size_t get_relocs_num(ELFOBJ *bin) {
 }
 
 static int read_reloc(ELFOBJ *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
-	ut8 *buf = bin->b->buf;
-	int j = 0;
-	if (offset + sizeof (Elf_ (Rela)) >
-		    bin->size || offset + sizeof (Elf_(Rela)) < offset) {
+	if (offset + sizeof (Elf_ (Rela)) > bin->size || offset + sizeof (Elf_(Rela)) < offset) {
 		return -1;
 	}
+	ut64 i = offset;
+	// TODO makke a single read and work with the buffer
 	if (is_rela == DT_RELA) {
 		Elf_(Rela) rela;
 #if R_BIN_ELF64
-		rela.r_offset = READ64 (buf + offset, j)
-		rela.r_info = READ64 (buf + offset, j)
-		rela.r_addend = READ64 (buf + offset, j)
+		rela.r_offset = BREAD64 (bin->b, i)
+		rela.r_info = BREAD64 (bin->b, i)
+		rela.r_addend = BREAD64 (bin->b, i)
 #else
-		rela.r_offset = READ32 (buf + offset, j)
-		rela.r_info = READ32 (buf + offset, j)
-		rela.r_addend = READ32 (buf + offset, j)
+		rela.r_offset = BREAD32 (bin->b, i)
+		rela.r_info = BREAD32 (bin->b, i)
+		rela.r_addend = BREAD32 (bin->b, i)
 #endif
 		r->is_rela = is_rela;
 		r->offset = rela.r_offset;
@@ -2365,11 +2366,11 @@ static int read_reloc(ELFOBJ *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
 	} else {
 		Elf_(Rel) rel;
 #if R_BIN_ELF64
-		rel.r_offset = READ64 (buf + offset, j)
-		rel.r_info = READ64 (buf + offset, j)
+		rel.r_offset = BREAD64 (bin->b, i)
+		rel.r_info = BREAD64 (bin->b, i)
 #else
-		rel.r_offset = READ32 (buf + offset, j)
-		rel.r_info = READ32 (buf + offset, j)
+		rel.r_offset = BREAD32 (bin->b, i)
+		rel.r_info = BREAD32 (bin->b, i)
 #endif
 		r->is_rela = is_rela;
 		r->offset = rel.r_offset;
@@ -2760,8 +2761,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 				toffset = 0;
 			}
 			tsize = 16;
-		} else if (type == R_BIN_ELF_SYMBOLS &&
-		           sym[i].st_shndx != STN_UNDEF) {
+		} else if (type == R_BIN_ELF_SYMBOLS && sym[i].st_shndx != STN_UNDEF) {
 			tsize = sym[i].st_size;
 			toffset = (ut64) sym[i].st_value;
 		} else {
@@ -3347,8 +3347,8 @@ static bool get_nt_file_maps (ELFOBJ *bin, RList *core_maps) {
 				n_maps = BREAD64 (bin->b, i);
 				page_size = BREAD64 (bin->b, i);
 			} else {
-				n_maps = READ32 (bin->b->buf, i);
-				page_size = READ32 (bin->b->buf, i);
+				n_maps = BREAD32 (bin->b, i);
+				page_size = BREAD32 (bin->b, i);
 			}
 			ut64 jump = ((size_of * 3) * n_maps) + i;
 			int len_str = 0;
