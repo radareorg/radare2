@@ -1271,6 +1271,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 		if (grep_arg) {
 			mode = *(grep_arg - 1);
 		} else {
+			mode = *grep;
 			++grep;
 		}
 	}
