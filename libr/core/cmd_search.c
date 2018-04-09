@@ -1219,7 +1219,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	const char *arch = r_config_get (core->config, "asm.arch");
 	ut64 from = search_itv.addr, to = r_itv_end (search_itv);
 	int max_count = r_config_get_i (core->config, "search.maxhits");
-	int i = 0, end = 0, mode = 0, increment = 1, ret;
+	int i = 0, end = 0, mode = 0, increment = 1, ret, result = true;
 	RList /*<endlist_pair>*/ *end_list = r_list_newf (free);
 	RList /*<intptr_t>*/ *badstart = r_list_new ();
 	RList /*<RRegex>*/ *rx_list = NULL;
@@ -1227,7 +1227,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	int align = core->search->align;
 	RListIter *itermap = NULL;
 	char *tok, *gregexp = NULL;
-	char *grep_arg = NULL;
+	char *grep_arg = NULL, *grep_dup = NULL;
 	char *grepstr = NULL;
 	bool json_first = true;
 	char *rx = NULL;
@@ -1270,15 +1270,15 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	if (*grep) {
 		if (grep_arg) {
 			mode = *(grep_arg - 1);
-			// grep = grep_arg;
 		} else {
 			mode = *grep;
 			++grep;
 		}
 	}
 	if (grep_arg) {
-		grep_arg = grepstr = r_str_replace (strdup (grep_arg), ",,", ";", true);
-			grep = grep_arg;
+		grep_dup = strdup (grep_arg);
+		grep_arg = grepstr = r_str_replace (grep_dup, ",,", ";", true);
+		grep = grep_arg;
 	}
 
 	if (*grep == ' ') { // grep mode
@@ -1315,6 +1315,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 		map = R_NEW0 (RIOMap);
 		if (!map) {
 			eprintf ("Cannot allocate map\n");
+			result = false;
 			goto bad;
 		}
 		map->fd = core->io->desc->fd;
@@ -1342,6 +1343,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 		delta = to - from;
 		buf = calloc (1, delta);
 		if (!buf) {
+			result = false;
 			goto bad;
 		}
 		(void) r_io_read_at (core->io, from, buf, delta);
@@ -1369,12 +1371,11 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 				if (end_gadget.delay) {
 					epair->instr_offset = i + increment;
 					epair->delay_size = end_gadget.delay;
-					r_list_append (end_list, (void *) (intptr_t) epair);
 				} else {
 					epair->instr_offset = (intptr_t) i;
 					epair->delay_size = end_gadget.delay;
-					r_list_append (end_list, (void *) epair);
 				}
+				r_list_append (end_list, (void *) (intptr_t) epair);
 			}
 			r_anal_op_fini (&end_gadget);
 			if (r_cons_is_breaked ()) {
@@ -1421,9 +1422,9 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 				if (i >= next) {
 					// We've exhausted the first end-gadget section,
 					// move to the next one.
+					free (end_gadget);
 					if (r_list_get_n (end_list, 0)) {
 						prev = i;
-						free (end_gadget);
 						end_gadget = (struct endlist_pair *) r_list_pop (end_list);
 						next = end_gadget->instr_offset;
 						i = next - ropdepth;
@@ -1459,6 +1460,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 						RCoreAsmHit *hit = (RCoreAsmHit *) hitlist->head->data;
 						char *headAddr = r_str_newf ("%"PFMT64x, hit->addr);
 						if (!headAddr) {
+							result = false;
 							goto bad;
 						}
 
@@ -1466,6 +1468,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 							char *addr = r_str_newf ("%"PFMT64x"(%"PFMT32d")", hit->addr, hit->len);
 							if (!addr) {
 								free (headAddr);
+								result = false;
 								goto bad;
 							}
 							sdb_concat (gadgetSdb, headAddr, addr, 0);
@@ -1485,6 +1488,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 					} else {
 						print_rop (core, hitlist, mode, &json_first);
 					}
+					r_list_free (hitlist);
 					if (max_count > 0) {
 						max_count--;
 						if (max_count < 1) {
@@ -1508,21 +1512,14 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	if (json) {
 		r_cons_printf ("]\n");
 	}
-	r_list_free (list);
-	r_list_free (rx_list);
-	r_list_free (end_list);
-	r_list_free (badstart);
-	free (gregexp);
-
-	return true;
-
 bad:
 	r_list_free (list);
 	r_list_free (rx_list);
 	r_list_free (end_list);
 	r_list_free (badstart);
 	free (gregexp);
-	return false;
+	free (grep_dup);
+	return result;
 }
 
 static int esil_addrinfo(RAnalEsil *esil) {
@@ -2639,7 +2636,7 @@ reread:
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_slash_R);
 		} else if (input[1] == '/') {
-// TODO search on boundaries
+			// TODO search on boundaries
 			r_core_search_rop (core, search_itv, 0, input + 1, 1);
 		} else if (input[1] == 'k') {
 			if (input[2] == '?') {
