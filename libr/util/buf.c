@@ -647,9 +647,17 @@ R_API ut8 *r_buf_get_at (RBuffer *b, ut64 addr, int *left) {
 	if (b->empty) {
 		return NULL;
 	}
-	if (b->iob || b->fd != -1) {
-		eprintf ("r_buf_get_at not supported for r_buf_new_file\n");
-		return NULL;
+	if (b->iob) {
+		if (b->fd != -1) {
+			eprintf ("r_buf_get_at not supported for r_buf_new_file\n");
+			return NULL;
+		}
+		static ut8 buf[8];
+		r_buf_read_at (b, addr, buf, sizeof (buf));
+		if (left) {
+			*left = 8;
+		}
+		return buf;
 	}
 	if (addr == R_BUF_CUR) {
 		addr = b->cur;

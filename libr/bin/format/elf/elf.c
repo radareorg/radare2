@@ -30,6 +30,9 @@
 #define READ32(x, i) r_read_ble32(x + i, bin->endian); i += 4;
 #define READ64(x, i) r_read_ble64(x + i, bin->endian); i += 8;
 
+#define BREAD32(x, i) r_read_ble32(r_buf_get_at (x, i, NULL), bin->endian); i += 8;
+#define BREAD64(x, i) r_read_ble64(r_buf_get_at (x, i, NULL), bin->endian); i += 8;
+
 #define GROWTH_FACTOR (1.5)
 
 #define round_up(a) ((((a) + (4) - (1)) / (4)) * (4))
@@ -3312,8 +3315,8 @@ static bool get_nt_file_maps (ELFOBJ *bin, RList *core_maps) {
 				int ret;
 				ut32 n_descsz, n_namesz, n_type;
 				ret = r_buf_read_at (bin->b,
-							bin->phdr[ph].p_offset + offset,
-							elf_nhdr, elf_nhdr_size);
+						bin->phdr[ph].p_offset + offset,
+						elf_nhdr, elf_nhdr_size);
 				if (ret != elf_nhdr_size) {
 					eprintf ("Cannot read more NOTES header from CORE\n");
 					free (elf_nhdr);
@@ -3341,8 +3344,8 @@ static bool get_nt_file_maps (ELFOBJ *bin, RList *core_maps) {
 			ut64 n_maps;
 			ut64 page_size;
 			if (bits == 64) {
-				n_maps = READ64 (bin->b->buf, i);
-				page_size = READ64 (bin->b->buf, i);
+				n_maps = BREAD64 (bin->b, i);
+				page_size = BREAD64 (bin->b, i);
 			} else {
 				n_maps = READ32 (bin->b->buf, i);
 				page_size = READ32 (bin->b->buf, i);
@@ -3352,11 +3355,14 @@ static bool get_nt_file_maps (ELFOBJ *bin, RList *core_maps) {
 			while (n_maps > 0) {
 				ut64 addr;
 				char str[512] = {0};
-
 				if (bits == 64) {
-					addr = READ64 (bin->b->buf, i);
+					addr = BREAD64 (bin->b, i);
 				} else {
-					addr = READ32 (bin->b->buf, i);
+					addr = BREAD32 (bin->b, i);
+				}
+				if (addr == UT64_MAX) {
+					eprintf ("ffbreak\n");
+					break;
 				}
 				r_buf_read_at (bin->b, jump + len_str,
 					(ut8*)str, sizeof (str) -1);
