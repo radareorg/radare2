@@ -1230,6 +1230,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	RListIter *itermap = NULL;
 	char *tok, *gregexp = NULL;
 	char *grep_arg = NULL;
+	char *grepstr = NULL;
 	bool json_first = true;
 	char *rx = NULL;
 	int delta = 0;
@@ -1237,11 +1238,11 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	RIOMap *map;
 	RAsmOp asmop;
 
-	Sdb *gadgetSdb;
-	if (!(gadgetSdb = sdb_ns (core->sdb, "gadget_sdb", false))) {
-		gadgetSdb = sdb_ns (core->sdb, "gadget_sdb", true);
-	} else {
-		gadgetSdb = NULL;
+	Sdb *gadgetSdb = NULL;
+	if (r_config_get_i (core->config, "rop.sdb")) {
+		if (!(gadgetSdb = sdb_ns (core->sdb, "gadget_sdb", false))) {
+			gadgetSdb = sdb_ns (core->sdb, "gadget_sdb", true);
+		}
 	}
 
 	if (max_count == 0) {
@@ -1268,6 +1269,9 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 
 	// Options, like JSON, linear, ...
 	grep_arg = strchr (grep, ' ');
+	if (grep_arg) {
+		grep_arg = grepstr = r_str_replace (strdup (grep_arg), ",,", ";", true);
+	}
 	if (*grep) {
 		if (grep_arg) {
 			mode = *(grep_arg - 1);
