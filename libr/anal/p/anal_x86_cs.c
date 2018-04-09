@@ -204,24 +204,8 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, int sel) {
 			snprintf (out, BUF_SZ, "%s,%s=",
 				cs_reg_name (handle, op.reg), setarg);
 			return out;
-		} else {
-			if (gop->bits == 64) {
-				switch (op.reg) {
-				case X86_REG_EAX: op.reg = X86_REG_RAX; break;
-				case X86_REG_EBX: op.reg = X86_REG_RBX; break;
-				case X86_REG_ECX: op.reg = X86_REG_RCX; break;
-				case X86_REG_EDX: op.reg = X86_REG_RDX; break;
-				case X86_REG_ESI: op.reg = X86_REG_RSI; break;
-				case X86_REG_EDI: op.reg = X86_REG_RDI; break;
-#if 0
-				case X86_REG_ESP: op.reg = X86_REG_RSP; break;
-				case X86_REG_EBP: op.reg = X86_REG_RBP; break;
-#endif
-				default: break;
-				}
-			}
-			return (char *)cs_reg_name (handle, op.reg);
 		}
+		return (char *)cs_reg_name (handle, op.reg);
 	case X86_OP_IMM:
 		if (set == 1) {
 			snprintf (out, BUF_SZ, "%"PFMT64d",%s=[%d]",
