@@ -1073,6 +1073,8 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 				snprintf (str, R_FLAG_NAME_SIZE, "entry%i.init", i);
 			} else if (entry->type == R_BIN_ENTRY_TYPE_FINI) {
 				snprintf (str, R_FLAG_NAME_SIZE, "entry%i.fini", i);
+			} else if (entry->type == R_BIN_ENTRY_TYPE_PREINIT) {
+				snprintf (str, R_FLAG_NAME_SIZE, "entry%i.preinit", i);
 			} else {
 				snprintf (str, R_FLAG_NAME_SIZE, "entry%i", i);
 			}
@@ -1093,6 +1095,8 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 				name = r_str_newf ("entry%i.init", i);
 			} else if (entry->type == R_BIN_ENTRY_TYPE_FINI) {
 				name = r_str_newf ("entry%i.fini", i);
+			} else if (entry->type == R_BIN_ENTRY_TYPE_PREINIT) {
+				name = r_str_newf ("entry%i.preinit", i);
 			} else {
 				name = r_str_newf ("entry%i", i);
 			}

@@ -335,9 +335,11 @@ static void process_constructors (RBinFile *bf, RList *ret, int bits) {
 	r_list_foreach (secs, iter, sec) {
 		type = -1;
 		if (!strcmp (sec->name, ".fini_array")) {
-			type  = R_BIN_ENTRY_TYPE_FINI;
+			type = R_BIN_ENTRY_TYPE_FINI;
 		} else if (!strcmp (sec->name, ".init_array")) {
-			type  = R_BIN_ENTRY_TYPE_INIT;
+			type = R_BIN_ENTRY_TYPE_INIT;
+		} else if (!strcmp (sec->name, ".preinit_array")) {
+			type = R_BIN_ENTRY_TYPE_PREINIT;
 		}
 		if (type != -1) {
 			ut8 *buf = calloc (sec->size, 1);

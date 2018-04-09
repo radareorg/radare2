@@ -1614,6 +1614,8 @@ R_API const char *r_bin_entry_type_string(int etype) {
 		return "fini";
 	case R_BIN_ENTRY_TYPE_TLS:
 		return "tls";
+	case R_BIN_ENTRY_TYPE_PREINIT:
+		return "preinit";
 	}
 	return NULL;
 }
