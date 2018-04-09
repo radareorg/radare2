@@ -661,7 +661,7 @@ static int rop_classify_nops(RCore *core, RList *ropList) {
 	const bool stats = r_config_get_i (core->config, "esil.stats");
 
 	if (!romem || !stats) {
-		eprintf ("Error: esil.romem and esil.stats must be set TRUE");
+		// eprintf ("Error: esil.romem and esil.stats must be set TRUE\n");
 		return -2;
 	}
 

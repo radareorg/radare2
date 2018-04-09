@@ -1,7 +1,5 @@
 /* radare - LGPL - Copyright 2010-2018 - pancake */
 
-#include <stddef.h>
-
 #include "r_core.h"
 #include "r_io.h"
 #include "r_list.h"
@@ -1269,17 +1267,18 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 
 	// Options, like JSON, linear, ...
 	grep_arg = strchr (grep, ' ');
-	if (grep_arg) {
-		grep_arg = grepstr = r_str_replace (strdup (grep_arg), ",,", ";", true);
-	}
 	if (*grep) {
 		if (grep_arg) {
 			mode = *(grep_arg - 1);
-			grep = grep_arg;
+			// grep = grep_arg;
 		} else {
 			mode = *grep;
 			++grep;
 		}
+	}
+	if (grep_arg) {
+		grep_arg = grepstr = r_str_replace (strdup (grep_arg), ",,", ";", true);
+			grep = grep_arg;
 	}
 
 	if (*grep == ' ') { // grep mode
@@ -2636,7 +2635,7 @@ reread:
 		}
 		break;
 	}
-	case 'R':
+	case 'R': // "/R"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_slash_R);
 		} else if (input[1] == '/') {
@@ -2691,7 +2690,6 @@ reread:
 					r_list_free (hitlist);
 				}
 			}
-
 		}
 		goto beach;
 	case 'r': // "/r" and "/re"
