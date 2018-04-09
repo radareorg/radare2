@@ -554,6 +554,7 @@ R_API RPanels *r_panels_new(RCore* core) {
 }
 
 R_API void r_panels_free(RPanels *panels) {
+	r_cons_switchbuf(true);
 	if (panels) {
 		free (panels);
 	}
@@ -564,6 +565,9 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 	int asm_comments = 0;
 	int asm_bytes = 0;
 	int have_utf8 = 0;
+
+	r_cons_switchbuf(false);
+
 	if (!_core) {
 		_core = core;
 	}
@@ -571,6 +575,7 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 	if (!panels) {
 		panels = r_panels_new (_core);
 		if (!panels) {
+			r_panels_free (panels);
 			return false;
 		}
 	}
@@ -580,6 +585,7 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 		return false;
 	}
 
+	r_cons_switchbuf(false);
 	core->panels = panels;
 
 	asm_comments = r_config_get_i (core->config, "asm.comments");
