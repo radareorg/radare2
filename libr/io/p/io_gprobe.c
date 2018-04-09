@@ -138,10 +138,8 @@ static int gprobe_send_request_i2c (struct gport *port, RBuffer *request) {
 }
 
 static int i2c_open (struct gport *port) {
-	char filename[20];
-	char *end;
+	char *end, filename[32];
 	int i2cbus = strtol (port->name + 4, &end, 0);
-	int file;
 
 	if (*end) {
 		return -1;
@@ -149,23 +147,22 @@ static int i2c_open (struct gport *port) {
 
 	snprintf (filename, sizeof (filename), "/dev/i2c/%d", i2cbus);
 	filename[sizeof (filename) - 1] = '\0';
-	file = r_sandbox_open (filename, O_RDWR, 0);
+	int file = r_sandbox_open (filename, O_RDWR, 0);
 
 	if (file < 0 && (errno == ENOENT || errno == ENOTDIR)) {
 		sprintf (filename, "/dev/i2c-%d", i2cbus);
 		file = r_sandbox_open (filename, O_RDWR, 0);
 	}
-
 	if (file < 0) {
 		return -1;
 	}
-
 	if (ioctl (file, I2C_SLAVE, GPROBE_I2C_ADDR >> 1) < 0) {
+		r_sandbox_close (file);
+		port->fd = -1;
 		return -1;
 	}
 
 	port->fd = file;
-
 	return 0;
 }
 #endif
@@ -188,7 +185,6 @@ static int sp_close (struct gport *port) {
 	CLOSE_OVERLAPPED (read_ovl);
 	CLOSE_OVERLAPPED (write_ovl);
 	CLOSE_OVERLAPPED (wait_ovl);
-
 #else
 	if (close (port->fd) == -1) {
 		return -1;
@@ -196,7 +192,6 @@ static int sp_close (struct gport *port) {
 
 	port->fd = -1;
 #endif
-
 	return 0;
 }
 
@@ -212,22 +207,18 @@ static int restart_wait (struct gport *port) {
 			port->wait_running = FALSE;
 		} else if (GetLastError () == ERROR_IO_INCOMPLETE) {
 			return 0;
-		} else {
-			return -1;
 		}
+		return -1;
 	}
-
 	if (!port->wait_running) {
 		/* Start new wait operation. */
 		if (WaitCommEvent (port->hdl, &port->events,
 				   &port->wait_ovl)) {
 		} else if (GetLastError () == ERROR_IO_PENDING) {
 			port->wait_running = TRUE;
-		} else {
-			return -1;
 		}
+		return -1;
 	}
-
 	return 0;
 }
 #endif
@@ -787,12 +778,15 @@ fail:
 }
 
 static int gprobe_reset (struct gport *port, ut8 code) {
+	if (!port) {
+		return -1;
+	}
 	RBuffer *request = r_buf_new ();
 	RBuffer *reply = r_buf_new ();
 	const ut8 cmd = GPROBE_RESET;
 
 	if (!request || !reply) {
-		return -1;
+		goto fail;
 	}
 
 	r_buf_append_bytes (request, &cmd, 1);
@@ -822,14 +816,16 @@ fail:
 }
 
 static int gprobe_debugon (struct gport *port) {
+	if (!port) {
+		return -1;
+	}
 	RBuffer *request = r_buf_new ();
 	RBuffer *reply = r_buf_new ();
 	const ut8 cmd = GPROBE_DEBUGON;
 
 	if (!request || !reply) {
-		return -1;
+		goto fail;
 	}
-
 	r_buf_append_bytes (request, &cmd, 1);
 
 	port->frame (request);
@@ -859,26 +855,19 @@ static int gprobe_debugoff (struct gport *port) {
 	const ut8 cmd = GPROBE_DEBUGOFF;
 
 	if (!request || !reply) {
-		return -1;
+		goto fail;
 	}
-
 	r_buf_append_bytes (request, &cmd, 1);
-
 	port->frame (request);
-
 	if (port->send_request (port, request)) {
 		goto fail;
 	}
-
 	if (port->get_reply (port, GPROBE_ACK, reply)) {
 		goto fail;
 	}
-
 	r_buf_free (request);
 	r_buf_free (reply);
-
 	return 0;
-
 fail:
 	r_buf_free (request);
 	r_buf_free (reply);
@@ -886,13 +875,16 @@ fail:
 }
 
 static int gprobe_runcode (struct gport *port, ut32 addr) {
+	if (!port) {
+		return -1;
+	}
 	RBuffer *request = r_buf_new ();
 	RBuffer *reply = r_buf_new ();
 	const ut8 cmd = GPROBE_RUN_CODE_2;
 	ut8 addr_be[4];
 
 	if (!request || !reply) {
-		return -1;
+		goto fail;
 	}
 
 	r_write_be32 (addr_be, addr);
@@ -922,12 +914,15 @@ fail:
 }
 
 static int gprobe_getdeviceid (struct gport *port, ut8 index) {
+	if (!port) {
+		return -1;
+	}
 	RBuffer *request = r_buf_new ();
 	RBuffer *reply = r_buf_new ();
 	const ut8 cmd = GPROBE_GET_DEVICE_ID;
 
 	if (!request || !reply) {
-		return -1;
+		goto fail;
 	}
 
 	r_buf_append_bytes (request, &cmd, 1);
@@ -943,7 +938,11 @@ static int gprobe_getdeviceid (struct gport *port, ut8 index) {
 		goto fail;
 	}
 
-	printf ("%s\n", r_buf_to_string (reply));
+	char *s = r_buf_to_string (reply);
+	if (s) {
+		printf ("%s\n", s);
+		free (s);
+	}
 
 	r_buf_free (request);
 	r_buf_free (reply);
@@ -957,13 +956,16 @@ fail:
 }
 
 static int gprobe_getinformation (struct gport *port) {
+	if (!port) {
+		return -1;
+	}
 	RBuffer *request = r_buf_new ();
 	RBuffer *reply = r_buf_new ();
 	const ut8 cmd = GPROBE_GET_INFORMATION;
 	const ut8 index = 0;
 
 	if (!request || !reply) {
-		return -1;
+		goto fail;
 	}
 
 	r_buf_append_bytes (request, &cmd, 1);
