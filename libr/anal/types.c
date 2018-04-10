@@ -29,40 +29,40 @@ R_API void r_anal_type_del(RAnal *anal, const char *name) {
 		return;
 	}
 	if (!strcmp (kind, "type")) {
-		sdb_unset (db, sdb_fmt (-1, "type.%s", name), 0);
-		sdb_unset (db, sdb_fmt (-1, "type.%s.size", name), 0);
-		sdb_unset (db, sdb_fmt (-1, "type.%s.meta", name), 0);
+		sdb_unset (db, sdb_fmt ("type.%s", name), 0);
+		sdb_unset (db, sdb_fmt ("type.%s.size", name), 0);
+		sdb_unset (db, sdb_fmt ("type.%s.meta", name), 0);
 		sdb_unset (db, name, 0);
 	} else if (!strcmp (kind, "struct") || !strcmp (kind, "union")) {
-		int i, n = sdb_array_length(db, sdb_fmt (-1, "%s.%s", kind, name));
+		int i, n = sdb_array_length(db, sdb_fmt ("%s.%s", kind, name));
 		char *elements_key = r_str_newf ("%s.%s", kind, name);
 		for (i = 0; i< n; i++) {
 			char *p = sdb_array_get (db, elements_key, i, NULL);
-			sdb_unset (db, sdb_fmt (-1, "%s.%s", elements_key, p), 0);
+			sdb_unset (db, sdb_fmt ("%s.%s", elements_key, p), 0);
 			free (p);
 		}
 		sdb_unset (db, elements_key, 0);
 		sdb_unset (db, name, 0);
 		free (elements_key);
 	} else if (!strcmp (kind, "func")) {
-		int i, n = sdb_num_get (db, sdb_fmt(-1, "func.%s.args", name), 0);
+		int i, n = sdb_num_get (db, sdb_fmt ("func.%s.args", name), 0);
 		for (i = 0; i < n; i++) {
-			sdb_unset (db, sdb_fmt(-1, "func.%s.arg.%d", name, i), 0);
+			sdb_unset (db, sdb_fmt ("func.%s.arg.%d", name, i), 0);
 		}
-		sdb_unset (db, sdb_fmt(-1, "func.%s.ret", name), 0);
-		sdb_unset (db, sdb_fmt(-1, "func.%s.cc", name), 0);
-		sdb_unset (db, sdb_fmt(-1, "func.%s.noreturn", name), 0);
-		sdb_unset (db, sdb_fmt(-1, "func.%s.args", name), 0);
+		sdb_unset (db, sdb_fmt ("func.%s.ret", name), 0);
+		sdb_unset (db, sdb_fmt ("func.%s.cc", name), 0);
+		sdb_unset (db, sdb_fmt ("func.%s.noreturn", name), 0);
+		sdb_unset (db, sdb_fmt ("func.%s.args", name), 0);
 		sdb_unset (db, name, 0);
 	} else if (!strcmp (kind, "enum")) {
 		int i;
 		for (i=0;; i++) {
-			const char *tmp = sdb_const_get (db, sdb_fmt (-1, "%s.0x%x", name, i), 0);
+			const char *tmp = sdb_const_get (db, sdb_fmt ("%s.0x%x", name, i), 0);
 			if (!tmp) {
 				break;
 			}
-			sdb_unset (db, sdb_fmt (-1, "%s.%s", name, tmp), 0);
-			sdb_unset (db, sdb_fmt (-1, "%s.0x%x", name, i), 0);
+			sdb_unset (db, sdb_fmt ("%s.%s", name, tmp), 0);
+			sdb_unset (db, sdb_fmt ("%s.0x%x", name, i), 0);
 		}
 		sdb_unset (db, name, 0);
 	} else {
@@ -84,11 +84,11 @@ R_API int r_anal_type_get_size(RAnal *anal, const char *type) {
 		return 0;
 	}
 	if (!strcmp (t, "type")){
-		query = sdb_fmt (-1, "type.%s.size", tmptype);
+		query = sdb_fmt ("type.%s.size", tmptype);
 		return sdb_num_get (anal->sdb_types, query, 0);
 	}
 	if (!strcmp (t, "struct")) {
-		query = sdb_fmt (-1, "struct.%s", tmptype);
+		query = sdb_fmt ("struct.%s", tmptype);
 		char *members = sdb_get (anal->sdb_types, query, 0);
 		char *next, *ptr = members;
 		int ret = 0;
@@ -98,7 +98,7 @@ R_API int r_anal_type_get_size(RAnal *anal, const char *type) {
 				if (!name) {
 					break;
 				}
-				query = sdb_fmt (-1, "struct.%s.%s", tmptype, name);
+				query = sdb_fmt ("struct.%s.%s", tmptype, name);
 				char *subtype = sdb_get (anal->sdb_types, query, 0);
 				if (!subtype) {
 					break;
@@ -132,7 +132,7 @@ static int get_types_by_offset(RAnal *anal, RList *offtypes, int offset, const c
 	//r_cons_printf ("tk %s=%s\n", k, v);
 	// TODO: Add unions support
 	if (!strncmp (v, "struct", 6) && strncmp (k, "struct.", 7)) {
-		char* query = sdb_fmt (-1, "struct.%s", k);
+		char* query = sdb_fmt ("struct.%s", k);
 		char *members = sdb_get (anal->sdb_types, query, 0);
 		char *next, *ptr = members;
 		if (members) {
@@ -143,7 +143,7 @@ static int get_types_by_offset(RAnal *anal, RList *offtypes, int offset, const c
 				if (!name) {
 					break;
 				}
-				query = sdb_fmt (-1, "struct.%s.%s", k, name);
+				query = sdb_fmt ("struct.%s.%s", k, name);
 				char *subtype = sdb_get (anal->sdb_types, query, 0);
 				if (!subtype) {
 					break;
@@ -204,7 +204,6 @@ R_API void r_anal_type_header (RAnal *anal, const char *hdr) {
 }
 
 R_API void r_anal_type_define (RAnal *anal, const char *key, const char *value) {
-
 }
 
 R_API int r_anal_type_link(RAnal *anal, const char *type, ut64 addr) {
@@ -230,7 +229,7 @@ R_API int r_anal_type_link_offset(RAnal *anal, const char *type, ut64 addr) {
 }
 
 R_API int r_anal_type_unlink(RAnal *anal, ut64 addr) {
-	char *laddr = sdb_fmt (-1, "link.%08"PFMT64x, addr);
+	char *laddr = sdb_fmt ("link.%08"PFMT64x, addr);
 	sdb_unset (anal->sdb_types, laddr, 0);
 	return true;
 }
@@ -341,23 +340,23 @@ R_API int r_anal_type_func_exist(RAnal *anal, const char *func_name) {
 }
 
 R_API const char *r_anal_type_func_ret(RAnal *anal, const char *func_name){
-	const char *query = sdb_fmt (-1, "func.%s.ret", func_name);
+	const char *query = sdb_fmt ("func.%s.ret", func_name);
 	return sdb_const_get (anal->sdb_types, query, 0);
 }
 
 R_API const char *r_anal_type_func_cc(RAnal *anal, const char *func_name) {
-	const char *query = sdb_fmt (-1, "func.%s.cc", func_name);
+	const char *query = sdb_fmt ("func.%s.cc", func_name);
 	const char *cc = sdb_const_get (anal->sdb_types, query, 0);
 	return cc ? cc : r_anal_cc_default (anal);
 }
 
 R_API int r_anal_type_func_args_count(RAnal *anal, const char *func_name) {
-	const char *query = sdb_fmt (-1, "func.%s.args", func_name);
+	const char *query = sdb_fmt ("func.%s.args", func_name);
 	return sdb_num_get (anal->sdb_types, query, 0);
 }
 
 R_API char *r_anal_type_func_args_type(RAnal *anal, const char *func_name, int i) {
-	const char *query = sdb_fmt (-1, "func.%s.arg.%d", func_name, i);
+	const char *query = sdb_fmt ("func.%s.arg.%d", func_name, i);
 	char *ret = sdb_get (anal->sdb_types, query, 0);
 	if (ret) {
 		char *comma = strchr (ret, ',');
@@ -371,7 +370,7 @@ R_API char *r_anal_type_func_args_type(RAnal *anal, const char *func_name, int i
 }
 
 R_API char *r_anal_type_func_args_name(RAnal *anal, const char *func_name, int i) {
-	const char *query = sdb_fmt (-1, "func.%s.arg.%d", func_name, i);
+	const char *query = sdb_fmt ("func.%s.arg.%d", func_name, i);
 	const char *get = sdb_const_get (anal->sdb_types, query, 0);
 	if (get) {
 		char *ret = strchr (get, ',');

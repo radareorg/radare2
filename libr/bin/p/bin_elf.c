@@ -887,13 +887,12 @@ static bool ht_insert_intu64(SdbHash* ht, int key, ut64 value) {
 	if (!mvalue) {
 		return false;
 	}
-
 	*mvalue = value;
-	return ht_insert (ht, sdb_fmt (-1, "%d", key), (void *)mvalue);
+	return ht_insert (ht, sdb_fmt ("%d", key), (void *)mvalue);
 }
 
 static ut64 ht_find_intu64(SdbHash* ht, int key, bool* found) {
-	ut64 *mvalue = (ut64 *)ht_find (ht, sdb_fmt (-1, "%d", key), found);
+	ut64 *mvalue = (ut64 *)ht_find (ht, sdb_fmt ("%d", key), found);
 	return *mvalue;
 }
 

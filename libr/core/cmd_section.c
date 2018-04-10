@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include "r_cons.h"
 #include "r_core.h"
@@ -255,7 +255,7 @@ static void update_section_flag_at_with_oldname(RIOSection *s, RFlag *flags, ut6
 	int len = 0;
 	char *secname = NULL;
 	list = r_flag_get_list (flags, s->vaddr);
-	secname = sdb_fmt (-1, "section.%s", oldname);
+	secname = sdb_fmt ("section.%s", oldname);
 	len = strlen (secname);
 	r_list_foreach (list, iter, item) {
 		if (!item->name)  {
@@ -263,7 +263,7 @@ static void update_section_flag_at_with_oldname(RIOSection *s, RFlag *flags, ut6
 		}
 		if (!strncmp (item->name, secname, R_MIN (strlen (item->name), len))) {
 			free (item->realname);
-			item->name = strdup (sdb_fmt (-1, "section.%s", s->name));
+			item->name = strdup (sdb_fmt ("section.%s", s->name));
 			r_str_trim (item->name);
 			r_name_filter (item->name, 0);
 			item->realname = item->name;
@@ -271,7 +271,7 @@ static void update_section_flag_at_with_oldname(RIOSection *s, RFlag *flags, ut6
 		}
 	}
 	list = r_flag_get_list (flags, s->vaddr + s->size);
-	secname = sdb_fmt (-1, "section_end.%s", oldname);
+	secname = sdb_fmt ("section_end.%s", oldname);
 	len = strlen (secname);
 	r_list_foreach (list, iter, item) {
 		if (!item->name)  {
@@ -279,7 +279,7 @@ static void update_section_flag_at_with_oldname(RIOSection *s, RFlag *flags, ut6
 		}
 		if (!strncmp (item->name, secname, R_MIN (strlen (item->name), len))) {
 			free (item->realname);
-			item->name = strdup (sdb_fmt (-1, "section_end.%s", s->name));
+			item->name = strdup (sdb_fmt ("section_end.%s", s->name));
 			r_str_trim (item->name);
 			r_name_filter (item->name, 0);
 			item->realname = item->name;

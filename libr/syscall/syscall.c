@@ -52,7 +52,7 @@ R_API const char *r_syscall_reg(RSyscall *s, int idx, int num) {
 
 static Sdb *openDatabase(Sdb *db, const char *name) {
 #define SYSCALLPATH "/share/radare2/" R2_VERSION
-	const char *file = sdb_fmt (0, "%s/%s/%s.sdb",
+	const char *file = sdb_fmt ("%s/%s/%s.sdb",
 		r_sys_prefix (NULL), SYSCALLPATH, name);
 	if (!r_file_exists (file)) {
 	//	eprintf ("r_syscall_setup: Cannot find '%s'\n", file);
@@ -191,13 +191,13 @@ R_API RSyscallItem *r_syscall_get(RSyscall *s, int num, int swi) {
 	}
 	swi = getswi (s, swi);
 	if (swi < 16) {
-		key = sdb_fmt (0, "%d.%d", swi, num);
+		key = sdb_fmt ("%d.%d", swi, num);
 	} else {
-		key = sdb_fmt (0, "0x%02x.%d", swi, num);
+		key = sdb_fmt ("0x%02x.%d", swi, num);
 	}
 	ret = sdb_const_get (s->db, key, 0);
 	if (!ret) {
-		key = sdb_fmt (0, "0x%02x.0x%02x", swi, num); // Workaround until Syscall SDB is fixed 
+		key = sdb_fmt ("0x%02x.0x%02x", swi, num); // Workaround until Syscall SDB is fixed 
 		ret = sdb_const_get (s->db, key, 0);
 		if (!ret) {
 			return NULL;
@@ -274,6 +274,6 @@ R_API const char* r_syscall_sysreg(RSyscall *s, const char *type, ut64 num) {
 	if (!s || !s->db) {
 		return NULL;
 	}
-	const char *key = sdb_fmt (0, "%s,%"PFMT64d, type, num);
+	const char *key = sdb_fmt ("%s,%"PFMT64d, type, num);
 	return sdb_const_get (s->db, key, 0);
 }

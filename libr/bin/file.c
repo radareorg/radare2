@@ -324,7 +324,7 @@ R_API RBinFile *r_bin_file_new(RBin *bin, const char *file, const ut8 *bytes, ut
 	}
 
 	if (sdb) {
-		binfile->sdb = sdb_ns (sdb, sdb_fmt (0, "fd.%d", fd), 1);
+		binfile->sdb = sdb_ns (sdb, sdb_fmt ("fd.%d", fd), 1);
 		sdb_set (binfile->sdb, "archs", "0:0:x86:32", 0); // x86??
 		/* NOTE */
 		/* Those refs++ are necessary because sdb_ns() doesnt rerefs all

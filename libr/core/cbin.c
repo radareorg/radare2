@@ -47,11 +47,11 @@ static void pair_bool(const char *a, bool t, int mode, bool last) {
 }
 
 static void pair_int(const char *a, int n, int mode, bool last) {
-	pair (a, sdb_fmt (0, "%d", n), mode, last);
+	pair (a, sdb_fmt ("%d", n), mode, last);
 }
 
 static void pair_ut64(const char *a, ut64 n, int mode, bool last) {
-	pair (a, sdb_fmt (0, "%"PFMT64d, n), mode, last);
+	pair (a, sdb_fmt ("%"PFMT64d, n), mode, last);
 }
 
 static void pair_str(const char *a, const char *b, int mode, int last) {
@@ -497,35 +497,35 @@ R_API void r_core_anal_type_init(RCore *core) {
 	anal_arch = r_config_get (core->config, "anal.arch");
 	os = r_config_get (core->config, "asm.os");
 	// spaguetti ahead
-	dbpath = sdb_fmt (-1, "%s/"DBSPATH"/types.sdb", dir_prefix);
+	dbpath = sdb_fmt ("%s/"DBSPATH"/types.sdb", dir_prefix);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (-1, "%s/"DBSPATH"/types-%s.sdb", dir_prefix, anal_arch);
+	dbpath = sdb_fmt ("%s/"DBSPATH"/types-%s.sdb", dir_prefix, anal_arch);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (-1, "%s/"DBSPATH"/types-%s.sdb", dir_prefix, os);
+	dbpath = sdb_fmt ("%s/"DBSPATH"/types-%s.sdb", dir_prefix, os);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (-1, "%s/"DBSPATH"/types-%d.sdb", dir_prefix, bits);
+	dbpath = sdb_fmt ("%s/"DBSPATH"/types-%d.sdb", dir_prefix, bits);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (-1, "%s/"DBSPATH"/types-%s-%d.sdb", dir_prefix, os, bits);
+	dbpath = sdb_fmt ("%s/"DBSPATH"/types-%s-%d.sdb", dir_prefix, os, bits);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (-1, "%s/"DBSPATH"/types-%s-%d.sdb", dir_prefix, anal_arch, bits);
+	dbpath = sdb_fmt ("%s/"DBSPATH"/types-%s-%d.sdb", dir_prefix, anal_arch, bits);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (-1, "%s/"DBSPATH"/types-%s-%s.sdb", dir_prefix, anal_arch, os);
+	dbpath = sdb_fmt ("%s/"DBSPATH"/types-%s-%s.sdb", dir_prefix, anal_arch, os);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (-1, "%s/"DBSPATH"/types-%s-%s-%d.sdb", dir_prefix, anal_arch, os, bits);
+	dbpath = sdb_fmt ("%s/"DBSPATH"/types-%s-%s-%d.sdb", dir_prefix, anal_arch, os, bits);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
@@ -536,8 +536,8 @@ static int save_ptr(void *p, const char *k, const char *v) {
 	sdbs[0] = ((Sdb**) p)[0];
 	sdbs[1] = ((Sdb**) p)[1];
 	if (!strncmp (v, "cc", strlen ("cc") + 1)) {
-		const char *x = sdb_const_get (sdbs[1], sdb_fmt (-1, "cc.%s.name", k), 0);
-		char *tmp = sdb_fmt (-1, "%p", x);
+		const char *x = sdb_const_get (sdbs[1], sdb_fmt ("cc.%s.name", k), 0);
+		char *tmp = sdb_fmt ("%p", x);
 		sdb_set (sdbs[0], tmp, x, 0);
 	}
 	return 1;
@@ -552,7 +552,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 	//save pointers and values stored inside them
 	//to recover from freeing heeps
 	const char *defaultcc = sdb_const_get (sdbs[1], "default.cc", 0);
-	sdb_set (sdbs[0], sdb_fmt (-1, "0x%08"PFMT64x, r_num_get (NULL, defaultcc)), defaultcc, 0);
+	sdb_set (sdbs[0], sdb_fmt ("0x%08"PFMT64x, r_num_get (NULL, defaultcc)), defaultcc, 0);
 	sdb_foreach (core->anal->sdb_cc, save_ptr, sdbs);
 	sdb_reset ( core->anal->sdb_cc);
 	const char *anal_arch = r_config_get (core->config, "anal.arch");
@@ -562,7 +562,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		bits = 32;
 	}
 
-	char *dbpath = sdb_fmt (-1, "%s/"DBSPATH"/cc-%s-%d.sdb", dir_prefix, anal_arch, bits);
+	char *dbpath = sdb_fmt ("%s/"DBSPATH"/cc-%s-%d.sdb", dir_prefix, anal_arch, bits);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (core->anal->sdb_cc, dbpath);
 	}
@@ -570,7 +570,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 	RListIter *it;
 	RAnalFunction *fcn;
 	r_list_foreach (core->anal->fcns, it, fcn) {
-		char *ptr = sdb_fmt (-1, "%p", fcn->cc);
+		char *ptr = sdb_fmt ("%p", fcn->cc);
 		const char *cc = sdb_const_get (sdbs[0], ptr, 0);
 		if (cc) {
 			fcn->cc = r_anal_cc_to_constant (core->anal, (char *)cc);
@@ -1165,28 +1165,28 @@ static ut8 bin_reloc_size(RBinReloc *reloc) {
 
 static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 	Sdb *db = sdb;
-	char *foo = sdb_get (db, sdb_fmt (0, "%d", ordinal), 0);
+	char *foo = sdb_get (db, sdb_fmt ("%d", ordinal), 0);
 	return (foo && *foo) ? foo : NULL;
 }
 
 static char *get_reloc_name(RBinReloc *reloc, ut64 addr) {
 	char *reloc_name = NULL;
 	if (reloc->import && reloc->import->name) {
-		reloc_name = sdb_fmt (-1, "reloc.%s_%d", reloc->import->name,
+		reloc_name = sdb_fmt ("reloc.%s_%d", reloc->import->name,
 				      (int)(addr & 0xff));
 		if (!reloc_name) {
 			return NULL;
 		}
 		r_str_replace_char (reloc_name, '$', '_');
 	} else if (reloc->symbol && reloc->symbol->name) {
-		reloc_name = sdb_fmt (-1, "reloc.%s_%d", reloc->symbol->name, (int)(addr & 0xff));
+		reloc_name = sdb_fmt ("reloc.%s_%d", reloc->symbol->name, (int)(addr & 0xff));
 		if (!reloc_name) {
 			return NULL;
 		}
 		r_str_replace_char (reloc_name, '$', '_');
 	} else if (reloc->is_ifunc) {
 		// addend is the function pointer for the resolving ifunc
-		reloc_name = sdb_fmt (-1, "reloc.ifunc_%"PFMT64x, reloc->addend);
+		reloc_name = sdb_fmt ("reloc.ifunc_%"PFMT64x, reloc->addend);
 	} else {
 		// TODO(eddyb) implement constant relocs.
 	}
@@ -1222,25 +1222,25 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 					free (*sdb_module);
 					*sdb_module = strdup (module);
 					/* always lowercase */
-					filename = sdb_fmt (1, "%s.sdb", module);
+					filename = sdb_fmt ("%s.sdb", module);
 					r_str_case (filename, false);
 					if (r_file_exists (filename)) {
 						*db = sdb_new (NULL, filename, 0);
 					} else {
 					// XXX. we have dir.prefix, windows shouldnt work different
-						filename = sdb_fmt (1, "%s/share/radare2/" R2_VERSION"/format/dll/%s.sdb", r_config_get (r->config, "dir.prefix"), module);
+						filename = sdb_fmt ("%s/share/radare2/" R2_VERSION"/format/dll/%s.sdb", r_config_get (r->config, "dir.prefix"), module);
 						if (r_file_exists (filename)) {
 							*db = sdb_new (NULL, filename, 0);
 #if __WINDOWS__
 						} else {
 							char invoke_dir[MAX_PATH];
 							if (r_sys_get_src_dir_w32 (invoke_dir)) {
-								filename = sdb_fmt (1, "%s/share/radare2/"R2_VERSION "/format/dll/%s.sdb", invoke_dir, module);
+								filename = sdb_fmt ("%s/share/radare2/"R2_VERSION "/format/dll/%s.sdb", invoke_dir, module);
 							} else {
-								filename = sdb_fmt (1, "share/radare2/"R2_VERSION"/format/dll/%s.sdb", module);
+								filename = sdb_fmt ("share/radare2/"R2_VERSION"/format/dll/%s.sdb", module);
 							}
 #else
-							filename = sdb_fmt (1, "%s/share/radare2/" R2_VERSION"/format/dll/%s.sdb", r_config_get (r->config, "dir.prefix"), module);
+							filename = sdb_fmt ("%s/share/radare2/" R2_VERSION"/format/dll/%s.sdb", r_config_get (r->config, "dir.prefix"), module);
 							if (r_file_exists (filename)) {
 								*db = sdb_new (NULL, filename, 0);
 							}
@@ -1281,9 +1281,9 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 		if (demname) {
 			char *realname;
 			if (r->bin->prefix) {
-				realname = sdb_fmt (0, "%s.reloc.%s", r->bin->prefix, demname);
+				realname = sdb_fmt ("%s.reloc.%s", r->bin->prefix, demname);
 			} else {
-				realname = sdb_fmt (0, "reloc.%s", demname);
+				realname = sdb_fmt ("reloc.%s", demname);
 			}
 			r_flag_item_set_realname (fi, realname);
 		}
@@ -1486,20 +1486,20 @@ static RBinSymbol *get_symbol(RBin *bin, RList *symbols, const char *name, ut64 
 	if (mydb) {
 		if (name) {
 			res = (RBinSymbol*)(void*)(size_t)
-				sdb_num_get (mydb, sdb_fmt (0, "%x", sdb_hash (name)), NULL);
+				sdb_num_get (mydb, sdb_fmt ("%x", sdb_hash (name)), NULL);
 		} else {
 			res = (RBinSymbol*)(void*)(size_t)
-				sdb_num_get (mydb, sdb_fmt (0, "0x"PFMT64x, addr), NULL);
+				sdb_num_get (mydb, sdb_fmt ("0x"PFMT64x, addr), NULL);
 		}
 	} else {
 		mydb = sdb_new0 ();
 		r_list_foreach (symbols, iter, symbol) {
 			/* ${name}=${ptrToSymbol} */
-			if (!sdb_num_add (mydb, sdb_fmt (0, "%x", sdb_hash (symbol->name)), (ut64)(size_t)symbol, 0)) {
+			if (!sdb_num_add (mydb, sdb_fmt ("%x", sdb_hash (symbol->name)), (ut64)(size_t)symbol, 0)) {
 			//	eprintf ("DUP (%s)\n", symbol->name);
 			}
 			/* 0x${vaddr}=${ptrToSymbol} */
-			if (!sdb_num_add (mydb, sdb_fmt (0, "0x"PFMT64x, symbol->vaddr), (ut64)(size_t)symbol, 0)) {
+			if (!sdb_num_add (mydb, sdb_fmt ("0x"PFMT64x, symbol->vaddr), (ut64)(size_t)symbol, 0)) {
 			//	eprintf ("DUP (%s)\n", symbol->name);
 			}
 			if (name) {
@@ -1546,7 +1546,7 @@ static ut64 impaddr(RBin *bin, int va, const char *name) {
 	if (!(symbols = r_bin_get_symbols (bin))) {
 		return false;
 	}
-	char *impname = sdb_fmt (2, "imp.%s", name);
+	char *impname = sdb_fmt ("imp.%s", name);
 	RBinSymbol *s = get_symbol (bin, symbols, impname, 0LL);
 	if (s) {
 		if (va) {
@@ -2572,11 +2572,11 @@ static int bin_classes(RCore *r, int mode) {
 		}
 
 		if (IS_MODE_SET (mode)) {
-			const char *classname = sdb_fmt (0, "class.%s", name);
+			const char *classname = sdb_fmt ("class.%s", name);
 			r_flag_set (r->flags, classname, c->addr, 1);
 			r_list_foreach (c->methods, iter2, sym) {
 				char *mflags = r_core_bin_method_flags_str (sym->method_flags, mode);
-				char *method = sdb_fmt (1, "method%s.%s.%s",
+				char *method = sdb_fmt ("method%s.%s.%s",
 					mflags, c->name, sym->name);
 				R_FREE (mflags);
 				r_name_filter (method, -1);
@@ -3118,12 +3118,12 @@ static void bin_pe_resources(RCore *r, int mode) {
 		r_cons_printf ("[");
 	}
 	while (true) {
-		const char *timestrKey = sdb_fmt (0, "resource.%d.timestr", index);
-		const char *vaddrKey = sdb_fmt (1, "resource.%d.vaddr", index);
-		const char *sizeKey  = sdb_fmt (2, "resource.%d.size", index);
-		const char *typeKey  = sdb_fmt (3, "resource.%d.type", index);
-		const char *languageKey = sdb_fmt (4, "resource.%d.language", index);
-		const char *nameKey = sdb_fmt (5, "resource.%d.name", index);
+		const char *timestrKey = sdb_fmt ("resource.%d.timestr", index);
+		const char *vaddrKey = sdb_fmt ("resource.%d.vaddr", index);
+		const char *sizeKey  = sdb_fmt ("resource.%d.size", index);
+		const char *typeKey  = sdb_fmt ("resource.%d.type", index);
+		const char *languageKey = sdb_fmt ("resource.%d.language", index);
+		const char *nameKey = sdb_fmt ("resource.%d.name", index);
 		char *timestr = sdb_get (sdb, timestrKey, 0);
 		if (!timestr) {
 			break;
@@ -3135,7 +3135,7 @@ static void bin_pe_resources(RCore *r, int mode) {
 		char *lang = sdb_get (sdb, languageKey, 0);
 
 		if (IS_MODE_SET (mode)) {
-			const char *name = sdb_fmt (4, "resource.%d", index);
+			const char *name = sdb_fmt ("resource.%d", index);
 			r_flag_set (r->flags, name, vaddr, size);
 		} else if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("f resource.%d %d 0x%08"PFMT32x"\n", index, size, vaddr);

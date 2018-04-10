@@ -4399,7 +4399,7 @@ toro:
 		}
 		ds_show_comments_right (ds);
 		// TRY adding here
-		char *link_key = sdb_fmt (-1, "link.%08"PFMT64x, ds->addr + idx);
+		char *link_key = sdb_fmt ("link.%08"PFMT64x, ds->addr + idx);
 		const char *link_type = sdb_const_get (core->anal->sdb_types, link_key, 0);
 		if (link_type) {
 			char *fmt = r_anal_type_format (core->anal, link_type);

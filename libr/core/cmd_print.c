@@ -1112,7 +1112,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	bytes = calloc (nb_cons_cols * 20, sizeof (char));
 	if (!bytes) goto err_bytes;
 #if 1
-	int addrpadlen = strlen (sdb_fmt (0, "%08"PFMT64x, addr)) - 8;
+	int addrpadlen = strlen (sdb_fmt ("%08"PFMT64x, addr)) - 8;
 	char addrpad[32];
 	if (addrpadlen > 0) {
 		memset (addrpad, ' ', addrpadlen);
@@ -3106,7 +3106,7 @@ static void _disasm_recursive(RCore *core, ut64 addr, char type_print) {
 			}
 			if (loop > 0) {
 				if (show_flags) {
-					const char *x = sdb_const_get (db, sdb_fmt (-1, "label.0x%"PFMT64x, addr + i), NULL);
+					const char *x = sdb_const_get (db, sdb_fmt ("label.0x%"PFMT64x, addr + i), NULL);
 					if (x) {
 						r_cons_printf ("%s:\n", x);
 					}
@@ -3135,8 +3135,8 @@ static void _disasm_recursive(RCore *core, ut64 addr, char type_print) {
 				break;
 			case R_ANAL_OP_TYPE_CALL:
 			case R_ANAL_OP_TYPE_CJMP:
-				sdb_set (db, sdb_fmt (-1, "label.0x%"PFMT64x, aop.jump),
-					sdb_fmt (-1, "from.0x%"PFMT64x, addr + i), 0);
+				sdb_set (db, sdb_fmt ("label.0x%"PFMT64x, aop.jump),
+					sdb_fmt ("from.0x%"PFMT64x, addr + i), 0);
 				break;
 			}
 			if (aop.size < 1) {
@@ -3955,7 +3955,7 @@ static int cmd_print(void *data, const char *input) {
 				if (input[2]) {
 					cmd_pDj (core, input + 2);
 				} else {
-					cmd_pDj (core, sdb_fmt (0, "%d", core->blocksize));
+					cmd_pDj (core, sdb_fmt ("%d", core->blocksize));
 				}
 			}
 			break;

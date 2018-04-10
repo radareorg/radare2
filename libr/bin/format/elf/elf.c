@@ -636,7 +636,7 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 				sdb_set (sdb, key, "1 (*global*)", 0);
 				break;
 			default:
-				tmp_val = sdb_fmt (0, "%x ", data[i+j] & 0x7FFF);
+				tmp_val = sdb_fmt ("%x ", data[i+j] & 0x7FFF);
 				check_def = true;
 				if (bin->version_info[DT_VERSIONTAGIDX (DT_VERNEED)]) {
 					Elf_(Verneed) vn;
@@ -681,7 +681,7 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 							if (vna.vna_name > bin->strtab_size) {
 								goto beach;
 							}
-							sdb_set (sdb, key, sdb_fmt (0, "%s(%s)", tmp_val, bin->strtab + vna.vna_name), 0);
+							sdb_set (sdb, key, sdb_fmt ("%s(%s)", tmp_val, bin->strtab + vna.vna_name), 0);
 							check_def = false;
 							break;
 						}

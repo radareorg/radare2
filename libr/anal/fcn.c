@@ -381,10 +381,10 @@ R_API int r_anal_fcn_xref_add(RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr, 
 	}
 #endif
 #if FCN_SDB
-	sdb_add (DB, sdb_fmt (0, "fcn.0x%08"PFMT64x ".name", fcn->addr), fcn->name, 0);
+	sdb_add (DB, sdb_fmt ("fcn.0x%08"PFMT64x ".name", fcn->addr), fcn->name, 0);
 	// encode the name in base64 ?
-	sdb_num_add (DB, sdb_fmt (0, "fcn.name.%s", fcn->name), fcn->addr, 0);
-	sdb_array_add_num (DB, sdb_fmt (0, "fcn.0x%08"PFMT64x ".xrefs", fcn->addr), at, 0);
+	sdb_num_add (DB, sdb_fmt ("fcn.name.%s", fcn->name), fcn->addr, 0);
+	sdb_array_add_num (DB, sdb_fmt ("fcn.0x%08"PFMT64x ".xrefs", fcn->addr), at, 0);
 #endif
 	return true;
 }
@@ -1508,7 +1508,7 @@ R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int t
 		}
 	}
 #if FCN_SDB
-	sdb_set (DB, sdb_fmt (0, "fcn.0x%08"PFMT64x, addr), "TODO", 0); // TODO: add more info here
+	sdb_set (DB, sdb_fmt ("fcn.0x%08"PFMT64x, addr), "TODO", 0); // TODO: add more info here
 #endif
 	return append? r_anal_fcn_insert (a, fcn): true;
 }
@@ -1930,7 +1930,7 @@ R_API RAnalBlock *r_anal_fcn_bbget(RAnalFunction *fcn, ut64 addr) {
 		return NULL;
 	}
 #if USE_SDB_CACHE
-	return sdb_ptr_get (HB, sdb_fmt (0, SDB_KEY_BB, fcn->addr, addr), NULL);
+	return sdb_ptr_get (HB, sdb_fmt (SDB_KEY_BB, fcn->addr, addr), NULL);
 #else
 	RListIter *iter;
 	RAnalBlock *bb;
@@ -1945,7 +1945,7 @@ R_API RAnalBlock *r_anal_fcn_bbget(RAnalFunction *fcn, ut64 addr) {
 
 R_API bool r_anal_fcn_bbadd(RAnalFunction *fcn, RAnalBlock *bb) {
 #if USE_SDB_CACHE
-	return sdb_ptr_set (HB, sdb_fmt (0, SDB_KEY_BB, fcn->addr, bb->addr), bb, NULL);
+	return sdb_ptr_set (HB, sdb_fmt (SDB_KEY_BB, fcn->addr, bb->addr), bb, NULL);
 #endif
 	r_list_append (fcn->bbs, bb);
 	return true;

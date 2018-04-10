@@ -281,11 +281,11 @@ static int typelist(void *p, const char *k, const char *v) {
 #if 0
 	if (!strcmp (v, "func")) {
 		const char *rv = sdb_const_get (DB,
-						sdb_fmt (0, "func.%s.ret", k), 0);
+						sdb_fmt ("func.%s.ret", k), 0);
 		r_cons_printf ("# %s %s(", rv, k);
 		for (i = 0; i < 16; i++) {
 			char *av = sdb_get (DB,
-					sdb_fmt (0, "func.%s.arg.%d", k, i), 0);
+					sdb_fmt ("func.%s.arg.%d", k, i), 0);
 			if (!av) break;
 			r_str_replace_char (av, ',', ' ');
 			r_cons_printf ("%s%s", i? ", ": "", av);
@@ -298,11 +298,11 @@ static int typelist(void *p, const char *k, const char *v) {
 		for (i = 0; i < 16; i++) {
 			const char *fmt;
 			char *comma, *av = sdb_get (DB,
-						sdb_fmt (0, "func.%s.arg.%d", k, i), 0);
+						sdb_fmt ("func.%s.arg.%d", k, i), 0);
 			if (!av) break;
 			comma = strchr (av, ',');
 			if (comma) *comma = 0;
-			fmt = sdb_const_get (DB, sdb_fmt (0, "type.%s", av), 0);
+			fmt = sdb_const_get (DB, sdb_fmt ("type.%s", av), 0);
 			r_cons_printf ("%s", fmt);
 			if (comma) *comma = ',';
 			free (av);
@@ -310,7 +310,7 @@ static int typelist(void *p, const char *k, const char *v) {
 		// names
 		for (i = 0; i < 16; i++) {
 			char *comma, *av = sdb_get (DB,
-						sdb_fmt (0, "func.%s.arg.%d", k, i), 0);
+						sdb_fmt ("func.%s.arg.%d", k, i), 0);
 			if (!av) break;
 			comma = strchr (av, ',');
 			if (comma) *comma++ = 0;
@@ -514,7 +514,7 @@ static int cmd_type(void *data, const char *input) {
 			*p++ = 0;
 			isenum = sdb_const_get (core->anal->sdb_types, s, 0);
 			if (isenum && !strncmp (isenum, "enum", 4)) {
-				const char *q = sdb_fmt (0, "%s.0x%x", s, (ut32)r_num_math (core->num, p));
+				const char *q = sdb_fmt ("%s.0x%x", s, (ut32)r_num_math (core->num, p));
 				const char *res = sdb_const_get (core->anal->sdb_types, q, 0);
 				if (res)
 					r_cons_println (res);
@@ -737,7 +737,7 @@ static int cmd_type(void *data, const char *input) {
 				if (strncmp (kv->key, "link.", strlen ("link."))) {
 					continue;
 				}
-				linkptr = sdb_fmt (-1,"0x%s", kv->key + strlen ("link."));
+				linkptr = sdb_fmt ("0x%s", kv->key + strlen ("link."));
 				if (ptr == r_num_math (NULL, linkptr)) {
 					linklist_readable (core, kv->key, kv->value);
 				}
@@ -851,7 +851,7 @@ static int cmd_type(void *data, const char *input) {
 		const char *istypedef;
 		istypedef = sdb_const_get (core->anal->sdb_types, s, 0);
 		if (istypedef && !strncmp (istypedef, "typedef", 7)) {
-			const char *q = sdb_fmt (0, "typedef.%s", s);
+			const char *q = sdb_fmt ("typedef.%s", s);
 			const char *res = sdb_const_get (core->anal->sdb_types, q, 0);
 			if (res)
 				r_cons_println (res);

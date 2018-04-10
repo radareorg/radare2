@@ -210,11 +210,11 @@ static void r_core_file_info(RCore *core, int mode) {
 			dbg = R_IO_WRITE | R_IO_EXEC;
 		}
 		if (desc) {
-			pair ("blksz", sdb_fmt (0, "0x%"PFMT64x, (ut64) core->io->desc->obsz));
+			pair ("blksz", sdb_fmt ("0x%"PFMT64x, (ut64) core->io->desc->obsz));
 		}
-		pair ("block", sdb_fmt (0, "0x%x", core->blocksize));
+		pair ("block", sdb_fmt ("0x%x", core->blocksize));
 		if (desc) {
-			pair ("fd", sdb_fmt (0, "%d", desc->fd));
+			pair ("fd", sdb_fmt ("%d", desc->fd));
 		}
 		if (fn || (desc && desc->uri)) {
 			pair ("file", fn? fn: desc->uri);

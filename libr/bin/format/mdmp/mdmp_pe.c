@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2016 - Davis, Alex Kornitzer */
+/* radare2 - LGPL - Copyright 2016-2018 - Davis, Alex Kornitzer */
 
 #include <r_util.h>
 #include <r_list.h>
@@ -12,19 +12,19 @@ static void PE_(add_tls_callbacks)(struct PE_(r_bin_pe_obj_t) *bin, RList* list)
 	RBinAddr *ptr = NULL;
 
 	do {
-		key =  sdb_fmt (0, "pe.tls_callback%d_paddr", count);
+		key = sdb_fmt ("pe.tls_callback%d_paddr", count);
 		paddr = sdb_num_get (bin->kv, key, 0);
 		if (!paddr) {
 			break;
 		}
 
-		key =  sdb_fmt (0, "pe.tls_callback%d_vaddr", count);
+		key = sdb_fmt ("pe.tls_callback%d_vaddr", count);
 		vaddr = sdb_num_get (bin->kv, key, 0);
 		if (!vaddr) {
 			break;
 		}
 
-		key =  sdb_fmt (0, "pe.tls_callback%d_haddr", count);
+		key = sdb_fmt ("pe.tls_callback%d_haddr", count);
 		haddr = sdb_num_get (bin->kv, key, 0);
 		if (!haddr) {
 			break;

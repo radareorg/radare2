@@ -90,7 +90,7 @@ static bool _fill_bin_symbol(struct r_bin_coff_obj *bin, int idx, RBinSymbol **s
 		ptr->type = r_str_const ("STATIC");
 		break;
 	default:
-		ptr->type = r_str_const (sdb_fmt (0, "%i", s->n_sclass));
+		ptr->type = r_str_const (sdb_fmt ("%i", s->n_sclass));
 		break;
 	}
 	if (bin->symbols[idx].n_scnum < bin->hdr.f_nscns &&

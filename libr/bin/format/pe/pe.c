@@ -361,7 +361,7 @@ static PE_DWord bin_pe_va_to_rva(RBinPEObj* bin, PE_DWord va) {
 
 static char* resolveModuleOrdinal(Sdb* sdb, const char* module, int ordinal) {
 	Sdb* db = sdb;
-	char* foo = sdb_get (db, sdb_fmt (0, "%d", ordinal), 0);
+	char* foo = sdb_get (db, sdb_fmt ("%d", ordinal), 0);
 	if (foo && *foo) {
 		return foo;
 	} else {
@@ -429,20 +429,20 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 					db = NULL;
 					free (sdb_module);
 					sdb_module = strdup (symdllname);
-					filename = sdb_fmt (1, "%s.sdb", symdllname);
+					filename = sdb_fmt ("%s.sdb", symdllname);
 					if (r_file_exists (filename)) {
 						db = sdb_new (NULL, filename, 0);
 					} else {
 #if __WINDOWS__
 						char invoke_dir[MAX_PATH];
 						if (r_sys_get_src_dir_w32 (invoke_dir)) {
-							filename = sdb_fmt (1, "%s\\share\\radare2\\"R2_VERSION "\\format\\dll\\%s.sdb", invoke_dir, symdllname);
+							filename = sdb_fmt ("%s\\share\\radare2\\"R2_VERSION "\\format\\dll\\%s.sdb", invoke_dir, symdllname);
 						} else {
-							filename = sdb_fmt (1, "share/radare2/"R2_VERSION "/format/dll/%s.sdb", symdllname);
+							filename = sdb_fmt ("share/radare2/"R2_VERSION "/format/dll/%s.sdb", symdllname);
 						}
 #else
 						const char *dirPrefix = r_sys_prefix (NULL);
-						filename = sdb_fmt (1, "%s/share/radare2/" R2_VERSION "/format/dll/%s.sdb", dirPrefix, symdllname);
+						filename = sdb_fmt ("%s/share/radare2/" R2_VERSION "/format/dll/%s.sdb", dirPrefix, symdllname);
 #endif
 						if (r_file_exists (filename)) {
 							db = sdb_new (NULL, filename, 0);
@@ -1301,12 +1301,12 @@ static void bin_pe_store_tls_callbacks(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord
 				break;
 			}
 		}
-		key = sdb_fmt (0, "pe.tls_callback%d_vaddr", count);
+		key = sdb_fmt ("pe.tls_callback%d_vaddr", count);
 		sdb_num_set (bin->kv, key, addressOfTLSCallback, 0);
-		key = sdb_fmt (0, "pe.tls_callback%d_paddr", count);
+		key = sdb_fmt ("pe.tls_callback%d_paddr", count);
 		paddr = bin_pe_rva_to_paddr (bin, bin_pe_va_to_rva (bin, (PE_DWord) addressOfTLSCallback));
 		sdb_num_set (bin->kv, key, paddr,                0);
-		key = sdb_fmt (0, "pe.tls_callback%d_haddr", count);
+		key = sdb_fmt ("pe.tls_callback%d_haddr", count);
 		haddr = callbacks;
 		sdb_num_set (bin->kv, key, haddr,                0);
 		count++;
@@ -2233,7 +2233,7 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 	for (index = 0; index < totalRes; index++) {
 		Pe_image_resource_directory_entry entry;
 		off = rsrc_base + offDir + sizeof(*dir) + index * sizeof(entry);
-		char *key = sdb_fmt (0, "0x%08"PFMT64x, off);
+		char *key = sdb_fmt ("0x%08"PFMT64x, off);
 		if (sdb_ht_find (dirs, key, NULL)) {
 			break;
 		}
@@ -2338,18 +2338,18 @@ static void _store_resource_sdb(struct PE_(r_bin_pe_obj_t) *bin) {
 		return;
 	}
 	r_list_foreach (bin->resources, iter, rs) {
-		key = sdb_fmt (0, "resource.%d.timestr", index);
+		key = sdb_fmt ("resource.%d.timestr", index);
 		sdb_set (sdb, key, rs->timestr, 0);
-		key = sdb_fmt (0, "resource.%d.vaddr", index);
+		key = sdb_fmt ("resource.%d.vaddr", index);
 		vaddr = bin_pe_rva_to_va (bin, rs->data->OffsetToData);
 		sdb_num_set (sdb, key, vaddr, 0);
-		key = sdb_fmt (0, "resource.%d.name", index);
+		key = sdb_fmt ("resource.%d.name", index);
 		sdb_num_set (sdb, key, rs->name, 0);
-		key = sdb_fmt (0, "resource.%d.size", index);
+		key = sdb_fmt ("resource.%d.size", index);
 		sdb_num_set (sdb, key, rs->data->Size, 0);
-		key = sdb_fmt (0, "resource.%d.type", index);
+		key = sdb_fmt ("resource.%d.type", index);
 		sdb_set (sdb, key, rs->type, 0);
-		key = sdb_fmt (0, "resource.%d.language", index);
+		key = sdb_fmt ("resource.%d.language", index);
 		sdb_set (sdb, key, rs->language, 0);
 		index++;
 	}
@@ -2381,7 +2381,7 @@ R_API void PE_(bin_pe_parse_resource)(struct PE_(r_bin_pe_obj_t) *bin) {
 	for (index = 0; index < totalRes; index++) {
 		Pe_image_resource_directory_entry typeEntry;
 		off = rsrc_base + sizeof (*rs_directory) + index * sizeof (typeEntry);
-		sdb_ht_insert (dirs, sdb_fmt (0, "0x%08"PFMT64x, off), "1");
+		sdb_ht_insert (dirs, sdb_fmt ("0x%08"PFMT64x, off), "1");
 		if (off > bin->size || off + sizeof(typeEntry) > bin->size) {
 			break;
 		}

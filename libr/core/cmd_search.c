@@ -524,7 +524,7 @@ static int _cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		}
 	}
 	if (searchflags && kw) {
-		const char *flag = sdb_fmt (0, "%s%d_%d", searchprefix, kw->kwidx, kw->count);
+		const char *flag = sdb_fmt ("%s%d_%d", searchprefix, kw->kwidx, kw->count);
 		r_flag_set (core->flags, flag, base_addr + addr, keyword_len);
 	}
 	if (*param->cmd_hit) {
@@ -1062,7 +1062,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 		if (db && hit) {
 			const ut64 addr = ((RCoreAsmHit *) hitlist->head->data)->addr;
 			// r_cons_printf ("Gadget size: %d\n", (int)size);
-			const char *key = sdb_fmt (0, "0x%08"PFMT64x, addr);
+			const char *key = sdb_fmt ("0x%08"PFMT64x, addr);
 			rop_classify (core, db, ropList, key, size);
 			r_cons_printf ("],\"retaddr\":%"PFMT64d ",\"size\":%d}", hit->addr, size);
 		} else if (hit) {
@@ -1101,7 +1101,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 		if (db && hit) {
 			const ut64 addr = ((RCoreAsmHit *) hitlist->head->data)->addr;
 			// r_cons_printf ("Gadget size: %d\n", (int)size);
-			const char *key = sdb_fmt (0, "0x%08"PFMT64x, addr);
+			const char *key = sdb_fmt ("0x%08"PFMT64x, addr);
 			rop_classify (core, db, ropList, key, size);
 		}
 		break;
@@ -1151,7 +1151,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 		if (db && hit) {
 			const ut64 addr = ((RCoreAsmHit *) hitlist->head->data)->addr;
 			// r_cons_printf ("Gadget size: %d\n", (int)size);
-			const char *key = sdb_fmt (0, "0x%08"PFMT64x, addr);
+			const char *key = sdb_fmt ("0x%08"PFMT64x, addr);
 			rop_classify (core, db, ropList, key, size);
 		}
 	}
@@ -2095,7 +2095,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 					break;
 				}
 				if (searchflags) {
-					const char *flagname = sdb_fmt (0, "%s%d_%d", searchprefix, kwidx, count);
+					const char *flagname = sdb_fmt ("%s%d_%d", searchprefix, kwidx, count);
 					r_flag_set (core->flags, flagname, hit->addr, hit->len);
 				}
 				count++;

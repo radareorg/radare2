@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2017 - pancake, h4ng3r */
+/* radare - LGPL - Copyright 2011-2018 - pancake, h4ng3r */
 
 #include <r_cons.h>
 #include <r_types.h>
@@ -1328,7 +1328,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 				if (!mdb) {
 					mdb = sdb_new0 ();
 				}
-				sdb_num_set (mdb, sdb_fmt (0, "method.%d", MI), sym->paddr, 0);
+				sdb_num_set (mdb, sdb_fmt ("method.%d", MI), sym->paddr, 0);
 				// -----------------
 				// WORK IN PROGRESS
 				// -----------------
@@ -1338,7 +1338,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 						if (!cdb) {
 							cdb = sdb_new0 ();
 						}
-						sdb_num_set (cdb, sdb_fmt (0, "%d", c->class_id), sym->paddr, 0);
+						sdb_num_set (cdb, sdb_fmt ("%d", c->class_id), sym->paddr, 0);
 					}
 				}
 #endif
@@ -1708,7 +1708,7 @@ static int dex_loadcode(RBinFile *bf, RBinDexObj *bin) {
 				sym->paddr = sym->vaddr = bin->b->base + bin->header.method_offset + (sizeof (struct dex_method_t) * i) ;
 				sym->ordinal = sym_count++;
 				r_list_append (bin->methods_list, sym);
-				sdb_num_set (mdb, sdb_fmt (0, "method.%d", i), sym->paddr, 0);
+				sdb_num_set (mdb, sdb_fmt ("method.%d", i), sym->paddr, 0);
 
 			}
 			free (signature);
@@ -1828,7 +1828,7 @@ static RList *entries(RBinFile *bf) {
 
 static ut64 offset_of_method_idx(RBinFile *bf, struct r_bin_dex_obj_t *dex, int idx) {
 	// ut64 off = dex->header.method_offset + idx;
-	return sdb_num_get (mdb, sdb_fmt (0, "method.%d", idx), 0);
+	return sdb_num_get (mdb, sdb_fmt ("method.%d", idx), 0);
 }
 
 // TODO: change all return type for all getoffset

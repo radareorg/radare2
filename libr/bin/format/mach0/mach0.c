@@ -209,7 +209,7 @@ static int parse_segments(struct MACH0_(obj_t)* bin, ut64 off) {
 	i += sizeof (ut32);
 	bin->segs[j].flags = r_read_ble32 (&segcom[i], bin->big_endian);
 
-	sdb_num_set (bin->kv, sdb_fmt (0, "mach0_segment_%d.offset", j), off, 0);
+	sdb_num_set (bin->kv, sdb_fmt ("mach0_segment_%d.offset", j), off, 0);
 	sdb_num_set (bin->kv, "mach0_segments.count", 0, 0);
 	sdb_set (bin->kv, "mach0_segment.format",
 		"xd[16]zxxxxoodx "
@@ -943,22 +943,22 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 		}
 
 		// TODO: a different format for each cmd
-		sdb_num_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.offset", i), off, 0);
-		sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.format", i), "xd cmd size", 0);
+		sdb_num_set (bin->kv, sdb_fmt ("mach0_cmd_%d.offset", i), off, 0);
+		sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.format", i), "xd cmd size", 0);
 
 		//bprintf ("%d\n", lc.cmd);
 		switch (lc.cmd) {
 		case LC_DATA_IN_CODE:
-			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "data_in_code", 0);
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "data_in_code", 0);
 			// TODO table of non-instructions in __text
 			break;
 		case LC_RPATH:
-			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "rpath", 0);
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "rpath", 0);
 			//bprintf ("--->\n");
 			break;
 		case LC_SEGMENT_64:
 		case LC_SEGMENT:
-			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "segment", 0);
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "segment", 0);
 			bin->nsegs++;
 			if (!parse_segments (bin, off)) {
 				bprintf ("error parsing segment\n");
@@ -967,45 +967,45 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			}
 			break;
 		case LC_SYMTAB:
-			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "symtab", 0);
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "symtab", 0);
 			if (!parse_symtab (bin, off)) {
 				bprintf ("error parsing symtab\n");
 				return false;
 			}
 			break;
 		case LC_DYSYMTAB:
-			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "dysymtab", 0);
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "dysymtab", 0);
 			if (!parse_dysymtab(bin, off)) {
 				bprintf ("error parsing dysymtab\n");
 				return false;
 			}
 			break;
 		case LC_DYLIB_CODE_SIGN_DRS:
-			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "dylib_code_sign_drs", 0);
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "dylib_code_sign_drs", 0);
 			//bprintf ("[mach0] code is signed\n");
 			break;
 		case LC_VERSION_MIN_MACOSX:
-			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "version_min_macosx", 0);
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "version_min_macosx", 0);
 			bin->os = 1;
 			// set OS = osx
 			//bprintf ("[mach0] Requires OSX >= x\n");
 			break;
 		case LC_VERSION_MIN_IPHONEOS:
-			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "version_min_iphoneos", 0);
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "version_min_iphoneos", 0);
 			bin->os = 2;
 			// set OS = ios
 			//bprintf ("[mach0] Requires iOS >= x\n");
 			break;
 		case LC_VERSION_MIN_TVOS:
-			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "version_min_tvos", 0);
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "version_min_tvos", 0);
 			bin->os = 4;
 			break;
 		case LC_VERSION_MIN_WATCHOS:
-			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "version_min_watchos", 0);
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "version_min_watchos", 0);
 			bin->os = 3;
 			break;
 		case LC_UUID:
-			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "uuid", 0);
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "uuid", 0);
 			{
 			struct uuid_command uc = {0};
 			if (off + sizeof (struct uuid_command) > bin->size) {
@@ -1025,7 +1025,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 		case LC_ENCRYPTION_INFO_64:
 			/* TODO: the struct is probably different here */
 		case LC_ENCRYPTION_INFO:
-			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "encryption_info", 0);
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "encryption_info", 0);
 			{
 			struct MACH0_(encryption_info_command) eic = {0};
 			ut8 seic[sizeof (struct MACH0_(encryption_info_command))] = {0};
@@ -1050,7 +1050,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			break;
 		case LC_LOAD_DYLINKER:
 			{
-				sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "dylinker", 0);
+				sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "dylinker", 0);
 				free (bin->intrp);
 				bin->intrp = NULL;
 				//bprintf ("[mach0] load dynamic linker\n");
@@ -1086,7 +1086,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 				ut64 ss;
 			} ep = {0};
 			ut8 sep[2 * sizeof (ut64)] = {0};
-			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "main", 0);
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "main", 0);
 
 			if (!is_first_thread) {
 				bprintf("Error: LC_MAIN with other threads\n");
@@ -1110,13 +1110,13 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			}
 			break;
 		case LC_UNIXTHREAD:
-			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "unixthread", 0);
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "unixthread", 0);
 			if (!is_first_thread) {
 				bprintf("Error: LC_UNIXTHREAD with other threads\n");
 				return false;
 			}
 		case LC_THREAD:
-			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "thread", 0);
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "thread", 0);
 			if (!parse_thread (bin, &lc, off, is_first_thread)) {
 				bprintf ("Cannot parse thread\n");
 				return false;
@@ -1125,7 +1125,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			break;
 		case LC_LOAD_DYLIB:
 		case LC_LOAD_WEAK_DYLIB:
-			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "load_dylib", 0);
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "load_dylib", 0);
 			bin->nlibs++;
 			if (!parse_dylib (bin, off)){
 				bprintf ("Cannot parse dylib\n");
@@ -1137,7 +1137,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 		case LC_DYLD_INFO_ONLY:
 			{
 			ut8 dyldi[sizeof (struct dyld_info_command)] = {0};
-			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "dyld_info", 0);
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "dyld_info", 0);
 			bin->dyld_info = calloc (1, sizeof (struct dyld_info_command));
 			if (bin->dyld_info) {
 				if (off + sizeof (struct dyld_info_command) > bin->size){
@@ -1168,28 +1168,28 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 			break;
 		case LC_CODE_SIGNATURE:
 			parse_signature (bin, off);
-			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "signature", 0);
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "signature", 0);
 			/* ut32 dataoff
 			// ut32 datasize */
 			break;
 		case LC_SOURCE_VERSION:
-			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "version", 0);
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "version", 0);
 			/* uint64_t  version;  */
 			/* A.B.C.D.E packed as a24.b10.c10.d10.e10 */
 			//bprintf ("mach0: TODO: Show source version\n");
 			break;
 		case LC_SEGMENT_SPLIT_INFO:
-			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "split_info", 0);
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "split_info", 0);
 			/* TODO */
 			break;
 		case LC_FUNCTION_STARTS:
-			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "function_starts", 0);
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "function_starts", 0);
 			if (!parse_function_starts (bin, off)) {
 				bprintf ("Cannot parse LC_FUNCTION_STARTS\n");
 			}
 			break;
 		case LC_REEXPORT_DYLIB:
-			sdb_set (bin->kv, sdb_fmt (0, "mach0_cmd_%d.cmd", i), "dylib", 0);
+			sdb_set (bin->kv, sdb_fmt ("mach0_cmd_%d.cmd", i), "dylib", 0);
 			/* TODO */
 			break;
 		default:
@@ -1443,7 +1443,7 @@ static ut64 get_text_base(struct MACH0_(obj_t)* bin) {
 
 static int inSymtab(SdbHash *hash, struct symbol_t *symbols, const char *name, ut64 addr) {
 	bool found;
-	const char *key = sdb_fmt (0, "%s.%"PFMT64x, name, addr);
+	const char *key = sdb_fmt ("%s.%"PFMT64x, name, addr);
 	(void)sdb_ht_find (hash, key, &found);
 	if (found) {
 		return true;
@@ -1982,7 +1982,7 @@ struct addr_t* MACH0_(get_entrypoint)(struct MACH0_(obj_t)* bin) {
 void MACH0_(kv_loadlibs)(struct MACH0_(obj_t)* bin) {
 	int i;
 	for (i = 0; i < bin->nlibs; i++) {
-		sdb_set (bin->kv, sdb_fmt (0, "libs.%d.name", i), bin->libs[i], 0);
+		sdb_set (bin->kv, sdb_fmt ("libs.%d.name", i), bin->libs[i], 0);
 	}
 }
 
@@ -1997,7 +1997,7 @@ struct lib_t* MACH0_(get_libs)(struct MACH0_(obj_t)* bin) {
 		return NULL;
 	}
 	for (i = 0; i < bin->nlibs; i++) {
-		sdb_set (bin->kv, sdb_fmt (0, "libs.%d.name", i), bin->libs[i], 0);
+		sdb_set (bin->kv, sdb_fmt ("libs.%d.name", i), bin->libs[i], 0);
 		strncpy (libs[i].name, bin->libs[i], R_BIN_MACH0_STRING_LENGTH);
 		libs[i].name[R_BIN_MACH0_STRING_LENGTH-1] = '\0';
 		libs[i].last = 0;
@@ -2449,7 +2449,7 @@ RList* MACH0_(mach_fields)(RBinFile *bf) {
 	ut64 addr = 0;
 
 #define ROW(nam,siz,val,fmt) \
-	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt (0, "0x%08x", val), fmt)); \
+	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt ("0x%08x", val), fmt)); \
 	addr += 4;
 	ROW("hdr.magic", 4, mh->magic, "x");
 	ROW("hdr.cputype", 4, mh->cputype, NULL);

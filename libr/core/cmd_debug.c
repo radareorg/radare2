@@ -4605,7 +4605,7 @@ static int cmd_debug(void *data, const char *input) {
 			if (input[2]) {
 				char *str;
 				r_cons_push ();
-				str = r_core_cmd_str (core, sdb_fmt (0, "gs %s", input + 2));
+				str = r_core_cmd_str (core, sdb_fmt ("gs %s", input + 2));
 				r_cons_pop ();
 				r_core_cmdf (core, "dx %s", str); //`gs %s`", input + 2);
 				free (str);

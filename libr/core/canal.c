@@ -35,7 +35,7 @@ static char *getFunctionName(RCore *core, ut64 addr) {
 	RBinObject *bo = r_bin_file_object_get_cur (bf);
 	if (bo) {
 		Sdb *kv = bo->addr2klassmethod;
-		char *at = sdb_fmt (-1, "0x%08"PFMT64x, addr);
+		char *at = sdb_fmt ("0x%08"PFMT64x, addr);
 		char *res = sdb_get (kv, at, 0);
 		if (res) {
 			return strdup (res);
@@ -1523,7 +1523,7 @@ R_API void r_core_anal_codexrefs(RCore *core, ut64 addr, int fmt) {
 		r_cons_printf ("agn %s\n", me);
 		r_list_foreach (refs, iter, ref) {
 			RFlagItem *item = r_flag_get_i (core->flags, ref->addr);
-			const char *dst = item? item->name: sdb_fmt (0, "0x%08"PFMT64x, ref->addr);
+			const char *dst = item? item->name: sdb_fmt ("0x%08"PFMT64x, ref->addr);
 			r_cons_printf ("agn %s\n", dst);
 			r_cons_printf ("age %s %s\n", me, dst);
 		}
@@ -1531,7 +1531,7 @@ R_API void r_core_anal_codexrefs(RCore *core, ut64 addr, int fmt) {
 		RList *list = r_anal_xrefs_get (core->anal, addr);
 		r_list_foreach (list, iter, ref) {
 			RFlagItem *item = r_flag_get_i (core->flags, ref->addr);
-			const char *src = item? item->name: sdb_fmt (0, "0x%08"PFMT64x, ref->addr);
+			const char *src = item? item->name: sdb_fmt ("0x%08"PFMT64x, ref->addr);
 			r_cons_printf ("agn %s\n", src);
 			r_cons_printf ("age %s %s\n", src, me);
 		}
@@ -3541,7 +3541,7 @@ static void add_string_ref(RCore *core, ut64 xref_to) {
 	str_flagname = is_string_at (core, xref_to, &len);
 	if (str_flagname) {
 		r_name_filter (str_flagname, -1);
-		char *flagname = sdb_fmt (0, "str.%s", str_flagname);
+		char *flagname = sdb_fmt ("str.%s", str_flagname);
 		r_flag_space_push (core->flags, "strings");
 		r_flag_set (core->flags, flagname, xref_to, len);
 		r_flag_space_pop (core->flags);
@@ -3828,10 +3828,10 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 					RSyscallItem *si = r_syscall_get (core->anal->syscall, snv, in);
 					if (si) {
 					//	eprintf ("0x%08"PFMT64x" SYSCALL %-4d %s\n", cur, snv, si->name);
-						r_flag_set_next (core->flags, sdb_fmt (0, "syscall.%s", si->name), cur, 1);
+						r_flag_set_next (core->flags, sdb_fmt ("syscall.%s", si->name), cur, 1);
 					} else {
 					//	eprintf ("0x%08"PFMT64x" SYSCALL %d\n", cur, snv);
-						r_flag_set_next (core->flags, sdb_fmt (0, "syscall.%d", snv), cur, 1);
+						r_flag_set_next (core->flags, sdb_fmt ("syscall.%d", snv), cur, 1);
 					}
 					r_flag_space_set (core->flags, NULL);
 				}
@@ -3904,7 +3904,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 								if ((f = r_flag_get_i2 (core->flags, dst))) {
 									r_meta_set_string (core->anal, R_META_TYPE_COMMENT, cur, f->name);
 								} else if ((str = is_string_at (mycore, dst, NULL))) {
-									char *str2 = sdb_fmt (2, "esilref: '%s'", str);
+									char *str2 = sdb_fmt ("esilref: '%s'", str);
 									// HACK avoid format string inside string used later as format
 									// string crashes disasm inside agf under some conditions.
 									// https://github.com/radare/radare2/issues/6937

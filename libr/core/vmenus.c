@@ -55,7 +55,7 @@ static char *prompt(const char *str, const char *txt) {
 
 static inline char *getformat (RCoreVisualTypes *vt, const char *k) {
 	return sdb_get (vt->core->anal->sdb_types,
-		sdb_fmt (0, "type.%s", k), 0);
+		sdb_fmt ("type.%s", k), 0);
 }
 
 static char *colorize_asm_string(RCore *core, const char *buf_asm, int optype) {
@@ -2880,7 +2880,7 @@ repeat:
 					}
 				}
 				if (bar) {
-					char *newname = r_cons_input (sdb_fmt (0, "New variable name for '%s': ", bar->name));
+					char *newname = r_cons_input (sdb_fmt ("New variable name for '%s': ", bar->name));
 					if (newname) {
 						if (*newname) {
 							r_anal_var_rename (core->anal, fcn->addr, bar->scope,

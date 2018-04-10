@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2011-2017 - pancake */
+/* sdb - MIT - Copyright 2011-2018 - pancake */
 
 #include "sdb.h"
 
@@ -7,20 +7,23 @@
 #if USE_MONOTONIC_CLOCK
 #include <time.h>
 #else
+
 #ifdef _MSC_VER
 #pragma message ("gettimeofday: Windows support is ugly here")
 #include <windows.h>
 #include <time.h>
+
 struct timezone {
 	int  tz_minuteswest; /* minutes W of Greenwich */
 	int  tz_dsttime;     /* type of dst correction */
 };
+
 int gettimeofday (struct timeval* p, struct timezone * tz) {
 	//ULARGE_INTEGER ul; // As specified on MSDN.
 	ut64 ul = 0;
 	static int tzflag = 0;
 	FILETIME ft;
-	if (p != NULL) {
+	if (p) {
 		// Returns a 64-bit value representing the number of
 		// 100-nanosecond intervals since January 1, 1601 (UTC).
 		GetSystemTimeAsFileTime (&ft);
@@ -43,7 +46,7 @@ int gettimeofday (struct timeval* p, struct timezone * tz) {
 		p->tv_sec = (long)(ul / 1000000LL);
 		p->tv_usec = (long)(ul % 1000000LL);
 	}
-	if (tz != NULL) {
+	if (tz) {
 		if (!tzflag) {
 			_tzset ();
 			tzflag++;
@@ -71,7 +74,7 @@ SDB_API ut32 sdb_hash_len(const char *s, ut32 *len) {
 	ut32 count = 0;
 	if (s) {
 		while (*s) {
-			h = (h + (h << 5)) ^* s++;
+			h = (h + (h << 5)) ^ *s++;
 			count++;
 		}
 	}
@@ -92,6 +95,10 @@ SDB_API ut8 sdb_hash_byte(const char *s) {
 	return h[0] ^ h[1] ^ h[2] ^ h[3];
 }
 
+SDB_API const char *sdb_itoca(ut64 n) {
+	return sdb_itoa (n, sdb_fmt (NULL), 16);
+}
+
 // assert (sizeof (s)>64)
 // if s is null, the returned pointer must be freed!!
 SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
@@ -101,6 +108,7 @@ SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
 	int i = imax, copy_string = 1;
 	if (s) {
 		*s = 0;
+		os = NULL;
 	} else {
 		os = s = tmpbuf;
 	}
@@ -120,7 +128,7 @@ SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
 	}
 	s[imax + 1] = '\0';
 	if (base <= 10) {
-		for (; n && i>0; n /= base) {
+		for (; n && i > 0; n /= base) {
 			s[i--] = (n % base) + '0';
 		}
 	} else {

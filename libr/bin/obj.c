@@ -233,8 +233,8 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 				o->addr2klassmethod = sdb_new0 ();
 				r_list_foreach (klasses, iter, klass) {
 					r_list_foreach (klass->methods, iter2, method) {
-						char *km = sdb_fmt (-1, "method.%s.%s", klass->name, method->name);
-						char *at = sdb_fmt (-1, "0x%08"PFMT64x, method->vaddr);
+						char *km = sdb_fmt ("method.%s.%s", klass->name, method->name);
+						char *at = sdb_fmt ("0x%08"PFMT64x, method->vaddr);
 						sdb_set (o->addr2klassmethod, at, km, 0);
 					}
 				}
