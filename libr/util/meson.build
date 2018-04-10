@@ -91,7 +91,7 @@ r_util = library('r_util', files,
   link_with: [libr_shlr],
   install: true,
   implicit_include_directories: false,
-  soversion: r2version
+  soversion: r2libversion
 )
 
 pkgconfig_mod.generate(

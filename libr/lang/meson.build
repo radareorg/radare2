@@ -14,7 +14,7 @@ r_lang = library('r_lang', files,
   link_with: [r_util, r_cons],
   install: true,
   implicit_include_directories: false,
-  soversion: r2version
+  soversion: r2libversion
 )
 
 pkgconfig_mod.generate(

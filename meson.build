@@ -62,6 +62,8 @@ else
   r2birth = r2birth.stdout().strip()
 endif
 
+r2libversion = host_machine.system() == 'windows' ? '' : r2version
+
 # system dependencies
 cc = meson.get_compiler('c')
 # required for linux

@@ -123,7 +123,7 @@ r_bin = library('r_bin', files,
   link_with: [r_util, r_io, r_socket, r_magic, libr_shlr],
   install: true,
   implicit_include_directories: false,
-  soversion: r2version
+  soversion: r2libversion
 )
 
 pkgconfig_mod.generate(

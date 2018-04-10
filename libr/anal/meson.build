@@ -113,7 +113,7 @@ r_anal = library('r_anal', files,
   ],
   install: true,
   implicit_include_directories: false,
-  soversion: r2version
+  soversion: r2libversion
 )
 
 pkgconfig_mod.generate(

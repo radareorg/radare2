@@ -8,7 +8,7 @@ r_config = library('r_config', files,
   link_with: [r_util, libr_shlr],
   install: true,
   implicit_include_directories: false,
-  soversion: r2version
+  soversion: r2libversion
 )
 
 pkgconfig_mod.generate(
