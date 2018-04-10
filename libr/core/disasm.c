@@ -51,7 +51,9 @@ static const char* r_vline_uc[] = {
 	"│", // LINE_VERT
 	"├", // LINE_CROSS
 	"─", // LINE_HORIZ
-	"↑", // LINE_UP
+	// "↑", // LINE_UP
+	"⋮", // LINE_UP
+	// "≀", // LINE_UP
 	//"┌", // LUP_CORNER
 	"╯", // LUP_CORNER
 	"╰", // RDWN_CORNER
