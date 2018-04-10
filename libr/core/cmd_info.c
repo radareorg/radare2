@@ -235,7 +235,7 @@ static void r_core_file_info(RCore *core, int mode) {
 		if (desc) {
 			ut64 fsz = r_io_desc_size (desc);
 			if (fsz != UT64_MAX) {
-				pair ("size", sdb_fmt (0,"0x%"PFMT64x, fsz));
+				pair ("size", sdb_fmt ("0x%"PFMT64x, fsz));
 				char *humansz = r_num_units (NULL, fsz);
 				if (humansz) {
 					pair ("humansz", humansz);
