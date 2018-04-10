@@ -97,6 +97,7 @@ typedef struct {
 	bool show_lines;
 	bool show_lines_ret;
 	bool show_lines_call;
+	bool show_seekline;
 	int linesright;
 	int tracespace;
 	int cyclespace;
@@ -598,6 +599,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->dwarfAbspath = r_config_get_i (ds->core->config, "asm.dwarf.abspath");
 	ds->show_lines_call = r_config_get_i (core->config, "asm.lines.call");
 	ds->show_lines_ret = r_config_get_i (core->config, "asm.lines.ret");
+	ds->show_seekline = r_config_get_i (core->config, "asm.seekline");
 	ds->show_size = r_config_get_i (core->config, "asm.size");
 	ds->show_trace = r_config_get_i (core->config, "asm.trace");
 	ds->linesout = r_config_get_i (core->config, "asm.linesout");
@@ -4583,6 +4585,17 @@ toro:
 				r_cons_printf ("%s%s%s; --------------------------------------\n",
 					COLOR (ds, color_flow), ds->line, COLOR_RESET (ds));
 			}
+		}
+		if (ds->show_seekline && ds->vat == core->prompt_offset) {
+			int pad_len = 2 + R_MAX (0, ds->line ? strlen (ds->line) - 2 : 0);
+			int line_len = R_MAX (0, ds->interactive ? r_cons_singleton ()->columns : 80) - pad_len;
+			r_cons_memset (' ', pad_len);
+			r_cons_print (COLOR_CONST (ds, CYAN));
+			r_cons_memset ('-', line_len);
+			r_cons_print (COLOR_RESET (ds));
+			r_cons_newline ();
+		}
+		if (ds->line) {
 			R_FREE (ds->line);
 			R_FREE (ds->refline);
 			R_FREE (ds->refline2);

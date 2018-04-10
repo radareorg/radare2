@@ -131,6 +131,7 @@ typedef struct r_core_t {
 	RBin *bin;
 	RConfig *config;
 	ut64 offset;
+	ut64 prompt_offset;
 	ut32 blocksize;
 	ut32 blocksize_max;
 	ut8 *block;

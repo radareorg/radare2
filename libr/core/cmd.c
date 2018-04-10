@@ -1644,7 +1644,6 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	const char *cmdrep = NULL;
 	bool tmpseek = false;
 	bool original_tmpseek = core->tmpseek;
-	ut64 orig_offset;
 
 	cmd = r_str_trim_head_tail (icmd);
 	// lines starting with # are ignored (never reach cmd_hash()), except #! and #?
@@ -1704,7 +1703,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	orep = rep;
 
 	int ocur_enabled = core->print && core->print->cur_enabled;
-	orig_offset = core->offset;
+	core->prompt_offset = core->offset;
 	while (rep-- && *cmd) {
 		if (core->print) {
 			core->print->cur_enabled = false;
@@ -1743,7 +1742,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		free (cr);
 	}
 	if (tmpseek) {
-		r_core_seek (core, orig_offset, 1);
+		r_core_seek (core, core->prompt_offset, 1);
 		core->tmpseek = original_tmpseek;
 	}
 	if (core->print) {
