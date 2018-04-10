@@ -124,9 +124,13 @@ if [ "${BUILD}" != 0 ]; then
 	SHELL=sh
 	cp -f "${ROOT}/ndk-gcc" "${NDK}"
 	chmod +x "${NDK}/ndk-gcc"
+	cp -f "${ROOT}/ndk-g++" "${NDK}"
+	chmod +x "${NDK}/ndk-g++"
 	CC=ndk-gcc
+	CXX=ndk-g++
 	PS1="[r2-android-${NDK_ARCH}]> "
 	export CC
+	export CXX
 	export PS1
 	export AR
 	export RANLIB
