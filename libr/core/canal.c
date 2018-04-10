@@ -3801,6 +3801,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 			cur -= (cur % opalign);
 		}
 		r_anal_op_fini (&op);
+		r_asm_set_pc (core->assembler, cur);
 		if (!r_anal_op (core->anal, &op, cur, buf + i, iend - i, R_ANAL_OP_MASK_ALL)) {
 			i += minopsize - 1;
 		}
@@ -3809,7 +3810,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 			// i +=2;
 			continue;
 		}
-		r_asm_set_pc (core->assembler, cur);
 		//we need to check again i because buf+i may goes beyond its boundaries
 		//because of i+= minopsize - 1
 		if (i > iend) {
@@ -3865,7 +3865,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 				break;
 			case R_ANAL_OP_TYPE_ADD:
 				/* TODO: test if this is valid for other archs too */
-				if (core->anal->bits == 64 && core->anal->cur && !strcmp (core->anal->cur->arch, "arm")) {
+				if (core->anal->cur && !strcmp (core->anal->cur->arch, "arm")) {
+					/* This code is known to work on Thumb, ARM and ARM64 */
 					ut64 dst = ESIL->cur;
 					if ((target && dst == ntarget) || !target) {
 						if (CHECKREF (dst)) {
