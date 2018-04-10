@@ -3852,7 +3852,12 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 			//r_anal_esil_stack_free (ESIL);
 			switch (op.type) {
 			case R_ANAL_OP_TYPE_LEA:
-				if ((target && op.ptr == ntarget) || !target) {
+				// arm64
+				if (core->anal->cur && core->anal->bits == 64 && !strcmp (core->anal->cur->arch, "arm")) {
+					if (CHECKREF (ESIL->cur)) {
+						r_anal_ref_add (core->anal, ESIL->cur, cur, 's');
+					}
+				} else if ((target && op.ptr == ntarget) || !target) {
 					if (core->anal->cur && strcmp (core->anal->cur->arch, "arm")) {
 						if (cfg_anal_strings) {
 							if (CHECKREF (ESIL->cur)) {
