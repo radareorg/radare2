@@ -107,7 +107,7 @@ static const char **menus_sub[] = {
 };
 
 static void Panel_print(RConsCanvas *can, RPanel *n, int color) {
-	if (!n || !can || !n->refresh) {
+	if (!can || !n || !n->refresh) {
 		return;
 	}
 	n->refresh = false;
@@ -548,6 +548,7 @@ R_API RPanels *r_panels_new(RCore* core) {
 	}
 	w = r_cons_get_size (&h);
 	if (!init (panels, w, h)) {
+		free (panels);
 		return NULL;
 	}
 	return panels;

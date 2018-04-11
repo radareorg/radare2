@@ -973,7 +973,7 @@ static RList* patch_relocs(RBin *b) {
 			if (relcs[i].sym < bin->imports_by_ord_size && bin->imports_by_ord[relcs[i].sym]) {
 				bool found;
 
-				sym_addr = ht_find_intu64(relocs_by_sym, relcs[i].sym, &found);
+				sym_addr = ht_find_intu64 (relocs_by_sym, relcs[i].sym, &found);
 				if (!found) {
 					sym_addr = 0;
 				}

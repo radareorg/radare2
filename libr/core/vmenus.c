@@ -1504,13 +1504,9 @@ beach:
 }
 
 R_API int r_core_visual_comments (RCore *core) {
-#undef DB
-#define DB core->anal->sdb_meta
-	const char *val, *comma = NULL;
-	char *list = sdb_get (DB, "meta.C", 0);
-	char *str, *next, *cur = list;
-	char key[128], cmd[512], *p = NULL;
-	int i, ch, option = 0, delta = 7;
+	char *str;
+	char cmd[512], *p = NULL;
+	int i, ch, option = 0;
 	int format = 0, found = 0;
 	ut64 addr, from = 0, size = 0;
 

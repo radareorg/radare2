@@ -2828,7 +2828,7 @@ done:
 		bin->symbols_by_ord_size = ret_ctr + 1;
 		if (ret_ctr > 0) {
 			bin->symbols_by_ord = (RBinSymbol * *) calloc (ret_ctr + 1, sizeof (RBinSymbol*));
-		}else {
+		} else {
 			bin->symbols_by_ord = NULL;
 		}
 	}
