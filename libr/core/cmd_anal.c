@@ -546,13 +546,13 @@ static const char *help_msg_as[] = {
 };
 
 static const char *help_msg_av[] = {
-		"Usage:", "av[?jr*]", " C++ vtables and RTTI",
-		"av", "", "search for vtables in data sections and show results",
-		"avj", "", "like av, but as json",
-		"av*", "", "like av, but as r2 commands",
-		"avr", "[j@addr]", "try to parse RTTI at vtable addr (see anal.cpp.abi)",
-		"avra", "[j]", "search for vtables and try to parse RTTI at each of them",
-		NULL
+	"Usage:", "av[?jr*]", " C++ vtables and RTTI",
+	"av", "", "search for vtables in data sections and show results",
+	"avj", "", "like av, but as json",
+	"av*", "", "like av, but as r2 commands",
+	"avr", "[j@addr]", "try to parse RTTI at vtable addr (see anal.cpp.abi)",
+	"avra", "[j]", "search for vtables and try to parse RTTI at each of them",
+	NULL
 };
 
 static const char *help_msg_ax[] = {
@@ -1950,12 +1950,14 @@ static void r_core_anal_fmap  (RCore *core, const char *input) {
 			assigned++;
 		}
 		if (show_color) {
-			if (bitmap[i])
+			if (bitmap[i]) {
 				r_cons_printf ("%s%c\x1b[0m", Color_GREEN, bitmap[i]);
-			else
+			} else {
 				r_cons_printf (".");
-		} else
+			}
+		} else {
 			r_cons_printf ("%c", bitmap[i] ? bitmap[i] : '.' );
+		}
 	}
 	r_cons_printf ("\n%d / %d (%.2lf%%) bytes assigned to a function\n", assigned, code_size, 100.0*( (float) assigned) / code_size);
 	free(bitmap);
@@ -3671,18 +3673,21 @@ typedef struct {
 	RList *regs;
 	RList *regread;
 	RList *regwrite;
+	RList *inputregs;
 } AeaStats;
 
 static void aea_stats_init (AeaStats *stats) {
 	stats->regs = r_list_newf (free);
 	stats->regread = r_list_newf (free);
 	stats->regwrite = r_list_newf (free);
+	stats->inputregs = r_list_newf (free);
 }
 
 static void aea_stats_fini (AeaStats *stats) {
 	R_FREE (stats->regs);
 	R_FREE (stats->regread);
 	R_FREE (stats->regwrite);
+	R_FREE (stats->inputregs);
 }
 
 static bool contains(RList *list, const char *name) {
@@ -3713,6 +3718,9 @@ static int mymemwrite(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
 			return len;
 		}
 	}
+	if (!r_io_is_valid_offset (esil->anal->iob.io, addr, 0)) {
+		return false;
+	}
 	n = R_NEW (AeaMemItem);
 	if (n) {
 		n->addr = addr;
@@ -3729,6 +3737,9 @@ static int mymemread(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 		if (addr == n->addr) {
 			return len;
 		}
+	}
+	if (!r_io_is_valid_offset (esil->anal->iob.io, addr, 0)) {
+		return false;
 	}
 	n = R_NEW (AeaMemItem);
 	if (n) {
@@ -3759,6 +3770,11 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 static int myregread(RAnalEsil *esil, const char *name, ut64 *val, int *len) {
 	AeaStats *stats = esil->user;
 	if (!IS_DIGIT (*name)) {
+		if (!contains (stats->inputregs, name)) {
+			if (!contains (stats->regwrite, name)) {
+				r_list_push (stats->inputregs, strdup (name));
+			}
+		}
 		if (!contains (stats->regs, name)) {
 			r_list_push (stats->regs, strdup (name));
 		}
@@ -3807,8 +3823,9 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	RAnalOp aop = R_EMPTY;
 	ut8 *buf;
 	RList* regnow;
-	if (!core)
+	if (!core) {
 		return false;
+	}
 	maxopsize = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
 	if (maxopsize < 1) {
 		maxopsize = 16;
@@ -3907,6 +3924,8 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	} else if ((mode >> 4) & 1) {
 		r_cons_printf ("{\"A\":");
 		showregs_json (stats.regs);
+		r_cons_printf (",\"I\":");
+		showregs_json (stats.inputregs);
 		r_cons_printf (",\"R\":");
 		showregs_json (stats.regread);
 		r_cons_printf (",\"W\":");
@@ -3918,6 +3937,8 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	} else if ((mode >> 5) & 1) {
 		// nothing
 	} else {
+		r_cons_printf (" I: ");
+		showregs (stats.inputregs);
 		r_cons_printf (" A: ");
 		showregs (stats.regs);
 		r_cons_printf (" R: ");
@@ -3932,14 +3953,15 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 		}
 		RListIter *iter;
 		ut64 *n;
-		int c = 0;
+		r_cons_printf ("@R:");
 		r_list_foreach (mymemxsr, iter, n) {
-			r_cons_printf ("R%d: 0x%08"PFMT64x"\n", c++, *n);
+			r_cons_printf (" 0x%08"PFMT64x, *n);
 		}
-		c = 0;
+		r_cons_printf ("\n@W:");
 		r_list_foreach (mymemxsw, iter, n) {
-			r_cons_printf ("W%d: 0x%08"PFMT64x"\n", c++, *n);
+			r_cons_printf (" 0x%08"PFMT64x, *n);
 		}
+		r_cons_newline ();
 	}
 	r_list_free (mymemxsr);
 	r_list_free (mymemxsw);
