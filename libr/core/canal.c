@@ -3878,8 +3878,12 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 				} else if ((target && op.ptr == ntarget) || !target) {
 			//		if (core->anal->cur && strcmp (core->anal->cur->arch, "arm")) {
 					if (CHECKREF (ESIL->cur)) {
-			//			r_anal_ref_add (core->anal, ESIL->cur, cur, 's');
-						r_anal_ref_add (core->anal, op.ptr,cur,'s');
+						if (op.ptr && r_io_is_valid_offset (core->io, op.ptr, !core->anal->opt.noncode)) {
+							r_anal_ref_add (core->anal, op.ptr, cur,'s');
+						} else {
+							r_anal_ref_add (core->anal, ESIL->cur, cur, 's');
+						}
+						printf ("%llx %llx %llx\n", ESIL->cur, cur, op.ptr);
 					}
 				}
 				if (cfg_anal_strings) {
