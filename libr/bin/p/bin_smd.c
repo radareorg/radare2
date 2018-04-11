@@ -150,10 +150,10 @@ static RList *symbols(RBinFile *bf) {
 	ret->free = free;
 	// TODO: store all this stuff in SDB
 	hdr = (SMD_Header *) (bf->buf->buf + 0x100);
-	addsym (ret, "rom_start", hdr->RomStart);
-	addsym (ret, "rom_end", hdr->RomEnd);
-	addsym (ret, "ram_start", hdr->RamStart);
-	addsym (ret, "ram_end", hdr->RamEnd);
+	addsym (ret, "rom_start", r_read_be32 (&hdr->RomStart));
+	addsym (ret, "rom_end", r_read_be32 (&hdr->RomEnd));
+	addsym (ret, "ram_start", r_read_be32 (&hdr->RamStart));
+	addsym (ret, "ram_end", r_read_be32 (&hdr->RamEnd));
 	showstr ("Copyright", hdr->CopyRights, 32);
 	showstr ("DomesticName", hdr->DomesticName, 48);
 	showstr ("OverseasName", hdr->OverseasName, 48);
@@ -273,7 +273,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->paddr = ptr->vaddr = 0x100 + sizeof (SMD_Header);
 	{
 		SMD_Header *hdr = (SMD_Header *) (bf->buf->buf + 0x100);
-		ut64 baddr = hdr->RamStart;
+		ut64 baddr = hdr->RomStart;
 		ptr->vaddr += baddr;
 	}
 	ptr->size = ptr->vsize = bf->buf->length - ptr->paddr;
@@ -293,7 +293,7 @@ static RList *entries(RBinFile *bf) { // Should be 3 offsets pointed by NMI, RES
 		return ret;
 	}
 	SMD_Header *hdr = (SMD_Header *) (bf->buf->buf + 0x100);
-	ut64 baddr = hdr->RamStart;
+	ut64 baddr = hdr->RomStart;
 	ptr->paddr = ptr->vaddr = baddr + 0x100 + sizeof (SMD_Header); // vtable[1];
 	r_list_append (ret, ptr);
 	return ret;
