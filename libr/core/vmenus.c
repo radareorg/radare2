@@ -1473,6 +1473,35 @@ R_API int r_core_visual_trackflags(RCore *core) {
 	}
 	return true;
 }
+static bool meta_deserialize(RAnalMetaItem *it, const char *k, const char *v) {
+	if (strlen (k) < 8) {
+		return false;
+	}
+	if (memcmp (k + 6, ".0x", 3)) {
+		return false;
+	}
+	return r_meta_deserialize_val (it, k[5], sdb_atoi (k + 7), v);
+}
+
+static int meta_enumerate_cb(void *user, const char *k, const char *v) {
+	RAnalMetaUserItem *ui = user;
+	RList *list = ui->user;
+	RAnalMetaItem *it = R_NEW0 (RAnalMetaItem);
+	if (!it) {
+		return 0;
+	}
+	if (!meta_deserialize (it, k, v)) {
+		free (it);
+		goto beach;
+	}
+	if (!it->str) {
+		free (it);
+		goto beach;
+	}
+	r_list_append (list, it);
+beach:
+	return 1;
+}
 
 R_API int r_core_visual_comments (RCore *core) {
 #undef DB
@@ -1490,40 +1519,32 @@ R_API int r_core_visual_comments (RCore *core) {
 		r_cons_strcat ("Comments:\n");
 		i = 0;
 		found = 0;
-		if (list) {
-			for (i=0; ;i++) {
-				cur = sdb_anext (cur, &next);
-				addr = sdb_atoi (cur);
-				snprintf (key, sizeof (key)-1, "meta.C.0x%08"PFMT64x, addr);
-				val = sdb_const_get (DB, key, 0);
-				if (val)
-					comma = strchr (val, ',');
-				if (comma) {
-					str = (char *)sdb_decode (comma+1, 0);
-					if ((i>=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
-						r_str_sanitize (str);
-						if (option==i) {
-							found = 1;
-							from = addr;
-							size = 1; // XXX: remove this thing size for comments is useless d->size;
-							free (p);
-							p = str;
-							r_cons_printf ("  >  %s\n", str);
-						} else {
-							r_cons_printf ("     %s\n", str);
-							free (str);
-						}
-					} else free (str);
-				}
-				if (!next) {
-					break;
-				}
-				cur = next;
+		RList *items = r_list_newf (free);
+		RAnalMetaItem *item;
+		RListIter *iter;
+		r_meta_list_cb (core->anal, R_META_TYPE_COMMENT, 0, meta_enumerate_cb, items, UT64_MAX);
+		int i = 0;
+		r_list_foreach (items, iter, item) {
+			str = item->str;
+			addr = item->from;
+			if (option==i) {
+				found = 1;
+				from = addr;
+				size = 1; // XXX: remove this thing size for comments is useless d->size;
+				free (p);
+				p = str;
+				r_cons_printf ("  >  %s\n", str);
+			} else {
+				r_cons_printf ("     %s\n", str);
+				free (str);
 			}
+			i ++;
+			found = true;
 		}
-
 		if (!found) {
 			if (--option < 0) {
+				eprintf ("\nNo comments.\n");
+				r_cons_any_key();
 				break;
 			}
 			continue;

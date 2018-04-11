@@ -1603,7 +1603,8 @@ static void visual_browse(RCore *core) {
 			r_core_visual_classes (core);
 			break;
 		case 'C':
-			r_core_cmd0 (core, "s $(CC~...)");
+			r_core_visual_comments (core);
+			//r_core_cmd0 (core, "s $(CC~...)");
 			break;
 		case 't':
 			r_core_visual_types (core);
@@ -2095,11 +2096,8 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_core_visual_refs (core, false);
 			break;
 		case 'r':
-			if (core->print->ocur != -1) {
-				r_core_visual_comments (core);
-			} else {
-				visual_refresh (core);
-			}
+			// TODO: toggle shortcut hotkeys
+			visual_refresh (core);
 			break;
 		case ' ':
 		case 'V':
