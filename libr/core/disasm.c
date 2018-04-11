@@ -2973,15 +2973,18 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 	RCore *core = ds->core;
 	bool gotShortcut = false;
 
-	if (!ds->show_jmphints) {
+	if (!core->vmode) {
 		return;
 	}
-	if (core->vmode) {
+	{
 		switch (ds->analop.type) {
+		case R_ANAL_OP_TYPE_MOV:
 		case R_ANAL_OP_TYPE_LEA:
 			if (ds->show_leahints) {
-				ds_print_shortcut (ds, ds->analop.ptr, pos);
-				gotShortcut = true;
+				if (ds->analop.ptr != UT64_MAX) {
+					ds_print_shortcut (ds, ds->analop.ptr, pos);
+					gotShortcut = true;
+				}
 			}
 			break;
 		case R_ANAL_OP_TYPE_UCALL:
@@ -3000,12 +3003,14 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 				ds_print_shortcut (ds, ds->analop.ptr, pos);
 			}
 #endif
-			if (ds->analop.jump != UT64_MAX) {
-				ds_print_shortcut (ds, ds->analop.jump, pos);
-			} else {
-				ds_print_shortcut (ds, ds->analop.ptr, pos);
+			if (ds->show_jmphints) {
+				if (ds->analop.jump != UT64_MAX) {
+					ds_print_shortcut (ds, ds->analop.jump, pos);
+				} else {
+					ds_print_shortcut (ds, ds->analop.ptr, pos);
+				}
+				gotShortcut = true;
 			}
-			gotShortcut = true;
 			break;
 		case R_ANAL_OP_TYPE_RCALL:
 			break;
@@ -3013,12 +3018,15 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_CALL:
 		case R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_CALL:
-			ds_print_shortcut (ds, ds->analop.jump, pos);
-			gotShortcut = true;
+			if (ds->show_jmphints) {
+				ds_print_shortcut (ds, ds->analop.jump, pos);
+				gotShortcut = true;
+			}
 			break;
 		default:
-			if (ds_print_core_vmode_jump_hit (ds, pos))
+			if (ds_print_core_vmode_jump_hit (ds, pos)) {
 				gotShortcut = true;
+			}
 			break;
 		}
 		if (!gotShortcut) {
