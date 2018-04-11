@@ -2514,7 +2514,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			for (i = 0; i < nblocks; i++) {
 				ut64 off = from + (blocksize * (i + skipblocks));
 				r_core_read_at (core, off, p, blocksize);
-				ptr[i] = (ut8) (256 * r_hash_entropy_fraction (p, blocksize));
+				ptr[i] = (ut8) (255 * r_hash_entropy_fraction (p, blocksize));
 			}
 			free (p);
 			r_print_columns (core->print, ptr, nblocks, 14);
@@ -2610,7 +2610,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		for (i = 0; i < nblocks; i++) {
 			ut64 off = from + (blocksize * (i + skipblocks));
 			r_core_read_at (core, off, p, blocksize);
-			ptr[i] = (ut8) (256 * r_hash_entropy_fraction (p, blocksize));
+			ptr[i] = (ut8) (255 * r_hash_entropy_fraction (p, blocksize));
 		}
 		free (p);
 		print_bars = true;
