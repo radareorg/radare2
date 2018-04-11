@@ -2980,8 +2980,9 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 		switch (ds->analop.type) {
 		case R_ANAL_OP_TYPE_MOV:
 		case R_ANAL_OP_TYPE_LEA:
+		case R_ANAL_OP_TYPE_LOAD:
 			if (ds->show_leahints) {
-				if (ds->analop.ptr != UT64_MAX) {
+				if (ds->analop.ptr != UT64_MAX && ds->analop.ptr > 256) {
 					ds_print_shortcut (ds, ds->analop.ptr, pos);
 					gotShortcut = true;
 				}
