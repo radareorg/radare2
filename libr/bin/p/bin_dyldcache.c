@@ -8,28 +8,22 @@
 #define R_BIN_MACH064 1
 #include "../format/mach0/mach0.h"
 
-static void* addr2ptr(uint64_t addr, cache_hdr_t *hdr) {
+static ut64 va2pa(uint64_t addr, cache_hdr_t *hdr, RBuffer *cache_buf) {
+	ut64 res = UT64_MAX;
 	uint32_t i;
-	cache_map_t *map = (cache_map_t*)((const ut8*)hdr + hdr->mappingOffset);
-	for (i = 0; i < hdr->mappingCount; ++i) {
-		if (addr >= map[i].address && addr < map[i].address + map[i].size) {
-			return (void*)((const ut8*)hdr + map[i].fileOffset + (addr - map[i].address));
-		}
-	}
-	return NULL;
-}
 
-static ut64 va2pa(uint64_t addr, void *cache) {
-	uint32_t i;
-	cache_hdr_t *hdr = (cache_hdr_t*)cache;
-	cache_map_t *map = (cache_map_t*)((uintptr_t)cache + hdr->mappingOffset);
+	cache_map_t *map = R_NEWS0 (cache_map_t, hdr->mappingCount);
+	r_buf_read_at (cache_buf, hdr->mappingOffset, map, sizeof (cache_map_t) * hdr->mappingCount);
+
 	for (i = 0; i < hdr->mappingCount; ++i) {
 		if (addr >= map[i].address && addr < map[i].address + map[i].size) {
-			return map[i].fileOffset + addr - map[i].address;
-			// (void*)((uintptr_t)cache + map[i].fileOffset + (addr - map[i].address));
+			res = map[i].fileOffset + addr - map[i].address;
+			break;
 		}
 	}
-	return UT64_MAX;
+
+	R_FREE (map);
+	return res;
 }
 
 static bool dyld64 = false;
@@ -48,6 +42,16 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 		}
 	}
 	return rc;
+}
+
+static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb * sdb) {
+	RBuffer *fbuf = r_buf_new_with_io (&bf->rbin->iob, bf->fd);
+	const ut8 bytes_to_check[32];
+	r_buf_read_at (fbuf, 0, bytes_to_check, 32);
+	if (!check_bytes (bytes_to_check, 32)) {
+		return NULL;
+	}
+	return fbuf;
 }
 
 static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
@@ -110,7 +114,7 @@ static ut64 baddr(RBinFile *bf) {
 void parse_mach064 (RList *ret, ut64 paddr, RBinFile *bf) {
 	// eprintf ("MACH0 AT 0x%"PFMT64x"\n", paddr);
 	int sz = 0;
-	void *ptr = r_buf_get_at (bf->buf, paddr, &sz);
+	RBuffer *cache_buf = (RBuffer*) bf->o->bin_obj;
 #if USE_R2_API
 	// XXX r2 api cannot load those mach0s because addresses are messed up
 	sz = 1024*1024*1; // 1MB limit file size to 1MB to avoid slow copies.. this is a nice place to optimize unnecessary r_buf_new_from_bytes
@@ -144,43 +148,49 @@ void parse_mach064 (RList *ret, ut64 paddr, RBinFile *bf) {
 	MACH0_(free)(res);
 #else
 	const ut8 * root = r_buf_get_at (bf->buf, 0, NULL);
-	//printf("f sym.imp.%s 0 0x%llx\n", &strs[syms[n].n_un.n_strx + 1], syms[n].n_value);
-	struct MACH0_(mach_header) *h64 = ptr;
-	struct load_command *cmd = (struct load_command*)((const ut8*)ptr + 0x20);
-	struct load_command *end = (struct load_command*)((const ut8*)cmd + h64->sizeofcmds);
+	struct MACH0_(mach_header) h64;
+	r_buf_read_at (cache_buf, paddr, &h64, sizeof (struct MACH0_(mach_header)));
+
+	struct load_command *cmds = (struct load_command*) malloc (h64.sizeofcmds);
+	struct load_command *cmd = cmds;
+	struct load_command *end = (struct load_command*)((const ut8*)cmds + h64.sizeofcmds);
+	r_buf_read_at (cache_buf, paddr + 0x20, cmd, h64.sizeofcmds);
+
 	for (; cmd < end; cmd = (void *)((const ut8*)cmd + cmd->cmdsize)) {
-		// eprintf ("%p  0x%x (%02x)\n", (void*)cmd - (void*)ptr + (void*)(size_t)paddr, cmd->cmd, LC_SYMTAB);
 		if (cmd->cmd == LC_SYMTAB) {
 			struct symtab_command *stab = (struct symtab_command*)(cmd);
-			struct MACH0_(nlist) *syms = (struct MACH0_(nlist)*)((uintptr_t)root + stab->symoff);
-			char *strs = (char*)((uintptr_t)root + stab->stroff);
+			struct MACH0_(nlist) *syms = R_NEWS0 (struct MACH0_(nlist), stab->nsyms);
+			r_buf_read_at (cache_buf, stab->symoff, syms, sizeof (struct MACH0_(nlist)) * stab->nsyms);
+
+			char *strs = malloc (stab->strsize);
+			r_buf_read_at (cache_buf, stab->stroff, strs, stab->strsize);
+
 			size_t n;
 			for (n = 0; n < stab->nsyms; n++) {
 				if ((syms[n].n_type & N_TYPE) != N_UNDF && (syms[n].n_type & N_EXT)) {
-					if (false) { // strs[syms[n].n_un.n_strx] != '_')
-						// LOG("Not a C symbol: %s", &strs[syms[n].n_un.n_strx]);
-					} else {
-						RBinSymbol *sym = R_NEW0 (RBinSymbol);
-						if (sym) {
-							sym->name = strdup (&strs [ syms[n].n_strx + 1]);
-							// eprintf ("Sym 0x%llx %s\n", (ut64)(syms[n].n_value), sym->name);
-							sym->vaddr = syms[n].n_value;
-							sym->paddr = syms[n].n_value;
-							// XXX THIs is unnecessarily slow! must be enums
-							sym->bind = "PUBLIC";
-							sym->type = "SYM";
-							r_list_append (ret, sym);
-						}
-						//printf("f sym.imp.%s 0 0x%llx\n", &strs[syms[n].n_un.n_strx + 1], syms[n].n_value);
+					RBinSymbol *sym = R_NEW0 (RBinSymbol);
+					if (sym) {
+						sym->name = strdup (&strs [ syms[n].n_strx + 1]);
+						sym->vaddr = syms[n].n_value;
+						sym->paddr = syms[n].n_value;
+						// XXX THIs is unnecessarily slow! must be enums
+						sym->bind = "PUBLIC";
+						sym->type = "SYM";
+						r_list_append (ret, sym);
 					}
 				}
 			}
+
+			R_FREE (strs);
+			R_FREE (syms);
 		}
 		if ((int)cmd->cmdsize < 1) {
 			eprintf ("CMD Size FAIL %d\n", cmd->cmdsize);
 			break;
 		}
 	}
+
+	R_FREE (cmds);
 #endif
 }
 
@@ -196,8 +206,10 @@ static RList* sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return NULL;
 	}
+
+	RBuffer *cache_buf = (RBuffer*) obj->bin_obj;
 	r_str_ncpy (ptr->name, (char*)"text", R_BIN_SIZEOF_STRINGS);
-	ptr->size = r_buf_size (bf->buf);
+	ptr->size = r_buf_size (cache_buf);
 	ptr->vsize = ptr->size;
 	ptr->paddr = 0;
 	ptr->vaddr = vaddr;
@@ -212,15 +224,22 @@ static RList* sections(RBinFile *bf) {
 
 static RList* symbols(RBinFile *bf) {
 	RList *ret = r_list_newf (free);
-	int cache_size = 0;
-	const ut8 *cache = r_buf_get_at (bf->buf, 0, &cache_size);
-	cache_hdr_t *hdr = (cache_hdr_t *)cache;
-	cache_img_t *img = (cache_img_t*)((uintptr_t)cache + hdr->imagesOffset);
+	RBuffer *cache_buf = (RBuffer*) bf->o->bin_obj;
+	cache_hdr_t hdr;
+	r_buf_read_at (cache_buf, 0, &hdr, sizeof (cache_hdr_t));
+
+	cache_img_t *img = R_NEWS0 (cache_img_t, hdr.imagesCount);
+	r_buf_read_at (cache_buf, hdr.imagesOffset, img, sizeof (cache_img_t) * hdr.imagesCount);
 	int i;
-	for (i = 0; i < hdr->imagesCount; i++) {
-		ut32 *ptr = addr2ptr (img[i].address, (cache_hdr_t*)cache);
-		ut64 pa = va2pa (img[i].address, (cache_hdr_t*)cache);
-		switch (*(uint32_t*)ptr) {
+	for (i = 0; i < hdr.imagesCount; i++) {
+		ut64 pa = va2pa (img[i].address, &hdr, cache_buf);
+		if (pa == UT64_MAX) {
+			continue;
+		}
+		ut8 magicbytes[4];
+		r_buf_read_at (cache_buf, pa, magicbytes, 4);
+		int magic = r_read_le32 (magicbytes);
+		switch (magic) {
 		case MH_MAGIC:
 			// parse_mach0 (ret, *ptr, bf);
 			break;
@@ -232,6 +251,8 @@ static RList* symbols(RBinFile *bf) {
 			break;
 		}
 	}
+
+	R_FREE (img);
 	return ret;
 }
 
@@ -241,6 +262,7 @@ RBinPlugin r_bin_plugin_dyldcache = {
 	.license = "LGPL3",
 	.load = &load,
 	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.entries = &entries,
 	.baddr = &baddr,
 	.symbols = &symbols,
