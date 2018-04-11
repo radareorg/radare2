@@ -3883,7 +3883,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 						} else {
 							r_anal_ref_add (core->anal, ESIL->cur, cur, 's');
 						}
-						printf ("%llx %llx %llx\n", ESIL->cur, cur, op.ptr);
 					}
 				}
 				if (cfg_anal_strings) {
