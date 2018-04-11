@@ -40,6 +40,7 @@ static const char *help_msg_aa[] = {
 	"aad", " [len]", "analyze data references to code",
 	"aae", " [len] ([addr])", "analyze references with ESIL (optionally to address)",
 	"aaE", "", "run aef on all functions (same as aef @@f)",
+	"aaf", " ", "analyze all functions (e anal.hasnext=1;afr @@c:isq)",
 	"aai", "[j]", "show info of all analysis parameters",
 	"aan", "", "autoname functions that either start with fcn.* or sym.func.*",
 	"aap", "", "find and analyze function preludes",
@@ -6224,6 +6225,14 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	case 'b': // "aab"
 		cmd_anal_blocks (core, input + 1);
 		break; // "aab"
+	case 'f': // "aaf"
+		{
+			int analHasnext = r_config_get_i (core->config, "anal.hasnext");
+			r_config_set_i (core->config, "anal.hasnext", true);
+			r_core_cmd0 (core, "afr@@c:isq");
+			r_config_set_i (core->config, "anal.hasnext", analHasnext);
+		}
+		break;
 	case 'c': // "aac"
 		switch (input[1]) {
 		case '*':
