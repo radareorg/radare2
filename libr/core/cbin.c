@@ -2953,7 +2953,9 @@ static void bin_elf_versioninfo(RCore *r, int mode) {
 	Sdb *sdb = NULL;
 	const char *oValue = NULL;
 	bool firstit_for_versym = true;
-	if (IS_MODE_JSON (mode)) { r_cons_printf ("{\"versym\":["); }
+	if (IS_MODE_JSON (mode)) {
+		r_cons_printf ("{\"versym\":[");
+	}
 	for (;; num_versym++) {
 		snprintf (path, sizeof (path), format, "versym", num_versym);
 		if (!(sdb = sdb_ns_path (r->sdb, path, 0))) {
@@ -3174,7 +3176,6 @@ static void bin_no_resources(RCore *r, int mode) {
 	}
 }
 
-
 static int bin_resources(RCore *r, int mode) {
 	const RBinInfo *info = r_bin_get_info (r->bin);
 	if (!info || !info->rclass) {
@@ -3353,7 +3354,7 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 				ret &= bin_fields (core, 0, va);
 			}
 		} else {
-			if (IS_MODE_NORMAL(mode)) {
+			if (IS_MODE_NORMAL (mode)) {
 				ret &= bin_header (core, mode);
 			} else {
 				if ((action & R_CORE_BIN_ACC_HEADER) || action & R_CORE_BIN_ACC_FIELDS) {

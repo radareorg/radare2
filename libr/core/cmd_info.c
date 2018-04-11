@@ -836,7 +836,7 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		case '?':
 			r_core_cmd_help (core, help_msg_i);
-			goto done;
+			goto redone;
 		case '*':
 			mode = R_CORE_BIN_RADARE;
 			goto done;
@@ -872,5 +872,6 @@ done:
 	if (newline) {
 		r_cons_newline ();
 	}
+redone:
 	return 0;
 }
