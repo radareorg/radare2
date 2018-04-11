@@ -232,7 +232,8 @@ static int cmd_project(void *data, const char *input) {
 		}
 		break;
 	case 0:
-		r_core_project_list (core, input[1]);
+	case 'j':
+		r_core_project_list (core, input[0]);
 		break;
 	default:
 		r_core_cmd_help (core, help_msg_P);
