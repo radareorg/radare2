@@ -32,6 +32,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 	for (;;) {
 		snprintf (prompt, sizeof (prompt), "[%.*s]> ", (int)sizeof (prompt) - 5, path);
 		if (shell) {
+			*shell->cwd = strdup (path);
 			if (shell->set_prompt) {
 				shell->set_prompt (prompt);
 			}
