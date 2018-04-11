@@ -3146,12 +3146,14 @@ static void bin_pe_resources(RCore *r, int mode) {
 		} else {
 			char *humanSize = r_num_units (NULL, size);
 			r_cons_printf ("Resource %d\n", index);
-			r_cons_printf ("\tname: %d\n", name);
-			r_cons_printf ("\ttimestamp: %s\n", timestr);
-			r_cons_printf ("\tvaddr: 0x%08"PFMT64x"\n", vaddr);
-			r_cons_printf ("\tsize: %s\n", humanSize);
-			r_cons_printf ("\ttype: %s\n", type);
-			r_cons_printf ("\tlanguage: %s\n", lang);
+			r_cons_printf ("  name: %d\n", name);
+			r_cons_printf ("  timestamp: %s\n", timestr);
+			r_cons_printf ("  vaddr: 0x%08"PFMT64x"\n", vaddr);
+			if (humanSize) {
+				r_cons_printf ("  size: %s\n", humanSize);
+			}
+			r_cons_printf ("  type: %s\n", type);
+			r_cons_printf ("  language: %s\n", lang);
 			free (humanSize);
 		}
 

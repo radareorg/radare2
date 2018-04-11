@@ -79,12 +79,17 @@ RebuildZip() {
 	Rebuild libr/io
 }
 
+RebuildTcc() {
+	Rebuild shlr/tcc
+}
+
 case "$1" in
 grub|fs)RebuildFs; ;;
 bin)    RebuildBin ; ;;
 gdb)    RebuildGdb ; ;;
 sdb)    RebuildSdb ; ;;
 spp)    RebuildSpp ; ;;
+tcc)    RebuildTcc ; ;;
 bin)    RebuildBin ; ;;
 zip)    RebuildZip ; ;;
 java)   RebuildJava ; ;;

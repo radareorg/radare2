@@ -457,6 +457,9 @@ meson-symstall-experimental:
 	for a in $(MESON_FILES) ; do echo ln -fs $(PWD)/$$a $(PWD)/$$(echo $$a|sed -e s,build/,,) ; done
 	$(MAKE) symstall
 
+shlr/capstone:
+	$(MAKE) -C shlr capstone
+
 .PHONY: meson meson-install
 
 include ${MKPLUGINS}
@@ -464,3 +467,4 @@ include ${MKPLUGINS}
 .PHONY: all clean distclean mrproper install symstall uninstall deinstall strip
 .PHONY: libr binr install-man w32dist tests dist shot pkgcfg depgraph.png love
 .PHONY: purge purge2 purge3
+.PHONY: shlr/capstone

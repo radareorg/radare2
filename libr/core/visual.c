@@ -1014,10 +1014,8 @@ repeat:
 					}
 					r_cons_printf (" %d [%s] 0x%08"PFMT64x " %s %cREF (%s)\n",
 						idx, cstr, refi->addr,
-						refi->type == R_ANAL_REF_TYPE_CODE? "CODE (JMP)" :
-						refi->type == R_ANAL_REF_TYPE_CALL? "CODE (CALL)": "DATA",
-						xref ? 'X':' ',
-						name);
+						r_anal_ref_to_string (refi->type),
+						xref ? 'X':' ', name);
 					free (name);
 					if (idx == skip) {
 						free (dis);

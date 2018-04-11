@@ -26,14 +26,13 @@ SDB_API char *sdb_fmt(const char *fmt, ...) {
 	static char Key[KN][KL];
 	static int n = 0;
 	va_list ap;
-	n = (n + 1) % KN;
-	if (!fmt) {
-		return Key[n];
-	}
 	va_start (ap, fmt);
-	*Key[n] = 0;
-	vsnprintf (Key[n], sizeof (Key[n]), fmt, ap);
-	Key[n][KL - 1] = 0;
+	n = (n + 1) % KN;
+	if (fmt) {
+		*Key[n] = 0;
+		vsnprintf (Key[n], KL - 1, fmt, ap);
+		Key[n][KL - 1] = 0;
+	}
 	va_end (ap);
 	return Key[n];
 }

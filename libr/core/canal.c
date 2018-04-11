@@ -22,6 +22,12 @@ typedef struct {
 	int count;
 } HintListState;
 
+// used to speedup strcmp with rconfig.get in loops
+enum {
+	R2_ARCH_ARM64
+} R2Arch;
+
+
 static void add_string_ref(RCore *core, ut64 xref_to);
 static int cmpfcn(const void *_a, const void *_b);
 
@@ -110,12 +116,18 @@ static char *is_string_at(RCore *core, ut64 addr, int *olen) {
 #endif
 	str = calloc (256, 1);
 	if (!str) {
+		if (olen) {
+			*olen = 0;
+		}
 		return NULL;
 	}
 	r_io_read_at (core->io, addr, str, 255);
 
 	str[255] = 0;
 	if (is_string (str, 256, &len)) {
+		if (olen) {
+			*olen = len;
+		}
 		return (char*) str;
 	}
 	
@@ -137,6 +149,9 @@ static char *is_string_at(RCore *core, ut64 addr, int *olen) {
 			ret = is_string (rstr, 128, &len);
 			if (ret) {
 				strcpy ((char*) str, (char*) rstr);
+				if (olen) {
+					*olen = len;
+				}
 				return (char*) str;
 			}
 		}
@@ -147,6 +162,9 @@ static char *is_string_at(RCore *core, ut64 addr, int *olen) {
 		ret = is_string (rstr, sizeof (rstr), &len);
 		if (ret) {
 			strcpy ((char*) str, (char*) rstr);
+			if (olen) {
+				*olen = len;
+			}
 			return (char*) str;
 		}
 	}
@@ -2563,10 +2581,6 @@ static int core_anal_followptr(RCore *core, int type, ut64 at, ut64 ptr, ut64 re
 	return core_anal_followptr (core, type, at, dataptr, ref, code, depth - 1);
 }
 
-enum {		//WTF
-	R2_ARCH_ARM64
-};
-
 static bool opiscall(RCore *core, RAnalOp *aop, ut64 addr, const ut8* buf, int len, int arch) {
 	switch (arch) {
 	case R2_ARCH_ARM64:
@@ -3787,6 +3801,11 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	esil_anal_stop = false;
 	r_cons_break_push (cccb, core);
 
+	int arch = -1;
+	if (core->anal->bits == 64 && !strcmp (core->anal->cur->arch, "arm")) {
+		arch = R2_ARCH_ARM64;
+	}
+
 	int opalign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	int in = r_syscall_get_swi (core->anal->syscall);
 	const char *sn = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
@@ -3840,33 +3859,32 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		}
 		if (1) {
 			const char *esilstr = R_STRBUF_SAFEGET (&op.esil);
-			r_anal_esil_set_pc (ESIL, cur);
 			i += op.size - 1;
 			if (!esilstr || !*esilstr) {
 				continue;
 			}
+			r_anal_esil_set_pc (ESIL, cur);
 			(void)r_anal_esil_parse (ESIL, esilstr);
-			// r_anal_esil_set_pc (ESIL, cur);
 			// looks like ^C is handled by esil_parse !!!!
 			//r_anal_esil_dumpstack (ESIL);
 			//r_anal_esil_stack_free (ESIL);
 			switch (op.type) {
 			case R_ANAL_OP_TYPE_LEA:
 				// arm64
-				if (core->anal->cur && core->anal->bits == 64 && !strcmp (core->anal->cur->arch, "arm")) {
+				if (core->anal->cur && arch == R2_ARCH_ARM64) {
 					if (CHECKREF (ESIL->cur)) {
 						r_anal_ref_add (core->anal, ESIL->cur, cur, 's');
 					}
 				} else if ((target && op.ptr == ntarget) || !target) {
-					if (core->anal->cur && strcmp (core->anal->cur->arch, "arm")) {
-						if (cfg_anal_strings) {
-							if (CHECKREF (ESIL->cur)) {
-								r_anal_ref_add (core->anal, ESIL->cur, cur, 's');
-							}
-						}
+			//		if (core->anal->cur && strcmp (core->anal->cur->arch, "arm")) {
+					if (CHECKREF (ESIL->cur)) {
+			//			r_anal_ref_add (core->anal, ESIL->cur, cur, 's');
+						r_anal_ref_add (core->anal, op.ptr,cur,'s');
 					}
 				}
-				add_string_ref (core, op.ptr);
+				if (cfg_anal_strings) {
+					add_string_ref (core, op.ptr);
+				}
 				break;
 			case R_ANAL_OP_TYPE_ADD:
 				/* TODO: test if this is valid for other archs too */
