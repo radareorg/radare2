@@ -537,12 +537,11 @@ beach:
 
 static RBinElfSection* get_section_by_name(ELFOBJ *bin, const char *section_name) {
 	int i;
-	if (!bin->g_sections) {
-		return NULL;
-	}
-	for (i = 0; !bin->g_sections[i].last; i++) {
-		if (!strncmp (bin->g_sections[i].name, section_name, ELF_STRING_LENGTH-1)) {
-			return &bin->g_sections[i];
+	if (bin->g_sections) {
+		for (i = 0; !bin->g_sections[i].last; i++) {
+			if (!strncmp (bin->g_sections[i].name, section_name, ELF_STRING_LENGTH-1)) {
+				return &bin->g_sections[i];
+			}
 		}
 	}
 	return NULL;
@@ -623,10 +622,10 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 		int j;
 		int check_def;
 		char key[32] = {0};
+		char *tmp_val = NULL;
 
 		for (j = 0; (j < 4) && (i + j) < num_entries; j++) {
 			int k;
-			char *tmp_val = NULL;
 			snprintf (key, sizeof (key), "entry%d", i + j);
 			switch (data[i + j]) {
 			case 0:
@@ -636,7 +635,8 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 				sdb_set (sdb, key, "1 (*global*)", 0);
 				break;
 			default:
-				tmp_val = sdb_fmt ("%x ", data[i+j] & 0x7FFF);
+				free (tmp_val);
+				tmp_val = strdup (sdb_fmt ("%x ", data[i+j] & 0x7FFF));
 				check_def = true;
 				if (bin->version_info[DT_VERSIONTAGIDX (DT_VERNEED)]) {
 					Elf_(Verneed) vn;
@@ -736,6 +736,7 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 				}
 			}
 		}
+		free (tmp_val);
 	}
 beach:
 	free (data);
@@ -2345,6 +2346,9 @@ static int read_reloc(ELFOBJ *bin, RBinElfReloc *r, int is_rela, ut64 offset) {
 	}
 	ut8 buf[sizeof (Elf_(Rela))] = {0};
 	int res = r_buf_read_at (bin->b, offset, buf, sizeof (Elf_(Rela)));
+	if (res != sizeof (Elf_(Rela))) {
+		return -1;
+	}
 	// TODO make a single read and work with the buffer
 	size_t i = 0;
 	if (is_rela == DT_RELA) {
