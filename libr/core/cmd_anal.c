@@ -3953,15 +3953,20 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 		}
 		RListIter *iter;
 		ut64 *n;
-		r_cons_printf ("@R:");
-		r_list_foreach (mymemxsr, iter, n) {
-			r_cons_printf (" 0x%08"PFMT64x, *n);
+		if (!r_list_empty (mymemxsr)) {
+			r_cons_printf ("@R:");
+			r_list_foreach (mymemxsr, iter, n) {
+				r_cons_printf (" 0x%08"PFMT64x, *n);
+			}
+			r_cons_newline ();
 		}
-		r_cons_printf ("\n@W:");
-		r_list_foreach (mymemxsw, iter, n) {
-			r_cons_printf (" 0x%08"PFMT64x, *n);
+		if (!r_list_empty (mymemxsw)) {
+			r_cons_printf ("@W:");
+			r_list_foreach (mymemxsw, iter, n) {
+				r_cons_printf (" 0x%08"PFMT64x, *n);
+			}
+			r_cons_newline ();
 		}
-		r_cons_newline ();
 	}
 	r_list_free (mymemxsr);
 	r_list_free (mymemxsw);
