@@ -1544,7 +1544,7 @@ R_API int r_core_visual_comments (RCore *core) {
 		if (!found) {
 			if (--option < 0) {
 				eprintf ("\nNo comments.\n");
-				r_cons_any_key();
+				r_cons_any_key (NULL);
 				break;
 			}
 			continue;
