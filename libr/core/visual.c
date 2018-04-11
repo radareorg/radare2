@@ -1248,12 +1248,12 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 		}
 		return;
 	}
-	if (PIDX == 2 && core->seltab == 1) {
+	if (PIDX == R_CORE_VISUAL_MODE_PDDBG && core->seltab == 1) {
 		const int cols = core->dbg->regcols;
 		p->cur += cols > 0? cols: 3;
 		return;
 	}
-	if (core->seltab == 0 && core->printidx == R_CORE_VISUAL_MODE_PDDBG) {
+	if (PIDX == R_CORE_VISUAL_MODE_PDDBG && core->seltab == 0) {
 		int w = r_config_get_i (core->config, "hex.cols");
 		if (w < 1) {
 			w = 16;
