@@ -43,15 +43,30 @@ static const char *help_msg_t_minus[] = {
 };
 
 static const char *help_msg_ta[] = {
-	"USAGE ta[...]", "", "",
+	"Usage: ta[...]", "", "",
 	"tas", " <offset>", "List all matching structure offsets",
 	"ta", " <struct member>", "Change immediate to structure offset",
 	"ta?", "", "show this help",
 	NULL
 };
 
+static const char *help_msg_tf[] = {
+	"Usage: tf[...]", "", "",
+	"tf", "", "List all function definitions loaded",
+	"tf", " <name>", "Show function signature",
+	NULL
+};
+
+static const char *help_msg_to[] = {
+	"Usage: to[...]", "", "",
+	"to", " -", "Open cfg.editor to load types",
+	"to", " <path>", "Load types from C header file",
+	"tos", " <path>", "Load types from parsed Sdb database",
+	NULL
+};
+
 static const char *help_msg_tc[] = {
-	"USAGE tc[...]", " [cctype]", "",
+	"Usage: tc[...]", " [cctype]", "",
 	"tc", "", "List all loaded structs",
 	"tc", " [cctype]", "Show convention rules for this type",
 	"tc=", "([cctype])", "Select (or show) default calling convention",
@@ -71,7 +86,7 @@ static const char *help_msg_td[] = {
 };
 
 static const char *help_msg_te[] = {
-	"USAGE te[...]", "", "",
+	"Usage: te[...]", "", "",
 	"te", "", "List all loaded enums",
 	"te", " <enum> <value>", "Show name for given enum number",
 	"te?", "", "show this help",
@@ -80,7 +95,7 @@ static const char *help_msg_te[] = {
 
 
 static const char *help_msg_tt[] = {
-	"USAGE tt[...]", "", "",
+	"Usage: tt[...]", "", "",
 	"tt", "", "List all loaded typedefs",
 	"tt", " <typename>", "Show name for given type alias",
 	"tt?", "", "show this help",
@@ -110,7 +125,7 @@ static const char *help_msg_tn[] = {
 };
 
 static const char *help_msg_ts[] = {
-	"USAGE ts[...]", " [type]", "",
+	"Usage: ts[...]", " [type]", "",
 	"ts", "", "List all loaded structs",
 	"ts", " [type]", "Show pf format string for given struct",
 	"ts?", "", "show this help",
@@ -118,7 +133,7 @@ static const char *help_msg_ts[] = {
 };
 
 static const char *help_msg_tu[] = {
-	"USAGE tu[...]", "", "",
+	"Usage: tu[...]", "", "",
 	"tu", "", "List all loaded unions",
 	"tu?", "", "show this help",
 	NULL
@@ -537,7 +552,9 @@ static int cmd_type(void *data, const char *input) {
 		typesList (core, input[0]);
 		break;
 	case 'o': // "to"
-		if (!r_sandbox_enable (0)) {
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_to);
+		} else if (!r_sandbox_enable (0)) {
 			if (input[1] == ' ') {
 				const char *filename = input + 2;
 				char *homefile = NULL;
@@ -822,7 +839,17 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	// tv - get/set type value linked to a given address
 	case 'f':
-		sdb_foreach (core->anal->sdb_types, stdprintiffunc, core);
+		switch (input[1]) {
+		case 0:
+			sdb_foreach (core->anal->sdb_types, stdprintiffunc, core);
+			break;
+		case ' ':
+			r_core_cmdf (core, "tk~func.%s.", input + 2);
+			break;
+		default:
+			r_core_cmd_help (core, help_msg_tf);
+			break;
+		}
 		break;
 	case 't': {
 		if (!input[1]) {
