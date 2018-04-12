@@ -10,11 +10,12 @@
 .Op Fl b Ar size
 .Op Fl D Ar algo
 .Op Fl E Ar algo
-.Op Fl s Ar string
+.Op Fl f Ar from
 .Op Fl i Ar iterations
 .Op Fl I Ar IV
+.Op Fl s Ar string
 .Op Fl S Ar seed
-.Op Fl f Ar from
+.Op Fl p Ar type
 .Op Fl x Ar hexstr
 .Op Fl t Ar to
 .Op Fl c Ar hash
@@ -60,6 +61,8 @@ Set seed to hash with, use ^to prefix seed, otherwise its suffixed. If the seed 
 Start hashing at given address
 .It Fl t Ar to
 Stop hashing at given address
+.It Fl p Ar arg
+Show vertical entropy/statistical entropy graphs
 .It Fl q
 Quiet mode (-qq for even quieter!)
 .It Fl r

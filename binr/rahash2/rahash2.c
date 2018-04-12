@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -429,6 +429,7 @@ int main(int argc, char **argv) {
 	int ivlen = -1;
 	char *ivseed = NULL;
 	const char *compareStr = NULL;
+	const char *ptype = NULL;
 	ut8 *compareBin = NULL;
 	int hashstr_len = -1;
 	int hashstr_hex = 0;
@@ -437,7 +438,7 @@ int main(int argc, char **argv) {
 	RHash *ctx;
 	RIO *io;
 
-	while ((c = getopt (argc, argv, "jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:")) != -1) {
+	while ((c = getopt (argc, argv, "p:jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:")) != -1) {
 		switch (c) {
 		case 'q': quiet++; break;
 		case 'i':
@@ -457,6 +458,7 @@ int main(int argc, char **argv) {
 		case 'e': ule = 1; break;
 		case 'r': rad = 1; break;
 		case 'k': rad = 2; break;
+		case 'p': ptype = optarg; break;
 		case 'a': algo = optarg; break;
 		case 'B': incremental = 0; break;
 		case 'b': bsize = (int) r_num_math (NULL, optarg); break;
@@ -522,6 +524,16 @@ int main(int argc, char **argv) {
 			eprintf ("Invalid -f or -t offsets\n");
 			return 1;
 		}
+	}
+	if (ptype) {
+		// TODO: support p=%s (horizontal bars)
+		// TODO: list supported statistical metrics
+		// TODO: support -f and -t
+		for (i = optind; i < argc; i++) {
+			printf ("%s:\n", argv[i]);
+			r_sys_cmdf ("r2 -qfnc \"p==%s 100\" \"%s\"", ptype, argv[i]);
+		}
+		return 0;
 	}
 	// convert iv to hex or string.
 	if (ivseed) {
