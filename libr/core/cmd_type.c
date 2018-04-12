@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
+/* radare - LGPL - Copyright 2009-2018 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
 
 #include <string.h>
 #include "r_anal.h"
@@ -128,6 +128,7 @@ static const char *help_msg_ts[] = {
 	"Usage: ts[...]", " [type]", "",
 	"ts", "", "List all loaded structs",
 	"ts", " [type]", "Show pf format string for given struct",
+	"ts*", " [type]", "Show pf.<name> format string for given struct",
 	"ts?", "", "show this help",
 	NULL
 };
@@ -157,7 +158,7 @@ static void show_help(RCore *core) {
 	r_core_cmd_help (core, help_msg_t);
 }
 
-static void showFormat(RCore *core, const char *name) {
+static void showFormat(RCore *core, const char *name, int mode) {
 	const char *isenum = sdb_const_get (core->anal->sdb_types, name, 0);
 	if (isenum && !strcmp (isenum, "enum")) {
 		eprintf ("IS ENUM\n");
@@ -165,7 +166,11 @@ static void showFormat(RCore *core, const char *name) {
 		char *fmt = r_anal_type_format (core->anal, name);
 		if (fmt) {
 			r_str_trim (fmt);
-			r_cons_printf ("pf %s\n", fmt);
+			if (mode) {
+				r_cons_printf ("pf.%s %s\n", name, fmt);
+			} else {
+				r_cons_printf ("pf %s\n", fmt);
+			}
 			free (fmt);
 		} else {
 			eprintf ("Cannot find '%s' type\n", name);
@@ -466,11 +471,14 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case 's': // "ts"
 		switch (input[1]) {
-		case '?': {
+		case '?':
 			r_core_cmd_help (core, help_msg_ts);
-		} break;
+			break;
+		case '*':
+			showFormat (core, input + 2, 1);
+			break;
 		case ' ':
-			showFormat (core, input + 2);
+			showFormat (core, input + 2, 0);
 			break;
 		case 0:
 			sdb_foreach (core->anal->sdb_types, stdprintifstruct, core);
@@ -543,7 +551,7 @@ static int cmd_type(void *data, const char *input) {
 		free (s);
 	} break;
 	case ' ':
-		showFormat (core, input + 1);
+		showFormat (core, input + 1, 0);
 		break;
 	// t* - list all types in 'pf' syntax
 	case 'j': // "tj"
