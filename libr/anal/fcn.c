@@ -935,6 +935,7 @@ repeat:
 		}
 
 		switch (op.type & R_ANAL_OP_TYPE_MASK) {
+		case R_ANAL_OP_TYPE_CMOV:
 		case R_ANAL_OP_TYPE_MOV:
 			// skip mov reg,reg
 			if (anal->opt.hpskip && regs_exist (op.src[0], op.dst)

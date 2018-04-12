@@ -839,10 +839,7 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds, bool print_color
 	if (print_color) {
 		r_cons_strcat (r_print_color_op_type (core->print, ds->analop.type));
 	}
-
-
 	// workaround dummy colorizer in case of paired commands (tms320 & friends)
-
 	spacer = strstr (source, "||");
 	if (spacer) {
 		char *scol1, *s1 = r_str_ndup (source, spacer - source);
@@ -2550,7 +2547,7 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 	case R_ANAL_OP_TYPE_CMOV:
 	case R_ANAL_OP_TYPE_MOV:
 		src = ds->analop.src[0];
-		if (src && src->memref>0 && src->reg && core->anal->reg) {
+		if (src && src->memref > 0 && src->reg && core->anal->reg) {
 			const char *pc = core->anal->reg->name[R_REG_NAME_PC];
 			RAnalValue *dst = ds->analop.dst;
 			if (dst && dst->reg && dst->reg->name) {
@@ -2976,63 +2973,61 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 	if (!core->vmode) {
 		return;
 	}
-	{
-		switch (ds->analop.type) {
-		case R_ANAL_OP_TYPE_MOV:
-		case R_ANAL_OP_TYPE_LEA:
-		case R_ANAL_OP_TYPE_LOAD:
-			if (ds->show_leahints) {
-				if (ds->analop.ptr != UT64_MAX && ds->analop.ptr > 256) {
-					ds_print_shortcut (ds, ds->analop.ptr, pos);
-					gotShortcut = true;
-				}
+	switch (ds->analop.type) {
+	case R_ANAL_OP_TYPE_MOV:
+	case R_ANAL_OP_TYPE_LEA:
+	case R_ANAL_OP_TYPE_LOAD:
+		if (ds->show_leahints) {
+			if (ds->analop.ptr != UT64_MAX && ds->analop.ptr > 256) {
+				ds_print_shortcut (ds, ds->analop.ptr, pos);
+				gotShortcut = true;
 			}
-			break;
-		case R_ANAL_OP_TYPE_UCALL:
-		case R_ANAL_OP_TYPE_UCALL | R_ANAL_OP_TYPE_REG | R_ANAL_OP_TYPE_IND:
-		case R_ANAL_OP_TYPE_UCALL | R_ANAL_OP_TYPE_IND:
+		}
+		break;
+	case R_ANAL_OP_TYPE_UCALL:
+	case R_ANAL_OP_TYPE_UCALL | R_ANAL_OP_TYPE_REG | R_ANAL_OP_TYPE_IND:
+	case R_ANAL_OP_TYPE_UCALL | R_ANAL_OP_TYPE_IND:
 #if 0
-			if (ds->analop.jump == 0 && ds->analop.ptr) {
-				ut8 buf[sizeof(ut64)] = {0};
-				r_io_read_at (core->io, ds->analop.ptr, buf, sizeof (buf));
-				ut32 n32 = r_read_ble32 (buf, 0);
-				// is valid address
-				// ut32 n64 = r_read_ble32 (buf, 0);
-				ds_print_shortcut (ds, n32, pos);
+		if (ds->analop.jump == 0 && ds->analop.ptr) {
+			ut8 buf[sizeof(ut64)] = {0};
+			r_io_read_at (core->io, ds->analop.ptr, buf, sizeof (buf));
+			ut32 n32 = r_read_ble32 (buf, 0);
+			// is valid address
+			// ut32 n64 = r_read_ble32 (buf, 0);
+			ds_print_shortcut (ds, n32, pos);
+		} else {
+			// ds_print_shortcut (ds, ds->analop.jump, pos);
+			ds_print_shortcut (ds, ds->analop.ptr, pos);
+		}
+#endif
+		if (ds->show_jmphints) {
+			if (ds->analop.jump != UT64_MAX) {
+				ds_print_shortcut (ds, ds->analop.jump, pos);
 			} else {
-				// ds_print_shortcut (ds, ds->analop.jump, pos);
 				ds_print_shortcut (ds, ds->analop.ptr, pos);
 			}
-#endif
-			if (ds->show_jmphints) {
-				if (ds->analop.jump != UT64_MAX) {
-					ds_print_shortcut (ds, ds->analop.jump, pos);
-				} else {
-					ds_print_shortcut (ds, ds->analop.ptr, pos);
-				}
-				gotShortcut = true;
-			}
-			break;
-		case R_ANAL_OP_TYPE_RCALL:
-			break;
-		case R_ANAL_OP_TYPE_JMP:
-		case R_ANAL_OP_TYPE_CJMP:
-		case R_ANAL_OP_TYPE_CALL:
-		case R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_CALL:
-			if (ds->show_jmphints) {
-				ds_print_shortcut (ds, ds->analop.jump, pos);
-				gotShortcut = true;
-			}
-			break;
-		default:
-			if (ds_print_core_vmode_jump_hit (ds, pos)) {
-				gotShortcut = true;
-			}
-			break;
+			gotShortcut = true;
 		}
-		if (!gotShortcut) {
-			r_cons_strcat ("   ");
+		break;
+	case R_ANAL_OP_TYPE_RCALL:
+		break;
+	case R_ANAL_OP_TYPE_JMP:
+	case R_ANAL_OP_TYPE_CJMP:
+	case R_ANAL_OP_TYPE_CALL:
+	case R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_CALL:
+		if (ds->show_jmphints) {
+			ds_print_shortcut (ds, ds->analop.jump, pos);
+			gotShortcut = true;
 		}
+		break;
+	default:
+		if (ds_print_core_vmode_jump_hit (ds, pos)) {
+			gotShortcut = true;
+		}
+		break;
+	}
+	if (!gotShortcut) {
+		r_cons_strcat ("   ");
 	}
 }
 
@@ -3988,7 +3983,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 				bool warning = false;
 				bool on_stack = false;
 				r_list_foreach (list, iter, arg) {
-					if (arg->cc_source && !strncmp (arg->cc_source, "stack", 5)) {
+					if (r_str_startswith (arg->cc_source, "stack")) {
 						on_stack = true;
 					}
 					if (!arg->size) {

@@ -2598,6 +2598,12 @@ R_API char *r_str_between(const char *cmt, const char *prefix, const char *suffi
 }
 
 R_API bool r_str_startswith(const char *str, const char *needle) {
+	if (!str || !needle) {
+		return false;
+	}
+	if (str == needle) {
+		return true;
+	}
 	return !strncmp (str, needle, strlen (needle));
 }
 

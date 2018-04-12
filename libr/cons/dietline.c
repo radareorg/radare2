@@ -1038,7 +1038,6 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 	r_cons_break_push (NULL, NULL);
 	for (;;) {
 		if (r_cons_is_breaked ()) {
-			eprintf ("CATCH\n");
 			break;
 		}
 		I.buffer.data[I.buffer.length] = '\0';

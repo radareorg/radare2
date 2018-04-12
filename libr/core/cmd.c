@@ -1257,16 +1257,16 @@ static int taskbgrun(RThread *th) {
 
 static int cmd_thread(void *data, const char *input) {
 	RCore *core = (RCore*) data;
-	if (r_sandbox_enable (0)) {
-		eprintf ("This command is disabled in sandbox mode\n");
-		return 0;
-	}
 	switch (input[0]) {
 	case '\0':
 	case 'j':
 		r_core_task_list (core, *input);
 		break;
 	case '&':
+		if (r_sandbox_enable (0)) {
+			eprintf ("This command is disabled in sandbox mode\n");
+			return 0;
+		}
 		if (input[1] == '&') {
 			// wait until ^C
 		} else {
@@ -1292,15 +1292,25 @@ static int cmd_thread(void *data, const char *input) {
 					task->id, task->state, task->msg->text);
 				if (task->msg->res)
 					r_cons_println (task->msg->res);
-			} else eprintf ("Cannot find task\n");
+			} else {
+				eprintf ("Cannot find task\n");
+			}
 		} else {
 			r_core_task_list (core, 1);
 		}}
 		break;
 	case '+':
+		if (r_sandbox_enable (0)) {
+			eprintf ("This command is disabled in sandbox mode\n");
+			return 0;
+		}
 		r_core_task_add (core, r_core_task_new (core, input + 1, (RCoreTaskCallback)task_finished, core));
 		break;
 	case '-':
+		if (r_sandbox_enable (0)) {
+			eprintf ("This command is disabled in sandbox mode\n");
+			return 0;
+		}
 		if (input[1] == '*') {
 			r_core_task_del (core, -1);
 		} else {
@@ -1311,6 +1321,10 @@ static int cmd_thread(void *data, const char *input) {
 		helpCmdTasks (core);
 		break;
 	case ' ':
+		if (r_sandbox_enable (0)) {
+			eprintf ("This command is disabled in sandbox mode\n");
+			return 0;
+		}
 		{
 			int tid = r_num_math (core->num, input + 1);
 			if (tid) {
