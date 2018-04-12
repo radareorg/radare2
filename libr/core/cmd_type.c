@@ -129,6 +129,7 @@ static const char *help_msg_ts[] = {
 	"ts", "", "List all loaded structs",
 	"ts", " [type]", "Show pf format string for given struct",
 	"ts*", " [type]", "Show pf.<name> format string for given struct",
+	"tss", " [type]", "Display size of struct",
 	"ts?", "", "show this help",
 	NULL
 };
@@ -479,6 +480,13 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case ' ':
 			showFormat (core, input + 2, 0);
+			break;
+		case 's':
+			if (input[2] == ' ') {
+				r_cons_printf ("%d\n", r_anal_type_get_size (core->anal, input + 3));
+			} else {
+				r_core_cmd_help (core, help_msg_ts);
+			}
 			break;
 		case 0:
 			sdb_foreach (core->anal->sdb_types, stdprintifstruct, core);
