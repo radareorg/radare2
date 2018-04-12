@@ -1047,6 +1047,17 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 
 	r_list_foreach (entries, iter, entry) {
 		ut64 paddr = entry->paddr;
+		switch (entry->type) {
+		case R_BIN_ENTRY_TYPE_INIT:
+		case R_BIN_ENTRY_TYPE_FINI:
+		case R_BIN_ENTRY_TYPE_PREINIT:
+			if (r->io->va && entry->paddr == entry->vaddr) {
+				RIOMap *map = r_io_map_get (r->io, entry->vaddr);
+				if (map) {
+					paddr = entry->vaddr - map->itv.addr + map->delta;
+				}
+			}
+		}
 		ut64 haddr = UT64_MAX;
 		if (mode != R_CORE_BIN_SET) {
 			if (inifin) {
