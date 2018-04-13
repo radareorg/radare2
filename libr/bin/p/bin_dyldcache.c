@@ -49,6 +49,7 @@ static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb * sdb) {
 	const ut8 bytes_to_check[32];
 	r_buf_read_at (fbuf, 0, bytes_to_check, 32);
 	if (!check_bytes (bytes_to_check, 32)) {
+		r_buf_free (fbuf);
 		return NULL;
 	}
 	return fbuf;
