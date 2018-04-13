@@ -50,13 +50,13 @@ R_API void r_config_node_free(void *n) {
 }
 
 static bool isBoolean(const char *val) {
-	if (!strcmp (val, "true") || !strcmp (val, "false")) {
+	if (!strcasecmp (val, "true") || !strcasecmp (val, "false")) {
 		return true;
 	}
-	if (!strcmp (val, "on") || !strcmp (val, "off")) {
+	if (!strcasecmp (val, "on") || !strcasecmp (val, "off")) {
 		return true;
 	}
-	if (!strcmp (val, "yes") || !strcmp (val, "no")) {
+	if (!strcasecmp (val, "yes") || !strcasecmp (val, "no")) {
 		return true;
 	}
 	return false;
