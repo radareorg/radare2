@@ -243,7 +243,7 @@ static void setASLR(RRunProfile *r, int enabled) {
 #if __ANDROID__
 		setRVA ("0\n");
 #else
-#ifdef ADDR_NO_RANDOMIZE
+#if __linux__
 		if (personality (ADDR_NO_RANDOMIZE) == -1)
 #endif
 			setRVA ("0\n");
