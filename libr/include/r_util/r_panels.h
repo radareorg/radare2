@@ -19,7 +19,7 @@ typedef struct r_panel_t {
 	int sx; // scroll-x
 	int sy; // scroll-y
 	char *cmd;
-	char *text;
+	char *title;
 	bool refresh;
 	PanelType type;
 } RPanel;
