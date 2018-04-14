@@ -22,6 +22,14 @@ long=type
 type.long=x
 type.long.size=64
 
+float=type
+type.float=f
+type.float.size=32
+
+double=type
+type.double=f
+type.double.size=64
+
 long long=type
 type.long long=q
 type.long long.size=64
