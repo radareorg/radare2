@@ -29,7 +29,7 @@ static const char *help_msg_slash[] = {
 	"/F", " file [off] [sz]", "search contents of file with offset and size",
 	// TODO: add subcommands to find paths between functions and filter only function names instead of offsets, etc
 	"/g", "[g] [from]", "find all graph paths A to B (/gg follow jumps, see search.count and anal.depth)",
-	"/h", "[t] [hash] [len]", "find block matching this hash. See /#?",
+	"/h", "[t] [hash] [len]", "find block matching this hash. See ph",
 	"/i", " foo", "search for string 'foo' ignoring case",
 	"/m", " magicfile", "search for matching magic file (use blocksize)",
 	"/M", " ", "search for known filesystems and mount them automatically",
