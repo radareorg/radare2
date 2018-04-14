@@ -1279,6 +1279,7 @@ static void r_print_format_num (const RPrint *p, int endian, int mode, const cha
 int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 	char *end, *args, *fmt;
 	int size = 0, tabsize = 0, i, idx = 0, biggest = 0, fmt_len = 0;
+	bool tabsize_set = false;
 	if (!f) {
 		return -1;
 	}
@@ -1325,6 +1326,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 				continue;
 			}
 			*end = '\0';
+			tabsize_set = true;
 			tabsize = r_num_math (NULL, fmt + i + 1);
 			*end = ']';
 			while (fmt[i++] != ']');
@@ -1370,14 +1372,18 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 			break;
 		case 'B':
 		case 'E':
-			switch (tabsize) {
-			case 1: size += 1; break;
-			case 2: size += 2; break;
-			case 4: size += 4; break;
-			case 8: size += 8; break;
-			default:
-				eprintf ("Unknown enum format size: %d\n", tabsize);
-				break;
+			if (tabsize_set) {
+				switch (tabsize) {
+				case 1: size += 1; break;
+				case 2: size += 2; break;
+				case 4: size += 4; break;
+				case 8: size += 8; break;
+				default:
+					eprintf ("Unknown enum format size: %d\n", tabsize);
+					break;
+				}
+			} else {
+				size += 4; // Assuming by default enum as int
 			}
 			break;
 		case '?':
