@@ -156,16 +156,16 @@ static int mode2opts(const RAGraph *g) {
 
 // duplicated from visual.c
 static void rotateAsmemu(RCore *core) {
-	const bool isEmuStr = r_config_get_i (core->config, "asm.emu.str");
+	const bool isEmuStr = r_config_get_i (core->config, "emu.str");
 	const bool isEmu = r_config_get_i (core->config, "asm.emu");
 	if (isEmu) {
 		if (isEmuStr) {
-			r_config_set (core->config, "asm.emu.str", "false");
+			r_config_set (core->config, "emu.str", "false");
 		} else {
 			r_config_set (core->config, "asm.emu", "false");
 		}
 	} else {
-		r_config_set (core->config, "asm.emu.str", "true");
+		r_config_set (core->config, "emu.str", "true");
 	}
 }
 
@@ -3850,7 +3850,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				" >            - show function callgraph (see graph.refs)\n"
 				" <            - show program callgraph (see graph.refs)\n"
 				" (            - reverse conditional branch of last instruction in bb\n"
-				" )            - rotate asm.emu and asm.emu.str\n"
+				" )            - rotate asm.emu and emu.str\n"
 				" Home/End     - go to the top/bottom of the canvas\n"
 				" Page-UP/DOWN - scroll canvas up/down\n"
 				" C            - toggle scr.colors\n"

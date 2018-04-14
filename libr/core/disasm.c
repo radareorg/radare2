@@ -556,7 +556,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->immstr = r_config_get_i (core->config, "asm.immstr");
 	ds->immtrim = r_config_get_i (core->config, "asm.immtrim");
 	ds->use_esil = r_config_get_i (core->config, "asm.esil");
-	ds->pre_emu = r_config_get_i (core->config, "asm.emu.pre");
+	ds->pre_emu = r_config_get_i (core->config, "emu.pre");
 	ds->show_flgoff = r_config_get_i (core->config, "asm.flgoff");
 	ds->show_nodup = r_config_get_i (core->config, "asm.nodup");
 	ds->asm_anal = r_config_get_i (core->config, "asm.anal");
@@ -612,12 +612,12 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_symbols = r_config_get_i (core->config, "asm.symbol");
 	ds->show_symbols_col = r_config_get_i (core->config, "asm.symbol.col");
 	ds->show_emu = r_config_get_i (core->config, "asm.emu");
-	ds->show_emu_str = r_config_get_i (core->config, "asm.emu.str");
-	ds->show_emu_stroff = r_config_get_i (core->config, "asm.emu.stroff");
-	ds->show_emu_strinv = r_config_get_i (core->config, "asm.emu.strinv");
-	ds->show_emu_strflag = r_config_get_i (core->config, "asm.emu.strflag");
-	ds->show_emu_write = r_config_get_i (core->config, "asm.emu.write");
-	ds->show_emu_stack = r_config_get_i (core->config, "asm.emu.stack");
+	ds->show_emu_str = r_config_get_i (core->config, "emu.str");
+	ds->show_emu_stroff = r_config_get_i (core->config, "emu.stroff");
+	ds->show_emu_strinv = r_config_get_i (core->config, "emu.strinv");
+	ds->show_emu_strflag = r_config_get_i (core->config, "emu.strflag");
+	ds->show_emu_write = r_config_get_i (core->config, "emu.write");
+	ds->show_emu_stack = r_config_get_i (core->config, "emu.stack");
 	ds->stackFd = -1;
 	if (ds->show_emu_stack) {
 		// TODO: initialize fake stack in here
@@ -3836,7 +3836,7 @@ static char * resolve_fcn_name(RAnal *anal, const char * func_name) {
 
 static bool can_emulate_metadata(RCore * core, ut64 at) {
 	const char *infos;
-	const char *emuskipmeta = r_config_get (core->config, "asm.emu.skip");
+	const char *emuskipmeta = r_config_get (core->config, "emu.skip");
 	char key[32];
 	Sdb *s = core->anal->sdb_meta;
 	snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, at);
@@ -4037,7 +4037,7 @@ beach:
 
 static void ds_print_calls_hints(RDisasmState *ds) {
 	int emu = r_config_get_i (ds->core->config, "asm.emu");
-	int emuwrite = r_config_get_i (ds->core->config, "asm.emu.write");
+	int emuwrite = r_config_get_i (ds->core->config, "emu.write");
 	if (emu && emuwrite) {
 		// this is done by ESIL
 		return;
