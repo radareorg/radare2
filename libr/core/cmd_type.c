@@ -483,7 +483,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 's':
 			if (input[2] == ' ') {
-				r_cons_printf ("%d\n", r_anal_type_get_size (core->anal, input + 3));
+				r_cons_printf ("%d\n", (r_anal_type_get_size (core->anal, input + 3) / 8));
 			} else {
 				r_core_cmd_help (core, help_msg_ts);
 			}
