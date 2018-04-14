@@ -4,7 +4,6 @@
 #include "r_util.h"
 #include "r_cons.h"
 #include "sdb/sdb.h"
-
 #define TN_KEY_LEN 32
 #define TN_KEY_FMT "%"PFMT64u
 
@@ -3056,7 +3055,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			bpi = r_debug_bp_add (core->dbg, addr, hwbp, false, 0, NULL, 0);
 			if (!bpi) eprintf ("Cannot set breakpoint (%s)\n", input + 2);
 		}
-		r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), true);
+		r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), true, 0);
 		break;
 	case 'n': // "dbn"
 		bpi = r_bp_get_at (core->dbg->bp, core->offset);
@@ -3077,12 +3076,18 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	case 'e':
 		for (p = input + 2; *p == ' '; p++);
 		if (*p == '*') r_bp_enable_all (core->dbg->bp,true);
-		else r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), true);
+		else {
+			for (; *p && *p != ' '; p++);
+			r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), true, r_num_math (core->num, p));
+		}
 		break;
 	case 'd':
 		for (p = input + 2; *p == ' '; p++);
 		if (*p == '*') r_bp_enable_all (core->dbg->bp, false);
-		r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), false);
+		else {
+			for (; *p && *p != ' '; p++);
+			r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), false, r_num_math (core->num, p));
+		}
 		break;
 	case 'h':
 		switch (input[2]) {
