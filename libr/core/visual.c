@@ -89,16 +89,16 @@ static void rotateAsmBits(RCore *core) {
 }
 
 static void rotateAsmemu(RCore *core) {
-	const bool isEmuStr = r_config_get_i (core->config, "asm.emu.str");
+	const bool isEmuStr = r_config_get_i (core->config, "emu.str");
 	const bool isEmu = r_config_get_i (core->config, "asm.emu");
 	if (isEmu) {
 		if (isEmuStr) {
-			r_config_set (core->config, "asm.emu.str", "false");
+			r_config_set (core->config, "emu.str", "false");
 		} else {
 			r_config_set (core->config, "asm.emu", "false");
 		}
 	} else {
-		r_config_set (core->config, "asm.emu.str", "true");
+		r_config_set (core->config, "emu.str", "true");
 	}
 }
 
@@ -255,7 +255,7 @@ static int visual_help() {
 		" \"        toggle the column mode (uses pC..)\n"
 		" /        in cursor mode search in current block\n"
 		" (        toggle snow\n"
-		" )        toggle asm.emu.str\n"
+		" )        toggle emu.str\n"
 		" :cmd     run radare command\n"
 		" ;[-]cmt  add/remove comment\n"
 		" 0        seek to beginning of current function\n"
