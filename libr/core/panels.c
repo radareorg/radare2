@@ -106,44 +106,57 @@ static const char **menus_sub[] = {
 	NULL
 };
 
-static void Panel_print(RConsCanvas *can, RPanel *n, int color) {
-	if (!can || !n || !n->refresh) {
+static void Panel_print(RConsCanvas *can, RPanel *panel, int color) {
+	if (!can || !panel|| !panel->refresh) {
 		return;
 	}
-	n->refresh = false;
+	panel->refresh = false;
 	char *text;
 	char title[128];
 	int delta_x, delta_y;
-	delta_x = n->sx;
-	delta_y = n->sy;
+	delta_x = panel->sx;
+	delta_y = panel->sy;
 	// clear the canvas first
-	r_cons_canvas_fill (can, n->x, n->y, n->w, n->h, ' ', 0);
+	r_cons_canvas_fill (can, panel->x, panel->y, panel->w, panel->h, ' ', 0);
 	// for menu
 	RCons *cons = r_cons_singleton ();
-	if (n->type == PANEL_TYPE_MENU) {
-		(void) r_cons_canvas_gotoxy (can, n->x + 2, n->y + 2);
-		text = r_str_ansi_crop (n->text,
-				delta_x, delta_y, n->w + 5, n->h - delta_y);
+	if (panel->type == PANEL_TYPE_MENU) {
+		(void) r_cons_canvas_gotoxy (can, panel->x + 2, panel->y + 2);
+		text = r_str_ansi_crop (panel->title,
+				delta_x, delta_y, panel->w + 5, panel->h - delta_y);
 		if (text) {
 			r_cons_canvas_write (can, text);
 			free (text);
 		} else {
-			r_cons_canvas_write (can, n->text);
+			r_cons_canvas_write (can, panel->title);
 		}
 	} else {
 		if (color) {
 			const char *k = cons->pal.graph_box;
 			snprintf (title, sizeof (title) - 1,
-				"%s[x] %s"Color_RESET, k, n->text);
+				"%s[x] %s"Color_RESET, k, panel->title);
 		} else {
 			snprintf (title, sizeof (title) - 1,
-				"   %s   ", n->text);
+				"   %s   ", panel->title);
 		}
-		if (r_cons_canvas_gotoxy (can, n->x + 1, n->y + 1)) {
+		if (r_cons_canvas_gotoxy (can, panel->x + 1, panel->y + 1)) {
 			r_cons_canvas_write (can, title); // delta_x
 		}
-		(void) r_cons_canvas_gotoxy (can, n->x + 2, n->y + 2);
-		char *foo = r_core_cmd_str (_core, n->cmd);
+		(void) r_cons_canvas_gotoxy (can, panel->x + 2, panel->y + 2);
+
+		char *cmdStr;
+		if (strcmp(panel->title, PANEL_TITLE_STACK) == 0) {
+			const int delta = r_config_get_i (_core->config, "stack.delta");
+			const char sign = (delta < 0)? '+': '-';
+			const int absdelta = R_ABS (delta);
+			const int size = snprintf(NULL, 0, "px 256@$$%c%d", sign, absdelta);
+			char *cmd = malloc(size + 1);
+
+			sprintf (cmd, "px 256@$$%c%d", sign, absdelta);
+			cmdStr = r_core_cmd_str (_core, cmd);
+		} else {
+			cmdStr = r_core_cmd_str (_core, panel->cmd);
+		}
 		if (delta_y < 0) {
 			delta_y = 0;
 		}
@@ -154,29 +167,29 @@ static void Panel_print(RConsCanvas *can, RPanel *n, int color) {
 				idx = sizeof (white) - 1;
 			}
 			white[idx] = 0;
-			text = r_str_ansi_crop (foo,
-					0, delta_y, n->w + delta_x - 2, n->h - 2 + delta_y);
+			text = r_str_ansi_crop (cmdStr,
+					0, delta_y, panel->w + delta_x - 2, panel->h - 2 + delta_y);
 			char *newText = r_str_prefix_all (text, white);
 			if (newText) {
 				free (text);
 				text = newText;
 			}
 		} else {
-			text = r_str_ansi_crop (foo,
-					delta_x, delta_y, n->w + delta_x - 2, n->h - 2 + delta_y);
+			text = r_str_ansi_crop (cmdStr,
+					delta_x, delta_y, panel->w + delta_x - 2, panel->h - 2 + delta_y);
 		}
 		if (text) {
 			r_cons_canvas_write (can, text);
 			free (text);
 		} else {
-			r_cons_canvas_write (can, n->text);
+			r_cons_canvas_write (can, panel->title);
 		}
-		free (foo);
+		free (cmdStr);
 	}
 	if (color) {
-		r_cons_canvas_box (can, n->x, n->y, n->w, n->h, cons->pal.graph_box2);
+		r_cons_canvas_box (can, panel->x, panel->y, panel->w, panel->h, cons->pal.graph_box2);
 	} else {
-		r_cons_canvas_box (can, n->x, n->y, n->w, n->h, cons->pal.graph_box);
+		r_cons_canvas_box (can, panel->x, panel->y, panel->w, panel->h, cons->pal.graph_box);
 	}
 }
 
@@ -196,7 +209,7 @@ static void Layout_run(RPanels *panels) {
 		switch (panel[i].type) {
 		case PANEL_TYPE_MENU:
 			panel[i].w = r_str_bounds (
-				panel[i].text,
+				panel[i].title,
 				&panel[i].h);
 			panel[i].h += 4;
 			break;
@@ -206,7 +219,7 @@ static void Layout_run(RPanels *panels) {
 				if (j == 0) {
 					panel[i].x = 0;
 					panel[i].y = 1;
-					if (panel[j + 1].text) {
+					if (panel[j + 1].title) {
 						panel[i].w = colpos + 1;
 					} else {
 						panel[i].w = w;
@@ -221,7 +234,7 @@ static void Layout_run(RPanels *panels) {
 						panel[i].w = 0;
 					}
 					panel[i].h = ph;
-					if (!panel[i + 1].text) {
+					if (!panel[i + 1].title) {
 						panel[i].h = h - panel[i].y;
 					}
 					if (j != 1) {
@@ -234,7 +247,7 @@ static void Layout_run(RPanels *panels) {
 				if (j == 0) {
 					panel[i].x = 0;
 					panel[i].y = 1;
-					if (panel[j + 1].text) {
+					if (panel[j + 1].title) {
 						panel[i].w = colpos + 1;
 					} else {
 						panel[i].w = w;
@@ -243,7 +256,7 @@ static void Layout_run(RPanels *panels) {
 				} else if (j == 1) {
 					panel[i].x = 0;
 					panel[i].y = (h / 2) + 1;
-					if (panel[j + 1].text) {
+					if (panel[j + 1].title) {
 						panel[i].w = colpos + 1;
 					} else {
 						panel[i].w = w;
@@ -258,7 +271,7 @@ static void Layout_run(RPanels *panels) {
 						panel[i].w = 0;
 					}
 					panel[i].h = ph;
-					if (!panel[i + 1].text) {
+					if (!panel[i + 1].title) {
 						panel[i].h = h - panel[i].y;
 					}
 					if (j != 2) {
@@ -279,7 +292,7 @@ static void delcurpanel(RPanels *panels) {
 		for (i = panels->curnode; i < (panels->n_panels - 1); i++) {
 			panels->panel[i] = panels->panel[i + 1];
 		}
-		panels->panel[i].text = 0;
+		panels->panel[i].title = 0;
 		panels->n_panels--;
 		if (panels->curnode >= panels->n_panels) {
 			panels->curnode = panels->n_panels - 1;
@@ -310,10 +323,10 @@ static void addPanelFrame(RPanels* panels, const char *title, const char *cmd) {
 	RPanel* panel = panels->panel;
 	int n_panels = panels->n_panels;
 	if (title) {
-		panel[n_panels].text = strdup (title);
+		panel[n_panels].title = strdup (title);
 		panel[n_panels].cmd = r_str_newf (cmd);
 	} else {
-		panel[n_panels].text = r_core_cmd_str (_core, cmd);
+		panel[n_panels].title = r_core_cmd_str (_core, cmd);
 		panel[n_panels].cmd = NULL;
 	}
 	panel[panels->n_panels].type = PANEL_TYPE_FRAME;
@@ -331,7 +344,7 @@ static bool initPanel(RPanels *panels) {
 	if (!panels->panel) return false;
 	panels->n_panels = 0;
 	panels->menu_pos = 0;
-	panels->panel[panels->n_panels].text = strdup ("");
+	panels->panel[panels->n_panels].title = strdup ("");
 	panels->panel[panels->n_panels].type = PANEL_TYPE_MENU;
 	panels->panel[panels->n_panels].refresh = true;
 	panels->n_panels++;
@@ -377,8 +390,8 @@ static void r_core_panels_refresh(RPanels *panels) {
 	if (panel) {
 		panel[menu_pos].x = (menu_y > 0) ? menu_x * 6 : w;
 		panel[menu_pos].y = 1;
-		free (panel[menu_pos].text);
-		panel[menu_pos].text = calloc (1, 1024); // r_str_newf ("%d", menu_y);
+		free (panel[menu_pos].title);
+		panel[menu_pos].title = calloc (1, 1024); // r_str_newf ("%d", menu_y);
 		int maxsub = 0;
 		for (i = 0; menus_sub[i]; i++) {
 			maxsub = i;
@@ -392,12 +405,12 @@ static void r_core_panels_refresh(RPanels *panels) {
 		if (menu_x >= 0 && menu_x <= maxsub && menus_sub[menu_x]) {
 			for (j = 0; menus_sub[menu_x][j]; j++) {
 				if (menu_y - 1 == j) {
-					strcat (panel[menu_pos].text, "> ");
+					strcat (panel[menu_pos].title, "> ");
 				} else {
-					strcat (panel[menu_pos].text, "  ");
+					strcat (panel[menu_pos].title, "  ");
 				}
-				strcat (panel[menu_pos].text, menus_sub[menu_x][j]);
-				strcat (panel[menu_pos].text, "          \n");
+				strcat (panel[menu_pos].title, menus_sub[menu_x][j]);
+				strcat (panel[menu_pos].title, "          \n");
 			}
 		}
 		for (i = 0; i < panels->n_panels; i++) {
@@ -461,12 +474,12 @@ static void doRefresh(RPanels *panels) {
 
 static int havePanel(RPanels *panels, const char *s) {
 	int i;
-	if (!panels->panel || !panels->panel[0].text) {
+	if (!panels->panel || !panels->panel[0].title) {
 		return 0;
 	}
 	// add new panel for testing
-	for (i = 1; panels->panel[i].text; i++) {
-		if (!strcmp (panels->panel[i].text, s)) {
+	for (i = 1; panels->panel[i].title; i++) {
+		if (!strcmp (panels->panel[i].title, s)) {
 			return 1;
 		}
 	}
@@ -944,7 +957,7 @@ repeat:
 				}
 			}
 		} else {
-			if (panels->curnode == 1) {
+			if (strcmp(panels->panel[panels->curnode].title, PANEL_TITLE_DISASSEMBLY) == 0) {
 				int cols = core->print->cols;
 				RAnalFunction *f = NULL;
 				RAsmOp op;
@@ -962,6 +975,13 @@ repeat:
 				}
 				r_core_seek (core, core->offset + cols, 1);
 				r_core_block_read (core);
+			} else if (strcmp(panels->panel[panels->curnode].title, PANEL_TITLE_STACK) == 0) {
+				int width = r_config_get_i (core->config, "hex.cols");
+				if (width < 1) {
+					width = 16;
+				}
+				r_config_set_i (core->config, "stack.delta",
+						r_config_get_i (core->config, "stack.delta") - width);
 			} else {
 				panels->panel[panels->curnode].sy++;
 			}
@@ -976,13 +996,18 @@ repeat:
 					panels->menu_y = 0;
 				}
 			}
+		} else if (strcmp(panels->panel[panels->curnode].title, PANEL_TITLE_DISASSEMBLY) == 0) {
+			r_core_cmd0 (core, "s-8");
+		} else if (strcmp(panels->panel[panels->curnode].title, PANEL_TITLE_STACK) == 0) {
+			int width = r_config_get_i (core->config, "hex.cols");
+			if (width < 1) {
+				width = 16;
+			}
+			r_config_set_i (core->config, "stack.delta",
+					r_config_get_i (core->config, "stack.delta") + width);
 		} else {
-			if (panels->curnode == 1) {
-				r_core_cmd0 (core, "s-8");
-			} else {
-				if (panels->panel[panels->curnode].sy > 0) {
-					panels->panel[panels->curnode].sy--;
-				}
+			if (panels->panel[panels->curnode].sy > 0) {
+				panels->panel[panels->curnode].sy--;
 			}
 		}
 		break;
@@ -1000,7 +1025,7 @@ repeat:
 		panels->panel[panels->curnode].refresh = true;
 		panels->curnode++;
 		panels->panel[panels->curnode].refresh = true;
-		if (!panels->panel[panels->curnode].text) {
+		if (!panels->panel[panels->curnode].title) {
 			panels->curnode = 0;
 			panels->menu_x = 0;
 		}
@@ -1059,7 +1084,9 @@ repeat:
 				panels->menu_y = panels->menu_y? 1: 0;
 			}
 		} else {
-			panels->panel[panels->curnode].sx--;
+			if (panels->panel[panels->curnode].sx > 0) {
+				panels->panel[panels->curnode].sx--;
+			}
 		}
 		break;
 	case 'l':
