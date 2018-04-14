@@ -118,7 +118,7 @@ R_API int r_anal_type_get_size(RAnal *anal, const char *type) {
 					if (elements == 0) {
 						elements = 1;
 					}
-					ret += (r_anal_type_get_size (anal, subtype) / 8) * elements;
+					ret += r_anal_type_get_size (anal, subtype) * elements;
 				}
 				free (subtype);
 				ptr = next;
