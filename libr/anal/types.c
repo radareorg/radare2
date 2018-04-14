@@ -81,11 +81,15 @@ R_API int r_anal_type_get_size(RAnal *anal, const char *type) {
 	}
 	const char *t = sdb_const_get (anal->sdb_types, tmptype, 0);
 	if (!t) {
+		if (!strncmp (tmptype, "enum ", 5)) {
+			//XXX: Need a proper way to determine size of enum
+			return 32;
+		}
 		return 0;
 	}
 	if (!strcmp (t, "type")){
 		query = sdb_fmt ("type.%s.size", tmptype);
-		return sdb_num_get (anal->sdb_types, query, 0);
+		return sdb_num_get (anal->sdb_types, query, 0); // returns size in bits
 	}
 	if (!strcmp (t, "struct")) {
 		query = sdb_fmt ("struct.%s", tmptype);
@@ -114,7 +118,7 @@ R_API int r_anal_type_get_size(RAnal *anal, const char *type) {
 					if (elements == 0) {
 						elements = 1;
 					}
-					ret += r_anal_type_get_size (anal, subtype) * elements;
+					ret += (r_anal_type_get_size (anal, subtype) / 8) * elements;
 				}
 				free (subtype);
 				ptr = next;
