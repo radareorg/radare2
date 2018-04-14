@@ -49,6 +49,19 @@ R_API void r_config_node_free(void *n) {
 	free (node);
 }
 
+static bool isBoolean(const char *val) {
+	if (!strcasecmp (val, "true") || !strcasecmp (val, "false")) {
+		return true;
+	}
+	if (!strcasecmp (val, "on") || !strcasecmp (val, "off")) {
+		return true;
+	}
+	if (!strcasecmp (val, "yes") || !strcasecmp (val, "no")) {
+		return true;
+	}
+	return false;
+}
+
 static void config_print_value_json(RConfig *cfg, RConfigNode *node) {
 	const char *val = node->value;
 	if (!val) {
@@ -59,7 +72,7 @@ static void config_print_value_json(RConfig *cfg, RConfigNode *node) {
 		if (!strncmp (val, "0x", 2)) {
 			ut64 n = r_num_get (NULL, val);
 			cfg->cb_printf ("%"PFMT64d, n);
-		} else if (r_str_isnumber (val) || !strcmp (val, "true") || !strcmp (val, "false")) {
+		} else if (r_str_isnumber (val) || isBoolean (val)) {
 			cfg->cb_printf ("%s", val);
 		} else {
 			cfg->cb_printf ("\"%s\"", sval);
@@ -296,7 +309,7 @@ R_API int r_config_set_setter(RConfig *cfg, const char *key, RConfigCallback cb)
 }
 
 static bool is_true(const char *s) {
-	return !strcasecmp ("true", s) || !strcasecmp ("1", s);
+	return !strcasecmp ("yes", s) || !strcasecmp ("on", s) || !strcasecmp ("true", s) || !strcasecmp ("1", s);
 }
 
 static bool is_bool(const char *s) {

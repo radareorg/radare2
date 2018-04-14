@@ -218,9 +218,10 @@ static char *getstr(const char *src) {
 
 static int parseBool(const char *e) {
 	return (strcmp (e, "yes")?
+		(strcmp (e, "on")?
 		(strcmp (e, "true")?
 		(strcmp (e, "1")?
-		0: 1): 1): 1);
+		0: 1): 1): 1): 1);
 }
 
 #if __linux__
