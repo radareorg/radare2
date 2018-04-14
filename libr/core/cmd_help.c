@@ -484,7 +484,7 @@ static int cmd_help(void *data, const char *input) {
 			const int list_len = r_list_length (list);
 			for (i = 0; i < list_len; i++) {
 				const char *str = r_list_pop_head (list);
-				if (*str == '\0') {
+				if (!*str) {
 					continue;
 				}
 				n = r_num_math (core->num, str);
@@ -496,28 +496,32 @@ static int cmd_help(void *data, const char *input) {
 				s = n >> 16 << 12;
 				a = n & 0x0fff;
 				r_num_units (unit, n);
-				r_cons_printf ("%"PFMT64d" 0x%"PFMT64x" 0%"PFMT64o
-					" %s %04x:%04x ",
-					n, n, n, unit, s, a);
+				r_cons_printf ("hex     0x%"PFMT64x"\n", n);
+				r_cons_printf ("octal   0%"PFMT64o"\n", n);
+				r_cons_printf ("unit    %s\n", unit);
+				r_cons_printf ("segment %04x:%04x\n", s, a);
 				if (n >> 32) {
-					r_cons_printf ("%"PFMT64d" ", (st64)n);
+					r_cons_printf ("int64   %"PFMT64d"\n", (st64)n);
 				} else {
-					r_cons_printf ("%d ", (st32)n);
+					r_cons_printf ("int32   %d\n", (st32)n);
 				}
 				if (asnum) {
-					r_cons_printf ("\"%s\" ", asnum);
+					r_cons_printf ("string  \"%s\"\n", asnum);
 					free (asnum);
 				}
 				/* binary and floating point */
 				r_str_bits64 (out, n);
 				f = d = core->num->fvalue;
-				r_cons_printf ("0b%s %.01lf %ff %lf ", out, core->num->fvalue, f, d);
+				memcpy (&f, &n, sizeof(f));
+				memcpy (&d, &n, sizeof(d));
+				r_cons_printf ("binary  0b%s\n", out);
+				r_cons_printf ("fvalue: %.1lf\n", core->num->fvalue);
+				r_cons_printf ("float:  %ff\n", f);
+				r_cons_printf ("double: %lf\n", d);
 
 				/* ternary */
 				r_num_to_trits (out, n);
-				r_cons_printf ("0t%s", out);
-
-				r_cons_printf ("\n");
+				r_cons_printf ("trits   0t%s\n", out);
 			}
 			free (inputs);
 			r_list_free (list);

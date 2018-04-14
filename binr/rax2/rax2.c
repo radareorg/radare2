@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2017 - pancake */
+/* radare - LGPL - Copyright 2007-2018 - pancake */
 
 #include "../blob/version.c"
 #include <r_print.h>
@@ -418,6 +418,7 @@ dotherax:
 		s = n >> 16 << 12;
 		a = n & 0x0fff;
 		r_num_units (unit, n);
+#if 0
 		eprintf ("%" PFMT64d " 0x%" PFMT64x " 0%" PFMT64o
 			" %s %04x:%04x ",
 			n, n, n, unit, s, a);
@@ -435,6 +436,31 @@ dotherax:
 		r_str_bits (out, (const ut8 *) &n, sizeof (n), NULL);
 		eprintf ("%s %.01lf %ff %lf\n",
 			out, num->fvalue, f, d);
+#endif
+				printf ("hex     0x%"PFMT64x"\n", n);
+				printf ("octal   0%"PFMT64o"\n", n);
+				printf ("unit    %s\n", unit);
+				printf ("segment %04x:%04x\n", s, a);
+				if (n >> 32) {
+					printf ("int64   %"PFMT64d"\n", (st64)n);
+				} else {
+					printf ("int32   %d\n", (st32)n);
+				}
+				if (asnum) {
+					printf ("string  \"%s\"\n", asnum);
+					free (asnum);
+				}
+				/* binary and floating point */
+				r_str_bits64 (out, n);
+				memcpy (&f, &n, sizeof (f));
+				memcpy (&d, &n, sizeof (d));
+				printf ("binary  0b%s\n", out);
+				printf ("float:  %ff\n", f);
+				printf ("double: %lf\n", d);
+
+				/* ternary */
+				r_num_to_trits (out, n);
+				printf ("trits   0t%s\n", out);
 
 		return true;
 	} else if (flags & (1 << 19)) { // -L
