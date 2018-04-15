@@ -820,14 +820,14 @@ R_API char *r_str_appendlen(char *ptr, const char *string, int slen) {
  */
 R_API char *r_str_append(char *ptr, const char *string) {
 	int slen, plen;
-	if (!string && !ptr) {
+	if (string && !ptr) {
+		return strdup (string);
+	}
+	if (!string) {
 		return NULL;
 	}
 	if (!string && ptr) {
 		return ptr;
-	}
-	if (string && !ptr) {
-		return strdup (string);
 	}
 	plen = strlen (ptr);
 	slen = strlen (string);

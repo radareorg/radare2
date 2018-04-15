@@ -110,6 +110,7 @@ typedef struct {
 	bool asm_describe;
 	int linesout;
 	int adistrick;
+	bool asm_meta;
 	int asm_demangle;
 	bool show_offset;
 	bool show_offdec; // dupe for r_print->flags
@@ -640,6 +641,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_offseg = r_config_get_i (core->config, "asm.segoff");
 	ds->show_flags = r_config_get_i (core->config, "asm.flags");
 	ds->show_bytes = r_config_get_i (core->config, "asm.bytes");
+	ds->asm_meta = r_config_get_i (core->config, "asm.meta");
 	ds->show_reloff = r_config_get_i (core->config, "asm.reloff");
 	ds->show_reloff_flags = r_config_get_i (core->config, "asm.reloff.flags");
 	ds->show_fcnlines = r_config_get_i (core->config, "asm.fcnlines");
@@ -1077,14 +1079,13 @@ static void ds_show_refs(RDisasmState *ds) {
 	RAnalRef *ref;
 	RListIter *iter;
 	RFlagItem *flagi, *flagat;
-	char *cmt;
 
 	if (!ds->show_cmtrefs) {
 		return;
 	}
 	list = r_anal_xrefs_get_from (ds->core->anal, ds->at);
 	r_list_foreach (list, iter, ref) {
-		cmt = r_meta_get_string (ds->core->anal, R_META_TYPE_COMMENT, ref->addr);
+		char *cmt = r_meta_get_string (ds->core->anal, R_META_TYPE_COMMENT, ref->addr);
 		flagi = r_flag_get_i (ds->core->flags, ref->addr);
 		flagat = r_flag_get_at (ds->core->flags, ref->addr, false);
 		// ds_align_comment (ds);
@@ -1949,6 +1950,56 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	if (ds->asmop.size < 1) {
 		ds->asmop.size = 1;
 	}
+	// handle meta here //
+	if (!ds->asm_meta) {
+		int i = 0;
+		// TODO: do in range
+#if 0
+		RAnalMetaItem *meta = r_meta_find (core->anal, ds->at,
+				R_META_TYPE_ANY, R_META_WHERE_HERE);
+#endif
+		RAnalMetaItem *meta = r_meta_find_in (core->anal, ds->at,
+				R_META_TYPE_ANY, R_META_WHERE_HERE);
+		if (meta && meta->size > 0) {
+			switch (meta->type) {
+			case R_META_TYPE_DATA:
+				if (meta->str) {
+					r_cons_printf (".data: %s\n", meta->str);
+				}
+				i += meta->size;
+				// continue;
+				break;
+			case R_META_TYPE_STRING:
+				r_cons_printf (".string: %s\n", meta->str);
+				i += meta->size;
+				// continue;
+				break;
+			case R_META_TYPE_FORMAT:
+				r_cons_printf (".format : %s\n", meta->str);
+				i += meta->size;
+				// continue;
+				break;
+			case R_META_TYPE_MAGIC:
+				r_cons_printf (".magic : %s\n", meta->str);
+				i += meta->size;
+				break;
+			case R_META_TYPE_RUN:
+				/* TODO */
+				break;
+			}
+		}
+		if (meta) {
+			int sz = R_MIN (16, meta->size - (ds->at - meta->from));
+			ds->asmop.size = sz;
+			r_hex_bin2str (buf, sz, ds->asmop.buf_hex);
+			snprintf (ds->asmop.buf_asm, sizeof (ds->asmop.buf_asm),
+				".hex %s", ds->asmop.buf_hex);
+			// strcpy (ds->asmop.buf_hex, "0102030405060708");
+			//return i;
+			ds->oplen = sz; //ds->asmop.size;
+			return i;
+		}
+	}
 
 	if (ds->show_nodup) {
 		const char *opname = (ret < 1)? "invalid": ds->asmop.buf_asm;
@@ -2416,6 +2467,9 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 	RAnalMetaItem MI, *mi = &MI;
 	RCore *core = ds->core;
 	Sdb *s = core->anal->sdb_meta;
+	if (!ds->asm_meta) {
+		return 0;
+	}
 
 	snprintf (key, sizeof (key), "meta.0x%" PFMT64x, ds->at);
 	infos = sdb_const_get (s, key, 0);
@@ -2681,7 +2735,7 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 	if (flagstr) {
 		str = flagstr;
 		if (ds->nb > 0) {
-			k = ds->nb-strlen (flagstr) - 1;
+			k = ds->nb - strlen (flagstr) - 1;
 			if (k < 0 || k > sizeof(pad)) k = 0;
 			for (j = 0; j < k; j++) {
 				pad[j] = ' ';
@@ -5355,7 +5409,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 			r_core_cmdf (core, "tf 0x%08"PFMT64x, ds->at);
 
 			ds_show_comments_right (ds);
-			ret = ds_disassemble (ds, buf+idx, len - bb_size_consumed);
+			ret = ds_disassemble (ds, buf + idx, len - bb_size_consumed);
 			ds_atabs_option (ds);
 			// TODO: store previous oplen in core->dec
 			if (!core->inc) {

@@ -31,32 +31,34 @@ Keys:
 #undef DB
 #define DB a->sdb_meta
 
-#if 0
-// Defined but not used. Shall we remove it?
 static char *meta_inrange_get (RAnal *a, ut64 addr, int size) {
-	char key[64];
-	ut64 base, base2;
-	base = META_RANGE_BASE (addr);
-	base2 = META_RANGE_BASE (addr+size);
+	ut64 base = META_RANGE_BASE (addr);
+	ut64 base2 = META_RANGE_BASE (addr + size) + 1;
+	char * res = NULL;
 	// return string array of all the offsets where there are stuff
-	for (; base<base2; base += META_RANGE_SIZE) {
-		snprintf (key, sizeof (key)-1, "range.0x%"PFMT64x, base);
-		sdb_array_get (DB, key, 0, 0);
+	for (; base < base2; base += META_RANGE_SIZE) {
+		const char *key = sdb_fmt ("range.0x%"PFMT64x, base);
+		char *r = sdb_array_get (DB, key, 0, 0);
+		if (res) {
+			res = r_str_append (res, " ");
+		}
+		res = r_str_append (res, r);
+		free (r);
 	}
-	return NULL;
+	return res;
 }
-#endif
 
-static int meta_inrange_add (RAnal *a, ut64 addr, int size) {
-	int set = 0;
+static bool meta_inrange_add (RAnal *a, ut64 addr, int size) {
+	bool set = false;
 	char key[64];
 	ut64 base, base2;
 	base = META_RANGE_BASE (addr);
-	base2 = META_RANGE_BASE (addr+size);
-	for (; base<base2; base += META_RANGE_SIZE) {
+	base2 = META_RANGE_BASE (addr + size) + 1;
+	for (; base < base2; base += META_RANGE_SIZE) {
 		snprintf (key, sizeof (key)-1, "range.0x%"PFMT64x, base);
-		if (sdb_array_add_num (DB, key, addr, 0))
-			set = 1;
+		if (sdb_array_add_num (DB, key, addr, 0)) {
+			set = true;
+		}
 	}
 	return set;
 }
@@ -65,9 +67,9 @@ static int meta_inrange_del (RAnal *a, ut64 addr, int size) {
 	int set = 0;
 	char key[64];
 	ut64 base = META_RANGE_BASE (addr);
-	ut64 base2 = META_RANGE_BASE (addr+size);
+	ut64 base2 = META_RANGE_BASE (addr + size) + 1;
 // TODO: optimize this thing?
-	for (; base<base2; base += META_RANGE_SIZE) {
+	for (; base < base2; base += META_RANGE_SIZE) {
 		snprintf (key, sizeof (key)-1, "range.0x%"PFMT64x, base);
 		if (sdb_array_remove_num (DB, key, addr, 0))
 			set = 1;
@@ -369,7 +371,7 @@ static int meta_add(RAnal *a, int type, int subtype, ut64 from, ut64 to, const c
 	}
 	snprintf (val, sizeof (val)-1, "%c", type);
 	sdb_array_add (DB, key, val, 0);
-
+	meta_inrange_add (a, from, to - from);
 	return true;
 }
 
@@ -412,6 +414,20 @@ R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, int where) {
 			}
 			return &mi;
 		}
+	}
+	return NULL;
+}
+
+R_API RAnalMetaItem *r_meta_find_in(RAnal *a, ut64 at, int type, int where) {
+	char *res = meta_inrange_get (a, at, 1);
+	if (!res) {
+		return NULL;
+	}
+	ut64 mia = r_num_math (NULL, res);
+	RAnalMetaItem *mi = r_meta_find (a, mia, type, where);
+	free (res);
+	if (at >= mi->from && at < mi->to) {
+		return mi;
 	}
 	return NULL;
 }

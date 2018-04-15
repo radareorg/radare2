@@ -48,6 +48,9 @@ RebuildJava() {
 }
 
 RebuildCapstone() {
+	if [ ! -d shlr/capstone ]; then
+		make -C shlr capstone
+	fi
 	Rebuild shlr/capstone
 	Rebuild libr/asm
 	Rebuild libr/anal
