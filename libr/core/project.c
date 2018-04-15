@@ -178,6 +178,7 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 		prjDir = r_file_dirname (path);
 		if (!prjDir) {
 			eprintf ("Cannot resolve directory\n");
+			free (path);
 			return false;
 		}
 		// rm project file
@@ -220,6 +221,7 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 		r_file_rm (prjDir);
 	}
 	free (prjDir);
+	free (path);
 	return 0;
 }
 
@@ -884,7 +886,7 @@ R_API bool r_core_project_save(RCore *core, const char *prjName) {
 	if (scr_null) {
 		r_config_set_i (core->config, "scr.null", true);
 	}
-	if (!ret) {
+	if (!ret && oldPrjName) {
 		// reset prj.name on fail
 		r_config_set (core->config, "prj.name", oldPrjName);
 	}

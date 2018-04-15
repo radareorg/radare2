@@ -158,33 +158,33 @@ void parse_mach064 (RList *ret, ut64 paddr, RBinFile *bf) {
 	r_buf_read_at (cache_buf, paddr + 0x20, cmd, h64.sizeofcmds);
 
 	for (; cmd < end; cmd = (void *)((const ut8*)cmd + cmd->cmdsize)) {
-		if (cmd->cmd == LC_SYMTAB) {
-			struct symtab_command *stab = (struct symtab_command*)(cmd);
-			struct MACH0_(nlist) *syms = R_NEWS0 (struct MACH0_(nlist), stab->nsyms);
-			r_buf_read_at (cache_buf, stab->symoff, syms, sizeof (struct MACH0_(nlist)) * stab->nsyms);
+		if (cmd->cmd != LC_SYMTAB) {
+			continue;
+		}
+		struct symtab_command *stab = (struct symtab_command*)(cmd);
+		struct MACH0_(nlist) *syms = R_NEWS0 (struct MACH0_(nlist), stab->nsyms);
+		r_buf_read_at (cache_buf, stab->symoff, syms, sizeof (struct MACH0_(nlist)) * stab->nsyms);
 
-			char *strs = malloc (stab->strsize);
-			r_buf_read_at (cache_buf, stab->stroff, strs, stab->strsize);
+		char *strs = malloc (stab->strsize);
+		r_buf_read_at (cache_buf, stab->stroff, strs, stab->strsize);
 
-			size_t n;
-			for (n = 0; n < stab->nsyms; n++) {
-				if ((syms[n].n_type & N_TYPE) != N_UNDF && (syms[n].n_type & N_EXT)) {
-					RBinSymbol *sym = R_NEW0 (RBinSymbol);
-					if (sym) {
-						sym->name = strdup (&strs [ syms[n].n_strx + 1]);
-						sym->vaddr = syms[n].n_value;
-						sym->paddr = syms[n].n_value;
-						// XXX THIs is unnecessarily slow! must be enums
-						sym->bind = "PUBLIC";
-						sym->type = "SYM";
-						r_list_append (ret, sym);
-					}
+		size_t n;
+		for (n = 0; n < stab->nsyms; n++) {
+			if ((syms[n].n_type & N_TYPE) != N_UNDF && (syms[n].n_type & N_EXT)) {
+				RBinSymbol *sym = R_NEW0 (RBinSymbol);
+				if (sym) {
+					sym->name = strdup (&strs [ syms[n].n_strx + 1]);
+					sym->vaddr = syms[n].n_value;
+					sym->paddr = syms[n].n_value;
+					// XXX THIs is unnecessarily slow! must be enums
+					sym->bind = "PUBLIC";
+					sym->type = "SYM";
+					r_list_append (ret, sym);
 				}
 			}
-
-			R_FREE (strs);
-			R_FREE (syms);
 		}
+		R_FREE (strs);
+		R_FREE (syms);
 		if ((int)cmd->cmdsize < 1) {
 			eprintf ("CMD Size FAIL %d\n", cmd->cmdsize);
 			break;

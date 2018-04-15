@@ -824,9 +824,6 @@ R_API char *r_str_append(char *ptr, const char *string) {
 		return strdup (string);
 	}
 	if (!string) {
-		return NULL;
-	}
-	if (!string && ptr) {
 		return ptr;
 	}
 	plen = strlen (ptr);

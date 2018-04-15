@@ -618,11 +618,11 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 		data[i] = r_read_ble16 (&edata[i * sizeof (ut16)], bin->endian);
 	}
 	R_FREE (edata);
+	char *tmp_val = NULL;
 	for (i = 0; i < num_entries; i += 4) {
 		int j;
 		int check_def;
 		char key[32] = {0};
-		char *tmp_val = NULL;
 
 		for (j = 0; (j < 4) && (i + j) < num_entries; j++) {
 			int k;
@@ -736,9 +736,10 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 				}
 			}
 		}
-		free (tmp_val);
+		R_FREE (tmp_val);
 	}
 beach:
+	R_FREE (tmp_val);
 	free (data);
 	return sdb;
 }
