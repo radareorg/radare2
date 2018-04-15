@@ -488,9 +488,15 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 
 static void queue_case(RAnal *anal, ut64 switch_addr, ut64 case_addr, ut64 id, ut64 case_addr_loc) {
 	// eprintf("\tqueue_case: 0x%"PFMT64x " from 0x%"PFMT64x "\n", case_addr, case_addr_loc);
-	anal->cmdtail = r_str_appendf (anal->cmdtail, "ax 0x%"PFMT64x " 0x%"PFMT64x "\n", case_addr, switch_addr);
-	anal->cmdtail = r_str_appendf (anal->cmdtail, "aho case %d: from 0x%"PFMT64x " @ 0x%"PFMT64x "\n", id, switch_addr, case_addr_loc);
-	anal->cmdtail = r_str_appendf (anal->cmdtail, "CCu case %d: from 0x%"PFMT64x " @ 0x%"PFMT64x "\n", id, switch_addr, case_addr);
+	anal->cmdtail = r_str_appendf (anal->cmdtail,
+		"ax 0x%"PFMT64x " 0x%"PFMT64x "\n",
+		case_addr, switch_addr);
+	anal->cmdtail = r_str_appendf (anal->cmdtail,
+		"aho case %d: from 0x%"PFMT64x " @ 0x%"PFMT64x "\n",
+		id, switch_addr, case_addr_loc);
+	anal->cmdtail = r_str_appendf (anal->cmdtail,
+		"CCu case %d: @ 0x%"PFMT64x "\n",
+		id, case_addr);
 }
 
 static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 ptr, int ret0) {
@@ -538,16 +544,17 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 				break;
 			}
 		}
-		if (offs == 0) {
-			// eprintf("\n\nSwitch statement at 0x%llx:\n", ip);
-			anal->cmdtail = r_str_appendf (anal->cmdtail, "CCu switch table at 0x%"PFMT64x " @ 0x%"PFMT64x "\n",
-				ptr, ip);
-		}
 		queue_case (anal, ip, jmpptr, offs/sz, ptr + offs);
 		// if (jmpptr < ip - MAX_JMPTBL_JMP || jmpptr > ip + MAX_JMPTBL_JMP) { break; }
 		recurseAt (jmpptr);
 	}
 
+	if (offs > 0) {
+		// eprintf("\n\nSwitch statement at 0x%llx:\n", ip);
+		anal->cmdtail = r_str_appendf (anal->cmdtail,
+			"CCu switch table (%d cases) at 0x%"PFMT64x " @ 0x%"PFMT64x "\n",
+			offs/sz, ptr, ip);
+	}
 
 	free (jmptbl);
 	return ret;
