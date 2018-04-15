@@ -34,6 +34,10 @@ static RList *keywords;
 
 static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	int delta = addr - cur;
+	if (cur > addr && (cur - addr == kw->keyword_length - 1)) {
+		// This case occurs when there is hit in search left over
+		delta = cur - addr;
+	}
 	if (delta < 0 || delta >= bsize) {
 		eprintf ("Invalid delta\n");
 		return 0;
