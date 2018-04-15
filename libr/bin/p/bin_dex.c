@@ -721,6 +721,10 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sd
 	return res;
 }
 
+static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	return r_bin_dex_new_buf (buf);
+}
+
 static bool load(RBinFile *bf) {
 	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
 	ut64 sz = bf ? r_buf_size (bf->buf): 0;
@@ -2011,6 +2015,7 @@ RBinPlugin r_bin_plugin_dex = {
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = load_bytes,
+	.load_buffer = &load_buffer,
 	.check_bytes = check_bytes,
 	.baddr = baddr,
 	.entries = entries,
