@@ -272,6 +272,10 @@ fail:
 	return dst;
 }
 
+R_API char *r_str_r2_prefix(const char *str) {
+	return r_str_newf ("%s%s%s", r_sys_prefix (NULL), R_SYS_DIR, str);
+}
+
 // Compute a 64 bit DJB hash of a string.
 R_API ut64 r_str_hash64(const char *s) {
 	ut64 len, h = 5381;
