@@ -514,6 +514,13 @@ static int cmd_help(void *data, const char *input) {
 				f = d = core->num->fvalue;
 				memcpy (&f, &n, sizeof(f));
 				memcpy (&d, &n, sizeof(d));
+				/* adjust sign for nan floats, different libcs are confused */
+				if (isnan (f) && f < 0) {
+					f = -f;
+				}
+				if (isnan (d) && d < 0) {
+					d = -d;
+				}
 				r_cons_printf ("binary  0b%s\n", out);
 				r_cons_printf ("fvalue: %.1lf\n", core->num->fvalue);
 				r_cons_printf ("float:  %ff\n", f);
@@ -949,7 +956,6 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_printf ("%"PFMT64d"\n", core->num->value);
 		}
 		break;
-
 	case '\0': // "?"
 	default:
 		// TODO #7967 help refactor
