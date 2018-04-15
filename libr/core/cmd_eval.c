@@ -116,19 +116,19 @@ static void list_themes_in_path(RList *list, const char *path) {
 }
 
 R_API RList *r_core_list_themes(RCore *core) {
-	RList *list = r_list_new ();
+	RList *list = r_list_newf (free);
 	getNext = false;
 
 	char *path = r_str_home (".config/radare2/cons/");
 	if (path) {
 		list_themes_in_path (list, path);
-		R_FREE(path);
+		R_FREE (path);
 	}
 
 	path = r_str_r2_prefix ("share/radare2/"R2_VERSION"/cons/");
 	if (path) {
 		list_themes_in_path (list, path);
-		R_FREE(path);
+		R_FREE (path);
 	}
 
 	return list;
@@ -309,11 +309,16 @@ static int cmd_eval(void *data, const char *input) {
 				nextpal (core, 'j');
 			} else if (input[2] == ' ') {
 				bool failed = false;
-				char *home, *path, tmp[512];
-				snprintf (tmp, sizeof (tmp), ".config/radare2/cons/%s", input + 3);
-				home = r_str_home (tmp);
-				snprintf (tmp, sizeof (tmp), "share/radare2/"R2_VERSION"/cons/%s", input + 3);
-				path = r_str_r2_prefix (tmp);
+				char *home, *path, *tmp;
+
+				tmp = r_str_newf (".config/radare2/cons/%s", input + 3);
+				home = tmp ? r_str_home (tmp) : NULL;
+				free (tmp);
+
+				tmp = r_str_newf ("share/radare2/"R2_VERSION"/cons/%s", input + 3);
+				path = tmp ? r_str_r2_prefix (tmp) : NULL;
+				free (tmp);
+
 				if (!load_theme (core, home)) {
 					if (load_theme (core, path)) {
 						//curtheme = r_str_dup (curtheme, path);

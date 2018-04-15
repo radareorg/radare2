@@ -273,22 +273,7 @@ fail:
 }
 
 R_API char *r_str_r2_prefix(const char *str) {
-	const char *prefix = r_sys_prefix (NULL);
-	size_t length;
-	length = strlen (prefix) + 1;
-	if (str) {
-		length += strlen (R_SYS_DIR) + strlen (str);
-	}
-	char *dst = (char *)malloc (length);
-	if (!dst) {
-		return NULL;
-	}
-	strcpy (dst, prefix);
-	if (str) {
-		strcat (dst, R_SYS_DIR);
-		strcat (dst, str);
-	}
-	return dst;
+	return r_str_newf ("%s%s%s", r_sys_prefix (NULL), R_SYS_DIR, str);
 }
 
 // Compute a 64 bit DJB hash of a string.
