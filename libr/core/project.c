@@ -164,18 +164,17 @@ R_API int r_core_project_list(RCore *core, int mode) {
 }
 
 R_API int r_core_project_delete(RCore *core, const char *prjfile) {
-	char *path, *prjDir = NULL;
 	if (r_sandbox_enable (0)) {
 		eprintf ("Cannot delete project in sandbox mode\n");
 		return 0;
 	}
-	path = projectScriptPath (core, prjfile);
+	char *path = projectScriptPath (core, prjfile);
 	if (!path) {
 		eprintf ("Invalid project name '%s'\n", prjfile);
 		return false;
 	}
 	if (r_core_is_project (core, prjfile)) {
-		prjDir = r_file_dirname (path);
+		char *prjDir = r_file_dirname (path);
 		if (!prjDir) {
 			eprintf ("Cannot resolve directory\n");
 			free (path);
@@ -186,8 +185,6 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 			r_file_rm (path);
 			eprintf ("rm %s\n", path);
 		}
-
-		free (path);
 
 		//rm xrefs.sdb file
 		char *xrefs_sdb = r_str_newf ("%s%s%s", prjDir, R_SYS_DIR, "xrefs.sdb");
@@ -219,8 +216,8 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 		free (rop_d);
 		// remove directory only if it's empty
 		r_file_rm (prjDir);
+		free (prjDir);
 	}
-	free (prjDir);
 	free (path);
 	return 0;
 }
