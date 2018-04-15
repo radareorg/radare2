@@ -515,10 +515,10 @@ static int cmd_help(void *data, const char *input) {
 				memcpy (&f, &n, sizeof(f));
 				memcpy (&d, &n, sizeof(d));
 				/* adjust sign for nan floats, different libcs are confused */
-				if (isnan (f) && f < 0) {
+				if (isnan (f) && signbit (f)) {
 					f = -f;
 				}
-				if (isnan (d) && d < 0) {
+				if (isnan (d) && signbit (d)) {
 					d = -d;
 				}
 				r_cons_printf ("binary  0b%s\n", out);
