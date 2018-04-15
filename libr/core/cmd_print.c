@@ -881,20 +881,21 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		if (input[2] == '?') {
 			eprintf ("|Usage: pfo [format-file]\n"
 				" ~/.config/radare2/format\n"
-				" "R2_DATDIR "/radare2/"R2_VERSION "/format/\n");
+				" %s/radare2/"R2_VERSION "/format/\n",
+				r_sys_prefix (NULL));
 		} else if (input[2] == ' ') {
-			char *home, path[512];
-			// XXX hardcoded path here
-			snprintf (path, sizeof (path), ".config/radare2/format/%s", input + 3);
-			home = r_str_home (path);
-			snprintf (path, sizeof (path), R2_DATDIR "/radare2/"
-				R2_VERSION "/format/%s", input + 3);
+			char *home, *path, tmp[512];
+			snprintf (tmp, sizeof (tmp), ".config/radare2/format/%s", input + 3);
+			home = r_str_home (tmp);
+			snprintf (tmp, sizeof (tmp), "share/radare2/"R2_VERSION"/format/%s", input + 3);
+			path = r_str_r2_prefix (tmp);
 			if (!r_core_cmd_file (core, home) && !r_core_cmd_file (core, path)) {
 				if (!r_core_cmd_file (core, input + 3)) {
 					eprintf ("ecf: cannot open colorscheme profile (%s)\n", path);
 				}
 			}
 			free (home);
+			free (path);
 		} else {
 			RList *files;
 			RListIter *iter;
@@ -910,13 +911,17 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 				r_list_free (files);
 				free (home);
 			}
-			files = r_sys_dir (R2_DATDIR "/radare2/"R2_VERSION "/format/");
-			r_list_foreach (files, iter, fn) {
-				if (*fn && *fn != '.') {
-					r_cons_println (fn);
+			char *path = r_str_r2_prefix ("share/radare2/"R2_VERSION"/format/");
+			if (path) {
+				files = r_sys_dir (path);
+				r_list_foreach (files, iter, fn) {
+					if (*fn && *fn != '.') {
+						r_cons_println (fn);
+					}
 				}
+				r_list_free (files);
+				free (path);
 			}
-			r_list_free (files);
 		}
 		free (input);
 		return;
