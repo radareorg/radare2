@@ -749,8 +749,7 @@ R_API int r_anal_case(RAnal *anal, RAnalFunction *fcn, ut64 addr_bbsw, ut64 addr
 static int walk_switch(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 at) {
 	ut8 buf[1024];
 	int i;
-	eprintf ("WALK_SWITCH ujmp at 0x%"PFMT64x " to 0x%"PFMT64x "\n", from, at);
-	// eprintf ("WALK SWITCH TABLE INTO (0x%"PFMT64x ") %"PFMT64x "\n", from, at);
+	eprintf ("WALK SWITCH TABLE INTO (0x%"PFMT64x ") %"PFMT64x "\n", from, at);
 	for (i = 0; i < 10; i++) {
 		anal->iob.read_at (anal->iob.io, at, buf, sizeof (buf));
 		int sz = r_anal_case (anal, fcn, from, at, buf, sizeof (buf), 0);
@@ -1285,6 +1284,7 @@ repeat:
 					// walk_switch (anal, fcn, op.addr, op.addr + op.size);
 				}
 				// op.ireg since rip relative addressing produces way too many false positives otherwise
+				// op.ireg is 0 for rip relative, "rax", etc otherwise
 				if (op.ptr != UT64_MAX && op.ireg) {       // direct jump
 					ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, ret);
 				} else {        // indirect jump: table pointer is unknown
