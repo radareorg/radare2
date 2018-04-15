@@ -1957,10 +1957,12 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 #if 0
 		RAnalMetaItem *meta = r_meta_find (core->anal, ds->at,
 				R_META_TYPE_ANY, R_META_WHERE_HERE);
-#endif
+#else
 		RAnalMetaItem *meta = r_meta_find_in (core->anal, ds->at,
 				R_META_TYPE_ANY, R_META_WHERE_HERE);
+#endif
 		if (meta && meta->size > 0) {
+			// XXX this is just noise. should be rewritten
 			switch (meta->type) {
 			case R_META_TYPE_DATA:
 				if (meta->str) {
@@ -1987,8 +1989,6 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 				/* TODO */
 				break;
 			}
-		}
-		if (meta) {
 			int sz = R_MIN (16, meta->size - (ds->at - meta->from));
 			ds->asmop.size = sz;
 			r_hex_bin2str (buf, sz, ds->asmop.buf_hex);
