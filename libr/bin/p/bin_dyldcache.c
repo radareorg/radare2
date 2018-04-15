@@ -13,7 +13,7 @@ static ut64 va2pa(uint64_t addr, cache_hdr_t *hdr, RBuffer *cache_buf) {
 	uint32_t i;
 
 	cache_map_t *map = R_NEWS0 (cache_map_t, hdr->mappingCount);
-	r_buf_read_at (cache_buf, hdr->mappingOffset, map, sizeof (cache_map_t) * hdr->mappingCount);
+	r_buf_read_at (cache_buf, hdr->mappingOffset, (ut8*)map, sizeof (cache_map_t) * hdr->mappingCount);
 
 	for (i = 0; i < hdr->mappingCount; ++i) {
 		if (addr >= map[i].address && addr < map[i].address + map[i].size) {
@@ -46,8 +46,8 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 
 static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb * sdb) {
 	RBuffer *fbuf = r_buf_new_with_io (&bf->rbin->iob, bf->fd);
-	const ut8 bytes_to_check[32];
-	r_buf_read_at (fbuf, 0, bytes_to_check, 32);
+	ut8 bytes_to_check[32];
+	r_buf_read_at (fbuf, 0, (ut8*)bytes_to_check, 32);
 	if (!check_bytes (bytes_to_check, 32)) {
 		r_buf_free (fbuf);
 		return NULL;
@@ -114,8 +114,8 @@ static ut64 baddr(RBinFile *bf) {
 
 void parse_mach064 (RList *ret, ut64 paddr, RBinFile *bf) {
 	// eprintf ("MACH0 AT 0x%"PFMT64x"\n", paddr);
-	int sz = 0;
 	RBuffer *cache_buf = (RBuffer*) bf->o->bin_obj;
+	int sz;
 #if USE_R2_API
 	// XXX r2 api cannot load those mach0s because addresses are messed up
 	sz = 1024*1024*1; // 1MB limit file size to 1MB to avoid slow copies.. this is a nice place to optimize unnecessary r_buf_new_from_bytes
@@ -148,25 +148,33 @@ void parse_mach064 (RList *ret, ut64 paddr, RBinFile *bf) {
 	r_buf_free (buf);
 	MACH0_(free)(res);
 #else
-	const ut8 * root = r_buf_get_at (bf->buf, 0, NULL);
+	sz = r_buf_size (cache_buf);
 	struct MACH0_(mach_header) h64;
-	r_buf_read_at (cache_buf, paddr, &h64, sizeof (struct MACH0_(mach_header)));
+	r_buf_read_at (cache_buf, paddr, (ut8*)&h64, sizeof (struct MACH0_(mach_header)));
 
 	struct load_command *cmds = (struct load_command*) malloc (h64.sizeofcmds);
 	struct load_command *cmd = cmds;
 	struct load_command *end = (struct load_command*)((const ut8*)cmds + h64.sizeofcmds);
-	r_buf_read_at (cache_buf, paddr + 0x20, cmd, h64.sizeofcmds);
+	r_buf_read_at (cache_buf, paddr + 0x20, (ut8*)cmd, h64.sizeofcmds);
 
 	for (; cmd < end; cmd = (void *)((const ut8*)cmd + cmd->cmdsize)) {
 		if (cmd->cmd != LC_SYMTAB) {
 			continue;
 		}
 		struct symtab_command *stab = (struct symtab_command*)(cmd);
-		struct MACH0_(nlist) *syms = R_NEWS0 (struct MACH0_(nlist), stab->nsyms);
-		r_buf_read_at (cache_buf, stab->symoff, syms, sizeof (struct MACH0_(nlist)) * stab->nsyms);
+		if (stab->nsyms == 0 || stab->strsize == 0) {
+			continue;
+		}
+		ut64 syms_sz = sizeof (struct MACH0_(nlist)) * stab->nsyms;
+		if (stab->symoff + syms_sz >= sz || stab->stroff + stab->strsize >= sz) {
+			continue;
+		}
 
-		char *strs = malloc (stab->strsize);
-		r_buf_read_at (cache_buf, stab->stroff, strs, stab->strsize);
+		struct MACH0_(nlist) *syms = (struct MACH0_(nlist)*)malloc (syms_sz);
+		r_buf_read_at (cache_buf, stab->symoff, (ut8*)syms, syms_sz);
+
+		char *strs = (char*)malloc (stab->strsize);
+		r_buf_read_at (cache_buf, stab->stroff, (ut8*)strs, stab->strsize);
 
 		size_t n;
 		for (n = 0; n < stab->nsyms; n++) {
@@ -227,10 +235,10 @@ static RList* symbols(RBinFile *bf) {
 	RList *ret = r_list_newf (free);
 	RBuffer *cache_buf = (RBuffer*) bf->o->bin_obj;
 	cache_hdr_t hdr;
-	r_buf_read_at (cache_buf, 0, &hdr, sizeof (cache_hdr_t));
+	r_buf_read_at (cache_buf, 0, (ut8*)&hdr, sizeof (cache_hdr_t));
 
 	cache_img_t *img = R_NEWS0 (cache_img_t, hdr.imagesCount);
-	r_buf_read_at (cache_buf, hdr.imagesOffset, img, sizeof (cache_img_t) * hdr.imagesCount);
+	r_buf_read_at (cache_buf, hdr.imagesOffset, (ut8*)img, sizeof (cache_img_t) * hdr.imagesCount);
 	int i;
 	for (i = 0; i < hdr.imagesCount; i++) {
 		ut64 pa = va2pa (img[i].address, &hdr, cache_buf);
