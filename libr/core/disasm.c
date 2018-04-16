@@ -3918,13 +3918,13 @@ static bool can_emulate_metadata(RCore * core, ut64 at) {
 
 static void mipsTweak(RDisasmState *ds) {
 	RCore *core = ds->core;
-	const char *asm_arch = r_config_get (core->config, "asm.arch");
-	if (asm_arch && *asm_arch && strstr (asm_arch, "mips")) {
-		ut64 gp = r_config_get_i (core->config, "anal.gp");
+	//const char *asm_arch = r_config_get (core->config, "asm.arch");
+	//if (asm_arch && *asm_arch && strstr (asm_arch, "mips")) {
+		ut64 gp = r_config_get_i (core->config, "anal.gp2");
 		if (gp && gp !=UT64_MAX) {
 			r_reg_setv (core->anal->reg, "gp", gp);
 		}
-	}
+	//}
 }
 
 // modifies anal register state
