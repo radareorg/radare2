@@ -80,9 +80,8 @@ static void listrefs(dict *m, ut64 addr, RList *list) {
 		for (i = 0; i < m->size; i++) {
 			dictkv *kv = m->table[i];
 			if (kv) {
-				dict *ht = kv->u;
 				while (kv->k != MHTNO) {
-					mylistrefs (ht, UT64_MAX, list);
+					mylistrefs (kv->u, UT64_MAX, list);
 					kv++;
 				}
 			}
@@ -114,9 +113,8 @@ static void listxrefs(dict *m, ut64 addr, RList *list) {
 		for (i = 0; i < m->size; i++) {
 			dictkv *kv = m->table[i];
 			if (kv) {
-				dict *ht = kv->u;
 				while (kv->k != MHTNO) {
-					mylistrefs (ht, UT64_MAX, list);
+					mylistrefs (kv->u, UT64_MAX, list);
 					kv++;
 				}
 			}
