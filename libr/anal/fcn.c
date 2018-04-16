@@ -663,7 +663,7 @@ static bool isInvalidMemory(const ut8 *buf, int len) {
 	// return buf[0]==buf[1] && buf[0]==0xff && buf[2]==0xff && buf[3] == 0xff;
 }
 
-static bool is_delta_pointer_table(RAnal *anal, ut64 addr, ut64 ptr) {
+static bool is_delta_pointer_table(RAnal *anal, ut64 addr, ut64 ptr, ut64 *jmp_addr) {
 	int i;
 	ut64 dst;
 	st32 jmptbl[64] = {
@@ -698,6 +698,7 @@ static bool is_delta_pointer_table(RAnal *anal, ut64 addr, ut64 ptr) {
 			return false;
 		}
 	}
+	*jmp_addr = aop.addr;
 	return true;
 }
 
@@ -999,18 +1000,9 @@ repeat:
 				}
 			}
 			if (anal->opt.jmptbl) {
-				if (is_delta_pointer_table (anal, op.addr, op.ptr)) {
-					// char *str = r_str_newf ("pxt. 0x%08" PFMT64x" @ 0x%08"PFMT64x "\n", op.addr, op.ptr);
-					// if (!anal->cmdtail) {
-					// 	anal->cmdtail = r_str_appendf (anal->cmdtail, str);
-					// }
-					// if (anal->cmdtail && !strstr (anal->cmdtail, str)) {
-					// 	anal->cmdtail = r_str_appendf (anal->cmdtail, str);
-					// } 
-					// free (str);
-					// jmptbl_addr = op.ptr;
-					// jmptbl_size = -1;
-					ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, 4);
+				ut64 jmp_addr = 0;
+				if (is_delta_pointer_table (anal, op.addr, op.ptr, &jmp_addr)) {
+					ret = try_walkthrough_jmptbl (anal, fcn, depth, jmp_addr, op.ptr, 4);
 				}
 			}
 			break;
