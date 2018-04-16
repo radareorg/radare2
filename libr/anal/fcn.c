@@ -489,14 +489,17 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 static void queue_case(RAnal *anal, ut64 switch_addr, ut64 case_addr, ut64 id, ut64 case_addr_loc) {
 	// eprintf("\tqueue_case: 0x%"PFMT64x " from 0x%"PFMT64x "\n", case_addr, case_addr_loc);
 	anal->cmdtail = r_str_appendf (anal->cmdtail,
-		"ax 0x%"PFMT64x " 0x%"PFMT64x "\n",
+		"axc 0x%"PFMT64x " 0x%"PFMT64x "\n",
 		case_addr, switch_addr);
+	// anal->cmdtail = r_str_appendf (anal->cmdtail,
+	// 	"aho case %d: from 0x%"PFMT64x " @ 0x%"PFMT64x "\n",
+	// 	id, switch_addr, case_addr_loc);
+	// anal->cmdtail = r_str_appendf (anal->cmdtail,
+	// 	"CCu case %d: @ 0x%"PFMT64x "\n",
+	// 	id, case_addr);
 	anal->cmdtail = r_str_appendf (anal->cmdtail,
-		"aho case %d: from 0x%"PFMT64x " @ 0x%"PFMT64x "\n",
-		id, switch_addr, case_addr_loc);
-	anal->cmdtail = r_str_appendf (anal->cmdtail,
-		"CCu case %d: @ 0x%"PFMT64x "\n",
-		id, case_addr);
+		"f case.%d.0x%"PFMT64x " 1 @ 0x%08"PFMT64x "\n",
+		id, case_addr, case_addr);
 }
 
 static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 ptr, int ret0) {
@@ -555,6 +558,9 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 		anal->cmdtail = r_str_appendf (anal->cmdtail,
 			"CCu switch table (%d cases) at 0x%"PFMT64x " @ 0x%"PFMT64x "\n",
 			offs/sz, ptr, ip);
+		anal->cmdtail = r_str_appendf (anal->cmdtail,
+			"f switch.0x%08"PFMT64x" 1 @ 0x%08"PFMT64x"\n",
+			ip, ip);
 	}
 
 	free (jmptbl);
@@ -994,17 +1000,17 @@ repeat:
 			}
 			if (anal->opt.jmptbl) {
 				if (is_delta_pointer_table (anal, op.addr, op.ptr)) {
-					char *str = r_str_newf ("pxt. 0x%08" PFMT64x" @ 0x%08"PFMT64x "\n", op.addr, op.ptr);
-					if (!anal->cmdtail) {
-						anal->cmdtail = r_str_appendf (anal->cmdtail, str);
-					}
-					if (anal->cmdtail && !strstr (anal->cmdtail, str)) {
-						anal->cmdtail = r_str_appendf (anal->cmdtail, str);
-					} 
-					free (str);
+					// char *str = r_str_newf ("pxt. 0x%08" PFMT64x" @ 0x%08"PFMT64x "\n", op.addr, op.ptr);
+					// if (!anal->cmdtail) {
+					// 	anal->cmdtail = r_str_appendf (anal->cmdtail, str);
+					// }
+					// if (anal->cmdtail && !strstr (anal->cmdtail, str)) {
+					// 	anal->cmdtail = r_str_appendf (anal->cmdtail, str);
+					// } 
+					// free (str);
 					// jmptbl_addr = op.ptr;
 					// jmptbl_size = -1;
-					// ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, 4);
+					ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, 4);
 				}
 			}
 			break;
