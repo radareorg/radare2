@@ -502,10 +502,10 @@ static void queue_case(RAnal *anal, ut64 switch_addr, ut64 case_addr, ut64 id, u
 		id, case_addr, case_addr);
 }
 
-static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 ptr, int ret0) {
+static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 ptr, ut64 sz, int ret0) {
 	int ret = ret0;
 	ut8 *jmptbl = malloc (MAX_JMPTBL_SIZE);
-	ut64 jmpptr, offs, sz = anal->bits >> 3;
+	ut64 jmpptr, offs;
 	ut8 buf[1024];
 	if (!jmptbl) {
 		return 0;
@@ -1002,7 +1002,7 @@ repeat:
 			if (anal->opt.jmptbl) {
 				ut64 jmp_addr = 0;
 				if (is_delta_pointer_table (anal, op.addr, op.ptr, &jmp_addr)) {
-					ret = try_walkthrough_jmptbl (anal, fcn, depth, jmp_addr, op.ptr, 4);
+					ret = try_walkthrough_jmptbl (anal, fcn, depth, jmp_addr, op.ptr, 4, 4);
 				}
 			}
 			break;
@@ -1285,12 +1285,12 @@ repeat:
 				// op.ireg since rip relative addressing produces way too many false positives otherwise
 				// op.ireg is 0 for rip relative, "rax", etc otherwise
 				if (op.ptr != UT64_MAX && op.ireg) {       // direct jump
-					ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, ret);
+					ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, anal->bits >> 3, ret);
 				} else {        // indirect jump: table pointer is unknown
 					if (op.src[0] && op.src[0]->reg) {
 						ut64 ptr = search_reg_val (anal, buf, idx, addr, op.src[0]->reg->name);
 						if (ptr && ptr != UT64_MAX) {
-							ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, ptr, ret);
+							ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, ptr, anal->bits >> 3, ret);
 						}
 					}
 				}
