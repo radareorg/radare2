@@ -581,7 +581,6 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, 
 R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr);
 R_API int r_bin_load_as(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr, int fileoffset, const char *name);
 R_API int r_bin_load_io(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx);
-R_API bool r_bin_load_io_at_offset_as(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name);
 R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name, ut64 sz);
 R_API void r_bin_bind(RBin *b, RBinBind *bnd);
 R_API bool r_bin_add(RBin *bin, RBinPlugin *foo);
