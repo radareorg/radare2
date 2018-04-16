@@ -77,8 +77,8 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 					} else if (map->name) {
 						char *filtered_name = strdup (map->name);
 						r_name_filter (filtered_name, 0);
-						if (!memcmp (flagname, "map.", 4) && \
-							!strcmp (flagname+4, filtered_name)) {
+						if (!strncmp (flagname, "map.", 4) && \
+							!strcmp (flagname + 4, filtered_name)) {
 							flagname = "";
 						}
 						free (filtered_name);
