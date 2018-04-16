@@ -3865,7 +3865,12 @@ static void delete_last_comment(RDisasmState *ds) {
 				// const int cstrlen = begin + len - ll;
 				// r_cons_drop (cstrlen - (int)(begin - ll));
 				ds_newline (ds);
-				ds_begin_json_line (ds);
+				if (ds->use_json) {
+					ds_begin_json_line (ds);
+				} else {
+					ds_setup_print_pre (ds, false, false);
+					ds_print_lines_left (ds);
+				}
 			}
 		}
 	}
