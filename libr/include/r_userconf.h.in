@@ -4,6 +4,7 @@
 #include "r_version.h"
 
 #define DEBUGGER @DEBUGGER@
+#define HAVE_DECL_ADDR_NO_RANDOMIZE @HAVE_DECL_ADDR_NO_RANDOMIZE@
 
 #if __WINDOWS__ || __CYGWIN__ || MINGW32 || _MSC_VER || CUTTER
 #define R2_PREFIX "."
