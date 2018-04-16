@@ -1560,7 +1560,7 @@ static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut
 				goto INVALID_OP;
 			}
 			if (op->cycles <= 0) {
-				eprintf ("opcode %s @%"PFMT64x" returned 0 cycles.\n", opcode_desc->name, op->addr);
+				// eprintf ("opcode %s @%"PFMT64x" returned 0 cycles.\n", opcode_desc->name, op->addr);
 				opcode_desc->cycles = 2;
 			}
 			op->nopcode = (op->type == R_ANAL_OP_TYPE_UNK);
