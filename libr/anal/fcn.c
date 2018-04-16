@@ -530,8 +530,9 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 		// will obviously be a good offset since it will be the start
 		// of the table, which is not what we want
 		// TODO: why is the double dereference even there?
-		if (jmpptr == 0)
+		if (jmpptr == 0) {
 			break;
+		}
 
 		if (!anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0)) {
 			jmpptr = ptr + (st32) jmpptr;
