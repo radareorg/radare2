@@ -495,7 +495,7 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 	return binfile? r_bin_file_set_cur_binfile (bin, binfile): false;
 }
 
-static bool r_bin_load_io_at_offset_as(RBin *bin, int fd, ut64 baseaddr,
+R_API bool r_bin_load_io_at_offset_as(RBin *bin, int fd, ut64 baseaddr,
 		ut64 loadaddr, int xtr_idx, ut64 offset, const char *name) {
 	// adding file_sz to help reduce the performance impact on the system
 	// in this case the number of bytes read will be limited to 2MB
