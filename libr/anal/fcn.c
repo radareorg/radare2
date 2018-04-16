@@ -532,12 +532,12 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 		// if we don't check for 0 here, the next check with ptr+jmpptr
 		// will obviously be a good offset since it will be the start
 		// of the table, which is not what we want
-		// TODO: why is the double dereference even there?
 		if (jmpptr == 0) {
 			break;
 		}
 
 		if (!anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0)) {
+			// jump tables where sign extended movs are used
 			jmpptr = ptr + (st32) jmpptr;
 			if (!anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0)) {
 				break;
