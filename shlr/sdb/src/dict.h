@@ -23,6 +23,7 @@ typedef struct {
 // 4 + 4 + 8 = 16 .. lgtm
 
 typedef void (*dict_freecb)(void *);
+typedef int (*dictkv_cb)(dictkv *, void *);
 
 typedef struct {
 	void **table; //[MHTSZ];
@@ -46,3 +47,4 @@ SDB_API dicti dict_get(dict *m, dicti k);
 SDB_API void *dict_getu(dict *m, dicti k);
 SDB_API bool dict_add(dict *m, dicti k, dicti v, void *u);
 SDB_API bool dict_del(dict *m, dicti k);
+SDB_API void dict_foreach(dict *m, dictkv_cb cb, void *u);
