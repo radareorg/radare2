@@ -560,7 +560,8 @@ static const char *help_msg_ax[] = {
 	"Usage:", "ax[?d-l*]", " # see also 'afx?'",
 	"ax", "", "list refs",
 	"ax", " addr [at]", "add code ref pointing to addr (from curseek)",
-	"ax-", " [at]", "clean all refs (or refs from addr)",
+	"ax-", " [at]", "clean all refs/refs from addr",
+	"ax-*", "", "clean all refs/refs",
 	"axc", " addr [at]", "add code jmp ref // unused?",
 	"axC", " addr [at]", "add code call ref",
 	"axg", " [addr]", "show xrefs graph to reach current function",
@@ -5082,7 +5083,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		RAnalRef *ref;
 		char *cp_inp = strdup (input + 1);
 		char *ptr = r_str_trim_head (cp_inp);
-		if (!strcmp (ptr, "*")) {
+		if (!strcmp (ptr, "*")) { // "ax-*"
 			r_anal_xrefs_init (core->anal);
 		} else {
 			int n = r_str_word_set0 (ptr);

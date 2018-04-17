@@ -243,7 +243,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 		switch (rad) {
 		case '*':
 			anal->cb_printf ("ax%c 0x%"PFMT64x" 0x%"PFMT64x"\n",
-				ref->type, ref->at, ref->addr);
+				t, ref->at, ref->addr);
 			break;
 		case '\0':
 			{
@@ -302,12 +302,26 @@ R_API const char *r_anal_xrefs_type_tostring (char type) {
 }
 
 R_API bool r_anal_xrefs_init(RAnal *anal) {
-	//TODO
-	return true;
-}
+	dict *tmp;
 
-R_API bool r_anal_xrefs_save(RAnal *anal, const char *prjDir) {
-	//TODO
+	dict_free (anal->dict_refs);
+	dict_free (anal->dict_xrefs);
+	anal->dict_refs = NULL;
+	anal->dict_xrefs = NULL;
+
+	tmp = dict_new (100, (dict_freecb)dict_free);
+	if (!tmp) {
+		return false;
+	}
+	anal->dict_refs = tmp;
+
+	tmp = dict_new (100, (dict_freecb)dict_free);
+	if (!tmp) {
+		dict_free (anal->dict_refs);
+		anal->dict_refs = NULL;
+		return false;
+	}
+	anal->dict_xrefs = tmp;
 	return true;
 }
 

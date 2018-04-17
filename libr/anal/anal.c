@@ -365,13 +365,6 @@ R_API RList* r_anal_get_fcns (RAnal *anal) {
 	return anal->fcns;
 }
 
-R_API bool r_anal_project_save(RAnal *anal, const char *prjfile) {
-	if (prjfile && *prjfile) {
-		return r_anal_xrefs_save (anal, prjfile);
-	}
-	return false;
-}
-
 R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *str) {
 	int len;
 	ut8 *buf;

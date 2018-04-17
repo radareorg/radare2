@@ -353,7 +353,6 @@ static bool refExists(RList *refs, RAnalRef *ref) {
 }
 
 R_API int r_anal_fcn_xref_add(RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr, int type) {
-	RAnalRef *ref;
 	if (!fcn || !a) {
 		return false;
 	}
