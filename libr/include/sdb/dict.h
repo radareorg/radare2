@@ -1,6 +1,6 @@
 
 #define MHTSZ 32
-#define MHTNO 0
+#define MHTNO ((dicti)-1)
 
 typedef ut64 dicti;
 
