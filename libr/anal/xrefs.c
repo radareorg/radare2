@@ -219,9 +219,8 @@ static void listxrefs_cb(dict *m, RAnalRefCmp cmp, void *data, RList *ret) {
 	for (i = 0; i < m->size; i++) {
 		dictkv *kv = m->table[i];
 		if (kv) {
-			dict *ht = kv->u;
 			while (kv->k != MHTNO) {
-				mylistrefs_cb (ht, cmp, data, ret);
+				mylistrefs_cb (kv->u, cmp, data, ret);
 				kv++;
 			}
 		}
