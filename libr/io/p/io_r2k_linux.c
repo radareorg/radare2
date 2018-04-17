@@ -843,9 +843,6 @@ int run_new_command(RIO *io, RIODesc *iodesc, const char *buf) {
 }
 
 int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
-	int ret, inphex, ioctl_n;
-	size_t pid, addr, len;
-	ut8 *databuf = NULL;
 	buf = r_str_ichr ((char *) buf, ' ');
 
 	if (!run_new_command (io, iodesc, buf)) {
