@@ -311,7 +311,18 @@ R_API bool r_anal_xrefs_save(RAnal *anal, const char *prjDir) {
 	return true;
 }
 
-R_API int r_anal_xrefs_count(RAnal *anal) {
-	//TODO implement this
+static int count_xref(dictkv *kv, int *count) {
+	*count += 1;
 	return 0;
+}
+
+static int foreach_from(dictkv *kv, int *count) {
+	dict_foreach (kv->u, (dictkv_cb)count_xref, count);
+	return 0;
+}
+
+R_API int r_anal_xrefs_count(RAnal *anal) {
+	int count = 0;
+	dict_foreach (anal->dict_xrefs, (dictkv_cb)foreach_from, &count);
+	return count;
 }
