@@ -21,6 +21,12 @@ xrefs
 20: call 10
 #endif
 
+struct anal_listxrefs_data {
+	RAnalRefCmp cmp;
+	RList *ret;
+	void *data;
+};
+
 static const char *analref_toString(RAnalRefType type) {
 	switch (type) {
 	case R_ANAL_REF_TYPE_NULL:
@@ -38,93 +44,45 @@ static const char *analref_toString(RAnalRefType type) {
 	return "unk";
 }
 
-static void appendRef(RList *list, dicti k, dicti v, void *u) {
+static int appendRef(dictkv *kv, RList *list) {
 	RAnalRef *ref = r_anal_ref_new ();
 	if (ref) {
-		ref->at = k;
-		ref->addr = v;
-		if (strcmp (u, "JMP") == 0) {
+		ref->at = kv->k;
+		ref->addr = kv->v;
+		if (strcmp (kv->u, "JMP") == 0) {
 			ref->type = R_ANAL_REF_TYPE_CODE;
-		} else if (strcmp (u, "CALL") == 0) {
+		} else if (strcmp (kv->u, "CALL") == 0) {
 			ref->type = R_ANAL_REF_TYPE_CALL;
-		} else if (strcmp (u, "DATA") == 0) {
+		} else if (strcmp (kv->u, "DATA") == 0) {
 			ref->type = R_ANAL_REF_TYPE_DATA;
-		} else if (strcmp (u, "STRING") == 0) {
+		} else if (strcmp (kv->u, "STRING") == 0) {
 			ref->type = R_ANAL_REF_TYPE_STRING;
 		} else {
 			ref->type = R_ANAL_REF_TYPE_NULL;
 		}
 		r_list_append (list, ref);
 	}
+	return 0;
 }
 
-static void mylistrefs(dict *m, ut64 addr, RList *list) {
-	int i;
-	for (i = 0; i < m->size; i++) {
-		dictkv *kv = m->table[i];
-		if (!kv) {
-			continue;
-		}
-		while (kv->k != MHTNO) {
-			if (addr == UT64_MAX || addr == kv->k) {
-				appendRef (list, kv->k, kv->v, kv->u);
-			}
-			kv++;
-		}
-	}
-}
-
-static void listrefs(dict *m, ut64 addr, RList *list) {
-	int i;
-	if (addr == UT64_MAX) {
-		for (i = 0; i < m->size; i++) {
-			dictkv *kv = m->table[i];
-			if (kv) {
-				while (kv->k != MHTNO) {
-					mylistrefs (kv->u, UT64_MAX, list);
-					kv++;
-				}
-			}
-		}
-	} else {
-		dict *d = dict_getu (m, addr);
-		if (!d) {
-			return;
-		}
-		mylistrefs (d, addr, list);
-		for (i = 0; i < m->size; i++) {
-			dictkv *kv = m->table[i];
-			if (kv) {
-				while (kv->k != MHTNO) {
-					if (kv->k == addr) {
-						appendRef (list, kv->k, kv->v, kv->u);
-					}
-				//	mylistrefs (ht, UT64_MAX, list);
-					kv++;
-				}
-			}
-		}
-	}
+static int mylistrefs_cb(dictkv *kv, void *u) {
+	dict_foreach (kv->u, (dictkv_cb)appendRef, u);
+	return 0;
 }
 
 static void listxrefs(dict *m, ut64 addr, RList *list) {
-	int i;
 	if (addr == UT64_MAX) {
-		for (i = 0; i < m->size; i++) {
-			dictkv *kv = m->table[i];
-			if (kv) {
-				while (kv->k != MHTNO) {
-					mylistrefs (kv->u, UT64_MAX, list);
-					kv++;
-				}
-			}
-		}
+		dict_foreach (m, mylistrefs_cb, list);
 	} else {
 		dict *d = dict_getu (m, addr);
 		if (!d) {
 			return;
 		}
-		mylistrefs (d, addr, list);
+
+		dictkv *kv = dict_getr (d, addr);
+		if (kv) {
+			appendRef (kv, list);
+		}
 	}
 }
 
@@ -189,53 +147,46 @@ R_API int r_anal_xrefs_deln (RAnal *anal, const RAnalRefType type, ut64 from, ut
 }
 
 R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr) {
-	listrefs (anal->dict_refs, addr, list);
+	listxrefs (anal->dict_refs, addr, list);
 	return true;
 }
 
-static void mylistrefs_cb(dict *m, RAnalRefCmp cmp, void *data, RList *list) {
-	int i;
-	for (i = 0; i < m->size; i++) {
-		dictkv *kv = m->table[i];
-		if (!kv) {
-			continue;
-		}
-		while (kv->k != MHTNO) {
-			RAnalRef ref = {
-				.at = kv->k,
-				.addr = kv->v,
-				.type = (size_t)kv->u
-			};
-			if (cmp (&ref, data)) {
-				appendRef (list, kv->k, kv->v, kv->u);
-			}
-			kv++;
-		}
+static int anal_listrefs_cb(dictkv *kv, struct anal_listxrefs_data *u) {
+	RAnalRef ref = {
+		.at = kv->k,
+		.addr = kv->v,
+		.type = (size_t)kv->u
+	};
+	if (u->cmp (&ref, u->data)) {
+		appendRef (kv, u->ret);
 	}
+	return 0;
 }
 
-static void listxrefs_cb(dict *m, RAnalRefCmp cmp, void *data, RList *ret) {
-	int i;
-	for (i = 0; i < m->size; i++) {
-		dictkv *kv = m->table[i];
-		if (kv) {
-			while (kv->k != MHTNO) {
-				mylistrefs_cb (kv->u, cmp, data, ret);
-				kv++;
-			}
-		}
-	}
+static int anal_listxrefs_cb(dictkv *kv, struct anal_listxrefs_data *u) {
+	dict_foreach (kv->u, (dictkv_cb)anal_listrefs_cb, u);
+	return 0;
 }
 
 R_API RList *r_anal_xref_get_cb (RAnal *anal, RAnalRefCmp cmp, void *data) {
 	RList *ret = r_list_newf (r_anal_ref_free);
-	listxrefs_cb (anal->dict_xrefs, cmp, data, ret);
+	struct anal_listxrefs_data user_data;
+
+	user_data.cmp = cmp;
+	user_data.data = data;
+	user_data.ret = ret;
+	dict_foreach (anal->dict_xrefs, (dictkv_cb)anal_listxrefs_cb, &user_data);
 	return ret;
 }
 
 R_API RList *r_anal_ref_get_cb (RAnal *anal, RAnalRefCmp cmp, void *data) {
 	RList *ret = r_list_newf (r_anal_ref_free);
-	listxrefs_cb (anal->dict_refs, cmp, data, ret);
+	struct anal_listxrefs_data user_data;
+
+	user_data.cmp = cmp;
+	user_data.data = data;
+	user_data.ret = ret;
+	dict_foreach (anal->dict_refs, (dictkv_cb)anal_listxrefs_cb, &user_data);
 	return ret;
 }
 
@@ -245,7 +196,6 @@ R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 to) {
 		return NULL;
 	}
 	listxrefs (anal->dict_xrefs, to, list);
-	// listrefs (anal->dict_xrefs, to, list);
 	if (r_list_empty (list)) {
 		r_list_free (list);
 		list = NULL;
@@ -258,7 +208,6 @@ R_API RList *r_anal_refs_get (RAnal *anal, ut64 from) {
 	if (!list) {
 		return NULL;
 	}
-	// listrefs (anal->dict_refs, from, list);
 	listxrefs (anal->dict_refs, from, list);
 	if (r_list_empty (list)) {
 		r_list_free (list);
@@ -272,7 +221,6 @@ R_API RList *r_anal_xrefs_get_from (RAnal *anal, ut64 to) {
 	if (!list) {
 		return NULL;
 	}
-	// listxrefs (anal->dict_xrefs, to, list);
 	listxrefs (anal->dict_refs, to, list);
 	if (r_list_empty (list)) {
 		r_list_free (list);

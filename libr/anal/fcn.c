@@ -2326,14 +2326,11 @@ static bool ref_fcn_cmp(RAnalRef *ref, void *data) {
 
 
 static bool initFcnRefs(RAnal *anal, RAnalFunction *fcn) {
-	// double free here
-	// r_list_free (fcn->refs);
 	fcn->refs = r_anal_ref_get_cb (anal, &ref_fcn_cmp, (void*)fcn);
 	return fcn->refs? true: false;
 }
 
 static bool initFcnXrefs(RAnal *anal, RAnalFunction *fcn) {
-//	r_list_free (fcn->xrefs);
 	fcn->xrefs = r_anal_xref_get_cb (anal, &xref_fcn_cmp, (void*)fcn);
 	return fcn->refs? true: false;
 }
