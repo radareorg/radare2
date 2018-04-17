@@ -1433,23 +1433,25 @@ repeat:
 		case R_ANAL_OP_TYPE_ICALL:
 		case R_ANAL_OP_TYPE_IRCALL:
 			/* call [dst] */
+			// XXX: this is TYPE_MCALL or indirect-call
+			(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.ptr, R_ANAL_REF_TYPE_CALL);
+
 			if (op.ptr != UT64_MAX && r_anal_noreturn_at (anal, op.ptr)) {
 				FITFCNSZ ();
 				r_anal_op_fini (&op);
 				return R_ANAL_RET_END;
 			}
-			// XXX: this is TYPE_MCALL or indirect-call
-			(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.ptr, R_ANAL_REF_TYPE_CALL);
 			break;
 		case R_ANAL_OP_TYPE_CCALL:
 		case R_ANAL_OP_TYPE_CALL:
 			/* call dst */
+			(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CALL);
+
 			if (r_anal_noreturn_at (anal, op.jump)) {
 				FITFCNSZ ();
 				r_anal_op_fini (&op);
 				return R_ANAL_RET_END;
 			}
-			(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CALL);
 #if CALL_IS_EOB
 			recurseAt (op.jump);
 			recurseAt (op.fail);
