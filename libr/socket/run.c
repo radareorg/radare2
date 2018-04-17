@@ -54,7 +54,7 @@
 #include <process.h>  // to compile execv in msvc windows
 #endif
 
-#define HAVE_PTY __UNIX__ && !__ANDROID__ && LIBC_HAVE_FORK && !defined(__sun)
+#define HAVE_PTY __UNIX__ && !__ANDROID__ && LIBC_HAVE_FORK && !__sun
 
 #if EMSCRIPTEN
 #undef HAVE_PTY
