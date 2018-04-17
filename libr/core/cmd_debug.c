@@ -3688,7 +3688,7 @@ static bool cmd_dcu (RCore *core, const char *input) {
 			from = r_num_math (core->num, input + 3);
 		}
 	}
-	if (from == UT64_MAX) {
+	if (from == UT64_MAX || from == 0LL) {
 		eprintf ("Cannot continue until address 0\n");
 		return false;
 	}
