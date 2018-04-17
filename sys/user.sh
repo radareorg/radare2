@@ -31,7 +31,7 @@ if [ ! -d "${HOME}" ]; then
 	exit 1
 fi
 
-ROOT="${HOME}/bin/prefix/radare2/"
+ROOT="${HOME}/bin/prefix/radare2"
 mkdir -p "${ROOT}/lib"
 
 if [ "${M32}" = 1 ]; then
