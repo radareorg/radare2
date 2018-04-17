@@ -360,33 +360,8 @@ R_API int r_anal_fcn_xref_add(RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr, 
 	if (!a->iob.is_valid_offset (a->iob.io, addr, 0)) {
 		return false;
 	}
-	ref = r_anal_ref_new ();
-	if (!ref) {
-		return false;
-	}
 	// set global reference
-// r_cons_printf ("C 0x%llx  0x%llx\n", at, addr);
 	r_anal_xrefs_set (a, type, at, addr);
-	return true;
-	// set per-function reference
-#if FCN_OLD
-// TOO OLD we shouldnt be storing this.. or we do?
-	ref->at = at; // from
-	ref->addr = addr; // to
-	ref->type = type;
-	// TODO: ensure we are not dupping xrefs
-	if (refExists (fcn->refs, ref)) {
-		r_anal_ref_free (ref);
-	} else {
-		r_list_append (fcn->refs, ref);
-	}
-#endif
-#if FCN_SDB
-	sdb_add (DB, sdb_fmt ("fcn.0x%08"PFMT64x ".name", fcn->addr), fcn->name, 0);
-	// encode the name in base64 ?
-	sdb_num_add (DB, sdb_fmt ("fcn.name.%s", fcn->name), fcn->addr, 0);
-	sdb_array_add_num (DB, sdb_fmt ("fcn.0x%08"PFMT64x ".xrefs", fcn->addr), at, 0);
-#endif
 	return true;
 }
 

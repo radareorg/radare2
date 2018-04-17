@@ -260,7 +260,7 @@ R_API RList *r_anal_refs_get (RAnal *anal, ut64 from) {
 		return NULL;
 	}
 	// listrefs (anal->dict_refs, from, list);
-	listxrefs (anal->dict_xrefs, from, list);
+	listxrefs (anal->dict_refs, from, list);
 	if (r_list_empty (list)) {
 		r_list_free (list);
 		list = NULL;
