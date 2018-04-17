@@ -486,10 +486,27 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		free (bbuf);\
 }
 
-static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 ptr, int ret0) {
+static void queue_case(RAnal *anal, ut64 switch_addr, ut64 case_addr, ut64 id, ut64 case_addr_loc) {
+	// eprintf("\tqueue_case: 0x%"PFMT64x " from 0x%"PFMT64x "\n", case_addr, case_addr_loc);
+	anal->cmdtail = r_str_appendf (anal->cmdtail,
+		"axc 0x%"PFMT64x " 0x%"PFMT64x "\n",
+		case_addr, switch_addr);
+	// anal->cmdtail = r_str_appendf (anal->cmdtail,
+	// 	"aho case %d: from 0x%"PFMT64x " @ 0x%"PFMT64x "\n",
+	// 	id, switch_addr, case_addr_loc);
+	// anal->cmdtail = r_str_appendf (anal->cmdtail,
+	// 	"CCu case %d: @ 0x%"PFMT64x "\n",
+	// 	id, case_addr);
+	anal->cmdtail = r_str_appendf (anal->cmdtail,
+		"f case.%d.0x%"PFMT64x " 1 @ 0x%08"PFMT64x "\n",
+		id, case_addr, case_addr);
+}
+
+static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 ptr, ut64 sz, int ret0) {
 	int ret = ret0;
 	ut8 *jmptbl = malloc (MAX_JMPTBL_SIZE);
-	ut64 jmpptr, offs, sz = anal->bits >> 3;
+	ut64 jmpptr, offs;
+	ut8 buf[1024];
 	if (!jmptbl) {
 		return 0;
 	}
@@ -512,7 +529,15 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 			jmpptr = r_read_le64 (jmptbl + offs);
 			break;
 		}
+		// if we don't check for 0 here, the next check with ptr+jmpptr
+		// will obviously be a good offset since it will be the start
+		// of the table, which is not what we want
+		if (jmpptr == 0) {
+			break;
+		}
+
 		if (!anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0)) {
+			// jump tables where sign extended movs are used
 			jmpptr = ptr + (st32) jmpptr;
 			if (!anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0)) {
 				break;
@@ -523,9 +548,21 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 				break;
 			}
 		}
+		queue_case (anal, ip, jmpptr, offs/sz, ptr + offs);
 		// if (jmpptr < ip - MAX_JMPTBL_JMP || jmpptr > ip + MAX_JMPTBL_JMP) { break; }
 		recurseAt (jmpptr);
 	}
+
+	if (offs > 0) {
+		// eprintf("\n\nSwitch statement at 0x%llx:\n", ip);
+		anal->cmdtail = r_str_appendf (anal->cmdtail,
+			"CCu switch table (%d cases) at 0x%"PFMT64x " @ 0x%"PFMT64x "\n",
+			offs/sz, ptr, ip);
+		anal->cmdtail = r_str_appendf (anal->cmdtail,
+			"f switch.0x%08"PFMT64x" 1 @ 0x%08"PFMT64x"\n",
+			ip, ip);
+	}
+
 	free (jmptbl);
 	return ret;
 }
@@ -626,7 +663,7 @@ static bool isInvalidMemory(const ut8 *buf, int len) {
 	// return buf[0]==buf[1] && buf[0]==0xff && buf[2]==0xff && buf[3] == 0xff;
 }
 
-static bool is_delta_pointer_table(RAnal *anal, ut64 addr, ut64 ptr) {
+static bool is_delta_pointer_table(RAnal *anal, ut64 addr, ut64 ptr, ut64 *jmp_addr) {
 	int i;
 	ut64 dst;
 	st32 jmptbl[64] = {
@@ -661,6 +698,7 @@ static bool is_delta_pointer_table(RAnal *anal, ut64 addr, ut64 ptr) {
 			return false;
 		}
 	}
+	*jmp_addr = aop.addr;
 	return true;
 }
 
@@ -962,18 +1000,9 @@ repeat:
 				}
 			}
 			if (anal->opt.jmptbl) {
-				if (is_delta_pointer_table (anal, op.addr, op.ptr)) {
-					char *str = r_str_newf ("pxt. 0x%08" PFMT64x" @ 0x%08"PFMT64x "\n", op.addr, op.ptr);
-					if (!anal->cmdtail) {
-						anal->cmdtail = r_str_appendf (anal->cmdtail, str);
-					}
-					if (anal->cmdtail && !strstr (anal->cmdtail, str)) {
-						anal->cmdtail = r_str_appendf (anal->cmdtail, str);
-					} 
-					free (str);
-					// jmptbl_addr = op.ptr;
-					// jmptbl_size = -1;
-					// ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, 4);
+				ut64 jmp_addr = 0;
+				if (is_delta_pointer_table (anal, op.addr, op.ptr, &jmp_addr)) {
+					ret = try_walkthrough_jmptbl (anal, fcn, depth, jmp_addr, op.ptr, 4, 4);
 				}
 			}
 			break;
@@ -1249,19 +1278,22 @@ repeat:
 				if (fcn->refs->tail) {
 					RAnalRef *last_ref = fcn->refs->tail->data;
 					last_ref->type = R_ANAL_REF_TYPE_NULL;
+					// TODO: walk switch? try_walkthrough_jmptbl?
+					// Why is this a jmp table and what does it look like
+					// walk_switch (anal, fcn, op.addr, op.addr + op.size);
 				}
-				if (op.ptr != UT64_MAX) {       // direct jump
-					ret = try_walkthrough_jmptbl (anal, fcn, depth, addr + idx, op.ptr, ret);
-
+				// op.ireg since rip relative addressing produces way too many false positives otherwise
+				// op.ireg is 0 for rip relative, "rax", etc otherwise
+				if (op.ptr != UT64_MAX && op.ireg) {       // direct jump
+					ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, anal->bits >> 3, ret);
 				} else {        // indirect jump: table pointer is unknown
 					if (op.src[0] && op.src[0]->reg) {
 						ut64 ptr = search_reg_val (anal, buf, idx, addr, op.src[0]->reg->name);
 						if (ptr && ptr != UT64_MAX) {
-							ret = try_walkthrough_jmptbl (anal, fcn, depth, addr + idx, ptr, ret);
+							ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, ptr, anal->bits >> 3, ret);
 						}
 					}
 				}
-				walk_switch (anal, fcn, op.addr, op.addr + op.size);
 			}
 #if 0
 			if (anal->cur) {
