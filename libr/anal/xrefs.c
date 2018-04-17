@@ -47,8 +47,8 @@ static const char *analref_toString(RAnalRefType type) {
 static int appendRef(dictkv *kv, RList *list) {
 	RAnalRef *ref = r_anal_ref_new ();
 	if (ref) {
-		ref->at = kv->k;
-		ref->addr = kv->v;
+		ref->at = kv->v;
+		ref->addr = kv->k;
 		if (strcmp (kv->u, "JMP") == 0) {
 			ref->type = R_ANAL_REF_TYPE_CODE;
 		} else if (strcmp (kv->u, "CALL") == 0) {
@@ -79,10 +79,7 @@ static void listxrefs(dict *m, ut64 addr, RList *list) {
 			return;
 		}
 
-		dictkv *kv = dict_getr (d, addr);
-		if (kv) {
-			appendRef (kv, list);
-		}
+		dict_foreach (d, (dictkv_cb)appendRef, list);
 	}
 }
 
@@ -98,20 +95,11 @@ static void setxref(dict *m, ut64 from, ut64 to, int type) {
 			dict_set (m, from, to, d);
 		}
 	}
-	dict_set (d, from, to, (void *)r_anal_xrefs_type_tostring (type));
+	bool res = dict_set (d, to, from, (void *)r_anal_xrefs_type_tostring (type));
 }
 
 static void delref(dict *m, ut64 from, ut64 to, int type) {
 	dict_del (m, from);
-#if 0
-	dictkv *kv = dict_getr (m, from);
-	if (kv) {
-		dict *ht = kv->u;
-		if (ht) {
-			dict_del (ht, to);
-		}
-	}
-#endif
 }
 
 R_API int r_anal_xrefs_set (RAnal *anal, const RAnalRefType type, ut64 from, ut64 to) {
@@ -153,8 +141,8 @@ R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const R
 
 static int anal_listrefs_cb(dictkv *kv, struct anal_listxrefs_data *u) {
 	RAnalRef ref = {
-		.at = kv->k,
-		.addr = kv->v,
+		.at = kv->v,
+		.addr = kv->k,
 		.type = (size_t)kv->u
 	};
 	if (u->cmp (&ref, u->data)) {
