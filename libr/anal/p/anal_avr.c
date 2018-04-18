@@ -1526,6 +1526,9 @@ OPCODE_DESC opcodes[] = {
 
 static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, CPU_MODEL *cpu) {
 	OPCODE_DESC *opcode_desc;
+	if (len < 2) {
+		return NULL;
+	}
 	ut16 ins = (buf[1] << 8) | buf[0];
 	int fail;
 	char *t;
