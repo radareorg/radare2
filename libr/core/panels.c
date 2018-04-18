@@ -610,7 +610,7 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 	r_config_set_i (core->config, "scr.utf8", 1);
 
 repeat:
-	core->cons->event_data = core;
+	core->cons->event_data = panels;
 	// core->cons->event_resize = (RConsEvent) r_core_panels_refresh;
 	core->cons->event_resize = (RConsEvent) doRefresh;
 	Layout_run (panels);
