@@ -190,6 +190,9 @@ R_API void r_cons_break_pop() {
 }
 
 R_API bool r_cons_is_breaked() {
+	if (I.cb_break) {
+		I.cb_break (I.user);
+	}
 	if (I.timeout) {
 		if (r_sys_now () > I.timeout) {
 			I.breaked = true;

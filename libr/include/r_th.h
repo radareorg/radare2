@@ -35,6 +35,10 @@ typedef struct r_th_lock_t {
 
 typedef struct r_th_t {
 	R_TH_TID tid;
+#if HAVE_PTHREAD
+	pthread_mutex_t _mutex;
+	pthread_cond_t _cond;
+#endif
 	RThreadLock *lock;
 	R_TH_FUNCTION(fun);
 	void *user;    // user pointer
@@ -57,6 +61,8 @@ R_API int r_th_wait_async(RThread *th);
 R_API void r_th_break(RThread *th);
 R_API void *r_th_free(RThread *th);
 R_API bool r_th_kill(RThread *th, bool force);
+R_API bool r_th_pause(RThread *th, bool enable);
+R_API R_TH_TID r_th_self();
 
 R_API RThreadLock *r_th_lock_new(bool recursive);
 R_API int r_th_lock_wait(RThreadLock *th);

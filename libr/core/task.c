@@ -114,6 +114,30 @@ R_API RCoreTask *r_core_task_add (RCore *core, RCoreTask *task) {
 	return NULL;
 }
 
+R_API RCoreTask *r_core_task_self (RCore *core) {
+	RListIter *iter;
+	RCoreTask *task;
+	R_TH_TID tid = r_th_self ();
+	r_list_foreach (core->tasks, iter, task) {
+		if (!task || !task->msg || !task->msg->th) {
+			continue;
+		}
+		// TODO: use r_th_equal // pthread_equal
+		if (task->msg->th->tid == tid) {
+			return task;
+		}
+	}
+	return NULL;
+}
+
+R_API bool r_core_task_pause (RCore *core, RCoreTask *task, bool enable) {
+	if (!core || !task) {
+		return false;
+	}
+	r_th_pause (task->msg->th, enable);
+	return true;
+}
+
 R_API void r_core_task_add_bg (RCore *core, RCoreTask *task) {
 	//r_th_pipe_push (core->pipe, task->cb, task);
 	r_list_append (core->tasks, task);

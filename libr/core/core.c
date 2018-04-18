@@ -1738,6 +1738,14 @@ static bool r_core_anal_read_at(struct r_anal_t *anal, ut64 addr, ut8 *buf, int 
 	return r_io_read_at (anal->iob.io, addr, buf, len);
 }
 
+static void r_core_break (RCore *core) {
+	// if we are not in the main thread we hold in a lock
+	RCoreTask *task = r_core_task_self (core);
+	if (task) {
+		// r_core_task_pause (core, task, true);
+	}
+}
+
 R_API bool r_core_init(RCore *core) {
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8*)calloc (R_CORE_BLOCKSIZE + 1, 1);
@@ -1805,7 +1813,7 @@ R_API bool r_core_init(RCore *core) {
 		core->cons = r_cons_singleton ();
 		if (core->cons->line) {
 			core->cons->line->user = core;
-			core->cons->line->editor_cb = \
+			core->cons->line->cb_editor = \
 				(RLineEditorCb)&r_core_editor;
 		}
 #if __EMSCRIPTEN__
@@ -1825,7 +1833,8 @@ R_API bool r_core_init(RCore *core) {
 	core->lang = r_lang_new ();
 	core->lang->cmd_str = (char *(*)(void *, const char *))r_core_cmd_str;
 	core->lang->cmdf = (int (*)(void *, const char *, ...))r_core_cmdf;
-	core->cons->editor = (RConsEditorCallback)r_core_editor;
+	core->cons->cb_editor = (RConsEditorCallback)r_core_editor;
+	core->cons->cb_break = (RConsBreakCallback)r_core_break;
 	core->cons->user = (void*)core;
 	core->lang->cb_printf = r_cons_printf;
 	r_lang_define (core->lang, "RCore", "core", core);
@@ -2568,10 +2577,10 @@ R_API char *r_core_editor (const RCore *core, const char *file, const char *str)
 
 	if (name && (!editor || !*editor || !strcmp (editor, "-"))) {
 		RCons *cons = r_cons_singleton ();
-		void *tmp = cons->editor;
-		cons->editor = NULL;
+		void *tmp = cons->cb_editor;
+		cons->cb_editor = NULL;
 		r_cons_editor (name, NULL);
-		cons->editor = tmp;
+		cons->cb_editor = tmp;
 	} else {
 		if (editor && name) {
 			r_sys_cmdf ("%s '%s'", editor, name);

@@ -3295,7 +3295,15 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	char *cmd, *ocmd, *ptr, *rcmd;
 	int ret = false, i;
 
-	r_th_lock_enter (core->lock);
+	if (r_list_empty (core->tasks)) {
+		r_th_lock_enter (core->lock);
+	} else {
+		RListIter *iter;
+		RCoreTask *task;
+		r_list_foreach (core->tasks, iter, task) {
+			r_th_pause (task->msg->th, true);
+		}
+	}
 	if (core->cmdfilter) {
 		const char *invalid_chars = ";|>`@";
 		for (i = 0; invalid_chars[i]; i++) {
@@ -3390,7 +3398,15 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	core->oobi_len = 0;
 	return ret;
 beach:
-	r_th_lock_leave (core->lock);
+	if (r_list_empty (core->tasks)) {
+		r_th_lock_leave (core->lock);
+	} else {
+		RListIter *iter;
+		RCoreTask *task;
+		r_list_foreach (core->tasks, iter, task) {
+			r_th_pause (task->msg->th, false);
+		}
+	}
 	/* run pending analysis commands */
 	if (core->anal->cmdtail) {
 		char *res = core->anal->cmdtail;
