@@ -47,9 +47,9 @@ R_API R_TH_TID r_th_self() {
 #if HAVE_PTRACE
 	return pthread_self ();
 #elif __WINDOWS__
-	return GetCurrentThreadId ();
+	return (HANDLE)GetCurrentThreadId ();
 #else
-#warning Not implemented on windows
+#pragma message("Not implemented on windows")
 	return (R_TH_TID)-1;
 #endif
 }
@@ -104,14 +104,14 @@ R_API bool r_th_pause(RThread *th, bool enable) {
 		pthread_mutex_lock (&th->_mutex);
 		pthread_cond_wait (&th->_cond, &th->_mutex);
 #else
-#		warning r_th_pause not implemented
+#pragma message("warning r_th_pause not implemented")
 #endif
 	} else {
 #if HAVE_PTHREAD
 		pthread_cond_signal (&th->_cond);
 		pthread_mutex_unlock (&th->_mutex);
 #else
-#		warning r_th_pause not implemented
+#pragma message("warning r_th_pause not implemented")
 #endif
 	}
 	return true;
