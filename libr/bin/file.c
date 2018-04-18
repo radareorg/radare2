@@ -76,11 +76,12 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 		eprintf ("Invalid range to find strings 0x%llx .. 0x%llx\n", from, to);
 		return -1;
 	}
-	ut8 *buf = calloc (to - from, 1);
+	int len = to - from;
+	ut8 *buf = calloc (len, 1);
 	if (!buf || !min) {
 		return -1;
 	}
-	r_buf_read_at (bf->buf, from, buf, to - from);
+	r_buf_read_at (bf->buf, from, buf, len);
 	// may oobread
 	while (needle < to) {
 		rc = r_utf8_decode (buf + needle - from, to - needle, NULL);
@@ -90,8 +91,8 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 		}
 		if (type == R_STRING_TYPE_DETECT) {
 			char *w = (char *)buf + needle + rc - from;
-			if ((to - needle) > 5) {
-				bool is_wide32 = needle + rc + 2 < to && !w[0] && !w[1] && !w[2] && w[3] && !w[4];
+			if ((to - needle) > 5 + rc) {
+				bool is_wide32 = (needle + rc + 2 < to) && (!w[0] && !w[1] && !w[2] && w[3] && !w[4]);
 				if (is_wide32) {
 					str_type = R_STRING_TYPE_WIDE32;
 				} else {
