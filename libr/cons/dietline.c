@@ -748,7 +748,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 		case 5:	// ^E
 			if (prev == 24) {	// ^X = 0x18
 				I.buffer.data[I.buffer.length] = 0;	// probably unnecessary
-				tmp_ed_cmd = I.editor_cb (I.user, I.buffer.data);
+				tmp_ed_cmd = I.cb_editor (I.user, I.buffer.data);
 				if (tmp_ed_cmd) {
 					/* copied from yank (case 25) */
 					I.buffer.length = strlen (tmp_ed_cmd);
