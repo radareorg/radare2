@@ -1044,6 +1044,10 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 			r_cons_printf ("[Entrypoints]\n");
 		}
 	}
+	if (r_list_length (entries) > 1024) {
+		eprintf ("Too many entrypoints (%d)\n", r_list_length (entries));
+		return false;
+	}
 
 	r_list_foreach (entries, iter, entry) {
 		ut64 paddr = entry->paddr;

@@ -348,7 +348,7 @@ static void process_constructors (RBinFile *bf, RList *ret, int bits) {
 			}
 			(void)r_buf_read_at (bf->buf, sec->paddr, buf, sec->size);
 			if (bits == 32) {
-				for (i = 0; i < sec->size; i += 4) {
+				for (i = 0; (i + 3) < sec->size; i += 4) {
 					ut32 addr32 = r_read_le32 (buf + i);
 					if (addr32) {
 						RBinAddr *ba = newEntry (sec->paddr + i, (ut64)addr32, type, bits);
@@ -356,7 +356,7 @@ static void process_constructors (RBinFile *bf, RList *ret, int bits) {
 					}
 				}
 			} else {
-				for (i = 0; i < sec->size; i += 8) {
+				for (i = 0; (i + 7) < sec->size; i += 8) {
 					ut64 addr64 = r_read_le64 (buf + i);
 					if (addr64) {
 						RBinAddr *ba = newEntry (sec->paddr + i, addr64, type, bits);
