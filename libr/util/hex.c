@@ -313,12 +313,13 @@ R_API int r_hex_pair2bin(const char *arg) {
 
 R_API int r_hex_bin2str(const ut8 *in, int len, char *out) {
 	int i, idx;
-	char tmp[5];
-	if (len < 0)
+	char tmp[8];
+	if (len < 0) {
 		return 0;
+	}
 	for (idx = i = 0; i < len; i++, idx += 2)  {
 		snprintf (tmp, sizeof (tmp), "%02x", in[i]);
-		memcpy (out+idx, tmp, 2);
+		memcpy (out + idx, tmp, 2);
 	}
 	out[idx] = 0;
 	return len;
