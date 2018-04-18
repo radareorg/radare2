@@ -4710,6 +4710,9 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 	}
 
 	int minop = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	if (minop < 1) {
+		minop = 1;
+	}
 	while (addr < addr_end) {
 		if (r_cons_is_breaked ()) {
 			break;
@@ -4733,7 +4736,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 			addr += bsz;
 			continue;
 		}
-		if (r_anal_op (core->anal, &op, addr, buf + bufi, bsz - bufi, 0)) {
+		if (r_anal_op (core->anal, &op, addr, buf + bufi, bsz - bufi, 0) > 0) {
 			if (op.size < 1) {
 				op.size = minop;
 			}
@@ -4757,6 +4760,9 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 			}
 
 		} else {
+			op.size = minop;
+		}
+		if ((int)op.size < 1) {
 			op.size = minop;
 		}
 		addr += op.size;

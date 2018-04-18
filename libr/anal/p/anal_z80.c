@@ -404,6 +404,10 @@ static int set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
+static int archinfo(RAnal *anal, int q) {
+	return 1;
+}
+
 RAnalPlugin r_anal_plugin_z80 = {
 	.name = "z80",
 	.arch = "z80",
@@ -411,6 +415,7 @@ RAnalPlugin r_anal_plugin_z80 = {
 	.bits = 16,
 	.set_reg_profile = &set_reg_profile,
 	.desc = "Z80 CPU code analysis plugin",
+	.archinfo = archinfo,
 	.op = &z80_anal_op,
 };
 

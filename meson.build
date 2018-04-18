@@ -124,6 +124,11 @@ if host_machine.system() == 'windows'
 else
   userconf.set('HAVE_JEMALLOC', 1)
 endif
+if cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
+  userconf.set('HAVE_DECL_ADDR_NO_RANDOMIZE', 1)
+else
+  userconf.set('HAVE_DECL_ADDR_NO_RANDOMIZE', 0)
+endif
 r_userconf_h = configure_file(
   input: 'libr/include/r_userconf.h.in',
   output: 'r_userconf.h',
