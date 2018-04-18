@@ -592,6 +592,7 @@ typedef struct r_anal_options_t {
 	int cjmpref;
 	int jmpref;
 	int jmpabove;
+	bool ijmp;
 	int followdatarefs;
 	int searchstringrefs;
 	int followbrokenfcnsrefs;
