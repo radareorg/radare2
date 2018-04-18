@@ -471,13 +471,15 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (a->ofilter) {
 		r_parse_parse (a->ofilter, op->buf_asm, op->buf_asm);
 	}
+	// XXX this is crap and needs proper fix
 	int dstlen = R_MIN ((R_ASM_BUFSIZE -1), oplen);
 	int cpylen = R_MIN (dstlen, len);
 	if (cpylen > 0) {
 		memcpy (op->buf, buf, cpylen);
 		const int addrbytes = a->user ? ((RCore *)a->user)->io->addrbytes : 1;
-		r_hex_bin2str (buf, R_MIN (addrbytes * oplen,
-					(sizeof (op->buf_hex) - 1) / 2), op->buf_hex);
+		int len = R_MIN (addrbytes * oplen, (sizeof (op->buf_hex) - 1) / 2);
+		// len is the length in input buffer, not len of output, so we must / 2
+		r_hex_bin2str (op->buf, len, op->buf_hex);
 	}
 	return ret;
 }
