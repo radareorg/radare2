@@ -156,6 +156,8 @@ r_core_wrap.cxx:32103:61: error: assigning to 'RDebugReasonType' from incompatib
 
 * Do not leave trailing whitespaces at the end of line
 
+* Do not use asserts
+
 * Do not use C99 variable declaration
   - This way we reduce the number of local variables per function
     and it's easier to find which variables are used, where and so on.
