@@ -277,7 +277,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		esilprintf (op, "0x%"PFMT64x",ip,=", op->jump);
 		break;
 	case 0x29: // goto/16
-		if (len > 2) {
+		if (len > 3) {
 			op->jump = addr + (short)(data[2]|data[3]<<8)*2;
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->eob = true;
@@ -285,7 +285,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		}
 		break;
 	case 0x2a: // goto/32
-		if (len > 2) {
+		if (len > 5) {
 			op->jump = addr + (int)(data[2]|(data[3]<<8)|(data[4]<<16)|(data[5]<<24))*2;
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->eob = true;
