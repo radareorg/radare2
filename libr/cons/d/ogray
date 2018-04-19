@@ -39,8 +39,8 @@ ec graph.current rgb:f72
 ec graph.traced rgb:f00
 ec graph.box rgb:fff
 ec graph.box2 rgb:f72
-ec graph.box3 rgb:f00
-ec graph.box4 rgb:f00
+ec graph.box3 rgb:000
+ec graph.box4 rgb:000
 ec gui.cflow rgb:f72
 ec gui.dataoffset rgb:f72
 ec crypto rgb:f72
