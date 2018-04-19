@@ -3688,8 +3688,8 @@ static bool cmd_dcu (RCore *core, const char *input) {
 			from = r_num_math (core->num, input + 3);
 		}
 	}
-	if (from == UT64_MAX || from == 0LL) {
-		eprintf ("Cannot continue until address 0\n");
+	if (from == UT64_MAX) {
+		eprintf ("Cannot continue until unknown address\n");
 		return false;
 	}
 	if (to == UT64_MAX) {
