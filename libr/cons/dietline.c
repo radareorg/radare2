@@ -277,9 +277,9 @@ do_it_again:
 }
 #endif
 
-R_API int r_line_set_hist_callback(RLine *line, RLineHistoryUpCb up_cb, RLineHistoryDownCb down_cb) {
-	line->history_up_cb = up_cb;
-	line->history_down_cb = down_cb;
+R_API int r_line_set_hist_callback(RLine *line, RLineHistoryUpCb up, RLineHistoryDownCb down) {
+	line->cb_history_up = up;
+	line->cb_history_down = down;
 	line->offset_index = 0;
 	return 1;
 }
@@ -352,17 +352,17 @@ R_API int r_line_hist_add(const char *line) {
 }
 
 static int r_line_hist_up() {
-	if (!I.history_up_cb) {
+	if (!I.cb_history_up) {
 		r_line_set_hist_callback (&I, &cmd_history_up, &cmd_history_down);
 	}
-	return I.history_up_cb (&I);
+	return I.cb_history_up (&I);
 }
 
 static int r_line_hist_down() {
-	if (!I.history_down_cb) {
+	if (!I.cb_history_down) {
 		r_line_set_hist_callback (&I, &cmd_history_up, &cmd_history_down);
 	}
-	return I.history_down_cb (&I);
+	return I.cb_history_down (&I);
 }
 
 R_API const char *r_line_hist_get(int n) {
@@ -748,7 +748,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 		case 5:	// ^E
 			if (prev == 24) {	// ^X = 0x18
 				I.buffer.data[I.buffer.length] = 0;	// probably unnecessary
-				tmp_ed_cmd = I.editor_cb (I.user, I.buffer.data);
+				tmp_ed_cmd = I.cb_editor (I.user, I.buffer.data);
 				if (tmp_ed_cmd) {
 					/* copied from yank (case 25) */
 					I.buffer.length = strlen (tmp_ed_cmd);
@@ -1115,7 +1115,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				gcomp = false;
 			} else if (prev == 24) {// ^X = 0x18
 				I.buffer.data[I.buffer.length] = 0;	// probably unnecessary
-				tmp_ed_cmd = I.editor_cb (I.user, I.buffer.data);
+				tmp_ed_cmd = I.cb_editor (I.user, I.buffer.data);
 				if (tmp_ed_cmd) {
 					/* copied from yank (case 25) */
 					I.buffer.length = strlen (tmp_ed_cmd);
