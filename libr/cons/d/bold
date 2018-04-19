@@ -35,8 +35,8 @@ ec pop rgb:999
 
 ec prompt black yellow bold
 
-ec graph.box rgb:444
-ec graph.box2 rgb:fff
+ec graph.box white
+ec graph.box2 green
 ec graph.box3 rgb:000
 ec graph.box4 rgb:000
 
