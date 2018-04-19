@@ -5781,10 +5781,16 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	const char *arg;
 	switch (input[0]) {
 	case 'f': // "agf"
-		if (input[1] == 't') { // "agft" - tiny graph
+		switch (input[1]) {
+		case 't':// "agft" - tiny graph
 			r_core_visual_graph (core, NULL, NULL, 2);
-		} else {
+			break;
+		case 0:
 			r_core_visual_graph (core, NULL, NULL, false);
+			break;
+		default:
+			eprintf ("Usage: agf or agft (for tiny)\n");
+			break;
 		}
 		break;
 	case '-': // "ag-"
