@@ -169,16 +169,24 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 			// sscanf (str+2, "%"PFMT64x, &ret);
 		}
 	} else {
-		lch = str[len > 0? len - 1:0];
-		if (*str == '0' && lch != 'b' && lch != 'h') {
+		char *endptr;
+		int len_num = len > 0 ? len - 1 : 0;
+		int chars_read = len_num;
+		lch = str[len > 0 ? len - 1 : 0];
+		if (*str == '0' && IS_DIGIT (*(str + 1)) && lch != 'b' && lch != 'h') {
 			lch = 'o';
+			len_num++;
 		}
 		switch (lch) {
 		case 'h': // hexa
-			sscanf (str, "%"PFMT64x, &ret);
+			if (!sscanf (str, "%"PFMT64x"%n", &ret, &chars_read)) {
+				ret = UT64_MAX;
+			}
 			break;
 		case 'o': // octal
-			sscanf (str, "%"PFMT64o, &ret);
+			if (!sscanf (str, "%"PFMT64o"%n", &ret, &chars_read)) {
+				ret = UT64_MAX;
+			}
 			break;
 		case 'b': // binary
 			ret = 0;
@@ -186,6 +194,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 				if (str[i] == '1') {
 					ret|=1 << j;
 				} else if (str[i] != '0') {
+					ret = UT64_MAX;
 					break;
 				}
 			}
@@ -195,7 +204,8 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 			ut64 x = 1;
 			for (i = strlen (str) - 2; i >= 0; i--) {
 				if (str[i] < '0' || '2' < str[i]) {
-					return 0;
+					ret = UT64_MAX;
+					break;
 				}
 				ret += x * (str[i] - '0');
 				x *= 3;
@@ -204,44 +214,55 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		case 'K': case 'k':
 			if (strchr (str, '.')) {
 				double d = 0;
-				sscanf (str, "%lf", &d);
-				ret = (ut64)(d * KB);
+				ret = sscanf (str, "%lf%n", &d, &chars_read)
+				                ? (ut64)(d * KB)
+				                : UT64_MAX;
 			} else {
-				ret = 0LL;
-				sscanf (str, "%"PFMT64d, &ret);
-				ret *= KB;
+				ret = sscanf (str, "%"PFMT64d"%n", &ret, &chars_read)
+				                ? ret * KB
+				                : UT64_MAX;
 			}
 			break;
 		case 'M': case 'm':
 			if (strchr (str, '.')) {
 				double d = 0;
-				sscanf (str, "%lf", &d);
-				ret = (ut64)(d * MB);
+				ret = sscanf (str, "%lf%n", &d, &chars_read)
+				                ? (ut64)(d * MB)
+				                : UT64_MAX;
 			} else {
-				sscanf (str, "%"PFMT64d, &ret);
-				ret *= MB;
+				ret = sscanf (str, "%"PFMT64d"%n", &ret, &chars_read)
+				                ? ret * MB
+				                : UT64_MAX;
 			}
 			break;
 		case 'G': case 'g':
 			if (strchr (str, '.')) {
 				double d = 0;
-				sscanf (str, "%lf", &d);
-				ret = (ut64)(d * GB);
+				ret = sscanf (str, "%lf%n", &d, &chars_read)
+				                ? (ut64)(d * GB)
+				                : UT64_MAX;
 			} else {
-				sscanf (str, "%"PFMT64d, &ret);
-				ret *= GB;
+				ret = sscanf (str, "%"PFMT64d"%n", &ret, &chars_read)
+				                ? ret * GB
+				                : UT64_MAX;
 			}
 			break;
 		default:
 #if 0
-			//sscanf (str, "%"PFMT64d, &ret);
+			//sscanf (str, "%"PFMT64d"%n", &ret, &chars_read);
 // 32bit chop
 #if __WINDOWS__ && MINGW32 && !__CYGWIN__
-			ret = _strtoui64 (str, NULL, 10);
+			ret = _strtoui64 (str, &endptr, 10);
 #endif
 #endif
-			ret = strtoull (str, NULL, 10);
+			ret = strtoull (str, &endptr, 10);
+			if (!IS_DIGIT (*str) || (*endptr && *endptr != lch)) {
+				ret = UT64_MAX;
+			}
 			break;
+		}
+		if (chars_read != len_num) {
+			ret = UT64_MAX;
 		}
 	}
 	if (num) {
