@@ -96,6 +96,15 @@ R_API const char *r_num_get_name(RNum *num, ut64 n) {
 	return NULL;
 }
 
+static void error(RNum *num, const char *err_str) {
+	if (num) {
+		num->nc.errors++;
+#if 0
+		num->nc.calc_err = err_str;
+#endif
+	}
+}
+
 // TODO: try to avoid the use of sscanf
 /* old get_offset */
 R_API ut64 r_num_get(RNum *num, const char *str) {
@@ -172,6 +181,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		char *endptr;
 		int len_num = len > 0 ? len - 1 : 0;
 		int chars_read = len_num;
+		bool zero_read = false;
 		lch = str[len > 0 ? len - 1 : 0];
 		if (*str == '0' && IS_DIGIT (*(str + 1)) && lch != 'b' && lch != 'h') {
 			lch = 'o';
@@ -179,13 +189,15 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		}
 		switch (lch) {
 		case 'h': // hexa
-			if (!sscanf (str, "%"PFMT64x"%n", &ret, &chars_read)) {
-				ret = UT64_MAX;
+			if (!sscanf (str, "%"PFMT64x"%n", &ret, &chars_read)
+			    || chars_read != len_num) {
+				error (num, "invalid hex number");
 			}
 			break;
 		case 'o': // octal
-			if (!sscanf (str, "%"PFMT64o"%n", &ret, &chars_read)) {
-				ret = UT64_MAX;
+			if (!sscanf (str, "%"PFMT64o"%n", &ret, &chars_read)
+			    || chars_read != len_num) {
+				error (num, "invalid octal number");
 			}
 			break;
 		case 'b': // binary
@@ -194,7 +206,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 				if (str[i] == '1') {
 					ret|=1 << j;
 				} else if (str[i] != '0') {
-					ret = UT64_MAX;
+					error (num, "invalid binary number");
 					break;
 				}
 			}
@@ -204,7 +216,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 			ut64 x = 1;
 			for (i = strlen (str) - 2; i >= 0; i--) {
 				if (str[i] < '0' || '2' < str[i]) {
-					ret = UT64_MAX;
+					error (num, "invalid ternary number");
 					break;
 				}
 				ret += x * (str[i] - '0');
@@ -214,37 +226,58 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		case 'K': case 'k':
 			if (strchr (str, '.')) {
 				double d = 0;
-				ret = sscanf (str, "%lf%n", &d, &chars_read)
-				                ? (ut64)(d * KB)
-				                : UT64_MAX;
+				if (sscanf (str, "%lf%n", &d, &chars_read)) {
+					ret = (ut64)(d * KB);
+				} else {
+					zero_read = true;
+				}
 			} else {
-				ret = sscanf (str, "%"PFMT64d"%n", &ret, &chars_read)
-				                ? ret * KB
-				                : UT64_MAX;
+				if (sscanf (str, "%"PFMT64d"%n", &ret, &chars_read)) {
+					ret *= KB;
+				} else {
+					zero_read = true;
+				}
+			}
+			if (zero_read || chars_read != len_num) {
+				error (num, "invalid kilobyte number");
 			}
 			break;
 		case 'M': case 'm':
 			if (strchr (str, '.')) {
 				double d = 0;
-				ret = sscanf (str, "%lf%n", &d, &chars_read)
-				                ? (ut64)(d * MB)
-				                : UT64_MAX;
+				if (sscanf (str, "%lf%n", &d, &chars_read)) {
+					ret = (ut64)(d * MB);
+				} else {
+					zero_read = true;
+				}
 			} else {
-				ret = sscanf (str, "%"PFMT64d"%n", &ret, &chars_read)
-				                ? ret * MB
-				                : UT64_MAX;
+				if (sscanf (str, "%"PFMT64d"%n", &ret, &chars_read)) {
+					ret *= MB;
+				} else {
+					zero_read = true;
+				}
+			}
+			if (zero_read || chars_read != len_num) {
+				error (num, "invalid megabyte number");
 			}
 			break;
 		case 'G': case 'g':
 			if (strchr (str, '.')) {
 				double d = 0;
-				ret = sscanf (str, "%lf%n", &d, &chars_read)
-				                ? (ut64)(d * GB)
-				                : UT64_MAX;
+				if (sscanf (str, "%lf%n", &d, &chars_read)) {
+					ret = (ut64)(d * GB);
+				} else {
+					zero_read = true;
+				}
 			} else {
-				ret = sscanf (str, "%"PFMT64d"%n", &ret, &chars_read)
-				                ? ret * GB
-				                : UT64_MAX;
+				if (sscanf (str, "%"PFMT64d"%n", &ret, &chars_read)) {
+					ret *= GB;
+				} else {
+					zero_read = true;
+				}
+			}
+			if (zero_read || chars_read != len_num) {
+				error (num, "invalid gigabyte number");
 			}
 			break;
 		default:
@@ -257,12 +290,9 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 #endif
 			ret = strtoull (str, &endptr, 10);
 			if (!IS_DIGIT (*str) || (*endptr && *endptr != lch)) {
-				ret = UT64_MAX;
+				error (num, "unknown symbol");
 			}
 			break;
-		}
-		if (chars_read != len_num) {
-			ret = UT64_MAX;
 		}
 	}
 	if (num) {
