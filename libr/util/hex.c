@@ -23,10 +23,8 @@ R_API char *r_hex_from_py_str(char *out, const char *code) {
 	if (!strncmp (code, "'''", 3)) {
 		const char *s = code + 2;
 		return r_hex_from_c_str (out, &s);
-	} else {
-		return r_hex_from_c_str (out, &code);
 	}
-	return out;
+	return r_hex_from_c_str (out, &code);
 }
 
 static const char *skip_comment_py(const char *code) {
