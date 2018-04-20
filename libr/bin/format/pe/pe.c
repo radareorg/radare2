@@ -2732,8 +2732,8 @@ static bool get_rsds(ut8* dbg_data, int dbg_data_len, SCV_RSDS_HEADER* res) {
 
 static void get_nb10(ut8* dbg_data, SCV_NB10_HEADER* res) {
 	const int nb10sz = 16;
-	memcpy (res, dbg_data, nb10sz);
-	res->file_name = (ut8*) strdup ((const char*) dbg_data + nb10sz);
+	// memcpy (res, dbg_data, nb10sz);
+	// res->file_name = (ut8*) strdup ((const char*) dbg_data + nb10sz);
 }
 
 static int get_debug_info(struct PE_(r_bin_pe_obj_t)* bin, PE_(image_debug_directory_entry)* dbg_dir_entry, ut8* dbg_data, int dbg_data_len, SDebugInfo* res) {
@@ -2772,13 +2772,20 @@ static int get_debug_info(struct PE_(r_bin_pe_obj_t)* bin, PE_(image_debug_direc
 			res->file_name[sizeof (res->file_name) - 1] = 0;
 			rsds_hdr.free ((struct SCV_RSDS_HEADER*) &rsds_hdr);
 		} else if (strncmp ((const char*) dbg_data, "NB10", 4) == 0) {
-			SCV_NB10_HEADER nb10_hdr;
+			if (dbg_data_len < 20) {
+				eprintf ("Truncated NB10 entry, not enough data to parse\n");
+				return 0;
+			}
+			SCV_NB10_HEADER nb10_hdr = {{0}};
 			init_cv_nb10_header (&nb10_hdr);
 			get_nb10 (dbg_data, &nb10_hdr);
 			snprintf (res->guidstr, sizeof (res->guidstr),
 				"%x%x", nb10_hdr.timestamp, nb10_hdr.age);
-			strncpy (res->file_name, (const char*)
-				nb10_hdr.file_name, sizeof(res->file_name) - 1);
+			res->file_name[0] = 0;
+			if (nb10_hdr.file_name) {
+				strncpy (res->file_name, (const char*)
+						nb10_hdr.file_name, sizeof (res->file_name) - 1);
+			}
 			res->file_name[sizeof (res->file_name) - 1] = 0;
 			nb10_hdr.free ((struct SCV_NB10_HEADER*) &nb10_hdr);
 		} else {
