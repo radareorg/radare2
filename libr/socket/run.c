@@ -54,7 +54,7 @@
 #include <process.h>  // to compile execv in msvc windows
 #endif
 
-#define HAVE_PTY __UNIX__ && !__ANDROID__ && LIBC_HAVE_FORK && !defined(__sun)
+#define HAVE_PTY __UNIX__ && !__ANDROID__ && LIBC_HAVE_FORK && !__sun
 
 #if EMSCRIPTEN
 #undef HAVE_PTY
@@ -218,9 +218,10 @@ static char *getstr(const char *src) {
 
 static int parseBool(const char *e) {
 	return (strcmp (e, "yes")?
+		(strcmp (e, "on")?
 		(strcmp (e, "true")?
 		(strcmp (e, "1")?
-		0: 1): 1): 1);
+		0: 1): 1): 1): 1);
 }
 
 #if __linux__
@@ -243,7 +244,7 @@ static void setASLR(RRunProfile *r, int enabled) {
 #if __ANDROID__
 		setRVA ("0\n");
 #else
-#ifdef ADDR_NO_RANDOMIZE
+#if HAVE_DECL_ADDR_NO_RANDOMIZE
 		if (personality (ADDR_NO_RANDOMIZE) == -1)
 #endif
 			setRVA ("0\n");

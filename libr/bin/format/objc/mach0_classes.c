@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2016 - inisider */
+/* radare - LGPL - Copyright 2015-2018 - inisider */
 
 #include "mach0_classes.h"
 
@@ -307,6 +307,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 			} else {
 				type = calloc (1, left);
 				r_buf_read_at (bf->buf, r, (ut8 *)type, left);
+				type[left - 1] = 0;
 			}
       			field->type = strdup (type);
 			R_FREE (type);
@@ -892,12 +893,12 @@ static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinCl
 			}
 		}
 		//eprintf ("0x%x  %s\n", s, klass->name);
-		sdb_num_set (bin->kv, sdb_fmt (0, "objc_class_%s.offset", klass->name), s, 0);
+		sdb_num_set (bin->kv, sdb_fmt ("objc_class_%s.offset", klass->name), s, 0);
 	}
 #ifdef R_BIN_MACH064
-	sdb_set (bin->kv, sdb_fmt (0, "objc_class.format", 0), "lllll isa super cache vtable data", 0);
+	sdb_set (bin->kv, sdb_fmt ("objc_class.format", 0), "lllll isa super cache vtable data", 0);
 #else
-	sdb_set (bin->kv, sdb_fmt (0, "objc_class.format", 0), "xxxxx isa super cache vtable data", 0);
+	sdb_set (bin->kv, sdb_fmt ("objc_class.format", 0), "xxxxx isa super cache vtable data", 0);
 #endif
 
 	if (cro.baseMethods > 0) {

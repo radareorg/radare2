@@ -250,11 +250,14 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	}
 	if (p->relsub) {
 		char *rip = (char *)r_str_casestr (tstr, "[pc, ");
+		if (!rip) {
+			rip = (char *)r_str_casestr (tstr, "[PC, ");
+		}
 		if (rip) {
 			rip += 4;
 			char *tstr_new, *ripend = strchr (rip, ']');
 			const char *neg = strchr (rip, '-');
-			ut64 off = (oplen == 2 || strstr (tstr, ".w")) ? 4 : 8;
+			ut64 off = (oplen == 2 || strstr (tstr, ".w") || strstr(tstr, ".W")) ? 4 : 8;
 			ut64 repl_num = (addr + off) & ~3;
 			if (!ripend) {
 				ripend = "]";

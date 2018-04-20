@@ -144,6 +144,8 @@ static void parse_grep_expression(const char *str) {
 			if (first) {
 				str++;
 				cons->grep.icase = 1;
+			} else {
+				goto while_end;
 			}
 			break;
 		case '^':

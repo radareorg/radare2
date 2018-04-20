@@ -885,16 +885,33 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	postfix = arm_prefix_cond (op, insn->detail->arm64.cc);
 
 	switch (insn->id) {
-	case ARM64_INS_REV: {
+	case ARM64_INS_REV:
+	{
+		const char *r0 = REG64(0);
+		const char *r1 = REG64(1);
+		int size = REGSIZE64(1);
+		r_strbuf_setf (&op->esil,
+			"0,%s,=,"                        // dst = 0
+			"%d,"                            // initial counter = size
+			"DUP,"                           // counter: size -> 0 (repeat here)
+				"DUP,1,SWAP,-,8,*,"          // counter to bits in source
+					"DUP,0xff,<<,%s,&,>>,"   // src byte moved to LSB
+				"SWAP,%d,-,8,*,"             // invert counter, calc dst bit
+				"SWAP,<<,%s,|=,"             // shift left to there and insert
+			"4,REPEAT",                      // goto 5th instruction
+			r0, size, r1, size, r0);
+		break;
+	}
+	case ARM64_INS_REV16:
+	{
 		const char *r0 = REG64(0);
 		const char *r1 = REG64(1);
 		r_strbuf_setf (&op->esil,
-			"24,0xff,%s,&,<<,%s,=,"
-			"16,0xff,8,%s,>>,&,<<,%s,|=,"
-			"8,0xff,16,%s,>>,&,<<,%s,|=,"
-			"0xff,24,%s,>>,&,%s,|=,",
-			r1, r0, r1, r0, r1, r0, r1, r0);
-		} break;
+			"8,0xff00ff00ff00ff00,%s,&,>>,%s,=,"
+			"8,0x00ff00ff00ff00ff,%s,&,<<,%s,|=,",
+			r1, r0, r1, r0);
+		break;
+	}
 	case ARM64_INS_ADR:
 		// TODO: must be 21bit signed
 		r_strbuf_setf (&op->esil,
@@ -2057,6 +2074,41 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 			notmask, REG (0), REG (0));
 		break;
 	}
+	case ARM_INS_REV:
+	{
+		const char *r0 = REG (0);
+		const char *r1 = REG (1);
+		r_strbuf_setf (&op->esil,
+			"24,0xff,%s,&,<<,%s,=,"
+			"16,0xff,8,%s,>>,&,<<,%s,|=,"
+			"8,0xff,16,%s,>>,&,<<,%s,|=,"
+			"0xff,24,%s,>>,&,%s,|=,",
+			r1, r0, r1, r0, r1, r0, r1, r0);
+		break;
+	}
+	case ARM_INS_REV16:
+	{
+		const char *r0 = REG (0);
+		const char *r1 = REG (1);
+		r_strbuf_setf (&op->esil,
+			"8,0xff00ff00,%s,&,>>,%s,=,"
+			"8,0x00ff00ff,%s,&,<<,%s,|=,",
+			r1, r0, r1, r0);
+		break;
+	}
+	case ARM_INS_REVSH:
+	{
+		const char *r0 = REG (0);
+		const char *r1 = REG (1);
+		r_strbuf_setf (&op->esil,
+			"8,0xff00,%s,&,>>,%s,=,"
+			"8,0x00ff,%s,&,<<,%s,|=,"
+			"0x8000,%s,&,?{,"
+				"0xffff0000,%s,|=,"
+			"}",
+			r1, r0, r1, r0, r0, r0);
+		break;
+	}
 	default:
 		break;
 	}
@@ -2320,7 +2372,18 @@ static int cond_cs2r2(int cc) {
 	return cc;
 }
 
-static void anop32(RAnal *a, csh handle, RAnalOp *op, cs_insn *insn, bool thumb) {
+static ut64 lookahead(csh handle, const ut64 addr, const ut8 *buf, int len, int distance) {
+	cs_insn *insn = NULL;
+	int n = cs_disasm (handle, buf, len, addr, distance, &insn);
+	if (n < 1) {
+		return UT64_MAX;
+	}
+	ut64 result = insn[n - 1].address;
+	cs_free (insn, n);
+	return result;
+}
+
+static void anop32(RAnal *a, csh handle, RAnalOp *op, cs_insn *insn, bool thumb, const ut8 *buf, int len) {
 	const ut64 addr = op->addr;
 	int i;
 	op->cond = cond_cs2r2 (insn->detail->arm.cc);
@@ -2376,11 +2439,13 @@ jmp $$ + 4 + ( [delta] * 2 )
 		}
 		break;
 	case ARM_INS_IT:
+	{
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = addr + insn->size;
-		op->fail = addr + insn->size + 4; // XXX must be next_insn->size;
-			// XXX what if instruction is 4
+		int distance = r_str_nlen (insn->mnemonic, 5);
+		op->fail = lookahead (handle, addr + insn->size, buf + insn->size, len - insn->size, distance);
 		break;
+	}
 	case ARM_INS_NOP:
 		op->type = R_ANAL_OP_TYPE_NOP;
 		op->cycles = 1;
@@ -2656,7 +2721,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				analop64_esil (a, op, addr, buf, len, &handle, insn);
 			}
 		} else {
-			anop32 (a, handle, op, insn, thumb);
+			anop32 (a, handle, op, insn, thumb, (ut8*)buf, len);
 			if (a->decode) {
 				analop_esil (a, op, addr, buf, len, &handle, insn, thumb);
 			}

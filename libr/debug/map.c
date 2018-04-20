@@ -4,7 +4,7 @@
 #include <r_list.h>
 
 R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
-	const char *fmtstr;
+	int i;
 	char buf[128];
 	bool notfirst = false;
 	RListIter *iter;
@@ -12,116 +12,96 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 	if (!dbg) {
 		return;
 	}
-	switch (rad) {
-	case 'j':
+
+	if (rad == 'j') {
 		dbg->cb_printf ("[");
-		r_list_foreach (dbg->maps, iter, map) {
-			if (notfirst) dbg->cb_printf (",");
-			dbg->cb_printf ("{\"name\":\"%s\",",map->name);
-			if (map->file && *map->file)
-				dbg->cb_printf ("\"file\":\"%s\",", map->file);
-			dbg->cb_printf ("\"addr\":%"PFMT64u",", map->addr);
-			dbg->cb_printf ("\"addr_end\":%"PFMT64u",", map->addr_end);
-			dbg->cb_printf ("\"type\":\"%c\",", map->user?'u':'s');
-			dbg->cb_printf ("\"perm\":\"%s\"}", r_str_rwx_i (map->perm));
-			notfirst = true;
-		}
-		r_list_foreach (dbg->maps_user, iter, map) {
-			if (notfirst) dbg->cb_printf (",");
-			dbg->cb_printf ("{\"name\":\"%s\",", map->name);
-			if (map->file && *map->file)
-				dbg->cb_printf ("\"file\":\"%s\",", map->file);
-			dbg->cb_printf ("\"addr\":%"PFMT64u",", map->addr);
-			dbg->cb_printf ("\"addr_end\":%"PFMT64u",", map->addr_end);
-			dbg->cb_printf ("\"type\":\"%c\",", map->user?'u':'s');
-			dbg->cb_printf ("\"perm\":\"%s\"}", r_str_rwx_i (map->perm));
-			notfirst = true;
-		}
-		dbg->cb_printf ("]\n");
-		break;
-	case '*':
-		r_list_foreach (dbg->maps, iter, map) {
-			char *name = (map->name && *map->name)
-				? r_str_newf ("%s.%s", map->name, r_str_rwx_i (map->perm))
-				: r_str_newf ("%08"PFMT64x".%s", map->addr, r_str_rwx_i (map->perm));
-			r_name_filter (name, 0);
-			dbg->cb_printf ("f map.%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
-				name, map->addr_end - map->addr + 1, map->addr);
-			free (name);
-		}
-		r_list_foreach (dbg->maps_user, iter, map) {
-			char *name = r_str_newf ("%s.%s", map->name,
-				r_str_rwx_i (map->perm));
-			r_name_filter (name, 0);
-			dbg->cb_printf ("f map.%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
-				name, map->addr_end - map->addr, map->addr);
-			free (name);
-		}
-		break;
-	case 'q':
-		r_list_foreach (dbg->maps, iter, map) {
-			char *name = r_str_newf ("%s.%s", map->name,
-				r_str_rwx_i (map->perm));
-			r_name_filter (name, 0);
-			dbg->cb_printf ("0x%016"PFMT64x" - 0x%016"PFMT64x" %6s %5s %s\n",
-				map->addr, map->addr_end,
-				r_num_units (buf, map->addr_end - map->addr),
-				r_str_rwx_i (map->perm), name);
-			free (name);
-		}
-		r_list_foreach (dbg->maps_user, iter, map) {
-			char *name = r_str_newf ("%s.%s", map->name,
-				r_str_rwx_i (map->perm));
-			r_name_filter (name, 0);
-			dbg->cb_printf ("f map.%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
-				name, map->addr_end - map->addr, map->addr);
-			free (name);
-		}
-		break;
-	default:
-		fmtstr = dbg->bits & R_SYS_BITS_64
-			? "0x%016"PFMT64x" # 0x%016"PFMT64x" %c %s %6s %c %s %s %s%s%s\n"
-			: "0x%08"PFMT64x" # 0x%08"PFMT64x" %c %s %6s %c %s %s %s%s%s\n";
-		r_list_foreach (dbg->maps, iter, map) {
-			const char *type = map->shared? "sys": "usr";
-			const char *flagname = dbg->corebind.getName
-				? dbg->corebind.getName (dbg->corebind.core, map->addr) : NULL;
-			if (!flagname || !*flagname) {
-				flagname = "";
-			} else {
-				if (!strncmp (flagname, "map.", 4)) {
-					if (!strncmp (flagname + 4, map->name, 4)) {
-						flagname = "";
-					}
+	}
+
+	for (i = 0; i < 2; i++) {
+		RList *maps = (i == 0) ? dbg->maps : dbg->maps_user;
+		r_list_foreach (maps, iter, map) {
+			switch (rad) {
+			case 'j':
+				dbg->cb_printf ("%s{", notfirst? ",": "");
+				if (map->name && *map->name) {
+					char *escaped_name = r_str_escape (map->name);
+					dbg->cb_printf ("\"name\":\"%s\",", escaped_name);
+					free (escaped_name);
 				}
+				if (map->file && *map->file) {
+					char *escaped_path = r_str_escape (map->file);
+					dbg->cb_printf ("\"file\":\"%s\",", escaped_path);
+					free (escaped_path);
+				}
+				dbg->cb_printf ("\"addr\":%"PFMT64u",", map->addr);
+				dbg->cb_printf ("\"addr_end\":%"PFMT64u",", map->addr_end);
+				dbg->cb_printf ("\"type\":\"%c\",", map->user?'u':'s');
+				dbg->cb_printf ("\"perm\":\"%s\"", r_str_rwx_i (map->perm));
+				dbg->cb_printf ("}");
+				notfirst = true;
+				break;
+			case '*':
+				{
+					char *name = (map->name && *map->name)
+						? r_str_newf ("%s.%s", map->name, r_str_rwx_i (map->perm))
+						: r_str_newf ("%08"PFMT64x".%s", map->addr, r_str_rwx_i (map->perm));
+					r_name_filter (name, 0);
+					dbg->cb_printf ("f map.%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
+						name, map->addr_end - map->addr + 1, map->addr);
+					free (name);
+				}
+				break;
+			case 'q':
+				{
+					char *name = (map->name && *map->name)
+						? r_str_newf ("%s.%s", map->name, r_str_rwx_i (map->perm))
+						: r_str_newf ("%08"PFMT64x".%s", map->addr, r_str_rwx_i (map->perm));
+					r_name_filter (name, 0);
+					dbg->cb_printf ("0x%016"PFMT64x" - 0x%016"PFMT64x" %6s %5s %s\n",
+						map->addr, map->addr_end,
+						r_num_units (buf, map->addr_end - map->addr),
+						r_str_rwx_i (map->perm), name);
+					free (name);
+				}
+				break;
+			default:
+				{
+					const char *fmtstr = dbg->bits & R_SYS_BITS_64
+						? "0x%016"PFMT64x" # 0x%016"PFMT64x" %c %s %6s %c %s %s %s%s%s\n"
+						: "0x%08"PFMT64x" # 0x%08"PFMT64x" %c %s %6s %c %s %s %s%s%s\n";
+					const char *type = map->shared? "sys": "usr";
+					const char *flagname = dbg->corebind.getName
+						? dbg->corebind.getName (dbg->corebind.core, map->addr) : NULL;
+					if (!flagname) {
+						flagname = "";
+					} else if (map->name) {
+						char *filtered_name = strdup (map->name);
+						r_name_filter (filtered_name, 0);
+						if (!strncmp (flagname, "map.", 4) && \
+							!strcmp (flagname + 4, filtered_name)) {
+							flagname = "";
+						}
+						free (filtered_name);
+					}
+					dbg->cb_printf (fmtstr,
+						map->addr,
+						map->addr_end,
+						(addr>=map->addr && addr<map->addr_end)?'*':'-',
+						type, r_num_units (buf, map->size),
+						map->user?'u':'s',
+						r_str_rwx_i (map->perm),
+						map->name?map->name:"?",
+						map->file?map->file:"?",
+						*flagname? " ; ": "",
+						flagname);
+				}
+				break;
 			}
-			r_num_units (buf, map->size);
-			dbg->cb_printf (fmtstr,
-				map->addr,
-				map->addr_end, 
-				(addr>=map->addr && addr<map->addr_end)?'*':'-',
-				type, buf,
-				map->user?'u':'s',
-				r_str_rwx_i (map->perm),
-				map->name,
-				map->file?map->file:"?",
-				*flagname? " ; ": "",
-				flagname);
 		}
-		fmtstr = dbg->bits & R_SYS_BITS_64?
-			"0x%016"PFMT64x" # 0x%016"PFMT64x" %s %04s %c %x %s %s\n":
-			"0x%08"PFMT64x" # 0x%08"PFMT64x" %s %04s %c %x %s %s\n";
-		r_list_foreach (dbg->maps_user, iter, map) {
-			const char *type = map->shared? "sys": "usr";
-			r_num_units (buf, map->size);
-			dbg->cb_printf (
-				buf, map->addr, map->addr_end,
-				fmtstr, type, 
-				map->user?'u':'s', (ut32)map->perm,
-				map->name,
-				map->file?map->file:"?");
-		}
-		break;
+	}
+
+	if (rad == 'j') {
+		dbg->cb_printf ("]\n");
 	}
 }
 

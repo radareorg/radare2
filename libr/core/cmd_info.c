@@ -25,7 +25,7 @@ static const char *help_msg_i[] = {
 	"idp", "", "Load pdb file information",
 	"iD", " lang sym", "demangle symbolname for given language",
 	"ie", "", "Entrypoint",
-	"iee", "", "Show Entry and Exit (init and fini)",
+	"iee", "", "Show Entry and Exit (preinit, init and fini)",
 	"iE", "", "Exports (global symbols)",
 	"iE.", "", "Current export",
 	"ih", "", "Headers (alias for iH)",
@@ -95,6 +95,7 @@ static bool demangle_internal(RCore *core, const char *lang, const char *s) {
 	case R_BIN_NM_OBJC: res = r_bin_demangle_objc (NULL, s); break;
 	case R_BIN_NM_SWIFT: res = r_bin_demangle_swift (s, core->bin->demanglercmd); break;
 	case R_BIN_NM_DLANG: res = r_bin_demangle_plugin (core->bin, "dlang", s); break;
+	case R_BIN_NM_MSVC: res = r_bin_demangle_msvc (s); break;
 	default:
 		r_bin_demangle_list (core->bin);
 		return true;
@@ -210,11 +211,11 @@ static void r_core_file_info(RCore *core, int mode) {
 			dbg = R_IO_WRITE | R_IO_EXEC;
 		}
 		if (desc) {
-			pair ("blksz", sdb_fmt (0, "0x%"PFMT64x, (ut64) core->io->desc->obsz));
+			pair ("blksz", sdb_fmt ("0x%"PFMT64x, (ut64) core->io->desc->obsz));
 		}
-		pair ("block", sdb_fmt (0, "0x%x", core->blocksize));
+		pair ("block", sdb_fmt ("0x%x", core->blocksize));
 		if (desc) {
-			pair ("fd", sdb_fmt (0, "%d", desc->fd));
+			pair ("fd", sdb_fmt ("%d", desc->fd));
 		}
 		if (fn || (desc && desc->uri)) {
 			pair ("file", fn? fn: desc->uri);
@@ -235,7 +236,7 @@ static void r_core_file_info(RCore *core, int mode) {
 		if (desc) {
 			ut64 fsz = r_io_desc_size (desc);
 			if (fsz != UT64_MAX) {
-				pair ("size", sdb_fmt (0,"0x%"PFMT64x, fsz));
+				pair ("size", sdb_itoca (fsz));
 				char *humansz = r_num_units (NULL, fsz);
 				if (humansz) {
 					pair ("humansz", humansz);
@@ -836,7 +837,7 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		case '?':
 			r_core_cmd_help (core, help_msg_i);
-			goto done;
+			goto redone;
 		case '*':
 			mode = R_CORE_BIN_RADARE;
 			goto done;
@@ -872,5 +873,6 @@ done:
 	if (newline) {
 		r_cons_newline ();
 	}
+redone:
 	return 0;
 }

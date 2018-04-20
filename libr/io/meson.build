@@ -17,6 +17,7 @@ files = [
   'p/io_debug.c',
   'p/io_default.c',
   'p/io_gdb.c',
+  'p/io_gprobe.c',
   'p/io_gzip.c',
   'p/io_http.c',
   'p/io_ihex.c',
@@ -40,18 +41,18 @@ files = [
   'p/io_zip.c',
 ]
 
-if host_os == 'linux'
-files += [
-  'p/io_r2k_linux.c',
-]
+if host_machine.system() == 'linux'
+  files += [
+    'p/io_r2k_linux.c',
+  ]
 endif
 
-if host_os == 'windows'
-files += [
-  'p/io_r2k_windows.c',
-  'p/io_w32.c',
-  'p/io_w32dbg.c',
-]
+if host_machine.system() == 'windows'
+  files += [
+    'p/io_r2k_windows.c',
+    'p/io_w32.c',
+    'p/io_w32dbg.c',
+  ]
 endif
 
 r_io = library('r_io', files,
@@ -71,17 +72,18 @@ r_io = library('r_io', files,
   ],
   c_args: ['-DCORELIB=1'],
   install: true,
-  implicit_include_directories: false
+  implicit_include_directories: false,
+  soversion: r2libversion
 )
 
-
-pkg = import('pkgconfig')
-pkg.generate(libraries: [r_io],
-             subdirs: 'libr',
-             version: r2version,
-             name: 'r_io',
-             filebase: 'r_io',
-             requires: [
-               'r_util', 'r_socket'
-             ],
-             description: 'radare foundation libraries')
+pkgconfig_mod.generate(
+  libraries: [r_io],
+  subdirs: 'libr',
+  version: r2version,
+  name: 'r_io',
+  filebase: 'r_io',
+  requires: [
+    'r_util', 'r_socket'
+  ],
+  description: 'radare foundation libraries'
+)

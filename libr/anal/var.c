@@ -87,7 +87,7 @@ R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, 
 		eprintf ("Invalid var kind '%c'\n", kind);
 		return false;
 	}
-	const char *var_def = sdb_fmt (0, "%c,%s,%d,%s", kind, type, size, name);
+	const char *var_def = sdb_fmt ("%c,%s,%d,%s", kind, type, size, name);
 	if (scope > 0) {
 		const char *sign = "";
 		if (delta < 0) {
@@ -95,21 +95,21 @@ R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, 
 			sign = "_";
 		}
 		/* local variable */
-		const char *fcn_key = sdb_fmt (1, "fcn.0x%"PFMT64x ".%c", addr, kind);
-		const char *var_key = sdb_fmt (2, "var.0x%"PFMT64x ".%c.%d.%s%d", addr, kind, scope, sign, delta);
-		const char *name_key = sdb_fmt (3, "var.0x%"PFMT64x ".%d.%s", addr, scope, name);
-		const char *shortvar = sdb_fmt (4, "%d.%s%d", scope, sign, delta);
+		const char *fcn_key = sdb_fmt ("fcn.0x%"PFMT64x ".%c", addr, kind);
+		const char *var_key = sdb_fmt ("var.0x%"PFMT64x ".%c.%d.%s%d", addr, kind, scope, sign, delta);
+		const char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", addr, scope, name);
+		const char *shortvar = sdb_fmt ("%d.%s%d", scope, sign, delta);
 		sdb_array_add (DB, fcn_key, shortvar, 0);
 		sdb_set (DB, var_key, var_def, 0);
 		if (*sign) {
 			delta = -delta;
 		}
-		const char *name_val = sdb_fmt (5, "%c,%d", kind, delta);
+		const char *name_val = sdb_fmt ("%c,%d", kind, delta);
 		sdb_set (DB, name_key, name_val, 0);
 	} else {
 		/* global variable */
-		const char *var_global = sdb_fmt (1, "var.0x%"PFMT64x, addr);
-		const char *var_def = sdb_fmt (2, "%c.%s,%d,%s", kind, type, size, name);
+		const char *var_global = sdb_fmt ("var.0x%"PFMT64x, addr);
+		const char *var_def = sdb_fmt ("%c.%s,%d,%s", kind, type, size, name);
 		sdb_array_add (DB, var_global, var_def, 0);
 	}
 // ls_sort (DB->ht->list, mystrcmp);
@@ -153,15 +153,15 @@ R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind
 		eprintf ("Invalid var kind '%c'\n", kind);
 		return false;
 	}
-	const char *var_def = sdb_fmt (0, "%c,%s,%d,%s", kind, type, size, name);
+	const char *var_def = sdb_fmt ("%c,%s,%d,%s", kind, type, size, name);
 	if (scope > 0) {
 		char *sign = delta> 0? "": "_";
 		/* local variable */
-		const char *fcn_key = sdb_fmt (1, "fcn.0x%"PFMT64x ".%c", fcn->addr, kind);
-		const char *var_key = sdb_fmt (2, "var.0x%"PFMT64x ".%c.%d.%s%d", fcn->addr, kind, scope, sign, R_ABS(delta));
-		const char *name_key = sdb_fmt (3, "var.0x%"PFMT64x ".%d.%s", fcn->addr, scope, name);
-		const char *shortvar = sdb_fmt (4, "%d.%s%d", scope, sign, R_ABS(delta));
-		const char *name_val = sdb_fmt (5, "%c,%d", kind, delta);
+		const char *fcn_key = sdb_fmt ("fcn.0x%"PFMT64x ".%c", fcn->addr, kind);
+		const char *var_key = sdb_fmt ("var.0x%"PFMT64x ".%c.%d.%s%d", fcn->addr, kind, scope, sign, R_ABS(delta));
+		const char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", fcn->addr, scope, name);
+		const char *shortvar = sdb_fmt ("%d.%s%d", scope, sign, R_ABS(delta));
+		const char *name_val = sdb_fmt ("%c,%d", kind, delta);
 		sdb_array_add (DB, fcn_key, shortvar, 0);
 		sdb_set (DB, var_key, var_def, 0);
 		sdb_set (DB, name_key, name_val, 0);
@@ -186,7 +186,7 @@ R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind
 		}
 	} else {
 		/* global variable */
-		const char *var_global = sdb_fmt (1, "var.0x%"PFMT64x, fcn->addr);
+		const char *var_global = sdb_fmt ("var.0x%"PFMT64x, fcn->addr);
 		sdb_array_add (DB, var_global, var_def, 0);
 	}
 	return true;
@@ -219,10 +219,10 @@ R_API int r_anal_var_delete(RAnal *a, ut64 addr, const char kind, int scope, int
 			delta = -delta;
 			sign = "_";
 		}
-		char *fcn_key = sdb_fmt (1, "fcn.0x%"PFMT64x ".%c", addr, kind);
-		char *var_key = sdb_fmt (2, "var.0x%"PFMT64x ".%c.%d.%s%d", addr, kind, scope, sign, delta);
-		char *name_key = sdb_fmt (3, "var.0x%"PFMT64x ".%d.%s", addr, scope, av->name);
-		char *shortvar = sdb_fmt (4, "%d.%s%d", scope, sign, delta);
+		char *fcn_key = sdb_fmt ("fcn.0x%"PFMT64x ".%c", addr, kind);
+		char *var_key = sdb_fmt ("var.0x%"PFMT64x ".%c.%d.%s%d", addr, kind, scope, sign, delta);
+		char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", addr, scope, av->name);
+		char *shortvar = sdb_fmt ("%d.%s%d", scope, sign, delta);
 		sdb_array_remove (DB, fcn_key, shortvar, 0);
 		sdb_unset (DB, var_key, 0);
 		sdb_unset (DB, name_key, 0);
@@ -230,8 +230,8 @@ R_API int r_anal_var_delete(RAnal *a, ut64 addr, const char kind, int scope, int
 			delta = -delta;
 		}
 	} else {
-		char *var_global = sdb_fmt (1, "var.0x%"PFMT64x, addr);
-		char *var_def = sdb_fmt (2, "%c.%s,%d,%s", kind, av->type, av->size, av->name);
+		char *var_global = sdb_fmt ("var.0x%"PFMT64x, addr);
+		char *var_def = sdb_fmt ("%c.%s,%d,%s", kind, av->type, av->size, av->name);
 		sdb_array_remove (DB, var_global, var_def, 0);
 	}
 	r_anal_var_free (av);
@@ -244,7 +244,7 @@ R_API bool r_anal_var_delete_byname(RAnal *a, RAnalFunction *fcn, int kind, cons
 	if (!a || !fcn) {
 		return false;
 	}
-	varlist = sdb_get (DB, sdb_fmt (0, "fcn.0x%"PFMT64x ".%c",
+	varlist = sdb_get (DB, sdb_fmt ("fcn.0x%"PFMT64x ".%c",
 			fcn->addr, kind), 0);
 	if (varlist) {
 		char *next, *ptr = varlist;
@@ -252,7 +252,7 @@ R_API bool r_anal_var_delete_byname(RAnal *a, RAnalFunction *fcn, int kind, cons
 			do {
 				char *word = sdb_anext (ptr, &next);
 				char *sign = strstr (word, "_");
-				const char *vardef = sdb_const_get (DB, sdb_fmt (1,
+				const char *vardef = sdb_const_get (DB, sdb_fmt (
 						"var.0x%"PFMT64x ".%c.%s",
 						fcn->addr, kind, word), 0);
 				if (sign) {
@@ -290,7 +290,7 @@ R_API RAnalVar *r_anal_var_get_byname(RAnal *a, RAnalFunction *fcn, const char *
 		// eprintf ("No something\n");
 		return NULL;
 	}
-	char *name_key = sdb_fmt (-1, "var.0x%"PFMT64x ".%d.%s", fcn->addr, 1, name);
+	char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", fcn->addr, 1, name);
 	const char *name_value = sdb_const_get (DB, name_key, 0);
 	if (!name_value) {
 		// eprintf ("Cant find key for %s\n", name_key);
@@ -319,7 +319,7 @@ R_API RAnalVar *r_anal_var_get(RAnal *a, ut64 addr, char kind, int scope, int de
 		delta = -delta;
 		sign = "_";
 	}
-	const char *varkey = sdb_fmt (-1, "var.0x%"PFMT64x ".%c.%d.%s%d",
+	const char *varkey = sdb_fmt ("var.0x%"PFMT64x ".%c.%d.%s%d",
 			fcn->addr, kind, scope, sign, delta);
 	const char *vardef = sdb_const_get (DB, varkey, 0);
 	if (!vardef) {
@@ -435,17 +435,17 @@ R_API int r_anal_var_access(RAnal *a, ut64 var_addr, char kind, int scope, int d
 	const char *xs_type_str = xs_type? "writes": "reads";
 	// TODO: kind is not used
 	if (scope > 0) { // local
-		const char *var_local = sdb_fmt (0, "var.0x%"PFMT64x ".%d.%d.%s",
+		const char *var_local = sdb_fmt ("var.0x%"PFMT64x ".%d.%d.%s",
 			var_addr, scope, delta, xs_type_str);
-		const char *inst_key = sdb_fmt (1, "inst.0x%"PFMT64x ".vars", xs_addr);
-		const char *var_def = sdb_fmt (2, "0x%"PFMT64x ",%c,0x%x,0x%x", var_addr,
+		const char *inst_key = sdb_fmt ("inst.0x%"PFMT64x ".vars", xs_addr);
+		const char *var_def = sdb_fmt ("0x%"PFMT64x ",%c,0x%x,0x%x", var_addr,
 			kind, scope, delta);
 		sdb_set (DB, inst_key, var_def, 0);
 		return sdb_array_add_num (DB, var_local, xs_addr, 0);
 	}
 	// global
-	sdb_add (DB, sdb_fmt (0, "var.0x%"PFMT64x, var_addr), "a,", 0);
-	var_global = sdb_fmt (0, "var.0x%"PFMT64x ".%s", var_addr, xs_type_str);
+	sdb_add (DB, sdb_fmt ("var.0x%"PFMT64x, var_addr), "a,", 0);
+	var_global = sdb_fmt ("var.0x%"PFMT64x ".%s", var_addr, xs_type_str);
 	return sdb_array_add_num (DB, var_global, xs_addr, 0);
 }
 
@@ -543,7 +543,7 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dyn
 	if (kind < 1) {
 		kind = R_ANAL_VAR_KIND_BPV; // by default show vars
 	}
-	char *varlist = sdb_get (DB, sdb_fmt (0, "fcn.0x%"PFMT64x ".%c", fcn->addr, kind), 0);
+	char *varlist = sdb_get (DB, sdb_fmt ("fcn.0x%"PFMT64x ".%c", fcn->addr, kind), 0);
 	if (varlist && *varlist) {
 		char *next, *ptr = varlist;
 		do {
@@ -551,7 +551,7 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dyn
 			if (r_str_nlen (word, 3) < 3) {
 				return NULL;
 			}
-			const char *vardef = sdb_const_get (DB, sdb_fmt (1,
+			const char *vardef = sdb_const_get (DB, sdb_fmt (
 				"var.0x%"PFMT64x ".%c.%s",
 				fcn->addr, kind, word), 0);
 			if (word[2] == '_') {

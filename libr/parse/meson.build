@@ -27,17 +27,18 @@ r_parse = library('r_parse', files,
   c_args: ['-DCORELIB=1'],
   link_with: [r_util, r_flag, r_syscall, r_reg, libr_shlr],
   install: true,
-  implicit_include_directories: false
+  implicit_include_directories: false,
+  soversion: r2libversion
 )
 
-
-pkg = import('pkgconfig')
-pkg.generate(libraries: [r_parse],
-             subdirs: 'libr',
-             version: r2version,
-             name: 'r_parse',
-             filebase: 'r_parse',
-             requires: [
-               'r_util', 'r_flag', 'r_syscall', 'r_reg'
-             ],
-             description: 'radare foundation libraries')
+pkgconfig_mod.generate(
+  libraries: [r_parse],
+  subdirs: 'libr',
+  version: r2version,
+  name: 'r_parse',
+  filebase: 'r_parse',
+  requires: [
+    'r_util', 'r_flag', 'r_syscall', 'r_reg'
+  ],
+  description: 'radare foundation libraries'
+)

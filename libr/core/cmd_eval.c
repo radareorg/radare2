@@ -102,32 +102,35 @@ static bool nextpal_item(RCore *core, int mode, const char *file, int ctr) {
 	return true;
 }
 
-R_API RList *r_core_list_themes(RCore *core) {
-	RList *files = NULL;
+static void list_themes_in_path(RList *list, const char *path) {
 	RListIter *iter;
 	const char *fn;
-	char *home = r_str_home (".config/radare2/cons/");
-
-	RList *list = r_list_new ();
-	getNext = false;
-	if (home) {
-		files = r_sys_dir (home);
-		r_list_foreach (files, iter, fn) {
-			if (*fn && *fn != '.') {
-				r_list_append (list, strdup (fn));
-			}
-		}
-		r_list_free (files);
-		R_FREE (home);
-	}
-	files = r_sys_dir (R2_DATDIR"/radare2/"R2_VERSION"/cons/");
+	RList *files = r_sys_dir (path);
 	r_list_foreach (files, iter, fn) {
 		if (*fn && *fn != '.') {
 			r_list_append (list, strdup (fn));
 		}
 	}
 	r_list_free (files);
-	files = NULL;
+	R_FREE (path);
+}
+
+R_API RList *r_core_list_themes(RCore *core) {
+	RList *list = r_list_newf (free);
+	getNext = false;
+
+	char *path = r_str_home (".config/radare2/cons/");
+	if (path) {
+		list_themes_in_path (list, path);
+		R_FREE (path);
+	}
+
+	path = r_str_r2_prefix ("share/radare2/"R2_VERSION"/cons/");
+	if (path) {
+		list_themes_in_path (list, path);
+		R_FREE (path);
+	}
+
 	return list;
 }
 
@@ -176,29 +179,34 @@ static void nextpal(RCore *core, int mode) {
 		r_list_free (files);
 		R_FREE (home);
 	}
-	files = r_sys_dir (R2_DATDIR"/radare2/"R2_VERSION"/cons/");
-	r_list_foreach (files, iter, fn) {
-		if (*fn && *fn != '.') {
-			if (mode == 'p') {
-				const char *nfn = iter->n? iter->n->data: NULL;
-				if (!curtheme) {
-					free (home);
-					r_list_free (files);
-					return;
-				}
-				eprintf ("%s %s %s\n", nfn, curtheme, fn);
-				if (nfn && !strcmp (nfn, curtheme)) {
-					free (curtheme);
-					curtheme = strdup (fn);
-					goto done;
-				}
-			} else {
-				if (!nextpal_item (core, mode, fn, ctr++)) {
-					goto done;
+
+	char *path = r_str_r2_prefix ("share/radare2/"R2_VERSION"/cons/");
+	if (path) {
+		files = r_sys_dir (path);
+		r_list_foreach (files, iter, fn) {
+			if (*fn && *fn != '.') {
+				if (mode == 'p') {
+					const char *nfn = iter->n? iter->n->data: NULL;
+					if (!curtheme) {
+						free (home);
+						r_list_free (files);
+						return;
+					}
+					eprintf ("%s %s %s\n", nfn, curtheme, fn);
+					if (nfn && !strcmp (nfn, curtheme)) {
+						free (curtheme);
+						curtheme = strdup (fn);
+						goto done;
+					}
+				} else {
+					if (!nextpal_item (core, mode, fn, ctr++)) {
+						goto done;
+					}
 				}
 			}
 		}
 	}
+
 done:
 	if (getNext) {
 		R_FREE (curtheme);
@@ -301,11 +309,16 @@ static int cmd_eval(void *data, const char *input) {
 				nextpal (core, 'j');
 			} else if (input[2] == ' ') {
 				bool failed = false;
-				char *home, path[512];
-				snprintf (path, sizeof (path), ".config/radare2/cons/%s", input + 3);
-				home = r_str_home (path);
-				snprintf (path, sizeof (path), R2_DATDIR"/radare2/"
-					R2_VERSION"/cons/%s", input + 3);
+				char *home, *path, *tmp;
+
+				tmp = r_str_newf (".config/radare2/cons/%s", input + 3);
+				home = tmp ? r_str_home (tmp) : NULL;
+				free (tmp);
+
+				tmp = r_str_newf ("share/radare2/"R2_VERSION"/cons/%s", input + 3);
+				path = tmp ? r_str_r2_prefix (tmp) : NULL;
+				free (tmp);
+
 				if (!load_theme (core, home)) {
 					if (load_theme (core, path)) {
 						//curtheme = r_str_dup (curtheme, path);
@@ -322,11 +335,13 @@ static int cmd_eval(void *data, const char *input) {
 					}
 				}
 				free (home);
+				free (path);
 				if (failed) {
 					eprintf ("Something went wrong\n");
 				}
 			} else if (input[2] == '?') {
-				eprintf ("Usage: eco [themename]  ;load theme from "R2_DATDIR"/radare2/"R2_VERSION"/cons/\n");
+				eprintf ("Usage: eco [themename]  ;load theme from %s/share/radare2/"R2_VERSION"/cons/ (see dir.prefix)\n",
+					r_sys_prefix (NULL));
 
 			} else {
 				nextpal (core, 'l');

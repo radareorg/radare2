@@ -312,6 +312,13 @@ static int cb_analrecont(void *user, void *data) {
 	return true;
 }
 
+static int cb_analijmp(void *user, void *data) {
+	RCore *core = (RCore*) user;
+	RConfigNode *node = (RConfigNode*) data;
+	core->anal->opt.ijmp = node->i_value;
+	return true;
+}
+
 static int cb_asmminvalsub(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2288,6 +2295,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("anal.fcnprefix", "fcn",  "Prefix new function names with this");
 	SETPREF ("anal.a2f", "false",  "Use the new WIP analysis algorithm (core/p/a2f), anal.depth ignored atm");
 	SETICB ("anal.gp", 0, (RConfigCallback)&cb_anal_gp, "Set the value of the GP register (MIPS)");
+	SETI ("anal.gp2", 0, "Set anal.gp before emulating each instruction (workaround)");
 	SETCB ("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "Restrict analysis to address range [anal.from:anal.to]");
 	SETCB ("anal.rnr", "false", (RConfigCallback)&cb_anal_rnr, "Recursive no return checks (EXPERIMENTAL)");
 	SETCB ("anal.limits", "false", (RConfigCallback)&cb_anal_limits, "Restrict analysis to address range [anal.from:anal.to]");
@@ -2325,6 +2333,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("anal.prelude", "", "Specify an hexpair to find preludes in code");
 	SETCB ("anal.split", "true", &cb_analsplit, "Split functions into basic blocks in analysis");
 	SETCB ("anal.recont", "false", &cb_analrecont, "End block after splitting a basic block instead of error"); // testing
+	SETCB ("anal.ijmp", "false", &cb_analijmp, "Follow the indirect jumps in function analysis"); // testing
 	SETI ("anal.ptrdepth", 3, "Maximum number of nested pointers to follow in analysis");
 	SETICB ("anal.maxreflines", 0, &cb_analmaxrefs, "Maximum number of reflines to be analyzed and displayed in asm.lines with pd");
 
@@ -2371,6 +2380,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETOPTIONS (n, "ios", "dos", "darwin", "linux", "freebsd", "openbsd", "netbsd", "windows", NULL);
 	SETI ("asm.maxrefs", 5,  "Maximum number of xrefs to be displayed as list (use columns above)");
 	SETCB ("asm.invhex", "false", &cb_asm_invhex, "Show invalid instructions as hexadecimal numbers");
+	SETPREF ("asm.meta", "true", "Display the code/data/format conversions in disasm");
 	SETPREF ("asm.bytes", "true", "Display the bytes of each instruction");
 	SETPREF ("asm.flagsinbytes", "false",  "Display flags inside the bytes space");
 	n = NODEICB ("asm.midflags", 2, &cb_midflags);
@@ -2400,13 +2410,15 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.dwarf.file", "true", "Show filename of asm.dwarf in pd");
 	SETPREF ("asm.esil", "false", "Show ESIL instead of mnemonic");
 	SETPREF ("asm.nodup", "false", "Do not show dupped instructions (collapse disasm)");
-	SETPREF ("asm.emu.pre", "false", "Run ESIL emulation starting at the closest flag in pd");
 	SETPREF ("asm.emu", "false", "Run ESIL emulation analysis on disasm");
-	SETPREF ("asm.emu.stack", "false", "Create a temporary fake stack when emulating in disasm (asm.emu)");
-	SETCB ("asm.emu.str", "false", &cb_emustr, "Show only strings if any in the asm.emu output");
-	SETPREF ("asm.emu.stroff", "false", "Always show offset when printing asm.emu strings");
-	SETPREF ("asm.emu.write", "false", "Allow asm.emu to modify memory (WARNING)");
-	n = NODECB ("asm.emu.skip", "ds", &cb_emuskip);
+	SETPREF ("emu.pre", "false", "Run ESIL emulation starting at the closest flag in pd");
+	SETPREF ("emu.stack", "false", "Create a temporary fake stack when emulating in disasm (asm.emu)");
+	SETCB ("emu.str", "false", &cb_emustr, "Show only strings if any in the asm.emu output");
+	SETPREF ("emu.stroff", "false", "Always show offset when printing asm.emu strings");
+	SETPREF ("emu.strinv", "true", "Color-invert asm.emu strings");
+	SETPREF ("emu.strflag", "true", "Also show flag (if any) for asm.emu string");
+	SETPREF ("emu.write", "false", "Allow asm.emu to modify memory (WARNING)");
+	n = NODECB ("emu.skip", "ds", &cb_emuskip);
 	SETDESC (n, "Skip metadata of given types in asm.emu");
 	SETOPTIONS (n, "d", "c", "s", "f", "m", "h", "C", "r", NULL);
 	SETPREF ("asm.filter", "true", "Replace numeric values by flags (e.g. 0x4003e0 -> sym.imp.printf)");
@@ -2903,7 +2915,8 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* rop */
 	SETI ("rop.len", 5, "Maximum ROP gadget length");
-	SETPREF ("rop.db", "true", "Store rop search results in sdb");
+	SETPREF ("rop.sdb", "false", "Cache results in sdb (experimental)");
+	SETPREF ("rop.db", "true", "Categorize rop gadgets in sdb");
 	SETPREF ("rop.subchains", "false", "Display every length gadget from rop.len=X to 2 in /Rl");
 	SETPREF ("rop.conditional", "false", "Include conditional jump, calls and returns in ropsearch");
 	SETPREF ("rop.nx", "false", "Include NX/XN/XD sections in ropsearch");

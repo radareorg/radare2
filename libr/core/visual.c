@@ -89,16 +89,16 @@ static void rotateAsmBits(RCore *core) {
 }
 
 static void rotateAsmemu(RCore *core) {
-	const bool isEmuStr = r_config_get_i (core->config, "asm.emu.str");
+	const bool isEmuStr = r_config_get_i (core->config, "emu.str");
 	const bool isEmu = r_config_get_i (core->config, "asm.emu");
 	if (isEmu) {
 		if (isEmuStr) {
-			r_config_set (core->config, "asm.emu.str", "false");
+			r_config_set (core->config, "emu.str", "false");
 		} else {
 			r_config_set (core->config, "asm.emu", "false");
 		}
 	} else {
-		r_config_set (core->config, "asm.emu.str", "true");
+		r_config_set (core->config, "emu.str", "true");
 	}
 }
 
@@ -255,7 +255,7 @@ static int visual_help() {
 		" \"        toggle the column mode (uses pC..)\n"
 		" /        in cursor mode search in current block\n"
 		" (        toggle snow\n"
-		" )        toggle asm.emu.str\n"
+		" )        toggle emu.str\n"
 		" :cmd     run radare command\n"
 		" ;[-]cmt  add/remove comment\n"
 		" 0        seek to beginning of current function\n"
@@ -315,11 +315,58 @@ static void prompt_read(const char *p, char *buf, int buflen) {
 	showcursor (NULL, false);
 }
 
+static void reset_print_cur(RPrint *p) {
+	p->cur = 0;
+	p->ocur = -1;
+}
+
+static void backup_current_addr(RCore *core, ut64 *addr, ut64 *bsze, ut64 *newaddr) {
+	*addr = core->offset;
+	*bsze = core->blocksize;
+	if (core->print->cur_enabled) {
+		if (core->print->ocur != -1) {
+			int newsz = core->print->cur - core->print->ocur;
+			*newaddr = core->offset + core->print->ocur;
+			r_core_block_size (core, newsz);
+		} else {
+			*newaddr = core->offset + core->print->cur;
+		}
+		r_core_seek (core, *newaddr, 1);
+	}
+}
+
+static void restore_current_addr(RCore *core, ut64 addr, ut64 bsze, ut64 newaddr) {
+	bool restore_seek = true;
+	if (core->offset != newaddr) {
+		bool cursor_moved = false;
+		// when new address is in the screen bounds, just move
+		// the cursor if enabled and restore seek
+		if (core->print->cur != -1 && core->print->screen_bounds > 1) {
+			if (core->offset >= addr &&
+			    core->offset < core->print->screen_bounds) {
+				core->print->ocur = -1;
+				core->print->cur = core->offset - addr;
+				cursor_moved = true;
+			}
+		}
+
+		if (!cursor_moved) {
+			restore_seek = false;
+			reset_print_cur (core->print);
+		}
+	}
+
+	if (core->print->cur_enabled) {
+		if (restore_seek) {
+			r_core_seek (core, addr, 1);
+			r_core_block_size (core, bsze);
+		}
+	}
+}
+
 R_API void r_core_visual_prompt_input(RCore *core) {
-	int ret;
-	ut64 addr = core->offset;
-	ut64 bsze = core->blocksize;
-	int h;
+	ut64 addr, bsze, newaddr;
+	int ret, h;
 	(void) r_cons_get_size (&h);
 	r_cons_enable_mouse (false);
 	r_cons_gotoxy (0, h - 2);
@@ -327,30 +374,13 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 	r_cons_printf ("\nPress <enter> to return to Visual mode.\n");
 	r_cons_show_cursor (true);
 	core->vmode = false;
-	ut64 newaddr = addr;
-	if (core->print->cur_enabled) {
-		if (core->print->ocur != -1) {
-			int newsz = core->print->cur - core->print->ocur;
-			newaddr = core->offset + core->print->ocur;
-			r_core_block_size (core, newsz);
-		} else {
-			newaddr = core->offset + core->print->cur;
-		}
-		r_core_seek (core, newaddr, 1);
-	}
+
+	backup_current_addr (core, &addr, &bsze, &newaddr);
 	do {
 		ret = r_core_visual_prompt (core);
-		if (core->offset != newaddr) {
-			// do not restore seek anymore
-			newaddr = addr;
-		}
 	} while (ret);
-	if (core->print->cur_enabled) {
-		if (addr != newaddr) {
-			r_core_seek (core, addr, 1);
-			r_core_block_size (core, bsze);
-		}
-	}
+	restore_current_addr (core, addr, bsze, newaddr);
+
 	r_cons_show_cursor (false);
 	core->vmode = true;
 	r_cons_enable_mouse (true);
@@ -838,11 +868,6 @@ R_API ut64 r_core_prevop_addr_force(RCore *core, ut64 start_addr, int numinstrs)
 	return start_addr;
 }
 
-static void reset_print_cur(RPrint *p) {
-	p->cur = 0;
-	p->ocur = -1;
-}
-
 R_API int offset_history_up(RLine *line) {
 	RCore *core = line->user;
 	RIOUndo *undo = &core->io->undo;
@@ -891,7 +916,10 @@ R_API int offset_history_down(RLine *line) {
 }
 
 static void visual_offset(RCore *core) {
+	ut64 addr, bsze, newaddr;
 	char buf[256];
+
+	backup_current_addr (core, &addr, &bsze, &newaddr);
 	core->cons->line->offset_prompt = true;
 	r_line_set_hist_callback (core->cons->line, &offset_history_up, &offset_history_down);
 	r_line_set_prompt ("[offset]> ");
@@ -901,7 +929,7 @@ static void visual_offset(RCore *core) {
 			buf[1] = '.';
 		}
 		r_core_cmd0 (core, buf);
-		reset_print_cur (core->print);
+		restore_current_addr (core, addr, bsze, newaddr);
 		r_line_set_hist_callback (core->cons->line, &cmd_history_up, &cmd_history_down);
 		core->cons->line->offset_prompt = false;
 	}
@@ -986,10 +1014,8 @@ repeat:
 					}
 					r_cons_printf (" %d [%s] 0x%08"PFMT64x " %s %cREF (%s)\n",
 						idx, cstr, refi->addr,
-						refi->type == R_ANAL_REF_TYPE_CODE? "CODE (JMP)" :
-						refi->type == R_ANAL_REF_TYPE_CALL? "CODE (CALL)": "DATA",
-						xref ? 'X':' ',
-						name);
+						r_anal_ref_to_string (refi->type),
+						xref ? 'X':' ', name);
 					free (name);
 					if (idx == skip) {
 						free (dis);
@@ -1222,12 +1248,12 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 		}
 		return;
 	}
-	if (PIDX == 2 && core->seltab == 1) {
+	if (PIDX == R_CORE_VISUAL_MODE_PDDBG && core->seltab == 1) {
 		const int cols = core->dbg->regcols;
 		p->cur += cols > 0? cols: 3;
 		return;
 	}
-	if (core->seltab == 0 && core->printidx == R_CORE_VISUAL_MODE_PDDBG) {
+	if (PIDX == R_CORE_VISUAL_MODE_PDDBG && core->seltab == 0) {
 		int w = r_config_get_i (core->config, "hex.cols");
 		if (w < 1) {
 			w = 16;
@@ -1577,7 +1603,8 @@ static void visual_browse(RCore *core) {
 			r_core_visual_classes (core);
 			break;
 		case 'C':
-			r_core_cmd0 (core, "s $(CC~...)");
+			r_core_visual_comments (core);
+			//r_core_cmd0 (core, "s $(CC~...)");
 			break;
 		case 't':
 			r_core_visual_types (core);
@@ -1833,7 +1860,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		}
 		break;
 		case '!':
-			r_core_visual_panels (core);
+			r_core_visual_panels (core, NULL);
 			break;
 		case 'o':
 		{
@@ -2069,11 +2096,10 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_core_visual_refs (core, false);
 			break;
 		case 'r':
-			if (core->print->ocur != -1) {
-				r_core_visual_comments (core);
-			} else {
-				visual_refresh (core);
-			}
+			// TODO: toggle shortcut hotkeys
+			r_core_cmd0 (core, "e!asm.jmphints");
+			r_core_cmd0 (core, "e!asm.leahints");
+			visual_refresh (core);
 			break;
 		case ' ':
 		case 'V':

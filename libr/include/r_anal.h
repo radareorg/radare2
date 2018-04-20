@@ -592,6 +592,7 @@ typedef struct r_anal_options_t {
 	int cjmpref;
 	int jmpref;
 	int jmpabove;
+	bool ijmp;
 	int followdatarefs;
 	int searchstringrefs;
 	int followbrokenfcnsrefs;
@@ -1571,6 +1572,7 @@ R_API int r_meta_var_comment_del(RAnal *a, int type, ut64 idx, ut64 addr);
 R_API int r_meta_add(RAnal *m, int type, ut64 from, ut64 size, const char *str);
 R_API int r_meta_add_with_subtype(RAnal *m, int type, int subtype, ut64 from, ut64 size, const char *str);
 R_API RAnalMetaItem *r_meta_find(RAnal *m, ut64 off, int type, int where);
+R_API RAnalMetaItem *r_meta_find_in(RAnal *m, ut64 off, int type, int where);
 R_API int r_meta_cleanup(RAnal *m, ut64 from, ut64 to);
 R_API const char *r_meta_type_to_string(int type);
 R_API RList *r_meta_enumerate(RAnal *a, int type);
@@ -1706,7 +1708,10 @@ R_API void r_anal_rtti_msvc_print_class_hierarchy_descriptor(RVTableContext *con
 R_API void r_anal_rtti_msvc_print_base_class_descriptor(RVTableContext *context, ut64 addr, int mode);
 R_API void r_anal_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr, int mode);
 
-R_API void r_anal_rtti_gcc_print_at_vtable(RVTableContext *context, ut64 addr, int mode);
+R_API void r_anal_rtti_itanium_print_class_type_info(RVTableContext *context, ut64 addr, int mode);
+R_API void r_anal_rtti_itanium_print_si_class_type_info(RVTableContext *context, ut64 addr, int mode);
+R_API void r_anal_rtti_itanium_print_vmi_class_type_info(RVTableContext *context, ut64 addr, int mode);
+R_API void r_anal_rtti_itanium_print_at_vtable(RVTableContext *context, ut64 addr, int mode);
 
 R_API void r_anal_rtti_print_at_vtable(RAnal *anal, ut64 addr, int mode);
 R_API void r_anal_rtti_print_all(RAnal *anal, int mode);

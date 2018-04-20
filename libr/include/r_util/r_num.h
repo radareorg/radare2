@@ -19,8 +19,7 @@ typedef enum {
 	//RNCXOR='^', RNCOR='|', RNCAND='&',
 	RNCNEG='~', RNCAND='&', RNCORR='|', RNCXOR='^',
 	RNCPRINT=';', RNCASSIGN='=', RNCLEFTP='(', RNCRIGHTP=')',
-	RNCSHL='<', RNCSHR = '>'
-
+	RNCSHL='<', RNCSHR = '>', RNCROL = '#', RNCROR = '$'
 } RNumCalcToken;
 
 typedef struct r_num_calc_t {

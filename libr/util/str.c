@@ -17,32 +17,23 @@
 static const char *nullstr = "";
 static const char *nullstr_c = "(null)";
 static const char *rwxstr[] = {
-	[0] = "----",
-	[1] = "---x",
-	[2] = "--w-",
-	[3] = "--wx",
-	[4] = "-r--",
-	[5] = "-r-x",
-	[6] = "-rw-",
-	[7] = "-rwx",
+	[0] = "---",
+	[1] = "--x",
+	[2] = "-w-",
+	[3] = "-wx",
+	[4] = "r--",
+	[5] = "r-x",
+	[6] = "rw-",
+	[7] = "rwx",
 
-	[8] = "----",
-	[9] = "---x",
-	[10] = "--w-",
-	[11] = "--wx",
-	[12] = "-r--",
-	[13] = "-r-x",
-	[14] = "-rw-",
-	[15] = "-rwx",
-
-	[16] = "m---",
-	[17] = "m--x",
-	[18] = "m-w-",
-	[19] = "m-wx",
-	[20] = "mr--",
-	[21] = "mr-x",
-	[22] = "mrw-",
-	[23] = "mrwx",
+	[8] = "---",
+	[9] = "--x",
+	[10] = "-w-",
+	[11] = "-wx",
+	[12] = "r--",
+	[13] = "r-x",
+	[14] = "rw-",
+	[15] = "rwx",
 };
 
 // In-place replace the first instance of the character a, with the character b.
@@ -244,11 +235,13 @@ R_API const char *r_str_bool(int b) {
 R_API void r_str_case(char *str, bool up) {
 	if (up) {
 		char oc = 0;
-		for (; *str; oc = *str++)
+		for (; *str; oc = *str++) {
 			*str = (*str=='x' && oc=='0') ? 'x': toupper ((int)(ut8)*str);
+		}
 	} else {
-		for (; *str; str++)
+		for (; *str; str++) { 
 			*str = tolower ((int)(ut8)*str);
+		}
 	}
 }
 
@@ -277,6 +270,10 @@ R_API char *r_str_home(const char *str) {
 fail:
 	free (home);
 	return dst;
+}
+
+R_API char *r_str_r2_prefix(const char *str) {
+	return r_str_newf ("%s%s%s", r_sys_prefix (NULL), R_SYS_DIR, str);
 }
 
 // Compute a 64 bit DJB hash of a string.
@@ -827,14 +824,11 @@ R_API char *r_str_appendlen(char *ptr, const char *string, int slen) {
  */
 R_API char *r_str_append(char *ptr, const char *string) {
 	int slen, plen;
-	if (!string && !ptr) {
-		return NULL;
-	}
-	if (!string && ptr) {
-		return ptr;
-	}
 	if (string && !ptr) {
 		return strdup (string);
+	}
+	if (!string) {
+		return ptr;
 	}
 	plen = strlen (ptr);
 	slen = strlen (string);
@@ -2605,6 +2599,12 @@ R_API char *r_str_between(const char *cmt, const char *prefix, const char *suffi
 }
 
 R_API bool r_str_startswith(const char *str, const char *needle) {
+	if (!str || !needle) {
+		return false;
+	}
+	if (str == needle) {
+		return true;
+	}
 	return !strncmp (str, needle, strlen (needle));
 }
 
@@ -2938,8 +2938,7 @@ R_API int r_snprintf(char *string, int len, const char *fmt, ...) {
 }
 
 // Strips all the lines in str that contain key
-R_API void r_str_stripLine(char *str, const char *key)
-{
+R_API void r_str_stripLine(char *str, const char *key) {
 	size_t i, j, klen, slen, off;
 	const char *ptr; 
 
@@ -2972,6 +2971,5 @@ R_API void r_str_stripLine(char *str, const char *key)
 			i += off;
 		}
 	}
-	return;
 }
 

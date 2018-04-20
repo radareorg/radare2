@@ -23,10 +23,8 @@ R_API char *r_hex_from_py_str(char *out, const char *code) {
 	if (!strncmp (code, "'''", 3)) {
 		const char *s = code + 2;
 		return r_hex_from_c_str (out, &s);
-	} else {
-		return r_hex_from_c_str (out, &code);
 	}
-	return out;
+	return r_hex_from_c_str (out, &code);
 }
 
 static const char *skip_comment_py(const char *code) {
@@ -313,12 +311,13 @@ R_API int r_hex_pair2bin(const char *arg) {
 
 R_API int r_hex_bin2str(const ut8 *in, int len, char *out) {
 	int i, idx;
-	char tmp[5];
-	if (len < 0)
+	char tmp[8];
+	if (len < 0) {
 		return 0;
+	}
 	for (idx = i = 0; i < len; i++, idx += 2)  {
 		snprintf (tmp, sizeof (tmp), "%02x", in[i]);
-		memcpy (out+idx, tmp, 2);
+		memcpy (out + idx, tmp, 2);
 	}
 	out[idx] = 0;
 	return len;

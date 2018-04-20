@@ -109,6 +109,7 @@ R_API void r_flag_item_set_alias(RFlagItem *item, const char *alias);
 R_API void r_flag_item_free (RFlagItem *item);
 R_API void r_flag_item_set_comment(RFlagItem *item, const char *comment);
 R_API void r_flag_item_set_realname(RFlagItem *item, const char *realname);
+R_API RFlagItem *r_flag_item_clone(RFlagItem *item);
 R_API int r_flag_unset_glob(RFlag *f, const char *name);
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name);
 R_API int r_flag_relocate (RFlag *f, ut64 off, ut64 off_mask, ut64 to);

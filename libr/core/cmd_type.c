@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
+/* radare - LGPL - Copyright 2009-2018 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
 
 #include <string.h>
 #include "r_anal.h"
@@ -32,6 +32,7 @@ static const char *help_msg_t[] = {
 	"tp", " <type>  = <address>", "cast data at <address> to <type> and print it",
 	"ts", "[?]", "print loaded struct types",
 	"tu", "[?]", "print loaded union types",
+	"tt", "[?]", "List all loaded typedefs",
 	//"| ts k=v k=v @ link.addr set fields at given linked type\n"
 	NULL
 };
@@ -42,15 +43,30 @@ static const char *help_msg_t_minus[] = {
 };
 
 static const char *help_msg_ta[] = {
-	"USAGE ta[...]", "", "",
+	"Usage: ta[...]", "", "",
 	"tas", " <offset>", "List all matching structure offsets",
 	"ta", " <struct member>", "Change immediate to structure offset",
 	"ta?", "", "show this help",
 	NULL
 };
 
+static const char *help_msg_tf[] = {
+	"Usage: tf[...]", "", "",
+	"tf", "", "List all function definitions loaded",
+	"tf", " <name>", "Show function signature",
+	NULL
+};
+
+static const char *help_msg_to[] = {
+	"Usage: to[...]", "", "",
+	"to", " -", "Open cfg.editor to load types",
+	"to", " <path>", "Load types from C header file",
+	"tos", " <path>", "Load types from parsed Sdb database",
+	NULL
+};
+
 static const char *help_msg_tc[] = {
-	"USAGE tc[...]", " [cctype]", "",
+	"Usage: tc[...]", " [cctype]", "",
 	"tc", "", "List all loaded structs",
 	"tc", " [cctype]", "Show convention rules for this type",
 	"tc=", "([cctype])", "Select (or show) default calling convention",
@@ -70,10 +86,19 @@ static const char *help_msg_td[] = {
 };
 
 static const char *help_msg_te[] = {
-	"USAGE te[...]", "", "",
+	"Usage: te[...]", "", "",
 	"te", "", "List all loaded enums",
 	"te", " <enum> <value>", "Show name for given enum number",
 	"te?", "", "show this help",
+	NULL
+};
+
+
+static const char *help_msg_tt[] = {
+	"Usage: tt[...]", "", "",
+	"tt", "", "List all loaded typedefs",
+	"tt", " <typename>", "Show name for given type alias",
+	"tt?", "", "show this help",
 	NULL
 };
 
@@ -100,15 +125,17 @@ static const char *help_msg_tn[] = {
 };
 
 static const char *help_msg_ts[] = {
-	"USAGE ts[...]", " [type]", "",
+	"Usage: ts[...]", " [type]", "",
 	"ts", "", "List all loaded structs",
 	"ts", " [type]", "Show pf format string for given struct",
+	"ts*", " [type]", "Show pf.<name> format string for given struct",
+	"tss", " [type]", "Display size of struct",
 	"ts?", "", "show this help",
 	NULL
 };
 
 static const char *help_msg_tu[] = {
-	"USAGE tu[...]", "", "",
+	"Usage: tu[...]", "", "",
 	"tu", "", "List all loaded unions",
 	"tu?", "", "show this help",
 	NULL
@@ -125,13 +152,14 @@ static void cmd_type_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, tn);
 	DEFINE_CMD_DESCRIPTOR (core, ts);
 	DEFINE_CMD_DESCRIPTOR (core, tu);
+	DEFINE_CMD_DESCRIPTOR (core, tt);
 }
 
 static void show_help(RCore *core) {
 	r_core_cmd_help (core, help_msg_t);
 }
 
-static void showFormat(RCore *core, const char *name) {
+static void showFormat(RCore *core, const char *name, int mode) {
 	const char *isenum = sdb_const_get (core->anal->sdb_types, name, 0);
 	if (isenum && !strcmp (isenum, "enum")) {
 		eprintf ("IS ENUM\n");
@@ -139,7 +167,11 @@ static void showFormat(RCore *core, const char *name) {
 		char *fmt = r_anal_type_format (core->anal, name);
 		if (fmt) {
 			r_str_trim (fmt);
-			r_cons_printf ("pf %s\n", fmt);
+			if (mode) {
+				r_cons_printf ("pf.%s %s\n", name, fmt);
+			} else {
+				r_cons_printf ("pf %s\n", fmt);
+			}
 			free (fmt);
 		} else {
 			eprintf ("Cannot find '%s' type\n", name);
@@ -199,7 +231,7 @@ static void save_parsed_type(RCore *core, const char *parsed) {
 	if (type) {
 		char *name = NULL;
 		if ((name = strstr (type, "=type")) || (name = strstr (type, "=struct")) || (name = strstr (type, "=union")) ||
-			(name = strstr (type, "=enum")) || (name = strstr (type, "=func"))) {
+			(name = strstr (type, "=enum")) || (name = strstr (type, "=typedef")) ||(name = strstr (type, "=func"))) {
 			*name = 0;
 			while (name - 1 >= type && *(name - 1) != '\n') {
 				name--;
@@ -270,11 +302,11 @@ static int typelist(void *p, const char *k, const char *v) {
 #if 0
 	if (!strcmp (v, "func")) {
 		const char *rv = sdb_const_get (DB,
-						sdb_fmt (0, "func.%s.ret", k), 0);
+						sdb_fmt ("func.%s.ret", k), 0);
 		r_cons_printf ("# %s %s(", rv, k);
 		for (i = 0; i < 16; i++) {
 			char *av = sdb_get (DB,
-					sdb_fmt (0, "func.%s.arg.%d", k, i), 0);
+					sdb_fmt ("func.%s.arg.%d", k, i), 0);
 			if (!av) break;
 			r_str_replace_char (av, ',', ' ');
 			r_cons_printf ("%s%s", i? ", ": "", av);
@@ -287,11 +319,11 @@ static int typelist(void *p, const char *k, const char *v) {
 		for (i = 0; i < 16; i++) {
 			const char *fmt;
 			char *comma, *av = sdb_get (DB,
-						sdb_fmt (0, "func.%s.arg.%d", k, i), 0);
+						sdb_fmt ("func.%s.arg.%d", k, i), 0);
 			if (!av) break;
 			comma = strchr (av, ',');
 			if (comma) *comma = 0;
-			fmt = sdb_const_get (DB, sdb_fmt (0, "type.%s", av), 0);
+			fmt = sdb_const_get (DB, sdb_fmt ("type.%s", av), 0);
 			r_cons_printf ("%s", fmt);
 			if (comma) *comma = ',';
 			free (av);
@@ -299,7 +331,7 @@ static int typelist(void *p, const char *k, const char *v) {
 		// names
 		for (i = 0; i < 16; i++) {
 			char *comma, *av = sdb_get (DB,
-						sdb_fmt (0, "func.%s.arg.%d", k, i), 0);
+						sdb_fmt ("func.%s.arg.%d", k, i), 0);
 			if (!av) break;
 			comma = strchr (av, ',');
 			if (comma) *comma++ = 0;
@@ -440,11 +472,21 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case 's': // "ts"
 		switch (input[1]) {
-		case '?': {
+		case '?':
 			r_core_cmd_help (core, help_msg_ts);
-		} break;
+			break;
+		case '*':
+			showFormat (core, input + 2, 1);
+			break;
 		case ' ':
-			showFormat (core, input + 2);
+			showFormat (core, input + 2, 0);
+			break;
+		case 's':
+			if (input[2] == ' ') {
+				r_cons_printf ("%d\n", (r_anal_type_get_size (core->anal, input + 3) / 8));
+			} else {
+				r_core_cmd_help (core, help_msg_ts);
+			}
 			break;
 		case 0:
 			sdb_foreach (core->anal->sdb_types, stdprintifstruct, core);
@@ -503,7 +545,7 @@ static int cmd_type(void *data, const char *input) {
 			*p++ = 0;
 			isenum = sdb_const_get (core->anal->sdb_types, s, 0);
 			if (isenum && !strncmp (isenum, "enum", 4)) {
-				const char *q = sdb_fmt (0, "%s.0x%x", s, (ut32)r_num_math (core->num, p));
+				const char *q = sdb_fmt ("%s.0x%x", s, (ut32)r_num_math (core->num, p));
 				const char *res = sdb_const_get (core->anal->sdb_types, q, 0);
 				if (res)
 					r_cons_println (res);
@@ -517,7 +559,7 @@ static int cmd_type(void *data, const char *input) {
 		free (s);
 	} break;
 	case ' ':
-		showFormat (core, input + 1);
+		showFormat (core, input + 1, 0);
 		break;
 	// t* - list all types in 'pf' syntax
 	case 'j': // "tj"
@@ -526,7 +568,9 @@ static int cmd_type(void *data, const char *input) {
 		typesList (core, input[0]);
 		break;
 	case 'o': // "to"
-		if (!r_sandbox_enable (0)) {
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_to);
+		} else if (!r_sandbox_enable (0)) {
 			if (input[1] == ' ') {
 				const char *filename = input + 2;
 				char *homefile = NULL;
@@ -726,7 +770,7 @@ static int cmd_type(void *data, const char *input) {
 				if (strncmp (kv->key, "link.", strlen ("link."))) {
 					continue;
 				}
-				linkptr = sdb_fmt (-1,"0x%s", kv->key + strlen ("link."));
+				linkptr = sdb_fmt ("0x%s", kv->key + strlen ("link."));
 				if (ptr == r_num_math (NULL, linkptr)) {
 					linklist_readable (core, kv->key, kv->value);
 				}
@@ -811,8 +855,54 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	// tv - get/set type value linked to a given address
 	case 'f':
-		sdb_foreach (core->anal->sdb_types, stdprintiffunc, core);
+		switch (input[1]) {
+		case 0:
+			sdb_foreach (core->anal->sdb_types, stdprintiffunc, core);
+			break;
+		case ' ':
+			r_core_cmdf (core, "tk~func.%s.", input + 2);
+			break;
+		default:
+			r_core_cmd_help (core, help_msg_tf);
+			break;
+		}
 		break;
+	case 't': {
+		if (!input[1]) {
+			char *name = NULL;
+			SdbKv *kv;
+			SdbListIter *iter;
+			SdbList *l = sdb_foreach_list (core->anal->sdb_types, true);
+			ls_foreach (l, iter, kv) {
+				if (!strcmp (kv->value, "typedef")) {
+					if (!name || strcmp (kv->value, name)) {
+						free (name);
+						name = strdup (kv->key);
+						r_cons_println (name);
+					}
+				}
+			}
+			free (name);
+			ls_free (l);
+			break;
+		}
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_tt);
+			break;
+		}
+		char *s = strdup (input + 2);
+		const char *istypedef;
+		istypedef = sdb_const_get (core->anal->sdb_types, s, 0);
+		if (istypedef && !strncmp (istypedef, "typedef", 7)) {
+			const char *q = sdb_fmt ("typedef.%s", s);
+			const char *res = sdb_const_get (core->anal->sdb_types, q, 0);
+			if (res)
+				r_cons_println (res);
+		} else {
+			eprintf ("This is not an typedef\n");
+		}
+		free (s);
+	} break;
 	case '?':
 		show_help (core);
 		break;

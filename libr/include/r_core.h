@@ -137,7 +137,7 @@ typedef struct r_core_t {
 	ut8 *oobi; /* out of band input ; used for multiline or file input */
 	int oobi_len;
 	RBuffer *yank_buf;
-	int tmpseek;
+	bool tmpseek;
 	bool vmode;
 	int interrupted; // XXX IS THIS DUPPED SOMEWHERE?
 	/* files */
@@ -166,6 +166,7 @@ typedef struct r_core_t {
 	REgg *egg;
 	RCoreLog *log;
 	RAGraph *graph;
+	RPanels* panels;
 	char *cmdqueue;
 	char *lastcmd;
 	char *cmdlog;
@@ -203,6 +204,8 @@ typedef struct r_core_t {
 	bool break_loop;
 	RThreadLock *lock;
 	RList *undos;
+	bool fixedbits;
+	bool fixedarch;
 } RCore;
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd);
@@ -275,8 +278,7 @@ R_API int r_core_visual_classes(RCore *core);
 R_API int r_core_visual_types(RCore *core);
 R_API int r_core_visual(RCore *core, const char *input);
 R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int is_interactive);
-R_API int r_core_fcn_graph(RCore *core, RAnalFunction *_fcn);
-R_API int r_core_visual_panels(RCore *core);
+R_API int r_core_visual_panels(RCore *core, RPanels *panels);
 R_API int r_core_visual_cmd(RCore *core, const char *arg);
 R_API void r_core_visual_seek_animation (RCore *core, ut64 addr);
 R_API void r_core_visual_asm(RCore *core, ut64 addr);
@@ -290,6 +292,7 @@ R_API char* r_core_add_asmqjmp(RCore *core, ut64 addr);
 
 R_API void r_core_anal_type_init(RCore *core);
 R_API void r_core_anal_cc_init(RCore *core);
+R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, int followDepth);
 
 R_API void r_core_list_io(RCore *core);
 /* visual marks */
@@ -657,6 +660,7 @@ R_API void r_core_task_run_bg(RCore *core, RCoreTask *_task);
 R_API RCoreTask *r_core_task_add (RCore *core, RCoreTask *task);
 R_API void r_core_task_add_bg (RCore *core, RCoreTask *task);
 R_API int r_core_task_del (RCore *core, int id);
+R_API RCoreTask *r_core_task_self (RCore *core);
 R_API void r_core_task_join (RCore *core, RCoreTask *task);
 typedef void (*inRangeCb) (RCore *core, ut64 from, ut64 to, int vsize,
 			   bool asterisk, int count);

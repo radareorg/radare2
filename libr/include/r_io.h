@@ -539,6 +539,7 @@ extern RIOPlugin r_io_plugin_null;
 extern RIOPlugin r_io_plugin_ar;
 extern RIOPlugin r_io_plugin_rbuf;
 extern RIOPlugin r_io_plugin_winedbg;
+extern RIOPlugin r_io_plugin_gprobe;
 
 #if __cplusplus
 }

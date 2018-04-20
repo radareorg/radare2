@@ -74,7 +74,6 @@ typedef struct r_asm_op_t {
 	char buf_asm[R_ASM_BUFSIZE + 1];
 	char buf_hex[R_ASM_BUFSIZE + 1];
 	RBuffer *buf_inc;
-
 } RAsmOp;
 
 typedef struct r_asm_code_t {

@@ -231,7 +231,7 @@ R_API char *r_core_sysenv_begin(RCore * core, const char *cmd) {
 	r_sys_setenv ("RABIN2_PDBSERVER", r_config_get (core->config, "pdb.server"));
 	if (desc && desc->name) {
 		r_sys_setenv ("R2_FILE", desc->name);
-		r_sys_setenv ("R2_SIZE", sdb_fmt (0, "%"PFMT64d, r_io_desc_size (desc)));
+		r_sys_setenv ("R2_SIZE", sdb_fmt ("%"PFMT64d, r_io_desc_size (desc)));
 		if (cmd && strstr (cmd, "R2_BLOCK")) {
 			// replace BLOCK in RET string
 			if ((f = r_file_temp ("r2block"))) {
@@ -244,12 +244,12 @@ R_API char *r_core_sysenv_begin(RCore * core, const char *cmd) {
 	}
 	r_sys_setenv ("RABIN2_LANG", r_config_get (core->config, "bin.lang"));
 	r_sys_setenv ("RABIN2_DEMANGLE", r_config_get (core->config, "bin.demangle"));
-	r_sys_setenv ("R2_OFFSET", sdb_fmt (0, "%"PFMT64d, core->offset));
-	r_sys_setenv ("R2_XOFFSET", sdb_fmt (0, "0x%08"PFMT64x, core->offset));
+	r_sys_setenv ("R2_OFFSET", sdb_fmt ("%"PFMT64d, core->offset));
+	r_sys_setenv ("R2_XOFFSET", sdb_fmt ("0x%08"PFMT64x, core->offset));
 	r_sys_setenv ("R2_ENDIAN", core->assembler->big_endian? "big": "little");
-	r_sys_setenv ("R2_BSIZE", sdb_fmt (0, "%d", core->blocksize));
+	r_sys_setenv ("R2_BSIZE", sdb_fmt ("%d", core->blocksize));
 	r_sys_setenv ("R2_ARCH", r_config_get (core->config, "asm.arch"));
-	r_sys_setenv ("R2_BITS", sdb_fmt (0, "%d", r_config_get_i (core->config, "asm.bits")));
+	r_sys_setenv ("R2_BITS", sdb_fmt ("%d", r_config_get_i (core->config, "asm.bits")));
 	r_sys_setenv ("R2_COLOR", r_config_get_i (core->config, "scr.color")? "1": "0");
 	r_sys_setenv ("R2_DEBUG", r_config_get_i (core->config, "cfg.debug")? "1": "0");
 	r_sys_setenv ("R2_IOVA", r_config_get_i (core->config, "io.va")? "1": "0");

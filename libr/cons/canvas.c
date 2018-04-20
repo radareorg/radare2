@@ -235,6 +235,9 @@ static void stamp_attr(RConsCanvas *c, int length) {
 
 /* check for ANSI sequences and use them as attr */
 static const char *set_attr(RConsCanvas *c, const char *s) {
+	if (!c || !s) {
+		return NULL;
+	}
 	const char *p = s;
 
 	while (is_ansi_seq (p)) {

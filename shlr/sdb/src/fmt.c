@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2014-2016 - pancake */
+/* sdb - MIT - Copyright 2014-2018 - pancake */
 
 #include "sdb.h"
 #include <stdarg.h>
@@ -20,32 +20,19 @@
 	} \
 }
 
-// move to util?
-// if n == -1 , assign the next bucket
-// if n==-1 and !fmt return last buffer
-SDB_API char *sdb_fmt(int n, const char *fmt, ...) {
-	static char Key[16][256];
-	static int cyclic_n = 0;
+SDB_API char *sdb_fmt(const char *fmt, ...) {
+#define KL 256
+#define KN 16
+	static char Key[KN][KL];
+	static int n = 0;
 	va_list ap;
-	if (n == -1) {
-		if (fmt) {
-			n = cyclic_n++;
-			if (cyclic_n>15)
-				cyclic_n = 0;
-		} else {
-			n = cyclic_n;
-		}
-	}
-        if (n < 0 || n > 15) {
-                return NULL;
-	}
-	if (!fmt) {
-		return Key[n];
-	}
 	va_start (ap, fmt);
-	*Key[n] = 0;
-	vsnprintf (Key[n], sizeof (Key[n]), fmt, ap);
-	Key[n][255] = 0;
+	n = (n + 1) % KN;
+	if (fmt) {
+		*Key[n] = 0;
+		vsnprintf (Key[n], KL - 1, fmt, ap);
+		Key[n][KL - 1] = 0;
+	}
 	va_end (ap);
 	return Key[n];
 }
@@ -219,8 +206,8 @@ SDB_API char** sdb_fmt_array(const char *list) {
 	if (list && *list) {
 		int len = sdb_alen (list);
 		retp = ret = (char**) malloc (2 * strlen (list) +
-			((len + 1)*sizeof (char*))+1);
-		_s = (char*)ret + ((len + 1) * sizeof (char*));
+			((len + 1) * sizeof (char *)) + 1);
+		_s = (char *)ret + ((len + 1) * sizeof (char *));
 		if (!ret) {
 			return NULL;
 		}

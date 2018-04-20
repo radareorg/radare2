@@ -76,14 +76,25 @@ static Sdb* get_sdb(RBinFile *bf) {
 	return NULL;
 }
 
+static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	struct Elf_(r_bin_elf_obj_t) *res;
+	if (!buf) {
+		return NULL;
+	}
+	res = Elf_(r_bin_elf_new_buf) (buf, bf->rbin->verbose);
+	if (res) {
+		sdb_ns_set (sdb, "info", res->kv);
+	}
+	return res;
+}
+
 static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	struct Elf_(r_bin_elf_obj_t) *res;
-	RBuffer *tbuf;
-
 	if (!buf || !sz || sz == UT64_MAX) {
 		return NULL;
 	}
-	tbuf = r_buf_new ();
+	RBuffer *tbuf = r_buf_new ();
+	// NOOOEES must use io!
 	r_buf_set_bytes (tbuf, buf, sz);
 	res = Elf_(r_bin_elf_new_buf) (tbuf, bf->rbin->verbose);
 	if (res) {
@@ -198,9 +209,6 @@ static RList* sections(RBinFile *bf) {
 			}
 			if (R_BIN_ELF_SCN_IS_READABLE (section[i].flags)) {
 				ptr->srwx |= R_BIN_SCN_READABLE;
-				if (obj->ehdr.e_type == ET_REL) {
-					ptr->srwx |= R_BIN_SCN_MAP;
-				}
 			}
 			r_list_append (ret, ptr);
 		}
@@ -220,7 +228,7 @@ static RList* sections(RBinFile *bf) {
 			ptr->vsize = phdr[i].p_memsz;
 			ptr->paddr = phdr[i].p_offset;
 			ptr->vaddr = phdr[i].p_vaddr;
-			ptr->srwx = phdr[i].p_flags | R_BIN_SCN_MAP;
+			ptr->srwx = phdr[i].p_flags;
 			switch (phdr[i].p_type) {
 			case PT_DYNAMIC:
 				strncpy (ptr->name, "DYNAMIC", R_BIN_SIZEOF_STRINGS);
@@ -276,7 +284,7 @@ static RList* sections(RBinFile *bf) {
 			ptr->vaddr = 0x10000;
 			ptr->add = true;
 			ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE |
-				R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
+				R_BIN_SCN_EXECUTABLE;
 			r_list_append (ret, ptr);
 		}
 	}
@@ -296,7 +304,7 @@ static RList* sections(RBinFile *bf) {
 		if (obj->ehdr.e_type == ET_REL) {
 			ptr->add = true;
 		}
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_MAP;
+		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE;
 		r_list_append (ret, ptr);
 	}
 	return ret;
@@ -327,9 +335,11 @@ static void process_constructors (RBinFile *bf, RList *ret, int bits) {
 	r_list_foreach (secs, iter, sec) {
 		type = -1;
 		if (!strcmp (sec->name, ".fini_array")) {
-			type  = R_BIN_ENTRY_TYPE_FINI;
+			type = R_BIN_ENTRY_TYPE_FINI;
 		} else if (!strcmp (sec->name, ".init_array")) {
-			type  = R_BIN_ENTRY_TYPE_INIT;
+			type = R_BIN_ENTRY_TYPE_INIT;
+		} else if (!strcmp (sec->name, ".preinit_array")) {
+			type = R_BIN_ENTRY_TYPE_PREINIT;
 		}
 		if (type != -1) {
 			ut8 *buf = calloc (sec->size, 1);
@@ -338,7 +348,7 @@ static void process_constructors (RBinFile *bf, RList *ret, int bits) {
 			}
 			(void)r_buf_read_at (bf->buf, sec->paddr, buf, sec->size);
 			if (bits == 32) {
-				for (i = 0; i < sec->size; i += 4) {
+				for (i = 0; (i + 3) < sec->size; i += 4) {
 					ut32 addr32 = r_read_le32 (buf + i);
 					if (addr32) {
 						RBinAddr *ba = newEntry (sec->paddr + i, (ut64)addr32, type, bits);
@@ -346,7 +356,7 @@ static void process_constructors (RBinFile *bf, RList *ret, int bits) {
 					}
 				}
 			} else {
-				for (i = 0; i < sec->size; i += 8) {
+				for (i = 0; (i + 7) < sec->size; i += 8) {
 					ut64 addr64 = r_read_le64 (buf + i);
 					if (addr64) {
 						RBinAddr *ba = newEntry (sec->paddr + i, addr64, type, bits);
@@ -873,11 +883,22 @@ static void _patch_reloc (ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 
 }
 
 static bool ht_insert_intu64(SdbHash* ht, int key, ut64 value) {
-	return ht_insert (ht, sdb_fmt (-1, "%d", key), (void *)value);
+	ut64 *mvalue = malloc (sizeof (ut64));
+	if (!mvalue) {
+		return false;
+	}
+	*mvalue = value;
+	return ht_insert (ht, sdb_fmt ("%d", key), (void *)mvalue);
 }
 
 static ut64 ht_find_intu64(SdbHash* ht, int key, bool* found) {
-	return (ut64)ht_find (ht, sdb_fmt (-1, "%d", key), found);
+	ut64 *mvalue = (ut64 *)ht_find (ht, sdb_fmt ("%d", key), found);
+	return *mvalue;
+}
+
+static void relocs_by_sym_free(HtKv *kv) {
+	free (kv->key);
+	free (kv->value);
 }
 
 static RList* patch_relocs(RBin *b) {
@@ -929,7 +950,7 @@ static RList* patch_relocs(RBin *b) {
 	n_vaddr = g->vaddr + g->vsize;
 	//reserve at least that space
 	size = bin->reloc_num * 4;
-	if (!b->iob.section_add (io, n_off, n_vaddr, size, size, R_BIN_SCN_READABLE|R_BIN_SCN_MAP, ".got.r2", 0, io->desc->fd)) {
+	if (!b->iob.section_add (io, n_off, n_vaddr, size, size, R_BIN_SCN_READABLE, ".got.r2", 0, io->desc->fd)) {
 		return NULL;
 	}
 	if (!(relcs = Elf_(r_bin_elf_get_relocs) (bin))) {
@@ -939,7 +960,7 @@ static RList* patch_relocs(RBin *b) {
 		free (relcs);
 		return NULL;
 	}
-	if (!(relocs_by_sym = ht_new (NULL, NULL, NULL))) {
+	if (!(relocs_by_sym = ht_new (NULL, relocs_by_sym_free, NULL))) {
 		r_list_free (ret);
 		free (relcs);
 		return NULL;
@@ -952,7 +973,7 @@ static RList* patch_relocs(RBin *b) {
 			if (relcs[i].sym < bin->imports_by_ord_size && bin->imports_by_ord[relcs[i].sym]) {
 				bool found;
 
-				sym_addr = ht_find_intu64(relocs_by_sym, relcs[i].sym, &found);
+				sym_addr = ht_find_intu64 (relocs_by_sym, relcs[i].sym, &found);
 				if (!found) {
 					sym_addr = 0;
 				}
@@ -1249,6 +1270,7 @@ RBinPlugin r_bin_plugin_elf = {
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,

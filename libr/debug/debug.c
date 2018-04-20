@@ -323,6 +323,7 @@ R_API RDebug *r_debug_new(int hard) {
 	/* TODO: needs a redesign? */
 	dbg->maps = r_debug_map_list_new ();
 	dbg->maps_user = r_debug_map_list_new ();
+	dbg->q_regs = NULL;
 	r_debug_signal_init (dbg);
 	if (hard) {
 		dbg->bp = r_bp_new ();
@@ -535,7 +536,7 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 	if (dbg->h && dbg->h->select && !dbg->h->select (pid, tid))
 		return false;
 
-	r_io_system (dbg->iob.io, sdb_fmt (0, "pid %d", pid));
+	r_io_system (dbg->iob.io, sdb_fmt ("pid %d", pid));
 
 	dbg->pid = pid;
 	dbg->tid = tid;
@@ -923,6 +924,41 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 	return steps_taken;
 }
 
+static ut64 get_prev_instr(RDebug *dbg, ut64 from, ut64 to) {
+	int i, ret, bsize = 256;
+	int inc;
+	ut64 prev, at;
+	RAnalOp aop = {0};
+	const int mininstrsz = r_anal_archinfo (dbg->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	const int minopcode = R_MAX (1, mininstrsz);
+	ut8 *buf = malloc (bsize);
+
+	if (!buf) {
+		eprintf ("Cannot allocate %d byte(s)\n", bsize);
+		free (buf);
+		return 0;
+	}
+	for (i = 0, at = from; at < to; at++, i++) {
+		if (i >= (bsize - 32)) {
+			i = 0;
+		}
+		if (!i) {
+			dbg->iob.read_at (dbg->iob.io, at, buf, bsize);
+		}
+		ret = r_anal_op (dbg->anal, &aop, at, buf + i, bsize - i, R_ANAL_OP_MASK_ALL);
+		inc = ret - 1;
+		if (inc < 0) {
+			inc = minopcode;
+		}
+		prev = at;
+		i += inc;
+		at += inc;
+		r_anal_op_fini (&aop);
+	}
+	free (buf);
+	return prev;
+}
+
 // TODO: add <int steps> parameter for repetition like step() and step_over() do and change return type to int
 R_API bool r_debug_step_back(RDebug *dbg) {
 	ut64 pc, prev = 0, end, cnt = 0;
@@ -944,6 +980,7 @@ R_API bool r_debug_step_back(RDebug *dbg) {
 	if (!before) {
 		return false;
 	}
+#if 0
 	//eprintf ("before session (%d) 0x%08"PFMT64x"\n", before->key.id, before->key.addr);
 
 	/* Rollback to previous state */
@@ -975,9 +1012,11 @@ R_API bool r_debug_step_back(RDebug *dbg) {
 		}
 		cnt++;
 	}
-
-	/* Finally, run to the desired point */
+#endif
+	/* Rollback to previous state and then run to the desired point */
 	r_debug_session_set (dbg, before);
+	pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
+	prev = get_prev_instr (dbg, pc, end);
 	if (prev) {
 		eprintf ("continue until 0x%08"PFMT64x"\n", prev);
 		r_debug_continue_until_nonblock (dbg, prev);
@@ -1464,7 +1503,7 @@ R_API bool r_debug_is_dead (RDebug *dbg) {
 		return false;
 	}
 	bool is_dead = (dbg->pid == -1 && strncmp (dbg->h->name, "gdb", 3)) || (dbg->reason.type == R_DEBUG_REASON_DEAD);
-	if (dbg->pid > 0) {
+	if (dbg->pid > 0 && dbg->h && dbg->h->kill) {
 		is_dead = !dbg->h->kill (dbg, dbg->pid, false, 0);
 	}
 #if 0

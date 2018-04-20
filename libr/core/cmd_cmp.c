@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include "r_core.h"
 
@@ -18,8 +18,8 @@ static const char *help_msg_c[] = {
 	"cg", "[?] [o] [file]", "Graphdiff current file and [file]",
 	"cu", "[?] [addr] @at", "Compare memory hexdumps of $$ and dst in unified diff",
 	"cud", " [addr] @at", "Unified diff disasm from $$ and given address",
-	"cv", "[1248] [hexpairs] @at", "Compare 1,2,4,8-byte value",
-	"cV", "[1248] [addr] @at", "Compare 1,2,4,8-byte address contents",
+	"cv", "[1248] [hexpairs] @at", "Compare 1,2,4,8-byte value (silent returns in $?",
+	"cV", "[1248] [addr] @at", "Compare 1,2,4,8-byte address contents (silent, return in $?)",
 	"cw", "[?] [us?] [...]", "Compare memory watchers",
 	"cx", " [hexpair]", "Compare hexpair string (use '.' as nibble wildcard)",
 	"cx*", " [hexpair]", "Compare hexpair string (output r2 commands)",
@@ -148,6 +148,54 @@ R_API int r_core_cmpwatch_revert(RCore *core, ut64 addr) {
 		}
 	}
 	return ret;
+}
+
+static int radare_compare_words(RCore *core, ut64 of, ut64 od, int len, int ws) {
+	int i;
+	bool useColor = r_config_get_i (core->config, "scr.color") != 0;
+	utAny v0, v1;
+	for (i = 0; i < len; i+=ws) {
+		memset (&v0, 0, sizeof (v0));
+		memset (&v1, 0, sizeof (v1));
+		r_io_read_at (core->io, of + i, (ut8*)&v0, ws);
+		r_io_read_at (core->io, od + i, (ut8*)&v1, ws);
+		char ch = (v0.v64 == v1.v64)? '=': '!';
+		const char *color = useColor? ch == '='? "": Color_RED: "";
+		const char *colorEnd = useColor? Color_RESET: "";
+
+		if (useColor) {
+			r_cons_printf (Color_YELLOW"0x%08" PFMT64x"  "Color_RESET, of + i);
+		} else {
+			r_cons_printf ("0x%08" PFMT64x"  ", of + i);
+		}
+		switch (ws) {
+		case 1:
+			r_cons_printf ("%s0x%02x %c 0x%02x%s\n", color,
+				(ut32)(v0.v8 & 0xff), ch, (ut32)(v1.v8 & 0xff), colorEnd);
+			break;
+		case 2:
+			r_cons_printf ("%s0x%04hx %c 0x%04hx%s\n", color,
+				v0.v16, ch, v1.v16, colorEnd);
+			break;
+		case 4:
+			r_cons_printf ("%s0x%08"PFMT32x" %c 0x%08"PFMT32x"%s\n", color,
+				v0.v32, ch, v1.v32, colorEnd);
+			//r_core_cmdf (core, "fd@0x%"PFMT64x, v0.v32);
+			if (v0.v32 != v1.v32) {
+			//	r_core_cmdf (core, "fd@0x%"PFMT64x, v1.v32);
+			}
+			break;
+		case 8:
+			r_cons_printf ("%s0x%016"PFMT64x" %c 0x%016"PFMT64x"%s\n",
+				color, v0.v64, ch, v1.v64, colorEnd);
+			//r_core_cmdf (core, "fd@0x%"PFMT64x, v0.v64);
+			if (v0.v64 != v1.v64) {
+			//	r_core_cmdf (core, "fd@0x%"PFMT64x, v1.v64);
+			}
+			break;
+		}
+	}
+	return 0;
 }
 
 static int radare_compare_unified(RCore *core, ut64 of, ut64 od, int len) {
@@ -685,22 +733,35 @@ static int cmd_cmp(void *data, const char *input) {
 		r_core_free (core2);
 	}
 	break;
-	case 'u':
+	case 'u': // "cu"
 		switch (input[1]) {
+		case '.':
 		case ' ':
 			radare_compare_unified (core, core->offset,
-				r_num_math (core->num, input + 1),
+				r_num_math (core->num, input + 2),
 				core->blocksize);
+			break;
+		case '1':
+		case '2':
+		case '4':
+		case '8':
+			radare_compare_words (core, core->offset,
+				r_num_math (core->num, input + 2),
+				core->blocksize, input[1] - '0');
 			break;
 		case 'd':
 			cmd_cmp_disasm (core, input + 2, 'u');
 			break;
 		default: {
 			const char *help_msg[] = {
-				"Usage: cu", " [offset]", "# Creates a unified hex patch",
-				"cu", " $$+1 > p", "Compare current seek and +1",
+				"Usage: cu", " [offset]", "# Prints unified comparison to make hexpatches",
+				"cu", " $$+1 > p", "Compare hexpairs from  current seek and +1",
+				"cu1", " $$+1 > p", "Compare bytes from current seek and +1",
+				"cu2", " $$+1 > p", "Compare words (half, 16bit) from current seek and +1",
+				"cu4", " $$+1 > p", "Compare dwords from current seek and +1",
+				"cu8", " $$+1 > p", "Compare qwords from current seek and +1",
 				"cud", " $$+1 > p", "Compare disasm current seek and +1",
-				"wu", " p", "Apply unified hex patch",
+				"wu", " p", "Apply unified hex patch (see output of cu)",
 				NULL
 			};
 			r_core_cmd_help (core, help_msg);

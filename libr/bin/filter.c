@@ -25,22 +25,22 @@ R_API void r_bin_filter_name(Sdb *db, ut64 vaddr, char *name, int maxlen) {
 	ut32 vhash, hash;
 	int count;
 	if (!db || !name) return;
-	uname = sdb_fmt (0, "%" PFMT64x ".%s", vaddr, name);
+	uname = sdb_fmt ("%" PFMT64x ".%s", vaddr, name);
 	vhash = sdb_hash (uname); // vaddr hash - unique
 	hash = sdb_hash (name);   // name hash - if dupped and not in unique hash must insert
-	count = sdb_num_inc (db, sdb_fmt (0, "%x", hash), 1, 0);
-	if (sdb_exists (db, sdb_fmt (1, "%x", vhash))) {
+	count = sdb_num_inc (db, sdb_fmt ("%x", hash), 1, 0);
+	if (sdb_exists (db, sdb_fmt ("%x", vhash))) {
 		// TODO: symbol is dupped, so symbol can be removed!
 		return;
 	}
-	sdb_num_set (db, sdb_fmt (0, "%x", vhash), 1, 0);
+	sdb_num_set (db, sdb_fmt ("%x", vhash), 1, 0);
 	if (vaddr) {
 		hashify (name, vaddr);
 	}
 	if (count > 1) {
 		int namelen = strlen (name);
 		if (namelen > maxlen) name[maxlen] = 0;
-		strcat (name, sdb_fmt (2, "_%d", count - 1));
+		strcat (name, sdb_fmt ("_%d", count - 1));
 		// two symbols at different addresses and same name wtf
 		//	eprintf ("Symbol '%s' dupped!\n", sym->name);
 	}
@@ -54,15 +54,15 @@ R_API void r_bin_filter_sym(Sdb *db, ut64 vaddr, RBinSymbol *sym) {
 	if (!name) {
 		return;
 	}
-	const char *uname = sdb_fmt (0, "%" PFMT64x ".%s", vaddr, name);
+	const char *uname = sdb_fmt ("%" PFMT64x ".%s", vaddr, name);
 	ut32 vhash = sdb_hash (uname); // vaddr hash - unique
 	ut32 hash = sdb_hash (name);   // name hash - if dupped and not in unique hash must insert
-	int count = sdb_num_inc (db, sdb_fmt (0, "%x", hash), 1, 0);
-	if (sdb_exists (db, sdb_fmt (1, "%x", vhash))) {
+	int count = sdb_num_inc (db, sdb_fmt ("%x", hash), 1, 0);
+	if (sdb_exists (db, sdb_fmt ("%x", vhash))) {
 		// TODO: symbol is dupped, so symbol can be removed!
 		return;
 	}
-	sdb_num_set (db, sdb_fmt (0, "%x", vhash), 1, 0);
+	sdb_num_set (db, sdb_fmt ("%x", vhash), 1, 0);
 	if (vaddr) {
 		//hashify (name, vaddr);
 	}

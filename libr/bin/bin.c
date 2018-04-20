@@ -32,6 +32,8 @@ static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS, NULL };
 static RBinXtrPlugin *bin_xtr_static_plugins[] = { R_BIN_XTR_STATIC_PLUGINS, NULL };
 static RBinLdrPlugin *bin_ldr_static_plugins[] = { R_BIN_LDR_STATIC_PLUGINS, NULL };
 
+static bool r_bin_load_io_at_offset_as(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name);
+
 static int getoffset(RBin *bin, int type, int idx) {
 	RBinFile *a = r_bin_cur (bin);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (a);
@@ -71,12 +73,14 @@ R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size,
 	data->file_count = file_count;
 	data->metadata = metadata;
 	data->loaded = 0;
+	// TODO: USE RBuffer *buf inside RBinXtrData*
 	data->buffer = malloc (size + 1);
 	// data->laddr = 0; /// XXX
 	if (!data->buffer) {
 		free (data);
 		return NULL;
 	}
+	// XXX unnecessary memcpy, this is slow
 	memcpy (data->buffer, r_buf_buffer (buf), size);
 	data->buffer[size] = 0;
 	return data;
@@ -274,12 +278,14 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 	bf->o = NULL;
 
 	sz = iob->fd_size (iob->io, fd);
-	if (sz == UT64_MAX || sz > (64 * 1024 * 1024)) {
+	if (sz == UT64_MAX) { // || sz > (64 * 1024 * 1024)) {
 		// too big, probably wrong
 		eprintf ("Too big\n");
 		res = false;
 		goto error;
 	}
+// TODO: deprecate, the code in the else should be enough
+#if 1
 	if (sz == UT64_MAX && iob->fd_is_dbg (iob->io, fd)) {
 		// attempt a local open and read
 		// This happens when a plugin like debugger does not have a
@@ -300,6 +306,7 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 			res = false;
 			goto error;
 		}
+		// OMG NOES we want to use io, not this shit. 
 		buf_bytes = calloc (1, sz + 1);
 		if (!buf_bytes) {
 			iob->fd_close (iob->io, tfd);
@@ -325,9 +332,11 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 			goto error;
 		}
 	}
-
 	bool yes_plz_steal_ptr = true;
 	r_bin_file_set_bytes (bf, buf_bytes, sz, yes_plz_steal_ptr);
+#else
+	bf->buf = r_buf_new_with_io (iob, fd);
+#endif
 
 	if (r_list_length (the_obj_list) == 1) {
 		RBinObject *old_o = (RBinObject *)r_list_get_n (the_obj_list, 0);
@@ -402,9 +411,15 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 			}
 		}
 	}
+#if 0
 	if (!buf_bytes) {
+		if (sz < 1) {
+			eprintf ("Cannot allocate %d bytes\n", sz + 1);
+			return false;
+		}
 		buf_bytes = calloc (1, sz + 1);
 		if (!buf_bytes) {
+			eprintf ("Cannot allocate %d bytes.\n", sz + 1);
 			return false;
 		}
 		ut64 seekaddr = is_debugger? baseaddr: loadaddr;
@@ -412,6 +427,28 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 			sz = 0LL;
 		}
 	}
+#else
+	// this thing works for 2GB ELF core from vbox
+	if (!buf_bytes) {
+		if (sz < 1) {
+			eprintf ("Cannot allocate %d bytes\n", (int)(sz + 1));
+			return false;
+		}
+		// just to check the header
+		if (file_sz > 1024*1024*64) {
+			sz = 1024* 8;
+		}
+		buf_bytes = calloc (1, sz);
+		if (!buf_bytes) {
+			eprintf ("Cannot allocate %d bytes.\n", (int)(sz + 1));
+			return false;
+		}
+		ut64 seekaddr = is_debugger? baseaddr: loadaddr;
+		if (!iob->fd_read_at (io, fd, seekaddr, buf_bytes, sz)) {
+			sz = 0LL;
+		}
+	}
+#endif
 
 	if (bin->use_xtr && !name && (st64)sz > 0) {
 		// XXX - for the time being this is fine, but we may want to
@@ -447,15 +484,18 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 		}
 	}
 	if (!binfile) {
-		bool steal_ptr = true; // transfer buf_bytes ownership to binfile
-		binfile = r_bin_file_new_from_bytes (
-			bin, fname, buf_bytes, sz, file_sz, bin->rawstr,
-			baseaddr, loadaddr, fd, name, NULL, offset, steal_ptr);
+		if (true) {
+			binfile = r_bin_file_new_from_bytes (
+				bin, fname, buf_bytes, sz, file_sz, bin->rawstr,
+				baseaddr, loadaddr, fd, name, NULL, offset, true);
+		} else {
+			binfile = r_bin_file_new_from_fd (bin, tfd, NULL);
+		}
 	}
 	return binfile? r_bin_file_set_cur_binfile (bin, binfile): false;
 }
 
-R_API bool r_bin_load_io_at_offset_as(RBin *bin, int fd, ut64 baseaddr,
+static bool r_bin_load_io_at_offset_as(RBin *bin, int fd, ut64 baseaddr,
 		ut64 loadaddr, int xtr_idx, ut64 offset, const char *name) {
 	// adding file_sz to help reduce the performance impact on the system
 	// in this case the number of bytes read will be limited to 2MB
@@ -1576,6 +1616,8 @@ R_API const char *r_bin_entry_type_string(int etype) {
 		return "fini";
 	case R_BIN_ENTRY_TYPE_TLS:
 		return "tls";
+	case R_BIN_ENTRY_TYPE_PREINIT:
+		return "preinit";
 	}
 	return NULL;
 }

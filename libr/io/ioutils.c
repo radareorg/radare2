@@ -82,7 +82,7 @@ R_API bool r_io_create_mem_for_section(RIO *io, RIOSection *sec) {
 			return false;
 		}
 		RIOMap *map = r_io_map_get (io, at);
-		r_io_map_set_name (map, sdb_fmt (0, "mem.%s", sec->name));
+		r_io_map_set_name (map, sdb_fmt ("mem.%s", sec->name));
 			
 	}
 	if (sec->size) {
@@ -90,7 +90,7 @@ R_API bool r_io_create_mem_for_section(RIO *io, RIOSection *sec) {
 			return false;
 		}
 		RIOMap *map = r_io_map_get (io, sec->vaddr);
-		r_io_map_set_name (map, sdb_fmt (1, "fmap.%s", sec->name));
+		r_io_map_set_name (map, sdb_fmt ("fmap.%s", sec->name));
 	}
 	return true;
 }

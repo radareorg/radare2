@@ -45,7 +45,7 @@ LIBNAME=libr_tcc.${SOEXT}
 all: ${LIBNAME} libr_tcc.$(EXT_AR)
 
 ${LIBNAME}: ${OFILES}
-	${CC} -o ${LIBNAME} ${LDFLAGS} ${LIBS} ${OFILES}
+	${CC} $(CFLAGS) -o ${LIBNAME} ${LDFLAGS} ${LIBS} ${OFILES}
 
 libr_tcc.$(EXT_AR): ${OFILES}
 	rm -f libr_tcc.$(EXT_AR)

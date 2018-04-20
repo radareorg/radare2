@@ -155,6 +155,27 @@ R_API RFlag * r_flag_new() {
 	return f;
 }
 
+R_API RFlagItem *r_flag_item_clone(RFlagItem *item) {
+	if (!item) {
+		return NULL;
+	}
+
+	RFlagItem *n = R_NEW0 (RFlagItem);
+	if (!n) {
+		return NULL;
+	}
+
+	n->color = item->color ? strdup (item->color) : NULL;
+	n->comment = item->comment ? strdup (item->comment) : NULL;
+	n->alias = item->alias ? strdup (item->alias) : NULL;
+	n->name = item->name ? strdup (item->name) : NULL;
+	n->realname = item->realname ? strdup (item->realname) : NULL;
+	n->offset = item->offset;
+	n->size = item->size;
+	n->space = item->space;
+	return n;
+}
+
 R_API void r_flag_item_free(RFlagItem *item) {
 	if (item) {
 		free (item->color);

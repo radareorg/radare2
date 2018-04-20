@@ -1257,16 +1257,16 @@ static int taskbgrun(RThread *th) {
 
 static int cmd_thread(void *data, const char *input) {
 	RCore *core = (RCore*) data;
-	if (r_sandbox_enable (0)) {
-		eprintf ("This command is disabled in sandbox mode\n");
-		return 0;
-	}
 	switch (input[0]) {
 	case '\0':
 	case 'j':
 		r_core_task_list (core, *input);
 		break;
 	case '&':
+		if (r_sandbox_enable (0)) {
+			eprintf ("This command is disabled in sandbox mode\n");
+			return 0;
+		}
 		if (input[1] == '&') {
 			// wait until ^C
 		} else {
@@ -1292,15 +1292,25 @@ static int cmd_thread(void *data, const char *input) {
 					task->id, task->state, task->msg->text);
 				if (task->msg->res)
 					r_cons_println (task->msg->res);
-			} else eprintf ("Cannot find task\n");
+			} else {
+				eprintf ("Cannot find task\n");
+			}
 		} else {
 			r_core_task_list (core, 1);
 		}}
 		break;
 	case '+':
+		if (r_sandbox_enable (0)) {
+			eprintf ("This command is disabled in sandbox mode\n");
+			return 0;
+		}
 		r_core_task_add (core, r_core_task_new (core, input + 1, (RCoreTaskCallback)task_finished, core));
 		break;
 	case '-':
+		if (r_sandbox_enable (0)) {
+			eprintf ("This command is disabled in sandbox mode\n");
+			return 0;
+		}
 		if (input[1] == '*') {
 			r_core_task_del (core, -1);
 		} else {
@@ -1311,6 +1321,10 @@ static int cmd_thread(void *data, const char *input) {
 		helpCmdTasks (core);
 		break;
 	case ' ':
+		if (r_sandbox_enable (0)) {
+			eprintf ("This command is disabled in sandbox mode\n");
+			return 0;
+		}
 		{
 			int tid = r_num_math (core->num, input + 1);
 			if (tid) {
@@ -1787,39 +1801,25 @@ static void tmpenvs_free(void *item) {
 	free (item);
 }
 
-static bool set_tmp_arch(RCore *core, char *arch, char **tmparch, char **tmphintarch) {
-	if (tmparch == NULL || tmphintarch == NULL) {
-		eprintf ("tmparch and tmphintarch should be set\n");
+static bool set_tmp_arch(RCore *core, char *arch, char **tmparch) {
+	if (tmparch == NULL ) {
+		eprintf ("tmparch should be set\n");
 	}
-
-	RAnalHint *hint = r_anal_hint_get (core->anal, core->offset);
-	// temporarily overwrite anal hints if there's any
-	if (hint) {
-		*tmphintarch = hint->arch ? strdup (hint->arch) : NULL;
-		r_anal_hint_set_arch (core->anal, core->offset, arch);
-	}
-	r_anal_hint_free (hint);
 
 	*tmparch = strdup (r_config_get (core->config, "asm.arch"));
 	r_config_set (core->config, "asm.arch", arch);
+	core->fixedarch = true;
 	return true;
 }
 
-static bool set_tmp_bits(RCore *core, int bits, char **tmpbits, int *tmphintbits) {
-	if (tmpbits == NULL || tmphintbits == NULL) {
-		eprintf ("tmpbits and tmphintbits should be set\n");
+static bool set_tmp_bits(RCore *core, int bits, char **tmpbits) {
+	if (tmpbits == NULL) {
+		eprintf ("tmpbits should be set\n");
 	}
-
-	RAnalHint *hint = r_anal_hint_get (core->anal, core->offset);
-	// temporarily overwrite bits hint if there's any
-	if (hint) {
-		*tmphintbits = hint->bits;
-		r_anal_hint_set_bits (core->anal, core->offset, bits);
-	}
-	r_anal_hint_free (hint);
 
 	*tmpbits = strdup (r_config_get (core->config, "asm.bits"));
 	r_config_set_i (core->config, "asm.bits", bits);
+	core->fixedbits = true;
 	return true;
 }
 
@@ -1836,6 +1836,8 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	int scr_color = -1;
 	bool eos = false;
 	bool haveQuote = false;
+	bool oldfixedarch = core->fixedarch;
+	bool oldfixedbits = core->fixedbits;
 
 	if (!cmd) {
 		return 0;
@@ -2026,9 +2028,10 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 					eprintf (" pd|H   - enable scr.html, respect scr.color\n");
 					eprintf (" pi 1|T - use scr.tts to speak out the stdout\n");
 					return ret;
-				} else if (!strcmp (ptr + 1, "H")) { // "|H"
+				} else if (!strncmp (ptr + 1, "H", 1)) { // "|H"
 					scr_html = r_config_get_i (core->config, "scr.html");
 					r_config_set_i (core->config, "scr.html", true);
+					//r_config_set_i (core->config, "scr.pipecolor", true);
 				} else if (!strcmp (ptr + 1, "T")) { // "|T"
 					scr_color = r_config_get_i (core->config, "scr.color");
 					r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
@@ -2061,7 +2064,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	/* bool conditions */
 	ptr = (char *)r_str_lastbut (cmd, '&', quotestr);
 	//ptr = strchr (cmd, '&');
-	while (ptr && ptr[1] == '&') {
+	while (ptr && *ptr && ptr[1] == '&') {
 		*ptr = '\0';
 		ret = r_cmd_call (core->rcmd, cmd);
 		if (ret == -1) {
@@ -2333,8 +2336,7 @@ next2:
 		bool is_bits_set = false;
 		bool is_arch_set = false;
 		char *tmpeval = NULL;
-		char *tmpasm = NULL, *tmphintasm = NULL;
-		int tmphintbits = -1;
+		char *tmpasm = NULL;
 		int flgspc = -123;
 		int tmpfd = -1;
 		int sz, len;
@@ -2386,7 +2388,6 @@ repeat_arroba:
 				eprintf ("TODO: what do you expect for @. import offset from file maybe?\n");
 			}
 		} else if (ptr[0] && ptr[1] == ':' && ptr[2]) {
-			usemyblock = true;
 			switch (ptr[0]) {
 			case 'F': // "@F:" // temporary flag space
 				flgspc = r_flag_space_get (core->flags, ptr + 2);
@@ -2406,6 +2407,7 @@ repeat_arroba:
 							ut16 inst_off = r_anal_bb_offset_inst (bb, index);
 							r_core_seek (core, bb->addr + inst_off, 1);
 							core->tmpseek = true;
+							usemyblock = true;
 						} else {
 							eprintf("The current basic block has %d instructions\n", bb->ninstr);
 						}
@@ -2424,6 +2426,7 @@ repeat_arroba:
 						core->block = buf;
 						core->blocksize = sz;
 						memcpy (core->block, f, sz);
+						usemyblock = true;
 					} else {
 						eprintf ("cannot alloc %d", sz);
 					}
@@ -2450,16 +2453,18 @@ repeat_arroba:
 					}
 					r_core_seek (core, regval, 1);
 					free (mander);
+					usemyblock = true;
 				}
 				break;
 			case 'b': // "@b:" // bits
-				is_bits_set = set_tmp_bits (core, r_num_math (core->num, ptr + 2), &tmpbits, &tmphintbits);
+				is_bits_set = set_tmp_bits (core, r_num_math (core->num, ptr + 2), &tmpbits);
 				break;
 			case 'i': // "@i:"
 				{
 					ut64 addr = r_num_math (core->num, ptr + 2);
 					if (addr) {
 						r_core_cmdf (core, "so %s", ptr + 2);
+						usemyblock = true;
 					}
 				}
 				break;
@@ -2482,6 +2487,7 @@ repeat_arroba:
 						r_core_block_size (core, R_ABS(len));
 						memcpy (core->block, buf, core->blocksize);
 						core->fixedblock = true;
+						usemyblock = true;
 						free (buf);
 					} else {
 						eprintf ("cannot allocate\n");
@@ -2496,6 +2502,7 @@ repeat_arroba:
 					if (out) {
 						r_core_seek (core, r_num_math (core->num, out), 1);
 						free (out);
+						usemyblock = true;
 					}
 				 }
 				break;
@@ -2511,9 +2518,9 @@ repeat_arroba:
 					if (q) {
 						*q++ = 0;
 						int bits = r_num_math (core->num, q);
-						is_bits_set = set_tmp_bits (core, bits, &tmpbits, &tmphintbits);
+						is_bits_set = set_tmp_bits (core, bits, &tmpbits);
 					}
-					is_arch_set = set_tmp_arch (core, ptr + 2, &tmpasm, &tmphintasm);
+					is_arch_set = set_tmp_arch (core, ptr + 2, &tmpasm);
 				} else {
 					eprintf ("Usage: pd 10 @a:arm:32\n");
 				}
@@ -2522,6 +2529,7 @@ repeat_arroba:
 				len = strlen (ptr + 2);
 				r_core_block_size (core, len);
 				memcpy (core->block, ptr + 2, len);
+				usemyblock = true;
 				break;
 			default:
 				goto ignore;
@@ -2630,8 +2638,9 @@ next_arroba:
 						r_core_seek (core, addr, 1);
 						r_core_block_read (core);
 					}
-					ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
 				}
+				ret = r_cmd_call (core->rcmd, r_str_trim_head (cmd));
+
 			}
 			if (tmpseek) {
 				// restore ranges
@@ -2648,14 +2657,9 @@ next_arroba:
 			r_core_block_size (core, tmpbsz);
 		}
 		if (is_arch_set) {
+			core->fixedarch = oldfixedarch;
 			r_config_set (core->config, "asm.arch", tmpasm);
-			if (tmphintasm) {
-				r_anal_hint_set_arch (core->anal, core->offset, tmphintasm);
-			} else {
-				r_anal_hint_unset_arch (core->anal, core->offset);
-			}
 			R_FREE (tmpasm);
-			R_FREE (tmphintasm);
 			is_arch_set = false;
 		}
 		if (tmpfd != -1) {
@@ -2663,14 +2667,8 @@ next_arroba:
 		}
 		if (is_bits_set) {
 			r_config_set (core->config, "asm.bits", tmpbits);
-			if (tmphintbits != -1) {
-				r_anal_hint_set_bits (core->anal, core->offset, tmphintbits);
-			} else {
-				r_anal_hint_unset_bits (core->anal, core->offset);
-			}
-			R_FREE (tmpbits);
-			tmphintbits = -1;
 			is_bits_set = false;
+			core->fixedbits = oldfixedbits;
 		}
 		if (tmpeval) {
 			r_core_cmd0 (core, tmpeval);
@@ -2697,6 +2695,8 @@ beach:
 	}
 	r_list_free (tmpenvs);
 	core->fixedblock = false;
+	core->fixedarch = oldfixedarch;
+	core->fixedbits = oldfixedbits;
 	return rc;
 fail:
 	rc = -1;
@@ -3228,29 +3228,49 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			str[i] = ch;
 			{
 				int flagspace = core->flags->space_idx;
-				/* for all flags in current flagspace */
-				// XXX: dont ask why, but this only works with _prev..
+				RList *match_flag_items = r_list_newf ((RListFree)r_flag_item_free);
+				if (!match_flag_items) {
+					break;
+				}
+
+				/* duplicate flags that match word, to be sure
+				   the command is going to be executed on flags
+				   values at the moment the command is called
+				   (without side effects) */
 				r_list_foreach (core->flags->flags, iter, flag) {
-					if (r_cons_is_breaked ()) {
-						break;
-					}
 					/* filter per flag spaces */
 					if ((flagspace != -1) && (flag->space != flagspace)) {
 						continue;
 					}
+
 					if (r_str_glob (flag->name, word)) {
-						char *buf = NULL;
-						const char *tmp = NULL;
-						r_core_seek (core, flag->offset, 1);
-						r_cons_push ();
-						r_core_cmd (core, cmd, 0);
-						tmp = r_cons_get_buffer ();
-						buf = tmp? strdup (tmp): NULL;
-						r_cons_pop ();
-						r_cons_strcat (buf);
-						free (buf);
+						RFlagItem *cloned_item = r_flag_item_clone (flag);
+						if (!cloned_item) {
+							break;
+						}
+						r_list_append (match_flag_items, cloned_item);
 					}
 				}
+
+				/* for all flags that match */
+				r_list_foreach (match_flag_items, iter, flag) {
+					if (r_cons_is_breaked ()) {
+						break;
+					}
+
+					char *buf = NULL;
+					const char *tmp = NULL;
+					r_core_seek (core, flag->offset, 1);
+					r_cons_push ();
+					r_core_cmd (core, cmd, 0);
+					tmp = r_cons_get_buffer ();
+					buf = tmp? strdup (tmp): NULL;
+					r_cons_pop ();
+					r_cons_strcat (buf);
+					free (buf);
+				}
+
+				r_list_free (match_flag_items);
 				core->flags->space_idx = flagspace;
 				core->rcmd->macro.counter++ ;
 				free (word);
@@ -3275,7 +3295,15 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	char *cmd, *ocmd, *ptr, *rcmd;
 	int ret = false, i;
 
-	r_th_lock_enter (core->lock);
+	if (r_list_empty (core->tasks)) {
+		r_th_lock_enter (core->lock);
+	} else {
+		RListIter *iter;
+		RCoreTask *task;
+		r_list_foreach (core->tasks, iter, task) {
+			r_th_pause (task->msg->th, true);
+		}
+	}
 	if (core->cmdfilter) {
 		const char *invalid_chars = ";|>`@";
 		for (i = 0; invalid_chars[i]; i++) {
@@ -3370,7 +3398,15 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	core->oobi_len = 0;
 	return ret;
 beach:
-	r_th_lock_leave (core->lock);
+	if (r_list_empty (core->tasks)) {
+		r_th_lock_leave (core->lock);
+	} else {
+		RListIter *iter;
+		RCoreTask *task;
+		r_list_foreach (core->tasks, iter, task) {
+			r_th_pause (task->msg->th, false);
+		}
+	}
 	/* run pending analysis commands */
 	if (core->anal->cmdtail) {
 		char *res = core->anal->cmdtail;

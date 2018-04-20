@@ -15,17 +15,18 @@ r_socket = library('r_socket', files,
   link_with: [r_util],
   c_args: ['-DCORELIB=1'],
   install: true,
-  implicit_include_directories: false
+  implicit_include_directories: false,
+  soversion: r2libversion
 )
 
-
-pkg = import('pkgconfig')
-pkg.generate(libraries: [r_socket],
-             subdirs: 'libr',
-             version: r2version,
-             name: 'r_socket',
-             filebase: 'r_socket',
-             requires: [
-               'r_util'
-             ],
-             description: 'radare foundation libraries')
+pkgconfig_mod.generate(
+  libraries: [r_socket],
+  subdirs: 'libr',
+  version: r2version,
+  name: 'r_socket',
+  filebase: 'r_socket',
+  requires: [
+    'r_util'
+  ],
+  description: 'radare foundation libraries'
+)

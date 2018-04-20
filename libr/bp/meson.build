@@ -17,17 +17,18 @@ r_bp = library('r_bp', files,
   c_args: ['-DCORELIB=1'],
   link_with: [r_util],
   install: true,
-  implicit_include_directories: false
+  implicit_include_directories: false,
+  soversion: r2libversion
 )
 
-
-pkg = import('pkgconfig')
-pkg.generate(libraries: [r_bp],
-             subdirs: 'libr',
-             version: r2version,
-             name: 'r_bp',
-             filebase: 'r_bp',
-             requires: [
-               'r_util'
-             ],
-             description: 'radare foundation libraries')
+pkgconfig_mod.generate(
+  libraries: [r_bp],
+  subdirs: 'libr',
+  version: r2version,
+  name: 'r_bp',
+  filebase: 'r_bp',
+  requires: [
+    'r_util'
+  ],
+  description: 'radare foundation libraries'
+)

@@ -41,8 +41,8 @@ ec graph.box rgb:aaa
 ec graph.box2 rgb:d52
 ec graph.box3 rgb:aaa
 ec graph.box4 rgb:aaa
-ec graph.true rgb:d52
-ec graph.false rgb:aaa
+ec graph.true rgb:aaa
+ec graph.false rgb:d52
 ec graph.trufae rgb:aaa
 ec graph.current blue
 ec graph.traced red

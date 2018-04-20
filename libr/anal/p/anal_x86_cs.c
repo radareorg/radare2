@@ -204,24 +204,8 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, int sel) {
 			snprintf (out, BUF_SZ, "%s,%s=",
 				cs_reg_name (handle, op.reg), setarg);
 			return out;
-		} else {
-			if (gop->bits == 64) {
-				switch (op.reg) {
-				case X86_REG_EAX: op.reg = X86_REG_RAX; break;
-				case X86_REG_EBX: op.reg = X86_REG_RBX; break;
-				case X86_REG_ECX: op.reg = X86_REG_RCX; break;
-				case X86_REG_EDX: op.reg = X86_REG_RDX; break;
-				case X86_REG_ESI: op.reg = X86_REG_RSI; break;
-				case X86_REG_EDI: op.reg = X86_REG_RDI; break;
-#if 0
-				case X86_REG_ESP: op.reg = X86_REG_RSP; break;
-				case X86_REG_EBP: op.reg = X86_REG_RBP; break;
-#endif
-				default: break;
-				}
-			}
-			return (char *)cs_reg_name (handle, op.reg);
 		}
+		return (char *)cs_reg_name (handle, op.reg);
 	case X86_OP_IMM:
 		if (set == 1) {
 			snprintf (out, BUF_SZ, "%"PFMT64d",%s=[%d]",
@@ -328,7 +312,13 @@ static int cond_x862r2(int id) {
 	return 0;
 }
 
-static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
+/* reg indices are based on Intel doc for 32-bit ModR/M byte */
+static const char *reg32_to_name(ut8 reg) {
+	const char * const names[] = {"eax", "ecx", "edx", "ebx", "esp", "ebp", "esi", "edi"};
+	return reg < R_ARRAY_SIZE (names) ? names[reg] : "unk";
+}
+
+static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	int rs = a->bits/8;
 	const char *pc = (a->bits==16)?"ip":
 		(a->bits==32)?"eip":"rip";
@@ -1109,14 +1099,18 @@ static void anop_esil (RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case X86_INS_CALL:
 		{
-			if (a->read_at) {
+			if (a->read_at && a->bits != 16) {
 				ut8 thunk[4] = {0};
 				if (a->read_at (a, (ut64)INSOP (0).imm, thunk, sizeof (thunk))) {
-					/* 8b 34 24    mov esi, dword [esp]
+					/* 8b xx x4    mov <reg>, dword [esp]
 					   c3          ret
 					*/
-					if (!memcmp (thunk, "\x8b\x34\x24\xc3", 4)) {
-						esilprintf (op, "0x%llx,esi,=", addr + op->size);
+					if (thunk[0] == 0x8b && thunk[3] == 0xc3
+					    && (thunk[1] & 0xc7) == 4        /* 00rrr100 */
+					    && (thunk[2] & 0x3f) == 0x24) {  /* --100100: ignore scale in SIB byte */
+						ut8 reg = (thunk[1] & 0x38) >> 3;
+						esilprintf (op, "0x%"PFMT64x",%s,=", addr + op->size,
+						            reg32_to_name (reg));
 						break;
 					}
 				}
@@ -2639,7 +2633,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 }
 
 #if 0
-static int x86_int_0x80 (RAnalEsil *esil, int interrupt) {
+static int x86_int_0x80(RAnalEsil *esil, int interrupt) {
 	int syscall;
 	ut64 eax, ebx, ecx, edx;
 	if (!esil || (interrupt != 0x80))
@@ -2673,14 +2667,14 @@ static int x86_int_0x80 (RAnalEsil *esil, int interrupt) {
 #endif
 
 #if 0
-static int esil_x86_cs_intr (RAnalEsil *esil, int intr) {
+static int esil_x86_cs_intr(RAnalEsil *esil, int intr) {
 	if (!esil) return false;
 	eprintf ("INTERRUPT 0x%02x HAPPENS\n", intr);
 	return true;
 }
 #endif
 
-static int esil_x86_cs_init (RAnalEsil *esil) {
+static int esil_x86_cs_init(RAnalEsil *esil) {
 	if (!esil) {
 		return false;
 	}
@@ -2691,13 +2685,13 @@ static int esil_x86_cs_init (RAnalEsil *esil) {
 	return true;
 }
 
-static int fini (void *p) {
+static int fini(void *p) {
 	cs_close (&handle);
 	handle = 0;
 	return true;
 }
 
-static int esil_x86_cs_fini (RAnalEsil *esil) {
+static int esil_x86_cs_fini(RAnalEsil *esil) {
 	return true;
 }
 

@@ -73,12 +73,12 @@ static void type_match(RCore *core, ut64 addr, char *name) {
 				if (r_cons_is_breaked ()) {
 					goto out_function;
 				}
-				ut64 write_addr = sdb_num_get (trace, sdb_fmt (-1, "%d.mem.write", j), 0);
+				ut64 write_addr = sdb_num_get (trace, sdb_fmt ("%d.mem.write", j), 0);
 				if (write_addr == sp + size) {
-					ut64 instr_addr = sdb_num_get (trace, sdb_fmt (-1, "%d.addr", j), 0);
+					ut64 instr_addr = sdb_num_get (trace, sdb_fmt ("%d.addr", j), 0);
 					r_meta_set_string (core->anal, R_META_TYPE_COMMENT, instr_addr,
-						sdb_fmt (-1, "%s %s", type, name));
-					char *tmp = sdb_fmt (-1, "%d.mem.read", j);
+						sdb_fmt ("%s %s", type, name));
+					char *tmp = sdb_fmt ("%d.mem.read", j);
 					int i2, array_size = sdb_array_size (trace, tmp);
 					for (i2 = 0; i2 < array_size; i2++) {
 						if (bp_name) {
@@ -116,12 +116,12 @@ static void type_match(RCore *core, ut64 addr, char *name) {
 					if (r_cons_is_breaked ()) {
 						goto out_function;
 					}
-					ut64 write_addr = sdb_num_get (trace, sdb_fmt (-1, "%d.mem.write", j), 0);
+					ut64 write_addr = sdb_num_get (trace, sdb_fmt ("%d.mem.write", j), 0);
 					if (write_addr == sp + size) {
-						ut64 instr_addr = sdb_num_get (trace, sdb_fmt (-1, "%d.addr", j), 0);
+						ut64 instr_addr = sdb_num_get (trace, sdb_fmt ("%d.addr", j), 0);
 						r_meta_set_string (core->anal, R_META_TYPE_COMMENT, instr_addr,
-								sdb_fmt (-1, "%s%s%s", type, r_str_endswith (type, "*") ? "" : " ", name));
-						char *tmp = sdb_fmt (-1, "%d.mem.read", j);
+								sdb_fmt ("%s%s%s", type, r_str_endswith (type, "*") ? "" : " ", name));
+						char *tmp = sdb_fmt ("%d.mem.read", j);
 						int i2, array_size = sdb_array_size (trace, tmp);
 						for (i2 = 0; i2 < array_size; i2++) {
 							if (bp_name) {
@@ -150,11 +150,11 @@ static void type_match(RCore *core, ut64 addr, char *name) {
 				if (r_cons_is_breaked ()) {
 					goto out_function;
 				}
-				if (sdb_array_contains (trace, sdb_fmt (-1, "%d.reg.write", j), place, 0)) {
-					ut64 instr_addr = sdb_num_get (trace, sdb_fmt (-1, "%d.addr", j), 0);
+				if (sdb_array_contains (trace, sdb_fmt ("%d.reg.write", j), place, 0)) {
+					ut64 instr_addr = sdb_num_get (trace, sdb_fmt ("%d.addr", j), 0);
 					r_meta_set_string (core->anal, R_META_TYPE_COMMENT, instr_addr,
-						sdb_fmt (-1, "%s %s", type, name));
-					char *tmp = sdb_fmt (-1, "%d.mem.read", j);
+						sdb_fmt ("%s %s", type, name));
+					char *tmp = sdb_fmt ("%d.mem.read", j);
 					int i2, array_size = sdb_array_size (trace, tmp);
 					for (i2 = 0; i2 < array_size; i2++) {
 						if (r_cons_is_breaked ()) {
@@ -204,10 +204,10 @@ static int stack_clean (RCore *core, ut64 addr, RAnalFunction *fcn) {
 
 	offset = r_num_math (core->num, str);
 	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
-	sig = sdb_fmt (-1, "%s,+=", sp);
+	sig = sdb_fmt ("%s,+=", sp);
 	ret = 0;
 	if (!strncmp (tmp, sig, strlen (sig))) {
-		const char *esil = sdb_fmt (-1, "%d,%s,-=", offset, sp);
+		const char *esil = sdb_fmt ("%d,%s,-=", offset, sp);
 		r_anal_esil_parse (core->anal->esil, esil);
 		r_anal_esil_stack_free (core->anal->esil);
 		r_core_esil_step (core, UT64_MAX, NULL, NULL);
@@ -242,12 +242,12 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 		r_cons_break_push (NULL, NULL);
 		while (!r_cons_is_breaked ()) {
 			RAnalOp *op = r_core_anal_op (core, addr);
-			int loop_count = sdb_num_get (core->anal->esil->db_trace, sdb_fmt (-1, "0x%"PFMT64x".count", addr), 0);
+			int loop_count = sdb_num_get (core->anal->esil->db_trace, sdb_fmt ("0x%"PFMT64x".count", addr), 0);
 			if (loop_count > LOOP_MAX || !op || op->type == R_ANAL_OP_TYPE_RET || addr >= bb->addr + bb->size || addr < bb->addr) {
 				r_anal_op_free (op);
 				break;
 			}
-			sdb_num_set (core->anal->esil->db_trace, sdb_fmt (-1, "0x%"PFMT64x".count", addr), loop_count + 1, 0);
+			sdb_num_set (core->anal->esil->db_trace, sdb_fmt ("0x%"PFMT64x".count", addr), loop_count + 1, 0);
 			switch (op->type) {
 			case R_ANAL_OP_TYPE_CALL:
 				{

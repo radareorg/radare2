@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_diff.h>
 #include <r_core.h>
@@ -113,16 +113,14 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 				if (!quiet) {
 					printf (Color_RED);
 				}
-				if (r_mem_is_printable ((const ut8 *) s, R_MIN (strlen (s), 5))) {
-					printf ("- %s\n", s);
-				} else {
-					printf ("-:");
-					int len = op->a_len; // R_MIN (op->a_len, strlen (op->a_buf));
-					for (i = 0; i < len; i++) {
-						printf ("%02x", op->a_buf[i]);
-					}
-					printf (" \"%s\"\n", op->a_buf);
+				printf ("-0x%08"PFMT64x":", op->a_off);
+				int len = op->a_len; // R_MIN (op->a_len, strlen (op->a_buf));
+				for (i = 0; i < len; i++) {
+					printf ("%02x", op->a_buf[i]);
 				}
+				char *p = r_str_escape((const char*)op->a_buf);
+				printf (" \"%s\"\n", p);
+				free (p);
 				if (!quiet) {
 					printf (Color_RESET);
 				}
@@ -134,17 +132,17 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 				if (!quiet) {
 					printf (Color_GREEN);
 				}
-				if (r_mem_is_printable ((const ut8 *) s, R_MIN (strlen (s), 5))) {
-					printf ("+ %s\n", s);
-				} else {
-					printf ("+:");
-					for (i = 0; i < op->b_len; i++) {
-						printf ("%02x", op->b_buf[i]);
-					}
-					printf (" \"%s\"\n", op->b_buf);
+				printf ("+0x%08"PFMT64x":", op->b_off);
+				for (i = 0; i < op->b_len; i++) {
+					printf ("%02x", op->b_buf[i]);
 				}
 				if (!quiet) {
+					char *p = r_str_escape((const char*)op->b_buf);
+					printf (" \"%s\"\n", p);
+					free (p);
 					printf (Color_RESET);
+				} else {
+					printf ("\n");
 				}
 			}
 		}

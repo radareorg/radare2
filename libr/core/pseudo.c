@@ -178,7 +178,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_config_save_num (hc, "asm.pseudo", "asm.decode", "asm.lines", "asm.bytes", NULL);
 	r_config_save_num (hc, "asm.offset", "asm.flags", "asm.fcnlines", "asm.comments", NULL);
 	r_config_save_num (hc, "asm.functions", "asm.section", "asm.cmt.col", "asm.filter", NULL);
-	r_config_save_num (hc, "scr.color", "asm.emu.str", "asm.emu", "asm.emu.write", NULL);
+	r_config_save_num (hc, "scr.color", "emu.str", "asm.emu", "emu.write", NULL);
 	r_config_save_num (hc, "io.cache", NULL);
 	if (!fcn) {
 		eprintf ("Cannot find function in 0x%08"PFMT64x"\n", core->offset);
@@ -194,8 +194,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_config_set_i (core->config, "asm.offset", 0);
 	r_config_set_i (core->config, "asm.flags", 0);
 	r_config_set_i (core->config, "asm.emu", 1);
-	r_config_set_i (core->config, "asm.emu.str", 1);
-	r_config_set_i (core->config, "asm.emu.write", 1);
+	r_config_set_i (core->config, "emu.str", 1);
+	r_config_set_i (core->config, "emu.write", 1);
 	r_config_set_i (core->config, "asm.fcnlines", 0);
 	r_config_set_i (core->config, "asm.comments", 1);
 	r_config_set_i (core->config, "asm.functions", 0);
@@ -221,9 +221,9 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_cons_printf ("\n    //  %d basic blocks\n", n_bb);
 	do {
 #define I_TAB 4
-#define K_MARK(x) sdb_fmt(0,"mark.%"PFMT64x,x)
-#define K_ELSE(x) sdb_fmt(0,"else.%"PFMT64x,x)
-#define K_INDENT(x) sdb_fmt(0,"loc.%"PFMT64x,x)
+#define K_MARK(x) sdb_fmt("mark.%"PFMT64x,x)
+#define K_ELSE(x) sdb_fmt("else.%"PFMT64x,x)
+#define K_INDENT(x) sdb_fmt("loc.%"PFMT64x,x)
 #define SET_INDENT(x) { x = x>0?x:1; memset (indentstr, ' ', x*I_TAB); indentstr [(x*I_TAB)-2] = 0; }
 		if (!bb) {
 			break;
@@ -232,7 +232,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		r_cons_push ();
 		bool html = r_config_get_i (core->config, "scr.html");
 		r_config_set_i (core->config, "scr.html", 0);
-		char *code = r_core_cmd_str (core, sdb_fmt (0, "pD %d @ 0x%08"PFMT64x"\n", bb->size, bb->addr));
+		char *code = r_core_cmd_str (core, sdb_fmt ("pD %d @ 0x%08"PFMT64x"\n", bb->size, bb->addr));
 		r_cons_pop ();
 		r_config_set_i (core->config, "scr.html", html);
 		if (indent * I_TAB + 2 >= sizeof (indentstr)) {

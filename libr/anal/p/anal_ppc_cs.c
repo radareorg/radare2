@@ -1143,7 +1143,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 }
 
 static int archinfo(RAnal *anal, int q) {
-	return 2; /* :D */
+	return 4;
 }
 
 RAnalPlugin r_anal_plugin_ppc_cs = {

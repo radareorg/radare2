@@ -54,15 +54,12 @@ static void *r_trie_node_find(RTrieNode *n, char *name) {
 }
 
 static void r_trie_node_free(RTrieNode **n) {
-	if (!n) {
-		return;
-	}
-	if (!*n) {
+	if (!n || *n) {
 		return;
 	}
 	int i;
 	for (i = 0; i < ALPHABET_SIZE; i++){
-		r_trie_node_free ((*n)->child[i]);
+		r_trie_node_free (&(*n)->child[i]);
 	}
 	R_FREE (*n);
 }
@@ -150,7 +147,7 @@ R_API void r_trie_free(RTrie ** t) {
 		return;
 	}
 	if ((*t)->root) {
-		r_trie_node_free ((*t)->root);
+		r_trie_node_free (&(*t)->root);
 	}
 	R_FREE (*t);
 }

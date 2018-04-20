@@ -1,6 +1,7 @@
 files = [
   'file.c',
   'fs.c',
+  'shell.c',
   #'p/fs_cpio.c',
   'p/fs_ext2.c',
   'p/fs_fat.c',
@@ -33,17 +34,18 @@ r_fs = library('r_fs', files,
   c_args: ['-DCORELIB=1'],
   link_with: [r_util, libr_shlr],
   install: true,
-  implicit_include_directories: false
+  implicit_include_directories: false,
+  soversion: r2libversion
 )
 
-
-pkg = import('pkgconfig')
-pkg.generate(libraries: [r_fs],
-             subdirs: 'libr',
-             version: r2version,
-             name: 'r_fs',
-             filebase: 'r_fs',
-             requires: [
-               'r_util'
-             ],
-             description: 'radare foundation libraries')
+pkgconfig_mod.generate(
+  libraries: [r_fs],
+  subdirs: 'libr',
+  version: r2version,
+  name: 'r_fs',
+  filebase: 'r_fs',
+  requires: [
+    'r_util'
+  ],
+  description: 'radare foundation libraries'
+)

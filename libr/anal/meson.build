@@ -22,7 +22,7 @@ files = [
   'p/anal_8051.c',
   'p/anal_arc.c',
   'p/anal_arm_cs.c',
-  # 'p/anal_arm_gnu.c',
+  'p/anal_arm_gnu.c',
   'p/anal_avr.c',
   'p/anal_bf.c',
   'p/anal_cr16.c',
@@ -70,7 +70,7 @@ files = [
   'reflines.c',
   'rtti.c',
   'rtti_msvc.c',
-  'rtti_gcc.c',
+  'rtti_itanium.c',
   'session.c',
   'sign.c',
   'state.c',
@@ -112,17 +112,18 @@ r_anal = library('r_anal', files,
     r_util, r_reg, r_asm, r_syscall, r_search, r_cons, r_flag, libr_shlr
   ],
   install: true,
-  implicit_include_directories: false
+  implicit_include_directories: false,
+  soversion: r2libversion
 )
 
-
-pkg = import('pkgconfig')
-pkg.generate(libraries: [r_anal],
-             subdirs: 'libr',
-             version: r2version,
-             name: 'r_anal',
-             filebase: 'r_anal',
-             requires: [
-               'r_util', 'r_reg', 'r_asm', 'r_syscall', 'r_search', 'r_cons', 'r_flag'
-             ],
-             description: 'radare foundation libraries')
+pkgconfig_mod.generate(
+  libraries: [r_anal],
+  subdirs: 'libr',
+  version: r2version,
+  name: 'r_anal',
+  filebase: 'r_anal',
+  requires: [
+    'r_util', 'r_reg', 'r_asm', 'r_syscall', 'r_search', 'r_cons', 'r_flag'
+  ],
+  description: 'radare foundation libraries'
+)

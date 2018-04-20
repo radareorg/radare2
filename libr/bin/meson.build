@@ -122,16 +122,18 @@ r_bin = library('r_bin', files,
   c_args: ['-DCORELIB=1', '-DR_API_BIN_ONLY=1'],
   link_with: [r_util, r_io, r_socket, r_magic, libr_shlr],
   install: true,
-  implicit_include_directories: false
+  implicit_include_directories: false,
+  soversion: r2libversion
 )
 
-pkg = import('pkgconfig')
-pkg.generate(libraries: [r_bin],
-             subdirs: 'libr',
-             version: r2version,
-             name: 'r_bin',
-             filebase: 'r_bin',
-             requires: [
-               'r_util', 'r_io', 'r_socket', 'r_magic'
-             ],
-             description: 'radare foundation libraries')
+pkgconfig_mod.generate(
+  libraries: [r_bin],
+  subdirs: 'libr',
+  version: r2version,
+  name: 'r_bin',
+  filebase: 'r_bin',
+  requires: [
+    'r_util', 'r_io', 'r_socket', 'r_magic'
+  ],
+  description: 'radare foundation libraries'
+)

@@ -106,9 +106,10 @@ static bool sparse_limits(RList *l, ut64 *min, ut64 *max) {
 	return set;
 }
 
-R_API RBuffer *r_buf_new_from_io(RIOBind *iob) {
+R_API RBuffer *r_buf_new_with_io(void *iob, int fd) {
 	RBuffer *b = r_buf_new ();
 	b->iob = iob;
+	b->fd = fd; 
 	return b;
 }
 
@@ -185,6 +186,10 @@ R_API const ut8 *r_buf_buffer (RBuffer *b) {
 R_API ut64 r_buf_size (RBuffer *b) {
 	if (!b) {
 		return 0LL;
+	}
+	if (b->iob) {
+		RIOBind *iob = b->iob;
+		return iob->fd_size (iob->io, b->fd);
 	}
 	if (b->fd != -1) {
 		return b->length;
@@ -463,10 +468,14 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 	}
 	if (b->iob) {
 		RIOBind *iob = b->iob;
-		if (write) {
-			return iob->write_at (iob->io, addr, src, len);
+		if (b->fd != -1) {
+			return write
+				? iob->fd_write_at (iob->io, b->fd, addr, src, len)
+				: iob->fd_read_at (iob->io, b->fd, addr, dst, len);
 		}
-		return iob->read_at (iob->io, addr, dst, len);
+		return write
+			? iob->write_at (iob->io, addr, src, len)
+			: iob->read_at (iob->io, addr, dst, len);
 	}
 	if (b->fd != -1) {
 		if (r_sandbox_lseek (b->fd, addr, SEEK_SET) == -1) {
@@ -638,9 +647,17 @@ R_API ut8 *r_buf_get_at (RBuffer *b, ut64 addr, int *left) {
 	if (b->empty) {
 		return NULL;
 	}
-	if (b->iob || b->fd != -1) {
-		eprintf ("r_buf_get_at not supported for r_buf_new_file\n");
-		return NULL;
+	if (b->iob) {
+		if (b->fd != -1) {
+			eprintf ("r_buf_get_at not supported for r_buf_new_file\n");
+			return NULL;
+		}
+		static ut8 buf[8];
+		r_buf_read_at (b, addr, buf, sizeof (buf));
+		if (left) {
+			*left = 8;
+		}
+		return buf;
 	}
 	if (addr == R_BUF_CUR) {
 		addr = b->cur;
@@ -670,6 +687,9 @@ R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 		addr = b->cur;
 	}
 	if (iob) {
+		if (b->fd != -1) {
+			return iob->fd_read_at (iob->io, b->fd, addr - b->base, buf, len);
+		}
 		return iob->read_at (iob->io, addr - b->base, buf, len);
 	}
 	if (b->fd != -1) {
@@ -707,6 +727,9 @@ R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len) {
 		return 0;
 	}
 	if (iob) {
+		if (b->fd != -1) {
+			return iob->fd_write_at (iob->io, b->fd, addr - b->base, buf, len);
+		}
 		return iob->write_at (iob->io, addr - b->base, buf, len);
 	}
 	if (b->fd != -1) {

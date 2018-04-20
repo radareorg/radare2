@@ -167,17 +167,18 @@ r_asm = library('r_asm', files,
     r_util, r_syscall, r_parse, r_lang, r_flag, r_socket, libr_shlr
   ],
   install: true,
-  implicit_include_directories: false
+  implicit_include_directories: false,
+  soversion: r2libversion
 )
 
-
-pkg = import('pkgconfig')
-pkg.generate(libraries: [r_asm],
-             subdirs: 'libr',
-             version: r2version,
-             name: 'r_asm',
-             filebase: 'r_asm',
-             requires: [
-               'r_util', 'r_syscall', 'r_parse', 'r_lang', 'r_flag', 'r_socket'
-             ],
-             description: 'radare foundation libraries')
+pkgconfig_mod.generate(
+  libraries: [r_asm],
+  subdirs: 'libr',
+  version: r2version,
+  name: 'r_asm',
+  filebase: 'r_asm',
+  requires: [
+    'r_util', 'r_syscall', 'r_parse', 'r_lang', 'r_flag', 'r_socket'
+  ],
+  description: 'radare foundation libraries'
+)

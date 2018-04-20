@@ -34,6 +34,16 @@ static inline RNumCalcValue Nmul(RNumCalcValue n, RNumCalcValue v) {
 
 static inline RNumCalcValue Nshl(RNumCalcValue n, RNumCalcValue v) { n.d += v.d; n.n <<= v.n; return n; }
 static inline RNumCalcValue Nshr(RNumCalcValue n, RNumCalcValue v) { n.d += v.d; n.n >>= v.n; return n; }
+static inline RNumCalcValue Nrol(RNumCalcValue n, RNumCalcValue v) {
+	n.d += v.d;
+	n.n = (n.n << v.n) | (n.n >> (sizeof(n.n) * 8 - v.n));
+	return n;
+}
+static inline RNumCalcValue Nror(RNumCalcValue n, RNumCalcValue v) {
+	n.d += v.d;
+	n.n = (n.n >> v.n) | (n.n << (sizeof(n.n) * 8 - v.n));
+	return n;
+}
 static inline RNumCalcValue Nmod(RNumCalcValue n, RNumCalcValue v) {
 	if (v.d) n.d = (n.d - (n.d/v.d)); else n.d = 0;
 	if (v.n) n.n %= v.n; else n.n = 0;
@@ -64,6 +74,8 @@ static RNumCalcValue expr(RNum *num, RNumCalc *nc, int get) {
 		switch (nc->curr_tok) {
 		case RNCSHL: left = Nshl (left, term (num, nc, 1)); break;
 		case RNCSHR: left = Nshr (left, term (num, nc, 1)); break;
+		case RNCROL: left = Nrol (left, term (num, nc, 1)); break;
+		case RNCROR: left = Nror (left, term (num, nc, 1)); break;
 		case RNCPLUS: left = Nadd (left, term (num, nc, 1)); break;
 		case RNCMINUS: left = Nsub (left, term (num, nc, 1)); break;
 		case RNCXOR: left = Nxor (left, term (num, nc, 1)); break;
@@ -158,6 +170,8 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 	case RNCRIGHTP:
 	case RNCSHL:
 	case RNCSHR:
+	case RNCROL:
+	case RNCROR:
 		return v;
 	//default: error (num, nc, "primary expected");
 	}
@@ -261,6 +275,26 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 		}
 		cin_putback (num, nc, c);
 		return nc->curr_tok = (RNumCalcToken) ch;
+	case '<':
+		if (cin_get (num, nc, &c) && c == '<') {
+			if (cin_get (num, nc, &c) && c == '<') {
+				return nc->curr_tok = RNCROL;
+			}
+			cin_putback (num, nc, c);
+			return nc->curr_tok = RNCSHL;
+		}
+		cin_putback (num, nc, c);
+		return nc->curr_tok = RNCEND;
+	case '>':
+		if (cin_get (num, nc, &c) && c == '>') {
+			if (cin_get (num, nc, &c) && c == '>') {
+				return nc->curr_tok = RNCROR;
+			}
+			cin_putback (num, nc, c);
+			return nc->curr_tok = RNCSHR;
+		}
+		cin_putback (num, nc, c);
+		return nc->curr_tok = RNCEND;
 	case '^':
 	case '&':
 	case '|':
@@ -269,8 +303,6 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 	case '/':
 	case '(':
 	case ')':
-	case '<':
-	case '>':
 	case '=':
 		return nc->curr_tok = (RNumCalcToken) ch;
 	case '0': case '1': case '2': case '3': case '4':

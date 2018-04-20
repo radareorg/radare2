@@ -201,6 +201,7 @@ static const char *help_msg_pd[] = {
 	"pdJ", "", "formatted disassembly like pd as json",
 	"pdk", "", "disassemble all methods of a class",
 	"pdl", "", "show instruction sizes",
+	"pdp", "", "disassemble by following pointers to read ropchains",
 	"pdr", "", "recursive disassemble across the function graph",
 	"pdr.", "", "recursive disassemble across the function graph (from current basic block)",
 	"pdR", "", "recursive disassemble block size bytes without analyzing functions",
@@ -239,16 +240,16 @@ static const char *help_detail_pf[] = {
 	" ", "b", "byte (unsigned)",
 	" ", "B", "resolve enum bitfield (see t?)",
 	" ", "c", "char (signed byte)",
-	" ", "d", "0x%%08x hexadecimal value (4 bytes) (see %%i and %%x)",
+	" ", "d", "0xHEX value (4 bytes) (see 'i' and 'x')",
 	" ", "D", "disassemble one opcode",
 	" ", "e", "temporally swap endian",
 	" ", "E", "resolve enum name (see t?)",
 	" ", "f", "float value (4 bytes)",
 	" ", "F", "double value (8 bytes)",
-	" ", "i", "%%i signed integer value (4 bytes) (see %%d and %%x)",
+	" ", "i", "signed integer value (4 bytes) (see 'd' and 'x')",
 	" ", "n", "next char specifies size of signed value (1, 2, 4 or 8 byte(s))",
 	" ", "N", "next char specifies size of unsigned value (1, 2, 4 or 8 byte(s))",
-	" ", "o", "0x%%08o octal value (4 byte)",
+	" ", "o", "octal value (4 byte)",
 	" ", "p", "pointer reference (2, 4 or 8 bytes)",
 	" ", "q", "quadword (8 bytes)",
 	" ", "r", "CPU register `pf r (eax)plop`",
@@ -258,10 +259,10 @@ static const char *help_detail_pf[] = {
 	" ", "T", "show Ten first bytes of buffer",
 	" ", "u", "uleb128 (variable length)",
 	" ", "w", "word (2 bytes unsigned short in hex)",
-	" ", "x", "0x%%08x hex value and flag (fd @ addr) (see %%d and %%i)",
+	" ", "x", "0xHEX value and flag (fd @ addr) (see 'd' and 'i')",
 	" ", "X", "show formatted hexpairs",
-	" ", "z", "\\0 terminated string",
-	" ", "Z", "\\0 terminated wide string",
+	" ", "z", "null terminated string",
+	" ", "Z", "null terminated wide string",
 	" ", "?", "data structure `pf ? (struct_name)example_name`",
 	" ", "*", "next char is pointer (honors asm.bits)",
 	" ", "+", "toggle show flags for each offset",
@@ -356,12 +357,12 @@ static const char *help_msg_px[] = {
 	"pxl", "", "display N lines (rows) of hexdump",
 	"pxo", "", "show octal dump",
 	"pxq", "", "show hexadecimal quad-words dump (64bit)",
-	"pxQ", "", "same as above, but one per line",
-	"pxr", "[j]", "show words with references to flags and code",
+	"pxQ", "[q]", "same as above, but one per line",
+	"pxr", "[j]", "show words with references to flags and code (q=quiet)",
 	"pxs", "", "show hexadecimal in sparse mode",
 	"pxt", "[*.] [origin]", "show delta pointer table in r2 commands",
 	"pxw", "", "show hexadecimal words dump (32bit)",
-	"pxW", "", "same as above, but one per line",
+	"pxW", "[q]", "same as above, but one per line (q=quiet)",
 	"pxx", "", "show N bytes of hex-less hexdump",
 	"pxX", "", "show N words of hex-less hexdump",
 	NULL
@@ -384,23 +385,23 @@ const char *help_msg_pz[] = {
 	NULL
 };
 
-static ut32 colormap[256] = {
+static const ut32 colormap[256] = {
 	0x000000, 0x560000, 0x640000, 0x750000, 0x870000, 0x9b0000, 0xb00000, 0xc60000, 0xdd0000, 0xf50000, 0xff0f0f, 0xff2828, 0xff4343, 0xff5e5e, 0xff7979, 0xfe9595,
-  0x4c1600, 0x561900, 0x641e00, 0x752300, 0x872800, 0x9b2e00, 0xb03400, 0xc63b00, 0xdd4200, 0xf54900, 0xff570f, 0xff6928, 0xff7b43, 0xff8e5e, 0xffa179, 0xfeb595,
-  0x4c3900, 0x564000, 0x644b00, 0x755700, 0x876500, 0x9b7400, 0xb08400, 0xc69400, 0xdda600, 0xf5b800, 0xffc30f, 0xffc928, 0xffd043, 0xffd65e, 0xffdd79, 0xfee495,
-  0x4c4c00, 0x565600, 0x646400, 0x757500, 0x878700, 0x9b9b00, 0xb0b000, 0xc6c600, 0xdddd00, 0xf5f500, 0xffff0f, 0xffff28, 0xffff43, 0xffff5e, 0xffff79, 0xfffe95,
-  0x324c00, 0x395600, 0x426400, 0x4e7500, 0x5a8700, 0x679b00, 0x75b000, 0x84c600, 0x93dd00, 0xa3f500, 0xafff0f, 0xb7ff28, 0xc0ff43, 0xc9ff5e, 0xd2ff79, 0xdbfe95,
-  0x1f4c00, 0x235600, 0x296400, 0x307500, 0x388700, 0x409b00, 0x49b000, 0x52c600, 0x5cdd00, 0x66f500, 0x73ff0f, 0x82ff28, 0x91ff43, 0xa1ff5e, 0xb1ff79, 0xc1fe95,
-  0x004c00, 0x005600, 0x006400, 0x007500, 0x008700, 0x009b00, 0x00b000, 0x00c600, 0x00dd00, 0x00f500, 0x0fff0f, 0x28ff28, 0x43ff43, 0x5eff5e, 0x79ff79, 0x95fe95,
-  0x004c19, 0x00561c, 0x006421, 0x007527, 0x00872d, 0x009b33, 0x00b03a, 0x00c642, 0x00dd49, 0x00f551, 0x0fff5f, 0x28ff70, 0x43ff81, 0x5eff93, 0x79ffa6, 0x95feb8,
-  0x004c4c, 0x005656, 0x006464, 0x007575, 0x008787, 0x009b9b, 0x00b0b0, 0x00c6c6, 0x00dddd, 0x00f5f5, 0x0ffffe, 0x28fffe, 0x43fffe, 0x5efffe, 0x79ffff, 0x95fffe,
-  0x00394c, 0x004056, 0x004b64, 0x005775, 0x006587, 0x00749b, 0x0084b0, 0x0094c6, 0x00a6dd, 0x00b8f5, 0x0fc3ff, 0x28c9ff, 0x43d0ff, 0x5ed6ff, 0x79ddff, 0x95e4fe,
-  0x00264c, 0x002b56, 0x003264, 0x003a75, 0x004387, 0x004d9b, 0x0058b0, 0x0063c6, 0x006edd, 0x007af5, 0x0f87ff, 0x2893ff, 0x43a1ff, 0x5eaeff, 0x79bcff, 0x95cafe,
-  0x00134c, 0x001556, 0x001964, 0x001d75, 0x002187, 0x00269b, 0x002cb0, 0x0031c6, 0x0037dd, 0x003df5, 0x0f4bff, 0x285eff, 0x4372ff, 0x5e86ff, 0x799aff, 0x95b0fe,
-  0x19004c, 0x1c0056, 0x210064, 0x270075, 0x2d0087, 0x33009b, 0x3a00b0, 0x4200c6, 0x4900dd, 0x5100f5, 0x5f0fff, 0x7028ff, 0x8143ff, 0x935eff, 0xa679ff, 0xb895fe,
-  0x33004c, 0x390056, 0x420064, 0x4e0075, 0x5a0087, 0x67009b, 0x7500b0, 0x8400c6, 0x9300dd, 0xa300f5, 0xaf0fff, 0xb728ff, 0xc043ff, 0xc95eff, 0xd279ff, 0xdb95fe,
-  0x4c004c, 0x560056, 0x640064, 0x750075, 0x870087, 0x9b009b, 0xb000b0, 0xc600c6, 0xdd00dd, 0xf500f5, 0xfe0fff, 0xfe28ff, 0xfe43ff, 0xfe5eff, 0xfe79ff, 0xfe95fe,
-  0x4c0032, 0x560039, 0x640042, 0x75004e, 0x87005a, 0x9b0067, 0xb00075, 0xc60084, 0xdd0093, 0xf500a3, 0xff0faf, 0xff28b7, 0xff43c0, 0xff5ec9, 0xff79d2, 0xffffff,
+	0x4c1600, 0x561900, 0x641e00, 0x752300, 0x872800, 0x9b2e00, 0xb03400, 0xc63b00, 0xdd4200, 0xf54900, 0xff570f, 0xff6928, 0xff7b43, 0xff8e5e, 0xffa179, 0xfeb595,
+	0x4c3900, 0x564000, 0x644b00, 0x755700, 0x876500, 0x9b7400, 0xb08400, 0xc69400, 0xdda600, 0xf5b800, 0xffc30f, 0xffc928, 0xffd043, 0xffd65e, 0xffdd79, 0xfee495,
+	0x4c4c00, 0x565600, 0x646400, 0x757500, 0x878700, 0x9b9b00, 0xb0b000, 0xc6c600, 0xdddd00, 0xf5f500, 0xffff0f, 0xffff28, 0xffff43, 0xffff5e, 0xffff79, 0xfffe95,
+	0x324c00, 0x395600, 0x426400, 0x4e7500, 0x5a8700, 0x679b00, 0x75b000, 0x84c600, 0x93dd00, 0xa3f500, 0xafff0f, 0xb7ff28, 0xc0ff43, 0xc9ff5e, 0xd2ff79, 0xdbfe95,
+	0x1f4c00, 0x235600, 0x296400, 0x307500, 0x388700, 0x409b00, 0x49b000, 0x52c600, 0x5cdd00, 0x66f500, 0x73ff0f, 0x82ff28, 0x91ff43, 0xa1ff5e, 0xb1ff79, 0xc1fe95,
+	0x004c00, 0x005600, 0x006400, 0x007500, 0x008700, 0x009b00, 0x00b000, 0x00c600, 0x00dd00, 0x00f500, 0x0fff0f, 0x28ff28, 0x43ff43, 0x5eff5e, 0x79ff79, 0x95fe95,
+	0x004c19, 0x00561c, 0x006421, 0x007527, 0x00872d, 0x009b33, 0x00b03a, 0x00c642, 0x00dd49, 0x00f551, 0x0fff5f, 0x28ff70, 0x43ff81, 0x5eff93, 0x79ffa6, 0x95feb8,
+	0x004c4c, 0x005656, 0x006464, 0x007575, 0x008787, 0x009b9b, 0x00b0b0, 0x00c6c6, 0x00dddd, 0x00f5f5, 0x0ffffe, 0x28fffe, 0x43fffe, 0x5efffe, 0x79ffff, 0x95fffe,
+	0x00394c, 0x004056, 0x004b64, 0x005775, 0x006587, 0x00749b, 0x0084b0, 0x0094c6, 0x00a6dd, 0x00b8f5, 0x0fc3ff, 0x28c9ff, 0x43d0ff, 0x5ed6ff, 0x79ddff, 0x95e4fe,
+	0x00264c, 0x002b56, 0x003264, 0x003a75, 0x004387, 0x004d9b, 0x0058b0, 0x0063c6, 0x006edd, 0x007af5, 0x0f87ff, 0x2893ff, 0x43a1ff, 0x5eaeff, 0x79bcff, 0x95cafe,
+	0x00134c, 0x001556, 0x001964, 0x001d75, 0x002187, 0x00269b, 0x002cb0, 0x0031c6, 0x0037dd, 0x003df5, 0x0f4bff, 0x285eff, 0x4372ff, 0x5e86ff, 0x799aff, 0x95b0fe,
+	0x19004c, 0x1c0056, 0x210064, 0x270075, 0x2d0087, 0x33009b, 0x3a00b0, 0x4200c6, 0x4900dd, 0x5100f5, 0x5f0fff, 0x7028ff, 0x8143ff, 0x935eff, 0xa679ff, 0xb895fe,
+	0x33004c, 0x390056, 0x420064, 0x4e0075, 0x5a0087, 0x67009b, 0x7500b0, 0x8400c6, 0x9300dd, 0xa300f5, 0xaf0fff, 0xb728ff, 0xc043ff, 0xc95eff, 0xd279ff, 0xdb95fe,
+	0x4c004c, 0x560056, 0x640064, 0x750075, 0x870087, 0x9b009b, 0xb000b0, 0xc600c6, 0xdd00dd, 0xf500f5, 0xfe0fff, 0xfe28ff, 0xfe43ff, 0xfe5eff, 0xfe79ff, 0xfe95fe,
+	0x4c0032, 0x560039, 0x640042, 0x75004e, 0x87005a, 0x9b0067, 0xb00075, 0xc60084, 0xdd0093, 0xf500a3, 0xff0faf, 0xff28b7, 0xff43c0, 0xff5ec9, 0xff79d2, 0xffffff,
 };
 
 static void cmd_print_init(RCore *core) {
@@ -650,6 +651,11 @@ static void cmd_pCx(RCore *core, const char *input, const char *xcmd) {
 	}
 	r_cons_push ();
 	RConsCanvas *c = r_cons_canvas_new (w, rows);
+	if (!c) {
+		eprintf ("Couldn't allocate a canvas with %d rows\n", rows);
+		goto err;
+	}
+
 	ut64 tsek = core->offset;
 	c->color = r_config_get_i (core->config, "scr.color");
 	int bsize = hex_cols * rows;
@@ -666,9 +672,10 @@ static void cmd_pCx(RCore *core, const char *input, const char *xcmd) {
 		tsek += bsize - 32;
 	}
 
-	r_cons_pop ();
 	r_cons_canvas_print (c);
 	r_cons_canvas_free (c);
+ err:
+	r_cons_pop ();
 	r_config_set_i (core->config, "hex.cols", hex_cols);
 }
 
@@ -874,20 +881,21 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		if (input[2] == '?') {
 			eprintf ("|Usage: pfo [format-file]\n"
 				" ~/.config/radare2/format\n"
-				" "R2_DATDIR "/radare2/"R2_VERSION "/format/\n");
+				" %s/radare2/"R2_VERSION "/format/\n",
+				r_sys_prefix (NULL));
 		} else if (input[2] == ' ') {
-			char *home, path[512];
-			// XXX hardcoded path here
-			snprintf (path, sizeof (path), ".config/radare2/format/%s", input + 3);
-			home = r_str_home (path);
-			snprintf (path, sizeof (path), R2_DATDIR "/radare2/"
-				R2_VERSION "/format/%s", input + 3);
+			char *home, *path, tmp[512];
+			snprintf (tmp, sizeof (tmp), ".config/radare2/format/%s", input + 3);
+			home = r_str_home (tmp);
+			snprintf (tmp, sizeof (tmp), "share/radare2/"R2_VERSION"/format/%s", input + 3);
+			path = r_str_r2_prefix (tmp);
 			if (!r_core_cmd_file (core, home) && !r_core_cmd_file (core, path)) {
 				if (!r_core_cmd_file (core, input + 3)) {
 					eprintf ("ecf: cannot open colorscheme profile (%s)\n", path);
 				}
 			}
 			free (home);
+			free (path);
 		} else {
 			RList *files;
 			RListIter *iter;
@@ -903,13 +911,17 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 				r_list_free (files);
 				free (home);
 			}
-			files = r_sys_dir (R2_DATDIR "/radare2/"R2_VERSION "/format/");
-			r_list_foreach (files, iter, fn) {
-				if (*fn && *fn != '.') {
-					r_cons_println (fn);
+			char *path = r_str_r2_prefix ("share/radare2/"R2_VERSION"/format/");
+			if (path) {
+				files = r_sys_dir (path);
+				r_list_foreach (files, iter, fn) {
+					if (*fn && *fn != '.') {
+						r_cons_println (fn);
+					}
 				}
+				r_list_free (files);
+				free (path);
 			}
-			r_list_free (files);
 		}
 		free (input);
 		return;
@@ -1105,7 +1117,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	bytes = calloc (nb_cons_cols * 20, sizeof (char));
 	if (!bytes) goto err_bytes;
 #if 1
-	int addrpadlen = strlen (sdb_fmt (0, "%08"PFMT64x, addr)) - 8;
+	int addrpadlen = strlen (sdb_fmt ("%08"PFMT64x, addr)) - 8;
 	char addrpad[32];
 	if (addrpadlen > 0) {
 		memset (addrpad, ' ', addrpadlen);
@@ -1808,8 +1820,8 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	bool asm_flags = r_config_get_i (core->config, "asm.flags");
 	bool asm_cmt_right = r_config_get_i (core->config, "asm.cmt.right");
 	bool asm_emu = r_config_get_i (core->config, "asm.emu");
-	bool asm_emustr = r_config_get_i (core->config, "asm.emu.str");
-	r_config_set_i (core->config, "asm.emu.str", true);
+	bool emu_str = r_config_get_i (core->config, "emu.str");
+	r_config_set_i (core->config, "emu.str", true);
 	RConsPrintablePalette *pal = &core->cons->pal;
 	// force defaults
 	r_config_set_i (core->config, "asm.offset", true);
@@ -1817,7 +1829,14 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 	r_config_set_i (core->config, "asm.tabs", 0);
 	r_config_set_i (core->config, "asm.cmt.right", true);
 r_cons_push();
-	if (!strncmp (input, "dsf", 3) || !strncmp (input, "dsr", 3)) {
+line = NULL;
+	s = NULL;
+	if (!strncmp (input, "dsb", 3)) {
+		RAnalBlock *bb = r_anal_bb_from_offset (core->anal, core->offset);
+		if (bb) {
+			line = s = r_core_cmd_strf (core, "pD %"PFMT64d" @ 0x%08"PFMT64x, bb->size, bb->addr);
+		}
+	} else if (!strncmp (input, "dsf", 3) || !strncmp (input, "dsr", 3)) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 		if (fcn) {
 			line = s = r_core_cmd_str (core, "pdr");
@@ -1828,9 +1847,7 @@ r_cons_push();
 			goto restore_conf;
 		}
 	} else if (!strncmp (input, "ds ", 3)) {
-		char *cmd = r_str_newf ("pD %s", input + 3);
-		line = s = r_core_cmd_strf (core, cmd);
-		free (cmd);
+		line = s = r_core_cmd_strf (core, "pD %s", input + 3);
 	} else {
 		line = s = r_core_cmd_str (core, "pd");
 	}
@@ -1839,7 +1856,7 @@ r_cons_pop();
 	r_config_set_i (core->config, "asm.cmt.right", asm_cmt_right);
 	count = r_str_split (s, '\n');
 	if (!line || !*line || count < 1) {
-		free (s);
+	//	R_FREE (s);
 		goto restore_conf;
 	}
 	for (i = 0; i < count; i++) {
@@ -2063,8 +2080,8 @@ r_cons_pop();
 restore_conf:
 	r_config_set_i (core->config, "asm.offset", show_offset);
 	r_config_set_i (core->config, "asm.tabs", asm_tabs);
-	r_config_set_i (core->config, "asm.emu.str", asm_emustr);
 	r_config_set_i (core->config, "asm.emu", asm_emu);
+	r_config_set_i (core->config, "emu.str", emu_str);
 }
 
 static void algolist(int mode) {
@@ -2502,7 +2519,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			for (i = 0; i < nblocks; i++) {
 				ut64 off = from + (blocksize * (i + skipblocks));
 				r_core_read_at (core, off, p, blocksize);
-				ptr[i] = (ut8) (256 * r_hash_entropy_fraction (p, blocksize));
+				ptr[i] = (ut8) (255 * r_hash_entropy_fraction (p, blocksize));
 			}
 			free (p);
 			r_print_columns (core->print, ptr, nblocks, 14);
@@ -2598,7 +2615,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		for (i = 0; i < nblocks; i++) {
 			ut64 off = from + (blocksize * (i + skipblocks));
 			r_core_read_at (core, off, p, blocksize);
-			ptr[i] = (ut8) (256 * r_hash_entropy_fraction (p, blocksize));
+			ptr[i] = (ut8) (255 * r_hash_entropy_fraction (p, blocksize));
 		}
 		free (p);
 		print_bars = true;
@@ -2986,6 +3003,54 @@ r_cons_printf ("base:\n");
 }
 #endif
 
+static void disasm_until_ret(RCore *core, ut64 addr, char type_print) {
+	int p = 0;
+	ut8 *buf = calloc (core->blocksize, 1);
+	if (!buf) {
+		return;
+	}
+	(void)r_io_read_at (core->io, addr, buf, core->blocksize);
+	while (p + 4 < core->blocksize) {
+		RAnalOp *op = r_core_anal_op (core, addr + p);
+		if (op) {
+			r_cons_printf ("0x%08"PFMT64x"  %10s %s\n", addr + p, "", op->mnemonic);
+			if (op->type == R_ANAL_OP_TYPE_RET) {
+				break;
+			}
+			p += op->size;
+		} else {
+			eprintf ("[pdp] Cannot get op at 0x%08"PFMT64x"\n", addr + p);
+			r_anal_op_free (op);
+			break;
+		}
+		//r_io_read_at (core->io, n, rbuf, 512);
+		r_anal_op_free (op);
+	}
+	free (buf);
+}
+
+static void disasm_ropchain(RCore *core, ut64 addr, char type_print) {
+	int p = 0;
+	ut64 n = 0;
+	ut8 *buf = calloc (core->blocksize, 1);
+	(void)r_io_read_at (core->io, addr, buf, core->blocksize);
+	while (p + 4 < core->blocksize) {
+		if (core->assembler->bits == 64) {
+			n = r_read_ble64 (buf + p, core->print->big_endian);
+		} else {
+			n = r_read_ble32 (buf + p, core->print->big_endian);
+		}
+		r_cons_printf ("[0x%08"PFMT64x"] 0x%08"PFMT64x"\n", addr + p, n);
+		disasm_until_ret (core, n, type_print);
+		if (core->assembler->bits == 64) {
+			p += 8;
+		} else {
+			p += 4;
+		}
+	}
+	free (buf);
+}
+
 static void disasm_recursive(RCore *core, ut64 addr, char type_print) {
 	RAnalOp aop = {0};
 	int ret;
@@ -3046,7 +3111,7 @@ static void _disasm_recursive(RCore *core, ut64 addr, char type_print) {
 			}
 			if (loop > 0) {
 				if (show_flags) {
-					const char *x = sdb_const_get (db, sdb_fmt (-1, "label.0x%"PFMT64x, addr + i), NULL);
+					const char *x = sdb_const_get (db, sdb_fmt ("label.0x%"PFMT64x, addr + i), NULL);
 					if (x) {
 						r_cons_printf ("%s:\n", x);
 					}
@@ -3075,8 +3140,8 @@ static void _disasm_recursive(RCore *core, ut64 addr, char type_print) {
 				break;
 			case R_ANAL_OP_TYPE_CALL:
 			case R_ANAL_OP_TYPE_CJMP:
-				sdb_set (db, sdb_fmt (-1, "label.0x%"PFMT64x, aop.jump),
-					sdb_fmt (-1, "from.0x%"PFMT64x, addr + i), 0);
+				sdb_set (db, sdb_fmt ("label.0x%"PFMT64x, aop.jump),
+					sdb_fmt ("from.0x%"PFMT64x, addr + i), 0);
 				break;
 			}
 			if (aop.size < 1) {
@@ -3895,7 +3960,7 @@ static int cmd_print(void *data, const char *input) {
 				if (input[2]) {
 					cmd_pDj (core, input + 2);
 				} else {
-					cmd_pDj (core, sdb_fmt (0, "%d", core->blocksize));
+					cmd_pDj (core, sdb_fmt ("%d", core->blocksize));
 				}
 			}
 			break;
@@ -4110,7 +4175,7 @@ static int cmd_print(void *data, const char *input) {
 		case 's': // "pds" and "pdsf"
 			processed_cmd = true;
 			if (input[2] == '?') {
-				r_cons_printf ("Usage: pds[f]  - sumarize N bytes or function (pdfs)\n");
+				r_cons_printf ("Usage: pds[bf]  - sumarize N bytes or function (pdfs)\n");
 			} else {
 				disasm_strings (core, input, NULL);
 			}
@@ -4232,7 +4297,12 @@ static int cmd_print(void *data, const char *input) {
 			}
 			l = 0;
 			break;
-		case 'l': // pdl
+		case 'p': // "pdp"
+			processed_cmd = true;
+			disasm_ropchain (core, core->offset, 'D');
+			pd_result = true;
+			break;
+		case 'l': // "pdl"
 			processed_cmd = true;
 			{
 				RAsmOp asmop;
@@ -4888,11 +4958,10 @@ static int cmd_print(void *data, const char *input) {
 				ut64 from = r_config_get_i (core->config, "diff.from");
 				ut64 to = r_config_get_i (core->config, "diff.to");
 				if (from == to && !from) {
-					if (!r_core_block_size (core, len)) {
-						len = core->blocksize;
-					}
+					r_core_block_size (core, len);
+					len = core->blocksize;
 					r_print_hexdump (core->print, core->offset,
-						core->block, len, 16, 1, 1);
+						core->block, core->blocksize, 16, 1, 1);
 				} else {
 					r_core_print_cmp (core, from, to);
 				}
@@ -4969,6 +5038,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'W': // "pxW"
 			if (l) {
+				bool printOffset = (input[2] != 'q' && r_config_get_i (core->config, "asm.offset"));
 				len = len - (len % 4);
 				for (i = 0; i < len; i += 4) {
 					const char *a, *b;
@@ -4999,11 +5069,13 @@ static int cmd_print(void *data, const char *input) {
 							}
 						}
 					}
-					r_cons_printf ("0x%08"PFMT64x " %s0x%08"PFMT64x "%s%s%s\n",
-						(ut64) core->offset + i, a, (ut64) v,
-						b,
-						fn? " ": "",
-						fn? fn: "");
+					if (printOffset) {
+						r_cons_printf ("0x%08"PFMT64x " %s0x%08"PFMT64x "%s%s%s\n",
+								(ut64) core->offset + i, a, (ut64) v,
+								b, fn? " ": "", fn? fn: "");
+					} else {
+						r_cons_printf ("%s0x%08"PFMT64x "%s\n", a, (ut64) v, b);
+					}
 					free (fn);
 				}
 			}
@@ -5121,6 +5193,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'Q': // "pxQ"
 			// TODO. show if flag name, or inside function
 			if (l) {
+				bool printOffset = (input[2] != 'q' && r_config_get_i (core->config, "asm.offset"));
 				len = len - (len % 8);
 				for (i = 0; i < len; i += 8) {
 					const char *a, *b;
@@ -5150,8 +5223,12 @@ static int cmd_print(void *data, const char *input) {
 							}
 						}
 					}
-					r_cons_printf ("0x%08"PFMT64x " %s0x%016"PFMT64x "%s %s\n",
-						(ut64) core->offset + i, a, v, b, fn? fn: "");
+					if (printOffset) {
+						r_cons_printf ("0x%08"PFMT64x " %s0x%016"PFMT64x "%s %s\n",
+								(ut64) core->offset + i, a, v, b, fn? fn: "");
+					} else {
+						r_cons_printf ("%s0x%016"PFMT64x "%s\n", a, v, b);
+					}
 					free (fn);
 				}
 			}

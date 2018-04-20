@@ -381,10 +381,10 @@ R_API int r_anal_fcn_xref_add(RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr, 
 	}
 #endif
 #if FCN_SDB
-	sdb_add (DB, sdb_fmt (0, "fcn.0x%08"PFMT64x ".name", fcn->addr), fcn->name, 0);
+	sdb_add (DB, sdb_fmt ("fcn.0x%08"PFMT64x ".name", fcn->addr), fcn->name, 0);
 	// encode the name in base64 ?
-	sdb_num_add (DB, sdb_fmt (0, "fcn.name.%s", fcn->name), fcn->addr, 0);
-	sdb_array_add_num (DB, sdb_fmt (0, "fcn.0x%08"PFMT64x ".xrefs", fcn->addr), at, 0);
+	sdb_num_add (DB, sdb_fmt ("fcn.name.%s", fcn->name), fcn->addr, 0);
+	sdb_array_add_num (DB, sdb_fmt ("fcn.0x%08"PFMT64x ".xrefs", fcn->addr), at, 0);
 #endif
 	return true;
 }
@@ -486,10 +486,27 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		free (bbuf);\
 }
 
-static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 ptr, int ret0) {
+static void queue_case(RAnal *anal, ut64 switch_addr, ut64 case_addr, ut64 id, ut64 case_addr_loc) {
+	// eprintf("\tqueue_case: 0x%"PFMT64x " from 0x%"PFMT64x "\n", case_addr, case_addr_loc);
+	anal->cmdtail = r_str_appendf (anal->cmdtail,
+		"axc 0x%"PFMT64x " 0x%"PFMT64x "\n",
+		case_addr, switch_addr);
+	// anal->cmdtail = r_str_appendf (anal->cmdtail,
+	// 	"aho case %d: from 0x%"PFMT64x " @ 0x%"PFMT64x "\n",
+	// 	id, switch_addr, case_addr_loc);
+	// anal->cmdtail = r_str_appendf (anal->cmdtail,
+	// 	"CCu case %d: @ 0x%"PFMT64x "\n",
+	// 	id, case_addr);
+	anal->cmdtail = r_str_appendf (anal->cmdtail,
+		"f case.%d.0x%"PFMT64x " 1 @ 0x%08"PFMT64x "\n",
+		id, case_addr, case_addr);
+}
+
+static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 ptr, ut64 sz, int ret0) {
 	int ret = ret0;
 	ut8 *jmptbl = malloc (MAX_JMPTBL_SIZE);
-	ut64 jmpptr, offs, sz = anal->bits >> 3;
+	ut64 jmpptr, offs;
+	ut8 buf[1024];
 	if (!jmptbl) {
 		return 0;
 	}
@@ -512,7 +529,15 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 			jmpptr = r_read_le64 (jmptbl + offs);
 			break;
 		}
+		// if we don't check for 0 here, the next check with ptr+jmpptr
+		// will obviously be a good offset since it will be the start
+		// of the table, which is not what we want
+		if (jmpptr == 0) {
+			break;
+		}
+
 		if (!anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0)) {
+			// jump tables where sign extended movs are used
 			jmpptr = ptr + (st32) jmpptr;
 			if (!anal->iob.is_valid_offset (anal->iob.io, jmpptr, 0)) {
 				break;
@@ -523,9 +548,21 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 				break;
 			}
 		}
+		queue_case (anal, ip, jmpptr, offs/sz, ptr + offs);
 		// if (jmpptr < ip - MAX_JMPTBL_JMP || jmpptr > ip + MAX_JMPTBL_JMP) { break; }
 		recurseAt (jmpptr);
 	}
+
+	if (offs > 0) {
+		// eprintf("\n\nSwitch statement at 0x%llx:\n", ip);
+		anal->cmdtail = r_str_appendf (anal->cmdtail,
+			"CCu switch table (%d cases) at 0x%"PFMT64x " @ 0x%"PFMT64x "\n",
+			offs/sz, ptr, ip);
+		anal->cmdtail = r_str_appendf (anal->cmdtail,
+			"f switch.0x%08"PFMT64x" 1 @ 0x%08"PFMT64x"\n",
+			ip, ip);
+	}
+
 	free (jmptbl);
 	return ret;
 }
@@ -626,7 +663,16 @@ static bool isInvalidMemory(const ut8 *buf, int len) {
 	// return buf[0]==buf[1] && buf[0]==0xff && buf[2]==0xff && buf[3] == 0xff;
 }
 
-static bool is_delta_pointer_table(RAnal *anal, ut64 addr, ut64 ptr) {
+static bool isSymbolNextInstruction(RAnal *anal, RAnalOp *op) {
+	if (!anal || !op || !anal->flb.get_at) {
+ 		return false;
+	}
+	RFlagItem *fi = anal->flb.get_at (anal->flb.f, op->addr + op->size, false);
+	return (fi && fi->name && (strstr (fi->name, "imp.") || strstr (fi->name, "sym.")
+			|| strstr (fi->name, "entry") || strstr (fi->name, "main")));
+}
+
+static bool is_delta_pointer_table(RAnal *anal, ut64 addr, ut64 ptr, ut64 *jmp_addr) {
 	int i;
 	ut64 dst;
 	st32 jmptbl[64] = {
@@ -651,7 +697,7 @@ static bool is_delta_pointer_table(RAnal *anal, ut64 addr, ut64 ptr) {
 	if (!isValid) {
 		return false;
 	}
-	
+
 	/* check if jump table contains valid deltas */
 	anal->iob.read_at (anal->iob.io, ptr, (ut8 *) &jmptbl, 64);
 	// XXX this is not endian safe
@@ -661,6 +707,7 @@ static bool is_delta_pointer_table(RAnal *anal, ut64 addr, ut64 ptr) {
 			return false;
 		}
 	}
+	*jmp_addr = aop.addr;
 	return true;
 }
 
@@ -935,6 +982,7 @@ repeat:
 		}
 
 		switch (op.type & R_ANAL_OP_TYPE_MASK) {
+		case R_ANAL_OP_TYPE_CMOV:
 		case R_ANAL_OP_TYPE_MOV:
 			// skip mov reg,reg
 			if (anal->opt.hpskip && regs_exist (op.src[0], op.dst)
@@ -961,20 +1009,23 @@ repeat:
 				}
 			}
 			if (anal->opt.jmptbl) {
-				if (is_delta_pointer_table (anal, op.addr, op.ptr)) {
-					char *str = r_str_newf ("pxt. 0x%08" PFMT64x" @ 0x%08"PFMT64x "\n", op.addr, op.ptr);
-					if (!anal->cmdtail) {
-						anal->cmdtail = r_str_appendf (anal->cmdtail, str);
-					}
-					if (anal->cmdtail && !strstr (anal->cmdtail, str)) {
-						anal->cmdtail = r_str_appendf (anal->cmdtail, str);
-					} 
-					free (str);
-					// jmptbl_addr = op.ptr;
-					// jmptbl_size = -1;
-					// ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, 4);
+				ut64 jmp_addr = 0;
+				if (is_delta_pointer_table (anal, op.addr, op.ptr, &jmp_addr)) {
+					ret = try_walkthrough_jmptbl (anal, fcn, depth, jmp_addr, op.ptr, 4, 4);
 				}
 			}
+			break;
+		// Case of valid but unused "add [rax], al"
+		case R_ANAL_OP_TYPE_ADD:
+			if (anal->opt.ijmp) {
+				if (((op.size + 4) <= len) && !memcmp (buf + op.size, "\x00\x00\x00\x00", 4)) {
+					bb->size -= oplen;
+					op.type = R_ANAL_OP_TYPE_RET;
+					FITFCNSZ ();
+					r_anal_op_fini (&op);
+					gotoBeach (R_ANAL_RET_END);
+				}
+      }
 			break;
 		case R_ANAL_OP_TYPE_ILL:
 			if (anal->opt.nopskip && len > 3 && !memcmp (buf, "\x00\x00\x00\x00", 4)) {
@@ -1243,24 +1294,33 @@ repeat:
 		case R_ANAL_OP_TYPE_RJMP:
 		case R_ANAL_OP_TYPE_IJMP:
 		case R_ANAL_OP_TYPE_IRJMP:
+			// if the next instruction is a symbol
+			if (anal->opt.ijmp && isSymbolNextInstruction (anal, &op)) {
+				FITFCNSZ ();
+				r_anal_op_fini (&op);
+				return R_ANAL_RET_END;
+			}
 			// switch statement
 			if (anal->opt.jmptbl) {
 				if (fcn->refs->tail) {
 					RAnalRef *last_ref = fcn->refs->tail->data;
 					last_ref->type = R_ANAL_REF_TYPE_NULL;
+					// TODO: walk switch? try_walkthrough_jmptbl?
+					// Why is this a jmp table and what does it look like
+					// walk_switch (anal, fcn, op.addr, op.addr + op.size);
 				}
-				if (op.ptr != UT64_MAX) {       // direct jump
-					ret = try_walkthrough_jmptbl (anal, fcn, depth, addr + idx, op.ptr, ret);
-
+				// op.ireg since rip relative addressing produces way too many false positives otherwise
+				// op.ireg is 0 for rip relative, "rax", etc otherwise
+				if (op.ptr != UT64_MAX && op.ireg) {       // direct jump
+					ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, anal->bits >> 3, ret);
 				} else {        // indirect jump: table pointer is unknown
 					if (op.src[0] && op.src[0]->reg) {
 						ut64 ptr = search_reg_val (anal, buf, idx, addr, op.src[0]->reg->name);
 						if (ptr && ptr != UT64_MAX) {
-							ret = try_walkthrough_jmptbl (anal, fcn, depth, addr + idx, ptr, ret);
+							ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, ptr, anal->bits >> 3, ret);
 						}
 					}
 				}
-				walk_switch (anal, fcn, op.addr, op.addr + op.size);
 			}
 #if 0
 			if (anal->cur) {
@@ -1286,9 +1346,24 @@ repeat:
 				}
 			}
 #endif
-			FITFCNSZ ();
-			r_anal_op_fini (&op);
-			return R_ANAL_RET_END;
+			if (anal->opt.ijmp) {
+				if (continue_after_jump) {
+					recurseAt (op.jump);
+					recurseAt (op.fail);
+					if (overlapped) {
+						goto analopfinish;
+					}
+				}
+				if (r_anal_noreturn_at (anal, op.jump) || op.eob) {
+					goto analopfinish;
+				}
+			} else {
+analopfinish:
+				FITFCNSZ ();
+				r_anal_op_fini (&op);
+				return R_ANAL_RET_END;
+			}
+			break;
 		/* fallthru */
 		case R_ANAL_OP_TYPE_PUSH:
 			last_is_push = true;
@@ -1508,7 +1583,7 @@ R_API int r_anal_fcn_add(RAnal *a, ut64 addr, ut64 size, const char *name, int t
 		}
 	}
 #if FCN_SDB
-	sdb_set (DB, sdb_fmt (0, "fcn.0x%08"PFMT64x, addr), "TODO", 0); // TODO: add more info here
+	sdb_set (DB, sdb_fmt ("fcn.0x%08"PFMT64x, addr), "TODO", 0); // TODO: add more info here
 #endif
 	return append? r_anal_fcn_insert (a, fcn): true;
 }
@@ -1930,7 +2005,7 @@ R_API RAnalBlock *r_anal_fcn_bbget(RAnalFunction *fcn, ut64 addr) {
 		return NULL;
 	}
 #if USE_SDB_CACHE
-	return sdb_ptr_get (HB, sdb_fmt (0, SDB_KEY_BB, fcn->addr, addr), NULL);
+	return sdb_ptr_get (HB, sdb_fmt (SDB_KEY_BB, fcn->addr, addr), NULL);
 #else
 	RListIter *iter;
 	RAnalBlock *bb;
@@ -1945,7 +2020,7 @@ R_API RAnalBlock *r_anal_fcn_bbget(RAnalFunction *fcn, ut64 addr) {
 
 R_API bool r_anal_fcn_bbadd(RAnalFunction *fcn, RAnalBlock *bb) {
 #if USE_SDB_CACHE
-	return sdb_ptr_set (HB, sdb_fmt (0, SDB_KEY_BB, fcn->addr, bb->addr), bb, NULL);
+	return sdb_ptr_set (HB, sdb_fmt (SDB_KEY_BB, fcn->addr, bb->addr), bb, NULL);
 #endif
 	r_list_append (fcn->bbs, bb);
 	return true;

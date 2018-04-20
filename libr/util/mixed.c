@@ -2,8 +2,8 @@
 
 #include <r_util.h>
 
-#define STR64OFF(x) sdb_fmt (2, "%"PFMT64x, x)
-#define STR32OFF(x) sdb_fmt (3, "%"PFMT32x, x)
+#define STR64OFF(x) sdb_fmt ("%"PFMT64x, x)
+#define STR32OFF(x) sdb_fmt ("%"PFMT32x, x)
 
 R_API RMixed *r_mixed_new () {
 	RMixed *m = R_NEW (RMixed);

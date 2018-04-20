@@ -402,6 +402,7 @@ static int cmd_seek(void *data, const char *input) {
 			;
 		}
 		r_core_seek_base (core, input);
+		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		break;
 	case 'j':  // "sj"
 		{

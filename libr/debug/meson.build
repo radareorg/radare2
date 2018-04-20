@@ -31,19 +31,20 @@ files = [
   'trace.c',
 ]
 
-if host_os == 'linux'
+if host_machine.system() == 'linux'
   files += [
     'p/native/linux/linux_debug.c',
     'p/native/linux/linux_coredump.c'
   ]
 endif
-if host_os != 'windows'
+
+if host_machine.system() != 'windows'
  files += [
   'p/native/procfs.c'
  ]
 endif
 
-if host_os == 'darwin'
+if host_machine.system() == 'darwin'
   files += [
     'p/native/xnu/xnu_debug.c',
     #'p/native/xnu/trap_arm.c',
@@ -68,18 +69,19 @@ r_debug = library('r_debug', files,
     r_cons, r_lang, r_egg, r_socket, libr_shlr
   ],
   install: true,
-  implicit_include_directories: false
+  implicit_include_directories: false,
+  soversion: r2libversion
 )
 
-
-pkg = import('pkgconfig')
-pkg.generate(libraries: [r_debug],
-             subdirs: 'libr',
-             version: r2version,
-             name: 'r_debug',
-             filebase: 'r_debug',
-             requires: [
-               'r_util', 'r_hash', 'r_reg', 'r_syscall', 'r_anal', 'r_flag', 'r_io', 'r_bp', 'r_search',
-               'r_cons', 'r_lang', 'r_egg', 'r_socket'
-             ],
-             description: 'radare foundation libraries')
+pkgconfig_mod.generate(
+  libraries: [r_debug],
+  subdirs: 'libr',
+  version: r2version,
+  name: 'r_debug',
+  filebase: 'r_debug',
+  requires: [
+    'r_util', 'r_hash', 'r_reg', 'r_syscall', 'r_anal', 'r_flag', 'r_io', 'r_bp', 'r_search',
+    'r_cons', 'r_lang', 'r_egg', 'r_socket'
+  ],
+  description: 'radare foundation libraries'
+)

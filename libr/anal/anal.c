@@ -234,9 +234,9 @@ R_API bool r_anal_set_fcnsign(RAnal *anal, const char *name) {
 	char *file = NULL;
 	const char *arch = (anal->cur && anal->cur->arch) ? anal->cur->arch : R_SYS_ARCH;
 	if (name && *name) {
-		file = sdb_fmt (0, "%s/%s/%s.sdb", dirPrefix, FCNSIGNPATH, name);
+		file = sdb_fmt ("%s/%s/%s.sdb", dirPrefix, FCNSIGNPATH, name);
 	} else {
-		file = sdb_fmt (0, "%s/%s/%s-%s-%d.sdb", dirPrefix, FCNSIGNPATH,
+		file = sdb_fmt ("%s/%s/%s-%s-%d.sdb", dirPrefix, FCNSIGNPATH,
 			anal->os, arch, anal->bits);
 	}
 	if (r_file_exists (file)) {
@@ -438,7 +438,7 @@ R_API int r_anal_archinfo(RAnal *anal, int query) {
 static int nonreturn_print_commands(void *p, const char *k, const char *v) {
 	RAnal *anal = (RAnal *)p;
 	if (!strncmp (v, "func", strlen ("func") + 1)) {
-		char *query = sdb_fmt (-1, "func.%s.noreturn", k);
+		char *query = sdb_fmt ("func.%s.noreturn", k);
 		if (sdb_bool_get (anal->sdb_types, query, NULL)) {
 			anal->cb_printf ("tnn %s\n", k);
 		}
@@ -452,7 +452,7 @@ static int nonreturn_print_commands(void *p, const char *k, const char *v) {
 static int nonreturn_print(void *p, const char *k, const char *v) {
 	RAnal *anal = (RAnal *)p;
 	if (!strncmp (v, "func", strlen ("func") + 1)) {
-		const char *query = sdb_fmt (-1, "func.%s.noreturn", k);
+		const char *query = sdb_fmt ("func.%s.noreturn", k);
 		if (sdb_bool_get (anal->sdb_types, query, NULL)) {
 			anal->cb_printf ("%s\n", k);
 		}
@@ -485,8 +485,8 @@ R_API void r_anal_noreturn_list(RAnal *anal, int mode) {
 	}
 }
 
-#define K_NORET_ADDR(x) sdb_fmt (-1, "addr.%"PFMT64x".noreturn", x)
-#define K_NORET_FUNC(x) sdb_fmt (-1, "func.%s.noreturn", x)
+#define K_NORET_ADDR(x) sdb_fmt ("addr.%"PFMT64x".noreturn", x)
+#define K_NORET_FUNC(x) sdb_fmt ("func.%s.noreturn", x)
 
 R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 	const char *tmp_name = NULL;

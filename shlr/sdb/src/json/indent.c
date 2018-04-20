@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2012-2015 - pancake */
+/* sdb - MIT - Copyright 2012-2018 - pancake */
 
 #include <limits.h>
 
@@ -50,7 +50,7 @@ SDB_API char *sdb_json_indent(const char *s, const char *tab) {
 	o_size += 2;
 	indent = 0;
 
-	O = malloc (o_size);
+	O = malloc (o_size + 1);
 	if (!O) {
 		return NULL;
 	}

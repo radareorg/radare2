@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2017 pancake */
+/* radare - LGPL - Copyright 2016-2018 pancake */
 
 #include <r_io.h>
 #include <r_asm.h>
@@ -132,7 +132,7 @@ static int __io_continue(RDebug *dbg, int pid, int tid, int sig) {
 
 // "dk" send kill signal
 static bool __io_kill(RDebug *dbg, int pid, int tid, int sig) {
-	const char *cmd = sdb_fmt (-1, "dk %d", sig);
+	const char *cmd = sdb_fmt ("dk %d", sig);
 	dbg->iob.system (dbg->iob.io, cmd);
 	r_cons_flush ();
 	return true;

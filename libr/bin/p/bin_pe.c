@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - nibble, pancake, alvarofe */
+/* radare - LGPL - Copyright 2009-2018 - nibble, pancake, alvarofe */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -16,7 +16,7 @@ static Sdb* get_sdb (RBinFile *bf) {
 	return bin? bin->kv: NULL;
 }
 
-static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	struct PE_(r_bin_pe_obj_t) *res = NULL;
 	RBuffer *tbuf = NULL;
 	if (!buf || !sz || sz == UT64_MAX) {
@@ -29,6 +29,18 @@ static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, S
 		sdb_ns_set (sdb, "info", res->kv);
 	}
 	r_buf_free (tbuf);
+	return res;
+}
+
+static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	struct PE_(r_bin_pe_obj_t) *res;
+	if (!buf) {
+		return NULL;
+	}
+	res = PE_(r_bin_pe_new_buf) (buf, bf->rbin->verbose);
+	if (res) {
+		sdb_ns_set (sdb, "info", res->kv);
+	}
 	return res;
 }
 
@@ -82,19 +94,19 @@ static void add_tls_callbacks(RBinFile *bf, RList* list) {
 	char *key;
 
 	do {
-		key =  sdb_fmt (0, "pe.tls_callback%d_paddr", count);
+		key =  sdb_fmt ("pe.tls_callback%d_paddr", count);
 		paddr = sdb_num_get (bin->kv, key, 0);
 		if (!paddr) {
 			break;
 		}
 
-		key =  sdb_fmt (0, "pe.tls_callback%d_vaddr", count);
+		key =  sdb_fmt ("pe.tls_callback%d_vaddr", count);
 		vaddr = sdb_num_get (bin->kv, key, 0);
 		if (!vaddr) {
 			break;
 		}
 
-		key =  sdb_fmt (0, "pe.tls_callback%d_haddr", count);
+		key =  sdb_fmt ("pe.tls_callback%d_haddr", count);
 		haddr = sdb_num_get (bin->kv, key, 0);
 		if (!haddr) {
 			break;
@@ -173,7 +185,7 @@ static RList* sections(RBinFile *bf) {
 		ptr->paddr = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr + ba;
 		ptr->add = true;
-		ptr->srwx = R_BIN_SCN_MAP;
+		ptr->srwx = 0;
 		if (R_BIN_PE_SCN_IS_EXECUTABLE (sections[i].flags)) {
 			ptr->srwx |= R_BIN_SCN_EXECUTABLE;
 		}
@@ -493,8 +505,8 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->has_canary = has_canary (bf);
 	ret->has_nx = haschr (bf, IMAGE_DLL_CHARACTERISTICS_NX_COMPAT);
 	ret->has_pi = haschr (bf, IMAGE_DLL_CHARACTERISTICS_DYNAMIC_BASE);
-	ret->claimed_checksum = strdup (sdb_fmt (0, "0x%08x", claimed_checksum));
-	ret->actual_checksum  = strdup (sdb_fmt (1, "0x%08x", actual_checksum));
+	ret->claimed_checksum = strdup (sdb_fmt ("0x%08x", claimed_checksum));
+	ret->actual_checksum  = strdup (sdb_fmt ("0x%08x", actual_checksum));
 	ret->pe_overlay = pe_overlay > 0;
 	ret->signature = bin ? bin->is_signed : false;
 
@@ -801,6 +813,7 @@ RBinPlugin r_bin_plugin_pe = {
 	.license = "LGPL3",
 	.get_sdb = &get_sdb,
 	.load = &load,
+	.load_buffer = &load_buffer,
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
 	.check_bytes = &check_bytes,

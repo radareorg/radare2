@@ -366,6 +366,7 @@ typedef struct r_cons_canvas_t {
 
 typedef char *(*RConsEditorCallback)(void *core, const char *file, const char *str);
 typedef int (*RConsClickCallback)(void *core, int x, int y);
+typedef void (*RConsBreakCallback)(void *core);
 
 typedef struct r_cons_t {
 	RConsGrep grep;
@@ -400,7 +401,10 @@ typedef struct r_cons_t {
 	void *event_data;
 	int mouse_event;
 
-	RConsEditorCallback editor;
+	RConsEditorCallback cb_editor;
+	RConsBreakCallback cb_break;
+	RConsClickCallback cb_click;
+
 	void *user; // Used by <RCore*>
 #if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 	struct termios term_raw, term_buf;
@@ -422,7 +426,6 @@ typedef struct r_cons_t {
 	struct r_line_t *line;
 	const char **vline;
 	int refcnt;
-	RConsClickCallback onclick;
 	bool newline;
 #if __WINDOWS__ && !__CYGWIN__
 	bool ansicon;
@@ -692,6 +695,7 @@ R_API int r_cons_controlz(int ch);
 R_API int r_cons_readchar(void);
 R_API bool r_cons_readpush(const char *str, int len);
 R_API void r_cons_readflush();
+R_API void r_cons_switchbuf(bool active);
 R_API int r_cons_readchar_timeout(ut32 usec);
 R_API int r_cons_any_key(const char *msg);
 R_API int r_cons_eof(void);
@@ -780,17 +784,18 @@ typedef struct r_line_comp_t {
 } RLineCompletion;
 
 typedef char* (*RLineEditorCb)(void *core, const char *str);
-
 typedef int (*RLineHistoryUpCb)(RLine* line);
 typedef int (*RLineHistoryDownCb)(RLine* line);
 
 struct r_line_t {
 	RLineCompletion completion;
-	RLineHistory history;
-	RLineHistoryUpCb history_up_cb;
-	RLineHistoryDownCb history_down_cb;
 	RLineBuffer buffer;
-	RLineEditorCb editor_cb;
+	RLineHistory history;
+	/* callbacks */
+	RLineHistoryUpCb cb_history_up;
+	RLineHistoryDownCb cb_history_down;
+	RLineEditorCb cb_editor;
+	/* state , TODO: use more bool */
 	int echo;
 	int has_echo;
 	char *prompt;
@@ -924,6 +929,24 @@ R_API Sdb *r_agraph_get_sdb(RAGraph *g);
 R_API void r_agraph_foreach(RAGraph *g, RANodeCallback cb, void *user);
 R_API void r_agraph_foreach_edge(RAGraph *g, RAEdgeCallback cb, void *user);
 R_API void r_agraph_set_curnode(RAGraph *g, RANode *node);
+#endif
+
+typedef struct r_panels_t {
+	RConsCanvas *can;
+	RPanel *panel;
+	int n_panels;
+	int columnWidth;
+	int layout;
+	int menu_pos;
+	int menu_x;
+	int menu_y;
+	int callgraph;
+	int curnode;
+	bool isResizing;
+} RPanels;
+#ifdef R_API
+R_API RPanels *r_panels_new();
+R_API void r_panels_free(RPanels *panels);
 #endif
 
 #ifdef __cplusplus

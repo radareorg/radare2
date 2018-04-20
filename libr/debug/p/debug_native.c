@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_userconf.h>
 #include <r_debug.h>
@@ -1174,7 +1174,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 #endif
 	fd = fopen (path, "r");
 	if (!fd) {
-		perror (sdb_fmt (0, "Cannot open '%s'", path));
+		perror (sdb_fmt ("Cannot open '%s'", path));
 		return NULL;
 	}
 

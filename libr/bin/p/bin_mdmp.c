@@ -73,7 +73,7 @@ static RBinInfo *info(RBinFile *bf) {
 	obj = (struct r_bin_mdmp_obj *)bf->o->bin_obj;
 
 	ret->big_endian = obj->endian;
-	ret->claimed_checksum = strdup (sdb_fmt (0, "0x%08x", obj->hdr->check_sum));  // FIXME: Leaks
+	ret->claimed_checksum = strdup (sdb_fmt ("0x%08x", obj->hdr->check_sum));  // FIXME: Leaks
 	ret->file = bf->file ? strdup (bf->file) : NULL;
 	ret->has_va = true;
 	ret->rclass = strdup ("mdmp");
@@ -83,7 +83,7 @@ static RBinInfo *info(RBinFile *bf) {
 	// FIXME: Needed to fix issue with PLT resolving. Can we get away with setting this for all children bins?
 	ret->has_lit = true;
 
-	sdb_set (bf->sdb, "mdmp.flags", sdb_fmt (0, "0x%08x", obj->hdr->flags), 0);
+	sdb_set (bf->sdb, "mdmp.flags", sdb_fmt ("0x%08x", obj->hdr->flags), 0);
 	sdb_num_set (bf->sdb, "mdmp.streams", obj->hdr->number_of_streams, 0);
 
 	if (obj->streams.system_info) {
@@ -248,8 +248,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->add = true;
 		ptr->has_strings = false;
 
-		ptr->srwx = R_BIN_SCN_MAP;
-		ptr->srwx |= r_bin_mdmp_get_srwx (obj, ptr->vaddr);
+		ptr->srwx = r_bin_mdmp_get_srwx (obj, ptr->vaddr);
 
 		r_list_append (ret, ptr);
 	}
@@ -268,8 +267,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->add = true;
 		ptr->has_strings = false;
 
-		ptr->srwx = R_BIN_SCN_MAP;
-		ptr->srwx |= r_bin_mdmp_get_srwx (obj, ptr->vaddr);
+		ptr->srwx = r_bin_mdmp_get_srwx (obj, ptr->vaddr);
 
 		r_list_append (ret, ptr);
 
@@ -291,7 +289,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->add = false;
 		ptr->has_strings = false;
 		/* As this is an encompassing section we will set the RWX to 0 */
-		ptr->srwx = R_BIN_SCN_MAP;
+		ptr->srwx = 0;
 
 		r_list_append (ret, ptr);
 
@@ -343,8 +341,7 @@ static RList *mem (RBinFile *bf) {
 		}
 		ptr->addr = module->start_of_memory_range;
 		ptr->size = (location->data_size);
-		ptr->perms = R_BIN_SCN_MAP;
-		ptr->perms |= r_bin_mdmp_get_srwx (obj, ptr->addr);
+		ptr->perms = r_bin_mdmp_get_srwx (obj, ptr->addr);
 
 		/* [1] */
 		state = type = a_protect = 0;
@@ -354,7 +351,7 @@ static RList *mem (RBinFile *bf) {
 			a_protect = mem_info->allocation_protect;
 		}
 		location = &(module->memory);
-		ptr->name = strdup (sdb_fmt (0, "paddr=0x%08x state=0x%08x type=0x%08x allocation_protect=0x%08x Memory_Section", location->rva, state, type, a_protect));
+		ptr->name = strdup (sdb_fmt ("paddr=0x%08x state=0x%08x type=0x%08x allocation_protect=0x%08x Memory_Section", location->rva, state, type, a_protect));
 
 		r_list_append (ret, ptr);
 	}
@@ -366,8 +363,7 @@ static RList *mem (RBinFile *bf) {
 		}
 		ptr->addr = module64->start_of_memory_range;
 		ptr->size = module64->data_size;
-		ptr->perms = R_BIN_SCN_MAP;
-		ptr->perms |= r_bin_mdmp_get_srwx (obj, ptr->addr);
+		ptr->perms = r_bin_mdmp_get_srwx (obj, ptr->addr);
 
 		/* [1] */
 		state = type = a_protect = 0;
@@ -376,7 +372,7 @@ static RList *mem (RBinFile *bf) {
 			type = mem_info->type;
 			a_protect = mem_info->allocation_protect;
 		}
-		ptr->name = strdup (sdb_fmt (0, "paddr=0x%08x state=0x%08x type=0x%08x allocation_protect=0x%08x Memory_Section", index, state, type, a_protect));
+		ptr->name = strdup (sdb_fmt ("paddr=0x%08x state=0x%08x type=0x%08x allocation_protect=0x%08x Memory_Section", index, state, type, a_protect));
 
 		index += module64->data_size;
 

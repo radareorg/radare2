@@ -231,9 +231,6 @@ a_attr void								\
 a_name##tsd_set(a_type *val)						\
 {									\
 									\
-
-
-
 	assert(a_name##tsd_booted);					\
 	a_name##tsd_tls = (*val);					\
 	if (a_cleanup != malloc_tsd_no_cleanup)				\
@@ -430,9 +427,6 @@ a_name##tsd_set(a_type *val)						\
 {									\
 	a_name##tsd_wrapper_t *wrapper;					\
 									\
-
-
-
 	assert(a_name##tsd_booted);					\
 	wrapper = a_name##tsd_wrapper_get(true);			\
 	wrapper->val = *(val);						\

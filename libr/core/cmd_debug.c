@@ -4,7 +4,6 @@
 #include "r_util.h"
 #include "r_cons.h"
 #include "sdb/sdb.h"
-
 #define TN_KEY_LEN 32
 #define TN_KEY_FMT "%"PFMT64u
 
@@ -72,6 +71,7 @@ static const char *help_msg_db[] = {
 	//
 	"dbh", " x86", "Set/list breakpoint plugin handlers",
 	"dbh-", " <name>", "Remove breakpoint plugin handler",
+	"dbt", "[?]", "Show backtrace. See dbt? for more details",
 	"dbw", " <addr> <rw>", "Add watchpoint",
 	"drx", " number addr len rwx", "Modify hardware breakpoint",
 	"drx-", "number", "Clear hardware breakpoint",
@@ -1331,34 +1331,6 @@ show_help:
 		case 0:
 			r_cons_printf ("0x%08"PFMT64x" %s\n", map->addr, map->file);
 			break;
-		case ':':
-			if (addr >= map->addr && addr < map->addr_end) {
-#if __WINDOWS__ && !__CYGWIN__
-				/* Escape backslashes in the file path on Windows */
-				char *escaped_path = r_str_escape (map->file);
-				char *escaped_name = r_str_escape (map->name);
-				if (escaped_path && escaped_name) {
-					r_name_filter (escaped_name, 0);
-					r_cons_printf ("f mod.%s = 0x%08"PFMT64x"\n",
-							escaped_name, map->addr);
-					r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" \'%s\'\n",
-							map->addr, escaped_path);
-				}
-				free (escaped_path);
-				free (escaped_name);
-#else
-				char *fn = strdup (map->file);
-				r_name_filter (fn, 0);
-				//r_cons_printf ("fs+module_%s\n", fn);
-				r_cons_printf ("f mod.%s = 0x%08"PFMT64x"\n",
-						fn, map->addr);
-				r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" '%s'\n",
-						map->addr, map->file);
-				//r_cons_printf ("fs-\n");
-				free (fn);
-#endif
-			}
-			break;
 		case '.':
 			if (addr >= map->addr && addr < map->addr_end) {
 				r_cons_printf ("0x%08"PFMT64x" %s\n", map->addr, map->file);
@@ -1366,50 +1338,30 @@ show_help:
 			}
 			break;
 		case 'j':
-#if __WINDOWS__ && !__CYGWIN__
 			{
-				/* Single backslashes cause issues when parsing JSON output, so escape them */
+				/* Escape backslashes (e.g. for Windows). */
 				char *escaped_path = r_str_escape (map->file);
 				char *escaped_name = r_str_escape (map->name);
-				if (escaped_path && escaped_name) {
-					r_cons_printf ("{\"address\":%"PFMT64d",\"name\":\"%s\",\"file\":\"%s\"}%s",
-							map->addr, escaped_name, escaped_path, iter->n?",":"");
-				}
+				r_cons_printf ("{\"address\":%"PFMT64d",\"name\":\"%s\",\"file\":\"%s\"}%s",
+					map->addr, escaped_name, escaped_path, iter->n?",":"");
 				free (escaped_path);
 				free (escaped_name);
 			}
-#else
-			r_cons_printf ("{\"address\":%"PFMT64d",\"name\":\"%s\",\"file\":\"%s\"}%s",
-					map->addr, map->name, map->file, iter->n?",":"");
-#endif
 			break;
+		case ':':
 		case '*':
-			{
-#if __WINDOWS__ && !__CYGWIN__
-				/* Escape backslashes in the file path on Windows */
+			if (mode == '*' || (mode == ':' && \
+				addr>=map->addr && addr < map->addr_end)) {
+				/* Escape backslashes (e.g. for Windows). */
 				char *escaped_path = r_str_escape (map->file);
-				char *escaped_name = r_str_escape (map->name);
-				if (escaped_path && escaped_name) {
-					r_name_filter (escaped_name, 0);
-					r_cons_printf ("f mod.%s = 0x%08"PFMT64x"\n",
-							escaped_name, map->addr);
-					/* Use double quotes around the file path on Windows to generate valid commands */
-					r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" \"%s\"\n",
-							map->addr, escaped_path);
-				}
-				free (escaped_path);
-				free (escaped_name);
-#else
-				char *fn = strdup (map->file);
-				r_name_filter (fn, 0);
-				//r_cons_printf ("fs+module_%s\n", fn);
+				char *filtered_name = strdup (map->name);
+				r_name_filter (filtered_name, 0);
 				r_cons_printf ("f mod.%s = 0x%08"PFMT64x"\n",
-						fn, map->addr);
-				r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" '%s'\n",
-						map->addr, map->file);
-				//r_cons_printf ("fs-\n");
-				free (fn);
-#endif
+					filtered_name, map->addr);
+				r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" \"%s\"\n",
+					map->addr, escaped_path);
+				free (escaped_path);
+				free (filtered_name);
 			}
 			break;
 		default:
@@ -3103,7 +3055,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			bpi = r_debug_bp_add (core->dbg, addr, hwbp, false, 0, NULL, 0);
 			if (!bpi) eprintf ("Cannot set breakpoint (%s)\n", input + 2);
 		}
-		r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), true);
+		r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), true, 0);
 		break;
 	case 'n': // "dbn"
 		bpi = r_bp_get_at (core->dbg->bp, core->offset);
@@ -3124,12 +3076,18 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	case 'e':
 		for (p = input + 2; *p == ' '; p++);
 		if (*p == '*') r_bp_enable_all (core->dbg->bp,true);
-		else r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), true);
+		else {
+			for (; *p && *p != ' '; p++);
+			r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), true, r_num_math (core->num, p));
+		}
 		break;
 	case 'd':
 		for (p = input + 2; *p == ' '; p++);
 		if (*p == '*') r_bp_enable_all (core->dbg->bp, false);
-		r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), false);
+		else {
+			for (; *p && *p != ' '; p++);
+			r_bp_enable (core->dbg->bp, r_num_math (core->num, input + 2), false, r_num_math (core->num, p));
+		}
 		break;
 	case 'h':
 		switch (input[2]) {
@@ -4653,7 +4611,7 @@ static int cmd_debug(void *data, const char *input) {
 			if (input[2]) {
 				char *str;
 				r_cons_push ();
-				str = r_core_cmd_str (core, sdb_fmt (0, "gs %s", input + 2));
+				str = r_core_cmd_str (core, sdb_fmt ("gs %s", input + 2));
 				r_cons_pop ();
 				r_core_cmdf (core, "dx %s", str); //`gs %s`", input + 2);
 				free (str);

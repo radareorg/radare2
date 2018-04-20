@@ -1,0 +1,2 @@
+#!/bin/sh
+NDKCXX=1 ndk-gcc $*

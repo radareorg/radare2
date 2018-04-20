@@ -15,9 +15,9 @@ static void set_fcn_args_info(RAnalFuncArg *arg, RAnal *anal, const char *fcn_na
 	} else {
 		arg->c_type = arg->orig_c_type;
 	}
-	const char *query = sdb_fmt (-1, "type.%s", arg->c_type);
+	const char *query = sdb_fmt ("type.%s", arg->c_type);
 	arg->fmt = sdb_const_get (anal->sdb_types, query, 0);
-	const char *t_query = sdb_fmt (-1, "type.%s.size", arg->c_type);
+	const char *t_query = sdb_fmt ("type.%s.size", arg->c_type);
 	arg->size = sdb_num_get (anal->sdb_types, t_query, 0) / 8;
 	arg->cc_source = r_anal_cc_arg (anal, cc, arg_num + 1);
 }

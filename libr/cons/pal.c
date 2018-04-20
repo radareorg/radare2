@@ -545,7 +545,7 @@ R_API void r_cons_pal_update_event() {
 			R_FREE (*color);
 		}
 		*color = r_cons_rgb_str (NULL, rcolor);
-		const char *rgb = sdb_fmt (0, "rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
+		const char *rgb = sdb_fmt ("rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
 		sdb_set (db, rgb, "1", 0);
 	}
 	SdbList *list = sdb_foreach_list (db, true);

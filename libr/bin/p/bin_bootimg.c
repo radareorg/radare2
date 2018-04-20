@@ -190,7 +190,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->vsize = bi->page_size;
 	ptr->paddr = 0;
 	ptr->vaddr = 0;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; // r--
+	ptr->srwx = R_BIN_SCN_READABLE; // r--
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -203,7 +203,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->vsize = ptr->size + (ptr->size % bi->page_size);
 	ptr->paddr = base;
 	ptr->vaddr = bi->kernel_addr;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; // r--
+	ptr->srwx = R_BIN_SCN_READABLE; // r--
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -217,7 +217,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->vsize = bi->ramdisk_size + (bi->ramdisk_size % bi->page_size);
 		ptr->paddr = base;
 		ptr->vaddr = bi->ramdisk_addr;
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP; // r-x
+		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE; // r-x
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
@@ -232,7 +232,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->vsize = bi->second_size + (bi->second_size % bi->page_size);
 		ptr->paddr = base;
 		ptr->vaddr = bi->second_addr;
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP; // r-x
+		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE; // r-x
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}

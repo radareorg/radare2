@@ -23,6 +23,8 @@ R_API RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 	if (!o) {
 		return NULL;
 	}
+	//ut8 *bytes = calloc (80000, 1);
+	//r_buf_read_at (binfile->buf, 0, bytes, 80000);
 	o->obj_size = bytes && (bytes_sz >= sz + offset)? sz: 0;
 	o->boffset = offset;
 	o->id = r_num_rand (0xfffff000);
@@ -32,11 +34,22 @@ R_API RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 	o->plugin = plugin;
 	o->loadaddr = loadaddr != UT64_MAX ? loadaddr : 0;
 
-	// XXX more checking will be needed here
-	// only use LoadBytes if buffer offset != 0
-	// if (offset != 0 && bytes && plugin && plugin->load_bytes && (bytes_sz
-	// >= sz + offset) ) {
-	if (bytes && plugin && plugin->load_bytes && (bytes_sz >= sz + offset)) {
+	if (bytes && plugin && plugin->load_buffer) {
+		o->bin_obj = plugin->load_buffer (binfile, binfile->buf, loadaddr, sdb); // bytes + offset, sz, loadaddr, sdb);
+		if (!o->bin_obj) {
+			bprintf (
+				"Error in r_bin_object_new: load_bytes failed "
+				"for %s plugin\n",
+				plugin->name);
+			sdb_free (o->kv);
+			free (o);
+			return NULL;
+		}
+	} else if (bytes && plugin && plugin->load_bytes && (bytes_sz >= sz + offset)) {
+		// XXX more checking will be needed here
+		// only use LoadBytes if buffer offset != 0
+		// if (offset != 0 && bytes && plugin && plugin->load_bytes && (bytes_sz
+		// >= sz + offset) ) {
 		ut64 bsz = bytes_sz - offset;
 		if (sz < bsz) {
 			bsz = sz;
@@ -90,7 +103,7 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	RBinObject *old_o;
 	RBinPlugin *cp;
 	int i, minlen;
-	int type;
+	// int type;
 
 	if (!binfile || !o || !o->plugin) {
 		return false;
@@ -209,6 +222,24 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 		if (bin->filter) {
 			r_bin_filter_classes (o->classes);
 		}
+		// cache addr=class+method
+		if (cp->classes) {
+			RList *klasses = cp->classes (binfile);
+			RListIter *iter, *iter2;
+			RBinClass *klass;
+			RBinSymbol *method;
+			if (!o->addr2klassmethod) {
+				// this is slow. must be optimized, but at least its cached
+				o->addr2klassmethod = sdb_new0 ();
+				r_list_foreach (klasses, iter, klass) {
+					r_list_foreach (klass->methods, iter2, method) {
+						char *km = sdb_fmt ("method.%s.%s", klass->name, method->name);
+						char *at = sdb_fmt ("0x%08"PFMT64x, method->vaddr);
+						sdb_set (o->addr2klassmethod, at, km, 0);
+					}
+				}
+			}
+		}
 	}
 	if (cp->lines) {
 		o->lines = cp->lines (binfile);
@@ -249,6 +280,7 @@ R_API void r_bin_object_delete_items(RBinObject *o) {
 	if (!o) {
 		return;
 	}
+	sdb_free (o->addr2klassmethod);
 	r_list_free (o->entries);
 	r_list_free (o->fields);
 	r_list_free (o->imports);
