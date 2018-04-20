@@ -401,21 +401,22 @@ static ut64 opmask(char *input, char *opcode, ut64 allowed_mask) {
 	return 0;
 }
 
-static ut32 itmask(char *input, char *opcode) {
+static ut32 itmask(char *input) {
 	ut32 res = 0;
-	ut32 i;
+	ut32 i, length;
 	r_str_case (input, false);
-	if (strlen (opcode) > strlen (input)) {
+	if (2 > strlen (input)) {
 		return 0;
 	}
-	if (r_str_startswith (input, opcode)) {
-		input += strlen (opcode);
+	if (r_str_startswith (input, "it")) {
+		input += 2;
 		res |= 1; // matched
 		if (strlen(input) > 3) {
 			return 0;
 		}
 		res |= (strlen (input) & 0x3) << 4;
-		for (i = 0; i < strlen(input); i++, input++ ) {
+		length = strlen (input);
+		for (i = 0; i < length; i++, input++ ) {
 			if (*input == 'e') {
 				res |= 1 << (3 - i);
 				continue;
@@ -2152,8 +2153,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			return -1;
 		}
 	} else
-	if ((m = itmask (ao->op, "it"))) {
-		// NB: This doesn't actually do anything: We still can't properly interpret the following instructions
+	if ((m = itmask (ao->op))) {
 		ut64 argt = thumb_selector (ao->a);
 		switch (argt) {
 		case THUMB_OTHER: {
@@ -2177,9 +2177,13 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			}
 			ao->o = 0x00bf;
 			ao->o |= cond << 12;
-			
-			for (i = 0; i < ((m & 0x30) >> 4); i++) {
-				ao->o |= ((cond & 0x1) ^ ((m & (0x1 << (3 - i))) >> (3 -i))) << (11 - i);
+
+			ut8 nrcs = (m & 0x30) >> 4;
+			ut8 thiset = 0;
+
+			for (i = 0; i < nrcs; i++) {
+				thiset = ((m & (1 << (3 - i))) >> (3 - i));
+				ao->o |= ((cond & 0x1) ^ thiset) << (11 - i);
 			}
 			ao->o |= 1 << (11 - i);
 			return 2;
