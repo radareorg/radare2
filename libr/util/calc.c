@@ -384,6 +384,7 @@ R_API ut64 r_num_calc(RNum *num, const char *str, const char **err) {
 	nc->calc_i = 0;
 	nc->calc_len = 0;
 	nc->calc_buf = NULL;
+	nc->under_calc = true;
 
 	load_token (num, nc, str);
 	get_token (num, nc);
@@ -394,6 +395,7 @@ R_API ut64 r_num_calc(RNum *num, const char *str, const char **err) {
 	if (num) {
 		num->fvalue = n.d;
 	}
+	nc->under_calc = false;
 	return n.n;
 }
 

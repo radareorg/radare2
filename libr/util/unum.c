@@ -113,6 +113,9 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 	ut64 ret = 0LL;
 	ut32 s, a;
 
+	if (num && !num->nc.under_calc) {
+		num->nc.errors = 0;
+	}
 	if (!str) {
 		return 0;
 	}
