@@ -32,6 +32,7 @@ typedef struct r_num_calc_t {
 	int calc_i;
 	const char *calc_buf;
 	int calc_len;
+	bool under_calc;
 } RNumCalc;
 
 typedef struct r_num_t {
