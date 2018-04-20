@@ -912,6 +912,9 @@ INST_HANDLER (ldi) {	// LDI Rd, K
 }
 
 INST_HANDLER (lds) {	// LDS Rd, k
+	if (len < 4) {
+		return;
+	}
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 	int k = (buf[3] << 8) | buf[2];
 	op->ptr = k;
