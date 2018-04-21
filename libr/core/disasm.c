@@ -4587,7 +4587,7 @@ toro:
 			}
 		}
 		if (ds->show_seekline && ds->vat == core->prompt_offset) {
-			int pad_len = 2 + R_MAX (0, ds->line ? (int)strlen (ds->line) - 2 : 0);
+			int pad_len = 2 + R_MAX (0, ds->line ? r_str_len_utf8 (ds->line) - 2 : 0);
 			int line_len = R_MAX (0, ds->interactive ? r_cons_singleton ()->columns : 80) - pad_len;
 			r_cons_memset (' ', pad_len);
 			r_cons_print (COLOR_CONST (ds, CYAN));
