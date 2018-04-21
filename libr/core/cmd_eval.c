@@ -452,7 +452,7 @@ static int cmd_eval(void *data, const char *input) {
 			} else {
 				char color[32];
 				RColor rcolor = r_cons_pal_get (p);
-				r_cons_rgb_str (color, &rcolor);
+				r_cons_rgb_str (color, sizeof (color), &rcolor);
 				eprintf ("(%s)(%sCOLOR"Color_RESET")\n", p, color);
 			}
 			free (p);

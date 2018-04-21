@@ -5644,7 +5644,7 @@ R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int se
 		char rgbstr[32];
 		const char *k = r_cons_singleton ()->pal.offset; // TODO etooslow. must cache
 		if (p->flags & R_PRINT_FLAGS_RAINBOW) {
-			k = r_cons_rgb_str_off (rgbstr, off);
+			k = r_cons_rgb_str_off (rgbstr, sizeof (rgbstr), off);
 		}
 		if (invert) {
 			r_cons_invert (true, true);

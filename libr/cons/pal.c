@@ -228,7 +228,7 @@ R_API char *r_cons_pal_parse (const char *str, RColor *outcol) {
 	if (!strcmp (fgcolor, "random")) {
 		rcolor = r_cons_color_random (ALPHA_FG);
 		if (!outcol) {
-			r_cons_rgb_str (out, &rcolor);
+			r_cons_rgb_str (out, sizeof (out), &rcolor);
 		}
 	} else if (!strncmp (fgcolor, "#", 1)) { // "#00ff00" HTML format
 		if (strlen (fgcolor) == 7) {
@@ -237,7 +237,7 @@ R_API char *r_cons_pal_parse (const char *str, RColor *outcol) {
 				eprintf ("Error while parsing HTML color: %s\n", fgcolor);
 			}
 			if (!outcol) {
-				r_cons_rgb_str (out, &rcolor);
+				r_cons_rgb_str (out, sizeof (out), &rcolor);
 			}
 		} else {
 			eprintf ("Invalid html color code\n");
@@ -248,14 +248,14 @@ R_API char *r_cons_pal_parse (const char *str, RColor *outcol) {
 			rcolor.g = rgbnum (fgcolor[5], '0');
 			rcolor.b = rgbnum (fgcolor[6], '0');
 			if (!outcol) {
-				r_cons_rgb_str (out, &rcolor);
+				r_cons_rgb_str (out, sizeof (out), &rcolor);
 			}
 		} else if (strlen (fgcolor) == 10) {
 			rcolor.r = rgbnum (fgcolor[4], fgcolor[5]);
 			rcolor.g = rgbnum (fgcolor[6], fgcolor[7]);
 			rcolor.b = rgbnum (fgcolor[8], fgcolor[9]);
 			if (!outcol) {
-				r_cons_rgb_str (out, &rcolor);
+				r_cons_rgb_str (out, sizeof (out), &rcolor);
 			}
 		}
 	}
@@ -267,7 +267,8 @@ R_API char *r_cons_pal_parse (const char *str, RColor *outcol) {
 			rcolor.g2 = rgbnum (bgcolor[5], '0');
 			rcolor.b2 = rgbnum (bgcolor[6], '0');
 			if (!outcol) {
-				r_cons_rgb_str (out + strlen (out), &rcolor);
+				size_t len = strlen (out);
+				r_cons_rgb_str (out + len, sizeof (out) - len, &rcolor);
 			}
 		} else if (strlen (bgcolor) == 10) {
 			rcolor.a |= ALPHA_BG;
@@ -275,7 +276,8 @@ R_API char *r_cons_pal_parse (const char *str, RColor *outcol) {
 			rcolor.g2 = rgbnum (bgcolor[6], bgcolor[7]);
 			rcolor.b2 = rgbnum (bgcolor[8], bgcolor[9]);
 			if (!outcol) {
-				r_cons_rgb_str (out + strlen (out), &rcolor);
+				size_t len = strlen (out);
+				r_cons_rgb_str (out + len, sizeof (out) - len, &rcolor);
 			}
 		}
 	}
@@ -344,7 +346,7 @@ static void r_cons_pal_show_gs () {
 
 		if (i < 0x76) strcpy (fg, Color_WHITE);
 		else strcpy (fg, Color_BLACK);
-		r_cons_rgb_str (bg, &rcolor);
+		r_cons_rgb_str (bg, sizeof (bg), &rcolor);
 		r_cons_printf ("%s%s rgb:%02x%02x%02x "Color_RESET,
 			fg, bg, i, i, i);
 		if (n++ == 5) {
@@ -377,7 +379,7 @@ static void r_cons_pal_show_256 () {
 					rc.g = 0x5f;
 				}
 				const char *fg = ((rc.r <= 0x5f) && (rc.g <= 0x5f)) ? Color_WHITE: Color_BLACK;
-				r_cons_rgb_str (bg, &rc);
+				r_cons_rgb_str (bg, sizeof (bg), &rc);
 				r_cons_printf ("%s%s rgb:%02x%02x%02x "
 					Color_RESET, fg, bg, rc.r, rc.g, rc.b);
 			}
@@ -400,7 +402,7 @@ static void r_cons_pal_show_rgb () {
 				rc.b = k * 16;
 				strcpy (fg, ((i < 6) && (j < 5))
 					? Color_WHITE: Color_BLACK);
-				r_cons_rgb_str (bg, &rc);
+				r_cons_rgb_str (bg, sizeof (bg), &rc);
 				r_cons_printf ("%s%s rgb:%02x%02x%02x "
 					Color_RESET, fg, bg, rc.r, rc.g, rc.b);
 				if (n ++== 5) {
@@ -544,7 +546,7 @@ R_API void r_cons_pal_update_event() {
 		if (*color) {
 			R_FREE (*color);
 		}
-		*color = r_cons_rgb_str (NULL, rcolor);
+		*color = r_cons_rgb_str (NULL, 0, rcolor);
 		const char *rgb = sdb_fmt ("rgb:%02x%02x%02x", rcolor->r, rcolor->g, rcolor->b);
 		sdb_set (db, rgb, "1", 0);
 	}
