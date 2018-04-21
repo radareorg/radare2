@@ -1671,32 +1671,32 @@ static int cb_scrhighlight(void *user, void *data) {
 #if __WINDOWS__ && !__CYGWIN__
 static int scr_ansicon(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton()->ansicon = node->i_value;
+	r_cons_singleton ()->ansicon = node->i_value;
 	return true;
 }
 #endif
 
 static int cb_screcho(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton()->echo = node->i_value;
+	r_cons_singleton ()->echo = node->i_value;
 	return true;
 }
 
 static int cb_scrlinesleep(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton()->linesleep = node->i_value;
+	r_cons_singleton ()->linesleep = node->i_value;
 	return true;
 }
 
 static int cb_scrpagesize(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton()->pagesize= node->i_value;
+	r_cons_singleton ()->pagesize= node->i_value;
 	return true;
 }
 
 static int cb_scrflush(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton()->flush = node->i_value;
+	r_cons_singleton ()->flush = node->i_value;
 	return true;
 }
 
@@ -1757,7 +1757,7 @@ static int cb_scrint(void *user, void *data) {
 	if (node->i_value && r_sandbox_enable (0)) {
 		return false;
 	}
-	r_cons_singleton()->is_interactive = node->i_value;
+	r_cons_singleton ()->is_interactive = node->i_value;
 	return true;
 }
 
@@ -1842,7 +1842,7 @@ static int cb_consbreak(void *user, void *data) {
 
 static int cb_teefile(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
-	r_cons_singleton()->teefile = node->value;
+	r_cons_singleton ()->teefile = node->value;
 	return true;
 }
 
@@ -2839,7 +2839,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("scr.color.ops", "true", "Colorize numbers and registers in opcodes");
 	SETPREF ("scr.color.bytes", "true", "Colorize bytes that represent the opcodes of the instruction");
 #if __WINDOWS__ && !__CYGWIN__
-	SETCB ("scr.ansicon", r_str_bool (r_cons_singleton()->ansicon),
+	SETCB ("scr.ansicon", r_str_bool (r_cons_singleton ()->ansicon),
 		&scr_ansicon, "Use ANSICON mode or not on Windows");
 #endif
 #if __ANDROID__
