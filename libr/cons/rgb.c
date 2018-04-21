@@ -155,21 +155,33 @@ R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a) {
 	return 1;
 }
 
-R_API char *r_cons_rgb_str_off(char *outstr, ut64 off) {
+R_API char *r_cons_rgb_str_off(char *outstr, size_t sz, ut64 off) {
 	RColor rc = RColor_BLACK;
 	rc.r = (off >> 2) & 0xff;
 	rc.g = (off >> 6) & 0xff;
 	rc.b = (off >> 12) & 0xff;
-	return r_cons_rgb_str (outstr, &rc);
+	return r_cons_rgb_str (outstr, sz, &rc);
 }
 
 /* Compute color string depending on cons->color */
-static void r_cons_rgb_gen (char *outstr, ut8 attr, ut8 a, ut8 r, ut8 g, ut8 b) {
+static void r_cons_rgb_gen (char *outstr, size_t sz, ut8 attr, ut8 a, ut8 r, ut8 g, ut8 b) {
 	ut8 fgbg = (a == ALPHA_BG)? 48: 38; // ANSI codes for Background/Foreground
-	int i = 2;
+
+	if (sz < 4) { // must have at least room for "<esc>[m\0"
+		if (sz > 0) {
+			outstr[0] = '\0';
+		}
+		return;
+	}
+
+	size_t i = 2;
 	outstr[0] = '\x1b';
 	outstr[1] = '[';
 	for (; attr; attr &= attr - 1) {
+		if (sz < i + 4) { // must have at least room for e.g. "1;m\0"
+			outstr[0] = '\0';
+			return;
+		}
 		switch (attr & -attr) {
 		case 1u << 1: outstr[i] = '1'; break;
 		case 1u << 2: outstr[i] = '2'; break;
@@ -180,12 +192,14 @@ static void r_cons_rgb_gen (char *outstr, ut8 attr, ut8 a, ut8 r, ut8 g, ut8 b) 
 		outstr[i + 1] = ';';
 		i += 2;
 	}
+
+	int written = -1;
 	switch (r_cons_singleton ()->color) {
 	case COLOR_MODE_256: // 256 color palette
-		sprintf (outstr + i, "%d;5;%dm", fgbg, rgb (r, g, b));
+		written = snprintf (outstr + i, sz - i, "%d;5;%dm", fgbg, rgb (r, g, b));
 		break;
 	case COLOR_MODE_16M: // 16M (truecolor)
-		sprintf (outstr + i, "%d;2;%d;%d;%dm", fgbg, r, g, b);
+		written = snprintf (outstr + i, sz - i, "%d;2;%d;%d;%dm", fgbg, r, g, b);
 		break;
 	case COLOR_MODE_16: // ansi 16 colors
 		{
@@ -195,19 +209,24 @@ static void r_cons_rgb_gen (char *outstr, ut8 attr, ut8 a, ut8 r, ut8 g, ut8 b) 
 		g = (g >= k) ? 1 : 0;
 		b = (b >= k) ? 1 : 0;
 		k = (r ? 1 : 0) + (g ? (b ? 6 : 2) : (b ? 4 : 0));
-		sprintf (outstr + i, "%dm", fgbg + k);
+		written = snprintf (outstr + i, sz - i, "%dm", fgbg + k);
 		}
 		break;
+	}
+
+	if (written < 0 || written >= sz - i) {
+		outstr[0] = '\0';
 	}
 }
 
 /* Return the computed color string for the specified color */
-R_API char *r_cons_rgb_str (char *outstr, RColor *rcolor) {
+R_API char *r_cons_rgb_str (char *outstr, size_t sz, RColor *rcolor) {
 	if (!rcolor) {
 		return NULL;
 	}
 	if (!outstr) {
-		outstr = calloc (32, 1);
+		sz = 64;
+		outstr = calloc (sz, 1);
 	}
 	*outstr = 0;
 	if (rcolor->a == ALPHA_RESET) {
@@ -216,10 +235,11 @@ R_API char *r_cons_rgb_str (char *outstr, RColor *rcolor) {
 	}
 	// If the color handles both foreground and background, also add background
 	if (rcolor->a == ALPHA_FGBG) {
-		r_cons_rgb_gen (outstr, 0, ALPHA_BG, rcolor->r2, rcolor->g2, rcolor->b2);
+		r_cons_rgb_gen (outstr, sz, 0, ALPHA_BG, rcolor->r2, rcolor->g2, rcolor->b2);
 	}
 	// APPEND
-	r_cons_rgb_gen (outstr + strlen (outstr), rcolor->attr, rcolor->a, rcolor->r, rcolor->g, rcolor->b);
+	size_t len = strlen (outstr);
+	r_cons_rgb_gen (outstr + len, sz - len, rcolor->attr, rcolor->a, rcolor->r, rcolor->g, rcolor->b);
 
 	return outstr;
 }
