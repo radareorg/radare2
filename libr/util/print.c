@@ -1627,7 +1627,7 @@ static bool ishexprefix(char *p) {
 
 R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num, bool partial_reset) {
 	int i, j, k, is_mod, is_float = 0, is_arg = 0;
-	char *reset = partial_reset ? Color_NOBGRESET:Color_RESET;
+	char *reset = Color_RESET;
 	ut32 c_reset = strlen (reset);
 	int is_jmp = p && (*p == 'j' || ((*p == 'c') && (p[1] == 'a')))? 1: 0;
 	ut32 opcode_sz = p && *p? strlen (p) * 10 + 1: 0;

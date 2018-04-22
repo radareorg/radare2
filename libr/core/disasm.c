@@ -883,7 +883,8 @@ static bool ds_must_strip(RDisasmState *ds) {
 
 static void ds_highlight_word(RDisasmState * ds, char *word, char *color) {
 	char *source = ds->opstr? ds->opstr: ds->asmop.buf_asm;
-	char * asm_str = r_str_highlight (source, word, color);
+	const char *color_reset = ds->vat == ds->core->prompt_offset ? Color_BGBLUE : Color_BGRESET;
+	char *asm_str = r_str_highlight (source, word, color, color_reset);
 	ds->opstr = asm_str? asm_str:source;
 }
 
