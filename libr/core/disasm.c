@@ -4509,6 +4509,9 @@ toro:
 			ds_setup_print_pre (ds, false, false);
 			ds_print_lines_left (ds);
 		}
+		if (ds->vat == core->prompt_offset) {
+			r_cons_strcat (Color_BGBLUE);
+		}
 		ds_print_offset (ds);
 		if (ds->shortcut_pos == 0) {
 			ds_print_core_vmode (ds, ds->shortcut_pos);
@@ -4526,6 +4529,9 @@ toro:
 			ds_print_lines_right (ds);
 			ds_build_op_str (ds, true);
 			ds_print_opstr (ds);
+			if (ds->vat == core->prompt_offset) {
+				r_cons_strcat (Color_BGRESET);
+			}
 			ds_print_dwarf (ds);
 			ret = ds_print_middle (ds, ret);
 
@@ -4554,6 +4560,9 @@ toro:
 				ds_show_refs (ds);
 			}
 		} else {
+			if (ds->vat == core->prompt_offset) {
+				r_cons_strcat (Color_BGRESET);
+			}
 			if (ds->show_comments && ds->show_comment_right) {
 				ds_print_color_reset (ds);
 				ds_print_comments_right (ds);
