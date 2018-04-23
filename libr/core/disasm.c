@@ -1992,8 +1992,9 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			int sz = R_MIN (16, meta->size - (ds->at - meta->from));
 			ds->asmop.size = sz;
 			r_hex_bin2str (buf, sz, ds->asmop.buf_hex);
-			snprintf (ds->asmop.buf_asm, sizeof (ds->asmop.buf_asm),
+			snprintf (ds->asmop.buf_asm, sizeof (ds->asmop.buf_asm) - 1,
 				".hex %s", ds->asmop.buf_hex);
+			ds->asmop.buf_asm[sizeof (ds->asmop.buf_asm) - 1] = 0;
 			// strcpy (ds->asmop.buf_hex, "0102030405060708");
 			//return i;
 			ds->oplen = sz; //ds->asmop.size;
