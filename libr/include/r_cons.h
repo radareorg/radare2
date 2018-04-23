@@ -942,6 +942,7 @@ typedef struct r_panels_t {
 	int menu_y;
 	int callgraph;
 	int curnode;
+	int originCursor;
 	bool isResizing;
 } RPanels;
 #ifdef R_API
