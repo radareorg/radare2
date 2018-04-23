@@ -4252,13 +4252,13 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 }
 
 static void ds_start_seek_highlight(RDisasmState *ds) {
-	if (ds->vat == ds->core->prompt_offset) {
+	if (ds->vat == ds->core->prompt_offset && ds->show_color) {
 		r_cons_strcat (Color_BGBLUE);
 	}
 }
 
 static void ds_end_seek_highlight(RDisasmState *ds) {
-	if (ds->vat == ds->core->prompt_offset) {
+	if (ds->vat == ds->core->prompt_offset && ds->show_color) {
 		r_cons_strcat (Color_BGRESET);
 	}
 }
