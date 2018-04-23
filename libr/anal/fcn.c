@@ -715,6 +715,7 @@ static bool is_delta_pointer_table(RAnal *anal, RAnalFunction *fcn, ut64 addr, u
 
 static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnalBlock *my_bb, ut64 *table_size, ut64 *default_case){
 	bool isValid = false;
+	int i;
 	RListIter *iter;
 	RAnalBlock *tmp_bb, *prev_bb;
 	prev_bb = 0;
@@ -743,7 +744,7 @@ static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAna
 	anal->iob.read_at (anal->iob.io, prev_bb->addr, (ut8 *) bb_buf, prev_bb->size);
 	isValid = false;
 
-	for (int i = 0; i < prev_bb->op_pos_size; i++) {
+	for (i = 0; i < prev_bb->op_pos_size; i++) {
 	//for (int i = prev_bb->op_pos_size - 1; i >= 0; i--) {
 		ut64 addr = prev_bb->addr + prev_bb->op_pos[i];
 		int len = r_anal_op (anal, &tmp_aop, addr, bb_buf + prev_bb->op_pos[i], prev_bb->size - prev_bb->op_pos[i], R_ANAL_OP_MASK_ALL);
