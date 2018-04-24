@@ -124,7 +124,7 @@ R_API RList *r_core_list_themes(RCore *core) {
 		R_FREE (path);
 	}
 
-	path = r_str_r2_prefix ("share/radare2/"R2_VERSION"/cons/");
+	path = r_str_r2_prefix (R2_THEMESDIR "/");
 	if (path) {
 		list_themes_in_path (list, path);
 		R_FREE (path);
@@ -179,7 +179,7 @@ static void nextpal(RCore *core, int mode) {
 		R_FREE (home);
 	}
 
-	char *path = r_str_r2_prefix ("share/radare2/"R2_VERSION"/cons/");
+	char *path = r_str_r2_prefix (R2_THEMESDIR "/");
 	if (path) {
 		files = r_sys_dir (path);
 		r_list_foreach (files, iter, fn) {
@@ -314,7 +314,7 @@ static int cmd_eval(void *data, const char *input) {
 				home = tmp ? r_str_home (tmp) : NULL;
 				free (tmp);
 
-				tmp = r_str_newf ("share/radare2/"R2_VERSION"/cons/%s", input + 3);
+				tmp = r_str_newf (R2_THEMESDIR "/%s", input + 3);
 				path = tmp ? r_str_r2_prefix (tmp) : NULL;
 				free (tmp);
 
@@ -339,7 +339,7 @@ static int cmd_eval(void *data, const char *input) {
 					eprintf ("Something went wrong\n");
 				}
 			} else if (input[2] == '?') {
-				eprintf ("Usage: eco [themename]  ;load theme from %s/share/radare2/"R2_VERSION"/cons/ (see dir.prefix)\n",
+				eprintf ("Usage: eco [themename]  ;load theme from %s/"R2_THEMESDIR"/ (see dir.prefix)\n",
 					r_sys_prefix (NULL));
 
 			} else {

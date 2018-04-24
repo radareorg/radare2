@@ -80,13 +80,13 @@ r_core = library('r_core', files,
   dependencies: [platform_deps],
   install: true,
   implicit_include_directories: false,
-  soversion: r2libversion
+  soversion: r2_libversion
 )
 
 pkgconfig_mod.generate(
   libraries: [r_core],
   subdirs: 'libr',
-  version: r2version,
+  version: r2_version,
   name: 'r_core',
   filebase: 'r_core',
   requires: [

@@ -70,13 +70,13 @@ r_debug = library('r_debug', files,
   ],
   install: true,
   implicit_include_directories: false,
-  soversion: r2libversion
+  soversion: r2_libversion
 )
 
 pkgconfig_mod.generate(
   libraries: [r_debug],
   subdirs: 'libr',
-  version: r2version,
+  version: r2_version,
   name: 'r_debug',
   filebase: 'r_debug',
   requires: [

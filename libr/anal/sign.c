@@ -1181,7 +1181,7 @@ R_API char *r_sign_path(RAnal *a, const char *file) {
 	}
 
 	/// XXX mixed / and R_SYS_DIR
-	const char *pfx = "/share/radare2/" R2_VERSION "/zigns";
+	const char *pfx = "/" R2_ZIGNSDIR;
 	abs = r_str_newf ("%s%s%s%s", r_sys_prefix (NULL), pfx, R_SYS_DIR, file);
 	if (r_file_is_regular (abs)) {
 		return abs;

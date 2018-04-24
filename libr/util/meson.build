@@ -91,13 +91,13 @@ r_util = library('r_util', files,
   link_with: [libr_shlr],
   install: true,
   implicit_include_directories: false,
-  soversion: r2libversion
+  soversion: r2_libversion
 )
 
 pkgconfig_mod.generate(
   libraries: [r_util],
   subdirs: 'libr',
-  version: r2version,
+  version: r2_version,
   name: 'r_util',
   filebase: 'r_util',
   description: 'radare foundation libraries'

@@ -28,13 +28,13 @@ r_parse = library('r_parse', files,
   link_with: [r_util, r_flag, r_syscall, r_reg, libr_shlr],
   install: true,
   implicit_include_directories: false,
-  soversion: r2libversion
+  soversion: r2_libversion
 )
 
 pkgconfig_mod.generate(
   libraries: [r_parse],
   subdirs: 'libr',
-  version: r2version,
+  version: r2_version,
   name: 'r_parse',
   filebase: 'r_parse',
   requires: [

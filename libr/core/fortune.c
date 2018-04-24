@@ -5,8 +5,8 @@ static const char *fortunes[] = {
 };
 
 static char *getFortuneFile(RCore *core, const char *type) {
-	return r_str_newf ("%s/share/doc/radare2/fortunes.%s",
-		r_config_get (core->config, "dir.prefix"), type);
+	return r_str_newf ("%s/" R2_FORTUNESDIR "/fortunes.%s",
+		r_sys_prefix (NULL), type);
 }
 
 R_API void r_core_fortune_list_types(void) {

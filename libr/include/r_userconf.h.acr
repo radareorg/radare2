@@ -8,15 +8,23 @@
 
 #if __WINDOWS__ || __CYGWIN__ || MINGW32 || _MSC_VER || CUTTER
 #define R2_PREFIX "."
-#define R2_LIBDIR "./lib"
-#define R2_INCDIR "./include/libr"
-#define R2_DATDIR "./share"
+#define R2_LIBDIR "lib"
+#define R2_INCDIR "include/libr"
+#define R2_DATDIR "share"
+#define R2_WWWROOT "www"
 #else
 #define R2_PREFIX "@PREFIX@"
 #define R2_LIBDIR "@LIBDIR@"
 #define R2_INCDIR "@INCLUDEDIR@/libr"
 #define R2_DATDIR "@DATADIR@"
+#define R2_WWWROOT R2_DATDIR "/radare2/" R2_VERSION "/www"
 #endif
+
+#define R2_SDBDIR "share/radare2/" R2_VERSION
+#define R2_ZIGNSDIR "share/radare2/" R2_VERSION "/zigns"
+#define R2_THEMESDIR "share/radare2/" R2_VERSION "/cons"
+#define R2_FORTUNESDIR "share/doc/radare2"
+#define R2_HUDDIR "share/radare2/" R2_VERSION "/hud"
 
 #define HAVE_LIB_MAGIC @HAVE_LIB_MAGIC@
 #define USE_LIB_MAGIC @USE_LIB_MAGIC@
@@ -27,8 +35,6 @@
 #define HAVE_FORK @HAVE_FORK@
 
 #define WITH_GPL @WITH_GPL@
-
-#define R2_WWWROOT R2_DATDIR "/radare2/" R2_VERSION "/www"
 
 #if __APPLE__ && __POWERPC__
 #define HAVE_JEMALLOC 0

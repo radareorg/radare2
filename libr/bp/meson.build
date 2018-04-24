@@ -18,13 +18,13 @@ r_bp = library('r_bp', files,
   link_with: [r_util],
   install: true,
   implicit_include_directories: false,
-  soversion: r2libversion
+  soversion: r2_libversion
 )
 
 pkgconfig_mod.generate(
   libraries: [r_bp],
   subdirs: 'libr',
-  version: r2version,
+  version: r2_version,
   name: 'r_bp',
   filebase: 'r_bp',
   requires: [

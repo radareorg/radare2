@@ -3,7 +3,7 @@
 #include <r_core.h>
 #include "r_util.h"
 
-#define DBSPATH "/share/radare2/" R2_VERSION "/fcnsign"
+#define DBSPATH R2_SDBDIR "/fcnsign"
 #define is_in_range(at, from, sz) ((at) >= (from) && (at) < ((from) + (sz)))
 
 #define VA_FALSE    0
@@ -1242,24 +1242,10 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 					if (r_file_exists (filename)) {
 						*db = sdb_new (NULL, filename, 0);
 					} else {
-					// XXX. we have dir.prefix, windows shouldnt work different
-						filename = sdb_fmt ("%s/share/radare2/" R2_VERSION"/format/dll/%s.sdb", r_config_get (r->config, "dir.prefix"), module);
+						const char *dirPrefix = r_sys_prefix (NULL);
+						filename = sdb_fmt ("%s/" R2_SDBDIR "/format/dll/%s.sdb", dirPrefix, module);
 						if (r_file_exists (filename)) {
 							*db = sdb_new (NULL, filename, 0);
-#if __WINDOWS__
-						} else {
-							char invoke_dir[MAX_PATH];
-							if (r_sys_get_src_dir_w32 (invoke_dir)) {
-								filename = sdb_fmt ("%s/share/radare2/"R2_VERSION "/format/dll/%s.sdb", invoke_dir, module);
-							} else {
-								filename = sdb_fmt ("share/radare2/"R2_VERSION"/format/dll/%s.sdb", module);
-							}
-#else
-							filename = sdb_fmt ("%s/share/radare2/" R2_VERSION"/format/dll/%s.sdb", r_config_get (r->config, "dir.prefix"), module);
-							if (r_file_exists (filename)) {
-								*db = sdb_new (NULL, filename, 0);
-							}
-#endif
 						}
 					}
 				}

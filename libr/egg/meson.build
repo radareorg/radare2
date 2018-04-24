@@ -21,13 +21,13 @@ r_egg = library('r_egg', files,
   link_with: [r_util, r_asm, r_syscall, libr_shlr],
   install: true,
   implicit_include_directories: false,
-  soversion: r2libversion
+  soversion: r2_libversion
 )
 
 pkgconfig_mod.generate(
   libraries: [r_egg],
   subdirs: 'libr',
-  version: r2version,
+  version: r2_version,
   name: 'r_egg',
   filebase: 'r_egg',
   requires: [

@@ -6,11 +6,11 @@ pkgconfig_mod = import('pkgconfig')
 glob_cmd = [py3_exe, '-c', 'from sys import argv; print(";".join(__import__("glob").glob(argv[1])))']
 
 # Get r2 version
-r2version = run_command(py3_exe, 'sys/version.py')
-if r2version.returncode() != 0
-  r2version = 'unknown-error'
+r2_version = run_command(py3_exe, 'sys/version.py')
+if r2_version.returncode() != 0
+  r2_version = 'unknown-error'
 else
-  r2version = r2version.stdout().strip()
+  r2_version = r2_version.stdout().strip()
 endif
 
 repo = '.'
@@ -62,7 +62,7 @@ else
   r2birth = r2birth.stdout().strip()
 endif
 
-r2libversion = host_machine.system() == 'windows' ? '' : r2version
+r2_libversion = host_machine.system() == 'windows' ? '' : r2_version
 
 # system dependencies
 cc = meson.get_compiler('c')
@@ -108,12 +108,69 @@ config_h = configure_file(
   configuration: conf_data
 )
 
+if host_machine.system() == 'windows'
+  r2_prefix = '.'
+  r2_libdir = get_option('r2_libdir')
+  if r2_libdir == ''
+    r2_libdir = 'lib'
+  endif
+  r2_incdir = get_option('r2_incdir')
+  if r2_incdir == ''
+    r2_incdir = 'include/libr'
+  endif
+  r2_datdir = get_option('r2_datdir')
+  if r2_datdir == ''
+    r2_datdir = 'share'
+  endif
+  r2_wwwroot = get_option('r2_wwwroot')
+  if r2_wwwroot == ''
+    r2_wwwroot = join_paths(r2_datdir, 'radare2', r2_version, 'www')
+  endif
+  r2_sdbdir = get_option('r2_sdbdir')
+  if r2_sdbdir == ''
+    r2_sdbdir = join_paths(r2_datdir, 'radare2', r2_version)
+  endif
+  r2_zignsdir = get_option('r2_zignsdir')
+  if r2_zignsdir == ''
+    r2_zignsdir = join_paths(r2_datdir, 'radare2', r2_version, 'zigns')
+  endif
+  r2_themesdir = get_option('r2_themesdir')
+  if r2_themesdir == ''
+    r2_themesdir = join_paths(r2_datdir, 'radare2', r2_version, 'cons')
+  endif
+  r2_fortunesdir = get_option('r2_fortunesdir')
+  if r2_fortunesdir == ''
+    r2_fortunesdir = join_paths(r2_datdir, 'doc/radare2')
+  endif
+  r2_huddir = get_option('r2_huddir')
+  if r2_huddir == ''
+    r2_huddir = join_paths(r2_datdir, 'radare2', r2_version, 'hud')
+  endif
+else
+  r2_prefix = get_option('prefix')
+  r2_libdir = join_paths(get_option('libdir'))
+  r2_incdir = join_paths(get_option('includedir'), 'libr')
+  r2_datdir = join_paths(get_option('datadir'))
+  r2_wwwroot = join_paths(r2_datdir, 'radare2', r2_version, 'www')
+  r2_sdbdir = join_paths(r2_datdir, 'radare2', r2_version)
+  r2_zignsdir = join_paths(r2_datdir, 'radare2', r2_version, 'zigns')
+  r2_themesdir = join_paths(r2_datdir, 'radare2', r2_version, 'cons')
+  r2_fortunesdir = join_paths(r2_datdir, 'doc/radare2')
+  r2_huddir = join_paths(r2_datdir, 'radare2', r2_version, 'hud')
+endif
+
 userconf = configuration_data()
 userconf.set('DEBUGGER', 1)
-userconf.set('PREFIX', get_option('prefix'))
-userconf.set('LIBDIR', join_paths(get_option('prefix'), get_option('libdir')))
-userconf.set('INCLUDEDIR', join_paths(get_option('prefix'), get_option('includedir')))
-userconf.set('DATADIR', join_paths(get_option('prefix'), get_option('datadir')))
+userconf.set('PREFIX', r2_prefix)
+userconf.set('LIBDIR', r2_libdir)
+userconf.set('INCLUDEDIR', r2_incdir)
+userconf.set('DATADIR', r2_datdir)
+userconf.set('WWWROOT', r2_wwwroot)
+userconf.set('SDBDIR', r2_sdbdir)
+userconf.set('ZIGNSDIR', r2_zignsdir)
+userconf.set('THEMESDIR', r2_themesdir)
+userconf.set('FORTUNESDIR', r2_fortunesdir)
+userconf.set('HUDDIR', r2_huddir)
 userconf.set('HAVE_LIB_MAGIC', 0)
 userconf.set('USE_LIB_MAGIC', 0)
 userconf.set('HAVE_OPENSSL', 0)
@@ -138,7 +195,7 @@ r_userconf_h = configure_file(
 
 versionconf = configuration_data()
 versionconf.set('VERSIONCOMMIT', version_commit)
-versionconf.set('R2_VERSION', r2version)
+versionconf.set('R2_VERSION', r2_version)
 versionconf.set('R2_GITTAP', gittap)
 versionconf.set('R2_GITTIP', gittip)
 versionconf.set('R2_BIRTH', r2birth)
@@ -155,7 +212,7 @@ run_command(py3_exe, '-c', '__import__("shutil").copyfile("shlr/spp/config.def.h
 pcconf = configuration_data()
 pcconf.set('PREFIX', get_option('prefix'))
 pcconf.set('LIBDIR', join_paths(get_option('prefix'), get_option('libdir')))
-pcconf.set('VERSION', r2version)
+pcconf.set('VERSION', r2_version)
 libr_pc = configure_file(
   input: 'libr/libr.pc.acr',
   output: 'libr.pc',
@@ -218,12 +275,12 @@ else
   libr2_dep = declare_dependency(
     link_with: libr2_lib,
     include_directories: libr2_inc,
-    version: r2version
+    version: r2_version
   )
 endif
 
 install_subdir('shlr/www',
-  install_dir: join_paths(get_option('prefix'), get_option('datadir'), 'radare2', r2version)
+  install_dir: join_paths(get_option('prefix'), get_option('datadir'), 'radare2', r2_version)
 )
 
 fortunes_files = run_command(glob_cmd + ['doc/fortunes.*']).stdout().strip().split(';')
@@ -242,6 +299,6 @@ install_data(man7_files,
 )
 
 install_data('doc/hud',
-  install_dir: join_paths(get_option('datadir'), 'radare2', r2version, 'hud'),
+  install_dir: join_paths(get_option('datadir'), 'radare2', r2_version, 'hud'),
   rename: 'main'
 )

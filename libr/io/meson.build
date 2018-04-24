@@ -73,13 +73,13 @@ r_io = library('r_io', files,
   c_args: ['-DCORELIB=1'],
   install: true,
   implicit_include_directories: false,
-  soversion: r2libversion
+  soversion: r2_libversion
 )
 
 pkgconfig_mod.generate(
   libraries: [r_io],
   subdirs: 'libr',
-  version: r2version,
+  version: r2_version,
   name: 'r_io',
   filebase: 'r_io',
   requires: [

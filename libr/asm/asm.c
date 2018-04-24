@@ -8,7 +8,7 @@
 #include <spp/spp.h>
 #include <config.h>
 
-#define R_ASM_OPCODES_PATH "/share/radare2/" R2_VERSION "/opcodes"
+#define R_ASM_OPCODES_PATH R2_SDBDIR "/opcodes"
 
 R_LIB_VERSION (r_asm);
 
