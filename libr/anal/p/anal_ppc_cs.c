@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2017 - pancake */
+/* radare2 - LGPL - Copyright 2013-2018 - pancake */
 
 #include <r_anal.h>
 #include <r_lib.h>
@@ -33,7 +33,6 @@ static ut64 mask64(ut64 mb, ut64 me) {
 	if (mb > 63 || me > 63) {
 		return mask;
 	}
-
 	if (mb < (me + 1)) {
 		for (i = mb; i <= me; i++) {
 			mask = mask | (ut64) (1LL << (63 - i));
@@ -1142,7 +1141,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	return op->size;
 }
 
-static int archinfo(RAnal *anal, int q) {
+static int archinfo(RAnal *a, int q) {
+	if (a->cpu && !strncmp (a->cpu, "vle", 3)) {
+		return 2;
+	}
 	return 4;
 }
 
