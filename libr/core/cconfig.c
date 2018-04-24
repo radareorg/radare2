@@ -295,6 +295,11 @@ static int cb_analcpu(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	r_anal_set_cpu (core->anal, node->value);
+	/* set pcalign */
+	{
+		int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+		r_config_set_i (core->config, "asm.pcalign", (v != -1)? v: 0);
+	}
 	return true;
 }
 
@@ -488,14 +493,6 @@ static int cb_asmarch(void *user, void *data) {
 		}
 	}
 	// set pcalign
-	{
-		int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
-		if (v != -1) {
-			r_config_set_i (core->config, "asm.pcalign", v);
-		} else {
-			r_config_set_i (core->config, "asm.pcalign", 0);
-		}
-	}
 	if (core->anal) {
 		const char *asmcpu = r_config_get (core->config, "asm.cpu");
 		if (!r_syscall_setup (core->anal->syscall, node->value, core->anal->bits, asmcpu, asmos)) {
@@ -523,6 +520,14 @@ static int cb_asmarch(void *user, void *data) {
 	RConfigNode *asmcpu = r_config_node_get (core->config, "asm.cpu");
 	if (asmcpu) {
 		update_asmcpu_options (core, asmcpu);
+	}
+	{
+		int v = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
+		if (v != -1) {
+			r_config_set_i (core->config, "asm.pcalign", v);
+		} else {
+			r_config_set_i (core->config, "asm.pcalign", 0);
+		}
 	}
 	/* reload types and cc info */
 	// changing asm.arch changes anal.arch
