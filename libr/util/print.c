@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2017 - pancake */
+/* radare - LGPL - Copyright 2007-2018 - pancake */
 
 #include "r_anal.h"
 #include "r_cons.h"
@@ -272,6 +272,7 @@ R_API RPrint* r_print_new() {
 	strcpy (p->datefmt, "%Y-%m-%d %H:%M:%S %z");
 	r_io_bind_init (p->iob);
 	p->pairs = true;
+	p->resetbg = true;
 	p->cb_printf = libc_printf;
 	p->oprintf = nullprinter;
 	p->bits = 32;
@@ -415,7 +416,7 @@ R_API void r_print_addr(RPrint *p, ut64 addr) {
 				// pre = r_cons_rgb_str_off (rgbstr, addr);
 				if (p && p->cons && p->cons->rgbstr) {
 					char rgbstr[32];
-					pre = p->cons->rgbstr (rgbstr, addr);
+					pre = p->cons->rgbstr (rgbstr, sizeof (rgbstr), addr);
 				}
 			}
 			if (dec) {
@@ -511,7 +512,11 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 		}
 	}
 	if (colors || p->cur_enabled) {
-		memcat (d, Color_RESET);
+		if (p->resetbg) {
+			memcat (d, Color_RESET);
+		} else {
+			memcat (d, Color_RESET_NOBG);
+		}
 	}
 	*d = '\0';
 	return dst;

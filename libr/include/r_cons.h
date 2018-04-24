@@ -441,7 +441,7 @@ typedef struct r_cons_t {
 	bool grep_color;
 	bool use_tts;
 	bool filter;
-	char* (*rgbstr)(char *str, ut64 addr);
+	char* (*rgbstr)(char *str, size_t sz, ut64 addr);
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */
@@ -474,9 +474,9 @@ typedef struct r_cons_t {
 #define Color_INVERT       "\x1b[7m"
 #define Color_INVERT_RESET "\x1b[27m"
 /* plain colors */
-#define Color_RESET_ALL  "\x1b[0m"
-#define Color_RESET      "\x1b[22;24;25;27;28;39m"  /* Reset everything except background */
-#define Color_BGRESET    "\x1b[49m"
+#define Color_RESET      "\x1b[0m" /* reset all */
+#define Color_RESET_NOBG "\x1b[22;24;25;27;28;39m"  /* Reset everything except background */
+#define Color_RESET_BG   "\x1b[49m"
 #define Color_BLACK      "\x1b[30m"
 #define Color_BGBLACK    "\x1b[40m"
 #define Color_RED        "\x1b[31m"

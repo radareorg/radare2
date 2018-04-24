@@ -105,7 +105,6 @@ typedef struct {
 	bool show_dwarf;
 	bool show_size;
 	bool show_trace;
-	bool highlight;
 	bool show_family;
 	bool asm_describe;
 	int linesout;
@@ -175,6 +174,7 @@ typedef struct {
 	int midflags;
 	bool midcursor;
 	bool show_noisy_comments;
+	ut64 asm_highlight;
 	const char *pal_comment;
 	const char *color_comment;
 	const char *color_usrcmt;
@@ -562,6 +562,10 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->pre_emu = r_config_get_i (core->config, "emu.pre");
 	ds->show_flgoff = r_config_get_i (core->config, "asm.flgoff");
 	ds->show_nodup = r_config_get_i (core->config, "asm.nodup");
+	{
+		const char *ah = r_config_get (core->config, "asm.highlight");
+		ds->asm_highlight = (ah && *ah)? r_num_math (core->num, ah): UT64_MAX;
+	}
 	ds->asm_anal = r_config_get_i (core->config, "asm.anal");
 	ds->show_color = r_config_get_i (core->config, "scr.color");
 	ds->show_color_bytes = r_config_get_i (core->config, "scr.color.bytes"); // maybe rename to asm.color.bytes
@@ -882,7 +886,7 @@ static bool ds_must_strip(RDisasmState *ds) {
 
 static void ds_highlight_word(RDisasmState * ds, char *word, char *color) {
 	char *source = ds->opstr? ds->opstr: ds->asmop.buf_asm;
-	const char *color_reset = ds->vat == ds->core->prompt_offset ? Color_BGBLUE : Color_BGRESET;
+	const char *color_reset = ds->vat == ds->core->prompt_offset ? Color_BGBLUE : Color_RESET_BG;
 	char *asm_str = r_str_highlight (source, word, color, color_reset);
 	ds->opstr = asm_str? asm_str:source;
 }
@@ -1032,6 +1036,7 @@ R_API RAnalHint *r_core_hint_begin(RCore *core, RAnalHint* hint, ut64 at) {
 			r_config_set (core->config, "asm.syntax", hint->syntax);
 		}
 		if (hint->high) {
+			/* TODO: do something here */
 		}
 	}
 	return hint;
@@ -1509,9 +1514,8 @@ static void ds_show_functions(RDisasmState *ds) {
 			ds_print_lines_left (ds);
 			ds_print_offset (ds);
 		}
-		r_cons_printf ("%s(%s) %s%s%s %d",
-					   COLOR (ds, color_fname),
-					   fcntype, fcn_name, cmt, COLOR_RESET (ds), tmp_get_realsize (f));
+		r_cons_printf ("%s(%s) %s%s%s %d", COLOR (ds, color_fname),
+			fcntype, fcn_name, cmt, COLOR_RESET (ds), tmp_get_realsize (f));
 	}
 	ds_newline (ds);
 	if (sign) {
@@ -4279,23 +4283,19 @@ static char *_find_next_number(char *op) {
 static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 	RAnal *anal = ds->core->anal;
 	RFlag *f = ds->core->flags;
-	int optype;
-	RAnalFunction *fcn;
 	RFlagItem *flag;
-	ut64 addr;
-	const char *name = 0;
+	const char *name = NULL;
 
 	if (!ds->jmpsub || !anal) {
 		return str;
 	}
-
-	optype = ds->analop.type & 0xFFFF;
+	int optype = ds->analop.type & 0xFFFF;
 	if (optype < R_ANAL_OP_TYPE_JMP || optype >= R_ANAL_OP_TYPE_RET) {
 		return str;
 	}
-	addr = ds->analop.jump;
+	ut64 addr = ds->analop.jump;
 
-	fcn = r_anal_get_fcn_at (anal, addr, 0);
+	RAnalFunction *fcn = r_anal_get_fcn_at (anal, addr, 0);
 	if (fcn) {
 		name = fcn->name;
 	} else if (f) {
@@ -4304,7 +4304,6 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 			name = flag->name;
 		}
 	}
-
 	if (name) {
 		char *nptr, *ptr;
 		ut64 numval;
@@ -4313,27 +4312,30 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 			ptr = nptr;
 			numval = r_num_get (NULL, ptr);
 			if (numval == addr) {
-				while (*nptr && !ISSEPARATOR (*nptr) && *nptr != 0x1b) nptr++;
+				while (*nptr && !ISSEPARATOR (*nptr) && *nptr != 0x1b) {
+					nptr++;
+				}
 				char* numstr = r_str_ndup (ptr, nptr-ptr);
-				str = r_str_replace (str, numstr, name, 0);
-				free (numstr);
+				if (numstr) {
+					str = r_str_replace (str, numstr, name, 0);
+					free (numstr);
+				}
 				break;
 			}
 		}
 	}
-
 	return str;
 }
 
 static void ds_start_seek_highlight(RDisasmState *ds) {
-	if (ds->vat == ds->core->prompt_offset && ds->show_color) {
+	if (ds->asm_highlight != UT64_MAX && ds->show_color && ds->vat == ds->asm_highlight) {
 		r_cons_strcat (Color_BGBLUE);
 	}
 }
 
 static void ds_end_seek_highlight(RDisasmState *ds) {
-	if (ds->vat == ds->core->prompt_offset && ds->show_color) {
-		r_cons_strcat (Color_BGRESET);
+	if (ds->asm_highlight != UT64_MAX && ds->show_color && ds->vat == ds->asm_highlight) {
+		r_cons_strcat (Color_RESET);
 	}
 }
 
@@ -4381,9 +4383,10 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	/* reset jmp table if not asked to keep it */
 	if (!core->keep_asmqjmps) { // hack
 		core->asmqjmps_count = 0;
-		core->asmqjmps_size = R_CORE_ASMQJMPS_NUM;
-		core->asmqjmps = realloc (core->asmqjmps, core->asmqjmps_size * sizeof (ut64));
-		if (core->asmqjmps) {
+		ut64 *p = realloc (core->asmqjmps, R_CORE_ASMQJMPS_NUM * sizeof (ut64));
+		if (p) {
+			core->asmqjmps_size = R_CORE_ASMQJMPS_NUM;
+			core->asmqjmps = p;
 			for (i = 0; i < R_CORE_ASMQJMPS_NUM; i++) {
 				core->asmqjmps[i] = UT64_MAX;
 			}
@@ -4587,7 +4590,6 @@ toro:
 		}
 
 		ds_begin_json_line (ds);
-
 		ds_setup_print_pre (ds, false, false);
 		ds_print_lines_left (ds);
 		// f = r_anal_get_fcn_in (core->anal, ds->addr, 0);
@@ -4598,6 +4600,7 @@ toro:
 			ds_setup_print_pre (ds, false, false);
 			ds_print_lines_left (ds);
 		}
+		core->print->resetbg = (ds->asm_highlight == UT64_MAX);
 		ds_start_seek_highlight (ds);
 		ds_print_offset (ds);
 		if (ds->shortcut_pos == 0) {
@@ -4625,7 +4628,8 @@ toro:
 				RAsmOp ao; /* disassemble for the vm .. */
 				int os = core->assembler->syntax;
 				r_asm_set_syntax (core->assembler, R_ASM_SYNTAX_INTEL);
-				r_asm_disassemble (core->assembler, &ao, buf + addrbytes * idx, len - addrbytes * idx + 5);
+				r_asm_disassemble (core->assembler, &ao, buf + addrbytes * idx,
+					len - addrbytes * idx + 5);
 				r_asm_set_syntax (core->assembler, os);
 			}
 			if (ds->shortcut_pos > 0) {
@@ -4653,6 +4657,7 @@ toro:
 			ds->mi_found = false;
 		}
 
+		core->print->resetbg = true;
 		ds_newline (ds);
 		if (ds->show_bbline && !ds->bblined && !ds->fcn) {
 			switch (ds->analop.type) {

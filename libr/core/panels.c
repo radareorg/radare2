@@ -146,18 +146,14 @@ static void Panel_print(RConsCanvas *can, RPanel *panel, int color) {
 
 		char *cmdStr;
 		bool ce = _core->print->cur_enabled;
-		if (strcmp(panel->title, PANEL_TITLE_DISASSEMBLY) == 0) {
+		if (!strcmp (panel->title, PANEL_TITLE_DISASSEMBLY)) {
 			_core->print->cur_enabled = false;
 			cmdStr = r_core_cmd_str (_core, panel->cmd);
-		} else if (strcmp(panel->title, PANEL_TITLE_STACK) == 0) {
+		} else if (!strcmp (panel->title, PANEL_TITLE_STACK)) {
 			const int delta = r_config_get_i (_core->config, "stack.delta");
 			const char sign = (delta < 0)? '+': '-';
 			const int absdelta = R_ABS (delta);
-			const int size = snprintf(NULL, 0, "%s%c%d", PANEL_CMD_STACK, sign, absdelta);
-			char *cmd = malloc(size + 1);
-
-			sprintf (cmd, "%s%c%d", PANEL_CMD_STACK, sign, absdelta);
-			cmdStr = r_core_cmd_str (_core, cmd);
+			cmdStr = r_core_cmd_strf (_core, "%s%c%d", PANEL_CMD_STACK, sign, absdelta);
 		} else {
 			cmdStr = r_core_cmd_str (_core, panel->cmd);
 		}

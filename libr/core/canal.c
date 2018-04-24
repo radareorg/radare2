@@ -4102,7 +4102,7 @@ R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, 
 	if (!b1) {
 		eprintf ("Cannot find basic block for 0x%08"PFMT64x"\n", to);
 	}
-	RCoreAnalPaths rcap = {0};
+	RCoreAnalPaths rcap = {{0}};
 	dict_init (&rcap.visited, 32, free);
 	rcap.path = r_list_new ();
 	rcap.core = core;

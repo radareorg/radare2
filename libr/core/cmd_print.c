@@ -477,7 +477,7 @@ static void cmd_prc (RCore *core, const ut8* block, int len) {
 			}
 			free (color);
 		}
-		r_cons_printf (Color_RESET_ALL);
+		r_cons_printf (Color_RESET);
 		r_cons_newline ();
 	}
 }
@@ -5639,6 +5639,7 @@ R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int se
 		0
 	};
 	const char *white;
+	const char *reset = p->resetbg? Color_RESET: Color_RESET_NOBG;
 	bool show_color = p->flags & R_PRINT_FLAGS_COLOR;
 	if (show_color) {
 		char rgbstr[32];
@@ -5656,10 +5657,9 @@ R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int se
 			if (offdec) {
 				snprintf (space, sizeof (space), "%d:%d", s & 0xffff, a & 0xffff);
 				white = r_str_pad (' ', 9 - strlen (space));
-				r_cons_printf ("%s%s%s"Color_RESET, k, white, space);
+				r_cons_printf ("%s%s%s%s", k, white, space, reset);
 			} else {
-				r_cons_printf ("%s%04x:%04x"Color_RESET,
-					k, s & 0xFFFF, a & 0xFFFF);
+				r_cons_printf ("%s%04x:%04x%s", k, s & 0xFFFF, a & 0xFFFF, reset);
 			}
 		} else {
 			int sz = lenof (off, 0);
@@ -5670,30 +5670,30 @@ R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int se
 					if (delta > 0) {
 						if (offdec) {
 							const char *pad = r_str_pad (' ', sz - sz2 + label_padding);
-							r_cons_printf ("%s%s"Color_RESET "+%d%s", k, label, delta, pad);
+							r_cons_printf ("%s%s%s+%d%s", k, label, reset, delta, pad);
 						} else {
 							const char *pad = r_str_pad (' ', sz - sz2 + label_padding);
-							r_cons_printf ("%s%s"Color_RESET "+0x%x%s", k, label, delta, pad);
+							r_cons_printf ("%s%s+0x%x%s", k, label, reset, delta, pad);
 						}
 					} else {
 						const char *pad = r_str_pad (' ', sz + label_padding);
-						r_cons_printf ("%s%s"Color_RESET "%s", k, label, pad);
+						r_cons_printf ("%s%s%s%s", k, label, reset, pad);
 					}
 				} else {
 					const char *pad = r_str_pad (' ', sz - sz2);
 					if (offdec) {
-						r_cons_printf ("%s+%d"Color_RESET, pad, delta);
+						r_cons_printf ("%s+%d%s", pad, delta, reset);
 					} else {
-						r_cons_printf ("%s+0x%x"Color_RESET, pad, delta);
+						r_cons_printf ("%s+0x%x%s", pad, delta, reset);
 					}
 				}
 			} else {
 				if (offdec) {
 					snprintf (space, sizeof (space), "%"PFMT64d, off);
 					white = r_str_pad (' ', 10 - strlen (space));
-					r_cons_printf ("%s%s%s"Color_RESET, k, white, space, off);
+					r_cons_printf ("%s%s%s%s", k, white, space, off, reset);
 				} else {
-					r_cons_printf ("%s0x%08"PFMT64x ""Color_RESET, k, off);
+					r_cons_printf ("%s0x%08"PFMT64x "%s", k, off, reset);
 				}
 			}
 		}
@@ -5706,7 +5706,7 @@ R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int se
 			if (offdec) {
 				snprintf (space, sizeof (space), "%d:%d", s & 0xffff, a & 0xffff);
 				white = r_str_pad (' ', 9 - strlen (space));
-				r_cons_printf ("%s%s"Color_RESET, white, space);
+				r_cons_printf ("%s%s%s", white, space, reset);
 			} else {
 				r_cons_printf ("%04x:%04x", s & 0xFFFF, a & 0xFFFF);
 			}
@@ -5716,9 +5716,9 @@ R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int se
 			const char *pad = r_str_pad (' ', sz - 5 - sz2 - 3);
 			if (delta > 0) {
 				if (offdec) {
-					r_cons_printf ("%s+%d"Color_RESET, pad, delta);
+					r_cons_printf ("%s+%d%s", pad, delta, reset);
 				} else {
-					r_cons_printf ("%s+0x%x"Color_RESET, pad, delta);
+					r_cons_printf ("%s+0x%x%s", pad, delta, reset);
 				}
 			} else {
 				if (offdec) {

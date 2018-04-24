@@ -2076,7 +2076,6 @@ static void chop_prompt (const char *filename, char *tmp, size_t max_tmp_size) {
 
 static void set_prompt (RCore *r) {
 	char tmp[128];
-	char *prompt = NULL;
 	char *filename = strdup ("");
 	const char *cmdprompt = r_config_get (r->config, "cmd.prompt");
 	const char *BEGIN = "";
@@ -2130,7 +2129,7 @@ static void set_prompt (RCore *r) {
 	}
 
 	chop_prompt (filename, tmp, 128);
-	prompt = r_str_newf ("%s%s[%s%s]>%s ", filename, BEGIN, remote,
+	char *prompt = r_str_newf ("%s%s[%s%s]>%s ", filename, BEGIN, remote,
 		tmp, END);
 	r_line_set_prompt (prompt ? prompt : "");
 

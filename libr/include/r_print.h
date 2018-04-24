@@ -73,6 +73,7 @@ typedef struct r_print_t {
 	int stride;
 	int bytespace;
 	int pairs;
+	bool resetbg;
 	RPrintZoom *zoom;
 	RPrintNameCallback offname;
 	RPrintColorFor colorfor;
