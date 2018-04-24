@@ -2860,6 +2860,7 @@ reread:
 			if (json) {
 				r_cons_printf ("[");
 			}
+			r_core_magic_reset (core);
 			r_list_foreach (param.boundaries, iter, map) {
 				if (!json) {
 					eprintf ("-- %llx %llx\n", map->itv.addr, r_itv_end (map->itv));
