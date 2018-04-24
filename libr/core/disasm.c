@@ -311,6 +311,7 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refadd
 static char *ds_sub_jumps(RDisasmState *ds, char *str);
 static void ds_start_line_highlight(RDisasmState *ds);
 static void ds_end_line_highlight(RDisasmState *ds);
+static bool line_highlighted(RDisasmState *ds);
 
 static ut64 p2v(RDisasmState *ds, ut64 addr) {
 #if 0
@@ -838,7 +839,7 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds, bool print_color
 	char *spacer = NULL;
 	char *source = ds->opstr? ds->opstr: ds->asmop.buf_asm;
 	char *hlstr = r_meta_get_string (ds->core->anal, R_META_TYPE_HIGHLIGHT, ds->at);
-	bool partial_reset = hlstr ? (*hlstr?true:false):false;
+	bool partial_reset = line_highlighted (ds) ? true : ((hlstr && *hlstr) ? true : false);
 
 	if (!ds->show_color || !ds->colorop) {
 		return strdup (source);
@@ -4340,14 +4341,18 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 	return str;
 }
 
+static bool line_highlighted(RDisasmState *ds) {
+	return ds->asm_highlight != UT64_MAX && ds->vat == ds->asm_highlight;
+}
+
 static void ds_start_line_highlight(RDisasmState *ds) {
-	if (ds->asm_highlight != UT64_MAX && ds->show_color && ds->vat == ds->asm_highlight) {
+	if (ds->show_color && line_highlighted (ds)) {
 		r_cons_strcat (Color_BGBLUE);
 	}
 }
 
 static void ds_end_line_highlight(RDisasmState *ds) {
-	if (ds->asm_highlight != UT64_MAX && ds->show_color && ds->vat == ds->asm_highlight) {
+	if (ds->show_color && line_highlighted (ds)) {
 		r_cons_strcat (Color_RESET);
 	}
 }
