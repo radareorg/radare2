@@ -504,7 +504,7 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 	int ret = ret0;
 	// jmptbl_size can not always be determined
 	if (jmptbl_size == 0) {
-		jmptbl_size = JMPTBLSZ
+		jmptbl_size = JMPTBLSZ;
 	}
 	ut8 *jmptbl = malloc (jmptbl_size * sz);
 	ut64 jmpptr, offs;
