@@ -1506,14 +1506,13 @@ beach:
 R_API int r_core_visual_comments (RCore *core) {
 	char *str;
 	char cmd[512], *p = NULL;
-	int i, ch, option = 0;
+	int ch, option = 0;
 	int format = 0, found = 0;
 	ut64 addr, from = 0, size = 0;
 
 	for (;;) {
 		r_cons_clear00 ();
 		r_cons_strcat ("Comments:\n");
-		i = 0;
 		found = 0;
 		RList *items = r_list_newf (free);
 		RAnalMetaItem *item;

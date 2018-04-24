@@ -11,7 +11,7 @@ R_LIB_VERSION(r_lib);
 
 #if __UNIX__
 #include <dlfcn.h>
-  #define DLOPEN(x)  dlopen(x, RTLD_GLOBAL)
+  #define DLOPEN(x)  dlopen(x, RTLD_GLOBAL | RTLD_LAZY)
   #define DLSYM(x,y) dlsym(x,y)
   #define DLCLOSE(x) dlclose(x)
 #elif __WINDOWS__

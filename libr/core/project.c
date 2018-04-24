@@ -193,6 +193,14 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 			eprintf ("rm %s\n", xrefs_sdb);
 		}
 		free (xrefs_sdb);
+		
+		//rm notes.txt file
+		char *notes_txt = r_str_newf ("%s%s%s", prjDir, R_SYS_DIR, "notes.txt");
+		if (r_file_exists (notes_txt)) {
+			r_file_rm (notes_txt);
+			eprintf ("rm %s\n", notes_txt);
+		}
+		free(notes_txt);
 
 		char *rop_d = r_str_newf ("%s%s%s", prjDir, R_SYS_DIR, "rop.d");
 

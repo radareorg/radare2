@@ -477,7 +477,7 @@ static void cmd_prc (RCore *core, const ut8* block, int len) {
 			}
 			free (color);
 		}
-		r_cons_printf (Color_RESET);
+		r_cons_printf (Color_RESET_ALL);
 		r_cons_newline ();
 	}
 }

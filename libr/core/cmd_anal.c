@@ -4350,8 +4350,9 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		{
 			// anal ESIL to REIL.
 			RAnalEsil *esil = r_anal_esil_new (stacksize, iotrap, addrsize);
-			if (!esil)
+			if (!esil) {
 				return;
+			}
 			r_anal_esil_to_reil_setup (esil, core->anal, romem, stats);
 			r_anal_esil_set_pc (esil, core->offset);
 			r_anal_esil_parse (esil, input + 2);

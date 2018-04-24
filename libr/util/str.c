@@ -2778,20 +2778,20 @@ static char *strchr_skip_color_codes(const char *s, int c) {
 
 // Global buffer to speed up colorizing performance
 
-R_API char* r_str_highlight(char *str, const char *word, const char *color) {
+R_API char* r_str_highlight(char *str, const char *word, const char *color, const char *color_reset) {
 	if (!str || !*str) {
 		return NULL;
 	}
 	ut32 i = 0, j = 0, to_copy;
 	char *start = str;
 	ut32 l_str = strlen (str);
-	ut32 l_reset = strlen (Color_BGRESET);
+	ut32 l_reset = strlen (color_reset);
 	ut32 l_color = color? strlen (color): 0;
 	if (!color) {
 		return strdup (str);
 	}
 	if (!word || !*word) {
-		return r_str_newf ("%s%s%s", color, str, Color_BGRESET);
+		return r_str_newf ("%s%s%s", color, str, color_reset);
 	}
 	ut32 l_word = strlen (word);
 	// XXX dont use static buffers
@@ -2823,11 +2823,11 @@ R_API char* r_str_highlight(char *str, const char *word, const char *color) {
 				copied = strncpy_with_color_codes (o + j, str + i, l_word);
 				i += copied;
 				j += copied;
-				if (j + strlen (Color_BGRESET) >= sizeof (o)) {
+				if (j + strlen (color_reset) >= sizeof (o)) {
 					// XXX. no limits
 					break;
 				}
-				strcpy (o + j, Color_BGRESET);
+				strcpy (o + j, color_reset);
 				j += l_reset;
 			} else {
 				o[j++] = str[i++];

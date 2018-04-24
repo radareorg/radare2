@@ -309,6 +309,8 @@ static void ds_print_comments_right(RDisasmState *ds);
 static void ds_print_ptr(RDisasmState *ds, int len, int idx);
 static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refaddr);
 static char *ds_sub_jumps(RDisasmState *ds, char *str);
+static void ds_start_seek_highlight(RDisasmState *ds);
+static void ds_end_seek_highlight(RDisasmState *ds);
 
 static ut64 p2v(RDisasmState *ds, ut64 addr) {
 #if 0
@@ -880,7 +882,8 @@ static bool ds_must_strip(RDisasmState *ds) {
 
 static void ds_highlight_word(RDisasmState * ds, char *word, char *color) {
 	char *source = ds->opstr? ds->opstr: ds->asmop.buf_asm;
-	char * asm_str = r_str_highlight (source, word, color);
+	const char *color_reset = ds->vat == ds->core->prompt_offset ? Color_BGBLUE : Color_BGRESET;
+	char *asm_str = r_str_highlight (source, word, color, color_reset);
 	ds->opstr = asm_str? asm_str:source;
 }
 
@@ -1992,8 +1995,9 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			int sz = R_MIN (16, meta->size - (ds->at - meta->from));
 			ds->asmop.size = sz;
 			r_hex_bin2str (buf, sz, ds->asmop.buf_hex);
-			snprintf (ds->asmop.buf_asm, sizeof (ds->asmop.buf_asm),
+			snprintf (ds->asmop.buf_asm, sizeof (ds->asmop.buf_asm) - 1,
 				".hex %s", ds->asmop.buf_hex);
+			ds->asmop.buf_asm[sizeof (ds->asmop.buf_asm) - 1] = 0;
 			// strcpy (ds->asmop.buf_hex, "0102030405060708");
 			//return i;
 			ds->oplen = sz; //ds->asmop.size;
@@ -4321,6 +4325,18 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 	return str;
 }
 
+static void ds_start_seek_highlight(RDisasmState *ds) {
+	if (ds->vat == ds->core->prompt_offset && ds->show_color) {
+		r_cons_strcat (Color_BGBLUE);
+	}
+}
+
+static void ds_end_seek_highlight(RDisasmState *ds) {
+	if (ds->vat == ds->core->prompt_offset && ds->show_color) {
+		r_cons_strcat (Color_BGRESET);
+	}
+}
+
 // int l is for lines
 R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak, int cbytes, bool json) {
 	int continueoninvbreak = (len == l) && invbreak;
@@ -4582,6 +4598,7 @@ toro:
 			ds_setup_print_pre (ds, false, false);
 			ds_print_lines_left (ds);
 		}
+		ds_start_seek_highlight (ds);
 		ds_print_offset (ds);
 		if (ds->shortcut_pos == 0) {
 			ds_print_core_vmode (ds, ds->shortcut_pos);
@@ -4599,6 +4616,7 @@ toro:
 			ds_print_lines_right (ds);
 			ds_build_op_str (ds, true);
 			ds_print_opstr (ds);
+			ds_end_seek_highlight (ds);
 			ds_print_dwarf (ds);
 			ret = ds_print_middle (ds, ret);
 
@@ -4627,6 +4645,7 @@ toro:
 				ds_show_refs (ds);
 			}
 		} else {
+			ds_end_seek_highlight (ds);
 			if (ds->show_comments && ds->show_comment_right) {
 				ds_print_color_reset (ds);
 				ds_print_comments_right (ds);

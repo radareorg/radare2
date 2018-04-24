@@ -724,7 +724,7 @@ R_API void r_cons_visual_write(char *buffer) {
 			if (lines > 0) {
 				r_cons_write (pptr, plen);
 				if (len != olen) {
-					r_cons_write (Color_RESET, strlen (Color_RESET));
+					r_cons_write (Color_RESET_ALL, strlen (Color_RESET_ALL));
 				}
 			}
 		} else {
