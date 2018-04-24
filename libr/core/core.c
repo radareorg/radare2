@@ -1898,6 +1898,7 @@ R_API bool r_core_init(RCore *core) {
 	core->file = NULL;
 	core->files = r_list_newf ((RListFree)r_core_file_free);
 	core->offset = 0LL;
+	core->prompt_offset = 0LL;
 	r_core_cmd_init (core);
 	core->dbg = r_debug_new (true);
 
