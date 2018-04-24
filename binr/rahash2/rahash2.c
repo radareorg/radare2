@@ -302,14 +302,14 @@ static void algolist() {
 		bits = 1ULL << i;
 		const char *name = r_hash_name (bits);
 		if (name && *name) {
-			printf ("[hash]  %s\n", name);
+			printf ("h  %s\n", name);
 		}
 	}
 	eprintf ("\nAvailable Encoders/Decoders: \n");
 	// TODO: do not hardcode
-	printf ("[enc]  base64\n");
-	printf ("[enc]  base91\n");
-	printf ("[enc]  punycode\n");
+	printf ("e  base64\n");
+	printf ("e  base91\n");
+	printf ("e  punycode\n");
 	eprintf ("\nAvailable Crypto Algos: \n");
 	for (i = 0;; i++) {
 		bits = ((ut64) 1) << i;
@@ -317,7 +317,7 @@ static void algolist() {
 		if (!name || !*name) {
 			break;
 		}
-		printf ("[cry]  %s\n", name);
+		printf ("c  %s\n", name);
 	}
 }
 
