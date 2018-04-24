@@ -309,8 +309,8 @@ static void ds_print_comments_right(RDisasmState *ds);
 static void ds_print_ptr(RDisasmState *ds, int len, int idx);
 static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refaddr);
 static char *ds_sub_jumps(RDisasmState *ds, char *str);
-static void ds_start_seek_highlight(RDisasmState *ds);
-static void ds_end_seek_highlight(RDisasmState *ds);
+static void ds_start_line_highlight(RDisasmState *ds);
+static void ds_end_line_highlight(RDisasmState *ds);
 
 static ut64 p2v(RDisasmState *ds, ut64 addr) {
 #if 0
@@ -4340,13 +4340,13 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 	return str;
 }
 
-static void ds_start_seek_highlight(RDisasmState *ds) {
+static void ds_start_line_highlight(RDisasmState *ds) {
 	if (ds->asm_highlight != UT64_MAX && ds->show_color && ds->vat == ds->asm_highlight) {
 		r_cons_strcat (Color_BGBLUE);
 	}
 }
 
-static void ds_end_seek_highlight(RDisasmState *ds) {
+static void ds_end_line_highlight(RDisasmState *ds) {
 	if (ds->asm_highlight != UT64_MAX && ds->show_color && ds->vat == ds->asm_highlight) {
 		r_cons_strcat (Color_RESET);
 	}
@@ -4614,7 +4614,7 @@ toro:
 			ds_print_lines_left (ds);
 		}
 		core->print->resetbg = (ds->asm_highlight == UT64_MAX);
-		ds_start_seek_highlight (ds);
+		ds_start_line_highlight (ds);
 		ds_print_offset (ds);
 		if (ds->shortcut_pos == 0) {
 			ds_print_core_vmode (ds, ds->shortcut_pos);
@@ -4632,7 +4632,7 @@ toro:
 			ds_print_lines_right (ds);
 			ds_build_op_str (ds, true);
 			ds_print_opstr (ds);
-			ds_end_seek_highlight (ds);
+			ds_end_line_highlight (ds);
 			ds_print_dwarf (ds);
 			ret = ds_print_middle (ds, ret);
 
@@ -4662,7 +4662,7 @@ toro:
 				ds_show_refs (ds);
 			}
 		} else {
-			ds_end_seek_highlight (ds);
+			ds_end_line_highlight (ds);
 			if (ds->show_comments && ds->show_comment_right) {
 				ds_print_color_reset (ds);
 				ds_print_comments_right (ds);
