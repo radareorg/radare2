@@ -11,6 +11,7 @@
 #define SDB_KEY_BB "bb.0x%"PFMT64x ".0x%"PFMT64x
 // XXX must be configurable by the user
 #define FCN_DEPTH 512
+#define JMPTBLSZ 512
 
 /* speedup analysis by removing some function overlapping checks */
 #define JAYRO_04 0
@@ -502,8 +503,8 @@ static void queue_case(RAnal *anal, ut64 switch_addr, ut64 case_addr, ut64 id, u
 static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 ptr, ut64 sz, ut64 jmptbl_size, ut64 default_case, int ret0) {
 	int ret = ret0;
 	// jmptbl_size can not always be determined
-	if (jmptbl_size == 0){
-		jmptbl_size = 512;
+	if (jmptbl_size == 0) {
+		jmptbl_size = JMPTBLSZ
 	}
 	ut8 *jmptbl = malloc (jmptbl_size * sz);
 	ut64 jmpptr, offs;
@@ -713,13 +714,13 @@ static bool is_delta_pointer_table(RAnal *anal, RAnalFunction *fcn, ut64 addr, u
 	return true;
 }
 
-static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnalBlock *my_bb, ut64 *table_size, ut64 *default_case){
+static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnalBlock *my_bb, ut64 *table_size, ut64 *default_case) {
 	bool isValid = false;
 	int i;
 	RListIter *iter;
 	RAnalBlock *tmp_bb, *prev_bb;
 	prev_bb = 0;
-	if (!fcn->bbs){
+	if (!fcn->bbs) {
 		return false;
 	}
 
@@ -731,7 +732,7 @@ static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAna
 		}
 	}
 	// predecessor must be a conditional jump
-	if (!prev_bb || !prev_bb->jump || !prev_bb->fail){
+	if (!prev_bb || !prev_bb->jump || !prev_bb->fail) {
 		return false;
 	}
 
@@ -762,12 +763,10 @@ static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAna
 		if (tmp_aop.val == UT64_MAX && tmp_aop.refptr == 0) {
 			isValid = true;
 			*table_size = 0;
-		}
-		else if (tmp_aop.refptr == 0) {
+		} else if (tmp_aop.refptr == 0) {
 			isValid = tmp_aop.val < 0x200;
 			*table_size = tmp_aop.val + 1;
-		}
-		else {
+		} else {
 			isValid = tmp_aop.refptr < 0x200;
 			*table_size = tmp_aop.refptr + 1;
 		}
@@ -776,7 +775,7 @@ static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAna
 
 		break;
 	}
-	free(bb_buf);
+	free (bb_buf);
 	if (!isValid) {
 		return false;
 	}
@@ -846,7 +845,8 @@ static int walk_switch(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 at) {
 	int i;
 	eprintf ("WALK SWITCH TABLE INTO (0x%"PFMT64x ") %"PFMT64x "\n", from, at);
 	for (i = 0; i < 10; i++) {
-		anal->iob.read_at (anal->iob.io, at, buf, sizeof (buf));
+		(void) anal->iob.read_at (anal->iob.io, at, buf, sizeof (buf));
+		// TODO check for return value
 		int sz = r_anal_case (anal, fcn, from, at, buf, sizeof (buf), 0);
 		if (sz < 1) {
 			break;
@@ -1090,7 +1090,7 @@ repeat:
 				RAnalOp jmp_aop = {0};
 				if (is_delta_pointer_table (anal, fcn, op.addr, op.ptr, &jmp_aop)) {
 					ut64 table_size, default_case;
-					if (try_get_jmptbl_info(anal, fcn, jmp_aop.addr, bb, &table_size, &default_case)){
+					if (try_get_jmptbl_info(anal, fcn, jmp_aop.addr, bb, &table_size, &default_case)) {
 						ret = try_walkthrough_jmptbl (anal, fcn, depth, jmp_aop.addr, op.ptr, 4, table_size, default_case, 4);
 					}
 				}
@@ -1394,7 +1394,7 @@ repeat:
 				// op.ireg is 0 for rip relative, "rax", etc otherwise
 				if (op.ptr != UT64_MAX && op.ireg) {       // direct jump
 					ut64 table_size, default_case;
-					if (try_get_jmptbl_info(anal, fcn, op.addr, bb, &table_size, &default_case)){
+					if (try_get_jmptbl_info(anal, fcn, op.addr, bb, &table_size, &default_case)) {
 						ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, anal->bits >> 3, table_size, default_case, ret);
 					}
 				}
@@ -2173,7 +2173,7 @@ R_API ut32 r_anal_fcn_cost(RAnal *anal, RAnalFunction *fcn) {
 		RAnalOp op;
 		ut64 at, end = bb->addr + bb->size;
 		ut8 *buf = malloc (bb->size);
-		anal->iob.read_at (anal->iob.io, bb->addr, (ut8 *) buf, bb->size);
+		(void)anal->iob.read_at (anal->iob.io, bb->addr, (ut8 *) buf, bb->size);
 		int idx = 0;
 		for (at = bb->addr; at < end;) {
 			memset (&op, 0, sizeof (op));
