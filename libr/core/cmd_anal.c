@@ -6329,15 +6329,10 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				}
 				r_config_set_i (core->config, "anal.calls", 1);
 				r_core_cmd0 (core, "s $S");
-				rowlog (core, "Analyze len bytes of instructions for references (aar)");
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
-				(void)r_core_anal_refs (core, ""); // "aar"
-				rowlog_done (core);
-				if (r_cons_is_breaked ()) {
-					goto jacuzzi;
-				}
+
 				rowlog (core, "Analyze function calls (aac)");
 				(void) cmd_anal_calls (core, "", false); // "aac"
 				r_core_seek (core, curseek, 1);
@@ -6347,6 +6342,14 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
+
+				rowlog (core, "Analyze len bytes of instructions for references (aar)");
+				(void)r_core_anal_refs (core, ""); // "aar"
+				rowlog_done (core);
+				if (r_cons_is_breaked ()) {
+					goto jacuzzi;
+				}
+
 				if (input[1] == 'a') { // "aaaa"
 					bool ioCache = r_config_get_i (core->config, "io.pcache");
 					r_config_set_i (core->config, "io.pcache", 1);
