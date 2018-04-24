@@ -654,10 +654,13 @@ typedef struct r_core_task_t {
 } RCoreTask;
 
 R_API RCoreTask *r_core_task_get (RCore *core, int id);
+R_API void r_core_task_print (RCore *core, RCoreTask *task, int mode);
 R_API void r_core_task_list (RCore *core, int mode);
+R_API const char *r_core_task_status (RCoreTask *task);
 R_API RCoreTask *r_core_task_new (RCore *core, const char *cmd, RCoreTaskCallback cb, void *user);
 R_API void r_core_task_run(RCore *core, RCoreTask *_task);
 R_API void r_core_task_run_bg(RCore *core, RCoreTask *_task);
+R_API bool r_core_task_pause (RCore *core, RCoreTask *task, bool enable);
 R_API RCoreTask *r_core_task_add (RCore *core, RCoreTask *task);
 R_API void r_core_task_add_bg (RCore *core, RCoreTask *task);
 R_API int r_core_task_del (RCore *core, int id);

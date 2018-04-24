@@ -2,6 +2,25 @@
 
 #include <r_core.h>
 
+R_API void r_core_task_print (RCore *core, RCoreTask *task, int mode) {
+	switch (mode) {
+	case 'j':
+		r_cons_printf ("{\"id\":%d,\"status\":\"%c\",\"text\":\"%s\"}",
+				task->id, task->state, task->msg->text);
+		break;
+	default:
+		r_cons_printf ("%2d  %8s  %s\n", task->id, r_core_task_status (task), task->msg->text);
+		if (mode == 1) {
+			if (task->msg->res) {
+				r_cons_println (task->msg->res);
+			} else {
+				r_cons_newline ();
+			}
+		}
+		break;
+	}
+}
+
 R_API void r_core_task_list (RCore *core, int mode) {
 	RListIter *iter;
 	RCoreTask *task;
@@ -9,22 +28,9 @@ R_API void r_core_task_list (RCore *core, int mode) {
 		r_cons_printf ("[");
 	}
 	r_list_foreach (core->tasks, iter, task) {
-		switch (mode) {
-		case 'j':
-			r_cons_printf ("{\"id\":%d,\"status\":\"%c\",\"text\":\"%s\"}%s",
-				task->id, task->state, task->msg->text, iter->n?",":"");
-			break;
-		default:
-			r_cons_printf ("Task %d Status %c Command %s\n",
-					task->id, task->state, task->msg->text);
-			if (mode == 1) {
-				if (task->msg->res) {
-					r_cons_println (task->msg->res);
-				} else {
-					r_cons_newline ();
-				}
-			}
-			break;
+		r_core_task_print (core, task, mode);
+		if (mode == 'j' && iter->n) {
+			r_cons_printf (",");
 		}
 	}
 	if (mode == 'j') {
@@ -112,6 +118,18 @@ R_API RCoreTask *r_core_task_add (RCore *core, RCoreTask *task) {
 		return task;
 	}
 	return NULL;
+}
+
+R_API const char *r_core_task_status (RCoreTask *task) {
+	static char str[2] = {0};
+	switch (task->state) {
+	case 's':
+		return "running";
+	case 'd':
+		return "dead";
+	}
+	str[0] = task->state;
+	return str;
 }
 
 R_API RCoreTask *r_core_task_self (RCore *core) {

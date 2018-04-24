@@ -1246,7 +1246,7 @@ static int taskbgrun(RThread *th) {
 	char *res;
 	RCoreTask *task = th->user;
 	RCore *core = task->core;
-	close (2); // no stderr
+	// close (2); // no stderr
 	res = r_core_cmd_str (core, task->msg->text);
 	task->msg->res = res;
 	task->state = 'd';
@@ -1261,6 +1261,13 @@ static int cmd_thread(void *data, const char *input) {
 	case '\0':
 	case 'j':
 		r_core_task_list (core, *input);
+		break;
+	case 't':
+		r_cons_break_push (NULL, NULL);
+		while (!r_cons_is_breaked ()) {
+			r_sys_sleep(1);
+		}
+		r_cons_break_pop ();
 		break;
 	case '&':
 		if (r_sandbox_enable (0)) {
@@ -1284,12 +1291,14 @@ static int cmd_thread(void *data, const char *input) {
 		}
 		break;
 	case '=': {
+		r_core_task_list (core, '=');
 		int tid = r_num_math (core->num, input + 1);
 		if (tid) {
 			RCoreTask *task = r_core_task_get (core, tid);
 			if (task) {
-				r_cons_printf ("Task %d Status %c Command %s\n",
-					task->id, task->state, task->msg->text);
+				r_core_task_print (core, task, 0);
+				r_cons_printf ("%2d %s %s\n",
+					task->id, r_core_task_status (task), task->msg->text);
 				if (task->msg->res)
 					r_cons_println (task->msg->res);
 			} else {
@@ -3300,7 +3309,8 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 		RListIter *iter;
 		RCoreTask *task;
 		r_list_foreach (core->tasks, iter, task) {
-			r_th_pause (task->msg->th, true);
+			// XXX: this lock pauses the whole r2
+		//	r_th_pause (task->msg->th, true);
 		}
 	}
 	if (core->cmdfilter) {
