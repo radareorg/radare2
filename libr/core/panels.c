@@ -156,7 +156,7 @@ static void Panel_print(RConsCanvas *can, RPanel *panel, int color) {
 			const int size = snprintf(NULL, 0, "px 256@$$%c%d", sign, absdelta);
 			char *cmd = malloc(size + 1);
 
-			sprintf (cmd, "px 256@$$%c%d", sign, absdelta);
+			sprintf (cmd, "%s%c%d", PANEL_CMD_STACK, sign, absdelta);
 			cmdStr = r_core_cmd_str (_core, cmd);
 		} else {
 			cmdStr = r_core_cmd_str (_core, panel->cmd);
