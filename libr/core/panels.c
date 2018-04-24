@@ -153,7 +153,7 @@ static void Panel_print(RConsCanvas *can, RPanel *panel, int color) {
 			const int delta = r_config_get_i (_core->config, "stack.delta");
 			const char sign = (delta < 0)? '+': '-';
 			const int absdelta = R_ABS (delta);
-			const int size = snprintf(NULL, 0, "px 256@$$%c%d", sign, absdelta);
+			const int size = snprintf(NULL, 0, "%s%c%d", PANEL_CMD_STACK, sign, absdelta);
 			char *cmd = malloc(size + 1);
 
 			sprintf (cmd, "%s%c%d", PANEL_CMD_STACK, sign, absdelta);
