@@ -3008,7 +3008,11 @@ static void ds_print_shortcut(RDisasmState *ds, ut64 addr, int pos) {
 		r_cons_printf ("%s[?]", ch);
 	}
 	if (ds->show_color) {
-		r_cons_strcat (Color_RESET);
+		if (ds->core->print->resetbg) {
+			r_cons_strcat (Color_RESET);
+		} else {
+			r_cons_strcat (Color_RESET_NOBG);
+		}
 	}
 }
 
