@@ -498,6 +498,7 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 			// read from sparse and write into dst
 			memset (dst, b->Oxff, len);
 			(void)sparse_read (b->sparse, addr, dst, len);
+			len = R_MIN (len , r_buf_size (b) - addr);
 		}
 		return len;
 	}

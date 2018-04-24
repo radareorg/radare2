@@ -293,6 +293,10 @@ R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 R_API void r_anal_set_cpu(RAnal *anal, const char *cpu) {
 	free (anal->cpu);
 	anal->cpu = cpu ? strdup (cpu) : NULL;
+	int v = r_anal_archinfo (anal, R_ANAL_ARCHINFO_ALIGN);
+	if (v != -1) {
+		anal->pcalign = v;
+	}
 }
 
 R_API int r_anal_set_big_endian(RAnal *anal, int bigend) {
