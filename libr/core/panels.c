@@ -145,7 +145,11 @@ static void Panel_print(RConsCanvas *can, RPanel *panel, int color) {
 		(void) r_cons_canvas_gotoxy (can, panel->x + 2, panel->y + 2);
 
 		char *cmdStr;
-		if (strcmp(panel->title, PANEL_TITLE_STACK) == 0) {
+		bool ce = _core->print->cur_enabled;
+		if (strcmp(panel->title, PANEL_TITLE_DISASSEMBLY) == 0) {
+			_core->print->cur_enabled = false;
+			cmdStr = r_core_cmd_str (_core, panel->cmd);
+		} else if (strcmp(panel->title, PANEL_TITLE_STACK) == 0) {
 			const int delta = r_config_get_i (_core->config, "stack.delta");
 			const char sign = (delta < 0)? '+': '-';
 			const int absdelta = R_ABS (delta);
@@ -185,6 +189,7 @@ static void Panel_print(RConsCanvas *can, RPanel *panel, int color) {
 			r_cons_canvas_write (can, panel->title);
 		}
 		free (cmdStr);
+		_core->print->cur_enabled = ce;
 	}
 	if (color) {
 		r_cons_canvas_box (can, panel->x, panel->y, panel->w, panel->h, cons->pal.graph_box2);
@@ -284,6 +289,28 @@ static void Layout_run(RPanels *panels) {
 			j++;
 		}
 	}
+}
+
+static void setcursor(RCore *core, bool cur) {
+	core->print->cur_enabled = cur;
+	if (core->print->cur == -1) {
+		core->print->cur = 0;
+	}
+	core->print->col = core->print->cur_enabled ? 1: 0;
+}
+
+static void cursor_right(RCore *core) {
+	if (core->print->cur < 15) {
+		core->print->cur++;
+	}
+	return;
+}
+
+static void cursor_left(RCore *core) {
+	if (core->print->cur > 0) {
+		core->print->cur--;
+	}
+	return;
 }
 
 static void delcurpanel(RPanels *panels) {
@@ -601,13 +628,17 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 
 	r_cons_switchbuf(false);
 	core->panels = panels;
+	panels->originCursor = core->print->cur;
+	core->print->cur = 0;
+	core->print->cur_enabled = false;
+	core->print->col = 0;
 
+	r_config_set_i (core->config, "asm.comments", 0);
+	r_config_set_i (core->config, "asm.bytes", 1);
+	r_config_set_i (core->config, "scr.utf8", 1);
 	asm_comments = r_config_get_i (core->config, "asm.comments");
 	asm_bytes = r_config_get_i (core->config, "asm.bytes");
 	have_utf8 = r_config_get_i (core->config, "scr.utf8");
-	r_config_set_i (core->config, "asm.comments", 0);
-	r_config_set_i (core->config, "asm.bytes", 0);
-	r_config_set_i (core->config, "scr.utf8", 1);
 
 repeat:
 	core->cons->event_data = panels;
@@ -934,6 +965,12 @@ repeat:
 		r_core_cmd0 (core, ".dr*");
 		doRefresh (panels);
 		break;
+	case 'c':
+		if (strcmp(panels->panel[panels->curnode].title, PANEL_TITLE_STACK) == 0) {
+			setcursor (core, !core->print->cur_enabled);
+			panels->panel[panels->curnode].refresh = true;
+		}
+		break;
 	case 'C':
 		panels->can->color = !panels->can->color;
 		// r_config_toggle (core->config, "scr.color");
@@ -1078,26 +1115,34 @@ repeat:
 		break;
 	case 'h':
 		panels->panel[panels->curnode].refresh = true;
-		if (panels->curnode == 0) {
-			if (panels->menu_x) {
-				panels->menu_x--;
-				panels->menu_y = panels->menu_y? 1: 0;
-			}
+		if (core->print->cur_enabled) {
+			cursor_left (core);
 		} else {
-			if (panels->panel[panels->curnode].sx > 0) {
-				panels->panel[panels->curnode].sx--;
+			if (panels->curnode == 0) {
+				if (panels->menu_x) {
+					panels->menu_x--;
+					panels->menu_y = panels->menu_y? 1: 0;
+				}
+			} else {
+				if (panels->panel[panels->curnode].sx > 0) {
+					panels->panel[panels->curnode].sx--;
+				}
 			}
 		}
 		break;
 	case 'l':
 		panels->panel[panels->curnode].refresh = true;
-		if (panels->curnode == 0) {
-			if (menus[panels->menu_x + 1]) {
-				panels->menu_x++;
-				panels->menu_y = panels->menu_y ? 1: 0;
-			}
+		if (core->print->cur_enabled) {
+			cursor_right (core);
 		} else {
-			panels->panel[panels->curnode].sx++;
+			if (panels->curnode == 0) {
+				if (menus[panels->menu_x + 1]) {
+					panels->menu_x++;
+					panels->menu_y = panels->menu_y ? 1: 0;
+				}
+			} else {
+				panels->panel[panels->curnode].sx++;
+			}
 		}
 		break;
 	case 'V':
@@ -1239,6 +1284,9 @@ beach:
 	r_config_set_i (core->config, "asm.comments", asm_comments);
 	r_config_set_i (core->config, "asm.bytes", asm_bytes);
 	r_config_set_i (core->config, "scr.utf8", have_utf8);
+	core->print->cur = panels->originCursor;
+	core->print->cur_enabled = false;
+	core->print->col = 0;
 	core->panels = NULL;
 	r_panels_free (panels);
 	return true;
