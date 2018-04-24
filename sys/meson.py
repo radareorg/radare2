@@ -140,27 +140,6 @@ def xp_compat(builddir):
             proj.write(c)
             log.debug("%s .. OK", f)
 
-def vs_dedup(builddir):
-    """Remove duplicated dependency entries from vs project"""
-    start = '<AdditionalDependencies>'
-    end = ';%(AdditionalDependencies)'
-    for f in glob.iglob(os.path.join(builddir, '**', '*.vcxproj'), recursive=True):
-        with open(f) as proj:
-            data = proj.read()
-        idx = data.find(start)
-        if idx < 0:
-            continue
-        idx += len(start)
-        idx2 = data.find(end, idx)
-        if idx2 < 0:
-            continue
-        libs = set(data[idx:idx2].split(';'))
-        with open(f, 'w') as proj:
-            proj.write(data[:idx])
-            proj.write(';'.join(sorted(libs)))
-            proj.write(data[idx2:])
-        log.debug('%s processed', f)
-
 def win_dist(args):
     """Create r2 distribution for Windows"""
     builddir = os.path.join(ROOT, args.dir)
@@ -217,7 +196,6 @@ def build(args):
         meson(ROOT, r2_builddir, prefix=args.prefix, backend=args.backend,
               release=args.release, shared=args.shared, options=options)
     if args.backend != 'ninja':
-        vs_dedup(r2_builddir)
         if args.xp:
             xp_compat(r2_builddir)
         if not args.project:

@@ -1,4 +1,4 @@
-project('radare2', 'c', meson_version: '>=0.45.0')
+project('radare2', 'c', meson_version: '>=0.46.0')
 
 py3_exe = import('python3').find_python()
 git_exe = find_program('git')
@@ -132,9 +132,9 @@ endif
 r_userconf_h = configure_file(
   input: 'libr/include/r_userconf.h.in',
   output: 'r_userconf.h',
-  configuration: userconf
+  configuration: userconf,
+  install_dir: join_paths(get_option('includedir'), 'libr')
 )
-install_headers(r_userconf_h, subdir: 'libr')
 
 versionconf = configuration_data()
 versionconf.set('VERSIONCOMMIT', version_commit)
@@ -145,9 +145,9 @@ versionconf.set('R2_BIRTH', r2birth)
 r_version_h = configure_file(
   input: 'libr/include/r_version.h.in',
   output: 'r_version.h',
-  configuration: versionconf
+  configuration: versionconf,
+  install_dir: join_paths(get_option('includedir'), 'libr')
 )
-install_headers(r_version_h, subdir: 'libr')
 
 # Copy missing header
 run_command(py3_exe, '-c', '__import__("shutil").copyfile("shlr/spp/config.def.h", "shlr/spp/config.h")')
@@ -159,9 +159,9 @@ pcconf.set('VERSION', r2version)
 libr_pc = configure_file(
   input: 'libr/libr.pc.acr',
   output: 'libr.pc',
-  configuration: userconf
+  configuration: userconf,
+  install_dir: join_paths(get_option('libdir'), 'pkgconfig')
 )
-install_data(libr_pc, install_dir: join_paths(get_option('libdir'), 'pkgconfig'))
 
 subdir('shlr')
 
@@ -241,12 +241,7 @@ install_data(man7_files,
   install_dir: join_paths(get_option('mandir'), 'man7')
 )
 
-custom_target('hud',
-  input: 'doc/hud',
-  output: 'main',
-  command: [py3_exe, '-c', 'from sys import argv; __import__("shutil").copy(argv[1], argv[2])', '@INPUT@', '@OUTPUT@'],
-  build_by_default: true,
-  build_always: false,
-  install: true,
-  install_dir: join_paths(get_option('prefix'), get_option('datadir'), 'radare2', r2version, 'hud')
+install_data('doc/hud',
+  install_dir: join_paths(get_option('datadir'), 'radare2', r2version, 'hud'),
+  rename: 'main'
 )
