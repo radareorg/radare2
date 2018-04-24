@@ -135,6 +135,8 @@ static const char *help_msg_wt[] = {
 	"wta", " [filename]", "append to 'filename'",
 	"wtf", " [filename] [size]", "write to file (see also 'wxf' and 'wf?')",
 	"wtf!", " [filename]", "write to file from current address to eof",
+	"wtff", " [prefix]", "write block from current seek to [prefix]-[offset]",
+	"wts"," host:port [sz]", "send data to remote host:port via tcp://",
 	NULL
 };
 
@@ -1247,10 +1249,18 @@ static int cmd_write(void *data, const char *input) {
 					poff =  s ? poff - s->vaddr + s->paddr : poff;
 					str++;
 				}
-				if (*str) {
-					filename = str + ((*str == ' ')? 1: 0);
+				if (*str == 'f') {
+					const char *prefix = r_str_trim_ro (str + 1);
+					if (!*prefix) {
+						prefix = "dump";
+					}
+					filename = r_str_newf ("%s-0x%08"PFMT64x, prefix, core->offset);
 				} else {
-					filename = "";
+					if (*str) {
+						filename = str + ((*str == ' ')? 1: 0);
+					} else {
+						filename = "";
+					}
 				}
 			} else if (*str == 'a') { // "wta"
 				append = 1;
