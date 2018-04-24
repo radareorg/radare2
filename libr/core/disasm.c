@@ -1979,7 +1979,6 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 				// continue;
 				break;
 			case R_META_TYPE_STRING:
-				r_cons_printf (".string: %s\n", meta->str);
 				i += meta->size;
 				// continue;
 				break;
@@ -1993,14 +1992,24 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 				i += meta->size;
 				break;
 			case R_META_TYPE_RUN:
-				/* TODO */
+				r_core_cmd0 (core, meta->str);
 				break;
 			}
 			int sz = R_MIN (16, meta->size - (ds->at - meta->from));
 			ds->asmop.size = sz;
 			r_hex_bin2str (buf, sz, ds->asmop.buf_hex);
-			snprintf (ds->asmop.buf_asm, sizeof (ds->asmop.buf_asm) - 1,
-				".hex %s", ds->asmop.buf_hex);
+			switch (meta->type) {
+			case R_META_TYPE_STRING:
+				snprintf (ds->asmop.buf_asm, sizeof (ds->asmop.buf_asm) - 1,
+					".string \"%s\"", meta->str);
+				break;
+			// case R_META_TYPE_DATA:
+			//	break;
+			default:
+				snprintf (ds->asmop.buf_asm, sizeof (ds->asmop.buf_asm) - 1,
+					".hex %s", ds->asmop.buf_hex);
+				break;
+			}
 			ds->asmop.buf_asm[sizeof (ds->asmop.buf_asm) - 1] = 0;
 			// strcpy (ds->asmop.buf_hex, "0102030405060708");
 			//return i;
