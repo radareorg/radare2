@@ -259,7 +259,8 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, int sel) {
 		} else {
 			// Remove the trailing ',' from esil statement.
 			if (*out) {
-				out[strlen (out) - 1] = 0;
+				int out_len = strlen (out);
+				out[out_len> 0? out_len - 1: 0] = 0;
 			}
 		}
 

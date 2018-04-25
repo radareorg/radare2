@@ -291,17 +291,20 @@ R_API RAnalVar *r_anal_var_get_byname(RAnal *a, RAnalFunction *fcn, const char *
 		return NULL;
 	}
 	char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", fcn->addr, 1, name);
-	const char *name_value = sdb_const_get (DB, name_key, 0);
+	char *name_value = sdb_get (DB, name_key, 0);
 	if (!name_value) {
 		// eprintf ("Cant find key for %s\n", name_key);
 		return NULL;
 	}
 	const char *comma = strchr (name_value, ',');
-	if (comma) {
+	if (comma && *comma) {
 		int delta = r_num_math (NULL, comma + 1);
 		// eprintf ("Silently failing (%s)\n", name_value);
-		return r_anal_var_get (a, fcn->addr, *name_value, 1, delta);
+		RAnalVar *res = r_anal_var_get (a, fcn->addr, *name_value, 1, delta);
+		free (name_value);
+		return res;
 	}
+	free (name_value);
 	return NULL;
 }
 

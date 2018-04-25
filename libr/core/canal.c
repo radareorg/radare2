@@ -9,7 +9,6 @@
 #include <string.h>
 
 #define SLOW_IO 0
-#define HASNEXT_FOREVER 1
 
 #define HINTCMD_ADDR(hint,x,y) if(hint->x) \
 	r_cons_printf (y" @ 0x%"PFMT64x"\n", hint->x, hint->addr)
@@ -539,6 +538,10 @@ static int r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) {
 }
 
 static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
+	if (depth < 0) {
+		eprintf ("Too deep for 0x%08"PFMT64x"\n", at);
+		return false;
+	}
 	int has_next = r_config_get_i (core->config, "anal.hasnext");
 	RAnalHint *hint;
 	ut8 *buf = NULL;
@@ -784,12 +787,10 @@ error:
 			if (!sect || (sect && (sect->flags & 1))) {
 				next = next_append (next, &nexti, newaddr);
 				for (i = 0; i < nexti; i++) {
-					if (!next[i]) continue;
-#if HASNEXT_FOREVER
-					r_core_anal_fcn (core, next[i], next[i], 0, 9999);
-#else
+					if (!next[i]) {
+						continue;
+					}
 					r_core_anal_fcn (core, next[i], next[i], 0, depth - 1);
-#endif
 				}
 				free (next);
 			}
@@ -1499,7 +1500,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 		// split function if overlaps
 		r_anal_fcn_resize (core->anal, fcn, at - fcn->addr);
 	}
-	return core_anal_fcn (core, at, from, reftype, depth);
+	return core_anal_fcn (core, at, from, reftype, depth - 1);
 }
 
 /* if addr is 0, remove all functions
