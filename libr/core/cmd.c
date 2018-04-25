@@ -3307,11 +3307,8 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	if (r_list_empty (core->tasks)) {
 		r_th_lock_enter (core->lock);
 	} else {
-		RListIter *iter;
-		RCoreTask *task;
-		r_list_foreach (core->tasks, iter, task) {
-			// XXX: this lock pauses the whole r2
-		//	r_th_pause (task->msg->th, true);
+		if (!r_core_task_self (core)) {
+			r_core_task_pause (core, NULL, true);
 		}
 	}
 	if (core->cmdfilter) {

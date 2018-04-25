@@ -98,23 +98,42 @@ R_API bool r_th_kill(RThread *th, bool force) {
 	return 0;
 }
 
+// running in parent
 R_API bool r_th_pause(RThread *th, bool enable) {
+	if (!th) {
+		return false;
+	}
 	if (enable) {
 #if HAVE_PTHREAD
-		pthread_mutex_lock (&th->_mutex);
-		pthread_cond_wait (&th->_cond, &th->_mutex);
+		pthread_mutex_trylock (&th->_mutex);
 #else
 #pragma message("warning r_th_pause not implemented")
 #endif
 	} else {
 #if HAVE_PTHREAD
-		pthread_cond_signal (&th->_cond);
+		// pthread_cond_signal (&th->_cond);
 		pthread_mutex_unlock (&th->_mutex);
 #else
 #pragma message("warning r_th_pause not implemented")
 #endif
 	}
 	return true;
+}
+
+// running in thread
+R_API bool r_th_try_pause(RThread *th) {
+	if (th) {
+		// pthread_mutex_lock (&th->_mutex);
+		// pthread_mutex_unlock (&th->_mutex);
+		if (pthread_mutex_trylock (&th->_mutex) != -1) {
+			pthread_mutex_unlock (&th->_mutex);
+		} else {
+			// oops
+		}
+		// pthread_cond_wait (&th->_cond, &th->_mutex);
+		return true;
+	}
+	return false;
 }
 
 R_API bool r_th_start(RThread *th, int enable) {
