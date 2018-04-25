@@ -3042,6 +3042,18 @@ static bool ds_print_core_vmode_jump_hit(RDisasmState *ds, int pos) {
 	return false;
 }
 
+static void getPtr(RDisasmState *ds, ut64 addr, int pos) {
+	ut8 buf[sizeof(ut64)] = {0};
+	r_io_read_at (ds->core->io, addr, buf, sizeof (buf));
+	if (ds->core->assembler->bits == 64) {
+		ut64 n64 = r_read_ble64 (buf, 0);
+		ds_print_shortcut (ds, n64, pos);
+	} else {
+		ut32 n32 = r_read_ble32 (buf, 0);
+		ds_print_shortcut (ds, n32, pos);
+	}
+}
+
 static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 	RCore *core = ds->core;
 	bool gotShortcut = false;
@@ -3050,6 +3062,15 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 		return;
 	}
 	switch (ds->analop.type) {
+	case R_ANAL_OP_TYPE_UJMP:
+	case R_ANAL_OP_TYPE_UJMP | R_ANAL_OP_TYPE_IND:
+	case R_ANAL_OP_TYPE_UJMP | R_ANAL_OP_TYPE_IND | R_ANAL_OP_TYPE_COND:
+	case R_ANAL_OP_TYPE_UJMP | R_ANAL_OP_TYPE_IND | R_ANAL_OP_TYPE_REG:
+		if (ds->show_leahints) {
+			getPtr (ds, ds->analop.ptr, pos);
+			gotShortcut = true;
+		}
+		break;
 	case R_ANAL_OP_TYPE_MOV:
 	case R_ANAL_OP_TYPE_LEA:
 	case R_ANAL_OP_TYPE_LOAD:

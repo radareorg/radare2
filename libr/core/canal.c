@@ -539,7 +539,7 @@ static int r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) {
 
 static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	if (depth < 0) {
-		eprintf ("Too deep for 0x%08"PFMT64x"\n", at);
+		// eprintf ("Too deep for 0x%08"PFMT64x"\n", at);
 		return false;
 	}
 	int has_next = r_config_get_i (core->config, "anal.hasnext");

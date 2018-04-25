@@ -1191,10 +1191,9 @@ static int cmd_resize(void *data, const char *input) {
 			eprintf ("r_io_resize: cannot resize\n");
 		}
 	}
-
-	if (delta && core->offset < newsize)
+	if (delta && core->offset < newsize) {
 		r_io_shift (core->io, core->offset, grow?newsize:oldsize, delta);
-
+	}
 	if (!grow) {
 		ret = r_io_resize (core->io, newsize);
 		if (ret < 1) {
