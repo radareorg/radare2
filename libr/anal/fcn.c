@@ -489,6 +489,9 @@ static void queue_case(RAnal *anal, ut64 switch_addr, ut64 case_addr, ut64 id, u
 	anal->cmdtail = r_str_appendf (anal->cmdtail,
 		"axc 0x%"PFMT64x " 0x%"PFMT64x "\n",
 		case_addr, switch_addr);
+	anal->cmdtail = r_str_appendf (anal->cmdtail,
+		"afbe 0x%"PFMT64x " 0x%"PFMT64x "\n",
+		switch_addr, case_addr);
 	// anal->cmdtail = r_str_appendf (anal->cmdtail,
 	// 	"aho case %d: from 0x%"PFMT64x " @ 0x%"PFMT64x "\n",
 	// 	id, switch_addr, case_addr_loc);
