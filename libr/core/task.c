@@ -149,10 +149,22 @@ R_API RCoreTask *r_core_task_self (RCore *core) {
 }
 
 R_API bool r_core_task_pause (RCore *core, RCoreTask *task, bool enable) {
-	if (!core || !task) {
+	if (!core) {
 		return false;
 	}
-	r_th_pause (task->msg->th, enable);
+	if (task) {
+		if (task->state != 'd' && task->msg) {
+			r_th_pause (task->msg->th, enable);
+		}
+	} else {
+		RListIter *iter;
+		r_list_foreach (core->tasks, iter, task) {
+			// XXX: this lock pauses the whole r2
+			if (task) {
+				r_core_task_pause (core, task, enable);
+			}
+		}
+	}
 	return true;
 }
 
