@@ -461,10 +461,7 @@ static ut64 getnumbang(const char *str) {
 		return 0;
 	}
 
-	char *temp = (char*) malloc (strlen (str) + 1);
-	if (!temp) {
-		return -1;
-	}
+	char *temp = (char*) malloc (strlen (str));
 	strncpy (temp, str, strlen (str) - 1);
 	temp[strlen (str) - 1] = 0;
 	err = false;
@@ -644,20 +641,9 @@ static st32 getlistmask(char *input) {
 	st32 tempres, res = 0;
 	int i, j;
 	int start, end;
-	char *temp = NULL;
-	char *temp2 = NULL;
-	char *otemp = NULL;
-	temp2 = malloc (strlen (input) + 1);
-	if (!temp2) {
-		res = -1;
-		goto end;
-	}
-	temp = (char *)malloc (strlen (input) + 1);
-	if (!temp) {
-		res = -1;
-		goto end;
-	}
-	otemp = temp;
+	char *temp2 = malloc (strlen (input));
+	char *temp = malloc (strlen (input));
+	char *otemp = temp;
 	while (*input != '\0') {
 		for (; *input == ' '; input++);
 		for (i = 0; input[i] != ',' && input[i] != '\0'; i++);
@@ -673,8 +659,7 @@ static st32 getlistmask(char *input) {
 		if (i == strlen (temp)) {
 			tempres = getreg (temp);
 			if (tempres == -1 || tempres > 15) {
-				res = -1;
-				goto end;
+				return -1;
 			}
 			res |= 1 << tempres;
 		} else {
@@ -683,13 +668,11 @@ static st32 getlistmask(char *input) {
 			temp += i + 1;
 			start = getreg (temp2);
 			if (start == -1 || start > 15) {
-				res = -1;
-				goto end;
+				return -1;
 			}
 			end = getreg (temp);
 			if (end == -1 || end > 15) {
-				res = -1;
-				goto end;
+				return -1;
 			}
 
 			for (j = start; j <= end; j++ ) {
@@ -697,7 +680,7 @@ static st32 getlistmask(char *input) {
 			}
 		}
 	}
-end:
+
 	free (otemp);
 	free (temp2);
 	return res;
@@ -717,10 +700,7 @@ static st32 getregmemstartend(const char *input) {
 		return -1;
 	}
 	input++;
-	char *temp = (char*) malloc (strlen (input) + 1);
-	if (!temp) {
-		return -1;
-	}
+	char *temp = (char*) malloc (strlen (input));
 	strncpy (temp, input, strlen (input) - 1);
 	temp[strlen (input) - 1] = 0;
 	res = getreg (temp);
@@ -748,13 +728,8 @@ static st32 getreglist(const char *input) {
 	if ((strlen (input) < 2) || (*input != '{') || (input[strlen (input) - 1] != '}')) {
 		return -1;
 	}
-	if (*input) {
-		input++;
-	}
-	char *temp = (char*) malloc (strlen (input) + 1);
-	if (!temp) {
-		return -1;
-	}
+	input++;
+	char *temp = (char*) malloc (strlen (input));
 	strncpy (temp, input, strlen (input) - 1);
 	temp[strlen (input) - 1] = 0;
 	res = getlistmask (temp);
@@ -767,13 +742,9 @@ static st32 getnummemend (const char *input) {
 	err = false;
 	if ((strlen(input) < 1) || (input[strlen(input) - 1] != ']')) {
 		err = true;
-		return -1;
+		return 0;
 	}
-	char *temp = (char*) malloc (strlen (input) + 1);
-	if (!temp) {
-		err = true;
-		return -1;
-	}
+	char *temp = (char*) malloc (strlen (input));
 	strncpy (temp, input, strlen (input) - 1);
 	temp[strlen (input) - 1] = 0;
 	res = getnum (temp);
@@ -949,25 +920,19 @@ static st32 getshiftmemend(const char *input) {
 		return -1;
 	}
 
-	char *temp = (char*) malloc (strlen (input) + 1);
-	if (!temp) {
-		return -1;
-	}
+	char *temp = (char*) malloc (strlen (input));
 	strncpy (temp, input, strlen (input) - 1);
 	temp[strlen (input) - 1] = 0;
 	res = thumb_getshift (temp);
 	free (temp);
 	return res;
 }
-
+	
 void collect_list(char *input[]) {
 	if (input[0] == NULL) {
 		return;
 	}
 	char *temp  = malloc (500);
-	if (!temp) {
-		return;
-	}
 	temp[0] = 0;
 	int i;
 	int conc = 0;
@@ -991,7 +956,6 @@ void collect_list(char *input[]) {
 		}
 	}
 	if (end == 0) {
-		free (temp);
 		return;
 	}
 	input[start] = temp;
@@ -2815,7 +2779,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			ut8 reg1 = getreg (ao->a[0]);
 			ut8 reg2 = getreg (ao->a[1]);
 			ut8 reg3 = getregmemstartend (ao->a[2]);
-			if (!(ldrsel & D_BIT)) {
+			if (!(ldrsel && D_BIT)) {
 				return -1;
 			}
 			ao->o = 0xd0e87f00;
