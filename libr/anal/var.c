@@ -104,8 +104,9 @@ R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, 
 		if (*sign) {
 			delta = -delta;
 		}
-		const char *name_val = sdb_fmt ("%c,%d", kind, delta);
+		char *name_val = r_str_newf ("%c,%d", kind, delta);
 		sdb_set (DB, name_key, name_val, 0);
+		free (name_val);
 	} else {
 		/* global variable */
 		const char *var_global = sdb_fmt ("var.0x%"PFMT64x, addr);
@@ -324,7 +325,7 @@ R_API RAnalVar *r_anal_var_get(RAnal *a, ut64 addr, char kind, int scope, int de
 	}
 	const char *varkey = sdb_fmt ("var.0x%"PFMT64x ".%c.%d.%s%d",
 			fcn->addr, kind, scope, sign, delta);
-	const char *vardef = sdb_const_get (DB, varkey, 0);
+	char *vardef = sdb_get (DB, varkey, 0);
 	if (!vardef) {
 		return NULL;
 	}
@@ -333,6 +334,7 @@ R_API RAnalVar *r_anal_var_get(RAnal *a, ut64 addr, char kind, int scope, int de
 	}
 	sdb_fmt_init (&vt, SDB_VARTYPE_FMT);
 	sdb_fmt_tobin (vardef, SDB_VARTYPE_FMT, &vt);
+	free (vardef);
 
 	av = R_NEW0 (RAnalVar);
 	if (!av) {

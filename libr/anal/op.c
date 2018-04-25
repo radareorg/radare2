@@ -65,15 +65,16 @@ R_API void r_anal_op_free(void *_op) {
 }
 
 static RAnalVar *get_used_var(RAnal *anal, RAnalOp *op) {
-	char *inst_key = sdb_fmt ("inst.0x%"PFMT64x".vars", op->addr);
-	const char *var_def = sdb_const_get (anal->sdb_fcns, inst_key, 0);
+	char *inst_key = r_str_newf ("inst.0x%"PFMT64x".vars", op->addr);
+	char *var_def = sdb_get (anal->sdb_fcns, inst_key, 0);
 	struct VarUsedType vut;
-
-	if (sdb_fmt_tobin (var_def, SDB_VARUSED_FMT, &vut) != 4) {
-		return NULL;
+	RAnalVar *res = NULL;
+	if (sdb_fmt_tobin (var_def, SDB_VARUSED_FMT, &vut) == 4) {
+		res = r_anal_var_get (anal, vut.fcn_addr, vut.type[0], vut.scope, vut.delta);
+		sdb_fmt_free (&vut, SDB_VARUSED_FMT);
 	}
-	RAnalVar *res = r_anal_var_get (anal, vut.fcn_addr, vut.type[0], vut.scope, vut.delta);
-	sdb_fmt_free (&vut, SDB_VARUSED_FMT);
+	free (inst_key);
+	free (var_def);
 	return res;
 }
 
