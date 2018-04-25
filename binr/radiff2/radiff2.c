@@ -826,22 +826,26 @@ int main(int argc, char **argv) {
 			szb = strlen ((const char *) bufb);
 			mode = MODE_DIFF;
 		} else if (mode == MODE_GRAPH) {
+			int depth = r_config_get_i (c->config, "anal.depth");
+			if (depth < 1) {
+				depth = 64;
+			}
 			char *words = strdup (addr? addr: "0");
 			char *second = strstr (words, ",");
 			if (second) {
 				*second++ = 0;
 				ut64 off = r_num_math (c->num, words);
 				// define the same function at each offset
-				r_core_anal_fcn (c, off, UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
+				r_core_anal_fcn (c, off, UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
 				r_core_anal_fcn (c2, r_num_math (c2->num, second),
-					UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
+					UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
 				r_core_gdiff (c, c2);
 				r_core_anal_graph (c, off, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF);
 			} else {
 				r_core_anal_fcn (c, r_num_math (c->num, words),
-					UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
+					UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
 				r_core_anal_fcn (c2, r_num_math (c2->num, words),
-					UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
+					UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
 				r_core_gdiff (c, c2);
 				r_core_anal_graph (c, r_num_math (c->num, addr),
 					R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF);
