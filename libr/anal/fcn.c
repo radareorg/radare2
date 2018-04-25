@@ -880,6 +880,9 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		0
 	};
 	char tmp_buf[MAX_FLG_NAME_SIZE + 5] = "skip";
+	if (r_cons_is_breaked ()) {
+		return R_ANAL_RET_END;
+	}
 
 	if (anal->sleep) {
 		r_sys_usleep (anal->sleep);
@@ -927,6 +930,9 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 			break;
 		}
 repeat:
+		if (r_cons_is_breaked ()) {
+			break;
+		}
 		if ((len - addrbytes * idx) < 5) {
 			eprintf (" WARNING : block size exceeding max block size at 0x%08"PFMT64x"\n", addr);
 			eprintf ("[+] Try changing it with e anal.bb.maxsize\n");
@@ -1183,6 +1189,9 @@ repeat:
 				r_anal_op_fini (&op);
 				return R_ANAL_RET_END;
 			}
+			if (r_cons_is_breaked ()) {
+				return R_ANAL_RET_END;
+			}
 			if (anal->opt.jmpref) {
 				(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
 			}
@@ -1195,6 +1204,9 @@ repeat:
 				FITFCNSZ ();
 				r_anal_op_fini (&op);
 				return R_ANAL_RET_END;
+			}
+			if (r_cons_is_breaked ()) {
+				break;
 			}
 			{
 				bool must_eob = anal->opt.eobjmp;

@@ -2395,13 +2395,17 @@ R_API void fcn_callconv(RCore *core, RAnalFunction *fcn) {
 		return;
 	}
 	r_list_foreach (fcn->bbs, tmp, bb) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
 		if (bb->size < 1) {
 			continue;
 		}
 		if (bb->size > bb_size) {
 			tbuf = realloc (buf, bb->size);
 			if (!tbuf) {
-				break;
+				eprintf ("Cannot realloc bb to %d\n", (int)bb->size);
+				continue;
 			}
 			buf = tbuf;
 			bb_size = bb->size;
@@ -2412,6 +2416,9 @@ R_API void fcn_callconv(RCore *core, RAnalFunction *fcn) {
 		}
 		pos = bb->addr;
 		while (pos < bb->addr + bb->size) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
 			op = r_core_anal_op (core, pos);
 			if (!op) {
 	//			eprintf ("Cannot get op\n");
@@ -2817,6 +2824,9 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 		while (at < (at + bsz) && !r_cons_is_breaked ()) {
 			RAnalRefType type;
 			ut64 xref_to;
+			if (r_cons_is_breaked ()) {
+				break;
+			}
 			ret = r_anal_op (core->anal, &op, at, buf + i, bsz - i, 0);
 			ret = ret > 0 ? ret : 1;
 			i += ret;

@@ -62,6 +62,7 @@ R_API void r_th_break(RThread *th);
 R_API void *r_th_free(RThread *th);
 R_API bool r_th_kill(RThread *th, bool force);
 R_API bool r_th_pause(RThread *th, bool enable);
+R_API bool r_th_try_pause(RThread *th);
 R_API R_TH_TID r_th_self();
 
 R_API RThreadLock *r_th_lock_new(bool recursive);

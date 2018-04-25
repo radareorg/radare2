@@ -1250,7 +1250,7 @@ static int taskbgrun(RThread *th) {
 	res = r_core_cmd_str (core, task->msg->text);
 	task->msg->res = res;
 	task->state = 'd';
-	eprintf ("Task %d finished\n", task->id);
+	eprintf ("\nTask %d finished\n", task->id);
 // TODO: run callback and pass result
 	return 0;
 }
@@ -1262,6 +1262,7 @@ static int cmd_thread(void *data, const char *input) {
 	case 'j':
 		r_core_task_list (core, *input);
 		break;
+#if 0
 	case 't':
 		r_cons_break_push (NULL, NULL);
 		while (!r_cons_is_breaked ()) {
@@ -1269,6 +1270,7 @@ static int cmd_thread(void *data, const char *input) {
 		}
 		r_cons_break_pop ();
 		break;
+#endif
 	case '&':
 		if (r_sandbox_enable (0)) {
 			eprintf ("This command is disabled in sandbox mode\n");
@@ -1291,7 +1293,7 @@ static int cmd_thread(void *data, const char *input) {
 		}
 		break;
 	case '=': {
-		r_core_task_list (core, '=');
+		// r_core_task_list (core, '=');
 		int tid = r_num_math (core->num, input + 1);
 		if (tid) {
 			RCoreTask *task = r_core_task_get (core, tid);

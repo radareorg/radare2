@@ -210,7 +210,6 @@ R_API int r_anal_xrefs_set (RAnal *anal, const RAnalRefType type, ut64 from, ut6
 	XREFKEY (key, sizeof (key), "xref", type, to);
 	sdb_array_add_num (DB, key, from, 0);
 #endif
-
 	return true;
 }
 
