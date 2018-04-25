@@ -444,7 +444,9 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 	}
 
 	for (idx = addrbytes; idx < len; idx += addrbytes) {
-		if (r_cons_singleton ()->breaked) break;
+		if (r_cons_is_breaked ()) {
+			break;
+		}
 		c = r_asm_mdisassemble (core->assembler, buf+(len-idx), idx);
 		if (strstr (c->buf_asm, "invalid") || strstr (c->buf_asm, ".byte")) {
 			r_asm_code_free(c);
@@ -506,7 +508,9 @@ static RList * r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len,
 	}
 
 	do {
-		if (r_cons_singleton ()->breaked) break;
+		if (r_cons_is_breaked ()) {
+			break;
+		}
 		// reset assembler
 		r_asm_set_pc (core->assembler, current_instr_addr);
 		current_instr_len = len - current_buf_pos + extra_padding;
@@ -585,12 +589,13 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 	next_buf_pos = len + extra_padding - 1;
 	current_instr_addr = addr-1;
 	do {
-		if (r_cons_singleton ()->breaked) break;
+		if (r_cons_is_breaked ()) {
+			break;
+		}
 		// reset assembler
 		r_asm_set_pc (core->assembler, current_instr_addr);
 		current_instr_len = next_buf_pos - current_buf_pos;
 		current_instr_len = r_asm_disassemble (core->assembler, &op, buf+current_buf_pos, current_instr_len);
-
 		IFDBG {
 			ut32 byte_cnt =  current_instr_len ? current_instr_len : 1;
 			eprintf("current_instr_addr: 0x%"PFMT64x", current_buf_pos: 0x%"PFMT64x", current_instr_len: %d \n", current_instr_addr, current_buf_pos, current_instr_len);
@@ -598,12 +603,12 @@ static RList *r_core_asm_back_disassemble (RCore *core, ut64 addr, int len, ut64
 			ut8 *hex_str = (ut8*)r_hex_bin2strdup(buf+current_buf_pos, byte_cnt);
 			eprintf("==== current_instr_bytes: %s ",hex_str);
 
-			if (current_instr_len > 0)
+			if (current_instr_len > 0) {
 				eprintf("op.buf_asm: %s\n", op.buf_asm);
-			else
+			} else {
 				eprintf("op.buf_asm: <invalid>\n");
-
-			free(hex_str);
+			}
+			free (hex_str);
 		}
 
 		// disassembly invalid
