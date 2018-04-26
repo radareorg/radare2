@@ -229,14 +229,13 @@ R_API bool r_anal_set_reg_profile(RAnal *anal) {
 }
 
 R_API bool r_anal_set_fcnsign(RAnal *anal, const char *name) {
-#define FCNSIGNPATH R2_SDBDIR "/fcnsign"
 	const char *dirPrefix = r_sys_prefix (NULL);
 	char *file = NULL;
 	const char *arch = (anal->cur && anal->cur->arch) ? anal->cur->arch : R_SYS_ARCH;
 	if (name && *name) {
-		file = sdb_fmt ("%s/%s/%s.sdb", dirPrefix, FCNSIGNPATH, name);
+		file = sdb_fmt ("%s/%s/%s.sdb", dirPrefix, R2_SDB_FCNSIGN, name);
 	} else {
-		file = sdb_fmt ("%s/%s/%s-%s-%d.sdb", dirPrefix, FCNSIGNPATH,
+		file = sdb_fmt ("%s/%s/%s-%s-%d.sdb", dirPrefix, R2_SDB_FCNSIGN,
 			anal->os, arch, anal->bits);
 	}
 	if (r_file_exists (file)) {

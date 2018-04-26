@@ -2289,7 +2289,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("pdb.useragent", "Microsoft-Symbol-Server/6.11.0001.402", "User agent for Microsoft symbol server");
 	SETPREF ("pdb.server", "https://msdl.microsoft.com/download/symbols", "Base URL for Microsoft symbol server");
 	{
-		char *pdb_path = r_str_home(R2_HOMEDIR R_SYS_DIR "pdb");
+		char *pdb_path = r_str_home(R2_HOME_PDB);
 		SETPREF("pdb.symstore", pdb_path, "Path to downstream symbol store");
 		R_FREE(pdb_path);
 	}
@@ -2585,7 +2585,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("zign.bytes", "true", "Use bytes patterns for matching");
 	SETPREF ("zign.offset", "true", "Use original offset for matching");
 	SETPREF ("zign.refs", "true", "Use references for matching");
-	SETPREF ("zign.autoload", "false", "Autoload all zignatures located in ~/.config/radare2/zigns");
+	SETPREF ("zign.autoload", "false", "Autoload all zignatures located in ~/"R2_HOME_ZIGNS);
 
 	/* diff */
 	SETCB ("diff.sort", "addr", &cb_diff_sort, "Specify function diff sorting column see (e diff.sort=?)");
@@ -2610,12 +2610,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("dir.types", "/usr/include", "Default path to look for cparse type files");
 #if __ANDROID__
 	SETPREF ("dir.projects", "/data/data/org.radare.radare2installer/radare2/projects", "Default path for projects");
-#elif __WINDOWS__
-	SETPREF ("dir.projects", "~\\"R2_HOMEDIR"\\projects", "Default path for projects");
 #else
-	SETPREF ("dir.projects", "~/"R2_HOMEDIR"/projects", "Default path for projects");
+	SETPREF ("dir.projects", "~/"R2_HOME_PROJECTS, "Default path for projects");
 #endif
-	SETCB ("dir.zigns", "~/"R2_HOMEDIR"/zigns", &cb_dirzigns, "Default path for zignatures (see zo command)");
+	SETCB ("dir.zigns", "~/"R2_HOME_ZIGNS, &cb_dirzigns, "Default path for zignatures (see zo command)");
 	SETPREF ("stack.bytes", "true", "Show bytes instead of words in stack");
 	SETPREF ("stack.anotated", "false", "Show anotated hexdump in visual debug");
 	SETI ("stack.size", 64,  "Size in bytes of stack hexdump in visual debug");
@@ -2770,7 +2768,7 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	SETI ("http.maxsize", 0, "Maximum file size for upload");
 	SETPREF ("http.bind", "localhost", "Server address");
-	SETPREF ("http.homeroot", "~/.config/radare2/www", "http home root directory");
+	SETPREF ("http.homeroot", "~/"R2_HOME_WWWROOT, "http home root directory");
 #if __ANDROID__
 	SETPREF ("http.root", "/data/data/org.radare.radare2installer/www", "http root directory");
 #else

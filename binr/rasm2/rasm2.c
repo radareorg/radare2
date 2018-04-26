@@ -446,7 +446,7 @@ int main (int argc, char *argv[]) {
 			r_lib_opendir (l, path);
 
 		if (1) {
-			char *homeplugindir = r_str_home (R2_HOMEDIR "/plugins");
+			char *homeplugindir = r_str_home (R2_HOME_PLUGINS);
 			// eprintf ("OPENDIR (%s)\n", homeplugindir);
 			r_lib_opendir (l, homeplugindir);
 			free (homeplugindir);

@@ -181,13 +181,13 @@ extern "C" {
 #if __WINDOWS__
 #define FS "\\"
 #define R_SYS_DIR "\\"
+#define R_SYS_ENVSEP ";"
 #define R_SYS_HOME "USERPROFILE"
-#define R2_HOMEDIR ".config\\radare2"
 #else
 #define FS "/"
 #define R_SYS_DIR "/"
+#define R_SYS_ENVSEP ":"
 #define R_SYS_HOME "HOME"
-#define R2_HOMEDIR ".config/radare2"
 #endif
 
 #ifndef __packed

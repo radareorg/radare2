@@ -11,11 +11,43 @@
 #define R2_INCDIR "@INCLUDEDIR@"
 #define R2_DATDIR "@DATADIR@"
 #define R2_WWWROOT "@WWWROOT@"
+
 #define R2_SDBDIR "@SDBDIR@"
 #define R2_ZIGNSDIR "@ZIGNSDIR@"
 #define R2_THEMESDIR "@THEMESDIR@"
 #define R2_FORTUNESDIR "@FORTUNESDIR@"
 #define R2_HUDDIR "@HUDDIR@"
+
+#define R2_SDB_FCNSIGN R2_SDBDIR "/fcnsign"
+#define R2_SDB_OPCODES R2_SDBDIR "/opcodes"
+#define R2_SDB_MAGIC R2_SDBDIR "/magic"
+#define R2_SDB_FORMAT R2_SDBDIR "/format"
+
+#if __WINDOWS__ || _MSC_VER
+#define R2_HOME_CFGDIR ".config\\radare2"
+#define R2_HOME_DATADIR ".local\\share\\radare2"
+#define R2_HOME_CACHEDIR ".cache\\share\\radare2"
+#else
+#define R2_HOME_CFGDIR ".config/radare2"
+#define R2_HOME_DATADIR ".local/share/radare2"
+#define R2_HOME_CACHEDIR ".cache/share/radare2"
+#endif
+
+#define R2_HOME_THEMES R2_HOME_DATADIR R_SYS_DIR "cons"
+#define R2_HOME_PLUGINS R2_HOME_DATADIR R_SYS_DIR "plugins"
+#define R2_HOME_ZIGNS R2_HOME_DATADIR R_SYS_DIR "zigns"
+#define R2_HOME_PDB R2_HOME_DATADIR R_SYS_DIR "pdb"
+#define R2_HOME_PROJECTS R2_HOME_DATADIR R_SYS_DIR "projects"
+#define R2_HOME_WWWROOT R2_HOME_DATADIR R_SYS_DIR "www"
+#define R2_HOME_SDB_FORMAT R2_HOME_DATADIR R_SYS_DIR "format"
+#define R2_HOME_HUD R2_HOME_DATADIR R_SYS_DIR "hud"
+#define R2_HOME_BINRC R2_HOME_DATADIR R_SYS_DIR "rc.d"
+#define R2_HOME_BIN R2_HOME_DATADIR R_SYS_DIR "prefix" R_SYS_DIR "bin"
+
+#define R2_HOME_RC R2_HOME_CFGDIR R_SYS_DIR "radare2rc"
+#define R2_HOME_RC_DIR R2_HOME_CFGDIR R_SYS_DIR "radare2rc.d"
+
+#define R2_HOME_HISTORY R2_HOME_CACHEDIR R_SYS_DIR "history"
 
 #define HAVE_LIB_MAGIC @HAVE_LIB_MAGIC@
 #define USE_LIB_MAGIC @USE_LIB_MAGIC@

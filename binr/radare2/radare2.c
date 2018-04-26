@@ -174,18 +174,18 @@ static int main_help(int line) {
 		" -z, -zz      do not load strings or load them even in raw\n");
 	}
 	if (line == 2) {
-		char *homedir = r_str_home (R2_HOMEDIR);
+		char *homedir = r_str_home (R2_HOME_CFGDIR);
 		printf (
 		"Scripts:\n"
 		" system       ${R2_PREFIX}/share/radare2/radare2rc\n"
 		" user         ~/.radare2rc ${RHOMEDIR}/radare2/radare2rc (and radare2rc.d/)\n"
 		" file         ${filename}.r2\n"
 		"Plugins:\n"
-		" binrc        ~/.config/radare2/rc.d/bin-<format>/ (elf, elf64, mach0, ..)\n"
+		" binrc        ~/"R2_HOME_BINRC R_SYS_DIR"bin-<format>/ (elf, elf64, mach0, ..)\n"
 		" plugins      "R2_PREFIX"/lib/radare2/last\n"
-		" USER_PLUGINS ~/.config/radare2/plugins\n"
+		" USER_PLUGINS ~/"R2_HOME_PLUGINS"\n"
 		" LIBR_PLUGINS "R2_PREFIX"/lib/radare2/"R2_VERSION"\n"
-		" USER_ZIGNS   ~/.config/radare2/zigns\n"
+		" USER_ZIGNS   ~/"R2_HOME_ZIGNS"\n"
 		"Environment:\n"
 		" RHOMEDIR     %s\n" // TODO: rename to RHOME R2HOME?
 		" RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
@@ -206,9 +206,9 @@ static int main_help(int line) {
 
 static int main_print_var(const char *var_name) {
 	int i = 0;
-	char *homedir = r_str_home (R2_HOMEDIR);
-	char *homeplugs = r_str_newf ("%s" R_SYS_DIR "plugins", homedir);
-	char *homezigns = r_str_newf ("%s" R_SYS_DIR "zigns", homedir);
+	char *homedir = r_str_home (R2_HOME_CFGDIR);
+	char *homeplugs = r_str_home (R2_HOME_PLUGINS);
+	char *homezigns = r_str_home (R2_HOME_ZIGNS);
 	struct radare2_var_t {
 		const char *name;
 		const char *value;
@@ -297,7 +297,7 @@ static void radare2_rc(RCore *r) {
 		r_core_cmd_file (r, homerc);
 	}
 	free (homerc);
-	homerc = r_str_home (".config/radare2/radare2rc");
+	homerc = r_str_home (R2_HOME_RC);
 	if (homerc && r_file_is_regular (homerc)) {
 		if (has_debug) {
 			eprintf ("USER CONFIG loaded from %s\n", homerc);
@@ -305,7 +305,7 @@ static void radare2_rc(RCore *r) {
 		r_core_cmd_file (r, homerc);
 	}
 	free (homerc);
-	homerc = r_str_home (".config/radare2/radare2rc.d");
+	homerc = r_str_home (R2_HOME_RC_DIR);
 	if (homerc) {
 		if (r_file_is_directory (homerc)) {
 			char *file;
@@ -1427,7 +1427,7 @@ int main(int argc, char **argv, char **envp) {
 	}
 
 	if (mustSaveHistory(r.config)) {
-		r_line_hist_save (R2_HOMEDIR"/history");
+		r_line_hist_save (R2_HOME_HISTORY);
 	}
 	// TODO: kill thread
 

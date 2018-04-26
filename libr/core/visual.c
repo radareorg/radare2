@@ -201,7 +201,7 @@ R_API int r_core_visual_hud(RCore *core) {
 	char *f = r_str_newf ("%s/" R2_HUDDIR "/main",
 		r_sys_prefix (NULL));
 	int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-	char *homehud = r_str_home (R2_HOMEDIR "/hud");
+	char *homehud = r_str_home (R2_HOME_HUD);
 	char *res = NULL;
 	char *p = 0;
 	r_cons_singleton ()->color = use_color;
