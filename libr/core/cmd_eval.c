@@ -112,7 +112,6 @@ static void list_themes_in_path(RList *list, const char *path) {
 		}
 	}
 	r_list_free (files);
-	R_FREE (path);
 }
 
 R_API RList *r_core_list_themes(RCore *core) {
