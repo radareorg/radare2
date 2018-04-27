@@ -4742,7 +4742,9 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 		if (hint && hint->bits) {
 			setBits = hint->bits;
 		}
-		r_config_set_i (core->config, "asm.bits", setBits);
+		if (setBits != core->assembler->bits) {
+			r_config_set_i (core->config, "asm.bits", setBits);
+		}
 		if (r_anal_op (core->anal, &op, addr, buf + bufi, bsz - bufi, 0) > 0) {
 			if (op.size < 1) {
 				op.size = minop;
