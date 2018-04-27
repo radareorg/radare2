@@ -2331,7 +2331,7 @@ static bool initFcnRefs(RAnal *anal, RAnalFunction *fcn) {
 
 static bool initFcnXrefs(RAnal *anal, RAnalFunction *fcn) {
 	fcn->xrefs = r_anal_xref_get_cb (anal, &xref_fcn_cmp, (void*)fcn);
-	return fcn->refs? true: false;
+	return fcn->xrefs? true: false;
 }
 
 R_API RList *r_anal_fcn_get_refs(RAnal *anal, RAnalFunction *fcn) {
