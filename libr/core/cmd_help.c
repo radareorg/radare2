@@ -119,6 +119,7 @@ static const char *help_msg_question[] = {
 static const char *help_msg_question_v[] = {
 	"Usage: ?v [$.]","","",
 	"$$", "", "here (current virtual seek)",
+	"$$$", "", "current non-temporary virtual seek",
 	"$?", "", "last comparison value",
 	"$alias", "=value", "Alias commands (simple macros)",
 	"$b", "", "block size",
@@ -664,8 +665,8 @@ static int cmd_help(void *data, const char *input) {
 		} else {
 			int i = 0;
 			const char *vars[] = {
-				"$$", "$?", "$b", "$B", "$F", "$Fj", "$Ff", "$FB", "$Fb", "$Fs", "$FE", "$FS", "$FI",
-				"$c", "$r", "$D", "$DD", "$e", "$f", "$j", "$Ja", "$l", "$m", "$M", "$o",
+				"$$", "$$$", "$?", "$b", "$B", "$F", "$Fj", "$Ff", "$FB", "$Fb", "$Fs", "$FE", "$FS",
+				"$FI", "$c", "$r", "$D", "$DD", "$e", "$f", "$j", "$Ja", "$l", "$m", "$M", "$o",
 				"$p", "$P", "$s", "$S", "$SS", "$v", "$w", NULL
 			};
 			while (vars[i]) {
