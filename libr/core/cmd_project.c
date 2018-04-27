@@ -18,7 +18,7 @@ static const char *help_msg_P[] = {
 	"PS", " [file]", "save script file",
 	"P-", " [file]", "delete project (alias for Pd)",
 	"NOTE:", "", "See 'e??prj.'",
-	"NOTE:", "", "project are stored in ~/.config/radare2/projects",
+	"NOTE:", "", "project are stored in " R_JOIN_2_PATHS("~", R2_HOME_PROJECTS),
 	NULL
 };
 

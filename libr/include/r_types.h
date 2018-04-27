@@ -190,6 +190,11 @@ extern "C" {
 #define R_SYS_HOME "HOME"
 #endif
 
+#define R_JOIN_2_PATHS(p1, p2) p1 R_SYS_DIR p2
+#define R_JOIN_3_PATHS(p1, p2, p3) p1 R_SYS_DIR p2 R_SYS_DIR p3
+#define R_JOIN_4_PATHS(p1, p2, p3, p4) p1 R_SYS_DIR p2 R_SYS_DIR p3 R_SYS_DIR p4
+#define R_JOIN_5_PATHS(p1, p2, p3, p4, p5) p1 R_SYS_DIR p2 R_SYS_DIR p3 R_SYS_DIR p4 R_SYS_DIR p5
+
 #ifndef __packed
 #define __packed __attribute__((__packed__))
 #endif

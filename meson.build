@@ -88,53 +88,49 @@ endif
 
 if host_machine.system() == 'windows'
   r2_prefix = '.'
-  r2_libdir = get_option('r2_libdir')
-  if r2_libdir == ''
-    r2_libdir = 'lib'
-  endif
-  r2_incdir = get_option('r2_incdir')
-  if r2_incdir == ''
-    r2_incdir = 'include/libr'
-  endif
-  r2_datdir = get_option('r2_datdir')
-  if r2_datdir == ''
-    r2_datdir = 'share'
-  endif
-  r2_wwwroot = get_option('r2_wwwroot')
-  if r2_wwwroot == ''
-    r2_wwwroot = join_paths(r2_datdir, 'radare2', r2_version, 'www')
-  endif
-  r2_sdbdir = get_option('r2_sdbdir')
-  if r2_sdbdir == ''
-    r2_sdbdir = join_paths(r2_datdir, 'radare2', r2_version)
-  endif
-  r2_zignsdir = get_option('r2_zignsdir')
-  if r2_zignsdir == ''
-    r2_zignsdir = join_paths(r2_datdir, 'radare2', r2_version, 'zigns')
-  endif
-  r2_themesdir = get_option('r2_themesdir')
-  if r2_themesdir == ''
-    r2_themesdir = join_paths(r2_datdir, 'radare2', r2_version, 'cons')
-  endif
-  r2_fortunesdir = get_option('r2_fortunesdir')
-  if r2_fortunesdir == ''
-    r2_fortunesdir = join_paths(r2_datdir, 'doc/radare2')
-  endif
-  r2_huddir = get_option('r2_huddir')
-  if r2_huddir == ''
-    r2_huddir = join_paths(r2_datdir, 'radare2', r2_version, 'hud')
-  endif
+  r2_libdir = 'lib'
+  r2_incdir = 'include/libr'
+  r2_datdir = 'share'
+
+  opts1 = ['r2_libdir', 'r2_incdir', 'r2_datdir']
+  foreach opt : opts1
+    val = get_option(opt)
+    if val != ''
+      set_variable(opt, val)
+    endif
+  endforeach
+
+  r2_wwwroot = join_paths(r2_datdir, 'radare2', r2_version, 'www')
+  r2_sdb = join_paths(r2_datdir, 'radare2', r2_version)
+  r2_zigns = join_paths(r2_datdir, 'radare2', r2_version, 'zigns')
+  r2_themes = join_paths(r2_datdir, 'radare2', r2_version, 'cons')
+  r2_fortunes = join_paths(r2_datdir, 'doc/radare2')
+  r2_hud = join_paths(r2_datdir, 'radare2', r2_version, 'hud')
+
+  opts2 = ['r2_wwwroot', 'r2_sdb', 'r2_zigns', 'r2_themes', 'r2_fortunes', 'r2_hud']
+  foreach opt : opts2
+    val = get_option(opt)
+    if val != ''
+      set_variable(opt, val)
+    endif
+  endforeach
+
+  foreach opt : opts1 + opts2
+    val = get_variable(opt)
+    val = '\\\\'.join(val.split('/'))
+    set_variable(opt, val)
+  endforeach
 else
   r2_prefix = get_option('prefix')
   r2_libdir = join_paths(r2_prefix, get_option('libdir'))
   r2_incdir = join_paths(r2_prefix, get_option('includedir'), 'libr')
   r2_datdir = join_paths(r2_prefix, get_option('datadir'))
   r2_wwwroot = join_paths(r2_datdir, 'radare2', r2_version, 'www')
-  r2_sdbdir = join_paths(get_option('datadir'), 'radare2', r2_version)
-  r2_zignsdir = join_paths(get_option('datadir'), 'radare2', r2_version, 'zigns')
-  r2_themesdir = join_paths(get_option('datadir'), 'radare2', r2_version, 'cons')
-  r2_fortunesdir = join_paths(get_option('datadir'), 'doc/radare2')
-  r2_huddir = join_paths(get_option('datadir'), 'radare2', r2_version, 'hud')
+  r2_sdb = join_paths(get_option('datadir'), 'radare2', r2_version)
+  r2_zigns = join_paths(get_option('datadir'), 'radare2', r2_version, 'zigns')
+  r2_themes = join_paths(get_option('datadir'), 'radare2', r2_version, 'cons')
+  r2_fortunes = join_paths(get_option('datadir'), 'doc/radare2')
+  r2_hud = join_paths(get_option('datadir'), 'radare2', r2_version, 'hud')
 endif
 
 # load plugin configuration
@@ -166,11 +162,11 @@ userconf.set('LIBDIR', r2_libdir)
 userconf.set('INCLUDEDIR', r2_incdir)
 userconf.set('DATADIR', r2_datdir)
 userconf.set('WWWROOT', r2_wwwroot)
-userconf.set('SDBDIR', r2_sdbdir)
-userconf.set('ZIGNSDIR', r2_zignsdir)
-userconf.set('THEMESDIR', r2_themesdir)
-userconf.set('FORTUNESDIR', r2_fortunesdir)
-userconf.set('HUDDIR', r2_huddir)
+userconf.set('SDB', r2_sdb)
+userconf.set('ZIGNS', r2_zigns)
+userconf.set('THEMES', r2_themes)
+userconf.set('FORTUNES', r2_fortunes)
+userconf.set('HUD', r2_hud)
 userconf.set('HAVE_LIB_MAGIC', 0)
 userconf.set('USE_LIB_MAGIC', 0)
 userconf.set('HAVE_OPENSSL', 0)

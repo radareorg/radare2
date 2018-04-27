@@ -174,22 +174,22 @@ static int main_help(int line) {
 		" -z, -zz      do not load strings or load them even in raw\n");
 	}
 	if (line == 2) {
-		char *homedir = r_str_home (R2_HOME_CFGDIR);
+		char *homedir = r_str_home (R2_HOME_CONFIGDIR);
 		printf (
 		"Scripts:\n"
 		" system       ${R2_PREFIX}/share/radare2/radare2rc\n"
-		" user         ~/.radare2rc ${RHOMEDIR}/radare2/radare2rc (and radare2rc.d/)\n"
+		" user         ~/.radare2rc " R_JOIN_2_PATHS("~", R2_HOME_RC) " (and " R_JOIN_3_PATHS("~", R2_HOME_RC_DIR,"") ")\n"
 		" file         ${filename}.r2\n"
 		"Plugins:\n"
-		" binrc        ~/"R2_HOME_BINRC R_SYS_DIR"bin-<format>/ (elf, elf64, mach0, ..)\n"
+		" binrc        " R_JOIN_4_PATHS("~", R2_HOME_BINRC, "bin-<format>",  "") " (elf, elf64, mach0, ..)\n"
 		" plugins      "R2_PREFIX"/lib/radare2/last\n"
-		" USER_PLUGINS ~/"R2_HOME_PLUGINS"\n"
+		" USER_PLUGINS " R_JOIN_2_PATHS("~", R2_HOME_PLUGINS)"\n"
 		" LIBR_PLUGINS "R2_PREFIX"/lib/radare2/"R2_VERSION"\n"
-		" USER_ZIGNS   ~/"R2_HOME_ZIGNS"\n"
+		" USER_ZIGNS   " R_JOIN_2_PATHS("~", R2_HOME_ZIGNS) "\n"
 		"Environment:\n"
 		" RHOMEDIR     %s\n" // TODO: rename to RHOME R2HOME?
 		" RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
-		" MAGICPATH    "R_MAGIC_PATH"\n"
+		" MAGICPATH    "R2_SDB_MAGIC"\n"
 		" R_DEBUG      if defined, show error messages and crash signal\n"
 		" VAPIDIR      path to extra vapi directory\n"
 		" R2_NOPLUGINS do not load r2 shared plugins\n"
@@ -206,7 +206,7 @@ static int main_help(int line) {
 
 static int main_print_var(const char *var_name) {
 	int i = 0;
-	char *homedir = r_str_home (R2_HOME_CFGDIR);
+	char *homedir = r_str_home (R2_HOME_CONFIGDIR);
 	char *homeplugs = r_str_home (R2_HOME_PLUGINS);
 	char *homezigns = r_str_home (R2_HOME_ZIGNS);
 	struct radare2_var_t {
@@ -214,7 +214,7 @@ static int main_print_var(const char *var_name) {
 		const char *value;
 	} r2_vars[] = {
 		{ "R2_PREFIX", R2_PREFIX },
-		{ "MAGICPATH", R_MAGIC_PATH },
+		{ "MAGICPATH", R2_SDB_MAGIC },
 		{ "PREFIX", R2_PREFIX },
 		{ "INCDIR", R2_INCDIR },
 		{ "LIBDIR", R2_LIBDIR },
