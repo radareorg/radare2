@@ -566,11 +566,10 @@ static int cb_asmbits(void *user, void *data) {
 	}
 
 	bits = node->i_value;
-	if (bits == core->assembler->bits && bits == core->anal->bits) {
+	if (bits == core->assembler->bits && bits == core->anal->bits && bits == core->dbg->bits) {
 		// early optimization
 		return true;
 	}
-
 	if (bits > 0) {
 		ret = r_asm_set_bits (core->assembler, bits);
 		if (!ret) {
