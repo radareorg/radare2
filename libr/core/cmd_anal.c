@@ -4745,14 +4745,14 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 				if (!anal_is_bad_call (core, from, to, addr, buf, bufi)) {
 					fcn = r_anal_get_fcn_in (core->anal, op.jump, R_ANAL_FCN_TYPE_ROOT);
 					if (!fcn) {
-						r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_NULL, depth);
+						r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_CALL, depth);
 					}
 				}
 #else
 				// add xref here
 				r_anal_xrefs_set (core->anal, R_ANAL_REF_TYPE_CALL, addr, op.jump);
 				if (r_io_is_valid_offset (core->io, op.jump, 1)) {
-					r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_NULL, depth);
+					r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_CALL, depth);
 				}
 #endif
 			}
