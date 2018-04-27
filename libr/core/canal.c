@@ -536,6 +536,27 @@ static int r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) {
 	return 1;
 }
 
+static void function_rename(RFlag *flags, RAnalFunction *fcn) {
+	const char *locname = "loc.";
+	const size_t locsize = strlen (locname);
+	char *fcnname = fcn->name;
+
+	if (strncmp (fcn->name, locname, locsize) == 0) {
+		const char *fcnpfx, *restofname;
+		RFlagItem *f;
+
+		fcn->type = R_ANAL_FCN_TYPE_FCN;
+		fcnpfx = r_anal_fcn_type_tostring (fcn->type);
+		restofname = fcn->name + locsize;
+		fcn->name = r_str_newf ("%s.%s", fcnpfx, restofname);
+
+		f = r_flag_get_i (flags, fcn->addr);
+		r_flag_rename (flags, f, fcn->name);
+
+		free (fcnname);
+	}
+}
+
 static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth) {
 	if (depth < 0) {
 //		printf ("Too deep for 0x%08"PFMT64x"\n", at);
@@ -1513,6 +1534,13 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	fcn = r_anal_get_fcn_in (core->anal, at, 0);
 	if (fcn) {
 		if (fcn->addr == at) {
+			// if the function was already analyzed as a "loc.",
+			// convert it to function and rename it to "fcn.",
+			// because we found a call to this address
+			if (reftype == R_ANAL_REF_TYPE_CALL && fcn->type == R_ANAL_FCN_TYPE_LOC) {
+				function_rename (core->flags, fcn);
+			}
+
 			return 0;  // already analyzed function
 		}
 		if (r_anal_fcn_is_in_offset (fcn, from)) { // inner function
