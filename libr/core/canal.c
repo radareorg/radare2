@@ -437,7 +437,7 @@ static void r_anal_set_stringrefs(RCore *core, RAnalFunction *fcn) {
 	r_list_foreach (refs, iter, ref) {
 		if (ref->type == R_ANAL_REF_TYPE_DATA &&
 		    r_bin_is_string (core->bin, ref->addr)) {
-			ref->type = R_ANAL_REF_TYPE_STRING;
+			r_anal_xrefs_set (core->anal, R_ANAL_REF_TYPE_STRING, ref->at, ref->addr);
 		}
 	}
 }
