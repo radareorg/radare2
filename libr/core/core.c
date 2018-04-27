@@ -608,7 +608,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			}
 			return 0LL; // maybe // return UT64_MAX;
 		case '?': return core->num->value;
-		case '$': return core->offset;
+		case '$': return str[2] == '$' ? core->prompt_offset : core->offset;
 		case 'o':
 			{
 				RIOSection *s;
