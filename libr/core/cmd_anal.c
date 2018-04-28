@@ -4236,11 +4236,11 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		break;
 	case 'i': // "aei"
 		switch (input[1]) {
-		case 's':
+		case 's': // "aeis"
 		case 'm': // "aeim"
 			cmd_esil_mem (core, input + 2);
 			break;
-		case 'p': // initialize pc = $$
+		case 'p': // "aeip" // initialize pc = $$
 			r_core_cmd0 (core, "ar PC=$$");
 			break;
 		case '?':
@@ -4691,51 +4691,53 @@ ctrl_c:
 
 static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 	RAnalOp op;
-	int bufi;
 	int depth = r_config_get_i (core->config, "anal.depth");
 	const int addrbytes = core->io->addrbytes;
 	const int bsz = 4096;
-	ut8 *buf;
-	ut8 *block;
-	bufi = 0;
+	int bufi = 0;
+	int bufi_max = bsz - 16;
 	if (addr_end - addr > UT32_MAX) {
 		return;
 	}
-	buf = malloc (bsz);
-	block = malloc (bsz);
-	if (!buf || !block) {
+	ut8 *buf = malloc (bsz);
+	ut8 *block0 = calloc (1, bsz);
+	ut8 *block1 = malloc (bsz);
+	if (!buf || !block0 || !block1) {
 		eprintf ("Error: cannot allocate buf or block\n");
 		free (buf);
-		free (block);
+		free (block0);
+		free (block1);
 		return;
 	}
-
+	memset (block1, -1, bsz);
 	int minop = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	if (minop < 1) {
 		minop = 1;
 	}
+	int setBits = r_config_get_i (core->config, "asm.bits");
+	r_cons_break_push (NULL, NULL);
 	while (addr < addr_end) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
 		// TODO: too many ioreads here
-		if (bufi > 4000) {
+		if (bufi > bufi_max) {
 			bufi = 0;
 		}
 		if (!bufi) {
-			r_io_read_at (core->io, addr, buf, bsz);
+			(void)r_io_read_at (core->io, addr, buf, bsz);
 		}
-		memset (block, -1, bsz);
-		if (!memcmp (buf, block, bsz)) {
+		if (!memcmp (buf, block0, bsz) || !memcmp (buf, block1, bsz)) {
 			//eprintf ("Error: skipping uninitialized block \n");
 			addr += bsz;
 			continue;
 		}
-		memset (block, 0, bsz);
-		if (!memcmp (buf, block, bsz)) {
-			//eprintf ("Error: skipping uninitialized block \n");
-			addr += bsz;
-			continue;
+		RAnalHint *hint = r_anal_hint_get (core->anal, addr);
+		if (hint && hint->bits) {
+			setBits = hint->bits;
+		}
+		if (setBits != core->assembler->bits) {
+			r_config_set_i (core->config, "asm.bits", setBits);
 		}
 		if (r_anal_op (core->anal, &op, addr, buf + bufi, bsz - bufi, 0) > 0) {
 			if (op.size < 1) {
@@ -4743,12 +4745,10 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 			}
 			if (op.type == R_ANAL_OP_TYPE_CALL) {
 #if JAYRO_03
-#error FUCK
 				if (!anal_is_bad_call (core, from, to, addr, buf, bufi)) {
 					fcn = r_anal_get_fcn_in (core->anal, op.jump, R_ANAL_FCN_TYPE_ROOT);
 					if (!fcn) {
-						r_core_anal_fcn (core, op.jump, addr,
-						  R_ANAL_REF_TYPE_NULL, depth);
+						r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_NULL, depth);
 					}
 				}
 #else
@@ -4759,7 +4759,6 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 				}
 #endif
 			}
-
 		} else {
 			op.size = minop;
 		}
@@ -4770,8 +4769,10 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 		bufi += addrbytes * op.size;
 		r_anal_op_fini (&op);
 	}
+	r_cons_break_pop ();
 	free (buf);
-	free (block);
+	free (block0);
+	free (block1);
 }
 
 static void cmd_anal_calls(RCore *core, const char *input, bool only_print_flag) {
