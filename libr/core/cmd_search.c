@@ -1228,7 +1228,6 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	RListIter *itermap = NULL;
 	char *tok, *gregexp = NULL;
 	char *grep_arg = NULL, *grep_dup = NULL;
-	char *grepstr = NULL;
 	bool json_first = true;
 	char *rx = NULL;
 	int delta = 0;
@@ -1276,8 +1275,8 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 		}
 	}
 	if (grep_arg) {
-		grep_dup = strdup (grep_arg);
-		grep_arg = grepstr = r_str_replace (grep_dup, ",,", ";", true);
+		grep_dup = r_str_dup (NULL, grep_arg);
+		grep_arg = r_str_replace (grep_dup, ",,", ";", true);
 		grep = grep_arg;
 	}
 
