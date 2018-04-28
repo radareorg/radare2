@@ -3103,7 +3103,6 @@ void cmd_anal_reg(RCore *core, const char *str) {
 			free (ostr);
 			return;
 		}
-		// if !arg
 		char name[32];
 		int i = 1, j;
 		while (str[i]) {
@@ -4695,17 +4694,14 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 	int depth = r_config_get_i (core->config, "anal.depth");
 	const int addrbytes = core->io->addrbytes;
 	const int bsz = 4096;
-	ut8 *buf;
-	ut8 *block0;
-	ut8 *block1;
 	int bufi = 0;
 	int bufi_max = bsz - 16;
 	if (addr_end - addr > UT32_MAX) {
 		return;
 	}
-	buf = malloc (bsz);
-	block0 = malloc (bsz);
-	block1 = malloc (bsz);
+	ut8 *buf = malloc (bsz);
+	ut8 *block0 = calloc (1, bsz);
+	ut8 *block1 = malloc (bsz);
 	if (!buf || !block0 || !block1) {
 		eprintf ("Error: cannot allocate buf or block\n");
 		free (buf);
@@ -4714,7 +4710,6 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 		return;
 	}
 	memset (block1, -1, bsz);
-	memset (block0, 0, bsz);
 	int minop = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	if (minop < 1) {
 		minop = 1;
@@ -4730,7 +4725,6 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 			bufi = 0;
 		}
 		if (!bufi) {
-			memset (buf, 0, bsz);
 			(void)r_io_read_at (core->io, addr, buf, bsz);
 		}
 		if (!memcmp (buf, block0, bsz) || !memcmp (buf, block1, bsz)) {
