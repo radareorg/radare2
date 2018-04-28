@@ -514,7 +514,7 @@ static int r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refd
 static int r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) {
 	RListIter *iter;
 	RAnalRef *ref;
-	RList *refs = r_anal_fcn_get_refs_sorted (core->anal, fcn);
+	RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
 
 	r_list_foreach (refs, iter, ref) {
 		if (ref->addr == UT64_MAX) {
