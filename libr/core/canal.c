@@ -400,6 +400,8 @@ static char *anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int dump) {
 R_API void r_core_anal_autoname_all_fcns(RCore *core) {
 	RListIter *it;
 	RAnalFunction *fcn;
+
+	r_anal_fcn_refs_preload (core->anal);
 	r_list_foreach (core->anal->fcns, it, fcn) {
 		char *name = anal_fcn_autoname (core, fcn, 0);
 		if (name && (!strncmp (fcn->name, "fcn.", 4) || \

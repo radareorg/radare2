@@ -95,7 +95,7 @@ static void setxref(dict *m, ut64 from, ut64 to, int type) {
 			dict_set (m, from, to, d);
 		}
 	}
-	bool res = dict_set (d, to, from, (void *)r_anal_xrefs_type_tostring (type));
+	dict_set (d, to, from, (void *)r_anal_xrefs_type_tostring (type));
 }
 
 static void delref(dict *m, ut64 from, ut64 to, int type) {
@@ -415,4 +415,47 @@ R_API RList *r_anal_fcn_get_refs_sorted(RAnal *anal, RAnalFunction *fcn) {
 R_API RList *r_anal_fcn_get_xrefs_sorted(RAnal *anal, RAnalFunction *fcn) {
 	init_ref_sorted (anal, fcn);
 	return fcn->xrefs;
+}
+
+static int refs_preload_append(dictkv *kv, RAnal *anal) {
+	RAnalFunction *fcn = r_anal_get_fcn_in (anal, kv->v, 0);
+	if (fcn) {
+		return appendRef (kv, fcn->refs);
+	}
+	return 0;
+}
+
+static int xrefs_preload_append(dictkv *kv, RAnal *anal) {
+	RAnalFunction *fcn = r_anal_get_fcn_in (anal, kv->v, 0);
+	if (fcn) {
+		return appendRef (kv, fcn->xrefs);
+	}
+	return 0;
+}
+
+static int refs_preload_cb(dictkv *kv, RAnal *u) {
+	dict_foreach (kv->u, (dictkv_cb)refs_preload_append, u);
+	return 0;
+}
+
+static int xrefs_preload_cb(dictkv *kv, RAnal *u) {
+	dict_foreach (kv->u, (dictkv_cb)xrefs_preload_append, u);
+	return 0;
+}
+
+R_API void r_anal_fcn_refs_preload(RAnal *anal) {
+	RListIter *it;
+	RAnalFunction *fcn;
+	r_list_foreach (anal->fcns, it, fcn) {
+		fcn->ref_cache_sorted = -1;
+
+		r_list_free (fcn->refs);
+		fcn->refs = r_list_newf (r_anal_ref_free);
+		r_list_free (fcn->xrefs);
+		fcn->xrefs = r_list_newf (r_anal_ref_free);
+		fcn->ref_cache = anal->ref_cache;
+	}
+
+	dict_foreach (anal->dict_refs, (dictkv_cb)refs_preload_cb, anal);
+	dict_foreach (anal->dict_xrefs, (dictkv_cb)xrefs_preload_cb, anal);
 }
