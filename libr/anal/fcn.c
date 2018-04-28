@@ -2334,6 +2334,31 @@ static bool initFcnXrefs(RAnal *anal, RAnalFunction *fcn) {
 	return fcn->xrefs? true: false;
 }
 
+static int ref_cmp(const RAnalRef *a, const RAnalRef *b) {
+	if (a->at < b->at) {
+		return -1;
+	} else if (a->at > b->at) {
+		return 1;
+	} else {
+		if (a->addr < b->addr) {
+			return -1;
+		} else if (a->addr > b->addr) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+static void init_ref_sorted(RAnal *anal, RAnalFunction *fcn) {
+	if (anal->ref_cache != fcn->ref_cache_sorted) {
+		fcn->refs = r_anal_fcn_get_refs (anal, fcn);
+		fcn->xrefs = r_anal_fcn_get_xrefs (anal, fcn);
+		r_list_sort (fcn->refs, (RListComparator)ref_cmp);
+		r_list_sort (fcn->xrefs, (RListComparator)ref_cmp);
+		fcn->ref_cache_sorted = anal->ref_cache;
+	}
+}
+
 R_API RList *r_anal_fcn_get_refs(RAnal *anal, RAnalFunction *fcn) {
 	if (anal->ref_cache != fcn->ref_cache) {
 		if (initFcnRefs (anal, fcn) && initFcnXrefs (anal, fcn)) {
@@ -2349,5 +2374,15 @@ R_API RList *r_anal_fcn_get_xrefs(RAnal *anal, RAnalFunction *fcn) {
 			fcn->ref_cache = anal->ref_cache;
 		}
 	}
+	return fcn->xrefs;
+}
+
+R_API RList *r_anal_fcn_get_refs_sorted(RAnal *anal, RAnalFunction *fcn) {
+	init_ref_sorted (anal, fcn);
+	return fcn->refs;
+}
+
+R_API RList *r_anal_fcn_get_xrefs_sorted(RAnal *anal, RAnalFunction *fcn) {
+	init_ref_sorted (anal, fcn);
 	return fcn->xrefs;
 }

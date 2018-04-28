@@ -356,7 +356,7 @@ R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
 	if (fcn) {
 		RAnalRef *ref;
 		RListIter *iter;
-		RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
+		RList *refs = r_anal_fcn_get_refs_sorted (core->anal, fcn);
 		r_list_foreach (refs, iter, ref) {
 		//	eprintf ("0x%x -> 0x%x %c\n", ref->at, ref->addr, ref->type);
 			RFlagItem *f = r_flag_get_i (core->flags, ref->addr);
@@ -510,7 +510,7 @@ static int r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refd
 static int r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) {
 	RListIter *iter, *tmp;
 	RAnalRef *ref;
-	RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
+	RList *refs = r_anal_fcn_get_refs_sorted (core->anal, fcn);
 
 	r_list_foreach (refs, iter, ref) {
 		if (ref->addr == UT64_MAX) {
@@ -1549,7 +1549,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			// XXX: use r_anal-xrefs api and sdb
 			// If the xref is new, add it
 			// avoid dupes
-			xrefs = r_anal_fcn_get_xrefs (core->anal, fcn);
+			xrefs = r_anal_fcn_get_xrefs_sorted (core->anal, fcn);
 			r_list_foreach (xrefs, iter, ref) {
 				if (from == ref->addr) {
 					return true;
@@ -1606,7 +1606,7 @@ R_API void r_core_anal_codexrefs(RCore *core, ut64 addr, int fmt) {
 		const char *me = fcn->name;
 		RListIter *iter;
 		RAnalRef *ref;
-		RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
+		RList *refs = r_anal_fcn_get_refs_sorted (core->anal, fcn);
 		r_cons_printf ("e graph.layout=1\n");
 		r_cons_printf ("ag-\n");
 		r_cons_printf ("agn %s\n", me);
@@ -1677,7 +1677,7 @@ repeat:
 		if (addr != UT64_MAX && addr != fcni->addr) {
 			continue;
 		}
-		RList *refs = r_anal_fcn_get_refs (core->anal, fcni);
+		RList *refs = r_anal_fcn_get_refs_sorted (core->anal, fcni);
 		if (!fmt) {
 			r_cons_printf ("0x%08"PFMT64x"\n", fcni->addr);
 		} else if (fmt == 1 && isGML) {
@@ -1806,7 +1806,7 @@ repeat:
 				}
 			} else if (fmt == 2) {
 				if (fr) {
-					RList *refs1 = r_anal_fcn_get_refs (core->anal, fr);
+					RList *refs1 = r_anal_fcn_get_refs_sorted (core->anal, fr);
 					if (!hideempty || (hideempty && r_list_length (refs1) > 0)) {
 						if (usenames) {
 							r_cons_printf ("%s\"%s\"", first2?",":"", fr->name);
@@ -2089,7 +2089,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 				fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?"UNMATCH":"NEW");
 	}
 	int outdegree = 0;
-	refs = r_anal_fcn_get_refs (core->anal, fcn);
+	refs = r_anal_fcn_get_refs_sorted (core->anal, fcn);
 	if (!r_list_empty (refs)) {
 		r_cons_printf (",\"callrefs\":[");
 		r_list_foreach (refs, iter, refi) {
@@ -2120,7 +2120,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 	}
 
 	int indegree = 0;
-	xrefs = r_anal_fcn_get_xrefs (core->anal, fcn);
+	xrefs = r_anal_fcn_get_xrefs_sorted (core->anal, fcn);
 	if (!r_list_empty (xrefs)) {
 		first = true;
 		r_cons_printf (",\"codexrefs\":[");
@@ -2223,7 +2223,7 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	/* Show references */
 	RListIter *refiter;
 	RAnalRef *refi;
-	RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
+	RList *refs = r_anal_fcn_get_refs_sorted (core->anal, fcn);
 	r_list_foreach (refs, refiter, refi) {
 		switch (refi->type) {
 		case R_ANAL_REF_TYPE_CALL:
@@ -2269,7 +2269,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	r_cons_printf ("\nend-bbs: %d", ebbs);
 	r_cons_printf ("\ncall-refs: ");
 	int outdegree = 0;
-	refs = r_anal_fcn_get_refs (core->anal, fcn);
+	refs = r_anal_fcn_get_refs_sorted (core->anal, fcn);
 	r_list_foreach (refs, iter, refi) {
 		if (refi->type == R_ANAL_REF_TYPE_CALL) {
 			outdegree++;
@@ -2288,7 +2288,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 
 	int indegree = 0;
 	r_cons_printf ("\ncode-xrefs: ");
-	xrefs = r_anal_fcn_get_xrefs (core->anal, fcn);
+	xrefs = r_anal_fcn_get_xrefs_sorted (core->anal, fcn);
 	r_list_foreach (xrefs, iter, refi) {
 		if (refi->type == R_ANAL_REF_TYPE_CODE || refi->type == R_ANAL_REF_TYPE_CALL) {
 			indegree++;

@@ -2571,7 +2571,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				if (fcn) {
 					RAnalRef *ref;
 					RListIter *iter;
-					RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
+					RList *refs = r_anal_fcn_get_refs_sorted (core->anal, fcn);
 					r_list_foreach (refs, iter, ref) {
 						if (input[2] == 'j') {
 							r_cons_printf ("{\"type\":\"%c\",\"from\":%"PFMT64d",\"to\":%"PFMT64d"}%s",
@@ -2686,7 +2686,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			if (fcn) {
 				RAnalRef *ref;
 				RListIter *iter;
-				RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
+				RList *refs = r_anal_fcn_get_refs_sorted (core->anal, fcn);
 				r_list_foreach (refs, iter, ref) {
 					if (ref->addr == UT64_MAX) {
 						//eprintf ("Warning: ignore 0x%08"PFMT64x" call 0x%08"PFMT64x"\n", ref->at, ref->addr);
@@ -2706,7 +2706,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					if (f) {
 						RListIter *iter;
 						RAnalRef *ref;
-						RList *refs1 = r_anal_fcn_get_refs (core->anal, f);
+						RList *refs1 = r_anal_fcn_get_refs_sorted (core->anal, f);
 						r_list_foreach (refs1, iter, ref) {
 							if (!r_io_is_valid_offset (core->io, ref->addr, !core->anal->opt.noncode)) {
 								continue;
@@ -5274,7 +5274,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			list = list_ = r_anal_xrefs_get_from (core->anal, addr);
 			if (!list) {
 				RAnalFunction * fcn = r_anal_get_fcn_in (core->anal, addr, 0);
-				list = r_anal_fcn_get_refs (core->anal, fcn);
+				list = r_anal_fcn_get_refs_sorted (core->anal, fcn);
 			}
 		} else {
 			list = r_anal_refs_get (core->anal, addr);

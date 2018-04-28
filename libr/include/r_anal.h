@@ -297,6 +297,7 @@ typedef struct r_anal_type_function_t {
 	//RList *locals; // list of local labels -> moved to anal->sdb_fcns
 	RList *bbs;
 	ut64 ref_cache;
+	ut64 ref_cache_sorted;
 #if FCN_OLD
 	RList *refs;
 	RList *xrefs;
@@ -1445,6 +1446,8 @@ R_API RList *r_anal_xrefs_get_from (RAnal *anal, ut64 from);
 R_API void r_anal_xrefs_list(RAnal *anal, int rad);
 R_API RList *r_anal_fcn_get_refs(RAnal *anal, RAnalFunction *fcn);
 R_API RList *r_anal_fcn_get_xrefs(RAnal *anal, RAnalFunction *fcn);
+R_API RList *r_anal_fcn_get_refs_sorted(RAnal *anal, RAnalFunction *fcn);
+R_API RList *r_anal_fcn_get_xrefs_sorted(RAnal *anal, RAnalFunction *fcn);
 R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr);
 R_API int r_anal_xrefs_set (RAnal *anal, const RAnalRefType type, ut64 from, ut64 to);
 R_API int r_anal_xrefs_deln (RAnal *anal, const RAnalRefType type, ut64 from, ut64 to);

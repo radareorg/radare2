@@ -327,9 +327,9 @@ static ut64 getref (RCore *core, int n, char t, int type) {
 	}
 #if FCN_OLD
 	if (t == 'r') {
-		list = r_anal_fcn_get_refs (core->anal, fcn);
+		list = r_anal_fcn_get_refs_sorted (core->anal, fcn);
 	} else {
-		list = r_anal_fcn_get_xrefs (core->anal, fcn);
+		list = r_anal_fcn_get_xrefs_sorted (core->anal, fcn);
 	}
 	r_list_foreach (list, iter, r) {
 		if (r->type == type) {
