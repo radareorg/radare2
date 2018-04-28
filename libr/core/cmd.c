@@ -1410,7 +1410,7 @@ static int cmd_system(void *data, const char *input) {
 	case '-':
 		if (input[1]) {
 			r_line_hist_free();
-			r_line_hist_save (R2_HOMEDIR"/history");
+			r_line_hist_save (R2_HOME_HISTORY);
 		} else {
 			r_line_hist_free();
 		}
@@ -1442,8 +1442,8 @@ static int cmd_system(void *data, const char *input) {
 				free (cmd);
 			} //else eprintf ("Error setting up system environment\n");
 		} else {
-			eprintf ("History saved to "R2_HOMEDIR"/history\n");
-			r_line_hist_save (R2_HOMEDIR"/history");
+			eprintf ("History saved to "R2_HOME_HISTORY"\n");
+			r_line_hist_save (R2_HOME_HISTORY);
 		}
 		break;
 	case '\0':

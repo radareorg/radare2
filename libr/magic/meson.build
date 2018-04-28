@@ -15,13 +15,13 @@ r_magic = library('r_magic', files,
   link_with: [r_util],
   install: true,
   implicit_include_directories: false,
-  soversion: r2libversion
+  soversion: r2_libversion
 )
 
 pkgconfig_mod.generate(
   libraries: [r_magic],
   subdirs: 'libr',
-  version: r2version,
+  version: r2_version,
   name: 'r_magic',
   filebase: 'r_magic',
   requires: [

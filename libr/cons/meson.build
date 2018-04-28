@@ -22,13 +22,13 @@ r_cons = library('r_cons', files,
   link_with: [r_util, libr_shlr],
   install: true,
   implicit_include_directories: false,
-  soversion: r2libversion
+  soversion: r2_libversion
 )
 
 pkgconfig_mod.generate(
   libraries: [r_cons],
   subdirs: 'libr',
-  version: r2version,
+  version: r2_version,
   name: 'r_cons',
   filebase: 'r_cons',
   requires: [

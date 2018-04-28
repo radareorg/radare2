@@ -3,7 +3,6 @@
 #include <r_core.h>
 #include "r_util.h"
 
-#define DBSPATH "/share/radare2/" R2_VERSION "/fcnsign"
 #define is_in_range(at, from, sz) ((at) >= (from) && (at) < ((from) + (sz)))
 
 #define VA_FALSE    0
@@ -497,35 +496,42 @@ R_API void r_core_anal_type_init(RCore *core) {
 	anal_arch = r_config_get (core->config, "anal.arch");
 	os = r_config_get (core->config, "asm.os");
 	// spaguetti ahead
-	dbpath = sdb_fmt ("%s/"DBSPATH"/types.sdb", dir_prefix);
+	dbpath = sdb_fmt (R_JOIN_3_PATHS("%s", R2_SDB_FCNSIGN, "types.sdb"), dir_prefix);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt ("%s/"DBSPATH"/types-%s.sdb", dir_prefix, anal_arch);
+	dbpath = sdb_fmt (R_JOIN_3_PATHS("%s", R2_SDB_FCNSIGN, "types-%s.sdb"),
+		dir_prefix, anal_arch);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt ("%s/"DBSPATH"/types-%s.sdb", dir_prefix, os);
+	dbpath = sdb_fmt (R_JOIN_3_PATHS("%s", R2_SDB_FCNSIGN, "types-%s.sdb"),
+		dir_prefix, os);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt ("%s/"DBSPATH"/types-%d.sdb", dir_prefix, bits);
+	dbpath = sdb_fmt (R_JOIN_3_PATHS("%s", R2_SDB_FCNSIGN, "types-%d.sdb"),
+		dir_prefix, bits);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt ("%s/"DBSPATH"/types-%s-%d.sdb", dir_prefix, os, bits);
+	dbpath = sdb_fmt (R_JOIN_3_PATHS("%s", R2_SDB_FCNSIGN, "types-%s-%d.sdb"),
+		dir_prefix, os, bits);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt ("%s/"DBSPATH"/types-%s-%d.sdb", dir_prefix, anal_arch, bits);
+	dbpath = sdb_fmt (R_JOIN_3_PATHS("%s", R2_SDB_FCNSIGN, "types-%s-%d.sdb"),
+		dir_prefix, anal_arch, bits);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt ("%s/"DBSPATH"/types-%s-%s.sdb", dir_prefix, anal_arch, os);
+	dbpath = sdb_fmt (R_JOIN_3_PATHS("%s", R2_SDB_FCNSIGN, "types-%s-%s.sdb"),
+		dir_prefix, anal_arch, os);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt ("%s/"DBSPATH"/types-%s-%s-%d.sdb", dir_prefix, anal_arch, os, bits);
+	dbpath = sdb_fmt (R_JOIN_3_PATHS("%s", R2_SDB_FCNSIGN, "types-%s-%s-%d.sdb"),
+		dir_prefix, anal_arch, os, bits);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
@@ -562,7 +568,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		bits = 32;
 	}
 
-	char *dbpath = sdb_fmt ("%s/"DBSPATH"/cc-%s-%d.sdb", dir_prefix, anal_arch, bits);
+	char *dbpath = sdb_fmt ("%s/"R2_SDB_FCNSIGN"/cc-%s-%d.sdb", dir_prefix, anal_arch, bits);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (core->anal->sdb_cc, dbpath);
 	}
@@ -583,7 +589,6 @@ R_API void r_core_anal_cc_init(RCore *core) {
 	sdb_close (sdbs[0]);
 	sdb_free (sdbs[0]);
 }
-#undef DBSPATH
 
 static int bin_info(RCore *r, int mode) {
 	int i, j, v;
@@ -1242,24 +1247,11 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 					if (r_file_exists (filename)) {
 						*db = sdb_new (NULL, filename, 0);
 					} else {
-					// XXX. we have dir.prefix, windows shouldnt work different
-						filename = sdb_fmt ("%s/share/radare2/" R2_VERSION"/format/dll/%s.sdb", r_config_get (r->config, "dir.prefix"), module);
+						const char *dirPrefix = r_sys_prefix (NULL);
+						filename = sdb_fmt (R_JOIN_4_PATHS("%s", R2_SDB_FORMAT, "dll", "%s.sdb"),
+							dirPrefix, module);
 						if (r_file_exists (filename)) {
 							*db = sdb_new (NULL, filename, 0);
-#if __WINDOWS__
-						} else {
-							char invoke_dir[MAX_PATH];
-							if (r_sys_get_src_dir_w32 (invoke_dir)) {
-								filename = sdb_fmt ("%s/share/radare2/"R2_VERSION "/format/dll/%s.sdb", invoke_dir, module);
-							} else {
-								filename = sdb_fmt ("share/radare2/"R2_VERSION"/format/dll/%s.sdb", module);
-							}
-#else
-							filename = sdb_fmt ("%s/share/radare2/" R2_VERSION"/format/dll/%s.sdb", r_config_get (r->config, "dir.prefix"), module);
-							if (r_file_exists (filename)) {
-								*db = sdb_new (NULL, filename, 0);
-							}
-#endif
 						}
 					}
 				}

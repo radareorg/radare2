@@ -46,7 +46,7 @@ static const char *help_msg_ec[] = {
 	"", " ", "",
 	"colors:", "", "rgb:000, red, green, blue, #ff0000, ...",
 	"e scr.color", "=0", "use more colors (0: no color 1: ansi 16, 2: 256, 3: 16M)",
-	"$DATADIR/radare2/cons", "", "~/.config/radare2/cons ./",
+	"$DATADIR/radare2/cons", "", R_JOIN_2_PATHS("~", R2_HOME_THEMES) " ./",
 	NULL
 };
 
@@ -118,13 +118,13 @@ R_API RList *r_core_list_themes(RCore *core) {
 	RList *list = r_list_newf (free);
 	getNext = false;
 
-	char *path = r_str_home (".config/radare2/cons/");
+	char *path = r_str_home (R2_HOME_THEMES R_SYS_DIR);
 	if (path) {
 		list_themes_in_path (list, path);
 		R_FREE (path);
 	}
 
-	path = r_str_r2_prefix ("share/radare2/"R2_VERSION"/cons/");
+	path = r_str_r2_prefix (R2_THEMES R_SYS_DIR);
 	if (path) {
 		list_themes_in_path (list, path);
 		R_FREE (path);
@@ -139,7 +139,7 @@ static void nextpal(RCore *core, int mode) {
 	RListIter *iter;
 	const char *fn;
 	int ctr = 0;
-	char *home = r_str_home (".config/radare2/cons/");
+	char *home = r_str_home (R2_HOME_THEMES R_SYS_DIR);
 
 	getNext = false;
 	if (mode == 'j') {
@@ -179,7 +179,7 @@ static void nextpal(RCore *core, int mode) {
 		R_FREE (home);
 	}
 
-	char *path = r_str_r2_prefix ("share/radare2/"R2_VERSION"/cons/");
+	char *path = r_str_r2_prefix (R2_THEMES R_SYS_DIR);
 	if (path) {
 		files = r_sys_dir (path);
 		r_list_foreach (files, iter, fn) {
@@ -310,11 +310,11 @@ static int cmd_eval(void *data, const char *input) {
 				bool failed = false;
 				char *home, *path, *tmp;
 
-				tmp = r_str_newf (".config/radare2/cons/%s", input + 3);
+				tmp = r_str_newf (R_JOIN_2_PATHS(R2_HOME_THEMES, "%s"), input + 3);
 				home = tmp ? r_str_home (tmp) : NULL;
 				free (tmp);
 
-				tmp = r_str_newf ("share/radare2/"R2_VERSION"/cons/%s", input + 3);
+				tmp = r_str_newf (R_JOIN_2_PATHS(R2_THEMES, "%s"), input + 3);
 				path = tmp ? r_str_r2_prefix (tmp) : NULL;
 				free (tmp);
 
@@ -339,7 +339,8 @@ static int cmd_eval(void *data, const char *input) {
 					eprintf ("Something went wrong\n");
 				}
 			} else if (input[2] == '?') {
-				eprintf ("Usage: eco [themename]  ;load theme from %s/share/radare2/"R2_VERSION"/cons/ (see dir.prefix)\n",
+				eprintf ("Usage: eco [themename]  ;load theme from "
+					R_JOIN_3_PATHS("%s", R2_THEMES, "") " (see dir.prefix)\n",
 					r_sys_prefix (NULL));
 
 			} else {

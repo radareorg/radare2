@@ -55,7 +55,7 @@ foreach file : sdb_files
     build_by_default: true,
     build_always: false,
     install: true,
-    install_dir: join_paths(get_option('datadir'), 'radare2', r2version, 'format/dll')
+    install_dir: join_paths(get_option('datadir'), 'radare2', r2_version, 'format/dll')
   )
 endforeach
 
@@ -70,5 +70,5 @@ format_files = [
 ]
 
 install_data(format_files,
-  install_dir: join_paths(get_option('datadir'), 'radare2', r2version, 'format')
+  install_dir: join_paths(get_option('datadir'), 'radare2', r2_version, 'format')
 )

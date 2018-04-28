@@ -12,7 +12,7 @@ static bool disabled = false;
 
 static bool inHomeWww(const char *path) {
 	bool ret = false;
-	char *homeWww = r_str_home (".config/radare2/www/");
+	char *homeWww = r_str_home (R2_HOME_WWWROOT R_SYS_DIR);
 	if (homeWww) {
 		if (!strncmp (path, homeWww, strlen (homeWww))) {
 			ret = true;

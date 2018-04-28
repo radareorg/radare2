@@ -502,7 +502,7 @@ static void load_scripts_for(RCore *core, const char *name) {
 	// TODO: 
 	char *file;
 	RListIter *iter;
-	char *hdir = r_str_newf (R2_HOMEDIR "/rc.d/bin-%s", name);
+	char *hdir = r_str_newf (R_JOIN_2_PATHS(R2_HOME_BINRC, "bin-%s"), name);
 	char *path = r_str_home (hdir);
 	RList *files = r_sys_dir (path);
 	if (!r_list_empty (files)) {

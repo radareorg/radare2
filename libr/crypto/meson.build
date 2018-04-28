@@ -26,13 +26,13 @@ r_crypto = library('r_crypto', files,
   c_args: ['-DCORELIB=1'],
   install: true,
   implicit_include_directories: false,
-  soversion: r2libversion
+  soversion: r2_libversion
 )
 
 pkg = import('pkgconfig')
 pkg.generate(libraries: [r_crypto],
              subdirs: 'libr',
-             version: r2version,
+             version: r2_version,
              name: 'r_crypto',
              filebase: 'r_crypto',
              requires: [

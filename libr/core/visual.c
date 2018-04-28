@@ -198,10 +198,10 @@ static int zoom = 0;
 
 R_API int r_core_visual_hud(RCore *core) {
 	const char *c = r_config_get (core->config, "hud.path");
-	char *f = r_str_newf ("%s/share/radare2/" R2_VERSION "/hud/main",
-		r_config_get (core->config, "dir.prefix"));
+	char *f = r_str_newf (R_JOIN_3_PATHS("%s", R2_HUD, "main"),
+		r_sys_prefix (NULL));
 	int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-	char *homehud = r_str_home (R2_HOMEDIR "/hud");
+	char *homehud = r_str_home (R2_HOME_HUD);
 	char *res = NULL;
 	char *p = 0;
 	r_cons_singleton ()->color = use_color;

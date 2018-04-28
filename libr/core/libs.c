@@ -86,7 +86,7 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 		free (p);
 	}
 	if (where & R_CORE_LOADLIBS_HOME) {
-		char *homeplugindir = r_str_home (R2_HOMEDIR "/plugins");
+		char *homeplugindir = r_str_home (R2_HOME_PLUGINS);
 		// eprintf ("OPENDIR (%s)\n", homeplugindir);
 		r_lib_opendir (core->lib, homeplugindir);
 		free (homeplugindir);
@@ -103,7 +103,7 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 	}
 #endif
 	// load script plugins
-	char *homeplugindir = r_str_home (R2_HOMEDIR "/plugins");
+	char *homeplugindir = r_str_home (R2_HOME_PLUGINS);
         RList *files = r_sys_dir (homeplugindir);
 	RListIter *iter;
 	char *file;

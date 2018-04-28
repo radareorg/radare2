@@ -35,6 +35,6 @@ foreach file : sdb_files
     build_by_default: true,
     build_always: false,
     install: true,
-    install_dir: join_paths(get_option('datadir'), 'radare2', r2version, 'fcnsign')
+    install_dir: join_paths(get_option('datadir'), 'radare2', r2_version, 'fcnsign')
   )
 endforeach

@@ -574,7 +574,7 @@ int main(int argc, char **argv) {
 	bin = core.bin;
 
 	if (!(tmp = r_sys_getenv ("RABIN2_NOPLUGINS"))) {
-		char *homeplugindir = r_str_home (R2_HOMEDIR "/plugins");
+		char *homeplugindir = r_str_home (R2_HOME_PLUGINS);
 		l = r_lib_new ("radare_plugin");
 		r_lib_add_handler (l, R_LIB_TYPE_BIN, "bin plugins",
 			&__lib_bin_cb, &__lib_bin_dt, NULL);

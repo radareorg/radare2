@@ -1171,7 +1171,7 @@ R_API char *r_sign_path(RAnal *a, const char *file) {
 		}
 		free (abs);
 	} else {
-		char *home = r_str_home (".config/radare2/zigns/");
+		char *home = r_str_home (R2_HOME_ZIGNS);
 		abs = r_str_newf ("%s%s%s", home, R_SYS_DIR, file);
 		free (home);
 		if (r_file_is_regular (abs)) {
@@ -1180,9 +1180,7 @@ R_API char *r_sign_path(RAnal *a, const char *file) {
 		free (abs);
 	}
 
-	/// XXX mixed / and R_SYS_DIR
-	const char *pfx = "/share/radare2/" R2_VERSION "/zigns";
-	abs = r_str_newf ("%s%s%s%s", r_sys_prefix (NULL), pfx, R_SYS_DIR, file);
+	abs = r_str_newf (R_JOIN_3_PATHS("%s", R2_ZIGNS, "%s"), r_sys_prefix (NULL), file);
 	if (r_file_is_regular (abs)) {
 		return abs;
 	}

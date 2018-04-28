@@ -16,13 +16,13 @@ r_socket = library('r_socket', files,
   c_args: ['-DCORELIB=1'],
   install: true,
   implicit_include_directories: false,
-  soversion: r2libversion
+  soversion: r2_libversion
 )
 
 pkgconfig_mod.generate(
   libraries: [r_socket],
   subdirs: 'libr',
-  version: r2version,
+  version: r2_version,
   name: 'r_socket',
   filebase: 'r_socket',
   requires: [

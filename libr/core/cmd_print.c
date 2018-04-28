@@ -880,14 +880,15 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 	if (input[1] == 'o') { // "pfo"
 		if (input[2] == '?') {
 			eprintf ("|Usage: pfo [format-file]\n"
-				" ~/.config/radare2/format\n"
-				" %s/radare2/"R2_VERSION "/format/\n",
+				" " R_JOIN_3_PATHS("~", R2_HOME_SDB_FORMAT, "") "\n"
+				" " R_JOIN_3_PATHS("%s", R2_SDB_FORMAT, "") "\n",
 				r_sys_prefix (NULL));
 		} else if (input[2] == ' ') {
 			char *home, *path, tmp[512];
-			snprintf (tmp, sizeof (tmp), ".config/radare2/format/%s", input + 3);
+			snprintf (tmp, sizeof (tmp),
+				R_JOIN_2_PATHS(R2_HOME_SDB_FORMAT, "%s"), input + 3);
 			home = r_str_home (tmp);
-			snprintf (tmp, sizeof (tmp), "share/radare2/"R2_VERSION"/format/%s", input + 3);
+			snprintf (tmp, sizeof (tmp), R_JOIN_2_PATHS(R2_SDB_FORMAT, "%s"), input + 3);
 			path = r_str_r2_prefix (tmp);
 			if (!r_core_cmd_file (core, home) && !r_core_cmd_file (core, path)) {
 				if (!r_core_cmd_file (core, input + 3)) {
@@ -900,7 +901,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			RList *files;
 			RListIter *iter;
 			const char *fn;
-			char *home = r_str_home (".config/radare2/format/");
+			char *home = r_str_home (R2_HOME_SDB_FORMAT R_SYS_DIR);
 			if (home) {
 				files = r_sys_dir (home);
 				r_list_foreach (files, iter, fn) {
@@ -911,7 +912,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 				r_list_free (files);
 				free (home);
 			}
-			char *path = r_str_r2_prefix ("share/radare2/"R2_VERSION"/format/");
+			char *path = r_str_r2_prefix (R2_SDB_FORMAT R_SYS_DIR);
 			if (path) {
 				files = r_sys_dir (path);
 				r_list_foreach (files, iter, fn) {
@@ -4664,7 +4665,7 @@ static int cmd_print(void *data, const char *input) {
 				"|   foo@0x40   # use 'foo' magic file on address 0x40\n"
 				"|   @0x40      # use current magic file on address 0x40\n"
 				"|   \\n         # append newline\n"
-				"| e dir.magic  # defaults to "R_MAGIC_PATH "\n"
+				"| e dir.magic  # defaults to "R2_SDB_MAGIC "\n"
 				"| /m           # search for magic signatures\n"
 				);
 		} else {

@@ -14,13 +14,13 @@ r_lang = library('r_lang', files,
   link_with: [r_util, r_cons],
   install: true,
   implicit_include_directories: false,
-  soversion: r2libversion
+  soversion: r2_libversion
 )
 
 pkgconfig_mod.generate(
   libraries: [r_lang],
   subdirs: 'libr',
-  version: r2version,
+  version: r2_version,
   name: 'r_lang',
   filebase: 'r_lang',
   requires: [
