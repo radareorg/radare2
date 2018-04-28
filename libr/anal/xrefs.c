@@ -156,7 +156,7 @@ static int anal_listxrefs_cb(dictkv *kv, struct anal_listxrefs_data *u) {
 	return 0;
 }
 
-R_API RList *r_anal_xref_get_cb (RAnal *anal, RAnalRefCmp cmp, void *data) {
+RList *anal_xref_get_cb(RAnal *anal, RAnalRefCmp cmp, void *data) {
 	RList *ret = r_list_newf (r_anal_ref_free);
 	struct anal_listxrefs_data user_data;
 
@@ -167,7 +167,7 @@ R_API RList *r_anal_xref_get_cb (RAnal *anal, RAnalRefCmp cmp, void *data) {
 	return ret;
 }
 
-R_API RList *r_anal_ref_get_cb (RAnal *anal, RAnalRefCmp cmp, void *data) {
+RList *anal_ref_get_cb(RAnal *anal, RAnalRefCmp cmp, void *data) {
 	RList *ret = r_list_newf (r_anal_ref_free);
 	struct anal_listxrefs_data user_data;
 
@@ -327,4 +327,92 @@ R_API int r_anal_xrefs_count(RAnal *anal) {
 	int count = 0;
 	dict_foreach (anal->dict_xrefs, (dictkv_cb)foreach_from, &count);
 	return count;
+}
+
+static bool xref_fcn_cmp(RAnalRef *ref, void *data) {
+	RAnalFunction *fcn = (RAnalFunction*)data;
+	if (!fcn || !ref) {
+		return false;
+	}
+
+	if (fcn->addr == ref->addr) {
+		return true;
+	}
+
+	return false;
+}
+
+static bool ref_fcn_cmp(RAnalRef *ref, void *data) {
+	RAnalFunction *fcn = (RAnalFunction*)data;
+	if (!fcn || !ref) {
+		return false;
+	}
+	if (r_anal_fcn_in (fcn, ref->at)) {
+		return true;
+	}
+	return false;
+}
+
+
+static bool initFcnRefs(RAnal *anal, RAnalFunction *fcn) {
+	fcn->refs = anal_ref_get_cb (anal, &ref_fcn_cmp, (void*)fcn);
+	return fcn->refs? true: false;
+}
+
+static bool initFcnXrefs(RAnal *anal, RAnalFunction *fcn) {
+	fcn->xrefs = anal_xref_get_cb (anal, &xref_fcn_cmp, (void*)fcn);
+	return fcn->xrefs? true: false;
+}
+
+static int ref_cmp(const RAnalRef *a, const RAnalRef *b) {
+	if (a->at < b->at) {
+		return -1;
+	} else if (a->at > b->at) {
+		return 1;
+	} else {
+		if (a->addr < b->addr) {
+			return -1;
+		} else if (a->addr > b->addr) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+static void init_ref_sorted(RAnal *anal, RAnalFunction *fcn) {
+	if (anal->ref_cache != fcn->ref_cache_sorted) {
+		fcn->refs = r_anal_fcn_get_refs (anal, fcn);
+		fcn->xrefs = r_anal_fcn_get_xrefs (anal, fcn);
+		r_list_sort (fcn->refs, (RListComparator)ref_cmp);
+		r_list_sort (fcn->xrefs, (RListComparator)ref_cmp);
+		fcn->ref_cache_sorted = anal->ref_cache;
+	}
+}
+
+R_API RList *r_anal_fcn_get_refs(RAnal *anal, RAnalFunction *fcn) {
+	if (anal->ref_cache != fcn->ref_cache) {
+		if (initFcnRefs (anal, fcn) && initFcnXrefs (anal, fcn)) {
+			fcn->ref_cache = anal->ref_cache;
+		}
+	}
+	return fcn->refs;
+}
+
+R_API RList *r_anal_fcn_get_xrefs(RAnal *anal, RAnalFunction *fcn) {
+	if (anal->ref_cache != fcn->ref_cache) {
+		if (initFcnRefs (anal, fcn) && initFcnXrefs (anal, fcn)) {
+			fcn->ref_cache = anal->ref_cache;
+		}
+	}
+	return fcn->xrefs;
+}
+
+R_API RList *r_anal_fcn_get_refs_sorted(RAnal *anal, RAnalFunction *fcn) {
+	init_ref_sorted (anal, fcn);
+	return fcn->refs;
+}
+
+R_API RList *r_anal_fcn_get_xrefs_sorted(RAnal *anal, RAnalFunction *fcn) {
+	init_ref_sorted (anal, fcn);
+	return fcn->xrefs;
 }

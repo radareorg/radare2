@@ -1435,8 +1435,6 @@ R_API int r_anal_fcn_resize (const RAnal *anal, RAnalFunction *fcn, int newsize)
 #define r_anal_fcn_get_bbs(x) x->bbs
 #else
 typedef bool (* RAnalRefCmp)(RAnalRef *ref, void *data);
-R_API RList *r_anal_xref_get_cb(RAnal *anal, RAnalRefCmp cmp, void *data);
-R_API RList *r_anal_ref_get_cb(RAnal *anal, RAnalRefCmp cmp, void *data);
 R_API int r_anal_xrefs_count(RAnal *anal);
 R_API const char *r_anal_xrefs_type_tostring (char type);
 R_API RAnalRefType r_anal_xrefs_type_fromstring (const char *string);
