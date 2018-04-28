@@ -318,12 +318,90 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 	return types;
 }
 
+static bool blacklisted_word(char* name) {
+	const char * list[] = {
+		"__stack_chk_guard", "__stderrp", "__stdinp", "__stdoutp", "_DefaultRuneLocale"
+	};
+	int i;
+	for (i = 0; i < sizeof (list) / sizeof (list[0]); i++) {
+		if (strstr (name, list[i])) { return true; }
+	}
+	return false;
+}
+
+static char *anal_fcn_autoname(RCore *core, RAnalFunction *fcn, int dump) {
+	int use_getopt = 0;
+	int use_isatty = 0;
+	char *do_call = NULL;
+	RAnalRef *ref;
+	RListIter *iter;
+	RList *refs = r_anal_fcn_get_refs_sorted (core->anal, fcn);
+	r_list_foreach (refs, iter, ref) {
+		RFlagItem *f = r_flag_get_i (core->flags, ref->addr);
+		if (f) {
+			if (dump) {
+				r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n", ref->at, ref->addr, f->name);
+			}
+			if (blacklisted_word (f->name)) {
+				break;
+			}
+			if (strstr (f->name, ".isatty")) {
+				use_isatty = 1;
+			}
+			if (strstr (f->name, ".getopt")) {
+				use_getopt = 1;
+			}
+			if (!strncmp (f->name, "method.", 7)) {
+				free (do_call);
+				do_call = strdup (f->name + 7);
+				break;
+			}
+			if (!strncmp (f->name, "str.", 4)) {
+				free (do_call);
+				do_call = strdup (f->name + 4);
+				break;
+			}
+			if (!strncmp (f->name, "sym.imp.", 8)) {
+				free (do_call);
+				do_call = strdup (f->name + 8);
+				break;
+			}
+			if (!strncmp (f->name, "reloc.", 6)) {
+				free (do_call);
+				do_call = strdup (f->name + 6);
+				break;
+			}
+		}
+	}
+	// TODO: append counter if name already exists
+	if (use_getopt) {
+		RFlagItem *item = r_flag_get (core->flags, "main");
+		free (do_call);
+		// if referenced from entrypoint. this should be main
+		if (item && item->offset == fcn->addr) {
+			return strdup ("main"); // main?
+		}
+		return strdup ("parse_args"); // main?
+	}
+	if (use_isatty) {
+		char *ret = r_str_newf ("sub.setup_tty_%s_%x", do_call, fcn->addr & 0xfff);
+		free (do_call);
+		return ret;
+	}
+	if (do_call) {
+		char *ret = r_str_newf ("sub.%s_%x", do_call, fcn->addr & 0xfff);
+		free (do_call);
+		return ret;
+	}
+	return NULL;
+}
+
 /*this only autoname those function that start with fcn.* or sym.func.* */
 R_API void r_core_anal_autoname_all_fcns(RCore *core) {
 	RListIter *it;
 	RAnalFunction *fcn;
 	r_list_foreach (core->anal->fcns, it, fcn) {
-		char *name = r_core_anal_fcn_autoname (core, fcn->addr, 0);
+		char *name = anal_fcn_autoname (core, fcn, 0);
 		if (name && (!strncmp (fcn->name, "fcn.", 4) || \
 				!strncmp (fcn->name, "sym.func.", 9))) {
 			r_flag_rename (core->flags, r_flag_get (core->flags, fcn->name), name);
@@ -335,86 +413,12 @@ R_API void r_core_anal_autoname_all_fcns(RCore *core) {
 	}
 }
 
-static bool blacklisted_word(char* name) {
-	const char * list[] = {
-		"__stack_chk_guard", "__stderrp", "__stdinp", "__stdoutp", "_DefaultRuneLocale"
-	};
-	int i;
-	for (i = 0; i < sizeof (list) / sizeof (list[0]); i++) {
-        	if (strstr (name, list[i])) { return true; }
-	}
-	return false;
-}
-
 /* suggest a name for the function at the address 'addr'.
  * If dump is true, every strings associated with the function is printed */
 R_API char *r_core_anal_fcn_autoname(RCore *core, ut64 addr, int dump) {
-	int use_getopt = 0;
-	int use_isatty = 0;
-	char *do_call = NULL;
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 	if (fcn) {
-		RAnalRef *ref;
-		RListIter *iter;
-		RList *refs = r_anal_fcn_get_refs_sorted (core->anal, fcn);
-		r_list_foreach (refs, iter, ref) {
-		//	eprintf ("0x%x -> 0x%x %c\n", ref->at, ref->addr, ref->type);
-			RFlagItem *f = r_flag_get_i (core->flags, ref->addr);
-			if (f) {
-				if (dump) {
-					r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n", ref->at, ref->addr, f->name);
-				}
-				if (blacklisted_word (f->name)) {
-					break;
-				}
-				if (strstr (f->name, ".isatty")) {
-					use_isatty = 1;
-				}
-				if (strstr (f->name, ".getopt")) {
-					use_getopt = 1;
-				}
-				if (!strncmp (f->name, "method.", 7)) {
-					free (do_call);
-					do_call = strdup (f->name + 7);
-					break;
-				}
-				if (!strncmp (f->name, "str.", 4)) {
-					free (do_call);
-					do_call = strdup (f->name + 4);
-					break;
-				}
-				if (!strncmp (f->name, "sym.imp.", 8)) {
-					free (do_call);
-					do_call = strdup (f->name + 8);
-					break;
-				}
-				if (!strncmp (f->name, "reloc.", 6)) {
-					free (do_call);
-					do_call = strdup (f->name + 6);
-					break;
-				}
-			}
-		}
-		// TODO: append counter if name already exists
-		if (use_getopt) {
-			RFlagItem *item = r_flag_get (core->flags, "main");
-			free (do_call);
-			// if referenced from entrypoint. this should be main
-			if (item && item->offset == addr) {
-				return strdup ("main"); // main?
-			}
-			return strdup ("parse_args"); // main?
-		}
-		if (use_isatty) {
-			char *ret = r_str_newf ("sub.setup_tty_%s_%x", do_call, addr & 0xfff);
-			free (do_call);
-			return ret;
-		}
-		if (do_call) {
-			char *ret = r_str_newf ("sub.%s_%x", do_call, addr & 0xfff);
-			free (do_call);
-			return ret;
-		}
+		return anal_fcn_autoname (core, fcn, dump);
 	}
 	return NULL;
 }
@@ -508,7 +512,7 @@ static int r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refd
 }
 
 static int r_anal_analyze_fcn_refs(RCore *core, RAnalFunction *fcn, int depth) {
-	RListIter *iter, *tmp;
+	RListIter *iter;
 	RAnalRef *ref;
 	RList *refs = r_anal_fcn_get_refs_sorted (core->anal, fcn);
 
