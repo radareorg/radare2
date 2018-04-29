@@ -13,6 +13,17 @@ BUILDDIR = 'build'
 BACKENDS = ['ninja', 'vs2015', 'vs2017']
 
 PATH_FMT = {}
+R2_PATH = {
+    'R2_LIBDIR': r'lib',
+    'R2_INCDIR': r'include\libr',
+    'R2_DATDIR': r'share',
+    'R2_WWWROOT': r'{R2_DATDIR}\radare2\{R2_VERSION}\www',
+    'R2_SDB': r'{R2_DATDIR}\radare2\{R2_VERSION}',
+    'R2_ZIGNS': r'{R2_DATDIR}\radare2\{R2_VERSION}\zigns',
+    'R2_THEMES': r'{R2_DATDIR}\radare2\{R2_VERSION}\cons',
+    'R2_FORTUNES': r'{R2_DATDIR}\doc\radare2',
+    'R2_HUD': r'{R2_DATDIR}\radare2\{R2_VERSION}\hud'
+}
 
 MESON = None
 ROOT = None
@@ -94,13 +105,13 @@ def msbuild(project, *params):
 
 def copytree(src, dst, exclude=()):
     src = src.format(**PATH_FMT)
-    dst = dst.format(**PATH_FMT)
+    dst = dst.format(**PATH_FMT).format(**PATH_FMT)
     log.debug('copytree "%s" -> "%s"', src, dst)
     shutil.copytree(src, dst, ignore=shutil.ignore_patterns(*exclude) if exclude else None)
 
 def move(src, dst):
     src = src.format(**PATH_FMT)
-    dst = dst.format(**PATH_FMT)
+    dst = dst.format(**PATH_FMT).format(**PATH_FMT)
     term = os.path.sep if os.path.isdir(dst) else ''
     log.debug('move "%s" -> "%s%s"', src, dst, term)
     for file in glob.iglob(src):
@@ -108,14 +119,14 @@ def move(src, dst):
 
 def copy(src, dst):
     src = src.format(**PATH_FMT)
-    dst = dst.format(**PATH_FMT)
+    dst = dst.format(**PATH_FMT).format(**PATH_FMT)
     term = os.path.sep if os.path.isdir(dst) else ''
     log.debug('copy "%s" -> "%s%s"', src, dst, term)
     for file in glob.iglob(src, recursive='**' in src):
         shutil.copy2(file, dst)
 
 def makedirs(path):
-    path = path.format(**PATH_FMT)
+    path = path.format(**PATH_FMT).format(**PATH_FMT)
     log.debug('makedirs "%s"', path)
     os.makedirs(path)
 
@@ -149,43 +160,43 @@ def win_dist(args):
     makedirs(r'{DIST}')
     copy(r'{BUILDDIR}\binr\*\*.exe', r'{DIST}')
     copy(r'{BUILDDIR}\libr\*\*.dll', r'{DIST}')
-    makedirs(r'{DIST}\lib')
+    makedirs(r'{DIST}\{R2_LIBDIR}')
     if args.shared:
-        copy(r'{BUILDDIR}\libr\*\*.lib', r'{DIST}\lib')
+        copy(r'{BUILDDIR}\libr\*\*.lib', r'{DIST}\{R2_LIBDIR}')
     else:
-        copy(r'{BUILDDIR}\libr\*\*.a', r'{DIST}\lib')
-    copy(r'{BUILDDIR}\shlr\libr_shlr.a', r'{DIST}\lib')
+        copy(r'{BUILDDIR}\libr\*\*.a', r'{DIST}\{R2_LIBDIR}')
+    copy(r'{BUILDDIR}\shlr\libr_shlr.a', r'{DIST}\{R2_LIBDIR}')
     win_dist_libr2()
 
 def win_dist_libr2(**path_fmt):
     """[R_API] Add libr2 data/www/include/doc to dist directory"""
     PATH_FMT.update(path_fmt)
 
-    copytree(r'{ROOT}\shlr\www', r'{DIST}\www')
-    copytree(r'{ROOT}\libr\magic\d\default', r'{DIST}\share\radare2\{R2_VERSION}\magic')
-    makedirs(r'{DIST}\share\radare2\{R2_VERSION}\syscall')
-    copy(r'{BUILDDIR}\libr\syscall\d\*.sdb', r'{DIST}\share\radare2\{R2_VERSION}\syscall')
-    makedirs(r'{DIST}\share\radare2\{R2_VERSION}\fcnsign')
-    copy(r'{BUILDDIR}\libr\anal\d\*.sdb', r'{DIST}\share\radare2\{R2_VERSION}\fcnsign')
-    makedirs(r'{DIST}\share\radare2\{R2_VERSION}\opcodes')
-    copy(r'{BUILDDIR}\libr\asm\d\*.sdb', r'{DIST}\share\radare2\{R2_VERSION}\opcodes')
-    makedirs(r'{DIST}\include\libr\sdb')
-    makedirs(r'{DIST}\include\libr\r_util')
-    copy(r'{ROOT}\libr\include\*.h', r'{DIST}\include\libr')
-    copy(r'{BUILDDIR}\r_version.h', r'{DIST}\include\libr')
-    copy(r'{BUILDDIR}\r_userconf.h', r'{DIST}\include\libr')
-    copy(r'{ROOT}\libr\include\sdb\*.h', r'{DIST}\include\libr\sdb')
-    copy(r'{ROOT}\libr\include\r_util\*.h', r'{DIST}\include\libr\r_util')
-    makedirs(r'{DIST}\share\doc\radare2')
-    copy(r'{ROOT}\doc\fortunes.*', r'{DIST}\share\doc\radare2')
-    copytree(r'{ROOT}\libr\bin\d', r'{DIST}\share\radare2\{R2_VERSION}\format',
+    copytree(r'{ROOT}\shlr\www', r'{DIST}\{R2_WWWROOT}')
+    copytree(r'{ROOT}\libr\magic\d\default', r'{DIST}\{R2_SDB}\magic')
+    makedirs(r'{DIST}\{R2_SDB}\syscall')
+    copy(r'{BUILDDIR}\libr\syscall\d\*.sdb', r'{DIST}\{R2_SDB}\syscall')
+    makedirs(r'{DIST}\{R2_SDB}\fcnsign')
+    copy(r'{BUILDDIR}\libr\anal\d\*.sdb', r'{DIST}\{R2_SDB}\fcnsign')
+    makedirs(r'{DIST}\{R2_SDB}\opcodes')
+    copy(r'{BUILDDIR}\libr\asm\d\*.sdb', r'{DIST}\{R2_SDB}\opcodes')
+    makedirs(r'{DIST}\{R2_INCDIR}\sdb')
+    makedirs(r'{DIST}\{R2_INCDIR}\r_util')
+    copy(r'{ROOT}\libr\include\*.h', r'{DIST}\{R2_INCDIR}')
+    copy(r'{BUILDDIR}\r_version.h', r'{DIST}\{R2_INCDIR}')
+    copy(r'{BUILDDIR}\r_userconf.h', r'{DIST}\{R2_INCDIR}')
+    copy(r'{ROOT}\libr\include\sdb\*.h', r'{DIST}\{R2_INCDIR}\sdb')
+    copy(r'{ROOT}\libr\include\r_util\*.h', r'{DIST}\{R2_INCDIR}\r_util')
+    makedirs(r'{DIST}\{R2_FORTUNES}')
+    copy(r'{ROOT}\doc\fortunes.*', r'{DIST}\{R2_FORTUNES}')
+    copytree(r'{ROOT}\libr\bin\d', r'{DIST}\{R2_SDB}\format',
              exclude=('Makefile', 'meson.build', 'dll'))
-    makedirs(r'{DIST}\share\radare2\{R2_VERSION}\format\dll')
-    copy(r'{BUILDDIR}\libr\bin\d\*.sdb', r'{DIST}\share\radare2\{R2_VERSION}\format\dll')
-    copytree(r'{ROOT}\libr\cons\d', r'{DIST}\share\radare2\{R2_VERSION}\cons',
+    makedirs(r'{DIST}\{R2_SDB}\format\dll')
+    copy(r'{BUILDDIR}\libr\bin\d\*.sdb', r'{DIST}\{R2_SDB}\format\dll')
+    copytree(r'{ROOT}\libr\cons\d', r'{DIST}\{R2_THEMES}',
              exclude=('Makefile', 'meson.build'))
-    makedirs(r'{DIST}\share\radare2\{R2_VERSION}\hud')
-    copy(r'{ROOT}\doc\hud', r'{DIST}\share\radare2\{R2_VERSION}\hud\main')
+    makedirs(r'{DIST}\{R2_HUD}')
+    copy(r'{ROOT}\doc\hud', r'{DIST}\{R2_HUD}\main')
 
 def build(args):
     """ Build radare2 """
@@ -255,10 +266,20 @@ def main():
         sys.exit(1)
     if os.name == 'nt' and not args.prefix:
         args.prefix = os.path.join(ROOT, args.dir, 'priv_install_dir')
-    for o in args.options:
-        if not '=' in o:
-            log.error('Invalid option: %s', o)
+    for option in args.options:
+        if '=' not in option:
+            log.error('Invalid option: %s', option)
             sys.exit(1)
+        key, value = option.split('=', 1)
+        key = key.upper()
+        if key not in R2_PATH:
+            continue
+        if os.path.isabs(value):
+            log.error('Relative path is required: %s', option)
+            sys.exit(1)
+        R2_PATH[key] = os.path.normpath(value)
+
+    PATH_FMT.update(R2_PATH)
 
     # Build it!
     log.debug('Arguments: %s', args)
