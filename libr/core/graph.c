@@ -3150,11 +3150,22 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		addr = r_core_anal_get_bbaddr (core, addr);
 		char *title = get_title (addr);
 
-		if (!acur || strcmp (acur->title, title) != 0) {
+		if (!acur || strcmp (acur->title, title)) {
 			r_core_cmd0 (core, "sr PC");
 		}
 		free (title);
 		g->is_instep = false;
+	}
+	if (r_config_get_i (core->config, "graph.offset")) {
+		if (! (g->mode & R_AGRAPH_MODE_OFFSET)) {
+			g->need_reload_nodes = true;
+		}
+		g->mode = R_AGRAPH_MODE_OFFSET;
+	} else {
+		if ((g->mode & R_AGRAPH_MODE_OFFSET)) {
+			g->need_reload_nodes = true;
+		}
+		g->mode = 0;
 	}
 
 	if (r_io_is_valid_offset (core->io, core->offset, 0)) {
@@ -3636,6 +3647,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			r_config_restore (hc);
 			r_config_hold_free (hc);
 			return false;
+		}
+		if (r_config_get_i (core->config, "graph.offset")) {
+			g->mode = R_AGRAPH_MODE_OFFSET;
 		}
 		g->is_tiny = is_interactive == 2;
 		g->layout = r_config_get_i (core->config, "graph.layout");
