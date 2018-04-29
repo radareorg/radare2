@@ -2635,7 +2635,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("dbg.forks", "false", &cb_dbg_forks, "Stop execution if fork() is done (see dbg.threads)");
 	n = NODECB ("dbg.btalgo", "fuzzy", &cb_dbg_btalgo);
 	SETDESC (n, "Select backtrace algorithm");
-	SETOPTIONS (n, "default", "fuzzy", "anal", NULL);
+	SETOPTIONS (n, "default", "fuzzy", "anal", "trace", NULL);
 	SETCB ("dbg.threads", "false", &cb_stopthreads, "Stop all threads when debugger breaks (see dbg.forks)");
 	SETCB ("dbg.clone", "false", &cb_dbg_clone, "Stop execution if new thread is created");
 	SETCB ("dbg.aftersyscall", "true", &cb_dbg_aftersc, "Stop execution before the syscall is executed (see dcs)");

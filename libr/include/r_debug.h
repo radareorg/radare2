@@ -282,6 +282,7 @@ typedef struct r_debug_t {
 	RDebugTrace *trace;
 	Sdb *tracenodes;
 	RTree *tree;
+	RList *call_frames;
 
 	RReg *reg;
 	RList *q_regs;
