@@ -43,7 +43,7 @@ static RList *r_debug_native_frames(RDebug *dbg, ut64 at) {
 		}
 	}
 
-	list = cb (dbg, at);
+	list = !strcmp (dbg->btalgo, "trace") ? r_list_clone (dbg->call_frames) : cb (dbg, at);
 	prepend_current_pc (dbg, list);
 
 	return list;
