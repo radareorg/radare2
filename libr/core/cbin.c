@@ -3085,7 +3085,7 @@ static void bin_elf_versioninfo(RCore *r, int mode) {
 				}
 				if (IS_MODE_JSON (mode)) {
 					if (!firstit_dowhile_vernaux) { r_cons_printf (","); }
-					r_cons_printf ("{\"idx\":%"PFMT64x",\"name\":\"%s\",",
+					r_cons_printf ("{\"idx\":%"PFMT64u",\"name\":\"%s\",",
 						sdb_num_get (sdb, "idx", 0), sdb_const_get (sdb, "name", 0));
 					r_cons_printf ("\"flags\":\"%s\",\"version\":%d}",
 						sdb_const_get (sdb, "flags", 0), (int)sdb_num_get (sdb, "version", 0));
