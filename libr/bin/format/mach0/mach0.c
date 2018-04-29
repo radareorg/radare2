@@ -629,7 +629,9 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 	}
 	bin->thread.cmd = r_read_ble32 (&thc[0], bin->big_endian);
 	bin->thread.cmdsize = r_read_ble32 (&thc[4], bin->big_endian);
-	r_buf_read_at (bin->b, off + sizeof (struct thread_command), tmp, 4);
+	if (r_buf_read_at (bin->b, off + sizeof (struct thread_command), tmp, 4) < 4) {
+		goto wrong_read;
+	}
 	flavor = r_read_ble32 (tmp, bin->big_endian);
 	if (len == -1)
 		goto wrong_read;
@@ -639,7 +641,9 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 		return false;
 
 	// TODO: use count for checks
-	r_buf_read_at (bin->b, off + sizeof (struct thread_command) + sizeof (flavor), tmp, 4);
+	if (r_buf_read_at (bin->b, off + sizeof (struct thread_command) + sizeof (flavor), tmp, 4) < 4) {
+		goto wrong_read;
+	}
 	count = r_read_ble32 (tmp, bin->big_endian);
 	ptr_thread = off + sizeof (struct thread_command) + sizeof (flavor) + sizeof (count);
 
