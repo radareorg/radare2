@@ -917,7 +917,7 @@ int main(int argc, char **argv) {
 		}
 		if (diffmode == 'U') {
 			char * res = r_diff_buffers_unified (d, bufa, sza, bufb, szb);
-			printf ("%s\n", res);
+			printf ("%s", res);
 			free (res);
 		} else if (diffmode == 'B') {
 			r_diff_set_callback (d, &bcb, 0);
