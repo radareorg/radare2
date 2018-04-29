@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake, nikolai */
+/* radare - LGPL - Copyright 2009-2018 - pancake, nikolai */
 
 #include <r_diff.h>
 
@@ -33,13 +33,68 @@ R_API int r_diff_set_delta(RDiff *d, int delta) {
 	return 1;
 }
 
+typedef struct {
+	RDiff *d;
+	char *str;
+} RDiffUser;
+
+// XXX buffers_static doesnt constructs the correct string in this callback
+static int tostring(RDiff *d, void *user, RDiffOp *op) {
+	RDiffUser *u = (RDiffUser*)user;
+	if (op->a_len > 0) {
+		char *a_str = r_str_ndup ((const char *)op->a_buf + op->a_off, op->a_len);
+		u->str = r_str_appendf (u->str, "+(%s)", a_str);
+#if 0
+		char *bufasm = r_str_prefix_all (a_str, "- ");
+		u->str = r_str_appendf (u->str, "-(%s)", bufasm);
+		free (bufasm);
+#endif
+		free (a_str);
+	}
+	if (op->b_len > 0) {
+		char *b_str = r_str_ndup ((const char *)op->b_buf + op->b_off, op->b_len);
+		u->str = r_str_appendf (u->str, "+(%s)", b_str);
+#if 0
+		char *bufasm = r_str_prefix_all (b_str, "+ ");
+		u->str = r_str_appendf (u->str, "+(%s)", bufasm);
+		free (bufasm);
+#endif
+		free (b_str);
+	}
+	if (op->a_len == op->b_len) {
+		char *b_str = r_str_ndup ((const char *)op->a_buf + op->a_off, op->a_len);
+		// char *bufasm = r_str_prefix_all (b_str, "  ");
+		u->str = r_str_appendf (u->str, "%s", b_str);
+		// free (bufasm);
+		free (b_str);
+	}
+	return 1;
+}
+
+R_API char *r_diff_buffers_to_string(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
+#if 1
+	return r_diff_buffers_unified (d, a, la, b, lb);
+#else
+	// XXX buffers_static doesnt constructs the correct string in this callback
+	void *c = d->callback;
+	void *u = d->user;
+	RDiffUser du = {d, strdup ("")};
+	d->callback = &tostring;
+	d->user = &du;
+	r_diff_buffers_static (d, a, la, b, lb);
+	d->callback = c;
+	d->user = u;
+	return du.str;
+#endif
+}
+
 R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
 	int i, len;
 	int hit = 0;
 	la = R_ABS (la);
 	lb = R_ABS (lb);
 	if (la != lb) {
-	 	len = R_MIN(la, lb);
+	 	len = R_MIN (la, lb);
 		eprintf ("Buffer truncated to %d byte(s) (%d not compared)\n", len, R_ABS(lb-la));
 	} else {
 		len = la;
@@ -74,7 +129,10 @@ R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 }
 
 // XXX: temporary files are
-R_API int r_diff_buffers_unified(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
+R_API char *r_diff_buffers_unified(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
+		r_file_dump (".a", a, la, 0);
+		r_file_dump (".b", b, lb, 0);
+#if 0
 	if (r_mem_is_printable (a, R_MIN (5, la))) {
 		r_file_dump (".a", a, la, 0);
 		r_file_dump (".b", b, lb, 0);
@@ -82,10 +140,15 @@ R_API int r_diff_buffers_unified(RDiff *d, const ut8 *a, int la, const ut8 *b, i
 		r_file_hexdump (".a", a, la, 0);
 		r_file_hexdump (".b", b, lb, 0);
 	}
-	r_sys_cmd ("diff -ru .a .b");
+#endif
+	char* err = NULL;
+	char* out = NULL;
+	int out_len;
+	int rc = r_sys_cmd_str_full ("/usr/bin/diff -u .a .b", NULL, &out, &out_len, &err);
 	r_file_rm (".a");
 	r_file_rm (".b");
-	return 0;
+	free (err);
+	return out;
 }
 
 R_API int r_diff_buffers(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb) {

@@ -1223,9 +1223,58 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					//r_cons_printf (" \"0x%08"PFMT64x"_0x%08"PFMT64x"\" [color=\"%s\","
 					//	" label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
 					//	fcn->addr, bbi->addr, difftype, str, fcn->name, bbi->addr);
-					r_cons_printf (" \"0x%08"PFMT64x"\" [fillcolor=\"%s\","
-						" label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
-						bbi->addr, difftype, str, fcn->name, bbi->addr);
+					RConfigHold *hc = r_config_hold_new (core->config);
+					r_config_save_num (hc, "scr.color", "scr.utf8", "asm.offset", "asm.lines",
+						"asm.cmt.right", "asm.fcnlines", "asm.bytes", NULL);
+					RDiff *d = r_diff_new ();
+					r_config_set_i (core->config, "scr.color", 0);
+					r_config_set_i (core->config, "scr.utf8", 0);
+					r_config_set_i (core->config, "asm.offset", 0);
+					r_config_set_i (core->config, "asm.lines", 0);
+					r_config_set_i (core->config, "asm.cmt.right", 0);
+					r_config_set_i (core->config, "asm.fcnlines", 0);
+					r_config_set_i (core->config, "asm.bytes", 0);
+
+					if (bbi->diff && bbi->diff->type != R_ANAL_DIFF_TYPE_MATCH && core->c2) {
+						RCore *c = core->c2;
+						RConfig *oc = c->config;
+						char *str = r_core_cmd_strf (core, "pdb @ 0x%08"PFMT64x, bbi->addr);
+						c->config = core->config;
+						// XXX. the bbi->addr doesnt needs to be in the same address in core2
+						char *str2 = r_core_cmd_strf (c, "pdb @ 0x%08"PFMT64x, bbi->diff->addr);
+						char *diffstr = r_diff_buffers_to_string (d,
+							(const ut8*)str, strlen (str),
+							(const ut8*)str2, strlen(str2));
+						if (diffstr) {
+							char *nl = strchr (diffstr, '\n');
+							if (nl) {
+								nl = strchr (nl + 1, '\n');
+								if (nl) {
+									nl = strchr (nl + 1, '\n');
+									if (nl) {
+										r_str_cpy (diffstr, nl + 1);
+									}
+								}
+							}
+						}
+						diffstr = r_str_replace (diffstr, "\n", "\\l", 1);
+						diffstr = r_str_replace (diffstr, "\"", "'", 1);
+						// eprintf ("%s\n", diffstr? diffstr: "");
+						r_cons_printf (" \"0x%08"PFMT64x"\" [fillcolor=\"%s\","
+								"color=\"black\", fontname=\"Courier\","
+								" label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
+								bbi->addr, difftype, diffstr, fcn->name, bbi->addr);
+						free (diffstr);
+						c->config = oc;
+					} else {
+						r_cons_printf (" \"0x%08"PFMT64x"\" [fillcolor=\"%s\","
+								"color=\"black\", fontname=\"Courier\","
+								" label=\"%s\", URL=\"%s/0x%08"PFMT64x"\"]\n",
+								bbi->addr, difftype, str, fcn->name, bbi->addr);
+					}
+					r_diff_free (d);
+					r_config_set_i (core->config, "scr.color", 1);
+					r_config_hold_free (hc);
 				}
 			} else {
 				if (is_html) {

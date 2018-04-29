@@ -207,6 +207,7 @@ typedef struct r_core_t {
 	RList *undos;
 	bool fixedbits;
 	bool fixedarch;
+	struct r_core_t *c2;
 } RCore;
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd);

@@ -437,6 +437,10 @@ R_API int r_sys_chdir(const char *s) {
 
 #if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
+	char *mysterr = NULL;
+	if (!sterr) {
+		sterr = &mysterr;
+	}
 	char buffer[1024], *outputptr = NULL;
 	char *inputptr = (char *)input;
 	int pid, bytes = 0, status;
@@ -528,7 +532,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 				if (!(bytes = read (sh_out[0], buffer, sizeof (buffer)-1))) {
 					break;
 				}
-				buffer[sizeof(buffer) - 1] = '\0';
+				buffer[sizeof (buffer) - 1] = '\0';
 				if (len) {
 					*len += bytes;
 				}
@@ -537,7 +541,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 				if (!read (sh_err[0], buffer, sizeof (buffer)-1)) {
 					break;
 				}
-				buffer[sizeof(buffer) - 1] = '\0';
+				buffer[sizeof (buffer) - 1] = '\0';
 				*sterr = r_str_append (*sterr, buffer);
 			} else if (FD_ISSET (sh_in[1], &wfds) && inputptr && *inputptr) {
 				int inputptr_len = strlen (inputptr);
@@ -564,10 +568,11 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 		waitpid (pid, &status, 0);
 		bool ret = true;
 		if (status) {
-			char *escmd = r_str_escape (cmd);
-			eprintf ("error code %d\n", WEXITSTATUS(status));
-			//eprintf ("%s: failed command '%s'\n", __func__, escmd);
-			free (escmd);
+			// char *escmd = r_str_escape (cmd);
+			// eprintf ("error code %d (%s): %s\n", WEXITSTATUS (status), escmd, *sterr);
+			// eprintf ("(%s)\n", output);
+			// eprintf ("%s: failed command '%s'\n", __func__, escmd);
+			// free (escmd);
 			ret = false;
 		}
 
