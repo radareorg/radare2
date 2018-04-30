@@ -118,7 +118,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 				for (i = 0; i < len; i++) {
 					printf ("%02x", op->a_buf[i]);
 				}
-				char *p = r_str_escape((const char*)op->a_buf);
+				char *p = r_str_escape ((const char*)op->a_buf);
 				printf (" \"%s\"\n", p);
 				free (p);
 				if (!quiet) {
@@ -791,7 +791,9 @@ int main(int argc, char **argv) {
 		if (!c || !c2) {
 			eprintf ("Cannot open '%s'\n", r_str_get (file2));
 			return 1;
-		}	
+		}
+		c->c2 = c2;
+		c2->c2 = c;
 		if (arch) {
 			r_config_set (c->config, "asm.arch", arch);
 			r_config_set (c2->config, "asm.arch", arch);
@@ -914,7 +916,9 @@ int main(int argc, char **argv) {
 			write (1, "\x04", 1);
 		}
 		if (diffmode == 'U') {
-			r_diff_buffers_unified (d, bufa, sza, bufb, szb);
+			char * res = r_diff_buffers_unified (d, bufa, sza, bufb, szb);
+			printf ("%s", res);
+			free (res);
 		} else if (diffmode == 'B') {
 			r_diff_set_callback (d, &bcb, 0);
 			r_diff_buffers (d, bufa, sza, bufb, szb);

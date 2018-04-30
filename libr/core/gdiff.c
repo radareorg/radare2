@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2016 - nibble, pancake */
+/* radare - LGPL - Copyright 2010-2018 - nibble, pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -90,7 +90,6 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
         int maxsize = 0;
         int digits = 1;
         int len;
-
 
         r_list_foreach (fcns, iter, f) {
                 if (f->name && (len = strlen (f->name)) > maxnamelen) {
