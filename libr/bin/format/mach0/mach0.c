@@ -1272,12 +1272,12 @@ struct MACH0_(obj_t)* MACH0_(mach0_new)(const char* file, bool verbose) {
 }
 
 struct MACH0_(obj_t)* MACH0_(new_buf)(RBuffer *buf, bool verbose) {
-	RBuffer * buf_copy = r_buf_new ();
-	if (!buf_copy) {
+	if (!buf) {
 		return NULL;
 	}
 
-	if (!r_buf_set_bytes (buf_copy, buf->buf, buf->length)) {
+	RBuffer * buf_copy = r_buf_new_with_buf (buf);
+	if (!buf_copy) {
 		return NULL;
 	}
 
