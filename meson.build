@@ -89,7 +89,7 @@ endif
 if host_machine.system() == 'windows'
   r2_prefix = '.'
   r2_libdir = 'lib'
-  r2_incdir = 'include/libr'
+  r2_incdir = 'include'
   r2_datdir = 'share'
 
   opts1 = ['r2_libdir', 'r2_incdir', 'r2_datdir']
@@ -100,12 +100,12 @@ if host_machine.system() == 'windows'
     endif
   endforeach
 
-  r2_wwwroot = join_paths(r2_datdir, 'radare2', r2_version, 'www')
-  r2_sdb = join_paths(r2_datdir, 'radare2', r2_version)
-  r2_zigns = join_paths(r2_datdir, 'radare2', r2_version, 'zigns')
-  r2_themes = join_paths(r2_datdir, 'radare2', r2_version, 'cons')
-  r2_fortunes = join_paths(r2_datdir, 'doc/radare2')
-  r2_hud = join_paths(r2_datdir, 'radare2', r2_version, 'hud')
+  r2_wwwroot = join_paths(r2_datdir, 'www')
+  r2_sdb = join_paths(r2_datdir)
+  r2_zigns = join_paths(r2_datdir, 'zigns')
+  r2_themes = join_paths(r2_datdir, 'cons')
+  r2_fortunes = join_paths(r2_datdir, 'doc')
+  r2_hud = join_paths(r2_datdir, 'hud')
 
   opts2 = ['r2_wwwroot', 'r2_sdb', 'r2_zigns', 'r2_themes', 'r2_fortunes', 'r2_hud']
   foreach opt : opts2

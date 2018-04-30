@@ -15,14 +15,14 @@ BACKENDS = ['ninja', 'vs2015', 'vs2017']
 PATH_FMT = {}
 R2_PATH = {
     'R2_LIBDIR': r'lib',
-    'R2_INCDIR': r'include\libr',
+    'R2_INCDIR': r'include',
     'R2_DATDIR': r'share',
-    'R2_WWWROOT': r'{R2_DATDIR}\radare2\{R2_VERSION}\www',
-    'R2_SDB': r'{R2_DATDIR}\radare2\{R2_VERSION}',
-    'R2_ZIGNS': r'{R2_DATDIR}\radare2\{R2_VERSION}\zigns',
-    'R2_THEMES': r'{R2_DATDIR}\radare2\{R2_VERSION}\cons',
-    'R2_FORTUNES': r'{R2_DATDIR}\doc\radare2',
-    'R2_HUD': r'{R2_DATDIR}\radare2\{R2_VERSION}\hud'
+    'R2_WWWROOT': r'{R2_DATDIR}\www',
+    'R2_SDB': r'{R2_DATDIR}',
+    'R2_ZIGNS': r'{R2_DATDIR}\zigns',
+    'R2_THEMES': r'{R2_DATDIR}\cons',
+    'R2_FORTUNES': r'{R2_DATDIR}\doc',
+    'R2_HUD': r'{R2_DATDIR}\hud'
 }
 
 MESON = None
