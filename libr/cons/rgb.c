@@ -7,7 +7,7 @@
 int color_table[256] = { 0 };
 int value_range[6] = { 0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff};
 
-static void init_color_table () {
+static void init_color_table() {
 	int i, r, g, b;
 	// ansi colors
 	color_table[0] = 0x000000;
@@ -42,7 +42,7 @@ static void init_color_table () {
 	}
 }
 
-static int lookup_rgb (int r, int g, int b) {
+static int lookup_rgb(int r, int g, int b) {
 	int i, color = (r << 16) + (g << 8) + b;
 	// lookup extended colors only, coz non-extended can be changed by users.
 	for (i = 16; i < 256; ++i) {
@@ -53,7 +53,7 @@ static int lookup_rgb (int r, int g, int b) {
 	return -1;
 }
 
-static ut32 approximate_rgb (int r, int g, int b) {
+static ut32 approximate_rgb(int r, int g, int b) {
 	bool grey = (r > 0 && r < 255 && r == g && r == b);
 	if (grey) {
 		return 232 + (int)((double)r / (255 / 24.1));
@@ -82,7 +82,7 @@ static ut32 approximate_rgb (int r, int g, int b) {
 #endif
 }
 
-static int rgb (int r, int g, int b) {
+static int rgb(int r, int g, int b) {
 	int c = lookup_rgb (r, g, b);
 	if (c == -1) {
 		return approximate_rgb (r, g, b);
@@ -90,7 +90,7 @@ static int rgb (int r, int g, int b) {
 	return c;
 }
 
-static void unrgb (int color, int *r, int *g, int *b) {
+static void unrgb(int color, int *r, int *g, int *b) {
 	if (color < 0 || color > 256) {
 		*r = *g = *b = 0;
 		return;
@@ -101,7 +101,7 @@ static void unrgb (int color, int *r, int *g, int *b) {
 	*b = rgb & 0xff;
 }
 
-R_API void r_cons_rgb_init (void) {
+R_API void r_cons_rgb_init(void) {
 	if (color_table[255] == 0) {
 		init_color_table ();
 	}
@@ -164,7 +164,7 @@ R_API char *r_cons_rgb_str_off(char *outstr, size_t sz, ut64 off) {
 }
 
 /* Compute color string depending on cons->color */
-static void r_cons_rgb_gen (char *outstr, size_t sz, ut8 attr, ut8 a, ut8 r, ut8 g, ut8 b) {
+static void r_cons_rgb_gen(char *outstr, size_t sz, ut8 attr, ut8 a, ut8 r, ut8 g, ut8 b) {
 	ut8 fgbg = (a == ALPHA_BG)? 48: 38; // ANSI codes for Background/Foreground
 
 	if (sz < 4) { // must have at least room for "<esc>[m\0"
@@ -220,7 +220,7 @@ static void r_cons_rgb_gen (char *outstr, size_t sz, ut8 attr, ut8 a, ut8 r, ut8
 }
 
 /* Return the computed color string for the specified color */
-R_API char *r_cons_rgb_str (char *outstr, size_t sz, RColor *rcolor) {
+R_API char *r_cons_rgb_str(char *outstr, size_t sz, RColor *rcolor) {
 	if (!rcolor) {
 		return NULL;
 	}
