@@ -1494,7 +1494,6 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 	bool use_esil = r_config_get_i (core->config, "anal.esil");
 	RAnalFunction *fcn;
 	RListIter *iter;
-	RList *xrefs = NULL;
 
 	//update bits based on the core->offset otherwise we could have the
 	//last value set and blow everything up
@@ -1550,31 +1549,16 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 			return 0;  // already analyzed function
 		}
 		if (r_anal_fcn_is_in_offset (fcn, from)) { // inner function
-			RAnalRef *ref;
-
-			// XXX: use r_anal-xrefs api and sdb
-			// If the xref is new, add it
-			// avoid dupes
-			xrefs = r_anal_fcn_get_xrefs_sorted (core->anal, fcn);
-			r_list_foreach (xrefs, iter, ref) {
-				if (from == ref->addr) {
-					return true;
-				}
+			RList *l = r_anal_xrefs_get (core->anal, from);
+			if (l && !r_list_empty (l)) {
+				r_list_free (l);
+				return true;
 			}
+			r_list_free (l);
+
 			// we should analyze and add code ref otherwise aaa != aac
 			if (from != UT64_MAX) {
-				// We shuold not use fcn->xrefs .. because that should be only via api (on top of sdb)
-				// the concepts of refs and xrefs are a bit twisted in the old implementation
-				ref = r_anal_ref_new ();
-				if (ref) {
-					ref->addr = from;
-					ref->at = fcn->addr;
-					ref->type = reftype;
-					// XXX this is creating dupped entries in the refs list with invalid reftypes, wtf?
-					r_anal_xrefs_set (core->anal, reftype, from, fcn->addr);
-				} else {
-					eprintf ("Error: new (xref)\n");
-				}
+				r_anal_xrefs_set (core->anal, reftype, from, fcn->addr);
 			}
 			return true;
 		}
