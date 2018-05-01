@@ -523,9 +523,9 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->core = core;
 	ds->strip = r_config_get (core->config, "asm.strip");
 	ds->pal_comment = core->cons->pal.comment;
-	#define P(x) false ? core->cons->pal.x
-	ds->color_comment = P(comment): Color_RED;
-	ds->color_usrcmt = P(usercomment): Color_RED;
+	#define P(x) (core->cons && core->cons->pal.x)? core->cons->pal.x
+	ds->color_comment = P(comment): Color_CYAN;
+	ds->color_usrcmt = P(usercomment): Color_CYAN;
 	ds->color_fname = P(fname): Color_RED;
 	ds->color_floc = P(floc): Color_MAGENTA;
 	ds->color_fline = P(fline): Color_CYAN;
@@ -547,8 +547,8 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->color_ret = P(ret): Color_RED;
 	ds->color_push = P(push): Color_YELLOW;
 	ds->color_pop = P(pop): Color_BYELLOW;
-	ds->color_reg = P(reg): Color_CYAN;
-	ds->color_num = P(num): Color_YELLOW;
+	ds->color_reg = P(reg): Color_YELLOW;
+	ds->color_num = P(num): Color_CYAN;
 	ds->color_mov = P(mov): Color_WHITE;
 	ds->color_invalid = P(invalid): Color_BRED;
 	ds->color_gui_cflow = P(gui_cflow): Color_YELLOW;
