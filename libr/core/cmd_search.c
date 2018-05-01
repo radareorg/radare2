@@ -1227,8 +1227,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	int align = core->search->align;
 	RListIter *itermap = NULL;
 	char *tok, *gregexp = NULL;
-	char *grep_arg = NULL, *grep_dup = NULL;
-	char *grepstr = NULL;
+	char *grep_arg = NULL;
 	bool json_first = true;
 	char *rx = NULL;
 	int delta = 0;
@@ -1276,8 +1275,8 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 		}
 	}
 	if (grep_arg) {
-		grep_dup = strdup (grep_arg);
-		grep_arg = grepstr = r_str_replace (grep_dup, ",,", ";", true);
+		grep_arg = strdup (grep_arg);
+		grep_arg = r_str_replace (grep_arg, ",,", ";", true);
 		grep = grep_arg;
 	}
 
@@ -1517,8 +1516,8 @@ bad:
 	r_list_free (rx_list);
 	r_list_free (end_list);
 	r_list_free (badstart);
+	free (grep_arg);
 	free (gregexp);
-	free (grep_dup);
 	return result;
 }
 
