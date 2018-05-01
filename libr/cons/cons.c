@@ -301,7 +301,7 @@ R_API RCons *r_cons_new() {
 	I.num = NULL;
 	I.null = 0;
 #if __WINDOWS__ && !__CYGWIN__
-	I.ansicon = r_sys_getenv ("ANSICON");
+	I.ansicon = true;
 #endif
 #if EMSCRIPTEN
 	/* do nothing here :? */
