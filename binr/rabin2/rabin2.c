@@ -590,9 +590,14 @@ int main(int argc, char **argv) {
 		}
 		r_lib_opendir (l, homeplugindir);
 		free (homeplugindir);
-		r_lib_opendir (l, R2_LIBDIR "/radare2/" R2_VERSION);
-		r_lib_opendir (l, R2_LIBDIR "/radare2-extras/" R2_VERSION);
-		r_lib_opendir (l, R2_LIBDIR "/radare2-bindings/" R2_VERSION);
+		const char *dirPrefix = r_sys_prefix (NULL);
+		char folder[1024];
+		snprintf (folder, sizeof (folder), R_JOIN_2_PATHS("%s", R2_PLUGINS), dirPrefix);
+		r_lib_opendir (l, folder);
+		snprintf (folder, sizeof (folder), R_JOIN_2_PATHS("%s", R2_EXTRAS), dirPrefix);
+		r_lib_opendir (l, folder);
+		snprintf (folder, sizeof (folder), R_JOIN_2_PATHS("%s", R2_BINDINGS), dirPrefix);
+		r_lib_opendir (l, folder);
 	}
 	free (tmp);
 

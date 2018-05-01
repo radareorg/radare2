@@ -12,6 +12,10 @@
 #define R2_DATDIR "@DATADIR@"
 #define R2_WWWROOT "@WWWROOT@"
 
+#define R2_PLUGINS "@PLUGINS@"
+#define R2_EXTRAS "@EXTRAS@"
+#define R2_BINDINGS "@BINDINGS@"
+
 #define R2_SDB "@SDB@"
 #define R2_ZIGNS "@ZIGNS@"
 #define R2_THEMES "@THEMES@"

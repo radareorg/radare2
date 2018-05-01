@@ -12,12 +12,18 @@
 #define R2_INCDIR "include\\libr"
 #define R2_DATDIR "share"
 #define R2_WWWROOT "www"
+#define R2_PLUGINS "lib\\plugins"
+#define R2_EXTRAS "lib\\extras"
+#define R2_BINDINGS "lib\\bindings"
 #else
 #define R2_PREFIX "@PREFIX@"
 #define R2_LIBDIR "@LIBDIR@"
 #define R2_INCDIR "@INCLUDEDIR@/libr"
 #define R2_DATDIR "@DATADIR@"
 #define R2_WWWROOT R2_DATDIR "/radare2/" R2_VERSION "/www"
+#define R2_PLUGINS "lib/radare2/" R2_VERSION
+#define R2_EXTRAS "lib/radare2-extras/" R2_VERSION
+#define R2_BINDINGS "lib/radare2-bindings/" R2_VERSION
 #endif
 
 #define R2_SDB              R_JOIN_3_PATHS("share", "radare2", R2_VERSION)

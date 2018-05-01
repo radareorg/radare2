@@ -2606,12 +2606,10 @@ R_API int r_core_config_init(RCore *core) {
 		char *path = r_str_newf (R_JOIN_2_PATHS("%s", R2_SDB_MAGIC), r_config_get (core->config, "dir.prefix"));
 		SETPREF ("dir.magic", path, "Path to r_magic files");
 		free (path);
+		path = r_str_newf (R_JOIN_2_PATHS("%s", R2_PLUGINS), r_config_get (core->config, "dir.prefix"));
+		SETPREF ("dir.plugins", path, "Path to plugin files to be loaded at startup");
+		free (path);
 	}
-#if __WINDOWS__
-	SETPREF ("dir.plugins", "plugins", "Path to plugin files to be loaded at startup");
-#else
-	SETPREF ("dir.plugins", R2_LIBDIR"/radare2/"R2_VERSION"/", "Path to plugin files to be loaded at startup");
-#endif
 	SETCB ("dir.source", "", &cb_dirsrc, "Path to find source files");
 	SETPREF ("dir.types", "/usr/include", "Default path to look for cparse type files");
 #if __ANDROID__
