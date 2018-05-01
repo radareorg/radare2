@@ -452,14 +452,15 @@ int main (int argc, char *argv[]) {
 			free (homeplugindir);
 		}
 		if (1) { //where & R_CORE_LOADLIBS_SYSTEM) {
-			const char *dirPrefix = r_sys_prefix (NULL);
-			char folder[1024];
-			snprintf (folder, sizeof (folder), R_JOIN_2_PATHS("%s", R2_PLUGINS), dirPrefix);
-			r_lib_opendir (l, folder);
-			snprintf (folder, sizeof (folder), R_JOIN_2_PATHS("%s", R2_EXTRAS), dirPrefix);
-			r_lib_opendir (l, folder);
-			snprintf (folder, sizeof (folder), R_JOIN_2_PATHS("%s", R2_BINDINGS), dirPrefix);
-			r_lib_opendir (l, folder);
+			char *plugindir = r_str_r2_prefix (R2_PLUGINS);
+			char *extrasdir = r_str_r2_prefix (R2_EXTRAS);
+			char *bindingsdir = r_str_r2_prefix (R2_BINDINGS);
+			r_lib_opendir (l, plugindir);
+			r_lib_opendir (l, extrasdir);
+			r_lib_opendir (l, bindingsdir);
+			free (plugindir);
+			free (extrasdir);
+			free (bindingsdir);
 		}
 		free (tmp);
 	}

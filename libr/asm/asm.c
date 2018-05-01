@@ -313,7 +313,7 @@ R_API int r_asm_use(RAsm *a, const char *name) {
 			if (!a->cur || (a->cur && strcmp (a->cur->arch, h->arch))) {
 				//const char *dop = r_config_get (core->config, "dir.opcodes");
 				// TODO: allow configurable path for sdb files
-				snprintf (file, sizeof (file), R_JOIN_3_PATHS("%s", R2_SDB_OPCODES, "%s.sdb"),
+				snprintf (file, sizeof (file), R_JOIN_3_PATHS ("%s", R2_SDB_OPCODES, "%s.sdb"),
 					dirPrefix, h->arch);
 				sdb_free (a->pair);
 				r_asm_set_cpu (a, NULL);

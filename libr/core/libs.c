@@ -92,14 +92,15 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 		free (homeplugindir);
 	}
 	if (where & R_CORE_LOADLIBS_SYSTEM) {
-		const char *dirPrefix = r_sys_prefix (NULL);
-		char folder[1024];
-		snprintf (folder, sizeof (folder), R_JOIN_2_PATHS("%s", R2_PLUGINS), dirPrefix);
-		r_lib_opendir (core->lib, folder);
-		snprintf (folder, sizeof (folder), R_JOIN_2_PATHS("%s", R2_EXTRAS), dirPrefix);
-		r_lib_opendir (core->lib, folder);
-		snprintf (folder, sizeof (folder), R_JOIN_2_PATHS("%s", R2_BINDINGS), dirPrefix);
-		r_lib_opendir (core->lib, folder);
+		char *plugindir = r_str_r2_prefix (R2_PLUGINS);
+		char *extrasdir = r_str_r2_prefix (R2_EXTRAS);
+		char *bindingsdir = r_str_r2_prefix (R2_BINDINGS);
+		r_lib_opendir (core->lib, plugindir);
+		r_lib_opendir (core->lib, extrasdir);
+		r_lib_opendir (core->lib, bindingsdir);
+		free (plugindir);
+		free (extrasdir);
+		free (bindingsdir);
 	}
 #endif
 	// load script plugins

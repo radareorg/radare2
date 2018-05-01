@@ -5,7 +5,7 @@ static const char *fortunes[] = {
 };
 
 static char *getFortuneFile(RCore *core, const char *type) {
-	return r_str_newf (R_JOIN_3_PATHS("%s", R2_FORTUNES, "fortunes.%s"),
+	return r_str_newf (R_JOIN_3_PATHS ("%s", R2_FORTUNES, "fortunes.%s"),
 		r_sys_prefix (NULL), type);
 }
 

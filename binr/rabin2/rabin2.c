@@ -575,6 +575,9 @@ int main(int argc, char **argv) {
 
 	if (!(tmp = r_sys_getenv ("RABIN2_NOPLUGINS"))) {
 		char *homeplugindir = r_str_home (R2_HOME_PLUGINS);
+		char *plugindir = r_str_r2_prefix (R2_PLUGINS);
+		char *extrasdir = r_str_r2_prefix (R2_EXTRAS);
+		char *bindingsdir = r_str_r2_prefix (R2_BINDINGS);
 		l = r_lib_new ("radare_plugin");
 		r_lib_add_handler (l, R_LIB_TYPE_BIN, "bin plugins",
 			&__lib_bin_cb, &__lib_bin_dt, NULL);
@@ -589,15 +592,13 @@ int main(int argc, char **argv) {
 			r_lib_opendir (l, path);
 		}
 		r_lib_opendir (l, homeplugindir);
+		r_lib_opendir (l, plugindir);
+		r_lib_opendir (l, extrasdir);
+		r_lib_opendir (l, bindingsdir);
 		free (homeplugindir);
-		const char *dirPrefix = r_sys_prefix (NULL);
-		char folder[1024];
-		snprintf (folder, sizeof (folder), R_JOIN_2_PATHS("%s", R2_PLUGINS), dirPrefix);
-		r_lib_opendir (l, folder);
-		snprintf (folder, sizeof (folder), R_JOIN_2_PATHS("%s", R2_EXTRAS), dirPrefix);
-		r_lib_opendir (l, folder);
-		snprintf (folder, sizeof (folder), R_JOIN_2_PATHS("%s", R2_BINDINGS), dirPrefix);
-		r_lib_opendir (l, folder);
+		free (plugindir);
+		free (extrasdir);
+		free (bindingsdir);
 	}
 	free (tmp);
 

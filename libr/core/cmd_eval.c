@@ -46,7 +46,7 @@ static const char *help_msg_ec[] = {
 	"", " ", "",
 	"colors:", "", "rgb:000, red, green, blue, #ff0000, ...",
 	"e scr.color", "=0", "use more colors (0: no color 1: ansi 16, 2: 256, 3: 16M)",
-	"$DATADIR/radare2/cons", "", R_JOIN_2_PATHS("~", R2_HOME_THEMES) " ./",
+	"$DATADIR/radare2/cons", "", R_JOIN_2_PATHS ("~", R2_HOME_THEMES) " ./",
 	NULL
 };
 
@@ -310,11 +310,11 @@ static int cmd_eval(void *data, const char *input) {
 				bool failed = false;
 				char *home, *path, *tmp;
 
-				tmp = r_str_newf (R_JOIN_2_PATHS(R2_HOME_THEMES, "%s"), input + 3);
+				tmp = r_str_newf (R_JOIN_2_PATHS (R2_HOME_THEMES, "%s"), input + 3);
 				home = tmp ? r_str_home (tmp) : NULL;
 				free (tmp);
 
-				tmp = r_str_newf (R_JOIN_2_PATHS(R2_THEMES, "%s"), input + 3);
+				tmp = r_str_newf (R_JOIN_2_PATHS (R2_THEMES, "%s"), input + 3);
 				path = tmp ? r_str_r2_prefix (tmp) : NULL;
 				free (tmp);
 
@@ -340,7 +340,7 @@ static int cmd_eval(void *data, const char *input) {
 				}
 			} else if (input[2] == '?') {
 				eprintf ("Usage: eco [themename]  ;load theme from "
-					R_JOIN_3_PATHS("%s", R2_THEMES, "") " (see dir.prefix)\n",
+					R_JOIN_3_PATHS ("%s", R2_THEMES, "") " (see dir.prefix)\n",
 					r_sys_prefix (NULL));
 
 			} else {

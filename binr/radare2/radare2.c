@@ -179,13 +179,13 @@ static int main_help(int line) {
 		printf (
 		"Scripts:\n"
 		" system       ${R2_PREFIX}/share/radare2/radare2rc\n"
-		" user         ~/.radare2rc " R_JOIN_2_PATHS("~", R2_HOME_RC) " (and " R_JOIN_3_PATHS("~", R2_HOME_RC_DIR,"") ")\n"
+		" user         ~/.radare2rc " R_JOIN_2_PATHS ("~", R2_HOME_RC) " (and " R_JOIN_3_PATHS ("~", R2_HOME_RC_DIR,"") ")\n"
 		" file         ${filename}.r2\n"
 		"Plugins:\n"
-		" binrc        " R_JOIN_4_PATHS("~", R2_HOME_BINRC, "bin-<format>",  "") " (elf, elf64, mach0, ..)\n"
-		" USER_PLUGINS " R_JOIN_2_PATHS("~", R2_HOME_PLUGINS) "\n"
-		" LIBR_PLUGINS " R_JOIN_2_PATHS("%s", R2_PLUGINS) "\n"
-		" USER_ZIGNS   " R_JOIN_2_PATHS("~", R2_HOME_ZIGNS) "\n"
+		" binrc        " R_JOIN_4_PATHS ("~", R2_HOME_BINRC, "bin-<format>",  "") " (elf, elf64, mach0, ..)\n"
+		" USER_PLUGINS " R_JOIN_2_PATHS ("~", R2_HOME_PLUGINS) "\n"
+		" LIBR_PLUGINS " R_JOIN_2_PATHS ("%s", R2_PLUGINS) "\n"
+		" USER_ZIGNS   " R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS) "\n"
 		"Environment:\n"
 		" RHOMEDIR     %s\n" // TODO: rename to RHOME R2HOME?
 		" RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
