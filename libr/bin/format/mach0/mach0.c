@@ -618,6 +618,7 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 	ut8 *arw_ptr = NULL;
 	int arw_sz, len = 0;
 	ut8 thc[sizeof (struct thread_command)] = {0};
+	ut8 tmp[4];
 
 	if (off > bin->size || off + sizeof (struct thread_command) > bin->size)
 		return false;
@@ -628,7 +629,10 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 	}
 	bin->thread.cmd = r_read_ble32 (&thc[0], bin->big_endian);
 	bin->thread.cmdsize = r_read_ble32 (&thc[4], bin->big_endian);
-	flavor = r_read_ble32 (bin->b->buf + off + sizeof (struct thread_command), bin->big_endian);
+	if (r_buf_read_at (bin->b, off + sizeof (struct thread_command), tmp, 4) < 4) {
+		goto wrong_read;
+	}
+	flavor = r_read_ble32 (tmp, bin->big_endian);
 	if (len == -1)
 		goto wrong_read;
 
@@ -637,8 +641,10 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 		return false;
 
 	// TODO: use count for checks
-	count = r_read_ble32 (bin->b->buf + off + sizeof (struct thread_command) + sizeof (flavor),
-				bin->big_endian);
+	if (r_buf_read_at (bin->b, off + sizeof (struct thread_command) + sizeof (flavor), tmp, 4) < 4) {
+		goto wrong_read;
+	}
+	count = r_read_ble32 (tmp, bin->big_endian);
 	ptr_thread = off + sizeof (struct thread_command) + sizeof (flavor) + sizeof (count);
 
 	if (ptr_thread > bin->size)
@@ -1266,20 +1272,27 @@ struct MACH0_(obj_t)* MACH0_(mach0_new)(const char* file, bool verbose) {
 }
 
 struct MACH0_(obj_t)* MACH0_(new_buf)(RBuffer *buf, bool verbose) {
+	if (!buf) {
+		return NULL;
+	}
+
+	RBuffer * buf_copy = r_buf_new_with_buf (buf);
+	if (!buf_copy) {
+		return NULL;
+	}
+
+	return MACH0_(new_buf_steal) (buf_copy, verbose);
+}
+
+struct MACH0_(obj_t)* MACH0_(new_buf_steal)(RBuffer *buf, bool verbose) {
 	struct MACH0_(obj_t) *bin = R_NEW0 (struct MACH0_(obj_t));
 	if (!bin) {
 		return NULL;
 	}
 	bin->kv = sdb_new (NULL, "bin.mach0", 0);
-	bin->size = buf->length;
+	bin->size = r_buf_size (buf);
 	bin->verbose = verbose;
-// 	bin->b = r_buf_ref (buf);
-#if 1
-	bin->b = r_buf_new ();
-	if (!r_buf_set_bytes (bin->b, buf->buf, bin->size)) {
-		return MACH0_(mach0_free) (bin);
-	}
-#endif
+	bin->b = buf;
 	if (!init (bin)) {
 		return MACH0_(mach0_free)(bin);
 	}
