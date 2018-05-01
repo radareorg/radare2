@@ -568,7 +568,7 @@ static RDisasmState * ds_init(RCore *core) {
 		ds->asm_highlight = (ah && *ah)? r_num_math (core->num, ah): UT64_MAX;
 	}
 	ds->asm_anal = r_config_get_i (core->config, "asm.anal");
-	ds->show_color = r_config_get_i (core->config, "scr.color");
+	ds->show_color = 1;
 	ds->show_color_bytes = r_config_get_i (core->config, "scr.color.bytes"); // maybe rename to asm.color.bytes
 	ds->colorop = r_config_get_i (core->config, "scr.color.ops"); // XXX confusing name // asm.color.inst (mnemonic + operands) ?
 	ds->show_utf8 = r_config_get_i (core->config, "scr.utf8");
