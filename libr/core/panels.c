@@ -298,6 +298,7 @@ static void setcursor(RCore *core, bool cur) {
 static void cursor_right(RCore *core) {
 	if (core->print->cur < 15) {
 		core->print->cur++;
+		core->panels->panel[core->panels->curnode].addr++;
 	}
 	return;
 }
@@ -305,6 +306,7 @@ static void cursor_right(RCore *core) {
 static void cursor_left(RCore *core) {
 	if (core->print->cur > 0) {
 		core->print->cur--;
+		core->panels->panel[core->panels->curnode].addr--;
 	}
 	return;
 }
@@ -354,6 +356,10 @@ static void addPanelFrame(RPanels* panels, const char *title, const char *cmd) {
 	}
 	panel[panels->n_panels].type = PANEL_TYPE_FRAME;
 	panel[panels->n_panels].refresh = true;
+	if (!strcmp (panel[panels->n_panels].title, PANEL_TITLE_STACK)) {
+		const char *sp = r_reg_get_name (_core->anal->reg, R_REG_NAME_SP);
+		panel[panels->n_panels].addr = r_reg_getv (_core->anal->reg, sp);
+	}
 	panels->n_panels++;
 	panels->curnode = panels->n_panels - 1;
 	zoom (panels);
@@ -650,6 +656,28 @@ repeat:
 	okey = r_cons_readchar ();
 	key = r_cons_arrow_to_hjkl (okey);
 	const char *cmd;
+	char buf[128];
+	if (core->print->cur_enabled) {
+		switch (key) {
+			case 9: // TAB
+				goto repeat;
+			case 'Q':
+			case 'q':
+				setcursor (core, !core->print->cur_enabled);
+				panels->panel[panels->curnode].refresh = true;
+				goto repeat;
+			case 'i':
+				// insert mode
+				r_line_set_prompt ("insert hex: ");
+				strcpy (buf, "wx ");
+				if (r_cons_fgets (buf + strlen (buf), sizeof (buf) - strlen (buf), 0, NULL) < 0) {
+					buf[0] = '\0';
+				}
+				r_core_cmdf (core, strcat (buf, "@ 0x%08" PFMT64x), panels->panel[panels->curnode].addr);
+				panels->panel[panels->curnode].refresh = true;
+				goto repeat;
+		}
+	}
 	switch (key) {
 	case 'u':
 		r_core_cmd0 (core, "s-");
@@ -1015,6 +1043,7 @@ repeat:
 				}
 				r_config_set_i (core->config, "stack.delta",
 						r_config_get_i (core->config, "stack.delta") - width);
+				panels->panel[panels->curnode].addr += width;
 			} else {
 				panels->panel[panels->curnode].sy++;
 			}
@@ -1038,6 +1067,7 @@ repeat:
 			}
 			r_config_set_i (core->config, "stack.delta",
 					r_config_get_i (core->config, "stack.delta") + width);
+			panels->panel[panels->curnode].addr -= width;
 		} else {
 			if (panels->panel[panels->curnode].sy > 0) {
 				panels->panel[panels->curnode].sy--;
