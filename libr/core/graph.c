@@ -43,6 +43,8 @@ static const char *mousemodes[] = {
 #define BODY_OFFSETS    0x1
 #define BODY_SUMMARY    0x2
 
+#define NORMALIZE_MOV(x) ((x) < 0 ? -1 : ((x) > 0 ? 1 : 0))
+
 #define hash_set(sdb, k, v) (sdb_num_set (sdb, sdb_fmt ("%"PFMT64u, (ut64) (size_t) k), (ut64) (size_t) v, 0))
 #define hash_get(sdb, k) (sdb_num_get (sdb, sdb_fmt ("%"PFMT64u, (ut64) (size_t) k), NULL))
 #define hash_get_rnode(sdb, k) ((RGraphNode *) (size_t) hash_get (sdb, k))
@@ -2898,6 +2900,19 @@ static void follow_nth(RAGraph *g, int nth) {
 	}
 }
 
+static void move_current_node(RAGraph *g, int xdiff, int ydiff) {
+	RANode *n = get_anode (g->curnode);
+	if (n) {
+		if (is_tiny (g)) {
+			xdiff = NORMALIZE_MOV (xdiff);
+			ydiff = NORMALIZE_MOV (ydiff);
+		}
+
+		n->x += xdiff;
+		n->y += ydiff;
+	}
+}
+
 #if GRAPH_MERGE_FEATURE
 #define K_NEIGHBOURS(x) (sdb_fmt ("agraph.nodes.%s.neighbours", x->title))
 static void agraph_merge_child(RAGraph *g, int idx) {
@@ -4053,20 +4068,11 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				discroll ++;
 			} else if (g->is_dis) {
 				r_core_cmd0 (core, "so 4");
+			} else if (okey == 27) {
+				// handle page down key
+				can->sy -= PAGEKEY_SPEED * (invscroll? -1: 1);
 			} else {
-				if (okey == 27) { // && r_cons_readchar () == 126) {
-					// handle page down key
-					can->sy -= PAGEKEY_SPEED * (invscroll? -1: 1);
-				} else {
-					RANode *n = get_anode (g->curnode);
-					if (n) {
-						if (g->is_tiny) {
-							n->y++;
-						} else {
-							n->y += movspeed;
-						}
-					}
-				}
+				move_current_node (g, 0, movspeed);
 			}
 			break;
 		case 'K':
@@ -4077,20 +4083,11 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				}
 			} else if (g->is_dis) {
 				r_core_cmd0 (core, "so -4");
+			} else if (okey == 27) {
+				// handle page up key
+				can->sy += PAGEKEY_SPEED * (invscroll? -1: 1);
 			} else {
-				if (okey == 27) { // && r_cons_readchar () == 126) {
-					// handle page up key
-					can->sy += PAGEKEY_SPEED * (invscroll? -1: 1);
-				} else {
-					RANode *n = get_anode (g->curnode);
-					if (n) {
-						if (g->is_tiny) {
-							n->y --;
-						} else {
-							n->y -= movspeed;
-						}
-					}
-				}
+				move_current_node (g, 0, -movspeed);
 			}
 			break;
 		case 'H':
@@ -4101,14 +4098,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				const RGraphNode *gn = find_near_of (g, NULL, true);
 				g->update_seek_on = get_anode (gn);
 			} else {
-				RANode *n = get_anode (g->curnode);
-				if (n) {
-					if (g->is_tiny) {
-						n->x --;
-					} else {
-						n->x -= movspeed;
-					}
-				}
+				move_current_node (g, -movspeed, 0);
 			}
 			break;
 		case 'v':
@@ -4118,16 +4108,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			if (is_mini (g)) {
 				discroll = 0;
 			} else {
-				RANode *n = get_anode (g->curnode);
-				if (n) {
-					if (g->is_tiny) {
-						n->x++;
-					} else {
-						n->x += movspeed;
-					}
-				}
-				break;
+				move_current_node (g, movspeed, 0);
 			}
+			break;
 		case 'j':
 			if (g->is_dis) {
 				r_core_cmd0 (core, "so 1");
