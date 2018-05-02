@@ -452,9 +452,15 @@ int main (int argc, char *argv[]) {
 			free (homeplugindir);
 		}
 		if (1) { //where & R_CORE_LOADLIBS_SYSTEM) {
-			r_lib_opendir (l, R2_LIBDIR "/radare2/" R2_VERSION);
-			r_lib_opendir (l, R2_LIBDIR "/radare2-extras/" R2_VERSION);
-			r_lib_opendir (l, R2_LIBDIR "/radare2-bindings/" R2_VERSION);
+			char *plugindir = r_str_r2_prefix (R2_PLUGINS);
+			char *extrasdir = r_str_r2_prefix (R2_EXTRAS);
+			char *bindingsdir = r_str_r2_prefix (R2_BINDINGS);
+			r_lib_opendir (l, plugindir);
+			r_lib_opendir (l, extrasdir);
+			r_lib_opendir (l, bindingsdir);
+			free (plugindir);
+			free (extrasdir);
+			free (bindingsdir);
 		}
 		free (tmp);
 	}

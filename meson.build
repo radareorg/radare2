@@ -115,7 +115,12 @@ if host_machine.system() == 'windows'
     endif
   endforeach
 
-  foreach opt : opts1 + opts2
+  opts3 = ['r2_plugins', 'r2_extras', 'r2_bindings']
+  r2_plugins = join_paths(r2_libdir, 'plugins')
+  r2_extras = join_paths(r2_libdir, 'extras')
+  r2_bindings = join_paths(r2_libdir, 'bindings')
+
+  foreach opt : opts1 + opts2 + opts3
     val = get_variable(opt)
     val = '\\\\'.join(val.split('/'))
     set_variable(opt, val)
@@ -131,6 +136,9 @@ else
   r2_themes = join_paths(get_option('datadir'), 'radare2', r2_version, 'cons')
   r2_fortunes = join_paths(get_option('datadir'), 'doc/radare2')
   r2_hud = join_paths(get_option('datadir'), 'radare2', r2_version, 'hud')
+  r2_plugins = join_paths(get_option('libdir'), 'radare2', r2_version)
+  r2_extras = join_paths(get_option('libdir'), 'radare2-extras', r2_version)
+  r2_bindings = join_paths(get_option('libdir'), 'radare2-bindings', r2_version)
 endif
 
 # load plugin configuration
@@ -167,6 +175,9 @@ userconf.set('ZIGNS', r2_zigns)
 userconf.set('THEMES', r2_themes)
 userconf.set('FORTUNES', r2_fortunes)
 userconf.set('HUD', r2_hud)
+userconf.set('PLUGINS', r2_plugins)
+userconf.set('EXTRAS', r2_extras)
+userconf.set('BINDINGS', r2_bindings)
 userconf.set('HAVE_LIB_MAGIC', 0)
 userconf.set('USE_LIB_MAGIC', 0)
 userconf.set('HAVE_OPENSSL', 0)

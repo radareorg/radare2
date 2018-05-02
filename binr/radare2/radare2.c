@@ -175,17 +175,17 @@ static int main_help(int line) {
 	}
 	if (line == 2) {
 		char *homedir = r_str_home (R2_HOME_CONFIGDIR);
+		char *dirPrefix = r_sys_prefix (NULL);
 		printf (
 		"Scripts:\n"
 		" system       ${R2_PREFIX}/share/radare2/radare2rc\n"
-		" user         ~/.radare2rc " R_JOIN_2_PATHS("~", R2_HOME_RC) " (and " R_JOIN_3_PATHS("~", R2_HOME_RC_DIR,"") ")\n"
+		" user         ~/.radare2rc " R_JOIN_2_PATHS ("~", R2_HOME_RC) " (and " R_JOIN_3_PATHS ("~", R2_HOME_RC_DIR,"") ")\n"
 		" file         ${filename}.r2\n"
 		"Plugins:\n"
-		" binrc        " R_JOIN_4_PATHS("~", R2_HOME_BINRC, "bin-<format>",  "") " (elf, elf64, mach0, ..)\n"
-		" plugins      "R2_PREFIX"/lib/radare2/last\n"
-		" USER_PLUGINS " R_JOIN_2_PATHS("~", R2_HOME_PLUGINS)"\n"
-		" LIBR_PLUGINS "R2_PREFIX"/lib/radare2/"R2_VERSION"\n"
-		" USER_ZIGNS   " R_JOIN_2_PATHS("~", R2_HOME_ZIGNS) "\n"
+		" binrc        " R_JOIN_4_PATHS ("~", R2_HOME_BINRC, "bin-<format>",  "") " (elf, elf64, mach0, ..)\n"
+		" USER_PLUGINS " R_JOIN_2_PATHS ("~", R2_HOME_PLUGINS) "\n"
+		" LIBR_PLUGINS " R_JOIN_2_PATHS ("%s", R2_PLUGINS) "\n"
+		" USER_ZIGNS   " R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS) "\n"
 		"Environment:\n"
 		" RHOMEDIR     %s\n" // TODO: rename to RHOME R2HOME?
 		" RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
@@ -198,7 +198,7 @@ static int main_help(int line) {
 		" R2_INCDIR    "R2_INCDIR"\n"
 		" R2_LIBDIR    "R2_LIBDIR"\n"
 		" R2_LIBEXT    "R_LIB_EXT"\n"
-		, homedir);
+		, dirPrefix, homedir);
 		free (homedir);
 	}
 	return 0;
@@ -209,6 +209,7 @@ static int main_print_var(const char *var_name) {
 	char *homedir = r_str_home (R2_HOME_CONFIGDIR);
 	char *homeplugs = r_str_home (R2_HOME_PLUGINS);
 	char *homezigns = r_str_home (R2_HOME_ZIGNS);
+	char *plugins = r_str_r2_prefix (R2_PLUGINS);
 	struct radare2_var_t {
 		const char *name;
 		const char *value;
@@ -220,7 +221,7 @@ static int main_print_var(const char *var_name) {
 		{ "LIBDIR", R2_LIBDIR },
 		{ "LIBEXT", R_LIB_EXT },
 		{ "RHOMEDIR", homedir },
-		{ "LIBR_PLUGINS", R2_PREFIX"/lib/radare2/"R2_VERSION },
+		{ "LIBR_PLUGINS", plugins },
 		{ "USER_PLUGINS", homeplugs },
 		{ "USER_ZIGNS", homezigns },
 		{ NULL, NULL }
@@ -242,6 +243,7 @@ static int main_print_var(const char *var_name) {
 	free (homedir);
 	free (homeplugs);
 	free (homezigns);
+	free (plugins);
 	return 0;
 }
 

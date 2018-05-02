@@ -2591,7 +2591,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("zign.bytes", "true", "Use bytes patterns for matching");
 	SETPREF ("zign.offset", "true", "Use original offset for matching");
 	SETPREF ("zign.refs", "true", "Use references for matching");
-	SETPREF ("zign.autoload", "false", "Autoload all zignatures located in " R_JOIN_2_PATHS("~", R2_HOME_ZIGNS));
+	SETPREF ("zign.autoload", "false", "Autoload all zignatures located in " R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS));
 
 	/* diff */
 	SETCB ("diff.sort", "addr", &cb_diff_sort, "Specify function diff sorting column see (e diff.sort=?)");
@@ -2603,23 +2603,21 @@ R_API int r_core_config_init(RCore *core) {
 	/* dir */
 	SETCB ("dir.dbgsnap", ".", &cb_dbgsnap, "Path to session dump files");
 	{
-		char *path = r_str_newf (R_JOIN_2_PATHS("%s", R2_SDB_MAGIC), r_config_get (core->config, "dir.prefix"));
+		char *path = r_str_newf (R_JOIN_2_PATHS ("%s", R2_SDB_MAGIC), r_config_get (core->config, "dir.prefix"));
 		SETPREF ("dir.magic", path, "Path to r_magic files");
 		free (path);
+		path = r_str_newf (R_JOIN_2_PATHS ("%s", R2_PLUGINS), r_config_get (core->config, "dir.prefix"));
+		SETPREF ("dir.plugins", path, "Path to plugin files to be loaded at startup");
+		free (path);
 	}
-#if __WINDOWS__
-	SETPREF ("dir.plugins", "plugins", "Path to plugin files to be loaded at startup");
-#else
-	SETPREF ("dir.plugins", R2_LIBDIR"/radare2/"R2_VERSION"/", "Path to plugin files to be loaded at startup");
-#endif
 	SETCB ("dir.source", "", &cb_dirsrc, "Path to find source files");
 	SETPREF ("dir.types", "/usr/include", "Default path to look for cparse type files");
 #if __ANDROID__
 	SETPREF ("dir.projects", "/data/data/org.radare.radare2installer/radare2/projects", "Default path for projects");
 #else
-	SETPREF ("dir.projects", R_JOIN_2_PATHS("~", R2_HOME_PROJECTS), "Default path for projects");
+	SETPREF ("dir.projects", R_JOIN_2_PATHS ("~", R2_HOME_PROJECTS), "Default path for projects");
 #endif
-	SETCB ("dir.zigns", R_JOIN_2_PATHS("~", R2_HOME_ZIGNS), &cb_dirzigns, "Default path for zignatures (see zo command)");
+	SETCB ("dir.zigns", R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS), &cb_dirzigns, "Default path for zignatures (see zo command)");
 	SETPREF ("stack.bytes", "true", "Show bytes instead of words in stack");
 	SETPREF ("stack.anotated", "false", "Show anotated hexdump in visual debug");
 	SETI ("stack.size", 64,  "Size in bytes of stack hexdump in visual debug");
@@ -2774,7 +2772,7 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 	SETI ("http.maxsize", 0, "Maximum file size for upload");
 	SETPREF ("http.bind", "localhost", "Server address");
-	SETPREF ("http.homeroot", R_JOIN_2_PATHS("~", R2_HOME_WWWROOT), "http home root directory");
+	SETPREF ("http.homeroot", R_JOIN_2_PATHS ("~", R2_HOME_WWWROOT), "http home root directory");
 #if __ANDROID__
 	SETPREF ("http.root", "/data/data/org.radare.radare2installer/www", "http root directory");
 #else

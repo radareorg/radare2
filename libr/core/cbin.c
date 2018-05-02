@@ -496,41 +496,41 @@ R_API void r_core_anal_type_init(RCore *core) {
 	anal_arch = r_config_get (core->config, "anal.arch");
 	os = r_config_get (core->config, "asm.os");
 	// spaguetti ahead
-	dbpath = sdb_fmt (R_JOIN_3_PATHS("%s", R2_SDB_FCNSIGN, "types.sdb"), dir_prefix);
+	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types.sdb"), dir_prefix);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (R_JOIN_3_PATHS("%s", R2_SDB_FCNSIGN, "types-%s.sdb"),
+	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s.sdb"),
 		dir_prefix, anal_arch);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (R_JOIN_3_PATHS("%s", R2_SDB_FCNSIGN, "types-%s.sdb"),
+	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s.sdb"),
 		dir_prefix, os);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (R_JOIN_3_PATHS("%s", R2_SDB_FCNSIGN, "types-%d.sdb"),
+	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%d.sdb"),
 		dir_prefix, bits);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (R_JOIN_3_PATHS("%s", R2_SDB_FCNSIGN, "types-%s-%d.sdb"),
+	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s-%d.sdb"),
 		dir_prefix, os, bits);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (R_JOIN_3_PATHS("%s", R2_SDB_FCNSIGN, "types-%s-%d.sdb"),
+	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s-%d.sdb"),
 		dir_prefix, anal_arch, bits);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (R_JOIN_3_PATHS("%s", R2_SDB_FCNSIGN, "types-%s-%s.sdb"),
+	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s-%s.sdb"),
 		dir_prefix, anal_arch, os);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (R_JOIN_3_PATHS("%s", R2_SDB_FCNSIGN, "types-%s-%s-%d.sdb"),
+	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s-%s-%d.sdb"),
 		dir_prefix, anal_arch, os, bits);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
@@ -1248,7 +1248,7 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 						*db = sdb_new (NULL, filename, 0);
 					} else {
 						const char *dirPrefix = r_sys_prefix (NULL);
-						filename = sdb_fmt (R_JOIN_4_PATHS("%s", R2_SDB_FORMAT, "dll", "%s.sdb"),
+						filename = sdb_fmt (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"),
 							dirPrefix, module);
 						if (r_file_exists (filename)) {
 							*db = sdb_new (NULL, filename, 0);

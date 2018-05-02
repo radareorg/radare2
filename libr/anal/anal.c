@@ -233,9 +233,9 @@ R_API bool r_anal_set_fcnsign(RAnal *anal, const char *name) {
 	char *file = NULL;
 	const char *arch = (anal->cur && anal->cur->arch) ? anal->cur->arch : R_SYS_ARCH;
 	if (name && *name) {
-		file = sdb_fmt (R_JOIN_3_PATHS("%s", R2_SDB_FCNSIGN, "%s.sdb"), dirPrefix, name);
+		file = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "%s.sdb"), dirPrefix, name);
 	} else {
-		file = sdb_fmt (R_JOIN_3_PATHS("%s", R2_SDB_FCNSIGN, "%s-%s-%d.sdb"), dirPrefix,
+		file = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "%s-%s-%d.sdb"), dirPrefix,
 			anal->os, arch, anal->bits);
 	}
 	if (r_file_exists (file)) {

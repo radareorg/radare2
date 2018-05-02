@@ -880,15 +880,15 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 	if (input[1] == 'o') { // "pfo"
 		if (input[2] == '?') {
 			eprintf ("|Usage: pfo [format-file]\n"
-				" " R_JOIN_3_PATHS("~", R2_HOME_SDB_FORMAT, "") "\n"
-				" " R_JOIN_3_PATHS("%s", R2_SDB_FORMAT, "") "\n",
+				" " R_JOIN_3_PATHS ("~", R2_HOME_SDB_FORMAT, "") "\n"
+				" " R_JOIN_3_PATHS ("%s", R2_SDB_FORMAT, "") "\n",
 				r_sys_prefix (NULL));
 		} else if (input[2] == ' ') {
 			char *home, *path, tmp[512];
 			snprintf (tmp, sizeof (tmp),
-				R_JOIN_2_PATHS(R2_HOME_SDB_FORMAT, "%s"), input + 3);
+				R_JOIN_2_PATHS (R2_HOME_SDB_FORMAT, "%s"), input + 3);
 			home = r_str_home (tmp);
-			snprintf (tmp, sizeof (tmp), R_JOIN_2_PATHS(R2_SDB_FORMAT, "%s"), input + 3);
+			snprintf (tmp, sizeof (tmp), R_JOIN_2_PATHS (R2_SDB_FORMAT, "%s"), input + 3);
 			path = r_str_r2_prefix (tmp);
 			if (!r_core_cmd_file (core, home) && !r_core_cmd_file (core, path)) {
 				if (!r_core_cmd_file (core, input + 3)) {
