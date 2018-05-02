@@ -9,7 +9,7 @@
 /* experimental support for x/y click */
 #define USE_CLICK 0
 
-#define I r_cons_singleton()
+#define I r_cons_singleton ()
 
 #if 0
 //__UNIX__
@@ -510,7 +510,7 @@ R_API int r_cons_yesno(int def, const char *fmt, ...) {
 }
 
 R_API char *r_cons_input(const char *msg) {
-	char *oprompt = r_line_get_prompt (); //r_cons_singleton()->line->prompt);
+	char *oprompt = r_line_get_prompt (); //r_cons_singleton ()->line->prompt);
 	if (!oprompt) {
 		return NULL;
 	}

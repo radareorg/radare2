@@ -2,8 +2,8 @@
 
 #include <r_cons.h>
 
-#define useUtf8 (r_cons_singleton()->use_utf8)
-#define useUtf8Curvy (r_cons_singleton()->use_utf8_curvy)
+#define useUtf8 (r_cons_singleton ()->use_utf8)
+#define useUtf8Curvy (r_cons_singleton ()->use_utf8_curvy)
 
 #define W(y) r_cons_canvas_write (c, y)
 #define G(x, y) r_cons_canvas_gotoxy (c, x, y)

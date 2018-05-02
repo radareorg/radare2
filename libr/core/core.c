@@ -1981,7 +1981,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	/* rconfig doesnt knows how to deinitialize vars, so we
 	should probably need to add a r_config_free_payload callback */
 	r_cons_free ();
-	r_cons_singleton()->teefile = NULL; // HACK
+	r_cons_singleton ()->teefile = NULL; // HACK
 	r_search_free (c->search);
 	r_flag_free (c->flags);
 	r_fs_free (c->fs);

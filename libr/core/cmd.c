@@ -2123,7 +2123,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	ptr = strchr (cmd, '<');
 	if (ptr) {
 		ptr[0] = '\0';
-		if (r_cons_singleton()->is_interactive) {
+		if (r_cons_singleton ()->is_interactive) {
 			if (ptr[1] == '<') {
 				/* this is a bit mess */
 				//const char *oprompt = strdup (r_line_singleton ()->prompt);

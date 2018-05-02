@@ -28,7 +28,7 @@ typedef struct {
 static char *prompt(const char *str, const char *txt) {
 	char cmd[1024];
 	char *res = NULL;
-	char *oprompt = strdup (r_cons_singleton()->line->prompt);
+	char *oprompt = strdup (r_cons_singleton ()->line->prompt);
 	r_cons_show_cursor (true);
 	if (txt && *txt) {
 		free (r_cons_singleton ()->line->contents);
