@@ -1942,6 +1942,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 		"asm.comments", "asm.cmt.right", NULL);
 	const bool o_comments = r_config_get_i (core->config, "graph.comments");
 	const bool o_cmtright = r_config_get_i (core->config, "graph.cmtright");
+	const bool o_graph_offset = r_config_get_i (core->config, "graph.offset");
 	int o_cursor = core->print->cur_enabled;
 
 	const char *cmd = (opts & BODY_SUMMARY)? "pds": "pD";
@@ -1955,13 +1956,18 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	r_config_set_i (core->config, "asm.comments", (opts & BODY_SUMMARY) || o_comments);
 	core->print->cur_enabled = false;
 
-	if (opts & BODY_OFFSETS || opts & BODY_SUMMARY) {
+	if (opts & BODY_OFFSETS || opts & BODY_SUMMARY || o_graph_offset) {
 		r_config_set_i (core->config, "asm.offset", true);
+	} else {
+		r_config_set_i (core->config, "asm.offset", false);
+	}
+
+	if (opts & BODY_OFFSETS || opts & BODY_SUMMARY) {
 		r_config_set_i (core->config, "asm.bytes", true);
 	} else {
 		r_config_set_i (core->config, "asm.bytes", false);
-		r_config_set_i (core->config, "asm.offset", false);
 	}
+
 	bool html = r_config_get_i (core->config, "scr.html");
 	r_config_set_i (core->config, "scr.html", 0);
 	body = r_core_cmd_strf (core,
