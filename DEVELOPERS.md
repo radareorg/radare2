@@ -213,4 +213,6 @@ I can get patches in unidiff format like this:
    - `make`
    - `make dist`
 
+  - Update the i[paths on the website](https://github.com/radareorg/radareorg/blob/master/source/download_paths.rst)
+
 --pancake
