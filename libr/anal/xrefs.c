@@ -390,21 +390,41 @@ static void init_ref_sorted(RAnal *anal, RAnalFunction *fcn) {
 }
 
 R_API RList *r_anal_fcn_get_refs(RAnal *anal, RAnalFunction *fcn) {
-	if (anal->ref_cache != fcn->ref_cache) {
-		if (initFcnRefs (anal, fcn) && initFcnXrefs (anal, fcn)) {
-			fcn->ref_cache = anal->ref_cache;
+	RListIter *iter;
+	RAnalBlock *bb;
+	RList *list = r_list_newf (r_anal_ref_free);
+	if (!list) {
+		return NULL;
+	}
+
+	r_list_foreach (fcn->bbs, iter, bb) {
+		int i;
+
+		for (i = 0; i < bb->ninstr; ++i) {
+			ut64 at = bb->addr + r_anal_bb_offset_inst (bb, i);
+			listxrefs (anal->dict_refs, at, list);
 		}
 	}
-	return fcn->refs;
+	return list;
 }
 
 R_API RList *r_anal_fcn_get_xrefs(RAnal *anal, RAnalFunction *fcn) {
-	if (anal->ref_cache != fcn->ref_cache) {
-		if (initFcnRefs (anal, fcn) && initFcnXrefs (anal, fcn)) {
-			fcn->ref_cache = anal->ref_cache;
+	RListIter *iter;
+	RAnalBlock *bb;
+	RList *list = r_list_newf (r_anal_ref_free);
+	if (!list) {
+		return NULL;
+	}
+
+	r_list_foreach (fcn->bbs, iter, bb) {
+		int i;
+
+		for (i = 0; i < bb->ninstr; ++i) {
+			ut64 at = bb->addr + r_anal_bb_offset_inst (bb, i);
+			listxrefs (anal->dict_xrefs, at, list);
 		}
 	}
-	return fcn->xrefs;
+	return list;
 }
 
 R_API RList *r_anal_fcn_get_refs_sorted(RAnal *anal, RAnalFunction *fcn) {
