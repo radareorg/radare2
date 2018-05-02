@@ -755,6 +755,9 @@ R_API bool r_config_save_char(RConfigHold *h, ...) {
 R_API bool r_config_save_num(RConfigHold *h, ...) {
 	va_list ap;
 	char *key;
+	if (!h) {
+		return false;
+	}
 	if (!h->list_num) {
 		h->list_num = r_list_newf ((RListFree) free);
 		if (!h->list_num) {

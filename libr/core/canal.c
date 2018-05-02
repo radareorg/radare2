@@ -1225,7 +1225,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					//	fcn->addr, bbi->addr, difftype, str, fcn->name, bbi->addr);
 					RConfigHold *hc = r_config_hold_new (core->config);
 					r_config_save_num (hc, "scr.color", "scr.utf8", "asm.offset", "asm.lines",
-						"asm.cmt.right", "asm.fcnlines", "asm.bytes", NULL);
+							"asm.cmt.right", "asm.fcnlines", "asm.bytes", NULL);
 					RDiff *d = r_diff_new ();
 					r_config_set_i (core->config, "scr.color", 0);
 					r_config_set_i (core->config, "scr.utf8", 0);
