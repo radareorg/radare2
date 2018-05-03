@@ -1668,6 +1668,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	const char *cmdrep = NULL;
 	bool tmpseek = false;
 	bool original_tmpseek = core->tmpseek;
+	/* must store a local orig_offset because there can be
+	 * nested call of this function */
+	ut64 orig_offset = core->offset;
 
 	cmd = r_str_trim_head_tail (icmd);
 	// lines starting with # are ignored (never reach cmd_hash()), except #! and #?
@@ -1766,7 +1769,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		free (cr);
 	}
 	if (tmpseek) {
-		r_core_seek (core, core->prompt_offset, 1);
+		r_core_seek (core, orig_offset, 1);
 		core->tmpseek = original_tmpseek;
 	}
 	if (core->print) {
