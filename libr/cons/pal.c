@@ -92,14 +92,14 @@ struct {
 	{ NULL, RColor_NULL, NULL, NULL }
 };
 
-static inline ut8 rgbnum (const char ch1, const char ch2) {
+static inline ut8 rgbnum(const char ch1, const char ch2) {
 	ut8 r = 0, r2 = 0;
 	r_hex_to_byte (&r, ch1);
 	r_hex_to_byte (&r2, ch2);
 	return r << 4 | r2;
 }
 
-R_API void r_cons_pal_init () {
+R_API void r_cons_pal_init() {
 	RCons *cons = r_cons_singleton ();
 
 	memset (&cons->cpal, 0, sizeof (cons->cpal));
@@ -178,7 +178,7 @@ R_API void r_cons_pal_init () {
 	r_cons_pal_update_event ();
 }
 
-R_API void r_cons_pal_free () {
+R_API void r_cons_pal_free() {
 	int i;
 	for (i = 0; keys[i].name; i++) {
 		char **color = COLOR_AT (i);
@@ -189,7 +189,7 @@ R_API void r_cons_pal_free () {
 	r_cons_rainbow_free ();
 }
 
-R_API void r_cons_pal_random () {
+R_API void r_cons_pal_random() {
 	int i;
 	RColor *rcolor;
 	for (i = 0; keys[i].name; i++) {
@@ -200,7 +200,7 @@ R_API void r_cons_pal_random () {
 }
 
 /* Return NULL if outcol is given */
-R_API char *r_cons_pal_parse (const char *str, RColor *outcol) {
+R_API char *r_cons_pal_parse(const char *str, RColor *outcol) {
 	int i;
 	RColor rcolor = (RColor) RColor_BLACK;
 	char *fgcolor;
@@ -334,7 +334,7 @@ R_API char *r_cons_pal_parse (const char *str, RColor *outcol) {
 	return (*out && !outcol) ? strdup (out) : NULL;
 }
 
-static void r_cons_pal_show_gs () {
+static void r_cons_pal_show_gs() {
 	int i, n;
 	r_cons_print ("\nGreyscale:\n");
 	RColor rcolor = RColor_BLACK;
@@ -356,7 +356,7 @@ static void r_cons_pal_show_gs () {
 	}
 }
 
-static void r_cons_pal_show_256 () {
+static void r_cons_pal_show_256() {
 	RColor rc = RColor_BLACK;
 	r_cons_print ("\n\nXTerm colors:\n");
 	int r = 0;
@@ -388,7 +388,7 @@ static void r_cons_pal_show_256 () {
 	}
 }
 
-static void r_cons_pal_show_rgb () {
+static void r_cons_pal_show_rgb() {
 	const int inc = 3;
 	int i, j, k, n = 0;
 	RColor rc = RColor_BLACK;
@@ -414,7 +414,7 @@ static void r_cons_pal_show_rgb () {
 	}
 }
 
-R_API void r_cons_pal_show () {
+R_API void r_cons_pal_show() {
 	int i;
 	for (i = 0; colors[i].name; i++) {
 		r_cons_printf ("%s%s__"Color_RESET" %s\n",
@@ -434,7 +434,7 @@ R_API void r_cons_pal_show () {
 	}
 }
 
-R_API void r_cons_pal_list (int rad, const char *arg) {
+R_API void r_cons_pal_list(int rad, const char *arg) {
 	char *name, **color;
 	const char *hasnext;
 	int i;
@@ -510,7 +510,7 @@ R_API int r_cons_pal_set(const char *key, const char *val) {
 }
 
 /* Get the named RColor */
-R_API RColor r_cons_pal_get (const char *key) {
+R_API RColor r_cons_pal_get(const char *key) {
 	int i;
 	RColor *rcolor;
 	for (i = 0; keys[i].name; i++) {
@@ -523,12 +523,12 @@ R_API RColor r_cons_pal_get (const char *key) {
 }
 
 /* Get the RColor at specified index */
-R_API RColor r_cons_pal_get_i (int index) {
+R_API RColor r_cons_pal_get_i(int index) {
 	return *(RCOLOR_AT (index));
 }
 
 /* Get color name at index */
-R_API const char *r_cons_pal_get_name (int index) {
+R_API const char *r_cons_pal_get_name(int index) {
 	int i;
 	for (i = 0; i < index && keys[i].name; i++) {}
 	return (i == index) ? keys[index].name : NULL;
@@ -601,4 +601,3 @@ R_API char *r_cons_rainbow_get(int idx, int last, bool bg) {
 	}
 	return r_cons_pal_parse (a, NULL);
 }
-
