@@ -352,41 +352,6 @@ static bool refExists(RList *refs, RAnalRef *ref) {
 	return false;
 }
 
-R_API int r_anal_fcn_xref_add(RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr, int type) {
-	if (!fcn || !a) {
-		return false;
-	}
-	if (!a->iob.is_valid_offset (a->iob.io, addr, 0)) {
-		return false;
-	}
-	// set global reference
-	r_anal_xrefs_set (a, type, at, addr);
-	return true;
-}
-
-R_API int r_anal_fcn_xref_del(RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr, int type) {
-	r_anal_xrefs_deln (a, type, at, addr);
-	return true;
-#if FCN_OLD
-	RAnalRef *ref;
-	RListIter *iter;
-	/* No need for _safe loop coz we return immediately after the delete. */
-	r_list_foreach (fcn->xrefs, iter, ref) {
-		if ((type != -1 || type == ref->type) &&
-		(at == 0LL || at == ref->at) &&
-		(addr == 0LL || addr == ref->addr)) {
-			r_list_delete (fcn->xrefs, iter);
-			return true;
-		}
-	}
-#endif
-#if FCN_SDB
-	// TODO
-	// sdb_array_delete_num (DB, key, at, 0);
-#endif
-	return false;
-}
-
 static RAnalBlock *bbget(RAnalFunction *fcn, ut64 addr) {
 	RListIter *iter;
 	RAnalBlock *bb;
@@ -1127,7 +1092,7 @@ repeat:
 
 		if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
 			// swapped parameters wtf
-			r_anal_fcn_xref_add (anal, fcn, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA);
+			r_anal_xrefs_set (anal, R_ANAL_REF_TYPE_DATA, op.addr, op.ptr);
 		}
 
 		switch (op.type & R_ANAL_OP_TYPE_MASK) {
@@ -1266,7 +1231,7 @@ repeat:
 				return R_ANAL_RET_END;
 			}
 			if (anal->opt.jmpref) {
-				(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
+				(void) r_anal_xrefs_set (anal, R_ANAL_REF_TYPE_CODE, op.addr, op.jump);
 			}
 			if (!anal->opt.jmpabove && (op.jump < fcn->addr)) {
 				FITFCNSZ ();
@@ -1361,8 +1326,7 @@ repeat:
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
 			if (anal->opt.cjmpref) {
-				(void) r_anal_fcn_xref_add (anal, fcn,
-					op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
+				(void) r_anal_xrefs_set (anal, R_ANAL_REF_TYPE_CODE, op.addr, op.jump);
 			}
 			if (!overlapped) {
 				bb->jump = op.jump;
@@ -1433,7 +1397,7 @@ repeat:
 		case R_ANAL_OP_TYPE_IRCALL:
 			/* call [dst] */
 			// XXX: this is TYPE_MCALL or indirect-call
-			(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.ptr, R_ANAL_REF_TYPE_CALL);
+			(void) r_anal_xrefs_set (anal, R_ANAL_REF_TYPE_CALL, op.addr, op.ptr);
 
 			if (op.ptr != UT64_MAX && r_anal_noreturn_at (anal, op.ptr)) {
 				FITFCNSZ ();
@@ -1444,7 +1408,7 @@ repeat:
 		case R_ANAL_OP_TYPE_CCALL:
 		case R_ANAL_OP_TYPE_CALL:
 			/* call dst */
-			(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CALL);
+			(void) r_anal_xrefs_set (anal, R_ANAL_REF_TYPE_CALL, op.addr, op.jump);
 
 			if (r_anal_noreturn_at (anal, op.jump)) {
 				FITFCNSZ ();
@@ -1533,7 +1497,7 @@ analopfinish:
 			last_is_push = true;
 			last_push_addr = op.val;
 			if (anal->iob.is_valid_offset (anal->iob.io, op.val, 1)) {
-				(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.val, R_ANAL_REF_TYPE_DATA);
+				(void) r_anal_xrefs_set (anal, R_ANAL_REF_TYPE_DATA, op.addr, op.val);
 			}
 			break;
 		case R_ANAL_OP_TYPE_RET:
