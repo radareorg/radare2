@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake, nibble, defragger */
+/* radare - LGPL - Copyright 2009-2018 - pancake, nibble, defragger, ret2libc */
 
 #include <r_anal.h>
 #include <r_cons.h>
