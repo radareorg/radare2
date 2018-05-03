@@ -146,6 +146,7 @@ static int vtable_is_addr_vtable_start(RVTableContext *context, ut64 curAddress)
 			r_anal_op_fini (&analop);
 		}
 	}
+	r_list_free (xrefs);
 	return false;
 }
 
@@ -198,9 +199,12 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 					startAddress += context->word_size;
 
 					// a ref means the vtable has ended
-					if (!r_list_empty (r_anal_xrefs_get (context->anal, startAddress))) {
+					RList *ll = r_anal_xrefs_get (context->anal, startAddress);
+					if (!r_list_empty (ll)) {
+						r_list_free (ll);
 						break;
 					}
+					r_list_free (ll);
 				}
 				vtable->method_count = noOfMethods;
 				r_list_append (vtables, vtable);

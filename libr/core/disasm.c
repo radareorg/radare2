@@ -1127,6 +1127,7 @@ static void ds_show_refs(RDisasmState *ds) {
 		}
 		ds_print_color_reset (ds);
 	}
+	r_list_free (list);
 }
 
 static void ds_show_xrefs(RDisasmState *ds) {
