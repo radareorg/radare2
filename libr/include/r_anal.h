@@ -655,8 +655,8 @@ typedef struct r_anal_t {
 	Sdb *sdb_zigns;
 
 #if USE_DICT
-	dict *dict_refs;
-	dict *dict_xrefs;
+	SdbHash *dict_refs;
+	SdbHash *dict_xrefs;
 #endif
 	bool recursive_noreturn;
 	RSpaces meta_spaces;

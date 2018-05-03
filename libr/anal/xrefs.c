@@ -21,6 +21,22 @@ xrefs
 20: call 10
 #endif
 
+#define u64_to_key(x) (sdb_fmt ("%"PFMT64x, (x)))
+
+#define ht_find_u64(_ht,_key,_found) (ht_find ((_ht), u64_to_key (_key), (_found)))
+#define ht_insert_u64(_ht,_key,_value) (ht_insert ((_ht), u64_to_key (_key), _value))
+#define ht_delete_u64(_ht,_key) (ht_delete ((_ht), u64_to_key (_key)))
+
+void xrefs_ht_free(HtKv *kv) {
+	free (kv->key);
+	ht_free (kv->value);
+}
+
+void xrefs_ref_free(HtKv *kv) {
+	free (kv->key);
+	r_anal_ref_free (kv->value);
+}
+
 static const char *analref_toString(RAnalRefType type) {
 	switch (type) {
 	case R_ANAL_REF_TYPE_NULL:
@@ -38,50 +54,53 @@ static const char *analref_toString(RAnalRefType type) {
 	return "unk";
 }
 
-static int appendRef(dictkv *kv, RList *list) {
-	r_list_append (list, kv->u);
-	return 0;
+static bool appendRef(RList *list, const char *k, RAnalRef *ref) {
+	RAnalRef *cloned = r_anal_ref_new ();
+	cloned->addr = ref->addr;
+	cloned->at = ref->at;
+	cloned->type = ref->type;
+	r_list_append (list, cloned);
+	return true;
 }
 
-static int mylistrefs_cb(dictkv *kv, void *u) {
-	dict_foreach (kv->u, (dictkv_cb)appendRef, u);
-	return 0;
+static bool mylistrefs_cb(RList *list, const char *k, SdbHash *ht) {
+	ht_foreach (ht, (HtForeachCallback)appendRef, list);
+	return true;
 }
 
-static void listxrefs(dict *m, ut64 addr, RList *list) {
+static void listxrefs(SdbHash *m, ut64 addr, RList *list) {
 	if (addr == UT64_MAX) {
-		dict_foreach (m, mylistrefs_cb, list);
+		ht_foreach (m, (HtForeachCallback)mylistrefs_cb, list);
 	} else {
-		dict *d = dict_getu (m, addr);
-		if (!d) {
+		bool found;
+		SdbHash *d = ht_find_u64 (m, addr, &found);
+		if (!found) {
 			return;
 		}
 
-		dict_foreach (d, (dictkv_cb)appendRef, list);
+		ht_foreach (d, (HtForeachCallback)appendRef, list);
 	}
 }
 
-static void setxref(dict *m, ut64 from, ut64 to, int type) {
-	dictkv *kv = dict_getr (m, from);
-	dict *d = NULL;
-	if (kv) {
-		d = kv->u;
-	} else {
-		d = R_NEW0 (dict);
-		if (d) {
-			dict_init (d, 9, r_anal_ref_free);
-			dict_set (m, from, to, d);
+static void setxref(SdbHash *m, ut64 from, ut64 to, int type) {
+	bool found;
+	SdbHash *ht = ht_find_u64 (m, from, &found);
+
+	if (!found) {
+		ht = ht_new (NULL, xrefs_ref_free, NULL);
+		if (!ht) {
+			return;
 		}
+
+		ht_insert_u64 (m, from, ht);
 	}
+
 	RAnalRef *ref = r_anal_ref_new ();
 	ref->at = from;
 	ref->addr = to;
 	ref->type = type;
-	dict_set (d, to, from, ref);
-}
 
-static void delref(dict *m, ut64 from, ut64 to, int type) {
-	dict_del (m, from);
+	ht_insert_u64 (ht, to, ref);
 }
 
 R_API int r_anal_xrefs_set (RAnal *anal, const RAnalRefType type, ut64 from, ut64 to) {
@@ -109,8 +128,8 @@ R_API int r_anal_xrefs_deln (RAnal *anal, const RAnalRefType type, ut64 from, ut
 	if (!anal) {
 		return false;
 	}
-	delref (anal->dict_refs, from, to, type);
-	delref (anal->dict_xrefs, to, from, type);
+	ht_delete_u64 (anal->dict_refs, from);
+	ht_delete_u64 (anal->dict_xrefs, to);
 	return true;
 }
 
@@ -120,7 +139,7 @@ R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const R
 }
 
 R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 to) {
-	RList *list = r_list_new ();
+	RList *list = r_anal_ref_list_new ();
 	if (!list) {
 		return NULL;
 	}
@@ -133,7 +152,7 @@ R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 to) {
 }
 
 R_API RList *r_anal_refs_get (RAnal *anal, ut64 from) {
-	RList *list = r_list_new ();
+	RList *list = r_anal_ref_list_new ();
 	if (!list) {
 		return NULL;
 	}
@@ -146,7 +165,7 @@ R_API RList *r_anal_refs_get (RAnal *anal, ut64 from) {
 }
 
 R_API RList *r_anal_xrefs_get_from (RAnal *anal, ut64 to) {
-	RList *list = r_list_new ();
+	RList *list = r_anal_ref_list_new ();
 	if (!list) {
 		return NULL;
 	}
@@ -162,7 +181,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 	bool is_first = true;
 	RListIter *iter;
 	RAnalRef *ref;
-	RList *list = r_list_new();
+	RList *list = r_anal_ref_list_new();
 	listxrefs (anal->dict_xrefs, UT64_MAX, list);
 	if (rad == 'j') {
 		anal->cb_printf ("{");
@@ -231,22 +250,22 @@ R_API const char *r_anal_xrefs_type_tostring (char type) {
 }
 
 R_API bool r_anal_xrefs_init(RAnal *anal) {
-	dict *tmp;
+	SdbHash *tmp;
 
-	dict_free (anal->dict_refs);
-	dict_free (anal->dict_xrefs);
+	ht_free (anal->dict_refs);
 	anal->dict_refs = NULL;
+	ht_free (anal->dict_xrefs);
 	anal->dict_xrefs = NULL;
 
-	tmp = dict_new (100, (dict_freecb)dict_free);
+	tmp = ht_new (NULL, xrefs_ht_free, NULL);
 	if (!tmp) {
 		return false;
 	}
 	anal->dict_refs = tmp;
 
-	tmp = dict_new (100, (dict_freecb)dict_free);
+	tmp = ht_new (NULL, xrefs_ht_free, NULL);
 	if (!tmp) {
-		dict_free (anal->dict_refs);
+		ht_free (anal->dict_refs);
 		anal->dict_refs = NULL;
 		return false;
 	}
@@ -254,20 +273,8 @@ R_API bool r_anal_xrefs_init(RAnal *anal) {
 	return true;
 }
 
-static int count_xref(dictkv *kv, int *count) {
-	*count += 1;
-	return 0;
-}
-
-static int foreach_from(dictkv *kv, int *count) {
-	dict_foreach (kv->u, (dictkv_cb)count_xref, count);
-	return 0;
-}
-
 R_API int r_anal_xrefs_count(RAnal *anal) {
-	int count = 0;
-	dict_foreach (anal->dict_xrefs, (dictkv_cb)foreach_from, &count);
-	return count;
+	return anal->dict_xrefs->count;
 }
 
 static int ref_cmp(const RAnalRef *a, const RAnalRef *b) {
@@ -288,7 +295,7 @@ static int ref_cmp(const RAnalRef *a, const RAnalRef *b) {
 R_API RList *r_anal_fcn_get_refs(RAnal *anal, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalBlock *bb;
-	RList *list = r_list_new ();
+	RList *list = r_anal_ref_list_new ();
 	if (!list) {
 		return NULL;
 	}
@@ -307,7 +314,7 @@ R_API RList *r_anal_fcn_get_refs(RAnal *anal, RAnalFunction *fcn) {
 R_API RList *r_anal_fcn_get_xrefs(RAnal *anal, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalBlock *bb;
-	RList *list = r_list_new ();
+	RList *list = r_anal_ref_list_new ();
 	if (!list) {
 		return NULL;
 	}

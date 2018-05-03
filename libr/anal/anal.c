@@ -81,10 +81,6 @@ R_API RAnal *r_anal_new() {
 	anal->sdb_types = sdb_ns (anal->sdb, "types", 1);
 	anal->sdb_cc = sdb_ns (anal->sdb, "cc", 1);
 	anal->sdb_zigns = sdb_ns (anal->sdb, "zigns", 1);
-#if USE_DICT
-	anal->dict_refs = dict_new (100, (dict_freecb)dict_free);
-	anal->dict_xrefs = dict_new (100, (dict_freecb)dict_free);
-#endif
 	anal->zign_path = strdup ("");
 	anal->cb_printf = (PrintfCallback) printf;
 	(void)r_anal_pin_init (anal);
