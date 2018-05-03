@@ -327,30 +327,6 @@ R_API int r_anal_xrefs_count(RAnal *anal) {
 	return count;
 }
 
-static bool xref_fcn_cmp(RAnalRef *ref, void *data) {
-	RAnalFunction *fcn = (RAnalFunction*)data;
-	if (!fcn || !ref) {
-		return false;
-	}
-
-	if (fcn->addr == ref->addr) {
-		return true;
-	}
-
-	return false;
-}
-
-static bool ref_fcn_cmp(RAnalRef *ref, void *data) {
-	RAnalFunction *fcn = (RAnalFunction*)data;
-	if (!fcn || !ref) {
-		return false;
-	}
-	if (r_anal_fcn_in (fcn, ref->at)) {
-		return true;
-	}
-	return false;
-}
-
 static int ref_cmp(const RAnalRef *a, const RAnalRef *b) {
 	if (a->at < b->at) {
 		return -1;
