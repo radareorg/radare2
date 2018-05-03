@@ -120,7 +120,6 @@ R_API int r_anal_xrefs_set (RAnal *anal, const RAnalRefType type, ut64 from, ut6
 #endif
 	setxref (anal->dict_xrefs, to, from, type);
 	setxref (anal->dict_refs, from, to, type);
-	anal->ref_cache++;
 	return true;
 }
 
@@ -130,7 +129,6 @@ R_API int r_anal_xrefs_deln (RAnal *anal, const RAnalRefType type, ut64 from, ut
 	}
 	delref (anal->dict_refs, from, to, type);
 	delref (anal->dict_xrefs, to, from, type);
-	anal->ref_cache++;
 	return true;
 }
 
@@ -353,17 +351,6 @@ static bool ref_fcn_cmp(RAnalRef *ref, void *data) {
 	return false;
 }
 
-
-static bool initFcnRefs(RAnal *anal, RAnalFunction *fcn) {
-	fcn->refs = anal_ref_get_cb (anal, &ref_fcn_cmp, (void*)fcn);
-	return fcn->refs? true: false;
-}
-
-static bool initFcnXrefs(RAnal *anal, RAnalFunction *fcn) {
-	fcn->xrefs = anal_xref_get_cb (anal, &xref_fcn_cmp, (void*)fcn);
-	return fcn->xrefs? true: false;
-}
-
 static int ref_cmp(const RAnalRef *a, const RAnalRef *b) {
 	if (a->at < b->at) {
 		return -1;
@@ -377,16 +364,6 @@ static int ref_cmp(const RAnalRef *a, const RAnalRef *b) {
 		}
 	}
 	return 0;
-}
-
-static void init_ref_sorted(RAnal *anal, RAnalFunction *fcn) {
-	if (anal->ref_cache != fcn->ref_cache_sorted) {
-		fcn->refs = r_anal_fcn_get_refs (anal, fcn);
-		fcn->xrefs = r_anal_fcn_get_xrefs (anal, fcn);
-		r_list_sort (fcn->refs, (RListComparator)ref_cmp);
-		r_list_sort (fcn->xrefs, (RListComparator)ref_cmp);
-		fcn->ref_cache_sorted = anal->ref_cache;
-	}
 }
 
 R_API RList *r_anal_fcn_get_refs(RAnal *anal, RAnalFunction *fcn) {

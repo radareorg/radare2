@@ -296,8 +296,6 @@ typedef struct r_anal_type_function_t {
 	RList *fcn_locs; //sorted list of a function *.loc refs
 	//RList *locals; // list of local labels -> moved to anal->sdb_fcns
 	RList *bbs;
-	ut64 ref_cache;
-	ut64 ref_cache_sorted;
 #if FCN_OLD
 	RList *refs;
 	RList *xrefs;
@@ -697,7 +695,6 @@ typedef struct r_anal_t {
 	bool (*read_at)(struct r_anal_t *anal, ut64 addr, ut8 *buf, int len);
 	char *cmdtail;
 	int seggrn;
-	ut64 ref_cache;
 } RAnal;
 
 typedef RAnalFunction *(* RAnalGetFcnIn)(RAnal *anal, ut64 addr, int type);
