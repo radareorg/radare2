@@ -428,13 +428,15 @@ R_API RList *r_anal_fcn_get_xrefs(RAnal *anal, RAnalFunction *fcn) {
 }
 
 R_API RList *r_anal_fcn_get_refs_sorted(RAnal *anal, RAnalFunction *fcn) {
-	init_ref_sorted (anal, fcn);
-	return fcn->refs;
+	RList *l = r_anal_fcn_get_refs (anal, fcn);
+	r_list_sort (l, (RListComparator)ref_cmp);
+	return l;
 }
 
 R_API RList *r_anal_fcn_get_xrefs_sorted(RAnal *anal, RAnalFunction *fcn) {
-	init_ref_sorted (anal, fcn);
-	return fcn->xrefs;
+	RList *l = r_anal_fcn_get_xrefs (anal, fcn);
+	r_list_sort (l, (RListComparator)ref_cmp);
+	return l;
 }
 
 static int refs_preload_append(dictkv *kv, RAnal *anal) {
