@@ -78,7 +78,6 @@ R_API RAnal *r_anal_new() {
 	anal->sdb_fcns = sdb_ns (anal->sdb, "fcns", 1);
 	anal->sdb_meta = sdb_ns (anal->sdb, "meta", 1);
 	anal->sdb_hints = sdb_ns (anal->sdb, "hints", 1);
-	anal->sdb_xrefs = sdb_ns (anal->sdb, "xrefs", 1);
 	anal->sdb_types = sdb_ns (anal->sdb, "types", 1);
 	anal->sdb_cc = sdb_ns (anal->sdb, "cc", 1);
 	anal->sdb_zigns = sdb_ns (anal->sdb, "zigns", 1);
@@ -405,7 +404,6 @@ R_API int r_anal_purge (RAnal *anal) {
 	sdb_reset (anal->sdb_fcns);
 	sdb_reset (anal->sdb_meta);
 	sdb_reset (anal->sdb_hints);
-	sdb_reset (anal->sdb_xrefs);
 	sdb_reset (anal->sdb_types);
 	sdb_reset (anal->sdb_zigns);
 	r_list_free (anal->fcns);

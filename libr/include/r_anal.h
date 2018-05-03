@@ -296,10 +296,6 @@ typedef struct r_anal_type_function_t {
 	RList *fcn_locs; //sorted list of a function *.loc refs
 	//RList *locals; // list of local labels -> moved to anal->sdb_fcns
 	RList *bbs;
-#if FCN_OLD
-	RList *refs;
-	RList *xrefs;
-#endif
 	RAnalFcnMeta meta;
 	RRangeTiny bbr;
 	RBNode rb;
@@ -654,7 +650,6 @@ typedef struct r_anal_t {
 	struct r_anal_plugin_t *cur;
 	RAnalRange *limit;
 	RList *plugins;
-	Sdb *sdb_xrefs;
 	Sdb *sdb_types;
 	Sdb *sdb_meta; // TODO: Future r_meta api
 	Sdb *sdb_zigns;
@@ -1416,7 +1411,7 @@ R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 R_API int r_anal_fcn_bb_overlaps(RAnalFunction *fcn, RAnalBlock *bb);
 R_API RAnalVar *r_anal_fcn_get_var(RAnalFunction *fs, int num, int dir);
 R_API void r_anal_fcn_fit_overlaps (RAnal *anal, RAnalFunction *fcn);
-R_API void r_anal_trim_jmprefs(RAnalFunction *fcn);
+R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn);
 R_API RAnalFunction *r_anal_fcn_next(RAnal *anal, ut64 addr);
 R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction* fs);
 R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *_str);

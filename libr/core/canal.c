@@ -606,7 +606,6 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 	}
 	do {
 		RFlagItem *f;
-		RAnalRef *ref;
 		int delta = r_anal_fcn_size (fcn);
 		// XXX hack slow check io error
 		if (core->io->va) {
@@ -715,13 +714,6 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 
 			/* New function: Add initial xref */
 			if (from != UT64_MAX) {
-				// We shuold not use fcn->xrefs .. because that should be only via api (on top of sdb)
-				// the concepts of refs and xrefs are a bit twisted in the old implementation
-				ref = r_anal_ref_new ();
-				if (!ref) {
-					eprintf ("Error: new (xref)\n");
-					goto error;
-				}
 				if (fcn->type == R_ANAL_FCN_TYPE_LOC) {
 					RAnalFunction *f = r_anal_get_fcn_in (core->anal, from, -1);
 					if (f) {
@@ -732,10 +724,6 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 						r_list_sort (f->fcn_locs, &cmpfcn);
 					}
 				}
-				ref->addr = from;
-				ref->at = fcn->addr;
-				ref->type = reftype;
-				// XXX this is creating dupped entries in the refs list with invalid reftypes, wtf?
 				r_anal_xrefs_set (core->anal, reftype, from, fcn->addr);
 			}
 			// XXX: this is wrong. See CID 1134565

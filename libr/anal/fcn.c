@@ -293,10 +293,6 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	fcn->cc = NULL;
 	/* Function attributes: weak/noreturn/format/etc */
 	fcn->addr = UT64_MAX;
-#if FCN_OLD
-	fcn->refs = r_anal_ref_list_new ();
-	fcn->xrefs = r_anal_ref_list_new ();
-#endif
 	fcn->fcn_locs = NULL;
 	fcn->bbs = r_anal_bb_list_new ();
 	fcn->fingerprint = NULL;
@@ -323,10 +319,6 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	free (fcn->name);
 	free (fcn->attr);
 	r_tinyrange_fini (&fcn->bbr);
-#if FCN_OLD
-	r_list_free (fcn->refs);
-	r_list_free (fcn->xrefs);
-#endif
 	// all functions are freed in anal->fcns
 	fcn->fcn_locs = NULL;
 	if (fcn->bbs) {
@@ -1434,13 +1426,6 @@ repeat:
 			}
 			// switch statement
 			if (anal->opt.jmptbl) {
-				if (fcn->refs->tail) {
-					RAnalRef *last_ref = fcn->refs->tail->data;
-					last_ref->type = R_ANAL_REF_TYPE_NULL;
-					// TODO: walk switch? try_walkthrough_jmptbl?
-					// Why is this a jmp table and what does it look like
-					// walk_switch (anal, fcn, op.addr, op.addr + op.size);
-				}
 				// op.ireg since rip relative addressing produces way too many false positives otherwise
 				// op.ireg is 0 for rip relative, "rax", etc otherwise
 				if (op.ptr != UT64_MAX && op.ireg) {       // direct jump
@@ -1609,15 +1594,18 @@ R_API void r_anal_fcn_fit_overlaps(RAnal *anal, RAnalFunction *fcn) {
 	}
 }
 
-R_API void r_anal_trim_jmprefs(RAnalFunction *fcn) {
+R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 	RAnalRef *ref;
+	RList *refs = r_anal_fcn_get_refs (anal, fcn);
 	RListIter *iter;
 	RListIter *tmp;
-	r_list_foreach_safe (fcn->refs, iter, tmp, ref) {
+
+	r_list_foreach (refs, iter, ref) {
 		if (ref->type == R_ANAL_REF_TYPE_CODE && r_anal_fcn_is_in_offset (fcn, ref->addr)) {
-			r_list_delete (fcn->refs, iter);
+			r_anal_xrefs_deln (anal, ref->type, ref->at, ref->addr);
 		}
 	}
+	r_list_free (refs);
 }
 
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
@@ -1661,7 +1649,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		// fcn is not yet in anal => pass NULL
 		r_anal_fcn_resize (NULL, fcn, endaddr - fcn->addr);
 #endif
-		r_anal_trim_jmprefs (fcn);
+		r_anal_trim_jmprefs (anal, fcn);
 	}
 	return ret;
 }
