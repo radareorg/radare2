@@ -21,12 +21,6 @@ xrefs
 20: call 10
 #endif
 
-struct anal_listxrefs_data {
-	RAnalRefCmp cmp;
-	RList *ret;
-	void *data;
-};
-
 static const char *analref_toString(RAnalRefType type) {
 	switch (type) {
 	case R_ANAL_REF_TYPE_NULL:
@@ -135,45 +129,6 @@ R_API int r_anal_xrefs_deln (RAnal *anal, const RAnalRefType type, ut64 from, ut
 R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr) {
 	listxrefs (anal->dict_refs, addr, list);
 	return true;
-}
-
-static int anal_listrefs_cb(dictkv *kv, struct anal_listxrefs_data *u) {
-	RAnalRef ref = {
-		.at = kv->v,
-		.addr = kv->k,
-		.type = (size_t)kv->u
-	};
-	if (u->cmp (&ref, u->data)) {
-		appendRef (kv, u->ret);
-	}
-	return 0;
-}
-
-static int anal_listxrefs_cb(dictkv *kv, struct anal_listxrefs_data *u) {
-	dict_foreach (kv->u, (dictkv_cb)anal_listrefs_cb, u);
-	return 0;
-}
-
-RList *anal_xref_get_cb(RAnal *anal, RAnalRefCmp cmp, void *data) {
-	RList *ret = r_list_newf (r_anal_ref_free);
-	struct anal_listxrefs_data user_data;
-
-	user_data.cmp = cmp;
-	user_data.data = data;
-	user_data.ret = ret;
-	dict_foreach (anal->dict_xrefs, (dictkv_cb)anal_listxrefs_cb, &user_data);
-	return ret;
-}
-
-RList *anal_ref_get_cb(RAnal *anal, RAnalRefCmp cmp, void *data) {
-	RList *ret = r_list_newf (r_anal_ref_free);
-	struct anal_listxrefs_data user_data;
-
-	user_data.cmp = cmp;
-	user_data.data = data;
-	user_data.ret = ret;
-	dict_foreach (anal->dict_refs, (dictkv_cb)anal_listxrefs_cb, &user_data);
-	return ret;
 }
 
 R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 to) {
