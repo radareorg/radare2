@@ -642,8 +642,9 @@ static void update_asmfeatures_options(RCore *core, RConfigNode *node) {
 			features = strdup (core->assembler->cur->features);
 			argc = r_str_split (features, ',');
 			for (i = 0; i < argc; i++) {
+				node->options->free = free;
 				const char *feature = r_str_word_get0 (features, i);
-				SETOPTIONS (node, feature, NULL);
+				r_list_append (node->options, strdup (feature));
 			}
 			free (features);
 		}

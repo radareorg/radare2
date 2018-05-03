@@ -212,18 +212,18 @@ static const char *help_msg_af[] = {
 	"afC[lc]", " ([addr])@[addr]", "calculate the Cycles (afC) or Cyclomatic Complexity (afCc)",
 	"afc", "[?] type @[addr]", "set calling convention for function",
 	"afd", "[addr]","show function + delta for given offset",
-	"aft", "[?]", "type matching, type propagation",
 	"aff", "", "re-adjust function boundaries to fit",
 	"afF", "[1|0|]", "fold/unfold/toggle",
 	"afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
 	"afl", "[?] [l*] [fcn name]", "list functions (addr, size, bbs, name) (see afll)",
-	"afo", " [fcn.name]", "show address for the function named like this",
 	"afm", " name", "merge two functions",
 	"afM", " name", "print functions map",
 	"afn", "[?] name [addr]", "rename name for function at address (change flag too)",
 	"afna", "", "suggest automatic name for current offset",
+	"afo", " [fcn.name]", "show address for the function named like this",
 	"afs", " [addr] [fcnsign]", "get/set function signature at current address",
 	"afS", "[stack_size]", "set stack frame size for function at current address",
+	"aft", "[?]", "type matching, type propagation",
 	"afu", " [addr]", "resize and analyze function from current address until addr",
 	"afv[bsra]", "?", "manipulate args, registers and variables in function",
 	"afx", "[cCd-] src dst", "add/remove code/Call/data/string reference",
@@ -319,9 +319,9 @@ static const char *help_msg_afn[] = {
 };
 
 static const char *help_msg_aft[] = {
-	"Usage:", "aftm", "",
-	"afta", "", "Setup memory and analyse do type matching analysis for all functions",
-	"aftm", "", "type matching analysis",
+	"Usage:", "aft[a|m]", "",
+	"afta", "", "setup memory and analyse do type matching analysis for all functions",
+	"aftm", "", "type matching analysis for current function",
 	NULL
 };
 
