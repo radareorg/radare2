@@ -2341,11 +2341,9 @@ static bool ref_fcn_cmp(RAnalRef *ref, void *data) {
 	if (!fcn || !ref) {
 		return false;
 	}
-
 	if (r_anal_fcn_in (fcn, ref->at)) {
 		return true;
 	}
-
 	return false;
 }
 

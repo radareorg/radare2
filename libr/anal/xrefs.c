@@ -54,7 +54,6 @@ static void appendRef(RList *list, dicti k, dicti v, void *u) {
 		} else {
 			ref->type = R_ANAL_REF_TYPE_NULL;
 		}
-
 		r_list_append (list, ref);
 	}
 }
