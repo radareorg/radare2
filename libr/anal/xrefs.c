@@ -39,23 +39,7 @@ static const char *analref_toString(RAnalRefType type) {
 }
 
 static int appendRef(dictkv *kv, RList *list) {
-	RAnalRef *ref = r_anal_ref_new ();
-	if (ref) {
-		ref->at = kv->v;
-		ref->addr = kv->k;
-		if (strcmp (kv->u, "JMP") == 0) {
-			ref->type = R_ANAL_REF_TYPE_CODE;
-		} else if (strcmp (kv->u, "CALL") == 0) {
-			ref->type = R_ANAL_REF_TYPE_CALL;
-		} else if (strcmp (kv->u, "DATA") == 0) {
-			ref->type = R_ANAL_REF_TYPE_DATA;
-		} else if (strcmp (kv->u, "STRING") == 0) {
-			ref->type = R_ANAL_REF_TYPE_STRING;
-		} else {
-			ref->type = R_ANAL_REF_TYPE_NULL;
-		}
-		r_list_append (list, ref);
-	}
+	r_list_append (list, kv->u);
 	return 0;
 }
 
@@ -85,11 +69,15 @@ static void setxref(dict *m, ut64 from, ut64 to, int type) {
 	} else {
 		d = R_NEW0 (dict);
 		if (d) {
-			dict_init (d, 9, NULL);
+			dict_init (d, 9, r_anal_ref_free);
 			dict_set (m, from, to, d);
 		}
 	}
-	dict_set (d, to, from, (void *)r_anal_xrefs_type_tostring (type));
+	RAnalRef *ref = r_anal_ref_new ();
+	ref->at = from;
+	ref->addr = to;
+	ref->type = type;
+	dict_set (d, to, from, ref);
 }
 
 static void delref(dict *m, ut64 from, ut64 to, int type) {
@@ -132,7 +120,7 @@ R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const R
 }
 
 R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 to) {
-	RList *list = r_list_newf (r_anal_ref_free);
+	RList *list = r_list_new ();
 	if (!list) {
 		return NULL;
 	}
@@ -145,7 +133,7 @@ R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 to) {
 }
 
 R_API RList *r_anal_refs_get (RAnal *anal, ut64 from) {
-	RList *list = r_list_newf (r_anal_ref_free);
+	RList *list = r_list_new ();
 	if (!list) {
 		return NULL;
 	}
@@ -158,7 +146,7 @@ R_API RList *r_anal_refs_get (RAnal *anal, ut64 from) {
 }
 
 R_API RList *r_anal_xrefs_get_from (RAnal *anal, ut64 to) {
-	RList *list = r_list_newf (NULL);
+	RList *list = r_list_new ();
 	if (!list) {
 		return NULL;
 	}
@@ -300,7 +288,7 @@ static int ref_cmp(const RAnalRef *a, const RAnalRef *b) {
 R_API RList *r_anal_fcn_get_refs(RAnal *anal, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalBlock *bb;
-	RList *list = r_list_newf (r_anal_ref_free);
+	RList *list = r_list_new ();
 	if (!list) {
 		return NULL;
 	}
@@ -319,7 +307,7 @@ R_API RList *r_anal_fcn_get_refs(RAnal *anal, RAnalFunction *fcn) {
 R_API RList *r_anal_fcn_get_xrefs(RAnal *anal, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalBlock *bb;
-	RList *list = r_list_newf (r_anal_ref_free);
+	RList *list = r_list_new ();
 	if (!list) {
 		return NULL;
 	}
