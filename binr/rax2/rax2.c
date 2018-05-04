@@ -483,8 +483,8 @@ dotherax:
 		}
 		return false;
 	} else if (flags & (1 << 21)) { // -i
-                printf("%d\n", len);
-		printf("unsigned char buf[] = {");
+		static const char start[] = "unsigned char buf[] = {";
+		printf (start);
 		/* resonable amount of bytes per line */
 		const int byte_per_col = 12;
 		for (i = 0; i < len-1; i++) {
