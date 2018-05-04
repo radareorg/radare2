@@ -22,13 +22,13 @@ typedef struct {
 static const char *printfmtSingle[] = {
 	"xc", "pd $r",
 	"pxw 64@r:SP;dr=;pd $r",
-	"pxw", "pxx", "pxA", "pss", "prc", "pxa"
+	"pxw", "pxx", "pxA", "pss", "prc", "pxa", "pxr"
 };
 
 static const char *printfmtColumns[] = {
 	"pCx", "pCd $r-1",
 	"pCD",
-	"pCw", "pCc", "pCA", "pss", "prc", "pCa"
+	"pCw", "pCc", "pCA", "pss", "prc", "pCa", "pxr"
 };
 
 static const char **printfmt = printfmtSingle;
@@ -1994,8 +1994,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					core->print->cur_enabled = true;
 					return true;
 				}
-			}
-			if (PIDX == 2 && core->seltab == 1) {
+			} else if (PIDX == 2 && core->seltab == 1) {
 				char buf[128];
 				prompt_read ("new-reg-value> ", buf, sizeof (buf));
 				if (*buf) {
@@ -2708,6 +2707,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 	int pc, hexcols = r_config_get_i (core->config, "hex.cols");
 	if (autoblocksize) {
 		switch (core->printidx) {
+		case R_CORE_VISUAL_MODE_PXR: // prc
 		case R_CORE_VISUAL_MODE_PRC: // prc
 			r_core_block_size (core, (int)(core->cons->rows * hexcols * 3.5));
 			break;
