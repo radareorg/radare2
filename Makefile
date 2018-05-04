@@ -8,7 +8,11 @@ PYTHON?=python
 R2R=radare2-regressions
 R2R_URL=$(shell doc/repo REGRESSIONS)
 R2BINS=$(shell cd binr ; echo r*2 r2agent r2pm r2-indent)
+ifdef SOURCE_DATE_EPOCH
+BUILDSEC=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null || date -u "+__%H:%M:%S")
+else
 BUILDSEC=$(shell date "+__%H:%M:%S")
+endif
 DATADIRS=libr/cons/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d libr/anal/d
 USE_ZIP=YES
 ZIP=zip
@@ -59,10 +63,10 @@ all: plugins.cfg libr/include/r_version.h
 GIT_TAP=$(shell git describe --tags --match "[0-9]*" 2>/dev/null || echo $(VERSION))
 GIT_TIP=$(shell git rev-parse HEAD 2>/dev/null || echo HEAD)
 R2_VER=$(shell grep VERSION configure.acr | head -n1 | awk '{print $$2}')
-ifndef SOURCE_DATE_EPOCH
-GIT_NOW=$(shell date +%Y-%m-%d)
+ifdef SOURCE_DATE_EPOCH
+GIT_NOW=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+%Y-%m-%d" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+%Y-%m-%d" 2>/dev/null || date -u "+%Y-%m-%d")
 else
-GIT_NOW=$(shell date --utc --date="@$$SOURCE_DATE_EPOCH" +%Y-%m-%d)
+GIT_NOW=$(shell date "+%Y-%m-%d")
 endif
 
 libr/include/r_version.h:
