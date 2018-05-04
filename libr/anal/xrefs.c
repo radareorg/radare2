@@ -28,6 +28,23 @@ xrefs
 #define ht_update_u64(_ht,_key,_value) (ht_update ((_ht), u64_to_key (_key), _value))
 #define ht_delete_u64(_ht,_key) (ht_delete ((_ht), u64_to_key (_key)))
 
+R_API RAnalRef *r_anal_ref_new() {
+	RAnalRef *ref = R_NEW0 (RAnalRef);
+	if (ref) {
+		ref->addr = -1;
+		ref->at = -1;
+		ref->type = R_ANAL_REF_TYPE_CODE;
+	}
+	return ref;
+}
+
+R_API RList *r_anal_ref_list_new() {
+	return r_list_newf (r_anal_ref_free);
+}
+
+R_API void r_anal_ref_free(void *ref) {
+	free (ref);
+}
 void xrefs_ht_free(HtKv *kv) {
 	free (kv->key);
 	ht_free (kv->value);
@@ -127,6 +144,10 @@ R_API int r_anal_xrefs_set (RAnal *anal, const RAnalRefType type, ut64 from, ut6
 	return true;
 }
 
+R_API int r_anal_ref_add(RAnal *anal, ut64 addr, ut64 at, int type) {
+	return r_anal_xrefs_set (anal, type, at, addr);
+}
+
 R_API int r_anal_xrefs_deln (RAnal *anal, const RAnalRefType type, ut64 from, ut64 to) {
 	if (!anal) {
 		return false;
@@ -134,6 +155,16 @@ R_API int r_anal_xrefs_deln (RAnal *anal, const RAnalRefType type, ut64 from, ut
 	ht_delete_u64 (anal->dict_refs, from);
 	ht_delete_u64 (anal->dict_xrefs, to);
 	return true;
+}
+
+R_API int r_anal_ref_del(RAnal *anal, ut64 from, ut64 to) {
+	bool res = false;
+	res |= r_anal_xrefs_deln (anal, R_ANAL_REF_TYPE_NULL, from, to);
+	res |= r_anal_xrefs_deln (anal, R_ANAL_REF_TYPE_CODE, from, to);
+	res |= r_anal_xrefs_deln (anal, R_ANAL_REF_TYPE_CALL, from, to);
+	res |= r_anal_xrefs_deln (anal, R_ANAL_REF_TYPE_DATA, from, to);
+	res |= r_anal_xrefs_deln (anal, R_ANAL_REF_TYPE_STRING, from, to);
+	return res;
 }
 
 R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr) {
