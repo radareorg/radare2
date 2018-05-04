@@ -8,8 +8,10 @@
 #include <r_cons.h>
 // #include "../../../shlr/lz4/lz4.h"
 #include "../../../shlr/lz4/lz4.c"
+#include "nxo/nxo.h"
 
 #define NSO_OFF(x) r_offsetof (NSOHeader, x)
+#define NSO_OFFSET_MODMEMOFF r_offsetof (NXOStart, mod_memoffset)
 
 // starting at 0
 typedef struct {
@@ -31,14 +33,8 @@ typedef struct {
 	ut32 bss_size;	// 60
 } NSOHeader;
 
-static ut32 readLE32(RBuffer *buf, int off) {
-	int left = 0;
-	const ut8 *data = r_buf_get_at (buf, off, &left);
-	return left > 3? r_read_le32 (data): 0;
-}
-
 static uint32_t decompress(const ut8 *cbuf, ut8 *obuf, int32_t csize, int32_t usize) {
-	if (csize < 0 || usize < 0) {
+	if (csize < 0 || usize < 0 || !cbuf || !obuf) {
 		return -1;
 	}
 	return LZ4_decompress_safe ((const char*)cbuf, (char*)obuf, (uint32_t) csize, (uint32_t) usize);
@@ -46,13 +42,6 @@ static uint32_t decompress(const ut8 *cbuf, ut8 *obuf, int32_t csize, int32_t us
 
 static ut64 baddr(RBinFile *bf) {
 	return 0;	// XXX
-}
-
-static const char *fileType(const ut8 *buf) {
-	if (!memcmp (buf, "NSO0", 4)) {
-		return "nso0";
-	}
-	return NULL;
 }
 
 static bool check_bytes(const ut8 *buf, ut64 length) {
@@ -64,6 +53,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 
 static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	RBin *rbin = bf->rbin;
+        RBinNXOObj *bin = R_NEW0 (RBinNXOObj);
 	ut32 toff = readLE32 (bf->buf, NSO_OFF (text_memoffset));
 	ut32 tsize = readLE32 (bf->buf, NSO_OFF (text_size));
 	ut32 rooff = readLE32 (bf->buf, NSO_OFF (ro_memoffset));
@@ -71,7 +61,7 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sd
 	ut32 doff = readLE32 (bf->buf, NSO_OFF (data_memoffset));
 	ut32 dsize = readLE32 (bf->buf, NSO_OFF (data_size));
 	ut64 total_size = tsize + rosize + dsize;
-	ut8 *newbuf = calloc (total_size, sizeof (ut8));
+        RBuffer *newbuf = r_buf_new_empty (total_size);
 	ut64 ba = baddr (bf);
 
         if (rbin->iob.io && !(rbin->iob.io->cached & R_IO_WRITE)) {
@@ -79,20 +69,26 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sd
                 goto fail;
         }
 	/* Decompress each sections */
-	if (decompress (buf + toff, newbuf, rooff - toff, tsize) != tsize) {
+	if (decompress (buf + toff, r_buf_get_at (newbuf, 0, NULL), rooff - toff, tsize) != tsize) {
 		goto fail;
 	}
-	if (decompress (buf + rooff, newbuf + tsize, doff - rooff, rosize) != rosize) {
+	if (decompress (buf + rooff, r_buf_get_at (newbuf, tsize, NULL), doff - rooff, rosize) != rosize) {
 		goto fail;
 	}
-	if (decompress (buf + doff, newbuf + tsize + rosize, r_buf_size (bf->buf) - doff, dsize) != dsize) {
+	if (decompress (buf + doff, r_buf_get_at (newbuf, tsize + rosize, NULL), r_buf_size (bf->buf) - doff, dsize) != dsize) {
 		goto fail;
 	}
 	/* Load unpacked binary */
-	r_io_write_at (rbin->iob.io, ba, newbuf, total_size);
-	return R_NOTNULL;
+	r_io_write_at (rbin->iob.io, ba, r_buf_get_at (newbuf, 0, NULL), total_size);
+        ut32 modoff = readLE32 (newbuf, NSO_OFFSET_MODMEMOFF);
+        bin->methods_list = r_list_newf ((RListFree)free);
+	bin->imports_list = r_list_newf ((RListFree)free);
+	bin->classes_list = r_list_newf ((RListFree)free);
+        eprintf ("MOD Offset = 0x%lx\n", modoff);
+        parseMod(newbuf, bin, modoff, ba);
+	return (void *) bin;
 fail:
-	R_FREE (newbuf);
+        r_buf_free (newbuf);
 	return NULL;
 }
 
@@ -212,8 +208,28 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
+static RList *symbols(RBinFile *bf) {
+	RBinNXOObj *bin;
+	if (!bf || !bf->o || !bf->o->bin_obj) {
+		return NULL;
+	}
+	bin = (RBinNXOObj*) bf->o->bin_obj;
+	if (!bin) {
+		return NULL;
+	}
+	return bin->methods_list;
+}
+
 static RList *imports(RBinFile *bf) {
-	return NULL;
+	RBinNXOObj *bin;
+	if (!bf || !bf->o || !bf->o->bin_obj) {
+		return NULL;
+	}
+	bin = (RBinNXOObj*) bf->o->bin_obj;
+	if (!bin) {
+		return NULL;
+	}
+	return bin->imports_list;
 }
 
 static RList *libs(RBinFile *bf) {
@@ -255,12 +271,12 @@ RBinPlugin r_bin_plugin_nso = {
 	.load_bytes = &load_bytes,
 	.destroy = &destroy,
 	.check_bytes = &check_bytes,
-	.baddr = baddr,
+	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,
 	.get_sdb = &get_sdb,
-	.symbols = NULL,
+	.symbols = &symbols,
 	.imports = &imports,
 	.info = &info,
 	.libs = &libs,
