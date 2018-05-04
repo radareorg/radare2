@@ -1455,8 +1455,10 @@ static int cb_fsview(void *user, void *data) {
 }
 
 static int cb_cmddepth(void *user, void *data) {
+	RCore *core = (RCore *)user;
 	int c = R_MAX (((RConfigNode*)data)->i_value, 0);
-	((RCore *)user)->cmd_depth = c;
+	core->max_cmd_depth = c;
+	core->cmd_depth = c;
 	return true;
 }
 
