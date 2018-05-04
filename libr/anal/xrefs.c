@@ -79,6 +79,9 @@ static const char *analref_toString(RAnalRefType type) {
 
 static bool appendRef(RList *list, const char *k, RAnalRef *ref) {
 	RAnalRef *cloned = r_anal_ref_new ();
+	if (!cloned) {
+		return false;
+	}
 	cloned->addr = ref->addr;
 	cloned->at = ref->at;
 	cloned->type = ref->type;
@@ -321,14 +324,15 @@ R_API int r_anal_xrefs_count(RAnal *anal) {
 static int ref_cmp(const RAnalRef *a, const RAnalRef *b) {
 	if (a->at < b->at) {
 		return -1;
-	} else if (a->at > b->at) {
+	}
+	if (a->at > b->at) {
 		return 1;
-	} else {
-		if (a->addr < b->addr) {
-			return -1;
-		} else if (a->addr > b->addr) {
-			return 1;
-		}
+	}
+	if (a->addr < b->addr) {
+		return -1;
+	}
+	if (a->addr > b->addr) {
+		return 1;
 	}
 	return 0;
 }
