@@ -25,16 +25,19 @@ xrefs
 
 #define ht_find_u64(_ht,_key,_found) (ht_find ((_ht), u64_to_key (_key), (_found)))
 #define ht_insert_u64(_ht,_key,_value) (ht_insert ((_ht), u64_to_key (_key), _value))
+#define ht_update_u64(_ht,_key,_value) (ht_update ((_ht), u64_to_key (_key), _value))
 #define ht_delete_u64(_ht,_key) (ht_delete ((_ht), u64_to_key (_key)))
 
 void xrefs_ht_free(HtKv *kv) {
 	free (kv->key);
 	ht_free (kv->value);
+	free (kv);
 }
 
 void xrefs_ref_free(HtKv *kv) {
 	free (kv->key);
 	r_anal_ref_free (kv->value);
+	free (kv);
 }
 
 static const char *analref_toString(RAnalRefType type) {
@@ -100,7 +103,7 @@ static void setxref(SdbHash *m, ut64 from, ut64 to, int type) {
 	ref->addr = to;
 	ref->type = type;
 
-	ht_insert_u64 (ht, to, ref);
+	ht_update_u64 (ht, to, ref);
 }
 
 R_API int r_anal_xrefs_set (RAnal *anal, const RAnalRefType type, ut64 from, ut64 to) {
