@@ -78,6 +78,7 @@ files = [
   'format/mdmp/mdmp_pe.c',
   'format/mdmp/mdmp_pe64.c',
   'format/mz/mz.c',
+  'format/nxo/nxo.c',
   'format/objc/mach064_classes.c',
   'format/objc/mach0_classes.c',
   'format/omf/omf.c',
