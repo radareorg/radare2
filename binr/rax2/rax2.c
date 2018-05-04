@@ -109,6 +109,7 @@ static int help() {
 		"  -f      floating point       ;  rax2 -f 6.3+2.1\n"
 		"  -F      stdin slurp code hex ;  rax2 -F < shellcode.c\n"
 		"  -h      help                 ;  rax2 -h\n"
+		"  -i      dump as C byte array ;  rax2 -i < bytes\n"
 		"  -k      keep base            ;  rax2 -k 33+3 -> 36\n"
 		"  -K      randomart            ;  rax2 -K 0x34 1020304050\n"
 		"  -L      bin -> hex(bignum)   ;  rax2 -L 111111111 # 0x1ff\n"
@@ -172,6 +173,7 @@ static int rax(char *str, int len, int last) {
 			case 'w': flags ^= 1 << 16; break;
 			case 'r': flags ^= 1 << 18; break;
 			case 'L': flags ^= 1 << 19; break;
+			case 'i': flags ^= 1 << 21; break;
 			case 'v': blob_version ("rax2"); return 0;
 			case '\0': return !use_stdin ();
 			default:
@@ -480,6 +482,26 @@ dotherax:
 			free (str);
 		}
 		return false;
+	} else if (flags & (1 << 21)) { // -i
+		static const char start[] = "unsigned char buf[] = {";
+		printf (start);
+		/* resonable amount of bytes per line */
+		const int byte_per_col = 12;
+		for (i = 0; i < len-1; i++) {
+			/* wrapping every N bytes */
+			if (i % byte_per_col == 0) {
+				printf ("\n  ");
+			}
+			printf ("0x%02x, ", (ut8) str[i]);
+		}
+		/* some care for the last element */
+		if (i % byte_per_col == 0) {
+			printf("\n  ");
+		}
+		printf ("0x%02x\n", (ut8) str[len-1]);
+		printf ("};\n");
+		printf ("unsigned int buf_len = %d;\n", len);
+		return true;
 	}
 
 	if (r_str_startswith (str, "0x")) {
