@@ -2637,7 +2637,7 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 							dst->reg->name, ptr, off, item?item->name: "");
 					if (ds->asm_anal) {
 						if (r_io_is_valid_offset (core->io, off, 0)) {
-							r_anal_ref_add (core->anal, ds->addr, off, 'd');
+							r_anal_xrefs_set (core->anal, R_ANAL_REF_TYPE_DATA, off, ds->addr);
 						}
 					}
 				}
@@ -2669,7 +2669,7 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 					            dst->reg->name, ptr, off, item?item->name: s);
 					if (ds->asm_anal) {
 						if (r_io_is_valid_offset (core->io, off, 0)) {
-							r_anal_ref_add (core->anal, ds->addr, ptr, 'd');
+							r_anal_xrefs_set (core->anal, R_ANAL_REF_TYPE_DATA, ptr, ds->addr);
 						}
 					}
 				}

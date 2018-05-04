@@ -5106,10 +5106,10 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			if (list) {
 				r_list_foreach (list, iter, ref) {
 					if (from != UT64_MAX && from == ref->addr) {
-						r_anal_ref_del (core->anal, ref->addr, ref->at);
+						r_anal_xref_del (core->anal, ref->addr, ref->at);
 					}
 					if (from == UT64_MAX) {
-						r_anal_ref_del (core->anal, ref->addr, ref->at);
+						r_anal_xref_del (core->anal, ref->addr, ref->at);
 					}
 				}
 			}
@@ -6133,7 +6133,7 @@ void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk, in
 		r_cons_printf ("f+ aav.0x%08"PFMT64x "= 0x%08"PFMT64x, to, to);
 	} else {
 #if 1
-		r_anal_ref_add (core->anal, to, from, ' ');
+		r_anal_xrefs_set (core->anal, ' ', from, to);
 		r_meta_add (core->anal, 'd', from, from + vsize, NULL);
 		if (!r_flag_get_at (core->flags, to, false)) {
 			char *name = r_str_newf ("aav.0x%08"PFMT64x, to);

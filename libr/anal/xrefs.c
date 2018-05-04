@@ -123,6 +123,7 @@ static void setxref(SdbHash *m, ut64 from, ut64 to, int type) {
 	ht_update_u64 (ht, to, ref);
 }
 
+// set a reference from FROM to TO and a cross-reference(xref) from TO to FROM.
 R_API int r_anal_xrefs_set(RAnal *anal, const RAnalRefType type, ut64 from, ut64 to) {
 	if (!anal) {
 		return false;
@@ -144,10 +145,6 @@ R_API int r_anal_xrefs_set(RAnal *anal, const RAnalRefType type, ut64 from, ut64
 	return true;
 }
 
-R_API int r_anal_ref_add(RAnal *anal, ut64 addr, ut64 at, int type) {
-	return r_anal_xrefs_set (anal, type, at, addr);
-}
-
 R_API int r_anal_xrefs_deln(RAnal *anal, const RAnalRefType type, ut64 from, ut64 to) {
 	if (!anal) {
 		return false;
@@ -157,7 +154,7 @@ R_API int r_anal_xrefs_deln(RAnal *anal, const RAnalRefType type, ut64 from, ut6
 	return true;
 }
 
-R_API int r_anal_ref_del(RAnal *anal, ut64 from, ut64 to) {
+R_API int r_anal_xref_del(RAnal *anal, ut64 from, ut64 to) {
 	bool res = false;
 	res |= r_anal_xrefs_deln (anal, R_ANAL_REF_TYPE_NULL, from, to);
 	res |= r_anal_xrefs_deln (anal, R_ANAL_REF_TYPE_CODE, from, to);
