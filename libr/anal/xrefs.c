@@ -123,7 +123,7 @@ static void setxref(SdbHash *m, ut64 from, ut64 to, int type) {
 	ht_update_u64 (ht, to, ref);
 }
 
-R_API int r_anal_xrefs_set (RAnal *anal, const RAnalRefType type, ut64 from, ut64 to) {
+R_API int r_anal_xrefs_set(RAnal *anal, const RAnalRefType type, ut64 from, ut64 to) {
 	if (!anal) {
 		return false;
 	}
@@ -148,7 +148,7 @@ R_API int r_anal_ref_add(RAnal *anal, ut64 addr, ut64 at, int type) {
 	return r_anal_xrefs_set (anal, type, at, addr);
 }
 
-R_API int r_anal_xrefs_deln (RAnal *anal, const RAnalRefType type, ut64 from, ut64 to) {
+R_API int r_anal_xrefs_deln(RAnal *anal, const RAnalRefType type, ut64 from, ut64 to) {
 	if (!anal) {
 		return false;
 	}
@@ -167,12 +167,12 @@ R_API int r_anal_ref_del(RAnal *anal, ut64 from, ut64 to) {
 	return res;
 }
 
-R_API int r_anal_xrefs_from (RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr) {
+R_API int r_anal_xrefs_from(RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr) {
 	listxrefs (anal->dict_refs, addr, list);
 	return true;
 }
 
-R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 to) {
+R_API RList *r_anal_xrefs_get(RAnal *anal, ut64 to) {
 	RList *list = r_anal_ref_list_new ();
 	if (!list) {
 		return NULL;
@@ -185,7 +185,7 @@ R_API RList *r_anal_xrefs_get (RAnal *anal, ut64 to) {
 	return list;
 }
 
-R_API RList *r_anal_refs_get (RAnal *anal, ut64 from) {
+R_API RList *r_anal_refs_get(RAnal *anal, ut64 from) {
 	RList *list = r_anal_ref_list_new ();
 	if (!list) {
 		return NULL;
@@ -198,7 +198,7 @@ R_API RList *r_anal_refs_get (RAnal *anal, ut64 from) {
 	return list;
 }
 
-R_API RList *r_anal_xrefs_get_from (RAnal *anal, ut64 to) {
+R_API RList *r_anal_xrefs_get_from(RAnal *anal, ut64 to) {
 	RList *list = r_anal_ref_list_new ();
 	if (!list) {
 		return NULL;
@@ -267,7 +267,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 	r_list_free (list);
 }
 
-R_API const char *r_anal_xrefs_type_tostring (char type) {
+R_API const char *r_anal_xrefs_type_tostring(RAnalRefType type) {
 	switch (type) {
 	case R_ANAL_REF_TYPE_CODE:
 		return "JMP";
@@ -326,7 +326,7 @@ static int ref_cmp(const RAnalRef *a, const RAnalRef *b) {
 	return 0;
 }
 
-static RList *fcn_get_refs (RAnalFunction *fcn, SdbHash *ht) {
+static RList *fcn_get_refs(RAnalFunction *fcn, SdbHash *ht) {
 	RListIter *iter;
 	RAnalBlock *bb;
 	RList *list = r_anal_ref_list_new ();
