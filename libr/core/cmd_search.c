@@ -2487,7 +2487,7 @@ static int cmd_search(void *data, const char *input) {
 	int ignorecase = false;
 	int param_offset = 2;
 	char *inp;
-	if (!core || !core->io || !core->io->desc) {
+	if (!core || !core->io) {
 		eprintf ("Can't search if we don't have an open file.\n");
 		return false;
 	}
