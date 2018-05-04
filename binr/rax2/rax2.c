@@ -483,25 +483,26 @@ dotherax:
 		}
 		return false;
 	} else if (flags & (1 << 21)) { // -i
-                printf("unsigned char buf[] = {");
-                /* resonable amount of bytes per line */
-                int byte_per_col = 12;
+                printf("%d\n", len);
+		printf("unsigned char buf[] = {");
+		/* resonable amount of bytes per line */
+		const int byte_per_col = 12;
 		for (i = 0; i < len-1; i++) {
-                        /* wrapping every N bytes */
-                        if (i % byte_per_col == 0) {
-                                printf("\n  ");
-                        }
+			/* wrapping every N bytes */
+			if (i % byte_per_col == 0) {
+				printf ("\n  ");
+			}
 			printf ("0x%02x, ", (ut8) str[i]);
 		}
-                /* some care for the last element */
-                if (i % byte_per_col == 0) {
-                        printf("\n  ");
-                }
-                printf ("0x%02x\n", (ut8) str[len-1]);
+		/* some care for the last element */
+		if (i % byte_per_col == 0) {
+			printf("\n  ");
+		}
+		printf ("0x%02x\n", (ut8) str[len-1]);
 		printf ("};\n");
 		printf ("unsigned int buf_len = %d;\n", len);
-                return true;
-        }
+		return true;
+	}
 
 	if (r_str_startswith (str, "0x")) {
 		out_mode = (flags & 32)? '0': 'I';
