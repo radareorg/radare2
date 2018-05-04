@@ -277,6 +277,19 @@ R_API const char *r_anal_xrefs_type_tostring(RAnalRefType type) {
 	}
 }
 
+R_API RAnalRefType r_anal_xrefs_type(char ch) {
+	switch (ch) {
+	case R_ANAL_REF_TYPE_CODE:
+	case R_ANAL_REF_TYPE_CALL:
+	case R_ANAL_REF_TYPE_DATA:
+	case R_ANAL_REF_TYPE_STRING:
+	case R_ANAL_REF_TYPE_NULL:
+		return (RAnalRefType)ch;
+	default:
+		return R_ANAL_REF_TYPE_NULL;
+	}
+}
+
 R_API bool r_anal_xrefs_init(RAnal *anal) {
 	SdbHash *tmp;
 
