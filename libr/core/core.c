@@ -1755,7 +1755,8 @@ R_API bool r_core_init(RCore *core) {
 	}
 	r_core_setenv (core);
 	core->lock = r_th_lock_new (true);
-	core->cmd_depth = R_CORE_CMD_DEPTH + 1;
+	core->max_cmd_depth = R_CORE_CMD_DEPTH + 1;
+	core->cmd_depth = core->max_cmd_depth;
 	core->sdb = sdb_new (NULL, "r2kv.sdb", 0); // XXX: path must be in home?
 	core->lastsearch = NULL;
 	core->cmdfilter = NULL;

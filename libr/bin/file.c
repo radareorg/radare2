@@ -977,7 +977,6 @@ R_API void r_bin_file_get_strings_range(RBinFile *bf, RList *list, int min, ut64
 		to = r_buf_size (bf->buf);
 	}
 	if (!to) {
-		eprintf ("Empty file with fd %d?\n", bf->buf->fd);
 		return;
 	}
 	if (bf->rawstr != 2) {
