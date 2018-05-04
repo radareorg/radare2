@@ -193,6 +193,7 @@ typedef struct r_core_t {
 	RList *scriptstack;
 	RList *tasks;
 	int cmd_depth;
+	int max_cmd_depth;
 	ut8 switch_file_view;
 	Sdb *sdb;
 	int incomment;
