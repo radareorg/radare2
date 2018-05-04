@@ -63,7 +63,3 @@ R_API int r_anal_ref_del(RAnal *anal, ut64 from, ut64 to) {
 #endif
 	return true;
 }
-
-R_API RList *r_anal_xref_get(RAnal *anal, ut64 addr) {
-	return r_anal_xrefs_get (anal, addr);
-}

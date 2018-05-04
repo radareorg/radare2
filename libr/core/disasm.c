@@ -1142,7 +1142,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		return;
 	}
 	/* show xrefs */
-	RList *xrefs = r_anal_xref_get (core->anal, ds->at);
+	RList *xrefs = r_anal_xrefs_get (core->anal, ds->at);
 	if (!xrefs) {
 		return;
 	}
@@ -5247,7 +5247,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		{
 			RAnalRef *ref;
 			RListIter *iter;
-			RList *xrefs = r_anal_xref_get (core->anal, at);
+			RList *xrefs = r_anal_xrefs_get (core->anal, at);
 			if (xrefs && !r_list_empty (xrefs)) {
 				r_cons_printf (",\"xrefs\":[");
 				r_list_foreach (xrefs, iter, ref) {
