@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Credits to https://github.com/derekparker/delve/blob/master/scripts/gencert.sh
 
 # Check if the certificate is already present in the system keychain
