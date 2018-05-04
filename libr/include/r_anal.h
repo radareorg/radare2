@@ -1426,6 +1426,7 @@ R_API RList *r_anal_ref_list_new(void);
 R_API void r_anal_ref_free(void *ref);
 R_API int r_anal_xrefs_count(RAnal *anal);
 R_API const char *r_anal_xrefs_type_tostring(RAnalRefType type);
+R_API RAnalRefType r_anal_xrefs_type(char ch);
 R_API RList *r_anal_xrefs_get(RAnal *anal, ut64 to);
 R_API RList *r_anal_refs_get(RAnal *anal, ut64 to);
 R_API RList *r_anal_xrefs_get_from(RAnal *anal, ut64 from);
@@ -1435,8 +1436,8 @@ R_API RList *r_anal_fcn_get_xrefs(RAnal *anal, RAnalFunction *fcn);
 R_API RList *r_anal_fcn_get_refs_sorted(RAnal *anal, RAnalFunction *fcn);
 R_API RList *r_anal_fcn_get_xrefs_sorted(RAnal *anal, RAnalFunction *fcn);
 R_API int r_anal_xrefs_from(RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr);
-R_API int r_anal_xrefs_set(RAnal *anal, const RAnalRefType type, ut64 from, ut64 to);
-R_API int r_anal_xrefs_deln(RAnal *anal, const RAnalRefType type, ut64 from, ut64 to);
+R_API int r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type);
+R_API int r_anal_xrefs_deln(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type);
 R_API int r_anal_xref_del(RAnal *anal, ut64 at, ut64 addr);
 
 R_API RList* r_anal_fcn_get_vars (RAnalFunction *anal);

@@ -2602,10 +2602,11 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			ut64 a, b;
 			char *mi = strdup (input);
 			if (mi && mi[3] == ' ' && (p = strchr (mi + 4, ' '))) {
+				RAnalRefType reftype = r_anal_xrefs_type (input[2]);
 				*p = 0;
 				a = r_num_math (core->num, mi + 3);
 				b = r_num_math (core->num, p + 1);
-				r_anal_xrefs_set (core->anal, input[2], a, b);
+				r_anal_xrefs_set (core->anal, a, b, reftype);
 			} else {
 				r_core_cmd_help (core, help_msg_afx);
 			}
@@ -2621,7 +2622,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				*p = 0;
 				a = r_num_math (core->num, mi);
 				b = r_num_math (core->num, p + 1);
-				r_anal_xrefs_deln (core->anal, -1, a, b);
+				r_anal_xrefs_deln (core->anal, a, b, -1);
 			} else {
 				eprintf ("Usage: afx- [src] [dst]\n");
 			}
@@ -4753,7 +4754,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 				}
 #else
 				// add xref here
-				r_anal_xrefs_set (core->anal, R_ANAL_REF_TYPE_CALL, addr, op.jump);
+				r_anal_xrefs_set (core->anal, addr, op.jump, R_ANAL_REF_TYPE_CALL);
 				if (r_io_is_valid_offset (core->io, op.jump, 1)) {
 					r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_CALL, depth);
 				}
@@ -5352,6 +5353,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		int n = r_str_word_set0 (ptr);
 		ut64 at = core->offset;
 		ut64 addr = UT64_MAX;
+		RAnalRefType reftype = r_anal_xrefs_type (input[0]);
 		switch (n) {
 		case 2: // get at
 			at = r_num_math (core->num, r_str_word_get0 (ptr, 1));
@@ -5363,7 +5365,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			free (ptr);
 			return false;
 		}
-		r_anal_xrefs_set (core->anal, input[0], at, addr);
+		r_anal_xrefs_set (core->anal, at, addr, reftype);
 		free (ptr);
 		}
 	   	break;
@@ -6133,7 +6135,7 @@ void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk, in
 		r_cons_printf ("f+ aav.0x%08"PFMT64x "= 0x%08"PFMT64x, to, to);
 	} else {
 #if 1
-		r_anal_xrefs_set (core->anal, ' ', from, to);
+		r_anal_xrefs_set (core->anal, from, to, R_ANAL_REF_TYPE_NULL);
 		r_meta_add (core->anal, 'd', from, from + vsize, NULL);
 		if (!r_flag_get_at (core->flags, to, false)) {
 			char *name = r_str_newf ("aav.0x%08"PFMT64x, to);

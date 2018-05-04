@@ -127,7 +127,7 @@ static void setxref(SdbHash *m, ut64 from, ut64 to, int type) {
 }
 
 // set a reference from FROM to TO and a cross-reference(xref) from TO to FROM.
-R_API int r_anal_xrefs_set(RAnal *anal, const RAnalRefType type, ut64 from, ut64 to) {
+R_API int r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type) {
 	if (!anal) {
 		return false;
 	}
@@ -137,18 +137,12 @@ R_API int r_anal_xrefs_set(RAnal *anal, const RAnalRefType type, ut64 from, ut64
 	if (!anal->iob.is_valid_offset (anal->iob.io, to, 0)) {
 		return false;
 	}
-	// unknown refs should not be stored. seems wrong
-#if 0
-	if (type == R_ANAL_REF_TYPE_NULL) {
-		return false;
-	}
-#endif
 	setxref (anal->dict_xrefs, to, from, type);
 	setxref (anal->dict_refs, from, to, type);
 	return true;
 }
 
-R_API int r_anal_xrefs_deln(RAnal *anal, const RAnalRefType type, ut64 from, ut64 to) {
+R_API int r_anal_xrefs_deln(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type) {
 	if (!anal) {
 		return false;
 	}
@@ -159,11 +153,11 @@ R_API int r_anal_xrefs_deln(RAnal *anal, const RAnalRefType type, ut64 from, ut6
 
 R_API int r_anal_xref_del(RAnal *anal, ut64 from, ut64 to) {
 	bool res = false;
-	res |= r_anal_xrefs_deln (anal, R_ANAL_REF_TYPE_NULL, from, to);
-	res |= r_anal_xrefs_deln (anal, R_ANAL_REF_TYPE_CODE, from, to);
-	res |= r_anal_xrefs_deln (anal, R_ANAL_REF_TYPE_CALL, from, to);
-	res |= r_anal_xrefs_deln (anal, R_ANAL_REF_TYPE_DATA, from, to);
-	res |= r_anal_xrefs_deln (anal, R_ANAL_REF_TYPE_STRING, from, to);
+	res |= r_anal_xrefs_deln (anal, from, to, R_ANAL_REF_TYPE_NULL);
+	res |= r_anal_xrefs_deln (anal, from, to, R_ANAL_REF_TYPE_CODE);
+	res |= r_anal_xrefs_deln (anal, from, to, R_ANAL_REF_TYPE_CALL);
+	res |= r_anal_xrefs_deln (anal, from, to, R_ANAL_REF_TYPE_DATA);
+	res |= r_anal_xrefs_deln (anal, from, to, R_ANAL_REF_TYPE_STRING);
 	return res;
 }
 

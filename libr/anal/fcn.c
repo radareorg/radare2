@@ -1084,7 +1084,7 @@ repeat:
 
 		if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
 			// swapped parameters wtf
-			r_anal_xrefs_set (anal, R_ANAL_REF_TYPE_DATA, op.addr, op.ptr);
+			r_anal_xrefs_set (anal, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA);
 		}
 
 		switch (op.type & R_ANAL_OP_TYPE_MASK) {
@@ -1223,7 +1223,7 @@ repeat:
 				return R_ANAL_RET_END;
 			}
 			if (anal->opt.jmpref) {
-				(void) r_anal_xrefs_set (anal, R_ANAL_REF_TYPE_CODE, op.addr, op.jump);
+				(void) r_anal_xrefs_set (anal, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
 			}
 			if (!anal->opt.jmpabove && (op.jump < fcn->addr)) {
 				FITFCNSZ ();
@@ -1318,7 +1318,7 @@ repeat:
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
 			if (anal->opt.cjmpref) {
-				(void) r_anal_xrefs_set (anal, R_ANAL_REF_TYPE_CODE, op.addr, op.jump);
+				(void) r_anal_xrefs_set (anal, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
 			}
 			if (!overlapped) {
 				bb->jump = op.jump;
@@ -1389,7 +1389,7 @@ repeat:
 		case R_ANAL_OP_TYPE_IRCALL:
 			/* call [dst] */
 			// XXX: this is TYPE_MCALL or indirect-call
-			(void) r_anal_xrefs_set (anal, R_ANAL_REF_TYPE_CALL, op.addr, op.ptr);
+			(void) r_anal_xrefs_set (anal, op.addr, op.ptr, R_ANAL_REF_TYPE_CALL);
 
 			if (op.ptr != UT64_MAX && r_anal_noreturn_at (anal, op.ptr)) {
 				FITFCNSZ ();
@@ -1400,7 +1400,7 @@ repeat:
 		case R_ANAL_OP_TYPE_CCALL:
 		case R_ANAL_OP_TYPE_CALL:
 			/* call dst */
-			(void) r_anal_xrefs_set (anal, R_ANAL_REF_TYPE_CALL, op.addr, op.jump);
+			(void) r_anal_xrefs_set (anal, op.addr, op.jump, R_ANAL_REF_TYPE_CALL);
 
 			if (r_anal_noreturn_at (anal, op.jump)) {
 				FITFCNSZ ();
@@ -1482,7 +1482,7 @@ analopfinish:
 			last_is_push = true;
 			last_push_addr = op.val;
 			if (anal->iob.is_valid_offset (anal->iob.io, op.val, 1)) {
-				(void) r_anal_xrefs_set (anal, R_ANAL_REF_TYPE_DATA, op.addr, op.val);
+				(void) r_anal_xrefs_set (anal, op.addr, op.val, R_ANAL_REF_TYPE_DATA);
 			}
 			break;
 		case R_ANAL_OP_TYPE_RET:
@@ -1602,7 +1602,7 @@ R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 
 	r_list_foreach (refs, iter, ref) {
 		if (ref->type == R_ANAL_REF_TYPE_CODE && r_anal_fcn_is_in_offset (fcn, ref->addr)) {
-			r_anal_xrefs_deln (anal, ref->type, ref->at, ref->addr);
+			r_anal_xrefs_deln (anal, ref->at, ref->addr, ref->type);
 		}
 	}
 	r_list_free (refs);

@@ -443,7 +443,7 @@ static void r_anal_set_stringrefs(RCore *core, RAnalFunction *fcn) {
 	r_list_foreach (refs, iter, ref) {
 		if (ref->type == R_ANAL_REF_TYPE_DATA &&
 		    r_bin_is_string (core->bin, ref->addr)) {
-			r_anal_xrefs_set (core->anal, R_ANAL_REF_TYPE_STRING, ref->at, ref->addr);
+			r_anal_xrefs_set (core->anal, ref->at, ref->addr, R_ANAL_REF_TYPE_STRING);
 		}
 	}
 	r_list_free (refs);
@@ -726,7 +726,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 						r_list_sort (f->fcn_locs, &cmpfcn);
 					}
 				}
-				r_anal_xrefs_set (core->anal, reftype, from, fcn->addr);
+				r_anal_xrefs_set (core->anal, from, fcn->addr, reftype);
 			}
 			// XXX: this is wrong. See CID 1134565
 			r_anal_fcn_insert (core->anal, fcn);
@@ -1547,7 +1547,7 @@ R_API int r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dept
 
 			// we should analyze and add code ref otherwise aaa != aac
 			if (from != UT64_MAX) {
-				r_anal_xrefs_set (core->anal, reftype, from, fcn->addr);
+				r_anal_xrefs_set (core->anal, from, fcn->addr, reftype);
 			}
 			return true;
 		}
@@ -2624,7 +2624,7 @@ static int core_anal_followptr(RCore *core, int type, ut64 at, ut64 ptr, ut64 re
 	}
 	if (ref == UT64_MAX || ptr == ref) {
 		const RAnalRefType t = code? type? type: R_ANAL_REF_TYPE_CODE: R_ANAL_REF_TYPE_DATA;
-		r_anal_xrefs_set (core->anal, t, at, ptr);
+		r_anal_xrefs_set (core->anal, at, ptr, t);
 		return true;
 	}
 	if (depth < 1) {
@@ -2966,7 +2966,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 				}
 				// Add to SDB
 				if (xref_to) {
-					r_anal_xrefs_set (core->anal, type, at, xref_to);
+					r_anal_xrefs_set (core->anal, at, xref_to, type);
 				}	
 			} else if (rad == 'j') {
 				// Output JSON
@@ -3580,7 +3580,7 @@ static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 		bool validRef = false;
 		if (trace && myvalid (mycore->io, refptr)) {
 			if (ntarget == UT64_MAX || ntarget == refptr) {
-				r_anal_xrefs_set (mycore->anal, R_ANAL_REF_TYPE_DATA, esil->address, refptr);
+				r_anal_xrefs_set (mycore->anal, esil->address, refptr, R_ANAL_REF_TYPE_DATA);
 				str[0] = 0;
 				if (r_io_read_at (mycore->io, refptr, str, sizeof (str)) < 1) {
 					eprintf ("Invalid read\n");
@@ -3595,7 +3595,7 @@ static int esilbreak_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 
 		/** resolve ptr */
 		if (ntarget == UT64_MAX || ntarget == addr || (ntarget == UT64_MAX && !validRef)) {
-			r_anal_xrefs_set (mycore->anal, R_ANAL_REF_TYPE_DATA, esil->address, addr);
+			r_anal_xrefs_set (mycore->anal, esil->address, addr, R_ANAL_REF_TYPE_DATA);
 		}
 	}
 	return 0; // fallback
@@ -3934,15 +3934,15 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 				// arm64
 				if (core->anal->cur && arch == R2_ARCH_ARM64) {
 					if (CHECKREF (ESIL->cur)) {
-						r_anal_xrefs_set (core->anal, R_ANAL_REF_TYPE_STRING, cur, ESIL->cur);
+						r_anal_xrefs_set (core->anal, cur, ESIL->cur, R_ANAL_REF_TYPE_STRING);
 					}
 				} else if ((target && op.ptr == ntarget) || !target) {
 			//		if (core->anal->cur && strcmp (core->anal->cur->arch, "arm")) {
 					if (CHECKREF (ESIL->cur)) {
 						if (op.ptr && r_io_is_valid_offset (core->io, op.ptr, !core->anal->opt.noncode)) {
-							r_anal_xrefs_set (core->anal, R_ANAL_REF_TYPE_STRING, cur, op.ptr);
+							r_anal_xrefs_set (core->anal, cur, op.ptr, R_ANAL_REF_TYPE_STRING);
 						} else {
-							r_anal_xrefs_set (core->anal, R_ANAL_REF_TYPE_STRING, cur, ESIL->cur);
+							r_anal_xrefs_set (core->anal, cur, ESIL->cur, R_ANAL_REF_TYPE_STRING);
 						}
 					}
 				}
@@ -3957,7 +3957,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 					ut64 dst = ESIL->cur;
 					if ((target && dst == ntarget) || !target) {
 						if (CHECKREF (dst)) {
-							r_anal_xrefs_set (core->anal, R_ANAL_REF_TYPE_DATA, cur, dst);
+							r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA);
 						}
 					}
 				//	if (cfg_anal_strings) {
@@ -3979,7 +3979,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 							RFlagItem *f;
 							char *str;
 							if (CHECKREF (dst) || CHECKREF (cur)) {
-								r_anal_xrefs_set (core->anal, R_ANAL_REF_TYPE_DATA, cur, dst);
+								r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA);
 								if (cfg_anal_strings) {
 									add_string_ref (core, dst);
 								}
@@ -4004,7 +4004,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 					ut64 dst = esilbreak_last_read;
 					if (dst != UT64_MAX && CHECKREF (dst)) {
 						if (myvalid (mycore->io, dst)) {
-							r_anal_xrefs_set (core->anal, R_ANAL_REF_TYPE_DATA, cur, dst);
+							r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA);
 							if (cfg_anal_strings) {
 								add_string_ref (core, dst);
 							}
@@ -4013,7 +4013,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 					dst = esilbreak_last_data;
 					if (dst != UT64_MAX && CHECKREF (dst)) {
 						if (myvalid (mycore->io, dst)) {
-							r_anal_xrefs_set (core->anal, R_ANAL_REF_TYPE_DATA, cur, dst);
+							r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA);
 							if (cfg_anal_strings) {
 								add_string_ref (core, dst);
 							}
@@ -4026,7 +4026,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 					ut64 dst = op.jump;
 					if (CHECKREF (dst)) {
 						if (myvalid (core->io, dst)) {
-							r_anal_xrefs_set (core->anal, R_ANAL_REF_TYPE_CODE, cur, dst);
+							r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_CODE);
 						}
 					}
 				}
@@ -4036,7 +4036,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 					ut64 dst = op.jump;
 					if (CHECKREF (dst)) {
 						if (myvalid (core->io, dst)) {
-							r_anal_xrefs_set (core->anal, R_ANAL_REF_TYPE_CALL, cur, dst);
+							r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_CALL);
 						}
 						ESIL->old = cur + op.size;
 						getpcfromstack (core, ESIL);
@@ -4060,7 +4060,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 								(op.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_UCALL
 								? R_ANAL_REF_TYPE_CALL
 								: R_ANAL_REF_TYPE_CODE;
-							r_anal_xrefs_set (core->anal, ref, cur, dst);
+							r_anal_xrefs_set (core->anal, cur, dst, ref);
 						}
 					}
 				}
