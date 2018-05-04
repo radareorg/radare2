@@ -210,15 +210,13 @@ R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 			return false;
 		}
 	} else if (!strcmp (op, "recj")) {
-		int of = *b == 0xf;
-		if (b[of] < 0x80 && b[of] >= 0x70) { // jo, jno, jb, jae, je, jne, jbe, ja, js, jns
-			if (of) {
-				r_core_cmdf (core, "wx 0f%x\n", (b[1]%2)? b[1] - 1: b[1] + 1);
-			} else {
+		int is_near = (*b == 0xf);
+		if (b[0] < 0x80 && b[0] >= 0x70) { // short jmps: jo, jno, jb, jae, je, jne, jbe, ja, js, jns
 				r_core_cmdf (core, "wx %x\n", (b[0]%2)? b[0] - 1: b[0] + 1);
-			}
+		} else if (is_near && b[1] < 0x90 && b[1] >= 0x80) { // near jmps: jo, jno, jb, jae, je, jne, jbe, ja, js, jns
+				r_core_cmdf (core, "wx 0f%x\n", (b[1]%2)? b[1] - 1: b[1] + 1);
 		} else {
-			eprintf ("Invalid opcode\n");
+			eprintf ("Invalid conditional jump opcode\n");
 			return false;
 		}
 	} else if (!strcmp (op, "ret1")) {
