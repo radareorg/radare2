@@ -21,6 +21,9 @@ xrefs
 20: call 10
 #endif
 
+// XXX: is it possible to have multiple type for the same (from, to) pair?
+//      if it is, things need to be adjusted
+
 #define u64_to_key(x) (sdb_fmt ("%"PFMT64x, (x)))
 
 #define ht_find_u64(_ht,_key,_found) (ht_find ((_ht), u64_to_key (_key), (_found)))
