@@ -196,7 +196,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 	RListIter *iter;
 	RAnalRef *ref;
 	RList *list = r_anal_ref_list_new();
-	listxrefs (anal->dict_xrefs, UT64_MAX, list);
+	listxrefs (anal->dict_refs, UT64_MAX, list);
 	if (rad == 'j') {
 		anal->cb_printf ("{");
 	}
