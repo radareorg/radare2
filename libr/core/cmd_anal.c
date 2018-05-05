@@ -380,7 +380,8 @@ static const char *help_msg_afx[] = {
 	"Usage:", "afx[-cCd?] [src] [dst]", " manage function references (see also ar?)",
 	"afxc", " sym.main+0x38 sym.printf", "add code ref",
 	"afxC", " sym.main sym.puts", "add call ref",
-	"afxd", " sym.main str.helloworld", "add data ref",
+	"afxd", " sym.main obj.count", "add data ref",
+	"afxs", " sym.main str.helloworld", "add string ref",
 	"afx-", " sym.main str.helloworld", "remove reference",
 	NULL
 };
@@ -559,10 +560,11 @@ static const char *help_msg_av[] = {
 static const char *help_msg_ax[] = {
 	"Usage:", "ax[?d-l*]", " # see also 'afx?'",
 	"ax", "", "list refs",
+	"ax*", "", "output radare commands",
 	"ax", " addr [at]", "add code ref pointing to addr (from curseek)",
 	"ax-", " [at]", "clean all refs/refs from addr",
 	"ax-*", "", "clean all refs/refs",
-	"axc", " addr [at]", "add code jmp ref // unused?",
+	"axc", " addr [at]", "add generic code ref",
 	"axC", " addr [at]", "add code call ref",
 	"axg", " [addr]", "show xrefs graph to reach current function",
 	"axgj", " [addr]", "show xrefs graph to reach current function in json format",
@@ -572,7 +574,7 @@ static const char *help_msg_ax[] = {
 	"axF", " [flg-glob]", "find data/code references of flags",
 	"axt", " [addr]", "find data/code references to this address",
 	"axf", " [addr]", "find data/code references from this address",
-	"ax*", "", "output radare commands",
+	"axs", " addr [at]", "add string ref",
 	NULL
 };
 
@@ -2559,11 +2561,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case '\0': // "afx"
 		case 'j': // "afxj"
 		case ' ': // "afx "
-#if FCN_OLD
 			if (input[2] == 'j') {
 				r_cons_printf ("[");
 			}
-			// TODO: sdbize!
 			// list xrefs from current address
 			{
 				ut64 addr = input[2]==' '? r_num_math (core->num, input + 2): core->offset;
@@ -2589,10 +2589,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			if (input[2] == 'j') {
 				r_cons_printf ("]\n");
 			}
-#else
-#warning TODO_ FCNOLD sdbize xrefs here
-			eprintf ("TODO\n");
-#endif
 			break;
 		case 'c': // "afxc" add code xref
 		case 'd': // "afxd"
@@ -5347,6 +5343,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case 'C': // "axC"
 	case 'c': // "axc"
 	case 'd': // "axd"
+	case 's': // "axs"
 	case ' ': // "ax "
 		{
 		char *ptr = strdup (r_str_trim_head ((char *)input + 1));
