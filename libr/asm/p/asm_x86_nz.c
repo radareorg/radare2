@@ -4272,7 +4272,7 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 
 				// Still going to need to know the size if not specified
 				if (!explicit_size) {
-					op->type |= reg_type;
+					op->type = OT_UNKNOWN;
 				}
 				// Addressing only via general purpose registers
 				if (!(reg_type & OT_GPREG)) {
