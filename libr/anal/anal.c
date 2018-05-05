@@ -78,14 +78,9 @@ R_API RAnal *r_anal_new() {
 	anal->sdb_fcns = sdb_ns (anal->sdb, "fcns", 1);
 	anal->sdb_meta = sdb_ns (anal->sdb, "meta", 1);
 	anal->sdb_hints = sdb_ns (anal->sdb, "hints", 1);
-	anal->sdb_xrefs = sdb_ns (anal->sdb, "xrefs", 1);
 	anal->sdb_types = sdb_ns (anal->sdb, "types", 1);
 	anal->sdb_cc = sdb_ns (anal->sdb, "cc", 1);
 	anal->sdb_zigns = sdb_ns (anal->sdb, "zigns", 1);
-#if USE_DICT
-	anal->dict_refs = dict_new (100, dict_free);
-	anal->dict_xrefs = dict_new (100, dict_free);
-#endif
 	anal->zign_path = strdup ("");
 	anal->cb_printf = (PrintfCallback) printf;
 	(void)r_anal_pin_init (anal);
@@ -141,6 +136,8 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	r_reg_free (a->reg);
 	r_anal_op_free (a->queued);
 	r_list_free (a->bits_ranges);
+	ht_free (a->dict_refs);
+	ht_free (a->dict_xrefs);
 	a->sdb = NULL;
 	sdb_ns_free (a->sdb);
 	if (a->esil) {
@@ -364,13 +361,6 @@ R_API RList* r_anal_get_fcns (RAnal *anal) {
 	return anal->fcns;
 }
 
-R_API bool r_anal_project_save(RAnal *anal, const char *prjfile) {
-	if (prjfile && *prjfile) {
-		return r_anal_xrefs_save (anal, prjfile);
-	}
-	return false;
-}
-
 R_API RAnalOp *r_anal_op_hexstr(RAnal *anal, ut64 addr, const char *str) {
 	int len;
 	ut8 *buf;
@@ -412,7 +402,6 @@ R_API int r_anal_purge (RAnal *anal) {
 	sdb_reset (anal->sdb_fcns);
 	sdb_reset (anal->sdb_meta);
 	sdb_reset (anal->sdb_hints);
-	sdb_reset (anal->sdb_xrefs);
 	sdb_reset (anal->sdb_types);
 	sdb_reset (anal->sdb_zigns);
 	r_list_free (anal->fcns);

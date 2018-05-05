@@ -223,7 +223,7 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 	switch (control_type) {
 		case R_ANAL_OP_TYPE_CALL:
 			IFDBG eprintf (" - Handling a call @ 0x%04"PFMT64x".\n", addr);
-			r_anal_fcn_xref_add (anal, state->current_fcn, bb->addr, bb->jump, R_ANAL_REF_TYPE_CALL);
+			r_anal_xrefs_set (anal, bb->addr, bb->jump, R_ANAL_REF_TYPE_CALL);
 			result = R_ANAL_RET_ERROR;
 			break;
 		case R_ANAL_OP_TYPE_JMP:
@@ -406,7 +406,7 @@ static int handle_bb_cf_linear_sweep (RAnal *anal, RAnalState *state) {
 	switch (control_type) {
 		case R_ANAL_OP_TYPE_CALL:
 			IFDBG eprintf (" - Handling a call @ 0x%04"PFMT64x"\n", addr);
-			r_anal_fcn_xref_add (anal, state->current_fcn, bb->addr, bb->jump, R_ANAL_REF_TYPE_CALL);
+			r_anal_xrefs_set (anal, bb->addr, bb->jump, R_ANAL_REF_TYPE_CALL);
 			result = R_ANAL_RET_ERROR;
 			break;
 		case R_ANAL_OP_TYPE_JMP:

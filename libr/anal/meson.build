@@ -66,7 +66,6 @@ files = [
   'p/anal_xtensa.c',
   'p/anal_z80.c',
   'pin.c',
-  'ref.c',
   'reflines.c',
   'rtti.c',
   'rtti_msvc.c',

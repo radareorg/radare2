@@ -293,10 +293,6 @@ R_API RAnalFunction *r_anal_fcn_new() {
 	fcn->cc = NULL;
 	/* Function attributes: weak/noreturn/format/etc */
 	fcn->addr = UT64_MAX;
-#if FCN_OLD
-	fcn->refs = r_anal_ref_list_new ();
-	fcn->xrefs = r_anal_ref_list_new ();
-#endif
 	fcn->fcn_locs = NULL;
 	fcn->bbs = r_anal_bb_list_new ();
 	fcn->fingerprint = NULL;
@@ -323,10 +319,6 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	free (fcn->name);
 	free (fcn->attr);
 	r_tinyrange_fini (&fcn->bbr);
-#if FCN_OLD
-	r_list_free (fcn->refs);
-	r_list_free (fcn->xrefs);
-#endif
 	// all functions are freed in anal->fcns
 	fcn->fcn_locs = NULL;
 	if (fcn->bbs) {
@@ -349,64 +341,6 @@ static bool refExists(RList *refs, RAnalRef *ref) {
 			return true;
 		}
 	}
-	return false;
-}
-
-R_API int r_anal_fcn_xref_add(RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr, int type) {
-	RAnalRef *ref;
-	if (!fcn || !a) {
-		return false;
-	}
-	if (!a->iob.is_valid_offset (a->iob.io, addr, 0)) {
-		return false;
-	}
-	ref = r_anal_ref_new ();
-	if (!ref) {
-		return false;
-	}
-	// set global reference
-// r_cons_printf ("C 0x%llx  0x%llx\n", at, addr);
-	r_anal_xrefs_set (a, type, at, addr);
-	// set per-function reference
-#if FCN_OLD
-// TOO OLD we shouldnt be storing this.. or we do?
-	ref->at = at; // from
-	ref->addr = addr; // to
-	ref->type = type;
-	// TODO: ensure we are not dupping xrefs
-	if (refExists (fcn->refs, ref)) {
-		r_anal_ref_free (ref);
-	} else {
-		r_list_append (fcn->refs, ref);
-	}
-#endif
-#if FCN_SDB
-	sdb_add (DB, sdb_fmt ("fcn.0x%08"PFMT64x ".name", fcn->addr), fcn->name, 0);
-	// encode the name in base64 ?
-	sdb_num_add (DB, sdb_fmt ("fcn.name.%s", fcn->name), fcn->addr, 0);
-	sdb_array_add_num (DB, sdb_fmt ("fcn.0x%08"PFMT64x ".xrefs", fcn->addr), at, 0);
-#endif
-	return true;
-}
-
-R_API int r_anal_fcn_xref_del(RAnal *a, RAnalFunction *fcn, ut64 at, ut64 addr, int type) {
-#if FCN_OLD
-	RAnalRef *ref;
-	RListIter *iter;
-	/* No need for _safe loop coz we return immediately after the delete. */
-	r_list_foreach (fcn->xrefs, iter, ref) {
-		if ((type != -1 || type == ref->type) &&
-		(at == 0LL || at == ref->at) &&
-		(addr == 0LL || addr == ref->addr)) {
-			r_list_delete (fcn->xrefs, iter);
-			return true;
-		}
-	}
-#endif
-#if FCN_SDB
-	// TODO
-	// sdb_array_delete_num (DB, key, at, 0);
-#endif
 	return false;
 }
 
@@ -1150,7 +1084,7 @@ repeat:
 
 		if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
 			// swapped parameters wtf
-			r_anal_fcn_xref_add (anal, fcn, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA);
+			r_anal_xrefs_set (anal, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA);
 		}
 
 		switch (op.type & R_ANAL_OP_TYPE_MASK) {
@@ -1289,7 +1223,7 @@ repeat:
 				return R_ANAL_RET_END;
 			}
 			if (anal->opt.jmpref) {
-				(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
+				(void) r_anal_xrefs_set (anal, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
 			}
 			if (!anal->opt.jmpabove && (op.jump < fcn->addr)) {
 				FITFCNSZ ();
@@ -1384,8 +1318,7 @@ repeat:
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
 			if (anal->opt.cjmpref) {
-				(void) r_anal_fcn_xref_add (anal, fcn,
-					op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
+				(void) r_anal_xrefs_set (anal, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
 			}
 			if (!overlapped) {
 				bb->jump = op.jump;
@@ -1455,23 +1388,25 @@ repeat:
 		case R_ANAL_OP_TYPE_ICALL:
 		case R_ANAL_OP_TYPE_IRCALL:
 			/* call [dst] */
+			// XXX: this is TYPE_MCALL or indirect-call
+			(void) r_anal_xrefs_set (anal, op.addr, op.ptr, R_ANAL_REF_TYPE_CALL);
+
 			if (op.ptr != UT64_MAX && r_anal_noreturn_at (anal, op.ptr)) {
 				FITFCNSZ ();
 				r_anal_op_fini (&op);
 				return R_ANAL_RET_END;
 			}
-			// XXX: this is TYPE_MCALL or indirect-call
-			(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.ptr, R_ANAL_REF_TYPE_CALL);
 			break;
 		case R_ANAL_OP_TYPE_CCALL:
 		case R_ANAL_OP_TYPE_CALL:
 			/* call dst */
+			(void) r_anal_xrefs_set (anal, op.addr, op.jump, R_ANAL_REF_TYPE_CALL);
+
 			if (r_anal_noreturn_at (anal, op.jump)) {
 				FITFCNSZ ();
 				r_anal_op_fini (&op);
 				return R_ANAL_RET_END;
 			}
-			(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.jump, R_ANAL_REF_TYPE_CALL);
 #if CALL_IS_EOB
 			recurseAt (op.jump);
 			recurseAt (op.fail);
@@ -1491,13 +1426,6 @@ repeat:
 			}
 			// switch statement
 			if (anal->opt.jmptbl) {
-				if (fcn->refs->tail) {
-					RAnalRef *last_ref = fcn->refs->tail->data;
-					last_ref->type = R_ANAL_REF_TYPE_NULL;
-					// TODO: walk switch? try_walkthrough_jmptbl?
-					// Why is this a jmp table and what does it look like
-					// walk_switch (anal, fcn, op.addr, op.addr + op.size);
-				}
 				// op.ireg since rip relative addressing produces way too many false positives otherwise
 				// op.ireg is 0 for rip relative, "rax", etc otherwise
 				if (op.ptr != UT64_MAX && op.ireg) {       // direct jump
@@ -1554,7 +1482,7 @@ analopfinish:
 			last_is_push = true;
 			last_push_addr = op.val;
 			if (anal->iob.is_valid_offset (anal->iob.io, op.val, 1)) {
-				(void) r_anal_fcn_xref_add (anal, fcn, op.addr, op.val, R_ANAL_REF_TYPE_DATA);
+				(void) r_anal_xrefs_set (anal, op.addr, op.val, R_ANAL_REF_TYPE_DATA);
 			}
 			break;
 		case R_ANAL_OP_TYPE_RET:
@@ -1666,15 +1594,18 @@ R_API void r_anal_fcn_fit_overlaps(RAnal *anal, RAnalFunction *fcn) {
 	}
 }
 
-R_API void r_anal_trim_jmprefs(RAnalFunction *fcn) {
+R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 	RAnalRef *ref;
+	RList *refs = r_anal_fcn_get_refs (anal, fcn);
 	RListIter *iter;
 	RListIter *tmp;
-	r_list_foreach_safe (fcn->refs, iter, tmp, ref) {
+
+	r_list_foreach (refs, iter, ref) {
 		if (ref->type == R_ANAL_REF_TYPE_CODE && r_anal_fcn_is_in_offset (fcn, ref->addr)) {
-			r_list_delete (fcn->refs, iter);
+			r_anal_xrefs_deln (anal, ref->at, ref->addr, ref->type);
 		}
 	}
+	r_list_free (refs);
 }
 
 R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int reftype) {
@@ -1718,7 +1649,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		// fcn is not yet in anal => pass NULL
 		r_anal_fcn_resize (NULL, fcn, endaddr - fcn->addr);
 #endif
-		r_anal_trim_jmprefs (fcn);
+		r_anal_trim_jmprefs (anal, fcn);
 	}
 	return ret;
 }
@@ -2318,14 +2249,4 @@ R_API int r_anal_fcn_count_edges(RAnalFunction *fcn, int *ebbs) {
 		}
 	}
 	return edges;
-}
-
-R_API RList *r_anal_fcn_get_refs(RAnal *anal, RAnalFunction *fcn) {
-	RList *ret = (fcn) ? r_list_clone (fcn->refs) : NULL;
-	return ret;
-}
-
-R_API RList *r_anal_fcn_get_xrefs(RAnal *anal, RAnalFunction *fcn) {
-	RList *ret = (fcn) ? r_list_clone (fcn->xrefs) : NULL;
-	return ret;
 }
