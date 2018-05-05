@@ -1084,6 +1084,7 @@ repeat:
 		break;
 	case 9: // TAB
 	case 'J':
+		r_cons_switchbuf(false);
 		panels->menu_y = 0;
 		panels->menu_x = -1;
 		panels->panel[panels->curnode].refresh = true;
@@ -1096,6 +1097,7 @@ repeat:
 		break;
 	case 'Z': // SHIFT-TAB
 	case 'K':
+		r_cons_switchbuf(false);
 		panels->menu_y = 0;
 		panels->menu_x = -1;
 		panels->panel[panels->curnode].refresh = true;
@@ -1130,10 +1132,12 @@ repeat:
 		panels->menu_y = 1;
 		break;
 	case 'H':
+		r_cons_switchbuf(false);
 		panels->columnWidth += 4;
 		panels->isResizing = true;
 		break;
 	case 'L':
+		r_cons_switchbuf(false);
 		panels->columnWidth -= 4;
 		panels->isResizing = true;
 		if (panels->columnWidth < 0) {
