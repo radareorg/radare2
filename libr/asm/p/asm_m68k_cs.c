@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015-2016 - pancake */
+/* radare2 - LGPL - Copyright 2015-2018 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -66,9 +66,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (!buf) {
 		goto beach;
 	}
-	n = cs_disasm (cd, buf, R_MIN (8, len),
-		a->pc, 1, &insn);
-	if (n<1) {
+	ut8 mybuf[8] = {0};
+	int mylen = R_MIN (8, len);
+	memcpy (mybuf, buf, R_MIN (8, len));
+	n = cs_disasm (cd, mybuf, mylen, a->pc, 1, &insn);
+	if (n < 1) {
 		ret = -1;
 		goto beach;
 	}
