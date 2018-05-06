@@ -609,8 +609,6 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 	int asm_bytes = 0;
 	int have_utf8 = 0;
 
-	r_cons_switchbuf(false);
-
 	if (!_core) {
 		_core = core;
 	}
@@ -655,6 +653,7 @@ repeat:
 	// r_core_graph_inputhandle()
 	okey = r_cons_readchar ();
 	key = r_cons_arrow_to_hjkl (okey);
+	r_cons_switchbuf(true);
 	const char *cmd;
 	char buf[128];
 	if (core->print->cur_enabled) {
@@ -1010,6 +1009,7 @@ repeat:
 		doRefresh (panels);
 		break;
 	case 'j':
+		r_cons_switchbuf(false);
 		panels->panel[panels->curnode].refresh = true;
 		if (panels->curnode == 0) {
 			if (panels->panel[panels->curnode].type == PANEL_TYPE_MENU) {
@@ -1050,6 +1050,7 @@ repeat:
 		}
 		break;
 	case 'k':
+		r_cons_switchbuf(false);
 		panels->panel[panels->curnode].refresh = true;
 		if (panels->curnode == 0) {
 			if (panels->panel[panels->curnode].type == PANEL_TYPE_MENU) {
@@ -1083,6 +1084,7 @@ repeat:
 		break;
 	case 9: // TAB
 	case 'J':
+		r_cons_switchbuf(false);
 		panels->menu_y = 0;
 		panels->menu_x = -1;
 		panels->panel[panels->curnode].refresh = true;
@@ -1095,6 +1097,7 @@ repeat:
 		break;
 	case 'Z': // SHIFT-TAB
 	case 'K':
+		r_cons_switchbuf(false);
 		panels->menu_y = 0;
 		panels->menu_x = -1;
 		panels->panel[panels->curnode].refresh = true;
@@ -1129,10 +1132,12 @@ repeat:
 		panels->menu_y = 1;
 		break;
 	case 'H':
+		r_cons_switchbuf(false);
 		panels->columnWidth += 4;
 		panels->isResizing = true;
 		break;
 	case 'L':
+		r_cons_switchbuf(false);
 		panels->columnWidth -= 4;
 		panels->isResizing = true;
 		if (panels->columnWidth < 0) {
@@ -1140,6 +1145,7 @@ repeat:
 		}
 		break;
 	case 'h':
+		r_cons_switchbuf(false);
 		panels->panel[panels->curnode].refresh = true;
 		if (core->print->cur_enabled) {
 			cursor_left (core);
@@ -1157,6 +1163,7 @@ repeat:
 		}
 		break;
 	case 'l':
+		r_cons_switchbuf(false);
 		panels->panel[panels->curnode].refresh = true;
 		if (core->print->cur_enabled) {
 			cursor_right (core);
