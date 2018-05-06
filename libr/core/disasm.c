@@ -3641,11 +3641,11 @@ static void ds_print_relocs(RDisasmState *ds) {
 		int len = cmtcol - cells;
 		r_cons_memset (' ', len);
 		if (rel->import) {
-			r_cons_printf ("  ; RELOC %d %s", rel->type, rel->import->name);
+			r_cons_printf ("; RELOC %d %s", rel->type, rel->import->name);
 		} else if (rel->symbol) {
-			r_cons_printf ("  ; RELOC %d %s", rel->type, rel->symbol->name);
+			r_cons_printf ("; RELOC %d %s", rel->type, rel->symbol->name);
 		} else {
-			r_cons_printf ("  ; RELOC %d ", rel->type);
+			r_cons_printf ("; RELOC %d ", rel->type);
 		}
 	}
 }
