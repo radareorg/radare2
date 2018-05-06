@@ -15,7 +15,7 @@
 
 R_LIB_VERSION (r_cons);
 
-static RCons r_cons_instance;
+static RCons r_cons_instance = {{{{0}}}};
 #define I r_cons_instance
 
 //this structure goes into cons_stack when r_cons_push/pop
