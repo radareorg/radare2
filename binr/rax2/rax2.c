@@ -107,7 +107,7 @@ static int help() {
 		"  -D      base64 decode        ;\n"
 		"  -E      base64 encode        ;\n"
 		"  -f      floating point       ;  rax2 -f 6.3+2.1\n"
-		"  -F      stdin slurp code hex ;  rax2 -F < shellcode.c\n"
+		"  -F      stdin slurp code hex ;  rax2 -F < shellcode.[c(py]\n"
 		"  -h      help                 ;  rax2 -h\n"
 		"  -i      dump as C byte array ;  rax2 -i < bytes\n"
 		"  -k      keep base            ;  rax2 -k 33+3 -> 36\n"
@@ -468,20 +468,6 @@ dotherax:
 	} else if (flags & (1 << 19)) { // -L
 		r_print_hex_from_bin (NULL, str);
 		return true;
-	} else if (flags & (1 << 20)) { // -P
-		char *str = r_stdin_slurp (NULL);
-		if (str) {
-			char *res = r_hex_from_py (str);
-			if (res) {
-				printf ("%s\n", res);
-				fflush (stdout);
-				free (res);
-			} else {
-				eprintf ("Invalid input.\n");
-			}
-			free (str);
-		}
-		return false;
 	} else if (flags & (1 << 21)) { // -i
 		static const char start[] = "unsigned char buf[] = {";
 		printf (start);
