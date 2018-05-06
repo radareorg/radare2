@@ -18,6 +18,7 @@ typedef struct r_panel_t {
 	int depth;
 	int sx; // scroll-x
 	int sy; // scroll-y
+	int curpos;
 	char *cmd;
 	char *title;
 	bool refresh;
