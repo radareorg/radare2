@@ -347,12 +347,19 @@ static int cmd_seek(void *data, const char *input) {
 		}
 		break;
 	case ' ': // "s "
+	{
+		ut64 addr = r_num_math (core->num, input + 1);
+		if (core->num->nc.errors && r_cons_singleton ()->is_interactive) {
+			eprintf ("Cannot seek to unknown address '%s'\n", core->num->nc.calc_buf);
+			break;
+		}
 		if (!silent) {
 			r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
 		}
-		r_core_seek (core, r_num_math (core->num, input + 1), 1);
+		r_core_seek (core, addr, 1);
 		r_core_block_read (core);
-		break;
+	}
+	break;
 	case '/': // "s/"
 	{
 		const char *pfx = r_config_get (core->config, "search.prefix");
