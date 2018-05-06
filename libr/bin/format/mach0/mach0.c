@@ -1586,8 +1586,9 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 			bprintf ("mach0-get-symbols: error\n");
 			break;
 		}
-		if (parse_import_stub(bin, &symbols[j], i))
+		if (parse_import_stub(bin, &symbols[j], i)) {
 			symbols[j++].last = 0;
+		}
 	}
 
 #if 1
@@ -1662,12 +1663,16 @@ static int parse_import_ptr(struct MACH0_(obj_t)* bin, struct reloc_t *reloc, in
 
 	for (i = 0; i < bin->nsects; i++) {
 		if ((bin->sects[i].flags & SECTION_TYPE) == stype) {
-			for (j=0, sym=-1; bin->sects[i].reserved1+j < bin->nindirectsyms; j++)
-				if (idx == bin->indirectsyms[bin->sects[i].reserved1 + j]) {
+			for (j = 0, sym = -1; bin->sects[i].reserved1 + j < bin->nindirectsyms; j++) {
+				int indidx = bin->sects[i].reserved1 + j;
+				if (indidx < 0 || indidx >= bin->nindirectsyms) {
+					break;
+				}
+				if (idx == bin->indirectsyms[indidx]) {
 					sym = j;
 					break;
 				}
-
+			}
 			reloc->offset = sym == -1 ? 0 : bin->sects[i].offset + sym * wordsize;
 			reloc->addr = sym == -1 ? 0 : bin->sects[i].addr + sym * wordsize;
 			return true;
@@ -1681,8 +1686,9 @@ struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin) {
 	int i, j, idx, stridx;
 	const char *symstr;
 
-	if (!bin->symtab || !bin->symstr || !bin->sects || !bin->indirectsyms)
+	if (!bin->symtab || !bin->symstr || !bin->sects || !bin->indirectsyms) {
 		return NULL;
+	}
 	if (bin->dysymtab.nundefsym < 1 || bin->dysymtab.nundefsym > 0xfffff) {
 		return NULL;
 	}
