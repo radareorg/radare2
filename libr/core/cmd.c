@@ -1661,7 +1661,7 @@ static char *parse_tmp_evals(RCore *core, const char *str) {
 	return res;
 }
 
-static int r_core_cmd_subst_i(RCore *core, char *cmd, char* colon);
+static int r_core_cmd_subst_i(RCore *core, char *cmd, char* colon, bool *tmpseek);
 static int r_core_cmd_subst(RCore *core, char *cmd) {
 	int ret = 0, rep = atoi (cmd), orep;
 	char *cmt, *colon = NULL, *icmd = strdup (cmd);
@@ -1744,14 +1744,11 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		}
 		char *cr = strdup (cmdrep);
 		core->break_loop = false;
-		ret = r_core_cmd_subst_i (core, cmd, colon);
+		ret = r_core_cmd_subst_i (core, cmd, colon, (rep == orep - 1) ? &tmpseek : NULL);
 		/*
 		 * r_core_cmd_subst_i will set core->tmpseek when run cmd the first time
 		 * if `@ tmpoff` is used, keep core->tmpseek in the remaining runs
 		 */
-		if (core->tmpseek) {
-			tmpseek = true;
-		}
 		if (ret && *cmd == 'q') {
 			free (cr);
 			goto beach;
@@ -1837,7 +1834,7 @@ static bool set_tmp_bits(RCore *core, int bits, char **tmpbits) {
 	return true;
 }
 
-static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
+static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek) {
 	RList *tmpenvs = r_list_newf (tmpenvs_free);
 	const char *quotestr = "`";
 	const char *tick = NULL;
@@ -1852,6 +1849,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon) {
 	bool haveQuote = false;
 	bool oldfixedarch = core->fixedarch;
 	bool oldfixedbits = core->fixedbits;
+	bool cmd_tmpseek = false;
 
 	if (!cmd) {
 		return 0;
@@ -2338,7 +2336,7 @@ next2:
 		ptr = NULL;
 	}
 
-	core->tmpseek = ptr ? true: false;
+	cmd_tmpseek = core->tmpseek = ptr ? true: false;
 	int rc = 0;
 	if (ptr) {
 		char *f, *ptr2 = strchr (ptr + 1, '!');
@@ -2394,7 +2392,7 @@ repeat_arroba:
 				} else {
 					addr = r_num_tail (core->num, core->offset, ptr + 3);
 					r_core_seek (core, addr, 1);
-					core->tmpseek = true;
+					cmd_tmpseek = core->tmpseek = true;
 					goto fuji;
 				}
 			} else {
@@ -2420,7 +2418,7 @@ repeat_arroba:
 						if (index >= 0 && index < bb->ninstr) {
 							ut16 inst_off = r_anal_bb_offset_inst (bb, index);
 							r_core_seek (core, bb->addr + inst_off, 1);
-							core->tmpseek = true;
+							cmd_tmpseek = core->tmpseek = true;
 							usemyblock = true;
 						} else {
 							eprintf("The current basic block has %d instructions\n", bb->ninstr);
@@ -2711,6 +2709,9 @@ beach:
 	core->fixedblock = false;
 	core->fixedarch = oldfixedarch;
 	core->fixedbits = oldfixedbits;
+	if (tmpseek) {
+		*tmpseek = cmd_tmpseek;
+	}
 	return rc;
 fail:
 	rc = -1;
