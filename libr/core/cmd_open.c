@@ -10,7 +10,6 @@
 static const char *help_msg_o[] = {
 	"Usage: o","[com- ] [file] ([offset])","",
 	"o","","list opened files",
-	"o"," 4","Switch to open file on fd 4",
 	"o","-1","close file descriptor 1",
 	"o-","!*","close all opened files",
 	"o--","","close all files, analysis, binfiles, flags, same as !r2 --",
