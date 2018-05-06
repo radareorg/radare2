@@ -84,6 +84,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	cs_insn* insn;
 	int mode = a->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 
+	if (len < 2) {
+		return -1;
+	}
 	//mode |= (a->bits==64)? CS_MODE_64: CS_MODE_32;
 	if (mode != omode || a->bits != obits) {
 		cs_close (&handle);
@@ -94,10 +97,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 // XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	op->delay = 0;
 	// replace this with the asm.features?
-	if (a->cpu && strstr (a->cpu, "68000"))
+	if (a->cpu && strstr (a->cpu, "68000")) {
 		mode |= CS_MODE_M68K_000;
-	if (a->cpu && strstr (a->cpu, "68010"))
+	}
+	if (a->cpu && strstr (a->cpu, "68010")) {
 		mode |= CS_MODE_M68K_010;
+	}
 	if (a->cpu && strstr (a->cpu, "68020"))
 		mode |= CS_MODE_M68K_020;
 	if (a->cpu && strstr (a->cpu, "68030"))
@@ -112,7 +117,10 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		if (ret != CS_ERR_OK) goto fin;
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
-	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
+	// XXX this is a workaround to avoid capstone to crash
+	ut8 mybuf[4] = {0};
+	memcpy (mybuf, buf, R_MIN (4, len));
+	n = cs_disasm (handle, (ut8*)mybuf, len, addr, 1, &insn);
 	if (n < 1 || insn->size < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		op->size = 2;
