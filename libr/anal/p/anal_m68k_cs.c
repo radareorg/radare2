@@ -118,8 +118,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
 	// XXX this is a workaround to avoid capstone to crash
-	ut8 mybuf[4] = {0};
-	memcpy (mybuf, buf, R_MIN (4, len));
+	ut8 mybuf[128] = {0};
+	int mylen = R_MIN (sizeof (mybuf), len);
+	memcpy (mybuf, buf, mylen);
 	n = cs_disasm (handle, (ut8*)mybuf, len, addr, 1, &insn);
 	if (n < 1 || insn->size < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
