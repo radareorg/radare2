@@ -414,14 +414,20 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 			}
 			op->len += n;
 			snprintf (op->txt, R_ASM_BUFSIZE, "%s %d ", opdef->txt, count);
-			for (i = 0; i < count && strlen (op->txt) + 10 < R_ASM_BUFSIZE; i++) {
-				int optxtlen = strlen (op->txt);
-				snprintf (op->txt + optxtlen, R_ASM_BUFSIZE - optxtlen, "%d ", table[i]);
+			char *txt = op->txt;
+			int txtLen = strlen (op->txt);
+			int txtLeft = R_ASM_BUFSIZE - txtLen;
+			txt += txtLen;
+			for (i = 0; i < count && txtLen + 10 < R_ASM_BUFSIZE; i++) {
+				snprintf (txt, txtLeft, "%d ", table[i]);
+				txtLen = strlen (txt);
+				txt += txtLen;
+				txtLeft -= txtLen;
 			}
-			snprintf (op->txt + strlen (op->txt), R_ASM_BUFSIZE, "%d", def);
+			snprintf (txt, txtLeft - 1, "%d", def);
 			free (table);
 			break;
-			beach:
+		beach:
 			free (table);
 			goto err;
 		}
