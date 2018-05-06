@@ -1745,10 +1745,6 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		char *cr = strdup (cmdrep);
 		core->break_loop = false;
 		ret = r_core_cmd_subst_i (core, cmd, colon, (rep == orep - 1) ? &tmpseek : NULL);
-		/*
-		 * r_core_cmd_subst_i will set core->tmpseek when run cmd the first time
-		 * if `@ tmpoff` is used, keep core->tmpseek in the remaining runs
-		 */
 		if (ret && *cmd == 'q') {
 			free (cr);
 			goto beach;
