@@ -434,10 +434,6 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 			eprintf ("Cannot allocate %d bytes\n", (int)(sz + 1));
 			return false;
 		}
-		// just to check the header
-		if (file_sz > 1024*1024*64) {
-			sz = 1024* 8;
-		}
 		buf_bytes = calloc (1, sz);
 		if (!buf_bytes) {
 			eprintf ("Cannot allocate %d bytes.\n", (int)(sz + 1));
