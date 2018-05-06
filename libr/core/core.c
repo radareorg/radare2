@@ -335,6 +335,7 @@ static ut64 getref (RCore *core, int n, char t, int type) {
 		if (r->type == type) {
 			if (i == n) {
 				ut64 addr = r->addr;
+				r_list_free (list);
 				return addr;
 			}
 			i++;

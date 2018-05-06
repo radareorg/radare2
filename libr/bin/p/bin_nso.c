@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017 - rkx1209 */
+/* radare2 - LGPL - Copyright 2017-2018 - rkx1209 */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -53,7 +53,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 
 static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	RBin *rbin = bf->rbin;
-        RBinNXOObj *bin = R_NEW0 (RBinNXOObj);
+	RBinNXOObj *bin = R_NEW0 (RBinNXOObj);
 	ut32 toff = readLE32 (bf->buf, NSO_OFF (text_memoffset));
 	ut32 tsize = readLE32 (bf->buf, NSO_OFF (text_size));
 	ut32 rooff = readLE32 (bf->buf, NSO_OFF (ro_memoffset));
@@ -61,13 +61,13 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sd
 	ut32 doff = readLE32 (bf->buf, NSO_OFF (data_memoffset));
 	ut32 dsize = readLE32 (bf->buf, NSO_OFF (data_size));
 	ut64 total_size = tsize + rosize + dsize;
-        RBuffer *newbuf = r_buf_new_empty (total_size);
+	RBuffer *newbuf = r_buf_new_empty (total_size);
 	ut64 ba = baddr (bf);
 
-        if (rbin->iob.io && !(rbin->iob.io->cached & R_IO_WRITE)) {
-                eprintf ("Please add \'-e io.cache=true\' option to r2 command\n");
-                goto fail;
-        }
+	if (rbin->iob.io && !(rbin->iob.io->cached & R_IO_WRITE)) {
+		eprintf ("Please add \'-e io.cache=true\' option to r2 command\n");
+		goto fail;
+	}
 	/* Decompress each sections */
 	if (decompress (buf + toff, r_buf_get_at (newbuf, 0, NULL), rooff - toff, tsize) != tsize) {
 		goto fail;
@@ -80,15 +80,16 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sd
 	}
 	/* Load unpacked binary */
 	r_io_write_at (rbin->iob.io, ba, r_buf_get_at (newbuf, 0, NULL), total_size);
-        ut32 modoff = readLE32 (newbuf, NSO_OFFSET_MODMEMOFF);
-        bin->methods_list = r_list_newf ((RListFree)free);
+	ut32 modoff = readLE32 (newbuf, NSO_OFFSET_MODMEMOFF);
+	bin->methods_list = r_list_newf ((RListFree)free);
 	bin->imports_list = r_list_newf ((RListFree)free);
 	bin->classes_list = r_list_newf ((RListFree)free);
-        eprintf ("MOD Offset = 0x%lx\n", modoff);
-        parseMod(newbuf, bin, modoff, ba);
+	eprintf ("MOD Offset = 0x%"PFMT64x"\n", (ut64)modoff);
+	parseMod (newbuf, bin, modoff, ba);
+	r_buf_free (newbuf);
 	return (void *) bin;
 fail:
-        r_buf_free (newbuf);
+	r_buf_free (newbuf);
 	return NULL;
 }
 
