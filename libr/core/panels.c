@@ -289,17 +289,20 @@ static void Layout_run(RPanels *panels) {
 
 static void setcursor(RCore *core, bool cur) {
 	core->print->cur_enabled = cur;
-	if (core->print->cur == -1) {
-		core->print->cur = 0;
+	if (cur) {
+		core->print->cur = core->panels->panel[core->panels->curnode].curpos;
+	} else {
+		core->panels->panel[core->panels->curnode].curpos = core->print->cur;
 	}
 	core->print->col = core->print->cur_enabled ? 1: 0;
 }
 
 static void cursor_right(RCore *core) {
-	if (core->print->cur < 15) {
-		core->print->cur++;
-		core->panels->panel[core->panels->curnode].addr++;
+	if (!strcmp (core->panels->panel[core->panels->curnode].title, PANEL_TITLE_STACK) && core->print->cur >= 15) {
+		return;
 	}
+	core->print->cur++;
+	core->panels->panel[core->panels->curnode].addr++;
 	return;
 }
 
@@ -356,6 +359,7 @@ static void addPanelFrame(RPanels* panels, const char *title, const char *cmd) {
 	}
 	panel[panels->n_panels].type = PANEL_TYPE_FRAME;
 	panel[panels->n_panels].refresh = true;
+	panel[panels->n_panels].curpos = 0;
 	if (!strcmp (panel[panels->n_panels].title, PANEL_TITLE_STACK)) {
 		const char *sp = r_reg_get_name (_core->anal->reg, R_REG_NAME_SP);
 		panel[panels->n_panels].addr = r_reg_getv (_core->anal->reg, sp);
@@ -655,10 +659,14 @@ repeat:
 	key = r_cons_arrow_to_hjkl (okey);
 	r_cons_switchbuf(true);
 	const char *cmd;
+	const char *creg;
 	char buf[128];
 	if (core->print->cur_enabled) {
 		switch (key) {
 			case 9: // TAB
+			case 'J':
+			case 'Z': // SHIFT-TAB
+			case 'K':
 				goto repeat;
 			case 'Q':
 			case 'q':
@@ -666,15 +674,25 @@ repeat:
 				panels->panel[panels->curnode].refresh = true;
 				goto repeat;
 			case 'i':
-				// insert mode
-				r_line_set_prompt ("insert hex: ");
-				strcpy (buf, "wx ");
-				if (r_cons_fgets (buf + strlen (buf), sizeof (buf) - strlen (buf), 0, NULL) < 0) {
-					buf[0] = '\0';
+				if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_STACK)) {
+					// insert mode
+					r_line_set_prompt ("insert hex: ");
+					*buf = 0;
+					r_cons_fgets (buf, sizeof (buf), 0, NULL);
+					r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, panels->panel[panels->curnode].addr);
+					panels->panel[panels->curnode].refresh = true;
+					goto repeat;
+				} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_REGISTERS)) {
+					r_line_set_prompt ("new-reg-value> ");
+					creg = core->dbg->creg;
+					if (creg) {
+						*buf = 0;
+						r_cons_fgets (buf, sizeof (buf), 0, NULL);
+						r_core_cmdf (core, "dr %s = %s", creg, buf);
+						panels->panel[panels->curnode].refresh = true;
+					}
+					goto repeat;
 				}
-				r_core_cmdf (core, strcat (buf, "@ 0x%08" PFMT64x), panels->panel[panels->curnode].addr);
-				panels->panel[panels->curnode].refresh = true;
-				goto repeat;
 		}
 	}
 	switch (key) {
@@ -989,7 +1007,7 @@ repeat:
 		doRefresh (panels);
 		break;
 	case 'c':
-		if (strcmp(panels->panel[panels->curnode].title, PANEL_TITLE_STACK) == 0) {
+		if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_STACK) || !strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_REGISTERS)) {
 			setcursor (core, !core->print->cur_enabled);
 			panels->panel[panels->curnode].refresh = true;
 		}
@@ -1011,14 +1029,12 @@ repeat:
 	case 'j':
 		r_cons_switchbuf(false);
 		panels->panel[panels->curnode].refresh = true;
-		if (panels->curnode == 0) {
-			if (panels->panel[panels->curnode].type == PANEL_TYPE_MENU) {
-				if (menus_sub[panels->menu_x][panels->menu_y]) {
-					panels->menu_y++;
-				}
+		if (panels->panel[panels->curnode].type == PANEL_TYPE_MENU) {
+			if (menus_sub[panels->menu_x][panels->menu_y]) {
+				panels->menu_y++;
 			}
 		} else {
-			if (strcmp(panels->panel[panels->curnode].title, PANEL_TITLE_DISASSEMBLY) == 0) {
+			if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_DISASSEMBLY)) {
 				int cols = core->print->cols;
 				RAnalFunction *f = NULL;
 				RAsmOp op;
@@ -1036,7 +1052,7 @@ repeat:
 				}
 				r_core_seek (core, core->offset + cols, 1);
 				r_core_block_read (core);
-			} else if (strcmp(panels->panel[panels->curnode].title, PANEL_TITLE_STACK) == 0) {
+			} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_STACK)) {
 				int width = r_config_get_i (core->config, "hex.cols");
 				if (width < 1) {
 					width = 16;
@@ -1044,6 +1060,11 @@ repeat:
 				r_config_set_i (core->config, "stack.delta",
 						r_config_get_i (core->config, "stack.delta") - width);
 				panels->panel[panels->curnode].addr += width;
+			} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_REGISTERS)) {
+				if (core->print->cur_enabled) {
+					const int cols = core->dbg->regcols;
+					core->print->cur += cols > 0 ? cols : 3;
+				}
 			} else {
 				panels->panel[panels->curnode].sy++;
 			}
@@ -1052,26 +1073,36 @@ repeat:
 	case 'k':
 		r_cons_switchbuf(false);
 		panels->panel[panels->curnode].refresh = true;
-		if (panels->curnode == 0) {
-			if (panels->panel[panels->curnode].type == PANEL_TYPE_MENU) {
-				panels->menu_y--;
-				if (panels->menu_y < 0) {
-					panels->menu_y = 0;
-				}
+		if (panels->panel[panels->curnode].type == PANEL_TYPE_MENU) {
+			panels->menu_y--;
+			if (panels->menu_y < 0) {
+				panels->menu_y = 0;
 			}
-		} else if (strcmp(panels->panel[panels->curnode].title, PANEL_TITLE_DISASSEMBLY) == 0) {
-			r_core_cmd0 (core, "s-8");
-		} else if (strcmp(panels->panel[panels->curnode].title, PANEL_TITLE_STACK) == 0) {
-			int width = r_config_get_i (core->config, "hex.cols");
-			if (width < 1) {
-				width = 16;
-			}
-			r_config_set_i (core->config, "stack.delta",
-					r_config_get_i (core->config, "stack.delta") + width);
-			panels->panel[panels->curnode].addr -= width;
 		} else {
-			if (panels->panel[panels->curnode].sy > 0) {
-				panels->panel[panels->curnode].sy--;
+			if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_DISASSEMBLY)) {
+				r_core_cmd0 (core, "s-8");
+			} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_STACK)) {
+				int width = r_config_get_i (core->config, "hex.cols");
+				if (width < 1) {
+					width = 16;
+				}
+				r_config_set_i (core->config, "stack.delta",
+						r_config_get_i (core->config, "stack.delta") + width);
+				panels->panel[panels->curnode].addr -= width;
+			} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_REGISTERS)) {
+				if (core->print->cur_enabled) {
+					int cur = core->print->cur;
+					int cols = core->dbg->regcols;
+					cols = cols > 0 ? cols : 3;
+					cur -= cols;
+					if (cur >= 0) {
+						core->print->cur = cur;
+					}
+				}
+			} else {
+				if (panels->panel[panels->curnode].sy > 0) {
+					panels->panel[panels->curnode].sy--;
+				}
 			}
 		}
 		break;
