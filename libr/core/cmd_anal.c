@@ -2643,7 +2643,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 						//eprintf ("Warning: ignore 0x%08"PFMT64x" call 0x%08"PFMT64x"\n", ref->at, ref->addr);
 						continue;
 					}
-					if (ref->type != 'c' && ref->type != 'C') {
+					if (ref->type != R_ANAL_REF_TYPE_CODE && ref->type != R_ANAL_REF_TYPE_CALL) {
 						/* only follow code/call references */
 						continue;
 					}
