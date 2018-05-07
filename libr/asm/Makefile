@@ -6,6 +6,9 @@ DEPS+=r_flag r_cons r_reg
 CFLAGS+=-DCORELIB -Iarch/include -Iarch -I../../shlr
 CURDIR=p/
 
+CFLAGS+=-fvisibility=hidden
+LDFLAGS+=-fvisibility=hidden
+
 include $(TOP)/libr/config.mk
 
 ifeq ($(WITHNONPIC),1)

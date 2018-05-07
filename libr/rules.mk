@@ -85,7 +85,7 @@ else
 ${LIBSO}: ;
 endif
 
-ifeq ($(WITHNONPIC),1)
+ifeq (1,1) #$(WITHNONPIC),1)
 $(LIBAR): ${OBJS}
 ifneq ($(SILENT),)
 	echo "CC_AR $(LIBAR)"
