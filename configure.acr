@@ -26,6 +26,8 @@ ARG_DISABLE LOADLIBS loadlibs disable loading plugins ;
 
 ARG_WITHOUT HAVE_FORK fork disable fork ;
 
+ARG_ENABLE BUILD_MERGED merged build merged r library ;
+
 ARG_WITH WITH_CAPSTONE syscapstone force to use system-wide capstone ;
 PKGCFG CAPSTONE_CFLAGS CAPSTONE_LDFLAGS capstone
 IFAND WITH_CAPSTONE HAVE_PKGCFG_CAPSTONE {

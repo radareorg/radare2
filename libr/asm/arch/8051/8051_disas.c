@@ -42,7 +42,7 @@ static const char *_8051_regs[] = {
 	0, 0, 0, 0, 0, 0, 0, 0  // 0xf8
 };
 
-R_API char* _replace_register (char* disasm, ut8 arg, ut8 val) {
+char* _replace_register (char* disasm, ut8 arg, ut8 val) {
 	char key[10];
 	char subst[10];
 	if (arg == A_DIRECT) {

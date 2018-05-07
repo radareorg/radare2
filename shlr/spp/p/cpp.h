@@ -29,7 +29,7 @@ static TAG_CALLBACK(cpp_if) {
 	} else {
 		state->echo[state->ifl + 1] = 0;
 	}
-	if (*buf=='!') {
+	if (*buf == '!') {
 		state->echo[state->ifl + 1] = !!!state->echo[state->ifl + 1];
 	}
 	return 1;

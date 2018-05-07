@@ -2004,13 +2004,13 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			r_hex_bin2str (buf, sz, ds->asmop.buf_hex);
 			switch (meta->type) {
 			case R_META_TYPE_STRING:
-				snprintf (ds->asmop.buf_asm, sizeof (ds->asmop.buf_asm) - 1,
+				snprintf (ds->asmop.buf_asm, sizeof (ds->asmop.buf_asm) - 11,
 					".string \"%s\"", meta->str);
 				break;
 			// case R_META_TYPE_DATA:
 			//	break;
 			default:
-				snprintf (ds->asmop.buf_asm, sizeof (ds->asmop.buf_asm) - 1,
+				snprintf (ds->asmop.buf_asm, sizeof (ds->asmop.buf_asm) - 6,
 					".hex %s", ds->asmop.buf_hex);
 				break;
 			}

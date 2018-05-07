@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_userconf.h>
 
@@ -105,7 +105,7 @@ int linux_handle_signals (RDebug *dbg) {
 				}
 				if (dbg->reason.type != R_DEBUG_REASON_NEW_LIB &&
 					dbg->reason.type != R_DEBUG_REASON_EXIT_LIB) {
-					dbg->reason.bp_addr = (ut64)siginfo.si_addr;
+					dbg->reason.bp_addr = (ut64)(size_t)siginfo.si_addr;
 					dbg->reason.type = R_DEBUG_REASON_BREAKPOINT;
 				}
 			}
@@ -758,7 +758,7 @@ void print_fpu (void *f, int r){
 	}
 #endif
 #else
-#warning not implemented for this platform
+#warning print_fpu not implemented for this platform
 #endif
 }
 
@@ -853,7 +853,7 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 		}
 		}
 #else
-	#warning not implemented for this platform
+	#warning getfpregs not implemented for this platform
 #endif
 		break;
 	case R_REG_TYPE_SEG:

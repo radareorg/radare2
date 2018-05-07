@@ -125,6 +125,6 @@ struct h8300_cmd {
 	char	operands[H8300_INSTR_MAXLEN];
 };
 
-R_API int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd);
+int h8300_decode_command(const ut8 *instr, struct h8300_cmd *cmd);
 
 #endif /* H8300_DISAS_H */

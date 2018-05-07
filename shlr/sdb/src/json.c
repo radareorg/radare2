@@ -8,6 +8,11 @@
 #include "json/api.c"
 #include "json/indent.c"
 
+SDB_API char *sdb_json_get_str (const char *json, const char *path) {
+	Rangstr rs = json_get (json, path);
+	return rangstr_dup (&rs);
+}
+
 SDB_API char *sdb_json_get (Sdb *s, const char *k, const char *p, ut32 *cas) {
 	Rangstr rs;
 	char *u, *v = sdb_get (s, k, cas);

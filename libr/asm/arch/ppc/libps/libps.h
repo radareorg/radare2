@@ -17,8 +17,8 @@ typedef struct {
     ut32 anal_op;
 } ppcps_t;
 
-R_API bool libps_decode(ut32 data, ppcps_t* ps);
-R_API void libps_snprint(char* str, int size, ut64 addr, ppcps_t* instr);
+bool libps_decode(ut32 data, ppcps_t* ps);
+void libps_snprint(char* str, int size, ut64 addr, ppcps_t* instr);
 
 #endif /* LIBPS_H */
 
