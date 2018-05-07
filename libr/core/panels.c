@@ -678,9 +678,7 @@ repeat:
 					// insert mode
 					r_line_set_prompt ("insert hex: ");
 					*buf = 0;
-					if (r_cons_fgets (buf + strlen (buf), sizeof (buf) - strlen (buf), 0, NULL) < 0) {
-						buf[0] = '\0';
-					}
+					r_cons_fgets (buf, sizeof (buf), 0, NULL);
 					r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, panels->panel[panels->curnode].addr);
 					panels->panel[panels->curnode].refresh = true;
 					goto repeat;
@@ -689,9 +687,7 @@ repeat:
 					creg = core->dbg->creg;
 					if (creg) {
 						*buf = 0;
-						if (r_cons_fgets (buf + strlen (buf), sizeof (buf) - strlen (buf), 0, NULL) < 0) {
-							buf[0] = '\0';
-						}
+						r_cons_fgets (buf, sizeof (buf), 0, NULL);
 						r_core_cmdf (core, "dr %s = %s", creg, buf);
 						panels->panel[panels->curnode].refresh = true;
 					}
