@@ -5776,14 +5776,61 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	switch (input[0]) {
 	case 'f': // "agf"
 		switch (input[1]) {
+		case 0:// "agf"
+			r_core_visual_graph (core, NULL, NULL, false);
+			break;
+		case 'v':// "agfv"
+			eprintf ("\rRendering graph...");
+			r_core_visual_graph (core, NULL, NULL, 1);
+			r_cons_show_cursor (true);
+			break;
 		case 't':// "agft" - tiny graph
 			r_core_visual_graph (core, NULL, NULL, 2);
 			break;
-		case 0:
-			r_core_visual_graph (core, NULL, NULL, false);
+		case 'd':// "agfd"
+			if (input[2] == 'm') {
+				r_core_anal_graph (core, r_num_math (core->num, input + 2),
+					R_CORE_ANAL_GRAPHLINES);
+			} else {
+				r_core_anal_graph (core, r_num_math (core->num, input + 1),
+					R_CORE_ANAL_GRAPHBODY);
+			}
+			break;
+		case 'j':// "agfj"
+			r_core_anal_graph (core, r_num_math (core->num, input + 1), R_CORE_ANAL_JSON);
+			break;
+		case 'J':// "agfJ"
+			r_core_anal_graph (core, r_num_math (core->num, input + 1),
+				R_CORE_ANAL_JSON | R_CORE_ANAL_JSON_FORMAT_DISASM);
+		case 'g':{// "agfg"
+			ut64 off_fcn = (*(input + 2)) ? r_num_math (core->num, input + 2) : core->offset;
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off_fcn, 0);
+			r_core_print_bb_gml (core, fcn);
+			break;
+			}
+		case 'k':// "agfk"
+			r_core_cmd0 (core, "ag-; .agf*; aggk");
+			break;
+		case '*':{// "agf*"
+			ut64 off_fcn = (*(input + 2)) ? r_num_math (core->num, input + 2) : core->offset;
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off_fcn, 0);
+			r_core_print_bb_custom (core, fcn);
+			break;
+			}
+		case 'w':// "agfw"
+			if (r_config_get_i (core->config, "graph.web")) {
+				r_core_cmd0 (core, "=H /graph/");
+			} else {
+				const char *cmd = r_config_get (core->config, "cmd.graph");
+				if (cmd && *cmd) {
+					r_core_cmd0 (core, cmd);
+				} else {
+					eprintf ("Command cmd.graph not valid\n");
+				}
+			}
 			break;
 		default:
-			eprintf ("Usage: agf or agft (for tiny)\n");
+			eprintf ("Usage: see ag?");
 			break;
 		}
 		break;

@@ -1579,6 +1579,134 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 	return true;
 }
 
+static char *get_title(ut64 addr) {
+	return r_str_newf ("0x%"PFMT64x, addr);
+}
+
+R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
+	RAnalBlock *bb;
+	RListIter *iter;
+	if (!fcn) {
+		return false;
+	}
+
+	RConfigHold *hc = r_config_hold_new (core->config);
+	r_config_save_num (hc, "scr.color", "scr.utf8", "asm.marks", "asm.offset", "asm.lines",
+	  "asm.cmt.right", "asm.cmt.col", "asm.fcnlines", "asm.bytes", NULL);
+	/*r_config_set_i (core->config, "scr.color", 0);*/
+	r_config_set_i (core->config, "scr.utf8", 0);
+	r_config_set_i (core->config, "asm.marks", 0);
+	r_config_set_i (core->config, "asm.offset", 0);
+	r_config_set_i (core->config, "asm.lines", 0);
+	r_config_set_i (core->config, "asm.cmt.right", 0);
+	r_config_set_i (core->config, "asm.cmt.col", 0);
+	r_config_set_i (core->config, "asm.fcnlines", 0);
+	r_config_set_i (core->config, "asm.bytes", 0);
+
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (bb->addr == UT64_MAX) {
+			continue;
+		}
+
+		char *title = get_title (bb->addr);
+		char *body = r_core_cmd_strf (core, "pdb @ 0x%08"PFMT64x, bb->addr);
+		char *body_b64 = r_base64_encode_dyn (body, -1);
+
+		if (!title || !body || !body_b64) {
+		    return false;
+		}
+
+		body_b64 = r_str_prefix (body_b64, "base64:");
+		r_cons_printf ("agn %s %s\n", title, body_b64);
+
+		free (body);
+		free (body_b64);
+		free (title);
+	}
+
+	r_config_restore (hc);
+	r_config_hold_free (hc);
+
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (bb->addr == UT64_MAX) {
+			continue;
+		}
+
+		char *u = get_title (bb->addr), *v = NULL;
+		if (bb->jump != UT64_MAX) {
+			v = get_title (bb->jump);
+			r_cons_printf ("age %s %s\n", u, v);
+		}
+		if (bb->fail != UT64_MAX) {
+			v = get_title (bb->fail);
+			r_cons_printf ("age %s %s\n", u, v);
+		}
+		if (bb->switch_op) {
+			RListIter *it;
+			RAnalCaseOp *cop;
+			r_list_foreach (bb->switch_op->cases, it, cop) {
+				v = get_title (cop->addr);
+				r_cons_printf ("age %s %s\n", u, v);
+			}
+		}
+		free (u);
+		free (v);
+	}
+	return true;
+}
+
+R_API int r_core_print_bb_gml(RCore *core, RAnalFunction *fcn) {
+	RAnalBlock *bb;
+	RListIter *iter;
+	if (!fcn) {
+		return false;
+	}
+
+	r_cons_printf ("graph\n[\n" "hierarchic 1\n" "label \"\"\n" "directed 1\n");
+
+	r_list_foreach (fcn->bbs, iter, bb) {
+		RFlagItem *flag = r_flag_get_i (core->flags, bb->addr);
+		char *msg = flag? strdup (flag->name): r_str_newf ("0x%08"PFMT64x, bb->addr);
+		r_cons_printf ("\tnode [\n"
+				"\t\tid\t%"PFMT64d"\n"
+				"\t\tlabel\t\"%s\"\n"
+				"\t]\n", bb->addr, msg);
+	}
+
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (bb->addr == UT64_MAX) {
+			continue;
+		}
+
+		if (bb->jump != UT64_MAX) {
+			r_cons_printf ("\tedge [\n"
+				"\t\tsource  %"PFMT64d"\n"
+				"\t\ttarget  %"PFMT64d"\n"
+				"\t]\n", bb->addr, bb->jump
+				);
+		}
+		if (bb->fail != UT64_MAX) {
+			r_cons_printf ("\tedge [\n"
+				"\t\tsource  %"PFMT64d"\n"
+				"\t\ttarget  %"PFMT64d"\n"
+				"\t]\n", bb->addr, bb->fail
+				);
+		}
+		if (bb->switch_op) {
+			RListIter *it;
+			RAnalCaseOp *cop;
+			r_list_foreach (bb->switch_op->cases, it, cop) {
+				r_cons_printf ("\tedge [\n"
+					"\t\tsource  %"PFMT64d"\n"
+					"\t\ttarget  %"PFMT64d"\n"
+					"\t]\n", bb->addr, cop->addr
+					);
+			}
+		}
+	}
+	return true;
+}
+
 R_API void r_core_anal_codexrefs(RCore *core, ut64 addr, int fmt) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
 	if (fcn) {
