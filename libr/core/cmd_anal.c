@@ -5791,8 +5791,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			if (input[2] == 'm') {
 				r_core_anal_graph (core, r_num_math (core->num, input + 2),
 					R_CORE_ANAL_GRAPHLINES);
-			}
-			else {
+			} else {
 				r_core_anal_graph (core, r_num_math (core->num, input + 1),
 					R_CORE_ANAL_GRAPHBODY);
 			}
@@ -5804,31 +5803,16 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			r_core_anal_graph (core, r_num_math (core->num, input + 1),
 				R_CORE_ANAL_JSON | R_CORE_ANAL_JSON_FORMAT_DISASM);
 		case 'g':// "agfg"
-			if (input[2] == 'f') {
-				//TODO
-			}
-			RAnalFunction *fcn = NULL;
-			if (*(input + 2)) {
-				ut64 off_fcn = r_num_math (core->num, input + 2);
-				fcn = r_anal_get_fcn_in (core->anal, off_fcn, 0);
-			}
-			else {
-				fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-			}
+			ut64 off_fcn = (*(input + 2)) ? r_num_math (core->num, input + 2) : core->offset;
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off_fcn, 0);
 			r_core_print_bb_gml (core, fcn);
 			break;
 		case 'k':// "agfk"
 			r_core_cmd0 (core, "ag-; .agf*; aggk");
 			break;
 		case '*':{// "agf*"
-			RAnalFunction *fcn = NULL;
-			if (*(input + 2)) {
-				ut64 off_fcn = r_num_math (core->num, input + 2);
-				fcn = r_anal_get_fcn_in (core->anal, off_fcn, 0);
-			}
-			else {
-				fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-			}
+			ut64 off_fcn = (*(input + 2)) ? r_num_math (core->num, input + 2) : core->offset;
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off_fcn, 0);
 			r_core_print_bb_custom (core, fcn);
 			break;
 			}

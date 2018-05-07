@@ -1610,10 +1610,14 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 
 		char *title = get_title (bb->addr);
 		char *body = r_core_cmd_strf (core, "pdb @ 0x%08"PFMT64x, bb->addr);
-		char *body_b64= r_base64_encode_dyn (body, strlen(body));
-		body_b64 = r_str_prefix (body_b64, "base64:");
+		char *body_b64 = r_base64_encode_dyn (body, -1);
 
-		r_cons_printf ("agn \"%s\" \"%s\"\n", title, body_b64);
+		if (!title || !body || !body_b64) {
+		    return false;
+		}
+
+		body_b64 = r_str_prefix (body_b64, "base64:");
+		r_cons_printf ("agn %s %s\n", title, body_b64);
 
 		free (body);
 		free (body_b64);
@@ -1631,18 +1635,18 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 		char *u = get_title (bb->addr), *v = NULL;
 		if (bb->jump != UT64_MAX) {
 			v = get_title (bb->jump);
-			r_cons_printf ("age \"%s\" \"%s\"\n", u, v);
+			r_cons_printf ("age %s %s\n", u, v);
 		}
 		if (bb->fail != UT64_MAX) {
 			v = get_title (bb->fail);
-			r_cons_printf ("age \"%s\" \"%s\"\n", u, v);
+			r_cons_printf ("age %s %s\n", u, v);
 		}
 		if (bb->switch_op) {
 			RListIter *it;
 			RAnalCaseOp *cop;
 			r_list_foreach (bb->switch_op->cases, it, cop) {
 				v = get_title (cop->addr);
-				r_cons_printf ("age \"%s\" \"%s\"\n", u, v);
+				r_cons_printf ("age %s %s\n", u, v);
 			}
 		}
 		free (u);
@@ -1658,7 +1662,7 @@ R_API int r_core_print_bb_gml(RCore *core, RAnalFunction *fcn) {
 		return false;
 	}
 
-	r_cons_printf ("graph\n[\n" "hierarchic\t1\n" "label\t\"\"\n" "directed\t1\n");
+	r_cons_printf ("graph\n[\n" "hierarchic 1\n" "label \"\"\n" "directed 1\n");
 
 	r_list_foreach (fcn->bbs, iter, bb) {
 		RFlagItem *flag = r_flag_get_i (core->flags, bb->addr);
