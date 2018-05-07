@@ -22,7 +22,7 @@ void r_core_hack_help(const RCore *core) {
 		"NOTE:", "", "those operations are only implemented for x86 and arm atm.", //TODO
 		NULL
 	};
-	r_core_cmd_help(core, help_msg);
+	r_core_cmd_help (core, help_msg);
 }
 
 R_API bool r_core_hack_arm64(RCore *core, const char *op, const RAnalOp *analop) {
@@ -180,10 +180,10 @@ R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 			return false;
 		}
 		for (i = 0; i < size; i++)
-			memcpy(str + (i * 2), "90", 2);
+			memcpy (str + (i * 2), "90", 2);
 		str[size*2] = '\0';
-		r_core_cmdf(core, "wx %s\n", str);
-		free(str);
+		r_core_cmdf (core, "wx %s\n", str);
+		free (str);
 	} else if (!strcmp (op, "trap")) {
 		r_core_cmd0 (core, "wx cc\n");
 	} else if (!strcmp (op, "jz")) {
