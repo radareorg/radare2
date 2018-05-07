@@ -677,11 +677,11 @@ repeat:
 				if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_STACK)) {
 					// insert mode
 					r_line_set_prompt ("insert hex: ");
-					strcpy (buf, "wx ");
+					*buf = 0;
 					if (r_cons_fgets (buf + strlen (buf), sizeof (buf) - strlen (buf), 0, NULL) < 0) {
 						buf[0] = '\0';
 					}
-					r_core_cmdf (core, strcat (buf, "@ 0x%08" PFMT64x), panels->panel[panels->curnode].addr);
+					r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, panels->panel[panels->curnode].addr);
 					panels->panel[panels->curnode].refresh = true;
 					goto repeat;
 				} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_REGISTERS)) {
