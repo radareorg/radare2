@@ -3052,11 +3052,13 @@ static void disasm_ropchain(RCore *core, ut64 addr, char type_print) {
 	free (buf);
 }
 
-static void disasm_recursive(RCore *core, ut64 addr, char type_print) {
+static void disasm_recursive(RCore *core, ut64 addr, int count, char type_print) {
 	RAnalOp aop = {0};
 	int ret;
 	ut8 buf[128];
-	int count = 64; // must be user-defined
+	if (type_print == 'j') {
+		r_cons_print ("[");
+	}
 	while (count-- > 0) {
 		r_io_read_at (core->io, addr, buf, sizeof (buf));
 		r_anal_op_fini (&aop);
@@ -3066,7 +3068,14 @@ static void disasm_recursive(RCore *core, ut64 addr, char type_print) {
 			continue;
 		}
 	//	r_core_cmdf (core, "pD %d @ 0x%08"PFMT64x, aop.size, addr);
-		r_core_cmdf (core, "pd 1 @ 0x%08"PFMT64x, addr);
+		if (type_print == 'j') {
+			r_core_print_disasm_json (core, addr, buf, sizeof (buf), 1);
+			if (count) {
+				r_cons_print (",");
+			}
+		} else {
+			r_core_cmdf (core, "pd 1 @ 0x%08"PFMT64x, addr);
+		}
 		switch (aop.type) {
 		case R_ANAL_OP_TYPE_JMP:
 			addr = aop.jump;
@@ -3076,6 +3085,9 @@ static void disasm_recursive(RCore *core, ut64 addr, char type_print) {
 			break;
 		}
 		addr += aop.size;
+	}
+	if (type_print == 'j') {
+		r_cons_print ("]\n");
 	}
 }
 
@@ -4128,7 +4140,11 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'R': // "pdR"
 			processed_cmd = true;
-			disasm_recursive (core, core->offset, 'D');
+			if (input[2] == 'j') {
+				disasm_recursive (core, core->offset, use_blocksize, 'j');
+			} else {
+				disasm_recursive (core, core->offset, use_blocksize, 'D');
+			}
 			pd_result = true;
 			break;
 		case 'r': // "pdr"
