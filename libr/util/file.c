@@ -828,7 +828,9 @@ static RMmap *r_file_mmap_other (RMmap *m) {
 R_API RMmap *r_file_mmap (const char *file, bool rw, ut64 base) {
 	RMmap *m = NULL;
 	int fd = -1;
-	if (!rw && !r_file_exists (file)) return m;
+	if (!rw && !r_file_exists (file)) {
+		return m;
+	}
 	fd = r_sandbox_open (file, rw? O_RDWR: O_RDONLY, 0644);
 	if (fd == -1 && !rw) {
 		eprintf ("r_file_mmap: file does not exis.\n");

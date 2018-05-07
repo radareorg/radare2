@@ -226,10 +226,14 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 			free (a_buf);
 			return count;
 		}
+		if (lseek (mmo->fd, io->off, SEEK_SET) < 0) {
+			return -1;
+		}
 		return read (mmo->fd, buf, count);
 	}
-	if (mmo->buf->length < io->off)
+	if (mmo->buf->length < io->off) {
 		io->off = mmo->buf->length;
+	}
 	return r_buf_read_at (mmo->buf, io->off, buf, count);
 }
 
