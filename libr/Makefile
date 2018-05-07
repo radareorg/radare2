@@ -32,24 +32,58 @@ all:
 	$(MAKE) $(LIBS5)
 	$(MAKE) $(LIBS6)
 	$(MAKE) $(LIBS7)
-ifeq (${WITHNONPIC},1)
 	$(MAKE) libr.${EXT_AR}
+	$(MAKE) libr.${EXT_SO}
+
+BUILD_MERGED=yes
+
+ifeq ($(BUILD_MERGED),yes)
+
+ifeq ($(BUILD_OS),darwin)
+MLFLAGS+=-install_name @rpath/libr2.dylib $(LDFLAGS)
 endif
+ifeq ($(BUILD_OS),ios)
+MLFLAGS+=-install_name @rpath/libr2.dylib $(LDFLAGS)
+endif
+# XXX version-script only works with shlib as output
+#ifeq ($(BUILD_OS),linux)
+#PLFLAGS+=--version-script ./ld.script
+#endif
 
-libr.${EXT_SO}:
-	rm -rf .libr/tcc # WHY
-	$(CC) $(LDFLAGS) -shared -dynamic -arch arm64 -o libr.${EXT_SO} .libr/*/*.o ../shlr/gdb/lib/libgdbr.a
-
-../shlr/libr_shlr.${EXT_AR}:
-	$(MAKE) -C ../shlr libr_shlr.${EXT_AR}
-
-libr.${EXT_AR}: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
+.libr: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 	rm -rf .libr
 	mkdir .libr
 	for LIB in $^ ; do \
-		${PARTIALLD} -o .libr/$$(basename $${LIB} .a).o $${LIB} ; \
+		${PARTIALLD} $(PLFLAGS) -o .libr/$$(basename $${LIB} .a).o $${LIB} ; \
 	done
+ifeq ($(BUILD_OS),linux)
+	for LIB in .libr/* ; do objcopy --localize-hidden $$LIB ; done
+endif
+
+libr.${EXT_AR}: .libr
 	${AR} crs $@ .libr/*.o
+
+libr.${EXT_SO}: .libr
+	$(CC) -fvisibility=hidden $(MLFLAGS) -shared -dynamiclib -o libr.${EXT_SO}  \
+		.libr/*.o \
+		../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/libr_java.${EXT_AR} \
+		../shlr/zip/librz.${EXT_AR} \
+		../shlr/sdb/src/libsdb.${EXT_AR} \
+		../shlr/libr_shlr.${EXT_AR}  \
+		../shlr/capstone/libcapstone.${EXT_AR}
+	# ../shlr/grub/libgrubfs.${EXT_AR}
+
+else
+
+libr.${EXT_SO}:
+	# do nothing
+
+libr.${EXT_AR}:
+	# do nothing
+endif
+
+../shlr/libr_shlr.${EXT_AR}:
+	$(MAKE) -C ../shlr libr_shlr.${EXT_AR}
 
 $(LIBS):
 	@echo "DIR $@"
@@ -173,6 +207,7 @@ deinstall uninstall:
 
 clean:
 	for LIB in ${LIBS}; do ( cd $${LIB} && $(MAKE) clean ); done
+	rm -rf .libr libr.${LIB_SO} libr.${LIB_AR}
 
 mrproper:
 	rm -rf .libr libr.${LIB_SO} libr.${LIB_AR}

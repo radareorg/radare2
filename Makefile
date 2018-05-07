@@ -165,8 +165,9 @@ ifneq ($(USE_ZIP),NO)
 endif
 
 clean: rmd
-	rm -f libr/libr.a
-	for DIR in shlr libr binr ; do (cd "$$DIR" ; ${MAKE} clean) ; done
+	rm -f libr/libr.a libr/libr.dylib
+	rm -rf libr/.libr
+	for DIR in shlr libr binr ; do $(MAKE) -C "$$DIR" clean ; done
 
 distclean mrproper:
 	-rm -f `find . -type f -name '*.d'`
