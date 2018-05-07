@@ -226,7 +226,7 @@ static const char *help_msg_af[] = {
 	"aft", "[?]", "type matching, type propagation",
 	"afu", " [addr]", "resize and analyze function from current address until addr",
 	"afv[bsra]", "?", "manipulate args, registers and variables in function",
-	"afx", "[cCd-] src dst", "add/remove code/Call/data/string reference",
+	"afx", "", "list function references",
 	NULL
 };
 
@@ -373,16 +373,6 @@ static const char *help_msg_afvs[] = {
 	"afvs-", " [name]", "delete stack based argument or locals with the given name",
 	"afvsg", " [idx] [addr]", "define var get reference",
 	"afvss", " [idx] [addr]", "define var set reference",
-	NULL
-};
-
-static const char *help_msg_afx[] = {
-	"Usage:", "afx[-cCd?] [src] [dst]", " manage function references (see also ar?)",
-	"afxc", " sym.main+0x38 sym.printf", "add code ref",
-	"afxC", " sym.main sym.puts", "add call ref",
-	"afxd", " sym.main obj.count", "add data ref",
-	"afxs", " sym.main str.helloworld", "add string ref",
-	"afx-", " sym.main str.helloworld", "remove reference",
 	NULL
 };
 
@@ -601,7 +591,6 @@ static void cmd_anal_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, afvb);
 	DEFINE_CMD_DESCRIPTOR (core, afvr);
 	DEFINE_CMD_DESCRIPTOR (core, afvs);
-	DEFINE_CMD_DESCRIPTOR (core, afx);
 	DEFINE_CMD_DESCRIPTOR (core, ag);
 	DEFINE_CMD_DESCRIPTOR (core, age);
 	DEFINE_CMD_DESCRIPTOR (core, agg);
@@ -2590,44 +2579,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				r_cons_printf ("]\n");
 			}
 			break;
-		case 'c': // "afxc" add code xref
-		case 'd': // "afxd"
-		case 's': // "afxs"
-		case 'C': { // "afxC"
-			char *p;
-			ut64 a, b;
-			char *mi = strdup (input);
-			if (mi && mi[3] == ' ' && (p = strchr (mi + 4, ' '))) {
-				RAnalRefType reftype = r_anal_xrefs_type (input[2]);
-				*p = 0;
-				a = r_num_math (core->num, mi + 3);
-				b = r_num_math (core->num, p + 1);
-				r_anal_xrefs_set (core->anal, a, b, reftype);
-			} else {
-				r_core_cmd_help (core, help_msg_afx);
-			}
-			free (mi);
-			}
-			break;
-		case '-': // "afx-"
-			{
-			char *p;
-			ut64 a, b;
-			char *mi = strdup (input + 3);
-			if (mi && *mi == ' ' && (p = strchr (mi + 1, ' '))) {
-				*p = 0;
-				a = r_num_math (core->num, mi);
-				b = r_num_math (core->num, p + 1);
-				r_anal_xrefs_deln (core->anal, a, b, -1);
-			} else {
-				eprintf ("Usage: afx- [src] [dst]\n");
-			}
-			free (mi);
-			}
-			break;
 		default:
-		case '?': // "afx?"
-			r_core_cmd_help (core, help_msg_afx);
+			eprintf ("Wrong command. Look at af?\n");
 			break;
 		}
 		break;
