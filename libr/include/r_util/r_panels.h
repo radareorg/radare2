@@ -23,6 +23,7 @@ typedef struct r_panel_t {
 	char *title;
 	bool refresh;
 	PanelType type;
+	ut64 baseAddr;
 	ut64 addr;
 } RPanel;
 

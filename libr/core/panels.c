@@ -362,7 +362,9 @@ static void addPanelFrame(RPanels* panels, const char *title, const char *cmd) {
 	panel[panels->n_panels].curpos = 0;
 	if (!strcmp (panel[panels->n_panels].title, PANEL_TITLE_STACK)) {
 		const char *sp = r_reg_get_name (_core->anal->reg, R_REG_NAME_SP);
-		panel[panels->n_panels].addr = r_reg_getv (_core->anal->reg, sp);
+		const ut64 stackbase = r_reg_getv (_core->anal->reg, sp);
+		panel[panels->n_panels].baseAddr = stackbase;
+		panel[panels->n_panels].addr = stackbase - r_config_get_i (_core->config, "stack.delta") + _core->print->cur;
 	}
 	panels->n_panels++;
 	panels->curnode = panels->n_panels - 1;
@@ -558,6 +560,21 @@ static void panel_continue(RCore *core) {
 	r_core_cmd (core, "dc", 0);
 }
 
+static void check_stackbase(RCore *core) {
+	int i;
+	const char *sp = r_reg_get_name (_core->anal->reg, R_REG_NAME_SP);
+	const ut64 stackbase = r_reg_getv (_core->anal->reg, sp);
+	RPanels *panels = core->panels;
+	for (i = 1; i < panels->n_panels; i++) {
+		const RPanel panel = panels->panel[i];
+		if (!strcmp (panel.title, PANEL_TITLE_STACK) && panel.baseAddr != stackbase) {
+			panels->panel[panels->curnode].baseAddr = stackbase;
+			panels->panel[panels->curnode].addr = stackbase - r_config_get_i (_core->config, "stack.delta") + core->print->cur;
+			panels->panel[panels->curnode].refresh = true;
+		}
+	}
+}
+
 static bool init (RPanels *panels, int w, int h) {
 	panels->panel = NULL;
 	panels->n_panels = 0;
@@ -648,6 +665,7 @@ repeat:
 	core->cons->event_data = panels;
 	// core->cons->event_resize = (RConsEvent) r_core_panels_refresh;
 	core->cons->event_resize = (RConsEvent) doRefresh;
+	check_stackbase (core);
 	Layout_run (panels);
 	r_core_panels_refresh (panels);
 	wheel = r_config_get_i (core->config, "scr.wheel");
