@@ -391,12 +391,6 @@ static char *get_varname(RAnal *a, RAnalFunction *fcn, char type, const char *pf
 	while (1) {
 		RAnalVar *v = r_anal_var_get_byname (a, fcn, varname);
 		if (!v) {
-			v = r_anal_var_get_byname (a, fcn, varname);
-		}
-		if (!v) {
-			v = r_anal_var_get_byname (a, fcn, varname);
-		}
-		if (!v) {
 			break;
 		}
 		if (v->kind == type && R_ABS (v->delta) == idx) {

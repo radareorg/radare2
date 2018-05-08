@@ -208,7 +208,9 @@ R_API ut64 r_buf_size (RBuffer *b) {
 R_API RBuffer *r_buf_mmap (const char *file, int flags) {
 	int rw = flags & R_IO_WRITE ? true : false;
 	RBuffer *b = r_buf_new ();
-	if (!b) return NULL;
+	if (!b) {
+		return NULL;
+	}
 	b->mmap = r_file_mmap (file, rw, 0);
 	if (b->mmap) {
 		b->buf = b->mmap->buf;

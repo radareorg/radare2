@@ -60,23 +60,6 @@ void xrefs_ref_free(HtKv *kv) {
 	free (kv);
 }
 
-static const char *analref_toString(RAnalRefType type) {
-	switch (type) {
-	case R_ANAL_REF_TYPE_NULL:
-		/* do nothing */
-		break;
-	case R_ANAL_REF_TYPE_CODE:
-		return "code jmp";
-	case R_ANAL_REF_TYPE_CALL:
-		return "code call";
-	case R_ANAL_REF_TYPE_DATA:
-		return "data mem";
-	case R_ANAL_REF_TYPE_STRING:
-		return "data string";
-	}
-	return "unk";
-}
-
 static bool appendRef(RList *list, const char *k, RAnalRef *ref) {
 	RAnalRef *cloned = r_anal_ref_new ();
 	if (!cloned) {
@@ -213,7 +196,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 	RListIter *iter;
 	RAnalRef *ref;
 	RList *list = r_anal_ref_list_new();
-	listxrefs (anal->dict_xrefs, UT64_MAX, list);
+	listxrefs (anal->dict_refs, UT64_MAX, list);
 	if (rad == 'j') {
 		anal->cb_printf ("{");
 	}
@@ -222,7 +205,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 		switch (rad) {
 		case '*':
 			anal->cb_printf ("ax%c 0x%"PFMT64x" 0x%"PFMT64x"\n",
-				t, ref->at, ref->addr);
+				t, ref->addr, ref->at);
 			break;
 		case '\0':
 			{
@@ -230,7 +213,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 				r_str_replace_char (name, ' ', 0);
 				anal->cb_printf ("%40s", name? name: "");
 				free (name);
-				anal->cb_printf (" 0x%"PFMT64x" -> %9s -> 0x%"PFMT64x, ref->at, analref_toString (t), ref->addr);
+				anal->cb_printf (" 0x%"PFMT64x" -> %9s -> 0x%"PFMT64x, ref->at, r_anal_xrefs_type_tostring (t), ref->addr);
 				name = anal->coreb.getNameDelta (anal->coreb.core, ref->addr);
 				r_str_replace_char (name, ' ', 0);
 				if (name && *name) {
@@ -242,7 +225,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 			}
 			break;
 		case 'q':
-			anal->cb_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x"  %s\n", ref->at, ref->addr, analref_toString (t));
+			anal->cb_printf ("0x%08"PFMT64x" -> 0x%08"PFMT64x"  %s\n", ref->at, ref->addr, r_anal_xrefs_type_tostring (t));
 			break;
 		case 'j':
 			{
@@ -251,7 +234,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 				} else {
 					anal->cb_printf (",");
 				}
-				anal->cb_printf ("\"%"PFMT64d"\":%"PFMT64d, ref->at, ref->addr);
+				anal->cb_printf ("%"PFMT64d":%"PFMT64d, ref->at, ref->addr);
 			}
 			break;
 		default:
@@ -267,7 +250,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 R_API const char *r_anal_xrefs_type_tostring(RAnalRefType type) {
 	switch (type) {
 	case R_ANAL_REF_TYPE_CODE:
-		return "JMP";
+		return "CODE";
 	case R_ANAL_REF_TYPE_CALL:
 		return "CALL";
 	case R_ANAL_REF_TYPE_DATA:

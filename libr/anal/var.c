@@ -132,12 +132,12 @@ R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind
 		eprintf ("Cant find function here\n");
 		return false;
 	}
-	if (size == -1) {
+	if ((size == -1) && (delta == -1) ) {
 		RList *list = r_anal_var_list (a, fcn, kind);
 		RListIter *iter;
 		RAnalVar *var;
 		r_list_foreach (list, iter, var) {
-			if (delta == -1 && !strcmp (var->name, name)) {
+			if (!strcmp (var->name, name)) {
 				delta = var->delta;
 				size = var->size;
 				break;
@@ -156,7 +156,7 @@ R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind
 	}
 	const char *var_def = sdb_fmt ("%c,%s,%d,%s", kind, type, size, name);
 	if (scope > 0) {
-		char *sign = delta> 0? "": "_";
+		char *sign = delta >= 0 ? "": "_";
 		/* local variable */
 		const char *fcn_key = sdb_fmt ("fcn.0x%"PFMT64x ".%c", fcn->addr, kind);
 		const char *var_key = sdb_fmt ("var.0x%"PFMT64x ".%c.%d.%s%d", fcn->addr, kind, scope, sign, R_ABS(delta));
@@ -513,7 +513,7 @@ static void var_add_structure_fields_to_list(RAnal *a, RAnalVar *av, const char 
 			char *field_type = sdb_array_get (TDB, field_key, 0, NULL);
 			ut64 field_offset = sdb_array_get_num (TDB, field_key, 1, NULL);
 			int field_count = sdb_array_get_num (TDB, field_key, 2, NULL);
-			int field_size = r_anal_type_get_size (a, field_type) * (field_count? field_count: 1);
+			int field_size = r_anal_type_get_bitsize (a, field_type) * (field_count? field_count: 1);
 			new_name = r_str_newf ( "%s.%s", base_name, field_name);
 			if (field_offset == 0) {
 				free (av->name);

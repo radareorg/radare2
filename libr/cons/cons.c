@@ -425,7 +425,7 @@ R_API void r_cons_clear_line(int std_err) {
 	} else {
 		char white[1024];
 		memset (&white, ' ', sizeof (white));
-		if (I.columns > 0 && I.columns < sizeof(white)) {
+		if (I.columns > 0 && I.columns < sizeof (white)) {
 			white[I.columns - 1] = 0;
 		} else if (I.columns == 0) {
 			white[0] = 0;
@@ -1312,7 +1312,7 @@ R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 	for (i = 0; help[i]; i += 3) {
 		if (i) {
 			int padding = max_length - (strlen (help[i]) + strlen (help[i + 1]));
-			r_cons_printf("| %s%s%s%*s  %s%s%s\n",
+			r_cons_printf ("| %s%s%s%*s  %s%s%s\n",
 					help[i],
 					pal_args_color, help[i + 1],
 					padding, "",

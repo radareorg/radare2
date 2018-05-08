@@ -1247,11 +1247,6 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 		}
 		return;
 	}
-	if (PIDX == R_CORE_VISUAL_MODE_PDDBG && core->seltab == 1) {
-		const int cols = core->dbg->regcols;
-		p->cur += cols > 0? cols: 3;
-		return;
-	}
 	if (PIDX == R_CORE_VISUAL_MODE_PDDBG && core->seltab == 0) {
 		int w = r_config_get_i (core->config, "hex.cols");
 		if (w < 1) {
@@ -1261,7 +1256,11 @@ static void cursor_nextrow(RCore *core, bool use_ocur) {
 			r_config_get_i (core->config, "stack.delta") - w);
 		return;
 	}
-
+	if (PIDX == R_CORE_VISUAL_MODE_PDDBG && core->seltab == 1) {
+		const int cols = core->dbg->regcols;
+		p->cur += cols > 0? cols: 3;
+		return;
+	}
 	if (p->row_offsets) {
 		// FIXME: cache the current row
 		row = r_print_row_at_off (p, p->cur);
@@ -1302,13 +1301,7 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 		p->cur -= R_MAX (cols, 0);
 		return;
 	}
-	if (PIDX == 2 && core->seltab == 1) {
-		const int cols = core->dbg->regcols;
-		p->cur -= cols > 0? cols: 4;
-		return;
-	}
 	cursor_ocur (core, use_ocur);
-
 	if (splitView) {
 		int w = r_config_get_i (core->config, "hex.cols");
 		if (w < 1) {
@@ -1321,7 +1314,7 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 		}
 		return;
 	}
-	if (core->seltab == 0 && core->printidx == R_CORE_VISUAL_MODE_PDDBG) {
+	if (PIDX == R_CORE_VISUAL_MODE_PDDBG && core->seltab == 0) {
 		int w = r_config_get_i (core->config, "hex.cols");
 		if (w < 1) {
 			w = 16;
@@ -1330,7 +1323,11 @@ static void cursor_prevrow(RCore *core, bool use_ocur) {
 			r_config_get_i (core->config, "stack.delta") + w);
 		return;
 	}
-
+	if (PIDX == R_CORE_VISUAL_MODE_PDDBG && core->seltab == 1) {
+		const int cols = core->dbg->regcols;
+		p->cur -= cols > 0? cols: 4;
+		return;
+	}
 	if (p->row_offsets != NULL) {
 		int delta, prev_sz;
 

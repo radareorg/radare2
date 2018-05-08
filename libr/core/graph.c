@@ -2215,9 +2215,6 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 
 	refs = r_anal_fcn_get_refs (core->anal, fcn);
 	r_list_foreach (refs, iter, ref) {
-		/* XXX: something is broken, why there are duplicated
-		 *      nodes here?! goto check fcn->refs!! */
-		/* avoid dups wtf */
 		title = get_title (ref->addr);
 		if (r_agraph_get_node (g, title) != NULL) {
 			continue;

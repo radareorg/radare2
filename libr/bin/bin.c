@@ -431,7 +431,7 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 	// this thing works for 2GB ELF core from vbox
 	if (!buf_bytes) {
 		if (sz < 1) {
-			eprintf ("Cannot allocate %d bytes\n", (int)(sz + 1));
+			eprintf ("Cannot allocate %d bytes\n", (int)(sz));
 			return false;
 		}
 		buf_bytes = calloc (1, sz);
@@ -445,7 +445,6 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 		}
 	}
 #endif
-
 	if (bin->use_xtr && !name && (st64)sz > 0) {
 		// XXX - for the time being this is fine, but we may want to
 		// change the name to something like
@@ -465,7 +464,7 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 								(void) iob->fd_read_at (io, tfd, 0, buf_bytes, sz);
 							}
 						}
-				//DOUBLECLOSE UAF : iob->fd_close (io, tfd);
+						// DOUBLECLOSE UAF : iob->fd_close (io, tfd);
 						tfd = -1;	// marking it closed
 					} else if (sz != file_sz) {
 						(void) iob->read_at (io, 0LL, buf_bytes, sz);

@@ -70,7 +70,7 @@ R_API void r_anal_type_del(RAnal *anal, const char *name) {
 	}
 }
 
-R_API int r_anal_type_get_size(RAnal *anal, const char *type) {
+R_API int r_anal_type_get_bitsize(RAnal *anal, const char *type) {
 	char *query;
 	/* Filter out the structure keyword if type looks like "struct mystruc" */
 	const char *tmptype;
@@ -118,7 +118,7 @@ R_API int r_anal_type_get_size(RAnal *anal, const char *type) {
 					if (elements == 0) {
 						elements = 1;
 					}
-					ret += r_anal_type_get_size (anal, subtype) * elements;
+					ret += r_anal_type_get_bitsize (anal, subtype) * elements;
 				}
 				free (subtype);
 				ptr = next;
@@ -172,7 +172,7 @@ static int get_types_by_offset(RAnal *anal, RList *offtypes, int offset, const c
 						sprintf (buf, "%s.%s", k, name);
 						r_list_append (offtypes, strdup (buf));
 					}
-					typesize += r_anal_type_get_size (anal, subtype) * elements;
+					typesize += r_anal_type_get_bitsize (anal, subtype) * elements;
 				}
 				free (subtype);
 				ptr = next;
