@@ -160,7 +160,7 @@ R_API void r_cons_pal_init() {
 	cons->cpal.gui_alt_background = (RColor) RColor_WHITE;
 	cons->cpal.gui_border         = (RColor) RColor_BLACK;
 	cons->cpal.highlight          = (RColor) RColor_BGRED;
-	cons->cpal.line_highlight     = RCOLOR (ALPHA_BG, 0x00, 0x00, 0x7f, 0x00, 0x00, 0x00);
+	cons->cpal.line_highlight     = (RColor) RCOLOR (ALPHA_BG, 0x00, 0x00, 0x7f, 0x00, 0x00, 0x00);
 
 	cons->cpal.graph_box          = (RColor) RColor_NULL;
 	cons->cpal.graph_box2         = (RColor) RColor_BLUE;
