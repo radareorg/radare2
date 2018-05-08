@@ -123,7 +123,7 @@ static void type_match(RCore *core, ut64 addr, char *name, int prev_idx) {
 				break;
 			}
 		}
-		size += r_anal_type_get_size (anal, type) / 8;
+		size += r_anal_type_get_bitsize (anal, type) / 8;
 	}
 	r_cons_break_pop ();
 	free (fcn_name);

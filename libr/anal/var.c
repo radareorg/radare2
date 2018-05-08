@@ -513,7 +513,7 @@ static void var_add_structure_fields_to_list(RAnal *a, RAnalVar *av, const char 
 			char *field_type = sdb_array_get (TDB, field_key, 0, NULL);
 			ut64 field_offset = sdb_array_get_num (TDB, field_key, 1, NULL);
 			int field_count = sdb_array_get_num (TDB, field_key, 2, NULL);
-			int field_size = r_anal_type_get_size (a, field_type) * (field_count? field_count: 1);
+			int field_size = r_anal_type_get_bitsize (a, field_type) * (field_count? field_count: 1);
 			new_name = r_str_newf ( "%s.%s", base_name, field_name);
 			if (field_offset == 0) {
 				free (av->name);
