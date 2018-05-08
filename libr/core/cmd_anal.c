@@ -226,7 +226,7 @@ static const char *help_msg_af[] = {
 	"aft", "[?]", "type matching, type propagation",
 	"afu", " [addr]", "resize and analyze function from current address until addr",
 	"afv[bsra]", "?", "manipulate args, registers and variables in function",
-	"afx", "[cCd-] src dst", "add/remove code/Call/data/string reference",
+	"afx", "", "list function references",
 	NULL
 };
 
@@ -373,15 +373,6 @@ static const char *help_msg_afvs[] = {
 	"afvs-", " [name]", "delete stack based argument or locals with the given name",
 	"afvsg", " [idx] [addr]", "define var get reference",
 	"afvss", " [idx] [addr]", "define var set reference",
-	NULL
-};
-
-static const char *help_msg_afx[] = {
-	"Usage:", "afx[-cCd?] [src] [dst]", " manage function references (see also ar?)",
-	"afxc", " sym.main+0x38 sym.printf", "add code ref",
-	"afxC", " sym.main sym.puts", "add call ref",
-	"afxd", " sym.main str.helloworld", "add data ref",
-	"afx-", " sym.main str.helloworld", "remove reference",
 	NULL
 };
 
@@ -559,10 +550,11 @@ static const char *help_msg_av[] = {
 static const char *help_msg_ax[] = {
 	"Usage:", "ax[?d-l*]", " # see also 'afx?'",
 	"ax", "", "list refs",
+	"ax*", "", "output radare commands",
 	"ax", " addr [at]", "add code ref pointing to addr (from curseek)",
 	"ax-", " [at]", "clean all refs/refs from addr",
 	"ax-*", "", "clean all refs/refs",
-	"axc", " addr [at]", "add code jmp ref // unused?",
+	"axc", " addr [at]", "add generic code ref",
 	"axC", " addr [at]", "add code call ref",
 	"axg", " [addr]", "show xrefs graph to reach current function",
 	"axgj", " [addr]", "show xrefs graph to reach current function in json format",
@@ -572,7 +564,7 @@ static const char *help_msg_ax[] = {
 	"axF", " [flg-glob]", "find data/code references of flags",
 	"axt", " [addr]", "find data/code references to this address",
 	"axf", " [addr]", "find data/code references from this address",
-	"ax*", "", "output radare commands",
+	"axs", " addr [at]", "add string ref",
 	NULL
 };
 
@@ -599,7 +591,6 @@ static void cmd_anal_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, afvb);
 	DEFINE_CMD_DESCRIPTOR (core, afvr);
 	DEFINE_CMD_DESCRIPTOR (core, afvs);
-	DEFINE_CMD_DESCRIPTOR (core, afx);
 	DEFINE_CMD_DESCRIPTOR (core, ag);
 	DEFINE_CMD_DESCRIPTOR (core, age);
 	DEFINE_CMD_DESCRIPTOR (core, agg);
@@ -2559,11 +2550,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case '\0': // "afx"
 		case 'j': // "afxj"
 		case ' ': // "afx "
-#if FCN_OLD
 			if (input[2] == 'j') {
 				r_cons_printf ("[");
 			}
-			// TODO: sdbize!
 			// list xrefs from current address
 			{
 				ut64 addr = input[2]==' '? r_num_math (core->num, input + 2): core->offset;
@@ -2589,49 +2578,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			if (input[2] == 'j') {
 				r_cons_printf ("]\n");
 			}
-#else
-#warning TODO_ FCNOLD sdbize xrefs here
-			eprintf ("TODO\n");
-#endif
-			break;
-		case 'c': // "afxc" add code xref
-		case 'd': // "afxd"
-		case 's': // "afxs"
-		case 'C': { // "afxC"
-			char *p;
-			ut64 a, b;
-			char *mi = strdup (input);
-			if (mi && mi[3] == ' ' && (p = strchr (mi + 4, ' '))) {
-				RAnalRefType reftype = r_anal_xrefs_type (input[2]);
-				*p = 0;
-				a = r_num_math (core->num, mi + 3);
-				b = r_num_math (core->num, p + 1);
-				r_anal_xrefs_set (core->anal, a, b, reftype);
-			} else {
-				r_core_cmd_help (core, help_msg_afx);
-			}
-			free (mi);
-			}
-			break;
-		case '-': // "afx-"
-			{
-			char *p;
-			ut64 a, b;
-			char *mi = strdup (input + 3);
-			if (mi && *mi == ' ' && (p = strchr (mi + 1, ' '))) {
-				*p = 0;
-				a = r_num_math (core->num, mi);
-				b = r_num_math (core->num, p + 1);
-				r_anal_xrefs_deln (core->anal, a, b, -1);
-			} else {
-				eprintf ("Usage: afx- [src] [dst]\n");
-			}
-			free (mi);
-			}
 			break;
 		default:
-		case '?': // "afx?"
-			r_core_cmd_help (core, help_msg_afx);
+			eprintf ("Wrong command. Look at af?\n");
 			break;
 		}
 		break;
@@ -2694,7 +2643,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 						//eprintf ("Warning: ignore 0x%08"PFMT64x" call 0x%08"PFMT64x"\n", ref->at, ref->addr);
 						continue;
 					}
-					if (ref->type != 'c' && ref->type != 'C') {
+					if (ref->type != R_ANAL_REF_TYPE_CODE && ref->type != R_ANAL_REF_TYPE_CALL) {
 						/* only follow code/call references */
 						continue;
 					}
@@ -5347,6 +5296,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case 'C': // "axC"
 	case 'c': // "axc"
 	case 'd': // "axd"
+	case 's': // "axs"
 	case ' ': // "ax "
 		{
 		char *ptr = strdup (r_str_trim_head ((char *)input + 1));

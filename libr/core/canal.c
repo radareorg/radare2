@@ -2343,13 +2343,20 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	r_list_foreach (refs, refiter, refi) {
 		switch (refi->type) {
 		case R_ANAL_REF_TYPE_CALL:
-			r_cons_printf ("afxC 0x%"PFMT64x" 0x%"PFMT64x"\n", refi->at, refi->addr);
+			r_cons_printf ("axC 0x%"PFMT64x" 0x%"PFMT64x"\n", refi->addr, refi->at);
 			break;
 		case R_ANAL_REF_TYPE_DATA:
-			r_cons_printf ("afxd 0x%"PFMT64x" 0x%"PFMT64x"\n", refi->at, refi->addr);
+			r_cons_printf ("axd 0x%"PFMT64x" 0x%"PFMT64x"\n", refi->addr, refi->at);
 			break;
 		case R_ANAL_REF_TYPE_CODE:
-			r_cons_printf ("afxc 0x%"PFMT64x" 0x%"PFMT64x"\n", refi->at, refi->addr);
+			r_cons_printf ("axc 0x%"PFMT64x" 0x%"PFMT64x"\n", refi->addr, refi->at);
+			break;
+		case R_ANAL_REF_TYPE_STRING:
+			r_cons_printf ("axs 0x%"PFMT64x" 0x%"PFMT64x"\n", refi->addr, refi->at);
+			break;
+		case R_ANAL_REF_TYPE_NULL:
+		default:
+			r_cons_printf ("ax 0x%"PFMT64x" 0x%"PFMT64x"\n", refi->addr, refi->at);
 			break;
 		}
 	}
