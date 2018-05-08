@@ -32,32 +32,32 @@ all:
 	$(MAKE) $(LIBS5)
 	$(MAKE) $(LIBS6)
 	$(MAKE) $(LIBS7)
-	$(MAKE) libr.${EXT_AR}
-	$(MAKE) libr.${EXT_SO}
+	-$(MAKE) libr.${EXT_AR}
+	-$(MAKE) libr.${EXT_SO}
 
 BUILD_MERGED=yes
 
 ifeq ($(BUILD_MERGED),yes)
 
+ifeq ($(BUILD_OS),darwin)
+MLFLAGS+=-install_name @rpath/libr2.dylib $(LDFLAGS)
+endif
+ifeq ($(BUILD_OS),ios)
+MLFLAGS+=-install_name @rpath/libr2.dylib $(LDFLAGS)
+endif
+
 .libr: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 	rm -rf .libr
 	mkdir .libr
 	for LIB in $^ ; do \
-		${PARTIALLD} $(LDFLAGS) -o .libr/$$(basename $${LIB} .a).o $${LIB} ; \
+		${PARTIALLD} $(MFLAGS) -o .libr/$$(basename $${LIB} .a).o $${LIB} ; \
 	done
 
 libr.${EXT_AR}: .libr
 	${AR} crs $@ .libr/*.o
 
-ifeq ($(BUILD_OS),darwin)
-MLFLAGS+=-install_name @rpath/libr2.dylib
-endif
-ifeq ($(BUILD_OS),ios)
-MLFLAGS+=-install_name @rpath/libr2.dylib
-endif
-
 libr.${EXT_SO}: .libr
-	$(CC) $(LDFLAGS) -fvisibility=hidden $(MLFLAGS) -shared -dynamiclib -o libr.${EXT_SO}  \
+	$(CC) -fvisibility=hidden $(MLFLAGS) -shared -dynamiclib -o libr.${EXT_SO}  \
 		.libr/*.o \
 		../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/libr_java.${EXT_AR} \
 		../shlr/zip/librz.${EXT_AR} \
