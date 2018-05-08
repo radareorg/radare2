@@ -3,7 +3,7 @@
 #include "spp.h"
 #include "config.h"
 
-int spp_run(char *buf, Output *out) {
+R_API int spp_run(char *buf, Output *out) {
 	int i, ret = 0;
 	char *tok;
 
@@ -109,7 +109,7 @@ int do_fputs(Output *out, char *str) {
 	return printed;
 }
 
-void spp_eval(char *buf, Output *out) {
+R_API void spp_eval(char *buf, Output *out) {
 	char *ptr, *ptr2;
 	char *ptrr = NULL;
 	int delta;
@@ -228,7 +228,7 @@ retry:
 }
 
 /* TODO: detect nesting */
-void spp_io(FILE *in, Output *out) {
+R_API void spp_io(FILE *in, Output *out) {
 	char buf[4096];
 	int lines;
 	if (!proc->buf.lbuf) {
@@ -268,10 +268,10 @@ void spp_io(FILE *in, Output *out) {
 		spp_eval (buf, out);
 		proc->state.lineno += lines;
 	}
-	do_fputs (out, proc->buf.lbuf);
+	(void)do_fputs (out, proc->buf.lbuf);
 }
 
-int spp_file(const char *file, Output *out) {
+R_API int spp_file(const char *file, Output *out) {
 	FILE *in = fopen (file, "r");
 	D fprintf (stderr, "SPP-FILE(%s)\n", file);
 	if (in) {
@@ -283,21 +283,21 @@ int spp_file(const char *file, Output *out) {
 	return 0;
 }
 
-void spp_proc_list_kw() {
+R_API void spp_proc_list_kw() {
 	int i;
 	for (i = 0; tags[i].name; i++) {
 		printf ("%s\n", tags[i].name);
 	}
 }
 
-void spp_proc_list() {
+R_API void spp_proc_list() {
 	int i;
 	for (i=0; procs[i]; i++) {
 		printf ("%s\n", procs[i]->name);
 	}
 }
 
-void spp_proc_set(struct Proc *p, char *arg, int fail) {
+R_API void spp_proc_set(struct Proc *p, char *arg, int fail) {
 	int i, j;
 	if (arg)
 	for (j = 0; procs[j]; j++) {

@@ -22,6 +22,11 @@ endif
 ALL?=
 CFLAGS+=-I$(LIBR)
 CFLAGS+=-I$(LIBR)/include
+
+CFLAGS+=-fvisibility=hidden
+LDFLAGS+=-fvisibility=hidden
+LINK+=-fvisibility=hidden
+
 LINK+=$(addprefix -L../,$(subst r_,,$(BINDEPS)))
 LINK+=$(addprefix -l,$(BINDEPS))
 SRC=$(subst .o,.c,$(OBJ))

@@ -32,6 +32,10 @@ extern int lineno;
 #define HAVE_FORK 1
 #endif
 
+#ifndef HAVE_FORK
+#define HAVE_FORK 1
+#endif
+
 #ifndef DLL_LOCAL
 #ifdef _MSC_VER
 #define DLL_LOCAL
