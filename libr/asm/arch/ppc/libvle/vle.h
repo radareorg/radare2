@@ -33,10 +33,10 @@ typedef struct {
 	int cond;
 } vle_t;
 
-R_API int vle_init(vle_handle* handle, const ut8* buffer, const ut32 size);
-R_API vle_t* vle_next(vle_handle* handle);
-R_API int vle_option(vle_handle* handle, ut32 option);
-R_API void vle_free(vle_t* instr);
-R_API void vle_snprint(char* str, int size, ut64 addr, vle_t* instr);
+int vle_init(vle_handle* handle, const ut8* buffer, const ut32 size);
+vle_t* vle_next(vle_handle* handle);
+int vle_option(vle_handle* handle, ut32 option);
+void vle_free(vle_t* instr);
+void vle_snprint(char* str, int size, ut64 addr, vle_t* instr);
 
 #endif
