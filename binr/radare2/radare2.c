@@ -174,7 +174,7 @@ static int main_help(int line) {
 		" -z, -zz      do not load strings or load them even in raw\n");
 	}
 	if (line == 2) {
-		char *homedir = r_str_home (R2_HOME_CONFIGDIR);
+		char *datahome = r_str_home (R2_HOME_DATADIR);
 		char *dirPrefix = r_sys_prefix (NULL);
 		printf (
 		"Scripts:\n"
@@ -187,7 +187,7 @@ static int main_help(int line) {
 		" LIBR_PLUGINS " R_JOIN_2_PATHS ("%s", R2_PLUGINS) "\n"
 		" USER_ZIGNS   " R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS) "\n"
 		"Environment:\n"
-		" RHOMEDIR     %s\n" // TODO: rename to RHOME R2HOME?
+		" RDATAHOME    %s\n" // TODO: rename to RHOME R2HOME?
 		" RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
 		" MAGICPATH    "R2_SDB_MAGIC"\n"
 		" R_DEBUG      if defined, show error messages and crash signal\n"
@@ -198,16 +198,18 @@ static int main_help(int line) {
 		" R2_INCDIR    "R2_INCDIR"\n"
 		" R2_LIBDIR    "R2_LIBDIR"\n"
 		" R2_LIBEXT    "R_LIB_EXT"\n"
-		, dirPrefix, homedir);
-		free (homedir);
+		, dirPrefix, datahome);
+		free (datahome);
 	}
 	return 0;
 }
 
 static int main_print_var(const char *var_name) {
 	int i = 0;
-	char *homedir = r_str_home (R2_HOME_CONFIGDIR);
-	char *homeplugs = r_str_home (R2_HOME_PLUGINS);
+	char *confighome = r_str_home (R2_HOME_CONFIGDIR);
+	char *datahome = r_str_home (R2_HOME_DATADIR);
+	char *cachehome = r_str_home (R2_HOME_CACHEDIR);
+	char *homeplugins = r_str_home (R2_HOME_PLUGINS);
 	char *homezigns = r_str_home (R2_HOME_ZIGNS);
 	char *plugins = r_str_r2_prefix (R2_PLUGINS);
 	struct radare2_var_t {
@@ -220,9 +222,11 @@ static int main_print_var(const char *var_name) {
 		{ "INCDIR", R2_INCDIR },
 		{ "LIBDIR", R2_LIBDIR },
 		{ "LIBEXT", R_LIB_EXT },
-		{ "RHOMEDIR", homedir },
+		{ "RCONFIGHOME", confighome },
+		{ "RDATAHOME", datahome },
+		{ "RCACHEHOME", cachehome },
 		{ "LIBR_PLUGINS", plugins },
-		{ "USER_PLUGINS", homeplugs },
+		{ "USER_PLUGINS", homeplugins },
 		{ "USER_ZIGNS", homezigns },
 		{ NULL, NULL }
 	};
@@ -240,8 +244,10 @@ static int main_print_var(const char *var_name) {
 			i++;
 		}
 	}
-	free (homedir);
-	free (homeplugs);
+	free (confighome);
+	free (datahome);
+	free (cachehome);
+	free (homeplugins);
 	free (homezigns);
 	free (plugins);
 	return 0;
