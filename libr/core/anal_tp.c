@@ -221,14 +221,17 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	RListIter *it;
 	RAnalOp aop = {0};
 	ut64 prevpc;
-	int ret, bsize = R_MAX (64, core->blocksize);
-	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
-	const int minopcode = R_MAX (1, mininstrsz);
-	int cur_idx , prev_idx = core->anal->esil->trace_idx;
 
 	if (!core|| !fcn) {
 		return;
 	}
+	if (!core->anal->esil) {
+		return;
+	}
+	int ret, bsize = R_MAX (64, core->blocksize);
+	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	const int minopcode = R_MAX (1, mininstrsz);
+	int cur_idx , prev_idx = core->anal->esil->trace_idx;
 	RConfigHold *hc = r_config_hold_new (core->config);
 	if (!hc) {
 		return;
