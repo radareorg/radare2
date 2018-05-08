@@ -192,9 +192,7 @@ static void _fcn_tree_print_dot_node(RBNode *n) {
 		}
 	}
 }
-#endif
 
-#if 0
 static void _fcn_tree_print_dot(RBNode *n) {
 	r_cons_print ("digraph fcn_tree {\n");
 	if (n) {
@@ -776,10 +774,10 @@ static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAna
 	isValid = false;
 
 	for (i = 0; i < prev_bb->op_pos_size; i++) {
-		// ut64 addr = prev_bb->addr + prev_bb->op_pos[i];
-		// int len = r_anal_op (anal, &tmp_aop, addr, bb_buf + prev_bb->op_pos[i], prev_bb->size - prev_bb->op_pos[i], R_ANAL_OP_MASK_ALL);
+		ut64 addr = prev_bb->addr + prev_bb->op_pos[i];
+		int len = r_anal_op (anal, &tmp_aop, addr, bb_buf + prev_bb->op_pos[i], prev_bb->size - prev_bb->op_pos[i], R_ANAL_OP_MASK_ALL);
 
-		if (tmp_aop.type != R_ANAL_OP_TYPE_CMP) {
+		if (len < 1 || tmp_aop.type != R_ANAL_OP_TYPE_CMP) {
 			continue;
 		}
 		// get the value of the cmp
