@@ -208,6 +208,7 @@ typedef struct {
 	const char *color_gui_background;
 	const char *color_gui_alt_background;
 	const char *color_gui_border;
+	const char *color_line_highlight;
 
 	RFlagItem *lastflag;
 	RAnalHint *hint;
@@ -556,6 +557,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->color_gui_background = P(gui_background): Color_BLACK;
 	ds->color_gui_alt_background = P(gui_alt_background): Color_GRAY;
 	ds->color_gui_border = P(gui_border): Color_BGGRAY;
+	ds->color_line_highlight = P(line_highlight): Color_BGBLUE;
 
 	ds->immstr = r_config_get_i (core->config, "asm.immstr");
 	ds->immtrim = r_config_get_i (core->config, "asm.immtrim");
@@ -887,7 +889,7 @@ static bool ds_must_strip(RDisasmState *ds) {
 
 static void ds_highlight_word(RDisasmState * ds, char *word, char *color) {
 	char *source = ds->opstr? ds->opstr: ds->asmop.buf_asm;
-	const char *color_reset = ds->vat == ds->core->prompt_offset ? Color_BGBLUE : Color_RESET_BG;
+	const char *color_reset = ds->vat == ds->core->prompt_offset ? ds->color_line_highlight : Color_RESET_BG;
 	char *asm_str = r_str_highlight (source, word, color, color_reset);
 	ds->opstr = asm_str? asm_str:source;
 }
@@ -4369,7 +4371,7 @@ static bool line_highlighted(RDisasmState *ds) {
 
 static void ds_start_line_highlight(RDisasmState *ds) {
 	if (ds->show_color && line_highlighted (ds)) {
-		r_cons_strcat (Color_BGBLUE);
+		r_cons_strcat (ds->color_line_highlight);
 	}
 }
 
