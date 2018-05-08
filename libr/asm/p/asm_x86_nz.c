@@ -114,6 +114,7 @@ typedef struct operand_t {
 			char rep_op[MAX_REPOP_LENGTH];
 		};
 	};
+	bool explicit_size;
 } Operand;
 
 typedef struct Opcode_t {
@@ -864,6 +865,11 @@ static int opdec(RAsm *a, ut8 *data, const Opcode *op) {
 		eprintf ("Error: Invalid operands\n");
 		return -1;
 	}
+	if (op->operands[0].type & OT_MEMORY) {
+		if (!op->operands[0].explicit_size) {
+			return -1;
+		}
+	}
 	if (op->operands[0].type & OT_BYTE) {
 		data[l++] = 0xfe;
 		if (op->operands[0].type & OT_MEMORY) {
@@ -1155,6 +1161,11 @@ static int opclflush(RAsm *a, ut8 *data, const Opcode *op) {
 
 static int opinc(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
+	if (op->operands[0].type & OT_MEMORY) {
+		if (!op->operands[0].explicit_size) {
+			return -1;
+		}
+	}
 	if (a->bits == 64) {
 		if (op->operands[0].type & OT_GPREG) {
 			data[l++] = 0x48;
@@ -1463,6 +1474,9 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 				}
 			}
 		} else if (op->operands[0].type & OT_MEMORY) {
+			if (op->operands[1].type & OT_CONSTANT && !op->operands[0].explicit_size) {
+				return -1;
+			}
 			if (a->bits == 64) {
 				if (op->operands[0].extended) {
 					if (op->operands[0].reg < 0) {
@@ -4274,8 +4288,12 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 
 				// Still going to need to know the size if not specified
 				if (!explicit_size) {
+					op->explicit_size = false;
 					op->type |= reg_type;
+				} else {
+					op->explicit_size = true;
 				}
+
 				// Addressing only via general purpose registers
 				if (!(reg_type & OT_GPREG)) {
 					op->type = 0;	// Make the result invalid
