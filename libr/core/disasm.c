@@ -4540,7 +4540,7 @@ toro:
 			if (fmt) {
 				r_cons_printf ("(%s)\n", link_type);
 				r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x"\n", fmt, ds->addr + idx);
-				inc += r_anal_type_get_size (core->anal, link_type) / 8;
+				inc += r_anal_type_get_bitsize (core->anal, link_type) / 8;
 				free (fmt);
 				r_anal_op_fini (&ds->analop);
 				continue;
