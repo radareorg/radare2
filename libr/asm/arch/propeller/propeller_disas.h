@@ -118,5 +118,5 @@ struct propeller_cmd {
 	char	operands[PROP_INSTR_MAXLEN];
 };
 
-R_API int propeller_decode_command (const ut8* instr, struct propeller_cmd *cmd);
+int propeller_decode_command (const ut8* instr, struct propeller_cmd *cmd);
 #endif /* PROPELLER_DISAS_H */

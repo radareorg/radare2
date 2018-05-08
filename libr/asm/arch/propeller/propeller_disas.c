@@ -203,7 +203,7 @@ static int decode_jmp (struct propeller_cmd *cmd, ut32 instr) {
 	return ret;
 }
 
-R_API int propeller_decode_command(const ut8 *instr, struct propeller_cmd *cmd)
+int propeller_decode_command(const ut8 *instr, struct propeller_cmd *cmd)
 {
 	int ret = -1;
 	ut32 in;
