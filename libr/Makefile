@@ -49,8 +49,15 @@ ifeq ($(BUILD_MERGED),yes)
 libr.${EXT_AR}: .libr
 	${AR} crs $@ .libr/*.o
 
+ifeq ($(BUILD_OS),darwin)
+MLFLAGS+=-install_name @rpath/libr2.dylib
+endif
+ifeq ($(BUILD_OS),ios)
+MLFLAGS+=-install_name @rpath/libr2.dylib
+endif
+
 libr.${EXT_SO}: .libr
-	$(CC) $(LDFLAGS) -fvisibility=hidden -install_name @rpath/libr2.dylib -shared -dynamiclib -o libr.${EXT_SO}  \
+	$(CC) $(LDFLAGS) -fvisibility=hidden $(MLFLAGS) -shared -dynamiclib -o libr.${EXT_SO}  \
 		.libr/*.o \
 		../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/libr_java.${EXT_AR} \
 		../shlr/zip/librz.${EXT_AR} \
