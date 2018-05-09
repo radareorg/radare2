@@ -70,6 +70,7 @@ static struct {
 	{ "gui.alt_background", r_offsetof (RConsPrintablePalette, gui_alt_background), r_offsetof (RConsPalette, gui_alt_background) },
 	{ "gui.border", r_offsetof (RConsPrintablePalette, gui_border), r_offsetof (RConsPalette, gui_border) },
 	{ "highlight", r_offsetof (RConsPrintablePalette, highlight), r_offsetof (RConsPalette, highlight) },
+	{ "line_highlight", r_offsetof (RConsPrintablePalette, line_highlight), r_offsetof (RConsPalette, line_highlight) },
 	{ NULL, 0, 0 }
 };
 
@@ -159,6 +160,7 @@ R_API void r_cons_pal_init() {
 	cons->cpal.gui_alt_background = (RColor) RColor_WHITE;
 	cons->cpal.gui_border         = (RColor) RColor_BLACK;
 	cons->cpal.highlight          = (RColor) RColor_BGRED;
+	cons->cpal.line_highlight     = (RColor) RCOLOR (ALPHA_BG, 0x00, 0x00, 0x7f, 0x00, 0x00, 0x00);
 
 	cons->cpal.graph_box          = (RColor) RColor_NULL;
 	cons->cpal.graph_box2         = (RColor) RColor_BLUE;
@@ -328,6 +330,9 @@ R_API char *r_cons_pal_parse(const char *str, RColor *outcol) {
 		}
 	}
 	if (outcol) {
+		if (outcol->a == ALPHA_BG && !bgcolor) {
+			rcolor.a = ALPHA_BG;
+		}
 		*outcol = rcolor;
 	}
 	free (fgcolor);

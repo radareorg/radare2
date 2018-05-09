@@ -127,6 +127,7 @@ enum {
 	R_CONS_PAL_GUI_BACKGROUND,
 	R_CONS_PAL_GUI_ALT_BACKGROUND,
 	R_CONS_PAL_GUI_BORDER,
+	R_CONS_PAL_LINE_HIGHLIGHT,
 	R_CONS_PAL_GRAPH_BOX,
 	R_CONS_PAL_GRAPH_BOX2,
 	R_CONS_PAL_GRAPH_BOX3,
@@ -207,6 +208,7 @@ typedef struct r_cons_palette_t {
 	RColor gui_alt_background;
 	RColor gui_border;
 	RColor highlight;
+	RColor line_highlight;
 
 	/* Graph colors */
 	RColor graph_box;
@@ -271,6 +273,7 @@ typedef struct r_cons_printable_palette_t {
 	char *gui_alt_background;
 	char *gui_border;
 	char *highlight;
+	char *line_highlight;
 
 	/* graph colors */
 	char *graph_box;
