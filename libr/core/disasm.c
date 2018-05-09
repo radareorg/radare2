@@ -3238,7 +3238,7 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 	int str_len;
 	char *escstr = NULL;
 	const char *prefix = "";
-	bool esc_bslash = ds->core->print->esc_bslash;
+	bool esc_bslash = ds->use_json ? true : ds->core->print->esc_bslash;
 	switch (ds->strenc) {
 	case R_STRING_ENC_LATIN1:
 		escstr = r_str_escape_latin1 (str, ds->show_asciidot, esc_bslash);
@@ -3302,10 +3302,14 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 
 static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refaddr) {
 	const char *prefix;
+	char *escstr;
+	bool orig_use_json = ds->use_json;
 	if (!r_bin_string_filter (ds->core->bin, str, refaddr)) {
 		return;
 	}
-	char *escstr = ds_esc_str (ds, str, len, &prefix);
+	ds->use_json = false;
+	escstr = ds_esc_str (ds, str, len, &prefix);
+	ds->use_json = orig_use_json;
 	if (escstr) {
 		bool inv = ds->show_color && !ds->show_emu_strinv;
 		ds_begin_comment (ds);
