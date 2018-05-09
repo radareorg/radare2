@@ -52,21 +52,22 @@ typedef struct ht_t {
 // If hashfunction is NULL it will be used sdb_hash internally
 // If keydup or valdup are null it will be used an assignment
 // If keySize or valueSize are null it will be used strlen internally
-SdbHash* ht_new(DupValue valdup, HtKvFreeFunc pair_free, CalcSize valueSize);
+SDB_API SdbHash* ht_new(DupValue valdup, HtKvFreeFunc pair_free, CalcSize valueSize);
 // Destroy a hashtable and all of its entries.
-void ht_free(SdbHash* ht);
-void ht_free_deleted(SdbHash* ht);
+SDB_API void ht_free(SdbHash* ht);
+SDB_API void ht_free_deleted(SdbHash* ht);
 // Insert a new Key-Value pair into the hashtable. If the key already exists, returns false.
-bool ht_insert(SdbHash* ht, const char* key, void* value);
+SDB_API bool ht_insert(SdbHash* ht, const char* key, void* value);
 //Insert a new HtKv in the hashtable
-bool ht_insert_kv(SdbHash *ht, HtKv *kv, bool update);
+SDB_API bool ht_insert_kv(SdbHash *ht, HtKv *kv, bool update);
 // Insert a new Key-Value pair into the hashtable, or updates the value if the key already exists.
-bool ht_update(SdbHash* ht, const char* key, void* value);
+SDB_API bool ht_update(SdbHash* ht, const char* key, void* value);
 // Delete a key from the hashtable.
-bool ht_delete(SdbHash* ht, const char* key);
+SDB_API bool ht_delete(SdbHash* ht, const char* key);
 // Find the value corresponding to the matching key.
-void* ht_find(SdbHash* ht, const char* key, bool* found);
+SDB_API void* ht_find(SdbHash* ht, const char* key, bool* found);
 HtKv* ht_find_kv(SdbHash* ht, const char* key, bool* found);
-void ht_foreach(SdbHash *ht, HtForeachCallback cb, void *user);
-SdbList* ht_foreach_list(SdbHash *ht, bool sorted);
+SDB_API void ht_foreach(SdbHash *ht, HtForeachCallback cb, void *user);
+SDB_API SdbList* ht_foreach_list(SdbHash *ht, bool sorted);
+
 #endif // __HT_H

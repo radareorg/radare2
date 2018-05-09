@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2016 - pancake */
+/* radare2 - LGPL - Copyright 2016-2018 - pancake */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -21,7 +21,6 @@ static int xtensa_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 le
 	if (length > INSN_BUFFER_SIZE) {
 		length = INSN_BUFFER_SIZE;
 	}
-
 	memcpy (myaddr, bytes, length);
 	return 0;
 }
@@ -36,26 +35,28 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 
 static void print_address(bfd_vma address, struct disassemble_info *info) {
 	char tmp[32];
-	if (!buf_global)
+	if (!buf_global) {
 		return;
-	sprintf(tmp, "0x%08"PFMT64x"", (ut64)address);
-	strcat(buf_global, tmp);
+	}
+	sprintf (tmp, "0x%08"PFMT64x"", (ut64)address);
+	strcat (buf_global, tmp);
 }
 
 static int buf_fprintf(void *stream, const char *format, ...) {
-	int flen, glen;
 	va_list ap;
-	char *tmp;
-	if (!buf_global)
+	if (!buf_global) {
 		return 0;
+	}
 	va_start (ap, format);
-	flen = strlen (format);
-	glen = strlen (buf_global);
-	tmp = malloc (flen + glen + 2);
-	if (!tmp) return 0;
+	int flen = strlen (format);
+	int glen = strlen (buf_global);
+	char *tmp = malloc (flen + glen + 2);
+	if (!tmp) {
+		return 0;
+	}
 	memcpy (tmp, buf_global, glen);
 	memcpy (tmp+glen, format, flen);
-	tmp[flen+glen] = 0;
+	tmp[flen + glen] = 0;
 // XXX: overflow here?
 	vsprintf (buf_global, tmp, ap);
 	va_end (ap);
@@ -65,7 +66,7 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
-	op->buf_asm[0]='\0';
+	op->buf_asm[0] = '\0';
 	buf_global = op->buf_asm;
 	offset = a->pc;
 	if (len > INSN_BUFFER_SIZE) {
@@ -87,9 +88,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.stream = stdout;
 
 	op->size = print_insn_xtensa ((bfd_vma)offset, &disasm_obj);
-	if (op->size == -1)
+	if (op->size == -1) {
 		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
-
+	}
 	return op->size;
 }
 

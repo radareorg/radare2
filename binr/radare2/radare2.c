@@ -175,7 +175,7 @@ static int main_help(int line) {
 	}
 	if (line == 2) {
 		char *datahome = r_str_home (R2_HOME_DATADIR);
-		char *dirPrefix = r_sys_prefix (NULL);
+		const char *dirPrefix = r_sys_prefix (NULL);
 		printf (
 		"Scripts:\n"
 		" system       ${R2_PREFIX}/share/radare2/radare2rc\n"

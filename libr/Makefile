@@ -6,6 +6,7 @@ include ../mk/${COMPILER}.mk
 
 DESTDIR:=$(DESTDIR)
 PREFIX?=${PWD}/../prefix
+OBJCOPY?=objcopy
 
 S=$
 B=`
@@ -32,24 +33,74 @@ all:
 	$(MAKE) $(LIBS5)
 	$(MAKE) $(LIBS6)
 	$(MAKE) $(LIBS7)
-ifeq (${WITHNONPIC},1)
 	$(MAKE) libr.${EXT_AR}
+	$(MAKE) libr.${EXT_SO}
+
+ifeq ($(BUILD_MERGED),1)
+
+ifeq ($(OSTYPE),darwin)
+MLFLAGS+=-install_name @rpath/libr2.dylib $(LDFLAGS)
 endif
+ifeq ($(OSTYPE),ios)
+MLFLAGS+=-install_name @rpath/libr2.dylib $(LDFLAGS)
+endif
+# XXX version-script only works with shlib as output
+#ifeq ($(OSTYPE),linux)
+#PLFLAGS+=--version-script ./ld.script
+#endif
 
-libr.${EXT_SO}:
-	rm -rf .libr/tcc # WHY
-	$(CC) $(LDFLAGS) -shared -dynamic -arch arm64 -o libr.${EXT_SO} .libr/*/*.o ../shlr/gdb/lib/libgdbr.a
-
-../shlr/libr_shlr.${EXT_AR}:
-	$(MAKE) -C ../shlr libr_shlr.${EXT_AR}
-
-libr.${EXT_AR}: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
+.libr: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 	rm -rf .libr
 	mkdir .libr
 	for LIB in $^ ; do \
-		${PARTIALLD} -o .libr/$$(basename $${LIB} .a).o $${LIB} ; \
+		${PARTIALLD} $(PLFLAGS) -o .libr/$$(basename $${LIB} .a).o $${LIB} ; \
 	done
+ifeq ($(OSTYPE),linux)
+	for LIB in .libr/* ; do $(OBJCOPY) --localize-hidden $$LIB ; done
+endif
+ifeq ($(OSTYPE),gnulinux)
+	for LIB in .libr/* ; do $(OBJCOPY) --localize-hidden $$LIB ; done
+endif
+ifeq ($(OSTYPE),android)
+	for LIB in .libr/* ; do $(OBJCOPY) --localize-hidden $$LIB ; done
+endif
+
+libr.${EXT_AR}: .libr
 	${AR} crs $@ .libr/*.o
+
+E+=../shlr/ar/libr_ar.${EXT_AR}
+E+=../shlr/grub/libgrubfs.${EXT_AR}
+E+=../shlr/windbg/libr_windbg.${EXT_AR}
+E+=../shlr/qnx/lib/libqnxr.${EXT_AR}
+E+=../shlr/bochs/lib/libbochs.${EXT_AR}
+#ifeq ($(COMPILER),ios-sdk)
+#E+=../shlr/sdb/src/libsdb.${EXT_AR}
+#endif
+#ifneq ($(OSTYPE),android)
+#E+=../shlr/sdb/src/libsdb.${EXT_AR}
+#endif
+
+libr.${EXT_SO}: .libr
+	$(CC) -fvisibility=hidden $(MLFLAGS) -shared -dynamiclib -o libr.${EXT_SO}  \
+		.libr/*.o \
+		../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/libr_java.${EXT_AR} \
+		../shlr/zip/librz.${EXT_AR} \
+		../shlr/libr_shlr.${EXT_AR} $(E)\
+		../shlr/capstone/libcapstone.${EXT_AR}
+
+else
+
+# BUILD_MERGED=0
+
+libr.${EXT_SO}:
+	# do nothing
+
+libr.${EXT_AR}:
+	# do nothing
+endif
+
+../shlr/libr_shlr.${EXT_AR}:
+	$(MAKE) -C ../shlr libr_shlr.${EXT_AR}
 
 $(LIBS):
 	@echo "DIR $@"
@@ -111,7 +162,7 @@ install: install-includes install-pkgconfig
 	# TODO :Use INSTALL_DATA_DIR instead of mkdir
 	# libraries
 	@${INSTALL_DIR} "${DESTDIR}${LIBDIR}"
-	@$(foreach lib,$(shell find * -type f -iname "*.${EXT_SO}" | grep -v '(lib|parse)/t/' | grep lib | grep -v /bin/ | grep -v /p/), \
+	@$(foreach lib,$(shell find * -type f -iname "*.${EXT_SO}" | grep -v 'libr\.' | grep -v '(lib|parse)/t/' | grep lib | grep -v /bin/ | grep -v /p/), \
 	  echo " ${DESTDIR}${LIBDIR}/$(call libpath-to-name-version,$(lib),${LIBVERSION})"; \
 	  rm -f "${DESTDIR}${LIBDIR}/$(call libpath-to-name-version,$(lib),${LIBVERSION})"; \
 	  ${INSTALL_LIB} "$(lib)" "${DESTDIR}${LIBDIR}/$(call libpath-to-name-version,$(lib),${LIBVERSION})"; \
@@ -173,6 +224,7 @@ deinstall uninstall:
 
 clean:
 	for LIB in ${LIBS}; do ( cd $${LIB} && $(MAKE) clean ); done
+	rm -rf .libr libr.${LIB_SO} libr.${LIB_AR}
 
 mrproper:
 	rm -rf .libr libr.${LIB_SO} libr.${LIB_AR}

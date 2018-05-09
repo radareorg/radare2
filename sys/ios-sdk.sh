@@ -9,6 +9,7 @@ SIMULATOR_ARCHS="x86_64"
 PACKAGE_RADARE=0
 EMBED_BITCODE=1
 CFLAGS="-O2"
+DOSH=0
 ARCHS="" # Will be set by -archs argument. If you want to set it -> e.g. ARCHS="armv7+arm64".
 MERGE_LIBS=1 # Will merge libs if you build for arm and simulator 
 
@@ -20,11 +21,10 @@ export LD="xcrun --sdk iphoneos ld"
 export IOSVER=9.0
 export IOSINC=`pwd`/sys/ios-include
 export USE_IOS_STORE=1
+export USE_IOS_STATIC=0
 
 if [ "${EMBED_BITCODE}" = 1 ]; then
 	export CFLAGS="$CFLAGS -fembed-bitcode"
-else 
-	export CFLAGS=$CFLAGS
 fi
 
 iosConfigure() {
@@ -33,7 +33,7 @@ iosConfigure() {
 	else
 		cp -f plugins.ios.cfg plugins.cfg
 	fi
-	./configure --prefix=${PREFIX} --with-ostype=darwin \
+	./configure --enable-merged --prefix=${PREFIX} --with-ostype=darwin \
 	  --without-pic --with-nonpic --without-fork \
 	  --with-compiler=ios-sdk --target=arm-unknown-darwin
 	return $?
@@ -41,34 +41,39 @@ iosConfigure() {
 
 iosClean() {
 	make clean
+	rm -rf libr/.libr libr/libr.a libr/libr.dylib
 }
 
 iosBuild() {
-    time make -j4 || exit 1
-    # Build and sign
-    ( cd binr/radare2 ; make ios_sdk_sign )
-    make install DESTDIR=$INSTALL_DST
-    rm -rf $INSTALL_DST/$PREFIX/share/radare2/*/www/enyo/node_modules
-    return $?
+	time make -j4 || exit 1
+	# Build and sign
+	( cd binr/radare2 ; make ios_sdk_sign )
+	make install DESTDIR="$INSTALL_DST"
+	rm -rf "$INSTALL_DST/$PREFIX"/share/radare2/*/www/enyo/node_modules
+	return $?
 }
 
 iosMergeLibs() {
-	mkdir $INSTALL_DST/$PREFIX/lib_merged
-	echo "\\nMerging dynamic libs"
-	lipo $INSTALL_DST/$PREFIX/lib/libr*git.dylib $INSTALL_DST/$PREFIX/lib_simulator/libr*git.dylib -output $INSTALL_DST/$PREFIX/lib_merged/libr2.dylib -create
+	mkdir -p $INSTALL_DST/$PREFIX/lib_merged
+	#echo "Merging dynamic libs"
+	#lipo "$INSTALL_DST/$PREFIX"/lib/libr*git.dylib $INSTALL_DST/$PREFIX/lib_simulator/libr*git.dylib -output $INSTALL_DST/$PREFIX/lib_merged/libr2.dylib -create
 	echo "Merging static libs (only libr.a)"
-	lipo $INSTALL_DST/$PREFIX/lib/libr.a $INSTALL_DST/$PREFIX/lib_simulator/libr.a -output $INSTALL_DST/$PREFIX/lib_merged/libr.a -create
-	echo "\\nYou can find the merged libs in $INSTALL_DST$PREFIX/lib_merged"
+	lipo "$INSTALL_DST/$PREFIX"/lib/libr.a "$INSTALL_DST/$PREFIX"/lib_simulator/libr.a -output "$INSTALL_DST/$PREFIX"/lib_merged/libr.a -create
+	echo "Merging shared libs (only libr.dylib)"
+	lipo "$INSTALL_DST/$PREFIX/lib/libr.dylib" \
+		"$INSTALL_DST/$PREFIX"/lib_simulator/libr.dylib \
+		-output "$INSTALL_DST/$PREFIX"/lib_merged/libr.dylib -create
+	echo "You can find the merged libs in $INSTALL_DST$PREFIX/lib_merged"
 }
 
 iosPackage() {
-	( cd $INSTALL_DST && tar czvf $INSTALL_DST-${CPU}.tar.gz * )
+	( cd "$INSTALL_DST" && tar czvf $INSTALL_DST-${CPU}.tar.gz * )
 	# Prepare radare2
 	rm -rf sys/cydia/radare2/root
 	rm -rf sys/cydia/radare2/root/usr/lib/*.dSYM
 	rm -rf sys/cydia/radare2/root/usr/lib/*.a
 	mkdir -p sys/cydia/radare2/root
-	sudo tar xpzvf $INSTALL_DST-${CPU}.tar.gz -C sys/cydia/radare2/root
+	sudo tar xpzvf "$INSTALL_DST"-${CPU}.tar.gz -C sys/cydia/radare2/root
 	rm -rf sys/cydia/radare2-dev/root
 	# Prepare radare2-dev
 	mkdir -p sys/cydia/radare2-dev/root
@@ -89,46 +94,59 @@ iosPackage() {
 showHelp() {
 	echo "The following arguments are available:"
 
-	echo "\\n\\t-archs"
-	echo "\\t\\tSelect the archs, you want to build for."
-	echo "\\t\\tAvailable archs: armv7, armv7s, arm64, all" 
-	echo "\\t\\tYou can select multiple archs by concatenating"
-	echo "\\t\\tthem with a '+' sign."
-	echo "\\t\\tOr specify 'all' to build for armv7+armv7s+arm64."
-	echo "\\t\\tSee the examples below."
+	echo "    -a, --archs"
+	echo "        Select the archs, you want to build for."
+	echo "        Available archs: armv7, armv7s, arm64, all" 
+	echo "        You can select multiple archs by concatenating"
+	echo "        them with a '+' sign."
+	echo "        Or specify 'all' to build for armv7+armv7s+arm64."
+	echo "        See the examples below."
 
-	echo "\\n\\t-h, --help"
-	echo "\\t\\tShow this text."
+	echo "    -h, --help"
+	echo "        Show this text."
 
-	echo "\\n\\t-p"
-	echo "\\t\\tPackage radare2."
+	echo "    -p, --package"
+	echo "        Package radare2."
 
-	echo "\\n\\t-s"
-	echo "\\t\\tRun shell."
+	echo "    -s, --shell"
+	echo "        Run shell."
 
-	echo "\\n\\t-simulator"
-	echo "\\t\\tBuild also for i386 and x86_64 archs."
-	echo "\\t\\tSo you can use radare2 in the iOS simulator."
+	echo "    -f, --full"
+	echo "        Same as -archs all -simulator."
 
-	echo "\\nExamples:"
-	echo "\\tsys/ios-sdk.sh -archs arm64"
-	echo "\\tsys/ios-sdk.sh -archs armv7+arm64 -simulator"
-	echo "\\tsys/ios-sdk.sh -archs all -simulator"
+	echo "    -simulator"
+	echo "        Build also for i386 and x86_64 archs."
+	echo "        So you can use radare2 in the iOS simulator."
 
-	echo "\\nYou can also modify some variables in sys/ios-sdk.sh."
+	echo "Examples:"
+	echo "    sys/ios-sdk.sh -archs arm64"
+	echo "    sys/ios-sdk.sh -archs armv7+arm64 -simulator"
+	echo "    sys/ios-sdk.sh -archs all -simulator"
+
+	echo "You can also modify some variables in sys/ios-sdk.sh."
 }
 
 # Show help text, if no archs are selected
 if [ $# -eq 0 ] && [ "${#ARCHS}" = 0 ] && [ "${USE_SIMULATOR}" = 0 ]; then
 	echo "You need to specify the archs you want to build for."
-	echo "Use the -archs/-simulator argument or modify the ARCHS/USE_SIMULATOR variable in sys/ios-sdk.sh.\\n"
+	echo "Use the -archs/-simulator argument or modify the ARCHS/USE_SIMULATOR variable in sys/ios-sdk.sh."
+	echo
 	showHelp
 	exit 0
 fi
 
 while test $# -gt 0; do
 	case "$1" in 
-		-archs)
+		-full|--full|-f)
+			shift
+			ARCHS="armv7+armv7s+arm64"
+			USE_SIMULATOR=1
+			;;
+		-shell|--shell|-s)
+			DOSH=1
+			shift
+			;;
+		-archs|-a|--archs)
 			shift
 			if test $# -gt 0; then
 				if [ "$1" == "all" ]; then
@@ -139,19 +157,10 @@ while test $# -gt 0; do
 			fi
 			shift
 			;;
-		-p)	
+		-p|--package)
 			iosPackage
  			exit 0
 		 	;;
-		-s)
-			if [ "${USE_SIMULATOR}" = 1 ]; then
-				export CPU="$SIMULATOR_ARCHS"
-				export SDK=iphonesimulator
-			fi
-			export PS1="\033[33m[ios-sdk-$CPU \w]> \033[0m"
-			exec "$SHELL"
-			exit $?
-			;;
 		-simulator)
 			USE_SIMULATOR=1
 			shift
@@ -173,10 +182,33 @@ if [ "${#ARCHS}" -gt 0 ]; then
 	[ "${USE_SIMULATOR}" = 1 ] && echo "and \\c"
 fi
 [ "${USE_SIMULATOR}" = 1 ] && echo "simulator($SIMULATOR_ARCHS)"
-echo
-sleep 2
 
-rm -rf $INSTALL_DST
+if [ "${DOSH}" = 1 ]; then
+	echo "Inside ios-sdk shell"
+	if [ "${USE_SIMULATOR}" = 1 ]; then
+		export CPU="$SIMULATOR_ARCHS"
+		export SDK=iphonesimulator
+	else
+		[ -z "$ARCHS" ] && ARCHS="armv7+armv7s+arm64"
+		export CPU="$ARCHS"
+		export SDK=iphoneos
+	fi
+CPUS=""
+CPU=`echo $CPU | sed -e 's,+, ,g'`
+EXTRA=""
+for a in `IFS=+ echo ${CPU}` ; do
+        CPUS="-arch $a ${CPUS}"
+done
+export LDFLAGS="${LDFLAGS} ${CPUS}"
+	export PS1="[ios-sdk-$CPU]> "
+	${SHELL}
+	echo "Outside ios-sdk shell"
+	exit $?
+fi
+echo
+sleep 1
+
+rm -rf "$INSTALL_DST"
 
 # Build radare2 for i386 and x86_64
 if [ "${USE_SIMULATOR}" = 1 ]; then
@@ -185,11 +217,16 @@ if [ "${USE_SIMULATOR}" = 1 ]; then
 	if [ $? = 0 ]; then
 		export CPU="$SIMULATOR_ARCHS"
 		export SDK=iphonesimulator
-		echo "\\nBuilding for simulator($SIMULATOR_ARCHS)\\n"
+		echo "Building for simulator($SIMULATOR_ARCHS)"
 		sleep 1
 		iosBuild
 		# backup lib folder of simulator
-		cp -r $INSTALL_DST/$PREFIX/lib $INSTALL_DST/$PREFIX/lib_simulator
+		if [ "${#ARCHS}" -gt 0 ]; then
+			rm -rf "$INSTALL_DST/$PREFIX"/lib_simulator
+			mv "$INSTALL_DST/$PREFIX"/lib "$INSTALL_DST/$PREFIX"/lib_simulator
+		else
+			cp -r "$INSTALL_DST/$PREFIX"/lib "$INSTALL_DST/$PREFIX"/lib_simulator
+		fi
 	fi
 fi
 
@@ -200,7 +237,7 @@ if [ "${#ARCHS}" -gt 0 ]; then
 	if [ "$?" = 0 ] && [ "${#ARCHS}" -gt 0 ]; then
 		export CPU=$ARCHS
 		export SDK=iphoneos
-		echo "\\nBuilding for $CPU\\n"
+		echo "Building for $CPU"
 		sleep 1
 		iosBuild
 		if [ "${PACKAGE_RADARE}" = 1 ]; then

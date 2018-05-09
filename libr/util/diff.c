@@ -144,7 +144,7 @@ R_API char *r_diff_buffers_unified(RDiff *d, const ut8 *a, int la, const ut8 *b,
 	char* err = NULL;
 	char* out = NULL;
 	int out_len;
-	int rc = r_sys_cmd_str_full ("/usr/bin/diff -u .a .b", NULL, &out, &out_len, &err);
+	(void)r_sys_cmd_str_full ("/usr/bin/diff -u .a .b", NULL, &out, &out_len, &err);
 	r_file_rm (".a");
 	r_file_rm (".b");
 	free (err);

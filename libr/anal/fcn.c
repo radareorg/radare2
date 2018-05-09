@@ -155,7 +155,7 @@ static void _fcn_tree_update_size(RBNode *root, RAnalFunction *fcn) {
 	r_rbtree_aug_update_sum (root, fcn, &(fcn->rb), _fcn_tree_cmp_addr, _fcn_tree_calc_max_addr);
 }
 
-
+#if 0
 static void _fcn_tree_print_dot_node(RBNode *n) {
 	int i;
 	RAnalFunction *fcn = FCN_CONTAINER (n);
@@ -200,6 +200,7 @@ static void _fcn_tree_print_dot(RBNode *n) {
 	}
 	r_cons_print ("}\n");
 }
+#endif
 
 // Find RAnalFunction whose addr is equal to addr
 static RAnalFunction *_fcn_tree_find_addr(RBNode *x_, ut64 addr) {
@@ -332,6 +333,7 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	free (fcn);
 }
 
+#if 0
 static bool refExists(RList *refs, RAnalRef *ref) {
 	RAnalRef *r;
 	RListIter *iter;
@@ -343,6 +345,7 @@ static bool refExists(RList *refs, RAnalRef *ref) {
 	}
 	return false;
 }
+#endif
 
 static RAnalBlock *bbget(RAnalFunction *fcn, ut64 addr) {
 	RListIter *iter;
@@ -504,6 +507,7 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 	return ret;
 }
 
+#if 0
 static ut64 search_reg_val(RAnal *anal, ut8 *buf, ut64 len, ut64 addr, char *regsz) {
 	ut64 offs, oplen;
 	RAnalOp op = {
@@ -524,6 +528,7 @@ static ut64 search_reg_val(RAnal *anal, ut8 *buf, ut64 len, ut64 addr, char *reg
 	}
 	return ret;
 }
+#endif
 
 #define gotoBeach(x) ret = x; goto beach;
 #define gotoBeachRet() goto beach;
@@ -657,7 +662,13 @@ static bool is_delta_pointer_table (RAnal *anal, RAnalFunction *fcn, ut64 addr, 
 	// XXX this is not endian safe
 	for (i = 0; i < 3; i++) {
 		dst = lea_ptr + jmptbl[0];
-		if (!anal->iob.is_valid_offset (anal->iob.io, dst, 0) || dst > fcn->addr + JMPTBL_MAXFCNSIZE || anal->opt.jmpabove && dst < (fcn->addr < JMPTBL_MAXFCNSIZE ? 0 : fcn->addr - JMPTBL_MAXFCNSIZE)) {
+		if (!anal->iob.is_valid_offset (anal->iob.io, dst, 0)) {
+			return false;
+		}
+		if (dst > fcn->addr + JMPTBL_MAXFCNSIZE) {
+			return false;
+		}
+		if (anal->opt.jmpabove && dst < (fcn->addr < JMPTBL_MAXFCNSIZE ? 0 : fcn->addr - JMPTBL_MAXFCNSIZE)) {
 			return false;
 		}
 	}
@@ -766,7 +777,7 @@ static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAna
 		ut64 addr = prev_bb->addr + prev_bb->op_pos[i];
 		int len = r_anal_op (anal, &tmp_aop, addr, bb_buf + prev_bb->op_pos[i], prev_bb->size - prev_bb->op_pos[i], R_ANAL_OP_MASK_ALL);
 
-		if (tmp_aop.type != R_ANAL_OP_TYPE_CMP) {
+		if (len < 1 || tmp_aop.type != R_ANAL_OP_TYPE_CMP) {
 			continue;
 		}
 		// get the value of the cmp
@@ -856,6 +867,7 @@ R_API int r_anal_case(RAnal *anal, RAnalFunction *fcn, ut64 addr_bbsw, ut64 addr
 	return idx;
 }
 
+#if 0
 static int walk_switch(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 at) {
 	ut8 buf[1024];
 	int i;
@@ -871,6 +883,7 @@ static int walk_switch(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 at) {
 	}
 	return 0;
 }
+#endif
 
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth) {
 	const int continue_after_jump = anal->opt.afterjmp;
@@ -1592,7 +1605,6 @@ R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 	RAnalRef *ref;
 	RList *refs = r_anal_fcn_get_refs (anal, fcn);
 	RListIter *iter;
-	RListIter *tmp;
 
 	r_list_foreach (refs, iter, ref) {
 		if (ref->type == R_ANAL_REF_TYPE_CODE && r_anal_fcn_is_in_offset (fcn, ref->addr)) {

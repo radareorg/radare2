@@ -4,11 +4,6 @@
 #include <r_util.h>
 #include <r_print.h>
 #include <sdb.h>
-#undef SDB_API
-#define SDB_API static
-#include "../../shlr/sdb/src/json/rangstr.c"
-int js0n(const ut8 *js, RangstrType len, RangstrType *out);
-#include "../../shlr/sdb/src/json/path.c"
 
 #define I(x) r_cons_singleton ()->x
 
@@ -462,8 +457,7 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 	}
 	if (cons->grep.json) {
 		if (cons->grep.json_path) {
-			Rangstr rs = json_get (cons->buffer, cons->grep.json_path);
-			char *u = rangstr_dup (&rs);
+			char *u = sdb_json_get_str (cons->buffer, cons->grep.json_path);
 			if (u) {
 				cons->buffer = u;
 				cons->buffer_len = strlen (u);
