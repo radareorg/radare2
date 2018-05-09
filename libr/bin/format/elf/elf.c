@@ -3348,7 +3348,6 @@ static bool get_nt_file_maps (ELFOBJ *bin, RList *core_maps) {
 			}
 			ut64 i = bin->phdr[ph].p_offset + offset;
 			ut64 n_maps;
-			ut64 page_size;
 			if (bits == 64) {
 				n_maps = BREAD64 (bin->b, i);
 				page_size = BREAD64 (bin->b, i);
