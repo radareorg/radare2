@@ -23,9 +23,9 @@ typedef struct r_buf_t {
 	// RIOBind *iob;
 	// forward declaration
 	void *iob;
-    ut64 offset;
-    ut64 limit;
-    struct r_buf_t * parent;
+	ut64 offset;
+	ut64 limit;
+	struct r_buf_t * parent;
 } RBuffer;
 
 typedef struct r_buf_cache_t {
