@@ -32,8 +32,8 @@ all:
 	$(MAKE) $(LIBS5)
 	$(MAKE) $(LIBS6)
 	$(MAKE) $(LIBS7)
-	-$(MAKE) libr.${EXT_AR}
-	-$(MAKE) libr.${EXT_SO}
+	$(MAKE) libr.${EXT_AR}
+	$(MAKE) libr.${EXT_SO}
 
 BUILD_MERGED=yes
 
@@ -45,13 +45,20 @@ endif
 ifeq ($(BUILD_OS),ios)
 MLFLAGS+=-install_name @rpath/libr2.dylib $(LDFLAGS)
 endif
+# XXX version-script only works with shlib as output
+#ifeq ($(BUILD_OS),linux)
+#PLFLAGS+=--version-script ./ld.script
+#endif
 
 .libr: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 	rm -rf .libr
 	mkdir .libr
 	for LIB in $^ ; do \
-		${PARTIALLD} $(MFLAGS) -o .libr/$$(basename $${LIB} .a).o $${LIB} ; \
+		${PARTIALLD} $(PLFLAGS) -o .libr/$$(basename $${LIB} .a).o $${LIB} ; \
 	done
+ifeq ($(BUILD_OS),linux)
+	for LIB in .libr/* ; do objcopy --localize-hidden $$LIB ; done
+endif
 
 libr.${EXT_AR}: .libr
 	${AR} crs $@ .libr/*.o
