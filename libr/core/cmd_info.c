@@ -38,6 +38,7 @@ static const char *help_msg_i[] = {
 	"im", "", "Show info about predefined memory allocation",
 	"iM", "", "Show main address",
 	"io", " [file]", "Load info from file (or last opened) use bin.baddr",
+	"iO", " [help]", "Same as rabin2 -O",
 	"ir", "", "Relocs",
 	"iR", "", "Resources",
 	"is", "", "Symbols",
@@ -448,6 +449,16 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		}
 		case 'Z': RBININFO ("size", R_CORE_BIN_ACC_SIZE, NULL, 0); break;
+		case 'O':
+			switch (input[1]) {
+			case ' ':
+			        r_sys_cmdf ("rabin2 -O \"%s\" \"%s\"", r_str_trim_ro (input + 1), desc->name);
+			        break;
+			default:
+			        r_sys_cmdf ("rabin2 -O help");
+			        break;
+			}
+			return 0;
 		case 'S':
 			//we comes from ia or iS
 			if ((input[1] == 'm' && input[2] == 'z') || !input[1]) {
@@ -498,9 +509,7 @@ static int cmd_info(void *data, const char *input) {
 			} else {
 				r_bin_list (core->bin, json);
 			}
-
 			newline = false;
-
 			goto done;
 		}
 		break;

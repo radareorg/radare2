@@ -745,15 +745,15 @@ int main(int argc, char **argv) {
 			op = optarg;
 			set_action (R_BIN_REQ_OPERATION);
 			if (isBinopHelp (op)) {
-				printf ("Operation string:\n"
-					"  Change Entrypoint: e/0x8048000\n"
-					"  Dump Symbols: d/s/1024\n"
-					"  Dump Section: d/S/.text\n"
-					"  Resize Section: r/.data/1024\n"
-					"  Remove RPATH: R\n"
-					"  Add Library: a/l/libfoo.dylib\n"
-					"  Change Permissions: p/.data/rwx\n"
-					"  Show LDID entitlements: C\n");
+				printf ("Usage: iO [expression]:\n"
+					" e/0x8048000       change entrypoint\n"
+					" d/s/1024          dump symbols\n"
+					" d/S/.text         dump section\n"
+					" r/.data/1024      resize section\n"
+					" R                 remove RPATH\n"
+					" a/l/libfoo.dylib  add library\n"
+					" p/.data/rwx       change section permissions\n"
+					" C                 show LDID entitlements\n");
 				r_core_fini (&core);
 				return 0;
 			}
