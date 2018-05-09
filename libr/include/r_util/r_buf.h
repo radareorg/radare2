@@ -23,6 +23,9 @@ typedef struct r_buf_t {
 	// RIOBind *iob;
 	// forward declaration
 	void *iob;
+	ut64 offset;
+	ut64 limit;
+	struct r_buf_t * parent;
 } RBuffer;
 
 typedef struct r_buf_cache_t {
@@ -46,6 +49,7 @@ R_API RBuffer *r_buf_new_slurp(const char *file);
 R_API RBuffer *r_buf_new_empty (ut64 len);
 R_API RBuffer *r_buf_mmap(const char *file, int flags);
 R_API RBuffer *r_buf_new_sparse(ut8 Oxff);
+R_API RBuffer *r_buf_new_slice(RBuffer *b, ut64 offset, ut64 size);
 R_API bool r_buf_dump (RBuffer *buf, const char *file);
 R_API RBuffer *r_buf_ref(RBuffer *b);
 /* methods */
