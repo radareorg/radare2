@@ -82,6 +82,11 @@ struct super_blob_t {
 	struct blob_index_t index[];
 };
 
+struct MACH0_(opts_t) {
+	bool verbose;
+	ut64 header_at;
+};
+
 struct MACH0_(obj_t) {
 	struct MACH0_(mach_header) hdr;
 	struct MACH0_(segment_command)* segs;
@@ -134,11 +139,14 @@ struct MACH0_(obj_t) {
 	int uuidn;
 	int func_size;
 	bool verbose;
+	ut64 header_at;
+	void * user;
+	ut64 (*va2pa)(ut64 p, ut32 *offset, ut32 *left, RBinFile *bf);
 };
 
-struct MACH0_(obj_t)* MACH0_(mach0_new)(const char* file, bool verbose);
-struct MACH0_(obj_t)* MACH0_(new_buf)(struct r_buf_t *buf, bool verbose);
-struct MACH0_(obj_t)* MACH0_(new_buf_steal)(struct r_buf_t *buf, bool verbose);
+void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RBinFile * bf);
+struct MACH0_(obj_t)* MACH0_(mach0_new)(const char* file, struct MACH0_(opts_t) *options);
+struct MACH0_(obj_t)* MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *options);
 void* MACH0_(mach0_free)(struct MACH0_(obj_t)* bin);
 struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin);
 struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin);

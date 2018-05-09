@@ -39,7 +39,9 @@ static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, S
 	}
 	RBuffer *tbuf = r_buf_new ();
 	r_buf_set_bytes (tbuf, buf, sz);
-	res = MACH0_(new_buf) (tbuf, bf->rbin->verbose);
+	struct MACH0_(opts_t) opts;
+	MACH0_(opts_set_default) (&opts, bf);
+	res = MACH0_(new_buf) (tbuf, &opts);
 	if (res) {
 		sdb_ns_set (sdb, "info", res->kv);
 	}
@@ -52,7 +54,9 @@ static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb){
 	if (!buf) {
 		return NULL;
 	}
-	res = MACH0_(new_buf) (buf, bf->rbin->verbose);
+	struct MACH0_(opts_t) opts;
+	MACH0_(opts_set_default) (&opts, bf);
+	res = MACH0_(new_buf) (buf, &opts);
 	if (res) {
 		sdb_ns_set (sdb, "info", res->kv);
 	}
