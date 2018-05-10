@@ -2742,7 +2742,7 @@ R_API void r_core_visual_define (RCore *core, const char *args) {
 		h = 0;
 		r_cons_clear00 ();
 	} else {
-		r_cons_gotoxy (0, h);
+		r_cons_gotoxy (0, 3);
 	}
 	const char *lines[] = { ""
 		,"[Vd]- Define current block as:"

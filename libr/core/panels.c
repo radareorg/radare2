@@ -1044,6 +1044,12 @@ repeat:
 		}
 		doRefresh (panels);
 		break;
+	case 'A':
+		r_core_visual_asm (core, core->offset);
+		break;
+	case 'd':
+		r_core_visual_define (core, "");
+		break;
 	case 'j':
 		r_cons_switchbuf(false);
 		panels->panel[panels->curnode].refresh = true;
