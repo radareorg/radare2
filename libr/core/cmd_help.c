@@ -817,6 +817,9 @@ static int cmd_help(void *data, const char *input) {
 			free (newmsg);
 			}
 			break;
+		case 0:
+			r_cons_newline ();
+			break;
 		default:
 			eprintf ("Usage: ?e[...]\n");
 			eprintf (" e msg       echo message\n");
