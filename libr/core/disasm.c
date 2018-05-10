@@ -4383,14 +4383,8 @@ static void ds_end_line_highlight(RDisasmState *ds) {
 	}
 }
 
-RAnalFunction *pdf = NULL;
-
-R_API void r_core_print_disasm_function(RCore *core, RAnalFunction *f) {
-	pdf = f;
-}
-
 // int l is for lines
-R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak, int cbytes, bool json) {
+R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak, int cbytes, bool json, RAnalFunction *pdf) {
 	int continueoninvbreak = (len == l) && invbreak;
 	RAnalFunction *of = NULL;
 	RAnalFunction *f = NULL;

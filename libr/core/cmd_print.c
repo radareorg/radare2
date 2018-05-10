@@ -4178,7 +4178,7 @@ static int cmd_print(void *data, const char *input) {
 						} else {
 							core->num->value = r_core_print_disasm (
 								core->print, core, b->addr, block,
-								b->size, 9999, 0, 2, input[2] == 'J');
+								b->size, 9999, 0, 2, input[2] == 'J', NULL);
 						}
 						free (block);
 						pd_result = 0;
@@ -4297,9 +4297,7 @@ static int cmd_print(void *data, const char *input) {
 						ut64 sz = f->_size > 0 ? f->_size : r_anal_fcn_realsize (f);
 						ut8 *buf = calloc (sz, 1);
 						(void)r_io_read_at (core->io, at, buf, sz);
-						r_core_print_disasm_function (core, f);
-						core->num->value = r_core_print_disasm (core->print, core, at, buf, sz, sz, 0, 1, 0);
-						r_core_print_disasm_function (core, NULL);
+						core->num->value = r_core_print_disasm (core->print, core, at, buf, sz, sz, 0, 1, 0, f);
 						free (buf);
 						// r_core_cmdf (core, "pD %d @ 0x%08" PFMT64x, f->_size > 0 ? f->_size: r_anal_fcn_realsize (f), f->addr);
 					}
@@ -4390,7 +4388,7 @@ static int cmd_print(void *data, const char *input) {
 							break;
 						}
 						r_core_read_at (core, addr - l, block1, l); // core->blocksize);
-						core->num->value = r_core_print_disasm (core->print, core, addr - l, block1, l, l, 0, 1, formatted_json);
+						core->num->value = r_core_print_disasm (core->print, core, addr - l, block1, l, l, 0, 1, formatted_json, NULL);
 					} else { // pd
 						int instr_len;
 						if (r_core_prevop_addr (core, core->offset, l, &start)) {
@@ -4413,7 +4411,7 @@ static int cmd_print(void *data, const char *input) {
 								bs1 - (bs - bs % addrbytes));
 						}
 						core->num->value = r_core_print_disasm (core->print,
-							core, core->offset, block1, bs1, l, 0, 1, formatted_json);
+							core, core->offset, block1, bs1, l, 0, 1, formatted_json, NULL);
 						r_core_seek (core, prevaddr, true);
 					}
 				}
@@ -4437,7 +4435,7 @@ static int cmd_print(void *data, const char *input) {
 							memcpy (block1, block, addrbytes * l);
 						}
 						core->num->value = r_core_print_disasm (core->print,
-							core, addr, block1, addrbytes * l, l, 0, 1, formatted_json);
+							core, addr, block1, addrbytes * l, l, 0, 1, formatted_json, NULL);
 					} else {
 						eprintf ("Cannot allocate %d byte(s)\n", addrbytes * l);
 					}
@@ -4451,7 +4449,7 @@ static int cmd_print(void *data, const char *input) {
 									bs1 - (bs - bs % addrbytes));
 						}
 						core->num->value = r_core_print_disasm (core->print,
-								core, addr, block1, bs1, l, 0, 0, formatted_json);
+								core, addr, block1, bs1, l, 0, 0, formatted_json, NULL);
 					}
 				}
 			}
