@@ -38,7 +38,7 @@ static const char *help_msg_i[] = {
 	"im", "", "Show info about predefined memory allocation",
 	"iM", "", "Show main address",
 	"io", " [file]", "Load info from file (or last opened) use bin.baddr",
-	"iO", " [help]", "Same as rabin2 -O",
+	"iO", "[?]", "Perform binary operation (dump, resize, change sections, ...)",
 	"ir", "", "Relocs",
 	"iR", "", "Resources",
 	"is", "", "Symbols",
