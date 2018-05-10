@@ -10,22 +10,24 @@ files = [
   'p/asm_arm_winedbg.c',
   'p/asm_avr.c',
   'p/asm_bf.c',
+  'p/asm_chip8.c',
   'p/asm_cr16.c',
   'p/asm_cris_gnu.c',
   'p/asm_dalvik.c',
   'p/asm_dcpu16.c',
   'p/asm_ebc.c',
-  'p/asm_gas.c',
+  #'p/asm_gas.c',
   'p/asm_gb.c',
   'p/asm_h8300.c',
   'p/asm_hexagon.c',
+  #'p/asm_hexagon_gnu.c',
   'p/asm_hppa_gnu.c',
   'p/asm_i4004.c',
   'p/asm_i8080.c',
   'p/asm_java.c',
   'p/asm_lanai_gnu.c',
-  'p/asm_lm32.c',
   'p/asm_lh5801.c',
+  'p/asm_lm32.c',
   'p/asm_m68k_cs.c',
   'p/asm_malbolge.c',
   'p/asm_mcs96.c',
@@ -57,6 +59,7 @@ files = [
   'p/asm_x86_cs.c',
   'p/asm_x86_nasm.c',
   'p/asm_x86_nz.c',
+  #'p/asm_x86_vm.c',
   'p/asm_xap.c',
   'p/asm_xcore_cs.c',
   'p/asm_xtensa.c',
@@ -90,6 +93,9 @@ files = [
   'arch/h8300/h8300_disas.c',
   'arch/hexagon/hexagon.c',
   'arch/hexagon/hexagon_disas.c',
+  #'arch/hexagon/gnu/hexagon-dis.c',
+  #'arch/hexagon/gnu/hexagon-opc.c',
+  #'arch/hexagon/gnu/safe-ctype.c',
   'arch/hppa/gnu/hppa-dis.c',
   'arch/i4004/i4004dis.c',
   'arch/i8080/i8080dis.c',
@@ -146,7 +152,7 @@ files = [
 r_asm = library('r_asm', files,
   include_directories: [
     platform_inc,
-    include_directories([
+    include_directories(
       '../../shlr/capstone/include',
       '../../shlr',
       'arch/include',
@@ -160,11 +166,17 @@ r_asm = library('r_asm', files,
       'arch/ebc',
       'arch/cr16',
       'arch/8051',
-    ])
+    )
   ],
   c_args: ['-DCORELIB=1'],
   link_with: [
-    r_util, r_syscall, r_parse, r_lang, r_flag, r_socket, libr_shlr
+    r_util,
+    r_syscall,
+    r_parse,
+    r_lang,
+    r_flag,
+    r_socket,
+    libr_shlr
   ],
   install: true,
   implicit_include_directories: false,
@@ -178,7 +190,12 @@ pkgconfig_mod.generate(
   name: 'r_asm',
   filebase: 'r_asm',
   requires: [
-    'r_util', 'r_syscall', 'r_parse', 'r_lang', 'r_flag', 'r_socket'
+    'r_util',
+    'r_syscall',
+    'r_parse',
+    'r_lang',
+    'r_flag',
+    'r_socket'
   ],
   description: 'radare foundation libraries'
 )

@@ -284,7 +284,7 @@ RList *mem (RBinFile *bf) {
 	return ret;
 }
 
-struct r_bin_plugin_t r_bin_plugin_ningb = {
+RBinPlugin r_bin_plugin_ningb = {
 	.name = "ningb",
 	.desc = "Gameboy format r_bin plugin",
 	.license = "LGPL3",

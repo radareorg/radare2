@@ -224,7 +224,7 @@ static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-struct r_bin_plugin_t r_bin_plugin_p9 = {
+RBinPlugin r_bin_plugin_p9 = {
 	.name = "p9",
 	.desc = "Plan9 bin plugin",
 	.license = "LGPL3",
