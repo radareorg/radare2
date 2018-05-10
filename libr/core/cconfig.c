@@ -2285,7 +2285,7 @@ R_API char* r_core_graph_cmd(char *r2_cmd) {
 				cmd = "?e cannot find a valid picture viewer";
 			}
 		} else {
-			cmd = "agf";
+			cmd = r_str_new ("agf");
 		}
 		free (dotPath);
 	}
