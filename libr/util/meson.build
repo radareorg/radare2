@@ -33,6 +33,7 @@ files = [
   'name.c',
   'p_date.c',
   'p_format.c',
+  'p_pie.c',
   'p_seven.c',
   'pool.c',
   'print.c',
