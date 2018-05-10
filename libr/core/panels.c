@@ -364,7 +364,7 @@ static void addPanelFrame(RPanels* panels, const char *title, const char *cmd) {
 		const char *sp = r_reg_get_name (_core->anal->reg, R_REG_NAME_SP);
 		const ut64 stackbase = r_reg_getv (_core->anal->reg, sp);
 		panel[panels->n_panels].baseAddr = stackbase;
-		panel[panels->n_panels].addr = stackbase - r_config_get_i (_core->config, "stack.delta") + _core->print->cur;
+		panel[panels->n_panels].addr = stackbase - r_config_get_i (_core->config, "stack.delta");
 	}
 	panels->n_panels++;
 	panels->curnode = panels->n_panels - 1;
@@ -575,6 +575,12 @@ static void check_stackbase(RCore *core) {
 	}
 }
 
+static void panel_prompt(const char *prompt, char *buf) {
+	r_line_set_prompt (prompt);
+	*buf = 0;
+	r_cons_fgets (buf, sizeof (buf), 0, NULL);
+}
+
 static bool init (RPanels *panels, int w, int h) {
 	panels->panel = NULL;
 	panels->n_panels = 0;
@@ -694,18 +700,16 @@ repeat:
 			case 'i':
 				if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_STACK)) {
 					// insert mode
-					r_line_set_prompt ("insert hex: ");
-					*buf = 0;
-					r_cons_fgets (buf, sizeof (buf), 0, NULL);
+					const char *prompt = "insert hex: ";
+					panel_prompt (prompt, buf);
 					r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, panels->panel[panels->curnode].addr);
 					panels->panel[panels->curnode].refresh = true;
 					goto repeat;
 				} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_REGISTERS)) {
-					r_line_set_prompt ("new-reg-value> ");
 					creg = core->dbg->creg;
 					if (creg) {
-						*buf = 0;
-						r_cons_fgets (buf, sizeof (buf), 0, NULL);
+						const char *prompt = "new-reg-value> ";
+						panel_prompt (prompt, buf);
 						r_core_cmdf (core, "dr %s = %s", creg, buf);
 						panels->panel[panels->curnode].refresh = true;
 					}
