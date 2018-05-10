@@ -242,6 +242,57 @@ R_API char *r_hex_from_c(const char *code) {
 	return ret;
 }
 
+
+R_API char *r_hex_from_js(const char *code) {
+	char * s1 = strchr (code, '\'');
+	char * s2 = strchr (code, '"');
+
+	/* there are no strings in the input */
+	if (!(s1 || s2)) {
+		return NULL;
+	}
+
+	char * start, * end;
+	if (s1 < s2) {
+		start = s1;
+		end = strchr(start+1, '\'');
+	} else {
+		start = s2;
+		end = strchr(start+1, '"');
+	}
+
+	/* the string isn't properly terminated */
+	if (!end) {
+		return NULL;
+	}
+
+	char * str = malloc (end-start);
+	strncpy (str, start+1, end-start-1);
+	str[end-start-1] = '\0';
+
+	/* assuming base64 input, output will always be shorter */
+	ut8 * b64d = malloc (end-start);
+
+	r_base64_decode (b64d, str, end-start-1);
+	if (b64d <= 0) {
+		free (str);
+		free (b64d);
+		return NULL;
+	}
+
+	int i, len = strlen (b64d);
+	char * out = malloc (len * 2 + 1);
+	for (i = 0; i < len; i++) {
+		sprintf (&out[i * 2], "%02x", b64d[i]);
+	}
+	out[len * 2] = '\0';
+
+	free (str);
+	free (b64d);
+	return out;
+}
+
+
 /* convert
  * "\x41\x23\x42\x1b"
  * "\x41\x23\x42\x1b"
@@ -279,6 +330,9 @@ R_API char *r_hex_from_code(const char *code) {
 	} else if (strstr (code, "char") || strstr (code, "int")) {
 		//C language
 		return r_hex_from_c (code);
+	} else if (strstr (code, "var")) {
+		// JavaScript
+		return r_hex_from_js (code);
 	} else {
 		// Python
 		return r_hex_from_py (code);
