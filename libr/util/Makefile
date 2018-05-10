@@ -4,6 +4,13 @@ NAME=r_util
 CFLAGS+=-DCORELIB -I$(TOP)/shlr
 PCLIBS=@LIBZIP@ @DL_LIBS@
 
+ifneq ($(OSTYPE),darwin)
+ifneq ($(OSTYPE),haiku)
+LDFLAGS+=-lm
+LINK=-lm
+endif
+endif
+
 OBJS=binheap.o mem.o pool.o unum.o str.o hex.o file.o range.o tinyrange.o
 OBJS+=prof.o cache.o sys.o buf.o w32-sys.o ubase64.o base85.o base91.o
 OBJS+=list.o flist.o mixed.o btree.o chmod.o graph.o
