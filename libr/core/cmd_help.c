@@ -793,7 +793,22 @@ static int cmd_help(void *data, const char *input) {
 			free (newmsg);
 			break;
 		}
-		default: {
+		case 'p':
+			  {
+			char *word, *str = strdup (input + 2);
+				  RList *list = r_str_split_list (str, " ");
+				  ut64 *nums = calloc (sizeof (ut64), r_list_length (list));
+				  int i = 0;
+				  r_list_foreach (list, iter, word) {
+					nums[i] = r_num_math (core->num, word);;
+					i++;
+				  }
+				  int size = r_config_get_i (core->config, "hex.cols");
+				  r_print_pie (core->print, nums, r_list_length (list), size);
+				  r_list_free (list);
+			  }
+			break;
+		case ' ': {
 			const char *msg = r_str_trim_ro (input+1);
 			// TODO: replace all ${flagname} by its value in hexa
 			char *newmsg = filterFlags (core, msg);
@@ -801,6 +816,15 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_println (newmsg);
 			free (newmsg);
 			}
+			break;
+		default:
+			eprintf ("Usage: ?e[...]\n");
+			eprintf (" e msg       echo message\n");
+			eprintf (" ep N...     echo pie chart\n");
+			eprintf (" eb N...     echo portions bar\n");
+			eprintf (" en msg      echo without newline\n");
+			eprintf (" eg x y      gotoxy\n");
+			eprintf (" es msg      use text-to-speech technology\n");
 			break;
 		}
 		break;
