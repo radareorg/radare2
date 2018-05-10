@@ -469,7 +469,7 @@ static void ds_comment(RDisasmState *ds, bool align, const char *format, ...) {
 	} else {
 		char buffer[4096];
 		vsnprintf (buffer, sizeof(buffer), format, ap);
-		char *escstr = ds_esc_str (ds, (const char *)buffer, (int)strlen (buffer), NULL);
+		char *escstr = r_str_escape_latin1 (buffer, false, true);
 		if (escstr) {
 			r_cons_printf ("%s", escstr);
 			free (escstr);
@@ -3234,6 +3234,7 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 	}
 }
 
+/* Do not use this function for escaping JSON! */
 static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char **prefix_out) {
 	int str_len;
 	char *escstr = NULL;
