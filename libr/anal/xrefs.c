@@ -77,6 +77,22 @@ static bool mylistrefs_cb(RList *list, const char *k, SdbHash *ht) {
 	return true;
 }
 
+static int ref_cmp(const RAnalRef *a, const RAnalRef *b) {
+	if (a->at < b->at) {
+		return -1;
+	}
+	if (a->at > b->at) {
+		return 1;
+	}
+	if (a->addr < b->addr) {
+		return -1;
+	}
+	if (a->addr > b->addr) {
+		return 1;
+	}
+	return 0;
+}
+
 static void listxrefs(SdbHash *m, ut64 addr, RList *list) {
 	if (addr == UT64_MAX) {
 		ht_foreach (m, (HtForeachCallback)mylistrefs_cb, list);
@@ -89,6 +105,7 @@ static void listxrefs(SdbHash *m, ut64 addr, RList *list) {
 
 		ht_foreach (d, (HtForeachCallback)appendRef, list);
 	}
+	r_list_sort (list, (RListComparator)ref_cmp);
 }
 
 static void setxref(SdbHash *m, ut64 from, ut64 to, int type) {
@@ -304,22 +321,6 @@ R_API int r_anal_xrefs_count(RAnal *anal) {
 	return anal->dict_xrefs->count;
 }
 
-static int ref_cmp(const RAnalRef *a, const RAnalRef *b) {
-	if (a->at < b->at) {
-		return -1;
-	}
-	if (a->at > b->at) {
-		return 1;
-	}
-	if (a->addr < b->addr) {
-		return -1;
-	}
-	if (a->addr > b->addr) {
-		return 1;
-	}
-	return 0;
-}
-
 static RList *fcn_get_refs(RAnalFunction *fcn, SdbHash *ht) {
 	RListIter *iter;
 	RAnalBlock *bb;
@@ -345,16 +346,4 @@ R_API RList *r_anal_fcn_get_refs(RAnal *anal, RAnalFunction *fcn) {
 
 R_API RList *r_anal_fcn_get_xrefs(RAnal *anal, RAnalFunction *fcn) {
 	return fcn_get_refs (fcn, anal->dict_xrefs);
-}
-
-R_API RList *r_anal_fcn_get_refs_sorted(RAnal *anal, RAnalFunction *fcn) {
-	RList *l = r_anal_fcn_get_refs (anal, fcn);
-	r_list_sort (l, (RListComparator)ref_cmp);
-	return l;
-}
-
-R_API RList *r_anal_fcn_get_xrefs_sorted(RAnal *anal, RAnalFunction *fcn) {
-	RList *l = r_anal_fcn_get_xrefs (anal, fcn);
-	r_list_sort (l, (RListComparator)ref_cmp);
-	return l;
 }
