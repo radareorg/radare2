@@ -469,7 +469,7 @@ static void ds_comment(RDisasmState *ds, bool align, const char *format, ...) {
 	} else {
 		char buffer[4096];
 		vsnprintf (buffer, sizeof(buffer), format, ap);
-		char *escstr = ds_esc_str (ds, (const char *)buffer, (int)strlen (buffer), NULL);
+		char *escstr = r_str_escape_latin1 (buffer, false, true);
 		if (escstr) {
 			r_cons_printf ("%s", escstr);
 			free (escstr);
@@ -3234,11 +3234,12 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 	}
 }
 
+/* Do not use this function for escaping JSON! */
 static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char **prefix_out) {
 	int str_len;
 	char *escstr = NULL;
 	const char *prefix = "";
-	bool esc_bslash = ds->use_json ? true : ds->core->print->esc_bslash;
+	bool esc_bslash = ds->core->print->esc_bslash;
 	switch (ds->strenc) {
 	case R_STRING_ENC_LATIN1:
 		escstr = r_str_escape_latin1 (str, ds->show_asciidot, esc_bslash);
@@ -3302,14 +3303,10 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 
 static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refaddr) {
 	const char *prefix;
-	char *escstr;
-	bool orig_use_json = ds->use_json;
 	if (!r_bin_string_filter (ds->core->bin, str, refaddr)) {
 		return;
 	}
-	ds->use_json = false;
-	escstr = ds_esc_str (ds, str, len, &prefix);
-	ds->use_json = orig_use_json;
+	char *escstr = ds_esc_str (ds, str, len, &prefix);
 	if (escstr) {
 		bool inv = ds->show_color && !ds->show_emu_strinv;
 		ds_begin_comment (ds);
