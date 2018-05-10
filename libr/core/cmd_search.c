@@ -557,7 +557,7 @@ static void append_bound(RList *list, RIO *io, RInterval search_itv, ut64 from, 
 		return;
 	}
 	if (io && io->desc) {
-		map->fd = io->desc->fd;
+		map->fd = r_io_fd_get_current (io);
 	}
 	RInterval itv = {from, size};
 	// TODO UT64_MAX is a valid address. search.from and search.to are not specified
@@ -1317,7 +1317,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 			result = false;
 			goto bad;
 		}
-		map->fd = core->io->desc->fd;
+		map->fd = r_io_fd_get_current (core->io);
 		map->itv.addr = from;
 		map->itv.size = to - from;
 		list = r_list_newf (free);
@@ -2028,11 +2028,13 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 
 	if (!param->boundaries) {
 		map = R_NEW0 (RIOMap);
-		map->fd = core->io->desc->fd;
-		map->itv.addr = r_config_get_i (core->config, "search.from");
-		map->itv.size = r_config_get_i (core->config, "search.to") - map->itv.addr;
-		param->boundaries = r_list_newf (free);
-		r_list_append (param->boundaries, map);
+		if (map) {
+			map->fd = r_io_fd_get_current (core->io);
+			map->itv.addr = r_config_get_i (core->config, "search.from");
+			map->itv.size = r_config_get_i (core->config, "search.to") - map->itv.addr;
+			param->boundaries = r_list_newf (free);
+			r_list_append (param->boundaries, map);
+		}
 	}
 
 	if (json) {
