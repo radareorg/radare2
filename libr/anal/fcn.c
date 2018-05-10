@@ -2132,7 +2132,7 @@ R_API RAnalBlock *r_anal_fcn_bbget(RAnalFunction *fcn, ut64 addr) {
 	RListIter *iter;
 	RAnalBlock *bb;
 	r_list_foreach (fcn->bbs, iter, bb) {
-		if (bb->addr == addr) {
+		if (addr >= bb->addr && addr < (bb->addr + bb->size)) {
 			return bb;
 		}
 	}

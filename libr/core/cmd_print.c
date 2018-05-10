@@ -4293,8 +4293,15 @@ static int cmd_print(void *data, const char *input) {
 					if (bbsum + 4096 < linear) {
 						eprintf ("Linear size differs too much from the bbsum, please use pdr instead.\n");
 					} else {
-						r_core_cmdf (core, "pD %d @ 0x%08" PFMT64x,
-							f->_size > 0 ? f->_size: r_anal_fcn_realsize (f), f->addr);
+						ut64 at = f->addr;
+						ut64 sz = f->_size > 0 ? f->_size : r_anal_fcn_realsize (f);
+						ut8 *buf = calloc (sz, 1);
+						(void)r_io_read_at (core->io, at, buf, sz);
+						r_core_print_disasm_function (core, f);
+						core->num->value = r_core_print_disasm (core->print, core, at, buf, sz, sz, 0, 1, 0);
+						r_core_print_disasm_function (core, NULL);
+						free (buf);
+						// r_core_cmdf (core, "pD %d @ 0x%08" PFMT64x, f->_size > 0 ? f->_size: r_anal_fcn_realsize (f), f->addr);
 					}
 #if 0
 					for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
@@ -4379,8 +4386,9 @@ static int cmd_print(void *data, const char *input) {
 				if (block1) {
 					if (*input == 'D') { // pD
 						free (block1);
-						if (!(block1 = malloc (l)))
+						if (!(block1 = malloc (l))) {
 							break;
+						}
 						r_core_read_at (core, addr - l, block1, l); // core->blocksize);
 						core->num->value = r_core_print_disasm (core->print, core, addr - l, block1, l, l, 0, 1, formatted_json);
 					} else { // pd
@@ -4400,10 +4408,10 @@ static int cmd_print(void *data, const char *input) {
 						r_core_seek (core, prevaddr - instr_len, true);
 						memcpy (block1, block, bs);
 						if (bs1 > bs) {
-							r_core_read_at (core, addr + bs / addrbytes, block1 + (bs - bs % addrbytes),
-															bs1 - (bs - bs % addrbytes));
+							r_core_read_at (core, addr + bs / addrbytes,
+								block1 + (bs - bs % addrbytes),
+								bs1 - (bs - bs % addrbytes));
 						}
-
 						core->num->value = r_core_print_disasm (core->print,
 							core, core->offset, block1, bs1, l, 0, 1, formatted_json);
 						r_core_seek (core, prevaddr, true);
@@ -4436,13 +4444,15 @@ static int cmd_print(void *data, const char *input) {
 				} else {
 					int bs1 = l * 16;
 					block1 = malloc (R_MAX (bs, bs1));
-					memcpy (block1, block, bs);
-					if (bs1 > bs) {
-						r_core_read_at (core, addr + bs / addrbytes, block1 + (bs - bs % addrbytes),
-													  bs1 - (bs - bs % addrbytes));
+					if (block1) {
+						memcpy (block1, block, bs);
+						if (bs1 > bs) {
+							r_core_read_at (core, addr + bs / addrbytes, block1 + (bs - bs % addrbytes),
+									bs1 - (bs - bs % addrbytes));
+						}
+						core->num->value = r_core_print_disasm (core->print,
+								core, addr, block1, bs1, l, 0, 0, formatted_json);
 					}
-					core->num->value = r_core_print_disasm (core->print,
-						core, addr, block1, bs1, l, 0, 0, formatted_json);
 				}
 			}
 			free (block1);

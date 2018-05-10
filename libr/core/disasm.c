@@ -237,6 +237,7 @@ typedef struct {
 	RAsmOp asmop;
 	RAnalOp analop;
 	RAnalFunction *fcn;
+	RAnalFunction *pdf;
 	const ut8 *buf;
 	int len;
 	int maxrefs;
@@ -4382,6 +4383,12 @@ static void ds_end_line_highlight(RDisasmState *ds) {
 	}
 }
 
+RAnalFunction *pdf = NULL;
+
+R_API void r_core_print_disasm_function(RCore *core, RAnalFunction *f) {
+	pdf = f;
+}
+
 // int l is for lines
 R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int l, int invbreak, int cbytes, bool json) {
 	int continueoninvbreak = (len == l) && invbreak;
@@ -4404,6 +4411,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	ds->hint = NULL;
 	ds->use_json = json;
 	ds->first_line = true;
+	ds->pdf = pdf;
 
 	// disable row_offsets to prevent other commands to overwrite computed info
 	p->calc_row_offsets = false;
@@ -4609,6 +4617,19 @@ toro:
 		ds_show_flags (ds);
 		if (skip_bytes && ds->midflags == R_MIDFLAGS_SHOW) {
 			ds->at -= skip_bytes;
+		}
+		if (ds->pdf) {
+			static bool sparse = false;
+			if (!r_anal_fcn_bbget (ds->pdf, ds->at)) {
+				inc = ds->oplen;
+				r_anal_op_fini (&ds->analop);
+				if (!sparse) {
+					r_cons_printf ("..\n");
+					sparse = true;
+				}
+				continue;
+			}
+			sparse = false;
 		}
 		ds_control_flow_comments (ds);
 		ds_adistrick_comments (ds);
