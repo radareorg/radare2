@@ -132,6 +132,7 @@ R_API int r_flag_space_push(RFlag *f, const char *name);
 R_API int r_flag_space_stack_list(RFlag *f, int mode);
 
 /* tags */
+R_API RList *r_flag_tags_list(RFlag *f);
 R_API RList *r_flag_tags_set(RFlag *f, const char *name, const char *words);
 R_API void r_flag_tags_reset(RFlag *f, const char *name);
 R_API RList *r_flag_tags_get(RFlag *f, const char *name);

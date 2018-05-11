@@ -13,8 +13,14 @@ R_API RList *r_flag_tags_list(RFlag *f) {
 	SdbList *o = sdb_foreach_list (f->tags, false);
 	SdbListIter *iter;
 	const char *tag;
-	ls_foreach (o, iter, tag) {
-		r_list_append (res, (void *)tag);
+	SdbKv *kv;
+	ls_foreach (o, iter, kv) {
+		const char *tag = kv->key;
+		if (strlen (tag) < 5) {
+			continue;
+		}
+		char *tagName = strdup (tag + 4);
+		r_list_append (res, (void *)strdup (tagName));
 	}
 	ls_free (o);
 	return res;
