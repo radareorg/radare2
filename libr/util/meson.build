@@ -88,7 +88,7 @@ r_util = library('r_util', files,
       '../../shlr/zip/include'
     ])
   ],
-  dependencies: [ldl, pth, utl],
+  dependencies: [ldl, mth, pth, utl],
   link_with: [libr_shlr],
   install: true,
   implicit_include_directories: false,
