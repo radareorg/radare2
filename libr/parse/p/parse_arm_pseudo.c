@@ -310,8 +310,12 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 			}
 		}
 		if (strstr (tstr, oldstr)) {
-			newstr = r_str_newf ("[%s %c %s]",
-				reg, var->delta > 0 ? '+' : '-', var->name);
+			if (p->localvar_only) {
+				newstr = r_str_newf ("[%s]", var->name);
+			} else {
+				newstr = r_str_newf ("[%s %c %s]",
+					reg, var->delta > 0 ? '+' : '-', var->name);
+			}
 			if (ucase) {
 				char *comma = strchr (newstr, ' ');
 				if (comma) {
