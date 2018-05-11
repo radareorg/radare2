@@ -26,11 +26,12 @@ files = [
   'p/bin_elf64.c',
   'p/bin_fs.c',
   'p/bin_java.c',
+  'p/bin_ldr_linux.c',
   'p/bin_mach0.c',
   'p/bin_mach064.c',
   'p/bin_mbn.c',
-  'p/bin_menuet.c',
   'p/bin_mdmp.c',
+  'p/bin_menuet.c',
   'p/bin_mz.c',
   'p/bin_nes.c',
   'p/bin_nin3ds.c',
@@ -38,6 +39,7 @@ files = [
   'p/bin_ningb.c',
   'p/bin_ningba.c',
   'p/bin_nro.c',
+  'p/bin_nso.c',
   'p/bin_omf.c',
   'p/bin_p9.c',
   'p/bin_pe.c',
@@ -60,8 +62,8 @@ files = [
   'p/bin_xbe.c',
   'p/bin_xtr_dyldcache.c',
   'p/bin_xtr_fatmach0.c',
-  'p/bin_zimg.c',
   'p/bin_z64.c',
+  'p/bin_zimg.c',
 
   'format/bflt/bflt.c',
   'format/coff/coff.c',
@@ -115,13 +117,19 @@ files = [
 r_bin = library('r_bin', files,
   include_directories: [
     platform_inc,
-    include_directories([
+    include_directories(
       'mangling',
       'format'
-    ])
+    )
   ],
   c_args: ['-DCORELIB=1', '-DR_API_BIN_ONLY=1'],
-  link_with: [r_util, r_io, r_socket, r_magic, libr_shlr],
+  link_with: [
+    r_util,
+    r_io,
+    r_socket,
+    r_magic,
+    libr_shlr
+  ],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
@@ -134,7 +142,10 @@ pkgconfig_mod.generate(
   name: 'r_bin',
   filebase: 'r_bin',
   requires: [
-    'r_util', 'r_io', 'r_socket', 'r_magic'
+    'r_util',
+    'r_io',
+    'r_socket',
+    'r_magic'
   ],
   description: 'radare foundation libraries'
 )

@@ -145,18 +145,20 @@ endif
 subdir('libr')
 
 conf_data = configuration_data()
-conf_data.set('plugins_core', '&r_core_plugin_' + ',&r_core_plugin_'.join(core) + ', 0')
-conf_data.set('plugins_anal', '&r_anal_plugin_' + ',&r_anal_plugin_'.join(anal) + ', 0')
-conf_data.set('plugins_asm', '&r_asm_plugin_' + ',&r_asm_plugin_'.join(asm) + ', 0')
-conf_data.set('plugins_bp', '&r_bp_plugin_' + ',&r_bp_plugin_'.join(bp) + ', 0')
-conf_data.set('plugins_bin', '&r_bin_plugin_' + ',&r_bin_plugin_'.join(bin) + ', 0')
-conf_data.set('plugins_crypto', '&r_crypto_plugin_' + ',&r_crypto_plugin_'.join(crypto) + ', 0')
-conf_data.set('plugins_io', '&r_io_plugin_' + ',&r_io_plugin_'.join(io) + ', 0')
-conf_data.set('plugins_fs', '&r_fs_plugin_' + ',&r_fs_plugin_'.join(fs) + ', 0')
-conf_data.set('plugins_debug', '&r_debug_plugin_' + ',&r_debug_plugin_'.join(debug) + ', 0')
-conf_data.set('plugins_egg', '&r_egg_plugin_' + ',&r_egg_plugin_'.join(egg) + ', 0')
-conf_data.set('plugins_lang', '&r_lang_plugin_' + ',&r_lang_plugin_'.join(lang) + ', 0')
-conf_data.set('plugins_parse', '&r_parse_plugin_' + ',&r_parse_plugin_'.join(parse) + ', 0')
+conf_data.set('plugins_core', core_plugins)
+conf_data.set('plugins_anal', anal_plugins)
+conf_data.set('plugins_asm', asm_plugins)
+conf_data.set('plugins_bp', bp_plugins)
+conf_data.set('plugins_bin', bin_plugins)
+conf_data.set('plugins_bin_ldr', bin_ldr_plugins)
+conf_data.set('plugins_bin_xtr', bin_xtr_plugins)
+conf_data.set('plugins_crypto', crypto_plugins)
+conf_data.set('plugins_io', io_plugins)
+conf_data.set('plugins_fs', fs_plugins)
+conf_data.set('plugins_debug', debug_plugins)
+conf_data.set('plugins_egg', egg_plugins)
+conf_data.set('plugins_lang', lang_plugins)
+conf_data.set('plugins_parse', parse_plugins)
 config_h = configure_file(
   input: 'libr/config.h.in',
   output: 'config.h',
@@ -273,15 +275,31 @@ if not meson.is_subproject()
   subdir('binr/rafind2')
   subdir('binr/rax2')
 else
-  libr2_lib = [
-    r_anal, r_asm, r_bin, r_bp, r_config, r_cons, r_core, r_crypto, r_egg,
-    r_flag, r_fs, r_hash, r_io, r_lang, r_magic, r_parse, r_reg, r_search,
-    r_socket, r_syscall, r_util
-  ]
-  libr2_inc = include_directories(['.', 'libr/include'])
   libr2_dep = declare_dependency(
-    link_with: libr2_lib,
-    include_directories: libr2_inc,
+    link_with: [
+      r_anal,
+      r_asm,
+      r_bin,
+      r_bp,
+      r_config,
+      r_cons,
+      r_core,
+      r_crypto,
+      r_egg,
+      r_flag,
+      r_fs,
+      r_hash,
+      r_io,
+      r_lang,
+      r_magic,
+      r_parse,
+      r_reg,
+      r_search,
+      r_socket,
+      r_syscall,
+      r_util
+    ],
+    include_directories: include_directories('.', 'libr/include'),
     version: r2_version
   )
 endif

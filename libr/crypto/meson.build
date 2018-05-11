@@ -15,9 +15,9 @@ files = [
   'p/crypto_rol.c',
   'p/crypto_ror.c',
   'p/crypto_rot.c',
-  'p/crypto_xor.c',
   'p/crypto_serpent.c',
   'p/crypto_serpent_algo.c',
+  'p/crypto_xor.c',
 ]
 
 r_crypto = library('r_crypto', files,
@@ -29,13 +29,14 @@ r_crypto = library('r_crypto', files,
   soversion: r2_libversion
 )
 
-pkg = import('pkgconfig')
-pkg.generate(libraries: [r_crypto],
-             subdirs: 'libr',
-             version: r2_version,
-             name: 'r_crypto',
-             filebase: 'r_crypto',
-             requires: [
-               'r_util'
-             ],
-             description: 'radare foundation libraries')
+pkgconfig_mod.generate(
+  libraries: [r_crypto],
+  subdirs: 'libr',
+  version: r2_version,
+  name: 'r_crypto',
+  filebase: 'r_crypto',
+  requires: [
+    'r_util'
+  ],
+  description: 'radare foundation libraries'
+)

@@ -8,7 +8,10 @@ files = [
 
 r_flag = library('r_flag', files,
   include_directories: [platform_inc],
-  link_with: [r_util, libr_shlr],
+  link_with: [
+    r_util,
+    libr_shlr
+  ],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
