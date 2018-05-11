@@ -268,20 +268,21 @@ R_API char *r_hex_from_js(const char *code) {
 	char * str = r_str_ndup (start + 1, end - start - 1);
 
 	/* assuming base64 input, output will always be shorter */
-	ut8 * b64d = malloc (end - start);
+	ut8 *b64d = malloc (end - start);
 	if (!b64d) {
 		free (str);
 		return NULL;
 	}
 
 	r_base64_decode (b64d, str, end - start - 1);
-	if (b64d < 1) {
+	if (!b64d) {
 		free (str);
 		free (b64d);
 		return NULL;
 	}
 
-	int i, len = strlen (b64d);
+	// TODO: use r_str_bin2hex
+	int i, len = strlen ((const char *)b64d);
 	char * out = malloc (len * 2 + 1);
 	if (!out) {
 		free (str);
@@ -297,7 +298,6 @@ R_API char *r_hex_from_js(const char *code) {
 	free (b64d);
 	return out;
 }
-
 
 /* convert
  * "\x41\x23\x42\x1b"
