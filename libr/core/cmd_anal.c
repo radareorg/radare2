@@ -5518,6 +5518,36 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 	}
 }
 
+static void agraph_print_node_json(RANode *n, void *user) {
+	char *label = strdup (n->body);
+	r_cons_printf ("%s{\"id\":%d,\"title\":\"%s\",\"body\":\"%s\",\"out_nodes\":[",
+		n->gnode->idx > 0 ? "," : "", n->gnode->idx, n->title, label);
+	RListIter *it = NULL;
+	RGraphNode *node = NULL;
+	RList *nodes = n->gnode->out_nodes;
+	r_list_foreach (nodes, it, node) {
+		r_cons_printf ("%s%d", it == nodes->head ? "" : ",", node->idx);
+	}
+	r_cons_printf ("]}");
+	free (label);
+}
+
+
+static void agraph_print_node_gml(RANode *n, void *user) {
+	r_cons_printf ("  node [\n"
+		"    id  %d\n"
+		"    label  \"%s\"\n"
+		"  ]\n", n->gnode->idx, n->title);
+}
+
+static void agraph_print_edge_gml(RANode *from, RANode *to, void *user) {
+	r_cons_printf ("  edge [\n"
+		"    source  %d\n"
+		"    target  %d\n"
+		"  ]\n", from->gnode->idx, to->gnode->idx
+		);
+}
+
 static void agraph_print_node_dot(RANode *n, void *user) {
 	char *label = strdup (n->body);
 	//label = r_str_replace (label, "\n", "\\l", 1);
@@ -5655,6 +5685,18 @@ static void cmd_agraph_edge(RCore *core, const char *input) {
 
 static void cmd_agraph_print(RCore *core, const char *input) {
 	switch (*input) {
+	case 0:
+		core->graph->can->linemode = r_config_get_i (core->config, "graph.linemode");
+		core->graph->can->color = r_config_get_i (core->config, "scr.color");
+		r_agraph_set_title (core->graph,
+			r_config_get (core->config, "graph.title"));
+		r_agraph_print (core->graph);
+		break;
+	case 't':// "aggt" - tiny graph
+		core->graph->is_tiny = true;
+		r_core_visual_graph (core, core->graph, NULL, false);
+		core->graph->is_tiny = false;
+		break;
 	case 'k': // "aggk"
 	{
 		Sdb *db = r_agraph_get_sdb (core->graph);
@@ -5664,20 +5706,6 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 		break;
 	}
 	case 'v': // "aggv"
-	{
-		const char *cmd = r_config_get (core->config, "cmd.graph");
-		if (cmd && *cmd) {
-			char *newCmd = strdup (cmd);
-			if (newCmd) {
-				newCmd = r_str_replace (newCmd, "ag $$", "aggd", 0);
-				r_core_cmd0 (core, newCmd);
-				free (newCmd);
-			}
-		} else {
-			r_core_cmd0 (core, "agf");
-		}
-		break;
-	}
 	case 'i': // "aggi" - open current core->graph in interactive mode
 	{
 		RANode *ran = r_agraph_get_first_node (core->graph);
@@ -5709,16 +5737,35 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 		r_agraph_foreach (core->graph, agraph_print_node, NULL);
 		r_agraph_foreach_edge (core->graph, agraph_print_edge, NULL);
 		break;
+	case 'J': 
+	case 'j': 
+		r_cons_printf ("{\"nodes\":[");
+		r_agraph_foreach (core->graph, agraph_print_node_json, NULL);
+		r_cons_printf ("]}\n");
+		break;
+	case 'g':
+		r_cons_printf ("graph\n[\n" "hierarchic 1\n" "label \"\"\n" "directed 1\n");
+		r_agraph_foreach (core->graph, agraph_print_node_gml, NULL);
+		r_agraph_foreach_edge (core->graph, agraph_print_edge_gml, NULL);
+		r_cons_print ("]\n");
+		break;
+	case 'w':{ // "aggw"
+		if (r_config_get_i (core->config, "graph.web")) {
+			r_core_cmd0 (core, "=H /graph/");
+		} else {
+			char *cmd = r_core_graph_cmd ("aggd");
+			if (cmd && *cmd) {
+				r_core_cmd0 (core, cmd);
+			}
+			free (cmd);
+		}
+		break;
+	}
 	case '?':
 		r_core_cmd_help (core, help_msg_agg);
 		break;
 	default:
-		core->graph->can->linemode = r_config_get_i (core->config, "graph.linemode");
-		core->graph->can->color = r_config_get_i (core->config, "scr.color");
-		r_agraph_set_title (core->graph,
-			r_config_get (core->config, "graph.title"));
-		r_agraph_print (core->graph);
-		break;
+		eprintf ("Usage: see ag?\n");
 	}
 }
 
@@ -5773,16 +5820,15 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			if (r_config_get_i (core->config, "graph.web")) {
 				r_core_cmd0 (core, "=H /graph/");
 			} else {
-				const char *cmd = r_config_get (core->config, "cmd.graph");
+				char *cmd = r_core_graph_cmd ("agfd");
 				if (cmd && *cmd) {
 					r_core_cmd0 (core, cmd);
-				} else {
-					eprintf ("Command cmd.graph not valid\n");
 				}
+				free (cmd);
 			}
 			break;
 		default:
-			eprintf ("Usage: see ag?");
+			eprintf ("Usage: see ag?\n");
 			break;
 		}
 		break;

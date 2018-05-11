@@ -2268,6 +2268,33 @@ static char *getViewerPath() {
 	return NULL;
 }
 
+R_API char* r_core_graph_cmd(char *r2_cmd) {
+	char *cmd = NULL;
+	char *xdotPath = r_file_path ("xdot");
+	if (r_file_exists (xdotPath)) {
+		cmd = r_str_newf ("%s > a.dot;!xdot a.dot", r2_cmd);
+	} else {
+		char *dotPath = r_file_path ("dot");
+		if (r_file_exists (dotPath)) {
+			R_FREE (dotPath);
+			char *viewer = getViewerPath();
+			if (viewer) {
+				cmd = r_str_newf ("%s > a.dot;!dot -Tgif -oa.gif a.dot;!%s a.gif", r2_cmd, viewer);
+				free (viewer);
+			} else {
+				cmd = "?e cannot find a valid picture viewer";
+			}
+		} else {
+			cmd = r_str_new ("agf");
+		}
+		free (dotPath);
+	}
+	free (xdotPath);
+	return cmd;
+}
+
+
+
 #define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
 	int i;
@@ -2683,28 +2710,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("dbg.trace.tag", 0, &cb_tracetag, "Trace tag");
 
 	/* cmd */
-	char *xdotPath = r_file_path ("xdot");
-	if (r_file_exists (xdotPath)) {
-		r_config_set (cfg, "cmd.graph", "ag $$ > a.dot;!xdot a.dot");
-	} else {
-		char *dotPath = r_file_path ("dot");
-		if (r_file_exists (dotPath)) {
-			R_FREE (dotPath);
-			char *viewer = getViewerPath();
-			if (viewer) {
-				char *cmd = r_str_newf ("ag $$>a.dot;!dot -Tgif -oa.gif a.dot;!%s a.gif", viewer);
-				r_config_set (cfg, "cmd.graph", cmd);
-				free (viewer);
-				free (cmd);
-			} else {
-				r_config_set (cfg, "cmd.graph", "?e cannot find a valid picture viewer");
-			}
-		} else {
-			r_config_set (cfg, "cmd.graph", "agf");
-		}
-		free (dotPath);
-	}
-	free (xdotPath);
+	char *cmd = r_core_graph_cmd ("ag $$");
+	r_config_set (cfg, "cmd.graph", cmd);
+	free (cmd);
+
 	r_config_desc (cfg, "cmd.graph", "Command executed by 'agv' command to view graphs");
 	SETPREF ("cmd.xterm", "xterm -bg black -fg gray -e", "xterm command to spawn with V@");
 	SETICB ("cmd.depth", 10, &cb_cmddepth, "Maximum command depth");

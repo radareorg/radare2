@@ -1667,10 +1667,10 @@ R_API int r_core_print_bb_gml(RCore *core, RAnalFunction *fcn) {
 	r_list_foreach (fcn->bbs, iter, bb) {
 		RFlagItem *flag = r_flag_get_i (core->flags, bb->addr);
 		char *msg = flag? strdup (flag->name): r_str_newf ("0x%08"PFMT64x, bb->addr);
-		r_cons_printf ("\tnode [\n"
-				"\t\tid\t%"PFMT64d"\n"
-				"\t\tlabel\t\"%s\"\n"
-				"\t]\n", bb->addr, msg);
+		r_cons_printf ("  node [\n"
+				"    id  %"PFMT64d"\n"
+				"    label  \"%s\"\n"
+				"  ]\n", bb->addr, msg);
 	}
 
 	r_list_foreach (fcn->bbs, iter, bb) {
@@ -1679,31 +1679,32 @@ R_API int r_core_print_bb_gml(RCore *core, RAnalFunction *fcn) {
 		}
 
 		if (bb->jump != UT64_MAX) {
-			r_cons_printf ("\tedge [\n"
-				"\t\tsource  %"PFMT64d"\n"
-				"\t\ttarget  %"PFMT64d"\n"
-				"\t]\n", bb->addr, bb->jump
+			r_cons_printf ("  edge [\n"
+				"    source  %"PFMT64d"\n"
+				"    target  %"PFMT64d"\n"
+				"  ]\n", bb->addr, bb->jump
 				);
 		}
 		if (bb->fail != UT64_MAX) {
-			r_cons_printf ("\tedge [\n"
-				"\t\tsource  %"PFMT64d"\n"
-				"\t\ttarget  %"PFMT64d"\n"
-				"\t]\n", bb->addr, bb->fail
+			r_cons_printf ("  edge [\n"
+				"    source  %"PFMT64d"\n"
+				"    target  %"PFMT64d"\n"
+				"  ]\n", bb->addr, bb->fail
 				);
 		}
 		if (bb->switch_op) {
 			RListIter *it;
 			RAnalCaseOp *cop;
 			r_list_foreach (bb->switch_op->cases, it, cop) {
-				r_cons_printf ("\tedge [\n"
-					"\t\tsource  %"PFMT64d"\n"
-					"\t\ttarget  %"PFMT64d"\n"
-					"\t]\n", bb->addr, cop->addr
+				r_cons_printf ("  edge [\n"
+					"    source  %"PFMT64d"\n"
+					"    target  %"PFMT64d"\n"
+					"  ]\n", bb->addr, cop->addr
 					);
 			}
 		}
 	}
+	r_cons_printf ("]\n");
 	return true;
 }
 
