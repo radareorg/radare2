@@ -106,6 +106,28 @@ static const char **menus_sub[] = {
 	NULL
 };
 
+static void Layout_run(RPanels *panels);
+static void Panel_print(RConsCanvas *can, RPanel *panel, int color);
+static void addPanelFrame(RPanels* panels, const char *title, const char *cmd);
+static void check_stackbase(RCore *core);
+static void cursor_left(RCore *core);
+static void cursor_right(RCore *core);
+static void delcurpanel(RPanels *panels);
+static void doRefresh(RPanels *panels);
+static bool handle_cursormode(RCore *core, const int key);
+static int  havePanel(RPanels *panels, const char *s);
+static bool init(RPanels *panels, int w, int h);
+static bool initPanel(RPanels *panels);
+static void panel_breakpoint(RCore *core);
+static void panel_continue(RCore *core);
+static void panel_prompt(const char *prompt, char *buf);
+static void panel_single_step_in(RCore *core);
+static void panel_single_step_over(RCore *core);
+static void r_core_panels_refresh(RPanels *panels);
+static void refreshAll(RPanels *panels);
+static void setcursor(RCore *core, bool cur);
+static void zoom(RPanels *panels);
+
 static void Panel_print(RConsCanvas *can, RPanel *panel, int color) {
 	if (!can || !panel|| !panel->refresh) {
 		return;
@@ -312,6 +334,44 @@ static void cursor_left(RCore *core) {
 		core->panels->panel[core->panels->curnode].addr--;
 	}
 	return;
+}
+
+static bool handle_cursormode(RCore *core, const int key) {
+	const char *creg;
+	const RPanels *panels = core->panels;
+	char buf[128];
+	if (core->print->cur_enabled) {
+		switch (key) {
+			case 9: // TAB
+			case 'J':
+			case 'Z': // SHIFT-TAB
+			case 'K':
+				return true;
+			case 'Q':
+			case 'q':
+				setcursor (core, !core->print->cur_enabled);
+				panels->panel[panels->curnode].refresh = true;
+				return true;
+			case 'i':
+				if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_STACK)) {
+					// insert mode
+					const char *prompt = "insert hex: ";
+					panel_prompt (prompt, buf);
+					r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, panels->panel[panels->curnode].addr);
+					panels->panel[panels->curnode].refresh = true;
+				} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_REGISTERS)) {
+					creg = core->dbg->creg;
+					if (creg) {
+						const char *prompt = "new-reg-value> ";
+						panel_prompt (prompt, buf);
+						r_core_cmdf (core, "dr %s = %s", creg, buf);
+						panels->panel[panels->curnode].refresh = true;
+					}
+				}
+				return true;
+		}
+	}
+	return false;
 }
 
 static void delcurpanel(RPanels *panels) {
@@ -669,7 +729,6 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 
 repeat:
 	core->cons->event_data = panels;
-	// core->cons->event_resize = (RConsEvent) r_core_panels_refresh;
 	core->cons->event_resize = (RConsEvent) doRefresh;
 	check_stackbase (core);
 	Layout_run (panels);
@@ -678,45 +737,15 @@ repeat:
 	if (wheel) {
 		r_cons_enable_mouse (true);
 	}
-	// r_core_graph_inputhandle()
 	okey = r_cons_readchar ();
 	key = r_cons_arrow_to_hjkl (okey);
 	r_cons_switchbuf(true);
-	const char *cmd;
-	const char *creg;
-	char buf[128];
-	if (core->print->cur_enabled) {
-		switch (key) {
-			case 9: // TAB
-			case 'J':
-			case 'Z': // SHIFT-TAB
-			case 'K':
-				goto repeat;
-			case 'Q':
-			case 'q':
-				setcursor (core, !core->print->cur_enabled);
-				panels->panel[panels->curnode].refresh = true;
-				goto repeat;
-			case 'i':
-				if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_STACK)) {
-					// insert mode
-					const char *prompt = "insert hex: ";
-					panel_prompt (prompt, buf);
-					r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, panels->panel[panels->curnode].addr);
-					panels->panel[panels->curnode].refresh = true;
-					goto repeat;
-				} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_REGISTERS)) {
-					creg = core->dbg->creg;
-					if (creg) {
-						const char *prompt = "new-reg-value> ";
-						panel_prompt (prompt, buf);
-						r_core_cmdf (core, "dr %s = %s", creg, buf);
-						panels->panel[panels->curnode].refresh = true;
-					}
-					goto repeat;
-				}
-		}
+
+	if (handle_cursormode (core, key)) {
+		goto repeat;
 	}
+
+	const char *cmd;
 	switch (key) {
 	case 'u':
 		r_core_cmd0 (core, "s-");
