@@ -106,8 +106,8 @@ static const char **menus_sub[] = {
 	NULL
 };
 
-static void Layout_run(RPanels *panels);
-static void Panel_print(RConsCanvas *can, RPanel *panel, int color);
+static void layoutRun(RPanels *panels);
+static void panelPrint(RConsCanvas *can, RPanel *panel, int color);
 static void addPanelFrame(RPanels* panels, const char *title, const char *cmd);
 static void check_stackbase(RCore *core);
 static void cursor_left(RCore *core);
@@ -128,7 +128,7 @@ static void refreshAll(RPanels *panels);
 static void setcursor(RCore *core, bool cur);
 static void zoom(RPanels *panels);
 
-static void Panel_print(RConsCanvas *can, RPanel *panel, int color) {
+static void panelPrint(RConsCanvas *can, RPanel *panel, int color) {
 	if (!can || !panel|| !panel->refresh) {
 		return;
 	}
@@ -216,7 +216,7 @@ static void Panel_print(RConsCanvas *can, RPanel *panel, int color) {
 	}
 }
 
-static void Layout_run(RPanels *panels) {
+static void layoutRun(RPanels *panels) {
 	int h, w = r_cons_get_size (&h);
 	int i, j;
 	int colpos = w - panels->columnWidth;
@@ -510,7 +510,7 @@ static void r_core_panels_refresh(RPanels *panels) {
 		}
 		for (i = 0; i < panels->n_panels; i++) {
 			if (i != panels->curnode) {
-				Panel_print (can, &panel[i], 0);
+				panelPrint (can, &panel[i], 0);
 			}
 		}
 	}
@@ -524,9 +524,9 @@ static void r_core_panels_refresh(RPanels *panels) {
 	if (panels->panel) {
 		if (panel[panels->curnode].type == PANEL_TYPE_MENU) {
 			panel[panels->curnode].refresh = true;
-			Panel_print (can, &panel[panels->curnode], menu_y);
+			panelPrint (can, &panel[panels->curnode], menu_y);
 		} else {
-			Panel_print (can, &panel[panels->curnode], 1);
+			panelPrint (can, &panel[panels->curnode], 1);
 		}
 	}
 
@@ -563,7 +563,7 @@ static void r_core_panels_refresh(RPanels *panels) {
 
 static void doRefresh(RPanels *panels) {
 	panels->isResizing = true;
-	Layout_run (panels);
+	layoutRun (panels);
 	r_core_panels_refresh (panels);
 }
 
@@ -731,7 +731,7 @@ repeat:
 	core->cons->event_data = panels;
 	core->cons->event_resize = (RConsEvent) doRefresh;
 	check_stackbase (core);
-	Layout_run (panels);
+	layoutRun (panels);
 	r_core_panels_refresh (panels);
 	wheel = r_config_get_i (core->config, "scr.wheel");
 	if (wheel) {
