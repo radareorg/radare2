@@ -5558,21 +5558,6 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 	}
 }
 
-static void agraph_print_node_json(RANode *n, void *user) {
-	char *label = strdup (n->body);
-	r_cons_printf ("%s{\"id\":%d,\"title\":\"%s\",\"body\":\"%s\",\"out_nodes\":[",
-		n->gnode->idx > 0 ? "," : "", n->gnode->idx, n->title, label);
-	RListIter *it = NULL;
-	RGraphNode *node = NULL;
-	RList *nodes = n->gnode->out_nodes;
-	r_list_foreach (nodes, it, node) {
-		r_cons_printf ("%s%d", it == nodes->head ? "" : ",", node->idx);
-	}
-	r_cons_printf ("]}");
-	free (label);
-}
-
-
 static void agraph_print_node_gml(RANode *n, void *user) {
 	r_cons_printf ("  node [\n"
 		"    id  %d\n"
@@ -5780,7 +5765,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 	case 'J': 
 	case 'j': 
 		r_cons_printf ("{\"nodes\":[");
-		r_agraph_foreach (core->graph, agraph_print_node_json, NULL);
+		r_agraph_print_json (core->graph);
 		r_cons_printf ("]}\n");
 		break;
 	case 'g':
@@ -5903,34 +5888,50 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		}
 		break;
 	case 'C': // "agC"
-		r_core_anal_coderefs (core, UT64_MAX, input[1] == 'j'? 2: 1);
+		r_core_anal_callgraph (core, UT64_MAX, input[1] == 'j'? 2 : 1);
 		break;
 	case 'r': // "refs"
 		switch (input[1]) {
-		case '*':
+		case 'v':
+		case 't':
+		case 'd':
+		case 'J':
 		case 'j':
-		case ' ':
-		case 0:
-			{
-				ut64 addr = input[2]? r_num_math (core->num, input + 2): core->offset;
-				r_core_anal_codexrefs (core, addr, '*');
+		case 'g':
+		case 'k':
+		case 'w':
+		case ' ': {
+			char *cmd = r_str_newf ("ag-; .agr* %lld; agg%c;", 
+				input[2] ? r_num_math (core->num, input + 2) : core->offset, input[1]);
+			if (cmd && *cmd) {
+				r_core_cmd0 (core, cmd);
+			}
+			free (cmd);
+			break;
+			}
+		case '*': {
+			ut64 addr = input[2] ? r_num_math (core->num, input + 2) : core->offset;
+			r_core_anal_coderefs (core, addr);
 			}
 			break;
+		case 0:
+			r_core_cmd0 (core, "ag-; .agr* $$; agg;");
+			break;
 		default:
-			eprintf ("|ERROR| Usage: agr[*j]\n");
+			eprintf ("Usage: see ag?\n");
 			break;
 		}
 		break;
 	case 'c': // "agc"
 		if (input[1] == '*') {
 			ut64 addr = input[2]? r_num_math (core->num, input + 2): UT64_MAX;
-			r_core_anal_coderefs (core, addr, '*');
+			r_core_anal_callgraph (core, addr, '*');
 		} else if (input[1] == 'j') {
 			ut64 addr = input[2]? r_num_math (core->num, input + 2): UT64_MAX;
-			r_core_anal_coderefs (core, addr, 2);
+			r_core_anal_callgraph (core, addr, 2);
 		} else if (input[1] == ' ') {
 			ut64 addr = input[2]? r_num_math (core->num, input + 1): UT64_MAX;
-			r_core_anal_coderefs (core, addr, 1);
+			r_core_anal_callgraph (core, addr, 1);
 		} else {
 			eprintf ("|ERROR| Usage: agc[j*] ([addr])\n");
 		}

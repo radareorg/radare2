@@ -3268,6 +3268,24 @@ R_API void r_agraph_print(RAGraph *g) {
 	}
 }
 
+R_API void r_agraph_print_json(RAGraph *g) {
+	RList *nodes = g->graph->nodes, *neighbours = NULL;
+	RListIter *it, *itt;
+	RGraphNode *node = NULL, *neighbour = NULL;
+	r_list_foreach (nodes, it, node) {
+		RANode *anode = (RANode *) node->data;
+		char *label = strdup (anode->body);
+		r_cons_printf ("%s{\"id\":%d,\"title\":\"%s\",\"body\":\"%s\",\"out_nodes\":[",
+			it == nodes->head ? "" : ",", anode->gnode->idx, anode->title, label);
+		neighbours = anode->gnode->out_nodes;
+		r_list_foreach (neighbours, itt, neighbour) {
+			r_cons_printf ("%s%d", itt == neighbours->head ? "" : ",", neighbour->idx);
+		}
+		r_cons_printf ("]}");
+		free (label);
+	}
+}
+
 R_API void r_agraph_set_title(RAGraph *g, const char *title) {
 	free (g->title);
 	g->title = title? strdup (title): NULL;
@@ -3767,8 +3785,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				}
 				r_config_set_i (core->config, "graph.layout", e);
 				g->layout = r_config_get_i (core->config, "graph.layout");
-				g->need_reload_nodes = true;
-				get_bbupdate (g, core, fcn);
+				g->need_update_dim = true;
+				g->need_set_layout = true;
 			}
 			break;
 		case 'e':

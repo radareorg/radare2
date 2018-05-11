@@ -1708,14 +1708,13 @@ R_API int r_core_print_bb_gml(RCore *core, RAnalFunction *fcn) {
 	return true;
 }
 
-R_API void r_core_anal_codexrefs(RCore *core, ut64 addr, int fmt) {
+R_API void r_core_anal_coderefs(RCore *core, ut64 addr) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
 	if (fcn) {
 		const char *me = fcn->name;
 		RListIter *iter;
 		RAnalRef *ref;
 		RList *refs = r_anal_fcn_get_refs_sorted (core->anal, fcn);
-		r_cons_printf ("e graph.layout=1\n");
 		r_cons_printf ("ag-\n");
 		r_cons_printf ("agn %s\n", me);
 		r_list_foreach (refs, iter, ref) {
@@ -1725,21 +1724,34 @@ R_API void r_core_anal_codexrefs(RCore *core, ut64 addr, int fmt) {
 			r_cons_printf ("age %s %s\n", me, dst);
 		}
 		r_list_free (refs);
-		RList *list = r_anal_xrefs_get (core->anal, addr);
-		r_list_foreach (list, iter, ref) {
-			RFlagItem *item = r_flag_get_i (core->flags, ref->addr);
-			const char *src = item? item->name: sdb_fmt ("0x%08"PFMT64x, ref->addr);
-			r_cons_printf ("agn %s\n", src);
-			r_cons_printf ("age %s %s\n", src, me);
-		}
-		r_list_free (list);
+	} else {
+		eprintf("Not in a function. Use 'df' to define it.\n");
 	}
+}
+
+R_API void r_core_anal_codexrefs(RCore *core, ut64 addr) {
+	RFlagItem *f = r_flag_get_at (core->flags, addr, false);
+	char *me = (f && f->offset == addr)
+		? r_str_new (f->name) : r_str_newf ("0x%"PFMT64x, addr);
+	r_cons_printf ("ag-\n");
+	r_cons_printf ("agn %s\n", me);
+	RListIter *iter;
+	RAnalRef *ref;
+	RList *list = r_anal_xrefs_get (core->anal, addr);
+	r_list_foreach (list, iter, ref) {
+		RFlagItem *item = r_flag_get_i (core->flags, ref->addr);
+		const char *src = item? item->name: sdb_fmt ("0x%08"PFMT64x, ref->addr);
+		r_cons_printf ("agn %s\n", src);
+		r_cons_printf ("age %s %s\n", src, me);
+	}
+	r_list_free (list);
+	free (me);
 }
 
 #define FMT_NO 0
 #define FMT_GV 1
 #define FMT_JS 2
-R_API void r_core_anal_coderefs(RCore *core, ut64 addr, int fmt) {
+R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt) {
 	RAnalFunction fakefr = R_EMPTY;
 	const char *font = r_config_get (core->config, "graph.font");
 	const char *format = r_config_get (core->config, "graph.format");
