@@ -5108,6 +5108,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				}
 			} else if (input[1] == 'j') { // "axtj"
 				bool asm_varsub = r_config_get_i (core->config, "asm.varsub");
+				core->parser->pseudo = r_config_get_i (core->config, "asm.pseudo");
 				core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
 				core->parser->localvar_only = r_config_get_i (core->config, "asm.varsub_only");
 				r_cons_printf ("[");
@@ -5169,6 +5170,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				RAnalFunction *fcn;
 				char *comment;
 				bool asm_varsub = r_config_get_i (core->config, "asm.varsub");
+				core->parser->pseudo = r_config_get_i (core->config, "asm.pseudo");
 				core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
 				core->parser->localvar_only = r_config_get_i (core->config, "asm.varsub_only");
 				if (core->parser->relsub) {

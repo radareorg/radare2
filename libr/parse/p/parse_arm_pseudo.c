@@ -280,18 +280,26 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	spargs = p->varlist (p->anal, f, 's');
 	bool ucase = IS_UPPER (*tstr);
 	r_list_foreach (bpargs, iter, var) {
+		char *reg = p->anal->reg->name[R_REG_NAME_BP];
+		char *tmplt = NULL;
 		if (var->delta > -10 && var->delta < 10) {
-			oldstr = r_str_newf ("[%s, %d]",
-				p->anal->reg->name[R_REG_NAME_BP],
-				var->delta);
+			if (p->pseudo) {
+				char sign = '+';
+				int delta = var->delta;
+				if (var->delta < 0) {
+					sign = '-';
+					delta = -delta;
+				}
+				oldstr = r_str_newf ("[%s %c %d]", reg, sign, delta);
+			} else {
+				oldstr = r_str_newf ("[%s, %d]", reg, var->delta);
+			}
 		} else if (var->delta > 0) {
-			oldstr = r_str_newf ("[%s, 0x%x]",
-			p->anal->reg->name[R_REG_NAME_BP],
-				var->delta);
+			tmplt = p->pseudo ? "[%s + 0x%x]" : "[%s, 0x%x]";
+			oldstr = r_str_newf (tmplt, reg, var->delta);
 		} else {
-			oldstr = r_str_newf ("[%s, -0x%x]",
-				p->anal->reg->name[R_REG_NAME_BP],
-				-var->delta);
+			tmplt = p->pseudo ? "[%s - 0x%x]" : "[%s, -0x%x]";
+			oldstr = r_str_newf (tmplt, reg, -var->delta);
 		}
 		if (ucase) {
 			char *comma = strchr (oldstr, ',');
@@ -303,9 +311,7 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		}
 		if (strstr (tstr, oldstr)) {
 			newstr = r_str_newf ("[%s %c %s]",
-				p->anal->reg->name[R_REG_NAME_BP],
-				var->delta > 0 ? '+' : '-',
-				var->name);
+				reg, var->delta > 0 ? '+' : '-', var->name);
 			if (ucase) {
 				char *comma = strchr (newstr, ' ');
 				if (comma) {
