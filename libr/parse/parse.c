@@ -25,6 +25,7 @@ R_API RParse *r_parse_new() {
 	p->parsers->free = NULL; // memleak
 	p->notin_flagspace = -1;
 	p->flagspace = -1;
+	p->pseudo = false;
 	p->relsub = false;
 	p->minval = 0x100;
 	p->localvar_only = false;
