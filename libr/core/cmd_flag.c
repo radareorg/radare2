@@ -44,6 +44,7 @@ static const char *help_msg_f[] = {
 	"fR","[?] [f] [t] [m]","relocate all flags matching f&~m 'f'rom, 't'o, 'm'ask",
 	"fs","[?]+-*","manage flagspaces",
 	"fS","[on]","sort flags by offset or name",
+	"ft","[?]+-*","flag tags, useful to find all flags matching some words",
 	"fV","[*-] [nkey] [offset]","dump/restore visual marks (mK/'K)",
 	"fx","[d]","show hexdump (or disasm) of flag:flagsize",
 	"fq","","list flags in quiet mode",
@@ -208,6 +209,35 @@ static int flag_to_flag(RCore *core, const char *glob) {
 		return next - core->offset;
 	}
 	return 0;
+}
+
+static void cmd_flag_tags (RCore *core, const char *input) {
+	const char *arg = r_str_trim_ro (input + 2);
+	if (!*arg) {
+		eprintf ("list tags\n");
+		return;
+	}
+	if (*arg == '?') {
+		eprintf ("Usage: ft [k] [v ...]\n");
+		eprintf (" ft string strcpy strlen ... # set words for the 'string' tag\n");
+		eprintf (" ft string                   # get offsets of all matching flags\n");
+		eprintf (" ft                          # list all tags\n");
+		return;
+	}
+	char *arg1 = strchr (arg, ' ');
+	if (arg1) {
+		*arg1 = 0;
+		const char *a1 = r_str_trim_ro (arg1 + 1);
+		r_flag_tags_set (core->flags, arg, a1);
+	} else {
+		RListIter *iter;
+		RFlagItem *flag;
+		RList *flags = r_flag_tags_get (core->flags, arg);
+		r_list_foreach (flags, iter, flag) {
+			r_cons_printf ("0x%08"PFMT64x"\n", flag->offset);
+			// r_cons_printf ("0x%08"PFMT64x"  %s\n", flag->offset, flag->name);
+		}
+	}
 }
 
 static void flag_ordinals(RCore *core, const char *str) {
@@ -601,6 +631,9 @@ rep:
 		} else {
 			eprintf ("Missing arguments\n");
 		}
+		break;
+	case 't':
+		cmd_flag_tags (core, input);
 		break;
 	case 'S':
 		r_flag_sort (core->flags, (input[1]=='n'));

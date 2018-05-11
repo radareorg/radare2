@@ -73,7 +73,8 @@ else
 	@-if [ -f p/Makefile ] ; then (echo "DIR ${NAME}/p"; cd p && ${MAKE}) ; fi
 endif
 
-ifeq ($(WITHPIC),1)
+ifeq (1,1)
+#$(WITHPIC),1)
 $(LIBSO): $(EXTRA_TARGETS) ${WFD} ${OBJS} ${SHARED_OBJ}
 	@for a in ${OBJS} ${SHARED_OBJ} ${SRC}; do \
 	  do=0 ; [ ! -e ${LIBSO} ] && do=1 ; \

@@ -130,6 +130,7 @@ R_API RFlag * r_flag_new() {
 #else
 	f->zones = NULL;
 #endif
+	f->tags = sdb_new0 ();
 	f->flags = r_list_new ();
 	if (!f->flags) {
 		r_flag_free (f);
