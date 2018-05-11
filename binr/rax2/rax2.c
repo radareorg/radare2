@@ -107,7 +107,7 @@ static int help() {
 		"  -D      base64 decode        ;\n"
 		"  -E      base64 encode        ;\n"
 		"  -f      floating point       ;  rax2 -f 6.3+2.1\n"
-		"  -F      stdin slurp code hex ;  rax2 -F < shellcode.[c(py]\n"
+		"  -F      stdin slurp code hex ;  rax2 -F < shellcode.[c/py/js]\n"
 		"  -h      help                 ;  rax2 -h\n"
 		"  -i      dump as C byte array ;  rax2 -i < bytes\n"
 		"  -k      keep base            ;  rax2 -k 33+3 -> 36\n"
@@ -541,7 +541,7 @@ static int use_stdin() {
 	if (!buf) {
 		return 0;
 	}
-	if (!(flags & 16384)) {
+	if (!(flags & (1<<14))) {
 		for (l = 0; l >= 0 && l < STDIN_BUFFER_SIZE; l++) {
 			// make sure we don't read beyond boundaries
 			int n = read (0, buf + l, STDIN_BUFFER_SIZE - l);
