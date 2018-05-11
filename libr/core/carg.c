@@ -22,7 +22,7 @@ static void set_fcn_args_info(RAnalFuncArg *arg, RAnal *anal, const char *fcn_na
 	arg->cc_source = r_anal_cc_arg (anal, cc, arg_num + 1);
 }
 
-static char *resolve_fcn_name(RAnal *anal, const char *func_name) {
+R_API char *resolve_fcn_name(RAnal *anal, const char *func_name) {
 	const char *str = func_name;
 	const char *name = func_name;
 	if (r_anal_type_func_exist (anal, func_name)) {

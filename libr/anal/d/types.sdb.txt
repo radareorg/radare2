@@ -298,14 +298,14 @@ func.imaxdiv.ret=imaxdiv_t
 strtoimax=func
 func.strtoimax.args=3
 func.strtoimax.arg.0=const char *,str
-func.strtoimax.arg.1=char*,*endptr
+func.strtoimax.arg.1=char *,*endptr
 func.strtoimax.arg.2=int,base
 func.strtoimax.ret=intmax_t
 
 strtoumax=func
 func.strtoumax.args=3
 func.strtoumax.arg.0=const char *,str
-func.strtoumax.arg.1=char*,*endptr
+func.strtoumax.arg.1=char *,*endptr
 func.strtoumax.arg.2=int,base
 func.strtoumax.ret=uintmax_t
 
@@ -1468,25 +1468,25 @@ func.atoll.ret=long long
 strtod=func
 func.strtod.args=2
 func.strtod.arg.0=const char *,str
-func.strtod.arg.1=char*,*endptr
+func.strtod.arg.1=char *,*endptr
 func.strtod.ret=double
 
 strtof=func
 func.strtof.args=2
 func.strtof.arg.0=const char *,str
-func.strtof.arg.1=char*,*endptr
+func.strtof.arg.1=char *,*endptr
 func.strtof.ret=float
 
 strtold=func
 func.strtold.args=2
 func.strtold.arg.0=const char *,str
-func.strtold.arg.1=char*,*endptr
-func.strtold.ret=long doubleouble
+func.strtold.arg.1=char *,*endptr
+func.strtold.ret=long double
 
 strtol=func
 func.strtol.args=3
 func.strtol.arg.0=const char *,str
-func.strtol.arg.1=char*,*endptr
+func.strtol.arg.1=char *,*endptr
 func.strtol.arg.2=int,base
 func.strtol.ret=long
 
@@ -1510,49 +1510,24 @@ func.atoll.args=1
 func.atoll.arg.0=const char *,str
 func.atoll.ret=long long
 
-strtod=func
-func.strtod.args=2
-func.strtod.arg.0=const char *,str
-func.strtod.arg.1=char*,*endptr
-func.strtod.ret=double
-
-strtof=func
-func.strtof.args=2
-func.strtof.arg.0=const char *,str
-func.strtof.arg.1=char*,*endptr
-func.strtof.ret=float
-
-strtold=func
-func.strtold.args=2
-func.strtold.arg.0=const char *,str
-func.strtold.arg.1=char*,*endptr
-func.strtold.ret=long double
-
-strtol=func
-func.strtol.args=3
-func.strtol.arg.0=const char *,str
-func.strtol.arg.1=char*,*endptr
-func.strtol.arg.2=int,base
-func.strtol.ret=long
-
 strtoll=func
 func.strtoll.args=3
 func.strtoll.arg.0=const char *,str
-func.strtoll.arg.1=char*,*endptr
+func.strtoll.arg.1=char *,*endptr
 func.strtoll.arg.2=int,base
 func.strtoll.ret=long long
 
 strtoul=func
 func.strtoul.args=3
 func.strtoul.arg.0=const char *,str
-func.strtoul.arg.1=char*,*endptr
+func.strtoul.arg.1=char *,*endptr
 func.strtoul.arg.2=int,base
 func.strtoul.ret=long
 
 strtoull=func
 func.strtoull.args=3
 func.strtoull.arg.0=const char *,str
-func.strtoull.arg.1=char*,*endptr
+func.strtoull.arg.1=char *,*endptr
 func.strtoull.arg.2=int,base
 func.strtoull.ret=long long
 
@@ -1590,16 +1565,6 @@ func.abs.args=1
 func.abs.arg.0=int,j
 func.abs.ret=int
 
-abs=func
-func.abs.args=1
-func.abs.arg.0=long,j
-func.abs.ret=long
-
-abs=func
-func.abs.args=1
-func.abs.arg.0=long long,j
-func.abs.ret=long long
-
 labs=func
 func.labs.args=1
 func.labs.arg.0=long,j
@@ -1615,18 +1580,6 @@ func.div.args=2
 func.div.arg.0=int,numer
 func.div.arg.1=int,denom
 func.div.ret=div_t
-
-div=func
-func.div.args=2
-func.div.arg.0=long,numer
-func.div.arg.1=long,denom
-func.div.ret=ldiv_t
-
-div=func
-func.div.args=2
-func.div.arg.0=long long,numer
-func.div.arg.1=long long,denom
-func.div.ret=lldiv_t
 
 ldiv=func
 func.ldiv.args=2
@@ -1706,14 +1659,14 @@ strcat=func
 func.strcat.args=2
 func.strcat.arg.0=char,*s1
 func.strcat.arg.1=const char *,s2
-func.strcat.ret=char*
+func.strcat.ret=char *
 
 strncat=func
 func.strncat.args=3
 func.strncat.arg.0=char,*s1
 func.strncat.arg.1=const char *,s2
 func.strncat.arg.2=size_t,n
-func.strncat.ret=char*
+func.strncat.ret=char *
 
 memcmp=func
 func.memcmp.args=3
@@ -1740,7 +1693,7 @@ func.memchr.args=3
 func.memchr.arg.0=const void,*s
 func.memchr.arg.1=int,c
 func.memchr.arg.2=size_t,n
-func.memchr.ret=const void *
+func.memchr.ret=void *
 
 memchr=func
 func.memchr.args=3
@@ -1753,13 +1706,7 @@ strchr=func
 func.strchr.args=2
 func.strchr.arg.0=const char *,s
 func.strchr.arg.1=int,c
-func.strchr.ret=const char*
-
-strchr=func
-func.strchr.args=2
-func.strchr.arg.0=char,*s
-func.strchr.arg.1=int,c
-func.strchr.ret=char*
+func.strchr.ret=char *
 
 strcspn=func
 func.strcspn.args=2
@@ -1771,25 +1718,13 @@ strpbrk=func
 func.strpbrk.args=2
 func.strpbrk.arg.0=const char *,s1
 func.strpbrk.arg.1=const char *,s2
-func.strpbrk.ret=const char*
-
-strpbrk=func
-func.strpbrk.args=2
-func.strpbrk.arg.0=char,*s1
-func.strpbrk.arg.1=const char *,s2
-func.strpbrk.ret=char*
+func.strpbrk.ret=char *
 
 strrchr=func
 func.strrchr.args=2
 func.strrchr.arg.0=const char *,s
 func.strrchr.arg.1=int,c
-func.strrchr.ret=const char*
-
-strrchr=func
-func.strrchr.args=2
-func.strrchr.arg.0=char,*s
-func.strrchr.arg.1=int,c
-func.strrchr.ret=char*
+func.strrchr.ret=char *
 
 strspn=func
 func.strspn.args=2
@@ -1801,19 +1736,13 @@ strstr=func
 func.strstr.args=2
 func.strstr.arg.0=const char *,s1
 func.strstr.arg.1=const char *,s2
-func.strstr.ret=const char*
-
-strstr=func
-func.strstr.args=2
-func.strstr.arg.0=char,*s1
-func.strstr.arg.1=const char *,s2
-func.strstr.ret=char*
+func.strstr.ret=char *
 
 strtok=func
 func.strtok.args=2
 func.strtok.arg.0=char,*s1
 func.strtok.arg.1=const char *,s2
-func.strtok.ret=char*
+func.strtok.ret=char *
 
 memset=func
 func.memset.args=3
@@ -1825,7 +1754,7 @@ func.memset.ret=void *
 strerror=func
 func.strerror.args=1
 func.strerror.arg.0=int,errnum
-func.strerror.ret=char*
+func.strerror.ret=char *
 
 strlen=func
 func.strlen.args=1
@@ -1872,12 +1801,12 @@ func.time.ret=time_t
 asctime=func
 func.asctime.args=1
 func.asctime.arg.0=const tm,*timeptr
-func.asctime.ret=char*
+func.asctime.ret=char *
 
 ctime=func
 func.ctime.args=1
 func.ctime.arg.0=const time_t,*timer
-func.ctime.ret=char*
+func.ctime.ret=char *
 
 gmtime=func
 func.gmtime.args=1
@@ -2289,7 +2218,7 @@ func.wcrtomb.ret=size_t
 mbsrtowcs=func
 func.mbsrtowcs.args=4
 func.mbsrtowcs.arg.0=wchar_t,*dst
-func.mbsrtowcs.arg.1=const char*,*src
+func.mbsrtowcs.arg.1=const char *,*src
 func.mbsrtowcs.arg.2=size_t,len
 func.mbsrtowcs.arg.3=mbstate_t,*ps
 func.mbsrtowcs.ret=size_t
@@ -2402,7 +2331,7 @@ func.remove.ret=int
 rename=func
 func.rename.args=2
 func.rename.arg.0=const char *,old
-func.rename.arg.1=,const char*
+func.rename.arg.1=,const char *
 func.rename.ret=int
 
 tmpfile=func
@@ -2412,7 +2341,7 @@ func.tmpfile.ret=file*
 tmpnam=func
 func.tmpnam.args=1
 func.tmpnam.arg.0=char,*s
-func.tmpnam.ret=char*
+func.tmpnam.ret=char *
 
 fflush=func
 func.fflush.args=1
@@ -2422,7 +2351,7 @@ func.fflush.ret=int
 fopen=func
 func.fopen.args=2
 func.fopen.arg.0=const char *,filename
-func.fopen.arg.1=,const char*
+func.fopen.arg.1=,const char *
 func.fopen.ret=file*
 
 freopen=func
@@ -2435,13 +2364,13 @@ func.freopen.ret=file*
 setbuf=func
 func.setbuf.args=2
 func.setbuf.arg.0=FILE,*stream
-func.setbuf.arg.1=,char*
+func.setbuf.arg.1=,char *
 func.setbuf.ret=void
 
 setvbuf=func
 func.setvbuf.args=4
 func.setvbuf.arg.0=FILE*,stream
-func.setvbuf.arg.1=char*,buf
+func.setvbuf.arg.1=char *,buf
 func.setvbuf.arg.2=int,mode
 func.setvbuf.arg.3=size_t,size
 func.setvbuf.ret=int
@@ -2485,14 +2414,14 @@ snprintf=func
 func.snprintf.args=4
 func.snprintf.arg.0=char,*s
 func.snprintf.arg.1=,size_t
-func.snprintf.arg.2=,const char*
+func.snprintf.arg.2=,const char *
 func.snprintf.arg.3=,...
 func.snprintf.ret=int
 
 sprintf=func
 func.sprintf.args=3
 func.sprintf.arg.0=char,*s
-func.sprintf.arg.1=,const char*
+func.sprintf.arg.1=,const char *
 func.sprintf.arg.2=,...
 func.sprintf.ret=int
 
@@ -2506,14 +2435,14 @@ func.sscanf.ret=int
 vfprintf=func
 func.vfprintf.args=3
 func.vfprintf.arg.0=FILE,*stream
-func.vfprintf.arg.1=,const char*
+func.vfprintf.arg.1=,const char *
 func.vfprintf.arg.2=,va_list
 func.vfprintf.ret=int
 
 vfscanf=func
 func.vfscanf.args=3
 func.vfscanf.arg.0=FILE,*stream
-func.vfscanf.arg.1=,const char*
+func.vfscanf.arg.1=,const char *
 func.vfscanf.arg.2=,va_list
 func.vfscanf.ret=int
 
@@ -2533,21 +2462,21 @@ vsnprintf=func
 func.vsnprintf.args=4
 func.vsnprintf.arg.0=char,*s
 func.vsnprintf.arg.1=,size_t
-func.vsnprintf.arg.2=,const char*
+func.vsnprintf.arg.2=,const char *
 func.vsnprintf.arg.3=va_list,arg
 func.vsnprintf.ret=int
 
 vsprintf=func
 func.vsprintf.args=3
 func.vsprintf.arg.0=char,*s
-func.vsprintf.arg.1=,const char*
+func.vsprintf.arg.1=,const char *
 func.vsprintf.arg.2=,va_list
 func.vsprintf.ret=int
 
 vsscanf=func
 func.vsscanf.args=3
 func.vsscanf.arg.0=const char *,s
-func.vsscanf.arg.1=,const char*
+func.vsscanf.arg.1=,const char *
 func.vsscanf.arg.2=,va_list
 func.vsscanf.ret=int
 
@@ -2566,7 +2495,7 @@ func.fputs.ret=int
 gets=func
 func.gets.args=1
 func.gets.arg.0=char,*s
-func.gets.ret=char*
+func.gets.ret=char *
 
 putc=func
 func.putc.args=2
