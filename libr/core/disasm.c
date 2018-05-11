@@ -3924,23 +3924,6 @@ static void delete_last_comment(RDisasmState *ds) {
 	}
 }
 
-static char * resolve_fcn_name(RAnal *anal, const char * func_name) {
-	const char * name = NULL;
-	const char * str = func_name;
-	if (r_anal_type_func_exist (anal, func_name)) {
-		return strdup (func_name);
-	}
-	name = func_name;
-	while ((str = strchr (str, '.'))) {
-		name = str + 1;
-		str++;
-	}
-	if (r_anal_type_func_exist (anal, name)) {
-		return strdup (name);
-	}
-	return r_anal_type_func_guess (anal, (char*)func_name);
-}
-
 static bool can_emulate_metadata(RCore * core, ut64 at) {
 	const char *infos;
 	const char *emuskipmeta = r_config_get (core->config, "emu.skip");

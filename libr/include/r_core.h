@@ -387,8 +387,10 @@ R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr);
 R_API char *r_core_disassemble_instr(RCore *core, ut64 addr, int l);
 R_API char *r_core_disassemble_bytes(RCore *core, ut64 addr, int b);
 
+/* carg.c */
 R_API RList *r_core_get_func_args(RCore *core, const char *func_name);
 R_API void r_core_print_func_args(RCore *core);
+R_API char *resolve_fcn_name(RAnal *anal, const char * func_name);
 
 /* anal.c */
 R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr);

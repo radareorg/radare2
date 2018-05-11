@@ -251,6 +251,7 @@ static const char *help_msg_afc[] = {
 	"afc", "", "Show Calling convention for the Current function",
 	"afcr", "[j]", "Show register usage for the current function",
 	"afca", "", "Analyse function for finding the current calling convention",
+	"afcf", " name", "Prints return type function(arg1, arg2...)",
 	"afcl", "", "List all available calling conventions",
 	"afco", " path", "Open Calling Convention sdb profile from given path",
 	NULL
@@ -2303,7 +2304,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case 'c':{ // "afc"
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
-		if (!fcn && !(input[2] == '?'|| input[2] == 'l' || input[2] == 'o')) {
+		if (!fcn && !(input[2] == '?'|| input[2] == 'l' || input[2] == 'o' || input[2] == 'f')) {
 			eprintf ("Cannot find function here\n");
 			break;
 		}
@@ -2321,9 +2322,48 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			}
 			break;
 		}
-		case 'a': // "afca""
+		case 'a': // "afca"
 			eprintf ("Todo\n");
 			break;
+		case 'f': { // "afcf"
+			const char *fcn_name = r_str_trim (strdup (input + 3));
+			char *key = NULL;
+			RListIter *iter;
+			RAnalFuncArg *arg;
+			if (fcn && !*fcn_name) {
+				fcn_name = fcn->name;
+			}
+			if (fcn_name) {
+				key = resolve_fcn_name (core->anal, fcn_name);
+			}
+			if (key) {
+				const char *fcn_type = r_anal_type_func_ret (core->anal, key);
+				int nargs = r_anal_type_func_args_count (core->anal, key);
+				if (fcn_type) {
+					char *sp = " ";
+					if (*fcn_type && (fcn_type[strlen (fcn_type) - 1] == '*')) {
+						sp = "";
+					}
+					r_cons_printf ("%s%s%s(", r_str_get (fcn_type), sp, r_str_get (key));
+					if (!nargs) {
+						r_cons_println ("void)");
+						break;
+					}
+					RList *list = r_core_get_func_args (core, fcn_name);
+					r_list_foreach (list, iter, arg) {
+						RListIter *nextele = r_list_iter_get_next (iter);
+						char *type = arg->orig_c_type;
+						char *sp1 = " ";
+						if (*type && (type[strlen (type) - 1] == '*')) {
+							sp1 = "";
+						}
+						r_cons_printf ("%s%s%s%s", type, sp1, arg->name, nextele?", ":")");
+					}
+					r_cons_println ("");
+				}
+			}
+			break;
+		}
 		case 'l': // "afcl" list all function Calling conventions.
 			sdb_foreach (core->anal->sdb_cc, cc_print, NULL);
 			break;
