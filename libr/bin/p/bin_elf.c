@@ -1103,29 +1103,31 @@ static RBinInfo* info(RBinFile *bf) {
 }
 
 static RList* fields(RBinFile *bf) {
-	RList *ret = NULL;
-	RBinField *ptr = NULL;
-	struct r_bin_elf_field_t *field = NULL;
-	int i;
-
-	if (!(ret = r_list_new ())) {
+	RList *ret = r_list_new ();
+	if (!ret) {
 		return NULL;
 	}
 	ret->free = free;
-	if (!(field = Elf_(r_bin_elf_get_fields) (bf->o->bin_obj))) {
-		return ret;
+	ut64 addr = 0;
+
+	#define ROW(nam,siz,val,fmt) \
+	r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt ("0x%08x", val), fmt));
+	const ut8 *buf = r_buf_get_at (bf->buf, 0, NULL);
+	ROW("ELF", 4, r_read_le32 (buf), "x"); addr+=0x10;
+	ROW("Type", 2, r_read_le16 (buf + 0x10), "x"); addr+=0x2;
+	ROW("Machine", 2, r_read_le16 (buf + 0x12), "x"); addr+=0x2;
+	ROW("Version", 4, r_read_le32 (buf + 0x14), "x"); addr+=0x4;
+
+	if (r_read_le8(buf + 0x04) == 1){
+		ROW("Entry point", 4, r_read_le32 (buf + 0x18), "x"); addr+=0x4;
+		ROW("PhOff", 4, r_read_le32 (buf + 0x1c), "x"); addr+=0x4;
+		ROW("ShOff", 4, r_read_le32 (buf + 0x20), "x");
+	}else{
+		ROW("Entry point", 8, r_read_le64 (buf + 0x18), "x"); addr+=0x8;
+		ROW("PhOff", 8, r_read_le64 (buf + 0x20), "x"); addr+=0x8;
+		ROW("ShOff", 8, r_read_le64 (buf + 0x28), "x");
 	}
-	for (i = 0; !field[i].last; i++) {
-		if (!(ptr = R_NEW0 (RBinField))) {
-			break;
-		}
-		ptr->name = strdup (field[i].name);
-		ptr->comment = NULL;
-		ptr->vaddr = field[i].offset;
-		ptr->paddr = field[i].offset;
-		r_list_append (ret, ptr);
-	}
-	free (field);
+
 	return ret;
 }
 
@@ -1152,12 +1154,12 @@ static void headers32(RBinFile *bf) {
 #define p bf->rbin->cb_printf
 	const ut8 *buf = r_buf_get_at (bf->buf, 0, NULL);
 	p ("0x00000000  ELF MAGIC   0x%08x\n", r_read_le32 (buf));
-	p ("0x00000004  Type        0x%04x\n", r_read_le16 (buf + 4));
-	p ("0x00000006  Machine     0x%04x\n", r_read_le16 (buf + 6));
-	p ("0x00000008  Version     0x%08x\n", r_read_le32 (buf + 8));
-	p ("0x0000000c  Entrypoint  0x%08x\n", r_read_le32 (buf + 12));
-	p ("0x00000010  PhOff       0x%08x\n", r_read_le32 (buf + 16));
-	p ("0x00000014  ShOff       0x%08x\n", r_read_le32 (buf + 20));
+	p ("0x00000010  Type        0x%04x\n", r_read_le16 (buf + 0x10));
+	p ("0x00000012  Machine     0x%04x\n", r_read_le16 (buf + 0x12));
+	p ("0x00000014  Version     0x%08x\n", r_read_le32 (buf + 0x14));
+	p ("0x00000018  Entrypoint  0x%08x\n", r_read_le32 (buf + 0x18));
+	p ("0x0000001c  PhOff       0x%08x\n", r_read_le32 (buf + 0x1c));
+	p ("0x00000020  ShOff       0x%08x\n", r_read_le32 (buf + 0x20));
 }
 
 static bool check_bytes(const ut8 *buf, ut64 length) {
