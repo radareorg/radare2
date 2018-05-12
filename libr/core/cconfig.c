@@ -2496,7 +2496,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.tracespace", "false", "Indent disassembly with trace.count information");
 	SETPREF ("asm.ucase", "false", "Use uppercase syntax at disassembly");
 	SETPREF ("asm.capitalize", "false", "Use camelcase at disassembly");
-	SETPREF ("asm.vars", "true", "Show local function variables in disassembly");
+	SETPREF ("asm.var", "true", "Show local function variables in disassembly");
 	SETPREF ("asm.varxs", "false", "Show accesses of local variables");
 	SETPREF ("asm.var.sub", "true", "Substitute variables in disassembly");
 	SETI ("asm.var.summary", 0, "Show variables summary instead of full list in disasm (0, 1, 2)");
