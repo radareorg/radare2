@@ -5745,6 +5745,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 			r_core_visual_graph (core, core->graph, NULL, true);
 			r_config_set_i (core->config, "scr.interactive", ov);
 			r_cons_show_cursor (true);
+			r_cons_enable_mouse (false);
 		} else {
 			eprintf ("This graph contains no nodes\n");
 		}
@@ -5806,6 +5807,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		case 'v':// "agfv"
 			eprintf ("\rRendering graph...");
 			r_core_visual_graph (core, NULL, NULL, 1);
+			r_cons_enable_mouse (false);
 			r_cons_show_cursor (true);
 			break;
 		case 't':// "agft" - tiny graph
