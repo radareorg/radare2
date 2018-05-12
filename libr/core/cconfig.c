@@ -2477,7 +2477,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.lines", "true", "Show ASCII-art lines at disassembly");
 	SETPREF ("asm.lines.call", "false", "Enable call lines");
 	SETPREF ("asm.lines.ret", "false", "Show separator lines after ret");
-	SETPREF ("asm.linesout", "true", "Show out of block lines");
+	SETPREF ("asm.lines.out", "true", "Show out of block lines");
 	SETPREF ("asm.linesright", "false", "Show lines before opcode instead of offset");
 	SETPREF ("asm.lineswide", "false", "Put a space between lines");
 	SETICB ("asm.lineswidth", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
