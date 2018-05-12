@@ -115,6 +115,11 @@ static void cursorRight(RCore *core);
 static void delCurPanel(RPanels *panels);
 static void doPanelsRefresh(RPanels *panels);
 static bool handleCursorMode(RCore *core, const int key);
+static void handleUpKey();
+static void handleDownKey();
+static void handleLeftKey();
+static void handleRightKey();
+static bool handleEnterKey();
 static int  havePanel(RPanels *panels, const char *s);
 static bool init(RPanels *panels, int w, int h);
 static bool initPanels(RPanels *panels);
@@ -334,6 +339,132 @@ static void cursorLeft(RCore *core) {
 		core->panels->panel[core->panels->curnode].addr--;
 	}
 	return;
+}
+
+static void handleUpKey() {
+	RPanels *panels = _core->panels;
+
+	r_cons_switchbuf(false);
+	panels->panel[panels->curnode].refresh = true;
+	if (panels->panel[panels->curnode].type == PANEL_TYPE_MENU) {
+		panels->menu_y--;
+		if (panels->menu_y < 0) {
+			panels->menu_y = 0;
+		}
+	} else {
+		if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_DISASSEMBLY)) {
+			r_core_cmd0 (_core, "s-8");
+		} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_STACK)) {
+			int width = r_config_get_i (_core->config, "hex.cols");
+			if (width < 1) {
+				width = 16;
+			}
+			r_config_set_i (_core->config, "stack.delta",
+					r_config_get_i (_core->config, "stack.delta") + width);
+			panels->panel[panels->curnode].addr -= width;
+		} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_REGISTERS)) {
+			if (_core->print->cur_enabled) {
+				int cur = _core->print->cur;
+				int cols = _core->dbg->regcols;
+				cols = cols > 0 ? cols : 3;
+				cur -= cols;
+				if (cur >= 0) {
+					_core->print->cur = cur;
+				}
+			}
+		} else {
+			if (panels->panel[panels->curnode].sy > 0) {
+				panels->panel[panels->curnode].sy--;
+			}
+		}
+	}
+}
+
+static void handleDownKey() {
+	RPanels *panels = _core->panels;
+
+	r_cons_switchbuf(false);
+	panels->panel[panels->curnode].refresh = true;
+	if (panels->panel[panels->curnode].type == PANEL_TYPE_MENU) {
+		if (menus_sub[panels->menu_x][panels->menu_y]) {
+			panels->menu_y++;
+		}
+	} else {
+		if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_DISASSEMBLY)) {
+			int cols = _core->print->cols;
+			RAnalFunction *f = NULL;
+			RAsmOp op;
+			f = r_anal_get_fcn_in (_core->anal, _core->offset, 0);
+			op.size = 1;
+			if (f && f->folded) {
+				cols = _core->offset - f->addr + r_anal_fcn_size (f);
+			} else {
+				r_asm_set_pc (_core->assembler, _core->offset);
+				cols = r_asm_disassemble (_core->assembler,
+						&op, _core->block, 32);
+			}
+			if (cols < 1) {
+				cols = op.size > 1 ? op.size : 1;
+			}
+			r_core_seek (_core, _core->offset + cols, 1);
+			r_core_block_read (_core);
+		} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_STACK)) {
+			int width = r_config_get_i (_core->config, "hex.cols");
+			if (width < 1) {
+				width = 16;
+			}
+			r_config_set_i (_core->config, "stack.delta",
+					r_config_get_i (_core->config, "stack.delta") - width);
+			panels->panel[panels->curnode].addr += width;
+		} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_REGISTERS)) {
+			if (_core->print->cur_enabled) {
+				const int cols = _core->dbg->regcols;
+				_core->print->cur += cols > 0 ? cols : 3;
+			}
+		} else {
+			panels->panel[panels->curnode].sy++;
+		}
+	}
+}
+
+static void handleLeftKey() {
+	RPanels *panels = _core->panels;
+
+	r_cons_switchbuf(false);
+	panels->panel[panels->curnode].refresh = true;
+	if (_core->print->cur_enabled) {
+		cursorLeft (_core);
+	} else {
+		if (panels->curnode == 0) {
+			if (panels->menu_x) {
+				panels->menu_x--;
+				panels->menu_y = panels->menu_y? 1: 0;
+			}
+		} else {
+			if (panels->panel[panels->curnode].sx > 0) {
+				panels->panel[panels->curnode].sx--;
+			}
+		}
+	}
+}
+
+static void handleRightKey() {
+	RPanels *panels = _core->panels;
+
+	r_cons_switchbuf(false);
+	panels->panel[panels->curnode].refresh = true;
+	if (_core->print->cur_enabled) {
+		cursorRight (_core);
+	} else {
+		if (panels->curnode == 0) {
+			if (menus[panels->menu_x + 1]) {
+				panels->menu_x++;
+				panels->menu_y = panels->menu_y ? 1: 0;
+			}
+		} else {
+			panels->panel[panels->curnode].sx++;
+		}
+	}
 }
 
 static bool handleCursorMode(RCore *core, const int key) {
@@ -664,6 +795,216 @@ static bool init (RPanels *panels, int w, int h) {
 	return true;
 }
 
+static bool handleEnterKey() {
+	RPanels *panels = _core->panels;
+	if (panels->curnode == 0 && panels->menu_y) {
+		const char *action = menus_sub[panels->menu_x][panels->menu_y - 1];
+		if (strstr (action, "New")) {
+			addPanelFrame (panels, PANEL_TITLE_NEWFILES, "o");
+		} else if (strstr (action, "Open")) {
+			/* XXX doesnt autocompletes filenames */
+			r_cons_enable_mouse (false);
+			char *res = r_cons_input ("open file: ");
+			if (res) {
+				if (*res) {
+					r_core_cmdf (_core, "o %s", res);
+				}
+				free (res);
+			}
+			r_cons_enable_mouse (true);
+		} else if (strstr (action, "RegisterRefs")) {
+			addPanelFrame (panels, "drr", "drr");
+		} else if (strstr (action, "Registers")) {
+			addPanelFrame (panels, "dr=", "dr=");
+		} else if (strstr (action, "Info")) {
+			addPanelFrame (panels, PANEL_TITLE_INFO, "i");
+		} else if (strstr (action, "Database")) {
+			addPanelFrame (panels, PANEL_TITLE_DATABASE, "k ***");
+		} else if (strstr (action, "Registers")) {
+			if (!havePanel (panels, "Registers")) {
+				addPanelFrame (panels, PANEL_TITLE_REGISTERS, "dr=");
+			}
+		} else if (strstr (action, "About")) {
+			char *s = r_core_cmd_str (_core, "?V");
+			r_cons_message (s);
+			free (s);
+		} else if (strstr (action, "Hexdump")) {
+			addPanelFrame (panels, PANEL_TITLE_HEXDUMP, "px 512");
+		} else if (strstr (action, "Disassembly")) {
+			addPanelFrame (panels, PANEL_TITLE_DISASSEMBLY, "pd 128");
+		} else if (strstr (action, "Functions")) {
+			addPanelFrame (panels, PANEL_TITLE_FUNCTIONS, "afl");
+		} else if (strstr (action, "Comments")) {
+			addPanelFrame (panels, PANEL_TITLE_COMMENTS, "CC");
+		} else if (strstr (action, "Entropy")) {
+			addPanelFrame (panels, PANEL_TITLE_ENTROPY, "p=e");
+		} else if (strstr (action, "Function")) {
+			r_core_cmdf (_core, "af");
+		} else if (strstr (action, "DRX")) {
+			addPanelFrame (panels, PANEL_TITLE_DRX, "drx");
+		} else if (strstr (action, "Program")) {
+			r_core_cmdf (_core, "aaa");
+		} else if (strstr (action, "Calls")) {
+			r_core_cmdf (_core, "aac");
+		} else if (strstr (action, "ROP")) {
+			r_cons_enable_mouse (false);
+			char *res = r_cons_input ("rop grep: ");
+			if (res) {
+				r_core_cmdf (_core, "\"/R %s\"", res);
+				free (res);
+			}
+			r_cons_enable_mouse (true);
+		} else if (strstr (action, "String")) {
+			r_cons_enable_mouse (false);
+			char *res = r_cons_input ("search string: ");
+			if (res) {
+				r_core_cmdf (_core, "\"/ %s\"", res);
+				free (res);
+			}
+			r_cons_enable_mouse (true);
+		} else if (strstr (action, "Hexpairs")) {
+			r_cons_enable_mouse (false);
+			char *res = r_cons_input ("search hexpairs: ");
+			if (res) {
+				r_core_cmdf (_core, "\"/x %s\"", res);
+				free (res);
+			}
+			r_cons_enable_mouse (true);
+		} else if (strstr (action, "Code")) {
+			r_cons_enable_mouse (false);
+			char *res = r_cons_input ("search code: ");
+			if (res) {
+				r_core_cmdf (_core, "\"/c %s\"", res);
+				free (res);
+			}
+			r_cons_enable_mouse (true);
+		} else if (strstr (action, "Copy")) {
+			r_cons_enable_mouse (false);
+			char *res = r_cons_input ("How many bytes? ");
+			if (res) {
+				r_core_cmdf (_core, "\"y %s\"", res);
+				free (res);
+			}
+			r_cons_enable_mouse (true);
+		} else if (strstr (action, "Write String")) {
+			r_cons_enable_mouse (false);
+			char *res = r_cons_input ("insert string: ");
+			if (res) {
+				r_core_cmdf (_core, "\"w %s\"", res);
+				free (res);
+			}
+			r_cons_enable_mouse (true);
+		} else if (strstr (action, "Write Value")) {
+			r_cons_enable_mouse (false);
+			char *res = r_cons_input ("insert number: ");
+			if (res) {
+				r_core_cmdf (_core, "\"wv %s\"", res);
+				free (res);
+			}
+			r_cons_enable_mouse (true);
+		} else if (strstr (action, "Write Hex")) {
+			r_cons_enable_mouse (false);
+			char *res = r_cons_input ("insert hexpairs: ");
+			if (res) {
+				r_core_cmdf (_core, "\"wx %s\"", res);
+				free (res);
+			}
+			r_cons_enable_mouse (true);
+		} else if (strstr (action, "Calculator")) {
+			r_cons_enable_mouse (false);
+			for (;;) {
+				char *s = r_cons_input ("> ");
+				if (!s || !*s) {
+					free (s);
+					break;
+				}
+				r_core_cmdf (_core, "? %s", s);
+				r_cons_flush ();
+				free (s);
+			}
+			r_cons_enable_mouse (true);
+		} else if (strstr (action, "Assemble")) {
+			r_core_visual_asm (_core, _core->offset);
+		} else if (strstr (action, "Sections")) {
+			addPanelFrame (panels, PANEL_TITLE_SECTIONS, "iSq");
+		} else if (strstr (action, "Close")) {
+			r_core_cmd0 (_core, "o-*");
+		} else if (strstr (action, "Strings")) {
+			addPanelFrame (panels, PANEL_TITLE_STRINGS, "izq");
+		} else if (strstr (action, "Maps")) {
+			addPanelFrame (panels, PANEL_TITLE_MAPS, "dm");
+		} else if (strstr (action, "Modules")) {
+			addPanelFrame (panels, PANEL_TITLE_MODULES, "dmm");
+		} else if (strstr (action, "Backtrace")) {
+			addPanelFrame (panels, PANEL_TITLE_BACKTRACE, "dbt");
+		} else if (strstr (action, "Step")) {
+			r_core_cmd (_core, "ds", 0);
+			r_cons_flush ();
+		} else if (strstr (action, "Step Over")) {
+			r_core_cmd (_core, "dso", 0);
+			r_cons_flush ();
+		} else if (strstr (action, "Continue")) {
+			r_core_cmd (_core, "dc", 0);
+			r_cons_flush ();
+		} else if (strstr (action, "Breakpoints")) {
+			addPanelFrame (panels, PANEL_TITLE_BREAKPOINTS, "db");
+		} else if (strstr (action, "Symbols")) {
+			addPanelFrame (panels, PANEL_TITLE_SYMBOLS, "isq");
+		} else if (strstr (action, "Imports")) {
+			addPanelFrame (panels, PANEL_TITLE_IMPORTS, "iiq");
+		} else if (strstr (action, "Paste")) {
+			r_core_cmd0 (_core, "yy");
+		} else if (strstr (action, "Clipboard")) {
+			addPanelFrame (panels, PANEL_TITLE_CLIPBOARD, "yx");
+		} else if (strstr (action, "io.cache")) {
+			r_core_cmd0 (_core, "e!io.cache");
+		} else if (strstr (action, "Fill")) {
+			r_cons_enable_mouse (false);
+			char *s = r_cons_input ("Fill with: ");
+			r_core_cmdf (_core, "wow %s", s);
+			free (s);
+			r_cons_enable_mouse (true);
+		} else if (strstr (action, "References")) {
+			r_core_cmdf (_core, "aar");
+		} else if (strstr (action, "FcnInfo")) {
+			addPanelFrame (panels, PANEL_TITLE_FCNINFO, "afi");
+		} else if (strstr (action, "Graph")) {
+			r_core_visual_graph (_core, NULL, NULL, true);
+			// addPanelFrame ("Graph", "agf");
+		} else if (strstr (action, "System Shell")) {
+			r_cons_set_raw (0);
+			r_cons_flush ();
+			r_sys_cmd ("$SHELL");
+		} else if (strstr (action, "R2 Shell")) {
+			_core->vmode = false;
+			r_core_visual_prompt_input (_core);
+			_core->vmode = true;
+		} else if (!strcmp (action, "2048")) {
+			r_cons_2048 (panels->can->color);
+		} else if (strstr (action, "License")) {
+			r_cons_message ("Copyright 2006-2016 - pancake - LGPL");
+		} else if (strstr (action, "Fortune")) {
+			char *s = r_core_cmd_str (_core, "fo");
+			r_cons_message (s);
+			free (s);
+		} else if (strstr (action, "Commands")) {
+			r_core_cmd0 (_core, "?;?@?;?$?;???");
+			r_cons_any_key (NULL);
+		} else if (strstr (action, "Colors")) {
+			r_core_cmd0 (_core, "e!scr.color");
+		} else if (strstr (action, "Quit")) {
+			return false;
+		}
+	} else {
+		if (panels->curnode > 0) {
+			zoom (panels);
+		} else {
+			panels->menu_y = 1;
+		}
+	}
+	return true;
+}
+
 R_API RPanels *r_panels_new(RCore* core) {
 	int w, h;
 	if (!_core) {
@@ -798,210 +1139,8 @@ repeat:
 	case ' ':
 	case '\r':
 	case '\n':
-		if (panels->curnode == 0 && panels->menu_y) {
-			const char *action = menus_sub[panels->menu_x][panels->menu_y - 1];
-			if (strstr (action, "New")) {
-				addPanelFrame (panels, PANEL_TITLE_NEWFILES, "o");
-			} else if (strstr (action, "Open")) {
-				/* XXX doesnt autocompletes filenames */
-				r_cons_enable_mouse (false);
-				char *res = r_cons_input ("open file: ");
-				if (res) {
-					if (*res) {
-						r_core_cmdf (core, "o %s", res);
-					}
-					free (res);
-				}
-				r_cons_enable_mouse (true);
-			} else if (strstr (action, "RegisterRefs")) {
-				addPanelFrame (panels, "drr", "drr");
-			} else if (strstr (action, "Registers")) {
-				addPanelFrame (panels, "dr=", "dr=");
-			} else if (strstr (action, "Info")) {
-				addPanelFrame (panels, PANEL_TITLE_INFO, "i");
-			} else if (strstr (action, "Database")) {
-				addPanelFrame (panels, PANEL_TITLE_DATABASE, "k ***");
-			} else if (strstr (action, "Registers")) {
-				if (!havePanel (panels, "Registers")) {
-					addPanelFrame (panels, PANEL_TITLE_REGISTERS, "dr=");
-				}
-			} else if (strstr (action, "About")) {
-				char *s = r_core_cmd_str (core, "?V");
-				r_cons_message (s);
-				free (s);
-			} else if (strstr (action, "Hexdump")) {
-				addPanelFrame (panels, PANEL_TITLE_HEXDUMP, "px 512");
-			} else if (strstr (action, "Disassembly")) {
-				addPanelFrame (panels, PANEL_TITLE_DISASSEMBLY, "pd 128");
-			} else if (strstr (action, "Functions")) {
-				addPanelFrame (panels, PANEL_TITLE_FUNCTIONS, "afl");
-			} else if (strstr (action, "Comments")) {
-				addPanelFrame (panels, PANEL_TITLE_COMMENTS, "CC");
-			} else if (strstr (action, "Entropy")) {
-				addPanelFrame (panels, PANEL_TITLE_ENTROPY, "p=e");
-			} else if (strstr (action, "Function")) {
-				r_core_cmdf (core, "af");
-			} else if (strstr (action, "DRX")) {
-				addPanelFrame (panels, PANEL_TITLE_DRX, "drx");
-			} else if (strstr (action, "Program")) {
-				r_core_cmdf (core, "aaa");
-			} else if (strstr (action, "Calls")) {
-				r_core_cmdf (core, "aac");
-			} else if (strstr (action, "ROP")) {
-				r_cons_enable_mouse (false);
-				char *res = r_cons_input ("rop grep: ");
-				if (res) {
-					r_core_cmdf (core, "\"/R %s\"", res);
-					free (res);
-				}
-				r_cons_enable_mouse (true);
-			} else if (strstr (action, "String")) {
-				r_cons_enable_mouse (false);
-				char *res = r_cons_input ("search string: ");
-				if (res) {
-					r_core_cmdf (core, "\"/ %s\"", res);
-					free (res);
-				}
-				r_cons_enable_mouse (true);
-			} else if (strstr (action, "Hexpairs")) {
-				r_cons_enable_mouse (false);
-				char *res = r_cons_input ("search hexpairs: ");
-				if (res) {
-					r_core_cmdf (core, "\"/x %s\"", res);
-					free (res);
-				}
-				r_cons_enable_mouse (true);
-			} else if (strstr (action, "Code")) {
-				r_cons_enable_mouse (false);
-				char *res = r_cons_input ("search code: ");
-				if (res) {
-					r_core_cmdf (core, "\"/c %s\"", res);
-					free (res);
-				}
-				r_cons_enable_mouse (true);
-			} else if (strstr (action, "Copy")) {
-				r_cons_enable_mouse (false);
-				char *res = r_cons_input ("How many bytes? ");
-				if (res) {
-					r_core_cmdf (core, "\"y %s\"", res);
-					free (res);
-				}
-				r_cons_enable_mouse (true);
-			} else if (strstr (action, "Write String")) {
-				r_cons_enable_mouse (false);
-				char *res = r_cons_input ("insert string: ");
-				if (res) {
-					r_core_cmdf (core, "\"w %s\"", res);
-					free (res);
-				}
-				r_cons_enable_mouse (true);
-			} else if (strstr (action, "Write Value")) {
-				r_cons_enable_mouse (false);
-				char *res = r_cons_input ("insert number: ");
-				if (res) {
-					r_core_cmdf (core, "\"wv %s\"", res);
-					free (res);
-				}
-				r_cons_enable_mouse (true);
-			} else if (strstr (action, "Write Hex")) {
-				r_cons_enable_mouse (false);
-				char *res = r_cons_input ("insert hexpairs: ");
-				if (res) {
-					r_core_cmdf (core, "\"wx %s\"", res);
-					free (res);
-				}
-				r_cons_enable_mouse (true);
-			} else if (strstr (action, "Calculator")) {
-				r_cons_enable_mouse (false);
-				for (;;) {
-					char *s = r_cons_input ("> ");
-					if (!s || !*s) {
-						free (s);
-						break;
-					}
-					r_core_cmdf (core, "? %s", s);
-					r_cons_flush ();
-					free (s);
-				}
-				r_cons_enable_mouse (true);
-			} else if (strstr (action, "Assemble")) {
-				r_core_visual_asm (core, core->offset);
-			} else if (strstr (action, "Sections")) {
-				addPanelFrame (panels, PANEL_TITLE_SECTIONS, "iSq");
-			} else if (strstr (action, "Close")) {
-				r_core_cmd0 (core, "o-*");
-			} else if (strstr (action, "Strings")) {
-				addPanelFrame (panels, PANEL_TITLE_STRINGS, "izq");
-			} else if (strstr (action, "Maps")) {
-				addPanelFrame (panels, PANEL_TITLE_MAPS, "dm");
-			} else if (strstr (action, "Modules")) {
-				addPanelFrame (panels, PANEL_TITLE_MODULES, "dmm");
-			} else if (strstr (action, "Backtrace")) {
-				addPanelFrame (panels, PANEL_TITLE_BACKTRACE, "dbt");
-			} else if (strstr (action, "Step")) {
-				r_core_cmd (core, "ds", 0);
-				r_cons_flush ();
-			} else if (strstr (action, "Step Over")) {
-				r_core_cmd (core, "dso", 0);
-				r_cons_flush ();
-			} else if (strstr (action, "Continue")) {
-				r_core_cmd (core, "dc", 0);
-				r_cons_flush ();
-			} else if (strstr (action, "Breakpoints")) {
-				addPanelFrame (panels, PANEL_TITLE_BREAKPOINTS, "db");
-			} else if (strstr (action, "Symbols")) {
-				addPanelFrame (panels, PANEL_TITLE_SYMBOLS, "isq");
-			} else if (strstr (action, "Imports")) {
-				addPanelFrame (panels, PANEL_TITLE_IMPORTS, "iiq");
-			} else if (strstr (action, "Paste")) {
-				r_core_cmd0 (core, "yy");
-			} else if (strstr (action, "Clipboard")) {
-				addPanelFrame (panels, PANEL_TITLE_CLIPBOARD, "yx");
-			} else if (strstr (action, "io.cache")) {
-				r_core_cmd0 (core, "e!io.cache");
-			} else if (strstr (action, "Fill")) {
-				r_cons_enable_mouse (false);
-				char *s = r_cons_input ("Fill with: ");
-				r_core_cmdf (core, "wow %s", s);
-				free (s);
-				r_cons_enable_mouse (true);
-			} else if (strstr (action, "References")) {
-				r_core_cmdf (core, "aar");
-			} else if (strstr (action, "FcnInfo")) {
-				addPanelFrame (panels, PANEL_TITLE_FCNINFO, "afi");
-			} else if (strstr (action, "Graph")) {
-				r_core_visual_graph (core, NULL, NULL, true);
-				// addPanelFrame ("Graph", "agf");
-			} else if (strstr (action, "System Shell")) {
-				r_cons_set_raw (0);
-				r_cons_flush ();
-				r_sys_cmd ("$SHELL");
-			} else if (strstr (action, "R2 Shell")) {
-				core->vmode = false;
-				r_core_visual_prompt_input (core);
-				core->vmode = true;
-			} else if (!strcmp (action, "2048")) {
-				r_cons_2048 (panels->can->color);
-			} else if (strstr (action, "License")) {
-				r_cons_message ("Copyright 2006-2016 - pancake - LGPL");
-			} else if (strstr (action, "Fortune")) {
-				char *s = r_core_cmd_str (core, "fo");
-				r_cons_message (s);
-				free (s);
-			} else if (strstr (action, "Commands")) {
-				r_core_cmd0 (core, "?;?@?;?$?;???");
-				r_cons_any_key (NULL);
-			} else if (strstr (action, "Colors")) {
-				r_core_cmd0 (core, "e!scr.color");
-			} else if (strstr (action, "Quit")) {
-				goto beach;
-			}
-		} else {
-			if (panels->curnode > 0) {
-				zoom (panels);
-			} else {
-				panels->menu_y = 1;
-			}
+		if (!handleEnterKey ()) {
+			goto exit;
 		}
 		doPanelsRefresh (panels);
 		break;
@@ -1084,84 +1223,10 @@ repeat:
 		r_core_visual_define (core, "");
 		break;
 	case 'j':
-		r_cons_switchbuf(false);
-		panels->panel[panels->curnode].refresh = true;
-		if (panels->panel[panels->curnode].type == PANEL_TYPE_MENU) {
-			if (menus_sub[panels->menu_x][panels->menu_y]) {
-				panels->menu_y++;
-			}
-		} else {
-			if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_DISASSEMBLY)) {
-				int cols = core->print->cols;
-				RAnalFunction *f = NULL;
-				RAsmOp op;
-				f = r_anal_get_fcn_in (core->anal, core->offset, 0);
-				op.size = 1;
-				if (f && f->folded) {
-					cols = core->offset - f->addr + r_anal_fcn_size (f);
-				} else {
-					r_asm_set_pc (core->assembler, core->offset);
-					cols = r_asm_disassemble (core->assembler,
-							&op, core->block, 32);
-				}
-				if (cols < 1) {
-					cols = op.size > 1 ? op.size : 1;
-				}
-				r_core_seek (core, core->offset + cols, 1);
-				r_core_block_read (core);
-			} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_STACK)) {
-				int width = r_config_get_i (core->config, "hex.cols");
-				if (width < 1) {
-					width = 16;
-				}
-				r_config_set_i (core->config, "stack.delta",
-						r_config_get_i (core->config, "stack.delta") - width);
-				panels->panel[panels->curnode].addr += width;
-			} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_REGISTERS)) {
-				if (core->print->cur_enabled) {
-					const int cols = core->dbg->regcols;
-					core->print->cur += cols > 0 ? cols : 3;
-				}
-			} else {
-				panels->panel[panels->curnode].sy++;
-			}
-		}
+		handleDownKey ();
 		break;
 	case 'k':
-		r_cons_switchbuf(false);
-		panels->panel[panels->curnode].refresh = true;
-		if (panels->panel[panels->curnode].type == PANEL_TYPE_MENU) {
-			panels->menu_y--;
-			if (panels->menu_y < 0) {
-				panels->menu_y = 0;
-			}
-		} else {
-			if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_DISASSEMBLY)) {
-				r_core_cmd0 (core, "s-8");
-			} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_STACK)) {
-				int width = r_config_get_i (core->config, "hex.cols");
-				if (width < 1) {
-					width = 16;
-				}
-				r_config_set_i (core->config, "stack.delta",
-						r_config_get_i (core->config, "stack.delta") + width);
-				panels->panel[panels->curnode].addr -= width;
-			} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_REGISTERS)) {
-				if (core->print->cur_enabled) {
-					int cur = core->print->cur;
-					int cols = core->dbg->regcols;
-					cols = cols > 0 ? cols : 3;
-					cur -= cols;
-					if (cur >= 0) {
-						core->print->cur = cur;
-					}
-				}
-			} else {
-				if (panels->panel[panels->curnode].sy > 0) {
-					panels->panel[panels->curnode].sy--;
-				}
-			}
-		}
+		handleUpKey ();
 		break;
 	case '_':
 		r_core_visual_hud (core);
@@ -1233,38 +1298,10 @@ repeat:
 		}
 		break;
 	case 'h':
-		r_cons_switchbuf(false);
-		panels->panel[panels->curnode].refresh = true;
-		if (core->print->cur_enabled) {
-			cursorLeft (core);
-		} else {
-			if (panels->curnode == 0) {
-				if (panels->menu_x) {
-					panels->menu_x--;
-					panels->menu_y = panels->menu_y? 1: 0;
-				}
-			} else {
-				if (panels->panel[panels->curnode].sx > 0) {
-					panels->panel[panels->curnode].sx--;
-				}
-			}
-		}
+		handleLeftKey ();
 		break;
 	case 'l':
-		r_cons_switchbuf(false);
-		panels->panel[panels->curnode].refresh = true;
-		if (core->print->cur_enabled) {
-			cursorRight (core);
-		} else {
-			if (panels->curnode == 0) {
-				if (menus[panels->menu_x + 1]) {
-					panels->menu_x++;
-					panels->menu_y = panels->menu_y ? 1: 0;
-				}
-			} else {
-				panels->panel[panels->curnode].sx++;
-			}
-		}
+		handleRightKey ();
 		break;
 	case 'V':
 		/* copypasta from visual.c */
@@ -1383,7 +1420,7 @@ repeat:
 	case 'q':
 	case -1: // EOF
 		if (panels->menu_y < 1) {
-			goto beach;
+			goto exit;
 		}
 		panels->menu_y = 0;
 		break;
@@ -1400,7 +1437,7 @@ repeat:
 		break;
 	}
 	goto repeat;
-beach:
+exit:
 	r_config_set_i (core->config, "scr.color", panels->can->color);
 	r_config_set_i (core->config, "asm.comments", asm_comments);
 	r_config_set_i (core->config, "asm.bytes", asm_bytes);
