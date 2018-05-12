@@ -3856,10 +3856,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			break;
 		case 'S':
-			if (!fcn) {
-				break;
+			if (fcn) {
+				graph_single_step_over (core, g);
 			}
-			graph_single_step_over (core, g);
 			break;
 		case 'x':
 		case 'X':
