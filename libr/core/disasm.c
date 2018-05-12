@@ -590,7 +590,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->filter = r_config_get_i (core->config, "asm.filter");
 	ds->interactive = r_config_get_i (core->config, "scr.interactive");
 	ds->jmpsub = r_config_get_i (core->config, "asm.jmpsub");
-	ds->varsub = r_config_get_i (core->config, "asm.varsub");
+	ds->varsub = r_config_get_i (core->config, "asm.var.sub");
 	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
 	core->parser->localvar_only = r_config_get_i (core->config, "asm.var.subonly");
 	core->parser->retleave_asm = NULL;
