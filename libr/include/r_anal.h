@@ -585,6 +585,7 @@ typedef struct r_anal_callbacks_t {
 
 typedef struct r_anal_options_t {
 	int depth;
+	bool vars; //analyze local var and arguments
 	int cjmpref;
 	int jmpref;
 	int jmpabove;

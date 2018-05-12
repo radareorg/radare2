@@ -205,6 +205,13 @@ static int cb_analafterjmp(void *user, void *data) {
 	return true;
 }
 
+static int cb_analvars(void *user, void *data) {
+        RCore *core = (RCore*) user;
+        RConfigNode *node = (RConfigNode*) data;
+        core->anal->opt.vars = node->i_value;
+        return true;
+}
+
 static int cb_analstrings(void *user, void *data) {
 	RCore *core = (RCore*) user;
 	RConfigNode *node = (RConfigNode*) data;
@@ -2361,7 +2368,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("anal.hasnext", "false", "Continue analysis after each function");
 	SETPREF ("anal.esil", "false", "Use the new ESIL code analysis");
 	SETCB ("anal.strings", "false", &cb_analstrings, "Identify and register strings during analysis (aar only)");
-	SETPREF ("anal.vars", "true",  "Analyze local variables and arguments");
+	SETCB ("anal.vars", "true", &cb_analvars, "Analyze local variables and arguments");
 	SETPREF ("anal.vinfun", "true",  "Search values in functions (aav) (false by default to only find on non-code)");
 	SETPREF ("anal.vinfunrange", "false",  "Search values outside function ranges (requires anal.vinfun=false)\n");
 	SETCB ("anal.nopskip", "true", &cb_analnopskip, "Skip nops at the beginning of functions");

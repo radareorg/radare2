@@ -3228,12 +3228,6 @@ R_API int r_core_anal_all(RCore *core) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			if (r_config_get_i (core->config, "anal.vars")) {
-				r_anal_var_delete_all (core->anal, fcni->addr, 'r');
-				r_anal_var_delete_all (core->anal, fcni->addr, 'b');
-				r_anal_var_delete_all (core->anal, fcni->addr, 's');
-				fcn_callconv (core, fcni);
-			}
 			if (!strncmp (fcni->name, "sym.", 4) || !strncmp (fcni->name, "main", 4)) {
 				fcni->type = R_ANAL_FCN_TYPE_SYM;
 			}

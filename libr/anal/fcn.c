@@ -975,7 +975,7 @@ repeat:
 		}
 		// check if opcode is in another basic block
 		// in that case we break
-		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + addrbytes * idx, len - addrbytes * idx, 0)) < 1) {
+		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + addrbytes * idx, len - addrbytes * idx, R_ANAL_OP_MASK_ALL)) < 1) {
 			VERBOSE_ANAL eprintf ("Unknown opcode at 0x%08"PFMT64x "\n", addr + idx);
 			if (!idx) {
 				gotoBeach (R_ANAL_RET_END);
@@ -1065,30 +1065,10 @@ repeat:
 		case R_ANAL_STACK_RESET:
 			bb->stackptr = 0;
 			break;
-		// TODO: use fcn->maxstack to know our stackframe
-		case R_ANAL_STACK_SET:
-			if ((int) op.ptr > 0) {
-				varname = get_varname (anal, fcn, 'b', ARGPREFIX, R_ABS (op.ptr));
-			} else {
-				varname = get_varname (anal, fcn, 'b', VARPREFIX, R_ABS (op.ptr));
-			}
-			r_anal_var_add (anal, fcn->addr, 1, op.ptr, 'b', NULL, anal->bits / 8, varname);
-			r_anal_var_access (anal, fcn->addr, 'b', 1, op.ptr, 1, op.addr);
-			free (varname);
-			break;
-		// TODO: use fcn->maxstack to know our stackframe
-		case R_ANAL_STACK_GET:
-			if (((int) op.ptr) > 0) {
-				varname = get_varname (anal, fcn, 'b', ARGPREFIX, R_ABS (op.ptr));
-			} else {
-				varname = get_varname (anal, fcn, 'b', VARPREFIX, R_ABS (op.ptr));
-			}
-			r_anal_var_add (anal, fcn->addr, 1, op.ptr, 'b', NULL, anal->bits / 8, varname);
-			r_anal_var_access (anal, fcn->addr, 'b', 1, op.ptr, 0, op.addr);
-			free (varname);
-			break;
 		}
-
+		if (anal->opt.vars) {
+			r_anal_fcn_fill_args (anal, fcn, &op);
+		}
 		if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
 			// swapped parameters wtf
 			r_anal_xrefs_set (anal, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA);

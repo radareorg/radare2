@@ -2665,9 +2665,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		//r_core_anal_undefine (core, core->offset);
 		r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
 		fcn = r_anal_get_fcn_in (core->anal, addr, 0);
-		if (fcn && r_config_get_i (core->config, "anal.vars")) {
-			fcn_callconv (core, fcn);
-		}
 		if (fcn) {
 			/* ensure we use a proper name */
 			setFunctionName (core, addr, fcn->name, false);
