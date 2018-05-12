@@ -2474,7 +2474,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.linesright", "false", "Show lines before opcode instead of offset");
 	SETPREF ("asm.lineswide", "false", "Put a space between lines");
 	SETICB ("asm.lineswidth", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
-	SETICB ("asm.minvalsub", 0x100, &cb_asmminvalsub, "Minimum value to substitute in instructions (asm.varsub)");
+	SETICB ("asm.minvalsub", 0x100, &cb_asmminvalsub, "Minimum value to substitute in instructions (asm.var.sub)");
 	SETPREF ("asm.middle", "false", "Allow disassembling jumps in the middle of an instruction");
 	SETPREF ("asm.noisy", "true", "Show comments considered noisy but possibly useful");
 	SETPREF ("asm.offset", "true", "Show offsets at disassembly");
@@ -2498,9 +2498,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.capitalize", "false", "Use camelcase at disassembly");
 	SETPREF ("asm.vars", "true", "Show local function variables in disassembly");
 	SETPREF ("asm.varxs", "false", "Show accesses of local variables");
-	SETPREF ("asm.varsub", "true", "Substitute variables in disassembly");
+	SETPREF ("asm.var.sub", "true", "Substitute variables in disassembly");
 	SETI ("asm.varsum", 0, "Show variables summary instead of full list in disasm (0, 1, 2)");
-	SETPREF ("asm.varsub_only", "true", "Substitute the entire variable expression with the local variable name (e.g. [local10h] instead of [ebp+local10h])");
+	SETPREF ("asm.var.subonly", "true", "Substitute the entire variable expression with the local variable name (e.g. [local10h] instead of [ebp+local10h])");
 	SETPREF ("asm.relsub", "true", "Substitute pc relative expressions in disasm");
 	SETPREF ("asm.cmt.fold", "false", "Fold comments, toggle with Vz");
 	SETPREF ("asm.family", "false", "Show family name in disasm");

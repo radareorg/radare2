@@ -5147,10 +5147,10 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_cons_printf ("0x%" PFMT64x "\n", ref->addr);
 				}
 			} else if (input[1] == 'j') { // "axtj"
-				bool asm_varsub = r_config_get_i (core->config, "asm.varsub");
+				bool asm_varsub = r_config_get_i (core->config, "asm.var.sub");
 				core->parser->pseudo = r_config_get_i (core->config, "asm.pseudo");
 				core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
-				core->parser->localvar_only = r_config_get_i (core->config, "asm.varsub_only");
+				core->parser->localvar_only = r_config_get_i (core->config, "asm.var.subonly");
 				r_cons_printf ("[");
 				r_list_foreach (list, iter, ref) {
 					r_core_read_at (core, ref->addr, buf, size);
@@ -5209,10 +5209,10 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				char str[512];
 				RAnalFunction *fcn;
 				char *comment;
-				bool asm_varsub = r_config_get_i (core->config, "asm.varsub");
+				bool asm_varsub = r_config_get_i (core->config, "asm.var.sub");
 				core->parser->pseudo = r_config_get_i (core->config, "asm.pseudo");
 				core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
-				core->parser->localvar_only = r_config_get_i (core->config, "asm.varsub_only");
+				core->parser->localvar_only = r_config_get_i (core->config, "asm.var.subonly");
 				if (core->parser->relsub) {
 					core->parser->relsub_addr = addr;
 				}
