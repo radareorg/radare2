@@ -239,3 +239,4 @@ There's more than one way to skin a cat
 git pull now
 git checkout hamster
 Noot noot
+This is an unregistered copy.
