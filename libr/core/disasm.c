@@ -711,7 +711,7 @@ static RDisasmState * ds_init(RCore *core) {
 
 	ds->showpayloads = r_config_get_i (ds->core->config, "asm.payloads");
 	ds->showrelocs = r_config_get_i (core->config, "bin.relocs");
-	ds->min_ref_addr = r_config_get_i (core->config, "asm.minvalsub");
+	ds->min_ref_addr = r_config_get_i (core->config, "asm.var.submin");
 
 	if (ds->show_flag_in_bytes) {
 		ds->show_flags = 0;
