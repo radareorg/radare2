@@ -2497,7 +2497,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.ucase", "false", "Use uppercase syntax at disassembly");
 	SETPREF ("asm.capitalize", "false", "Use camelcase at disassembly");
 	SETPREF ("asm.var", "true", "Show local function variables in disassembly");
-	SETPREF ("asm.varxs", "false", "Show accesses of local variables");
+	SETPREF ("asm.var.access", "false", "Show accesses of local variables");
 	SETPREF ("asm.var.sub", "true", "Substitute variables in disassembly");
 	SETI ("asm.var.summary", 0, "Show variables summary instead of full list in disasm (0, 1, 2)");
 	SETPREF ("asm.var.subonly", "true", "Substitute the entire variable expression with the local variable name (e.g. [local10h] instead of [ebp+local10h])");
