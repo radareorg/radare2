@@ -141,14 +141,16 @@ static void emit_syscall_args(REgg *egg, int nargs) {
 }
 
 static void emit_string(REgg *egg, const char *dstvar, const char *str, int j) {
-	char *p, *s, str2[64];
-	int i, len, oj = j;
+	char *p, str2[64];
+	int i, oj = j;
 
-	len = strlen (str);
-	s = malloc (len+4);
-	if (!s) return;
+	int len = strlen (str);
+	char *s = calloc (1, len + 8);
+	if (!s) {
+		return;
+	}
 	memcpy (s, str, len);
-	memset (s+len, 0, 4);
+	memset (s + len, 0, 4);
 
 	/* XXX: Hack: Adjust offset in R_BP correctly for 64b addresses */
 #define BPOFF R_SZ-4
@@ -159,7 +161,7 @@ static void emit_string(REgg *egg, const char *dstvar, const char *str, int j) {
 		ut32 *n = (ut32 *)(s+i-4);
 		p = r_egg_mkvar (egg, str2, dstvar, i+BPOFF);
 		if (attsyntax) r_egg_printf (egg, "  movl $0x%x, %s\n", M32(*n), p);
-		else r_egg_printf (egg, "  mov %s, 0x%x\n", p, M32(*n));
+		else r_egg_printf (egg, "  mov dword %s, 0x%x\n", p, M32(*n));
 		free (p);
 		j -= 4;
 	}
@@ -168,7 +170,7 @@ static void emit_string(REgg *egg, const char *dstvar, const char *str, int j) {
 	/* zero */
 	p = r_egg_mkvar (egg, str2, dstvar, i+BPOFF);
 	if (attsyntax) r_egg_printf (egg, "  movl $0, %s\n", p);
-	else r_egg_printf (egg, "  mov %s, 0\n", p);
+	else r_egg_printf (egg, "  mov dword %s, 0\n", p);
 	free (p);
 
 	/* store pointer */
