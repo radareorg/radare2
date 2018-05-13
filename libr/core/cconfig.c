@@ -324,7 +324,7 @@ static int cb_analijmp(void *user, void *data) {
 	return true;
 }
 
-static int cb_asmminvalsub(void *user, void *data) {
+static int cb_asmvarsubmin(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->parser->minval = node->i_value;
@@ -2474,7 +2474,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.linesright", "false", "Show lines before opcode instead of offset");
 	SETPREF ("asm.lineswide", "false", "Put a space between lines");
 	SETICB ("asm.lineswidth", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
-	SETICB ("asm.minvalsub", 0x100, &cb_asmminvalsub, "Minimum value to substitute in instructions (asm.var.sub)");
+	SETICB ("asm.var.submin", 0x100, &cb_asmvarsubmin, "Minimum value to substitute in instructions (asm.var.sub)");
 	SETPREF ("asm.middle", "false", "Allow disassembling jumps in the middle of an instruction");
 	SETPREF ("asm.noisy", "true", "Show comments considered noisy but possibly useful");
 	SETPREF ("asm.offset", "true", "Show offsets at disassembly");
@@ -2497,7 +2497,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.ucase", "false", "Use uppercase syntax at disassembly");
 	SETPREF ("asm.capitalize", "false", "Use camelcase at disassembly");
 	SETPREF ("asm.var", "true", "Show local function variables in disassembly");
-	SETPREF ("asm.varxs", "false", "Show accesses of local variables");
+	SETPREF ("asm.var.access", "false", "Show accesses of local variables");
 	SETPREF ("asm.var.sub", "true", "Substitute variables in disassembly");
 	SETI ("asm.var.summary", 0, "Show variables summary instead of full list in disasm (0, 1, 2)");
 	SETPREF ("asm.var.subonly", "true", "Substitute the entire variable expression with the local variable name (e.g. [local10h] instead of [ebp+local10h])");

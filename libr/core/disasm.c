@@ -168,7 +168,7 @@ typedef struct {
 	int show_utf8;
 	int lines;
 	int oplen;
-	bool show_varxs;
+	bool show_varaccess;
 	bool show_vars;
 	int show_varsum;
 	int midflags;
@@ -596,7 +596,7 @@ static RDisasmState * ds_init(RCore *core) {
 	core->parser->retleave_asm = NULL;
 	ds->show_vars = r_config_get_i (core->config, "asm.var");
 	ds->show_varsum = r_config_get_i (core->config, "asm.var.summary");
-	ds->show_varxs = r_config_get_i (core->config, "asm.varxs");
+	ds->show_varaccess = r_config_get_i (core->config, "asm.var.access");
 	ds->maxrefs = r_config_get_i (core->config, "asm.maxrefs");
 	ds->show_lines = r_config_get_i (core->config, "asm.lines");
 	ds->linesright = r_config_get_i (core->config, "asm.linesright");
@@ -711,7 +711,7 @@ static RDisasmState * ds_init(RCore *core) {
 
 	ds->showpayloads = r_config_get_i (ds->core->config, "asm.payloads");
 	ds->showrelocs = r_config_get_i (core->config, "bin.relocs");
-	ds->min_ref_addr = r_config_get_i (core->config, "asm.minvalsub");
+	ds->min_ref_addr = r_config_get_i (core->config, "asm.var.submin");
 
 	if (ds->show_flag_in_bytes) {
 		ds->show_flags = 0;
@@ -3199,7 +3199,7 @@ static void ds_print_dwarf(RDisasmState *ds) {
 }
 
 static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
-	if (ds->show_varxs) {
+	if (ds->show_varaccess) {
 		// XXX asume analop is filled
 		//r_anal_op (core->anal, &ds->analop, ds->at, core->block+i, core->blocksize-i);
 		int v = ds->analop.ptr;
