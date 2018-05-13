@@ -3157,6 +3157,10 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	RAnalFunction *f = NULL;
 	RAnalFunction **fcn = grd->fcn;
 
+	if (!fcn) {
+		return agraph_print (g, grd->fs, core, NULL);
+	}
+
 	// allow to change the current function during debugging
 	if (g->is_instep && core->io->debug) {
 		// seek only when the graph node changes
@@ -3198,7 +3202,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		r_cons_flush ();
 	}
 
-	return agraph_print (g, grd->fs, core, fcn ? *fcn: NULL);
+	return agraph_print (g, grd->fs, core, *fcn);
 }
 
 static void agraph_toggle_speed(RAGraph *g, RCore *core) {
@@ -3816,13 +3820,15 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 #if 1
 // disabled for now, ultraslow in most situations
 		case '>':
-			if (r_cons_yesno ('y', "Compute function callgraph? (Y/n)")) {
+			if (fcn && r_cons_yesno ('y', "Compute function callgraph? (Y/n)")) {
 				r_core_cmd0 (core, "ag-;.agc* $$;.axtg $$;aggi");
 			}
 			break;
 		case '<':
 			// r_core_visual_refs (core, true);
-			r_core_cmd0 (core, "ag-;.axtg $$;aggi");
+			if (fcn) {
+				r_core_cmd0 (core, "ag-;.axtg $$;aggi");
+			}
 			break;
 #endif
 		case 'G':
@@ -3839,6 +3845,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			break;
 		case 's':
+			if (!fcn) {
+				break;
+			}
 			key_s = r_config_get (core->config, "key.s");
 			if (key_s && *key_s) {
 				r_core_cmd0 (core, key_s);
@@ -3847,7 +3856,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			break;
 		case 'S':
-			graph_single_step_over (core, g);
+			if (fcn) {
+				graph_single_step_over (core, g);
+			}
 			break;
 		case 'x':
 		case 'X':
@@ -3945,6 +3956,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			visual_offset (g, core);
 			break;
 		case 'O':
+			if (!fcn) {
+				break;
+			}
 			disMode = (disMode + 1) % 3;
 			applyDisMode (core);
 			g->need_reload_nodes = true;
@@ -4032,12 +4046,16 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			break;
 		case '(':
-			r_core_cmd0 (core, "wao recj@B:-1");
-			g->need_reload_nodes = true;
+			if (fcn) {
+				r_core_cmd0 (core, "wao recj@B:-1");
+				g->need_reload_nodes = true;
+			}
 			break;
 		case ')':
-			rotateAsmemu (core);
-			g->need_reload_nodes = true;
+			if (fcn) {
+				rotateAsmemu (core);
+				g->need_reload_nodes = true;
+			}
 			break;
 		case 'd':
 			{

@@ -5745,6 +5745,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 			r_core_visual_graph (core, core->graph, NULL, true);
 			r_config_set_i (core->config, "scr.interactive", ov);
 			r_cons_show_cursor (true);
+			r_cons_enable_mouse (false);
 		} else {
 			eprintf ("This graph contains no nodes\n");
 		}
@@ -5806,6 +5807,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		case 'v':// "agfv"
 			eprintf ("\rRendering graph...");
 			r_core_visual_graph (core, NULL, NULL, 1);
+			r_cons_enable_mouse (false);
 			r_cons_show_cursor (true);
 			break;
 		case 't':// "agft" - tiny graph
@@ -5890,7 +5892,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	case 'C': // "agC"
 		r_core_anal_callgraph (core, UT64_MAX, input[1] == 'j'? 2 : 1);
 		break;
-	case 'r': // "refs"
+	case 'r': // agr "refs"
 		switch (input[1]) {
 		case 'v':
 		case 't':
@@ -5916,6 +5918,38 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			break;
 		case 0:
 			r_core_cmd0 (core, "ag-; .agr* $$; agg;");
+			break;
+		default:
+			eprintf ("Usage: see ag?\n");
+			break;
+		}
+		break;
+	case 'x': // agx "cross refs"
+		switch (input[1]) {
+		case 'v':
+		case 't':
+		case 'd':
+		case 'J':
+		case 'j':
+		case 'g':
+		case 'k':
+		case 'w':
+		case ' ': {
+			char *cmd = r_str_newf ("ag-; .agx* %lld; agg%c;", 
+				input[2] ? r_num_math (core->num, input + 2) : core->offset, input[1]);
+			if (cmd && *cmd) {
+				r_core_cmd0 (core, cmd);
+			}
+			free (cmd);
+			break;
+			}
+		case '*': {
+			ut64 addr = input[2] ? r_num_math (core->num, input + 2) : core->offset;
+			r_core_anal_codexrefs (core, addr);
+			}
+			break;
+		case 0:
+			r_core_cmd0 (core, "ag-; .agx* $$; agg;");
 			break;
 		default:
 			eprintf ("Usage: see ag?\n");
