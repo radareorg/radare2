@@ -223,8 +223,8 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 			r_bin_filter_classes (o->classes);
 		}
 		// cache addr=class+method
-		if (cp->classes) {
-			RList *klasses = cp->classes (binfile);
+		if (o->classes) {
+			RList *klasses = o->classes;
 			RListIter *iter, *iter2;
 			RBinClass *klass;
 			RBinSymbol *method;
