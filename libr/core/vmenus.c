@@ -2200,11 +2200,7 @@ static void variable_rename (RCore *core, ut64 addr, int vindex, const char *nam
 	ut64 a_tmp = core->offset;
 	int i = 0;
 	RListIter *iter;
-	// arguments.
-	RList* list2 = r_anal_var_list (core->anal, fcn, true);
-	// variables.
-	RList* list = r_anal_var_list (core->anal, fcn, false);
-	r_list_join (list, list2);
+	RList *list = r_anal_var_all_list (core->anal, fcn);
 	RAnalVar* var;
 
 	r_list_foreach (list, iter, var) {
@@ -2217,7 +2213,6 @@ static void variable_rename (RCore *core, ut64 addr, int vindex, const char *nam
 		++i;
 	}
 	r_list_free (list);
-	r_list_free (list2);
 }
 
 // In visual mode, display function list
@@ -2261,11 +2256,7 @@ static ut64 var_variables_show(RCore* core, int idx, int *vindex, int show) {
 	int window;
 	int wdelta = (idx > 5) ? idx - 5 : 0;
 	RListIter *iter;
-	// arguments.
-	RList* list2 = r_anal_var_list (core->anal, fcn, true);
-	// variables.
-	RList* list = r_anal_var_list (core->anal, fcn, false);
-	r_list_join (list, list2);
+	RList *list = r_anal_var_all_list (core->anal, fcn);
 	RAnalVar* var;
 	// Adjust the window size automatically.
 	(void)r_cons_get_size (&window);
@@ -2298,7 +2289,6 @@ static ut64 var_variables_show(RCore* core, int idx, int *vindex, int show) {
 		++i;
 	}
 	r_list_free (list);
-	r_list_free (list2);
 	return addr;
 }
 

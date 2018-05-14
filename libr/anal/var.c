@@ -8,13 +8,13 @@
 #define DB a->sdb_fcns
 
 struct VarType {
-	char kind;
+	bool isarg;
 	char *type;
 	int size;
 	char *name;
 };
 
-#define SDB_VARTYPE_FMT "czdz"
+#define SDB_VARTYPE_FMT "bzdz"
 
 #define EXISTS(x, ...) snprintf (key, sizeof (key) - 1, x, ## __VA_ARGS__), sdb_exists (DB, key)
 #define SETKEY(x, ...) snprintf (key, sizeof (key) - 1, x, ## __VA_ARGS__);
@@ -68,7 +68,8 @@ R_API bool r_anal_var_display(RAnal *anal, int delta, char kind, const char *typ
 	return true;
 }
 
-R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, const char *name) {
+R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size,
+		bool isarg, const char *name) {
 	if (!a) {
 		return false;
 	}
@@ -87,7 +88,7 @@ R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, 
 		eprintf ("Invalid var kind '%c'\n", kind);
 		return false;
 	}
-	const char *var_def = sdb_fmt ("%c,%s,%d,%s", kind, type, size, name);
+	const char *var_def = sdb_fmt ("%d,%s,%d,%s", isarg, type, size, name);
 	if (scope > 0) {
 		const char *sign = "";
 		if (delta < 0) {
@@ -117,7 +118,8 @@ R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, 
 	return true;
 }
 
-R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, const char *name) {
+R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, 
+		bool isarg, const char *name) {
 	if (!a) {
 		return false;
 	}
@@ -154,7 +156,7 @@ R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind
 		eprintf ("Invalid var kind '%c'\n", kind);
 		return false;
 	}
-	const char *var_def = sdb_fmt ("%c,%s,%d,%s", kind, type, size, name);
+	const char *var_def = sdb_fmt ("%d,%s,%d,%s", isarg, type, size, name);
 	if (scope > 0) {
 		char *sign = delta >= 0 ? "": "_";
 		/* local variable */
@@ -267,10 +269,9 @@ R_API bool r_anal_var_delete_byname(RAnal *a, RAnalFunction *fcn, int kind, cons
 						if (p) {
 							p = strchr (p + 1, ',');
 							if (p) {
-								int mykind = vardef[0];
 								if (!strcmp (p + 1, name)) {
 									return r_anal_var_delete (a, fcn->addr,
-										mykind, 1, delta);
+										kind, 1, delta);
 								}
 							}
 						}
@@ -344,6 +345,7 @@ R_API RAnalVar *r_anal_var_get(RAnal *a, ut64 addr, char kind, int scope, int de
 	av->addr = fcn->addr;
 	av->scope = scope;
 	av->delta = delta;
+	av->isarg = vt.isarg;
 	av->name = vt.name? strdup (vt.name): strdup ("unkown_var");
 	av->size = vt.size;
 	av->type = vt.type? strdup (vt.type): strdup ("unkown_type");
@@ -494,7 +496,7 @@ R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type) {
 			count[1]++;
 			continue;
 		}
-		count[(kind == R_ANAL_VAR_KIND_BPV && var->delta > 0) || (kind == R_ANAL_VAR_KIND_SPV && var->delta > fcn->maxstack)]++;
+		count[var->isarg]++;
 	}
 	r_list_free (list);
 	return count[type];
@@ -583,6 +585,7 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dyn
 				av->delta = delta;
 				av->kind = kind;
 				av->name = strdup (vt.name);
+				av->isarg = vt.isarg;
 				av->size = vt.size;
 				av->type = strdup (vt.type);
 				r_list_append (list, av);
@@ -684,7 +687,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 			}
 				break;
 			case R_ANAL_VAR_KIND_SPV:
-				if (var->delta < fcn->maxstack) {
+				if (var->isarg) {
 					anal->cb_printf ("{\"name\":\"%s\","
 						"\"kind\":\"arg\",\"type\":\"%s\",\"ref\":"
 						"{\"base\":\"%s\", \"offset\":%"PFMT64d "}}",
@@ -729,7 +732,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 				}
 				break;
 			case R_ANAL_VAR_KIND_SPV:
-				if (var->delta < fcn->maxstack) {
+				if (!var->isarg) {
 					anal->cb_printf ("var %s %s @ %s+0x%x\n",
 						var->type, var->name,
 						anal->reg->name[R_REG_NAME_SP],

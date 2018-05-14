@@ -52,13 +52,13 @@ static void type_match_var(RAnal *anal , Sdb *trace, ut64 addr,const char *type,
 		if (bp_name) {
 			int bp_idx = sdb_array_get_num (trace, key, i, 0) - bp;
 			if ((v = r_anal_var_get (anal, addr, R_ANAL_VAR_KIND_BPV, 1, bp_idx))) {
-				r_anal_var_retype (anal, addr, 1, bp_idx, R_ANAL_VAR_KIND_BPV, type, -1, v->name);
+				r_anal_var_retype (anal, addr, 1, bp_idx, R_ANAL_VAR_KIND_BPV, type, -1, v->isarg, v->name);
 				r_anal_var_free (v);
 			}
 		}
 		int sp_idx = sdb_array_get_num (trace, key, i, 0) - sp;
 		if ((v = r_anal_var_get (anal, addr, R_ANAL_VAR_KIND_SPV, 1, sp_idx))) {
-			r_anal_var_retype (anal, addr, 1, sp_idx, R_ANAL_VAR_KIND_SPV, type, -1, v->name);
+			r_anal_var_retype (anal, addr, 1, sp_idx, R_ANAL_VAR_KIND_SPV, type, -1, v->isarg, v->name);
 			r_anal_var_free (v);
 		}
 	}
