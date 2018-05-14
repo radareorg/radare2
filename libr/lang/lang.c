@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_lang.h>
 #include <r_util.h>
@@ -8,6 +8,7 @@ R_LIB_VERSION(r_lang);
 #include "p/pipe.c"  // hardcoded
 #include "p/vala.c"  // hardcoded
 #include "p/rust.c"  // hardcoded
+#include "p/zig.c"   // hardcoded
 #include "p/c.c"     // hardcoded
 #include "p/lib.c"
 #if __UNIX__
@@ -50,6 +51,7 @@ R_API RLang *r_lang_new() {
 #endif
 	r_lang_add (lang, &r_lang_plugin_vala);
 	r_lang_add (lang, &r_lang_plugin_rust);
+	r_lang_add (lang, &r_lang_plugin_zig);
 	r_lang_add (lang, &r_lang_plugin_pipe);
 	r_lang_add (lang, &r_lang_plugin_lib);
 

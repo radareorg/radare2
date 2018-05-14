@@ -753,6 +753,12 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 					r_lang_run_file (core->lang, cmd);
 					free (cmd);
 					ret = 1;
+				} else if (!strcmp (ext, "zig")) {
+					char *cmd = cmdstr ("zig run");
+					r_lang_use (core->lang, "pipe");
+					r_lang_run_file (core->lang, cmd);
+					free (cmd);
+					ret = 1;
 				} else if (!strcmp (ext, "d")) {
 					char *cmd = cmdstr ("dmd -run");
 					r_lang_use (core->lang, "pipe");

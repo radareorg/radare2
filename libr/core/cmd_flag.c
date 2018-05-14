@@ -213,7 +213,7 @@ static int flag_to_flag(RCore *core, const char *glob) {
 
 static void cmd_flag_tags (RCore *core, const char *input) {
 	char mode = input[1];
-	for (input; *input && !IS_WHITESPACE (*input); input++) {}
+	for (; *input && !IS_WHITESPACE (*input); input++) {}
 	char *inp = strdup (input);
 	char *arg = r_str_trim (inp);
 	if (!*arg) {
