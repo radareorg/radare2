@@ -1,7 +1,7 @@
 project('radare2', 'c', meson_version: '>=0.46.0')
 
 py3_exe = import('python3').find_python()
-git_exe = find_program('git')
+git_exe = find_program('git', required: false)
 pkgconfig_mod = import('pkgconfig')
 glob_cmd = [py3_exe, '-c', 'from sys import argv; print(";".join(__import__("glob").glob(argv[1])))']
 
@@ -26,28 +26,40 @@ if meson.is_subproject()
   endif
 endif
 
-# Get version_commit
-version_commit = run_command(git_exe, '-C', repo, 'rev-list', '--all', '--count')
-if version_commit.returncode() != 0
-  version_commit = 0
-else
-  version_commit = version_commit.stdout().strip()
+version_commit = ''
+gittap = ''
+gittip = 'unknown'
+
+if git_exe.found()
+  # Get version_commit
+  git_rev_list = run_command(git_exe, '-C', repo, 'rev-list', '--all', '--count')
+  if git_rev_list.returncode() == 0
+    version_commit = git_rev_list.stdout().strip()
+  endif
+  
+  # Get gittap
+  git_describe = run_command(git_exe, '-C', repo, 'describe', '--tags', '--match', '[0-9]*')
+  if git_describe.returncode() == 0
+    gittap = git_describe.stdout().strip()
+  endif
+  
+  # Get gittip
+  git_rev_parse = run_command(git_exe, '-C', repo, 'rev-parse', 'HEAD')
+  if git_rev_parse.returncode() == 0
+    gittip = git_rev_parse.stdout().strip()
+  endif
 endif
 
-# Get gittap
-gittap  = run_command(git_exe, '-C', repo, 'describe', '--tags', '--match', '[0-9]*')
-if gittap.returncode() != 0
-  gittap = ''
-else
-  gittap = gittap.stdout().strip()
+if get_option('r2_version_commit') != ''
+  version_commit = get_option('r2_version_commit')
 endif
 
-# Get gittip
-gittip  = run_command(git_exe, '-C', repo, 'rev-parse', 'HEAD')
-if gittip.returncode() != 0
-  gittip = 'unknown'
-else
-  gittip = gittip.stdout().strip()
+if get_option('r2_gittap') != ''
+  gittap = get_option('r2_gittap')
+endif
+
+if get_option('r2_gittip') != ''
+  gittip = get_option('r2_gittip')
 endif
 
 # Get current date
