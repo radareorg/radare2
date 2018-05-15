@@ -1763,10 +1763,10 @@ R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt) {
 	ut64 from = r_config_get_i (core->config, "graph.from");
 	ut64 to = r_config_get_i (core->config, "graph.to");
 
-	if (fmt == R_CALLGRAPH_FORMAT_JSON) {
+	if (fmt == R_GRAPH_FORMAT_JSON) {
 		r_cons_printf ("[");
 	}
-	if (fmt == R_CALLGRAPH_FORMAT_GML || fmt == R_CALLGRAPH_FORMAT_GMLFCN) {
+	if (fmt == R_GRAPH_FORMAT_GML || fmt == R_GRAPH_FORMAT_GMLFCN) {
 		r_cons_printf ("graph\n[\n"
 				"hierarchic  1\n"
 				"label  \"\"\n"
@@ -1792,7 +1792,7 @@ repeat:
 		RList *refs = r_anal_fcn_get_refs_sorted (core->anal, fcni);
 		if (!fmt) {
 			r_cons_printf ("0x%08"PFMT64x"\n", fcni->addr);
-		} else if (fmt == R_CALLGRAPH_FORMAT_GML || fmt == R_CALLGRAPH_FORMAT_GMLFCN) {
+		} else if (fmt == R_GRAPH_FORMAT_GML || fmt == R_GRAPH_FORMAT_GMLFCN) {
 			RFlagItem *flag = r_flag_get_i (core->flags, fcni->addr);
 			if (iteration == 0) {
 				char *msg = flag? strdup (flag->name): r_str_newf ("0x%08"PFMT64x, fcni->addr);
@@ -1802,7 +1802,7 @@ repeat:
 						"  ]\n", fcni->addr - base, msg);
 				free (msg);
 			}
-		} else if (fmt == R_CALLGRAPH_FORMAT_JSON) {
+		} else if (fmt == R_GRAPH_FORMAT_JSON) {
 			if (hideempty && !r_list_length (refs)) {
 				r_list_free (refs);
 				continue;
@@ -1833,7 +1833,7 @@ repeat:
 				}
 			}
 			if (!is_html && !showhdr) {
-				if (fmt == R_CALLGRAPH_FORMAT_DOT) {
+				if (fmt == R_GRAPH_FORMAT_DOT) {
 					const char * gv_edge = r_config_get (core->config, "graph.gv.edge");
 					const char * gv_node = r_config_get (core->config, "graph.gv.node");
 					const char * gv_grph = r_config_get (core->config, "graph.gv.graph");
@@ -1860,9 +1860,9 @@ repeat:
 			}
 			// TODO: display only code or data refs?
 			RFlagItem *flag = r_flag_get_i (core->flags, fcnr->addr);
-			if (fmt == R_CALLGRAPH_FORMAT_GML || fmt == R_CALLGRAPH_FORMAT_GMLFCN) {
+			if (fmt == R_GRAPH_FORMAT_GML || fmt == R_GRAPH_FORMAT_GMLFCN) {
 				if (iteration == 0) {
-					if (fmt == R_CALLGRAPH_FORMAT_GMLFCN) {
+					if (fmt == R_GRAPH_FORMAT_GMLFCN) {
 						char *msg = flag? strdup (flag->name): r_str_newf ("0x%08"PFMT64x, fcnr->addr);
 						r_cons_printf ("  node [\n"
 								"    id  %"PFMT64d"\n"
@@ -1883,7 +1883,7 @@ repeat:
 							"  ]\n", fcni->addr-base, fcnr->addr-base //, "#000000"
 						      );
 				}
-			} else if (fmt == R_CALLGRAPH_FORMAT_DOT) {
+			} else if (fmt == R_GRAPH_FORMAT_DOT) {
 				if (flag && flag->name) {
 					r_cons_printf ("  \"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
 							"[label=\"%s\" color=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
@@ -1897,7 +1897,7 @@ repeat:
 							fcnr->addr, flag->name,
 							flag->name, fcnr->addr);
 				}
-			} else if (fmt == R_CALLGRAPH_FORMAT_JSON) {
+			} else if (fmt == R_GRAPH_FORMAT_JSON) {
 				if (fr) {
 					RList *refs1 = r_anal_fcn_get_refs_sorted (core->anal, fr);
 					if (!hideempty || (hideempty && r_list_length (refs1) > 0)) {
@@ -1922,24 +1922,24 @@ repeat:
 			}
 		}
 		r_list_free (refs);
-		if (fmt == R_CALLGRAPH_FORMAT_JSON) {
+		if (fmt == R_GRAPH_FORMAT_JSON) {
 			r_cons_printf ("]}");
 		}
 	}
-	if (iteration == 0 && fmt == R_CALLGRAPH_FORMAT_GML) {
+	if (iteration == 0 && fmt == R_GRAPH_FORMAT_GML) {
 		iteration++;
 		goto repeat;
 	}
-	if (iteration == 0 && fmt == R_CALLGRAPH_FORMAT_GMLFCN) {
+	if (iteration == 0 && fmt == R_GRAPH_FORMAT_GMLFCN) {
 		iteration++;
 	}
-	if (showhdr && (fmt == R_CALLGRAPH_FORMAT_GML || fmt == R_CALLGRAPH_FORMAT_GMLFCN)) {
+	if (showhdr && (fmt == R_GRAPH_FORMAT_GML || fmt == R_GRAPH_FORMAT_GMLFCN)) {
 		r_cons_printf ("]\n");
 	}
-	if (fmt == R_CALLGRAPH_FORMAT_DOT) {
+	if (fmt == R_GRAPH_FORMAT_DOT) {
 		r_cons_printf ("}\n");
 	}
-	if (fmt == R_CALLGRAPH_FORMAT_JSON) {
+	if (fmt == R_GRAPH_FORMAT_JSON) {
 		r_cons_printf ("]\n");
 	}
 }
