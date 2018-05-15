@@ -585,6 +585,7 @@ typedef struct r_anal_callbacks_t {
 
 typedef struct r_anal_options_t {
 	int depth;
+	bool vars; //analyze local var and arguments
 	int cjmpref;
 	int jmpref;
 	int jmpabove;
@@ -735,10 +736,11 @@ typedef struct r_anal_var_access_t {
 typedef struct r_anal_var_t {
 	char *name;  /* name of the variable */
 	char *type;  // cparse type of the variable
-	char kind;   // 'a'rg, 'v'ar ..
+	char kind;   // reg , stack ...
 	ut64 addr;   // not used correctly?
 	ut64 eaddr;  // not used correctly?
 	int size;
+	bool isarg;
 	int delta;   /* delta offset inside stack frame */
 	int scope;   /* global, local... | in, out... */
 	/* probably dupped or so */
@@ -1451,7 +1453,7 @@ R_API int r_anal_var_access (RAnal *a, ut64 var_addr, char kind, int scope, int 
 
 R_API RAnalVar *r_anal_var_new(void);
 R_API int r_anal_var_rename (RAnal *a, ut64 var_addr, int scope, char kind, const char *old_name, const char *new_name);
-R_API int r_anal_var_retype (RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, const char *name);
+R_API int r_anal_var_retype (RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, bool isarg, const char *name);
 R_API RAnalVarAccess *r_anal_var_access_new(void);
 R_API RList *r_anal_var_list_new(void);
 R_API RList *r_anal_var_access_list_new(void);
@@ -1462,7 +1464,7 @@ R_API void r_anal_var_access_free(void *access);
 R_API int r_anal_var_delete_all (RAnal *a, ut64 addr, const char kind);
 R_API int r_anal_var_delete (RAnal *a, ut64 var_addr, const char kind, int scope, int delta);
 R_API bool r_anal_var_delete_byname (RAnal *a, RAnalFunction *fcn, int type, const char *name);
-R_API bool r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, const char *name);
+R_API bool r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, bool isarg, const char *name);
 R_API int r_anal_var_del(RAnal *anal, RAnalFunction *fcn, int delta, int scope);
 R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int index);
 R_API const char *r_anal_var_scope_to_str(RAnal *anal, int scope);

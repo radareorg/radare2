@@ -391,16 +391,22 @@ static RAnalBlock *appendBasicBlock(RAnal *anal, RAnalFunction *fcn, ut64 addr) 
 static char *get_varname(RAnal *a, RAnalFunction *fcn, char type, const char *pfx, int idx) {
 	char *varname = r_str_newf ("%s_%xh", pfx, idx);
 	int i = 2;
+	char v_kind;
+	int v_delta;
 	while (1) {
-		RAnalVar *v = r_anal_var_get_byname (a, fcn, varname);
-		if (!v) {
+		char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", fcn->addr, 1, varname);
+		char *name_value = sdb_get (DB, name_key, 0);
+		if (!name_value) {
 			break;
 		}
-		if (v->kind == type && R_ABS (v->delta) == idx) {
-			r_anal_var_free (v);
+		const char *comma = strchr (name_value, ',');
+		if (comma && *comma) {
+			v_delta = r_num_math (NULL, comma + 1);
+			v_kind = *name_value;
+		}
+		if (v_kind == type && R_ABS (v_delta) == idx) {
 			break;
 		}
-		r_anal_var_free (v);
 		free (varname);
 		varname = r_str_newf ("%s_%xh_%d", pfx, idx, i);
 		i++;
@@ -555,36 +561,40 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		free (esil_buf);
 		return;
 	}
-#if 1
 	*ptr_end = 0;
 	addr = ptr_end;
 	while ((addr[0] != '0' || addr[1] != 'x') && addr >= esil_buf + 1 && *addr != ',') {
 		addr--;
 	}
 	if (strncmp (addr, "0x", 2)) {
-		free (esil_buf);
-		return;
+		//XXX: This is a workaround for inconsistent esil
+		if ((op->stackop == R_ANAL_STACK_SET) || (op->stackop == R_ANAL_STACK_GET)) {
+			ptr = R_ABS (op->ptr);
+			if (ptr%4) {
+				goto beach;
+			}
+		} else {
+			goto beach;
+		}
+	} else {
+		ptr = (st64) r_num_get (NULL, addr);
 	}
-	ptr = (st64) r_num_get (NULL, addr);
-#else
-	ptr = -op->ptr;
-	if (ptr%4) {
-		free (esil_buf);
-		return;
-	}
-#endif
+	//XXX: This won't work for stack based var/arg
+	int rw = (op->stackop == R_ANAL_STACK_SET) ? 1 : 0;
 	if (*sign == '+') {
-		const char *pfx = (ptr < fcn->maxstack && type == 's')? VARPREFIX: ARGPREFIX;
+		const char *pfx = ((ptr < fcn->maxstack) && (type == 's')) ? VARPREFIX : ARGPREFIX;
+		bool isarg = strcmp(pfx , ARGPREFIX) ? false : true;
 		char *varname = get_varname (anal, fcn, type, pfx, R_ABS (ptr));
-		r_anal_var_add (anal, fcn->addr, 1, ptr, type, NULL, anal->bits / 8, varname);
-		r_anal_var_access (anal, fcn->addr, type, 1, ptr, 0, op->addr);
+		r_anal_var_add (anal, fcn->addr, 1, ptr, type, NULL, anal->bits / 8, isarg, varname);
+		r_anal_var_access (anal, fcn->addr, type, 1, ptr, rw, op->addr);
 		free (varname);
 	} else {
 		char *varname = get_varname (anal, fcn, type, VARPREFIX, R_ABS (ptr));
-		r_anal_var_add (anal, fcn->addr, 1, -ptr, type, NULL, anal->bits / 8, varname);
-		r_anal_var_access (anal, fcn->addr, type, 1, -ptr, 1, op->addr);
+		r_anal_var_add (anal, fcn->addr, 1, -ptr, type, NULL, anal->bits / 8, 0, varname);
+		r_anal_var_access (anal, fcn->addr, type, 1, -ptr, rw, op->addr);
 		free (varname);
 	}
+beach:
 	free (esil_buf);
 }
 
@@ -893,7 +903,6 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	RAnalBlock *bbg = NULL;
 	int ret = R_ANAL_RET_END, skip_ret = 0;
 	int overlapped = 0;
-	char *varname;
 	RAnalOp op = {
 		0
 	};
@@ -975,7 +984,7 @@ repeat:
 		}
 		// check if opcode is in another basic block
 		// in that case we break
-		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + addrbytes * idx, len - addrbytes * idx, 0)) < 1) {
+		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + addrbytes * idx, len - addrbytes * idx, R_ANAL_OP_MASK_ALL)) < 1) {
 			VERBOSE_ANAL eprintf ("Unknown opcode at 0x%08"PFMT64x "\n", addr + idx);
 			if (!idx) {
 				gotoBeach (R_ANAL_RET_END);
@@ -1065,30 +1074,10 @@ repeat:
 		case R_ANAL_STACK_RESET:
 			bb->stackptr = 0;
 			break;
-		// TODO: use fcn->maxstack to know our stackframe
-		case R_ANAL_STACK_SET:
-			if ((int) op.ptr > 0) {
-				varname = get_varname (anal, fcn, 'b', ARGPREFIX, R_ABS (op.ptr));
-			} else {
-				varname = get_varname (anal, fcn, 'b', VARPREFIX, R_ABS (op.ptr));
-			}
-			r_anal_var_add (anal, fcn->addr, 1, op.ptr, 'b', NULL, anal->bits / 8, varname);
-			r_anal_var_access (anal, fcn->addr, 'b', 1, op.ptr, 1, op.addr);
-			free (varname);
-			break;
-		// TODO: use fcn->maxstack to know our stackframe
-		case R_ANAL_STACK_GET:
-			if (((int) op.ptr) > 0) {
-				varname = get_varname (anal, fcn, 'b', ARGPREFIX, R_ABS (op.ptr));
-			} else {
-				varname = get_varname (anal, fcn, 'b', VARPREFIX, R_ABS (op.ptr));
-			}
-			r_anal_var_add (anal, fcn->addr, 1, op.ptr, 'b', NULL, anal->bits / 8, varname);
-			r_anal_var_access (anal, fcn->addr, 'b', 1, op.ptr, 0, op.addr);
-			free (varname);
-			break;
 		}
-
+		if (anal->opt.vars) {
+			r_anal_fcn_fill_args (anal, fcn, &op);
+		}
 		if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
 			// swapped parameters wtf
 			r_anal_xrefs_set (anal, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA);

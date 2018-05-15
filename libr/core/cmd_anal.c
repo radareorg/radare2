@@ -331,8 +331,9 @@ static const char *help_msg_afv[] = {
 	"afvr", "[?]", "manipulate register based arguments",
 	"afvb", "[?]", "manipulate bp based arguments/locals",
 	"afvs", "[?]", "manipulate sp based arguments/locals",
-	"afvR", " [varname]", "list addresses where vars are accessed",
-	"afvW", " [varname]", "list addresses where vars are accessed",
+	"afv*", "", "output r2 command to add args/locals to flagspace",
+	"afvR", " [varname]", "list addresses where vars are accessed (READ)",
+	"afvW", " [varname]", "list addresses where vars are accessed (WRITE)",
 	"afva", "", "analyze function arguments/locals",
 	"afvd", " name", "output r2 command for displaying the value of args/locals in the debugger",
 	"afvn", " [old_name] [new_name]", "rename argument/local",
@@ -764,7 +765,7 @@ static void var_accesses_list(RAnal *a, RAnalFunction *fcn, int delta, const cha
 static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *name) {
 	RAnalVar *var;
 	RListIter *iter;
-	RList *list = r_anal_var_list (core->anal, fcn, 0);
+	RList *list = r_anal_var_all_list (core->anal, fcn);
 	if (type == '*') {
 		const char *bp = r_reg_get_name (core->anal->reg, R_REG_NAME_BP);
 		r_cons_printf ("f-fcnvar*\n");
@@ -778,9 +779,17 @@ static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *nam
 		return;
 	}
 	const char *typestr = type == 'R'?"reads":"writes";
-	r_list_foreach (list, iter, var) {
-		r_cons_printf ("%10s  ", var->name);
-		var_accesses_list (core->anal, fcn, var->delta, typestr);
+	if (name && *name) {
+		var = r_anal_var_get_byname (core->anal, fcn, name);
+		if (var) {
+			r_cons_printf ("%10s  ", var->name);
+			var_accesses_list (core->anal, fcn, var->delta, typestr);
+		}
+	} else {
+		r_list_foreach (list, iter, var) {
+			r_cons_printf ("%10s  ", var->name);
+			var_accesses_list (core->anal, fcn, var->delta, typestr);
+		}
 	}
 }
 
@@ -926,8 +935,11 @@ static int var_cmd(RCore *core, const char *str) {
 	case 'R': // "afvR"
 	case 'W': // "afvW"
 	case '*': // "afv*"
-		list_vars (core, fcn, str[0], str + 1);
-		break;
+		{
+			char *name = r_str_trim_head (strchr (ostr, ' '));
+			list_vars (core, fcn, str[0], name);
+			return true;
+		}
 	case 'a': // "afva"
 		r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_REG);
 		r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_BPV);
@@ -961,7 +973,7 @@ static int var_cmd(RCore *core, const char *str) {
 		} else {
 			RListIter *iter;
 			RAnalVar *v;
-			RList *list = r_anal_var_list (core->anal, fcn, 0);
+			RList *list = r_anal_var_all_list (core->anal, fcn);
 			r_list_foreach (list, iter, v) {
 				r_cons_printf ("%s\n", v->name);
 			}
@@ -985,26 +997,14 @@ static int var_cmd(RCore *core, const char *str) {
 		} else {
 			RListIter *iter;
 			RAnalVar *p;
-			RList *list = r_anal_var_list (core->anal, fcn, 0);
+			RList *list = r_anal_var_all_list (core->anal, fcn);
 			r_list_foreach (list, iter, p) {
 				char *a = r_core_cmd_strf (core, ".afvd %s", p->name);
 				if ((a && !*a) || !a) {
 					free (a);
 					a = strdup ("\n");
 				}
-				r_cons_printf ("var %s = %s", p->name, a);
-				free (a);
-			}
-			r_list_free (list);
-			// args
-			list = r_anal_var_list (core->anal, fcn, 1);
-			r_list_foreach (list, iter, p) {
-				char *a = r_core_cmd_strf (core, ".afvd %s", p->name);
-				if ((a && !*a) || !a) {
-					free (a);
-					a = strdup ("\n");
-				}
-				r_cons_printf ("arg %s = %s", p->name, a);
+				r_cons_printf ("%s %s = %s", p->isarg ? "arg": "var", p->name, a);
 				free (a);
 			}
 			r_list_free (list);
@@ -1030,14 +1030,14 @@ static int var_cmd(RCore *core, const char *str) {
 			return false;
 		}
 		r_anal_var_retype (core->anal, fcn->addr,
-			R_ANAL_VAR_SCOPE_LOCAL, -1, v1->kind, type, -1, p);
+			R_ANAL_VAR_SCOPE_LOCAL, -1, v1->kind, type, -1, v1->isarg, p);
 		r_anal_var_free (v1);
 		free (ostr);
 		return true;
 
 	}
 	}
-	switch (str[1]) {
+	switch (str[1]) { // afv[bsr]
 	case '\0':
 	case '*':
 	case 'j':
@@ -1070,20 +1070,28 @@ static int var_cmd(RCore *core, const char *str) {
 	case 'g':
 		if (str[2] != '\0') {
 			int rw = 0; // 0 = read, 1 = write
+			int idx = r_num_math (core->num, str + 2);
+			char *vaddr;
+			char *p = r_str_trim (strchr (ostr, ' '));
+			if (!p) {
+				var_help (core, type);
+				break;
+			}
+			ut64 addr = core->offset;
+			if ((vaddr = strchr (p , ' '))) {
+				addr = r_num_math (core->num, vaddr);
+			}
 			RAnalVar *var = r_anal_var_get (core->anal, fcn->addr,
-							(char)type, atoi (str + 2), R_ANAL_VAR_SCOPE_LOCAL);
+							str[0], R_ANAL_VAR_SCOPE_LOCAL, idx);
 			if (!var) {
-				eprintf ("Cannot find variable in: '%s'\n", str);
+				eprintf ("Cannot find variable with delta %d\n", idx);
 				res = false;
 				break;
 			}
-			if (var != NULL) {
-				int scope = (str[1] == 'g')? 0: 1;
-				r_anal_var_access (core->anal, fcn->addr, (char)type,
-						scope, atoi (str + 2), rw, core->offset);
-				r_anal_var_free (var);
-				break;
-			}
+			rw = (str[1] == 'g')? 0: 1;
+			r_anal_var_access (core->anal, fcn->addr, str[0],
+					R_ANAL_VAR_SCOPE_LOCAL, idx, rw, addr);
+			r_anal_var_free (var);
 		} else {
 			eprintf ("Missing argument\n");
 		}
@@ -1093,7 +1101,7 @@ static int var_cmd(RCore *core, const char *str) {
 		char *vartype;
 		int size = 4;
 		int scope = 1;
-			for (str++; *str == ' ';) str++;
+		for (str++; *str == ' ';) str++;
 		p = strchr (str, ' ');
 		if (!p) {
 			var_help (core, type);
@@ -1116,7 +1124,7 @@ static int var_cmd(RCore *core, const char *str) {
 			*vartype++ = 0;
 			r_anal_var_add (core->anal, fcn->addr,
 					scope, delta, type,
-					vartype, size, name);
+					vartype, size, 0, name);
 		} else {
 			eprintf ("Missing name\n");
 		}
@@ -2665,9 +2673,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		//r_core_anal_undefine (core, core->offset);
 		r_core_anal_fcn (core, addr, UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
 		fcn = r_anal_get_fcn_in (core->anal, addr, 0);
-		if (fcn && r_config_get_i (core->config, "anal.vars")) {
-			fcn_callconv (core, fcn);
-		}
 		if (fcn) {
 			/* ensure we use a proper name */
 			setFunctionName (core, addr, fcn->name, false);

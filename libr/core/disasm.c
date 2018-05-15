@@ -1382,7 +1382,7 @@ static void printVarSummary(RDisasmState *ds, RList *list) {
 	const char *sp_args_color = COLOR_RESET (ds);
 	const char *rg_args_color = COLOR_RESET (ds);
 	r_list_foreach (list, iter, var) {
-		if (var->delta > 0) {
+		if (var->isarg) {
 			switch (var->kind) {
 			case 'b':
 				bp_args++;
@@ -1580,7 +1580,7 @@ static void ds_show_functions(RDisasmState *ds) {
 			}
 			comma = true;
 			r_list_foreach (sp_vars, iter, var) {
-				if (var->delta > f->maxstack) {
+				if (var->isarg) {
 					if ((arg_bp || !r_list_empty (regs)) && comma) {
 						comma = false;
 						r_cons_printf (", ");
@@ -1638,7 +1638,7 @@ static void ds_show_functions(RDisasmState *ds) {
 				}
 				break;
 			case 's': {
-				bool is_var = var->delta < f->maxstack;
+				bool is_var = !var->isarg;
 				ds_show_functions_argvar (ds, var,
 					anal->reg->name[R_REG_NAME_SP],
 					is_var, '+');
