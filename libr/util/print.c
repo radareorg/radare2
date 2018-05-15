@@ -571,14 +571,10 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 	bool zeroend = (options & R_PRINT_STRING_ZEROEND);
 	bool wrap = (options & R_PRINT_STRING_WRAP);
 	bool urlencode = (options & R_PRINT_STRING_URLENCODE);
+	bool esc_nl = (options & R_PRINT_STRING_ESC_NL);
 	p->interrupt = 0;
 	int col = 0;
 	i = 0;
-	if (!urlencode && !wrap) {
-		while (buf[i] == '\0' && i < 3 && i < len) {
-			i++;
-		}
-	}
 	for (; !p->interrupt && i < len; i++) {
 		if (wide32) {
 			int j = i;
@@ -600,7 +596,7 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 			// TODO: some ascii can be bypassed here
 			p->cb_printf ("%%%02x", b);
 		} else {
-			if (b == '\n' || IS_PRINTABLE (b)) {
+			if ((b == '\n' && !esc_nl) || IS_PRINTABLE (b)) {
 				p->cb_printf ("%c", b);
 			} else {
 				p->cb_printf ("\\x%02x", b);

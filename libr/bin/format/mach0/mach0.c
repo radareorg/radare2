@@ -92,7 +92,7 @@ static int init_hdr(struct MACH0_(obj_t)* bin) {
 	ut8 machohdrbytes[sizeof (struct MACH0_(mach_header))] = {0};
 	int len;
 
-	if (r_buf_read_at (bin->b, 0, magicbytes, 4) < 1) {
+	if (r_buf_read_at (bin->b, 0 + bin->header_at, magicbytes, 4) < 1) {
 		return false;
 	}
 	if (r_read_le32 (magicbytes) == 0xfeedface) {
@@ -110,7 +110,7 @@ static int init_hdr(struct MACH0_(obj_t)* bin) {
 	} else {
 		return false; // object files are magic == 0, but body is different :?
 	}
-	len = r_buf_read_at (bin->b, 0, machohdrbytes, sizeof (machohdrbytes));
+	len = r_buf_read_at (bin->b, 0 + bin->header_at, machohdrbytes, sizeof (machohdrbytes));
 	if (len != sizeof (machohdrbytes)) {
 		bprintf ("Error: read (hdr)\n");
 		return false;
@@ -928,7 +928,7 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 		//return false;
 	}
 	//bprintf ("Commands: %d\n", bin->hdr.ncmds);
-	for (i = 0, off = sizeof (struct MACH0_(mach_header)); \
+	for (i = 0, off = sizeof (struct MACH0_(mach_header)) + bin->header_at; \
 			i < bin->hdr.ncmds; i++, off += lc.cmdsize) {
 		if (off > bin->size || off + sizeof (struct load_command) > bin->size){
 			bprintf ("mach0: out of bounds command\n");
@@ -1244,14 +1244,30 @@ void* MACH0_(mach0_free)(struct MACH0_(obj_t)* bin) {
 	return NULL;
 }
 
-struct MACH0_(obj_t)* MACH0_(mach0_new)(const char* file, bool verbose) {
+void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RBinFile * bf) {
+	if (!options) {
+		return;
+	}
+
+	options->header_at = 0;
+	if (bf && bf->rbin) {
+		options->verbose = bf->rbin->verbose;
+	} else {
+		options->verbose = false;
+	}
+}
+
+struct MACH0_(obj_t)* MACH0_(mach0_new)(const char* file, struct MACH0_(opts_t) *options) {
 	ut8 *buf;
 	struct MACH0_(obj_t) *bin;
 	if (!(bin = malloc (sizeof (struct MACH0_(obj_t))))) {
 		return NULL;
 	}
 	memset (bin, 0, sizeof (struct MACH0_(obj_t)));
-	bin->verbose = verbose;
+	if (options) {
+		bin->verbose = options->verbose;
+		bin->header_at = options->header_at;
+	}
 	bin->file = file;
 	if (!(buf = (ut8*)r_file_slurp (file, &bin->size))) {
 		return MACH0_(mach0_free)(bin);
@@ -1271,28 +1287,24 @@ struct MACH0_(obj_t)* MACH0_(mach0_new)(const char* file, bool verbose) {
 	return bin;
 }
 
-struct MACH0_(obj_t)* MACH0_(new_buf)(RBuffer *buf, bool verbose) {
+struct MACH0_(obj_t)* MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *options) {
 	if (!buf) {
 		return NULL;
 	}
 
-	RBuffer * buf_copy = r_buf_new_with_buf (buf);
-	if (!buf_copy) {
-		return NULL;
-	}
+	RBuffer * buf_ref = r_buf_ref (buf);
 
-	return MACH0_(new_buf_steal) (buf_copy, verbose);
-}
-
-struct MACH0_(obj_t)* MACH0_(new_buf_steal)(RBuffer *buf, bool verbose) {
 	struct MACH0_(obj_t) *bin = R_NEW0 (struct MACH0_(obj_t));
 	if (!bin) {
 		return NULL;
 	}
 	bin->kv = sdb_new (NULL, "bin.mach0", 0);
-	bin->size = r_buf_size (buf);
-	bin->verbose = verbose;
-	bin->b = buf;
+	bin->size = r_buf_size (buf_ref);
+	if (options) {
+		bin->verbose = options->verbose;
+		bin->header_at = options->header_at;
+	}
+	bin->b = buf_ref;
 	if (!init (bin)) {
 		return MACH0_(mach0_free)(bin);
 	}

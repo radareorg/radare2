@@ -1,6 +1,5 @@
 /* radare - LGPL - Copyright 2009-2018 - nibble, pancake */
 
-#include <assert.h>
 #include <stdio.h>
 #include <r_types.h>
 #include <r_util.h>
@@ -893,7 +892,7 @@ static bool ht_insert_intu64(SdbHash* ht, int key, ut64 value) {
 
 static ut64 ht_find_intu64(SdbHash* ht, int key, bool* found) {
 	ut64 *mvalue = (ut64 *)ht_find (ht, sdb_fmt ("%d", key), found);
-	return *mvalue;
+	return *found ? *mvalue : 0;
 }
 
 static void relocs_by_sym_free(HtKv *kv) {
@@ -974,9 +973,6 @@ static RList* patch_relocs(RBin *b) {
 				bool found;
 
 				sym_addr = ht_find_intu64 (relocs_by_sym, relcs[i].sym, &found);
-				if (!found) {
-					sym_addr = 0;
-				}
 			} else if (relcs[i].sym < bin->symbols_by_ord_size && bin->symbols_by_ord[relcs[i].sym]) {
 				sym_addr = bin->symbols_by_ord[relcs[i].sym]->vaddr;
 			}

@@ -4540,7 +4540,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'x': // "psx"
 			if (l > 0) {
-				r_print_string (core->print, core->offset, block, len, 0);
+				r_print_string (core->print, core->offset, block, len, R_PRINT_STRING_ESC_NL);
 			}
 			break;
 		case 'b': // "psb"

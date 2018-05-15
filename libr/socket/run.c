@@ -268,6 +268,7 @@ static void setASLR(RRunProfile *r, int enabled) {
 #endif
 }
 
+#if HAVE_PTY
 static void restore_saved_fd(int saved, bool restore, int fd) {
 	if (saved == -1) {
 		return;
@@ -277,6 +278,7 @@ static void restore_saved_fd(int saved, bool restore, int fd) {
 	}
 	close (saved);
 }
+#endif
 
 static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err) {
 #if HAVE_PTY
@@ -591,7 +593,7 @@ R_API const char *r_run_help() {
 	"# nice=5\n";
 }
 
-#if __UNIX__
+#if HAVE_PTY
 static int fd_forward(int in_fd, int out_fd, char **buff) {
 	int size = 0;
 

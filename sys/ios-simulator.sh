@@ -59,7 +59,7 @@ export CC="$(pwd)/sys/ios-sdk-gcc"
 export IOSVER=10.2
 export IOSINC=/
 #$(pwd)/sys/ios-include
-export CFLAGS=-O2
+export CFLAGS="${CFLAGS} -O2"
 export USE_SIMULATOR=1
 export RANLIB="xcrun --sdk iphoneos ranlib"
 
