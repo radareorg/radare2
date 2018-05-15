@@ -580,7 +580,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		ptr = (st64) r_num_get (NULL, addr);
 	}
 	//XXX: This won't work for stack based var/arg
-	int rw = (op.stackop == R_ANAL_STACK_SET) ? 1 : 0;
+	int rw = (op->stackop == R_ANAL_STACK_SET) ? 1 : 0;
 	if (*sign == '+') {
 		const char *pfx = ((ptr < fcn->maxstack) && (type == 's')) ? VARPREFIX : ARGPREFIX;
 		bool isarg = strcmp(pfx , ARGPREFIX) ? false : true;
