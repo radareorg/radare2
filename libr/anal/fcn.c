@@ -1074,14 +1074,16 @@ repeat:
 		case R_ANAL_STACK_SET:
 		case R_ANAL_STACK_GET:
 			{
-				int rw = (op.stackop == R_ANAL_STACK_SET) ? 1 : 0;
-				int delta = -op.ptr;
-				char *pfx = (delta > 0) ? ARGPREFIX : VARPREFIX;
-				bool isarg = strcmp(pfx , ARGPREFIX) ? false : true;
-				char *varname = get_varname (anal, fcn, 'b', pfx, R_ABS (op.ptr));
-				r_anal_var_add (anal, fcn->addr, 1, delta, 'b', NULL, anal->bits / 8, isarg, varname);
-				r_anal_var_access (anal, fcn->addr, 'b', 1, delta, rw, op.addr);
-				free (varname);
+				if (anal->opt.vars) {
+					int rw = (op.stackop == R_ANAL_STACK_SET) ? 1 : 0;
+					int delta = -op.ptr;
+					char *pfx = (delta > 0) ? ARGPREFIX : VARPREFIX;
+					bool isarg = strcmp(pfx , ARGPREFIX) ? false : true;
+					char *varname = get_varname (anal, fcn, 'b', pfx, R_ABS (op.ptr));
+					r_anal_var_add (anal, fcn->addr, 1, delta, 'b', NULL, anal->bits / 8, isarg, varname);
+					r_anal_var_access (anal, fcn->addr, 'b', 1, delta, rw, op.addr);
+					free (varname);
+				}
 				break;
 			}
 		}
