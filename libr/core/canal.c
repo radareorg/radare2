@@ -1748,13 +1748,9 @@ R_API void r_core_anal_codexrefs(RCore *core, ut64 addr) {
 	free (me);
 }
 
-#define FMT_NO 0
-#define FMT_GV 1
-#define FMT_JS 2
 R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt) {
 	RAnalFunction fakefr = R_EMPTY;
 	const char *font = r_config_get (core->config, "graph.font");
-	const char *format = r_config_get (core->config, "graph.format");
 	int is_html = r_cons_singleton ()->is_html;
 	bool refgraph = r_config_get_i (core->config, "graph.refs");
 	int first, first2, showhdr = 0;
@@ -1763,24 +1759,18 @@ R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt) {
 	const int usenames = 1;
 	RAnalFunction *fcni;
 	RAnalRef *fcnr;
-	bool isGML = !strcmp (format, "gml");
 
-	bool gmlFcnGraph = false;
-	if (!strcmp (format, "gmlfcn")) {
-		isGML = true;
-		gmlFcnGraph = true;
-	}
 	ut64 from = r_config_get_i (core->config, "graph.from");
 	ut64 to = r_config_get_i (core->config, "graph.to");
 
-	if (fmt == 2) {
+	if (fmt == R_GRAPH_FORMAT_JSON) {
 		r_cons_printf ("[");
 	}
-	if (fmt == 1 && isGML) {
+	if (fmt == R_GRAPH_FORMAT_GML || fmt == R_GRAPH_FORMAT_GMLFCN) {
 		r_cons_printf ("graph\n[\n"
-				"hierarchic\t1\n"
-				"label\t\"\"\n"
-				"directed\t1\n");
+				"hierarchic  1\n"
+				"label  \"\"\n"
+				"directed  1\n");
 	}
 	first = 0;
 	ut64 base = UT64_MAX;
@@ -1802,17 +1792,17 @@ repeat:
 		RList *refs = r_anal_fcn_get_refs_sorted (core->anal, fcni);
 		if (!fmt) {
 			r_cons_printf ("0x%08"PFMT64x"\n", fcni->addr);
-		} else if (fmt == 1 && isGML) {
+		} else if (fmt == R_GRAPH_FORMAT_GML || fmt == R_GRAPH_FORMAT_GMLFCN) {
 			RFlagItem *flag = r_flag_get_i (core->flags, fcni->addr);
 			if (iteration == 0) {
 				char *msg = flag? strdup (flag->name): r_str_newf ("0x%08"PFMT64x, fcni->addr);
-				r_cons_printf ("\tnode [\n"
-						"\t\tid\t%"PFMT64d"\n"
-						"\t\tlabel\t\"%s\"\n"
-						"\t]\n", fcni->addr - base, msg);
+				r_cons_printf ("  node [\n"
+						"  id  %"PFMT64d"\n"
+						"    label  \"%s\"\n"
+						"  ]\n", fcni->addr - base, msg);
 				free (msg);
 			}
-		} else if (fmt == 2) {
+		} else if (fmt == R_GRAPH_FORMAT_JSON) {
 			if (hideempty && !r_list_length (refs)) {
 				r_list_free (refs);
 				continue;
@@ -1843,91 +1833,71 @@ repeat:
 				}
 			}
 			if (!is_html && !showhdr) {
-				if (fmt == 1) {
-					if (isGML) {
-/*
-						r_cons_printf ("Creator \"radare2\"\n"
-							"Version \"2.14\"\n"
-							"graph\n[\n"
-							"hierarchic\t1\n"
-							"label\t\"\"\n"
-							"directed\t1\n");
-*/
-					} else {
-						const char * gv_edge = r_config_get (core->config, "graph.gv.edge");
-						const char * gv_node = r_config_get (core->config, "graph.gv.node");
-						const char * gv_grph = r_config_get (core->config, "graph.gv.graph");
-						const char * gv_spline = r_config_get (core->config, "graph.gv.spline");
-						if (!gv_edge || !*gv_edge) {
-							gv_edge = "arrowhead=\"normal\"";
-						}
-						if (!gv_node || !*gv_node) {
-							gv_node = "fillcolor=gray style=filled shape=box";
-						}
-						if (!gv_grph || !*gv_grph) {
-							gv_grph = "bgcolor=white";
-						}
-						if (!gv_spline || !*gv_spline) {
-							gv_spline = "splines=\"ortho\"";
-						}
-						r_cons_printf ("digraph code {\n"
-								"\tgraph [%s fontname=\"%s\" %s];\n"
-								"\tnode [%s];\n"
-								"\tedge [%s];\n", gv_grph, font, gv_spline,
-								gv_node, gv_edge);
+				if (fmt == R_GRAPH_FORMAT_DOT) {
+					const char * gv_edge = r_config_get (core->config, "graph.gv.edge");
+					const char * gv_node = r_config_get (core->config, "graph.gv.node");
+					const char * gv_grph = r_config_get (core->config, "graph.gv.graph");
+					const char * gv_spline = r_config_get (core->config, "graph.gv.spline");
+					if (!gv_edge || !*gv_edge) {
+						gv_edge = "arrowhead=\"normal\"";
 					}
+					if (!gv_node || !*gv_node) {
+						gv_node = "fillcolor=gray style=filled shape=box";
+					}
+					if (!gv_grph || !*gv_grph) {
+						gv_grph = "bgcolor=white";
+					}
+					if (!gv_spline || !*gv_spline) {
+						gv_spline = "splines=\"ortho\"";
+					}
+					r_cons_printf ("digraph code {\n"
+							"graph [%s fontname=\"%s\" %s];\n"
+							"node [%s];\n"
+							"edge [%s];\n", gv_grph, font, gv_spline,
+							gv_node, gv_edge);
 				}
 				showhdr = 1;
 			}
 			// TODO: display only code or data refs?
 			RFlagItem *flag = r_flag_get_i (core->flags, fcnr->addr);
-			if (fmt == 1) {
-				if (isGML) {
-					if (iteration == 0) {
-						if (gmlFcnGraph) {
-							char *msg = flag? strdup(flag->name): r_str_newf ("0x%08"PFMT64x, fcnr->addr);
-							r_cons_printf ("\tnode [\n"
-									"\t\tid\t%"PFMT64d"\n"
-									"\t\tlabel\t\"%s\"\n"
-									"\t]\n", fcnr->addr - base, msg
-								      );
-							r_cons_printf ("\tedge [\n"
-									"\t\tsource  %"PFMT64d"\n"
-									"\t\ttarget  %"PFMT64d"\n"
-									"\t]\n", fcni->addr-base, fcnr->addr-base
-								      );
-							free (msg);
-						}
-					} else {
-						r_cons_printf ("\tedge [\n"
-								"\t\tsource  %"PFMT64d"\n"
-								"\t\ttarget  %"PFMT64d"\n"
-								/*
-								   "graphics\n"
-								   "[\n"
-								   "	fill    \"%s\"\n"
-								   "	targetArrow     \"standard\"\n"
-								   "]\n"
-								 */
-								"\t]\n", fcni->addr-base, fcnr->addr-base //, "#000000"
+			if (fmt == R_GRAPH_FORMAT_GML || fmt == R_GRAPH_FORMAT_GMLFCN) {
+				if (iteration == 0) {
+					if (fmt == R_GRAPH_FORMAT_GMLFCN) {
+						char *msg = flag? strdup (flag->name): r_str_newf ("0x%08"PFMT64x, fcnr->addr);
+						r_cons_printf ("  node [\n"
+								"    id  %"PFMT64d"\n"
+								"    label  \"%s\"\n"
+								"  ]\n", fcnr->addr - base, msg
 							      );
+						r_cons_printf ("  edge [\n"
+								"    source  %"PFMT64d"\n"
+								"    target  %"PFMT64d"\n"
+								"  ]\n", fcni->addr-base, fcnr->addr-base
+							      );
+						free (msg);
 					}
 				} else {
-					if (flag && flag->name) {
-						r_cons_printf ("\t\"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
-								"[label=\"%s\" color=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
-								fcni->addr, fcnr->addr, flag->name,
-								(fcnr->type==R_ANAL_REF_TYPE_CODE ||
-								 fcnr->type==R_ANAL_REF_TYPE_CALL)?"green":"red",
-								flag->name, fcnr->addr);
-						r_cons_printf ("\t\"0x%08"PFMT64x"\" "
-								"[label=\"%s\""
-								" URL=\"%s/0x%08"PFMT64x"\"];\n",
-								fcnr->addr, flag->name,
-								flag->name, fcnr->addr);
-					}
+					r_cons_printf ("  edge [\n"
+							"    source  %"PFMT64d"\n"
+							"    target  %"PFMT64d"\n"
+							"  ]\n", fcni->addr-base, fcnr->addr-base //, "#000000"
+						      );
 				}
-			} else if (fmt == 2) {
+			} else if (fmt == R_GRAPH_FORMAT_DOT) {
+				if (flag && flag->name) {
+					r_cons_printf ("  \"0x%08"PFMT64x"\" -> \"0x%08"PFMT64x"\" "
+							"[label=\"%s\" color=\"%s\" URL=\"%s/0x%08"PFMT64x"\"];\n",
+							fcni->addr, fcnr->addr, flag->name,
+							(fcnr->type==R_ANAL_REF_TYPE_CODE ||
+							 fcnr->type==R_ANAL_REF_TYPE_CALL)?"green":"red",
+							flag->name, fcnr->addr);
+					r_cons_printf ("  \"0x%08"PFMT64x"\" "
+							"[label=\"%s\""
+							" URL=\"%s/0x%08"PFMT64x"\"];\n",
+							fcnr->addr, flag->name,
+							flag->name, fcnr->addr);
+				}
+			} else if (fmt == R_GRAPH_FORMAT_JSON) {
 				if (fr) {
 					RList *refs1 = r_anal_fcn_get_refs_sorted (core->anal, fr);
 					if (!hideempty || (hideempty && r_list_length (refs1) > 0)) {
@@ -1952,20 +1922,24 @@ repeat:
 			}
 		}
 		r_list_free (refs);
-		if (fmt == 2) {
+		if (fmt == R_GRAPH_FORMAT_JSON) {
 			r_cons_printf ("]}");
 		}
 	}
-	if (iteration == 0 && fmt == 1 && isGML) {
+	if (iteration == 0 && fmt == R_GRAPH_FORMAT_GML) {
 		iteration++;
-		if (!gmlFcnGraph) {
-			goto repeat;
-		}
+		goto repeat;
 	}
-	if (showhdr && fmt == 1) {
-		r_cons_printf ("%s\n", isGML? "]": "}");
+	if (iteration == 0 && fmt == R_GRAPH_FORMAT_GMLFCN) {
+		iteration++;
 	}
-	if (fmt == 2) {
+	if (showhdr && (fmt == R_GRAPH_FORMAT_GML || fmt == R_GRAPH_FORMAT_GMLFCN)) {
+		r_cons_printf ("]\n");
+	}
+	if (fmt == R_GRAPH_FORMAT_DOT) {
+		r_cons_printf ("}\n");
+	}
+	if (fmt == R_GRAPH_FORMAT_JSON) {
 		r_cons_printf ("]\n");
 	}
 }

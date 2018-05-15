@@ -2818,7 +2818,6 @@ R_API int r_core_config_init(RCore *core) {
 	/* graph */
 	SETPREF ("graph.comments", "true", "Show disasm comments in graph");
 	SETPREF ("graph.cmtright", "false", "Show comments at right");
-	SETCB ("graph.format", "dot", &cb_graphformat, "Specify output format for graphs (dot, gml, gmlfcn)");
 	SETPREF ("graph.refs", "false", "Graph references in callgraphs (.agc*;aggi)");
 	SETI ("graph.edges", 2, "0=no edges, 1=simple edges, 2=avoid collisions");
 	SETI ("graph.layout", 0, "Graph layout (0=vertical, 1=horizontal)");

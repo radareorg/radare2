@@ -5895,7 +5895,38 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		}
 		break;
 	case 'C': // "agC"
-		r_core_anal_callgraph (core, UT64_MAX, input[1] == 'j'? 2 : 1);
+		switch (input[1]) {
+		case 'v':
+		case 't':
+		case 'k':
+		case 'w':
+		case ' ':
+		case 0: {
+			core->graph->is_callgraph = true;
+			char *cmd = r_str_newf ("ag-; .agc* %lld; agg%c;", UT64_MAX, input[1]);
+			if (cmd && *cmd) {
+				r_core_cmd0 (core, cmd);
+			}
+			free (cmd);
+			break;
+			}
+		case 'J':
+		case 'j':
+			r_core_anal_callgraph (core, UT64_MAX, R_GRAPH_FORMAT_JSON);
+			break;
+		case 'g':
+			r_core_anal_callgraph (core, UT64_MAX, R_GRAPH_FORMAT_GML);
+			break;
+		case 'd':
+			r_core_anal_callgraph (core, UT64_MAX, R_GRAPH_FORMAT_DOT);
+			break;
+		case '*':
+			r_core_anal_callgraph (core, UT64_MAX, R_GRAPH_FORMAT_CMD);
+			break;
+		default:
+			eprintf ("Usage: see ag?\n");
+			break;
+		}
 		break;
 	case 'r': // agr "refs"
 		switch (input[1]) {
@@ -5962,17 +5993,49 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		}
 		break;
 	case 'c': // "agc"
-		if (input[1] == '*') {
-			ut64 addr = input[2]? r_num_math (core->num, input + 2): UT64_MAX;
-			r_core_anal_callgraph (core, addr, '*');
-		} else if (input[1] == 'j') {
-			ut64 addr = input[2]? r_num_math (core->num, input + 2): UT64_MAX;
-			r_core_anal_callgraph (core, addr, 2);
-		} else if (input[1] == ' ') {
-			ut64 addr = input[2]? r_num_math (core->num, input + 1): UT64_MAX;
-			r_core_anal_callgraph (core, addr, 1);
-		} else {
-			eprintf ("|ERROR| Usage: agc[j*] ([addr])\n");
+		switch (input[1]) {
+		case 'v':
+		case 't':
+		case 'k':
+		case 'w':
+		case ' ': {
+			core->graph->is_callgraph = true;
+			char *cmd = r_str_newf ("ag-; .agc* %lld; agg%c;",
+				input[2] ? r_num_math (core->num, input + 2) : core->offset, input[1]);
+			if (cmd && *cmd) {
+				r_core_cmd0 (core, cmd);
+			}
+			free (cmd);
+			break;
+			}
+		case 0:
+			core->graph->is_callgraph = true;
+			r_core_cmd0 (core, "ag-; .agc* $$; agg;");
+			break;
+		case 'g': {
+			ut64 addr = input[2]? r_num_math (core->num, input + 1): core->offset;
+			r_core_anal_callgraph (core, addr, R_GRAPH_FORMAT_GMLFCN);
+			break;
+		}
+		case 'd': {
+			ut64 addr = input[2]? r_num_math (core->num, input + 1): core->offset;
+			r_core_anal_callgraph (core, addr, R_GRAPH_FORMAT_DOT);
+			break;
+		}
+		case 'J':
+		case 'j': {
+			ut64 addr = input[2]? r_num_math (core->num, input + 2): core->offset;
+			r_core_anal_callgraph (core, addr, R_GRAPH_FORMAT_JSON);
+			break;
+		}
+		case '*': {
+			ut64 addr = input[2]? r_num_math (core->num, input + 2): core->offset;
+			r_core_anal_callgraph (core, addr, R_GRAPH_FORMAT_CMD);
+			break;
+		}
+		default:
+			eprintf ("Usage: see ag?\n");
+			break;
 		}
 		break;
 	case 'j': // "agj"

@@ -45,6 +45,13 @@ R_LIB_VERSION_HEADER(r_core);
 #define R_CORE_ANAL_KEYVALUE            16
 #define R_CORE_ANAL_JSON_FORMAT_DISASM  32
 
+#define R_GRAPH_FORMAT_NO           0
+#define R_GRAPH_FORMAT_GMLFCN       1
+#define R_GRAPH_FORMAT_JSON         2
+#define R_GRAPH_FORMAT_GML          3
+#define R_GRAPH_FORMAT_DOT          4
+#define R_GRAPH_FORMAT_CMD          5
+
 ///
 #define R_CONS_COLOR_DEF(x, def) ((core->cons && core->cons->pal.x)? core->cons->pal.x: def)
 #define R_CONS_COLOR(x) R_CONS_COLOR_DEF (x, "")
