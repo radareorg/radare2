@@ -1382,7 +1382,7 @@ static void printVarSummary(RDisasmState *ds, RList *list) {
 	const char *sp_args_color = COLOR_RESET (ds);
 	const char *rg_args_color = COLOR_RESET (ds);
 	r_list_foreach (list, iter, var) {
-		if (var->delta > 0) {
+		if (var->isarg) {
 			switch (var->kind) {
 			case 'b':
 				bp_args++;

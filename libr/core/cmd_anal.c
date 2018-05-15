@@ -331,6 +331,7 @@ static const char *help_msg_afv[] = {
 	"afvr", "[?]", "manipulate register based arguments",
 	"afvb", "[?]", "manipulate bp based arguments/locals",
 	"afvs", "[?]", "manipulate sp based arguments/locals",
+	"afv*", "", "output r2 command to add args/locals to flagspace",
 	"afvR", " [varname]", "list addresses where vars are accessed (READ)",
 	"afvW", " [varname]", "list addresses where vars are accessed (WRITE)",
 	"afva", "", "analyze function arguments/locals",
