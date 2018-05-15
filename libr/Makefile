@@ -39,21 +39,22 @@ all:
 ifeq ($(BUILD_MERGED),1)
 
 ifeq ($(OSTYPE),darwin)
-MLFLAGS+=-install_name @rpath/libr2.dylib $(LDFLAGS)
+MLFLAGS+=-install_name @rpath/libr2.dylib
 endif
 ifeq ($(OSTYPE),ios)
-MLFLAGS+=-install_name @rpath/libr2.dylib $(LDFLAGS)
+MLFLAGS+=-install_name @rpath/libr2.dylib
 endif
 # XXX version-script only works with shlib as output
 #ifeq ($(OSTYPE),linux)
 #PLFLAGS+=--version-script ./ld.script
 #endif
+# from env: ALFLAGS+=$(ALFLAGS)
 
 .libr: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 	rm -rf .libr
 	mkdir .libr
 	for LIB in $^ ; do \
-		${PARTIALLD} $(PLFLAGS) -o .libr/$$(basename $${LIB} .a).o $${LIB} ; \
+		${PARTIALLD} $(ALFLAGS) $(MLFLAGS) $(PLFLAGS) -o .libr/$$(basename $${LIB} .a).o $${LIB} ; \
 	done
 ifeq ($(OSTYPE),linux)
 	for LIB in .libr/* ; do $(OBJCOPY) --localize-hidden $$LIB ; done

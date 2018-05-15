@@ -200,6 +200,7 @@ EXTRA=""
 for a in `IFS=+ echo ${CPU}` ; do
         CPUS="-arch $a ${CPUS}"
 done
+export ALFLAGS="${CPUS}"
 export LDFLAGS="${LDFLAGS} ${CPUS}"
 	export PS1="[ios-sdk-$CPU]> "
 	${SHELL}

@@ -18,7 +18,8 @@ include $(LIBR)/../mk/${COMPILER}.mk
 CFLAGS+=${CFLAGS_APPEND}
 CFLAGS+=${CPPFLAGS}
 
-ifeq ($(WITHPIC),1)
+ifeq (1,1)
+#$(WITHPIC),1)
 LINK+=$(subst r_,-L$(LIBR)/,$(DEPS))
 LINK+=$(subst r_,-lr_,$(DEPS))
 LINK+=$(subst r_,-L$(LIBR)/,$(BINDEPS))
