@@ -1003,19 +1003,7 @@ static int var_cmd(RCore *core, const char *str) {
 					free (a);
 					a = strdup ("\n");
 				}
-				r_cons_printf ("var %s = %s", p->name, a);
-				free (a);
-			}
-			r_list_free (list);
-			// args
-			list = r_anal_var_list (core->anal, fcn, 1);
-			r_list_foreach (list, iter, p) {
-				char *a = r_core_cmd_strf (core, ".afvd %s", p->name);
-				if ((a && !*a) || !a) {
-					free (a);
-					a = strdup ("\n");
-				}
-				r_cons_printf ("arg %s = %s", p->name, a);
+				r_cons_printf ("%s %s = %s", p->isarg ? "arg": "var", p->name, a);
 				free (a);
 			}
 			r_list_free (list);
