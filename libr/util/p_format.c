@@ -1316,7 +1316,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 		}
 	}
 
-	r_str_word_set0_stack (args);
+	int words = r_str_word_set0_stack (args);
 	fmt_len = strlen (fmt);
 	for (; i < fmt_len; i++) {
 		if (fmt[i] == '[') {
@@ -1388,10 +1388,19 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 			break;
 		case '?':
 			{
+			const char *wordAtIndex = "";
+			if (idx < words) {
+				eprintf ("Index out of bounds\n");
+			} else {
+				wordAtIndex = r_str_word_get0 (args, idx);
+			}
 			const char *format = NULL;
 			char *endname = NULL, *structname = NULL;
 			char tmp = 0;
-			structname = strdup (r_str_word_get0 (args, idx));
+			if (!wordAtIndex) {
+				break;
+			}
+			structname = strdup (wordAtIndex);
 			if (*structname == '(') {
 				endname = (char*)r_str_rchr (structname, NULL, ')');
 			} else {
@@ -1565,7 +1574,6 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	const char *argend;
 	int viewflags = 0;
 	char *oarg = NULL;
-	ut8 *buf;
 
 	/* Load format from name into fmt */
 	if (!formatname) {
@@ -1585,7 +1593,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 		return 0;
 	}
 	// len+2 to save space for the null termination in wide strings
-	buf = calloc (1, len + 2);
+	ut8 *buf = calloc (1, len + 2);
 	if (!buf) {
 		return 0;
 	}
@@ -1748,13 +1756,14 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			if (mode & R_PRINT_MUSTSEE && otimes > 1) {
 				p->cb_printf ("  ");
 			}
-
 			if (idx < nargs && tmp != 'e' && isptr == 0) {
 				char *dot = NULL, *bracket = NULL;
-				if (field)
+				if (field) {
 					dot = strchr (field, '.');
-				if (dot)
+				}
+				if (dot) {
 					*dot = '\0';
+				}
 				free (oarg);
 				oarg = fieldname = strdup (r_str_word_get0 (args, idx));
 				if (ISSTRUCT || tmp=='E' || tmp=='B' || tmp=='r') {
@@ -2132,7 +2141,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					slide += NESTEDSTRUCT;
 					if (size == -1) {
 						s = r_print_format_struct (p, seeki,
-									buf+i, len-i, fmtname, slide,
+									buf + i, len - i, fmtname, slide,
 									mode, setval, nxtfield, anon);
 						i += (isptr) ? (p->bits / 8) : s;
 						if (MUSTSEEJSON) {
