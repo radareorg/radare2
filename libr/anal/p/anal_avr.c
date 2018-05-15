@@ -392,6 +392,9 @@ static void __generic_sub_update_flags_rk(RAnalOp *op, int d, int k, int carry) 
 
 INST_HANDLER (adc) {	// ADC Rd, Rr
 			// ROL Rd
+	if (len < 2) {
+		return;
+	}
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
 	int r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
 	ESIL_A ("r%d,cf,+,r%d,+,", r, d);		// Rd + Rr + C
@@ -401,6 +404,9 @@ INST_HANDLER (adc) {	// ADC Rd, Rr
 
 INST_HANDLER (add) {	// ADD Rd, Rr
 			// LSL Rd
+	if (len < 2) {
+		return;
+	}
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
 	int r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
 	ESIL_A ("r%d,r%d,+,", r, d);			// Rd + Rr
@@ -409,6 +415,9 @@ INST_HANDLER (add) {	// ADD Rd, Rr
 }
 
 INST_HANDLER (adiw) {	// ADIW Rd+1:Rd, K
+	if (len < 1) {
+		return;
+	}
 	int d = ((buf[0] & 0x30) >> 3) + 24;
 	int k = (buf[0] & 0xf) | ((buf[0] >> 2) & 0x30);
 	op->val = k;
@@ -475,6 +484,9 @@ INST_HANDLER (bclr) {	// BCLR s
 			// CLT
 			// CLV
 			// CLZ
+	if (len < 1) {
+		return;
+	}
 	int s = (buf[0] >> 4) & 0x7;
 	ESIL_A ("0xff,%d,1,<<,^,sreg,&=,", s);
 }
@@ -500,6 +512,9 @@ INST_HANDLER (brbx) {	// BRBC s, k
 			// BRBC/S 5:		BRHC		BRHS
 			// BRBC/S 6:		BRTC		BRTS
 			// BRBC/S 7:		BRID		BRIE
+	if (len < 2) {
+		return;
+	}
 	int s = buf[0] & 0x7;
 	op->jump = op->addr
 		+ ((((buf[1] & 0x03) << 6) | ((buf[0] & 0xf8) >> 2))
@@ -532,6 +547,9 @@ INST_HANDLER (bset) {	// BSET s
 			// SET
 			// SEV
 			// SEZ
+	if (len < 1) {
+		return;
+	}
 	int s = (buf[0] >> 4) & 0x7;
 	ESIL_A ("%d,1,<<,sreg,|=,", s);
 }
@@ -566,6 +584,9 @@ INST_HANDLER (call) {	// CALL k
 }
 
 INST_HANDLER (cbi) {	// CBI A, b
+	if (len < 1) {
+		return;
+	}
 	int a = (buf[0] >> 3) & 0x1f;
 	int b = buf[0] & 0x07;
 	RStrBuf *io_port;
@@ -586,6 +607,9 @@ INST_HANDLER (cbi) {	// CBI A, b
 }
 
 INST_HANDLER (com) {	// COM Rd
+	if (len < 2) {
+		return;
+	}
 	int r = ((buf[0] >> 4) & 0x0f) | ((buf[1] & 1) << 4);
 
 	ESIL_A ("r%d,0xff,-,0xff,&,r%d,=,", r, r);		// Rd = 0xFF-Rd
@@ -595,6 +619,9 @@ INST_HANDLER (com) {	// COM Rd
 }
 
 INST_HANDLER (cp) {	// CP Rd, Rr
+	if (len < 2) {
+		return;
+	}
 	int r = (buf[0]        & 0x0f) | ((buf[1] << 3) & 0x10);
 	int d = ((buf[0] >> 4) & 0x0f) | ((buf[1] << 4) & 0x10);
 	ESIL_A ("r%d,r%d,-,", r, d);			// do Rd - Rr
@@ -602,6 +629,9 @@ INST_HANDLER (cp) {	// CP Rd, Rr
 }
 
 INST_HANDLER (cpc) {	// CPC Rd, Rr
+	if (len < 2) {
+		return;
+	}
 	int r = (buf[0]        & 0x0f) | ((buf[1] << 3) & 0x10);
 	int d = ((buf[0] >> 4) & 0x0f) | ((buf[1] << 4) & 0x10);
 
@@ -610,6 +640,9 @@ INST_HANDLER (cpc) {	// CPC Rd, Rr
 }
 
 INST_HANDLER (cpi) { // CPI Rd, K
+	if (len < 2) {
+		return;
+	}
 	int d = ((buf[0] >> 4) & 0xf) + 16;
 	int k = (buf[0] & 0xf) | ((buf[1] & 0xf) << 4);
 	ESIL_A ("%d,r%d,-,", k, d);			// Rd - k
@@ -617,6 +650,9 @@ INST_HANDLER (cpi) { // CPI Rd, K
 }
 
 INST_HANDLER (cpse) {	// CPSE Rd, Rr
+	if (len < 2) {
+		return;
+	}
 	int r = (buf[0] & 0xf) | ((buf[1] & 0x2) << 3);
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 	RAnalOp next_op = {0};
@@ -641,6 +677,9 @@ INST_HANDLER (cpse) {	// CPSE Rd, Rr
 }
 
 INST_HANDLER (dec) {	// DEC Rd
+	if (len < 2) {
+		return;
+	}
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 	ESIL_A ("-1,r%d,+,", d);				// --Rd
 								// FLAGS:
@@ -687,6 +726,9 @@ INST_HANDLER (eicall) {	// EICALL
 INST_HANDLER (elpm) {	// ELPM
 			// ELPM Rd
 			// ELPM Rd, Z+
+	if (len < 2) {
+		return;
+	}
 	int d = ((buf[1] & 0xfe) == 0x90)
 			? ((buf[1] & 1) << 4) | ((buf[0] >> 4) & 0xf)	// Rd
 			: 0;						// R0
@@ -699,6 +741,9 @@ INST_HANDLER (elpm) {	// ELPM
 
 INST_HANDLER (eor) {	// EOR Rd, Rr
 			// CLR Rd
+	if (len < 2) {
+		return;
+	}
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
 	int r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
 	ESIL_A ("r%d,r%d,^,", r, d);			// 0: Rd ^ Rr
@@ -707,6 +752,9 @@ INST_HANDLER (eor) {	// EOR Rd, Rr
 }
 
 INST_HANDLER (fmul) {	// FMUL Rd, Rr
+	if (len < 1) {
+		return;
+	}
 	int d = ((buf[0] >> 4) & 0x7) + 16;
 	int r = (buf[0] & 0x7) + 16;
 
@@ -719,6 +767,9 @@ INST_HANDLER (fmul) {	// FMUL Rd, Rr
 }
 
 INST_HANDLER (fmuls) {	// FMULS Rd, Rr
+	if (len < 1) {
+		return;
+	}
 	int d = ((buf[0] >> 4) & 0x7) + 16;
 	int r = (buf[0] & 0x7) + 16;
 
@@ -735,6 +786,9 @@ INST_HANDLER (fmuls) {	// FMULS Rd, Rr
 }
 
 INST_HANDLER (fmulsu) {	// FMULSU Rd, Rr
+	if (len < 1) {
+		return;
+	}
 	int d = ((buf[0] >> 4) & 0x7) + 16;
 	int r = (buf[0] & 0x7) + 16;
 
@@ -776,6 +830,9 @@ INST_HANDLER (icall) {	// ICALL k
 }
 
 INST_HANDLER (in) {	// IN Rd, A
+	if (len < 2) {
+		return;
+	}
 	int r = ((buf[0] >> 4) & 0x0f) | ((buf[1] & 0x01) << 4);
 	int a = (buf[0] & 0x0f) | ((buf[1] & 0x6) << 3);
 	RStrBuf *io_src = __generic_io_dest (a, 0, cpu);
@@ -787,6 +844,9 @@ INST_HANDLER (in) {	// IN Rd, A
 }
 
 INST_HANDLER (inc) {	// INC Rd
+	if (len < 2) {
+		return;
+	}
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 	ESIL_A ("1,r%d,+,", d);					// ++Rd
 								// FLAGS:
@@ -798,6 +858,9 @@ INST_HANDLER (inc) {	// INC Rd
 }
 
 INST_HANDLER (jmp) {	// JMP k
+	if (len < 4) {
+		return;
+	}
 	op->jump = (buf[2] << 1)
 		 | (buf[3] << 9)
 		 | (buf[1] & 0x01) << 23
@@ -808,6 +871,9 @@ INST_HANDLER (jmp) {	// JMP k
 }
 
 INST_HANDLER (lac) {	// LAC Z, Rd
+	if (len < 2) {
+		return;
+	}
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 
 	// read memory from RAMPZ:Z
@@ -818,6 +884,9 @@ INST_HANDLER (lac) {	// LAC Z, Rd
 }
 
 INST_HANDLER (las) {	// LAS Z, Rd
+	if (len < 2) {
+		return;
+	}
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 
 	// read memory from RAMPZ:Z
@@ -828,6 +897,9 @@ INST_HANDLER (las) {	// LAS Z, Rd
 }
 
 INST_HANDLER (lat) {	// LAT Z, Rd
+	if (len < 2) {
+		return;
+	}
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 
 	// read memory from RAMPZ:Z
@@ -840,6 +912,9 @@ INST_HANDLER (lat) {	// LAT Z, Rd
 INST_HANDLER (ld) {	// LD Rd, X
 			// LD Rd, X+
 			// LD Rd, -X
+	if (len < 2) {
+		return;
+	}
 	// read memory
 	__generic_ld_st (
 		op, "ram",
@@ -870,6 +945,9 @@ INST_HANDLER (ldd) {	// LD Rd, Y	LD Rd, Z
 			// LD Rd, Y+	LD Rd, Z+
 			// LD Rd, -Y	LD Rd, -Z
 			// LD Rd, Y+q	LD Rd, Z+q
+	if (len < 2) {
+		return;
+	}
 	// calculate offset (this value only has sense in some opcodes,
 	// but we are optimistic and we calculate it always)
 	int offset = (buf[1] & 0x20)
@@ -905,6 +983,9 @@ INST_HANDLER (ldd) {	// LD Rd, Y	LD Rd, Z
 }
 
 INST_HANDLER (ldi) {	// LDI Rd, K
+	if (len < 2) {
+		return;
+	}
 	int k = (buf[0] & 0xf) + ((buf[1] & 0xf) << 4);
 	int d = ((buf[0] >> 4) & 0xf) + 16;
 	op->val = k;
@@ -956,6 +1037,9 @@ INST_HANDLER (lds16) {	// LDS Rd, k
 INST_HANDLER (lpm) {	// LPM
 			// LPM Rd, Z
 			// LPM Rd, Z+
+	if (len < 2) {
+		return;
+	}
 	ut16 ins = (((ut16) buf[1]) << 8) | ((ut16) buf[0]);
 	// read program memory
 	__generic_ld_st (
@@ -976,6 +1060,9 @@ INST_HANDLER (lpm) {	// LPM
 }
 
 INST_HANDLER (lsr) {	// LSR Rd
+	if (len < 2) {
+		return;
+	}
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
 	ESIL_A ("1,r%d,>>,", d);				// 0: R=(Rd >> 1)
 	ESIL_A ("r%d,0x1,&,!,!,cf,=,", d);			// C = Rd0
@@ -987,18 +1074,27 @@ INST_HANDLER (lsr) {	// LSR Rd
 }
 
 INST_HANDLER (mov) {	// MOV Rd, Rr
+	if (len < 2) {
+		return;
+	}
 	int d = ((buf[1] << 4) & 0x10) | ((buf[0] >> 4) & 0x0f);
 	int r = ((buf[1] << 3) & 0x10) | (buf[0] & 0x0f);
 	ESIL_A ("r%d,r%d,=,", r, d);
 }
 
 INST_HANDLER (movw) {	// MOVW Rd+1:Rd, Rr+1:Rr
+	if (len < 1) {
+		return;
+	}
 	int d = (buf[0] & 0xf0) >> 3;
 	int r = (buf[0] & 0x0f) << 1;
 	ESIL_A ("r%d,r%d,=,r%d,r%d,=,", r, d, r + 1, d + 1);
 }
 
 INST_HANDLER (mul) {	// MUL Rd, Rr
+	if (len < 2) {
+		return;
+	}
 	int d = ((buf[1] << 4) & 0x10) | ((buf[0] >> 4) & 0x0f);
 	int r = ((buf[1] << 3) & 0x10) | (buf[0] & 0x0f);
 
@@ -1010,6 +1106,9 @@ INST_HANDLER (mul) {	// MUL Rd, Rr
 }
 
 INST_HANDLER (muls) {	// MULS Rd, Rr
+	if (len < 1) {
+		return;
+	}
 	int d = (buf[0] >> 4 & 0x0f) + 16;
 	int r = (buf[0] & 0x0f) + 16;
 
@@ -1023,6 +1122,9 @@ INST_HANDLER (muls) {	// MULS Rd, Rr
 }
 
 INST_HANDLER (mulsu) {	// MULSU Rd, Rr
+	if (len < 1) {
+		return;
+	}
 	int d = (buf[0] >> 4 & 0x07) + 16;
 	int r = (buf[0] & 0x07) + 16;
 
@@ -1036,6 +1138,9 @@ INST_HANDLER (mulsu) {	// MULSU Rd, Rr
 }
 
 INST_HANDLER (neg) {	// NEG Rd
+	if (len < 2) {
+		return;
+	}
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
 	ESIL_A ("r%d,0x00,-,0xff,&,", d);			// 0: (0-Rd)
 	ESIL_A ("DUP,r%d,0xff,^,|,0x08,&,!,!,hf,=,", d);	// H
@@ -1052,6 +1157,9 @@ INST_HANDLER (nop) {	// NOP
 }
 
 INST_HANDLER (or) {	// OR Rd, Rr
+	if (len < 2) {
+		return;
+	}
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
 	int r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
 	ESIL_A ("r%d,r%d,|,", r, d);				// 0: (Rd | Rr)
@@ -1064,6 +1172,9 @@ INST_HANDLER (or) {	// OR Rd, Rr
 
 INST_HANDLER (ori) {	// ORI Rd, K
 			// SBR Rd, K
+	if (len < 2) {
+		return;
+	}
 	int d = ((buf[0] >> 4) & 0xf) + 16;
 	int k = (buf[0] & 0xf) | ((buf[1] & 0xf) << 4);
 	op->val = k;
@@ -1076,6 +1187,9 @@ INST_HANDLER (ori) {	// ORI Rd, K
 }
 
 INST_HANDLER (out) {	// OUT A, Rr
+	if (len < 2) {
+		return;
+	}
 	int r = ((buf[0] >> 4) & 0x0f) | ((buf[1] & 0x01) << 4);
 	int a = (buf[0] & 0x0f) | ((buf[1] & 0x6) << 3);
 	RStrBuf *io_dst = __generic_io_dest (a, 1, cpu);
@@ -1087,6 +1201,9 @@ INST_HANDLER (out) {	// OUT A, Rr
 }
 
 INST_HANDLER (pop) {	// POP Rd
+	if (len < 2) {
+		return;
+	}
 	int d = ((buf[1] & 0x1) << 4) | ((buf[0] >> 4) & 0xf);
 	__generic_pop (op, 1);
 	ESIL_A ("r%d,=,", d);	// store in Rd
@@ -1094,6 +1211,9 @@ INST_HANDLER (pop) {	// POP Rd
 }
 
 INST_HANDLER (push) {	// PUSH Rr
+	if (len < 2) {
+		return;
+	}
 	int r = ((buf[1] & 0x1) << 4) | ((buf[0] >> 4) & 0xf);
 	ESIL_A ("r%d,", r);	// load Rr
 	__generic_push (op, 1);	// push it into stack
@@ -1104,6 +1224,9 @@ INST_HANDLER (push) {	// PUSH Rr
 }
 
 INST_HANDLER (rcall) {	// RCALL k
+	if (len < 2) {
+		return;
+	}
 	// target address
 	op->jump = (op->addr
 		+ (((((buf[1] & 0xf) << 8) | buf[0]) << 1)
@@ -1177,6 +1300,9 @@ INST_HANDLER (ror) {	// ROR Rd
 }
 
 INST_HANDLER (sbc) {	// SBC Rd, Rr
+	if (len < 2) {
+		return;
+	}
 	int r = (buf[0] & 0x0f) | ((buf[1] & 0x2) << 3);
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 
@@ -1186,6 +1312,9 @@ INST_HANDLER (sbc) {	// SBC Rd, Rr
 }
 
 INST_HANDLER (sbci) {	// SBCI Rd, k
+	if (len < 2) {
+		return;
+	}
 	int d = ((buf[0] >> 4) & 0xf) + 16;
 	int k = ((buf[1] & 0xf) << 4) | (buf[0] & 0xf);
 	op->val = k;
@@ -1196,6 +1325,9 @@ INST_HANDLER (sbci) {	// SBCI Rd, k
 }
 
 INST_HANDLER (sub) {	// SUB Rd, Rr
+	if (len < 2) {
+		return;
+	}
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 1) << 4);
 	int r = (buf[0] & 0xf) | ((buf[1] & 2) << 3);
 
@@ -1205,6 +1337,9 @@ INST_HANDLER (sub) {	// SUB Rd, Rr
 }
 
 INST_HANDLER (subi) {	// SUBI Rd, k
+	if (len < 2) {
+		return;
+	}
 	int d = ((buf[0] >> 4) & 0xf) + 16;
 	int k = ((buf[1] & 0xf) << 4) | (buf[0] & 0xf);
 	op->val = k;
@@ -1215,6 +1350,9 @@ INST_HANDLER (subi) {	// SUBI Rd, k
 }
 
 INST_HANDLER (sbi) {	// SBI A, b
+	if (len < 1) {
+		return;
+	}
 	int a = (buf[0] >> 3) & 0x1f;
 	int b = buf[0] & 0x07;
 	RStrBuf *io_port;
@@ -1236,6 +1374,9 @@ INST_HANDLER (sbi) {	// SBI A, b
 
 INST_HANDLER (sbix) {	// SBIC A, b
 			// SBIS A, b
+	if (len < 1) {
+		return;
+	}
 	int a = (buf[0] >> 3) & 0x1f;
 	int b = buf[0] & 0x07;
 	RAnalOp next_op;
@@ -1273,6 +1414,9 @@ INST_HANDLER (sbix) {	// SBIC A, b
 }
 
 INST_HANDLER (sbiw) {	// SBIW Rd+1:Rd, K
+	if (len < 1) {
+		return;
+	}
 	int d = ((buf[0] & 0x30) >> 3) + 24;
 	int k = (buf[0] & 0xf) | ((buf[0] >> 2) & 0x30);
 	op->val = k;
@@ -1291,6 +1435,9 @@ INST_HANDLER (sbiw) {	// SBIW Rd+1:Rd, K
 
 INST_HANDLER (sbrx) {	// SBRC Rr, b
 			// SBRS Rr, b
+	if (len < 2) {
+		return;
+	}
 	int b = buf[0] & 0x7;
 	int r = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x01) << 4);
 	RAnalOp next_op = {0};
@@ -1332,27 +1479,27 @@ INST_HANDLER (spm) {	// SPM Z+
 
 	// decide action depending on the old value of SPMCSR
 	switch (spmcsr & 0x7f) {
-		case 0x03: // PAGE ERASE
-			// invoke SPM_CLEAR_PAGE (erases target page writing
-			// the 0xff value
-			ESIL_A ("16,rampz,<<,z,+,"); // push target address
-			ESIL_A ("SPM_PAGE_ERASE,");  // do magic
-			break;
+	case 0x03: // PAGE ERASE
+		// invoke SPM_CLEAR_PAGE (erases target page writing
+		// the 0xff value
+		ESIL_A ("16,rampz,<<,z,+,"); // push target address
+		ESIL_A ("SPM_PAGE_ERASE,");  // do magic
+		break;
 
-		case 0x01: // FILL TEMPORARY BUFFER
-			ESIL_A ("r1,r0,");           // push data
-			ESIL_A ("z,");               // push target address
-			ESIL_A ("SPM_PAGE_FILL,");   // do magic
-			break;
+	case 0x01: // FILL TEMPORARY BUFFER
+		ESIL_A ("r1,r0,");           // push data
+		ESIL_A ("z,");               // push target address
+		ESIL_A ("SPM_PAGE_FILL,");   // do magic
+		break;
 
-		case 0x05: // WRITE PAGE
-			ESIL_A ("16,rampz,<<,z,+,"); // push target address
-			ESIL_A ("SPM_PAGE_WRITE,");  // do magic
-			break;
+	case 0x05: // WRITE PAGE
+		ESIL_A ("16,rampz,<<,z,+,"); // push target address
+		ESIL_A ("SPM_PAGE_WRITE,");  // do magic
+		break;
 
-		default:
-			eprintf ("SPM: I dont know what to do with SPMCSR %02x.\n",
-					(unsigned int) spmcsr);
+	default:
+		eprintf ("SPM: I dont know what to do with SPMCSR %02x.\n",
+				(unsigned int) spmcsr);
 	}
 
 	op->cycles = 1;	// This is truly false. Datasheets do not publish how
@@ -1365,6 +1512,9 @@ INST_HANDLER (spm) {	// SPM Z+
 INST_HANDLER (st) {	// ST X, Rr
 			// ST X+, Rr
 			// ST -X, Rr
+	if (len < 2) {
+		return;
+	}
 	// load register
 	ESIL_A ("r%d,", ((buf[1] & 1) << 4) | ((buf[0] >> 4) & 0xf));
 	// write in memory
@@ -1395,6 +1545,9 @@ INST_HANDLER (std) {	// ST Y, Rr	ST Z, Rr
 			// ST Y+, Rr	ST Z+, Rr
 			// ST -Y, Rr	ST -Z, Rr
 			// ST Y+q, Rr	ST Z+q, Rr
+	if (len < 2) {
+		return;
+	}
 	// load register
 	ESIL_A ("r%d,", ((buf[1] & 1) << 4) | ((buf[0] >> 4) & 0xf));
 	// write in memory
@@ -1429,6 +1582,9 @@ INST_HANDLER (std) {	// ST Y, Rr	ST Z, Rr
 }
 
 INST_HANDLER (swap) {	// SWAP Rd
+	if (len < 2) {
+		return;
+	}
 	int d = ((buf[1] & 0x1) << 4) | ((buf[0] >> 4) & 0xf);
 	ESIL_A ("4,r%d,>>,0x0f,&,", d);		// (Rd >> 4) & 0xf
 	ESIL_A ("4,r%d,<<,0xf0,&,", d);		// (Rd >> 4) & 0xf
@@ -1985,7 +2141,6 @@ static int archinfo(RAnal *anal, int q) {
 		return 2;
 	return 2; // XXX
 }
-
 
 static ut8 *anal_mask_avr(RAnal *anal, int size, const ut8 *data, ut64 at) {
 	RAnalOp *op = NULL;
