@@ -728,12 +728,8 @@ static void cmd_open_map(RCore *core, const char *input) {
 		break;
 	case 'm': // "omm"
 		{
-			ut64 fd = input[3]? r_num_math (core->num, input + 3): UT64_MAX;
+			ut32 fd = input[3]? r_num_math (core->num, input + 3): r_io_fd_get_current (core->io);
 			RIODesc *desc = r_io_desc_get (core->io, fd);
-			if (!desc) {
-				fd = r_io_fd_get_current (core->io);
-				desc = r_io_desc_get (core->io, fd);
-			}
 			if (desc) {
 				ut64 size = r_io_desc_size (desc);
 				map = r_io_map_add (core->io, fd, desc->flags, 0, 0, size, true);
