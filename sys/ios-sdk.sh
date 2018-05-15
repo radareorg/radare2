@@ -25,6 +25,7 @@ export USE_IOS_STATIC=0
 
 if [ "${EMBED_BITCODE}" = 1 ]; then
 	export CFLAGS="$CFLAGS -fembed-bitcode"
+	export LDFLAGS="$LDFLAGS -fembed-bitcode"
 fi
 
 iosConfigure() {
