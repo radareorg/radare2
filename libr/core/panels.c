@@ -344,7 +344,7 @@ static void cursorLeft(RCore *core) {
 static void handleUpKey() {
 	RPanels *panels = _core->panels;
 
-	r_cons_switchbuf(false);
+	r_cons_switchbuf (false);
 	panels->panel[panels->curnode].refresh = true;
 	if (panels->panel[panels->curnode].type == PANEL_TYPE_MENU) {
 		panels->menu_y--;
@@ -383,7 +383,7 @@ static void handleUpKey() {
 static void handleDownKey() {
 	RPanels *panels = _core->panels;
 
-	r_cons_switchbuf(false);
+	r_cons_switchbuf (false);
 	panels->panel[panels->curnode].refresh = true;
 	if (panels->panel[panels->curnode].type == PANEL_TYPE_MENU) {
 		if (menus_sub[panels->menu_x][panels->menu_y]) {
@@ -430,7 +430,7 @@ static void handleDownKey() {
 static void handleLeftKey() {
 	RPanels *panels = _core->panels;
 
-	r_cons_switchbuf(false);
+	r_cons_switchbuf (false);
 	panels->panel[panels->curnode].refresh = true;
 	if (_core->print->cur_enabled) {
 		cursorLeft (_core);
@@ -451,7 +451,7 @@ static void handleLeftKey() {
 static void handleRightKey() {
 	RPanels *panels = _core->panels;
 
-	r_cons_switchbuf(false);
+	r_cons_switchbuf (false);
 	panels->panel[panels->curnode].refresh = true;
 	if (_core->print->cur_enabled) {
 		cursorRight (_core);
@@ -1025,7 +1025,7 @@ R_API RPanels *r_panels_new(RCore* core) {
 }
 
 R_API void r_panels_free(RPanels *panels) {
-	r_cons_switchbuf(true);
+	r_cons_switchbuf (true);
 	if (panels) {
 		free (panels);
 	}
@@ -1054,7 +1054,7 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 		return false;
 	}
 
-	r_cons_switchbuf(false);
+	r_cons_switchbuf (false);
 	core->panels = panels;
 	panels->originCursor = core->print->cur;
 	core->print->cur = 0;
@@ -1080,7 +1080,7 @@ repeat:
 	}
 	okey = r_cons_readchar ();
 	key = r_cons_arrow_to_hjkl (okey);
-	r_cons_switchbuf(true);
+	r_cons_switchbuf (true);
 
 	if (handleCursorMode (core, key)) {
 		goto repeat;
@@ -1155,7 +1155,10 @@ repeat:
 			" x    - close current panel\n"
 			" m    - open menubar\n"
 			" V    - view graph\n"
+			" b    - browse symbols, flags, configurations, classes, ...\n"
+			" c    - toggle cursor\n"
 			" C    - toggle color\n"
+			" i    - insert hex\n"
 			" M    - open new custom frame\n"
 			" hl   - toggle scr.color\n"
 			" HL   - move vertical column split\n"
@@ -1169,6 +1172,9 @@ repeat:
 			);
 		r_cons_flush ();
 		r_cons_any_key (NULL);
+		break;
+	case 'b':
+		r_core_visual_browse (core);
 		break;
 	case 's':
 		if (r_config_get_i (core->config, "cfg.debug")) {
@@ -1237,7 +1243,7 @@ repeat:
 		break;
 	case 9: // TAB
 	case 'J':
-		r_cons_switchbuf(false);
+		r_cons_switchbuf (false);
 		panels->menu_y = 0;
 		panels->menu_x = -1;
 		panels->panel[panels->curnode].refresh = true;
@@ -1250,7 +1256,7 @@ repeat:
 		break;
 	case 'Z': // SHIFT-TAB
 	case 'K':
-		r_cons_switchbuf(false);
+		r_cons_switchbuf (false);
 		panels->menu_y = 0;
 		panels->menu_x = -1;
 		panels->panel[panels->curnode].refresh = true;
@@ -1285,12 +1291,12 @@ repeat:
 		panels->menu_y = 1;
 		break;
 	case 'H':
-		r_cons_switchbuf(false);
+		r_cons_switchbuf (false);
 		panels->columnWidth += 4;
 		panels->isResizing = true;
 		break;
 	case 'L':
-		r_cons_switchbuf(false);
+		r_cons_switchbuf (false);
 		panels->columnWidth -= 4;
 		panels->isResizing = true;
 		if (panels->columnWidth < 0) {

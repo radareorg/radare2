@@ -1560,7 +1560,7 @@ static bool insert_mode_enabled(RCore *core) {
 	return true;
 }
 
-static void visual_browse(RCore *core) {
+R_API void r_core_visual_browse(RCore *core) {
 	const char *browsemsg = \
 		"Browse stuff:\n"
 		"-------------\n"
@@ -2614,7 +2614,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			showcursor (core, false);
 			break;
 		case 'b':
-			visual_browse (core);
+			r_core_visual_browse (core);
 			break;
 		case 'B':
 			{
