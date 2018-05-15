@@ -91,7 +91,7 @@ static void readstr(char *s, int sz, const ut8 *buf, int len) {
 		return;
 	}
 	s[sz - 1] = 0;
-	while (*s && *s == '\n') {
+	while (*s && *s != '\n') {
 		s++;
 	}
 	strncpy (s, (char *) buf, last);
