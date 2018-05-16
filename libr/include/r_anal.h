@@ -1436,8 +1436,6 @@ R_API RList *r_anal_xrefs_get_from(RAnal *anal, ut64 from);
 R_API void r_anal_xrefs_list(RAnal *anal, int rad);
 R_API RList *r_anal_fcn_get_refs(RAnal *anal, RAnalFunction *fcn);
 R_API RList *r_anal_fcn_get_xrefs(RAnal *anal, RAnalFunction *fcn);
-R_API RList *r_anal_fcn_get_refs_sorted(RAnal *anal, RAnalFunction *fcn);
-R_API RList *r_anal_fcn_get_xrefs_sorted(RAnal *anal, RAnalFunction *fcn);
 R_API int r_anal_xrefs_from(RAnal *anal, RList *list, const char *kind, const RAnalRefType type, ut64 addr);
 R_API int r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type);
 R_API int r_anal_xrefs_deln(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type);
