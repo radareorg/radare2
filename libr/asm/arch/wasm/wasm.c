@@ -6,8 +6,8 @@
 #include <r_lib.h>
 #include <string.h>
 
-#include "../../asm/arch/wasm/wasm.h"
-#include "../../bin/format/wasm/wasm.h"
+#include "wasm.h"
+#include "../../../bin/format/wasm/wasm.h"
 
 static WasmOpDef opcodes[256] = {
 	[WASM_OP_TRAP] = { "trap", 1, 1 },
