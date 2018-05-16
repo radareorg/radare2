@@ -1,5 +1,9 @@
 res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("capstone"))')
 if res.returncode() == 0
+  if not git_exe.found()
+    error('Cannot load capstone library. Either provide capstone in ./shlr/capstone or install git, so it can be downloaded')
+  endif
+
   message('Cloning capstone')
   git_cmd = 'clone -b next --depth 10 https://github.com/aquynh/capstone.git capstone'
   run_command(git_exe, git_cmd.split())
