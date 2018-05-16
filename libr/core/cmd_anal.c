@@ -6069,6 +6069,19 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			}
 		}
 		break;
+	case 'w':// "agw" 
+		if (r_config_get_i (core->config, "graph.web")) {
+			r_core_cmd0 (core, "=H /graph/");
+		} else {
+			char *cmdargs = r_str_newf ("agfd %lld", r_num_math (core->num, input + 2));
+			char *cmd = r_core_graph_cmd (core, cmdargs);
+			if (cmd && *cmd) {
+				r_core_cmd0 (core, cmd);
+			}
+			free (cmd);
+			free (cmdargs);
+		}
+		break;
 	case '?': // "ag?"
 		r_core_cmd_help (core, help_msg_ag);
 		break;
