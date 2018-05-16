@@ -728,12 +728,8 @@ static void cmd_open_map(RCore *core, const char *input) {
 		break;
 	case 'm': // "omm"
 		{
-			ut64 fd = input[3]? r_num_math (core->num, input + 3): UT64_MAX;
+			ut32 fd = input[3]? r_num_math (core->num, input + 3): r_io_fd_get_current (core->io);
 			RIODesc *desc = r_io_desc_get (core->io, fd);
-			if (!desc) {
-				fd = r_io_fd_get_current (core->io);
-				desc = r_io_desc_get (core->io, fd);
-			}
 			if (desc) {
 				ut64 size = r_io_desc_size (desc);
 				map = r_io_map_add (core->io, fd, desc->flags, 0, 0, size, true);
@@ -782,35 +778,52 @@ static void cmd_open_map(RCore *core, const char *input) {
 	r_core_block_read (core);
 }
 
-R_API void r_core_file_reopen_in_malloc (RCore *core) {
-	RListIter *iter;
-	RList *files = r_id_storage_list (core->io->files);
-	RIODesc *desc;
-	r_list_foreach (files, iter, desc) {
-		if (strstr (desc->name, "://")) {
-			continue;
-		}
-		ut64 sz = r_io_desc_size (desc);
-		ut8 *buf = calloc (sz, 1);
-		if (!buf) {
-			eprintf ("Cannot allocate %d\n", (int)sz);
-			continue;
-		}
-		(void)r_io_pread_at (core->io, 0, buf, sz);
-		char *url = r_str_newf ("malloc://%d", (int)sz);
-		// use r_io_desc_exchange pls
-		RIODesc *newDesc = r_io_open (core->io, url, R_IO_READ | R_IO_WRITE, 0);
-		if (newDesc) {
-			r_io_desc_close (desc);
-			(void)r_io_write_at (core->io, 0, buf, sz);
-		} else {
-			eprintf ("Cannot open %s\n", url);
-		}
-		free (buf);
-		free (url);
-		break;
+static bool reopen_in_malloc_cb(void *user, void *data, ut32 id) {
+	RIO *io = (RIO *)user;
+	RIODesc *desc = (RIODesc *)data;
+
+	if (r_io_desc_is_blockdevice (desc) || r_io_desc_is_dbg (desc)) {
+		return true;
 	}
-	r_core_block_read (core);
+
+	if (strstr (desc->uri, "://")) {
+		return true;
+	}
+
+	ut64 size = r_io_desc_size (desc);
+
+	char *uri = r_str_newf ("malloc://%"PFMT64u, size);
+	if (!uri) {
+		return false;
+	}
+
+	ut8 *buf = malloc (size);
+// if malloc fails, we can just abort the loop by returning false
+	if (!buf) {
+		free (uri);
+		return false;
+	}
+
+	RIODesc *ndesc = r_io_open_nomap (io, uri, R_IO_RW, 0);
+	free (uri);
+	if (!ndesc) {
+		free (buf);
+		return false;
+	}
+
+	r_io_desc_read_at (desc, 0LL, buf, (int)size);	//that cast o_O
+	r_io_desc_write_at (ndesc, 0LL, buf, (int)size);
+	free (buf);
+	r_io_desc_exchange (io, desc->fd, ndesc->fd);
+
+	r_io_desc_close (desc);
+	return true;
+}
+
+R_API void r_core_file_reopen_in_malloc (RCore *core) {
+	if (core && core->io && core->io->files) {
+		r_id_storage_foreach (core->io->files, reopen_in_malloc_cb, core->io);
+	}
 }
 
 R_API void r_core_file_reopen_debug (RCore *core, const char *args) {
