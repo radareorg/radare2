@@ -10,7 +10,6 @@ files = [
   'section.c',
   'undo.c',
   'p_cache.c',
-  'p/io_rbuf.c',
   'p/io_ar.c',
   'p/io_bfdbg.c',
   'p/io_bochs.c',
@@ -32,6 +31,7 @@ files = [
   'p/io_r2pipe.c',
   'p/io_r2web.c',
   'p/io_rap.c',
+  'p/io_rbuf.c',
   'p/io_self.c',
   'p/io_shm.c',
   'p/io_sparse.c',
@@ -58,17 +58,19 @@ endif
 r_io = library('r_io', files,
   include_directories: [
     platform_inc,
-    include_directories([
+    include_directories(
       '../../shlr/bochs/include',
       '../../shlr/gdb/include',
       '../../shlr/qnx/include',
       '../../shlr/windbg',
       '../../shlr/ar',
       '../../shlr/zip/include'
-    ])
+    )
   ],
   link_with: [
-    r_util, r_socket, libr_shlr
+    r_util,
+    r_socket,
+    libr_shlr
   ],
   c_args: ['-DCORELIB=1'],
   install: true,
@@ -83,7 +85,8 @@ pkgconfig_mod.generate(
   name: 'r_io',
   filebase: 'r_io',
   requires: [
-    'r_util', 'r_socket'
+    'r_util',
+    'r_socket'
   ],
   description: 'radare foundation libraries'
 )

@@ -184,7 +184,7 @@ static RList* entries(RBinFile *bf) {
 	return ret;
 }
 
-struct r_bin_plugin_t r_bin_plugin_pebble = {
+RBinPlugin r_bin_plugin_pebble = {
 	.name = "pebble",
 	.desc = "Pebble Watch App",
 	.license = "LGPL",

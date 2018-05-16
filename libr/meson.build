@@ -1,19 +1,22 @@
-anal = [
+anal_plugins = [
   '6502',
   '8051',
   'arc',
-  'avr',
   'arm_cs',
   'arm_gnu',
+  'avr',
   'bf',
+  'chip8',
   'cr16',
   'cris',
   'dalvik',
   'ebc',
+  'gb',
+  'h8300',
+  'hexagon',
   'i4004',
   'i8080',
   'java',
-  'gb',
   'm68k_cs',
   'malbolge',
   'mips_cs',
@@ -26,15 +29,18 @@ anal = [
   'ppc_gnu',
   'propeller',
   'riscv',
+  'rsp',
   'sh',
   'snes',
   'sparc_cs',
   'sparc_gnu',
   'sysz',
   'tms320',
-  'vax',
+  #'tms320c64x',
   'v810',
   'v850',
+  'vax',
+  'wasm',
   'ws',
   'x86_cs',
   'xap',
@@ -43,23 +49,26 @@ anal = [
   'z80',
 ]
 
-asm = [
+asm_plugins = [
   '6502',
   '8051',
   'arc',
-  'avr',
   'arm_as',
   'arm_cs',
   'arm_gnu',
   'arm_winedbg',
+  'avr',
   'bf',
+  'chip8',
   'cr16',
   'cris_gnu',
   'dalvik',
   'dcpu16',
-  'gb',
   'ebc',
+  'gb',
   'h8300',
+  'hexagon',
+  #'hexagon_gnu',
   'hppa_gnu',
   'i4004',
   'i8080',
@@ -79,6 +88,7 @@ asm = [
   'ppc_gnu',
   'propeller',
   'riscv',
+  'rsp',
   'sh',
   'snes',
   'sparc_cs',
@@ -94,6 +104,7 @@ asm = [
   'ws',
   'x86_as',
   'x86_cs',
+  #'x86_gas',
   'x86_nasm',
   'x86_nz',
   'xap',
@@ -102,7 +113,7 @@ asm = [
   'z80',
 ]
 
-bin = [
+bin_plugins = [
   'any',
   'art',
   'bf',
@@ -130,6 +141,7 @@ bin = [
   'ningb',
   'ningba',
   'nro',
+  'nso',
   'omf',
   'p9',
   'pe',
@@ -144,28 +156,34 @@ bin = [
   'vsf',
   'wasm',
   'xbe',
-  'zimg',
   'z64',
+  'zimg',
 ]
 
-bin_xtr = [
-  'fatmach0',
-  'xtr_dyldcache'
+bin_ldr_plugins = [
+  'ldr_linux',
 ]
 
-bp = [
+bin_xtr_plugins = [
+  'xtr_dyldcache',
+  'xtr_fatmach0',
+]
+
+bp_plugins = [
   'arm',
   'bf',
   'mips',
   'ppc',
+  'sh',
   'x86'
 ]
 
-core = [
-  'anal'
+core_plugins = [
+  'anal',
+  'java'
 ]
 
-crypto = [
+crypto_plugins = [
   'aes',
   'aes_cbc',
   'base64',
@@ -180,50 +198,60 @@ crypto = [
   'rol',
   'ror',
   'rot',
+  'serpent',
   'xor',
-  'serpent'
 ]
 
-debug = [
+debug_plugins = [
   'bf',
+  'bochs',
   'esil',
+  'gdb',
   'io',
   'native',
+  'null',
+  'qnx',
   'rap',
-  'gdb',
   'windbg'
 ]
 
-egg = [
+egg_plugins = [
   'exec',
+  #'shya',
   'xor'
 ]
 
-fs = [
+fs_plugins = [
+  'cpio',
   'ext2',
   'fat',
   'fb',
   'hfs',
   'hfsplus',
+  'io',
   'iso9660',
   'jfs',
   'minix',
   'ntfs',
   'posix',
+  'r2',
   'reiserfs',
   'sfs',
   'tar',
   'udf',
   'ufs',
+  'ufs2',
   'xfs'
 ]
 
-io = [
+io_plugins = [
   'ar',
   'bfdbg',
+  'bochs',
   'debug',
   'default',
   'gdb',
+  'gprobe',
   'gzip',
   'http',
   'ihex',
@@ -233,41 +261,52 @@ io = [
   'null',
   'procpid',
   'ptrace',
+  'qnx',
   'r2k',
   'r2pipe',
   'r2web',
   'rap',
+  'rbuf',
   'self',
   'shm',
   'sparse',
   'tcp',
+  'w32',
+  'w32dbg',
   'windbg',
-  'winedbg'
+  'winedbg',
+  'zip'
 ]
 
 if host_machine.system() == 'windows'
-  io += [
+  io_plugins += [
     'w32dbg',
     'w32',
   ]
 endif
 
-lang = [
+lang_plugins = [
+  'c',
+  'cpipe',
+  'lib',
+  'pipe',
+  'rust',
   'vala'
 ]
 
-parse = [
+parse_plugins = [
   '6502_pseudo',
   'arm_pseudo',
   'att2intel',
+  'avr_pseudo',
   'dalvik_pseudo',
   'm68k_pseudo',
   'mips_pseudo',
   'mreplace',
   'ppc_pseudo',
   'sh_pseudo',
-  'avr_pseudo',
   'x86_pseudo',
+  'z80_pseudo'
 ]
 
 include_files = run_command(glob_cmd + ['include/*.h']).stdout().strip().split(';')

@@ -5,14 +5,21 @@ files = [
   'dreg.c',
   'esil.c',
   'map.c',
+  'pid.c',
+  'plugin.c',
+  'session.c',
+  'signal.c',
+  'snap.c',
+  'trace.c',
   'p/bfvm.c',
   'p/debug_bf.c',
-  #'p/debug_bochs.c',
+  'p/debug_bochs.c',
   'p/debug_esil.c',
   'p/debug_gdb.c',
   'p/debug_io.c',
   'p/debug_native.c',
-  #'p/debug_qnx.c',
+  'p/debug_null.c',
+  'p/debug_qnx.c',
   'p/debug_rap.c',
   'p/debug_windbg.c',
   #'p/native/arm.c',
@@ -23,12 +30,6 @@ files = [
   #'p/native/darwin.c',
   #'p/native/drx.c',
   #'p/native/maps/darwin.c',
-  'pid.c',
-  'plugin.c',
-  'session.c',
-  'signal.c',
-  'snap.c',
-  'trace.c',
 ]
 
 if host_machine.system() == 'linux'
@@ -57,16 +58,30 @@ endif
 r_debug = library('r_debug', files,
   include_directories: [
     platform_inc,
-    include_directories([
+    include_directories(
       '../bin/format/elf',
       '../../shlr/gdb/include',
+      '../../shlr/qnx/include',
+      '../../shlr/bochs/include',
       '../../shlr/windbg'
-    ])
+    )
   ],
   c_args: ['-DCORELIB=1'],
   link_with: [
-    r_util, r_hash, r_reg, r_syscall, r_anal, r_flag, r_io, r_bp, r_search,
-    r_cons, r_lang, r_egg, r_socket, libr_shlr
+    r_util,
+    r_hash,
+    r_reg,
+    r_syscall,
+    r_anal,
+    r_flag,
+    r_io,
+    r_bp,
+    r_search,
+    r_cons,
+    r_lang,
+    r_egg,
+    r_socket,
+    libr_shlr
   ],
   install: true,
   implicit_include_directories: false,
@@ -80,8 +95,19 @@ pkgconfig_mod.generate(
   name: 'r_debug',
   filebase: 'r_debug',
   requires: [
-    'r_util', 'r_hash', 'r_reg', 'r_syscall', 'r_anal', 'r_flag', 'r_io', 'r_bp', 'r_search',
-    'r_cons', 'r_lang', 'r_egg', 'r_socket'
+    'r_util',
+    'r_hash',
+    'r_reg',
+    'r_syscall',
+    'r_anal',
+    'r_flag',
+    'r_io',
+    'r_bp',
+    'r_search',
+    'r_cons',
+    'r_lang',
+    'r_egg',
+    'r_socket'
   ],
   description: 'radare foundation libraries'
 )

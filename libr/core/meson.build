@@ -1,7 +1,6 @@
 files = [
   'anal_tp.c',
   'asm.c',
-  'p/core_anal.c',
   'blaze.c',
   'canal.c',
   'carg.c',
@@ -57,7 +56,9 @@ files = [
   'visual.c',
   'vmarks.c',
   'vmenus.c',
-  'yank.c'
+  'yank.c',
+  'p/core_anal.c',
+  'p/core_java.c',
 ]
 
 
@@ -73,9 +74,28 @@ r_core = library('r_core', files,
   ],
   c_args: ['-DCORELIB=1'],
   link_with: [
-    r_util, r_reg, r_syscall, r_search, r_cons, r_anal, r_socket, r_io, r_fs,
-    r_lang, r_hash, r_flag, r_parse, r_egg, r_debug, r_magic, r_crypto, r_config,
-    r_bin, r_asm, r_bp, libr_shlr
+    r_util,
+    r_reg,
+    r_syscall,
+    r_search,
+    r_cons,
+    r_anal,
+    r_socket,
+    r_io,
+    r_fs,
+    r_lang,
+    r_hash,
+    r_flag,
+    r_parse,
+    r_egg,
+    r_debug,
+    r_magic,
+    r_crypto,
+    r_config,
+    r_bin,
+    r_asm,
+    r_bp,
+    libr_shlr
   ],
   dependencies: [platform_deps],
   install: true,
@@ -90,9 +110,27 @@ pkgconfig_mod.generate(
   name: 'r_core',
   filebase: 'r_core',
   requires: [
-    'r_util', 'r_reg', 'r_syscall', 'r_search', 'r_cons', 'r_anal', 'r_socket', 'r_io', 'r_fs',
-    'r_lang', 'r_hash', 'r_flag', 'r_parse', 'r_egg', 'r_debug', 'r_magic', 'r_crypto', 'r_config',
-    'r_bin', 'r_asm', 'r_bp'
+    'r_util',
+    'r_reg',
+    'r_syscall',
+    'r_search',
+    'r_cons',
+    'r_anal',
+    'r_socket',
+    'r_io',
+    'r_fs',
+    'r_lang',
+    'r_hash',
+    'r_flag',
+    'r_parse',
+    'r_egg',
+    'r_debug',
+    'r_magic',
+    'r_crypto',
+    'r_config',
+    'r_bin',
+    'r_asm',
+    'r_bp'
   ],
   description: 'radare foundation libraries'
 )

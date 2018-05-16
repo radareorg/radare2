@@ -104,7 +104,11 @@ if host_machine.system() == 'windows'
   r2_incdir = 'include'
   r2_datdir = 'share'
 
-  opts1 = ['r2_libdir', 'r2_incdir', 'r2_datdir']
+  opts1 = [
+    'r2_libdir',
+    'r2_incdir',
+    'r2_datdir'
+  ]
   foreach opt : opts1
     val = get_option(opt)
     if val != ''
@@ -119,7 +123,14 @@ if host_machine.system() == 'windows'
   r2_fortunes = join_paths(r2_datdir, 'doc')
   r2_hud = join_paths(r2_datdir, 'hud')
 
-  opts2 = ['r2_wwwroot', 'r2_sdb', 'r2_zigns', 'r2_themes', 'r2_fortunes', 'r2_hud']
+  opts2 = [
+    'r2_wwwroot',
+    'r2_sdb',
+    'r2_zigns',
+    'r2_themes',
+    'r2_fortunes',
+    'r2_hud'
+  ]
   foreach opt : opts2
     val = get_option(opt)
     if val != ''
@@ -127,7 +138,11 @@ if host_machine.system() == 'windows'
     endif
   endforeach
 
-  opts3 = ['r2_plugins', 'r2_extras', 'r2_bindings']
+  opts3 = [
+    'r2_plugins',
+    'r2_extras',
+    'r2_bindings'
+  ]
   r2_plugins = join_paths(r2_libdir, 'plugins')
   r2_extras = join_paths(r2_libdir, 'extras')
   r2_bindings = join_paths(r2_libdir, 'bindings')
@@ -157,18 +172,20 @@ endif
 subdir('libr')
 
 conf_data = configuration_data()
-conf_data.set('plugins_core', '&r_core_plugin_' + ',&r_core_plugin_'.join(core) + ', 0')
-conf_data.set('plugins_anal', '&r_anal_plugin_' + ',&r_anal_plugin_'.join(anal) + ', 0')
-conf_data.set('plugins_asm', '&r_asm_plugin_' + ',&r_asm_plugin_'.join(asm) + ', 0')
-conf_data.set('plugins_bp', '&r_bp_plugin_' + ',&r_bp_plugin_'.join(bp) + ', 0')
-conf_data.set('plugins_bin', '&r_bin_plugin_' + ',&r_bin_plugin_'.join(bin) + ', 0')
-conf_data.set('plugins_crypto', '&r_crypto_plugin_' + ',&r_crypto_plugin_'.join(crypto) + ', 0')
-conf_data.set('plugins_io', '&r_io_plugin_' + ',&r_io_plugin_'.join(io) + ', 0')
-conf_data.set('plugins_fs', '&r_fs_plugin_' + ',&r_fs_plugin_'.join(fs) + ', 0')
-conf_data.set('plugins_debug', '&r_debug_plugin_' + ',&r_debug_plugin_'.join(debug) + ', 0')
-conf_data.set('plugins_egg', '&r_egg_plugin_' + ',&r_egg_plugin_'.join(egg) + ', 0')
-conf_data.set('plugins_lang', '&r_lang_plugin_' + ',&r_lang_plugin_'.join(lang) + ', 0')
-conf_data.set('plugins_parse', '&r_parse_plugin_' + ',&r_parse_plugin_'.join(parse) + ', 0')
+conf_data.set('plugins_core', '&r_core_plugin_' + ', &r_core_plugin_'.join(core_plugins) + ', 0')
+conf_data.set('plugins_anal', '&r_anal_plugin_' + ', &r_anal_plugin_'.join(anal_plugins) + ', 0')
+conf_data.set('plugins_asm', '&r_asm_plugin_' + ', &r_asm_plugin_'.join(asm_plugins) + ', 0')
+conf_data.set('plugins_bp', '&r_bp_plugin_' + ', &r_bp_plugin_'.join(bp_plugins) + ', 0')
+conf_data.set('plugins_bin', '&r_bin_plugin_' + ', &r_bin_plugin_'.join(bin_plugins) + ', 0')
+conf_data.set('plugins_bin_ldr', '&r_bin_ldr_plugin_' + ', &r_bin_ldr_plugin_'.join(bin_ldr_plugins) + ', 0')
+conf_data.set('plugins_bin_xtr', '&r_bin_xtr_plugin_' + ', &r_bin_xtr_plugin_'.join(bin_xtr_plugins) + ', 0')
+conf_data.set('plugins_crypto', '&r_crypto_plugin_' + ', &r_crypto_plugin_'.join(crypto_plugins) + ', 0')
+conf_data.set('plugins_io', '&r_io_plugin_' + ', &r_io_plugin_'.join(io_plugins) + ', 0')
+conf_data.set('plugins_fs', '&r_fs_plugin_' + ', &r_fs_plugin_'.join(fs_plugins) + ', 0')
+conf_data.set('plugins_debug', '&r_debug_plugin_' + ', &r_debug_plugin_'.join(debug_plugins) + ', 0')
+conf_data.set('plugins_egg', '&r_egg_plugin_' + ', &r_egg_plugin_'.join(egg_plugins) + ', 0')
+conf_data.set('plugins_lang', '&r_lang_plugin_' + ', &r_lang_plugin_'.join(lang_plugins) + ', 0')
+conf_data.set('plugins_parse', '&r_parse_plugin_' + ', &r_parse_plugin_'.join(parse_plugins) + ', 0')
 config_h = configure_file(
   input: 'libr/config.h.in',
   output: 'config.h',
@@ -285,15 +302,31 @@ if not meson.is_subproject()
   subdir('binr/rafind2')
   subdir('binr/rax2')
 else
-  libr2_lib = [
-    r_anal, r_asm, r_bin, r_bp, r_config, r_cons, r_core, r_crypto, r_egg,
-    r_flag, r_fs, r_hash, r_io, r_lang, r_magic, r_parse, r_reg, r_search,
-    r_socket, r_syscall, r_util
-  ]
-  libr2_inc = include_directories(['.', 'libr/include'])
   libr2_dep = declare_dependency(
-    link_with: libr2_lib,
-    include_directories: libr2_inc,
+    link_with: [
+      r_anal,
+      r_asm,
+      r_bin,
+      r_bp,
+      r_config,
+      r_cons,
+      r_core,
+      r_crypto,
+      r_egg,
+      r_flag,
+      r_fs,
+      r_hash,
+      r_io,
+      r_lang,
+      r_magic,
+      r_parse,
+      r_reg,
+      r_search,
+      r_socket,
+      r_syscall,
+      r_util
+    ],
+    include_directories: include_directories('.', 'libr/include'),
     version: r2_version
   )
 endif

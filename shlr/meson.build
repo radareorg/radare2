@@ -359,7 +359,7 @@ grub_files = [
   #'grub/fs/befs.c',
   #'grub/fs/befs_be.c',
   'grub/fs/btrfs.c',
-  #'grub/fs/cpio.c',
+  'grub/fs/cpio.c',
   'grub/fs/ext2.c',
   'grub/fs/fat.c',
   'grub/fs/fb.c',

@@ -538,7 +538,7 @@ static RList* entries(RBinFile *bf) {
 	return ret;
 }
 
-struct r_bin_plugin_t r_bin_plugin_vsf = {
+RBinPlugin r_bin_plugin_vsf = {
 	.name = "vsf",
 	.desc = "VICE Snapshot File",
 	.license = "LGPL3",

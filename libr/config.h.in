@@ -10,6 +10,8 @@
 
 #define R_EGG_STATIC_PLUGINS @plugins_egg@
 #define R_BIN_STATIC_PLUGINS @plugins_bin@
+#define R_BIN_LDR_STATIC_PLUGINS @plugins_bin_ldr@
+#define R_BIN_XTR_STATIC_PLUGINS @plugins_bin_xtr@
 #define R_FS_STATIC_PLUGINS @plugins_fs@
 #define R_IO_STATIC_PLUGINS @plugins_io@
 #define R_DEBUG_STATIC_PLUGINS @plugins_debug@
