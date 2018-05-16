@@ -271,8 +271,6 @@ io_plugins = [
   'shm',
   'sparse',
   'tcp',
-  'w32',
-  'w32dbg',
   'windbg',
   'winedbg',
   'zip'
