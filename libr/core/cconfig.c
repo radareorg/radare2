@@ -2717,11 +2717,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("dbg.trace", "false", &cb_trace, "Trace program execution (see asm.trace)");
 	SETICB ("dbg.trace.tag", 0, &cb_tracetag, "Trace tag");
 
-	/* cmd */
-	char *cmd = r_core_graph_cmd (core, "ag $$");
-	r_config_set (cfg, "cmd.graph", cmd);
-	free (cmd);
 
+	/* cmd */
 	r_config_desc (cfg, "cmd.graph", "Command executed by 'agv' command to view graphs");
 	SETPREF ("cmd.xterm", "xterm -bg black -fg gray -e", "xterm command to spawn with V@");
 	SETICB ("cmd.depth", 10, &cb_cmddepth, "Maximum command depth");
@@ -2838,6 +2835,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("graph.gv.graph", "", "Graphviz global style attributes. (bgcolor=white)");
 	SETPREF ("graph.gv.current", "false", "Highlight the current node in graphviz graph.");
 	SETPREF ("graph.nodejmps", "true", "Enables shortcuts for every node.");
+	char *cmd = r_core_graph_cmd (core, "ag $$");
+	r_config_set (cfg, "cmd.graph", cmd);
+	free (cmd);
+
 	/* hud */
 	SETPREF ("hud.path", "", "Set a custom path for the HUD file");
 
