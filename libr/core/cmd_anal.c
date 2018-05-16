@@ -6051,7 +6051,36 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		r_core_anal_graph (core, r_num_math (core->num, input + 1), R_CORE_ANAL_GRAPHLINES);
 		break;
 	case 'a': // "aga"
-		r_core_anal_graph (core, r_num_math (core->num, input + 1), 0);
+		switch (input[1]) {
+		case 'v':
+		case 't':
+		case 'k':
+		case 'w':
+		case 'g':
+		case 'j':
+		case 'J':
+		case 'd':
+		case ' ': {
+			char *cmd = r_str_newf ("ag-; .aga* %lld; agg%c;",
+				input[2] ? r_num_math (core->num, input + 2) : core->offset, input[1]);
+			if (cmd && *cmd) {
+				r_core_cmd0 (core, cmd);
+			}
+			free (cmd);
+			break;
+			}
+		case 0:
+			r_core_cmd0 (core, "ag-; .aga* $$; agg;");
+			break;
+		case '*': {
+			ut64 addr = input[2]? r_num_math (core->num, input + 2): core->offset;
+			r_core_anal_datarefs (core, addr);
+			break;
+			}
+		default:
+			 eprintf ("Usage: see ag?\n");
+			 break;
+		}
 		break;
 	case 'd': // "agd"
 		r_core_anal_graph (core, r_num_math (core->num, input + 1),

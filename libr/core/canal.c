@@ -1708,6 +1708,38 @@ R_API int r_core_print_bb_gml(RCore *core, RAnalFunction *fcn) {
 	return true;
 }
 
+R_API void r_core_anal_datarefs(RCore *core, ut64 addr) {
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
+	if (fcn) {
+		bool found = false;
+		const char *me = fcn->name;
+		RListIter *iter;
+		RAnalRef *ref;
+		RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
+		r_list_foreach (refs, iter, ref) {
+			RBinObject *obj = r_bin_cur_object (core->bin);
+			RBinSection *binsec = r_bin_get_section_at (obj, ref->addr, true);
+			if (binsec->is_data) {
+				if (!found) {
+					r_cons_printf ("ag-\n");
+					r_cons_printf ("agn %s\n", me);
+					found = true;
+				}
+				RFlagItem *item = r_flag_get_i (core->flags, ref->addr);
+				const char *dst = item? item->name: sdb_fmt ("0x%08"PFMT64x, ref->addr);
+				r_cons_printf ("agn %s\n", dst);
+				r_cons_printf ("age %s %s\n", me, dst);
+			}
+		}
+		if (!found) {
+			eprintf("No data refs in this function.\n");
+		}
+		r_list_free (refs);
+	} else {
+		eprintf("Not in a function. Use 'df' to define it.\n");
+	}
+}
+
 R_API void r_core_anal_coderefs(RCore *core, ut64 addr) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
 	if (fcn) {
