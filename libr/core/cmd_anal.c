@@ -6092,15 +6092,19 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		case 'k':
 		case '*':
 		case ' ':
-			eprintf ("Currently the only supported formats for the diff graph are 'd' and 'w'\n");
-			break;
 		case 0:
-		case 'd':
-			r_core_anal_graph (core, r_num_math (core->num, input + 2), R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF);
+			eprintf ("Currently the only supported formats for the diff graph are 'agdd' and 'agdw'\n");
 			break;
+		case 'd': {
+			ut64 addr = input[2]? r_num_math (core->num, input + 2): core->offset;
+			r_core_gdiff_fcn (core, addr, core->offset);
+			r_core_anal_graph (core, addr, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF);
+			break;
+			}
 		case 'w': {
-			char *cmdargs = r_str_newf ("agdd %lld", r_num_math (core->num, input + 2));
-			char *cmd = r_core_graph_cmd (cmdargs);
+			char *cmdargs = r_str_newf ("agdd %lld",
+				input[2] ? r_num_math (core->num, input + 2) : core->offset);
+			char *cmd = r_core_graph_cmd (core, cmdargs);
 			if (cmd && *cmd) {
 				r_core_cmd0 (core, cmd);
 			}
