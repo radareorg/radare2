@@ -471,13 +471,14 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 's': // "ts"
+	case 's': { // "ts"
+		char *name = strchr (input + 2, ' ');
 		switch (input[1]) {
 		case '?':
 			r_core_cmd_help (core, help_msg_ts);
 			break;
 		case '*':
-			showFormat (core, input + 2, 1);
+			showFormat (core, name + 1, 1);
 			break;
 		case ' ':
 			showFormat (core, input + 2, 0);
@@ -493,7 +494,7 @@ static int cmd_type(void *data, const char *input) {
 			sdb_foreach (TDB, stdprintifstruct, core);
 			break;
 		}
-		break;
+	} break;
 	case 'b': {
 		char *p, *s = (strlen (input) > 1)? strdup (input + 2): NULL;
 		const char *isenum;

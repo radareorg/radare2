@@ -947,6 +947,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 	core->print->reg = core->dbg->reg;
 	core->print->get_register = r_reg_get;
 	core->print->get_register_value = r_reg_get_value;
+	core->print->sdb_types = core->anal->sdb_types;
 
 	int o_blocksize = core->blocksize;
 
