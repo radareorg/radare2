@@ -225,7 +225,6 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 		}
 */
 		if (fcn->diff->type != R_ANAL_DIFF_TYPE_NULL) {
-			eprintf ("Function %s already diffed\n", fcn->name);
 			continue;
 		}
 		ot = 0;
