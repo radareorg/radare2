@@ -26,7 +26,6 @@ files = [
   'sign.c',
   'state.c',
   'switch.c',
-  'types.c',
   'value.c',
   'var.c',
   'vtable.c',

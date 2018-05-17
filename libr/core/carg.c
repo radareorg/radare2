@@ -8,34 +8,35 @@ static void set_fcn_args_info(RAnalFuncArg *arg, RAnal *anal, const char *fcn_na
 	if (!fcn_name || !arg || !anal) {
 		return;
 	}
-	arg->name = r_anal_type_func_args_name (anal, fcn_name, arg_num);
-	arg->orig_c_type = r_anal_type_func_args_type (anal, fcn_name, arg_num);
+	Sdb *TDB = anal->sdb_types;
+	arg->name = r_type_func_args_name (TDB, fcn_name, arg_num);
+	arg->orig_c_type = r_type_func_args_type (TDB, fcn_name, arg_num);
 	if (!strncmp ("const ", arg->orig_c_type, 6)) {
 		arg->c_type = arg->orig_c_type + 6;
 	} else {
 		arg->c_type = arg->orig_c_type;
 	}
 	const char *query = sdb_fmt ("type.%s", arg->c_type);
-	arg->fmt = sdb_const_get (anal->sdb_types, query, 0);
+	arg->fmt = sdb_const_get (TDB, query, 0);
 	const char *t_query = sdb_fmt ("type.%s.size", arg->c_type);
-	arg->size = sdb_num_get (anal->sdb_types, t_query, 0) / 8;
+	arg->size = sdb_num_get (TDB, t_query, 0) / 8;
 	arg->cc_source = r_anal_cc_arg (anal, cc, arg_num + 1);
 }
 
 R_API char *resolve_fcn_name(RAnal *anal, const char *func_name) {
 	const char *str = func_name;
 	const char *name = func_name;
-	if (r_anal_type_func_exist (anal, func_name)) {
+	if (r_type_func_exist (anal->sdb_types, func_name)) {
 		return strdup (func_name);
 	}
 	while ((str = strchr (str, '.'))) {
 		name = str + 1;
 		str++;
 	}
-	if (r_anal_type_func_exist (anal, name)) {
+	if (r_type_func_exist (anal->sdb_types, name)) {
 		return strdup (name);
 	}
-	return r_anal_type_func_guess (anal, (char*)func_name);
+	return r_type_func_guess (anal->sdb_types, (char*)func_name);
 }
 
 static ut64 get_buf_val(ut8 *buf, int endian, int width) {
@@ -211,14 +212,15 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 	if (!fcn_name || !core->anal) {
 		return NULL;
 	}
+	Sdb *TDB = core->anal->sdb_types;
 	RList *list = r_list_new ();
 	char *key = resolve_fcn_name (core->anal, fcn_name);
 	if (!key) {
 		return NULL;
 	}
 	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
-	int nargs = r_anal_type_func_args_count (core->anal, key);
-	const char *cc = r_anal_type_func_cc (core->anal, key);
+	int nargs = r_type_func_args_count (TDB, key);
+	const char *cc = r_anal_cc_func (core->anal, key);
 	const char *src = r_anal_cc_arg (core->anal, cc, 1); // src of first argument
 	if (!cc) {
 		// unsupported calling convention

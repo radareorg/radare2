@@ -4058,8 +4058,8 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 				key = resolve_fcn_name (core->anal, fcn_name);
 			}
 			if (key) {
-				const char *fcn_type = r_anal_type_func_ret (core->anal, key);
-				int nargs = r_anal_type_func_args_count (core->anal, key);
+				const char *fcn_type = r_type_func_ret (core->anal->sdb_types, key);
+				int nargs = r_type_func_args_count (core->anal->sdb_types, key);
 				// remove other comments
 				delete_last_comment (ds);
 				if (ds->show_color) {
@@ -4147,36 +4147,37 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 	RAnal *anal = ds->core->anal;
 	// RAnalFunction *fcn = r_anal_get_fcn_in (anal, ds->analop.jump, -1);
 	RAnalFunction *fcn = fcnIn (ds, ds->analop.jump, -1);
+	Sdb *TDB = anal->sdb_types;
 	char *name;
 	if (!fcn) {
 		return;
 	}
-	if (r_anal_type_func_exist (anal, fcn->name)) {
+	if (r_type_func_exist (TDB, fcn->name)) {
 		name = strdup (fcn->name);
-	} else if (!(name = r_anal_type_func_guess (anal, fcn->name))) {
+	} else if (!(name = r_type_func_guess (TDB, fcn->name))) {
 		return;
 	}
 	if (ds->show_color) {
 		r_cons_strcat (ds->pal_comment);
 	}
 	ds_align_comment (ds);
-	const char *fcn_type = r_anal_type_func_ret (anal, name);
+	const char *fcn_type = r_type_func_ret (TDB, name);
 	if (fcn_type && *fcn_type) {
 		r_cons_printf (
 			"; %s%s%s(", fcn_type,
 			fcn_type[strlen (fcn_type) - 1] == '*' ? "" : " ",
 			name);
 	}
-	int i, arg_max = r_anal_type_func_args_count (anal, name);
+	int i, arg_max = r_type_func_args_count (TDB, name);
 	if (!arg_max) {
 		r_cons_printf ("void)");
 	} else {
 		for (i = 0; i < arg_max; i++) {
-			char *type = r_anal_type_func_args_type (anal, name, i);
+			char *type = r_type_func_args_type (TDB, name, i);
 			if (type && *type) {
 				r_cons_printf ("%s%s%s%s%s", i == 0 ? "": " ", type,
 						type[strlen (type) -1] == '*' ? "": " ",
-						r_anal_type_func_args_name (anal, name, i),
+						r_type_func_args_name (TDB, name, i),
 						i == arg_max - 1 ? ")": ",");
 			}
 			free (type);
@@ -4524,11 +4525,11 @@ toro:
 		char *link_key = sdb_fmt ("link.%08"PFMT64x, ds->addr + idx);
 		const char *link_type = sdb_const_get (core->anal->sdb_types, link_key, 0);
 		if (link_type) {
-			char *fmt = r_anal_type_format (core->anal, link_type);
+			char *fmt = r_type_format (core->anal->sdb_types, link_type);
 			if (fmt) {
 				r_cons_printf ("(%s)\n", link_type);
 				r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x"\n", fmt, ds->addr + idx);
-				inc += r_anal_type_get_bitsize (core->anal, link_type) / 8;
+				inc += r_type_get_bitsize (core->anal->sdb_types, link_type) / 8;
 				free (fmt);
 				r_anal_op_fini (&ds->analop);
 				continue;

@@ -44,6 +44,7 @@ files = [
   'r_asn1.c',
   'r_pkcs7.c',
   'r_x509.c',
+  'r_ctypes.c',
   'randomart.c',
   'range.c',
   'rbtree.c',

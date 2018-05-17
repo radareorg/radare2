@@ -99,7 +99,6 @@ R_API RAnal *r_anal_new() {
 	anal->fcns = r_anal_fcn_list_new ();
 	anal->fcn_tree = NULL;
 	anal->refs = r_anal_ref_list_new ();
-	anal->types = r_anal_type_list_new ();
 	r_anal_set_bits (anal, 32);
 	anal->plugins = r_list_newf ((RListFree) r_anal_plugin_free);
 	if (anal->plugins) {
@@ -132,7 +131,6 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	r_anal_pin_fini (a);
 	r_list_free (a->refs);
 	r_syscall_free (a->syscall);
-	r_list_free (a->types);
 	r_reg_free (a->reg);
 	r_anal_op_free (a->queued);
 	r_list_free (a->bits_ranges);
@@ -409,8 +407,6 @@ R_API int r_anal_purge (RAnal *anal) {
 	anal->fcn_tree = NULL;
 	r_list_free (anal->refs);
 	anal->refs = r_anal_ref_list_new ();
-	r_list_free (anal->types);
-	anal->types = r_anal_type_list_new ();
 	return 0;
 }
 
@@ -482,8 +478,9 @@ R_API void r_anal_noreturn_list(RAnal *anal, int mode) {
 
 R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 	const char *tmp_name = NULL;
+	Sdb *TDB = anal->sdb_types;
 	char *fnl_name = NULL;
-	if (sdb_bool_set (anal->sdb_types, K_NORET_ADDR (addr), true, 0)) {
+	if (sdb_bool_set (TDB, K_NORET_ADDR (addr), true, 0)) {
 		return true;
 	}
 	if (name && *name) {
@@ -497,13 +494,13 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 		}
 		tmp_name = fcn ? fcn->name: fi->name;
 	}
-	if (r_anal_type_func_exist (anal, tmp_name)) {
+	if (r_type_func_exist (TDB, tmp_name)) {
 		fnl_name = strdup (tmp_name);
-	} else if (!(fnl_name = r_anal_type_func_guess (anal, (char *)tmp_name))) {
+	} else if (!(fnl_name = r_type_func_guess (TDB, (char *)tmp_name))) {
 		eprintf ("Cant find prototype for %s in types databse\n", tmp_name);
 		return false;
 	}
-	sdb_bool_set (anal->sdb_types, K_NORET_FUNC(fnl_name), true, 0);
+	sdb_bool_set (TDB, K_NORET_FUNC(fnl_name), true, 0);
 	free (fnl_name);
 	return true;
 }
@@ -517,8 +514,9 @@ static int noreturn_dropall(void *p, const char *k, const char *v) {
 }
 
 R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr) {
+	Sdb *TDB = anal->sdb_types;
 	if (!strcmp (expr, "*")) {
-		sdb_foreach (anal->sdb_types, noreturn_dropall, anal);
+		sdb_foreach (TDB, noreturn_dropall, anal);
 		return true;
 	} else {
 		const char *fcnname = NULL;
@@ -534,11 +532,11 @@ R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr) {
 		} else {
 			fcnname = expr;
 		}
-		if (r_anal_type_func_exist (anal, fcnname)) {
-			sdb_unset (anal->sdb_types, K_NORET_FUNC (fcnname), 0);
+		if (r_type_func_exist (TDB, fcnname)) {
+			sdb_unset (TDB, K_NORET_FUNC (fcnname), 0);
 			return true;
-		} else if ((tmp = r_anal_type_func_guess (anal, (char *)fcnname))) {
-			sdb_unset (anal->sdb_types, K_NORET_FUNC (fcnname), 0);
+		} else if ((tmp = r_type_func_guess (TDB, (char *)fcnname))) {
+			sdb_unset (TDB, K_NORET_FUNC (fcnname), 0);
 			free (tmp);
 			return true;
 		} else {
@@ -552,7 +550,7 @@ static bool r_anal_noreturn_at_name(RAnal *anal, const char *name) {
 	if (sdb_bool_get (anal->sdb_types, K_NORET_FUNC(name), NULL)) {
 		return true;
 	}
-	char *tmp = r_anal_type_func_guess (anal, (char *)name);
+	char *tmp = r_type_func_guess (anal->sdb_types, (char *)name);
 	if (tmp) {
 		if (sdb_bool_get (anal->sdb_types, K_NORET_FUNC (tmp), NULL)) {
 			free (tmp);
