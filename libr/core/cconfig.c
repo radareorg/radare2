@@ -1748,7 +1748,7 @@ static int cb_scrstrconv(void *user, void *data) {
 static int cb_graphformat(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (!strcmp (node->value, "?")) {
-		r_cons_printf ("dot\ngml\ngmlfcn\n");
+		r_cons_printf ("png\njpg\npdf\nps\nsvg\njson\n");
 		return false;
 	}
 	return true;
@@ -2275,9 +2275,10 @@ static char *getViewerPath() {
 	return NULL;
 }
 
-R_API char* r_core_graph_cmd(char *r2_cmd) {
+R_API char* r_core_graph_cmd(RCore *core, char *r2_cmd) {
 	char *cmd = NULL;
 	char *xdotPath = r_file_path ("xdot");
+	const char *ext = r_config_get (core->config, "graph.extension");
 	if (r_file_exists (xdotPath)) {
 		cmd = r_str_newf ("%s > a.dot;!xdot a.dot", r2_cmd);
 	} else {
@@ -2286,7 +2287,7 @@ R_API char* r_core_graph_cmd(char *r2_cmd) {
 			R_FREE (dotPath);
 			char *viewer = getViewerPath();
 			if (viewer) {
-				cmd = r_str_newf ("%s > a.dot;!dot -Tgif -oa.gif a.dot;!%s a.gif", r2_cmd, viewer);
+				cmd = r_str_newf ("%s > a.dot;!dot -T%s -oa.%s a.dot;!%s a.%s", r2_cmd, ext, ext, viewer, ext);
 				free (viewer);
 			} else {
 				cmd = "?e cannot find a valid picture viewer";
@@ -2716,11 +2717,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("dbg.trace", "false", &cb_trace, "Trace program execution (see asm.trace)");
 	SETICB ("dbg.trace.tag", 0, &cb_tracetag, "Trace tag");
 
-	/* cmd */
-	char *cmd = r_core_graph_cmd ("ag $$");
-	r_config_set (cfg, "cmd.graph", cmd);
-	free (cmd);
 
+	/* cmd */
 	r_config_desc (cfg, "cmd.graph", "Command executed by 'agv' command to view graphs");
 	SETPREF ("cmd.xterm", "xterm -bg black -fg gray -e", "xterm command to spawn with V@");
 	SETICB ("cmd.depth", 10, &cb_cmddepth, "Maximum command depth");
@@ -2818,6 +2816,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* graph */
 	SETPREF ("graph.comments", "true", "Show disasm comments in graph");
 	SETPREF ("graph.cmtright", "false", "Show comments at right");
+	SETCB ("graph.extension", "gif", &cb_graphformat, "Graph extension when using 'w' format (png, jpg, pdf, ps, svg, json)");
 	SETPREF ("graph.refs", "false", "Graph references in callgraphs (.agc*;aggi)");
 	SETI ("graph.edges", 2, "0=no edges, 1=simple edges, 2=avoid collisions");
 	SETI ("graph.layout", 0, "Graph layout (0=vertical, 1=horizontal)");
@@ -2836,6 +2835,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("graph.gv.graph", "", "Graphviz global style attributes. (bgcolor=white)");
 	SETPREF ("graph.gv.current", "false", "Highlight the current node in graphviz graph.");
 	SETPREF ("graph.nodejmps", "true", "Enables shortcuts for every node.");
+	char *cmd = r_core_graph_cmd (core, "ag $$");
+	r_config_set (cfg, "cmd.graph", cmd);
+	free (cmd);
+
 	/* hud */
 	SETPREF ("hud.path", "", "Set a custom path for the HUD file");
 

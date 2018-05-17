@@ -5784,7 +5784,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 		if (r_config_get_i (core->config, "graph.web")) {
 			r_core_cmd0 (core, "=H /graph/");
 		} else {
-			char *cmd = r_core_graph_cmd ("aggd");
+			char *cmd = r_core_graph_cmd (core, "aggd");
 			if (cmd && *cmd) {
 				r_core_cmd0 (core, cmd);
 			}
@@ -5852,7 +5852,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			if (r_config_get_i (core->config, "graph.web")) {
 				r_core_cmd0 (core, "=H /graph/");
 			} else {
-				char *cmd = r_core_graph_cmd ("agfd");
+				char *cmd = r_core_graph_cmd (core, "agfd");
 				if (cmd && *cmd) {
 					r_core_cmd0 (core, cmd);
 				}
@@ -6067,6 +6067,19 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			} else {
 				r_core_cmd0 (core, "agf");
 			}
+		}
+		break;
+	case 'w':// "agw" 
+		if (r_config_get_i (core->config, "graph.web")) {
+			r_core_cmd0 (core, "=H /graph/");
+		} else {
+			char *cmdargs = r_str_newf ("agfd %lld", r_num_math (core->num, input + 2));
+			char *cmd = r_core_graph_cmd (core, cmdargs);
+			if (cmd && *cmd) {
+				r_core_cmd0 (core, cmd);
+			}
+			free (cmd);
+			free (cmdargs);
 		}
 		break;
 	case '?': // "ag?"
