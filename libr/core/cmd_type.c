@@ -472,7 +472,7 @@ static int cmd_type(void *data, const char *input) {
 		}
 		break;
 	case 's': { // "ts"
-		char *name = strchr (input + 2, ' ');
+		char *name = strchr (input, ' ');
 		switch (input[1]) {
 		case '?':
 			r_core_cmd_help (core, help_msg_ts);
@@ -481,7 +481,7 @@ static int cmd_type(void *data, const char *input) {
 			showFormat (core, name + 1, 1);
 			break;
 		case ' ':
-			showFormat (core, input + 2, 0);
+			showFormat (core, name + 1, 0);
 			break;
 		case 's':
 			if (input[2] == ' ') {
