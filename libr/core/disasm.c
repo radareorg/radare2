@@ -599,7 +599,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_varaccess = r_config_get_i (core->config, "asm.var.access");
 	ds->maxrefs = r_config_get_i (core->config, "asm.maxrefs");
 	ds->show_lines = r_config_get_i (core->config, "asm.lines");
-	ds->linesright = r_config_get_i (core->config, "asm.linesright");
+	ds->linesright = r_config_get_i (core->config, "asm.lines.right");
 	ds->show_indent = r_config_get_i (core->config, "asm.indent");
 	ds->indent_space = r_config_get_i (core->config, "asm.indentspace");
 	ds->tracespace = r_config_get_i (core->config, "asm.tracespace");
@@ -611,7 +611,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_lines_ret = r_config_get_i (core->config, "asm.lines.ret");
 	ds->show_size = r_config_get_i (core->config, "asm.size");
 	ds->show_trace = r_config_get_i (core->config, "asm.trace");
-	ds->linesout = r_config_get_i (core->config, "asm.linesout");
+	ds->linesout = r_config_get_i (core->config, "asm.lines.out");
 	ds->adistrick = r_config_get_i (core->config, "asm.middle"); // TODO: find better name
 	ds->asm_demangle = r_config_get_i (core->config, "asm.demangle");
 	ds->asm_describe = r_config_get_i (core->config, "asm.describe");
@@ -716,7 +716,7 @@ static RDisasmState * ds_init(RCore *core) {
 	if (ds->show_flag_in_bytes) {
 		ds->show_flags = 0;
 	}
-	if (r_config_get_i (core->config, "asm.lineswide")) {
+	if (r_config_get_i (core->config, "asm.lines.wide")) {
 		ds->linesopts |= R_ANAL_REFLINE_TYPE_WIDE;
 	}
 	if (core->cons->vline) {
@@ -751,7 +751,7 @@ static RDisasmState * ds_init(RCore *core) {
 	} else {
 		ds->cursor = -1;
 	}
-	if (r_config_get_i (core->config, "asm.lineswide")) {
+	if (r_config_get_i (core->config, "asm.lines.wide")) {
 		ds->linesopts |= R_ANAL_REFLINE_TYPE_WIDE;
 	}
 	if (core->cons->vline) {

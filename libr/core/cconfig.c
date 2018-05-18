@@ -2478,10 +2478,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.lines", "true", "Show ASCII-art lines at disassembly");
 	SETPREF ("asm.lines.call", "false", "Enable call lines");
 	SETPREF ("asm.lines.ret", "false", "Show separator lines after ret");
-	SETPREF ("asm.linesout", "true", "Show out of block lines");
-	SETPREF ("asm.linesright", "false", "Show lines before opcode instead of offset");
-	SETPREF ("asm.lineswide", "false", "Put a space between lines");
-	SETICB ("asm.lineswidth", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
+	SETPREF ("asm.lines.out", "true", "Show out of block lines");
+	SETPREF ("asm.lines.right", "false", "Show lines before opcode instead of offset");
+	SETPREF ("asm.lines.wide", "false", "Put a space between lines");
+	SETICB ("asm.lines.width", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
 	SETICB ("asm.var.submin", 0x100, &cb_asmvarsubmin, "Minimum value to substitute in instructions (asm.var.sub)");
 	SETPREF ("asm.middle", "false", "Allow disassembling jumps in the middle of an instruction");
 	SETPREF ("asm.noisy", "true", "Show comments considered noisy but possibly useful");

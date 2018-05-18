@@ -2882,14 +2882,14 @@ static int visual_responsive(RCore *core) {
 			r_config_set_i (core->config, "asm.offset", 1);
 		}
 		if (w > 80) {
-			r_config_set_i (core->config, "asm.lineswidth", 14);
-			r_config_set_i (core->config, "asm.lineswidth", w - (w / 1.2));
+			r_config_set_i (core->config, "asm.lines.width", 14);
+			r_config_set_i (core->config, "asm.lines.width", w - (w / 1.2));
 			r_config_set_i (core->config, "asm.cmt.col", w - (w / 2.5));
 		} else {
-			r_config_set_i (core->config, "asm.lineswidth", 7);
+			r_config_set_i (core->config, "asm.lines.width", 7);
 		}
 		if (w < 70) {
-			r_config_set_i (core->config, "asm.lineswidth", 1);
+			r_config_set_i (core->config, "asm.lines.width", 1);
 			r_config_set_i (core->config, "asm.bytes", 0);
 		} else {
 			r_config_set_i (core->config, "asm.bytes", 1);
