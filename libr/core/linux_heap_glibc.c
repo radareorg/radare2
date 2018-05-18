@@ -895,7 +895,7 @@ static void GH(print_heap_segment)(RCore *core, GH(RHeap_MallocState) *main_aren
 	*initial_brk = (brk_start >> 12) << 12;
 
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX || *initial_brk == GHT_MAX) {
-		eprintf ("No Heap section\n");
+		eprintf ("No heap section\n");
 		return;
 	}
 
@@ -969,6 +969,159 @@ static void GH(print_heap_segment)(RCore *core, GH(RHeap_MallocState) *main_aren
 	PRINT_GA ("]\n");
 	//r_cons_println (); giving me a compile error
 	r_cons_printf ("\n");
+	free (cnk);
+}
+
+static void GH(print_heap_segment_json)(RCore *core, GH(RHeap_MallocState) *main_arena, GHT *initial_brk, GHT global_max_fast) {
+	if (!core || !core->dbg || !core->dbg->maps) {
+		return;
+	}
+
+	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, size_tmp, top_size = GHT_MAX, min_size = SZ * 4;
+	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
+
+	if (!cnk) {
+		return;
+	}
+
+	GH(get_brks) (core, &brk_start, &brk_end);
+	*initial_brk = (brk_start >> 12) << 12;
+
+	if (brk_start == GHT_MAX || brk_end == GHT_MAX || *initial_brk == GHT_MAX) {
+		eprintf ("No heap section\n");
+		free (cnk);
+		return;
+	}
+
+	GHT next_chunk = *initial_brk, prev_chunk = next_chunk;
+	top_size = main_arena->top - brk_start;
+
+	r_cons_printf ("{\"chunks\":[");
+	const char *comma = "";
+	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->top) {
+		(void)r_core_read_at (core, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
+		size_tmp = (cnk->size >> 3) << 3;
+		if (size_tmp < min_size || size_tmp > top_size || next_chunk + size_tmp > main_arena->top) {
+			const char *status = "corrupted";
+			r_cons_printf ("%s{\"addr\":%"PFMT64d",\"size\":%"PFMT64d",\"status\":\"%s\",\"fd\":"PFMT64d",\"bk\":"PFMT64d"}",
+					comma, (ut64)next_chunk, (ut64)cnk->size, status, (ut64)cnk->fd, (ut64)cnk->bk);
+			comma = ",";
+			break;
+		}
+		bool is_free = false;
+		GHT double_free = GHT_MAX;
+		if (size_tmp >= SZ * 4 && size_tmp <= global_max_fast) {
+			int i = (size_tmp / (SZ * 2)) - 2;
+			GHT next = (GHT)main_arena->fastbinsY[i];
+			double_free = next;
+			while (next && next >= brk_start && next < main_arena->top) {
+				if (prev_chunk == next) {
+					is_free = true;
+				}
+				(void)r_core_read_at (core, next, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
+				next = cnk->fd;
+				if (double_free == next) {
+					if (prev_chunk <= double_free) {
+						PRINT_RA ("Double free detected ");
+					}
+					break;
+				}
+			}
+		}
+
+		const char *status = "allocated";
+		if (is_free || (cnk->size % 2) == 0) {
+			status = "free";
+		}
+		r_cons_printf ("%s{\"addr\":%"PFMT64d",\"size\":%"PFMT64d",\"status\":\"%s\"}",
+				comma, (ut64)prev_chunk, (ut64)cnk->size, status);
+		comma = ",";
+
+		next_chunk += size_tmp;
+		prev_chunk = next_chunk;
+		r_core_read_at (core, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
+	}
+	r_cons_printf ("],");
+	r_cons_printf ("\"top\":%"PFMT64d",", (ut64)main_arena->top);
+	r_cons_printf ("\"brk\":%"PFMT64d",", (ut64)brk_start);
+	r_cons_printf ("\"end\":%"PFMT64d",", (ut64)brk_end);
+	r_cons_printf ("\"hdr\":16");
+	r_cons_printf ("}");
+	free (cnk);
+}
+
+static void GH(print_heap_segment_r2)(RCore *core, GH(RHeap_MallocState) *main_arena, GHT *initial_brk, GHT global_max_fast) {
+	if (!core || !core->dbg || !core->dbg->maps) {
+		return;
+	}
+
+	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, size_tmp, top_size = GHT_MAX, min_size = SZ * 4;
+
+	GH(get_brks) (core, &brk_start, &brk_end);
+	*initial_brk = (brk_start >> 12) << 12;
+
+	if (brk_start == GHT_MAX || brk_end == GHT_MAX || *initial_brk == GHT_MAX) {
+		eprintf ("No heap section\n");
+		return;
+	}
+
+	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
+	if (!cnk) {
+		return;
+	}
+	GHT next_chunk = *initial_brk, prev_chunk = next_chunk;
+	top_size = main_arena->top - brk_start;
+
+	r_cons_printf ("fs+heap.allocated\n");
+	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->top) {
+		(void)r_core_read_at (core, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
+		size_tmp = (cnk->size >> 3) << 3;
+		if (size_tmp < min_size || size_tmp > top_size || next_chunk + size_tmp > main_arena->top) {
+			r_cons_printf ("fs heap.corrupted\n");
+			char *name = r_str_newf ("chunk.corrupted.%06x", ((prev_chunk>>4) & 0xffff));
+			r_cons_printf ("f %s %d 0x%"PFMT64x"\n", name, (int)cnk->size, prev_chunk);
+			free (name);
+			break;
+		}
+		bool is_free = false;
+		GHT double_free = GHT_MAX;
+		if (size_tmp >= SZ * 4 && size_tmp <= global_max_fast) {
+			int i = (size_tmp / (SZ * 2)) - 2;
+			GHT next = (GHT)main_arena->fastbinsY[i];
+			double_free = next;
+			while (next && next >= brk_start && next < main_arena->top) {
+				if (prev_chunk == next) {
+					is_free = true;
+				}
+				(void)r_core_read_at (core, next, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
+				next = cnk->fd;
+				if (double_free == next) {
+					if (prev_chunk <= double_free) {
+						PRINT_RA ("Double free detected ");
+					}
+					break;
+				}
+			}
+		}
+
+		const char *status = "allocated";
+		if (is_free || (cnk->size % 2) == 0) {
+			status = "free";
+		}
+		r_cons_printf ("fs heap.%s\n", status);
+		char *name = r_str_newf ("chunk.%06x", ((prev_chunk>>4) & 0xffff));
+		r_cons_printf ("f %s %d 0x%"PFMT64x"\n", name, (int)cnk->size, prev_chunk);
+		free (name);
+
+		next_chunk += size_tmp;
+		prev_chunk = next_chunk;
+		r_core_read_at (core, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
+	}
+	r_cons_printf ("fs-\n");
+	r_cons_printf ("f heap.top = 0x%08"PFMT64x"\n", (ut64)main_arena->top);
+	r_cons_printf ("f heap.brk = 0x%08"PFMT64x"\n", (ut64)brk_start);
+	r_cons_printf ("f heap.end = 0x%08"PFMT64x"\n", (ut64)brk_end);
+	r_cons_printf ("f heap.hdr = 16\n");
 	free (cnk);
 }
 
@@ -1086,7 +1239,7 @@ void GH(print_malloc_states)( RCore *core, GHT m_arena, GH(RHeap_MallocState) *m
 void GH(print_inst_minfo)(GH(RHeapInfo) *heap_info, GHT hinfo) {
 	PRINT_YA ("malloc_info @ ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)hinfo);
-	PRINT_YA ("{\n  ar_ptr = " );
+	PRINT_YA (" {\n  ar_ptr = " );
 	PRINTF_BA ("0x%"PFMT64x"\n", (ut64)heap_info->ar_ptr);
 	PRINT_YA ("  prev = ");
 	PRINTF_BA ("0x%"PFMT64x"\n", (ut64)heap_info->prev);
@@ -1182,6 +1335,10 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 		}
 		break;
 	case '*':
+		if (GH(r_resolve_main_arena) (core, &m_arena, main_arena) && GH(r_resolve_global_max_fast) (core, &g_max_fast, &global_max_fast)) {
+			GH(print_heap_segment_r2) (core, main_arena, &initial_brk, global_max_fast);
+		}
+        break;
 	case 'm': // "dmhm"
 		if (GH(r_resolve_main_arena) (core, &m_arena, main_arena) &&
 			GH(r_resolve_global_max_fast) (core, &g_max_fast, &global_max_fast)) {
@@ -1266,7 +1423,9 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 		}
 		break;
 	case 'j': // "dmhj"
-		eprintf ("TODO: JSON output for dmh is not yet implemented\n");
+		if (GH(r_resolve_main_arena) (core, &m_arena, main_arena) && GH(r_resolve_global_max_fast) (core, &g_max_fast, &global_max_fast)) {
+			GH(print_heap_segment_json) (core, main_arena, &initial_brk, global_max_fast);
+		}
 		break;
 	case '?':
 		r_core_cmd_help (core, GH(help_msg));
