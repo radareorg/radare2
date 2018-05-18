@@ -2735,7 +2735,7 @@ static int foreach_comment(void *user, const char *k, const char *v) {
 	return 1;
 }
 
-R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
+R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@@"
 	RDebug *dbg = core->dbg;
 	RList *list, *head;
 	RListIter *iter;
@@ -2814,7 +2814,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
 			r_core_seek (core, offorig, 1);
 		}
 		break;
-	case 'i':
+	case 'i': // @@@i
 		// imports
 		{
 			RBinImport *imp;
@@ -2882,9 +2882,20 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) {
 		}
 		break;
 	case 'f':
-		r_list_foreach (core->flags->flags, iter, flg) {
-			r_core_seek (core, flg->offset, 1);
-			r_core_cmd0 (core, cmd);
+		{
+			char *glob = r_str_trim (strdup (each + 1));
+			ut64 off = core->offset;
+			ut64 obs = core->blocksize;
+			r_list_foreach (core->flags->flags, iter, flg) {
+				if (r_str_glob (flg->name, glob)) {
+					r_core_seek (core, flg->offset, 1);
+					r_core_block_size (core, flg->size);
+					r_core_cmd0 (core, cmd);
+				}
+			}
+			r_core_seek (core, off, 0);
+			r_core_block_size (core, obs);
+			free (glob);
 		}
 		break;
 	case 'F':
