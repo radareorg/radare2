@@ -1131,7 +1131,6 @@ static RList* fields(RBinFile *bf) {
 		#define ROW(nam,siz,val,fmt) \
 		r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt ("0x%08x", val), fmt));
 		ut64 addr = 0;
-		const ut8 *buf = r_buf_get_at (bf->buf, 0, NULL);
 		ROW ("ELF", 4, r_read_le32 (buf), "x"); addr+=0x10;
 		ROW ("Type", 2, r_read_le16 (buf + addr), "x"); addr+=0x2;
 		ROW ("Machine", 2, r_read_le16 (buf + addr), "x"); addr+=0x2;
