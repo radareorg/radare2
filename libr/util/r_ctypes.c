@@ -249,64 +249,59 @@ R_API char *r_type_format(Sdb *TDB, const char *t) {
 		for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
 			const char *tfmt;
 			char *type;
-			int elements;
-			//int off;
-			//int size;
+			char *struct_name;
 			bool isStruct = false;
 			bool isEnum = false;
 			snprintf (var2, sizeof (var2), "%s.%s", var, p);
 			type = sdb_array_get (TDB, var2, 0, NULL);
+			int elements = sdb_array_get_num (TDB, var2, 2, NULL);
 			if (type) {
 				//off = sdb_array_get_num (DB, var2, 1, NULL);
 				//size = sdb_array_get_num (DB, var2, 2, NULL);
 				if (!strncmp (type, "struct ", 7)) {
-					char* struct_name = type + 7;
+					struct_name = type + 7;
 					// TODO: iterate over all the struct fields, and format the format and vars
 					snprintf (var3, sizeof (var3), "struct.%s", struct_name);
-					fmt = r_str_append (fmt, "?");
-					vars = r_str_appendf (vars, "(%s)%s", struct_name, p);
-					vars = r_str_append (vars, " ");
+					tfmt = sdb_const_get (TDB, var3, NULL);
+					isStruct = true;
 				} else {
-					elements = sdb_array_get_num (TDB, var2, 2, NULL);
 					// special case for char[]. Use char* format type without *
 					if (!strncmp (type, "char", 5) && elements > 0) {
 						tfmt = sdb_const_get (TDB, "type.char *", NULL);
 						if (tfmt && *tfmt == '*') {
 							tfmt++;
 						}
-				} else {
+					} else {
 						if (!strncmp (type, "enum ", 5)) {
 							snprintf (var3, sizeof (var3), "%s", type + 5);
 							isEnum = true;
-						} else if (!strncmp (type, "struct ", 7)) {
-							snprintf (var3, sizeof (var3), "%s", type + 7);
-							isStruct = true;
 						} else {
 							snprintf (var3, sizeof (var3), "type.%s", type);
 						}
 						tfmt = sdb_const_get (TDB, var3, NULL);
 					}
-					if (tfmt) {
-						filter_type (type);
-						if (elements > 0) {
-							fmt = r_str_appendf (fmt, "[%d]", elements);
-						}
-						if (isStruct) {
-							fmt = r_str_append (fmt, "?");
-							vars = r_str_appendf (vars, "(%s)%s", p, p);
-							vars = r_str_append (vars, " ");
-						} else if (isEnum) {
-							fmt = r_str_append (fmt, "E");
-							vars = r_str_appendf (vars, "(%s)%s", type + 5, p);
-							vars = r_str_append (vars, " ");
-						} else {
-							fmt = r_str_append (fmt, tfmt);
-							vars = r_str_append (vars, p);
-							vars = r_str_append (vars, " ");
-						}
-					} else {
-						eprintf ("Cannot resolve type '%s'\n", var3);
+
+				}
+				if (tfmt) {
+					filter_type (type);
+					if (elements > 0) {
+						fmt = r_str_appendf (fmt, "[%d]", elements);
 					}
+					if (isStruct) {
+						fmt = r_str_append (fmt, "?");
+						vars = r_str_appendf (vars, "(%s)%s", struct_name, p);
+						vars = r_str_append (vars, " ");
+					} else if (isEnum) {
+						fmt = r_str_append (fmt, "E");
+						vars = r_str_appendf (vars, "(%s)%s", type + 5, p);
+						vars = r_str_append (vars, " ");
+					} else {
+						fmt = r_str_append (fmt, tfmt);
+						vars = r_str_append (vars, p);
+						vars = r_str_append (vars, " ");
+					}
+				} else {
+					eprintf ("Cannot resolve type '%s'\n", var3);
 				}
 			}
 			free (type);
