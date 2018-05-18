@@ -11,13 +11,7 @@ LINK+=-g
 endif
 
 LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
-ifeq (${LIBR},)
-ifeq ($(R2DIR),)
-$(error R2DIRis not defined)
-else
-LIBR:=$(R2DIR)/libr
-endif
-endif
+# /libr
 
 ALL?=
 CFLAGS+=-I$(LIBR)

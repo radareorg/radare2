@@ -1,1 +1,1 @@
-include ${SHLR}/zip/deps.mk
+include $(SHLR)/zip/deps.mk
