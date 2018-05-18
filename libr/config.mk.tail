@@ -1,6 +1,10 @@
 # config.mk.tail
 
 LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+# neat???!? trick to support path with spaces
+null:=
+SPACE:=$(null) $(null)
+
 ifeq ($(LIBR),)
 ifeq ($(R2DIR),)
 $(error ERROR: Cannot find R2DIR. Please define this variable)
@@ -9,6 +13,7 @@ LIBR=$(R2DIR)/libr
 MSVC=$(R2DIR)/msvc
 endif
 endif
+
 SHLR:=$(LIBR)/../shlr
 
 #include $(LIBR)/../config-user.mk
