@@ -185,28 +185,23 @@ static void GH(print_main_arena)(RCore *core, GHT m_arena, GH(RHeap_MallocState)
 	PRINT_GA ("}\n\n");
 }
 
-static GHT GH(get_vaddr_symbol)(const char *path, const char *symname) {
+static GHT GH(get_vaddr_symbol)(RCore *core, const char *path, const char *symname) {
 	RListIter *iter;
 	RBinSymbol *s;
-	RCore *core = r_core_new ();
-	RList * syms = NULL;
-	GHT vaddr = 0LL;
 
-	if (!core) {
-		return (GHT) -1;
-	}
+	// TODO: avoid loading twice?
 	r_bin_load (core->bin, path, 0, 0, 0, -1, false);
-	syms = r_bin_get_symbols (core->bin);
+	RList *syms = r_bin_get_symbols (core->bin);
 	if (!syms) {
 		return (GHT) -1;
 	}
+	GHT vaddr = 0LL;
 	r_list_foreach (syms, iter, s) {
 		if (strstr (s->name, symname)) {
 			vaddr = s->vaddr;
 			break;
 		}
 	}
-	r_core_free (core);
 	return vaddr;
 }
 
@@ -286,7 +281,7 @@ static bool GH(r_resolve_symbol)(RCore *core, GHT *symbol, const char *symname) 
 
 	goto not_found;
 found:
-	vaddr = GH(get_vaddr_symbol) (path, symname);
+	vaddr = GH(get_vaddr_symbol) (core, path, symname);
 	if (libc_addr != GHT_MAX && vaddr && vaddr != GHT_MAX) {
 		*symbol = libc_addr + vaddr;
 		free (path);
@@ -896,23 +891,20 @@ static void GH(print_heap_segment)(RCore *core, GH(RHeap_MallocState) *main_aren
 	}
 
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, size_tmp, top_size = GHT_MAX, min_size = SZ * 4;
-	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
-
-	if (!cnk) {
-		return;
-	}
-
 	GH(get_brks) (core, &brk_start, &brk_end);
 	*initial_brk = (brk_start >> 12) << 12;
 
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX || *initial_brk == GHT_MAX) {
 		eprintf ("No Heap section\n");
-		free (cnk);
 		return;
 	}
 
 	GHT next_chunk = *initial_brk, prev_chunk = next_chunk;
 	top_size = main_arena->top - brk_start;
+	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
+	if (!cnk) {
+		return;
+	}
 
 	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->top) {
 		(void)r_core_read_at (core, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
@@ -976,7 +968,7 @@ static void GH(print_heap_segment)(RCore *core, GH(RHeap_MallocState) *main_aren
 	PRINTF_BA ("0x%"PFMT64x, (ut64)brk_end);
 	PRINT_GA ("]\n");
 	//r_cons_println (); giving me a compile error
-	r_cons_printf("\n");
+	r_cons_printf ("\n");
 	free (cnk);
 }
 
@@ -1128,7 +1120,6 @@ void GH(print_malloc_info)(RCore *core, GHT m_state) {
 		free (heap_info);
 		free (ms);
 	}
-	return;
 }
 
 static const char* GH(help_msg)[] = {
@@ -1166,7 +1157,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 		break;
 	case ' ' : // dmh [malloc_state]
 		if (GH(r_resolve_main_arena) (core, &m_arena, main_arena)) {
-			GHT m_state = strstr (input, "0x")
+			GHT m_state = strstr (input, "0x") // TODO: use r_num_get (NULL, input);
 				? (GHT)strtol (input, NULL, 0)
 				: (GHT)strtol (input, NULL, 16);
 			if (m_state == m_arena) {			
