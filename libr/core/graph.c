@@ -171,6 +171,18 @@ static void rotateAsmemu(RCore *core) {
 	}
 }
 
+static void showcursor(RCore *core, int x) {
+	if (!x) {
+		int wheel = r_config_get_i (core->config, "scr.wheel");
+		if (wheel) {
+			r_cons_enable_mouse (true);
+		}
+	} else {
+		r_cons_enable_mouse (false);
+	}
+	r_cons_show_cursor (x);
+}
+
 static char *get_title(ut64 addr) {
 	return r_str_newf ("0x%"PFMT64x, addr);
 }
@@ -3726,11 +3738,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			is_error = true;
 			break;
 		}
-		r_cons_show_cursor (false);
-		wheel = r_config_get_i (core->config, "scr.wheel");
-		if (wheel) {
-			r_cons_enable_mouse (true);
-		}
+		showcursor (core, false);
 
 		// r_core_graph_inputhandle()
 		okey = r_cons_readchar ();
@@ -3772,6 +3780,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case '|':
 		{         // TODO: edit
+			showcursor (core, true);
 			const char *buf = NULL;
 			const char *cmd = r_config_get (core->config, "cmd.gprompt");
 			r_line_set_prompt ("cmd.gprompt> ");
@@ -3779,6 +3788,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			buf = r_line_readline ();
 			core->cons->line->contents = NULL;
 			r_config_set (core->config, "cmd.gprompt", buf);
+			showcursor (core, false);
 		}
 		break;
 		case '=':
@@ -3953,7 +3963,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			goto_asmqjmps (g, core);
 			break;
 		case 'o':
+			showcursor (core, true);
 			visual_offset (g, core);
+			showcursor (core, false);
 			break;
 		case 'O':
 			if (!fcn) {
@@ -4022,12 +4034,14 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case ';':
 			if (fcn) {
+				showcursor (core, true);
 				char buf[256];
 				r_line_set_prompt ("[comment]> ");
 				if (r_cons_fgets (buf, sizeof (buf) - 1, 0, NULL) > 0) {
 					r_core_cmdf (core, "\"CC %s\"", buf);
 				}
 				g->need_reload_nodes = true;
+				showcursor (core, false);
 			}
 			break;
 		case 'C':
@@ -4059,17 +4073,12 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case 'd':
 			{
-				int wheel = r_config_get_i (core->config, "scr.wheel");
-				if (wheel) {
-					r_cons_enable_mouse (false);
-				}
+				showcursor (core, true);
 				// WTF?
 				r_config_set_i (core->config, "scr.interactive", true);
 				r_core_visual_define (core, "");
 				get_bbupdate (g, core, fcn);
-				if (wheel) {
-					r_cons_enable_mouse (true);
-				}
+				showcursor (core, false);
 			}
 			break;
 		case 'D':
@@ -4185,9 +4194,11 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			}
 			break;
 		case '/':
+			showcursor (core, true);
 			r_config_set_i (core->config, "scr.interactive", true);
 			r_core_cmd0 (core, "?i highlight;e scr.highlight=`?y`");
 			r_config_set_i (core->config, "scr.interactive", false);
+			showcursor (core, false);
 			break;
 		case ':':
 			r_core_visual_prompt_input (core);
