@@ -645,7 +645,6 @@ typedef struct r_anal_t {
 	int esil_goto_limit;
 	int pcalign;
 	int bitshift;
-	RList *types;
 	//struct r_anal_ctx_t *ctx;
 	struct r_anal_esil_t *esil;
 	struct r_anal_plugin_t *cur;
@@ -1225,37 +1224,18 @@ R_API RAnalFunction *r_listrange_find_in_range(RListRange* s, ut64 addr);
 R_API RAnalFunction *r_listrange_find_root(RListRange* s, ut64 addr);
 /* --------- */ /* REFACTOR */ /* ---------- */
 /* type.c */
-R_API int r_anal_type_get_bitsize (RAnal *anal, const char *type);
-R_API RList* r_anal_type_get_by_offset(RAnal *anal, ut64 offset);
 R_API RAnalType *r_anal_type_new(void);
 R_API void r_anal_type_add(RAnal *l, RAnalType *t);
-R_API void r_anal_type_del(RAnal *l, const char *name);
-R_API RList *r_anal_type_list_new(void);
 R_API RAnalType *r_anal_type_find(RAnal *a, const char* name);
 R_API void r_anal_type_list(RAnal *a, short category, short enabled);
 R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* s);
-R_API char *r_anal_type_to_str(RAnal *a, const char *name);
 R_API const char *r_anal_optype_to_string(int t);
 R_API const char *r_anal_op_family_to_string (int n);
 R_API int r_anal_op_family_from_string(const char *f);
 R_API int r_anal_op_hint(RAnalOp *op, RAnalHint *hint);
 R_API RAnalType *r_anal_type_free(RAnalType *t);
 R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path);
-R_API void r_anal_type_define (RAnal *anal, const char *key, const char *value);
-R_API void r_anal_type_header (RAnal *anal, const char *hdr);
 
-R_API int r_anal_type_link (RAnal *anal, const char *val, ut64 addr);
-R_API int r_anal_type_unlink(RAnal *anal, ut64 addr);
-R_API int r_anal_type_link_offset (RAnal *anal, const char *val, ut64 addr);
-R_API char *r_anal_type_format (RAnal *anal, const char *t);
-R_API int r_anal_type_set(RAnal *anal, ut64 at, const char *field, ut64 val);
-R_API int r_anal_type_func_exist(RAnal *anal, const char *func_name);
-R_API const char *r_anal_type_func_cc(RAnal *anal, const char *func_name);
- R_API const char *r_anal_type_func_ret(RAnal *anal, const char *func_name);
-R_API int r_anal_type_func_args_count(RAnal *anal, const char *func_name);
-R_API char *r_anal_type_func_args_type(RAnal *anal, const char *func_name, int i);
-R_API char *r_anal_type_func_args_name(RAnal *anal, const char *func_name, int i);
-R_API char *r_anal_type_func_guess(RAnal *anal, char *func_name);
 /* anal.c */
 R_API RAnal *r_anal_new(void);
 R_API int r_anal_purge (RAnal *anal);
@@ -1524,6 +1504,7 @@ R_API int r_anal_cc_exist (RAnal *anal, const char *convention);
 R_API const char *r_anal_cc_arg(RAnal *anal, const char *convention, int n);
 R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention);
 R_API const char *r_anal_cc_default(RAnal *anal);
+R_API const char *r_anal_cc_func(RAnal *anal, const char *func_name);
 R_API const char *r_anal_cc_to_constant(RAnal *anal, char *convention);
 R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr);
 

@@ -2345,8 +2345,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				key = resolve_fcn_name (core->anal, fcn_name);
 			}
 			if (key) {
-				const char *fcn_type = r_anal_type_func_ret (core->anal, key);
-				int nargs = r_anal_type_func_args_count (core->anal, key);
+				const char *fcn_type = r_type_func_ret (core->anal->sdb_types, key);
+				int nargs = r_type_func_args_count (core->anal->sdb_types, key);
 				if (fcn_type) {
 					char *sp = " ";
 					if (*fcn_type && (fcn_type[strlen (fcn_type) - 1] == '*')) {
