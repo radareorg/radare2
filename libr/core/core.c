@@ -1209,6 +1209,7 @@ static int autocomplete(RLine *line) {
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
 		} else if (!strncmp (line->buffer.data, "s ", 2)
+		|| !strncmp (line->buffer.data, "s+ ", 3)
 		|| !strncmp (line->buffer.data, "b ", 2)
 		|| !strncmp (line->buffer.data, "f ", 2)
 		|| !strncmp (line->buffer.data, "? ", 2)
