@@ -1027,23 +1027,13 @@ R_API void r_panels_free(RPanels *panels) {
 	r_cons_switchbuf (true);
 	if (panels) {
 		for (i = 0; i < panels->n_panels; i++) {
-			if (panels->panel[i].title) {
-				free (panels->panel[i].title);
-			}
-			if (panels->panel[i].cmd) {
-				free (panels->panel[i].cmd);
-			}
+			free (panels->panel[i].title);
+			free (panels->panel[i].cmd);
 		}
-		if (panels->panel) {
-			free (panels->panel);
-		}
+		free (panels->panel);
 		if (panels->can) {
-			if (panels->can->b) {
-				free (panels->can->b);
-			}
-			if (panels->can->attrs) {
-				free (panels->can->attrs);
-			}
+			free (panels->can->b);
+			free (panels->can->attrs);
 			free (panels->can);
 		}
 		free (panels);
