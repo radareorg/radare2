@@ -130,6 +130,6 @@ install:
 	mkdir -p "${DESTDIR}${BINDIR}"
 	for FILE in r2 ${BINS2} ; do \
 		rm -f "${DESTDIR}${BINDIR}/$$FILE" ; \
-		cp -af "$$FILE" "${DESTDIR}${BINDIR}/$$FILE" ; \
+		cp -PRpf "$$FILE" "${DESTDIR}${BINDIR}/$$FILE" ; \
 	done
 
