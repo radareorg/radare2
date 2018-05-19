@@ -415,6 +415,7 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth, int wo
 R_API void r_core_anal_datarefs(RCore *core, ut64 addr);
 R_API void r_core_anal_coderefs(RCore *core, ut64 addr);
 R_API void r_core_anal_codexrefs(RCore *core, ut64 addr);
+R_API void r_core_anal_importxrefs(RCore *core);
 R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt);
 R_API int r_core_anal_refs(RCore *core, const char *input);
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr);
@@ -481,6 +482,7 @@ R_API int r_core_hash_load(RCore *core, const char *file);
 R_API int r_core_bin_list(RCore *core, int mode);
 R_API int r_core_bin_raise (RCore *core, ut32 binfile_idx, ut32 obj_idx);
 R_API bool r_core_bin_delete (RCore *core, ut32 binfile_idx, ut32 binobj_idx);
+R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name);
 
 // XXX - this is kinda hacky, maybe there should be a way to
 // refresh the bin environment without specific calls?
