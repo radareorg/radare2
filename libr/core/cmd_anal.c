@@ -15,7 +15,7 @@ static const char *help_msg_a[] = {
 	"ae", "[?] [expr]", "analyze opcode eval expression (see ao)",
 	"af", "[?]", "analyze Functions",
 	"aF", "", "same as above, but using anal.depth=1",
-	"ag", "[?] [options]", "output Graphviz code",
+	"ag", "[?] [options]", "draw graphs",
 	"ah", "[?]", "analysis hints (force opcode size, ...)",
 	"ai", " [addr]", "address information (show perms, stack, heap, ...)",
 	"an"," [name] [@addr]","show/rename/create whatever flag/function is used at addr",
@@ -379,26 +379,32 @@ static const char *help_msg_afvs[] = {
 };
 
 static const char *help_msg_ag[] = {
-	"Usage:", "ag[?f]", " Graphviz/graph code",
-	"ag", " [addr]", "output graphviz code (bb at addr and children)",
-	"ag-", "", "Reset the current ASCII art graph (see agn, age, agg?)",
-	"aga", " [addr]", "idem, but only addresses",
-	"agr", "[j] [addr]", "output graphviz call graph of function",
-	"agg", "", "display current graph created with agn and age (see also ag-)",
-	"agc", "[*j] [addr]", "output graphviz call graph of function",
-	"agC", "[j]", "Same as agc -1. full program callgraph",
-	"agd", " [fcn name]", "output graphviz code of diffed function",
-	"age", "[?] title1 title2", "Add an edge to the current graph",
-	"agf", " [addr]", "Show ASCII art graph of given function",
-	"agg", "[?] [kdi*]", "Print graph in ASCII-Art, graphviz, k=v, r2 or visual",
-	"agj", " [addr]", "idem, but in JSON format",
-	"agJ", " [addr]", "idem, but in JSON format with formatted disassembly (like pdJ)",
-	"agk", " [addr]", "idem, but in SDB key-value format",
-	"agl", " [fcn name]", "output graphviz code using meta-data",
-	"agn", "[?] title body", "Add a node to the current graph",
-	"ags", " [addr]", "output simple graphviz call graph of function (only bb offset)",
-	"agt", " [addr]", "find paths from current offset to given address",
-	"agv", "", "Show function graph in web/png (see graph.web and cmd.graph) or agf for asciiart",
+	"Usage:", "ag<graphtype><format> [addr]", "",
+	"Graph types:", "", "", 
+	"c", " [fcn addr]", "Function callgraph",
+	"f", " [fcn addr]", "Basic blocks function graph",
+	"x", " [addr]", "Cross references graph",
+	"r", " [fcn addr]", "References graph",
+	"a", " [fcn addr]", "Data references graph",
+	"d", " [fcn addr]", "Diff graph",
+	"i", "", "Imports graph",
+	"g", "", "Custom graph",
+	"","","",
+	"Output formats:", "", "",
+	"<blank>", "", "Ascii art",
+	"v", "", "Interactive ascii art",
+	"t", "", "Tiny ascii art",
+	"d", "", "Graphviz dot",
+	"j", "", "json ('J' for formatted disassembly)",
+	"g", "", "Graph Modelling Language (gml)",
+	"k", "", "SDB key-value",
+	"*", "", "r2 commands",
+	"w", "", "Web/image (see graph.extension and graph.web)",
+	"","","",
+	"Custom graph commands:", "", "",
+	"ag-", "", "Clear the custom graph",
+	"agn", "[?] title body", "Add a node to the custom graph",
+	"age", "[?] title1 title2", "Add an edge to the custom graph",
 	NULL
 };
 
@@ -409,17 +415,6 @@ static const char *help_msg_age[] = {
 	"age", " \"title1 with spaces\" title2", "Add an edge from node \"title1 with spaces\" to node \"title2\"",
 	"age-", " title1 title2", "Remove an edge from the node with \"title1\" as title to the one with title \"title2\"",
 	"age?", "", "Show this help",
-	NULL
-};
-
-static const char *help_msg_agg[] = {
-	"Usage:", "agg[kid?*]", "print graph",
-	"agg", "", "show current graph in ascii art",
-	"aggk", "", "show graph in key=value form",
-	"aggi", "", "enter interactive mode for the current graph",
-	"aggd", "", "print the current graph in GRAPHVIZ dot format",
-	"aggv", "", "run graphviz + viewer (see 'e cmd.graph')",
-	"agg*", "", "in r2 commands, to save in projects, etc",
 	NULL
 };
 
@@ -595,7 +590,6 @@ static void cmd_anal_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, afvs);
 	DEFINE_CMD_DESCRIPTOR (core, ag);
 	DEFINE_CMD_DESCRIPTOR (core, age);
-	DEFINE_CMD_DESCRIPTOR (core, agg);
 	DEFINE_CMD_DESCRIPTOR (core, agn);
 	DEFINE_CMD_DESCRIPTOR (core, ah);
 	DEFINE_CMD_DESCRIPTOR (core, ahi);
@@ -5792,9 +5786,6 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 		}
 		break;
 	}
-	case '?':
-		r_core_cmd_help (core, help_msg_agg);
-		break;
 	default:
 		eprintf ("Usage: see ag?\n");
 	}
@@ -5802,7 +5793,6 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 
 static void cmd_anal_graph(RCore *core, const char *input) {
 	RList *list;
-	const char *arg;
 	switch (input[0]) {
 	case 'f': // "agf"
 		switch (input[1]) {
@@ -5992,6 +5982,33 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			break;
 		}
 		break;
+	case 'i': // agi "import graph"
+		switch (input[1]) {
+		case 'v':
+		case 't':
+		case 'd':
+		case 'J':
+		case 'j':
+		case 'g':
+		case 'k':
+		case 'w':
+		case ' ':
+		case 0: {
+			char *cmd = r_str_newf ("ag-; .agi*; agg%c;", input[1]);
+			if (cmd && *cmd) {
+				r_core_cmd0 (core, cmd);
+			}
+			free (cmd);
+			break;
+			}
+		case '*':
+			r_core_anal_importxrefs (core);
+			break;
+		default:
+			eprintf ("Usage: see ag?\n");
+			break;
+		}
+		break;
 	case 'c': // "agc"
 		switch (input[1]) {
 		case 'v':
@@ -6013,12 +6030,12 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			r_core_cmd0 (core, "ag-; .agc* $$; agg;");
 			break;
 		case 'g': {
-			ut64 addr = input[2]? r_num_math (core->num, input + 1): core->offset;
+			ut64 addr = input[2]? r_num_math (core->num, input + 2): core->offset;
 			r_core_anal_callgraph (core, addr, R_GRAPH_FORMAT_GMLFCN);
 			break;
 		}
 		case 'd': {
-			ut64 addr = input[2]? r_num_math (core->num, input + 1): core->offset;
+			ut64 addr = input[2]? r_num_math (core->num, input + 2): core->offset;
 			r_core_anal_callgraph (core, addr, R_GRAPH_FORMAT_DOT);
 			break;
 		}
@@ -6139,19 +6156,8 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			free (cmdargs);
 		}
 		break;
-	case '?': // "ag?"
-		r_core_cmd_help (core, help_msg_ag);
-		break;
-	case ' ': // "ag"
-		arg = strchr (input, ' ');
-		r_core_anal_graph (core, r_num_math (core->num, arg? arg + 1: NULL),
-				R_CORE_ANAL_GRAPHBODY);
-		break;
-	case 0:
-		eprintf ("|ERROR| Usage: ag [addr]\n");
-		break;
 	default:
-		eprintf ("See ag?\n");
+		r_core_cmd_help (core, help_msg_ag);
 		break;
 	}
 }

@@ -1545,7 +1545,7 @@ static RBinSymbol *get_symbol(RBin *bin, RList *symbols, const char *name, ut64 
 
 /* XXX: This is a hack to get PLT references in rabin2 -i */
 /* imp. is a prefix that can be rewritten by the symbol table */
-static ut64 impaddr(RBin *bin, int va, const char *name) {
+R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name) {
 	RList *symbols;
 
 	if (!name || !*name) {
@@ -1585,7 +1585,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			continue;
 		}
 		char *symname = strdup (import->name);
-		ut64 addr = lit ? impaddr (r->bin, va, symname): 0;
+		ut64 addr = lit ? r_core_bin_impaddr (r->bin, va, symname): 0;
 		if (bin_demangle) {
 			char *dname = r_bin_demangle (r->bin->cur, NULL, symname, addr);
 			if (dname) {

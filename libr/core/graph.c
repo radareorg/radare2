@@ -3643,7 +3643,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	int o_vmode = core->vmode;
 	int exit_graph = false, is_error = false;
 	struct agraph_refresh_data *grd;
-	int okey, key, wheel;
+	int okey, key;
 	RAnalFunction *fcn = NULL;
 	const char *key_s;
 	RConsCanvas *can, *o_can = NULL;

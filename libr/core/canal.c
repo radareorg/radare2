@@ -1721,7 +1721,6 @@ R_API void r_core_anal_datarefs(RCore *core, ut64 addr) {
 			RBinSection *binsec = r_bin_get_section_at (obj, ref->addr, true);
 			if (binsec->is_data) {
 				if (!found) {
-					r_cons_printf ("ag-\n");
 					r_cons_printf ("agn %s\n", me);
 					found = true;
 				}
@@ -1747,7 +1746,6 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr) {
 		RListIter *iter;
 		RAnalRef *ref;
 		RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
-		r_cons_printf ("ag-\n");
 		r_cons_printf ("agn %s\n", me);
 		r_list_foreach (refs, iter, ref) {
 			RFlagItem *item = r_flag_get_i (core->flags, ref->addr);
@@ -1761,11 +1759,28 @@ R_API void r_core_anal_coderefs(RCore *core, ut64 addr) {
 	}
 }
 
+R_API void r_core_anal_importxrefs(RCore *core) {
+	RBinInfo *info = r_bin_get_info (core->bin);
+	RBinObject *obj = r_bin_cur_object (core->bin);
+	bool lit = info ? info->has_lit: false;
+	int va = core->io->va || core->io->debug;
+
+	RListIter *iter;
+	RBinImport *imp;
+	r_list_foreach (obj->imports, iter, imp) {
+		ut64 addr = lit ? r_core_bin_impaddr (core->bin, va, imp->name): 0;
+		if (addr) {
+			r_core_anal_codexrefs (core, addr);
+		} else {
+			r_cons_printf ("agn %s\n", imp->name);
+		}
+	}
+}
+
 R_API void r_core_anal_codexrefs(RCore *core, ut64 addr) {
 	RFlagItem *f = r_flag_get_at (core->flags, addr, false);
 	char *me = (f && f->offset == addr)
 		? r_str_new (f->name) : r_str_newf ("0x%"PFMT64x, addr);
-	r_cons_printf ("ag-\n");
 	r_cons_printf ("agn %s\n", me);
 	RListIter *iter;
 	RAnalRef *ref;
