@@ -480,6 +480,7 @@ static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *h
 		if (!target_lib_names) {
 			R_FREE (target_libs);
 			r_list_free (bins);
+			R_FREE (img);
 			return NULL;
 		}
 
@@ -488,6 +489,7 @@ static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *h
 			r_list_free (target_lib_names);
 			R_FREE (target_libs);
 			r_list_free (bins);
+			R_FREE (img);
 			return NULL;
 		}
 
@@ -497,6 +499,7 @@ static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *h
 			R_FREE (target_libs);
 			r_list_free (bins);
 			R_FREE (deps);
+			R_FREE (img);
 			return NULL;
 		}
 
@@ -506,6 +509,7 @@ static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *h
 			r_list_free (bins);
 			R_FREE (deps);
 			R_FREE (depArray);
+			R_FREE (img);
 			return NULL;
 		}
 
@@ -516,6 +520,7 @@ static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *h
 			r_list_free (bins);
 			R_FREE (deps);
 			R_FREE (depArray);
+			R_FREE (img);
 			return NULL;
 		}
 
