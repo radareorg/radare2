@@ -15,7 +15,7 @@ static const char *help_msg_a[] = {
 	"ae", "[?] [expr]", "analyze opcode eval expression (see ao)",
 	"af", "[?]", "analyze Functions",
 	"aF", "", "same as above, but using anal.depth=1",
-	"ag", "[?] [options]", "draw graphs",
+	"ag", "[?] [options]", "draw graphs in various formats",
 	"ah", "[?]", "analysis hints (force opcode size, ...)",
 	"ai", " [addr]", "address information (show perms, stack, heap, ...)",
 	"an"," [name] [@addr]","show/rename/create whatever flag/function is used at addr",
@@ -380,7 +380,7 @@ static const char *help_msg_afvs[] = {
 
 static const char *help_msg_ag[] = {
 	"Usage:", "ag<graphtype><format> [addr]", "",
-	"Graph types:", "", "", 
+	"Graph types:", "", "",
 	"c", " [fcn addr]", "Function callgraph",
 	"f", " [fcn addr]", "Basic blocks function graph",
 	"x", " [addr]", "Cross references graph",
@@ -5993,14 +5993,9 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		case 'k':
 		case 'w':
 		case ' ':
-		case 0: {
-			char *cmd = r_str_newf ("ag-; .agi*; agg%c;", input[1]);
-			if (cmd && *cmd) {
-				r_core_cmd0 (core, cmd);
-			}
-			free (cmd);
+		case 0:
+			r_core_cmdf (core, "ag-; .agi*; agg%c;", input[1]);
 			break;
-			}
 		case '*':
 			r_core_anal_importxrefs (core);
 			break;
@@ -6030,12 +6025,12 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			r_core_cmd0 (core, "ag-; .agc* $$; agg;");
 			break;
 		case 'g': {
-			ut64 addr = input[2]? r_num_math (core->num, input + 2): core->offset;
+			ut64 addr = input[2] ? r_num_math (core->num, input + 2): core->offset;
 			r_core_anal_callgraph (core, addr, R_GRAPH_FORMAT_GMLFCN);
 			break;
 		}
 		case 'd': {
-			ut64 addr = input[2]? r_num_math (core->num, input + 2): core->offset;
+			ut64 addr = input[2] ? r_num_math (core->num, input + 2): core->offset;
 			r_core_anal_callgraph (core, addr, R_GRAPH_FORMAT_DOT);
 			break;
 		}
@@ -6131,23 +6126,14 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			}
 		}
 		break;
-	case 'v': // "agv"
-		if (r_config_get_i (core->config, "graph.web")) {
-			r_core_cmd0 (core, "=H /graph/");
-		} else {
-			const char *cmd = r_config_get (core->config, "cmd.graph");
-			if (cmd && *cmd) {
-				r_core_cmd0 (core, cmd);
-			} else {
-				r_core_cmd0 (core, "agf");
-			}
-		}
+	case 'v': // "agv" alias for "agfv"
+		r_core_cmdf (core, "agfv%s", input + 1);
 		break;
 	case 'w':// "agw" 
 		if (r_config_get_i (core->config, "graph.web")) {
 			r_core_cmd0 (core, "=H /graph/");
 		} else {
-			char *cmdargs = r_str_newf ("agfd %lld", r_num_math (core->num, input + 2));
+			char *cmdargs = r_str_newf ("agfd %lld", r_num_math (core->num, input + 1));
 			char *cmd = r_core_graph_cmd (core, cmdargs);
 			if (cmd && *cmd) {
 				r_core_cmd0 (core, cmd);
