@@ -1209,6 +1209,7 @@ static int autocomplete(RLine *line) {
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
 		} else if (!strncmp (line->buffer.data, "s ", 2)
+		|| !strncmp (line->buffer.data, "s+ ", 3)
 		|| !strncmp (line->buffer.data, "b ", 2)
 		|| !strncmp (line->buffer.data, "f ", 2)
 		|| !strncmp (line->buffer.data, "? ", 2)
@@ -1782,7 +1783,7 @@ R_API bool r_core_init(RCore *core) {
 	core->print->use_comments = false;
 	core->rtr_n = 0;
 	core->blocksize_max = R_CORE_BLOCKSIZE_MAX;
-	core->tasks = r_list_new ();
+	core->tasks = r_list_newf (free);
 	core->watchers = r_list_new ();
 	core->watchers->free = (RListFree)r_core_cmpwatch_free;
 	core->scriptstack = r_list_new ();

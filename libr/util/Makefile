@@ -36,7 +36,7 @@ else
 endif
 endif
 
-include $(SHLR)/zip/deps.mk
+include deps.mk
 
 LDFLAGS+=${BN_LIBS}
 LDFLAGS+=${TH_LIBS}
