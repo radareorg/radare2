@@ -579,7 +579,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->atabs = r_config_get_i (core->config, "asm.tabs");
 	ds->atabsonce = r_config_get_i (core->config, "asm.tabs.once");
 	ds->atabsoff = r_config_get_i (core->config, "asm.tabs.off");
-	ds->midflags = r_config_get_i (core->config, "asm.midflags");
+	ds->midflags = r_config_get_i (core->config, "asm.flags.middle");
 	ds->midcursor = r_config_get_i (core->config, "asm.midcursor");
 	ds->decode = r_config_get_i (core->config, "asm.decode");
 	core->parser->pseudo = ds->pseudo = r_config_get_i (core->config, "asm.pseudo");
@@ -5680,7 +5680,7 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 	}
 	r_cons_break_push (NULL, NULL);
 
-	int midflags = r_config_get_i (core->config, "asm.midflags");
+	int midflags = r_config_get_i (core->config, "asm.flags.middle");
 	i = 0;
 	j = 0;
 toro:
