@@ -1021,14 +1021,14 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 					*eq++ = 0;
 					mode = R_PRINT_MUSTSET;
 					r_print_format (core->print, core->offset,
-						block, core->blocksize, name, mode, eq, dot);
+						core->block, core->blocksize, name, mode, eq, dot);
 				} else {
 					r_print_format (core->print, core->offset,
-						block, core->blocksize, name, mode, NULL, dot);
+						core->block, core->blocksize, name, mode, NULL, dot);
 				}
 			} else {
 				r_print_format (core->print, core->offset,
-					block, core->blocksize, name, mode, NULL, NULL);
+					core->block, core->blocksize, name, mode, NULL, NULL);
 			}
 			free (name);
 		}
