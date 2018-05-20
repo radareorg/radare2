@@ -5982,7 +5982,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			break;
 		}
 		break;
-	case 'i': // agi "import graph"
+	case 'i': // "agi" import graph
 		switch (input[1]) {
 		case 'v':
 		case 't':
