@@ -2423,7 +2423,6 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* asm */
 	//asm.os needs to be first, since other asm.* depend on it
-	SETICB ("asm.armimm", false,  &cb_asm_armimm, "Display # for immediates in ARM");
 	n = NODECB ("asm.os", R_SYS_OS, &cb_asmos);
 	SETDESC (n, "Select operating system (kernel)");
 	SETOPTIONS (n, "ios", "dos", "darwin", "linux", "freebsd", "openbsd", "netbsd", "windows", NULL);
@@ -2431,16 +2430,12 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("asm.invhex", "false", &cb_asm_invhex, "Show invalid instructions as hexadecimal numbers");
 	SETPREF ("asm.meta", "true", "Display the code/data/format conversions in disasm");
 	SETPREF ("asm.bytes", "true", "Display the bytes of each instruction");
-	SETPREF ("asm.flagsinbytes", "false",  "Display flags inside the bytes space");
-	n = NODEICB ("asm.midflags", 2, &cb_midflags);
-	SETDESC (n, "Realign disassembly if there is a flag in the middle of an instruction");
 	SETPREF ("asm.midcursor", "false", "Cursor in visual disasm mode breaks the instruction");
-	SETOPTIONS (n, "0 = do not show flag", "1 = show without realign", "2 = realign at middle flag",
-		"3 = realign at middle flag if sym.*", NULL);
 	SETPREF ("asm.cmt.flgrefs", "true", "Show comment flags associated to branch reference");
 	SETPREF ("asm.cmt.right", "true", "Show comments at right of disassembly if they fit in screen");
 	SETI ("asm.cmt.col", 71, "Column to align comments");
 	SETICB ("asm.pcalign", 0, &cb_asm_pcalign, "Only recognize as valid instructions aligned to this value");
+	// maybe rename to asm.cmt.calls
 	SETPREF ("asm.calls", "true", "Show callee function related info as comments in disasm");
 	SETPREF ("asm.bbline", "false", "Show empty line after every basic block");
 	SETPREF ("asm.comments", "true", "Show comments in disassembly view");
@@ -2449,9 +2444,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.leahints", "false", "Show LEA hints [numbers] in disasm");
 	SETPREF ("asm.slow", "true", "Perform slow analysis operations in disasm");
 	SETPREF ("asm.decode", "false", "Use code analysis as a disassembler");
-	SETPREF ("asm.flgoff", "false", "Show offset in flags");
-	SETPREF ("asm.immstr", "false", "Show immediates values as strings");
-	SETPREF ("asm.immtrim", "false", "Remove all offsets and constants from disassembly");
+	SETICB ("asm.imm.arm", false,  &cb_asm_armimm, "Display # for immediates in ARM");
+	SETPREF ("asm.imm.str", "false", "Show immediates values as strings");
+	SETPREF ("asm.imm.trim", "false", "Remove all offsets and constants from disassembly");
 	SETPREF ("asm.indent", "false", "Indent disassembly based on reflines depth");
 	SETI ("asm.indentspace", 2, "How many spaces to indent the code");
 	SETPREF ("asm.dwarf", "false", "Show dwarf comment at disassembly");
@@ -2474,6 +2469,12 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.strip", "", "strip all instructions given comma separated types");
 	SETPREF ("asm.fcnlines", "true", "Show function boundary lines");
 	SETPREF ("asm.flags", "true", "Show flags");
+	SETPREF ("asm.flags.offset", "false", "Show offset in flags");
+	SETPREF ("asm.flags.inbytes", "false",  "Display flags inside the bytes space");
+	n = NODEICB ("asm.flags.middle", 2, &cb_midflags);
+	SETOPTIONS (n, "0 = do not show flag", "1 = show without realign", "2 = realign at middle flag",
+		"3 = realign at middle flag if sym.*", NULL);
+	SETDESC (n, "Realign disassembly if there is a flag in the middle of an instruction");
 	SETPREF ("asm.lbytes", "true", "Align disasm bytes to left");
 	SETPREF ("asm.lines", "true", "Show ASCII-art lines at disassembly");
 	SETPREF ("asm.lines.call", "false", "Enable call lines");
@@ -2498,8 +2499,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.cyclespace", "false", "Indent instructions depending on CPU-cycles");
 	SETPREF ("asm.cycles", "false", "Show CPU-cycles taken by instruction at disassembly");
 	SETI ("asm.tabs", 0, "Use tabs in disassembly");
-	SETPREF ("asm.tabsonce", "false", "Only tabulate the opcode, not the arguments");
-	SETI ("asm.tabsoff", 0, "tabulate spaces after the offset");
+	SETPREF ("asm.tabs.once", "false", "Only tabulate the opcode, not the arguments");
+	SETI ("asm.tabs.off", 0, "tabulate spaces after the offset");
 	SETPREF ("asm.trace", "false", "Show execution traces for each opcode");
 	SETPREF ("asm.tracespace", "false", "Indent disassembly with trace.count information");
 	SETPREF ("asm.ucase", "false", "Use uppercase syntax at disassembly");
@@ -2543,7 +2544,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("asm.bits", 32, &cb_asmbits, "Word size in bits at assembler");
 #endif
 	SETPREF ("asm.functions", "true", "Show functions in disassembly");
-	SETPREF ("asm.fcncalls", "true", "Show functions calls");
 	SETPREF ("asm.xrefs", "true", "Show xrefs in disassembly");
 	SETPREF ("asm.demangle", "true", "Show demangled symbols in disasm");
 	SETPREF ("asm.describe", "false", "Show opcode description");
