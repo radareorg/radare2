@@ -236,7 +236,7 @@ fi
 if [ "${#ARCHS}" -gt 0 ]; then
 	iosClean
 	iosConfigure
-	if [ "$?" = 0 ] && [ "${#ARCHS}" -gt 0 ]; then
+	if [ "$?" = 0 ]; then
 		export CPU=$ARCHS
 		export SDK=iphoneos
 		echo "Building for $CPU"

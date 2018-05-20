@@ -13,7 +13,7 @@ BUILDSEC=$(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+__%H:%M:%S" 2>/dev/null ||
 else
 BUILDSEC=$(shell date "+__%H:%M:%S")
 endif
-DATADIRS=libr/cons/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d libr/anal/d
+DATADIRS=libr/cons/d libr/flag/d libr/bin/d libr/asm/d libr/syscall/d libr/magic/d libr/anal/d
 USE_ZIP=YES
 ZIP=zip
 
@@ -210,7 +210,7 @@ install-doc-symlink:
 		ln -fs "$(PWD)/doc/$$FILE" "${DESTDIR}${DOCDIR}" ; done
 
 install love: install-doc install-man install-www
-	cd libr && ${MAKE} install PARENT=1
+	cd libr && ${MAKE} install
 	cd binr && ${MAKE} install
 	cd shlr && ${MAKE} install
 	for DIR in ${DATADIRS} ; do \
@@ -279,11 +279,11 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 deinstall uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/r2-indent
 	rm -f $(DESTDIR)$(BINDIR)/r2-docker
-	cd libr && ${MAKE} uninstall PARENT=1
-	cd binr && ${MAKE} uninstall PARENT=1
-	cd shlr && ${MAKE} uninstall PARENT=1
-	cd libr/syscall/d && ${MAKE} uninstall PARENT=1
-	cd libr/anal/d && ${MAKE} uninstall PARENT=1
+	cd libr && ${MAKE} uninstall
+	cd binr && ${MAKE} uninstall
+	cd shlr && ${MAKE} uninstall
+	cd libr/syscall/d && ${MAKE} uninstall
+	cd libr/anal/d && ${MAKE} uninstall
 	@echo
 	@echo "Run 'make purge' to also remove installed files from previous versions of r2"
 	@echo
