@@ -124,7 +124,7 @@ static bool init(RCore *core, RPanels *panels, int w, int h);
 static bool initPanels(RCore *core, RPanels *panels);
 static void panelBreakpoint(RCore *core);
 static void panelContinue(RCore *core);
-static void panelPrompt(const char *prompt, char *buf);
+static void panelPrompt(const char *prompt, char *buf, int len);
 static void panelSingleStepIn(RCore *core);
 static void panelSingleStepOver(RCore *core);
 static void panelsRefresh(RCore *core, RPanels *panels);
@@ -486,14 +486,14 @@ static bool handleCursorMode(RCore *core, const int key) {
 				if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_STACK)) {
 					// insert mode
 					const char *prompt = "insert hex: ";
-					panelPrompt (prompt, buf);
+					panelPrompt (prompt, buf, sizeof (buf));
 					r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, panels->panel[panels->curnode].addr);
 					panels->panel[panels->curnode].refresh = true;
 				} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_REGISTERS)) {
 					creg = core->dbg->creg;
 					if (creg) {
 						const char *prompt = "new-reg-value> ";
-						panelPrompt (prompt, buf);
+						panelPrompt (prompt, buf, sizeof (buf));
 						r_core_cmdf (core, "dr %s = %s", creg, buf);
 						panels->panel[panels->curnode].refresh = true;
 					}
@@ -768,10 +768,10 @@ static void checkStackbase(RCore *core) {
 	}
 }
 
-static void panelPrompt(const char *prompt, char *buf) {
+static void panelPrompt(const char *prompt, char *buf, int len) {
 	r_line_set_prompt (prompt);
 	*buf = 0;
-	r_cons_fgets (buf, sizeof (buf), 0, NULL);
+	r_cons_fgets (buf, len, 0, NULL);
 }
 
 static bool init (RCore *core, RPanels *panels, int w, int h) {
