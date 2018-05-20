@@ -174,6 +174,7 @@ R_API RFlagItem *r_flag_item_clone(RFlagItem *item) {
 	n->offset = item->offset;
 	n->size = item->size;
 	n->space = item->space;
+	n->section_end = item->section_end;
 	return n;
 }
 
@@ -556,6 +557,7 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 	item->space = f->space_idx;
 	item->offset = off + f->base;
 	item->size = size;
+	item->section_end = !strncmp (item->name, "section_end.", 12);
 
 	list = (RList *)r_flag_get_list (f, off);
 	if (!list) {

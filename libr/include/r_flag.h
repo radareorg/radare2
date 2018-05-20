@@ -46,6 +46,7 @@ typedef struct r_flag_item_t {
 	char *color;    /* item color */
 	char *comment;  /* item comment */
 	char *alias;    /* used to define a flag based on a math expression (e.g. foo + 3) */
+	bool section_end; /* is a section_end flag */
 } RFlagItem;
 
 typedef struct r_flag_t {

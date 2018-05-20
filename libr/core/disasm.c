@@ -3782,7 +3782,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 					continue;
 				}
 				fi = item;
-				if (strncmp (item->name, "section_end.", 12) != 0) {
+				if (!item->section_end) {
 					break;
 				}
 			}
