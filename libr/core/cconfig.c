@@ -2440,6 +2440,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.cmt.right", "true", "Show comments at right of disassembly if they fit in screen");
 	SETI ("asm.cmt.col", 71, "Column to align comments");
 	SETICB ("asm.pcalign", 0, &cb_asm_pcalign, "Only recognize as valid instructions aligned to this value");
+	// maybe rename to asm.cmt.calls
 	SETPREF ("asm.calls", "true", "Show callee function related info as comments in disasm");
 	SETPREF ("asm.bbline", "false", "Show empty line after every basic block");
 	SETPREF ("asm.comments", "true", "Show comments in disassembly view");
@@ -2543,7 +2544,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("asm.bits", 32, &cb_asmbits, "Word size in bits at assembler");
 #endif
 	SETPREF ("asm.functions", "true", "Show functions in disassembly");
-	SETPREF ("asm.fcncalls", "true", "Show functions calls");
 	SETPREF ("asm.xrefs", "true", "Show xrefs in disassembly");
 	SETPREF ("asm.demangle", "true", "Show demangled symbols in disasm");
 	SETPREF ("asm.describe", "false", "Show opcode description");
