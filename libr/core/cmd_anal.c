@@ -2345,8 +2345,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				key = resolve_fcn_name (core->anal, fcn_name);
 			}
 			if (key) {
-				const char *fcn_type = r_anal_type_func_ret (core->anal, key);
-				int nargs = r_anal_type_func_args_count (core->anal, key);
+				const char *fcn_type = r_type_func_ret (core->anal->sdb_types, key);
+				int nargs = r_type_func_args_count (core->anal->sdb_types, key);
 				if (fcn_type) {
 					char *sp = " ";
 					if (*fcn_type && (fcn_type[strlen (fcn_type) - 1] == '*')) {
@@ -6051,11 +6051,68 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		r_core_anal_graph (core, r_num_math (core->num, input + 1), R_CORE_ANAL_GRAPHLINES);
 		break;
 	case 'a': // "aga"
-		r_core_anal_graph (core, r_num_math (core->num, input + 1), 0);
+		switch (input[1]) {
+		case 'v':
+		case 't':
+		case 'k':
+		case 'w':
+		case 'g':
+		case 'j':
+		case 'J':
+		case 'd':
+		case ' ': {
+			char *cmd = r_str_newf ("ag-; .aga* %lld; agg%c;",
+				input[2] ? r_num_math (core->num, input + 2) : core->offset, input[1]);
+			if (cmd && *cmd) {
+				r_core_cmd0 (core, cmd);
+			}
+			free (cmd);
+			break;
+			}
+		case 0:
+			r_core_cmd0 (core, "ag-; .aga* $$; agg;");
+			break;
+		case '*': {
+			ut64 addr = input[2]? r_num_math (core->num, input + 2): core->offset;
+			r_core_anal_datarefs (core, addr);
+			break;
+			}
+		default:
+			 eprintf ("Usage: see ag?\n");
+			 break;
+		}
 		break;
 	case 'd': // "agd"
-		r_core_anal_graph (core, r_num_math (core->num, input + 1),
-				R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF);
+		switch (input[1]) {
+		case 'v':
+		case 't':
+		case 'j':
+		case 'J':
+		case 'g':
+		case 'k':
+		case '*':
+		case ' ':
+		case 0:
+			eprintf ("Currently the only supported formats for the diff graph are 'agdd' and 'agdw'\n");
+			break;
+		case 'd': {
+			ut64 addr = input[2]? r_num_math (core->num, input + 2): core->offset;
+			r_core_gdiff_fcn (core, addr, core->offset);
+			r_core_anal_graph (core, addr, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF);
+			break;
+			}
+		case 'w': {
+			char *cmdargs = r_str_newf ("agdd %lld",
+				input[2] ? r_num_math (core->num, input + 2) : core->offset);
+			char *cmd = r_core_graph_cmd (core, cmdargs);
+			if (cmd && *cmd) {
+				r_core_cmd0 (core, cmd);
+			}
+			free (cmd);
+			free (cmdargs);
+			break;
+			}
+		}
 		break;
 	case 'v': // "agv"
 		if (r_config_get_i (core->config, "graph.web")) {

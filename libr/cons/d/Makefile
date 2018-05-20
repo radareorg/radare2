@@ -12,7 +12,7 @@ install: ${F_SDB}
 	mkdir -p "$P"
 	for FILE in * ; do \
 		if [ $$FILE != Makefile -a $$FILE != meson.build -a -f $$FILE ]; then \
-			cp -af "${CWD}/$$FILE" "$P/$$FILE" ; \
+			cp -PRpf "${CWD}/$$FILE" "$P/$$FILE" ; \
 		fi ; \
 	done
 

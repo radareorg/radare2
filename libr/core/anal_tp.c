@@ -77,23 +77,24 @@ static bool type_pos_hit(RAnal *anal, Sdb *trace, bool in_stack, int idx, int si
 
 static void type_match(RCore *core, ut64 addr, char *name, int prev_idx) {
 	Sdb *trace = core->anal->esil->db_trace;
+	Sdb *TDB = core->anal->sdb_types;
 	RAnal *anal = core->anal;
 	char *fcn_name;
 	int idx = sdb_num_get (trace, "idx", 0);
 	bool stack_rev = false, in_stack = false;
 
-	if (r_anal_type_func_exist (anal, name)) {
+	if (r_type_func_exist (TDB, name)) {
 		fcn_name = strdup (name);
-	} else if (!(fcn_name = r_anal_type_func_guess (anal, name))) {
+	} else if (!(fcn_name = r_type_func_guess (TDB, name))) {
 		//eprintf ("can't find function prototype for %s\n", name);
 		return;
 	}
-	const char* cc = r_anal_type_func_cc (anal, fcn_name);
+	const char* cc = r_anal_cc_func (anal, fcn_name);
 	if (!cc || !r_anal_cc_exist (anal, cc)) {
 		//eprintf ("can't find %s calling convention %s\n", fcn_name, cc);
 		return;
 	}
-	int i, j, size = 0, max = r_anal_type_func_args_count (anal, fcn_name);
+	int i, j, size = 0, max = r_type_func_args_count (TDB, fcn_name);
 	const char *place = r_anal_cc_arg (anal, cc, 1);
 	r_cons_break_push (NULL, NULL);
 
@@ -106,8 +107,8 @@ static void type_match(RCore *core, ut64 addr, char *name, int prev_idx) {
 	}
 	for (i = 0; i < max; i++) {
 		int arg_num = stack_rev ? (max - 1 - i) : i;
-		char *type = r_anal_type_func_args_type (anal, fcn_name, arg_num);
-		const char *name = r_anal_type_func_args_name (anal, fcn_name, arg_num);
+		char *type = r_type_func_args_type (TDB, fcn_name, arg_num);
+		const char *name = r_type_func_args_name (TDB, fcn_name, arg_num);
 		if (!in_stack) {
 			place = r_anal_cc_arg (anal, cc, arg_num + 1);
 		}
@@ -123,7 +124,7 @@ static void type_match(RCore *core, ut64 addr, char *name, int prev_idx) {
 				break;
 			}
 		}
-		size += r_anal_type_get_bitsize (anal, type) / 8;
+		size += r_type_get_bitsize (TDB, type) / 8;
 	}
 	r_cons_break_pop ();
 	free (fcn_name);

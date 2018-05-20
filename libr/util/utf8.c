@@ -539,7 +539,7 @@ R_API int r_utf8_encode_str (const RRune *str, ut8 *dst, const int dst_length) {
 
 	if (!str || !dst) return -1;
 
-	for (i = 0; str[i] && pos < dst_length - 1; i++)
+	for (i = 0; i < sizeof (str) - 1 && str[i] && pos < dst_length - 1; i++)
 		pos += r_utf8_encode (&dst[pos], str[i]);
 
 	dst[pos++] = '\0';

@@ -947,6 +947,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 	core->print->reg = core->dbg->reg;
 	core->print->get_register = r_reg_get;
 	core->print->get_register_value = r_reg_get_value;
+	core->print->sdb_types = core->anal->sdb_types;
 
 	int o_blocksize = core->blocksize;
 
@@ -3096,7 +3097,7 @@ static void _disasm_recursive(RCore *core, ut64 addr, char type_print) {
 	bool show_flags = r_config_get_i (core->config, "asm.flags");
 	bool show_bytes = r_config_get_i (core->config, "asm.bytes");
 	bool show_offset = r_config_get_i (core->config, "asm.offset");
-	bool show_imtrim = r_config_get_i (core->config, "asm.immtrim");
+	bool show_imtrim = r_config_get_i (core->config, "asm.imm.trim");
 	Sdb *db = sdb_new0 ();
 	RAsmOp asmop = {0};
 	RAnalOp aop = {0};

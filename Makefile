@@ -155,7 +155,7 @@ windist:
 	@cp -f libr/bin/d/trx "${WINDIST}/share/radare2/${VERSION}/format"
 	@cp -f libr/bin/d/dll/*.sdb "${WINDIST}/share/radare2/${VERSION}/format/dll"
 	@mkdir -p "${WINDIST}/share/radare2/${VERSION}/cons"
-	@cp -af libr/cons/d/* "${WINDIST}/share/radare2/${VERSION}/cons"
+	@cp -PRpf libr/cons/d/* "${WINDIST}/share/radare2/${VERSION}/cons"
 	@mkdir -p "${WINDIST}/share/radare2/${VERSION}/hud"
 	@cp -f doc/hud "${WINDIST}/share/radare2/${VERSION}/hud/main"
 	@mv "${WINDIST}" "radare2-${WINBITS}-${VERSION}"

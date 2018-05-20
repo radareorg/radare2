@@ -429,6 +429,7 @@ static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
 	ut32 sz = R_MIN (as, bs);
 	ut32 i, j;
 	int ctx = DUMP_CONTEXT;
+	int pad = 0;
 	switch (w) {
 	case 8:
 		r_cons_printf ("  offset     0 1 2 3 4 5 6 7 01234567    0 1 2 3 4 5 6 7 01234567\n");
@@ -443,6 +444,10 @@ static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
 		return;
 	}
 	for (i = 0; i < sz; i += w) {
+		if (i + w >= sz) {
+			pad = w - sz + i;
+			w = sz - i;
+		}
 		bool eq = !memcmp (a + i, b + i, w);
 		if (eq) {
 			ctx--;
@@ -470,6 +475,9 @@ static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
 				r_cons_printf (Color_RESET);
 			}
 		}
+		for (j = 0; j < pad; j++) {
+			r_cons_printf ("  ");
+		}
 		r_cons_printf (" ");
 		for (j = 0; j < w; j++) {
 			bool eq2 = a[i + j] == b[i + j];
@@ -481,6 +489,9 @@ static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
 				r_cons_printf (Color_RESET);
 			}
 		}
+		for (j = 0; j < pad; j++) {
+			r_cons_printf (" ");
+		}
 		r_cons_printf ("   ");
 		for (j = 0; j < w; j++) {
 			bool eq2 = a[i + j] == b[i + j];
@@ -491,6 +502,9 @@ static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
 			if (!eq) {
 				r_cons_printf (Color_RESET);
 			}
+		}
+		for (j = 0; j < pad; j++) {
+			r_cons_printf ("  ");
 		}
 		r_cons_printf (" ");
 		for (j = 0; j < w; j++) {

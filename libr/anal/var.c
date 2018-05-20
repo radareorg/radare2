@@ -21,7 +21,7 @@ struct VarType {
 #define SETKEY2(x, ...) snprintf (key2, sizeof (key) - 1, x, ## __VA_ARGS__);
 #define SETVAL(x, ...) snprintf (val, sizeof (val) - 1, x, ## __VA_ARGS__);
 R_API bool r_anal_var_display(RAnal *anal, int delta, char kind, const char *type) {
-	char *fmt = r_anal_type_format (anal, type);
+	char *fmt = r_type_format (anal->sdb_types, type);
 	RRegItem *i;
 	if (!fmt) {
 		eprintf ("type:%s doesn't exist\n", type);
@@ -515,7 +515,7 @@ static void var_add_structure_fields_to_list(RAnal *a, RAnalVar *av, const char 
 			char *field_type = sdb_array_get (TDB, field_key, 0, NULL);
 			ut64 field_offset = sdb_array_get_num (TDB, field_key, 1, NULL);
 			int field_count = sdb_array_get_num (TDB, field_key, 2, NULL);
-			int field_size = r_anal_type_get_bitsize (a, field_type) * (field_count? field_count: 1);
+			int field_size = r_type_get_bitsize (TDB, field_type) * (field_count? field_count: 1);
 			new_name = r_str_newf ( "%s.%s", base_name, field_name);
 			if (field_offset == 0) {
 				free (av->name);

@@ -147,7 +147,6 @@ typedef struct {
 	bool show_cmtrefs;
 	const char *show_cmtoff;
 	bool show_functions;
-	bool show_fcncalls;
 	bool show_hints;
 	bool show_marks;
 	bool show_asciidot;
@@ -560,11 +559,11 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->color_gui_border = P(gui_border): Color_BGGRAY;
 	ds->color_line_highlight = P(line_highlight): Color_BGBLUE;
 
-	ds->immstr = r_config_get_i (core->config, "asm.immstr");
-	ds->immtrim = r_config_get_i (core->config, "asm.immtrim");
+	ds->immstr = r_config_get_i (core->config, "asm.imm.str");
+	ds->immtrim = r_config_get_i (core->config, "asm.imm.trim");
 	ds->use_esil = r_config_get_i (core->config, "asm.esil");
 	ds->pre_emu = r_config_get_i (core->config, "emu.pre");
-	ds->show_flgoff = r_config_get_i (core->config, "asm.flgoff");
+	ds->show_flgoff = r_config_get_i (core->config, "asm.flags.offset");
 	ds->show_nodup = r_config_get_i (core->config, "asm.nodup");
 	{
 		const char *ah = r_config_get (core->config, "asm.highlight");
@@ -578,9 +577,9 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->acase = r_config_get_i (core->config, "asm.ucase");
 	ds->capitalize = r_config_get_i (core->config, "asm.capitalize");
 	ds->atabs = r_config_get_i (core->config, "asm.tabs");
-	ds->atabsonce = r_config_get_i (core->config, "asm.tabsonce");
-	ds->atabsoff = r_config_get_i (core->config, "asm.tabsoff");
-	ds->midflags = r_config_get_i (core->config, "asm.midflags");
+	ds->atabsonce = r_config_get_i (core->config, "asm.tabs.once");
+	ds->atabsoff = r_config_get_i (core->config, "asm.tabs.off");
+	ds->midflags = r_config_get_i (core->config, "asm.flags.middle");
 	ds->midcursor = r_config_get_i (core->config, "asm.midcursor");
 	ds->decode = r_config_get_i (core->config, "asm.decode");
 	core->parser->pseudo = ds->pseudo = r_config_get_i (core->config, "asm.pseudo");
@@ -599,7 +598,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_varaccess = r_config_get_i (core->config, "asm.var.access");
 	ds->maxrefs = r_config_get_i (core->config, "asm.maxrefs");
 	ds->show_lines = r_config_get_i (core->config, "asm.lines");
-	ds->linesright = r_config_get_i (core->config, "asm.linesright");
+	ds->linesright = r_config_get_i (core->config, "asm.lines.right");
 	ds->show_indent = r_config_get_i (core->config, "asm.indent");
 	ds->indent_space = r_config_get_i (core->config, "asm.indentspace");
 	ds->tracespace = r_config_get_i (core->config, "asm.tracespace");
@@ -611,7 +610,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_lines_ret = r_config_get_i (core->config, "asm.lines.ret");
 	ds->show_size = r_config_get_i (core->config, "asm.size");
 	ds->show_trace = r_config_get_i (core->config, "asm.trace");
-	ds->linesout = r_config_get_i (core->config, "asm.linesout");
+	ds->linesout = r_config_get_i (core->config, "asm.lines.out");
 	ds->adistrick = r_config_get_i (core->config, "asm.middle"); // TODO: find better name
 	ds->asm_demangle = r_config_get_i (core->config, "asm.demangle");
 	ds->asm_describe = r_config_get_i (core->config, "asm.describe");
@@ -670,7 +669,6 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->cmtfold = r_config_get_i (core->config, "asm.cmt.fold");
 	ds->show_cmtoff = r_config_get (core->config, "asm.cmt.off");
 	ds->show_functions = r_config_get_i (core->config, "asm.functions");
-	ds->show_fcncalls = r_config_get_i (core->config, "asm.fcncalls");
 	ds->nbytes = r_config_get_i (core->config, "asm.nbytes");
 	ds->show_asciidot = !strcmp (core->print->strconv_mode, "asciidot");
 	const char *strenc_str = r_config_get (core->config, "asm.strenc");
@@ -692,7 +690,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->lbytes = r_config_get_i (core->config, "asm.lbytes");
 	ds->show_comment_right_default = r_config_get_i (core->config, "asm.cmt.right");
 	ds->show_comment_right = ds->show_comment_right_default;
-	ds->show_flag_in_bytes = r_config_get_i (core->config, "asm.flagsinbytes");
+	ds->show_flag_in_bytes = r_config_get_i (core->config, "asm.flags.inbytes");
 	ds->show_hints = r_config_get_i (core->config, "asm.hints");
 	ds->show_marks = r_config_get_i (core->config, "asm.marks");
 	ds->show_noisy_comments = r_config_get_i (core->config, "asm.noisy");
@@ -716,7 +714,7 @@ static RDisasmState * ds_init(RCore *core) {
 	if (ds->show_flag_in_bytes) {
 		ds->show_flags = 0;
 	}
-	if (r_config_get_i (core->config, "asm.lineswide")) {
+	if (r_config_get_i (core->config, "asm.lines.wide")) {
 		ds->linesopts |= R_ANAL_REFLINE_TYPE_WIDE;
 	}
 	if (core->cons->vline) {
@@ -751,7 +749,7 @@ static RDisasmState * ds_init(RCore *core) {
 	} else {
 		ds->cursor = -1;
 	}
-	if (r_config_get_i (core->config, "asm.lineswide")) {
+	if (r_config_get_i (core->config, "asm.lines.wide")) {
 		ds->linesopts |= R_ANAL_REFLINE_TYPE_WIDE;
 	}
 	if (core->cons->vline) {
@@ -4058,8 +4056,8 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 				key = resolve_fcn_name (core->anal, fcn_name);
 			}
 			if (key) {
-				const char *fcn_type = r_anal_type_func_ret (core->anal, key);
-				int nargs = r_anal_type_func_args_count (core->anal, key);
+				const char *fcn_type = r_type_func_ret (core->anal->sdb_types, key);
+				int nargs = r_type_func_args_count (core->anal->sdb_types, key);
 				// remove other comments
 				delete_last_comment (ds);
 				if (ds->show_color) {
@@ -4147,36 +4145,37 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 	RAnal *anal = ds->core->anal;
 	// RAnalFunction *fcn = r_anal_get_fcn_in (anal, ds->analop.jump, -1);
 	RAnalFunction *fcn = fcnIn (ds, ds->analop.jump, -1);
+	Sdb *TDB = anal->sdb_types;
 	char *name;
 	if (!fcn) {
 		return;
 	}
-	if (r_anal_type_func_exist (anal, fcn->name)) {
+	if (r_type_func_exist (TDB, fcn->name)) {
 		name = strdup (fcn->name);
-	} else if (!(name = r_anal_type_func_guess (anal, fcn->name))) {
+	} else if (!(name = r_type_func_guess (TDB, fcn->name))) {
 		return;
 	}
 	if (ds->show_color) {
 		r_cons_strcat (ds->pal_comment);
 	}
 	ds_align_comment (ds);
-	const char *fcn_type = r_anal_type_func_ret (anal, name);
+	const char *fcn_type = r_type_func_ret (TDB, name);
 	if (fcn_type && *fcn_type) {
 		r_cons_printf (
 			"; %s%s%s(", fcn_type,
 			fcn_type[strlen (fcn_type) - 1] == '*' ? "" : " ",
 			name);
 	}
-	int i, arg_max = r_anal_type_func_args_count (anal, name);
+	int i, arg_max = r_type_func_args_count (TDB, name);
 	if (!arg_max) {
 		r_cons_printf ("void)");
 	} else {
 		for (i = 0; i < arg_max; i++) {
-			char *type = r_anal_type_func_args_type (anal, name, i);
+			char *type = r_type_func_args_type (TDB, name, i);
 			if (type && *type) {
 				r_cons_printf ("%s%s%s%s%s", i == 0 ? "": " ", type,
 						type[strlen (type) -1] == '*' ? "": " ",
-						r_anal_type_func_args_name (anal, name, i),
+						r_type_func_args_name (TDB, name, i),
 						i == arg_max - 1 ? ")": ",");
 			}
 			free (type);
@@ -4524,11 +4523,11 @@ toro:
 		char *link_key = sdb_fmt ("link.%08"PFMT64x, ds->addr + idx);
 		const char *link_type = sdb_const_get (core->anal->sdb_types, link_key, 0);
 		if (link_type) {
-			char *fmt = r_anal_type_format (core->anal, link_type);
+			char *fmt = r_type_format (core->anal->sdb_types, link_type);
 			if (fmt) {
 				r_cons_printf ("(%s)\n", link_type);
 				r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x"\n", fmt, ds->addr + idx);
-				inc += r_anal_type_get_bitsize (core->anal, link_type) / 8;
+				inc += r_type_get_bitsize (core->anal->sdb_types, link_type) / 8;
 				free (fmt);
 				r_anal_op_fini (&ds->analop);
 				continue;
@@ -5615,7 +5614,7 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 	bool asm_ucase = r_config_get_i (core->config, "asm.ucase");
 	int esil = r_config_get_i (core->config, "asm.esil");
 	int flags = r_config_get_i (core->config, "asm.flags");
-	bool asm_immtrim = r_config_get_i (core->config, "asm.immtrim");
+	bool asm_immtrim = r_config_get_i (core->config, "asm.imm.trim");
 	int i = 0, j, ret, err = 0;
 	ut64 old_offset = core->offset;
 	RAsmOp asmop;
@@ -5681,7 +5680,7 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 	}
 	r_cons_break_push (NULL, NULL);
 
-	int midflags = r_config_get_i (core->config, "asm.midflags");
+	int midflags = r_config_get_i (core->config, "asm.flags.middle");
 	i = 0;
 	j = 0;
 toro:

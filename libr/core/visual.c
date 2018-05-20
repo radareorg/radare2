@@ -175,7 +175,7 @@ static void visual_repeat(RCore *core) {
 static void showcursor(RCore *core, int x) {
 	if (core && core->vmode) {
 		r_cons_show_cursor (x);
-		if (x) {
+		if (!x) {
 			// TODO: cache this
 			int wheel = r_config_get_i (core->config, "scr.wheel");
 			if (wheel) {
@@ -1824,6 +1824,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		break;
 		case '=':
 		{ // TODO: edit
+			showcursor (core, true);
 			const char *buf = NULL;
 			#define I core->cons
 			const char *cmd = r_config_get (core->config, "cmd.vprompt");
@@ -1833,10 +1834,12 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 //		if (r_cons_fgets (buf, sizeof (buf)-4, 0, NULL) <0) buf[0]='\0';
 			I->line->contents = NULL;
 			(void)r_config_set (core->config, "cmd.vprompt", buf);
+			showcursor (core, false);
 		}
 		break;
 		case '|':
 		{ // TODO: edit
+			showcursor (core, true);
 			const char *buf = NULL;
 			#define I core->cons
 			const char *cmd = r_config_get (core->config, "cmd.cprompt");
@@ -1853,6 +1856,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				R_FREE (I->line->contents);
 				(void)r_config_set (core->config, "cmd.cprompt", buf? buf: "");
 			}
+			showcursor (core, false);
 		}
 		break;
 		case '!':
@@ -1860,12 +1864,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'o':
 		{
-			r_cons_enable_mouse (false);
+			showcursor (core, true);
 			visual_offset (core);
-			int wheel = r_config_get_i (core->config, "scr.wheel");
-			if (wheel) {
-				r_cons_enable_mouse (true);
-			}
+			showcursor (core, false);
 		}
 		break;
 		case 'A':
@@ -1911,14 +1912,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (r_config_get_i (core->config, "asm.esil")) {
 				r_core_visual_esil (core);
 			} else {
-				int wheel = r_config_get_i (core->config, "scr.wheel");
-				if (wheel) {
-					r_cons_enable_mouse (false);
-				}
+				showcursor (core, true);
 				r_core_visual_define (core, arg + 1);
-				if (wheel) {
-					r_cons_enable_mouse (true);
-				}
+				showcursor (core, false);
 			}
 			break;
 		case 'D':
@@ -2556,6 +2552,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_core_visual_hudstuff (core);
 			break;
 		case ';':
+			r_cons_enable_mouse (false);
 			r_cons_gotoxy (0, 0);
 			r_cons_printf ("Enter a comment: ('-' to remove, '!' to use $EDITOR)\n");
 			showcursor (core, true);
@@ -2882,14 +2879,14 @@ static int visual_responsive(RCore *core) {
 			r_config_set_i (core->config, "asm.offset", 1);
 		}
 		if (w > 80) {
-			r_config_set_i (core->config, "asm.lineswidth", 14);
-			r_config_set_i (core->config, "asm.lineswidth", w - (w / 1.2));
+			r_config_set_i (core->config, "asm.lines.width", 14);
+			r_config_set_i (core->config, "asm.lines.width", w - (w / 1.2));
 			r_config_set_i (core->config, "asm.cmt.col", w - (w / 2.5));
 		} else {
-			r_config_set_i (core->config, "asm.lineswidth", 7);
+			r_config_set_i (core->config, "asm.lines.width", 7);
 		}
 		if (w < 70) {
-			r_config_set_i (core->config, "asm.lineswidth", 1);
+			r_config_set_i (core->config, "asm.lines.width", 1);
 			r_config_set_i (core->config, "asm.bytes", 0);
 		} else {
 			r_config_set_i (core->config, "asm.bytes", 1);

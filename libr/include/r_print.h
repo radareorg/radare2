@@ -80,6 +80,7 @@ typedef struct r_print_t {
 	RPrintColorFor hasrefs;
 	RPrintCommentCallback get_comments;
 	Sdb *formats;
+	Sdb *sdb_types;
 	RCons *cons;
 	RConsBind consbind;
 	RNum *num;

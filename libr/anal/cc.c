@@ -34,6 +34,12 @@ R_API const char *r_anal_cc_default(RAnal *anal) {
 	return sdb_const_get (DB, "default.cc", 0);
 }
 
+R_API const char *r_anal_cc_func(RAnal *anal, const char *func_name) {
+	const char *query = sdb_fmt ("func.%s.cc", func_name);
+	const char *cc = sdb_const_get (anal->sdb_types, query, 0);
+	return cc ? cc : r_anal_cc_default (anal);
+}
+
 R_API const char *r_anal_cc_to_constant(RAnal *anal, char *convention) {
 	char *query = sdb_fmt ("cc.%s.name", convention);
 	return sdb_const_get (DB, query, 0);

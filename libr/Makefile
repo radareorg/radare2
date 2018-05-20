@@ -94,10 +94,10 @@ else
 # BUILD_MERGED=0
 
 libr.${EXT_SO}:
-	# do nothing
+	$(MAKE) libr.${EXT_SO} BUILD_MERGED=1
 
 libr.${EXT_AR}:
-	# do nothing
+	$(MAKE) libr.${EXT_AR} BUILD_MERGED=1
 endif
 
 ../shlr/libr_shlr.${EXT_AR}:

@@ -1410,6 +1410,9 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 				}
 			} else {
 				format = sdb_get (p->formats, structname + 1, NULL);
+				if (!format) { // Fetch format from types db
+					format = r_type_format (p->sdb_types, structname + 1);
+				}
 			}
 			if (!format) {
 				eprintf ("Cannot find format for struct `%s'\n", structname + 1);
@@ -1513,6 +1516,9 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, co
 		fmt = name;
 	} else {
 		fmt = sdb_get (p->formats, name, NULL);
+		if (!fmt) { // Fetch struct info from types DB
+			fmt = r_type_format (p->sdb_types, name);
+		}
 	}
 	if (!fmt || !*fmt) {
 		eprintf ("Undefined struct '%s'.\n", name);
