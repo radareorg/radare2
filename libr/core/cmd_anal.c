@@ -5951,6 +5951,34 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			break;
 		}
 		break;
+	case 'R': // "agR" global refs
+		switch (input[1]) {
+		case 'v':
+		case 't':
+		case 'd':
+		case 'J':
+		case 'j':
+		case 'g':
+		case 'k':
+		case 'w':
+		case ' ':
+		case 0: {
+			r_core_cmdf (core, "ag-; .agR*; agg%c;", input[1]);
+			break;
+			}
+		case '*': {
+			RListIter *it;
+			RAnalFunction *fcn;
+			r_list_foreach (core->anal->fcns, it, fcn) {
+				r_core_anal_coderefs (core, fcn->addr);
+			}
+			break;
+			}
+		default:
+			eprintf ("Usage: see ag?\n");
+			break;
+		}
+		break;
 	case 'x': // agx "cross refs"
 		switch (input[1]) {
 		case 'v':
@@ -6093,6 +6121,34 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		default:
 			 eprintf ("Usage: see ag?\n");
 			 break;
+		}
+		break;
+	case 'A': // "agA" global data refs
+		switch (input[1]) {
+		case 'v':
+		case 't':
+		case 'd':
+		case 'J':
+		case 'j':
+		case 'g':
+		case 'k':
+		case 'w':
+		case ' ':
+		case 0: {
+			r_core_cmdf (core, "ag-; .agA*; agg%c;", input[1]);
+			break;
+			}
+		case '*': {
+			RListIter *it;
+			RAnalFunction *fcn;
+			r_list_foreach (core->anal->fcns, it, fcn) {
+				r_core_anal_datarefs (core, fcn->addr);
+			}
+			break;
+			}
+		default:
+			eprintf ("Usage: see ag?\n");
+			break;
 		}
 		break;
 	case 'd': // "agd"

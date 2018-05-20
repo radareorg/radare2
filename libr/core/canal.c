@@ -1729,9 +1729,6 @@ R_API void r_core_anal_datarefs(RCore *core, ut64 addr) {
 				r_cons_printf ("age %s %s\n", me, dst);
 			}
 		}
-		if (!found) {
-			eprintf ("No data refs in this function.\n");
-		}
 		r_list_free (refs);
 	} else {
 		eprintf ("Not in a function. Use 'df' to define it.\n");
