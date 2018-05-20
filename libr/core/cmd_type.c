@@ -493,7 +493,7 @@ static int cmd_type(void *data, const char *input) {
 		}
 	} break;
 	case 'e': { // "te"
-		char *res, *temp = strchr(input, ' ');
+		char *res = NULL, *temp = strchr(input, ' ');
 		Sdb *TDB = core->anal->sdb_types;
 		char *name = temp ? strdup (temp + 1): NULL;
 		char *member_name = name ? strchr (name, ' '): NULL;
@@ -503,6 +503,7 @@ static int cmd_type(void *data, const char *input) {
 		}
 		if (name && !r_type_isenum (TDB, name)) {
 			eprintf ("%s is not an enum\n", name);
+			break;
 		}
 		switch (input[1]) {
 		case '?' :
@@ -514,7 +515,6 @@ static int cmd_type(void *data, const char *input) {
 		case ' ' : {
 			RListIter *iter;
 			RTypeEnum *member = R_NEW0 (RTypeEnum);
-			//char *value = sdb_fmt ("0x%x", (ut32)r_num_math (core->num, member));
 			if (member_name) {
 				res = r_type_enum_member (TDB, name, NULL, r_num_math (core->num, member_name));
 			} else {
@@ -538,7 +538,6 @@ static int cmd_type(void *data, const char *input) {
 					}
 				}
 			}
-			free (name);
 			ls_free (l);
 		} break;
 		}
