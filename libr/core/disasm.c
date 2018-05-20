@@ -577,8 +577,8 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->acase = r_config_get_i (core->config, "asm.ucase");
 	ds->capitalize = r_config_get_i (core->config, "asm.capitalize");
 	ds->atabs = r_config_get_i (core->config, "asm.tabs");
-	ds->atabsonce = r_config_get_i (core->config, "asm.tabsonce");
-	ds->atabsoff = r_config_get_i (core->config, "asm.tabsoff");
+	ds->atabsonce = r_config_get_i (core->config, "asm.tabs.once");
+	ds->atabsoff = r_config_get_i (core->config, "asm.tabs.off");
 	ds->midflags = r_config_get_i (core->config, "asm.midflags");
 	ds->midcursor = r_config_get_i (core->config, "asm.midcursor");
 	ds->decode = r_config_get_i (core->config, "asm.decode");
