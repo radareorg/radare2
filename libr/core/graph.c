@@ -1949,7 +1949,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	if (!hc) {
 		return NULL;
 	}
-	r_config_save_num (hc, "asm.fcnlines", "asm.lines", "asm.bytes",
+	r_config_save_num (hc, "asm.lines.fcn", "asm.lines", "asm.bytes",
 		"asm.cmt.col", "asm.marks", "asm.marks", "asm.offset",
 		"asm.comments", "asm.cmt.right", NULL);
 	const bool o_comments = r_config_get_i (core->config, "graph.comments");
@@ -1960,7 +1960,7 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	const char *cmd = (opts & BODY_SUMMARY)? "pds": "pD";
 
 	// configure options
-	r_config_set_i (core->config, "asm.fcnlines", false);
+	r_config_set_i (core->config, "asm.lines.fcn", false);
 	r_config_set_i (core->config, "asm.lines", false);
 	r_config_set_i (core->config, "asm.cmt.col", 0);
 	r_config_set_i (core->config, "asm.marks", false);
