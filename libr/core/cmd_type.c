@@ -14,17 +14,13 @@ static const char *help_msg_t[] = {
 	"t*", "", "List types info in r2 commands",
 	"t-", " <name>", "Delete types by its name",
 	"t-*", "", "Remove all types",
-	//"t-!", "",          "Use to open $EDITOR",
 	"ta", " <type>", "Mark immediate as a type offset",
-	"tb", " <enum> <value>", "Show matching enum bitfield for given number",
 	"tc", " ([cctype])", "calling conventions listing and manipulations",
 	"te", "[?]", "List all loaded enums",
-	"te", " <enum> <value>", "Show name for given enum number",
 	"td", "[?] <string>", "Load types from string",
 	"tf", "", "List all loaded functions signatures",
 	"tk", " <sdb-query>", "Perform sdb query",
 	"tl", "[?]", "Show/Link type to an address",
-	//"to",  "",         "List opened files",
 	"tn", "[?] [-][addr]", "manage noreturn function attributes and marks",
 	"to", " -", "Open cfg.editor to load types",
 	"to", " <path>", "Load types from C header file",
@@ -33,7 +29,6 @@ static const char *help_msg_t[] = {
 	"ts", "[?]", "print loaded struct types",
 	"tu", "[?]", "print loaded union types",
 	"tt", "[?]", "List all loaded typedefs",
-	//"| ts k=v k=v @ link.addr set fields at given linked type\n"
 	NULL
 };
 
@@ -67,7 +62,7 @@ static const char *help_msg_to[] = {
 
 static const char *help_msg_tc[] = {
 	"Usage: tc[...]", " [cctype]", "",
-	"tc", "", "List all loaded structs",
+	"tc", "", "List all loaded calling convention",
 	"tc", " [cctype]", "Show convention rules for this type",
 	"tc=", "([cctype])", "Select (or show) default calling convention",
 	"tc-", "[cctype]", "TODO: remove given calling convention",
@@ -88,7 +83,9 @@ static const char *help_msg_td[] = {
 static const char *help_msg_te[] = {
 	"Usage: te[...]", "", "",
 	"te", "", "List all loaded enums",
+	"te", " <enum>", "Print all values of enum for given name",
 	"te", " <enum> <value>", "Show name for given enum number",
+	"teb", " <enum> <name>", "Show matching enum bitfield for given name",
 	"te?", "", "show this help",
 	NULL
 };
@@ -495,30 +492,39 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 	} break;
-	case 'b': {
-		char *p, *s = (strlen (input) > 1)? strdup (input + 2): NULL;
-		const char *isenum;
-		p = s? strchr (s, ' '): NULL;
-		if (p) {
-			*p++ = 0;
-			// dupp in core.c (see getbitfield())
-			isenum = sdb_const_get (TDB, s, 0);
-			if (isenum && !strcmp (isenum, "enum")) {
-				*--p = '.';
-				const char *res = sdb_const_get (TDB, s, 0);
-				if (res)
-					r_cons_println (res);
-				else eprintf ("Invalid enum member\n");
-			} else {
-				eprintf ("This is not an enum\n");
-			}
-		} else {
-			eprintf ("Missing value\n");
+	case 'e': { // "te"
+		char *res, *temp = strchr(input, ' ');
+		Sdb *TDB = core->anal->sdb_types;
+		char *name = temp ? strdup (temp + 1): NULL;
+		char *member_name = name ? strchr (name, ' '): NULL;
+
+		if (member_name) {
+			*member_name++ = 0;
 		}
-		free (s);
-	} break;
-	case 'e': {
-		if (!input[1]) {
+		if (name && !r_type_isenum (TDB, name)) {
+			eprintf ("%s is not an enum\n", name);
+		}
+		switch (input[1]) {
+		case '?' :
+			r_core_cmd_help (core, help_msg_te);
+			break;
+		case 'b' :
+			res = r_type_enum_member (TDB, name, member_name, 0);
+			break;
+		case ' ' : {
+			RListIter *iter;
+			RTypeEnum *member = R_NEW0 (RTypeEnum);
+			//char *value = sdb_fmt ("0x%x", (ut32)r_num_math (core->num, member));
+			if (member_name) {
+				res = r_type_enum_member (TDB, name, NULL, r_num_math (core->num, member_name));
+			} else {
+				RList *list = r_type_get_enum (TDB, name);
+				r_list_foreach (list, iter, member) {
+					r_cons_printf ("%s = %s\n", member->name, member->val);
+				}
+			}
+		} break;
+		case '\0' : {
 			char *name = NULL;
 			SdbKv *kv;
 			SdbListIter *iter;
@@ -534,31 +540,14 @@ static int cmd_type(void *data, const char *input) {
 			}
 			free (name);
 			ls_free (l);
-			break;
+		} break;
 		}
-		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_te);
-			break;
+		free (name);
+		if (res) {
+			r_cons_println (res);
+		} else if (member_name) {
+			eprintf ("Invalid enum member\n");
 		}
-		char *p, *s = strdup (input + 2);
-		const char *isenum;
-		p = strchr (s, ' ');
-		if (p) {
-			*p++ = 0;
-			isenum = sdb_const_get (TDB, s, 0);
-			if (isenum && !strncmp (isenum, "enum", 4)) {
-				const char *q = sdb_fmt ("%s.0x%x", s, (ut32)r_num_math (core->num, p));
-				const char *res = sdb_const_get (TDB, q, 0);
-				if (res)
-					r_cons_println (res);
-			} else {
-				eprintf ("This is not an enum\n");
-			}
-		} else {
-			//eprintf ("Missing value\n");
-			r_core_cmdf (core, "t~&%s,=0x", s);
-		}
-		free (s);
 	} break;
 	case ' ':
 		showFormat (core, input + 1, 0);

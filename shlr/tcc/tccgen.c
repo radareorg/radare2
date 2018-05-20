@@ -991,8 +991,6 @@ do_decl:
 			if (!strcmp (name, "{")) {
 				// UNNAMED
 				fprintf (stderr, "anonymous enums are ignored\n");
-			} else {
-				tcc_appendf ("%s=enum\n", name);
 			}
 			for (;;) {
 				v = tok;
@@ -1006,9 +1004,10 @@ do_decl:
 				}
 				if (strcmp (name, "{")) {
 					char *varstr = get_tok_str (v, NULL);
-					// eprintf("%s.%s @ 0x%"PFMT64x"\n", name, varstr, c);
-					tcc_appendf ("%s.%s=0x%"PFMT64x "\n", name, varstr, c);
-					tcc_appendf ("%s.0x%"PFMT64x "=%s\n", name, c, varstr);
+					tcc_appendf ("%s=enum\n", name);
+					tcc_appendf ("[+]enum.%s=%s\n",name, varstr);
+					tcc_appendf ("enum.%s.%s=0x%"PFMT64x "\n", name, varstr, c);
+					tcc_appendf ("enum.%s.0x%"PFMT64x "=%s\n", name, c, varstr);
 					// TODO: if token already defined throw an error
 					// if (varstr isInside (arrayOfvars)) { erprintf ("ERROR: DUP VAR IN ENUM\n"); }
 				}

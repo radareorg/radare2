@@ -1457,55 +1457,6 @@ static void update_sdb(RCore *core) {
 	}
 }
 
-// dupped in cmd_type.c
-static char *getenumname(void *_core, const char *name, ut64 val) {
-	const char *isenum;
-	RCore *core = (RCore*)_core;
-
-	isenum = sdb_const_get (core->anal->sdb_types, name, 0);
-	if (isenum && !strncmp (isenum, "enum", 4)) {
-		const char *q = sdb_fmt ("%s.0x%x", name, val);
-		return sdb_get (core->anal->sdb_types, q, 0);
-	} else {
-		eprintf ("This is not an enum (%s)\n", name);
-	}
-	return NULL;
-}
-
-// TODO: dupped in cmd_type.c
-static char *getbitfield(void *_core, const char *name, ut64 val) {
-	const char *isenum, *q, *res;
-	RCore *core = (RCore*)_core;
-	char *ret = NULL;
-	int i;
-
-	isenum = sdb_const_get (core->anal->sdb_types, name, 0);
-	if (isenum && !strcmp (isenum, "enum")) {
-		int isFirst = true;
-		ret = r_str_appendf (ret, "0x%08"PFMT64x" : ", val);
-		for (i = 0; i < 32; i++) {
-			if (!(val & (1 << i))) {
-				continue;
-			}
-			q = sdb_fmt ("%s.0x%x", name, (1<<i));
-			res = sdb_const_get (core->anal->sdb_types, q, 0);
-			if (isFirst) {
-				isFirst = false;
-			} else {
-				ret = r_str_append (ret, " | ");
-			}
-			if (res) {
-				ret = r_str_append (ret, res);
-			} else {
-				ret = r_str_appendf (ret, "0x%x", (1<<i));
-			}
-		}
-	} else {
-		eprintf ("This is not an enum\n");
-	}
-	return ret;
-}
-
 #define MINLEN 1
 static int is_string (const ut8 *buf, int size, int *len) {
 	int i;
@@ -1770,8 +1721,6 @@ R_API bool r_core_init(RCore *core) {
 	core->print = r_print_new ();
 	core->print->user = core;
 	core->print->num = core->num;
-	core->print->get_enumname = getenumname;
-	core->print->get_bitfield = getbitfield;
 	core->print->offname = r_core_print_offname;
 	core->print->cb_printf = r_cons_printf;
 	core->print->cb_color = r_cons_rainbow_get;
@@ -1850,6 +1799,7 @@ R_API bool r_core_init(RCore *core) {
 	core->anal->cb.on_fcn_new = on_fcn_new;
 	core->anal->cb.on_fcn_delete = on_fcn_delete;
 	core->anal->cb.on_fcn_rename = on_fcn_rename;
+	core->print->sdb_types = core->anal->sdb_types;
 	core->assembler->syscall = r_syscall_ref (core->anal->syscall); // BIND syscall anal/asm
 	r_anal_set_user_ptr (core->anal, core);
 	core->anal->cb_printf = (void *) r_cons_printf;

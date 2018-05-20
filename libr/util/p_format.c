@@ -1110,9 +1110,7 @@ static void r_print_format_bitfield(const RPrint* p, ut64 seeki, char* fmtname,
 	if (MUSTSEE && !SEEVALUE) {
 		p->cb_printf ("0x%08"PFMT64x" = ", seeki);
 	}
-	if (p->get_bitfield) {
-		bitfield = p->get_bitfield (p->user, fmtname, addr);
-	}
+	bitfield = r_type_enum_getbitfield (p->sdb_types, fmtname, addr);
 	if (bitfield && *bitfield) {
 		if (MUSTSEEJSON) p->cb_printf ("\"%s\"}", bitfield);
 		else if (MUSTSEE) p->cb_printf (" %s (bitfield) = %s\n", fieldname, bitfield);
@@ -1135,9 +1133,7 @@ static void r_print_format_enum (const RPrint* p, ut64 seeki, char* fmtname,
 	if (MUSTSEE && !SEEVALUE) {
 		p->cb_printf ("0x%08"PFMT64x" = ", seeki);
 	}
-	if (p->get_enumname) {
-		enumvalue = p->get_enumname (p->user, fmtname, addr);
-	}
+	enumvalue = r_type_enum_member (p->sdb_types, fmtname, NULL, addr);
 	if (enumvalue && *enumvalue) {
 		if (mode & R_PRINT_DOT) {
 			p->cb_printf ("%s.%s", fmtname, enumvalue);
