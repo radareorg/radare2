@@ -560,8 +560,8 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->color_gui_border = P(gui_border): Color_BGGRAY;
 	ds->color_line_highlight = P(line_highlight): Color_BGBLUE;
 
-	ds->immstr = r_config_get_i (core->config, "asm.immstr");
-	ds->immtrim = r_config_get_i (core->config, "asm.immtrim");
+	ds->immstr = r_config_get_i (core->config, "asm.imm.str");
+	ds->immtrim = r_config_get_i (core->config, "asm.imm.trim");
 	ds->use_esil = r_config_get_i (core->config, "asm.esil");
 	ds->pre_emu = r_config_get_i (core->config, "emu.pre");
 	ds->show_flgoff = r_config_get_i (core->config, "asm.flgoff");
@@ -5616,7 +5616,7 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 	bool asm_ucase = r_config_get_i (core->config, "asm.ucase");
 	int esil = r_config_get_i (core->config, "asm.esil");
 	int flags = r_config_get_i (core->config, "asm.flags");
-	bool asm_immtrim = r_config_get_i (core->config, "asm.immtrim");
+	bool asm_immtrim = r_config_get_i (core->config, "asm.imm.trim");
 	int i = 0, j, ret, err = 0;
 	ut64 old_offset = core->offset;
 	RAsmOp asmop;

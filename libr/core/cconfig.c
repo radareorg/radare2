@@ -2423,7 +2423,6 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* asm */
 	//asm.os needs to be first, since other asm.* depend on it
-	SETICB ("asm.armimm", false,  &cb_asm_armimm, "Display # for immediates in ARM");
 	n = NODECB ("asm.os", R_SYS_OS, &cb_asmos);
 	SETDESC (n, "Select operating system (kernel)");
 	SETOPTIONS (n, "ios", "dos", "darwin", "linux", "freebsd", "openbsd", "netbsd", "windows", NULL);
@@ -2450,8 +2449,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.slow", "true", "Perform slow analysis operations in disasm");
 	SETPREF ("asm.decode", "false", "Use code analysis as a disassembler");
 	SETPREF ("asm.flgoff", "false", "Show offset in flags");
-	SETPREF ("asm.immstr", "false", "Show immediates values as strings");
-	SETPREF ("asm.immtrim", "false", "Remove all offsets and constants from disassembly");
+	SETICB ("asm.imm.arm", false,  &cb_asm_armimm, "Display # for immediates in ARM");
+	SETPREF ("asm.imm.str", "false", "Show immediates values as strings");
+	SETPREF ("asm.imm.trim", "false", "Remove all offsets and constants from disassembly");
 	SETPREF ("asm.indent", "false", "Indent disassembly based on reflines depth");
 	SETI ("asm.indentspace", 2, "How many spaces to indent the code");
 	SETPREF ("asm.dwarf", "false", "Show dwarf comment at disassembly");
