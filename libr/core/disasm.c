@@ -690,7 +690,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->lbytes = r_config_get_i (core->config, "asm.lbytes");
 	ds->show_comment_right_default = r_config_get_i (core->config, "asm.cmt.right");
 	ds->show_comment_right = ds->show_comment_right_default;
-	ds->show_flag_in_bytes = r_config_get_i (core->config, "asm.flagsinbytes");
+	ds->show_flag_in_bytes = r_config_get_i (core->config, "asm.flags.inbytes");
 	ds->show_hints = r_config_get_i (core->config, "asm.hints");
 	ds->show_marks = r_config_get_i (core->config, "asm.marks");
 	ds->show_noisy_comments = r_config_get_i (core->config, "asm.noisy");

@@ -2430,9 +2430,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("asm.invhex", "false", &cb_asm_invhex, "Show invalid instructions as hexadecimal numbers");
 	SETPREF ("asm.meta", "true", "Display the code/data/format conversions in disasm");
 	SETPREF ("asm.bytes", "true", "Display the bytes of each instruction");
-	SETPREF ("asm.flagsinbytes", "false",  "Display flags inside the bytes space");
-	n = NODEICB ("asm.midflags", 2, &cb_midflags);
-	SETDESC (n, "Realign disassembly if there is a flag in the middle of an instruction");
 	SETPREF ("asm.midcursor", "false", "Cursor in visual disasm mode breaks the instruction");
 	SETOPTIONS (n, "0 = do not show flag", "1 = show without realign", "2 = realign at middle flag",
 		"3 = realign at middle flag if sym.*", NULL);
@@ -2475,6 +2472,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.strip", "", "strip all instructions given comma separated types");
 	SETPREF ("asm.fcnlines", "true", "Show function boundary lines");
 	SETPREF ("asm.flags", "true", "Show flags");
+	SETPREF ("asm.flags.inbytes", "false",  "Display flags inside the bytes space");
+	n = NODEICB ("asm.flags.middle", 2, &cb_midflags);
+	SETDESC (n, "Realign disassembly if there is a flag in the middle of an instruction");
 	SETPREF ("asm.lbytes", "true", "Align disasm bytes to left");
 	SETPREF ("asm.lines", "true", "Show ASCII-art lines at disassembly");
 	SETPREF ("asm.lines.call", "false", "Enable call lines");
