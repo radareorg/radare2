@@ -1388,15 +1388,15 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 			break;
 		case '?':
 			{
-			const char *wordAtIndex = "";
-			if (idx < words) {
+			const char *wordAtIndex = NULL;
+			const char *format = NULL;
+			char *endname = NULL, *structname = NULL;
+			char tmp = 0;
+			if (words < idx) {
 				eprintf ("Index out of bounds\n");
 			} else {
 				wordAtIndex = r_str_word_get0 (args, idx);
 			}
-			const char *format = NULL;
-			char *endname = NULL, *structname = NULL;
-			char tmp = 0;
 			if (!wordAtIndex) {
 				break;
 			}

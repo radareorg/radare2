@@ -499,17 +499,13 @@ R_API char *r_str_word_get0set(char *stra, int stralen, int idx, const char *new
 // XXX: Warning! this function is UNSAFE, check that the string has, at least,
 // idx+1 tokens.
 R_API const char *r_str_word_get0(const char *str, int idx) {
-	int i, ptrlen;
+	int i;
 	const char *ptr = str;
 	if (!ptr || idx < 0 /* prevent crashes with negative index */) {
 		return (char *)nullstr;
 	}
 	for (i = 0; i != idx; i++) {
-		ptrlen = strlen (ptr);
-		ptr += ptrlen + 1;
-		if (!ptrlen) {
-			break;
-		}
+		ptr += strlen (ptr) + 1;
 	}
 	return ptr;
 }
