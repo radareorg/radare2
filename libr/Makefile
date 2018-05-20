@@ -65,6 +65,9 @@ endif
 ifeq ($(OSTYPE),android)
 	for LIB in .libr/* ; do $(OBJCOPY) --localize-hidden $$LIB ; done
 endif
+ifeq ($(OSTYPE),bsd)
+	for LIB in .libr/* ; do $(OBJCOPY) --localize-hidden $$LIB ; done
+endif
 
 libr.${EXT_AR}: .libr
 	${AR} crs $@ .libr/*.o
