@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2018 - pancake, oddcoder */
+/* radare - LGPL - Copyright 2013-2018 - pancake, oddcoder, sivaramaaa */
 
 #include "r_util.h"
 
@@ -21,51 +21,79 @@ R_API int r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 	return false;
 }
 
-R_API void r_type_del(Sdb *TDB, const char *name) {
-	const char *kind = sdb_const_get (TDB, name, 0);
-	if (!kind) {
-		return;
+R_API bool r_type_isenum(Sdb *TDB, const char *name) {
+	if (!name) {
+		return false;
 	}
-	if (!strcmp (kind, "type")) {
-		sdb_unset (TDB, sdb_fmt ("type.%s", name), 0);
-		sdb_unset (TDB, sdb_fmt ("type.%s.size", name), 0);
-		sdb_unset (TDB, sdb_fmt ("type.%s.meta", name), 0);
-		sdb_unset (TDB, name, 0);
-	} else if (!strcmp (kind, "struct") || !strcmp (kind, "union")) {
-		int i, n = sdb_array_length(TDB, sdb_fmt ("%s.%s", kind, name));
-		char *elements_key = r_str_newf ("%s.%s", kind, name);
-		for (i = 0; i< n; i++) {
-			char *p = sdb_array_get (TDB, elements_key, i, NULL);
-			sdb_unset (TDB, sdb_fmt ("%s.%s", elements_key, p), 0);
-			free (p);
-		}
-		sdb_unset (TDB, elements_key, 0);
-		sdb_unset (TDB, name, 0);
-		free (elements_key);
-	} else if (!strcmp (kind, "func")) {
-		int i, n = sdb_num_get (TDB, sdb_fmt ("func.%s.args", name), 0);
-		for (i = 0; i < n; i++) {
-			sdb_unset (TDB, sdb_fmt ("func.%s.arg.%d", name, i), 0);
-		}
-		sdb_unset (TDB, sdb_fmt ("func.%s.ret", name), 0);
-		sdb_unset (TDB, sdb_fmt ("func.%s.cc", name), 0);
-		sdb_unset (TDB, sdb_fmt ("func.%s.noreturn", name), 0);
-		sdb_unset (TDB, sdb_fmt ("func.%s.args", name), 0);
-		sdb_unset (TDB, name, 0);
-	} else if (!strcmp (kind, "enum")) {
-		int i;
-		for (i=0;; i++) {
-			const char *tmp = sdb_const_get (TDB, sdb_fmt ("%s.0x%x", name, i), 0);
-			if (!tmp) {
-				break;
-			}
-			sdb_unset (TDB, sdb_fmt ("%s.%s", name, tmp), 0);
-			sdb_unset (TDB, sdb_fmt ("%s.0x%x", name, i), 0);
-		}
-		sdb_unset (TDB, name, 0);
+	const char *type = sdb_const_get (TDB, name, 0);
+	if (type && !strcmp (type, "enum")) {
+		return true;
 	} else {
-		eprintf ("Unrecognized type \"%s\"\n", kind);
+		return false;
 	}
+}
+
+R_API RList* r_type_get_enum (Sdb *TDB, const char *name) {
+	RList *res = r_list_new ();
+	char *p, *val, var[128], var2[128];
+	int n;
+
+	if (!r_type_isenum (TDB, name)) {
+		return NULL;
+	}
+	snprintf (var, sizeof (var), "enum.%s", name);
+	for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
+		RTypeEnum *member = R_NEW0 (RTypeEnum);
+		snprintf (var2, sizeof (var2), "%s.%s", var, p);
+		val = sdb_array_get (TDB, var2, 0, NULL);
+		member->name = p;
+		member->val = val;
+		r_list_append (res, member);
+	}
+	return res;
+}
+
+R_API char *r_type_enum_member(Sdb *TDB, const char *name, const char *member, ut64 val) {
+	const char *q;
+	if (!r_type_isenum (TDB, name)) {
+		return NULL;
+	}
+	if (member) {
+		q = sdb_fmt ("enum.%s.%s", name, member);
+	} else {
+		q = sdb_fmt ("enum.%s.0x%x", name, val);
+	}
+	return sdb_get (TDB, q, 0);
+}
+
+R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
+	char *q, *ret = NULL;
+	const char *res;
+	int i;
+
+	if (!r_type_isenum (TDB, name)) {
+		return NULL;
+	}
+	bool isFirst = true;
+	ret = r_str_appendf (ret, "0x%08"PFMT64x" : ", val);
+	for (i = 0; i < 32; i++) {
+		if (!(val & (1 << i))) {
+			continue;
+		}
+		q = sdb_fmt ("enum.%s.0x%x", name, (1<<i));
+                res = sdb_const_get (TDB, q, 0);
+                if (isFirst) {
+			isFirst = false;
+                } else {
+			ret = r_str_append (ret, " | ");
+                }
+                if (res) {
+			ret = r_str_append (ret, res);
+                } else {
+			ret = r_str_appendf (ret, "0x%x", (1<<i));
+                }
+	}
+	return ret;
 }
 
 R_API int r_type_get_bitsize(Sdb *TDB, const char *type) {
@@ -313,6 +341,51 @@ R_API char *r_type_format(Sdb *TDB, const char *t) {
 		return fmt;
 	}
 	return NULL;
+}
+
+R_API void r_type_del(Sdb *TDB, const char *name) {
+	const char *kind = sdb_const_get (TDB, name, 0);
+	if (!kind) {
+		return;
+	}
+	if (!strcmp (kind, "type")) {
+		sdb_unset (TDB, sdb_fmt ("type.%s", name), 0);
+		sdb_unset (TDB, sdb_fmt ("type.%s.size", name), 0);
+		sdb_unset (TDB, sdb_fmt ("type.%s.meta", name), 0);
+		sdb_unset (TDB, name, 0);
+	} else if (!strcmp (kind, "struct") || !strcmp (kind, "union")) {
+		int i, n = sdb_array_length(TDB, sdb_fmt ("%s.%s", kind, name));
+		char *elements_key = r_str_newf ("%s.%s", kind, name);
+		for (i = 0; i< n; i++) {
+			char *p = sdb_array_get (TDB, elements_key, i, NULL);
+			sdb_unset (TDB, sdb_fmt ("%s.%s", elements_key, p), 0);
+			free (p);
+		}
+		sdb_unset (TDB, elements_key, 0);
+		sdb_unset (TDB, name, 0);
+		free (elements_key);
+	} else if (!strcmp (kind, "func")) {
+		int i, n = sdb_num_get (TDB, sdb_fmt ("func.%s.args", name), 0);
+		for (i = 0; i < n; i++) {
+			sdb_unset (TDB, sdb_fmt ("func.%s.arg.%d", name, i), 0);
+		}
+		sdb_unset (TDB, sdb_fmt ("func.%s.ret", name), 0);
+		sdb_unset (TDB, sdb_fmt ("func.%s.cc", name), 0);
+		sdb_unset (TDB, sdb_fmt ("func.%s.noreturn", name), 0);
+		sdb_unset (TDB, sdb_fmt ("func.%s.args", name), 0);
+		sdb_unset (TDB, name, 0);
+	} else if (!strcmp (kind, "enum")) {
+		RList *list = r_type_get_enum (TDB, name);
+		RTypeEnum *member = R_NEW0 (RTypeEnum);
+		RListIter *iter;
+		r_list_foreach (list, iter, member) {
+			sdb_unset (TDB, sdb_fmt ("enum.%s.%s", name, member->name), 0);
+			sdb_unset (TDB, sdb_fmt ("enum.%s.0x%x", name, member->val), 0);
+		}
+		sdb_unset (TDB, name, 0);
+	} else {
+		eprintf ("Unrecognized type \"%s\"\n", kind);
+	}
 }
 
 // Function prototypes api
