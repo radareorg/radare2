@@ -434,6 +434,29 @@ static bool isFunctionFlag(const char *n) {
 	|| !strncmp (n, "fcn.0", 5));
 }
 
+/* return a flag item at offset "off" or NULL in following order of availability:
+ *   1. first flag item that doesn't start with "section_end."
+ *   2. first flag item that starts with "section_end."
+ *   3. NULL */
+R_API RFlagItem *r_flag_get_priority(RFlag *f, ut64 off) {
+	RFlagItem *fi = NULL;
+	const RList *flags = r_flag_get_list (f, off);
+	RListIter *iter;
+	RFlagItem *item;
+	r_list_foreach_prev (flags, iter, item) {
+		if (!item->name) {
+			continue;
+		}
+		if (!item->section_end) {
+			fi = item;
+			break;
+		} else if (!fi) {
+			fi = item;
+		}
+	}
+	return fi;
+}
+
 /* returns the last flag item defined before or at the given offset.
  * NULL is returned if such a item is not found. */
 R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest) {

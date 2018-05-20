@@ -3773,19 +3773,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 		R_FREE (type);
 		if ((ds->printed_flag_addr == UT64_MAX || *val != ds->printed_flag_addr)
 		    && (ds->show_emu_strflag || !emu_str_printed)) {
-			const RList *flags = r_flag_get_list (esil->anal->flb.f, *val);
-			RFlagItem *fi = NULL;
-			RListIter *iter;
-			RFlagItem *item;
-			r_list_foreach_prev (flags, iter, item) {
-				if (!item->name) {
-					continue;
-				}
-				fi = item;
-				if (!item->section_end) {
-					break;
-				}
-			}
+			RFlagItem *fi = r_flag_get_priority (esil->anal->flb.f, *val);
 			if (fi && (!ds->opstr || !strstr (ds->opstr, fi->name))) {
 				msg = r_str_appendf (msg, "%s%s", msg && *msg ? " " : "", fi->name);
 			}
