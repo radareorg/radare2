@@ -2446,7 +2446,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.leahints", "false", "Show LEA hints [numbers] in disasm");
 	SETPREF ("asm.slow", "true", "Perform slow analysis operations in disasm");
 	SETPREF ("asm.decode", "false", "Use code analysis as a disassembler");
-	SETPREF ("asm.flgoff", "false", "Show offset in flags");
 	SETICB ("asm.imm.arm", false,  &cb_asm_armimm, "Display # for immediates in ARM");
 	SETPREF ("asm.imm.str", "false", "Show immediates values as strings");
 	SETPREF ("asm.imm.trim", "false", "Remove all offsets and constants from disassembly");
@@ -2472,6 +2471,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.strip", "", "strip all instructions given comma separated types");
 	SETPREF ("asm.fcnlines", "true", "Show function boundary lines");
 	SETPREF ("asm.flags", "true", "Show flags");
+	SETPREF ("asm.flags.offset", "false", "Show offset in flags");
 	SETPREF ("asm.flags.inbytes", "false",  "Display flags inside the bytes space");
 	n = NODEICB ("asm.flags.middle", 2, &cb_midflags);
 	SETDESC (n, "Realign disassembly if there is a flag in the middle of an instruction");

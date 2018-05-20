@@ -563,7 +563,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->immtrim = r_config_get_i (core->config, "asm.imm.trim");
 	ds->use_esil = r_config_get_i (core->config, "asm.esil");
 	ds->pre_emu = r_config_get_i (core->config, "emu.pre");
-	ds->show_flgoff = r_config_get_i (core->config, "asm.flgoff");
+	ds->show_flgoff = r_config_get_i (core->config, "asm.flags.offset");
 	ds->show_nodup = r_config_get_i (core->config, "asm.nodup");
 	{
 		const char *ah = r_config_get (core->config, "asm.highlight");
