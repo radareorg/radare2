@@ -2172,7 +2172,7 @@ static int optest(RAsm *a, ut8 *data, const Opcode *op) {
 		if (op->operands[0].type & OT_BYTE) {
 			data[l++] = 0xf6;
 			data[l++] = op->operands[0].regs[0];
-			data[l++] = op->operands[1].reg;
+			data[l++] = op->operands[1].immediate;
 			return l;
 		}
 		data[l++] = 0xf7;
