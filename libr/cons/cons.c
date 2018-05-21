@@ -1146,8 +1146,8 @@ R_API void r_cons_zero() {
 }
 
 R_API void r_cons_highlight(const char *word) {
-	int l, *cpos;
-	char *rword, *res, *clean;
+	int l, *cpos = NULL;
+	char *rword = NULL, *res, *clean = NULL;
 	char *inv[2] = {
 		R_CONS_INVERT (true, true),
 		R_CONS_INVERT (false, true)
@@ -1160,8 +1160,8 @@ R_API void r_cons_highlight(const char *word) {
 	if (word && *word && I.buffer) {
 		int word_len = strlen (word);
 		char *orig;
-		clean = I.buffer;
-		l = r_str_ansi_filter (clean, &orig, &cpos, 0);
+		clean = r_str_ndup (I.buffer, I.buffer_len);
+		l = r_str_ansi_filter (clean, &orig, &cpos, -1);
 		I.buffer = orig;
 		if (I.highlight) {
 			if (strcmp (word, I.highlight)) {

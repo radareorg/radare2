@@ -1447,7 +1447,10 @@ R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len) {
 	int i, j, *cps;
 	char *tmp;
 
-	if (len < 1) {
+	if (len == 0) {
+		return 0;
+	}
+	if (len < 0) {
 		len = strlen (str);
 	}
 	tmp = malloc (len + 1);
