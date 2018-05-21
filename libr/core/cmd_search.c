@@ -939,8 +939,8 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 			opsz = asmop.size;
 			opst = asmop.buf_asm;
 		}
-		if (!strncasecmp (opst, "invalid", strlen ("invalid")) ||
-		    !strncasecmp (opst, ".byte", strlen (".byte"))) {
+		if (!r_str_ncasecmp (opst, "invalid", strlen ("invalid")) ||
+		    !r_str_ncasecmp (opst, ".byte", strlen (".byte"))) {
 			valid = false;
 			goto ret;
 		}

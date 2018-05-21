@@ -507,7 +507,7 @@ elf_xtensa_reloc_name_lookup (bfd *abfd ATTRIBUTE_UNUSED,
 
   for (i = 0; i < sizeof (elf_howto_table) / sizeof (elf_howto_table[0]); i++)
     if (elf_howto_table[i].name != NULL
-	&& strcasecmp (elf_howto_table[i].name, r_name) == 0)
+	&& r_str_casecmp (elf_howto_table[i].name, r_name) == 0)
       return &elf_howto_table[i];
 
   return NULL;

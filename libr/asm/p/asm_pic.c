@@ -7,10 +7,10 @@
 #include "../arch/pic/pic_pic18.h"
 
 static int asm_pic_disassemble(RAsm *a, RAsmOp *op, const ut8 *b, int l) {
-	if (a->cpu && strcasecmp (a->cpu, "baseline") == 0) {
+	if (a->cpu && r_str_casecmp (a->cpu, "baseline") == 0) {
 		return pic_baseline_disassemble (a, op, b, l);
 	}
-	if (a->cpu && strcasecmp (a->cpu, "pic18") == 0) {
+	if (a->cpu && r_str_casecmp (a->cpu, "pic18") == 0) {
 		return pic_pic18_disassemble (a, op, b, l);
 	}
 

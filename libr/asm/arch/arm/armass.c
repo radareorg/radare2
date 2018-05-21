@@ -1093,7 +1093,7 @@ static ut32 getshift(const char *str) {
 
 	strncpy (type, str, sizeof (type) - 1);
 	// XXX strcaecmp is probably unportable
-	if (!strcasecmp (type, shifts[5])) {
+	if (!r_str_casecmp (type, shifts[5])) {
 		// handle RRX alias case
 		shift = 6;
 	} else { // all other shift types
@@ -1105,7 +1105,7 @@ static ut32 getshift(const char *str) {
 		strncpy (arg, ++space, sizeof(arg) - 1);
 
 		for (i = 0; shifts[i]; i++) {
-			if (!strcasecmp (type, shifts[i])) {
+			if (!r_str_casecmp (type, shifts[i])) {
 				shift = 1;
 				break;
 			}

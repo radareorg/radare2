@@ -1,10 +1,7 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
-#ifdef _MSC_VER
-#define strcasecmp stricmp
-#endif
 
 R_LIB_VERSION (r_reg);
 
@@ -21,7 +18,7 @@ R_API const char* r_reg_32_to_64(RReg* reg, const char* rreg32) {
 	RRegItem* item;
 	for (i = 0; i < R_REG_TYPE_LAST; ++i) {
 		r_list_foreach (reg->regset[i].regs, iter, item) {
-			if (!strcasecmp (rreg32, item->name) && item->size == 32) {
+			if (!r_str_casecmp (rreg32, item->name) && item->size == 32) {
 				j = item->offset;
 				break;
 			}

@@ -70,7 +70,7 @@ static int get_mem_option(char *token) {
 	                         "xxx", "osh", "oshst", "oshld", NULL};
 	int i = 0;
 	while (options[i]) {
-		if (!strcasecmp (token, options[i])) {
+		if (!r_str_casecmp (token, options[i])) {
 			return 15 - i;
 		}
 		i++;
@@ -796,7 +796,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 			if (token[1] == 'P' || token [1] == 'p') {
 				int i;
 				for (i = 0; msr_const[i].name; i++) {
-					if (!strncasecmp (token, msr_const[i].name, strlen (msr_const[i].name))) {
+					if (!r_str_ncasecmp (token, msr_const[i].name, strlen (msr_const[i].name))) {
 						op->operands[operand].sp_val = msr_const[i].val;
 						break;
 					}

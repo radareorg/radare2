@@ -121,10 +121,12 @@ static void set_cpu_model(RAnal *anal, bool force) {
 	}
 
 	// if cpu model changed, reinitalize emulation
-	if (force || !cpu_curr_model || strcasecmp (cpu, cpu_curr_model->name) != 0) {
+	if (force || !cpu_curr_model || r_str_casecmp (cpu, cpu_curr_model->name)) {
 		// find model by name
 		int i = 0;
-		while (cpu_models[i].name && strcasecmp (cpu, cpu_models[i].name) != 0) i++;
+		while (cpu_models[i].name && r_str_casecmp (cpu, cpu_models[i].name)) {
+			i++;
+		}
 		if (!cpu_models[i].name) {
 			i = 0;	// if not found, default to generic 8051
 		}
