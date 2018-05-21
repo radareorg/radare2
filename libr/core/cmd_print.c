@@ -1035,7 +1035,9 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 	} else {
 		/* This make sure the structure will be printed entirely */
 		char *fmt = input + 1;
-		while (*fmt && ISWHITECHAR (*fmt)) fmt++;
+		while (*fmt && IS_WHITECHAR (*fmt)) {
+			fmt++;
+		}
 		int size = r_print_format_struct_size (fmt, core->print, mode, 0) + 10;
 		if (size > core->blocksize) {
 			r_core_block_size (core, size);

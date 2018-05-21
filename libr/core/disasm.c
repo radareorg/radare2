@@ -3503,7 +3503,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			}
 		}
 #if 1
-		if (!(IS_PRINTABLE (*msg) || ISWHITECHAR (*msg)
+		if (!(IS_PRINTABLE (*msg) || IS_WHITECHAR (*msg)
 		      || (len > 1 && !memcmp (msg, "\xff\xfe", 2)))) {
 			*msg = 0;
 		} else {
@@ -4283,15 +4283,15 @@ static char *_find_next_number(char *op) {
 	if (p) {
 		while (*p) {
 			// look for start of next separator or ANSI sequence
-			while (*p && !ISSEPARATOR (*p) && *p != 0x1b) p++;
+			while (*p && !IS_SEPARATOR (*p) && *p != 0x1b) p++;
 			if (*p == 0x1b) {
 				// skip to end of ANSI sequence (lower or uppercase char)
 				while (*p && !(*p >= 'A' && *p <= 'Z') && !(*p >= 'a' && *p <= 'z')) p++;
 				if (*p) p++;
 			}
-			if (ISSEPARATOR (*p)) {
+			if (IS_SEPARATOR (*p)) {
 				// skip to end of separator
-				while (*p && ISSEPARATOR (*p)) p++;
+				while (*p && IS_SEPARATOR (*p)) p++;
 			}
 			if (IS_DIGIT (*p)) {
 				// we found the start of the next number
@@ -4334,7 +4334,7 @@ static char *ds_sub_jumps(RDisasmState *ds, char *str) {
 			ptr = nptr;
 			numval = r_num_get (NULL, ptr);
 			if (numval == addr) {
-				while (*nptr && !ISSEPARATOR (*nptr) && *nptr != 0x1b) {
+				while (*nptr && !IS_SEPARATOR (*nptr) && *nptr != 0x1b) {
 					nptr++;
 				}
 				char* numstr = r_str_ndup (ptr, nptr-ptr);

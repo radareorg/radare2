@@ -211,7 +211,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 		//		eprintf ("(%s) (%c)\n", optr, *ptr2);
 			}
 		} else {
-			for (ptr2 = ptr; *ptr2 && (*ptr2 != ']' && (*ptr2 != '\x1b') && !ISSEPARATOR (*ptr2)); ptr2++);
+			for (ptr2 = ptr; *ptr2 && (*ptr2 != ']' && (*ptr2 != '\x1b') && !IS_SEPARATOR (*ptr2)); ptr2++);
 		}
 		off = r_num_math (NULL, ptr);
 		if (off >= p->minval) {
@@ -348,7 +348,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 				pnum += 2;
 			}
 			for (; *pnum; pnum++) {
-				if ((is_hex && ISHEXCHAR (*pnum)) || IS_DIGIT (*pnum)) {
+				if ((is_hex && IS_HEXCHAR (*pnum)) || IS_DIGIT (*pnum)) {
 					continue;
 				}
 				break;
@@ -485,7 +485,7 @@ R_API bool r_parse_immtrim (char *opstr) {
 	char *n = strstr (opstr, "0x");
 	if (n) {
 		char *p = n + 2;
-		while (ISHEXCHAR (*p)) {
+		while (IS_HEXCHAR (*p)) {
 			p++;
 		}
 		memmove (n, p, strlen (p) + 1);

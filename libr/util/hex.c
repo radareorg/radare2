@@ -489,7 +489,7 @@ R_API int r_hex_str_is_valid(const char* str) {
 		str += 2;
 	}
 	for (i = 0; str[i] != '\0' && str[i] != ' '; i++) {
-		if (ISHEXCHAR (str[i])) {
+		if (IS_HEXCHAR (str[i])) {
 			continue;
 		}
 		return -1; //if we're here, then str isnt valid

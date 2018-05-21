@@ -1400,7 +1400,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		proto = RTR_PROT_RAP;
 		host = input;
 	}
-	while (*host && ISWHITECHAR (*host))
+	while (*host && IS_WHITECHAR (*host))
 		host++;
 
 	if (!(ptr = strchr (host, ':'))) {

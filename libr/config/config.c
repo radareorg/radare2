@@ -2,15 +2,12 @@
 
 #include "r_config.h"
 #include "r_util.h" // r_str_hash, r_str_chop, ...
-#ifdef _MSC_VER
-#define strcasecmp stricmp
-#endif
+
 R_API RConfigNode* r_config_node_new(const char *name, const char *value) {
-	RConfigNode *node;
-	if (STRNULL (name)) {
+	if (IS_NULLSTR (name)) {
 		return NULL;
 	}
-	node = R_NEW0 (RConfigNode);
+	RConfigNode *node = R_NEW0 (RConfigNode);
 	if (!node) {
 		return NULL;
 	}
@@ -161,7 +158,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 	bool json = false;
 	bool isFirst = false;
 
-	if (!STRNULL (str)) {
+	if (!IS_NULLSTR (str)) {
 		str = r_str_trim_ro (str);
 		len = strlen (str);
 		if (len > 0 && str[0] == 'j') {
@@ -284,7 +281,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 }
 
 R_API RConfigNode* r_config_node_get(RConfig *cfg, const char *name) {
-	if (!cfg || STRNULL (name)) {
+	if (!cfg || IS_NULLSTR (name)) {
 		return NULL;
 	}
 	return ht_find (cfg->ht, name, NULL);
@@ -404,7 +401,7 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 	RConfigNode *node = NULL;
 	char *ov = NULL;
 	ut64 oi;
-	if (!cfg || STRNULL (name)) {
+	if (!cfg || IS_NULLSTR (name)) {
 		return NULL;
 	}
 	node = r_config_node_get (cfg, name);

@@ -84,9 +84,7 @@ typedef struct r_asn1_object_t {
 } RASN1Object;
 
 R_API RASN1Object *r_asn1_create_object (const ut8 *buffer, ut32 length);
-
 R_API RASN1Binary *r_asn1_create_binary (const ut8 *buffer, ut32 length);
-
 R_API RASN1String *r_asn1_stringify_bits (const ut8 *buffer, ut32 length);
 R_API RASN1String *r_asn1_stringify_utctime (const ut8 *buffer, ut32 length);
 R_API RASN1String *r_asn1_stringify_time (const ut8 *buffer, ut32 length);
@@ -98,10 +96,9 @@ R_API RASN1String *r_asn1_stringify_oid (const ut8* buffer, ut32 length);
 R_API RASN1String *r_asn1_stringify_tag (RASN1Object *object);
 R_API RASN1String *r_asn1_stringify_object (RASN1Object *object);
 
-void r_asn1_free_object (RASN1Object *object);
-void r_asn1_free_string (RASN1String *string);
-void r_asn1_free_binary (RASN1Binary *string);
-
+R_API void r_asn1_free_object (RASN1Object *object);
+R_API void r_asn1_free_string (RASN1String *string);
+R_API void r_asn1_free_binary (RASN1Binary *string);
 
 #ifdef __cplusplus
 }

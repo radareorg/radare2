@@ -1579,7 +1579,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	if (!fmt) {
 		fmt = formatname;
 	}
-	while (*fmt && ISWHITECHAR (*fmt)) fmt++;
+	while (*fmt && IS_WHITECHAR (*fmt)) fmt++;
 	argend = fmt + strlen (fmt);
 	arg = fmt;
 
