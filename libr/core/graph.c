@@ -3429,7 +3429,7 @@ R_API RANode *r_agraph_get_first_node(const RAGraph *g) {
 }
 
 R_API RANode *r_agraph_get_node(const RAGraph *g, const char *title) {
-	char *title_trunc = r_str_trunc_ellipsis (title, 255);
+	char *title_trunc = title ? r_str_trunc_ellipsis (title, 255) : NULL;
 	RANode *node = (RANode *) (size_t) sdb_num_get (g->nodes, title_trunc, NULL);
 	free (title_trunc);
 	return node;
