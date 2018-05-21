@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2017 - pancake */
+/* radare - LGPL - Copyright 2007-2018 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -9,9 +9,6 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdarg.h>
-#ifdef _MSC_VER
-#define strncasecmp _strnicmp
-#endif
 
 // TODO: simplify this horrible loop
 R_API void r_str_trim_path(char *s) {

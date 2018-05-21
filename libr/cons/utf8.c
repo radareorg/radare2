@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015 - pancake */
+/* radare - LGPL - Copyright 2015-2018 - pancake */
 
 // Copypasta from http://www.linuxquestions.org/questions/programming-9/get-cursor-position-in-c-947833/
 #include <r_cons.h>
@@ -226,7 +226,7 @@ R_API int r_cons_is_utf8() {
 #include <locale.h>
 	const char *ctype = setlocale(LC_CTYPE, NULL);
 	if ( (ctype != NULL) && (ctype = strchr(ctype, '.')) && ctype++ &&
-		(strcasecmp(ctype, "UTF-8") == 0 || strcasecmp(ctype, "UTF8") == 0)) {
+		(r_str_casecmp(ctype, "UTF-8") == 0 || r_str_casecmp(ctype, "UTF8") == 0)) {
 		return 1;
 	}
 #endif

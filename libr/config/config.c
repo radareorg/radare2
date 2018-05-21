@@ -47,13 +47,13 @@ R_API void r_config_node_free(void *n) {
 }
 
 static bool isBoolean(const char *val) {
-	if (!strcasecmp (val, "true") || !strcasecmp (val, "false")) {
+	if (!r_str_casecmp (val, "true") || !r_str_casecmp (val, "false")) {
 		return true;
 	}
-	if (!strcasecmp (val, "on") || !strcasecmp (val, "off")) {
+	if (!r_str_casecmp (val, "on") || !r_str_casecmp (val, "off")) {
 		return true;
 	}
-	if (!strcasecmp (val, "yes") || !strcasecmp (val, "no")) {
+	if (!r_str_casecmp (val, "yes") || !r_str_casecmp (val, "no")) {
 		return true;
 	}
 	return false;
@@ -306,11 +306,11 @@ R_API int r_config_set_setter(RConfig *cfg, const char *key, RConfigCallback cb)
 }
 
 static bool is_true(const char *s) {
-	return !strcasecmp ("yes", s) || !strcasecmp ("on", s) || !strcasecmp ("true", s) || !strcasecmp ("1", s);
+	return !r_str_casecmp ("yes", s) || !r_str_casecmp ("on", s) || !r_str_casecmp ("true", s) || !r_str_casecmp ("1", s);
 }
 
 static bool is_bool(const char *s) {
-	return !strcasecmp ("true", s) || !strcasecmp ("false", s);
+	return !r_str_casecmp ("true", s) || !r_str_casecmp ("false", s);
 }
 
 R_API const char* r_config_get(RConfig *cfg, const char *name) {

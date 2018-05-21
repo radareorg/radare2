@@ -67,7 +67,7 @@ static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut
 
 #define ESIL_A(e, ...)			r_strbuf_appendf (&op->esil, e, ##__VA_ARGS__)
 
-#define STR_BEGINS(in, s)		strncasecmp (in, s, strlen (s))
+#define STR_BEGINS(in, s)		r_str_ncasecmp (in, s, strlen (s))
 
 // Following IO definitions are valid for:
 //	ATmega8
@@ -156,7 +156,7 @@ static CPU_MODEL *__get_cpu_model_recursive(char *model) {
 	CPU_MODEL *cpu = NULL;
 
 	for (cpu = cpu_models; cpu < cpu_models + ((sizeof (cpu_models) / sizeof (CPU_MODEL))) - 1; cpu++) {
-		if (!strcasecmp (model, cpu->model)) {
+		if (!r_str_casecmp (model, cpu->model)) {
 			break;
 		}
 	}
@@ -174,14 +174,12 @@ static CPU_MODEL *__get_cpu_model_recursive(char *model) {
 
 static CPU_MODEL *get_cpu_model(char *model) {
 	static CPU_MODEL *cpu = NULL;
-
 	// cached value?
-	if (cpu && !strcasecmp (model, cpu->model))
+	if (cpu && !r_str_casecmp (model, cpu->model)) {
 		return cpu;
-
+	}
 	// do the real search
 	cpu = __get_cpu_model_recursive (model);
-
 	return cpu;
 }
 
@@ -1239,7 +1237,7 @@ INST_HANDLER (rcall) {	// RCALL k
 	__generic_push (op, CPU_PC_SIZE (cpu));	// push @ret addr
 	ESIL_A ("%"PFMT64d",pc,=,", op->jump);	// jump!
 	// cycles
-	if (!strncasecmp (cpu->model, "ATtiny", 6)) {
+	if (!r_str_ncasecmp (cpu->model, "ATtiny", 6)) {
 		op->cycles = 4;	// ATtiny is always slow
 	} else {
 		// PC size decides required runtime!

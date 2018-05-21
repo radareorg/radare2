@@ -402,22 +402,22 @@ static int anal_pic_pic18_set_reg_profile(RAnal *esil) {
 
 
 static int anal_pic_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
-	if (anal->cpu && strcasecmp (anal->cpu, "baseline") == 0) {
+	if (anal->cpu && r_str_casecmp (anal->cpu, "baseline") == 0) {
 		// TODO: implement
 		return -1;
 	}
-	if (anal->cpu && strcasecmp (anal->cpu, "pic18") == 0) {
+	if (anal->cpu && r_str_casecmp (anal->cpu, "pic18") == 0) {
 		return anal_pic_pic18_op (anal, op, addr, buf, len);
 	}
 	return -1;
 }
 
 static int anal_pic_set_reg_profile(RAnal *anal) {
-	if (anal->cpu && strcasecmp (anal->cpu, "baseline") == 0) {
+	if (anal->cpu && r_str_casecmp (anal->cpu, "baseline") == 0) {
 		// TODO: implement
 		return r_reg_set_profile_string (anal->reg, "");
 	}
-	if (anal->cpu && strcasecmp (anal->cpu, "pic18") == 0) {
+	if (anal->cpu && r_str_casecmp (anal->cpu, "pic18") == 0) {
 		return anal_pic_pic18_set_reg_profile (anal);
 	}
 	return -1;

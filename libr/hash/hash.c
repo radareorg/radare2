@@ -1,10 +1,7 @@
-/* radare - LGPL - Copyright 2007-2017 pancake */
+/* radare - LGPL - Copyright 2007-2018 pancake */
 
 #include <r_hash.h>
 #include "r_util.h"
-#ifdef _MSC_VER
-#define strcasecmp stricmp
-#endif
 R_LIB_VERSION (r_hash);
 
 struct {
@@ -287,14 +284,14 @@ R_API ut64 r_hash_name_to_bits(const char *name) {
 	do {
 		/* Eat everything up to the comma */
 		for (i = 0; *ptr && *ptr != ',' && i < sizeof (tmp) - 1; i++) {
-			tmp[i] = *ptr++;
+			tmp[i] = tolower (*ptr++);
 		}
 
 		/* Safety net */
 		tmp[i] = '\0';
 
 		for (i = 0; hash_name_bytes[i].name; i++) {
-			if (!strcasecmp (tmp, hash_name_bytes[i].name)) {
+			if (!strcmp (tmp, hash_name_bytes[i].name)) {
 				ret |= hash_name_bytes[i].bit;
 				break;
 			}

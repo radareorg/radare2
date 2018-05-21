@@ -95,6 +95,8 @@ R_API const char *r_sub_str_rchr(const char *str, int start, int end, char chr);
 R_API char *r_str_ichr(char *str, char chr);
 R_API int r_str_ccmp(const char *dst, const char *orig, int ch);
 R_API int r_str_cmp(const char *dst, const char *orig, int len);
+R_API int r_str_casecmp(const char *dst, const char *orig);
+R_API int r_str_ncasecmp(const char *dst, const char *orig, size_t n);
 R_API int r_str_ccpy(char *dst, char *orig, int ch);
 R_API const char *r_str_get(const char *str);
 R_API const char *r_str_get2(const char *str);

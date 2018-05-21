@@ -4058,28 +4058,28 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 	// General purpose registers
 	if (length == 3 && token[0] == 'e') {
 		for (i = 0; regs[i]; i++)
-			if (!strncasecmp (regs[i], token, length)) {
+			if (!r_str_ncasecmp (regs[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_DWORD;
 				return i;
 			}
 	}
 	if (length == 2 && (token[1] == 'l' || token[1] == 'h')) {
 		for (i = 0; regs8[i]; i++)
-			if (!strncasecmp (regs8[i], token, length)) {
+			if (!r_str_ncasecmp (regs8[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_BYTE;
 				return i;
 			}
 	}
 	if (length == 2) {
 		for (i = 0; regs16[i]; i++) {
-			if (!strncasecmp (regs16[i], token, length)) {
+			if (!r_str_ncasecmp (regs16[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_WORD;
 				return i;
 			}
 		}
 		// This isn't working properly yet
 		for (i = 0; sregs[i]; i++) {
-			if (!strncasecmp (sregs[i], token, length)) {
+			if (!r_str_ncasecmp (sregs[i], token, length)) {
 				*type = (OT_SEGMENTREG & OT_REG (i)) | OT_WORD;
 				return i;
 			}
@@ -4087,21 +4087,21 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 	}
 	if (token[0] == 'r') {
 		for (i = 0; regs64[i]; i++) {
-			if (!strncasecmp (regs64[i], token, length)) {
+			if (!r_str_ncasecmp (regs64[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_QWORD;
 				a->bits = 64;
 				return i;
 			}
 		}
 		for (i = 0; regs64ext[i]; i++) {
-			if (!strncasecmp (regs64ext[i], token, length)) {
+			if (!r_str_ncasecmp (regs64ext[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_QWORD;
 				a->bits = 64;
 				return i + 8;
 			}
 		}
 		for (i = 0; regsext[i]; i++) {
-			if (!strncasecmp (regsext[i], token, length)) {
+			if (!r_str_ncasecmp (regsext[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_DWORD;
 				a->bits = 32;
 				return i + 8;
@@ -4110,15 +4110,15 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 	}
 
 	// Extended registers
-	if (!strncasecmp ("st", token, 2)) {
+	if (!r_str_ncasecmp ("st", token, 2)) {
 		*type = (OT_FPUREG & ~OT_REGALL);
 		*pos = 3;
 	}
-	if (!strncasecmp ("mm", token, 2)) {
+	if (!r_str_ncasecmp ("mm", token, 2)) {
 		*type = (OT_MMXREG & ~OT_REGALL);
 		*pos = 3;
 	}
-	if (!strncasecmp ("xmm", token, 3)) {
+	if (!r_str_ncasecmp ("xmm", token, 3)) {
 		*type = (OT_XMMREG & ~OT_REGALL);
 		*pos = 4;
 	}
@@ -4200,24 +4200,24 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 		last_type = getToken (str, &pos, &nextpos);
 
 		// Token may indicate size: then skip
-		if (!strncasecmp (str + pos, "ptr", 3))
+		if (!r_str_ncasecmp (str + pos, "ptr", 3))
 			continue;
-		else if (!strncasecmp (str + pos, "byte", 4)) {
+		else if (!r_str_ncasecmp (str + pos, "byte", 4)) {
 			op->type |= OT_MEMORY | OT_BYTE;
 			explicit_size = true;
-		} else if (!strncasecmp (str + pos, "word", 4)) {
+		} else if (!r_str_ncasecmp (str + pos, "word", 4)) {
 			op->type |= OT_MEMORY | OT_WORD;
 			explicit_size = true;
-		} else if (!strncasecmp (str + pos, "dword", 5)) {
+		} else if (!r_str_ncasecmp (str + pos, "dword", 5)) {
 			op->type |= OT_MEMORY | OT_DWORD;
 			explicit_size = true;
-		} else if (!strncasecmp (str + pos, "qword", 5)) {
+		} else if (!r_str_ncasecmp (str + pos, "qword", 5)) {
 			op->type |= OT_MEMORY | OT_QWORD;
 			explicit_size = true;
-		} else if (!strncasecmp (str + pos, "oword", 5)) {
+		} else if (!r_str_ncasecmp (str + pos, "oword", 5)) {
 			op->type |= OT_MEMORY | OT_OWORD;
 			explicit_size = true;
-		} else if (!strncasecmp (str + pos, "tbyte", 5)) {
+		} else if (!r_str_ncasecmp (str + pos, "tbyte", 5)) {
 			op->type |= OT_MEMORY | OT_TBYTE;
 			explicit_size = true;
 		} else	// the current token doesn't denote a size
@@ -4397,7 +4397,7 @@ static int parseOpcode(RAsm *a, const char *op, Opcode *out) {
 	} else {
 		return 1;
 	}
-	if (!strncasecmp (args, "short", 5)) {
+	if (!r_str_ncasecmp (args, "short", 5)) {
 		out->is_short = true;
 		args += 5;
 	}
@@ -4440,7 +4440,7 @@ static int oprep(RAsm *a, ut8 *data, const Opcode *op) {
 	parseOpcode (a, op->operands[0].rep_op, &instr);
 
 	for (lt_ptr = oplookup; strcmp (lt_ptr->mnemonic, "null"); lt_ptr++) {
-		if (!strcasecmp (instr.mnemonic, lt_ptr->mnemonic)) {
+		if (!r_str_casecmp (instr.mnemonic, lt_ptr->mnemonic)) {
 			if (lt_ptr->opcode > 0) {
 				if (lt_ptr->only_x32 && a->bits == 64) {
 					return -1;
@@ -4484,7 +4484,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	op[sizeof (op) - 1] = '\0';
 	parseOpcode (a, op, &instr);
 	for (lt_ptr = oplookup; strcmp (lt_ptr->mnemonic, "null"); lt_ptr++) {
-		if (!strcasecmp (instr.mnemonic, lt_ptr->mnemonic)) {
+		if (!r_str_casecmp (instr.mnemonic, lt_ptr->mnemonic)) {
 			if (lt_ptr->opcode > 0) {
 				if (!lt_ptr->only_x32 || a->bits != 64) {
 					ut8 *ptr = (ut8 *)&lt_ptr->opcode;
