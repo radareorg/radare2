@@ -1335,7 +1335,7 @@ static int cmd_open(void *data, const char *input) {
 			}
                         char *uri = r_str_newf ("malloc://%d", len);
 			ut8 *data = calloc (len, 1);
-			r_core_read_at (core, core->offset, data, len);
+			r_io_read_at (core->io, core->offset, data, len);
                         RIODesc *fd = r_io_open (core->io, uri, R_IO_READ | R_IO_WRITE, 0);
                         if (fd) {
                                 r_io_desc_write (fd, data, len);

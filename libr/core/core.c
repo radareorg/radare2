@@ -2204,7 +2204,7 @@ R_API char *r_core_op_str(RCore *core, ut64 addr) {
 	ut8 buf[64];
 	int ret;
 	r_asm_set_pc (core->assembler, addr);
-	r_core_read_at (core, addr, buf, sizeof (buf));
+	r_io_read_at (core->io, addr, buf, sizeof (buf));
 	ret = r_asm_disassemble (core->assembler, &op, buf, sizeof (buf));
 	return (ret > 0)? strdup (op.buf_asm): NULL;
 }
@@ -2212,7 +2212,7 @@ R_API char *r_core_op_str(RCore *core, ut64 addr) {
 R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr) {
 	ut8 buf[64];
 	RAnalOp *op = R_NEW (RAnalOp);
-	r_core_read_at (core, addr, buf, sizeof (buf));
+	r_io_read_at (core->io, addr, buf, sizeof (buf));
 	r_anal_op (core->anal, op, addr, buf, sizeof (buf), R_ANAL_OP_MASK_ALL);
 	return op;
 }

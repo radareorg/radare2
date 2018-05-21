@@ -4005,7 +4005,7 @@ static void cmd_aespc(RCore *core, ut64 addr, int off) {
 			i = 0;
 		}
 		if (!i) {
-			r_core_read_at (core, addr, buf, bsize);
+			r_io_read_at (core->io, addr, buf, bsize);
 		}
 		ret = r_anal_op (core->anal, &aop, addr, buf + i, bsize - i, R_ANAL_OP_MASK_ALL);
 		instr_size += ret;
@@ -5153,7 +5153,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				core->parser->localvar_only = r_config_get_i (core->config, "asm.var.subonly");
 				r_cons_printf ("[");
 				r_list_foreach (list, iter, ref) {
-					r_core_read_at (core, ref->addr, buf, size);
+					r_io_read_at (core->io, ref->addr, buf, size);
 					r_asm_set_pc (core->assembler, ref->addr);
 					r_asm_disassemble (core->assembler, &asmop, buf, size);
 					char str[512];
@@ -5217,7 +5217,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					core->parser->relsub_addr = addr;
 				}
 				r_list_foreach (list, iter, ref) {
-					r_core_read_at (core, ref->addr, buf, size);
+					r_io_read_at (core->io, ref->addr, buf, size);
 					r_asm_set_pc (core->assembler, ref->addr);
 					r_asm_disassemble (core->assembler, &asmop, buf, size);
 
@@ -5283,7 +5283,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			} else if (input[1] == 'j') { // axfj
 				r_cons_print ("[");
 				r_list_foreach (list, iter, ref) {
-					r_core_read_at (core, ref->at, buf, 12);
+					r_io_read_at (core->io, ref->at, buf, 12);
 					r_asm_set_pc (core->assembler, ref->at);
 					r_asm_disassemble (core->assembler, &asmop, buf, 12);
 					r_cons_printf ("{\"from\":%" PFMT64d ",\"to\":%" PFMT64d ",\"type\":\"%s\",\"opcode\":\"%s\"}%s",
@@ -5300,7 +5300,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				char str[512];
 				int has_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 				r_list_foreach (list, iter, ref) {
-					r_core_read_at (core, ref->at, buf, 12);
+					r_io_read_at (core->io, ref->at, buf, 12);
 					r_asm_set_pc (core->assembler, ref->at);
 					r_asm_disassemble (core->assembler, &asmop, buf, 12);
 					r_parse_filter (core->parser, core->flags,

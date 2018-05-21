@@ -321,14 +321,14 @@ R_API RAsmOp *r_core_disassemble (RCore *core, ut64 addr) {
 	RAsmOp *op;
 	if (!b) {
 		b = r_buf_new ();
-		if (!b || !r_core_read_at (core, addr, buf, sizeof (buf))) {
+		if (!b || !r_io_read_at (core->io, addr, buf, sizeof (buf))) {
 			return NULL;
 		}
 		b->base = addr;
 		r_buf_set_bytes (b, buf, sizeof (buf));
 	} else {
 		if ((addr < b->base) || addr > (b->base + b->length - 32)) {
-			if (!r_core_read_at (core, addr, buf, sizeof (buf))) {
+			if (!r_io_read_at (core->io, addr, buf, sizeof (buf))) {
 				return NULL;
 			}
 			b->base = addr;

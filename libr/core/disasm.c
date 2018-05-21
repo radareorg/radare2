@@ -1113,7 +1113,7 @@ static void ds_show_refs(RDisasmState *ds) {
 		if (ref->type & R_ANAL_REF_TYPE_CALL) {
 			RAnalOp aop;
 			ut8 buf[12];
-			r_core_read_at (ds->core, ref->at, buf, sizeof (buf));
+			r_io_read_at (ds->core->io, ref->at, buf, sizeof (buf));
 			r_anal_op (ds->core->anal, &aop, ref->at, buf, sizeof (buf), R_ANAL_OP_MASK_ALL);
 			if ((aop.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_UCALL) {
 				RAnalFunction * fcn = r_anal_get_fcn_at (ds->core->anal,
@@ -2630,7 +2630,7 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 					ut8 b[8];
 					ut64 ptr = addrbytes * idx + ds->addr + src->delta + ds->analop.size;
 					ut64 off = 0LL;
-					r_core_read_at (core, ptr, b, src->memref);
+					r_io_read_at (core->io, ptr, b, src->memref);
 					off = r_mem_get_num (b, src->memref);
 					item = r_flag_get_i (core->flags, off);
 					//TODO: introduce env for this print?
@@ -2658,7 +2658,7 @@ static void ds_instruction_mov_lea(RDisasmState *ds, int idx) {
 				ut8 b[64];
 				ut64 ptr = index + ds->addr + src->delta + ds->analop.size;
 				ut64 off = 0LL;
-				r_core_read_at (core, ptr, b, sizeof (b)); //memref);
+				r_io_read_at (core->io, ptr, b, sizeof (b)); //memref);
 				off = r_mem_get_num (b, memref);
 				item = r_flag_get_i (core->flags, off);
 				if (ds->show_leahints) {
@@ -4754,13 +4754,13 @@ toro:
 		}
 		buf = nbuf = malloc (len);
 		if (ds->tries > 0) {
-			if (r_core_read_at (core, ds->addr, buf, len)) {
+			if (r_io_read_at (core->io, ds->addr, buf, len)) {
 				goto toro;
 			}
 		}
 		if (ds->lines < ds->l) {
 			//ds->addr += idx;
-			if (!r_core_read_at (core, ds->addr, buf, len)) {
+			if (!r_io_read_at (core->io, ds->addr, buf, len)) {
 				//ds->tries = -1;
 			}
 			goto toro;
@@ -4819,7 +4819,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 			if (nbytes > core->blocksize) {
 				r_core_block_size (core, nbytes);
 			}
-			r_core_read_at (core, core->offset, core->block, nbytes);
+			r_io_read_at (core->io, core->offset, core->block, nbytes);
 		}
 	} else {
 		if (nb_bytes < 0) { // Disassemble backward `nb_bytes` bytes
@@ -4829,7 +4829,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 				ut64 obsz = core->blocksize;
 				r_core_block_size (core, nb_bytes);
 				if (core->blocksize == nb_bytes) {
-					r_core_read_at (core, core->offset, core->block, nb_bytes);
+					r_io_read_at (core->io, core->offset, core->block, nb_bytes);
 				} else {
 					eprintf ("Cannot read that much!\n");
 					r_core_block_size (core, obsz);
@@ -4838,12 +4838,12 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 				}
 				r_core_block_size (core, obsz);
 			} else {
-				r_core_read_at (core, core->offset, core->block, nb_bytes);
+				r_io_read_at (core->io, core->offset, core->block, nb_bytes);
 			}
 		} else {
 			if (nb_bytes > core->blocksize) {
 				r_core_block_size (core, nb_bytes);
-				r_core_read_at (core, core->offset, core->block, nb_bytes);
+				r_io_read_at (core->io, core->offset, core->block, nb_bytes);
 			}
 		}
 	}
@@ -5046,8 +5046,8 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			}
 			count = R_MIN (nb_bytes, nbytes);
 			if (count > 0) {
-				r_core_read_at (core, addr, buf, count);
-				r_core_read_at (core, addr+count, buf+count, nb_bytes-count);
+				r_io_read_at (core->io, addr, buf, count);
+				r_io_read_at (core->io, addr+count, buf+count, nb_bytes-count);
 			} else {
 				if (nb_bytes > 0) {
 					memset (buf, 0xff, nb_bytes);
@@ -5060,14 +5060,14 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			// the equivalent addr and nb_size and scan a positive number of BYTES
 			// so keep dis_opcodes = 0;
 			dis_opcodes = 1;
-			r_core_read_at (core, addr, buf, nb_bytes);
+			r_io_read_at (core->io, addr, buf, nb_bytes);
 		}
 	} else { // Disassemble `nb_bytes` bytes
 		if (nb_bytes < 0) {
 			//Backward disassembly of `nb_bytes` bytes
 			nb_bytes = -nb_bytes;
 			addr -= nb_bytes;
-			r_core_read_at (core, addr, buf, nb_bytes);
+			r_io_read_at (core->io, addr, buf, nb_bytes);
 		}
 	}
 	core->offset = addr;
@@ -5096,7 +5096,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		// Make sure we have room for it
 		if (dis_opcodes == 1 && i >= nb_bytes - 32) {
 			// Read another nb_bytes bytes into buf from current offset
-			r_core_read_at (core, at, buf, nb_bytes);
+			r_io_read_at (core->io, at, buf, nb_bytes);
 			i = 0;
 		}
 
@@ -5292,7 +5292,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 	RDisasmState *ds = ds_init (core);
 	if (l > core->blocksize || addr != core->offset) {
 		buf = malloc (l + 1);
-		r_core_read_at (core, addr, buf, l);
+		r_io_read_at (core->io, addr, buf, l);
 	}
 	if (mode == 'j') {
 		r_cons_printf ("[");
@@ -5440,7 +5440,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 		if (idx >= cur_buf_sz) {
 			break;
 		}
-		r_core_read_at (core, bb->addr, buf+idx, bb->size);
+		r_io_read_at (core->io, bb->addr, buf+idx, bb->size);
 		//ret = r_asm_disassemble (core->assembler, &ds->asmop, buf+idx, bb->size);
 		//if (ret > 0) eprintf ("%s\n",ds->asmop.buf_asm);
 		idx += bb->size;
@@ -5635,7 +5635,7 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 			// Backward disasm `nb_bytes` bytes
 			nb_bytes = -nb_bytes;
 			core->offset -= nb_bytes;
-			r_core_read_at (core, core->offset, core->block, nb_bytes);
+			r_io_read_at (core->io, core->offset, core->block, nb_bytes);
 		}
 	} else if (!nb_bytes) {
 		if (nb_opcodes < 0) {
@@ -5656,7 +5656,7 @@ R_API int r_core_disasm_pdi(RCore *core, int nb_opcodes, int nb_bytes, int fmt) 
 			if (nb_bytes > core->blocksize) {
 				r_core_block_size (core, nb_bytes);
 			}
-			r_core_read_at (core, core->offset, core->block, nb_bytes);
+			r_io_read_at (core->io, core->offset, core->block, nb_bytes);
 		} else {
 			// workaround for the `for` loop below
 			nb_bytes = core->blocksize;

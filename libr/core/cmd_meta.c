@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2017 - pancake */
+/* radare2 - LGPL - Copyright 2009-2018 - pancake */
 
 #include "r_anal.h"
 #include "r_bin.h"
@@ -703,11 +703,11 @@ p = t;
 					char tmp[256] = R_EMPTY;
 					int i, j, name_len = 0;
 					if (input[1] == 'a' || input[1] == '8') {
-						(void)r_core_read_at (core, addr, (ut8*)name, sizeof (name) - 1);
+						(void)r_io_read_at (core->io, addr, (ut8*)name, sizeof (name) - 1);
 						name[sizeof (name) - 1] = '\0';
 						name_len = strlen (name);
 					} else {
-						(void)r_core_read_at (core, addr, (ut8*)tmp, sizeof (tmp) - 3);
+						(void)r_io_read_at (core->io, addr, (ut8*)tmp, sizeof (tmp) - 3);
 						name_len = r_str_nlen_w (tmp, sizeof (tmp) - 3);
 						//handle wide strings
 						for (i = 0, j = 0; i < sizeof (name); i++, j++) {

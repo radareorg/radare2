@@ -77,12 +77,12 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 		} else {
 			r_cons_printf ("0x%08"PFMT64x" --> ", bval);
 		}
-        	r_core_read_at (core, bval, buf, bsize);
+		r_io_read_at (core->io, bval, buf, bsize);
 	}
 	if (onstack) { // Fetch value from stack
 		bval = get_buf_val (buf, endian, width);
 		if (opt != 'd' && opt != 'x') {
-			r_core_read_at (core, bval, buf, bsize); // update buf with val from stack
+			r_io_read_at (core->io, bval, buf, bsize); // update buf with val from stack
 		}
 	}
 	r_cons_print (color? Color_BGREEN: "");

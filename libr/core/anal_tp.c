@@ -195,7 +195,7 @@ static void emulate_prev_N_instr(RCore *core, ut64 at, ut64 curpc) {
 			i = 0;
 		}
 		if (!i) {
-			r_core_read_at (core, curpc, arr, bsize);
+			r_io_read_at (core->io, curpc, arr, bsize);
 		}
 		inslen = r_anal_op (core->anal, &aop, curpc, arr + i, bsize - i, R_ANAL_OP_MASK_ALL);
 		int incr = inslen - 1;
@@ -263,7 +263,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 				i = 0;
 			}
 			if (!i) {
-				r_core_read_at (core, addr, buf, bsize);
+				r_io_read_at (core->io, addr, buf, bsize);
 			}
 			ret = r_anal_op (core->anal, &aop, addr, buf + i, bsize - i, R_ANAL_OP_MASK_ALL);
 			if (ret <= 0) {

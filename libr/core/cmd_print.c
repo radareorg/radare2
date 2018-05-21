@@ -1505,7 +1505,7 @@ R_API void r_core_print_cmp(RCore *core, ut64 from, ut64 to) {
 	ut64 addr = core->offset;
 	memset (b, 0xff, core->blocksize);
 	delta = addr - from;
-	r_core_read_at (core, to + delta, b, core->blocksize);
+	r_io_read_at (core->io, to + delta, b, core->blocksize);
 	r_print_hexdiff (core->print, core->offset, core->block,
 		to + delta, b, core->blocksize, col);
 	free (b);
@@ -2465,7 +2465,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				int len = 0;
 				for (i = 0; i < nblocks; i++) {
 					ut64 off = from + blocksize * (i + skipblocks);
-					r_core_read_at (core, off, p, blocksize);
+					r_io_read_at (core->io, off, p, blocksize);
 					for (j = k = 0; j < blocksize; j++) {
 						switch (submode) {
 						case '0':
@@ -2521,7 +2521,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			}
 			for (i = 0; i < nblocks; i++) {
 				ut64 off = from + (blocksize * (i + skipblocks));
-				r_core_read_at (core, off, p, blocksize);
+				r_io_read_at (core->io, off, p, blocksize);
 				ptr[i] = (ut8) (255 * r_hash_entropy_fraction (p, blocksize));
 			}
 			free (p);
@@ -2617,7 +2617,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		}
 		for (i = 0; i < nblocks; i++) {
 			ut64 off = from + (blocksize * (i + skipblocks));
-			r_core_read_at (core, off, p, blocksize);
+			r_io_read_at (core->io, off, p, blocksize);
 			ptr[i] = (ut8) (255 * r_hash_entropy_fraction (p, blocksize));
 		}
 		free (p);
@@ -2645,7 +2645,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		int len = 0;
 		for (i = 0; i < nblocks; i++) {
 			ut64 off = from + blocksize * (i + skipblocks);
-			r_core_read_at (core, off, p, blocksize);
+			r_io_read_at (core->io, off, p, blocksize);
 			for (j = k = 0; j < blocksize; j++) {
 				switch (mode) {
 				case '0':
@@ -2689,7 +2689,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	case 'b': // bytes
 	case '\0':
 		ptr = calloc (1, nblocks);
-		r_core_read_at (core, from, ptr, nblocks);
+		r_io_read_at (core->io, from, ptr, nblocks);
 		// TODO: support print_bars
 		r_print_fill (core->print, ptr, nblocks, from, blocksize);
 		R_FREE (ptr);
@@ -3621,7 +3621,7 @@ static int cmd_print(void *data, const char *input) {
 				ut8 *data = calloc (core->offset + 1, 1);
 				if (data) {
 					data[core->offset] = 0;
-					(void)r_core_read_at (core, 0, data, core->offset);
+					(void)r_io_read_at (core->io, 0, data, core->offset);
 					char *res = r_print_json_path ((const char *)data, core->offset);
 					if (res) {
 						eprintf ("-> res(%s)\n", res);
@@ -4171,7 +4171,7 @@ static int cmd_print(void *data, const char *input) {
 				if (b) {
 					ut8 *block = malloc (b->size + 1);
 					if (block) {
-						r_core_read_at (core, b->addr, block, b->size);
+						r_io_read_at (core->io, b->addr, block, b->size);
 
 						if (input[2] == 'j') {
 							r_cons_print ("[");
@@ -4389,7 +4389,7 @@ static int cmd_print(void *data, const char *input) {
 						if (!(block1 = malloc (l))) {
 							break;
 						}
-						r_core_read_at (core, addr - l, block1, l); // core->blocksize);
+						r_io_read_at (core->io, addr - l, block1, l); // core->blocksize);
 						core->num->value = r_core_print_disasm (core->print, core, addr - l, block1, l, l, 0, 1, formatted_json, NULL);
 					} else { // pd
 						int instr_len;
@@ -4408,7 +4408,7 @@ static int cmd_print(void *data, const char *input) {
 						r_core_seek (core, prevaddr - instr_len, true);
 						memcpy (block1, block, bs);
 						if (bs1 > bs) {
-							r_core_read_at (core, addr + bs / addrbytes,
+							r_io_read_at (core->io, addr + bs / addrbytes,
 								block1 + (bs - bs % addrbytes),
 								bs1 - (bs - bs % addrbytes));
 						}
@@ -4432,7 +4432,7 @@ static int cmd_print(void *data, const char *input) {
 					block1 = malloc (addrbytes * l);
 					if (block1) {
 						if (addrbytes * l > core->blocksize) {
-							r_core_read_at (core, addr, block1, addrbytes * l); // core->blocksize);
+							r_io_read_at (core->io, addr, block1, addrbytes * l); // core->blocksize);
 						} else {
 							memcpy (block1, block, addrbytes * l);
 						}
@@ -4447,7 +4447,7 @@ static int cmd_print(void *data, const char *input) {
 					if (block1) {
 						memcpy (block1, block, bs);
 						if (bs1 > bs) {
-							r_core_read_at (core, addr + bs / addrbytes, block1 + (bs - bs % addrbytes),
+							r_io_read_at (core->io, addr + bs / addrbytes, block1 + (bs - bs % addrbytes),
 									bs1 - (bs - bs % addrbytes));
 						}
 						core->num->value = r_core_print_disasm (core->print,
@@ -4519,7 +4519,7 @@ static int cmd_print(void *data, const char *input) {
 					delta = core->offset;
 				}
 				p = buf + delta;
-				r_core_read_at (core, core->offset - delta, buf, 1024);
+				r_io_read_at (core->io, core->offset - delta, buf, 1024);
 				for (b = p; b > buf; b--) {
 					if (!IS_PRINTABLE (*b)) {
 						b++;
@@ -5494,7 +5494,7 @@ static int cmd_print(void *data, const char *input) {
 				for (j = 0; j < cols; j++) {
 					r_cons_canvas_gotoxy (c, j * 20, i * 11);
 					core->offset += len;
-					r_core_read_at (core, core->offset, core->block, len);
+					r_io_read_at (core->io, core->offset, core->block, len);
 					s = r_print_randomart (core->block, len, core->offset);
 					r_cons_canvas_write (c, s);
 					free (s);
@@ -5502,7 +5502,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 			r_cons_canvas_print (c);
 			r_cons_canvas_free (c);
-			r_core_read_at (core, offset0, core->block, len);
+			r_io_read_at (core->io, offset0, core->block, len);
 			core->offset = offset0;
 			r_cons_printf ("\n");
 		}

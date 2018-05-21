@@ -814,7 +814,7 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 	// if we anal info didn't help then fallback to the dumb solution.
 	target = addr;
 	base = target - OPDELTA;
-	r_core_read_at (core, base, buf, sizeof (buf));
+	r_io_read_at (core->io, base, buf, sizeof (buf));
 	for (i = 0; i < sizeof (buf); i++) {
 		ret = r_anal_op (core->anal, &op, base + i,
 			buf + i, sizeof (buf) - i, R_ANAL_OP_MASK_ALL);

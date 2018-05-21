@@ -434,7 +434,7 @@ static int _cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			const int len = keyword_len;
 			char *buf = calloc (1, len + 32 + ctx * 2);
 			type = "string";
-			r_core_read_at (core, addr - prectx, (ut8 *) buf, len + (ctx * 2));
+			r_io_read_at (core->io, addr - prectx, (ut8 *) buf, len + (ctx * 2));
 			pre = getstring (buf, prectx);
 			wrd = r_str_utf16_encode (buf + prectx, len);
 			pos = getstring (buf + prectx + len, ctx);
@@ -468,7 +468,7 @@ static int _cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 			if (str) {
 				p = str;
 				memset (str, 0, len);
-				r_core_read_at (core, base_addr + addr, buf, keyword_len);
+				r_io_read_at (core->io, base_addr + addr, buf, keyword_len);
 				if (json) {
 					p = str;
 				}
@@ -1043,7 +1043,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 		r_cons_printf ("{\"opcodes\":[");
 		r_list_foreach (hitlist, iter, hit) {
 			ut8 *buf = malloc (hit->len);
-			r_core_read_at (core, hit->addr, buf, hit->len);
+			r_io_read_at (core->io, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->assembler, hit->addr);
 			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
 			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ANAL_OP_MASK_ALL);
@@ -1076,7 +1076,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 			((RCoreAsmHit *) hitlist->head->data)->addr);
 		r_list_foreach (hitlist, iter, hit) {
 			ut8 *buf = malloc (hit->len);
-			r_core_read_at (core, hit->addr, buf, hit->len);
+			r_io_read_at (core->io, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->assembler, hit->addr);
 			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
 			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ANAL_OP_MASK_ALL);
@@ -1116,7 +1116,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 			}
 			ut8 *buf = malloc (1 + hit->len);
 			buf[hit->len] = 0;
-			r_core_read_at (core, hit->addr, buf, hit->len);
+			r_io_read_at (core->io, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->assembler, hit->addr);
 			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
 			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ANAL_OP_MASK_ALL);
@@ -1435,7 +1435,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 					}
 				}
 				if (i >= end) { // read by chunk of 4k
-					r_core_read_at (core, from + i, buf + i,
+					r_io_read_at (core->io, from + i, buf + i,
 						R_MIN ((delta - i), 4096));
 					end = i + 2048;
 				}
@@ -1680,7 +1680,7 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 			i = 0;
 		}
 		if (!i) {
-			r_core_read_at (core, curpc, arr, bsize);
+			r_io_read_at (core->io, curpc, arr, bsize);
 		}
 		inslen = r_anal_op (core->anal, &aop, curpc, arr + i, bsize - i, R_ANAL_OP_MASK_ALL);
 		if (inslen) {	
@@ -1761,7 +1761,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 				continue;
 			}	
 			if (!i) {
-				r_core_read_at (core, at, buf, bsize);
+				r_io_read_at (core->io, at, buf, bsize);
 			}
 			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i, R_ANAL_OP_MASK_ALL);
 			curpos = idx++ % (MAXINSTR + 1);
@@ -1822,7 +1822,7 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 	RList *list = r_anal_xrefs_get (core->anal, addr);
 	if (list) {
 		r_list_foreach (list, iter, ref) {
-			r_core_read_at (core, ref->addr, buf, size);
+			r_io_read_at (core->io, ref->addr, buf, size);
 			r_asm_set_pc (core->assembler, ref->addr);
 			r_asm_disassemble (core->assembler, &asmop, buf, size);
 			fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
@@ -1920,7 +1920,7 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 				i = 0;
 			}
 			if (!i) {
-				r_core_read_at (core, at, buf, bsize);
+				r_io_read_at (core->io, at, buf, bsize);
 			}
 			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i, R_ANAL_OP_MASK_ALL);
 			if (ret) {

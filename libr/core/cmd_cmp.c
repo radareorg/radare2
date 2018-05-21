@@ -335,7 +335,7 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 	if (!buf) {
 		return false;
 	}
-	r_core_read_at (core, off, buf, core->blocksize + 32);
+	r_io_read_at (core->io, off, buf, core->blocksize + 32);
 	switch (mode) {
 	case 'c': // columns
 		for (i = j = 0; i < core->blocksize && j < core->blocksize;) {
@@ -660,7 +660,7 @@ static int cmd_cmp(void *data, const char *input) {
 			ut8 *b = malloc (core->blocksize);
 			if (b != NULL) {
 				memset (b, 0xff, core->blocksize);
-				r_core_read_at (core, addr, b, core->blocksize);
+				r_io_read_at (core->io, addr, b, core->blocksize);
 				r_print_hexdiff (core->print, core->offset, block,
 					addr, b, core->blocksize, col);
 				free (b);

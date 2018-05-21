@@ -1109,7 +1109,7 @@ static void cmd_debug_backtrace(RCore *core, const char *input) {
 			oaddr = addr;
 			/* XXX Bottleneck..we need to reuse the bytes read by traptrace */
 			// XXX Do asm.arch should define the max size of opcode?
-			r_core_read_at (core, addr, buf, 32); // XXX longer opcodes?
+			r_io_read_at (core->io, addr, buf, 32); // XXX longer opcodes?
 			r_anal_op (core->anal, &analop, addr, buf, sizeof (buf), R_ANAL_OP_MASK_ALL);
 		} while (r_bp_traptrace_at (core->dbg->bp, addr, analop.size));
 		r_bp_traptrace_enable (core->dbg->bp, false);

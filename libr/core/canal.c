@@ -1379,7 +1379,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 			if (!r_io_read_at (core->io, at + bblen, buf, 4)) { // ETOOSLOW
 				goto error;
 			}
-			r_core_read_at (core, at + bblen, buf, core->anal->opt.bb_max_size);
+			r_io_read_at (core->io, at + bblen, buf, core->anal->opt.bb_max_size);
 #else
 			if (!r_io_read_at (core->io, at + bblen, buf, core->anal->opt.bb_max_size)) { // ETOOSLOW
 				goto error;

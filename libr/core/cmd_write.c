@@ -268,7 +268,7 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 static void cmd_write_bits(RCore *core, int set, ut64 val) {
 	ut64 ret, orig;
 	// used to set/unset bit in current address
-	r_core_read_at (core, core->offset, (ut8*)&orig, sizeof (orig));
+	r_io_read_at (core->io, core->offset, (ut8*)&orig, sizeof (orig));
 	if (set) {
 		ret = orig | val;
 	} else {

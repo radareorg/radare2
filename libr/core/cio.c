@@ -414,13 +414,6 @@ R_API int r_core_block_read(RCore *core) {
 	return -1;
 }
 
-R_API bool r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
-	if (core) {
-		return r_io_read_at (core->io, addr, buf, size);
-	}
-	return false;
-}
-
 R_API int r_core_is_valid_offset (RCore *core, ut64 offset) {
 	if (!core) {
 		eprintf ("r_core_is_valid_offset: core is NULL\n");
