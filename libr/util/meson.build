@@ -42,6 +42,7 @@ files = [
   'qrcode.c',
   'queue.c',
   'asn1.c',
+  'astr.c',
   'pkcs7.c',
   'x509.c',
   'ctype.c',
