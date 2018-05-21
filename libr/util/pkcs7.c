@@ -1,9 +1,8 @@
-/* radare2 - LGPL - Copyright 2017 - wargio */
+/* radare2 - LGPL - Copyright 2017-2018 - wargio */
 
 #include <stdlib.h>
 #include <string.h>
 #include <r_util.h>
-#include <r_types.h>
 #include "./x509.h"
 #include "./pkcs7.h"
 
