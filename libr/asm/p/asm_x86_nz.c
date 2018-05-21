@@ -2009,16 +2009,15 @@ static int opout(RAsm *a, ut8 *data, const Opcode *op) {
 		if (immediate > 255 || immediate < -128) {
 			return -1;
 		}
-		if (op->operands[0].reg == X86R_AL && op->operands[1].type & OT_BYTE) {
+		if (op->operands[1].reg == X86R_AL && op->operands[1].type & OT_BYTE) {
 			data[l++] = 0xe6;
-		} else if (op->operands[0].reg == X86R_AX && op->operands[0].type & OT_BYTE) {
+		} else if (op->operands[1].reg == X86R_AX && op->operands[1].type & OT_WORD) {
 			data[l++] = 0x66;
 			data[l++] = 0xe7;
 		} else if (op->operands[1].reg == X86R_EAX && op->operands[1].type & OT_DWORD) {
 			data[l++] = 0xe7;
 		} else {
-			// TODO: this is wrong
-			data[l++] = 0xe7;
+			return -1;
 		}
 		data[l++] = immediate;
 	} else {
