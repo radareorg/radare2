@@ -8,6 +8,15 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#define USE_OWNTIMER 1
+#if USE_OWNTIMER
+#include "io_gprobe.h"
+#else
+#define Timersub timersub
+#define Timeradd timeradd
+#define Timercmp timercmp
+#endif
+
 #if __WINDOWS__
 #include <cfgmgr32.h>
 #include <setupapi.h>
@@ -133,7 +142,6 @@ static int gprobe_send_request_i2c (struct gport *port, RBuffer *request) {
 	if (write (port->fd, r_buf_buffer (request), r_buf_size (request)) != r_buf_size (request)) {
 		return -1;
 	}
-
 	return 0;
 }
 
@@ -161,7 +169,6 @@ static int i2c_open (struct gport *port) {
 		port->fd = -1;
 		return -1;
 	}
-
 	port->fd = file;
 	return 0;
 }
@@ -321,13 +328,12 @@ static int sp_open (struct gport *port) {
 
 	return 0;
 #else
-	struct termios tty;
+	struct termios tty = {0};
 
 	if ((port->fd = r_sandbox_open (port->name, O_NONBLOCK | O_NOCTTY | O_RDWR, 0)) < 0) {
 		return -1;
 	}
 
-	memset (&tty, 0, sizeof tty);
 	if (tcgetattr (port->fd, &tty) != 0) {
 		sp_close (port);
 		return -1;
@@ -347,7 +353,11 @@ static int sp_open (struct gport *port) {
 	tty.c_cflag |= (CLOCAL | CREAD);
 	tty.c_cflag &= ~(PARENB | PARODD);
 	tty.c_cflag &= ~CSTOPB;
+#ifdef CRTSCTS
 	tty.c_cflag &= ~CRTSCTS;
+#else
+	tty.c_cflag &= ~020000000000;
+#endif
 
 	if (tcsetattr (port->fd, TCSANOW, &tty) != 0) {
 		return -1;
@@ -428,7 +438,7 @@ static int sp_blocking_read (struct gport *port, void *buf,
 		delta.tv_sec = timeout_ms / 1000;
 		delta.tv_usec = (timeout_ms % 1000) * 1000;
 		/* Calculate time at which we should give up. */
-		timeradd (&start, &delta, &end);
+		Timeradd (&start, &delta, &end);
 	}
 
 	FD_ZERO (&fds);
@@ -443,11 +453,11 @@ static int sp_blocking_read (struct gport *port, void *buf,
 		 */
 		if (timeout_ms && started) {
 			gettimeofday (&now, NULL);
-			if (timercmp (&now, &end, >)) {
+			if (Timercmp (&now, &end, >)) {
 				/* Timeout has expired. */
 				break;
 			}
-			timersub (&end, &now, &delta);
+			Timersub (&end, &now, &delta);
 		}
 		result = select (port->fd + 1, &fds, NULL, NULL, timeout_ms ? &delta : NULL);
 		started = 1;
@@ -569,7 +579,7 @@ static int sp_blocking_write (struct gport *port, const void *buf,
 		delta.tv_sec = timeout_ms / 1000;
 		delta.tv_usec = (timeout_ms % 1000) * 1000;
 		/* Calculate time at which we should give up. */
-		timeradd (&start, &delta, &end);
+		Timeradd (&start, &delta, &end);
 	}
 
 	FD_ZERO (&fds);
@@ -584,11 +594,11 @@ static int sp_blocking_write (struct gport *port, const void *buf,
 		 */
 		if (timeout_ms && started) {
 			gettimeofday (&now, NULL);
-			if (timercmp (&now, &end, >)) {
+			if (Timercmp (&now, &end, >)) {
 				/* Timeout has expired. */
 				break;
 			}
-			timersub (&end, &now, &delta);
+			Timersub (&end, &now, &delta);
 		}
 		result = select (port->fd + 1, NULL, &fds, NULL, timeout_ms ? &delta : NULL);
 		started = 1;
