@@ -388,6 +388,9 @@ static const char *help_msg_ag[] = {
 	"aga", "[format] [fcn addr]", "Data references graph",
 	"agd", "[format] [fcn addr]", "Diff graph",
 	"agi", "[format]", "Imports graph",
+	"agC", "[format]", "Global callgraph",
+	"agR", "[format]", "Global references graph",
+	"agA", "[format]", "Global data references graph",
 	"agg", "[format]", "Custom graph",
 	"ag-", "", "Clear the custom graph",
 	"agn", "[?] title body", "Add a node to the custom graph",
@@ -5894,11 +5897,12 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		case ' ':
 		case 0: {
 			core->graph->is_callgraph = true;
-			char *cmd = r_str_newf ("ag-; .agc* %lld; agg%c;", UT64_MAX, input[1]);
+			char *cmd = r_str_newf ("ag-; .agC*; agg%c;", input[1]);
 			if (cmd && *cmd) {
 				r_core_cmd0 (core, cmd);
 			}
 			free (cmd);
+			core->graph->is_callgraph = false;
 			break;
 			}
 		case 'J':
@@ -6046,12 +6050,14 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			if (cmd && *cmd) {
 				r_core_cmd0 (core, cmd);
 			}
+			core->graph->is_callgraph = false;
 			free (cmd);
 			break;
 			}
 		case 0:
 			core->graph->is_callgraph = true;
 			r_core_cmd0 (core, "ag-; .agc* $$; agg;");
+			core->graph->is_callgraph = false;
 			break;
 		case 'g': {
 			ut64 addr = input[2] ? r_num_math (core->num, input + 2): core->offset;
