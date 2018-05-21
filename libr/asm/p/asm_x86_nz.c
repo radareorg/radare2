@@ -95,11 +95,11 @@ typedef enum register_t {
 typedef struct operand_t {
 	ut32 type;
 	st8 sign;
+	struct {
+		Register reg;
+		bool extended;
+	};
 	union {
-		struct {
-			Register reg;
-			bool extended;
-		};
 		struct {
 			long offset;
 			st8 offset_sign;
