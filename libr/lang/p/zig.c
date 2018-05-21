@@ -45,14 +45,18 @@ static int lang_zig_file(RLang *lang, const char *file) {
 
 	char *path = r_str_newf ("%s/%s.%s", libpath, libname, R_LIB_EXT);
 	lib = r_lib_dl_open (path);
-	if (lib!= NULL) {
+	if (lib) {
 		void (*fcn)(RCore *);
 		fcn = r_lib_dl_sym (lib, "entry");
-		if (fcn) fcn (lang->user);
-		else eprintf ("Cannot find 'entry' symbol in library\n");
+		if (fcn) {
+			fcn (lang->user);
+		} else {
+			eprintf ("Cannot find 'entry' symbol in library\n");
+		}
 		r_lib_dl_close (lib);
 	} else {
 		eprintf ("Cannot open library\n");
+		free (path);
 		return false;
 	}
 	r_file_rm (path); // remove lib

@@ -1607,18 +1607,18 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 		if (bb->addr == UT64_MAX) {
 			continue;
 		}
-
 		char *title = get_title (bb->addr);
 		char *body = r_core_cmd_strf (core, "pdb @ 0x%08"PFMT64x, bb->addr);
 		char *body_b64 = r_base64_encode_dyn (body, -1);
 
 		if (!title || !body || !body_b64) {
-		    return false;
+			free (body_b64);
+			free (body);
+			free (title);
+			return false;
 		}
-
 		body_b64 = r_str_prefix (body_b64, "base64:");
 		r_cons_printf ("agn %s %s\n", title, body_b64);
-
 		free (body);
 		free (body_b64);
 		free (title);
@@ -1631,7 +1631,6 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 		if (bb->addr == UT64_MAX) {
 			continue;
 		}
-
 		char *u = get_title (bb->addr), *v = NULL;
 		if (bb->jump != UT64_MAX) {
 			v = get_title (bb->jump);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2017 pancake, nibble */
+/* radare - LGPL - Copyright 2010-2018 pancake, nibble */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -66,39 +66,39 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 				perror ("malloc");
 				return 0;
 			}
-			if (r_buf_read_at (bin->b, shdrp->sh_offset, (ut8*)rel, shdrp->sh_size) == -1)
+			if (r_buf_read_at (bin->b, shdrp->sh_offset, (ut8*)rel, shdrp->sh_size) == -1) {
 				perror("read (rel)");
-
+			}
 			for (j = 0, relp = rel; j < shdrp->sh_size; j += sizeof(Elf_(Rel)), relp++) {
 				/* rewrite relp->r_offset */
 				if (relp->r_offset - got_addr + got_offset >= rsz_offset + rsz_osize) {
 					relp->r_offset+=delta;
 					off = shdrp->sh_offset + j;
-					if (r_buf_write_at (bin->b, off, (ut8*)relp, sizeof (Elf_(Rel))) == -1)
+					if (r_buf_write_at (bin->b, off, (ut8*)relp, sizeof (Elf_(Rel))) == -1) {
 						perror("write (imports)");
+					}
 				}
 			}
 			free(rel);
 			break;
 		} else if (!strcmp (&strtab[shdrp->sh_name], ".rela.plt")) {
 			Elf_(Rela) *rel, *relp;
-			rel = (Elf_(Rela) *)malloc (1+shdrp->sh_size);
+			rel = (Elf_(Rela) *)malloc (shdrp->sh_size + 1);
 			if (!rel) {
 				perror("malloc");
 				return 0;
 			}
-
-			if (r_buf_read_at (bin->b, shdrp->sh_offset, (ut8*)rel, shdrp->sh_size) == -1)
+			if (r_buf_read_at (bin->b, shdrp->sh_offset, (ut8*)rel, shdrp->sh_size) == -1) {
 				perror("read (rel)");
-
+			}
 			for (j = 0, relp = rel; j < shdrp->sh_size; j += sizeof(Elf_(Rela)), relp++) {
 				/* rewrite relp->r_offset */
 				if (relp->r_offset - got_addr + got_offset >= rsz_offset + rsz_osize) {
 					relp->r_offset+=delta;
 					off = shdrp->sh_offset + j;
-
-					if (r_buf_write_at (bin->b, off, (ut8*)relp, sizeof (Elf_(Rela))) == -1)
+					if (r_buf_write_at (bin->b, off, (ut8*)relp, sizeof (Elf_(Rela))) == -1) {
 						perror("write (imports)");
+					}
 				}
 			}
 			free(rel);
@@ -113,12 +113,14 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 			done = 1;
 		} else if (shdrp->sh_offset >= rsz_offset + rsz_osize) {
 			shdrp->sh_offset += delta;
-			if (shdrp->sh_addr) shdrp->sh_addr += delta;
-
+			if (shdrp->sh_addr) {
+				shdrp->sh_addr += delta;
+			}
 		}
 		off = ehdr->e_shoff + i * sizeof (Elf_(Shdr));
-		if (r_buf_write_at (bin->b, off, (ut8*)shdrp, sizeof (Elf_(Shdr))) == -1)
+		if (r_buf_write_at (bin->b, off, (ut8*)shdrp, sizeof (Elf_(Shdr))) == -1) {
 			perror ("write (shdr)");
+		}
 		printf ("-> elf section (%s)\n", &strtab[shdrp->sh_name]);
 	}
 
@@ -142,14 +144,18 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 	}
 
 	/* rewrite other elf pointers (entrypoint, phoff, shoff) */
-	if (ehdr->e_entry - bin->baddr >= rsz_offset + rsz_osize)
+	if (ehdr->e_entry - bin->baddr >= rsz_offset + rsz_osize) {
 		ehdr->e_entry += delta;
-	if (ehdr->e_phoff >= rsz_offset + rsz_osize)
+	}
+	if (ehdr->e_phoff >= rsz_offset + rsz_osize) {
 		ehdr->e_phoff += delta;
-	if (ehdr->e_shoff >= rsz_offset + rsz_osize)
+	}
+	if (ehdr->e_shoff >= rsz_offset + rsz_osize) {
 		ehdr->e_shoff += delta;
-	if (r_buf_write_at (bin->b, 0, (ut8*)ehdr, sizeof (Elf_(Ehdr))) == -1)
+	}
+	if (r_buf_write_at (bin->b, 0, (ut8*)ehdr, sizeof (Elf_(Ehdr))) == -1) {
 		perror ("write (ehdr)");
+	}
 
 	/* inverse order to write bodies .. avoid overlapping here */
 	/* XXX Check when delta is negative */
@@ -179,36 +185,40 @@ bool Elf_(r_bin_elf_del_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 	if (!bin->phdr) {
 		return false;
 	}
-	for (i = 0; i < bin->ehdr.e_phnum; i++)
-		if (bin->phdr[i].p_type == PT_DYNAMIC) {
-			if (!(dyn = malloc (bin->phdr[i].p_filesz + 1))) {
-				perror ("malloc (dyn)");
-				return false;
-			}
-			if (r_buf_read_at (bin->b, bin->phdr[i].p_offset, (ut8*)dyn, bin->phdr[i].p_filesz) == -1) {
-				eprintf ("Error: read (dyn)\n");
-				free (dyn);
-				return false;
-			}
-			if ((ndyn = (int)(bin->phdr[i].p_filesz / sizeof (Elf_(Dyn)))) > 0) {
-				for (j = 0; j < ndyn; j++)
-					if (dyn[j].d_tag == DT_STRTAB) {
-						stroff = (ut64)(dyn[j].d_un.d_ptr - bin->baddr);
-						break;
-					}
-				for (j = 0; j < ndyn; j++)
-					if (dyn[j].d_tag == DT_RPATH || dyn[j].d_tag == DT_RUNPATH) {
-						if (r_buf_write_at (bin->b, stroff + dyn[j].d_un.d_val,
-									(ut8*)"", 1) == -1) {
-							eprintf ("Error: write (rpath)\n");
-							free (dyn);
-							return false;
-						}
-					}
-			}
-			free (dyn);
-			break;
+	for (i = 0; i < bin->ehdr.e_phnum; i++) {
+		if (bin->phdr[i].p_type != PT_DYNAMIC) {
+			continue;
 		}
+		if (!(dyn = malloc (bin->phdr[i].p_filesz + 1))) {
+			perror ("malloc (dyn)");
+			return false;
+		}
+		if (r_buf_read_at (bin->b, bin->phdr[i].p_offset, (ut8*)dyn, bin->phdr[i].p_filesz) == -1) {
+			eprintf ("Error: read (dyn)\n");
+			free (dyn);
+			return false;
+		}
+		if ((ndyn = (int)(bin->phdr[i].p_filesz / sizeof (Elf_(Dyn)))) > 0) {
+			for (j = 0; j < ndyn; j++) {
+				if (dyn[j].d_tag == DT_STRTAB) {
+					stroff = (ut64)(dyn[j].d_un.d_ptr - bin->baddr);
+					break;
+				}
+			}
+			for (j = 0; j < ndyn; j++) {
+				if (dyn[j].d_tag == DT_RPATH || dyn[j].d_tag == DT_RUNPATH) {
+					if (r_buf_write_at (bin->b, stroff + dyn[j].d_un.d_val,
+								(ut8*)"", 1) == -1) {
+						eprintf ("Error: write (rpath)\n");
+						free (dyn);
+						return false;
+					}
+				}
+			}
+		}
+		free (dyn);
+		break;
+	}
 	return true;
 }
 
