@@ -1474,6 +1474,8 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 				}
 			}
 		} else if (op->operands[0].type & OT_MEMORY) {
+		int offset= op->operands[0].offset * op->operands[0].offset_sign;
+		printf("%d\n", offset);// = op->operands[1].offset * op->operands[1].offset_sign;
 			if (op->operands[1].type & OT_CONSTANT && !op->operands[0].explicit_size) {
 				return -1;
 			}
@@ -1686,6 +1688,7 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 			return -1;
 		}
 		offset = op->operands[1].offset * op->operands[1].offset_sign;
+		printf("%d\n", offset);// = op->operands[1].offset * op->operands[1].offset_sign;
 		if (op->operands[0].reg == X86R_EAX && op->operands[1].regs[0] == X86R_UNDEFINED) {
 			if (a->bits == 64) {
 				data[l++] = 0x48;
@@ -2181,10 +2184,10 @@ static int optest(RAsm *a, ut8 *data, const Opcode *op) {
 		} else {
 			data[l++] = 0xc0 | op->operands[0].reg;
 		}
-		data[l++] = op->operands[1].reg >> 0;
-		data[l++] = op->operands[1].reg >> 8;
-		data[l++] = op->operands[1].reg >> 16;
-		data[l++] = op->operands[1].reg >> 24;
+		data[l++] = op->operands[1].immediate >> 0;
+		data[l++] = op->operands[1].immediate >> 8;
+		data[l++] = op->operands[1].immediate >> 16;
+		data[l++] = op->operands[1].immediate >> 24;
 		return l;
 	}
 	if (op->operands[0].type & OT_BYTE ||
