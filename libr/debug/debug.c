@@ -965,7 +965,7 @@ static ut64 get_prev_instr(RDebug *dbg, ut64 from, ut64 to) {
 
 // TODO: add <int steps> parameter for repetition like step() and step_over() do and change return type to int
 R_API bool r_debug_step_back(RDebug *dbg) {
-	ut64 pc, prev = 0, end, cnt = 0;
+	ut64 pc, prev = 0, end;
 	RDebugSession *before;
 
 	if (r_debug_is_dead (dbg)) {
@@ -985,6 +985,7 @@ R_API bool r_debug_step_back(RDebug *dbg) {
 		return false;
 	}
 #if 0
+	ut64 cnt = 0;
 	//eprintf ("before session (%d) 0x%08"PFMT64x"\n", before->key.id, before->key.addr);
 
 	/* Rollback to previous state */

@@ -8,7 +8,7 @@ extern "C" {
 struct r_oid_list_t {
 	const char* oid;
 	const char* name;
-} X509OIDList [2230] = {
+} X509OIDList [] = {
 	{"0.2.262.1.10", "Telesec"},
 	{"0.2.262.1.10.0", "extension"},
 	{"0.2.262.1.10.1", "mechanism"},

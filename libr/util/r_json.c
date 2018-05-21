@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017 - wargio */
+/* radare2 - LGPL - Copyright 2017-2018 - wargio */
 
 #include <r_util.h>
 #include <r_types.h>
@@ -18,12 +18,13 @@ enum {
 
 R_API void r_json_var_free (RJSVar* var) {
 	ut32 i;
-	if (!var || var->ref > 1) {
-		if (var)
-			var->ref--;
+	if (!var) {
 		return;
 	}
 	var->ref--;
+	if (var->ref > 0) {
+		return;
+	}
 	switch (var->type) {
 	case R_JS_STRING:
 		free ((char*) var->string.s);

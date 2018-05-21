@@ -9,9 +9,6 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdarg.h>
-#ifdef _MSC_VER
-#define strncasecmp _strnicmp
-#endif
 
 /* stable code */
 static const char *nullstr = "";
@@ -35,6 +32,22 @@ static const char *rwxstr[] = {
 	[14] = "rw-",
 	[15] = "rwx",
 };
+
+R_API int r_str_casecmp(const char *s1, const char *s2) {
+#ifdef _MSC_VER
+	return stricmp (s1, s2, n);
+#else
+	return strcasecmp (s1, s2);
+#endif
+}
+
+R_API int r_str_ncasecmp(const char *s1, const char *s2, size_t n) {
+#ifdef _MSC_VER
+	return _strnicmp (s1, s2, n);
+#else
+	return strncasecmp (s1, s2, n);
+#endif
+}
 
 // In-place replace the first instance of the character a, with the character b.
 R_API int r_str_replace_char_once(char *s, int a, int b) {
@@ -522,15 +535,15 @@ R_API int r_str_char_count(const char *string, char ch) {
 }
 
 // Counts the number of words (separted by separator charactors: newlines, tabs,
-// return, space). See r_util.h for more details of the ISSEPARATOR macro.
+// return, space). See r_util.h for more details of the IS_SEPARATOR macro.
 R_API int r_str_word_count(const char *string) {
 	const char *text, *tmp;
 	int word;
 
-	for (text = tmp = string; *text && ISSEPARATOR (*text); text++);
+	for (text = tmp = string; *text && IS_SEPARATOR (*text); text++);
 	for (word = 0; *text; word++) {
-		for (;*text && !ISSEPARATOR (*text); text++);
-		for (tmp = text; *text && ISSEPARATOR (*text); text++);
+		for (;*text && !IS_SEPARATOR (*text); text++);
+		for (tmp = text; *text && IS_SEPARATOR (*text); text++);
 	}
 	return word;
 }
@@ -730,7 +743,7 @@ R_API int r_str_ccpy(char *dst, char *src, int ch) {
 R_API char *r_str_word_get_first(const char *text) {
 	char *ret;
 	int len = 0;
-	for (;*text && ISSEPARATOR (*text); text++);
+	for (;*text && IS_SEPARATOR (*text); text++);
 	/* strdup */
 	len = strlen (text);
 	ret = (char *)malloc (len + 1);
@@ -1701,7 +1714,7 @@ R_API char **r_str_argv(const char *cmdline, int *_argc) {
 		int doublequoted = 0;
 
 		// Seek the beginning of next argument (skip whitespaces)
-		while (cmdline[cmdline_current] != '\0' && ISWHITECHAR (cmdline[cmdline_current])) {
+		while (cmdline[cmdline_current] != '\0' && IS_WHITECHAR (cmdline[cmdline_current])) {
 			cmdline_current++;
 		}
 
@@ -2176,7 +2189,7 @@ R_API int r_print_format_length(const char *fmt) {
 	int viewflags = 0;
 	nargs = endian = i = j = 0;
 
-	while (*arg && ISWHITECHAR (*arg)) {
+	while (*arg && IS_WHITECHAR (*arg)) {
 		arg++;
 	}
 	/* get times */
