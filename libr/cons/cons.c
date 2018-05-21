@@ -1174,6 +1174,7 @@ R_API void r_cons_highlight(const char *word) {
 		rword = malloc (word_len + linv[0] + linv[1] + 1);
 		if (!rword) {
 			free (cpos);
+			free (clean);
 			return;
 		}
 		strcpy (rword, inv[0]);

@@ -34,13 +34,13 @@ R_API bool r_type_isenum(Sdb *TDB, const char *name) {
 }
 
 R_API RList* r_type_get_enum (Sdb *TDB, const char *name) {
-	RList *res = r_list_new ();
 	char *p, *val, var[128], var2[128];
 	int n;
 
 	if (!r_type_isenum (TDB, name)) {
 		return NULL;
 	}
+	RList *res = r_list_new ();
 	snprintf (var, sizeof (var), "enum.%s", name);
 	for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
 		RTypeEnum *member = R_NEW0 (RTypeEnum);
@@ -376,7 +376,7 @@ R_API void r_type_del(Sdb *TDB, const char *name) {
 		sdb_unset (TDB, name, 0);
 	} else if (!strcmp (kind, "enum")) {
 		RList *list = r_type_get_enum (TDB, name);
-		RTypeEnum *member = R_NEW0 (RTypeEnum);
+		RTypeEnum *member;
 		RListIter *iter;
 		r_list_foreach (list, iter, member) {
 			sdb_unset (TDB, sdb_fmt ("enum.%s.%s", name, member->name), 0);

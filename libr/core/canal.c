@@ -1767,6 +1767,9 @@ R_API void r_core_anal_importxrefs(RCore *core) {
 
 	RListIter *iter;
 	RBinImport *imp;
+	if (!obj) {
+		return;
+	}
 	r_list_foreach (obj->imports, iter, imp) {
 		ut64 addr = lit ? r_core_bin_impaddr (core->bin, va, imp->name): 0;
 		if (addr) {
