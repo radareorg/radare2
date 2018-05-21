@@ -4483,20 +4483,23 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 	case 'e': // "aoe"
 	case 'r': {
 		int count = 1;
+		int obs = core->blocksize;
 		if (input[1] && input[2]) {
 			l = (int)r_num_get (core->num, input + 1);
 			if (l > 0) {
 				count = l;
 			}
-			if (l > tbs) {
-				r_core_block_size (core, l * 4);
-			//	len = l;
+			l *= 8;
+			if (l > obs) {
+				r_core_block_size (core, l);
 			}
 		} else {
-			len = l = core->blocksize;
 			count = 1;
 		}
-		core_anal_bytes (core, core->block, len, count, input[0]);
+		core_anal_bytes (core, core->block, core->blocksize, count, input[0]);
+		if (obs != core->blocksize) {
+			r_core_block_size (core, obs);
+		}
 		}
 		break;
 	case '*':
