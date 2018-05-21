@@ -984,6 +984,9 @@ static RDebugMap* linux_map_alloc (RDebug *dbg, ut64 addr, int size) {
 		sc_name = "mmap";
 	}
 	num = r_syscall_get_num (dbg->anal->syscall, sc_name);
+#ifndef MAP_ANONYMOUS
+#define MAP_ANONYMOUS 0x20
+#endif
 	snprintf (code, sizeof (code),
 		"sc_mmap@syscall(%d);\n"
 		"main@naked(0) { .rarg0 = sc_mmap(0x%08"PFMT64x",%d,%d,%d,%d,%d);break;\n"
