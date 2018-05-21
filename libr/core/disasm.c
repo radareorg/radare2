@@ -137,7 +137,7 @@ typedef struct {
 	bool show_leahints;
 	bool show_slow;
 	int cmtcol;
-	bool show_fcnlines;
+	bool show_lines_fcn;
 	bool show_calls;
 	bool show_cmtflgrefs;
 	bool show_cycles;
@@ -653,7 +653,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->asm_meta = r_config_get_i (core->config, "asm.meta");
 	ds->show_reloff = r_config_get_i (core->config, "asm.reloff");
 	ds->show_reloff_flags = r_config_get_i (core->config, "asm.reloff.flags");
-	ds->show_fcnlines = r_config_get_i (core->config, "asm.fcnlines");
+	ds->show_lines_fcn = r_config_get_i (core->config, "asm.lines.fcn");
 	ds->show_comments = r_config_get_i (core->config, "asm.comments");
 	ds->show_jmphints = r_config_get_i (core->config, "asm.jmphints");
 	ds->show_leahints = r_config_get_i (core->config, "asm.leahints");
@@ -1509,7 +1509,7 @@ static void ds_show_functions(RDisasmState *ds) {
 		}
 #endif
 		//ds_set_pre (ds, core->cons->vline[CORNER_TL]);
-		if (ds->show_fcnlines) {
+		if (ds->show_lines_fcn) {
 			ds->pre = DS_PRE_FCN_HEAD;
 		}
 		ds_print_pre (ds);
@@ -1527,7 +1527,7 @@ static void ds_show_functions(RDisasmState *ds) {
 		ds_newline (ds);
 	}
 	R_FREE (sign);
-	if (ds->show_fcnlines) {
+	if (ds->show_lines_fcn) {
 		ds->pre = DS_PRE_FCN_MIDDLE;
 	}
 	ds->stackptr = core->anal->stackptr;
@@ -1677,7 +1677,7 @@ static void ds_setup_print_pre(RDisasmState *ds, bool tail, bool middle) {
 
 static void ds_setup_pre(RDisasmState *ds, bool tail, bool middle) {
 	ds->cmtcount = 0;
-	if (!ds->show_functions || !ds->show_fcnlines) {
+	if (!ds->show_functions || !ds->show_lines_fcn) {
 		ds->pre = DS_PRE_NONE;
 		return;
 	}

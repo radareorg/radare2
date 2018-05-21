@@ -1240,14 +1240,14 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					//	fcn->addr, bbi->addr, difftype, str, fcn->name, bbi->addr);
 					RConfigHold *hc = r_config_hold_new (core->config);
 					r_config_save_num (hc, "scr.color", "scr.utf8", "asm.offset", "asm.lines",
-							"asm.cmt.right", "asm.fcnlines", "asm.bytes", NULL);
+							"asm.cmt.right", "asm.lines.fcn", "asm.bytes", NULL);
 					RDiff *d = r_diff_new ();
 					r_config_set_i (core->config, "scr.color", 0);
 					r_config_set_i (core->config, "scr.utf8", 0);
 					r_config_set_i (core->config, "asm.offset", 0);
 					r_config_set_i (core->config, "asm.lines", 0);
 					r_config_set_i (core->config, "asm.cmt.right", 0);
-					r_config_set_i (core->config, "asm.fcnlines", 0);
+					r_config_set_i (core->config, "asm.lines.fcn", 0);
 					r_config_set_i (core->config, "asm.bytes", 0);
 
 					if (bbi->diff && bbi->diff->type != R_ANAL_DIFF_TYPE_MATCH && core->c2) {
@@ -1592,7 +1592,7 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 
 	RConfigHold *hc = r_config_hold_new (core->config);
 	r_config_save_num (hc, "scr.color", "scr.utf8", "asm.marks", "asm.offset", "asm.lines",
-	  "asm.cmt.right", "asm.cmt.col", "asm.fcnlines", "asm.bytes", NULL);
+	  "asm.cmt.right", "asm.cmt.col", "asm.lines.fcn", "asm.bytes", NULL);
 	/*r_config_set_i (core->config, "scr.color", 0);*/
 	r_config_set_i (core->config, "scr.utf8", 0);
 	r_config_set_i (core->config, "asm.marks", 0);
@@ -1600,7 +1600,7 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 	r_config_set_i (core->config, "asm.lines", 0);
 	r_config_set_i (core->config, "asm.cmt.right", 0);
 	r_config_set_i (core->config, "asm.cmt.col", 0);
-	r_config_set_i (core->config, "asm.fcnlines", 0);
+	r_config_set_i (core->config, "asm.lines.fcn", 0);
 	r_config_set_i (core->config, "asm.bytes", 0);
 
 	r_list_foreach (fcn->bbs, iter, bb) {
