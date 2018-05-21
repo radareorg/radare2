@@ -46,6 +46,7 @@ typedef struct r_flag_item_t {
 	char *color;    /* item color */
 	char *comment;  /* item comment */
 	char *alias;    /* used to define a flag based on a math expression (e.g. foo + 3) */
+	bool section_end; /* is a section_end flag */
 } RFlagItem;
 
 typedef struct r_flag_t {
@@ -96,6 +97,7 @@ R_API bool r_flag_exist_at(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64
 R_API RFlagItem *r_flag_get(RFlag *f, const char *name);
 R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off);
 R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off);
+R_API RFlagItem *r_flag_get_priority(RFlag *f, ut64 off);
 R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest);
 R_API const RList* /*<RFlagItem*>*/ r_flag_get_list(RFlag *f, ut64 off);
 R_API char *r_flag_get_liststr(RFlag *f, ut64 off);
