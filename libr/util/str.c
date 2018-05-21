@@ -652,6 +652,17 @@ R_API char *r_str_newlen(const char *str, int len) {
 	return buf;
 }
 
+R_API char *r_str_trunc_ellipsis(const char *str, int len) {
+	char *buf;
+	if (strlen (str) < len) {
+		buf = strdup (str);
+	} else {
+		buf = r_str_newlen (str, len);
+		strcpy (buf + len - 4, "...");
+	}
+	return buf;
+}
+
 // Returns a new heap-allocated string that matches the format-string
 // specification.
 R_API char *r_str_newf(const char *fmt, ...) {

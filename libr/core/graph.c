@@ -3317,7 +3317,8 @@ R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char 
 	if (!res) {
 		return NULL;
 	}
-	res->title = title? strdup (title): strdup ("");
+
+	res->title = title? r_str_trunc_ellipsis (title, 255) : strdup ("");
 	res->body = body? strdup (body): strdup ("");
 	res->layer = -1;
 	res->pos_in_layer = -1;
@@ -3325,7 +3326,7 @@ R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char 
 	res->is_reversed = false;
 	res->klass = -1;
 	res->gnode = r_graph_add_node (g->graph, res);
-	sdb_num_set (g->nodes, title, (ut64) (size_t) res, 0);
+	sdb_num_set (g->nodes, res->title, (ut64) (size_t) res, 0);
 	if (res->title) {
 		char *s, *estr, *b;
 		size_t len;
@@ -3345,7 +3346,9 @@ R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char 
 }
 
 R_API bool r_agraph_del_node(const RAGraph *g, const char *title) {
-	RANode *an, *res = r_agraph_get_node (g, title);
+	char *title_trunc = r_str_trunc_ellipsis (title, 255);
+	RANode *an, *res = r_agraph_get_node (g, title_trunc);
+	free (title_trunc);
 	const RList *innodes;
 	RGraphNode *gn;
 	RListIter *it;
@@ -3353,7 +3356,7 @@ R_API bool r_agraph_del_node(const RAGraph *g, const char *title) {
 	if (!res) {
 		return false;
 	}
-	sdb_set (g->nodes, title, NULL, 0);
+	sdb_set (g->nodes, res->title, NULL, 0);
 	sdb_array_remove (g->db, "agraph.nodes", res->title, 0);
 	sdb_set (g->db, sdb_fmt ("agraph.nodes.%s", res->title), NULL, 0);
 	sdb_set (g->db, sdb_fmt ("agraph.nodes.%s.body", res->title), 0, 0);
@@ -3426,7 +3429,10 @@ R_API RANode *r_agraph_get_first_node(const RAGraph *g) {
 }
 
 R_API RANode *r_agraph_get_node(const RAGraph *g, const char *title) {
-	return (RANode *) (size_t) sdb_num_get (g->nodes, title, NULL);
+	char *title_trunc = r_str_trunc_ellipsis (title, 255);
+	RANode *node = (RANode *) (size_t) sdb_num_get (g->nodes, title_trunc, NULL);
+	free (title_trunc);
+	return node;
 }
 
 R_API void r_agraph_add_edge(const RAGraph *g, RANode *a, RANode *b) {
