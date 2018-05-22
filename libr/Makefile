@@ -84,13 +84,18 @@ E+=../shlr/bochs/lib/libbochs.${EXT_AR}
 #E+=../shlr/sdb/src/libsdb.${EXT_AR}
 #endif
 
+ifeq ($(USE_CAPSTONE),1)
+E+=$(CAPSTONE_LDFLAGS)
+else
+E+=../shlr/capstone/libcapstone.${EXT_AR}
+endif
+
 libr.${EXT_SO}: .libr
 	$(CC) -fvisibility=hidden $(MLFLAGS) -shared -dynamiclib -o libr.${EXT_SO}  \
 		.libr/*.o \
 		../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/libr_java.${EXT_AR} \
 		../shlr/zip/librz.${EXT_AR} \
-		../shlr/libr_shlr.${EXT_AR} $(E)\
-		../shlr/capstone/libcapstone.${EXT_AR}
+		../shlr/libr_shlr.${EXT_AR} $(E)
 
 else
 
