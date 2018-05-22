@@ -1815,8 +1815,10 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 					mod = 0x1;
 				}
 			} else {
-				if (op->operands[1].regs[0] == X86R_EIP) {
+				if (op->operands[1].regs[0] == X86R_EIP && (op->operands[0].type & OT_DWORD)) {
 					data[l++] = 0x0d;
+				} else if (op->operands[1].regs[0] == X86R_RIP && (op->operands[0].type & OT_QWORD)) {
+					data[l++] = 0x05;
 				} else {
 					data[l++] = mod << 5 | op->operands[0].reg << 3 | op->operands[1].regs[0];
 				}
@@ -1826,14 +1828,14 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 			if (mod >= 0x2) {
 				data[l++] = offset;
-				if (op->operands[1].offset > 128) {
+				if (op->operands[1].offset > 128 || op->operands[1].regs[0] == X86R_EIP) {
 					data[l++] = offset >> 8;
 					data[l++] = offset >> 16;
 					data[l++] = offset >> 24;
 				}
-			} else if (a->bits == 64 && offset) {
+			} else if (a->bits == 64 && (offset || op->operands[1].regs[0] == X86R_RIP)) {
 				data[l++] = offset;
-				if (op->operands[1].offset > 127) {
+				if (op->operands[1].offset > 127 || op->operands[1].regs[0] == X86R_RIP) {
 					data[l++] = offset >> 8;
 					data[l++] = offset >> 16;
 					data[l++] = offset >> 24;
