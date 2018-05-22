@@ -2306,9 +2306,13 @@ static void r_core_visual_anal_refresh_column (RCore *core, int colpos) {
 	// RAnalFunction* fcn = r_anal_get_fcn_in(core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 	int h, w = r_cons_get_size (&h);
 	// int sz = (fcn)? R_MIN (r_anal_fcn_size (fcn), h * 15) : 16; // max instr is 15 bytes.
+	char *cmd_pds = r_str_newf ("pds %d", h * 6);
+	if (!cmd_pds) {
+		return;
+	}
 
 	const char *cmd, *printCmds[lastPrintMode] = {
-		"pdf", "afi", "pds", "pdc", "pdr"
+		"pdf", "afi", cmd_pds, "pdc", "pdr"
 	};
 	if (printMode > 0 && printMode < lastPrintMode) {
 		cmd = printCmds[printMode];
@@ -2317,6 +2321,7 @@ static void r_core_visual_anal_refresh_column (RCore *core, int colpos) {
 	}
 	char *cmdf = r_str_newf ("%s @ 0x%"PFMT64x, cmd, addr);
 	if (!cmdf) {
+		free (cmd_pds);
 		return;
 	}
 	char *output = r_core_cmd_str (core, cmdf);
@@ -2327,6 +2332,7 @@ static void r_core_visual_anal_refresh_column (RCore *core, int colpos) {
 		free (out);
 		R_FREE (output);
 	}
+	free (cmd_pds);
 	free (cmdf);
 }
 
