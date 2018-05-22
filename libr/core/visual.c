@@ -251,6 +251,7 @@ static int visual_help() {
 		" =        set cmd.vprompt (top row)\n"
 		" |        set cmd.cprompt (right column)\n"
 		" .        seek to program counter\n"
+		" #        toggle bytes in disasm view\n"
 		" \\        toggle visual split mode\n"
 		" \"        toggle the column mode (uses pC..)\n"
 		" /        in cursor mode search in current block\n"
@@ -274,6 +275,7 @@ static int visual_help() {
 		" gG       go seek to begin and end of file (0-$s)\n"
 		" hjkl     move around (or HJKL) (left-down-up-right)\n"
 		" i        insert hex or string (in hexdump) use tab to toggle\n"
+		" I        insert hexpair block \n"
 		" mK/'K    mark/go to Key (any key)\n"
 		" M        walk the mounted filesystems\n"
 		" n/N      seek next/prev function/flag/hit (scr.nkey)\n"
@@ -2483,6 +2485,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case ')':
 			rotateAsmemu (core);
+			break;
+		case '#':
+			r_core_cmd0 (core, "e!asm.bytes");
 			break;
 		case '*':
 			if (core->print->cur_enabled) {
