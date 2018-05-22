@@ -789,6 +789,9 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case 'p': { // "tp"
 		char *ptr = strdup (input);
+		if (!ptr) {
+			break;
+		}
 		int nargs = r_str_word_set0 (ptr);
 		if (nargs > 1) {
 			const char *type = r_str_word_get0 (ptr, 1);

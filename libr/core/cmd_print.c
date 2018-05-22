@@ -1041,6 +1041,10 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		int struct_sz = r_print_format_struct_size (fmt, core->print, mode, 0) + 10;
 		int size = R_MAX (core->blocksize, struct_sz);
 		ut8 *buf = calloc (1, size);
+		if (!buf) {
+			eprintf ("cannot allocate %d byte(s)\n", size);
+			goto stage_left;
+		}
 		if ((struct_sz > core->blocksize) && !core->fixedblock) {
 			r_core_block_size (core, struct_sz);
 		}
