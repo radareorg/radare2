@@ -95,11 +95,11 @@ typedef enum register_t {
 typedef struct operand_t {
 	ut32 type;
 	st8 sign;
+	struct {
+		Register reg;
+		bool extended;
+	};
 	union {
-		struct {
-			Register reg;
-			bool extended;
-		};
 		struct {
 			long offset;
 			st8 offset_sign;
@@ -1815,8 +1815,10 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 					mod = 0x1;
 				}
 			} else {
-				if (op->operands[1].regs[0] == X86R_EIP) {
+				if (op->operands[1].regs[0] == X86R_EIP && (op->operands[0].type & OT_DWORD)) {
 					data[l++] = 0x0d;
+				} else if (op->operands[1].regs[0] == X86R_RIP && (op->operands[0].type & OT_QWORD)) {
+					data[l++] = 0x05;
 				} else {
 					data[l++] = mod << 5 | op->operands[0].reg << 3 | op->operands[1].regs[0];
 				}
@@ -1826,14 +1828,14 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 			if (mod >= 0x2) {
 				data[l++] = offset;
-				if (op->operands[1].offset > 128) {
+				if (op->operands[1].offset > 128 || op->operands[1].regs[0] == X86R_EIP) {
 					data[l++] = offset >> 8;
 					data[l++] = offset >> 16;
 					data[l++] = offset >> 24;
 				}
-			} else if (a->bits == 64 && offset) {
+			} else if (a->bits == 64 && (offset || op->operands[1].regs[0] == X86R_RIP)) {
 				data[l++] = offset;
-				if (op->operands[1].offset > 127) {
+				if (op->operands[1].offset > 127 || op->operands[1].regs[0] == X86R_RIP) {
 					data[l++] = offset >> 8;
 					data[l++] = offset >> 16;
 					data[l++] = offset >> 24;
@@ -2009,16 +2011,15 @@ static int opout(RAsm *a, ut8 *data, const Opcode *op) {
 		if (immediate > 255 || immediate < -128) {
 			return -1;
 		}
-		if (op->operands[0].reg == X86R_AL && op->operands[1].type & OT_BYTE) {
+		if (op->operands[1].reg == X86R_AL && op->operands[1].type & OT_BYTE) {
 			data[l++] = 0xe6;
-		} else if (op->operands[0].reg == X86R_AX && op->operands[0].type & OT_BYTE) {
+		} else if (op->operands[1].reg == X86R_AX && op->operands[1].type & OT_WORD) {
 			data[l++] = 0x66;
 			data[l++] = 0xe7;
 		} else if (op->operands[1].reg == X86R_EAX && op->operands[1].type & OT_DWORD) {
 			data[l++] = 0xe7;
 		} else {
-			// TODO: this is wrong
-			data[l++] = 0xe7;
+			return -1;
 		}
 		data[l++] = immediate;
 	} else {
@@ -2172,7 +2173,7 @@ static int optest(RAsm *a, ut8 *data, const Opcode *op) {
 		if (op->operands[0].type & OT_BYTE) {
 			data[l++] = 0xf6;
 			data[l++] = op->operands[0].regs[0];
-			data[l++] = op->operands[1].reg;
+			data[l++] = op->operands[1].immediate;
 			return l;
 		}
 		data[l++] = 0xf7;
@@ -2181,10 +2182,10 @@ static int optest(RAsm *a, ut8 *data, const Opcode *op) {
 		} else {
 			data[l++] = 0xc0 | op->operands[0].reg;
 		}
-		data[l++] = op->operands[1].reg >> 0;
-		data[l++] = op->operands[1].reg >> 8;
-		data[l++] = op->operands[1].reg >> 16;
-		data[l++] = op->operands[1].reg >> 24;
+		data[l++] = op->operands[1].immediate >> 0;
+		data[l++] = op->operands[1].immediate >> 8;
+		data[l++] = op->operands[1].immediate >> 16;
+		data[l++] = op->operands[1].immediate >> 24;
 		return l;
 	}
 	if (op->operands[0].type & OT_BYTE ||
