@@ -1038,10 +1038,17 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		while (*fmt && IS_WHITECHAR (*fmt)) {
 			fmt++;
 		}
-		int size = r_print_format_struct_size (fmt, core->print, mode, 0) + 10;
-		if (size > core->blocksize) {
-			r_core_block_size (core, size);
+		int struct_sz = r_print_format_struct_size (fmt, core->print, mode, 0) + 10;
+		int size = R_MAX (core->blocksize, struct_sz);
+		ut8 *buf = calloc (1, size);
+		if (!buf) {
+			eprintf ("cannot allocate %d byte(s)\n", size);
+			goto stage_left;
 		}
+		if ((struct_sz > core->blocksize) && !core->fixedblock) {
+			r_core_block_size (core, struct_sz);
+		}
+		memcpy (buf, core->block, core->blocksize);
 		/* check if fmt is '\d+ \d+<...>', common mistake due to usage string*/
 		bool syntax_ok = true;
 		char *args = strdup (fmt);
@@ -1058,8 +1065,9 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		free (args);
 		if (syntax_ok) {
 			r_print_format (core->print, core->offset,
-				core->block, core->blocksize, fmt, mode, NULL, NULL);
+				buf, size, fmt, mode, NULL, NULL);
 		}
+		free (buf);
 	}
 stage_left:
 	free (input);

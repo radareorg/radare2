@@ -26,6 +26,7 @@ static const char *help_msg_t[] = {
 	"to", " <path>", "Load types from C header file",
 	"tos", " <path>", "Load types from parsed Sdb database",
 	"tp", " <type>  = <address>", "cast data at <address> to <type> and print it",
+	"tpx", "<type> <hexpairs>", "Show value for type with specified byte sequence",
 	"ts", "[?]", "print loaded struct types",
 	"tu", "[?]", "print loaded union types",
 	"tt", "[?]", "List all loaded typedefs",
@@ -786,28 +787,33 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 		break;
-	case 'p':
-		if (input[2]) {
-			ut64 addr = core->offset;
-			const char *type = input + 2;
-			char *ptr = strchr (type, '=');
-			if (ptr) {
-				char *tmp = ptr-1;
-				*ptr++ = 0;
-				while(isspace (*ptr)) ptr++;
-				while(isspace (*tmp)) *tmp-- = 0;
-				addr = r_num_math (core->num, ptr);
-			}
+	case 'p': { // "tp"
+		char *ptr = strdup (input);
+		if (!ptr) {
+			break;
+		}
+		int nargs = r_str_word_set0 (ptr);
+		if (nargs > 1) {
+			const char *type = r_str_word_get0 (ptr, 1);
+			const char *arg = r_str_word_get0 (ptr, 2);
 			char *fmt = r_type_format (TDB, type);
-			if (fmt) {
+			if (!fmt) {
+				eprintf ("Cannot find '%s' type\n", type);
+				break;
+			}
+			if (input[1] == 'x' && arg) {
+				r_core_cmdf (core, "pf %s @x: %s", fmt, arg);
+			} else {
+				ut64 addr = arg ? r_num_math (core->num, arg): core->offset;
 				r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x "\n", fmt, addr);
-				free (fmt);
-			} else eprintf ("Cannot find '%s' type\n", input + 1);
+			}
+			free (fmt);
 		} else {
 			eprintf ("see t?\n");
 			break;
 		}
-		break;
+		free (ptr);
+	} break;
 	case '-':
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_t_minus);
