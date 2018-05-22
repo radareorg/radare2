@@ -112,7 +112,7 @@ static void checkStackbase(RCore *core);
 static void cursorLeft(RCore *core);
 static void cursorRight(RCore *core);
 static void delCurPanel(RPanels *panels);
-static void doPanelsRefresh(RCore *core, RPanels *panels);
+static void doPanelsRefresh(RCore *core);
 static bool handleCursorMode(RCore *core, const int key);
 static void handleUpKey(RCore *core);
 static void handleDownKey(RCore *core);
@@ -127,7 +127,7 @@ static void panelContinue(RCore *core);
 static void panelPrompt(const char *prompt, char *buf, int len);
 static void panelSingleStepIn(RCore *core);
 static void panelSingleStepOver(RCore *core);
-static void panelsRefresh(RCore *core, RPanels *panels);
+static void panelsRefresh(RCore *core);
 static void setRefreshAll(RPanels *panels);
 static void setCursor(RCore *core, bool cur);
 static void zoom(RPanels *panels);
@@ -560,7 +560,6 @@ static void addPanelFrame(RCore *core, RPanels* panels, const char *title, const
 	panels->curnode = panels->n_panels - 1;
 	zoom (panels);
 	panels->menu_y = 0;
-	setRefreshAll (panels);
 }
 
 static bool initPanels(RCore *core, RPanels *panels) {
@@ -588,7 +587,8 @@ static bool initPanels(RCore *core, RPanels *panels) {
 // into a struct makes the code to reference pointers unnecesarily
 // we can look for a non-global solution here in the future if
 // necessary
-static void panelsRefresh(RCore *core, RPanels *panels) {
+static void panelsRefresh(RCore *core) {
+	RPanels *panels = core->panels;
 	RPanel *panel = panels->panel;
 	RConsCanvas *can = panels->can;
 	int menu_pos = panels->menu_pos;
@@ -691,10 +691,10 @@ static void panelsRefresh(RCore *core, RPanels *panels) {
 	r_cons_flush ();
 }
 
-static void doPanelsRefresh(RCore *core, RPanels *panels) {
-	panels->isResizing = true;
-	layoutRun (panels);
-	panelsRefresh (core, panels);
+static void doPanelsRefresh(RCore *core) {
+	core->panels->isResizing = true;
+	layoutRun (core->panels);
+	panelsRefresh (core);
 }
 
 static int havePanel(RPanels *panels, const char *s) {
@@ -785,6 +785,7 @@ static bool init (RCore *core, RPanels *panels, int w, int h) {
 	panels->callgraph = 0;
 	panels->isResizing = false;
 	panels->can = r_cons_canvas_new (w, h);
+	r_cons_canvas_fill (panels->can, 0, 0, w, h, ' ', 0);
 	if (!panels->can) {
 		eprintf ("Cannot create RCons.canvas context\n");
 		return false;
@@ -1060,7 +1061,6 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 	}
 
 	r_cons_switchbuf (false);
-	core->panels = panels;
 	panels->originCursor = core->print->cur;
 	core->print->cur = 0;
 	core->print->cur_enabled = false;
@@ -1075,11 +1075,11 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 
 repeat:
 	core->panels = panels;
-	core->cons->event_data = panels;
+	core->cons->event_data = core;
 	core->cons->event_resize = (RConsEvent) doPanelsRefresh;
 	checkStackbase (core);
 	layoutRun (panels);
-	panelsRefresh (core, panels);
+	panelsRefresh (core);
 	wheel = r_config_get_i (core->config, "scr.wheel");
 	if (wheel) {
 		r_cons_enable_mouse (true);
@@ -1140,7 +1140,7 @@ repeat:
 		} else {
 			r_core_cmd0 (core, "s entry0; px");
 		}
-		doPanelsRefresh (core, panels);
+		doPanelsRefresh (core);
 		break;
 	case ' ':
 	case '\r':
@@ -1148,7 +1148,7 @@ repeat:
 		if (!handleEnterKey (core)) {
 			goto exit;
 		}
-		doPanelsRefresh (core, panels);
+		doPanelsRefresh (core);
 		break;
 	case '?':
 		r_cons_clear00 ();
@@ -1206,7 +1206,7 @@ repeat:
 		// FIX: Issue with visual mode instruction highlighter
 		// not updating after 'ds' or 'dcu' commands.
 		r_core_cmd0 (core, ".dr*");
-		doPanelsRefresh (core, panels);
+		doPanelsRefresh (core);
 		break;
 	case 'c':
 		if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_STACK) || !strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_REGISTERS)) {
@@ -1218,7 +1218,7 @@ repeat:
 		panels->can->color = !panels->can->color;
 		// r_config_toggle (core->config, "scr.color");
 		// refresh graph
-		doPanelsRefresh (core, panels);
+		doPanelsRefresh (core);
 		break;
 	case 'R':
 		if (r_config_get_i (core->config, "scr.randpal")) {
@@ -1226,7 +1226,7 @@ repeat:
 		} else {
 			r_core_cmd0 (core, "ecn");
 		}
-		doPanelsRefresh (core, panels);
+		doPanelsRefresh (core);
 		break;
 	case 'A':
 		r_core_visual_asm (core, core->offset);
@@ -1292,7 +1292,7 @@ repeat:
 		panels->curnode = 0;
 		if (panels->menu_x < 0) {
 			panels->menu_x = 0;
-			panelsRefresh (core, panels);
+			panelsRefresh (core);
 		}
 		panels->menu_y = 1;
 		break;
@@ -1454,10 +1454,12 @@ exit:
 	r_config_set_i (core->config, "asm.comments", asm_comments);
 	r_config_set_i (core->config, "asm.bytes", asm_bytes);
 	r_config_set_i (core->config, "scr.utf8", have_utf8);
+
 	core->print->cur = panels->originCursor;
 	core->print->cur_enabled = false;
 	core->print->col = 0;
-	core->panels = NULL;
+
 	r_panels_free (panels);
+	core->panels = NULL;
 	return true;
 }
