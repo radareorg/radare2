@@ -2551,9 +2551,17 @@ R_API char *r_core_editor (const RCore *core, const char *file, const char *str)
 }
 
 /* weak getters */
-R_API RCons *r_core_get_cons (RCore *core) { return core->cons; }
-R_API RConfig *r_core_get_config (RCore *core) { return core->config; }
-R_API RBin *r_core_get_bin (RCore *core) { return core->bin; }
+R_API RCons *r_core_get_cons (RCore *core) {
+	return core->cons;
+}
+
+R_API RConfig *r_core_get_config (RCore *core) {
+	return core->config;
+}
+
+R_API RBin *r_core_get_bin (RCore *core) {
+	return core->bin;
+}
 
 R_API RBuffer *r_core_syscallf (RCore *core, const char *name, const char *fmt, ...) {
 	char str[1024];

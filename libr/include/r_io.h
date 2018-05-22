@@ -4,7 +4,7 @@
 #define R2_IO_H
 
 #include "r_list.h"
-#include <r_util/r_id_storage.h>
+#include <r_util/r_idpool.h>
 #include <r_util/r_cache.h>
 #include <r_util/r_buf.h>
 #include "r_socket.h"
