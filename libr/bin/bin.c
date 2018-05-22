@@ -629,7 +629,7 @@ R_API void *r_bin_free(RBin *bin) {
 	r_list_free (bin->plugins);
 	r_list_free (bin->binldrs);
 	sdb_free (bin->sdb);
-	r_id_pool_free (bin->file_ids);
+	r_id_storage_free (bin->ids);
 	memset (bin, 0, sizeof (RBin));
 	free (bin);
 	return NULL;
@@ -1018,7 +1018,7 @@ R_API RBin *r_bin_new() {
 	bin->want_dbginfo = true;
 	bin->cur = NULL;
 	bin->io_owned = false;
-	bin->file_ids = r_id_pool_new (0, 0xffffffff);
+	bin->ids = r_id_storage_new (0, ST32_MAX);
 
 	/* bin parsers */
 	bin->binfiles = r_list_newf ((RListFree)r_bin_file_free);

@@ -102,7 +102,9 @@ R_API void r_bin_filter_sections(RList *list) {
 		r_list_foreach (list, iter, sec) {
 			r_bin_filter_name (db, sec->vaddr, sec->name, maxlen);
 		}
-	} else eprintf ("SectionName is not dynamic\n");
+	} else {
+		eprintf ("SectionName is not dynamic\n");
+	}
 	sdb_free (db);
 }
 

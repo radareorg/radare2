@@ -73,7 +73,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 		type = R_STRING_TYPE_DETECT;
 	}
 	if (from >= to) {
-		eprintf ("Invalid range to find strings 0x%llx .. 0x%llx\n", from, to);
+		eprintf ("Invalid range to find strings 0x%"PFMT64x" .. 0x%"PFMT64x"\n", from, to);
 		return -1;
 	}
 	int len = to - from;
@@ -296,7 +296,8 @@ R_API RBinFile *r_bin_file_new(RBin *bin, const char *file, const ut8 *bytes, ut
 	if (!binfile) {
 		return NULL;
 	}
-	if (!r_id_pool_grab_id (bin->file_ids, &binfile->id)) {
+	// TODO: use r_id_storage api
+	if (!r_id_pool_grab_id (bin->ids->pool, &binfile->id)) {
 		if (steal_ptr) { // we own the ptr, free on error
 			free ((void*) bytes);
 		}
@@ -512,7 +513,6 @@ R_API RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file, const ut8
 		bf->narch = 1;
 	}
 #endif
-
 	/* free unnecessary rbuffer (???) */
 	return bf;
 }
@@ -762,7 +762,6 @@ R_API int r_bin_file_ref(RBin *bin, RBinFile *a) {
 R_API void r_bin_file_free(void /*RBinFile*/ *bf_) {
 	RBinFile *a = bf_;
 	RBinPlugin *plugin = r_bin_file_cur_plugin (a);
-
 	if (!a) {
 		return;
 	}
@@ -781,14 +780,14 @@ R_API void r_bin_file_free(void /*RBinFile*/ *bf_) {
 		sdb_free (a->sdb_addrinfo);
 		a->sdb_addrinfo = NULL;
 	}
-	R_FREE (a->file);
+	free (a->file);
 	a->o = NULL;
 	r_list_free (a->objs);
 	r_list_free (a->xtr_data);
 	if (a->id != -1) {
-		r_id_pool_kick_id (a->rbin->file_ids, a->id);
+		// TODO: use r_storage api
+		r_id_pool_kick_id (a->rbin->ids->pool, a->id);
 	}
-	memset (a, 0, sizeof (RBinFile));
 	free (a);
 }
 
@@ -861,7 +860,7 @@ R_API int r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz, boo
 		r_buf_set_bytes (binfile->buf, bytes, sz);
 	}
 #endif
-	return binfile->buf != NULL;
+	return binfile->buf;
 }
 
 R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *binfile) {
@@ -872,11 +871,8 @@ static int is_data_section(RBinFile *a, RBinSection *s) {
 	if (s->has_strings || s->is_data) {
 		return true;
 	}
-	if (s->is_data) {
-		return true;
-	}
  	// Rust
-	return (strstr (s->name, "_const") != NULL);
+	return strstr (s->name, "_const");
 }
 
 R_API RList *r_bin_file_get_strings(RBinFile *a, int min, int dump) {
@@ -1008,4 +1004,3 @@ R_API void r_bin_file_get_strings_range(RBinFile *bf, RList *list, int min, ut64
 R_API ut64 r_bin_file_get_baddr(RBinFile *binfile) {
 	return binfile? r_bin_object_get_baddr (binfile->o): UT64_MAX;
 }
-

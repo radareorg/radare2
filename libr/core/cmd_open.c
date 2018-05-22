@@ -378,10 +378,12 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		r_core_cmd0 (core, ".is*");
 		break;
 	case 'f':
-		// TODO: specify path to file?
-		r_core_bin_load (core, NULL, UT64_MAX);
-		value = input[2] ? input + 2 : NULL;
-		// r2_obf (core, value);
+		if (input[2] == ' ') {
+			r_core_cmdf (core, "oba 0 %s", input + 3);
+		} else {
+			r_core_bin_load (core, NULL, UT64_MAX);
+			value = input[2] ? input + 2 : NULL;
+		}
 		break;
 	case 'o': // "obo"
 		value = input[2] ? input + 2 : NULL;

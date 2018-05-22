@@ -1,9 +1,9 @@
-/* radare2 - LGPL - Copyright 2017 - condret */
+/* radare2 - LGPL - Copyright 2017-2018 - condret */
 
 #include <r_util.h>
 #include <r_types.h>
 
-ut32 get_msb(ut32 v) {
+static ut32 get_msb(ut32 v) {
 	int i;
 	for (i = 31; i > (-1); i--) {
 		if (v & (0x1U << i)) {
@@ -147,7 +147,7 @@ R_API void r_id_storage_delete(RIDStorage* storage, ut32 id) {
 			storage->top_id--;
 		}
 		if (!storage->top_id) {
-			if(storage->data[storage->top_id]) {
+			if (storage->data[storage->top_id]) {
 				id_storage_reallocate (storage, 2);
 			} else {
 				RIDPool* pool = r_id_pool_new (storage->pool->start_id, storage->pool->last_id);
