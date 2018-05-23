@@ -1,6 +1,7 @@
 #!/bin/sh
 
 BUILD=1
+FLAGS=""
 PREFIX="/data/data/org.radare.radare2installer/radare2"
 
 type pax
@@ -8,16 +9,22 @@ type pax
 
 cd `dirname $PWD/$0` ; cd ..
 
+# we need a more recent ndk to build the mergedlib for mips
+
 case "$1" in
 "mips")
 	NDK_ARCH=mips
 	STATIC_BUILD=0
 	STRIP=mips-linux-android-strip
+#	FLAGS="-mlong-calls"
+#	export LDFLAGS="-fuse-ld=gold"
 	;;
 "mips64")
 	NDK_ARCH=mips64
 	STATIC_BUILD=0
 	STRIP=mips64el-linux-android-strip
+#	FLAGS="-mlong-calls"
+#	export LDFLAGS="-fuse-ld=gold"
 	;;
 "arm")
 	NDK_ARCH=arm
@@ -87,7 +94,7 @@ echo NDK_ARCH: ${NDK_ARCH}
 echo "Using NDK_ARCH: ${NDK_ARCH}"
 echo "Using STATIC_BUILD: ${STATIC_BUILD}"
 
-export CFLAGS="-fPIC -fPIE"
+export CFLAGS="-fPIC -fPIE ${FLAGS}"
 
 if [ "${BUILD}" = 1 ]; then
 	if [ -z "${NDK}" ]; then
