@@ -4309,6 +4309,13 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 						op->offset_sign = -1;
 					}
 				}
+				//with SIB notation, we need to consider the right sign
+				char * plus = strchr (str, '+');
+				char * minus = strchr (str, '-');
+				char * closeB = strchr (str, ']');
+				if (plus && minus && plus < closeB && minus < closeB) {
+					op->offset_sign = -1;
+				}
 				// If there's a scale, we don't want to parse out the
 				// scale with the offset (scale + offset) otherwise the scale
 				// will be the sum of the two. This splits the numbers
