@@ -3,6 +3,7 @@ include config.mk
 include ../config-user.mk
 include ../mk/platform.mk
 include ../mk/${COMPILER}.mk
+include ${SHLR}/zip/deps.mk
 
 DESTDIR:=$(DESTDIR)
 PREFIX?=${PWD}/../prefix
@@ -91,10 +92,9 @@ E+=../shlr/capstone/libcapstone.${EXT_AR}
 endif
 
 libr.${EXT_SO}: .libr
-	$(CC) -fvisibility=hidden $(MLFLAGS) -shared -dynamiclib -o libr.${EXT_SO}  \
+	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -shared -dynamiclib -o libr.${EXT_SO}  \
 		.libr/*.o \
 		../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/libr_java.${EXT_AR} \
-		../shlr/zip/librz.${EXT_AR} \
 		../shlr/libr_shlr.${EXT_AR} $(E)
 
 else
