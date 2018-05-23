@@ -1415,6 +1415,9 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 				}
 			} else {
 				format = sdb_get (p->formats, structname + 1, NULL);
+				if (!strncmp (format, f, strlen (format) - 1)) { // Avoid recursion here
+					return -1;
+				}
 				if (!format) { // Fetch format from types db
 					format = r_type_format (p->sdb_types, structname + 1);
 				}
