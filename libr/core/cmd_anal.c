@@ -5800,24 +5800,32 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	switch (input[0]) {
 	case 'f': // "agf"
 		switch (input[1]) {
-		case 0:// "agf"
+		case 0: // "agf"
 			r_core_visual_graph (core, NULL, NULL, false);
 			break;
-		case 'v':// "agfv"
+		case ' ':{ // "agf "
+			ut64 off_fcn = (*(input + 2)) ? r_num_math (core->num, input + 2) : core->offset;
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off_fcn, 0);
+			r_core_visual_graph (core, NULL, fcn, false);
+			break;
+			}
+		case 'v': // "agfv"
 			eprintf ("\rRendering graph...");
 			ut64 off_fcn = (*(input + 2)) ? r_num_math (core->num, input + 2) : core->offset;
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off_fcn, 0);
 			if (fcn) {
-				eprintf ("%s\n", fcn->name);
 				r_core_visual_graph (core, NULL, fcn, 1);
 			}
 			r_cons_enable_mouse (false);
 			r_cons_show_cursor (true);
 			break;
-		case 't':// "agft" - tiny graph
-			r_core_visual_graph (core, NULL, NULL, 2);
+		case 't': { // "agft" - tiny graph
+			ut64 off_fcn = (*(input + 2)) ? r_num_math (core->num, input + 2) : core->offset;
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off_fcn, 0);
+			r_core_visual_graph (core, NULL, fcn, 2);
 			break;
-		case 'd':// "agfd"
+			}
+		case 'd': // "agfd"
 			if (input[2] == 'm') {
 				r_core_anal_graph (core, r_num_math (core->num, input + 3),
 					R_CORE_ANAL_GRAPHLINES);
@@ -5826,21 +5834,24 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 					R_CORE_ANAL_GRAPHBODY);
 			}
 			break;
-		case 'j':// "agfj"
-			r_core_anal_graph (core, r_num_math (core->num, input + 1), R_CORE_ANAL_JSON);
+		case 'j': // "agfj"
+			r_core_anal_graph (core, r_num_math (core->num, input + 2), R_CORE_ANAL_JSON);
 			break;
-		case 'J':// "agfJ"
-			r_core_anal_graph (core, r_num_math (core->num, input + 1),
+		case 'J': // "agfJ"
+			r_core_anal_graph (core, r_num_math (core->num, input + 2),
 				R_CORE_ANAL_JSON | R_CORE_ANAL_JSON_FORMAT_DISASM);
-		case 'g':{// "agfg"
+			break;
+		case 'g':{ // "agfg"
 			ut64 off_fcn = (*(input + 2)) ? r_num_math (core->num, input + 2) : core->offset;
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off_fcn, 0);
 			r_core_print_bb_gml (core, fcn);
 			break;
 			}
-		case 'k':// "agfk"
-			r_core_cmd0 (core, "ag-; .agf*; aggk");
+		case 'k':{ // "agfk"
+			ut64 addr = (*(input + 2)) ? r_num_math (core->num, input + 2) : core->offset;
+			r_core_cmdf (core, "ag-; .agf* %lld; aggk", addr);
 			break;
+			}
 		case '*':{// "agf*"
 			ut64 off_fcn = (*(input + 2)) ? r_num_math (core->num, input + 2) : core->offset;
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off_fcn, 0);
@@ -6092,14 +6103,14 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			break;
 		}
 		break;
-	case 'j': // "agj"
-		r_core_anal_graph (core, r_num_math (core->num, input + 1), R_CORE_ANAL_JSON);
+	case 'j': // "agj" alias for agfj
+		r_core_cmdf (core, "agfj%s", input + 1);
 		break;
-	case 'J': // "agJ"
-		r_core_anal_graph (core, r_num_math (core->num, input + 1), R_CORE_ANAL_JSON | R_CORE_ANAL_JSON_FORMAT_DISASM);
+	case 'J': // "agJ" alias for agfJ
+		r_core_cmdf (core, "agfJ%s", input + 1);
 		break;
-	case 'k': // "agk"
-		r_core_anal_graph (core, r_num_math (core->num, input + 1), R_CORE_ANAL_KEYVALUE);
+	case 'k': // "agk" alias for agfk
+		r_core_cmdf (core, "agfk%s", input + 1);
 		break;
 	case 'l': // "agl"
 		r_core_anal_graph (core, r_num_math (core->num, input + 1), R_CORE_ANAL_GRAPHLINES);

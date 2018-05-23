@@ -3170,10 +3170,6 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	RAnalFunction *f = NULL;
 	RAnalFunction **fcn = grd->fcn;
 
-	/*if (fcn) eprintf ("%s\n", (*fcn)->name);*/
-	/*else eprintf ("NULL\n");*/
-	/*return NULL;*/
-
 	if (!fcn) {
 		return agraph_print (g, grd->fs, core, NULL);
 	}
@@ -3231,7 +3227,6 @@ static void agraph_toggle_speed(RAGraph *g, RCore *core) {
 
 static void agraph_init(RAGraph *g) {
 	g->is_callgraph = false;
-	g->follow_offset = false;
 	g->is_instep = false;
 	g->need_reload_nodes = true;
 	g->force_update_seek = true;
