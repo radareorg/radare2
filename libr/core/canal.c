@@ -2988,6 +2988,75 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	return count;
 }
 
+static void found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, int count, int rad, int cfg_debug, bool cfg_anal_strings) {
+	// Validate the reference. If virtual addressing is enabled, we
+	// allow only references to virtual addresses in order to reduce
+	// the number of false positives. In debugger mode, the reference
+	// must point to a mapped memory region.
+	if (type == R_ANAL_REF_TYPE_NULL) {
+		return;
+	}
+	if (cfg_debug) {
+		if (!r_debug_map_get (core->dbg, xref_to)) {
+			return;
+		}
+	} else if (core->io->va) {
+		if (!r_io_is_valid_offset (core->io, xref_to, 0)) {
+			return;
+		}
+	}
+	if (!rad) {
+		if (cfg_anal_strings && type == R_ANAL_REF_TYPE_DATA) {
+			int len = 0;
+			char *str_string = is_string_at (core, xref_to, &len);
+			if (str_string) {
+				r_name_filter (str_string, -1);
+				char *str_flagname = r_str_newf ("str.%s", str_string);
+				r_flag_space_push (core->flags, "strings");
+				(void)r_flag_set (core->flags, str_flagname, xref_to, 1);
+				r_flag_space_pop (core->flags);
+			}
+			if (len > 0) {
+				r_meta_add (core->anal, R_META_TYPE_STRING, xref_to,
+						xref_to + len, (const char *)str_string);
+			}
+			free (str_string);
+		}
+		// Add to SDB
+		if (xref_to) {
+			r_anal_xrefs_set (core->anal, at, xref_to, type);
+		}	
+	} else if (rad == 'j') {
+		// Output JSON
+		if (count > 0) {
+			r_cons_printf (",");
+		}
+		r_cons_printf ("\"0x%"PFMT64x"\":\"0x%"PFMT64x"\"", xref_to, at);
+	} else {
+		int len = 0;
+		// Display in radare commands format
+		char *cmd;
+		switch (type) {
+		case R_ANAL_REF_TYPE_CODE: cmd = "axc"; break;
+		case R_ANAL_REF_TYPE_CALL: cmd = "axC"; break;
+		case R_ANAL_REF_TYPE_DATA: cmd = "axd"; break;
+		default: cmd = "ax"; break;
+		}
+		r_cons_printf ("%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n", cmd, xref_to, at);
+		if (cfg_anal_strings && type == R_ANAL_REF_TYPE_DATA) {
+			char *str_flagname = is_string_at (core, xref_to, &len);
+			if (str_flagname) {
+				ut64 str_addr = xref_to;
+				r_name_filter (str_flagname, -1);
+				r_cons_printf ("f str.%s=0x%"PFMT64x"\n", str_flagname, str_addr);
+				r_cons_printf ("Cs %d @ 0x%"PFMT64x"\n", len, str_addr);
+				free (str_flagname);
+			}
+		}
+	}
+
+}
+
 R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 	int cfg_debug = r_config_get_i (core->config, "cfg.debug");
 	bool cfg_anal_strings = r_config_get_i (core->config, "anal.strings");
@@ -3046,8 +3115,6 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			continue;
 		}
 		while (at < (at + bsz) && !r_cons_is_breaked ()) {
-			RAnalRefType type;
-			ut64 xref_to;
 			if (r_cons_is_breaked ()) {
 				break;
 			}
@@ -3057,18 +3124,18 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			if (ret <= 0 || i > bsz) {
 				break;
 			}
-			// Get reference type and target address
-			type = R_ANAL_REF_TYPE_NULL;
+			// find references
+			if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
+				found_xref (core, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA, count, rad, cfg_debug, cfg_anal_strings);
+			}
 			switch (op.type) {
 			case R_ANAL_OP_TYPE_JMP:
 			case R_ANAL_OP_TYPE_CJMP:
-				type = R_ANAL_REF_TYPE_CODE;
-				xref_to = op.jump;
+				found_xref(core, op.addr, op.jump, R_ANAL_REF_TYPE_CODE, count, rad, cfg_debug, cfg_anal_strings);
 				break;
 			case R_ANAL_OP_TYPE_CALL:
 			case R_ANAL_OP_TYPE_CCALL:
-				type = R_ANAL_REF_TYPE_CALL;
-				xref_to = op.jump;
+				found_xref(core, op.addr, op.jump, R_ANAL_REF_TYPE_CALL, count, rad, cfg_debug, cfg_anal_strings);
 				break;
 			case R_ANAL_OP_TYPE_UJMP:
 			case R_ANAL_OP_TYPE_IJMP:
@@ -3076,98 +3143,22 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			case R_ANAL_OP_TYPE_IRJMP:
 			case R_ANAL_OP_TYPE_MJMP:
 			case R_ANAL_OP_TYPE_UCJMP:
-				type = R_ANAL_REF_TYPE_CODE;
-				xref_to = op.ptr;
+				found_xref(core, op.addr, op.ptr, R_ANAL_REF_TYPE_CODE, count, rad, cfg_debug, cfg_anal_strings);
 				break;
 			case R_ANAL_OP_TYPE_UCALL:
 			case R_ANAL_OP_TYPE_ICALL:
 			case R_ANAL_OP_TYPE_RCALL:
 			case R_ANAL_OP_TYPE_IRCALL:
 			case R_ANAL_OP_TYPE_UCCALL:
-				type = R_ANAL_REF_TYPE_CALL;
-				xref_to = op.ptr;
-				break;
-			case R_ANAL_OP_TYPE_LOAD:
-				type = R_ANAL_REF_TYPE_DATA;
-				xref_to = op.ptr;
+				found_xref(core, op.addr, op.ptr, R_ANAL_REF_TYPE_CALL, count, rad, cfg_debug, cfg_anal_strings);
 				break;
 			default:
-				if (op.ptr != -1) {
-					type = R_ANAL_REF_TYPE_DATA;
-					xref_to = op.ptr;
-				}
 				break;
 			}
 
-			// Validate the reference. If virtual addressing is enabled, we
-			// allow only references to virtual addresses in order to reduce
-			// the number of false positives. In debugger mode, the reference
-			// must point to a mapped memory region.
-			if (type == R_ANAL_REF_TYPE_NULL) {
-				goto beach;
-			}
-			if (cfg_debug) {
-				if (!r_debug_map_get (core->dbg, xref_to)) {
-					goto beach;
-				}
-			} else if (core->io->va) {
-				if (!r_io_is_valid_offset (core->io, xref_to, 0)) {
-					goto beach;
-				}
-			}
-			if (!rad) {
-				if (cfg_anal_strings && type == R_ANAL_REF_TYPE_DATA) {
-					int len = 0;
-					char *str_string = is_string_at (core, xref_to, &len);
-					if (str_string) {
-						r_name_filter (str_string, -1);
-						char *str_flagname = r_str_newf ("str.%s", str_string);
-						r_flag_space_push (core->flags, "strings");
-						(void)r_flag_set (core->flags, str_flagname, xref_to, 1);
-						r_flag_space_pop (core->flags);
-					}
-					if (len > 0) {
-						r_meta_add (core->anal, R_META_TYPE_STRING, xref_to,
-								xref_to + len, (const char *)str_string);
-					}
-					free (str_string);
-				}
-				// Add to SDB
-				if (xref_to) {
-					r_anal_xrefs_set (core->anal, at, xref_to, type);
-				}	
-			} else if (rad == 'j') {
-				// Output JSON
-				if (count > 0) {
-					r_cons_printf (",");
-				}
-				r_cons_printf ("\"0x%"PFMT64x"\":\"0x%"PFMT64x"\"", xref_to, at);
-			} else {
-				int len = 0;
-				// Display in radare commands format
-				char *cmd;
-				switch (type) {
-				case R_ANAL_REF_TYPE_CODE: cmd = "axc"; break;
-				case R_ANAL_REF_TYPE_CALL: cmd = "axC"; break;
-				case R_ANAL_REF_TYPE_DATA: cmd = "axd"; break;
-				default: cmd = "ax"; break;
-				}
-				r_cons_printf ("%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n", cmd, xref_to, at);
-				if (cfg_anal_strings && type == R_ANAL_REF_TYPE_DATA) {
-					char *str_flagname = is_string_at (core, xref_to, &len);
-					if (str_flagname) {
-						ut64 str_addr = xref_to;
-						r_name_filter (str_flagname, -1);
-						r_cons_printf ("f str.%s=0x%"PFMT64x"\n", str_flagname, str_addr);
-						r_cons_printf ("Cs %d @ 0x%"PFMT64x"\n", len, str_addr);
-						free (str_flagname);
-					}
-				}
-			}
-			beach :
-				count++;
-				at += ret;
-				r_anal_op_fini (&op);
+			count++;
+			at += ret;
+			r_anal_op_fini (&op);
 		}
 	}
 	r_cons_break_pop ();
