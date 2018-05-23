@@ -1826,10 +1826,10 @@ repeat:
 		if (base == UT64_MAX) {
 			base = fcni->addr;
 		}
-		if (from != UT64_MAX && addr < from) {
+		if (from != UT64_MAX && fcni->addr < from) {
 			continue;
 		}
-		if (to != UT64_MAX && addr > to) {
+		if (to != UT64_MAX && fcni->addr > to) {
 			continue;
 		}
 		if (addr != UT64_MAX && addr != fcni->addr) {
@@ -2721,10 +2721,6 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	if (!hc) {
 		return false;
 	}
-
-	eprintf ("%lld\n", addr);
-	eprintf ("%lld\n", UT64_MAX);
-	/*return NULL;*/
 
 	r_config_save_num (hc, "asm.lines", "asm.bytes", "asm.dwarf", NULL);
 	//opts |= R_CORE_ANAL_GRAPHBODY;

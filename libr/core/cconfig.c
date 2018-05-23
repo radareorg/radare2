@@ -2719,7 +2719,6 @@ R_API int r_core_config_init(RCore *core) {
 
 
 	/* cmd */
-	r_config_desc (cfg, "cmd.graph", "Command executed by 'agv' command to view graphs");
 	SETPREF ("cmd.xterm", "xterm -bg black -fg gray -e", "xterm command to spawn with V@");
 	SETICB ("cmd.depth", 10, &cb_cmddepth, "Maximum command depth");
 	SETPREF ("cmd.bp", "", "Run when a breakpoint is hit");
@@ -2824,8 +2823,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("graph.font", "Courier", "Font for dot graphs");
 	SETPREF ("graph.offset", "false", "Show offsets in graphs");
 	SETPREF ("graph.web", "false", "Display graph in web browser (VV)");
-	SETI ("graph.from", UT64_MAX, "");
-	SETI ("graph.to", UT64_MAX, "");
+	SETI ("graph.from", UT64_MAX, "Lower bound address when drawing global graphs");
+	SETI ("graph.to", UT64_MAX, "Upper bound address when drawing global graphs");
 	SETI ("graph.scroll", 5, "Scroll speed in ascii-art graph");
 	SETPREF ("graph.invscroll", "false", "Invert scroll direction in ascii-art graph");
 	SETPREF ("graph.title", "", "Title of the graph");
@@ -2835,9 +2834,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("graph.gv.graph", "", "Graphviz global style attributes. (bgcolor=white)");
 	SETPREF ("graph.gv.current", "false", "Highlight the current node in graphviz graph.");
 	SETPREF ("graph.nodejmps", "true", "Enables shortcuts for every node.");
-	char *cmd = r_core_graph_cmd (core, "ag $$");
-	r_config_set (cfg, "cmd.graph", cmd);
-	free (cmd);
 
 	/* hud */
 	SETPREF ("hud.path", "", "Set a custom path for the HUD file");
