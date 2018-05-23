@@ -4310,7 +4310,10 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 					}
 				}
 				//with SIB notation, we need to consider the right sign
-				if (strchr (str, '+') && strchr (str, '-')) {
+				char * plus = strchr (str, '+');
+				char * minus = strchr (str, '-');
+				char * closeB = strchr (str, ']');
+				if (plus && minus && plus < closeB && minus < closeB) {
 					op->offset_sign = -1;
 				}
 				// If there's a scale, we don't want to parse out the
