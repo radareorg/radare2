@@ -4098,14 +4098,14 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 			if (!r_str_ncasecmp (regs64ext[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_QWORD;
 				a->bits = 64;
-				return i + 8;
+				return i + 9;
 			}
 		}
 		for (i = 0; regsext[i]; i++) {
 			if (!r_str_ncasecmp (regsext[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_DWORD;
 				a->bits = 32;
-				return i + 8;
+				return i + 9;
 			}
 		}
 	}
@@ -4157,7 +4157,7 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 			eprintf ("Too large register index!\n");
 			return X86R_UNDEFINED;
 		}
-		*type |= (OT_REG(reg) & ~OT_REGTYPE);
+		*type |= (OT_REG (reg) & ~OT_REGTYPE);
 		return reg;
 	}
 
@@ -4276,9 +4276,9 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 				nextpos = pos;
 				reg = parseReg (a, str, &nextpos, &reg_type);
 				op->extended = false;
-				if (reg > 7) {
+				if (reg > 8) {
 					op->extended = true;
-					op->reg = reg - 8;
+					op->reg = reg - 9;
 				}
 				if (reg_type & OT_REGTYPE & OT_SEGMENTREG) {
 					op->reg = reg;
@@ -4334,9 +4334,9 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 		op->reg = parseReg (a, str, &nextpos, &op->type);
 
 		op->extended = false;
-		if (op->reg > 7) {
+		if (op->reg > 8) {
 			op->extended = true;
-			op->reg -= 8;
+			op->reg -= 9;
 		}
 		if (op->type & OT_REGTYPE & OT_SEGMENTREG) {
 			parse_segment_offset (a, str, &nextpos, op, reg_index);
