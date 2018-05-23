@@ -2721,6 +2721,11 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	if (!hc) {
 		return false;
 	}
+
+	eprintf ("%lld\n", addr);
+	eprintf ("%lld\n", UT64_MAX);
+	/*return NULL;*/
+
 	r_config_save_num (hc, "asm.lines", "asm.bytes", "asm.dwarf", NULL);
 	//opts |= R_CORE_ANAL_GRAPHBODY;
 	r_config_set_i (core->config, "asm.lines", 0);
@@ -2753,8 +2758,8 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 	r_list_foreach (core->anal->fcns, iter, fcni) {
 		if (fcni->type & (R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_FCN |
 		                  R_ANAL_FCN_TYPE_LOC) &&
-		    (!addr || r_anal_fcn_in (fcni, addr))) {
-			if (!addr && (from != UT64_MAX && to != UT64_MAX)) {
+		    (addr == UT64_MAX || r_anal_fcn_in (fcni, addr))) {
+			if (addr == UT64_MAX && (from != UT64_MAX && to != UT64_MAX)) {
 				if (fcni->addr < from || fcni->addr > to) {
 					continue;
 				}
@@ -2763,7 +2768,7 @@ R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts) {
 				r_cons_printf (",");
 			}
 			nodes += core_anal_graph_nodes (core, fcni, opts);
-			if (addr != 0) {
+			if (addr != UT64_MAX) {
 				break;
 			}
 		}
