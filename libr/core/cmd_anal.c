@@ -5805,7 +5805,12 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			break;
 		case 'v':// "agfv"
 			eprintf ("\rRendering graph...");
-			r_core_visual_graph (core, NULL, NULL, 1);
+			ut64 off_fcn = (*(input + 2)) ? r_num_math (core->num, input + 2) : core->offset;
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off_fcn, 0);
+			if (fcn) {
+				eprintf ("%s\n", fcn->name);
+				r_core_visual_graph (core, NULL, fcn, 1);
+			}
 			r_cons_enable_mouse (false);
 			r_cons_show_cursor (true);
 			break;
@@ -5814,10 +5819,10 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			break;
 		case 'd':// "agfd"
 			if (input[2] == 'm') {
-				r_core_anal_graph (core, r_num_math (core->num, input + 2),
+				r_core_anal_graph (core, r_num_math (core->num, input + 3),
 					R_CORE_ANAL_GRAPHLINES);
 			} else {
-				r_core_anal_graph (core, r_num_math (core->num, input + 1),
+				r_core_anal_graph (core, r_num_math (core->num, input + 2),
 					R_CORE_ANAL_GRAPHBODY);
 			}
 			break;
@@ -5846,11 +5851,13 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			if (r_config_get_i (core->config, "graph.web")) {
 				r_core_cmd0 (core, "=H /graph/");
 			} else {
-				char *cmd = r_core_graph_cmd (core, "agfd");
+				char *cmdargs = r_str_newf ("agfd %lld", r_num_math (core->num, input + 2));
+				char *cmd = r_core_graph_cmd (core, cmdargs);
 				if (cmd && *cmd) {
 					r_core_cmd0 (core, cmd);
 				}
 				free (cmd);
+				free (cmdargs);
 			}
 			break;
 		default:

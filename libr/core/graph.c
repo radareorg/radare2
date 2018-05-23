@@ -94,6 +94,7 @@ struct agraph_refresh_data {
 	RCore *core;
 	RAGraph *g;
 	RAnalFunction **fcn;
+	bool follow_offset;
 	int fs;
 };
 
@@ -3169,6 +3170,10 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	RAnalFunction *f = NULL;
 	RAnalFunction **fcn = grd->fcn;
 
+	/*if (fcn) eprintf ("%s\n", (*fcn)->name);*/
+	/*else eprintf ("NULL\n");*/
+	/*return NULL;*/
+
 	if (!fcn) {
 		return agraph_print (g, grd->fs, core, NULL);
 	}
@@ -3191,27 +3196,29 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		g->is_instep = false;
 	}
 
-	if (r_io_is_valid_offset (core->io, core->offset, 0)) {
-		f = r_anal_get_fcn_in (core->anal, core->offset, 0);
-		if (!f) {
-			if (!g->is_dis) {
-				if (!r_cons_yesno ('y', "\rNo function at 0x%08"PFMT64x". Define it here (Y/n)? ", core->offset)) {
-					return 0;
-				}
-				r_core_cmd0 (core, "af");
-			}
+	if (grd->follow_offset) {
+		if (r_io_is_valid_offset (core->io, core->offset, 0)) {
 			f = r_anal_get_fcn_in (core->anal, core->offset, 0);
-			g->need_reload_nodes = true;
+			if (!f) {
+				if (!g->is_dis) {
+					if (!r_cons_yesno ('y', "\rNo function at 0x%08"PFMT64x". Define it here (Y/n)? ", core->offset)) {
+						return 0;
+					}
+					r_core_cmd0 (core, "af");
+				}
+				f = r_anal_get_fcn_in (core->anal, core->offset, 0);
+				g->need_reload_nodes = true;
+			}
+			if (f && fcn && f != *fcn) {
+				*fcn = f;
+				g->need_reload_nodes = true;
+				g->force_update_seek = true;
+			}
+		} else {
+			// TODO: maybe go back to avoid seeking from graph view to an scary place?
+			r_cons_message ("This is not a valid offset\n");
+			r_cons_flush ();
 		}
-		if (f && fcn && f != *fcn) {
-			*fcn = f;
-			g->need_reload_nodes = true;
-			g->force_update_seek = true;
-		}
-	} else {
-		// TODO: maybe go back to avoid seeking from graph view to an scary place?
-		r_cons_message ("This is not a valid offset\n");
-		r_cons_flush ();
 	}
 
 	return agraph_print (g, grd->fs, core, *fcn);
@@ -3224,6 +3231,7 @@ static void agraph_toggle_speed(RAGraph *g, RCore *core) {
 
 static void agraph_init(RAGraph *g) {
 	g->is_callgraph = false;
+	g->follow_offset = false;
 	g->is_instep = false;
 	g->need_reload_nodes = true;
 	g->force_update_seek = true;
@@ -3724,6 +3732,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	grd->g = g;
 	grd->fs = is_interactive == 1;
 	grd->core = core;
+	grd->follow_offset = _fcn ? false : true;
 	grd->fcn = fcn != NULL? &fcn: NULL;
 	ret = agraph_refresh (grd);
 	if (!ret || is_interactive != 1) {
