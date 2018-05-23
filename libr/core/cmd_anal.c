@@ -5989,10 +5989,14 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			break;
 			}
 		case '*': {
+			ut64 from = r_config_get_i (core->config, "graph.from");
+			ut64 to = r_config_get_i (core->config, "graph.to");
 			RListIter *it;
 			RAnalFunction *fcn;
 			r_list_foreach (core->anal->fcns, it, fcn) {
-				r_core_anal_coderefs (core, fcn->addr);
+				if ((from == UT64_MAX && to == UT64_MAX) || R_BETWEEN (from, fcn->addr, to)) {
+					r_core_anal_coderefs (core, fcn->addr);
+				}
 			}
 			break;
 			}
@@ -6163,10 +6167,14 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			break;
 			}
 		case '*': {
+			ut64 from = r_config_get_i (core->config, "graph.from");
+			ut64 to = r_config_get_i (core->config, "graph.to");
 			RListIter *it;
 			RAnalFunction *fcn;
 			r_list_foreach (core->anal->fcns, it, fcn) {
-				r_core_anal_datarefs (core, fcn->addr);
+				if ((from == UT64_MAX && to == UT64_MAX) || R_BETWEEN (from, fcn->addr, to)) {
+					r_core_anal_datarefs (core, fcn->addr);
+				}
 			}
 			break;
 			}
