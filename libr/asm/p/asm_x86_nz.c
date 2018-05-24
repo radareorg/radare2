@@ -1574,8 +1574,7 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 				if (index != -1) {
 					use_sib = true;
 					sib = (scale << 6) | (index << 3) | rm;
-				}
-				if (rm == 4) {
+				} else if (rm == 4) {
 					use_sib = true;
 					sib = 0x24;
 				}
