@@ -19,32 +19,6 @@
 static char *r_line_nullstr = "";
 static const char dl_basic_word_break_characters[] =  " \t\n\"\\'`@$><=;|&{(";
 
-#define ONLY_VALID_CHARS 1
-
-#if ONLY_VALID_CHARS
-static inline int is_valid_char(unsigned char ch) {
-	if (ch >= 32 && ch <= 127) {
-		return true;
-	}
-	switch (ch) {
-	// case 0: // wat
-	case 1:	// ^a
-	case 2:	// ^b -> emacs left
-	case 4:	// ^d
-	case 5:	// ^e
-	case 6:	// ^f -> emacs right
-	case 8:	// backspace
-	case 9:	// tab
-	case 10:// newline
-	case 13:// carriage return
-	case 23:// ^w
-	case 27:// arrow
-		return true;
-	}
-	return false;
-}
-#endif
-
 static inline bool is_word_break_char(char ch) {
 	int i;
 	int len =
@@ -205,74 +179,6 @@ do_it_again:
 	if (buf[0] == 0 && *vch == 0) {
 		goto do_it_again;
 	}
-	return buf[0];
-}
-#endif
-
-#if 0
-// TODO use define here to hac
-static int r_line_readchar() {
-	ut8 buf[2];
-	*buf = '\0';
-#if __WINDOWS__ && !__CYGWIN__
-#if 1		// new implementation for read input at windows by skuater. If something fail set this to 0
-	int dummy = 0;
-	return r_line_readchar_win (&dummy);
-#endif
-	BOOL ret;
-	DWORD mode, out;
-	HANDLE h;
-#else
-	int ret;
-#endif
-
-do_it_again:
-#if __WINDOWS__ && !__CYGWIN__
-	h = GetStdHandle (STD_INPUT_HANDLE);
-	GetConsoleMode (h, &mode);
-	SetConsoleMode (h, 0);	// RAW
-	ret = ReadConsole (h, buf, 1, &out, NULL);
-	// wine hack-around
-	if (!ret && read (0, buf, 1) != 1) {
-		return -1;
-	}
-	SetConsoleMode (h, mode);
-#else
-	do {
-		buf[0] = 0;
-		ret = read (0, buf, 1);
-		buf[0] = r_cons_controlz (buf[0]);
-		// VTE HOME/END support
-		if (buf[0] == 79) {
-			if (read (0, buf, 1) != 1) {
-				return -1;
-			}
-			if (buf[0] == 70) {
-				return 5;
-			}
-			if (buf[0] == 72) {
-				return 1;
-			}
-			return 0;
-		}
-		if (ret == -1) {
-			return 0;	// read no char
-		}
-		if (!buf[0] || !ret) {
-			return -1;	// eof
-		}
-		// TODO: add support for other invalid chars
-		if (*buf == 0xc2 || *buf == 0xc3) {
-			read (0, buf + 1, 1);
-			*buf = '\0';
-		}
-	} while (*buf == '\0');
-#endif
-#if ONLY_VALID_CHARS
-	if (!is_valid_char (buf[0])) {
-		goto do_it_again;
-	}
-#endif
 	return buf[0];
 }
 #endif
