@@ -116,6 +116,7 @@ typedef struct operand_t {
 	};
 	bool explicit_size;
 	ut32 dest_size;
+	ut32 reg_size;
 } Operand;
 
 typedef struct Opcode_t {
@@ -1476,7 +1477,7 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 		} else if (op->operands[0].type & OT_MEMORY) {
 			int dest_bits = 8 * ((op->operands[0].dest_size & ALL_SIZE) >> OPSIZE_SHIFT);
-			int reg_bits = 8 * ((op->operands[0].type & ALL_SIZE) >> OPSIZE_SHIFT);
+			int reg_bits = 8 * ((op->operands[0].reg_size & ALL_SIZE) >> OPSIZE_SHIFT);
 			int offset = op->operands[0].offset * op->operands[0].offset_sign;
 
 			if (!op->operands[0].explicit_size) {
@@ -4247,27 +4248,27 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 		if (!r_str_ncasecmp (str + pos, "ptr", 3))
 			continue;
 		else if (!r_str_ncasecmp (str + pos, "byte", 4)) {
-			op->type |= OT_MEMORY;
+			op->type |= OT_MEMORY | OT_BYTE;
 			op->dest_size = OT_BYTE;
 			explicit_size = true;
 		} else if (!r_str_ncasecmp (str + pos, "word", 4)) {
-			op->type |= OT_MEMORY;
+			op->type |= OT_MEMORY | OT_WORD;
 			op->dest_size = OT_WORD;
 			explicit_size = true;
 		} else if (!r_str_ncasecmp (str + pos, "dword", 5)) {
-			op->type |= OT_MEMORY;
+			op->type |= OT_MEMORY | OT_DWORD;
 			op->dest_size = OT_DWORD;
 			explicit_size = true;
 		} else if (!r_str_ncasecmp (str + pos, "qword", 5)) {
-			op->type |= OT_MEMORY;
+			op->type |= OT_MEMORY | OT_QWORD;
 			op->dest_size = OT_QWORD;
 			explicit_size = true;
 		} else if (!r_str_ncasecmp (str + pos, "oword", 5)) {
-			op->type |= OT_MEMORY;
+			op->type |= OT_MEMORY | OT_OWORD;
 			op->dest_size = OT_OWORD;
 			explicit_size = true;
 		} else if (!r_str_ncasecmp (str + pos, "tbyte", 5)) {
-			op->type |= OT_MEMORY;
+			op->type |= OT_MEMORY | OT_TBYTE;
 			op->dest_size = OT_TBYTE;
 			explicit_size = true;
 		} else	// the current token doesn't denote a size
@@ -4337,8 +4338,11 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 				}
 
 				// Still going to need to know the size if not specified
+				if (!explicit_size) {
+					op->type |= reg_type;
+				}
+				op->reg_size = reg_type;
 				op->explicit_size = explicit_size;
-				op->type |= reg_type;
 
 				// Addressing only via general purpose registers
 				if (!(reg_type & OT_GPREG)) {
