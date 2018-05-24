@@ -115,6 +115,8 @@ typedef struct operand_t {
 		};
 	};
 	bool explicit_size;
+	ut32 dest_size;
+	ut32 reg_size;
 } Operand;
 
 typedef struct Opcode_t {
@@ -1474,109 +1476,150 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 				}
 			}
 		} else if (op->operands[0].type & OT_MEMORY) {
-			if (op->operands[1].type & OT_CONSTANT && !op->operands[0].explicit_size) {
+			int dest_bits = 8 * ((op->operands[0].dest_size & ALL_SIZE) >> OPSIZE_SHIFT);
+			int reg_bits = 8 * ((op->operands[0].reg_size & ALL_SIZE) >> OPSIZE_SHIFT);
+			int offset = op->operands[0].offset * op->operands[0].offset_sign;
+
+			if (!op->operands[0].explicit_size) {
+				//dest_bits = op->operands[0].type;
+				//we can use the previous line if we prefer to have a default behavior instead of an error
 				return -1;
 			}
-			if (a->bits == 64) {
-				if (op->operands[0].extended) {
-					if (op->operands[0].reg < 0) {
-						return -1;
-					}
-					data[l++] = 0x41;
-					data[l++] = 0xc6;
-					// For r12 and r13
-					if (op->operands[0].reg == 4) {
-						data[l++] = 0x04;
-						data[l++] = 0x24;
-					} else if (op->operands[0].reg == 5) {
-						data[l++] = 0x45;
-						data[l++] = 0x00;
-					} else {
-						data[l++] = op->operands[0].reg;
-					}
-					data[l++] = op->operands[1].immediate;
-					return l;
-				} else if (!(op->operands[0].type & OT_BYTE) &&
-				           !(op->operands[0].type & OT_QWORD)) {
-					data[l++] = 0x67;
-				} else if (op->operands[0].type & OT_QWORD) {
-					// The operand is a QWORD PTR memory access, so we want a
-					// REX prefix with a set W bit.
-					data[l++] = 0x48;
-				}
-			}
-			if (op->operands[0].type & (OT_DWORD | OT_QWORD)) {
-				data[l++] = 0xc7;
-			} else if (op->operands[0].type & OT_BYTE) {
-				data[l++] = 0xc6;
-			} else if (op->operands[0].type & OT_WORD) {
-				if (a->bits > 16) {
-					data[l++] = 0x66;
-				}
-			}
-			offset = op->operands[0].offset * op->operands[0].offset_sign;
 
-			if (op->operands[0].scale[0] > 1) {
-				int s = op->operands[0].scale[0];
-				// Check for power of 2 as valid sib
-				if (!(s & (s - 1))) {
+                        //addr_size_override prefix
+			bool use_aso = false;
+			if (reg_bits < a->bits) {
+				use_aso = true;
+			}
+
+                        //op_size_override prefix
+			bool use_oso = false;
+			if (dest_bits == 16) {
+				use_oso = true;
+			}
+
+			bool rip_rel = op->operands[0].regs[0] == X86R_RIP;
+
+                        //rex prefix
+			int rex = 1 << 6;
+			bool use_rex = false;
+			if (dest_bits == 64) {			//W field
+				use_rex = true;
+				rex |= 1 << 3;
+			}
+			if (op->operands[0].extended) {		//B field
+				use_rex = true;
+				rex |= 1;
+			}
+
+                        //opcode selection
+			int opcode;
+			if (dest_bits == 8) {
+				opcode = 0xc6;
+			} else {
+				opcode = 0xc7;
+			}
+
+			//modrm and SIB selection
+			int modrm = 0;
+			int mod;
+			int reg = 0;
+			int rm;
+			bool use_sib = false;
+			int sib;
+			//mod
+			if (offset == 0) {
+				mod = 0;
+			} else if (offset < 128 && offset > -129) {
+				mod = 1;
+			} else {
+				mod = 2;
+			}
+
+			if (reg_bits == 16) {
+				if (op->operands[0].regs[0] == X86R_BX && op->operands[0].regs[1] == X86R_SI) {
+					rm = 0b000;
+				} else if (op->operands[0].regs[0] == X86R_BX && op->operands[0].regs[1] == X86R_DI) {
+					rm = 0b001;
+				} else if (op->operands[0].regs[0] == X86R_BP && op->operands[0].regs[1] == X86R_SI) {
+					rm = 0b010;
+				} else if (op->operands[0].regs[0] == X86R_BP && op->operands[0].regs[1] == X86R_DI) {
+					rm = 0b011;
+				} else if (op->operands[0].regs[0] == X86R_SI && op->operands[0].regs[1] == -1) {
+					rm = 0b100;
+				} else if (op->operands[0].regs[0] == X86R_DI && op->operands[0].regs[1] == -1) {
+					rm = 0b101;
+				} else if (op->operands[0].regs[0] == X86R_BX && op->operands[0].regs[1] == -1) {
+					rm = 0b111;
+				} else {
+					//TODO allow for displacement only when parser is reworked
 					return -1;
 				}
-				data[l++] = 0x04;
-				data[l++] = getsib (s) << 6 | op->operands[0].regs[0] << 3 | 5;
-				data[l++] = offset;
-				data[l++] = offset >> 8;
-				data[l++] = offset >> 16;
-				data[l++] = offset >> 24;
-				data[l++] = immediate;
-				if (op->operands[0].type & (OT_DWORD | OT_QWORD)) {
-					data[l++] = immediate >> 8;
-					data[l++] = immediate >> 16;
-					data[l++] = immediate >> 24;
-				}
-				return l;
-			}
-
-			if (offset) {
-				mod = (offset > 128 || offset < -129) ? 0x2 : 0x1;
-			}
-
-			//if (op->operands[0].regs[0] == X86R_EBP) mod = 0x2;
-			if (op->operands[0].regs[1] != X86R_UNDEFINED) {
-				data[l++] = 0x44;
-				if (op->operands[0].regs[1] == X86R_ESP) {
-					data[l++] = 0x4 | op->operands[0].regs[0] << 3;
-				} else {
-					data[l++] = op->operands[0].regs[1] << 3 | op->operands[0].regs[0];
-				}
+				modrm = (mod << 6) | (reg << 3) | rm;
 			} else {
-				if (op->operands[0].regs[0] == X86R_UNDEFINED) {
-					data[l++] = 0x5;
-					mod = 0x02;
-				} else if (op->operands[0].scale[0] < 2) {
-					data[l++] = mod << 6 | op->operands[0].regs[0];
+	                        //rm
+				if (op->operands[0].extended) {
+					rm = op->operands[0].reg;
+				} else {
+					rm = op->operands[0].regs[0];
+				}
+				//[epb] alone is illegal, so we need to fake a [ebp+0]
+				if (rm == 5 && mod == 0) {
+					mod = 1;
 				}
 
-				if (op->operands[0].regs[0] == X86R_ESP) {
-					data[l++] = 0x24;
+	                        //sib
+				int index = op->operands[0].regs[1];
+	                        int scale = getsib(op->operands[0].scale[1]);
+				if (index != -1) {
+					use_sib = true;
+					sib = (scale << 6) | (index << 3) | rm;
+				} else if (rm == 4) {
+					use_sib = true;
+					sib = 0x24;
 				}
-				if (op->operands[0].regs[0] == X86R_EBP && !offset) {
-					data[l++] = 0x00;
+				if (use_sib) {
+					rm = 0b100;
+				}
+				if (rip_rel) {
+					modrm = (0b00 << 6) | (reg << 3) | 0b101;
+					sib = (scale << 6) | (0b100 << 3) | 0b101;
+				} else {
+					modrm = (mod << 6) | (reg << 3) | rm;
 				}
 			}
-			if (offset) {
+
+			//build the final result
+			if (use_aso) {
+				data[l++] = 0x67;
+			}
+			if (use_oso) {
+				data[l++] = 0x66;
+			}
+			if (use_rex) {
+				data[l++] = rex;
+			}
+			data[l++] = opcode;
+			data[l++] = modrm;
+			if (use_sib) {
+				data[l++] = sib;
+			}
+                        //offset
+			if (mod == 1) {
 				data[l++] = offset;
-			}
-			if (mod == 2) {
+			} else if (reg_bits == 16 && mod == 2) {
+				data[l++] = offset;
+				data[l++] = offset >> 8;
+			} else if (mod == 2 || rip_rel) {
+				data[l++] = offset;
 				data[l++] = offset >> 8;
 				data[l++] = offset >> 16;
 				data[l++] = offset >> 24;
 			}
-			data[l++] = immediate;
-			if (op->operands[0].type & (OT_DWORD | OT_QWORD)) {
-				data[l++] = immediate >> 8;
-				data[l++] = immediate >> 16;
-				data[l++] = immediate >> 24;
+                        //immediate
+			int byte;
+			for (byte = 0; byte < dest_bits && byte < 32; byte += 8) {
+				data[l++] = (immediate >> byte);
 			}
 		}
 	} else if (op->operands[1].type & OT_REGALL &&
@@ -4205,21 +4248,27 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 			continue;
 		else if (!r_str_ncasecmp (str + pos, "byte", 4)) {
 			op->type |= OT_MEMORY | OT_BYTE;
+			op->dest_size = OT_BYTE;
 			explicit_size = true;
 		} else if (!r_str_ncasecmp (str + pos, "word", 4)) {
 			op->type |= OT_MEMORY | OT_WORD;
+			op->dest_size = OT_WORD;
 			explicit_size = true;
 		} else if (!r_str_ncasecmp (str + pos, "dword", 5)) {
 			op->type |= OT_MEMORY | OT_DWORD;
+			op->dest_size = OT_DWORD;
 			explicit_size = true;
 		} else if (!r_str_ncasecmp (str + pos, "qword", 5)) {
 			op->type |= OT_MEMORY | OT_QWORD;
+			op->dest_size = OT_QWORD;
 			explicit_size = true;
 		} else if (!r_str_ncasecmp (str + pos, "oword", 5)) {
 			op->type |= OT_MEMORY | OT_OWORD;
+			op->dest_size = OT_OWORD;
 			explicit_size = true;
 		} else if (!r_str_ncasecmp (str + pos, "tbyte", 5)) {
 			op->type |= OT_MEMORY | OT_TBYTE;
+			op->dest_size = OT_TBYTE;
 			explicit_size = true;
 		} else	// the current token doesn't denote a size
 			size_token = 0;
@@ -4289,11 +4338,10 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 
 				// Still going to need to know the size if not specified
 				if (!explicit_size) {
-					op->explicit_size = false;
 					op->type |= reg_type;
-				} else {
-					op->explicit_size = true;
 				}
+				op->reg_size = reg_type;
+				op->explicit_size = explicit_size;
 
 				// Addressing only via general purpose registers
 				if (!(reg_type & OT_GPREG)) {
