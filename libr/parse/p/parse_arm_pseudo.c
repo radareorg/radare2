@@ -295,10 +295,10 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 				oldstr = r_str_newf ("[%s, %d]", reg, var->delta);
 			}
 		} else if (var->delta > 0) {
-			tmplt = p->pseudo ? "[%s + 0x%x]" : "[%s, 0x%x]";
+			tmplt = p->pseudo ? "[%s + 0x%x]" : (ucase ? "[%s, 0x%X]" : "[%s, 0x%x]");
 			oldstr = r_str_newf (tmplt, reg, var->delta);
 		} else {
-			tmplt = p->pseudo ? "[%s - 0x%x]" : "[%s, -0x%x]";
+			tmplt = p->pseudo ? "[%s - 0x%x]" : (ucase ? "[%s, -0x%X]" : "[%s, -0x%x]");
 			oldstr = r_str_newf (tmplt, reg, -var->delta);
 		}
 		if (ucase) {
