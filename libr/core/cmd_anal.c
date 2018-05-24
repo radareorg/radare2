@@ -5720,7 +5720,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 			r_config_get (core->config, "graph.title"));
 		r_agraph_print (core->graph);
 		break;
-	case 't':// "aggt" - tiny graph
+	case 't':{ // "aggt" - tiny graph
 		core->graph->is_tiny = true;
 		int e = r_config_get_i (core->config, "graph.edges");
 		r_config_set_i (core->config, "graph.edges", 0);
@@ -5728,6 +5728,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 		r_config_set_i (core->config, "graph.edges", e);
 		core->graph->is_tiny = false;
 		break;
+		}
 	case 'k': // "aggk"
 	{
 		Sdb *db = r_agraph_get_sdb (core->graph);
@@ -5855,7 +5856,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			}
 		case 'k':{ // "agfk"
 			ut64 addr = (*(input + 2)) ? r_num_math (core->num, input + 2) : core->offset;
-			r_core_cmdf (core, "ag-; .agf* %lld; aggk", addr);
+			r_core_cmdf (core, "ag-; .agf* %"PFMT64d"; aggk", addr);
 			break;
 			}
 		case '*':{// "agf*"
@@ -5868,7 +5869,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			if (r_config_get_i (core->config, "graph.web")) {
 				r_core_cmd0 (core, "=H /graph/");
 			} else {
-				char *cmdargs = r_str_newf ("agfd %lld", r_num_math (core->num, input + 2));
+				char *cmdargs = r_str_newf ("agfd %"PFMT64d, r_num_math (core->num, input + 2));
 				char *cmd = r_core_graph_cmd (core, cmdargs);
 				if (cmd && *cmd) {
 					r_core_cmd0 (core, cmd);
@@ -5955,7 +5956,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		case 'w':
 		case ' ': {
 			ut64 addr = input[2] ? r_num_math (core->num, input + 2) : core->offset;
-			r_core_cmdf (core, "ag-; .agr* %lld; agg%c;", addr, input[1]);
+			r_core_cmdf (core, "ag-; .agr* %"PFMT64d"; agg%c;", addr, input[1]);
 			break;
 			}
 		case '*': {
@@ -6015,7 +6016,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		case 'w':
 		case ' ': {
 			ut64 addr = input[2] ? r_num_math (core->num, input + 2) : core->offset;
-			r_core_cmdf (core, "ag-; .agx* %lld; agg%c;", addr, input[1]);
+			r_core_cmdf (core, "ag-; .agx* %"PFMT64d"; agg%c;", addr, input[1]);
 			break;
 			}
 		case '*': {
@@ -6062,7 +6063,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		case ' ': {
 			core->graph->is_callgraph = true;
 			ut64 addr = input[2] ? r_num_math (core->num, input + 2) : core->offset;
-			r_core_cmdf (core, "ag-; .agc* %lld; agg%c;", addr, input[1]);
+			r_core_cmdf (core, "ag-; .agc* %"PFMT64d"; agg%c;", addr, input[1]);
 			core->graph->is_callgraph = false;
 			break;
 			}
@@ -6121,7 +6122,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		case 'd':
 		case ' ': {
 			ut64 addr = input[2] ? r_num_math (core->num, input + 2): core->offset;
-			r_core_cmdf (core, "ag-; .aga* %lld; agg%c;", addr, input[1]);
+			r_core_cmdf (core, "ag-; .aga* %"PFMT64d"; agg%c;", addr, input[1]);
 			break;
 			}
 		case 0:
@@ -6189,7 +6190,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			break;
 			}
 		case 'w': {
-			char *cmdargs = r_str_newf ("agdd %lld",
+			char *cmdargs = r_str_newf ("agdd %"PFMT64d,
 				input[2] ? r_num_math (core->num, input + 2) : core->offset);
 			char *cmd = r_core_graph_cmd (core, cmdargs);
 			if (cmd && *cmd) {
@@ -6208,7 +6209,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		if (r_config_get_i (core->config, "graph.web")) {
 			r_core_cmd0 (core, "=H /graph/");
 		} else {
-			char *cmdargs = r_str_newf ("agfd %lld", r_num_math (core->num, input + 1));
+			char *cmdargs = r_str_newf ("agfd %"PFMT64d, r_num_math (core->num, input + 1));
 			char *cmd = r_core_graph_cmd (core, cmdargs);
 			if (cmd && *cmd) {
 				r_core_cmd0 (core, cmd);
