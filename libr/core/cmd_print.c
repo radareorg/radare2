@@ -4234,7 +4234,8 @@ static int cmd_print(void *data, const char *input) {
 					locs_it = f->fcn_locs->head;
 				}
 				if (f && input[2] == 'j') { // "pdfj"
-					ut8 *func_buf = NULL, *loc_buf = NULL;
+					ut8 *loc_buf = NULL;
+					RAnalBlock *b;
 					ut32 fcn_size = r_anal_fcn_realsize (f);
 					cont_size = tmp_get_contsize (f);
 					r_cons_printf ("{");
@@ -4243,16 +4244,43 @@ static int cmd_print(void *data, const char *input) {
 					r_cons_printf (",\"addr\":%"PFMT64d, f->addr);
 					r_cons_printf (",\"ops\":[");
 					// instructions are all outputted as a json list
-					func_buf = calloc (cont_size, 1);
+					cont_size = f->_size > 0 ? f->_size : r_anal_fcn_realsize (f);
 					bool first = true;
-					if (func_buf) {
-						// TODO: can loc jump to another locs?
-						for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
-							if (tmp_func->addr > f->addr) {
-								break;
-							}
-							cont_size = tmp_get_contsize (tmp_func);
-							loc_buf = calloc (cont_size, 1);
+					// TODO: can loc jump to another locs?
+					for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
+						if (tmp_func->addr > f->addr) {
+							break;
+						}
+						cont_size = tmp_get_contsize (tmp_func);
+						loc_buf = calloc (cont_size, 1);
+						r_io_read_at (core->io, tmp_func->addr, loc_buf, cont_size);
+						if (!first) {
+							r_cons_print (",");
+						}
+						r_core_print_disasm_json (core, tmp_func->addr, loc_buf, cont_size, 0);
+						first = false;
+						free (loc_buf);
+					}
+					r_list_foreach (f->bbs, locs_it, b) {
+						if (!first) {
+							first = false;
+						} else {
+							r_cons_print (",");
+						}
+
+						ut8 *buf = malloc (b->size);
+						if (buf) {
+							r_io_read_at (core->io, b->addr, buf, b->size);
+							r_core_print_disasm_json (core, b->addr, buf, b->size, 0);
+							free (buf);
+						} else {
+							eprintf ("cannot allocate %d byte(s)\n", b->size);
+						}
+					}
+					for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
+						cont_size = tmp_get_contsize (tmp_func);
+						loc_buf = calloc (cont_size, 1);
+						if (loc_buf) {
 							r_io_read_at (core->io, tmp_func->addr, loc_buf, cont_size);
 							if (!first) {
 								r_cons_print (",");
@@ -4261,29 +4289,6 @@ static int cmd_print(void *data, const char *input) {
 							first = false;
 							free (loc_buf);
 						}
-						cont_size = tmp_get_contsize (f);
-						r_io_read_at (core->io, f->addr, func_buf, cont_size);
-						if (!first) {
-							r_cons_print (",");
-						}
-						r_core_print_disasm_json (core, f->addr, func_buf, cont_size, 0);
-						first = false;
-						free (func_buf);
-						for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
-							cont_size = tmp_get_contsize (tmp_func);
-							loc_buf = calloc (cont_size, 1);
-							if (loc_buf) {
-								r_io_read_at (core->io, tmp_func->addr, loc_buf, cont_size);
-								if (!first) {
-									r_cons_print (",");
-								}
-								r_core_print_disasm_json (core, tmp_func->addr, loc_buf, cont_size, 0);
-								first = false;
-								free (loc_buf);
-							}
-						}
-					} else {
-						eprintf ("cannot allocate %d byte(s)\n", fcn_size);
 					}
 					r_cons_printf ("]}\n");
 					pd_result = 0;
