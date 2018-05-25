@@ -256,7 +256,7 @@ static void print_help (RIO *io, char *cmd, int p_usage) {
 			io->cb_printf ("%s\n", help_msg[i]);
 		}
 	}
-	printf ("\nOld Commands: (deprecated)\n");
+	io->cb_printf ("\nOld Commands: (deprecated)\n");
 	for (i = 0; i < (sizeof (help_msg_old) / sizeof (char*)); i++) {
 		if (!cmd || !strncmp (cmd, help_msg_old[i]+1, cmd_len)) {
 			io->cb_printf ("%s\n", help_msg_old[i]);
