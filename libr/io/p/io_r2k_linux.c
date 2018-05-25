@@ -738,6 +738,7 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 				}
 			} else {
 				io->cb_printf ("pid = %d\nprocess name = %s\n", proc_data.pid, proc_data.comm);
+				io->cb_printf ("task_struct = 0x%08"PFMT64x"\n", proc_data.task);
 				for (i = 0; i < buffsize;) {
 					nextstart = 0;
 					if (i + 7 < buffsize) {
