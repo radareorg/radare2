@@ -2836,11 +2836,11 @@ static void ds_print_indent(RDisasmState *ds) {
 static void ds_print_opstr(RDisasmState *ds) {
 	ds_print_indent (ds);
 	if (ds->use_json) {
-		char *escaped_str = r_str_escape(ds->opstr);
+		char *escaped_str = r_str_escape (ds->opstr);
 		if (escaped_str) {
-			r_cons_strcat(escaped_str);
+			r_cons_strcat (escaped_str);
 		}
-		free(escaped_str);
+		free (escaped_str);
 	} else {
 		r_cons_strcat (ds->opstr);
 	}
@@ -3135,7 +3135,16 @@ static void ds_align_comment(RDisasmState *ds) {
 	if (ds->show_comment_right_default) {
 		const int cmtcol = ds->cmtcol - 1;
 		int cells = 0;
-		char *ll = r_cons_lastline_utf8_ansi_len (&cells);
+		const char *ll = r_cons_lastline_utf8_ansi_len (&cells);
+		if (ds->use_json) {
+			// for json thats wrong, so we adjust the offset here
+			const int delta = 3;
+			const char *llq = r_str_last (ll, "\":\"");
+			if (llq) {
+				ll = llq + delta;
+				cells = r_str_ansi_len (ll);
+			}
+		}
 		if (ll) {
 			if (cells < 20) {
 				ds_print_pre (ds);
@@ -3629,15 +3638,13 @@ static void ds_print_relocs(RDisasmState *ds) {
 	}
 	RCore *core = ds->core;
 	RBinReloc *rel = getreloc (core, ds->at, ds->analop.size);
-
 	if (rel) {
-		const int cmtcol = ds->cmtcol;
 		int cstrlen = 0;
 		char *ll = r_cons_lastline (&cstrlen);
 		int ansilen = r_str_ansi_len (ll);
 		int utf8len = r_utf8_strlen ((const ut8*)ll);
 		int cells = utf8len - (cstrlen - ansilen);
-		int len = cmtcol - cells;
+		int len = ds->cmtcol - cells;
 		r_cons_memset (' ', len);
 		if (rel->import) {
 			r_cons_printf ("; RELOC %d %s", rel->type, rel->import->name);
