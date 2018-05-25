@@ -682,6 +682,13 @@ static int cmd_type(void *data, const char *input) {
 						}
 					}
 				}
+				if (!offimm && op.dst) {
+					if (op.dst->imm) {
+						offimm = op.dst->imm;
+					} else if (op.dst->delta) {
+						offimm = op.dst->delta;
+					}
+				}
 				if (offimm != 0) {
 					// TODO: Allow to select from multiple choices
 					RList* otypes = r_type_get_by_offset (TDB, offimm);
