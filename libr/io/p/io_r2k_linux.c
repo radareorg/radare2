@@ -736,6 +736,7 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 					j += 1;
 					i = nextstart;
 				}
+				io->cb_printf ("f pid.%d.task_struct = 0x%08"PFMT64x"\n", proc_data.pid, proc_data.task);
 			} else {
 				io->cb_printf ("pid = %d\nprocess name = %s\n", proc_data.pid, proc_data.comm);
 				io->cb_printf ("task_struct = 0x%08"PFMT64x"\n", proc_data.task);
@@ -800,7 +801,7 @@ int run_new_command(RIO *io, RIODesc *iodesc, const char *buf) {
 		return 1;
 	}
 	if (r_str_startswith (buf, "dp")) {
-		if (buf[2]== ' ') {
+		if (buf[2] == ' ') {
 			r2k_struct.pid = atoi (buf + 3);
 		} else {
 			io->cb_printf ("%d\n", r2k_struct.pid);
