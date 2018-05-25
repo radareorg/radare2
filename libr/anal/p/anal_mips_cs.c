@@ -584,10 +584,45 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	return 0;
 }
 
+static void op_fillval(RAnal *anal, RAnalOp *op, csh *handle, cs_insn *insn) {
+	switch (op->type) {
+	case R_ANAL_OP_TYPE_LOAD:
+		if (OPERAND(1).type == MIPS_OP_MEM) {
+			op->src[0] = r_anal_value_new ();
+			op->src[0]->delta = OPERAND(1).mem.disp;
+		}
+		break;
+	case R_ANAL_OP_TYPE_STORE:
+		if (OPERAND(1).type == MIPS_OP_MEM) {
+			op->dst = r_anal_value_new ();
+			op->dst->delta = OPERAND(1).mem.disp;
+		}
+		break;
+	case R_ANAL_OP_TYPE_SHL:
+	case R_ANAL_OP_TYPE_SHR:
+	case R_ANAL_OP_TYPE_SAR:
+	case R_ANAL_OP_TYPE_XOR:
+	case R_ANAL_OP_TYPE_SUB:
+	case R_ANAL_OP_TYPE_AND:
+	case R_ANAL_OP_TYPE_ADD:
+	case R_ANAL_OP_TYPE_OR:
+		SET_SRC_DST_3_REG_OR_IMM (op);
+		break;
+	case R_ANAL_OP_TYPE_MOV:
+		SET_SRC_DST_2_REGS (op);
+		break;
+	case R_ANAL_OP_TYPE_DIV:
+		SET_SRC_DST_3_REGS (op);
+		break;
+	}
+	if (insn && (insn->id == MIPS_INS_SLTI || insn->id == MIPS_INS_SLTIU)) {
+		SET_SRC_DST_3_IMM (op);
+	}
+}
+
 static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	int n, ret, opsize = -1;
 	static csh hndl = 0;
-	static csh *handle = &hndl;
 	static int omode = -1;
 	static int obits = 32;
 	cs_insn* insn;
@@ -739,7 +774,6 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		break;
 	case MIPS_INS_MOVE:
 		op->type = R_ANAL_OP_TYPE_MOV;
-		SET_SRC_DST_2_REGS (op);
 		break;
 	case MIPS_INS_ADD:
 	case MIPS_INS_ADDI:
@@ -749,7 +783,6 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	case MIPS_INS_DADDI:
 	case MIPS_INS_DADDIU:
 		SET_VAL (op, 2);
-		SET_SRC_DST_3_REG_OR_IMM (op);
 		op->type = R_ANAL_OP_TYPE_ADD;
 		if (REGID(0) == MIPS_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
@@ -769,7 +802,6 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	case MIPS_INS_SUBUH:
 	case MIPS_INS_SUBUH_R:
 		SET_VAL (op,2);
-		SET_SRC_DST_3_REG_OR_IMM (op);
 		op->type = R_ANAL_OP_TYPE_SUB;
 		break;
 	case MIPS_INS_MULV:
@@ -784,13 +816,11 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	case MIPS_INS_XOR:
 	case MIPS_INS_XORI:
 		SET_VAL (op,2);
-		SET_SRC_DST_3_REG_OR_IMM (op);
 		op->type = R_ANAL_OP_TYPE_XOR;
 		break;
 	case MIPS_INS_AND:
 	case MIPS_INS_ANDI:
 		SET_VAL (op,2);
-		SET_SRC_DST_3_REG_OR_IMM (op);
 		op->type = R_ANAL_OP_TYPE_AND;
 		if (REGID(0) == MIPS_REG_SP) {
 			op->stackop = R_ANAL_STACK_ALIGN;
@@ -802,7 +832,6 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	case MIPS_INS_OR:
 	case MIPS_INS_ORI:
 		SET_VAL (op,2);
-		SET_SRC_DST_3_REG_OR_IMM (op);
 		op->type = R_ANAL_OP_TYPE_OR;
 		break;
 	case MIPS_INS_DIV:
@@ -812,7 +841,6 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	case MIPS_INS_FDIV:
 	case MIPS_INS_DIV_S:
 	case MIPS_INS_DIV_U:
-		SET_SRC_DST_3_REGS (op);
 		op->type = R_ANAL_OP_TYPE_DIV;
 		break;
 	case MIPS_INS_CMPGDU:
@@ -888,7 +916,6 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		break;
 	case MIPS_INS_SLTI:
 	case MIPS_INS_SLTIU:
-		SET_SRC_DST_3_IMM (op);
 		SET_VAL (op,2);
 		break;
 
@@ -898,20 +925,17 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	case MIPS_INS_SHRA_R:
 	case MIPS_INS_SRA:
 		op->type = R_ANAL_OP_TYPE_SAR;
-		SET_SRC_DST_3_REG_OR_IMM (op);
 		SET_VAL (op,2);
 		break;
 	case MIPS_INS_SHRL:
 	case MIPS_INS_SRLV:
 	case MIPS_INS_SRL:
 		op->type = R_ANAL_OP_TYPE_SHR;
-		SET_SRC_DST_3_REG_OR_IMM (op);
 		SET_VAL (op,2);
 		break;
 	case MIPS_INS_SLLV:
 	case MIPS_INS_SLL:
 		op->type = R_ANAL_OP_TYPE_SHL;
-		SET_SRC_DST_3_REG_OR_IMM (op);
 		SET_VAL (op,2);
 		break;
 	}
@@ -919,6 +943,9 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	if (anal->decode) {
 		if (analop_esil (anal, op, addr, buf, len, &hndl, insn) != 0)
 			r_strbuf_fini (&op->esil);
+	}
+	if (anal->fillval) {
+		op_fillval (anal, op, &hndl, insn);
 	}
 	cs_free (insn, n);
 	//cs_close (&handle);
