@@ -404,7 +404,7 @@ static int cmd_seek(void *data, const char *input) {
 		}
 	}
 	break;
-	case '.': // "s."
+	case '.': // "s." "s.."
 		for (input++; *input == '.'; input++) {
 			;
 		}
