@@ -216,7 +216,7 @@ static void cmd_flag_tags (RCore *core, const char *input) {
 	for (; *input && !IS_WHITESPACE (*input); input++) {}
 	char *inp = strdup (input);
 	char *arg = r_str_trim (inp);
-	if (!*arg) {
+	if (!*arg && !mode) {
 		const char *tag;
 		RListIter *iter;
 		RList *list = r_flag_tags_list (core->flags);
@@ -227,7 +227,7 @@ static void cmd_flag_tags (RCore *core, const char *input) {
 		free (inp);
 		return;
 	}
-	if (*arg == '?') {
+	if (mode == '?') {
 		eprintf ("Usage: ft [k] [v ...]\n");
 		eprintf (" ft tag strcpy strlen ... # set words for the 'string' tag\n");
 		eprintf (" ft tag                   # get offsets of all matching flags\n");

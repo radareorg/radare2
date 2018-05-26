@@ -314,6 +314,9 @@ static bool is_bool(const char *s) {
 }
 
 R_API const char* r_config_get(RConfig *cfg, const char *name) {
+	if (!cfg || !name) {
+		return NULL;
+	}
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
 		if (node->getter) {

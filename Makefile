@@ -3,6 +3,8 @@ include global.mk
 
 PREVIOUS_RELEASE=`git log --tags --simplify-by-decoration --pretty='format:%d'|head -n1|cut -d ' ' -f3 |sed -e 's,),,'`
 
+B=$(DESTDIR)$(BINDIR)
+L=$(DESTDIR)$(LIBDIR)
 MESON?=meson
 PYTHON?=python
 R2R=radare2-regressions
@@ -138,6 +140,8 @@ windist:
 	cp -f libr/anal/d/*.sdb "${WINDIST}/share/radare2/${VERSION}/fcnsign"
 	mkdir -p "${WINDIST}/share/radare2/${VERSION}/opcodes"
 	cp -f libr/asm/d/*.sdb "${WINDIST}/share/radare2/${VERSION}/opcodes"
+	mkdir -p "${WINDIST}/share/radare2/${VERSION}/flag"
+	cp -f libr/flag/d/*.r2 "${WINDIST}/share/radare2/${VERSION}/flag"
 	mkdir -p "${WINDIST}/share/doc/radare2"
 	mkdir -p "${WINDIST}/include/libr/sdb"
 	mkdir -p "${WINDIST}/include/libr/r_util"
@@ -213,9 +217,7 @@ install love: install-doc install-man install-www
 	cd libr && ${MAKE} install
 	cd binr && ${MAKE} install
 	cd shlr && ${MAKE} install
-	for DIR in ${DATADIRS} ; do \
-		(cd "$$DIR" ; ${MAKE} install ); \
-	done
+	for DIR in ${DATADIRS} ; do $(MAKE) -C "$$DIR" install ; done
 	cd "$(DESTDIR)$(LIBDIR)/radare2/" ;\
 		rm -f last ; ln -fs $(VERSION) last
 	cd "$(DESTDIR)$(DATADIR)/radare2/" ;\
@@ -267,11 +269,13 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 	ln -fs "${PWD}/sys/indent.sh" "${DESTDIR}${BINDIR}/r2-indent"
 	ln -fs "${PWD}/sys/r2-docker.sh" "${DESTDIR}${BINDIR}/r2-docker"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud"
+	ln -fs "${PWD}/doc/hud" "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud/main"
+	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/flag"
+	ln -fs $(PWD)/libr/flag/d/tags.r2 "${DESTDIR}${DATADIR}/radare2/${VERSION}/flag/tags.r2"
 	cd "$(DESTDIR)$(LIBDIR)/radare2/" ;\
 		rm -f last ; ln -fs $(VERSION) last
 	cd "$(DESTDIR)$(DATADIR)/radare2/" ;\
 		rm -f last ; ln -fs $(VERSION) last
-	ln -fs "${PWD}/doc/hud" "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud/main"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
 	$(SHELL) sys/ldconfig.sh
 	$(SHELL) ./configure-plugins --rm-static $(DESTDIR)/$(LIBDIR)/radare2/last/
@@ -368,6 +372,7 @@ olddist:
 	#git log $$(git show-ref `git tag |tail -n1`)..HEAD > ChangeLog
 	git log $$(git show-ref | grep ${PREVIOUS_RELEASE} | awk '{print $$1}')..HEAD > ChangeLog
 	cd shlr && ${MAKE} capstone-sync
+	$(MAKE) -R capstone.ps
 	DIR=`basename "$$PWD"` ; \
 	FILES=`git ls-files | sed -e "s,^,radare2-${VERSION}/,"` ; \
 	CS_FILES=`cd shlr/capstone ; git ls-files | grep -v pdf | grep -v xcode | grep -v msvc | grep -v suite | grep -v bindings | grep -v tests | sed -e "s,^,radare2-${VERSION}/shlr/capstone/,"` ; \
@@ -392,7 +397,7 @@ tests:
 	else \
 		git clone --depth 1 "${R2R_URL}" "$(R2R)"; \
 	fi
-	cd $(R2R) ; ${MAKE}
+	$(MAKE) -C $(R2R)
 
 macos-sign:
 	$(MAKE) -C binr/radare2 macos-sign
@@ -416,12 +421,9 @@ meson:
 meson-install:
 	DESTDIR="$(DESTDIR)" ninja -C build install
 
-B=$(DESTDIR)$(BINDIR)
-L=$(DESTDIR)$(LIBDIR)
-
 meson-symstall: symstall-sdb
 	@echo "[ Meson symstall (not stable) ]"
-	ln -fs $(PWD)/binr/r2pm/r2pm  ${B}/r2pm
+	ln -fs $(PWD)/binr/r2pm/r2pm ${B}/r2pm
 	ln -fs $(PWD)/build/binr/rasm2/rasm2 ${B}/rasm2
 	ln -fs $(PWD)/build/binr/rarun2/rarun2 ${B}/rarun2
 	ln -fs $(PWD)/build/binr/radare2/radare2 ${B}/radare2
@@ -457,9 +459,9 @@ meson-clean:
 	rm -rf build
 	rm -rf build_sdb
 
-MESON_FILES=$(shell find build/libr build/binr -type f| grep -v @)
+MESON_FILES=$(shell find build/libr build/binr -type f | grep -v @)
 meson-symstall-experimental:
-	for a in $(MESON_FILES) ; do echo ln -fs $(PWD)/$$a $(PWD)/$$(echo $$a|sed -e s,build/,,) ; done
+	for a in $(MESON_FILES) ; do echo ln -fs "$(PWD)/$$a" "$(PWD)/$$(echo $$a|sed -e s,build/,,)" ; done
 	$(MAKE) symstall
 
 shlr/capstone:
