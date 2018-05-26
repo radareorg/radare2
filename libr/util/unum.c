@@ -213,25 +213,33 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 			break;
 		case 'b': // binary
 			ret = 0;
+			ok = true;
 			for (j = 0, i = strlen (str) - 2; i >= 0; i--, j++) {
 				if (str[i] == '1') {
 					ret|=1 << j;
 				} else if (str[i] != '0') {
-					error (num, "invalid binary number");
+					ok = false;
 					break;
 				}
+			}
+			if (!ok || !len_num) {
+				error (num, "invalid binary number");
 			}
 			break;
 		case 't': // ternary
 			ret = 0;
+			ok = true;
 			ut64 x = 1;
 			for (i = strlen (str) - 2; i >= 0; i--) {
 				if (str[i] < '0' || '2' < str[i]) {
-					error (num, "invalid ternary number");
+					ok = false;
 					break;
 				}
 				ret += x * (str[i] - '0');
 				x *= 3;
+			}
+			if (!ok || !len_num) {
+				error (num, "invalid ternary number");
 			}
 			break;
 		case 'K': case 'k':
