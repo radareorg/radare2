@@ -98,6 +98,7 @@ typedef struct {
 	bool show_lines_bb;
 	bool show_lines_ret;
 	bool show_lines_call;
+	bool pava;
 	int linesright;
 	int tracespace;
 	int cyclespace;
@@ -316,17 +317,24 @@ static void ds_start_line_highlight(RDisasmState *ds);
 static void ds_end_line_highlight(RDisasmState *ds);
 static bool line_highlighted(RDisasmState *ds);
 
+ut64 pa2va(RIO *io, ut64 addr) {
+	RIOMap *map = r_io_map_get_paddr (io, addr);
+	if (map) {
+		return addr -map->delta +  map->itv.addr;
+	}
+	return addr;
+}
+
 static ut64 p2v(RDisasmState *ds, ut64 addr) {
-#if 0
-	if (ds->core->io->pava) {
-		ut64 at = r_io_section_get_vaddr (ds->core->io, addr);
+	if (ds->pava) {
+		ut64 at = pa2va (ds->core->io, addr);
+		return at;
 		if (at == UT64_MAX || (!at && ds->at)) {
 			addr = ds->at;
 		} else {
 			addr = at + addr;
 		}
 	}
-#endif
 	return addr;
 }
 
@@ -562,6 +570,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->color_linehl = P(linehl): Color_BGBLUE;
 
 	ds->immstr = r_config_get_i (core->config, "asm.imm.str");
+	ds->pava = r_config_get_i (core->config, "io.pava");
 	ds->immtrim = r_config_get_i (core->config, "asm.imm.trim");
 	ds->use_esil = r_config_get_i (core->config, "asm.esil");
 	ds->pre_emu = r_config_get_i (core->config, "emu.pre");
