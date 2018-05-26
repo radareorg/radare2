@@ -3477,7 +3477,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			ds_comment (ds, true, "; 0x%" PFMT64x, refaddr);
 			refaddr_printed = true;
 		} else if (!refaddr_printed && strcmp (ds->show_cmtoff, "false")) {
-			char addrstr[sizeof (refaddr) * 2 + 3];
+			char addrstr[32] = {0};
 			snprintf (addrstr, sizeof (addrstr), "0x%" PFMT64x, refaddr);
 			if (!ds->opstr || !strstr (ds->opstr, addrstr)) {
 				snprintf (addrstr, sizeof (addrstr), "0x%08" PFMT64x, refaddr);

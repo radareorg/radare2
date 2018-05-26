@@ -3179,7 +3179,7 @@ static void _disasm_recursive(RCore *core, ut64 addr, char type_print) {
 
 static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char type_print, bool fromHere) {
 	RListIter *iter;
-	RAnalBlock *b;
+	RAnalBlock *b = NULL;
 	RAnalFunction *tmp_func;
 	RListIter *locs_it = NULL;
 
@@ -3193,6 +3193,10 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 		if (b->size > fcn_size) {
 			b->size = fcn_size;
 		}
+	}
+	if (!b) {
+		// no blocks for this function
+		return;
 	}
 	r_list_sort (f->bbs, (RListComparator) bbcmp);
 	if (input == 'j') {
