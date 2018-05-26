@@ -41,24 +41,28 @@ R_API RCmd *r_cmd_free(RCmd *cmd) {
 	r_cmd_alias_free (cmd);
 	r_cmd_macro_free (&cmd->macro);
 	// dinitialize plugin commands
-	r_core_plugin_deinit(cmd);
+	r_core_plugin_fini (cmd);
 	r_list_free (cmd->plist);
 	r_list_free (cmd->lcmds);
-	for (i=0;i<NCMDS;i++)
-		if (cmd->cmds[i])
+	for (i = 0; i < NCMDS; i++) {
+		if (cmd->cmds[i]) {
 			R_FREE (cmd->cmds[i]);
+		}
+	}
 	free (cmd);
 	return NULL;
 }
 
 R_API char **r_cmd_alias_keys(RCmd *cmd, int *sz) {
-	if (sz) *sz = cmd->aliases.count;
+	if (sz) {
+		*sz = cmd->aliases.count;
+	}
 	return cmd->aliases.keys;
 }
 
 R_API void r_cmd_alias_free (RCmd *cmd) {
 	int i; // find
-	for (i=0; i<cmd->aliases.count; i++) {
+	for (i = 0; i < cmd->aliases.count; i++) {
 		free (cmd->aliases.keys[i]);
 		free (cmd->aliases.values[i]);
 	}
@@ -70,31 +74,31 @@ R_API void r_cmd_alias_free (RCmd *cmd) {
 	cmd->aliases.values = NULL;
 }
 
-R_API int r_cmd_alias_del (RCmd *cmd, const char *k) {
+R_API bool r_cmd_alias_del (RCmd *cmd, const char *k) {
 	int i; // find
-	for (i=0; i<cmd->aliases.count; i++) {
+	for (i = 0; i < cmd->aliases.count; i++) {
 		if (!k || !strcmp (k, cmd->aliases.keys[i])) {
 			free (cmd->aliases.values[i]);
 			cmd->aliases.values[i] = NULL;
 			cmd->aliases.count--;
-			if (cmd->aliases.count>0) {
-				if (i>0) {
+			if (cmd->aliases.count > 0) {
+				if (i > 0) {
 					free (cmd->aliases.keys[i]);
 					cmd->aliases.keys[i] = cmd->aliases.keys[0];
 					free (cmd->aliases.values[i]);
 					cmd->aliases.values[i] = cmd->aliases.values[0];
 				}
 				memmove (cmd->aliases.values,
-					cmd->aliases.values+1,
-					cmd->aliases.count*sizeof (void*));
+					cmd->aliases.values + 1,
+					cmd->aliases.count * sizeof (void*));
 				memmove (cmd->aliases.keys,
-					cmd->aliases.keys+1,
-					cmd->aliases.count*sizeof (void*));
+					cmd->aliases.keys + 1,
+					cmd->aliases.count * sizeof (void*));
 			}
-			return 1;
+			return true;
 		}
 	}
-	return 0;
+	return false;
 }
 
 R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v, int remote) {
@@ -407,8 +411,9 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 		}
 	}
 #endif
-	if (macro_update == 0)
+	if (macro_update == 0) {
 		r_list_append (mac->macros, macro);
+	}
 	free (name);
 	return 0;
 }

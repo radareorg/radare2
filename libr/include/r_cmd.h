@@ -93,14 +93,14 @@ typedef struct r_core_plugin_t {
 	const char *version;
 	RCmdCallback call;
 	RCmdCallback init;
-	RCmdCallback deinit;
+	RCmdCallback fini;
 } RCorePlugin;
 
 #ifdef R_API
 R_API int r_core_plugin_init(RCmd *cmd);
 R_API int r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin);
 R_API int r_core_plugin_check(RCmd *cmd, const char *a0);
-R_API int r_core_plugin_deinit(RCmd *cmd);
+R_API int r_core_plugin_fini(RCmd *cmd);
 
 /* review api */
 R_API RCmd *r_cmd_new(void);
@@ -122,7 +122,7 @@ R_API void r_cmd_macro_meta(RCmdMacro *mac);
 R_API int r_cmd_macro_call(RCmdMacro *mac, const char *name);
 R_API int r_cmd_macro_break(RCmdMacro *mac, const char *value);
 
-R_API int r_cmd_alias_del (RCmd *cmd, const char *k);
+R_API bool r_cmd_alias_del (RCmd *cmd, const char *k);
 R_API char **r_cmd_alias_keys(RCmd *cmd, int *sz);
 R_API int r_cmd_alias_set (RCmd *cmd, const char *k, const char *v, int remote);
 R_API char *r_cmd_alias_get (RCmd *cmd, const char *k, int remote);
