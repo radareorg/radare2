@@ -860,7 +860,7 @@ R_API int r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz, boo
 		r_buf_set_bytes (binfile->buf, bytes, sz);
 	}
 #endif
-	return binfile->buf;
+	return binfile->buf != NULL;
 }
 
 R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *binfile) {
@@ -872,7 +872,7 @@ static int is_data_section(RBinFile *a, RBinSection *s) {
 		return true;
 	}
  	// Rust
-	return strstr (s->name, "_const");
+	return strstr (s->name, "_const") != NULL;
 }
 
 R_API RList *r_bin_file_get_strings(RBinFile *a, int min, int dump) {

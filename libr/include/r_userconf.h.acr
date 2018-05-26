@@ -29,6 +29,7 @@
 #define R2_SDB              R_JOIN_3_PATHS ("share", "radare2", R2_VERSION)
 #define R2_ZIGNS            R_JOIN_4_PATHS ("share", "radare2", R2_VERSION, "zigns")
 #define R2_THEMES           R_JOIN_4_PATHS ("share", "radare2", R2_VERSION, "cons")
+#define R2_FLAGS            R_JOIN_4_PATHS ("share", "radare2", R2_VERSION, "flag")
 #define R2_FORTUNES         R_JOIN_3_PATHS ("share", "doc", "radare2")
 #define R2_HUD              R_JOIN_4_PATHS ("share", "radare2", R2_VERSION, "hud")
 

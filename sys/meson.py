@@ -22,6 +22,7 @@ R2_PATH = {
     'R2_ZIGNS': r'{R2_DATDIR}\zigns',
     'R2_THEMES': r'{R2_DATDIR}\cons',
     'R2_FORTUNES': r'{R2_DATDIR}\doc',
+    'R2_FLAGS': r'{R2_DATDIR}\flag',
     'R2_HUD': r'{R2_DATDIR}\hud'
 }
 

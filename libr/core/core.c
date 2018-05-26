@@ -1883,6 +1883,15 @@ R_API bool r_core_init(RCore *core) {
 	r_config_set (core->config, "asm.arch", R_SYS_ARCH);
 	r_bp_use (core->dbg->bp, R_SYS_ARCH, core->anal->bits);
 	update_sdb (core);
+	{
+		char *a = r_str_r2_prefix (R2_FLAGS);
+		if (a) {
+			char *file = r_str_newf ("%s/tags.r2", a);
+			(void)r_core_run_script (core, file);
+			free (file);
+			free (a);
+		}
+	}
 	return 0;
 }
 
