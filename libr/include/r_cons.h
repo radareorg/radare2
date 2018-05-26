@@ -629,6 +629,7 @@ R_API RCons *r_cons_new(void);
 R_API RCons *r_cons_singleton(void);
 R_API RCons *r_cons_free(void);
 R_API char *r_cons_lastline(int *size);
+R_API char *r_cons_lastline_utf8_ansi_len(int *len);
 
 typedef void (*RConsBreak)(void *);
 R_API void r_cons_break_end(void);

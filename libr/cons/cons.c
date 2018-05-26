@@ -1213,6 +1213,47 @@ R_API char *r_cons_lastline(int *len) {
 	return b;
 }
 
+// same as r_cons_lastline(), but len will be the number of
+// utf-8 characters excluding ansi escape sequences as opposed to just bytes
+R_API char *r_cons_lastline_utf8_ansi_len(int *len) {
+	if (!len) {
+		return r_cons_lastline (0);
+	}
+
+	char *b = I.buffer + I.buffer_len;
+	int l = 0;
+	int last_possible_ansi_end = 0;
+	char ch = '\0';
+	char ch2;
+	while (b > I.buffer) {
+		ch2 = ch;
+		ch = *b;
+
+		if (ch == '\n') {
+			b++;
+			l--;
+			break;
+		}
+
+		// utf-8
+		if ((ch & 0xc0) != 0x80) {
+			l++;
+		}
+
+		// ansi
+		if (ch == 'J' || ch == 'm' || ch == 'H') {
+			last_possible_ansi_end = l - 1;
+		} else if (ch == '\x1b' && ch2 == '[') {
+			l = last_possible_ansi_end;
+		}
+
+		b--;
+	}
+
+	*len = l;
+	return b;
+}
+
 /* swap color from foreground to background, returned value must be freed */
 R_API char *r_cons_swap_ground(const char *col) {
 	if (!col) {
