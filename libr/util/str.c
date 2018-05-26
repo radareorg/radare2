@@ -1322,20 +1322,11 @@ R_API char *r_str_escape_utf32le(const char *buf, int buf_size, bool show_asciid
 
 /* ansi helpers */
 R_API int r_str_ansi_len(const char *str) {
-	int ch, ch2, i = 0, len = 0, sub = 0;
+	int ch, i = 0, len = 0, sub = 0;
 	while (str[i]) {
 		ch = str[i];
-		ch2 = str[i + 1];
-		if (ch == 0x1b) {
-			if (ch2 == '\\') {
-				i++;
-			} else if (ch2 == ']') {
-				if (!strncmp (str + 2 + 5, "rgb:", 4)) {
-					i += 18;
-				}
-			} else if (ch2 == '[') {
-				for (++i; str[i] && str[i] != 'J' && str[i] != 'm' && str[i] != 'H'; i++);
-			}
+		if (ch == 0x1b && str[i + 1] == '[') {
+			for (++i; str[i] && str[i] != 'J' && str[i] != 'm' && str[i] != 'H'; i++);
 		} else {
 			len++;
 #if 0
