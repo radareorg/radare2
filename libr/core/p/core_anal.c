@@ -391,8 +391,6 @@ RCorePlugin r_core_plugin_anal = {
 	.desc = "The reworked analysis from scratch thing",
 	.license = "LGPL3",
 	.call = r_cmd_anal_call,
-	.deinit = NULL,
-	.init = NULL,
 };
 
 #ifndef CORELIB
