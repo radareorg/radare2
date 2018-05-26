@@ -3134,16 +3134,13 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 static void ds_align_comment(RDisasmState *ds) {
 	if (ds->show_comment_right_default) {
 		const int cmtcol = ds->cmtcol - 1;
-		int cstrlen = 0;
-		char *ll = r_cons_lastline (&cstrlen);
+		int cells = 0;
+		char *ll = r_cons_lastline_utf8_ansi_len (&cells);
 		if (ll) {
-			int cols, ansilen = r_str_ansi_len (ll);
-			int utf8len = r_utf8_strlen ((const ut8*)ll);
-			int cells = utf8len - (cstrlen - ansilen);
-			if (cstrlen < 20) {
+			if (cells < 20) {
 				ds_print_pre (ds);
 			}
-			cols = ds->interactive ? ds->core->cons->columns : 1024;
+			int cols = ds->interactive ? ds->core->cons->columns : 1024;
 			if (cells < cmtcol) {
 				int len = cmtcol - cells;
 				if (len < cols && len > 0) {
