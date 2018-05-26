@@ -224,6 +224,7 @@ dotherax:
 			fflush (stdout);
 			free (buf);
 		}
+		printf ("\n");
 		return true;
 	}
 	if (flags & (1 << 2)) { // -S
