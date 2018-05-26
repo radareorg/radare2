@@ -2670,6 +2670,22 @@ jmp $$ + 4 + ( [delta] * 2 )
 	}
 }
 
+static void op_fillval (RAnalOp *op , cs_insn *insn, int bits) {
+	ut64 disp = (bits == 32)? MEMDISP(1): MEMDISP64(1);
+	switch (op->type) {
+	case R_ANAL_OP_TYPE_LOAD:
+		op->src[0] = r_anal_value_new ();
+		op->src[0]->delta = disp;
+		break;
+	case R_ANAL_OP_TYPE_STORE:
+		op->dst = r_anal_value_new ();
+		op->dst->delta = disp;
+		break;
+	default:
+		break;
+	}
+}
+
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	static csh handle = 0;
 	static int omode = -1;
@@ -2725,6 +2741,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			if (a->decode) {
 				analop_esil (a, op, addr, buf, len, &handle, insn, thumb);
 			}
+		}
+		if (a->fillval) {
+			op_fillval (op, insn, a->bits);
 		}
 		cs_free (insn, n);
 	}

@@ -85,6 +85,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	}
 
 	anal->decode = mask & R_ANAL_OP_MASK_ESIL ? true : false;
+	anal->fillval = mask & R_ANAL_OP_MASK_VAL ? true : false;
 
 	if (anal->pcalign) {
 		if (addr % anal->pcalign) {

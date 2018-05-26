@@ -1668,15 +1668,76 @@ static int parse_reg_name_lea(RRegItem *reg, csh *handle, cs_insn *insn, int reg
 	return 0;
 }
 
-static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
+#define CREATE_SRC_DST(op) \
+	(op)->src[0] = r_anal_value_new ();\
+	(op)->dst = r_anal_value_new ();\
+	ZERO_FILL (regs[0]);\
+	ZERO_FILL (regs[1]);\
+	(op)->src[0]->reg = &regs[1];\
+	(op)->dst->reg = &regs[0];
+
+static void op_fillval (RAnal *a, RAnalOp *op, csh *handle, cs_insn *insn){
 	char *dst;
 	struct Getarg gop = {
 		.handle = *handle,
 		.insn = insn,
 		.bits = a->bits
 	};
-	int regsz = 4;
 	static RRegItem regs[2];
+
+	switch (op->type) {
+	case R_ANAL_OP_TYPE_MOV:
+		CREATE_SRC_DST (op);
+		switch (INSOP(0).type) {
+		case X86_OP_MEM:
+			op->dst->delta = INSOP(0).mem.disp;
+			parse_reg_name_mov (op->src[0]->reg, &gop.handle, insn, 1);
+			break;
+		case X86_OP_REG:
+			dst = getarg (&gop, 0, 0, NULL, DST_AR);
+			op->dst->reg = r_reg_get (a->reg, dst, R_REG_TYPE_GPR);
+			if (INSOP(1).type == X86_OP_MEM) {
+				op->src[0]->delta = INSOP(1).mem.disp;
+			}
+		default:
+			break;
+		}
+		break;
+	case R_ANAL_OP_TYPE_SHL:
+		op->src[0] = r_anal_value_new ();
+		op->src[0]->imm = INSOP(1).imm;
+		break;
+	case R_ANAL_OP_TYPE_CMP:
+		switch (INSOP(0).type) {
+		case X86_OP_MEM:
+			op->dst = r_anal_value_new ();
+			op->dst->delta = INSOP(0).mem.disp;
+			break;
+		case X86_OP_REG:
+			op->src[0] = r_anal_value_new ();
+			op->src[0]->delta = INSOP(1).mem.disp;
+		default:
+			break;
+		}
+		break;
+	case R_ANAL_OP_TYPE_LEA:
+		CREATE_SRC_DST (op);
+		parse_reg_name_lea (op->src[0]->reg, &gop.handle, insn, 1);
+		parse_reg_name_mov (op->dst->reg, &gop.handle, insn, 0);
+		if (INSOP(1).type == X86_OP_MEM) {
+			op->src[0]->delta = INSOP(1).mem.disp;
+		}
+		break;
+	}
+}
+
+static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
+	struct Getarg gop = {
+		.handle = *handle,
+		.insn = insn,
+		.bits = a->bits
+	};
+	int regsz = 4;
 	switch (a->bits) {
 	case 64: regsz = 8; break;
 	case 16: regsz = 2; break;
@@ -1895,20 +1956,8 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		{
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->ptr = UT64_MAX;
-
-		op->src[0] = r_anal_value_new ();
-		ZERO_FILL (regs[1]);
-		op->src[0]->reg = &regs[1];
-		op->dst = r_anal_value_new ();
-
-		parse_reg_name_mov (op->src[0]->reg, &gop.handle, insn, 1);
-
 		switch (INSOP(0).type) {
 		case X86_OP_MEM:
-			ZERO_FILL (regs[1]);
-			op->dst->reg = &regs[0];
-			parse_reg_name_mov (op->dst->reg, &gop.handle, insn, 0);
-
 			op->cycles = CYCLE_MEM;
 			op->ptr = INSOP(0).mem.disp;
 			op->refptr = INSOP(0).size;
@@ -1928,15 +1977,6 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 			}
 			break;
 		case X86_OP_REG:
-			{
-			dst = getarg (&gop, 0, 0, NULL, DST_AR);
-			//op->dst = r_anal_value_new ();
-			op->dst->reg = r_reg_get (a->reg, dst, R_REG_TYPE_GPR);
-			//op->src[0] = r_anal_value_new ();
-			if (INSOP(1).type == X86_OP_MEM) {
-				op->src[0]->delta = INSOP(1).mem.disp;
-			}
-			}
 		default:
 			break;
 		}
@@ -1982,8 +2022,6 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		// number of bits shifted is greater than the size of the
 		// destination.
 		op->type = R_ANAL_OP_TYPE_SHL;
-		op->src[0] = r_anal_value_new ();
-		op->src[0]->imm = INSOP(1).imm;
 		break;
 	case X86_INS_SAR:
 	case X86_INS_SARX:
@@ -2058,16 +2096,6 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		break;
 	case X86_INS_LEA:
 		op->type = R_ANAL_OP_TYPE_LEA;
-		op->src[0] = r_anal_value_new ();
-		ZERO_FILL (regs[1]);
-		op->src[0]->reg = &regs[1];
-		op->dst = r_anal_value_new ();
-		ZERO_FILL (regs[0]);
-		op->dst->reg = &regs[0];
-
-		parse_reg_name_lea (op->src[0]->reg, &gop.handle, insn, 1);
-		parse_reg_name_mov (op->dst->reg, &gop.handle, insn, 0);
-
 		switch (INSOP(1).type) {
 		case X86_OP_MEM:
 			// op->type = R_ANAL_OP_TYPE_ULEA;
@@ -2572,6 +2600,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	op->ptr = op->val = UT64_MAX;
 	op->src[0] = NULL;
 	op->src[1] = NULL;
+	op->dst = NULL;
 	op->size = 0;
 	op->delay = 0;
 	r_strbuf_init (&op->esil);
@@ -2617,6 +2646,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		anop (a, op, addr, buf, len, &handle, insn);
 		if (a->decode) {
 			anop_esil (a, op, addr, buf, len, &handle, insn);
+		}
+		if (a->fillval) {
+			op_fillval (a, op, &handle, insn);
 		}
 	}
 //#if X86_GRP_PRIVILEGE>0

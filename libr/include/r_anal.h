@@ -461,7 +461,8 @@ typedef enum {
 
 typedef enum {
 	R_ANAL_OP_MASK_ESIL       = 1,
-	R_ANAL_OP_MASK_ALL        = R_ANAL_OP_MASK_ESIL
+	R_ANAL_OP_MASK_VAL        = 2,
+	R_ANAL_OP_MASK_ALL        = R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL
 } RAnalOpMask;
 
 /* TODO: what to do with signed/unsigned conditionals? */
@@ -686,6 +687,7 @@ typedef struct r_anal_t {
 	RList /*RAnalRange*/ *bits_ranges;
 	RListComparator columnSort;
 	int stackptr;
+	bool fillval;
 	bool (*log)(struct r_anal_t *anal, const char *msg);
 	bool (*read_at)(struct r_anal_t *anal, ut64 addr, ut8 *buf, int len);
 	char *cmdtail;
