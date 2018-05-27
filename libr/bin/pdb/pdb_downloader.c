@@ -76,7 +76,7 @@ static int download(struct SPDBDownloader *pd) {
 						    guid, R_SYS_DIR,
 						    archive_name_escaped);
 
-		curl_cmd = r_str_newf ("curl -sfA \"%s\" \"%s/%s/%s/%s\" --create-dirs -o \"%s\"",
+		curl_cmd = r_str_newf ("curl -sfLA \"%s\" \"%s/%s/%s/%s\" --create-dirs -o \"%s\"",
 		                       user_agent,
 		                       symbol_server,
 							   dbg_file,
@@ -131,7 +131,7 @@ static int download(struct SPDBDownloader *pd) {
 		    guid, R_SYS_DIR,
 		    archive_name_escaped);
 
-		curl_cmd = r_str_newf ("curl -sfA \"%s\" \"%s/%s/%s/%s\" --create-dirs -o \"%s\"",
+		curl_cmd = r_str_newf ("curl -sfLA \"%s\" \"%s/%s/%s/%s\" --create-dirs -o \"%s\"",
 		                       opt->user_agent,
 		                       opt->symbol_server,
 		                       opt->dbg_file,
