@@ -3890,7 +3890,7 @@ static int cmd_print(void *data, const char *input) {
 				}
 			}
 		} else if (input[1] == '?') {
-			r_cons_printf ("|Usage: pa[ed] [hex|asm]  assemble (pa) disasm (pad)"
+			r_cons_printf ("|Usage: pa[edD] [asm|hex]  assemble (pa), disasm (pa[dD]),"
 				" esil (pae) from hexpairs\n");
 		} else {
 			RAsmCode *acode;
