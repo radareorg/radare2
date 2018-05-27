@@ -1796,7 +1796,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		eprintf ("Error: Allocating cmd output\n");
 		return;
 	}
-	r_socket_read (fh, (ut8*)cmd_output, cmd_len);
+	r_socket_read_block (fh, (ut8*)cmd_output, cmd_len);
 	//ensure the termination
 	cmd_output[cmd_len] = 0;
 	r_cons_println (cmd_output);
