@@ -54,7 +54,7 @@ index 449b1da5..fe87a318 100644
  				return 0;
  			}
 -
-+			memset (total + (sizeof(cs_insn) * old_size), 0, (total_size - old_size));
++			memset ((char *)total + (sizeof(cs_insn) * old_size), 0, (total_size - old_size));
  			total = tmp;
  			// continue to fill in the cache after the last instruction
  			insn_cache = (cs_insn *)((char *)total + sizeof(cs_insn) * c);
