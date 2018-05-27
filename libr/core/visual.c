@@ -431,6 +431,8 @@ static void visual_single_step_in(RCore *core) {
 }
 
 static void visual_single_step_over(RCore *core) {
+	bool io_cache = r_config_get_i (core->config, "io.cache");
+	r_config_set_i (core->config, "io.cache", false);
 	if (r_config_get_i (core->config, "cfg.debug")) {
 		if (core->print->cur_enabled) {
 			r_core_cmd (core, "dcr", 0);
@@ -443,6 +445,7 @@ static void visual_single_step_over(RCore *core) {
 		r_core_cmd (core, "aeso", 0);
 		r_core_cmd (core, ".ar*", 0);
 	}
+	r_config_set_i (core->config, "io.cache", io_cache);
 }
 
 static void visual_breakpoint(RCore *core) {
