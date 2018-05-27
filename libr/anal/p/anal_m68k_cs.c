@@ -76,6 +76,56 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	r_strbuf_append (buf, "]}");
 }
 
+#define ZERO_FILL(x) memset (&x, 0, sizeof (x))
+
+static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
+	if (!reg) {
+		return -1;
+	}
+	switch (OPERAND (reg_num).type) {
+	case M68K_OP_REG:
+		reg->name = (char *)cs_reg_name (handle, OPERAND (reg_num).reg);
+		break;
+	case M68K_OP_MEM:
+		if (OPERAND (reg_num).mem.base_reg != M68K_REG_INVALID) {
+			reg->name = (char *)cs_reg_name (handle, OPERAND (reg_num).mem.base_reg);
+		}
+		break;
+	default:
+		break;
+	}
+	return 0;
+}
+
+static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
+	static RRegItem reg;
+	switch (op->type) {
+	case R_ANAL_OP_TYPE_MOV:
+		ZERO_FILL (reg);
+		if (OPERAND(1).type == M68K_OP_MEM) {
+			op->src[0] = r_anal_value_new ();
+			op->src[0]->reg = &reg;
+			parse_reg_name (op->src[0]->reg, handle, insn, 1);
+			op->src[0]->delta = OPERAND(0).mem.disp;
+		} else if (OPERAND(0).type == M68K_OP_MEM) {
+			op->dst = r_anal_value_new ();
+			op->dst->reg = &reg;
+			parse_reg_name (op->dst->reg, handle, insn, 0);
+			op->dst->delta = OPERAND(1).mem.disp;
+		}
+		break;
+	case R_ANAL_OP_TYPE_LEA:
+		ZERO_FILL (reg);
+		if (OPERAND(1).type == M68K_OP_MEM) {
+			op->dst = r_anal_value_new ();
+			op->dst->reg = &reg;
+			parse_reg_name (op->dst->reg, handle, insn, 1);
+			op->dst->delta = OPERAND(1).mem.disp;
+		}
+		break;
+	}
+}
+
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	int n, ret, opsize = -1;
 	static csh handle = 0;
@@ -592,10 +642,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		op->stackptr = 0;
 		break;
 	}
-	beach:
+	if (a->fillval) {
+		op_fillval (op, handle, insn);
+	}
+beach:
 	cs_free (insn, n);
 	//cs_close (&handle);
-	fin:
+fin:
 	return opsize;
 }
 
