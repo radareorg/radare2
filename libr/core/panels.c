@@ -728,18 +728,16 @@ static void panelSingleStepIn(RCore *core) {
 }
 
 static void panelSingleStepOver(RCore *core) {
+	bool io_cache = r_config_get_i (core->config, "io.cache");
+	r_config_set_i (core->config, "io.cache", false);
 	if (r_config_get_i (core->config, "cfg.debug")) {
-		if (core->print->cur_enabled) {
-			r_core_cmd (core, "dcr", 0);
-			core->print->cur_enabled = 0;
-		} else {
-			r_core_cmd (core, "dso", 0);
-			r_core_cmd (core, ".dr*", 0);
-		}
+		r_core_cmd (core, "dso", 0);
+		r_core_cmd (core, ".dr*", 0);
 	} else {
 		r_core_cmd (core, "aeso", 0);
 		r_core_cmd (core, ".ar*", 0);
 	}
+	r_config_set_i (core->config, "io.cache", io_cache);
 }
 
 static void panelBreakpoint(RCore *core) {
@@ -1191,11 +1189,7 @@ repeat:
 		setRefreshAll (panels);
 		break;
 	case 'S':
-		if (r_config_get_i (core->config, "cfg.debug")) {
-			r_core_cmd0 (core, "dso;.dr*"); // ;sr PC");
-		} else {
-			panelSingleStepOver (core);
-		}
+		panelSingleStepOver (core);
 		setRefreshAll (panels);
 		break;
 	case ':':
