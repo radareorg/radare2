@@ -175,6 +175,14 @@ SDB_API char *sdb_querys (Sdb *r, char *buf, size_t len, const char *_cmd) {
 		return NULL;
 	}
 	out = strbuf_new ();
+	if ((int)len < 1 || !buf) {
+		bufset = 1;
+		buf = malloc ((len = 64));
+		if (!buf) {
+			strbuf_free (out);
+			return NULL;
+		}
+	}
 	if (_cmd) {
 		cmd = original_cmd = strdup (_cmd);
 		if (!cmd) {
@@ -182,14 +190,6 @@ SDB_API char *sdb_querys (Sdb *r, char *buf, size_t len, const char *_cmd) {
 			return NULL;
 		}
 	} else {
-		if (len < 1 || !buf) {
-			bufset = 1;
-			buf = malloc ((len = 64));
-			if (!buf) {
-				strbuf_free (out);
-				return NULL;
-			}
-		}
 		cmd = buf;
 	}
 	// if cmd is null, we take buf as cmd
@@ -837,7 +837,7 @@ fail:
 SDB_API int sdb_query (Sdb *s, const char *cmd) {
 	char buf[1024], *out;
 	int must_save = ((*cmd=='~') || strchr (cmd, '='));
-	out = sdb_querys (s, buf, sizeof (buf)-1, cmd);
+	out = sdb_querys (s, buf, sizeof (buf) - 1, cmd);
 	if (out) {
 		if (*out) {
 			puts (out);
