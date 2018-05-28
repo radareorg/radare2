@@ -1572,7 +1572,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			continue;
 		}
 		rtr_host[i].proto = proto;
-		strncpy (rtr_host[i].host, host, sizeof (rtr_host[i].proto)-1);
+		strncpy (rtr_host[i].host, host, sizeof (rtr_host[i].host)-1);
 		rtr_host[i].port = r_num_get (core->num, port);
 		strncpy (rtr_host[i].file, file, sizeof (rtr_host[i].file)-1);
 		rtr_host[i].fd = fd;
