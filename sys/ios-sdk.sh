@@ -20,8 +20,10 @@ export CC=`pwd`/sys/ios-sdk-gcc
 export LD="xcrun --sdk iphoneos ld"
 export IOSVER=9.0
 export IOSINC=`pwd`/sys/ios-include
-export USE_IOS_STORE=1
 export USE_IOS_STATIC=0
+
+PLUGINS_CFG=plugins.ios-store.cfg
+#PLUGINS_CFG=plugins.ios.cfg
 
 if [ "${EMBED_BITCODE}" = 1 ]; then
 	export CFLAGS="$CFLAGS -fembed-bitcode"
@@ -29,14 +31,9 @@ if [ "${EMBED_BITCODE}" = 1 ]; then
 fi
 
 iosConfigure() {
-	if [ "${USE_IOS_STORE}" = 1 ]; then
-		cp -f plugins.ios-store.cfg plugins.cfg
-	else
-		cp -f plugins.ios.cfg plugins.cfg
-	fi
-	./configure --enable-merged --prefix=${PREFIX} --with-ostype=darwin \
-	  --without-pic --with-nonpic --without-fork \
-	  --with-compiler=ios-sdk --target=arm-unknown-darwin
+	cp -f ${PLUGINS_CFG} plugins.cfg
+	./configure --with-libr --prefix=${PREFIX} --with-ostype=darwin \
+		--without-fork --with-compiler=ios-sdk --target=arm-unknown-darwin
 	return $?
 }
 
