@@ -2131,7 +2131,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		char *title = get_title (bb->addr);
 
 		RANode *node = r_agraph_add_node (g, title, body);
-		shortcuts = r_config_get_i (core->config, "graph.nodejmps");
+		shortcuts = g->is_interactive ? r_config_get_i (core->config, "graph.nodejmps") : false;
 
 		if (shortcuts) {
 			shortcut = r_core_add_asmqjmp (core, bb->addr);
@@ -3709,6 +3709,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	g->on_curnode_change = (RANodeCallback) seek_to_node;
 	g->on_curnode_change_data = core;
 	g->edgemode = r_config_get_i (core->config, "graph.edges");
+	g->is_interactive = is_interactive;
 	bool asm_comments = r_config_get_i (core->config, "asm.comments");
 	r_config_set (core->config, "asm.comments",
 		r_str_bool (r_config_get_i (core->config, "graph.comments")));

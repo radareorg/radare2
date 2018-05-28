@@ -1232,16 +1232,15 @@ static int autocomplete(RLine *line) {
 		|| !strncmp (line->buffer.data, "afc ", 4)
 		|| !strncmp (line->buffer.data, "axt ", 4)
 		|| !strncmp (line->buffer.data, "axf ", 4)
-		|| !strncmp (line->buffer.data, "aga ", 4)
-		|| !strncmp (line->buffer.data, "agc ", 4)
-		|| !strncmp (line->buffer.data, "agl ", 4)
-		|| !strncmp (line->buffer.data, "agd ", 4)
 		|| !strncmp (line->buffer.data, "dcu ", 4)
 		|| !strncmp (line->buffer.data, "/re ", 4)
 		|| !strncmp (line->buffer.data, "agfl ", 5)
 		|| !strncmp (line->buffer.data, "aecu ", 5)
 		|| !strncmp (line->buffer.data, "aesu ", 5)
 		|| !strncmp (line->buffer.data, "aeim ", 5)
+		|| (!strncmp (line->buffer.data, "ag", 2)
+			&& (strlen (line->buffer.data) > 4  && line->buffer.data[4] == ' '
+				|| strlen (line->buffer.data) > 3  && line->buffer.data[3] == ' '))
 		|| line->offset_prompt) {
 			int n, i = 0;
 			int sdelta = line->offset_prompt 

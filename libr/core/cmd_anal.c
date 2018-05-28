@@ -9,6 +9,7 @@ static const char *help_msg_a[] = {
 	"a8", " [hexpairs]", "analyze bytes",
 	"ab", "[b] [addr]", "analyze block at given address",
 	"abb", " [len]", "analyze N basic blocks in [len] (section.size by default)",
+	"abt", " [addr]", "find paths in the bb function graph from current offset to given address",
 	"ac", " [cycles]", "analyze which op could be executed in [cycles]",
 	"ad", "[?]", "analyze data trampoline (wip)",
 	"ad", " [from] [to]", "analyze data pointers to (from-to)",
@@ -5800,7 +5801,6 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 }
 
 static void cmd_anal_graph(RCore *core, const char *input) {
-	RList *list;
 	switch (input[0]) {
 	case 'f': // "agf"
 		switch (input[1]) {
@@ -5897,21 +5897,6 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		break;
 	case 's': // "ags"
 		r_core_anal_graph (core, r_num_math (core->num, input + 1), 0);
-		break;
-	case 't': // "agt"
-		list = r_core_anal_graph_to (core, r_num_math (core->num, input + 1), 0);
-		if (list) {
-			RListIter *iter, *iter2;
-			RList *list2;
-			RAnalBlock *bb;
-			r_list_foreach (list, iter, list2) {
-				r_list_foreach (list2, iter2, bb) {
-					r_cons_printf ("-> 0x%08" PFMT64x "\n", bb->addr);
-				}
-			}
-			r_list_purge (list);
-			free (list);
-		}
 		break;
 	case 'C': // "agC"
 		switch (input[1]) {
@@ -6930,6 +6915,20 @@ static int cmd_anal(void *data, const char *input) {
 			core_anal_bbs (core, input + 2);
 		} else if (input[1] == 'r') { // "abr"
 			core_anal_bbs_range (core, input + 2);
+		} else if (input[1] == 't') {
+			RList* list = r_core_anal_graph_to (core, r_num_math (core->num, input + 2), 0);
+			if (list) {
+				RListIter *iter, *iter2;
+				RList *list2;
+				RAnalBlock *bb;
+				r_list_foreach (list, iter, list2) {
+					r_list_foreach (list2, iter2, bb) {
+						r_cons_printf ("-> 0x%08" PFMT64x "\n", bb->addr);
+					}
+				}
+				r_list_purge (list);
+				free (list);
+			}
 		} else if (input[1] == ' ' || !input[1]) {
 			// find block
 			ut64 addr = core->offset;
