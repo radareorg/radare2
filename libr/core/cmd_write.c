@@ -795,7 +795,7 @@ static int cmd_write(void *data, const char *input) {
 					eprintf ("Error: failed to malloc memory");
 					break;
 				}
-				len = r_base64_decode (buf, str, 0);
+				len = r_base64_decode (buf, str, -1);
 				if (len < 0) {
 					free (buf);
 					fail = 1;
