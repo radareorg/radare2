@@ -18,7 +18,7 @@ if [ -z "${R2_PLUGINS_CFG}" ]; then
 fi
 cp -f "${R2_PLUGINS_CFG}" plugins.cfg
 #./configure-plugins
-./configure --prefix="$PREFIX" --with-nonpic --without-pic --without-gpl || exit 1
+./configure --prefix="$PREFIX" --with-libr --without-gpl || exit 1
 #--disable-loadlibs || exit 1
 make -j8 || exit 1
 rm -rf "${SDKDIR}"

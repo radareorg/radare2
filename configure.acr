@@ -26,7 +26,7 @@ ARG_DISABLE LOADLIBS loadlibs disable loading plugins ;
 
 ARG_WITHOUT HAVE_FORK fork disable fork ;
 
-ARG_ENABLE BUILD_MERGED merged build merged r library ;
+ARG_WITH WITH_LIBR libr build libr.a and libr.dylib ;
 
 ARG_WITH WITH_CAPSTONE syscapstone force to use system-wide capstone ;
 PKGCFG CAPSTONE_CFLAGS CAPSTONE_LDFLAGS capstone
@@ -128,8 +128,6 @@ IFEQ USEROSTYPE auto ; {
 	} } } } } } } } } }
 }
 
-ARG_WITHOUT WITHPIC pic do not build libr as a program independent location ;
-ARG_WITH WITHNONPIC nonpic build the library archives .a ;
 (( this hack is required for openbsd ports ))
 ARG_WITH LIBVERSION=xxx libversion specify different libversion ;
 ARG_WITHOUT HAVE_JEMALLOC jemalloc build without jemalloc ;
