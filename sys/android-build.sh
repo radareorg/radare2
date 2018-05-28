@@ -11,6 +11,11 @@ cd `dirname $PWD/$0` ; cd ..
 
 # we need a more recent ndk to build the mergedlib for mips
 
+[ -z "${NDK_ARCH}" ] && NDK_ARCH=arm
+
+# ow yeah
+STATIC_BUILD=1
+
 case "$1" in
 "mips")
 	NDK_ARCH=mips
@@ -80,11 +85,7 @@ local)
 	;;
 esac
 
-[ -z "${NDK_ARCH}" ] && NDK_ARCH=arm
 [ -z "${STATIC_BUILD}" ] && STATIC_BUILD=0
-
-# ow yeah
-STATIC_BUILD=1
 export NDK_ARCH
 export STATIC_BUILD
 PKG=`./configure --version|head -n1 |cut -d ' ' -f 1`
@@ -107,7 +108,7 @@ if [ "${BUILD}" = 1 ]; then
 	if [ 1 = 1 ]; then
 		make mrproper
 		if [ $STATIC_BUILD = 1 ]; then
-			CFGFLAGS="--without-pic --with-nonpic"
+			CFGFLAGS="--with-libr"
 		fi
 		# dup
 		echo ./configure --with-compiler=android \

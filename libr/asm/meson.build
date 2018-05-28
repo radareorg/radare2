@@ -109,6 +109,7 @@ files = [
   'arch/nios/gnu/nios2-dis.c',
   'arch/nios/gnu/nios2-opc.c',
   'arch/pic/pic_baseline.c',
+  'arch/pic/pic_midrange.c',
   'arch/pic/pic_pic18.c',
   'arch/ppc/gnu/ppc-dis.c',
   'arch/ppc/gnu/ppc-opc.c',

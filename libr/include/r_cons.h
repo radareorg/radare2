@@ -891,6 +891,7 @@ typedef struct r_ascii_graph_t {
 	int edgemode;
 	int mode;
 	bool is_callgraph;
+	bool is_interactive;
 	int zoom;
 	int movspeed;
 

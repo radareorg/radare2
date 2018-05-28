@@ -150,8 +150,7 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 	int bits = 0;
 	char *libname = NULL;
 	const char *filename = bf ? bf->file : NULL;
-	char *path = NULL, *outpath = NULL, *outfile = NULL, *ptr = NULL;
-	ut32 outfile_sz = 0, outpath_sz = 0;
+	char *path = NULL, *ptr = NULL;
 	bool res = false;
 
 	if (!bf || !data || !filename) {
@@ -185,14 +184,7 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 	} else {
 		ptr = path;
 	}
-	outpath_sz = strlen (path) + 20;
-	if (outpath_sz > 0) {
-		outpath = malloc (outpath_sz);
-	}
-
-	if (outpath) {
-		snprintf (outpath, outpath_sz, "%s.fat", ptr);
-	}
+	char *outpath = r_str_newf ("%s.fat", ptr);
 	if (!outpath || !r_sys_mkdirp (outpath)) {
 		free (path);
 		free (outpath);
@@ -200,20 +192,9 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 		return false;
 	}
 
-	outfile_sz = outpath_sz + strlen (ptr) + strlen (arch) + 23;
-	if (outfile_sz) {
-		outfile = malloc (outfile_sz);
-	}
-
-	if (outfile) {
-		if (libname) {
-			snprintf (outfile, outfile_sz, "%s/%s.%s.%s_%i.%d",
-					  outpath, ptr, arch, libname, bits, idx);
-		} else {
-			snprintf (outfile, outfile_sz, "%s/%s.%s_%i.%d",
-					  outpath, ptr, arch, bits, idx);
-		}
-	}
+	char *outfile = libname
+		? r_str_newf ("%s/%s.%s.%s_%i.%d", outpath, ptr, arch, libname, bits, idx)
+		: r_str_newf ("%s/%s.%s_%i.%d", outpath, ptr, arch, bits, idx);
 
 	if (!outfile || !r_file_dump (outfile, bytes, bin_size, 0)) {
 		eprintf ("Error extracting %s\n", outfile);
@@ -1116,7 +1097,7 @@ int main(int argc, char **argv) {
 		rabin_do_operation (op);
 	}
 	if (isradjson) {
-		printf ("}");
+		r_cons_print ("}");
 	}
 	r_cons_flush ();
 	r_core_fini (&core);
