@@ -88,6 +88,7 @@ files = [
   '../asm/arch/hexagon/hexagon.c',
   '../asm/arch/hexagon/hexagon_disas.c',
   '../asm/arch/msp430/msp430_disas.c',
+  '../asm/arch/pic/pic_midrange.c',
   '../asm/arch/ppc/libvle/vle.c',
   '../asm/arch/propeller/propeller_disas.c',
   '../asm/arch/rsp/rsp_idec.c',
