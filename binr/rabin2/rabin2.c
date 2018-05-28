@@ -150,8 +150,7 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 	int bits = 0;
 	char *libname = NULL;
 	const char *filename = bf ? bf->file : NULL;
-	char *path = NULL, *outpath = NULL, *ptr = NULL;
-	ut32 outfile_sz = 0, outpath_sz = 0;
+	char *path = NULL, *ptr = NULL;
 	bool res = false;
 
 	if (!bf || !data || !filename) {
@@ -185,14 +184,7 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 	} else {
 		ptr = path;
 	}
-	outpath_sz = strlen (path) + 20;
-	if (outpath_sz > 0) {
-		outpath = malloc (outpath_sz);
-	}
-
-	if (outpath) {
-		snprintf (outpath, outpath_sz, "%s.fat", ptr);
-	}
+	char *outpath = r_str_newf ("%s.fat", ptr);
 	if (!outpath || !r_sys_mkdirp (outpath)) {
 		free (path);
 		free (outpath);
@@ -208,7 +200,7 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 		eprintf ("Error extracting %s\n", outfile);
 		res = false;
 	} else {
-		eprintf ("%s created (%"PFMT64d")\n", outfile, bin_size);
+		printf ("%s created (%"PFMT64d")\n", outfile, bin_size);
 		res = true;
 	}
 
