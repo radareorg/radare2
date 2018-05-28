@@ -153,7 +153,7 @@ R_API bool r_core_visual_esil(RCore *core) {
 		// bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 		(void) r_asm_disassemble (core->assembler, &asmop, buf, sizeof (ut64));
 		analop.type = -1;
-		(void)r_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), R_ANAL_OP_MASK_ALL);
+		(void)r_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), R_ANAL_OP_MASK_ESIL);
 		analopType = analop.type & R_ANAL_OP_TYPE_MASK;
 		r_cons_printf ("r2's esil debugger:\n\n");
 		r_cons_printf ("pos: %d\n", x);
@@ -292,7 +292,7 @@ static bool edit_bits (RCore *core) {
 		bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 		(void) r_asm_disassemble (core->assembler, &asmop, buf, sizeof (ut64));
 		analop.type = -1;
-		(void)r_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), R_ANAL_OP_MASK_ALL);
+		(void)r_anal_op (core->anal, &analop, core->offset, buf, sizeof (ut64), R_ANAL_OP_MASK_ESIL);
 		analopType = analop.type & R_ANAL_OP_TYPE_MASK;
 		r_cons_printf ("r2's bit editor:\n\n");
 		{
@@ -2599,21 +2599,19 @@ R_API void r_core_seek_next(RCore *core, const char *type) {
 	ut64 next = UT64_MAX;
 	if (strstr (type, "opc")) {
 		RAnalOp aop;
-		if (r_anal_op (core->anal, &aop, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_ALL)) {
+		if (r_anal_op (core->anal, &aop, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC)) {
 			next = core->offset + aop.size;
 		} else {
 			eprintf ("Invalid opcode\n");
 		}
-	} else
-	if (strstr (type, "fun")) {
+	} else if (strstr (type, "fun")) {
 		RAnalFunction *fcni;
 		r_list_foreach (core->anal->fcns, iter, fcni) {
 			if (fcni->addr < next && fcni->addr > core->offset) {
 				next = fcni->addr;
 			}
 		}
-	} else
-	if (strstr (type, "hit")) {
+	} else if (strstr (type, "hit")) {
 		const char *pfx = r_config_get (core->config, "search.prefix");
 		RFlagItem *flag;
 		r_list_foreach (core->flags->flags, iter, flag) {
@@ -2876,7 +2874,7 @@ repeat:
 		}
 		// TODO: get the aligned instruction even if the cursor is in the middle of it.
 		r_anal_op (core->anal, &op, off,
-			core->block + off - core->offset, 32, R_ANAL_OP_MASK_ALL);
+			core->block + off - core->offset, 32, R_ANAL_OP_MASK_BASIC);
 
 		tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
 		if (op.var) {
@@ -2979,7 +2977,7 @@ repeat:
 			RAnalOp op;
 			ut64 size;
 			if (r_anal_op (core->anal, &op, off, core->block+delta,
-					core->blocksize-delta, R_ANAL_OP_MASK_ALL)) {
+					core->blocksize-delta, R_ANAL_OP_MASK_BASIC)) {
 				size = off - fcn->addr + op.size;
 				r_anal_fcn_resize (core->anal, fcn, size);
 			}

@@ -253,7 +253,7 @@ R_API int r_core_hack(RCore *core, const char *op) {
 	}
 	if (hack) {
 		RAnalOp analop;
-		if (!r_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_ALL)) {
+		if (!r_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC)) {
 			eprintf ("anal op fail\n");
 			return false;
 		}

@@ -161,7 +161,7 @@ static void emulate_prev_N_instr(RCore *core, ut64 at, ut64 curpc) {
 		if (!i) {
 			r_io_read_at (core->io, curpc, arr, bsize);
 		}
-		inslen = r_anal_op (core->anal, &aop, curpc, arr + i, bsize - i, R_ANAL_OP_MASK_ALL);
+		inslen = r_anal_op (core->anal, &aop, curpc, arr + i, bsize - i, R_ANAL_OP_MASK_BASIC);
 		int incr = inslen - 1;
 		if (incr < 0) {
 			incr = minopcode;
@@ -230,7 +230,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			if (!i) {
 				r_io_read_at (core->io, addr, buf, bsize);
 			}
-			ret = r_anal_op (core->anal, &aop, addr, buf + i, bsize - i, R_ANAL_OP_MASK_ALL);
+			ret = r_anal_op (core->anal, &aop, addr, buf + i, bsize - i, R_ANAL_OP_MASK_BASIC);
 			if (ret <= 0) {
 				i += minopcode;
 				addr += minopcode;
