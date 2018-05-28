@@ -139,7 +139,7 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 					PRINT_YA ("   Chunk - start: ");
 					PRINTF_BA ("0x%08"PFMT64x, (ut64)(size_t)head->en_addr);
 					PRINT_YA (", end: ");
-					PRINTF_BA ("0x%08"PFMT64x, (ut64)(size_t)(head->en_addr + cnksz));
+					PRINTF_BA ("0x%08"PFMT64x, (ut64)(size_t)((char *)head->en_addr + cnksz));
 					PRINT_YA (", size: ");
 					PRINTF_BA ("0x%08"PFMT64x"\n", (ut64)cnksz); 
 					r_io_read_at (core->io, (ut64)(size_t)head->ql_link.qre_next, (ut8 *)node, sizeof (extent_node_t));
@@ -147,7 +147,7 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 						PRINT_YA ("   Chunk - start: ");
 						PRINTF_BA ("0x%08"PFMT64x, (ut64)(size_t)node->en_addr); 
 						PRINT_YA (", end: ");
-						PRINTF_BA ("0x%"PFMTx, (node->en_addr + cnksz));
+						PRINTF_BA ("0x%"PFMTx, ((char *)node->en_addr + cnksz));
 						PRINT_YA (", size: ");
 						PRINTF_BA ("0x%08"PFMTx"\n", cnksz); 
 						r_io_read_at (core->io, (ut64)(size_t)node->ql_link.qre_next, (ut8 *)node, sizeof (extent_node_t));
@@ -192,7 +192,7 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 						PRINT_YA ("   Chunk - start: ");
 						PRINTF_BA ("0x%08"PFMT64x, (ut64)(size_t)head->en_addr);
 						PRINT_YA (", end: ");
-						PRINTF_BA ("0x%"PFMTx, (head->en_addr + cnksz));
+						PRINTF_BA ("0x%"PFMTx, ((char *)head->en_addr + cnksz));
 						PRINT_YA (", size: ");
 						PRINTF_BA ("0x%08"PFMT64x"\n", (ut64)cnksz); 
 						ut64 addr = (ut64) (size_t)head->ql_link.qre_next;
@@ -201,7 +201,7 @@ static void GH(jemalloc_get_chunks)(RCore *core, const char *input) {
 							PRINT_YA ("   Chunk - start: ");
 							PRINTF_BA ("0x%08"PFMT64x, (ut64)(size_t)node->en_addr);
 							PRINT_YA (", end: ");
-							PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)(node->en_addr + cnksz));
+							PRINTF_BA ("0x%"PFMT64x, (ut64)(size_t)((char *)node->en_addr + cnksz));
 							PRINT_YA (", size: ");
 							PRINTF_BA ("0x%"PFMT64x"\n", cnksz);
 							r_io_read_at (core->io, (GHT)(size_t)node->ql_link.qre_next, (ut8 *)node, sizeof (extent_node_t));
