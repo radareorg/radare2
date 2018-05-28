@@ -47,6 +47,8 @@
 #endif
 #if defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__)
 #include <util.h>
+#elif defined(__FreeBSD__)
+#include <libutil.h>
 #endif
 #endif
 #ifdef _MSC_VER
