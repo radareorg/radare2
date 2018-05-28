@@ -34,10 +34,12 @@ all:
 	$(MAKE) $(LIBS5)
 	$(MAKE) $(LIBS6)
 	$(MAKE) $(LIBS7)
+ifeq ($(WITH_LIBR),1)
 	$(MAKE) libr.${EXT_AR}
 	$(MAKE) libr.${EXT_SO}
+endif
 
-ifeq ($(BUILD_MERGED),1)
+ifeq ($(WITH_LIBR),1)
 
 ifeq ($(OSTYPE),darwin)
 MLFLAGS+=-install_name @rpath/libr2.dylib
@@ -100,13 +102,13 @@ libr.${EXT_SO}: .libr
 
 else
 
-# BUILD_MERGED=0
+# WITH_LIBR=0
 
 libr.${EXT_SO}:
-	$(MAKE) libr.${EXT_SO} BUILD_MERGED=1
+	$(MAKE) libr.${EXT_SO} WITH_LIBR=1
 
 libr.${EXT_AR}:
-	$(MAKE) libr.${EXT_AR} BUILD_MERGED=1
+	$(MAKE) libr.${EXT_AR} WITH_LIBR=1
 endif
 
 ../shlr/libr_shlr.${EXT_AR}:
