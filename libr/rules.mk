@@ -69,7 +69,6 @@ else
 	@-if [ -f p/Makefile ] ; then (echo "DIR ${NAME}/p"; cd p && ${MAKE}) ; fi
 endif
 
-ifeq ($(WITH_LIBR),1)
 $(LIBSO): $(EXTRA_TARGETS) ${WFD} ${OBJS} ${SHARED_OBJ}
 	@for a in ${OBJS} ${SHARED_OBJ} ${SRC}; do \
 	  do=0 ; [ ! -e ${LIBSO} ] && do=1 ; \
@@ -82,13 +81,16 @@ $(LIBSO): $(EXTRA_TARGETS) ${WFD} ${OBJS} ${SHARED_OBJ}
 	    [ -f "$(LIBR)/stripsyms.sh" ] && sh $(LIBR)/stripsyms.sh ${LIBSO} ${NAME} ; \
 	  break ; \
 	fi ; done
+
+ifeq ($(WITH_LIBR),1)
 $(LIBAR): ${OBJS}
 	[ "${SILENT}" = 1 ] && @echo "CC_AR $(LIBAR)" || true
 	rm -f $(LIBAR)
 	${CC_AR} ${OBJS} ${SHARED_OBJ}
 	${RANLIB} $(LIBAR)
 else
-${LIBSO} $(LIBAR): ;
+# ${LIBSO} $(LIBAR): ;
+$(LIBAR): ;
 endif
 
 pkgcfg:
