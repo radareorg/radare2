@@ -25,7 +25,7 @@ static const char *help_msg_t[] = {
 	"to", " -", "Open cfg.editor to load types",
 	"to", " <path>", "Load types from C header file",
 	"tos", " <path>", "Load types from parsed Sdb database",
-	"tp", " <type>  = <address>", "cast data at <address> to <type> and print it",
+	"tp", " <type> [addr]", "cast data at <address> to <type> and print it",
 	"tpx", "<type> <hexpairs>", "Show value for type with specified byte sequence",
 	"ts", "[?]", "print loaded struct types",
 	"tu", "[?]", "print loaded union types",
@@ -795,14 +795,14 @@ static int cmd_type(void *data, const char *input) {
 		}
 		break;
 	case 'p': { // "tp"
-		char *ptr = strdup (input);
+		char *ptr = r_str_trim (strdup (input + 1));
 		if (!ptr) {
 			break;
 		}
 		int nargs = r_str_word_set0 (ptr);
-		if (nargs > 1) {
-			const char *type = r_str_word_get0 (ptr, 1);
-			const char *arg = r_str_word_get0 (ptr, 2);
+		if (nargs > 0) {
+			const char *type = r_str_word_get0 (ptr, 0);
+			const char *arg = nargs > 1? r_str_word_get0 (ptr, 1): NULL;
 			char *fmt = r_type_format (TDB, type);
 			if (!fmt) {
 				eprintf ("Cannot find '%s' type\n", type);
