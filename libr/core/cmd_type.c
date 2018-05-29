@@ -25,8 +25,8 @@ static const char *help_msg_t[] = {
 	"to", " -", "Open cfg.editor to load types",
 	"to", " <path>", "Load types from C header file",
 	"tos", " <path>", "Load types from parsed Sdb database",
-	"tp", " <type> [addr]", "cast data at <address> to <type> and print it",
-	"tpx", "<type> <hexpairs>", "Show value for type with specified byte sequence",
+	"tp", "  <type> [addr]", "cast data at <address> to <type> and print it",
+	"tpx", " <type> <hexpairs>", "Show value for type with specified byte sequence",
 	"ts", "[?]", "print loaded struct types",
 	"tu", "[?]", "print loaded union types",
 	"tt", "[?]", "List all loaded typedefs",
@@ -42,6 +42,7 @@ static const char *help_msg_ta[] = {
 	"Usage: ta[...]", "", "",
 	"tas", " <offset>", "List all matching structure offsets",
 	"ta", " <struct member>", "Change immediate to structure offset",
+	"taa", " [fcn]", "Analyze all/given function to convert immediate to linked structure offsets (see tl?)",
 	"ta?", "", "show this help",
 	NULL
 };
@@ -295,50 +296,8 @@ static int linklist_readable (void *p, const char *k, const char *v) {
 	return 1;
 
 }
-static int typelist(void *p, const char *k, const char *v) {
+static int typelist_cb(void *p, const char *k, const char *v) {
 	r_cons_printf ("tk %s=%s\n", k, v);
-#if 0
-	if (!strcmp (v, "func")) {
-		const char *rv = sdb_const_get (DB,
-						sdb_fmt ("func.%s.ret", k), 0);
-		r_cons_printf ("# %s %s(", rv, k);
-		for (i = 0; i < 16; i++) {
-			char *av = sdb_get (DB,
-					sdb_fmt ("func.%s.arg.%d", k, i), 0);
-			if (!av) break;
-			r_str_replace_char (av, ',', ' ');
-			r_cons_printf ("%s%s", i? ", ": "", av);
-			free (av);
-		}
-		r_cons_printf (");\n");
-		// signature in pf for asf
-		r_cons_printf ("asf %s=", k);
-		// formats
-		for (i = 0; i < 16; i++) {
-			const char *fmt;
-			char *comma, *av = sdb_get (DB,
-						sdb_fmt ("func.%s.arg.%d", k, i), 0);
-			if (!av) break;
-			comma = strchr (av, ',');
-			if (comma) *comma = 0;
-			fmt = sdb_const_get (DB, sdb_fmt ("type.%s", av), 0);
-			r_cons_printf ("%s", fmt);
-			if (comma) *comma = ',';
-			free (av);
-		}
-		// names
-		for (i = 0; i < 16; i++) {
-			char *comma, *av = sdb_get (DB,
-						sdb_fmt ("func.%s.arg.%d", k, i), 0);
-			if (!av) break;
-			comma = strchr (av, ',');
-			if (comma) *comma++ = 0;
-			r_cons_printf (" %s", comma);
-			free (av);
-		}
-		r_cons_newline ();
-	}
-#endif
 	return 1;
 }
 
@@ -364,7 +323,7 @@ static void typesList(RCore *core, int mode) {
 	switch (mode) {
 	case 1:
 	case '*':
-		sdb_foreach (core->anal->sdb_types, typelist, core);
+		sdb_foreach (core->anal->sdb_types, typelist_cb, core);
 		break;
 	case 'j':
 	default:
@@ -395,6 +354,115 @@ static void typesList(RCore *core, int mode) {
 		}
 		break;
 	}
+}
+
+static void set_offset_hint (RCore *core, const char *type, ut64 addr, int offimm) {
+	if (offimm > 0) {
+		char *res = r_type_get_struct_memb (core->anal->sdb_types, type, offimm);
+		if (res) {
+			r_anal_hint_set_offset (core->anal, addr, res);
+		}
+	}
+}
+
+static void link_struct_offset (RCore *core, RAnalFunction *fcn, const char *type, ut64 taddr) {
+	RAnalBlock *bb;
+	RListIter *it;
+	RAnalOp aop = {0};
+	RAnalEsil *esil = core->anal->esil;
+	int iotrap = r_config_get_i (core->config, "esil.iotrap");
+	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
+	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
+	const char *pc_name = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
+	RRegItem *pc = r_reg_get (core->dbg->reg, pc_name, -1);
+
+	if (!fcn) {
+		return;
+	}
+	r_reg_arena_push (core->anal->reg);
+	if (!(esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
+		return;
+	}
+	int i, ret, bsize = R_MAX (64, core->blocksize);
+	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	const int minopcode = R_MAX (1, mininstrsz);
+	ut8 *buf = malloc (bsize);
+	if (!buf) {
+		free (buf);
+		r_anal_esil_free (esil);
+		return;
+	}
+	ut64 oldoff = core->offset;
+	r_cons_break_push (NULL, NULL);
+	r_list_foreach (fcn->bbs, it, bb) {
+		ut64 at = bb->addr;
+		ut64 to = bb->addr + bb->size;
+		r_reg_set_value (core->dbg->reg, pc, at);
+		for (i = 0; at < to; i++) {
+			if (r_cons_is_breaked ()) {
+				goto beach;
+			}
+			if (at < bb->addr) {
+				break;
+			}
+			if (i >= (bsize - 32)) {
+				i = 0;
+			}
+			if (!i) {
+				r_io_read_at (core->io, at, buf, bsize);
+			}
+			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i, R_ANAL_OP_MASK_VAL);
+			if (ret <= 0) {
+				i += minopcode;
+				at += minopcode;
+				r_anal_op_fini (&aop);
+				continue;
+			}
+			i += ret - 1;
+			at += ret;
+			if (r_anal_op_nonlinear (aop.type)) {
+				r_reg_set_value (core->dbg->reg, pc, at);
+			} else {
+				r_core_esil_step (core, UT64_MAX, NULL, NULL);
+			}
+			int j, src_imm = -1, dst_imm = -1;
+			ut64 src_addr, dst_addr;
+			for (j = 0; j < 3; j++) {
+				if (aop.src[j] && aop.src[j]->reg && aop.src[j]->reg->name) {
+					src_addr = r_debug_reg_get (core->dbg, aop.src[j]->reg->name);
+					src_imm = aop.src[j]->delta;
+				}
+			}
+			if (aop.dst && aop.dst->reg && aop.dst->reg->name) {
+				dst_addr = r_debug_reg_get (core->dbg, aop.dst->reg->name);
+				dst_imm = aop.dst->delta;
+			}
+			if (type) {
+				if (src_addr == taddr) {
+					set_offset_hint (core, type, at - ret, src_imm);
+				} else if (dst_addr == taddr) {
+					set_offset_hint (core, type, at - ret, dst_imm);
+				}
+			} else {
+				char *slink = r_type_link_at (core->anal->sdb_types, src_addr);
+				char *dlink = r_type_link_at (core->anal->sdb_types, dst_addr);
+				if (slink) {
+					set_offset_hint (core, slink, at - ret, src_imm);
+				} else if (dlink) {
+					set_offset_hint (core, dlink, at - ret, dst_imm);
+				}
+				free (slink);
+				free (dlink);
+			}
+			r_anal_op_fini (&aop);
+		}
+	}
+beach:
+	r_core_seek (core, oldoff, 1);
+	r_anal_esil_free (esil);
+	r_reg_arena_pop (core->anal->reg);
+	r_cons_break_pop ();
+	free (buf);
 }
 
 static int cmd_type(void *data, const char *input) {
@@ -629,7 +697,7 @@ static int cmd_type(void *data, const char *input) {
 	// ta - link immediate type offset to an address
 	case 'a': // "ta"
 		switch (input[1]) {
-		case 's': {
+		case 's': { // "tas"
 			char *off = strdup (input + 2);
 			r_str_trim (off);
 			int toff = r_num_math (NULL, off);
@@ -641,8 +709,35 @@ static int cmd_type(void *data, const char *input) {
 					r_cons_printf ("%s\n", ty);
 				}
 			}
+			free (off);
 			break;
 		}
+		case 'a': { // "taa"
+			char *off = r_str_trim (strdup (input + 2));
+			RAnalFunction *fcn;
+			RListIter *it;
+			if (off && *off) {
+				ut64 addr = r_num_math (NULL, off);
+				fcn = r_anal_get_fcn_at (core->anal, core->offset, 0);
+				if (fcn) {
+					link_struct_offset (core, fcn, NULL, -1);
+				} else {
+					eprintf ("cannot find function at %08"PFMT64x"\n", addr);
+				}
+			} else {
+				if (r_list_length (core->anal->fcns) == 0) {
+					eprintf ("couldn't find any functions\n");
+					break;
+				}
+				r_list_foreach (core->anal->fcns, it, fcn) {
+					if (r_cons_is_breaked ()) {
+						break;
+					}
+					link_struct_offset (core, fcn, NULL, -1);
+				}
+			}
+			free (off);
+		} break;
 		case ' ': {
 			char *type = strdup (input + 2);
 			char *ptr = strchr (type, '=');
@@ -743,7 +838,11 @@ static int cmd_type(void *data, const char *input) {
 			r_str_trim (type);
 			char *tmp = sdb_get (TDB, type, 0);
 			if (tmp && *tmp) {
-				r_type_link (TDB, type, addr);
+				r_type_set_link (TDB, type, addr);
+				RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, core->offset, 0);
+				if (fcn) {
+					link_struct_offset (core, fcn, type, addr);
+				}
 				free (tmp);
 			} else {
 				eprintf ("unknown type %s\n", type);
@@ -752,26 +851,14 @@ static int cmd_type(void *data, const char *input) {
 			}
 			break;
 		case 's': {
-			int ptr;
-			char *addr = strdup (input + 2);
-			SdbKv *kv;
-			SdbListIter *sdb_iter;
-			SdbList *sdb_list = sdb_foreach_list (TDB, true);
-			r_str_trim (addr);
-			ptr = r_num_math (NULL, addr);
-			//r_core_cmdf (core, "tl~0x%08"PFMT64x" = ", addr);
-			ls_foreach (sdb_list, sdb_iter, kv) {
-				char *linkptr;
-				if (strncmp (kv->key, "link.", strlen ("link."))) {
-					continue;
-				}
-				linkptr = sdb_fmt ("0x%s", kv->key + strlen ("link."));
-				if (ptr == r_num_math (NULL, linkptr)) {
-					linklist_readable (core, kv->key, kv->value);
-				}
+			char *ptr = r_str_trim (strdup (input + 2));
+			ut64 addr = r_num_math (NULL, ptr);
+			const char* query = sdb_fmt ("link.%08"PFMT64x, addr);
+			const char *link = sdb_const_get (TDB, query, 0);
+			if (link) {
+				linklist_readable (core, query, link);
 			}
-			free (addr);
-			ls_free (sdb_list);
+			free (ptr);
 			}
 			break;
 		case '-':
@@ -796,7 +883,8 @@ static int cmd_type(void *data, const char *input) {
 		}
 		break;
 	case 'p': { // "tp"
-		char *ptr = r_str_trim (strdup (input + 1));
+		char *tmp = strdup (input);
+		char *ptr = r_str_trim (strchr (tmp , ' '));
 		if (!ptr) {
 			break;
 		}
@@ -820,7 +908,7 @@ static int cmd_type(void *data, const char *input) {
 			eprintf ("see t?\n");
 			break;
 		}
-		free (ptr);
+		free (tmp);
 	} break;
 	case '-':
 		if (input[1] == '?') {

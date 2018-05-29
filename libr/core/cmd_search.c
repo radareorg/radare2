@@ -1652,11 +1652,6 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 #define MAXINSTR 8
 #define SUMARRAY(arr, size, res) do (res) += (arr)[--(size)]; while ((size))
 
-static inline bool isnonlinear(int optype) {
-	return (optype ==  R_ANAL_OP_TYPE_CALL || optype ==  R_ANAL_OP_TYPE_JMP || optype ==  R_ANAL_OP_TYPE_CJMP ||
-			optype == R_ANAL_OP_TYPE_RET);
-}	
-
 static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 	int i, inslen, bsize = R_MIN (64, core->blocksize);
 	ut8 *arr;
@@ -1690,7 +1685,7 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 			}	
 			i += incr;
 			curpc += incr;
-			if (isnonlinear (aop.type)) {	// skip the instr
+			if (r_anal_op_nonlinear (aop.type)) {	// skip the instr
 				r_reg_set_value (core->dbg->reg, r, curpc + 1);
 			} else {	// step instr
 				r_core_esil_step (core, UT64_MAX, NULL, NULL);
