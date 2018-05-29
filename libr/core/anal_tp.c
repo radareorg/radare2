@@ -130,14 +130,6 @@ static void type_match(RCore *core, ut64 addr, char *name, int prev_idx) {
 	free (fcn_name);
 }
 
-// Avoid Emulating these instructions
-static inline bool isnonlinear(int optype) {
-	return (optype ==  R_ANAL_OP_TYPE_CALL || optype ==  R_ANAL_OP_TYPE_JMP
-			|| optype == R_ANAL_OP_TYPE_TRAP || optype == R_ANAL_OP_TYPE_UJMP
-			|| optype ==  R_ANAL_OP_TYPE_CJMP|| optype == R_ANAL_OP_TYPE_UCALL
-			|| optype == R_ANAL_OP_TYPE_RET);
-}
-
 // Emulates previous N instr
 static void emulate_prev_N_instr(RCore *core, ut64 at, ut64 curpc) {
 	int i, inslen, bsize = R_MIN (64, core->blocksize);
@@ -169,7 +161,7 @@ static void emulate_prev_N_instr(RCore *core, ut64 at, ut64 curpc) {
 		i += incr;
 		curpc += incr;
 		if ((inslen > 0) || (inslen < 50)) {
-			if (isnonlinear (aop.type)) {   // skip the instr
+			if (r_anal_op_nonlinear (aop.type)) {   // skip the instr
 				r_reg_set_value (core->dbg->reg, r, curpc + 1);
 			} else {                       // step instr
 				r_core_esil_step (core, UT64_MAX, NULL, NULL);

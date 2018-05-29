@@ -219,6 +219,34 @@ R_API int r_anal_op_execute(RAnal *anal, RAnalOp *op) {
 	return true;
 }
 
+R_API bool r_anal_op_nonlinear(int t) {
+	switch (t) {
+	//call
+	case R_ANAL_OP_TYPE_CALL:
+	case R_ANAL_OP_TYPE_RCALL:
+	case R_ANAL_OP_TYPE_ICALL:
+	case R_ANAL_OP_TYPE_UCALL:
+	case R_ANAL_OP_TYPE_IRCALL:
+	case R_ANAL_OP_TYPE_UCCALL:
+	// jmp
+	case R_ANAL_OP_TYPE_JMP:
+	case R_ANAL_OP_TYPE_MJMP:
+	case R_ANAL_OP_TYPE_UJMP:
+	case R_ANAL_OP_TYPE_CJMP:
+	case R_ANAL_OP_TYPE_UCJMP:
+	case R_ANAL_OP_TYPE_RJMP:
+	case R_ANAL_OP_TYPE_IJMP:
+	case R_ANAL_OP_TYPE_IRJMP:
+	// trap| ill| unk
+	case R_ANAL_OP_TYPE_TRAP:
+	case R_ANAL_OP_TYPE_ILL:
+	case R_ANAL_OP_TYPE_UNK:
+		return true;
+	default:
+		return false;
+	}
+}
+
 R_API const char *r_anal_optype_to_string(int t) {
 	t &= R_ANAL_OP_TYPE_MASK; // ignore the modifier bits... we dont want this!
 	switch (t) {
