@@ -435,21 +435,22 @@ static char *get_and_escape_path (char *str)
 
 		path_bin[pp - str] = '\0';
 		if (strstr (path_bin, "\\ ")) {
-		        path_bin = r_str_replace (path_bin, "\\ ", " ", true);
+			path_bin = r_str_replace (path_bin, "\\ ", " ", true);
 		}
 		args = path_bin + (pp - str) + 1;
 
 		char *path_bin_escaped = r_str_arg_escape (path_bin);
 		int len = strlen (path_bin_escaped);
 
+		path_bin_escaped = realloc (path_bin_escaped, len + 2);
 		path_bin_escaped[len] = ' ';
 		path_bin_escaped[len + 1] = '\0';
 
 		final = r_str_append (path_bin_escaped, args);
 		free (path_bin);
-       }
+	}
 
-       return final;
+	return final;
 }
 
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
