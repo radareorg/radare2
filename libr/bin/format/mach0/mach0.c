@@ -1370,8 +1370,7 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 		sections[i].vsize = (ut64)bin->sects[i].size;
 		sections[i].align = bin->sects[i].align;
 		sections[i].flags = bin->sects[i].flags;
-		r_str_ncpy (sectname, bin->sects[i].sectname, 16);
-		sectname[16] = 0;
+		r_str_ncpy (sectname, bin->sects[i].sectname, 17);
 		r_str_filter (sectname, -1);
 		// hack to support multiple sections with same name
 		// snprintf (segname, sizeof (segname), "%d", i); // wtf
