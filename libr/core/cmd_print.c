@@ -4264,7 +4264,7 @@ static int cmd_print(void *data, const char *input) {
 						free (loc_buf);
 					}
 					r_list_foreach (f->bbs, locs_it, b) {
-						if (!first) {
+						if (first) {
 							first = false;
 						} else {
 							r_cons_print (",");
