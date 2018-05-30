@@ -481,6 +481,9 @@ R_API char *r_type_func_guess(Sdb *TDB, char *func_name) {
 	// also try module.dll_function and function_number
 	if ((first = strchr (str, '_'))) {
 		last = (char *)r_str_lchr (first, '_');
+		if (!last) {
+			goto out;
+		}
 		// middle + suffix or right half
 		if ((result = type_func_try_guess (TDB, first + 1))) {
 			goto out;
