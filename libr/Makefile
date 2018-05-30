@@ -181,7 +181,7 @@ install: install-includes install-pkgconfig
 	  ( cd "${DESTDIR}${LIBDIR}" ; ln -fs "$(call libpath-to-name-version,$(lib),${LIBVERSION})" "$(call libpath-to-name,$(lib))" ) ; \
 	)
 	lib=libr.$(EXT_SO) ; if [ -f "$$lib" ]; then \
-	  ${INSTALL_LIB} "$$lib" "${DESTDIR}${LIBDIR}/$$lib; \
+	  ${INSTALL_LIB} "$$lib" "${DESTDIR}${LIBDIR}/$$lib"; \
 	fi
 	# object archives
 	@for FILE in `find * -type f -iname "*.${EXT_AR}" | grep -v fs/p` ; do \
