@@ -56,7 +56,7 @@ LDFLAGS+=${SSL_LDFLAGS}
 
 .libr: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 	rm -rf .libr
-	mkdir .libr
+	mkdir -p .libr
 	for LIB in $^ ; do \
 		${PARTIALLD} $(ALFLAGS) $(MLFLAGS) $(PLFLAGS) -o .libr/$$(basename $${LIB} .a).o $${LIB} ; \
 	done

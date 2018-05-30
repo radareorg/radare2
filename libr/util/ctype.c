@@ -500,7 +500,6 @@ R_API char *r_type_func_guess(Sdb *TDB, char *func_name) {
 			}
 		}
 		result = NULL;
-		goto out;
 	}
 out:
 	free (str);
