@@ -1242,24 +1242,6 @@ static int cmd_pipein(void *user, const char *input) {
 	return 0;
 }
 
-static int task_finished(void *user, void *data) {
-	eprintf ("TASK FINISHED\n");
-	return 0;
-}
-
-static int taskbgrun(RThread *th) {
-	char *res;
-	RCoreTask *task = th->user;
-	RCore *core = task->core;
-	// close (2); // no stderr
-	res = r_core_cmd_str (core, task->msg->text);
-	task->msg->res = res;
-	task->state = 'd';
-	eprintf ("\nTask %d finished\n", task->id);
-// TODO: run callback and pass result
-	return 0;
-}
-
 static void task_test(RCore *core, int usecs) {
 	int i;
 	RCoreTask *task = r_core_task_self (core);
@@ -1320,7 +1302,7 @@ static int cmd_thread(void *data, const char *input) {
 					eprintf ("Cannot find task\n");
 				}
 			} else {
-				r_core_task_run (core, NULL);
+				//r_core_task_run (core, NULL);
 			}
 		}
 		break;
@@ -1347,7 +1329,7 @@ static int cmd_thread(void *data, const char *input) {
 			eprintf ("This command is disabled in sandbox mode\n");
 			return 0;
 		}
-		r_core_task_add (core, r_core_task_new (core, input + 1, (RCoreTaskCallback)task_finished, core));
+		//r_core_task_add (core, r_core_task_new (core, input + 1, (RCoreTaskCallback)task_finished, core));
 		break;
 	case '-':
 		if (r_sandbox_enable (0)) {
@@ -1378,10 +1360,7 @@ static int cmd_thread(void *data, const char *input) {
 					eprintf ("Cannot find task\n");
 				}
 			} else {
-				RCoreTask *task = r_core_task_add (core, r_core_task_new (
-							core, input + 1, (RCoreTaskCallback)task_finished, core));
-				RThread *th = r_th_new (taskbgrun, task, 0);
-				task->msg->th = th;
+				r_core_task_enqueue (core, r_core_task_new (core, input + 1, NULL, core));
 			}
 			//r_core_cmd0 (core, task->msg->text);
 			//r_core_task_del (core, task->id);
