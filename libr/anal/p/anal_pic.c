@@ -552,7 +552,7 @@ INST_HANDLER (MOVWI_2) {
 	e ("=[1],");
 }
 
-#define PIC_MIDRANGE_OPINFO_LEN 26
+#define PIC_MIDRANGE_OPINFO_LEN 52
 static const PicMidrangeOpAnalInfo pic_midrange_op_anal_info[PIC_MIDRANGE_OPINFO_LEN] = {
 	INST_DECL (NOP, NONE),      INST_DECL (RETURN, NONE),
 	INST_DECL (RETFIE, NONE),   INST_DECL (OPTION, NONE),
