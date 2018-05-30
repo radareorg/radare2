@@ -200,6 +200,8 @@ typedef struct r_core_t {
 	RList *watchers;
 	RList *scriptstack;
 	RList *tasks;
+	RList *tasks_queue;
+	RThreadLock *tasks_lock;
 	int cmd_depth;
 	int max_cmd_depth;
 	ut8 switch_file_view;
@@ -670,11 +672,19 @@ R_API char *cmd_syscall_dostr(RCore *core, int num);
 
 typedef void (*RCoreTaskCallback)(void *user, char *out);
 
+typedef enum {
+	R_CORE_TASK_STATE_BEFORE_START,
+	R_CORE_TASK_STATE_RUNNING,
+	R_CORE_TASK_STATE_DONE
+} RTaskState;
+
 typedef struct r_core_task_t {
 	int id;
-	char state;
+	RTaskState state;
 	void *user;
 	RCore *core;
+	RThreadCond *dispatch_cond;
+	RThreadLock *dispatch_lock;
 	RThreadMsg *msg;
 	RCoreTaskCallback cb;
 } RCoreTask;
@@ -684,11 +694,9 @@ R_API void r_core_task_print (RCore *core, RCoreTask *task, int mode);
 R_API void r_core_task_list (RCore *core, int mode);
 R_API const char *r_core_task_status (RCoreTask *task);
 R_API RCoreTask *r_core_task_new (RCore *core, const char *cmd, RCoreTaskCallback cb, void *user);
-R_API void r_core_task_run(RCore *core, RCoreTask *_task);
-R_API void r_core_task_run_bg(RCore *core, RCoreTask *_task);
+R_API void r_core_task_enqueue(RCore *core, RCoreTask *task);
+R_API void r_core_task_run_sync(RCore *core, RCoreTask *task);
 R_API bool r_core_task_pause (RCore *core, RCoreTask *task, bool enable);
-R_API RCoreTask *r_core_task_add (RCore *core, RCoreTask *task);
-R_API void r_core_task_add_bg (RCore *core, RCoreTask *task);
 R_API int r_core_task_del (RCore *core, int id);
 R_API RCoreTask *r_core_task_self (RCore *core);
 R_API void r_core_task_join (RCore *core, RCoreTask *task);

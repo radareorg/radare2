@@ -1824,6 +1824,8 @@ R_API bool r_core_init(RCore *core) {
 	core->rtr_n = 0;
 	core->blocksize_max = R_CORE_BLOCKSIZE_MAX;
 	core->tasks = r_list_newf (free);
+	core->tasks_queue = r_list_new ();
+	core->tasks_lock = r_th_lock_new (false);
 	core->watchers = r_list_new ();
 	core->watchers->free = (RListFree)r_core_cmpwatch_free;
 	core->scriptstack = r_list_new ();
@@ -2020,6 +2022,8 @@ R_API RCore *r_core_fini(RCore *c) {
 	r_list_free (c->watchers);
 	r_list_free (c->scriptstack);
 	r_list_free (c->tasks);
+	r_list_free (c->tasks_queue);
+	r_th_lock_free (c->tasks_lock);
 	c->rcmd = r_cmd_free (c->rcmd);
 	r_list_free (c->cmd_descriptors);
 	c->anal = r_anal_free (c->anal);
