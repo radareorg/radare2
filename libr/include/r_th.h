@@ -10,6 +10,7 @@
 #define HAVE_PTHREAD 0
 #define R_TH_TID HANDLE
 #define R_TH_LOCK_T CRITICAL_SECTION
+#define R_TH_COND_T void *
 //HANDLE
 
 #elif HAVE_PTHREAD
@@ -17,6 +18,7 @@
 #include <pthread.h>
 #define R_TH_TID pthread_t
 #define R_TH_LOCK_T pthread_mutex_t
+#define R_TH_COND_T pthread_cond_t
 
 #else
 #error Threading library only supported for pthread and w32
@@ -32,6 +34,10 @@ typedef struct r_th_lock_t {
 	int refs;
 	R_TH_LOCK_T lock;
 } RThreadLock;
+
+typedef struct r_th_cond_t {
+	R_TH_COND_T cond;
+} RThreadCond;
 
 typedef struct r_th_t {
 	R_TH_TID tid;
@@ -71,6 +77,12 @@ R_API int r_th_lock_check(RThreadLock *thl);
 R_API int r_th_lock_enter(RThreadLock *thl);
 R_API int r_th_lock_leave(RThreadLock *thl);
 R_API void *r_th_lock_free(RThreadLock *thl);
+
+R_API RThreadCond *r_th_cond_new();
+R_API void r_th_cond_signal(RThreadCond *cond);
+R_API void r_th_cond_signal_all(RThreadCond *cond);
+R_API void r_th_cond_wait(RThreadCond *cond, RThreadLock *lock);
+R_API void r_th_cond_free(RThreadCond *cond);
 
 typedef struct r_thread_msg_t {
 	char *text;
