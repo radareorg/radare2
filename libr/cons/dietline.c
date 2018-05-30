@@ -17,29 +17,30 @@
 #endif
 
 static char *r_line_nullstr = "";
-static const char dl_basic_word_break_characters[] =  " \t\n\"\\'`@$><=;|&{(";
+static const char word_break_characters[] = "\t\n ~`!@#$%^&*()-_=+[]{}\\|;:\"'<>,./";
 
 static inline bool is_word_break_char(char ch) {
 	int i;
 	int len =
-		sizeof (dl_basic_word_break_characters) /
-		sizeof (dl_basic_word_break_characters[0]);
+		sizeof (word_break_characters) /
+		sizeof (word_break_characters[0]);
 	for (i = 0; i < len; ++i) {
-		if (ch == dl_basic_word_break_characters[i]) {
+		if (ch == word_break_characters[i]) {
 			return true;
 		}
 	}
 	return false;
 }
 
-static void unix_word_rubout() {
+/* https://www.gnu.org/software/bash/manual/html_node/Commands-For-Killing.html */
+static void backward_kill_word() {
 	int i;
 	if (I.buffer.index > 0) {
 		for (i = I.buffer.index - 1; i > 0 && is_word_break_char (I.buffer.data[i]); i--) {
-			/*nothing to see here*/
+			/* Move the cursor index back until we hit a non-word-break-character */
 		}
-		for (; i && !is_word_break_char (I.buffer.data[i]); i--) {
-			/*nothing to see here*/
+		for (; i > 0 && !is_word_break_char (I.buffer.data[i]); i--) {
+			/* Move the cursor index back until we hit a word-break-character */
 		}
 		if (i > 0) {
 			i++;
@@ -51,6 +52,33 @@ static void unix_word_rubout() {
 		}
 		memmove (I.buffer.data + i, I.buffer.data + I.buffer.index,
 				I.buffer.length - I.buffer.index + 1);
+		I.buffer.length = strlen (I.buffer.data);
+		I.buffer.index = i;
+	}
+}
+
+static void unix_word_rubout() {
+	int i;
+	if (I.buffer.index > 0) {
+		for (i = I.buffer.index - 1; i > 0 && I.buffer.data[i] == ' '; i--) {
+			/* Move cursor backwards until we hit a non-space character or EOL */
+			/* This removes any trailing spaces from the input */
+		}
+		for (; i > 0 && I.buffer.data[i] != ' '; i--) {
+			/* Move cursor backwards until we hit a space character or EOL */
+			/* This deletes everything back to the previous space character */
+		}
+		if (i > 0) {
+			i++;
+		} else if (i < 0) {
+			i = 0;
+		}
+		if (I.buffer.index > I.buffer.length) {
+			I.buffer.length = I.buffer.index;
+		}
+		memmove (I.buffer.data + i,
+			I.buffer.data + I.buffer.index,
+			I.buffer.length - I.buffer.index + 1);
 		I.buffer.length = strlen (I.buffer.data);
 		I.buffer.index = i;
 	}
@@ -1123,33 +1151,8 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			I.buffer.length = 0;
 			I.buffer.index = 0;
 			break;
-		case 23:// ^W ^w
-			if (I.buffer.index > 0) {
-				for (i = I.buffer.index - 1; i > 0 && I.buffer.data[i] == ' '; i--) {
-					/*nothing to see here*/
-				}
-				for (; i && I.buffer.data[i] != ' '; i--) {
-					/*nothing to see here*/
-				}
-				if (!i) {
-					for (; i > 0 && I.buffer.data[i] == ' '; i--) {
-						/*nothing to see here*/
-					}
-				}
-				if (i > 0) {
-					i++;
-				} else if (i < 0) {
-					i = 0;
-				}
-				if (I.buffer.index > I.buffer.length) {
-					I.buffer.length = I.buffer.index;
-				}
-				memmove (I.buffer.data + i,
-					I.buffer.data + I.buffer.index,
-					I.buffer.length - I.buffer.index + 1);
-				I.buffer.length = strlen (I.buffer.data);
-				I.buffer.index = i;
-			}
+		case 23:// ^W ^w unix-word-rubout
+			unix_word_rubout ();
 			break;
 		case 24:// ^X -- do nothing but store in prev = *buf
 			break;
@@ -1181,11 +1184,11 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				r_line_hist_up ();
 			}
 			break;
-		case 27:// esc-5b-41-00-00
+		case 27: // esc-5b-41-00-00 alt/meta key
 			buf[0] = r_cons_readchar ();
 			switch (buf[0]) {
 			case 127: // alt+bkspace
-				unix_word_rubout ();
+				backward_kill_word ();
 				break;
 			case -1:
 				r_cons_break_pop ();
@@ -1200,7 +1203,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			case 'b':
 				// previous word
 				for (i = I.buffer.index - 2; i >= 0; i--) {
-					if (I.buffer.data[i] == ' ' && I.buffer.data[i + 1] != ' ') {
+					if (is_word_break_char (I.buffer.data[i]) && !is_word_break_char (I.buffer.data[i + 1])) {
 						I.buffer.index = i + 1;
 						break;
 					}
@@ -1213,7 +1216,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			case 'f':
 				// next word
 				for (i = I.buffer.index + 1; i < I.buffer.length; i++) {
-					if (I.buffer.data[i] != ' ' && I.buffer.data[i - 1] == ' ') {
+					if (!is_word_break_char (I.buffer.data[i]) && is_word_break_char (I.buffer.data[i - 1])) {
 						I.buffer.index = i;
 						break;
 					}
