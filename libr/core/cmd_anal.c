@@ -2799,10 +2799,9 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 	}
 	r_debug_reg_list (core->dbg, type, bits, mode2, use_color);
 	if (mode2 == 'J') {
-		r_cons_printf ("}");
+		r_cons_print ("}\n");
 	}
 	core->dbg->reg = hack;
-	r_cons_newline ();
 }
 
 // XXX dup from drp :OOO

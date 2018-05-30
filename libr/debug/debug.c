@@ -27,8 +27,8 @@ R_API void r_debug_info_free (RDebugInfo *rdi) {
 		free (rdi->cmdline);
 		free (rdi->libname);
 		free (rdi->usr);
+		free (rdi);
 	}
-	free (rdi);
 }
 
 /*

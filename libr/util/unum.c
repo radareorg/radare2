@@ -665,6 +665,7 @@ static ut64 r_num_tailff(RNum *num, const char *hex) {
                         n = r_num_math (num, p);
                 } else {
                         eprintf ("Invalid argument\n");
+			free (p);
                         return UT64_MAX;
                 }
                 free (p);

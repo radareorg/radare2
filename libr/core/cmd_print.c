@@ -4266,6 +4266,14 @@ static int cmd_print(void *data, const char *input) {
 					}
 					prev_result = true;
 					r_list_foreach (f->bbs, locs_it, b) {
+<<<<<<< HEAD
+=======
+						if (first) {
+							first = false;
+						} else {
+							r_cons_print (",");
+						}
+>>>>>>> 38d6dada8d0e1d283ec4c9d7dcd037475e393738
 
 						ut8 *buf = malloc (b->size);
 						if (buf) {
