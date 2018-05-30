@@ -180,6 +180,9 @@ install: install-includes install-pkgconfig
 	  ${INSTALL_LIB} "$(lib)" "${DESTDIR}${LIBDIR}/$(call libpath-to-name-version,$(lib),${LIBVERSION})"; \
 	  ( cd "${DESTDIR}${LIBDIR}" ; ln -fs "$(call libpath-to-name-version,$(lib),${LIBVERSION})" "$(call libpath-to-name,$(lib))" ) ; \
 	)
+	lib=libr.$(EXT_SO) ; if [ -f "$$lib" ]; then \
+	  ${INSTALL_LIB} "$(lib)" "${DESTDIR}${LIBDIR}/$(call libpath-to-name-version,$(lib),${LIBVERSION})"; \
+	fi
 	# object archives
 	@for FILE in `find * -type f -iname "*.${EXT_AR}" | grep -v fs/p` ; do \
 	  echo " ${DESTDIR}${LIBDIR}/$$FILE"; ${INSTALL_DATA} $$FILE "${DESTDIR}${LIBDIR}" ; done || true

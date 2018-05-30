@@ -1,3 +1,4 @@
+include ../../../global.mk
 TARGET:=tags.r2
 
 R2_FLAGS=$(DESTDIR)$(DATADIR)/radare2/$(VERSION)/flag
@@ -13,6 +14,9 @@ install: $(TARGET)
 	rm -rf "${R2_FLAGS}"
 	mkdir -p "${R2_FLAGS}"
 	cp -f *.r2 "${R2_FLAGS}"
+
+symstall install-symlink: ${TARGET}
+	ln -fs $(TOP)/libr/flag/d $(R2_FLAGS)
 
 uninstall:
 	rm -rf "$(R2_FLAGS)"
