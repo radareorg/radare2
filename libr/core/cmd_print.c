@@ -4248,6 +4248,7 @@ static int cmd_print(void *data, const char *input) {
 					// instructions are all outputted as a json list
 					cont_size = f->_size > 0 ? f->_size : r_anal_fcn_realsize (f);
 					bool first = true;
+					bool prev_result = true;
 					// TODO: can loc jump to another locs?
 					for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
 						if (tmp_func->addr > f->addr) {
@@ -4256,38 +4257,40 @@ static int cmd_print(void *data, const char *input) {
 						cont_size = tmp_get_contsize (tmp_func);
 						loc_buf = calloc (cont_size, 1);
 						r_io_read_at (core->io, tmp_func->addr, loc_buf, cont_size);
-						if (!first) {
+						if (!first && prev_result) {
 							r_cons_print (",");
 						}
-						r_core_print_disasm_json (core, tmp_func->addr, loc_buf, cont_size, 0);
+						prev_result = r_core_print_disasm_json (core, tmp_func->addr, loc_buf, cont_size, 0);
 						first = false;
 						free (loc_buf);
 					}
+					prev_result = true;
 					r_list_foreach (f->bbs, locs_it, b) {
-						if (first) {
-							first = false;
-						} else {
-							r_cons_print (",");
-						}
 
 						ut8 *buf = malloc (b->size);
 						if (buf) {
+							if (first) {
+								first = false;
+							} else if (!first && prev_result) {
+								r_cons_print (",");
+							}
 							r_io_read_at (core->io, b->addr, buf, b->size);
-							r_core_print_disasm_json (core, b->addr, buf, b->size, 0);
+							prev_result = r_core_print_disasm_json (core, b->addr, buf, b->size, 0);
 							free (buf);
 						} else {
 							eprintf ("cannot allocate %d byte(s)\n", b->size);
 						}
 					}
+					prev_result = true;
 					for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
 						cont_size = tmp_get_contsize (tmp_func);
 						loc_buf = calloc (cont_size, 1);
 						if (loc_buf) {
 							r_io_read_at (core->io, tmp_func->addr, loc_buf, cont_size);
-							if (!first) {
+							if (!first && prev_result) {
 								r_cons_print (",");
 							}
-							r_core_print_disasm_json (core, tmp_func->addr, loc_buf, cont_size, 0);
+							prev_result = r_core_print_disasm_json (core, tmp_func->addr, loc_buf, cont_size, 0);
 							first = false;
 							free (loc_buf);
 						}
