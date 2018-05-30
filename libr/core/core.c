@@ -412,7 +412,7 @@ static const char *str_callback(RNum *user, ut64 off, int *ok) {
 static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	RCore *core = (RCore *)userptr; // XXX ?
 	RAnalFunction *fcn;
-	char *ptr, *bptr, *out;
+	char *ptr, *bptr, *out = NULL;
 	RFlagItem *flag;
 	RIOSection *s;
 	RAnalOp op;
@@ -583,7 +583,22 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'l': return op.size;
 		case 'b': return core->blocksize;
 		case 's':
-			if (core->file) {
+			// flag size $s{}
+			if (str[2] == '{') {
+				bptr = strdup (str + 3);
+				ptr = strchr (bptr, '}');
+				if (!ptr) {
+					// invalid json
+					free (bptr);
+					break;
+				}
+				*ptr = '\0';
+				RFlagItem *flag = r_flag_get (core->flags, bptr);
+				ret = flag? flag->size: 0LL; // flag 
+				free (bptr);
+				free (out);
+				return ret;
+			} else if (core->file) {
 				return r_io_fd_size (core->io, core->file->fd);
 			}
 			return 0LL;

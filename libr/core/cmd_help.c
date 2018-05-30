@@ -157,6 +157,7 @@ static const char *help_msg_question_v[] = {
 	"$w", "", "get word size, 4 if asm.bits=32, 8 if 64, ...",
 	"${ev}", "", "get value of eval config variable",
 	"$k{kv}", "", "get value of an sdb query value",
+	"$s{flag}", "", "get size of flag",
 	"RNum", "", "$variables usable in math expressions",
 	NULL
 };
