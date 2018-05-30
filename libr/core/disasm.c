@@ -5022,7 +5022,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 
 			if (nb_opcodes > 0xffff) {
 				eprintf ("Too many backward instructions\n");
-				return 0;
+				return false;
 			}
 
 			if (r_core_prevop_addr (core, core->offset, nb_opcodes, &addr)) {
@@ -5083,6 +5083,8 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	// j = number of instructions
 	// k = delta from addr
 	ds = ds_init (core);
+	bool result = false;
+
 	for (;;) {
 		bool end_nbopcodes, end_nbbytes;
 
@@ -5266,6 +5268,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		free (opstr);
 		end_nbopcodes = dis_opcodes == 1 && nb_opcodes > 0 && line>=nb_opcodes;
 		end_nbbytes = dis_opcodes == 0 && nb_bytes > 0 && i>=nb_bytes;
+		result = true;
 		if (end_nbopcodes || end_nbbytes) {
 			break;
 		}
@@ -5274,7 +5277,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	core->offset = old_offset;
 	r_anal_op_fini (&ds->analop);
 	ds_free (ds);
-	return true;
+	return result;
 }
 
 R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mode) {
