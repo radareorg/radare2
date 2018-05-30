@@ -83,12 +83,12 @@ with your distribution package manager or with r2pm:
 If you already have them installed, you can run this line to
 compile radare2:
 
-        $ python ./sys/meson.py --prefix=/usr --shared --install
+	$ python ./sys/meson.py --prefix=/usr --shared --install
 
 This method is mostly useful on Windows because the initial building
 with Makefile is not suitable. If you are lost in any way, just type:
 
-        $ python ./sys/meson.py --help
+	$ python ./sys/meson.py --help
 
 # Update
 
