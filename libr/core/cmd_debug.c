@@ -1651,6 +1651,15 @@ static int cmd_debug_map(RCore *core, const char *input) {
 					if (libname) {
 						char *cmd, *res;
 						const char *file = map->file? map->file: map->name;
+						char *newfile = NULL;
+						if (!r_file_exists (file)) {
+							newfile = r_file_temp ("memlib");
+							if (newfile) {
+								file = newfile;
+								r_core_cmdf (core, "wtf %s 0x%"PFMT64x" @ 0x%"PFMT64x" 2> %s",
+								             file, map->size, baddr, R_SYS_DEVNULL);
+							}
+						}
 						if (symname) {
 							cmd = r_str_newf ("rabin2 %s-B 0x%08"PFMT64x" -s %s | grep %s", mode, baddr, file, symname);
 						} else {
@@ -1661,6 +1670,12 @@ static int cmd_debug_map(RCore *core, const char *input) {
 						r_cons_println (res);
 						free (res);
 						free (cmd);
+						if (newfile) {
+							if (!r_file_rm (newfile)) {
+								eprintf ("Error when removing %s\n", newfile);
+							}
+							free (newfile);
+						}
 					} else {
 						r_bin_set_baddr (core->bin, map->addr);
 						r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS, (input[1]=='*'), true, &filter, NULL);
