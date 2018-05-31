@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2017 - nibble, pancake, maijin */
+/* radare2 - LGPL - Copyright 2009-2018 - nibble, pancake, maijin */
 
 #include <stdio.h>
 
@@ -112,57 +112,64 @@ static bool isvalidflag(RFlagItem *flag) {
 }
 
 static char *findNextNumber(char *op) {
+	if (!op) {
+		return NULL;
+	}
 	bool ansi_found = false;
 	char *p = op;
-	if (p && *p) {
-		const char *o = NULL;
-		while (*p) {
-			if (*p == 0x1b) {
+	const char *o = NULL;
+	while (*p) {
+		if (p[0] == 0x1b && p[1] == '[') {
+			ansi_found = true;
+			p += 2;
+			if (p[0] && p[1] == ';') {
+				// "\x1b[%d;2;%d;%d;%dm", fgbg, r, g, b
+				// "\x1b[%d;5;%dm", fgbg, rgb (r, g, b)
+				for (; p[0] && p[1] && p[0] != 0x1b && p[1] != '\\'; p++);
+				if (p[0] && p[1] == '\\') {
+					p++;
+				}
+			} else {
+				// "\x1b[%dm", 30 + k
+				for (; *p && *p != 'J' && *p != 'm' && *p != 'H'; p++);
+				if (*p) {
+					p++;
+					if (!*p) {
+						break;
+					}
+				}
+			}
+			o = p - 1;
+		} else {
+			bool is_space = ansi_found;
+			ansi_found = false;
+			if (!is_space) {
+				is_space = p == op;
+				if (!is_space && o) {
+					is_space = (*o == ' ' || *o == ',' || *o == '[');
+				}
+			}
+			if (*p == '[') {
 				p++;
 				if (!*p) {
 					break;
 				}
-				if (*p == '[') {
-					p++;
-					if (p[0] && p[1] == ';') {
-						// "\x1b[%d;2;%d;%d;%dm", fgbg, r, g, b
-						// "\x1b[%d;5;%dm", fgbg, rgb (r, g, b)
-						for (; p[0] && p[1] && p[0] != 0x1b && p[1] != '\\'; p++);
-						if (p[1] == '\\') p++;
-					} else {
-						// "\x1b[%dm", 30 + k
-						for (; *p && *p != 'J' && *p != 'm' && *p != 'H'; p++);
-						if (*p) p++;
-					}
-					ansi_found = true;
-				}
-				o = p - 1;
-			} else {
-				bool is_space = ansi_found;
-				ansi_found = false;
-				if (!is_space) {
-					is_space = p == op;
-					if (!is_space && o) {
-						is_space = (*o == ' ' || *o == ',' || *o == '[');
-					}
-				}
-				if (*p == '[') {
+				if (!IS_DIGIT (*p)) {
 					char *t = p;
-					p++;
-					if (!IS_DIGIT (*p)) {
-						for (;*t && *t != ']'; t++);
-						if (*t == ']') {
-							continue;
-						} else {
-							p = t;
-						}
+					for (; *t && *t != ']'; t++);
+					if (*t == ']') {
+						continue;
+					}
+					p = t;
+					if (!*p) {
+						break;
 					}
 				}
-				if (is_space && IS_DIGIT (*p)) {
-					return p;
-				}
-				o = p++;
 			}
+			if (is_space && IS_DIGIT (*p)) {
+				return p;
+			}
+			o = p++;
 		}
 	}
 	return NULL;

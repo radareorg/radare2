@@ -2734,6 +2734,71 @@ static void asciiart_backtrace(RCore *core, RList *frames) {
 	}
 }
 
+static void get_backtrace_info(RCore* core, RDebugFrame* frame, ut64 addr, char** flagdesc, char** flagdesc2, char** pcstr, char** spstr, bool hex_format) {
+	RFlagItem *f = r_flag_get_at (core->flags, frame->addr, true);
+	*flagdesc = NULL;
+	*flagdesc2 = NULL;
+	if (f) {
+		if (f->offset != addr) {
+			int delta = (int)(frame->addr - f->offset);
+			if (delta > 0) {
+				*flagdesc = r_str_newf ("%s+%d", f->name, delta);
+			} else if (delta < 0) {
+				*flagdesc = r_str_newf ("%s%d", f->name, delta);
+			} else {
+				*flagdesc = r_str_newf ("%s", f->name);
+			}
+		} else {
+			*flagdesc = r_str_newf ("%s", f->name);
+		}
+	}
+	f = r_flag_get_at (core->flags, frame->addr, true);
+	if (f && !strchr (f->name, '.')) {
+		f = r_flag_get_at (core->flags, frame->addr - 1, true);
+	}
+	if (f) {
+		if (f->offset != addr) {
+			int delta = (int)(frame->addr - 1 - f->offset);
+			if (delta > 0) {
+				*flagdesc2 = r_str_newf ("%s+%d", f->name, delta + 1);
+			} else if (delta < 0) {
+				*flagdesc2 = r_str_newf ("%s%d", f->name, delta + 1);
+			} else {
+				*flagdesc2 = r_str_newf ("%s+1", f->name);
+			}
+		} else {
+			*flagdesc2 = r_str_newf ("%s", f->name);
+		}
+	}
+	if (!r_str_cmp (*flagdesc, *flagdesc2, -1)) {
+		free (*flagdesc2);
+		*flagdesc2 = NULL;
+	}
+	if (hex_format) {
+		if (core->dbg->bits & R_SYS_BITS_64) {
+			*pcstr = r_str_newf ("0x%-16" PFMT64x, frame->addr);
+			*spstr = r_str_newf ("0x%-16" PFMT64x, frame->sp);
+		} else if (core->dbg->bits & R_SYS_BITS_32) {
+			*pcstr = r_str_newf ("0x%-8" PFMT64x, frame->addr);
+			*spstr = r_str_newf ("0x%-8" PFMT64x, frame->sp);
+		} else {
+			*pcstr = r_str_newf ("0x%" PFMT64x, frame->addr);
+			*spstr = r_str_newf ("0x%" PFMT64x, frame->sp);
+		}
+	} else {
+		if (core->dbg->bits & R_SYS_BITS_64) {
+			*pcstr = r_str_newf ("%" PFMT64d, frame->addr);
+			*spstr = r_str_newf ("%" PFMT64d, frame->sp);
+		} else if (core->dbg->bits & R_SYS_BITS_32) {
+			*pcstr = r_str_newf ("%" PFMT64d, frame->addr);
+			*spstr = r_str_newf ("%" PFMT64d, frame->sp);
+		} else {
+			*pcstr = r_str_newf ("%" PFMT64d, frame->addr);
+			*spstr = r_str_newf ("%" PFMT64d, frame->sp);
+		}
+	}
+}
+
 static void static_debug_stop(void *u) {
 	RDebug *dbg = (RDebug *)u;
 	r_debug_stop (dbg);
@@ -2745,6 +2810,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	RDebugFrame *frame;
 	RListIter *iter;
 	const char *p;
+	bool hex_format;
 	bool watch = false;
 	int rw = 0;
 	RList *list;
@@ -2844,12 +2910,25 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			}
 			i = 0;
 			list = r_debug_frames (core->dbg, addr);
+			hex_format = false;
 			r_cons_printf ("[");
 			r_list_foreach (list, iter, frame) {
-				r_cons_printf ("%s%"PFMT64d,
-					       (i ? "," : ""),
-					       frame->addr);
+				char *flagdesc, *flagdesc2, *pcstr, *spstr;
+				get_backtrace_info (core, frame, addr, &flagdesc, &flagdesc2, &pcstr, &spstr, hex_format);
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, frame->addr, 0);
+				r_cons_printf ("%s{\"idx\":%d,\"pc\":%s,\"sp\":%s,\"frame_size\":%d,"
+						"\"fname\":\"%s\",\"desc\":\"%s%s\"}", (i ? " ," : ""),
+						i,
+						pcstr, spstr,
+						(int)frame->size,
+						fcn ? fcn->name : "",
+						flagdesc ? flagdesc : "",
+						flagdesc2 ? flagdesc2 : "");
 				i++;
+				free (flagdesc);
+				free (flagdesc2);
+				free (pcstr);
+				free (spstr);
 			}
 			r_cons_printf ("]\n");
 			r_list_free (list);
@@ -2909,73 +2988,22 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			}
 			i = 0;
 			list = r_debug_frames (core->dbg, addr);
+			hex_format = true;
 			r_list_foreach (list, iter, frame) {
-				char flagdesc[1024], flagdesc2[1024], pcstr[32], spstr[32];
-				RFlagItem *f = r_flag_get_at (core->flags, frame->addr, true);
-				flagdesc[0] = flagdesc2[0] = 0;
-				if (f) {
-					if (f->offset != addr) {
-						int delta = (int)(frame->addr - f->offset);
-						if (delta > 0) {
-							snprintf (flagdesc, sizeof (flagdesc),
-									"%s+%d", f->name, delta);
-						} else if (delta < 0) {
-							snprintf (flagdesc, sizeof (flagdesc),
-									"%s%d", f->name, delta);
-						} else {
-							snprintf (flagdesc, sizeof (flagdesc),
-									"%s", f->name);
-						}
-					} else {
-						snprintf (flagdesc, sizeof (flagdesc),
-								"%s", f->name);
-					}
-				}
-				f = r_flag_get_at (core->flags, frame->addr, true);
-				if (f && !strchr (f->name, '.')) {
-					f = r_flag_get_at (core->flags, frame->addr - 1, true);
-				}
-				if (f) {
-					if (f->offset != addr) {
-						int delta = (int)(frame->addr - 1 - f->offset);
-						if (delta > 0) {
-							snprintf (flagdesc2, sizeof (flagdesc2),
-									"%s+%d", f->name, delta + 1);
-						} else if (delta<0) {
-							snprintf (flagdesc2, sizeof (flagdesc2),
-									"%s%d", f->name, delta + 1);
-						} else {
-							snprintf (flagdesc2, sizeof (flagdesc2),
-									"%s+1", f->name);
-						}
-					} else {
-						snprintf (flagdesc2, sizeof (flagdesc2),
-								"%s", f->name);
-					}
-				}
-				if (!strcmp (flagdesc, flagdesc2)) {
-					flagdesc2[0] = 0;
-				}
-
-				if (core->dbg->bits & R_SYS_BITS_64) {
-					snprintf (pcstr, sizeof (pcstr), "0x%-16" PFMT64x, frame->addr);
-					snprintf (spstr, sizeof (spstr), "0x%-16" PFMT64x, frame->sp);
-				} else if (core->dbg->bits & R_SYS_BITS_32) {
-					snprintf (pcstr, sizeof (pcstr), "0x%-8" PFMT64x, frame->addr);
-					snprintf (spstr, sizeof (spstr), "0x%-8" PFMT64x, frame->sp);
-				} else {
-					snprintf (pcstr, sizeof (pcstr), "0x%" PFMT64x, frame->addr);
-					snprintf (spstr, sizeof (spstr), "0x%" PFMT64x, frame->sp);
-				}
-
+				char *flagdesc, *flagdesc2, *pcstr, *spstr;
+				get_backtrace_info (core, frame, addr, &flagdesc, &flagdesc2, &pcstr, &spstr, hex_format);
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, frame->addr, 0);
 				r_cons_printf ("%d  %s sp: %s  %-5d"
 						"[%s]  %s %s\n", i++,
 						pcstr, spstr,
 						(int)frame->size,
 						fcn ? fcn->name : "??",
-						flagdesc,
-						flagdesc2);
+						flagdesc ? flagdesc : "",
+						flagdesc2 ? flagdesc2 : "");
+				free (flagdesc);
+				free (flagdesc2);
+				free (pcstr);
+				free (spstr);
 			}
 			r_list_free (list);
 			break;

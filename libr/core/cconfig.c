@@ -584,12 +584,11 @@ static int cb_asmbits(void *user, void *data) {
 		ret = r_asm_set_bits (core->assembler, bits);
 		if (!ret) {
 			RAsmPlugin *h = core->assembler->cur;
-			if (h) {
-				eprintf ("Cannot set bits %d to '%s'\n", bits, h->name);
-			} else {
+			if (!h) {
 				eprintf ("e asm.bits: Cannot set value, no plugins defined yet\n");
 				ret = true;
 			}
+			// else { eprintf ("Cannot set bits %d to '%s'\n", bits, h->name); }
 		}
 		if (!r_anal_set_bits (core->anal, bits)) {
 			eprintf ("asm.arch: Cannot setup '%d' bits analysis engine\n", bits);

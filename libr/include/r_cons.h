@@ -1,8 +1,6 @@
 #ifndef R2_CONS_H
 #define R2_CONS_H
 
-#define HAVE_DIETLINE 1
-
 #ifdef __cplusplus
 extern "C" {
 #endif

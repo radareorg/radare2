@@ -2762,6 +2762,7 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 	} else if (!bits) {
 		bits = core->anal->bits;
 	}
+	int mode2 = mode;
 	if (core->anal) {
 		core->dbg->reg = core->anal->reg;
 		if (core->anal->cur && core->anal->cur->arch) {
@@ -2771,10 +2772,16 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 			}
 			/* workaround for 6502 */
 			if (!strcmp (core->anal->cur->arch, "6502") && bits == 8) {
-				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 16, mode, use_color); // XXX detect which one is current usage
+				mode2 = mode == 'j' ? 'J' : mode;
+				r_cons_printf ("{");
+				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 16, mode2, use_color); // XXX detect which one is current usage
+				r_cons_printf (",");
 			}
 			if (!strcmp (core->anal->cur->arch, "avr") && bits == 8) {
-				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 16, mode, use_color); // XXX detect which one is current usage
+				mode2 = mode == 'j' ? 'J' : mode;
+				r_cons_printf ("{");
+				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 16, mode2, use_color); // XXX detect which one is current usage
+				r_cons_printf (",");
 			}
 		}
 	}
@@ -2790,7 +2797,10 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, 2, use_color); // XXX detect which one is current usage
 		}
 	}
-	r_debug_reg_list (core->dbg, type, bits, mode, use_color);
+	r_debug_reg_list (core->dbg, type, bits, mode2, use_color);
+	if (mode2 == 'J') {
+		r_cons_print ("}\n");
+	}
 	core->dbg->reg = hack;
 }
 

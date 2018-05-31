@@ -56,7 +56,7 @@ LDFLAGS+=${SSL_LDFLAGS}
 
 .libr: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 	rm -rf .libr
-	mkdir .libr
+	mkdir -p .libr
 	for LIB in $^ ; do \
 		${PARTIALLD} $(ALFLAGS) $(MLFLAGS) $(PLFLAGS) -o .libr/$$(basename $${LIB} .a).o $${LIB} ; \
 	done
@@ -174,12 +174,15 @@ install: install-includes install-pkgconfig
 	# TODO :Use INSTALL_DATA_DIR instead of mkdir
 	# libraries
 	@${INSTALL_DIR} "${DESTDIR}${LIBDIR}"
-	@$(foreach lib,$(shell find * -type f -iname "*.${EXT_SO}" | grep -v '(lib|parse)/t/' | grep lib | grep -v /bin/ | grep -v /p/), \
+	@$(foreach lib,$(shell find * -type f -iname "*.${EXT_SO}" | grep -vE '^libr\.${EXT_SO}$$' | grep -v '(lib|parse)/t/' | grep lib | grep -v /bin/ | grep -v /p/), \
 	  echo " ${DESTDIR}${LIBDIR}/$(call libpath-to-name-version,$(lib),${LIBVERSION})"; \
 	  rm -f "${DESTDIR}${LIBDIR}/$(call libpath-to-name-version,$(lib),${LIBVERSION})"; \
 	  ${INSTALL_LIB} "$(lib)" "${DESTDIR}${LIBDIR}/$(call libpath-to-name-version,$(lib),${LIBVERSION})"; \
 	  ( cd "${DESTDIR}${LIBDIR}" ; ln -fs "$(call libpath-to-name-version,$(lib),${LIBVERSION})" "$(call libpath-to-name,$(lib))" ) ; \
 	)
+	lib=libr.$(EXT_SO) ; if [ -f "$$lib" ]; then \
+	  ${INSTALL_LIB} "$$lib" "${DESTDIR}${LIBDIR}/$$lib"; \
+	fi
 	# object archives
 	@for FILE in `find * -type f -iname "*.${EXT_AR}" | grep -v fs/p` ; do \
 	  echo " ${DESTDIR}${LIBDIR}/$$FILE"; ${INSTALL_DATA} $$FILE "${DESTDIR}${LIBDIR}" ; done || true

@@ -1645,6 +1645,7 @@ R_API void r_core_visual_browse(RCore *core) {
 		case '_':
 			r_core_visual_hudstuff (core);
 			break;
+		case 127: // backspace
 		case 'q':
 			return;
 		}

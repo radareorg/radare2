@@ -216,6 +216,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 		int *previnstr = calloc (MAXINSTR + 1, sizeof (int));
 		if (!previnstr) {
 			eprintf ("Cannot allocate %d byte(s)\n", MAXINSTR + 1);
+			free (buf);
 			return;
 		}
 		r_cons_break_push (NULL, NULL);
