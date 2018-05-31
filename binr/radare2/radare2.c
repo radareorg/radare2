@@ -699,11 +699,7 @@ int main(int argc, char **argv, char **envp) {
 			eprintf ("Failed to close stderr");
 			return 1;
 		}
-#if __WINDOWS__ && !__CYGWIN__
-		const char nul[] = "nul";
-#else
-		const char nul[] = "/dev/null";
-#endif
+		const char nul[] = R_SYS_DEVNULL;
 		int new_stderr = open (nul, O_RDWR);
 		if (-1 == new_stderr) {
 			eprintf ("Failed to open %s", nul);
