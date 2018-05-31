@@ -19,11 +19,7 @@ static bool checkExtract() {
 }
 
 static bool checkCurl() {
-#if __WINDOWS__ && !__CYGWIN__
-	const char nul[] = "nul";
-#else
-	const char nul[] = "/dev/null";
-#endif
+	const char nul[] = R_SYS_DEVNULL;
 	if (r_sys_cmdf ("curl --version > %s", nul) != 0) {
 		return false;
 	}
