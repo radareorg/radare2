@@ -2896,14 +2896,14 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				char *flagdesc, *flagdesc2, *pcstr, *spstr;
 				get_backtrace_info (core, frame, addr, &flagdesc, &flagdesc2, &pcstr, &spstr, hex_format);
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, frame->addr, 0);
-				r_cons_printf ("%s{\"idx\" : %d, \"pc\" : %s, \"sp\" : %s, \"frame_size\" : %d,"
-						"\"fname\" : \"%s\", \"desc\" : \"%s%s\"}", (i ? " ," : ""),
+				r_cons_printf ("%s{\"idx\":%d,\"pc\":%s,\"sp\":%s,\"frame_size\":%d,"
+						"\"fname\":\"%s\",\"desc\":\"%s%s\"}", (i ? " ," : ""),
 						i,
 						pcstr, spstr,
 						(int)frame->size,
 						fcn ? fcn->name : "",
-						flagdesc,
-						flagdesc2);
+						flagdesc ? flagdesc : "",
+						flagdesc2 ? flagdesc2 : "");
 				i++;
 				free (flagdesc);
 				free (flagdesc2);
@@ -2978,8 +2978,8 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 						pcstr, spstr,
 						(int)frame->size,
 						fcn ? fcn->name : "??",
-						flagdesc,
-						flagdesc2);
+						flagdesc ? flagdesc : "",
+						flagdesc2 ? flagdesc2 : "");
 				free (flagdesc);
 				free (flagdesc2);
 				free (pcstr);
