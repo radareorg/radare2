@@ -1655,14 +1655,9 @@ static int cmd_debug_map(RCore *core, const char *input) {
 						if (!r_file_exists (file)) {
 							newfile = r_file_temp ("memlib");
 							if (newfile) {
-#if __WINDOWS__ && !__CYGWIN__
-								const char *nul = "nul";
-#else
-								const char *nul = "/dev/null";
-#endif
 								file = newfile;
 								r_core_cmdf (core, "wtf %s 0x%"PFMT64x" @ 0x%"PFMT64x" 2> %s",
-								             file, map->size, baddr, nul);
+								             file, map->size, baddr, R_SYS_DEVNULL);
 							}
 						}
 						if (symname) {
