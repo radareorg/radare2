@@ -443,7 +443,7 @@ static char *get_and_escape_path (char *str) {
 	char *path_bin_escaped = r_str_arg_escape (path_bin);
 	int len = strlen (path_bin_escaped);
 
-	pbe = realloc (path_bin_escaped, len + 2);
+	char *pbe = realloc (path_bin_escaped, len + 2);
 	if (pbe) {
 		path_bin_escaped = pbe;
 		path_bin_escaped[len] = ' ';
