@@ -417,6 +417,9 @@ static int fork_and_ptraceme_for_mac(RIO *io, int bits, const char *cmd) {
 }
 #endif
 
+#if __APPLE__ && !__POWERPC__
+// wat
+#else
 static char *get_and_escape_path (char *str) {
 	char *path_bin = strdup (str);
 	char *final = NULL;
@@ -457,6 +460,7 @@ static char *get_and_escape_path (char *str) {
 
 	return final;
 }
+#endif
 
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 #if __APPLE__ && !__POWERPC__
