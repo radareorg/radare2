@@ -417,38 +417,43 @@ static int fork_and_ptraceme_for_mac(RIO *io, int bits, const char *cmd) {
 }
 #endif
 
-static char *get_and_escape_path (char *str)
-{
+static char *get_and_escape_path (char *str) {
 	char *path_bin = strdup (str);
 	char *final = NULL;
 
-	if (path_bin) {
-		char *p = (char*) r_str_lchr (str, '/');
-		char *pp = (char*) r_str_tok (p, ' ', -1);
-		char *args;
+	if (!path_bin) {
+		return NULL;
+	}
+	char *p = (char*) r_str_lchr (str, '/');
+	char *pp = (char*) r_str_tok (p, ' ', -1);
+	char *args;
 
-		if (!pp) {
-			// There is nothing more to parse
-			free (path_bin);
-			return str;
-		}
+	if (!pp) {
+		// There is nothing more to parse
+		free (path_bin);
+		return str;
+	}
 
-		path_bin[pp - str] = '\0';
-		if (strstr (path_bin, "\\ ")) {
-			path_bin = r_str_replace (path_bin, "\\ ", " ", true);
-		}
-		args = path_bin + (pp - str) + 1;
+	path_bin[pp - str] = '\0';
+	if (strstr (path_bin, "\\ ")) {
+		path_bin = r_str_replace (path_bin, "\\ ", " ", true);
+	}
+	args = path_bin + (pp - str) + 1;
 
-		char *path_bin_escaped = r_str_arg_escape (path_bin);
-		int len = strlen (path_bin_escaped);
+	char *path_bin_escaped = r_str_arg_escape (path_bin);
+	int len = strlen (path_bin_escaped);
 
-		path_bin_escaped = realloc (path_bin_escaped, len + 2);
+	pbe = realloc (path_bin_escaped, len + 2);
+	if (pbe) {
+		path_bin_escaped = pbe;
 		path_bin_escaped[len] = ' ';
 		path_bin_escaped[len + 1] = '\0';
-
 		final = r_str_append (path_bin_escaped, args);
-		free (path_bin);
+	} else {
+		free (path_bin_escaped);
+		final = NULL;
 	}
+	free (path_bin);
 
 	return final;
 }
