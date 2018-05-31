@@ -2714,9 +2714,10 @@ static void asciiart_backtrace(RCore *core, RList *frames) {
 	}
 }
 
-
 static void get_backtrace_info(RCore* core, RDebugFrame* frame, ut64 addr, char** flagdesc, char** flagdesc2, char** pcstr, char** spstr, bool hex_format) {
 	RFlagItem *f = r_flag_get_at (core->flags, frame->addr, true);
+	*flagdesc = NULL;
+	*flagdesc2 = NULL;
 	if (f) {
 		if (f->offset != addr) {
 			int delta = (int)(frame->addr - f->offset);
@@ -2749,10 +2750,10 @@ static void get_backtrace_info(RCore* core, RDebugFrame* frame, ut64 addr, char*
 			*flagdesc2 = r_str_newf ("%s", f->name);
 		}
 	}
-	if (!strcmp (*flagdesc, *flagdesc2)) {
-		*flagdesc2[0] = 0;
+	if (!r_str_cmp (*flagdesc, *flagdesc2, -1)) {
+		free (*flagdesc2);
+		*flagdesc2 = NULL;
 	}
-
 	if (hex_format) {
 		if (core->dbg->bits & R_SYS_BITS_64) {
 			*pcstr = r_str_newf ("0x%-16" PFMT64x, frame->addr);
