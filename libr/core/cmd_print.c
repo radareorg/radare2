@@ -5133,7 +5133,8 @@ static int cmd_print(void *data, const char *input) {
 					const char *comma = "";
 					const ut8 *buf = core->block;
 					int withref = 0;
-					for (i = 0; i < core->blocksize; i += (base / 4)) {
+					const int wordsize = base / 8;
+					for (i = 0; i < core->blocksize; i += wordsize) {
 						ut64 addr = core->offset + i;
 						ut64 *foo = (ut64 *) (buf + i);
 						ut64 val = *foo;
