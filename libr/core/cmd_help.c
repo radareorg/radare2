@@ -278,9 +278,9 @@ R_API void r_core_clippy(const char *msg) {
 	free (s);
 }
 
-static bool listOpDescriptions(void *_core, const char *k, const char *v) {
+static int listOpDescriptions(void *_core, const char *k, const char *v) {
 	r_cons_printf ("%s=%s\n", k, v);
-	return true;
+	return 1;
 }
 
 static int cmd_help(void *data, const char *input) {
