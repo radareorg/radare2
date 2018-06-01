@@ -80,6 +80,7 @@ R_API RListIter *r_list_append(RList *list, void *data);
 R_API RListIter *r_list_prepend(RList *list, void *data);
 R_API RListIter *r_list_insert(RList *list, int n, void *data);
 R_API void *r_list_remove(RList *list, RListIter *iter);
+R_API bool r_list_remove_data_once(RList *list, void *ptr);
 R_API int r_list_length(const RList *list);
 R_API void *r_list_first(const RList *list);
 R_API RListIter *r_list_add_sorted(RList *list, void *data, RListComparator cmp);

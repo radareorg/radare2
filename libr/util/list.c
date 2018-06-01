@@ -259,6 +259,18 @@ R_API void *r_list_remove(RList *list, RListIter *iter) {
 	}
 }
 
+R_API bool r_list_remove_data_once(RList *list, void *ptr) {
+	void *p;
+	RListIter *iter;
+	r_list_foreach (list, iter, p) {
+		if (ptr == p) {
+			r_list_remove (list, iter);
+			return true;
+		}
+	}
+	return false;
+}
+
 R_API void *r_list_pop(RList *list) {
 	void *data = NULL;
 	RListIter *iter;
