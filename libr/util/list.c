@@ -252,6 +252,13 @@ R_API RListIter *r_list_insert(RList *list, int n, void *data) {
 	return r_list_append (list, data);
 }
 
+R_API void *r_list_remove(RList *list, RListIter *iter) {
+	if (list && iter) {
+		r_list_split_iter (list, iter);
+		R_FREE (iter);
+	}
+}
+
 R_API void *r_list_pop(RList *list) {
 	void *data = NULL;
 	RListIter *iter;
