@@ -207,21 +207,24 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			}
 		}
 		if (IS_MODE_SET (mode)) {
-			char *f_name, *str;
+			char *f_name, *f_realname, *str;
 			if (r_cons_is_breaked ()) {
 				break;
 			}
 			r_meta_add (r->anal, R_META_TYPE_STRING, addr, addr + string->size, string->string);
 			f_name = strdup (string->string);
-			r_name_filter (f_name, -1);
 			if (r->bin->prefix) {
 				str = r_str_newf ("%s.str.%s", r->bin->prefix, f_name);
 			} else {
 				str = r_str_newf ("str.%s", f_name);
 			}
-			r_flag_set (r->flags, str, addr, string->size);
+			f_realname = strdup (str);
+			r_name_filter (str, -1);
+			RFlagItem *flag = r_flag_set (r->flags, str, addr, string->size);
+			r_flag_item_set_realname (flag, f_realname);
 			free (str);
 			free (f_name);
+			free (f_realname);
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("0x%"PFMT64x" %d %d %s\n", addr,
 				string->size, string->length, string->string);
