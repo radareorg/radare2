@@ -5121,6 +5121,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			i++;
 			k++;
 			j++;
+			result = true;
 			continue;
 		}
 		char *opstr = strdup (asmop.buf_asm);
