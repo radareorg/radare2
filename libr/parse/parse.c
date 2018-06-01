@@ -276,7 +276,8 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 						}
 					}
 					*ptr = 0;
-					snprintf (str, len, "%s%s%s", data, flag->name,
+					bool utf8 = r_cons_singleton ()->use_utf8;
+					snprintf (str, len, "%s%s%s", data, utf8? flag->realname : flag->name,
 							(ptr != ptr2) ? ptr2 : "");
 					bool banned = false;
 					{
