@@ -9,6 +9,7 @@
 
 /* arm64 */
 #define IMM64(x) (ut64)(insn->detail->arm64.operands[x].imm)
+#define INSOP64(x) insn->detail->arm64.operands[x]
 
 /* arm32 */
 #define REG(x) r_str_get (cs_reg_name (*handle, insn->detail->arm.operands[x].reg))
@@ -16,6 +17,7 @@
 #define REGID64(x) insn->detail->arm64.operands[x].reg
 #define REGID(x) insn->detail->arm.operands[x].reg
 #define IMM(x) (ut32)(insn->detail->arm.operands[x].imm)
+#define INSOP(x) insn->detail->arm.operands[x]
 #define MEMBASE(x) r_str_get (cs_reg_name(*handle, insn->detail->arm.operands[x].mem.base))
 #define MEMBASE64(x) r_str_get (cs_reg_name(*handle, insn->detail->arm64.operands[x].mem.base))
 #define REGBASE(x) insn->detail->arm.operands[x].mem.base
@@ -2670,16 +2672,72 @@ jmp $$ + 4 + ( [delta] * 2 )
 	}
 }
 
-static void op_fillval (RAnalOp *op , cs_insn *insn, int bits) {
-	ut64 disp = (bits == 32)? MEMDISP(1): MEMDISP64(1);
+#define ZERO_FILL(x) memset (&x, 0, sizeof (x))
+
+static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
+	if (!reg) {
+		return -1;
+	}
+	switch (INSOP (reg_num).type) {
+	case ARM_OP_REG:
+		reg->name = (char *)cs_reg_name (handle, INSOP (reg_num).reg);
+		break;
+	case ARM_OP_MEM:
+		if (INSOP (reg_num).mem.base != ARM_REG_INVALID) {
+			reg->name = (char *)cs_reg_name (handle, INSOP (reg_num).mem.base);
+		}
+		break;
+	default:
+		break;
+	}
+	return 0;
+}
+
+static int parse_reg64_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
+	if (!reg) {
+		return -1;
+	}
+	switch (INSOP64 (reg_num).type) {
+	case ARM64_OP_REG:
+		reg->name = (char *)cs_reg_name (handle, INSOP64 (reg_num).reg);
+		break;
+	case ARM64_OP_MEM:
+		if (INSOP64 (reg_num).mem.base != ARM64_REG_INVALID) {
+			reg->name = (char *)cs_reg_name (handle, INSOP64 (reg_num).mem.base);
+		}
+		break;
+	default:
+		break;
+	}
+	return 0;
+}
+
+static void op_fillval(RAnalOp *op , csh handle, cs_insn *insn, int bits) {
+	static RRegItem reg;
 	switch (op->type) {
 	case R_ANAL_OP_TYPE_LOAD:
 		op->src[0] = r_anal_value_new ();
-		op->src[0]->delta = disp;
+		ZERO_FILL (reg);
+		op->src[0]->reg = &reg;
+		if (bits == 32) {
+			parse_reg_name (op->src[0]->reg, handle, insn, 1);
+			op->src[0]->delta = MEMDISP(1);
+		} else {
+			parse_reg64_name (op->src[0]->reg, handle, insn, 1);
+			op->src[0]->delta = MEMDISP64(1);
+		}
 		break;
 	case R_ANAL_OP_TYPE_STORE:
 		op->dst = r_anal_value_new ();
-		op->dst->delta = disp;
+		ZERO_FILL (reg);
+		op->dst->reg = &reg;
+		if (bits == 32) {
+			parse_reg_name (op->dst->reg, handle, insn, 1);
+			op->dst->delta = MEMDISP(1);
+		} else {
+			parse_reg64_name (op->dst->reg, handle, insn, 1);
+			op->dst->delta = MEMDISP64(1);
+		}
 		break;
 	default:
 		break;
@@ -2743,7 +2801,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			}
 		}
 		if (a->fillval) {
-			op_fillval (op, insn, a->bits);
+			op_fillval (op, handle, insn, a->bits);
 		}
 		cs_free (insn, n);
 	}

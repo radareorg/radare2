@@ -584,17 +584,44 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	return 0;
 }
 
+#define ZERO_FILL(x) memset (&x, 0, sizeof (x))
+
+static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
+	if (!reg) {
+		return -1;
+	}
+	switch (OPERAND (reg_num).type) {
+	case MIPS_OP_REG:
+		reg->name = (char *)cs_reg_name (handle, OPERAND (reg_num).reg);
+		break;
+	case MIPS_OP_MEM:
+		if (OPERAND (reg_num).mem.base != MIPS_REG_INVALID) {
+			reg->name = (char *)cs_reg_name (handle, OPERAND (reg_num).mem.base);
+		}
+	default:
+		break;
+	}
+	return 0;
+}
+
 static void op_fillval(RAnal *anal, RAnalOp *op, csh *handle, cs_insn *insn) {
+	static RRegItem reg;
 	switch (op->type) {
 	case R_ANAL_OP_TYPE_LOAD:
 		if (OPERAND(1).type == MIPS_OP_MEM) {
+			ZERO_FILL (reg);
 			op->src[0] = r_anal_value_new ();
+			op->src[0]->reg = &reg;
+			parse_reg_name (op->src[0]->reg, *handle, insn, 1);
 			op->src[0]->delta = OPERAND(1).mem.disp;
 		}
 		break;
 	case R_ANAL_OP_TYPE_STORE:
 		if (OPERAND(1).type == MIPS_OP_MEM) {
+			ZERO_FILL (reg);
 			op->dst = r_anal_value_new ();
+			op->dst->reg = &reg;
+			parse_reg_name (op->dst->reg, *handle, insn, 1);
 			op->dst->delta = OPERAND(1).mem.disp;
 		}
 		break;

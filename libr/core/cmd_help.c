@@ -82,7 +82,7 @@ static const char *help_msg_question[] = {
 	"?b64[-]", " [str]", "encode/decode in base64",
 	"?btw", " num|expr num|expr num|expr", "returns boolean value of a <= b <= c",
 	"?B", " [elem]", "show range boundaries like 'e?search.in",
-	"?d[.]", " opcode", "describe opcode for asm.arch",
+	"?d[*.]", " opcode", "describe opcode for asm.arch (?d* list them all)",
 	"?e[nbgc]", " string", "echo string (nonl, gotoxy, column, bars)",
 	"?f", " [num] [str]", "map each bit of the number as flag string index",
 	"?F", "", "flush cons output",
@@ -157,6 +157,7 @@ static const char *help_msg_question_v[] = {
 	"$w", "", "get word size, 4 if asm.bits=32, 8 if 64, ...",
 	"${ev}", "", "get value of eval config variable",
 	"$k{kv}", "", "get value of an sdb query value",
+	"$s{flag}", "", "get size of flag",
 	"RNum", "", "$variables usable in math expressions",
 	NULL
 };
@@ -277,6 +278,11 @@ R_API void r_core_clippy(const char *msg) {
 	free (s);
 }
 
+static bool listOpDescriptions(void *_core, const char *k, const char *v) {
+	r_cons_printf ("%s=%s\n", k, v);
+	return true;
+}
+
 static int cmd_help(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	RIOMap *map;
@@ -358,7 +364,10 @@ static int cmd_help(void *data, const char *input) {
 		r_list_free (tmp);
 		break;
 	case 'd': // "?d"
-		if (input[1]=='.') {
+		if (input[1]=='*') {
+			// list sdb database
+			sdb_foreach (core->assembler->pair, listOpDescriptions, core);
+		} else if (input[1]=='.') {
 			int cur = R_MAX (core->print->cur, 0);
 			// XXX: we need cmd_xxx.h (cmd_anal.h)
 			core_anal_bytes (core, core->block + cur, core->blocksize, 1, 'd');
@@ -371,12 +380,12 @@ static int cmd_help(void *data, const char *input) {
 				eprintf ("Unknown opcode\n");
 			}
 		} else {
-			eprintf ("Use: ?d[.] [opcode]    to get the description of the opcode\n");
+			eprintf ("Use: ?d[?.*] [opcode]    to get the description of the opcode\n");
 		}
 		break;
 	case 'h': // "?h"
 		if (input[1] == ' ') {
-			r_cons_printf ("0x%08x\n", (ut32)r_str_hash (input+2));
+			r_cons_printf ("0x%08x\n", (ut32)r_str_hash (input + 2));
 		} else {
 			eprintf ("Usage: ?h [string-to-hash]\n");
 		}

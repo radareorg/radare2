@@ -27,8 +27,8 @@ R_API void r_debug_info_free (RDebugInfo *rdi) {
 		free (rdi->cmdline);
 		free (rdi->libname);
 		free (rdi->usr);
+		free (rdi);
 	}
-	free (rdi);
 }
 
 /*
@@ -713,7 +713,7 @@ R_API int r_debug_step_soft(RDebug *dbg) {
 	if (!dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf))) {
 		return false;
 	}
-	if (!r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), R_ANAL_OP_MASK_ALL)) {
+	if (!r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC)) {
 		return false;
 	}
 	if (op.type == R_ANAL_OP_TYPE_ILL) {
@@ -897,7 +897,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 			dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
 		}
 		// Analyze the opcode
-		if (!r_anal_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc), R_ANAL_OP_MASK_ALL)) {
+		if (!r_anal_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc), R_ANAL_OP_MASK_BASIC)) {
 			eprintf ("Decode error at %"PFMT64x"\n", pc);
 			return steps_taken;
 		}
@@ -949,7 +949,7 @@ static ut64 get_prev_instr(RDebug *dbg, ut64 from, ut64 to) {
 		if (!i) {
 			dbg->iob.read_at (dbg->iob.io, at, buf, bsize);
 		}
-		ret = r_anal_op (dbg->anal, &aop, at, buf + i, bsize - i, R_ANAL_OP_MASK_ALL);
+		ret = r_anal_op (dbg->anal, &aop, at, buf + i, bsize - i, R_ANAL_OP_MASK_BASIC);
 		inc = ret - 1;
 		if (inc < 0) {
 			inc = minopcode;
@@ -1152,7 +1152,7 @@ repeat:
 				RAnalOp op = {0};
 				ut64 pc = r_debug_reg_get (dbg, "PC");
 				dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
-				r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), R_ANAL_OP_MASK_ALL);
+				r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC);
 				if (op.size > 0) {
 					const char *signame = r_signal_to_string (dbg->reason.signum);
 					r_debug_reg_set (dbg, "PC", pc+op.size);
@@ -1222,7 +1222,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 			dbg->iob.read_at (dbg->iob.io, buf_pc, buf, sizeof (buf));
 		}
 		// Analyze the opcode
-		if (!r_anal_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc), R_ANAL_OP_MASK_ALL)) {
+		if (!r_anal_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc), R_ANAL_OP_MASK_BASIC)) {
 			eprintf ("Decode error at %"PFMT64x"\n", pc);
 			return false;
 		}

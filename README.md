@@ -75,38 +75,20 @@ using root privileges and sudo, simply run:
 
 # Building with meson + ninja
 
-The sys/install.sh method uses acr+make to build r2 from sources, which is the default
-and recommended way, but there's also a work-in-progress support for Meson.
-
-You can install last version of meson and ninja using r2pm:
+If you don't already have meson and ninja you can install them
+with your distribution package manager or with r2pm:
 
 	$ r2pm -i meson
-	$ r2pm -r make meson
-	$ r2pm -r make meson-symstall
 
-Or just run this line if you have them available in PATH:
+If you already have them installed, you can run this line to
+compile radare2:
 
-        $ python ./sys/meson.py --prefix=/usr --shared --install
+	$ python ./sys/meson.py --prefix=/usr --shared --install
 
-Alternatively you can try these lines (but it is just a wrapper around the above script):
+This method is mostly useful on Windows because the initial building
+with Makefile is not suitable. If you are lost in any way, just type:
 
-        $ ./configure
-	$ make meson
-	$ sudo make meson-symstall  # symstall the meson build into PREFIX (/usr)
-	$ sudo make meson-uninstall # uninstall the meson installation
-
-But if you do it via the Makefile, note that the PREFIX is inherited from the last run
-of ./configure, so it's recommended to run sys/install.sh at least once to autodetect this,
-this step will end up into meson.
-
-At the moment, the meson build system doesnt supports much configuration options and it
-is not able to build all the plugins, it has been tested to work on the following hosts:
-
-* Rpi3-arm32
-* macOS-x86-64
-* Termux/Android-arm64
-* VoidLinux-x86-64
-* Windows-x86-64
+	$ python ./sys/meson.py --help
 
 # Update
 

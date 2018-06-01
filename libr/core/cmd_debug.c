@@ -842,7 +842,7 @@ static int step_until_optype(RCore *core, const char *_optypes) {
 			res = false;
 			goto cleanup_after_push;
 		}
-		if (!r_anal_op (core->dbg->anal, &op, pc, buf, sizeof (buf), R_ANAL_OP_MASK_ALL)) {
+		if (!r_anal_op (core->dbg->anal, &op, pc, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC)) {
 			eprint("ERROR\n");
 			res = false;
 			goto cleanup_after_push;
@@ -1110,7 +1110,7 @@ static void cmd_debug_backtrace(RCore *core, const char *input) {
 			/* XXX Bottleneck..we need to reuse the bytes read by traptrace */
 			// XXX Do asm.arch should define the max size of opcode?
 			r_io_read_at (core->io, addr, buf, 32); // XXX longer opcodes?
-			r_anal_op (core->anal, &analop, addr, buf, sizeof (buf), R_ANAL_OP_MASK_ALL);
+			r_anal_op (core->anal, &analop, addr, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC);
 		} while (r_bp_traptrace_at (core->dbg->bp, addr, analop.size));
 		r_bp_traptrace_enable (core->dbg->bp, false);
 	}
@@ -1651,6 +1651,15 @@ static int cmd_debug_map(RCore *core, const char *input) {
 					if (libname) {
 						char *cmd, *res;
 						const char *file = map->file? map->file: map->name;
+						char *newfile = NULL;
+						if (!r_file_exists (file)) {
+							newfile = r_file_temp ("memlib");
+							if (newfile) {
+								file = newfile;
+								r_core_cmdf (core, "wtf %s 0x%"PFMT64x" @ 0x%"PFMT64x" 2> %s",
+								             file, map->size, baddr, R_SYS_DEVNULL);
+							}
+						}
 						if (symname) {
 							cmd = r_str_newf ("rabin2 %s-B 0x%08"PFMT64x" -s %s | grep %s", mode, baddr, file, symname);
 						} else {
@@ -1661,6 +1670,12 @@ static int cmd_debug_map(RCore *core, const char *input) {
 						r_cons_println (res);
 						free (res);
 						free (cmd);
+						if (newfile) {
+							if (!r_file_rm (newfile)) {
+								eprintf ("Error when removing %s\n", newfile);
+							}
+							free (newfile);
+						}
 					} else {
 						r_bin_set_baddr (core->bin, map->addr);
 						r_core_bin_info (core, R_CORE_BIN_ACC_SYMBOLS, (input[1]=='*'), true, &filter, NULL);
@@ -2714,6 +2729,71 @@ static void asciiart_backtrace(RCore *core, RList *frames) {
 	}
 }
 
+static void get_backtrace_info(RCore* core, RDebugFrame* frame, ut64 addr, char** flagdesc, char** flagdesc2, char** pcstr, char** spstr, bool hex_format) {
+	RFlagItem *f = r_flag_get_at (core->flags, frame->addr, true);
+	*flagdesc = NULL;
+	*flagdesc2 = NULL;
+	if (f) {
+		if (f->offset != addr) {
+			int delta = (int)(frame->addr - f->offset);
+			if (delta > 0) {
+				*flagdesc = r_str_newf ("%s+%d", f->name, delta);
+			} else if (delta < 0) {
+				*flagdesc = r_str_newf ("%s%d", f->name, delta);
+			} else {
+				*flagdesc = r_str_newf ("%s", f->name);
+			}
+		} else {
+			*flagdesc = r_str_newf ("%s", f->name);
+		}
+	}
+	f = r_flag_get_at (core->flags, frame->addr, true);
+	if (f && !strchr (f->name, '.')) {
+		f = r_flag_get_at (core->flags, frame->addr - 1, true);
+	}
+	if (f) {
+		if (f->offset != addr) {
+			int delta = (int)(frame->addr - 1 - f->offset);
+			if (delta > 0) {
+				*flagdesc2 = r_str_newf ("%s+%d", f->name, delta + 1);
+			} else if (delta < 0) {
+				*flagdesc2 = r_str_newf ("%s%d", f->name, delta + 1);
+			} else {
+				*flagdesc2 = r_str_newf ("%s+1", f->name);
+			}
+		} else {
+			*flagdesc2 = r_str_newf ("%s", f->name);
+		}
+	}
+	if (!r_str_cmp (*flagdesc, *flagdesc2, -1)) {
+		free (*flagdesc2);
+		*flagdesc2 = NULL;
+	}
+	if (hex_format) {
+		if (core->dbg->bits & R_SYS_BITS_64) {
+			*pcstr = r_str_newf ("0x%-16" PFMT64x, frame->addr);
+			*spstr = r_str_newf ("0x%-16" PFMT64x, frame->sp);
+		} else if (core->dbg->bits & R_SYS_BITS_32) {
+			*pcstr = r_str_newf ("0x%-8" PFMT64x, frame->addr);
+			*spstr = r_str_newf ("0x%-8" PFMT64x, frame->sp);
+		} else {
+			*pcstr = r_str_newf ("0x%" PFMT64x, frame->addr);
+			*spstr = r_str_newf ("0x%" PFMT64x, frame->sp);
+		}
+	} else {
+		if (core->dbg->bits & R_SYS_BITS_64) {
+			*pcstr = r_str_newf ("%" PFMT64d, frame->addr);
+			*spstr = r_str_newf ("%" PFMT64d, frame->sp);
+		} else if (core->dbg->bits & R_SYS_BITS_32) {
+			*pcstr = r_str_newf ("%" PFMT64d, frame->addr);
+			*spstr = r_str_newf ("%" PFMT64d, frame->sp);
+		} else {
+			*pcstr = r_str_newf ("%" PFMT64d, frame->addr);
+			*spstr = r_str_newf ("%" PFMT64d, frame->sp);
+		}
+	}
+}
+
 static void static_debug_stop(void *u) {
 	RDebug *dbg = (RDebug *)u;
 	r_debug_stop (dbg);
@@ -2725,6 +2805,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	RDebugFrame *frame;
 	RListIter *iter;
 	const char *p;
+	bool hex_format;
 	bool watch = false;
 	int rw = 0;
 	RList *list;
@@ -2824,12 +2905,25 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			}
 			i = 0;
 			list = r_debug_frames (core->dbg, addr);
+			hex_format = false;
 			r_cons_printf ("[");
 			r_list_foreach (list, iter, frame) {
-				r_cons_printf ("%s%"PFMT64d,
-					       (i ? "," : ""),
-					       frame->addr);
+				char *flagdesc, *flagdesc2, *pcstr, *spstr;
+				get_backtrace_info (core, frame, addr, &flagdesc, &flagdesc2, &pcstr, &spstr, hex_format);
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, frame->addr, 0);
+				r_cons_printf ("%s{\"idx\":%d,\"pc\":%s,\"sp\":%s,\"frame_size\":%d,"
+						"\"fname\":\"%s\",\"desc\":\"%s%s\"}", (i ? " ," : ""),
+						i,
+						pcstr, spstr,
+						(int)frame->size,
+						fcn ? fcn->name : "",
+						flagdesc ? flagdesc : "",
+						flagdesc2 ? flagdesc2 : "");
 				i++;
+				free (flagdesc);
+				free (flagdesc2);
+				free (pcstr);
+				free (spstr);
 			}
 			r_cons_printf ("]\n");
 			r_list_free (list);
@@ -2889,73 +2983,22 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			}
 			i = 0;
 			list = r_debug_frames (core->dbg, addr);
+			hex_format = true;
 			r_list_foreach (list, iter, frame) {
-				char flagdesc[1024], flagdesc2[1024], pcstr[32], spstr[32];
-				RFlagItem *f = r_flag_get_at (core->flags, frame->addr, true);
-				flagdesc[0] = flagdesc2[0] = 0;
-				if (f) {
-					if (f->offset != addr) {
-						int delta = (int)(frame->addr - f->offset);
-						if (delta > 0) {
-							snprintf (flagdesc, sizeof (flagdesc),
-									"%s+%d", f->name, delta);
-						} else if (delta < 0) {
-							snprintf (flagdesc, sizeof (flagdesc),
-									"%s%d", f->name, delta);
-						} else {
-							snprintf (flagdesc, sizeof (flagdesc),
-									"%s", f->name);
-						}
-					} else {
-						snprintf (flagdesc, sizeof (flagdesc),
-								"%s", f->name);
-					}
-				}
-				f = r_flag_get_at (core->flags, frame->addr, true);
-				if (f && !strchr (f->name, '.')) {
-					f = r_flag_get_at (core->flags, frame->addr - 1, true);
-				}
-				if (f) {
-					if (f->offset != addr) {
-						int delta = (int)(frame->addr - 1 - f->offset);
-						if (delta > 0) {
-							snprintf (flagdesc2, sizeof (flagdesc2),
-									"%s+%d", f->name, delta + 1);
-						} else if (delta<0) {
-							snprintf (flagdesc2, sizeof (flagdesc2),
-									"%s%d", f->name, delta + 1);
-						} else {
-							snprintf (flagdesc2, sizeof (flagdesc2),
-									"%s+1", f->name);
-						}
-					} else {
-						snprintf (flagdesc2, sizeof (flagdesc2),
-								"%s", f->name);
-					}
-				}
-				if (!strcmp (flagdesc, flagdesc2)) {
-					flagdesc2[0] = 0;
-				}
-
-				if (core->dbg->bits & R_SYS_BITS_64) {
-					snprintf (pcstr, sizeof (pcstr), "0x%-16" PFMT64x, frame->addr);
-					snprintf (spstr, sizeof (spstr), "0x%-16" PFMT64x, frame->sp);
-				} else if (core->dbg->bits & R_SYS_BITS_32) {
-					snprintf (pcstr, sizeof (pcstr), "0x%-8" PFMT64x, frame->addr);
-					snprintf (spstr, sizeof (spstr), "0x%-8" PFMT64x, frame->sp);
-				} else {
-					snprintf (pcstr, sizeof (pcstr), "0x%" PFMT64x, frame->addr);
-					snprintf (spstr, sizeof (spstr), "0x%" PFMT64x, frame->sp);
-				}
-
+				char *flagdesc, *flagdesc2, *pcstr, *spstr;
+				get_backtrace_info (core, frame, addr, &flagdesc, &flagdesc2, &pcstr, &spstr, hex_format);
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, frame->addr, 0);
 				r_cons_printf ("%d  %s sp: %s  %-5d"
 						"[%s]  %s %s\n", i++,
 						pcstr, spstr,
 						(int)frame->size,
 						fcn ? fcn->name : "??",
-						flagdesc,
-						flagdesc2);
+						flagdesc ? flagdesc : "",
+						flagdesc2 ? flagdesc2 : "");
+				free (flagdesc);
+				free (flagdesc2);
+				free (pcstr);
+				free (spstr);
 			}
 			r_list_free (list);
 			break;
@@ -3361,7 +3404,7 @@ static void do_debug_trace_calls(RCore *core, ut64 from, ut64 to, ut64 final_add
 		addr_in_range = addr >= from && addr < to;
 
 		r_io_read_at (core->io, addr, buf, sizeof (buf));
-		r_anal_op (core->anal, &aop, addr, buf, sizeof (buf), R_ANAL_OP_MASK_ALL);
+		r_anal_op (core->anal, &aop, addr, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC);
 		eprintf ("%d %"PFMT64x"\r", n++, addr);
 		switch (aop.type) {
 		case R_ANAL_OP_TYPE_UCALL:
@@ -4059,7 +4102,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 			r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 			addr = r_debug_reg_get (core->dbg, "PC");
 			r_io_read_at (core->io, addr, buf, sizeof (buf));
-			r_anal_op (core->anal, &aop, addr, buf, sizeof (buf), R_ANAL_OP_MASK_ALL);
+			r_anal_op (core->anal, &aop, addr, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC);
 			if (aop.type == R_ANAL_OP_TYPE_CALL) {
 				RIOSection *s = r_io_section_vget (core->io, aop.jump);
 				if (!s) {
@@ -4080,7 +4123,7 @@ static int cmd_debug_step (RCore *core, const char *input) {
 			for (i = 0; i < times; i++) {
 				r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false);
 				r_io_read_at (core->io, addr, buf, sizeof (buf));
-				r_anal_op (core->anal, &aop, addr, buf, sizeof (buf), R_ANAL_OP_MASK_ALL);
+				r_anal_op (core->anal, &aop, addr, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC);
 				if (aop.jump != UT64_MAX && aop.fail != UT64_MAX) {
 					eprintf ("Don't know how to skip this instruction\n");
 					if (bpi) r_core_cmd0 (core, delb);

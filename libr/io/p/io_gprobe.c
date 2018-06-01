@@ -23,7 +23,7 @@
 #include <tchar.h>
 #include <windows.h>
 #else
-#if !__linux__ && !__APPLE__ && !__OpenBSD__
+#if !__linux__ && !__APPLE__ && !__OpenBSD__ && !__FreeBSD__
 #include <stropts.h>
 #endif
 #include <termios.h>

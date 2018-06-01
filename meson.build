@@ -36,13 +36,13 @@ if git_exe.found()
   if git_rev_list.returncode() == 0
     version_commit = git_rev_list.stdout().strip()
   endif
-  
+
   # Get gittap
   git_describe = run_command(git_exe, '-C', repo, 'describe', '--tags', '--match', '[0-9]*')
   if git_describe.returncode() == 0
     gittap = git_describe.stdout().strip()
   endif
-  
+
   # Get gittip
   git_rev_parse = run_command(git_exe, '-C', repo, 'rev-parse', 'HEAD')
   if git_rev_parse.returncode() == 0
@@ -121,6 +121,7 @@ if host_machine.system() == 'windows'
   r2_zigns = join_paths(r2_datdir, 'zigns')
   r2_themes = join_paths(r2_datdir, 'cons')
   r2_fortunes = join_paths(r2_datdir, 'doc')
+  r2_flags = join_paths(r2_datdir, 'flag')
   r2_hud = join_paths(r2_datdir, 'hud')
 
   opts2 = [
@@ -129,6 +130,7 @@ if host_machine.system() == 'windows'
     'r2_zigns',
     'r2_themes',
     'r2_fortunes',
+    'r2_flags',
     'r2_hud'
   ]
   foreach opt : opts2
@@ -162,6 +164,7 @@ else
   r2_zigns = join_paths(get_option('datadir'), 'radare2', r2_version, 'zigns')
   r2_themes = join_paths(get_option('datadir'), 'radare2', r2_version, 'cons')
   r2_fortunes = join_paths(get_option('datadir'), 'doc/radare2')
+  r2_flags = join_paths(get_option('datadir'), 'radare2', r2_version, 'flag')
   r2_hud = join_paths(get_option('datadir'), 'radare2', r2_version, 'hud')
   r2_plugins = join_paths(get_option('libdir'), 'radare2', r2_version)
   r2_extras = join_paths(get_option('libdir'), 'radare2-extras', r2_version)
@@ -203,6 +206,7 @@ userconf.set('SDB', r2_sdb)
 userconf.set('ZIGNS', r2_zigns)
 userconf.set('THEMES', r2_themes)
 userconf.set('FORTUNES', r2_fortunes)
+userconf.set('FLAGS', r2_flags)
 userconf.set('HUD', r2_hud)
 userconf.set('PLUGINS', r2_plugins)
 userconf.set('EXTRAS', r2_extras)
@@ -289,6 +293,7 @@ subdir('libr/bin/d')
 subdir('libr/syscall/d')
 subdir('libr/cons/d')
 subdir('libr/magic/d')
+subdir('libr/flag/d')
 
 if not meson.is_subproject()
   subdir('binr/rahash2')
@@ -332,12 +337,13 @@ else
 endif
 
 install_subdir('shlr/www',
-  install_dir: join_paths(get_option('prefix'), get_option('datadir'), 'radare2', r2_version)
+  install_dir: r2_wwwroot,
+  strip_directory: true
 )
 
 fortunes_files = run_command(glob_cmd + ['doc/fortunes.*']).stdout().strip().split(';')
 install_data(fortunes_files,
-  install_dir: join_paths(get_option('datadir'), 'doc/radare2')
+  install_dir: r2_fortunes
 )
 
 man1_files = run_command(glob_cmd + ['man/*.1']).stdout().strip().split(';')
@@ -351,6 +357,6 @@ install_data(man7_files,
 )
 
 install_data('doc/hud',
-  install_dir: join_paths(get_option('datadir'), 'radare2', r2_version, 'hud'),
+  install_dir: r2_hud,
   rename: 'main'
 )

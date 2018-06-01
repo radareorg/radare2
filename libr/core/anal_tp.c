@@ -130,14 +130,6 @@ static void type_match(RCore *core, ut64 addr, char *name, int prev_idx) {
 	free (fcn_name);
 }
 
-// Avoid Emulating these instructions
-static inline bool isnonlinear(int optype) {
-	return (optype ==  R_ANAL_OP_TYPE_CALL || optype ==  R_ANAL_OP_TYPE_JMP
-			|| optype == R_ANAL_OP_TYPE_TRAP || optype == R_ANAL_OP_TYPE_UJMP
-			|| optype ==  R_ANAL_OP_TYPE_CJMP|| optype == R_ANAL_OP_TYPE_UCALL
-			|| optype == R_ANAL_OP_TYPE_RET);
-}
-
 // Emulates previous N instr
 static void emulate_prev_N_instr(RCore *core, ut64 at, ut64 curpc) {
 	int i, inslen, bsize = R_MIN (64, core->blocksize);
@@ -161,7 +153,7 @@ static void emulate_prev_N_instr(RCore *core, ut64 at, ut64 curpc) {
 		if (!i) {
 			r_io_read_at (core->io, curpc, arr, bsize);
 		}
-		inslen = r_anal_op (core->anal, &aop, curpc, arr + i, bsize - i, R_ANAL_OP_MASK_ALL);
+		inslen = r_anal_op (core->anal, &aop, curpc, arr + i, bsize - i, R_ANAL_OP_MASK_BASIC);
 		int incr = inslen - 1;
 		if (incr < 0) {
 			incr = minopcode;
@@ -169,7 +161,7 @@ static void emulate_prev_N_instr(RCore *core, ut64 at, ut64 curpc) {
 		i += incr;
 		curpc += incr;
 		if ((inslen > 0) || (inslen < 50)) {
-			if (isnonlinear (aop.type)) {   // skip the instr
+			if (r_anal_op_nonlinear (aop.type)) {   // skip the instr
 				r_reg_set_value (core->dbg->reg, r, curpc + 1);
 			} else {                       // step instr
 				r_core_esil_step (core, UT64_MAX, NULL, NULL);
@@ -216,6 +208,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 		int *previnstr = calloc (MAXINSTR + 1, sizeof (int));
 		if (!previnstr) {
 			eprintf ("Cannot allocate %d byte(s)\n", MAXINSTR + 1);
+			free (buf);
 			return;
 		}
 		r_cons_break_push (NULL, NULL);
@@ -229,7 +222,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			if (!i) {
 				r_io_read_at (core->io, addr, buf, bsize);
 			}
-			ret = r_anal_op (core->anal, &aop, addr, buf + i, bsize - i, R_ANAL_OP_MASK_ALL);
+			ret = r_anal_op (core->anal, &aop, addr, buf + i, bsize - i, R_ANAL_OP_MASK_BASIC);
 			if (ret <= 0) {
 				i += minopcode;
 				addr += minopcode;

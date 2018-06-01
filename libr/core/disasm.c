@@ -2836,11 +2836,11 @@ static void ds_print_indent(RDisasmState *ds) {
 static void ds_print_opstr(RDisasmState *ds) {
 	ds_print_indent (ds);
 	if (ds->use_json) {
-		char *escaped_str = r_str_escape(ds->opstr);
+		char *escaped_str = r_str_escape (ds->opstr);
 		if (escaped_str) {
-			r_cons_strcat(escaped_str);
+			r_cons_strcat (escaped_str);
 		}
-		free(escaped_str);
+		free (escaped_str);
 	} else {
 		r_cons_strcat (ds->opstr);
 	}
@@ -3135,7 +3135,16 @@ static void ds_align_comment(RDisasmState *ds) {
 	if (ds->show_comment_right_default) {
 		const int cmtcol = ds->cmtcol - 1;
 		int cells = 0;
-		char *ll = r_cons_lastline_utf8_ansi_len (&cells);
+		const char *ll = r_cons_lastline_utf8_ansi_len (&cells);
+		if (ds->use_json) {
+			// for json thats wrong, so we adjust the offset here
+			const int delta = 3;
+			const char *llq = r_str_last (ll, "\":\"");
+			if (llq) {
+				ll = llq + delta;
+				cells = r_str_ansi_len (ll);
+			}
+		}
 		if (ll) {
 			if (cells < 20) {
 				ds_print_pre (ds);
@@ -3629,15 +3638,13 @@ static void ds_print_relocs(RDisasmState *ds) {
 	}
 	RCore *core = ds->core;
 	RBinReloc *rel = getreloc (core, ds->at, ds->analop.size);
-
 	if (rel) {
-		const int cmtcol = ds->cmtcol;
 		int cstrlen = 0;
 		char *ll = r_cons_lastline (&cstrlen);
 		int ansilen = r_str_ansi_len (ll);
 		int utf8len = r_utf8_strlen ((const ut8*)ll);
 		int cells = utf8len - (cstrlen - ansilen);
-		int len = cmtcol - cells;
+		int len = ds->cmtcol - cells;
 		r_cons_memset (' ', len);
 		if (rel->import) {
 			r_cons_printf ("; RELOC %d %s", rel->type, rel->import->name);
@@ -4932,7 +4939,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 				if (!hasanal) {
 					r_anal_op (core->anal, &ds->analop,
 						ds->at, core->block + i,
-						core->blocksize - i, R_ANAL_OP_MASK_ALL);
+						core->blocksize - i, R_ANAL_OP_MASK_ESIL);
 					hasanal = true;
 				}
 				if (*R_STRBUF_SAFEGET (&ds->analop.esil)) {
@@ -5022,7 +5029,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 
 			if (nb_opcodes > 0xffff) {
 				eprintf ("Too many backward instructions\n");
-				return 0;
+				return false;
 			}
 
 			if (r_core_prevop_addr (core, core->offset, nb_opcodes, &addr)) {
@@ -5083,6 +5090,8 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	// j = number of instructions
 	// k = delta from addr
 	ds = ds_init (core);
+	bool result = false;
+
 	for (;;) {
 		bool end_nbopcodes, end_nbbytes;
 
@@ -5266,6 +5275,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		free (opstr);
 		end_nbopcodes = dis_opcodes == 1 && nb_opcodes > 0 && line>=nb_opcodes;
 		end_nbbytes = dis_opcodes == 0 && nb_bytes > 0 && i>=nb_bytes;
+		result = true;
 		if (end_nbopcodes || end_nbbytes) {
 			break;
 		}
@@ -5274,7 +5284,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	core->offset = old_offset;
 	r_anal_op_fini (&ds->analop);
 	ds_free (ds);
-	return true;
+	return result;
 }
 
 R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mode) {
@@ -5815,7 +5825,7 @@ toro:
 						0
 					};
 					r_anal_op (core->anal, &aop, core->offset + i,
-						core->block + addrbytes * i, core->blocksize - addrbytes * i, R_ANAL_OP_MASK_ALL);
+						core->block + addrbytes * i, core->blocksize - addrbytes * i, R_ANAL_OP_MASK_BASIC);
 					asm_str = r_print_colorize_opcode (core->print, asm_str, color_reg, color_num, false);
 					r_cons_printf ("%s%s"Color_RESET "\n",
 						r_print_color_op_type (core->print, aop.type),

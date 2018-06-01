@@ -272,8 +272,8 @@ R_API bool r_oids_get_id(ROIDStorage *storage, ut32 od, ut32 *id) {
 R_API bool r_oids_get_od(ROIDStorage *storage, ut32 id, ut32 *od) {
 	if (storage && storage->permutation &&
 		storage->data && (id < storage->data->pool->next_id)) {
-		for (*od = 0; *od < storage->ptop; *od++) {
-			if (id == storage->permutation[*od]) {
+		for (od[0] = 0; od[0] < storage->ptop; od[0]++) {
+			if (id == storage->permutation[od[0]]) {
 				return true;
 			}
 		}
@@ -427,38 +427,4 @@ R_API bool r_oids_foreach_prev (ROIDStorage* storage, RIDStorageForeachCb cb, vo
 		}
 	}
 	return true;
-}
-
-#if !defined(__OpenBSD__)
-#if __WINDOWS__ && !__CYGWIN__
-int _cmp_wrap (void *user, const void *a, const void *b) {
-#else
-int _cmp_wrap (const void *a, const void *b, void *user) {
-#endif
-#else
-__thread void *user;
-int _cmp_wrap (const void *a, const void *b) {
-#endif
-	ROIDStorage *st = (ROIDStorage *)user;
-	ut32 *a_id = (ut32 *)a;
-	ut32 *b_id = (ut32 *)b;
-	return st->cmp (r_id_storage_get (st->data, a_id[0]),
-			r_id_storage_get (st->data, b_id[0]));
-}
-
-R_API void r_oids_sort (ROIDStorage *storage, ROIDStorageCompareCb cmp) {
-	if (!storage || !storage->data || !storage->permutation) {
-		return;
-	}
-	storage->cmp = cmp;
-#if !defined(__OpenBSD__)
-#if __WINDOWS__ && !__CYGWIN__
-	qsort_s (storage->permutation, storage->ptop, sizeof (ut32), _cmp_wrap, storage);
-#else
-	qsort_r (storage->permutation, storage->ptop, sizeof (ut32), _cmp_wrap, storage);
-#endif
-#else
-  user = (void *)storage;
-  qsort (storage->permutation, storage->ptop, sizeof (ut32), _cmp_wrap);
-#endif
 }

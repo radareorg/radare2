@@ -1570,7 +1570,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 		bgcolor = Color_BGBLACK;
 		fgcolor = Color_WHITE;
 		text = NULL;
-		if (r_anal_op (core->anal, &op, core->offset + i, core->block + i, len - i, R_ANAL_OP_MASK_ALL) <= 0) {
+		if (r_anal_op (core->anal, &op, core->offset + i, core->block + i, len - i, R_ANAL_OP_MASK_BASIC) <= 0) {
 			op.type = 0;
 			bgcolor = Color_BGRED;
 			op.size = 1;
@@ -3072,7 +3072,7 @@ static void disasm_recursive(RCore *core, ut64 addr, int count, char type_print)
 	while (count-- > 0) {
 		r_io_read_at (core->io, addr, buf, sizeof (buf));
 		r_anal_op_fini (&aop);
-		ret = r_anal_op (core->anal, &aop, addr, buf, sizeof (buf), R_ANAL_OP_MASK_ALL);
+		ret = r_anal_op (core->anal, &aop, addr, buf, sizeof (buf), R_ANAL_OP_MASK_BASIC);
 		if (ret < 0 || aop.size < 1) {
 			addr++;
 			continue;
@@ -3861,7 +3861,7 @@ static int cmd_print(void *data, const char *input) {
 
 				bufsz = r_hex_str2bin (arg, (ut8 *) hex_arg);
 				ret = r_anal_op (core->anal, &aop, core->offset,
-					(const ut8 *) hex_arg, bufsz, R_ANAL_OP_MASK_ALL);
+					(const ut8 *) hex_arg, bufsz, R_ANAL_OP_MASK_ESIL);
 				if (ret > 0) {
 					str = R_STRBUF_SAFEGET (&aop.esil);
 					r_cons_println (str);
@@ -4248,6 +4248,7 @@ static int cmd_print(void *data, const char *input) {
 					// instructions are all outputted as a json list
 					cont_size = f->_size > 0 ? f->_size : r_anal_fcn_realsize (f);
 					bool first = true;
+					bool prev_result = true;
 					// TODO: can loc jump to another locs?
 					for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
 						if (tmp_func->addr > f->addr) {
@@ -4256,38 +4257,40 @@ static int cmd_print(void *data, const char *input) {
 						cont_size = tmp_get_contsize (tmp_func);
 						loc_buf = calloc (cont_size, 1);
 						r_io_read_at (core->io, tmp_func->addr, loc_buf, cont_size);
-						if (!first) {
+						if (!first && prev_result) {
 							r_cons_print (",");
 						}
-						r_core_print_disasm_json (core, tmp_func->addr, loc_buf, cont_size, 0);
+						prev_result = r_core_print_disasm_json (core, tmp_func->addr, loc_buf, cont_size, 0);
 						first = false;
 						free (loc_buf);
 					}
+					prev_result = true;
 					r_list_foreach (f->bbs, locs_it, b) {
-						if (!first) {
-							first = false;
-						} else {
-							r_cons_print (",");
-						}
 
 						ut8 *buf = malloc (b->size);
 						if (buf) {
+							if (first) {
+								first = false;
+							} else if (!first && prev_result) {
+								r_cons_print (",");
+							}
 							r_io_read_at (core->io, b->addr, buf, b->size);
-							r_core_print_disasm_json (core, b->addr, buf, b->size, 0);
+							prev_result = r_core_print_disasm_json (core, b->addr, buf, b->size, 0);
 							free (buf);
 						} else {
 							eprintf ("cannot allocate %d byte(s)\n", b->size);
 						}
 					}
+					prev_result = true;
 					for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
 						cont_size = tmp_get_contsize (tmp_func);
 						loc_buf = calloc (cont_size, 1);
 						if (loc_buf) {
 							r_io_read_at (core->io, tmp_func->addr, loc_buf, cont_size);
-							if (!first) {
+							if (!first && prev_result) {
 								r_cons_print (",");
 							}
-							r_core_print_disasm_json (core, tmp_func->addr, loc_buf, cont_size, 0);
+							prev_result = r_core_print_disasm_json (core, tmp_func->addr, loc_buf, cont_size, 0);
 							first = false;
 							free (loc_buf);
 						}
@@ -5130,7 +5133,8 @@ static int cmd_print(void *data, const char *input) {
 					const char *comma = "";
 					const ut8 *buf = core->block;
 					int withref = 0;
-					for (i = 0; i < core->blocksize; i += (base / 4)) {
+					const int wordsize = base / 8;
+					for (i = 0; i < core->blocksize; i += wordsize) {
 						ut64 addr = core->offset + i;
 						ut64 *foo = (ut64 *) (buf + i);
 						ut64 val = *foo;

@@ -460,8 +460,9 @@ typedef enum {
 } _RAnalOpType;
 
 typedef enum {
-	R_ANAL_OP_MASK_ESIL       = 1,
-	R_ANAL_OP_MASK_VAL        = 2,
+	R_ANAL_OP_MASK_BASIC      = 0, // Just fills basic op info , it's fast
+	R_ANAL_OP_MASK_ESIL       = 1, // It fills RAnalop->esil info
+	R_ANAL_OP_MASK_VAL        = 2, // It fills RAnalop->dst/src info
 	R_ANAL_OP_MASK_ALL        = R_ANAL_OP_MASK_ESIL | R_ANAL_OP_MASK_VAL
 } RAnalOpMask;
 
@@ -1231,6 +1232,7 @@ R_API void r_anal_type_add(RAnal *l, RAnalType *t);
 R_API RAnalType *r_anal_type_find(RAnal *a, const char* name);
 R_API void r_anal_type_list(RAnal *a, short category, short enabled);
 R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* s);
+R_API bool r_anal_op_nonlinear(int t);
 R_API const char *r_anal_optype_to_string(int t);
 R_API const char *r_anal_op_family_to_string (int n);
 R_API int r_anal_op_family_from_string(const char *f);

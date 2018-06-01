@@ -552,7 +552,8 @@ INST_HANDLER (MOVWI_2) {
 	e ("=[1],");
 }
 
-static const PicMidrangeOpAnalInfo pic_midrange_op_anal_info[] = {
+#define PIC_MIDRANGE_OPINFO_LEN 52
+static const PicMidrangeOpAnalInfo pic_midrange_op_anal_info[PIC_MIDRANGE_OPINFO_LEN] = {
 	INST_DECL (NOP, NONE),      INST_DECL (RETURN, NONE),
 	INST_DECL (RETFIE, NONE),   INST_DECL (OPTION, NONE),
 	INST_DECL (SLEEP, NONE),    INST_DECL (CLRWDT, NONE),
@@ -639,9 +640,9 @@ static RIODesc *cpu_memory_map (RIOBind *iob, RIODesc *desc, ut32 addr,
 	if (desc && iob->fd_get_name (iob->io, desc->fd)) {
 		iob->fd_remap (iob->io, desc->fd, addr);
 	} else {
-		desc = iob->open_at (iob->io, mstr, R_IO_READ | R_IO_WRITE, 0,
-				     addr);
+		desc = iob->open_at (iob->io, mstr, R_IO_READ | R_IO_WRITE, 0, addr);
 	}
+	free (mstr);
 	return desc;
 }
 
@@ -704,7 +705,7 @@ static int anal_pic_midrange_op (RAnal *anal, RAnalOp *op, ut64 addr,
 	PicMidrangeOpcode opcode = pic_midrange_get_opcode (instr);
 	PicMidrangeOpArgsVal args_val;
 
-	for (i = 0; i < sizeof (pic_midrange_op_anal_info); i++) {
+	for (i = 0; i < PIC_MIDRANGE_OPINFO_LEN; i++) {
 		if (pic_midrange_op_anal_info[i].opcode == opcode) {
 			anal_pic_midrange_extract_args (
 				instr, pic_midrange_op_anal_info[i].args,
@@ -718,8 +719,7 @@ static int anal_pic_midrange_op (RAnal *anal, RAnalOp *op, ut64 addr,
 	return op->size;
 }
 
-static void pic18_cond_branch (RAnalOp *op, ut64 addr, const ut8 *buf,
-			       char *flag) {
+static void pic18_cond_branch (RAnalOp *op, ut64 addr, const ut8 *buf, char *flag) {
 	op->type = R_ANAL_OP_TYPE_CJMP;
 	op->jump = addr + 2 + 2 * (*(ut16 *)buf & 0xff);
 	op->fail = addr + op->size;

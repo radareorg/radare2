@@ -1631,22 +1631,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	}
 }
 
-static int parse_reg_name_mov(RRegItem *reg, csh *handle, cs_insn *insn, int reg_num) {
-	if (!reg) {
-		return -1;
-	}
-
-	switch (INSOP (reg_num).type) {
-	case X86_OP_REG:
-		reg->name = (char *)cs_reg_name (*handle, INSOP (reg_num).reg);
-		break;
-	default:
-		break;
-	}
-	return 0;
-}
-
-static int parse_reg_name_lea(RRegItem *reg, csh *handle, cs_insn *insn, int reg_num) {
+static int parse_reg_name(RRegItem *reg, csh *handle, cs_insn *insn, int reg_num) {
 	if (!reg) {
 		return -1;
 	}
@@ -1674,7 +1659,9 @@ static int parse_reg_name_lea(RRegItem *reg, csh *handle, cs_insn *insn, int reg
 	ZERO_FILL (regs[0]);\
 	ZERO_FILL (regs[1]);\
 	(op)->src[0]->reg = &regs[1];\
-	(op)->dst->reg = &regs[0];
+	(op)->dst->reg = &regs[0];\
+	parse_reg_name (op->src[0]->reg, &gop.handle, insn, 1);\
+	parse_reg_name (op->dst->reg, &gop.handle, insn, 0);
 
 static void op_fillval (RAnal *a, RAnalOp *op, csh *handle, cs_insn *insn){
 	char *dst;
@@ -1691,7 +1678,6 @@ static void op_fillval (RAnal *a, RAnalOp *op, csh *handle, cs_insn *insn){
 		switch (INSOP(0).type) {
 		case X86_OP_MEM:
 			op->dst->delta = INSOP(0).mem.disp;
-			parse_reg_name_mov (op->src[0]->reg, &gop.handle, insn, 1);
 			break;
 		case X86_OP_REG:
 			dst = getarg (&gop, 0, 0, NULL, DST_AR);
@@ -1708,13 +1694,12 @@ static void op_fillval (RAnal *a, RAnalOp *op, csh *handle, cs_insn *insn){
 		op->src[0]->imm = INSOP(1).imm;
 		break;
 	case R_ANAL_OP_TYPE_CMP:
+		CREATE_SRC_DST (op);
 		switch (INSOP(0).type) {
 		case X86_OP_MEM:
-			op->dst = r_anal_value_new ();
 			op->dst->delta = INSOP(0).mem.disp;
 			break;
 		case X86_OP_REG:
-			op->src[0] = r_anal_value_new ();
 			op->src[0]->delta = INSOP(1).mem.disp;
 		default:
 			break;
@@ -1722,8 +1707,6 @@ static void op_fillval (RAnal *a, RAnalOp *op, csh *handle, cs_insn *insn){
 		break;
 	case R_ANAL_OP_TYPE_LEA:
 		CREATE_SRC_DST (op);
-		parse_reg_name_lea (op->src[0]->reg, &gop.handle, insn, 1);
-		parse_reg_name_mov (op->dst->reg, &gop.handle, insn, 0);
 		if (INSOP(1).type == X86_OP_MEM) {
 			op->src[0]->delta = INSOP(1).mem.disp;
 		}

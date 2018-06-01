@@ -801,7 +801,7 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 	}
 
 	r_anal_op (core->anal, &op, off,
-			core->block + off - core->offset, 32, R_ANAL_OP_MASK_ALL);
+			core->block + off - core->offset, 32, R_ANAL_OP_MASK_BASIC);
 
 	tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
 	if (op.var) {
@@ -1293,7 +1293,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		hint = r_anal_hint_get (core->anal, addr);
 		r_asm_set_pc (core->assembler, addr);
 		ret = r_asm_disassemble (core->assembler, &asmop, buf + idx, len - idx);
-		ret = r_anal_op (core->anal, &op, core->offset + idx, buf + idx, len - idx, R_ANAL_OP_MASK_ALL);
+		ret = r_anal_op (core->anal, &op, core->offset + idx, buf + idx, len - idx, R_ANAL_OP_MASK_ESIL);
 		esilstr = R_STRBUF_SAFEGET (&op.esil);
 		opexstr = R_STRBUF_SAFEGET (&op.opex);
 		char *mnem = strdup (asmop.buf_asm);
@@ -2762,6 +2762,7 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 	} else if (!bits) {
 		bits = core->anal->bits;
 	}
+	int mode2 = mode;
 	if (core->anal) {
 		core->dbg->reg = core->anal->reg;
 		if (core->anal->cur && core->anal->cur->arch) {
@@ -2771,10 +2772,16 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 			}
 			/* workaround for 6502 */
 			if (!strcmp (core->anal->cur->arch, "6502") && bits == 8) {
-				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 16, mode, use_color); // XXX detect which one is current usage
+				mode2 = mode == 'j' ? 'J' : mode;
+				r_cons_printf ("{");
+				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 16, mode2, use_color); // XXX detect which one is current usage
+				r_cons_printf (",");
 			}
 			if (!strcmp (core->anal->cur->arch, "avr") && bits == 8) {
-				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 16, mode, use_color); // XXX detect which one is current usage
+				mode2 = mode == 'j' ? 'J' : mode;
+				r_cons_printf ("{");
+				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 16, mode2, use_color); // XXX detect which one is current usage
+				r_cons_printf (",");
 			}
 		}
 	}
@@ -2790,7 +2797,10 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 			r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, pcbits, 2, use_color); // XXX detect which one is current usage
 		}
 	}
-	r_debug_reg_list (core->dbg, type, bits, mode, use_color);
+	r_debug_reg_list (core->dbg, type, bits, mode2, use_color);
+	if (mode2 == 'J') {
+		r_cons_print ("}\n");
+	}
 	core->dbg->reg = hack;
 }
 
@@ -3229,7 +3239,7 @@ repeat:
 	}
 	(void)r_io_read_at (core->io, addr, code, sizeof (code));
 	// TODO: sometimes this is dupe
-	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code), R_ANAL_OP_MASK_ALL);
+	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code), R_ANAL_OP_MASK_ESIL);
 // if type is JMP then we execute the next N instructions
 	// update the esil pointer because RAnal.op() can change it
 	esil = core->anal->esil;
@@ -3270,7 +3280,7 @@ repeat:
 			r_anal_esil_set_pc (esil, naddr);
 			(void)r_io_read_at (core->io, naddr, code2, sizeof (code2));
 			// TODO: sometimes this is dupe
-			ret = r_anal_op (core->anal, &op2, naddr, code2, sizeof (code2), R_ANAL_OP_MASK_ALL);
+			ret = r_anal_op (core->anal, &op2, naddr, code2, sizeof (code2), R_ANAL_OP_MASK_ESIL);
 			switch (op2.type) {
 			case R_ANAL_OP_TYPE_CJMP:
 			case R_ANAL_OP_TYPE_JMP:
@@ -3866,7 +3876,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	esil->cb.hook_mem_read = mymemread;
 	esil->nowrite = true;
 	for (ops = ptr = 0; ptr < buf_sz && hasNext (mode); ops++, ptr += len) {
-		len = r_anal_op (core->anal, &aop, addr + ptr, buf + ptr, buf_sz - ptr, R_ANAL_OP_MASK_ALL);
+		len = r_anal_op (core->anal, &aop, addr + ptr, buf + ptr, buf_sz - ptr, R_ANAL_OP_MASK_ESIL);
 		esilstr = R_STRBUF_SAFEGET (&aop.esil);
 		if (len < 1) {
 			eprintf ("Invalid 0x%08"PFMT64x" instruction %02x %02x\n",
@@ -4011,7 +4021,7 @@ static void cmd_aespc(RCore *core, ut64 addr, int off) {
 		if (!i) {
 			r_io_read_at (core->io, addr, buf, bsize);
 		}
-		ret = r_anal_op (core->anal, &aop, addr, buf + i, bsize - i, R_ANAL_OP_MASK_ALL);
+		ret = r_anal_op (core->anal, &aop, addr, buf + i, bsize - i, R_ANAL_OP_MASK_BASIC);
 		instr_size += ret;
 		int inc = (core->search->align > 0)? core->search->align - 1: ret - 1;
 		if (inc < 0) {
@@ -4319,7 +4329,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				while (pc < end) {
 					left = R_MIN (end - pc, 32);
 					r_asm_set_pc (core->assembler, pc);
-					ret = r_anal_op (core->anal, &op, addr, buf, left, R_ANAL_OP_MASK_ALL); // read overflow
+					ret = r_anal_op (core->anal, &op, addr, buf, left, R_ANAL_OP_MASK_ESIL); // read overflow
 					if (ret) {
 						r_reg_set_value_by_role (core->anal->reg, R_REG_NAME_PC, pc);
 						r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
@@ -4437,7 +4447,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		RAnalOp aop = R_EMPTY;
 		bufsz = r_hex_str2bin (hex, (ut8*)hex);
 		ret = r_anal_op (core->anal, &aop, core->offset,
-			(const ut8*)hex, bufsz, R_ANAL_OP_MASK_ALL);
+			(const ut8*)hex, bufsz, R_ANAL_OP_MASK_ESIL);
 		if (ret>0) {
 			const char *str = R_STRBUF_SAFEGET (&aop.esil);
 			char *str2 = r_str_newf (" %s", str);
@@ -4601,7 +4611,7 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 		if (!bufi) {
 			r_io_read_at (core->io, addr, buf, 4096);
 		}
-		if (r_anal_op (core->anal, &op, addr, buf + bufi, 4096 - bufi, R_ANAL_OP_MASK_ALL)) {
+		if (r_anal_op (core->anal, &op, addr, buf + bufi, 4096 - bufi, R_ANAL_OP_MASK_BASIC)) {
 			if (op.size < 1) {
 				// XXX must be +4 on arm/mips/.. like we do in disasm.c
 				op.size = minop;
@@ -5320,7 +5330,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 
 					if (ref->type == R_ANAL_REF_TYPE_CALL) {
 						RAnalOp aop;
-						r_anal_op (core->anal, &aop, ref->at, buf, 12, R_ANAL_OP_MASK_ALL);
+						r_anal_op (core->anal, &aop, ref->at, buf, 12, R_ANAL_OP_MASK_BASIC);
 						if (aop.type == R_ANAL_OP_TYPE_UCALL) {
 							cmd_anal_ucall_ref (core, ref->addr);
 						}

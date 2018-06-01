@@ -732,6 +732,9 @@ R_API int r_str_cmp(const char *a, const char *b, int len) {
 	if (a == b) {
 		return true;
 	}
+	if (len < 0) {
+		return strcmp (a, b);
+	}
 	for (;len--;) {
 		if (*a == '\0' || *b == '\0' || *a != *b) {
 			return false;

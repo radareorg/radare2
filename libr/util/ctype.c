@@ -156,57 +156,42 @@ R_API int r_type_get_bitsize(Sdb *TDB, const char *type) {
 	return 0;
 }
 
-// FIXME: Make it recursive
-static int get_types_by_offset(Sdb *TDB, RList *offtypes, int offset, const char *k, const char *v) {
-	char buf[256] = {0};
-	//r_cons_printf ("tk %s=%s\n", k, v);
-	// TODO: Add unions support
-	if (!strncmp (v, "struct", 6) && strncmp (k, "struct.", 7)) {
-		char* query = sdb_fmt ("struct.%s", k);
-		char *members = sdb_get (TDB, query, 0);
-		char *next, *ptr = members;
-		if (members) {
-			// Search for members, summarize the size
-			int typesize = 0;
-			do {
-				char *name = sdb_anext (ptr, &next);
-				if (!name) {
-					break;
-				}
-				query = sdb_fmt ("struct.%s.%s", k, name);
-				char *subtype = sdb_get (TDB, query, 0);
-				if (!subtype) {
-					break;
-				}
-				char *tmp = strchr (subtype, ',');
-				if (tmp) {
-					*tmp++ = 0;
-					tmp = strchr (tmp, ',');
-					if (tmp) {
-						*tmp++ = 0;
-					}
-					// TODO: Go recurse here
-					int elements = r_num_math (NULL, tmp);
-					if (elements == 0) {
-						elements = 1;
-					}
-					// TODO: Handle also alignment, unions, etc
-					// If previous types size matches the offset
-					if ((typesize / 8) == offset) {
-						// Add them in the list
-						buf[0] = '\0';
-						sprintf (buf, "%s.%s", k, name);
-						r_list_append (offtypes, strdup (buf));
-					}
-					typesize += r_type_get_bitsize (TDB, subtype) * elements;
-				}
-				free (subtype);
-				ptr = next;
-			} while (next);
-			free (members);
-		}
+R_API char *r_type_get_struct_memb(Sdb *TDB, const char *type, int offset) {
+	char* query = sdb_fmt ("struct.%s", type);
+	char *members = sdb_get (TDB, query, 0);
+	int i, typesize = 0;
+	char *res = NULL;
+	if (!members) {
+		eprintf ("%s is not a struct\n", type);
+		return NULL;
 	}
-	return 0;
+	int nargs = r_str_split (members, ',');
+	for (i = 0; i < nargs ; i++) {
+		const char *name = r_str_word_get0 (members, i);
+		if (!name) {
+			break;
+		}
+		query = sdb_fmt ("struct.%s.%s", type, name);
+		char *subtype = sdb_get (TDB, query, 0);
+		if (!subtype) {
+			break;
+		}
+		if (r_str_split (subtype, ',') != 3) {
+			free (subtype);
+			break;
+		}
+		int val = r_num_math (NULL, r_str_word_get0 (subtype, 2));
+		int arrsz = val ? val : 1;
+		if ((typesize / 8) == offset) {
+			res = sdb_fmt ("%s.%s", type, name);
+			free (subtype);
+			break;
+		}
+		typesize += r_type_get_bitsize (TDB, subtype) * arrsz;
+		free (subtype);
+	}
+	free (members);
+	return res;
 }
 
 R_API RList* r_type_get_by_offset(Sdb *TDB, ut64 offset) {
@@ -215,13 +200,22 @@ R_API RList* r_type_get_by_offset(Sdb *TDB, ut64 offset) {
 	SdbListIter *lsi;
 	SdbKv *kv;
 	ls_foreach (ls, lsi, kv) {
-		get_types_by_offset (TDB, offtypes, offset, kv->key, kv->value);
+		// TODO: Add unions support
+		if (!strncmp (kv->value, "struct", 6) && strncmp (kv->key, "struct.", 7)) {
+			char *res = r_type_get_struct_memb (TDB, kv->key, offset);
+			r_list_append (offtypes, res);
+		}
 	}
 	ls_free (ls);
 	return offtypes;
 }
 
-R_API int r_type_link(Sdb *TDB, const char *type, ut64 addr) {
+R_API char *r_type_link_at (Sdb *TDB, ut64 addr) {
+	char* query = sdb_fmt ("link.%08"PFMT64x, addr);
+	return sdb_get (TDB, query, 0);
+}
+
+R_API int r_type_set_link(Sdb *TDB, const char *type, ut64 addr) {
 	if (sdb_const_get (TDB, type, 0)) {
 		char *laddr = r_str_newf ("link.%08"PFMT64x, addr);
 		sdb_set (TDB, laddr, type, 0);
@@ -481,6 +475,9 @@ R_API char *r_type_func_guess(Sdb *TDB, char *func_name) {
 	// also try module.dll_function and function_number
 	if ((first = strchr (str, '_'))) {
 		last = (char *)r_str_lchr (first, '_');
+		if (!last) {
+			goto out;
+		}
 		// middle + suffix or right half
 		if ((result = type_func_try_guess (TDB, first + 1))) {
 			goto out;
@@ -497,7 +494,6 @@ R_API char *r_type_func_guess(Sdb *TDB, char *func_name) {
 			}
 		}
 		result = NULL;
-		goto out;
 	}
 out:
 	free (str);

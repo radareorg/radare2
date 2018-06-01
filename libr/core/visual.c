@@ -820,7 +820,7 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 	r_io_read_at (core->io, base, buf, sizeof (buf));
 	for (i = 0; i < sizeof (buf); i++) {
 		ret = r_anal_op (core->anal, &op, base + i,
-			buf + i, sizeof (buf) - i, R_ANAL_OP_MASK_ALL);
+			buf + i, sizeof (buf) - i, R_ANAL_OP_MASK_BASIC);
 		if (!ret) {
 			continue;
 		}
@@ -1645,6 +1645,7 @@ R_API void r_core_visual_browse(RCore *core) {
 		case '_':
 			r_core_visual_hudstuff (core);
 			break;
+		case 127: // backspace
 		case 'q':
 			return;
 		}
