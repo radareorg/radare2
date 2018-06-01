@@ -251,7 +251,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 				} else {
 					anal->cb_printf (",");
 				}
-				anal->cb_printf ("%"PFMT64d":%"PFMT64d, ref->at, ref->addr);
+				anal->cb_printf ("\"%"PFMT64d"\":%"PFMT64d, ref->at, ref->addr);
 			}
 			break;
 		default:
