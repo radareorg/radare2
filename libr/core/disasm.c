@@ -240,6 +240,7 @@ typedef struct {
 	const ut8 *buf;
 	int len;
 	int maxrefs;
+	int foldxrefs;
 	char *prev_ins;
 	bool prev_ins_eq;
 	int prev_ins_count;
@@ -596,7 +597,8 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_vars = r_config_get_i (core->config, "asm.var");
 	ds->show_varsum = r_config_get_i (core->config, "asm.var.summary");
 	ds->show_varaccess = r_config_get_i (core->config, "asm.var.access");
-	ds->maxrefs = r_config_get_i (core->config, "asm.maxrefs");
+	ds->maxrefs = r_config_get_i (core->config, "asm.xrefs.max");
+	ds->foldxrefs = r_config_get_i (core->config, "asm.xrefs.fold");
 	ds->show_lines = r_config_get_i (core->config, "asm.lines");
 	ds->linesright = r_config_get_i (core->config, "asm.lines.right");
 	ds->show_indent = r_config_get_i (core->config, "asm.indent");
@@ -1147,18 +1149,18 @@ static void ds_show_xrefs(RDisasmState *ds) {
 	if (!xrefs) {
 		return;
 	}
-	if (ds->maxrefs < 1) {
+	if (r_list_length (xrefs) > ds->maxrefs) {
 		ds_pre_xrefs (ds, false);
 		ds_comment (ds, false, "%s; XREFS(%d)\n",
 			ds->show_color? ds->pal_comment: "",
 			r_list_length (xrefs));
 		r_list_free (xrefs);
 		return;
-	}
-	if (r_list_length (xrefs) > ds->maxrefs) {
+	} else if (r_list_length (xrefs) > ds->foldxrefs) {
 		int cols = r_cons_get_size (NULL);
 		cols -= 15;
 		cols /= 23;
+		cols = cols > 5 ? 5 : cols;
 		ds_pre_xrefs (ds, false);
 		ds_comment (ds, false, "%s; XREFS: ", ds->show_color? ds->pal_comment: "");
 		r_list_foreach (xrefs, iter, refi) {
