@@ -456,10 +456,10 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		e ("c,1,&,!,"); cjmp;
 		break;
 	case 0x60: /* jz offset */
-		e ("a,0,==,"); cjmp;
+		e ("a,0,==,$z,"); cjmp;
 		break;
 	case 0x70: /* jnz offset */
-		e ("a,0,==,!,"); cjmp;
+		e ("a,0,==,$z,!,"); cjmp;
 		break;
 
 	case 0x11: case 0x31: case 0x51: case 0x71:
@@ -552,7 +552,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		break;
 	case 0x84: /* div ab */
 		// note: escape % if this becomes a format string
-		e ("b,0,==,ov,=,b,a,%,b,a,/=,b,=,0,c,=," flag_p);
+		e ("b,0,==,$z,ov,=,b,a,%,b,a,/=,b,=,0,c,=," flag_p);
 		break;
 	case 0x85: /* mov direct, direct */
 		xr (dir1); xw (dir2);
@@ -584,7 +584,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		xi (dp, "++");
 		break;
 	case 0xA4: /* mul ab */
-		e ("8,a,b,*,DUP,a,=,>>,DUP,b,=,0,==,!,ov,=,0,c,=," flag_p);
+		e ("8,a,b,*,DUP,a,=,>>,DUP,b,=,0,==,$z,!,ov,=,0,c,=," flag_p);
 		break;
 	case 0xA5: /* "reserved" */
 		e ("0,trap");
@@ -654,10 +654,10 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		// if (lower nibble > 9) or (AC == 1) add 6
 		// if (higher nibble > 9) or (C == 1) add 0x60
 		// carry |= carry caused by this operation
-		e ("a,0x0f,&,9,<,ac,|,?{,6,a,+=,$c7,c,|=,},a,0xf0,&,0x90,<,c,|,?{,0x60,a,+=,$c7,c,|=,}," flag_p);
+		e ("a,0x0f,&,9,==,$b4,ac,|,?{,6,a,+=,$c7,c,|=,},a,0xf0,&,0x90,==,$b8,c,|,?{,0x60,a,+=,$c7,c,|=,}," flag_p);
 		break;
 	case 0xD5: /* djnz direct, offset */
-		xi (dir1, "--"); xr (dir1); e ("0,==,!,"); cjmp;
+		xi (dir1, "--"); xr (dir1); e ("0,==,$z,!,"); cjmp;
 		break;
 	case 0xD6:
 	case 0xD7: /* xchd a, @Ri*/
@@ -667,7 +667,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		break;
 	case 0xD8: case 0xD9: case 0xDA: case 0xDB:
 	case 0xDC: case 0xDD: case 0xDE: case 0xDF: /* djnz Rn, offset */
-		xi (rn, "--"); xr (rn); e ("0,==,!,"); cjmp;
+		xi (rn, "--"); xr (rn); e ("0,==,$z,!,"); cjmp;
 		break;
 	case 0xE0: /* movx a, @dptr */
 		xr (dpx); xw (a); e (flag_p);
