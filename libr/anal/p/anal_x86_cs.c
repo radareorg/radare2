@@ -426,11 +426,11 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	case X86_INS_FXRSTOR:
 	case X86_INS_FXRSTOR64:
 		break;
-	case X86_INS_FDIV:
 	case X86_INS_FIDIV:
+	case X86_INS_FIDIVR:
+	case X86_INS_FDIV:
 	case X86_INS_FDIVP:
 	case X86_INS_FDIVR:
-	case X86_INS_FIDIVR:
 	case X86_INS_FDIVRP:
 		break;
 	case X86_INS_FSUBR:
@@ -1366,6 +1366,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			arg1 = getarg (&gop, 1, 0, NULL, ARG1_AR);
 			arg2 = getarg (&gop, 2, 0, NULL, ARG2_AR);
 			// TODO update flags & handle signedness
+			op->sign = true;
 			if (!arg2 && !arg1) {
 				// TODO: IDIV rbx not implemented. this is just a workaround
 // http://www.tptp.cc/mirrors/siyobik.info/instruction/IDIV.html
@@ -1415,6 +1416,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			arg0 = getarg (&gop, 0, 0, NULL, ARG0_AR);
 			arg1 = getarg (&gop, 1, 0, NULL, ARG1_AR);
 			arg2 = getarg (&gop, 2, 0, NULL, ARG2_AR);
+			op->sign = true;
 			if (arg2) {
 				// TODO update flags & handle signedness
 				esilprintf (op, "%s,%s,*,%s,=", arg2, arg1, arg0);
@@ -2218,6 +2220,15 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 		op->jump = INSOP(0).imm;
 		op->fail = addr + op->size;
 		op->cycles = CYCLE_JMP;
+		switch (insn->id) {
+		case X86_INS_JL:
+		case X86_INS_JLE:
+		case X86_INS_JS:
+		case X86_INS_JG:
+		case X86_INS_JGE:
+			op->sign = true;
+			break;
+		}
 		break;
 	case X86_INS_CALL:
 	case X86_INS_LCALL:
@@ -2447,8 +2458,11 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_DIV:
 		op->type = R_ANAL_OP_TYPE_DIV;
 		break;
-	case X86_INS_AAM:
 	case X86_INS_IMUL:
+		op->type = R_ANAL_OP_TYPE_MUL;
+		op->sign = true;
+		break;
+	case X86_INS_AAM:
 	case X86_INS_MUL:
 	case X86_INS_MULX:
 	case X86_INS_MULPD:

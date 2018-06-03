@@ -1373,6 +1373,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (hint && hint->opcode) {
 				r_cons_printf ("\"ophint\":\"%s\",", hint->opcode);
 			}
+			r_cons_printf ("\"sign\":%s,", r_str_bool (op.sign));
 			r_cons_printf ("\"prefix\":%" PFMT64d ",", op.prefix);
 			r_cons_printf ("\"id\":%d,", op.id);
 			if (opexstr && *opexstr) {
@@ -1480,6 +1481,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (op.refptr != -1)
 				printline ("refptr", "%d\n", op.refptr);
 			printline ("size", "%d\n", size);
+			printline ("sign", "%s\n", r_str_bool (op.sign));
 			printline ("type", "%s\n", r_anal_optype_to_string (op.type));
 			{
 				const char *t2 = r_anal_optype_to_string (op.type2);
