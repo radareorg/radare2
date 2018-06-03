@@ -1518,7 +1518,7 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 	RStrBuf *s = r_strbuf_new (NULL);
 	ut64 type;
 	RIOSection *sect;
-	char *mapname;
+	char *mapname = NULL;
 	RAnalFunction *fcn;
 	RFlagItem *fi = r_flag_get_i (core->flags, value);
 	type = r_core_anal_address (core, value);
@@ -1527,11 +1527,7 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 		RDebugMap *map = r_debug_map_get (core->dbg, value);
 		if (map && map->name && map->name[0]) {
 			mapname = strdup (map->name);
-		} else {
-			mapname = NULL;
 		}
-	} else {
-		mapname = NULL;
 	}
 	sect = value? r_io_section_vget (core->io, value): NULL;
 	if(! ((type&R_ANAL_ADDR_TYPE_HEAP)||(type&R_ANAL_ADDR_TYPE_STACK)) ) {
@@ -1541,7 +1537,7 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 		}
 		if (mapname) {
 			r_strbuf_appendf (s, " (%s)", mapname);
-			free (mapname);
+			R_FREE (mapname);
 		}
 	}
 	if (fi) r_strbuf_appendf (s, " %s", fi->name);
@@ -1640,6 +1636,7 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 			}
 		}
 	}
+	free (mapname);
 	return r_strbuf_drain (s);
 }
 
