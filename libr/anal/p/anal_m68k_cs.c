@@ -132,6 +132,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	static int omode = -1;
 	static int obits = 32;
 	cs_insn* insn;
+	cs_m68k *m68k;
+	cs_detail *detail;
+
 	int mode = a->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 
 	//mode |= (a->bits==64)? CS_MODE_64: CS_MODE_32;
@@ -175,6 +178,8 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		opsize = -1;
 		goto beach;
 	}
+	detail = insn->detail;
+	m68k = &detail->m68k;
 	op->type = R_ANAL_OP_TYPE_NULL;
 	op->delay = 0;
 	op->id = insn->id;
@@ -219,9 +224,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case M68K_INS_BLT:
 	case M68K_INS_BGT:
 	case M68K_INS_BLE:
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = ((addr >>32)<<32) | (UT32_MAX & IMM(0));
-		op->fail = addr + 2;
+		if (m68k->operands[0].type == M68K_OP_BR_DISP) {
+			op->type = R_ANAL_OP_TYPE_CJMP;
+			// TODO: disp_size is ignored
+			op->jump = addr + m68k->operands[0].br_disp.disp + 2;
+			op->fail = addr + insn->size;
+		}
 		break;
 	case M68K_INS_BRA:
 		op->type = R_ANAL_OP_TYPE_JMP;
@@ -721,7 +729,7 @@ RAnalPlugin r_anal_plugin_m68k_cs = {
 };
 #else
 RAnalPlugin r_anal_plugin_m68k_cs = {
-	.name = "m68k.cs (unsupported)",
+	.name = "m68k (unsupported)",
 	.desc = "Capstone M68K analyzer (unsupported)",
 	.license = "BSD",
 	.arch = "m68k",
