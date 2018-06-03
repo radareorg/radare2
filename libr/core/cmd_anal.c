@@ -7020,12 +7020,12 @@ static int cmd_anal(void *data, const char *input) {
 		int ccl = input[1]? r_num_math (core->num, &input[2]): 0; //get cycles to look for
 		int cr = r_config_get_i (core->config, "asm.cmt.right");
 		int fun = r_config_get_i (core->config, "asm.functions");
-		int li = r_config_get_i (core->config, "asm.lines.jmp");
+		int li = r_config_get_i (core->config, "asm.lines");
 		int xr = r_config_get_i (core->config, "asm.xrefs");
 
 		r_config_set_i (core->config, "asm.cmt.right", true);
 		r_config_set_i (core->config, "asm.functions", false);
-		r_config_set_i (core->config, "asm.lines.jmp", false);
+		r_config_set_i (core->config, "asm.lines", false);
 		r_config_set_i (core->config, "asm.xrefs", false);
 
 		hooks = r_core_anal_cycles (core, ccl); //analyse
@@ -7040,7 +7040,7 @@ static int cmd_anal(void *data, const char *input) {
 
 		r_config_set_i (core->config, "asm.cmt.right", cr); //reset settings
 		r_config_set_i (core->config, "asm.functions", fun);
-		r_config_set_i (core->config, "asm.lines.jmp", li);
+		r_config_set_i (core->config, "asm.lines", li);
 		r_config_set_i (core->config, "asm.xrefs", xr);
 		}
 		break;
