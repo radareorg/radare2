@@ -8,7 +8,7 @@ static struct r_bp_arch_t r_bp_plugin_arm_bps[] = {
 	{ 64, 4, 1, (const ut8*)"\xd4\x20\x00\x00" }, // be - arm64
 	//{ 64, 1, 0, (const ut8*)"\xfe\xde\xff\xe7" }, // le - arm64 // hacky fix
 
-        {32, 4, 0, (const ut8*)"\xf0\x01\xf0\xe7" }, // eabi-le - undefined instruction - for all kernels
+	{32, 4, 0, (const ut8*)"\xf0\x01\xf0\xe7" }, // eabi-le - undefined instruction - for all kernels
 	{32, 4, 1, (const ut8*)"\xe7\xf0\x01\xf0" }, // eabi-be
 
 //	{ 32, 1, 0, (const ut8*)"\xff\xff\xff\xff" }, // le - linux only? (undefined instruction)
