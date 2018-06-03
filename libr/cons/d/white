@@ -32,6 +32,7 @@ ec flow blue
 ec flow2 green
 ec mov black
 ec invalid red
+ec line_highlight rgb:ff0
 ec graph.box blue
 ec graph.box2 green
 ec graph.box3 red

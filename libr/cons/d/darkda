@@ -32,6 +32,7 @@ ec trap rgb:d66
 ec swi rgb:df077e
 ec creg rgb:69d200
 ec flag rgb:00b1ab
+ec line_highlight rgb:00007f
 ec ai.read rgb:66d
 ec ai.write rgb:d66
 ec ai.exec rgb:6d6

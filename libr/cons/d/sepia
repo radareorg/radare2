@@ -35,6 +35,7 @@ ec trap rgb:431
 ec swi rgb:bb7
 ec creg rgb:960
 ec flag rgb:ffd
+ec line_highlight rgb:210
 ec graph.true rgb:fd9
 ec graph.false rgb:431
 ec graph.trufae rgb:fd9

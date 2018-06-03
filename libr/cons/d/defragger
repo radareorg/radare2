@@ -34,6 +34,7 @@ ec reg rgb:73adad
 ec creg rgb:73adad
 ec num rgb:d25032
 ec mov rgb:ebebeb
+ec line_highlight rgb:00003f
 ec ai.read rgb:00ff00
 ec ai.write rgb:0000ff
 ec ai.exec rgb:ff0000
