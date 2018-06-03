@@ -45,3 +45,4 @@ ec gui.cflow rgb:f72
 ec gui.dataoffset rgb:f72
 ec crypto rgb:f72
 ec floc rgb:777
+ec line_highlight rgb:111
