@@ -786,6 +786,7 @@ typedef struct r_anal_op_t {
 	int family;     /* family of opcode */
 	int id;         /* instruction id */
 	bool eob;       /* end of block (boolean) */
+	bool sign;      /* operates on signed values, false by default */
 	/* Run N instructions before executing the current one */
 	int delay;      /* delay N slots (mips, ..)*/
 	ut64 jump;      /* true jmp */
