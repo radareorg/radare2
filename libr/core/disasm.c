@@ -599,7 +599,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_varaccess = r_config_get_i (core->config, "asm.var.access");
 	ds->maxrefs = r_config_get_i (core->config, "asm.xrefs.max");
 	ds->foldxrefs = r_config_get_i (core->config, "asm.xrefs.fold");
-	ds->show_lines = r_config_get_i (core->config, "asm.lines");
+	ds->show_lines = r_config_get_i (core->config, "asm.lines.jmp");
 	ds->linesright = r_config_get_i (core->config, "asm.lines.right");
 	ds->show_indent = r_config_get_i (core->config, "asm.indent");
 	ds->indent_space = r_config_get_i (core->config, "asm.indentspace");
