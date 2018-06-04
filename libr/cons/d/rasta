@@ -38,7 +38,7 @@ ec trap red
 ec swi red
 ec creg green
 ec flag yellow
-ec line_highlight #00007f
+ec linehl #00007f
 ec graph.box yellow
 ec graph.box2 green
 ec graph.box3 red

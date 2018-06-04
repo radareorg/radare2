@@ -55,4 +55,4 @@ ec gui.dataoffset rgb:f72
 ec crypto rgb:f72
 ec floc rgb:777
 ec invalid red
-ec line_highlight rgb:008
+ec linehl rgb:008
