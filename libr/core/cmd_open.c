@@ -941,11 +941,11 @@ static bool desc_list_json_cb(void *user, void *data, ut32 id) {
 	// TODO: from is always 0? See libr/core/file.c:945
 	ut64 from = 0LL;
 	p->cb_printf ("{\"raised\":%s,\"fd\":%d,\"uri\":\"%s\",\"from\":%"
-            PFMT64d ",\"writable\":%s,\"size\":%" PFMT64d "}%s",
+			PFMT64d ",\"writable\":%s,\"size\":%" PFMT64d "}%s",
 			(desc->io && (desc->io->desc == desc)) ? "true" : "false",
-            desc->fd, desc->uri, from,
-            (desc->flags & R_IO_WRITE ? "true": "false"),
-            r_io_desc_size (desc), (desc->io->files->top_id == id) ? "" : ",");
+			desc->fd, desc->uri, from,
+			(desc->flags & R_IO_WRITE ? "true": "false"),
+			r_io_desc_size (desc), (desc->io->files->top_id == id) ? "" : ",");
 	return true;
 }
 
