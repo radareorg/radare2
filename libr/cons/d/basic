@@ -36,7 +36,7 @@ ec call cyan
 ec cjmp green
 ec jmp green
 ec pop yellow
-ec line_highlight #00003f
+ec linehl #00003f
 
 ec graph.true green
 ec graph.false red
