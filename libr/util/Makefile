@@ -50,6 +50,13 @@ ifneq ($(shell expr "`uname -r`" : '[0-6]\.'), 2)
 endif
 endif
 
+# FreeBSD 10.0 ships with backtrace(3) in -lexecinfo
+ifeq (${BUILD_OS},freebsd)
+ifneq ($(shell expr "`uname -r`" : '[0-9]\.'), 2)
+  LDFLAGS+=-lexecinfo
+endif
+endif
+
 EXTRA_PRE+=sdb_version
 EXTRA_PRE+=spp_config
 
