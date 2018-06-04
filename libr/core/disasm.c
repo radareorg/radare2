@@ -95,6 +95,7 @@ typedef struct {
 	bool jmpsub;
 	bool varsub;
 	bool show_lines;
+	bool show_lines_bb;
 	bool show_lines_ret;
 	bool show_lines_call;
 	int linesright;
@@ -600,6 +601,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->maxrefs = r_config_get_i (core->config, "asm.xrefs.max");
 	ds->foldxrefs = r_config_get_i (core->config, "asm.xrefs.fold");
 	ds->show_lines = r_config_get_i (core->config, "asm.lines");
+	ds->show_lines_bb = ds->show_lines ? r_config_get_i (core->config, "asm.lines.bb") : false;
 	ds->linesright = r_config_get_i (core->config, "asm.lines.right");
 	ds->show_indent = r_config_get_i (core->config, "asm.indent");
 	ds->indent_space = r_config_get_i (core->config, "asm.indentspace");
@@ -608,8 +610,8 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_dwarf = r_config_get_i (core->config, "asm.dwarf");
 	ds->dwarfFile = r_config_get_i (ds->core->config, "asm.dwarf.file");
 	ds->dwarfAbspath = r_config_get_i (ds->core->config, "asm.dwarf.abspath");
-	ds->show_lines_call = r_config_get_i (core->config, "asm.lines.call");
-	ds->show_lines_ret = r_config_get_i (core->config, "asm.lines.ret");
+	ds->show_lines_call = ds->show_lines ? r_config_get_i (core->config, "asm.lines.call") : false;
+	ds->show_lines_ret = ds->show_lines ? r_config_get_i (core->config, "asm.lines.ret") : false;
 	ds->show_size = r_config_get_i (core->config, "asm.size");
 	ds->show_trace = r_config_get_i (core->config, "asm.trace");
 	ds->linesout = r_config_get_i (core->config, "asm.lines.out");
@@ -655,7 +657,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->asm_meta = r_config_get_i (core->config, "asm.meta");
 	ds->show_reloff = r_config_get_i (core->config, "asm.reloff");
 	ds->show_reloff_flags = r_config_get_i (core->config, "asm.reloff.flags");
-	ds->show_lines_fcn = r_config_get_i (core->config, "asm.lines.fcn");
+	ds->show_lines_fcn = ds->show_lines ? r_config_get_i (core->config, "asm.lines.fcn") : false;
 	ds->show_comments = r_config_get_i (core->config, "asm.comments");
 	ds->show_jmphints = r_config_get_i (core->config, "asm.jmphints");
 	ds->show_leahints = r_config_get_i (core->config, "asm.leahints");
@@ -724,7 +726,7 @@ static RDisasmState * ds_init(RCore *core) {
 			ds->linesopts |= R_ANAL_REFLINE_TYPE_UTF8;
 		}
 	}
-	if (ds->show_lines) {
+	if (ds->show_lines_bb) {
 		ds->ocols += 10; // XXX
 	}
 	if (ds->show_offset) {
@@ -779,7 +781,7 @@ static void ds_reflines_init(RDisasmState *ds) {
 
 	lastaddr = UT64_MAX;
 
-	if (ds->show_lines) {
+	if (ds->show_lines_bb) {
 		ds_reflines_fini (ds);
 		anal->reflines = r_anal_reflines_get (anal,
 			ds->addr, ds->buf, ds->len, ds->l,
@@ -797,7 +799,7 @@ static void ds_reflines_init(RDisasmState *ds) {
 static void ds_reflines_fcn_init(RDisasmState *ds,  RAnalFunction *fcn, const ut8* buf) {
 	RCore *core = ds->core;
 	RAnal *anal = core->anal;
-	if (ds->show_lines) {
+	if (ds->show_lines_bb) {
 		// TODO: make anal->reflines implicit
 		free (anal->reflines); // TODO: leak
 		anal->reflines = r_anal_reflines_fcn_get (anal, fcn, -1, ds->linesout, ds->show_lines_call);
@@ -1895,7 +1897,7 @@ static void ds_show_flags(RDisasmState *ds) {
 }
 
 static void ds_update_ref_lines(RDisasmState *ds) {
-	if (ds->show_lines) {
+	if (ds->show_lines_bb) {
 		ds->line = r_anal_reflines_str (ds->core, ds->at, ds->linesopts);
 		free (ds->refline);
 		ds->refline = ds->line? strdup (ds->line): NULL;
@@ -2114,7 +2116,7 @@ static void ds_control_flow_comments(RDisasmState *ds) {
 }
 
 static void ds_print_lines_right(RDisasmState *ds){
-	if (ds->linesright && ds->show_lines && ds->line) {
+	if (ds->linesright && ds->show_lines_bb && ds->line) {
 		r_cons_printf ("%s%s%s", COLOR (ds, color_flow), ds->line, COLOR_RESET (ds));
 	}
 }
@@ -2188,7 +2190,7 @@ static void ds_print_lines_left(RDisasmState *ds) {
 	}
 	if (ds->line) {
 		if (ds->show_color) {
-			if (!ds->linesright && ds->show_lines) {
+			if (!ds->linesright && ds->show_lines_bb) {
 				r_cons_printf ("%s%s%s", COLOR (ds, color_flow), ds->line, COLOR_RESET (ds));
 			}
 		} else {
@@ -3886,7 +3888,7 @@ static void ds_print_bbline(RDisasmState *ds, bool force) {
 			ds_begin_json_line (ds);
 			ds_setup_print_pre (ds, false, false);
 			ds_update_ref_lines (ds);
-			if (!ds->linesright && ds->show_lines && ds->line) {
+			if (!ds->linesright && ds->show_lines_bb && ds->line) {
 				r_cons_printf ("%s%s%s", COLOR (ds, color_flow),
 						ds->refline2, COLOR_RESET (ds));
 			}

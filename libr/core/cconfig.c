@@ -2477,6 +2477,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETDESC (n, "Realign disassembly if there is a flag in the middle of an instruction");
 	SETPREF ("asm.lbytes", "true", "Align disasm bytes to left");
 	SETPREF ("asm.lines", "true", "Show ASCII-art lines at disassembly");
+	SETPREF ("asm.lines.bb", "true", "Show flow lines at jumps");
 	SETPREF ("asm.lines.call", "false", "Enable call lines");
 	SETPREF ("asm.lines.ret", "false", "Show separator lines after ret");
 	SETPREF ("asm.lines.out", "true", "Show out of block lines");
