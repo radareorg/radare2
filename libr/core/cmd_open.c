@@ -938,8 +938,8 @@ static bool desc_list_cb(void *user, void *data, ut32 id) {
 static bool desc_list_json_cb(void *user, void *data, ut32 id) {
 	RPrint *p = (RPrint *)user;
 	RIODesc *desc = (RIODesc *)data;
-    // TODO: from is always 0? See libr/core/file.c:945
-    ut64 from = 0LL;
+	// TODO: from is always 0? See libr/core/file.c:945
+	ut64 from = 0LL;
 	p->cb_printf ("{\"raised\":%s,\"fd\":%d,\"uri\":\"%s\",\"from\":%"
             PFMT64d ",\"writable\":%s,\"size\":%" PFMT64d "}%s",
 			(desc->io && (desc->io->desc == desc)) ? "true" : "false",
@@ -1225,9 +1225,9 @@ static int cmd_open(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_oj);
 			break;
 		}
-        core->print->cb_printf("[");
+		core->print->cb_printf("[");
 		r_id_storage_foreach (core->io->files, desc_list_json_cb, core->print);
-        core->print->cb_printf("]\n");
+		core->print->cb_printf("]\n");
 		break;
 	case 'L': // "oL"
 		if (r_sandbox_enable (0)) {
