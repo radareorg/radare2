@@ -69,7 +69,7 @@ static struct {
 	{ "gui.background", r_offsetof (RConsPrintablePalette, gui_background), r_offsetof (RConsPalette, gui_background) },
 	{ "gui.alt_background", r_offsetof (RConsPrintablePalette, gui_alt_background), r_offsetof (RConsPalette, gui_alt_background) },
 	{ "gui.border", r_offsetof (RConsPrintablePalette, gui_border), r_offsetof (RConsPalette, gui_border) },
-	{ "highlight", r_offsetof (RConsPrintablePalette, highlight), r_offsetof (RConsPalette, highlight) },
+	{ "wordhl", r_offsetof (RConsPrintablePalette, wordhl), r_offsetof (RConsPalette, wordhl) },
 	{ "linehl", r_offsetof (RConsPrintablePalette, linehl), r_offsetof (RConsPalette, linehl) },
 	{ NULL, 0, 0 }
 };
@@ -159,7 +159,7 @@ R_API void r_cons_pal_init() {
 	cons->cpal.gui_background     = (RColor) RColor_BLACK;
 	cons->cpal.gui_alt_background = (RColor) RColor_WHITE;
 	cons->cpal.gui_border         = (RColor) RColor_BLACK;
-	cons->cpal.highlight          = (RColor) RColor_BGRED;
+	cons->cpal.wordhl             = (RColor) RColor_BGRED;
 	cons->cpal.linehl             = (RColor) RCOLOR (ALPHA_BG, 0x00, 0x00, 0x7f, 0x00, 0x00, 0x00);
 
 	cons->cpal.graph_box          = (RColor) RColor_NULL;
