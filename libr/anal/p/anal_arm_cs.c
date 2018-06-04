@@ -2143,6 +2143,15 @@ static void anop64 (csh handle, RAnalOp *op, cs_insn *insn) {
 		op->family = R_ANAL_OP_FAMILY_CPU;
 	}
 
+	switch (insn->detail->arm64.cc) {
+	case ARM64_CC_GE:
+	case ARM64_CC_GT:
+	case ARM64_CC_LE:
+	case ARM64_CC_LT:
+		op->sign = true;
+		break;
+	}
+
 	switch (insn->id) {
 	case ARM64_INS_SVC:
 		op->type = R_ANAL_OP_TYPE_SWI;
@@ -2275,6 +2284,8 @@ static void anop64 (csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_LDUR:
 	case ARM64_INS_LDURB:
 	case ARM64_INS_LDRSW:
+	case ARM64_INS_LDRSB:
+	case ARM64_INS_LDRSH:
 	case ARM64_INS_LDR:
 	case ARM64_INS_LDP:
 	case ARM64_INS_LDNP:
@@ -2282,6 +2293,14 @@ static void anop64 (csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_LDRH:
 	case ARM64_INS_LDRB:
 		op->type = R_ANAL_OP_TYPE_LOAD;
+		switch (insn->id) {
+		case ARM64_INS_LDPSW:
+		case ARM64_INS_LDRSW:
+		case ARM64_INS_LDRSH:
+		case ARM64_INS_LDRSB:
+			op->sign = true;
+			break;
+		}
 		if (REGBASE64(1) == ARM64_REG_X29) {
 			op->stackop = R_ANAL_STACK_GET;
 			op->stackptr = 0;
