@@ -5289,6 +5289,10 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 	core->offset = old_offset;
 	r_anal_op_fini (&ds->analop);
 	ds_free (ds);
+	if (result == false) {
+		r_cons_printf ("{}");
+		result = true;
+	}
 	return result;
 }
 
