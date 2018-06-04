@@ -436,6 +436,9 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		r_strbuf_appendf (&op->esil, "0x%"PFMT64x"0000,%s,=", IMM(1), ARG(0));
 		break;
 	case MIPS_INS_LB:
+		op->sign = true;
+		ESIL_LOAD ("1");
+		break;
 	case MIPS_INS_LBU:
 		//one of these is wrong
 		ESIL_LOAD ("1");
@@ -810,6 +813,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	case MIPS_INS_DADDI:
 	case MIPS_INS_DADDIU:
 		SET_VAL (op, 2);
+		op->sign = (insn->id == MIPS_INS_ADDI || insn->id == MIPS_INS_ADD);
 		op->type = R_ANAL_OP_TYPE_ADD;
 		if (REGID(0) == MIPS_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
@@ -829,6 +833,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	case MIPS_INS_SUBUH:
 	case MIPS_INS_SUBUH_R:
 		SET_VAL (op,2);
+		op->sign = insn->id == MIPS_INS_SUB;
 		op->type = R_ANAL_OP_TYPE_SUB;
 		break;
 	case MIPS_INS_MULV:
@@ -941,11 +946,14 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 			op->type = R_ANAL_OP_TYPE_RET;
 		}
 		break;
+	case MIPS_INS_SLT:
 	case MIPS_INS_SLTI:
-	case MIPS_INS_SLTIU:
-		SET_VAL (op,2);
+		op->sign = true;
+		SET_VAL (op, 2);
 		break;
-
+	case MIPS_INS_SLTIU:
+		SET_VAL (op, 2);
+		break;
 	case MIPS_INS_SHRAV:
 	case MIPS_INS_SHRAV_R:
 	case MIPS_INS_SHRA:
