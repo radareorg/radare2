@@ -9,6 +9,12 @@
 #  define NETBSD_WITH_BACKTRACE
 # endif
 #endif
+#if defined(__FreeBSD__)
+# include <sys/param.h>
+# if __FreeBSD_version >= 1000000 
+#  define FREEBSD_WITH_BACKTRACE
+# endif
+#endif
 #include <sys/types.h>
 #include <r_types.h>
 #include <r_util.h>
@@ -16,7 +22,8 @@
 
 static char** env = NULL;
 
-#if (__linux__ && __GNU_LIBRARY__) || defined(NETBSD_WITH_BACKTRACE)
+#if (__linux__ && __GNU_LIBRARY__) || defined(NETBSD_WITH_BACKTRACE) || \
+  defined(FREEBSD_WITH_BACKTRACE)
 # include <execinfo.h>
 #endif
 #if __APPLE__
@@ -199,7 +206,8 @@ R_API char *r_sys_cmd_strf(const char *fmt, ...) {
 #define APPLE_WITH_BACKTRACE 1
 #endif
 
-#if (__linux__ && __GNU_LIBRARY__) || (__APPLE__ && APPLE_WITH_BACKTRACE) || defined(NETBSD_WITH_BACKTRACE)
+#if (__linux__ && __GNU_LIBRARY__) || (__APPLE__ && APPLE_WITH_BACKTRACE) || \
+  defined(NETBSD_WITH_BACKTRACE) || defined(FREEBSD_WITH_BACKTRACE)
 #define HAVE_BACKTRACE 1
 #endif
 
