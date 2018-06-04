@@ -935,6 +935,20 @@ static bool desc_list_cb(void *user, void *data, ut32 id) {
 	return true;
 }
 
+static bool desc_list_json_cb(void *user, void *data, ut32 id) {
+	RPrint *p = (RPrint *)user;
+	RIODesc *desc = (RIODesc *)data;
+	// TODO: from is always 0? See libr/core/file.c:945
+	ut64 from = 0LL;
+	p->cb_printf ("{\"raised\":%s,\"fd\":%d,\"uri\":\"%s\",\"from\":%"
+			PFMT64d ",\"writable\":%s,\"size\":%" PFMT64d "}%s",
+			(desc->io && (desc->io->desc == desc)) ? "true" : "false",
+			desc->fd, desc->uri, from,
+			(desc->flags & R_IO_WRITE ? "true": "false"),
+			r_io_desc_size (desc), (desc->io->files->top_id == id) ? "" : ",");
+	return true;
+}
+
 static int cmd_open(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	int perms = R_IO_READ;
@@ -1211,7 +1225,9 @@ static int cmd_open(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_oj);
 			break;
 		}
-		r_core_file_list (core, (int)(*input));
+		core->print->cb_printf("[");
+		r_id_storage_foreach (core->io->files, desc_list_json_cb, core->print);
+		core->print->cb_printf("]\n");
 		break;
 	case 'L': // "oL"
 		if (r_sandbox_enable (0)) {
