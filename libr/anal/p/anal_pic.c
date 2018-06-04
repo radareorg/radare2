@@ -87,10 +87,10 @@ INST_HANDLER (TRIS) {
 
 INST_HANDLER (RETURN) {
 	op->type = R_ANAL_OP_TYPE_RET;
-	e ("0x1f,stkptr,==,?{,BREAK,},");
+	e ("0x1f,stkptr,==,$z,?{,BREAK,},");
 	e ("_stack,stkptr,2,*,+,[2],2,*,pc,=,");
 	e ("0x01,stkptr,-=,");
-	e ("0xff,stkptr,==,?{,0x1f,stkptr,=,},");
+	e ("0xff,stkptr,==,$z,?{,0x1f,stkptr,=,},");
 }
 
 INST_HANDLER (CALL) {
@@ -99,8 +99,8 @@ INST_HANDLER (CALL) {
 	r_anal_esil_reg_read (anal->esil, "pclath", &pclath, NULL);
 	op->jump = 2 * (((pclath & 0x78) << 8) + args->k);
 	ef ("8,pclath,0x78,&,<<,0x%x,+,2,*,pc,=,", args->k);
-	e ("0x1f,stkptr,==,?{,0xff,stkptr,=,},");
-	e ("0x0f,stkptr,==,?{,0xff,stkptr,=,},");
+	e ("0x1f,stkptr,==,$z,?{,0xff,stkptr,=,},");
+	e ("0x0f,stkptr,==,$z,?{,0xff,stkptr,=,},");
 	e ("0x01,stkptr,+=,");
 	ef ("0x%x,_stack,stkptr,2,*,+,=[2],", (addr + 2) / 2);
 }
@@ -300,10 +300,10 @@ INST_HANDLER (MOVLW) {
 INST_HANDLER (RETLW) {
 	op->type = R_ANAL_OP_TYPE_RET;
 	ef ("0x%x,wreg,=,", args->k);
-	e ("0x1f,stkptr,==,?{,BREAK,},");
+	e ("0x1f,stkptr,==,$z,?{,BREAK,},");
 	e ("_stack,stkptr,2,*,+,[2],2,*,pc,=,");
 	e ("0x01,stkptr,-=,");
-	e ("0xff,stkptr,==,?{,0x1f,stkptr,=,},");
+	e ("0xff,stkptr,==,$z,?{,0x1f,stkptr,=,},");
 }
 
 INST_HANDLER (MOVLP) {
@@ -319,8 +319,8 @@ INST_HANDLER (MOVLB) {
 INST_HANDLER (CALLW) {
 	op->type = R_ANAL_OP_TYPE_UCALL;
 	e ("8,pclath,<<,0x%x,+,wreg,2,*,pc,=,");
-	e ("0x1f,stkptr,==,?{,0xff,stkptr,=,},");
-	e ("0x0f,stkptr,==,?{,0xff,stkptr,=,},");
+	e ("0x1f,stkptr,==,$z,?{,0xff,stkptr,=,},");
+	e ("0x0f,stkptr,==,$z,?{,0xff,stkptr,=,},");
 	e ("0x01,stkptr,+=,");
 	ef ("0x%x,_stack,stkptr,2,*,+,=[2],", (addr + 2) / 2);
 }
