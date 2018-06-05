@@ -3302,8 +3302,8 @@ repeat:
 	}
 
 	st64 follow = (st64)r_config_get_i (core->config, "dbg.follow");
-	ut64 pc = r_debug_reg_get (core->dbg, "PC");
 	if (follow > 0) {
+		ut64 pc = r_debug_reg_get (core->dbg, "PC");
 		if ((pc < core->offset) || (pc > (core->offset + follow))) {
 			r_core_cmd0 (core, "sr PC");
 		}
@@ -3581,6 +3581,8 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 			eprintf ("Cannot deinitialize %s\n", name);
 		}
 		r_flag_unset_name (core->flags, name);
+		r_flag_unset_name (core->flags, "aeim.stack");
+		r_flag_unset_name (core->flags, "aeim.fd");
 		// eprintf ("Deinitialized %s\n", name);
 		return;
 	}
