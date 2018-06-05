@@ -448,8 +448,8 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 	if (jmptbl_size == 0) {
 		jmptbl_size = JMPTBLSZ;
 	}
-	ut8 *jmptbl = malloc (jmptbl_size * sz);
 	ut64 jmpptr, offs;
+	ut8 *jmptbl = malloc (jmptbl_size * sz);
 	if (!jmptbl) {
 		return 0;
 	}
@@ -771,6 +771,7 @@ static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAna
 	}
 	// predecessor must be a conditional jump
 	if (!prev_bb || !prev_bb->jump || !prev_bb->fail) {
+		eprintf ("missing cjmp bb in predecesor\n");
 		return false;
 	}
 
@@ -778,7 +779,10 @@ static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAna
 	*default_case = prev_bb->jump == my_bb->addr ? prev_bb->fail : prev_bb->jump;
 
 	RAnalOp tmp_aop = {0};
-	ut8 *bb_buf = malloc(prev_bb->size);
+	ut8 *bb_buf = malloc (prev_bb->size);
+	if (!bb_buf) {
+		return false;
+	}
 	// search for a cmp register with a resonable size
 	anal->iob.read_at (anal->iob.io, prev_bb->addr, (ut8 *) bb_buf, prev_bb->size);
 	isValid = false;
@@ -1426,7 +1430,7 @@ repeat:
 				// op.ireg is 0 for rip relative, "rax", etc otherwise
 				if (op.ptr != UT64_MAX && op.ireg) {       // direct jump
 					ut64 table_size, default_case;
-					if (try_get_jmptbl_info(anal, fcn, op.addr, bb, &table_size, &default_case)) {
+					if (try_get_jmptbl_info (anal, fcn, op.addr, bb, &table_size, &default_case)) {
 						ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, op.ptr, anal->bits >> 3, table_size, default_case, ret);
 					}
 				}
