@@ -970,7 +970,7 @@ static bool handleEnterKey(RCore *core) {
 		} else if (strstr (action, "FcnInfo")) {
 			addPanelFrame (core, panels, PANEL_TITLE_FCNINFO, "afi");
 		} else if (strstr (action, "Graph")) {
-			r_core_visual_graph (core, NULL, NULL, true);
+			r_core_visual_graph (core, NULL, NULL, true, NULL);
 			// addPanelFrame ("Graph", "agf");
 		} else if (strstr (action, "System Shell")) {
 			r_cons_set_raw (0);
@@ -1324,7 +1324,7 @@ repeat:
 				break;
 			}
 			ocolor = r_config_get_i (core->config, "scr.color");
-			r_core_visual_graph (core, NULL, NULL, true);
+			r_core_visual_graph (core, NULL, NULL, true, NULL);
 			r_config_set_i (core->config, "scr.color", ocolor);
 			setRefreshAll (panels);
 		}

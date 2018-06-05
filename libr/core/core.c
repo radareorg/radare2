@@ -1960,7 +1960,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	r_egg_free (c->egg);
 	r_lib_free (c->lib);
 	r_buf_free (c->yank_buf);
-	r_agraph_free (c->graph);
+	r_agraph_free (c->graph, true);
 	R_FREE (c->asmqjmps);
 	sdb_free (c->sdb);
 	r_core_log_free (c->log);

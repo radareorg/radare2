@@ -3484,14 +3484,16 @@ R_API void r_agraph_reset(RAGraph *g) {
 	g->curnode = NULL;
 }
 
-R_API void r_agraph_free(RAGraph *g) {
+R_API void r_agraph_free(RAGraph *g, bool freecanvas) {
 	if (g) {
 		agraph_free_nodes (g);
 		r_graph_free (g->graph);
 		r_list_free (g->edges);
 		r_agraph_set_title (g, NULL);
 		sdb_free (g->db);
-		r_cons_canvas_free (g->can);
+		if (freecanvas) {
+			r_cons_canvas_free (g->can);
+		}
 		free (g);
 	}
 }
@@ -3645,7 +3647,7 @@ static void rotateColor(RCore *core) {
 	r_config_set_i (core->config, "scr.color", color);
 }
 
-R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int is_interactive) {
+R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int is_interactive, RConsCanvas *c) {
 	int o_asmqjmps_letter = core->is_asmqjmps_letter;
 	int o_scrinteractive = r_config_get_i (core->config, "scr.interactive");
 	int o_vmode = core->vmode;
@@ -3655,7 +3657,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	RAnalFunction *fcn = NULL;
 	const char *key_s;
 	RConsCanvas *can, *o_can = NULL;
-	bool graph_allocated = false;
+	bool graph_allocated = false, canvas_allocated = true;
 	int movspeed;
 	int ret, invscroll;
 	RConfigHold *hc = r_config_hold_new (core->config);
@@ -3665,7 +3667,14 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	r_config_save_num (hc, "asm.pseudo", "asm.esil", "asm.cmt.right", NULL);
 
 	int h, w = r_cons_get_size (&h);
-	can = r_cons_canvas_new (w, h);
+
+	if (c) {
+		canvas_allocated = false;
+		can = c;
+	} else {
+		can = r_cons_canvas_new (w, h);
+	}
+
 	if (!can) {
 		w = 80;
 		h = 25;
@@ -3722,7 +3731,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		r_cons_canvas_free (can);
 		r_config_restore (hc);
 		r_config_hold_free (hc);
-		r_agraph_free (g);
+		r_agraph_free (g, canvas_allocated);
 		return false;
 	}
 	grd->g = g;
@@ -4332,7 +4341,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 
 	free (grd);
 	if (graph_allocated) {
-		r_agraph_free (g);
+		r_agraph_free (g, canvas_allocated);
 		r_config_set_i (core->config, "scr.interactive", o_scrinteractive);
 	} else {
 		g->can = o_can;
