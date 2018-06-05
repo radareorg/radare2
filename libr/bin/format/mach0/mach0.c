@@ -2002,7 +2002,10 @@ struct addr_t* MACH0_(get_entrypoint)(struct MACH0_(obj_t)* bin) {
 				sdb_num_set (bin->kv, "mach0.entry", entry->offset, 0);
 				entry->addr = (ut64)bin->sects[i].addr;
 				if (!entry->addr) { // workaround for object files
-					entry->addr = entry->offset;
+					eprintf ("entrypoint is 0...\n");
+					// XXX(lowlyw) there's technically not really entrypoints
+					// for .o files, so ignore this...
+					// entry->addr = entry->offset;
 				}
 				break;
 			}

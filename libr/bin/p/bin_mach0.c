@@ -144,7 +144,10 @@ static RList* sections(RBinFile *bf) {
 		ptr->vaddr = sections[i].addr;
 		ptr->add = true;
 		if (!ptr->vaddr) {
-			ptr->vaddr = ptr->paddr;
+			// XXX(lowlyw) this is a valid macho, but rarely will anything
+			// be mapped at va = 0
+			eprintf ("mapping text to va = 0\n");
+			// ptr->vaddr = ptr->paddr;
 		}
 		ptr->srwx = sections[i].srwx;
 		r_list_append (ret, ptr);
