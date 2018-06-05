@@ -20,7 +20,7 @@ R_API int r_core_plugin_fini(RCmd *cmd) {
 	}
 	r_list_foreach (cmd->plist, iter, plugin) {
 		if (plugin && plugin->fini) {
-			plugin->fini (cmd, NULL);
+			plugin->fini (cmd->data, NULL);
 		}
 	}
 	/* empty the list */
@@ -30,7 +30,7 @@ R_API int r_core_plugin_fini(RCmd *cmd) {
 }
 
 R_API int r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin) {
-	if (!cmd || (plugin && plugin->init && !plugin->init (cmd, NULL))) {
+	if (!cmd || (plugin && plugin->init && !plugin->init (cmd->data, NULL))) {
 		return false;
 	}
 	r_list_append (cmd->plist, plugin);
