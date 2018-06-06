@@ -2218,10 +2218,7 @@ R_API int r_core_prompt(RCore *r, int sync) {
 }
 
 R_API int r_core_prompt_exec(RCore *r) {
-	RCoreTask *task = r->main_task;
-	task->msg->text = r->cmdqueue;
-	task->state = R_CORE_TASK_STATE_BEFORE_START;
-	r_core_task_run_sync (r, task);
+	r_core_cmd_task_sync (r, r->cmdqueue);
 	//int ret = r_core_cmd (r, r->cmdqueue, true);
 	if (r->cons && r->cons->use_tts) {
 		const char *buf = r_cons_get_buffer();
