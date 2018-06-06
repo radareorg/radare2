@@ -639,7 +639,7 @@ static void panelsRefresh(RCore *core) {
 				strcat (panel[menu_pos].title, menus_sub[menu_x][j]);
 				strcat (panel[menu_pos].title, "          \n");
 			}
-			layoutMenu(&panel[menu_pos]);
+			layoutMenu (&panel[menu_pos]);
 		}
 		for (i = 0; i < panels->n_panels; i++) {
 			if (i != panels->curnode) {
