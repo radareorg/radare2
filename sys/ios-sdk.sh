@@ -118,7 +118,7 @@ showHelp() {
 
 	echo "Examples:"
 	echo "    sys/ios-sdk.sh -archs arm64"
-	echo "    sys/ios-sdk.sh -archs armv7+arm64 -simulator"
+	echo "    sys/ios-sdk.sh -archs armv7s+arm64 -simulator"
 	echo "    sys/ios-sdk.sh -archs all -simulator"
 
 	echo "You can also modify some variables in sys/ios-sdk.sh."
@@ -137,7 +137,7 @@ while test $# -gt 0; do
 	case "$1" in 
 		-full|--full|-f)
 			shift
-			ARCHS="armv7+armv7s+arm64"
+			ARCHS="armv7s+arm64"
 			USE_SIMULATOR=1
 			;;
 		-shell|--shell|-s)
@@ -187,7 +187,7 @@ if [ "${DOSH}" = 1 ]; then
 		export CPU="$SIMULATOR_ARCHS"
 		export SDK=iphonesimulator
 	else
-		[ -z "$ARCHS" ] && ARCHS="armv7+armv7s+arm64"
+		[ -z "$ARCHS" ] && ARCHS="armv7s+arm64"
 		export CPU="$ARCHS"
 		export SDK=iphoneos
 	fi

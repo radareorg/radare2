@@ -156,11 +156,15 @@ R_API int r_type_get_bitsize(Sdb *TDB, const char *type) {
 	return 0;
 }
 
-R_API char *r_type_get_struct_memb(Sdb *TDB, const char *type, int offset) {
+R_API const char *r_type_get_struct_memb(Sdb *TDB, const char *type, int offset) {
+	int i, typesize = 0;
+	const char *res = NULL;
+
+	if (offset < 0) {
+		return NULL;
+	}
 	char* query = sdb_fmt ("struct.%s", type);
 	char *members = sdb_get (TDB, query, 0);
-	int i, typesize = 0;
-	char *res = NULL;
 	if (!members) {
 		eprintf ("%s is not a struct\n", type);
 		return NULL;
@@ -202,7 +206,7 @@ R_API RList* r_type_get_by_offset(Sdb *TDB, ut64 offset) {
 	ls_foreach (ls, lsi, kv) {
 		// TODO: Add unions support
 		if (!strncmp (kv->value, "struct", 6) && strncmp (kv->key, "struct.", 7)) {
-			char *res = r_type_get_struct_memb (TDB, kv->key, offset);
+			char *res = (char *)r_type_get_struct_memb (TDB, kv->key, offset);
 			r_list_append (offtypes, res);
 		}
 	}
@@ -210,9 +214,33 @@ R_API RList* r_type_get_by_offset(Sdb *TDB, ut64 offset) {
 	return offtypes;
 }
 
-R_API char *r_type_link_at (Sdb *TDB, ut64 addr) {
+R_API const char *r_type_link_at (Sdb *TDB, ut64 addr) {
+	const char* res = NULL;
+
+	if (addr == UT64_MAX) {
+		return NULL;
+	}
 	char* query = sdb_fmt ("link.%08"PFMT64x, addr);
-	return sdb_get (TDB, query, 0);
+	res = sdb_const_get (TDB, query, 0);
+	if (!res) { // resolve struct memb if possible for given addr
+		SdbKv *kv;
+		SdbListIter *sdb_iter;
+		SdbList *sdb_list = sdb_foreach_list (TDB, true);
+		ls_foreach (sdb_list, sdb_iter, kv) {
+			if (strncmp (kv->key, "link.", strlen ("link."))) {
+				continue;
+			}
+			const char *linkptr = sdb_fmt ("0x%s", kv->key + strlen ("link."));
+			ut64 baseaddr = r_num_math (NULL, linkptr);
+			int delta = (addr > baseaddr)? addr - baseaddr: -1;
+			res = r_type_get_struct_memb (TDB, kv->value, delta);
+			if (res) {
+				break;
+			}
+		}
+		ls_free (sdb_list);
+	}
+	return res;
 }
 
 R_API int r_type_set_link(Sdb *TDB, const char *type, ut64 addr) {

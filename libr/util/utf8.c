@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2017 - thelemon, kazarmy, pancake */
+/* radare2 - LGPL - Copyright 2014-2018 - thelemon, kazarmy, pancake */
 
 #include <r_types.h>
 #include <r_util.h>

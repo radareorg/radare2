@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include "r_core.h"
 #include "r_util.h"
@@ -1358,8 +1358,8 @@ show_help:
 				r_name_filter (filtered_name, 0);
 				r_cons_printf ("f mod.%s = 0x%08"PFMT64x"\n",
 					filtered_name, map->addr);
-				r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" \"%s\"\n",
-					map->addr, escaped_path);
+				r_cons_printf ("oba 0x%08"PFMT64x" %s\n", map->addr, escaped_path);
+				// r_cons_printf (".!rabin2 -rsB 0x%08"PFMT64x" \"%s\"\n", map->addr, escaped_path);
 				free (escaped_path);
 				free (filtered_name);
 			}

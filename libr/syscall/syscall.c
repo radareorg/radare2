@@ -51,18 +51,17 @@ R_API const char *r_syscall_reg(RSyscall *s, int idx, int num) {
 }
 
 static Sdb *openDatabase(Sdb *db, const char *name) {
-#define SYSCALLPATH "/share/radare2/" R2_VERSION
-	const char *file = sdb_fmt ("%s/%s/%s.sdb",
-		r_sys_prefix (NULL), SYSCALLPATH, name);
-	if (!r_file_exists (file)) {
-	//	eprintf ("r_syscall_setup: Cannot find '%s'\n", file);
-		return false;
+	char *file = r_str_newf ("%s/%s/%s.sdb",
+		r_sys_prefix (NULL), "share/radare2/last", name);
+	if (r_file_exists (file)) {
+		if (db) {
+			sdb_reset (db);
+			sdb_open (db, file);
+		} else {
+			db = sdb_new (0, file, 0);
+		}
 	}
-	if (!db) {
-		return sdb_new (0, file, 0);
-	}
-	sdb_reset (db);
-	sdb_open (db, file);
+	free (file);
 	return db;
 }
 
@@ -119,6 +118,7 @@ R_API bool r_syscall_setup(RSyscall *s, const char *arch, int bits, const char *
 
 	dbName = r_str_newf ("sysregs/%s-%d-%s", arch, bits, cpu ? cpu: arch);
 	sdb_free (s->srdb);
+	s->srdb = NULL;
 	s->srdb = openDatabase (s->srdb, dbName);
 	free (dbName);
 	if (s->fd) {

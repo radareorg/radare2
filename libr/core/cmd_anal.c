@@ -2775,15 +2775,23 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 			/* workaround for 6502 */
 			if (!strcmp (core->anal->cur->arch, "6502") && bits == 8) {
 				mode2 = mode == 'j' ? 'J' : mode;
-				r_cons_printf ("{");
+				if (mode == 'j') {
+					r_cons_printf ("{");
+				}
 				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 16, mode2, use_color); // XXX detect which one is current usage
-				r_cons_printf (",");
+				if (mode == 'j') {
+					r_cons_printf (",");
+				}
 			}
 			if (!strcmp (core->anal->cur->arch, "avr") && bits == 8) {
 				mode2 = mode == 'j' ? 'J' : mode;
-				r_cons_printf ("{");
+				if (mode == 'j') {
+					r_cons_printf ("{");
+				}
 				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 16, mode2, use_color); // XXX detect which one is current usage
-				r_cons_printf (",");
+				if (mode == 'j') {
+					r_cons_printf (",");
+				}
 			}
 		}
 	}
@@ -3302,8 +3310,8 @@ repeat:
 	}
 
 	st64 follow = (st64)r_config_get_i (core->config, "dbg.follow");
-	ut64 pc = r_debug_reg_get (core->dbg, "PC");
 	if (follow > 0) {
+		ut64 pc = r_debug_reg_get (core->dbg, "PC");
 		if ((pc < core->offset) || (pc > (core->offset + follow))) {
 			r_core_cmd0 (core, "sr PC");
 		}
@@ -3581,6 +3589,8 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 			eprintf ("Cannot deinitialize %s\n", name);
 		}
 		r_flag_unset_name (core->flags, name);
+		r_flag_unset_name (core->flags, "aeim.stack");
+		r_flag_unset_name (core->flags, "aeim.fd");
 		// eprintf ("Deinitialized %s\n", name);
 		return;
 	}

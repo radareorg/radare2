@@ -2150,6 +2150,8 @@ static void anop64 (csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_CC_LT:
 		op->sign = true;
 		break;
+	default:
+		break;
 	}
 
 	switch (insn->id) {
