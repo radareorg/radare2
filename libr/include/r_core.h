@@ -260,7 +260,7 @@ R_API int r_core_lines_currline (RCore *core);
 R_API void r_core_prompt_loop(RCore *core);
 R_API int r_core_cmd(RCore *core, const char *cmd, int log);
 R_API void r_core_cmd_repeat(RCore *core, int next);
-R_API void r_core_cmd_task_sync(RCore *core, const char *cmd);
+R_API int r_core_cmd_task_sync(RCore *core, const char *cmd, bool log);
 R_API char *r_core_editor (const RCore *core, const char *file, const char *str);
 R_API int r_core_fgets(char *buf, int len);
 // FIXME: change (void *user) to (RCore *core)
@@ -691,6 +691,7 @@ typedef struct r_core_task_t {
 	RThreadCond *dispatch_cond;
 	RThreadLock *dispatch_lock;
 	RThreadMsg *msg;
+	bool cmd_log;
 	RCoreTaskCallback cb;
 } RCoreTask;
 
@@ -700,8 +701,7 @@ R_API void r_core_task_list (RCore *core, int mode);
 R_API const char *r_core_task_status (RCoreTask *task);
 R_API RCoreTask *r_core_task_new (RCore *core, const char *cmd, RCoreTaskCallback cb, void *user);
 R_API void r_core_task_enqueue(RCore *core, RCoreTask *task);
-R_API void r_core_task_run_sync(RCore *core, RCoreTask *task);
-R_API bool r_core_task_pause (RCore *core, RCoreTask *task, bool enable);
+R_API int r_core_task_run_sync(RCore *core, RCoreTask *task);
 R_API int r_core_task_del (RCore *core, int id);
 R_API RCoreTask *r_core_task_self (RCore *core);
 R_API void r_core_task_join (RCore *core, RCoreTask *task);

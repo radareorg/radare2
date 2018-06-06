@@ -250,7 +250,7 @@ R_API bool r_core_visual_esil(RCore *core) {
 			if (r_cons_fgets (cmd, sizeof (cmd)-1, 0, NULL) < 0) {
 				cmd[0] = '\0';
 			}
-			r_core_cmd (core, cmd, 1);
+			r_core_cmd_task_sync (core, cmd, 1);
 			r_cons_set_raw (1);
 			r_cons_show_cursor (false);
 			if (cmd[0]) {
@@ -1453,7 +1453,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 				*cmd = 0;
 			}
 			cmd[sizeof (cmd) - 1] = 0;
-			r_core_cmd (core, cmd, 1);
+			r_core_cmd_task_sync (core, cmd, 1);
 			r_cons_set_raw (1);
 			r_cons_show_cursor (false);
 			if (*cmd) {
