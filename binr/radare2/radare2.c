@@ -1237,10 +1237,10 @@ int main(int argc, char **argv, char **envp) {
 			}
 			nsha1 = r_config_get (r.config, "file.sha1");
 			npath = r_config_get (r.config, "file.path");
-			if (!quiet && sha1 && *sha1 && strcmp (sha1, nsha1)) {
+			if (!quiet && sha1 && *sha1 && nsha1 && strcmp (sha1, nsha1)) {
 				eprintf ("WARNING: file.sha1 change: %s => %s\n", sha1, nsha1);
 			}
-			if (!quiet && path && *path && strcmp (path, npath)) {
+			if (!quiet && path && *path && npath && strcmp (path, npath)) {
 				eprintf ("WARNING: file.path change: %s => %s\n", path, npath);
 			}
 			free (sha1);
