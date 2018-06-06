@@ -1780,6 +1780,7 @@ static bool r_core_anal_read_at(struct r_anal_t *anal, ut64 addr, ut8 *buf, int 
 static void r_core_break (RCore *core) {
 	// if we are not in the main thread we hold in a lock
 	RCoreTask *task = r_core_task_self (core);
+	r_core_task_schedule (task, false);
 	if (task && task->msg) {
 		r_th_try_pause (task->msg->th);
 		r_cons_singleton ()->breaked = false;

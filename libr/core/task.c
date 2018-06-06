@@ -85,7 +85,7 @@ hell:
 	}
 }
 
-static void schedule_tasks(RCoreTask *current, bool end) {
+R_API void r_core_task_schedule(RCoreTask *current, bool end) {
 	r_th_lock_enter (current->core->tasks_lock);
 
 	if (end) {
@@ -140,11 +140,11 @@ static void task_begin(RCoreTask *current) {
 }
 
 R_API void r_core_task_continue(RCoreTask *t) {
-	schedule_tasks(t, false);
+	r_core_task_schedule (t, false);
 }
 
 static void task_end(RCoreTask *t) {
-	schedule_tasks(t, true);
+	r_core_task_schedule (t, true);
 }
 
 
