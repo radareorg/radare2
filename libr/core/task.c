@@ -94,7 +94,7 @@ static void schedule_tasks(RCoreTask *current, bool end) {
 
 	RCoreTask *next = r_list_pop_head (current->core->tasks_queue);
 
-	if (next) {
+	if (next && !end) {
 		r_list_append (current->core->tasks_queue, current);
 	}
 
