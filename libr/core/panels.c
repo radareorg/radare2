@@ -33,7 +33,7 @@
 #define PANEL_CMD_STACK          "px 256@r:SP"
 #define PANEL_CMD_REGISTERS      "dr="
 #define PANEL_CMD_REGISTERREFS   "drr"
-#define PANEL_CMD_DISASSEMBLY    "pd $r @e:scr.utf8=0"
+#define PANEL_CMD_DISASSEMBLY    "pd $r @e:scr.utf8=1"
 
 static const int layoutMaxCount = 2;
 
@@ -1069,10 +1069,10 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 
 	r_config_set_i (core->config, "asm.comments", 0);
 	r_config_set_i (core->config, "asm.bytes", 1);
-	r_config_set_i (core->config, "scr.utf8", 1);
+	/*r_config_set_i (core->config, "scr.utf8", 1);*/
 	asm_comments = r_config_get_i (core->config, "asm.comments");
 	asm_bytes = r_config_get_i (core->config, "asm.bytes");
-	have_utf8 = r_config_get_i (core->config, "scr.utf8");
+	/*have_utf8 = r_config_get_i (core->config, "scr.utf8");*/
 
 repeat:
 	core->panels = panels;
@@ -1450,7 +1450,7 @@ exit:
 	r_config_set_i (core->config, "scr.color", panels->can->color);
 	r_config_set_i (core->config, "asm.comments", asm_comments);
 	r_config_set_i (core->config, "asm.bytes", asm_bytes);
-	r_config_set_i (core->config, "scr.utf8", have_utf8);
+	/*r_config_set_i (core->config, "scr.utf8", have_utf8);*/
 
 	core->print->cur = panels->originCursor;
 	core->print->cur_enabled = false;
