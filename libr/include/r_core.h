@@ -710,6 +710,8 @@ typedef void (*inRangeCb) (RCore *core, ut64 from, ut64 to, int vsize,
 R_API int r_core_search_value_in_range (RCore *core, RInterval search_itv,
 		ut64 vmin, ut64 vmax, int vsize, bool asterisk, inRangeCb cb);
 
+R_API void r_core_task_schedule(RCoreTask *current, bool end);
+
 /* PLUGINS */
 extern RCorePlugin r_core_plugin_java;
 extern RCorePlugin r_core_plugin_anal;
