@@ -2218,7 +2218,7 @@ R_API int r_core_prompt(RCore *r, int sync) {
 }
 
 R_API int r_core_prompt_exec(RCore *r) {
-	r_core_cmd_task_sync (r, r->cmdqueue);
+	int ret = r_core_cmd_task_sync (r, r->cmdqueue, true);
 	//int ret = r_core_cmd (r, r->cmdqueue, true);
 	if (r->cons && r->cons->use_tts) {
 		const char *buf = r_cons_get_buffer();
@@ -2229,7 +2229,7 @@ R_API int r_core_prompt_exec(RCore *r) {
 	if (r->cons && r->cons->line && r->cons->line->zerosep) {
 		r_cons_zero ();
 	}
-	return 0;
+	return ret;
 }
 
 R_API int r_core_seek_size(RCore *core, ut64 addr, int bsize) {

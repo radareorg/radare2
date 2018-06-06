@@ -3353,13 +3353,6 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	char *cmd, *ocmd, *ptr, *rcmd;
 	int ret = false, i;
 
-	if (r_list_empty (core->tasks)) {
-		r_th_lock_enter (core->lock);
-	} else {
-		if (!r_core_task_self (core)) {
-			r_core_task_pause (core, NULL, true);
-		}
-	}
 	if (core->cmdfilter) {
 		const char *invalid_chars = ";|>`@";
 		for (i = 0; invalid_chars[i]; i++) {
@@ -3744,16 +3737,19 @@ R_API void r_core_cmd_repeat(RCore *core, int next) {
 	}
 }
 
-R_API void r_core_cmd_task_sync(RCore *core, const char *cmd) {
+/* run cmd in the main task synchronously */
+R_API int r_core_cmd_task_sync(RCore *core, const char *cmd, bool log) {
 	RCoreTask *task = core->main_task;
 	char *s = strdup (cmd);
 	if (!s) {
 		return 0;
 	}
 	task->msg->text = s;
+	task->cmd_log = log;
 	task->state = R_CORE_TASK_STATE_BEFORE_START;
-	r_core_task_run_sync (core, task);
+	int res = r_core_task_run_sync (core, task);
 	free (s);
+	return res;
 }
 
 static int cmd_ox(void *data, const char *input) {
