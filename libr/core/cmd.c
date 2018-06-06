@@ -3744,6 +3744,18 @@ R_API void r_core_cmd_repeat(RCore *core, int next) {
 	}
 }
 
+R_API void r_core_cmd_task_sync(RCore *core, const char *cmd) {
+	RCoreTask *task = core->main_task;
+	char *s = strdup (cmd);
+	if (!s) {
+		return 0;
+	}
+	task->msg->text = s;
+	task->state = R_CORE_TASK_STATE_BEFORE_START;
+	r_core_task_run_sync (core, task);
+	free (s);
+}
+
 static int cmd_ox(void *data, const char *input) {
 	return r_core_cmdf ((RCore*)data, "s 0%s", input);
 }

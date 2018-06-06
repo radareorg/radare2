@@ -359,7 +359,8 @@ static bool run_commands(RList *cmds, RList *files, bool quiet) {
 	}
 	/* -c */
 	r_list_foreach (cmds, iter, cmdn) {
-		r_core_cmd0 (&r, cmdn);
+		//r_core_cmd0 (&r, cmdn);
+		r_core_cmd_task_sync (&r, cmdn);
 		r_cons_flush ();
 	}
 	if (quiet) {
