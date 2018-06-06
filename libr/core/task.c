@@ -69,7 +69,7 @@ R_API RCoreTask *r_core_task_new (RCore *core, const char *cmd, RCoreTaskCallbac
 		goto hell;
 	}
 
-	task->id = r_list_length (core->tasks)+1;
+	task->id = core->task_id_next++;
 	task->state = R_CORE_TASK_STATE_BEFORE_START;
 	task->core = core;
 	task->user = user;
@@ -92,12 +92,15 @@ static void schedule_tasks(RCoreTask *current, bool end) {
 		r_th_lock_leave (current->dispatch_lock);
 	}
 
-	RCoreTask *next = r_list_pop_head (current->core->tasks);
-	r_list_append (current->core->tasks, current);
+	RCoreTask *next = r_list_pop_head (current->core->tasks_queue);
+
+	if (next) {
+		r_list_append (current->core->tasks_queue, current);
+	}
 
 	r_th_lock_leave (current->core->tasks_lock);
 
-	if (next != NULL) {
+	if (next) {
 		r_th_lock_enter (next->dispatch_lock);
 		r_th_cond_signal (next->dispatch_cond);
 		r_th_lock_leave (next->dispatch_lock);
@@ -155,8 +158,15 @@ static int task_run(RCoreTask *task) {
 	task_begin (task);
 
 	// close (2); // no stderr
-	char *res = r_core_cmd_str (core, task->msg->text);
+	char *res;
+	if (task == task->core->main_task) {
+		r_core_cmd0 (core, task->msg->text);
+		res = NULL;
+	} else {
+		res = r_core_cmd_str (core, task->msg->text);
+	}
 	task->msg->res = res;
+
 	eprintf ("\nTask %d finished\n", task->id);
 
 	task_end (task);
@@ -170,16 +180,12 @@ static int task_run_thread(RThread *th) {
 R_API void r_core_task_enqueue(RCore *core, RCoreTask *task) {
 	r_th_lock_enter (core->tasks_lock);
 	r_list_append (core->tasks, task);
+	task->msg->th = r_th_new (task_run_thread, task, 0);
 	r_th_lock_leave (core->tasks_lock);
-
-	r_th_new (task_run_thread, task, 0);
 }
 
 R_API void r_core_task_run_sync(RCore *core, RCoreTask *task) {
-	r_th_lock_enter (core->tasks_lock);
-	r_list_append (core->tasks, task);
-	r_th_lock_enter (core->tasks_lock);
-
+	task->msg->th = NULL;
 	task_run (task);
 }
 

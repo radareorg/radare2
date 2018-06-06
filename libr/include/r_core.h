@@ -135,6 +135,8 @@ typedef struct r_core_asmsteps_t {
 	int cols;
 } RCoreAsmsteps;
 
+typedef struct r_core_task_t RCoreTask;
+
 typedef struct r_core_t {
 	RBin *bin;
 	RConfig *config;
@@ -199,8 +201,10 @@ typedef struct r_core_t {
 	bool in_search;
 	RList *watchers;
 	RList *scriptstack;
+	int task_id_next;
 	RList *tasks;
 	RList *tasks_queue;
+	RCoreTask *main_task;
 	RThreadLock *tasks_lock;
 	int cmd_depth;
 	int max_cmd_depth;
