@@ -725,6 +725,16 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			break;
 		case X86_OP_REG:
 		default:
+			if (INSOP(0).type == X86_OP_MEM) {
+				op->direction = 1; // read
+			}
+			if (INSOP(1).type == X86_OP_MEM) {
+				// MOV REG, [PTR + IREG*SCALE]
+				op->ireg = cs_reg_name (*handle, INSOP (1).mem.index);
+				op->ptr = INSOP(1).mem.disp; // XXX base ?
+				op->scale = INSOP(1).mem.scale;
+				op->refptr = 4;
+			}
 			{
 				src = getarg (&gop, 1, 0, NULL, SRC_AR);
 				dst = getarg (&gop, 0, 0, NULL, DST_AR);
@@ -733,8 +743,8 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				if (a->bits == 64 && dst64) {
 					r_strbuf_appendf (&op->esil, ",0xffffffff,%s,&=", dst64);
 				}
-				break;
 			}
+			break;
 		}
 		}
 		break;
