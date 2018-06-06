@@ -1260,6 +1260,25 @@ static int taskbgrun(RThread *th) {
 	return 0;
 }
 
+static void task_test(RCore *core, int usecs) {
+	int i;
+	RCoreTask *task = r_core_task_self (core);
+	r_cons_break_push (NULL, NULL);
+	for (i = 0; i < 10; i++) {
+		if (r_cons_is_breaked()) {
+			r_cons_printf ("task %d was breaked!\n", task->id);
+			break;
+		}
+		r_cons_printf ("task %d doing work %d/%d\n", task->id, i, 10);
+		eprintf ("task %d doing work %d/%d\n", task->id, i, 10);
+		if (usecs > 0) {
+			r_sys_usleep (usecs);
+		}
+	}
+	r_cons_break_pop ();
+	r_cons_printf ("task %d is done!\n", task->id);
+}
+
 static int cmd_thread(void *data, const char *input) {
 	RCore *core = (RCore*) data;
 	switch (input[0]) {
@@ -1276,6 +1295,14 @@ static int cmd_thread(void *data, const char *input) {
 		r_cons_break_pop ();
 		break;
 #endif
+	case 't': {
+		int usecs = 0;
+		if (input[1] == ' ') {
+			usecs = (int) r_num_math (core->num, input + 1);
+		}
+		task_test (core, usecs);
+		break;
+	}
 	case '&':
 		if (r_sandbox_enable (0)) {
 			eprintf ("This command is disabled in sandbox mode\n");

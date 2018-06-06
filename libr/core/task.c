@@ -145,7 +145,7 @@ R_API RCoreTask *r_core_task_self (RCore *core) {
 			return task;
 		}
 	}
-	return NULL;
+	return core->main_task;
 }
 
 R_API bool r_core_task_pause (RCore *core, RCoreTask *task, bool enable) {
