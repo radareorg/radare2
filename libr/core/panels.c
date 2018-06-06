@@ -105,6 +105,7 @@ static const char **menus_sub[] = {
 	NULL
 };
 
+static void layoutMenu(RPanel *panel);
 static void layoutRun(RPanels *panels);
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color);
 static void addPanelFrame(RCore* core, RPanels* panels, const char *title, const char *cmd);
@@ -220,6 +221,11 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 	}
 }
 
+static void layoutMenu(RPanel *panel) {
+	panel->w = r_str_bounds (panel->title, &panel->h);
+	panel->h += 4;
+}
+
 static void layoutRun(RPanels *panels) {
 	int h, w = r_cons_get_size (&h);
 	int i, j;
@@ -235,10 +241,7 @@ static void layoutRun(RPanels *panels) {
 	for (i = j = 0; i < panels->n_panels; i++) {
 		switch (panel[i].type) {
 		case PANEL_TYPE_MENU:
-			panel[i].w = r_str_bounds (
-				panel[i].title,
-				&panel[i].h);
-			panel[i].h += 4;
+			layoutMenu (&panel[i]);
 			break;
 		case PANEL_TYPE_FRAME:
 			switch (panels->layout) {
@@ -567,7 +570,6 @@ static bool initPanels(RCore *core, RPanels *panels) {
 	panels->panel = calloc (sizeof (RPanel), LIMIT);
 	if (!panels->panel) return false;
 	panels->n_panels = 0;
-	panels->menu_pos = 0;
 	panels->panel[panels->n_panels].title = strdup ("");
 	panels->panel[panels->n_panels].type = PANEL_TYPE_MENU;
 	panels->panel[panels->n_panels].refresh = true;
@@ -637,6 +639,7 @@ static void panelsRefresh(RCore *core) {
 				strcat (panel[menu_pos].title, menus_sub[menu_x][j]);
 				strcat (panel[menu_pos].title, "          \n");
 			}
+			layoutMenu(&panel[menu_pos]);
 		}
 		for (i = 0; i < panels->n_panels; i++) {
 			if (i != panels->curnode) {
