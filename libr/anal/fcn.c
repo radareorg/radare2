@@ -408,6 +408,7 @@ static char *get_varname(RAnal *a, RAnalFunction *fcn, char type, const char *pf
 			break;
 		}
 		free (varname);
+		free (name_value);
 		varname = r_str_newf ("%s_%xh_%d", pfx, idx, i);
 		i++;
 	}
