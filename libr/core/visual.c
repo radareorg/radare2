@@ -2487,7 +2487,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			rotateAsmemu (core);
 			break;
 		case '#':
-			r_core_cmd0 (core, "e!asm.bytes");
+			r_config_toggle (core->config, "asm.bytes");
 			break;
 		case '*':
 			if (core->print->cur_enabled) {
