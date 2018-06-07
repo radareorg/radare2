@@ -1487,7 +1487,6 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (op.failcycles) {
 				printline ("failcycles", "%d\n", op.failcycles);
 			}
-			printline ("delay", "%d\n", op.delay);
 			{
 				const char *t2 = r_anal_optype_to_string (op.type2);
 				if (t2 && strcmp (t2, "null")) {
