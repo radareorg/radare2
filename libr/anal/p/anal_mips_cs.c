@@ -650,6 +650,28 @@ static void op_fillval(RAnal *anal, RAnalOp *op, csh *handle, cs_insn *insn) {
 	}
 }
 
+static void set_opdir(RAnalOp *op) {
+        switch (op->type) {
+        case R_ANAL_OP_TYPE_LOAD:
+                op->direction = R_ANAL_OP_DIR_READ;
+                break;
+        case R_ANAL_OP_TYPE_STORE:
+                op->direction = R_ANAL_OP_DIR_WRITE;
+                break;
+        case R_ANAL_OP_TYPE_LEA:
+                op->direction = R_ANAL_OP_DIR_REF;
+                break;
+        case R_ANAL_OP_TYPE_CALL:
+        case R_ANAL_OP_TYPE_JMP:
+        case R_ANAL_OP_TYPE_UJMP:
+        case R_ANAL_OP_TYPE_UCALL:
+                op->direction = R_ANAL_OP_DIR_EXEC;
+                break;
+        default:
+                break;
+        }
+}
+
 static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	int n, ret, opsize = -1;
 	static csh hndl = 0;
@@ -974,7 +996,8 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		SET_VAL (op,2);
 		break;
 	}
-	beach:
+beach:
+	set_opdir (op);
 	if (anal->decode) {
 		if (analop_esil (anal, op, addr, buf, len, &hndl, insn) != 0)
 			r_strbuf_fini (&op->esil);
@@ -984,7 +1007,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	}
 	cs_free (insn, n);
 	//cs_close (&handle);
-	fin:
+fin:
 	return opsize;
 }
 
