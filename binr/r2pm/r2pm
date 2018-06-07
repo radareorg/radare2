@@ -145,10 +145,10 @@ commitSuicide() {
 		exit 1
 	fi
 	countDown "Self destroying in" 3
-	confirm "> Delete ~/config.radare2" && (
+	confirm "> Delete ~/.config.radare2" && (
 		rm -rf ~/.config/radare2
 	)
-	R2PATHS="${PREFIX} /usr /usr/local /opt/radare2 ~/config/radare2/prefix /"
+	R2PATHS="${PREFIX} /usr /usr/local /opt/radare2 ~/.config/radare2/prefix /"
 	for a in $R2PATHS ; do
 		if [ -x "${a}/bin/radare2" ]; then
 			confirm "> Delete r2 from ${a}" && (
@@ -162,6 +162,7 @@ case "$1" in
 init|up|update)
 	[ -z "$R2PM_DBDIR" ] && R2PM_DBDIR="${R2PM_USRDIR}/db"
 	mkdir -p "${R2PM_GITDIR}"
+	mkdir -p ${HOME}/.config
 	cd "${R2PM_GITDIR}"
 	if [ -d radare2-pm ]; then
 		cd radare2-pm

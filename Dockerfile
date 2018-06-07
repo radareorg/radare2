@@ -92,8 +92,7 @@ WORKDIR /home/r2
 ENV HOME /home/r2
 
 # Setup r2pm
-RUN mkdir -p /home/r2/.config && \
-  r2pm init && \
+RUN r2pm init && \
   r2pm update && \
   chown -R r2:r2 /home/r2/.config
 
