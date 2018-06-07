@@ -2841,7 +2841,7 @@ repeat:
 		{
 			char *man = NULL;
 			/* check for manpage */
-			RAnalOp *op = r_core_anal_op (core, off);
+			RAnalOp *op = r_core_anal_op (core, off, R_ANAL_OP_MASK_BASIC);
 			if (op) {
 				if (op->jump != UT64_MAX) {
 					RFlagItem *item = r_flag_get_i (core->flags, op->jump);
