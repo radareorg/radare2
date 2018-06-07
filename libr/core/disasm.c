@@ -437,15 +437,15 @@ static void _ds_comment_align_(RDisasmState *ds, bool up, bool nl) {
 #endif
 #endif
 }
-#define ALIGN _ds_comment_align_ (ds, true, false)
+#define _ALIGN _ds_comment_align_ (ds, true, false)
 
 static void ds_comment_lineup(RDisasmState *ds) {
-	_ds_comment_align_ (ds, true, false);
+	_ALIGN;
 }
 
 static void ds_begin_comment(RDisasmState *ds) {
 	if (ds->show_comment_right) {
-		ALIGN;
+		_ALIGN;
 	} else {
 		if (ds->use_json) {
 			ds_begin_json_line (ds);
@@ -1795,7 +1795,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		} else {
 			ds->comment = r_str_prefix_all (ds->comment, "; ");
 			if (ds->show_comment_right) {
-				ALIGN;
+				_ALIGN;
 			} else {
 				ds_pre_xrefs (ds, false);
 			}
@@ -2932,7 +2932,7 @@ static void ds_print_sysregs(RDisasmState *ds) {
 			RSyscall *sc = core->anal->syscall;
 			const char *ioname = r_syscall_get_io (sc, imm);
 			if (ioname && *ioname) {
-				ALIGN;
+				_ALIGN;
 				ds_comment (ds, true, "; IO %s", ioname);
 				ds->has_description = true;
 			}
@@ -2947,7 +2947,7 @@ static void ds_print_sysregs(RDisasmState *ds) {
 			const int imm = (int)ds->analop.ptr;
 			const char *sr = r_syscall_sysreg (core->anal->syscall, "reg", imm);
 			if (sr) {
-				ALIGN;
+				_ALIGN;
 				ds_comment (ds, true, "; REG %s - %s", sr, "");
 				// TODO: add register description description
 				ds->has_description = true;
@@ -2980,12 +2980,12 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 				ds_begin_json_line (ds);
 			}
 			if (label) {
-				ALIGN;
+				_ALIGN;
 				ds_comment (ds, true, "; %s.%s", f->name, label);
 			} else {
 				RAnalFunction *f2 = fcnIn (ds, ds->at, 0); //r_anal_get_fcn_in (core->anal, ds->at, 0);
 				if (f != f2) {
-					ALIGN;
+					_ALIGN;
 					if (delta > 0) {
 						ds_comment (ds, true, "; %s+0x%x", f->name, delta);
 					} else if (delta < 0) {
@@ -3365,7 +3365,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		if (ds->immstr) {
 			char *str = r_str_from_ut64 (r_read_ble64 (&v, core->print->big_endian));
 			if (str && *str) {
-				ALIGN;
+				_ALIGN;
 				ds_comment (ds, true, "; '%s'", str);
 			}
 			free (str);
