@@ -1012,7 +1012,7 @@ static int sh_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) 
 	ut8 op_MSB, op_LSB;
 	int ret;
 	if (!data || len < 2) {
-			return 0;
+		return 0;
 	}
 	memset (op, '\0', sizeof (RAnalOp));
 	op->addr = addr;
@@ -1067,13 +1067,6 @@ static int archinfo(RAnal *anal, int q) {
 	return 2; /* :) */
 }
 
-static int esil_sh_init(RAnalEsil *esil) {
-	if (esil->anal && esil->anal->reg) {		// initial values
-		r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "pc", -1), 0x0000);
-		//r_reg_set_value (esil->anal->reg, r_reg_get (esil->anal->reg, "flags", -1), 0x00);
-	}
-	return true;
-}
 
 RAnalPlugin r_anal_plugin_sh = {
 	.name = "sh",
@@ -1084,8 +1077,7 @@ RAnalPlugin r_anal_plugin_sh = {
 	.bits = 32,
 	.op = &sh_op,
 	.set_reg_profile = &sh_set_reg_profile,
-	.esil = true,
-	.esil_init = esil_sh_init
+	.esil = true
 };
 
 #ifndef CORELIB
