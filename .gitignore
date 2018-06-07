@@ -106,3 +106,9 @@ libr/flag/d/tags.r2
 CMakeLists.txt
 *.cmake
 cmake-build-*
+# Snap packaging
+/parts
+/prime
+/stage
+/snap
+/*.snap
