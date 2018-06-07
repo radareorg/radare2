@@ -2094,7 +2094,7 @@ static int sh_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) 
 	ut8 op_MSB, op_LSB;
 	int ret;
 	if (!data || len < 2) {
-			return 0;
+		return 0;
 	}
 	memset (op, '\0', sizeof (RAnalOp));
 	op->addr = addr;
@@ -2172,6 +2172,7 @@ static int archinfo(RAnal *anal, int q) {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 static int esil_sh_init (RAnalEsil *esil) {
     if (esil->anal && esil->anal->reg) {        // initial values
@@ -2193,6 +2194,8 @@ static int esil_sh_init(RAnalEsil *esil) {
 >>>>>>> removed unnecessary variables and functions. Changed code for coding style rules. Added EXT.S instructions. head of file is still to be rewritten after I will finish tests.
 }
 >>>>>>> Implemented ESIL for SH architecture
+=======
+>>>>>>> removed esil_sh_init()
 
 RAnalPlugin r_anal_plugin_sh = {
 	.name = "sh",
@@ -2204,6 +2207,7 @@ RAnalPlugin r_anal_plugin_sh = {
 	.op = &sh_op,
 	.set_reg_profile = &sh_set_reg_profile,
 <<<<<<< HEAD
+<<<<<<< HEAD
 	.esil = true
 =======
 	.esil = true,
@@ -2214,6 +2218,9 @@ RAnalPlugin r_anal_plugin_sh = {
 =======
 	.esil_init = esil_sh_init
 >>>>>>> removed unnecessary variables and functions. Changed code for coding style rules. Added EXT.S instructions. head of file is still to be rewritten after I will finish tests.
+=======
+	.esil = true
+>>>>>>> removed esil_sh_init()
 };
 
 #ifndef CORELIB
