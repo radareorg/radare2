@@ -1830,6 +1830,7 @@ R_API bool r_core_init(RCore *core) {
 	core->tasks_lock = r_th_lock_new (false);
 	core->main_task = r_core_task_new (core, NULL, NULL, NULL);
 	r_list_append (core->tasks, core->main_task);
+	core->current_task = NULL;
 	core->watchers = r_list_new ();
 	core->watchers->free = (RListFree)r_core_cmpwatch_free;
 	core->scriptstack = r_list_new ();

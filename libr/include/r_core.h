@@ -204,6 +204,7 @@ typedef struct r_core_t {
 	int task_id_next;
 	RList *tasks;
 	RList *tasks_queue;
+	RCoreTask *current_task;
 	RCoreTask *main_task;
 	RThreadLock *tasks_lock;
 	int cmd_depth;

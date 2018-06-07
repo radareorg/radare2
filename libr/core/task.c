@@ -86,6 +86,8 @@ hell:
 }
 
 R_API void r_core_task_schedule(RCoreTask *current, bool end) {
+	current->core->current_task = NULL;
+	
 	r_th_lock_enter (current->core->tasks_lock);
 
 	if (end) {
@@ -108,6 +110,10 @@ R_API void r_core_task_schedule(RCoreTask *current, bool end) {
 		if (!end) {
 			r_th_cond_wait (current->dispatch_cond, current->dispatch_lock);
 		}
+	}
+
+	if (!end) {
+		current->core->current_task = current;
 	}
 }
 
@@ -137,6 +143,8 @@ static void task_begin(RCoreTask *current) {
 	if(!single) {
 		r_th_cond_wait (current->dispatch_cond, current->dispatch_lock);
 	}
+
+	current->core->current_task = current;
 }
 
 R_API void r_core_task_continue(RCoreTask *t) {
@@ -204,19 +212,7 @@ R_API const char *r_core_task_status (RCoreTask *task) {
 }
 
 R_API RCoreTask *r_core_task_self (RCore *core) {
-	RListIter *iter;
-	RCoreTask *task;
-	R_TH_TID tid = r_th_self ();
-	r_list_foreach (core->tasks, iter, task) {
-		if (!task || !task->msg || !task->msg->th) {
-			continue;
-		}
-		// TODO: use r_th_equal // pthread_equal
-		if (task->msg->th->tid == tid) {
-			return task;
-		}
-	}
-	return core->main_task;
+	return core->current_task ? core->current_task : core->main_task;
 }
 
 R_API int r_core_task_cat (RCore *core, int id) {
