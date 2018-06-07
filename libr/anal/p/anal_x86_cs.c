@@ -1713,7 +1713,7 @@ static void op_fillval (RAnal *a, RAnalOp *op, csh *handle, cs_insn *insn){
 }
 
 static void set_opdir(RAnalOp *op, cs_insn *insn) {
-	switch (op->type) {
+	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_MOV:
 		switch (INSOP(0).type) {
 		case X86_OP_MEM:
