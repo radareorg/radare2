@@ -62,7 +62,8 @@
 #define IS_MOVL_R0REL_TO_REG(x)		(((x) & 0xF00F) == 0x000E)
 //#define IS_MACL(x)		(((x) & 0xF00F) == 0x000F) //complicated !
 #define IS_MOVT(x)			(((x) & 0xF0FF) == 0x0029)
-#define IS_STSMAC(x)		(((x) & 0xF0EF) == 0x000A)		//mask sts Rn, MAC*
+#define IS_STSMACH(x)		(((x) & 0xF0FF) == 0x000A)		//mask sts Rn, MAC*
+#define IS_STSMACL(x)		(((x) & 0xF0FF) == 0x001A)		//mask sts Rn, MAC*
 #define IS_STSPR(x)			(((x) & 0xF0FF) == 0x002A)
 //#define IS_STSFPUL(x)		(((x) & 0xF0FF) == 0x005A)		//FP*: todo maybe someday
 //#define IS_STSFPSCR(x)		(((x) & 0xF0FF) == 0x006A)
@@ -110,7 +111,7 @@
 #define IS_CMPPL(x)			(((x) & 0xf0ff) == 0x4015)
 #define IS_CMPPZ(x)			(((x) & 0xf0ff) == 0x4011)
 
-#define IS_LDCSR1(x)		(((x) & 0xF0CF) == 0x400E)		//mask ldc Rn,{SR,GBR,VBR,SSR}
+#define IS_LDCSR1(x)		(((x) & 0xF0FF) == 0x400E)		//mask ldc Rn,{SR,GBR,VBR,SSR}
 #define IS_LDCLSR(x)		(((x) & 0xF0FF) == 0x4007)		//mask ldc.l @Rn+,SR
 #define IS_LDCLSRGBR(x)		(((x) & 0xF0FF) == 0x4017)		//mask ldc.l @Rn+,GBR
 #define IS_LDCLSRVBR(x)		(((x) & 0xF0FF) == 0x4027)		//mask ldc.l @Rn+,VBR
@@ -367,14 +368,15 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code){ //STOP
         r_strbuf_setf (&op->esil, "r%d,r%d,*,macl,=",GET_TARGET_REG(code),GET_SOURCE_REG(code));
 	} else if (IS_SLEEP(code)) {
 		op->type = R_ANAL_OP_TYPE_UNK;
-	} else if (IS_STSMAC(code)) {	//0000nnnn0000101_ sts MAC*,<REG_N>
+    } else if (IS_STSMACH(code)) {	//0000nnnn0000101_ sts MAC*,<REG_N>
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG(code));
-        if (GET_SOURCE_REG(code))
-            r_strbuf_setf (&op->esil, "macl,r%d,=",GET_TARGET_REG(code));
-        else
-            r_strbuf_setf (&op->esil, "mach,r%d,=",GET_TARGET_REG(code));
-	} else if (IS_STCSR1(code)) {	//0000nnnn00010010 stc {sr,gbr,vbr,ssr},<REG_N>
+        r_strbuf_setf (&op->esil, "mach,r%d,=",GET_TARGET_REG(code));
+    } else if (IS_STSLMACL(code)){
+        op->type = R_ANAL_OP_TYPE_MOV;
+        op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG(code));
+        r_strbuf_setf (&op->esil, "macl,r%d,=",GET_TARGET_REG(code));
+    } else if (IS_STCSR1(code)) {	//0000nnnn00010010 stc {sr,gbr,vbr,ssr},<REG_N>
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG(code));
 		//todo: plug in src
@@ -397,7 +399,6 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code){ //STOP
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG(code));
         r_strbuf_setf (&op->esil, "pr,r%d,=",GET_TARGET_REG(code));
-		//todo: plug in src
 	}
 
 	//TODO Check missing insns, especially STC might be interesting
@@ -962,7 +963,7 @@ static int movl_pcdisp_reg(RAnal* anal, RAnalOp* op, ut16 code){
 	op->type = R_ANAL_OP_TYPE_LOAD;
 	op->src[0] = anal_pcrel_disp_mov (anal, op, code&0xFF, LONG_SIZE);
 	op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG(code));
-    r_strbuf_setf (&op->esil, "0x%x,[4],r%d,=",(code&0xFF)*4+op->addr+4,GET_TARGET_REG(code));
+    r_strbuf_setf (&op->esil, "0x%x,[4],r%d,=",(code&0xFF)*4+op->addr+2,GET_TARGET_REG(code));
 	return op->size;
 }
 
