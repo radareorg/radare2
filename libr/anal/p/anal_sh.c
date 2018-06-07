@@ -27,6 +27,7 @@
 #define CLR_T	"0xFFFFFFFE,sr,&="
 //Macros for different instruction types
 
+<<<<<<< HEAD
 #define IS_CLRT(x)	x == 0x0008
 #define IS_NOP(x)	x == 0x0009
 #define IS_RTS(x)	x == 0x000b
@@ -53,6 +54,36 @@
 #define IS_STSPR(x)	(((x) & 0xF0FF) == 0x002A)
 //#define IS_STSFPUL(x)	(((x) & 0xF0FF) == 0x005A)	//FP*: todo maybe someday
 //#define IS_STSFPSCR(x)	(((x) & 0xF0FF) == 0x006A)
+=======
+#define IS_CLRT(x)			x == 0x0008
+#define IS_NOP(x)			x == 0x0009
+#define IS_RTS(x)			x == 0x000b
+#define IS_SETT(x)			x == 0x0018
+#define IS_DIV0U(x)			x == 0x0019
+#define IS_SLEEP(x)			x == 0x001b
+#define IS_CLRMAC(x)		x == 0x0028
+#define IS_RTE(x)			x == 0x002b
+//#define IS_CLRS(x)
+
+#define IS_STCSR1(x)		(((x) & 0xF0CF) == 0x0002)		//mask stc Rn,{SR,GBR,VBR,SSR}
+#define IS_BSRF(x)			(x & 0xf0ff) == 0x0003
+#define IS_BRAF(x)			(((x) & 0xf0ff) == 0x0023)
+#define IS_MOVB_REG_TO_R0REL(x)		(((x) & 0xF00F) == 0x0004)
+#define IS_MOVW_REG_TO_R0REL(x)		(((x) & 0xF00F) == 0x0005)
+#define IS_MOVL_REG_TO_R0REL(x)		(((x) & 0xF00F) == 0x0006)
+#define IS_MULL(x)			(((x) & 0xF00F) == 0x0007)
+#define IS_MOVB_R0REL_TO_REG(x)		(((x) & 0xF00F) == 0x000C)
+#define IS_MOVW_R0REL_TO_REG(x)		(((x) & 0xF00F) == 0x000D)
+#define IS_MOVL_R0REL_TO_REG(x)		(((x) & 0xF00F) == 0x000E)
+//#define IS_MACL(x)		(((x) & 0xF00F) == 0x000F) //complicated !
+#define IS_MOVT(x)			(((x) & 0xF0FF) == 0x0029)
+#define IS_STSMACH(x)		(((x) & 0xF0FF) == 0x000A)		//mask sts Rn, MAC*
+#define IS_STSMACL(x)		(((x) & 0xF0FF) == 0x001A)		//mask sts Rn, MAC*
+#define IS_STSPR(x)			(((x) & 0xF0FF) == 0x002A)
+//#define IS_STSFPUL(x)		(((x) & 0xF0FF) == 0x005A)		//FP*: todo maybe someday
+//#define IS_STSFPSCR(x)		(((x) & 0xF0FF) == 0x006A)
+
+>>>>>>> fixed mov.l @(<disp>,PC), PC needed -2 offset, as program counter is already incremented
 #define IS_MOVB_REG_TO_REGREF(x)	(((x) & 0xF00F) == 0x2000)
 #define IS_MOVW_REG_TO_REGREF(x)	(((x) & 0xF00F) == 0x2001)
 #define IS_MOVL_REG_TO_REGREF(x)	(((x) & 0xF00F) == 0x2002)
@@ -151,7 +182,7 @@
 #define IS_CMPPL(x)			(((x) & 0xf0ff) == 0x4015)
 #define IS_CMPPZ(x)			(((x) & 0xf0ff) == 0x4011)
 
-#define IS_LDCSR1(x)		(((x) & 0xF0CF) == 0x400E)		//mask ldc Rn,{SR,GBR,VBR,SSR}
+#define IS_LDCSR1(x)		(((x) & 0xF0FF) == 0x400E)		//mask ldc Rn,{SR,GBR,VBR,SSR}
 #define IS_LDCLSR(x)		(((x) & 0xF0FF) == 0x4007)		//mask ldc.l @Rn+,SR
 #define IS_LDCLSRGBR(x)		(((x) & 0xF0FF) == 0x4017)		//mask ldc.l @Rn+,GBR
 #define IS_LDCLSRVBR(x)		(((x) & 0xF0FF) == 0x4027)		//mask ldc.l @Rn+,VBR
@@ -518,6 +549,7 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code){ //STOP
 	} else if (IS_SLEEP(code)) {
 >>>>>>> Implemented ESIL for SH architecture
 		op->type = R_ANAL_OP_TYPE_UNK;
+<<<<<<< HEAD
 		r_strbuf_setf (&op->esil, "sleep_called,TRAP", GET_TARGET_REG (code));
 	} else if (IS_STSMACH (code)) {	//0000nnnn0000101_ sts MAC*,<REG_N>
 		op->type = R_ANAL_OP_TYPE_MOV;
@@ -525,6 +557,9 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code){ //STOP
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "mach,r%d,=", GET_TARGET_REG (code));
 	} else if (IS_STSMACL (code)) {	//0000nnnn0000101_ sts MAC*,<REG_N>
+=======
+    } else if (IS_STSMACH(code)) {	//0000nnnn0000101_ sts MAC*,<REG_N>
+>>>>>>> fixed mov.l @(<disp>,PC), PC needed -2 offset, as program counter is already incremented
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "macl,r%d,=", GET_TARGET_REG (code));
@@ -537,11 +572,12 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code){ //STOP
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 =======
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG(code));
-        if (GET_SOURCE_REG(code))
-            r_strbuf_setf (&op->esil, "macl,r%d,=",GET_TARGET_REG(code));
-        else
-            r_strbuf_setf (&op->esil, "mach,r%d,=",GET_TARGET_REG(code));
-	} else if (IS_STCSR1(code)) {	//0000nnnn00010010 stc {sr,gbr,vbr,ssr},<REG_N>
+        r_strbuf_setf (&op->esil, "mach,r%d,=",GET_TARGET_REG(code));
+    } else if (IS_STSLMACL(code)){
+        op->type = R_ANAL_OP_TYPE_MOV;
+        op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG(code));
+        r_strbuf_setf (&op->esil, "macl,r%d,=",GET_TARGET_REG(code));
+    } else if (IS_STCSR1(code)) {	//0000nnnn00010010 stc {sr,gbr,vbr,ssr},<REG_N>
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG(code));
 		//todo: plug in src
@@ -564,6 +600,7 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code){ //STOP
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG(code));
         r_strbuf_setf (&op->esil, "pr,r%d,=",GET_TARGET_REG(code));
+<<<<<<< HEAD
 >>>>>>> Implemented ESIL for SH architecture
 		//todo: plug in src
 		switch(GET_SOURCE_REG (code)) {
@@ -579,6 +616,9 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code){ //STOP
 		default:
 			r_strbuf_setf (&op->esil, "");
 			break;
+=======
+	}
+>>>>>>> fixed mov.l @(<disp>,PC), PC needed -2 offset, as program counter is already incremented
 
 <<<<<<< HEAD
 		}
@@ -1724,8 +1764,12 @@ static int movl_pcdisp_reg(RAnal* anal, RAnalOp* op, ut16 code) {
 =======
 	op->src[0] = anal_pcrel_disp_mov (anal, op, code&0xFF, LONG_SIZE);
 	op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG(code));
+<<<<<<< HEAD
     r_strbuf_setf (&op->esil, "0x%x,[4],r%d,=",(code&0xFF)*4+op->addr+4,GET_TARGET_REG(code));
 >>>>>>> Implemented ESIL for SH architecture
+=======
+    r_strbuf_setf (&op->esil, "0x%x,[4],r%d,=",(code&0xFF)*4+op->addr+2,GET_TARGET_REG(code));
+>>>>>>> fixed mov.l @(<disp>,PC), PC needed -2 offset, as program counter is already incremented
 	return op->size;
 }
 
