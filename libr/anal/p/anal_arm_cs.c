@@ -2734,7 +2734,7 @@ static int parse_reg64_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_nu
 }
 
 static void set_opdir(RAnalOp *op) {
-	switch (op->type) {
+	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_LOAD:
 		op->direction = R_ANAL_OP_DIR_READ;
 		break;
