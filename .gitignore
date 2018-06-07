@@ -110,5 +110,5 @@ cmake-build-*
 /parts
 /prime
 /stage
-/.snapcraft/state
+/snap
 /*.snap
