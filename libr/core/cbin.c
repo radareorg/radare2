@@ -2092,6 +2092,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	bool inDebugger = r_config_get_i (r->config, "cfg.debug");
 	SdbHash *dup_chk_ht = ht_new (NULL, NULL, NULL);
 	bool ret = false;
+	bool has_segments = false;
 
 	if (!dup_chk_ht) {
 		return false;
@@ -2339,6 +2340,11 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 					r_str_get2 (arch), bits);
 			} else {
 				str[0] = 0;
+			}
+			if (section->is_segment && !has_segments) {
+				r_cons_printf ("\n[Segments]\n");
+				has_segments = true;
+				i = 0;
 			}
 			if (r->bin->prefix) {
 #if 0
