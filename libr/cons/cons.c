@@ -44,6 +44,45 @@ static void cons_stack_free(void *ptr) {
 	free (s);
 }
 
+static RConsStack *cons_stack_dump() {
+	RConsStack *data = R_NEW0 (RConsStack);
+	if (!data) {
+		return NULL;
+	}
+	if (I.buffer) {
+		data->buf = malloc (I.buffer_sz);
+		if (!data->buf) {
+			free (data);
+			return NULL;
+		}
+		memcpy (data->buf, I.buffer, I.buffer_sz);
+		data->buf_len = I.buffer_len;
+		data->buf_size = I.buffer_sz;
+	}
+	data->grep = R_NEW0 (RConsGrep);
+	if (data->grep) {
+		memcpy (data->grep, &I.grep, sizeof (RConsGrep));
+		if (I.grep.str) {
+			data->grep->str = strdup (I.grep.str);
+		}
+	}
+	return data;
+}
+
+static void cons_stack_load(RConsStack *data) {
+	free (I.buffer);
+	I.buffer = data->buf ? malloc (data->buf_size) : NULL;
+	I.buffer_len = data->buf_len;
+	I.buffer_sz = data->buf_size;
+	if (I.buffer) {
+		memcpy (I.buffer, data->buf, data->buf_size);
+	}
+	if (data->grep) {
+		free (I.grep.str);
+		memcpy (&I.grep, data->grep, sizeof (RConsGrep));
+	}
+}
+
 static void break_signal(int sig) {
 	I.breaked = true;
 	r_print_set_interrupted (I.breaked);
@@ -497,55 +536,30 @@ R_API void r_cons_filter() {
 }
 
 R_API void r_cons_push() {
-	if (I.cons_stack) {
-		RConsStack *data = R_NEW0 (RConsStack);
-		if (!data) {
-			return;
-		}
-		if (I.buffer) {
-			data->buf = malloc (I.buffer_sz);
-			if (!data->buf) {
-				free (data);
-				return;
-			}
-			memcpy (data->buf, I.buffer, I.buffer_sz);
-			data->buf_len = I.buffer_len;
-			data->buf_size = I.buffer_sz;
-		}
-		data->grep = R_NEW0 (RConsGrep);
-		if (data->grep) {
-			memcpy (data->grep, &I.grep, sizeof (RConsGrep));
-			if (I.grep.str) {
-				data->grep->str = strdup (I.grep.str);
-			}
-		}
-		r_stack_push (I.cons_stack, data);
-		I.buffer_len = 0;
-		if (I.buffer) {
-			memset (I.buffer, 0, I.buffer_sz);
-		}
+	if (!I.cons_stack) {
+		return;
+	}
+	RConsStack *data = cons_stack_dump ();
+	if (!data) {
+		return;
+	}
+	r_stack_push (I.cons_stack, data);
+	I.buffer_len = 0;
+	if (I.buffer) {
+		memset (I.buffer, 0, I.buffer_sz);
 	}
 }
 
 R_API void r_cons_pop() {
-	if (I.cons_stack) {
-		RConsStack *data = (RConsStack *)r_stack_pop (I.cons_stack);
-		if (!data) {
-			return;
-		}
-		free (I.buffer);
-		I.buffer = data->buf ? malloc (data->buf_size) : NULL;
-		I.buffer_len = data->buf_len;
-		I.buffer_sz = data->buf_size;
-		if (I.buffer) {
-			memcpy (I.buffer, data->buf, data->buf_size);
-		}
-		if (data->grep) {
-			free (I.grep.str);
-			memcpy (&I.grep, data->grep, sizeof (RConsGrep));
-		}
-		cons_stack_free ((void *)data);
+	if (!I.cons_stack) {
+		return;
 	}
+	RConsStack *data = (RConsStack *)r_stack_pop (I.cons_stack);
+	if (!data) {
+		return;
+	}
+	cons_stack_load (data);
+	cons_stack_free ((void *)data);
 }
 
 R_API void r_cons_flush() {
