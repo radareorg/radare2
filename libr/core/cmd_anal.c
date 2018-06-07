@@ -4132,8 +4132,8 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		case 'l': // "aesl"
 		{
 			ut64 pc = r_debug_reg_get (core->dbg, "PC");
-			RAnalOp *op = r_core_anal_op (core, pc);
-// TODO: honor hint
+			RAnalOp *op = r_core_anal_op (core, pc, R_ANAL_OP_MASK_BASIC);
+			// TODO: honor hint
 			if (!op) {
 				break;
 			}
@@ -4141,6 +4141,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			r_debug_reg_set (core->dbg, "PC", pc + op->size);
 			r_anal_esil_set_pc (esil, pc + op->size);
 			r_core_cmd0 (core, ".ar*");
+			r_anal_op_free (op);
 		} break;
 		case 'b': // "aesb"
 			if (!r_core_esil_step_back (core)) {
@@ -4160,7 +4161,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		case 'o': // "aeso"
 			// step over
 			op = r_core_anal_op (core, r_reg_getv (core->anal->reg,
-				r_reg_get_name (core->anal->reg, R_REG_NAME_PC)));
+				r_reg_get_name (core->anal->reg, R_REG_NAME_PC)), R_ANAL_OP_MASK_BASIC);
 			if (op && op->type == R_ANAL_OP_TYPE_CALL) {
 				until_addr = op->addr + op->size;
 			}
@@ -4202,7 +4203,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			ut64 newaddr;
 			int ret;
 			for (;;) {
-				op = r_core_anal_op (core, addr);
+				op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_BASIC);
 				if (!op) {
 					break;
 				}
