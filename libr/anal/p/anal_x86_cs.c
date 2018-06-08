@@ -731,9 +731,8 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			if (INSOP(1).type == X86_OP_MEM) {
 				// MOV REG, [PTR + IREG*SCALE]
 				op->ireg = cs_reg_name (*handle, INSOP (1).mem.index);
-				op->ptr = INSOP(1).mem.disp; // XXX base ?
+				op->disp = INSOP(1).mem.disp;
 				op->scale = INSOP(1).mem.scale;
-				op->refptr = 4;
 			}
 			{
 				src = getarg (&gop, 1, 0, NULL, SRC_AR);
