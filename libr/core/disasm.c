@@ -328,12 +328,10 @@ static ut64 p2v(RDisasmState *ds, ut64 addr) {
 	return addr;
 }
 
-
 static RAnalFunction *fcnIn(RDisasmState *ds, ut64 at, int type) {
 	if (ds->fcn && r_tinyrange_in (&ds->fcn->bbr, at)) {
 		return ds->fcn;
 	}
-
 	return r_anal_get_fcn_in (ds->core->anal, at, type);
 }
 

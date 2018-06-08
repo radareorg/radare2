@@ -3181,20 +3181,30 @@ R_API void r_core_visual_colors(RCore *core) {
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
 #define CASE_RGB(x,X,y) \
-	case x:if(y>0x00)y--;break;\
-	case X:if(y<0xff)y++;break;
+	case x:if (y > 0x00) { y--; } break;\
+	case X:if (y < 0xff) { y++; } break;
 		CASE_RGB ('R','r',rcolor.r);
 		CASE_RGB ('G','g',rcolor.g);
 		CASE_RGB ('B','b',rcolor.b);
 		case 'Q':
-		case 'q': 
+		case 'q':
 			free (body);
 			return;
-		case 'k': opt--; break;
-		case 'j': opt++; break;
-		case 'K': opt=0; break;
-		case 'J': opt=r_cons_pal_len()-1; break;
-		case ':': r_cons_pal_random (); break;
+		case 'k':
+			opt--;
+			break;
+		case 'j':
+			opt++;
+			break;
+		case 'K':
+			opt = 0;
+			break;
+		case 'J':
+			opt = r_cons_pal_len () - 1;
+			break;
+		case ':':
+			r_cons_pal_random ();
+			break;
 		case '.':
 			rcolor.r = r_num_rand (0xff);
 			rcolor.g = r_num_rand (0xff);
