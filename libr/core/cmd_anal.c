@@ -450,6 +450,7 @@ static const char *help_msg_ah[] = {
 	"ahj", "", "list hints in JSON",
 	"aho", " foo a0,33", "replace opcode string",
 	"ahp", " addr", "set pointer hint",
+	"ahr", " val",  "set hint for return value of a function"
 	"ahs", " 4", "set opcode size=4",
 	"ahS", " jz", "set asm.syntax=jz for this opcode",
 	NULL
@@ -5543,6 +5544,12 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_anal_hint_unset_pointer (core->anal, core->offset);
 		}
 		break;
+	case 'r': // "ahr"
+		if (input[1] == ' ') {
+			r_anal_hint_set_ret (core->anal, core->offset, r_num_math (core->num, input + 1));
+		} else if (input[1] == '-') { // "ahr-"
+			r_anal_hint_unset_ret (core->anal, core->offset);
+		}
 	case '*': // "ah*"
 		if (input[1] == ' ') {
 			char *ptr = strdup (r_str_trim_ro (input + 2));
