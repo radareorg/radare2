@@ -90,6 +90,10 @@ R_API void r_anal_hint_set_pointer(RAnal *a, ut64 addr, ut64 ptr) {
 	setHint (a, "ptr:", addr, NULL, ptr);
 }
 
+R_API void r_anal_hint_set_ret(RAnal *a, ut64 addr, ut64 val) {
+	setHint (a, "ret:", addr, NULL, val);
+}
+
 R_API void r_anal_hint_set_arch(RAnal *a, ut64 addr, const char *arch) {
 	setHint (a, "arch:", addr, r_str_trim_ro (arch), 0);
 }
@@ -148,6 +152,10 @@ R_API void r_anal_hint_unset_pointer(RAnal *a, ut64 addr) {
 	unsetHint(a, "ptr:", addr);
 }
 
+R_API void r_anal_hint_unset_ret(RAnal *a, ut64 addr) {
+	unsetHint(a, "ret:", addr);
+}
+
 R_API void r_anal_hint_unset_offset(RAnal *a, ut64 addr) {
 	unsetHint (a, "Offset:", addr);
 }
@@ -180,6 +188,7 @@ R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str) {
 	}
 	hint->jump = UT64_MAX;
 	hint->fail = UT64_MAX;
+	hint->ret = UT64_MAX;
 	char *s = strdup (str);
 	if (!s) {
 		free (hint);
@@ -199,6 +208,7 @@ R_API RAnalHint *r_anal_hint_from_string(RAnal *a, ut64 addr, const char *str) {
 			case 'j': hint->jump = sdb_atoi (nxt); break;
 			case 'f': hint->fail = sdb_atoi (nxt); break;
 			case 'p': hint->ptr  = sdb_atoi (nxt); break;
+			case 'r': hint->ret  = sdb_atoi (nxt); break;
 			case 'b': hint->bits = sdb_atoi (nxt); break;
 			case 'B': hint->new_bits = sdb_atoi (nxt); break;
 			case 's': hint->size = sdb_atoi (nxt); break;

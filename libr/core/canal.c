@@ -872,6 +872,9 @@ static void print_hint_h_format(RAnalHint* hint) {
 	if (hint->jump != UT64_MAX) {
 		r_cons_printf (" jump: 0x%"PFMT64x, hint->jump);
 	}
+	if (hint->ret != UT64_MAX) {
+		r_cons_printf (" ret: 0x%"PFMT64x, hint->ret);
+	}
 	r_cons_newline ();
 }
 
