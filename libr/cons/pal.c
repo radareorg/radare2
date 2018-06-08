@@ -73,6 +73,7 @@ static struct {
 	{ "line_highlight", r_offsetof (RConsPrintablePalette, line_highlight), r_offsetof (RConsPalette, line_highlight) },
 	{ NULL, 0, 0 }
 };
+static const int keys_len = sizeof (keys) / sizeof (keys[0]) - 1;
 
 struct {
 	const char *name;
@@ -534,9 +535,13 @@ R_API RColor r_cons_pal_get_i(int index) {
 
 /* Get color name at index */
 R_API const char *r_cons_pal_get_name(int index) {
-	int i;
-	for (i = 0; i < index && keys[i].name; i++) {}
-	return (i == index) ? keys[index].name : NULL;
+        return (index && index < keys_len) ? keys[index].name : NULL;
+}
+
+/* Get number of colors */
+R_API const int r_cons_pal_len()
+{
+    return keys_len;
 }
 
 R_API void r_cons_pal_update_event() {

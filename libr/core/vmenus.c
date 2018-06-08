@@ -3166,7 +3166,7 @@ R_API void r_core_visual_colors(RCore *core) {
 			rcolor.b &= 0xf;
 		}
 		sprintf (color, "rgb:%x%x%x", rcolor.r, rcolor.g, rcolor.b);
-		r_cons_printf ("# Colorscheme %d - Use '.' and ':' to randomize palette\n"
+		r_cons_printf ("# Colorscheme %d - Use '.' to randomize current color and ':' to randomize palette\n"
 			"# Press 'rRgGbB', 'jk' or 'q'\nec %s %s   # %d (\\x1b%s)\n",
 			opt, k, color, atoi (cstr+7), cstr+1);
 		r_core_cmdf (core, "ec %s %s", k, color);
@@ -3181,8 +3181,8 @@ R_API void r_core_visual_colors(RCore *core) {
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
 #define CASE_RGB(x,X,y) \
-	case x:y--;if(y>0x7f)y=0;break;\
-	case X:y++;if(y>15)y=15;break;
+	case x:if(y>0x00)y--;break;\
+	case X:if(y<0xff)y++;break;
 		CASE_RGB ('R','r',rcolor.r);
 		CASE_RGB ('G','g',rcolor.g);
 		CASE_RGB ('B','b',rcolor.b);
@@ -3193,7 +3193,7 @@ R_API void r_core_visual_colors(RCore *core) {
 		case 'k': opt--; break;
 		case 'j': opt++; break;
 		case 'K': opt=0; break;
-		case 'J': opt=0; break; // XXX must go to end
+		case 'J': opt=r_cons_pal_len()-1; break;
 		case ':': r_cons_pal_random (); break;
 		case '.':
 			rcolor.r = r_num_rand (0xff);
