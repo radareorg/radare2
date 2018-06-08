@@ -476,6 +476,7 @@ static const char *help_msg_ao[] = {
 	"aoe", " N", "display esil form for N opcodes",
 	"aor", " N", "display reil form for N opcodes",
 	"aos", " N", "display size of N opcodes",
+	"aod[*.]", " opcode", "describe opcode for asm.arch (aod* list them all)",
 	"ao", " 5", "display opcode analysis of 5 opcodes",
 	"ao*", "", "display opcode in r commands",
 	NULL
@@ -602,6 +603,11 @@ static void cmd_anal_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, arw);
 	DEFINE_CMD_DESCRIPTOR (core, as);
 	DEFINE_CMD_DESCRIPTOR (core, ax);
+}
+
+static int listOpDescriptions(void *_core, const char *k, const char *v) {
+        r_cons_printf ("%s=%s\n", k, v);
+        return 1;
 }
 
 /* better aac for windows-x86-32 */
@@ -4530,6 +4536,26 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		}
 		}
 		break;
+	case 'd': // "aod"
+                if (input[1]=='*') {
+                        // list sdb database
+                        sdb_foreach (core->assembler->pair, listOpDescriptions, core);
+                } else if (input[1]=='.') {
+                        int cur = R_MAX (core->print->cur, 0);
+                        // XXX: we need cmd_xxx.h (cmd_anal.h)
+                        core_anal_bytes (core, core->block + cur, core->blocksize, 1, 'd');
+                } else if (input[1] == ' ') {
+                        char *d = r_asm_describe (core->assembler, input+2);
+                        if (d && *d) {
+                                r_cons_println (d);
+                                free (d);
+                        } else {
+                                eprintf ("Unknown opcode\n");
+                        }
+                } else {
+                        eprintf ("Use: aod[.*] [opcode]    to get the description of the opcode\n");
+                }
+                break;
 	case '*':
 		r_core_anal_hint_list (core->anal, input[0]);
 		break;
