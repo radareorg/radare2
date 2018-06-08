@@ -446,7 +446,7 @@ static int set_reg_profile(RAnal *anal) {
 static int archinfo(RAnal *anal, int q) {
 	if (q == R_ANAL_ARCHINFO_ALIGN) {
 		if (anal && anal->bits == 16) {
-			return 2;
+			return 1;
 		}
 		return 4;
 	}
