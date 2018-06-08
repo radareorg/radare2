@@ -872,44 +872,44 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			switch (insn->detail->ppc.bc) {
 			case PPC_BC_LT:
 				if (ARG (1)[0] == '\0') {
-					esilprintf (op, "0,cr0,<,?{,%s,pc,=,},", ARG (0));
+					esilprintf (op, "0x80,cr0,&,!,!,?{,%s,pc,=,},", ARG (0));
 				} else {
-					esilprintf (op, "0,%s,<,?{,%s,pc,=,},", ARG (0), ARG (1));
+					esilprintf (op, "0x80,%s,&,!,!,?{,%s,pc,=,},", ARG (0), ARG (1));
 				}
 				break;
 			case PPC_BC_LE:
 				if (ARG (1)[0] == '\0') {
-					esilprintf (op, "0,cr0,<=,?{,%s,pc,=,},", ARG (0));
+					esilprintf (op, "0x80,cr0,&,!,!,cr0,!,|,?{,%s,pc,=,},", ARG (0));
 				} else {
-					esilprintf (op, "0,%s,<=,?{,%s,pc,=,},", ARG (0), ARG (1));
+					esilprintf (op, "0x80,%s,&,!,!,0,%s,!,|,?{,%s,pc,=,},", ARG (0), ARG (0), ARG (1));
 				}
 				break;
 			case PPC_BC_EQ:
 				if (ARG (1)[0] == '\0') {
-					esilprintf (op, "0,cr0,==,?{,%s,pc,=,},", ARG (0));
+					esilprintf (op, "cr0,!,?{,%s,pc,=,},", ARG (0));
 				} else {
-					esilprintf (op, "0,%s,==,?{,%s,pc,=,},", ARG (0), ARG (1));
+					esilprintf (op, "%s,!,?{,%s,pc,=,},", ARG (0), ARG (1));
 				}
 				break;
 			case PPC_BC_GE:
 				if (ARG (1)[0] == '\0') {
-					esilprintf (op, "0,cr0,>=,?{,%s,pc,=,},", ARG (0));
+					esilprintf (op, "0x80,cr0,&,!,cr0,!,|,?{,%s,pc,=,},", ARG (0));
 				} else {
-					esilprintf (op, "0,%s,>=,?{,%s,pc,=,},", ARG (0), ARG (1));
+					esilprintf (op, "0x80,%s,&,!,%s,!,|,?{,%s,pc,=,},", ARG (0), ARG (0), ARG (1));
 				}
 				break;
 			case PPC_BC_GT:
 				if (ARG (1)[0] == '\0') {
-					esilprintf (op, "0,cr0,>,?{,%s,pc,=,},", ARG (0));
+					esilprintf (op, "0x80,cr0,&,!,?{,%s,pc,=,},", ARG (0));
 				} else {
-					esilprintf (op, "0,%s,>,?{,%s,pc,=,},", ARG (0), ARG (1));
+					esilprintf (op, "0x80,%s,&,!,?{,%s,pc,=,},", ARG (0), ARG (1));
 				}
 				break;
 			case PPC_BC_NE:
 				if (ARG (1)[0] == '\0') {
-					esilprintf (op, "cr0,?{,%s,pc,=,},", ARG (0));
+					esilprintf (op, "cr0,!,!,?{,%s,pc,=,},", ARG (0));
 				} else {
-					esilprintf (op, "%s,?{,%s,pc,=,},", ARG (0), ARG (1));
+					esilprintf (op, "%s,!,!,?{,%s,pc,=,},", ARG (0), ARG (1));
 				}
 				break;
 			case PPC_BC_INVALID:
@@ -1006,7 +1006,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case PPC_INS_BLRL:
 		case PPC_INS_BCLR:
 		case PPC_INS_BCLRL:
-			op->type = R_ANAL_OP_TYPE_CRET;
+			op->type = R_ANAL_OP_TYPE_CRET;		//I'm a condret
 			op->fail = addr + op->size;
 			switch (insn->detail->ppc.bc) {
 			case PPC_BC_INVALID:
@@ -1014,45 +1014,45 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				esilprintf (op, "lr,pc,=");
 				break;
 			case PPC_BC_LT:
-				if (ARG (0)[0] == '\0') {
-					esilprintf (op, "0,cr0,<,?{,lr,pc,=,},");
+				if (ARG (1)[0] == '\0') {
+					esilprintf (op, "0x80,cr0,&,!,!,?{,lr,pc,=,},");
 				} else {
-					esilprintf (op, "0,%s,<,?{,lr,pc,=,},", ARG (0));
+					esilprintf (op, "0x80,%s,&,!,!,?{,lr,pc,=,},", ARG (0));
 				}
 				break;
 			case PPC_BC_LE:
-				if (ARG (0)[0] == '\0') {
-					esilprintf (op, "0,cr0,<=,?{,lr,pc,=,},");
+				if (ARG (1)[0] == '\0') {
+					esilprintf (op, "0x80,cr0,&,!,!,cr0,!,|,?{,lr,pc,=,},");
 				} else {
-					esilprintf (op, "0,%s,<=,?{,lr,pc,=,},", ARG (0));
+					esilprintf (op, "0x80,%s,&,!,!,0,%s,!,|,?{,lr,pc,=,},", ARG (0), ARG (0));
 				}
 				break;
 			case PPC_BC_EQ:
-				if (ARG (0)[0] == '\0') {
-					esilprintf (op, "0,cr0,==,?{,lr,pc,=,},");
+				if (ARG (1)[0] == '\0') {
+					esilprintf (op, "cr0,!,?{,lr,pc,=,},");
 				} else {
-					esilprintf (op, "0,%s,==,?{,lr,pc,=,},", ARG (0));
+					esilprintf (op, "%s,!,?{,lr,pc,=,},", ARG (0));
 				}
 				break;
 			case PPC_BC_GE:
-				if (ARG (0)[0] == '\0') {
-					esilprintf (op, "0,cr0,>=,?{,lr,pc,=,},");
+				if (ARG (1)[0] == '\0') {
+					esilprintf (op, "0x80,cr0,&,!,cr0,!,|,?{,lr,pc,=,},");
 				} else {
-					esilprintf (op, "0,%s,>=,?{,lr,pc,=,},", ARG (0));
+					esilprintf (op, "0x80,%s,&,!,%s,!,|,?{,lr,pc,=,},", ARG (0), ARG (0));
 				}
 				break;
 			case PPC_BC_GT:
-				if (ARG (0)[0] == '\0') {
-					esilprintf (op, "0,cr0,>,?{,lr,pc,=,},");
+				if (ARG (1)[0] == '\0') {
+					esilprintf (op, "0x80,cr0,&,!,?{,lr,pc,=,},");
 				} else {
-					esilprintf (op, "0,%s,>,?{,lr,pc,=,},", ARG (0));
+					esilprintf (op, "0x80,%s,&,!,?{,lr,pc,=,},", ARG (0));
 				}
 				break;
 			case PPC_BC_NE:
-				if (ARG (0)[0] == '\0') {
-					esilprintf (op, "cr0,?{,lr,pc,=,},");
+				if (ARG (1)[0] == '\0') {
+					esilprintf (op, "cr0,!,!,?{,lr,pc,=,},");
 				} else {
-					esilprintf (op, "%s,?{,lr,pc,=,},", ARG (0));
+					esilprintf (op, "%s,!,!,?{,lr,pc,=,},", ARG (0));
 				}
 				break;
 			case PPC_BC_UN: // unordered
