@@ -144,7 +144,7 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 	delta_x = panel->sx;
 	delta_y = panel->sy;
 	// clear the canvas first
-	r_cons_canvas_fill (can, panel->x, panel->y, panel->w, panel->h, ' ', 0);
+	r_cons_canvas_fill (can, panel->x, panel->y, panel->w, panel->h, ' ');
 	// for menu
 	RCons *cons = r_cons_singleton ();
 	if (panel->type == PANEL_TYPE_MENU) {
@@ -786,7 +786,7 @@ static bool init (RCore *core, RPanels *panels, int w, int h) {
 	panels->callgraph = 0;
 	panels->isResizing = false;
 	panels->can = r_cons_canvas_new (w, h);
-	r_cons_canvas_fill (panels->can, 0, 0, w, h, ' ', 0);
+	r_cons_canvas_fill (panels->can, 0, 0, w, h, ' ');
 	if (!panels->can) {
 		eprintf ("Cannot create RCons.canvas context\n");
 		return false;
