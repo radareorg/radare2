@@ -86,38 +86,49 @@ hell:
 }
 
 R_API void r_core_task_schedule(RCoreTask *current, bool end) {
-	current->core->current_task = NULL;
+	RCore *core = current->core;
+
+	core->current_task = NULL;
 	
-	r_th_lock_enter (current->core->tasks_lock);
+	r_th_lock_enter (core->tasks_lock);
 
 	if (end) {
 		current->state = R_CORE_TASK_STATE_DONE;
 		r_th_lock_leave (current->dispatch_lock);
 	}
 
-	RCoreTask *next = r_list_pop_head (current->core->tasks_queue);
+	RCoreTask *next = r_list_pop_head (core->tasks_queue);
 
 	if (next && !end) {
-		r_list_append (current->core->tasks_queue, current);
+		r_list_append (core->tasks_queue, current);
 	}
 
-	r_th_lock_leave (current->core->tasks_lock);
+	r_th_lock_leave (core->tasks_lock);
 
 	if (next) {
+		current->cons = r_cons_dump ();
 		r_th_lock_enter (next->dispatch_lock);
 		r_th_cond_signal (next->dispatch_cond);
 		r_th_lock_leave (next->dispatch_lock);
 		if (!end) {
 			r_th_cond_wait (current->dispatch_cond, current->dispatch_lock);
+			r_cons_load (current->cons);
 		}
+	} else if (current != core->main_task && end) {
+		// all tasks done, reset to main cons
+		current->cons = r_cons_dump ();
+		r_cons_load (core->main_task->cons);
+		core->main_task->cons = NULL;
 	}
 
 	if (!end) {
-		current->core->current_task = current;
+		core->current_task = current;
 	}
 }
 
 static void task_begin(RCoreTask *current) {
+	RCore *core = current->core;
+
 	r_th_lock_enter (current->core->tasks_lock);
 
 	current->state = R_CORE_TASK_STATE_RUNNING;
@@ -145,6 +156,21 @@ static void task_begin(RCoreTask *current) {
 	}
 
 	current->core->current_task = current;
+
+	// swap cons
+	if (current->cons) {
+		// we are the main task and some other task has already dumped the main cons for us
+		r_cons_load (current->cons);
+	} if (core->main_task != current) {
+		// we are not the main task, so we need a new cons
+		current->cons = r_cons_dump_new ();
+		if (single) {
+			// no other tasks are currently running, so the main cons is currently loaded
+			// and has to be dumped.
+			core->main_task->cons = r_cons_dump ();
+		}
+		r_cons_load (current->cons);
+	}
 }
 
 R_API void r_core_task_continue(RCoreTask *t) {

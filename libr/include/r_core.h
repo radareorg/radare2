@@ -693,6 +693,7 @@ typedef struct r_core_task_t {
 	RThreadLock *dispatch_lock;
 	RThreadMsg *msg;
 	bool cmd_log;
+	RStack *cons;
 	RCoreTaskCallback cb;
 } RCoreTask;
 
