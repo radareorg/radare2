@@ -190,7 +190,7 @@ static char *get_title(ut64 addr) {
 
 static int agraph_refresh(struct agraph_refresh_data *grd);
 
-static void update_node_dimension(const RGraph *g, int is_mini, int zoom, int edgemode) {
+static void update_node_dimension(const RGraph *g, int is_mini, int zoom, int edgemode, bool callgraph) {
 	const RList *nodes = r_graph_get_nodes (g);
 	RGraphNode *gn;
 	RListIter *it;
@@ -219,14 +219,10 @@ static void update_node_dimension(const RGraph *g, int is_mini, int zoom, int ed
 			n->h = R_MAX (MIN_NODE_HEIGHT, (n->h * zoom) / 100);
 
 			/*if (!isvert) {*/
-			if (edgemode == 2) {
-				/*n->w = R_MAX (n->w, (r_list_length (n->gnode->out_nodes)*2  + 1) + R_EDGES_X_INC * 2);*/
-				/*n->w = R_MAX (n->w, (r_list_length (n->gnode->in_nodes)*2 + 1) + R_EDGES_X_INC * 2);*/
+			if (edgemode == 2 && !callgraph) {
+				n->w = R_MAX (n->w, (r_list_length (n->gnode->out_nodes)*2  + 1) + R_EDGES_X_INC * 2);
+				n->w = R_MAX (n->w, (r_list_length (n->gnode->in_nodes)*2 + 1) + R_EDGES_X_INC * 2);
 			}
-			/*} else {*/
-				/*n->h = R_MAX (n->h, (r_list_length (n->gnode->out_nodes)));*/
-				/*n->h = R_MAX (n->h, (r_list_length (n->gnode->in_nodes)));*/
-			/*}*/
 		}
 	}
 }
@@ -2636,8 +2632,8 @@ static void agraph_print_edges_simple(RAGraph *g) {
 
 			if (n2->is_dummy) {
 				r_cons_canvas_line (g->can,
-					n2->x, n2->y - 1,
-					n2->x, n2->y + n2->h, &style);
+					n2->x + sx2, n2->y - 1,
+					n2->x + sx2, n2->y + n2->h, &style);
 			}
 		}
 	}
@@ -2749,10 +2745,8 @@ static void agraph_print_edges(RAGraph *g) {
 
 				eprintf ("%d\n", g->edgemode);
 
-				/*if (g->edgemode == 2) {*/
-					/*a->w = R_MAX(a->w, a_x_inc + R_EDGES_X_INC);*/
-					/*b->w = R_MAX(b->w, b_x_inc + R_EDGES_X_INC);*/
-				/*}*/
+				/*a->w = R_MAX(a->w, a_x_inc + R_EDGES_X_INC);*/
+				/*b->w = R_MAX(b->w, b_x_inc + R_EDGES_X_INC);*/
 
 				if (!a->is_dummy && itn == neighbours->head && out_nth == 0 && bx > ax) {
 					a_x_inc += 4;
@@ -3063,7 +3057,7 @@ static int check_changes(RAGraph *g, int is_interactive,
 		agraph_update_title (g, fcn);
 	}
 	if (g->need_update_dim || g->need_reload_nodes || !is_interactive) {
-		update_node_dimension (g->graph, is_mini (g), g->zoom, g->edgemode);
+		update_node_dimension (g->graph, is_mini (g), g->zoom, g->edgemode, g->is_callgraph);
 	}
 	if (g->need_set_layout || g->need_reload_nodes || !is_interactive) {
 		agraph_set_layout (g, is_interactive);
@@ -3850,7 +3844,6 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				g->edgemode = e;
 				g->need_update_dim = true;
 				get_bbupdate (g, core, fcn);
-				can->sx += 1;
 			}
 			break;
 		case 'E':
