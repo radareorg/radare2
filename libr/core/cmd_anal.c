@@ -5999,8 +5999,10 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		case 'k':
 		case 'w':
 		case ' ': {
+			core->graph->is_callgraph = true;
 			ut64 addr = input[2] ? r_num_math (core->num, input + 2) : core->offset;
 			r_core_cmdf (core, "ag-; .agr* %"PFMT64d"; agg%c;", addr, input[1]);
+			core->graph->is_callgraph = false;
 			break;
 			}
 		case '*': {
@@ -6028,7 +6030,9 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		case 'w':
 		case ' ':
 		case 0: {
+			core->graph->is_callgraph = true;
 			r_core_cmdf (core, "ag-; .agR*; agg%c;", input[1]);
+			core->graph->is_callgraph = false;
 			break;
 			}
 		case '*': {

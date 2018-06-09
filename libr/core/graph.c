@@ -190,7 +190,7 @@ static char *get_title(ut64 addr) {
 
 static int agraph_refresh(struct agraph_refresh_data *grd);
 
-static void update_node_dimension(const RGraph *g, int is_mini, int zoom, int edgemode, bool callgraph) {
+static void update_node_dimension(const RGraph *g, int is_mini, int zoom, int edgemode, bool callgraph, int layout) {
 	const RList *nodes = r_graph_get_nodes (g);
 	RGraphNode *gn;
 	RListIter *it;
@@ -218,10 +218,14 @@ static void update_node_dimension(const RGraph *g, int is_mini, int zoom, int ed
 			n->w = R_MAX (MIN_NODE_WIDTH, (n->w * zoom) / 100);
 			n->h = R_MAX (MIN_NODE_HEIGHT, (n->h * zoom) / 100);
 
-			/*if (!isvert) {*/
 			if (edgemode == 2 && !callgraph) {
-				n->w = R_MAX (n->w, (r_list_length (n->gnode->out_nodes)*2  + 1) + R_EDGES_X_INC * 2);
-				n->w = R_MAX (n->w, (r_list_length (n->gnode->in_nodes)*2 + 1) + R_EDGES_X_INC * 2);
+				if (!layout) {
+					n->w = R_MAX (n->w, (r_list_length (n->gnode->out_nodes)*2  + 1) + R_EDGES_X_INC * 2);
+					n->w = R_MAX (n->w, (r_list_length (n->gnode->in_nodes)*2 + 1) + R_EDGES_X_INC * 2);
+				} else {
+					n->h = R_MAX (n->h, (r_list_length (n->gnode->out_nodes)  + 1) + R_EDGES_X_INC);
+					n->h = R_MAX (n->h, (r_list_length (n->gnode->in_nodes) + 1) + R_EDGES_X_INC);
+				}
 			}
 		}
 	}
@@ -2743,11 +2747,6 @@ static void agraph_print_edges(RAGraph *g) {
 				bx = b->is_dummy ? b->x : (b->x + b_x_inc);
 				by = b->y - 1;
 
-				eprintf ("%d\n", g->edgemode);
-
-				/*a->w = R_MAX(a->w, a_x_inc + R_EDGES_X_INC);*/
-				/*b->w = R_MAX(b->w, b_x_inc + R_EDGES_X_INC);*/
-
 				if (!a->is_dummy && itn == neighbours->head && out_nth == 0 && bx > ax) {
 					a_x_inc += 4;
 					ax -= 4;
@@ -2782,9 +2781,9 @@ static void agraph_print_edges(RAGraph *g) {
 			case 1:
 				style.symbol = a->is_dummy ? LINE_NOSYM_HORIZ : style.color;
 				ax = a->x + a->w;
-				ay = a->is_dummy ? a->y : a->y + (a->h / 2) + out_nth;
+				ay = a->is_dummy ? a->y : a->y + R_EDGES_X_INC + out_nth;
 				bx = b->x - 1;
-				by = b->is_dummy ? b->y : b->y + (b->h / 2) + out_nth;
+				by = b->is_dummy ? b->y : b->y + R_EDGES_X_INC + out_nth;
 				if (a->w < a->layer_width) {
 					r_cons_canvas_line_square_defined (g->can, ax, ay, a->x + a->layer_width, ay, &style, 0, false);
 					ax = a->x + a->layer_width;
@@ -3057,7 +3056,7 @@ static int check_changes(RAGraph *g, int is_interactive,
 		agraph_update_title (g, fcn);
 	}
 	if (g->need_update_dim || g->need_reload_nodes || !is_interactive) {
-		update_node_dimension (g->graph, is_mini (g), g->zoom, g->edgemode, g->is_callgraph);
+		update_node_dimension (g->graph, is_mini (g), g->zoom, g->edgemode, g->is_callgraph, g->layout);
 	}
 	if (g->need_set_layout || g->need_reload_nodes || !is_interactive) {
 		agraph_set_layout (g, is_interactive);
