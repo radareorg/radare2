@@ -390,6 +390,30 @@ static int get_stacksz (RCore *core, ut64 from, ut64 to, int minopcode) {
 	return ret;
 }
 
+static void set_retval (RCore *core, ut64 at) {
+	RAnal *anal = core->anal;
+	RAnalHint *hint = r_anal_hint_get (anal, at);
+	RAnalFunction *fcn = r_anal_get_fcn_in (anal, at, 0);
+
+	if (!hint || !fcn || !fcn->name) {
+		goto beach;
+	}
+	if (hint->ret == UT64_MAX) {
+		goto beach;
+	}
+	const char *cc = r_anal_cc_func (core->anal, fcn->name);
+	const char *regname = r_anal_cc_ret (anal, cc);
+	if (regname) {
+		RRegItem *reg = r_reg_get (anal->reg, regname, -1);
+		if (reg) {
+			r_reg_set_value (anal->reg, reg, hint->ret);
+		}
+	}
+beach:
+	r_anal_hint_free (hint);
+	return;
+}
+
 static void link_struct_offset(RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *it;
@@ -471,6 +495,7 @@ static void link_struct_offset(RCore *core, RAnalFunction *fcn) {
 			at += ret;
 			if (r_anal_op_nonlinear (aop.type)) {
 				r_reg_set_value (esil->anal->reg, pc, at);
+				set_retval (core, at - ret);
 			} else {
 				r_core_esil_step (core, UT64_MAX, NULL, NULL);
 			}
