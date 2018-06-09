@@ -1075,7 +1075,28 @@ static int autocomplete(RLine *line) {
 			ls_foreach (l, iter, kv) {
 				int len = strlen (line->buffer.data + chr);
 				if (!len || !strncmp (line->buffer.data + chr, kv->key, len)) {
-					if (!strncmp (kv->value, "0x", 2)) {
+					if (!strcmp (kv->value, "enum")) {
+						tmp_argv[i++] = strdup (kv->key);
+					}
+				}
+			}
+			if (i > 0) tmp_argv_heap = true;
+			tmp_argv[i] = NULL;
+			ls_free (l);
+			line->completion.argc = i;
+			line->completion.argv = tmp_argv;
+		} else if (!strncmp (line->buffer.data, "ts ", 3)
+		|| !strncmp (line->buffer.data, "tss ", 4)
+		|| !strncmp (line->buffer.data, "ts* ", 4)) {
+			int i = 0;
+			SdbList *l = sdb_foreach_list (core->anal->sdb_types, true);
+			SdbListIter *iter;
+			SdbKv *kv;
+			int chr = (line->buffer.data[2] == ' ')? 3: 4;
+			ls_foreach (l, iter, kv) {
+				int len = strlen (line->buffer.data + chr);
+				if (!len || !strncmp (line->buffer.data + chr, kv->key, len)) {
+					if (!strncmp (kv->value, "struct", strlen ("struct") + 1)) {
 						tmp_argv[i++] = strdup (kv->key);
 					}
 				}
