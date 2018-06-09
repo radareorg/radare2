@@ -204,7 +204,9 @@ static int task_run(RCoreTask *task) {
 	}
 	task->msg->res = res_str;
 
-	eprintf ("\nTask %d finished\n", task->id);
+	if (task != core->main_task) {
+		eprintf ("\nTask %d finished\n", task->id);
+	}
 
 	task_end (task);
 	return res;
