@@ -72,6 +72,7 @@ static int rabin_show_help(int v) {
 		" -R              relocations\n"
 		" -s              symbols\n"
 		" -S              sections\n"
+		" -SS             segments\n"
 		" -u              unfiltered (no rename duplicated symbols/sections)\n"
 		" -U              resoUrces\n"
 		" -v              display version and quit\n"
@@ -626,6 +627,7 @@ int main(int argc, char **argv) {
 			set_action (R_BIN_REQ_IMPORTS);
 			set_action (R_BIN_REQ_SYMBOLS);
 			set_action (R_BIN_REQ_SECTIONS);
+			set_action (R_BIN_REQ_SEGMENTS);
 			set_action (R_BIN_REQ_STRINGS);
 			set_action (R_BIN_REQ_SIZE);
 			set_action (R_BIN_REQ_INFO);
@@ -668,7 +670,14 @@ int main(int argc, char **argv) {
 			break;
 		case 'i': set_action (R_BIN_REQ_IMPORTS); break;
 		case 's': set_action (R_BIN_REQ_SYMBOLS); break;
-		case 'S': set_action (R_BIN_REQ_SECTIONS); break;
+		case 'S':
+			if (is_active (R_BIN_REQ_SECTIONS)) {
+				action &= ~R_BIN_REQ_SECTIONS;
+				action |= R_BIN_REQ_SEGMENTS;
+			} else {
+				set_action (R_BIN_REQ_SECTIONS);
+			}
+			break;
 		case 'z':
 			if (is_active (R_BIN_REQ_STRINGS)) {
 				if (rawstr) {
@@ -1061,6 +1070,7 @@ int main(int argc, char **argv) {
 	}
 
 	run_action ("sections", R_BIN_REQ_SECTIONS, R_CORE_BIN_ACC_SECTIONS);
+	run_action ("segments", R_BIN_REQ_SEGMENTS, R_CORE_BIN_ACC_SEGMENTS);
 	run_action ("entries", R_BIN_REQ_ENTRIES, R_CORE_BIN_ACC_ENTRIES);
 	run_action ("entries", R_BIN_REQ_INITFINI, R_CORE_BIN_ACC_INITFINI);
 	run_action ("main", R_BIN_REQ_MAIN, R_CORE_BIN_ACC_MAIN);
