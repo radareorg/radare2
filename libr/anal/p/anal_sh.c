@@ -23,7 +23,7 @@
  - FPU (opcodes 0xF___)
  - opcodes > SH2E
  - cmp*
- - "special" regs : PR, SR, VBR, GBR, MACL, MACH
+ - "special" regs : PR, SR, VBR,gbr, MACL, MACH
  - T flag handling
  - 0x0___
  - 0x2___
@@ -31,7 +31,7 @@
  - 0x4___ ops : ld*, st*
  - 0x6___ implement (ext*, pop, swap, ...)
  - 0x8___ implement cmp/eq imm,Rn
- - 0xC___ implement {mova, T flag dest, (disp, GBR) src/dst}
+ - 0xC___ implement {mova, T flag dest, (disp,gbr) src/dst}
  - 0xF___ FPU: everything
 
  *** complete :
@@ -92,7 +92,7 @@
 #define IS_RTE(x)			x == 0x002b
 //#define IS_CLRS(x)
 
-#define IS_STCSR1(x)		(((x) & 0xF0CF) == 0x0002)		//mask stc Rn,{SR, GBR,VBR,SSR}
+#define IS_STCSR1(x)		(((x) & 0xF0CF) == 0x0002)		//mask stc Rn,{SR,gbr,VBR,SSR}
 #define IS_BSRF(x)			(x & 0xf0ff) == 0x0003
 #define IS_BRAF(x)			(((x) & 0xf0ff) == 0x0023)
 #define IS_MOVB_REG_TO_R0REL(x)		(((x) & 0xF00F) == 0x0004)
@@ -209,9 +209,11 @@
 #define IS_CMPPL(x)			(((x) & 0xf0ff) == 0x4015)
 #define IS_CMPPZ(x)			(((x) & 0xf0ff) == 0x4011)
 
-#define IS_LDCSR1(x)		(((x) & 0xF0FF) == 0x400E)		//mask ldc Rn,{SR, GBR,VBR,SSR}
+#define IS_LDCSR(x) 		(((x) & 0xF0FF) == 0x400E)
+#define IS_LDCGBR(x)	 	(((x) & 0xF0FF) == 0x401E)
+#define IS_LDCVBR(x)		(((x) & 0xF0FF) == 0x402E)
 #define IS_LDCLSR(x)		(((x) & 0xF0FF) == 0x4007)		//mask ldc.l @Rn+,SR
-#define IS_LDCLSRGBR(x)		(((x) & 0xF0FF) == 0x4017)		//mask ldc.l @Rn+, GBR
+#define IS_LDCLSRGBR(x)		(((x) & 0xF0FF) == 0x4017)		//mask ldc.l @Rn+,gbr
 #define IS_LDCLSRVBR(x)		(((x) & 0xF0FF) == 0x4027)		//mask ldc.l @Rn+,VBR
 #define IS_LDSMACH(x)		(((x) & 0xF0FF) == 0x400A)		//mask lds Rn, MACH
 #define IS_LDSMACL(x)		(((x) & 0xF0FF) == 0x401A)		//mask lds Rn, MACL
@@ -250,11 +252,17 @@
 #define IS_STSLMACL(x)		(((x) & 0xF0FF) == 0x4012)
 #define IS_STSLMACH(x)		(((x) & 0xF0FF) == 0x4002)//mask sts.l mac*, @-Rn
 <<<<<<< HEAD
+<<<<<<< HEAD
 #define IS_STCLSR1(x)		(((x) & 0xF0CF) == 0x4003)	//mask stc.l {SR,GBR,VBR,SSR},@-Rn
 >>>>>>> Implemented ESIL for SH architecture
 =======
 #define IS_STCLSR1(x)		(((x) & 0xF0CF) == 0x4003)	//mask stc.l {SR, GBR,VBR,SSR},@-Rn
 >>>>>>> removed unnecessary variables and functions. Changed code for coding style rules. Added EXT.S instructions. head of file is still to be rewritten after I will finish tests.
+=======
+#define IS_STCLSR(x)		(((x) & 0xF0FF) == 0x4003)	//mask stc.l {SR,gbr,VBR,SSR},@-Rn
+#define IS_STCLGBR(x)		(((x) & 0xF0FF) == 0x4013)
+#define IS_STCLVBR(x)		(((x) & 0xF0FF) == 0x4023)
+>>>>>>> lots of bugs fixed during testing, not so much left
 //todo: other stc.l not on sh2e
 #define IS_STSLPR(x)	(((x) & 0xF0FF) == 0x4022)
 //#define IS_STSLFPUL(x)	(((x) & 0xF0FF) == 0x4052)
@@ -314,11 +322,15 @@
 #define IS_MOVA_PCREL_R0(x)	(((x) & 0xFF00) == 0xC700)
 #define IS_BINLOGIC_IMM_R0(x)	(((x) & 0xFC00) == 0xC800)	//match C{8,9,A,B}00
 <<<<<<< HEAD
+<<<<<<< HEAD
 #define IS_BINLOGIC_IMM_GBR(x)	(((x) & 0xFC00) == 0xCC00)	//match C{C,D,E,F}00 : *.b #imm, @(R0,gbr)
 
 =======
 #define IS_BINLOGIC_IMM_GBR(x)	(((x) & 0xFC00) == 0xCC00)	//match C{C,D,E,F}00 : *.b #imm, @(R0, GBR)
 >>>>>>> removed unnecessary variables and functions. Changed code for coding style rules. Added EXT.S instructions. head of file is still to be rewritten after I will finish tests.
+=======
+#define IS_BINLOGIC_IMM_GBR(x)	(((x) & 0xFC00) == 0xCC00)	//match C{C,D,E,F}00 : *.b #imm, @(R0,gbr)
+>>>>>>> lots of bugs fixed during testing, not so much left
 
 
 /* Compute PC-relative displacement for branch instructions */
@@ -454,10 +466,13 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
 		op->type = R_ANAL_OP_TYPE_UCALL;
 		op->delay = 1;
 		op->dst = anal_regrel_jump (anal, op, GET_TARGET_REG (code));
-		r_strbuf_setf (&op->esil, "pc,pr,=,r%d,4,+,pc,+=", GET_TARGET_REG (code));
+		r_strbuf_setf (&op->esil, "1,$ds,=,pc,2,+,pr,=,r%d,2,+,pc,+=", GET_TARGET_REG (code));
 	} else if (IS_BRAF (code)) {
+<<<<<<< HEAD
 		/* Unconditional branch to Rn+PC+4, no delay slot */
 >>>>>>> Implemented ESIL for SH architecture
+=======
+>>>>>>> lots of bugs fixed during testing, not so much left
 		op->type = R_ANAL_OP_TYPE_UJMP;
 		op->dst = anal_regrel_jump (anal, op, GET_TARGET_REG (code));
 <<<<<<< HEAD
@@ -537,7 +552,8 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
 	} else if( IS_RTS(code) ) {
 =======
 		op->eob = true;
-		r_strbuf_setf (&op->esil, "r%d,4,+,pc,+=", GET_TARGET_REG (code));
+		op->delay = 1;
+		r_strbuf_setf (&op->esil, "1,$ds,=,r%d,2,+,pc,+=", GET_TARGET_REG (code));
 	} else if (IS_RTS (code)) {
 >>>>>>> removed unnecessary variables and functions. Changed code for coding style rules. Added EXT.S instructions. head of file is still to be rewritten after I will finish tests.
 		op->type = R_ANAL_OP_TYPE_RET;
@@ -548,7 +564,9 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
 		op->type = R_ANAL_OP_TYPE_RET;
 		op->delay = 1;
 		op->eob = true;
-		r_strbuf_setf (&op->esil, "r15,4,+,[],pc,=,r15,[],0xFFF0FFF,&,sr,=,4,r15+=");
+		//r_strbuf_setf (&op->esil, "1,$ds,=,r15,[4],4,+,pc,=,r15,4,+,[4],0xFFF0FFF,&,sr,=,8,r15,+=");
+		//not sure if should be added 4 to pc
+		r_strbuf_setf (&op->esil, "1,$ds,=,r15,[4],pc,=,r15,4,+,[4],0xFFF0FFF,&,sr,=,8,r15,+=");
 	} else if (IS_MOVB_REG_TO_R0REL (code)) {	//0000nnnnmmmm0100 mov.b <REG_M>,@(R0,<REG_N>)
 		op->type = R_ANAL_OP_TYPE_STORE;
 		op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
@@ -587,13 +605,13 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=");
 	} else if (IS_SETT (code)) {
 		op->type = R_ANAL_OP_TYPE_UNK;
-		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,|=");
+		r_strbuf_setf (&op->esil, "0x1,sr,|=");
 	} else if (IS_CLRMAC (code)) {
 		op->type = R_ANAL_OP_TYPE_UNK;
 		r_strbuf_setf (&op->esil, "0,mach,=,0,macl,=");
 	} else if (IS_DIV0U (code)) {
 		op->type = R_ANAL_OP_TYPE_DIV;
-		r_strbuf_setf (&op->esil, "0xFFFFFCFE,sr,|=");
+		r_strbuf_setf (&op->esil, "0xFFFFFCFE,sr,&=");
 	} else if (IS_MOVT (code)) {
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
@@ -646,12 +664,16 @@ static int first_nibble_is_0(RAnal* anal, RAnalOp* op, ut16 code) { //STOP
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "mach,r%d,=", GET_TARGET_REG (code));
+	} else if (IS_STSMACL (code)) {	//0000nnnn0000101_ sts MAC*,<REG_N>
+		op->type = R_ANAL_OP_TYPE_MOV;
+		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
+		r_strbuf_setf (&op->esil, "macl,r%d,=", GET_TARGET_REG (code));
 	} else if (IS_STSLMACL (code)) {
 >>>>>>> removed unnecessary variables and functions. Changed code for coding style rules. Added EXT.S instructions. head of file is still to be rewritten after I will finish tests.
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		r_strbuf_setf (&op->esil, "macl,r%d,=", GET_TARGET_REG (code));
-	} else if (IS_STCSR1 (code)) {	//0000nnnn00010010 stc {sr, Gbr,vbr,ssr},<REG_N>
+	} else if (IS_STCSR1 (code)) {	//0000nnnn00010010 stc {sr,gbr,vbr,ssr},<REG_N>
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		//todo: plug in src
@@ -754,8 +776,12 @@ static int movl_reg_rdisp(RAnal* anal, RAnalOp* op, ut16 code) {
 =======
 	op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 	op->dst = anal_fill_reg_disp_mem (anal, GET_TARGET_REG (code), code & 0x0F, LONG_SIZE);
+<<<<<<< HEAD
 	r_strbuf_setf (&op->esil, "r%d,r%d,0x%x,+,=[]", GET_SOURCE_REG (code), GET_TARGET_REG (code), (code & 0xF)<<2);
 >>>>>>> removed unnecessary variables and functions. Changed code for coding style rules. Added EXT.S instructions. head of file is still to be rewritten after I will finish tests.
+=======
+	r_strbuf_setf (&op->esil, "r%d,r%d,0x%x,+,=[4]", GET_SOURCE_REG (code), GET_TARGET_REG (code), (code & 0xF)<<2);
+>>>>>>> lots of bugs fixed during testing, not so much left
 	return op->size;
 }
 
@@ -1023,7 +1049,7 @@ static int first_nibble_is_3(RAnal* anal, RAnalOp* op, ut16 code){
 		op->type = R_ANAL_OP_TYPE_ADD;
 		op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
-		r_strbuf_setf (&op->esil, "sr,0x1,&,r%d,+=,0xFFFFFFFE,$c31,?{,1,+,},sr,&=,r%d,r%d,+=,$c31,?{,0x1,sr,|=,}", GET_TARGET_REG (code), GET_SOURCE_REG (code), GET_TARGET_REG (code));
+		r_strbuf_setf (&op->esil, "sr,0x1,&,0xFFFFFFFE,sr,&=,r%d,+=,$c31,sr,|=,r%d,r%d,+=,$c31,sr,|=", GET_TARGET_REG (code), GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_ADDV (code)) {
 		op->type = R_ANAL_OP_TYPE_ADD;
 		op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
@@ -1048,7 +1074,7 @@ static int first_nibble_is_3(RAnal* anal, RAnalOp* op, ut16 code){
 		op->type = R_ANAL_OP_TYPE_CMP;
 		op->src[0] = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		op->src[1] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
-		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r%d,r%d,==,?{,0x1,sr,|=,}", GET_SOURCE_REG (code), GET_TARGET_REG (code));
+		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r%d,r%d,==,sr,|=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 	} else if (IS_CMPGE (code)) {
 		op->type = R_ANAL_OP_TYPE_CMP;
 		op->src[0] = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
@@ -1073,6 +1099,7 @@ static int first_nibble_is_3(RAnal* anal, RAnalOp* op, ut16 code){
 		op->type = R_ANAL_OP_TYPE_DIV;
 		op->src[0] = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 		op->src[1] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
+		r_strbuf_setf (&op->esil, "TODO,NOT IMPLEMENTED", GET_SOURCE_REG (code), GET_TARGET_REG (code));
 		//todo: implement division
 	} else if (IS_DMULU (code)) {
 		op->type = R_ANAL_OP_TYPE_MUL;
@@ -1210,7 +1237,7 @@ static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
 >>>>>>> Implemented ESIL for SH architecture
 =======
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
-		r_strbuf_setf (&op->esil, "pc,pr,=,r%d,pc,=", GET_TARGET_REG (code));
+		r_strbuf_setf (&op->esil, "1,$ds,=,pc,2,+,pr,=,r%d,pc,=", GET_TARGET_REG (code));
 	} else if (IS_JMP (code)) {
 >>>>>>> removed unnecessary variables and functions. Changed code for coding style rules. Added EXT.S instructions. head of file is still to be rewritten after I will finish tests.
 		op->type = R_ANAL_OP_TYPE_UJMP; //jmp to reg
@@ -1219,10 +1246,14 @@ static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
 		op->eob = true;
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		r_strbuf_setf (&op->esil, "1,$ds,=,r%d,pc,=", GET_TARGET_REG (code));
 =======
 		r_strbuf_setf (&op->esil, "r%d,pc,=", GET_TARGET_REG (code));
 >>>>>>> removed unnecessary variables and functions. Changed code for coding style rules. Added EXT.S instructions. head of file is still to be rewritten after I will finish tests.
+=======
+		r_strbuf_setf (&op->esil, "1,$ds,=,r%d,pc,=", GET_TARGET_REG (code));
+>>>>>>> lots of bugs fixed during testing, not so much left
 	} else if (IS_CMPPL (code)) {
 		op->type = R_ANAL_OP_TYPE_CMP;
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,0,r%d,>,?{,0x1,sr,|=,}", GET_TARGET_REG (code));
@@ -1318,7 +1349,7 @@ static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
 		r_strbuf_setf (&op->esil, "r%d,[4],0x0FFF0FFF,&,sr,=,4,r%d,+=", GET_TARGET_REG (code), GET_TARGET_REG (code));
 	} else if (IS_LDCLSRGBR (code)) {
 		op->type = R_ANAL_OP_TYPE_POP;
-		r_strbuf_setf (&op->esil, "r%d,[4], Gbr,=,4,r%d,+=", GET_TARGET_REG (code), GET_TARGET_REG (code));
+		r_strbuf_setf (&op->esil, "r%d,[4],gbr,=,4,r%d,+=", GET_TARGET_REG (code), GET_TARGET_REG (code));
 	} else if (IS_LDCLSRVBR (code)) {
 		op->type = R_ANAL_OP_TYPE_POP;
 		r_strbuf_setf (&op->esil, "r%d,[4],vbr,=,4,r%d,+=", GET_TARGET_REG (code), GET_TARGET_REG (code));
@@ -1332,17 +1363,23 @@ static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
 	} else if (IS_LDSLPR (code)) {
 		op->type = R_ANAL_OP_TYPE_POP;
 		r_strbuf_setf (&op->esil, "r%d,[4],pr,=,4,r%d,+=", GET_TARGET_REG (code), GET_TARGET_REG (code));
-	} else if (IS_LDCSR1 (code)) {
+	} else if (IS_LDCSR (code)) {
 		r_strbuf_setf (&op->esil, "r%d,0x0FFF0FFF,&,sr,=", GET_TARGET_REG (code));
 		op->type = R_ANAL_OP_TYPE_MOV;
+	} else if (IS_LDCGBR (code)) {
+		r_strbuf_setf (&op->esil, "r%d,gbr,=", GET_TARGET_REG (code));
+		op->type = R_ANAL_OP_TYPE_MOV;
+	} else if (IS_LDCVBR (code)) {
+		r_strbuf_setf (&op->esil, "r%d,vbr,=", GET_TARGET_REG (code));
+		op->type = R_ANAL_OP_TYPE_MOV;
 	} else if (IS_LDSMACH (code)) {
-		r_strbuf_setf (&op->esil, "r%d,0x0FFF0FFF,&,mach,=", GET_TARGET_REG (code));
+		r_strbuf_setf (&op->esil, "r%d,mach,=", GET_TARGET_REG (code));
 		op->type = R_ANAL_OP_TYPE_MOV;
 	} else if (IS_LDSMACL (code)) {
-		r_strbuf_setf (&op->esil, "r%d,0x0FFF0FFF,&,macl,=", GET_TARGET_REG (code));
+		r_strbuf_setf (&op->esil, "r%d,macl,=", GET_TARGET_REG (code));
 		op->type = R_ANAL_OP_TYPE_MOV;
 	} else if (IS_LDSPR (code)) {
-		r_strbuf_setf (&op->esil, "r%d,0x0FFF0FFF,&,pr,=", GET_TARGET_REG (code));
+		r_strbuf_setf (&op->esil, "r%d,pr,=", GET_TARGET_REG (code));
 		op->type = R_ANAL_OP_TYPE_MOV;
 	} else if (IS_ROTR (code)) {
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r%d,0x1,&,sr,|=,0x1,r%d,>>>,r%d,=", GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
@@ -1357,8 +1394,14 @@ static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
 		r_strbuf_setf (&op->esil, "sr,0x1,&,0xFFFFFFFE,sr,&=,r%d,0x80000000,&,?{,1,sr,|=,},1,r%d,<<=,r%d,|=", GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
 		op->type = (code & 1)? R_ANAL_OP_TYPE_ROR:R_ANAL_OP_TYPE_ROL;
 		//todo: implement rot* vs rotc*
-	} else if (IS_STCLSR1 (code)) {
+	} else if (IS_STCLSR (code)) {
 		r_strbuf_setf (&op->esil, "4,r%d,-=,sr,r%d,=[4]", GET_TARGET_REG (code), GET_TARGET_REG (code));
+		op->type = R_ANAL_OP_TYPE_PUSH;
+	} else if (IS_STCLGBR (code)) {
+		r_strbuf_setf (&op->esil, "4,r%d,-=,gbr,r%d,=[4]", GET_TARGET_REG (code), GET_TARGET_REG (code));
+		op->type = R_ANAL_OP_TYPE_PUSH;
+	} else if (IS_STCLVBR (code)) {
+		r_strbuf_setf (&op->esil, "4,r%d,-=,vbr,r%d,=[4]", GET_TARGET_REG (code), GET_TARGET_REG (code));
 		op->type = R_ANAL_OP_TYPE_PUSH;
 	} else if (IS_STSLMACL (code)) {
 		r_strbuf_setf (&op->esil, "4,r%d,-=,macl,r%d,=[4]", GET_TARGET_REG (code), GET_TARGET_REG (code));
@@ -1378,8 +1421,12 @@ static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
 >>>>>>> Implemented ESIL for SH architecture
 =======
 	} else if (IS_DT (code)) {
+<<<<<<< HEAD
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,1,r%d,-=,r%d,0,==,?{,1,sr,|=,}", GET_TARGET_REG (code), GET_TARGET_REG (code));
 >>>>>>> removed unnecessary variables and functions. Changed code for coding style rules. Added EXT.S instructions. head of file is still to be rewritten after I will finish tests.
+=======
+		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,1,r%d,-=,$z,sr,|=", GET_TARGET_REG (code), GET_TARGET_REG (code));
+>>>>>>> lots of bugs fixed during testing, not so much left
 		op->type = R_ANAL_OP_TYPE_UNK;
 	} else if (IS_MACW(code)){
 		r_strbuf_setf (&op->esil,
@@ -1425,8 +1472,12 @@ static int movl_rdisp_reg(RAnal* anal, RAnalOp* op, ut16 code) {
 =======
 	op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	op->src[0] = anal_fill_reg_disp_mem (anal, GET_SOURCE_REG (code), code & 0x0F, LONG_SIZE);
+<<<<<<< HEAD
 	r_strbuf_setf (&op->esil, "r%d,0x%x,+,[4],r%d,=", GET_SOURCE_REG (code), op->src[0], GET_TARGET_REG (code));
 >>>>>>> removed unnecessary variables and functions. Changed code for coding style rules. Added EXT.S instructions. head of file is still to be rewritten after I will finish tests.
+=======
+	r_strbuf_setf (&op->esil, "r%d,0x%x,+,[4],r%d,=", GET_SOURCE_REG (code), (code&0xF) * 4, GET_TARGET_REG (code));
+>>>>>>> lots of bugs fixed during testing, not so much left
 	return op->size;
 }
 
@@ -1497,6 +1548,7 @@ static int first_nibble_is_6(RAnal* anal, RAnalOp* op, ut16 code) {
 	} else if (IS_NEGC (code)) {
 		op->type = R_ANAL_OP_TYPE_UNK;
 		r_strbuf_setf (&op->esil, "1,sr,&,0xFFFFFFFE,sr,&=,r%d,+,0,-,$b31,sr,|=,r%d,=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
+<<<<<<< HEAD
 		op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	} else if (IS_NOT (code)) {
@@ -1582,6 +1634,8 @@ static int first_nibble_is_6(RAnal* anal, RAnalOp* op, ut16 code) {
 	} else if (IS_NEGC (code)) {
 		op->type = R_ANAL_OP_TYPE_UNK;
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r%d,0,-,r%d,=,$b31,sr,|=", GET_SOURCE_REG (code), GET_TARGET_REG (code));
+=======
+>>>>>>> lots of bugs fixed during testing, not so much left
 		op->src[0] = anal_fill_ai_rg (anal, GET_SOURCE_REG (code));
 		op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
 	} else if (IS_NOT (code)) {
@@ -1686,35 +1740,44 @@ static int first_nibble_is_8(RAnal* anal, RAnalOp* op, ut16 code) {
 =======
 		op->eob = true;
 		if (IS_BT (code)) {
+<<<<<<< HEAD
 			r_strbuf_setf (&op->esil, "sr,1,&,?{0x%x,pc,=,}", op->jump);
 		} else if (IS_BTS (code) || IS_BFS (code)) {
 			r_strbuf_setf (&op->esil, "TODO,NOT IMPLEMENTED");
 >>>>>>> removed unnecessary variables and functions. Changed code for coding style rules. Added EXT.S instructions. head of file is still to be rewritten after I will finish tests.
+=======
+			r_strbuf_setf (&op->esil, "sr,1,&,?{,0x%x,pc,=,}", op->jump);
+		} else if (IS_BTS (code)) {
+			r_strbuf_setf (&op->esil, "1,$ds,=,sr,1,&,?{,0x%x,pc,=,}", op->jump);
+			op->delay = 1; //Only /S versions have a delay slot
+		} else if (IS_BFS (code)) {
+			r_strbuf_setf (&op->esil, "1,$ds,=,sr,1,&,!,?{,0x%x,pc,=,}",op->jump);
+>>>>>>> lots of bugs fixed during testing, not so much left
 			op->delay = 1; //Only /S versions have a delay slot
 		} else if (IS_BF (code)) {
-			r_strbuf_setf (&op->esil, "sr,1,&,!,?{0x%x,pc,=,}", op->jump);
+			r_strbuf_setf (&op->esil, "sr,1,&,!,?{,0x%x,pc,=,}", op->jump);
 		}
 	} else if (IS_MOVB_REGDISP_R0 (code)) {
 		// 10000100mmmmi4*1 mov.b @(<disp>,<REG_M>),R0
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		op->dst = anal_fill_ai_rg (anal, 0);
 		op->src[0] = anal_fill_reg_disp_mem (anal, GET_SOURCE_REG (code), code & 0x0F, BYTE_SIZE);
-		r_strbuf_setf (&op->esil, "r%d,0x%x,+,[1],DUP,0x80,&,?{,0xFFFFFF00,|,},r0,=", GET_SOURCE_REG (code), code & 0xFF);
+		r_strbuf_setf (&op->esil, "r%d,0x%x,+,[1],DUP,0x80,&,?{,0xFFFFFF00,|,},r0,=", GET_SOURCE_REG (code), code & 0xF);
 	} else if (IS_MOVW_REGDISP_R0 (code)) {
 		// 10000101mmmmi4*2 mov.w @(<disp>,<REG_M>),R0
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		op->dst = anal_fill_ai_rg (anal, 0);
 		op->src[0] = anal_fill_reg_disp_mem (anal, GET_SOURCE_REG (code), code & 0x0F, WORD_SIZE);
-		r_strbuf_setf (&op->esil, "r%d,0x%x,+,[2],DUP,0x8000,&,?{,0xFFFF0000,|,},r0,=", GET_SOURCE_REG (code), (code & 0xFF)*2);
+		r_strbuf_setf (&op->esil, "r%d,0x%x,+,[2],DUP,0x8000,&,?{,0xFFFF0000,|,},r0,=", GET_SOURCE_REG (code), (code & 0xF)*2);
 	} else if (IS_CMPIMM (code)) {
 		op->type = R_ANAL_OP_TYPE_CMP;
-		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,0x%x,r0,==,?{,1,sr,|=,}", code & 0xFF);
+		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,0x%x,DUP,0x80,&,?{,0xFFFFFF00,|,},r0,==,sr,|=", code & 0xFF);
 	} else if (IS_MOVB_R0_REGDISP (code)) {
 		/* 10000000mmmmi4*1 mov.b R0,@(<disp>,<REG_M>)*/
 		op->type = R_ANAL_OP_TYPE_STORE;
 		op->src[0] = anal_fill_ai_rg (anal, 0);
 		op->dst = anal_fill_reg_disp_mem (anal, GET_SOURCE_REG (code), code & 0x0F, BYTE_SIZE);
-		r_strbuf_setf (&op->esil, "r0,0xFF,&,0x%x,r%d,+,=[1]", code & 0xFF, GET_TARGET_REG (code));
+		r_strbuf_setf (&op->esil, "r0,0xFF,&,0x%x,r%d,+,=[1]", code & 0xF, GET_SOURCE_REG (code));
 	} else if (IS_MOVW_R0_REGDISP (code)) {
 		// 10000001mmmmi4*2 mov.w R0,@(<disp>,<REG_M>))
 		op->type = R_ANAL_OP_TYPE_STORE;
@@ -1768,6 +1831,7 @@ static int bra(RAnal* anal, RAnalOp* op, ut16 code) {
 	/* Unconditional branch, relative to PC */
 	op->type = R_ANAL_OP_TYPE_JMP;
 <<<<<<< HEAD
+<<<<<<< HEAD
 	op->delay = 1;
 	op->jump = disarm_12bit_offset (op, GET_BRA_OFFSET (code));
 	op->eob = true;
@@ -1784,6 +1848,12 @@ static int bra(RAnal* anal, RAnalOp* op, ut16 code) {
 	op->eob = true;
 	r_strbuf_setf (&op->esil, "0x%x,pc,=", op->jump);
 >>>>>>> removed unnecessary variables and functions. Changed code for coding style rules. Added EXT.S instructions. head of file is still to be rewritten after I will finish tests.
+=======
+	op->delay = 1;
+	op->jump = disarm_12bit_offset (op, GET_BRA_OFFSET (code));
+	op->eob = true;
+	r_strbuf_setf (&op->esil, "1,$ds,=,0x%x,pc,=", op->jump);
+>>>>>>> lots of bugs fixed during testing, not so much left
 	return op->size;
 }
 
@@ -1795,6 +1865,7 @@ static int bsr(RAnal* anal, RAnalOp* op, ut16 code) {
 	op->delay = 1;
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	r_strbuf_setf (&op->esil, "1,$ds,=,pc,2,+,pr,=,0x%x,pc,=", op->jump);
 =======
     r_strbuf_setf (&op->esil, "pc,pr,=,0x%x,pc,=", op->jump);
@@ -1802,6 +1873,9 @@ static int bsr(RAnal* anal, RAnalOp* op, ut16 code) {
 =======
 	r_strbuf_setf (&op->esil, "pc,pr,=,0x%x,pc,=", op->jump);
 >>>>>>> removed unnecessary variables and functions. Changed code for coding style rules. Added EXT.S instructions. head of file is still to be rewritten after I will finish tests.
+=======
+	r_strbuf_setf (&op->esil, "1,$ds,=,pc,2,+,pr,=,0x%x,pc,=", op->jump);
+>>>>>>> lots of bugs fixed during testing, not so much left
 	return op->size;
 }
 
@@ -1889,13 +1963,18 @@ static int first_nibble_is_c(RAnal* anal, RAnalOp* op, ut16 code) {
 			r_strbuf_setf (&op->esil, "0x%x,r0,|=", code & 0xFF);
 			break;
 		}
+<<<<<<< HEAD
 	} else if (IS_BINLOGIC_IMM_GBR (code)) {	//110011__i8 (binop).b #imm, @(R0, GBR)
 >>>>>>> removed unnecessary variables and functions. Changed code for coding style rules. Added EXT.S instructions. head of file is still to be rewritten after I will finish tests.
+=======
+	} else if (IS_BINLOGIC_IMM_GBR (code)) {	//110011__i8 (binop).b #imm, @(R0,gbr)
+>>>>>>> lots of bugs fixed during testing, not so much left
 		op->src[0] = anal_fill_im (anal, code & 0xFF);
 		switch(code & 0xFF00) {
 		case 0xCC00:	//tst
 			//TODO : get correct op->dst ! (T flag)
 			op->type = R_ANAL_OP_TYPE_ACMP;
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 			r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r0,gbr,+,[1],0x%x,&,!,?{,1,sr,|=,}", code & 0xFF);
@@ -1916,17 +1995,21 @@ static int first_nibble_is_c(RAnal* anal, RAnalOp* op, ut16 code) {
 =======
 			r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r0, Gbr,+,[1],0x%x,&,!,?{,1,sr,|=,}", code & 0xFF);
 >>>>>>> removed unnecessary variables and functions. Changed code for coding style rules. Added EXT.S instructions. head of file is still to be rewritten after I will finish tests.
+=======
+			r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r0,gbr,+,[1],0x%x,&,!,?{,1,sr,|=,}", code & 0xFF);
+>>>>>>> lots of bugs fixed during testing, not so much left
 			break;
 		case 0xCD00:	//and
 			op->type = R_ANAL_OP_TYPE_AND;
-			r_strbuf_setf (&op->esil, "r0, Gbr,+,[1],0x%x,&,r0, Gbr,+,=[1]", code & 0xFF);
+			r_strbuf_setf (&op->esil, "r0,gbr,+,[1],0x%x,&,r0,gbr,+,=[1]", code & 0xFF);
 			break;
 		case 0xCE00:	//xor
 			op->type = R_ANAL_OP_TYPE_XOR;
-			r_strbuf_setf (&op->esil, "r0, Gbr,+,[1],0x%x,^,r0, Gbr,+,=[1]", code & 0xFF);
+			r_strbuf_setf (&op->esil, "r0,gbr,+,[1],0x%x,^,r0,gbr,+,=[1]", code & 0xFF);
 			break;
 		case 0xCF00:	//or
 			op->type = R_ANAL_OP_TYPE_OR;
+<<<<<<< HEAD
 <<<<<<< HEAD
             r_strbuf_setf (&op->esil, "r0,gbr,+,[1],0x%x,|,r0,gbr,+,=[1]",code&0xFF);
 >>>>>>> Implemented ESIL for SH architecture
@@ -1970,36 +2053,45 @@ static int first_nibble_is_c(RAnal* anal, RAnalOp* op, ut16 code) {
 	} else if (IS_MOVW_R0_GBRREF(code)) {	//11000001i8*2.... mov.w R0,@(<disp>,GBR)
 =======
 			r_strbuf_setf (&op->esil, "r0, Gbr,+,[1],0x%x,|,r0, Gbr,+,=[1]", code & 0xFF);
+=======
+			r_strbuf_setf (&op->esil, "r0,gbr,+,[1],0x%x,|,r0,gbr,+,=[1]", code & 0xFF);
+>>>>>>> lots of bugs fixed during testing, not so much left
 			break;
 		}
-		//TODO : implement @(R0, GBR) dest and src[1]
-	} else if (IS_MOVB_R0_GBRREF (code)) {	//11000000i8*1.... mov.b R0,@(<disp>, GBR)
+		//TODO : implement @(R0,gbr) dest and src[1]
+	} else if (IS_MOVB_R0_GBRREF (code)) {	//11000000i8*1.... mov.b R0,@(<disp>,gbr)
 		op->type = R_ANAL_OP_TYPE_STORE;
 		op->src[0] = anal_fill_ai_rg (anal, 0);
+<<<<<<< HEAD
 		r_strbuf_setf (&op->esil, "r0, Gbr,0x%x,+,=[1]", code & 0xFF);
 		//todo: implement @(disp, GBR) dest
 	} else if (IS_MOVW_R0_GBRREF (code)) {	//11000001i8*2.... mov.w R0,@(<disp>, GBR)
 >>>>>>> removed unnecessary variables and functions. Changed code for coding style rules. Added EXT.S instructions. head of file is still to be rewritten after I will finish tests.
+=======
+		r_strbuf_setf (&op->esil, "r0,gbr,0x%x,+,=[1]", code & 0xFF);
+		//todo: implement @(disp,gbr) dest
+	} else if (IS_MOVW_R0_GBRREF (code)) {	//11000001i8*2.... mov.w R0,@(<disp>,gbr)
+>>>>>>> lots of bugs fixed during testing, not so much left
 		op->type = R_ANAL_OP_TYPE_STORE;
 		op->src[0] = anal_fill_ai_rg (anal, 0);
-		r_strbuf_setf (&op->esil, "r0, Gbr,0x%x,+,=[1]", (code & 0xFF)*2);
-		//todo: implement @(disp, GBR) dest
-	} else if (IS_MOVL_R0_GBRREF (code)) {	//11000010i8*4.... mov.l R0,@(<disp>, GBR)
+		r_strbuf_setf (&op->esil, "r0,gbr,0x%x,+,=[2]", (code & 0xFF)*2);
+		//todo: implement @(disp,gbr) dest
+	} else if (IS_MOVL_R0_GBRREF (code)) {	//11000010i8*4.... mov.l R0,@(<disp>,gbr)
 		op->type = R_ANAL_OP_TYPE_STORE;
 		op->src[0] = anal_fill_ai_rg (anal, 0);
-		r_strbuf_setf (&op->esil, "r0, Gbr,0x%x,+,=[1]", (code & 0xFF)*4);
-		//todo: implement @(disp, GBR) dest
-	} else if (IS_MOVB_GBRREF_R0 (code)) {	//11000100i8*1.... mov.b @(<disp>, GBR),R0
+		r_strbuf_setf (&op->esil, "r0,gbr,0x%x,+,=[4]", (code & 0xFF)*4);
+		//todo: implement @(disp,gbr) dest
+	} else if (IS_MOVB_GBRREF_R0 (code)) {	//11000100i8*1.... mov.b @(<disp>,gbr),R0
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		op->dst = anal_fill_ai_rg (anal, 0);
 		r_strbuf_setf (&op->esil, "gbr,0x%x,+,[1],DUP,0x80,&,?{,0xFFFFFF00,|,},r0,=", (code & 0xFF));
-		//todo: implement @(disp, GBR) src
-	} else if (IS_MOVW_GBRREF_R0 (code)) {	//11000101i8*2.... mov.w @(<disp>, GBR),R0
+		//todo: implement @(disp,gbr) src
+	} else if (IS_MOVW_GBRREF_R0 (code)) {	//11000101i8*2.... mov.w @(<disp>,gbr),R0
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		op->dst = anal_fill_ai_rg (anal, 0);
 		r_strbuf_setf (&op->esil, "gbr,0x%x,+,[2],DUP,0x8000,&,?{,0xFFFF0000,|,},r0,=", (code & 0xFF)*2);
-		//todo: implement @(disp, GBR) src
-	} else if (IS_MOVL_GBRREF_R0 (code)) {	//11000110i8*4.... mov.l @(<disp>, GBR),R0
+		//todo: implement @(disp,gbr) src
+	} else if (IS_MOVL_GBRREF_R0 (code)) {	//11000110i8*4.... mov.l @(<disp>,gbr),R0
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		op->dst = anal_fill_ai_rg (anal, 0);
 <<<<<<< HEAD
@@ -2008,8 +2100,12 @@ static int first_nibble_is_c(RAnal* anal, RAnalOp* op, ut16 code) {
 >>>>>>> Implemented ESIL for SH architecture
 =======
 		r_strbuf_setf (&op->esil, "gbr,0x%x,+,[4],r0,=", (code & 0xFF)*4);
+<<<<<<< HEAD
 		//todo: implement @(disp, GBR) src
 >>>>>>> removed unnecessary variables and functions. Changed code for coding style rules. Added EXT.S instructions. head of file is still to be rewritten after I will finish tests.
+=======
+		//todo: implement @(disp,gbr) src
+>>>>>>> lots of bugs fixed during testing, not so much left
 	}
 
 	return op->size;
@@ -2035,9 +2131,14 @@ static int movl_pcdisp_reg(RAnal* anal, RAnalOp* op, ut16 code) {
 >>>>>>> fixed mov.l @(<disp>,PC), PC needed -2 offset, as program counter is already incremented
 =======
 	op->src[0] = anal_pcrel_disp_mov (anal, op, code & 0xFF, LONG_SIZE);
+	//TODO: check it
 	op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
+<<<<<<< HEAD
 	r_strbuf_setf (&op->esil, "0x%x,[4],r%d,=", (code & 0xFF)*4+op->addr+2, GET_TARGET_REG (code));
 >>>>>>> removed unnecessary variables and functions. Changed code for coding style rules. Added EXT.S instructions. head of file is still to be rewritten after I will finish tests.
+=======
+	r_strbuf_setf (&op->esil, "0x%x,[4],r%d,=", (code & 0xFF)*4+op->addr+4, GET_TARGET_REG (code));
+>>>>>>> lots of bugs fixed during testing, not so much left
 	return op->size;
 }
 
@@ -2048,6 +2149,7 @@ static int mov_imm_reg(RAnal* anal, RAnalOp* op, ut16 code) {
 	op->src[0] = anal_fill_im (anal, (st8)(code & 0xFF));
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	r_strbuf_setf (&op->esil, "0x%x,r%d,=,r%d,0x80,&,?{,0xFFFFFF00,r%d,|=,}", code & 0xFF, GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
 =======
 	int regn=GET_TARGET_REG(code);
@@ -2056,6 +2158,9 @@ static int mov_imm_reg(RAnal* anal, RAnalOp* op, ut16 code) {
 =======
 	r_strbuf_setf (&op->esil, "0x%x,r%d,=,r%d,0x8000,&,?{,0xFFFF0000,r%d,|=,}", code & 0xFF, GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
 >>>>>>> removed unnecessary variables and functions. Changed code for coding style rules. Added EXT.S instructions. head of file is still to be rewritten after I will finish tests.
+=======
+	r_strbuf_setf (&op->esil, "0x%x,r%d,=,r%d,0x80,&,?{,0xFFFFFF00,r%d,|=,}", code & 0xFF, GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
+>>>>>>> lots of bugs fixed during testing, not so much left
 	return op->size;
 }
 
