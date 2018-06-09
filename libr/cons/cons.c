@@ -44,21 +44,18 @@ static void cons_stack_free(void *ptr) {
 	free (s);
 }
 
-static RConsStack *cons_stack_dump() {
+static RConsStack *cons_stack_dump(bool recreate) {
 	RConsStack *data = R_NEW0 (RConsStack);
 	if (!data) {
 		return NULL;
 	}
+
 	if (I.buffer) {
-		data->buf = malloc (I.buffer_sz);
-		if (!data->buf) {
-			free (data);
-			return NULL;
-		}
-		memcpy (data->buf, I.buffer, I.buffer_sz);
+		data->buf = I.buffer;
 		data->buf_len = I.buffer_len;
 		data->buf_size = I.buffer_sz;
 	}
+
 	data->grep = R_NEW0 (RConsGrep);
 	if (data->grep) {
 		memcpy (data->grep, &I.grep, sizeof (RConsGrep));
@@ -66,17 +63,29 @@ static RConsStack *cons_stack_dump() {
 			data->grep->str = strdup (I.grep.str);
 		}
 	}
+
+	if (recreate) {
+		I.buffer = malloc (I.buffer_sz);
+		if (!I.buffer) {
+			I.buffer = data->buf;
+			free (data);
+			return NULL;
+		}
+	}
+
 	return data;
 }
 
-static void cons_stack_load(RConsStack *data) {
-	free (I.buffer);
-	I.buffer = data->buf ? malloc (data->buf_size) : NULL;
+static void cons_stack_load(RConsStack *data, bool free_current) {
+	if (free_current) {
+		free (I.buffer);
+	}
+
+	I.buffer = data->buf;
+	data->buf = NULL;
 	I.buffer_len = data->buf_len;
 	I.buffer_sz = data->buf_size;
-	if (I.buffer) {
-		memcpy (I.buffer, data->buf, data->buf_size);
-	}
+
 	if (data->grep) {
 		free (I.grep.str);
 		memcpy (&I.grep, data->grep, sizeof (RConsGrep));
@@ -493,6 +502,17 @@ R_API void r_cons_clear() {
 	I.lines = 0;
 }
 
+static void cons_grep_reset(RConsGrep *grep) {
+	grep->strings[0][0] = '\0';
+	grep->nstrings = 0; // XXX
+	grep->line = -1;
+	grep->sort = -1;
+	grep->sort_invert = false;
+	R_FREE (grep->str);
+	ZERO_FILL (grep->tokens);
+	grep->tokens_used = 0;
+}
+
 R_API void r_cons_reset() {
 	if (I.buffer) {
 		I.buffer[0] = '\0';
@@ -500,14 +520,7 @@ R_API void r_cons_reset() {
 	I.buffer_len = 0;
 	I.lines = 0;
 	I.lastline = I.buffer;
-	I.grep.strings[0][0] = '\0';
-	I.grep.nstrings = 0; // XXX
-	I.grep.line = -1;
-	I.grep.sort = -1;
-	I.grep.sort_invert = false;
-	R_FREE (I.grep.str);
-	ZERO_FILL (I.grep.tokens);
-	I.grep.tokens_used = 0;
+	cons_grep_reset (&I.grep);
 }
 
 R_API const char *r_cons_get_buffer() {
@@ -539,7 +552,7 @@ R_API void r_cons_push() {
 	if (!I.cons_stack) {
 		return;
 	}
-	RConsStack *data = cons_stack_dump ();
+	RConsStack *data = cons_stack_dump (true);
 	if (!data) {
 		return;
 	}
@@ -558,8 +571,59 @@ R_API void r_cons_pop() {
 	if (!data) {
 		return;
 	}
-	cons_stack_load (data);
+	cons_stack_load (data, true);
 	cons_stack_free ((void *)data);
+}
+
+R_API RStack *r_cons_dump_new(void) {
+	RStack *stack = r_stack_newf (6, cons_stack_free);
+	if (!stack) {
+		return NULL;
+	}
+
+	RConsStack *data = R_NEW0 (RConsStack);
+	if (!data) {
+		r_stack_free (stack);
+		return NULL;
+	}
+
+	data->grep = R_NEW0 (RConsGrep);
+	if (!data->grep) {
+		R_FREE (data);
+		r_stack_free (stack);
+		return NULL;
+	}
+	cons_grep_reset (data->grep);
+
+	r_stack_push (stack, data);
+
+	return stack;
+}
+
+R_API void r_cons_dump_free(RStack *stack) {
+	r_stack_free (stack);
+}
+
+/* pushes the current state to the cons stack and returns the stack */
+R_API RStack *r_cons_dump(void) {
+	RStack *stack = I.cons_stack;
+	if (!stack) {
+		return NULL;
+	}
+	RConsStack *cur = cons_stack_dump (false);
+	if (!cur) {
+		return NULL;
+	}
+	r_stack_push (stack, cur);
+	return stack;
+}
+
+/* pops the top item from the stack and loads it.
+ * The rest of the stack will be the current cons stack */
+R_API void r_cons_load(RStack *stack) {
+	RConsStack *cur = r_stack_pop (stack);
+	cons_stack_load (cur, false);
+	I.cons_stack = stack;
 }
 
 R_API void r_cons_flush() {
