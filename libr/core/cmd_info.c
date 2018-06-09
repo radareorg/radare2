@@ -45,7 +45,7 @@ static const char *help_msg_i[] = {
 	"is.", "", "Current symbol",
 	"iS ", "[entropy,sha1]", "Sections (choose which hash algorithm to use)",
 	"iS.", "", "Current section",
-	"iSS", "", "Segments",
+	"iSS", " [entropy,sha1]", "Segments",
 	"iV", "", "Display file version info",
 	"iz|izj", "", "Strings in data sections (in JSON/Base64)",
 	"izz", "", "Search for Strings in the whole binary",
