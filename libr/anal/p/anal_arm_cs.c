@@ -692,10 +692,9 @@ static int regsize64(cs_insn *insn, int n) {
 // return postfix
 const char* arm_prefix_cond(RAnalOp *op, int cond_type)
 {
-	const char *close_cond[3];
+	const char *close_cond[2];
 	close_cond[0] = "\0";
 	close_cond[1] = ",}\0";
-	close_cond[2] = ",},}\0";
 	int close_type = 0;
 	switch (cond_type) {
 	case ARM_CC_EQ:
@@ -731,30 +730,30 @@ const char* arm_prefix_cond(RAnalOp *op, int cond_type)
 		r_strbuf_setf (&op->esil, "vf,!,?{,");
 		break;
 	case ARM_CC_HI:
-		close_type = 2;
-		r_strbuf_setf (&op->esil, "cf,?{,zf,!,?{,");
+		close_type = 1;
+		r_strbuf_setf (&op->esil, "cf,zf,!,&,?{,");
 		break;
 	case ARM_CC_LS:
-		close_type = 2;
-		r_strbuf_setf (&op->esil, "cf,!,?{,zf,?{,");
+		close_type = 1;
+		r_strbuf_setf (&op->esil, "cf,!,zf,&,?{,");
 		break;
 	case ARM_CC_GE:
 		close_type = 1;
-		r_strbuf_setf (&op->esil, "nf,vf,==,?{,");
+		r_strbuf_setf (&op->esil, "nf,vf,^,!,?{,");
 		break;
 	case ARM_CC_LT:
 		close_type = 1;
-		r_strbuf_setf (&op->esil, "nf,vf,==,!,?{,");
+		r_strbuf_setf (&op->esil, "nf,vf,^,?{,");
 		break;
 	case ARM_CC_GT:
 		// zf == 0 && nf == vf
-		close_type = 2;
-		r_strbuf_setf (&op->esil, "zf,!,?{,nf,vf,==,?{,");
+		close_type = 1;
+		r_strbuf_setf (&op->esil, "zf,!,nf,vf,^,!,&,?{,");
 		break;
 	case ARM_CC_LE:
 		// zf == 1 && nf != vf
-		close_type = 2;
-		r_strbuf_setf (&op->esil, "zf,?{,nf,vf,==,!,?{,");
+		close_type = 1;
+		r_strbuf_setf (&op->esil, "zf,nf,vf,^,&,?{,");
 		break;
 	case ARM_CC_AL:
 		// always executed
@@ -1572,10 +1571,10 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		}
 		break;
 	case ARM_INS_CMP:
-		r_strbuf_appendf (&op->esil, "%s,%s,==,$z,zf,=", ARG(1), ARG(0));
+		r_strbuf_appendf (&op->esil, "%s,%s,^,!,zf,=", ARG(1), ARG(0));
 		break;
 	case ARM_INS_CMN:
-		r_strbuf_appendf (&op->esil, "%s,%s,!=,$z,zf,=", ARG(1), ARG(0));
+		r_strbuf_appendf (&op->esil, "%s,%s,^,!,!,zf,=", ARG(1), ARG(0));
 		break;
 	case ARM_INS_B:
 		r_strbuf_appendf (&op->esil, "%s,pc,=%s", ARG(0), postfix);
@@ -2180,7 +2179,13 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 	// Update flags if required...TODO different instructions update different flags, but this should fix
 	// many errors
 	if (insn->detail->arm.update_flags) {
-	        r_strbuf_appendf (&op->esil, ",$z,zf,=");
+		switch(insn->id) {
+		case ARM_INS_CMP:
+		case ARM_INS_CMN:
+			break;
+		default:
+		        r_strbuf_appendf (&op->esil, ",$z,zf,=");
+		}
 	}
 
 	return 0;
