@@ -10,7 +10,7 @@
 static ut64 r_num_tailff(RNum *num, const char *hex);
 
 R_API void r_num_irand() {
-  r_srand (r_sys_now());
+	r_srand (r_sys_now ());
 }
 
 static int rand_initialized = 0;
@@ -19,8 +19,10 @@ R_API int r_num_rand(int max) {
 		r_num_irand ();
 		rand_initialized = 1;
 	}
-	if (!max) max = 1;
-	return r_rand()%max;
+	if (!max) {
+		max = 1;
+	}
+	return r_rand ()%max;
 }
 
 R_API void r_num_minmax_swap(ut64 *a, ut64 *b) {

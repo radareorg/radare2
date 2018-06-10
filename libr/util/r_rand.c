@@ -2,19 +2,19 @@
 
 #include <r_util.h>
 
-R_API void r_srand (int seed) {
-#if !HAVE_ARC4RANDOM
-  srand (seed);
+void r_srand (int seed) {
+#if !HAVE_ARC4RANDOM_UNIFORM
+	srand (seed);
 #else
-// no-op
-  (void)seed;
+	// no-op
+	(void)seed;
 #endif
 }
 
-R_API int r_rand (void) {
-#if !HAVE_ARC4RANDOM
-  return rand();
+int r_rand (void) {
+#if !HAVE_ARC4RANDOM_UNIFORM
+	return rand ();
 #else
-  return (int)arc4random();
+	return (int)arc4random ();
 #endif
 }
