@@ -233,6 +233,12 @@ r_userconf_h = configure_file(
   install_dir: join_paths(get_option('includedir'), 'libr')
 )
 
+if cc.has_function('arc4random_uniform')
+  userconf.set('HAVE_ARC4RANDOM_UNIFORM', 1)
+else
+  userconf.set('HAVE_ARC4RANDOM_UNIFORM', 0)
+endif
+
 versionconf = configuration_data()
 versionconf.set('VERSIONCOMMIT', version_commit)
 versionconf.set('R2_VERSION', r2_version)
