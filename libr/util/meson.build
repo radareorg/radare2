@@ -69,6 +69,7 @@ files = [
   'tree.c',
   'trie.c',
   'r_json.c',
+  'r_rand.c',
   'ubase64.c',
   'uleb128.c',
   'unum.c',
