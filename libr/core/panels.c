@@ -1034,9 +1034,7 @@ R_API void r_panels_free(RPanels *panels) {
 		}
 		free (panels->panel);
 		if (panels->can) {
-			free (panels->can->b);
-			free (panels->can->attrs);
-			free (panels->can);
+			r_cons_canvas_free (panels->can);
 		}
 		free (panels);
 	}
