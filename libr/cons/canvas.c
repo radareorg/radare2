@@ -13,7 +13,6 @@ R_API void r_cons_canvas_free(RConsCanvas *c) {
 		if (c->b) {
 			int y;
 			for (y = 0; y < c->h; y++) {
-				eprintf ("Freeing %d (%d)\n", y, c->bsize[y]);
 				free (c->b[y]);
 			}
 			free (c->b);
@@ -35,7 +34,6 @@ R_API void r_cons_canvas_clear(RConsCanvas *c) {
 		/*//XXX tofix*/
 		if (c->attrs) {
 			c->attrslen = 0;
-			eprintf ("clear %d\n", sizeof (*c->attrs) * (c->w + 1) * c->h);
 			memset (c->attrs, 0, sizeof (*c->attrs) * (c->w + 1) * c->h);
 		}
 	}
@@ -57,42 +55,6 @@ static int _get_piece(const char *p, char *chr) {
 		*chr = *p;
 	}
 	return p - q;
-}
-
-static char * _prefixline(RConsCanvas *c, int *left) {
-
-	if (!c) {
-		return NULL;
-	}
-	if (left) {
-		*left =  c->blen[c->y] - c->x;
-	}
-
-	return c->b[c->y] + c->x; //XXX check this
-
-	//XXX probably wrong, check below
-
-	/*if (!c) {*/
-		/*return NULL;*/
-	/*}*/
-	/*int x, len;*/
-	/*char *p;*/
-	/*int b_len = c->w * c->h;*/
-	/*int yxw = c->y * c->w;*/
-	/*if (b_len < yxw) {*/
-		/*return NULL;*/
-	/*}*/
-	/*p = c->b + yxw;*/
-	/*len = b_len - yxw - 1;*/
-	/*for (x = 0; (p[x] && x < c->x) && x < len; x++) {*/
-		/*if (p[x] == '\n') {*/
-			/*p[x] = ' ';*/
-		/*}*/
-	/*}*/
-	/*if (left) {*/
-		/**left = c->w - c->x;*/
-	/*}*/
-	/*return p + x;*/
 }
 
 //XXX todo
@@ -147,16 +109,8 @@ static void sort_attrs(RConsCanvas *c) {
 
 //XXX todo
 static void stamp_attr(RConsCanvas *c, int loc, int length) {
-	/*eprintf ("putting attr at %d, x:%d\n", loc, loc % c->w);*/
-	if (loc % c->w == 3) {
-		/*loc -=2;*/
-	}
 	int i;
 	const char **s;
-	/*int loc = c->x;*/
-	/*for (int i = 0; i < c->y; i++) {*/
-		/*loc += c->w;*/
-	/*}*/
 	s = attr_at (c, loc);
 
 	if (s) {
@@ -244,7 +198,6 @@ R_API bool r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
 	if (y < c->h && y >= 0) {
 		c->y = y;
 	}
-	/*eprintf ("Went to pos (%d, %d)\n", c->x, c->y);*/
 	return ret;
 }
 
@@ -301,7 +254,6 @@ R_API RConsCanvas *r_cons_canvas_new(int w, int h) {
 	c->x = c->y = 0;
 	c->attrslen = 0;
 	c->attrs = calloc (sizeof (*c->attrs), (c->w + 1) * c->h + 1);
-	eprintf ("start, %d\n", sizeof (*c->attrs) * (c->w + 1) * c->h + 1);
 	if (!c->attrs) {
 		free (c->b);
 		free (c);
@@ -351,7 +303,6 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 	char *p, ch;
 	int x, y;
 	int left, slen, attr_len, piece_len;
-	/*eprintf ("I'm writing: (%d %d) %s \n",c->x, c->y, s) ;*/
 
 	if (!c || !s || !*s) {
 		return;
@@ -359,11 +310,10 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 
 	int x_padding = utf8len_fixed (c->b[c->y], c->x);
 	int real_x = c->x + (c->x - x_padding);
-
+	int orig_x = c->x;
 	int attr_x = utf8len(c->b[c->y], c->x);
 
-	x = real_x - c->sx;
-	y = c->y - c->sy;
+	c->x = real_x;
 
 	/* split the string into pieces of non-ANSI chars and print them normally,
 	** using the ANSI chars to set the attr of the canvas */
@@ -375,63 +325,70 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 		if (piece_len == 0 && ch == '\0' && s_part == s) {
 			break;
 		}
-		left =  c->blen[y] - x;
+		left =  c->blen[c->y] - c->x;
 		slen = R_MIN (left, piece_len);
 		attr_len = slen <= 0 && s_part != s? 1: slen;
 		if (attr_len > 0) {
-			stamp_attr (c, y*c->w + attr_x, attr_len);
+			stamp_attr (c, c->y*c->w + attr_x, attr_len);
 		}
 
 		int real_len = r_str_nlen (s_part, slen);
 		int utf8_len = utf8len_fixed (s_part, slen); //XXX error here, utf8len doesn't take slen
 		int padding = real_len - utf8_len;
 
-		int occ_utf8_len = utf8len_bytes (c->b[y] + x, utf8_len);
-		int goback = (slen - occ_utf8_len);
+		int occ_utf8_len = utf8len_bytes (c->b[c->y] + c->x, utf8_len);
+		int goback = (occ_utf8_len - real_len);
 
 		attr_x += utf8_len;
 
-		if (goback > 0)
-			eprintf ("goback %d (%d, %d)\n", goback, slen, occ_utf8_len);
-
 		if (padding > 0) {
-			if (c->blen[y] + padding > c->bsize[y]) {
-				int newsize = R_MAX (c->bsize[y] * 1.5, c->blen[y] + padding);
-				char * newline = realloc (c->b[y], sizeof (*c->b[y])*(newsize)); //XXX should optimize by doubling
+			if (c->blen[c->y] + padding > c->bsize[c->y]) {
+				int newsize = R_MAX (c->bsize[c->y] * 1.5, c->blen[c->y] + padding);
+				char * newline = realloc (c->b[c->y], sizeof (*c->b[c->y])*(newsize)); //XXX should optimize by doubling
 				if (!newline) {
 					r_cons_canvas_free (c);
 					return;
 				}
-				memset (newline + c->bsize[y], 0, newsize - c->blen[y]);
-				c->b[y] = newline;
-				c->bsize[y] = newsize;
+				memset (newline + c->bsize[c->y], 0, newsize - c->blen[c->y]);
+				c->b[c->y] = newline;
+				c->bsize[c->y] = newsize;
 			}
-			char copy[1000];
-			memcpy(copy, c->b[y] + x, c->blen[y] - x);
-			memcpy(c->b[y] + x + padding, copy, c->blen[y] - x);
-			c->blen[y] += padding;
+			char copy[512];
+			memcpy(copy, c->b[c->y] + c->x, c->blen[c->y] - c->x);
+			memcpy(c->b[c->y] + c->x + padding, copy, c->blen[c->y] - c->x);
+			c->blen[c->y] += padding;
 		}
 
-		if (G (c->x, c->y)) {
-			memcpy (c->b[y] + x, s_part, slen);
+		if (goback > 0) {
+			int p = R_MAX (0, padding);
+			char copy[512];
+			memcpy(copy, c->b[c->y] + c->x + slen, c->blen[c->y] - c->x - slen);
+			memcpy(c->b[c->y] + c->x + slen + p - goback,  copy, c->blen[c->y] - c->x - slen);
+			c->blen[c->y] += p - goback;
 		}
+
+		if (G (c->x - c->sx, c->y - c->sy)) {
+			memcpy (c->b[c->y] + c->x, s_part, slen);
+		}
+
 		s = s_part;
 		if (ch == '\n') {
-			y++;
+			c->y++;
 			s++;
-			if (*s == '\0' || y == c->h) {
+			if (*s == '\0' || c->y  >= c->h) {
 				break;
 			}
-			x_padding = utf8len (c->b[y], c->x);
-			real_x = c->x + (c->x - x_padding);
-			x = real_x;
+			x_padding = utf8len (c->b[c->y], orig_x);
+			real_x = orig_x + (orig_x - x_padding);
+			c->x = real_x;
 			attr_x = x_padding;
 		} else {
-			x += slen;
+			c->x += slen;
 		}
 		s += piece_len;
 	} while (*s && !r_cons_is_breaked ());
 	r_cons_break_pop ();
+	c->x = orig_x;
 }
 
 R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
@@ -486,12 +443,6 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 		}
 	}
 	o[olen] = '\0';
-	/*int i = 0;*/
-	/*eprintf ("Yo olen%d beach this written: %s\n", olen, o);*/
-	/*for  (i = 0; i < olen; i++) {*/
-		/*if (o[i] == '\0') eprintf("A");*/
-		/*else if (o[i] != '\n') eprintf ("%c", o[i]);*/
-	/*}*/
 	return o;
 }
 
