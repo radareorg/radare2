@@ -25,7 +25,7 @@ static const char *help_msg_t[] = {
 	"to", " -", "Open cfg.editor to load types",
 	"to", " <path>", "Load types from C header file",
 	"tos", " <path>", "Load types from parsed Sdb database",
-	"tp", "  <type> [addr]", "cast data at <address> to <type> and print it",
+	"tp", "  <type> [addr|varname]", "cast data at <address> to <type> and print it",
 	"tpx", " <type> <hexpairs>", "Show value for type with specified byte sequence",
 	"ts", "[?]", "print loaded struct types",
 	"tu", "[?]", "print loaded union types",
@@ -985,7 +985,13 @@ static int cmd_type(void *data, const char *input) {
 				r_core_cmdf (core, "pf %s @x: %s", fmt, arg);
 			} else {
 				ut64 addr = arg ? r_num_math (core->num, arg): core->offset;
-				r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x "\n", fmt, addr);
+				if (!addr && arg) {
+					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
+					addr = r_anal_var_addr (core->anal, fcn, arg);
+				}
+				if (addr != UT64_MAX) {
+					r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x "\n", fmt, addr);
+				}
 			}
 			free (fmt);
 		} else {
