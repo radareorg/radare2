@@ -1100,6 +1100,27 @@ static int autocomplete(RLine *line) {
 			r_list_free (themes);
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
+		} else if (!strncmp (line->buffer.data, "t ", 2)
+		|| !strncmp (line->buffer.data, "t- ", 3)) {
+			int i = 0;
+			SdbList *l = sdb_foreach_list (core->anal->sdb_types, true);
+			SdbListIter *iter;
+			SdbKv *kv;
+			int chr = (line->buffer.data[1] == ' ')? 2: 3;
+			ls_foreach (l, iter, kv) {
+				int len = strlen (line->buffer.data + chr);
+				if (!len || !strncmp (line->buffer.data + chr, kv->key, len)) {
+					if (!strcmp (kv->value, "type") || !strcmp (kv->value, "enum")
+					|| !strcmp (kv->value, "struct")) {
+						tmp_argv[i++] = strdup (kv->key);
+					}
+				}
+			}
+			if (i > 0) tmp_argv_heap = true;
+			tmp_argv[i] = NULL;
+			ls_free (l);
+			line->completion.argc = i;
+			line->completion.argv = tmp_argv;
 		} else if ((!strncmp (line->buffer.data, "te ", 3))) {
 			int i = 0;
 			SdbList *l = sdb_foreach_list (core->anal->sdb_types, true);
@@ -1120,7 +1141,10 @@ static int autocomplete(RLine *line) {
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
 		} else if (!strncmp (line->buffer.data, "ts ", 3)
+		|| !strncmp (line->buffer.data, "ta ", 3)
+		|| !strncmp (line->buffer.data, "tp ", 3)
 		|| !strncmp (line->buffer.data, "tl ", 3)
+		|| !strncmp (line->buffer.data, "tpx ", 4)
 		|| !strncmp (line->buffer.data, "tss ", 4)
 		|| !strncmp (line->buffer.data, "ts* ", 4)) {
 			int i = 0;
