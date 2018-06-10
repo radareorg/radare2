@@ -105,10 +105,9 @@ static const char **menus_sub[] = {
 	NULL
 };
 
-static void layoutRun(RPanels *panels);
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color);
 static void addPanelFrame(RCore* core, RPanels* panels, const char *title, const char *cmd);
-static void checkStackbase(RCore *core);
+static void clearMainPanel(RPanels *panels);
 static void cursorLeft(RCore *core);
 static void cursorRight(RCore *core);
 static void delCurPanel(RPanels *panels);
@@ -127,10 +126,16 @@ static void panelContinue(RCore *core);
 static void panelPrompt(const char *prompt, char *buf, int len);
 static void panelSingleStepIn(RCore *core);
 static void panelSingleStepOver(RCore *core);
-static void panelsRefresh(RCore *core);
 static void setRefreshAll(RPanels *panels);
 static void setCursor(RCore *core, bool cur);
 static void zoom(RPanels *panels);
+
+static void clearMainPanel(RPanels *panels) {
+	r_core_turnoff_refresh_mainpanel (panels);
+	r_cons_canvas_fill (panels->can, panels->panel[1].x, panels->panel[1].y, panels->panel[1].w, panels->panel[1].h, ' ', 0);
+	r_cons_canvas_print (panels->can);
+	r_cons_flush ();
+}
 
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) {
 	if (!can || !panel|| !panel->refresh) {
@@ -220,7 +225,7 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 	}
 }
 
-static void layoutRun(RPanels *panels) {
+R_API void r_core_panels_layout(RPanels *panels) {
 	int h, w = r_cons_get_size (&h);
 	int i, j;
 	int colpos = w - panels->columnWidth;
@@ -310,6 +315,26 @@ static void layoutRun(RPanels *panels) {
 			}
 			j++;
 		}
+	}
+}
+
+R_API void r_core_panels_layout_refresh(RCore *core) {
+	r_core_check_stackbase (core);
+	r_core_panels_layout (core->panels);
+	r_core_panels_refresh (core);
+}
+
+R_API bool r_core_panels_graph(RCore *core) {
+	if (core->panels && core->panels->isGraphInPanels) {
+		return true;
+	}
+	return false;
+}
+
+R_API void r_core_turnoff_refresh_mainpanel(RPanels *panels) {
+	int i;
+	for (i = 0; i < panels->n_panels; i++) {
+		panels->panel[i].refresh = i == 1 ? false : true;
 	}
 }
 
@@ -587,7 +612,7 @@ static bool initPanels(RCore *core, RPanels *panels) {
 // into a struct makes the code to reference pointers unnecesarily
 // we can look for a non-global solution here in the future if
 // necessary
-static void panelsRefresh(RCore *core) {
+R_API void r_core_panels_refresh(RCore *core) {
 	RPanels *panels = core->panels;
 	RPanel *panel = panels->panel;
 	RConsCanvas *can = panels->can;
@@ -644,10 +669,10 @@ static void panelsRefresh(RCore *core) {
 			}
 		}
 	}
-	if (panel && panels->n_panels > 1) {
-		// always refresh first panel or can be trashed
-		panel[1].refresh = true;
-	}
+	//if (panel && panels->n_panels > 1) {
+	//	// always refresh first panel or can be trashed
+	//	panel[1].refresh = true;
+	//}
 	if (menu_y) {
 		panels->curnode = menu_pos;
 	}
@@ -686,15 +711,14 @@ static void panelsRefresh(RCore *core) {
 		"[0x%08"PFMT64x "]", core->offset);
 	(void) r_cons_canvas_gotoxy (can, -can->sx + w - strlen (title), -can->sy);
 	r_cons_canvas_write (can, title);
-
 	r_cons_canvas_print (can);
 	r_cons_flush ();
 }
 
 static void doPanelsRefresh(RCore *core) {
 	core->panels->isResizing = true;
-	layoutRun (core->panels);
-	panelsRefresh (core);
+	r_core_panels_layout (core->panels);
+	r_core_panels_refresh (core);
 }
 
 static int havePanel(RPanels *panels, const char *s) {
@@ -748,7 +772,7 @@ static void panelContinue(RCore *core) {
 	r_core_cmd (core, "dc", 0);
 }
 
-static void checkStackbase(RCore *core) {
+R_API void r_core_check_stackbase(RCore *core) {
 	if (!core || !core->panels) {
 		return;
 	}
@@ -782,6 +806,7 @@ static bool init (RCore *core, RPanels *panels, int w, int h) {
 	panels->menu_y = 0;
 	panels->callgraph = 0;
 	panels->isResizing = false;
+	panels->isGraphInPanels = false;
 	panels->can = r_cons_canvas_new (w, h);
 	r_cons_canvas_fill (panels->can, 0, 0, w, h, ' ', 0);
 	if (!panels->can) {
@@ -970,7 +995,7 @@ static bool handleEnterKey(RCore *core) {
 		} else if (strstr (action, "FcnInfo")) {
 			addPanelFrame (core, panels, PANEL_TITLE_FCNINFO, "afi");
 		} else if (strstr (action, "Graph")) {
-			r_core_visual_graph (core, NULL, NULL, true, NULL);
+			r_core_visual_graph (core, NULL, NULL, true);
 			// addPanelFrame ("Graph", "agf");
 		} else if (strstr (action, "System Shell")) {
 			r_cons_set_raw (0);
@@ -1006,7 +1031,7 @@ static bool handleEnterKey(RCore *core) {
 	return true;
 }
 
-R_API RPanels *r_panels_new(RCore *core) {
+R_API RPanels *r_core_panels_new(RCore *core) {
 	int w, h;
 	RPanels *panels = R_NEW0 (RPanels);
 
@@ -1021,7 +1046,7 @@ R_API RPanels *r_panels_new(RCore *core) {
 	return panels;
 }
 
-R_API void r_panels_free(RPanels *panels) {
+R_API void r_core_panels_free(RPanels *panels) {
 	int i;
 	r_cons_switchbuf (true);
 	if (panels) {
@@ -1046,15 +1071,15 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 	int have_utf8 = 0;
 
 	if (!panels) {
-		panels = r_panels_new (core);
+		panels = r_core_panels_new (core);
 		if (!panels) {
-			r_panels_free (panels);
+			r_core_panels_free (panels);
 			return false;
 		}
 	}
 
 	if (!initPanels (core, panels)) {
-		r_panels_free (panels);
+		r_core_panels_free (panels);
 		return false;
 	}
 
@@ -1075,9 +1100,7 @@ repeat:
 	core->panels = panels;
 	core->cons->event_data = core;
 	core->cons->event_resize = (RConsEvent) doPanelsRefresh;
-	checkStackbase (core);
-	layoutRun (panels);
-	panelsRefresh (core);
+	r_core_panels_layout_refresh (core);
 	wheel = r_config_get_i (core->config, "scr.wheel");
 	if (wheel) {
 		r_cons_enable_mouse (true);
@@ -1286,7 +1309,7 @@ repeat:
 		panels->curnode = 0;
 		if (panels->menu_x < 0) {
 			panels->menu_x = 0;
-			panelsRefresh (core);
+			r_core_panels_refresh (core);
 		}
 		panels->menu_y = 1;
 		break;
@@ -1324,7 +1347,9 @@ repeat:
 				break;
 			}
 			ocolor = r_config_get_i (core->config, "scr.color");
-			r_core_visual_graph (core, NULL, NULL, true, NULL);
+			clearMainPanel (panels);
+			panels->isGraphInPanels = true;
+			r_core_visual_graph (core, NULL, NULL, true);
 			r_config_set_i (core->config, "scr.color", ocolor);
 			setRefreshAll (panels);
 		}
@@ -1453,7 +1478,7 @@ exit:
 	core->print->cur_enabled = false;
 	core->print->col = 0;
 
-	r_panels_free (panels);
+	r_core_panels_free (panels);
 	core->panels = NULL;
 	return true;
 }

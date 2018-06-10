@@ -3140,6 +3140,9 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 			w - title_len, 1, ' ', true);
 	}
 
+	if (r_core_panels_graph (core)) {
+		r_cons_canvas_fill (g->can, -g->can->sx + core->panels->panel[1].w, -g->can->sy, w - core->panels->panel[1].w, core->panels->panel[1].h, ' ', 0);
+	}
 	r_cons_canvas_print_region (g->can);
 	if (is_interactive) {
 		r_cons_newline ();
@@ -3647,7 +3650,7 @@ static void rotateColor(RCore *core) {
 	r_config_set_i (core->config, "scr.color", color);
 }
 
-R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int is_interactive, RConsCanvas *c) {
+R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int is_interactive) {
 	int o_asmqjmps_letter = core->is_asmqjmps_letter;
 	int o_scrinteractive = r_config_get_i (core->config, "scr.interactive");
 	int o_vmode = core->vmode;
@@ -3668,9 +3671,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 
 	int h, w = r_cons_get_size (&h);
 
-	if (c) {
+	if (core->panels && core->panels->isGraphInPanels) {
 		canvas_allocated = false;
-		can = c;
+		can = core->panels->can;
 	} else {
 		can = r_cons_canvas_new (w, h);
 	}
@@ -3740,6 +3743,15 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	grd->follow_offset = _fcn ? false : true;
 	grd->fcn = fcn != NULL? &fcn: NULL;
 	ret = agraph_refresh (grd);
+
+	if (r_core_panels_graph (core)) {
+		int origx = g->can->sx, origy = g->can->sy;
+		r_core_turnoff_refresh_mainpanel (core->panels);
+		r_core_panels_layout_refresh (core);
+		g->can->sx = origx;
+		g->can->sy = origy;
+	}
+
 	if (!ret || is_interactive != 1) {
 		r_cons_newline ();
 		exit_graph = true;
@@ -3754,6 +3766,17 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		w = r_cons_get_size (&h);
 		invscroll = r_config_get_i (core->config, "graph.invscroll");
 		ret = agraph_refresh (grd);
+
+		if (r_core_panels_graph (core)) {
+			int title_len = strlen (g->title);
+			int origx = g->can->sx, origy = g->can->sy;
+			r_core_turnoff_refresh_mainpanel (core->panels);
+			r_cons_canvas_fill (g->can, -g->can->sx, -g->can->sy, w, 1, ' ', true);
+			r_core_panels_layout_refresh (core);
+			g->can->sx = origx;
+			g->can->sy = origy;
+		}
+
 		if (!ret) {
 			is_error = true;
 			break;

@@ -5747,7 +5747,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 		core->graph->is_tiny = true;
 		int e = r_config_get_i (core->config, "graph.edges");
 		r_config_set_i (core->config, "graph.edges", 0);
-		r_core_visual_graph (core, core->graph, NULL, false, NULL);
+		r_core_visual_graph (core, core->graph, NULL, false);
 		r_config_set_i (core->config, "graph.edges", e);
 		core->graph->is_tiny = false;
 		break;
@@ -5772,7 +5772,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 			core->graph->layout = r_config_get_i (core->config, "graph.layout");
 			int ov = r_config_get_i (core->config, "scr.interactive");
 			core->graph->need_update_dim = true;
-			r_core_visual_graph (core, core->graph, NULL, true, NULL);
+			r_core_visual_graph (core, core->graph, NULL, true);
 			r_config_set_i (core->config, "scr.interactive", ov);
 			r_cons_show_cursor (true);
 			r_cons_enable_mouse (false);
@@ -5827,12 +5827,12 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	case 'f': // "agf"
 		switch (input[1]) {
 		case 0: // "agf"
-			r_core_visual_graph (core, NULL, NULL, false, NULL);
+			r_core_visual_graph (core, NULL, NULL, false);
 			break;
 		case ' ':{ // "agf "
 			ut64 off_fcn = (*(input + 2)) ? r_num_math (core->num, input + 2) : core->offset;
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off_fcn, 0);
-			r_core_visual_graph (core, NULL, fcn, false, NULL);
+			r_core_visual_graph (core, NULL, fcn, false);
 			break;
 			}
 		case 'v': // "agfv"
@@ -5840,7 +5840,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			ut64 off_fcn = (*(input + 2)) ? r_num_math (core->num, input + 2) : core->offset;
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off_fcn, 0);
 			if (fcn) {
-				r_core_visual_graph (core, NULL, fcn, 1, NULL);
+				r_core_visual_graph (core, NULL, fcn, 1);
 			}
 			r_cons_enable_mouse (false);
 			r_cons_show_cursor (true);
@@ -5850,7 +5850,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			r_config_set_i (core->config, "graph.edges", 0);
 			ut64 off_fcn = (*(input + 2)) ? r_num_math (core->num, input + 2) : core->offset;
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off_fcn, 0);
-			r_core_visual_graph (core, NULL, fcn, 2, NULL);
+			r_core_visual_graph (core, NULL, fcn, 2);
 			r_config_set_i (core->config, "graph.edges", e);
 			break;
 			}
