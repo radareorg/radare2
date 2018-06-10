@@ -71,22 +71,15 @@ static char *colorize_asm_string(RCore *core, const char *buf_asm, int optype) {
 	// workaround dummy colorizer in case of paired commands (tms320 & friends)
 	spacer = strstr (source, "||");
 	if (spacer) {
-		char *scol1, *s1 = r_str_ndup (source, spacer - source);
-		char *scol2, *s2 = strdup (spacer + 2);
-		scol1 = r_print_colorize_opcode (core->print, s1, color_reg, color_num, false);
-		free (s1);
-		scol2 = r_print_colorize_opcode (core->print, s2, color_reg, color_num, false);
-		free (s2);
-		if (!scol1) {
-			scol1 = strdup ("");
-		}
-		if (!scol2) {
-			scol2 = strdup ("");
-		}
-		source = r_str_newf ("%s||%s", scol1, scol2); // reuse source variable
-		sprintf (source, "%s||%s", scol1, scol2);
+		char *s1 = r_str_ndup (source, spacer - source);
+		char *s2 = strdup (spacer + 2);
+		char *scol1 = r_print_colorize_opcode (core->print, s1, color_reg, color_num, false);
+		char *scol2 = r_print_colorize_opcode (core->print, s2, color_reg, color_num, false);
+		char *source = r_str_newf ("%s||%s", r_str_get2 (scol1), r_str_get2 (scol2));
 		free (scol1);
 		free (scol2);
+		free (s1);
+		free (s2);
 		return source;
 	}
 	char *res = strdup ("");
