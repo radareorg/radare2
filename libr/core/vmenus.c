@@ -83,7 +83,7 @@ static char *colorize_asm_string(RCore *core, const char *buf_asm, int optype) {
 		if (!scol2) {
 			scol2 = strdup ("");
 		}
-		source = malloc (strlen (scol1) + strlen (scol2) + 2 + 1); // reuse source variable
+		source = r_str_newf ("%s||%s", scol1, scol2); // reuse source variable
 		sprintf (source, "%s||%s", scol1, scol2);
 		free (scol1);
 		free (scol2);
@@ -1702,7 +1702,7 @@ R_API void r_core_visual_config(RCore *core) {
 				if (show) {
 					if (option == i) hit = 1;
 					if ( (i >=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
-						r_cons_printf (" %c  %s\n", (option==i)?'>':' ', old);
+						r_cons_printf (" %c  %s\n", (option == i)?'>':' ', old);
 						j++;
 					}
 					i++;
@@ -3137,11 +3137,14 @@ repeat:
         {
 		RAnalOp op;
 		ut64 N;
+		char *endptr;
 		char *end_off = r_cons_input ("Last hexadecimal digits of instruction: ");
-		int ret = sscanf (end_off,"%lx\n", &N);
-		if (!ret) {
+		if (end_off) {
+			N = strtoull(end_off, &endptr, 16);
+		}
+		if (!end_off || end_off == endptr) {
 			eprintf ("Invalid numeric input\n");
-			r_sys_sleep (1);
+			r_cons_anykey();
 			break;
 		}
 		free (end_off);
@@ -3176,12 +3179,6 @@ repeat:
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 			if (fcn) {
 				RAnalVar *bar = r_anal_var_get_byname (core->anal, fcn, op.var->name);
-				if (!bar) {
-					bar = r_anal_var_get_byname (core->anal, fcn, op.var->name);
-					if (!bar) {
-						bar = r_anal_var_get_byname (core->anal, fcn, op.var->name);
-					}
-				}
 				if (bar) {
 					char *newname = r_cons_input (sdb_fmt ("New variable name for '%s': ", bar->name));
 					if (newname) {
@@ -3193,16 +3190,16 @@ repeat:
 					}
 				} else {
 					eprintf ("Cannot find variable\n");
-					r_sys_sleep (1);
+					r_cons_anykey();
 				}
 			} else {
 				eprintf ("Cannot find function\n");
-				r_sys_sleep (1);
+				r_cons_anykey();
 			}
-                } else {
-                        eprintf ("Cannot find instruction with a variable\n");
-                        r_sys_sleep (1);
-                }
+		} else {
+			eprintf ("Cannot find instruction with a variable\n");
+			r_cons_anykey();
+		}
 
 		r_anal_op_fini (&op);
 		break;
