@@ -3142,7 +3142,7 @@ repeat:
 		}
 		if (!end_off || end_off == endptr) {
 			eprintf ("Invalid numeric input\n");
-			r_cons_anykey();
+			r_cons_any_key (NULL);
 			break;
 		}
 		free (end_off);
@@ -3188,15 +3188,15 @@ repeat:
 					}
 				} else {
 					eprintf ("Cannot find variable\n");
-					r_cons_anykey();
+					r_cons_any_key (NULL);
 				}
 			} else {
 				eprintf ("Cannot find function\n");
-				r_cons_anykey();
+				r_cons_any_key (NULL);
 			}
 		} else {
 			eprintf ("Cannot find instruction with a variable\n");
-			r_cons_anykey();
+			r_cons_any_key (NULL);
 		}
 
 		r_anal_op_fini (&op);
