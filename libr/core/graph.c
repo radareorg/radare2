@@ -100,7 +100,7 @@ struct agraph_refresh_data {
 
 #define G(x, y) r_cons_canvas_gotoxy (g->can, x, y)
 #define W(x) r_cons_canvas_write (g->can, x)
-#define F(x, y, x2, y2, c) r_cons_canvas_fill (g->can, x, y, x2, y2, c, 0)
+#define F(x, y, x2, y2, c) r_cons_canvas_fill (g->can, x, y, x2, y2, c)
 
 static bool is_offset(const RAGraph *g) {
 	return g->mode == R_AGRAPH_MODE_OFFSET;
@@ -3111,7 +3111,7 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 		r_config_set_i (core->config, "asm.cmt.right", 0);
 		char *str = r_core_cmd_str (core, "pd $r");
 		//r_cons_canvas_fill (g->can, -g->can->sx + title_len, -g->can->sy,
-		//		w - title_len, 1, ' ', true);
+		//		w - title_len, 1, ' ');
 		W (str);
 		free (str);
 		r_config_set_i (core->config, "scr.utf8", scr_utf8);
@@ -3137,7 +3137,7 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 	if (is_interactive && g->title) {
 		int title_len = strlen (g->title);
 		r_cons_canvas_fill (g->can, -g->can->sx + title_len, -g->can->sy,
-			w - title_len, 1, ' ', true);
+			w - title_len, 1, ' ');
 	}
 
 	r_cons_canvas_print_region (g->can);
