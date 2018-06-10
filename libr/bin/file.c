@@ -83,10 +83,15 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 		free (buf);
 		return -1;
 	}
-	r_buf_read_at (bf->buf, from, buf, len);
+	int r = r_buf_read_at (bf->buf, from , buf, len);
+	if (r != len) {
+		// fatmach0 hack.. we need to get this 0x4000 from bf->loadaddr or bf->o->l.. but its 0
+		r = r_buf_read_at (bf->buf, from - 0x4000, buf, len);
+	}
 	// may oobread
 	while (needle < to) {
 		rc = r_utf8_decode (buf + needle - from, to - needle, NULL);
+// eprintf ("DECODE %x = %d\n", buf[needle-from], rc);
 		if (!rc) {
 			needle++;
 			continue;
@@ -168,7 +173,6 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 		}
 
 		tmp[i++] = '\0';
-
 		if (runes >= min) {
 			// reduce false positives
 			int j, num_blocks, *block_list;
@@ -975,7 +979,11 @@ R_API void r_bin_file_get_strings_range(RBinFile *bf, RList *list, int min, int 
 	if (!bf || !bf->buf) {
 		return;
 	}
-	if (!raw) {
+	if (from > to) {
+		eprintf ("WARNING: get_strings_range: from > to\n");
+		return;
+	}
+	if (!raw || !bf->rawstr) {
 		if (!plugin || !plugin->info) {
 			return;
 		}
@@ -990,16 +998,31 @@ R_API void r_bin_file_get_strings_range(RBinFile *bf, RList *list, int min, int 
 	if (min < 0) {
 		return;
 	}
+#if 0
 	if (!to || to > bf->buf->length) {
 		to = r_buf_size (bf->buf);
 	}
+#else
+#if 1
+	if (!to || (to - from) > bf->buf->length) {
+		// hack for the fatmach0 va/pa issue
+		ut64 ba = bf->buf->base;
+		ut64 bl = bf->buf->length;
+		to = from - ba + bl;
+	}
+#endif
+	if (to < from) {
+		eprintf ("WARNING: get_strings_range: to < from\n");
+		return;
+	}
+#endif
 	if (!to) {
 		return;
 	}
-	if (raw != 2) {
-		ut64 size = to - from;
+	if (bf->rawstr != 2) { // if (raw != 2) {
+		st64 size = to - from;
 		// in case of dump ignore here
-		if (bf->rbin->maxstrbuf && size && size > bf->rbin->maxstrbuf) {
+		if (size < 0 || (bf->rbin->maxstrbuf && size && size > bf->rbin->maxstrbuf)) {
 			if (bf->rbin->verbose) {
 				eprintf ("WARNING: bin_strings buffer is too big "
 					"(0x%08" PFMT64x
@@ -1014,8 +1037,13 @@ R_API void r_bin_file_get_strings_range(RBinFile *bf, RList *list, int min, int 
 	if (string_scan_range (list, bf, min, from, to, -1) < 0) {
 		return;
 	}
+	RBinSection *s = NULL;
 	r_list_foreach (list, it, ptr) {
-		RBinSection *s = r_bin_get_section_at (bf->o, ptr->paddr, false);
+		// RBinSection *s = r_bin_get_section_at (bf->o, ptr->paddr, false);
+		ut64 pa = ptr->paddr;
+		if (!s || pa < s->paddr || pa >= (s->paddr + s->size)) {
+			s = r_bin_get_section_at (bf->o, pa, false);
+		}
 		if (s) {
 			ptr->vaddr = s->vaddr + (ptr->paddr - s->paddr);
 		}

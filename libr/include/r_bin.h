@@ -269,8 +269,9 @@ typedef struct r_bin_file_t {
 	ut64 offset;
 	RBinObject *o;
 	void *xtr_obj;
-	ut64 loadaddr;
+	ut64 loadaddr; // already inside RBinObject. its a dupe!
 	/* values used when searching the strings */
+	// Those are RBinOptions
 	int minstrlen;
 	int maxstrlen;
 	int narch;

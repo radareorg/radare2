@@ -731,10 +731,8 @@ R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 	}
 	ut64 start = addr - b->base + b->offset;
 	ut64 effective_size = r_buf_size (b);
-	int real_len = len;
-	if (start + len > effective_size) {
-		real_len = effective_size - start;
-	}
+	int real_len = (start + len > effective_size)
+		? effective_size - start: len;
 	if (iob) {
 		if (b->fd != -1) {
 			return iob->fd_read_at (iob->io, b->fd, start, buf, real_len);
@@ -753,14 +751,14 @@ R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 		}
 		if (real_len != len) {
 			memset (buf, b->Oxff, len);
-			len = real_len;
-			if (len < 0) {
+			if (0 && len < 0) {
 				return 0;
 			}
 		}
 	}
 	// addr will be converted to pa inside r_buf_cpy
 	return r_buf_cpy (b, addr, buf, b->buf, len, false);
+// eprintf ("ER %llx  -- %02x %02x %02x %02x %02x === %d\n", addr, buf[0], buf[1], buf[2], buf[3], buf[4], (int)b->length);
 }
 
 R_API int r_buf_fread_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n) {

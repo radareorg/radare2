@@ -357,14 +357,16 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 	if (r_list_length (the_obj_list) == 1) {
 		RBinObject *old_o = (RBinObject *)r_list_get_n (the_obj_list, 0);
 		res = r_bin_load_io_at_offset_as (bin, fd, baseaddr,
-						old_o->loadaddr, 0, old_o->boffset, NULL);
+			old_o->loadaddr, 0, old_o->boffset, NULL);
 	} else {
 		RListIter *iter = NULL;
 		RBinObject *old_o;
+		int idx = 0;
 		r_list_foreach (the_obj_list, iter, old_o) {
 			// XXX - naive. do we need a way to prevent multiple "anys" from being opened?
 			res = r_bin_load_io_at_offset_as (bin, fd, baseaddr,
-				old_o->loadaddr, 0, old_o->boffset, old_o->plugin->name);
+				old_o->loadaddr, idx, old_o->boffset, old_o->plugin->name);
+			idx++;
 		}
 	}
 	bf->o = r_list_get_n (bf->objs, 0);
@@ -974,8 +976,9 @@ R_API int r_bin_is_stripped(RBin *bin) {
 
 R_API int r_bin_is_static(RBin *bin) {
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o && r_list_length (o->libs) > 0)
+	if (o && r_list_length (o->libs) > 0) {
 		return R_BIN_DBG_STATIC & o->info->dbg_info;
+	}
 	return true;
 }
 
