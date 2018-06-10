@@ -2338,7 +2338,7 @@ static ut8 *analBars(RCore *core, int type, int nblocks, int blocksize, int skip
 		}
 		ut64 off = from + (i + skipblocks) * blocksize;
 		for (j = 0; j < blocksize ; j++) {
-			RAnalOp *op = r_core_anal_op (core, off + j);
+			RAnalOp *op = r_core_anal_op (core, off + j, R_ANAL_OP_MASK_BASIC);
 			if (op) {
 				if (op->size < 1) {
 					// do nothing
@@ -3022,7 +3022,7 @@ static void disasm_until_ret(RCore *core, ut64 addr, char type_print) {
 	}
 	(void)r_io_read_at (core->io, addr, buf, core->blocksize);
 	while (p + 4 < core->blocksize) {
-		RAnalOp *op = r_core_anal_op (core, addr + p);
+		RAnalOp *op = r_core_anal_op (core, addr + p, R_ANAL_OP_MASK_BASIC);
 		if (op) {
 			r_cons_printf ("0x%08"PFMT64x"  %10s %s\n", addr + p, "", op->mnemonic);
 			if (op->type == R_ANAL_OP_TYPE_RET) {

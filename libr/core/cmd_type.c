@@ -356,7 +356,7 @@ static void typesList(RCore *core, int mode) {
 	}
 }
 
-static void set_offset_hint (RCore *core, RAnalOp op, const char *type, ut64 addr, int offimm) {
+static void set_offset_hint(RCore *core, RAnalOp op, const char *type, ut64 addr, int offimm) {
 	const char *res = r_type_get_struct_memb (core->anal->sdb_types, type, offimm);
 	const char *cmt = ((offimm == 0) && res)? res: type;
 	if (offimm > 0) {
@@ -368,7 +368,53 @@ static void set_offset_hint (RCore *core, RAnalOp op, const char *type, ut64 add
 	}
 }
 
-static void link_struct_offset (RCore *core, RAnalFunction *fcn) {
+static int get_stacksz (RCore *core, ut64 from, ut64 to, int minopcode) {
+	int ret = 0;
+	ut64 at = from;
+
+	if (from >= to) {
+		return 0;
+	}
+	while (at < to) {
+		RAnalOp *op = r_core_anal_op (core, at, R_ANAL_OP_MASK_BASIC);
+		if (!op || op->size <= 0) {
+			at += minopcode;
+			continue;
+		}
+		if ((op->stackop == R_ANAL_STACK_INC) && R_ABS (op->stackptr) < 8096) {
+			ret += op->stackptr;
+		}
+		at += op->size;
+		r_anal_op_fini (op);
+	}
+	return ret;
+}
+
+static void set_retval (RCore *core, ut64 at) {
+	RAnal *anal = core->anal;
+	RAnalHint *hint = r_anal_hint_get (anal, at);
+	RAnalFunction *fcn = r_anal_get_fcn_in (anal, at, 0);
+
+	if (!hint || !fcn || !fcn->name) {
+		goto beach;
+	}
+	if (hint->ret == UT64_MAX) {
+		goto beach;
+	}
+	const char *cc = r_anal_cc_func (core->anal, fcn->name);
+	const char *regname = r_anal_cc_ret (anal, cc);
+	if (regname) {
+		RRegItem *reg = r_reg_get (anal->reg, regname, -1);
+		if (reg) {
+			r_reg_set_value (anal->reg, reg, hint->ret);
+		}
+	}
+beach:
+	r_anal_hint_free (hint);
+	return;
+}
+
+static void link_struct_offset(RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *it;
 	RAnalOp aop = {0};
@@ -394,7 +440,6 @@ static void link_struct_offset (RCore *core, RAnalFunction *fcn) {
 	int i, ret, bsize = R_MAX (64, core->blocksize);
 	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
-	const int maxopcode = R_MAX (16, r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE));
 	ut8 *buf = malloc (bsize);
 	if (!buf) {
 		free (buf);
@@ -408,9 +453,10 @@ static void link_struct_offset (RCore *core, RAnalFunction *fcn) {
 		// reset stack pointer to intial value
 		RRegItem *sp = r_reg_get (esil->anal->reg, sp_name, -1);
 		ut64 curpc = r_reg_getv (esil->anal->reg, pc_name);
-		int delta = (curpc > fcn->addr)? curpc - fcn->addr: 0;
-		if (delta > maxopcode) {
-			r_reg_set_value (esil->anal->reg, sp, spval + fcn->maxstack);
+		int stacksz = get_stacksz (core, fcn->addr, curpc, minopcode);
+		if (stacksz > 0) {
+			r_reg_arena_zero (esil->anal->reg); // clear prev reg values
+			r_reg_set_value (esil->anal->reg, sp, spval + stacksz);
 		}
 	} else {
 		// intialize stack
@@ -449,6 +495,7 @@ static void link_struct_offset (RCore *core, RAnalFunction *fcn) {
 			at += ret;
 			if (r_anal_op_nonlinear (aop.type)) {
 				r_reg_set_value (esil->anal->reg, pc, at);
+				set_retval (core, at - ret);
 			} else {
 				r_core_esil_step (core, UT64_MAX, NULL, NULL);
 			}

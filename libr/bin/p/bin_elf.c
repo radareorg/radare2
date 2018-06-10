@@ -228,6 +228,7 @@ static RList* sections(RBinFile *bf) {
 			ptr->paddr = phdr[i].p_offset;
 			ptr->vaddr = phdr[i].p_vaddr;
 			ptr->srwx = phdr[i].p_flags;
+			ptr->is_segment = true;
 			switch (phdr[i].p_type) {
 			case PT_DYNAMIC:
 				strncpy (ptr->name, "DYNAMIC", R_BIN_SIZEOF_STRINGS);
@@ -304,6 +305,7 @@ static RList* sections(RBinFile *bf) {
 			ptr->add = true;
 		}
 		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE;
+		ptr->is_segment = true;
 		r_list_append (ret, ptr);
 	}
 	return ret;

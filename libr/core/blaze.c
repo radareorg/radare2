@@ -242,7 +242,7 @@ R_API bool core_anal_bbs(RCore *core, const char* input) {
 		if (block_score < invalid_instruction_barrier) {
 			break;
 		}
-		op = r_core_anal_op (core, start + cur);
+		op = r_core_anal_op (core, start + cur, R_ANAL_OP_MASK_BASIC);
 
 		if (!op || !op->mnemonic) {
 			block_score -= 10;
@@ -533,7 +533,7 @@ R_API bool core_anal_bbs_range (RCore *core, const char* input) {
 				}
 
 				if (!bFound) {
-					op = r_core_anal_op (core, b_start + cur);
+					op = r_core_anal_op (core, b_start + cur, R_ANAL_OP_MASK_BASIC);
 
 					if (!op || !op->mnemonic) {
 						block_score -= 10;

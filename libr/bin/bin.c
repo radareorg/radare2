@@ -411,40 +411,23 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 			}
 		}
 	}
-#if 0
-	if (!buf_bytes) {
-		if (sz < 1) {
-			eprintf ("Cannot allocate %d bytes\n", sz + 1);
-			return false;
-		}
-		buf_bytes = calloc (1, sz + 1);
-		if (!buf_bytes) {
-			eprintf ("Cannot allocate %d bytes.\n", sz + 1);
-			return false;
-		}
-		ut64 seekaddr = is_debugger? baseaddr: loadaddr;
-		if (!iob->fd_read_at (io, fd, seekaddr, buf_bytes, sz)) {
-			sz = 0LL;
-		}
-	}
-#else
 	// this thing works for 2GB ELF core from vbox
 	if (!buf_bytes) {
-		if (sz < 1) {
+		if (sz < 0) {
 			eprintf ("Cannot allocate %d bytes\n", (int)(sz));
 			return false;
 		}
-		buf_bytes = calloc (1, sz);
+		const int asz = sz? sz: 1;
+		buf_bytes = calloc (1, asz);
 		if (!buf_bytes) {
-			eprintf ("Cannot allocate %d bytes.\n", (int)(sz + 1));
+			eprintf ("Cannot allocate %d bytes.\n", asz);
 			return false;
 		}
 		ut64 seekaddr = is_debugger? baseaddr: loadaddr;
-		if (!iob->fd_read_at (io, fd, seekaddr, buf_bytes, sz)) {
+		if (!iob->fd_read_at (io, fd, seekaddr, buf_bytes, asz)) {
 			sz = 0LL;
 		}
 	}
-#endif
 	if (bin->use_xtr && !name && (st64)sz > 0) {
 		// XXX - for the time being this is fine, but we may want to
 		// change the name to something like

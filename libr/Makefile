@@ -46,6 +46,7 @@ MLFLAGS+=-install_name @rpath/libr2.dylib
 endif
 ifeq ($(OSTYPE),ios)
 MLFLAGS+=-install_name @rpath/libr2.dylib
+MLFLAGS+=-fembed-bitcode
 endif
 LDFLAGS+=${SSL_LDFLAGS}
 # XXX version-script only works with shlib as output

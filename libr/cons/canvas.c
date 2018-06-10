@@ -461,7 +461,7 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 	}
 }
 
-R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char ch, int replace) {
+R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char ch) {
 	int i;
 	if (w < 0) {
 		return;

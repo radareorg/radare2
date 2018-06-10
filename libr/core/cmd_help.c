@@ -82,7 +82,6 @@ static const char *help_msg_question[] = {
 	"?b64[-]", " [str]", "encode/decode in base64",
 	"?btw", " num|expr num|expr num|expr", "returns boolean value of a <= b <= c",
 	"?B", " [elem]", "show range boundaries like 'e?search.in",
-	"?d[*.]", " opcode", "describe opcode for asm.arch (?d* list them all)",
 	"?e[nbgc]", " string", "echo string (nonl, gotoxy, column, bars)",
 	"?f", " [num] [str]", "map each bit of the number as flag string index",
 	"?F", "", "flush cons output",
@@ -278,11 +277,6 @@ R_API void r_core_clippy(const char *msg) {
 	free (s);
 }
 
-static int listOpDescriptions(void *_core, const char *k, const char *v) {
-	r_cons_printf ("%s=%s\n", k, v);
-	return 1;
-}
-
 static int cmd_help(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	RIOMap *map;
@@ -362,26 +356,6 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_printf ("0x%"PFMT64x" 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
 		}
 		r_list_free (tmp);
-		break;
-	case 'd': // "?d"
-		if (input[1]=='*') {
-			// list sdb database
-			sdb_foreach (core->assembler->pair, listOpDescriptions, core);
-		} else if (input[1]=='.') {
-			int cur = R_MAX (core->print->cur, 0);
-			// XXX: we need cmd_xxx.h (cmd_anal.h)
-			core_anal_bytes (core, core->block + cur, core->blocksize, 1, 'd');
-		} else if (input[1] == ' ') {
-			char *d = r_asm_describe (core->assembler, input+2);
-			if (d && *d) {
-				r_cons_println (d);
-				free (d);
-			} else {
-				eprintf ("Unknown opcode\n");
-			}
-		} else {
-			eprintf ("Use: ?d[?.*] [opcode]    to get the description of the opcode\n");
-		}
 		break;
 	case 'h': // "?h"
 		if (input[1] == ' ') {
