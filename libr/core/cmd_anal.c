@@ -476,7 +476,8 @@ static const char *help_msg_ao[] = {
 	"aoe", " N", "display esil form for N opcodes",
 	"aor", " N", "display reil form for N opcodes",
 	"aos", " N", "display size of N opcodes",
-	"aod[*.]", " opcode", "describe opcode for asm.arch (aod* list them all)",
+	"aod", "[mnemonic]", "describe opcode for asm.arch",
+	"aoda", "", "show all mnemonic descriptions",
 	"ao", " 5", "display opcode analysis of 5 opcodes",
 	"ao*", "", "display opcode in r commands",
 	NULL
@@ -4509,9 +4510,6 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 	ut32 tbs = core->blocksize;
 
 	switch (input[0]) {
-	case '?':
-		r_core_cmd_help (core, help_msg_ao);
-		break;
 	case 's': // "aos"
 	case 'j': // "aoj"
 	case 'e': // "aoe"
@@ -4537,46 +4535,51 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		}
 		break;
 	case 'd': // "aod"
-                if (input[1]=='*') {
+                if (input[1] == 'a') {
                         // list sdb database
                         sdb_foreach (core->assembler->pair, listOpDescriptions, core);
-                } else if (input[1]=='.') {
+                } else if (input[1] == 0) {
                         int cur = R_MAX (core->print->cur, 0);
                         // XXX: we need cmd_xxx.h (cmd_anal.h)
                         core_anal_bytes (core, core->block + cur, core->blocksize, 1, 'd');
                 } else if (input[1] == ' ') {
-                        char *d = r_asm_describe (core->assembler, input+2);
+                        char *d = r_asm_describe (core->assembler, input + 2);
                         if (d && *d) {
                                 r_cons_println (d);
                                 free (d);
                         } else {
-                                eprintf ("Unknown opcode\n");
+                                eprintf ("Unknown mnemonic\n");
                         }
                 } else {
-                        eprintf ("Use: aod[.*] [opcode]    to get the description of the opcode\n");
+                        eprintf ("Use: aod[?a] ([opcode])    describe current, [given] or all mnemonics\n");
                 }
                 break;
 	case '*':
 		r_core_anal_hint_list (core->anal, input[0]);
 		break;
-	default: {
-		int count = 0;
-		if (input[0]) {
-			l = (int)r_num_get (core->num, input + 1);
-			if (l > 0) {
-				count = l;
+	case 0:
+	case ' ': {
+			int count = 0;
+			if (input[0]) {
+				l = (int)r_num_get (core->num, input + 1);
+				if (l > 0) {
+					count = l;
+				}
+				if (l > tbs) {
+					r_core_block_size (core, l * 4);
+					//len = l;
+				}
+			} else {
+				len = l = core->blocksize;
+				count = 1;
 			}
-			if (l > tbs) {
-				r_core_block_size (core, l * 4);
-				//len = l;
-			}
-		} else {
-			len = l = core->blocksize;
-			count = 1;
+			core_anal_bytes (core, core->block, len, count, 0);
 		}
-		core_anal_bytes (core, core->block, len, count, 0);
 		break;
-	}
+	default:
+	case '?':
+		r_core_cmd_help (core, help_msg_ao);
+		break;
 	}
 }
 
