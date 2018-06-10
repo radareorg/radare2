@@ -2085,6 +2085,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	RBinInfo *info = NULL;
 	RList *sections;
 	RListIter *iter;
+	RListIter *last_processed = NULL;
 	int i = 0;
 	int fd = -1;
 	bool printHere = false;
@@ -2231,6 +2232,9 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			free (hashstr);
 		} else if (IS_MODE_JSON (mode)) {
 			char *hashstr = NULL;
+			if (section->is_segment != print_segments) {
+				continue;
+			}
 			if (chksum) {
 				ut8 *data = malloc (section->size);
 				if (!data) {
@@ -2250,7 +2254,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				"%s"
 				"\"paddr\":%"PFMT64d","
 				"\"vaddr\":%"PFMT64d"}",
-				(iter->p && !printHere)?",":"",
+				(last_processed && !printHere) ? "," : "",
 				section->name,
 				section->size,
 				section->vsize,
@@ -2371,6 +2375,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			free (hashstr);
 		}
 		i++;
+		last_processed = iter;
 		if (printHere) {
 			break;
 		}
