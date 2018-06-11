@@ -606,7 +606,6 @@ static void panelsRefresh(RCore *core) {
 	}
 	if (panels->isResizing) {
 		panels->isResizing = false;
-		/*eprintf ("REEEEEEEEEEEEEESSSSS\n");*/
 		r_cons_canvas_resize (can, w, h);
 		setRefreshAll (panels);
 	}
