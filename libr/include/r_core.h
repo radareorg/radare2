@@ -704,6 +704,8 @@ R_API const char *r_core_task_status (RCoreTask *task);
 R_API RCoreTask *r_core_task_new (RCore *core, const char *cmd, RCoreTaskCallback cb, void *user);
 R_API void r_core_task_enqueue(RCore *core, RCoreTask *task);
 R_API int r_core_task_run_sync(RCore *core, RCoreTask *task);
+R_API void r_core_task_sync_begin(RCore *core);
+R_API void r_core_task_sync_end(RCore *core);
 R_API int r_core_task_del (RCore *core, int id);
 R_API RCoreTask *r_core_task_self (RCore *core);
 R_API void r_core_task_join (RCore *core, RCoreTask *task);

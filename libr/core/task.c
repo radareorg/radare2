@@ -228,6 +228,21 @@ R_API int r_core_task_run_sync(RCore *core, RCoreTask *task) {
 	return task_run (task);
 }
 
+/* begin running stuff synchronously on the main task */
+R_API void r_core_task_sync_begin(RCore *core) {
+	RCoreTask *task = core->main_task;
+	task->msg->th = NULL;
+	task->msg->text = NULL;
+	task->cmd_log = false;
+	task->state = R_CORE_TASK_STATE_BEFORE_START;
+	task_wakeup (task);
+}
+
+/* end running stuff synchronously, initially started with r_core_task_sync_begin() */
+R_API void r_core_task_sync_end(RCore *core) {
+	task_end(core->main_task);
+}
+
 R_API const char *r_core_task_status (RCoreTask *task) {
 	switch (task->state) {
 	case R_CORE_TASK_STATE_RUNNING:
