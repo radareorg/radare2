@@ -198,11 +198,13 @@ static int decode_3operands(const ut8 *instr, struct v850_cmd *cmd) {
 	return 4;
 }
 
-static int decode_load_store(const ut8 *instr, struct v850_cmd *cmd) {
-	ut16 word1, word2;
+static int decode_load_store(const ut8 *instr, int len, struct v850_cmd *cmd) {
+	if (len < 4) {
+		return -1;
+	}
 
-	word1 = r_read_le16 (instr);
-	word2 = r_read_at_le16 (instr, 2);
+	ut16 word1 = r_read_le16 (instr);
+	ut16 word2 = r_read_at_le16 (instr, 2);
 
 	switch (get_opcode (word1)) {
 	case V850_STB:
@@ -296,11 +298,13 @@ static int decode_extended(const ut8 *instr, struct v850_cmd *cmd) {
 	return 4;
 }
 
-int v850_decode_command (const ut8 *instr, struct v850_cmd *cmd) {
+int v850_decode_command (const ut8 *instr, int len, struct v850_cmd *cmd) {
 	int ret;
-	ut16 in;
 
-	in = r_read_le16 (instr);
+	if (len < 2) {
+		return -1;
+	}
+	ut16 in = r_read_le16 (instr);
 
 	switch (get_opcode (in)) {
 	case V850_MOV:
@@ -349,7 +353,7 @@ int v850_decode_command (const ut8 *instr, struct v850_cmd *cmd) {
 	case V850_LDB:
 	case V850_LDHW:
 	case V850_STHW:
-		ret = decode_load_store (instr, cmd);
+		ret = decode_load_store (instr, len, cmd);
 		break;
 	case V850_BIT_MANIP:
 		ret = decode_bit_op (instr, cmd);
