@@ -280,6 +280,20 @@ R_API void r_cons_break_end() {
 	}
 }
 
+R_API void *r_cons_sleep_begin(void) {
+	if (!I.cb_sleep_begin) {
+		return NULL;
+	}
+	return I.cb_sleep_begin (I.user);
+}
+
+R_API void r_cons_sleep_end(void *user) {
+	if (!I.cb_sleep_end) {
+		return;
+	}
+	I.cb_sleep_end (I.user, user);
+}
+
 #if __WINDOWS__ && !__CYGWIN__
 static HANDLE h;
 static BOOL __w32_control(DWORD type) {

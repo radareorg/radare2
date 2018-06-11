@@ -1789,6 +1789,17 @@ static void r_core_break (RCore *core) {
 	}
 }
 
+static void *r_core_sleep_begin (RCore *core) {
+	RCoreTask *task = r_core_task_self (core);
+	r_core_task_sleep_begin (task);
+	return task;
+}
+
+static void r_core_sleep_end (RCore *core, void *user) {
+	RCoreTask *task = (RCoreTask *)user;
+	r_core_task_sleep_end (task);
+}
+
 R_API bool r_core_init(RCore *core) {
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8*)calloc (R_CORE_BLOCKSIZE + 1, 1);
@@ -1883,6 +1894,8 @@ R_API bool r_core_init(RCore *core) {
 	core->lang->cmdf = (int (*)(void *, const char *, ...))r_core_cmdf;
 	core->cons->cb_editor = (RConsEditorCallback)r_core_editor;
 	core->cons->cb_break = (RConsBreakCallback)r_core_break;
+	core->cons->cb_sleep_begin = (RConsSleepBeginCallback)r_core_sleep_begin;
+	core->cons->cb_sleep_end = (RConsSleepEndCallback)r_core_sleep_end;
 	core->cons->user = (void*)core;
 	core->lang->cb_printf = r_cons_printf;
 	r_lang_define (core->lang, "RCore", "core", core);
@@ -2220,7 +2233,7 @@ R_API int r_core_prompt(RCore *r, int sync) {
 }
 
 R_API int r_core_prompt_exec(RCore *r) {
-	int ret = r_core_cmd_task_sync (r, r->cmdqueue, true);
+	int ret = r_core_cmd (r, r->cmdqueue, true);
 	//int ret = r_core_cmd (r, r->cmdqueue, true);
 	if (r->cons && r->cons->use_tts) {
 		const char *buf = r_cons_get_buffer();

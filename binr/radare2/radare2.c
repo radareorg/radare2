@@ -360,7 +360,7 @@ static bool run_commands(RList *cmds, RList *files, bool quiet) {
 	/* -c */
 	r_list_foreach (cmds, iter, cmdn) {
 		//r_core_cmd0 (&r, cmdn);
-		r_core_cmd_task_sync (&r, cmdn, false);
+		r_core_cmd (&r, cmdn, false);
 		r_cons_flush ();
 	}
 	if (quiet) {
@@ -493,6 +493,7 @@ int main(int argc, char **argv, char **envp) {
 		return main_help (1);
 	}
 	r_core_init (&r);
+	r_core_task_sync_begin (&r);
 	if (argc == 2 && !strcmp (argv[1], "-p")) {
 		r_core_project_list (&r, 0);
 		r_cons_flush ();
@@ -1443,6 +1444,9 @@ beach:
 		exit (ret);
 		return ret;
 	}
+
+	r_core_task_sync_end (&r);
+
 	// not really needed, cause r_core_fini will close the file
 	// and this fh may be come stale during the command
 	// execution.

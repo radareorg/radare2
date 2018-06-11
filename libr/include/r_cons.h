@@ -369,6 +369,8 @@ typedef struct r_cons_canvas_t {
 typedef char *(*RConsEditorCallback)(void *core, const char *file, const char *str);
 typedef int (*RConsClickCallback)(void *core, int x, int y);
 typedef void (*RConsBreakCallback)(void *core);
+typedef void *(*RConsSleepBeginCallback)(void *core);
+typedef void (*RConsSleepEndCallback)(void *core, void *user);
 
 typedef struct r_cons_t {
 	RConsGrep grep;
@@ -405,6 +407,8 @@ typedef struct r_cons_t {
 
 	RConsEditorCallback cb_editor;
 	RConsBreakCallback cb_break;
+	RConsSleepBeginCallback cb_sleep_begin;
+	RConsSleepEndCallback cb_sleep_end;
 	RConsClickCallback cb_click;
 
 	void *user; // Used by <RCore*>
@@ -635,6 +639,8 @@ R_API void r_cons_break_end(void);
 R_API bool r_cons_is_breaked(void);
 R_API void r_cons_break_timeout(int timeout);
 R_API void r_cons_breakword(const char *s);
+R_API void *r_cons_sleep_begin(void);
+R_API void r_cons_sleep_end(void *user);
 
 /* pipe */
 R_API int r_cons_pipe_open(const char *file, int fdn, int append);
