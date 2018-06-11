@@ -10,19 +10,19 @@
 static ut64 r_num_tailff(RNum *num, const char *hex);
 
 void r_srand (int seed) {
-#if !HAVE_ARC4RANDOM_UNIFORM
-	srand (seed);
-#else
+#if HAVE_ARC4RANDOM_UNIFORM
 	// no-op
 	(void)seed;
+#else
+	srand (seed);
 #endif
 }
 
 int r_rand (void) {
-#if !HAVE_ARC4RANDOM_UNIFORM
-	return rand ();
-#else
+#if HAVE_ARC4RANDOM_UNIFORM
 	return (int)arc4random ();
+#else
+	return rand ();
 #endif
 }
 

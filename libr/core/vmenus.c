@@ -3128,14 +3128,15 @@ repeat:
         {
 		RAnalOp op;
 		ut64 N;
-		char *endptr;
+		char *endptr = NULL;
 		char *end_off = r_cons_input ("Last hexadecimal digits of instruction: ");
 		if (end_off) {
-			N = strtoull(end_off, &endptr, 16);
+			N = strtoull (end_off, &endptr, 16);
 		}
 		if (!end_off || end_off == endptr) {
 			eprintf ("Invalid numeric input\n");
 			r_cons_any_key (NULL);
+			free (end_off);
 			break;
 		}
 		free (end_off);

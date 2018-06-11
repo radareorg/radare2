@@ -413,7 +413,7 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 	}
 	// this thing works for 2GB ELF core from vbox
 	if (!buf_bytes) {
-		if (sz < 0) {
+		if ((int)sz < 0) {
 			eprintf ("Cannot allocate %d bytes\n", (int)(sz));
 			return false;
 		}
