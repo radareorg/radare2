@@ -681,6 +681,7 @@ typedef void (*RCoreTaskCallback)(void *user, char *out);
 typedef enum {
 	R_CORE_TASK_STATE_BEFORE_START,
 	R_CORE_TASK_STATE_RUNNING,
+	R_CORE_TASK_STATE_SLEEPING,
 	R_CORE_TASK_STATE_DONE
 } RTaskState;
 
@@ -706,6 +707,8 @@ R_API void r_core_task_enqueue(RCore *core, RCoreTask *task);
 R_API int r_core_task_run_sync(RCore *core, RCoreTask *task);
 R_API void r_core_task_sync_begin(RCore *core);
 R_API void r_core_task_sync_end(RCore *core);
+R_API void r_core_task_sleep_begin(RCoreTask *task);
+R_API void r_core_task_sleep_end(RCoreTask *task);
 R_API int r_core_task_del (RCore *core, int id);
 R_API RCoreTask *r_core_task_self (RCore *core);
 R_API void r_core_task_join (RCore *core, RCoreTask *task);
@@ -714,7 +717,7 @@ typedef void (*inRangeCb) (RCore *core, ut64 from, ut64 to, int vsize,
 R_API int r_core_search_value_in_range (RCore *core, RInterval search_itv,
 		ut64 vmin, ut64 vmax, int vsize, bool asterisk, inRangeCb cb);
 
-R_API void r_core_task_schedule(RCoreTask *current, bool end);
+R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state);
 
 /* PLUGINS */
 extern RCorePlugin r_core_plugin_java;
