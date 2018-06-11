@@ -816,7 +816,7 @@ error:
 }
 
 /* decode and return the RANalOp at the address addr */
-R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr) {
+R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 	int len;
 	RAnalOp *op;
 	ut8 buf[128];
@@ -844,7 +844,7 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr) {
 		ptr = buf;
 		len = sizeof (buf);
 	}
-	if (r_anal_op (core->anal, op, addr, ptr, len, R_ANAL_OP_MASK_ALL) < 1) {
+	if (r_anal_op (core->anal, op, addr, ptr, len, mask) < 1) {
 		goto err_op;
 	}
 
@@ -871,6 +871,9 @@ static void print_hint_h_format(RAnalHint* hint) {
 	HINTCMD (hint, esil, " esil='%s'", false);
 	if (hint->jump != UT64_MAX) {
 		r_cons_printf (" jump: 0x%"PFMT64x, hint->jump);
+	}
+	if (hint->ret != UT64_MAX) {
+		r_cons_printf (" ret: 0x%"PFMT64x, hint->ret);
 	}
 	r_cons_newline ();
 }
@@ -1455,7 +1458,7 @@ R_API int r_core_anal_esil_fcn(RCore *core, ut64 at, ut64 from, int reftype, int
 	eprintf ("TODO\n");
 	while (1) {
 		// TODO: Implement the proper logic for doing esil analysis
-		op = r_core_anal_op (core, at);
+		op = r_core_anal_op (core, at, R_ANAL_OP_MASK_ESIL);
 		if (!op) {
 			break;
 		}
@@ -2643,7 +2646,7 @@ R_API void fcn_callconv(RCore *core, RAnalFunction *fcn) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			op = r_core_anal_op (core, pos);
+			op = r_core_anal_op (core, pos, R_ANAL_OP_MASK_ESIL);
 			if (!op) {
 	//			eprintf ("Cannot get op\n");
 				break;
@@ -3410,7 +3413,7 @@ R_API RList* r_core_anal_cycles(RCore *core, int ccl) {
 	cf = r_anal_cycle_frame_new ();
 	r_cons_break_push (NULL, NULL);
 	while (cf && !r_cons_is_breaked ()) {
-		if ((op = r_core_anal_op (core, addr)) && (op->cycles) && (ccl > 0)) {
+		if ((op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_BASIC)) && (op->cycles) && (ccl > 0)) {
 			r_cons_clear_line (1);
 			eprintf ("%i -- ", ccl);
 			addr += op->size;
@@ -4269,7 +4272,7 @@ static void analPaths (RCoreAnalPaths *p) {
 			int i;
 			for (i = 0; i < cur->op_pos_size; i++) {
 				ut64 addr = cur->addr + cur->op_pos[i];
-				RAnalOp *op = r_core_anal_op (p->core, addr);
+				RAnalOp *op = r_core_anal_op (p->core, addr, R_ANAL_OP_MASK_BASIC);
 				if (op && op->type == R_ANAL_OP_TYPE_CALL) {
 					cur = c;
 					analPathFollow (p, op->jump);

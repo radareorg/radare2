@@ -408,7 +408,7 @@ R_API void r_core_print_func_args(RCore *core);
 R_API char *resolve_fcn_name(RAnal *anal, const char * func_name);
 
 /* anal.c */
-R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr);
+R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask);
 R_API void r_core_anal_esil(RCore *core, const char *str, const char *addr);
 R_API void r_core_anal_fcn_merge (RCore *core, ut64 addr, ut64 addr2);
 R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, bool verbose);
@@ -546,6 +546,7 @@ R_API void fcn_callconv (RCore *core, RAnalFunction *fcn);
 #define R_CORE_BIN_ACC_HEADER 0x80000
 #define R_CORE_BIN_ACC_RESOURCES 0x100000
 #define R_CORE_BIN_ACC_INITFINI 0x200000
+#define R_CORE_BIN_ACC_SEGMENTS 0x400000
 #define R_CORE_BIN_ACC_ALL	0x104FFF
 
 #define R_CORE_PRJ_FLAGS	0x0001

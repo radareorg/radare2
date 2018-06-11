@@ -682,9 +682,15 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		op->cycles = 2;
 		op->failcycles = 3;
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		if (data[1] <= 127)
-			op->jump = addr + data[1] + op->size;
-		else	op->jump = addr - (256 - data[1]) + op->size;
+		if (len > 1) {
+			if (data[1] <= 127) {
+				op->jump = addr + data[1] + op->size;
+			} else {
+				op->jump = addr - (256 - data[1]) + op->size;
+			}
+		} else {
+			op->jump = addr;
+		}
 		op->fail = addr + op->size;
 		// FIXME: add a type of conditional
 		// op->cond = R_ANAL_COND_LE;

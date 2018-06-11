@@ -62,7 +62,11 @@ R_API void r_anal_bb_free(RAnalBlock *bb) {
 		bb->failbb->prev = NULL;
 		bb->failbb = NULL;
 	}
-	R_FREE (bb);
+	if (bb->next) {
+		// avoid double free
+		bb->next->prev = NULL;
+	}
+	R_FREE (bb); // double free
 }
 
 R_API RList *r_anal_bb_list_new() {

@@ -41,7 +41,7 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
 
-	ret = op->size = v850_decode_command (buf, &cmd);
+	ret = op->size = v850_decode_command (buf, len, &cmd);
 
 	if (ret <= 0) {
 		return ret;

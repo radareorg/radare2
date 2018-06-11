@@ -230,8 +230,8 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 		} else if (IS_MODE_JSON (mode)) {
 			int *block_list;
 			q = r_base64_encode_dyn (string->string, -1);
-			r_cons_printf ("%s{\"vaddr\":%"PFMT64d
-				",\"paddr\":%"PFMT64d",\"ordinal\":%d"
+			r_cons_printf ("%s{\"vaddr\":%"PFMT64u
+				",\"paddr\":%"PFMT64u",\"ordinal\":%d"
 				",\"size\":%d,\"length\":%d,\"section\":\"%s\","
 				"\"type\":\"%s\",\"string\":\"%s\"",
 				last_processed ? ",": "",
@@ -2079,12 +2079,13 @@ static char *build_hash_string(int mode, const char *chksum, ut8 *data, ut32 dat
 	return ret;
 }
 
-static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum) {
+static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments) {
 	char *str = NULL;
 	RBinSection *section;
 	RBinInfo *info = NULL;
 	RList *sections;
 	RListIter *iter;
+	RListIter *last_processed = NULL;
 	int i = 0;
 	int fd = -1;
 	bool printHere = false;
@@ -2102,7 +2103,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	}
 	if (IS_MODE_JSON (mode) && !printHere) r_cons_printf ("[");
 	else if (IS_MODE_RAD (mode) && !at) r_cons_printf ("fs sections\n");
-	else if (IS_MODE_NORMAL (mode) && !at && !printHere) r_cons_printf ("[Sections]\n");
+	else if (IS_MODE_NORMAL (mode) && !at && !printHere) r_cons_printf (print_segments ? "[Segments]\n" : "[Sections]\n");
 	else if (IS_MODE_NORMAL (mode) && printHere) r_cons_printf("Current section\n");
 	else if (IS_MODE_SET (mode)) {
 		fd = r_core_file_cur_fd (r);
@@ -2211,6 +2212,9 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			}
 		} else if (IS_MODE_SIMPLE (mode)) {
 			char *hashstr = NULL;
+			if (section->is_segment != print_segments) {
+				continue;
+			}
 			if (chksum) {
 				ut8 *data = malloc (section->size);
 				if (!data) {
@@ -2231,6 +2235,9 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			free (hashstr);
 		} else if (IS_MODE_JSON (mode)) {
 			char *hashstr = NULL;
+			if (section->is_segment != print_segments) {
+				continue;
+			}
 			if (chksum) {
 				ut8 *data = malloc (section->size);
 				if (!data) {
@@ -2250,7 +2257,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				"%s"
 				"\"paddr\":%"PFMT64d","
 				"\"vaddr\":%"PFMT64d"}",
-				(iter->p && !printHere)?",":"",
+				(last_processed && !printHere) ? "," : "",
 				section->name,
 				section->size,
 				section->vsize,
@@ -2311,6 +2318,9 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			}
 		} else {
 			char *hashstr = NULL, str[128];
+			if (section->is_segment != print_segments) {
+				continue;
+			}
 			if (chksum) {
 				ut8 *data = malloc (section->size);
 				if (!data) {
@@ -2368,6 +2378,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			free (hashstr);
 		}
 		i++;
+		last_processed = iter;
 		if (printHere) {
 			break;
 		}
@@ -3340,7 +3351,8 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 	if ((action & R_CORE_BIN_ACC_PDB)) ret &= bin_pdb (core, mode);
 	if ((action & R_CORE_BIN_ACC_ENTRIES)) ret &= bin_entry (core, mode, loadaddr, va, false);
 	if ((action & R_CORE_BIN_ACC_INITFINI)) ret &= bin_entry (core, mode, loadaddr, va, true);
-	if ((action & R_CORE_BIN_ACC_SECTIONS)) ret &= bin_sections (core, mode, loadaddr, va, at, name, chksum);
+	if ((action & R_CORE_BIN_ACC_SECTIONS)) ret &= bin_sections (core, mode, loadaddr, va, at, name, chksum, false);
+	if ((action & R_CORE_BIN_ACC_SEGMENTS)) ret &= bin_sections (core, mode, loadaddr, va, at, name, chksum, true);
 	if (r_config_get_i (core->config, "bin.relocs")) {
 		if ((action & R_CORE_BIN_ACC_RELOCS)) ret &= bin_relocs (core, mode, va);
 	}

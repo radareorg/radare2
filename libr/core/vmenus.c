@@ -71,25 +71,18 @@ static char *colorize_asm_string(RCore *core, const char *buf_asm, int optype) {
 	// workaround dummy colorizer in case of paired commands (tms320 & friends)
 	spacer = strstr (source, "||");
 	if (spacer) {
-		char *scol1, *s1 = r_str_ndup (source, spacer - source);
-		char *scol2, *s2 = strdup (spacer + 2);
-		scol1 = r_print_colorize_opcode (core->print, s1, color_reg, color_num, false);
-		free (s1);
-		scol2 = r_print_colorize_opcode (core->print, s2, color_reg, color_num, false);
-		free (s2);
-		if (!scol1) {
-			scol1 = strdup ("");
-		}
-		if (!scol2) {
-			scol2 = strdup ("");
-		}
-		source = malloc (strlen(scol1) + strlen(scol2) + 2 + 1); // reuse source variable
-		sprintf (source, "%s||%s", scol1, scol2);
+		char *s1 = r_str_ndup (source, spacer - source);
+		char *s2 = strdup (spacer + 2);
+		char *scol1 = r_print_colorize_opcode (core->print, s1, color_reg, color_num, false);
+		char *scol2 = r_print_colorize_opcode (core->print, s2, color_reg, color_num, false);
+		char *source = r_str_newf ("%s||%s", r_str_get2 (scol1), r_str_get2 (scol2));
 		free (scol1);
 		free (scol2);
+		free (s1);
+		free (s2);
 		return source;
 	}
-	char *res = strdup("");
+	char *res = strdup ("");
 	res = r_str_append (res, r_print_color_op_type (core->print, optype));
 	tmp = r_print_colorize_opcode (core->print, source, color_reg, color_num, false);
 	res = r_str_append (res, tmp);
@@ -1263,7 +1256,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 					}
 					if ((i >= option - delta) && ((i < option + delta)|| \
 							((option < delta) && (i < (delta << 1))))) {
-						r_cons_printf(" %c %02d %c %s\n",
+						r_cons_printf (" %c %02d %c %s\n",
 							(option==i)?'>':' ', j,
 							(i==core->flags->space_idx)?'*':' ',
 							core->flags->spaces[i]);
@@ -1702,7 +1695,7 @@ R_API void r_core_visual_config(RCore *core) {
 				if (show) {
 					if (option == i) hit = 1;
 					if ( (i >=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
-						r_cons_printf(" %c  %s\n", (option==i)?'>':' ', old);
+						r_cons_printf (" %c  %s\n", (option == i)?'>':' ', old);
 						j++;
 					}
 					i++;
@@ -1816,7 +1809,7 @@ R_API void r_core_visual_config(RCore *core) {
 			break;
 		case ':':
 			r_cons_show_cursor (true);
-			r_cons_set_raw(0);
+			r_cons_set_raw (0);
 			 {
 				char *cmd = prompt (":> ", NULL);
 				r_core_cmd (core, cmd, 1);
@@ -1873,7 +1866,7 @@ R_API void r_core_visual_mounts(RCore *core) {
 			} else r_cons_printf ("Cannot read partition\n");
 		} else if (mode == 1) {
 			r_cons_printf ("Types:\n\n");
-			for(i=0;;i++) {
+			for (i=0;;i++) {
 				n = r_fs_partition_type_get (i);
 				if (!n) break;
 				r_cons_printf ("%s%s\n", (i==partition)?" > ":"   ", n);
@@ -2378,7 +2371,7 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 		r_cons_printf ("Press 'q' to quit call refs\n");
 		r_cons_printf ("-[ calls ]----------------------- 0x%08"PFMT64x" (TODO)\n", addr);
 		// TODO: filter only the callrefs. but we cant grep here
-		sprintf(old, "afi @ 0x%08"PFMT64x, addr);
+		sprintf (old, "afi @ 0x%08"PFMT64x, addr);
 		r_core_cmd0 (core, old);
 		break;
 	case 3:
@@ -2761,6 +2754,7 @@ R_API void r_core_visual_define (RCore *core, const char *args) {
 		," s    set string"
 		," S    set strings in current block"
 		," u    undefine metadata here"
+		," v    rename variable at offset that matches some hex digits"
 		," x    find xrefs to current address (./r)"
 		," w    set as 32bit word"
 		," W    set as 64bit word"
@@ -2841,7 +2835,7 @@ repeat:
 		{
 			char *man = NULL;
 			/* check for manpage */
-			RAnalOp *op = r_core_anal_op (core, off);
+			RAnalOp *op = r_core_anal_op (core, off, R_ANAL_OP_MASK_BASIC);
 			if (op) {
 				if (op->jump != UT64_MAX) {
 					RFlagItem *item = r_flag_get_i (core->flags, op->jump);
@@ -2856,8 +2850,8 @@ repeat:
 			if (man) {
 				char *p = strstr (man, "INODE");
 				if (p) *p = 0;
-				r_cons_clear();
-				r_cons_flush();
+				r_cons_clear ();
+				r_cons_flush ();
 				r_sys_cmdf ("man %s", man);
 				free (man);
 			}
@@ -3130,6 +3124,78 @@ repeat:
 			}
 		}
 		break;
+        case 'v':
+        {
+		RAnalOp op;
+		ut64 N;
+		char *endptr = NULL;
+		char *end_off = r_cons_input ("Last hexadecimal digits of instruction: ");
+		if (end_off) {
+			N = strtoull (end_off, &endptr, 16);
+		}
+		if (!end_off || end_off == endptr) {
+			eprintf ("Invalid numeric input\n");
+			r_cons_any_key (NULL);
+			free (end_off);
+			break;
+		}
+		free (end_off);
+
+		ut64 incr = 0x10;
+		ut64 tmp_N = N >> 4;
+		while (tmp_N > 0) {
+			tmp_N = tmp_N >> 4;
+			incr = incr << 4;
+		}
+		ut64 mask = incr - 1;
+
+		ut64 start_off;
+		if ((off & mask) <= N) {
+			start_off = (off & ~mask) ^ N;
+		} else {
+			start_off = ((off & ~mask) ^ incr) ^ N;
+		}
+
+		ut64 try_off;
+		bool found = false;
+		for (try_off = start_off; try_off < start_off + incr*16; try_off += incr) {
+			r_anal_op (core->anal, &op, try_off,
+				core->block + try_off - core->offset, 32, R_ANAL_OP_MASK_ALL);
+			if (op.var) {
+				found = true;
+				break;
+			}
+		}
+
+		if (found) {
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
+			if (fcn) {
+				RAnalVar *bar = r_anal_var_get_byname (core->anal, fcn, op.var->name);
+				if (bar) {
+					char *newname = r_cons_input (sdb_fmt ("New variable name for '%s': ", bar->name));
+					if (newname) {
+						if (*newname) {
+							r_anal_var_rename (core->anal, fcn->addr, bar->scope,
+								bar->kind, bar->name, newname);
+						}
+						free (newname);
+					}
+				} else {
+					eprintf ("Cannot find variable\n");
+					r_cons_any_key (NULL);
+				}
+			} else {
+				eprintf ("Cannot find function\n");
+				r_cons_any_key (NULL);
+			}
+		} else {
+			eprintf ("Cannot find instruction with a variable\n");
+			r_cons_any_key (NULL);
+		}
+
+		r_anal_op_fini (&op);
+		break;
+        }
 	case 'Q':
 	case 'q':
 	default:
@@ -3166,7 +3232,7 @@ R_API void r_core_visual_colors(RCore *core) {
 			rcolor.b &= 0xf;
 		}
 		sprintf (color, "rgb:%x%x%x", rcolor.r, rcolor.g, rcolor.b);
-		r_cons_printf ("# Colorscheme %d - Use '.' and ':' to randomize palette\n"
+		r_cons_printf ("# Colorscheme %d - Use '.' to randomize current color and ':' to randomize palette\n"
 			"# Press 'rRgGbB', 'jk' or 'q'\nec %s %s   # %d (\\x1b%s)\n",
 			opt, k, color, atoi (cstr+7), cstr+1);
 		r_core_cmdf (core, "ec %s %s", k, color);
@@ -3181,20 +3247,30 @@ R_API void r_core_visual_colors(RCore *core) {
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
 #define CASE_RGB(x,X,y) \
-	case x:y--;if(y>0x7f)y=0;break;\
-	case X:y++;if(y>15)y=15;break;
+	case x:if (y > 0x00) { y--; } break;\
+	case X:if (y < 0xff) { y++; } break;
 		CASE_RGB ('R','r',rcolor.r);
 		CASE_RGB ('G','g',rcolor.g);
 		CASE_RGB ('B','b',rcolor.b);
 		case 'Q':
-		case 'q': 
+		case 'q':
 			free (body);
 			return;
-		case 'k': opt--; break;
-		case 'j': opt++; break;
-		case 'K': opt=0; break;
-		case 'J': opt=0; break; // XXX must go to end
-		case ':': r_cons_pal_random (); break;
+		case 'k':
+			opt--;
+			break;
+		case 'j':
+			opt++;
+			break;
+		case 'K':
+			opt = 0;
+			break;
+		case 'J':
+			opt = r_cons_pal_len () - 1;
+			break;
+		case ':':
+			r_cons_pal_random ();
+			break;
 		case '.':
 			rcolor.r = r_num_rand (0xff);
 			rcolor.g = r_num_rand (0xff);

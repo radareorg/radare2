@@ -1732,7 +1732,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				r_cons_enable_mouse (true);
 			}
 			do {
-				op = r_core_anal_op (core, core->offset + core->print->cur);
+				op = r_core_anal_op (core, core->offset + core->print->cur, R_ANAL_OP_MASK_BASIC);
 				if (op) {
 					if (op->type == R_ANAL_OP_TYPE_JMP ||
 					op->type == R_ANAL_OP_TYPE_CJMP ||

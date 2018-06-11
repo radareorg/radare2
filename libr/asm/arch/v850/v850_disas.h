@@ -312,5 +312,5 @@ static inline ut8 get_reg2(const ut16 instr) {
 	return instr >> 11;
 }
 
-int v850_decode_command (const ut8 *instr, struct v850_cmd *cmd);
+int v850_decode_command (const ut8 *instr, int len, struct v850_cmd *cmd);
 #endif /* R2_V850_DISASM_H */

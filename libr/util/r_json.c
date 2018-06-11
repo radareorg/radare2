@@ -1,6 +1,5 @@
 /* radare2 - LGPL - Copyright 2017-2018 - wargio */
 
-#include <r_util.h>
 #include <r_types.h>
 #include <r_util.h>
 #include <stdlib.h>

@@ -45,6 +45,7 @@ static const char *help_msg_i[] = {
 	"is.", "", "Current symbol",
 	"iS ", "[entropy,sha1]", "Sections (choose which hash algorithm to use)",
 	"iS.", "", "Current section",
+	"iSS", " [entropy,sha1]", "Segments",
 	"iV", "", "Display file version info",
 	"iz|izj", "", "Strings in data sections (in JSON/Base64)",
 	"izz", "", "Search for Strings in the whole binary",
@@ -330,7 +331,11 @@ static int cmd_info(void *data, const char *input) {
 		}
 	}
 	if (mode == R_CORE_BIN_JSON) {
-		if (strlen (input + 1) > 1) {
+		int suffix_shift = 0;
+		if (!strncmp (input, "SS", 2)) {
+			suffix_shift = 1;
+		}
+		if (strlen (input + 1 + suffix_shift) > 1) {
 			is_array = 1;
 		}
 	}
@@ -463,25 +468,35 @@ static int cmd_info(void *data, const char *input) {
 			//we comes from ia or iS
 			if ((input[1] == 'm' && input[2] == 'z') || !input[1]) {
 				RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, NULL, 0);
-			} else {  //iS entropy,sha1
+			} else if (input[1] == 'S' && !input[2]) {  // "iSS"
+				RBININFO ("segments", R_CORE_BIN_ACC_SEGMENTS, NULL, 0);
+			} else {  //iS/iSS entropy,sha1
+				const char *name = "sections";
+				int action = R_CORE_BIN_ACC_SECTIONS;
+				int param_shift = 0;
+				if (input[1] == 'S') {
+					name = "segments";
+					action = R_CORE_BIN_ACC_SEGMENTS;
+					param_shift = 1;
+				}
 				// case for iSj.
 				if (input[1] == 'j' && input[2] == '.') {
 					mode = R_CORE_BIN_JSON;
 				}
 				RBinObject *obj = r_bin_cur_object (core->bin);
 				if (mode == R_CORE_BIN_RADARE || mode == R_CORE_BIN_JSON || mode == R_CORE_BIN_SIMPLE) {
-					RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, input + 2,
+					RBININFO (name, action, input + 2 + param_shift,
 						obj? r_list_length (obj->sections): 0);
 				} else {
-					RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, input + 1,
+					RBININFO (name, action, input + 1 + param_shift,
 						obj? r_list_length (obj->sections): 0);
 				}
-				//we move input until get '\0'
-				while (*(++input)) ;
-				//input-- because we are inside a while that does input++
-				// oob read if not input--
-				input--;
 			}
+			//we move input until get '\0'
+			while (*(++input)) ;
+			//input-- because we are inside a while that does input++
+			// oob read if not input--
+			input--;
 			break;
 		case 'H':
 			if (input[1] == 'H') { // "iHH"

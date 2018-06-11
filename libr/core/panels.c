@@ -105,6 +105,7 @@ static const char **menus_sub[] = {
 	NULL
 };
 
+static void layoutMenu(RPanel *panel);
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color);
 static void addPanelFrame(RCore* core, RPanels* panels, const char *title, const char *cmd);
 static bool checkFunc(RCore *core);
@@ -133,7 +134,7 @@ static void zoom(RPanels *panels);
 
 static void clearMainPanel(RPanels *panels) {
 	r_core_turnoff_refresh_mainpanel (panels);
-	r_cons_canvas_fill (panels->can, panels->panel[1].x, panels->panel[1].y, panels->panel[1].w, panels->panel[1].h, ' ', 0);
+	r_cons_canvas_fill (panels->can, panels->panel[1].x, panels->panel[1].y, panels->panel[1].w, panels->panel[1].h, ' ');
 	r_cons_canvas_print (panels->can);
 	r_cons_flush ();
 }
@@ -149,7 +150,7 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 	delta_x = panel->sx;
 	delta_y = panel->sy;
 	// clear the canvas first
-	r_cons_canvas_fill (can, panel->x, panel->y, panel->w, panel->h, ' ', 0);
+	r_cons_canvas_fill (can, panel->x, panel->y, panel->w, panel->h, ' ');
 	// for menu
 	RCons *cons = r_cons_singleton ();
 	if (panel->type == PANEL_TYPE_MENU) {
@@ -226,6 +227,11 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 	}
 }
 
+static void layoutMenu(RPanel *panel) {
+	panel->w = r_str_bounds (panel->title, &panel->h);
+	panel->h += 4;
+}
+
 R_API void r_core_panels_layout(RPanels *panels) {
 	int h, w = r_cons_get_size (&h);
 	int i, j;
@@ -241,10 +247,7 @@ R_API void r_core_panels_layout(RPanels *panels) {
 	for (i = j = 0; i < panels->n_panels; i++) {
 		switch (panel[i].type) {
 		case PANEL_TYPE_MENU:
-			panel[i].w = r_str_bounds (
-				panel[i].title,
-				&panel[i].h);
-			panel[i].h += 4;
+			layoutMenu (&panel[i]);
 			break;
 		case PANEL_TYPE_FRAME:
 			switch (panels->layout) {
@@ -605,7 +608,6 @@ static bool initPanels(RCore *core, RPanels *panels) {
 	panels->panel = calloc (sizeof (RPanel), LIMIT);
 	if (!panels->panel) return false;
 	panels->n_panels = 0;
-	panels->menu_pos = 0;
 	panels->panel[panels->n_panels].title = strdup ("");
 	panels->panel[panels->n_panels].type = PANEL_TYPE_MENU;
 	panels->panel[panels->n_panels].refresh = true;
@@ -675,6 +677,7 @@ R_API void r_core_panels_refresh(RCore *core) {
 				strcat (panel[menu_pos].title, menus_sub[menu_x][j]);
 				strcat (panel[menu_pos].title, "          \n");
 			}
+			layoutMenu (&panel[menu_pos]);
 		}
 		for (i = 0; i < panels->n_panels; i++) {
 			if (i != panels->curnode) {
@@ -682,10 +685,6 @@ R_API void r_core_panels_refresh(RCore *core) {
 			}
 		}
 	}
-	//if (panel && panels->n_panels > 1) {
-	//	// always refresh first panel or can be trashed
-	//	panel[1].refresh = true;
-	//}
 	if (menu_y) {
 		panels->curnode = menu_pos;
 	}
@@ -821,7 +820,7 @@ static bool init (RCore *core, RPanels *panels, int w, int h) {
 	panels->isResizing = false;
 	panels->isGraphInPanels = false;
 	panels->can = r_cons_canvas_new (w, h);
-	r_cons_canvas_fill (panels->can, 0, 0, w, h, ' ', 0);
+	r_cons_canvas_fill (panels->can, 0, 0, w, h, ' ');
 	if (!panels->can) {
 		eprintf ("Cannot create RCons.canvas context\n");
 		return false;

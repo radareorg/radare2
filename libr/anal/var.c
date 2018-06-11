@@ -366,6 +366,25 @@ R_API void r_anal_var_free(RAnalVar *av) {
 	}
 }
 
+R_API ut64 r_anal_var_addr(RAnal *a, RAnalFunction *fcn, const char *name) {
+	const char *regname = NULL;
+	ut64 ret = UT64_MAX;
+	if (!a || !fcn) {
+		return ret;
+	}
+	RAnalVar *v1 = r_anal_var_get_byname (a, fcn, name);
+	if (v1) {
+		if (v1->kind == R_ANAL_VAR_KIND_BPV) {
+			regname = r_reg_get_name (a->reg, R_REG_NAME_BP);
+		} else if (v1->kind == R_ANAL_VAR_KIND_SPV) {
+			regname = r_reg_get_name (a->reg, R_REG_NAME_SP);
+		}
+		ret = r_reg_getv (a->reg, regname) + v1->delta;
+	}
+	r_anal_var_free (v1);
+	return ret;
+}
+
 /* (columns) elements in the array value */
 #define R_ANAL_VAR_SDB_KIND 0 /* char */
 #define R_ANAL_VAR_SDB_TYPE 1 /* string */

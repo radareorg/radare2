@@ -613,7 +613,10 @@ static int fd_forward(int in_fd, int out_fd, char **buff) {
 		return -1;
 	}
 	*buff = new_buff;
-	(void)read (in_fd, *buff, size);
+	if (read (in_fd, *buff, size) != size) {
+		perror ("read");
+		return -1;
+	}
 	if (write (out_fd, *buff, size) != size) {
 		perror ("write");
 		return -1;
