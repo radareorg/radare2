@@ -161,11 +161,15 @@ static int r_line_readchar_win(int *vch) { // this function handle the input in 
 	ut8 buf[2];
 	HANDLE h;
 	int i;
+	void *bed;
 
 	if (I.zerosep) {
 		*vch = 0;
 		buf[0] = 0;
-		if (read (0, buf, 1) != 1)
+		bed = r_cons_sleep_begin ();
+		int rsz = read (0, buf, 1);
+		r_cons_sleep_end (bed);
+		if (rsz != 1)
 			return -1;
 		return buf[0];
 	}
@@ -176,7 +180,9 @@ do_it_again:
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, 0);	// RAW
 	*vch = 0;
+	bed = r_cons_sleep_begin ();
 	ret = ReadConsoleInput (h, irInBuf, 128, &out);
+	r_cons_sleep_end (bed);
 	if (ret < 1) {
 		return 0;
 	}
