@@ -80,6 +80,10 @@ uid_t=type
 type.uid_t=i
 type.uid_t.size=64
 
+arc4random=func
+func.arc4random.args=0
+func.arc4random.ret=uint32_t
+
 calloc=func
 func.calloc.args=2
 func.calloc.arg.0=size_t,nmeb
