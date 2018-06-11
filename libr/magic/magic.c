@@ -39,13 +39,13 @@
 #define MAXPATHLEN 255
 #endif
 
+R_LIB_VERSION (r_magic);
+
 #if USE_LIB_MAGIC
 #include <magic.h>
 #define RMagic void
 #undef R_API
 #define R_API
-
-R_LIB_VERSION (r_magic);
 
 R_API RMagic* r_magic_new(int flags) {
 	return magic_open (flags);
