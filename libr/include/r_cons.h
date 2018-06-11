@@ -762,6 +762,8 @@ R_API const char* r_cons_get_rune(const ut8 ch);
 #define R_LINE_BUFSIZE 4096
 #define R_LINE_HISTSIZE 256
 
+#define R_EDGES_X_INC 4
+
 typedef struct r_line_hist_t {
 	char **data;
 	int size;
