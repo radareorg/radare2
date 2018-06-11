@@ -170,14 +170,14 @@ R_API bool r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
 
 
 
-	if (x > c->w * 2) {
+	if (x > c->blen[y] * 2) {
 		return false;
 	}
 	if (y > c->h * 2) {
 		return false;
 	}
-	if (x >= c->w) {
-		c->x = c->w;
+	if (x >= c->blen[y]) {
+		c->x = c->blen[y];
 		ret = false;
 	}
 	if (y >= c->h) {
@@ -192,7 +192,7 @@ R_API bool r_cons_canvas_gotoxy(RConsCanvas *c, int x, int y) {
 		c->y = 0;
 		ret = false;
 	}
-	if (x < c->w && x >= 0) {
+	if (x < c->blen[y] && x >= 0) {
 		c->x = x;
 	}
 	if (y < c->h && y >= 0) {
@@ -300,13 +300,14 @@ static int utf8len_bytes (const char *s, int n) {
 }
 
 R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
-	char *p, ch;
-	int x, y;
-	int left, slen, attr_len, piece_len;
 
 	if (!c || !s || !*s) {
 		return;
 	}
+
+	char ch;
+	int x, y;
+	int left, slen, attr_len, piece_len;
 
 	int x_padding = utf8len_fixed (c->b[c->y], c->x);
 	int real_x = c->x + (c->x - x_padding);
@@ -349,7 +350,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 					r_cons_canvas_free (c);
 					return;
 				}
-				memset (newline + c->bsize[c->y], 0, newsize - c->blen[c->y]);
+				memset (newline + c->bsize[c->y], 0, newsize - c->bsize[c->y]);
 				c->b[c->y] = newline;
 				c->bsize[c->y] = newsize;
 			}
@@ -378,10 +379,10 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 			if (*s == '\0' || c->y  >= c->h) {
 				break;
 			}
-			x_padding = utf8len (c->b[c->y], orig_x);
+			x_padding = utf8len_fixed (c->b[c->y], orig_x);
 			real_x = orig_x + (orig_x - x_padding);
 			c->x = real_x;
-			attr_x = x_padding;
+			attr_x = utf8len (c->b[c->y], orig_x);
 		} else {
 			c->x += slen;
 		}
@@ -491,7 +492,11 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 	int i;
 	char *newline = NULL;
 	for (i = 0; i < h; i++) {
-		newline = realloc (c->b[i], sizeof *c->b[i] * (w + 1));
+		if (i < c->h) {
+			newline = realloc (c->b[i], sizeof *c->b[i] * (w + 1));
+		} else {
+			newline = malloc ((w + 1));
+		}
 		c->blen[i] = w;
 		c->bsize[i] = w + 1;
 		if (!newline) {
@@ -500,7 +505,9 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 				free (c->b[i]);
 			}
 			free (c->bsize);
+			free (c->attrs);
 			free (c->blen);
+			free (c->bsize);
 			free (c->b);
 			free (c);
 			return false;
