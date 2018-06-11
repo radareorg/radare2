@@ -679,11 +679,11 @@ static int java_switch_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, 
 
 	if (op_byte == 0xaa) {
 		// handle a table switch condition
-		if (pos + 8 > len) {
+		if (pos + 8 + 8 > len) {
 			return op->size;
 		}
-		int min_val = (ut32)(UINT (data, pos + 4)),
-			max_val = (ut32)(UINT (data, pos + 8));
+		const int min_val = (ut32)(UINT (data, pos + 4));
+		const int max_val = (ut32)(UINT (data, pos + 8));
 
 		ut32 default_loc = (ut32) (UINT (data, pos)), cur_case = 0;
 		op->switch_op = r_anal_switch_op_new (addr, min_val, default_loc);
