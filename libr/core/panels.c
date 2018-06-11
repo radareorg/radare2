@@ -107,6 +107,7 @@ static const char **menus_sub[] = {
 
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color);
 static void addPanelFrame(RCore* core, RPanels* panels, const char *title, const char *cmd);
+static bool checkFunc(RCore *core);
 static void clearMainPanel(RPanels *panels);
 static void cursorLeft(RCore *core);
 static void cursorRight(RCore *core);
@@ -553,6 +554,18 @@ static void zoom(RPanels *panels) {
 		panels->panel[1] = ocurnode;
 		panels->curnode = 1;
 	}
+}
+
+static bool checkFunc(RCore *core) {
+	RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+	if (!fun) {
+		r_cons_message ("Not in a function. Type 'df' to define it here");
+		return false;
+	} else if (r_list_empty (fun->bbs)) {
+		r_cons_message ("No basic blocks in this function. You may want to use 'afb+'.");
+		return false;
+	}
+	return true;
 }
 
 static void setRefreshAll(RPanels *panels) {
@@ -1314,9 +1327,11 @@ repeat:
 		panels->menu_y = 1;
 		break;
 	case 'G':
-		clearMainPanel (panels);
-		panels->isGraphInPanels = true;
-		r_core_visual_graph (core, NULL, NULL, true);
+		if (checkFunc (core)) {
+			clearMainPanel (panels);
+			panels->isGraphInPanels = true;
+			r_core_visual_graph (core, NULL, NULL, true);
+		}
 		break;
 	case 'H':
 		r_cons_switchbuf (false);
@@ -1341,20 +1356,13 @@ repeat:
 		if (r_config_get_i (core->config, "graph.web")) {
 			r_core_cmd0 (core, "agv $$");
 		} else {
-			RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
-			int ocolor;
-
-			if (!fun) {
-				r_cons_message ("Not in a function. Type 'df' to define it here");
-				break;
-			} else if (r_list_empty (fun->bbs)) {
-				r_cons_message ("No basic blocks in this function. You may want to use 'afb+'.");
-				break;
+			if (checkFunc (core)) {
+				int ocolor;
+				ocolor = r_config_get_i (core->config, "scr.color");
+				r_core_visual_graph (core, NULL, NULL, true);
+				r_config_set_i (core->config, "scr.color", ocolor);
+				setRefreshAll (panels);
 			}
-			ocolor = r_config_get_i (core->config, "scr.color");
-			r_core_visual_graph (core, NULL, NULL, true);
-			r_config_set_i (core->config, "scr.color", ocolor);
-			setRefreshAll (panels);
 		}
 		break;
 	case ']':

@@ -3131,16 +3131,18 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 	if (!preEdges) {
 		agraph_print_edges (g);
 	}
+	bool isPanelGraph = r_core_panels_graph (core);
 	/* print the graph title */
-	(void) G (-g->can->sx, -g->can->sy);
-	W (g->title);
+	if (!isPanelGraph) {
+		(void) G (-g->can->sx, -g->can->sy);
+		W (g->title);
+	}
 	if (is_interactive && g->title) {
 		int title_len = strlen (g->title);
 		r_cons_canvas_fill (g->can, -g->can->sx + title_len, -g->can->sy,
 			w - title_len, 1, ' ', true);
 	}
-
-	if (r_core_panels_graph (core)) {
+	if (isPanelGraph) {
 		r_cons_canvas_fill (g->can, -g->can->sx + core->panels->panel[1].w, -g->can->sy, w - core->panels->panel[1].w, core->panels->panel[1].h, ' ', 0);
 	}
 	r_cons_canvas_print_region (g->can);
@@ -3671,7 +3673,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 
 	int h, w = r_cons_get_size (&h);
 
-	if (core->panels && core->panels->isGraphInPanels) {
+	if (r_core_panels_graph (core)) {
 		canvas_allocated = false;
 		can = core->panels->can;
 	} else {
@@ -3768,10 +3770,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		ret = agraph_refresh (grd);
 
 		if (r_core_panels_graph (core)) {
-			int title_len = strlen (g->title);
 			int origx = g->can->sx, origy = g->can->sy;
 			r_core_turnoff_refresh_mainpanel (core->panels);
-			r_cons_canvas_fill (g->can, -g->can->sx, -g->can->sy, w, 1, ' ', true);
 			r_core_panels_layout_refresh (core);
 			g->can->sx = origx;
 			g->can->sy = origy;
