@@ -1313,6 +1313,11 @@ repeat:
 		}
 		panels->menu_y = 1;
 		break;
+	case 'G':
+		clearMainPanel (panels);
+		panels->isGraphInPanels = true;
+		r_core_visual_graph (core, NULL, NULL, true);
+		break;
 	case 'H':
 		r_cons_switchbuf (false);
 		panels->columnWidth += 4;
@@ -1347,8 +1352,6 @@ repeat:
 				break;
 			}
 			ocolor = r_config_get_i (core->config, "scr.color");
-			clearMainPanel (panels);
-			panels->isGraphInPanels = true;
 			r_core_visual_graph (core, NULL, NULL, true);
 			r_config_set_i (core->config, "scr.color", ocolor);
 			setRefreshAll (panels);
