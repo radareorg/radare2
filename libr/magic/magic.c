@@ -264,8 +264,6 @@ done:
 
 /* API */
 
-R_LIB_VERSION (r_magic);
-
 // TODO: reinitialize all the time
 R_API RMagic* r_magic_new(int flags) {
 	RMagic *ms = R_NEW0 (RMagic);
