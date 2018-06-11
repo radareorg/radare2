@@ -85,21 +85,23 @@ hell:
 	}
 }
 
-R_API void r_core_task_schedule(RCoreTask *current, bool end) {
+R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 	RCore *core = current->core;
+	bool stop = next_state != R_CORE_TASK_STATE_RUNNING;
 
 	core->current_task = NULL;
 	
 	r_th_lock_enter (core->tasks_lock);
 
-	if (end) {
-		current->state = R_CORE_TASK_STATE_DONE;
+	current->state = next_state;
+
+	if (stop) {
 		r_th_lock_leave (current->dispatch_lock);
 	}
 
 	RCoreTask *next = r_list_pop_head (core->tasks_queue);
 
-	if (next && !end) {
+	if (next && !stop) {
 		r_list_append (core->tasks_queue, current);
 	}
 
@@ -110,29 +112,30 @@ R_API void r_core_task_schedule(RCoreTask *current, bool end) {
 		r_th_lock_enter (next->dispatch_lock);
 		r_th_cond_signal (next->dispatch_cond);
 		r_th_lock_leave (next->dispatch_lock);
-		if (!end) {
+		if (!stop) {
 			r_th_cond_wait (current->dispatch_cond, current->dispatch_lock);
 			r_cons_load (current->cons);
 		}
-	} else if (current != core->main_task && end) {
+	} else if (current != core->main_task && stop) {
 		// all tasks done, reset to main cons
 		current->cons = r_cons_dump ();
 		r_cons_load (core->main_task->cons);
 		core->main_task->cons = NULL;
 	}
 
-	if (!end) {
+	if (!stop) {
 		core->current_task = current;
 	}
 }
 
-static void task_begin(RCoreTask *current) {
+static void task_wakeup(RCoreTask *current) {
 	RCore *core = current->core;
 
 	r_th_lock_enter (current->core->tasks_lock);
 
 	current->state = R_CORE_TASK_STATE_RUNNING;
 
+	// check if there are other tasks running
 	bool single = true;
 	RCoreTask *task;
 	RListIter *iter;
@@ -144,6 +147,8 @@ static void task_begin(RCoreTask *current) {
 	}
 
 	r_th_lock_enter (current->dispatch_lock);
+
+	// if we are not the only task, we must wait until another task signals us.
 
 	if (!single) {
 		r_list_append (current->core->tasks_queue, current);
@@ -160,7 +165,9 @@ static void task_begin(RCoreTask *current) {
 	// swap cons
 	if (current->cons) {
 		// we are the main task and some other task has already dumped the main cons for us
+		// or we were sleeping.
 		r_cons_load (current->cons);
+		current->cons = NULL;
 	} if (core->main_task != current) {
 		// we are not the main task, so we need a new cons
 		current->cons = r_cons_dump_new ();
@@ -170,15 +177,16 @@ static void task_begin(RCoreTask *current) {
 			core->main_task->cons = r_cons_dump ();
 		}
 		r_cons_load (current->cons);
+		current->cons = NULL;
 	}
 }
 
 R_API void r_core_task_continue(RCoreTask *t) {
-	r_core_task_schedule (t, false);
+	r_core_task_schedule (t, R_CORE_TASK_STATE_RUNNING);
 }
 
 static void task_end(RCoreTask *t) {
-	r_core_task_schedule (t, true);
+	r_core_task_schedule (t, R_CORE_TASK_STATE_DONE);
 }
 
 
@@ -190,7 +198,7 @@ static int task_finished(void *user, void *data) {
 static int task_run(RCoreTask *task) {
 	RCore *core = task->core;
 
-	task_begin (task);
+	task_wakeup (task);
 
 	// close (2); // no stderr
 	char *res_str;
@@ -243,10 +251,22 @@ R_API void r_core_task_sync_end(RCore *core) {
 	task_end(core->main_task);
 }
 
+/* To be called from within a task.
+ * Begin sleeping and schedule other tasks until r_core_task_sleep_end() is called. */
+R_API void r_core_task_sleep_begin(RCoreTask *task) {
+	r_core_task_schedule (task, R_CORE_TASK_STATE_SLEEPING);
+}
+
+R_API void r_core_task_sleep_end(RCoreTask *task) {
+	task_wakeup (task);
+}
+
 R_API const char *r_core_task_status (RCoreTask *task) {
 	switch (task->state) {
 	case R_CORE_TASK_STATE_RUNNING:
 		return "running";
+	case R_CORE_TASK_STATE_SLEEPING:
+		return "sleeping";
 	case R_CORE_TASK_STATE_DONE:
 		return "done";
 	case R_CORE_TASK_STATE_BEFORE_START:
