@@ -2212,6 +2212,9 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			}
 		} else if (IS_MODE_SIMPLE (mode)) {
 			char *hashstr = NULL;
+			if (section->is_segment != print_segments) {
+				continue;
+			}
 			if (chksum) {
 				ut8 *data = malloc (section->size);
 				if (!data) {
