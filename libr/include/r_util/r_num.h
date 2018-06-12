@@ -50,7 +50,7 @@ typedef ut64 (*RNumCallback)(struct r_num_t *self, const char *str, int *ok);
 typedef const char *(*RNumCallback2)(struct r_num_t *self, ut64, int *ok);
 
 void r_srand(int seed);
-int r_rand(void);
+int r_rand(int mod);
 
 R_API RNum *r_num_new(RNumCallback cb, RNumCallback2 cb2, void *ptr);
 R_API void r_num_free(RNum *num);
