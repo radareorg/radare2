@@ -33,7 +33,8 @@ Profile *p_table[] = {
 	&WIN2003_SP1_X64,
 	&WIN2003_SP2_X86,
 	&WIN2003_SP2_X64,
-	&WIN10_SP0_X64,
+	&WIN10_RS1_X64, // Windows 10 (Anniversary Update)
+	&WIN10_RS4_X64, // Windows 10 (April 2018 Update)
 	NULL,
 };
 
