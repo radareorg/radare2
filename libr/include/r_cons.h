@@ -305,8 +305,9 @@ typedef struct r_cons_canvas_t {
 	int h;
 	int x;
 	int y;
-	char *b;
-	int blen;
+	char **b;
+	int *blen;
+	int *bsize;
 	const char * attr;//The current attr (inserted on each write)
 	RConsCanvasAttr * attrs;// all the different attributes
 	int attrslen;
