@@ -911,6 +911,7 @@ R_API int r_core_file_close(RCore *r, RCoreFile *fh) {
 		}
 	}
 	r_io_desc_close (desc);
+	r_core_file_free (fh);
 	return ret;
 }
 

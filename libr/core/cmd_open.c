@@ -1342,7 +1342,6 @@ static int cmd_open(void *data, const char *input) {
 		case 0:
 		case '?':
 			r_core_cmd_help (core, help_msg_o_);
-			eprintf ("Usage: o-#, o-! or o-*, where # is the filedescriptor number\n");
 		}
 		break;
 	case '.': // "o."
