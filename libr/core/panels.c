@@ -193,7 +193,7 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 			}
 			white[idx] = 0;
 			text = r_str_ansi_crop (cmdStr,
-					0, delta_y, panel->w + delta_x - 2, panel->h - 2 + delta_y);
+					0, delta_y, panel->w + delta_x - 3, panel->h - 2 + delta_y);
 			char *newText = r_str_prefix_all (text, white);
 			if (newText) {
 				free (text);
@@ -201,7 +201,7 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 			}
 		} else {
 			text = r_str_ansi_crop (cmdStr,
-					delta_x, delta_y, panel->w + delta_x - 2, panel->h - 2 + delta_y);
+					delta_x, delta_y, panel->w + delta_x - 3, panel->h - 2 + delta_y);
 		}
 		if (text) {
 			r_cons_canvas_write (can, text);
