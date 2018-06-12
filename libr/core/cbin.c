@@ -2093,6 +2093,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	bool inDebugger = r_config_get_i (r->config, "cfg.debug");
 	SdbHash *dup_chk_ht = ht_new (NULL, NULL, NULL);
 	bool ret = false;
+	const char *type = print_segments ? "segment" : "section";
 
 	if (!dup_chk_ht) {
 		return false;
@@ -2102,7 +2103,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		printHere = true;
 	}
 	if (IS_MODE_JSON (mode) && !printHere) r_cons_printf ("[");
-	else if (IS_MODE_RAD (mode) && !at) r_cons_printf ("fs sections\n");
+	else if (IS_MODE_RAD (mode) && !at) r_cons_printf ("fs %ss\n", type);
 	else if (IS_MODE_NORMAL (mode) && !at && !printHere) {
 		r_cons_printf ("[%s]\n", print_segments ? "Segments" : "Sections");
 	} else if (IS_MODE_NORMAL (mode) && printHere) r_cons_printf("Current section\n");
@@ -2268,6 +2269,9 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				addr);
 			free (hashstr);
 		} else if (IS_MODE_RAD (mode)) {
+			if (section->is_segment != print_segments) {
+				continue;
+			}
 			if (!strcmp (section->name, ".bss") && !inDebugger) {
 #if LOAD_BSS_MALLOC
 				r_cons_printf ("on malloc://%d 0x%"PFMT64x" # bss\n",
@@ -2298,23 +2302,23 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 					PFMT64x"\n", arch, bits, addr);
 			}
 			if (r->bin->prefix) {
-				r_cons_printf ("f %s.section.%s %"PFMT64d" 0x%08"PFMT64x"\n",
-						r->bin->prefix, section->name, section->size, addr);
-				r_cons_printf ("f %s.section_end.%s 1 0x%08"PFMT64x"\n",
-						r->bin->prefix, section->name, addr + section->vsize);
-				r_cons_printf ("CC section %i va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
+				r_cons_printf ("f %s.%s.%s %"PFMT64d" 0x%08"PFMT64x"\n",
+						r->bin->prefix, type, section->name, section->size, addr);
+				r_cons_printf ("f %s.%s_end.%s 1 0x%08"PFMT64x"\n",
+						r->bin->prefix, type, section->name, addr + section->vsize);
+				r_cons_printf ("CC %s %i va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
 						"rwx=%s %s.%s @ 0x%08"PFMT64x"\n",
-						i, addr, section->paddr, section->size, section->vsize,
+						type, i, addr, section->paddr, section->size, section->vsize,
 						perms, r->bin->prefix, section->name, addr);
 
 			} else {
-				r_cons_printf ("f section.%s %"PFMT64d" 0x%08"PFMT64x"\n",
-						section->name, section->size, addr);
-				r_cons_printf ("f section_end.%s 1 0x%08"PFMT64x"\n",
-						section->name, addr + section->vsize);
-				r_cons_printf ("CC section %i va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
+				r_cons_printf ("f %s.%s %"PFMT64d" 0x%08"PFMT64x"\n",
+						type, section->name, section->size, addr);
+				r_cons_printf ("f %s_end.%s 1 0x%08"PFMT64x"\n",
+						type, section->name, addr + section->vsize);
+				r_cons_printf ("CC %s %i va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
 						"rwx=%s %s @ 0x%08"PFMT64x"\n",
-						i, addr, section->paddr, section->size, section->vsize,
+						type, i, addr, section->paddr, section->size, section->vsize,
 						perms, section->name, addr);
 			}
 		} else {
