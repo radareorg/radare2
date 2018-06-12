@@ -207,28 +207,30 @@ R_API RConsCanvas *r_cons_canvas_new(int w, int h) {
 	if (!c) {
 		return NULL;
 	}
+	c->bsize = NULL;
+	c->blen = NULL;
+	int i = 0;
 	c->color = 0;
 	c->sx = 0;
 	c->sy = 0;
 	c->b = malloc (sizeof *c->b * h);
 	if (!c->b) {
-		goto error_b;
+		goto beach;
 	}
 	c->blen = malloc (sizeof *c->blen * h);
 	if (!c->blen) {
-		goto error_blen;
+		goto beach;
 	}
 	c->bsize = malloc (sizeof *c->bsize * h);
 	if (!c->bsize) {
-		goto error_bsize;
+		goto beach;
 	}
-	int i;
 	for (i = 0; i < h; i++) {
 		c->b[i] = malloc (w + 1);
 		c->blen[i] = w;
 		c->bsize[i] = w + 1;
 		if (!c->b[i]) {
-			goto error_c;
+			goto beach;
 		}
 	}
 	c->w = w;
@@ -237,28 +239,22 @@ R_API RConsCanvas *r_cons_canvas_new(int w, int h) {
 	c->attrslen = 0;
 	c->attrs = calloc (sizeof (*c->attrs), (c->w + 1) * c->h);
 	if (!c->attrs) {
-		goto error_c;
+		goto beach;
 	}
 	c->attr = Color_RESET;
 	r_cons_canvas_clear (c);
 	return c;
-error_c: {
+beach: {
 	int j;
 	for (j = 0; j < i; j++) {
 		free (c->b[j]);
 	}
 	free (c->bsize);
-	goto error_bsize;
-	}
-error_bsize:
 	free (c->blen);
-	goto error_blen;
-error_blen:
 	free (c->b);
-	goto error_b;
-error_b:
 	free (c);
 	return NULL;
+       }
 }
 
 static int utf8len_fixed(const char *s, int n) {
