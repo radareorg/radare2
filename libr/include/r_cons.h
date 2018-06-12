@@ -952,11 +952,8 @@ typedef struct r_panels_t {
 	int curnode;
 	int originCursor;
 	bool isResizing;
+	bool isGraphInPanels;
 } RPanels;
-#ifdef R_API
-R_API RPanels *r_panels_new();
-R_API void r_panels_free(RPanels *panels);
-#endif
 
 #ifdef __cplusplus
 }
