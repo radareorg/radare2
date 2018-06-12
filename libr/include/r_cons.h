@@ -918,7 +918,7 @@ typedef struct r_ascii_graph_t {
 
 #ifdef R_API
 R_API RAGraph *r_agraph_new(RConsCanvas *can);
-R_API void r_agraph_free(RAGraph *g, bool freecanvas);
+R_API void r_agraph_free(RAGraph *g);
 R_API void r_agraph_reset(RAGraph *g);
 R_API void r_agraph_set_title(RAGraph *g, const char *title);
 R_API RANode *r_agraph_get_first_node(const RAGraph *g);

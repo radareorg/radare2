@@ -442,7 +442,7 @@ static int GH(print_double_linked_list_bin_graph)(RCore *core, GHT bin, GH(RHeap
 
 	if (!cnk || !g) {
 		free (cnk);
-		r_agraph_free (g, true);
+		r_agraph_free (g);
 		return -1;
 	}
 	g->can->color = r_config_get_i (core->config, "scr.color");
@@ -478,7 +478,7 @@ static int GH(print_double_linked_list_bin_graph)(RCore *core, GHT bin, GH(RHeap
 	r_agraph_print (g);
 
 	free (cnk);
-	r_agraph_free (g, true);
+	r_agraph_free (g);
 	return 0;
 }
 
@@ -708,7 +708,7 @@ static void GH(print_mmap_graph)(RCore *core, GH(RHeap_MallocState) *malloc_stat
 		free (cnk);
 		free (prev_c);
 		r_cons_canvas_free (can);
-		r_agraph_free (g, true);
+		r_agraph_free (g);
 		r_config_restore (hc);
 		r_config_hold_free (hc);
 		return;

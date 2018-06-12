@@ -3489,16 +3489,14 @@ R_API void r_agraph_reset(RAGraph *g) {
 	g->curnode = NULL;
 }
 
-R_API void r_agraph_free(RAGraph *g, bool freecanvas) {
+R_API void r_agraph_free(RAGraph *g) {
 	if (g) {
 		agraph_free_nodes (g);
 		r_graph_free (g->graph);
 		r_list_free (g->edges);
 		r_agraph_set_title (g, NULL);
 		sdb_free (g->db);
-		if (freecanvas) {
-			r_cons_canvas_free (g->can);
-		}
+		r_cons_canvas_free (g->can);
 		free (g);
 	}
 }
@@ -3662,7 +3660,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	RAnalFunction *fcn = NULL;
 	const char *key_s;
 	RConsCanvas *can, *o_can = NULL;
-	bool graph_allocated = false, canvas_allocated = true;
+	bool graph_allocated = false;
 	int movspeed;
 	int ret, invscroll;
 	RConfigHold *hc = r_config_hold_new (core->config);
@@ -3672,14 +3670,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	r_config_save_num (hc, "asm.pseudo", "asm.esil", "asm.cmt.right", NULL);
 
 	int h, w = r_cons_get_size (&h);
-
-	if (r_core_panels_graph (core)) {
-		canvas_allocated = false;
-		can = core->panels->can;
-	} else {
-		can = r_cons_canvas_new (w, h);
-	}
-
+	can = r_cons_canvas_new (w, h);
 	if (!can) {
 		w = 80;
 		h = 25;
@@ -3736,7 +3727,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		r_cons_canvas_free (can);
 		r_config_restore (hc);
 		r_config_hold_free (hc);
-		r_agraph_free (g, canvas_allocated);
+		r_agraph_free (g);
 		return false;
 	}
 	grd->g = g;
@@ -3748,6 +3739,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 
 	if (r_core_panels_graph (core)) {
 		int origx = g->can->sx, origy = g->can->sy;
+		core->panels->can = can;
 		r_core_turnoff_refresh_mainpanel (core->panels);
 		r_core_panels_layout_refresh (core);
 		g->can->sx = origx;
@@ -4364,7 +4356,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 
 	free (grd);
 	if (graph_allocated) {
-		r_agraph_free (g, canvas_allocated);
+		r_agraph_free (g);
 		r_config_set_i (core->config, "scr.interactive", o_scrinteractive);
 	} else {
 		g->can = o_can;

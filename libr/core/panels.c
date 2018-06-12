@@ -109,7 +109,6 @@ static void layoutMenu(RPanel *panel);
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color);
 static void addPanelFrame(RCore* core, RPanels* panels, const char *title, const char *cmd);
 static bool checkFunc(RCore *core);
-static void clearMainPanel(RPanels *panels);
 static void cursorLeft(RCore *core);
 static void cursorRight(RCore *core);
 static void delCurPanel(RPanels *panels);
@@ -132,7 +131,7 @@ static void setRefreshAll(RPanels *panels);
 static void setCursor(RCore *core, bool cur);
 static void zoom(RPanels *panels);
 
-static void clearMainPanel(RPanels *panels) {
+R_API void r_core_clear_mainpanel(RPanels *panels) {
 	r_core_turnoff_refresh_mainpanel (panels);
 	r_cons_canvas_fill (panels->can, panels->panel[1].x, panels->panel[1].y, panels->panel[1].w, panels->panel[1].h, ' ');
 	r_cons_canvas_print (panels->can);
@@ -1126,6 +1125,7 @@ repeat:
 	}
 
 	const char *cmd;
+	RConsCanvas *can = panels->can;
 	switch (key) {
 	case 'u':
 		r_core_cmd0 (core, "s-");
@@ -1244,7 +1244,7 @@ repeat:
 		}
 		break;
 	case 'C':
-		panels->can->color = !panels->can->color;
+		can->color = !can->color;
 		// r_config_toggle (core->config, "scr.color");
 		// refresh graph
 		doPanelsRefresh (core);
@@ -1327,9 +1327,9 @@ repeat:
 		break;
 	case 'G':
 		if (checkFunc (core)) {
-			clearMainPanel (panels);
 			panels->isGraphInPanels = true;
 			r_core_visual_graph (core, NULL, NULL, true);
+			panels->can = can;
 		}
 		break;
 	case 'H':
@@ -1479,7 +1479,7 @@ repeat:
 	}
 	goto repeat;
 exit:
-	r_config_set_i (core->config, "scr.color", panels->can->color);
+	r_config_set_i (core->config, "scr.color", can->color);
 	r_config_set_i (core->config, "asm.comments", asm_comments);
 	r_config_set_i (core->config, "asm.bytes", asm_bytes);
 	r_config_set_i (core->config, "scr.utf8", have_utf8);
