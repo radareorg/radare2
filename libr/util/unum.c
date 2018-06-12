@@ -18,11 +18,11 @@ void r_srand (int seed) {
 #endif
 }
 
-int r_rand (void) {
+int r_rand (int mod) {
 #if HAVE_ARC4RANDOM_UNIFORM
-	return (int)arc4random ();
+	return (int)arc4random_uniform (mod);
 #else
-	return rand ();
+	return rand ()%mod;
 #endif
 }
 
@@ -39,7 +39,7 @@ R_API int r_num_rand(int max) {
 	if (!max) {
 		max = 1;
 	}
-	return r_rand ()%max;
+	return r_rand (max);
 }
 
 R_API void r_num_minmax_swap(ut64 *a, ut64 *b) {
