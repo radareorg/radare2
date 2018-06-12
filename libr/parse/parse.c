@@ -292,6 +292,9 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 						char *ptr_end = str + strlen (data) + flag_len - 1;
 						char *ptr_right = ptr_end + 1, *ptr_left, *ptr_esc;
 						bool ansi_found = false;
+						if (!*ptr_end) {
+							return true;
+						}
 						while (*ptr_right) {
 							if (*ptr_right == 0x1b) {
 								while (*ptr_right && *ptr_right != 'm') ptr_right++;
