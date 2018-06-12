@@ -293,7 +293,6 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels);
 R_API RPanels *r_core_panels_new(RCore *core);
 R_API void r_core_panels_refresh(RCore *core);
 R_API void r_core_check_stackbase(RCore *core);
-R_API void r_core_clear_mainpanel(RPanels *panels);
 R_API void r_core_panels_free(RPanels *panels);
 R_API void r_core_panels_layout(RPanels *panels);
 R_API void r_core_panels_layout_refresh(RCore *core);

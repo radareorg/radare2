@@ -131,13 +131,6 @@ static void setRefreshAll(RPanels *panels);
 static void setCursor(RCore *core, bool cur);
 static void zoom(RPanels *panels);
 
-R_API void r_core_clear_mainpanel(RPanels *panels) {
-	r_core_turnoff_refresh_mainpanel (panels);
-	r_cons_canvas_fill (panels->can, panels->panel[1].x, panels->panel[1].y, panels->panel[1].w, panels->panel[1].h, ' ');
-	r_cons_canvas_print (panels->can);
-	r_cons_flush ();
-}
-
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) {
 	if (!can || !panel|| !panel->refresh) {
 		return;
