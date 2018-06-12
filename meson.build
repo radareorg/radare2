@@ -233,6 +233,12 @@ else
   userconf.set('HAVE_ARC4RANDOM_UNIFORM', 0)
 endif
 
+if cc.has_function('cap_service_open')
+  userconf.set('HAVE_LIB_CASPER', 1)
+else
+  userconf.set('HAVE_LIB_CASPER', 0)
+endif
+
 r_userconf_h = configure_file(
   input: 'libr/include/r_userconf.h.in',
   output: 'r_userconf.h',
