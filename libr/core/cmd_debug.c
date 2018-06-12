@@ -1505,12 +1505,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		cmd_debug_map_snapshot (core, input + 1);
 		break;
 	case '.': // "dm."
-		r_list_foreach (core->dbg->maps, iter, map) {
-			if (addr >= map->addr && addr < map->addr_end) {
-				r_cons_println (map->name);
-				break;
-			}
-		}
+		r_debug_map_list (core->dbg, addr, input);
 		break;
 	case 'm': // "dmm"
 		if (!strcmp (input + 1, ".*")) {
@@ -1822,7 +1817,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	case 'j': // "dmj"
 	case 'q': // "dmq"
 		r_debug_map_sync (core->dbg); // update process memory maps
-		r_debug_map_list (core->dbg, core->offset, input[0]);
+		r_debug_map_list (core->dbg, core->offset, input);
 		break;
 	case '=': // "dm="
 		r_debug_map_sync (core->dbg);

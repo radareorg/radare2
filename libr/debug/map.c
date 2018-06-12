@@ -3,7 +3,65 @@
 #include <r_debug.h>
 #include <r_list.h>
 
-R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
+/* Print out the JSON body for memory maps in the passed map region */
+static void print_debug_map_json(RDebug *dbg, RDebugMap *map, bool prefix_comma) {
+	dbg->cb_printf ("%s{", prefix_comma ? ",": "");
+	if (map->name && *map->name) {
+		char *escaped_name = r_str_escape (map->name);
+		dbg->cb_printf ("\"name\":\"%s\",", escaped_name);
+		free (escaped_name);
+	}
+	if (map->file && *map->file) {
+		char *escaped_path = r_str_escape (map->file);
+		dbg->cb_printf ("\"file\":\"%s\",", escaped_path);
+		free (escaped_path);
+	}
+	dbg->cb_printf ("\"addr\":%"PFMT64u",", map->addr);
+	dbg->cb_printf ("\"addr_end\":%"PFMT64u",", map->addr_end);
+	dbg->cb_printf ("\"type\":\"%c\",", map->user?'u':'s');
+	dbg->cb_printf ("\"perm\":\"%s\"", r_str_rwx_i (map->perm));
+	dbg->cb_printf ("}");
+}
+
+/* Write the memory map header describing the line columns */
+static void print_debug_map_header(RDebug *dbg, const char *input) {
+	// TODO: Write header to console based on which command is being ran
+}
+
+/* Write a single memory map line to the console */
+static void print_debug_map_line(RDebug *dbg, RDebugMap *map, ut64 addr, const char *input) {
+	char sizebuf[128];
+	const char *fmtstr = dbg->bits & R_SYS_BITS_64
+		? "0x%016"PFMT64x" # 0x%016"PFMT64x" %c %s %6s %c %s %s %s%s%s\n"
+		: "0x%08"PFMT64x" # 0x%08"PFMT64x" %c %s %6s %c %s %s %s%s%s\n";
+	const char *type = map->shared? "sys": "usr";
+	const char *flagname = dbg->corebind.getName
+		? dbg->corebind.getName (dbg->corebind.core, map->addr) : NULL;
+	if (!flagname) {
+		flagname = "";
+	} else if (map->name) {
+		char *filtered_name = strdup (map->name);
+		r_name_filter (filtered_name, 0);
+		if (!strncmp (flagname, "map.", 4) && \
+			!strcmp (flagname + 4, filtered_name)) {
+			flagname = "";
+		}
+		free (filtered_name);
+	}
+	dbg->cb_printf (fmtstr,
+		map->addr,
+		map->addr_end,
+		(addr>=map->addr && addr<map->addr_end)?'*':'-',
+		type, r_num_units (sizebuf, map->size),
+		map->user?'u':'s',
+		r_str_rwx_i (map->perm),
+		map->name?map->name:"?",
+		map->file?map->file:"?",
+		*flagname? " ; ": "",
+		flagname);
+}
+
+R_API void r_debug_map_list(RDebug *dbg, ut64 addr, const char *input) {
 	int i;
 	char buf[128];
 	bool notfirst = false;
@@ -13,34 +71,26 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 		return;
 	}
 
-	if (rad == 'j') {
-		dbg->cb_printf ("[");
+	switch (input[0]) {
+		case 'j': // "dmj" add JSON opening array brace
+			dbg->cb_printf ("[");
+			break;
+		case '*': // "dm*" dont print a header for r2 commands output
+			break;
+		default:
+			// TODO: Find a way to only print headers if output isn't being grepped
+			print_debug_map_header (dbg, input);
 	}
 
 	for (i = 0; i < 2; i++) {
 		RList *maps = (i == 0) ? dbg->maps : dbg->maps_user;
 		r_list_foreach (maps, iter, map) {
-			switch (rad) {
-			case 'j':
-				dbg->cb_printf ("%s{", notfirst? ",": "");
-				if (map->name && *map->name) {
-					char *escaped_name = r_str_escape (map->name);
-					dbg->cb_printf ("\"name\":\"%s\",", escaped_name);
-					free (escaped_name);
-				}
-				if (map->file && *map->file) {
-					char *escaped_path = r_str_escape (map->file);
-					dbg->cb_printf ("\"file\":\"%s\",", escaped_path);
-					free (escaped_path);
-				}
-				dbg->cb_printf ("\"addr\":%"PFMT64u",", map->addr);
-				dbg->cb_printf ("\"addr_end\":%"PFMT64u",", map->addr_end);
-				dbg->cb_printf ("\"type\":\"%c\",", map->user?'u':'s');
-				dbg->cb_printf ("\"perm\":\"%s\"", r_str_rwx_i (map->perm));
-				dbg->cb_printf ("}");
+			switch (input[0]) {
+			case 'j': // "dmj"
+				print_debug_map_json (dbg, map, notfirst);
 				notfirst = true;
 				break;
-			case '*':
+			case '*': // "dm*"
 				{
 					char *name = (map->name && *map->name)
 						? r_str_newf ("%s.%s", map->name, r_str_rwx_i (map->perm))
@@ -51,7 +101,7 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 					free (name);
 				}
 				break;
-			case 'q':
+			case 'q': // "dmq"
 				{
 					char *name = (map->name && *map->name)
 						? r_str_newf ("%s.%s", map->name, r_str_rwx_i (map->perm))
@@ -64,43 +114,19 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad) {
 					free (name);
 				}
 				break;
-			default:
-				{
-					const char *fmtstr = dbg->bits & R_SYS_BITS_64
-						? "0x%016"PFMT64x" # 0x%016"PFMT64x" %c %s %6s %c %s %s %s%s%s\n"
-						: "0x%08"PFMT64x" # 0x%08"PFMT64x" %c %s %6s %c %s %s %s%s%s\n";
-					const char *type = map->shared? "sys": "usr";
-					const char *flagname = dbg->corebind.getName
-						? dbg->corebind.getName (dbg->corebind.core, map->addr) : NULL;
-					if (!flagname) {
-						flagname = "";
-					} else if (map->name) {
-						char *filtered_name = strdup (map->name);
-						r_name_filter (filtered_name, 0);
-						if (!strncmp (flagname, "map.", 4) && \
-							!strcmp (flagname + 4, filtered_name)) {
-							flagname = "";
-						}
-						free (filtered_name);
-					}
-					dbg->cb_printf (fmtstr,
-						map->addr,
-						map->addr_end,
-						(addr>=map->addr && addr<map->addr_end)?'*':'-',
-						type, r_num_units (buf, map->size),
-						map->user?'u':'s',
-						r_str_rwx_i (map->perm),
-						map->name?map->name:"?",
-						map->file?map->file:"?",
-						*flagname? " ; ": "",
-						flagname);
+			case '.':
+				if (addr >= map->addr && addr < map->addr_end) {
+					print_debug_map_line (dbg, map, addr, input);
 				}
+				break;
+			default:
+				print_debug_map_line (dbg, map, addr, input);
 				break;
 			}
 		}
 	}
 
-	if (rad == 'j') {
+	if (input[0] == 'j') { // "dmj" add JSON closing array brace
 		dbg->cb_printf ("]\n");
 	}
 }
@@ -169,8 +195,8 @@ static void print_debug_map_ascii_art(RList *maps, ut64 addr, int use_color, Pri
 			}
 			count++;
 			fmtstr = bits & R_SYS_BITS_64 ?
-				"map %.8s %c %s0x%016"PFMT64x"%s |" :
-				"map %.8s %c %s0x%08"PFMT64x"%s |";
+				"map %4.8s %c %s0x%016"PFMT64x"%s |" :
+				"map %4.8s %c %s0x%08"PFMT64x"%s |";
 			cb_printf (fmtstr, buf,
 				(addr >= map->addr && \
 				addr < map->addr_end) ? '*' : '-',
