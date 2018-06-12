@@ -1315,6 +1315,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				eprintf ("%02x ", buf[i]);
 			}
 			eprintf ("...)\n");
+			free (mnem);
 			break;
 		}
 		size = (hint && hint->size)? hint->size: op.size;
@@ -6321,6 +6322,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 				}
 			}
 			free (ptr);
+			r_list_free (list);
 			return 1;
 		}
 	} else if (n == 1) {
