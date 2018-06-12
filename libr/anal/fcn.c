@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2017 - nibble, alvaro, pancake */
+/* radare - LGPL - Copyright 2010-2018 - nibble, alvaro, pancake */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -405,7 +405,8 @@ static char *get_varname(RAnal *a, RAnalFunction *fcn, char type, const char *pf
 			v_kind = *name_value;
 		}
 		if (v_kind == type && R_ABS (v_delta) == idx) {
-			break;
+			free (name_value);
+			return varname;
 		}
 		free (varname);
 		free (name_value);

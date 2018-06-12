@@ -1271,7 +1271,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	RAnalHint *hint;
 	RAnalEsil *esil = NULL;
 	RAsmOp asmop;
-	RAnalOp op;
+	RAnalOp op = {0};
 	ut64 addr;
 	bool isFirst = true;
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
@@ -1544,7 +1544,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		//free (hint);
 		free (mnem);
 		r_anal_hint_free (hint);
+		r_anal_op_fini (&op);
 	}
+	r_anal_op_fini (&op);
 	if (fmt == 'j') {
 		r_cons_printf ("]");
 		r_cons_newline ();

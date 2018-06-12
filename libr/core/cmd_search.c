@@ -601,6 +601,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		protection = R_IO_RWX;
 	}
 	if (!core) {
+		r_list_free (list);
 		return NULL;
 	}
 	if (!core->io->va) {
