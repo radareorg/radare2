@@ -2103,8 +2103,9 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	}
 	if (IS_MODE_JSON (mode) && !printHere) r_cons_printf ("[");
 	else if (IS_MODE_RAD (mode) && !at) r_cons_printf ("fs sections\n");
-	else if (IS_MODE_NORMAL (mode) && !at && !printHere) r_cons_printf (print_segments ? "[Segments]\n" : "[Sections]\n");
-	else if (IS_MODE_NORMAL (mode) && printHere) r_cons_printf("Current section\n");
+	else if (IS_MODE_NORMAL (mode) && !at && !printHere) {
+		r_cons_printf ("[%s]\n", print_segments ? "Segments" : "Sections");
+	} else if (IS_MODE_NORMAL (mode) && printHere) r_cons_printf("Current section\n");
 	else if (IS_MODE_SET (mode)) {
 		fd = r_core_file_cur_fd (r);
 		r_flag_space_set (r->flags, "sections");
