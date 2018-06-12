@@ -2109,7 +2109,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	} else if (IS_MODE_NORMAL (mode) && printHere) r_cons_printf("Current section\n");
 	else if (IS_MODE_SET (mode)) {
 		fd = r_core_file_cur_fd (r);
-		r_flag_space_set (r->flags, "sections");
+		r_flag_space_set (r->flags, print_segments ? "segments" : "sections");
 	}
 	r_list_foreach (sections, iter, section) {
 		char perms[] = "----";
@@ -2132,6 +2132,10 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 
 		r_name_filter (section->name, sizeof (section->name));
 		if (at && (!section->size || !is_in_range (at, addr, section->size))) {
+			continue;
+		}
+
+		if (section->is_segment != print_segments) {
 			continue;
 		}
 
@@ -2166,18 +2170,18 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				}
 			}
 			if (r->bin->prefix) {
-				str = r_str_newf ("%s.section.%s", r->bin->prefix, section->name);
+				str = r_str_newf ("%s.%s.%s", r->bin->prefix, type, section->name);
 			} else {
-				str = r_str_newf ("section.%s", section->name);
+				str = r_str_newf ("%s.%s", type, section->name);
 
 			}
 			r_flag_set (r->flags, str, addr, section->size);
 			R_FREE (str);
 
 			if (r->bin->prefix) {
-				str = r_str_newf ("%s.section_end.%s", r->bin->prefix, section->name);
+				str = r_str_newf ("%s.%s_end.%s", r->bin->prefix, type, section->name);
 			} else {
-				str = r_str_newf ("section_end.%s", section->name);
+				str = r_str_newf ("%s_end.%s", type, section->name);
 			}
 			r_flag_set (r->flags, str, addr + section->vsize, 0);
 			R_FREE (str);
@@ -2196,8 +2200,8 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				//r_io_section_set_archbits (r->io, addr, arch, bits);
 			}
 			char *pfx = r->bin->prefix;
-			str = r_str_newf ("[%02d] %s section size %" PFMT64d" named %s%s%s",
-				i, perms, section->size,
+			str = r_str_newf ("[%02d] %s %s size %" PFMT64d" named %s%s%s",
+				i, perms, type, section->size,
 				pfx? pfx: "", pfx? ".": "", section->name);
 			r_meta_add (r->anal, R_META_TYPE_COMMENT, addr, addr, str);
 			R_FREE (str);
@@ -2214,9 +2218,6 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			}
 		} else if (IS_MODE_SIMPLE (mode)) {
 			char *hashstr = NULL;
-			if (section->is_segment != print_segments) {
-				continue;
-			}
 			if (chksum) {
 				ut8 *data = malloc (section->size);
 				if (!data) {
@@ -2237,9 +2238,6 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			free (hashstr);
 		} else if (IS_MODE_JSON (mode)) {
 			char *hashstr = NULL;
-			if (section->is_segment != print_segments) {
-				continue;
-			}
 			if (chksum) {
 				ut8 *data = malloc (section->size);
 				if (!data) {
@@ -2269,9 +2267,6 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				addr);
 			free (hashstr);
 		} else if (IS_MODE_RAD (mode)) {
-			if (section->is_segment != print_segments) {
-				continue;
-			}
 			if (!strcmp (section->name, ".bss") && !inDebugger) {
 #if LOAD_BSS_MALLOC
 				r_cons_printf ("on malloc://%d 0x%"PFMT64x" # bss\n",
@@ -2323,9 +2318,6 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			}
 		} else {
 			char *hashstr = NULL, str[128];
-			if (section->is_segment != print_segments) {
-				continue;
-			}
 			if (chksum) {
 				ut8 *data = malloc (section->size);
 				if (!data) {
