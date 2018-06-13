@@ -320,11 +320,16 @@ R_API void r_core_panels_layout_refresh(RCore *core) {
 	r_core_panels_refresh (core);
 }
 
-R_API bool r_core_panels_graph(RCore *core) {
-	if (core->panels && core->panels->isGraphInPanels) {
-		return true;
+R_API void r_core_panels_graph(RCore *core, RConsCanvas *can) {
+	if (!core->panels || !core->panels->isGraphInPanels) {
+		return;
 	}
-	return false;
+	core->panels->can = can;
+	int origx = can->sx, origy = can->sy;
+	r_core_panels_refresh_except_mainpanel (core->panels);
+	r_core_panels_layout_refresh (core);
+	can->sx = origx;
+	can->sy = origy;
 }
 
 R_API void r_core_panels_refresh_except_mainpanel(RPanels *panels) {
