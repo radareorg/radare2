@@ -9,6 +9,7 @@ LINK=-lm
 endif
 endif
 
+DEPS=r_util
 OBJS=state.o md5.o sha1.o hash.o md4.o hamdist.o crca.o
 OBJS+=entropy.o sha2.o calc.o xxhash.o adler32.o luhn.o
 
