@@ -669,11 +669,14 @@ static bool is_delta_pointer_table (RAnal *anal, RAnalFunction *fcn, ut64 addr, 
 		// eprintf ("JMPTBL ADDR %llx\n", mov_aop.ptr);
 		*jmptbl_addr += mov_aop.ptr;
 	}
+#if 0 
+	// required for the last jmptbl.. but seems to work without it and breaks other tests
 	if (mov_aop.type && mov_aop.ptr) {
 		*jmptbl_addr += mov_aop.ptr;
 		// absjmptbl
 		lea_ptr = mov_aop.ptr;
 	}
+#endif
 
 	/* check if jump table contains valid deltas */
 	anal->iob.read_at (anal->iob.io, *jmptbl_addr, (ut8 *)&jmptbl, 64);
@@ -1440,8 +1443,12 @@ repeat:
 			if (anal->opt.jmptbl) {
 				// op.ireg since rip relative addressing produces way too many false positives otherwise
 				// op.ireg is 0 for rip relative, "rax", etc otherwise
-				// if (op.ptr != UT64_MAX && op.ireg) { // direct jump
-				if (op.ptr != UT64_MAX && op.reg) { // direct jump
+				if (op.ptr != UT64_MAX && op.ireg) { // direct jump
+					ut64 table_size, default_case;
+					if (try_get_jmptbl_info (anal, fcn, op.addr, bb, &table_size, &default_case)) {
+						ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, op.ptr, anal->bits >> 3, table_size, default_case, ret);
+					}
+				} else if (op.ptr != UT64_MAX && op.reg) { // direct jump
 					ut64 table_size, default_case;
 					if (try_get_jmptbl_info (anal, fcn, op.addr, bb, &table_size, &default_case)) {
 						ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, op.ptr, anal->bits >> 3, table_size, default_case, ret);
@@ -1454,7 +1461,7 @@ repeat:
 						ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, op.ptr, anal->bits >> 3, table_size, default_case, ret);
 					}
 					movptr = UT64_MAX;
-	}
+				}
 			}
 #if 0
 			if (anal->cur) {
