@@ -1406,6 +1406,12 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			if (op.reg) {
 				r_cons_printf ("\"reg\": \"%s\",", op.reg);
 			}
+			if (op.ireg) {
+				r_cons_printf ("\"ireg\": \"%s\",", op.ireg);
+			}
+			if (op.scale) {
+				r_cons_printf ("\"scale\":%d,", op.scale);
+			}
 			if (hint && hint->esil) {
 				r_cons_printf ("\"esil\": \"%s\",", hint->esil);
 			} else if (*esilstr) {
@@ -1504,6 +1510,12 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			}
 			if (op.reg) {
 				printline ("reg", "%s\n", op.reg);
+			}
+			if (op.ireg) {
+				printline ("ireg", "%s\n", op.ireg);
+			}
+			if (op.scale) {
+				printline ("scale", "%d\n", op.scale);
 			}
 			if (hint && hint->esil) {
 				printline ("esil", "%s\n", hint->esil);
