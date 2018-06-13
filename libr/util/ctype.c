@@ -21,23 +21,31 @@ R_API int r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 	return false;
 }
 
-R_API bool r_type_isenum(Sdb *TDB, const char *name) {
+R_API int r_type_kind(Sdb *TDB, const char *name) {
 	if (!name) {
-		return false;
+		return -1;
 	}
 	const char *type = sdb_const_get (TDB, name, 0);
-	if (type && !strcmp (type, "enum")) {
-		return true;
-	} else {
-		return false;
+	if (!type) {
+		return -1;
 	}
+	if (!strcmp (type, "enum")) {
+		return R_TYPE_ENUM;
+	} else if (!strcmp (type, "struct")){
+		return R_TYPE_STRUCT;
+	} else if (!strcmp (type, "union")){
+		return R_TYPE_UNION;
+	} else if (!strcmp (type, "type")){
+		return R_TYPE_BASIC;
+	}
+	return -1;
 }
 
 R_API RList* r_type_get_enum (Sdb *TDB, const char *name) {
 	char *p, *val, var[128], var2[128];
 	int n;
 
-	if (!r_type_isenum (TDB, name)) {
+	if (r_type_kind (TDB, name) != R_TYPE_ENUM) {
 		return NULL;
 	}
 	RList *res = r_list_new ();
@@ -55,7 +63,7 @@ R_API RList* r_type_get_enum (Sdb *TDB, const char *name) {
 
 R_API char *r_type_enum_member(Sdb *TDB, const char *name, const char *member, ut64 val) {
 	const char *q;
-	if (!r_type_isenum (TDB, name)) {
+	if (r_type_kind (TDB, name) != R_TYPE_ENUM) {
 		return NULL;
 	}
 	if (member) {
@@ -71,7 +79,7 @@ R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
 	const char *res;
 	int i;
 
-	if (!r_type_isenum (TDB, name)) {
+	if (r_type_kind (TDB, name) != R_TYPE_ENUM) {
 		return NULL;
 	}
 	bool isFirst = true;
@@ -166,7 +174,7 @@ R_API const char *r_type_get_struct_memb(Sdb *TDB, const char *type, int offset)
 	char* query = sdb_fmt ("struct.%s", type);
 	char *members = sdb_get (TDB, query, 0);
 	if (!members) {
-		eprintf ("%s is not a struct\n", type);
+		//eprintf ("%s is not a struct\n", type);
 		return NULL;
 	}
 	int nargs = r_str_split (members, ',');
@@ -293,8 +301,7 @@ R_API char *r_type_format(Sdb *TDB, const char *t) {
 		const char *fmt = sdb_const_get (TDB, var, NULL);
 		if (fmt)
 			return strdup (fmt);
-	} else
-	if (!strcmp (kind, "struct")) {
+	} else if (!strcmp (kind, "struct") || !strcmp (kind, "union")) {
 		// assumes var list is sorted by offset.. should do more checks here
 		for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
 			const char *tfmt;

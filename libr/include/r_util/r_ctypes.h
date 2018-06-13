@@ -10,9 +10,16 @@ typedef struct r_type_enum {
 	const char *val;
 }RTypeEnum;
 
+enum RTypeKind {
+	R_TYPE_BASIC = 0,
+	R_TYPE_ENUM = 1,
+	R_TYPE_STRUCT = 2,
+	R_TYPE_UNION = 3,
+};
+
 R_API int r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val);
 R_API void r_type_del(Sdb *TDB, const char *name);
-R_API bool r_type_isenum(Sdb *TDB, const char *name);
+R_API int r_type_kind(Sdb *TDB, const char *name);
 R_API char *r_type_enum_member(Sdb *TDB, const char *name, const char *member, ut64 val);
 R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val);
 R_API RList* r_type_get_enum (Sdb *TDB, const char *name);

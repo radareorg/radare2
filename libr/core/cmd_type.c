@@ -136,6 +136,8 @@ static const char *help_msg_ts[] = {
 static const char *help_msg_tu[] = {
 	"Usage: tu[...]", "", "",
 	"tu", "", "List all loaded unions",
+	"tu", " [type]", "Show pf format string for given union",
+	"tu*", " [type]", "Show pf.<name> format string for given union",
 	"tu?", "", "show this help",
 	NULL
 };
@@ -420,6 +422,7 @@ static void link_struct_offset(RCore *core, RAnalFunction *fcn) {
 	RAnalOp aop = {0};
 	bool ioCache = r_config_get_i (core->config, "io.cache");
 	bool stack_set = false;
+	const char *varpfx;
 	int dbg_follow = r_config_get_i (core->config, "dbg.follow");
 	Sdb *TDB = core->anal->sdb_types;
 	RAnalEsil *esil = core->anal->esil;
@@ -519,11 +522,16 @@ static void link_struct_offset(RCore *core, RAnalFunction *fcn) {
 			} else if (dlink) {
 				RAnalVar *var = aop.var;
 				if (dst_imm == 0 && var) {
+					if (r_type_kind (TDB, dlink) == R_TYPE_UNION) {
+						varpfx = "union";
+					} else {
+						varpfx = "struct";
+					}
 					// if a var addr matches with struct , change it's type and name
 					// var int local_e0h --> var struct foo
 					if (strcmp (var->name , dlink)) {
 						r_anal_var_retype (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
-								-1, var->kind, "struct", -1, var->isarg, var->name);
+								-1, var->kind, varpfx, -1, var->isarg, var->name);
 						r_anal_var_rename (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
 								var->kind, var->name, dlink);
 					}
@@ -563,6 +571,12 @@ static int cmd_type(void *data, const char *input) {
 		switch (input[1]) {
 		case '?':
 			r_core_cmd_help (core, help_msg_tu);
+			break;
+		case '*':
+			showFormat (core, input + 2, 1);
+			break;
+		case ' ':
+			showFormat (core, input + 2, 0);
 			break;
 		case 0:
 			sdb_foreach (TDB, stdprintifunion, core);
@@ -654,7 +668,7 @@ static int cmd_type(void *data, const char *input) {
 		if (member_name) {
 			*member_name++ = 0;
 		}
-		if (name && !r_type_isenum (TDB, name)) {
+		if (name && (r_type_kind (TDB, name) != R_TYPE_ENUM)) {
 			eprintf ("%s is not an enum\n", name);
 			break;
 		}
