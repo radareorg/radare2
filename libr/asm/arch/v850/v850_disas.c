@@ -250,11 +250,13 @@ static int decode_bit_op(const ut8 *instr, struct v850_cmd *cmd) {
 	return 4;
 }
 
-static int decode_extended(const ut8 *instr, struct v850_cmd *cmd) {
-	ut16 word1, word2;
+static int decode_extended(const ut8 *instr, int len, struct v850_cmd *cmd) {
+	if (len < 4) {
+		return -1;
+	}
 
-	word1 = r_read_le16 (instr);
-	word2 = r_read_at_le16 (instr, 2);
+	ut16 word1 = r_read_le16 (instr);
+	ut16 word2 = r_read_at_le16 (instr, 2);
 
 	snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "%s",
 			ext_instrs1[get_subopcode (word1)]);
@@ -359,7 +361,7 @@ int v850_decode_command (const ut8 *instr, int len, struct v850_cmd *cmd) {
 		ret = decode_bit_op (instr, cmd);
 		break;
 	case V850_EXT1:
-		ret = decode_extended (instr, cmd);
+		ret = decode_extended (instr, len, cmd);
 		break;
 	default:
 		if ((get_opcode (in) >> 2) == 0xB) {
