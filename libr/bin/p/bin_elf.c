@@ -16,7 +16,9 @@ static RBinInfo* info(RBinFile *bf);
 static int get_file_type(RBinFile *bf) {
 	struct Elf_(r_bin_elf_obj_t) *obj = bf->o->bin_obj;
 	char *type = Elf_(r_bin_elf_get_file_type (obj));
-	return type? ((!strncmp (type, "CORE", 4)) ? R_BIN_TYPE_CORE : R_BIN_TYPE_DEFAULT) : -1;
+	int res = type? ((!strncmp (type, "CORE", 4)) ? R_BIN_TYPE_CORE : R_BIN_TYPE_DEFAULT) : -1;
+	free (type);
+	return res;
 }
 
 static RList *maps(RBinFile *bf) {
@@ -228,6 +230,7 @@ static RList* sections(RBinFile *bf) {
 			ptr->paddr = phdr[i].p_offset;
 			ptr->vaddr = phdr[i].p_vaddr;
 			ptr->srwx = phdr[i].p_flags;
+			ptr->is_segment = true;
 			switch (phdr[i].p_type) {
 			case PT_DYNAMIC:
 				strncpy (ptr->name, "DYNAMIC", R_BIN_SIZEOF_STRINGS);
@@ -304,6 +307,7 @@ static RList* sections(RBinFile *bf) {
 			ptr->add = true;
 		}
 		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE;
+		ptr->is_segment = true;
 		r_list_append (ret, ptr);
 	}
 	return ret;
@@ -1099,6 +1103,7 @@ static RBinInfo* info(RBinFile *bf) {
 }
 
 static RList* fields(RBinFile *bf) {
+	int left = 0;
 	RList *ret = NULL;
 	const ut8 *buf = NULL;
 
@@ -1107,7 +1112,7 @@ static RList* fields(RBinFile *bf) {
 	}
 	ret->free = free;
 
-	if (!(buf = r_buf_get_at (bf->buf, 0, NULL))) {
+	if (!(buf = r_buf_get_at (bf->buf, 0, &left))) {
 		RBinField *ptr = NULL;
 		struct r_bin_elf_field_t *field = NULL;
 		int i;
@@ -1130,13 +1135,16 @@ static RList* fields(RBinFile *bf) {
 	} else {
 		#define ROW(nam,siz,val,fmt) \
 		r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt ("0x%08x", val), fmt));
+		if (left < 40) {
+			return ret;
+		}
 		ut64 addr = 0;
 		ROW ("ELF", 4, r_read_le32 (buf), "x"); addr+=0x10;
 		ROW ("Type", 2, r_read_le16 (buf + addr), "x"); addr+=0x2;
 		ROW ("Machine", 2, r_read_le16 (buf + addr), "x"); addr+=0x2;
 		ROW ("Version", 4, r_read_le32 (buf + addr), "x"); addr+=0x4;
 
-		if (r_read_le8(buf + 0x04) == 1) {
+		if (r_read_le8 (buf + 0x04) == 1) {
 			ROW ("Entry point", 4, r_read_le32 (buf + addr), "x"); addr+=0x4;
 			ROW ("PhOff", 4, r_read_le32 (buf + addr), "x"); addr+=0x4;
 			ROW ("ShOff", 4, r_read_le32 (buf + addr), "x");

@@ -3,6 +3,7 @@
 
 // defines like IS_DIGIT, etc'
 #include "r_util/r_str_util.h"
+#include "r_userconf.h"
 
 // TODO: fix this to make it crosscompile-friendly: R_SYS_OSTYPE ?
 /* operating system */
@@ -255,7 +256,7 @@ R_API const char *x##_version () { return "" R2_GITTAP; }
 #define BITS2BYTES(x) (((x)/8)+(((x)%8)?1:0))
 #define ZERO_FILL(x) memset (&x, 0, sizeof (x))
 #define R_NEWS0(x,y) (x*)calloc(y,sizeof(x))
-#define R_NEWS(x,y) (x*)malloc(sizeof(x)*y)
+#define R_NEWS(x,y) (x*)malloc(sizeof(x)*(y))
 #define R_NEW0(x) (x*)calloc(1,sizeof(x))
 #define R_NEW(x) (x*)malloc(sizeof(x))
 #define R_NEWCOPY(x,y) (x*)r_new_copy(sizeof(x), y)

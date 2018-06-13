@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2017 - nibble, alvaro, pancake */
+/* radare - LGPL - Copyright 2010-2018 - nibble, alvaro, pancake */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -405,9 +405,11 @@ static char *get_varname(RAnal *a, RAnalFunction *fcn, char type, const char *pf
 			v_kind = *name_value;
 		}
 		if (v_kind == type && R_ABS (v_delta) == idx) {
-			break;
+			free (name_value);
+			return varname;
 		}
 		free (varname);
+		free (name_value);
 		varname = r_str_newf ("%s_%xh_%d", pfx, idx, i);
 		i++;
 	}
@@ -448,8 +450,8 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 	if (jmptbl_size == 0) {
 		jmptbl_size = JMPTBLSZ;
 	}
-	ut8 *jmptbl = malloc (jmptbl_size * sz);
 	ut64 jmpptr, offs;
+	ut8 *jmptbl = malloc (jmptbl_size * sz);
 	if (!jmptbl) {
 		return 0;
 	}
@@ -579,8 +581,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	} else {
 		ptr = (st64) r_num_get (NULL, addr);
 	}
-	//XXX: This won't work for stack based var/arg
-	int rw = (op->stackop == R_ANAL_STACK_SET) ? 1 : 0;
+	int rw = (op->direction == R_ANAL_OP_DIR_WRITE) ? 1 : 0;
 	if (*sign == '+') {
 		const char *pfx = ((ptr < fcn->maxstack) && (type == 's')) ? VARPREFIX : ARGPREFIX;
 		bool isarg = strcmp(pfx , ARGPREFIX) ? false : true;
@@ -771,6 +772,7 @@ static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAna
 	}
 	// predecessor must be a conditional jump
 	if (!prev_bb || !prev_bb->jump || !prev_bb->fail) {
+		eprintf ("missing cjmp bb in predecesor\n");
 		return false;
 	}
 
@@ -778,7 +780,10 @@ static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAna
 	*default_case = prev_bb->jump == my_bb->addr ? prev_bb->fail : prev_bb->jump;
 
 	RAnalOp tmp_aop = {0};
-	ut8 *bb_buf = malloc(prev_bb->size);
+	ut8 *bb_buf = malloc (prev_bb->size);
+	if (!bb_buf) {
+		return false;
+	}
 	// search for a cmp register with a resonable size
 	anal->iob.read_at (anal->iob.io, prev_bb->addr, (ut8 *) bb_buf, prev_bb->size);
 	isValid = false;
@@ -1426,7 +1431,7 @@ repeat:
 				// op.ireg is 0 for rip relative, "rax", etc otherwise
 				if (op.ptr != UT64_MAX && op.ireg) {       // direct jump
 					ut64 table_size, default_case;
-					if (try_get_jmptbl_info(anal, fcn, op.addr, bb, &table_size, &default_case)) {
+					if (try_get_jmptbl_info (anal, fcn, op.addr, bb, &table_size, &default_case)) {
 						ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, op.ptr, anal->bits >> 3, table_size, default_case, ret);
 					}
 				}

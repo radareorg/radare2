@@ -200,6 +200,7 @@ R_API RFlag *r_flag_free(RFlag *f) {
 	ht_free (f->ht_name);
 
 	r_list_free (f->flags);
+	sdb_free (f->tags);
 	r_list_free (f->spacestack);
 	r_num_free (f->num);
 	free (f);

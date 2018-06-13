@@ -25,7 +25,7 @@ static const char *help_msg_t[] = {
 	"to", " -", "Open cfg.editor to load types",
 	"to", " <path>", "Load types from C header file",
 	"tos", " <path>", "Load types from parsed Sdb database",
-	"tp", "  <type> [addr]", "cast data at <address> to <type> and print it",
+	"tp", "  <type> [addr|varname]", "cast data at <address> to <type> and print it",
 	"tpx", " <type> <hexpairs>", "Show value for type with specified byte sequence",
 	"ts", "[?]", "print loaded struct types",
 	"tu", "[?]", "print loaded union types",
@@ -356,33 +356,87 @@ static void typesList(RCore *core, int mode) {
 	}
 }
 
-static void set_offset_hint (RCore *core, const char *type, ut64 addr, int offimm) {
+static void set_offset_hint(RCore *core, RAnalOp op, const char *type, ut64 addr, int offimm) {
+	const char *res = r_type_get_struct_memb (core->anal->sdb_types, type, offimm);
+	const char *cmt = ((offimm == 0) && res)? res: type;
 	if (offimm > 0) {
-		char *res = r_type_get_struct_memb (core->anal->sdb_types, type, offimm);
 		if (res) {
 			r_anal_hint_set_offset (core->anal, addr, res);
 		}
+	} else if (cmt && r_anal_op_ismemref (op.type)) {
+			r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, cmt);
 	}
 }
 
-static void link_struct_offset (RCore *core, RAnalFunction *fcn, const char *type, ut64 taddr) {
+static int get_stacksz (RCore *core, ut64 from, ut64 to, int minopcode) {
+	int ret = 0;
+	ut64 at = from;
+
+	if (from >= to) {
+		return 0;
+	}
+	while (at < to) {
+		RAnalOp *op = r_core_anal_op (core, at, R_ANAL_OP_MASK_BASIC);
+		if (!op || op->size <= 0) {
+			at += minopcode;
+			continue;
+		}
+		if ((op->stackop == R_ANAL_STACK_INC) && R_ABS (op->stackptr) < 8096) {
+			ret += op->stackptr;
+		}
+		at += op->size;
+		r_anal_op_fini (op);
+	}
+	return ret;
+}
+
+static void set_retval (RCore *core, ut64 at) {
+	RAnal *anal = core->anal;
+	RAnalHint *hint = r_anal_hint_get (anal, at);
+	RAnalFunction *fcn = r_anal_get_fcn_in (anal, at, 0);
+
+	if (!hint || !fcn || !fcn->name) {
+		goto beach;
+	}
+	if (hint->ret == UT64_MAX) {
+		goto beach;
+	}
+	const char *cc = r_anal_cc_func (core->anal, fcn->name);
+	const char *regname = r_anal_cc_ret (anal, cc);
+	if (regname) {
+		RRegItem *reg = r_reg_get (anal->reg, regname, -1);
+		if (reg) {
+			r_reg_set_value (anal->reg, reg, hint->ret);
+		}
+	}
+beach:
+	r_anal_hint_free (hint);
+	return;
+}
+
+static void link_struct_offset(RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *it;
 	RAnalOp aop = {0};
+	bool ioCache = r_config_get_i (core->config, "io.cache");
+	bool stack_set = false;
+	int dbg_follow = r_config_get_i (core->config, "dbg.follow");
+	Sdb *TDB = core->anal->sdb_types;
 	RAnalEsil *esil = core->anal->esil;
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");
 	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
-	const char *pc_name = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
-	RRegItem *pc = r_reg_get (core->dbg->reg, pc_name, -1);
+	const char *pc_name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+	const char *sp_name = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
+	RRegItem *pc = r_reg_get (core->anal->reg, pc_name, -1);
 
 	if (!fcn) {
 		return;
 	}
-	r_reg_arena_push (core->anal->reg);
 	if (!(esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
 		return;
 	}
+	r_anal_esil_setup (esil, core->anal, 0, 0, 0);
 	int i, ret, bsize = R_MAX (64, core->blocksize);
 	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
@@ -392,12 +446,31 @@ static void link_struct_offset (RCore *core, RAnalFunction *fcn, const char *typ
 		r_anal_esil_free (esil);
 		return;
 	}
+	r_reg_arena_push (core->anal->reg);
+	r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
+	ut64 spval = r_reg_getv (esil->anal->reg, sp_name);
+	if (spval) {
+		// reset stack pointer to intial value
+		RRegItem *sp = r_reg_get (esil->anal->reg, sp_name, -1);
+		ut64 curpc = r_reg_getv (esil->anal->reg, pc_name);
+		int stacksz = get_stacksz (core, fcn->addr, curpc, minopcode);
+		if (stacksz > 0) {
+			r_reg_arena_zero (esil->anal->reg); // clear prev reg values
+			r_reg_set_value (esil->anal->reg, sp, spval + stacksz);
+		}
+	} else {
+		// intialize stack
+		r_core_cmd0 (core, "aeim");
+		stack_set = true;
+	}
+	r_config_set_i (core->config, "io.cache", 1);
+	r_config_set_i (core->config, "dbg.follow", 0);
 	ut64 oldoff = core->offset;
 	r_cons_break_push (NULL, NULL);
 	r_list_foreach (fcn->bbs, it, bb) {
 		ut64 at = bb->addr;
 		ut64 to = bb->addr + bb->size;
-		r_reg_set_value (core->dbg->reg, pc, at);
+		r_reg_set_value (esil->anal->reg, pc, at);
 		for (i = 0; at < to; i++) {
 			if (r_cons_is_breaked ()) {
 				goto beach;
@@ -421,46 +494,57 @@ static void link_struct_offset (RCore *core, RAnalFunction *fcn, const char *typ
 			i += ret - 1;
 			at += ret;
 			if (r_anal_op_nonlinear (aop.type)) {
-				r_reg_set_value (core->dbg->reg, pc, at);
+				r_reg_set_value (esil->anal->reg, pc, at);
+				set_retval (core, at - ret);
 			} else {
 				r_core_esil_step (core, UT64_MAX, NULL, NULL);
 			}
 			int j, src_imm = -1, dst_imm = -1;
-			ut64 src_addr, dst_addr;
+			ut64 src_addr = UT64_MAX;
+			ut64 dst_addr = UT64_MAX;
 			for (j = 0; j < 3; j++) {
 				if (aop.src[j] && aop.src[j]->reg && aop.src[j]->reg->name) {
-					src_addr = r_debug_reg_get (core->dbg, aop.src[j]->reg->name);
+					src_addr = r_reg_getv (esil->anal->reg, aop.src[j]->reg->name);
 					src_imm = aop.src[j]->delta;
 				}
 			}
 			if (aop.dst && aop.dst->reg && aop.dst->reg->name) {
-				dst_addr = r_debug_reg_get (core->dbg, aop.dst->reg->name);
+				dst_addr = r_reg_getv (esil->anal->reg, aop.dst->reg->name);
 				dst_imm = aop.dst->delta;
 			}
-			if (type) {
-				if (src_addr == taddr) {
-					set_offset_hint (core, type, at - ret, src_imm);
-				} else if (dst_addr == taddr) {
-					set_offset_hint (core, type, at - ret, dst_imm);
+			const char *slink = r_type_link_at (TDB, src_addr);
+			const char *dlink = r_type_link_at (TDB, dst_addr);
+			if (slink) {
+				set_offset_hint (core, aop, slink, at - ret, src_imm);
+			} else if (dlink) {
+				RAnalVar *var = aop.var;
+				if (dst_imm == 0 && var) {
+					// if a var addr matches with struct , change it's type and name
+					// var int local_e0h --> var struct foo
+					if (strcmp (var->name , dlink)) {
+						r_anal_var_retype (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
+								-1, var->kind, "struct", -1, var->isarg, var->name);
+						r_anal_var_rename (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
+								var->kind, var->name, dlink);
+					}
+				} else {
+					set_offset_hint (core, aop, dlink, at - ret, dst_imm);
 				}
-			} else {
-				char *slink = r_type_link_at (core->anal->sdb_types, src_addr);
-				char *dlink = r_type_link_at (core->anal->sdb_types, dst_addr);
-				if (slink) {
-					set_offset_hint (core, slink, at - ret, src_imm);
-				} else if (dlink) {
-					set_offset_hint (core, dlink, at - ret, dst_imm);
-				}
-				free (slink);
-				free (dlink);
 			}
 			r_anal_op_fini (&aop);
 		}
 	}
 beach:
+	r_core_cmd0 (core, "wc-*"); // drop cache writes
+	r_config_set_i (core->config, "io.cache", ioCache);
+	r_config_set_i (core->config, "dbg.follow", dbg_follow);
+	if (stack_set) {
+		r_core_cmd0 (core, "aeim-");
+	}
 	r_core_seek (core, oldoff, 1);
 	r_anal_esil_free (esil);
 	r_reg_arena_pop (core->anal->reg);
+	r_core_cmd0 (core, ".ar*");
 	r_cons_break_pop ();
 	free (buf);
 }
@@ -720,7 +804,7 @@ static int cmd_type(void *data, const char *input) {
 				ut64 addr = r_num_math (NULL, off);
 				fcn = r_anal_get_fcn_at (core->anal, core->offset, 0);
 				if (fcn) {
-					link_struct_offset (core, fcn, NULL, -1);
+					link_struct_offset (core, fcn);
 				} else {
 					eprintf ("cannot find function at %08"PFMT64x"\n", addr);
 				}
@@ -733,7 +817,7 @@ static int cmd_type(void *data, const char *input) {
 					if (r_cons_is_breaked ()) {
 						break;
 					}
-					link_struct_offset (core, fcn, NULL, -1);
+					link_struct_offset (core, fcn);
 				}
 			}
 			free (off);
@@ -839,9 +923,9 @@ static int cmd_type(void *data, const char *input) {
 			char *tmp = sdb_get (TDB, type, 0);
 			if (tmp && *tmp) {
 				r_type_set_link (TDB, type, addr);
-				RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, core->offset, 0);
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 				if (fcn) {
-					link_struct_offset (core, fcn, type, addr);
+					link_struct_offset (core, fcn);
 				}
 				free (tmp);
 			} else {
@@ -901,7 +985,13 @@ static int cmd_type(void *data, const char *input) {
 				r_core_cmdf (core, "pf %s @x: %s", fmt, arg);
 			} else {
 				ut64 addr = arg ? r_num_math (core->num, arg): core->offset;
-				r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x "\n", fmt, addr);
+				if (!addr && arg) {
+					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
+					addr = r_anal_var_addr (core->anal, fcn, arg);
+				}
+				if (addr != UT64_MAX) {
+					r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x "\n", fmt, addr);
+				}
 			}
 			free (fmt);
 		} else {

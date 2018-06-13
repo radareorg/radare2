@@ -226,6 +226,13 @@ if cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
 else
   userconf.set('HAVE_DECL_ADDR_NO_RANDOMIZE', 0)
 endif
+
+if cc.has_function('arc4random_uniform')
+  userconf.set('HAVE_ARC4RANDOM_UNIFORM', 1)
+else
+  userconf.set('HAVE_ARC4RANDOM_UNIFORM', 0)
+endif
+
 r_userconf_h = configure_file(
   input: 'libr/include/r_userconf.h.in',
   output: 'r_userconf.h',

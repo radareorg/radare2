@@ -885,6 +885,33 @@ out:
 	free (input);
 }
 
+//TODO: make it recursive to handle nested struct
+static int autocomplete_pfele (RCore *core, char *key, char *pfx, int idx, char *ptr) {
+	int i, ret = 0;
+	int len = strlen (ptr);
+	char* fmt = sdb_get (core->print->formats, key, NULL);
+	if (fmt) {
+		int nargs = r_str_word_set0_stack (fmt);
+		if (nargs > 1) {
+			for (i = 1; i < nargs; i++) {
+				const char *arg = r_str_word_get0 (fmt, i);
+				char *p = strchr (arg, '(');
+				char *p2 = strchr (arg, ')');
+				// remove '(' and ')' from fmt
+				if (p && p2) {
+					arg = p + 1;
+					*p2 = '\0';
+				}
+				if (!len || !strncmp (ptr, arg, len)) {
+					tmp_argv[ret++] = r_str_newf ("pf%s.%s.%s", pfx, key, arg);
+				}
+			}
+		}
+	}
+	free (fmt);
+	return ret;
+}
+
 #define ADDARG(x) if (!strncmp (line->buffer.data+chr, x, strlen (line->buffer.data+chr))) { tmp_argv[j++] = x; }
 
 static int autocomplete(RLine *line) {
@@ -1017,8 +1044,15 @@ static int autocomplete(RLine *line) {
 			int j = 0;
 			ls_foreach (sls, iter, kv) {
 				int len = strlen (line->buffer.data + chr);
-				if (!len || !strncmp (line->buffer.data + chr, kv->key, len)) {
-					tmp_argv[j++] = r_str_newf ("pf%s.%s", pfx, kv->key);
+				int minlen = R_MIN (len,  strlen (kv->key));
+				if (!len || !strncmp (line->buffer.data + chr, kv->key, minlen)) {
+					char *p = strchr (line->buffer.data + chr, '.');
+					if (p) {
+						j += autocomplete_pfele (core, kv->key, pfx, j, p + 1);
+						break;
+					} else {
+						tmp_argv[j++] = r_str_newf ("pf%s.%s", pfx, kv->key);
+					}
 				}
 			}
 			if (j > 0) tmp_argv_heap = true;
@@ -1066,6 +1100,27 @@ static int autocomplete(RLine *line) {
 			r_list_free (themes);
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
+		} else if (!strncmp (line->buffer.data, "t ", 2)
+		|| !strncmp (line->buffer.data, "t- ", 3)) {
+			int i = 0;
+			SdbList *l = sdb_foreach_list (core->anal->sdb_types, true);
+			SdbListIter *iter;
+			SdbKv *kv;
+			int chr = (line->buffer.data[1] == ' ')? 2: 3;
+			ls_foreach (l, iter, kv) {
+				int len = strlen (line->buffer.data + chr);
+				if (!len || !strncmp (line->buffer.data + chr, kv->key, len)) {
+					if (!strcmp (kv->value, "type") || !strcmp (kv->value, "enum")
+					|| !strcmp (kv->value, "struct")) {
+						tmp_argv[i++] = strdup (kv->key);
+					}
+				}
+			}
+			if (i > 0) tmp_argv_heap = true;
+			tmp_argv[i] = NULL;
+			ls_free (l);
+			line->completion.argc = i;
+			line->completion.argv = tmp_argv;
 		} else if ((!strncmp (line->buffer.data, "te ", 3))) {
 			int i = 0;
 			SdbList *l = sdb_foreach_list (core->anal->sdb_types, true);
@@ -1075,7 +1130,32 @@ static int autocomplete(RLine *line) {
 			ls_foreach (l, iter, kv) {
 				int len = strlen (line->buffer.data + chr);
 				if (!len || !strncmp (line->buffer.data + chr, kv->key, len)) {
-					if (!strncmp (kv->value, "0x", 2)) {
+					if (!strcmp (kv->value, "enum")) {
+						tmp_argv[i++] = strdup (kv->key);
+					}
+				}
+			}
+			if (i > 0) tmp_argv_heap = true;
+			tmp_argv[i] = NULL;
+			ls_free (l);
+			line->completion.argc = i;
+			line->completion.argv = tmp_argv;
+		} else if (!strncmp (line->buffer.data, "ts ", 3)
+		|| !strncmp (line->buffer.data, "ta ", 3)
+		|| !strncmp (line->buffer.data, "tp ", 3)
+		|| !strncmp (line->buffer.data, "tl ", 3)
+		|| !strncmp (line->buffer.data, "tpx ", 4)
+		|| !strncmp (line->buffer.data, "tss ", 4)
+		|| !strncmp (line->buffer.data, "ts* ", 4)) {
+			int i = 0;
+			SdbList *l = sdb_foreach_list (core->anal->sdb_types, true);
+			SdbListIter *iter;
+			SdbKv *kv;
+			int chr = (line->buffer.data[2] == ' ')? 3: 4;
+			ls_foreach (l, iter, kv) {
+				int len = strlen (line->buffer.data + chr);
+				if (!len || !strncmp (line->buffer.data + chr, kv->key, len)) {
+					if (!strncmp (kv->value, "struct", strlen ("struct") + 1)) {
 						tmp_argv[i++] = strdup (kv->key);
 					}
 				}

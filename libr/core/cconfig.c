@@ -431,8 +431,8 @@ static int cb_asmarch(void *user, void *data) {
 		bits = core->anal->bits;
 	}
 	if (node->value[0] == '?') {
+		update_asmarch_options (core, node);
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
-			update_asmarch_options (core, node);
 			/* print more verbose help instead of plain option values */
 			rasm2_list (core, NULL, node->value[1]);
 			return false;

@@ -9,8 +9,25 @@
 
 static ut64 r_num_tailff(RNum *num, const char *hex);
 
+void r_srand (int seed) {
+#if HAVE_ARC4RANDOM_UNIFORM
+	// no-op
+	(void)seed;
+#else
+	srand (seed);
+#endif
+}
+
+int r_rand (int mod) {
+#if HAVE_ARC4RANDOM_UNIFORM
+	return (int)arc4random_uniform (mod);
+#else
+	return rand ()%mod;
+#endif
+}
+
 R_API void r_num_irand() {
-	srand (r_sys_now ());
+	r_srand (r_sys_now ());
 }
 
 static int rand_initialized = 0;
@@ -19,8 +36,10 @@ R_API int r_num_rand(int max) {
 		r_num_irand ();
 		rand_initialized = 1;
 	}
-	if (!max) max = 1;
-	return rand()%max;
+	if (!max) {
+		max = 1;
+	}
+	return r_rand (max);
 }
 
 R_API void r_num_minmax_swap(ut64 *a, ut64 *b) {

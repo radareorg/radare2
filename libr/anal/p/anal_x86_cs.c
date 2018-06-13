@@ -722,13 +722,9 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				dst = getarg (&gop, 0, 1, NULL, DST_AR);
 				esilprintf (op, "%s,%s", src, dst);
 			}
-			op->direction = 2; // write
 			break;
 		case X86_OP_REG:
 		default:
-			if (INSOP(0).type == X86_OP_MEM) {
-				op->direction = 1; // read
-			}
 			{
 				src = getarg (&gop, 1, 0, NULL, SRC_AR);
 				dst = getarg (&gop, 0, 0, NULL, DST_AR);
@@ -1716,6 +1712,36 @@ static void op_fillval (RAnal *a, RAnalOp *op, csh *handle, cs_insn *insn){
 	}
 }
 
+static void set_opdir(RAnalOp *op, cs_insn *insn) {
+	switch (op->type & R_ANAL_OP_TYPE_MASK) {
+	case R_ANAL_OP_TYPE_MOV:
+		switch (INSOP(0).type) {
+		case X86_OP_MEM:
+			op->direction = R_ANAL_OP_DIR_WRITE;
+			break;
+		case X86_OP_REG:
+			if (INSOP(1).type == X86_OP_MEM) {
+				op->direction = R_ANAL_OP_DIR_READ;
+			}
+			break;
+		default:
+			break;
+		}
+		break;
+	case R_ANAL_OP_TYPE_LEA:
+		op->direction = R_ANAL_OP_DIR_REF;
+		break;
+	case R_ANAL_OP_TYPE_CALL:
+	case R_ANAL_OP_TYPE_JMP:
+	case R_ANAL_OP_TYPE_UJMP:
+	case R_ANAL_OP_TYPE_UCALL:
+		op->direction = R_ANAL_OP_DIR_EXEC;
+		break;
+	default:
+		break;
+	}
+}
+
 static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	struct Getarg gop = {
 		.handle = *handle,
@@ -2641,6 +2667,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			break;
 		}
 		anop (a, op, addr, buf, len, &handle, insn);
+		set_opdir (op, insn);
 		if (a->decode) {
 			anop_esil (a, op, addr, buf, len, &handle, insn);
 		}

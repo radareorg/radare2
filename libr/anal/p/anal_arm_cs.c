@@ -2150,6 +2150,8 @@ static void anop64 (csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_CC_LT:
 		op->sign = true;
 		break;
+	default:
+		break;
 	}
 
 	switch (insn->id) {
@@ -2731,6 +2733,28 @@ static int parse_reg64_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_nu
 	return 0;
 }
 
+static void set_opdir(RAnalOp *op) {
+	switch (op->type & R_ANAL_OP_TYPE_MASK) {
+	case R_ANAL_OP_TYPE_LOAD:
+		op->direction = R_ANAL_OP_DIR_READ;
+		break;
+	case R_ANAL_OP_TYPE_STORE:
+		op->direction = R_ANAL_OP_DIR_WRITE;
+		break;
+	case R_ANAL_OP_TYPE_LEA:
+		op->direction = R_ANAL_OP_DIR_REF;
+		break;
+	case R_ANAL_OP_TYPE_CALL:
+	case R_ANAL_OP_TYPE_JMP:
+	case R_ANAL_OP_TYPE_UJMP:
+	case R_ANAL_OP_TYPE_UCALL:
+		op->direction = R_ANAL_OP_DIR_EXEC;
+		break;
+	default:
+		break;
+        }
+}
+
 static void op_fillval(RAnalOp *op , csh handle, cs_insn *insn, int bits) {
 	static RRegItem reg;
 	switch (op->type) {
@@ -2819,6 +2843,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 				analop_esil (a, op, addr, buf, len, &handle, insn, thumb);
 			}
 		}
+		set_opdir (op);
 		if (a->fillval) {
 			op_fillval (op, handle, insn, a->bits);
 		}

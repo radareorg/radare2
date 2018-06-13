@@ -63,6 +63,7 @@ files = [
   'syscmd.c',
   'thread.c',
   'thread_lock.c',
+  'thread_cond.c',
   'thread_msg.c',
   'thread_pipe.c',
   'tinyrange.c',

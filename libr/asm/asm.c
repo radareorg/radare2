@@ -301,8 +301,6 @@ R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
 
 // TODO: this can be optimized using r_str_hash()
 R_API int r_asm_use(RAsm *a, const char *name) {
-	const char *dirPrefix = r_sys_prefix (NULL);
-	char file[1024];
 	RAsmPlugin *h;
 	RListIter *iter;
 	if (!a || !name) {
@@ -311,13 +309,11 @@ R_API int r_asm_use(RAsm *a, const char *name) {
 	r_list_foreach (a->plugins, iter, h) {
 		if (!strcmp (h->name, name) && h->arch) {
 			if (!a->cur || (a->cur && strcmp (a->cur->arch, h->arch))) {
-				//const char *dop = r_config_get (core->config, "dir.opcodes");
-				// TODO: allow configurable path for sdb files
-				snprintf (file, sizeof (file), R_JOIN_3_PATHS ("%s", R2_SDB_OPCODES, "%s.sdb"),
-					dirPrefix, h->arch);
-				sdb_free (a->pair);
+				char *file = r_str_newf ("%s/%s/%s/%s.sdb", r_sys_prefix (NULL), "share/radare2/last", "opcodes", h->arch);
 				r_asm_set_cpu (a, NULL);
+				sdb_free (a->pair);
 				a->pair = sdb_new (NULL, file, 0);
+				free (file);
 			}
 			a->cur = h;
 			return true;

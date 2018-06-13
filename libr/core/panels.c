@@ -33,7 +33,7 @@
 #define PANEL_CMD_STACK          "px 256@r:SP"
 #define PANEL_CMD_REGISTERS      "dr="
 #define PANEL_CMD_REGISTERREFS   "drr"
-#define PANEL_CMD_DISASSEMBLY    "pd $r @e:scr.utf8=0"
+#define PANEL_CMD_DISASSEMBLY    "pd $r"
 
 static const int layoutMaxCount = 2;
 
@@ -105,6 +105,7 @@ static const char **menus_sub[] = {
 	NULL
 };
 
+static void layoutMenu(RPanel *panel);
 static void layoutRun(RPanels *panels);
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color);
 static void addPanelFrame(RCore* core, RPanels* panels, const char *title, const char *cmd);
@@ -143,7 +144,7 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 	delta_x = panel->sx;
 	delta_y = panel->sy;
 	// clear the canvas first
-	r_cons_canvas_fill (can, panel->x, panel->y, panel->w, panel->h, ' ', 0);
+	r_cons_canvas_fill (can, panel->x, panel->y, panel->w, panel->h, ' ');
 	// for menu
 	RCons *cons = r_cons_singleton ();
 	if (panel->type == PANEL_TYPE_MENU) {
@@ -220,6 +221,11 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 	}
 }
 
+static void layoutMenu(RPanel *panel) {
+	panel->w = r_str_bounds (panel->title, &panel->h);
+	panel->h += 4;
+}
+
 static void layoutRun(RPanels *panels) {
 	int h, w = r_cons_get_size (&h);
 	int i, j;
@@ -235,10 +241,7 @@ static void layoutRun(RPanels *panels) {
 	for (i = j = 0; i < panels->n_panels; i++) {
 		switch (panel[i].type) {
 		case PANEL_TYPE_MENU:
-			panel[i].w = r_str_bounds (
-				panel[i].title,
-				&panel[i].h);
-			panel[i].h += 4;
+			layoutMenu (&panel[i]);
 			break;
 		case PANEL_TYPE_FRAME:
 			switch (panels->layout) {
@@ -567,7 +570,6 @@ static bool initPanels(RCore *core, RPanels *panels) {
 	panels->panel = calloc (sizeof (RPanel), LIMIT);
 	if (!panels->panel) return false;
 	panels->n_panels = 0;
-	panels->menu_pos = 0;
 	panels->panel[panels->n_panels].title = strdup ("");
 	panels->panel[panels->n_panels].type = PANEL_TYPE_MENU;
 	panels->panel[panels->n_panels].refresh = true;
@@ -637,6 +639,7 @@ static void panelsRefresh(RCore *core) {
 				strcat (panel[menu_pos].title, menus_sub[menu_x][j]);
 				strcat (panel[menu_pos].title, "          \n");
 			}
+			layoutMenu (&panel[menu_pos]);
 		}
 		for (i = 0; i < panels->n_panels; i++) {
 			if (i != panels->curnode) {
@@ -783,7 +786,7 @@ static bool init (RCore *core, RPanels *panels, int w, int h) {
 	panels->callgraph = 0;
 	panels->isResizing = false;
 	panels->can = r_cons_canvas_new (w, h);
-	r_cons_canvas_fill (panels->can, 0, 0, w, h, ' ', 0);
+	r_cons_canvas_fill (panels->can, 0, 0, w, h, ' ');
 	if (!panels->can) {
 		eprintf ("Cannot create RCons.canvas context\n");
 		return false;
@@ -1031,9 +1034,7 @@ R_API void r_panels_free(RPanels *panels) {
 		}
 		free (panels->panel);
 		if (panels->can) {
-			free (panels->can->b);
-			free (panels->can->attrs);
-			free (panels->can);
+			r_cons_canvas_free (panels->can);
 		}
 		free (panels);
 	}
@@ -1064,12 +1065,12 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 	core->print->cur_enabled = false;
 	core->print->col = 0;
 
+	have_utf8 = r_config_get_i (core->config, "scr.utf8");
 	r_config_set_i (core->config, "asm.comments", 0);
 	r_config_set_i (core->config, "asm.bytes", 1);
 	r_config_set_i (core->config, "scr.utf8", 1);
 	asm_comments = r_config_get_i (core->config, "asm.comments");
 	asm_bytes = r_config_get_i (core->config, "asm.bytes");
-	have_utf8 = r_config_get_i (core->config, "scr.utf8");
 
 repeat:
 	core->panels = panels;

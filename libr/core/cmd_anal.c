@@ -450,6 +450,7 @@ static const char *help_msg_ah[] = {
 	"ahj", "", "list hints in JSON",
 	"aho", " foo a0,33", "replace opcode string",
 	"ahp", " addr", "set pointer hint",
+	"ahr", " val",  "set hint for return value of a function"
 	"ahs", " 4", "set opcode size=4",
 	"ahS", " jz", "set asm.syntax=jz for this opcode",
 	NULL
@@ -475,6 +476,8 @@ static const char *help_msg_ao[] = {
 	"aoe", " N", "display esil form for N opcodes",
 	"aor", " N", "display reil form for N opcodes",
 	"aos", " N", "display size of N opcodes",
+	"aod", "[mnemonic]", "describe opcode for asm.arch",
+	"aoda", "", "show all mnemonic descriptions",
 	"ao", " 5", "display opcode analysis of 5 opcodes",
 	"ao*", "", "display opcode in r commands",
 	NULL
@@ -601,6 +604,11 @@ static void cmd_anal_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, arw);
 	DEFINE_CMD_DESCRIPTOR (core, as);
 	DEFINE_CMD_DESCRIPTOR (core, ax);
+}
+
+static int listOpDescriptions(void *_core, const char *k, const char *v) {
+        r_cons_printf ("%s=%s\n", k, v);
+        return 1;
 }
 
 /* better aac for windows-x86-32 */
@@ -1263,7 +1271,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	RAnalHint *hint;
 	RAnalEsil *esil = NULL;
 	RAsmOp asmop;
-	RAnalOp op;
+	RAnalOp op = {0};
 	ut64 addr;
 	bool isFirst = true;
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
@@ -1307,6 +1315,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				eprintf ("%02x ", buf[i]);
 			}
 			eprintf ("...)\n");
+			free (mnem);
 			break;
 		}
 		size = (hint && hint->size)? hint->size: op.size;
@@ -1536,7 +1545,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		//free (hint);
 		free (mnem);
 		r_anal_hint_free (hint);
+		r_anal_op_fini (&op);
 	}
+	r_anal_op_fini (&op);
 	if (fmt == 'j') {
 		r_cons_printf ("]");
 		r_cons_newline ();
@@ -2775,15 +2786,23 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 			/* workaround for 6502 */
 			if (!strcmp (core->anal->cur->arch, "6502") && bits == 8) {
 				mode2 = mode == 'j' ? 'J' : mode;
-				r_cons_printf ("{");
+				if (mode == 'j') {
+					r_cons_printf ("{");
+				}
 				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 16, mode2, use_color); // XXX detect which one is current usage
-				r_cons_printf (",");
+				if (mode == 'j') {
+					r_cons_printf (",");
+				}
 			}
 			if (!strcmp (core->anal->cur->arch, "avr") && bits == 8) {
 				mode2 = mode == 'j' ? 'J' : mode;
-				r_cons_printf ("{");
+				if (mode == 'j') {
+					r_cons_printf ("{");
+				}
 				r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 16, mode2, use_color); // XXX detect which one is current usage
-				r_cons_printf (",");
+				if (mode == 'j') {
+					r_cons_printf (",");
+				}
 			}
 		}
 	}
@@ -3302,8 +3321,8 @@ repeat:
 	}
 
 	st64 follow = (st64)r_config_get_i (core->config, "dbg.follow");
-	ut64 pc = r_debug_reg_get (core->dbg, "PC");
 	if (follow > 0) {
+		ut64 pc = r_debug_reg_get (core->dbg, "PC");
 		if ((pc < core->offset) || (pc > (core->offset + follow))) {
 			r_core_cmd0 (core, "sr PC");
 		}
@@ -3581,6 +3600,8 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 			eprintf ("Cannot deinitialize %s\n", name);
 		}
 		r_flag_unset_name (core->flags, name);
+		r_flag_unset_name (core->flags, "aeim.stack");
+		r_flag_unset_name (core->flags, "aeim.fd");
 		// eprintf ("Deinitialized %s\n", name);
 		return;
 	}
@@ -4122,8 +4143,8 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		case 'l': // "aesl"
 		{
 			ut64 pc = r_debug_reg_get (core->dbg, "PC");
-			RAnalOp *op = r_core_anal_op (core, pc);
-// TODO: honor hint
+			RAnalOp *op = r_core_anal_op (core, pc, R_ANAL_OP_MASK_BASIC);
+			// TODO: honor hint
 			if (!op) {
 				break;
 			}
@@ -4131,6 +4152,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			r_debug_reg_set (core->dbg, "PC", pc + op->size);
 			r_anal_esil_set_pc (esil, pc + op->size);
 			r_core_cmd0 (core, ".ar*");
+			r_anal_op_free (op);
 		} break;
 		case 'b': // "aesb"
 			if (!r_core_esil_step_back (core)) {
@@ -4150,7 +4172,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		case 'o': // "aeso"
 			// step over
 			op = r_core_anal_op (core, r_reg_getv (core->anal->reg,
-				r_reg_get_name (core->anal->reg, R_REG_NAME_PC)));
+				r_reg_get_name (core->anal->reg, R_REG_NAME_PC)), R_ANAL_OP_MASK_BASIC);
 			if (op && op->type == R_ANAL_OP_TYPE_CALL) {
 				until_addr = op->addr + op->size;
 			}
@@ -4192,7 +4214,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			ut64 newaddr;
 			int ret;
 			for (;;) {
-				op = r_core_anal_op (core, addr);
+				op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_BASIC);
 				if (!op) {
 					break;
 				}
@@ -4491,9 +4513,6 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 	ut32 tbs = core->blocksize;
 
 	switch (input[0]) {
-	case '?':
-		r_core_cmd_help (core, help_msg_ao);
-		break;
 	case 's': // "aos"
 	case 'j': // "aoj"
 	case 'e': // "aoe"
@@ -4518,27 +4537,52 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		}
 		}
 		break;
+	case 'd': // "aod"
+                if (input[1] == 'a') {
+                        // list sdb database
+                        sdb_foreach (core->assembler->pair, listOpDescriptions, core);
+                } else if (input[1] == 0) {
+                        int cur = R_MAX (core->print->cur, 0);
+                        // XXX: we need cmd_xxx.h (cmd_anal.h)
+                        core_anal_bytes (core, core->block + cur, core->blocksize, 1, 'd');
+                } else if (input[1] == ' ') {
+                        char *d = r_asm_describe (core->assembler, input + 2);
+                        if (d && *d) {
+                                r_cons_println (d);
+                                free (d);
+                        } else {
+                                eprintf ("Unknown mnemonic\n");
+                        }
+                } else {
+                        eprintf ("Use: aod[?a] ([opcode])    describe current, [given] or all mnemonics\n");
+                }
+                break;
 	case '*':
 		r_core_anal_hint_list (core->anal, input[0]);
 		break;
-	default: {
-		int count = 0;
-		if (input[0]) {
-			l = (int)r_num_get (core->num, input + 1);
-			if (l > 0) {
-				count = l;
+	case 0:
+	case ' ': {
+			int count = 0;
+			if (input[0]) {
+				l = (int)r_num_get (core->num, input + 1);
+				if (l > 0) {
+					count = l;
+				}
+				if (l > tbs) {
+					r_core_block_size (core, l * 4);
+					//len = l;
+				}
+			} else {
+				len = l = core->blocksize;
+				count = 1;
 			}
-			if (l > tbs) {
-				r_core_block_size (core, l * 4);
-				//len = l;
-			}
-		} else {
-			len = l = core->blocksize;
-			count = 1;
+			core_anal_bytes (core, core->block, len, count, 0);
 		}
-		core_anal_bytes (core, core->block, len, count, 0);
 		break;
-	}
+	default:
+	case '?':
+		r_core_cmd_help (core, help_msg_ao);
+		break;
 	}
 }
 
@@ -5532,6 +5576,12 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_anal_hint_unset_pointer (core->anal, core->offset);
 		}
 		break;
+	case 'r': // "ahr"
+		if (input[1] == ' ') {
+			r_anal_hint_set_ret (core->anal, core->offset, r_num_math (core->num, input + 1));
+		} else if (input[1] == '-') { // "ahr-"
+			r_anal_hint_unset_ret (core->anal, core->offset);
+		}
 	case '*': // "ah*"
 		if (input[1] == ' ') {
 			char *ptr = strdup (r_str_trim_ro (input + 2));
@@ -5952,8 +6002,10 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		case 'k':
 		case 'w':
 		case ' ': {
+			core->graph->is_callgraph = true;
 			ut64 addr = input[2] ? r_num_math (core->num, input + 2) : core->offset;
 			r_core_cmdf (core, "ag-; .agr* %"PFMT64d"; agg%c;", addr, input[1]);
+			core->graph->is_callgraph = false;
 			break;
 			}
 		case '*': {
@@ -5981,7 +6033,9 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		case 'w':
 		case ' ':
 		case 0: {
+			core->graph->is_callgraph = true;
 			r_core_cmdf (core, "ag-; .agR*; agg%c;", input[1]);
+			core->graph->is_callgraph = false;
 			break;
 			}
 		case '*': {
@@ -6268,6 +6322,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 				}
 			}
 			free (ptr);
+			r_list_free (list);
 			return 1;
 		}
 	} else if (n == 1) {

@@ -1816,7 +1816,7 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 			if (op->operands[1].scale[0] > 1) {
 				data[l++] = op->operands[0].reg << 3 | 4;
 
-				if (op->operands[1].scale[0] > 2) {
+				if (op->operands[1].scale[0] >= 2) {
 					base = 5;
 				}
 				if (base) {
