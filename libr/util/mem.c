@@ -326,3 +326,18 @@ R_API void *r_mem_alloc(int sz) {
 R_API void r_mem_free(void *p) {
 	free (p);
 }
+
+R_API void* r_mem_memzero(void *dst, size_t l) {
+#ifdef _MSC_VER
+	return RtlSecureZeroMemory (dst, l);
+#else
+#if HAVE_EXPLICIT_BZERO
+	explicit_bzero (dst, l);
+	return dst;
+#else
+	void *ret = memset (dst, 0, l);
+	__asm__ volatile ("" :: "r"(dst) : "memory");
+	return ret;
+#endif
+#endif
+}
