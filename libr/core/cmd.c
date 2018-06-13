@@ -1790,6 +1790,7 @@ beach:
 }
 
 static char *find_eoq(char *p) {
+eprintf ("EOQ\n");
 	for (; *p; p++) {
 		if (*p == '"') {
 			break;
