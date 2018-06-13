@@ -4,6 +4,18 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#ifdef __FreeBSD__
+#include <sys/param.h>
+
+#if __FreeBSD_version >= 1000000
+#define HAVE_CAPSICUM 1
+#else
+#define HAVE_CAPSICUM 0
+#endif
+#else
+#define HAVE_CAPSICUM 0
+#endif
 /**
  * This function verifies that the given path is allowed. Paths are allowed only if they don't
  * contain .. components (which would indicate directory traversal) and they are relative.
