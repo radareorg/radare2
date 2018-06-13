@@ -3147,10 +3147,9 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 	if (!preEdges) {
 		agraph_print_edges (g);
 	}
-
+	/* print the graph title */
 	(void) G (-g->can->sx, -g->can->sy);
 	W (g->title);
-
 	if (is_interactive && g->title) {
 		int title_len = strlen (g->title);
 		r_cons_canvas_fill (g->can, -g->can->sx + title_len, -g->can->sy,
@@ -3748,7 +3747,6 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	grd->follow_offset = _fcn ? false : true;
 	grd->fcn = fcn != NULL? &fcn: NULL;
 	ret = agraph_refresh (grd);
-
 	if (!ret || is_interactive != 1) {
 		r_cons_newline ();
 		exit_graph = true;
