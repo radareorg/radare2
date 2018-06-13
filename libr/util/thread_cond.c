@@ -12,6 +12,8 @@ R_API RThreadCond *r_th_cond_new() {
 		free (cond);
 		return NULL;
 	}
+#elif __WINDOWS__ && !defined(__CYGWIN__)
+	InitializeConditionVariable (&cond->cond);
 #endif
 	return cond;
 }
@@ -19,23 +21,33 @@ R_API RThreadCond *r_th_cond_new() {
 R_API void r_th_cond_signal(RThreadCond *cond) {
 #if HAVE_PTHREAD
 	pthread_cond_signal (&cond->cond);
+#elif __WINDOWS__ && !defined(__CYGWIN__)
+	WakeConditionVariable (&cond->cond);
 #endif
 }
 
 R_API void r_th_cond_signal_all(RThreadCond *cond) {
 #if HAVE_PTHREAD
 	pthread_cond_broadcast (&cond->cond);
+#elif __WINDOWS__ && !defined(__CYGWIN__)
+	WakeAllConditionVariable (&cond->cond);
 #endif
 }
 
 R_API void r_th_cond_wait(RThreadCond *cond, RThreadLock *lock) {
 #if HAVE_PTHREAD
 	pthread_cond_wait (&cond->cond, &lock->lock);
+#elif __WINDOWS__ && !defined(__CYGWIN__)
+	SleepConditionVariableCS (&cond->cond, &lock->lock, INFINITE);
 #endif
 }
 
 R_API void r_th_cond_free(RThreadCond *cond) {
+	if (!cond) {
+		return;
+	}
 #if HAVE_PTHREAD
 	pthread_cond_destroy (&cond->cond);
 #endif
+	free (cond);
 }
