@@ -561,7 +561,8 @@ static bool checkFunc(RCore *core) {
 	if (!fun) {
 		r_cons_message ("Not in a function. Type 'df' to define it here");
 		return false;
-	} else if (r_list_empty (fun->bbs)) {
+	}
+	if (r_list_empty (fun->bbs)) {
 		r_cons_message ("No basic blocks in this function. You may want to use 'afb+'.");
 		return false;
 	}
