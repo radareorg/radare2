@@ -3761,6 +3761,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		w = r_cons_get_size (&h);
 		invscroll = r_config_get_i (core->config, "graph.invscroll");
 		ret = agraph_refresh (grd);
+
+		r_core_panels_graph (core, can);
+
 		if (!ret) {
 			is_error = true;
 			break;
