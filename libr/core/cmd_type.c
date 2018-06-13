@@ -136,6 +136,8 @@ static const char *help_msg_ts[] = {
 static const char *help_msg_tu[] = {
 	"Usage: tu[...]", "", "",
 	"tu", "", "List all loaded unions",
+	"tu", " [type]", "Show pf format string for given union",
+	"tu*", " [type]", "Show pf.<name> format string for given union",
 	"tu?", "", "show this help",
 	NULL
 };
