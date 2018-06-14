@@ -27,7 +27,7 @@ static const char *help_msg_d[] = {
 	"dH", " [handler]", "Transplant process to a new handler",
 	"di", "[?]", "Show debugger backend information (See dh)",
 	"dk", "[?]", "List, send, get, set, signal handlers of child",
-	"dL", " [handler]", "List or set debugger handler",
+	"dL", "[?]", "List or set debugger handler",
 	"dm", "[?]", "Show memory maps",
 	"do", "[?]", "Open process (reload, alias for 'oo')",
 	"doo", "[args]", "Reopen in debugger mode with args (alias for 'ood')",
@@ -450,6 +450,15 @@ static const char *help_msg_dx[] = {
 	"\nExamples:", "", "",
 	"dx", " 9090", "Inject two x86 nop",
 	"\"dxa mov eax,6;mov ebx,0;int 0x80\"", "", "Inject and restore state",
+	NULL
+};
+
+static const char *help_msg_dL[] = {
+	"Usage: dL", "", " # List or set debugger handler",
+	"dL", "", "List debugger handlers",
+	"dLq", "", "List debugger handlers in quiet mode",
+	"dLj", "", "List debugger handlers in json mode",
+	"dL", " <handler>", "Set debugger handler",
 	NULL
 };
 
@@ -4527,6 +4536,10 @@ static int cmd_debug(void *data, const char *input) {
 	case 'L': // "dL"
 		if (input[1]=='q') {
 			r_debug_plugin_list (core->dbg, 'q');
+		} else if (input[1]=='j') {
+			r_debug_plugin_list (core->dbg, 'j');
+		} else if (input[1]=='?') {
+			r_core_cmd_help (core, help_msg_dL);
 		} else if (input[1]==' ') {
 			char *str = r_str_trim (strdup (input + 2));
 			r_config_set (core->config, "dbg.backend", str);
