@@ -28,12 +28,14 @@
 #define PANEL_TITLE_IMPORTS      "Imports"
 #define PANEL_TITLE_CLIPBOARD    "Clipboard"
 #define PANEL_TITLE_FCNINFO      "FcnInfo"
+#define PANEL_TITLE_GRAPH        "Graph"
 
 #define PANEL_CMD_SYMBOLS        "isq"
 #define PANEL_CMD_STACK          "px 256@r:SP"
 #define PANEL_CMD_REGISTERS      "dr="
 #define PANEL_CMD_REGISTERREFS   "drr"
 #define PANEL_CMD_DISASSEMBLY    "pd $r"
+#define PANEL_CMD_GRAPH          "agf"
 
 static const int layoutMaxCount = 2;
 
@@ -129,6 +131,7 @@ static void panelSingleStepIn(RCore *core);
 static void panelSingleStepOver(RCore *core);
 static void setRefreshAll(RPanels *panels);
 static void setCursor(RCore *core, bool cur);
+static void replaceCmd(RPanels* panels, char *title, char *cmd);
 static void zoom(RPanels *panels);
 
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) {
@@ -318,25 +321,6 @@ R_API void r_core_panels_layout_refresh(RCore *core) {
 	r_core_panels_check_stackbase (core);
 	r_core_panels_layout (core->panels);
 	r_core_panels_refresh (core);
-}
-
-R_API void r_core_panels_graph(RCore *core, RConsCanvas *can) {
-	if (!core->panels || !core->panels->isGraphInPanels) {
-		return;
-	}
-	core->panels->can = can;
-	int origx = can->sx, origy = can->sy;
-	r_core_panels_refresh_except_mainpanel (core->panels);
-	r_core_panels_layout_refresh (core);
-	can->sx = origx;
-	can->sy = origy;
-}
-
-R_API void r_core_panels_refresh_except_mainpanel(RPanels *panels) {
-	int i;
-	for (i = 0; i < panels->n_panels; i++) {
-		panels->panel[i].refresh = i == 1 ? false : true;
-	}
 }
 
 static void setCursor(RCore *core, bool cur) {
@@ -542,6 +526,14 @@ static void delCurPanel(RPanels *panels) {
 			panels->curnode = panels->n_panels - 1;
 		}
 	}
+}
+
+static void replaceCmd(RPanels* panels, char *title, char *cmd) {
+	free (panels->panel[panels->curnode].title);
+	free (panels->panel[panels->curnode].cmd);
+	panels->panel[panels->curnode].title = strdup (title);
+	panels->panel[panels->curnode].cmd = r_str_newf (cmd);
+	setRefreshAll (panels);
 }
 
 static void zoom(RPanels *panels) {
@@ -816,7 +808,6 @@ static bool init (RCore *core, RPanels *panels, int w, int h) {
 	panels->menu_y = 0;
 	panels->callgraph = 0;
 	panels->isResizing = false;
-	panels->isGraphInPanels = false;
 	panels->can = r_cons_canvas_new (w, h);
 	r_cons_canvas_fill (panels->can, 0, 0, w, h, ' ');
 	if (!panels->can) {
@@ -1089,7 +1080,7 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 	}
 
 	r_cons_switchbuf (false);
-	panels->originCursor = core->print->cur;
+	int originCursor = core->print->cur;
 	core->print->cur = 0;
 	core->print->cur_enabled = false;
 	core->print->col = 0;
@@ -1247,7 +1238,7 @@ repeat:
 	case 'A':
 		r_core_visual_asm (core, core->offset);
 		break;
-	case 'd':
+	case 'D':
 		r_core_visual_define (core, "");
 		break;
 	case 'j':
@@ -1312,13 +1303,6 @@ repeat:
 		}
 		panels->menu_y = 1;
 		break;
-	case 'G':
-		if (checkFunc (core)) {
-			panels->isGraphInPanels = true;
-			r_core_visual_graph (core, NULL, NULL, true);
-			panels->can = can;
-		}
-		break;
 	case 'H':
 		r_cons_switchbuf (false);
 		panels->columnWidth += 4;
@@ -1330,6 +1314,16 @@ repeat:
 		panels->isResizing = true;
 		if (panels->columnWidth < 0) {
 			panels->columnWidth = 0;
+		}
+		break;
+	case 'd':
+		if (checkFunc (core)) {
+			replaceCmd (panels, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY);
+		}
+		break;
+	case 'g':
+		if (checkFunc (core)) {
+			replaceCmd (panels, PANEL_TITLE_GRAPH, PANEL_CMD_GRAPH);
 		}
 		break;
 	case 'h':
@@ -1466,7 +1460,7 @@ repeat:
 	}
 	goto repeat;
 exit:
-	core->print->cur = panels->originCursor;
+	core->print->cur = originCursor;
 	core->print->cur_enabled = false;
 	core->print->col = 0;
 

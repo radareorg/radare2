@@ -2482,7 +2482,7 @@ static ut64 rebase(RAGraph *g, int v) {
 	return g->x < 0? -g->x + v: v;
 }
 
-static void agraph_set_layout(RAGraph *g, bool is_interactive) {
+static void agraph_set_layout(RAGraph *g) {
 	RListIter *it;
 	RGraphNode *n;
 	RANode *a;
@@ -2978,7 +2978,7 @@ static void agraph_toggle_tiny (RAGraph *g) {
 	g->is_tiny = !g->is_tiny;
 	g->need_update_dim = 1;
 	agraph_refresh (r_cons_singleton ()->event_data);
-	agraph_set_layout ((RAGraph *) g, r_cons_singleton ()->is_interactive);
+	agraph_set_layout ((RAGraph *) g);
 	//remove_dummy_nodes (g);
 }
 
@@ -2989,7 +2989,7 @@ static void agraph_toggle_mini(RAGraph *g) {
 	}
 	g->need_update_dim = 1;
 	agraph_refresh (r_cons_singleton ()->event_data);
-	agraph_set_layout ((RAGraph *) g, r_cons_singleton ()->is_interactive);
+	agraph_set_layout ((RAGraph *) g);
 	//remove_dummy_nodes (g);
 }
 
@@ -3057,7 +3057,7 @@ static int check_changes(RAGraph *g, int is_interactive,
 		update_node_dimension (g->graph, is_mini (g), g->zoom, g->edgemode, g->is_callgraph, g->layout);
 	}
 	if (g->need_set_layout || g->need_reload_nodes || !is_interactive) {
-		agraph_set_layout (g, is_interactive);
+		agraph_set_layout (g);
 	}
 	if (core) {
 		ut64 off = r_core_anal_get_bbaddr (core, core->offset);
@@ -3110,7 +3110,7 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 	}
 
 	h = is_interactive? h: g->h + 1;
-	w = is_interactive? w: g->w;
+	w = is_interactive? w: g->w + 2;
 	r_cons_canvas_resize (g->can, w, h);
 	// r_cons_canvas_clear (g->can);
 	if (!is_interactive) {
@@ -3761,8 +3761,6 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		w = r_cons_get_size (&h);
 		invscroll = r_config_get_i (core->config, "graph.invscroll");
 		ret = agraph_refresh (grd);
-
-		r_core_panels_graph (core, can);
 
 		if (!ret) {
 			is_error = true;

@@ -950,9 +950,7 @@ typedef struct r_panels_t {
 	int menu_y;
 	int callgraph;
 	int curnode;
-	int originCursor;
 	bool isResizing;
-	bool isGraphInPanels;
 } RPanels;
 
 #ifdef __cplusplus
