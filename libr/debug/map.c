@@ -24,46 +24,58 @@ static void print_debug_map_json(RDebug *dbg, RDebugMap *map, bool prefix_comma)
 }
 
 /* Write the memory map header describing the line columns */
-static void print_debug_map_header(RDebug *dbg, const char *input) {
+static void print_debug_map_line_header(RDebug *dbg, const char *input) {
 	// TODO: Write header to console based on which command is being ran
 }
 
 /* Write a single memory map line to the console */
 static void print_debug_map_line(RDebug *dbg, RDebugMap *map, ut64 addr, const char *input) {
-	char sizebuf[128];
-	const char *fmtstr = dbg->bits & R_SYS_BITS_64
-		? "0x%016"PFMT64x" # 0x%016"PFMT64x" %c %s %6s %c %s %s %s%s%s\n"
-		: "0x%08"PFMT64x" # 0x%08"PFMT64x" %c %s %6s %c %s %s %s%s%s\n";
-	const char *type = map->shared? "sys": "usr";
-	const char *flagname = dbg->corebind.getName
-		? dbg->corebind.getName (dbg->corebind.core, map->addr) : NULL;
-	if (!flagname) {
-		flagname = "";
-	} else if (map->name) {
-		char *filtered_name = strdup (map->name);
-		r_name_filter (filtered_name, 0);
-		if (!strncmp (flagname, "map.", 4) && \
-			!strcmp (flagname + 4, filtered_name)) {
+	if (input[0] == 'q') { // "dmq"
+		char buf[128];
+		char *name = (map->name && *map->name)
+			? r_str_newf ("%s.%s", map->name, r_str_rwx_i (map->perm))
+			: r_str_newf ("%08"PFMT64x".%s", map->addr, r_str_rwx_i (map->perm));
+		r_name_filter (name, 0);
+		dbg->cb_printf ("0x%016"PFMT64x" - 0x%016"PFMT64x" %6s %5s %s\n",
+			map->addr, map->addr_end,
+			r_num_units (buf, map->addr_end - map->addr),
+			r_str_rwx_i (map->perm), name);
+		free (name);
+	} else {
+		char sizebuf[128];
+		const char *fmtstr = dbg->bits & R_SYS_BITS_64
+			? "0x%016"PFMT64x" # 0x%016"PFMT64x" %c %s %6s %c %s %s %s%s%s\n"
+			: "0x%08"PFMT64x" # 0x%08"PFMT64x" %c %s %6s %c %s %s %s%s%s\n";
+		const char *type = map->shared? "sys": "usr";
+		const char *flagname = dbg->corebind.getName
+			? dbg->corebind.getName (dbg->corebind.core, map->addr) : NULL;
+		if (!flagname) {
 			flagname = "";
+		} else if (map->name) {
+			char *filtered_name = strdup (map->name);
+			r_name_filter (filtered_name, 0);
+			if (!strncmp (flagname, "map.", 4) && \
+				!strcmp (flagname + 4, filtered_name)) {
+				flagname = "";
+			}
+			free (filtered_name);
 		}
-		free (filtered_name);
+		dbg->cb_printf (fmtstr,
+			map->addr,
+			map->addr_end,
+			(addr>=map->addr && addr<map->addr_end)?'*':'-',
+			type, r_num_units (sizebuf, map->size),
+			map->user?'u':'s',
+			r_str_rwx_i (map->perm),
+			map->name?map->name:"?",
+			map->file?map->file:"?",
+			*flagname? " ; ": "",
+			flagname);
 	}
-	dbg->cb_printf (fmtstr,
-		map->addr,
-		map->addr_end,
-		(addr>=map->addr && addr<map->addr_end)?'*':'-',
-		type, r_num_units (sizebuf, map->size),
-		map->user?'u':'s',
-		r_str_rwx_i (map->perm),
-		map->name?map->name:"?",
-		map->file?map->file:"?",
-		*flagname? " ; ": "",
-		flagname);
 }
 
 R_API void r_debug_map_list(RDebug *dbg, ut64 addr, const char *input) {
 	int i;
-	char buf[128];
 	bool notfirst = false;
 	RListIter *iter;
 	RDebugMap *map;
@@ -79,10 +91,10 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, const char *input) {
 			break;
 		default:
 			// TODO: Find a way to only print headers if output isn't being grepped
-			print_debug_map_header (dbg, input);
+			print_debug_map_line_header (dbg, input);
 	}
 
-	for (i = 0; i < 2; i++) {
+	for (i = 0; i < 2; i++) { // Iterate over dbg::maps and dbg::maps_user
 		RList *maps = (i == 0) ? dbg->maps : dbg->maps_user;
 		r_list_foreach (maps, iter, map) {
 			switch (input[0]) {
@@ -102,17 +114,13 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, const char *input) {
 				}
 				break;
 			case 'q': // "dmq"
-				{
-					char *name = (map->name && *map->name)
-						? r_str_newf ("%s.%s", map->name, r_str_rwx_i (map->perm))
-						: r_str_newf ("%08"PFMT64x".%s", map->addr, r_str_rwx_i (map->perm));
-					r_name_filter (name, 0);
-					dbg->cb_printf ("0x%016"PFMT64x" - 0x%016"PFMT64x" %6s %5s %s\n",
-						map->addr, map->addr_end,
-						r_num_units (buf, map->addr_end - map->addr),
-						r_str_rwx_i (map->perm), name);
-					free (name);
+				if (input[1] == '.') { // "dmq."
+					if (addr >= map->addr && addr < map->addr_end) {
+						print_debug_map_line (dbg, map, addr, input);
+					}
+					break;
 				}
+				print_debug_map_line (dbg, map, addr, input);
 				break;
 			case '.':
 				if (addr >= map->addr && addr < map->addr_end) {
@@ -137,6 +145,18 @@ static int cmp(const void *a, const void *b) {
 	return ma->addr - mb->addr;
 }
 
+/**
+ * \brief Find the min and max addresses in an RList of maps.
+ * \param maps RList of maps that will be searched through
+ * \param min Pointer to a ut64 that the min will be stored in
+ * \param max Pointer to a ut64 that the max will be stored in
+ * \param skip How many maps to skip at the start of iteration
+ * \param width Divisor for the return value
+ * \return (max-min)/width
+ *
+ * Used to determine the min & max addresses of maps and
+ * scale the ascii bar to the width of the terminal
+ */
 static int findMinMax(RList *maps, ut64 *min, ut64 *max, int skip, int width) {
 	RDebugMap *map;
 	RListIter *iter;
@@ -157,9 +177,10 @@ static int findMinMax(RList *maps, ut64 *min, ut64 *max, int skip, int width) {
 	return (*max - *min) / width;
 }
 
-static void print_debug_map_ascii_art(RList *maps, ut64 addr, int use_color, PrintfCallback cb_printf, int bits, int cons_width) {
-	ut64 mul, min = -1, max = 0;
-	int width = cons_width - 90;
+static void print_debug_maps_ascii_art(RDebug *dbg, RList *maps, ut64 addr, int colors) {
+	ut64 mul; // The amount of address space a single console column will represent in bar graph
+	ut64 min = -1, max = 0;
+	int width = r_cons_get_size (NULL) - 90;
 	RListIter *iter;
 	RDebugMap *map;
 	if (width < 1) {
@@ -169,68 +190,75 @@ static void print_debug_map_ascii_art(RList *maps, ut64 addr, int use_color, Pri
 	mul = findMinMax (maps, &min, &max, 0, width);
 	ut64 last = min;
 	if (min != -1 && mul != 0) {
-		const char *c = "", *c_end = "";
+		const char *color_prefix = ""; // Color escape code prefixed to string (address coloring)
+		const char *color_suffix = ""; // Color escape code appended to end of string
 		const char *fmtstr;
-		char buf[56];
-		int j;
-		int count = 0;
+		char size_buf[56]; // Holds the human formatted size string [124K]
+		int skip = 0; // Number of maps to skip when re-calculating the minmax
 		r_list_foreach (maps, iter, map) {
-			r_num_units (buf, map->size);
-			if (use_color) {
-				c_end = Color_RESET;
-				if (map->perm & 2) {
-					c = Color_RED;
-				} else if (map->perm & 1) {
-					c = Color_GREEN;
+			r_num_units (size_buf, map->size); // Convert map size to human readable string
+			if (colors) {
+				color_suffix = Color_RESET;
+				if (map->perm & 2) { // Writable maps are red
+					color_prefix = Color_RED;
+				} else if (map->perm & 1) { // Executable maps are green
+					color_prefix = Color_GREEN;
 				} else {
-					c = "";
-					c_end = "";
+					color_prefix = "";
+					color_suffix = "";
 				}
 			} else {
-				c = "";
-				c_end = "";
+				color_prefix = "";
+				color_suffix = "";
 			}
-			if ((map->addr - last) > UT32_MAX) {
-				mul = findMinMax (maps, &min, &max, count, width);
+			if ((map->addr - last) > UT32_MAX) { // TODO: Comment what this is for
+				mul = findMinMax (maps, &min, &max, skip, width); //  Recalculate minmax
 			}
-			count++;
-			fmtstr = bits & R_SYS_BITS_64 ?
+			skip++;
+			fmtstr = dbg->bits & R_SYS_BITS_64 ? // Prefix formatting string (before bar)
 				"map %4.8s %c %s0x%016"PFMT64x"%s |" :
 				"map %4.8s %c %s0x%08"PFMT64x"%s |";
-			cb_printf (fmtstr, buf,
+			dbg->cb_printf (fmtstr, size_buf,
 				(addr >= map->addr && \
 				addr < map->addr_end) ? '*' : '-',
-				c, map->addr, c_end);
-			for (j = 0; j < width; j++) {
-				ut64 pos = min + (j * mul);
-				ut64 npos = min + ((j + 1) * mul);
+				color_prefix, map->addr, color_suffix); // * indicates map is within our current seeked offset
+			for (int col = 0; col < width; col++) { // Iterate over the available width/columns for bar graph
+				ut64 pos = min + (col * mul); // Current address space to check
+				ut64 npos = min + ((col + 1) * mul); // Next address space to check
 				if (map->addr < npos && map->addr_end > pos) {
-					cb_printf ("#");
+					dbg->cb_printf ("#"); // TODO: Comment what a # represents
 				} else {
-					cb_printf ("-");
+					dbg->cb_printf ("-");
 				}
 			}
-			fmtstr = bits & R_SYS_BITS_64 ?
+			fmtstr = dbg->bits & R_SYS_BITS_64 ? // Suffix formatting string (after bar)
 				"| %s0x%016"PFMT64x"%s %s %s\n" :
 				"| %s0x%08"PFMT64x"%s %s %s\n";
-			cb_printf (fmtstr, c, map->addr_end, c_end,
+			dbg->cb_printf (fmtstr, color_prefix, map->addr_end, color_suffix,
 				r_str_rwx_i (map->perm), map->name);
 			last = map->addr;
 		}
 	}
 }
 
-R_API void r_debug_map_list_visual(RDebug *dbg, ut64 addr, int use_color, int cons_cols) {
+R_API void r_debug_map_list_visual(RDebug *dbg, ut64 addr, const char *input, int colors) {
 	if (dbg) {
-		if (dbg->maps) {
-			print_debug_map_ascii_art (dbg->maps, addr,
-				use_color, dbg->cb_printf,
-				dbg->bits, cons_cols);
-		}
-		if (dbg->maps_user) {
-			print_debug_map_ascii_art (dbg->maps_user,
-				addr, use_color, dbg->cb_printf,
-				dbg->bits, cons_cols);
+		for (int i = 0; i < 2; i++) { // Iterate over dbg::maps and dbg::maps_user
+			RList *maps = (i == 0) ? dbg->maps : dbg->maps_user;
+			if (maps) {
+				RListIter *iter;
+				RDebugMap *map;
+				if (input[1] == '.') { // "dm=." Only show map overlapping current offset
+					dbg->cb_printf ("TODO:\n");
+					r_list_foreach (maps, iter, map) {
+						if (addr >= map->addr && addr < map->addr_end) {
+							// print_debug_map_ascii_art (dbg, map);
+						}
+					}
+				} else { // "dm=" Show all maps with a graph
+					print_debug_maps_ascii_art (dbg, maps, addr, colors);
+				}
+			}
 		}
 	}
 }

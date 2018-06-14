@@ -1821,9 +1821,8 @@ static int cmd_debug_map(RCore *core, const char *input) {
 		break;
 	case '=': // "dm="
 		r_debug_map_sync (core->dbg);
-		r_debug_map_list_visual (core->dbg, core->offset,
-				r_config_get_i (core->config, "scr.color"),
-				r_cons_get_size (NULL));
+		r_debug_map_list_visual (core->dbg, core->offset, input,
+				r_config_get_i (core->config, "scr.color"));
 		break;
 	case 'h': // "dmh"
 		(void)r_debug_heap (core, input);
