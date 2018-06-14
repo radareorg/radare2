@@ -1671,15 +1671,14 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 
 		if (op->operands[0].scale[0] > 1) {
 				data[l++] = op->operands[1].reg << 3 | 4;
-				if (op->operands[0].scale[0] > 2) {
-					data[l++] = getsib (op->operands[0].scale[0]) << 6 |
-										op->operands[0].regs[0] << 3 | 5;
+				data[l++] = getsib (op->operands[0].scale[0]) << 6 |
+						    op->operands[0].regs[0] << 3 | 5;
 
-					data[l++] = offset;
-					data[l++] = offset >> 8;
-					data[l++] = offset >> 16;
-					data[l++] = offset >> 24;
-				}
+				data[l++] = offset;
+				data[l++] = offset >> 8;
+				data[l++] = offset >> 16;
+				data[l++] = offset >> 24;
+
 				return l;
 			}
 
