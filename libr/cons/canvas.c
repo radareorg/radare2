@@ -286,7 +286,6 @@ static int expand_line (RConsCanvas *c, int real_len, int utf8_len) {
 			int newsize = R_MAX (c->bsize[c->y] * 1.5, c->blen[c->y] + padding);
 			char * newline = realloc (c->b[c->y], sizeof (*c->b[c->y])*(newsize)); 
 			if (!newline) {
-				r_cons_canvas_free (c);
 				return false;
 			}
 			memset (newline + c->bsize[c->y], 0, newsize - c->bsize[c->y]);
@@ -340,7 +339,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 		int utf8_len = utf8len_fixed (s_part, slen); 
 
 		if (!expand_line (c, real_len, utf8_len)) {
-			return;
+			break;
 		}
 
 		if (G (c->x - c->sx, c->y - c->sy)) {
@@ -478,7 +477,6 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 			for (j = 0; j <= i; j++) {
 				free (c->b[i]);
 			}
-			free (c->bsize);
 			free (c->attrs);
 			free (c->blen);
 			free (c->bsize);
