@@ -262,12 +262,13 @@ R_API RList *r_io_desc_cache_list(RIODesc *desc) {
 	RIOCache *c;
 	RListIter *iter;
 	r_list_foreach (writes, iter, c) {
-		c->odata = calloc (1, R_ITV_SIZE (c));
+		const ut64 itvSize = r_itv_size (c->itv);
+		c->odata = calloc (1, itvSize);
 		if (!c->odata) {
 			r_list_free (writes);
 			return NULL;
 		}
-		r_io_pread_at (desc->io, R_ITV_BEGIN (c), c->odata, R_ITV_SIZE (c));
+		r_io_pread_at (desc->io, r_itv_begin (c->itv), c->odata, itvSize);
 	}
 	desc->io->p_cache = true;
 	desc->io->desc = current;
