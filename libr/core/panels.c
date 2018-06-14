@@ -1074,9 +1074,6 @@ R_API void r_core_panels_free(RPanels *panels) {
 
 R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 	int okey, key, wheel;
-	int asm_comments = 0;
-	int asm_bytes = 0;
-	int have_utf8 = 0;
 
 	if (!panels) {
 		panels = r_core_panels_new (core);
@@ -1096,13 +1093,6 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 	core->print->cur = 0;
 	core->print->cur_enabled = false;
 	core->print->col = 0;
-
-	have_utf8 = r_config_get_i (core->config, "scr.utf8");
-	r_config_set_i (core->config, "asm.comments", 0);
-	r_config_set_i (core->config, "asm.bytes", 1);
-	r_config_set_i (core->config, "scr.utf8", 1);
-	asm_comments = r_config_get_i (core->config, "asm.comments");
-	asm_bytes = r_config_get_i (core->config, "asm.bytes");
 
 repeat:
 	core->panels = panels;
@@ -1476,11 +1466,6 @@ repeat:
 	}
 	goto repeat;
 exit:
-	r_config_set_i (core->config, "scr.color", can->color);
-	r_config_set_i (core->config, "asm.comments", asm_comments);
-	r_config_set_i (core->config, "asm.bytes", asm_bytes);
-	r_config_set_i (core->config, "scr.utf8", have_utf8);
-
 	core->print->cur = panels->originCursor;
 	core->print->cur_enabled = false;
 	core->print->col = 0;
