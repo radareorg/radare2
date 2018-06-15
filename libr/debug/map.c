@@ -222,7 +222,8 @@ static void print_debug_maps_ascii_art(RDebug *dbg, RList *maps, ut64 addr, int 
 				(addr >= map->addr && \
 				addr < map->addr_end) ? '*' : '-',
 				color_prefix, map->addr, color_suffix); // * indicates map is within our current seeked offset
-			for (int col = 0; col < width; col++) { // Iterate over the available width/columns for bar graph
+			int col;
+			for (col = 0; col < width; col++) { // Iterate over the available width/columns for bar graph
 				ut64 pos = min + (col * mul); // Current address space to check
 				ut64 npos = min + ((col + 1) * mul); // Next address space to check
 				if (map->addr < npos && map->addr_end > pos) {
@@ -243,7 +244,8 @@ static void print_debug_maps_ascii_art(RDebug *dbg, RList *maps, ut64 addr, int 
 
 R_API void r_debug_map_list_visual(RDebug *dbg, ut64 addr, const char *input, int colors) {
 	if (dbg) {
-		for (int i = 0; i < 2; i++) { // Iterate over dbg::maps and dbg::maps_user
+		int i;
+		for (i = 0; i < 2; i++) { // Iterate over dbg::maps and dbg::maps_user
 			RList *maps = (i == 0) ? dbg->maps : dbg->maps_user;
 			if (maps) {
 				RListIter *iter;
