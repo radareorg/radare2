@@ -3,7 +3,31 @@
 This file aims to describe an introduction for developers to work
 on the code base of radare2 project.
 
+## Documentation
+There is support for Doxygen document generation in this repo.
+By running `doxygen` in the root of this repository it will autodetect the
+Doxyfile and generate HTML documentation into
+[doc/doxygen/html/index.html](./doc/doxygen/html/index.html)
 
+If you're contributing code or willing to update existing code you can use the
+doxygen C style comments to improve documentation and comments in code.
+See the [Doxygen Manual](https://www.stack.nl/~dimitri/doxygen/manual/index.html)
+for more info. Example usage can be found [here](https://www.stack.nl/~dimitri/doxygen/manual/docblocks.html)
+```c
+/**
+ * \brief Find the min and max addresses in an RList of maps.
+ * \param maps RList of maps that will be searched through
+ * \param min Pointer to a ut64 that the min will be stored in
+ * \param max Pointer to a ut64 that the max will be stored in
+ * \param skip How many maps to skip at the start of iteration
+ * \param width Divisor for the return value
+ * \return (max-min)/width
+ *
+ * Used to determine the min & max addresses of maps and
+ * scale the ascii bar to the width of the terminal
+ */
+static int findMinMax(RList *maps, ut64 *min, ut64 *max, int skip, int width);
+```
 
 ## Code style
 
