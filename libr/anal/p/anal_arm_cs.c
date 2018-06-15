@@ -2762,24 +2762,24 @@ static void op_fillval(RAnalOp *op , csh handle, cs_insn *insn, int bits) {
 		op->src[0] = r_anal_value_new ();
 		ZERO_FILL (reg);
 		op->src[0]->reg = &reg;
-		if (bits == 32) {
-			parse_reg_name (op->src[0]->reg, handle, insn, 1);
-			op->src[0]->delta = MEMDISP(1);
-		} else {
+		if (bits == 64) {
 			parse_reg64_name (op->src[0]->reg, handle, insn, 1);
 			op->src[0]->delta = MEMDISP64(1);
+		} else {
+			parse_reg_name (op->src[0]->reg, handle, insn, 1);
+			op->src[0]->delta = MEMDISP(1);
 		}
 		break;
 	case R_ANAL_OP_TYPE_STORE:
 		op->dst = r_anal_value_new ();
 		ZERO_FILL (reg);
 		op->dst->reg = &reg;
-		if (bits == 32) {
-			parse_reg_name (op->dst->reg, handle, insn, 1);
-			op->dst->delta = MEMDISP(1);
-		} else {
+		if (bits == 64) {
 			parse_reg64_name (op->dst->reg, handle, insn, 1);
 			op->dst->delta = MEMDISP64(1);
+		} else {
+			parse_reg_name (op->dst->reg, handle, insn, 1);
+			op->dst->delta = MEMDISP(1);
 		}
 		break;
 	default:
