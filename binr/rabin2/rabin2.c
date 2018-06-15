@@ -45,7 +45,7 @@ static int rabin_show_help(int v) {
 		" -E              globally exportable symbols\n"
 		" -f [str]        select sub-bin named str\n"
 		" -F [binfmt]     force to use that bin plugin (ignore header check)\n"
-		" -g              same as -SMZIHVResizcld -SS (show all info)\n"
+		" -g              same as -SMZIHVResizcld -SS -ee (show all info)\n"
 		" -G [addr]       load address . offset to header\n"
 		" -h              this help message\n"
 		" -H              header fields\n"
@@ -634,6 +634,7 @@ int main(int argc, char **argv) {
 			set_action (R_BIN_REQ_FIELDS);
 			set_action (R_BIN_REQ_DWARF);
 			set_action (R_BIN_REQ_ENTRIES);
+			set_action (R_BIN_REQ_INITFINI);
 			set_action (R_BIN_REQ_MAIN);
 			set_action (R_BIN_REQ_LIBS);
 			set_action (R_BIN_REQ_RELOCS);
