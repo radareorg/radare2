@@ -233,6 +233,12 @@ else
   userconf.set('HAVE_ARC4RANDOM_UNIFORM', 0)
 endif
 
+if cc.has_function('explicit_bzero')
+  userconf.set('HAVE_EXPLICIT_BZERO', 1)
+else
+  userconf.set('HAVE_EXPLICIT_BZERO', 0)
+endif
+
 r_userconf_h = configure_file(
   input: 'libr/include/r_userconf.h.in',
   output: 'r_userconf.h',
