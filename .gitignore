@@ -112,3 +112,5 @@ cmake-build-*
 /stage
 /snap
 /*.snap
+# doxygen autogen
+doc/doxygen/html
