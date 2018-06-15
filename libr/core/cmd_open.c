@@ -191,10 +191,26 @@ static void cmd_open_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, oonn);
 }
 
+typedef struct min_max_t {
+	ut64 min;
+	ut64 max;
+} MinMax;
+
+static bool _map_min_max_cb (void *user, void *data, ut32 id) {
+	MinMax *mm = (MinMax *)user;
+	RIOMap *map = (RIOMap *)data;
+
+	mm->min = R_MIN (mm->min, map->itv.addr);
+	mm->max = R_MAX (mm->max, r_itv_end (map->itv) - 1);
+
+	return true;
+}
+
 // very similiar to section list, must reuse more code
 static void list_maps_visual(RIO *io, ut64 seek, ut64 len, int width, int use_color) {
+	MinMax mm;
 	ut64 mul, min = -1, max = 0;
-	SdbListIter *iter;
+	ut32 od;
 	RIOMap *s;
 	int j, i;
 
@@ -205,15 +221,18 @@ static void list_maps_visual(RIO *io, ut64 seek, ut64 len, int width, int use_co
 
 	// seek = (io->va || io->debug) ? r_io_section_vaddr_to_maddr_try (io, seek) : seek;
 
-	ls_foreach_prev (io->maps, iter, s) {			//this must be prev, maps the previous map allways has lower priority
-		min = R_MIN (min, s->itv.addr);
-		max = R_MAX (max, r_itv_end (s->itv) - 1);
-	}
+	mm.min = min;
+	mm.max = max;
+	r_oids_foreach(io->maps, _map_min_max_cb, &mm);
+	min = mm.min;
+	max = mm.max;
+
 	mul = (max - min) / width;
 	if (min != -1 && mul != 0) {
 		const char * color = "", *color_end = "";
 		i = 0;
-		ls_foreach_prev (io->maps, iter, s) {
+		od = io->maps->ptop - 1;
+		while ((s = r_oids_oget(io->maps, od))) {
 			if (use_color) {
 				color_end = Color_RESET;
 				if (s->flags & 1) { // exec bit
@@ -247,6 +266,7 @@ static void list_maps_visual(RIO *io, ut64 seek, ut64 len, int width, int use_co
 					color, r_itv_end (s->itv), color_end,
 					r_str_rwx_i (s->flags), s->fd, s->name);
 			i++;
+			od--;
 		}
 		/* current seek */
 		if (i > 0 && len != 0) {
@@ -436,8 +456,8 @@ static void cmd_open_bin(RCore *core, const char *input) {
 
 // TODO: discuss the output format
 static void map_list(RIO *io, int mode, RPrint *print, int fd) {
-	SdbListIter *iter;
 	RIOMap *map;
+	ut32 od;
 	if (!io || !io->maps || !print || !print->cb_printf) {
 		return;
 	}
@@ -445,7 +465,9 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 		print->cb_printf ("[");
 	}
 	bool first = true;
-	ls_foreach_prev (io->maps, iter, map) {			//this must be prev
+	od = io->maps->ptop - 1;
+	while ((map = r_oids_oget(io->maps, od))) {
+		od--;
 		if (fd != -1 && map->fd != fd) {
 			continue;
 		}
@@ -483,6 +505,30 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 	}
 }
 
+static bool _map_add_flags (void *user, void *data, ut32 id) {
+	int *flags = (int *)user;
+	RIOMap *map = (RIOMap *)data;
+
+	map->flags |= flags[0];
+	return true;
+}
+
+static bool _map_clear_flags (void *user, void *data, ut32 id) {
+	int *flags = (int *)user;
+	RIOMap *map = (RIOMap *)data;
+
+	map->flags &= ~flags[0];
+	return true;
+}
+
+static bool _map_set_flags (void *user, void *data, ut32 id) {
+	int *flags = (int *)user;
+	RIOMap *map = (RIOMap *)data;
+
+	map->flags = flags[0];
+	return true;
+}
+
 static void cmd_omfg (RCore *core, const char *input) {
 	SdbListIter *iter;
 	RIOMap *map;
@@ -495,19 +541,13 @@ static void cmd_omfg (RCore *core, const char *input) {
 		: 7;
 		switch (*input) {
 		case '+':
-			ls_foreach (core->io->maps, iter, map) {
-				map->flags |= flags;
-			}
+			r_oids_foreach (core->io->maps, _map_add_flags, &flags);
 			break;
 		case '-':
-			ls_foreach (core->io->maps, iter, map) {
-				map->flags &= ~flags;
-			}
+			r_oids_foreach (core->io->maps, _map_clear_flags, &flags);
 			break;
 		default:
-			ls_foreach (core->io->maps, iter, map) {
-				map->flags = flags;
-			}
+			r_oids_foreach (core->io->maps, _map_set_flags, &flags);
 			break;
 		}
 	}
@@ -526,19 +566,16 @@ static void cmd_omf (RCore *core, const char *input) {
 		*sp++ = 0;
 		int id = r_num_math (core->num, arg);
 		int flags = (*sp)? r_str_rwx (sp): 7;
-		ls_foreach (core->io->maps, iter, map) {
-			if (map->id == id) {
-				map->flags = flags;
-				break;
-			}
+		map = r_io_map_resolve(core->io, id);
+		if (map) {
+			map->flags = flags;
 		}
 	} else {
 		// change perms of current map
 		int flags = (arg && *arg)? r_str_rwx (arg): 7;
-		ls_foreach (core->io->maps, iter, map) {
-			if (r_itv_contain (map->itv, core->offset)) {
-				map->flags = flags;
-			}
+		map = r_io_map_get (core->io, core->offset);
+		if (map) {
+			map->flags = flags;
 		}
 	}
 	free (arg);
@@ -675,7 +712,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 				if (!size) {
 					size = r_io_fd_size (core->io, fd);
 				}
-				map = r_io_map_add (core->io, fd, rwx_arg ? rwx : desc->flags, paddr, vaddr, size, true);
+				map = r_io_map_add (core->io, fd, rwx_arg ? rwx : desc->flags, paddr, vaddr, size);
 				r_io_map_set_name (map, name);
 			}
 		} else {
@@ -754,7 +791,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 			RIODesc *desc = r_io_desc_get (core->io, fd);
 			if (desc) {
 				ut64 size = r_io_desc_size (desc);
-				map = r_io_map_add (core->io, fd, desc->flags, 0, 0, size, true);
+				map = r_io_map_add (core->io, fd, desc->flags, 0, 0, size);
 				r_io_map_set_name (map, desc->name);
 			} else {
 				eprintf ("Usage: omm [fd]\n");
@@ -1111,7 +1148,7 @@ static int cmd_open(void *data, const char *input) {
 		if ((file = r_core_file_open (core, ptr, perms, addr))) {
 			fd = file->fd;
 			r_io_map_add (core->io, fd, perms, 0LL, addr,
-					r_io_fd_size (core->io, fd), true);
+					r_io_fd_size (core->io, fd));
 		}
 		r_str_argv_free (argv);
 		if (!silence) {
@@ -1459,14 +1496,14 @@ static int cmd_open(void *data, const char *input) {
 					perms |= core->io->desc->flags;
 				}
 				if (r_io_reopen (core->io, fd, perms, 644)) {
-					SdbListIter *iter;
+					RList *maps = r_io_map_get_for_fd(core->io, fd);
+					RListIter *iter;
 					RIOMap *map;
-					ls_foreach_prev (core->io->maps, iter, map) {
-						if (map->fd == fd) {
-							map->flags |= R_IO_WRITE;
-							map->flags |= R_IO_EXEC;
-						}
+					r_list_foreach (maps, iter, map) {
+						map->flags |= R_IO_WRITE;
+						map->flags |= R_IO_EXEC;
 					}
+					r_list_free (maps);
 				}
 			}
 			break;

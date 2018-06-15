@@ -54,148 +54,71 @@ static int al_fd_write_at_wrap (RIO *io, int fd, ut64 addr, ut8 *buf, int len, R
 	return rlen;
 }
 
-typedef int (*cbOnIterMap)(RIO *io, int fd, ut64 addr, ut8 *buf, int len, RIOMap *map, void *user);
+typedef int (*cbOnSubMap)(RIO *io, int fd, ut64 addr, ut8 *buf, int len, RIOMap *map, void *user);
 
-// If prefix_mode is true, returns the number of bytes of operated prefix; returns < 0 on error.
-// If prefix_mode is false, operates in non-stop mode and returns true iff all IO operations on overlapped maps are complete.
-static st64 on_map_skyline(RIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg, cbOnIterMap op, bool prefix_mode) {
-	const RPVector *skyline = &io->map_skyline;
-	ut64 addr = vaddr;
-	size_t i;
-	bool ret = true, wrap = !prefix_mode && vaddr + len < vaddr;
-#define CMP(addr, part) (addr < r_itv_end (((RIOMapSkyline *)part)->itv) - 1 ? -1 : \
-			addr > r_itv_end (((RIOMapSkyline *)part)->itv) - 1 ? 1 : 0)
-	// Let i be the first skyline part whose right endpoint > addr
-	if (!len) {
-		i = r_pvector_len (skyline);
-	} else {
-		r_pvector_lower_bound (skyline, addr, i, CMP);
-		if (i == r_pvector_len (skyline) && wrap) {
-			wrap = false;
-			i = 0;
-			addr = 0;
-		}
+static bool _submap_find_cb(void *vin, void *vincoming, void *user, int *cmp_res) {
+	RIOSubMap *sm = (RIOSubMap *)vin;
+	ut64 *off = (ut64 *)vincoming;
+
+	if (off[0] < sm->from) {
+		cmp_res[0] = 1;
+		goto beach;
 	}
-#undef CMP
-	while (i < r_pvector_len (skyline)) {
-		const RIOMapSkyline *part = r_pvector_at (skyline, i);
-		// Right endpoint <= addr
-		if (r_itv_end (part->itv) - 1 < addr) {
-			i++;
-			if (wrap && i == r_pvector_len (skyline)) {
-				wrap = false;
-				i = 0;
-				addr = 0;
-			}
+	if (off[0] > sm->to) {
+		cmp_res[0] = -1;
+		goto beach;
+	}
+	cmp_res[0] = 0;
+beach:
+	return true;
+}
+
+static bool operateOnSubMap(RIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg, cbOnSubMap op, void *user) {
+	ut8 *ptr;
+	ut32 od;
+	ut64 vend, paddr;
+	RIOMap *map;
+	RIOSubMap *sm;
+	if ((len < 1) || !io || !io->maps || !io->submaps || !op || !buf) {
+		return false;
+	}
+	vend = vaddr + len - 1;
+	io->submaps->cmp = _submap_find_cb;
+	od = r_oids_find(io->submaps, &vaddr, NULL);
+	while ((sm = r_oids_oget(io->submaps, od)) && sm->from <= vend) {
+		map = r_oids_get (io->maps, sm->id);
+		if (!map || (((map->flags & match_flg) != match_flg) && !io->p_cache)) {
+			od++;
 			continue;
 		}
-		if (addr < part->itv.addr) {
-			// [addr, part->itv.addr) is a gap
-			if (prefix_mode || len <= part->itv.addr - vaddr) {
-				break;
-			}
-			addr = part->itv.addr;
-		}
-		// Now left endpoint <= addr < right endpoint
-		ut64 len1 = R_MIN (vaddr + len - addr, r_itv_end (part->itv) - addr);
-		// The map satisfies the permission requirement or p_cache is enabled
-		if (((part->map->flags & match_flg) == match_flg || io->p_cache)) {
-			st64 result = op (io, part->map->fd, part->map->delta + addr - part->map->itv.addr,
-					buf + addr - vaddr, len1, part->map, NULL);
-			if (prefix_mode) {
-				if (result < 0) {
-					return result;
-				}
-				addr += result;
-				if (result != len1) {
-					break;
-				}
-			} else {
-				if (result != len1) {
-					ret = false;
-				}
-				addr += len1;
-			}
-		} else if (prefix_mode) {
-			break;
+		len = R_MIN(sm->to, vend) - R_MAX(sm->from, vaddr) + 1;
+		if (sm->from > vaddr) {
+			ptr = buf + (sm->from - vaddr);
 		} else {
-			addr += len1;
-			ret = false;
+			ptr = buf;
 		}
-		// Reaches the end
-		if (addr == vaddr + len) {
-			break;
-		}
-		// Wrap to the beginning of skyline if address wraps
-		if (!addr) {
-			i = 0;
-		}
+		paddr = map->delta + R_MAX (sm->from, vaddr) - map->itv.addr;
+		op (io, map->fd, paddr, ptr, len, map, user);
+		od++;
 	}
-	return prefix_mode ? addr - vaddr : ret;
+	return true;
 }
 
-// Precondition: len > 0
-// Non-stop IO
-// Returns true iff all reads/writes on overlapped maps are complete.
-static bool onIterMap(SdbListIter *iter, RIO *io, ut64 vaddr, ut8 *buf,
-		int len, int match_flg, cbOnIterMap op, void *user) {
-	// vendaddr may be 0 to denote 2**64
-	ut64 vendaddr = vaddr + len, len1;
-	int t;
-	bool ret = true;
-	for (; iter; iter = iter->p) {
-		RIOMap *map = (RIOMap *)iter->data;
-		ut64 to = r_itv_end (map->itv);
-		if (r_itv_overlap2 (map->itv, vaddr, len)) {
-			if ((map->flags & match_flg) == match_flg || io->p_cache) {
-				t = vaddr < map->itv.addr
-						? op (io, map->fd, map->delta, buf + map->itv.addr - vaddr,
-								len1 = R_MIN (vendaddr - map->itv.addr, map->itv.size), map, user)
-						: op (io, map->fd, map->delta + vaddr - map->itv.addr, buf,
-								len1 = R_MIN (to - vaddr, len), map, user);
-				if (t != len1) {
-					ret = false;
-				}
-			}
-			if (vaddr < map->itv.addr) {
-				t = onIterMap (iter->p, io, vaddr, buf, map->itv.addr - vaddr, match_flg, op, user);
-				if (!t) {
-					ret = false;
-				}
-			}
-			if (to - 1 < vendaddr - 1) {
-				t = onIterMap (iter->p, io, to, buf + to - vaddr, vendaddr - to, match_flg, op, user);
-				if (!t) {
-					ret = false;
-				}
-			}
-		}
-	}
-	return ret;
-}
-
-// Precondition: len >= 0
-// Non-stop IO supporting address space wraparound
-// Returns true iff all reads/writes on overlapped maps are complete.
-static bool onIterMap_wrap(SdbListIter *iter, RIO *io, ut64 vaddr, ut8 *buf,
-		int len, int match_flg, cbOnIterMap op, void *user) {
-#if 1
-	return on_map_skyline (io, vaddr, buf, len, match_flg, op, false);
-#else
+static bool operateOnSubMap_wrap(RIO *io, ut64 vaddr, ut8 *buf,
+		int len, int match_flg, cbOnSubMap op, void *user) {
 	if (!len) {
 		return true;
 	}
 	bool ret = true;
 	// vaddr + len > 2**64
 	if (vaddr > UT64_MAX - len + 1) {
-		ret = onIterMap (iter, io, 0, buf - vaddr, len + vaddr, match_flg, op, user);
+		ret = operateOnSubMap (io, 0, buf - vaddr, len + vaddr, match_flg, op, user);
 		len = -vaddr;
 	}
 	if (ret) {
-		ret = onIterMap (iter, io, vaddr, buf, len, match_flg, op, user);
+		ret = operateOnSubMap (io, vaddr, buf, len, match_flg, op, user);
 	}
 	return ret;
-#endif
 }
 
 R_API RIO* r_io_new() {
@@ -208,7 +131,6 @@ R_API RIO* r_io_init(RIO* io) {
 	}
 	io->addrbytes = 1;
 	r_io_desc_init (io);
-	r_pvector_init (&io->map_skyline, free);
 	r_io_map_init (io);
 	r_io_section_init (io);
 	r_io_cache_init (io);
@@ -276,7 +198,7 @@ R_API RIODesc* r_io_open(RIO* io, const char* uri, int flags, int mode) {
 	if (!desc) {
 		return NULL;
 	}
-	r_io_map_new (io, desc->fd, desc->flags, 0LL, 0LL, r_io_desc_size (desc), true);
+	r_io_map_new (io, desc->fd, desc->flags, 0LL, 0LL, r_io_desc_size (desc));
 	return desc;
 }
 
@@ -295,12 +217,11 @@ R_API RIODesc* r_io_open_at(RIO* io, const char* uri, int flags, int mode, ut64 
 	// second map
 	if (size && ((UT64_MAX - size + 1) < at)) {
 		// split map into 2 maps if only 1 big map results into interger overflow
-		r_io_map_new (io, desc->fd, desc->flags, UT64_MAX - at + 1, 0LL, size - (UT64_MAX - at) - 1, false);
+		r_io_map_new (io, desc->fd, desc->flags, UT64_MAX - at + 1, 0LL, size - (UT64_MAX - at) - 1);
 		// someone pls take a look at this confusing stuff
 		size = UT64_MAX - at + 1;
 	}
-	// skyline not updated
-	r_io_map_new (io, desc->fd, desc->flags, 0LL, at, size, false);
+	r_io_map_new (io, desc->fd, desc->flags, 0LL, at, size);
 	return desc;
 }
 
@@ -398,7 +319,7 @@ R_API int r_io_pwrite_at(RIO* io, ut64 paddr, const ut8* buf, int len) {
 }
 
 // Returns true iff all reads on mapped regions are successful and complete.
-R_API bool r_io_vread_at_mapped(RIO* io, ut64 vaddr, ut8* buf, int len) {
+R_API bool r_io_vread_at(RIO* io, ut64 vaddr, ut8* buf, int len) {
 	if (!io || !buf || (len < 1)) {
 		return false;
 	}
@@ -409,10 +330,10 @@ R_API bool r_io_vread_at_mapped(RIO* io, ut64 vaddr, ut8* buf, int len) {
 	if (!io->maps) {
 		return false;
 	}
-	return onIterMap_wrap (io->maps->tail, io, vaddr, buf, len, R_IO_READ, fd_read_at_wrap, NULL);
+	return operateOnSubMap_wrap (io, vaddr, buf, len, R_IO_READ, fd_read_at_wrap, NULL);
 }
 
-static bool r_io_vwrite_at(RIO* io, ut64 vaddr, const ut8* buf, int len) {
+R_API bool r_io_vwrite_at(RIO* io, ut64 vaddr, const ut8* buf, int len) {
 	if (!io || !buf || (len < 1)) {
 		return false;
 	}
@@ -420,7 +341,7 @@ static bool r_io_vwrite_at(RIO* io, ut64 vaddr, const ut8* buf, int len) {
 	if (!io->maps) {
 		return false;
 	}
-	return onIterMap_wrap (io->maps->tail, io, vaddr, (ut8*)buf, len, R_IO_WRITE, fd_write_at_wrap, NULL);
+	return operateOnSubMap_wrap (io, vaddr, (ut8*)buf, len, R_IO_WRITE, fd_write_at_wrap, NULL);
 }
 
 R_API RIOAccessLog *r_io_al_vread_at(RIO* io, ut64 vaddr, ut8* buf, int len) {
@@ -436,7 +357,7 @@ R_API RIOAccessLog *r_io_al_vread_at(RIO* io, ut64 vaddr, ut8* buf, int len) {
 		memset (buf, io->Oxff, len);
 	}
 	log->buf = buf;
-	onIterMap (io->maps->tail, io, vaddr, buf, len, R_IO_READ, al_fd_read_at_wrap, log);
+	operateOnSubMap_wrap (io, vaddr, buf, len, R_IO_READ, al_fd_read_at_wrap, log);
 	return log;
 }
 
@@ -450,15 +371,10 @@ R_API RIOAccessLog *r_io_al_vwrite_at(RIO* io, ut64 vaddr, const ut8* buf, int l
 		return NULL;
 	}
 	log->buf = (ut8*)buf;
-	(void)onIterMap (io->maps->tail, io, vaddr, (ut8*)buf, len, R_IO_WRITE, al_fd_write_at_wrap, log);
+	operateOnSubMap_wrap (io, vaddr, (ut8*)buf, len, R_IO_WRITE, al_fd_write_at_wrap, log);
 	return log;
 }
 
-// Deprecated, use either r_io_read_at_mapped or r_io_nread_at instead.
-// For virtual mode, returns true if all reads on mapped regions are successful
-// and complete.
-// For physical mode, the interface is broken because the actual read bytes are
-// not available. This requires fixes in all call sites.
 R_API bool r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	bool ret;
 	if (!io || !buf || len < 1) {
@@ -468,62 +384,11 @@ R_API bool r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		return !!r_io_buffer_read(io, addr, buf, len);
 	}
 	if (io->va) {
-		ret = r_io_vread_at_mapped(io, addr, buf, len);
+		ret = r_io_vread_at(io, addr, buf, len);
 	} else {
 		ret = r_io_pread_at(io, addr, buf, len) > 0;
 	}
 	if (io->cached & R_IO_READ) {
-		(void)r_io_cache_read(io, addr, buf, len);
-	}
-	return ret;
-}
-
-// Returns true iff all reads on mapped regions are successful and complete.
-// Unmapped regions are filled with io->Oxff in both physical and virtual modes.
-// Use this function if you want to ignore gaps or do not care about the number
-// of read bytes.
-R_API bool r_io_read_at_mapped(RIO *io, ut64 addr, ut8 *buf, int len) {
-	bool ret;
-	if (!io || !buf) {
-		return false;
-	}
-	if (io->buffer_enabled) {
-		return !!r_io_buffer_read(io, addr, buf, len);
-	}
-	if (io->ff) {
-		memset(buf, io->Oxff, len);
-	}
-	if (io->va) {
-		ret = on_map_skyline(io, addr, buf, len, R_IO_READ, fd_read_at_wrap, false);
-	} else {
-		ret = r_io_pread_at(io, addr, buf, len) > 0;
-	}
-	if (io->cached & R_IO_READ) {
-		(void)r_io_cache_read(io, addr, buf, len);
-	}
-	return ret;
-}
-
-// For both virtual and physical mode, returns the number of bytes of read
-// prefix.
-// Returns -1 on error.
-R_API int r_io_nread_at(RIO *io, ut64 addr, ut8 *buf, int len) {
-	int ret;
-	if (!io || !buf) {
-		return -1;
-	}
-	if (io->buffer_enabled) {
-		return r_io_buffer_read(io, addr, buf, len);
-	}
-	if (io->va) {
-		if (io->ff) {
-			memset(buf, io->Oxff, len);
-		}
-		ret = on_map_skyline(io, addr, buf, len, R_IO_READ, fd_read_at_wrap, true);
-	} else {
-		ret = r_io_pread_at(io, addr, buf, len);
-	}
-	if (ret > 0 && io->cached & R_IO_READ) {
 		(void)r_io_cache_read(io, addr, buf, len);
 	}
 	return ret;

@@ -6,6 +6,7 @@ files = [
   'io.c',
   'ioutils.c',
   'map.c',
+  'submap.c',
   'plugin.c',
   'section.c',
   'undo.c',

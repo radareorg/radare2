@@ -613,15 +613,15 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		if (m) {
 			append_bound (list, core->io, search_itv, m->itv.addr, m->itv.size);
 		}
-	} else if (!strcmp (mode, "io.maps")) { // Non-overlapping RIOMap parts not overriden by others (skyline)
-		const RPVector *skyline = &core->io->map_skyline;
+//todo
+	} else if (!strcmp (mode, "io.maps")) { // Non-overlapping RIOMap parts not overriden by others
+		RIOSubMap *sm = NULL;
 		ut64 begin = UT64_MAX;
 		ut64 end = UT64_MAX;
-		size_t i;
-		for (i = 0; i < r_pvector_len (skyline); i++) {
-			const RIOMapSkyline *part = r_pvector_at (skyline, i);
-			ut64 from = part->itv.addr;
-			ut64 to = part->itv.addr + part->itv.size;
+		ut32 od;
+		for (od = 0; !!(sm = r_oids_oget(core->io->submaps, od)); od++) {
+			ut64 from = sm->from;
+			ut64 to = sm->to + 1;	//stupid half opened intervals
 			// eprintf ("--------- %llx %llx    (%llx %llx)\n", from, to, begin, end);
 			if (begin== UT64_MAX) {
 				begin = from;

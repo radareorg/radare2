@@ -2562,13 +2562,14 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						if (s) {
 							entry = s->vaddr;
 						} else {
-							RIOMap *map = ls_pop (core->io->maps);
+//							RIOMap *map = ls_pop (core->io->maps);
+							RIOMap *map = r_oids_first (core->io->maps);
 							if (map) {
 								entry = map->itv.addr;
 							} else {
 								entry = r_config_get_i (core->config, "bin.baddr");
 							}
-							ls_prepend (core->io->maps, map);
+//							ls_prepend (core->io->maps, map);
 						}
 					}
 					if (entry != UT64_MAX) {
