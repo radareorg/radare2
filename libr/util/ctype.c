@@ -309,13 +309,15 @@ R_API char *r_type_format(Sdb *TDB, const char *t) {
 			char *struct_name;
 			bool isStruct = false;
 			bool isEnum = false;
+			bool isfp = false;
 			snprintf (var2, sizeof (var2), "%s.%s", var, p);
 			type = sdb_array_get (TDB, var2, 0, NULL);
-			int elements = sdb_array_get_num (TDB, var2, 2, NULL);
+			int alen = sdb_array_size (TDB, var2);
+			int elements = sdb_array_get_num (TDB, var2, alen - 1, NULL);
 			if (type) {
-				//off = sdb_array_get_num (DB, var2, 1, NULL);
-				//size = sdb_array_get_num (DB, var2, 2, NULL);
-				if (!strncmp (type, "struct ", 7)) {
+				if (strstr (type, "*(")) { // check for function pointer
+					isfp = true;
+				} else if (!strncmp (type, "struct ", 7)) {
 					struct_name = type + 7;
 					// TODO: iterate over all the struct fields, and format the format and vars
 					snprintf (var3, sizeof (var3), "struct.%s", struct_name);
@@ -351,6 +353,11 @@ R_API char *r_type_format(Sdb *TDB, const char *t) {
 					} else if (isEnum) {
 						fmt = r_str_append (fmt, "E");
 						vars = r_str_appendf (vars, "(%s)%s", type + 5, p);
+						vars = r_str_append (vars, " ");
+					} else if (isfp) {
+						// consider function pointer as void * for printing
+						fmt = r_str_append (fmt, "p");
+						vars = r_str_append (vars, p);
 						vars = r_str_append (vars, " ");
 					} else {
 						fmt = r_str_append (fmt, tfmt);
