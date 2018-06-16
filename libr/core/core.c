@@ -1781,8 +1781,8 @@ static void r_core_break (RCore *core) {
 	// if we are not in the main thread we hold in a lock
 	RCoreTask *task = r_core_task_self (core);
 	r_core_task_continue (task);
-	if (task && task->msg) {
-		r_th_try_pause (task->msg->th);
+	if (task) {
+		r_th_try_pause (task->thread);
 		r_cons_singleton ()->breaked = false;
 		// eprintf ("Going to pause %d\n", getpid ());
 //		// r_core_task_pause (core, task, true);
