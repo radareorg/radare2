@@ -2010,6 +2010,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	if (!c) {
 		return NULL;
 	}
+	r_core_task_join (c, NULL);
 	r_core_wait (c);
 	/* TODO: it leaks as shit */
 	//update_sdb (c);
@@ -2019,7 +2020,6 @@ R_API RCore *r_core_fini(RCore *c) {
 	r_th_lock_free (c->lock);
 	R_FREE (c->lastsearch);
 	c->cons->pager = NULL;
-	r_core_task_join (c, NULL);
 	free (c->cmdqueue);
 	free (c->lastcmd);
 	free (c->block);
