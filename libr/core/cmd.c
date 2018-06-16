@@ -1268,16 +1268,7 @@ static int cmd_thread(void *data, const char *input) {
 	case 'j':
 		r_core_task_list (core, *input);
 		break;
-#if 0
-	case 't':
-		r_cons_break_push (NULL, NULL);
-		while (!r_cons_is_breaked ()) {
-			r_sys_sleep(1);
-		}
-		r_cons_break_pop ();
-		break;
-#endif
-	case 't': {
+	case 't': { // "&t"
 		int usecs = 0;
 		if (input[1] == ' ') {
 			usecs = (int) r_num_math (core->num, input + 1);
@@ -1285,28 +1276,25 @@ static int cmd_thread(void *data, const char *input) {
 		task_test (core, usecs);
 		break;
 	}
-	case '&':
+	case '&': { // "&&"
 		if (r_sandbox_enable (0)) {
 			eprintf ("This command is disabled in sandbox mode\n");
 			return 0;
 		}
-		if (input[1] == '&') {
-			// wait until ^C
-		} else {
-			int tid = r_num_math (core->num, input + 1);
-			if (tid) {
-				RCoreTask *task = r_core_task_get (core, tid);
-				if (task) {
-					r_core_task_join (core, task);
-				} else {
-					eprintf ("Cannot find task\n");
-				}
+		int tid = r_num_math (core->num, input + 1);
+		if (tid) {
+			RCoreTask *task = r_core_task_get (core, tid);
+			if (task) {
+				r_core_task_join (core, task);
 			} else {
-				//r_core_task_run (core, NULL);
+				eprintf ("Cannot find task\n");
 			}
+		} else {
+			//r_core_task_run (core, NULL);
 		}
 		break;
-	case '=': {
+	}
+	case '=': { // "&="
 		// r_core_task_list (core, '=');
 		int tid = r_num_math (core->num, input + 1);
 		if (tid) {
@@ -1323,13 +1311,6 @@ static int cmd_thread(void *data, const char *input) {
 		} else {
 			r_core_task_list (core, 1);
 		}}
-		break;
-	case '+':
-		if (r_sandbox_enable (0)) {
-			eprintf ("This command is disabled in sandbox mode\n");
-			return 0;
-		}
-		//r_core_task_add (core, r_core_task_new (core, input + 1, (RCoreTaskCallback)task_finished, core));
 		break;
 	case '-':
 		if (r_sandbox_enable (0)) {
