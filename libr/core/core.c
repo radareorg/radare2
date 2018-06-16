@@ -1836,7 +1836,7 @@ R_API bool r_core_init(RCore *core) {
 	core->rtr_n = 0;
 	core->blocksize_max = R_CORE_BLOCKSIZE_MAX;
 	core->task_id_next = 0;
-	core->tasks = r_list_newf (free); // TODO: free tasks properly
+	core->tasks = r_list_newf ((RListFree)r_core_task_free);
 	core->tasks_queue = r_list_new ();
 	core->tasks_lock = r_th_lock_new (false);
 	core->main_task = r_core_task_new (core, NULL, NULL, NULL);
