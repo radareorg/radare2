@@ -96,11 +96,21 @@ R_API RCoreTask *r_core_task_new (RCore *core, const char *cmd, RCoreTaskCallbac
 	return task;
 
 hell:
-	if (task) {
-		free (task->cmd);
-		free (task);
-	}
+	r_core_task_free (task);
 	return NULL;
+}
+
+R_API void r_core_task_free (RCoreTask *task) {
+	if (!task) {
+		return;
+	}
+	free (task->cmd);
+	free (task->res);
+	r_th_free (task->thread);
+	r_th_cond_free (task->dispatch_cond);
+	r_th_lock_free (task->dispatch_lock);
+	r_cons_dump_free (task->cons);
+	free (task);
 }
 
 R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
@@ -296,28 +306,30 @@ R_API RCoreTask *r_core_task_self (RCore *core) {
 	return core->current_task ? core->current_task : core->main_task;
 }
 
-R_API int r_core_task_cat (RCore *core, int id) {
-	RCoreTask *task = r_core_task_get (core, id);
-	r_cons_println (task->res);
-	r_core_task_del (core, id);
-	return true;
-}
-
 R_API int r_core_task_del (RCore *core, int id) {
 	RCoreTask *task;
 	RListIter *iter;
-	if (id == -1) {
-		r_list_free (core->tasks);
-		core->tasks = r_list_new ();
-		return true;
-	}
 	r_list_foreach (core->tasks, iter, task) {
 		if (task->id == id) {
+			if (task == core->main_task
+				|| task->state != R_CORE_TASK_STATE_DONE) {
+				return false;
+			}
 			r_list_delete (core->tasks, iter);
 			return true;
 		}
 	}
 	return false;
+}
+
+R_API void r_core_task_del_all_done (RCore *core) {
+	RCoreTask *task;
+	RListIter *iter, *iter2;
+	r_list_foreach_safe (core->tasks, iter, iter2, task) {
+		if (task != core->main_task && task->state == R_CORE_TASK_STATE_DONE) {
+			r_list_delete (core->tasks, iter);
+		}
+	}
 }
 
 R_API RCoreTask *r_core_task_get (RCore *core, int id) {

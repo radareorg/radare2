@@ -40,6 +40,9 @@ static void break_stack_free(void *ptr) {
 static void cons_stack_free(void *ptr) {
 	RConsStack *s = (RConsStack *)ptr;
 	free (s->buf);
+	if (s->grep) {
+		free (s->grep->str);
+	}
 	free (s->grep);
 	free (s);
 }

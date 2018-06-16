@@ -17,7 +17,6 @@ static const char *help_msg_amper[] = {
 	"&", "", "list all tasks",
 	"&j", "", "list all tasks (in JSON)",
 	"&=", " 3", "show output of task 3",
-	"&=", "", "show output of all tasks",
 	"&-", " 1", "delete task #1",
 	"&", "-*", "delete all done tasks",
 	"&?", "", "show this help",

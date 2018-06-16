@@ -1284,13 +1284,13 @@ static int cmd_thread(void *data, const char *input) {
 		int tid = r_num_math (core->num, input + 1);
 		if (tid) {
 			RCoreTask *task = r_core_task_get (core, tid);
-			if (task) {
+			if (task && task != core->main_task) {
 				r_core_task_join (core, task);
 			} else {
 				eprintf ("Cannot find task\n");
 			}
 		} else {
-			//r_core_task_run (core, NULL);
+			r_core_task_join (core, NULL);
 		}
 		break;
 	}
@@ -1300,26 +1300,22 @@ static int cmd_thread(void *data, const char *input) {
 		if (tid) {
 			RCoreTask *task = r_core_task_get (core, tid);
 			if (task) {
-				r_core_task_print (core, task, 0);
-				r_cons_printf ("%2d %s %s\n",
-					task->id, r_core_task_status (task), task->cmd);
 				if (task->res) {
 					r_cons_println (task->res);
 				}
 			} else {
 				eprintf ("Cannot find task\n");
 			}
-		} else {
-			r_core_task_list (core, 1);
-		}}
+		}
 		break;
+	}
 	case '-':
 		if (r_sandbox_enable (0)) {
 			eprintf ("This command is disabled in sandbox mode\n");
 			return 0;
 		}
 		if (input[1] == '*') {
-			r_core_task_del (core, -1);
+			r_core_task_del_all_done (core);
 		} else {
 			r_core_task_del (core, r_num_math (core->num, input + 1));
 		}
