@@ -243,6 +243,11 @@ static int task_run(RCoreTask *task) {
 	}
 
 	task_end (task);
+
+	if (task->cb) {
+		task->cb (task->user, task->res);
+	}
+
 	return res;
 }
 
