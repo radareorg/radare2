@@ -707,6 +707,7 @@ R_API void r_core_task_enqueue(RCore *core, RCoreTask *task);
 R_API int r_core_task_run_sync(RCore *core, RCoreTask *task);
 R_API void r_core_task_sync_begin(RCore *core);
 R_API void r_core_task_sync_end(RCore *core);
+R_API void r_core_task_continue(RCoreTask *t);
 R_API void r_core_task_sleep_begin(RCoreTask *task);
 R_API void r_core_task_sleep_end(RCoreTask *task);
 R_API int r_core_task_del (RCore *core, int id);
@@ -716,8 +717,6 @@ typedef void (*inRangeCb) (RCore *core, ut64 from, ut64 to, int vsize,
 			   bool asterisk, int count);
 R_API int r_core_search_value_in_range (RCore *core, RInterval search_itv,
 		ut64 vmin, ut64 vmax, int vsize, bool asterisk, inRangeCb cb);
-
-R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state);
 
 /* PLUGINS */
 extern RCorePlugin r_core_plugin_java;

@@ -115,6 +115,7 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 		if (!stop) {
 			r_th_cond_wait (current->dispatch_cond, current->dispatch_lock);
 			r_cons_load (current->cons);
+			current->cons = NULL;
 		}
 	} else if (current != core->main_task && stop) {
 		// all tasks done, reset to main cons
