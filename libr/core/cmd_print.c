@@ -12,21 +12,17 @@
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
 static const char *help_msg_amper[] = {
-	"Usage:", "&[-|<cmd>]", "Manage tasks ( XXX broken because of mutex in r_core_cmd )",
-	"&", "", "list all running threads",
-	"&=", "", "show output of all tasks",
+	"Usage:", "&[-|<cmd>]", "Manage tasks (WARNING: Experimental. Use with caution!)",
+	"&", " <cmd>", "run <cmd> in a new background task",
+	"&", "", "list all tasks",
+	"&j", "", "list all tasks (in JSON)",
 	"&=", " 3", "show output of task 3",
-	"&j", "", "list all running threads (in JSON)",
-	"&?", "", "show this help",
-	"&+", " aa", "push to the task list",
+	"&=", "", "show output of all tasks",
 	"&-", " 1", "delete task #1",
-	"&", "-*", "delete all threads",
-	"&", " aa", "run analysis in background",
-	"&", " &&", "run all tasks in background",
-	"&&", "", "run all pendings tasks (and join threads)",
-	"&&&", "", "run all pendings tasks until ^C",
-	"", "", "TODO: last command should honor asm.bits",
-	"", "", "WARN: this feature is very experimental. Use it with caution",
+	"&", "-*", "delete all done tasks",
+	"&?", "", "show this help",
+	"&&", " 3", "wait until task 3 is finished",
+	"&&", "", "wait until all tasks are finished",
 	NULL
 };
 
