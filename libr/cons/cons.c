@@ -640,6 +640,10 @@ R_API RStack *r_cons_dump(void) {
 R_API void r_cons_load(RStack *stack) {
 	RConsStack *cur = r_stack_pop (stack);
 	cons_stack_load (cur, false);
+	// cur->buf is moved to cons instance by cons_stack_load(),
+	// make sure it is not freed by cons_stack_free()
+	cur->buf = NULL;
+	cons_stack_free (cur);
 	I.cons_stack = stack;
 }
 
