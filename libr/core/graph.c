@@ -3111,7 +3111,9 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 
 	h = is_interactive? h: g->h + 1;
 	w = is_interactive? w: g->w + 2;
-	r_cons_canvas_resize (g->can, w, h);
+	if (!r_cons_canvas_resize (g->can, w, h)) {
+		return false;
+	}
 	// r_cons_canvas_clear (g->can);
 	if (!is_interactive) {
 		g->can->sx = -g->x;
