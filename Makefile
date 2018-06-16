@@ -169,7 +169,7 @@ ifneq ($(USE_ZIP),NO)
 endif
 
 clean: rmd
-	rm -f libr/libr.a libr/libr.dylib
+	rm -f libr/libr.a libr/libr.dylib libr/include/r_version.h
 	rm -rf libr/.libr
 	for DIR in shlr libr binr ; do $(MAKE) -C "$$DIR" clean ; done
 
