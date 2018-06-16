@@ -2010,7 +2010,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	if (!c) {
 		return NULL;
 	}
-	r_core_task_join (c, NULL);
+	r_core_task_join (c, NULL, NULL);
 	r_core_wait (c);
 	/* TODO: it leaks as shit */
 	//update_sdb (c);

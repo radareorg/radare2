@@ -58,15 +58,33 @@ R_API void r_core_task_list (RCore *core, int mode) {
 	}
 }
 
-R_API void r_core_task_join (RCore *core, RCoreTask *task) {
+R_API void r_core_task_join (RCore *core, RCoreTask *current, RCoreTask *task) {
 	RListIter *iter;
+	if (current && task == current) {
+		return;
+	}
 	if (task) {
 		r_cons_break_push (NULL, NULL);
+		if (current) {
+			r_core_task_sleep_begin (current);
+		}
 		r_th_wait (task->thread);
+		if (current) {
+			r_core_task_sleep_end (current);
+		}
 		r_cons_break_pop ();
 	} else {
 		r_list_foreach_prev (core->tasks, iter, task) {
+			if (current == task) {
+				continue;
+			}
+			if (current) {
+				r_core_task_sleep_begin (current);
+			}
 			r_th_wait (task->thread);
+			if (current) {
+				r_core_task_sleep_end (current);
+			}
 		}
 	}
 }

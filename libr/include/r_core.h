@@ -716,7 +716,7 @@ R_API void r_core_task_sleep_end(RCoreTask *task);
 R_API int r_core_task_del(RCore *core, int id);
 R_API void r_core_task_del_all_done(RCore *core);
 R_API RCoreTask *r_core_task_self(RCore *core);
-R_API void r_core_task_join(RCore *core, RCoreTask *task);
+R_API void r_core_task_join(RCore *core, RCoreTask *current, RCoreTask *task);
 typedef void (*inRangeCb) (RCore *core, ut64 from, ut64 to, int vsize,
 			   bool asterisk, int count);
 R_API int r_core_search_value_in_range (RCore *core, RInterval search_itv,
