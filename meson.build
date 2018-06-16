@@ -240,7 +240,7 @@ else
 endif
 
 r_userconf_h = configure_file(
-  input: 'libr/include/r_userconf.h.in',
+  input: 'libr/include/r_userconf.h.acr',
   output: 'r_userconf.h',
   configuration: userconf,
   install_dir: join_paths(get_option('includedir'), 'libr')
