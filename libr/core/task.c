@@ -1,23 +1,43 @@
-/* radare - LGPL - Copyright 2014-2018 - pancake */
+/* radare - LGPL - Copyright 2014-2018 - pancake, thestr4ng3r */
 
 #include <r_core.h>
 
 R_API void r_core_task_print (RCore *core, RCoreTask *task, int mode) {
 	switch (mode) {
 	case 'j':
-		r_cons_printf ("{\"id\":%d,\"status\":\"%c\",\"text\":\"%s\"}",
-				task->id, task->state, task->cmd);
-		break;
-	default:
-		r_cons_printf ("%2d  %8s  %s\n", task->id, r_core_task_status (task), task->cmd);
-		if (mode == 1) {
-			if (task->res) {
-				r_cons_println (task->res);
-			} else {
-				r_cons_newline ();
-			}
+		r_cons_printf ("{\"id\":%d,\"state\":\"", task->id);
+		switch (task->state) {
+			case R_CORE_TASK_STATE_BEFORE_START:
+				r_cons_print("before_start");
+				break;
+			case R_CORE_TASK_STATE_RUNNING:
+				r_cons_print("running");
+				break;
+			case R_CORE_TASK_STATE_SLEEPING:
+				r_cons_print("sleeping");
+				break;
+			case R_CORE_TASK_STATE_DONE:
+				r_cons_print("done");
+				break;
+		}
+		r_cons_print("\",\"cmd\":");
+		if (task->cmd) {
+			r_cons_printf("\"%s\"}", task->cmd);
+		} else {
+			r_cons_printf("null}");
 		}
 		break;
+	default: {
+		const char *info = task->cmd;
+		if (task == core->main_task) {
+			info = "-- MAIN TASK --";
+		}
+		r_cons_printf ("%2d  %12s  %s\n",
+					   task->id,
+					   r_core_task_status (task),
+					   info ? info : "");
+		break;
+	}
 	}
 }
 
@@ -40,7 +60,7 @@ R_API void r_core_task_list (RCore *core, int mode) {
 
 R_API void r_core_task_join (RCore *core, RCoreTask *task) {
 	RListIter *iter;
-	if( task) {
+	if (task) {
 		r_cons_break_push (NULL, NULL);
 		r_th_wait (task->thread);
 		r_cons_break_pop ();
@@ -49,11 +69,6 @@ R_API void r_core_task_join (RCore *core, RCoreTask *task) {
 			r_th_wait (task->thread);
 		}
 	}
-}
-
-static int r_core_task_thread(RCore *core, RCoreTask *task) {
-	// TODO
-	return 0;
 }
 
 R_API RCoreTask *r_core_task_new (RCore *core, const char *cmd, RCoreTaskCallback cb, void *user) {
@@ -193,12 +208,6 @@ static void task_end(RCoreTask *t) {
 	r_core_task_schedule (t, R_CORE_TASK_STATE_DONE);
 }
 
-
-static int task_finished(void *user, void *data) {
-	eprintf ("TASK FINISHED\n");
-	return 0;
-}
-
 static int task_run(RCoreTask *task) {
 	RCore *core = task->core;
 
@@ -277,7 +286,7 @@ R_API const char *r_core_task_status (RCoreTask *task) {
 	case R_CORE_TASK_STATE_DONE:
 		return "done";
 	case R_CORE_TASK_STATE_BEFORE_START:
-		return "not started yet";
+		return "before start";
 	default:
 		return "unknown";
 	}
