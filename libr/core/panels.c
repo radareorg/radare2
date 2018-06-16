@@ -634,7 +634,9 @@ R_API void r_core_panels_refresh(RCore *core) {
 	}
 	if (panels->isResizing) {
 		panels->isResizing = false;
-		r_cons_canvas_resize (can, w, h);
+		if (!r_cons_canvas_resize (can, w, h)) {
+			return;
+		}
 		setRefreshAll (panels);
 	}
 #if 0
