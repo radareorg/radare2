@@ -1285,12 +1285,12 @@ static int cmd_thread(void *data, const char *input) {
 		if (tid) {
 			RCoreTask *task = r_core_task_get (core, tid);
 			if (task && task != core->main_task) {
-				r_core_task_join (core, task);
+				r_core_task_join (core, core->current_task, task);
 			} else {
 				eprintf ("Cannot find task\n");
 			}
 		} else {
-			r_core_task_join (core, NULL);
+			r_core_task_join (core, core->current_task, NULL);
 		}
 		break;
 	}
@@ -1328,21 +1328,7 @@ static int cmd_thread(void *data, const char *input) {
 			eprintf ("This command is disabled in sandbox mode\n");
 			return 0;
 		}
-		{
-			int tid = r_num_math (core->num, input + 1);
-			if (tid) {
-				RCoreTask *task = r_core_task_get (core, tid);
-				if (task) {
-					r_core_task_join (core, task);
-				} else {
-					eprintf ("Cannot find task\n");
-				}
-			} else {
-				r_core_task_enqueue (core, r_core_task_new (core, input + 1, NULL, core));
-			}
-			//r_core_cmd0 (core, task->msg->text);
-			//r_core_task_del (core, task->id);
-		}
+		r_core_task_enqueue (core, r_core_task_new (core, input + 1, NULL, core));
 		break;
 	default:
 		eprintf ("&?\n");
