@@ -141,7 +141,7 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 	panel->refresh = false;
 	char *text;
 	char title[128];
-	int delta_x, delta_y;
+	int delta_x, delta_y, graph_pad = 0;
 	delta_x = panel->sx;
 	delta_y = panel->sy;
 	// clear the canvas first
@@ -171,7 +171,6 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 			r_cons_canvas_write (can, title); // delta_x
 		}
 		(void) r_cons_canvas_gotoxy (can, panel->x + 2, panel->y + 2);
-
 		char *cmdStr;
 		bool ce = core->print->cur_enabled;
 		if (!strcmp (panel->title, PANEL_TITLE_DISASSEMBLY)) {
@@ -185,18 +184,21 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 		} else {
 			cmdStr = r_core_cmd_str (core, panel->cmd);
 		}
+		if (!strcmp (core->panels->panel[core->panels->curnode].title, PANEL_TITLE_GRAPH)) {
+			graph_pad = 1;
+		}
 		if (delta_y < 0) {
 			delta_y = 0;
 		}
 		if (delta_x < 0) {
-			char *white = (char*)r_str_pad (' ', 128);;
+			char *white = (char*)r_str_pad (' ', 128);
 			int idx = -delta_x;
 			if (idx >= sizeof (white)) {
 				idx = sizeof (white) - 1;
 			}
 			white[idx] = 0;
 			text = r_str_ansi_crop (cmdStr,
-					0, delta_y, panel->w + delta_x - 3, panel->h - 2 + delta_y);
+					0, delta_y + graph_pad, panel->w + delta_x - 3, panel->h - 2 + delta_y);
 			char *newText = r_str_prefix_all (text, white);
 			if (newText) {
 				free (text);
@@ -204,7 +206,7 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 			}
 		} else {
 			text = r_str_ansi_crop (cmdStr,
-					delta_x, delta_y, panel->w + delta_x - 3, panel->h - 2 + delta_y);
+					delta_x, delta_y + graph_pad, panel->w + delta_x - 3, panel->h - 2 + delta_y);
 		}
 		if (text) {
 			r_cons_canvas_write (can, text);
@@ -381,6 +383,10 @@ static void handleUpKey(RCore *core) {
 					core->print->cur = cur;
 				}
 			}
+		} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_GRAPH)) {
+			if (panels->panel[panels->curnode].sy > 0) {
+				panels->panel[panels->curnode].sy -= r_config_get_i (core->config, "graph.scroll");
+			}
 		} else {
 			if (panels->panel[panels->curnode].sy > 0) {
 				panels->panel[panels->curnode].sy--;
@@ -430,6 +436,8 @@ static void handleDownKey(RCore *core) {
 				const int cols = core->dbg->regcols;
 				core->print->cur += cols > 0 ? cols : 3;
 			}
+		} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_GRAPH)) {
+			panels->panel[panels->curnode].sy += r_config_get_i (core->config, "graph.scroll");
 		} else {
 			panels->panel[panels->curnode].sy++;
 		}
@@ -448,6 +456,10 @@ static void handleLeftKey(RCore *core) {
 			if (panels->menu_x) {
 				panels->menu_x--;
 				panels->menu_y = panels->menu_y? 1: 0;
+			}
+		} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_GRAPH)) {
+			if (panels->panel[panels->curnode].sx > 0) {
+				panels->panel[panels->curnode].sx -= r_config_get_i (core->config, "graph.scroll");
 			}
 		} else {
 			if (panels->panel[panels->curnode].sx > 0) {
@@ -470,6 +482,8 @@ static void handleRightKey(RCore *core) {
 				panels->menu_x++;
 				panels->menu_y = panels->menu_y ? 1: 0;
 			}
+		} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_GRAPH)) {
+			panels->panel[panels->curnode].sx += r_config_get_i (core->config, "graph.scroll");
 		} else {
 			panels->panel[panels->curnode].sx++;
 		}
