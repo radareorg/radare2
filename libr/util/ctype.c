@@ -113,6 +113,10 @@ R_API int r_type_get_bitsize(Sdb *TDB, const char *type) {
 	} else {
 		tmptype = type;
 	}
+	if ((strstr (type, "*(") || strstr (type, " *")) &&
+			strncmp (type, "char *", 7)) {
+		return 32;
+	}
 	const char *t = sdb_const_get (TDB, tmptype, 0);
 	if (!t) {
 		if (!strncmp (tmptype, "enum ", 5)) {
@@ -164,9 +168,9 @@ R_API int r_type_get_bitsize(Sdb *TDB, const char *type) {
 	return 0;
 }
 
-R_API const char *r_type_get_struct_memb(Sdb *TDB, const char *type, int offset) {
+R_API char *r_type_get_struct_memb(Sdb *TDB, const char *type, int offset) {
 	int i, typesize = 0;
-	const char *res = NULL;
+	char *res = NULL;
 
 	if (offset < 0) {
 		return NULL;
@@ -188,14 +192,15 @@ R_API const char *r_type_get_struct_memb(Sdb *TDB, const char *type, int offset)
 		if (!subtype) {
 			break;
 		}
-		if (r_str_split (subtype, ',') != 3) {
+		int len = r_str_split (subtype, ',');
+		if (len < 3) {
 			free (subtype);
 			break;
 		}
-		int val = r_num_math (NULL, r_str_word_get0 (subtype, 2));
+		int val = r_num_math (NULL, r_str_word_get0 (subtype, len - 1));
 		int arrsz = val ? val : 1;
 		if ((typesize / 8) == offset) {
-			res = sdb_fmt ("%s.%s", type, name);
+			res = r_str_newf ("%s.%s", type, name);
 			free (subtype);
 			break;
 		}
@@ -214,22 +219,24 @@ R_API RList* r_type_get_by_offset(Sdb *TDB, ut64 offset) {
 	ls_foreach (ls, lsi, kv) {
 		// TODO: Add unions support
 		if (!strncmp (kv->value, "struct", 6) && strncmp (kv->key, "struct.", 7)) {
-			char *res = (char *)r_type_get_struct_memb (TDB, kv->key, offset);
-			r_list_append (offtypes, res);
+			char *res = r_type_get_struct_memb (TDB, kv->key, offset);
+			if (res) {
+				r_list_append (offtypes, res);
+			}
 		}
 	}
 	ls_free (ls);
 	return offtypes;
 }
 
-R_API const char *r_type_link_at (Sdb *TDB, ut64 addr) {
-	const char* res = NULL;
+R_API char *r_type_link_at (Sdb *TDB, ut64 addr) {
+	char* res = NULL;
 
 	if (addr == UT64_MAX) {
 		return NULL;
 	}
 	char* query = sdb_fmt ("link.%08"PFMT64x, addr);
-	res = sdb_const_get (TDB, query, 0);
+	res = sdb_get (TDB, query, 0);
 	if (!res) { // resolve struct memb if possible for given addr
 		SdbKv *kv;
 		SdbListIter *sdb_iter;
@@ -315,7 +322,9 @@ R_API char *r_type_format(Sdb *TDB, const char *t) {
 			int alen = sdb_array_size (TDB, var2);
 			int elements = sdb_array_get_num (TDB, var2, alen - 1, NULL);
 			if (type) {
-				if (strstr (type, "*(")) { // check for function pointer
+				// Handle general pointers except for char *
+				if ((strstr (type, "*(") || strstr (type, " *")) &&
+						strncmp (type, "char *", 7)) {
 					isfp = true;
 				} else if (!strncmp (type, "struct ", 7)) {
 					struct_name = type + 7;
