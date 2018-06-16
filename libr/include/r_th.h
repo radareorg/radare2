@@ -84,16 +84,6 @@ R_API void r_th_cond_signal_all(RThreadCond *cond);
 R_API void r_th_cond_wait(RThreadCond *cond, RThreadLock *lock);
 R_API void r_th_cond_free(RThreadCond *cond);
 
-typedef struct r_thread_msg_t {
-	char *text;
-	char done;
-	char *res;
-	RThread *th;
-} RThreadMsg;
-
-R_API RThreadMsg* r_th_msg_new (const char *cmd, void *cb);
-R_API void r_th_msg_free (RThreadMsg* msg);
-
 #endif
 
 #ifdef __cplusplus

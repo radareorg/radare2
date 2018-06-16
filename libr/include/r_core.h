@@ -692,7 +692,9 @@ typedef struct r_core_task_t {
 	RCore *core;
 	RThreadCond *dispatch_cond;
 	RThreadLock *dispatch_lock;
-	RThreadMsg *msg;
+	RThread *thread;
+	char *cmd;
+	char *res;
 	bool cmd_log;
 	RStack *cons;
 	RCoreTaskCallback cb;

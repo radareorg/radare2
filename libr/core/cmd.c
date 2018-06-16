@@ -1302,9 +1302,10 @@ static int cmd_thread(void *data, const char *input) {
 			if (task) {
 				r_core_task_print (core, task, 0);
 				r_cons_printf ("%2d %s %s\n",
-					task->id, r_core_task_status (task), task->msg->text);
-				if (task->msg->res)
-					r_cons_println (task->msg->res);
+					task->id, r_core_task_status (task), task->cmd);
+				if (task->res) {
+					r_cons_println (task->res);
+				}
 			} else {
 				eprintf ("Cannot find task\n");
 			}
@@ -3434,7 +3435,7 @@ beach:
 		RListIter *iter;
 		RCoreTask *task;
 		r_list_foreach (core->tasks, iter, task) {
-			r_th_pause (task->msg->th, false);
+			r_th_pause (task->thread, false);
 		}
 	}
 	/* run pending analysis commands */
@@ -3725,7 +3726,7 @@ R_API int r_core_cmd_task_sync(RCore *core, const char *cmd, bool log) {
 	if (!s) {
 		return 0;
 	}
-	task->msg->text = s;
+	task->cmd = s;
 	task->cmd_log = log;
 	task->state = R_CORE_TASK_STATE_BEFORE_START;
 	int res = r_core_task_run_sync (core, task);

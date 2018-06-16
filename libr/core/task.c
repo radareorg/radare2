@@ -6,13 +6,13 @@ R_API void r_core_task_print (RCore *core, RCoreTask *task, int mode) {
 	switch (mode) {
 	case 'j':
 		r_cons_printf ("{\"id\":%d,\"status\":\"%c\",\"text\":\"%s\"}",
-				task->id, task->state, task->msg->text);
+				task->id, task->state, task->cmd);
 		break;
 	default:
-		r_cons_printf ("%2d  %8s  %s\n", task->id, r_core_task_status (task), task->msg->text);
+		r_cons_printf ("%2d  %8s  %s\n", task->id, r_core_task_status (task), task->cmd);
 		if (mode == 1) {
-			if (task->msg->res) {
-				r_cons_println (task->msg->res);
+			if (task->res) {
+				r_cons_println (task->res);
 			} else {
 				r_cons_newline ();
 			}
@@ -42,11 +42,11 @@ R_API void r_core_task_join (RCore *core, RCoreTask *task) {
 	RListIter *iter;
 	if( task) {
 		r_cons_break_push (NULL, NULL);
-		r_th_wait (task->msg->th);
+		r_th_wait (task->thread);
 		r_cons_break_pop ();
 	} else {
 		r_list_foreach_prev (core->tasks, iter, task) {
-			r_th_wait (task->msg->th);
+			r_th_wait (task->thread);
 		}
 	}
 }
@@ -62,11 +62,13 @@ R_API RCoreTask *r_core_task_new (RCore *core, const char *cmd, RCoreTaskCallbac
 		goto hell;
 	}
 
-	task->msg = r_th_msg_new (cmd, r_core_task_thread);
+	task->thread = NULL;
+	task->cmd = cmd ? strdup (cmd) : NULL;
 	task->cmd_log = false;
+	task->res = NULL;
 	task->dispatch_cond = r_th_cond_new ();
 	task->dispatch_lock = r_th_lock_new (false);
-	if (!task->msg || !task->dispatch_cond || !task->dispatch_cond) {
+	if (!task->dispatch_cond || !task->dispatch_cond) {
 		goto hell;
 	}
 
@@ -80,9 +82,10 @@ R_API RCoreTask *r_core_task_new (RCore *core, const char *cmd, RCoreTaskCallbac
 
 hell:
 	if (task) {
-		free (task->msg);
+		free (task->cmd);
 		free (task);
 	}
+	return NULL;
 }
 
 R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
@@ -201,17 +204,20 @@ static int task_run(RCoreTask *task) {
 
 	task_wakeup (task);
 
-	// close (2); // no stderr
 	char *res_str;
 	int res;
 	if (task == task->core->main_task) {
-		res = r_core_cmd (core, task->msg->text, task->cmd_log);
+		res = r_core_cmd (core, task->cmd, task->cmd_log);
 		res_str = NULL;
 	} else {
 		res = 0;
-		res_str = r_core_cmd_str (core, task->msg->text);
+		res_str = r_core_cmd_str (core, task->cmd);
 	}
-	task->msg->res = res_str;
+
+	if (task->res) {
+		free (task->res);
+	}
+	task->res = res_str;
 
 	if (task != core->main_task) {
 		eprintf ("\nTask %d finished\n", task->id);
@@ -228,20 +234,20 @@ static int task_run_thread(RThread *th) {
 R_API void r_core_task_enqueue(RCore *core, RCoreTask *task) {
 	r_th_lock_enter (core->tasks_lock);
 	r_list_append (core->tasks, task);
-	task->msg->th = r_th_new (task_run_thread, task, 0);
+	task->thread = r_th_new (task_run_thread, task, 0);
 	r_th_lock_leave (core->tasks_lock);
 }
 
 R_API int r_core_task_run_sync(RCore *core, RCoreTask *task) {
-	task->msg->th = NULL;
+	task->thread = NULL;
 	return task_run (task);
 }
 
 /* begin running stuff synchronously on the main task */
 R_API void r_core_task_sync_begin(RCore *core) {
 	RCoreTask *task = core->main_task;
-	task->msg->th = NULL;
-	task->msg->text = NULL;
+	task->thread = NULL;
+	task->cmd = NULL;
 	task->cmd_log = false;
 	task->state = R_CORE_TASK_STATE_BEFORE_START;
 	task_wakeup (task);
@@ -272,6 +278,8 @@ R_API const char *r_core_task_status (RCoreTask *task) {
 		return "done";
 	case R_CORE_TASK_STATE_BEFORE_START:
 		return "not started yet";
+	default:
+		return "unknown";
 	}
 }
 
@@ -281,7 +289,7 @@ R_API RCoreTask *r_core_task_self (RCore *core) {
 
 R_API int r_core_task_cat (RCore *core, int id) {
 	RCoreTask *task = r_core_task_get (core, id);
-	r_cons_println (task->msg->res);
+	r_cons_println (task->res);
 	r_core_task_del (core, id);
 	return true;
 }
