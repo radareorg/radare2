@@ -1673,6 +1673,7 @@ R_API int r_core_print_bb_gml(RCore *core, RAnalFunction *fcn) {
 				"    id  %"PFMT64d"\n"
 				"    label  \"%s\"\n"
 				"  ]\n", bb->addr, msg);
+		free (msg);
 	}
 
 	r_list_foreach (fcn->bbs, iter, bb) {
