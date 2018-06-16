@@ -3281,5 +3281,6 @@ R_API void r_core_visual_colors(RCore *core) {
 			rcolor = r_cons_pal_get_i (opt);
 			oopt = opt;
 		}
+		free (body);
 	}
 }
