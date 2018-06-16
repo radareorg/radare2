@@ -106,12 +106,24 @@ static void sort_attrs(RConsCanvas *c) {
 }
 
 static void stamp_attr(RConsCanvas *c, int loc, int length) {
+	if (!c->color) {
+		return;
+	}
 	int i;
 	const char **s;
 	s = attr_at (c, loc);
 
 	if (s) {
-		//If theres already an attr there, just replace it.
+		if (strlen (s) > 2 && *(*s + 2) == '0') {
+			if (strlen (c->attr) == 5 && *(c->attr + 2) != '0') {
+				char tmp[9];
+				memcpy (tmp, c->attr, 2);
+				strcpy (tmp + 2, "0;");
+				memcpy (tmp + 4, c->attr + 2, 3);
+				tmp[8] = 0;
+				c->attr = r_str_const (tmp);
+			}
+		}
 		*s = c->attr;
 	} else {
 		c->attrs[c->attrslen].loc = loc;
@@ -120,10 +132,10 @@ static void stamp_attr(RConsCanvas *c, int loc, int length) {
 		sort_attrs (c);
 	}
 
-	for (i = 0; i < length; i++) {
+	for (i = 1; i < length; i++) {
 		s = attr_at (c, loc + i);
 		if (s) {
-			*s = c->attr;
+			*s = '\0';
 		}
 	}
 }
@@ -329,11 +341,6 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 		}
 		left =  c->blen[c->y] - c->x;
 		slen = R_MIN (left, piece_len);
-		attr_len = slen <= 0 && s_part != s? 1: slen;
-
-		if (attr_len > 0 && attr_x < c->blen[c->y]) {
-			stamp_attr (c, c->y*c->w + attr_x, attr_len);
-		}
 
 		int real_len = r_str_nlen (s_part, slen);
 		int utf8_len = utf8len_fixed (s_part, slen); 
@@ -344,6 +351,11 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 
 		if (G (c->x - c->sx, c->y - c->sy)) {
 			memcpy (c->b[c->y] + c->x, s_part, slen);
+		}
+
+		attr_len = slen <= 0 && s_part != s? 1: utf8_len;
+		if (attr_len > 0 && attr_x < c->blen[c->y]) {
+			stamp_attr (c, c->y*c->w + attr_x, attr_len);
 		}
 
 		s = s_part;
