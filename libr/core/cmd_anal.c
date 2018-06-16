@@ -450,7 +450,7 @@ static const char *help_msg_ah[] = {
 	"ahj", "", "list hints in JSON",
 	"aho", " foo a0,33", "replace opcode string",
 	"ahp", " addr", "set pointer hint",
-	"ahr", " val",  "set hint for return value of a function"
+	"ahr", " val",  "set hint for return value of a function",
 	"ahs", " 4", "set opcode size=4",
 	"ahS", " jz", "set asm.syntax=jz for this opcode",
 	NULL
