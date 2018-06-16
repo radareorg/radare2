@@ -1671,7 +1671,6 @@ static int parse_reg_name(RRegItem *reg, csh *handle, cs_insn *insn, int reg_num
 	parse_reg_name (op->dst->reg, &gop.handle, insn, 0);
 
 static void op_fillval (RAnal *a, RAnalOp *op, csh *handle, cs_insn *insn){
-	char *dst;
 	struct Getarg gop = {
 		.handle = *handle,
 		.insn = insn,
@@ -1681,14 +1680,14 @@ static void op_fillval (RAnal *a, RAnalOp *op, csh *handle, cs_insn *insn){
 
 	switch (op->type) {
 	case R_ANAL_OP_TYPE_MOV:
+	case R_ANAL_OP_TYPE_CMP:
+	case R_ANAL_OP_TYPE_LEA:
 		CREATE_SRC_DST (op);
 		switch (INSOP(0).type) {
 		case X86_OP_MEM:
 			op->dst->delta = INSOP(0).mem.disp;
 			break;
 		case X86_OP_REG:
-			dst = getarg (&gop, 0, 0, NULL, DST_AR);
-			op->dst->reg = r_reg_get (a->reg, dst, R_REG_TYPE_GPR);
 			if (INSOP(1).type == X86_OP_MEM) {
 				op->src[0]->delta = INSOP(1).mem.disp;
 			}
@@ -1699,24 +1698,9 @@ static void op_fillval (RAnal *a, RAnalOp *op, csh *handle, cs_insn *insn){
 	case R_ANAL_OP_TYPE_SHL:
 		op->src[0] = r_anal_value_new ();
 		op->src[0]->imm = INSOP(1).imm;
+		parse_reg_name (op->src[0]->reg, &gop.handle, insn, 1);
 		break;
-	case R_ANAL_OP_TYPE_CMP:
-		CREATE_SRC_DST (op);
-		switch (INSOP(0).type) {
-		case X86_OP_MEM:
-			op->dst->delta = INSOP(0).mem.disp;
-			break;
-		case X86_OP_REG:
-			op->src[0]->delta = INSOP(1).mem.disp;
-		default:
-			break;
-		}
-		break;
-	case R_ANAL_OP_TYPE_LEA:
-		CREATE_SRC_DST (op);
-		if (INSOP(1).type == X86_OP_MEM) {
-			op->src[0]->delta = INSOP(1).mem.disp;
-		}
+	default:
 		break;
 	}
 }

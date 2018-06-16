@@ -358,15 +358,17 @@ static void typesList(RCore *core, int mode) {
 	}
 }
 
-static void set_offset_hint(RCore *core, RAnalOp op, const char *type, ut64 addr, int offimm) {
-	const char *res = r_type_get_struct_memb (core->anal->sdb_types, type, offimm);
+static void set_offset_hint(RCore *core, RAnalOp op, const char *type, ut64 laddr, ut64 at, int offimm) {
+	char *res = r_type_get_struct_memb (core->anal->sdb_types, type, offimm);
 	const char *cmt = ((offimm == 0) && res)? res: type;
 	if (offimm > 0) {
-		if (res) {
-			r_anal_hint_set_offset (core->anal, addr, res);
+		// set hint only if link is present
+		char* query = sdb_fmt ("link.%08"PFMT64x, laddr);
+		if (res && sdb_const_get (core->anal->sdb_types, query, 0)) {
+			r_anal_hint_set_offset (core->anal, at, res);
 		}
 	} else if (cmt && r_anal_op_ismemref (op.type)) {
-			r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, cmt);
+			r_meta_set_string (core->anal, R_META_TYPE_COMMENT, at, cmt);
 	}
 }
 
@@ -422,6 +424,7 @@ static void link_struct_offset(RCore *core, RAnalFunction *fcn) {
 	RAnalOp aop = {0};
 	bool ioCache = r_config_get_i (core->config, "io.cache");
 	bool stack_set = false;
+	bool resolved = false;
 	const char *varpfx;
 	int dbg_follow = r_config_get_i (core->config, "dbg.follow");
 	Sdb *TDB = core->anal->sdb_types;
@@ -496,49 +499,56 @@ static void link_struct_offset(RCore *core, RAnalFunction *fcn) {
 			}
 			i += ret - 1;
 			at += ret;
-			if (r_anal_op_nonlinear (aop.type)) {
-				r_reg_set_value (esil->anal->reg, pc, at);
-				set_retval (core, at - ret);
-			} else {
-				r_core_esil_step (core, UT64_MAX, NULL, NULL);
+			int index = 0;
+			if (aop.ireg) {
+				index = r_reg_getv (esil->anal->reg, aop.ireg) * aop.scale;
 			}
 			int j, src_imm = -1, dst_imm = -1;
 			ut64 src_addr = UT64_MAX;
 			ut64 dst_addr = UT64_MAX;
 			for (j = 0; j < 3; j++) {
 				if (aop.src[j] && aop.src[j]->reg && aop.src[j]->reg->name) {
-					src_addr = r_reg_getv (esil->anal->reg, aop.src[j]->reg->name);
+					src_addr = r_reg_getv (esil->anal->reg, aop.src[j]->reg->name) + index;
 					src_imm = aop.src[j]->delta;
 				}
 			}
 			if (aop.dst && aop.dst->reg && aop.dst->reg->name) {
-				dst_addr = r_reg_getv (esil->anal->reg, aop.dst->reg->name);
+				dst_addr = r_reg_getv (esil->anal->reg, aop.dst->reg->name) + index;
 				dst_imm = aop.dst->delta;
 			}
-			const char *slink = r_type_link_at (TDB, src_addr);
-			const char *dlink = r_type_link_at (TDB, dst_addr);
-			if (slink) {
-				set_offset_hint (core, aop, slink, at - ret, src_imm);
-			} else if (dlink) {
-				RAnalVar *var = aop.var;
-				if (dst_imm == 0 && var) {
-					if (r_type_kind (TDB, dlink) == R_TYPE_UNION) {
-						varpfx = "union";
-					} else {
-						varpfx = "struct";
-					}
-					// if a var addr matches with struct , change it's type and name
-					// var int local_e0h --> var struct foo
-					if (strcmp (var->name , dlink)) {
-						r_anal_var_retype (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
-								-1, var->kind, varpfx, -1, var->isarg, var->name);
-						r_anal_var_rename (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
-								var->kind, var->name, dlink);
-					}
+			RAnalVar *var = aop.var;
+			char *slink = r_type_link_at (TDB, src_addr);
+			char *vlink = r_type_link_at (TDB, src_addr + src_imm);
+			char *dlink = r_type_link_at (TDB, dst_addr);
+			if (vlink && var) {
+				if (r_type_kind (TDB, vlink) == R_TYPE_UNION) {
+					varpfx = "union";
 				} else {
-					set_offset_hint (core, aop, dlink, at - ret, dst_imm);
+					varpfx = "struct";
 				}
+				// if a var addr matches with struct , change it's type and name
+				// var int local_e0h --> var struct foo
+				if (strcmp (var->name , vlink) && !resolved) {
+					resolved = true;
+					r_anal_var_retype (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
+							-1, var->kind, varpfx, -1, var->isarg, var->name);
+					r_anal_var_rename (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
+							var->kind, var->name, vlink);
+				}
+			} else if (slink) {
+				set_offset_hint (core, aop, slink, src_addr, at - ret, src_imm);
+			} else if (dlink) {
+				set_offset_hint (core, aop, dlink, dst_addr, at - ret, dst_imm);
 			}
+			if (r_anal_op_nonlinear (aop.type)) {
+				r_reg_set_value (esil->anal->reg, pc, at);
+				set_retval (core, at - ret);
+			} else {
+				r_core_esil_step (core, UT64_MAX, NULL, NULL);
+			}
+			free (dlink);
+			free (vlink);
+			free (slink);
 			r_anal_op_fini (&aop);
 		}
 	}

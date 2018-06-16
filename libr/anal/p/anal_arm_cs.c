@@ -2785,6 +2785,12 @@ static void op_fillval(RAnalOp *op , csh handle, cs_insn *insn, int bits) {
 	default:
 		break;
 	}
+	if ((bits == 64) && HASMEMINDEX64 (1)) {
+		op->ireg = r_str_get (cs_reg_name(handle, INSOP64 (1).mem.index));
+	} else if (HASMEMINDEX (1)) {
+		op->ireg = r_str_get (cs_reg_name(handle, INSOP (1).mem.index));
+		op->scale = INSOP (1).mem.scale;
+	}
 }
 
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
