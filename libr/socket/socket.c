@@ -559,7 +559,10 @@ R_API RSocket *r_socket_accept(RSocket *s) {
 	//signal (SIGPIPE, SIG_DFL);
 	sock->fd = accept (s->fd, (struct sockaddr *)&s->sa, &salen);
 	if (sock->fd == -1) {
-		r_sys_perror ("accept");
+		if (errno != EWOULDBLOCK) {
+			// not just a timeout
+			r_sys_perror ("accept");
+		}
 		free (sock);
 		return NULL;
 	}
