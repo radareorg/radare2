@@ -3744,10 +3744,6 @@ static bool cmd_dcu (RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_dcu);
 		return false;
 	}
-	if (core->bin && !core->bin->is_debugger) {
-		eprintf ("Not in debug mode\n");
-		return false;
-	}
 	from = UT64_MAX;
 	to = UT64_MAX;
 	if (input[2] == '.') {
@@ -3869,7 +3865,10 @@ static bool cmd_dcu (RCore *core, const char *input) {
 		eprintf ("Continue until 0x%08"PFMT64x" using %d bpsize\n", addr, core->dbg->bpsize);
 		r_reg_arena_swap (core->dbg->reg, true);
 		if (r_bp_add_sw (core->dbg->bp, addr, core->dbg->bpsize, R_BP_PROT_EXEC)) {
-			r_debug_continue (core->dbg);
+			int ret = r_debug_continue (core->dbg);
+			if (!ret && r_debug_is_dead (core->dbg)) {
+				eprintf ("Cannot continue, run ood?\n");
+			}
 			r_bp_del (core->dbg->bp, addr);
 		} else {
 			eprintf ("Cannot set breakpoint of size %d at 0x%08"PFMT64x"\n",
