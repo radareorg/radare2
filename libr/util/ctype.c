@@ -311,9 +311,9 @@ R_API char *r_type_format(Sdb *TDB, const char *t) {
 	} else if (!strcmp (kind, "struct") || !strcmp (kind, "union")) {
 		// assumes var list is sorted by offset.. should do more checks here
 		for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
-			const char *tfmt;
 			char *type;
 			char *struct_name;
+			const char *tfmt = NULL;
 			bool isStruct = false;
 			bool isEnum = false;
 			bool isfp = false;
