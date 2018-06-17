@@ -875,7 +875,7 @@ static int is_data_section(RBinFile *a, RBinSection *s) {
 	return strstr (s->name, "_const") != NULL;
 }
 
-R_API RList *r_bin_file_get_strings(RBinFile *a, int min, int dump) {
+R_API RList *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw) {
 	RListIter *iter;
 	RBinSection *section;
 	RBinObject *o = a? a->o: NULL;
@@ -890,10 +890,10 @@ R_API RList *r_bin_file_get_strings(RBinFile *a, int min, int dump) {
 			return NULL;
 		}
 	}
-	if (o && o->sections && !r_list_empty (o->sections) && !a->rawstr) {
+	if (!raw && o && o->sections && !r_list_empty (o->sections)) {
 		r_list_foreach (o->sections, iter, section) {
 			if (is_data_section (a, section)) {
-				r_bin_file_get_strings_range (a, ret, min, section->paddr,
+				r_bin_file_get_strings_range (a, ret, min, raw, section->paddr,
 						section->paddr + section->size);
 			}
 		}
@@ -940,13 +940,13 @@ R_API RList *r_bin_file_get_strings(RBinFile *a, int min, int dump) {
 		}
 	} else {
 		if (a) {
-			r_bin_file_get_strings_range (a, ret, min, 0, a->size);
+			r_bin_file_get_strings_range (a, ret, min, raw, 0, a->size);
 		}
 	}
 	return ret;
 }
 
-R_API void r_bin_file_get_strings_range(RBinFile *bf, RList *list, int min, ut64 from, ut64 to) {
+R_API void r_bin_file_get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 from, ut64 to) {
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 	RBinString *ptr;
 	RListIter *it;
@@ -954,7 +954,7 @@ R_API void r_bin_file_get_strings_range(RBinFile *bf, RList *list, int min, ut64
 	if (!bf || !bf->buf) {
 		return;
 	}
-	if (!bf->rawstr) {
+	if (!raw) {
 		if (!plugin || !plugin->info) {
 			return;
 		}
@@ -975,7 +975,7 @@ R_API void r_bin_file_get_strings_range(RBinFile *bf, RList *list, int min, ut64
 	if (!to) {
 		return;
 	}
-	if (bf->rawstr != 2) {
+	if (raw != 2) {
 		ut64 size = to - from;
 		// in case of dump ignore here
 		if (bf->rbin->maxstrbuf && size && size > bf->rbin->maxstrbuf) {

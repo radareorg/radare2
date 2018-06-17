@@ -115,16 +115,13 @@ R_API void r_bin_xtrdata_free(void /*RBinXtrData*/ *data_) {
 R_API RList* r_bin_raw_strings(RBinFile *bf, int min) {
 	RList *l = NULL;
 	if (bf) {
-		int tmp = bf->rawstr;
-		bf->rawstr = 2;
-		l = r_bin_file_get_strings (bf, min, 0);
-		bf->rawstr = tmp;
+		l = r_bin_file_get_strings (bf, min, 0, 2);
 	}
 	return l;
 }
 
-R_API int r_bin_dump_strings(RBinFile *a, int min) {
-	r_bin_file_get_strings (a, min, 1);
+R_API int r_bin_dump_strings(RBinFile *a, int min, int raw) {
+	r_bin_file_get_strings (a, min, 1, raw);
 	return 0;
 }
 
@@ -881,7 +878,7 @@ R_API RList *r_bin_reset_strings(RBin *bin) {
 	if (plugin && plugin->strings) {
 		o->strings = plugin->strings (a);
 	} else {
-		o->strings = r_bin_file_get_strings (a, bin->minstrlen, 0);
+		o->strings = r_bin_file_get_strings (a, bin->minstrlen, 0, a->rawstr);
 	}
 	if (bin->debase64) {
 		r_bin_object_filter_strings (o);

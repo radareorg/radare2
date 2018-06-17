@@ -721,11 +721,8 @@ static int cmd_info(void *data, const char *input) {
 					RBinFile *bf = r_core_bin_cur (core);
 					int min = r_config_get_i (core->config, "bin.minstr");
 					if (bf) {
-						int tmp = bf->rawstr;
-						bf->rawstr = 2;
 						bf->strmode = mode;
-						r_bin_dump_strings (bf, min);
-						bf->rawstr = tmp;
+						r_bin_dump_strings (bf, min, 2);
 					}
 					goto done;
 				}
