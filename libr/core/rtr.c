@@ -466,6 +466,9 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 		eprintf ("Cannot listen on http.port\n");
 		return 1;
 	}
+
+	r_socket_block_time (s, 1, 1);
+
 	if (launch=='H') {
 		const char *browser = r_config_get (core->config, "http.browser");
 		r_sys_cmdf ("%s http://%s:%d/%s &",
