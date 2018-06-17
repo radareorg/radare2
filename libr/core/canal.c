@@ -1618,6 +1618,8 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 			free (body_b64);
 			free (body);
 			free (title);
+			r_config_restore (hc);
+			r_config_hold_free (hc);
 			return false;
 		}
 		body_b64 = r_str_prefix (body_b64, "base64:");
@@ -1638,10 +1640,12 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 		if (bb->jump != UT64_MAX) {
 			v = get_title (bb->jump);
 			r_cons_printf ("age %s %s\n", u, v);
+			free (v);
 		}
 		if (bb->fail != UT64_MAX) {
 			v = get_title (bb->fail);
 			r_cons_printf ("age %s %s\n", u, v);
+			free (v);
 		}
 		if (bb->switch_op) {
 			RListIter *it;
@@ -1649,10 +1653,10 @@ R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn) {
 			r_list_foreach (bb->switch_op->cases, it, cop) {
 				v = get_title (cop->addr);
 				r_cons_printf ("age %s %s\n", u, v);
+				free (v);
 			}
 		}
 		free (u);
-		free (v);
 	}
 	return true;
 }
