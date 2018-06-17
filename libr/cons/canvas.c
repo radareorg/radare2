@@ -114,7 +114,7 @@ static void stamp_attr(RConsCanvas *c, int loc, int length) {
 	s = attr_at (c, loc);
 
 	if (s) {
-		if (strlen (s) > 2 && *(*s + 2) == '0') {
+		if (strlen (*s) > 2 && *(*s + 2) == '0') {
 			if (strlen (c->attr) == 5 && *(c->attr + 2) != '0') {
 				char tmp[9];
 				memcpy (tmp, c->attr, 2);
@@ -135,7 +135,7 @@ static void stamp_attr(RConsCanvas *c, int loc, int length) {
 	for (i = 1; i < length; i++) {
 		s = attr_at (c, loc + i);
 		if (s) {
-			*s = '\0';
+			*s = Color_RESET;
 		}
 	}
 }
