@@ -350,7 +350,12 @@ R_API char *r_type_format(Sdb *TDB, const char *t) {
 					}
 
 				}
-				if (tfmt) {
+				if (isfp) {
+					// consider function pointer as void * for printing
+					fmt = r_str_append (fmt, "p");
+					vars = r_str_append (vars, p);
+					vars = r_str_append (vars, " ");
+				} else if (tfmt) {
 					filter_type (type);
 					if (elements > 0) {
 						fmt = r_str_appendf (fmt, "[%d]", elements);
@@ -362,11 +367,6 @@ R_API char *r_type_format(Sdb *TDB, const char *t) {
 					} else if (isEnum) {
 						fmt = r_str_append (fmt, "E");
 						vars = r_str_appendf (vars, "(%s)%s", type + 5, p);
-						vars = r_str_append (vars, " ");
-					} else if (isfp) {
-						// consider function pointer as void * for printing
-						fmt = r_str_append (fmt, "p");
-						vars = r_str_append (vars, p);
 						vars = r_str_append (vars, " ");
 					} else {
 						fmt = r_str_append (fmt, tfmt);
