@@ -613,8 +613,8 @@ R_API bool r_bin_add(RBin *bin, RBinPlugin *foo);
 R_API bool r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);
 R_API bool r_bin_ldr_add(RBin *bin, RBinLdrPlugin *foo);
 R_API void* r_bin_free(RBin *bin);
-R_API int r_bin_dump_strings(RBinFile *a, int min);
-R_API RList* r_bin_raw_strings(RBinFile *a, int min);
+R_API RList *r_bin_raw_strings(RBinFile *a, int min);
+R_API int r_bin_dump_strings(RBinFile *a, int min, int raw);
 //io-wrappers
 R_API int r_bin_read_at (RBin *bin, ut64 addr, ut8 *buf, int size);
 R_API int r_bin_write_at (RBin *bin, ut64 addr, const ut8 *buf, int size);
@@ -626,7 +626,8 @@ R_API RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file, const ut8
 R_API RBinFile *r_bin_file_new_from_fd(RBin *bin, int fd, RBinFileOptions *options);
 R_API RBinFile *r_bin_file_find_by_arch_bits(RBin *bin, const char *arch, int bits, const char *name);
 R_API RBinObject *r_bin_file_object_find_by_id(RBinFile *binfile, ut32 binobj_id);
-R_API RList *r_bin_file_get_strings(RBinFile *a, int min, int dump);
+R_API RList *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw);
+R_API void r_bin_file_get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 from, ut64 to);
 R_API RBinFile *r_bin_file_find_by_object_id(RBin *bin, ut32 binobj_id);
 R_API RBinFile *r_bin_file_find_by_id(RBin *bin, ut32 binfile_id);
 R_API int r_bin_file_object_add(RBinFile *binfile, RBinObject *o);
@@ -661,7 +662,6 @@ R_API void r_bin_object_delete_items(RBinObject *o);
 
 // ref
 R_API int r_bin_file_deref_by_bind (RBinBind * binb);
-R_API void r_bin_file_get_strings_range(RBinFile *bf, RList *list, int min, ut64 from, ut64 to);
 R_API int r_bin_file_deref (RBin *bin, RBinFile * a);
 R_API int r_bin_file_ref_by_bind (RBinBind * binb);
 R_API int r_bin_file_ref (RBin *bin, RBinFile * a);

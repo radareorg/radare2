@@ -1002,7 +1002,7 @@ int main(int argc, char **argv) {
 		RBinFile *bf = r_core_bin_cur (&core);
 		if (bf) {
 			bf->strmode = rad;
-			r_bin_dump_strings (bf, bin->minstrlen);
+			r_bin_dump_strings (bf, bin->minstrlen, bf->rawstr);
 		}
 	}
 	if (query) {
