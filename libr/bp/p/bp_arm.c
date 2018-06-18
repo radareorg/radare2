@@ -21,12 +21,12 @@ static struct r_bp_arch_t r_bp_plugin_arm_bps[] = {
         { 4, 0, (const ut8*)"\xf0\x01\xf0\xe7" }, // eabi-le - undefined instruction - for all kernels
 	{ 4, 1, (const ut8*)"\xe7\xf0\x01\xf0" }, // eabi-be
 #endif
-	{ 16, 2, 0, (const ut8*)"\xde\x01" },         // thumb-le
-	{ 16, 2, 1, (const ut8*)"\x01\xde" },         // thumb-be
+	{ 16, 2, 0, (const ut8*)"\x01\xbe" },         // thumb-le
+	{ 16, 2, 1, (const ut8*)"\xbe\x01" },         // thumb-be
 	{ 16, 2, 0, (const ut8*)"\xfe\xdf" },         // arm-thumb-le
 	{ 16, 2, 1, (const ut8*)"\xdf\xfe" },         // arm-thumb-be
+	{ 16, 4, 0, (const ut8*)"\xff\xff\xff\xff" },         // arm-thumb-le
 	{ 16, 4, 1, (const ut8*)"\xff\xff\xff\xff" },         // arm-thumb-be
-	{ 16, 1, 1, (const ut8*)"\xff\xff\xff\xff" },         // arm-thumb-be
 	{ 0, 0, 0, NULL }
 };
 
