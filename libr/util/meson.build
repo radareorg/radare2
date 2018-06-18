@@ -1,7 +1,6 @@
 
 files = [
   'ascii_table.c',
-  'assert.c',
   'base85.c',
   'base91.c',
   'bdiff.c',
@@ -25,7 +24,7 @@ files = [
   'json_indent.c',
   'lib.c',
   'list.c',
-  'log.c',
+  'logging.c',
   'mem.c',
   'name.c',
   'date.c',

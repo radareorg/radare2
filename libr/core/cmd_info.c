@@ -442,11 +442,11 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		case 'E': // "iE"
 		{
-			if (input[1] == 'j' && input[2] == '.') {	
+			if (input[1] == 'j' && input[2] == '.') {
 				mode = R_MODE_JSON;
-				RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, input + 2, 0); 
+				RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, input + 2, 0);
 			} else {
-				RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, input + 1, 0); 
+				RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, input + 1, 0);
 			}
 			while (*(++input)) ;
 			input--;

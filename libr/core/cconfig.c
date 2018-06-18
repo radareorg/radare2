@@ -2285,6 +2285,65 @@ static int cb_dbgsnap(void *user, void *data) {
 	return true;
 }
 
+static int cb_logging_config_level(void *coreptr, void *nodeptr) {
+	RConfigNode *node = (RConfigNode *)nodeptr;
+	const char *value = node->value;
+	char *bad_data = NULL;
+	long int ival = strtol (value, &bad_data, 10);
+	if (*bad_data) {
+		return false;
+	}
+	r_logging_set_level (ival);
+	return true;
+}
+
+static int cb_logging_config_traplevel(void *coreptr, void *nodeptr) {
+	RConfigNode *node = (RConfigNode *)nodeptr;
+	const char *value = node->value;
+	char *bad_data = NULL;
+	long int ival = strtol (value, &bad_data, 10);
+	if (*bad_data) {
+		return false;
+	}
+	r_logging_set_traplevel (ival);
+	return true;
+}
+
+static int cb_logging_config_file(void *coreptr, void *nodeptr) {
+	RConfigNode *node = (RConfigNode *)nodeptr;
+	const char *value = node->value;
+	r_logging_set_file (value);
+	return true;
+}
+
+static int cb_logging_config_srcinfo(void *coreptr, void *nodeptr) {
+	RConfigNode *node = (RConfigNode *)nodeptr;
+	const char *value = node->value;
+	switch (value[0]) {
+	case 't':
+	case 'T':
+		r_logging_set_srcinfo (true);
+		break;
+	default:
+		r_logging_set_srcinfo (false);
+	}
+	return true;
+}
+
+static int cb_logging_config_colors(void *coreptr, void *nodeptr) {
+	RConfigNode *node = (RConfigNode *)nodeptr;
+	const char *value = node->value;
+	switch (value[0]) {
+	case 't':
+	case 'T':
+		r_logging_set_colors (true);
+		break;
+	default:
+		r_logging_set_colors (false);
+	}
+	return true;
+}
+
 #define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
 	int i;
@@ -2625,6 +2684,37 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
 	SETPREF ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
+
+	/* cfg.logging */
+#if DEBUG
+#define R_LOGGING_DEFAULTLEVEL R_LOGLVL_WARN
+#else
+#define R_LOGGING_DEFAULTLEVEL R_LOGLVL_ERROR
+#endif
+	// R2_LOGLEVEL / cfg.logging.level
+	p = r_sys_getenv ("R2_LOGLEVEL");
+	SETICB ("cfg.logging.level", p ? atoi(p) : R_LOGGING_DEFAULTLEVEL, cb_logging_config_level, "Output logging level "\
+	 "(0:SILLY, 1:VERBOSE, 2:DEBUG, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL, 7:FATALTRAP)"
+	);
+	free (p);
+	// R2_LOGTRAP_LEVEL / cfg.logging.traplevel
+	p = r_sys_getenv ("R2_LOGTRAPLEVEL");
+	SETICB ("cfg.logging.traplevel", p ? atoi(p) : R_LOGLVL_FATALTRAP, cb_logging_config_traplevel, "Log level for trapping R2 when hit (developer use only)"\
+	 "(0:SILLY, 1:VERBOSE, 2:DEBUG, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL, 7:FATALTRAP)"
+	);
+	free (p);
+	// R2_LOGFILE / cfg.logging.file
+	p = r_sys_getenv ("R2_LOGFILE");
+	SETCB ("cfg.logging.file", p ? p : "", cb_logging_config_file, "Logging output filename / path");
+	free (p);
+	// R2_LOGSRCINFO / cfg.logging.srcinfo
+	p = r_sys_getenv ("R2_LOGSRCINFO");
+	SETCB ("cfg.logging.srcinfo", p ? p : "false", cb_logging_config_srcinfo, "Should the logging output contain src info (filename:lineno)");
+	free (p);
+	// R2_LOGCOLORS / cfg.logging.colors
+	p = r_sys_getenv ("R2_LOGCOLORS");
+	SETCB ("cfg.logging.colors", p ? p : "false", cb_logging_config_colors, "Should the logging output use colors (TODO)");
+	free (p);
 
 	// zign
 	SETPREF ("zign.prefix", "sign", "Default prefix for zignatures matches");

@@ -110,6 +110,7 @@ static void cons_context_init(RConsContext *context) {
 	context->event_interrupt = NULL;
 	context->event_interrupt_data = NULL;
 	context->pageable = true;
+	context->logging_callback = NULL;
 }
 
 static void cons_context_deinit(RConsContext *context) {
@@ -367,6 +368,18 @@ R_API bool r_cons_enable_mouse(const bool enable) {
 #endif
 }
 
+// Stub function that cb_logfunc_print gets assigned to in logging.c by default
+// This allows Cutter to set per-task logging redirection
+R_API void r_cons_logging_stub(const char *output, const char *funcname,
+ const char *filename, ut32 lineno, ut32 level, const char *fmtstr, ...) {
+	if (!I.null && I.context->logging_callback) {
+		va_list args;
+		I.context->logging_callback (output, funcname, filename, lineno, level, fmtstr, args);
+	} else {
+		r_cons_strcat (output);
+	}
+}
+
 R_API RCons *r_cons_new() {
 	I.refcnt++;
 	if (I.refcnt != 1) {
@@ -430,6 +443,9 @@ R_API RCons *r_cons_new() {
 	r_cons_pal_init ();
 
 	r_print_set_is_interrupted_cb (r_cons_is_breaked);
+
+	// This sets the default logging callback in logging.c for all R_LOG calls
+	r_logging_set_callback ((RLoggingFuncdef)r_cons_logging_stub);
 
 	return &I;
 }
