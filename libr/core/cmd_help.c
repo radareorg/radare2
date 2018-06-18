@@ -52,7 +52,7 @@ static const char *help_msg_root[] = {
 	"t","[?]", "types, noreturn, signatures, C parser and more",
 	"T","[?] [-] [num|msg]", "Text log utility",
 	"u","[?]", "uname/undo seek/write",
-	"V","", "visual mode (V! = panels, VV = fcngraph, VVV = callgraph)",
+	"V","", "visual mode (V! = panels, VV = fcngraph)",
 	"w","[?] [str]", "multiple write operations",
 	"x","[?] [len]", "alias for 'px' (print hexadecimal)",
 	"y","[?] [len] [[[@]addr", "Yank/paste bytes from/to memory",
