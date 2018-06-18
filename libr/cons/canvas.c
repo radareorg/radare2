@@ -424,7 +424,7 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 				o[olen++] = c->b[y][x];
 			}
 		}
-		while (o[olen - 1] == ' ') {
+		while (olen > 0 && o[olen - 1] == ' ') {
 			o[--olen] = '\0';
 		}
 	}

@@ -5672,7 +5672,7 @@ static void agraph_print_node(RANode *n, void *user) {
 	char *encbody, *cmd;
 	int len = strlen (n->body);
 
-	if (n->body[len - 1] == '\n') {
+	if (len > 0 && n->body[len - 1] == '\n') {
 		len--;
 	}
 	encbody = r_base64_encode_dyn (n->body, len);
