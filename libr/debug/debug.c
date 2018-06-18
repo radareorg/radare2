@@ -1112,10 +1112,14 @@ repeat:
 			reason == R_DEBUG_REASON_EXIT_TID ) {
 			goto repeat;
 		}
-		if (reason == R_DEBUG_REASON_EXIT_PID) {
-			dbg->pid = -1;
-		}
 #endif
+		if (reason == R_DEBUG_REASON_EXIT_PID) {
+#if __WINDOWS__
+			dbg->pid = -1;
+#elif __linux__
+			r_bp_restore (dbg->bp, false); // (vdf) there has got to be a better way
+#endif
+		}
 
 		/* if continuing killed the inferior, we won't be able to get
 		 * the registers.. */
