@@ -2016,8 +2016,8 @@ R_API RCore *r_core_fini(RCore *c) {
 	c->cons->pager = NULL;
 	free (c->cmdqueue);
 	free (c->lastcmd);
-	free (c->block);
 	r_io_free (c->io);
+	free (c->block);
 
 	// Check if the old num is saved. If yes, we restore it.
 	if (c->cons && c->old_num) {
