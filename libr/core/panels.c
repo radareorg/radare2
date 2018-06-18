@@ -725,6 +725,9 @@ R_API void r_core_panels_refresh(RCore *core) {
 }
 
 static void doPanelsRefresh(RCore *core) {
+	if (!core->panels) {
+		return;
+	}
 	core->panels->isResizing = true;
 	r_core_panels_layout (core->panels);
 	r_core_panels_refresh (core);
