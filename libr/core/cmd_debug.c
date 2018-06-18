@@ -3865,9 +3865,10 @@ static bool cmd_dcu (RCore *core, const char *input) {
 		eprintf ("Continue until 0x%08"PFMT64x" using %d bpsize\n", addr, core->dbg->bpsize);
 		r_reg_arena_swap (core->dbg->reg, true);
 		if (r_bp_add_sw (core->dbg->bp, addr, core->dbg->bpsize, R_BP_PROT_EXEC)) {
-			int ret = r_debug_continue (core->dbg);
-			if (!ret && r_debug_is_dead (core->dbg)) {
+			if (r_debug_is_dead (core->dbg)) {
 				eprintf ("Cannot continue, run ood?\n");
+			} else {
+				r_debug_continue (core->dbg);
 			}
 			r_bp_del (core->dbg->bp, addr);
 		} else {
