@@ -3879,7 +3879,7 @@ static bool cmd_dcu (RCore *core, const char *input) {
 }
 
 static int cmd_debug_continue (RCore *core, const char *input) {
-	int pid, old_pid, signum, ret = true;
+	int pid, old_pid, signum;
 	char *ptr;
 	// TODO: we must use this for step 'ds' too maybe...
 	switch (input[1]) {
@@ -3888,10 +3888,11 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 #if __linux__
 		core->dbg->continue_all_threads = true;
 #endif
-		ret = r_debug_continue (core->dbg);
-		if (!ret && r_debug_is_dead (core->dbg)) {
+		if (r_debug_is_dead (core->dbg)) {
 			eprintf ("Cannot continue, run ood?\n");
+			break;
 		}
+		r_debug_continue (core->dbg);
 		break;
 	case 'a': // "dca"
 		eprintf ("TODO: dca\n");
