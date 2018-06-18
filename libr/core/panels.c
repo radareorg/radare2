@@ -1191,6 +1191,8 @@ repeat:
 			" b    - browse symbols, flags, configurations, classes, ...\n"
 			" c    - toggle cursor\n"
 			" C    - toggle color\n"
+			" d    - define in current address. Same as Vd\n"
+			" D    - show disassembly in current frame\n"
 			" i    - insert hex\n"
 			" M    - open new custom frame\n"
 			" hl   - toggle scr.color\n"
@@ -1254,8 +1256,13 @@ repeat:
 	case 'A':
 		r_core_visual_asm (core, core->offset);
 		break;
-	case 'D':
+	case 'd':
 		r_core_visual_define (core, "");
+		break;
+	case 'D':
+		if (checkFunc (core)) {
+			replaceCmd (panels, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY);
+		}
 		break;
 	case 'j':
 		handleDownKey (core);
@@ -1289,11 +1296,12 @@ repeat:
 		panels->menu_y = 0;
 		panels->menu_x = -1;
 		panels->panel[panels->curnode].refresh = true;
-		panels->curnode--;
-		panels->panel[panels->curnode].refresh = true;
-		if (panels->curnode < 0) {
+		if (panels->curnode > 0) {
+			panels->curnode--;
+		} else {
 			panels->curnode = panels->n_panels - 1;
 		}
+		panels->panel[panels->curnode].refresh = true;
 		if (!panels->curnode) {
 			panels->menu_x = 0;
 		}
@@ -1330,11 +1338,6 @@ repeat:
 		panels->isResizing = true;
 		if (panels->columnWidth < 0) {
 			panels->columnWidth = 0;
-		}
-		break;
-	case 'd':
-		if (checkFunc (core)) {
-			replaceCmd (panels, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY);
 		}
 		break;
 	case 'g':
