@@ -3887,10 +3887,8 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 		r_reg_arena_swap (core->dbg->reg, true);
 #if __linux__
 		core->dbg->continue_all_threads = true;
-		ret = r_debug_continue (core->dbg);
-#else
-		r_debug_continue (core->dbg);
 #endif
+		ret = r_debug_continue (core->dbg);
 		if (!ret && r_debug_is_dead (core->dbg)) {
 			eprintf ("Cannot continue, run ood?\n");
 		}
