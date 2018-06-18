@@ -20,7 +20,7 @@ R_API RDebugInfo *r_debug_info(RDebug *dbg, const char *arg) {
 	return dbg->h->info (dbg, arg);
 }
 
-R_API void r_debug_info_free (RDebugInfo *rdi) {
+R_API void r_debug_info_free(RDebugInfo *rdi) {
 	if (rdi) {
 		free (rdi->cwd);
 		free (rdi->exe);
@@ -336,13 +336,13 @@ R_API RDebug *r_debug_new(int hard) {
 	return dbg;
 }
 
-static int free_tracenodes_entry (RDebug *dbg, const char *k, const char *v) {
+static int free_tracenodes_entry(RDebug *dbg, const char *k, const char *v) {
 	ut64 v_num = r_num_get (NULL, v);
 	free((void *)(size_t)v_num);
 	return true;
 }
 
-R_API void r_debug_tracenodes_reset (RDebug *dbg) {
+R_API void r_debug_tracenodes_reset(RDebug *dbg) {
 	sdb_foreach (dbg->tracenodes, (SdbForeachCallback)free_tracenodes_entry, dbg);
 	sdb_reset (dbg->tracenodes);
 }
@@ -1499,7 +1499,7 @@ R_API int r_debug_child_clone(RDebug *dbg) {
 	return 0;
 }
 
-R_API bool r_debug_is_dead (RDebug *dbg) {
+R_API bool r_debug_is_dead(RDebug *dbg) {
 	if (!dbg->h) {
 		return false;
 	}
