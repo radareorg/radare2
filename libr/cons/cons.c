@@ -67,7 +67,7 @@ static RConsStack *cons_stack_dump(bool recreate) {
 		}
 	}
 
-	if (recreate) {
+	if (recreate && I.buffer_sz > 0) {
 		I.buffer = malloc (I.buffer_sz);
 		if (!I.buffer) {
 			I.buffer = data->buf;
