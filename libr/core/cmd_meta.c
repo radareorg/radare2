@@ -37,7 +37,7 @@ static const char *help_msg_CC[] = {
 	"Usage:", "CC[-+!*au] [base64:..|str] @ addr", "",
 	"CC", "", "list all comments in human friendly form",
 	"CC*", "", "list all comments in r2 commands",
-	"CC.", "", "show comment at current offset",
+	"CC.", "[@addr]", "show comment at current offset",
 	"CC,", " [file]", "show or set comment file",
 	"CC", " [text]", "append comment at current address",
 	"CCf", "", "list comments in function",
