@@ -74,6 +74,8 @@ static RConsStack *cons_stack_dump(bool recreate) {
 			free (data);
 			return NULL;
 		}
+	} else {
+		I.buffer = NULL;
 	}
 
 	return data;
@@ -83,7 +85,6 @@ static void cons_stack_load(RConsStack *data, bool free_current) {
 	if (free_current) {
 		free (I.buffer);
 	}
-
 	I.buffer = data->buf;
 	data->buf = NULL;
 	I.buffer_len = data->buf_len;
