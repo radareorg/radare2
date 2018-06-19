@@ -914,8 +914,48 @@ static int autocomplete_pfele (RCore *core, char *key, char *pfx, int idx, char 
 
 #define ADDARG(x) if (!strncmp (line->buffer.data+chr, x, strlen (line->buffer.data+chr))) { tmp_argv[j++] = x; }
 
+static void autocomplete_default(RLine *line) {
+	RCore *core = line->user;
+	if (!core) {
+		return;
+	}
+	RCoreAutocomplete *a = core->autocomplete;
+
+	int i, j;
+	j = 0;
+	if (a) {
+		for (i = 0; j < TMP_ARGV_SZ && i < a->n_subcmds && radare_argv[i]; i++) {
+			if (!strncmp (a->subcmds[i]->cmd, line->buffer.data, line->buffer.index)) {
+				tmp_argv[j++] = a->subcmds[i]->cmd;
+			}
+		}
+	}
+	for (i = 0; j < TMP_ARGV_SZ && i < radare_argc && radare_argv[i]; i++) {
+		if (!strncmp (radare_argv[i], line->buffer.data, line->buffer.index)) {
+			tmp_argv[j++] = radare_argv[i];
+		}
+	}
+	tmp_argv[j] = NULL;
+	line->completion.argc = j;
+	line->completion.argv = tmp_argv;
+}
+
+static RCoreAutocomplete* find_plugins_autocomplete(RLine *line) {
+	RCore *core = line->user;
+	if (!core) {
+		return NULL;
+	}
+	RCoreAutocomplete* tmp = NULL;
+	RCoreAutocomplete* plugin = core->autocomplete;
+	while ((tmp = r_core_autocomplete_find (plugin, line->buffer.data)) && line->buffer.data[tmp->length] == ' ') {
+		plugin = tmp;
+	}
+	return plugin == core->autocomplete ? NULL : plugin;
+}
+
 static int autocomplete(RLine *line) {
 	RCore *core = line->user;
+	RCoreAutocomplete* plugin;
 	RListIter *iter;
 	RFlagItem *flag;
 	if (core) {
@@ -1442,8 +1482,16 @@ static int autocomplete(RLine *line) {
 			tmp_argv[R_MIN(i, TMP_ARGV_SZ - 1)] = NULL;
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
+		} else if (plugin = find_plugins_autocomplete (line)) {
+			int i, j;
+			for (i = j = 0; j < TMP_ARGV_SZ && i < plugin->n_subcmds && radare_argv[i]; i++) {
+				tmp_argv[j++] = plugin->subcmds[i]->cmd;
+			}
+			tmp_argv[j] = NULL;
+			line->completion.argc = j;
+			line->completion.argv = tmp_argv;
 		} else {
-			int i, j, cfg_newtab = r_config_get_i (core->config, "cfg.newtab");
+			int i, cfg_newtab = r_config_get_i (core->config, "cfg.newtab");
 			if (cfg_newtab) {
 				RCmdDescriptor *desc = &core->root_cmd_descriptor;
 				for (i = 0; i < line->buffer.index && desc; i++) {
@@ -1457,23 +1505,10 @@ static int autocomplete(RLine *line) {
 				}
 				// fallback to old command completion
 			}
-			for (i = j = 0; i < radare_argc && radare_argv[i]; i++)
-				if (!strncmp (radare_argv[i], line->buffer.data, line->buffer.index))
-					tmp_argv[j++] = radare_argv[i];
-			tmp_argv[j] = NULL;
-			line->completion.argc = j;
-			line->completion.argv = tmp_argv;
+			autocomplete_default (line);
 		}
 	} else {
-			int i, j;
-			for (i = j = 0; i < radare_argc&& radare_argv[i]; i++) {
-				if (!strncmp (radare_argv[i], line->buffer.data, line->buffer.index)) {
-					tmp_argv[j++] = radare_argv[i];
-				}
-			}
-			tmp_argv[j] = NULL;
-			line->completion.argc = j;
-			line->completion.argv = tmp_argv;
+			autocomplete_default (line);
 	}
 	return true;
 }
@@ -1997,6 +2032,7 @@ R_API bool r_core_init(RCore *core) {
 			free (a);
 		}
 	}
+	core->autocomplete = R_NEW0 (RCoreAutocomplete);
 	return 0;
 }
 
@@ -2842,4 +2878,35 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 beach:
 	r_cons_break_pop ();
 	return hitctr;
+}
+
+R_API RCoreAutocomplete *r_core_autocomplete_add(RCoreAutocomplete *parent, const char* cmd) {
+	if (!parent || !cmd) {
+		return NULL;
+	}
+	RCoreAutocomplete *autocmpl = R_NEW0 (RCoreAutocomplete);
+	if (!autocmpl) {
+		return NULL;
+	}
+	RCoreAutocomplete **updated = realloc (parent->subcmds, (parent->n_subcmds + 1) * sizeof(RCoreAutocomplete**));
+	if (!updated) {
+		free (autocmpl);
+		return NULL;
+	}
+	parent->subcmds = updated;
+	parent->subcmds[parent->n_subcmds] = autocmpl;
+	parent->n_subcmds++;
+	autocmpl->cmd = cmd;
+	autocmpl->length = strlen (cmd);
+	return autocmpl;
+}
+
+R_API RCoreAutocomplete *r_core_autocomplete_find(RCoreAutocomplete *parent, const char* cmd) {
+	int i;
+	for (i = 0; i < parent->n_subcmds; ++i) {
+		if (!strncmp (parent->subcmds[i]->cmd, cmd, parent->subcmds[i]->length)) {
+			return parent->subcmds[i];
+		}
+	}
+	return NULL;
 }

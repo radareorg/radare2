@@ -137,6 +137,13 @@ typedef struct r_core_asmsteps_t {
 
 typedef struct r_core_task_t RCoreTask;
 
+typedef struct r_core_autocomplete_t {
+	const char* cmd;
+	int length;
+	int n_subcmds;
+	struct r_core_autocomplete_t** subcmds;
+} RCoreAutocomplete;
+
 typedef struct r_core_t {
 	RBin *bin;
 	RConfig *config;
@@ -224,6 +231,7 @@ typedef struct r_core_t {
 	bool fixedbits;
 	bool fixedarch;
 	struct r_core_t *c2;
+	RCoreAutocomplete *autocomplete;
 } RCore;
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd);
@@ -721,6 +729,9 @@ typedef void (*inRangeCb) (RCore *core, ut64 from, ut64 to, int vsize,
 			   bool asterisk, int count);
 R_API int r_core_search_value_in_range (RCore *core, RInterval search_itv,
 		ut64 vmin, ut64 vmax, int vsize, bool asterisk, inRangeCb cb);
+
+R_API RCoreAutocomplete *r_core_autocomplete_add(RCoreAutocomplete *parent, const char* cmd);
+R_API RCoreAutocomplete *r_core_autocomplete_find(RCoreAutocomplete *parent, const char* cmd);
 
 /* PLUGINS */
 extern RCorePlugin r_core_plugin_java;
