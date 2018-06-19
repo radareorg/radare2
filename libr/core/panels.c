@@ -496,33 +496,31 @@ static bool handleCursorMode(RCore *core, const int key) {
 	char buf[128];
 	if (core->print->cur_enabled) {
 		switch (key) {
-			case 9: // TAB
-			case 'J':
-			case 'Z': // SHIFT-TAB
-			case 'K':
-				return true;
-			case 'Q':
-			case 'q':
-				setCursor (core, !core->print->cur_enabled);
+		case 9: // TAB
+		case 'Z': // SHIFT-TAB
+			return true;
+		case 'Q':
+		case 'q':
+			setCursor (core, !core->print->cur_enabled);
+			panels->panel[panels->curnode].refresh = true;
+			return true;
+		case 'i':
+			if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_STACK)) {
+				// insert mode
+				const char *prompt = "insert hex: ";
+				panelPrompt (prompt, buf, sizeof (buf));
+				r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, panels->panel[panels->curnode].addr);
 				panels->panel[panels->curnode].refresh = true;
-				return true;
-			case 'i':
-				if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_STACK)) {
-					// insert mode
-					const char *prompt = "insert hex: ";
+			} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_REGISTERS)) {
+				creg = core->dbg->creg;
+				if (creg) {
+					const char *prompt = "new-reg-value> ";
 					panelPrompt (prompt, buf, sizeof (buf));
-					r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, panels->panel[panels->curnode].addr);
+					r_core_cmdf (core, "dr %s = %s", creg, buf);
 					panels->panel[panels->curnode].refresh = true;
-				} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_REGISTERS)) {
-					creg = core->dbg->creg;
-					if (creg) {
-						const char *prompt = "new-reg-value> ";
-						panelPrompt (prompt, buf, sizeof (buf));
-						r_core_cmdf (core, "dr %s = %s", creg, buf);
-						panels->panel[panels->curnode].refresh = true;
-					}
 				}
-				return true;
+			}
+			return true;
 		}
 	}
 	return false;
@@ -1080,7 +1078,7 @@ R_API void r_core_panels_free(RPanels *panels) {
 }
 
 R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
-	int okey, key, wheel;
+	int i, okey, key, wheel;
 
 	if (!panels) {
 		panels = r_core_panels_new (core);
@@ -1264,6 +1262,16 @@ repeat:
 			replaceCmd (panels, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY);
 		}
 		break;
+	case 'J':
+		for (i = 0; i < 10; i++) {
+			handleDownKey (core);
+		}
+		break;
+	case 'K':
+		for (i = 0; i < 10; i++) {
+			handleUpKey (core);
+		}
+		break;
 	case 'j':
 		handleDownKey (core);
 		break;
@@ -1278,7 +1286,6 @@ repeat:
 		setRefreshAll (panels);
 		break;
 	case 9: // TAB
-	case 'J':
 		r_cons_switchbuf (false);
 		panels->menu_y = 0;
 		panels->menu_x = -1;
@@ -1291,7 +1298,6 @@ repeat:
 		}
 		break;
 	case 'Z': // SHIFT-TAB
-	case 'K':
 		r_cons_switchbuf (false);
 		panels->menu_y = 0;
 		panels->menu_x = -1;
