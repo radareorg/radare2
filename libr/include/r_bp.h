@@ -126,6 +126,7 @@ R_API int r_bp_enable_all(RBreakpoint *bp, int set);
 /* index api */
 R_API int r_bp_del_index(RBreakpoint *bp, int idx);
 R_API RBreakpointItem *r_bp_get_index(RBreakpoint *bp, int idx);
+R_API int r_bp_get_index_at (RBreakpoint *bp, ut64 addr);
 R_API RBreakpointItem *r_bp_item_new (RBreakpoint *bp);
 
 R_API RBreakpointItem *r_bp_get_at (RBreakpoint *bp, ut64 addr);

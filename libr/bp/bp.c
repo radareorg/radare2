@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2017 - pancake */
+/* radare2 - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_bp.h>
 #include <config.h>
@@ -92,8 +92,9 @@ R_API RBreakpointItem *r_bp_get_at(RBreakpoint *bp, ut64 addr) {
 	RListIter *iter;
 	RBreakpointItem *b;
 	r_list_foreach(bp->bps, iter, b) {
-		if (b->addr == addr)
+		if (b->addr == addr) {
 			return b;
+		}
 	}
 	return NULL;
 }
@@ -357,6 +358,16 @@ R_API RBreakpointItem *r_bp_get_index(RBreakpoint *bp, int idx) {
 		return bp->bps_idx[idx];
 	}
 	return NULL;
+}
+
+R_API int r_bp_get_index_at (RBreakpoint *bp, ut64 addr) {
+	int i;
+	for (i = 0; i< bp->bps_idx_count; i++) {
+		if (bp->bps_idx[i] && bp->bps_idx[i]->addr == addr) {
+			return i;
+		}
+	}
+	return -1;
 }
 
 R_API int r_bp_del_index(RBreakpoint *bp, int idx) {
