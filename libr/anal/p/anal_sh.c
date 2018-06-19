@@ -581,7 +581,6 @@ static int first_nibble_is_3(RAnal* anal, RAnalOp* op, ut16 code) {
 
 static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
 	switch(code & 0xF0FF) { //TODO: change to common } else if construction
-		//todo: implement
 	case 0x4020:	//shal
 		op->type = R_ANAL_OP_TYPE_SAL;
 		r_strbuf_setf (&op->esil, "0xFFFFFFFE,sr,&=,r%d,0x80000000,&,?{,0x1,sr,|=,},1,r%d,<<=", GET_TARGET_REG (code), GET_TARGET_REG (code));
@@ -692,7 +691,6 @@ static int first_nibble_is_4(RAnal* anal, RAnalOp* op, ut16 code) {
 	} else if (IS_ROTCL (code)) {
 		r_strbuf_setf (&op->esil, "sr,0x1,&,0xFFFFFFFE,sr,&=,r%d,0x80000000,&,?{,1,sr,|=,},1,r%d,<<=,r%d,|=", GET_TARGET_REG (code), GET_TARGET_REG (code), GET_TARGET_REG (code));
 		op->type = (code & 1)? R_ANAL_OP_TYPE_ROR:R_ANAL_OP_TYPE_ROL;
-		//todo: implement rot* vs rotc*
 	} else if (IS_STCLSR (code)) {
 		r_strbuf_setf (&op->esil, "4,r%d,-=,sr,r%d,=[4]", GET_TARGET_REG (code), GET_TARGET_REG (code));
 		op->type = R_ANAL_OP_TYPE_PUSH;
@@ -984,36 +982,30 @@ static int first_nibble_is_c(RAnal* anal, RAnalOp* op, ut16 code) {
 			break;
 		}
 		//TODO : implement @(R0,gbr) dest and src[1]
-	} else if (IS_MOVB_R0_GBRREF (code)) {	//11000000i8*1.... mov.b R0,@(<disp>,gbr)
+	} else if (IS_MOVB_R0_GBRREF (code)) {
 		op->type = R_ANAL_OP_TYPE_STORE;
 		op->src[0] = anal_fill_ai_rg (anal, 0);
 		r_strbuf_setf (&op->esil, "r0,gbr,0x%x,+,=[1]", code & 0xFF);
-		//todo: implement @(disp,gbr) dest
-	} else if (IS_MOVW_R0_GBRREF (code)) {	//11000001i8*2.... mov.w R0,@(<disp>,gbr)
+	} else if (IS_MOVW_R0_GBRREF (code)) {	
 		op->type = R_ANAL_OP_TYPE_STORE;
 		op->src[0] = anal_fill_ai_rg (anal, 0);
 		r_strbuf_setf (&op->esil, "r0,gbr,0x%x,+,=[2]", (code & 0xFF) * 2);
-		//todo: implement @(disp,gbr) dest
-	} else if (IS_MOVL_R0_GBRREF (code)) {	//11000010i8*4.... mov.l R0,@(<disp>,gbr)
+	} else if (IS_MOVL_R0_GBRREF (code)) {
 		op->type = R_ANAL_OP_TYPE_STORE;
 		op->src[0] = anal_fill_ai_rg (anal, 0);
 		r_strbuf_setf (&op->esil, "r0,gbr,0x%x,+,=[4]", (code & 0xFF) * 4);
-		//todo: implement @(disp,gbr) dest
-	} else if (IS_MOVB_GBRREF_R0 (code)) {	//11000100i8*1.... mov.b @(<disp>,gbr),R0
+	} else if (IS_MOVB_GBRREF_R0 (code)) {
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		op->dst = anal_fill_ai_rg (anal, 0);
 		r_strbuf_setf (&op->esil, "gbr,0x%x,+,[1],DUP,0x80,&,?{,0xFFFFFF00,|,},r0,=", (code & 0xFF));
-		//todo: implement @(disp,gbr) src
-	} else if (IS_MOVW_GBRREF_R0 (code)) {	//11000101i8*2.... mov.w @(<disp>,gbr),R0
+	} else if (IS_MOVW_GBRREF_R0 (code)) {	
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		op->dst = anal_fill_ai_rg (anal, 0);
 		r_strbuf_setf (&op->esil, "gbr,0x%x,+,[2],DUP,0x8000,&,?{,0xFFFF0000,|,},r0,=", (code & 0xFF)*2);
-		//todo: implement @(disp,gbr) src
-	} else if (IS_MOVL_GBRREF_R0 (code)) {	//11000110i8*4.... mov.l @(<disp>,gbr),R0
+	} else if (IS_MOVL_GBRREF_R0 (code)) {
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		op->dst = anal_fill_ai_rg (anal, 0);
 		r_strbuf_setf (&op->esil, "gbr,0x%x,+,[4],r0,=", (code & 0xFF) * 4);
-		//todo: implement @(disp,gbr) src
 	}
 
 	return op->size;
@@ -1025,7 +1017,7 @@ static int movl_pcdisp_reg(RAnal* anal, RAnalOp* op, ut16 code) {
 	op->src[0] = anal_pcrel_disp_mov (anal, op, code & 0xFF, LONG_SIZE);
 	//TODO: check it
 	op->dst = anal_fill_ai_rg (anal, GET_TARGET_REG (code));
-	r_strbuf_setf (&op->esil, "0x%x,[4],r%d,=", (code & 0xFF) * 4+op->addr + 4, GET_TARGET_REG (code));
+	r_strbuf_setf (&op->esil, "0x%x,[4],r%d,=", (code & 0xFF) * 4 + (op->addr & 0xfffffffc) + 4, GET_TARGET_REG (code));
 	return op->size;
 }
 
