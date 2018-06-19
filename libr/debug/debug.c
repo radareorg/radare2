@@ -93,6 +93,40 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 # else
 	int pc_off = dbg->bpsize;
 	/* see if we really have a breakpoint here... */
+	if (!dbg->pc_at_bp_set) {
+		b = r_bp_get_at (dbg->bp, pc - dbg->bpsize);
+		if (!b) { /* we don't. nothing left to do */
+			/* Some targets set pc to breakpoint */
+			b = r_bp_get_at (dbg->bp, pc);
+			if (!b) {
+				/* Couldn't find the break point. Nothing more to do... */
+				return true;
+			}
+			else {
+				dbg->pc_at_bp_set = true;
+				dbg->pc_at_bp = true;
+			}
+		} else {
+			dbg->pc_at_bp_set = true;
+			dbg->pc_at_bp = false;
+		}
+	}
+	
+	if (!dbg->pc_at_bp_set) {
+		eprintf ("failed to determine position of pc after breakpoint");
+	}
+	
+	if (dbg->pc_at_bp) {
+		pc_off = 0;
+		b = r_bp_get_at (dbg->bp, pc);
+	} else {
+		b = r_bp_get_at (dbg->bp, pc - dbg->bpsize);
+	}
+	
+	if (!b) {
+		return true;
+	}
+	
 	b = r_bp_get_at (dbg->bp, pc - dbg->bpsize);
 	if (!b) { /* we don't. nothing left to do */
 		/* Some targets set pc to breakpoint */
