@@ -18,6 +18,7 @@ typedef char *(*RCoreGetNameDelta)(void *core, ut64 off);
 typedef void (*RCoreSeekArchBits)(void *core, ut64 addr); 
 typedef int (*RCoreConfigGetI)(void *core, const char *key);
 typedef const char *(*RCoreConfigGet)(void *core, const char *key);
+typedef ut64 (*RCoreNumGet)(void *core, const char *str);
 
 typedef struct r_core_bind_t {
 	void *core;
@@ -33,6 +34,7 @@ typedef struct r_core_bind_t {
 	RCoreSeekArchBits archbits;
 	RCoreConfigGetI cfggeti;
 	RCoreConfigGet cfgGet;
+	RCoreNumGet numGet;
 } RCoreBind;
 
 #endif

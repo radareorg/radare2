@@ -249,6 +249,10 @@ static const char *cfgget(RCore *core, const char *k) {
 	return r_config_get (core->config, k);
 }
 
+static ut64 numget(RCore *core, const char *k) {
+	return r_num_math (core->num, k);
+}
+
 R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->core = core;
 	bnd->bphit = (RCoreDebugBpHit)r_core_debug_breakpoint_hit;
@@ -263,6 +267,7 @@ R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->archbits = (RCoreSeekArchBits)archbits;
 	bnd->cfggeti = (RCoreConfigGetI)cfggeti;
 	bnd->cfgGet = (RCoreConfigGet)cfgget;
+	bnd->numGet = (RCoreNumGet)numget;
 	return true;
 }
 

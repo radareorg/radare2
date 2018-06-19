@@ -63,17 +63,19 @@ static const char *help_msg_db[] = {
 	"dbi", "", "List breakpoint indexes",
 	"dbi", " <addr>", "Show breakpoint index in givengiven  offset",
 	"dbi.", "", "Show breakpoint index in current offset",
-	"dbic", " <index> <cmd>", "Run command at breakpoint index",
-	"dbie", " <index>", "Enable breakpoint by index",
-	"dbid", " <index>", "Disable breakpoint by index",
-	"dbis", " <index>", "Swap Nth breakpoint",
-	"dbite", " <index>", "Enable breakpoint Trace by index",
-	"dbitd", " <index>", "Disable breakpoint Trace by index",
-	"dbits", " <index>", "Swap Nth breakpoint trace",
+	"dbix", " <idx> [expr]", "Set expression for bp at given index",
+	"dbic", " <idx> <cmd>", "Run command at breakpoint index",
+	"dbie", " <idx>", "Enable breakpoint by index",
+	"dbid", " <idx>", "Disable breakpoint by index",
+	"dbis", " <idx>", "Swap Nth breakpoint",
+	"dbite", " <idx>", "Enable breakpoint Trace by index",
+	"dbitd", " <idx>", "Disable breakpoint Trace by index",
+	"dbits", " <idx>", "Swap Nth breakpoint trace",
 	//
 	"dbh", " x86", "Set/list breakpoint plugin handlers",
 	"dbh-", " <name>", "Remove breakpoint plugin handler",
 	"dbt", "[?]", "Show backtrace. See dbt? for more details",
+	"dbx", " [expr]", "Set expression for bp in current offset",
 	"dbw", " <addr> <rw>", "Add watchpoint",
 	"drx", " number addr len rwx", "Modify hardware breakpoint",
 	"drx-", "number", "Clear hardware breakpoint",
@@ -2833,6 +2835,29 @@ static void core_cmd_dbi (RCore *core, const char *input, ut64 addr) {
 			}
 		}
 		break;
+	case 'x': // "dbix"
+		if (input[3] == ' ') {
+			int idx = r_bp_get_index_at (core->dbg->bp, addr);
+			if (idx != -1) {
+				bpi = r_bp_get_index (core->dbg->bp, idx);
+				if (bpi) {
+					char *expr = strchr (input + 4, ' ');
+					if (expr) {
+						free (bpi->expr);
+						bpi->expr = strdup (expr);
+					}
+				}
+				r_cons_printf ("%d\n", idx);
+			}
+		} else {
+			for (i = 0; i < core->dbg->bp->bps_idx_count; i++) {
+				RBreakpointItem *bp = core->dbg->bp->bps_idx[i];
+				if (bp) {
+					r_cons_printf ("%d 0x%08"PFMT64x" %s\n", i, bp->addr, bp->expr);
+				}
+			}
+		}
+		break;
 	case 'c': // "dbic"
 		p = strchr (input + 3, ' ');
 		if (p) {
@@ -2957,6 +2982,23 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				}
 			}
 		}
+		}
+		break;
+	case 'x': // "dbx"
+		if (input[2] == ' ') {
+			if (addr == UT64_MAX) {
+				addr = core->offset;
+			}
+			bpi = r_bp_get_at (core->dbg->bp, addr);
+			if (bpi) {
+				free (bpi->expr);
+				bpi->expr = strdup (input + 3);
+			}
+		} else {
+			RBreakpointItem *bp;
+			r_list_foreach (core->dbg->bp->bps, iter, bp) {
+				r_cons_printf ("0x%08"PFMT64x" %s\n", bp->addr, r_str_get2 (bp->expr));
+			}
 		}
 		break;
 	case 't': // "dbt"

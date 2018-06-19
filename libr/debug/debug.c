@@ -31,6 +31,17 @@ R_API void r_debug_info_free(RDebugInfo *rdi) {
 	}
 }
 
+R_API void r_debug_bp_update(RDebug *dbg) {
+	/* update all bp->addr if they are named bps */
+	RBreakpointItem *bp;
+	RListIter *iter;
+	r_list_foreach (dbg->bp->bps, iter, bp) {
+		if (bp->expr) {
+			bp->addr = dbg->corebind.numGet (dbg->corebind.core, bp->expr);
+		}
+	}
+}
+
 /*
  * Recoiling after a breakpoint has two stages:
  * 1. remove the breakpoint and fix the program counter.
@@ -60,6 +71,7 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 	 * this is necessary because while stopped we don't want any breakpoints in
 	 * the code messing up our analysis.
 	 */
+	r_debug_bp_update (dbg);
 	if (!r_bp_restore (dbg->bp, false)) { // unset sw breakpoints
 		return false;
 	}
@@ -137,9 +149,9 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 static int r_debug_bps_enable(RDebug *dbg) {
 	/* restore all sw breakpoints. we are about to step/continue so these need
 	 * to be in place. */
-	if (!r_bp_restore (dbg->bp, true))
+	if (!r_bp_restore (dbg->bp, true)) {
 		return false;
-
+	}
 	/* done recoiling... */
 	dbg->recoil_mode = R_DBG_RECOIL_NONE;
 	return true;
@@ -1117,6 +1129,7 @@ repeat:
 #if __WINDOWS__
 			dbg->pid = -1;
 #elif __linux__
+			r_debug_bp_update (dbg);
 			r_bp_restore (dbg->bp, false); // (vdf) there has got to be a better way
 #endif
 		}

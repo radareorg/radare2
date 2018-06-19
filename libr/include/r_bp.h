@@ -59,6 +59,7 @@ typedef struct r_bp_item_t {
 	int pids[R_BP_MAXPIDS];
 	char *data;
 	char *cond; /* used for conditional breakpoints */
+	char *expr; /* to be used for named breakpoints (see r_debug_bp_update) */
 } RBreakpointItem;
 
 typedef int (*RBreakpointCallback)(void *bp, RBreakpointItem *b, bool set);
