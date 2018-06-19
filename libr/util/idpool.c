@@ -428,3 +428,119 @@ R_API bool r_oids_foreach_prev (ROIDStorage* storage, RIDStorageForeachCb cb, vo
 	}
 	return true;
 }
+
+bool oids_od_bfind (ROIDStorage *st, ut32 *od, void *incoming, void *user) {
+	st64 high, low;
+	int cmp_res;
+	void *in;
+
+	if (!st->ptop) {
+		return false;
+	}
+
+	high = st->ptop - 1;
+	low = 0;
+
+	while (1) {
+		if (high <= low) {
+			od[0] = (ut32)low;
+			in = r_oids_oget(st, od[0]);
+			//in - incoming
+			if (!st->cmp(in, incoming, user, &cmp_res)) {
+				return false;
+			}
+			if (cmp_res < 0) {
+				od[0]++;
+			}
+			return true;
+		}
+
+		od[0] = (ut32)((low + high) / 2);
+		in = r_oids_oget(st, od[0]);
+		if (!st->cmp(in, incoming, user, &cmp_res)) {
+			return false;
+		}
+
+		if (cmp_res == 0) {
+			return true;
+		}
+
+		if (cmp_res < 0) {
+			low = od[0] + 1;
+		} else {
+			high = od[0];
+			high--;
+		}
+	}
+	return false;
+}
+
+bool oids_od_binsert (ROIDStorage *storage, ut32 id, ut32 *od, void *incoming, void *user) {
+	if (!oids_od_bfind (storage, od, incoming, user)) {
+		return false;
+	}
+	if(od[0] != storage->ptop) {
+		memmove (&storage->permutation[od[0] + 1], &storage->permutation[od[0]], (storage->ptop - od[0]) * sizeof(ut32));
+	}
+	storage->ptop++;
+	storage->permutation[od[0]] = id;
+	return true;
+}
+
+R_API bool r_oids_insert (ROIDStorage *storage, void *data, ut32 *id, ut32 *od, void *user) {
+	if (!storage || !storage->cmp || !id || !od) {
+		return false;
+	}
+	if (!storage->ptop) {	//empty storage
+		return r_oids_add(storage, data, id, od);
+	}
+	if (!r_id_storage_add (storage->data, data, id)) {
+		return false;
+	}
+	if (storage->ptop > (storage->psize * 3 / 4)) {
+		oid_storage_preallocate (storage, storage->psize * 2);
+	}
+	return oids_od_binsert (storage, id[0], od, data, user);
+}
+
+R_API bool r_oids_sort (ROIDStorage *storage, void *user) {
+	ut32 od, id, ptop, *permutation;
+	void *incoming;
+
+	if(!storage || !storage->ptop || !storage->cmp) {
+		return false;
+	}
+	if(storage->ptop == 1) {
+		return true;
+	}
+	permutation = storage->permutation;
+	storage->permutation = R_NEWS0 (ut32, storage->psize);
+	if (!storage->permutation) {
+		storage->permutation = permutation;
+		return false;
+	}
+	storage->permutation[0] = permutation[0];
+	ptop = storage->ptop;
+	storage->ptop = 1;
+	while (storage->ptop != ptop) {
+		id = permutation[storage->ptop];
+		incoming = r_id_storage_get (storage->data, id);
+		if (!oids_od_binsert (storage, id, &od, incoming, user)) {
+			goto beach;
+		}
+	}
+	free (permutation);
+	return true;
+
+beach:
+	free (storage->permutation);
+	storage->permutation = permutation;
+	storage->ptop = ptop;
+	return false;
+}
+
+R_API ut32 r_oids_find (ROIDStorage *storage, void *incoming, void *user) {
+	ut32 ret;
+
+	return oids_od_bfind(storage, &ret, incoming, user) ? ret : storage->ptop;
+}
