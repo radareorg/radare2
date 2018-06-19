@@ -267,6 +267,7 @@ R_API int r_bp_set_trace_all(RBreakpoint *bp, int set) {
 	}
 	return true;
 }
+
 // TODO: deprecate
 R_API int r_bp_list(RBreakpoint *bp, int rad) {
 	int n = 0;
@@ -344,7 +345,12 @@ R_API RBreakpointItem *r_bp_item_new (RBreakpoint *bp) {
 	}
 	/* allocate new slot */
 	bp->bps_idx_count += 16; // alocate space for 16 more bps
-	bp->bps_idx = realloc (bp->bps_idx, bp->bps_idx_count * sizeof(RBreakpointItem*));
+	RBreakpointItem **newbps = realloc (bp->bps_idx, bp->bps_idx_count * sizeof (RBreakpointItem*));
+	if (newbps) {
+		bp->bps_idx = newbps;
+	} else {
+		bp->bps_idx_count -= 16; // alocate space for 16 more bps
+	}
 	for (j = i; j < bp->bps_idx_count; j++) {
 		bp->bps_idx[j] = NULL;
 	}
