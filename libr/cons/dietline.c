@@ -310,6 +310,7 @@ R_API const char *r_line_hist_get(int n) {
 	if (!I.history.data) {
 		inithist ();
 	}
+	n--;
 	if (I.history.data) {
 		for (i = 0; i < I.history.size && I.history.data[i]; i++) {
 			if (n == i) {
