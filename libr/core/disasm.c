@@ -3973,7 +3973,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	int i, nargs;
 	ut64 at = p2v (ds, ds->at);
 	RConfigHold *hc = r_config_hold_new (core->config);
-	/* apply hint */	
+	/* apply hint */
 	RAnalHint *hint = r_anal_hint_get (core->anal, at);
 	r_anal_op_hint (&ds->analop, hint);
 	r_anal_hint_free (hint);
@@ -4911,7 +4911,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 		if (ds_must_strip (ds)) {
 			continue;
 		}
-		
+
 		// r_conf = s_printf ("0x%08"PFMT64x"  ", core->offset+i);
 		if (ds->hint && ds->hint->size) {
 			ret = ds->hint->size;
@@ -5138,7 +5138,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			r_parse_parse (core->parser, asmop.buf_asm, asmop.buf_asm);
 		}
 
-		// f = r_anal_get_fcn_in (core->anal, at, 
+		// f = r_anal_get_fcn_in (core->anal, at,
 		f = fcnIn (ds, at, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 		if (ds->varsub && f) {
 			core->parser->varlist = r_anal_var_list_dynamic;
