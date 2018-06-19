@@ -101,7 +101,7 @@ int main(int argc, char **argv) {
 		char *result_heap = NULL;
 		const char *result = page_index;
 
-		rs = r_socket_http_accept (s, timeout);
+		rs = r_socket_http_accept (s, 0, timeout);
 		if (!rs) continue;
 		if (!strcmp (rs->method, "GET")) {
 			if (!strncmp (rs->path, "/proc/kill/", 11)) {

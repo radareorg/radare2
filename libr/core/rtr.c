@@ -467,8 +467,6 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 		return 1;
 	}
 
-	r_socket_block_time (s, 1, 1);
-
 	if (launch=='H') {
 		const char *browser = r_config_get (core->config, "http.browser");
 		r_sys_cmdf ("%s http://%s:%d/%s &",
@@ -528,7 +526,8 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 
 		/* this is blocking */
 		activateDieTime (core);
-		rs = r_socket_http_accept (s, timeout);
+
+		rs = r_socket_http_accept (s, 1, timeout);
 
 		origoff = core->offset;
 		origblk = core->block;
