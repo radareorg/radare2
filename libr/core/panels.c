@@ -1252,9 +1252,7 @@ repeat:
 		r_core_visual_define (core, "");
 		break;
 	case 'D':
-		if (checkFunc (core)) {
-			replaceCmd (panels, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY);
-		}
+		replaceCmd (panels, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY);
 		break;
 	case 'J':
 		for (i = 0; i < 10; i++) {
