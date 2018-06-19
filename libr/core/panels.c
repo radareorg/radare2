@@ -452,7 +452,7 @@ static void handleLeftKey(RCore *core) {
 	if (core->print->cur_enabled) {
 		cursorLeft (core);
 	} else {
-		if (panels->curnode == 0) {
+		if (panels->curnode == panels->menu_pos) {
 			if (panels->menu_x) {
 				panels->menu_x--;
 				panels->menu_y = panels->menu_y? 1: 0;
@@ -477,7 +477,7 @@ static void handleRightKey(RCore *core) {
 	if (core->print->cur_enabled) {
 		cursorRight (core);
 	} else {
-		if (panels->curnode == 0) {
+		if (panels->curnode == panels->menu_pos) {
 			if (menus[panels->menu_x + 1]) {
 				panels->menu_x++;
 				panels->menu_y = panels->menu_y ? 1: 0;
@@ -657,6 +657,9 @@ R_API void r_core_panels_refresh(RCore *core) {
 	r_cons_flush ();
 #endif
 	if (panel) {
+		if (panel[panels->curnode].type == PANEL_TYPE_MENU) {
+			setRefreshAll (panels);
+		}
 		panel[menu_pos].x = (menu_y > 0) ? menu_x * 6 : w;
 		panel[menu_pos].y = 1;
 		free (panel[menu_pos].title);
@@ -688,17 +691,7 @@ R_API void r_core_panels_refresh(RCore *core) {
 				panelPrint (core, can, &panel[i], 0);
 			}
 		}
-	}
-	if (menu_y) {
-		panels->curnode = menu_pos;
-	}
-	if (panels->panel) {
-		if (panel[panels->curnode].type == PANEL_TYPE_MENU) {
-			panel[panels->curnode].refresh = true;
-			panelPrint (core, can, &panel[panels->curnode], menu_y);
-		} else {
-			panelPrint (core, can, &panel[panels->curnode], 1);
-		}
+		panelPrint (core, can, &panel[panels->curnode], 1);
 	}
 
 	(void) r_cons_canvas_gotoxy (can, -can->sx, -can->sy);
@@ -1040,6 +1033,7 @@ static bool handleEnterKey(RCore *core) {
 		if (panels->curnode > 0) {
 			zoom (panels);
 		} else {
+			panels->curnode = panels->menu_pos;
 			panels->menu_y = 1;
 		}
 	}
@@ -1326,11 +1320,11 @@ repeat:
 	}
 	break;
 	case 'm':
-		panels->curnode = 0;
 		if (panels->menu_x < 0) {
 			panels->menu_x = 0;
 			r_core_panels_refresh (core);
 		}
+		panels->curnode = panels->menu_pos;
 		panels->menu_y = 1;
 		break;
 	case 'H':
