@@ -655,11 +655,11 @@ int main(int argc, char **argv) {
 		case 'u': bin->filter = 0; break;
 		case 'k': query = optarg; break;
 		case 'K': chksum = optarg; break;
-		case 'c': 
+		case 'c':
 			if (is_active (R_BIN_REQ_CLASSES)) {
 				rad = R_CORE_BIN_CLASSDUMP;
 			} else {
-			  	set_action (R_BIN_REQ_CLASSES); 
+			  	set_action (R_BIN_REQ_CLASSES);
 			}
 			break;
 		case 'f': arch_name = strdup (optarg); break;
