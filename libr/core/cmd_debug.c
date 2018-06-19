@@ -3239,10 +3239,10 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	case 'i':
 		switch (input[2]) {
 		case 0: // "dbi"
-			for (i = 0;i < core->dbg->bp->bps_idx_count; i++) {
+			for (i = 0; i < core->dbg->bp->bps_idx_count; i++) {
 				if ((bpi = core->dbg->bp->bps_idx[i])) {
 					r_cons_printf ("%d 0x%08"PFMT64x" E:%d T:%d\n",
-							i, bpi->addr, bpi->enabled, bpi->trace);
+						i, bpi->addr, bpi->enabled, bpi->trace);
 				}
 			}
 			break;
