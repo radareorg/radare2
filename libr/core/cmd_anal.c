@@ -66,7 +66,7 @@ static const char *help_msg_ab[] = {
 	"Usage:", "ab", "",
 	"ab", " [addr]", "show basic block information at given address",
 	"abb", " [length]", "analyze N bytes and extract basic blocks",
-	"abj", "", "display basic block information in JSON",
+	"abj", " [addr]", "display basic block information in JSON (alias to afbj)",
 	"abx", " [hexpair-bytes]", "analyze N bytes",
 	NULL
 };
@@ -240,7 +240,7 @@ static const char *help_msg_afb[] = {
 	"afb+", " fcn_at bbat bbsz [jump] [fail] ([type] ([diff]))", "add basic block by hand",
 	"afbr", "", "Show addresses of instructions which leave the function",
 	"afbi", "", "print current basic block information",
-	"afbj", "", "show basic blocks information in json",
+	"afbj", " [addr]", "show basic blocks information in json",
 	"afbe", " bbfrom bbto", "add basic-block edge for switch-cases",
 	"afB", " [bits]", "define asm.bits for the given function",
 	NULL
@@ -7012,6 +7012,8 @@ static int cmd_anal(void *data, const char *input) {
 				r_list_purge (list);
 				free (list);
 			}
+		} else if (input[1] == 'j') { // "abj"
+			anal_fcn_list_bb (core, input + 1, false);
 		} else if (input[1] == ' ' || !input[1]) {
 			// find block
 			ut64 addr = core->offset;
