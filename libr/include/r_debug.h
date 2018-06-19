@@ -298,6 +298,9 @@ typedef struct r_debug_t {
 	struct r_debug_plugin_t *h;
 	RList *plugins;
 
+	bool pc_at_bp; /* after a breakpoint, is the pc at the bp? */
+	bool pc_at_bp_set; /* is the pc_at_bp variable set already? */
+
 	RAnal *anal;
 	RList *maps; // <RDebugMap>
 	RList *maps_user; // <RDebugMap>
