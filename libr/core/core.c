@@ -545,11 +545,27 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			free (bptr);
 			break;
 		case 'c': return r_cons_get_size (NULL);
-		case 'r': {
-			int rows;
-			(void)r_cons_get_size (&rows);
-			return rows;
+		case 'r': 
+			if (str[2] == '{') {
+				bptr = strdup (str + 3);
+				ptr = strchr (bptr, '}');
+				if (!ptr) {
+					break;
+				}
+				*ptr = 0;
+				if (r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false)) {
+					RRegItem *r = r_reg_get (core->dbg->reg, bptr, -1);
+					if (r) {
+						return r_reg_get_value (core->dbg->reg, r);
+					}
+				}
+				return 0; // UT64_MAX;
+			} else {
+				int rows;
+				(void)r_cons_get_size (&rows);
+				return rows;
 			}
+			break;
 		case 'e': return r_anal_op_is_eob (&op);
 		case 'j': return op.jump;
 		case 'p': return r_sys_getpid ();
