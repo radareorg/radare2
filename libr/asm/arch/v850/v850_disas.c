@@ -151,12 +151,19 @@ static int decode_imm_reg(const ut16 instr, struct v850_cmd *cmd) {
 }
 
 static int decode_bcond(const ut16 instr, int len, struct v850_cmd *cmd) {
+#if 0
 	ut16 disp = ((instr >> 4) & 0x7) | (instr >> 11);
 	disp <<= 1;
-
 	snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "b%s", conds[instr & 0xF]);
 	snprintf (cmd->operands, V850_INSTR_MAXLEN - 1, "0x%x", disp);
-
+#else
+	ut64 delta = ((((instr >> 4) & 0x7) | ((instr >> 11) << 3)) << 1);
+	if (delta & 0x100) {
+		delta |= 0xFE00;
+	}
+	snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "b%s", conds[instr & 0xF]);
+	snprintf (cmd->operands, V850_INSTR_MAXLEN - 1, "0x%08"PFMT64x, cmd->addr + delta);
+#endif
 	return 2;
 }
 
@@ -227,19 +234,14 @@ static int decode_load_store(const ut8 *instr, int len, struct v850_cmd *cmd) {
 }
 
 static int decode_bit_op(const ut8 *instr, int len, struct v850_cmd *cmd) {
-	ut16 word1, word2;
-	ut8 reg1;
 	if (len < 4) {
 		return -1;
 	}
 
-	word1 = r_read_le16 (instr);
-	word2 = r_read_at_le16 (instr, 2);
-
+	ut16 word1 = r_read_le16 (instr);
+	ut16 word2 = r_read_at_le16 (instr, 2);
 	snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "%s", bit_instrs[word1 >> 14]);
-
-	reg1 = get_reg1 (word1);
-
+	ut8 reg1 = get_reg1 (word1);
 	snprintf (cmd->operands, V850_INSTR_MAXLEN - 1, "%u, 0x%x[r%d]",
 			(word1 >> 11) & 0x7, word2, reg1);
 	return 4;
