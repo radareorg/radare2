@@ -582,8 +582,8 @@ typedef struct r_bin_bind_t {
 typedef struct r_bin_options_t {
 	ut64 offset; // starting physical address to read from the target file
 	ut64 baseaddr; // where the linker maps the binary in memory
+	ut64 loadaddr; // the desired offset where the binary should be loaded
 	ut64 size; // restrict the size of the target fd
-	// ut64 loadaddr; // DEPRECATED ?
 	int xtr_idx; // load Nth binary
 	int rawstr;
 	int iofd;
