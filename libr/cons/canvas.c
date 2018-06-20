@@ -378,7 +378,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 		s = s_part;
 		if (ch == '\n') {
 			c->attr = Color_RESET;
-			stamp_attr (c, c->y*c->w + attr_x, strlen (Color_RESET));
+			stamp_attr (c, c->y*c->w + attr_x, 0);
 			c->y++;
 			s++;
 			if (*s == '\0' || c->y  >= c->h) {
