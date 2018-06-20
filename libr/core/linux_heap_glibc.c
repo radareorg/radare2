@@ -980,7 +980,7 @@ static void GH(print_heap_segment)(RCore *core, GH(RHeap_MallocState) *main_aren
 				PRINT_GA ("[allocated]");
 			}
 		} else {
-			if (cnk->size & 1 == 0) {
+			if (!(cnk->size & 1)) {
 				PRINT_GA ("[free]");
 			} else {
 				PRINT_GA ("[allocated]");
