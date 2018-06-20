@@ -1,4 +1,4 @@
-/* Apache 2.0 - Copyright 2007-2017 - pancake and dso
+/* Apache 2.0 - Copyright 2007-2018 - pancake and dso
    class.c rewrite: Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com>
  */
 #include <stdio.h>
@@ -3687,6 +3687,10 @@ R_API RBinJavaAttrInfo *r_bin_java_inner_classes_attr_new(ut8 *buffer, ut64 sz, 
 	attr->info.inner_classes_attr.classes = r_list_newf (r_bin_java_inner_classes_attr_entry_free);
 	for (i = 0; i < attr->info.inner_classes_attr.number_of_classes; i++) {
 		curpos = buf_offset + offset;
+		if (offset + 8 > sz) {
+			eprintf ("Invalid amount of inner classes\n");
+			break;
+		}
 		icattr = R_NEW0 (RBinJavaClassesAttribute);
 		if (!icattr) {
 			break;
@@ -3708,15 +3712,16 @@ R_API RBinJavaAttrInfo *r_bin_java_inner_classes_attr_new(ut8 *buffer, ut64 sz, 
 			eprintf ("BINCPLIS IS HULL %d\n", icattr->inner_name_idx);
 		}
 		icattr->name = r_bin_java_get_item_name_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, obj);
-		if (icattr->name == NULL) {
+		if (!icattr->name) {
 			obj = r_bin_java_get_item_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, icattr->inner_class_info_idx);
 			if (!obj) {
 				eprintf ("BINCPLIST IS NULL %d\n", icattr->inner_class_info_idx);
 			}
 			icattr->name = r_bin_java_get_item_name_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, obj);
-			if (icattr->name == NULL) {
+			if (!icattr->name) {
 				icattr->name = r_str_dup (NULL, "NULL");
 				eprintf ("r_bin_java_inner_classes_attr: Unable to find the name for %d index.\n", icattr->inner_name_idx);
+				break;
 			}
 		}
 
