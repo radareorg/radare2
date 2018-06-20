@@ -2736,7 +2736,6 @@ static void agraph_print_edges(RAGraph *g) {
 			default:
 				style.symbol = a->is_dummy ? LINE_NOSYM_VERT : style.color;
 
-
 				a_x_inc = R_EDGES_X_INC + 2 * (out_nth + 1);
 				b_x_inc = R_EDGES_X_INC + 2 * (in_nth + 1);
 
@@ -2750,7 +2749,6 @@ static void agraph_print_edges(RAGraph *g) {
 
 				ay = a->y + a->h;
 				by = b->y - 1;
-
 
 				if (!a->is_dummy && itn == neighbours->head && out_nth == 0 && bx > ax) {
 					a_x_inc += 4;
