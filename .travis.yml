@@ -1,47 +1,20 @@
-# travis.yml for testing radare2. Initially written in 2014-2016, by jn__.
+# travis.yml for testing radare2. Initially written in 2014-2016, by jn__.  Updated 2018 by damo22
 
 os:
   - linux
-  - osx
 
 language: c
 dist: trusty
+sudo: required
 
-compiler:
-  - gcc
-  - clang
-
-matrix:
-  exclude:
-      - os: osx
-        compiler: gcc
-
-sudo: false
-
-env:
-  - CXX=g++-4.8
-
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - dc
-      - binutils
-      - cabextract
-      - libcurl4-openssl-dev
-      - libelf-dev
-      - libdw-dev
-      - jq
-      - gcc-4.8
-      - g++-4.8
+services:
+  - docker
 
 cache:
   - ccache
-  - apt
 
-before_script:
-  - rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm install 8
+before_install:
+  - docker pull damo22/r2-travis:latest || docker build -t damo22/r2-travis:latest -f Dockerfile.travis .
 
 script:
   - export PR_NAME=$(echo $TRAVIS_PULL_REQUEST_SLUG | cut -d'/' -f1)
@@ -52,25 +25,7 @@ script:
   - export R2R_BRANCH=$([ -n "${TRAVIS_PULL_REQUEST_BRANCH}" ] && echo "${TRAVIS_PULL_REQUEST_BRANCH}" || echo "${R2R_DEFAULT_BRANCH}")
   - if [ "${R2R_BRANCH}" = master ]; then USER_NAME=radare; fi
   - export R2R_REPO=$(doc/repo PR_REGRESSIONS | sed "s/__USER__/${USER_NAME}/g")
-  - git clone --depth 1 --branch "${R2R_BRANCH}" "${R2R_REPO}" || true # If cloning fails that's not an error: we simply fallback to master.
-  - ls radare2-regressions >/dev/null 2>&1 || git clone --depth 1 --branch "${R2R_DEFAULT_BRANCH}" "${R2R_DEFAULT_REPO}"
-  - ./configure --prefix=`pwd`/install > /dev/null
-  - make -s -j2 > /dev/null
-  - make install > /dev/null
-  - export PKG_CONFIG_PATH=${TRAVIS_BUILD_DIR}/pkgcfg:${PKG_CONFIG_PATH}
-  - export PATH=${TRAVIS_BUILD_DIR}/install/bin:${PATH}
-  - export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/install/lib:${LD_LIBRARY_PATH}
-  #- [ "$TRAVIS_OS_NAME" != "osx" ] && mkdir -p /tmp/kcov && pushd /tmp/kcov
-  #- [ "$TRAVIS_OS_NAME" != "osx" ] && mkdir ${TRAVIS_BUILD_DIR}/kcov
-  #- [ "$TRAVIS_OS_NAME" != "osx" ] && wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz && tar xzf master.tar.gz && mkdir kcov-master/build && cd kcov-master/build && cmake .. && make && make install DESTDIR=../tmp && popd
-  #- [ "$TRAVIS_OS_NAME" != "osx" ] && export KCOV="/tmp/kcov/kcov-master/tmp/usr/local/bin/kcov --coveralls-id=$TRAVIS_JOB_ID ${TRAVIS_BUILD_DIR}/kcov"
-  - export NOOK=1
-  - export NOREPORT=1
-  - cd radare2-regressions
-  - git remote -v
-  - git branch
-  - git rev-parse HEAD
-  - VERBOSE=1 make -k all
+  - docker run -v /home/travis/.ccache:/root/.ccache -v ${TRAVIS_BUILD_DIR}:/build --entrypoint "/bin/bash" damo22/r2-travis:latest -c "cd /build; R2R_BRANCH=${R2R_BRANCH} R2R_REPO=${R2R_REPO} R2R_DEFAULT_BRANCH=${R2R_DEFAULT_BRANCH} R2R_DEFAULT_REPO=${R2R_DEFAULT_REPO} bash travis-script"
 
 notifications:
   irc: "chat.freenode.net#radare"
