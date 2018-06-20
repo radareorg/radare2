@@ -307,7 +307,7 @@ static int expand_line (RConsCanvas *c, int real_len, int utf8_len) {
 			c->b[c->y] = newline;
 			c->bsize[c->y] = newsize;
 		}
-		int size = c->blen[c->y] - c->x - utf8_len;
+		int size = R_MAX (c->blen[c->y] - c->x - utf8_len, 0);
 		char *start = c->b[c->y] + c->x + utf8_len;
 		char *tmp = malloc (size);
 		if (!tmp) {
@@ -316,7 +316,7 @@ static int expand_line (RConsCanvas *c, int real_len, int utf8_len) {
 		memcpy (tmp, start, size);
 		if (padding < 0) {
 			int lap = R_MAX (0, c->b[c->y] - (start + padding));
-			memcpy(start + padding + lap,  tmp + lap, size - lap);
+			memcpy (start + padding + lap,  tmp + lap, size - lap);
 			free (tmp);
 			c->blen[c->y] += padding;
 			return true;
@@ -352,9 +352,9 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 		left = c->blen[c->y] - c->x;
 		slen = piece_len;
 
-		int utf8_piece_len = utf8len_fixed (s_part, piece_len);
 		if (piece_len > left) {
-			if (utf8_piece_len > c->w - attr_x) {
+			int utf8_piece_len = utf8len_fixed (s_part, piece_len);
+			if (utf8_piece_len >= c->w - attr_x) {
 				slen = left;
 			}
 		}
@@ -366,12 +366,6 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 			break;
 		}
 
-/*if (slen < 10) */
-		/*eprintf ("write at (%d, %d)[%d, %d], slen %d, utf8size %d,  left %d, size %d, orig_x %d, c->w %d, piece_len %d, attr_x %d %.5s \n", c->x, c->y, c->sx, c->sy, slen, utf8_piece_len, left, c->bsize[c->y], orig_x, c->w, piece_len, attr_x, s_part);*/
-		/*eprintf ("[%d, ] %d %d  %s\n", c->sx, piece_len, attr_x,s_part);*/
-
-		/*slen = R_MIN (slen, left);*/
-		
 		if (G (c->x - c->sx, c->y - c->sy)) {
 			memcpy (c->b[c->y] + c->x, s_part, slen);
 		}
