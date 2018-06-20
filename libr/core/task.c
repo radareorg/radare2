@@ -101,7 +101,7 @@ R_API RCoreTask *r_core_task_new (RCore *core, const char *cmd, RCoreTaskCallbac
 	task->res = NULL;
 	task->dispatch_cond = r_th_cond_new ();
 	task->dispatch_lock = r_th_lock_new (false);
-	if (!task->dispatch_cond || !task->dispatch_cond) {
+	if (!task->dispatch_cond || !task->dispatch_lock) {
 		goto hell;
 	}
 
@@ -288,10 +288,12 @@ R_API int r_core_task_run_sync(RCore *core, RCoreTask *task) {
 /* begin running stuff synchronously on the main task */
 R_API void r_core_task_sync_begin(RCore *core) {
 	RCoreTask *task = core->main_task;
+	r_th_lock_enter (core->tasks_lock);
 	task->thread = NULL;
 	task->cmd = NULL;
 	task->cmd_log = false;
 	task->state = R_CORE_TASK_STATE_BEFORE_START;
+	r_th_lock_leave (core->tasks_lock);
 	task_wakeup (task);
 }
 
