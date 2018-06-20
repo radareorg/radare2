@@ -1679,7 +1679,7 @@ static const char *getPrefixFor(const char *s) {
 		if (!strcmp (s, "NOTYPE")) {
 			return "loc";
 		}
-		if (!strcmp (s, "OBJECT")) {
+		if (!strcmp (s, "OBJ")) {
 			return "obj";
 		}
 	}
@@ -1879,20 +1879,24 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 			} else {
 				const char *fn, *n;
 				RFlagItem *fi;
-				n = sn.demname ? sn.demname : sn.name;
-				fn = sn.demflag ? sn.demflag : sn.nameflag;
-				char *fnp = (r->bin->prefix) ?
-					r_str_newf ("%s.%s", r->bin->prefix, fn):
-					strdup (fn);
-				fi = r_flag_set (r->flags, fnp, addr, symbol->size);
-				if (fi) {
-					r_flag_item_set_realname (fi, n);
-				} else {
-					if (fn) {
-						eprintf ("[Warning] Can't find flag (%s)\n", fn);
+				if (*sn.name && symbol->paddr) {
+					n = sn.demname ? sn.demname : sn.name;
+					fn = sn.demflag ? sn.demflag : sn.nameflag;
+					char *fnp = (r->bin->prefix) ?
+						r_str_newf ("%s.%s", r->bin->prefix, fn):
+						strdup (fn);
+					fi = r_flag_set (r->flags, fnp, addr, symbol->size);
+					if (fi) {
+						r_flag_item_set_realname (fi, n);
+					} else {
+						if (fn) {
+							eprintf ("[Warning] Can't find flag (%s)\n", fn);
+						}
 					}
+					free (fnp);
+				} else {
+					// we dont want unnamed symbols to be flagged
 				}
-				free (fnp);
 			}
 			if (sn.demname) {
 				r_meta_add (r->anal, R_META_TYPE_COMMENT,
@@ -1952,12 +1956,16 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 						r->bin->prefix, name, symbol->size, addr);
 				}
 			} else {
-				if (symbol->dup_count) {
-					r_cons_printf ("f sym.%s_%d %u 0x%08"PFMT64x"\n",
-						name, symbol->dup_count, symbol->size, addr);
+				if (*name) {
+					if (symbol->dup_count) {
+						r_cons_printf ("f sym.%s_%d %u 0x%08"PFMT64x"\n",
+								name, symbol->dup_count, symbol->size, addr);
+					} else {
+						r_cons_printf ("f sym.%s %u 0x%08"PFMT64x"\n",
+								name, symbol->size, addr);
+					}
 				} else {
-					r_cons_printf ("f sym.%s %u 0x%08"PFMT64x"\n",
-						name, symbol->size, addr);
+					// we dont want unnamed symbol flags
 				}
 			}
 			binfile = r_core_bin_cur (r);
@@ -1986,10 +1994,10 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 			const char *name = r_str_get (sn.demname? sn.demname: symbol->name);
 			// const char *fwd = r_str_get (symbol->forwarder);
 			r_cons_printf ("%03u 0x%08"PFMT64x" 0x%08"PFMT64x" "
-				"%6s %6s %4d %s\n",
+				"%6s %6s %4d%s%s\n",
 				symbol->ordinal,
 				symbol->paddr, addr, bind, type,
-				symbol->size, name);
+				symbol->size, *name? " ": "", name);
 			// r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" ord=%03u "
 			//	"fwd=%s sz=%u bind=%s type=%s name=%s\n",
 			//	addr, symbol->paddr, symbol->ordinal, fwd,
