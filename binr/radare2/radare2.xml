@@ -4,6 +4,9 @@
   <key>com.apple.springboard.debugapplications</key>
   <true/>
 
+  <key>platform-application</key>
+  <true/>
+
   <key>app-identifier</key>
   <true/>
 
