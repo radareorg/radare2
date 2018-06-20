@@ -1329,13 +1329,16 @@ repeat:
 		r_cons_switchbuf (false);
 		panels->columnWidth += 4;
 		panels->isResizing = true;
+		if (panels->columnWidth > 80) {
+			panels->columnWidth = 80;
+		}
 		break;
 	case 'L':
 		r_cons_switchbuf (false);
 		panels->columnWidth -= 4;
 		panels->isResizing = true;
-		if (panels->columnWidth < 0) {
-			panels->columnWidth = 0;
+		if (panels->columnWidth < 10) {
+			panels->columnWidth = 10;
 		}
 		break;
 	case 'g':
