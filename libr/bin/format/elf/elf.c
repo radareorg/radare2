@@ -2652,9 +2652,9 @@ static void fill_symbol_bind_and_type (struct r_bin_elf_symbol_t *ret, Elf_(Sym)
 	}
 	switch (ELF_ST_TYPE (sym->st_info)) {
 	case STT_NOTYPE:  s_type ("NOTYPE"); break;
-	case STT_OBJECT:  s_type ("OBJECT"); break;
+	case STT_OBJECT:  s_type ("OBJ"); break;
 	case STT_FUNC:    s_type ("FUNC"); break;
-	case STT_SECTION: s_type ("SECTION"); break;
+	case STT_SECTION: s_type ("SECT"); break;
 	case STT_FILE:    s_type ("FILE"); break;
 	case STT_COMMON:  s_type ("COMMON"); break;
 	case STT_TLS:     s_type ("TLS"); break;
@@ -2663,7 +2663,7 @@ static void fill_symbol_bind_and_type (struct r_bin_elf_symbol_t *ret, Elf_(Sym)
 	case STT_HIOS:    s_type ("HIOS"); break;
 	case STT_LOPROC:  s_type ("LOPROC"); break;
 	case STT_HIPROC:  s_type ("HIPROC"); break;
-	default:          s_type ("UNKNOWN");
+	default:          s_type ("UNK");
 	}
 }
 
