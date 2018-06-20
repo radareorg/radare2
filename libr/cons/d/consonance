@@ -36,6 +36,7 @@ ec trap rgb:d41
 ec swi rgb:f2a
 ec creg rgb:789
 ec flag rgb:4cf
+ec linehl rgb:004
 
 ec graph.box rgb:789
 ec graph.box2 rgb:d41

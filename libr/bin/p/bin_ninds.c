@@ -1,4 +1,4 @@
-/* radare - LGPL - 2015-2017 - a0rtega */
+/* radare - LGPL - 2015-2018 - a0rtega */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -65,21 +65,21 @@ static RList *sections(RBinFile *bf) {
 		return NULL;
 	}
 
-	strncpy (ptr9->name, "arm9", 5);
+	strcpy (ptr9->name, "arm9");
 	ptr9->size = loaded_header.arm9_size;
 	ptr9->vsize = loaded_header.arm9_size;
 	ptr9->paddr = loaded_header.arm9_rom_offset;
 	ptr9->vaddr = loaded_header.arm9_ram_address;
-	ptr9->srwx = r_str_rwx ("mrwx");
+	ptr9->srwx = r_str_rwx ("rwx");
 	ptr9->add = true;
 	r_list_append (ret, ptr9);
 
-	strncpy (ptr7->name, "arm7", 5);
+	strcpy (ptr7->name, "arm7");
 	ptr7->size = loaded_header.arm7_size;
 	ptr7->vsize = loaded_header.arm7_size;
 	ptr7->paddr = loaded_header.arm7_rom_offset;
 	ptr7->vaddr = loaded_header.arm7_ram_address;
-	ptr7->srwx = r_str_rwx ("mrwx");
+	ptr7->srwx = r_str_rwx ("rwx");
 	ptr7->add = true;
 	r_list_append (ret, ptr7);
 
@@ -119,7 +119,6 @@ static RList *entries(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	char filepath[1024];
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
@@ -129,19 +128,15 @@ static RBinInfo *info(RBinFile *bf) {
 		free (ret);
 		return NULL;
 	}
-
-	strncpy (filepath, (char *) loaded_header.title, 0xC);
-	strncat (filepath, " - ", 3);
-	strncat (filepath, (char *) loaded_header.gamecode, 0x4);
-
-	ret->file = strdup (filepath);
+	char *filepath = r_str_newf ("%.12s - %.4s",
+		loaded_header.title, loaded_header.gamecode);
+	ret->file = filepath;
 	ret->type = strdup ("ROM");
 	ret->machine = strdup ("Nintendo DS");
 	ret->os = strdup ("nds");
 	ret->arch = strdup ("arm");
 	ret->has_va = true;
 	ret->bits = 32;
-
 	return ret;
 }
 

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2017 - pancake, h4ng3r */
+/* radare - LGPL - Copyright 2011-2018 - pancake, h4ng3r */
 
 #include <r_cons.h>
 #include <r_types.h>
@@ -721,6 +721,10 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sd
 	return res;
 }
 
+static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
+	return r_bin_dex_new_buf (buf);
+}
+
 static bool load(RBinFile *bf) {
 	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
 	ut64 sz = bf ? r_buf_size (bf->buf): 0;
@@ -1089,10 +1093,10 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 	int i, left;
 	ut64 omi = 0;
 	bool catchAll;
-	ut16 regsz, ins_size, outs_size, tries_size;
-	ut16 handler_off, start_addr, insn_count;
-	ut32 debug_info_off, insns_size;
-	const ut8 *encoded_method_addr;
+	ut16 regsz = 0, ins_size = 0, outs_size = 0, tries_size = 0;
+	ut16 handler_off, start_addr, insn_count = 0;
+	ut32 debug_info_off = 0, insns_size = 0;
+	const ut8 *encoded_method_addr = NULL;
 
 	if (DM > 4096) {
 		eprintf ("This DEX is probably corrupted. Chopping DM from %d to 4KB\n", (int)DM);
@@ -1128,7 +1132,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 		// TODO: check size
 		// ut64 prolog_size = 2 + 2 + 2 + 2 + 4 + 4;
 		ut64 v2, handler_type, handler_addr;
-		int t;
+		int t = 0;
 		if (MC > 0) {
 			// TODO: parse debug info
 			// XXX why binfile->buf->base???
@@ -1328,7 +1332,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 				if (!mdb) {
 					mdb = sdb_new0 ();
 				}
-				sdb_num_set (mdb, sdb_fmt (0, "method.%d", MI), sym->paddr, 0);
+				sdb_num_set (mdb, sdb_fmt ("method.%d", MI), sym->paddr, 0);
 				// -----------------
 				// WORK IN PROGRESS
 				// -----------------
@@ -1338,7 +1342,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 						if (!cdb) {
 							cdb = sdb_new0 ();
 						}
-						sdb_num_set (cdb, sdb_fmt (0, "%d", c->class_id), sym->paddr, 0);
+						sdb_num_set (cdb, sdb_fmt ("%d", c->class_id), sym->paddr, 0);
 					}
 				}
 #endif
@@ -1708,7 +1712,7 @@ static int dex_loadcode(RBinFile *bf, RBinDexObj *bin) {
 				sym->paddr = sym->vaddr = bin->b->base + bin->header.method_offset + (sizeof (struct dex_method_t) * i) ;
 				sym->ordinal = sym_count++;
 				r_list_append (bin->methods_list, sym);
-				sdb_num_set (mdb, sdb_fmt (0, "method.%d", i), sym->paddr, 0);
+				sdb_num_set (mdb, sdb_fmt ("method.%d", i), sym->paddr, 0);
 
 			}
 			free (signature);
@@ -1828,7 +1832,7 @@ static RList *entries(RBinFile *bf) {
 
 static ut64 offset_of_method_idx(RBinFile *bf, struct r_bin_dex_obj_t *dex, int idx) {
 	// ut64 off = dex->header.method_offset + idx;
-	return sdb_num_get (mdb, sdb_fmt (0, "method.%d", idx), 0);
+	return sdb_num_get (mdb, sdb_fmt ("method.%d", idx), 0);
 }
 
 // TODO: change all return type for all getoffset
@@ -1902,7 +1906,7 @@ static RList *sections(RBinFile *bf) {
 		strcpy (ptr->name, "header");
 		ptr->size = ptr->vsize = sizeof (struct dex_header_t);
 		ptr->paddr= ptr->vaddr = 0;
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;
+		ptr->srwx = R_BIN_SCN_READABLE;
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
@@ -1912,7 +1916,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->paddr= ptr->vaddr = sizeof (struct dex_header_t);
 		ptr->size = bin->code_from - ptr->vaddr; // fix size
 		ptr->vsize = ptr->size;
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;
+		ptr->srwx = R_BIN_SCN_READABLE;
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
@@ -1921,7 +1925,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->vaddr = ptr->paddr = bin->code_from; //ptr->vaddr = fsym;
 		ptr->size = bin->code_to - ptr->paddr;
 		ptr->vsize = ptr->size;
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
+		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE;
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
@@ -1937,7 +1941,7 @@ static RList *sections(RBinFile *bf) {
 			// hacky workaround
 			//ptr->size = ptr->vsize = 1024;
 		}
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; //|2;
+		ptr->srwx = R_BIN_SCN_READABLE; //|2;
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
@@ -2011,6 +2015,7 @@ RBinPlugin r_bin_plugin_dex = {
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = load_bytes,
+	.load_buffer = &load_buffer,
 	.check_bytes = check_bytes,
 	.baddr = baddr,
 	.entries = entries,

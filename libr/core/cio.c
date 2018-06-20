@@ -266,18 +266,17 @@ static void choose_bits_anal_hints(RCore *core, ut64 addr, int *bits) {
 	}
 }
 
-
 R_API void r_core_seek_archbits(RCore *core, ut64 addr) {
 	int bits = 0;
 	const char *arch = r_io_section_get_archbits (core->io, addr, &bits);
-	if (!bits) {
+	if (!bits && !core->fixedbits) {
 		//if we found bits related with anal hints pick it up
 		choose_bits_anal_hints (core, addr, &bits);
 	}
-	if (bits) {
+	if (bits && !core->fixedbits) {
 		r_config_set_i (core->config, "asm.bits", bits);
 	}
-	if (arch) {
+	if (arch && !core->fixedarch) {
 		r_config_set (core->config, "asm.arch", arch);
 	}
 }
@@ -322,7 +321,7 @@ R_API bool r_core_write_at(RCore *core, ut64 addr, const ut8 *buf, int size) {
 		return false;
 	}
 	ret = r_io_write_at (core->io, addr, buf, size);
-	if (addr >= core->offset && addr <= core->offset + core->blocksize) {
+	if (addr >= core->offset && addr <= core->offset + core->blocksize - 1) {
 		r_core_block_read (core);
 	}
 	return ret;
@@ -413,13 +412,6 @@ R_API int r_core_block_read(RCore *core) {
 		return r_io_read_at (core->io, core->offset, core->block, core->blocksize);
 	}
 	return -1;
-}
-
-R_API bool r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size) {
-	if (core) {
-		return r_io_read_at (core->io, addr, buf, size);
-	}
-	return false;
 }
 
 R_API int r_core_is_valid_offset (RCore *core, ut64 offset) {

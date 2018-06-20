@@ -1,4 +1,4 @@
-// by jeremie miller - 2010-2015
+// by jeremie miller - 2010-2018
 // public domain, contributions/improvements welcome via github
 
 // opportunity to further optimize would be having different jump tables for higher depths
@@ -7,7 +7,7 @@
 
 #ifdef _MSC_VER
 #pragma message ("TODO: json not implemented for this platform")
-int js0n(const ut8 *js, RangstrType len, RangstrType *out) {
+int sdb_js0n(const ut8 *js, RangstrType len, RangstrType *out) {
 	return 1;
 }
 #else
@@ -23,7 +23,7 @@ int js0n(const ut8 *js, RangstrType len, RangstrType *out) {
 #define PUSH(i) if(depth == 1) prev = *out++ = ((cur+i) - js)
 #define CAP(i) if(depth == 1) prev = *out++ = ((cur+i) - (js + prev) + 1)
 
-int js0n(const ut8 *js, RangstrType len, RangstrType *out) {
+int sdb_js0n(const ut8 *js, RangstrType len, RangstrType *out) {
 	ut32 prev = 0;
 	const ut8 *cur, *end;
 	int depth = 0, utf8_remain = 0;

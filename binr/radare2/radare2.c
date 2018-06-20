@@ -8,15 +8,15 @@
 #endif
 #endif
 #include <sdb.h>
-#include <r_core.h>
+#include <r_th.h>
 #include <r_io.h>
 #include <stdio.h>
 #include <getopt.c>
+#include <r_core.h>
 #include "../blob/version.c"
 
 
 #if USE_THREADS
-#include <r_th.h>
 static char *rabin_cmd = NULL;
 #endif
 static bool threaded = false;
@@ -36,6 +36,32 @@ static char* get_file_in_cur_dir(const char *filepath) {
 		return r_file_abspath (filepath);
 	}
 	return NULL;
+}
+
+static RThread *thread = NULL;
+
+static int loading_thread(RThread *th) {
+	const char *tok = "\\|/-";
+	int i = 0;
+	if (th) {
+		while (!th->breaked) {
+			eprintf ("%c] Loading..%c     \r[", tok[i%4], "."[i%2]);
+			r_sys_usleep (100000);
+			i++;
+		}
+	}
+	return 0;
+}
+
+static void loading_start() {
+	thread = r_th_new (loading_thread, NULL, 1);
+	r_th_start (thread, true);
+}
+
+static void loading_stop() {
+	r_th_kill (thread, true);
+	r_th_free (thread);
+	thread = NULL;
 }
 
 static int verify_version(int show) {
@@ -97,7 +123,7 @@ static int verify_version(int show) {
 static int main_help(int line) {
 	if (line < 2) {
 		printf ("Usage: r2 [-ACdfLMnNqStuvwzX] [-P patch] [-p prj] [-a arch] [-b bits] [-i file]\n"
-			"          [-s addr] [-B baddr] [-M maddr] [-c cmd] [-e k=v] file|pid|-|--|=\n");
+			"          [-s addr] [-B baddr] [-m maddr] [-c cmd] [-e k=v] file|pid|-|--|=\n");
 	}
 	if (line != 1) {
 		printf (
@@ -148,54 +174,59 @@ static int main_help(int line) {
 		" -z, -zz      do not load strings or load them even in raw\n");
 	}
 	if (line == 2) {
-		char *homedir = r_str_home (R2_HOMEDIR);
+		char *datahome = r_str_home (R2_HOME_DATADIR);
+		const char *dirPrefix = r_sys_prefix (NULL);
 		printf (
 		"Scripts:\n"
-		" system   "R2_PREFIX"/share/radare2/radare2rc\n"
-		" user     ~/.radare2rc ${RHOMEDIR}/radare2/radare2rc (and radare2rc.d/)\n"
-		" file     ${filename}.r2\n"
+		" system       ${R2_PREFIX}/share/radare2/radare2rc\n"
+		" user         ~/.radare2rc " R_JOIN_2_PATHS ("~", R2_HOME_RC) " (and " R_JOIN_3_PATHS ("~", R2_HOME_RC_DIR,"") ")\n"
+		" file         ${filename}.r2\n"
 		"Plugins:\n"
-		" binrc    ~/.config/radare2/rc.d/bin-<format>/ (elf, elf64, mach0, ..)\n"
-		" plugins  "R2_PREFIX"/lib/radare2/last\n"
-		" USER_PLUGINS ~/.config/radare2/plugins\n"
-		" LIBR_PLUGINS "R2_PREFIX"/lib/radare2/"R2_VERSION"\n"
-		" USER_ZIGNS   ~/.config/radare2/zigns\n"
+		" binrc        " R_JOIN_4_PATHS ("~", R2_HOME_BINRC, "bin-<format>",  "") " (elf, elf64, mach0, ..)\n"
+		" USER_PLUGINS " R_JOIN_2_PATHS ("~", R2_HOME_PLUGINS) "\n"
+		" LIBR_PLUGINS " R_JOIN_2_PATHS ("%s", R2_PLUGINS) "\n"
+		" USER_ZIGNS   " R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS) "\n"
 		"Environment:\n"
-		" RHOMEDIR     %s\n" // TODO: rename to RHOME R2HOME?
+		" RDATAHOME    %s\n" // TODO: rename to RHOME R2HOME?
 		" RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
-		" MAGICPATH    "R_MAGIC_PATH"\n"
+		" MAGICPATH    "R2_SDB_MAGIC"\n"
 		" R_DEBUG      if defined, show error messages and crash signal\n"
 		" VAPIDIR      path to extra vapi directory\n"
 		" R2_NOPLUGINS do not load r2 shared plugins\n"
 		"Paths:\n"
-		" PREFIX       "R2_PREFIX"\n"
-		" INCDIR       "R2_INCDIR"\n"
-		" LIBDIR       "R2_LIBDIR"\n"
-		" LIBEXT       "R_LIB_EXT"\n"
-		, homedir);
-		free (homedir);
+		" R2_PREFIX    "R2_PREFIX"\n"
+		" R2_INCDIR    "R2_INCDIR"\n"
+		" R2_LIBDIR    "R2_LIBDIR"\n"
+		" R2_LIBEXT    "R_LIB_EXT"\n"
+		, dirPrefix, datahome);
+		free (datahome);
 	}
 	return 0;
 }
 
 static int main_print_var(const char *var_name) {
 	int i = 0;
-	char *homedir = r_str_home (R2_HOMEDIR);
-	char *homeplugs = r_str_newf ("%s" R_SYS_DIR "plugins", homedir);
-	char *homezigns = r_str_newf ("%s" R_SYS_DIR "zigns", homedir);
+	char *confighome = r_str_home (R2_HOME_CONFIGDIR);
+	char *datahome = r_str_home (R2_HOME_DATADIR);
+	char *cachehome = r_str_home (R2_HOME_CACHEDIR);
+	char *homeplugins = r_str_home (R2_HOME_PLUGINS);
+	char *homezigns = r_str_home (R2_HOME_ZIGNS);
+	char *plugins = r_str_r2_prefix (R2_PLUGINS);
 	struct radare2_var_t {
 		const char *name;
 		const char *value;
 	} r2_vars[] = {
 		{ "R2_PREFIX", R2_PREFIX },
-		{ "MAGICPATH", R_MAGIC_PATH },
+		{ "MAGICPATH", R2_SDB_MAGIC },
 		{ "PREFIX", R2_PREFIX },
 		{ "INCDIR", R2_INCDIR },
 		{ "LIBDIR", R2_LIBDIR },
 		{ "LIBEXT", R_LIB_EXT },
-		{ "RHOMEDIR", homedir },
-		{ "LIBR_PLUGINS", R2_PREFIX"/lib/radare2/"R2_VERSION },
-		{ "USER_PLUGINS", homeplugs },
+		{ "RCONFIGHOME", confighome },
+		{ "RDATAHOME", datahome },
+		{ "RCACHEHOME", cachehome },
+		{ "LIBR_PLUGINS", plugins },
+		{ "USER_PLUGINS", homeplugins },
 		{ "USER_ZIGNS", homezigns },
 		{ NULL, NULL }
 	};
@@ -213,9 +244,12 @@ static int main_print_var(const char *var_name) {
 			i++;
 		}
 	}
-	free (homedir);
-	free (homeplugs);
+	free (confighome);
+	free (datahome);
+	free (cachehome);
+	free (homeplugins);
 	free (homezigns);
+	free (plugins);
 	return 0;
 }
 
@@ -271,7 +305,7 @@ static void radare2_rc(RCore *r) {
 		r_core_cmd_file (r, homerc);
 	}
 	free (homerc);
-	homerc = r_str_home (".config/radare2/radare2rc");
+	homerc = r_str_home (R2_HOME_RC);
 	if (homerc && r_file_is_regular (homerc)) {
 		if (has_debug) {
 			eprintf ("USER CONFIG loaded from %s\n", homerc);
@@ -279,7 +313,7 @@ static void radare2_rc(RCore *r) {
 		r_core_cmd_file (r, homerc);
 	}
 	free (homerc);
-	homerc = r_str_home (".config/radare2/radare2rc.d");
+	homerc = r_str_home (R2_HOME_RC_DIR);
 	if (homerc) {
 		if (r_file_is_directory (homerc)) {
 			char *file;
@@ -325,7 +359,8 @@ static bool run_commands(RList *cmds, RList *files, bool quiet) {
 	}
 	/* -c */
 	r_list_foreach (cmds, iter, cmdn) {
-		r_core_cmd0 (&r, cmdn);
+		//r_core_cmd0 (&r, cmdn);
+		r_core_cmd (&r, cmdn, false);
 		r_cons_flush ();
 	}
 	if (quiet) {
@@ -445,7 +480,6 @@ int main(int argc, char **argv, char **envp) {
 			r_list_free (prefiles); \
 		}
 
-	int va = 1; // set va = 0 to load physical offsets from rbin
 	bool noStderr = false;
 
 	r_sys_set_environ (envp);
@@ -459,6 +493,7 @@ int main(int argc, char **argv, char **envp) {
 		return main_help (1);
 	}
 	r_core_init (&r);
+	r_core_task_sync_begin (&r);
 	if (argc == 2 && !strcmp (argv[1], "-p")) {
 		r_core_project_list (&r, 0);
 		r_cons_flush ();
@@ -496,11 +531,10 @@ int main(int argc, char **argv, char **envp) {
 			break;
 		case '0':
 			zerosep = true;
-			//r_config_set (r.config, "scr.color", "false");
 			/* implicit -q */
 			r_config_set (r.config, "scr.interactive", "false");
 			r_config_set (r.config, "scr.prompt", "false");
-			r_config_set (r.config, "scr.color", "false");
+			r_config_set_i (r.config, "scr.color", COLOR_MODE_DISABLED);
 			quiet = true;
 			break;
 		case 'u':
@@ -515,10 +549,11 @@ int main(int argc, char **argv, char **envp) {
 		case 'A':
 			do_analysis += do_analysis ? 1: 2;
 			break;
-		case 'b': asmbits = optarg; break;
+		case 'b':
+			asmbits = optarg;
+			break;
 		case 'B':
 			baddr = r_num_math (r.num, optarg);
-			va = 2;
 			break;
 		case 'X':
 			r_config_set (r.config, "bin.usextr", "false");
@@ -666,11 +701,7 @@ int main(int argc, char **argv, char **envp) {
 			eprintf ("Failed to close stderr");
 			return 1;
 		}
-#if __WINDOWS__ && !__CYGWIN__
-		const char nul[] = "nul";
-#else
-		const char nul[] = "/dev/null";
-#endif
+		const char nul[] = R_SYS_DEVNULL;
 		int new_stderr = open (nul, O_RDWR);
 		if (-1 == new_stderr) {
 			eprintf ("Failed to open %s", nul);
@@ -870,6 +901,9 @@ int main(int argc, char **argv, char **envp) {
 			return 1;
 		}
 	} else if (strcmp (argv[optind - 1], "--") && !(r_config_get (r.config, "prj.name") && r_config_get (r.config, "prj.name")[0]) ) {
+		if (threaded) {
+			loading_start ();
+		}
 		if (debug) {
 			if (asmbits) {
 				r_config_set (r.config, "asm.bits", asmbits);
@@ -1061,21 +1095,22 @@ int main(int argc, char **argv, char **envp) {
 						eprintf ("Cannot find project file\n");
 					}
 				} else {
-					// necessary for GDB, otherwise io only works with io.va=false
 					if (fh) {
-						// avoid connecting twice to gdb if first try fails
-						RCoreFile *f = r_core_file_open (&r, pfile, perms, mapaddr);
-						if (f) {
-							fh = f;
-						}
-						if (fh) {
-							iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
-							if (iod) {
-								perms = iod->flags;
-								r_io_map_new (r.io, iod->fd, perms, 0LL, 0LL, r_io_desc_size (iod), true);
-							}
+						iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
+						if (iod) {
+							perms = iod->flags;
+							r_io_map_new (r.io, iod->fd, perms, 0LL, 0LL, r_io_desc_size (iod), true);
 						}
 					}
+				}
+			}
+			if (mapaddr) {
+				eprintf ("WARNING: using oba to load the syminfo from different mapaddress.\n");
+				eprintf ("TODO: Must use the API instead of running commands to speedup loading times.\n");
+				if (r_config_get_i (r.config, "file.info")) {
+					// load symbols when using r2 -m 0x1000 /bin/ls
+					r_core_cmdf (&r, "oba 0x%"PFMT64x, mapaddr);
+					r_core_cmd0 (&r, ".ies*");
 				}
 			}
 		} else {
@@ -1091,7 +1126,6 @@ int main(int argc, char **argv, char **envp) {
 			baddr = r_debug_get_baddr (r.dbg, pfile);
 			if (baddr != UT64_MAX && baddr != 0) {
 				eprintf ("bin.baddr 0x%08" PFMT64x "\n", baddr);
-				va = 2;
 			}
 			if (run_anal > 0) {
 				if (baddr && baddr != UT64_MAX) {
@@ -1205,10 +1239,10 @@ int main(int argc, char **argv, char **envp) {
 			}
 			nsha1 = r_config_get (r.config, "file.sha1");
 			npath = r_config_get (r.config, "file.path");
-			if (!quiet && sha1 && *sha1 && strcmp (sha1, nsha1)) {
+			if (!quiet && sha1 && *sha1 && nsha1 && strcmp (sha1, nsha1)) {
 				eprintf ("WARNING: file.sha1 change: %s => %s\n", sha1, nsha1);
 			}
-			if (!quiet && path && *path && strcmp (path, npath)) {
+			if (!quiet && path && *path && npath && strcmp (path, npath)) {
 				eprintf ("WARNING: file.path change: %s => %s\n", path, npath);
 			}
 			free (sha1);
@@ -1264,7 +1298,7 @@ int main(int argc, char **argv, char **envp) {
 #if UNCOLORIZE_NONTTY
 #if __UNIX__
 	if (!r_cons_isatty ()) {
-		r_config_set_i (r.config, "scr.color", 0);
+		r_config_set_i (r.config, "scr.color", COLOR_MODE_DISABLED);
 	}
 #endif
 #endif
@@ -1322,6 +1356,7 @@ int main(int argc, char **argv, char **envp) {
 				r_core_cmd0 (&r, "aeip");
 			}
 		}
+		loading_stop ();
 		for (;;) {
 #if USE_THREADS
 			do {
@@ -1360,13 +1395,13 @@ int main(int argc, char **argv, char **envp) {
 				if (debug) {
 					if (no_question_debug) {
 						if (r_config_get_i (r.config, "dbg.exitkills") && y_kill_debug){
-							r_debug_kill (r.dbg, 0, false, 9); // KILL
+							r_debug_kill (r.dbg, r.dbg->pid, r.dbg->tid, 9); // KILL
 						}
 					} else {
 						if (r_cons_yesno ('y', "Do you want to quit? (Y/n)")) {
 							if (r_config_get_i (r.config, "dbg.exitkills") &&
 									r_cons_yesno ('y', "Do you want to kill the process? (Y/n)")) {
-								r_debug_kill (r.dbg, 0, false, 9); // KILL
+								r_debug_kill (r.dbg, r.dbg->pid, r.dbg->tid, 9); // KILL
 							} else {
 								r_debug_detach (r.dbg, r.dbg->pid);
 							}
@@ -1398,7 +1433,7 @@ int main(int argc, char **argv, char **envp) {
 	}
 
 	if (mustSaveHistory(r.config)) {
-		r_line_hist_save (R2_HOMEDIR"/history");
+		r_line_hist_save (R2_HOME_HISTORY);
 	}
 	// TODO: kill thread
 
@@ -1409,9 +1444,12 @@ beach:
 		exit (ret);
 		return ret;
 	}
+
+	r_core_task_sync_end (&r);
+
 	// not really needed, cause r_core_fini will close the file
 	// and this fh may be come stale during the command
-	// exectution.
+	// execution.
 	//r_core_file_close (&r, fh);
 	r_core_fini (&r);
 	r_cons_set_raw (0);

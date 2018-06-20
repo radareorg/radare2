@@ -46,7 +46,11 @@ static void pair_bool(const char *a, bool t, int mode, bool last) {
 }
 
 static void pair_int(const char *a, int n, int mode, bool last) {
-	pair (a, sdb_fmt (0, "%d", n), mode, last);
+	pair (a, sdb_fmt ("%d", n), mode, last);
+}
+
+static void pair_ut64(const char *a, ut64 n, int mode, bool last) {
+	pair (a, sdb_fmt ("%"PFMT64d, n), mode, last);
 }
 
 static void pair_str(const char *a, const char *b, int mode, int last) {
@@ -147,173 +151,6 @@ R_API RBinFile * r_core_bin_cur(RCore *core) {
 	return binfile;
 }
 
-R_API bool r_core_bin_strpurge(const char *str) {
-	int i;
-	ut8 bo[0x100];
-	int up = 0;
-	int lo = 0;
-	int ot = 0;
-	int di = 0;
-	int ln = 0;
-	int sp = 0;
-	int nm = 0;
-	for (i = 0; i < 0x100; i++) {
-		bo[i] = 0;
-	}
-	for (i = 0; str[i]; i++) {
-		if (IS_DIGIT(str[i])) {
-			nm++;
-		} else if (str[i]>='a' && str[i]<='z') {
-			lo++;
-		} else if (str[i]>='A' && str[i]<='Z') {
-			up++;
-		} else {
-			ot++;
-		}
-		if (str[i]=='\\') {
-			ot++;
-		}
-		if (str[i]==' ') {
-			sp++;
-		}
-		bo[(ut8)str[i]] = 1;
-		ln++;
-	}
-	for (i = 0; i<0x100; i++) {
-		if (bo[i]) {
-			di++;
-		}
-	}
-	if (ln > 2 && str[0] != '_') {
-		if (ln < 10) {
-			return true;
-		}
-		if (ot >= (nm + up + lo)) {
-			return true;
-		}
-		if (lo < 3) {
-			return true;
-		}
-	}
-	return false;
-}
-
-static bool string_filter(RCore *core, const char *str) {
-	int i;
-	/* pointer/rawdata detection */
-	if (core->bin->strpurge && r_core_bin_strpurge (str)) {
-		return false;
-	}
-
-	switch (core->bin->strfilter) {
-	case 'U': // only uppercase strings
-		for (i = 0; str[i]; i++) {
-			char ch = str[i];
-			if (ch == ' ') {
-				continue;
-			}
-			if (ch < '@'|| ch > 'Z') {
-				return false;
-			}
-			if (ch < 0 || !IS_PRINTABLE (ch)) {
-				return false;
-			}
-		}
-		if (str[0] && str[1]) {
-			for (i = 2; i<6 && str[i]; i++) {
-				if (str[i] == str[0]) {
-					return false;
-				}
-				if (str[i] == str[1]) {
-					return false;
-				}
-			}
-		}
-		if (str[0] == str[2]) {
-			return false; // rm false positives
-		}
-		break;
-	case 'a': // only alphanumeric - plain ascii
-		for (i = 0; str[i]; i++) {
-			char ch = str[i];
-			if (ch < 1 || !IS_PRINTABLE (ch)) {
-				return false;
-			}
-		}
-		break;
-	case 'e': // emails
-		if (str && *str) {
-			if (!strstr (str + 1, "@")) {
-				return false;
-			}
-			if (!strstr (str + 1, ".")) {
-				return false;
-			}
-		} else {
-			return false;
-		}
-		break;
-	case 'f': // format-string
-		if (str && *str) {
-			if (!strstr (str + 1, "%")) {
-				return false;
-			}
-		} else {
-			return false;
-		}
-		break;
-	case 'u': // URLs
-		if (!strstr (str, "://")) {
-			return false;
-		}
-		break;
-        case 'i': //IPV4
-		{
-			int segment = 0;
-			int segmentsum = 0;
-			bool prevd = false;
-			for (i = 0; str[i]; i++) {
-				char ch = str[i];
-				if (IS_DIGIT (ch)) {
-					segmentsum = segmentsum*10 + (ch - '0');
-					if (segment == 3) {
-						return true;
-					}
-					prevd = true;
-				} else if (ch == '.') {
-					if (prevd == true && segmentsum < 256){
-						segment++;
-						segmentsum = 0;
-					} else {
-						segmentsum = 0;
-						segment = 0;
-					}
-					prevd = false;
-				} else {
-					segmentsum = 0;
-					prevd = false;
-					segment = 0;
-				}
-			}
-			return false;
-		}
-	case 'p': // path
-		if (str[0] != '/') {
-			return false;
-		}
-		break;
-	case '8': // utf8
-		for (i = 0; str[i]; i++) {
-			char ch = str[i];
-			if (ch < 0) {
-				return true;
-			}
-		}
-		return false;
-	}
-	return true;
-}
-
 static void _print_strings(RCore *r, RList *list, int mode, int va) {
 	bool b64str = r_config_get_i (r->config, "bin.b64str");
 	int minstr = r_config_get_i (r->config, "bin.minstr");
@@ -321,6 +158,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 	RBin *bin = r->bin;
 	RBinObject *obj = r_bin_cur_object (bin);
 	RListIter *iter;
+	RListIter *last_processed = NULL;
 	RBinString *string;
 	RBinSection *section;
 	char *q;
@@ -341,12 +179,12 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 	r_list_foreach (list, iter, string) {
 		const char *section_name, *type_string;
 		ut64 paddr, vaddr, addr;
-		if (!string_filter (r, string->string)) {
-			continue;
-		}
 		paddr = string->paddr;
 		vaddr = r_bin_get_vaddr (bin, paddr, string->vaddr);
 		addr = va ? vaddr : paddr;
+		if (!r_bin_string_filter (bin, string->string, addr)) {
+			continue;
+		}
 		if (string->length < minstr) {
 			continue;
 		}
@@ -392,11 +230,11 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 		} else if (IS_MODE_JSON (mode)) {
 			int *block_list;
 			q = r_base64_encode_dyn (string->string, -1);
-			r_cons_printf ("%s{\"vaddr\":%"PFMT64d
-				",\"paddr\":%"PFMT64d",\"ordinal\":%d"
+			r_cons_printf ("%s{\"vaddr\":%"PFMT64u
+				",\"paddr\":%"PFMT64u",\"ordinal\":%d"
 				",\"size\":%d,\"length\":%d,\"section\":\"%s\","
 				"\"type\":\"%s\",\"string\":\"%s\"",
-				iter->p ? ",": "",
+				last_processed ? ",": "",
 				vaddr, paddr, string->ordinal, string->size,
 				string->length, section_name, type_string, q);
 			switch (string->type) {
@@ -512,6 +350,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			}
 			r_cons_printf ("\n");
 		}
+		last_processed = iter;
 	}
 	R_FREE (b64.string);
 	if (IS_MODE_JSON (mode)) {
@@ -524,13 +363,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 
 static bool bin_raw_strings(RCore *r, int mode, int va) {
 	RBinFile *bf = r_bin_cur (r->bin);
-	if (!bf && r->io && r->io->desc && r->io->desc->uri) {
-		const char *file = r->io->desc->uri;
-		r_sys_cmdf ("rabin2 -qzzz '%s'", file);
-		// eprintf ("Likely you used -nn \n");
-		// eprintf ("try: .!rabin2 -B <baddr> -zzr filename\n");
-		return false;
-	}
+	bool new_bf = false;
 	if (bf && strstr (bf->file, "malloc://")) {
 		//sync bf->buf to search string on it
 		r_io_read_at (r->io, 0, bf->buf->buf, bf->size);
@@ -539,8 +372,52 @@ static bool bin_raw_strings(RCore *r, int mode, int va) {
 		eprintf ("Core file not open\n");
 		return false;
 	}
+	if (!bf) {
+		bf = R_NEW0 (RBinFile);
+		if (!bf) {
+			return false;
+		}
+		RIODesc *desc = r_io_desc_get (r->io, r->file->fd);
+		if (!desc) {
+			free (bf);
+			return false;
+		}
+		bf->file = strdup (desc->name);
+		bf->size = r_io_desc_size (desc);
+		if (bf->size == UT64_MAX) {
+			free (bf);
+			return false;
+		}
+		bf->buf = r_buf_new_with_io (&r->bin->iob, r->file->fd);
+#if 0
+		bf->buf = r_buf_new ();
+		if (!bf->buf) {
+			free (bf);
+			return false;
+		}
+		bf->buf->buf = malloc (bf->size);
+		if (!bf->buf->buf) {
+			free (bf->buf);
+			free (bf);
+			return false;
+		}
+		bf->buf->fd = r->file->fd;
+		bf->buf->length = bf->size;
+		r_io_read_at (r->io, 0, bf->buf->buf, bf->size);
+#endif
+		bf->o = NULL;
+		bf->rbin = r->bin;
+		new_bf = true;
+		va = false;
+	}
 	RList *l = r_bin_raw_strings (bf, 0);
 	_print_strings (r, l, mode, va);
+	if (new_bf) {
+		r_buf_free (bf->buf);
+		bf->buf = NULL;
+		bf->id = -1;
+		r_bin_file_free (bf);
+	}
 	return true;
 }
 
@@ -597,7 +474,6 @@ static int is_executable(RBinObject *obj) {
 	return false;
 }
 
-#define DBSPATH R2_PREFIX "/share/radare2/" R2_VERSION "/fcnsign"
 static void sdb_concat_by_path(Sdb *s, const char *path) {
 	Sdb *db = sdb_new (0, path, 0);
 	sdb_merge (s, db);
@@ -608,46 +484,54 @@ static void sdb_concat_by_path(Sdb *s, const char *path) {
 R_API void r_core_anal_type_init(RCore *core) {
 	Sdb *types = NULL;
 	const char *anal_arch = NULL, *os = NULL;
-	int bits = 0;
 	char *dbpath;
 	if (!core || !core->anal) {
 		return;
 	}
-	bits = core->assembler->bits;
+	const char *dir_prefix = r_config_get (core->config, "dir.prefix");
+	int bits = core->assembler->bits;
 	types = core->anal->sdb_types;
  	// make sure they are empty this is initializing
 	sdb_reset (types);
 	anal_arch = r_config_get (core->config, "anal.arch");
 	os = r_config_get (core->config, "asm.os");
-	if (r_file_exists (DBSPATH"/types.sdb")) {
-		sdb_concat_by_path (types, DBSPATH"/types.sdb");
-	}
-	dbpath = sdb_fmt (-1, DBSPATH"/types-%s.sdb", anal_arch);
+	// spaguetti ahead
+	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types.sdb"), dir_prefix);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (-1, DBSPATH"/types-%s.sdb", os);
+	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s.sdb"),
+		dir_prefix, anal_arch);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (-1, DBSPATH"/types-%d.sdb", bits);
-
+	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s.sdb"),
+		dir_prefix, os);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (-1, DBSPATH"/types-%s-%d.sdb", os, bits);
+	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%d.sdb"),
+		dir_prefix, bits);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (-1, DBSPATH"/types-%s-%d.sdb", anal_arch, bits);
+	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s-%d.sdb"),
+		dir_prefix, os, bits);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (-1, DBSPATH"/types-%s-%s.sdb", anal_arch, os);
+	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s-%d.sdb"),
+		dir_prefix, anal_arch, bits);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
-	dbpath = sdb_fmt (-1, DBSPATH"/types-%s-%s-%d.sdb", anal_arch, os, bits);
+	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s-%s.sdb"),
+		dir_prefix, anal_arch, os);
+	if (r_file_exists (dbpath)) {
+		sdb_concat_by_path (types, dbpath);
+	}
+	dbpath = sdb_fmt (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "types-%s-%s-%d.sdb"),
+		dir_prefix, anal_arch, os, bits);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (types, dbpath);
 	}
@@ -658,8 +542,8 @@ static int save_ptr(void *p, const char *k, const char *v) {
 	sdbs[0] = ((Sdb**) p)[0];
 	sdbs[1] = ((Sdb**) p)[1];
 	if (!strncmp (v, "cc", strlen ("cc") + 1)) {
-		const char *x = sdb_const_get (sdbs[1], sdb_fmt (-1, "cc.%s.name", k), 0);
-		char *tmp = sdb_fmt (-1, "%p", x);
+		const char *x = sdb_const_get (sdbs[1], sdb_fmt ("cc.%s.name", k), 0);
+		char *tmp = sdb_fmt ("%p", x);
 		sdb_set (sdbs[0], tmp, x, 0);
 	}
 	return 1;
@@ -670,10 +554,11 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		sdb_new0 (),
 		core->anal->sdb_cc
 	};
+	const char *dir_prefix = r_config_get (core->config, "dir.prefix");
 	//save pointers and values stored inside them
 	//to recover from freeing heeps
 	const char *defaultcc = sdb_const_get (sdbs[1], "default.cc", 0);
-	sdb_set (sdbs[0], sdb_fmt (-1, "0x%08"PFMT64x, r_num_get (NULL, defaultcc)), defaultcc, 0);
+	sdb_set (sdbs[0], sdb_fmt ("0x%08"PFMT64x, r_num_get (NULL, defaultcc)), defaultcc, 0);
 	sdb_foreach (core->anal->sdb_cc, save_ptr, sdbs);
 	sdb_reset ( core->anal->sdb_cc);
 	const char *anal_arch = r_config_get (core->config, "anal.arch");
@@ -683,7 +568,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		bits = 32;
 	}
 
-	char *dbpath = sdb_fmt (-1, DBSPATH"/cc-%s-%d.sdb", anal_arch, bits);
+	char *dbpath = sdb_fmt ("%s/"R2_SDB_FCNSIGN"/cc-%s-%d.sdb", dir_prefix, anal_arch, bits);
 	if (r_file_exists (dbpath)) {
 		sdb_concat_by_path (core->anal->sdb_cc, dbpath);
 	}
@@ -691,7 +576,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 	RListIter *it;
 	RAnalFunction *fcn;
 	r_list_foreach (core->anal->fcns, it, fcn) {
-		char *ptr = sdb_fmt (-1, "%p", fcn->cc);
+		char *ptr = sdb_fmt ("%p", fcn->cc);
 		const char *cc = sdb_const_get (sdbs[0], ptr, 0);
 		if (cc) {
 			fcn->cc = r_anal_cc_to_constant (core->anal, (char *)cc);
@@ -704,7 +589,6 @@ R_API void r_core_anal_cc_init(RCore *core) {
 	sdb_close (sdbs[0]);
 	sdb_free (sdbs[0]);
 }
-#undef DBSPATH
 
 static int bin_info(RCore *r, int mode) {
 	int i, j, v;
@@ -738,6 +622,11 @@ static int bin_info(RCore *r, int mode) {
 				r_config_set (r->config, "bin.lang", info->lang);
 			}
 			r_config_set (r->config, "asm.os", info->os);
+			if (info->rclass && !strcmp (info->rclass, "pe")) {
+				r_config_set (r->config, "anal.cpp.abi", "msvc");
+			} else {
+				r_config_set (r->config, "anal.cpp.abi", "itanium");
+			}
 			r_config_set (r->config, "asm.arch", info->arch);
 			if (info->cpu && *info->cpu) {
 				r_config_set (r->config, "asm.cpu", info->cpu);
@@ -810,7 +699,7 @@ static int bin_info(RCore *r, int mode) {
 		if (info->cpu && *info->cpu) {
 			pair_str ("cpu", info->cpu, mode, false);
 		}
-		pair_int ("binsz", r_bin_get_size (r->bin), mode, false);
+		pair_ut64 ("binsz", r_bin_get_size (r->bin), mode, false);
 		pair_str ("bintype", info->rclass, mode, false);
 		pair_int ("bits", info->bits, mode, false);
 		pair_bool ("canary", info->has_canary, mode, false);
@@ -1063,12 +952,11 @@ static int bin_dwarf(RCore *core, int mode) {
 	return true;
 }
 
-static int bin_pdb(RCore *core, int mode) {
+R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
 	R_PDB pdb = R_EMPTY;
-	ut64 baddr = r_bin_get_baddr (core->bin);
 
 	pdb.cb_printf = r_cons_printf;
-	if (!init_pdb_parser (&pdb, core->bin->file)) {
+	if (!init_pdb_parser (&pdb, file)) {
 		return false;
 	}
 	if (!pdb.pdb_parse (&pdb)) {
@@ -1108,6 +996,11 @@ static int bin_pdb(RCore *core, int mode) {
 	pdb.finish_pdb_parse (&pdb);
 
 	return true;
+}
+
+static int bin_pdb(RCore *core, int mode) {
+	ut64 baddr = r_bin_get_baddr (core->bin);
+	return r_core_pdb_info (core, core->bin->file, baddr, mode);
 }
 
 static int bin_main(RCore *r, int mode, int va) {
@@ -1156,6 +1049,10 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 			r_cons_printf ("[Entrypoints]\n");
 		}
 	}
+	if (r_list_length (entries) > 1024) {
+		eprintf ("Too many entrypoints (%d)\n", r_list_length (entries));
+		return false;
+	}
 
 	r_list_foreach (entries, iter, entry) {
 		ut64 paddr = entry->paddr;
@@ -1168,6 +1065,17 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 			} else {
 				if (entry->type != R_BIN_ENTRY_TYPE_PROGRAM) {
 					continue;
+				}
+			}
+		}
+		switch (entry->type) {
+		case R_BIN_ENTRY_TYPE_INIT:
+		case R_BIN_ENTRY_TYPE_FINI:
+		case R_BIN_ENTRY_TYPE_PREINIT:
+			if (r->io->va && entry->paddr == entry->vaddr) {
+				RIOMap *map = r_io_map_get (r->io, entry->vaddr);
+				if (map) {
+					paddr = entry->vaddr - map->itv.addr + map->delta;
 				}
 			}
 		}
@@ -1185,6 +1093,8 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 				snprintf (str, R_FLAG_NAME_SIZE, "entry%i.init", i);
 			} else if (entry->type == R_BIN_ENTRY_TYPE_FINI) {
 				snprintf (str, R_FLAG_NAME_SIZE, "entry%i.fini", i);
+			} else if (entry->type == R_BIN_ENTRY_TYPE_PREINIT) {
+				snprintf (str, R_FLAG_NAME_SIZE, "entry%i.preinit", i);
 			} else {
 				snprintf (str, R_FLAG_NAME_SIZE, "entry%i", i);
 			}
@@ -1205,6 +1115,8 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 				name = r_str_newf ("entry%i.init", i);
 			} else if (entry->type == R_BIN_ENTRY_TYPE_FINI) {
 				name = r_str_newf ("entry%i.fini", i);
+			} else if (entry->type == R_BIN_ENTRY_TYPE_PREINIT) {
+				name = r_str_newf ("entry%i.preinit", i);
 			} else {
 				name = r_str_newf ("entry%i", i);
 			}
@@ -1273,28 +1185,28 @@ static ut8 bin_reloc_size(RBinReloc *reloc) {
 
 static char *resolveModuleOrdinal(Sdb *sdb, const char *module, int ordinal) {
 	Sdb *db = sdb;
-	char *foo = sdb_get (db, sdb_fmt (0, "%d", ordinal), 0);
+	char *foo = sdb_get (db, sdb_fmt ("%d", ordinal), 0);
 	return (foo && *foo) ? foo : NULL;
 }
 
 static char *get_reloc_name(RBinReloc *reloc, ut64 addr) {
 	char *reloc_name = NULL;
 	if (reloc->import && reloc->import->name) {
-		reloc_name = sdb_fmt (-1, "reloc.%s_%d", reloc->import->name,
+		reloc_name = sdb_fmt ("reloc.%s_%d", reloc->import->name,
 				      (int)(addr & 0xff));
 		if (!reloc_name) {
 			return NULL;
 		}
 		r_str_replace_char (reloc_name, '$', '_');
 	} else if (reloc->symbol && reloc->symbol->name) {
-		reloc_name = sdb_fmt (-1, "reloc.%s_%d", reloc->symbol->name, (int)(addr & 0xff));
+		reloc_name = sdb_fmt ("reloc.%s_%d", reloc->symbol->name, (int)(addr & 0xff));
 		if (!reloc_name) {
 			return NULL;
 		}
 		r_str_replace_char (reloc_name, '$', '_');
 	} else if (reloc->is_ifunc) {
 		// addend is the function pointer for the resolving ifunc
-		reloc_name = sdb_fmt (-1, "reloc.ifunc_%"PFMT64x, reloc->addend);
+		reloc_name = sdb_fmt ("reloc.ifunc_%"PFMT64x, reloc->addend);
 	} else {
 		// TODO(eddyb) implement constant relocs.
 	}
@@ -1330,21 +1242,14 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 					free (*sdb_module);
 					*sdb_module = strdup (module);
 					/* always lowercase */
-					filename = sdb_fmt (1, "%s.sdb", module);
+					filename = sdb_fmt ("%s.sdb", module);
 					r_str_case (filename, false);
 					if (r_file_exists (filename)) {
 						*db = sdb_new (NULL, filename, 0);
 					} else {
-#if __WINDOWS__
-						char invoke_dir[MAX_PATH];
-						if (r_sys_get_src_dir_w32(invoke_dir)) {
-							filename = sdb_fmt (1, "%s/share/radare2/"R2_VERSION "/format/dll/%s.sdb", invoke_dir, module);
-						} else {
-							filename = sdb_fmt (1, "share/radare2/"R2_VERSION"/format/dll/%s.sdb", module);
-						}
-#else
-						filename = sdb_fmt (1, R2_PREFIX"/share/radare2/" R2_VERSION"/format/dll/%s.sdb", module);
-#endif
+						const char *dirPrefix = r_sys_prefix (NULL);
+						filename = sdb_fmt (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"),
+							dirPrefix, module);
 						if (r_file_exists (filename)) {
 							*db = sdb_new (NULL, filename, 0);
 						}
@@ -1371,9 +1276,9 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 		}
 		reloc_name = reloc->import->name;
 		if (r->bin->prefix) {
-			snprintf (str, R_FLAG_NAME_SIZE, "%s.reloc.%s_%d", r->bin->prefix, reloc_name, (int)(addr&0xff));
+			snprintf (str, R_FLAG_NAME_SIZE, "%s.reloc.%s", r->bin->prefix, reloc_name);
 		} else {
-			snprintf (str, R_FLAG_NAME_SIZE, "reloc.%s_%d", reloc_name, (int)(addr&0xff));
+			snprintf (str, R_FLAG_NAME_SIZE, "reloc.%s", reloc_name);
 		}
 		if (bin_demangle) {
 			demname = r_bin_demangle (r->bin->cur, lang, str, addr);
@@ -1383,9 +1288,9 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 		if (demname) {
 			char *realname;
 			if (r->bin->prefix) {
-				realname = sdb_fmt (0, "%s.reloc.%s", r->bin->prefix, demname);
+				realname = sdb_fmt ("%s.reloc.%s", r->bin->prefix, demname);
 			} else {
-				realname = sdb_fmt (0, "reloc.%s", demname);
+				realname = sdb_fmt ("reloc.%s", demname);
 			}
 			r_flag_item_set_realname (fi, realname);
 		}
@@ -1393,6 +1298,52 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 		char *reloc_name = get_reloc_name (reloc, addr);
 		r_flag_set (r->flags, reloc_name, addr, bin_reloc_size (reloc));
 	}
+}
+
+/* Define new data at relocation address if it's not in an executable section */
+static void add_metadata(RCore *r, RBinReloc *reloc, ut64 addr, int mode) {
+	RBinFile * binfile = r->bin->cur;
+	RBinObject *binobj = binfile ? binfile->o: NULL;
+	RBinInfo *info = binobj ? binobj->info: NULL;
+	RIOSection *section;
+	int cdsz;
+
+	cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
+	if (cdsz == 0) {
+		return;
+	}
+
+	section = r_io_section_vget (r->io, addr);
+	if (!section || section->flags & R_IO_EXEC) {
+		return;
+	}
+
+	if (IS_MODE_SET(mode)) {
+		r_meta_add (r->anal, R_META_TYPE_DATA, reloc->vaddr, reloc->vaddr + cdsz, NULL);
+	} else if (IS_MODE_RAD (mode)) {
+		r_cons_printf ("f Cd %d @ 0x%08" PFMT64x "\n", cdsz, addr);
+	}
+}
+
+static bool is_section_symbol(RBinSymbol *s) {
+	/* workaround for some bin plugs (e.g. ELF) */
+	if (!s || *s->name) {
+		return false;
+	}
+	return (s->type && !strcmp (s->type, "SECTION"));
+}
+
+static bool is_section_reloc(RBinReloc *r) {
+	return is_section_symbol (r->symbol);
+}
+
+static bool is_file_symbol(RBinSymbol *s) {
+	/* workaround for some bin plugs (e.g. ELF) */
+	return (s && s->type && !strcmp (s->type, "FILE"));
+}
+
+static bool is_file_reloc(RBinReloc *r) {
+	return is_file_symbol (r->symbol);
 }
 
 static int bin_relocs(RCore *r, int mode, int va) {
@@ -1420,17 +1371,16 @@ static int bin_relocs(RCore *r, int mode, int va) {
 	} else if (IS_MODE_SET (mode)) {
 		r_flag_space_set (r->flags, "relocs");
 	}
-	RBinFile * binfile = r->bin->cur;
-	RBinObject *binobj = binfile ? binfile->o: NULL;
-	RBinInfo *info = binobj ? binobj->info: NULL;
-	int cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
 	r_list_foreach (relocs, iter, reloc) {
 		ut64 addr = rva (r->bin, reloc->paddr, reloc->vaddr, va);
-		if (IS_MODE_SET (mode)) {
+		if (IS_MODE_SET (mode) && (is_section_reloc (reloc) || is_file_reloc (reloc))) {
+			/*
+			 * Skip section reloc because they will have their own flag.
+			 * Skip also file reloc because not useful for now.
+			 */
+		} else if (IS_MODE_SET (mode)) {
 			set_bin_relocs (r, reloc, addr, &db, &sdb_module);
-			if (cdsz) {
-				r_meta_add (r->anal, R_META_TYPE_DATA, reloc->vaddr, reloc->vaddr + cdsz, NULL);
-			}
+			add_metadata (r, reloc, addr, mode);
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("0x%08"PFMT64x"  %s\n", addr, reloc->import ? reloc->import->name : "");
 		} else if (IS_MODE_RAD (mode)) {
@@ -1448,9 +1398,7 @@ static int bin_relocs(RCore *r, int mode, int va) {
 				r_cons_printf ("f %s%s%s @ 0x%08"PFMT64x"\n",
 					r->bin->prefix ? r->bin->prefix : "reloc.",
 					r->bin->prefix ? "." : "", name, addr);
-				if (cdsz) {
-					r_cons_printf ("f Cd %d @ 0x%08"PFMT64x"\n", cdsz, addr);
-				}
+				add_metadata (r, reloc, addr, mode);
 				free (name);
 			}
 		} else if (IS_MODE_JSON (mode)) {
@@ -1545,20 +1493,20 @@ static RBinSymbol *get_symbol(RBin *bin, RList *symbols, const char *name, ut64 
 	if (mydb) {
 		if (name) {
 			res = (RBinSymbol*)(void*)(size_t)
-				sdb_num_get (mydb, sdb_fmt (0, "%x", sdb_hash (name)), NULL);
+				sdb_num_get (mydb, sdb_fmt ("%x", sdb_hash (name)), NULL);
 		} else {
 			res = (RBinSymbol*)(void*)(size_t)
-				sdb_num_get (mydb, sdb_fmt (0, "0x"PFMT64x, addr), NULL);
+				sdb_num_get (mydb, sdb_fmt ("0x"PFMT64x, addr), NULL);
 		}
 	} else {
 		mydb = sdb_new0 ();
 		r_list_foreach (symbols, iter, symbol) {
 			/* ${name}=${ptrToSymbol} */
-			if (!sdb_num_add (mydb, sdb_fmt (0, "%x", sdb_hash (symbol->name)), (ut64)(size_t)symbol, 0)) {
+			if (!sdb_num_add (mydb, sdb_fmt ("%x", sdb_hash (symbol->name)), (ut64)(size_t)symbol, 0)) {
 			//	eprintf ("DUP (%s)\n", symbol->name);
 			}
 			/* 0x${vaddr}=${ptrToSymbol} */
-			if (!sdb_num_add (mydb, sdb_fmt (0, "0x"PFMT64x, symbol->vaddr), (ut64)(size_t)symbol, 0)) {
+			if (!sdb_num_add (mydb, sdb_fmt ("0x"PFMT64x, symbol->vaddr), (ut64)(size_t)symbol, 0)) {
 			//	eprintf ("DUP (%s)\n", symbol->name);
 			}
 			if (name) {
@@ -1580,6 +1528,7 @@ static RList *osymbols = NULL;
 static RBinSymbol *get_symbol(RBin *bin, RList *symbols, const char *name, ut64 addr) {
 	RBinSymbol *symbol;
 	RListIter *iter;
+	// XXX this is slow, we should use a hashtable here
 	r_list_foreach (symbols, iter, symbol) {
 		if (name) {
 			if (!strcmp (symbol->name, name))
@@ -1596,7 +1545,7 @@ static RBinSymbol *get_symbol(RBin *bin, RList *symbols, const char *name, ut64 
 
 /* XXX: This is a hack to get PLT references in rabin2 -i */
 /* imp. is a prefix that can be rewritten by the symbol table */
-static ut64 impaddr(RBin *bin, int va, const char *name) {
+R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name) {
 	RList *symbols;
 
 	if (!name || !*name) {
@@ -1605,15 +1554,12 @@ static ut64 impaddr(RBin *bin, int va, const char *name) {
 	if (!(symbols = r_bin_get_symbols (bin))) {
 		return false;
 	}
-	char *impname = sdb_fmt (2, "imp.%s", name);
+	char *impname = r_str_newf ("imp.%s", name);
 	RBinSymbol *s = get_symbol (bin, symbols, impname, 0LL);
-	if (s) {
-		if (va) {
-			return r_bin_get_vaddr (bin, s->paddr, s->vaddr);
-		}
-		return s->paddr;
-	}
-	return 0LL;
+	// maybe ut64_MAX to indicate import not found?
+	ut64 addr = s? (va? r_bin_get_vaddr (bin, s->paddr, s->vaddr): s->paddr): 0LL;
+	free (impname);
+	return addr;
 }
 
 static int bin_imports(RCore *r, int mode, int va, const char *name) {
@@ -1626,6 +1572,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 	int i = 0;
 
 	RList *imports = r_bin_get_imports (r->bin);
+	int cdsz = info? (info->bits == 64? 8: info->bits == 32? 4: info->bits == 16 ? 4: 0): 0;
 	if (IS_MODE_JSON (mode)) {
 		r_cons_print ("[");
 	} else if (IS_MODE_RAD (mode)) {
@@ -1638,7 +1585,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			continue;
 		}
 		char *symname = strdup (import->name);
-		ut64 addr = lit ? impaddr (r->bin, va, symname): 0;
+		ut64 addr = lit ? r_core_bin_impaddr (r->bin, va, symname): 0;
 		if (bin_demangle) {
 			char *dname = r_bin_demangle (r->bin->cur, NULL, symname, addr);
 			if (dname) {
@@ -1654,6 +1601,10 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		}
 		if (IS_MODE_SET (mode)) {
 			// TODO(eddyb) symbols that are imports.
+			// Add a dword/qword for PE imports
+			if (strstr (symname, ".dll_") && cdsz) {
+				r_meta_add (r->anal, R_META_TYPE_DATA, addr, addr + cdsz, NULL);
+			}
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_println (symname);
 		} else if (IS_MODE_JSON (mode)) {
@@ -1692,7 +1643,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			}
 			r_cons_newline ();
 #else
-			r_cons_printf ("%03d 0x%08"PFMT64x" %s %s ",
+			r_cons_printf ("%4d 0x%08"PFMT64x" %7s %7s ",
 				import->ordinal, addr, bind, type);
 			if (import->classname && import->classname[0]) {
 				r_cons_printf ("%s.", import->classname);
@@ -1839,18 +1790,19 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 		if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("fs exports\n");
 		} else if (IS_MODE_NORMAL (mode)) {
-			r_cons_printf (printHere ? "Current export\n" : "[Exports]\n");
+			r_cons_printf (printHere ? "" : "[Exports]\n");
 		}
 	} else if (!at && !exponly) {
 		if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("fs symbols\n");
 		} else if (IS_MODE_NORMAL (mode)) {
-			r_cons_printf (printHere ? "Current symbol\n" : "[Symbols]\n");
+			r_cons_printf (printHere ? "" : "[Symbols]\n");
 		}
 	}
 
 	r_list_foreach (symbols, iter, symbol) {
 		ut64 addr = rva (r->bin, symbol->paddr, symbol->vaddr, va);
+		int len = symbol->size ? symbol->size : 32;
 		SymName sn;
 
 		if (exponly && !isAnExport (symbol)) {
@@ -1862,13 +1814,18 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 		if (at && (!symbol->size || !is_in_range (at, addr, symbol->size))) {
 			continue;
 		}
-		if ((printHere && !(symbol->paddr <= r->offset && r->offset < (symbol->paddr + symbol->size)))
-				&& (printHere && !(addr <= r->offset && r->offset < (addr + symbol->size)))) {
+		if ((printHere && !is_in_range (r->offset, symbol->paddr, len))
+				&& (printHere && !is_in_range (r->offset, addr, len))) {
 			continue;
 		}
 		snInit (r, &sn, symbol, lang);
 
-		if (IS_MODE_SET (mode)) {
+		if (IS_MODE_SET (mode) && (is_section_symbol (symbol) || is_file_symbol (symbol))) {
+			/*
+			 * Skip section symbols because they will have their own flag.
+			 * Skip also file symbols because not useful for now.
+			 */
+		} else if (IS_MODE_SET (mode)) {
 			if (is_arm && info->bits < 33) { // 16 or 32
 				int force_bits = 0;
 				if (symbol->paddr & 1 || symbol->bits == 16) {
@@ -1943,7 +1900,7 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 			}
 		} else if (IS_MODE_JSON (mode)) {
 			char *str = r_str_utf16_encode (symbol->name, -1);
-			str = r_str_replace (str, "\"", "\\\"", 1);
+			// str = r_str_replace (str, "\"", "\\\"", 1);
 			r_cons_printf ("%s{\"name\":\"%s\","
 				"\"demname\":\"%s\","
 				"\"flagname\":\"%s\","
@@ -1953,7 +1910,8 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 				"\"type\":\"%s\","
 				"\"vaddr\":%"PFMT64d","
 				"\"paddr\":%"PFMT64d"}",
-				((exponly && firstexp) || printHere) ? "" : (iter->p ? "," : ""), str,
+				((exponly && firstexp) || printHere) ? "" : (iter->p ? "," : ""),
+				str,
 				sn.demname? sn.demname: "",
 				sn.nameflag,
 				symbol->ordinal,
@@ -2121,12 +2079,13 @@ static char *build_hash_string(int mode, const char *chksum, ut8 *data, ut32 dat
 	return ret;
 }
 
-static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum) {
+static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments) {
 	char *str = NULL;
 	RBinSection *section;
 	RBinInfo *info = NULL;
 	RList *sections;
 	RListIter *iter;
+	RListIter *last_processed = NULL;
 	int i = 0;
 	int fd = -1;
 	bool printHere = false;
@@ -2134,6 +2093,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	bool inDebugger = r_config_get_i (r->config, "cfg.debug");
 	SdbHash *dup_chk_ht = ht_new (NULL, NULL, NULL);
 	bool ret = false;
+	const char *type = print_segments ? "segment" : "section";
 
 	if (!dup_chk_ht) {
 		return false;
@@ -2143,15 +2103,16 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		printHere = true;
 	}
 	if (IS_MODE_JSON (mode) && !printHere) r_cons_printf ("[");
-	else if (IS_MODE_RAD (mode) && !at) r_cons_printf ("fs sections\n");
-	else if (IS_MODE_NORMAL (mode) && !at && !printHere) r_cons_printf ("[Sections]\n");
-	else if (IS_MODE_NORMAL (mode) && printHere) r_cons_printf("Current section\n");
+	else if (IS_MODE_RAD (mode) && !at) r_cons_printf ("fs %ss\n", type);
+	else if (IS_MODE_NORMAL (mode) && !at && !printHere) {
+		r_cons_printf ("[%s]\n", print_segments ? "Segments" : "Sections");
+	} else if (IS_MODE_NORMAL (mode) && printHere) r_cons_printf("Current section\n");
 	else if (IS_MODE_SET (mode)) {
 		fd = r_core_file_cur_fd (r);
-		r_flag_space_set (r->flags, "sections");
+		r_flag_space_set (r->flags, print_segments ? "segments" : "sections");
 	}
 	r_list_foreach (sections, iter, section) {
-		char perms[] = "-----";
+		char perms[] = "----";
 		int va_sect = va;
 		ut64 addr;
 
@@ -2174,11 +2135,14 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			continue;
 		}
 
-		if (section->srwx & R_BIN_SCN_MAP) perms[0] = 'm';
-		if (section->srwx & R_BIN_SCN_SHAREABLE) perms[1] = 's';
-		if (section->srwx & R_BIN_SCN_READABLE) perms[2] = 'r';
-		if (section->srwx & R_BIN_SCN_WRITABLE) perms[3] = 'w';
-		if (section->srwx & R_BIN_SCN_EXECUTABLE) perms[4] = 'x';
+		if (section->is_segment != print_segments) {
+			continue;
+		}
+
+		if (section->srwx & R_BIN_SCN_SHAREABLE) perms[0] = 's';
+		if (section->srwx & R_BIN_SCN_READABLE) perms[1] = 'r';
+		if (section->srwx & R_BIN_SCN_WRITABLE) perms[2] = 'w';
+		if (section->srwx & R_BIN_SCN_EXECUTABLE) perms[3] = 'x';
 
 		if (IS_MODE_SET (mode)) {
 #if LOAD_BSS_MALLOC
@@ -2206,18 +2170,18 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				}
 			}
 			if (r->bin->prefix) {
-				str = r_str_newf ("%s.section.%s", r->bin->prefix, section->name);
+				str = r_str_newf ("%s.%s.%s", r->bin->prefix, type, section->name);
 			} else {
-				str = r_str_newf ("section.%s", section->name);
+				str = r_str_newf ("%s.%s", type, section->name);
 
 			}
 			r_flag_set (r->flags, str, addr, section->size);
 			R_FREE (str);
 
 			if (r->bin->prefix) {
-				str = r_str_newf ("%s.section_end.%s", r->bin->prefix, section->name);
+				str = r_str_newf ("%s.%s_end.%s", r->bin->prefix, type, section->name);
 			} else {
-				str = r_str_newf ("section_end.%s", section->name);
+				str = r_str_newf ("%s_end.%s", type, section->name);
 			}
 			r_flag_set (r->flags, str, addr + section->vsize, 0);
 			R_FREE (str);
@@ -2235,12 +2199,14 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				}
 				//r_io_section_set_archbits (r->io, addr, arch, bits);
 			}
-			char *pfx = r->bin->prefix;
-			str = r_str_newf ("[%02d] %s section size %" PFMT64d" named %s%s%s",
-				i, perms, section->size,
-				pfx? pfx: "", pfx? ".": "", section->name);
-			r_meta_add (r->anal, R_META_TYPE_COMMENT, addr, addr, str);
-			R_FREE (str);
+			if (!section->is_segment) {
+				char *pfx = r->bin->prefix;
+				str = r_str_newf ("[%02d] %s %s size %" PFMT64d" named %s%s%s",
+				                  i, perms, type, section->size,
+				                  pfx? pfx: "", pfx? ".": "", section->name);
+				r_meta_add (r->anal, R_META_TYPE_COMMENT, addr, addr, str);
+				R_FREE (str);
+			}
 			if (section->add) {
 				str = r_str_newf ("%"PFMT64x".%"PFMT64x".%"PFMT64x".%"PFMT64x".%"PFMT32u".%s.%"PFMT32u".%d",
 					section->paddr, addr, section->size, section->vsize, section->srwx, section->name, r->bin->cur->id, fd);
@@ -2293,7 +2259,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				"%s"
 				"\"paddr\":%"PFMT64d","
 				"\"vaddr\":%"PFMT64d"}",
-				(iter->p && !printHere)?",":"",
+				(last_processed && !printHere) ? "," : "",
 				section->name,
 				section->size,
 				section->vsize,
@@ -2333,23 +2299,23 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 					PFMT64x"\n", arch, bits, addr);
 			}
 			if (r->bin->prefix) {
-				r_cons_printf ("f %s.section.%s %"PFMT64d" 0x%08"PFMT64x"\n",
-						r->bin->prefix, section->name, section->size, addr);
-				r_cons_printf ("f %s.section_end.%s 1 0x%08"PFMT64x"\n",
-						r->bin->prefix, section->name, addr + section->vsize);
-				r_cons_printf ("CC section %i va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
+				r_cons_printf ("f %s.%s.%s %"PFMT64d" 0x%08"PFMT64x"\n",
+						r->bin->prefix, type, section->name, section->size, addr);
+				r_cons_printf ("f %s.%s_end.%s 1 0x%08"PFMT64x"\n",
+						r->bin->prefix, type, section->name, addr + section->vsize);
+				r_cons_printf ("CC %s %i va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
 						"rwx=%s %s.%s @ 0x%08"PFMT64x"\n",
-						i, addr, section->paddr, section->size, section->vsize,
+						type, i, addr, section->paddr, section->size, section->vsize,
 						perms, r->bin->prefix, section->name, addr);
 
 			} else {
-				r_cons_printf ("f section.%s %"PFMT64d" 0x%08"PFMT64x"\n",
-						section->name, section->size, addr);
-				r_cons_printf ("f section_end.%s 1 0x%08"PFMT64x"\n",
-						section->name, addr + section->vsize);
-				r_cons_printf ("CC section %i va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
+				r_cons_printf ("f %s.%s %"PFMT64d" 0x%08"PFMT64x"\n",
+						type, section->name, section->size, addr);
+				r_cons_printf ("f %s_end.%s 1 0x%08"PFMT64x"\n",
+						type, section->name, addr + section->vsize);
+				r_cons_printf ("CC %s %i va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
 						"rwx=%s %s @ 0x%08"PFMT64x"\n",
-						i, addr, section->paddr, section->size, section->vsize,
+						type, i, addr, section->paddr, section->size, section->vsize,
 						perms, section->name, addr);
 			}
 		} else {
@@ -2390,8 +2356,9 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 					i, addr, section->paddr, section->size, section->vsize,
 					perms, str, hashstr ?hashstr : "", r->bin->prefix, section->name);
 #endif
+				// r_cons_printf ("%02i 0x%08"PFMT64x" %10"PFMT64d" 0x%08"PFMT64x" %10"PFMT64d" "
 				r_cons_printf ("%02i 0x%08"PFMT64x" %5"PFMT64d" 0x%08"PFMT64x" %5"PFMT64d" "
-					"%s %s% %s.%s\n",
+					"%s %s%s%s.%s\n",
 					i, section->paddr, section->size, addr, section->vsize,
 					perms, str, hashstr ?hashstr : "", r->bin->prefix, section->name);
 			} else {
@@ -2401,6 +2368,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 					i, addr, section->paddr, section->size, section->vsize,
 					perms, str, hashstr ?hashstr : "", section->name);
 #endif
+				// r_cons_printf ("%02i 0x%08"PFMT64x" %10"PFMT64d" 0x%08"PFMT64x" %10"PFMT64d" "
 				r_cons_printf ("%02i 0x%08"PFMT64x" %5"PFMT64d" 0x%08"PFMT64x" %5"PFMT64d" "
 					"%s %s%s%s\n",
 					i, section->paddr, (ut64)section->size, addr, (ut64)section->vsize,
@@ -2409,6 +2377,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			free (hashstr);
 		}
 		i++;
+		last_processed = iter;
 		if (printHere) {
 			break;
 		}
@@ -2618,11 +2587,11 @@ static int bin_classes(RCore *r, int mode) {
 		}
 
 		if (IS_MODE_SET (mode)) {
-			const char *classname = sdb_fmt (0, "class.%s", name);
+			const char *classname = sdb_fmt ("class.%s", name);
 			r_flag_set (r->flags, classname, c->addr, 1);
 			r_list_foreach (c->methods, iter2, sym) {
 				char *mflags = r_core_bin_method_flags_str (sym->method_flags, mode);
-				char *method = sdb_fmt (1, "method%s.%s.%s",
+				char *method = sdb_fmt ("method%s.%s.%s",
 					mflags, c->name, sym->name);
 				R_FREE (mflags);
 				r_name_filter (method, -1);
@@ -2837,7 +2806,7 @@ static int bin_mem(RCore *r, int mode) {
 	return true;
 }
 
-static void bin_pe_versioninfo(RCore *r) {
+static void bin_pe_versioninfo(RCore *r, int mode) {
 	Sdb *sdb = NULL;
 	int num_version = 0;
 	int num_stringtable = 0;
@@ -2845,36 +2814,89 @@ static void bin_pe_versioninfo(RCore *r) {
 	const char *format_version = "bin/cur/info/vs_version_info/VS_VERSIONINFO%d";
 	const char *format_stringtable = "%s/string_file_info/stringtable%d";
 	const char *format_string = "%s/string%d";
-	r_cons_printf ("=== VS_VERSIONINFO ===\n\n");
+	if (!IS_MODE_JSON (mode)) {
+		r_cons_printf ("=== VS_VERSIONINFO ===\n\n");
+	}
+	bool firstit_dowhile = true;
 	do {
 		char path_version[256] = R_EMPTY;
 		snprintf (path_version, sizeof (path_version), format_version, num_version);
 		if (!(sdb = sdb_ns_path (r->sdb, path_version, 0))) {
 			break;
 		}
-		r_cons_printf ("# VS_FIXEDFILEINFO\n\n");
+		if (!firstit_dowhile && IS_MODE_JSON (mode)) { r_cons_printf (","); }
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("{\"VS_FIXEDFILEINFO\":{");
+		} else {
+			r_cons_printf ("# VS_FIXEDFILEINFO\n\n");
+		}
 		char path_fixedfileinfo[256] = R_EMPTY;
 		snprintf (path_fixedfileinfo, sizeof (path_fixedfileinfo), "%s/fixed_file_info", path_version);
 		if (!(sdb = sdb_ns_path (r->sdb, path_fixedfileinfo, 0))) {
+			r_cons_printf ("}");
 			break;
 		}
-		r_cons_printf ("  Signature: 0x%"PFMT64x"\n", sdb_num_get (sdb, "Signature", 0));
-		r_cons_printf ("  StrucVersion: 0x%"PFMT64x"\n", sdb_num_get (sdb, "StrucVersion", 0));
-		r_cons_printf ("  FileVersion: %"PFMT64d".%"PFMT64d".%"PFMT64d".%"PFMT64d"\n",
-			sdb_num_get (sdb, "FileVersionMS", 0) >> 16,
-			sdb_num_get (sdb, "FileVersionMS", 0) & 0xFFFF,
-			sdb_num_get (sdb, "FileVersionLS", 0) >> 16,
-			sdb_num_get (sdb, "FileVersionLS", 0) & 0xFFFF);
-		r_cons_printf ("  ProductVersion: %"PFMT64d".%"PFMT64d".%"PFMT64d".%"PFMT64d"\n",
-			sdb_num_get (sdb, "ProductVersionMS", 0) >> 16,
-			sdb_num_get (sdb, "ProductVersionMS", 0) & 0xFFFF,
-			sdb_num_get (sdb, "ProductVersionLS", 0) >> 16,
-			sdb_num_get (sdb, "ProductVersionLS", 0) & 0xFFFF);
-		r_cons_printf ("  FileFlagsMask: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileFlagsMask", 0));
-		r_cons_printf ("  FileFlags: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileFlags", 0));
-		r_cons_printf ("  FileOS: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileOS", 0));
-		r_cons_printf ("  FileType: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileType", 0));
-		r_cons_printf ("  FileSubType: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileSubType", 0));
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("\"Signature\":%"PFMT64u",", sdb_num_get (sdb, "Signature", 0));
+		} else {
+			r_cons_printf ("  Signature: 0x%"PFMT64x"\n", sdb_num_get (sdb, "Signature", 0));
+		}
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("\"StrucVersion\":%"PFMT64u",", sdb_num_get (sdb, "StrucVersion", 0));
+		} else {
+			r_cons_printf ("  StrucVersion: 0x%"PFMT64x"\n", sdb_num_get (sdb, "StrucVersion", 0));
+		}
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("\"FileVersion\":\"%"PFMT64d".%"PFMT64d".%"PFMT64d".%"PFMT64d"\",",
+				sdb_num_get (sdb, "FileVersionMS", 0) >> 16,
+				sdb_num_get (sdb, "FileVersionMS", 0) & 0xFFFF,
+				sdb_num_get (sdb, "FileVersionLS", 0) >> 16,
+				sdb_num_get (sdb, "FileVersionLS", 0) & 0xFFFF);
+		} else {
+			r_cons_printf ("  FileVersion: %"PFMT64d".%"PFMT64d".%"PFMT64d".%"PFMT64d"\n",
+				sdb_num_get (sdb, "FileVersionMS", 0) >> 16,
+				sdb_num_get (sdb, "FileVersionMS", 0) & 0xFFFF,
+				sdb_num_get (sdb, "FileVersionLS", 0) >> 16,
+				sdb_num_get (sdb, "FileVersionLS", 0) & 0xFFFF);
+		}
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("\"ProductVersion\":\"%"PFMT64d".%"PFMT64d".%"PFMT64d".%"PFMT64d"\",",
+				sdb_num_get (sdb, "ProductVersionMS", 0) >> 16,
+				sdb_num_get (sdb, "ProductVersionMS", 0) & 0xFFFF,
+				sdb_num_get (sdb, "ProductVersionLS", 0) >> 16,
+				sdb_num_get (sdb, "ProductVersionLS", 0) & 0xFFFF);
+		} else {
+			r_cons_printf ("  ProductVersion: %"PFMT64d".%"PFMT64d".%"PFMT64d".%"PFMT64d"\n",
+				sdb_num_get (sdb, "ProductVersionMS", 0) >> 16,
+				sdb_num_get (sdb, "ProductVersionMS", 0) & 0xFFFF,
+				sdb_num_get (sdb, "ProductVersionLS", 0) >> 16,
+				sdb_num_get (sdb, "ProductVersionLS", 0) & 0xFFFF);
+		}
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("\"FileFlagsMask\":%"PFMT64u",", sdb_num_get (sdb, "FileFlagsMask", 0));
+		} else {
+			r_cons_printf ("  FileFlagsMask: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileFlagsMask", 0));
+		}
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("\"FileFlags\":%"PFMT64u",", sdb_num_get (sdb, "FileFlags", 0));
+		} else {
+			r_cons_printf ("  FileFlags: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileFlags", 0));
+		}
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("\"FileOS\":%"PFMT64u",", sdb_num_get (sdb, "FileOS", 0));
+		} else {
+			r_cons_printf ("  FileOS: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileOS", 0));
+		}
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("\"FileType\":%"PFMT64u",", sdb_num_get (sdb, "FileType", 0));
+		} else {
+			r_cons_printf ("  FileType: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileType", 0));
+		}
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("\"FileSubType\":%"PFMT64u, sdb_num_get (sdb, "FileSubType", 0));
+		} else {
+			r_cons_printf ("  FileSubType: 0x%"PFMT64x"\n", sdb_num_get (sdb, "FileSubType", 0));
+		}
 #if 0
 		r_cons_printf ("  FileDate: %d.%d.%d.%d\n",
 			sdb_num_get (sdb, "FileDateMS", 0) >> 16,
@@ -2882,17 +2904,27 @@ static void bin_pe_versioninfo(RCore *r) {
 			sdb_num_get (sdb, "FileDateLS", 0) >> 16,
 			sdb_num_get (sdb, "FileDateLS", 0) & 0xFFFF);
 #endif
-		r_cons_newline ();
-		r_cons_println ("# StringTable\n");
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("},");
+		} else {
+			r_cons_newline ();
+		}
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("\"StringTable\":{");
+		} else {
+			r_cons_printf ("# StringTable\n\n");
+		}
 		for (num_stringtable = 0; sdb; num_stringtable++) {
 			char path_stringtable[256] = R_EMPTY;
 			snprintf (path_stringtable, sizeof (path_stringtable), format_stringtable, path_version, num_stringtable);
 			sdb = sdb_ns_path (r->sdb, path_stringtable, 0);
-			for (num_string = 0; sdb; ++num_string) {
+			bool firstit_for = true;
+			for (num_string = 0; sdb; num_string++) {
 				char path_string[256] = R_EMPTY;
 				snprintf (path_string, sizeof (path_string), format_string, path_stringtable, num_string);
 				sdb = sdb_ns_path (r->sdb, path_string, 0);
 				if (sdb) {
+					if (!firstit_for && IS_MODE_JSON (mode)) { r_cons_printf (","); }
 					int lenkey = 0;
 					int lenval = 0;
 					ut8 *key_utf16 = sdb_decode (sdb_const_get (sdb, "key", 0), &lenkey);
@@ -2903,6 +2935,12 @@ static void bin_pe_versioninfo(RCore *r) {
 					if (r_str_utf16_to_utf8 (key_utf8, lenkey * 2, key_utf16, lenkey, true) < 0
 						|| r_str_utf16_to_utf8 (val_utf8, lenval * 2, val_utf16, lenval, true) < 0) {
 						eprintf ("Warning: Cannot decode utf16 to utf8\n");
+					} else if (IS_MODE_JSON (mode)) {
+						char *escaped_key_utf8 = r_str_escape ((char*)key_utf8);
+						char *escaped_val_utf8 = r_str_escape ((char*)val_utf8);
+						r_cons_printf ("\"%s\":\"%s\"", escaped_key_utf8, escaped_val_utf8);
+						free (escaped_key_utf8);
+						free (escaped_val_utf8);
 					} else {
 						r_cons_printf ("  %s: %s\n", (char*)key_utf8, (char*)val_utf8);
 					}
@@ -2912,13 +2950,18 @@ static void bin_pe_versioninfo(RCore *r) {
 					free (key_utf16);
 					free (val_utf16);
 				}
+				firstit_for = false;
 			}
 		}
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("}}");
+		}
 		num_version++;
+		firstit_dowhile = false;
 	} while (sdb);
 }
 
-static void bin_elf_versioninfo(RCore *r) {
+static void bin_elf_versioninfo(RCore *r, int mode) {
 	const char *format = "bin/cur/info/versioninfo/%s%d";
 	char path[256] = {0};
 	int num_versym = 0;
@@ -2926,6 +2969,10 @@ static void bin_elf_versioninfo(RCore *r) {
 	int num_version = 0;
 	Sdb *sdb = NULL;
 	const char *oValue = NULL;
+	bool firstit_for_versym = true;
+	if (IS_MODE_JSON (mode)) {
+		r_cons_printf ("{\"versym\":[");
+	}
 	for (;; num_versym++) {
 		snprintf (path, sizeof (path), format, "versym", num_versym);
 		if (!(sdb = sdb_ns_path (r->sdb, path, 0))) {
@@ -2938,9 +2985,17 @@ static void bin_elf_versioninfo(RCore *r) {
 		const char *section_name = sdb_const_get (sdb, "section_name", 0);
 		const char *link_section_name = sdb_const_get (sdb, "link_section_name", 0);
 
-		r_cons_printf ("Version symbols section '%s' contains %"PFMT64u" entries:\n", section_name, num_entries);
-		r_cons_printf (" Addr: 0x%08"PFMT64x"  Offset: 0x%08"PFMT64x"  Link: %x (%s)\n",
-			(ut64)addr, (ut64)offset, (ut32)link, link_section_name);
+		if (IS_MODE_JSON (mode)) {
+			if (!firstit_for_versym) { r_cons_printf (","); }
+			r_cons_printf ("{\"section_name\":\"%s\",\"address\":%"PFMT64u",\"offset\":%"PFMT64u",",
+					section_name, (ut64)addr, (ut64)offset);
+			r_cons_printf ("\"link\":%"PFMT64u",\"link_section_name\":\"%s\",\"entries\":[",
+					(ut32)link, link_section_name);
+		} else {
+			r_cons_printf ("Version symbols section '%s' contains %"PFMT64u" entries:\n", section_name, num_entries);
+			r_cons_printf (" Addr: 0x%08"PFMT64x"  Offset: 0x%08"PFMT64x"  Link: %x (%s)\n",
+				(ut64)addr, (ut64)offset, (ut32)link, link_section_name);
+		}
 		int i;
 		for (i = 0; i < num_entries; i++) {
 			char key[32] = R_EMPTY;
@@ -2950,14 +3005,29 @@ static void bin_elf_versioninfo(RCore *r) {
 				if (oValue && !strcmp (value, oValue)) {
 					continue;
 				}
-				r_cons_printf ("  0x%08"PFMT64x": ", (ut64) i);
-				r_cons_printf ("%s\n", value);
+				if (IS_MODE_JSON (mode)) {
+					if (i > 0) { r_cons_printf (","); }
+					char *escaped_value = r_str_escape (value);
+					r_cons_printf ("{\"idx\":%"PFMT64u",\"value\":\"%s\"}",
+							(ut64) i, escaped_value);
+					free (escaped_value);
+				} else {
+					r_cons_printf ("  0x%08"PFMT64x": ", (ut64) i);
+					r_cons_printf ("%s\n", value);
+				}
 				oValue = value;
 			}
 		}
-		r_cons_println ("\n");
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("]}");
+		} else {
+			r_cons_printf ("\n\n");
+		}
+		firstit_for_versym = false;
 	}
+	if (IS_MODE_JSON (mode)) { r_cons_printf ("],\"verneed\":["); }
 
+	bool firstit_dowhile_verneed = true;
 	do {
 		char path_version[256] = R_EMPTY;
 		snprintf (path, sizeof (path), format, "verneed", num_verneed++);
@@ -2965,14 +3035,23 @@ static void bin_elf_versioninfo(RCore *r) {
 			break;
 		}
 
-		r_cons_printf ("Version need section '%s' contains %d entries:\n",
-			sdb_const_get (sdb, "section_name", 0), (int)sdb_num_get (sdb, "num_entries", 0));
+		if (IS_MODE_JSON (mode)) {
+			if (!firstit_dowhile_verneed) { r_cons_printf (","); }
+			r_cons_printf ("{\"section_name\":\"%s\",\"address\":%"PFMT64u",\"offset\":%"PFMT64u",",
+				sdb_const_get (sdb, "section_name", 0), sdb_num_get (sdb, "addr", 0), sdb_num_get (sdb, "offset", 0));
+			r_cons_printf ("\"link\":%"PFMT64u",\"link_section_name\":\"%s\",\"entries\":[",
+				sdb_num_get (sdb, "link", 0), sdb_const_get (sdb, "link_section_name", 0));
+		} else {
+			r_cons_printf ("Version need section '%s' contains %d entries:\n",
+				sdb_const_get (sdb, "section_name", 0), (int)sdb_num_get (sdb, "num_entries", 0));
 
-		r_cons_printf (" Addr: 0x%08"PFMT64x, sdb_num_get (sdb, "addr", 0));
+			r_cons_printf (" Addr: 0x%08"PFMT64x, sdb_num_get (sdb, "addr", 0));
 
-		r_cons_printf ("  Offset: 0x%08"PFMT64x"  Link to section: %"PFMT64d" (%s)\n",
-			sdb_num_get (sdb, "offset", 0), sdb_num_get (sdb, "link", 0),
-			sdb_const_get (sdb, "link_section_name", 0));
+			r_cons_printf ("  Offset: 0x%08"PFMT64x"  Link to section: %"PFMT64d" (%s)\n",
+				sdb_num_get (sdb, "offset", 0), sdb_num_get (sdb, "link", 0),
+				sdb_const_get (sdb, "link_section_name", 0));
+		}
+		bool firstit_for_verneed = true;
 		for (num_version = 0;; num_version++) {
 			snprintf (path_version, sizeof (path_version), "%s/version%d", path, num_version);
 			const char *filename = NULL;
@@ -2981,26 +3060,60 @@ static void bin_elf_versioninfo(RCore *r) {
 			if (!(sdb = sdb_ns_path (r->sdb, path_version, 0))) {
 				break;
 			}
-			r_cons_printf ("  0x%08"PFMT64x": Version: %d",
-				sdb_num_get (sdb, "idx", 0), (int)sdb_num_get (sdb, "vn_version", 0));
+			if (IS_MODE_JSON (mode)) {
+				if (!firstit_for_verneed) { r_cons_printf (","); }
+				r_cons_printf ("{\"idx\":%"PFMT64u",\"vn_version\":%d,",
+					sdb_num_get (sdb, "idx", 0), (int)sdb_num_get (sdb, "vn_version", 0));
+			} else {
+				r_cons_printf ("  0x%08"PFMT64x": Version: %d",
+					sdb_num_get (sdb, "idx", 0), (int)sdb_num_get (sdb, "vn_version", 0));
+			}
 
 			if ((filename = sdb_const_get (sdb, "file_name", 0))) {
-				r_cons_printf ("  File: %s", filename);
+				if (IS_MODE_JSON (mode)) {
+					char *escaped_filename = r_str_escape (filename);
+					r_cons_printf ("\"file_name\":\"%s\",", escaped_filename);
+					free (escaped_filename);
+				} else {
+					r_cons_printf ("  File: %s", filename);
+				}
 			}
-			r_cons_printf ("  Cnt: %d\n", (int)sdb_num_get (sdb, "cnt", 0));
+			if (IS_MODE_JSON (mode)) {
+				r_cons_printf ("\"cnt\":%d,", (int)sdb_num_get (sdb, "cnt", 0));
+			} else {
+				r_cons_printf ("  Cnt: %d\n", (int)sdb_num_get (sdb, "cnt", 0));
+			}
+			if (IS_MODE_JSON (mode)) {
+				r_cons_printf ("\"vernaux\":[");
+			}
+			bool firstit_dowhile_vernaux = true;
 			do {
 				snprintf (path_vernaux, sizeof (path_vernaux), "%s/vernaux%d",
 					path_version, num_vernaux++);
 				if (!(sdb = sdb_ns_path (r->sdb, path_vernaux, 0))) {
 					break;
 				}
-				r_cons_printf ("  0x%08"PFMT64x":   Name: %s",
-					sdb_num_get (sdb, "idx", 0), sdb_const_get (sdb, "name", 0));
-				r_cons_printf ("  Flags: %s Version: %d\n",
-					sdb_const_get (sdb, "flags", 0), (int)sdb_num_get (sdb, "version", 0));
+				if (IS_MODE_JSON (mode)) {
+					if (!firstit_dowhile_vernaux) { r_cons_printf (","); }
+					r_cons_printf ("{\"idx\":%"PFMT64u",\"name\":\"%s\",",
+						sdb_num_get (sdb, "idx", 0), sdb_const_get (sdb, "name", 0));
+					r_cons_printf ("\"flags\":\"%s\",\"version\":%d}",
+						sdb_const_get (sdb, "flags", 0), (int)sdb_num_get (sdb, "version", 0));
+				} else {
+					r_cons_printf ("  0x%08"PFMT64x":   Name: %s",
+						sdb_num_get (sdb, "idx", 0), sdb_const_get (sdb, "name", 0));
+					r_cons_printf ("  Flags: %s Version: %d\n",
+						sdb_const_get (sdb, "flags", 0), (int)sdb_num_get (sdb, "version", 0));
+				}
+				firstit_dowhile_vernaux = false;
 			} while (sdb);
+			if (IS_MODE_JSON (mode)) { r_cons_printf ("]}"); };
+			firstit_for_verneed = false;
 		}
+		if (IS_MODE_JSON (mode)) { r_cons_printf ("]}"); };
+		firstit_dowhile_verneed = false;
 	} while (sdb);
+	if (IS_MODE_JSON (mode)) { r_cons_printf ("]}"); }
 }
 
 static void bin_mach0_versioninfo(RCore *r) {
@@ -3022,12 +3135,12 @@ static void bin_pe_resources(RCore *r, int mode) {
 		r_cons_printf ("[");
 	}
 	while (true) {
-		const char *timestrKey = sdb_fmt (0, "resource.%d.timestr", index);
-		const char *vaddrKey = sdb_fmt (1, "resource.%d.vaddr", index);
-		const char *sizeKey  = sdb_fmt (2, "resource.%d.size", index);
-		const char *typeKey  = sdb_fmt (3, "resource.%d.type", index);
-		const char *languageKey = sdb_fmt (4, "resource.%d.language", index);
-		const char *nameKey = sdb_fmt (5, "resource.%d.name", index);
+		const char *timestrKey = sdb_fmt ("resource.%d.timestr", index);
+		const char *vaddrKey = sdb_fmt ("resource.%d.vaddr", index);
+		const char *sizeKey  = sdb_fmt ("resource.%d.size", index);
+		const char *typeKey  = sdb_fmt ("resource.%d.type", index);
+		const char *languageKey = sdb_fmt ("resource.%d.language", index);
+		const char *nameKey = sdb_fmt ("resource.%d.name", index);
 		char *timestr = sdb_get (sdb, timestrKey, 0);
 		if (!timestr) {
 			break;
@@ -3039,23 +3152,25 @@ static void bin_pe_resources(RCore *r, int mode) {
 		char *lang = sdb_get (sdb, languageKey, 0);
 
 		if (IS_MODE_SET (mode)) {
-			const char *name = sdb_fmt (4, "resource.%d", index);
+			const char *name = sdb_fmt ("resource.%d", index);
 			r_flag_set (r->flags, name, vaddr, size);
 		} else if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("f resource.%d %d 0x%08"PFMT32x"\n", index, size, vaddr);
 		} else if (IS_MODE_JSON (mode)) {
 			r_cons_printf("%s{\"name\":%d,\"index\":%d, \"type\":\"%s\","
-					"\"vaddr\":%"PFMT32d", \"size\":%d, \"lang\":\"%s\"}",
+					"\"vaddr\":%"PFMT64d", \"size\":%d, \"lang\":\"%s\"}",
 					index? ",": "", name, index, type, vaddr, size, lang);
 		} else {
 			char *humanSize = r_num_units (NULL, size);
 			r_cons_printf ("Resource %d\n", index);
-			r_cons_printf ("\tname: %d\n", name);
-			r_cons_printf ("\ttimestamp: %s\n", timestr);
-			r_cons_printf ("\tvaddr: 0x%08"PFMT32x"\n", vaddr);
-			r_cons_printf ("\tsize: %s\n", humanSize);
-			r_cons_printf ("\ttype: %s\n", type);
-			r_cons_printf ("\tlanguage: %s\n", lang);
+			r_cons_printf ("  name: %d\n", name);
+			r_cons_printf ("  timestamp: %s\n", timestr);
+			r_cons_printf ("  vaddr: 0x%08"PFMT64x"\n", vaddr);
+			if (humanSize) {
+				r_cons_printf ("  size: %s\n", humanSize);
+			}
+			r_cons_printf ("  type: %s\n", type);
+			r_cons_printf ("  language: %s\n", lang);
 			free (humanSize);
 		}
 
@@ -3078,7 +3193,6 @@ static void bin_no_resources(RCore *r, int mode) {
 	}
 }
 
-
 static int bin_resources(RCore *r, int mode) {
 	const RBinInfo *info = r_bin_get_info (r->bin);
 	if (!info || !info->rclass) {
@@ -3098,9 +3212,9 @@ static int bin_versioninfo(RCore *r, int mode) {
 		return false;
 	}
 	if (!strncmp ("pe", info->rclass, 2)) {
-		bin_pe_versioninfo (r);
+		bin_pe_versioninfo (r, mode);
 	} else if (!strncmp ("elf", info->rclass, 3)) {
-		bin_elf_versioninfo (r);
+		bin_elf_versioninfo (r, mode);
 	} else if (!strncmp ("mach0", info->rclass, 5)) {
 		bin_mach0_versioninfo (r);
 	} else {
@@ -3223,9 +3337,11 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 	
 	// use our internal values for va
 	va = va ? VA_TRUE : VA_FALSE;
+#if 0
 	if (r_config_get_i (core->config, "anal.strings")) {
 		r_core_cmd0 (core, "aar");
 	}
+#endif
 	if ((action & R_CORE_BIN_ACC_STRINGS)) ret &= bin_strings (core, mode, va);
 	if ((action & R_CORE_BIN_ACC_RAW_STRINGS)) ret &= bin_raw_strings (core, mode, va);
 	if ((action & R_CORE_BIN_ACC_INFO)) ret &= bin_info (core, mode);
@@ -3234,7 +3350,8 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 	if ((action & R_CORE_BIN_ACC_PDB)) ret &= bin_pdb (core, mode);
 	if ((action & R_CORE_BIN_ACC_ENTRIES)) ret &= bin_entry (core, mode, loadaddr, va, false);
 	if ((action & R_CORE_BIN_ACC_INITFINI)) ret &= bin_entry (core, mode, loadaddr, va, true);
-	if ((action & R_CORE_BIN_ACC_SECTIONS)) ret &= bin_sections (core, mode, loadaddr, va, at, name, chksum);
+	if ((action & R_CORE_BIN_ACC_SECTIONS)) ret &= bin_sections (core, mode, loadaddr, va, at, name, chksum, false);
+	if ((action & R_CORE_BIN_ACC_SEGMENTS)) ret &= bin_sections (core, mode, loadaddr, va, at, name, chksum, true);
 	if (r_config_get_i (core->config, "bin.relocs")) {
 		if ((action & R_CORE_BIN_ACC_RELOCS)) ret &= bin_relocs (core, mode, va);
 	}
@@ -3255,7 +3372,7 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 				ret &= bin_fields (core, 0, va);
 			}
 		} else {
-			if (IS_MODE_NORMAL(mode)) {
+			if (IS_MODE_NORMAL (mode)) {
 				ret &= bin_header (core, mode);
 			} else {
 				if ((action & R_CORE_BIN_ACC_HEADER) || action & R_CORE_BIN_ACC_FIELDS) {

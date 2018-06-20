@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2017 - pancake */
+/* radare - LGPL - Copyright 2010-2018 - pancake */
 
 /* covardly copied from r_cmd */
 
@@ -12,15 +12,15 @@ static RCorePlugin *cmd_static_plugins[] = {
 	R_CORE_STATIC_PLUGINS
 };
 
-R_API int r_core_plugin_deinit(RCmd *cmd) {
+R_API int r_core_plugin_fini(RCmd *cmd) {
 	RListIter *iter;
 	RCorePlugin *plugin;
 	if (!cmd->plist) {
 		return false;
 	}
 	r_list_foreach (cmd->plist, iter, plugin) {
-		if (plugin && plugin->deinit) {
-			plugin->deinit (cmd, NULL);
+		if (plugin && plugin->fini) {
+			plugin->fini (cmd, NULL);
 		}
 	}
 	/* empty the list */
@@ -30,7 +30,7 @@ R_API int r_core_plugin_deinit(RCmd *cmd) {
 }
 
 R_API int r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin) {
-	if (plugin->init && !plugin->init (cmd, NULL)) {
+	if (!cmd || (plugin && plugin->init && !plugin->init (cmd, NULL))) {
 		return false;
 	}
 	r_list_append (cmd->plist, plugin);

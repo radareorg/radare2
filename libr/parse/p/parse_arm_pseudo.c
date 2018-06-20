@@ -250,11 +250,14 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	}
 	if (p->relsub) {
 		char *rip = (char *)r_str_casestr (tstr, "[pc, ");
+		if (!rip) {
+			rip = (char *)r_str_casestr (tstr, "[PC, ");
+		}
 		if (rip) {
 			rip += 4;
 			char *tstr_new, *ripend = strchr (rip, ']');
 			const char *neg = strchr (rip, '-');
-			ut64 off = (oplen == 2 || strstr (tstr, ".w")) ? 4 : 8;
+			ut64 off = (oplen == 2 || strstr (tstr, ".w") || strstr(tstr, ".W")) ? 4 : 8;
 			ut64 repl_num = (addr + off) & ~3;
 			if (!ripend) {
 				ripend = "]";
@@ -277,18 +280,26 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 	spargs = p->varlist (p->anal, f, 's');
 	bool ucase = IS_UPPER (*tstr);
 	r_list_foreach (bpargs, iter, var) {
+		char *reg = p->anal->reg->name[R_REG_NAME_BP];
+		char *tmplt = NULL;
 		if (var->delta > -10 && var->delta < 10) {
-			oldstr = r_str_newf ("[%s, %d]",
-				p->anal->reg->name[R_REG_NAME_BP],
-				var->delta);
+			if (p->pseudo) {
+				char sign = '+';
+				int delta = var->delta;
+				if (var->delta < 0) {
+					sign = '-';
+					delta = -delta;
+				}
+				oldstr = r_str_newf ("[%s %c %d]", reg, sign, delta);
+			} else {
+				oldstr = r_str_newf ("[%s, %d]", reg, var->delta);
+			}
 		} else if (var->delta > 0) {
-			oldstr = r_str_newf ("[%s, 0x%x]",
-			p->anal->reg->name[R_REG_NAME_BP],
-				var->delta);
+			tmplt = p->pseudo ? "[%s + 0x%x]" : (ucase ? "[%s, 0x%X]" : "[%s, 0x%x]");
+			oldstr = r_str_newf (tmplt, reg, var->delta);
 		} else {
-			oldstr = r_str_newf ("[%s, -0x%x]",
-				p->anal->reg->name[R_REG_NAME_BP],
-				-var->delta);
+			tmplt = p->pseudo ? "[%s - 0x%x]" : (ucase ? "[%s, -0x%X]" : "[%s, -0x%x]");
+			oldstr = r_str_newf (tmplt, reg, -var->delta);
 		}
 		if (ucase) {
 			char *comma = strchr (oldstr, ',');
@@ -299,10 +310,12 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 			}
 		}
 		if (strstr (tstr, oldstr)) {
-			newstr = r_str_newf ("[%s %c %s]",
-				p->anal->reg->name[R_REG_NAME_BP],
-				var->delta > 0 ? '+' : '-',
-				var->name);
+			if (p->localvar_only) {
+				newstr = r_str_newf ("[%s]", var->name);
+			} else {
+				newstr = r_str_newf ("[%s %c %s]",
+					reg, var->delta > 0 ? '+' : '-', var->name);
+			}
 			if (ucase) {
 				char *comma = strchr (newstr, ' ');
 				if (comma) {

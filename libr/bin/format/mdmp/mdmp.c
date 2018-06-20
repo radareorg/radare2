@@ -377,7 +377,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		sdb_num_set (obj->kv, "mdmp_thread_list.offset",
 			entry->location.rva, 0);
 		sdb_set (obj->kv, "mdmp_thread_list.format",
-			sdb_fmt (0, "d[%i]? "
+			sdb_fmt ("d[%i]? "
 				"NumberOfThreads (mdmp_thread)Threads",
 				thread_list->number_of_threads),
 			0);
@@ -401,7 +401,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		sdb_num_set (obj->kv, "mdmp_module_list.offset",
 			entry->location.rva, 0);
 		sdb_set (obj->kv, "mdmp_module_list.format",
-			sdb_fmt (0, "d[%i]? "
+			sdb_fmt ("d[%i]? "
 				"NumberOfModule (mdmp_module)Modules",
 				module_list->number_of_modules,
 				0),
@@ -418,7 +418,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		sdb_num_set (obj->kv, "mdmp_memory_list.offset",
 			entry->location.rva, 0);
 		sdb_set (obj->kv, "mdmp_memory_list.format",
-			sdb_fmt (0, "d[%i]? "
+			sdb_fmt ("d[%i]? "
 				"NumberOfMemoryRanges "
 				"(mdmp_memory_descriptor)MemoryRanges ",
 				memory_list->number_of_memory_ranges,
@@ -474,7 +474,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		sdb_num_set (obj->kv, "mdmp_thread_ex_list.offset",
 			entry->location.rva, 0);
 		sdb_set (obj->kv, "mdmp_thread_ex_list.format",
-			sdb_fmt (0, "d[%i]? NumberOfThreads "
+			sdb_fmt ("d[%i]? NumberOfThreads "
 				"(mdmp_thread_ex)Threads",
 				thread_ex_list->number_of_threads, 0),
 			0);
@@ -490,7 +490,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		sdb_num_set (obj->kv, "mdmp_memory64_list.offset",
 			entry->location.rva, 0);
 		sdb_set (obj->kv, "mdmp_memory64_list.format",
-			sdb_fmt (0, "qq[%i]? NumberOfMemoryRanges "
+			sdb_fmt ("qq[%i]? NumberOfMemoryRanges "
 				"BaseRva "
 				"(mdmp_memory_descriptor64)MemoryRanges",
 				memory64_list->number_of_memory_ranges),
@@ -586,7 +586,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		sdb_num_set (obj->kv, "mdmp_memory_info_list.offset",
 			entry->location.rva, 0);
 		sdb_set (obj->kv, "mdmp_memory_info_list.format",
-			sdb_fmt (0, "ddq[%i]? SizeOfHeader SizeOfEntry "
+			sdb_fmt ("ddq[%i]? SizeOfHeader SizeOfEntry "
 				"NumberOfEntries (mdmp_memory_info)MemoryInfo",
 				memory_info_list->number_of_entries),
 			0);
@@ -658,7 +658,7 @@ static bool r_bin_mdmp_init_directory(struct r_bin_mdmp_obj *obj) {
 			"(mdmp_location_descriptor)Location", 0);
 
 	/* Parse each entry in the directory */
-	for (i = 0; i < obj->hdr->number_of_streams; i++) {
+	for (i = 0; i < (int)obj->hdr->number_of_streams; i++) {
 		entry = (struct minidump_directory *)(directory_base + (i * sizeof (struct minidump_directory)));
 		r_bin_mdmp_init_directory_entry (obj, entry);
 	}

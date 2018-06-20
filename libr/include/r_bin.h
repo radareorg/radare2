@@ -18,7 +18,6 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_SCN_WRITABLE   (1 << 1)
 #define R_BIN_SCN_READABLE   (1 << 2)
 #define R_BIN_SCN_SHAREABLE  (1 << 3)
-#define R_BIN_SCN_MAP        (1 << 4)
 
 #define R_BIN_DBG_STRIPPED 0x01
 #define R_BIN_DBG_STATIC   0x02
@@ -31,6 +30,7 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_ENTRY_TYPE_INIT    2
 #define R_BIN_ENTRY_TYPE_FINI    3
 #define R_BIN_ENTRY_TYPE_TLS     4
+#define R_BIN_ENTRY_TYPE_PREINIT 5
 
 #define R_BIN_SIZEOF_STRINGS 512
 #define R_BIN_MAX_ARCH 1024
@@ -66,6 +66,7 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_REQ_LISTPLUGINS 0x4000000
 #define R_BIN_REQ_RESOURCES 0x8000000
 #define R_BIN_REQ_INITFINI 0x10000000
+#define R_BIN_REQ_SEGMENTS 0x20000000
 
 /* RBinSymbol->method_flags : */
 #define R_BIN_METH_CLASS 0x0000000000000001L
@@ -134,6 +135,11 @@ enum {
 	R_BIN_RELOC_16 = 16,
 	R_BIN_RELOC_32 = 32,
 	R_BIN_RELOC_64 = 64
+};
+
+enum {
+	R_BIN_TYPE_DEFAULT = 0,
+	R_BIN_TYPE_CORE = 1
 };
 
 typedef struct r_bin_addr_t {
@@ -212,12 +218,15 @@ typedef struct r_bin_object_t {
 	RList/*<RBinClass>*/ *classes;
 	RList/*<RBinDwarfRow>*/ *lines;
 	RList/*<??>*/ *mem;	//RBinMem maybe?
+	RList/*<BinMap*/ *maps;
+	char *regstate;
 	RBinInfo *info;
 	RBinAddr *binsym[R_BIN_SYM_LAST];
 	struct r_bin_plugin_t *plugin;
 	int referenced;
 	int lang;
 	Sdb *kv;
+	Sdb *addr2klassmethod;
 	void *bin_obj; // internal pointer used by formats
 } RBinObject;
 
@@ -248,6 +257,15 @@ typedef struct r_bin_file_t {
 	struct r_bin_t *rbin;
 } RBinFile;
 
+typedef struct RBinFileOptions {
+	int rawstr;
+	ut64 baddr; // base address
+	ut64 laddr; // load address
+	ut64 paddr; // offset
+	const char *plugname; // force a plugin? why do i need this?
+	// const char *xtrname;
+} RBinFileOptions;
+
 typedef struct r_bin_t {
 	const char *file;
 	RBinFile *cur;
@@ -260,7 +278,7 @@ typedef struct r_bin_t {
 	ut64 maxstrbuf;
 	int rawstr;
 	Sdb *sdb;
-	RIDPool *file_ids;
+	RIDStorage *ids;
 	RList/*<RBinPlugin>*/ *plugins;
 	RList/*<RBinXtrPlugin>*/ *binxtrs;
 	RList/*<RBinLdrPlugin>*/ *binldrs;
@@ -273,7 +291,7 @@ typedef struct r_bin_t {
 	bool want_dbginfo;
 	int filter; // symbol filtering
 	char strfilter; // string filtering
-	int strpurge; // purge false positive strings
+	char *strpurge; // purge false positive strings
 	char *srcdir; // dir.source
 	char *prefix; // bin.prefix
 	ut64 filter_rules;
@@ -352,7 +370,8 @@ typedef struct r_bin_plugin_t {
 	int (*fini)(void *user);
 	Sdb * (*get_sdb)(RBinFile *obj);
 	bool (*load)(RBinFile *arch);
-	void *(*load_bytes)(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb);
+	void *(*load_bytes)(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb);
+	void *(*load_buffer)(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb);
 	ut64 (*size)(RBinFile *bin); // return ut64 maybe? meh
 	int (*destroy)(RBinFile *arch);
 	bool (*check_bytes)(const ut8 *buf, ut64 length);
@@ -372,6 +391,7 @@ typedef struct r_bin_plugin_t {
 	RList/*<RBinClass>*/* (*classes)(RBinFile *arch);
 	RList/*<RBinMem>*/* (*mem)(RBinFile *arch);
 	RList/*<RBinReloc>*/* (*patch_relocs)(RBin *bin);
+	RList/*<RBinMap>*/* (*maps)(RBinFile *arch);
 	void (*header)(RBinFile *arch);
 	char* (*signature)(RBinFile *arch, bool json);
 	int (*demangle_type)(const char *str);
@@ -382,6 +402,8 @@ typedef struct r_bin_plugin_t {
 	ut64 (*get_vaddr)(RBinFile *arch, ut64 baddr, ut64 paddr, ut64 vaddr);
 	RBuffer* (*create)(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen);
 	char* (*demangle)(const char *str);
+	char* (*regstate)(RBinFile *arch);
+	int (*file_type)(RBinFile *arch);
 	/* default value if not specified by user */
 	int minstrlen;
 	char strfilter;
@@ -402,6 +424,7 @@ typedef struct r_bin_section_t {
 	bool has_strings;
 	bool add; // indicates when you want to add the section to io `S` command
 	bool is_data;
+	bool is_segment;
 } RBinSection;
 
 typedef struct r_bin_class_t {
@@ -418,9 +441,16 @@ typedef struct r_bin_class_t {
 
 #define RBinSectionName r_offsetof(RBinSection, name)
 #define RBinSectionOffset r_offsetof(RBinSection, offset)
-// usage:
-// r_list_get_by_name(bin->sections, RBinSectionName, ".text");
-// bin.sections.get_by_name(SectionName, ".text");
+
+#define REBASE_PADDR(o, l, type_t)\
+	do { \
+		RListIter *_it;\
+		type_t *_el;\
+		r_list_foreach ((l), _it, _el) { \
+			_el->paddr += (o)->loadaddr;\
+		}\
+	} while (0)
+
 
 typedef struct r_bin_symbol_t {
 	/* heap-allocated */
@@ -508,6 +538,14 @@ typedef struct r_bin_mem_t {	//new toy for esil-init
 	RList *mirrors;		//for mirror access; stuff here should only create new maps not new fds
 } RBinMem;
 
+typedef struct r_bin_map_t {
+	ut64 addr;
+	ut64 offset;
+	int size;
+	int perms;
+	char *file;
+} RBinMap;
+
 typedef struct r_bin_dbginfo_t {
 	int (*get_line)(RBinFile *arch, ut64 addr, char *file, int len, int *line);
 } RBinDbgInfo;
@@ -539,25 +577,88 @@ typedef struct r_bin_bind_t {
 
 #ifdef R_API
 
-/* bin.c */
-R_API void r_bin_load_filter(RBin *bin, ut64 rules);
+/* fd api */
+
+typedef struct r_bin_options_t {
+	ut64 offset; // starting physical address to read from the target file
+	ut64 baseaddr; // where the linker maps the binary in memory
+	ut64 loadaddr; // the desired offset where the binary should be loaded
+	ut64 size; // restrict the size of the target fd
+	int xtr_idx; // load Nth binary
+	int rawstr;
+	int iofd;
+	char *name; // or comment :?
+} RBinOptions;
+
+R_API RBinOptions *r_bin_options_new (ut64 offset, ut64 baddr, int rawstr);
+R_API void r_bin_options_free(RBinOptions *bo);
+R_API int r_bin_open(RBin *bin, const char *filename, RBinOptions *bo);
+R_API RBinFile *r_bin_get_file (RBin *bin, int bd);
+R_API bool r_bin_close(RBin *bin, int bd);
+R_API bool r_bin_query(RBin *bin, const char *query);
+
+/* load */
 R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr);
-R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr);
 R_API int r_bin_load_as(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr, int fileoffset, const char *name);
 R_API int r_bin_load_io(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx);
-R_API bool r_bin_load_io_at_offset_as(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name);
 R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name, ut64 sz);
+
+/* bin.c */
+R_API void r_bin_load_filter(RBin *bin, ut64 rules);
+R_API int r_bin_load_languages(RBinFile *binfile);
+
+R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr);
 R_API void r_bin_bind(RBin *b, RBinBind *bnd);
 R_API bool r_bin_add(RBin *bin, RBinPlugin *foo);
 R_API bool r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);
 R_API bool r_bin_ldr_add(RBin *bin, RBinLdrPlugin *foo);
 R_API void* r_bin_free(RBin *bin);
-R_API int r_bin_load_languages(RBinFile *binfile);
-R_API int r_bin_dump_strings(RBinFile *a, int min);
-R_API RList* r_bin_raw_strings(RBinFile *a, int min);
+R_API RList *r_bin_raw_strings(RBinFile *a, int min);
+R_API int r_bin_dump_strings(RBinFile *a, int min, int raw);
 //io-wrappers
 R_API int r_bin_read_at (RBin *bin, ut64 addr, ut8 *buf, int size);
 R_API int r_bin_write_at (RBin *bin, ut64 addr, const ut8 *buf, int size);
+
+/* file.c */
+R_API RBinFile *r_bin_file_new(RBin *bin, const char *file, const ut8 *bytes, ut64 sz, ut64 file_sz, int rawstr, int fd, const char *xtrname, Sdb *sdb, bool steal_ptr);
+R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 baseaddr, ut64 loadaddr, RBinXtrData *data);
+R_API RBinFile *r_bin_file_new_from_bytes(RBin *bin, const char *file, const ut8 *bytes, ut64 sz, ut64 file_sz, int rawstr, ut64 baseaddr, ut64 loadaddr, int fd, const char *pluginname, const char *xtrname, ut64 offset, bool steal_ptr);
+R_API RBinFile *r_bin_file_new_from_fd(RBin *bin, int fd, RBinFileOptions *options);
+R_API RBinFile *r_bin_file_find_by_arch_bits(RBin *bin, const char *arch, int bits, const char *name);
+R_API RBinObject *r_bin_file_object_find_by_id(RBinFile *binfile, ut32 binobj_id);
+R_API RList *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw);
+R_API void r_bin_file_get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 from, ut64 to);
+R_API RBinFile *r_bin_file_find_by_object_id(RBin *bin, ut32 binobj_id);
+R_API RBinFile *r_bin_file_find_by_id(RBin *bin, ut32 binfile_id);
+R_API int r_bin_file_object_add(RBinFile *binfile, RBinObject *o);
+R_API int r_bin_file_delete_all(RBin *bin);
+R_API int r_bin_file_delete(RBin *bin, ut32 bin_fd);
+R_API RBinFile *r_bin_file_find_by_fd(RBin *bin, ut32 bin_fd);
+R_API RBinFile *r_bin_file_find_by_name(RBin *bin, const char *name);
+R_API RBinFile *r_bin_file_find_by_name_n(RBin *bin, const char *name, int idx);
+R_API bool r_bin_file_set_cur_binfile_obj(RBin *bin, RBinFile *bf, RBinObject *obj);
+R_API int r_bin_file_set_cur_binfile(RBin *bin, RBinFile *bf);
+R_API int r_bin_file_set_cur_by_name(RBin *bin, const char *name);
+R_API RBinObject *r_bin_file_object_get_cur(RBinFile *binfile);
+R_API int r_bin_file_cur_set_plugin(RBinFile *binfile, RBinPlugin *plugin);
+R_API int r_bin_file_ref(RBin *bin, RBinFile *a);
+R_API void r_bin_file_free(void /*RBinFile*/ *bf_);
+R_API RBinFile *r_bin_file_create_append(RBin *bin, const char *file, const ut8 *bytes, ut64 sz, ut64 file_sz, int rawstr, int fd, const char *xtrname, bool steal_ptr);
+R_API RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const char *filename, const ut8 *bytes, ut64 sz, ut64 file_sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr);
+R_API int r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz, bool steal_ptr);
+R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *binfile);
+
+/* obj.c */
+R_API void r_bin_object_free(void /*RBinObject*/ *o_);
+R_API ut64 r_bin_object_get_baddr(RBinObject *o);
+R_API void r_bin_object_filter_strings (RBinObject *bo);
+R_API void r_bin_object_set_baddr(RBinObject *o, ut64 baddr);
+R_API RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz);
+R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o);
+R_API RBinObject *r_bin_object_get_cur(RBin *bin);
+R_API RBinObject *r_bin_object_find_by_arch_bits(RBinFile *binfile, const char *arch, int bits, const char *name);
+R_API int r_bin_object_delete(RBin *bin, ut32 binfile_id, ut32 binobj_id);
+R_API void r_bin_object_delete_items(RBinObject *o);
 
 // ref
 R_API int r_bin_file_deref_by_bind (RBinBind * binb);
@@ -565,6 +666,11 @@ R_API int r_bin_file_deref (RBin *bin, RBinFile * a);
 R_API int r_bin_file_ref_by_bind (RBinBind * binb);
 R_API int r_bin_file_ref (RBin *bin, RBinFile * a);
 R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 baseaddr, ut64 loadaddr,
+
+#define MODE_PRINT 0x000
+#define MODE_RADARE 0x001
+#define MODE_SIMPLE 0x004
+
 						RBinXtrData *xtr_data);
 R_API int r_bin_list(RBin *bin, int json);
 R_API int r_bin_list_plugin(RBin *bin, const char* name, int json);
@@ -576,6 +682,10 @@ R_API ut64 r_bin_get_laddr(RBin *bin);
 R_API ut64 r_bin_get_boffset(RBin *bin);
 R_API RBinAddr* r_bin_get_sym(RBin *bin, int sym);
 R_API const char *r_bin_entry_type_string(int etype);
+
+R_API RBinXtrPlugin *r_bin_get_xtrplugin_by_name(RBin *bin, const char *name);
+R_API RBinPlugin *r_bin_get_binplugin_by_name(RBin *bin, const char *name);
+R_API RBinPlugin *r_bin_get_binplugin_any(RBin *bin);
 
 R_API char* r_bin_demangle(RBinFile *binfile, const char *lang, const char *str, ut64 vaddr);
 R_API int r_bin_demangle_type (const char *str);
@@ -605,11 +715,13 @@ R_API RList* r_bin_get_relocs(RBin *bin);
 R_API RList* r_bin_get_sections(RBin *bin);
 R_API RList* /*<RBinClass>*/r_bin_get_classes(RBin *bin);
 
+// TODO: rename to r_bin_file_get_class() etc
 R_API RBinClass *r_bin_class_get (RBinFile *binfile, const char *name);
 R_API RBinClass *r_bin_class_new (RBinFile *binfile, const char *name, const char *super, int view);
 R_API void r_bin_class_free(RBinClass *c);
 R_API RBinSymbol *r_bin_class_add_method (RBinFile *binfile, const char *classname, const char *name, int nargs);
 R_API void r_bin_class_add_field (RBinFile *binfile, const char *classname, const char *name);
+R_API RList *r_bin_classes_from_symbols (RBinFile *bf, RBinObject *o);
 
 R_API RBinSection* r_bin_get_section_at(RBinObject *o, ut64 off, int va);
 R_API RList* r_bin_get_strings(RBin *bin);
@@ -628,17 +740,13 @@ R_API RBin* r_bin_new(void);
 R_API void r_bin_iobind(RBin *bin, RIO *io);
 R_API RBinFile * r_bin_cur(RBin *bin);
 R_API RBinObject * r_bin_cur_object(RBin *bin);
-R_API int r_bin_file_set_cur_binfile_obj(RBin * bin, RBinFile *bf, RBinObject *obj);
 R_API int r_bin_io_load(RBin *bin, RIO *io, int fd, ut64 baseaddr, ut64 loadaddr, int dummy);
 
 R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name);
 R_API int r_bin_select_idx(RBin *bin, const char *name, int idx);
-R_API int r_bin_select_by_ids(RBin *bin, ut32 binfile_id, ut32 binobj_id );
-R_API int r_bin_object_delete (RBin *bin, ut32 binfile_id, ut32 binobj_id);
-R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o);
+R_API int r_bin_select_by_ids(RBin *bin, ut32 binfile_id, ut32 binobj_id);
 R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name);
 R_API RBinFile * r_bin_file_find_by_arch_bits(RBin *bin, const char *arch, int bits, const char *name);
-R_API RBinObject * r_bin_object_find_by_arch_bits (RBinFile *binfile, const char *arch, int bits, const char *name);
 R_API void r_bin_list_archs(RBin *bin, int mode);
 R_API void r_bin_set_user_ptr(RBin *bin, void *user);
 R_API RBuffer *r_bin_create (RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen);
@@ -648,11 +756,9 @@ R_API ut64 r_bin_a2b (RBin *bin, ut64 addr);
 R_API int r_bin_file_delete(RBin *bin, ut32 bin_fd);
 R_API int r_bin_file_delete_all(RBin *bin);
 R_API int r_bin_file_set_cur_by_fd (RBin *bin, ut32 bin_fd);
-R_API int r_bin_file_set_cur_by_name (RBin * bin, const char * name);
 R_API RBinFile * r_bin_file_find_by_fd (RBin *bin, ut32 bin_fd);
 R_API RBinFile * r_bin_file_find_by_name (RBin * bin, const char * name);
 R_API RBinFile * r_bin_file_find_by_name_n (RBin * bin, const char * name, int idx);
-R_API int r_bin_file_set_cur_binfile (RBin * bin, RBinFile *bf);
 R_API RBinPlugin * r_bin_file_cur_plugin (RBinFile *binfile);
 R_API void r_bin_force_plugin (RBin *bin, const char *pname);
 R_API const char *r_bin_string_type (int type);
@@ -685,6 +791,8 @@ R_API void r_bin_filter_name(Sdb *db, ut64 addr, char *name, int maxlen);
 R_API void r_bin_filter_symbols (RList *list);
 R_API void r_bin_filter_sections (RList *list);
 R_API void r_bin_filter_classes (RList *list);
+R_API bool r_bin_strpurge(RBin *bin, const char *str, ut64 addr);
+R_API bool r_bin_string_filter(RBin *bin, const char *str, ut64 addr);
 
 /* plugin pointers */
 extern RBinPlugin r_bin_plugin_any;

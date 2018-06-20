@@ -30,7 +30,7 @@ static int show_analinfo(const char *arg, ut64 offset) {
 	}
 	for (ret = 0; ret < len;) {
 		aop.size = 0;
-		if (r_anal_op (anal, &aop, offset, buf + ret, len - ret) > 0) {
+		if (r_anal_op (anal, &aop, offset, buf + ret, len - ret, R_ANAL_OP_MASK_BASIC) > 0) {
 			//printf ("%s\n", R_STRBUF_SAFEGET (&aop.esil));
 		}
 		if (aop.size < 1) {
@@ -148,7 +148,7 @@ static int showanal(RAnal *lanal, RAnalOp *op, ut64 offset, ut8 *buf, int len, b
 	char *bytes, *stackop = NULL;
 	int ret;
 
-	ret = r_anal_op (anal, op, offset, buf, len);
+	ret = r_anal_op (anal, op, offset, buf, len, R_ANAL_OP_MASK_ESIL);
 	if (ret) {
 		stackop = stackop2str (op->stackop);
 		optype = r_anal_optype_to_string (op->type);
@@ -273,7 +273,7 @@ static int rasm_disasm(char *buf, ut64 offset, int len, int bits, int ascii, int
 		RAnalOp aop = { 0 };
 		while (ret < len) {
 			aop.size = 0;
-			if (r_anal_op (anal, &aop, offset, data + ret, len - ret) > 0) {
+			if (r_anal_op (anal, &aop, offset, data + ret, len - ret, R_ANAL_OP_MASK_ESIL) > 0) {
 				printf ("%s\n", R_STRBUF_SAFEGET (&aop.esil));
 			}
 			if (aop.size < 1) {
@@ -446,15 +446,21 @@ int main (int argc, char *argv[]) {
 			r_lib_opendir (l, path);
 
 		if (1) {
-			char *homeplugindir = r_str_home (R2_HOMEDIR "/plugins");
+			char *homeplugindir = r_str_home (R2_HOME_PLUGINS);
 			// eprintf ("OPENDIR (%s)\n", homeplugindir);
 			r_lib_opendir (l, homeplugindir);
 			free (homeplugindir);
 		}
 		if (1) { //where & R_CORE_LOADLIBS_SYSTEM) {
-			r_lib_opendir (l, R2_LIBDIR "/radare2/" R2_VERSION);
-			r_lib_opendir (l, R2_LIBDIR "/radare2-extras/" R2_VERSION);
-			r_lib_opendir (l, R2_LIBDIR "/radare2-bindings/" R2_VERSION);
+			char *plugindir = r_str_r2_prefix (R2_PLUGINS);
+			char *extrasdir = r_str_r2_prefix (R2_EXTRAS);
+			char *bindingsdir = r_str_r2_prefix (R2_BINDINGS);
+			r_lib_opendir (l, plugindir);
+			r_lib_opendir (l, extrasdir);
+			r_lib_opendir (l, bindingsdir);
+			free (plugindir);
+			free (extrasdir);
+			free (bindingsdir);
 		}
 		free (tmp);
 	}
@@ -605,7 +611,7 @@ int main (int argc, char *argv[]) {
 	r_asm_set_bits (a, (env_bits && *env_bits)? atoi (env_bits): bits);
 	r_anal_set_bits (anal, (env_bits && *env_bits)? atoi (env_bits): bits);
 	a->syscall = r_syscall_new ();
-	r_syscall_setup (a->syscall, arch, kernel, bits);
+	r_syscall_setup (a->syscall, arch, bits, cpu, kernel);
 	{
 		bool canbebig = r_asm_set_big_endian (a, isbig);
 		if (isbig && !canbebig) {

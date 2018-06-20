@@ -20,19 +20,35 @@ export MAKE
 export GLOBAL=0
 export R2PM_JOBS=4
 export R2VERSION="`r2 -qv`"
+export R2PMCACHE="$HOME/.r2pm.cache"
 
 R2PM=$0
-PREFIX="`r2 -H PREFIX`"
+R2PMCACHE_LOADED=0
+if [ -f ~/.r2pm.cache ]; then
+	. ~/.r2pm.cache
+	export LIBEXT="$LIBEXT"
+	export R2CONFIGHOME="$R2CONFIGHOME"
+	export R2DATAHOME="$R2DATAHOME"
+	PREFIX="$PREFIX"
+	if [ -z "${LIBEXT}" -o -z "${R2CONFIGHOME}" -o -z "${R2DATAHOME}" -o -z "${PREFIX}" ]; then
+		echo "[r2pm] corrupted cache, please run r2pm cache"
+	else
+		R2PMCACHE_LOADED=1
+	fi
+fi
+if [ "${R2PMCACHE_LOADED}" != 1 ]; then
+	export LIBEXT="`r2 -H LIBEXT`"
+	export R2CONFIGHOME="`r2 -H RCONFIGHOME`"
+	export R2DATAHOME="`r2 -H RDATAHOME`"
+	PREFIX="`r2 -H PREFIX`"
+fi
 BINDIR="${PREFIX}/bin/"
 LIBDIR="${PREFIX}/lib/"
 WRKDIR="$PWD"
 
-export LIBEXT="`r2 -H LIBEXT`"
-export R2HOMEDIR="`r2 -H RHOMEDIR`"
-
 # prefix
 export R2PM_SYSPREFIX="${PREFIX}"
-export R2PM_HOMEPREFIX="${R2HOMEDIR}/prefix"
+export R2PM_HOMEPREFIX="${R2DATAHOME}/prefix"
 export R2PM_PREFIX="${R2PM_HOMEPREFIX}"
 
 # bindir
@@ -43,12 +59,12 @@ export R2PM_SYSBINDIR="${BINDIR}"
 export R2PM_BINDIR
 
 # plugdir
-[ -z "${R2PM_PLUGDIR}" ] && R2PM_PLUGDIR="${R2HOMEDIR}/plugins"
+[ -z "${R2PM_PLUGDIR}" ] && R2PM_PLUGDIR="${R2DATAHOME}/plugins"
 export R2PM_PLUGDIR
 
 # www
 export R2PM_SYSWWWROOT="`r2 -qc 'e http.root' --`"
-export R2PM_HOMEWWWROOT="${R2HOMEDIR}/www/"
+export R2PM_HOMEWWWROOT="${R2DATAHOME}/www/"
 export R2PM_WWWROOT="${R2PM_HOMEWWWROOT}"
 
 # pkgconfig
@@ -58,6 +74,8 @@ export LDFLAGS="-L${R2PM_HOMEPREFIX}/lib"
 
 export R2PM_PYPATH="${R2PM_PREFIX}/python"
 export R2PM_OLDPWD="${PWD}"
+
+export RHOMEDIR="`r2 -H RHOMEDIR`"
 
 if [ "`uname`" = Darwin ]; then
 	export LD_LIBRARY_PATH="${R2PM_HOMEPREFIX}/lib"
@@ -69,16 +87,16 @@ fi
 TRAVIS_TYPE=XX
 TRAVIS_JOB=86948888
 IS_SYSPKG=0
-[ -z "$R2PM_USRDIR" ] && R2PM_USRDIR="${HOME}/.config/radare2/r2pm"
-R2PM_ETCD="${R2HOMEDIR}/radare2rc.d"
+[ -z "$R2PM_USRDIR" ] && R2PM_USRDIR="${R2DATAHOME}/r2pm"
+R2PM_ETCD="${R2CONFIGHOME}/radare2rc.d"
 
 # TODO. support system plugin installs R2PM_PLUGDIR="${R2PM_PREFIX}/lib/radare2/last"
 if [ -z "${R2PM_GITDIR}" ]; then
 	R2PM_GITDIR="${R2PM_USRDIR}/git/"
 fi
 if [ -z "${R2PM_DBDIR}" ]; then
-	if [ -d "${HOME}/.config/radare2/r2pm/db" ]; then
-		R2PM_DBDIR="${HOME}/.config/radare2/r2pm/db"
+	if [ -d "${R2DATAHOME}/r2pm/db" ]; then
+		R2PM_DBDIR="${R2DATAHOME}/r2pm/db"
 	fi
 fi
 if [ -z "${R2PM_DBDIR}" ]; then
@@ -123,16 +141,17 @@ countDown() {
 }
 
 commitSuicide() {
-	confirm "Do you wanna purge r2 completely from your system and home? (y/N)?"
+	confirm "Do you wanna purge r2 completely from your system and home?"
 	if [ $? != 0 ]; then
 		echo "Aborted." > /dev/stderr
 		exit 1
 	fi
 	countDown "Self destroying in" 3
-	confirm "> Delete ~/config.radare2" && (
-		rm -rf ~/.config/radare2
+	confirm "> Delete $RHOMEDIR" && (
+		rm -rf "$RHOMEDIR"
 	)
-	R2PATHS="${PREFIX} /usr /usr/local /opt/radare2 ~/config/radare2/prefix /"
+	R2PATHS="${PREFIX}:/usr:/usr/local:/opt/radare2:${RHOMEDIR}/prefix:/"
+	IFS=:
 	for a in $R2PATHS ; do
 		if [ -x "${a}/bin/radare2" ]; then
 			confirm "> Delete r2 from ${a}" && (
@@ -140,12 +159,14 @@ commitSuicide() {
 			)
 		fi
 	done
+	unset IFS
 }
 
 case "$1" in
 init|up|update)
 	[ -z "$R2PM_DBDIR" ] && R2PM_DBDIR="${R2PM_USRDIR}/db"
 	mkdir -p "${R2PM_GITDIR}"
+	mkdir -p "${HOME}/.config"
 	cd "${R2PM_GITDIR}"
 	if [ -d radare2-pm ]; then
 		cd radare2-pm
@@ -490,6 +511,11 @@ case "$1" in
 	#TODO set R2PM_ETCD= to a "global" radare2rc.d
 	r2pm_uninstall "$@"
 	;;
+-cp)
+	if [ -n "${R2PM_PLUGDIR}" ]; then
+		rm -f "${R2PM_PLUGDIR}/*"
+	fi
+	;;
 -ci)
 	shift
 	${R2PM} clean $*
@@ -546,6 +572,13 @@ ls)
 		echo "Cannot find ${R2PM_GITDIR}"
 		exit 1
 	fi
+	;;
+cache)
+	echo "export LIBEXT=\"${LIBEXT}\"" > "${R2PMCACHE}"
+	echo "export R2CONFIGHOME=\"${R2CONFIGHOME}\"" >> "${R2PMCACHE}"
+	echo "export R2DATAHOME=\"${R2DATAHOME}\"" >> "${R2PMCACHE}"
+	echo "export PREFIX=\"${PREFIX}\"" >> "${R2PMCACHE}"
+	echo "[r2pm] r2 environment cached in ${R2PMCACHE}"
 	;;
 -a|add)
 	if [ "$2" = "help" ]; then
@@ -627,19 +660,21 @@ Commands:
  -H variable                 show value of given variable
  -c,clean ([git/dir])        clear source cache (GITDIR)
  -ci (pkgname)               clean install of given package
+ -cp                         clean the user's home plugin directory
  -d,doc [pkgname]            show documentation for given package
  -w <pkgname>                what/where is installed
  init | update ..            initialize/update database
  cd [git/dir]                cd into given git (see 'r2pm ls')
  ls                          ls all cloned git repos in GITDIR
  suicide                     self remove all (home + system) installations of r2
+ cache                       cache contents of r2 -H to make r2pm r2-independent
 Environment:
  SUDO=sudo                    use this tool as sudo
- R2PM_PLUGDIR=~/.config/radare2/plugins   # default value, home-install for plugins
- R2PM_BINDIR=~/.config/radare2/prefix/bin # bindir in r2's PATH
- R2PM_PLUGDIR=/usr/lib/radare2/last/      # for system-wide plugin installs
- R2PM_DBDIR=~/.config/radare2/r2pm/db     # location of the db
- R2PM_GITDIR=~/.config/radare2/r2pm/git   # cloned git repositories
+ R2PM_PLUGDIR=~/.local/share/radare2/plugins   # default value, home-install for plugins
+ R2PM_BINDIR=~/.local/share/radare2/prefix/bin # bindir in r2's PATH
+ R2PM_PLUGDIR=/usr/lib/radare2/last/           # for system-wide plugin installs
+ R2PM_DBDIR=~/.local/share/radare2/r2pm/db     # location of the db
+ R2PM_GITDIR=~/.local/share/radare2/r2pm/git   # cloned git repositories
 HELP
 	;;
 esac

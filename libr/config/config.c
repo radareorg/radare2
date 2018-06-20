@@ -2,15 +2,12 @@
 
 #include "r_config.h"
 #include "r_util.h" // r_str_hash, r_str_chop, ...
-#ifdef _MSC_VER
-#define strcasecmp stricmp
-#endif
+
 R_API RConfigNode* r_config_node_new(const char *name, const char *value) {
-	RConfigNode *node;
-	if (STRNULL (name)) {
+	if (IS_NULLSTR (name)) {
 		return NULL;
 	}
-	node = R_NEW0 (RConfigNode);
+	RConfigNode *node = R_NEW0 (RConfigNode);
 	if (!node) {
 		return NULL;
 	}
@@ -49,6 +46,19 @@ R_API void r_config_node_free(void *n) {
 	free (node);
 }
 
+static bool isBoolean(const char *val) {
+	if (!r_str_casecmp (val, "true") || !r_str_casecmp (val, "false")) {
+		return true;
+	}
+	if (!r_str_casecmp (val, "on") || !r_str_casecmp (val, "off")) {
+		return true;
+	}
+	if (!r_str_casecmp (val, "yes") || !r_str_casecmp (val, "no")) {
+		return true;
+	}
+	return false;
+}
+
 static void config_print_value_json(RConfig *cfg, RConfigNode *node) {
 	const char *val = node->value;
 	if (!val) {
@@ -59,7 +69,7 @@ static void config_print_value_json(RConfig *cfg, RConfigNode *node) {
 		if (!strncmp (val, "0x", 2)) {
 			ut64 n = r_num_get (NULL, val);
 			cfg->cb_printf ("%"PFMT64d, n);
-		} else if (r_str_isnumber (val) || !strcmp (val, "true") || !strcmp (val, "false")) {
+		} else if (r_str_isnumber (val) || isBoolean (val)) {
 			cfg->cb_printf ("%s", val);
 		} else {
 			cfg->cb_printf ("\"%s\"", sval);
@@ -148,7 +158,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 	bool json = false;
 	bool isFirst = false;
 
-	if (!STRNULL (str)) {
+	if (!IS_NULLSTR (str)) {
 		str = r_str_trim_ro (str);
 		len = strlen (str);
 		if (len > 0 && str[0] == 'j') {
@@ -271,7 +281,7 @@ R_API void r_config_list(RConfig *cfg, const char *str, int rad) {
 }
 
 R_API RConfigNode* r_config_node_get(RConfig *cfg, const char *name) {
-	if (STRNULL (name)) {
+	if (!cfg || IS_NULLSTR (name)) {
 		return NULL;
 	}
 	return ht_find (cfg->ht, name, NULL);
@@ -296,14 +306,17 @@ R_API int r_config_set_setter(RConfig *cfg, const char *key, RConfigCallback cb)
 }
 
 static bool is_true(const char *s) {
-	return !strcasecmp ("true", s) || !strcasecmp ("1", s);
+	return !r_str_casecmp ("yes", s) || !r_str_casecmp ("on", s) || !r_str_casecmp ("true", s) || !r_str_casecmp ("1", s);
 }
 
 static bool is_bool(const char *s) {
-	return !strcasecmp ("true", s) || !strcasecmp ("false", s);
+	return !r_str_casecmp ("true", s) || !r_str_casecmp ("false", s);
 }
 
 R_API const char* r_config_get(RConfig *cfg, const char *name) {
+	if (!cfg || !name) {
+		return NULL;
+	}
 	RConfigNode *node = r_config_node_get (cfg, name);
 	if (node) {
 		if (node->getter) {
@@ -338,6 +351,9 @@ R_API ut64 r_config_get_i(RConfig *cfg, const char *name) {
 		}
 		if (node->i_value || !strcmp (node->value, "false")) {
 			return node->i_value;
+		}
+		if (!strcmp (node->value, "true")) {
+			return 1;
 		}
 		return (ut64) r_num_math (cfg->num, node->value);
 	}
@@ -388,7 +404,7 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 	RConfigNode *node = NULL;
 	char *ov = NULL;
 	ut64 oi;
-	if (!cfg || STRNULL (name)) {
+	if (!cfg || IS_NULLSTR (name)) {
 		return NULL;
 	}
 	node = r_config_node_get (cfg, name);
@@ -739,6 +755,9 @@ R_API bool r_config_save_char(RConfigHold *h, ...) {
 R_API bool r_config_save_num(RConfigHold *h, ...) {
 	va_list ap;
 	char *key;
+	if (!h) {
+		return false;
+	}
 	if (!h->list_num) {
 		h->list_num = r_list_newf ((RListFree) free);
 		if (!h->list_num) {

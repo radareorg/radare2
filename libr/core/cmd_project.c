@@ -6,10 +6,10 @@
 
 static const char *help_msg_P[] = {
 	"Usage:", "P[?osi] [file]", "Project management",
+	"P", "", "list all projects",
 	"Pc", " [file]", "show project script to console",
 	"Pd", " [file]", "delete project",
 	"Pi", " [file]", "show project information",
-	"Pl", "", "list all projects",
 	"Pn", "[j]", "show project notes (Pnj for json)",
 	"Pn", " [base64]", "set notes text",
 	"Pn", " -", "edit notes with cfg.editor",
@@ -18,7 +18,7 @@ static const char *help_msg_P[] = {
 	"PS", " [file]", "save script file",
 	"P-", " [file]", "delete project (alias for Pd)",
 	"NOTE:", "", "See 'e??prj.'",
-	"NOTE:", "", "project are stored in ~/.config/radare2/projects",
+	"NOTE:", "", "project are stored in " R_JOIN_2_PATHS ("~", R2_HOME_PROJECTS),
 	NULL
 };
 
@@ -81,9 +81,6 @@ static int cmd_project(void *data, const char *input) {
 				r_cons_println (file);
 			}
 		}
-		break;
-	case 'l':
-		r_core_project_list (core, input[1]);
 		break;
 	case 'd':
 	case '-':
@@ -233,6 +230,10 @@ static int cmd_project(void *data, const char *input) {
 			r_cons_println (prjName);
 			free (prjName);
 		}
+		break;
+	case 0:
+	case 'j':
+		r_core_project_list (core, input[0]);
 		break;
 	default:
 		r_core_cmd_help (core, help_msg_P);

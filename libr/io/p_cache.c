@@ -155,6 +155,7 @@ R_API int r_io_desc_cache_read(RIODesc *desc, ut64 paddr, ut8 *buf, int len) {
 		// get an existing desc-cache, if it exists
 		if (!(cache = (RIODescCache *)(size_t)sdb_num_get (desc->cache, k, NULL))) {	
 			amount += (R_IO_DESC_CACHE_SIZE - cbaddr);
+			ptr += (R_IO_DESC_CACHE_SIZE - cbaddr);
 			goto beach;
 		}
 		if ((len - amount) > (R_IO_DESC_CACHE_SIZE - cbaddr)) {
@@ -261,12 +262,13 @@ R_API RList *r_io_desc_cache_list(RIODesc *desc) {
 	RIOCache *c;
 	RListIter *iter;
 	r_list_foreach (writes, iter, c) {
-		c->odata = calloc (1, R_ITV_SIZE (c));
+		const ut64 itvSize = r_itv_size (c->itv);
+		c->odata = calloc (1, itvSize);
 		if (!c->odata) {
 			r_list_free (writes);
 			return NULL;
 		}
-		r_io_pread_at (desc->io, R_ITV_BEGIN (c), c->odata, R_ITV_SIZE (c));
+		r_io_pread_at (desc->io, r_itv_begin (c->itv), c->odata, itvSize);
 	}
 	desc->io->p_cache = true;
 	desc->io->desc = current;

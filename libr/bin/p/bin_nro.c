@@ -5,16 +5,10 @@
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
+#include "nxo/nxo.h"
 
-// starting at 0
-typedef struct {
-	ut32 unused;
-	ut32 mod_memoffset;
-	ut64 padding;
-} NROStart;
-
-#define NRO_OFF(x) sizeof (NROStart) + r_offsetof (NROHeader, x)
-#define NRO_OFFSET_MODMEMOFF r_offsetof (NROStart, mod_memoffset)
+#define NRO_OFF(x) sizeof (NXOStart) + r_offsetof (NROHeader, x)
+#define NRO_OFFSET_MODMEMOFF r_offsetof (NXOStart, mod_memoffset)
 
 // starting at 0x10 (16th byte)
 typedef struct {
@@ -32,96 +26,8 @@ typedef struct {
 	ut32 unknown3;
 } NROHeader;
 
-// ------------------------------
-typedef struct {
-	ut32 magic;
-	ut32 dynamic;
-	ut32 bss_start;
-	ut32 bss_end;
-	ut32 unwind_start;
-	ut32 unwind_end;
-	ut32 mod_object;
-} MODHeader;
-
-typedef struct {
-	ut64 next;
-	ut64 prev;
-	ut64 relplt;
-	ut64 reldyn;
-	ut64 base;
-	ut64 dynamic;
-	ut64 is_rela;
-	ut64 relplt_size;
-	ut64 init;
-	ut64 fini;
-	ut64 bucket;
-	ut64 chain;
-	ut64 strtab;
-	ut64 symtab;
-	ut64 strtab_size;
-	ut64 got;
-	ut64 reladyn_size;
-	ut64 reldyn_size;
-	ut64 relcount;
-	ut64 relacount;
-	ut64 nchain;
-	ut64 nbucket;
-	ut64 got_value;
-} MODObject;
-
-typedef struct {
-	ut32 mod_offset;
-	ut32 text_offset;
-	ut32 text_size;
-	ut32 ro_offset;
-	ut32 ro_size;
-	ut32 data_offset;
-	ut32 data_size;
-	ut32 bss_size;
-} MODMeta;
-
-typedef struct {
-	ut32 *strings;
-	RList *methods_list;
-	RList *imports_list;
-	RList *classes_list;
-} RBinNROObj;
-
-static void parseMod (RBinFile *bf, RBinNROObj *bin, ut32 mod0, ut64 baddr);
-
-static ut32 readLE32(RBuffer *buf, int off) {
-	int left = 0;
-	const ut8 *data = r_buf_get_at (buf, off, &left);
-	return left > 3? r_read_le32 (data): 0;
-}
-
-static ut64 readLE64(RBuffer *buf, int off) {
-	int left = 0;
-	const ut8 *data = r_buf_get_at (buf, off, &left);
-	return left > 7? r_read_le64 (data): 0;
-}
-
-static const char *readString(RBuffer *buf, int off) {
-	int left = 0;
-	const char *data = (const char *)r_buf_get_at (buf, off, &left);
-	return left > 0 ? data: NULL;
-}
-
 static ut64 baddr(RBinFile *bf) {
 	return bf? readLE32 (bf->buf, NRO_OFFSET_MODMEMOFF): 0;
-}
-
-static const char *fileType(const ut8 *buf) {
-	if (!memcmp (buf, "NRO0", 4)) {
-		return "nro0";
-	}
-	if (!memcmp (buf, "NRR0", 4)) {
-		return "nrr0";
-	}
-	if (!memcmp (buf, "MOD0", 4)) {
-		return "mod0";
-	}
-	return NULL;
 }
 
 static bool check_bytes(const ut8 *buf, ut64 length) {
@@ -132,7 +38,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 }
 
 static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	RBinNROObj *bin = R_NEW0 (RBinNROObj);
+	RBinNXOObj *bin = R_NEW0 (RBinNXOObj);
 	if (!bin) {
 		return NULL;
 	}
@@ -141,7 +47,7 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sd
 	bin->imports_list = r_list_newf ((RListFree)free);
 	bin->classes_list = r_list_newf ((RListFree)free);
 	ut32 mod0 = readLE32 (bf->buf, NRO_OFFSET_MODMEMOFF);
-	parseMod (bf, bin, mod0, ba);
+	parseMod (bf->buf, bin, mod0, ba);
 	return (void *) bin;//(size_t) check_bytes (buf, sz);
 }
 
@@ -189,133 +95,6 @@ static Sdb *get_sdb(RBinFile *bf) {
 	sdb_set (kv, "nro_header.format", "xxxxxxxxxxxx magic unk size unk2 text_offset text_size ro_offset ro_size data_offset data_size bss_size unk3", 0);
 	sdb_ns_set (bf->sdb, "info", kv);
 	return kv;
-}
-
-static void walkSymbols (RBinFile *bf, RBinNROObj *bin, ut64 symtab, ut64 strtab, ut64 strtab_size, ut64 relplt, ut64 baddr) {
-	int i, import = 0;
-	RBinSymbol *sym;
-	RBinImport *imp;
-	for (i = 8; i < 99999; i++) {
-		ut64 addr = readLE64 (bf->buf, symtab + i);
-		ut64 size = readLE64 (bf->buf, symtab + i + 8);
-		i += 16; // NULL, NULL
-		ut64 name = readLE32 (bf->buf, symtab + i);
-		//ut64 type = readLE32 (bf->buf, symtab + i + 4);
-		const char *symName = readString (bf->buf, strtab + name);
-		if (!symName) {
-			break;
-		}
-		sym = R_NEW0 (RBinSymbol);
-		if (!sym) {
-			break;
-		}
-		sym->type = r_str_const ("FUNC");
-		sym->bind = r_str_const ("NONE");
-		sym->size = size;
-
-		if (addr == 0) {
-			import ++;
-			ut64 pltSym = readLE64 (bf->buf, relplt + (import * 24));
-			imp = R_NEW0 (RBinImport);
-			if (!imp) {
-				R_FREE (sym);
-				break;
-			}
-			imp->name  = strdup (symName);
-			if (!imp->name) {
-				goto out_walk_symbol;
-			}
-			imp->type = r_str_const ("FUNC");
-			if (!imp->type) {
-				goto out_walk_symbol;
-			}
-			imp->bind = r_str_const ("NONE");
-			if (!imp->bind) {
-				goto out_walk_symbol;
-			}
-			imp->ordinal = bin->imports_list->length;
-			r_list_append (bin->imports_list, imp);
-			sym->name = r_str_newf ("imp.%s", symName);
-			if (!sym->name) {
-				goto out_walk_symbol;
-			}
-			sym->paddr = pltSym - 8;
-			sym->vaddr = sym->paddr + baddr;
-			//eprintf ("f sym.imp.%s = 0x%"PFMT64x"\n", symName, pltSym - 8);
-		} else {
-			sym->name = strdup (symName);
-			if (!sym->name) {
-				R_FREE (sym);
-				break;
-			}
-			sym->paddr = addr;
-			sym->vaddr = sym->paddr + baddr;
-			//eprintf ("f sym.%s %"PFMT64u "0x%"PFMT64x"\n", symName, size, addr);
-		}
-		r_list_append (bin->methods_list, sym);
-		i += 8 - 1;
-	}
-    return;
-
-out_walk_symbol:
-	R_FREE (sym);
-	R_FREE (imp);
-	return;
-}
-
-static void parseMod (RBinFile *bf, RBinNROObj *bin, ut32 mod0, ut64 baddr) {
-	ut32 ptr = readLE32 (bf->buf, mod0);
-	eprintf ("magic %x at 0x%x\n", ptr, mod0);
-	if (ptr == 0x30444f4d) { // MOD0
-		eprintf ("is mode0\n");
-		MODHeader mh = {
-			.magic = readLE32 (bf->buf, mod0),
-			.dynamic = readLE32 (bf->buf, mod0 + 4),
-			.bss_start = readLE32 (bf->buf, mod0 + 8),
-			.bss_end = readLE32 (bf->buf, mod0 + 12),
-			.unwind_start = readLE32 (bf->buf, mod0 + 16),
-			.unwind_end = readLE32 (bf->buf, mod0 + 20),
-			.mod_object = readLE32 (bf->buf, mod0 + 24),
-		};
-		mh.mod_object += mod0;
-		eprintf ("magic 0x%x\n", mh.magic);
-		eprintf ("dynamic 0x%x\n", mh.dynamic);
-		eprintf ("bss 0x%x 0x%x\n", mh.bss_start, mh.bss_end);
-		eprintf ("unwind 0x%x 0x%x\n", mh.unwind_start, mh.unwind_end);
-		eprintf ("-------------\n");
-		eprintf ("mod 0x%x\n", mh.mod_object);
-#define MO_(x) readLE64(bf->buf, mh.mod_object + r_offsetof(MODObject, x))
-		MODObject mo = {
-			.next = MO_(next),
-			.prev = MO_(prev),
-			.relplt = MO_(relplt),
-			.reldyn = MO_(reldyn),
-			.base = MO_(base),
-			.dynamic = MO_(dynamic),
-			.is_rela = MO_(is_rela),
-			.relplt_size = MO_(relplt_size),
-			.init = MO_(init),
-			.fini = MO_(fini),
-			.bucket = MO_(bucket),
-			.chain = MO_(chain),
-			.strtab = MO_(strtab),
-			.symtab = MO_(symtab),
-			.strtab_size = MO_(strtab_size)
-		};
-		eprintf ("next 0x%"PFMT64x"\n", mo.next);
-		eprintf ("prev 0x%"PFMT64x"\n", mo.prev);
-		eprintf ("base 0x%"PFMT64x"\n", mo.base);
-		eprintf ("init 0x%"PFMT64x"\n", mo.init);
-		eprintf ("fini 0x%"PFMT64x"\n", mo.fini);
-		eprintf ("relplt 0x%"PFMT64x"\n", mo.relplt - mo.base);
-		eprintf ("symtab = 0x%"PFMT64x"\n", mo.symtab - mo.base);
-		eprintf ("strtab = 0x%"PFMT64x"\n", mo.strtab - mo.base);
-		eprintf ("strtabsz = 0x%"PFMT64x"\n", mo.strtab_size);
-		//ut32 modo = mh.mod_object;
-		ut64 strtab = mo.strtab - mo.base;
-		ut64 symtab = mo.symtab - mo.base;
-		walkSymbols (bf, bin, symtab, strtab, mo.strtab_size, mo.relplt - mo.base, baddr);
-	}
 }
 
 static RList *sections(RBinFile *bf) {
@@ -375,7 +154,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->vsize = sig0sz;
 		ptr->paddr = sig0;
 		ptr->vaddr = sig0 + ba;
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; // r--
+		ptr->srwx = R_BIN_SCN_READABLE; // r--
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	} else {
@@ -391,7 +170,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize;
 	ptr->paddr = readLE32 (b, NRO_OFF (text_memoffset));
 	ptr->vaddr = ptr->paddr + ba;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP; // r-x
+	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE; // r-x
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -404,7 +183,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize;
 	ptr->paddr = readLE32 (b, NRO_OFF (ro_memoffset));
 	ptr->vaddr = ptr->paddr + ba;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; // r-x
+	ptr->srwx = R_BIN_SCN_READABLE; // r-x
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -417,7 +196,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize;
 	ptr->paddr = readLE32 (b, NRO_OFF (data_memoffset));
 	ptr->vaddr = ptr->paddr + ba;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_MAP; // rw-
+	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE; // rw-
 	ptr->add = true;
 	eprintf ("Base Address 0x%08"PFMT64x "\n", ba);
 	eprintf ("BSS Size 0x%08"PFMT64x "\n", (ut64)
@@ -427,11 +206,11 @@ static RList *sections(RBinFile *bf) {
 }
 
 static RList *symbols(RBinFile *bf) {
-	RBinNROObj *bin;
+	RBinNXOObj *bin;
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	bin = (RBinNROObj*) bf->o->bin_obj;
+	bin = (RBinNXOObj*) bf->o->bin_obj;
 	if (!bin) {
 		return NULL;
 	}
@@ -439,11 +218,11 @@ static RList *symbols(RBinFile *bf) {
 }
 
 static RList *imports(RBinFile *bf) {
-	RBinNROObj *bin;
+	RBinNXOObj *bin;
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	bin = (RBinNROObj*) bf->o->bin_obj;
+	bin = (RBinNXOObj*) bf->o->bin_obj;
 	if (!bin) {
 		return NULL;
 	}

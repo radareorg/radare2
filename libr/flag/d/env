@@ -1,0 +1,7 @@
+getenv
+putenv
+unsetenv
+setenv
+GetEnvironmentVariable
+SetEnvironmentVariable
+ExpandEnvironmentStrings

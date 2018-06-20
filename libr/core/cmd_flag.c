@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <stddef.h>
 #include "r_cons.h"
@@ -44,6 +44,7 @@ static const char *help_msg_f[] = {
 	"fR","[?] [f] [t] [m]","relocate all flags matching f&~m 'f'rom, 't'o, 'm'ask",
 	"fs","[?]+-*","manage flagspaces",
 	"fS","[on]","sort flags by offset or name",
+	"ft","[?]*","flag tags, useful to find all flags matching some words",
 	"fV","[*-] [nkey] [offset]","dump/restore visual marks (mK/'K)",
 	"fx","[d]","show hexdump (or disasm) of flag:flagsize",
 	"fq","","list flags in quiet mode",
@@ -208,6 +209,57 @@ static int flag_to_flag(RCore *core, const char *glob) {
 		return next - core->offset;
 	}
 	return 0;
+}
+
+static void cmd_flag_tags (RCore *core, const char *input) {
+	char mode = input[1];
+	for (; *input && !IS_WHITESPACE (*input); input++) {}
+	char *inp = strdup (input);
+	char *arg = r_str_trim (inp);
+	if (!*arg && !mode) {
+		const char *tag;
+		RListIter *iter;
+		RList *list = r_flag_tags_list (core->flags);
+		r_list_foreach (list, iter, tag) {
+			r_cons_printf ("%s\n", tag);
+		}
+		r_list_free (list);
+		free (inp);
+		return;
+	}
+	if (mode == '?') {
+		eprintf ("Usage: ft [k] [v ...]\n");
+		eprintf (" ft tag strcpy strlen ... # set words for the 'string' tag\n");
+		eprintf (" ft tag                   # get offsets of all matching flags\n");
+		eprintf (" ft                       # list all tags\n");
+		eprintf (" ftn tag                  # get matching flagnames fot given tag\n");
+		free (inp);
+		return;
+	}
+	char *arg1 = strchr (arg, ' ');
+	if (arg1) {
+		*arg1 = 0;
+		const char *a1 = r_str_trim_ro (arg1 + 1);
+		r_flag_tags_set (core->flags, arg, a1);
+	} else {
+		RListIter *iter;
+		RFlagItem *flag;
+		RList *flags = r_flag_tags_get (core->flags, arg);
+		switch (mode) {
+		case 'n':
+			r_list_foreach (flags, iter, flag) {
+				// r_cons_printf ("0x%08"PFMT64x"\n", flag->offset);
+				r_cons_printf ("0x%08"PFMT64x"  %s\n", flag->offset, flag->name);
+			}
+			break;
+		default:
+			r_list_foreach (flags, iter, flag) {
+				r_cons_printf ("0x%08"PFMT64x"\n", flag->offset);
+			}
+			break;
+		}
+	}
+	free (inp);
 }
 
 static void flag_ordinals(RCore *core, const char *str) {
@@ -602,6 +654,9 @@ rep:
 			eprintf ("Missing arguments\n");
 		}
 		break;
+	case 't': // "ft"
+		cmd_flag_tags (core, input);
+		break;
 	case 'S':
 		r_flag_sort (core->flags, (input[1]=='n'));
 		break;
@@ -819,13 +874,23 @@ rep:
 					addr = r_num_math (core->num, arg + 1);
 				}
 				break;
-			case '.':
-				strict_offset = true;
+			case '.': // list all flags at given offset
+				{
+				RFlagItem *flag;
+				RListIter *iter;
+				const RList *flaglist;
 				arg = strchr (input, ' ');
 				if (arg) {
 					addr = r_num_math (core->num, arg + 1);
 				}
-				break;
+				flaglist = r_flag_get_list (core->flags, addr);
+				r_list_foreach (flaglist, iter, flag) {
+					if (flag) {
+						r_cons_println (flag->name);
+					}
+				}
+				return 0;
+				}
 			case 'w':
 				{
 				arg = strchr (input, ' ');
@@ -837,7 +902,7 @@ rep:
 						ut64 loff = 0; 
 						ut64 uoff = 0;
 						ut64 curseek = core->offset;
-						char *lmatch , *umatch;
+						char *lmatch = NULL , *umatch = NULL;
 						RFlagItem *flag;
 						RListIter *iter;
 						r_list_foreach (f->flags, iter, flag) { // creating a local copy

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_userconf.h>
 
@@ -105,7 +105,7 @@ int linux_handle_signals (RDebug *dbg) {
 				}
 				if (dbg->reason.type != R_DEBUG_REASON_NEW_LIB &&
 					dbg->reason.type != R_DEBUG_REASON_EXIT_LIB) {
-					dbg->reason.bp_addr = (ut64)siginfo.si_addr;
+					dbg->reason.bp_addr = (ut64)(size_t)siginfo.si_addr;
 					dbg->reason.type = R_DEBUG_REASON_BREAKPOINT;
 				}
 			}
@@ -293,28 +293,6 @@ void linux_attach_new_process (RDebug *dbg) {
 	}
 	linux_attach (dbg, dbg->forked_pid);
 	r_debug_select (dbg, dbg->forked_pid, dbg->forked_pid);
-}
-
-static RDebugPid *find_rdebug_pid (RDebug *dbg, int pid) {
-	RList *list = dbg->threads;
-	if (list) {
-		RDebugPid *th;
-		RListIter *it;
-		r_list_foreach (list, it, th) {
-			if (th->pid == pid) {
-				return th;
-			}
-		}
-	}
-	return NULL;
-}
-
-static bool get_pid_signalled_status (RDebug *dbg, int pid) {
-	RDebugPid *th = find_rdebug_pid (dbg, pid);
-	if (th) {
-		return th->signalled;
-	}
-	return false;
 }
 
 RDebugReasonType linux_dbg_wait(RDebug *dbg, int my_pid) {
@@ -780,7 +758,7 @@ void print_fpu (void *f, int r){
 	}
 #endif
 #else
-#warning not implemented for this platform
+#warning print_fpu not implemented for this platform
 #endif
 }
 
@@ -875,7 +853,7 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 		}
 		}
 #else
-	#warning not implemented for this platform
+	#warning getfpregs not implemented for this platform
 #endif
 		break;
 	case R_REG_TYPE_SEG:

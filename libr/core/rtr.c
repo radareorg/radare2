@@ -342,7 +342,7 @@ R_API int r_core_rtr_http_stop(RCore *u) {
 	RSocket* sock;
 
 #if __WINDOWS__
-	r_socket_http_server_set_breaked (&r_cons_singleton()->breaked);
+	r_socket_http_server_set_breaked (&r_cons_singleton ()->breaked);
 #endif
 	if (((size_t)u) > 0xff) {
 		port = listenport? listenport: r_config_get (
@@ -466,6 +466,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 		eprintf ("Cannot listen on http.port\n");
 		return 1;
 	}
+
 	if (launch=='H') {
 		const char *browser = r_config_get (core->config, "http.browser");
 		r_sys_cmdf ("%s http://%s:%d/%s &",
@@ -476,12 +477,12 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 	newcfg = r_config_clone (core->config);
 	core->config = newcfg;
 
-	r_config_set (core->config, "asm.cmtright", "false");
+	r_config_set (core->config, "asm.cmt.right", "false");
 #if 0
 	// WHY
 	r_config_set (core->config, "scr.html", "true");
 #endif
-	r_config_set (core->config, "scr.color", "false");
+	r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 	r_config_set (core->config, "asm.bytes", "false");
 	r_config_set (core->config, "scr.interactive", "false");
 	bool restoreSandbox = false;
@@ -509,7 +510,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 		/* restore environment */
 		core->config = origcfg;
 		r_config_set (origcfg, "scr.html", r_config_get (origcfg, "scr.html"));
-		r_config_set (origcfg, "scr.color", r_config_get (origcfg, "scr.color"));
+		r_config_set_i (origcfg, "scr.color", r_config_get_i (origcfg, "scr.color"));
 		r_config_set (origcfg, "scr.interactive", r_config_get (origcfg, "scr.interactive"));
 		core->http_up = 0; // DAT IS NOT TRUE AT ALL.. but its the way to enable visual
 
@@ -525,7 +526,8 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 
 		/* this is blocking */
 		activateDieTime (core);
-		rs = r_socket_http_accept (s, timeout);
+
+		rs = r_socket_http_accept (s, 1, timeout);
 
 		origoff = core->offset;
 		origblk = core->block;
@@ -538,7 +540,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 		core->http_up = 1;
 		core->config = newcfg;
 		r_config_set (newcfg, "scr.html", r_config_get (newcfg, "scr.html"));
-		r_config_set (newcfg, "scr.color", r_config_get (newcfg, "scr.color"));
+		r_config_set_i (newcfg, "scr.color", r_config_get_i (newcfg, "scr.color"));
 		r_config_set (newcfg, "scr.interactive", r_config_get (newcfg, "scr.interactive"));
 
 
@@ -836,7 +838,7 @@ the_end:
 	}
 	/* refresh settings - run callbacks */
 	r_config_set (origcfg, "scr.html", r_config_get (origcfg, "scr.html"));
-	r_config_set (origcfg, "scr.color", r_config_get (origcfg, "scr.color"));
+	r_config_set_i (origcfg, "scr.color", r_config_get_i (origcfg, "scr.color"));
 	r_config_set (origcfg, "scr.interactive", r_config_get (origcfg, "scr.interactive"));
 	return ret;
 }
@@ -1400,7 +1402,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		proto = RTR_PROT_RAP;
 		host = input;
 	}
-	while (*host && ISWHITECHAR (*host))
+	while (*host && IS_WHITECHAR (*host))
 		host++;
 
 	if (!(ptr = strchr (host, ':'))) {
@@ -1572,7 +1574,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			continue;
 		}
 		rtr_host[i].proto = proto;
-		strncpy (rtr_host[i].host, host, sizeof (rtr_host[i].proto)-1);
+		strncpy (rtr_host[i].host, host, sizeof (rtr_host[i].host)-1);
 		rtr_host[i].port = r_num_get (core->num, port);
 		strncpy (rtr_host[i].file, file, sizeof (rtr_host[i].file)-1);
 		rtr_host[i].fd = fd;
@@ -1668,12 +1670,12 @@ static bool r_core_rtr_rap_run(RCore *core, const char *input) {
 	if (fd) {
 		if (r_io_is_listener (core->io)) {
 			if (!r_core_serve (core, fd)) {
-				r_cons_singleton() -> breaked = true;
+				r_cons_singleton () -> breaked = true;
 			}
 			r_io_desc_free (fd);
 		}
 	} else {
-		r_cons_singleton()->breaked = true;
+		r_cons_singleton ()->breaked = true;
 	}
 	return !r_cons_singleton ()->breaked;
 	// r_core_cmdf (core, "o rap://%s", input);
@@ -1796,7 +1798,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		eprintf ("Error: Allocating cmd output\n");
 		return;
 	}
-	r_socket_read (fh, (ut8*)cmd_output, cmd_len);
+	r_socket_read_block (fh, (ut8*)cmd_output, cmd_len);
 	//ensure the termination
 	cmd_output[cmd_len] = 0;
 	r_cons_println (cmd_output);
@@ -1847,6 +1849,8 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 	}
 
 	s = r_socket_new (0);
+	s->local = r_config_get_i(core->config, "tcp.islocal");
+
 	if (!r_socket_listen (s, port, NULL)) {
 		eprintf ("Error listening on port %s\n", port);
 		r_socket_free (s);

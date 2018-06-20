@@ -29,6 +29,8 @@ static int check_features(RAsm *a, cs_insn *insn);
 
 #include "cs_mnemonics.c"
 
+#include "asm_x86_vm.c"
+
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static int omode = 0;
 	int mode, ret;
@@ -111,6 +113,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		if (ptrstr) {
 			memmove (ptrstr, ptrstr + 4, strlen (ptrstr + 4) + 1);
 		}
+	} else {
+		decompile_vm (a, op, buf, len);
 	}
 	if (a->syntax == R_ASM_SYNTAX_JZ) {
 		if (!strncmp (op->buf_asm, "je ", 3)) {

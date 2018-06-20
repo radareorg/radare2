@@ -1831,8 +1831,8 @@ hexagon_reg_num
 
           len = strlen (alias [i].name);
 
-          if (!strncasecmp (regs, alias [i].name, len)
-              || !strncasecmp (name, alias [i].name, len))
+          if (!r_str_ncasecmp (regs, alias [i].name, len)
+              || !r_str_ncasecmp (name, alias [i].name, len))
             {
               regn = alias [i].reg_num;
 
@@ -3167,7 +3167,7 @@ hexagon_extract_modifier_operand(
   for(i=0;i<hexagon_control_regs_count;i++){
     const char *name = hexagon_control_regs[i].name;
     size_t len = strlen(name);
-    if(!strncasecmp(reg_name,name,len)){
+    if(!r_str_ncasecmp(reg_name,name,len)){
       *return_value = hexagon_control_regs[i].reg_num;
       return 1;
     }

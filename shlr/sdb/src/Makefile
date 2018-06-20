@@ -4,9 +4,8 @@ CFLAGS+=-g
 OBJ=cdb.o buffer.o cdb_make.o ls.o sdbht.o ht.o sdb.o num.o base64.o match.o
 OBJ+=json.o ns.o lock.o util.o disk.o query.o array.o fmt.o journal.o
 OBJ+=dict.o
-
 SOBJ=$(subst .o,.o.o,${OBJ})
-
+WITHPIC?=1
 BIN=sdb${EXT_EXE}
 
 .PHONY: all static shared clean

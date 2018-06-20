@@ -30,7 +30,7 @@ You will want to set your favourite options in `~/.radare2rc` since every line t
 
 ```
 # Show comments at right of disassembly if they fit in screen
-e asm.cmtright=true
+e asm.cmt.right=true
 
 # Shows pseudocode in disassembly. Eg mov eax, str.ok = > eax = str.ok
 e asm.pseudo = true

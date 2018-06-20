@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #ifndef R2_CORE_H
 #define R2_CORE_H
@@ -38,11 +38,19 @@ R_LIB_VERSION_HEADER(r_core);
 #define R_CORE_BLOCKSIZE 0x100
 #define R_CORE_BLOCKSIZE_MAX 0x3200000 /* 32MB */
 
-#define R_CORE_ANAL_GRAPHLINES 1
-#define R_CORE_ANAL_GRAPHBODY  2
-#define R_CORE_ANAL_GRAPHDIFF  4
-#define R_CORE_ANAL_JSON       8
-#define R_CORE_ANAL_KEYVALUE  16
+#define R_CORE_ANAL_GRAPHLINES          1
+#define R_CORE_ANAL_GRAPHBODY           2
+#define R_CORE_ANAL_GRAPHDIFF           4
+#define R_CORE_ANAL_JSON                8
+#define R_CORE_ANAL_KEYVALUE            16
+#define R_CORE_ANAL_JSON_FORMAT_DISASM  32
+
+#define R_GRAPH_FORMAT_NO           0
+#define R_GRAPH_FORMAT_GMLFCN       1
+#define R_GRAPH_FORMAT_JSON         2
+#define R_GRAPH_FORMAT_GML          3
+#define R_GRAPH_FORMAT_DOT          4
+#define R_GRAPH_FORMAT_CMD          5
 
 ///
 #define R_CONS_COLOR_DEF(x, def) ((core->cons && core->cons->pal.x)? core->cons->pal.x: def)
@@ -63,7 +71,7 @@ R_LIB_VERSION_HEADER(r_core);
 #define R_CORE_CMD_DEPTH 100
 
 /* visual mode */
-#define NPF 9
+#define NPF 10
 #define PIDX (R_ABS (core->printidx % NPF))
 #define R_CORE_VISUAL_MODE_PX    0
 #define R_CORE_VISUAL_MODE_PD    1
@@ -74,6 +82,7 @@ R_LIB_VERSION_HEADER(r_core);
 #define R_CORE_VISUAL_MODE_PSS   6
 #define R_CORE_VISUAL_MODE_PRC   7
 #define R_CORE_VISUAL_MODE_PXa   8
+#define R_CORE_VISUAL_MODE_PXR   9
 
 typedef struct r_core_rtr_host_t {
 	int proto;
@@ -82,6 +91,19 @@ typedef struct r_core_rtr_host_t {
 	char file[1024];
 	RSocket *fd;
 } RCoreRtrHost;
+
+typedef struct r_core_undo_t {
+	char *action;
+	char *revert;
+	ut64 tstamp;
+	ut64 offset;
+} RCoreUndo;
+
+typedef struct {
+	ut64 addr;
+	const char *glob;
+	ut64 minstamp;
+} RCoreUndoCondition;
 
 typedef struct r_core_log_t {
 	int first;
@@ -113,17 +135,20 @@ typedef struct r_core_asmsteps_t {
 	int cols;
 } RCoreAsmsteps;
 
+typedef struct r_core_task_t RCoreTask;
+
 typedef struct r_core_t {
 	RBin *bin;
 	RConfig *config;
 	ut64 offset;
+	ut64 prompt_offset;
 	ut32 blocksize;
 	ut32 blocksize_max;
 	ut8 *block;
 	ut8 *oobi; /* out of band input ; used for multiline or file input */
 	int oobi_len;
 	RBuffer *yank_buf;
-	int tmpseek;
+	bool tmpseek;
 	bool vmode;
 	int interrupted; // XXX IS THIS DUPPED SOMEWHERE?
 	/* files */
@@ -152,6 +177,7 @@ typedef struct r_core_t {
 	REgg *egg;
 	RCoreLog *log;
 	RAGraph *graph;
+	RPanels* panels;
 	char *cmdqueue;
 	char *lastcmd;
 	char *cmdlog;
@@ -175,8 +201,14 @@ typedef struct r_core_t {
 	bool in_search;
 	RList *watchers;
 	RList *scriptstack;
+	int task_id_next;
 	RList *tasks;
+	RList *tasks_queue;
+	RCoreTask *current_task;
+	RCoreTask *main_task;
+	RThreadLock *tasks_lock;
 	int cmd_depth;
+	int max_cmd_depth;
 	ut8 switch_file_view;
 	Sdb *sdb;
 	int incomment;
@@ -188,6 +220,10 @@ typedef struct r_core_t {
 	char *cmdfilter;
 	bool break_loop;
 	RThreadLock *lock;
+	RList *undos;
+	bool fixedbits;
+	bool fixedarch;
+	struct r_core_t *c2;
 } RCore;
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd);
@@ -217,6 +253,7 @@ R_API void r_core_wait(RCore *core);
 R_API RCore *r_core_ncast(ut64 p);
 R_API RCore *r_core_cast(void *p);
 R_API int r_core_config_init(RCore *core);
+R_API char* r_core_graph_cmd(RCore *core, char *r2_cmd);
 R_API int r_core_prompt(RCore *core, int sync);
 R_API int r_core_prompt_exec(RCore *core);
 R_API int r_core_lines_initcache (RCore *core, ut64 start_addr, ut64 end_addr);
@@ -224,6 +261,7 @@ R_API int r_core_lines_currline (RCore *core);
 R_API void r_core_prompt_loop(RCore *core);
 R_API int r_core_cmd(RCore *core, const char *cmd, int log);
 R_API void r_core_cmd_repeat(RCore *core, int next);
+R_API int r_core_cmd_task_sync(RCore *core, const char *cmd, bool log);
 R_API char *r_core_editor (const RCore *core, const char *file, const char *str);
 R_API int r_core_fgets(char *buf, int len);
 // FIXME: change (void *user) to (RCore *core)
@@ -247,7 +285,7 @@ R_API int r_core_seek_align(RCore *core, ut64 align, int count);
 R_API void r_core_seek_archbits (RCore *core, ut64 addr);
 R_API int r_core_block_read(RCore *core);
 R_API int r_core_block_size(RCore *core, int bsize);
-R_API bool r_core_read_at(RCore *core, ut64 addr, ut8 *buf, int size);
+R_API int r_core_seek_size(RCore *core, ut64 addr, int bsize);
 R_API int r_core_is_valid_offset (RCore *core, ut64 offset);
 R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist);
 R_API void r_core_visual_prompt_input (RCore *core);
@@ -259,8 +297,14 @@ R_API int r_core_visual_classes(RCore *core);
 R_API int r_core_visual_types(RCore *core);
 R_API int r_core_visual(RCore *core, const char *input);
 R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int is_interactive);
-R_API int r_core_fcn_graph(RCore *core, RAnalFunction *_fcn);
-R_API int r_core_visual_panels(RCore *core);
+R_API int r_core_visual_panels(RCore *core, RPanels *panels);
+R_API RPanels *r_core_panels_new(RCore *core);
+R_API void r_core_panels_refresh(RCore *core);
+R_API void r_core_panels_check_stackbase(RCore *core);
+R_API void r_core_panels_free(RPanels *panels);
+R_API void r_core_panels_layout(RPanels *panels);
+R_API void r_core_panels_layout_refresh(RCore *core);
+R_API void r_core_visual_browse(RCore *core);
 R_API int r_core_visual_cmd(RCore *core, const char *arg);
 R_API void r_core_visual_seek_animation (RCore *core, ut64 addr);
 R_API void r_core_visual_asm(RCore *core, ut64 addr);
@@ -274,6 +318,7 @@ R_API char* r_core_add_asmqjmp(RCore *core, ut64 addr);
 
 R_API void r_core_anal_type_init(RCore *core);
 R_API void r_core_anal_cc_init(RCore *core);
+R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, int followDepth);
 
 R_API void r_core_list_io(RCore *core);
 /* visual marks */
@@ -363,10 +408,13 @@ R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr);
 R_API char *r_core_disassemble_instr(RCore *core, ut64 addr, int l);
 R_API char *r_core_disassemble_bytes(RCore *core, ut64 addr, int b);
 
-R_API int r_core_process_input_pade(RCore *core, const char *input, char** hex, char **asm_arch, ut32 *bits);
+/* carg.c */
+R_API RList *r_core_get_func_args(RCore *core, const char *func_name);
+R_API void r_core_print_func_args(RCore *core);
+R_API char *resolve_fcn_name(RAnal *anal, const char * func_name);
 
 /* anal.c */
-R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr);
+R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask);
 R_API void r_core_anal_esil(RCore *core, const char *str, const char *addr);
 R_API void r_core_anal_fcn_merge (RCore *core, ut64 addr, ut64 addr2);
 R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, bool verbose);
@@ -377,10 +425,14 @@ R_API void r_core_anal_hint_list (RAnal *a, int mode);
 R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode);
 R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad);
 R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth, int wordsize);
-R_API void r_core_anal_coderefs(RCore *core, ut64 addr, int gv);
-R_API void r_core_anal_codexrefs(RCore *core, ut64 addr, int fmt);
+R_API void r_core_anal_datarefs(RCore *core, ut64 addr);
+R_API void r_core_anal_coderefs(RCore *core, ut64 addr);
+R_API void r_core_anal_codexrefs(RCore *core, ut64 addr);
+R_API void r_core_anal_importxrefs(RCore *core);
+R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt);
 R_API int r_core_anal_refs(RCore *core, const char *input);
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr);
+R_API bool r_core_esil_cmd(RAnalEsil *esil, const char *cmd, ut64 a1, ut64 a2);
 R_API int r_core_esil_step_back(RCore *core);
 R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head);
 R_API ut64 r_core_anal_get_bbaddr(RCore *core, ut64 addr);
@@ -392,6 +444,8 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad);
 R_API int r_core_anal_fcn_list_size(RCore *core);
 R_API void r_core_anal_fcn_labels(RCore *core, RAnalFunction *fcn, int rad);
 R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr);
+R_API int r_core_print_bb_custom(RCore *core, RAnalFunction *fcn);
+R_API int r_core_print_bb_gml(RCore *core, RAnalFunction *fcn);
 R_API int r_core_anal_graph(RCore *core, ut64 addr, int opts);
 R_API int r_core_anal_graph_fcn(RCore *core, char *input, int opts);
 R_API RList* r_core_anal_graph_to(RCore *core, ut64 addr, int n);
@@ -422,7 +476,7 @@ R_API RList *r_core_asm_bwdisassemble (RCore *core, ut64 addr, int n, int len);
 R_API RList *r_core_asm_back_disassemble_instr (RCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
 R_API RList *r_core_asm_back_disassemble_byte (RCore *core, ut64 addr, int len, ut32 hit_count, ut32 extra_padding);
 R_API ut32 r_core_asm_bwdis_len (RCore* core, int* len, ut64* start_addr, ut32 l);
-R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int lines, int invbreak, int nbytes, bool json);
+R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int len, int lines, int invbreak, int nbytes, bool json, RAnalFunction *pdf);
 R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int len, int lines);
 R_API int r_core_print_disasm_instructions (RCore *core, int len, int l);
 R_API int r_core_print_disasm_all (RCore *core, ut64 addr, int l, int len, int mode);
@@ -441,11 +495,11 @@ R_API int r_core_hash_load(RCore *core, const char *file);
 R_API int r_core_bin_list(RCore *core, int mode);
 R_API int r_core_bin_raise (RCore *core, ut32 binfile_idx, ut32 obj_idx);
 R_API bool r_core_bin_delete (RCore *core, ut32 binfile_idx, ut32 binobj_idx);
+R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name);
 
 // XXX - this is kinda hacky, maybe there should be a way to
 // refresh the bin environment without specific calls?
 R_API int r_core_bin_refresh_strings(RCore *core);
-R_API bool r_core_bin_strpurge(const char *str);
 R_API int r_core_pseudo_code (RCore *core, const char *input);
 
 /* gdiff.c */
@@ -498,7 +552,8 @@ R_API void fcn_callconv (RCore *core, RAnalFunction *fcn);
 #define R_CORE_BIN_ACC_HEADER 0x80000
 #define R_CORE_BIN_ACC_RESOURCES 0x100000
 #define R_CORE_BIN_ACC_INITFINI 0x200000
-#define R_CORE_BIN_ACC_ALL	0x104FFF
+#define R_CORE_BIN_ACC_SEGMENTS 0x400000
+#define R_CORE_BIN_ACC_ALL	0x504FFF
 
 #define R_CORE_PRJ_FLAGS	0x0001
 #define R_CORE_PRJ_EVAL		0x0002
@@ -523,6 +578,7 @@ R_API int r_core_bin_info (RCore *core, int action, int mode, int va, RCoreBinFi
 R_API int r_core_bin_set_arch_bits (RCore *r, const char *name, const char * arch, ut16 bits);
 R_API int r_core_bin_update_arch_bits (RCore *r);
 R_API char *r_core_bin_method_flags_str(ut64 flags, int mode);
+R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode);
 
 /* rtr */
 R_API int r_core_rtr_cmds (RCore *core, const char *port);
@@ -550,9 +606,7 @@ R_API int r_core_visual_prompt (RCore *core);
 R_API bool r_core_visual_esil (RCore *core);
 R_API int r_core_search_preludes(RCore *core);
 R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen);
-R_API RList* /*<RIOMap*>*/ r_core_get_boundaries_prot (RCore *core, int protection, const char *mode);
-R_API RList* /*<RIOMap*>*/ r_core_get_boundaries (RCore *core, const char *mode);
-R_API RList* r_core_get_boundaries_ok(RCore *core);
+R_API RList* /*<RIOMap*>*/ r_core_get_boundaries_prot (RCore *core, int protection, const char *mode, const char *prefix);
 
 R_API int r_core_patch (RCore *core, const char *patch);
 
@@ -570,6 +624,13 @@ R_API int r_core_cmpwatch_del (RCore *core, ut64 addr);
 R_API int r_core_cmpwatch_update (RCore *core, ut64 addr);
 R_API int r_core_cmpwatch_show (RCore *core, ut64 addr, int mode);
 R_API int r_core_cmpwatch_revert (RCore *core, ut64 addr);
+
+/* undo */
+R_API RCoreUndo *r_core_undo_new(ut64 offset, const char *action, const char *revert);
+R_API void r_core_undo_print(RCore *core, int mode, RCoreUndoCondition *cond);
+R_API void *r_core_undo_free(RCoreUndo *cu);
+R_API void r_core_undo_push(RCore *core, RCoreUndo *cu);
+R_API void r_core_undo_pop(RCore *core);
 
 /* logs */
 R_API void r_core_log_free(RCoreLog *log);
@@ -598,16 +659,18 @@ typedef struct {
 } RCoreAnalStats;
 
 R_API bool core_anal_bbs(RCore *core, const char* input);
+R_API bool core_anal_bbs_range (RCore *core, const char* input);
 R_API char *r_core_anal_hasrefs(RCore *core, ut64 value, bool verbose);
 R_API char *r_core_anal_get_comments(RCore *core, ut64 addr);
 R_API RCoreAnalStats* r_core_anal_get_stats (RCore *a, ut64 from, ut64 to, ut64 step);
 R_API void r_core_anal_stats_free (RCoreAnalStats *s);
-R_API void r_core_anal_list_vtables (void *core, bool printJson);
-R_API void r_core_anal_print_rtti (void *core);
 
 R_API void r_core_syscmd_ls(const char *input);
 R_API void r_core_syscmd_cat(const char *file);
 R_API void r_core_syscmd_mkdir(const char *dir);
+
+R_API int offset_history_up(RLine *line);
+R_API int offset_history_down(RLine *line);
 
 // TODO : move into debug or syscall++
 R_API char *cmd_syscall_dostr(RCore *core, int num);
@@ -615,24 +678,45 @@ R_API char *cmd_syscall_dostr(RCore *core, int num);
 
 typedef void (*RCoreTaskCallback)(void *user, char *out);
 
+typedef enum {
+	R_CORE_TASK_STATE_BEFORE_START,
+	R_CORE_TASK_STATE_RUNNING,
+	R_CORE_TASK_STATE_SLEEPING,
+	R_CORE_TASK_STATE_DONE
+} RTaskState;
+
 typedef struct r_core_task_t {
 	int id;
-	char state;
+	RTaskState state;
 	void *user;
 	RCore *core;
-	RThreadMsg *msg;
+	RThreadCond *dispatch_cond;
+	RThreadLock *dispatch_lock;
+	RThread *thread;
+	char *cmd;
+	char *res;
+	bool cmd_log;
+	RStack *cons;
 	RCoreTaskCallback cb;
 } RCoreTask;
 
-R_API RCoreTask *r_core_task_get (RCore *core, int id);
-R_API void r_core_task_list (RCore *core, int mode);
-R_API RCoreTask *r_core_task_new (RCore *core, const char *cmd, RCoreTaskCallback cb, void *user);
-R_API void r_core_task_run(RCore *core, RCoreTask *_task);
-R_API void r_core_task_run_bg(RCore *core, RCoreTask *_task);
-R_API RCoreTask *r_core_task_add (RCore *core, RCoreTask *task);
-R_API void r_core_task_add_bg (RCore *core, RCoreTask *task);
-R_API int r_core_task_del (RCore *core, int id);
-R_API void r_core_task_join (RCore *core, RCoreTask *task);
+R_API RCoreTask *r_core_task_get(RCore *core, int id);
+R_API void r_core_task_print(RCore *core, RCoreTask *task, int mode);
+R_API void r_core_task_list(RCore *core, int mode);
+R_API const char *r_core_task_status(RCoreTask *task);
+R_API RCoreTask *r_core_task_new(RCore *core, const char *cmd, RCoreTaskCallback cb, void *user);
+R_API void r_core_task_free(RCoreTask *task);
+R_API void r_core_task_enqueue(RCore *core, RCoreTask *task);
+R_API int r_core_task_run_sync(RCore *core, RCoreTask *task);
+R_API void r_core_task_sync_begin(RCore *core);
+R_API void r_core_task_sync_end(RCore *core);
+R_API void r_core_task_continue(RCoreTask *t);
+R_API void r_core_task_sleep_begin(RCoreTask *task);
+R_API void r_core_task_sleep_end(RCoreTask *task);
+R_API int r_core_task_del(RCore *core, int id);
+R_API void r_core_task_del_all_done(RCore *core);
+R_API RCoreTask *r_core_task_self(RCore *core);
+R_API void r_core_task_join(RCore *core, RCoreTask *current, RCoreTask *task);
 typedef void (*inRangeCb) (RCore *core, ut64 from, ut64 to, int vsize,
 			   bool asterisk, int count);
 R_API int r_core_search_value_in_range (RCore *core, RInterval search_itv,
@@ -644,79 +728,6 @@ extern RCorePlugin r_core_plugin_anal;
 
 #endif
 
-/*
-	RTTI Parsing Information
-	MSVC(Microsoft visual studio compiler) rtti structure
-	information:
-*/
-
-typedef struct type_descriptor_t {
-	ut64 pVFTable;//Always point to type_info's vftable
-	int spare;
-	char* className;
-} type_descriptor;
-
-typedef struct class_hierarchy_descriptor_t {
-	int signature;//always 0
-
-	//bit 0 --> Multiple inheritance
-	//bit 1 --> Virtual inheritance
-	int attributes;
-
-	//total no of base classes
-	// including itself
-	int numBaseClasses;
-
-	//Array of base class descriptor's
-	RList* baseClassArray;
-} class_hierarchy_descriptor;
-
-typedef struct base_class_descriptor_t {
-	//Type descriptor of current base class
-	type_descriptor* typeDescriptor;
-
-	//Number of direct bases
-	//of this base class
-	int numContainedBases;
-
-	//vftable offset
-	int mdisp;
-
-	// vbtable offset
-	int pdisp;
-
-	//displacement of the base class
-	//vftable pointer inside the vbtable
-	int vdisp;
-
-	//don't know what's this
-	int attributes;
-
-	//class hierarchy descriptor
-	//of this base class
-	class_hierarchy_descriptor* classDescriptor;
-} base_class_descriptor;
-
-typedef struct rtti_complete_object_locator_t {
-	int signature;
-
-	//within class offset
-	int vftableOffset;
-
-	//don't know what's this
-	int cdOffset;
-
-	//type descriptor for the current class
-	type_descriptor* typeDescriptor;
-
-	//hierarchy descriptor for current class
-	class_hierarchy_descriptor* hierarchyDescriptor;
-} rtti_complete_object_locator;
-
-typedef struct run_time_type_information_t {
-	ut64 vtable_start_addr;
-	ut64 rtti_addr;
-} rtti_struct;
 
 #ifdef __cplusplus
 }

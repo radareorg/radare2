@@ -78,7 +78,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->vsize = textsize + (textsize % 4096);
 	ptr->paddr = 8 * 4;
 	ptr->vaddr = ptr->paddr;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP; // r-x
+	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE; // r-x
 	ptr->add = true;
 	r_list_append (ret, ptr);
 	// add data segment
@@ -92,7 +92,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->vsize = datasize + (datasize % 4096);
 		ptr->paddr = textsize + (8 * 4);
 		ptr->vaddr = ptr->paddr;
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_MAP; // rw-
+		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE; // rw-
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
@@ -108,7 +108,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->vsize = symssize + (symssize % 4096);
 		ptr->paddr = datasize + textsize + (8 * 4);
 		ptr->vaddr = ptr->paddr;
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; // r--
+		ptr->srwx = R_BIN_SCN_READABLE; // r--
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
@@ -123,7 +123,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->vsize = spszsize + (spszsize % 4096);
 		ptr->paddr = symssize + datasize + textsize + (8 * 4);
 		ptr->vaddr = ptr->paddr;
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; // r--
+		ptr->srwx = R_BIN_SCN_READABLE; // r--
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
@@ -138,7 +138,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->vsize = pcszsize + (pcszsize % 4096);
 		ptr->paddr = spszsize + symssize + datasize + textsize + (8 * 4);
 		ptr->vaddr = ptr->paddr;
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; // r--
+		ptr->srwx = R_BIN_SCN_READABLE; // r--
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
@@ -224,7 +224,7 @@ static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-struct r_bin_plugin_t r_bin_plugin_p9 = {
+RBinPlugin r_bin_plugin_p9 = {
 	.name = "p9",
 	.desc = "Plan9 bin plugin",
 	.license = "LGPL3",

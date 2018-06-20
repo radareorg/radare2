@@ -13,7 +13,7 @@ extern "C" {
 R_LIB_VERSION_HEADER(r_egg);
 
 #define R_EGG_INCDIR_ENV "EGG_INCDIR"
-#define R_EGG_INCDIR_PATH R2_PREFIX "/lib/radare2/" R2_VERSION "/egg"
+#define R_EGG_INCDIR_PATH "/lib/radare2/" R2_VERSION "/egg"
 
 // rename to REggShellcode
 #define R_EGG_PLUGIN_SHELLCODE 0
@@ -218,6 +218,9 @@ R_API void r_egg_append(REgg *egg, const char *src);
 R_API int r_egg_run(REgg *egg);
 R_API int r_egg_patch(REgg *egg, int off, const ut8 *b, int l);
 R_API void r_egg_finalize(REgg *egg);
+
+/* r_egg_Cfile.c */
+R_API char* r_egg_Cfile_parser(const char *file, const char *arch, const char *os, int bits);
 
 /* lang.c */
 R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta);

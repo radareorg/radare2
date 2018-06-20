@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_userconf.h>
 #include <stdlib.h>
@@ -9,6 +9,12 @@
 #  define NETBSD_WITH_BACKTRACE
 # endif
 #endif
+#if defined(__FreeBSD__)
+# include <sys/param.h>
+# if __FreeBSD_version >= 1000000 
+#  define FREEBSD_WITH_BACKTRACE
+# endif
+#endif
 #include <sys/types.h>
 #include <r_types.h>
 #include <r_util.h>
@@ -16,7 +22,8 @@
 
 static char** env = NULL;
 
-#if (__linux__ && __GNU_LIBRARY__) || defined(NETBSD_WITH_BACKTRACE)
+#if (__linux__ && __GNU_LIBRARY__) || defined(NETBSD_WITH_BACKTRACE) || \
+  defined(FREEBSD_WITH_BACKTRACE)
 # include <execinfo.h>
 #endif
 #if __APPLE__
@@ -199,7 +206,8 @@ R_API char *r_sys_cmd_strf(const char *fmt, ...) {
 #define APPLE_WITH_BACKTRACE 1
 #endif
 
-#if (__linux__ && __GNU_LIBRARY__) || (__APPLE__ && APPLE_WITH_BACKTRACE) || defined(NETBSD_WITH_BACKTRACE)
+#if (__linux__ && __GNU_LIBRARY__) || (__APPLE__ && APPLE_WITH_BACKTRACE) || \
+  defined(NETBSD_WITH_BACKTRACE) || defined(FREEBSD_WITH_BACKTRACE)
 #define HAVE_BACKTRACE 1
 #endif
 
@@ -437,6 +445,10 @@ R_API int r_sys_chdir(const char *s) {
 
 #if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
+	char *mysterr = NULL;
+	if (!sterr) {
+		sterr = &mysterr;
+	}
 	char buffer[1024], *outputptr = NULL;
 	char *inputptr = (char *)input;
 	int pid, bytes = 0, status;
@@ -528,7 +540,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 				if (!(bytes = read (sh_out[0], buffer, sizeof (buffer)-1))) {
 					break;
 				}
-				buffer[sizeof(buffer) - 1] = '\0';
+				buffer[sizeof (buffer) - 1] = '\0';
 				if (len) {
 					*len += bytes;
 				}
@@ -537,7 +549,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 				if (!read (sh_err[0], buffer, sizeof (buffer)-1)) {
 					break;
 				}
-				buffer[sizeof(buffer) - 1] = '\0';
+				buffer[sizeof (buffer) - 1] = '\0';
 				*sterr = r_str_append (*sterr, buffer);
 			} else if (FD_ISSET (sh_in[1], &wfds) && inputptr && *inputptr) {
 				int inputptr_len = strlen (inputptr);
@@ -564,10 +576,11 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 		waitpid (pid, &status, 0);
 		bool ret = true;
 		if (status) {
-			char *escmd = r_str_escape (cmd);
-			eprintf ("error code %d\n", WEXITSTATUS(status));
-			//eprintf ("%s: failed command '%s'\n", __func__, escmd);
-			free (escmd);
+			// char *escmd = r_str_escape (cmd);
+			// eprintf ("error code %d (%s): %s\n", WEXITSTATUS (status), escmd, *sterr);
+			// eprintf ("(%s)\n", output);
+			// eprintf ("%s: failed command '%s'\n", __func__, escmd);
+			// free (escmd);
 			ret = false;
 		}
 
@@ -1019,4 +1032,19 @@ R_API bool r_sys_tts(const char *txt, bool bg) {
 		}
 	}
 	return false;
+}
+
+static char prefix[128] = {0};
+
+R_API const char *r_sys_prefix(const char *pfx) {
+	if (!*prefix) {
+		r_str_ncpy (prefix, R2_PREFIX, sizeof (prefix));
+	}
+	if (pfx) {
+		if (strlen (pfx) >= sizeof (prefix) -1) {
+			return NULL;
+		}
+		r_str_ncpy (prefix, pfx, sizeof (prefix) - 1);
+	}
+	return prefix;
 }

@@ -1,5 +1,4 @@
-/* radare - LGPL - Copyright 2007-2016 - pancake */
-
+/* radare - LGPL - Copyright 2007-2016 - pancake */ 
 #include "r_types.h"
 #include "r_util.h"
 #include <stdio.h>
@@ -23,10 +22,8 @@ R_API char *r_hex_from_py_str(char *out, const char *code) {
 	if (!strncmp (code, "'''", 3)) {
 		const char *s = code + 2;
 		return r_hex_from_c_str (out, &s);
-	} else {
-		return r_hex_from_c_str (out, &code);
 	}
-	return out;
+	return r_hex_from_c_str (out, &code);
 }
 
 static const char *skip_comment_py(const char *code) {
@@ -244,6 +241,64 @@ R_API char *r_hex_from_c(const char *code) {
 	return ret;
 }
 
+
+R_API char *r_hex_from_js(const char *code) {
+	char * s1 = strchr (code, '\'');
+	char * s2 = strchr (code, '"');
+
+	/* there are no strings in the input */
+	if (!(s1 || s2)) {
+		return NULL;
+	}
+
+	char * start, * end;
+	if (s1 < s2) {
+		start = s1;
+		end = strchr (start + 1, '\'');
+	} else {
+		start = s2;
+		end = strchr (start + 1, '"');
+	}
+
+	/* the string isn't properly terminated */
+	if (!end) {
+		return NULL;
+	}
+
+	char * str = r_str_ndup (start + 1, end - start - 1);
+
+	/* assuming base64 input, output will always be shorter */
+	ut8 *b64d = malloc (end - start);
+	if (!b64d) {
+		free (str);
+		return NULL;
+	}
+
+	r_base64_decode (b64d, str, end - start - 1);
+	if (!b64d) {
+		free (str);
+		free (b64d);
+		return NULL;
+	}
+
+	// TODO: use r_str_bin2hex
+	int i, len = strlen ((const char *)b64d);
+	char * out = malloc (len * 2 + 1);
+	if (!out) {
+		free (str);
+		free (b64d);
+		return NULL;
+	}
+	for (i = 0; i < len; i++) {
+		sprintf (&out[i * 2], "%02x", b64d[i]);
+	}
+	out[len * 2] = '\0';
+
+	free (str);
+	free (b64d);
+	return out;
+}
+
 /* convert
  * "\x41\x23\x42\x1b"
  * "\x41\x23\x42\x1b"
@@ -278,13 +333,17 @@ R_API char *r_hex_no_code(const char *code) {
 R_API char *r_hex_from_code(const char *code) {
 	if (!strchr (code, '=')) {
 		return r_hex_no_code (code);
-	} else if (strstr (code, "char") || strstr (code, "int")) {
-		//C language
-		return r_hex_from_c (code);
-	} else {
-		// Python
-		return r_hex_from_py (code);
 	}
+	/* C language */
+	if (strstr (code, "char") || strstr (code, "int")) {
+		return r_hex_from_c (code);
+	}
+	/* JavaScript */
+	if (strstr (code, "var")) {
+		return r_hex_from_js (code);
+	}
+        /* Python */
+	return r_hex_from_py (code);
 }
 
 /* int byte = hexpair2bin("A0"); */
@@ -313,12 +372,13 @@ R_API int r_hex_pair2bin(const char *arg) {
 
 R_API int r_hex_bin2str(const ut8 *in, int len, char *out) {
 	int i, idx;
-	char tmp[5];
-	if (len < 0)
+	char tmp[8];
+	if (len < 0) {
 		return 0;
+	}
 	for (idx = i = 0; i < len; i++, idx += 2)  {
 		snprintf (tmp, sizeof (tmp), "%02x", in[i]);
-		memcpy (out+idx, tmp, 2);
+		memcpy (out + idx, tmp, 2);
 	}
 	out[idx] = 0;
 	return len;
@@ -429,7 +489,7 @@ R_API int r_hex_str_is_valid(const char* str) {
 		str += 2;
 	}
 	for (i = 0; str[i] != '\0' && str[i] != ' '; i++) {
-		if (ISHEXCHAR (str[i])) {
+		if (IS_HEXCHAR (str[i])) {
 			continue;
 		}
 		return -1; //if we're here, then str isnt valid

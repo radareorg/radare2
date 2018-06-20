@@ -1,6 +1,6 @@
 #include "sdbht.h"
 
-SdbHash* sdb_ht_new() {
+SDB_API SdbHash* sdb_ht_new() {
 	return ht_new ((DupValue)strdup, (HtKvFreeFunc)sdb_kv_free, (CalcSize)strlen);
 }
 
@@ -20,34 +20,35 @@ static bool sdb_ht_internal_insert(SdbHash* ht, const char* key,
 	}
 	return false;
 }
-bool sdb_ht_insert(SdbHash* ht, const char* key, const char* value) {
+
+SDB_API bool sdb_ht_insert(SdbHash* ht, const char* key, const char* value) {
 	return sdb_ht_internal_insert (ht, key, value, false);
 }
 
-bool sdb_ht_insert_kvp(SdbHash* ht, SdbKv *kvp, bool update) {
+SDB_API bool sdb_ht_insert_kvp(SdbHash* ht, SdbKv *kvp, bool update) {
 	return ht_insert_kv (ht, (HtKv*)kvp, update);
 }
 
-bool sdb_ht_update(SdbHash *ht, const char *key, const char*value) {
+SDB_API bool sdb_ht_update(SdbHash *ht, const char *key, const char*value) {
 	return sdb_ht_internal_insert (ht, key, value, true);
 }
 
-SdbKv* sdb_ht_find_kvp(SdbHash* ht, const char* key, bool* found) {
+SDB_API SdbKv* sdb_ht_find_kvp(SdbHash* ht, const char* key, bool* found) {
 	return (SdbKv *)ht_find_kv (ht, key, found);
 }
 
-char* sdb_ht_find(SdbHash* ht, const char* key, bool* found) {
+SDB_API char* sdb_ht_find(SdbHash* ht, const char* key, bool* found) {
 	return (char *)ht_find (ht, key, found);
 }
 
-void sdb_ht_free(SdbHash *ht) {
+SDB_API void sdb_ht_free(SdbHash *ht) {
 	ht_free (ht);
 }
 
-bool sdb_ht_delete(SdbHash* ht, const char *key) {
+SDB_API bool sdb_ht_delete(SdbHash* ht, const char *key) {
 	return ht_delete (ht, key);
 }
 
-void sdb_ht_free_deleted(SdbHash* ht) {
+SDB_API void sdb_ht_free_deleted(SdbHash* ht) {
 	ht_free_deleted (ht);
 }

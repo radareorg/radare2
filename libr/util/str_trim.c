@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2017 - pancake */
+/* radare - LGPL - Copyright 2007-2018 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -9,9 +9,6 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdarg.h>
-#ifdef _MSC_VER
-#define strncasecmp _strnicmp
-#endif
 
 // TODO: simplify this horrible loop
 R_API void r_str_trim_path(char *s) {
@@ -66,13 +63,13 @@ R_API char *r_str_trim(char *str) {
 	if (!str) {
 		return NULL;
 	}
-	while (*str && ISWHITECHAR (*str)) {
+	while (*str && IS_WHITECHAR (*str)) {
 		memmove (str, str + 1, strlen (str + 1) + 1);
 	}
 	len = strlen (str);
 	if (len > 0) {
 		for (ptr = str + len - 1; ptr != str; ptr--) {
-			if (!ISWHITECHAR (*ptr)) {
+			if (!IS_WHITECHAR (*ptr)) {
 				break;
 			}
 			*ptr = '\0';
@@ -85,7 +82,7 @@ R_API char *r_str_trim(char *str) {
 // TODO: rename to r_str_trim_head_ro()
 R_API const char *r_str_trim_ro(const char *str) {
 	if (str) {
-		for (; *str && ISWHITECHAR (*str); str++);
+		for (; *str && IS_WHITECHAR (*str); str++);
 	}
 	return str;
 }
@@ -114,7 +111,7 @@ R_API char *r_str_trim_tail(char *str) {
 	}
 
 	while (length--) {
-		if (ISWHITECHAR (str[length])) {
+		if (IS_WHITECHAR (str[length])) {
 			str[length] = '\0';
 		} else {
 			break;

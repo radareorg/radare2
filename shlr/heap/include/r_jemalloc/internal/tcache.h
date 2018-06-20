@@ -193,8 +193,8 @@ tcache_enabled_get(void)
 	tsd_t *tsd;
 	tcache_enabled_t tcache_enabled;
 
-	cassert(config_tcache);
-
+	if(unlikely(!config_tcache))
+		return false;
 	tsd = tsd_fetch();
 	tcache_enabled = tsd_tcache_enabled_get(tsd);
 	if (tcache_enabled == tcache_enabled_default) {
@@ -288,10 +288,15 @@ tcache_alloc_small(tsd_t *tsd, arena_t *arena, tcache_t *tcache, size_t size,
 	bool tcache_success;
 	size_t usize JEMALLOC_CC_SILENCE_INIT(0);
 
-	assert(binind < JM_NBINS);
+	if (unlikely(binind > JM_NBINS))
+		return (NULL);
+
 	tbin = &tcache->tbins[binind];
 	ret = tcache_alloc_easy(tbin, &tcache_success);
-	assert(tcache_success == (ret != NULL));
+
+	if (unlikely(!(tcache_success == (ret != NULL))))
+		return (NULL);
+
 	if (unlikely(!tcache_success)) {
 		bool tcache_hard_success;
 		arena = arena_choose(tsd, arena);
@@ -304,7 +309,9 @@ tcache_alloc_small(tsd_t *tsd, arena_t *arena, tcache_t *tcache, size_t size,
 			return (NULL);
 	}
 
-	assert(ret);
+	if (unlikely(!ret))
+		return (NULL);
+
 	/*
 	 * Only compute usize if required.  The checks in the following if
 	 * statement are all static.
@@ -346,10 +353,14 @@ tcache_alloc_large(tsd_t *tsd, arena_t *arena, tcache_t *tcache, size_t size,
 	tcache_bin_t *tbin;
 	bool tcache_success;
 
-	assert(binind < nhbins);
+	if (unlikely(binind > nhbins))
+		return (NULL);
 	tbin = &tcache->tbins[binind];
 	ret = tcache_alloc_easy(tbin, &tcache_success);
-	assert(tcache_success == (ret != NULL));
+
+	if (unlikely(!(tcache_success == (ret != NULL))))
+		return (NULL);
+
 	if (unlikely(!tcache_success)) {
 		/*
 		 * Only allocate one large object at a time, because it's quite
@@ -449,6 +460,7 @@ tcache_dalloc_large(tsd_t *tsd, tcache_t *tcache, void *ptr, size_t size,
 		tcache_bin_flush_large(tsd, tbin, binind,
 		    (tbin_info->ncached_max >> 1), tcache);
 	}
+
 	assert(tbin->ncached < tbin_info->ncached_max);
 	tbin->ncached++;
 	*(tbin->avail - tbin->ncached) = ptr;

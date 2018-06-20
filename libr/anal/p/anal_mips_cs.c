@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2017 - pancake */
+/* radare2 - LGPL - Copyright 2013-2018 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -61,8 +61,6 @@
 // put the sign bit on the stack
 #define ES_IS_NEGATIVE(arg) "1,"arg",<<<,1,&"
 
-// jump to address
-#define ES_J(addr) addr",$jt,=,1,$ds,="
 
 // call with delay slot
 #define ES_CALL_DR(ra, addr) "pc,4,+,"ra",=,"ES_J(addr)
@@ -72,8 +70,16 @@
 #define ES_CALL_NDR(ra, addr) "pc,"ra",=,"ES_J(addr)
 #define ES_CALL_ND(addr) ES_CALL_NDR("ra", addr)
 
+#define USE_DS 0
+#if USE_DS
 // emit ERR trap if executed in a delay slot
-#define ES_TRAP_DS() "0,$ds,>,?{,$$,1,TRAP,BREAK,}"
+#define ES_TRAP_DS() "0,$ds,>,?{,$$,1,TRAP,BREAK,},"
+// jump to address
+#define ES_J(addr) addr",$jt,=,1,$ds,=,"
+#else
+#define ES_TRAP_DS() ""
+#define ES_J(addr) addr",pc,="
+#endif
 
 // sign extend 32 -> 64
 #define ES_SIGN_EXT64(arg) \
@@ -241,110 +247,110 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case MIPS_INS_BAL:
 	case MIPS_INS_JAL:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "," ES_CALL_D ("%s"), ARG (0));
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_CALL_D ("%s"), ARG (0));
 		break;
 	case MIPS_INS_JALR:
 	case MIPS_INS_JALRS:
 		if (OPCOUNT () < 2) {
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "," ES_CALL_D ("%s"), ARG (0));
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_CALL_D ("%s"), ARG (0));
 		} else {
 			PROTECT_ZERO () {
-				r_strbuf_appendf (&op->esil, ES_TRAP_DS () "," ES_CALL_DR ("%s","%s"), ARG (0), ARG (1));
+				r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_CALL_DR ("%s","%s"), ARG (0), ARG (1));
 			}
 		}
 		break;
 	case MIPS_INS_JALRC: // no delay
 		if (OPCOUNT () < 2) {
-			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "," ES_CALL_ND ("%s"), ARG (0));
+			r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_CALL_ND ("%s"), ARG (0));
 		} else {
 			PROTECT_ZERO () {
-				r_strbuf_appendf (&op->esil, ES_TRAP_DS () "," ES_CALL_NDR ("%s","%s"), ARG (0), ARG (1));
+				r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_CALL_NDR ("%s","%s"), ARG (0), ARG (1));
 			}
 		}
 		break;
 	case MIPS_INS_JRADDIUSP:
 		// increment stackpointer in X and jump to %ra
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",%d,sp,+=,"ES_J ("ra"), ARG (0));
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "%d,sp,+=,"ES_J ("ra"), ARG (0));
 		break;
 	case MIPS_INS_JR:
 	case MIPS_INS_JRC:
 	case MIPS_INS_J:
 	case MIPS_INS_B: // ???
 		// jump to address with conditional
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "," ES_J ("%s"), ARG (0));
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "" ES_J ("%s"), ARG (0));
 		break;
 	case MIPS_INS_BNE:  // bne $s, $t, offset
 	case MIPS_INS_BNEL:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",%s,%s,==,$z,!,?{,"ES_J ("%s")",}",
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "%s,%s,==,$z,!,?{,"ES_J ("%s")",}",
 			ARG (0), ARG (1), ARG (2));
 		break;
 	case MIPS_INS_BEQ:
 	case MIPS_INS_BEQL:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",%s,%s,==,$z,?{,"ES_J ("%s")",}",
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "%s,%s,==,$z,?{,"ES_J ("%s")",}",
 			ARG (0), ARG (1), ARG (2));
 		break;
 	case MIPS_INS_BZ:
 	case MIPS_INS_BEQZ:
 	case MIPS_INS_BEQZC:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",%s,0,==,$z,?{,"ES_J ("%s")",}",
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "%s,0,==,$z,?{,"ES_J ("%s")",}",
 			ARG (0), ARG (1));
 		break;
 	case MIPS_INS_BNEZ:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",%s,0,==,$z,!,?{,"ES_J ("%s")",}",
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "%s,0,==,$z,!,?{,"ES_J ("%s")",}",
 			ARG (0), ARG (1));
 		break;
 	case MIPS_INS_BEQZALC:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",%s,0,==,$z,?{,"ES_CALL_ND ("%s")",}",
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "%s,0,==,$z,?{,"ES_CALL_ND ("%s")",}",
 			ARG (0), ARG (1));
 		break;
 	case MIPS_INS_BLEZ:
 	case MIPS_INS_BLEZC:
 	case MIPS_INS_BLEZL:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",0,%s,==,$z,?{,"ES_J ("%s")",BREAK,},",
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0,%s,==,$z,?{,"ES_J ("%s")",BREAK,},",
 			ARG (0), ARG (1));
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",1,"ES_IS_NEGATIVE ("%s")",==,$z,?{,"ES_J ("%s")",}",
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "1,"ES_IS_NEGATIVE ("%s")",==,$z,?{,"ES_J ("%s")",}",
 			ARG (0), ARG (1));
 		break;
 	case MIPS_INS_BGEZ:
 	case MIPS_INS_BGEZC:
 	case MIPS_INS_BGEZL:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",0,"ES_IS_NEGATIVE ("%s")",==,$z,?{,"ES_J ("%s")",}",
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0,"ES_IS_NEGATIVE ("%s")",==,$z,?{,"ES_J ("%s")",}",
 			ARG (0), ARG (1));
 		break;
 	case MIPS_INS_BGEZAL:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",0,"ES_IS_NEGATIVE ("%s")",==,$z,?{,"ES_CALL_D ("%s")",}",
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0,"ES_IS_NEGATIVE ("%s")",==,$z,?{,"ES_CALL_D ("%s")",}",
 			ARG (0), ARG (1));
 		break;
 	case MIPS_INS_BGEZALC:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",0,"ES_IS_NEGATIVE ("%s")",==,$z,?{,"ES_CALL_ND ("%s")",}",
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0,"ES_IS_NEGATIVE ("%s")",==,$z,?{,"ES_CALL_ND ("%s")",}",
 			ARG (0), ARG (1));
 		break;
 	case MIPS_INS_BGTZALC:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",0,%s,==,$z,?{,BREAK,},", ARG(0));
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0,%s,==,$z,?{,BREAK,},", ARG(0));
 		r_strbuf_appendf (&op->esil, "0,"ES_IS_NEGATIVE ("%s")",==,$z,?{,"ES_CALL_ND ("%s")",}",
 			ARG (0), ARG (1));
 		break;
 	case MIPS_INS_BLTZAL:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",1,"ES_IS_NEGATIVE ("%s")",==,$z,?{,"ES_CALL_D ("%s")",}", ARG(0), ARG(1));
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "1,"ES_IS_NEGATIVE ("%s")",==,$z,?{,"ES_CALL_D ("%s")",}", ARG(0), ARG(1));
 		break;
 	case MIPS_INS_BLTZ:
 	case MIPS_INS_BLTZC:
 	case MIPS_INS_BLTZL:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",1,"ES_IS_NEGATIVE ("%s")",==,$z,?{,"ES_J ("%s")",}",
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "1,"ES_IS_NEGATIVE ("%s")",==,$z,?{,"ES_J ("%s")",}",
 			ARG (0), ARG (1));
 		break;
 	case MIPS_INS_BGTZ:
 	case MIPS_INS_BGTZC:
 	case MIPS_INS_BGTZL:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",0,%s,==,$z,?{,BREAK,},", ARG (0));
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",0,"ES_IS_NEGATIVE ("%s")",==,$z,?{,"ES_J("%s")",}",
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0,%s,==,$z,?{,BREAK,},", ARG (0));
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0,"ES_IS_NEGATIVE ("%s")",==,$z,?{,"ES_J("%s")",}",
 			ARG (0), ARG (1));
 		break;
 	case MIPS_INS_BTEQZ:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",0,t,==,$z,?{,"ES_J ("%s")",}", ARG (0));
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0,t,==,$z,?{,"ES_J ("%s")",}", ARG (0));
 		break;
 	case MIPS_INS_BTNEZ:
-		r_strbuf_appendf (&op->esil, ES_TRAP_DS () ",0,t,==,$z,!,?{,"ES_J ("%s")",}", ARG (0));
+		r_strbuf_appendf (&op->esil, ES_TRAP_DS () "0,t,==,$z,!,?{,"ES_J ("%s")",}", ARG (0));
 		break;
 	case MIPS_INS_MOV:
 	case MIPS_INS_MOVE:
@@ -430,6 +436,9 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		r_strbuf_appendf (&op->esil, "0x%"PFMT64x"0000,%s,=", IMM(1), ARG(0));
 		break;
 	case MIPS_INS_LB:
+		op->sign = true;
+		ESIL_LOAD ("1");
+		break;
 	case MIPS_INS_LBU:
 		//one of these is wrong
 		ESIL_LOAD ("1");
@@ -578,10 +587,94 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	return 0;
 }
 
+#define ZERO_FILL(x) memset (&x, 0, sizeof (x))
+
+static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
+	if (!reg) {
+		return -1;
+	}
+	switch (OPERAND (reg_num).type) {
+	case MIPS_OP_REG:
+		reg->name = (char *)cs_reg_name (handle, OPERAND (reg_num).reg);
+		break;
+	case MIPS_OP_MEM:
+		if (OPERAND (reg_num).mem.base != MIPS_REG_INVALID) {
+			reg->name = (char *)cs_reg_name (handle, OPERAND (reg_num).mem.base);
+		}
+	default:
+		break;
+	}
+	return 0;
+}
+
+static void op_fillval(RAnal *anal, RAnalOp *op, csh *handle, cs_insn *insn) {
+	static RRegItem reg;
+	switch (op->type) {
+	case R_ANAL_OP_TYPE_LOAD:
+		if (OPERAND(1).type == MIPS_OP_MEM) {
+			ZERO_FILL (reg);
+			op->src[0] = r_anal_value_new ();
+			op->src[0]->reg = &reg;
+			parse_reg_name (op->src[0]->reg, *handle, insn, 1);
+			op->src[0]->delta = OPERAND(1).mem.disp;
+		}
+		break;
+	case R_ANAL_OP_TYPE_STORE:
+		if (OPERAND(1).type == MIPS_OP_MEM) {
+			ZERO_FILL (reg);
+			op->dst = r_anal_value_new ();
+			op->dst->reg = &reg;
+			parse_reg_name (op->dst->reg, *handle, insn, 1);
+			op->dst->delta = OPERAND(1).mem.disp;
+		}
+		break;
+	case R_ANAL_OP_TYPE_SHL:
+	case R_ANAL_OP_TYPE_SHR:
+	case R_ANAL_OP_TYPE_SAR:
+	case R_ANAL_OP_TYPE_XOR:
+	case R_ANAL_OP_TYPE_SUB:
+	case R_ANAL_OP_TYPE_AND:
+	case R_ANAL_OP_TYPE_ADD:
+	case R_ANAL_OP_TYPE_OR:
+		SET_SRC_DST_3_REG_OR_IMM (op);
+		break;
+	case R_ANAL_OP_TYPE_MOV:
+		SET_SRC_DST_2_REGS (op);
+		break;
+	case R_ANAL_OP_TYPE_DIV:
+		SET_SRC_DST_3_REGS (op);
+		break;
+	}
+	if (insn && (insn->id == MIPS_INS_SLTI || insn->id == MIPS_INS_SLTIU)) {
+		SET_SRC_DST_3_IMM (op);
+	}
+}
+
+static void set_opdir(RAnalOp *op) {
+        switch (op->type & R_ANAL_OP_TYPE_MASK) {
+        case R_ANAL_OP_TYPE_LOAD:
+                op->direction = R_ANAL_OP_DIR_READ;
+                break;
+        case R_ANAL_OP_TYPE_STORE:
+                op->direction = R_ANAL_OP_DIR_WRITE;
+                break;
+        case R_ANAL_OP_TYPE_LEA:
+                op->direction = R_ANAL_OP_DIR_REF;
+                break;
+        case R_ANAL_OP_TYPE_CALL:
+        case R_ANAL_OP_TYPE_JMP:
+        case R_ANAL_OP_TYPE_UJMP:
+        case R_ANAL_OP_TYPE_UCALL:
+                op->direction = R_ANAL_OP_DIR_EXEC;
+                break;
+        default:
+                break;
+        }
+}
+
 static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	int n, ret, opsize = -1;
 	static csh hndl = 0;
-	static csh *handle = &hndl;
 	static int omode = -1;
 	static int obits = 32;
 	cs_insn* insn;
@@ -733,7 +826,6 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 		break;
 	case MIPS_INS_MOVE:
 		op->type = R_ANAL_OP_TYPE_MOV;
-		SET_SRC_DST_2_REGS (op);
 		break;
 	case MIPS_INS_ADD:
 	case MIPS_INS_ADDI:
@@ -743,7 +835,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	case MIPS_INS_DADDI:
 	case MIPS_INS_DADDIU:
 		SET_VAL (op, 2);
-		SET_SRC_DST_3_REG_OR_IMM (op);
+		op->sign = (insn->id == MIPS_INS_ADDI || insn->id == MIPS_INS_ADD);
 		op->type = R_ANAL_OP_TYPE_ADD;
 		if (REGID(0) == MIPS_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
@@ -763,7 +855,7 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	case MIPS_INS_SUBUH:
 	case MIPS_INS_SUBUH_R:
 		SET_VAL (op,2);
-		SET_SRC_DST_3_REG_OR_IMM (op);
+		op->sign = insn->id == MIPS_INS_SUB;
 		op->type = R_ANAL_OP_TYPE_SUB;
 		break;
 	case MIPS_INS_MULV:
@@ -778,13 +870,11 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	case MIPS_INS_XOR:
 	case MIPS_INS_XORI:
 		SET_VAL (op,2);
-		SET_SRC_DST_3_REG_OR_IMM (op);
 		op->type = R_ANAL_OP_TYPE_XOR;
 		break;
 	case MIPS_INS_AND:
 	case MIPS_INS_ANDI:
 		SET_VAL (op,2);
-		SET_SRC_DST_3_REG_OR_IMM (op);
 		op->type = R_ANAL_OP_TYPE_AND;
 		if (REGID(0) == MIPS_REG_SP) {
 			op->stackop = R_ANAL_STACK_ALIGN;
@@ -796,7 +886,6 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	case MIPS_INS_OR:
 	case MIPS_INS_ORI:
 		SET_VAL (op,2);
-		SET_SRC_DST_3_REG_OR_IMM (op);
 		op->type = R_ANAL_OP_TYPE_OR;
 		break;
 	case MIPS_INS_DIV:
@@ -806,7 +895,6 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	case MIPS_INS_FDIV:
 	case MIPS_INS_DIV_S:
 	case MIPS_INS_DIV_U:
-		SET_SRC_DST_3_REGS (op);
 		op->type = R_ANAL_OP_TYPE_DIV;
 		break;
 	case MIPS_INS_CMPGDU:
@@ -880,43 +968,46 @@ static int analop(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 			op->type = R_ANAL_OP_TYPE_RET;
 		}
 		break;
+	case MIPS_INS_SLT:
 	case MIPS_INS_SLTI:
-	case MIPS_INS_SLTIU:
-		SET_SRC_DST_3_IMM (op);
-		SET_VAL (op,2);
+		op->sign = true;
+		SET_VAL (op, 2);
 		break;
-
+	case MIPS_INS_SLTIU:
+		SET_VAL (op, 2);
+		break;
 	case MIPS_INS_SHRAV:
 	case MIPS_INS_SHRAV_R:
 	case MIPS_INS_SHRA:
 	case MIPS_INS_SHRA_R:
 	case MIPS_INS_SRA:
 		op->type = R_ANAL_OP_TYPE_SAR;
-		SET_SRC_DST_3_REG_OR_IMM (op);
 		SET_VAL (op,2);
 		break;
 	case MIPS_INS_SHRL:
 	case MIPS_INS_SRLV:
 	case MIPS_INS_SRL:
 		op->type = R_ANAL_OP_TYPE_SHR;
-		SET_SRC_DST_3_REG_OR_IMM (op);
 		SET_VAL (op,2);
 		break;
 	case MIPS_INS_SLLV:
 	case MIPS_INS_SLL:
 		op->type = R_ANAL_OP_TYPE_SHL;
-		SET_SRC_DST_3_REG_OR_IMM (op);
 		SET_VAL (op,2);
 		break;
 	}
-	beach:
+beach:
+	set_opdir (op);
 	if (anal->decode) {
 		if (analop_esil (anal, op, addr, buf, len, &hndl, insn) != 0)
 			r_strbuf_fini (&op->esil);
 	}
+	if (anal->fillval) {
+		op_fillval (anal, op, &hndl, insn);
+	}
 	cs_free (insn, n);
 	//cs_close (&handle);
-	fin:
+fin:
 	return opsize;
 }
 

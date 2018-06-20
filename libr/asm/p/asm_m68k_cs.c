@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015-2016 - pancake */
+/* radare2 - LGPL - Copyright 2015-2018 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -47,8 +47,10 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		mode |= CS_MODE_M68K_040;
 	if (a->cpu && strstr (a->cpu, "68060"))
 		mode |= CS_MODE_M68K_060;
-	op->size = 4;
-	op->buf_asm[0] = 0;
+	if (op) {
+		op->size = 4;
+		op->buf_asm[0] = 0;
+	}
 	if (cd == 0) {
 		ret = cs_open (CS_ARCH_M68K, mode, &cd);
 		if (ret) {
@@ -61,31 +63,40 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	} else {
 		cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
-	n = cs_disasm (cd, buf, R_MIN (8, len),
-		a->pc, 1, &insn);
-	if (n<1) {
+	if (!buf) {
+		goto beach;
+	}
+	ut8 mybuf[8] = {0};
+	int mylen = R_MIN (8, len);
+	memcpy (mybuf, buf, R_MIN (8, len));
+	n = cs_disasm (cd, mybuf, mylen, a->pc, 1, &insn);
+	if (n < 1) {
 		ret = -1;
 		goto beach;
 	}
-	op->size = 0;
+	if (op) {
+		op->size = 0;
+	}
 	if (insn->size<1) {
 		ret = -1;
 		goto beach;
 	}
 	if (a->features && *a->features) {
 		if (!check_features (a, insn)) {
+			if (op) {
 			op->size = insn->size;
 			strcpy (op->buf_asm, "illegal");
+			}
 		}
 	}
-	if (!op->size) {
+	if (op && !op->size) {
 		op->size = insn->size;
 		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s%s%s",
 			insn->mnemonic,
 			insn->op_str[0]?" ":"",
 			insn->op_str);
 	}
-	{
+	if (op) {
 		char *p = r_str_replace (strdup (op->buf_asm),
 			"$", "0x", true);
 		if (p) {
@@ -96,11 +107,14 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	cs_free (insn, n);
 	beach:
 	//cs_close (&cd);
-	if (!strncmp (op->buf_asm, "dc.w", 4)) {
-		strcpy (op->buf_asm, "invalid");
+	if (op) {
+		if (!strncmp (op->buf_asm, "dc.w", 4)) {
+			strcpy (op->buf_asm, "invalid");
+		}
+		r_str_rmch (op->buf_asm, '#');
+		return op->size;
 	}
-	r_str_rmch (op->buf_asm, '#');
-	return op->size;
+	return ret;
 }
 
 RAsmPlugin r_asm_plugin_m68k_cs = {

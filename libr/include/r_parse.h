@@ -22,6 +22,7 @@ typedef struct r_parse_t {
 	void *user;
 	int flagspace;
 	int notin_flagspace;
+	bool pseudo;
 	bool relsub; // replace rip relative expressions in instruction
 	bool localvar_only; // if true use only the local variable name (e.g. [local_10h] instead of [ebp + local10h])
 	int relsub_addr;

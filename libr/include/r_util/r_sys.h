@@ -3,6 +3,12 @@
 
 #include <r_list.h>
 
+#if __WINDOWS__ && !__CYGWIN__
+#define R_SYS_DEVNULL "nul"
+#else
+#define R_SYS_DEVNULL "/dev/null"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -33,6 +39,7 @@ R_API void r_sys_perror_str(const char *fun);
 #else
 #define r_sys_mkdir_failed() (errno != EEXIST)
 #endif
+R_API const char *r_sys_prefix(const char *pfx);
 R_API bool r_sys_mkdir(const char *dir);
 R_API bool r_sys_mkdirp(const char *dir);
 R_API int r_sys_sleep(int secs);

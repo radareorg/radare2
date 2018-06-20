@@ -15,8 +15,6 @@ R_LIB_VERSION_HEADER(r_magic);
 #define MAGICFILE "/etc/magic"
 #endif
 
-#define R_MAGIC_PATH R2_PREFIX "/share/radare2/" R2_VERSION "/magic"
-
 #if USE_LIB_MAGIC
 
 #include <magic.h>

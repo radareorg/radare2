@@ -6,9 +6,9 @@
 
 #define MAXFCNSIZE 4096
 
-#define Fbb(x) sdb_fmt(0,"bb.%"PFMT64x,x)
-#define Fhandled(x) sdb_fmt(0, "handled.%"PFMT64x,x)
-#define FbbTo(x) sdb_fmt(0,"bb.%"PFMT64x".to",x)
+#define Fbb(x) sdb_fmt("bb.%"PFMT64x,x)
+#define Fhandled(x) sdb_fmt("handled.%"PFMT64x,x)
+#define FbbTo(x) sdb_fmt("bb.%"PFMT64x".to",x)
 
 static ut64 getCrossingBlock(Sdb *db, const char *key, ut64 start, ut64 end) {
 	ut64 block_start, block_end;
@@ -118,7 +118,7 @@ ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_commands)
 #define addUjmp(x) sdb_array_add_num (db, "ujmps", x, 0);
 #define addCjmp(x) sdb_array_add_num (db, "cjmps", x, 0);
 #define addRet(x) sdb_array_add_num (db, "rets", x, 0);
-#define bbAddOpcode(x) sdb_array_insert_num (db, sdb_fmt (0, "bb.%"PFMT64x, addr+cur), -1, x, 0);
+#define bbAddOpcode(x) sdb_array_insert_num (db, sdb_fmt ("bb.%"PFMT64x, addr+cur), -1, x, 0);
 	ut64 oaddr = addr;
 	ut64 *value = NULL;
 	RAnalOp *op;
@@ -139,7 +139,7 @@ ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_commands)
 		free (value);
 		cur = 0;
 		while (!block_end) {
-			op = r_core_anal_op (core, addr + cur);
+			op = r_core_anal_op (core, addr + cur, R_ANAL_OP_MASK_BASIC);
 			if (!op || !op->mnemonic) {
 				eprintf ("Cannot analyze opcode at %"PFMT64d"\n", addr+cur);
 				oaddr = UT64_MAX;
@@ -391,8 +391,6 @@ RCorePlugin r_core_plugin_anal = {
 	.desc = "The reworked analysis from scratch thing",
 	.license = "LGPL3",
 	.call = r_cmd_anal_call,
-	.deinit = NULL,
-	.init = NULL,
 };
 
 #ifndef CORELIB

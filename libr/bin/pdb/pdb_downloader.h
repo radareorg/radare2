@@ -11,6 +11,7 @@ extern "C" {
 typedef struct SPDBOptions {
 	char *user_agent;
 	char *symbol_server;
+	char *symbol_store_path;
 	ut64 extract;
 } SPDBOptions;
 
@@ -19,7 +20,7 @@ typedef struct SPDBDownloaderOpt {
 	char *symbol_server;
 	char *dbg_file;
 	char *guid;
-	char *path;
+	char *symbol_store_path;
 	ut64 extract;
 } SPDBDownloaderOpt;
 

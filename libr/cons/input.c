@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_cons.h>
 #include <string.h>
@@ -9,7 +9,7 @@
 /* experimental support for x/y click */
 #define USE_CLICK 0
 
-#define I r_cons_singleton()
+#define I r_cons_singleton ()
 
 #if 0
 //__UNIX__
@@ -275,7 +275,7 @@ R_API int r_cons_any_key(const char *msg) {
 
 #if __WINDOWS__ && !__CYGWIN__
 static int readchar_win(ut32 usec) {
-	int ch=0;
+	int ch = 0;
 	BOOL ret;
 	BOOL bCtrl = FALSE;
 	DWORD mode, out;
@@ -286,12 +286,14 @@ do_it_again:
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, 0 | ENABLE_MOUSE_INPUT); // RAW
+	void *bed = r_cons_sleep_begin ();
 	if (usec) {
 		if (WaitForSingleObject (h, usec) == WAIT_TIMEOUT) {
 			return -1;
 		}
 	}
 	ret = ReadConsoleInput (h, irInBuf, 128, &out);
+	r_cons_sleep_end (bed);
 	if (ret) {
 		for (i = 0; i < out; i++) {
 			if (irInBuf[i].EventType==MOUSE_EVENT) {
@@ -342,28 +344,16 @@ do_it_again:
 								ch='J';
 							break;
 						case VK_F1:
-							if (bCtrl)
-								ch=R_CONS_KEY_F1;
-							else
-								ch=R_CONS_KEY_F1;
+							ch = R_CONS_KEY_F1;
 							break;
 						case VK_F2:
-							if (bCtrl)
-								ch=R_CONS_KEY_F2;
-							else
-								ch=R_CONS_KEY_F2;
+							ch = R_CONS_KEY_F2;
 							break;
 						case VK_F3:
-							if (bCtrl)
-								ch=R_CONS_KEY_F3;
-							else
-								ch=R_CONS_KEY_F3;
+							ch = R_CONS_KEY_F3;
 							break;
 						case VK_F4:
-							if (bCtrl)
-								ch=R_CONS_KEY_F4;
-							else
-								ch=R_CONS_KEY_F4;
+							ch = R_CONS_KEY_F4;
 							break;
 						case VK_F5:
 							if (bCtrl)
@@ -372,49 +362,28 @@ do_it_again:
 								ch=R_CONS_KEY_F5;
 							break;
 						case VK_F6:
-							if (bCtrl)
-								ch=R_CONS_KEY_F6;
-							else
-								ch=R_CONS_KEY_F6;
+							ch = R_CONS_KEY_F6;
 							break;
 						case VK_F7:
-							if (bCtrl)
-								ch=R_CONS_KEY_F7;
-							else
-								ch=R_CONS_KEY_F7;
+							ch = R_CONS_KEY_F7;
 							break;
 						case VK_F8:
-							if (bCtrl)
-								ch=R_CONS_KEY_F8;
-							else
-								ch=R_CONS_KEY_F8;
+							ch = R_CONS_KEY_F8;
 							break;
 						case VK_F9:
-							if (bCtrl)
-								ch=R_CONS_KEY_F9;
-							else
-								ch=R_CONS_KEY_F9;
+							ch = R_CONS_KEY_F9;
 							break;
 						case VK_F10:
-							if (bCtrl)
-								ch=R_CONS_KEY_F10;
-							else
-								ch=R_CONS_KEY_F10;
+							ch = R_CONS_KEY_F10;
 							break;
 						case VK_F11:
-							if (bCtrl)
-								ch=R_CONS_KEY_F11;
-							else
-								ch=R_CONS_KEY_F11;
+							ch = R_CONS_KEY_F11;
 							break;
 						case VK_F12:
-							if (bCtrl)
-								ch=R_CONS_KEY_F12;
-							else
-								ch=R_CONS_KEY_F12;
+							ch = R_CONS_KEY_F12;
 							break;
 						default:
-							ch=0;
+							ch = 0;
 							break;
 						}
 					}
@@ -422,7 +391,7 @@ do_it_again:
 			}
 		}
 	}
-	FlushConsoleInputBuffer(h);
+	FlushConsoleInputBuffer (h);
 	SetConsoleMode (h, mode);
 	if (ch == 0) {
 		goto do_it_again;
@@ -458,12 +427,46 @@ R_API int r_cons_readchar_timeout(ut32 usec) {
 #endif
 }
 
+// TODO: support binary? buf+len
+static char *readbuffer = NULL;
+static int readbuffer_length = 0;
+static bool bufactive = true;
+
+R_API bool r_cons_readpush(const char *str, int len) {
+	char *res = (len + readbuffer_length > 0) ? realloc (readbuffer, len + readbuffer_length) : NULL;
+	if (res) {
+		readbuffer = res;
+		memmove (readbuffer + readbuffer_length, str, len);
+		readbuffer_length += len;
+		return true;
+	}
+	return false;
+}
+
+R_API void r_cons_readflush() {
+	R_FREE (readbuffer);
+	readbuffer_length = 0;
+}
+
+R_API void r_cons_switchbuf(bool active) {
+	bufactive = active;
+}
+
 R_API int r_cons_readchar() {
+	void *bed;
 	char buf[2];
 	buf[0] = -1;
+	if (readbuffer_length > 0) {
+		int ch = *readbuffer;
+		readbuffer_length--;
+		memmove (readbuffer, readbuffer + 1, readbuffer_length);
+		return ch;
+	}
 #if __WINDOWS__ && !__CYGWIN__ //&& !MINGW32
 	#if 1   // if something goes wrong set this to 0. skuater.....
+	bed = r_cons_sleep_begin ();
 	return readchar_win(0);
+	r_cons_sleep_end (bed);
 	#endif
 	BOOL ret;
 	DWORD out;
@@ -471,7 +474,9 @@ R_API int r_cons_readchar() {
 	HANDLE h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, 0); // RAW
+	bed = r_cons_sleep_begin ();
 	ret = ReadConsole (h, buf, 1, &out, NULL);
+	r_cons_sleep_end (bed);
 	FlushConsoleInputBuffer (h);
 	if (!ret) {
 		return -1;
@@ -479,10 +484,15 @@ R_API int r_cons_readchar() {
 	SetConsoleMode (h, mode);
 #else
 	r_cons_set_raw (1);
-	if (read (0, buf, 1) == -1) {
+	bed = r_cons_sleep_begin ();
+	ssize_t ret = read (0, buf, 1);
+	r_cons_sleep_end (bed);
+	if (ret != 1) {
 		return -1;
 	}
-	r_cons_set_raw (0);
+	if (bufactive) {
+		r_cons_set_raw (0);
+	}
 #endif
 	return r_cons_controlz (buf[0]);
 }
@@ -496,6 +506,8 @@ R_API int r_cons_yesno(int def, const char *fmt, ...) {
 	fflush (stderr);
 	r_cons_set_raw (true);
 	(void)read (0, &key, 1);
+	write (2, " ", 1);
+	write (2, &key, 1);
 	write (2, "\n", 1);
 	if (key == 'Y') {
 		key = 'y';
@@ -508,7 +520,7 @@ R_API int r_cons_yesno(int def, const char *fmt, ...) {
 }
 
 R_API char *r_cons_input(const char *msg) {
-	char *oprompt = r_line_get_prompt (); //r_cons_singleton()->line->prompt);
+	char *oprompt = r_line_get_prompt (); //r_cons_singleton ()->line->prompt);
 	if (!oprompt) {
 		return NULL;
 	}

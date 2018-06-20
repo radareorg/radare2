@@ -1,13 +1,15 @@
 ```
     ____  ___  ___  ___ ____  ___    ____
-   |  _ \/   \|   \/   \  _ \/ _ \  |__  \
-   |    (  V  | |  ) V  |   (   _/   / __/
+   |  _ \/   \|   \/   \  _ \/ _ \  (__  \
+   |    (  -  | |  ) -  |   (   _/  /  __/
    |__\__|_|__|___/__|__|_\__|___|  |____|
 
-                www.radare.org
+                https://www.radare.org
 
                                   --pancake
 ```
+
+
 
 | | |
 |----------|---------------------------------------------------------------------|
@@ -15,6 +17,10 @@
 | **TravisCI** 	| [![Build Status](https://travis-ci.org/radare/radare2.svg?branch=master)](https://travis-ci.org/radare/radare2)|
 | **AppVeyor**  | [![Build Status](https://ci.appveyor.com/api/projects/status/v9bxvsb1p6c3cmf9/branch/master?svg=true)](https://ci.appveyor.com/project/radare/radare2-shvdd)|
 | **Coverity** 	| [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) |
+<a href="https://repology.org/metapackage/radare2">
+<img src="https://repology.org/badge/vertical-allrepos/radare2.svg" alt="Packaging status" align="right" width="150px" height="700px">
+</a>
+
 # Introduction
 
 r2 is a rewrite from scratch of radare in order to provide
@@ -69,36 +75,20 @@ using root privileges and sudo, simply run:
 
 # Building with meson + ninja
 
-The sys/install.sh method uses acr+make to build r2 from sources, which is the default
-and recommended way, but there's also a work-in-progress support for Meson.
-
-Run first the configuration process:
-
-	$ ./configure
-
-You can install last version of meson and ninja using r2pm:
+If you don't already have meson and ninja you can install them
+with your distribution package manager or with r2pm:
 
 	$ r2pm -i meson
-	$ r2pm -r make meson
-	$ r2pm -r make meson-symstall
 
-Or just run those lines if you have them available in PATH:
+If you already have them installed, you can run this line to
+compile radare2:
 
-	$ make meson                # will run make meson-config automatically
-	$ sudo make meson-symstall  # symstall the meson build into PREFIX (/usr)
-	$ sudo make meson-uninstall # uninstall the meson installation
+	$ python ./sys/meson.py --prefix=/usr --shared --install
 
-The PREFIX is inherited from the last run of ./configure, so it's recommended to run
-sys/install.sh at least once to autodetect this, this step will end up into meson.
+This method is mostly useful on Windows because the initial building
+with Makefile is not suitable. If you are lost in any way, just type:
 
-At the moment, the meson build system doesnt supports much configuration options and it
-is not able to build all the plugins, it has been tested to work on the following hosts:
-
-* Rpi3-arm32
-* macOS-x86-64
-* Termux/Android-arm64
-* VoidLinux-x86-64
-* Windows-x86-64
+	$ python ./sys/meson.py --help
 
 # Update
 
@@ -208,7 +198,7 @@ in the project root.
 
 # Pointers
 
-Website: http://www.radare.org/
+Website: https://www.radare.org/
 
 IRC: irc.freenode.net #radare
 

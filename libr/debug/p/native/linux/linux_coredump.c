@@ -88,7 +88,7 @@ static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg, proc_per_process_t *proc_data
 
 	p->pr_pid = mypid = dbg->pid;
 	/* Start filling pr_fname and pr_psargs */
-	file = sdb_fmt (0, "/proc/%d/cmdline", mypid);
+	file = sdb_fmt ("/proc/%d/cmdline", mypid);
 	buffer = r_file_slurp (file, &len);
 	if (!buffer) {
 		eprintf ("buffer NULL\n");
@@ -134,7 +134,7 @@ error:
 static proc_per_thread_t *get_proc_thread_content(int pid, int tid) {
 	char *temp_p_sigpend, *temp_p_sighold, *p_sigpend, *p_sighold;
 	int size;
-	const char * file = sdb_fmt (0, "/proc/%d/task/%d/stat", pid, tid);
+	const char * file = sdb_fmt ("/proc/%d/task/%d/stat", pid, tid);
 
 	char *buff = r_file_slurp (file, &size);
 	if (!buff) {
@@ -161,7 +161,7 @@ static proc_per_thread_t *get_proc_thread_content(int pid, int tid) {
 	}
 
         /* /proc/[pid]/status for uid, gid, sigpend and sighold */
-	file = sdb_fmt (0, "/proc/%d/task/%d/status", pid, tid);
+	file = sdb_fmt ("/proc/%d/task/%d/status", pid, tid);
 	buff = r_file_slurp (file, &size);
 	if (!buff) {
 		free (t);
@@ -565,7 +565,7 @@ static auxv_buff_t *linux_get_auxv(RDebug *dbg) {
 	int auxv_entries;
 	int size;
 
-	const char *file = sdb_fmt (0, "/proc/%d/auxv", dbg->pid);
+	const char *file = sdb_fmt ("/proc/%d/auxv", dbg->pid);
 	buff = r_file_slurp (file, &size);
 	if (!buff) {
 		return NULL;
@@ -648,12 +648,11 @@ static int get_info_mappings(linux_map_entry_t *me_head, size_t *maps_size) {
 	linux_map_entry_t *p;
 	int n_entries;
 	for (n_entries = 0, p = me_head; p; p = p->n) {
-		if (p->dumpeable) {
-			*maps_size += p->end_addr - p->start_addr;
-		}
 		/* We don't count maps which does not have r/w perms */
-		if ((p->perms & R_IO_READ) || (p->perms & R_IO_WRITE))
+		if (((p->perms & R_IO_READ) || (p->perms & R_IO_WRITE)) && p->dumpeable) {
+			*maps_size += p->end_addr - p->start_addr;
 			n_entries++;
+		}
 	}
 	return n_entries;
 }
@@ -724,7 +723,7 @@ static bool dump_elf_pheaders(RBuffer *dest, linux_map_entry_t *maps, elf_offset
 
 	/* write program headers */
 	for (me_p = maps; me_p; me_p = me_p->n) {
-		if (!(me_p->perms & R_IO_READ) && !(me_p->perms & R_IO_WRITE)) {
+		if ((!(me_p->perms & R_IO_READ) && !(me_p->perms & R_IO_WRITE)) || !me_p->dumpeable) {
 			continue;
 		}
 		phdr.p_type = PT_LOAD;
@@ -755,7 +754,6 @@ static bool dump_elf_map_content(RDebug *dbg, RBuffer *dest, linux_map_entry_t *
 	linux_map_entry_t *p;
 	ut8 *map_content;
 	size_t size;
-	size_t rbytes;
 	bool ret;
 
 	eprintf ("dump_elf_map_content starting\n\n");
@@ -769,17 +767,13 @@ static bool dump_elf_map_content(RDebug *dbg, RBuffer *dest, linux_map_entry_t *
 		if (!map_content) {
 			return false;
 		}
-		rbytes = dbg->iob.read_at (dbg->iob.io, p->start_addr, map_content, size);
-		if (rbytes != size) {
-			eprintf ("dump_elf_map_content: size not equal\n");
+		ret = dbg->iob.read_at (dbg->iob.io, p->start_addr, map_content, size);
+		if (!ret) {
+			eprintf ("Problems reading %"PFMTSZd" bytes at %"PFMT64x"\n", size, (ut64)p->start_addr);
 		} else {
 			ret = r_buf_append_bytes (dest, (const ut8*)map_content, size);
 			if (!ret) {
 				eprintf ("r_buf_append_bytes - failed\n");
-				/* Huge map files can be a problem here:
-					Because sometimes r_buf_append_bytes fails reallocing new size due to a high memory usage.
-					Little trick for freeing some mem would be flush everything to disk and start from scratch. */
-				/* We need a trick */
 			}
 		}
 		free (map_content);
@@ -793,7 +787,7 @@ static proc_per_process_t *get_proc_process_content (RDebug *dbg) {
 	char *temp_p_uid, *temp_p_gid, *p_uid, *p_gid;
 	ut16 filter_flags, default_filter_flags = 0x33;
 	char *buff;
-	const char *file = sdb_fmt (0, "/proc/%d/stat", dbg->pid);
+	const char *file = sdb_fmt ("/proc/%d/stat", dbg->pid);
 	int size;
 
 	buff = r_file_slurp (file, &size);
@@ -827,7 +821,7 @@ static proc_per_process_t *get_proc_process_content (RDebug *dbg) {
 		eprintf ("Warning: number of threads is < 1\n");
 		return NULL;
 	}
-	file = sdb_fmt (0, "/proc/%d/status", dbg->pid);
+	file = sdb_fmt ("/proc/%d/status", dbg->pid);
 	buff = r_file_slurp (file, &size);
 	if (!buff) {
 		free (p);
@@ -867,7 +861,7 @@ static proc_per_process_t *get_proc_process_content (RDebug *dbg) {
 
 	free (buff);
 	/* Check the coredump_filter value if we have*/
-	file = sdb_fmt (0, "/proc/%d/coredump_filter", dbg->pid);
+	file = sdb_fmt ("/proc/%d/coredump_filter", dbg->pid);
 	buff = r_file_slurp (file, &size);
 	if (buff) {
 		sscanf (buff, "%hx", &filter_flags);

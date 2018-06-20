@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include "r_cons.h"
 #include "r_core.h"
@@ -6,17 +6,18 @@
 
 static const char *help_msg_g[] = {
 	"Usage:", "g[wcilper] [arg]", "Go compile shellcodes",
+	"g", " ", "Compile the shellcode",
 	"g", " foo.r", "Compile r_egg source file",
 	"gw", "", "Compile and write",
 	"gc", " cmd=/bin/ls", "Set config option for shellcodes and encoders",
 	"gc", "", "List all config options",
 	"gl", "[?]", "List plugins (shellcodes, encoders)",
 	"gs", " name args", "Compile syscall name(args)",
-	"gi", " [type]", "Compile shellcode. like ragg2 -i (see gl or ragg2 -L)",
+	"gi", " [type]", "Define the shellcode type",
 	"gp", " padding", "Define padding for command",
-	"ge", " xor", "Specify an encoder",
-	"gS", "", "Show the current configuration",
+	"ge", " [encoder] [key]", "Specify an encoder and a key",
 	"gr", "", "Reset r_egg",
+	"gS", "", "Show the current configuration",
 	"EVAL VARS:", "", "asm.arch, asm.bits, asm.os",
 	NULL
 };
@@ -58,10 +59,11 @@ static void showBuffer(RBuffer *b) {
 		for (i = 0; i < b->length; i++) {
 			r_cons_printf ("%02x", b->buf[i]);
 		}
-		r_cons_printf ("\n");
+		r_cons_newline ();
 	}
 }
 
+#if 0
 static int compileShellcode(REgg *egg, const char *input){
 	int i = 0;
 	RBuffer *b;
@@ -90,6 +92,7 @@ static int compileShellcode(REgg *egg, const char *input){
 	r_egg_reset (egg);
 	return 0;
 }
+#endif
 
 static int cmd_egg_compile(REgg *egg) {
 	RBuffer *b;
@@ -186,24 +189,45 @@ static int cmd_egg(void *data, const char *input) {
 		}
 		break;
 	case 'p': // "gp"
-		if (input[0] && input[2]) {
-			r_egg_padding (egg, input + 2);
+		if (input[1] == ' ') {
+			if (input[0] && input[2]) {
+				r_egg_option_set (egg, "egg.padding", input + 2);
+			}
+		} else {
+			eprintf ("Usage: gp [padding]\n");	
 		}
-		// cmd_egg_option (egg, "egg.padding", input);
 		break;
 	case 'e': // "ge"
-		if (input[0] && input[2]) {
-			if (!r_egg_encode (egg, input + 2)) {
-				eprintf ("Invalid encoder '%s'\n", input + 2);
+		if (input[1] == ' ') {
+			const char *encoder = input + 2;
+			while (IS_WHITESPACE (*encoder) && *encoder) {
+				encoder++;
 			}
-		}
-		// cmd_egg_option (egg, "egg.encoder", input);
-		break;
-	case 'i': // "gi"
-		if (input[0] && input[2]) {
-			compileShellcode (egg, input + 2);
+
+			oa = strdup (encoder);
+			p = strchr (oa + 1, ' ');
+
+			if (p) {
+				*p = 0;
+				r_egg_option_set (egg, "key", p + 1);
+				r_egg_option_set (egg, "egg.encoder", oa);
+			} else {
+				eprintf ("Usage: ge [encoder] [key]\n");	
+			}
+			free (oa);
 		} else {
-			eprintf ("Usage: gi [shellcode-type]");
+			eprintf ("Usage: ge [encoder] [key]\n");
+		}
+		break;
+	case 'i': // "gi" 
+		if (input[1] == ' ') {
+			if (input[0] && input[2]) {
+				r_egg_option_set (egg, "egg.shellcode", input + 2);
+			} else {
+				eprintf ("Usage: gi [shellcode-type]\n");
+			}
+		} else {
+			eprintf ("Usage: gi [shellcode-type]\n");
 		}
 		break;
 	case 'l': // "gl"

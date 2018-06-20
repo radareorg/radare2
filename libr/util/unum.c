@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2017 - pancake */
+/* radare - LGPL - Copyright 2007-2018 - pancake */
 
 #if __WINDOWS__ && MINGW32 && !__CYGWIN__
 #include <stdlib.h>
@@ -7,8 +7,27 @@
 #include <r_util.h>
 #define R_NUM_USE_CALC 1
 
+static ut64 r_num_tailff(RNum *num, const char *hex);
+
+void r_srand (int seed) {
+#if HAVE_ARC4RANDOM_UNIFORM
+	// no-op
+	(void)seed;
+#else
+	srand (seed);
+#endif
+}
+
+int r_rand (int mod) {
+#if HAVE_ARC4RANDOM_UNIFORM
+	return (int)arc4random_uniform (mod);
+#else
+	return rand ()%mod;
+#endif
+}
+
 R_API void r_num_irand() {
-	srand (r_sys_now ());
+	r_srand (r_sys_now ());
 }
 
 static int rand_initialized = 0;
@@ -17,8 +36,10 @@ R_API int r_num_rand(int max) {
 		r_num_irand ();
 		rand_initialized = 1;
 	}
-	if (!max) max = 1;
-	return rand()%max;
+	if (!max) {
+		max = 1;
+	}
+	return r_rand (max);
 }
 
 R_API void r_num_minmax_swap(ut64 *a, ut64 *b) {
@@ -96,6 +117,15 @@ R_API const char *r_num_get_name(RNum *num, ut64 n) {
 	return NULL;
 }
 
+static void error(RNum *num, const char *err_str) {
+	if (num) {
+		num->nc.errors++;
+#if 0
+		num->nc.calc_err = err_str;
+#endif
+	}
+}
+
 // TODO: try to avoid the use of sscanf
 /* old get_offset */
 R_API ut64 r_num_get(RNum *num, const char *str) {
@@ -104,6 +134,9 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 	ut64 ret = 0LL;
 	ut32 s, a;
 
+	if (num && !num->nc.under_calc) {
+		num->nc.errors = 0;
+	}
 	if (!str) {
 		return 0;
 	}
@@ -155,6 +188,12 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		sscanf (str, "0x%"PFMT64x, &ret);
 	} else if (str[0] == '\'') {
 		ret = str[1] & 0xff;
+	// ugly as hell
+	} else if (!strncmp (str, "0xff..", 6) || !strncmp (str, "0xFF..", 6)) {
+        	ret = r_num_tailff (num, str + 5);
+	// ugly as hell
+	} else if (!strncmp (str, "0xf..", 5) || !strncmp (str, "0xF..", 5)) {
+        	ret = r_num_tailff (num, str + 5);
 	} else if (str[0] == '0' && str[1] == 'x') {
 		const char *lodash = strchr (str + 2, '_');
 		if (lodash) {
@@ -169,78 +208,128 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 			// sscanf (str+2, "%"PFMT64x, &ret);
 		}
 	} else {
-		lch = str[len > 0? len - 1:0];
-		if (*str == '0' && lch != 'b' && lch != 'h') {
+		char *endptr;
+		int len_num = len > 0 ? len - 1 : 0;
+		int chars_read = len_num;
+		bool zero_read = false;
+		lch = str[len > 0 ? len - 1 : 0];
+		if (*str == '0' && IS_DIGIT (*(str + 1)) && lch != 'b' && lch != 'h') {
 			lch = 'o';
+			len_num++;
 		}
 		switch (lch) {
 		case 'h': // hexa
-			sscanf (str, "%"PFMT64x, &ret);
+			if (!sscanf (str, "%"PFMT64x"%n", &ret, &chars_read)
+			    || chars_read != len_num) {
+				error (num, "invalid hex number");
+			}
 			break;
 		case 'o': // octal
-			sscanf (str, "%"PFMT64o, &ret);
+			if (!sscanf (str, "%"PFMT64o"%n", &ret, &chars_read)
+			    || chars_read != len_num) {
+				error (num, "invalid octal number");
+			}
 			break;
 		case 'b': // binary
 			ret = 0;
+			ok = true;
 			for (j = 0, i = strlen (str) - 2; i >= 0; i--, j++) {
 				if (str[i] == '1') {
 					ret|=1 << j;
 				} else if (str[i] != '0') {
+					ok = false;
 					break;
 				}
+			}
+			if (!ok || !len_num) {
+				error (num, "invalid binary number");
 			}
 			break;
 		case 't': // ternary
 			ret = 0;
+			ok = true;
 			ut64 x = 1;
 			for (i = strlen (str) - 2; i >= 0; i--) {
 				if (str[i] < '0' || '2' < str[i]) {
-					return 0;
+					ok = false;
+					break;
 				}
 				ret += x * (str[i] - '0');
 				x *= 3;
+			}
+			if (!ok || !len_num) {
+				error (num, "invalid ternary number");
 			}
 			break;
 		case 'K': case 'k':
 			if (strchr (str, '.')) {
 				double d = 0;
-				sscanf (str, "%lf", &d);
-				ret = (ut64)(d * KB);
+				if (sscanf (str, "%lf%n", &d, &chars_read)) {
+					ret = (ut64)(d * KB);
+				} else {
+					zero_read = true;
+				}
 			} else {
-				ret = 0LL;
-				sscanf (str, "%"PFMT64d, &ret);
-				ret *= KB;
+				if (sscanf (str, "%"PFMT64d"%n", &ret, &chars_read)) {
+					ret *= KB;
+				} else {
+					zero_read = true;
+				}
+			}
+			if (zero_read || chars_read != len_num) {
+				error (num, "invalid kilobyte number");
 			}
 			break;
 		case 'M': case 'm':
 			if (strchr (str, '.')) {
 				double d = 0;
-				sscanf (str, "%lf", &d);
-				ret = (ut64)(d * MB);
+				if (sscanf (str, "%lf%n", &d, &chars_read)) {
+					ret = (ut64)(d * MB);
+				} else {
+					zero_read = true;
+				}
 			} else {
-				sscanf (str, "%"PFMT64d, &ret);
-				ret *= MB;
+				if (sscanf (str, "%"PFMT64d"%n", &ret, &chars_read)) {
+					ret *= MB;
+				} else {
+					zero_read = true;
+				}
+			}
+			if (zero_read || chars_read != len_num) {
+				error (num, "invalid megabyte number");
 			}
 			break;
 		case 'G': case 'g':
 			if (strchr (str, '.')) {
 				double d = 0;
-				sscanf (str, "%lf", &d);
-				ret = (ut64)(d * GB);
+				if (sscanf (str, "%lf%n", &d, &chars_read)) {
+					ret = (ut64)(d * GB);
+				} else {
+					zero_read = true;
+				}
 			} else {
-				sscanf (str, "%"PFMT64d, &ret);
-				ret *= GB;
+				if (sscanf (str, "%"PFMT64d"%n", &ret, &chars_read)) {
+					ret *= GB;
+				} else {
+					zero_read = true;
+				}
+			}
+			if (zero_read || chars_read != len_num) {
+				error (num, "invalid gigabyte number");
 			}
 			break;
 		default:
 #if 0
-			//sscanf (str, "%"PFMT64d, &ret);
+			//sscanf (str, "%"PFMT64d"%n", &ret, &chars_read);
 // 32bit chop
 #if __WINDOWS__ && MINGW32 && !__CYGWIN__
-			ret = _strtoui64 (str, NULL, 10);
+			ret = _strtoui64 (str, &endptr, 10);
 #endif
 #endif
-			ret = strtoull (str, NULL, 10);
+			ret = strtoull (str, &endptr, 10);
+			if (!IS_DIGIT (*str) || (*endptr && *endptr != lch)) {
+				error (num, "unknown symbol");
+			}
 			break;
 		}
 	}
@@ -575,6 +664,34 @@ R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 	}
 	mask = UT64_MAX << i;
 	return (addr & mask) | n;
+}
+
+static ut64 r_num_tailff(RNum *num, const char *hex) {
+        ut64 mask = 0LL;
+        ut64 n = 0;
+        char *p;
+        int i;
+
+        while (*hex && (*hex == ' ' || *hex=='.')) {
+                hex++;
+        }
+        i = strlen (hex) * 4;
+        p = malloc (strlen (hex) + 10);
+        if (p) {
+                strcpy (p, "0x");
+                strcpy (p + 2, hex);
+                if (isHexDigit (hex[0])) {
+                        n = r_num_math (num, p);
+                } else {
+                        eprintf ("Invalid argument\n");
+			free (p);
+                        return UT64_MAX;
+                }
+                free (p);
+        }
+        mask = UT64_MAX << i;
+	ut64 left = ((UT64_MAX >>i) << i);
+        return left | n;
 }
 
 R_API int r_num_between(RNum *num, const char *input_value) {

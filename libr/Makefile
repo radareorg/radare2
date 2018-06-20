@@ -3,9 +3,11 @@ include config.mk
 include ../config-user.mk
 include ../mk/platform.mk
 include ../mk/${COMPILER}.mk
+include ${SHLR}/zip/deps.mk
 
 DESTDIR:=$(DESTDIR)
 PREFIX?=${PWD}/../prefix
+OBJCOPY?=objcopy
 
 S=$
 B=`
@@ -32,21 +34,86 @@ all:
 	$(MAKE) $(LIBS5)
 	$(MAKE) $(LIBS6)
 	$(MAKE) $(LIBS7)
-ifeq (${WITHNONPIC},1)
+ifeq ($(WITH_LIBR),1)
 	$(MAKE) libr.${EXT_AR}
+	$(MAKE) libr.${EXT_SO}
 endif
 
-libr.${EXT_SO}:
-	rm -rf .libr/tcc # WHY
-	$(CC) $(LDFLAGS) -shared -dynamic -arch arm64 -o libr.${EXT_SO} .libr/*/*.o ../shlr/gdb/lib/libgdbr.a
+ifeq ($(WITH_LIBR),1)
 
-libr.${EXT_AR}: $(wildcard */libr_*.${EXT_AR}) $(shell find ../shlr -name '*.${EXT_AR}')
+ifeq ($(OSTYPE),darwin)
+MLFLAGS+=-install_name @rpath/libr2.dylib
+endif
+ifeq ($(OSTYPE),ios)
+MLFLAGS+=-install_name @rpath/libr2.dylib
+MLFLAGS+=-fembed-bitcode
+endif
+LDFLAGS+=${SSL_LDFLAGS}
+# XXX version-script only works with shlib as output
+#ifeq ($(OSTYPE),linux)
+#PLFLAGS+=--version-script ./ld.script
+#endif
+# from env: ALFLAGS+=$(ALFLAGS)
+
+.libr: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 	rm -rf .libr
-	mkdir .libr
+	mkdir -p .libr
 	for LIB in $^ ; do \
-		${PARTIALLD} -o .libr/$$(basename $${LIB} .a).o $${LIB} ; \
+		${PARTIALLD} $(ALFLAGS) $(MLFLAGS) $(PLFLAGS) -o .libr/$$(basename $${LIB} .a).o $${LIB} ; \
 	done
+ifeq ($(OSTYPE),linux)
+	for LIB in .libr/* ; do $(OBJCOPY) --localize-hidden $$LIB ; done
+endif
+ifeq ($(OSTYPE),gnulinux)
+	for LIB in .libr/* ; do $(OBJCOPY) --localize-hidden $$LIB ; done
+endif
+ifeq ($(OSTYPE),android)
+	for LIB in .libr/* ; do $(OBJCOPY) --localize-hidden $$LIB ; done
+endif
+ifeq ($(OSTYPE),bsd)
+	for LIB in .libr/* ; do $(OBJCOPY) --localize-hidden $$LIB ; done
+endif
+
+libr.${EXT_AR}: .libr
 	${AR} crs $@ .libr/*.o
+
+E+=../shlr/ar/libr_ar.${EXT_AR}
+E+=../shlr/grub/libgrubfs.${EXT_AR}
+E+=../shlr/windbg/libr_windbg.${EXT_AR}
+E+=../shlr/qnx/lib/libqnxr.${EXT_AR}
+E+=../shlr/bochs/lib/libbochs.${EXT_AR}
+#ifeq ($(COMPILER),ios-sdk)
+#E+=../shlr/sdb/src/libsdb.${EXT_AR}
+#endif
+#ifneq ($(OSTYPE),android)
+#E+=../shlr/sdb/src/libsdb.${EXT_AR}
+#endif
+
+ifeq ($(USE_CAPSTONE),1)
+E+=$(CAPSTONE_LDFLAGS)
+else
+E+=../shlr/capstone/libcapstone.${EXT_AR}
+endif
+
+libr.${EXT_SO}: .libr
+	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -shared -dynamiclib -o libr.${EXT_SO}  \
+		.libr/*.o \
+		../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/libr_java.${EXT_AR} \
+		../shlr/libr_shlr.${EXT_AR} $(E)
+
+else
+
+# WITH_LIBR=0
+
+libr.${EXT_SO}:
+	$(MAKE) libr.${EXT_SO} WITH_LIBR=1
+
+libr.${EXT_AR}:
+	$(MAKE) libr.${EXT_AR} WITH_LIBR=1
+endif
+
+../shlr/libr_shlr.${EXT_AR}:
+	$(MAKE) -C ../shlr libr_shlr.${EXT_AR}
 
 $(LIBS):
 	@echo "DIR $@"
@@ -108,12 +175,15 @@ install: install-includes install-pkgconfig
 	# TODO :Use INSTALL_DATA_DIR instead of mkdir
 	# libraries
 	@${INSTALL_DIR} "${DESTDIR}${LIBDIR}"
-	@$(foreach lib,$(shell find * -type f -iname "*.${EXT_SO}" | grep -v '(lib|parse)/t/' | grep lib | grep -v /bin/ | grep -v /p/), \
+	@$(foreach lib,$(shell find * -type f -iname "*.${EXT_SO}" | grep -vE '^libr\.${EXT_SO}$$' | grep -v '(lib|parse)/t/' | grep lib | grep -v /bin/ | grep -v /p/), \
 	  echo " ${DESTDIR}${LIBDIR}/$(call libpath-to-name-version,$(lib),${LIBVERSION})"; \
 	  rm -f "${DESTDIR}${LIBDIR}/$(call libpath-to-name-version,$(lib),${LIBVERSION})"; \
 	  ${INSTALL_LIB} "$(lib)" "${DESTDIR}${LIBDIR}/$(call libpath-to-name-version,$(lib),${LIBVERSION})"; \
 	  ( cd "${DESTDIR}${LIBDIR}" ; ln -fs "$(call libpath-to-name-version,$(lib),${LIBVERSION})" "$(call libpath-to-name,$(lib))" ) ; \
 	)
+	lib=libr.$(EXT_SO) ; if [ -f "$$lib" ]; then \
+	  ${INSTALL_LIB} "$$lib" "${DESTDIR}${LIBDIR}/$$lib"; \
+	fi
 	# object archives
 	@for FILE in `find * -type f -iname "*.${EXT_AR}" | grep -v fs/p` ; do \
 	  echo " ${DESTDIR}${LIBDIR}/$$FILE"; ${INSTALL_DATA} $$FILE "${DESTDIR}${LIBDIR}" ; done || true
@@ -123,9 +193,6 @@ install: install-includes install-pkgconfig
 	  do echo " ${DESTDIR}${LIBDIR}/radare2/${VERSION}/$$FILE"; \
 	  ${INSTALL_LIB} "$$FILE" "${DESTDIR}${LIBDIR}/radare2/${VERSION}" ; done
 	cd "${DESTDIR}${LIBDIR}/radare2" ; ln -fs "${VERSION}" last
-
-#@echo "lang/p/radare.* ${DESTDIR}${DESTDIR}${PREFIX}/${LIBDIR}/radare2/${VERSION}"
-#${INSTALL_DATA} lang/p/radare.* ${DESTDIR}${LIBDIR}/radare2/${VERSION}
 
 deinstall uninstall:
 	# libraries
@@ -170,6 +237,7 @@ deinstall uninstall:
 
 clean:
 	for LIB in ${LIBS}; do ( cd $${LIB} && $(MAKE) clean ); done
+	rm -rf .libr libr.${LIB_SO} libr.${LIB_AR}
 
 mrproper:
 	rm -rf .libr libr.${LIB_SO} libr.${LIB_AR}

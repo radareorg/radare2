@@ -11,7 +11,7 @@
 #include <string.h>
 
 
-static int usage (int v) {
+static int usage(int v) {
 	printf ("Usage: ragg2 [-FOLsrxhvz] [-a arch] [-b bits] [-k os] [-o file] [-I path]\n"
 		"             [-i sc] [-e enc] [-B hex] [-c k=v] [-C file] [-p pad] [-q off]\n"
 		"             [-q off] [-dDw off:hex] file|f.asm|-\n");
@@ -50,7 +50,8 @@ static int usage (int v) {
 	return 1;
 }
 
-static void list (REgg *egg) {
+
+static void list(REgg *egg) {
 	RListIter *iter;
 	REggPlugin *p;
 	printf ("shellcodes:\n");
@@ -67,7 +68,7 @@ static void list (REgg *egg) {
 	}
 }
 
-static int create (const char *format, const char *arch, int bits, const ut8 *code, int codelen) {
+static int create(const char *format, const char *arch, int bits, const ut8 *code, int codelen) {
 	RBin *bin = r_bin_new ();
 	RBuffer *b;
 	if (!r_bin_use_arch (bin, arch, bits, format)) {
@@ -86,7 +87,7 @@ static int create (const char *format, const char *arch, int bits, const ut8 *co
 	return 0;
 }
 
-static int openfile (const char *f, int x) {
+static int openfile(const char *f, int x) {
 	int fd = open (f, O_RDWR | O_CREAT, 0644);
 	if (fd == -1) {
 		fd = open (f, O_RDWR);
@@ -156,7 +157,7 @@ int main(int argc, char **argv) {
 		case 'C':
 			contents = optarg;
 			break;
-		case 'w':
+		case 'w': 
 			{
 			char *arg = strdup (optarg);
 			char *p = strchr (arg, ':');
@@ -191,7 +192,7 @@ int main(int argc, char **argv) {
 			ut64 n = r_num_math (NULL, optarg);
 			r_egg_patch (egg, -1, (const ut8*)&n, 8);
 			append = 1;
-			} 
+			}
 			break;
 		case 'd':
 			{
@@ -315,6 +316,12 @@ int main(int argc, char **argv) {
 
 	// catch this first
 	if (get_offset) {
+		if (strncmp (sequence, "0x", 2)) {
+			eprintf ("Need hex value with `0x' prefix e.g. 0x41414142\n");
+			free (sequence);
+			return 1;
+		}
+
 		get_offset = r_num_math (0, sequence);
 		printf ("Little endian: %d\n", r_debruijn_offset (get_offset, false));
 		printf ("Big endian: %d\n", r_debruijn_offset (get_offset, true));
@@ -334,6 +341,28 @@ int main(int argc, char **argv) {
 				}
 				r_egg_load (egg, buf, 0);
 			}
+		} else if (strstr (file, ".c")) {
+			char *fileSanitized = strdup (file);
+			r_str_sanitize (fileSanitized);
+			char *textFile = r_egg_Cfile_parser (fileSanitized, arch, os, bits);
+
+			if (!textFile) {
+				eprintf ("Failure while parsing '%s'\n", fileSanitized);
+				goto fail;
+			}
+
+			int l;
+			char *buf = r_file_slurp (textFile, &l);
+			if (buf && l > 0) {
+				r_egg_raw (egg, (const ut8*)buf, l);
+			} else {
+				eprintf ("Error loading '%s'\n", textFile);
+			}
+
+			r_file_rm (textFile);
+			free (fileSanitized);
+			free (textFile);
+			free (buf);
 		} else {
 			if (strstr (file, ".s") || strstr (file, ".asm")) {
 				fmt = 'a';

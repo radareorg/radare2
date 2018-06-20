@@ -23,6 +23,7 @@
 
 extern char hex2char(char *hex);
 
+#if 0
 static int set_interface_attribs (int fd, int speed, int parity) {
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #pragma message("gdbclient/core.c: set_interface_attribs not implemented")
@@ -61,6 +62,7 @@ static int set_interface_attribs (int fd, int speed, int parity) {
 #endif
 	return 0;
 }
+#endif
 
 static struct {
 	ut8  *buf;
@@ -477,7 +479,7 @@ static int gdbr_read_registers_lldb(libgdbr_t *g) {
 
 int gdbr_read_registers(libgdbr_t *g) {
 	int ret = -1;
-	if (!g) {
+	if (!g || !g->data) {
 		return -1;
 	}
 	if (reg_cache.init && reg_cache.valid) {
@@ -510,6 +512,9 @@ static int gdbr_read_memory_page(libgdbr_t *g, ut64 address, ut8 *buf, int len) 
 	int last, ret_len, pkt;
 	if (!g) {
 		return -1;
+	}
+	if (len < 1) {
+		return len;
 	}
 	g->stub_features.pkt_sz = R_MAX (g->stub_features.pkt_sz, GDB_MAX_PKTSZ);
 	int data_sz = g->stub_features.pkt_sz / 2;
@@ -589,7 +594,7 @@ int gdbr_read_memory(libgdbr_t *g, ut64 address, ut8 *buf, int len) {
 	// Read complete pages
 	while (len > page_size) {
 		if ((ret = gdbr_read_memory_page (g, address, buf, page_size)) != page_size) {
-			if (ret < 0) {
+			if (ret < 1) {
 				return ret_len;
 			}
 			return ret_len + ret;

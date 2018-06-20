@@ -23,6 +23,7 @@ static RList* parse_list (const char *str) {
 	}
 	line = strtok (str_n, "\n");
 	data = strchr (line, '=');
+	// TODO: use r_str_split()
 	p = strtok (data + 1, ",");
 
 	while (p) {
@@ -65,7 +66,6 @@ static bool isFlag (RRegItem *reg) {
 // binary op
 static bool simulate_op (const char *op, ut64 src1, ut64 src2, ut64 old_src1, ut64 old_src2, ut64 *result, int size) {
 	ut64 limit;
-
 	if (size == 64) {
 		limit = UT64_MAX;
 	} else {
@@ -545,8 +545,8 @@ static char* rop_classify_arithmetic_const(RCore *core, RList *ropList) {
 
 	if (!romem || !stats) {
 		// eprintf ("Error: esil.romem and esil.stats must be set TRUE");
-		free (op_result);
-		free (op_result_r);
+		R_FREE (op_result);
+		R_FREE (op_result_r);
 		return NULL;
 	}
 
@@ -580,8 +580,8 @@ static char* rop_classify_arithmetic_const(RCore *core, RList *ropList) {
 			mem_read  = parse_list (strstr (out, "mem.read"));
 			mem_write = parse_list (strstr (out, "mem.write"));
 		} else {
-			free (op_result);
-			free (op_result_r);
+			R_FREE (op_result);
+			R_FREE (op_result_r);
 			goto continue_error;
 		}
 
@@ -621,7 +621,7 @@ static char* rop_classify_arithmetic_const(RCore *core, RList *ropList) {
 							simulate_r = simulate_op (op, value_ct, value_src1, 
 							  			value_ct, diff_src1, op_result_r, 
 										item_dst->size);
-							if (simulate && value_dst == *op_result) {
+							if (simulate && op_result && value_dst == *op_result) {
 								char *tmp = r_str_newf ("%s <-- %s %s %s;", item_dst->name, item_src1->name, op, constant);
 								if (arithmetic && !strstr (arithmetic, tmp)) {
 									arithmetic = r_str_append (arithmetic, tmp);
@@ -661,7 +661,7 @@ static int rop_classify_nops(RCore *core, RList *ropList) {
 	const bool stats = r_config_get_i (core->config, "esil.stats");
 
 	if (!romem || !stats) {
-		// eprintf ("Error: esil.romem and esil.stats must be set TRUE");
+		// eprintf ("Error: esil.romem and esil.stats must be set TRUE\n");
 		return -2;
 	}
 
@@ -684,14 +684,13 @@ static int rop_classify_nops(RCore *core, RList *ropList) {
 }
 
 static void rop_classify (RCore *core, Sdb *db, RList *ropList, const char *key, unsigned int size) {
-	Sdb *db_nop = NULL, *db_mov = NULL, *db_ct = NULL, *db_aritm = NULL, *db_aritm_ct = NULL;
 	int nop = 0;  rop_classify_nops (core, ropList);
 	char *mov, *ct, *arithm, *arithm_ct, *str;
-	db_nop = sdb_ns (db, "nop", true);
-	db_mov = sdb_ns (db, "mov", true);
-	db_ct = sdb_ns (db, "const", true);
-	db_aritm = sdb_ns (db, "arithm", true);
-	db_aritm_ct = sdb_ns (db, "arithm_ct", true);
+	Sdb *db_nop = sdb_ns (db, "nop", true);
+	Sdb *db_mov = sdb_ns (db, "mov", true);
+	Sdb *db_ct = sdb_ns (db, "const", true);
+	Sdb *db_aritm = sdb_ns (db, "arithm", true);
+	Sdb *db_aritm_ct = sdb_ns (db, "arithm_ct", true);
 
 	if (!db_nop || !db_mov || !db_ct || !db_aritm || !db_aritm_ct) {
 		eprintf ("Error: Could not create SDB 'rop' sub-namespaces\n");

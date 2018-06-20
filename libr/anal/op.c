@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2017 - pancake, nibble */
+/* radare - LGPL - Copyright 2010-2018 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -50,6 +50,7 @@ R_API bool r_anal_op_fini(RAnalOp *op) {
 	r_strbuf_fini (&op->opex);
 	r_strbuf_fini (&op->esil);
 	r_anal_switch_op_free (op->switch_op);
+	op->switch_op = NULL;
 	R_FREE (op->mnemonic);
 	return true;
 }
@@ -64,23 +65,28 @@ R_API void r_anal_op_free(void *_op) {
 }
 
 static RAnalVar *get_used_var(RAnal *anal, RAnalOp *op) {
-	char *inst_key = sdb_fmt (0, "inst.0x%"PFMT64x".vars", op->addr);
-	const char *var_def = sdb_const_get (anal->sdb_fcns, inst_key, 0);
+	char *inst_key = r_str_newf ("inst.0x%"PFMT64x".vars", op->addr);
+	char *var_def = sdb_get (anal->sdb_fcns, inst_key, 0);
 	struct VarUsedType vut;
-
-	if (sdb_fmt_tobin (var_def, SDB_VARUSED_FMT, &vut) != 4) {
-		return NULL;
+	RAnalVar *res = NULL;
+	if (sdb_fmt_tobin (var_def, SDB_VARUSED_FMT, &vut) == 4) {
+		res = r_anal_var_get (anal, vut.fcn_addr, vut.type[0], vut.scope, vut.delta);
+		sdb_fmt_free (&vut, SDB_VARUSED_FMT);
 	}
-	RAnalVar *res = r_anal_var_get (anal, vut.fcn_addr, vut.type[0], vut.scope, vut.delta);
-	sdb_fmt_free (&vut, SDB_VARUSED_FMT);
+	free (inst_key);
+	free (var_def);
 	return res;
 }
 
-R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
+R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, int mask) {
 	//len will end up in memcmp so check for negative
 	if (!anal || len < 0) {
 		return -1;
 	}
+
+	anal->decode = mask & R_ANAL_OP_MASK_ESIL ? true : false;
+	anal->fillval = mask & R_ANAL_OP_MASK_VAL ? true : false;
+
 	if (anal->pcalign) {
 		if (addr % anal->pcalign) {
 			memset (op, 0, sizeof (RAnalOp));
@@ -211,6 +217,47 @@ R_API int r_anal_op_execute(RAnal *anal, RAnalOp *op) {
 		}
 	}
 	return true;
+}
+
+R_API bool r_anal_op_nonlinear(int t) {
+	switch (t) {
+	//call
+	case R_ANAL_OP_TYPE_CALL:
+	case R_ANAL_OP_TYPE_RCALL:
+	case R_ANAL_OP_TYPE_ICALL:
+	case R_ANAL_OP_TYPE_UCALL:
+	case R_ANAL_OP_TYPE_IRCALL:
+	case R_ANAL_OP_TYPE_UCCALL:
+	// jmp
+	case R_ANAL_OP_TYPE_JMP:
+	case R_ANAL_OP_TYPE_MJMP:
+	case R_ANAL_OP_TYPE_UJMP:
+	case R_ANAL_OP_TYPE_CJMP:
+	case R_ANAL_OP_TYPE_UCJMP:
+	case R_ANAL_OP_TYPE_RJMP:
+	case R_ANAL_OP_TYPE_IJMP:
+	case R_ANAL_OP_TYPE_IRJMP:
+	// trap| ill| unk
+	case R_ANAL_OP_TYPE_TRAP:
+	case R_ANAL_OP_TYPE_ILL:
+	case R_ANAL_OP_TYPE_UNK:
+		return true;
+	default:
+		return false;
+	}
+}
+
+R_API bool r_anal_op_ismemref(int t) {
+	switch (t) {
+	case R_ANAL_OP_TYPE_LOAD:
+	case R_ANAL_OP_TYPE_MOV:
+	case R_ANAL_OP_TYPE_STORE:
+	case R_ANAL_OP_TYPE_LEA:
+	case R_ANAL_OP_TYPE_CMP:
+		return true;
+	default:
+		return false;
+	}
 }
 
 R_API const char *r_anal_optype_to_string(int t) {

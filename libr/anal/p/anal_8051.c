@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2017 - pancake, dkreuter, astuder  */
+/* radare - LGPL - Copyright 2013-2018 - pancake, dkreuter, astuder  */
 
 #include <string.h>
 #include <r_types.h>
@@ -8,20 +8,163 @@
 
 #include <8051_ops.h>
 
-#define IRAM 0x10000
+typedef struct {
+	const char *name;
+	ut32 map_code;
+	ut32 map_idata;
+	ut32 map_sfr;
+	ut32 map_xdata;
+	ut32 map_pdata;
+} i8051_cpu_model;
+
+static i8051_cpu_model cpu_models[] = {
+	{
+		.name = "8051-generic",
+		.map_code	= 0,
+		.map_idata	= 0x10000000,
+		.map_sfr	= 0x10000180,
+		.map_xdata	= 0x20000000,
+		.map_pdata	= 0x00000000
+	},
+	{
+		.name = "8051-shared-code-xdata",
+		.map_code	= 0,
+		.map_idata	= 0x10000000,
+		.map_sfr	= 0x10000180,
+		.map_xdata	= 0x00000000,
+		.map_pdata	= 0x00000000
+	},
+	{
+		.name = NULL	// last entry
+	}
+};
 
 static bool i8051_is_init = false;
-// doesnt needs to be global, but anyway :D
-static RAnalEsilCallbacks ocbs = {0};
+static const i8051_cpu_model *cpu_curr_model = NULL;
+
+static bool i8051_reg_write (RReg *reg, const char *regname, ut32 num) {
+	if (reg) {
+		RRegItem *item = r_reg_get (reg, regname, R_REG_TYPE_GPR);
+		if (item) {
+			r_reg_set_value (reg, item, num);
+			return true;
+		}
+	}
+	return false;
+}
+
+static ut32 i8051_reg_read (RReg *reg, const char *regname) {
+	if (reg) {
+		RRegItem *item = r_reg_get (reg, regname, R_REG_TYPE_GPR);
+		if (item) {
+			return r_reg_get_value (reg, item);
+		}
+	}
+	return 0;
+}
+
+typedef struct {
+	RIODesc *desc;
+	ut32 addr;
+	const char *name;
+} i8051_map_entry;
+
+static const int I8051_IDATA = 0;
+static const int I8051_SFR = 1;
+static const int I8051_XDATA = 2;
+
+static i8051_map_entry mem_map[3] = {
+	{ NULL, UT32_MAX, "idata" },
+	{ NULL, UT32_MAX, "sfr" },
+	{ NULL, UT32_MAX, "xdata" }
+};
+
+static void map_cpu_memory (RAnal *anal, int entry, ut32 addr, ut32 size, bool force) {
+	RIODesc *desc = mem_map[entry].desc;
+	if (desc && anal->iob.fd_get_name (anal->iob.io, desc->fd)) {
+		if (force || addr != mem_map[entry].addr) {
+			// reallocate mapped memory if address changed
+			anal->iob.fd_remap (anal->iob.io, desc->fd, addr);
+		}
+	} else {
+		// allocate memory for address space
+		char *mstr = r_str_newf ("malloc://%d", size);		
+		desc = anal->iob.open_at (anal->iob.io, mstr, R_IO_READ | R_IO_WRITE, 0, addr);		
+		r_str_free (mstr);
+		// set 8051 address space as name of mapped memory
+		if (desc && anal->iob.fd_get_name (anal->iob.io, desc->fd)) {
+			RList *maps = anal->iob.fd_get_map (anal->iob.io, desc->fd);
+			RIOMap *current_map;
+			RListIter *iter;
+			r_list_foreach (maps, iter, current_map) {
+				char *cmdstr = r_str_newf ("omni %d %s", current_map->id, mem_map[entry].name);
+				anal->coreb.cmd (anal->coreb.core, cmdstr);
+				r_str_free (cmdstr);
+			}
+			r_list_free (maps);
+		}
+	}
+	mem_map[entry].desc = desc;
+	mem_map[entry].addr = addr;
+}
+
+static void set_cpu_model(RAnal *anal, bool force) {
+	ut32 addr_idata, addr_sfr, addr_xdata;
+
+	if (!anal->reg) {
+		return;
+	}
+
+	const char *cpu = anal->cpu;
+	if (!cpu || !cpu[0]) {
+		cpu = cpu_models[0].name;
+	}
+
+	// if cpu model changed, reinitalize emulation
+	if (force || !cpu_curr_model || r_str_casecmp (cpu, cpu_curr_model->name)) {
+		// find model by name
+		int i = 0;
+		while (cpu_models[i].name && r_str_casecmp (cpu, cpu_models[i].name)) {
+			i++;
+		}
+		if (!cpu_models[i].name) {
+			i = 0;	// if not found, default to generic 8051
+		}
+		cpu_curr_model = &cpu_models[i];
+
+		// TODO: Add flags as needed - seek using pseudo registers works w/o flags
+
+		// set memory map registers
+		addr_idata = cpu_models[i].map_idata;
+		addr_sfr = cpu_models[i].map_sfr;
+		addr_xdata = cpu_models[i].map_xdata;
+		i8051_reg_write (anal->reg, "_code", cpu_models[i].map_code);
+		i8051_reg_write (anal->reg, "_idata", addr_idata);
+		i8051_reg_write (anal->reg, "_sfr", addr_sfr - 0x80);
+		i8051_reg_write (anal->reg, "_xdata", addr_xdata);
+		i8051_reg_write (anal->reg, "_pdata", cpu_models[i].map_pdata);
+	} else {
+		addr_idata = i8051_reg_read (anal->reg, "_idata");
+		addr_sfr = i8051_reg_read (anal->reg, "_sfr") + 0x80;
+		addr_xdata = i8051_reg_read (anal->reg, "_xdata");
+	}
+
+	// (Re)allocate memory as needed.
+	// We assume that code is allocated with firmware image
+	map_cpu_memory (anal, I8051_IDATA, addr_idata, 0x100, force);
+	map_cpu_memory (anal, I8051_SFR, addr_sfr, 0x80, force);
+	map_cpu_memory (anal, I8051_XDATA, addr_xdata, 0x10000, force);
+}
 
 static ut8 bitindex[] = {
 	// bit 'i' can be found in (ram[bitindex[i>>3]] >> (i&7)) & 1
 	0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, // 0x00
 	0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F, // 0x40
 	0x80, 0x88, 0x90, 0x98, 0xA0, 0xA8, 0xB0, 0xB8, // 0x80
-	0x00, 0x00, 0xD0, 0x00, 0xE0, 0x00, 0xF0, 0x00  // 0xC0
+	0xC0, 0xC8, 0xD0, 0xD8, 0xE0, 0xE8, 0xF0, 0xF8  // 0xC0
 };
 
+#if 0
 typedef struct {
 	const char *name;
 	ut8 offset; // offset into memory, where the value is held
@@ -31,13 +174,14 @@ typedef struct {
 	ut8 isdptr : 1;
 } RI8051Reg;
 
+// custom reg read/write temporarily disabled - see r2 issue #9242
 static RI8051Reg registers[] = {
 	// keep these sorted
-	{"acc",   0xE0, 0x00, 1, 0},
+	{"a",     0xE0, 0x00, 1, 0},
 	{"b",     0xF0, 0x00, 1, 0},
 	{"dph",   0x83, 0x00, 1, 0},
 	{"dpl",   0x82, 0x00, 1, 0},
-	{"dptr",  0x00, 0x00, 2, 0, 1},
+	{"dptr",  0x82, 0x00, 2, 0, 1},
 	{"ie",    0xA8, 0x00, 1, 0},
 	{"ip",    0xB8, 0x00, 1, 0},
 	{"p0",    0x80, 0xFF, 1, 0},
@@ -64,335 +208,514 @@ static RI8051Reg registers[] = {
 	{"tl1",   0x8B, 0x00, 1, 0},
 	{"tmod",  0x89, 0x00, 1, 0}
 };
+#endif
 
-#define emit(frag) r_strbuf_appendf(&op->esil, frag)
-#define emitf(...) r_strbuf_appendf(&op->esil, __VA_ARGS__)
+#define e(frag) r_strbuf_append(&op->esil, frag)
+#define ef(frag, ...) r_strbuf_appendf(&op->esil, frag, __VA_ARGS__)
 
-#define j(frag) emitf(frag, 1 & buf[0], buf[1], buf[2])
-#define h(frag) emitf(frag, 7 & buf[0], buf[1], buf[2])
-#define k(frag) emitf(frag, bitindex[buf[1]>>3], buf[1] & 7, buf[2])
+#define flag_c "$c7,c,=,"
+#define flag_b "$b8,c,=,"
+#define flag_ac "$c3,ac,=,"
+#define flag_ab "$b3,ac,=,"
+#define flag_ov "$c6,ov,=,"
+#define flag_ob "$b7,$b6,^,ov,=,"
+#define flag_p "0xff,a,&=,$p,!,p,=,"
 
-// on 8051 the stack grows upward and lsb is pushed first meaning
-// that on little-endian esil vms =[2] works as indended
-#define PUSH1 "1,sp,+=,sp,=[1]"
-#define POP1  "sp,[1],1,sp,-=,"
-#define PUSH2 "1,sp,+=,sp,=[2],1,sp,+="
-#define POP2  "1,sp,-=,sp,[2],1,sp,-=,"
-#define CALL(skipbytes) skipbytes",pc,+," PUSH2
-#define JMP(skipbytes) skipbytes",+,pc,+="
-#define CJMP(target, skipbytes) "?{," ESX_##target "" JMP(skipbytes) ",}"
-#define BIT_R "%2$d,%1$d,[1],>>,1,&,"
-#define F_BIT_R "%d,%d,[1],>>,1,&,"
-#define A_BIT_R a2, a1
+#define ev_a 0
+#define ev_bit bitindex[buf[1]>>3]
+#define ev_c 0
+#define ev_dir1 buf[1]
+#define ev_dir2 buf[2]
+#define ev_dp 0
+#define ev_dpx 0
+#define ev_imm1 buf[1]
+#define ev_imm2 buf[2]
+#define ev_imm16 op->val
+#define ev_ri 1 & buf[0]
+#define ev_rix 1 & buf[0]
+#define ev_rn 7 & buf[0]
+#define ev_sp2 0
+#define ev_sp1 0
 
-#define IRAM_BASE  "0x10000"
-#define XRAM_BASE  "0x10100"
+static void exr_a(RAnalOp *op, ut8 dummy) {
+	e ("a,");
+}
 
-#define ES_IB1 IRAM_BASE ",%2$d,+,"
-#define ES_IB2 IRAM_BASE ",%3$d,+,"
-#define ES_R0I "r%1$d,"
-#define ES_AI "A,"
-#define ES_R0  "r%1$d,"
-#define ES_R1 "r%2$d,"
-#define ES_A "A,"
-#define ES_L1 "%2$d,"
-#define ES_L2 "%3$d,"
-#define ES_C "C,"
+static void exr_dir1(RAnalOp *op, ut8 addr) {
+	if (addr < 0x80) {
+		ef ("_idata,%d,+,[1],", addr);
+	} else {
+		ef ("_sfr,%d,+,[1],", addr);
+	}
+}
 
-// signed char variant
-#define ESX_L1 "%2$hhd,"
-#define ESX_L2 "%2$hhd,"
+static void exr_bit(RAnalOp *op, ut8 addr) {
+	exr_dir1 (op, addr);
+}
 
-#define ACC_IB1 "[1],"
-#define ACC_IB2 "[1],"
-#define ACC_R0I "[1],"
-#define ACC_AI  "[1],"
-#define ACC_R0  ""
-#define ACC_R1  ""
-#define ACC_A   ""
-#define ACC_L1  ""
-#define ACC_L2  ""
-#define ACC_C   ""
+static void exr_dpx (RAnalOp *op, ut8 dummy) {
+	e ("_xdata,dptr,+,[1],");
+}
 
-#define XR(subject)            ES_##subject               ACC_##subject
-#define XW(subject)            ES_##subject "="           ACC_##subject
-#define XI(subject, operation) ES_##subject operation "=" ACC_##subject
+static void exr_imm1(RAnalOp *op, ut8 val) {
+	ef ("%d,", val);
+}
 
-#define TEMPLATE_4(base, format, src4, arg1, arg2) \
+static void exr_imm2(RAnalOp *op, ut8 val) {
+	ef ("%d,", val);
+}
+
+static void exr_imm16(RAnalOp *op, ut16 val) {
+	ef ("%d,", val);
+}
+
+static void exr_ri(RAnalOp *op, ut8 reg) {
+	ef ("_idata,r%d,+,[1],", reg);
+}
+
+static void exr_rix(RAnalOp *op, ut8 reg) {
+	ef ("8,0xff,_pdata,&,<<,_xdata,+,r%d,+,[1],", reg);
+}
+
+static void exr_rn(RAnalOp *op, ut8 reg) {
+	ef ("r%d,", reg);
+}
+
+static void exr_sp1(RAnalOp *op, ut8 dummy) {
+	e ("_idata,sp,+,[1],");
+	e ("1,sp,-=,");
+}
+
+static void exr_sp2(RAnalOp *op, ut8 dummy) {
+	e ("1,sp,-=,");
+	e ("_idata,sp,+,[2],");
+	e ("1,sp,-=,");
+}
+
+static void exw_a(RAnalOp *op, ut8 dummy) {
+	e ("a,=,");
+}
+
+static void exw_c(RAnalOp *op, ut8 dummy) {
+	e ("c,=,");
+}
+
+static void exw_dir1(RAnalOp *op, ut8 addr) {
+	if (addr < 0x80) {
+		ef ("_idata,%d,+,=[1],", addr);
+	} else {
+		ef ("_sfr,%d,+,=[1],", addr);
+	}
+}
+
+static void exw_dir2(RAnalOp *op, ut8 addr) {
+	exw_dir1 (op, addr);
+}
+
+static void exw_bit(RAnalOp *op, ut8 addr) {
+	exw_dir1 (op, addr);
+}
+
+static void exw_dp (RAnalOp *op, ut8 dummy) {
+	e ("dptr,=,");
+}
+
+static void exw_dpx (RAnalOp *op, ut8 dummy) {
+	e ("_xdata,dptr,+,=[1],");
+}
+
+static void exw_ri(RAnalOp *op, ut8 reg) {
+	ef ("_idata,r%d,+,=[1],", reg);
+}
+
+static void exw_rix(RAnalOp *op, ut8 reg) {
+	ef ("8,0xff,_pdata,&,<<,_xdata,+,r%d,+,=[1],", reg);
+}
+
+static void exw_rn(RAnalOp *op, ut8 reg) {
+	ef ("r%d,=,", reg);
+}
+
+static void exw_sp1(RAnalOp *op, ut8 dummy) {
+	e ("1,sp,+=,");
+	e ("_idata,sp,+,=[1],");
+}
+
+static void exw_sp2(RAnalOp *op, ut8 dummy) {
+	e ("1,sp,+=,");
+	e ("_idata,sp,+,=[2],");
+	e ("1,sp,+=,");
+}
+
+static void exi_a(RAnalOp *op, ut8 dummy, const char* operation) {
+	ef ("a,%s=,", operation);
+}
+
+static void exi_c(RAnalOp *op, ut8 dummy, const char* operation) {
+	ef ("c,%s=,", operation);
+}
+
+static void exi_dp (RAnalOp *op, ut8 dummy, const char *operation) {
+	ef ("dptr,%s=,", operation);
+}
+
+static void exi_dir1 (RAnalOp *op, ut8 addr, const char *operation) {
+	if (addr < 0x80) {
+		ef ("_idata,%d,+,%s=[1],", addr, operation);
+	} else {
+		ef ("_sfr,%d,+,%s=[1],", addr, operation);
+	}
+}
+
+static void exi_bit (RAnalOp *op, ut8 addr, const char *operation) {
+	exi_dir1 (op, addr, operation);
+}
+
+static void exi_ri(RAnalOp *op, ut8 reg, const char *operation) {
+	ef ("_idata,r%d,+,%s=[1],", reg, operation);
+}
+
+static void exi_rn(RAnalOp *op, ut8 reg, const char *operation) {
+	ef ("r%d,%s=,", reg, operation);
+}
+
+#define xr(subject) exr_##subject (op, ev_##subject)
+#define xw(subject) exw_##subject (op, ev_##subject)
+#define xi(subject, operation) exi_##subject (op, ev_##subject, operation)
+
+#define bit_set ef ("%d,1,<<,", buf[1] & 7)
+#define bit_mask bit_set; e ("255,^,")
+#define bit_r ef ("%d,", buf[1] & 7); xr (bit); e (">>,1,&,")
+#define bit_c ef ("%d,c,<<,", buf[1] & 7);
+
+#define jmp ef ("%d,pc,=", op->jump)
+#define cjmp e ("?{,"); jmp; e (",}")
+#define call ef ("%d,", op->fail); xw (sp2); jmp
+
+#define alu_op(val, aluop, flags) xr (val); e ("a," aluop "=," flags)
+#define alu_op_c(val, aluop, flags) e ("c,"); xr (val); e ("+,a," aluop "=," flags)
+#define alu_op_d(val, aluop) xr (val); xi (dir1, aluop)
+
+#define template_alu4_c(base, aluop, flags) \
 	case base + 0x4: \
-		h (format(0, src4, arg1, arg2)); break; \
-		\
+		alu_op_c (imm1, aluop, flags); break; \
 	case base + 0x5: \
-		h (format(1, IB1,  arg1, arg2)); break; \
-		\
+		alu_op_c (dir1, aluop, flags); break; \
 	case base + 0x6: \
 	case base + 0x7: \
-		j (format(0, R0I,  arg1, arg2)); break; \
-		\
+		alu_op_c (ri, aluop, flags); break; \
 	case base + 0x8: case base + 0x9: \
 	case base + 0xA: case base + 0xB: \
 	case base + 0xC: case base + 0xD: \
 	case base + 0xE: case base + 0xF: \
-		h (format(0, R0,   arg1, arg2)); break;
+		alu_op_c (rn, aluop, flags); break;
 
-#define OP_GROUP_INPLACE_LHS_4(base, lhs, op) TEMPLATE_4(base, OP_GROUP_INPLACE_LHS_4_FMT, L1, lhs, op)
-#define OP_GROUP_INPLACE_LHS_4_FMT(databyte, rhs, lhs, op) XR(rhs) XI(lhs, op)
+#define template_alu2(base, aluop) \
+	case base + 0x2: \
+		alu_op_d (a, aluop); break; \
+	case base + 0x3: \
+		alu_op_d (imm2, aluop); break; \
 
-#define OP_GROUP_UNARY_4(base, op) TEMPLATE_4(base, OP_GROUP_UNARY_4_FMT, A, op, XXX)
-#define OP_GROUP_UNARY_4_FMT(databyte, lhs, op, xxx) XI(lhs, op)
+#define template_alu4(base, aluop, flags) \
+	case base + 0x4: \
+		alu_op (imm1, aluop, flags); break; \
+	case base + 0x5: \
+		alu_op (dir1, aluop, flags); break; \
+	case base + 0x6: \
+	case base + 0x7: \
+		alu_op (ri, aluop, flags); break; \
+	case base + 0x8: case base + 0x9: \
+	case base + 0xA: case base + 0xB: \
+	case base + 0xC: case base + 0xD: \
+	case base + 0xE: case base + 0xF: \
+		alu_op (rn, aluop, flags); break;
 
 static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
 
-	const ut32 a1 = bitindex[buf[1] >> 3];
-	const ut32 a2 = buf[1] & 7;
-	const ut32 a3 = buf[2];
-
 	switch (buf[0]) {
 	// Irregulars sorted by lower nibble
-	case 0x00: /* nop  */ emit(","); break;
-	case 0x10: /* jbc  */
-		emitf(F_BIT_R "&,?{,%d,1,<<,255,^,%d,&=[1],%hhd,3,+,pc,+=,}", A_BIT_R, a2, a1, a3);
+	case 0x00: /* nop */
+		e (",");
 		break;
-	case 0x20: /* jb   */
-		emitf(F_BIT_R "&,?{,%hhd,3,+,pc,+=,}", A_BIT_R, a3);
+
+	case 0x10: /* jbc bit, offset */
+		bit_r; e ("?{,"); bit_mask; xi (bit, "&"); jmp; e (",}");
 		break;
-	case 0x30: /* jnb  */
-		emitf(F_BIT_R "&,!,?{,%hhd,3,+,pc,+=,}", A_BIT_R, a3);
+	case 0x20: /* jb bit, offset */
+		bit_r; cjmp;
 		break;
-	case 0x40: /* jc   */ emitf("C,!,?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
-	case 0x42: /* orl 0x31, a */
-		emitf ("%d,[],A,|,%d,=[]", (ut8)buf[1], (ut8)buf[1]);
+	case 0x30: /* jnb bit, offset */
+		bit_r; e ("!,"); cjmp;
 		break;
-	case 0x43: /* orl 0x31, #0x01 */
-		emitf ("%d,[],%d,|,%d,=[]", (ut8)buf[1], (ut8)buf[2], (ut8)buf[1]);
+	case 0x40: /* jc offset */
+		e ("c,1,&,"); cjmp;
 		break;
-	case 0x50: /* jnc  */ emitf("C,""?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
-	case 0x52: /* anl 0x31, a */
-		emitf ("%d,[],A,&,%d,=[]", (ut8)buf[1], (ut8)buf[1]);
+	case 0x50: /* jnc offset */
+		e ("c,1,&,!,"); cjmp;
 		break;
-	case 0x53: /* anl 0x31, #0x01 */
-		emitf ("%d,[],%d,&,%d,=[]", (ut8)buf[1], (ut8)buf[2], (ut8)buf[1]);
+	case 0x60: /* jz offset */
+		e ("a,0,==,"); cjmp;
 		break;
-	case 0x60: /* jz   */ emitf("A,!,?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
-	case 0x70: /* jnz  */ emitf("A,""?{,%d,2,+,pc,+=,}", (st8)buf[1]); break;
-	case 0x80: /* sjmp */ j(ESX_L1 JMP("2")); break;
-	case 0x90: /* mov  */ emitf("%d,dptr,=", (buf[1]<<8) + buf[2]); break;
-	/* orl */
-	case 0xA0:
-	case 0x72:
-		k(BIT_R "C,|=");
+	case 0x70: /* jnz offset */
+		e ("a,0,==,!,"); cjmp;
 		break;
-	/* anl */
-	case 0xB0:
-	case 0x82:
-		k(BIT_R "C,&=");
-		break;
-	case 0xC0: /* push */ h(XR(IB1) PUSH1); break;
-	case 0xD0: /* pop  */ h(POP1 XW(IB1)); break;
-	case 0xE0: /* movx */ emit ("dptr,[2],a,="); break;
-	case 0xF0: /* movx */ emit ("a,dptr,=[2]"); break;
+
 	case 0x11: case 0x31: case 0x51: case 0x71:
-	case 0x91: case 0xB1: case 0xD1: case 0xF1:
-		emit (CALL ("2"));
-		/* fall through */
+	case 0x91: case 0xB1: case 0xD1: case 0xF1: /* acall addr11 */
+	case 0x12: /* lcall addr16 */
+		call;
+		break;
 	case 0x01: case 0x21: case 0x41: case 0x61:
-	case 0x81: case 0xA1: case 0xC1: case 0xE1:
-		emitf ("0x%x,pc,=", (addr & 0xF800) | ((((ut16)buf[0])<<3) & 0x0700) | buf[1]);
+	case 0x81: case 0xA1: case 0xC1: case 0xE1: /* ajmp addr11 */	
+	case 0x02: /* ljmp addr16 */
+	case 0x80: /* sjmp offset */
+		jmp;
 		break;
-	case 0x02: /* ljmp  */ emitf (          "%d,pc,=", (ut32)((buf[1] << 8) + buf[2])); break;
-	case 0x12: /* lcall */ emitf (CALL ("3")",%d,pc,=", (ut32)((buf[1] << 8) + buf[2])); break;
-	case 0x22: /* ret   */ emitf (POP2 "pc,="); break;
-	case 0x32: /* reti  */ emitf (POP2 "pc,="); break;
-	case 0x92: /* mov   */ /* TODO */ break;
-	case 0xA2: /* mov   */ /* TODO */ break;
-	case 0xB2: /* cpl   */
-		emitf ("%d,1,<<,%d,^=[1]", a2, a1);
-		break;
-	case 0xC2: /* clr   */
-		emitf ("0,%d,=[]", (ut8)buf[1]);
-		break;
-	case 0x03: /* rr   */ emit("1,A,0x101,*,>>,A,="); break;
-	case 0x13: /* rrc  */ emit("1,A,>>,$c7,C,=,A,="); break;
-	case 0x23: /* rl   */ emit("7,A,0x101,*,>>,A,="); break;
-	case 0x33: /* rlc  */ emit("1,A,>>,$c0,C,=,A,="); break;
-	case 0x73: /* jmp  */ emit("dptr,A,+,pc,="); break;
-	case 0x83: /* movc */ emit("A,dptr,+,[1],A,="); break;
-	case 0x93: /* movc */ emit("A,pc,+,[1],A,="); break;
-	case 0xA3: /* inc  */ h(XI(IB1, "++")); break;
-	case 0xB3: /* cpl  */ emit("1," XI(C, "^")); break;
-	// FIXME: Wrong - should use register name
-	case 0xC3: /* clr  */ emit("0,C,="); break;
 
-	// Regulars sorted by upper nibble
-	OP_GROUP_UNARY_4(0x00, "++")
-	OP_GROUP_UNARY_4(0x10, "--")
-	OP_GROUP_INPLACE_LHS_4(0x20, A, "+")
+	case 0x22: /* ret */
+	case 0x32: /* reti */
+		xr (sp2); e ("pc,=");
+		break;
 
-	case 0x34:
-		h (XR(L1)  "C,+," XI(A, "+"));
-		 break;
-	case 0x35:
-		h (XR(IB1) "C,+," XI(A, "+"));
+	case 0x03: /* rr a */
+		e ("1,a,0x101,*,>>,a,=," flag_p);
 		break;
-	case 0x36: case 0x37:
-		j (XR(R0I) "C,+," XI(A, "+"));
+	case 0x04: /* inc a */
+		xi (a, "++"); e (flag_p);
 		break;
-	case 0x38: case 0x39:
-	case 0x3A: case 0x3B:
-	case 0x3C: case 0x3D:
-	case 0x3E: case 0x3F:
-		h (XR(R0)  "C,+," XI(A, "+"));
+	case 0x05: /* inc direct */
+		xi (dir1, "++");
 		break;
-	OP_GROUP_INPLACE_LHS_4 (0x40, A, "|")
-	OP_GROUP_INPLACE_LHS_4 (0x50, A, "&")
-	OP_GROUP_INPLACE_LHS_4 (0x60, A, "^")
-	case 0x74:
-		h (XR(L1) XW(A));
+	case 0x06: case 0x07: /* inc @Ri */
+		xi (ri, "++");
 		break;
-	case 0x75:
-		h (XR(L2) XW(IB1));
+	case 0x08: case 0x09: case 0x0A: case 0x0B:
+	case 0x0C: case 0x0D: case 0x0E: case 0x0F: /* inc @Rn */
+		xi (rn, "++");
 		break;
-	case 0x76: case 0x77:
-		j (XR(L1) XW(R0I));
+	case 0x13: /* rrc a */
+		e ("7,c,<<,1,a,&,c,=,0x7f,1,a,>>,&,+,a,=," flag_p);
 		break;
-	case 0x78: case 0x79:
-	case 0x7A: case 0x7B:
-	case 0x7C: case 0x7D:
-	case 0x7E: case 0x7F:
-		h (XR(L1) XW(R0));
+	case 0x14: /* dec a */
+		xi (a, "--"); e (flag_p);
 		break;
-	case 0x84: /* div */
-		emit("B,!,OV,=,0,A,B,A,/=,A,B,*,-,-,B,=,0,C,=");
+	case 0x15: /* dec direct */
+		xi (dir1, "--"); e (flag_p);
 		break;
-	case 0x85: /* mov */
-		h(IRAM_BASE ",%2$d,+,[1]," IRAM_BASE ",%2$d,+,=[1]");
+	case 0x16: case 0x17: /* dec @Ri */
+		xi (ri, "--");
 		break;
-	case 0x86: case 0x87:
-		j (XR(R0I) XW(IB1));
+	case 0x18: case 0x19: case 0x1A: case 0x1B:
+	case 0x1C: case 0x1D: case 0x1E: case 0x1F: /* dec @Rn */
+		xi (rn, "--");
 		break;
-	case 0x88: case 0x89:
-	case 0x8A: case 0x8B:
-	case 0x8C: case 0x8D:
-	case 0x8E: case 0x8F:
-		h (XR(R0) XW(IB1));
+	case 0x23: /* rl a */
+		e ("7,a,0x101,*,>>,a,=," flag_p);
 		break;
-	OP_GROUP_INPLACE_LHS_4(0x90, A, ".")
-	case 0xA4:
-		/* mul */ emit("8,A,B,*,NUM,>>,NUM,!,!,OV,=,B,=,A,=,0,C,="); break;
-	case 0xA5: /* ??? */ emit("0,TRAP"); break;
-	case 0xA6: case 0xA7:
-		j (XR(IB1) XW(R0I));
+	template_alu4 (0x20, "+", flag_c flag_ac flag_ov flag_p) /* 0x24..0x2f add a,.. */
+	case 0x33: /* rlc a */
+		e ("c,1,&,a,a,+=,$c7,c,=,a,+=," flag_p);
 		break;
-	case 0xA8: case 0xA9:
-	case 0xAA: case 0xAB:
-	case 0xAC: case 0xAD:
-	case 0xAE: case 0xAF:
-		h (XR(IB1) XW(R0));
+	template_alu4_c (0x30, "+", flag_c flag_ac flag_ov flag_p) /* 0x34..0x3f addc a,.. */
+	template_alu2 (0x40, "|") /* 0x42..0x43 orl direct,.. */
+	template_alu4 (0x40, "|", flag_p) /* 0x44..0x4f orl a,.. */
+	template_alu2 (0x50, "&") /* 0x52..0x53 anl direct,.. */
+	template_alu4 (0x50, "&", flag_p) /* 0x54..0x5f anl a,.. */
+	template_alu2 (0x60, "^") /* 0x62..0x63 xrl direct,.. */
+	template_alu4 (0x60, "^", flag_p) /* 0x64..0x6f xrl a,.. */
+	case 0x72: /* orl C, bit */
+		bit_r; xi (c, "|");
 		break;
-	case 0xB4:
-		h (XR(L1)  XR(A)   "!=,?{,%3$hhd,2,+pc,+=,}");
+	case 0x73: /* jmp @a+dptr */
+		e ("dptr,a,+,pc,=");
 		break;
-	case 0xB5:
-		h (XR(IB1) XR(A)   "!=,?{,%3$hhd,2,+pc,+=,}");
+	case 0x74: /* mov a, imm */
+		xr (imm1); xw (a); e (flag_p);
 		break;
-	case 0xB6: case 0xB7:
-		j (XR(L1)  XR(R0I) "!=,?{,%3$hhd,2,+pc,+=,}");
+	case 0x75: /* mov direct, imm */
+		xr (imm2); xw (dir1);
 		break;
-	case 0xB8: case 0xB9:
-	case 0xBA: case 0xBB:
-	case 0xBC: case 0xBD:
-	case 0xBE: case 0xBF:
-		h (XR(L1)  XR(R0)  "!=,?{,%3$hhd,2,+pc,+=,}");
+	case 0x76: case 0x77: /* mov @Ri, imm */
+		xr (imm1); xw (ri);
 		break;
-	case 0xC4: /* swap */
-		emit("4,A,0x101,*,>>,A,=");
+	case 0x78: case 0x79: case 0x7A: case 0x7B:
+	case 0x7C: case 0x7D: case 0x7E: case 0x7F: /* mov Rn, imm */
+		xr (imm1); xw (rn);
 		break;
-	case 0xC5:
-		/* xch  */ /* TODO */
+	case 0x82: /* anl C, bit */
+		bit_r; xi (c, "&");
 		break;
-	case 0xC6: case 0xC7:
-		/* xch  */ /* TODO */
+	case 0x83: /* movc a, @a+pc */
+		e ("a,pc,--,+,[1],a,=," flag_p);
 		break;
-	case 0xC8: case 0xC9:
-	case 0xCA: case 0xCB:
-	case 0xCC: case 0xCD:
-	case 0xCE: case 0xCF: /* xch  */
-		h (XR(A) XR(R0) XW(A) ","  XW(R0));
+	case 0x84: /* div ab */
+		// note: escape % if this becomes a format string
+		e ("b,0,==,ov,=,b,a,%,b,a,/=,b,=,0,c,=," flag_p);
 		break;
-	case 0xD2: /* setb */
-		emitf("%d,1,<<,A,|=", (ut8)buf[1]);
+	case 0x85: /* mov direct, direct */
+		xr (dir1); xw (dir2);
 		break;
-	case 0xD3:
-		/* setb */
-		emitf("%d,1,<<,%d,[],|=,%d,=[]", (ut8)buf[1], (ut8)buf[2], (ut8)buf[2]);
+	case 0x86: case 0x87: /* mov direct, @Ri */
+		xr (ri); xw (dir1);
 		break;
-	case 0xD4:
-		/* da   */ emit("A,--="); break;
-	case 0xD5:
-		/* djnz */ h(XI(R0I, "--") "," XR(R0I) CJMP(L2, "2")); break;
+	case 0x88: case 0x89: case 0x8A: case 0x8B:
+	case 0x8C: case 0x8D: case 0x8E: case 0x8F: /* mov direct, Rn */
+		xr (rn); xw (dir1);
+		break;
+	case 0x90: /* mov dptr, imm */
+		xr (imm16); xw (dp);
+		break;
+	case 0x92: /* mov bit, C */
+		bit_c; bit_mask; xr (bit); e ("&,|,"); xw(bit);
+		break;
+	case 0x93: /* movc a, @a+dptr */
+		e ("a,dptr,+,[1],a,=," flag_p);
+		break;
+	template_alu4_c (0x90, "-", flag_b flag_ab flag_ob flag_p) /* 0x94..0x9f subb a,.. */
+	case 0xA0: /* orl C, /bit */
+		bit_r; e ("!,"); xi (c, "|");
+		break;
+	case 0xA2: /* mov C, bit */
+		bit_r; xw (c);
+		break;
+	case 0xA3: /* inc dptr */
+		xi (dp, "++");
+		break;
+	case 0xA4: /* mul ab */
+		e ("8,a,b,*,DUP,a,=,>>,DUP,b,=,0,==,!,ov,=,0,c,=," flag_p);
+		break;
+	case 0xA5: /* "reserved" */
+		e ("0,trap");
+		break;
+	case 0xA6: case 0xA7: /* mov @Ri, direct */
+		xr (dir1); xw (ri);
+		break;
+	case 0xA8: case 0xA9: case 0xAA: case 0xAB:
+	case 0xAC: case 0xAD: case 0xAE: case 0xAF: /* mov Rn, direct */
+		xr (dir1); xw (rn);
+		break;
+	case 0xB0: /* anl C, /bit */
+		bit_r; e ("!,"); xi (c, "&");
+		break;
+	case 0xB2: /* cpl bit */
+		bit_set; xi (bit, "^");
+		break;
+	case 0xB3: /* cpl C */
+		e ("1,"); xi (c, "^");
+		break;
+	case 0xB4: /* cjne a, imm, offset */
+		xr (imm1); xr (a); e ("-," flag_b); cjmp;
+		break;
+	case 0xB5: /* cjne a, direct, offset */
+		xr (dir1); xr (a); e ("-," flag_b); cjmp;
+		break;
+	case 0xB6: case 0xB7: /* cjne @ri, imm, offset */
+		xr (imm1); xr (ri); e ("-," flag_b); cjmp;
+		break;
+	case 0xB8: case 0xB9: case 0xBA: case 0xBB:
+	case 0xBC: case 0xBD: case 0xBE: case 0xBF: /* cjne Rn, imm, offset */
+		xr (imm1); xr (rn); e ("-," flag_b); cjmp;
+		break;
+	case 0xC0: /* push direct */
+		xr (dir1); xw (sp1);
+		break;
+	case 0xC2: /* clr bit */
+		bit_mask; xi (bit, "&");
+		break;
+	case 0xC3: /* clr C */
+		e ("0,"); xw (c);
+		break;
+	case 0xC4: /* swap a */
+		e ("0xff,4,a,0x101,*,>>,&,a,=," flag_p);
+		break;
+	case 0xC5: /* xch a, direct */
+		xr (a); e ("0,+,"); xr (dir1); xw (a); xw (dir1); e (flag_p);
+		break;
+	case 0xC6: case 0xC7: /* xch a, @Ri */ 
+		xr (a); e ("0,+,"); xr (ri); xw (a); xw (ri); e (flag_p);
+		break;
+	case 0xC8: case 0xC9: case 0xCA: case 0xCB:
+	case 0xCC: case 0xCD: case 0xCE: case 0xCF: /* xch a, Rn */
+		xr (a); e ("0,+,"); xr (rn); xw (a); xw (rn); e (flag_p);
+		break;
+	case 0xD0: /* pop direct */
+		xr (sp1); xw (dir1);
+		break;
+	case 0xD2: /* setb bit */
+		bit_set; xi (bit, "|");
+		break;
+	case 0xD3: /* setb C */
+		e ("1,"); xw (c);
+		break;
+	case 0xD4: /* da a */
+		// BCD adjust after add:
+		// if (lower nibble > 9) or (AC == 1) add 6
+		// if (higher nibble > 9) or (C == 1) add 0x60
+		// carry |= carry caused by this operation
+		e ("a,0x0f,&,9,<,ac,|,?{,6,a,+=,$c7,c,|=,},a,0xf0,&,0x90,<,c,|,?{,0x60,a,+=,$c7,c,|=,}," flag_p);
+		break;
+	case 0xD5: /* djnz direct, offset */
+		xi (dir1, "--"); xr (dir1); e ("0,==,!,"); cjmp;
+		break;
 	case 0xD6:
-		/* xchd */ /* TODO */ break;
-	case 0xD7:
-		/* xchd */ /* TODO */ break;
-
-	case 0xD8: case 0xD9:
-	case 0xDA: case 0xDB:
-	case 0xDC: case 0xDD:
-	case 0xDE: case 0xDF:
-		/* djnz */ h(XI(R0, "--") "," XR(R0) CJMP(L1, "2")); break;
-
-	case 0xE2: case 0xE3:
-		/* movx */
-		j(XRAM_BASE "r%0$d,+,[1]," XW(A));
+	case 0xD7: /* xchd a, @Ri*/
+		xr (a); e ("0xf0,&,"); xr (ri); e ("0x0f,&,|,");
+		xr (ri); e ("0xf0,&,"); xr (a); e ("0x0f,&,|,");
+		xw (ri); xw (a); e (flag_p);
 		break;
-	case 0xE4:
-		/* clr  */
-		emit("0,A,=");
+	case 0xD8: case 0xD9: case 0xDA: case 0xDB:
+	case 0xDC: case 0xDD: case 0xDE: case 0xDF: /* djnz Rn, offset */
+		xi (rn, "--"); xr (rn); e ("0,==,!,"); cjmp;
 		break;
-	case 0xE5:
-		/* mov  */
-		h (XR(IB1) XW(A));
+	case 0xE0: /* movx a, @dptr */
+		xr (dpx); xw (a); e (flag_p);
 		break;
-	case 0xE6: case 0xE7:
-		/* mov  */
-		j (XR(R0I) XW(A));
+	case 0xE2: case 0xE3: /* movx a, @Ri */
+		xr (rix); xw (a); e (flag_p);
 		break;
-	case 0xE8: case 0xE9:
-	case 0xEA: case 0xEB:
-	case 0xEC: case 0xED:
-	case 0xEE: case 0xEF:
-		/* mov  */
-		h (XR(R0)  XW(A));
+	case 0xE4: /* clr a */
+		e ("0,"); xw (a); e (flag_p);
 		break;
-	case 0xF2: case 0xF3:
-		/* movx */
-		j(XR(A) XRAM_BASE "r%0$d,+,=[1]");
+	case 0xE5: /* mov a, direct */
+		xr (dir1); xw (a); e (flag_p);
 		break;
-	case 0xF4:
-		/* cpl  */
-		h ("255" XI(A, "^"));
+	case 0xE6: case 0xE7: /* mov a, @Ri */
+		xr (ri); xw (a); e (flag_p);
 		break;
-	case 0xF5:
-		/* mov  */
-		h (XR(A) XW(IB1));
+	case 0xE8: case 0xE9: case 0xEA: case 0xEB:
+	case 0xEC: case 0xED: case 0xEE: case 0xEF: /* mov a, Rn */
+		xr (rn); xw (a); e (flag_p);
 		break;
-	case 0xF6: case 0xF7:
-		/* mov  */
-		j (XR(A) XW(R0I));
+	case 0xF0: /* movx @dptr, a */
+		xr (a); xw (dpx);
 		break;
-	case 0xF8: case 0xF9:
-	case 0xFA: case 0xFB:
-	case 0xFC: case 0xFD:
-	case 0xFE: case 0xFF:
-		/* mov  */
-		h (XR(A) XW(R0));
+	case 0xF2: case 0xF3: /* movx @Ri, a */
+		xr (a); xw (rix);
 		break;
-	default: break;
+	case 0xF4: /* cpl a */
+		e ("255,"); xi (a, "^"); e (flag_p);
+		break;
+	case 0xF5: /* mov direct, a */
+		xr (a); xw (dir1);
+		break;
+	case 0xF6: case 0xF7: /* mov  @Ri, a */
+		xr (a); xw (ri);
+		break;
+	case 0xF8: case 0xF9: case 0xFA: case 0xFB:
+	case 0xFC: case 0xFD: case 0xFE: case 0xFF: /* mov Rn, a */
+		xr (a); xw (rn);
+		break;
+	default:
+		break;
 	}
 }
 
+static RAnalEsilCallbacks ocbs = {0};
+
+#if 0
+// custom reg read/write temporarily disabled - see r2 issue #9242
 static int i8051_hook_reg_read(RAnalEsil *, const char *, ut64 *, int *);
 
 static int i8051_reg_compare(const void *name, const void *reg) {
@@ -430,7 +753,7 @@ static int i8051_hook_reg_read(RAnalEsil *esil, const char *name, ut64 *res, int
 
 	if ((ri = i8051_reg_find (name))) {
 		ut8 offset = i8051_reg_get_offset(esil, ri);
-		ret = r_anal_esil_mem_read (esil, IRAM + offset, (ut8*)res, ri->num_bytes);
+		ret = r_anal_esil_mem_read (esil, IRAM_BASE + offset, (ut8*)res, ri->num_bytes);
 	}
 	esil->cb = ocbs;
 	if (!ret && ocbs.hook_reg_read) {
@@ -450,7 +773,7 @@ static int i8051_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	RAnalEsilCallbacks cbs = esil->cb;
 	if ((ri = i8051_reg_find (name))) {
 		ut8 offset = i8051_reg_get_offset(esil, ri);
-		ret = r_anal_esil_mem_write (esil, IRAM + offset, (ut8*)val, ri->num_bytes);
+		ret = r_anal_esil_mem_write (esil, IRAM_BASE + offset, (ut8*)val, ri->num_bytes);
 	}
 	esil->cb = ocbs;
 	if (!ret && ocbs.hook_reg_write) {
@@ -459,14 +782,19 @@ static int i8051_hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 	esil->cb = cbs;
 	return ret;
 }
+#endif
 
 static int esil_i8051_init (RAnalEsil *esil) {
 	if (esil->cb.user) {
 		return true;
 	}
 	ocbs = esil->cb;
-	esil->cb.hook_reg_read = i8051_hook_reg_read;
-	esil->cb.hook_reg_write = i8051_hook_reg_write;
+	/* these hooks break esil emulation */
+	/* pc is not read properly, mem mapped registers are not shown in ar, ... */
+	/* all 8051 regs are mem mapped, and reg access via mem is very common */
+//  disabled to make esil work, before digging deeper
+//	esil->cb.hook_reg_read = i8051_hook_reg_read;
+//	esil->cb.hook_reg_write = i8051_hook_reg_write;
 	i8051_is_init = true;
 	return true;
 }
@@ -492,17 +820,64 @@ static int set_reg_profile(RAnal *anal) {
 		"gpr	r5	.8	5	0\n"
 		"gpr	r6	.8	6	0\n"
 		"gpr	r7	.8	7	0\n"
-		"gpr	A	.8	8	0\n"
-		"gpr	B	.8	9	0\n"
-		"gpr	sp	.8	10	0\n"
-		"gpr	pc	.16	12	0\n"
-		"gpr	dptr	.16	14	0\n"
-		"gpr	C	.1	16	0\n"
-		"gpr	OV	.1	17	0\n";
-	return r_reg_set_profile_string (anal->reg, p);
+		"gpr	a	.8	8	0\n"
+		"gpr	b	.8	9	0\n"
+		"gpr	dptr	.16	10	0\n"
+		"gpr	dpl	.8	10	0\n"
+		"gpr	dph	.8	11	0\n"
+		"gpr	psw	.8	12	0\n"
+		"gpr	p	.1	.96	0\n"
+		"gpr	ov	.1	.98	0\n"
+		"gpr	ac	.1	.102	0\n"
+		"gpr	c	.1	.103	0\n"
+		"gpr	sp	.8	13	0\n"
+		"gpr	pc	.16	15	0\n"
+// ---------------------------------------------------
+// 8051 memory emulation control registers
+// These registers map 8051 memory classes to r2's
+// linear address space. Registers contain base addr
+// in r2 memory space representing the memory class.
+// Offsets are initialized based on asm.cpu, but can
+// be updated with ar command.
+//
+// _code
+//		program memory (CODE)
+// _idata
+//		internal data memory (IDATA, IRAM)
+// _sfr
+//		special function registers (SFR)
+// _xdata
+//		external data memory (XDATA, XRAM)
+// _pdata
+//		page accessed by movx @ri op (PDATA, XREG)
+//		r2 addr = (_pdata & 0xff) << 8 + x_data
+//		if 0xffffffnn, addr = ([SFRnn] << 8) + _xdata (TODO)
+		"gpr	_code	.32	20 0\n"
+		"gpr	_idata	.32 24 0\n"
+		"gpr	_sfr	.32	28 0\n"
+		"gpr	_xdata	.32 32 0\n"
+		"gpr	_pdata	.32	36 0\n";
+
+	int retval = r_reg_set_profile_string (anal->reg, p);
+	if (retval) {
+		// reset emulation control registers based on cpu
+		set_cpu_model (anal, true);
+	}
+
+	return retval;
+}
+
+static ut32 map_direct_addr(RAnal *anal, ut8 addr) {
+	if (addr < 0x80) {
+		return addr + i8051_reg_read (anal->reg, "_idata");
+	} else {
+		return addr + i8051_reg_read (anal->reg, "_sfr");
+	}
 }
 
 static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
+	set_cpu_model (anal, false);
+
 	op->delay = 0;
 
 	int i = 0;
@@ -519,16 +894,17 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 
 	switch (arg1) {
 	case A_DIRECT:
-		op->ptr = buf[1];
+		op->ptr = map_direct_addr (anal, buf[1]);
 		break;
 	case A_BIT:
-		op->ptr = arg_bit (buf[1]);
+		op->ptr = map_direct_addr (anal, arg_bit (buf[1]));
 		break;
 	case A_IMMEDIATE:
 		op->val = buf[1];
 		break;
 	case A_IMM16:
 		op->val = buf[1] * 256 + buf[2];
+		op->ptr = op->val + i8051_reg_read (anal->reg, "_xdata"); // best guess, it's a XRAM pointer
 		break;
 	default:
 		break;
@@ -536,10 +912,15 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 
 	switch (arg2) {
 	case A_DIRECT:
-		op->ptr = (arg1 == A_RI || arg1 == A_RN) ? buf[1] : buf[2];
+		if (arg1 == A_RI || arg1 == A_RN) {
+			op->ptr = map_direct_addr (anal, buf[1]);
+		} else if (arg1 != A_DIRECT) {
+			op->ptr = map_direct_addr (anal, buf[2]);
+		}
 		break;
 	case A_BIT:
 		op->ptr = arg_bit ((arg1 == A_RI || arg1 == A_RN) ? buf[1] : buf[2]);
+		op->ptr = map_direct_addr (anal, op->ptr);
 		break;
 	case A_IMMEDIATE:
 		op->val = (arg1 == A_RI || arg1 == A_RN) ? buf[1] : buf[2];
@@ -551,13 +932,11 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	switch(_8051_ops[i].instr) {
 	case OP_PUSH:
 		op->type = R_ANAL_OP_TYPE_PUSH;
-		op->ptr = 0;
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = 1;
 		break;
 	case OP_POP:
 		op->type = R_ANAL_OP_TYPE_POP;
-		op->ptr = 0;
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = -1;
 		break;
@@ -604,6 +983,8 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case OP_CALL:
 		op->type = R_ANAL_OP_TYPE_CALL;
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = 2;
 		if (arg1 == A_ADDR11) {
 			op->jump = arg_addr11 (addr + op->size, buf);
 			op->fail = addr + op->size;
@@ -637,11 +1018,10 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		if (op->size == 2) {
 			op->jump = arg_offset (addr + 2, buf[1]);
-			op->fail = addr + 2;
 		} else if (op->size == 3) {
 			op->jump = arg_offset (addr + 3, buf[2]);
-			op->fail = addr + 3;
 		}
+		op->fail = addr + op->size;
 		break;
 	case OP_INVALID:
 		op->type = R_ANAL_OP_TYPE_ILL;
@@ -667,11 +1047,12 @@ static int i8051_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 RAnalPlugin r_anal_plugin_8051 = {
 	.name = "8051",
 	.arch = "8051",
+	.esil = true,
 	.bits = 8|16,
 	.desc = "8051 CPU code analysis plugin",
 	.license = "LGPL3",
 	.op = &i8051_op,
-	.set_reg_profile = set_reg_profile,
+	.set_reg_profile = &set_reg_profile,
 	.esil_init = esil_i8051_init,
 	.esil_fini = esil_i8051_fini
 };

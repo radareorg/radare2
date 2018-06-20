@@ -1049,7 +1049,7 @@ static int r_cmd_java_handle_calc_class_sz (RCore *core, const char *cmd) {
 		sz = cur_fsz < init_size ? cur_fsz : init_size;
 		while (sz <= cur_fsz) {
 			buf = realloc (buf, sz);
-			ut64 r_sz = r_core_read_at (core, addr, buf, sz) ? sz : 0LL;
+			ut64 r_sz = r_io_read_at (core->io, addr, buf, sz) ? sz : 0LL;
 			// check the return read on the read
 			if (r_sz == 0) break;
 			res_size = r_bin_java_calc_class_size (buf, sz);
@@ -1096,7 +1096,7 @@ static int r_cmd_java_handle_isvalid (RCore *core, const char *cmd) {
 
 		while (sz <= cur_fsz) {
 			buf = realloc (buf, sz);
-			ut64 r_sz = r_core_read_at (core, addr, buf, sz) ? sz : 0LL;
+			ut64 r_sz = r_io_read_at (core->io, addr, buf, sz) ? sz : 0LL;
 			// check the return read on the read
 			if (r_sz == 0) break;
 			res_size = r_bin_java_calc_class_size (buf, sz);
@@ -1277,7 +1277,7 @@ static int r_cmd_java_handle_flags_str_at (RCore *core, const char *cmd) {
 		flag_value = 0;
 		ut64 cur_offset = core->offset;
 		flag_value_addr = r_cmd_java_is_valid_input_num_value(core, p) ? r_cmd_java_get_input_num_value (core, p) : -1;
-		r_core_read_at (core, flag_value_addr, (ut8 *) &flag_value, 2);
+		r_io_read_at (core->io, flag_value_addr, (ut8 *) &flag_value, 2);
 		IFDBG r_cons_printf ("r_cmd_java_handle_flags_str_at: read = 0x%04x\n", flag_value);
 		if (cur_offset != core->offset) r_core_seek (core, cur_offset-2, 1);
 		flag_value = R_BIN_JAVA_USHORT (((ut8 *) &flag_value), 0);

@@ -41,10 +41,19 @@ cache:
   - apt
 
 before_script:
-  - rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm install 7
+  - rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm install 8
 
 script:
-  - git clone --depth 1 `doc/repo REGRESSIONS`
+  - export PR_NAME=$(echo $TRAVIS_PULL_REQUEST_SLUG | cut -d'/' -f1)
+  - export DEFAULT_NAME=$(echo $TRAVIS_REPO_SLUG | cut -d'/' -f1)
+  - export R2R_DEFAULT_REPO=$(doc/repo PR_REGRESSIONS | sed "s/__USER__/${DEFAULT_NAME}/g")
+  - export R2R_DEFAULT_BRANCH=master
+  - export USER_NAME=$([ -n "${PR_NAME}" ] && echo "${PR_NAME}" || echo "${DEFAULT_NAME}")
+  - export R2R_BRANCH=$([ -n "${TRAVIS_PULL_REQUEST_BRANCH}" ] && echo "${TRAVIS_PULL_REQUEST_BRANCH}" || echo "${R2R_DEFAULT_BRANCH}")
+  - if [ "${R2R_BRANCH}" = master ]; then USER_NAME=radare; fi
+  - export R2R_REPO=$(doc/repo PR_REGRESSIONS | sed "s/__USER__/${USER_NAME}/g")
+  - git clone --depth 1 --branch "${R2R_BRANCH}" "${R2R_REPO}" || true # If cloning fails that's not an error: we simply fallback to master.
+  - ls radare2-regressions >/dev/null 2>&1 || git clone --depth 1 --branch "${R2R_DEFAULT_BRANCH}" "${R2R_DEFAULT_REPO}"
   - ./configure --prefix=`pwd`/install > /dev/null
   - make -s -j2 > /dev/null
   - make install > /dev/null
@@ -58,6 +67,9 @@ script:
   - export NOOK=1
   - export NOREPORT=1
   - cd radare2-regressions
+  - git remote -v
+  - git branch
+  - git rev-parse HEAD
   - VERBOSE=1 make -k all
 
 notifications:

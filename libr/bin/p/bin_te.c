@@ -117,7 +117,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->vsize = sections[i].vsize;
 		ptr->paddr = sections[i].paddr;
 		ptr->vaddr = sections[i].vaddr;
-		ptr->srwx = R_BIN_SCN_MAP;
+		ptr->srwx = 0;
 		ptr->add = true;
 		if (R_BIN_TE_SCN_IS_EXECUTABLE (sections[i].flags)) {
 			ptr->srwx |= R_BIN_SCN_EXECUTABLE;
@@ -126,7 +126,7 @@ static RList *sections(RBinFile *bf) {
 			ptr->srwx |= R_BIN_SCN_WRITABLE;
 		}
 		if (R_BIN_TE_SCN_IS_READABLE (sections[i].flags)) {
-			ptr->srwx |= R_BIN_SCN_SHAREABLE;
+			ptr->srwx |= R_BIN_SCN_READABLE;
 		}
 		if (R_BIN_TE_SCN_IS_SHAREABLE (sections[i].flags)) {
 			ptr->srwx |= R_BIN_SCN_SHAREABLE;

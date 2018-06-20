@@ -123,7 +123,7 @@ int copy_string(STypeCodeStr *type_code_str, char *str_for_copy, unsigned int co
 		return 0;
 	}
 	if (free_space > str_for_copy_len) {
-		int newlen = ((type_code_str->type_str_len + str_for_copy_len) << 1) + 1;
+		int newlen = type_code_str->type_str_len + (str_for_copy_len << 1) + 1;
 		if (newlen < 1) {
 			R_FREE (type_code_str->type_str);
 			goto copy_string_err;
@@ -1087,7 +1087,7 @@ static EDemanglerErr parse_microsoft_mangled_name(char *sym, char **demangled_na
 	char *ptr64 = 0;
 	char *storage_class = 0;
 
-	type_code_str.type_str = NULL;
+	memset(&type_code_str, 0, sizeof(type_code_str));
 
 	if (!init_type_code_str_struct (&func_str)) {
 		err = eDemanglerErrMemoryAllocation;

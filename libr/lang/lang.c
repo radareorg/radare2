@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_lang.h>
 #include <r_util.h>
@@ -8,13 +8,11 @@ R_LIB_VERSION(r_lang);
 #include "p/pipe.c"  // hardcoded
 #include "p/vala.c"  // hardcoded
 #include "p/rust.c"  // hardcoded
+#include "p/zig.c"   // hardcoded
 #include "p/c.c"     // hardcoded
 #include "p/lib.c"
 #if __UNIX__
 #include "p/cpipe.c" // hardcoded
-#endif
-#ifdef _MSC_VER
-#define strcasecmp stricmp
 #endif
 
 static RLang *__lang = NULL;
@@ -50,6 +48,7 @@ R_API RLang *r_lang_new() {
 #endif
 	r_lang_add (lang, &r_lang_plugin_vala);
 	r_lang_add (lang, &r_lang_plugin_rust);
+	r_lang_add (lang, &r_lang_plugin_zig);
 	r_lang_add (lang, &r_lang_plugin_pipe);
 	r_lang_add (lang, &r_lang_plugin_lib);
 
@@ -81,7 +80,7 @@ R_API bool r_lang_define(RLang *lang, const char *type, const char *name, void *
 	RLangDef *def;
 	RListIter *iter;
 	r_list_foreach (lang->defs, iter, def) {
-		if (!strcasecmp (name, def->name)) {
+		if (!r_str_casecmp (name, def->name)) {
 			def->value = value;
 			return  true;
 		}
@@ -109,7 +108,7 @@ R_API void r_lang_undef(RLang *lang, const char *name) {
 		RListIter *iter;
 		/* No _safe loop necessary because we return immediately after the delete. */
 		r_list_foreach (lang->defs, iter, def) {
-			if (!name || !strcasecmp (name, def->name)) {
+			if (!name || !r_str_casecmp (name, def->name)) {
 				r_list_delete (lang->defs, iter);
 				break;
 			}
@@ -160,7 +159,7 @@ R_API RLangPlugin *r_lang_get_by_extension (RLang *lang, const char *ext) {
 	const char *p = r_str_lchr (ext, '.');
 	if (p) ext = p + 1;
 	r_list_foreach (lang->langs, iter, h) {
-		if (!strcasecmp (h->ext, ext)) {
+		if (!r_str_casecmp (h->ext, ext)) {
 			return h;
 		}
 	}
@@ -171,10 +170,10 @@ R_API RLangPlugin *r_lang_get_by_name (RLang *lang, const char *name) {
 	RListIter *iter;
 	RLangPlugin *h;
 	r_list_foreach (lang->langs, iter, h) {
-		if (!strcasecmp (h->name, name)) {
+		if (!r_str_casecmp (h->name, name)) {
 			return h;
 		}
-		if (h->alias && !strcasecmp (h->alias, name)) {
+		if (h->alias && !r_str_casecmp (h->alias, name)) {
 			return h;
 		}
 	}

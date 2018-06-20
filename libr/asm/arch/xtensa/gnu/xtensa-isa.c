@@ -29,6 +29,7 @@
 #include "../../include/xtensa-isa.h"
 #include "../../include/xtensa-isa-internal.h"
 #include "r_types.h"
+#include "r_util.h"
 extern int filename_cmp (const char *s1, const char *s2);
 xtensa_isa_status xtisa_errno;
 char xtisa_error_msg[1024];
@@ -391,7 +392,7 @@ xtensa_isa_name_compare (const void *v1, const void *v2)
   xtensa_lookup_entry *e1 = (xtensa_lookup_entry *) v1;
   xtensa_lookup_entry *e2 = (xtensa_lookup_entry *) v2;
 
-  return strcasecmp (e1->key, e2->key);
+  return r_str_casecmp (e1->key, e2->key);
 }
 
 
@@ -547,7 +548,7 @@ xtensa_format_lookup (xtensa_isa isa, const char *fmtname)
 
   for (fmt = 0; fmt < intisa->num_formats; fmt++)
     {
-      if (strcasecmp (fmtname, intisa->formats[fmt].name) == 0)
+      if (r_str_casecmp (fmtname, intisa->formats[fmt].name) == 0)
 	return fmt;
     }
 

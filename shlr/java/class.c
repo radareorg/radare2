@@ -1,4 +1,4 @@
-/* Apache 2.0 - Copyright 2007-2017 - pancake and dso
+/* Apache 2.0 - Copyright 2007-2018 - pancake and dso
    class.c rewrite: Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com>
  */
 #include <stdio.h>
@@ -2664,7 +2664,7 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 			strcpy (section->name, "constant_pool");
 			section->size = bin->cp_size;
 			section->paddr = bin->cp_offset + baddr;
-			section->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;
+			section->srwx = R_BIN_SCN_READABLE;
 			section->add = true;
 			r_list_append (sections, section);
 		}
@@ -2676,7 +2676,7 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 			strcpy (section->name, "fields");
 			section->size = bin->fields_size;
 			section->paddr = bin->fields_offset + baddr;
-			section->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;
+			section->srwx = R_BIN_SCN_READABLE;
 			section->add = true;
 			r_list_append (sections, section);
 			section = NULL;
@@ -2689,7 +2689,7 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 					snprintf (section->name, R_BIN_SIZEOF_STRINGS, "attrs.%s", fm_type->name);
 					section->size = fm_type->size - (fm_type->file_offset - fm_type->attr_offset);
 					section->paddr = fm_type->attr_offset + baddr;
-					section->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;
+					section->srwx = R_BIN_SCN_READABLE;
 					section->add = true;
 					r_list_append (sections, section);
 				}
@@ -2702,7 +2702,7 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 			strcpy (section->name, "methods");
 			section->size = bin->methods_size;
 			section->paddr = bin->methods_offset + baddr;
-			section->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
+			section->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE;
 			section->add = true;
 			r_list_append (sections, section);
 			section = NULL;
@@ -2715,7 +2715,7 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 					snprintf (section->name, R_BIN_SIZEOF_STRINGS, "attrs.%s", fm_type->name);
 					section->size = fm_type->size - (fm_type->file_offset - fm_type->attr_offset);
 					section->paddr = fm_type->attr_offset + baddr;
-					section->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;
+					section->srwx = R_BIN_SCN_READABLE;
 					section->add = true;
 					r_list_append (sections, section);
 				}
@@ -2728,7 +2728,7 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 			strcpy (section->name, "interfaces");
 			section->size = bin->interfaces_size;
 			section->paddr = bin->interfaces_offset + baddr;
-			section->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;
+			section->srwx = R_BIN_SCN_READABLE;
 			section->add = true;
 			r_list_append (sections, section);
 		}
@@ -2740,7 +2740,7 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 			strcpy (section->name, "attributes");
 			section->size = bin->attrs_size;
 			section->paddr = bin->attrs_offset + baddr;
-			section->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;
+			section->srwx = R_BIN_SCN_READABLE;
 			section->add = true;
 			r_list_append (sections, section);
 		}
@@ -3367,7 +3367,8 @@ R_API RBinJavaAttrInfo *r_bin_java_unknown_attr_new(ut8 *buffer, ut64 sz, ut64 b
 }
 
 R_API ut64 r_bin_java_code_attr_calc_size(RBinJavaAttrInfo *attr) {
-	RListIter *iter, *iter_tmp;
+	RListIter *iter;
+	// RListIter *iter_tmp;
 	ut64 size = 0;
 	if (attr) {
 		// attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
@@ -3383,8 +3384,9 @@ R_API ut64 r_bin_java_code_attr_calc_size(RBinJavaAttrInfo *attr) {
 		}
 		// attr->info.code_attr.exception_table_length =  R_BIN_JAVA_USHORT (buffer, offset);
 		size += 2;
-		RBinJavaExceptionEntry *exc_entry;
-		r_list_foreach_safe (attr->info.code_attr.exception_table, iter, iter_tmp, exc_entry) {
+		// RBinJavaExceptionEntry *exc_entry;
+		// r_list_foreach_safe (attr->info.code_attr.exception_table, iter, iter_tmp, exc_entry) {
+		r_list_foreach_iter (attr->info.code_attr.exception_table, iter) {
 			// exc_entry->start_pc = R_BIN_JAVA_USHORT (buffer,offset);
 			size += 2;
 			// exc_entry->end_pc = R_BIN_JAVA_USHORT (buffer,offset);
@@ -3396,9 +3398,10 @@ R_API ut64 r_bin_java_code_attr_calc_size(RBinJavaAttrInfo *attr) {
 		}
 		// attr->info.code_attr.attributes_count = R_BIN_JAVA_USHORT (buffer, offset);
 		size += 2;
-		RBinJavaAttrInfo *_attr;
+		// RBinJavaAttrInfo *_attr;
 		if (attr->info.code_attr.attributes_count > 0) {
-			r_list_foreach_safe (attr->info.code_attr.attributes, iter, iter_tmp, _attr) {
+			// r_list_foreach_safe (attr->info.code_attr.attributes, iter, iter_tmp, _attr) {
+			r_list_foreach_iter (attr->info.code_attr.attributes, iter) {
 				size += r_bin_java_attr_calc_size (attr);
 			}
 		}
@@ -3684,6 +3687,10 @@ R_API RBinJavaAttrInfo *r_bin_java_inner_classes_attr_new(ut8 *buffer, ut64 sz, 
 	attr->info.inner_classes_attr.classes = r_list_newf (r_bin_java_inner_classes_attr_entry_free);
 	for (i = 0; i < attr->info.inner_classes_attr.number_of_classes; i++) {
 		curpos = buf_offset + offset;
+		if (offset + 8 > sz) {
+			eprintf ("Invalid amount of inner classes\n");
+			break;
+		}
 		icattr = R_NEW0 (RBinJavaClassesAttribute);
 		if (!icattr) {
 			break;
@@ -3705,15 +3712,16 @@ R_API RBinJavaAttrInfo *r_bin_java_inner_classes_attr_new(ut8 *buffer, ut64 sz, 
 			eprintf ("BINCPLIS IS HULL %d\n", icattr->inner_name_idx);
 		}
 		icattr->name = r_bin_java_get_item_name_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, obj);
-		if (icattr->name == NULL) {
+		if (!icattr->name) {
 			obj = r_bin_java_get_item_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, icattr->inner_class_info_idx);
 			if (!obj) {
 				eprintf ("BINCPLIST IS NULL %d\n", icattr->inner_class_info_idx);
 			}
 			icattr->name = r_bin_java_get_item_name_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, obj);
-			if (icattr->name == NULL) {
+			if (!icattr->name) {
 				icattr->name = r_str_dup (NULL, "NULL");
 				eprintf ("r_bin_java_inner_classes_attr: Unable to find the name for %d index.\n", icattr->inner_name_idx);
+				break;
 			}
 		}
 
@@ -3795,12 +3803,14 @@ R_API RBinJavaAttrInfo *r_bin_java_line_number_table_attr_new(ut8 *buffer, ut64 
 
 R_API ut64 r_bin_java_line_number_table_attr_calc_size(RBinJavaAttrInfo *attr) {
 	ut64 size = 6;
-	RBinJavaLineNumberAttribute *lnattr;
-	RListIter *iter, *iter_tmp;
+	// RBinJavaLineNumberAttribute *lnattr;
+	RListIter *iter;
+	// RListIter *iter_tmp;
 	if (!attr) {
 		return 0LL;
 	}
-	r_list_foreach_safe (attr->info.line_number_table_attr.line_number_table, iter, iter_tmp, lnattr) {
+	// r_list_foreach_safe (attr->info.line_number_table_attr.line_number_table, iter, iter_tmp, lnattr) {
+	r_list_foreach_iter (attr->info.line_number_table_attr.line_number_table, iter) {
 		// lnattr->start_pc = R_BIN_JAVA_USHORT (buffer, offset);
 		size += 2;
 		// lnattr->line_number = R_BIN_JAVA_USHORT (buffer, offset);
@@ -3852,14 +3862,15 @@ R_API ut64 r_bin_java_local_variable_table_attr_calc_size(RBinJavaAttrInfo *attr
 	ut64 size = 0;
 	// ut64 offset = 0;
 	RListIter *iter;
-	RBinJavaLocalVariableAttribute *lvattr;
+	// RBinJavaLocalVariableAttribute *lvattr;
 	if (!attr) {
 		return 0LL;
 	}
 	size += 6;
 	// attr->info.local_variable_table_attr.table_length = R_BIN_JAVA_USHORT (buffer, offset);
 	size += 2;
-	r_list_foreach (attr->info.local_variable_table_attr.local_variable_table, iter, lvattr) {
+	// r_list_foreach (attr->info.local_variable_table_attr.local_variable_table, iter, lvattr) {
+	r_list_foreach_iter (attr->info.local_variable_table_attr.local_variable_table, iter) {
 		// lvattr->start_pc = R_BIN_JAVA_USHORT (buffer, offset);
 		size += 2;
 		// lvattr->length = R_BIN_JAVA_USHORT (buffer, offset);
@@ -3927,7 +3938,7 @@ R_API RBinJavaAttrInfo *r_bin_java_local_variable_table_attr_new(ut8 *buffer, ut
 }
 
 R_API ut64 r_bin_java_local_variable_type_table_attr_calc_size(RBinJavaAttrInfo *attr) {
-	RBinJavaLocalVariableTypeAttribute *lvattr;
+	// RBinJavaLocalVariableTypeAttribute *lvattr;
 	RListIter *iter;
 	ut64 size = 0;
 	if (attr) {
@@ -3935,7 +3946,8 @@ R_API ut64 r_bin_java_local_variable_type_table_attr_calc_size(RBinJavaAttrInfo 
 		size += 6;
 		// attr->info.local_variable_type_table_attr.table_length = R_BIN_JAVA_USHORT (buffer, offset);
 		size += 2;
-		r_list_foreach (list, iter, lvattr) {
+		// r_list_foreach (list, iter, lvattr) {
+		r_list_foreach_iter (list, iter) {
 			// lvattr->start_pc = R_BIN_JAVA_USHORT (buffer, offset);
 			size += 2;
 			// lvattr->length = R_BIN_JAVA_USHORT (buffer, offset);

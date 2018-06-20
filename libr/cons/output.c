@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_cons.h>
-#define I r_cons_singleton()
+#define I r_cons_singleton ()
 
 #if __WINDOWS__
 static void fill_tail (int cols, int lines) {

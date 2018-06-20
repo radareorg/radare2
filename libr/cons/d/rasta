@@ -38,6 +38,7 @@ ec trap red
 ec swi red
 ec creg green
 ec flag yellow
+ec linehl rgb:008
 ec graph.box yellow
 ec graph.box2 green
 ec graph.box3 red

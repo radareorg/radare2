@@ -75,6 +75,13 @@ typedef struct r_fs_partition_t {
 	int type;
 } RFSPartition;
 
+typedef struct r_fs_shell_t {
+	char **cwd;
+	void (*set_prompt)(const char *prompt);
+	const char* (*readline)(void);
+	int (*hist_add)(const char *line);
+} RFSShell;
+
 #define R_FS_FILE_TYPE_MOUNTPOINT 'm'
 #define R_FS_FILE_TYPE_DIRECTORY 'd'
 #define R_FS_FILE_TYPE_REGULAR 'r'
@@ -119,6 +126,7 @@ R_API RList *r_fs_partitions(RFS* fs, const char *ptype, ut64 delta);
 R_API char *r_fs_name(RFS *fs, ut64 offset);
 R_API int r_fs_prompt(RFS *fs, const char *root);
 R_API bool r_fs_check(RFS *fs, const char *p);
+R_API int r_fs_shell_prompt(RFSShell *shell, RFS *fs, const char *root); 
 
 /* file.c */
 R_API RFSFile *r_fs_file_new(RFSRoot *root, const char *path);

@@ -1,8 +1,9 @@
-/* radare - LGPL - Copyright 2015-2016 - inisider */
+/* radare - LGPL - Copyright 2015-2018 - inisider */
 
 #include "mach0_classes.h"
 
 #define RO_META (1 << 0)
+#define MAX_CLASS_NAME_LEN 256
 
 struct MACH0_(SMethodList) {
 	ut32 entsize;
@@ -88,7 +89,6 @@ static void get_objc_property_list(mach0_ut p, RBinFile *bf, RBinClass *klass);
 static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinClass *klass, bool is_static);
 static void get_protocol_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass);
 static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinClass *klass);
-static void get_class_t(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe);
 static bool is_thumb(RBinFile *bf) {
 	struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *)bf->o->bin_obj;
 	if (bin->hdr.cputype == 12) {
@@ -110,6 +110,15 @@ static mach0_ut get_pointer(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) 
 	if (!obj) {
 		return 0;
 	}
+	if (!obj->bin_obj) {
+		return 0;
+	}
+
+	struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t)*) obj->bin_obj;
+	if (bin->va2pa) {
+		return bin->va2pa (p, offset, left, bf);
+	}
+
 	if (!sctns) {
 		sctns = r_bin_plugin_mach.sections (bf);
 		if (!sctns) {
@@ -278,14 +287,15 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 				name = strdup ("some_encrypted_data");
 				left = strlen (name) + 1;
 			} else {
-				name = malloc (left + 1);
-				len = r_buf_read_at (bf->buf, r, (ut8 *)name, left);
+				int name_len = R_MIN (MAX_CLASS_NAME_LEN, left);
+				name = malloc (name_len + 1);
+				len = r_buf_read_at (bf->buf, r, (ut8 *)name, name_len);
 				if (len < 1) {
 					eprintf ("Error reading\n");
 					R_FREE (name);
 					goto error;
 				}
-				name[left] = 0;
+				name[name_len] = 0;
 			}
 			field->name = r_str_newf ("%s::%s%s", klass->name, "(ivar)", name);
 			R_FREE (name);
@@ -305,8 +315,10 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 				type = strdup ("some_encrypted_data");
 			// 	left = strlen (name) + 1;
 			} else {
-				type = calloc (1, left);
-				r_buf_read_at (bf->buf, r, (ut8 *)type, left);
+				int type_len = R_MIN (MAX_CLASS_NAME_LEN, left);
+				type = calloc (1, type_len + 1);
+				r_buf_read_at (bf->buf, r, (ut8 *)type, type_len);
+				type[type_len] = 0;
 			}
       			field->type = strdup (type);
 			R_FREE (type);
@@ -419,11 +431,12 @@ static void get_objc_property_list(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 				name = strdup ("some_encrypted_data");
 				left = strlen (name) + 1;
 			} else {
-				name = calloc (1, left + 1);
+				int name_len = R_MIN (MAX_CLASS_NAME_LEN, left);
+				name = calloc (1, name_len + 1);
 				if (!name) {
 					goto error;
 				}
-				if (r_buf_read_at (bf->buf, r, (ut8 *)name, left) != left) {
+				if (r_buf_read_at (bf->buf, r, (ut8 *)name, name_len) != name_len) {
 					goto error;
 				}
 			}
@@ -561,9 +574,10 @@ static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinCl
 				name = strdup ("some_encrypted_data");
 				left = strlen (name) + 1;
 			} else {
-				name = malloc (left + 1);
-				len = r_buf_read_at (bf->buf, r, (ut8 *)name, left);
-				name[left] = 0;
+				int name_len = R_MIN (MAX_CLASS_NAME_LEN, left);
+				name = malloc (name_len + 1);
+				len = r_buf_read_at (bf->buf, r, (ut8 *)name, name_len);
+				name[name_len] = 0;
 				if (len < 1) {
 					goto error;
 				}
@@ -583,7 +597,7 @@ static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinCl
 				rtype = strdup ("some_encrypted_data");
 				left = strlen (rtype) + 1;
 			} else {
-        			left = 1;
+				left = 1;
 				rtype = malloc (left + 1);
 				if (!rtype) {
 					goto error;
@@ -743,15 +757,16 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 				name = strdup ("some_encrypted_data");
 				left = strlen (name) + 1;
 			} else {
-				name = malloc (left + 1);
+				int name_len = R_MIN (MAX_CLASS_NAME_LEN, left);
+				name = malloc (name_len + 1);
 				if (!name) {
 					return;
 				}
-				if (r_buf_read_at (bf->buf, r, (ut8 *)name, left) != left) {
+				if (r_buf_read_at (bf->buf, r, (ut8 *)name, name_len) != name_len) {
 					R_FREE (name);
 					return;
 				}
-				name[left] = 0;
+				name[name_len] = 0;
 			}
 			class_name = r_str_newf ("%s::%s%s", klass->name, "(protocol)", name);
 			R_FREE (name);
@@ -880,10 +895,11 @@ static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinCl
 			klass->name = strdup ("some_encrypted_data");
 			left = strlen (klass->name) + 1;
 		} else {
-			char *name = malloc (left + 1);
+			int name_len = R_MIN (MAX_CLASS_NAME_LEN, left);
+			char *name = malloc (name_len + 1);
 			if (name) {
-				int rc = r_buf_read_at (bf->buf, r, (ut8 *)name, left);
-				if (rc != left) {
+				int rc = r_buf_read_at (bf->buf, r, (ut8 *)name, name_len);
+				if (rc != name_len) {
 					rc = 0;
 				}
 				name[rc] = 0;
@@ -892,12 +908,12 @@ static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinCl
 			}
 		}
 		//eprintf ("0x%x  %s\n", s, klass->name);
-		sdb_num_set (bin->kv, sdb_fmt (0, "objc_class_%s.offset", klass->name), s, 0);
+		sdb_num_set (bin->kv, sdb_fmt ("objc_class_%s.offset", klass->name), s, 0);
 	}
 #ifdef R_BIN_MACH064
-	sdb_set (bin->kv, sdb_fmt (0, "objc_class.format", 0), "lllll isa super cache vtable data", 0);
+	sdb_set (bin->kv, sdb_fmt ("objc_class.format", 0), "lllll isa super cache vtable data", 0);
 #else
-	sdb_set (bin->kv, sdb_fmt (0, "objc_class.format", 0), "xxxxx isa super cache vtable data", 0);
+	sdb_set (bin->kv, sdb_fmt ("objc_class.format", 0), "xxxxx isa super cache vtable data", 0);
 #endif
 
 	if (cro.baseMethods > 0) {
@@ -926,7 +942,7 @@ static mach0_ut get_isa_value() {
 	return 0;
 }
 
-static void get_class_t(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe) {
+void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe) {
 	struct MACH0_(SClass) c = { 0 };
 	const int size = sizeof (struct MACH0_(SClass));
 	mach0_ut r = 0;
@@ -984,7 +1000,7 @@ static void get_class_t(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe) {
 	if (!is_meta_class && !dupe) {
 		mach0_ut isa_n_value = get_isa_value ();
 		ut64 tmp = klass->addr;
-		get_class_t (c.isa + isa_n_value, bf, klass, true);
+		MACH0_(get_class_t) (c.isa + isa_n_value, bf, klass, true);
 		klass->addr = tmp;
 	}
 }
@@ -1029,8 +1045,6 @@ RList *MACH0_(parse_classes)(RBinFile *bf) {
 	RList /*<RBinClass>*/ *ret = NULL;
 	ut64 num_of_unnamed_class = 0;
 	RBinClass *klass = NULL;
-	RListIter *iter = NULL;
-	RBinSection *s = NULL;
 	RBinObject *obj = bf ? bf->o : NULL;
 	ut32 i = 0, size = 0;
 	RList *sctns = NULL;
@@ -1039,6 +1053,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf) {
 	ut32 left = 0;
 	int len;
 	ut64 paddr;
+	ut64 s_size;
 	bool bigendian;
 	ut8 pp[sizeof (mach0_ut)] = {0};
 
@@ -1051,18 +1066,22 @@ RList *MACH0_(parse_classes)(RBinFile *bf) {
 	// ret = parse_swift_classes (bf);
 
 	// sebfing of section with name __objc_classlist
-	if (!(sctns = r_bin_plugin_mach.sections (bf))) {
-		// retain just for debug
-		// eprintf ("there is no sections\n");
+
+	struct section_t *sections = NULL;
+	if (!(sections = MACH0_(get_sections) (obj->bin_obj))) {
 		return ret;
 	}
 
-	r_list_foreach (sctns, iter, s) {
-		if (strstr (s->name, "__objc_classlist") != NULL) {
+	for (i = 0; !sections[i].last; i++) {
+		if (strstr (sections[i].name, "__objc_classlist")) {
 			is_found = true;
+			paddr = sections[i].offset;
+			s_size = sections[i].size;
 			break;
 		}
 	}
+
+	R_FREE (sections);
 
 	if (!is_found) {
 		// retain just for debug
@@ -1077,9 +1096,8 @@ RList *MACH0_(parse_classes)(RBinFile *bf) {
 		goto get_classes_error;
 	}
 	// start of getting information about each class in file
-	paddr = s->paddr - obj->boffset;
-	for (i = 0; i < s->size; i += sizeof (mach0_ut)) {
-		left = s->size - i;
+	for (i = 0; i < s_size; i += sizeof (mach0_ut)) {
+		left = s_size - i;
 		if (left < sizeof (mach0_ut)) {
 			eprintf ("Chopped classlist data\n");
 			break;
@@ -1111,7 +1129,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf) {
 			goto get_classes_error;
 		}
 		p = r_read_ble (&pp[0], bigendian, 8 * sizeof (mach0_ut));
-		get_class_t (p, bf, klass, false);
+		MACH0_(get_class_t) (p, bf, klass, false);
 		if (!klass->name) {
 			klass->name = r_str_newf ("UnnamedClass%" PFMT64d, num_of_unnamed_class);
 			if (!klass->name) {
@@ -1121,7 +1139,6 @@ RList *MACH0_(parse_classes)(RBinFile *bf) {
 		}
 		r_list_append (ret, klass);
 	}
-	r_list_free (sctns);
 	return ret;
 
 get_classes_error:

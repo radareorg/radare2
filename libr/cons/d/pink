@@ -32,6 +32,7 @@ ec reg rgb:f5d
 ec creg rgb:f5d
 ec num rgb:72d
 ec crypto rgb:75d
+ec linehl rgb:fdf
 ec graph.true rgb:f5d
 ec graph.false rgb:715
 ec graph.trufae rgb:f5d

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <stddef.h>
 #include "r_cons.h"
@@ -21,44 +21,46 @@ static ut32 vernum(const char *s) {
 }
 
 static const char *help_msg_root[] = {
-	"%var", "=value", "Alias for 'env' command",
-	"*", "[?] off[=[0x]value]", "Pointer read/write data/values (see ?v, wx, wv)",
-	"(macro arg0 arg1)",  "", "Manage scripting macros",
+	"%var", "=value", "alias for 'env' command",
+	"*", "[?] off[=[0x]value]", "pointer read/write data/values (see ?v, wx, wv)",
+	"(macro arg0 arg1)",  "", "manage scripting macros",
 	".", "[?] [-|(m)|f|!sh|cmd]", "Define macro or load r2, cparse or rlang file",
-	"=","[?] [cmd]", "Send/Listen for Remote Commands (rap://, http://, <fd>)",
-	"/","[?]", "Search for bytes, regexps, patterns, ..",
-	"!","[?] [cmd]", "Run given command as in system(3)",
+	"=","[?] [cmd]", "send/listen for remote commands (rap://, http://, <fd>)",
+	"<","[...]", "push escaped string into the RCons.readChar buffer",
+	"/","[?]", "search for bytes, regexps, patterns, ..",
+	"!","[?] [cmd]", "run given command as in system(3)",
 	"#","[?] !lang [..]", "Hashbang to run an rlang script",
-	"a","[?]", "Analysis commands",
-	"b","[?]", "Display or change the block size",
-	"c","[?] [arg]", "Compare block with given data",
-	"C","[?]", "Code metadata (comments, format, hints, ..)",
-	"d","[?]", "Debugger commands",
-	"e","[?] [a[=b]]", "List/get/set config evaluable vars",
-	"f","[?] [name][sz][at]", "Add flag at current address",
-	"g","[?] [arg]", "Generate shellcodes with r_egg",
-	"i","[?] [file]", "Get info about opened file from r_bin",
-	"k","[?] [sdb-query]", "Run sdb-query. see k? for help, 'k *', 'k **' ...",
+	"a","[?]", "analysis commands",
+	"b","[?]", "display or change the block size",
+	"c","[?] [arg]", "compare block with given data",
+	"C","[?]", "code metadata (comments, format, hints, ..)",
+	"d","[?]", "debugger commands",
+	"e","[?] [a[=b]]", "list/get/set config evaluable vars",
+	"f","[?] [name][sz][at]", "add flag at current address",
+	"g","[?] [arg]", "generate shellcodes with r_egg",
+	"i","[?] [file]", "get info about opened file from r_bin",
+	"k","[?] [sdb-query]", "run sdb-query. see k? for help, 'k *', 'k **' ...",
 	"L","[?] [-] [plugin]", "list, unload load r2 plugins",
-	"m","[?]", "Mountpoints commands",
-	"o","[?] [file] ([offset])", "Open file at optional address",
-	"p","[?] [len]", "Print current block with format and length",
-	"P","[?]", "Project management utilities",
-	"q","[?] [ret]", "Quit program with a return value",
-	"r","[?] [len]", "Resize file",
-	"s","[?] [addr]", "Seek to address (also for '0x', '0x1' == 's 0x1')",
-	"S","[?]", "Io section manipulation information",
-	"t","[?]", "Types, noreturn, signatures, C parser and more",
+	"m","[?]", "mountpoints commands",
+	"o","[?] [file] ([offset])", "open file at optional address",
+	"p","[?] [len]", "print current block with format and length",
+	"P","[?]", "project management utilities",
+	"q","[?] [ret]", "quit program with a return value",
+	"r","[?] [len]", "resize file",
+	"s","[?] [addr]", "seek to address (also for '0x', '0x1' == 's 0x1')",
+	"S","[?]", "io section manipulation information",
+	"t","[?]", "types, noreturn, signatures, C parser and more",
 	"T","[?] [-] [num|msg]", "Text log utility",
 	"u","[?]", "uname/undo seek/write",
-	"V","", "Visual mode (V! = panels, VV = fcngraph, VVV = callgraph)",
-	"w","[?] [str]", "Multiple write operations",
-	"x","[?] [len]", "Alias for 'px' (print hexadecimal)",
+	"V","", "visual mode (V! = panels, VV = fcngraph, VVV = callgraph)",
+	"w","[?] [str]", "multiple write operations",
+	"x","[?] [len]", "alias for 'px' (print hexadecimal)",
 	"y","[?] [len] [[[@]addr", "Yank/paste bytes from/to memory",
-	"z", "[?]", "Zignatures management",
+	"z", "[?]", "zignatures management",
 	"?[??]","[expr]", "Help or evaluate math expression",
-	"?$?", "", "Show available '$' variables and aliases",
-	"?@?", "", "Misc help for '@' (seek), '~' (grep) (see ~?""?)",
+	"?$?", "", "show available '$' variables and aliases",
+	"?@?", "", "misc help for '@' (seek), '~' (grep) (see ~?""?)",
+	"?>?", "", "output redirection",
 	NULL
 };
 
@@ -66,7 +68,7 @@ static const char *help_msg_question[] = {
 	"Usage: ?[?[?]] expression", "", "",
 	"?", " eip-0x804800", "show hex and dec result for this math expr",
 	"?:", "", "list core cmd plugins",
-	"[cmd]?*", "", "Recursive help for the given cmd",
+	"[cmd]?*", "", "recursive help for the given cmd",
 	"?!", " [cmd]", "run cmd if $? == 0",
 	"?$", "", "show value all the variables ($)",
 	"?+", " [cmd]", "run cmd if $? > 0",
@@ -75,11 +77,11 @@ static const char *help_msg_question[] = {
 	"??", " [cmd]", "run cmd if $? != 0",
 	"??", "", "show value of operation",
 	"?_", " hudfile", "load hud menu with given file",
+	"?a", "", "show ascii table",
 	"?b", " [num]", "show binary value of number",
 	"?b64[-]", " [str]", "encode/decode in base64",
 	"?btw", " num|expr num|expr num|expr", "returns boolean value of a <= b <= c",
 	"?B", " [elem]", "show range boundaries like 'e?search.in",
-	"?d[.]", " opcode", "describe opcode for asm.arch",
 	"?e[nbgc]", " string", "echo string (nonl, gotoxy, column, bars)",
 	"?f", " [num] [str]", "map each bit of the number as flag string index",
 	"?F", "", "flush cons output",
@@ -89,11 +91,12 @@ static const char *help_msg_question[] = {
 	"?im", " message", "show message centered in screen",
 	"?in", " prompt", "noyes input prompt",
 	"?iy", " prompt", "yesno input prompt",
-	"?l", " str", "returns the length of string",
+	"?l", "[q] str", "returns the length of string ('q' for quiet, just set $?)",
 	"?o", " num", "get octal value",
 	"?O", " [id]", "List mnemonics for current asm.arch / asm.bits",
 	"?p", " vaddr", "get physical address for given virtual address",
 	"?P", " paddr", "get virtual address for given physical one",
+	"?q", " eip-0x804800", "compute expression like ? or ?v but in quiet mode",
 	"?r", " [from] [to]", "generate random number between from-to",
 	"?s", " from to step", "sequence of numbers from to by steps",
 	"?S", " addr", "return section name of given address",
@@ -115,8 +118,9 @@ static const char *help_msg_question[] = {
 static const char *help_msg_question_v[] = {
 	"Usage: ?v [$.]","","",
 	"$$", "", "here (current virtual seek)",
+	"$$$", "", "current non-temporary virtual seek",
 	"$?", "", "last comparison value",
-	"$alias", "=value", "Alias commands (simple macros)",
+	"$alias", "=value", "alias commands (simple macros)",
 	"$b", "", "block size",
 	"$B", "", "base address (aligned lowest map address)",
 	"$f", "", "jump fail address (e.g. jz 0x10 => next instruction)",
@@ -151,7 +155,9 @@ static const char *help_msg_question_v[] = {
 	"$v", "", "opcode immediate value (e.g. lui a0,0x8010 => 0x8010)",
 	"$w", "", "get word size, 4 if asm.bits=32, 8 if 64, ...",
 	"${ev}", "", "get value of eval config variable",
+	"$r{reg}", "", "get value of named register",
 	"$k{kv}", "", "get value of an sdb query value",
+	"$s{flag}", "", "get size of flag",
 	"RNum", "", "$variables usable in math expressions",
 	NULL
 };
@@ -162,6 +168,15 @@ static const char *help_msg_question_V[] = {
 	"?Vc", "", "show numeric version",
 	"?Vj", "", "same as above but in JSON",
 	"?Vq", "", "quiet mode, just show the version number",
+	NULL
+};
+
+static const char *help_msg_greater_sign[] = {
+	"Usage:", "[cmd]>[file]", "redirects console from 'cmd' output to 'file'",
+	"[cmd] > [file]", "", "redirect STDOUT of 'cmd' to 'file'",
+	"[cmd] H> [file]", "", "redirect html output of 'cmd' to 'file'",
+	"[cmd] 2> [file]", "", "redirect STDERR of 'cmd' to 'file'",
+	"[cmd] 2> /dev/null", "", "omit the STDERR output of 'cmd'",
 	NULL
 };
 
@@ -223,18 +238,42 @@ static char *filterFlags(RCore *core, const char *msg) {
 	return buf;
 }
 
-R_API void r_core_clippy(const char *msg) {
-	int msglen = strlen (msg);
-	char *l = strdup (r_str_pad ('-', msglen));
-	char *s = strdup (r_str_pad (' ', msglen));
-	r_cons_printf (
+static const char *getClippy() {
+	const int choose = r_num_rand (3);
+	switch (choose) {
+	case 0: return
 " .--.     .-%s-.\n"
 " | _|     | %s |\n"
 " | O O   <  %s |\n"
 " |  |  |  | %s |\n"
 " || | /   `-%s-'\n"
 " |`-'|\n"
-" `---'\n", l, s, msg, s, l);
+" `---'\n";
+	case 1: return
+" .--.     .-%s-.\n"
+" | __\\    | %s |\n"
+" | > <   <  %s |\n"
+" |  \\|    | %s |\n"
+" |/_//    `-%s-'\n"
+" |  / \n"
+" `-'\n";
+	case 2: return
+" .--.     .-%s-.\n"
+" | _|_    | %s |\n"
+" | O O   <  %s |\n"
+" |  ||    | %s |\n"
+" | _:|    `-%s-'\n"
+" |   |\n"
+" `---'\n";
+	}
+	return "";
+}
+
+R_API void r_core_clippy(const char *msg) {
+	int msglen = strlen (msg);
+	char *l = strdup (r_str_pad ('-', msglen));
+	char *s = strdup (r_str_pad (' ', msglen));
+	r_cons_printf (getClippy(), l, s, msg, s, l);
 	free (l);
 	free (s);
 }
@@ -283,6 +322,9 @@ static int cmd_help(void *data, const char *input) {
 		r_cons_printf ("0x%"PFMT64x"\n", core->num->value);
 		}
 		break;
+	case 'a': // "?a"
+		r_cons_printf ("%s", ret_ascii_table());
+		break;
 	case 'b': // "?b"
 		if (input[1] == '6' && input[2] == '4') {
 			//b64 decoding takes at most strlen(str) * 4
@@ -310,32 +352,15 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'B': // "?B"
 		k = r_str_trim_ro (input + 1);
-		tmp = r_core_get_boundaries (core, k);
+		tmp = r_core_get_boundaries_prot (core, -1, k, "search");
 		r_list_foreach (tmp, iter, map) {
 			r_cons_printf ("0x%"PFMT64x" 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
 		}
 		r_list_free (tmp);
 		break;
-	case 'd': // "?d"
-		if (input[1]=='.') {
-			int cur = R_MAX (core->print->cur, 0);
-			// XXX: we need cmd_xxx.h (cmd_anal.h)
-			core_anal_bytes (core, core->block + cur, core->blocksize, 1, 'd');
-		} else if (input[1] == ' ') {
-			char *d = r_asm_describe (core->assembler, input+2);
-			if (d && *d) {
-				r_cons_println (d);
-				free (d);
-			} else {
-				eprintf ("Unknown opcode\n");
-			}
-		} else {
-			eprintf ("Use: ?d[.] [opcode]    to get the description of the opcode\n");
-		}
-		break;
 	case 'h': // "?h"
 		if (input[1] == ' ') {
-			r_cons_printf ("0x%08x\n", (ut32)r_str_hash (input+2));
+			r_cons_printf ("0x%08x\n", (ut32)r_str_hash (input + 2));
 		} else {
 			eprintf ("Usage: ?h [string-to-hash]\n");
 		}
@@ -444,7 +469,7 @@ static int cmd_help(void *data, const char *input) {
 			const int list_len = r_list_length (list);
 			for (i = 0; i < list_len; i++) {
 				const char *str = r_list_pop_head (list);
-				if (*str == '\0') {
+				if (!*str) {
 					continue;
 				}
 				n = r_num_math (core->num, str);
@@ -456,31 +481,59 @@ static int cmd_help(void *data, const char *input) {
 				s = n >> 16 << 12;
 				a = n & 0x0fff;
 				r_num_units (unit, n);
-				r_cons_printf ("%"PFMT64d" 0x%"PFMT64x" 0%"PFMT64o
-					" %s %04x:%04x ",
-					n, n, n, unit, s, a);
+				r_cons_printf ("hex     0x%"PFMT64x"\n", n);
+				r_cons_printf ("octal   0%"PFMT64o"\n", n);
+				r_cons_printf ("unit    %s\n", unit);
+				r_cons_printf ("segment %04x:%04x\n", s, a);
 				if (n >> 32) {
-					r_cons_printf ("%"PFMT64d" ", (st64)n);
+					r_cons_printf ("int64   %"PFMT64d"\n", (st64)n);
 				} else {
-					r_cons_printf ("%d ", (st32)n);
+					r_cons_printf ("int32   %d\n", (st32)n);
 				}
 				if (asnum) {
-					r_cons_printf ("\"%s\" ", asnum);
+					r_cons_printf ("string  \"%s\"\n", asnum);
 					free (asnum);
 				}
 				/* binary and floating point */
 				r_str_bits64 (out, n);
 				f = d = core->num->fvalue;
-				r_cons_printf ("0b%s %.01lf %ff %lf ", out, core->num->fvalue, f, d);
+				memcpy (&f, &n, sizeof(f));
+				memcpy (&d, &n, sizeof(d));
+				/* adjust sign for nan floats, different libcs are confused */
+				if (isnan (f) && signbit (f)) {
+					f = -f;
+				}
+				if (isnan (d) && signbit (d)) {
+					d = -d;
+				}
+				r_cons_printf ("binary  0b%s\n", out);
+				r_cons_printf ("fvalue: %.1lf\n", core->num->fvalue);
+				r_cons_printf ("float:  %ff\n", f);
+				r_cons_printf ("double: %lf\n", d);
 
 				/* ternary */
 				r_num_to_trits (out, n);
-				r_cons_printf ("0t%s", out);
-
-				r_cons_printf ("\n");
+				r_cons_printf ("trits   0t%s\n", out);
 			}
 			free (inputs);
 			r_list_free (list);
+		}
+		break;
+	case 'q': // "?q"
+		if (core->num->dbz) {
+			eprintf ("RNum ERROR: Division by Zero\n");
+		}
+		if (input[1] == '?') {
+			r_cons_printf ("|Usage: ?q [num]  # Update $? without printing anything\n"
+				"|?q 123; ?? x    # hexdump if 123 != 0");
+		} else {
+			const char *space = strchr (input, ' ');
+			if (space) {
+				n = r_num_math (core->num, space + 1);
+			} else {
+				n = r_num_math (core->num, "$?");
+			}
+			core->num->value = n; // redundant
 		}
 		break;
 	case 'v': // "?v"
@@ -578,7 +631,11 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case '@': // "?@"
 		if (input[1] == '@') {
-			r_core_cmd_help (core, help_msg_at_at);
+			if (input[2] == '@') {
+				r_core_cmd_help (core, help_msg_at_at_at);
+			} else {
+				r_core_cmd_help (core, help_msg_at_at);
+			}
 		} else {
 			r_core_cmd_help (core, help_msg_at);
 		}
@@ -592,8 +649,8 @@ static int cmd_help(void *data, const char *input) {
 		} else {
 			int i = 0;
 			const char *vars[] = {
-				"$$", "$?", "$b", "$B", "$F", "$Fj", "$Ff", "$FB", "$Fb", "$Fs", "$FE", "$FS", "$FI",
-				"$c", "$r", "$D", "$DD", "$e", "$f", "$j", "$Ja", "$l", "$m", "$M", "$o",
+				"$$", "$$$", "$?", "$b", "$B", "$F", "$Fj", "$Ff", "$FB", "$Fb", "$Fs", "$FE", "$FS",
+				"$FI", "$c", "$r", "$D", "$DD", "$e", "$f", "$j", "$Ja", "$l", "$m", "$M", "$o",
 				"$p", "$P", "$s", "$S", "$SS", "$v", "$w", NULL
 			};
 			while (vars[i]) {
@@ -637,8 +694,14 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'l': // "?l"
-		for (input++; input[0] == ' '; input++);
-		core->num->value = strlen (input);
+		if (input[1] == 'q') {
+			for (input+=2; input[0] == ' '; input++);
+			core->num->value = strlen (input);
+		} else {
+			for (input++; input[0] == ' '; input++);
+			core->num->value = strlen (input);
+			r_cons_printf ("%d\n", core->num->value);
+		}
 		break;
 	case 'X': // "?X"
 		for (input++; input[0] == ' '; input++);
@@ -714,7 +777,22 @@ static int cmd_help(void *data, const char *input) {
 			free (newmsg);
 			break;
 		}
-		default: {
+		case 'p':
+			  {
+			char *word, *str = strdup (input + 2);
+				  RList *list = r_str_split_list (str, " ");
+				  ut64 *nums = calloc (sizeof (ut64), r_list_length (list));
+				  int i = 0;
+				  r_list_foreach (list, iter, word) {
+					nums[i] = r_num_math (core->num, word);;
+					i++;
+				  }
+				  int size = r_config_get_i (core->config, "hex.cols");
+				  r_print_pie (core->print, nums, r_list_length (list), size);
+				  r_list_free (list);
+			  }
+			break;
+		case ' ': {
 			const char *msg = r_str_trim_ro (input+1);
 			// TODO: replace all ${flagname} by its value in hexa
 			char *newmsg = filterFlags (core, msg);
@@ -722,6 +800,18 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_println (newmsg);
 			free (newmsg);
 			}
+			break;
+		case 0:
+			r_cons_newline ();
+			break;
+		default:
+			eprintf ("Usage: ?e[...]\n");
+			eprintf (" e msg       echo message\n");
+			eprintf (" ep N...     echo pie chart\n");
+			eprintf (" eb N...     echo portions bar\n");
+			eprintf (" en msg      echo without newline\n");
+			eprintf (" eg x y      gotoxy\n");
+			eprintf (" es msg      use text-to-speech technology\n");
 			break;
 		}
 		break;
@@ -878,7 +968,6 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_printf ("%"PFMT64d"\n", core->num->value);
 		}
 		break;
-
 	case '\0': // "?"
 	default:
 		// TODO #7967 help refactor

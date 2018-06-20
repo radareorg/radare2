@@ -1,11 +1,17 @@
 diff --git a/MCInst.c b/MCInst.c
-index cc062d00..3f75de3b 100644
+index 40d1aba..fdec580 100644
 --- a/MCInst.c
 +++ b/MCInst.c
-@@ -16,15 +16,7 @@
- 
+@@ -17,20 +17,10 @@
  void MCInst_Init(MCInst *inst)
  {
+ 	unsigned int i;
+-
++	memset (inst, 0, sizeof (MCInst));
+ 	for (i = 0; i < 48; i++) {
+ 		inst->Operands[i].Kind = kInvalid;
+ 	}
+-
 -	inst->Opcode = 0;
 -	inst->OpcodePub = 0;
 -	inst->size = 0;
@@ -15,7 +21,6 @@ index cc062d00..3f75de3b 100644
 -	inst->ac_idx = 0;
 -	inst->popcode_adjust = 0;
 -	inst->assembly[0] = '\0';
-+	memset (inst, 0, sizeof (MCInst));
  }
  
  void MCInst_clear(MCInst *inst)
@@ -54,7 +59,7 @@ index 449b1da5..fe87a318 100644
  				return 0;
  			}
 -
-+			memset (total + (sizeof(cs_insn) * old_size), 0, (total_size - old_size));
++			memset ((char *)total + (sizeof(cs_insn) * old_size), 0, (total_size - old_size));
  			total = tmp;
  			// continue to fill in the cache after the last instruction
  			insn_cache = (cs_insn *)((char *)total + sizeof(cs_insn) * c);

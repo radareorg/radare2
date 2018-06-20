@@ -283,8 +283,10 @@ typedef struct r_debug_t {
 	RDebugTrace *trace;
 	Sdb *tracenodes;
 	RTree *tree;
+	RList *call_frames;
 
 	RReg *reg;
+	RList *q_regs;
 	const char *creg; // current register value
 	RBreakpoint *bp;
 	void *user; // XXX(jjd): unused?? meant for caller's use??
@@ -296,6 +298,9 @@ typedef struct r_debug_t {
 
 	struct r_debug_plugin_t *h;
 	RList *plugins;
+
+	bool pc_at_bp; /* after a breakpoint, is the pc at the bp? */
+	bool pc_at_bp_set; /* is the pc_at_bp variable set already? */
 
 	RAnal *anal;
 	RList *maps; // <RDebugMap>
@@ -486,8 +491,8 @@ R_API RList *r_debug_map_list_new(void);
 R_API RDebugMap *r_debug_map_get(RDebug *dbg, ut64 addr);
 R_API RDebugMap *r_debug_map_new (char *name, ut64 addr, ut64 addr_end, int perm, int user);
 R_API void r_debug_map_free(RDebugMap *map);
-R_API void r_debug_map_list(RDebug *dbg, ut64 addr, int rad);
-R_API void r_debug_map_list_visual(RDebug *dbg, ut64 addr, int use_color, int cons_cols);
+R_API void r_debug_map_list(RDebug *dbg, ut64 addr, const char *input);
+R_API void r_debug_map_list_visual(RDebug *dbg, ut64 addr, const char *input, int colors);
 
 /* descriptors */
 R_API RDebugDesc *r_debug_desc_new (int fd, char* path, int perm, int type, int off);

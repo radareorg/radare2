@@ -121,9 +121,9 @@ static void addsym(RList *ret, const char *name, ut64 addr) {
 
 static void addptr(RList *ret, const char *name, ut64 addr, const ut8 *b, int len) {
 	if (b && rjmp (b)) {
-		addsym (ret, sdb_fmt (0, "vector.%s", name), addr);
+		addsym (ret, sdb_fmt ("vector.%s", name), addr);
 		ut64 ptr_addr = rjmp_dest (addr, b + addr);
-		addsym (ret, sdb_fmt (0, "syscall.%s", name), ptr_addr);
+		addsym (ret, sdb_fmt ("syscall.%s", name), ptr_addr);
 	}
 }
 

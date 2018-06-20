@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2017 - thelemon, kazarmy, pancake */
+/* radare2 - LGPL - Copyright 2014-2018 - thelemon, kazarmy, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -539,7 +539,7 @@ R_API int r_utf8_encode_str (const RRune *str, ut8 *dst, const int dst_length) {
 
 	if (!str || !dst) return -1;
 
-	for (i = 0; str[i] && pos < dst_length - 1; i++)
+	for (i = 0; i < sizeof (str) - 1 && str[i] && pos < dst_length - 1; i++)
 		pos += r_utf8_encode (&dst[pos], str[i]);
 
 	dst[pos++] = '\0';
@@ -565,8 +565,9 @@ R_API int r_utf8_strlen (const ut8 *str) {
 	int i, len = 0;
 
 	for (i = 0; str[i]; i++) {
-		if ((str[i] & 0xc0) != 0x80)
+		if ((str[i] & 0xc0) != 0x80) {
 			len++;
+		}
 	}
 
 	return len;

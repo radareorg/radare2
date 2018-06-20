@@ -25,12 +25,11 @@ static void clear_flags(RAnalOp *op, int flags) {
 	if (flags & V850_FLAG_Z) r_strbuf_append (&op->esil, ",0,z,=");
 }
 
-static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr,
-		const ut8 *buf, int len)
-{
+static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	int ret = 0;
 	ut8 opcode = 0;
-	char *reg1 = NULL, *reg2 = NULL;
+	const char *reg1 = NULL;
+	const char *reg2 = NULL;
 	ut32 bitmask = 0;
 	ut16 destaddr = 0;
 	st16 destaddrs = 0;
@@ -42,7 +41,7 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr,
 	r_strbuf_init (&op->esil);
 	r_strbuf_set (&op->esil, "");
 
-	ret = op->size = v850_decode_command (buf, &cmd);
+	ret = op->size = v850_decode_command (buf, len, &cmd);
 
 	if (ret <= 0) {
 		return ret;
@@ -66,7 +65,7 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr,
 		if (opcode != V850_MOV_IMM5) { // Format I
 			r_strbuf_appendf (&op->esil, "%s,%s,=", F1_RN1(word1), F1_RN2(word1));
 		} else { // Format II
-			r_strbuf_appendf (&op->esil, "%"PFMT64d",%s,=", F2_IMM(word1), F2_RN2(word1));
+			r_strbuf_appendf (&op->esil, "%"PFMT64d",%s,=", (st64)(F2_IMM(word1)), F2_RN2(word1));
 		}
 		break;
 	case V850_MOVEA:
@@ -216,13 +215,10 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr,
 		op->type = R_ANAL_OP_TYPE_ADD;
 		if (F6_REG2(word1) == V850_SP) {
 			op->stackop = R_ANAL_STACK_INC;
-			// Not so sure about the fix but
-			// F6_IMM works only for 32 bit words.
-			// word1 is 16 bits long.
-			op->stackptr = F2_IMM (word1);
+			op->stackptr = (st64) word2;
 			op->val = op->stackptr;
 		}
-		r_strbuf_appendf (&op->esil, "%hd,%s,+,%s,=", word2, F6_RN1 (word1), F6_RN2 (word1));
+		r_strbuf_appendf (&op->esil, "%d,%s,+,%s,=", (st32) word2, F6_RN1 (word1), F6_RN2 (word1));
 		update_flags (op, -1);
 		break;
 	case V850_SHR_IMM5:
@@ -245,7 +241,6 @@ static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr,
 		update_flags (op, V850_FLAG_CY | V850_FLAG_S | V850_FLAG_Z);
 		clear_flags (op, V850_FLAG_OV);
 		break;
-
 	case V850_BCOND:
 	case V850_BCOND2:
 	case V850_BCOND3:

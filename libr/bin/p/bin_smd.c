@@ -1,4 +1,4 @@
-/* radare - LGPL3 - 2015-2017 - pancake */
+/* radare - LGPL3 - 2015-2018 - pancake */
 
 #include <r_bin.h>
 
@@ -150,10 +150,10 @@ static RList *symbols(RBinFile *bf) {
 	ret->free = free;
 	// TODO: store all this stuff in SDB
 	hdr = (SMD_Header *) (bf->buf->buf + 0x100);
-	addsym (ret, "rom_start", hdr->RomStart);
-	addsym (ret, "rom_end", hdr->RomEnd);
-	addsym (ret, "ram_start", hdr->RamStart);
-	addsym (ret, "ram_end", hdr->RamEnd);
+	addsym (ret, "rom_start", r_read_be32 (&hdr->RomStart));
+	addsym (ret, "rom_end", r_read_be32 (&hdr->RomEnd));
+	addsym (ret, "ram_start", r_read_be32 (&hdr->RamStart));
+	addsym (ret, "ram_end", r_read_be32 (&hdr->RamEnd));
 	showstr ("Copyright", hdr->CopyRights, 32);
 	showstr ("DomesticName", hdr->DomesticName, 48);
 	showstr ("OverseasName", hdr->OverseasName, 48);
@@ -169,66 +169,67 @@ static RList *symbols(RBinFile *bf) {
 		case 0: name = "SSP"; break;
 		case 1: name = "Reset"; break;
 		case 2: name = "BusErr"; break;
-		case 3: name = "InvOpCode"; break;
-		case 4: name = "DivBy0"; break;
-		case 5: name = "Check"; break;
-		case 6: name = "TrapV"; break;
-		case 7: name = "GPF"; break;
-		case 8: name = "Trace"; break;
-		case 9: name = "Reserv0"; break;
-		case 10: name = "Reserv1"; break;
-		case 11: name = "Reserv2"; break;
-		case 12: name = "Reserv3"; break;
-		case 13: name = "Reserv4"; break;
-		case 14: name = "BadInt"; break;
-		case 15: name = "Reserv10"; break;
-		case 16: name = "Reserv11"; break;
-		case 17: name = "Reserv12"; break;
-		case 18: name = "Reserv13"; break;
-		case 19: name = "Reserv14"; break;
-		case 20: name = "Reserv15"; break;
-		case 21: name = "Reserv16"; break;
-		case 22: name = "Reserv17"; break;
-		case 23: name = "BadIRQ"; break;
-		case 24: name = "IRQ1"; break;
-		case 25: name = "EXT"; break;
-		case 26: name = "IRQ3"; break;
-		case 27: name = "HBLANK"; break;
-		case 28: name = "IRQ5"; break;
-		case 29: name = "VBLANK"; break;
-		case 30: name = "IRQ7"; break;
-		case 31: name = "Trap0"; break;
-		case 32: name = "Trap1"; break;
-		case 33: name = "Trap2"; break;
-		case 34: name = "Trap3"; break;
-		case 35: name = "Trap4"; break;
-		case 36: name = "Trap5"; break;
-		case 37: name = "Trap6"; break;
-		case 38: name = "Trap7"; break;
-		case 39: name = "Trap8"; break;
-		case 40: name = "Trap9"; break;
-		case 41: name = "Trap10"; break;
-		case 42: name = "Trap11"; break;
-		case 43: name = "Trap12"; break;
-		case 44: name = "Trap13"; break;
-		case 45: name = "Trap14"; break;
-		case 46: name = "Trap15"; break;
-		case 47: name = "Reserv30"; break;
-		case 48: name = "Reserv31"; break;
-		case 49: name = "Reserv32"; break;
-		case 50: name = "Reserv33"; break;
-		case 51: name = "Reserv34"; break;
-		case 52: name = "Reserv35"; break;
-		case 53: name = "Reserv36"; break;
-		case 54: name = "Reserv37"; break;
-		case 55: name = "Reserv38"; break;
-		case 56: name = "Reserv39"; break;
-		case 57: name = "Reserv3A"; break;
-		case 58: name = "Reserv3B"; break;
-		case 59: name = "Reserv3C"; break;
-		case 60: name = "Reserv3D"; break;
-		case 61: name = "Reserv3E"; break;
-		case 62: name = "Reserv3F"; break;
+		case 3: name = "AdrErr"; break;
+		case 4: name = "InvOpCode"; break;
+		case 5: name = "DivBy0"; break;
+		case 6: name = "Check"; break;
+		case 7: name = "TrapV"; break;
+		case 8: name = "GPF"; break;
+		case 9: name = "Trace"; break;
+		case 10: name = "Reserv0"; break;
+		case 11: name = "Reserv1"; break;
+		case 12: name = "Reserv2"; break;
+		case 13: name = "Reserv3"; break;
+		case 14: name = "Reserv4"; break;
+		case 15: name = "BadInt"; break;
+		case 16: name = "Reserv10"; break;
+		case 17: name = "Reserv11"; break;
+		case 18: name = "Reserv12"; break;
+		case 19: name = "Reserv13"; break;
+		case 20: name = "Reserv14"; break;
+		case 21: name = "Reserv15"; break;
+		case 22: name = "Reserv16"; break;
+		case 23: name = "Reserv17"; break;
+		case 24: name = "BadIRQ"; break;
+		case 25: name = "IRQ1"; break;
+		case 26: name = "EXT"; break;
+		case 27: name = "IRQ3"; break;
+		case 28: name = "HBLANK"; break;
+		case 29: name = "IRQ5"; break;
+		case 30: name = "VBLANK"; break;
+		case 31: name = "IRQ7"; break;
+		case 32: name = "Trap0"; break;
+		case 33: name = "Trap1"; break;
+		case 34: name = "Trap2"; break;
+		case 35: name = "Trap3"; break;
+		case 36: name = "Trap4"; break;
+		case 37: name = "Trap5"; break;
+		case 38: name = "Trap6"; break;
+		case 39: name = "Trap7"; break;
+		case 40: name = "Trap8"; break;
+		case 41: name = "Trap9"; break;
+		case 42: name = "Trap10"; break;
+		case 43: name = "Trap11"; break;
+		case 44: name = "Trap12"; break;
+		case 45: name = "Trap13"; break;
+		case 46: name = "Trap14"; break;
+		case 47: name = "Trap15"; break;
+		case 48: name = "Reserv30"; break;
+		case 49: name = "Reserv31"; break;
+		case 50: name = "Reserv32"; break;
+		case 51: name = "Reserv33"; break;
+		case 52: name = "Reserv34"; break;
+		case 53: name = "Reserv35"; break;
+		case 54: name = "Reserv36"; break;
+		case 55: name = "Reserv37"; break;
+		case 56: name = "Reserv38"; break;
+		case 57: name = "Reserv39"; break;
+		case 58: name = "Reserv3A"; break;
+		case 59: name = "Reserv3B"; break;
+		case 60: name = "Reserv3C"; break;
+		case 61: name = "Reserv3D"; break;
+		case 62: name = "Reserv3E"; break;
+		case 63: name = "Reserv3F"; break;
 		default: name = NULL;
 		}
 		if (name && vtable[i]) {
@@ -251,7 +252,7 @@ static RList *sections(RBinFile *bf) {
 	strcpy (ptr->name, "vtable");
 	ptr->paddr = ptr->vaddr = 0;
 	ptr->size = ptr->vsize = 0x100;
-	ptr->srwx = R_BIN_SCN_MAP;
+	ptr->srwx = R_BIN_SCN_READABLE;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -261,7 +262,7 @@ static RList *sections(RBinFile *bf) {
 	strcpy (ptr->name, "header");
 	ptr->paddr = ptr->vaddr = 0x100;
 	ptr->size = ptr->vsize = sizeof (SMD_Header);
-	ptr->srwx = R_BIN_SCN_MAP;
+	ptr->srwx = R_BIN_SCN_READABLE;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -272,11 +273,11 @@ static RList *sections(RBinFile *bf) {
 	ptr->paddr = ptr->vaddr = 0x100 + sizeof (SMD_Header);
 	{
 		SMD_Header *hdr = (SMD_Header *) (bf->buf->buf + 0x100);
-		ut64 baddr = hdr->RamStart;
+		ut64 baddr = hdr->RomStart;
 		ptr->vaddr += baddr;
 	}
 	ptr->size = ptr->vsize = bf->buf->length - ptr->paddr;
-	ptr->srwx = R_BIN_SCN_MAP;
+	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 	return ret;
@@ -291,7 +292,9 @@ static RList *entries(RBinFile *bf) { // Should be 3 offsets pointed by NMI, RES
 	if (!(ptr = R_NEW0 (RBinAddr))) {
 		return ret;
 	}
-	ptr->paddr = ptr->vaddr = 0x100 + sizeof (SMD_Header); // vtable[1];
+	SMD_Header *hdr = (SMD_Header *) (bf->buf->buf + 0x100);
+	ut64 baddr = hdr->RomStart;
+	ptr->paddr = ptr->vaddr = baddr + 0x100 + sizeof (SMD_Header); // vtable[1];
 	r_list_append (ret, ptr);
 	return ret;
 }
@@ -303,7 +306,7 @@ RBinPlugin r_bin_plugin_smd = {
 	.load_bytes = &load_bytes,
 	.check_bytes = &check_bytes,
 	.entries = &entries,
-	.sections = sections,
+	.sections = &sections,
 	.symbols = &symbols,
 	.info = &info,
 	.minstrlen = 10,

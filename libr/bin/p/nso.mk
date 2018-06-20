@@ -1,4 +1,4 @@
-OBJ_NSO=bin_nso.o
+OBJ_NSO=bin_nso.o ../format/nxo/nxo.o
 #include $(SHLR)/lz4/deps.mk
 
 STATIC_OBJ+=${OBJ_NSO}

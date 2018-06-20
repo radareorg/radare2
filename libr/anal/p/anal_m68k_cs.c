@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2015-2016 - pancake */
+/* radare2 - LGPL - Copyright 2015-2018 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -76,12 +76,65 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	r_strbuf_append (buf, "]}");
 }
 
+#define ZERO_FILL(x) memset (&x, 0, sizeof (x))
+
+static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
+	if (!reg) {
+		return -1;
+	}
+	switch (OPERAND (reg_num).type) {
+	case M68K_OP_REG:
+		reg->name = (char *)cs_reg_name (handle, OPERAND (reg_num).reg);
+		break;
+	case M68K_OP_MEM:
+		if (OPERAND (reg_num).mem.base_reg != M68K_REG_INVALID) {
+			reg->name = (char *)cs_reg_name (handle, OPERAND (reg_num).mem.base_reg);
+		}
+		break;
+	default:
+		break;
+	}
+	return 0;
+}
+
+static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
+	static RRegItem reg;
+	switch (op->type) {
+	case R_ANAL_OP_TYPE_MOV:
+		ZERO_FILL (reg);
+		if (OPERAND(1).type == M68K_OP_MEM) {
+			op->src[0] = r_anal_value_new ();
+			op->src[0]->reg = &reg;
+			parse_reg_name (op->src[0]->reg, handle, insn, 1);
+			op->src[0]->delta = OPERAND(0).mem.disp;
+		} else if (OPERAND(0).type == M68K_OP_MEM) {
+			op->dst = r_anal_value_new ();
+			op->dst->reg = &reg;
+			parse_reg_name (op->dst->reg, handle, insn, 0);
+			op->dst->delta = OPERAND(1).mem.disp;
+		}
+		break;
+	case R_ANAL_OP_TYPE_LEA:
+		ZERO_FILL (reg);
+		if (OPERAND(1).type == M68K_OP_MEM) {
+			op->dst = r_anal_value_new ();
+			op->dst->reg = &reg;
+			parse_reg_name (op->dst->reg, handle, insn, 1);
+			op->dst->delta = OPERAND(1).mem.disp;
+		}
+		break;
+	}
+}
+
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	int n, ret, opsize = -1;
 	static csh handle = 0;
 	static int omode = -1;
 	static int obits = 32;
 	cs_insn* insn;
+	cs_m68k *m68k;
+	cs_detail *detail;
+
 	int mode = a->big_endian? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 
 	//mode |= (a->bits==64)? CS_MODE_64: CS_MODE_32;
@@ -119,12 +172,14 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		opsize = -1;
 		goto beach;
 	}
-	if (!memcmp (buf, "\xff\xff", 2)) {
+	if (!memcmp (buf, "\xff\xff", R_MIN (len, 2))) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		op->size = 2;
 		opsize = -1;
 		goto beach;
 	}
+	detail = insn->detail;
+	m68k = &detail->m68k;
 	op->type = R_ANAL_OP_TYPE_NULL;
 	op->delay = 0;
 	op->id = insn->id;
@@ -169,9 +224,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case M68K_INS_BLT:
 	case M68K_INS_BGT:
 	case M68K_INS_BLE:
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = ((addr >>32)<<32) | (UT32_MAX & IMM(0));
-		op->fail = addr + 2;
+		if (m68k->operands[0].type == M68K_OP_BR_DISP) {
+			op->type = R_ANAL_OP_TYPE_CJMP;
+			// TODO: disp_size is ignored
+			op->jump = addr + m68k->operands[0].br_disp.disp + 2;
+			op->fail = addr + insn->size;
+		}
 		break;
 	case M68K_INS_BRA:
 		op->type = R_ANAL_OP_TYPE_JMP;
@@ -454,15 +512,24 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		op->jump = UT32_MAX & (ut64)IMM(0);
 		op->fail = addr + op->size;
 		break;
-	case M68K_INS_LINK:
 	case M68K_INS_LPSTOP:
+		op->type = R_ANAL_OP_TYPE_NOP;
+		break;
 	case M68K_INS_LSL:
 		op->type = R_ANAL_OP_TYPE_SHL;
+		break;
+	case M68K_INS_LINK:
+		op->type = R_ANAL_OP_TYPE_PUSH;
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = -(st16)IMM(1);
 		break;
 	case M68K_INS_LSR:
 		op->type = R_ANAL_OP_TYPE_SHR;
 		break;
+	case M68K_INS_PEA:
 	case M68K_INS_LEA:
+		op->type = R_ANAL_OP_TYPE_LEA;
+		break;
 	case M68K_INS_MOVE:
 	case M68K_INS_MOVEA:
 	case M68K_INS_MOVEC:
@@ -490,7 +557,6 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		op->type = R_ANAL_OP_TYPE_OR;
 		break;
 	case M68K_INS_PACK:
-	case M68K_INS_PEA:
 	case M68K_INS_PFLUSH:
 	case M68K_INS_PFLUSHA:
 	case M68K_INS_PFLUSHAN:
@@ -574,14 +640,23 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case M68K_INS_TST:
 		op->type = R_ANAL_OP_TYPE_CMP;
 		break;
+	case M68K_INS_UNPK: // unpack BCD
+		op->type = R_ANAL_OP_TYPE_MOV;
+		break;
 	case M68K_INS_UNLK:
-	case M68K_INS_UNPK:
+		op->type = R_ANAL_OP_TYPE_POP;
+		// reset stackframe
+		op->stackop = R_ANAL_STACK_SET;
+		op->stackptr = 0;
 		break;
 	}
-	beach:
+	if (a->fillval) {
+		op_fillval (op, handle, insn);
+	}
+beach:
 	cs_free (insn, n);
 	//cs_close (&handle);
-	fin:
+fin:
 	return opsize;
 }
 
@@ -643,7 +718,7 @@ static int set_reg_profile(RAnal *anal) {
 }
 
 RAnalPlugin r_anal_plugin_m68k_cs = {
-	.name = "m68k.cs",
+	.name = "m68k",
 	.desc = "Capstone M68K analyzer",
 	.license = "BSD",
 	.esil = false,
@@ -654,7 +729,7 @@ RAnalPlugin r_anal_plugin_m68k_cs = {
 };
 #else
 RAnalPlugin r_anal_plugin_m68k_cs = {
-	.name = "m68k.cs (unsupported)",
+	.name = "m68k (unsupported)",
 	.desc = "Capstone M68K analyzer (unsupported)",
 	.license = "BSD",
 	.arch = "m68k",

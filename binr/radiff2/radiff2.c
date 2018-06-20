@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_diff.h>
 #include <r_core.h>
@@ -113,16 +113,14 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 				if (!quiet) {
 					printf (Color_RED);
 				}
-				if (r_mem_is_printable ((const ut8 *) s, R_MIN (strlen (s), 5))) {
-					printf ("- %s\n", s);
-				} else {
-					printf ("-:");
-					int len = op->a_len; // R_MIN (op->a_len, strlen (op->a_buf));
-					for (i = 0; i < len; i++) {
-						printf ("%02x", op->a_buf[i]);
-					}
-					printf (" \"%s\"\n", op->a_buf);
+				printf ("-0x%08"PFMT64x":", op->a_off);
+				int len = op->a_len; // R_MIN (op->a_len, strlen (op->a_buf));
+				for (i = 0; i < len; i++) {
+					printf ("%02x", op->a_buf[i]);
 				}
+				char *p = r_str_escape ((const char*)op->a_buf);
+				printf (" \"%s\"\n", p);
+				free (p);
 				if (!quiet) {
 					printf (Color_RESET);
 				}
@@ -134,17 +132,17 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 				if (!quiet) {
 					printf (Color_GREEN);
 				}
-				if (r_mem_is_printable ((const ut8 *) s, R_MIN (strlen (s), 5))) {
-					printf ("+ %s\n", s);
-				} else {
-					printf ("+:");
-					for (i = 0; i < op->b_len; i++) {
-						printf ("%02x", op->b_buf[i]);
-					}
-					printf (" \"%s\"\n", op->b_buf);
+				printf ("+0x%08"PFMT64x":", op->b_off);
+				for (i = 0; i < op->b_len; i++) {
+					printf ("%02x", op->b_buf[i]);
 				}
 				if (!quiet) {
+					char *p = r_str_escape((const char*)op->b_buf);
+					printf (" \"%s\"\n", p);
+					free (p);
 					printf (Color_RESET);
+				} else {
+					printf ("\n");
 				}
 			}
 		}
@@ -431,6 +429,7 @@ static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
 	ut32 sz = R_MIN (as, bs);
 	ut32 i, j;
 	int ctx = DUMP_CONTEXT;
+	int pad = 0;
 	switch (w) {
 	case 8:
 		r_cons_printf ("  offset     0 1 2 3 4 5 6 7 01234567    0 1 2 3 4 5 6 7 01234567\n");
@@ -445,6 +444,10 @@ static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
 		return;
 	}
 	for (i = 0; i < sz; i += w) {
+		if (i + w >= sz) {
+			pad = w - sz + i;
+			w = sz - i;
+		}
 		bool eq = !memcmp (a + i, b + i, w);
 		if (eq) {
 			ctx--;
@@ -472,6 +475,9 @@ static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
 				r_cons_printf (Color_RESET);
 			}
 		}
+		for (j = 0; j < pad; j++) {
+			r_cons_printf ("  ");
+		}
 		r_cons_printf (" ");
 		for (j = 0; j < w; j++) {
 			bool eq2 = a[i + j] == b[i + j];
@@ -483,6 +489,9 @@ static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
 				r_cons_printf (Color_RESET);
 			}
 		}
+		for (j = 0; j < pad; j++) {
+			r_cons_printf (" ");
+		}
 		r_cons_printf ("   ");
 		for (j = 0; j < w; j++) {
 			bool eq2 = a[i + j] == b[i + j];
@@ -493,6 +502,9 @@ static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
 			if (!eq) {
 				r_cons_printf (Color_RESET);
 			}
+		}
+		for (j = 0; j < pad; j++) {
+			r_cons_printf ("  ");
 		}
 		r_cons_printf (" ");
 		for (j = 0; j < w; j++) {
@@ -793,7 +805,9 @@ int main(int argc, char **argv) {
 		if (!c || !c2) {
 			eprintf ("Cannot open '%s'\n", r_str_get (file2));
 			return 1;
-		}	
+		}
+		c->c2 = c2;
+		c2->c2 = c;
 		if (arch) {
 			r_config_set (c->config, "asm.arch", arch);
 			r_config_set (c2->config, "asm.arch", arch);
@@ -816,8 +830,8 @@ int main(int argc, char **argv) {
 				addr = "main";
 			}
 			/* should be in mode not in bool pdc */
-			r_config_set (c->config, "scr.color", "false");
-			r_config_set (c2->config, "scr.color", "false");
+			r_config_set_i (c->config, "scr.color", COLOR_MODE_DISABLED);
+			r_config_set_i (c2->config, "scr.color", COLOR_MODE_DISABLED);
 
 			ut64 addra = r_num_math (c->num, addr);
 			bufa = (ut8 *) r_core_cmd_strf (c, "af;pdc @ 0x%08"PFMT64x, addra);
@@ -828,22 +842,26 @@ int main(int argc, char **argv) {
 			szb = strlen ((const char *) bufb);
 			mode = MODE_DIFF;
 		} else if (mode == MODE_GRAPH) {
+			int depth = r_config_get_i (c->config, "anal.depth");
+			if (depth < 1) {
+				depth = 64;
+			}
 			char *words = strdup (addr? addr: "0");
 			char *second = strstr (words, ",");
 			if (second) {
 				*second++ = 0;
 				ut64 off = r_num_math (c->num, words);
 				// define the same function at each offset
-				r_core_anal_fcn (c, off, UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
+				r_core_anal_fcn (c, off, UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
 				r_core_anal_fcn (c2, r_num_math (c2->num, second),
-					UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
+					UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
 				r_core_gdiff (c, c2);
 				r_core_anal_graph (c, off, R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF);
 			} else {
 				r_core_anal_fcn (c, r_num_math (c->num, words),
-					UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
+					UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
 				r_core_anal_fcn (c2, r_num_math (c2->num, words),
-					UT64_MAX, R_ANAL_REF_TYPE_NULL, 0);
+					UT64_MAX, R_ANAL_REF_TYPE_NULL, depth);
 				r_core_gdiff (c, c2);
 				r_core_anal_graph (c, r_num_math (c->num, addr),
 					R_CORE_ANAL_GRAPHBODY | R_CORE_ANAL_GRAPHDIFF);
@@ -912,7 +930,9 @@ int main(int argc, char **argv) {
 			write (1, "\x04", 1);
 		}
 		if (diffmode == 'U') {
-			r_diff_buffers_unified (d, bufa, sza, bufb, szb);
+			char * res = r_diff_buffers_unified (d, bufa, sza, bufb, szb);
+			printf ("%s", res);
+			free (res);
 		} else if (diffmode == 'B') {
 			r_diff_set_callback (d, &bcb, 0);
 			r_diff_buffers (d, bufa, sza, bufb, szb);

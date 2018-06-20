@@ -53,6 +53,7 @@ typedef struct r_flag_t {
 	int space_idx;     /* index of the selected space in spaces array */
 	bool space_strict; /* when true returned flag items must belong to the selected space */
 	char *spaces[R_FLAG_SPACES_MAX]; /* array of flag spaces */
+	Sdb *tags;
 	RNum *num;
 	RSkipList *by_off; /* flags sorted by offset, value=RFlagsAtOffset */
 	SdbHash *ht_name; /* hashmap key=item name, value=RList of items */
@@ -109,6 +110,7 @@ R_API void r_flag_item_set_alias(RFlagItem *item, const char *alias);
 R_API void r_flag_item_free (RFlagItem *item);
 R_API void r_flag_item_set_comment(RFlagItem *item, const char *comment);
 R_API void r_flag_item_set_realname(RFlagItem *item, const char *realname);
+R_API RFlagItem *r_flag_item_clone(RFlagItem *item);
 R_API int r_flag_unset_glob(RFlag *f, const char *name);
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name);
 R_API int r_flag_relocate (RFlag *f, ut64 off, ut64 off_mask, ut64 to);
@@ -128,6 +130,12 @@ R_API int r_flag_space_rename (RFlag *f, const char *oname, const char *nname);
 R_API bool r_flag_space_pop(RFlag *f);
 R_API int r_flag_space_push(RFlag *f, const char *name);
 R_API int r_flag_space_stack_list(RFlag *f, int mode);
+
+/* tags */
+R_API RList *r_flag_tags_list(RFlag *f);
+R_API RList *r_flag_tags_set(RFlag *f, const char *name, const char *words);
+R_API void r_flag_tags_reset(RFlag *f, const char *name);
+R_API RList *r_flag_tags_get(RFlag *f, const char *name);
 
 /* zones */
 

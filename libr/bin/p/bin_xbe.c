@@ -152,7 +152,7 @@ static RList *sections(RBinFile *bf) {
 		item->vsize = sect[i].vsize;
 		item->add = true;
 
-		item->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;
+		item->srwx = R_BIN_SCN_READABLE;
 		if (sect[i].flags & SECT_FLAG_X) {
 			item->srwx |= R_BIN_SCN_EXECUTABLE;
 		}

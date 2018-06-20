@@ -1,32 +1,33 @@
 #!/bin/sh
 
 if [ -z "${MAKE}" ]; then
-  MAKE=make
-  gmake --help >/dev/null 2>&1
-  [ $? = 0 ] && MAKE=gmake
+	MAKE=make
+	gmake --help >/dev/null 2>&1
+	[ $? = 0 ] && MAKE=gmake
 fi
 [ -z "${MAKE_JOBS}" ] && MAKE_JOBS=12
 [ -z "${CERTID}" ] && CERTID=org.radare.radare2
 
 # find root
-cd `dirname $PWD/$0` ; cd ..
+A=$(dirname "$PWD/$0")
+cd "$A" && cd .. || exit 1
 
 if [ "`uname`" = Darwin ]; then
-  DEFAULT_PREFIX=/usr/local
-  # purge previous installations on other common paths
-  if [ -f /usr/bin/r2 ]; then
-    type sudo || NOSUDO=1
-    [ "$(id -u)" = 0 ] || SUDO=sudo
-    [ -n "${NOSUDO}" ] && SUDO=
-    # purge first
-    echo "Purging r2 installation..."
-    ./configure --prefix=/usr > /dev/null
-    ${SUDO} ${MAKE} uninstall > /dev/null
-  fi
+	DEFAULT_PREFIX=/usr/local
+	# purge previous installations on other common paths
+	if [ -f /usr/bin/r2 ]; then
+		type sudo || NOSUDO=1
+		[ "$(id -u)" = 0 ] || SUDO=sudo
+		[ -n "${NOSUDO}" ] && SUDO=
+		# purge first
+		echo "Purging r2 installation..."
+		./configure --prefix=/usr > /dev/null
+		${SUDO} ${MAKE} uninstall > /dev/null
+	fi
 else
-  DEFAULT_PREFIX=/usr
-  [ -n "${PREFIX}" -a "${PREFIX}" != /usr ] && \
-    CFGARG="${CFGARG} --with-rpath"
+	DEFAULT_PREFIX=/usr
+	[ -n "${PREFIX}" -a "${PREFIX}" != /usr ] && \
+		CFGARG="${CFGARG} --with-rpath"
 fi
 
 [ -z "${PREFIX}" ] && PREFIX="${DEFAULT_PREFIX}"
@@ -92,9 +93,11 @@ if [ -z "${KEEP_PLUGINS_CFG}" ]; then
 	rm -f plugins.cfg
 fi
 unset DEPS
-./configure ${CFGARG} --prefix=${PREFIX} || exit 1
+pwd
+./configure ${CFGARG} --prefix="${PREFIX}" || exit 1
 ${MAKE} -s -j${MAKE_JOBS} MAKE_JOBS=${MAKE_JOBS} || exit 1
 if [ "`uname`" = Darwin ]; then
+	./sys/macos-cert.sh
 	${MAKE} macos-sign macos-sign-libs CERTID="${CERTID}" || (
 		echo "CERTID not defined. If you want the bins signed to debug without root"
 		echo "follow the instructions described in doc/macos.md and run make macos-sign."

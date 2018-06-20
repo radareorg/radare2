@@ -34,17 +34,32 @@ static char *entitlements(RBinFile *bf, bool json) {
 
 static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	struct MACH0_(obj_t) *res = NULL;
-	RBuffer *tbuf = NULL;
 	if (!buf || !sz || sz == UT64_MAX) {
 		return NULL;
 	}
-	tbuf = r_buf_new ();
+	RBuffer *tbuf = r_buf_new ();
 	r_buf_set_bytes (tbuf, buf, sz);
-	res = MACH0_(new_buf) (tbuf, bf->rbin->verbose);
+	struct MACH0_(opts_t) opts;
+	MACH0_(opts_set_default) (&opts, bf);
+	res = MACH0_(new_buf) (tbuf, &opts);
 	if (res) {
 		sdb_ns_set (sdb, "info", res->kv);
 	}
 	r_buf_free (tbuf);
+	return res;
+}
+
+static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb){
+	struct MACH0_(obj_t) *res = NULL;
+	if (!buf) {
+		return NULL;
+	}
+	struct MACH0_(opts_t) opts;
+	MACH0_(opts_set_default) (&opts, bf);
+	res = MACH0_(new_buf) (buf, &opts);
+	if (res) {
+		sdb_ns_set (sdb, "info", res->kv);
+	}
 	return res;
 }
 
@@ -129,9 +144,12 @@ static RList* sections(RBinFile *bf) {
 		ptr->vaddr = sections[i].addr;
 		ptr->add = true;
 		if (!ptr->vaddr) {
-			ptr->vaddr = ptr->paddr;
+			// XXX(lowlyw) this is a valid macho, but rarely will anything
+			// be mapped at va = 0
+			eprintf ("mapping text to va = 0\n");
+			// ptr->vaddr = ptr->paddr;
 		}
-		ptr->srwx = sections[i].srwx | R_BIN_SCN_MAP;
+		ptr->srwx = sections[i].srwx;
 		r_list_append (ret, ptr);
 	}
 	free (sections);
@@ -301,7 +319,7 @@ static RList* symbols(RBinFile *bf) {
 		}
 		ptr->ordinal = i;
 		bin->dbg_info = strncmp (ptr->name, "radr://", 7)? 0: 1;
-		sdb_set (symcache, sdb_fmt (0, "sym0x%"PFMT64x, ptr->vaddr), "found", 0);
+		sdb_set (symcache, sdb_fmt ("sym0x%"PFMT64x, ptr->vaddr), "found", 0);
 		if (!strncmp (ptr->name, "type.", 5)) {
 			lang = "go";
 		}
@@ -839,6 +857,7 @@ RBinPlugin r_bin_plugin_mach0 = {
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,

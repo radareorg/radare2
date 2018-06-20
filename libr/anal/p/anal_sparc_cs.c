@@ -51,6 +51,51 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 	r_strbuf_append (buf, "}");
 }
 
+#define ZERO_FILL(x) memset (&x, 0, sizeof (x))
+
+static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
+	if (!reg) {
+		return -1;
+	}
+	switch (INSOP (reg_num).type) {
+	case SPARC_OP_REG:
+		reg->name = (char *)cs_reg_name (handle, INSOP (reg_num).reg);
+		break;
+	case SPARC_OP_MEM:
+		if (INSOP (reg_num).mem.base != SPARC_REG_INVALID) {
+			reg->name = (char *)cs_reg_name (handle, INSOP (reg_num).mem.base);
+			break;
+		}
+	default:
+		break;
+	}
+	return 0;
+}
+
+static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
+	static RRegItem reg;
+	switch (op->type) {
+	case R_ANAL_OP_TYPE_LOAD:
+		if (INSOP(0).type == SPARC_OP_MEM) {
+			ZERO_FILL (reg);
+			op->src[0] = r_anal_value_new ();
+			op->src[0]->reg = &reg;
+			parse_reg_name (op->src[0]->reg, handle, insn, 0);
+			op->src[0]->delta = INSOP(0).mem.disp;
+		}
+		break;
+	case R_ANAL_OP_TYPE_STORE:
+		if (INSOP(1).type == SPARC_OP_MEM) {
+			ZERO_FILL (reg);
+			op->dst = r_anal_value_new ();
+			op->dst->reg = &reg;
+			parse_reg_name (op->dst->reg, handle, insn, 1);
+			op->dst->delta = INSOP(1).mem.disp;
+		}
+		break;
+	}
+}
+
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	static csh handle = 0;
 	static int omode;
@@ -259,6 +304,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case SPARC_INS_UDIV:
 			op->type = R_ANAL_OP_TYPE_DIV;
 			break;
+		}
+		if (a->fillval) {
+			op_fillval (op, handle, insn);
 		}
 		cs_free (insn, n);
 	}

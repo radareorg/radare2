@@ -2,6 +2,7 @@
 #define R2_HASH_H
 
 #include "r_types.h"
+#include "r_util/r_mem.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -161,6 +162,7 @@ struct r_hash_t {
 	R_SHA512_CTX sha512;
 	bool rst;
 	ut8 digest[128];
+	double entropy;
 };
 
 typedef struct r_hash_seed_t {
@@ -248,8 +250,8 @@ typedef struct r_hash_seed_t {
 #define R_HASH_SIZE_SHA384 48
 #define R_HASH_SIZE_SHA512 64
 #define R_HASH_SIZE_ADLER32 4
-/* entropy is double !! fail with size 4 */
-#define R_HASH_SIZE_ENTROPY 4
+/* entropy is double !! size 0 for test in r_hash_to_string */
+#define R_HASH_SIZE_ENTROPY 0
 #define R_HASH_SIZE_PCPRINT 1
 #define R_HASH_SIZE_MOD255 1
 #define R_HASH_SIZE_PARITY 1

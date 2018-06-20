@@ -162,6 +162,11 @@ static void find_and_change (char* in, int len) {
 }
 
 R_API int r_core_pseudo_code(RCore *core, const char *input) {
+	const char *cmdPdc = r_config_get (core->config, "cmd.pdc");
+	if (cmdPdc && *cmdPdc && !strstr (cmdPdc, "pdc")) {
+		return r_core_cmdf (core, "%s%s", cmdPdc, input);
+	}
+
 	Sdb *db;
 	ut64 queuegoto = 0LL;
 	const char *blocktype = "else";
@@ -171,9 +176,9 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		return false;
 	}
 	r_config_save_num (hc, "asm.pseudo", "asm.decode", "asm.lines", "asm.bytes", NULL);
-	r_config_save_num (hc, "asm.offset", "asm.flags", "asm.fcnlines", "asm.comments", NULL);
-	r_config_save_num (hc, "asm.functions", "asm.section", "asm.cmtcol", "asm.filter", NULL);
-	r_config_save_num (hc, "scr.color", "asm.emustr", "asm.emu", "asm.emuwrite", NULL);
+	r_config_save_num (hc, "asm.offset", "asm.flags", "asm.lines.fcn", "asm.comments", NULL);
+	r_config_save_num (hc, "asm.functions", "asm.section", "asm.cmt.col", "asm.filter", NULL);
+	r_config_save_num (hc, "scr.color", "emu.str", "asm.emu", "emu.write", NULL);
 	r_config_save_num (hc, "io.cache", NULL);
 	if (!fcn) {
 		eprintf ("Cannot find function in 0x%08"PFMT64x"\n", core->offset);
@@ -189,14 +194,14 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_config_set_i (core->config, "asm.offset", 0);
 	r_config_set_i (core->config, "asm.flags", 0);
 	r_config_set_i (core->config, "asm.emu", 1);
-	r_config_set_i (core->config, "asm.emustr", 1);
-	r_config_set_i (core->config, "asm.emuwrite", 1);
-	r_config_set_i (core->config, "asm.fcnlines", 0);
+	r_config_set_i (core->config, "emu.str", 1);
+	r_config_set_i (core->config, "emu.write", 1);
+	r_config_set_i (core->config, "asm.lines.fcn", 0);
 	r_config_set_i (core->config, "asm.comments", 1);
 	r_config_set_i (core->config, "asm.functions", 0);
 	r_config_set_i (core->config, "asm.tabs", 0);
 	r_config_set_i (core->config, "asm.section", 0);
-	r_config_set_i (core->config, "asm.cmtcol", 30);
+	r_config_set_i (core->config, "asm.cmt.col", 30);
 	r_config_set_i (core->config, "io.cache", 1);
 	r_core_cmd0 (core, "aeim");
 
@@ -216,10 +221,10 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_cons_printf ("\n    //  %d basic blocks\n", n_bb);
 	do {
 #define I_TAB 4
-#define K_MARK(x) sdb_fmt(0,"mark.%"PFMT64x,x)
-#define K_ELSE(x) sdb_fmt(0,"else.%"PFMT64x,x)
-#define K_INDENT(x) sdb_fmt(0,"loc.%"PFMT64x,x)
-#define SET_INDENT(x) { memset (indentstr, ' ', x*I_TAB); indentstr [(x*I_TAB)-2] = 0; }
+#define K_MARK(x) sdb_fmt("mark.%"PFMT64x,x)
+#define K_ELSE(x) sdb_fmt("else.%"PFMT64x,x)
+#define K_INDENT(x) sdb_fmt("loc.%"PFMT64x,x)
+#define SET_INDENT(x) { x = x>0?x:1; memset (indentstr, ' ', x*I_TAB); indentstr [(x*I_TAB)-2] = 0; }
 		if (!bb) {
 			break;
 		}
@@ -227,14 +232,13 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		r_cons_push ();
 		bool html = r_config_get_i (core->config, "scr.html");
 		r_config_set_i (core->config, "scr.html", 0);
-		char *code = r_core_cmd_str (core, sdb_fmt (0, "pD %d @ 0x%08"PFMT64x"\n", bb->size, bb->addr));
+		char *code = r_core_cmd_str (core, sdb_fmt ("pD %d @ 0x%08"PFMT64x"\n", bb->size, bb->addr));
 		r_cons_pop ();
 		r_config_set_i (core->config, "scr.html", html);
 		if (indent * I_TAB + 2 >= sizeof (indentstr)) {
 			indent = (sizeof (indentstr) / I_TAB) - 4;
 		}
-		memset (indentstr, ' ', indent * I_TAB);
-		indentstr [(indent * I_TAB) - 2] = 0;
+		SET_INDENT (indent);
 		code = r_str_prefix_all (code, indentstr);
 		if (!code) {
 			eprintf ("No code here\n");

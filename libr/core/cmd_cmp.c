@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include "r_core.h"
 
@@ -9,21 +9,24 @@ static const char *help_msg_c[] = {
 	"c4", " [value]", "Compare a doubleword from a math expression",
 	"c8", " [value]", "Compare a quadword from a math expression",
 	"cat", " [file]", "Show contents of file (see pwd, ls)",
-	"cc", " [at] [(at)]", "Compares in two hexdump columns of block size",
-	"ccc", " [at] [(at)]", "Same as above, but only showing different lines",
-	"ccd", " [at] [(at)]", "Compares in two disasm columns of block size",
+	"cc", " [at]", "Compares in two hexdump columns of block size",
+	"ccc", " [at]", "Same as above, but only showing different lines",
+	"ccd", " [at]", "Compares in two disasm columns of block size",
 	// "cc", " [offset]", "code bindiff current block against offset"
 	// "cD", " [file]", "like above, but using radiff -b",
 	"cf", " [file]", "Compare contents of file at current seek",
 	"cg", "[?] [o] [file]", "Graphdiff current file and [file]",
-	"cl|cls|clear", "", "Clear screen, (clear0 to goto 0, 0 only)",
 	"cu", "[?] [addr] @at", "Compare memory hexdumps of $$ and dst in unified diff",
 	"cud", " [addr] @at", "Unified diff disasm from $$ and given address",
-	"cv", "[1248] [addr] @at", "Compare 1,2,4,8-byte value",
+	"cv", "[1248] [hexpairs] @at", "Compare 1,2,4,8-byte value (silent returns in $?",
+	"cV", "[1248] [addr] @at", "Compare 1,2,4,8-byte address contents (silent, return in $?)",
 	"cw", "[?] [us?] [...]", "Compare memory watchers",
 	"cx", " [hexpair]", "Compare hexpair string (use '.' as nibble wildcard)",
 	"cx*", " [hexpair]", "Compare hexpair string (output r2 commands)",
 	"cX", " [addr]", "Like 'cc' but using hexdiff output",
+	"", "", "",
+	"cd", " [dir]", "chdir",
+	"cl|cls|clear", "", "Clear screen, (clear0 to goto 0, 0 only)",
 	NULL
 };
 
@@ -145,6 +148,54 @@ R_API int r_core_cmpwatch_revert(RCore *core, ut64 addr) {
 		}
 	}
 	return ret;
+}
+
+static int radare_compare_words(RCore *core, ut64 of, ut64 od, int len, int ws) {
+	int i;
+	bool useColor = r_config_get_i (core->config, "scr.color") != 0;
+	utAny v0, v1;
+	for (i = 0; i < len; i+=ws) {
+		memset (&v0, 0, sizeof (v0));
+		memset (&v1, 0, sizeof (v1));
+		r_io_read_at (core->io, of + i, (ut8*)&v0, ws);
+		r_io_read_at (core->io, od + i, (ut8*)&v1, ws);
+		char ch = (v0.v64 == v1.v64)? '=': '!';
+		const char *color = useColor? ch == '='? "": Color_RED: "";
+		const char *colorEnd = useColor? Color_RESET: "";
+
+		if (useColor) {
+			r_cons_printf (Color_YELLOW"0x%08" PFMT64x"  "Color_RESET, of + i);
+		} else {
+			r_cons_printf ("0x%08" PFMT64x"  ", of + i);
+		}
+		switch (ws) {
+		case 1:
+			r_cons_printf ("%s0x%02x %c 0x%02x%s\n", color,
+				(ut32)(v0.v8 & 0xff), ch, (ut32)(v1.v8 & 0xff), colorEnd);
+			break;
+		case 2:
+			r_cons_printf ("%s0x%04hx %c 0x%04hx%s\n", color,
+				v0.v16, ch, v1.v16, colorEnd);
+			break;
+		case 4:
+			r_cons_printf ("%s0x%08"PFMT32x" %c 0x%08"PFMT32x"%s\n", color,
+				v0.v32, ch, v1.v32, colorEnd);
+			//r_core_cmdf (core, "fd@0x%"PFMT64x, v0.v32);
+			if (v0.v32 != v1.v32) {
+			//	r_core_cmdf (core, "fd@0x%"PFMT64x, v1.v32);
+			}
+			break;
+		case 8:
+			r_cons_printf ("%s0x%016"PFMT64x" %c 0x%016"PFMT64x"%s\n",
+				color, v0.v64, ch, v1.v64, colorEnd);
+			//r_core_cmdf (core, "fd@0x%"PFMT64x, v0.v64);
+			if (v0.v64 != v1.v64) {
+			//	r_core_cmdf (core, "fd@0x%"PFMT64x, v1.v64);
+			}
+			break;
+		}
+	}
+	return 0;
 }
 
 static int radare_compare_unified(RCore *core, ut64 of, ut64 od, int len) {
@@ -284,7 +335,7 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 	if (!buf) {
 		return false;
 	}
-	r_core_read_at (core, off, buf, core->blocksize + 32);
+	r_io_read_at (core->io, off, buf, core->blocksize + 32);
 	switch (mode) {
 	case 'c': // columns
 		for (i = j = 0; i < core->blocksize && j < core->blocksize;) {
@@ -373,15 +424,27 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 }
 
 static int cmd_cp(void *data, const char *input) {
-	char *src, *dst;
+	RCore *core = (RCore *)data;
+	if (input[1] == '.') {
+		char *file = r_core_cmd_strf (core, "ij~{core.file}");
+		r_str_trim (file);
+		char *newfile = r_str_newf ("%s.%s", file, input + 2);
+		r_file_copy (file, newfile);
+		free (file);
+		free (newfile);
+		return true;
+	}
 	if (strlen (input) < 3) {
 		eprintf ("Usage: cp src dst\n");
+		eprintf ("Usage: cp.orig  # cp $file $file.orig\n");
 		return false;
 	}
-	src = strdup (input + 2);
-	dst = strchr (src, ' ');
+	char *src = strdup (input + 2);
+	char *dst = strchr (src, ' ');
 	if (dst) {
 		*dst++ = 0;
+		r_str_trim (src);
+		r_str_trim (dst);
 		bool rc = r_file_copy (src, dst);
 		free (src);
 		return rc;
@@ -402,6 +465,7 @@ static int cmd_cmp(void *data, const char *input) {
 	ut32 v32;
 	ut64 v64;
 	FILE *fd;
+	const ut8* block = core->block;
 
 	switch (*input) {
 	case 'p':
@@ -430,14 +494,14 @@ static int cmd_cmp(void *data, const char *input) {
 			return 0;
 		}
 
-		val = radare_compare (core, core->block, (ut8 *) input + 2,
+		val = radare_compare (core, block, (ut8 *) input + 2,
 			strlen (input + 2) + 1, '*');
 		break;
 	case ' ':
 	{
 		char *str = strdup (input + 1);
 		int len = r_str_unescape (str);
-		val = radare_compare (core, core->block, (ut8 *) str, len, 0);
+		val = radare_compare (core, block, (ut8 *) str, len, 0);
 		free (str);
 	}
 	break;
@@ -467,7 +531,7 @@ static int cmd_cmp(void *data, const char *input) {
 			free (filled);
 			return false;
 		}
-		ret = r_hex_bin2str (core->block, strlen (input) / 2, (char *) buf);
+		ret = r_hex_bin2str (block, strlen (input) / 2, (char *) buf);
 		for (i = 0; i < ret * 2; i++) {
 			if (filled[i] == '.') {
 				filled[i] = buf[i];
@@ -478,7 +542,7 @@ static int cmd_cmp(void *data, const char *input) {
 		if (ret < 1) {
 			eprintf ("Cannot parse hexpair\n");
 		} else {
-			val = radare_compare (core, core->block, buf, ret, mode);
+			val = radare_compare (core, block, buf, ret, mode);
 		}
 		free (buf);
 		free (filled);
@@ -490,7 +554,7 @@ static int cmd_cmp(void *data, const char *input) {
 					    input + 1), buf, core->blocksize)) {
 				eprintf ("Cannot read hexdump\n");
 			} else {
-				val = radare_compare (core, core->block, buf, ret, mode);
+				val = radare_compare (core, block, buf, ret, mode);
 			}
 			free (buf);
 		}
@@ -511,8 +575,7 @@ static int cmd_cmp(void *data, const char *input) {
 			if (fread (buf, 1, core->blocksize, fd) < 1) {
 				eprintf ("Cannot read file %s\n", input + 2);
 			} else {
-				val = radare_compare (core, core->block,
-					buf, core->blocksize, 0);
+				val = radare_compare (core, block, buf, core->blocksize, 0);
 			}
 			fclose (fd);
 			free (buf);
@@ -521,7 +584,7 @@ static int cmd_cmp(void *data, const char *input) {
 			return false;
 		}
 		break;
-	case 'd':
+	case 'd': // "cd"
 		while (input[1] == ' ') input++;
 		if (input[1]) {
 			if (!strcmp (input + 1, "-")) {
@@ -567,20 +630,20 @@ static int cmd_cmp(void *data, const char *input) {
 			free (home);
 		}
 		break;
-	case '2':
+	case '2': // "c2"
 		v16 = (ut16) r_num_math (core->num, input + 1);
-		val = radare_compare (core, core->block, (ut8 *) &v16, sizeof (v16), 0);
+		val = radare_compare (core, block, (ut8 *) &v16, sizeof (v16), 0);
 		break;
-	case '4':
+	case '4': // "c4"
 		v32 = (ut32) r_num_math (core->num, input + 1);
-		val = radare_compare (core, core->block, (ut8 *) &v32, sizeof (v32), 0);
+		val = radare_compare (core, block, (ut8 *) &v32, sizeof (v32), 0);
 		break;
-	case '8':
+	case '8': // "c8"
 		v64 = (ut64) r_num_math (core->num, input + 1);
-		val = radare_compare (core, core->block, (ut8 *) &v64, sizeof (v64), 0);
+		val = radare_compare (core, block, (ut8 *) &v64, sizeof (v64), 0);
 		break;
 	case 'c': // "cc"
-		if (input[1] == 'd') {
+		if (input[1] == 'd') { // "ccd"
 			cmd_cmp_disasm (core, input + 2, 'c');
 		} else {
 			ut32 oflags = core->print->flags;
@@ -597,8 +660,8 @@ static int cmd_cmp(void *data, const char *input) {
 			ut8 *b = malloc (core->blocksize);
 			if (b != NULL) {
 				memset (b, 0xff, core->blocksize);
-				r_core_read_at (core, addr, b, core->blocksize);
-				r_print_hexdiff (core->print, core->offset, core->block,
+				r_io_read_at (core->io, addr, b, core->blocksize);
+				r_print_hexdiff (core->print, core->offset, block,
 					addr, b, core->blocksize, col);
 				free (b);
 			}
@@ -670,22 +733,35 @@ static int cmd_cmp(void *data, const char *input) {
 		r_core_free (core2);
 	}
 	break;
-	case 'u':
+	case 'u': // "cu"
 		switch (input[1]) {
+		case '.':
 		case ' ':
 			radare_compare_unified (core, core->offset,
-				r_num_math (core->num, input + 1),
+				r_num_math (core->num, input + 2),
 				core->blocksize);
+			break;
+		case '1':
+		case '2':
+		case '4':
+		case '8':
+			radare_compare_words (core, core->offset,
+				r_num_math (core->num, input + 2),
+				core->blocksize, input[1] - '0');
 			break;
 		case 'd':
 			cmd_cmp_disasm (core, input + 2, 'u');
 			break;
 		default: {
 			const char *help_msg[] = {
-				"Usage: cu", " [offset]", "# Creates a unified hex patch",
-				"cu", " $$+1 > p", "Compare current seek and +1",
+				"Usage: cu", " [offset]", "# Prints unified comparison to make hexpatches",
+				"cu", " $$+1 > p", "Compare hexpairs from  current seek and +1",
+				"cu1", " $$+1 > p", "Compare bytes from current seek and +1",
+				"cu2", " $$+1 > p", "Compare words (half, 16bit) from current seek and +1",
+				"cu4", " $$+1 > p", "Compare dwords from current seek and +1",
+				"cu8", " $$+1 > p", "Compare qwords from current seek and +1",
 				"cud", " $$+1 > p", "Compare disasm current seek and +1",
-				"wu", " p", "Apply unified hex patch",
+				"wu", " p", "Apply unified hex patch (see output of cu)",
 				NULL
 			};
 			r_core_cmd_help (core, help_msg);
@@ -695,8 +771,7 @@ static int cmd_cmp(void *data, const char *input) {
 	case '?':
 		r_core_cmd_help (core, help_msg_c);
 		break;
-	case 'v': // "cv"
-	{
+	case 'v': { // "cv"
 		int sz = input[1];
 		if (sz == ' ') {
 			switch (r_config_get_i (core->config, "asm.bits")) {
@@ -709,38 +784,42 @@ static int cmd_cmp(void *data, const char *input) {
 		}
 		// TODO: honor endian
 		switch (sz) {
-		case '1':
-		{
+		case '1': { // "cv1"
 			ut8 n = (ut8) r_num_math (core->num, input + 2);
-			if (core->block[0] == n) {
+			core->num->value = 1;
+			if (block[0] == n) {
 				r_cons_printf ("0x%08"PFMT64x "\n", core->offset);
+				core->num->value = 0;
 			}
+			break;
 		}
-		break;
-		case '2':
-		{
-			ut16 *b = (ut16 *) core->block, n = (ut16) r_num_math (core->num, input + 2);
-			if (*b == n) {
+		case '2': { // "cv2"
+			ut16 n = (ut16) r_num_math (core->num, input + 2);
+			core->num->value = 1;
+			if (core->blocksize >= 2 && *(ut16*)block == n) {
 				r_cons_printf ("0x%08"PFMT64x "\n", core->offset);
+				core->num->value = 0;
 			}
+			break;
 		}
-		break;
-		case '4':
-		{
-			ut32 *b = (ut32 *) core->block, n = (ut32) r_num_math (core->num, input + 2);
-			if (*b == n) {
+		case '4': { // "cv4"
+			ut32 n = (ut32) r_num_math (core->num, input + 2);
+			core->num->value = 1;
+			if (core->blocksize >= 4 && *(ut32*)block == n) {
 				r_cons_printf ("0x%08"PFMT64x "\n", core->offset);
+				core->num->value = 0;
 			}
+			break;
 		}
-		break;
-		case '8':
-		{
-			ut64 *b = (ut64 *) core->block, n = (ut64) r_num_math (core->num, input + 2);
-			if (*b == n) {
+		case '8': { // "cv8"
+			ut64 n = (ut64) r_num_math (core->num, input + 2);
+			core->num->value = 1;
+			if (core->blocksize >= 8 && *(ut64*)block == n) {
 				r_cons_printf ("0x%08"PFMT64x "\n", core->offset);
+				core->num->value = 0;
 			}
+			break;
 		}
-		break;
 		default:
 		case '?':
 			eprintf ("Usage: cv[1248] [num]\n"
@@ -753,7 +832,30 @@ static int cmd_cmp(void *data, const char *input) {
 		}
 	}
 	break;
-	case 'l':
+	case 'V': { // "cV"
+		int sz = input[1];
+		if (sz == ' ') {
+			switch (r_config_get_i (core->config, "asm.bits")) {
+			case 8: sz = '1'; break;
+			case 16: sz = '2'; break;
+			case 32: sz = '4'; break;
+			case 64: sz = '8'; break;
+			default: sz = '4'; break; // default
+			}
+		} else if (sz == '?') {
+			eprintf ("Usage: cV[1248] [addr] @ addr2\n"
+				"Compare n bytes from one address to current one and return in $? 0 or 1\n");
+		}
+		sz -= '0';
+		if (sz > 0) {
+			ut64 at = r_num_math (core->num, input + 2);
+			ut8 buf[8] = {0};
+			r_io_read_at (core->io, at, buf, sizeof (buf));
+			core->num->value = memcmp (buf, core->block, sz)? 1: 0;
+		}
+		break;
+	}
+	case 'l': // "cl"
 		if (strchr (input, 'f')) {
 			r_cons_flush ();
 		} else if (input[1] == 0) {

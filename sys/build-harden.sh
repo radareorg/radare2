@@ -39,7 +39,7 @@ ${MAKE} mrproper > /dev/null 2>&1
 rm -f plugins.cfg
 # STATIC BUILD
 CFLAGS="${CFLAGS} -fPIE -fstack-protector-all -D_FORTIFY_SOURCE=2"
-CFGFLAGS="--without-pic --with-nonpic"
+CFGFLAGS="--with-libr"
 export CFLAGS
 
 # TODO: add this?

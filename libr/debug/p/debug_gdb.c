@@ -45,7 +45,7 @@ static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	int buflen = 0;
 	check_connection (dbg);
 	gdbr_read_registers (desc);
-	if (!desc) {
+	if (!desc || !desc->data) {
 		return -1;
 	}
 	// read the len of the current area

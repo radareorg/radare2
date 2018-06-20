@@ -130,6 +130,7 @@ R_API RFlag * r_flag_new() {
 #else
 	f->zones = NULL;
 #endif
+	f->tags = sdb_new0 ();
 	f->flags = r_list_new ();
 	if (!f->flags) {
 		r_flag_free (f);
@@ -155,6 +156,27 @@ R_API RFlag * r_flag_new() {
 	return f;
 }
 
+R_API RFlagItem *r_flag_item_clone(RFlagItem *item) {
+	if (!item) {
+		return NULL;
+	}
+
+	RFlagItem *n = R_NEW0 (RFlagItem);
+	if (!n) {
+		return NULL;
+	}
+
+	n->color = item->color ? strdup (item->color) : NULL;
+	n->comment = item->comment ? strdup (item->comment) : NULL;
+	n->alias = item->alias ? strdup (item->alias) : NULL;
+	n->name = item->name ? strdup (item->name) : NULL;
+	n->realname = item->realname ? strdup (item->realname) : NULL;
+	n->offset = item->offset;
+	n->size = item->size;
+	n->space = item->space;
+	return n;
+}
+
 R_API void r_flag_item_free(RFlagItem *item) {
 	if (item) {
 		free (item->color);
@@ -178,6 +200,7 @@ R_API RFlag *r_flag_free(RFlag *f) {
 	ht_free (f->ht_name);
 
 	r_list_free (f->flags);
+	sdb_free (f->tags);
 	r_list_free (f->spacestack);
 	r_num_free (f->num);
 	free (f);

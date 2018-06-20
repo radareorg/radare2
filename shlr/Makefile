@@ -23,9 +23,9 @@ CS_PATCHES=0
 else
 CS_TAR=
 CS_URL=$(GIT_PREFIX)github.com/aquynh/capstone.git
-CS_UPD=20180106
+CS_UPD=20180619
 CS_BRA=next
-CS_TIP=bdbc57de63725a98732ddc34b48de96f8ada66f2
+CS_TIP=ba25ab0fe15d0b2737219ffde399a4346850d583
 # REVERT THIS COMMIT BECAUSE ITS WRONG
 CS_REV=
 CS_PATCHES=1
@@ -37,7 +37,7 @@ HOST_CC?=gcc
 SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
-MODS=sdb zip udis86 java tcc
+MODS=sdb zip java tcc
 MODS+=gdb qnx ar
 # lz4
 ifneq ($(CC),cccl)
@@ -92,7 +92,6 @@ ifeq ($(filter sdb/sdb${BUILD_EXT_EXE},$(SDB_TARGETS)),)
 SDB_TARGETS+=sdb/sdb${BUILD_EXT_EXE}
 endif
 endif
-
 
 targets:
 	for TARGET in ${SDB_TARGETS} ; do ${MAKE} $$TARGET ; done
@@ -172,9 +171,6 @@ sdb-sync sync-sdb:
 $(TCCLIB) libr_tcc/libr_tcc.${EXT_AR}:
 	cd libr_tcc ; $(MAKE)
 
-udis-sync udis86-sync sync-udis sync-udis86:
-	cd udis86 ; $(MAKE) sync
-
 tcc-clean tccclean:
 	cd libr_tcc ; $(MAKE) clean
 
@@ -195,10 +191,9 @@ tcc-sync sync-tcc:
 	$(GIT) add tcc
 	rm -rf _
 
-install:
-	#mkdir -p ${DESTDIR}${LIBDIR}
-	#cp -f tcc/libr_tcc* ${DESTDIR}${LIBDIR}
-	#cp -f zip/libr_z* ${DESTDIR}${LIBDIR}
+install: libr_shlr.${EXT_AR}
+	mkdir -p ${DESTDIR}/${LIBDIR}
+	cp -f libr_shlr.${EXT_AR} ${DESTDIR}/${LIBDIR}
 
 install-symlink symstall:
 	mkdir -p "${DESTDIR}${LIBDIR}"
@@ -206,8 +201,7 @@ install-symlink symstall:
 	#	ln -fs `pwd`/$$FILE ${DESTDIR}${LIBDIR}/$$FILE ; done
 
 uninstall deinstall:
-	#rm -f ${DESTDIR}${LIBDIR}/libr_tcc*
-	#rm -f ${DESTDIR}${LIBDIR}/libr_z*
+	rm -f ${DESTDIR}${LIBDIR}/libr_shlr.${EXT_AR}
 
 ifeq ($(USE_CAPSTONE),1)
 # Do nothing here
@@ -266,7 +260,7 @@ endif
 capstone-build: capstone
 	cd capstone && CFLAGS="-Dmips=mips ${CAPSTONE_CFLAGS} $(CFLAGS)" LDFLAGS="$(LDFLAGS)" \
 		$(MAKE) $(CAPSTONE_MAKEFLAGS) CC="$(CC)" AR_EXT=a IS_CYGWIN=0 CAPSTONE_STATIC=yes CAPSTONE_SHARED=no \
-		RANLIB="$(RANLIB)" AR="$(AR)" IS_MINGW=0 libcapstone.a
+		RANLIB="$(RANLIB)" LIBARCHS="" AR="$(AR)" IS_MINGW=0 libcapstone.a
 ifneq (${EXT_AR},a)
 	-cp -f capstone/libcapstone.a capstone/libcapstone.${EXT_AR}
 endif
@@ -312,5 +306,26 @@ spp-sync sync-spp:
 
 spp: spp-sync
 	CFLAGS="-DHAVE_FORK=${HAVE_FORK} -fPIC" $(MAKE) -C spp
+
+SHLRS+=ar/libr_ar.a
+SHLRS+=bochs/lib/libbochs.a
+SHLRS+=capstone/libcapstone.a
+SHLRS+=gdb/lib/libgdbr.a
+SHLRS+=grub/libgrubfs.a
+SHLRS+=java/libr_java.a
+SHLRS+=lz4/liblz4.a
+SHLRS+=qnx/lib/libqnxr.a
+#SHLRS+=sdb/src/libsdb.a
+#SHLRS+=tcc/libr_tcc.a
+SHLRS+=windbg/libr_windbg.a
+SHLRS+=zip/librz.a
+
+libr_shlr.${EXT_AR}:
+	rm -rf .libr
+	mkdir .libr
+	for LIB in ${SHLRS} ; do \
+		if [ -f "$${LIB}" ]; then ${PARTIALLD} -o .libr/$$(basename $${LIB} .a).o $${LIB} ; fi ; \
+	done
+	${AR} crs $@ .libr/*.o
 
 .PHONY: spp

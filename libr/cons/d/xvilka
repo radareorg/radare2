@@ -36,6 +36,7 @@ ec trap red
 ec swi red
 ec mov white
 ec creg rgb:6f0
+ec linehl rgb:004
 ec ai.read green
 ec ai.write blue
 ec ai.exec red

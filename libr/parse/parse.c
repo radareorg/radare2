@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2017 - nibble, pancake, maijin */
+/* radare2 - LGPL - Copyright 2009-2018 - nibble, pancake, maijin */
 
 #include <stdio.h>
 
@@ -25,6 +25,7 @@ R_API RParse *r_parse_new() {
 	p->parsers->free = NULL; // memleak
 	p->notin_flagspace = -1;
 	p->flagspace = -1;
+	p->pseudo = false;
 	p->relsub = false;
 	p->minval = 0x100;
 	p->localvar_only = false;
@@ -111,57 +112,64 @@ static bool isvalidflag(RFlagItem *flag) {
 }
 
 static char *findNextNumber(char *op) {
+	if (!op) {
+		return NULL;
+	}
 	bool ansi_found = false;
 	char *p = op;
-	if (p && *p) {
-		const char *o = NULL;
-		while (*p) {
-			if (*p == 0x1b) {
+	const char *o = NULL;
+	while (*p) {
+		if (p[0] == 0x1b && p[1] == '[') {
+			ansi_found = true;
+			p += 2;
+			if (p[0] && p[1] == ';') {
+				// "\x1b[%d;2;%d;%d;%dm", fgbg, r, g, b
+				// "\x1b[%d;5;%dm", fgbg, rgb (r, g, b)
+				for (; p[0] && p[1] && p[0] != 0x1b && p[1] != '\\'; p++);
+				if (p[0] && p[1] == '\\') {
+					p++;
+				}
+			} else {
+				// "\x1b[%dm", 30 + k
+				for (; *p && *p != 'J' && *p != 'm' && *p != 'H'; p++);
+				if (*p) {
+					p++;
+					if (!*p) {
+						break;
+					}
+				}
+			}
+			o = p - 1;
+		} else {
+			bool is_space = ansi_found;
+			ansi_found = false;
+			if (!is_space) {
+				is_space = p == op;
+				if (!is_space && o) {
+					is_space = (*o == ' ' || *o == ',' || *o == '[');
+				}
+			}
+			if (*p == '[') {
 				p++;
 				if (!*p) {
 					break;
 				}
-				if (*p == '[') {
-					p++;
-					if (p[0] && p[1] == ';') {
-						// "\x1b[%d;2;%d;%d;%dm", fgbg, r, g, b
-						// "\x1b[%d;5;%dm", fgbg, rgb (r, g, b)
-						for (; p[0] && p[1] && p[0] != 0x1b && p[1] != '\\'; p++);
-						if (p[1] == '\\') p++;
-					} else {
-						// "\x1b[%dm", 30 + k
-						for (; *p && *p != 'J' && *p != 'm' && *p != 'H'; p++);
-						if (*p) p++;
-					}
-					ansi_found = true;
-				}
-				o = p - 1;
-			} else {
-				bool is_space = ansi_found;
-				ansi_found = false;
-				if (!is_space) {
-					is_space = p == op;
-					if (!is_space && o) {
-						is_space = (*o == ' ' || *o == ',' || *o == '[');
-					}
-				}
-				if (*p == '[') {
+				if (!IS_DIGIT (*p)) {
 					char *t = p;
-					p++;
-					if (!IS_DIGIT (*p)) {
-						for (;*t && *t != ']'; t++);
-						if (*t == ']') {
-							continue;
-						} else {
-							p = t;
-						}
+					for (; *t && *t != ']'; t++);
+					if (*t == ']') {
+						continue;
+					}
+					p = t;
+					if (!*p) {
+						break;
 					}
 				}
-				if (is_space && IS_DIGIT (*p)) {
-					return p;
-				}
-				o = p++;
 			}
+			if (is_space && IS_DIGIT (*p)) {
+				return p;
+			}
+			o = p++;
 		}
 	}
 	return NULL;
@@ -210,7 +218,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 		//		eprintf ("(%s) (%c)\n", optr, *ptr2);
 			}
 		} else {
-			for (ptr2 = ptr; *ptr2 && (*ptr2 != ']' && (*ptr2 != '\x1b') && !ISSEPARATOR (*ptr2)); ptr2++);
+			for (ptr2 = ptr; *ptr2 && (*ptr2 != ']' && (*ptr2 != '\x1b') && !IS_SEPARATOR (*ptr2)); ptr2++);
 		}
 		off = r_num_math (NULL, ptr);
 		if (off >= p->minval) {
@@ -284,6 +292,9 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 						char *ptr_end = str + strlen (data) + flag_len - 1;
 						char *ptr_right = ptr_end + 1, *ptr_left, *ptr_esc;
 						bool ansi_found = false;
+						if (!*ptr_end) {
+							return true;
+						}
 						while (*ptr_right) {
 							if (*ptr_right == 0x1b) {
 								while (*ptr_right && *ptr_right != 'm') ptr_right++;
@@ -314,9 +325,14 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 									break;
 								}
 								memmove (ptr_left, ptr_esc, copied_len);
+#if 1
 								sprintf (ptr_left + copied_len, "%s%s",
 										ansi_found && ptr_right - ptr_end + 1 >= 4 ? "\x1b[0m" : "",
 										ptr_right + 1);
+
+#else
+								strcpy (ptr_left + copied_len, ptr_right + 1);
+#endif
 							}
 							break;
 						}
@@ -342,7 +358,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 				pnum += 2;
 			}
 			for (; *pnum; pnum++) {
-				if ((is_hex && ISHEXCHAR (*pnum)) || IS_DIGIT (*pnum)) {
+				if ((is_hex && IS_HEXCHAR (*pnum)) || IS_DIGIT (*pnum)) {
 					continue;
 				}
 				break;
@@ -479,7 +495,7 @@ R_API bool r_parse_immtrim (char *opstr) {
 	char *n = strstr (opstr, "0x");
 	if (n) {
 		char *p = n + 2;
-		while (ISHEXCHAR (*p)) {
+		while (IS_HEXCHAR (*p)) {
 			p++;
 		}
 		memmove (n, p, strlen (p) + 1);

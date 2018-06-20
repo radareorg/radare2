@@ -33,6 +33,7 @@ ec creg rgb:368
 ec trap rgb:000 rgb:
 ec swi rgb:99a
 ec invalid rgb:rgb:44f rgb:123
+ec linehl rgb:004
 ec graph.box rgb:040
 ec graph.box2 rgb:040
 ec graph.box3 rgb:040

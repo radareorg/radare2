@@ -27,12 +27,13 @@ plugins: ${LIBSO} ${LIBAR}
 include ${STATIC_ANAL_PLUGINS}
 
 STATIC_OBJS=$(addprefix $(LTOP)/anal/p/,$(STATIC_OBJ))
-OBJLIBS=meta.o reflines.o ref.o op.o fcn.o bb.o var.o
-OBJLIBS+=cond.o value.o cc.o diff.o types.o fcnstore.o
+OBJLIBS=meta.o reflines.o op.o fcn.o bb.o var.o
+OBJLIBS+=cond.o value.o cc.o diff.o
 OBJLIBS+=hint.o anal.o data.o xrefs.o esil.o sign.o
 OBJLIBS+=anal_ex.o switch.o state.o cycles.o
 OBJLIBS+=esil_stats.o esil_trace.o flirt.o labels.o
-OBJLIBS+=esil2reil.o pin.o session.o
+OBJLIBS+=esil2reil.o pin.o session.o vtable.o rtti.o
+OBJLIBS+=rtti_msvc.o rtti_itanium.o
 ASMOBJS+=$(LTOP)/asm/arch/xtensa/gnu/xtensa-modules.o
 ASMOBJS+=$(LTOP)/asm/arch/xtensa/gnu/xtensa-isa.o
 ASMOBJS+=$(LTOP)/asm/arch/xtensa/gnu/elf32-xtensa.o

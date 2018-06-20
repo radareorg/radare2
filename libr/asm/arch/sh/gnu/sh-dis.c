@@ -90,7 +90,7 @@ print_insn_shx (bfd_vma memaddr, struct disassemble_info *info)
 	      imm = (nibs[2] << 4) | (nibs[3]);
 	      if (imm & 0x80)
 		imm |= ~0xff;
-	      imm = ((unsigned char)imm) * 2 + 4 ;
+	      imm = (imm * 2) + 4 ;
 	      goto ok;
 	    case BRANCH_12:
 	      imm = ((nibs[1]) << 8) | (nibs[2] << 4) | (nibs[3]);

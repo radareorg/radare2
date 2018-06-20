@@ -205,7 +205,6 @@ prng_range_zu(size_t *state, size_t range, bool atomic)
 {
 	size_t ret;
 	unsigned lg_range;
-
 	assert(range > 1);
 
 	/* Compute the ceiling of lg(range). */

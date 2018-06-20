@@ -40,8 +40,10 @@
 #include <grub/fshelp.h>
 #include <r_types.h>
 
+#ifndef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+#endif
 
 #define REISERFS_SUPER_BLOCK_OFFSET 0x10000
 #define REISERFS_MAGIC_LEN 12

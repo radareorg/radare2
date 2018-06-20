@@ -58,7 +58,7 @@ static SdbHash* internal_ht_new(ut32 size, HashFunction hashfunction,
 	return ht;
 }
 
-bool ht_delete_internal(SdbHash* ht, const char* key, ut32* hash) {
+SDB_API bool ht_delete_internal(SdbHash* ht, const char* key, ut32* hash) {
 	HtKv* kv;
 	SdbListIter* iter;
 	ut32 computed_hash = hash ? *hash : ht->hashfn (key);
@@ -105,13 +105,13 @@ bool ht_delete_internal(SdbHash* ht, const char* key, ut32* hash) {
 	return false;
 }
 
-SdbHash* ht_new(DupValue valdup, HtKvFreeFunc pair_free, CalcSize calcsizeV) {
+SDB_API SdbHash* ht_new(DupValue valdup, HtKvFreeFunc pair_free, CalcSize calcsizeV) {
 	return internal_ht_new (ht_primes_sizes[0], (HashFunction)sdb_hash, 
 	  			(ListComparator)strcmp, (DupKey)strdup,
 				valdup, pair_free, (CalcSize)strlen, calcsizeV);
 }
 
-void ht_free(SdbHash* ht) {
+SDB_API void ht_free(SdbHash* ht) {
 	if (ht) {
 		ut32 i;
 		for (i = 0; i < ht->size; i++) {
@@ -126,7 +126,7 @@ void ht_free(SdbHash* ht) {
 	}
 }
 
-void ht_free_deleted(SdbHash* ht) {
+SDB_API void ht_free_deleted(SdbHash* ht) {
 	if (!ls_empty (ht->deleted)) {
 		ls_free (ht->deleted);
 		ht->deleted = ls_newf (free);
@@ -219,25 +219,26 @@ static bool internal_ht_insert(SdbHash* ht, bool update, const char* key,
 	}
 	return false;
 }
-bool ht_insert_kv(SdbHash *ht, HtKv *kv, bool update) {
+
+SDB_API bool ht_insert_kv(SdbHash *ht, HtKv *kv, bool update) {
 	return internal_ht_insert_kv (ht, kv, update);
 }
 // Inserts the key value pair key, value into the hashtable.
 // Doesn't allow for "update" of the value.
-bool ht_insert(SdbHash* ht, const char* key, void* value) {
+SDB_API bool ht_insert(SdbHash* ht, const char* key, void* value) {
 	return internal_ht_insert (ht, false, key, value);
 }
 
 // Inserts the key value pair key, value into the hashtable.
 // Does allow for "update" of the value.
-bool ht_update(SdbHash* ht, const char* key, void* value) {
+SDB_API bool ht_update(SdbHash* ht, const char* key, void* value) {
 	return internal_ht_insert (ht, true, key, value);
 }
 
 // Returns the corresponding SdbKv entry from the key.
 // If `found` is not NULL, it will be set to true if the entry was found, false
 // otherwise.
-HtKv* ht_find_kv(SdbHash* ht, const char* key, bool* found) {
+SDB_API HtKv* ht_find_kv(SdbHash* ht, const char* key, bool* found) {
 	if (!ht) {
 		return NULL;
 	}
@@ -275,7 +276,7 @@ HtKv* ht_find_kv(SdbHash* ht, const char* key, bool* found) {
 // Looks up the corresponding value from the key.
 // If `found` is not NULL, it will be set to true if the entry was found, false
 // otherwise.
-void* ht_find(SdbHash* ht, const char* key, bool* found) {
+SDB_API void* ht_find(SdbHash* ht, const char* key, bool* found) {
 	bool _found = false;
 	if (!found) {
 		found = &_found;
@@ -285,11 +286,11 @@ void* ht_find(SdbHash* ht, const char* key, bool* found) {
 }
 
 // Deletes a entry from the hash table from the key, if the pair exists.
-bool ht_delete(SdbHash* ht, const char* key) {
+SDB_API bool ht_delete(SdbHash* ht, const char* key) {
 	return ht_delete_internal (ht, key, NULL);
 }
 
-void ht_foreach(SdbHash *ht, HtForeachCallback cb, void *user) {
+SDB_API void ht_foreach(SdbHash *ht, HtForeachCallback cb, void *user) {
 	if (!ht) {
 		return;
 	}

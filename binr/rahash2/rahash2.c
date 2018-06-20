@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -96,7 +96,11 @@ static void do_hash_print(RHash *ctx, ut64 hash, int dlen, int rad, int ule) {
 			printf ("0x%08"PFMT64x "-0x%08"PFMT64x " %s: ",
 				from, to > 0? to - 1: 0, hname);
 		}
-		do_hash_hexprint (c, dlen, ule, rad);
+		if (dlen == R_HASH_SIZE_ENTROPY) {
+			printf("%.8f\n", ctx->entropy);
+		} else {
+			do_hash_hexprint (c, dlen, ule, rad);
+		}
 		break;
 	case 1:
 		printf ("e file.%s=", hname);
@@ -124,28 +128,13 @@ static int do_hash_internal(RHash *ctx, ut64 hash, const ut8 *buf, int len, int 
 		return 0;
 	}
 	dlen = r_hash_calculate (ctx, hash, buf, len);
-	if (!dlen) {
-		return 0;
-	}
 	if (!print) {
 		return 1;
 	}
-	if (hash == R_HASH_ENTROPY) {
-		double e = r_hash_entropy (buf, len);
-		if (rad) {
-			eprintf ("entropy: %10f\n", e);
-		} else {
-			printf ("0x%08"PFMT64x "-0x%08"PFMT64x " %10f: ",
-				from, to > 0? to - 1: 0, e);
-			r_print_progressbar (NULL, 12.5 * e, 60);
-			printf ("\n");
-		}
-	} else {
-		if (iterations > 0) {
-			r_hash_do_spice (ctx, hash, iterations, _s);
-		}
-		do_hash_print (ctx, hash, dlen, rad, le);
+	if (iterations > 0) {
+		r_hash_do_spice (ctx, hash, iterations, _s);
 	}
+	do_hash_print (ctx, hash, dlen, rad, le);
 	return 1;
 }
 
@@ -313,14 +302,14 @@ static void algolist() {
 		bits = 1ULL << i;
 		const char *name = r_hash_name (bits);
 		if (name && *name) {
-			printf ("  %s\n", name);
+			printf ("h  %s\n", name);
 		}
 	}
 	eprintf ("\nAvailable Encoders/Decoders: \n");
 	// TODO: do not hardcode
-	printf ("  base64\n");
-	printf ("  base91\n");
-	printf ("  punycode\n");
+	printf ("e  base64\n");
+	printf ("e  base91\n");
+	printf ("e  punycode\n");
 	eprintf ("\nAvailable Crypto Algos: \n");
 	for (i = 0;; i++) {
 		bits = ((ut64) 1) << i;
@@ -328,7 +317,7 @@ static void algolist() {
 		if (!name || !*name) {
 			break;
 		}
-		printf ("  %s\n", name);
+		printf ("c  %s\n", name);
 	}
 }
 
@@ -440,6 +429,7 @@ int main(int argc, char **argv) {
 	int ivlen = -1;
 	char *ivseed = NULL;
 	const char *compareStr = NULL;
+	const char *ptype = NULL;
 	ut8 *compareBin = NULL;
 	int hashstr_len = -1;
 	int hashstr_hex = 0;
@@ -448,7 +438,7 @@ int main(int argc, char **argv) {
 	RHash *ctx;
 	RIO *io;
 
-	while ((c = getopt (argc, argv, "jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:")) != -1) {
+	while ((c = getopt (argc, argv, "p:jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:")) != -1) {
 		switch (c) {
 		case 'q': quiet++; break;
 		case 'i':
@@ -468,6 +458,7 @@ int main(int argc, char **argv) {
 		case 'e': ule = 1; break;
 		case 'r': rad = 1; break;
 		case 'k': rad = 2; break;
+		case 'p': ptype = optarg; break;
 		case 'a': algo = optarg; break;
 		case 'B': incremental = 0; break;
 		case 'b': bsize = (int) r_num_math (NULL, optarg); break;
@@ -533,6 +524,16 @@ int main(int argc, char **argv) {
 			eprintf ("Invalid -f or -t offsets\n");
 			return 1;
 		}
+	}
+	if (ptype) {
+		// TODO: support p=%s (horizontal bars)
+		// TODO: list supported statistical metrics
+		// TODO: support -f and -t
+		for (i = optind; i < argc; i++) {
+			printf ("%s:\n", argv[i]);
+			r_sys_cmdf ("r2 -qfnc \"p==%s 100\" \"%s\"", ptype, argv[i]);
+		}
+		return 0;
 	}
 	// convert iv to hex or string.
 	if (ivseed) {

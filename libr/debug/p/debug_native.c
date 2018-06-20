@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_userconf.h>
 #include <r_debug.h>
@@ -134,7 +134,7 @@ static int windows_step (RDebug *dbg) {
 	regs.EFlags |= 0x100;
 	r_debug_native_reg_write (dbg, R_REG_TYPE_GPR, (ut8 *)&regs, sizeof (regs));
 	r_debug_native_continue (dbg, dbg->pid, dbg->tid, dbg->reason.signum);
-	r_debug_handle_signals (dbg);
+	(void)r_debug_handle_signals (dbg);
 	return true;
 }
 #endif
@@ -316,8 +316,11 @@ static bool tracelib(RDebug *dbg, const char *mode, PLIB_ITEM item) {
 		case 'u': needle = dbg->glob_unlibs; break;
 		}
 	}
-	eprintf ("(%d) %sing library at %p (%s) %s\n", item->pid, mode,
+	//eprintf ("(%d) %sing library at %p (%s) %s\n", item->pid, mode,
+		//item->BaseOfDll, item->Path, item->Name);
+	r_cons_printf ("(%d) %sing library at %p (%s) %s\n", item->pid, mode,
 		item->BaseOfDll, item->Path, item->Name);
+	r_cons_flush ();
 	if (needle && strlen (needle)) {
 		tmp = r_str_glob (item->Name, needle);
 	}
@@ -365,7 +368,9 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 				dbg->corebind.cmdf (core, "o-%d", fd);
 			}
 		} else {
-			eprintf ("Loading unknown library.\n");
+			//eprintf ("Loading unknown library.\n");
+			r_cons_printf ("Loading unknown library.\n");
+			r_cons_flush ();
 		}
 	} else if (reason == R_DEBUG_REASON_EXIT_LIB) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
@@ -375,13 +380,19 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 			}
 			r_debug_info_free (r);
 		} else {
-			eprintf ("Unloading unknown library.\n");
+			//eprintf ("Unloading unknown library.\n");
+			r_cons_printf ("Unloading unknown library.\n");
+			r_cons_flush ();
+
 		}
 	} else if (reason == R_DEBUG_REASON_NEW_TID) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
-			eprintf ("(%d) Created thread %d (start @ %p)\n", item->pid, item->tid, item->lpStartAddress);
+			//eprintf ("(%d) Created thread %d (start @ %p)\n", item->pid, item->tid, item->lpStartAddress);
+			r_cons_printf ("(%d) Created thread %d (start @ %p)\n", item->pid, item->tid, item->lpStartAddress);
+			r_cons_flush ();
+
 			r_debug_info_free (r);
 		}
 
@@ -389,7 +400,10 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 		RDebugInfo *r = r_debug_native_info (dbg, "");
 		if (r && r->thread) {
 			PTHREAD_ITEM item = r->thread;
-			eprintf ("(%d) Finished thread %d Exit code %d\n", (ut32)item->pid, (ut32)item->tid, (ut32)item->dwExitCode);
+			//eprintf ("(%d) Finished thread %d Exit code %d\n", (ut32)item->pid, (ut32)item->tid, (ut32)item->dwExitCode);
+			r_cons_printf ("(%d) Finished thread %d Exit code %d\n", (ut32)item->pid, (ut32)item->tid, (ut32)item->dwExitCode);
+			r_cons_flush ();
+
 			r_debug_info_free (r);
 		}
 	}
@@ -574,10 +588,9 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 			r_list_free (list);
 			return NULL;
 		}
-		int uid, gid;
 		while ((de = readdir (dh))) {
-			uid = 0;
-			gid = 0;
+			int uid = 0;
+			int gid = 0; // unused
 			/* for each existing pid file... */
 			i = atoi (de->d_name);
 			if (i <= 0) {
@@ -624,6 +637,7 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 					continue;
 				}
 				// TODO: add support for gid in RDebugPid.new()
+				eprintf ("uid %d gid %d\n", uid, gid);
 				r_list_append (list, r_debug_pid_new (buf, i, uid, 's', 0));
 			}
 		}
@@ -809,7 +823,6 @@ static int r_debug_native_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 }
 
 static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int size) {
-
 	// XXX use switch or so
 	if (type == R_REG_TYPE_DRX) {
 #if __i386__ || __x86_64__
@@ -971,6 +984,9 @@ static RDebugMap* linux_map_alloc (RDebug *dbg, ut64 addr, int size) {
 		sc_name = "mmap";
 	}
 	num = r_syscall_get_num (dbg->anal->syscall, sc_name);
+#ifndef MAP_ANONYMOUS
+#define MAP_ANONYMOUS 0x20
+#endif
 	snprintf (code, sizeof (code),
 		"sc_mmap@syscall(%d);\n"
 		"main@naked(0) { .rarg0 = sc_mmap(0x%08"PFMT64x",%d,%d,%d,%d,%d);break;\n"
@@ -1175,7 +1191,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 #endif
 	fd = fopen (path, "r");
 	if (!fd) {
-		perror (sdb_fmt (0, "Cannot open '%s'", path));
+		perror (sdb_fmt ("Cannot open '%s'", path));
 		return NULL;
 	}
 
@@ -1411,6 +1427,112 @@ static int r_debug_native_drx (RDebug *dbg, int n, ut64 addr, int sz, int rwx, i
 	return false;
 }
 
+#if __linux__
+
+#include <sys/prctl.h>
+#include <sys/uio.h>
+
+#define NT_ARM_VFP	0x400		/* ARM VFP/NEON registers */
+#define NT_ARM_TLS	0x401		/* ARM TLS register */
+#define NT_ARM_HW_BREAK	0x402		/* ARM hardware breakpoint registers */
+#define NT_ARM_HW_WATCH	0x403		/* ARM hardware watchpoint registers */
+#define NT_ARM_SYSTEM_CALL	0x404	/* ARM system call number */
+
+
+#if __arm__
+
+#ifndef PTRACE_GETHBPREGS
+#define PTRACE_GETHBPREGS 29
+#define PTRACE_SETHBPREGS 30
+#endif
+static bool ll_arm32_hwbp_set(pid_t pid, ut64 addr, int size, int wp, int type) {
+	const unsigned byte_mask = (1 << size) - 1;
+	//const unsigned type = 2; // Write.
+	const unsigned enable = 1;
+	const unsigned control = byte_mask << 5 | type << 3 | enable;
+	(void)ptrace (PTRACE_SETHBPREGS, pid, -1, (void*)(size_t)addr);
+	return ptrace (PTRACE_SETHBPREGS, pid, -2, &control) != -1;
+}
+
+static bool arm32_hwbp_add (RDebug *dbg, RBreakpoint* bp, RBreakpointItem *b) {
+	return ll_arm32_hwbp_set (dbg->pid, b->addr, b->size, 0, 1 | 2 | 4);
+}
+
+static bool arm32_hwbp_del (RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
+	return false; // TODO: hwbp.del not yetimplemented
+}
+
+#elif __arm64__ || __aarch64__
+// type = 2 = write
+static volatile uint8_t var[96] __attribute__((__aligned__(32)));
+
+static bool ll_arm64_hwbp_set(pid_t pid, ut64 _addr, int size, int wp, ut32 type) {
+	const volatile uint8_t *addr = (void*)(size_t)_addr; //&var[32 + wp];
+	const unsigned int offset = (uintptr_t)addr % 8;
+	const ut32 byte_mask = ((1 << size) - 1) << offset;
+	const ut32 enable = 1;
+	const ut32 control = byte_mask << 5 | type << 3 | enable;
+
+	struct user_hwdebug_state dreg_state = {0};
+	struct iovec iov = {0};
+	iov.iov_base = &dreg_state;
+	iov.iov_len = sizeof (dreg_state);
+
+	if (ptrace (PTRACE_GETREGSET, pid, NT_ARM_HW_WATCH, &iov) == -1) {
+		// error reading regs
+	}
+	memcpy (&dreg_state, iov.iov_base, sizeof (dreg_state));
+	// wp is not honored here i think... we cant have more than one wp for now..
+	dreg_state.dbg_regs[0].addr = (uintptr_t)(addr - offset);
+	dreg_state.dbg_regs[0].ctrl = control;
+	iov.iov_base = &dreg_state;
+	iov.iov_len = r_offsetof (struct user_hwdebug_state, dbg_regs) +
+				sizeof (dreg_state.dbg_regs[0]);
+	if (ptrace (PTRACE_SETREGSET, pid, NT_ARM_HW_WATCH, &iov) == 0) {
+		return true;
+	}
+
+	if (errno == EIO) {
+		eprintf ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) not supported on this hardware: %s\n",
+			strerror (errno));
+	}
+
+	eprintf ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) failed: %s\n", strerror (errno));
+	return false;
+}
+
+static bool ll_arm64_hwbp_del(pid_t pid, ut64 _addr, int size, int wp, ut32 type) {
+	const volatile uint8_t *addr = &var[32 + wp];
+	// TODO: support multiple watchpoints and find
+	struct user_hwdebug_state dreg_state = {0};
+	struct iovec iov = {0};
+	iov.iov_base = &dreg_state;
+	// only delete 1 bp for now
+	iov.iov_len = r_offsetof (struct user_hwdebug_state, dbg_regs) +
+				sizeof (dreg_state.dbg_regs[0]);
+	if (ptrace (PTRACE_SETREGSET, pid, NT_ARM_HW_WATCH, &iov) == 0) {
+		return true;
+	}
+	if (errno == EIO) {
+		eprintf ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) not supported on this hardware: %s\n",
+			strerror (errno));
+	}
+
+	eprintf ("ptrace(PTRACE_SETREGSET, NT_ARM_HW_WATCH) failed: %s\n", strerror (errno));
+	return false;
+}
+
+static bool arm64_hwbp_add (RDebug *dbg, RBreakpoint* bp, RBreakpointItem *b) {
+	return ll_arm64_hwbp_set (dbg->pid, b->addr, b->size, 0, 1 | 2 | 4);
+}
+
+static bool arm64_hwbp_del (RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
+	return ll_arm64_hwbp_del (dbg->pid, b->addr, b->size, 0, 1 | 2 | 4);
+}
+
+#endif
+#endif // __linux__
+
 /*
  * set or unset breakpoints...
  *
@@ -1418,15 +1540,25 @@ static int r_debug_native_drx (RDebug *dbg, int n, ut64 addr, int sz, int rwx, i
  * we let the caller handle the work.
  */
 static int r_debug_native_bp (void *bp_, RBreakpointItem *b, bool set) {
-#if __i386__ || __x86_64__
 	RBreakpoint *bp = (RBreakpoint *)bp_;
 	RDebug *dbg = bp->user;
 	if (b && b->hw) {
-		return set
+#if __i386__ || __x86_64__
+	return set
 		? drx_add (dbg, bp, b)
 		: drx_del (dbg, bp, b);
-	}
+#elif __arm64__ || __aarch64__
+# if __linux__
+	return set
+		? arm64_hwbp_add (dbg, bp, b)
+		: arm64_hwbp_del (dbg, bp, b);
+# endif
+#elif __arm__
+	return set
+		? arm32_hwbp_add (dbg, bp, b)
+		: arm32_hwbp_del (dbg, bp, b);
 #endif
+	}
 	return false;
 }
 

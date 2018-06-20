@@ -76,7 +76,7 @@ install: ${F_SDB}
 CWD=$(shell pwd)
 symstall install-symlink: ${F_SDB}
 	cd ../../.. && mkdir -p "${FCNSIGNPATH}" && \
-	for FILE in $(shell cd libr/anal/d ; ls *.sdb); do \
+	for FILE in $(shell cd $(TOP)/libr/anal/d ; ls *.sdb); do \
 		ln -fs "$(CWD)/$$FILE" "$(FCNSIGNPATH)/$$FILE" ; \
 	done
 

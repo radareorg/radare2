@@ -50,6 +50,7 @@ ec trap rgb:a00
 ec swi rgb:950
 ec creg rgb:590
 ec flag rgb:950
+ec linehl rgb:004
 
 ec graph.true rgb:370
 ec graph.false rgb:a00

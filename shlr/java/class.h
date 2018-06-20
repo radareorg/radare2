@@ -13,6 +13,11 @@
 #include <sdb.h>
 #include "dsojson.h"
 
+#if defined(_MSC_VER) && !defined(R_API_BIN_ONLY)
+#undef R_API
+#define R_API
+#endif
+
 #define USHORT(x,y) ((ut16)(x[y+1]|(x[y]<<8)))
 #if 1
 #define UINT(x,y) (ut32)(((x[y]&0xff)<<24) \

@@ -36,7 +36,7 @@ static int typeload(void *p, const char *k, const char *v) {
 		const char *typename = k;
 		int typesize = 0;
 		// TODO: Add typesize here
-		char* query = sdb_fmt (-1, "struct.%s", k);
+		char* query = sdb_fmt ("struct.%s", k);
 		char *members = sdb_get (anal->sdb_types, query, 0);
 		char *next, *ptr = members;
 		if (members) {
@@ -45,7 +45,7 @@ static int typeload(void *p, const char *k, const char *v) {
 				if (!name) {
 					break;
 				}
-				query = sdb_fmt (-1, "struct.%s.%s", k, name);
+				query = sdb_fmt ("struct.%s.%s", k, name);
 				char *subtype = sdb_get (anal->sdb_types, query, 0);
 				if (!subtype) {
 					break;
@@ -59,7 +59,7 @@ static int typeload(void *p, const char *k, const char *v) {
 					}
 					char *subname = tmp;
 					// TODO: Go recurse here
-					query = sdb_fmt (-1, "struct.%s.%s.meta", subtype, subname);
+					query = sdb_fmt ("struct.%s.%s.meta", subtype, subname);
 					btype = sdb_num_get (anal->sdb_types, query, 0);
 					tcc_sym_push (subtype, 0, btype);
 				}

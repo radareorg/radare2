@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2017 - pancake */
+/* radare - LGPL - Copyright 2010-2018 - pancake */
 
 #include <r_egg.h>
 
@@ -159,7 +159,9 @@ R_API void r_egg_lang_include_path(REgg *egg, const char *path) {
 }
 
 R_API void r_egg_lang_include_init(REgg *egg) {
-	r_sys_setenv (R_EGG_INCDIR_ENV, ".:"R_EGG_INCDIR_PATH);
+	char *s = r_str_newf (".:%s/%s", r_sys_prefix (NULL), R_EGG_INCDIR_PATH);
+	r_sys_setenv (R_EGG_INCDIR_ENV, s);
+	free (s);
 }
 
 static void rcc_set_callname(REgg *egg, const char *s) {

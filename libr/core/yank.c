@@ -143,7 +143,7 @@ R_API int r_core_yank(struct r_core_t *core, ut64 addr, int len) {
 	if (addr != core->offset) {
 		r_core_seek (core, addr, 1);
 	}
-	r_core_read_at (core, addr, buf, len);
+	r_io_read_at (core->io, addr, buf, len);
 	r_core_yank_set (core, addr, buf, len);
 	if (curseek != addr) {
 		r_core_seek (core, curseek, 1);
@@ -169,7 +169,7 @@ R_API int r_core_yank_string(RCore *core, ut64 addr, int maxlen) {
 		return false;
 	}
 	buf[core->blocksize] = 0;
-	r_core_read_at (core, addr, buf, core->blocksize);
+	r_io_read_at (core->io, addr, buf, core->blocksize);
 	if (maxlen == 0) {
 		// Don't use strnlen, see: http://sourceforge.net/p/mingw/bugs/1912/
 		maxlen = r_str_nlen ((const char *) buf, core->blocksize);

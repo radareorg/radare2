@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2016 - pancake, Judge_Dredd */
+/* radare2 - LGPL - Copyright 2014-2018 - pancake, Judge_Dredd */
 
 #include <r_cons.h>
 #include <r_regex.h>
@@ -15,7 +15,7 @@ static void color_line(const char *line, RStrpool *p, RList *ml){
 	};
 	int linv[2] = {
 		strlen (inv[0]),
-		strlen(inv[1])
+		strlen (inv[1])
 	};
 	r_strpool_empty (p);
 	r_list_foreach (ml, it, m) {
@@ -23,7 +23,9 @@ static void color_line(const char *line, RStrpool *p, RList *ml){
 		r_strpool_memcat (p, line + offset, m->rm_so - offset);
 		r_strpool_memcat (p, inv[0], linv[0]);
 		m_len = m->rm_eo - m->rm_so;
-		if (m_len<0) m_len = 0;
+		if (m_len < 0) {
+			m_len = 0;
+		}
 		m_addr = r_str_ndup (line + m->rm_so, m_len);
 		if (m_addr) {
 			/* in case there's a CSI in the middle of this match*/
@@ -68,9 +70,13 @@ static int *splitlines (char *s, int *lines_count) {
 	int i, row = 0;
 	int sidx = 0;
 
-	if (lines_size * sizeof(int) < lines_size) return NULL;
-	lines = malloc (lines_size * sizeof(int));
-	if (!lines) return NULL;
+	if (lines_size * sizeof (int) < lines_size) {
+		return NULL;
+	}
+	lines = malloc (lines_size * sizeof (int));
+	if (!lines) {
+		return NULL;
+	}
 	lines[row++] = 0;
 	for (i = 0; s[i]; i++) {
 		if (row >= lines_size) {
@@ -99,19 +105,27 @@ static int *splitlines (char *s, int *lines_count) {
 
 static int next_match(int from, RList **mla, int lcount){
 	int l;
-	if(from > lcount - 2) return from;
-	for(l = from + 1; l < lcount; l++){
+	if (from > lcount - 2) {
+		return from;
+	}
+	for (l = from + 1; l < lcount; l++){
 		/* if there's at least one match on the line */
-		if(r_list_first(mla[l])) return l;
+		if (r_list_first(mla[l])) {
+			return l;
+		}
 	}
 	return from;
 }
 
 static int prev_match(int from, RList **mla){
 	int l;
-	if(from < 1) return from;
-	for(l = from - 1; l > 0; l--){
-		if(r_list_first(mla[l])) return l;
+	if (from < 1) {
+		return from;
+	}
+	for (l = from - 1; l > 0; l--) {
+		if (r_list_first(mla[l])) {
+			return l;
+		}
 	}
 	return from;
 }
@@ -125,11 +139,14 @@ static int all_matches(const char *s, RRegex *rx, RList **mla, int *lines, int l
 		const char *loff = s + lines[l]; /* current line offset */
 		char *clean = strdup (loff);
 		if (!clean) return 0;
-		int *cpos;
-		r_str_ansi_filter (clean, NULL, &cpos, 0);
+		int *cpos = NULL;
+		int ncpos = r_str_ansi_filter (clean, NULL, &cpos, 0);
 		m.rm_eo = slen = strlen (clean);
 		r_list_purge (mla[l]);
-		while (!r_regex_exec (rx, clean, 1, &m, R_REGEX_STARTEND)){
+		while (!r_regex_exec (rx, clean, 1, &m, R_REGEX_STARTEND)) {
+			if (!cpos || m.rm_so >= ncpos) {
+				break;
+			}
 			RRegexMatch *ms = R_NEW0 (RRegexMatch);
 			ms->rm_so = cpos[m.rm_so];
 			ms->rm_eo = cpos[m.rm_eo];

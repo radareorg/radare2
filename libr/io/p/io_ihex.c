@@ -178,10 +178,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	}
 	Rihex *rih = fd->data;
 	memset (buf, io->Oxff, count);
-	if (r_buf_read_at (rih->rbuf, io->off, buf, count) != count) {
-		return -1; //should never happen with a sparsebuf..
-	}
-	return count;
+	return r_buf_read_at (rih->rbuf, io->off, buf, count);
 }
 
 static int __close(RIODesc *fd) {
@@ -378,7 +375,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		if (!str) {
 			return NULL;
 		}
-		mal= R_NEW0 (Rihex);
+		mal = R_NEW0 (Rihex);
 		if (!mal) {
 			free (str);
 			return NULL;

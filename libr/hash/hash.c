@@ -1,9 +1,7 @@
-/* radare - LGPL - Copyright 2007-2017 pancake */
+/* radare - LGPL - Copyright 2007-2018 pancake */
 
 #include <r_hash.h>
-#ifdef _MSC_VER
-#define strcasecmp stricmp
-#endif
+#include "r_util.h"
 R_LIB_VERSION (r_hash);
 
 struct {
@@ -286,14 +284,14 @@ R_API ut64 r_hash_name_to_bits(const char *name) {
 	do {
 		/* Eat everything up to the comma */
 		for (i = 0; *ptr && *ptr != ',' && i < sizeof (tmp) - 1; i++) {
-			tmp[i] = *ptr++;
+			tmp[i] = tolower (*ptr++);
 		}
 
 		/* Safety net */
 		tmp[i] = '\0';
 
 		for (i = 0; hash_name_bytes[i].name; i++) {
-			if (!strcasecmp (tmp, hash_name_bytes[i].name)) {
+			if (!strcmp (tmp, hash_name_bytes[i].name)) {
 				ret |= hash_name_bytes[i].bit;
 				break;
 			}
@@ -343,7 +341,10 @@ R_API char *r_hash_to_string(RHash *ctx, const char *name, const ut8 *data, int 
 	r_hash_do_begin (ctx, algo);
 	digest_size = r_hash_calculate (ctx, algo, data, len);
 	r_hash_do_end (ctx, algo);
-	if (digest_size > 0) {
+	if (digest_size == 0) {
+		digest_hex = calloc (16, 1);
+		snprintf (digest_hex, 15, "%02.8f", ctx->entropy);
+	} else if (digest_size > 0) {
 		if (digest_size * 2 < digest_size) {
 			digest_hex = NULL;
 		} else {

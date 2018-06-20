@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2016 - pancake, dso */
+/* radare - LGPL - Copyright 2014-2018 - pancake, dso */
 
 #include <r_anal.h>
 
@@ -28,14 +28,16 @@ R_API RAnalSwitchOp * r_anal_switch_op_new(ut64 addr, ut64 min_val, ut64 def_val
 }
 
 R_API void r_anal_switch_op_free(RAnalSwitchOp * swop) {
-	if (!swop || (((ut32)(size_t)swop)==UT32_MAX)) {
-		return;
+	if (swop) {
+		r_list_free (swop->cases);
+		free (swop);
 	}
-	r_list_free (swop->cases);
-	free (swop);
 }
 
 R_API RAnalCaseOp* r_anal_switch_op_add_case(RAnalSwitchOp * swop, ut64 addr, ut64 value, ut64 jump) {
+	if (!swop) {
+		return NULL;
+	}
 	RAnalCaseOp * caseop = R_NEW0 (RAnalCaseOp);
 	if (!caseop) {
 		return NULL;

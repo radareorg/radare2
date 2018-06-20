@@ -36,6 +36,7 @@ ec call cyan
 ec cjmp green
 ec jmp green
 ec pop yellow
+ec linehl rgb:004
 
 ec graph.true green
 ec graph.false red

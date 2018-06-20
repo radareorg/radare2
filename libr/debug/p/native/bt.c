@@ -22,7 +22,6 @@ static void prepend_current_pc (RDebug *dbg, RList *list) {
 }
 
 static RList *r_debug_native_frames(RDebug *dbg, ut64 at) {
-	RList *list;
 	RDebugFrameCallback cb = NULL;
 	if (dbg->btalgo) {
 		if (!strcmp (dbg->btalgo, "fuzzy")) {
@@ -43,8 +42,7 @@ static RList *r_debug_native_frames(RDebug *dbg, ut64 at) {
 		}
 	}
 
-	list = cb (dbg, at);
+	RList *list = (dbg->btalgo && !strcmp (dbg->btalgo, "trace")) ? r_list_clone (dbg->call_frames) : cb (dbg, at);
 	prepend_current_pc (dbg, list);
-
 	return list;
 }

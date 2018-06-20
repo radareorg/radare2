@@ -961,8 +961,8 @@ static void print_types(R_PDB *pdb, int mode) {
 					break;
 				case eLF_STRUCTURE:
 				case eLF_UNION:
-					pdb->cb_printf ("{\"type\":\"%s\",\"name\":\"%s\",\"%s\":[",
-						"structure", name, "members");
+					pdb->cb_printf ("{\"type\":\"%s\",\"name\":\"%s\",\"size\":%d,\"%s\":[",
+						"structure", name, val, "members");
 					break;
 				default:
 					continue;
@@ -1131,27 +1131,27 @@ static void print_gvars(R_PDB *pdb, ut64 img_base, int format) {
 				if (!is_first) {
 					pdb->cb_printf (",");
 				}
-				pdb->cb_printf ("{\"%s\":%d,\"%s\":%d,\"%s\":\"%s\",\"%s\":\"%s\"}",
+				pdb->cb_printf ("{\"%s\":%d,\"%s\":%d,\"%s\":\"%.*s\",\"%s\":\"%s\"}",
 					"address", (ut64) (img_base + omap_remap ((omap)? (omap->stream): 0, gdata->offset + sctn_header->virtual_address)),
 					"symtype", gdata->symtype,
-					"section_name", sctn_header->name,
+					"section_name", PDB_SIZEOF_SECTION_NAME, sctn_header->name,
 					"gdata_name", name);
 				break;
 			case 1:
 			case '*':
 			case 'r':
-				pdb->cb_printf ("f pdb.%s = 0x%"PFMT64x " # %d %s\n",
+				pdb->cb_printf ("f pdb.%s = 0x%"PFMT64x " # %d %.*s\n",
 					name,
 					(ut64) (img_base + omap_remap ((omap)? (omap->stream): 0,
 							gdata->offset + sctn_header->virtual_address)),
-					gdata->symtype, sctn_header->name);
+					gdata->symtype, PDB_SIZEOF_SECTION_NAME, sctn_header->name);
 				break;
 			case 'd':
 			default:
-				pdb->cb_printf ("0x%08"PFMT64x "  %d  %s  %s\n",
+				pdb->cb_printf ("0x%08"PFMT64x "  %d  %.*s  %s\n",
 					(ut64) (img_base + omap_remap ((omap)? (omap->stream): 0,
 							gdata->offset + sctn_header->virtual_address)),
-					gdata->symtype, sctn_header->name, name);
+					gdata->symtype, PDB_SIZEOF_SECTION_NAME, sctn_header->name, name);
 				break;
 			}
 			free (name);
@@ -1179,6 +1179,10 @@ R_API bool init_pdb_parser(R_PDB *pdb, const char *filename) {
 		pdb->cb_printf = (PrintfCallback) printf;
 	}
 	pdb->buf = r_buf_new_slurp (filename);
+	if (!pdb->buf) {
+		eprintf ("File reading error/empty file\n");
+		goto error;
+	}
 // pdb->fp = r_sandbox_fopen (filename, "rb");
 // if (!pdb->fp) {
 // eprintf ("file %s can not be open\n", filename);

@@ -98,7 +98,7 @@
   #define __BSD__ 0
   #define __UNIX__ 1
 #endif
-#if __KFBSD__ || defined(__NetBSD__) || defined(__OpenBSD__)
+#if __KFBSD__ || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__)
   #define __BSD__ 1
   #define __UNIX__ 1
 #endif
@@ -132,6 +132,7 @@
   #define FUNC_ATTR_ALLOC_ALIGN(x) __attribute__((alloc_align(x)))
   #define FUNC_ATTR_PURE __attribute__ ((pure))
   #define FUNC_ATTR_CONST __attribute__((const))
+  #define FUNC_ATTR_USED __attribute__((used))
   #define FUNC_ATTR_WARN_UNUSED_RESULT __attribute__((warn_unused_result))
   #define FUNC_ATTR_ALWAYS_INLINE __attribute__((always_inline))
 
@@ -149,6 +150,7 @@
   #define FUNC_ATTR_ALLOC_ALIGN(x)
   #define FUNC_ATTR_PURE
   #define FUNC_ATTR_CONST
+  #define FUNC_ATTR_USED
   #define FUNC_ATTR_WARN_UNUSED_RESULT
   #define FUNC_ATTR_ALWAYS_INLINE
 #endif
@@ -179,14 +181,19 @@ extern "C" {
 #if __WINDOWS__
 #define FS "\\"
 #define R_SYS_DIR "\\"
+#define R_SYS_ENVSEP ";"
 #define R_SYS_HOME "USERPROFILE"
-#define R2_HOMEDIR ".config\\radare2"
 #else
 #define FS "/"
 #define R_SYS_DIR "/"
+#define R_SYS_ENVSEP ":"
 #define R_SYS_HOME "HOME"
-#define R2_HOMEDIR ".config/radare2"
 #endif
+
+#define R_JOIN_2_PATHS(p1, p2) p1 R_SYS_DIR p2
+#define R_JOIN_3_PATHS(p1, p2, p3) p1 R_SYS_DIR p2 R_SYS_DIR p3
+#define R_JOIN_4_PATHS(p1, p2, p3, p4) p1 R_SYS_DIR p2 R_SYS_DIR p3 R_SYS_DIR p4
+#define R_JOIN_5_PATHS(p1, p2, p3, p4, p5) p1 R_SYS_DIR p2 R_SYS_DIR p3 R_SYS_DIR p4 R_SYS_DIR p5
 
 #ifndef __packed
 #define __packed __attribute__((__packed__))
@@ -249,7 +256,7 @@ R_API const char *x##_version () { return "" R2_GITTAP; }
 #define BITS2BYTES(x) (((x)/8)+(((x)%8)?1:0))
 #define ZERO_FILL(x) memset (&x, 0, sizeof (x))
 #define R_NEWS0(x,y) (x*)calloc(y,sizeof(x))
-#define R_NEWS(x,y) (x*)malloc(sizeof(x)*y)
+#define R_NEWS(x,y) (x*)malloc(sizeof(x)*(y))
 #define R_NEW0(x) (x*)calloc(1,sizeof(x))
 #define R_NEW(x) (x*)malloc(sizeof(x))
 #define R_NEWCOPY(x,y) (x*)r_new_copy(sizeof(x), y)
@@ -339,7 +346,7 @@ static inline void *r_new_copy(int size, void *data) {
 #define R_ABS(x) (((x)<0)?-(x):(x))
 #define R_BTW(x,y,z) (((x)>=(y))&&((y)<=(z)))?y:x
 
-#define R_FREE(x) { free(x); x = NULL; }
+#define R_FREE(x) { free((void *)x); x = NULL; }
 
 #if __WINDOWS__
 #define HAVE_REGEXP 0
@@ -352,6 +359,10 @@ static inline void *r_new_copy(int size, void *data) {
 #define PFMT64d "I64d"
 #define PFMT64u "I64u"
 #define PFMT64o "I64o"
+#define PFMTSZx "Ix"
+#define PFMTSZd "Id"
+#define PFMTSZu "Iu"
+#define PFMTSZo "Io"
 #define LDBLFMT "f"
 #define HHXFMT  "x"
 #else
@@ -359,6 +370,10 @@ static inline void *r_new_copy(int size, void *data) {
 #define PFMT64d "lld"
 #define PFMT64u "llu"
 #define PFMT64o "llo"
+#define PFMTSZx "zx"
+#define PFMTSZd "zd"
+#define PFMTSZu "zu"
+#define PFMTSZo "zo"
 #define LDBLFMT "Lf"
 #define HHXFMT  "hhx"
 #endif

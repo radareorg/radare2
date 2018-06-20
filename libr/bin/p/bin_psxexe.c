@@ -69,7 +69,7 @@ static RList* sections(RBinFile* bf) {
 	sect->size = sz - PSXEXE_TEXTSECTION_OFFSET;
 	sect->vaddr = psxheader.t_addr;
 	sect->vsize = psxheader.t_size;
-	sect->srwx = R_BIN_SCN_MAP | R_BIN_SCN_EXECUTABLE;
+	sect->srwx = R_BIN_SCN_EXECUTABLE;
 	sect->add = true;
 	sect->has_strings = true;
 

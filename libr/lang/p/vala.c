@@ -124,7 +124,7 @@ static int lang_vala_run(RLang *lang, const char *code, int len) {
 	return false;
 }
 
-static struct r_lang_plugin_t r_lang_plugin_vala = {
+static RLangPlugin r_lang_plugin_vala = {
 	.name = "vala",
 	.ext = "vala",
 	.license = "LGPL",

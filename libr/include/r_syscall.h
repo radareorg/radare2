@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #ifndef R2_SYSCALL_H
 #define R2_SYSCALL_H
@@ -43,9 +43,28 @@ typedef struct r_syscall_t {
 	RSyscallItem *sysptr;
 	RSyscallPort *sysport;
 	Sdb *db;
-	// TODO: deprecate
-	PrintfCallback cb_printf;
+	Sdb *srdb;
+	int refs;
 } RSyscall;
+
+#if 0
+// todo: add the ability to describe particular bits
+typedef struct r_sysregs_item_t {
+	ut64 address;
+	ut64 size;
+	int type;
+	const char *name;
+	const char *description;
+} RSysregsItem;
+
+typedef struct r_sysregs_t {
+	FILE *fd;
+	char *arch;
+	char *cpu;
+	RSysregsItem *sysregs;
+	Sdb *db;
+} RSysregs;
+#endif
 
 /* plugin struct */
 typedef struct r_syscall_plugin_t {
@@ -73,12 +92,13 @@ R_API void r_syscall_item_free(RSyscallItem *si);
 
 R_API RSyscall *r_syscall_new(void);
 R_API void r_syscall_free(RSyscall *ctx);
-R_API bool r_syscall_setup(RSyscall *ctx, const char *arch, const char *os, int bits);
-R_API int r_syscall_setup_file(RSyscall *ctx, const char *path);
+R_API RSyscall* r_syscall_ref(RSyscall *sc);
+R_API bool r_syscall_setup(RSyscall *s, const char *arch, int bits, const char *cpu, const char *os);
 R_API RSyscallItem *r_syscall_get(RSyscall *ctx, int num, int swi);
 R_API int r_syscall_get_num(RSyscall *ctx, const char *str);
 R_API const char *r_syscall_get_i(RSyscall *ctx, int num, int swi);
 R_API const char *r_syscall_reg(RSyscall *s, int idx, int num);
+R_API const char* r_syscall_sysreg(RSyscall *s, const char *type, ut64 num);
 R_API RList *r_syscall_list(RSyscall *ctx);
 R_API int r_syscall_get_swi(RSyscall *s);
 

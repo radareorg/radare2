@@ -23,7 +23,7 @@ static int __esil_step(RDebug *dbg) {
 	int oplen;
 	ut8 buf[64];
 	ut64 pc = 0LL; // getreg("pc")
-	RAnalOp op;
+	RAnalOp op = {0};
 
 	pc = r_debug_reg_sync(dbg, R_REG_TYPE_GPR, false);
 	pc = r_debug_reg_get (dbg, "PC");
@@ -33,13 +33,14 @@ static int __esil_step(RDebug *dbg) {
 	//memset (buf, 0, sizeof (buf));
 	dbg->iob.read_at (dbg->iob.io, pc, buf, 64);
 	eprintf ("READ 0x%08"PFMT64x" %02x %02x %02x\n", pc, buf[0], buf[1], buf[2]);
-	oplen = r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf));
+	oplen = r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), R_ANAL_OP_MASK_ESIL);
 	if (oplen > 0) {
 		if (*R_STRBUF_SAFEGET (&op.esil)) {
 			eprintf ("ESIL: %s\n", R_STRBUF_SAFEGET (&op.esil));
 			r_anal_esil_parse (dbg->anal->esil, R_STRBUF_SAFEGET (&op.esil));
 		}
 	}
+	r_anal_op_fini (&op);
 	eprintf ("TODO: ESIL STEP\n");
 	return true;
 }
@@ -48,7 +49,6 @@ static int __esil_init(RDebug *dbg) {
 	dbg->tid = dbg->pid = 1;
 	// aeim
 	// aei
-	eprintf ("TODO: esil-vm not initialized\n");
 	return true;
 }
 

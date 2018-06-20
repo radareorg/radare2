@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_core.h> // just to get the RPrint instance
 #include <r_debug.h>
@@ -146,6 +146,28 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 					continue;
 				}
 			}
+			// Is this register being asked?
+			if (dbg->q_regs) {
+				if (!r_list_empty (dbg->q_regs)) {
+					RListIter *iterreg;
+					RList *q_reg = dbg->q_regs;
+					char *q_name;
+					bool found = false;
+					r_list_foreach (q_reg, iterreg, q_name) {
+						if (!strcmp (item->name, q_name)) {
+							found = true;
+							break;
+						}
+					}
+					if (!found) {
+					        continue;
+					}
+					r_list_delete (q_reg, iterreg);
+				} else {
+					// List is empty, all requested regs were taken, no need to go further
+					goto beach;
+				}
+			}
 			int regSize = item->size;
 			if (regSize < 80) {
 				value = r_reg_get_value (dbg->reg, item);
@@ -153,7 +175,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 				diff = r_reg_get_value (dbg->reg, item);
 				r_reg_arena_swap (dbg->reg, false);
 				delta = value-diff;
-				if (rad == 'j') {
+				if (tolower (rad) == 'j') {
 					snprintf (strvalue, sizeof (strvalue),"%"PFMT64d, value);
 				} else {
 					snprintf (strvalue, sizeof (strvalue),"0x%08"PFMT64x, value);
@@ -178,6 +200,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 			itmidx++;
 
 			switch (rad) {
+			case 'J':
 			case 'j':
 				dbg->cb_printf ("%s\"%s\":%s",
 					n?",":"", item->name, strvalue);
@@ -253,8 +276,11 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 			n++;
 		}
 	}
+beach:
 	if (rad == 'j') {
 		dbg->cb_printf ("}\n");
+	} else if (rad == 'J') {
+		// do nothing
 	} else if (n > 0 && rad == 2 && ((n%cols))) {
 		dbg->cb_printf ("\n");
 	}

@@ -44,6 +44,7 @@ static struct r_syscall_regs_t fastcall_x86_64 [R_SYSCALL_ARGS] = {
 	{{ NULL }}
 };
 
+#if 0
 static struct r_syscall_regs_t fastcall_x86_64_msvc [R_SYSCALL_ARGS] = {
 	{{ "rdi", NULL }},
 	{{ "rdi", "rsi", NULL }},
@@ -53,6 +54,7 @@ static struct r_syscall_regs_t fastcall_x86_64_msvc [R_SYSCALL_ARGS] = {
 	{{ "rdi", "rsi", "rdx", "rdx", "r8", "r9", NULL }},
 	{{ NULL }}
 };
+#endif
 
 static struct r_syscall_regs_t fastcall_x86_8 [R_SYSCALL_ARGS] = {
 	{{ "ax", NULL }},

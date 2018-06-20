@@ -29,6 +29,7 @@ ec flow2 rgb:fff
 ec mov rgb:888
 ec swi rgb:000 rgb:fff
 ec floc rgb:af2
+ec linehl rgb:222
 ec ai.read green
 ec ai.write blue
 ec ai.exec red

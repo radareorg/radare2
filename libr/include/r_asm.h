@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2018 - nibble, pancake */
 
 #ifndef R2_ASM_H
 #define R2_ASM_H
@@ -7,6 +7,7 @@
 #include <r_bin.h> // only for binding, no hard dep required
 #include <r_util.h>
 #include <r_parse.h>
+#include <r_bind.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,7 +15,6 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_asm);
 
-#define R_ASM_OPCODES_PATH R2_PREFIX "/share/radare2/" R2_VERSION "/opcodes"
 // XXX too big!
 // the 256th character is left for the null terminator
 #define R_ASM_BUFSIZE 255
@@ -73,6 +73,7 @@ typedef struct r_asm_op_t {
 	ut8  buf[R_ASM_BUFSIZE + 1];
 	char buf_asm[R_ASM_BUFSIZE + 1];
 	char buf_hex[R_ASM_BUFSIZE + 1];
+	RBuffer *buf_inc;
 } RAsmOp;
 
 typedef struct r_asm_code_t {
@@ -116,6 +117,7 @@ typedef struct r_asm_t {
 	int bitshift;
 	bool immdisp; // Display immediates with # symbol (for arm stuff).
 	SdbHash *flags;
+	int seggrn;
 } RAsm;
 
 typedef int (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);
@@ -251,6 +253,7 @@ extern RAsmPlugin r_asm_plugin_xtensa;
 extern RAsmPlugin r_asm_plugin_tricore;
 extern RAsmPlugin r_asm_plugin_pic;
 extern RAsmPlugin r_asm_plugin_rsp;
+extern RAsmPlugin r_asm_plugin_hexagon;
 extern RAsmPlugin r_asm_plugin_hexagon_gnu;
 extern RAsmPlugin r_asm_plugin_wasm;
 extern RAsmPlugin r_asm_plugin_tms320c64x;

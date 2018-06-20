@@ -59,7 +59,7 @@ export CC="$(pwd)/sys/ios-sdk-gcc"
 export IOSVER=10.2
 export IOSINC=/
 #$(pwd)/sys/ios-include
-export CFLAGS=-O2
+export CFLAGS="${CFLAGS} -O2"
 export USE_SIMULATOR=1
 export RANLIB="xcrun --sdk iphoneos ranlib"
 
@@ -71,9 +71,8 @@ fi
 if true; then
 make mrproper
 cp -f ${PLGCFG} plugins.cfg
-./configure --prefix=${PREFIX} --with-ostype=darwin \
-	--without-fork --without-pic --with-nonpic \
-	--disable-debugger --with-compiler=ios-sdk \
+./configure --prefix=${PREFIX} --with-ostype=darwin --with-libr \
+	--without-fork --disable-debugger --with-compiler=ios-sdk \
 	--target=arm-unknown-darwin
 fi
 

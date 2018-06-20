@@ -8,20 +8,20 @@
 #define DB a->sdb_fcns
 
 struct VarType {
-	char kind;
+	bool isarg;
 	char *type;
 	int size;
 	char *name;
 };
 
-#define SDB_VARTYPE_FMT "czdz"
+#define SDB_VARTYPE_FMT "bzdz"
 
 #define EXISTS(x, ...) snprintf (key, sizeof (key) - 1, x, ## __VA_ARGS__), sdb_exists (DB, key)
 #define SETKEY(x, ...) snprintf (key, sizeof (key) - 1, x, ## __VA_ARGS__);
 #define SETKEY2(x, ...) snprintf (key2, sizeof (key) - 1, x, ## __VA_ARGS__);
 #define SETVAL(x, ...) snprintf (val, sizeof (val) - 1, x, ## __VA_ARGS__);
 R_API bool r_anal_var_display(RAnal *anal, int delta, char kind, const char *type) {
-	char *fmt = r_anal_type_format (anal, type);
+	char *fmt = r_type_format (anal->sdb_types, type);
 	RRegItem *i;
 	if (!fmt) {
 		eprintf ("type:%s doesn't exist\n", type);
@@ -68,7 +68,8 @@ R_API bool r_anal_var_display(RAnal *anal, int delta, char kind, const char *typ
 	return true;
 }
 
-R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, const char *name) {
+R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size,
+		bool isarg, const char *name) {
 	if (!a) {
 		return false;
 	}
@@ -87,7 +88,7 @@ R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, 
 		eprintf ("Invalid var kind '%c'\n", kind);
 		return false;
 	}
-	const char *var_def = sdb_fmt (0, "%c,%s,%d,%s", kind, type, size, name);
+	const char *var_def = sdb_fmt ("%d,%s,%d,%s", isarg, type, size, name);
 	if (scope > 0) {
 		const char *sign = "";
 		if (delta < 0) {
@@ -95,28 +96,30 @@ R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, 
 			sign = "_";
 		}
 		/* local variable */
-		const char *fcn_key = sdb_fmt (1, "fcn.0x%"PFMT64x ".%c", addr, kind);
-		const char *var_key = sdb_fmt (2, "var.0x%"PFMT64x ".%c.%d.%s%d", addr, kind, scope, sign, delta);
-		const char *name_key = sdb_fmt (3, "var.0x%"PFMT64x ".%d.%s", addr, scope, name);
-		const char *shortvar = sdb_fmt (4, "%d.%s%d", scope, sign, delta);
+		const char *fcn_key = sdb_fmt ("fcn.0x%"PFMT64x ".%c", addr, kind);
+		const char *var_key = sdb_fmt ("var.0x%"PFMT64x ".%c.%d.%s%d", addr, kind, scope, sign, delta);
+		const char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", addr, scope, name);
+		const char *shortvar = sdb_fmt ("%d.%s%d", scope, sign, delta);
 		sdb_array_add (DB, fcn_key, shortvar, 0);
 		sdb_set (DB, var_key, var_def, 0);
 		if (*sign) {
 			delta = -delta;
 		}
-		const char *name_val = sdb_fmt (5, "%c,%d", kind, delta);
+		char *name_val = r_str_newf ("%c,%d", kind, delta);
 		sdb_set (DB, name_key, name_val, 0);
+		free (name_val);
 	} else {
 		/* global variable */
-		const char *var_global = sdb_fmt (1, "var.0x%"PFMT64x, addr);
-		const char *var_def = sdb_fmt (2, "%c.%s,%d,%s", kind, type, size, name);
+		const char *var_global = sdb_fmt ("var.0x%"PFMT64x, addr);
+		const char *var_def = sdb_fmt ("%c.%s,%d,%s", kind, type, size, name);
 		sdb_array_add (DB, var_global, var_def, 0);
 	}
 // ls_sort (DB->ht->list, mystrcmp);
 	return true;
 }
 
-R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, const char *name) {
+R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, 
+		bool isarg, const char *name) {
 	if (!a) {
 		return false;
 	}
@@ -131,12 +134,12 @@ R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind
 		eprintf ("Cant find function here\n");
 		return false;
 	}
-	if (size == -1) {
+	if ((size == -1) && (delta == -1) ) {
 		RList *list = r_anal_var_list (a, fcn, kind);
 		RListIter *iter;
 		RAnalVar *var;
 		r_list_foreach (list, iter, var) {
-			if (delta == -1 && !strcmp (var->name, name)) {
+			if (!strcmp (var->name, name)) {
 				delta = var->delta;
 				size = var->size;
 				break;
@@ -153,15 +156,15 @@ R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind
 		eprintf ("Invalid var kind '%c'\n", kind);
 		return false;
 	}
-	const char *var_def = sdb_fmt (0, "%c,%s,%d,%s", kind, type, size, name);
+	const char *var_def = sdb_fmt ("%d,%s,%d,%s", isarg, type, size, name);
 	if (scope > 0) {
-		char *sign = delta> 0? "": "_";
+		char *sign = delta >= 0 ? "": "_";
 		/* local variable */
-		const char *fcn_key = sdb_fmt (1, "fcn.0x%"PFMT64x ".%c", fcn->addr, kind);
-		const char *var_key = sdb_fmt (2, "var.0x%"PFMT64x ".%c.%d.%s%d", fcn->addr, kind, scope, sign, R_ABS(delta));
-		const char *name_key = sdb_fmt (3, "var.0x%"PFMT64x ".%d.%s", fcn->addr, scope, name);
-		const char *shortvar = sdb_fmt (4, "%d.%s%d", scope, sign, R_ABS(delta));
-		const char *name_val = sdb_fmt (5, "%c,%d", kind, delta);
+		const char *fcn_key = sdb_fmt ("fcn.0x%"PFMT64x ".%c", fcn->addr, kind);
+		const char *var_key = sdb_fmt ("var.0x%"PFMT64x ".%c.%d.%s%d", fcn->addr, kind, scope, sign, R_ABS(delta));
+		const char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", fcn->addr, scope, name);
+		const char *shortvar = sdb_fmt ("%d.%s%d", scope, sign, R_ABS(delta));
+		const char *name_val = sdb_fmt ("%c,%d", kind, delta);
 		sdb_array_add (DB, fcn_key, shortvar, 0);
 		sdb_set (DB, var_key, var_def, 0);
 		sdb_set (DB, name_key, name_val, 0);
@@ -186,7 +189,7 @@ R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind
 		}
 	} else {
 		/* global variable */
-		const char *var_global = sdb_fmt (1, "var.0x%"PFMT64x, fcn->addr);
+		const char *var_global = sdb_fmt ("var.0x%"PFMT64x, fcn->addr);
 		sdb_array_add (DB, var_global, var_def, 0);
 	}
 	return true;
@@ -219,10 +222,10 @@ R_API int r_anal_var_delete(RAnal *a, ut64 addr, const char kind, int scope, int
 			delta = -delta;
 			sign = "_";
 		}
-		char *fcn_key = sdb_fmt (1, "fcn.0x%"PFMT64x ".%c", addr, kind);
-		char *var_key = sdb_fmt (2, "var.0x%"PFMT64x ".%c.%d.%s%d", addr, kind, scope, sign, delta);
-		char *name_key = sdb_fmt (3, "var.0x%"PFMT64x ".%d.%s", addr, scope, av->name);
-		char *shortvar = sdb_fmt (4, "%d.%s%d", scope, sign, delta);
+		char *fcn_key = sdb_fmt ("fcn.0x%"PFMT64x ".%c", addr, kind);
+		char *var_key = sdb_fmt ("var.0x%"PFMT64x ".%c.%d.%s%d", addr, kind, scope, sign, delta);
+		char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", addr, scope, av->name);
+		char *shortvar = sdb_fmt ("%d.%s%d", scope, sign, delta);
 		sdb_array_remove (DB, fcn_key, shortvar, 0);
 		sdb_unset (DB, var_key, 0);
 		sdb_unset (DB, name_key, 0);
@@ -230,8 +233,8 @@ R_API int r_anal_var_delete(RAnal *a, ut64 addr, const char kind, int scope, int
 			delta = -delta;
 		}
 	} else {
-		char *var_global = sdb_fmt (1, "var.0x%"PFMT64x, addr);
-		char *var_def = sdb_fmt (2, "%c.%s,%d,%s", kind, av->type, av->size, av->name);
+		char *var_global = sdb_fmt ("var.0x%"PFMT64x, addr);
+		char *var_def = sdb_fmt ("%c.%s,%d,%s", kind, av->type, av->size, av->name);
 		sdb_array_remove (DB, var_global, var_def, 0);
 	}
 	r_anal_var_free (av);
@@ -244,7 +247,7 @@ R_API bool r_anal_var_delete_byname(RAnal *a, RAnalFunction *fcn, int kind, cons
 	if (!a || !fcn) {
 		return false;
 	}
-	varlist = sdb_get (DB, sdb_fmt (0, "fcn.0x%"PFMT64x ".%c",
+	varlist = sdb_get (DB, sdb_fmt ("fcn.0x%"PFMT64x ".%c",
 			fcn->addr, kind), 0);
 	if (varlist) {
 		char *next, *ptr = varlist;
@@ -252,7 +255,7 @@ R_API bool r_anal_var_delete_byname(RAnal *a, RAnalFunction *fcn, int kind, cons
 			do {
 				char *word = sdb_anext (ptr, &next);
 				char *sign = strstr (word, "_");
-				const char *vardef = sdb_const_get (DB, sdb_fmt (1,
+				const char *vardef = sdb_const_get (DB, sdb_fmt (
 						"var.0x%"PFMT64x ".%c.%s",
 						fcn->addr, kind, word), 0);
 				if (sign) {
@@ -266,10 +269,9 @@ R_API bool r_anal_var_delete_byname(RAnal *a, RAnalFunction *fcn, int kind, cons
 						if (p) {
 							p = strchr (p + 1, ',');
 							if (p) {
-								int mykind = vardef[0];
 								if (!strcmp (p + 1, name)) {
 									return r_anal_var_delete (a, fcn->addr,
-										mykind, 1, delta);
+										kind, 1, delta);
 								}
 							}
 						}
@@ -290,18 +292,21 @@ R_API RAnalVar *r_anal_var_get_byname(RAnal *a, RAnalFunction *fcn, const char *
 		// eprintf ("No something\n");
 		return NULL;
 	}
-	char *name_key = sdb_fmt (-1, "var.0x%"PFMT64x ".%d.%s", fcn->addr, 1, name);
-	const char *name_value = sdb_const_get (DB, name_key, 0);
+	char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", fcn->addr, 1, name);
+	char *name_value = sdb_get (DB, name_key, 0);
 	if (!name_value) {
 		// eprintf ("Cant find key for %s\n", name_key);
 		return NULL;
 	}
 	const char *comma = strchr (name_value, ',');
-	if (comma) {
+	if (comma && *comma) {
 		int delta = r_num_math (NULL, comma + 1);
 		// eprintf ("Silently failing (%s)\n", name_value);
-		return r_anal_var_get (a, fcn->addr, *name_value, 1, delta);
+		RAnalVar *res = r_anal_var_get (a, fcn->addr, *name_value, 1, delta);
+		free (name_value);
+		return res;
 	}
+	free (name_value);
 	return NULL;
 }
 
@@ -319,9 +324,9 @@ R_API RAnalVar *r_anal_var_get(RAnal *a, ut64 addr, char kind, int scope, int de
 		delta = -delta;
 		sign = "_";
 	}
-	const char *varkey = sdb_fmt (-1, "var.0x%"PFMT64x ".%c.%d.%s%d",
+	const char *varkey = sdb_fmt ("var.0x%"PFMT64x ".%c.%d.%s%d",
 			fcn->addr, kind, scope, sign, delta);
-	const char *vardef = sdb_const_get (DB, varkey, 0);
+	char *vardef = sdb_get (DB, varkey, 0);
 	if (!vardef) {
 		return NULL;
 	}
@@ -330,6 +335,7 @@ R_API RAnalVar *r_anal_var_get(RAnal *a, ut64 addr, char kind, int scope, int de
 	}
 	sdb_fmt_init (&vt, SDB_VARTYPE_FMT);
 	sdb_fmt_tobin (vardef, SDB_VARTYPE_FMT, &vt);
+	free (vardef);
 
 	av = R_NEW0 (RAnalVar);
 	if (!av) {
@@ -339,6 +345,7 @@ R_API RAnalVar *r_anal_var_get(RAnal *a, ut64 addr, char kind, int scope, int de
 	av->addr = fcn->addr;
 	av->scope = scope;
 	av->delta = delta;
+	av->isarg = vt.isarg;
 	av->name = vt.name? strdup (vt.name): strdup ("unkown_var");
 	av->size = vt.size;
 	av->type = vt.type? strdup (vt.type): strdup ("unkown_type");
@@ -357,6 +364,25 @@ R_API void r_anal_var_free(RAnalVar *av) {
 		free (av->type);
 		R_FREE (av);
 	}
+}
+
+R_API ut64 r_anal_var_addr(RAnal *a, RAnalFunction *fcn, const char *name) {
+	const char *regname = NULL;
+	ut64 ret = UT64_MAX;
+	if (!a || !fcn) {
+		return ret;
+	}
+	RAnalVar *v1 = r_anal_var_get_byname (a, fcn, name);
+	if (v1) {
+		if (v1->kind == R_ANAL_VAR_KIND_BPV) {
+			regname = r_reg_get_name (a->reg, R_REG_NAME_BP);
+		} else if (v1->kind == R_ANAL_VAR_KIND_SPV) {
+			regname = r_reg_get_name (a->reg, R_REG_NAME_SP);
+		}
+		ret = r_reg_getv (a->reg, regname) + v1->delta;
+	}
+	r_anal_var_free (v1);
+	return ret;
 }
 
 /* (columns) elements in the array value */
@@ -435,17 +461,17 @@ R_API int r_anal_var_access(RAnal *a, ut64 var_addr, char kind, int scope, int d
 	const char *xs_type_str = xs_type? "writes": "reads";
 	// TODO: kind is not used
 	if (scope > 0) { // local
-		const char *var_local = sdb_fmt (0, "var.0x%"PFMT64x ".%d.%d.%s",
+		const char *var_local = sdb_fmt ("var.0x%"PFMT64x ".%d.%d.%s",
 			var_addr, scope, delta, xs_type_str);
-		const char *inst_key = sdb_fmt (1, "inst.0x%"PFMT64x ".vars", xs_addr);
-		const char *var_def = sdb_fmt (2, "0x%"PFMT64x ",%c,0x%x,0x%x", var_addr,
+		const char *inst_key = sdb_fmt ("inst.0x%"PFMT64x ".vars", xs_addr);
+		const char *var_def = sdb_fmt ("0x%"PFMT64x ",%c,0x%x,0x%x", var_addr,
 			kind, scope, delta);
 		sdb_set (DB, inst_key, var_def, 0);
 		return sdb_array_add_num (DB, var_local, xs_addr, 0);
 	}
 	// global
-	sdb_add (DB, sdb_fmt (0, "var.0x%"PFMT64x, var_addr), "a,", 0);
-	var_global = sdb_fmt (0, "var.0x%"PFMT64x ".%s", var_addr, xs_type_str);
+	sdb_add (DB, sdb_fmt ("var.0x%"PFMT64x, var_addr), "a,", 0);
+	var_global = sdb_fmt ("var.0x%"PFMT64x ".%s", var_addr, xs_type_str);
 	return sdb_array_add_num (DB, var_global, xs_addr, 0);
 }
 
@@ -489,7 +515,7 @@ R_API int r_anal_var_count(RAnal *a, RAnalFunction *fcn, int kind, int type) {
 			count[1]++;
 			continue;
 		}
-		count[(kind == R_ANAL_VAR_KIND_BPV && var->delta > 0) || (kind == R_ANAL_VAR_KIND_SPV && var->delta > fcn->maxstack)]++;
+		count[var->isarg]++;
 	}
 	r_list_free (list);
 	return count[type];
@@ -508,7 +534,7 @@ static void var_add_structure_fields_to_list(RAnal *a, RAnalVar *av, const char 
 			char *field_type = sdb_array_get (TDB, field_key, 0, NULL);
 			ut64 field_offset = sdb_array_get_num (TDB, field_key, 1, NULL);
 			int field_count = sdb_array_get_num (TDB, field_key, 2, NULL);
-			int field_size = r_anal_type_get_size (a, field_type) * (field_count? field_count: 1);
+			int field_size = r_type_get_bitsize (TDB, field_type) * (field_count? field_count: 1);
 			new_name = r_str_newf ( "%s.%s", base_name, field_name);
 			if (field_offset == 0) {
 				free (av->name);
@@ -543,7 +569,7 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dyn
 	if (kind < 1) {
 		kind = R_ANAL_VAR_KIND_BPV; // by default show vars
 	}
-	char *varlist = sdb_get (DB, sdb_fmt (0, "fcn.0x%"PFMT64x ".%c", fcn->addr, kind), 0);
+	char *varlist = sdb_get (DB, sdb_fmt ("fcn.0x%"PFMT64x ".%c", fcn->addr, kind), 0);
 	if (varlist && *varlist) {
 		char *next, *ptr = varlist;
 		do {
@@ -551,7 +577,7 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dyn
 			if (r_str_nlen (word, 3) < 3) {
 				return NULL;
 			}
-			const char *vardef = sdb_const_get (DB, sdb_fmt (1,
+			const char *vardef = sdb_const_get (DB, sdb_fmt (
 				"var.0x%"PFMT64x ".%c.%s",
 				fcn->addr, kind, word), 0);
 			if (word[2] == '_') {
@@ -578,6 +604,7 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dyn
 				av->delta = delta;
 				av->kind = kind;
 				av->name = strdup (vt.name);
+				av->isarg = vt.isarg;
 				av->size = vt.size;
 				av->type = strdup (vt.type);
 				r_list_append (list, av);
@@ -679,7 +706,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 			}
 				break;
 			case R_ANAL_VAR_KIND_SPV:
-				if (var->delta < fcn->maxstack) {
+				if (var->isarg) {
 					anal->cb_printf ("{\"name\":\"%s\","
 						"\"kind\":\"arg\",\"type\":\"%s\",\"ref\":"
 						"{\"base\":\"%s\", \"offset\":%"PFMT64d "}}",
@@ -724,7 +751,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 				}
 				break;
 			case R_ANAL_VAR_KIND_SPV:
-				if (var->delta < fcn->maxstack) {
+				if (!var->isarg) {
 					anal->cb_printf ("var %s %s @ %s+0x%x\n",
 						var->type, var->name,
 						anal->reg->name[R_REG_NAME_SP],

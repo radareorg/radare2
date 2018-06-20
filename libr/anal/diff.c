@@ -70,7 +70,7 @@ R_API int r_anal_diff_fingerprint_bb(RAnal *anal, RAnalBlock *bb) {
 				return false;
 			}
 			while (idx < bb->size) {
-				if ((oplen = r_anal_op (anal, op, 0, buf+idx, bb->size-idx)) < 1) {
+				if ((oplen = r_anal_op (anal, op, 0, buf+idx, bb->size-idx, R_ANAL_OP_MASK_BASIC)) < 1) {
 					break;
 				}
 				if (op->nopcode != 0) {
@@ -239,10 +239,16 @@ R_API int r_anal_diff_fcn(RAnal *anal, RList *fcns, RList *fcns2) {
 				maxsize = fcn2_size;
 				minsize = fcn_size;
 			}
-			if ((fcn2->type != R_ANAL_FCN_TYPE_FCN
-				&& fcn2->type != R_ANAL_FCN_TYPE_SYM) ||
-				fcn2->diff->type != R_ANAL_DIFF_TYPE_NULL ||
-				(maxsize * anal->diff_thfcn > minsize)) {
+			if (maxsize * anal->diff_thfcn > minsize) {
+				eprintf ("Exceeded anal threshold while diffing %s and %s\n", fcn->name, fcn2->name);
+				continue;
+			}
+			if (fcn2->diff->type != R_ANAL_DIFF_TYPE_NULL) {
+				eprintf ("Function %s already diffed\n", fcn2->name);
+				continue;
+			}
+			if ((fcn2->type != R_ANAL_FCN_TYPE_FCN && fcn2->type != R_ANAL_FCN_TYPE_SYM)) {
+				eprintf ("Function %s type not supported\n", fcn2->name);
 				continue;
 			}
 			r_diff_buffers_distance (NULL, fcn->fingerprint, fcn_size, fcn2->fingerprint, fcn2_size, NULL, &t);

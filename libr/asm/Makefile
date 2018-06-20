@@ -8,13 +8,9 @@ CURDIR=p/
 
 include $(TOP)/libr/config.mk
 
-ifeq ($(WITHNONPIC),1)
-# do not statically link capstone when creating libars
-else
 include p/capstone.mk
 LDFLAGS+=${CS_LDFLAGS}
 include $(STOP)/java/deps.mk
-endif
 
 .PHONY: all plugins
 

@@ -28,8 +28,8 @@
 # $ r2 -d /bin/true
 #
 
-# Using debian 8 as base image.
-FROM debian:8
+# Using debian 9 as base image.
+FROM debian:9
 
 # Label base
 LABEL r2docker latest
@@ -62,6 +62,7 @@ RUN DEBIAN_FRONTEND=noninteractive dpkg --add-architecture i386 && \
   libc6:i386 \
   libncurses5:i386 \
   libstdc++6:i386 \
+  gnupg2 \
   sudo && \
   curl -sL https://deb.nodesource.com/setup_8.x | bash - && \
   apt-get install -y nodejs python-pip && \

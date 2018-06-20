@@ -116,6 +116,19 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin) {
 					return entry;
 				}
 			}
+			//case4:
+			//50                                        push    eax
+			//57                                        push    edi
+			//FF 36                                     push    dword ptr[esi]
+			//E8 D9 FD FF FF                            call    _main
+			for (n = 0; n < sizeof (b) - 5; n++) {
+				if (b[n] == 0x50 && b[n + 1] == 0x57 && b[n + 2] == 0xff && b[n + 4] == 0xe8) {
+					const st32 call_dst = r_read_ble32 (b + n + 5, bin->big_endian);
+					entry->paddr += (n + 5 + 4 + call_dst);
+					entry->vaddr += (n + 5 + 4 + call_dst);
+					return entry;
+				}
+			}
 
 		}
 	}
@@ -348,7 +361,7 @@ static PE_DWord bin_pe_va_to_rva(RBinPEObj* bin, PE_DWord va) {
 
 static char* resolveModuleOrdinal(Sdb* sdb, const char* module, int ordinal) {
 	Sdb* db = sdb;
-	char* foo = sdb_get (db, sdb_fmt (0, "%d", ordinal), 0);
+	char* foo = sdb_get (db, sdb_fmt ("%d", ordinal), 0);
 	if (foo && *foo) {
 		return foo;
 	} else {
@@ -416,20 +429,13 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 					db = NULL;
 					free (sdb_module);
 					sdb_module = strdup (symdllname);
-					filename = sdb_fmt (1, "%s.sdb", symdllname);
+					filename = sdb_fmt ("%s.sdb", symdllname);
 					if (r_file_exists (filename)) {
 						db = sdb_new (NULL, filename, 0);
 					} else {
-#if __WINDOWS__
-						char invoke_dir[MAX_PATH];
-						if (r_sys_get_src_dir_w32(invoke_dir)) {
-							filename = sdb_fmt (1, "%s\\share\\radare2\\"R2_VERSION "\\format\\dll\\%s.sdb", invoke_dir, symdllname);
-						} else {
-							filename = sdb_fmt (1, "share/radare2/"R2_VERSION "/format/dll/%s.sdb", symdllname);
-						}
-#else
-						filename = sdb_fmt (1, R2_PREFIX "/share/radare2/" R2_VERSION "/format/dll/%s.sdb", symdllname);
-#endif
+						const char *dirPrefix = r_sys_prefix (NULL);
+						filename = sdb_fmt (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"),
+							dirPrefix, symdllname);
 						if (r_file_exists (filename)) {
 							db = sdb_new (NULL, filename, 0);
 						}
@@ -503,6 +509,14 @@ error:
 }
 
 static char *_time_stamp_to_str(ut32 timeStamp) {
+#ifdef _MSC_VER
+	time_t rawtime;
+	struct tm *tminfo;
+	rawtime = (time_t)timeStamp;
+	tminfo = localtime (&rawtime);
+	//tminfo = gmtime (&rawtime);
+	return r_str_trim (strdup (asctime (tminfo)));
+#else
 	struct my_timezone {
 		int tz_minuteswest;     /* minutes west of Greenwich */
 		int tz_dsttime;         /* type of DST correction */
@@ -512,8 +526,9 @@ static char *_time_stamp_to_str(ut32 timeStamp) {
 	time_t ts = (time_t) timeStamp;
 	gettimeofday (&tv, (void*) &tz);
 	gmtoff = (int) (tz.tz_minuteswest * 60); // in seconds
-	ts += gmtoff;
+	ts += (time_t)gmtoff;
 	return r_str_trim (strdup (ctime (&ts)));
+#endif
 }
 
 static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
@@ -1278,12 +1293,12 @@ static void bin_pe_store_tls_callbacks(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord
 				break;
 			}
 		}
-		key = sdb_fmt (0, "pe.tls_callback%d_vaddr", count);
+		key = sdb_fmt ("pe.tls_callback%d_vaddr", count);
 		sdb_num_set (bin->kv, key, addressOfTLSCallback, 0);
-		key = sdb_fmt (0, "pe.tls_callback%d_paddr", count);
+		key = sdb_fmt ("pe.tls_callback%d_paddr", count);
 		paddr = bin_pe_rva_to_paddr (bin, bin_pe_va_to_rva (bin, (PE_DWord) addressOfTLSCallback));
 		sdb_num_set (bin->kv, key, paddr,                0);
-		key = sdb_fmt (0, "pe.tls_callback%d_haddr", count);
+		key = sdb_fmt ("pe.tls_callback%d_haddr", count);
 		haddr = callbacks;
 		sdb_num_set (bin->kv, key, haddr,                0);
 		count++;
@@ -2210,7 +2225,7 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 	for (index = 0; index < totalRes; index++) {
 		Pe_image_resource_directory_entry entry;
 		off = rsrc_base + offDir + sizeof(*dir) + index * sizeof(entry);
-		char *key = sdb_fmt (0, "0x%08"PFMT64x, off);
+		char *key = sdb_fmt ("0x%08"PFMT64x, off);
 		if (sdb_ht_find (dirs, key, NULL)) {
 			break;
 		}
@@ -2315,18 +2330,18 @@ static void _store_resource_sdb(struct PE_(r_bin_pe_obj_t) *bin) {
 		return;
 	}
 	r_list_foreach (bin->resources, iter, rs) {
-		key = sdb_fmt (0, "resource.%d.timestr", index);
+		key = sdb_fmt ("resource.%d.timestr", index);
 		sdb_set (sdb, key, rs->timestr, 0);
-		key = sdb_fmt (0, "resource.%d.vaddr", index);
+		key = sdb_fmt ("resource.%d.vaddr", index);
 		vaddr = bin_pe_rva_to_va (bin, rs->data->OffsetToData);
 		sdb_num_set (sdb, key, vaddr, 0);
-		key = sdb_fmt (0, "resource.%d.name", index);
+		key = sdb_fmt ("resource.%d.name", index);
 		sdb_num_set (sdb, key, rs->name, 0);
-		key = sdb_fmt (0, "resource.%d.size", index);
+		key = sdb_fmt ("resource.%d.size", index);
 		sdb_num_set (sdb, key, rs->data->Size, 0);
-		key = sdb_fmt (0, "resource.%d.type", index);
+		key = sdb_fmt ("resource.%d.type", index);
 		sdb_set (sdb, key, rs->type, 0);
-		key = sdb_fmt (0, "resource.%d.language", index);
+		key = sdb_fmt ("resource.%d.language", index);
 		sdb_set (sdb, key, rs->language, 0);
 		index++;
 	}
@@ -2358,7 +2373,7 @@ R_API void PE_(bin_pe_parse_resource)(struct PE_(r_bin_pe_obj_t) *bin) {
 	for (index = 0; index < totalRes; index++) {
 		Pe_image_resource_directory_entry typeEntry;
 		off = rsrc_base + sizeof (*rs_directory) + index * sizeof (typeEntry);
-		sdb_ht_insert (dirs, sdb_fmt (0, "0x%08"PFMT64x, off), "1");
+		sdb_ht_insert (dirs, sdb_fmt ("0x%08"PFMT64x, off), "1");
 		if (off > bin->size || off + sizeof(typeEntry) > bin->size) {
 			break;
 		}
@@ -2709,13 +2724,14 @@ static bool get_rsds(ut8* dbg_data, int dbg_data_len, SCV_RSDS_HEADER* res) {
 
 static void get_nb10(ut8* dbg_data, SCV_NB10_HEADER* res) {
 	const int nb10sz = 16;
-	memcpy (res, dbg_data, nb10sz);
-	res->file_name = (ut8*) strdup ((const char*) dbg_data + nb10sz);
+	// memcpy (res, dbg_data, nb10sz);
+	// res->file_name = (ut8*) strdup ((const char*) dbg_data + nb10sz);
 }
 
 static int get_debug_info(struct PE_(r_bin_pe_obj_t)* bin, PE_(image_debug_directory_entry)* dbg_dir_entry, ut8* dbg_data, int dbg_data_len, SDebugInfo* res) {
 	#define SIZEOF_FILE_NAME 255
 	int i = 0;
+	const char* basename;
 	if (!dbg_data) {
 		return 0;
 	}
@@ -2742,18 +2758,26 @@ static int get_debug_info(struct PE_(r_bin_pe_obj_t)* bin, PE_(image_debug_direc
 				rsds_hdr.guid.data4[6],
 				rsds_hdr.guid.data4[7],
 				rsds_hdr.age);
+			basename = r_file_basename ((char*) rsds_hdr.file_name);
 			strncpy (res->file_name, (const char*)
-				rsds_hdr.file_name, sizeof (res->file_name));
+				basename, sizeof (res->file_name));
 			res->file_name[sizeof (res->file_name) - 1] = 0;
 			rsds_hdr.free ((struct SCV_RSDS_HEADER*) &rsds_hdr);
 		} else if (strncmp ((const char*) dbg_data, "NB10", 4) == 0) {
-			SCV_NB10_HEADER nb10_hdr;
+			if (dbg_data_len < 20) {
+				eprintf ("Truncated NB10 entry, not enough data to parse\n");
+				return 0;
+			}
+			SCV_NB10_HEADER nb10_hdr = {{0}};
 			init_cv_nb10_header (&nb10_hdr);
 			get_nb10 (dbg_data, &nb10_hdr);
 			snprintf (res->guidstr, sizeof (res->guidstr),
 				"%x%x", nb10_hdr.timestamp, nb10_hdr.age);
-			strncpy (res->file_name, (const char*)
-				nb10_hdr.file_name, sizeof(res->file_name) - 1);
+			res->file_name[0] = 0;
+			if (nb10_hdr.file_name) {
+				strncpy (res->file_name, (const char*)
+						nb10_hdr.file_name, sizeof (res->file_name) - 1);
+			}
 			res->file_name[sizeof (res->file_name) - 1] = 0;
 			nb10_hdr.free ((struct SCV_NB10_HEADER*) &nb10_hdr);
 		} else {
@@ -3295,7 +3319,7 @@ struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)
 			}
 		} else {
 			memcpy (sections[j].name, shdr[i].Name, PE_IMAGE_SIZEOF_SHORT_NAME);
-			sections[j].name[PE_IMAGE_SIZEOF_SHORT_NAME - 1] = '\0';
+			sections[j].name[PE_IMAGE_SIZEOF_SHORT_NAME] = '\0';
 		}
 		sections[j].vaddr = shdr[i].VirtualAddress;
 		sections[j].size = shdr[i].SizeOfRawData;

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2017 - pancake */
+/* radare - LGPL - Copyright 2007-2018 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -444,16 +444,14 @@ R_API char *r_file_slurp_random_line_count(const char *file, int *line) {
 	/* Reservoir Sampling */
 	char *ptr = NULL, *str;
 	int sz, i, lines, selection = -1;
-	struct timeval tv;
 	int start = *line;
 	if ((str = r_file_slurp (file, &sz))) {
-		gettimeofday (&tv, NULL);
-		srand (getpid() + tv.tv_usec);
+		r_num_irand ();
 		for (i = 0; str[i]; i++) {
 			if (str[i] == '\n') {
 				//here rand doesn't have any security implication
 				// https://www.securecoding.cert.org/confluence/display/c/MSC30-C.+Do+not+use+the+rand()+function+for+generating+pseudorandom+numbers
-				if (!(rand() % (++(*line)))) {
+				if (!(r_num_rand ((++(*line))))) {
 					selection = (*line - 1);  /* The line we want. */
 				}
 			}
@@ -574,9 +572,13 @@ R_API bool r_file_hexdump(const char *file, const ut8 *buf, int len, int append)
 	return true;
 }
 
-R_API bool r_file_dump(const char *file, const ut8 *buf, int len, int append) {
+R_API bool r_file_touch(const char *file) {
+	return r_file_dump(file, NULL, 0, true);
+}
+
+R_API bool r_file_dump(const char *file, const ut8 *buf, int len, bool append) {
 	FILE *fd;
-	if (!file || !*file || !buf || len < 0) {
+	if (!file || !*file) {
 		eprintf ("r_file_dump file: %s buf: %p\n", file, buf);
 		return false;
 	}
@@ -590,13 +592,15 @@ R_API bool r_file_dump(const char *file, const ut8 *buf, int len, int append) {
 		eprintf ("Cannot open '%s' for writing\n", file);
 		return false;
 	}
-	if (len < 0) {
-		len = strlen ((const char *)buf);
-	}
-	if (fwrite (buf, len, 1, fd) != 1) {
-		r_sys_perror ("r_file_dump: fwrite: error\n");
-		fclose (fd);
-		return false;
+	if (buf) {
+		if (len < 0) {
+			len = strlen ((const char *)buf);
+		}
+		if (len > 0 && fwrite (buf, len, 1, fd) != 1) {
+			r_sys_perror ("r_file_dump: fwrite: error\n");
+			fclose (fd);
+			return false;
+		}
 	}
 	fclose (fd);
 	return true;
@@ -822,7 +826,9 @@ static RMmap *r_file_mmap_other (RMmap *m) {
 R_API RMmap *r_file_mmap (const char *file, bool rw, ut64 base) {
 	RMmap *m = NULL;
 	int fd = -1;
-	if (!rw && !r_file_exists (file)) return m;
+	if (!rw && !r_file_exists (file)) {
+		return m;
+	}
 	fd = r_sandbox_open (file, rw? O_RDWR: O_RDONLY, 0644);
 	if (fd == -1 && !rw) {
 		eprintf ("r_file_mmap: file does not exis.\n");
@@ -1002,7 +1008,7 @@ R_API bool r_file_copy (const char *src, const char *dst) {
 	/* TODO: implement in C */
 	/* TODO: Use NO_CACHE for iOS dyldcache copying */
 #if HAVE_COPYFILE_H
-	return copyfile (src, dst, 0, 0) != -1;
+	return copyfile (src, dst, 0, COPYFILE_DATA | COPYFILE_XATTR) != -1;
 #elif __WINDOWS__
 	return r_sys_cmdf ("copy %s %s", src, dst);
 #else

@@ -297,3 +297,36 @@ struct r_bin_mz_obj_t* r_bin_mz_new_buf(const struct r_buf_t *buf) {
 	}
 	return r_bin_mz_init (bin) ? bin : r_bin_mz_free (bin);
 }
+
+ut64 r_bin_mz_get_main_vaddr(struct r_bin_mz_obj_t *bin) {
+	int entry;
+	int n;
+	ut8 b[512];
+	if (!bin || !bin->b) {
+		return 0LL;
+	}
+	entry = r_bin_mz_get_entrypoint (bin);
+	ZERO_FILL (b);
+	if (r_buf_read_at (bin->b, entry, b, sizeof (b)) < 0) {
+		eprintf ("Warning: Cannot read entry at 0x%08"PFMT32x "\n", (ut32) entry);
+		return 0LL;
+	}
+	// MSVC
+	if (b[0] == 0xb4 && b[1] == 0x30) {
+		// ff 36 XX XX			push	XXXX
+		// ff 36 XX XX			push	argv
+		// ff 36 XX XX			push	argc
+		// 9a XX XX XX XX		lcall	_main
+		// 50				push	ax
+		for (n = 0; n < sizeof (b) - 18; n++) {
+			if (b[n] == 0xff && b[n + 4] == 0xff && b[n + 8] == 0xff && b[n + 12] == 0x9a && b[n + 17] == 0x50) {
+				const ut16 call_addr = r_read_ble16 (b + n + 13, 0);;
+				const ut16 call_seg = r_read_ble16 (b + n + 15, 0);;
+				const ut64 call_dst = r_bin_mz_seg_to_paddr (bin, call_seg) + call_addr;
+				return call_dst;
+			}
+		}
+	}
+
+	return 0LL;
+}

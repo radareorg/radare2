@@ -70,7 +70,7 @@ static int get_mem_option(char *token) {
 	                         "xxx", "osh", "oshst", "oshld", NULL};
 	int i = 0;
 	while (options[i]) {
-		if (!strcasecmp (token, options[i])) {
+		if (!r_str_casecmp (token, options[i])) {
 			return 15 - i;
 		}
 		i++;
@@ -244,7 +244,7 @@ static ut32 cmp(ArmOp *op) {
 }
 
 
-static ut32 sturop(ArmOp *op, int k) {
+static ut32 regsluop(ArmOp *op, int k) {
 	ut32 data = UT32_MAX;
 
 	if (op->operands[1].reg_type & ARM_REG32) {
@@ -796,7 +796,7 @@ static bool parseOperands(char* str, ArmOp *op) {
 			if (token[1] == 'P' || token [1] == 'p') {
 				int i;
 				for (i = 0; msr_const[i].name; i++) {
-					if (!strncasecmp (token, msr_const[i].name, strlen (msr_const[i].name))) {
+					if (!r_str_ncasecmp (token, msr_const[i].name, strlen (msr_const[i].name))) {
 						op->operands[operand].sp_val = msr_const[i].val;
 						break;
 					}
@@ -914,7 +914,11 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 		return *op != -1;
 	}
 	if (!strncmp (str, "stur", 4)) {
-		*op = sturop (&ops, 0x000000f8);
+		*op = regsluop (&ops, 0x000000f8);
+		return *op != -1;
+	}
+	if (!strncmp (str, "ldur", 4)) {
+		*op = regsluop (&ops, 0x000040f8);
 		return *op != -1;
 	}
 	if (!strncmp (str, "str", 3)) {

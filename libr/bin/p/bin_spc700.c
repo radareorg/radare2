@@ -61,7 +61,7 @@ static RList* sections(RBinFile *bf) {
 	ptr->size = RAM_SIZE;
 	ptr->vaddr = 0x0;
 	ptr->vsize = RAM_SIZE;
-	ptr->srwx = R_BIN_SCN_MAP;
+	ptr->srwx = R_BIN_SCN_READABLE;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 	return ret;

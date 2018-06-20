@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2014-2018 - Fedor Sakharov */
+
 #include <r_types.h>
 #include <r_util.h>
 #include <r_endian.h>
@@ -99,9 +101,7 @@ static const char *conds[] = {
 };
 
 static int decode_reg_reg(const ut16 instr, struct v850_cmd *cmd) {
-	ut8 opcode;
-
-	opcode = get_opcode (instr);
+	ut8 opcode = get_opcode (instr);
 
 	if (opcode >= sizeof (instrs)/sizeof (char *)) {
 		return -1;
@@ -121,18 +121,14 @@ static int decode_reg_reg(const ut16 instr, struct v850_cmd *cmd) {
 }
 
 static int decode_imm_reg(const ut16 instr, struct v850_cmd *cmd) {
-	ut8 opcode;
-	st8 immed;
-
-	opcode = get_opcode (instr);
-
-	if (opcode >= sizeof (instrs)/sizeof (char *)) {
+	ut8 opcode = get_opcode (instr);
+	if (opcode >= sizeof (instrs) / sizeof (char *)) {
 		return -1;
 	}
 
 	snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "%s", instrs[opcode]);
 
-	immed = get_reg1 (instr);
+	st8 immed = get_reg1 (instr);
 
 	if (immed & 0x10) {
 		immed |= 0xE0;
@@ -154,29 +150,33 @@ static int decode_imm_reg(const ut16 instr, struct v850_cmd *cmd) {
 	return 2;
 }
 
-static int decode_bcond(const ut16 instr, struct v850_cmd *cmd) {
-	ut16 disp;
-
-	disp = ((instr >> 4) & 0x7) | (instr >> 11);
-	disp = disp << 1;
-
+static int decode_bcond(const ut16 instr, int len, struct v850_cmd *cmd) {
+#if 0
+	ut16 disp = ((instr >> 4) & 0x7) | (instr >> 11);
+	disp <<= 1;
 	snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "b%s", conds[instr & 0xF]);
-
 	snprintf (cmd->operands, V850_INSTR_MAXLEN - 1, "0x%x", disp);
-
+#else
+	ut64 delta = ((((instr >> 4) & 0x7) | ((instr >> 11) << 3)) << 1);
+	if (delta & 0x100) {
+		delta |= 0xFE00;
+	}
+	snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "b%s", conds[instr & 0xF]);
+	snprintf (cmd->operands, V850_INSTR_MAXLEN - 1, "0x%08"PFMT64x, cmd->addr + delta);
+#endif
 	return 2;
 }
 
-static int decode_jarl(const ut8 *instr, struct v850_cmd *cmd) {
-	ut8 reg;
-	ut16 word1, word2;
-	ut32 disp;
+static int decode_jarl(const ut8 *instr, int len, struct v850_cmd *cmd) {
+	if (len < 4) {
+		return -1;
+	}
 
-	word1 = r_read_le16 (instr);
-	word2 = r_read_at_le16 (instr, 2);
+	ut16 word1 = r_read_le16 (instr);
+	ut16 word2 = r_read_at_le16 (instr, 2);
 
-	reg = get_reg2 (word1);
-	disp = (word2 << 6) | get_reg1 (word1);
+	ut8 reg = get_reg2 (word1);
+	ut32 disp = (word2 << 6) | get_reg1 (word1);
 
 	snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "%s", instrs[get_opcode (word1)]);
 	snprintf (cmd->operands, V850_INSTR_MAXLEN - 1, "0x%08x, r%d",
@@ -185,24 +185,25 @@ static int decode_jarl(const ut8 *instr, struct v850_cmd *cmd) {
 	return 4;
 }
 
-static int decode_3operands(const ut8 *instr, struct v850_cmd *cmd) {
-	ut16 word1, word2;
-
-	word1 = r_read_le16 (instr);
-	word2 = r_read_at_le16 (instr, 2);
-
+static int decode_3operands(const ut8 *instr, int len, struct v850_cmd *cmd) {
+	if (len < 4) {
+		return -1;
+	}
+	ut16 word1 = r_read_le16 (instr);
+	ut16 word2 = r_read_at_le16 (instr, 2);
 	snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "%s", instrs[get_opcode (word1)]);
 	snprintf (cmd->operands, V850_INSTR_MAXLEN - 1, "0x%x, r%d, r%d",
 			word2, get_reg1 (word1), get_reg2 (word1));
-
 	return 4;
 }
 
-static int decode_load_store(const ut8 *instr, struct v850_cmd *cmd) {
-	ut16 word1, word2;
+static int decode_load_store(const ut8 *instr, int len, struct v850_cmd *cmd) {
+	if (len < 4) {
+		return -1;
+	}
 
-	word1 = r_read_le16 (instr);
-	word2 = r_read_at_le16 (instr, 2);
+	ut16 word1 = r_read_le16 (instr);
+	ut16 word2 = r_read_at_le16 (instr, 2);
 
 	switch (get_opcode (word1)) {
 	case V850_STB:
@@ -232,27 +233,27 @@ static int decode_load_store(const ut8 *instr, struct v850_cmd *cmd) {
 	return 4;
 }
 
-static int decode_bit_op(const ut8 *instr, struct v850_cmd *cmd) {
-	ut16 word1, word2;
-	ut8 reg1;
+static int decode_bit_op(const ut8 *instr, int len, struct v850_cmd *cmd) {
+	if (len < 4) {
+		return -1;
+	}
 
-	word1 = r_read_le16 (instr);
-	word2 = r_read_at_le16 (instr, 2);
-
+	ut16 word1 = r_read_le16 (instr);
+	ut16 word2 = r_read_at_le16 (instr, 2);
 	snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "%s", bit_instrs[word1 >> 14]);
-
-	reg1 = get_reg1 (word1);
-
+	ut8 reg1 = get_reg1 (word1);
 	snprintf (cmd->operands, V850_INSTR_MAXLEN - 1, "%u, 0x%x[r%d]",
 			(word1 >> 11) & 0x7, word2, reg1);
 	return 4;
 }
 
-static int decode_extended(const ut8 *instr, struct v850_cmd *cmd) {
-	ut16 word1, word2;
+static int decode_extended(const ut8 *instr, int len, struct v850_cmd *cmd) {
+	if (len < 4) {
+		return -1;
+	}
 
-	word1 = r_read_le16 (instr);
-	word2 = r_read_at_le16 (instr, 2);
+	ut16 word1 = r_read_le16 (instr);
+	ut16 word2 = r_read_at_le16 (instr, 2);
 
 	snprintf (cmd->instr, V850_INSTR_MAXLEN - 1, "%s",
 			ext_instrs1[get_subopcode (word1)]);
@@ -296,11 +297,13 @@ static int decode_extended(const ut8 *instr, struct v850_cmd *cmd) {
 	return 4;
 }
 
-int v850_decode_command (const ut8 *instr, struct v850_cmd *cmd) {
+int v850_decode_command (const ut8 *instr, int len, struct v850_cmd *cmd) {
 	int ret;
-	ut16 in;
 
-	in = r_read_le16 (instr);
+	if (len < 2) {
+		return -1;
+	}
+	ut16 in = r_read_le16 (instr);
 
 	switch (get_opcode (in)) {
 	case V850_MOV:
@@ -339,27 +342,27 @@ int v850_decode_command (const ut8 *instr, struct v850_cmd *cmd) {
 	case V850_XORI:
 	case V850_ANDI:
 	case V850_MULHI:
-		ret = decode_3operands (instr, cmd);
+		ret = decode_3operands (instr, len, cmd);
 		break;
 	case V850_JARL1:
 	case V850_JARL2:
-		ret = decode_jarl (instr, cmd);
+		ret = decode_jarl (instr, len, cmd);
 		break;
 	case V850_STB:
 	case V850_LDB:
 	case V850_LDHW:
 	case V850_STHW:
-		ret = decode_load_store (instr, cmd);
+		ret = decode_load_store (instr, len, cmd);
 		break;
 	case V850_BIT_MANIP:
-		ret = decode_bit_op (instr, cmd);
+		ret = decode_bit_op (instr, len, cmd);
 		break;
 	case V850_EXT1:
-		ret = decode_extended (instr, cmd);
+		ret = decode_extended (instr, len, cmd);
 		break;
 	default:
 		if ((get_opcode (in) >> 2) == 0xB) {
-			ret = decode_bcond (in, cmd);
+			ret = decode_bcond (in, len, cmd);
 		} else {
 			ret = -1;
 		}

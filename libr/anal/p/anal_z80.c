@@ -12,21 +12,18 @@ static void z80_op_size(const ut8 *data, int *size, int *size_prefix) {
 	int type;
 	switch(data[0]) {
 	case 0xed:
-//		type = dd[data[1]].type;
-		type = ed[data[1]].type;
+		type = ed[z80_ed_branch_index_res(data[1])].type;
 		break;
 	case 0xcb:
 		type = Z80_OP16;
 		break;
 	case 0xdd:
-		type = dd[data[1]].type;
+		type = dd[z80_fddd_branch_index_res(data[1])].type;
 		break;
 	case 0xfd:
-//		type = dd[data[1]].type;
-		type = fd[data[1]].type;
+		type = fd[z80_fddd_branch_index_res(data[1])].type;
 		break;
 	default:
-//		type = dd[data[0]].type;
 		type = z80_op[data[0]].type;
 		break;
 	}
@@ -404,6 +401,10 @@ static int set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
+static int archinfo(RAnal *anal, int q) {
+	return 1;
+}
+
 RAnalPlugin r_anal_plugin_z80 = {
 	.name = "z80",
 	.arch = "z80",
@@ -411,6 +412,7 @@ RAnalPlugin r_anal_plugin_z80 = {
 	.bits = 16,
 	.set_reg_profile = &set_reg_profile,
 	.desc = "Z80 CPU code analysis plugin",
+	.archinfo = archinfo,
 	.op = &z80_anal_op,
 };
 

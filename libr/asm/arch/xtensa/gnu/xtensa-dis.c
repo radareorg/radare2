@@ -30,6 +30,10 @@
 #include "dis-asm.h"
 #include "libiberty.h"
 
+
+#if defined(_MSC_VER)
+__declspec(dllimport)
+#endif
 extern xtensa_isa xtensa_default_isa;
 
 #ifndef MAX

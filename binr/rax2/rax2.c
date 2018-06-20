@@ -1,7 +1,8 @@
-/* radare - LGPL - Copyright 2007-2017 - pancake */
+/* radare - LGPL - Copyright 2007-2018 - pancake */
 
 #include "../blob/version.c"
 #include <r_print.h>
+#include <r_util.h>
 
 #define STDIN_BUFFER_SIZE 354096
 #define R_STATIC_ASSERT(x)\
@@ -72,6 +73,10 @@ static int format_output(char mode, const char *s) {
 	return true;
 }
 
+static void print_ascii_table() {
+	printf("%s", ret_ascii_table());
+}
+
 static int help() {
 	printf (
 		"  =[base]                      ;  rax2 =10 0x46 -> output in base 10\n"
@@ -94,6 +99,7 @@ static int help() {
 		"  raw     ->  hex              ;  rax2 -S < /binfile\n"
 		"  hex     ->  raw              ;  rax2 -s 414141\n"
 		"  -l                           ;  append newline to output (for -E/-D/-r/..\n"
+		"  -a      show ascii table     ;  rax2 -a\n"
 		"  -b      bin -> str           ;  rax2 -b 01000101 01110110\n"
 		"  -B      str -> bin           ;  rax2 -B hello\n"
 		"  -d      force integer        ;  rax2 -d 3 -> 3 instead of 0x3\n"
@@ -101,8 +107,9 @@ static int help() {
 		"  -D      base64 decode        ;\n"
 		"  -E      base64 encode        ;\n"
 		"  -f      floating point       ;  rax2 -f 6.3+2.1\n"
-		"  -F      stdin slurp code hex ;  rax2 -F < shellcode.c\n"
+		"  -F      stdin slurp code hex ;  rax2 -F < shellcode.[c/py/js]\n"
 		"  -h      help                 ;  rax2 -h\n"
+		"  -i      dump as C byte array ;  rax2 -i < bytes\n"
 		"  -k      keep base            ;  rax2 -k 33+3 -> 36\n"
 		"  -K      randomart            ;  rax2 -K 0x34 1020304050\n"
 		"  -L      bin -> hex(bignum)   ;  rax2 -L 111111111 # 0x1ff\n"
@@ -145,6 +152,7 @@ static int rax(char *str, int len, int last) {
 		while (str[1] && str[1] != ' ') {
 			switch (str[1]) {
 			case 'l': nl = "\n"; break;
+			case 'a': print_ascii_table (); return 0;
 			case 's': flags ^= 1; break;
 			case 'e': flags ^= 1 << 1; break;
 			case 'S': flags ^= 1 << 2; break;
@@ -165,6 +173,7 @@ static int rax(char *str, int len, int last) {
 			case 'w': flags ^= 1 << 16; break;
 			case 'r': flags ^= 1 << 18; break;
 			case 'L': flags ^= 1 << 19; break;
+			case 'i': flags ^= 1 << 21; break;
 			case 'v': blob_version ("rax2"); return 0;
 			case '\0': return !use_stdin ();
 			default:
@@ -361,7 +370,7 @@ dotherax:
 		char *out = calloc (sizeof (char), (len + 2) / 3 * 4 + 1); // ceil(len/3)*4 plus 1 for NUL
 		if (out) {
 			r_base64_encode (out, (const ut8 *) str, len);
-			printf ("%s\n", out);
+			printf ("%s%s", out, nl);
 			fflush (stdout);
 			free (out);
 		}
@@ -411,6 +420,7 @@ dotherax:
 		s = n >> 16 << 12;
 		a = n & 0x0fff;
 		r_num_units (unit, n);
+#if 0
 		eprintf ("%" PFMT64d " 0x%" PFMT64x " 0%" PFMT64o
 			" %s %04x:%04x ",
 			n, n, n, unit, s, a);
@@ -428,25 +438,56 @@ dotherax:
 		r_str_bits (out, (const ut8 *) &n, sizeof (n), NULL);
 		eprintf ("%s %.01lf %ff %lf\n",
 			out, num->fvalue, f, d);
+#endif
+				printf ("hex     0x%"PFMT64x"\n", n);
+				printf ("octal   0%"PFMT64o"\n", n);
+				printf ("unit    %s\n", unit);
+				printf ("segment %04x:%04x\n", s, a);
+				if (n >> 32) {
+					printf ("int64   %"PFMT64d"\n", (st64)n);
+				} else {
+					printf ("int32   %d\n", (st32)n);
+				}
+				if (asnum) {
+					printf ("string  \"%s\"\n", asnum);
+					free (asnum);
+				}
+				/* binary and floating point */
+				r_str_bits64 (out, n);
+				memcpy (&f, &n, sizeof (f));
+				memcpy (&d, &n, sizeof (d));
+				printf ("binary  0b%s\n", out);
+				printf ("float:  %ff\n", f);
+				printf ("double: %lf\n", d);
+
+				/* ternary */
+				r_num_to_trits (out, n);
+				printf ("trits   0t%s\n", out);
 
 		return true;
 	} else if (flags & (1 << 19)) { // -L
 		r_print_hex_from_bin (NULL, str);
 		return true;
-	} else if (flags & (1 << 20)) { // -P
-		char *str = r_stdin_slurp (NULL);
-		if (str) {
-			char *res = r_hex_from_py (str);
-			if (res) {
-				printf ("%s\n", res);
-				fflush (stdout);
-				free (res);
-			} else {
-				eprintf ("Invalid input.\n");
+	} else if (flags & (1 << 21)) { // -i
+		static const char start[] = "unsigned char buf[] = {";
+		printf (start);
+		/* resonable amount of bytes per line */
+		const int byte_per_col = 12;
+		for (i = 0; i < len-1; i++) {
+			/* wrapping every N bytes */
+			if (i % byte_per_col == 0) {
+				printf ("\n  ");
 			}
-			free (str);
+			printf ("0x%02x, ", (ut8) str[i]);
 		}
-		return false;
+		/* some care for the last element */
+		if (i % byte_per_col == 0) {
+			printf("\n  ");
+		}
+		printf ("0x%02x\n", (ut8) str[len-1]);
+		printf ("};\n");
+		printf ("unsigned int buf_len = %d;\n", len);
+		return true;
 	}
 
 	if (r_str_startswith (str, "0x")) {
@@ -500,7 +541,7 @@ static int use_stdin() {
 	if (!buf) {
 		return 0;
 	}
-	if (!(flags & 16384)) {
+	if (!(flags & (1<<14))) {
 		for (l = 0; l >= 0 && l < STDIN_BUFFER_SIZE; l++) {
 			// make sure we don't read beyond boundaries
 			int n = read (0, buf + l, STDIN_BUFFER_SIZE - l);
@@ -514,7 +555,7 @@ static int use_stdin() {
 			}
 			buf[n] = 0;
 			// if (sflag && strlen (buf) < STDIN_BUFFER_SIZE) // -S
-			buf[STDIN_BUFFER_SIZE] = '\0'; 
+			buf[STDIN_BUFFER_SIZE] = '\0';
 			if (!rax (buf, l, 0)) {
 				break;
 			}

@@ -19,7 +19,6 @@ static ut64 get_elf_vaddr64 (RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	//NOTE(aaSSfxxx): since RVA is vaddr - "official" image base, we just need to add imagebase to vaddr
 	struct Elf_(r_bin_elf_obj_t)* obj = bf->o->bin_obj;
 	return obj->baddr - obj->boffset + vaddr;
-
 }
 
 static void headers64(RBinFile *bf) {
@@ -122,6 +121,7 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
+	.load_buffer= &load_buffer,
 	.destroy = &destroy,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
@@ -143,6 +143,9 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.create = &create,
 	.write = &r_bin_write_elf64,
 	.get_vaddr = &get_elf_vaddr64,
+	.file_type = &get_file_type,
+	.regstate = &regstate,
+	.maps = &maps,
 };
 
 #ifndef CORELIB

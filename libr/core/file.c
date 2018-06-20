@@ -18,7 +18,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	RBinFile *bf = ofile ? r_bin_file_find_by_fd (core->bin, ofile->fd)
 		: NULL;
 	RIODesc *odesc = (core->io && ofile) ? r_io_desc_get (core->io, ofile->fd) : NULL;
-	char *ofilepath = NULL, *obinfilepath = bf? strdup (bf->file): NULL;
+	char *ofilepath = NULL, *obinfilepath = (bf && bf->file)? strdup (bf->file): NULL;
 	int ret = false;
 	ut64 origoff = core->offset;
 	if (odesc) {
@@ -231,7 +231,7 @@ R_API char *r_core_sysenv_begin(RCore * core, const char *cmd) {
 	r_sys_setenv ("RABIN2_PDBSERVER", r_config_get (core->config, "pdb.server"));
 	if (desc && desc->name) {
 		r_sys_setenv ("R2_FILE", desc->name);
-		r_sys_setenv ("R2_SIZE", sdb_fmt (0, "%"PFMT64d, r_io_desc_size (desc)));
+		r_sys_setenv ("R2_SIZE", sdb_fmt ("%"PFMT64d, r_io_desc_size (desc)));
 		if (cmd && strstr (cmd, "R2_BLOCK")) {
 			// replace BLOCK in RET string
 			if ((f = r_file_temp ("r2block"))) {
@@ -244,12 +244,12 @@ R_API char *r_core_sysenv_begin(RCore * core, const char *cmd) {
 	}
 	r_sys_setenv ("RABIN2_LANG", r_config_get (core->config, "bin.lang"));
 	r_sys_setenv ("RABIN2_DEMANGLE", r_config_get (core->config, "bin.demangle"));
-	r_sys_setenv ("R2_OFFSET", sdb_fmt (0, "%"PFMT64d, core->offset));
-	r_sys_setenv ("R2_XOFFSET", sdb_fmt (0, "0x%08"PFMT64x, core->offset));
+	r_sys_setenv ("R2_OFFSET", sdb_fmt ("%"PFMT64d, core->offset));
+	r_sys_setenv ("R2_XOFFSET", sdb_fmt ("0x%08"PFMT64x, core->offset));
 	r_sys_setenv ("R2_ENDIAN", core->assembler->big_endian? "big": "little");
-	r_sys_setenv ("R2_BSIZE", sdb_fmt (0, "%d", core->blocksize));
+	r_sys_setenv ("R2_BSIZE", sdb_fmt ("%d", core->blocksize));
 	r_sys_setenv ("R2_ARCH", r_config_get (core->config, "asm.arch"));
-	r_sys_setenv ("R2_BITS", sdb_fmt (0, "%d", r_config_get_i (core->config, "asm.bits")));
+	r_sys_setenv ("R2_BITS", sdb_fmt ("%d", r_config_get_i (core->config, "asm.bits")));
 	r_sys_setenv ("R2_COLOR", r_config_get_i (core->config, "scr.color")? "1": "0");
 	r_sys_setenv ("R2_DEBUG", r_config_get_i (core->config, "cfg.debug")? "1": "0");
 	r_sys_setenv ("R2_IOVA", r_config_get_i (core->config, "io.va")? "1": "0");
@@ -502,7 +502,7 @@ static void load_scripts_for(RCore *core, const char *name) {
 	// TODO: 
 	char *file;
 	RListIter *iter;
-	char *hdir = r_str_newf (R2_HOMEDIR "/rc.d/bin-%s", name);
+	char *hdir = r_str_newf (R_JOIN_2_PATHS (R2_HOME_BINRC, "bin-%s"), name);
 	char *path = r_str_home (hdir);
 	RList *files = r_sys_dir (path);
 	if (!r_list_empty (files)) {
@@ -612,7 +612,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 					r_config_get_i (r->config, "asm.bits"));
 		}
 	}
-	if (r_config_get_i (r->config, "io.exec")) {
+	if (desc && r_config_get_i (r->config, "io.exec")) {
 		desc->flags |= R_IO_EXEC;
 	}
 	if (plugin && plugin->name && !strcmp (plugin->name, "dex")) {
@@ -644,10 +644,61 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	if (!va) {
 		r_config_set_i (r->config, "io.va", 0);
 	}
+
+	//If type == R_BIN_TYPE_CORE, we need to create all the maps
+	if (plugin && binfile && plugin->file_type
+		 && plugin->file_type (binfile) == R_BIN_TYPE_CORE) {
+		ut64 sp_addr = (ut64)-1;
+		RIOMap *stack_map = NULL;
+
+		// Setting the right arch and bits, so regstate will be shown correctly
+		if (plugin->info) {
+			RBinInfo *inf = plugin->info (binfile);
+			eprintf ("Setting up coredump: asm.arch <-> %s and asm.bits <-> %d\n",
+									inf->arch,
+									inf->bits);
+			r_config_set (r->config, "asm.arch", inf->arch);
+			r_config_set_i (r->config, "asm.bits", inf->bits);
+                }
+		if (binfile->o->regstate) {
+			if (r_reg_arena_set_bytes (r->anal->reg, binfile->o->regstate)) {
+				eprintf ("Setting up coredump: Problem while setting the registers\n");
+			} else {
+				eprintf ("Setting up coredump: Registers have been set\n");
+				const char *regname = r_reg_get_name (r->anal->reg, R_REG_NAME_SP);
+				RRegItem *reg = r_reg_get (r->anal->reg, regname, -1);
+				sp_addr = r_reg_get_value (r->anal->reg, reg);
+				stack_map = r_io_map_get (r->io, sp_addr);
+			}
+			free (binfile->o->regstate);
+                }
+
+		RBinObject *o = binfile->o;
+		int map = 0;
+		if (o && o->maps) {
+			RList *maps = o->maps;
+			RListIter *iter;
+			RBinMap *mapcore;
+
+			r_list_foreach (maps, iter, mapcore) {
+				RIOMap *iomap = r_io_map_get (r->io, mapcore->addr);
+				if (iomap && (mapcore->file || stack_map == iomap)) {
+					r_io_map_set_name (iomap, mapcore->file ? mapcore->file : "[stack]");
+				}
+				map++;
+			}
+			r_list_free (maps);
+			o->maps = NULL;
+		}
+		eprintf ("Setting up coredump: %d maps have been found and created\n", map);
+		goto beach;
+	}
+
 	//workaround to map correctly malloc:// and raw binaries
 	if (!plugin || !strcmp (plugin->name, "any") || r_io_desc_is_dbg (desc) || (obj && (!obj->sections || !va))) {
 		r_io_map_new (r->io, desc->fd, desc->flags, 0LL, laddr, r_io_desc_size (desc), true);
 	}
+beach:
 	return true;
 }
 
@@ -792,7 +843,11 @@ R_API int r_core_files_free(const RCore *core, RCoreFile *cf) {
 
 R_API void r_core_file_free(RCoreFile *cf) {
 	int res = 1;
-	if (!cf || !cf->core) {
+	if (!cf) {
+		return;
+	}
+	if (!cf->core) {
+		free (cf);
 		return;
 	}
 	res = r_core_files_free (cf->core, cf);
@@ -856,6 +911,7 @@ R_API int r_core_file_close(RCore *r, RCoreFile *fh) {
 		}
 	}
 	r_io_desc_close (desc);
+	r_core_file_free (fh);
 	return ret;
 }
 

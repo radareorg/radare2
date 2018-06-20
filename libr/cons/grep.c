@@ -1,14 +1,9 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2018 - pancake, nibble */
 
 #include <r_cons.h>
 #include <r_util.h>
 #include <r_print.h>
 #include <sdb.h>
-#undef SDB_API
-#define SDB_API static
-#include "../../shlr/sdb/src/json/rangstr.c"
-int js0n(const ut8 *js, RangstrType len, RangstrType *out);
-#include "../../shlr/sdb/src/json/path.c"
 
 #define I(x) r_cons_singleton ()->x
 
@@ -144,6 +139,8 @@ static void parse_grep_expression(const char *str) {
 			if (first) {
 				str++;
 				cons->grep.icase = 1;
+			} else {
+				goto while_end;
 			}
 			break;
 		case '^':
@@ -460,8 +457,7 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 	}
 	if (cons->grep.json) {
 		if (cons->grep.json_path) {
-			Rangstr rs = json_get (cons->buffer, cons->grep.json_path);
-			char *u = rangstr_dup (&rs);
+			char *u = sdb_json_get_str (cons->buffer, cons->grep.json_path);
 			if (u) {
 				cons->buffer = u;
 				cons->buffer_len = strlen (u);
@@ -479,7 +475,7 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 				Color_RESET,
 				NULL
 			};
-			char *out = r_print_json_indent (buf, I (use_color), "  ", palette);
+			char *out = r_print_json_indent (buf, I (color), "  ", palette);
 			if (!out) {
 				return 0;
 			}
@@ -564,7 +560,11 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 		l = p - in;
 		if (l > 0) {
 			memcpy (tline, in, l);
-			tl = r_str_ansi_filter (tline, NULL, NULL, l);
+			if (cons->grep_color) {
+				tl = l;
+			} else {
+				tl = r_str_ansi_filter (tline, NULL, NULL, l);
+			}
 			if (tl < 0) {
 				ret = -1;
 			} else {
@@ -884,14 +884,14 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 				esc = 0;
 				str = ptr;
 				continue;
-			} else if (!strncmp (ptr, "48;5;", 5)) {
+			} else if (!strncmp (ptr, "48;5;", 5) || !strncmp (ptr, "48;2;", 5)) {
 				char *end = strchr (ptr, 'm');
 				r_strbuf_appendf (res, "<font style='background-color:%s'>", gethtmlrgb (ptr));
 				tag_font = true;
 				ptr = end;
 				str = ptr + 1;
 				esc = 0;
-			} else if (!strncmp (ptr, "38;5;", 5)) {
+			} else if (!strncmp (ptr, "38;5;", 5) || !strncmp (ptr, "38;2;", 5)) {
 				char *end = strchr (ptr, 'm');
 				r_strbuf_appendf (res, "<font color='%s'>", gethtmlrgb (ptr));
 				tag_font = true;
@@ -946,11 +946,3 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 	return r_strbuf_drain (res);
 }
 
-R_API int r_cons_html_print(const char *ptr) {
-	char *res = r_cons_html_filter (ptr, NULL);
-	int res_len = strlen (res);
-	printf ("%s", res);
-	fflush (stdout);
-	free (res);
-	return res_len;
-}

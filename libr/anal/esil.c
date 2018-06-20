@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2017 - pancake, condret */
+/* radare - LGPL - Copyright 2014-2018 - pancake, condret */
 
 #include <r_anal.h>
 #include <r_types.h>
@@ -27,8 +27,11 @@ static void err(RAnalEsil *esil, const char *msg) {
 
 /* Returns the number that has bits + 1 least significant bits set. */
 static inline ut64 genmask(int bits) {
-	ut64 m = (ut64)(((ut64)(2) << bits) - 1);
-	if (!m) m = UT64_MAX;
+	ut64 m = UT64_MAX;
+	if (bits < 64) {
+		m = (ut64)(((ut64)(2) << bits) - 1);
+		if (!m) m = UT64_MAX;
+	}
 	return m;
 }
 
@@ -75,7 +78,7 @@ static bool popRN(RAnalEsil *esil, ut64 *n) {
 
 /* R_ANAL_ESIL API */
 
-R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap) {
+R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
 	RAnalEsil *esil = R_NEW0 (RAnalEsil);
 	if (!esil) {
 		return NULL;
@@ -95,16 +98,16 @@ R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap) {
 	esil->iotrap = iotrap;
 	esil->interrupts = sdb_new0 ();
 	esil->sessions = r_list_newf (r_anal_esil_session_free);
+	esil->addrmask = genmask (addrsize - 1);
 	return esil;
 }
 
 R_API int r_anal_esil_set_op(RAnalEsil *esil, const char *op, RAnalEsilOp code) {
 	char t[128];
-	char *h;
 	if (!code || !op || !strlen (op) || !esil || !esil->ops) {
 		return false;
 	}
-	h = sdb_itoa (sdb_hash (op), t, 16);
+	char *h = sdb_itoa (sdb_hash (op), t, 16);
 	sdb_num_set (esil->ops, h, (ut64)(size_t)code, 0);
 	if (!sdb_num_exists (esil->ops, h)) {
 		eprintf ("can't set esil-op %s\n", op);
@@ -229,10 +232,8 @@ static ut8 esil_internal_sizeof_reg(RAnalEsil *esil, const char *r) {
 
 static bool alignCheck(RAnalEsil *esil, ut64 addr) {
 	int dataAlign = r_anal_archinfo (esil->anal, R_ANAL_ARCHINFO_DATA_ALIGN);
-	if (dataAlign > 0) {
-		if (addr % dataAlign) {
-			return false;
-		}
+	if (dataAlign > 0 && addr % dataAlign) {
+		return false;
 	}
 	return true;
 }
@@ -241,6 +242,7 @@ static int internal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len)
 	if (!esil || !esil->anal || !esil->anal->iob.io) {
 		return 0;
 	}
+	addr &= esil->addrmask;
 	if (!alignCheck (esil, addr)) {
 		esil->trap = R_ANAL_TRAP_READ_ERR;
 		esil->trap_code = addr;
@@ -273,6 +275,7 @@ static int internal_esil_mem_read_no_null(RAnalEsil *esil, ut64 addr, ut8 *buf, 
 	if (!esil || !esil->anal || !esil->anal->iob.io || !addr) {
 		return 0;
 	}
+	addr &= esil->addrmask;
 	if (!alignCheck (esil, addr)) {
 		esil->trap = R_ANAL_TRAP_READ_ERR;
 		esil->trap_code = addr;
@@ -296,6 +299,7 @@ R_API int r_anal_esil_mem_read(RAnalEsil *esil, ut64 addr, ut8 *buf, int len) {
 	if (!buf || !esil) {
 		return 0;
 	}
+	addr &= esil->addrmask;
 	if (esil->cb.hook_mem_read) {
 		ret = esil->cb.hook_mem_read (esil, addr, buf, len);
 	}
@@ -328,6 +332,7 @@ static int internal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, i
 	if (!esil || !esil->anal || !esil->anal->iob.io || esil->nowrite) {
 		return 0;
 	}
+	addr &= esil->addrmask;
 	if (!alignCheck (esil, addr)) {
 		esil->trap = R_ANAL_TRAP_READ_ERR;
 		esil->trap_code = addr;
@@ -365,6 +370,7 @@ static int internal_esil_mem_write_no_null(RAnalEsil *esil, ut64 addr, const ut8
 	if (esil->nowrite) {
 		return 0;
 	}
+	addr &= esil->addrmask;
 	if (esil->anal->iob.write_at (esil->anal->iob.io, addr, buf, len)) {
 		ret = len;
 	}
@@ -384,6 +390,7 @@ R_API int r_anal_esil_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int 
 	if (!buf || !esil) {
 		return 0;
 	}
+	addr &= esil->addrmask;
 	IFDBG {
 		eprintf ("0x%08" PFMT64x " <W ", addr);
 		for (i = 0; i < len; i++) {

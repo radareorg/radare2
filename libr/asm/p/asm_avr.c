@@ -27,7 +27,7 @@ extern instructionInfo instructionSet[AVR_TOTAL_INSTRUCTIONS];
 #define TOKEN_DELIM " ,\t"
 
 /* the next few functions and structures uses for detecting
-   AVR special regs, like X+, -Y, Z+3 in st(d), ld(d) and 
+   AVR special regs, like X+, -Y, Z+3 in st(d), ld(d) and
    (e)lpm instructions */
 struct _specialregs {
 	char reg[4];
@@ -35,7 +35,7 @@ struct _specialregs {
 };
 typedef struct _specialregs specialregs;
 
-#define REGS_TABLE 9 
+#define REGS_TABLE 9
 
 // radare tolower instruction in rasm, so we use 'x' instead of 'X' etc.
 specialregs RegsTable[REGS_TABLE] = {
@@ -70,7 +70,7 @@ static int parse_specialreg(const char *reg) {
 				found = OPERAND_ZPQ;
 		}
 	}
-	return found;	
+	return found;
 }
 
 /* gets the number from string
@@ -81,7 +81,7 @@ static int getnum(RAsm *a, const char *s) {
 	return r_num_math (a->num, s);
 }
 
-/* this function searches from instruction in instructionSet table 
+/* this function searches from instruction in instructionSet table
    (see avr_disasm.h for more info)
    returns index of the instruction in the table */
 static int search_instruction(RAsm *a, char instr[3][MAX_TOKEN_SIZE], int args) {
@@ -93,43 +93,43 @@ static int search_instruction(RAsm *a, char instr[3][MAX_TOKEN_SIZE], int args) 
 			// in AVR instructions could have different opcodes based on number of arguments
 			if (instructionSet[i].numOperands == args) {
 				/* because st Z+ and st Z (and so on...) are instructions with DIFFERENT opcodes
-				   we handling all this instruction manually, by pre-parsing the arguments */					
+				   we handling all this instruction manually, by pre-parsing the arguments */
 				if (args != 2) {
 					return i; // it's 0- or 1- arg instruction
 				}
 				// handling (e)lpm instruction with 2 args
-				if (instructionSet[i].opcodeMask >= 0x9004 && 
+				if (instructionSet[i].opcodeMask >= 0x9004 &&
 					instructionSet[i].opcodeMask <= 0x9007) {
 					if (instructionSet[i].operandTypes[1] == parse_specialreg(instr[2]))
 						return i;
 				// handling ld & ldd instruction with 2 args
-				} else if (instructionSet[i].mnemonic[0] == 'l' 
+				} else if (instructionSet[i].mnemonic[0] == 'l'
 					&& instructionSet[i].mnemonic[1] == 'd'
 					&& (instructionSet[i].mnemonic[2] == 'd' || instructionSet[i].mnemonic[2] == '\0')) {
 					if (instructionSet[i].operandTypes[1] == parse_specialreg(instr[2]))
 						return i;
 				// handling lds command, distinguishing long from 16-bit version
-				} else if (instructionSet[i].mnemonic[0] == 'l' 
+				} else if (instructionSet[i].mnemonic[0] == 'l'
 					&& instructionSet[i].mnemonic[1] == 'd'
-					&& instructionSet[i].mnemonic[2] == 's' 
+					&& instructionSet[i].mnemonic[2] == 's'
 					&& instructionSet[i].operandTypes[1] == OPERAND_LONG_ABSOLUTE_ADDRESS) {
 					// ineffective, but needed for lds/sts and other cases
 					if (strlen(instr[2]) > 0) {
 						op2 = getnum(a, instr[2]);
 						if (op2 > 127)
-							return i;	
+							return i;
 					}
 				// handling st & std instruction with 2 args
-				} else if (instructionSet[i].mnemonic[0] == 's' 
-					&& instructionSet[i].mnemonic[1] == 't' 
+				} else if (instructionSet[i].mnemonic[0] == 's'
+					&& instructionSet[i].mnemonic[1] == 't'
 					&& (instructionSet[i].mnemonic[2] == 'd' || instructionSet[i].mnemonic[2] == '\0')) {
-					
+
 					if (instructionSet[i].operandTypes[0] == parse_specialreg(instr[1]))
 						return i;
-				// handling sts long command 
-				} else if (instructionSet[i].mnemonic[0] == 's' 
+				// handling sts long command
+				} else if (instructionSet[i].mnemonic[0] == 's'
 					&& instructionSet[i].mnemonic[1] == 't'
-					&& instructionSet[i].mnemonic[2] == 's' 
+					&& instructionSet[i].mnemonic[2] == 's'
 					&& instructionSet[i].operandTypes[0] == OPERAND_LONG_ABSOLUTE_ADDRESS) {
 					// same for 1st operand of sts
 					if (strlen(instr[1]) > 0) {
@@ -142,26 +142,26 @@ static int search_instruction(RAsm *a, char instr[3][MAX_TOKEN_SIZE], int args) 
 				}
 			}
 		}
-	}	
+	}
 	return -1;
 }
 
-// Packs certain bits of data according to mask, used to pack operands by their encoding in the opcode. 
+// Packs certain bits of data according to mask, used to pack operands by their encoding in the opcode.
 static uint16_t packDataByMask(uint16_t data, uint16_t mask) {
 	int i, j;
 	uint16_t result = 0;
-	
+
 	/* i counts through every bit of the mask,
 	 * j counts through every bit of the original */
 	for (i = 0, j = 0; i < 16; i++) {
-		// If the mask has a bit in this position 
+		// If the mask has a bit in this position
 		if (mask & (1<<i)) {
 			/* If there is a data bit with this mask bit counter(j),
 			 * then toggle that bit in the extracted data (result) by mask offest(i).*/
 			if ((data & (1<<j)) != 0) {
 				result |= (1<<i);
-			}			
-			// Increment the original data bit count. 
+			}
+			// Increment the original data bit count.
 			j++;
 		}
 	}
@@ -180,7 +180,7 @@ static int parse_registerpair(const char *operand) {
 		free (op);
 		return -1;
 	}
-	
+
 	second = strtok (NULL, ":");
 
 	/* the next code handles two possible different representation of pair
@@ -198,8 +198,8 @@ static int parse_registerpair(const char *operand) {
 			if (fnum > snum && snum >= 0 && snum <= 30) {
 				res = snum / 2;
 			}
-		} else if (first[0] >= 'x' && first[0] <= 'z' 
-			 && second[0] >= 'x' && second[0] <= 'z' 
+		} else if (first[0] >= 'x' && first[0] <= 'z'
+			 && second[0] >= 'x' && second[0] <= 'z'
 			 && first[1] == 'h' && second[1] == 'l') {
 			// convert to register pair number by inversing and invert (and adding 12)
 			res = (2 - ('z' - first[0])) + 12;
@@ -243,7 +243,7 @@ static int assemble_operand(RAsm *a, const char *operand, int type, uint32_t *re
 	case OPERAND_RELATIVE_ADDRESS: // TODO: <-- check for negative (should be correct, but...)
 		temp = getnum (a, operand); // return pure number
 		/* the argument could be:
-		- target address (will be calculated in according to current pc of assemble), ex: 0x4, 200, 0x1000 
+		- target address (will be calculated in according to current pc of assemble), ex: 0x4, 200, 0x1000
 		or
 		- relative address, ex: +2, -1, +60, -49 */
 		if(a->pc || (operand[0] != '+' && operand[0] != '-')) { // for series of commands
@@ -284,8 +284,8 @@ static int assemble_operand(RAsm *a, const char *operand, int type, uint32_t *re
 
 	case OPERAND_YPQ:
 	case OPERAND_ZPQ:
-		if (strlen(operand) > 2) { 
-			/* return argument after '+' sign 
+		if (strlen(operand) > 2) {
+			/* return argument after '+' sign
 			   we've already checked presence of '+' in parse_specialreg */
 			*res = getnum(a, operand + 2);
 			ret = 0;
@@ -337,7 +337,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	}
 
 	if (tokens_cnt > 0) {
-		// find nearest instruction that looks like supplied 
+		// find nearest instruction that looks like supplied
 		instr_idx = search_instruction (a, tokens, tokens_cnt - 1);
 
 		if (instr_idx >= 0) {
@@ -355,10 +355,10 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 			} else if (instructionSet[instr_idx].numOperands == 1 && tokens_cnt == 2) {
 
 				if (assemble_operand (a, tokens[1], instructionSet[instr_idx].operandTypes[0], &op1) >= 0) {
-					// jmp and call has 4-byte opcode				
-					if (instructionSet[instr_idx].operandTypes[0] == OPERAND_LONG_ABSOLUTE_ADDRESS) { 
+					// jmp and call has 4-byte opcode
+					if (instructionSet[instr_idx].operandTypes[0] == OPERAND_LONG_ABSOLUTE_ADDRESS) {
 						op1 = op1/2;
-						coded = instructionSet[instr_idx].opcodeMask 
+						coded = instructionSet[instr_idx].opcodeMask
 						| packDataByMask((op1 >> 16), instructionSet[instr_idx].operandMasks[0]);
 						// memory addressed in bytes for jumps
 						coded |= ((uint16_t)op1) << 16;
@@ -366,12 +366,12 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 					} else {
 						// see avr_disasm.h for OPERAND_REGISTER_GHOST description
 						// e.g. clr r0 == eor r0, r0
-						if (instructionSet[instr_idx].operandTypes[1] == OPERAND_REGISTER_GHOST) { 
-							coded = instructionSet[instr_idx].opcodeMask 
+						if (instructionSet[instr_idx].operandTypes[1] == OPERAND_REGISTER_GHOST) {
+							coded = instructionSet[instr_idx].opcodeMask
 							| packDataByMask(op1, instructionSet[instr_idx].operandMasks[0])
 							| packDataByMask(op1, instructionSet[instr_idx].operandMasks[1]);
-						} else {	
-							coded = instructionSet[instr_idx].opcodeMask 
+						} else {
+							coded = instructionSet[instr_idx].opcodeMask
 							| packDataByMask(op1, instructionSet[instr_idx].operandMasks[0]);
 						}
 
@@ -383,10 +383,10 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 				if (assemble_operand(a, tokens[1], instructionSet[instr_idx].operandTypes[0], &op1) >= 0 &&
 				   assemble_operand(a, tokens[2], instructionSet[instr_idx].operandTypes[1], &op2) >= 0) {
 
-					coded = instructionSet[instr_idx].opcodeMask 
+					coded = instructionSet[instr_idx].opcodeMask
 						| packDataByMask(op1, instructionSet[instr_idx].operandMasks[0])
 						| packDataByMask(op2, instructionSet[instr_idx].operandMasks[1]);
-						
+
 					len = 2;
 
 					// handling lds/sts instructions
@@ -396,10 +396,10 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 					} else if (instructionSet[instr_idx].operandTypes[1] == OPERAND_LONG_ABSOLUTE_ADDRESS) {
 						coded |= ((uint16_t)op2) << 16;
 						len = 4;
-					}									
+					}
 				}
 			}
-		}	
+		}
 	}
 
 	// copying result to radare struct
@@ -419,14 +419,19 @@ RAsmPlugin r_asm_plugin_avr = {
 	.desc = "AVR Atmel",
 	.disassemble = &disassemble,
 	.assemble = &assemble,
-	.cpus = 
-		"ATmega8,"
+	.cpus =
+		"ATmega8," // First one is default
+		"ATmega1280,"
+		"ATmega1281,"
 		"ATmega168,"
+		"ATmega2560,"
+		"ATmega2561,"
 		"ATmega328p,"
 		"ATmega32u4,"
-		"ATmega1280,"
-		"ATmega2560,"
-		"ATmega48"
+		"ATmega48,"
+		"ATmega640,"
+		"ATmega88,"
+		"ATxmega128a4u"
 };
 
 #ifndef CORELIB

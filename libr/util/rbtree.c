@@ -244,6 +244,39 @@ R_API void r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBCompar
 	}
 }
 
+// returns true if the sum has been updated, false if node has not been found
+R_API bool r_rbtree_aug_update_sum(RBNode *root, void *data, RBNode *node, RBComparator cmp, RBNodeSum sum) {
+	int dep = 0;
+	RBNode *path[R_RBTREE_MAX_HEIGHT];
+	RBNode *cur = root;
+	for (;;) {
+		if (dep >= R_RBTREE_MAX_HEIGHT) {
+			eprintf ("Too deep tree\n");
+			return false;
+		}
+		if (!cur) {
+			return false;
+		}
+		path[dep] = cur;
+		dep++;
+		if (cur == node) {
+			break;
+		}
+
+		int d = cmp (data, cur);
+		if (d < 0) {
+			cur = cur->child[0];
+		} else {
+			cur = cur->child[1];
+		}
+	}
+
+	for(; dep > 0; dep--) {
+		sum (path[dep-1]);
+	}
+	return true;
+}
+
 R_API bool r_rbtree_delete(RBNode **root, void *data, RBComparator cmp, RBNodeFree freefn) {
 	return r_rbtree_aug_delete (root, data, cmp, freefn, NULL);
 }

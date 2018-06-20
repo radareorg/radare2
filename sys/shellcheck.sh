@@ -1,7 +1,6 @@
 #!/bin/sh
 fileslist=(
 ./autogen.sh
-./binr/ragg2/ragg2-cc
 ./binr/rax2/test-rax2.sh
 ./binr/r2pm/r2pm
 ./configure

@@ -107,7 +107,7 @@ bool libps_decode(ut32 data, ppcps_t* ps) {
 		for (l = 0; l < size; l++) {
 			if ((data & instruction->mask) == instruction->opcode) {
 				j = 0;
-				for (; instruction->operands[j] != 0 && j < 6; j++) {
+				for (;j < 6 && instruction->operands[j] != 0; j++) {
 					ppcps_field_t* field = &ps->operands[j];
 					ps_operand_t* ps_operand = &ps_operands_array[instruction->operands[j]];
 
@@ -189,7 +189,7 @@ void libps_snprint(char* str, int size, ut64 addr, ppcps_t* instr) {
 		} else if (instr->operands[i].type == TYPE_IMM) {
 			add += snprintf (str + add, bufsize - add, " 0x%x", instr->operands[i].value);
 		} else if (instr->operands[i].type == TYPE_MEM) {
-			add += snprintf (str + add, bufsize - add, " 0x%x(r%d)", instr->operands[i + 1].value, instr->operands[i].value);
+			add += snprintf (str + add, bufsize - add, " 0x%x(r%d)", instr->operands[i].value, instr->operands[i + 1].value);
 			i++;
 		} else if (instr->operands[i].type == TYPE_CR) {
 			add += snprintf (str + add, bufsize - add, " cr%u", instr->operands[i].value);

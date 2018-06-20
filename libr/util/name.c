@@ -1,10 +1,11 @@
-/* radare - LGPL - Copyright 2009-2015 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_util.h>
 
 R_API int r_name_validate_char(const char ch) {
-	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (IS_DIGIT(ch)))
+	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (IS_DIGIT(ch))) {
 		return true;
+	}
 	switch (ch) {
 	case ':':
 	case '.':
@@ -15,28 +16,31 @@ R_API int r_name_validate_char(const char ch) {
 }
 
 R_API int r_name_check(const char *name) {
-	if (!name || !*name)
-		return false;
 	/* Cannot start by number */
-	if (IS_DIGIT(*name))
+	if (!name || !*name || IS_DIGIT (*name)) {
 		return false;
+	}
 	/* Cannot contain non-alphanumeric chars + [:._] */
-	for (; *name != '\0'; name++)
-		if (!r_name_validate_char (*name))
+	for (; *name != '\0'; name++) {
+		if (!r_name_validate_char (*name)) {
 			return false;
+		}
+	}
 	return true;
 }
 
 static inline bool is_special_char (char *name) {
 	const char n = *name;
-	return (n == 'b' || n == 'f' || n == 'n' || n == 'r' || n == 't' || n == 'v');
+	return (n == 'b' || n == 'f' || n == 'n' || n == 'r' || n == 't' || n == 'v' || n == 'a');
 }
 
 R_API int r_name_filter(char *name, int maxlen) {
 	int i;
 	size_t len;
 	char *oname;
-	if (!name) return 0;
+	if (!name) {
+		return 0;
+	}
 	if (maxlen < 0) {
 		maxlen = strlen (name);
 	}
@@ -81,8 +85,9 @@ R_API int r_name_filter(char *name, int maxlen) {
 R_API char *r_name_filter2(const char *name) {
 	int i;
 	char *res;
-	while (!IS_PRINTABLE (*name))
+	while (!IS_PRINTABLE (*name)) {
 		name++;
+	}
 	res = strdup (name);
 	for (i = 0; res[i]; i++) {
 		if (!r_name_validate_char (res[i])) {

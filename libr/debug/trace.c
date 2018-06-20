@@ -54,7 +54,7 @@ R_API int r_debug_trace_pc(RDebug *dbg, ut64 pc) {
 		return false;
 	}
 	(void)dbg->iob.read_at (dbg->iob.io, pc, buf, sizeof (buf));
-	if (r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf)) < 1) {
+	if (r_anal_op (dbg->anal, &op, pc, buf, sizeof (buf), R_ANAL_OP_MASK_ESIL) < 1) {
 		eprintf ("trace_pc: cannot get opcode size at 0x%"PFMT64x"\n", pc);
 		return false;
 	}
@@ -81,7 +81,7 @@ R_API RDebugTracepoint *r_debug_trace_get (RDebug *dbg, ut64 addr) {
 	RDebugTracepoint *trace;
 #if R_DEBUG_SDB_TRACES
 	trace = (RDebugTracepoint*)(void*)(size_t)sdb_num_get (db,
-		sdb_fmt (0, "trace.%d.%"PFMT64x, tag, addr), NULL);
+		sdb_fmt ("trace.%d.%"PFMT64x, tag, addr), NULL);
 	return trace;
 #else
 	RListIter *iter;
@@ -144,10 +144,12 @@ R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size) {
 		tp->times = 1;
 		r_list_append (dbg->trace->traces, tp);
 #if R_DEBUG_SDB_TRACES
-		sdb_num_set (dbg->trace->db, sdb_fmt (0, "trace.%d.%"PFMT64x, tag, addr),
+		sdb_num_set (dbg->trace->db, sdb_fmt ("trace.%d.%"PFMT64x, tag, addr),
 			(ut64)(size_t)tp, 0);
 #endif
-	} else tp->times++;
+	} else {
+		tp->times++;
+	}
 	return tp;
 }
 

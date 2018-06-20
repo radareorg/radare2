@@ -90,7 +90,7 @@ static RList *sections(RBinFile *bf) {
 	s->vaddr = 0x8000000;
 	s->size = sz;
 	s->vsize = 0x2000000;
-	s->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
+	s->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE;
 	s->add = true;
 
 	r_list_append (ret, s);

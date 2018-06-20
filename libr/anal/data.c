@@ -89,7 +89,7 @@ static bool is_bin(const ut8 *buf, int size) {
 // TODO: add is_flag, is comment?
 
 // XXX: optimize by removing all strlens here
-R_API char *r_anal_data_to_string(RAnalData *d, RConsPalette *pal) {
+R_API char *r_anal_data_to_string(RAnalData *d, RConsPrintablePalette *pal) {
 	int i, len, idx, mallocsz = 1024;
 	ut32 n32;
 	char *line;

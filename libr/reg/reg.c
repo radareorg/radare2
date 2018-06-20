@@ -1,10 +1,7 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
-#ifdef _MSC_VER
-#define strcasecmp stricmp
-#endif
 
 R_LIB_VERSION (r_reg);
 
@@ -21,7 +18,7 @@ R_API const char* r_reg_32_to_64(RReg* reg, const char* rreg32) {
 	RRegItem* item;
 	for (i = 0; i < R_REG_TYPE_LAST; ++i) {
 		r_list_foreach (reg->regset[i].regs, iter, item) {
-			if (!strcasecmp (rreg32, item->name) && item->size == 32) {
+			if (!r_str_casecmp (rreg32, item->name) && item->size == 32) {
 				j = item->offset;
 				break;
 			}
@@ -71,16 +68,14 @@ R_API int r_reg_get_name_idx(const char* type) {
 	case 'Z' + ('F' << 8): return R_REG_NAME_ZF;
 	case 'S' + ('F' << 8): return R_REG_NAME_SF;
 	case 'C' + ('F' << 8): return R_REG_NAME_CF;
-	case 'O' + ('F' << 8):
-		return R_REG_NAME_OF;
+	case 'O' + ('F' << 8): return R_REG_NAME_OF;
 	/* gpr */
 	case 'P' + ('C' << 8): return R_REG_NAME_PC;
 	case 'S' + ('R' << 8): return R_REG_NAME_SR;
 	case 'L' + ('R' << 8): return R_REG_NAME_LR;
 	case 'S' + ('P' << 8): return R_REG_NAME_SP;
 	case 'B' + ('P' << 8): return R_REG_NAME_BP;
-	case 'S' + ('N' << 8):
-		return R_REG_NAME_SN;
+	case 'S' + ('N' << 8): return R_REG_NAME_SN;
 	/* args */
 	case 'A' + ('0' << 8): return R_REG_NAME_A0;
 	case 'A' + ('1' << 8): return R_REG_NAME_A1;

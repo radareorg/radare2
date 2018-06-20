@@ -15,10 +15,10 @@ R_API const char *r_anal_cc_arg(RAnal *anal, const char *convention, int n) {
 	if (n < 1) {
 		return 0;
 	}
-	query = sdb_fmt (-1, "cc.%s.arg%d", convention, n);
+	query = sdb_fmt ("cc.%s.arg%d", convention, n);
 	ret = sdb_const_get (DB, query, 0);
 	if (!ret) {
-		query = sdb_fmt (-1, "cc.%s.argn", convention);
+		query = sdb_fmt ("cc.%s.argn", convention);
 		ret = sdb_const_get (DB, query, 0);
 	}
 	return ret;
@@ -26,7 +26,7 @@ R_API const char *r_anal_cc_arg(RAnal *anal, const char *convention, int n) {
 }
 
 R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention) {
-	char *query = sdb_fmt (-1, "cc.%s.ret", convention);
+	char *query = sdb_fmt ("cc.%s.ret", convention);
 	return sdb_const_get (DB, query, 0);
 }
 
@@ -34,7 +34,13 @@ R_API const char *r_anal_cc_default(RAnal *anal) {
 	return sdb_const_get (DB, "default.cc", 0);
 }
 
+R_API const char *r_anal_cc_func(RAnal *anal, const char *func_name) {
+	const char *query = sdb_fmt ("func.%s.cc", func_name);
+	const char *cc = sdb_const_get (anal->sdb_types, query, 0);
+	return cc ? cc : r_anal_cc_default (anal);
+}
+
 R_API const char *r_anal_cc_to_constant(RAnal *anal, char *convention) {
-	char *query = sdb_fmt (-1, "cc.%s.name", convention);
+	char *query = sdb_fmt ("cc.%s.name", convention);
 	return sdb_const_get (DB, query, 0);
 }

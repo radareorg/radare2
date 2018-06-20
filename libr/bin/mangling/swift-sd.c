@@ -175,6 +175,7 @@ R_API char *r_bin_demangle_swift(const char *s, int syscmd) {
 	const char *attr2 = NULL;
 	const char *q, *p = s;
 	const char *q_end = p + strlen (p);
+	const char *q_start = p;
 
 	if (strchr (s, '\'') || strchr (s, ' ')) {
 		return NULL;
@@ -351,7 +352,7 @@ R_API char *r_bin_demangle_swift(const char *s, int syscmd) {
 		} else {
 			/* parse function parameters here */
 			// type len value/
-			for (i = 0; q && q < q_end; i++) {
+			for (i = 0; q && q < q_end && q >= q_start; i++) {
 				if (*q == 'f') {
 					q++;
 				}
@@ -360,7 +361,10 @@ R_API char *r_bin_demangle_swift(const char *s, int syscmd) {
 					{
 						int n;
 						const char *Q = getnum (q + 1, &n);
-						strcat (out, getstring (Q, n));
+						const char *res = getstring (Q, n);
+						if (res) {
+							strcat (out, res);
+						}
 						q = Q + n + 1;
 						continue;
 					}
@@ -508,7 +512,7 @@ R_API char *r_bin_demangle_swift(const char *s, int syscmd) {
 					q += len;
 					p = q;
 				} else {
-					if (q) {
+					if (q && *q) {
 						q++;
 					} else {
 						break;

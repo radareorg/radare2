@@ -38,6 +38,7 @@ ec creg rgb:f0f
 ec num rgb:0ff
 ec help rgb:0ff
 ec trap rgb:000 rgb:f0f
+ec linehl rgb:008
 
 ec graph.box rgb:f0f
 ec graph.box2 rgb:f0f

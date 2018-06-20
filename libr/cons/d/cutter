@@ -32,6 +32,7 @@ ec flow rgb:8d0
 ec flow2 rgb:8d0
 ec mov black
 ec invalid rgb:e33
+ec linehl rgb:efefef
 ec graph.box rgb:28d
 ec graph.box2 rgb:8d0
 ec graph.box3 rgb:e33

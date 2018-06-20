@@ -200,8 +200,9 @@ SDB_API bool sdb_journal_clear(Sdb *s);
 SDB_API bool sdb_journal_unlink(Sdb *s);
 
 /* numeric */
-char *sdb_itoa(ut64 n, char *s, int base);
-ut64  sdb_atoi(const char *s);
+SDB_API char *sdb_itoa(ut64 n, char *s, int base);
+SDB_API ut64  sdb_atoi(const char *s);
+SDB_API const char *sdb_itoca(ut64 n);
 
 /* locking */
 SDB_API bool sdb_lock(const char *s);
@@ -220,7 +221,10 @@ SDB_API ut32 sdb_hash_len(const char *key, ut32 *len);
 SDB_API ut8 sdb_hash_byte(const char *s);
 
 /* json api */
+// SDB_API int sdb_js0n(const unsigned char *js, RangstrType len, RangstrType *out);
 SDB_API bool sdb_isjson(const char *k);
+SDB_API char *sdb_json_get_str (const char *json, const char *path);
+
 SDB_API char *sdb_json_get(Sdb* s, const char *key, const char *p, ut32 *cas);
 SDB_API bool sdb_json_set(Sdb* s, const char *k, const char *p, const char *v, ut32 cas);
 SDB_API int sdb_json_num_get(Sdb* s, const char *k, const char *p, ut32 *cas);
@@ -337,7 +341,7 @@ void sdb_encode_raw(char *bout, const ut8 *bin, int len);
 int sdb_decode_raw(ut8 *bout, const char *bin, int len);
 
 // binfmt
-char *sdb_fmt(int n, const char *fmt, ...);
+char *sdb_fmt(const char *fmt, ...);
 int sdb_fmt_init(void *p, const char *fmt);
 void sdb_fmt_free(void *p, const char *fmt);
 int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru);

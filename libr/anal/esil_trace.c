@@ -1,11 +1,11 @@
-/* radare - LGPL - Copyright 2015 - pancake */
+/* radare - LGPL - Copyright 2015-2018 - pancake */
 
 #include <r_anal.h>
 
 #define DB esil->db_trace
-#define KEY(x) sdb_fmt (0, "%d."x, esil->trace_idx)
-#define KEYAT(x,y) sdb_fmt (0, "%d."x".0x%"PFMT64x, esil->trace_idx, y)
-#define KEYREG(x,y) sdb_fmt (0, "%d."x".%s", esil->trace_idx, y)
+#define KEY(x) sdb_fmt ("%d."x, esil->trace_idx)
+#define KEYAT(x,y) sdb_fmt ("%d."x".0x%"PFMT64x, esil->trace_idx, y)
+#define KEYREG(x,y) sdb_fmt ("%d."x".%s", esil->trace_idx, y)
 
 static int ocbs_set = false;
 static RAnalEsilCallbacks ocbs = {0};

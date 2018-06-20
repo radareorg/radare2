@@ -9,18 +9,25 @@ static int iscallret(RDebug *dbg, ut64 addr) {
 	/* if x86 expect CALL to be 5 byte length */
 	if (dbg->arch && !strcmp (dbg->arch, "x86")) {
 		(void)dbg->iob.read_at (dbg->iob.io, addr-5, buf, 5);
-		if (buf[0] == 0xe8) return 1;
-		if (buf[3] == 0xff && (buf[4] & 0xf0)==0xd0) return 1;
+		if (buf[0] == 0xe8) {
+			return 1;
+		}
+		if (buf[3] == 0xff  /* bits 4-5 (from right) of next byte must be 01 */
+		    && ((buf[4] & 0xf0) == 0xd0  /* Mod is 11 */
+		        || ((buf[4] & 0xf0) == 0x10  /* Mod is 00 */
+		            && (buf[4] & 0x06) != 0x04))) {  /* R/M not 10x */
+			return 1;
+		}
 		// IMMAMISSINGANYOP
 	} else {
 		RAnalOp op;
 		(void) dbg->iob.read_at (dbg->iob.io, addr-8, buf, 8);
-		(void) r_anal_op (dbg->anal, &op, addr-8, buf, 8);
+		(void) r_anal_op (dbg->anal, &op, addr-8, buf, 8, R_ANAL_OP_MASK_BASIC);
 		if (op.type == R_ANAL_OP_TYPE_CALL || op.type == R_ANAL_OP_TYPE_UCALL) {
 			return 1;
 		}
 		/* delay slot */
-		(void) r_anal_op (dbg->anal, &op, addr-4, buf, 4);
+		(void) r_anal_op (dbg->anal, &op, addr-4, buf, 4, R_ANAL_OP_MASK_BASIC);
 		if (op.type == R_ANAL_OP_TYPE_CALL || op.type == R_ANAL_OP_TYPE_UCALL) {
 			return 1;
 		}
