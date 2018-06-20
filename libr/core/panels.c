@@ -1250,6 +1250,7 @@ repeat:
 		break;
 	case 'd':
 		r_core_visual_define (core, "");
+		setRefreshAll (panels);
 		break;
 	case 'D':
 		replaceCmd (panels, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY);
