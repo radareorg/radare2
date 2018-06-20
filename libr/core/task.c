@@ -64,7 +64,6 @@ R_API void r_core_task_join (RCore *core, RCoreTask *current, RCoreTask *task) {
 		return;
 	}
 	if (task) {
-		r_cons_break_push (NULL, NULL);
 		if (current) {
 			r_core_task_sleep_begin (current);
 		}
@@ -72,7 +71,6 @@ R_API void r_core_task_join (RCore *core, RCoreTask *current, RCoreTask *task) {
 		if (current) {
 			r_core_task_sleep_end (current);
 		}
-		r_cons_break_pop ();
 	} else {
 		r_list_foreach_prev (core->tasks, iter, task) {
 			if (current == task) {
@@ -334,17 +332,21 @@ R_API RCoreTask *r_core_task_self (RCore *core) {
 R_API int r_core_task_del (RCore *core, int id) {
 	RCoreTask *task;
 	RListIter *iter;
+	bool ret = false;
+	r_th_lock_enter (core->tasks_lock);
 	r_list_foreach (core->tasks, iter, task) {
 		if (task->id == id) {
 			if (task == core->main_task
 				|| task->state != R_CORE_TASK_STATE_DONE) {
-				return false;
+				break;
 			}
 			r_list_delete (core->tasks, iter);
-			return true;
+			ret = true;
+			break;
 		}
 	}
-	return false;
+	r_th_lock_leave (core->tasks_lock);
+	return ret;
 }
 
 R_API void r_core_task_del_all_done (RCore *core) {
