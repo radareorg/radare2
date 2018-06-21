@@ -231,6 +231,7 @@ static bool GH(r_resolve_symbol)(RCore *core, GHT *symbol, const char *symname) 
 		eprintf ("Warning: Can't find glibc mapped in memory (see dm)\n");
 		return false;
 	}
+
 	is_debug_file[0] = str_start_with (libc_ver_end, "/usr/lib/");
 	is_debug_file[1] = str_start_with (libc_ver_end, "/usr/lib32/");
 	is_debug_file[2] = str_start_with (libc_ver_end, "/usr/lib64/");
@@ -238,36 +239,30 @@ static bool GH(r_resolve_symbol)(RCore *core, GHT *symbol, const char *symname) 
 	is_debug_file[4] = str_start_with (libc_ver_end, "/lib32/");
 	is_debug_file[5] = str_start_with (libc_ver_end, "/lib64/");
 
-	if (!is_debug_file[0] && !is_debug_file[1] && \
-	!is_debug_file[2] && !is_debug_file[3] && \
-	!is_debug_file[4] && !is_debug_file[5]) {
-		path = r_cons_input ("Is a custom library? (LD_PRELOAD=..) Enter full path glibc: ");
+	if (getenv("LD_PRELOAD")) {
+		path = r_cons_input ("Is a custom library? Enter full path glibc: ");
 		if (r_file_exists (path)) {
 			goto found;
 		}
 	}
-
 	if (is_debug_file[0] || is_debug_file[1] || is_debug_file[2]) {
-		free (path);
 		path = r_str_newf ("%s", libc_ver_end);
 		if (r_file_exists (path)) {
 			goto found;
 		}
 	}
-
 	if ((is_debug_file[3] || is_debug_file[4] || is_debug_file[5]) && \
 	r_file_is_directory ("/usr/lib/debug")) {
-		free (path);
 		path = r_str_newf ("%s%s", dir_dbg, libc_ver_end);
 		if (r_file_exists (path)) {
 			goto found;
 		}
+		free (path);
 		path = r_str_append (path, ".debug");
 		if (r_file_exists (path)) {
 			goto found;
 		}
 	}
-
 	if ((is_debug_file[3] || is_debug_file[4] || is_debug_file[5]) && \
 	r_file_is_directory ("/usr/lib/debug/.build-id")) {
 		get_hash_debug_file (libc_ver_end, hash, sizeof (hash) - 1);
