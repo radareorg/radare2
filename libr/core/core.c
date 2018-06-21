@@ -930,10 +930,12 @@ static void autocomplete_default(RLine *line) {
 				tmp_argv[j++] = a->subcmds[i]->cmd;
 			}
 		}
-	}
-	for (i = 0; j < TMP_ARGV_SZ && i < radare_argc && radare_argv[i]; i++) {
-		if (!strncmp (radare_argv[i], line->buffer.data, line->buffer.index)) {
-			tmp_argv[j++] = radare_argv[i];
+	} else {
+		for (i = 0; j < TMP_ARGV_SZ && i < radare_argc && radare_argv[i]; i++) {
+			int length = strlen (radare_argv[i]);
+			if (!strncmp (radare_argv[i], line->buffer.data, length)) {
+				tmp_argv[j++] = radare_argv[i];
+			}
 		}
 	}
 	tmp_argv[j] = NULL;
@@ -975,7 +977,7 @@ static void autocomplete_project(RLine* line, const char* input) {
 	if (projects_path) {
 		r_list_foreach (list, iter, foo) {
 			if (r_core_is_project (core, foo)) {
-				if (!strncmp (foo, line->buffer.data + 3, n)) {
+				if (!strncmp (foo, input, n)) {
 					tmp_argv[i++] = r_str_newf ("%s", foo);
 					if (i == TMP_ARGV_SZ - 1) {
 						break;
@@ -1154,36 +1156,17 @@ static void autocomplete_file(RLine* line, const char* str) {
 	if (!core) {
 		return;
 	}
-	char *args = NULL, *input = NULL;
-	int narg = 1;
-	int n = 0;
 	char *pipe = strchr (str, '>');
+
 	if (pipe) {
-		args = r_str_new (pipe + 1);
+		str = r_str_trim_ro (pipe + 1);
+	}
+	if (str && !*str) {
+		autocomplete_process_path (line, str, "./", 0);
 	} else {
-		args = r_str_new (str);
-	}
-	if (!args) {
-		goto out;
+		autocomplete_process_path (line, str, str, 0);
 	}
 
-	n = r_str_word_set0 (args);
-	if (n < narg) {
-		goto out;
-	}
-
-	input = r_str_new (r_str_word_get0 (args, narg));
-	if (!input) {
-		goto out;
-	}
-
-	if (input[0] == '/' || input[0] == '.') {
-		goto out;
-	}
-
-out:
-	free (args);
-	free (input);
 }
 
 static void autocomplete_theme(RLine* line, const char* str) {
@@ -1945,7 +1928,6 @@ static void init_autocomplete (RCore* core) {
 	r_core_autocomplete_add (core->autocomplete, "op", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "wf", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "rm", R_CORE_AUTOCMPLT_FILE, true);
-	r_core_autocomplete_add (core->autocomplete, "ls", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "wF", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "wp", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "Sd", R_CORE_AUTOCMPLT_FILE, true);
