@@ -1378,33 +1378,20 @@ static int cmd_env(void *data, const char *input) {
 	return ret;
 }
 
-static inline const char* next_arg(const char *input) {
-	while (input && *input && IS_WHITESPACE (*input)) {
-		input++;
-	}
-	return input;
-}
-
-static inline const char* next_whitespace(const char *input) {
-	while (input && *input && !IS_WHITESPACE (*input)) {
-		input++;
-	}
-	return input;
-}
-
 static inline void print_dict(RCoreAutocomplete* a, int sub) {
 	if (!a) {
 		return;
 	}
 	int i;
 	for (i = 0; i < a->n_subcmds; ++i) {
-		eprintf ("[%3d] '%s'\n", sub, a->subcmds[i]->cmd);
+		RCoreAutocomplete* b = a->subcmds[i];
+		eprintf ("[%3d] '%s'%s\n", sub, b->cmd, b->locked ? " (readonly)" : "");
 		print_dict (a->subcmds[i], sub + 1);
 	}
 }
 
 static void cmd_autocomplete(RCore *core, const char *input) {
-	input = next_arg (input);
+	input = r_str_trim_ro (input);
 	if (!*input) {
 		eprintf ("Invalid usage of !!!\n");
 		return;
@@ -1415,9 +1402,15 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 		print_dict (core->autocomplete, 0);
 		return;
 	}
+	/*
+	if (*input == '+') {
+		// Read file
+		return;
+	}
+	*/
 	if (*input == '-') {
 		remove = true;
-		input = next_arg (input + 1);
+		input = r_str_trim_ro (input + 1);
 	}
 	if (!*input) {
 		eprintf ("Invalid usage of !!!%c\n", remove ? '-' : ' ');
@@ -1425,7 +1418,7 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 	}
 	RCoreAutocomplete* b = core->autocomplete;
 	while (b) {
-		const char* end = next_whitespace (input);
+		const char* end = r_str_trim_wp (input);
 		if (!end) {
 			break;
 		}
@@ -1438,9 +1431,8 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 		}
 		memcpy (arg, input, end - input);
 		arg[end - input] = 0;
-		RCoreAutocomplete* a = r_core_autocomplete_find (b, arg);
-		input = next_arg (end);
-		eprintf("%p %p %d\n", input, a, remove);
+		RCoreAutocomplete* a = r_core_autocomplete_find (b, arg, true);
+		input = r_str_trim_ro (end);
 		if (input && *input && !a && !remove) {
 			b = r_core_autocomplete_add (b, strdup(arg), false);
 			eprintf ("Added '%s' into the autocomplete dict.\n", arg);
@@ -1452,7 +1444,6 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 			eprintf ("Added '%s' into the autocomplete dict.\n", arg);
 			return;
 		} else if ((!input || !*input) && a && remove) {
-			eprintf("Remove from %s\n", b->cmd);
 			if (r_core_autocomplete_remove (b, arg)) {
 				eprintf ("Removed '%s' into the autocomplete dict.\n", arg);
 			} else {

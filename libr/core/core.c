@@ -940,52 +940,55 @@ static void autocomplete_default(RLine *line) {
 	line->completion.argv = tmp_argv;
 }
 
-static inline const char* next_whitespace(const char *input) {
-	while (input && *input && !IS_WHITESPACE (*input)) {
-		input++;
-	}
-	return input;
-}
-
-static inline const char* next_arg(const char *input) {
-	while (input && *input && IS_WHITESPACE (*input)) {
-		input++;
-	}
-	return input;
-}
-
-static RCoreAutocomplete* find_plugins_autocomplete(RLine *line) {
+static bool find_custom_autocomplete(RLine *line) {
 	RCore *core = line->user;
 	if (!core) {
-		return NULL;
+		return false;
 	}
-	RCoreAutocomplete* tmp = NULL;
-	RCoreAutocomplete* plugin = core->autocomplete;
+	RCoreAutocomplete* child = NULL;
+	RCoreAutocomplete* parent = core->autocomplete;
 	const char* p = line->buffer.data;
 	char arg[256];
+	arg[0] = 0;
 	while (p && *p) {
-		const char* e = next_whitespace (p);
+		const char* e = r_str_trim_wp (p);
 		if (!e || (e - p) >= 256 || e == p) {
-			return NULL;
+			return false;
 		}
 		memcpy (arg, p, e - p);
 		arg[e - p] = 0;
-		tmp = r_core_autocomplete_find (plugin, arg);
-		if (tmp && *(p + tmp->length) == ' ') {
-			p = next_arg (p + tmp->length);
-			plugin = tmp;
-		} else if(tmp) {
+		child = r_core_autocomplete_find (parent, arg, false);
+		if (child && *(p + child->length) == ' ') {
+			// if is spaced then i can provide the
+			// next subtree as suggestion..
+			p = r_str_trim_ro (p + child->length);
+			parent = child;
+		} else if (child) {
 			break; 
 		} else {
-			return NULL;
+			return false;
 		}
 	}
-	return plugin;
+	if (p && !*p) {
+		//show all hints
+		arg[0] = 0;
+	}
+	int length = strlen (arg);
+	int i, j;
+	for (i = j = 0; j < TMP_ARGV_SZ && i < parent->n_subcmds && radare_argv[i]; i++) {
+		int lenmin = length > parent->subcmds[i]->length ? parent->subcmds[i]->length : length;
+		if (!strncmp (parent->subcmds[i]->cmd, arg, lenmin)) {
+			tmp_argv[j++] = parent->subcmds[i]->cmd;
+		}
+	}
+	tmp_argv[j] = NULL;
+	line->completion.argc = j;
+	line->completion.argv = tmp_argv;
+	return true;
 }
 
 static int autocomplete(RLine *line) {
 	RCore *core = line->user;
-	RCoreAutocomplete* plugin;
 	RListIter *iter;
 	RFlagItem *flag;
 	if (core) {
@@ -996,7 +999,7 @@ static int autocomplete(RLine *line) {
 			autocompleteFilename (line, NULL, 1);
 		} else if (ptr && strchr (ptr + 1, ' ') && line->buffer.data+line->buffer.index >= ptr) {
 			int sdelta, n, i = 0;
-			ptr = (char *)r_str_trim_ro (ptr+1);
+			ptr = (char *)r_str_trim_ro (ptr + 1);
 			n = strlen (ptr);//(line->buffer.data+sdelta);
 			sdelta = (int)(size_t)(ptr - line->buffer.data);
 			r_list_foreach (core->flags->flags, iter, flag) {
@@ -1512,15 +1515,7 @@ static int autocomplete(RLine *line) {
 			tmp_argv[R_MIN(i, TMP_ARGV_SZ - 1)] = NULL;
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
-		} else if ((plugin = find_plugins_autocomplete (line))) {
-			int i, j;
-			for (i = j = 0; j < TMP_ARGV_SZ && i < plugin->n_subcmds && radare_argv[i]; i++) {
-				tmp_argv[j++] = plugin->subcmds[i]->cmd;
-			}
-			tmp_argv[j] = NULL;
-			line->completion.argc = j;
-			line->completion.argv = tmp_argv;
-		} else {
+		} else if (!find_custom_autocomplete (line)) {
 			int i, cfg_newtab = r_config_get_i (core->config, "cfg.newtab");
 			if (cfg_newtab) {
 				RCmdDescriptor *desc = &core->root_cmd_descriptor;
@@ -2947,14 +2942,17 @@ R_API void r_core_autocomplete_free(RCoreAutocomplete *obj) {
 	free (obj);
 }
 
-R_API RCoreAutocomplete *r_core_autocomplete_find(RCoreAutocomplete *parent, const char* cmd) {
+R_API RCoreAutocomplete *r_core_autocomplete_find(RCoreAutocomplete *parent, const char* cmd, bool exact) {
 	if (!parent || !cmd) {
 		return false;
 	}
 	int len = strlen (cmd);
 	int i;
 	for (i = 0; i < parent->n_subcmds; ++i) {
-		if (len == parent->subcmds[i]->length && !strncmp (parent->subcmds[i]->cmd, cmd, len)) {
+		int lenmin = len < parent->subcmds[i]->length ? len : parent->subcmds[i]->length;
+		if (exact && len == parent->subcmds[i]->length && !strncmp (parent->subcmds[i]->cmd, cmd, len)) {
+			return parent->subcmds[i];
+		} else if (!exact && !strncmp (parent->subcmds[i]->cmd, cmd, lenmin)) {
 			return parent->subcmds[i];
 		}
 	}

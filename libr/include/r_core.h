@@ -733,7 +733,7 @@ R_API int r_core_search_value_in_range (RCore *core, RInterval search_itv,
 
 R_API RCoreAutocomplete *r_core_autocomplete_add(RCoreAutocomplete *parent, const char* cmd, bool lock);
 R_API void r_core_autocomplete_free(RCoreAutocomplete *obj);
-R_API RCoreAutocomplete *r_core_autocomplete_find(RCoreAutocomplete *parent, const char* cmd);
+R_API RCoreAutocomplete *r_core_autocomplete_find(RCoreAutocomplete *parent, const char* cmd, bool exact);
 R_API bool r_core_autocomplete_remove(RCoreAutocomplete *parent, const char* cmd);
 
 /* PLUGINS */

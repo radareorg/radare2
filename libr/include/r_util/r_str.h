@@ -84,6 +84,7 @@ R_API char *r_str_word_get_first(const char *string);
 R_API char *r_str_trim(char *str);
 R_API char *r_str_trim_head(char *str);
 R_API const char *r_str_trim_ro(const char *str);
+R_API const char *r_str_trim_wp(const char *str);
 R_API char *r_str_trim_tail(char *str);
 R_API char *r_str_trim_head_tail(char *str);
 R_API ut32 r_str_hash(const char *str);
