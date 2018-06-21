@@ -239,7 +239,7 @@ static bool GH(r_resolve_symbol)(RCore *core, GHT *symbol, const char *symname) 
 	is_debug_file[4] = str_start_with (libc_ver_end, "/lib32/");
 	is_debug_file[5] = str_start_with (libc_ver_end, "/lib64/");
 
-	if (getenv("LD_PRELOAD")) {
+	if (r_sys_getenv ("LD_PRELOAD")) {
 		path = r_cons_input ("Is a custom library? Enter full path glibc: ");
 		if (r_file_exists (path)) {
 			goto found;
@@ -257,7 +257,6 @@ static bool GH(r_resolve_symbol)(RCore *core, GHT *symbol, const char *symname) 
 		if (r_file_exists (path)) {
 			goto found;
 		}
-		free (path);
 		path = r_str_append (path, ".debug");
 		if (r_file_exists (path)) {
 			goto found;
@@ -267,7 +266,6 @@ static bool GH(r_resolve_symbol)(RCore *core, GHT *symbol, const char *symname) 
 	r_file_is_directory ("/usr/lib/debug/.build-id")) {
 		get_hash_debug_file (libc_ver_end, hash, sizeof (hash) - 1);
 		libc_ver_end = hash;
-		free (path);
 		path = r_str_newf ("%s%s%s", dir_dbg, dir_build_id, libc_ver_end);
 		if (r_file_exists (path)) {
 			goto found;
