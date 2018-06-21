@@ -926,7 +926,7 @@ static void autocomplete_default(RLine *line) {
 	j = 0;
 	if (a) {
 		for (i = 0; j < TMP_ARGV_SZ && i < a->n_subcmds; i++) {
-			if (!strncmp (a->subcmds[i]->cmd, line->buffer.data, a->subcmds[i]->length)) {
+			if (line->buffer.data[0] == 0 || !strncmp (a->subcmds[i]->cmd, line->buffer.data, a->subcmds[i]->length)) {
 				tmp_argv[j++] = a->subcmds[i]->cmd;
 			}
 		}
@@ -1215,11 +1215,16 @@ static bool find_autocomplete(RLine *line) {
 			// if is spaced then i can provide the
 			// next subtree as suggestion..
 			p = r_str_trim_ro (p + child->length);
+			if (child->type == R_CORE_AUTOCMPLT_OPTN) {
+				continue;
+			}
 			parent = child;
 		} else {
 			break;
 		}
 	}
+	int i, j;
+	j = 0;
 	switch (parent->type) {
 	case R_CORE_AUTOCMPLT_FLAG:
 		autocomplete_flags (line, p);
@@ -1259,17 +1264,16 @@ static bool find_autocomplete(RLine *line) {
 			arg[0] = 0;
 		}
 		int length = strlen (arg);
-		int i, j;
-		for (i = j = 0; j < TMP_ARGV_SZ && i < parent->n_subcmds; i++) {
+		for (i = 0; j < TMP_ARGV_SZ && i < parent->n_subcmds; i++) {
 			if (!strncmp (arg, parent->subcmds[i]->cmd, length)) {
 				tmp_argv[j++] = parent->subcmds[i]->cmd;
 			}
 		}
-		tmp_argv[j] = NULL;
-		line->completion.argc = j;
-		line->completion.argv = tmp_argv;
 		break;
 	}
+	tmp_argv[j] = NULL;
+	line->completion.argc = j;
+	line->completion.argv = tmp_argv;
 	return true;
 }
 
@@ -1953,7 +1957,7 @@ static void init_autocomplete (RCore* core) {
 	int i;
 	for (i = 0; i < radare_argc && radare_argv[i]; i++) {
 		if (!r_core_autocomplete_find (core->autocomplete, radare_argv[i], true)) {
-			r_core_autocomplete_add (core->autocomplete, radare_argv[i], R_CORE_AUTOCMPLT_OPTN, true);
+			r_core_autocomplete_add (core->autocomplete, radare_argv[i], R_CORE_AUTOCMPLT_DFLT, true);
 		}
 	}
 }

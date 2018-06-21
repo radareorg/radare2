@@ -1478,9 +1478,12 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 		input = r_str_trim_ro (end);
 		if (input && *input && !a && !remove) {
 			char *c = strdup(arg);
-			if (!(b = r_core_autocomplete_add (b, c, R_CORE_AUTOCMPLT_DFLT, false))) {
+			if (b->type == R_CORE_AUTOCMPLT_DFLT && !(b = r_core_autocomplete_add (b, c, R_CORE_AUTOCMPLT_DFLT, false))) {
 				free (c);
 				eprintf ("ENOMEM\n");
+				return;
+			} else if (b->type != R_CORE_AUTOCMPLT_DFLT) {
+				eprintf ("Cannot add autocomplete to '%s'. type not $dflt\n", b->cmd);
 				return;
 			}
 		} else if (input && *input && !a && remove) {
@@ -1489,8 +1492,10 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 		} else if ((!input || !*input) && !a && !remove) {
 			if (arg[0] == '$') {
 				int type = autocomplete_type (arg);
-				if (type != R_CORE_AUTOCMPLT_END) {
+				if (type != R_CORE_AUTOCMPLT_END && !b->locked) {
 					b->type = type;
+				} else if (b->locked) {
+					eprintf ("Changing type of '%s' is forbidden.\n", b->cmd);
 				}
 			} else {
 				char *c = strdup(arg);
