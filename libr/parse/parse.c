@@ -326,12 +326,11 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 								}
 								memmove (ptr_left, ptr_esc, copied_len);
 #if 1
-								sprintf (ptr_left + copied_len, "%s%s",
-										ansi_found && ptr_right - ptr_end + 1 >= 4 ? "\x1b[0m" : "",
-										ptr_right + 1);
+								strcpy (ptr_left + copied_len,
+										ansi_found && ptr_right - ptr_end + 1 >= 4 ? "\x1b[0m" : "");
 
 #else
-								strcpy (ptr_left + copied_len, ptr_right + 1);
+								strcat (ptr_left + copied_len, ptr_right + 1);
 #endif
 							}
 							break;
