@@ -720,7 +720,7 @@ static const char *radare_argv[] = {
 	"ec","ecs", "eco",
 	"S", "S.", "S*", "S-", "S=", "Sa", "Sa-", "Sd", "Sl", "SSj", "Sr",
 	"s", "s+", "s++", "s-", "s--", "s*", "sa", "sb", "sr",
-	"!", "!!",
+	"!", "!!", "!!!", "!!!-",
 	"#sha1", "#crc32", "#pcprint", "#sha256", "#sha512", "#md4", "#md5",
 	"#!python", "#!perl", "#!vala",
 	"V", "v",
@@ -940,6 +940,20 @@ static void autocomplete_default(RLine *line) {
 	line->completion.argv = tmp_argv;
 }
 
+static inline const char* next_whitespace(const char *input) {
+	while (input && *input && !IS_WHITESPACE (*input)) {
+		input++;
+	}
+	return input;
+}
+
+static inline const char* next_arg(const char *input) {
+	while (input && *input && IS_WHITESPACE (*input)) {
+		input++;
+	}
+	return input;
+}
+
 static RCoreAutocomplete* find_plugins_autocomplete(RLine *line) {
 	RCore *core = line->user;
 	if (!core) {
@@ -947,10 +961,26 @@ static RCoreAutocomplete* find_plugins_autocomplete(RLine *line) {
 	}
 	RCoreAutocomplete* tmp = NULL;
 	RCoreAutocomplete* plugin = core->autocomplete;
-	while ((tmp = r_core_autocomplete_find (plugin, line->buffer.data)) && line->buffer.data[tmp->length] == ' ') {
-		plugin = tmp;
+	const char* p = line->buffer.data;
+	char arg[256];
+	while (p && *p) {
+		const char* e = next_whitespace (p);
+		if (!e || (e - p) >= 256 || e == p) {
+			return NULL;
+		}
+		memcpy (arg, p, e - p);
+		arg[e - p] = 0;
+		tmp = r_core_autocomplete_find (plugin, arg);
+		if (tmp && *(p + tmp->length) == ' ') {
+			p = next_arg (p + tmp->length);
+			plugin = tmp;
+		} else if(tmp) {
+			break; 
+		} else {
+			return NULL;
+		}
 	}
-	return plugin == core->autocomplete ? NULL : plugin;
+	return plugin;
 }
 
 static int autocomplete(RLine *line) {
@@ -1482,7 +1512,7 @@ static int autocomplete(RLine *line) {
 			tmp_argv[R_MIN(i, TMP_ARGV_SZ - 1)] = NULL;
 			line->completion.argc = i;
 			line->completion.argv = tmp_argv;
-		} else if (plugin = find_plugins_autocomplete (line)) {
+		} else if ((plugin = find_plugins_autocomplete (line))) {
 			int i, j;
 			for (i = j = 0; j < TMP_ARGV_SZ && i < plugin->n_subcmds && radare_argv[i]; i++) {
 				tmp_argv[j++] = plugin->subcmds[i]->cmd;
@@ -2880,7 +2910,7 @@ beach:
 	return hitctr;
 }
 
-R_API RCoreAutocomplete *r_core_autocomplete_add(RCoreAutocomplete *parent, const char* cmd) {
+R_API RCoreAutocomplete *r_core_autocomplete_add(RCoreAutocomplete *parent, const char* cmd, bool lock) {
 	if (!parent || !cmd) {
 		return NULL;
 	}
@@ -2897,16 +2927,65 @@ R_API RCoreAutocomplete *r_core_autocomplete_add(RCoreAutocomplete *parent, cons
 	parent->subcmds[parent->n_subcmds] = autocmpl;
 	parent->n_subcmds++;
 	autocmpl->cmd = cmd;
+	autocmpl->locked = lock;
 	autocmpl->length = strlen (cmd);
 	return autocmpl;
 }
 
+R_API void r_core_autocomplete_free(RCoreAutocomplete *obj) {
+	if (!obj) {
+		return;
+	}
+	int i;
+	for (i = 0; i < obj->n_subcmds; ++i) {
+		r_core_autocomplete_free (obj->subcmds[i]);
+		obj->subcmds[i] = NULL;
+	}
+	if (!obj->locked) {
+		free ((char*) obj->cmd);
+	}
+	free (obj);
+}
+
 R_API RCoreAutocomplete *r_core_autocomplete_find(RCoreAutocomplete *parent, const char* cmd) {
+	if (!parent || !cmd) {
+		return false;
+	}
+	int len = strlen (cmd);
 	int i;
 	for (i = 0; i < parent->n_subcmds; ++i) {
-		if (!strncmp (parent->subcmds[i]->cmd, cmd, parent->subcmds[i]->length)) {
+		if (len == parent->subcmds[i]->length && !strncmp (parent->subcmds[i]->cmd, cmd, len)) {
 			return parent->subcmds[i];
 		}
 	}
 	return NULL;
+}
+
+R_API bool r_core_autocomplete_remove(RCoreAutocomplete *parent, const char* cmd) {
+	if (!parent || !cmd) {
+		return false;
+	}
+	int i, j;
+	for (i = 0; i < parent->n_subcmds; ++i) {
+		if (!strncmp (parent->subcmds[i]->cmd, cmd, parent->subcmds[i]->length)) {
+			RCoreAutocomplete *autocmpl = parent->subcmds[i];
+			if (autocmpl->locked) {
+				return false;
+			}
+			for (j = i + 1; j < parent->n_subcmds; ++j) {
+				parent->subcmds[j - 1] = parent->subcmds[j];
+				parent->subcmds[j] = NULL;
+			}
+			r_core_autocomplete_free (autocmpl);
+			RCoreAutocomplete **updated = realloc (parent->subcmds, (parent->n_subcmds - 1) * sizeof(RCoreAutocomplete**));
+			if (!updated && (parent->n_subcmds - 1) > 0) {
+				eprintf ("Something really bad has happen.. this should never ever happen..\n");
+				return false;
+			}
+			parent->subcmds = updated;
+			parent->n_subcmds--;
+			return true;
+		}
+	}
+	return false;
 }
