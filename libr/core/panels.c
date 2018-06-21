@@ -186,6 +186,8 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 		}
 		if (!strcmp (core->panels->panel[core->panels->curnode].title, PANEL_TITLE_GRAPH)) {
 			graph_pad = 1;
+			core->cons->event_data = core;
+			core->cons->event_resize = (RConsEvent) doPanelsRefresh;
 		}
 		if (delta_y < 0) {
 			delta_y = 0;
