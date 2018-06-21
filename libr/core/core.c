@@ -1257,6 +1257,9 @@ static bool find_autocomplete(RLine *line) {
 		autocomplete_theme (line, p);
 		break;
 	case R_CORE_AUTOCMPLT_OPTN:
+		tmp_argv[j] = NULL;
+		line->completion.argc = j;
+		line->completion.argv = tmp_argv;
 		break;
 	default:
 		if (p && !*p) {
@@ -1269,11 +1272,11 @@ static bool find_autocomplete(RLine *line) {
 				tmp_argv[j++] = parent->subcmds[i]->cmd;
 			}
 		}
+		tmp_argv[j] = NULL;
+		line->completion.argc = j;
+		line->completion.argv = tmp_argv;
 		break;
 	}
-	tmp_argv[j] = NULL;
-	line->completion.argc = j;
-	line->completion.argv = tmp_argv;
 	return true;
 }
 
