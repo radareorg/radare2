@@ -1492,9 +1492,9 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 		} else if ((!input || !*input) && !a && !remove) {
 			if (arg[0] == '$') {
 				int type = autocomplete_type (arg);
-				if (type != R_CORE_AUTOCMPLT_END && !b->locked) {
+				if (type != R_CORE_AUTOCMPLT_END && !b->locked && !b->n_subcmds) {
 					b->type = type;
-				} else if (b->locked) {
+				} else if (b->locked || b->n_subcmds) {
 					eprintf ("Changing type of '%s' is forbidden.\n", b->cmd);
 				}
 			} else {
