@@ -4049,13 +4049,13 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			r_core_cmd (core, "sr PC", 0);
 			break;
 		case 'R':
-			if (!fcn) {
-				break;
-			}
 			if (r_config_get_i (core->config, "scr.randpal")) {
 				r_core_cmd0 (core, "ecr");
 			} else {
 				r_core_cmd0 (core, "ecn");
+			}
+			if (!fcn) {
+				break;
 			}
 			g->edgemode = r_config_get_i (core->config, "graph.edges");
 			get_bbupdate (g, core, fcn);
