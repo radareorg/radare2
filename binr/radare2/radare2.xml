@@ -7,6 +7,9 @@
   <key>platform-application</key>
   <true/>
 
+  <key>com.apple.private.skip-library-validation</key>
+  <true/>
+
   <key>app-identifier</key>
   <true/>
 
