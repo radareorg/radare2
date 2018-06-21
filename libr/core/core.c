@@ -926,7 +926,7 @@ static void autocomplete_default(RLine *line) {
 	j = 0;
 	if (a) {
 		for (i = 0; j < TMP_ARGV_SZ && i < a->n_subcmds; i++) {
-			if (!strncmp (a->subcmds[i]->cmd, line->buffer.data, line->buffer.index)) {
+			if (!strncmp (a->subcmds[i]->cmd, line->buffer.data, a->subcmds[i]->length)) {
 				tmp_argv[j++] = a->subcmds[i]->cmd;
 			}
 		}
@@ -1176,7 +1176,6 @@ static void autocomplete_file(RLine* line, const char* str) {
 	if (!input) {
 		goto out;
 	}
-	const char *tinput = r_str_trim_ro (input);
 
 	if (input[0] == '/' || input[0] == '.') {
 		goto out;
@@ -1278,7 +1277,7 @@ static bool find_autocomplete(RLine *line) {
 		}
 		int length = strlen (arg);
 		int i, j;
-		for (i = j = 0; j < TMP_ARGV_SZ && i < parent->n_subcmds && radare_argv[i]; i++) {
+		for (i = j = 0; j < TMP_ARGV_SZ && i < parent->n_subcmds; i++) {
 			if (!strncmp (arg, parent->subcmds[i]->cmd, length)) {
 				tmp_argv[j++] = parent->subcmds[i]->cmd;
 			}
@@ -1556,7 +1555,7 @@ static int autocomplete(RLine *line) {
 			autocomplete_default (line);
 		}
 	} else {
-			autocomplete_default (line);
+		autocomplete_default (line);
 	}
 	return true;
 }
