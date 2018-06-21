@@ -1333,18 +1333,16 @@ repeat:
 		break;
 	case 'H':
 		r_cons_switchbuf (false);
-		panels->columnWidth += 4;
 		panels->isResizing = true;
-		if (panels->columnWidth > 80) {
-			panels->columnWidth = 80;
+		if (panels->columnWidth + 4 < panels->can->w) {
+			panels->columnWidth += 4;
 		}
 		break;
 	case 'L':
 		r_cons_switchbuf (false);
-		panels->columnWidth -= 4;
 		panels->isResizing = true;
-		if (panels->columnWidth < 10) {
-			panels->columnWidth = 10;
+		if (panels->columnWidth - 4 > 0) {
+			panels->columnWidth -= 4;
 		}
 		break;
 	case 'g':
