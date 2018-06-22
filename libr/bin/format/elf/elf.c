@@ -2404,12 +2404,6 @@ RBinElfReloc* Elf_(r_bin_elf_get_relocs)(ELFOBJ *bin) {
 	if (!ret) {
 		return NULL;
 	}
-#if DEAD_CODE
-	ut64 section_text_offset = Elf_(r_bin_elf_get_section_offset) (bin, ".text");
-	if (section_text_offset == -1) {
-		section_text_offset = 0;
-	}
-#endif
 	for (i = 0, rel = 0; !bin->g_sections[i].last && rel < reloc_num ; i++) {
 		bool is_rela = 0 == strncmp (bin->g_sections[i].name, ".rela.", strlen (".rela."));
 		bool is_rel  = 0 == strncmp (bin->g_sections[i].name, ".rel.",  strlen (".rel."));
@@ -2502,8 +2496,9 @@ static RBinElfSection* get_sections_from_phdr(ELFOBJ *bin) {
 	int i, num_sections = 0;
 	ut64 reldyn = 0, relava = 0, pltgotva = 0, relva = 0;
 	ut64 reldynsz = 0, relasz = 0, pltgotsz = 0;
-	if (!bin || !bin->phdr || !bin->ehdr.e_phnum)
+	if (!bin || !bin->phdr || !bin->ehdr.e_phnum) {
 		return NULL;
+	}
 
 	for (i = 0; i < bin->dyn_entries; i++) {
 		switch (bin->dyn_buf[i].d_tag) {
@@ -2758,9 +2753,10 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		sym[i].st_other = READ8 (s, j);
 		sym[i].st_shndx = READ16 (s, j);
 #endif
+		bool is_sht_null = false;
 		// zero symbol is always empty
 		// Examine entry and maybe store
-		if (type == R_BIN_ELF_IMPORTS && sym[i].st_shndx == STN_UNDEF) {
+		if (type == R_BIN_ELF_IMPORTS && sym[i].st_shndx == SHT_NULL) {
 			if (sym[i].st_value) {
 				toffset = sym[i].st_value;
 			} else if ((toffset = get_import_addr (bin, i)) == -1){
@@ -2770,9 +2766,11 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		} else if (type == R_BIN_ELF_SYMBOLS) {
 			tsize = sym[i].st_size;
 			toffset = (ut64) sym[i].st_value;
+			is_sht_null = sym[i].st_shndx == SHT_NULL;
 		} else {
 			continue;
 		}
+
 		tmp_offset = Elf_(r_bin_elf_v2p) (bin, toffset);
 		if (tmp_offset > bin->size) {
 			goto done;
@@ -2800,6 +2798,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		ret[ret_ctr].in_shdr = false;
 		ret[ret_ctr].name[ELF_STRING_LENGTH - 2] = '\0';
 		fill_symbol_bind_and_type (&ret[ret_ctr], &sym[i]);
+		ret[ret_ctr].is_sht_null = is_sht_null;
 		ret[ret_ctr].last = 0;
 		ret_ctr++;
 	}
