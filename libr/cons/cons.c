@@ -29,8 +29,8 @@ typedef struct {
 
 typedef struct {
 	bool breaked;
-	void *data;
 	RConsEvent event_interrupt;
+	void *event_interrupt_data;
 } RConsBreakStack;
 
 static void break_stack_free(void *ptr) {
@@ -100,8 +100,8 @@ static void cons_stack_load(RConsStack *data, bool free_current) {
 static void break_signal(int sig) {
 	I.context->breaked = true;
 	r_print_set_interrupted (I.context->breaked);
-	if (I.event_interrupt) {
-		I.event_interrupt (I.data);
+	if (I.context->event_interrupt) {
+		I.context->event_interrupt (I.context->event_interrupt_data);
 	}
 }
 
@@ -112,6 +112,8 @@ static void cons_context_init(RConsContext *context) {
 	context->buffer_len = 0;
 	context->cons_stack = r_stack_newf (6, cons_stack_free);
 	context->break_stack = r_stack_newf (6, break_stack_free);
+	context->event_interrupt = NULL;
+	context->event_interrupt_data = NULL;
 }
 
 static void cons_context_deinit(RConsContext *context) {
@@ -222,17 +224,19 @@ R_API void r_cons_break_push(RConsBreak cb, void *user) {
 		if (!b) return;
 		if (r_stack_is_empty (I.context->break_stack)) {
 #if __UNIX__ || __CYGWIN__
-			signal (SIGINT, break_signal);
+			if (r_cons_context_is_main ()) {
+				signal (SIGINT, break_signal);
+			}
 #endif
 			I.context->breaked = false;
 		}
 		//save the actual state
-		b->event_interrupt = I.event_interrupt;
-		b->data = I.data;
+		b->event_interrupt = I.context->event_interrupt;
+		b->event_interrupt_data = I.context->event_interrupt_data;
 		r_stack_push (I.context->break_stack, b);
 		//configure break
-		I.event_interrupt = cb;
-		I.data = user;
+		I.context->event_interrupt = cb;
+		I.context->event_interrupt_data = user;
 	}
 }
 
@@ -243,13 +247,15 @@ R_API void r_cons_break_pop() {
 		r_print_set_interrupted (I.context->breaked);
 		b = r_stack_pop (I.context->break_stack);
 		if (b) {
-			I.event_interrupt = b->event_interrupt;
-			I.data = b->data;
+			I.context->event_interrupt = b->event_interrupt;
+			I.context->event_interrupt_data = b->event_interrupt_data;
 			break_stack_free (b);
 		} else {
 			//there is not more elements in the stack
 #if __UNIX__ || __CYGWIN__
-			signal (SIGINT, SIG_IGN);
+			if (r_cons_context_is_main ()) {
+				signal (SIGINT, SIG_IGN);
+			}
 #endif
 			I.context->breaked = false;
 		}
@@ -294,8 +300,8 @@ R_API void r_cons_break_end() {
 		r_stack_free (I.context->break_stack);
 		//create another one
 		I.context->break_stack = r_stack_newf (6, break_stack_free);
-		I.data = NULL;
-		I.event_interrupt = NULL;
+		I.context->event_interrupt_data = NULL;
+		I.context->event_interrupt = NULL;
 	}
 }
 
@@ -353,7 +359,6 @@ R_API RCons *r_cons_new() {
 	I.rgbstr = r_cons_rgb_str_off;
 	I.line = r_line_new ();
 	I.highlight = NULL;
-	I.event_interrupt = NULL;
 	I.is_wine = -1;
 	I.fps = 0;
 	I.color = COLOR_MODE_DISABLED;
@@ -365,7 +370,6 @@ R_API RCons *r_cons_new() {
 	I.force_rows = 0;
 	I.force_columns = 0;
 	I.event_resize = NULL;
-	I.data = NULL;
 	I.event_data = NULL;
 	I.is_interactive = true;
 	I.noflush = false;
@@ -651,6 +655,10 @@ R_API void r_cons_context_load(RConsContext *context) {
 
 R_API void r_cons_context_reset() {
 	I.context = &r_cons_context_default;
+}
+
+R_API bool r_cons_context_is_main() {
+	return I.context == &r_cons_context_default;
 }
 
 R_API void r_cons_flush() {

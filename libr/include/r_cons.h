@@ -375,11 +375,14 @@ typedef void (*RConsSleepEndCallback)(void *core, void *user);
 typedef struct r_cons_context_t {
 	RConsGrep grep;
 	RStack *cons_stack;
-	RStack *break_stack;
-	bool breaked;
 	char *buffer;
 	int buffer_len;
 	int buffer_sz;
+
+	bool breaked;
+	RStack *break_stack;
+	RConsEvent event_interrupt;
+	void *event_interrupt_data;
 } RConsContext;
 
 typedef struct r_cons_t {
@@ -402,9 +405,7 @@ typedef struct r_cons_t {
 	int fdout; // only used in pipe.c :?? remove?
 	const char *teefile;
 	int (*user_fgets)(char *buf, int len);
-	RConsEvent event_interrupt;
 	RConsEvent event_resize;
-	void *data;
 	void *event_data;
 	int mouse_event;
 
@@ -659,6 +660,7 @@ R_API RConsContext *r_cons_context_new(void);
 R_API void r_cons_context_free(RConsContext *context);
 R_API void r_cons_context_load(RConsContext *context);
 R_API void r_cons_context_reset();
+R_API bool r_cons_context_is_main();
 R_API void r_cons_break_pop(void);
 R_API void r_cons_break_push(RConsBreak cb, void*user);
 R_API void r_cons_break_clear(void);
