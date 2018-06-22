@@ -3035,6 +3035,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				goto beach;
 			}
 			for (k = 1, ret_ctr = 0; k < nsym; k++) {
+				bool is_sht_null = false;
 				if (type == R_BIN_ELF_IMPORTS && sym[k].st_shndx == STN_UNDEF) {
 					if (sym[k].st_value) {
 						toffset = sym[k].st_value;
@@ -3042,11 +3043,10 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 						toffset = 0;
 					}
 					tsize = 16;
-				} else if (type == R_BIN_ELF_SYMBOLS &&
-					   sym[k].st_shndx != STN_UNDEF) {
-					//int idx = sym[k].st_shndx;
+				} else if (type == R_BIN_ELF_SYMBOLS) {
 					tsize = sym[k].st_size;
 					toffset = (ut64)sym[k].st_value; 
+					is_sht_null = sym[k].st_shndx == SHT_NULL;
 				} else {
 					continue;
 				}
@@ -3075,6 +3075,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				ret[ret_ctr].ordinal = k;
 				ret[ret_ctr].name[ELF_STRING_LENGTH - 2] = '\0';
 				fill_symbol_bind_and_type (&ret[ret_ctr], &sym[k]);
+				ret[ret_ctr].is_sht_null = is_sht_null;
 				ret[ret_ctr].last = 0;
 				ret_ctr++;
 			}
