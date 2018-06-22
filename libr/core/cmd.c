@@ -266,6 +266,18 @@ static const char *help_msg_y[] = {
 	NULL
 };
 
+static const char *help_msg_triple_exclamation[] = {
+	"Usage:", "!!![-*][cmd] [arg|$type...]", " # user-defined autocompletion for commands",
+	"!!!", "", "list all autocompletions",
+	"!!!?", "", "show this help",
+	"!!!", "-*", "remove all user-defined autocompletions",
+	"!!!", "-\\*", "remove autocompletions starting by backslash (glob expression)",
+	"!!!", "-foo", "remove autocompletion named 'foo'",
+	"!!!", "foo", "add 'foo' for autocompletion",
+	"!!!", "bar $flag", "add 'bar' for autocompletion with $flag as argument",
+	NULL
+};
+
 R_API void r_core_cmd_help(const RCore *core, const char *help[]) {
 	r_cons_cmd_help (help, core->print->flags & R_PRINT_FLAGS_COLOR);
 }
@@ -1403,15 +1415,6 @@ static inline void print_dict(RCoreAutocomplete* a, int sub) {
 	}
 	int i, j;
 	const char* name = "unknown";
-	if (!sub) {
-		eprintf ("Valid flags:\n");
-		for (i = 0; i < R_CORE_AUTOCMPLT_END; ++i) {
-			if (autocomplete_flags[i].desc) {
-				eprintf ("    %s | %s\n", autocomplete_flags[i].name, autocomplete_flags[i].desc);
-			}
-		}
-		eprintf ("Dictionary:\n");
-	}
 	for (i = 0; i < a->n_subcmds; ++i) {
 		RCoreAutocomplete* b = a->subcmds[i];
 		if (b->locked) {
@@ -1440,32 +1443,42 @@ static int autocomplete_type(const char* strflag) {
 }
 
 static void cmd_autocomplete(RCore *core, const char *input) {
+	RCoreAutocomplete* b = core->autocomplete;
 	input = r_str_trim_ro (input);
-	if (!*input) {
-		eprintf ("Invalid usage of !!!\n");
-		return;
-	}
 	char arg[256];
-	bool remove = false;
-	if (*input == '?') {
+	if (!*input) {
 		print_dict (core->autocomplete, 0);
 		return;
 	}
-	if (*input == '-') {
-		remove = true;
-		input = r_str_trim_ro (input + 1);
-	}
-	if (!*input) {
-		eprintf ("Invalid usage of !!!%c\n", remove ? '-' : ' ');
+	if (*input == '?') {
+		r_core_cmd_help (core, help_msg_triple_exclamation);
+		int i;
+		r_cons_printf ("|Types:\n");
+		for (i = 0; i < R_CORE_AUTOCMPLT_END; ++i) {
+			if (autocomplete_flags[i].desc) {
+				r_cons_printf ("| %s     %s\n",
+					autocomplete_flags[i].name,
+					autocomplete_flags[i].desc);
+			}
+		}
 		return;
 	}
-	RCoreAutocomplete* b = core->autocomplete;
+	if (*input == '-') {
+		const char *arg = input + 1;
+		if (!*input) {
+			eprintf ("Use !!!-* or !!!-<cmd>\n");
+			return;
+		}
+		r_core_autocomplete_remove (b, arg);
+		return;
+	}
 	while (b) {
 		const char* end = r_str_trim_wp (input);
 		if (!end) {
 			break;
 		}
-		if ((end - input) >= 256) {
+		if ((end - input) >= sizeof (arg)) {
+			// wtf?
 			eprintf ("Exceeded the max arg length (255).\n");
 			return;
 		}
@@ -1476,20 +1489,15 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 		arg[end - input] = 0;
 		RCoreAutocomplete* a = r_core_autocomplete_find (b, arg, true);
 		input = r_str_trim_ro (end);
-		if (input && *input && !a && !remove) {
-			char *c = strdup(arg);
-			if (b->type == R_CORE_AUTOCMPLT_DFLT && !(b = r_core_autocomplete_add (b, c, R_CORE_AUTOCMPLT_DFLT, false))) {
-				free (c);
+		if (input && *input && !a) {
+			if (b->type == R_CORE_AUTOCMPLT_DFLT && !(b = r_core_autocomplete_add (b, arg, R_CORE_AUTOCMPLT_DFLT, false))) {
 				eprintf ("ENOMEM\n");
 				return;
 			} else if (b->type != R_CORE_AUTOCMPLT_DFLT) {
 				eprintf ("Cannot add autocomplete to '%s'. type not $dflt\n", b->cmd);
 				return;
 			}
-		} else if (input && *input && !a && remove) {
-			eprintf ("Cannot remove '%s'. Doesn't exists.\n", arg);
-			return;
-		} else if ((!input || !*input) && !a && !remove) {
+		} else if ((!input || !*input) && !a) {
 			if (arg[0] == '$') {
 				int type = autocomplete_type (arg);
 				if (type != R_CORE_AUTOCMPLT_END && !b->locked && !b->n_subcmds) {
@@ -1498,27 +1506,20 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 					eprintf ("Changing type of '%s' is forbidden.\n", b->cmd);
 				}
 			} else {
-				char *c = strdup(arg);
-				if (!r_core_autocomplete_add (b, c, R_CORE_AUTOCMPLT_DFLT, false)) {
-					free (c);
+				if (!r_core_autocomplete_add (b, arg, R_CORE_AUTOCMPLT_DFLT, false)) {
 					eprintf ("ENOMEM\n");
 					return;
 				}
 			}
 			return;
-		} else if ((!input || !*input) && a && remove) {
-			if (!r_core_autocomplete_remove (b, arg)) {
-				eprintf ("Removing '%s' from the dict is forbidden.\n", arg);
-			}
-			return;
-		} else if ((!input || !*input) && a && !remove) {
+		} else if ((!input || !*input) && a) {
 			eprintf ("Cannot add '%s'. Already exists.\n", arg);
 			return;
 		} else {
 			b = a;
 		}
 	}
-	eprintf ("Invalid usage of !!!%c\n", remove ? '-' : ' ');
+	eprintf ("Invalid usage of !!!\n");
 }
 
 static int cmd_system(void *data, const char *input) {
