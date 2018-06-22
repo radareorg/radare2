@@ -202,9 +202,11 @@ R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *o) {
 
 R_API void r_bin_symbol_free(void *_sym) {
 	RBinSymbol *sym = (RBinSymbol *)_sym;
-	free (sym->name);
-	free (sym->classname);
-	free (sym);
+	if (sym) {
+		free (sym->name);
+		free (sym->classname);
+		free (sym);
+	}
 }
 
 R_API void r_bin_string_free(void *_str) {
