@@ -1378,12 +1378,155 @@ static int cmd_env(void *data, const char *input) {
 	return ret;
 }
 
+static struct autocomplete_flag_map_t {
+	const char* name;
+	const char* desc;
+	int type;
+} autocomplete_flags [] = {
+	{ "$dflt", "default autocomplete flag", R_CORE_AUTOCMPLT_DFLT },
+	{ "$flag", "shows known flag hints", R_CORE_AUTOCMPLT_FLAG },
+	{ "$flsp", "shows known flag-spaces hints", R_CORE_AUTOCMPLT_FLSP },
+	{ "$zign", "shows known zignatures hints", R_CORE_AUTOCMPLT_ZIGN },
+	{ "$eval", "shows known evals hints", R_CORE_AUTOCMPLT_EVAL },
+	{ "$prjt", "shows known projects hints", R_CORE_AUTOCMPLT_PRJT },
+	{ "$mins", NULL, R_CORE_AUTOCMPLT_MINS },
+	{ "$brkp", "shows known breakpoints hints", R_CORE_AUTOCMPLT_BRKP },
+	{ "$macro", NULL, R_CORE_AUTOCMPLT_MACR },
+	{ "$file", "hints file paths", R_CORE_AUTOCMPLT_FILE },
+	{ "$thme", "shows known themes hints", R_CORE_AUTOCMPLT_THME },
+	{ "$optn", "allows the selection for multiple options", R_CORE_AUTOCMPLT_OPTN }
+};
+
+static inline void print_dict(RCoreAutocomplete* a, int sub) {
+	if (!a) {
+		return;
+	}
+	int i, j;
+	const char* name = "unknown";
+	if (!sub) {
+		eprintf ("Valid flags:\n");
+		for (i = 0; i < R_CORE_AUTOCMPLT_END; ++i) {
+			if (autocomplete_flags[i].desc) {
+				eprintf ("    %s | %s\n", autocomplete_flags[i].name, autocomplete_flags[i].desc);
+			}
+		}
+		eprintf ("Dictionary:\n");
+	}
+	for (i = 0; i < a->n_subcmds; ++i) {
+		RCoreAutocomplete* b = a->subcmds[i];
+		if (b->locked) {
+			continue;
+		}
+		for (j = 0; j < R_CORE_AUTOCMPLT_END; ++j) {
+			if (b->type == autocomplete_flags[j].type) {
+				name = autocomplete_flags[j].name;
+				break;
+			}
+		}
+		eprintf ("[%3d] %s: '%s'\n", sub, name, b->cmd);
+		print_dict (a->subcmds[i], sub + 1);
+	}
+}
+
+static int autocomplete_type(const char* strflag) {
+	int i;
+	for (i = 0; i < R_CORE_AUTOCMPLT_END; ++i) {
+		if (autocomplete_flags[i].desc && !strncmp (strflag, autocomplete_flags[i].name, 5)) {
+			return autocomplete_flags[i].type;
+		}
+	}
+	eprintf ("Invalid flag '%s'\n", strflag);
+	return R_CORE_AUTOCMPLT_END;
+}
+
+static void cmd_autocomplete(RCore *core, const char *input) {
+	input = r_str_trim_ro (input);
+	if (!*input) {
+		eprintf ("Invalid usage of !!!\n");
+		return;
+	}
+	char arg[256];
+	bool remove = false;
+	if (*input == '?') {
+		print_dict (core->autocomplete, 0);
+		return;
+	}
+	if (*input == '-') {
+		remove = true;
+		input = r_str_trim_ro (input + 1);
+	}
+	if (!*input) {
+		eprintf ("Invalid usage of !!!%c\n", remove ? '-' : ' ');
+		return;
+	}
+	RCoreAutocomplete* b = core->autocomplete;
+	while (b) {
+		const char* end = r_str_trim_wp (input);
+		if (!end) {
+			break;
+		}
+		if ((end - input) >= 256) {
+			eprintf ("Exceeded the max arg length (255).\n");
+			return;
+		}
+		if (end == input) {
+			break;
+		}
+		memcpy (arg, input, end - input);
+		arg[end - input] = 0;
+		RCoreAutocomplete* a = r_core_autocomplete_find (b, arg, true);
+		input = r_str_trim_ro (end);
+		if (input && *input && !a && !remove) {
+			char *c = strdup(arg);
+			if (b->type == R_CORE_AUTOCMPLT_DFLT && !(b = r_core_autocomplete_add (b, c, R_CORE_AUTOCMPLT_DFLT, false))) {
+				free (c);
+				eprintf ("ENOMEM\n");
+				return;
+			} else if (b->type != R_CORE_AUTOCMPLT_DFLT) {
+				eprintf ("Cannot add autocomplete to '%s'. type not $dflt\n", b->cmd);
+				return;
+			}
+		} else if (input && *input && !a && remove) {
+			eprintf ("Cannot remove '%s'. Doesn't exists.\n", arg);
+			return;
+		} else if ((!input || !*input) && !a && !remove) {
+			if (arg[0] == '$') {
+				int type = autocomplete_type (arg);
+				if (type != R_CORE_AUTOCMPLT_END && !b->locked && !b->n_subcmds) {
+					b->type = type;
+				} else if (b->locked || b->n_subcmds) {
+					eprintf ("Changing type of '%s' is forbidden.\n", b->cmd);
+				}
+			} else {
+				char *c = strdup(arg);
+				if (!r_core_autocomplete_add (b, c, R_CORE_AUTOCMPLT_DFLT, false)) {
+					free (c);
+					eprintf ("ENOMEM\n");
+					return;
+				}
+			}
+			return;
+		} else if ((!input || !*input) && a && remove) {
+			if (!r_core_autocomplete_remove (b, arg)) {
+				eprintf ("Removing '%s' from the dict is forbidden.\n", arg);
+			}
+			return;
+		} else if ((!input || !*input) && a && !remove) {
+			eprintf ("Cannot add '%s'. Already exists.\n", arg);
+			return;
+		} else {
+			b = a;
+		}
+	}
+	eprintf ("Invalid usage of !!!%c\n", remove ? '-' : ' ');
+}
+
 static int cmd_system(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	ut64 n;
 	int ret = 0;
 	switch (*input) {
-	case '-':
+	case '-': //!-
 		if (input[1]) {
 			r_line_hist_free();
 			r_line_hist_save (R2_HOME_HISTORY);
@@ -1391,7 +1534,7 @@ static int cmd_system(void *data, const char *input) {
 			r_line_hist_free();
 		}
 		break;
-	case '=':
+	case '=': //!=
 		if (input[1] == '?') {
 			r_cons_printf ("Usage: !=[!]  - enable/disable remote commands\n");
 		} else {
@@ -1401,31 +1544,37 @@ static int cmd_system(void *data, const char *input) {
 			}
 		}
 		break;
-	case '!':
-		if (r_sandbox_enable (0)) {
-			eprintf ("This command is disabled in sandbox mode\n");
-			return 0;
-		}
-		if (input[1]) {
-			int olen;
-			char *out = NULL;
-			char *cmd = r_core_sysenv_begin (core, input);
-			if (cmd) {
-				ret = r_sys_cmd_str_full (cmd + 1, NULL, &out, &olen, NULL);
-				r_core_sysenv_end (core, input);
-				r_cons_memcat (out, olen);
-				free (out);
-				free (cmd);
-			} //else eprintf ("Error setting up system environment\n");
+	case '!': //!!
+		if (input[1] == '!') { // !!! & !!!-
+			cmd_autocomplete (core, input + 2);
+		} else if (input[1] == '?') {
+			r_core_sysenv_help (core);
 		} else {
-			eprintf ("History saved to "R2_HOME_HISTORY"\n");
-			r_line_hist_save (R2_HOME_HISTORY);
+			if (r_sandbox_enable (0)) {
+				eprintf ("This command is disabled in sandbox mode\n");
+				return 0;
+			}
+			if (input[1]) {
+				int olen;
+				char *out = NULL;
+				char *cmd = r_core_sysenv_begin (core, input);
+				if (cmd) {
+					ret = r_sys_cmd_str_full (cmd + 1, NULL, &out, &olen, NULL);
+					r_core_sysenv_end (core, input);
+					r_cons_memcat (out, olen);
+					free (out);
+					free (cmd);
+				} //else eprintf ("Error setting up system environment\n");
+			} else {
+				eprintf ("History saved to "R2_HOME_HISTORY"\n");
+				r_line_hist_save (R2_HOME_HISTORY);
+			}
 		}
 		break;
 	case '\0':
 		r_line_hist_list ();
 		break;
-	case '?':
+	case '?': //!?
 		r_core_sysenv_help (core);
 		break;
 	default:
