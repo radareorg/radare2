@@ -97,14 +97,6 @@ static void cons_stack_load(RConsStack *data, bool free_current) {
 	}
 }
 
-static void break_signal(int sig) {
-	I.context->breaked = true;
-	r_print_set_interrupted (I.context->breaked);
-	if (I.context->event_interrupt) {
-		I.context->event_interrupt (I.context->event_interrupt_data);
-	}
-}
-
 static void cons_context_init(RConsContext *context) {
 	context->breaked = false;
 	context->buffer = NULL;
@@ -119,6 +111,18 @@ static void cons_context_init(RConsContext *context) {
 static void cons_context_deinit(RConsContext *context) {
 	r_stack_free (context->cons_stack);
 	r_stack_free (context->break_stack);
+}
+
+static void cons_context_break(RConsContext *context) {
+	context->breaked = true;
+	r_print_set_interrupted (context->breaked);
+	if (context->event_interrupt) {
+		context->event_interrupt (context->event_interrupt_data);
+	}
+}
+
+static void break_signal(int sig) {
+	cons_context_break (&r_cons_context_default);
 }
 
 static inline void r_cons_write(const char *buf, int len) {
