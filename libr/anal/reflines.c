@@ -394,7 +394,7 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 		return NULL;
 	}
 	r_list_foreach (anal->reflines, iter, ref) {
-		if (core->cons && core->cons->breaked) {
+		if (core->cons && core->cons->context->breaked) {
 			r_list_free (lvls);
 			return NULL;
 		}
@@ -405,7 +405,7 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	b = r_buf_new ();
 	r_buf_append_string (b, " ");
 	r_list_foreach (lvls, iter, ref) {
-		if (core->cons && core->cons->breaked) {
+		if (core->cons && core->cons->context->breaked) {
 			r_list_free (lvls);
 			r_buf_free (b);
 			return NULL;

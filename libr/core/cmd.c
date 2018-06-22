@@ -314,8 +314,8 @@ static void recursive_help(RCore *core, int detail, const char *cmd_prefix) {
 
 static int r_core_cmd_nullcallback(void *data) {
 	RCore *core = (RCore*) data;
-	if (core->cons->breaked) {
-		core->cons->breaked = false;
+	if (core->cons->context->breaked) {
+		core->cons->context->breaked = false;
 		return 0;
 	}
 	if (!core->cmdrepeat) {
@@ -3228,7 +3228,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			RAnalFunction *fcn;
 			RListIter *iter;
 			if (core->anal) {
-				RConsGrep grep = core->cons->grep;
+				RConsGrep grep = core->cons->context->grep;
 				r_list_foreach (core->anal->fcns, iter, fcn) {
 					char *buf;
 					r_core_seek (core, fcn->addr, 1);
@@ -3245,7 +3245,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 						break;
 					}
 				}
-				core->cons->grep = grep;
+				core->cons->context->grep = grep;
 			}
 			goto out_finish;
 		}

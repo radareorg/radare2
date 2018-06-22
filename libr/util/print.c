@@ -874,7 +874,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	}
 	for (i = j = 0; i < len; i += (stride? stride: inc), j += (stride? stride: 0)) {
 		r_print_set_screenbounds (p, addr + i);
-		if (p && p->cons && p->cons->breaked) {
+		if (p && p->cons && p->cons->context && p->cons->context->breaked) {
 			break;
 		}
 		if (use_sparse) {

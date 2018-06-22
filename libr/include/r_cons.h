@@ -372,14 +372,18 @@ typedef void (*RConsBreakCallback)(void *core);
 typedef void *(*RConsSleepBeginCallback)(void *core);
 typedef void (*RConsSleepEndCallback)(void *core, void *user);
 
-typedef struct r_cons_t {
+typedef struct r_cons_context_t {
 	RConsGrep grep;
 	RStack *cons_stack;
 	RStack *break_stack;
+	bool breaked;
 	char *buffer;
-	//int line;
 	int buffer_len;
 	int buffer_sz;
+} RConsContext;
+
+typedef struct r_cons_t {
+	RConsContext *context;
 	char *lastline;
 	int is_html;
 	int is_interactive;
@@ -392,7 +396,6 @@ typedef struct r_cons_t {
 	int force_columns;
 	int fix_rows;
 	int fix_columns;
-	bool breaked;
 	bool break_lines;
 	int noflush;
 	FILE *fdin; // FILE? and then int ??
