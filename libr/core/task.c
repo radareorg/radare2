@@ -87,7 +87,7 @@ R_API void r_core_task_join (RCore *core, RCoreTask *current, RCoreTask *task) {
 	}
 }
 
-R_API RCoreTask *r_core_task_new (RCore *core, const char *cmd, RCoreTaskCallback cb, void *user) {
+R_API RCoreTask *r_core_task_new (RCore *core, bool create_cons, const char *cmd, RCoreTaskCallback cb, void *user) {
 	RCoreTask *task = R_NEW0 (RCoreTask);
 	if (!task) {
 		goto hell;
@@ -101,6 +101,13 @@ R_API RCoreTask *r_core_task_new (RCore *core, const char *cmd, RCoreTaskCallbac
 	task->dispatch_lock = r_th_lock_new (false);
 	if (!task->dispatch_cond || !task->dispatch_lock) {
 		goto hell;
+	}
+
+	if (create_cons) {
+		task->cons_context = r_cons_context_new ();
+		if (!task->cons_context) {
+			goto hell;
+		}
 	}
 
 	task->id = core->task_id_next++;

@@ -731,7 +731,7 @@ R_API RCoreTask *r_core_task_get(RCore *core, int id);
 R_API void r_core_task_print(RCore *core, RCoreTask *task, int mode);
 R_API void r_core_task_list(RCore *core, int mode);
 R_API const char *r_core_task_status(RCoreTask *task);
-R_API RCoreTask *r_core_task_new(RCore *core, const char *cmd, RCoreTaskCallback cb, void *user);
+R_API RCoreTask *r_core_task_new(RCore *core, bool create_cons, const char *cmd, RCoreTaskCallback cb, void *user);
 R_API void r_core_task_free(RCoreTask *task);
 R_API void r_core_task_enqueue(RCore *core, RCoreTask *task);
 R_API int r_core_task_run_sync(RCore *core, RCoreTask *task);

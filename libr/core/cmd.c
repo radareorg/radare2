@@ -1340,7 +1340,7 @@ static int cmd_thread(void *data, const char *input) {
 			eprintf ("This command is disabled in sandbox mode\n");
 			return 0;
 		}
-		r_core_task_enqueue (core, r_core_task_new (core, input + 1, NULL, core));
+		r_core_task_enqueue (core, r_core_task_new (core, true, input + 1, NULL, core));
 		break;
 	default:
 		eprintf ("&?\n");
