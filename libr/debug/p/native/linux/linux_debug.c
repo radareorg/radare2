@@ -75,7 +75,7 @@ int linux_handle_signals (RDebug *dbg) {
 		//ptrace (PTRACE_SETSIGINFO, dbg->pid, 0, &siginfo);
 		dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 		dbg->reason.signum = siginfo.si_signo;
-		//dbg->stopaddr = siginfo.si_addr;
+		dbg->stopaddr = siginfo.si_addr;
 		//dbg->errno = siginfo.si_errno;
 		// siginfo.si_code -> HWBKPT, USER, KERNEL or WHAT
 #warning DO MORE RDEBUGREASON HERE
