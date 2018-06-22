@@ -173,9 +173,9 @@ R_API RBinImport *r_bin_import_clone(RBinImport *o) {
 	if (!res) {
 		return NULL;
 	}
-	res->name = o->name ? strdup (o->name) : NULL;
-	res->classname = o->classname ? strdup (o->classname) : NULL;
-	res->descriptor = o->descriptor ? strdup (o->descriptor) : NULL;
+	res->name = R_STR_DUP (o->name);
+	res->classname = R_STR_DUP (o->classname);
+	res->descriptor = R_STR_DUP (o->descriptor);
 	return res;
 }
 
@@ -194,9 +194,9 @@ R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *o) {
 	if (!res) {
 		return NULL;
 	}
-	res->name = o->name ? strdup (o->name) : NULL;
-	res->dname = o->dname ? strdup (o->dname) : NULL;
-	res->classname = o->classname ? strdup (o->classname) : NULL;
+	res->name = R_STR_DUP (o->name);
+	res->dname = R_STR_DUP (o->dname);
+	res->classname = R_STR_DUP (o->classname);
 	return res;
 }
 
