@@ -2189,28 +2189,28 @@ static char* _resource_lang_str(int id) {
 
 static char* _resource_type_str(int type) {
 	switch (type) {
-	case 1: return "CURSOR";
-	case 2: return "BITMAP";
-	case 3: return "ICON";
-	case 4: return "MENU";
-	case 5: return "DIALOG";
-	case 6: return "STRING";
-	case 7: return "FONTDIR";
-	case 8: return "FONT";
-	case 9: return "ACCELERATOR";
-	case 10: return "RCDATA";
-	case 11: return "MESSAGETABLE";
-	case 12: return "GROUP_CURSOR";
-	case 14: return "GROUP_ICON";
-	case 16: return "VERSION";
-	case 17: return "DLGINCLUDE";
-	case 19: return "PLUGPLAY";
-	case 20: return "VXD";
-	case 21: return "ANICURSOR";
-	case 22: return "ANIICON";
-	case 23: return "HTML";
-	case 24: return "MANIFEST";
-	default: return "UNKNOWN";
+	case 1: return strdup("CURSOR");
+	case 2: return strdup("BITMAP");
+	case 3: return strdup("ICON");
+	case 4: return strdup("MENU");
+	case 5: return strdup("DIALOG");
+	case 6: return strdup("STRING");
+	case 7: return strdup("FONTDIR");
+	case 8: return strdup("FONT");
+	case 9: return strdup("ACCELERATOR");
+	case 10: return strdup("RCDATA");
+	case 11: return strdup("MESSAGETABLE");
+	case 12: return strdup("GROUP_CURSOR");
+	case 14: return strdup("GROUP_ICON");
+	case 16: return strdup("VERSION");
+	case 17: return strdup("DLGINCLUDE");
+	case 19: return strdup("PLUGPLAY");
+	case 20: return strdup("VXD");
+	case 21: return strdup("ANICURSOR");
+	case 22: return strdup("ANIICON");
+	case 23: return strdup("HTML");
+	case 24: return strdup("MANIFEST");
+	default: return r_str_newf("UNKNOWN (%d)", type);
 	}
 }
 
