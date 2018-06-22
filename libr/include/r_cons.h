@@ -655,10 +655,10 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int empty);
 
 R_API void r_cons_push(void);
 R_API void r_cons_pop(void);
-R_API RStack *r_cons_dump_new(void);
-R_API void r_cons_dump_free(RStack *stack);
-R_API RStack *r_cons_dump(void);
-R_API void r_cons_load(RStack *stack);
+R_API RConsContext *r_cons_context_new(void);
+R_API void r_cons_context_free(RConsContext *context);
+R_API void r_cons_context_load(RConsContext *context);
+R_API void r_cons_context_reset();
 R_API void r_cons_break_pop(void);
 R_API void r_cons_break_push(RConsBreak cb, void*user);
 R_API void r_cons_break_clear(void);

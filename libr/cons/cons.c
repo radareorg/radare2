@@ -605,7 +605,14 @@ R_API void r_cons_pop() {
 	cons_stack_free ((void *)data);
 }
 
-R_API RStack *r_cons_dump_new(void) {
+R_API RConsContext *r_cons_context_new(void) {
+	RConsContext *context = R_NEW0 (RConsContext);
+	if (!context) {
+		return NULL;
+	}
+	cons_context_init (context);
+	return context;
+	/*
 	RStack *stack = r_stack_newf (6, cons_stack_free);
 	if (!stack) {
 		return NULL;
@@ -627,37 +634,23 @@ R_API RStack *r_cons_dump_new(void) {
 
 	r_stack_push (stack, data);
 
-	return stack;
+	return stack;*/
 }
 
-R_API void r_cons_dump_free(RStack *stack) {
-	r_stack_free (stack);
-}
-
-/* pushes the current state to the cons stack and returns the stack */
-R_API RStack *r_cons_dump(void) {
-	RStack *stack = I.context->cons_stack;
-	if (!stack) {
-		return NULL;
+R_API void r_cons_context_free(RConsContext *context) {
+	if (!context) {
+		return;
 	}
-	RConsStack *cur = cons_stack_dump (false);
-	if (!cur) {
-		return NULL;
-	}
-	r_stack_push (stack, cur);
-	return stack;
+	cons_context_deinit (context);
+	free (context);
 }
 
-/* pops the top item from the stack and loads it.
- * The rest of the stack will be the current cons stack */
-R_API void r_cons_load(RStack *stack) {
-	RConsStack *cur = r_stack_pop (stack);
-	cons_stack_load (cur, false);
-	// cur->buf is moved to cons instance by cons_stack_load(),
-	// make sure it is not freed by cons_stack_free()
-	cur->buf = NULL;
-	cons_stack_free (cur);
-	I.context->cons_stack = stack;
+R_API void r_cons_context_load(RConsContext *context) {
+	I.context = context;
+}
+
+R_API void r_cons_context_reset() {
+	I.context = &r_cons_context_default;
 }
 
 R_API void r_cons_flush() {

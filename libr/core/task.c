@@ -125,7 +125,7 @@ R_API void r_core_task_free (RCoreTask *task) {
 	r_th_free (task->thread);
 	r_th_cond_free (task->dispatch_cond);
 	r_th_lock_free (task->dispatch_lock);
-	r_cons_dump_free (task->cons);
+	r_cons_context_free (task->cons_context);
 	free (task);
 }
 
@@ -152,31 +152,31 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 	r_th_lock_leave (core->tasks_lock);
 
 	if (next) {
-		current->cons = r_cons_dump ();
+		r_cons_context_reset ();
 		r_th_lock_enter (next->dispatch_lock);
 		r_th_cond_signal (next->dispatch_cond);
 		r_th_lock_leave (next->dispatch_lock);
 		if (!stop) {
 			r_th_cond_wait (current->dispatch_cond, current->dispatch_lock);
-			r_cons_load (current->cons);
-			current->cons = NULL;
 		}
-	} else if (current != core->main_task && stop) {
-		// all tasks done, reset to main cons
-		current->cons = r_cons_dump ();
-		r_cons_load (core->main_task->cons);
-		core->main_task->cons = NULL;
 	}
 
 	if (!stop) {
 		core->current_task = current;
+		if (current->cons_context) {
+			r_cons_context_load (current->cons_context);
+		} else {
+			r_cons_context_reset ();
+		}
+	} else {
+		r_cons_context_reset ();
 	}
 }
 
 static void task_wakeup(RCoreTask *current) {
 	RCore *core = current->core;
 
-	r_th_lock_enter (current->core->tasks_lock);
+	r_th_lock_enter (core->tasks_lock);
 
 	current->state = R_CORE_TASK_STATE_RUNNING;
 
@@ -184,7 +184,7 @@ static void task_wakeup(RCoreTask *current) {
 	bool single = true;
 	RCoreTask *task;
 	RListIter *iter;
-	r_list_foreach (current->core->tasks, iter, task) {
+	r_list_foreach (core->tasks, iter, task) {
 		if (task != current && task->state == R_CORE_TASK_STATE_RUNNING) {
 			single = false;
 			break;
@@ -199,30 +199,18 @@ static void task_wakeup(RCoreTask *current) {
 		r_list_append (current->core->tasks_queue, current);
 	}
 
-	r_th_lock_leave (current->core->tasks_lock);
+	r_th_lock_leave (core->tasks_lock);
 
 	if(!single) {
 		r_th_cond_wait (current->dispatch_cond, current->dispatch_lock);
 	}
 
-	current->core->current_task = current;
+	core->current_task = current;
 
-	// swap cons
-	if (current->cons) {
-		// we are the main task and some other task has already dumped the main cons for us
-		// or we were sleeping.
-		r_cons_load (current->cons);
-		current->cons = NULL;
-	} if (core->main_task != current) {
-		// we are not the main task, so we need a new cons
-		current->cons = r_cons_dump_new ();
-		if (single) {
-			// no other tasks are currently running, so the main cons is currently loaded
-			// and has to be dumped.
-			core->main_task->cons = r_cons_dump ();
-		}
-		r_cons_load (current->cons);
-		current->cons = NULL;
+	if (current->cons_context) {
+		r_cons_context_load (current->cons_context);
+	} else {
+		r_cons_context_reset ();
 	}
 }
 

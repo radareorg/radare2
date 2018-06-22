@@ -723,7 +723,7 @@ typedef struct r_core_task_t {
 	char *cmd;
 	char *res;
 	bool cmd_log;
-	RStack *cons;
+	RConsContext *cons_context;
 	RCoreTaskCallback cb;
 } RCoreTask;
 
