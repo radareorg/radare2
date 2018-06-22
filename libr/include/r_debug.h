@@ -277,6 +277,7 @@ typedef struct r_debug_t {
 	int steps; /* counter of steps done */
 	RDebugReason reason; /* stop reason */
 	RDebugRecoilMode recoil_mode; /* what did the user want to do? */
+	ut64 stopaddr;  /* stop address  */
 
 	/* tracing vars */
 	RDebugTrace *trace;
