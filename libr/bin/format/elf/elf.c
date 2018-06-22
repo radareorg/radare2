@@ -2867,12 +2867,16 @@ static RBinElfSymbol *Elf_(r_bin_elf_get_phdr_imports)(ELFOBJ *bin) {
 	return bin->phdr_imports;
 }
 
+static RBinElfSymbol *Elf_(get_phdr_symbols)(ELFOBJ *bin, int type) {
+	return (type == R_BIN_ELF_SYMBOLS)
+		? Elf_(r_bin_elf_get_phdr_symbols) (bin)
+		: Elf_(r_bin_elf_get_phdr_imports) (bin);
+}
+
 static int Elf_(fix_symbols)(ELFOBJ *bin, int nsym, int type, RBinElfSymbol **sym) {
 	int count = 0;
 	RBinElfSymbol *ret = *sym;
-	RBinElfSymbol *phdr_symbols = (type == R_BIN_ELF_SYMBOLS)
-				? Elf_(r_bin_elf_get_phdr_symbols) (bin)
-				: Elf_(r_bin_elf_get_phdr_imports) (bin);
+	RBinElfSymbol *phdr_symbols = Elf_(get_phdr_symbols) (bin, type);
 	RBinElfSymbol *tmp, *p;
 	if (phdr_symbols) {
 		RBinElfSymbol *d = ret;
@@ -2934,9 +2938,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 	char *strtab = NULL;
 
 	if (!bin || !bin->shdr || !bin->ehdr.e_shnum || bin->ehdr.e_shnum == 0xffff) {
-		return (type == R_BIN_ELF_SYMBOLS)
-				? Elf_(r_bin_elf_get_phdr_symbols) (bin)
-				: Elf_(r_bin_elf_get_phdr_imports) (bin);
+		return Elf_(get_phdr_symbols) (bin, type);
 	}
 	if (!UT32_MUL (&shdr_size, bin->ehdr.e_shnum, sizeof (Elf_(Shdr)))) {
 		return false;
@@ -3083,9 +3085,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 		}
 	}
 	if (!ret) {
-		return (type == R_BIN_ELF_SYMBOLS)
-				? Elf_(r_bin_elf_get_phdr_symbols) (bin)
-				: Elf_(r_bin_elf_get_phdr_imports) (bin);
+		return Elf_(get_phdr_symbols) (bin, type);
 	}
 	int max = -1;
 	RBinElfSymbol *aux = NULL;
