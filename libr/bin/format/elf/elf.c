@@ -1208,7 +1208,7 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 	ut8 rl[sizeof (Elf_(Rel))] = {0};
 	ut8 rla[sizeof (Elf_(Rela))] = {0};
 	RBinElfSection *rel_sec = NULL;
-	Elf_(Addr) plt_sym_addr = -1;
+	ut64 plt_sym_addr = -1;
 	ut64 got_addr, got_offset;
 	ut64 plt_addr;
 	int j, k, tsize, len, nrel;
