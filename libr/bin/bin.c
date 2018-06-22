@@ -168,6 +168,17 @@ R_API void r_bin_info_free(RBinInfo *rb) {
 	free (rb);
 }
 
+R_API RBinImport *r_bin_import_clone(RBinImport *o) {
+	RBinImport *res = r_mem_dup (o, sizeof (*o));
+	if (!res) {
+		return NULL;
+	}
+	res->name = o->name ? strdup (o->name) : NULL;
+	res->classname = o->classname ? strdup (o->classname) : NULL;
+	res->descriptor = o->descriptor ? strdup (o->descriptor) : NULL;
+	return res;
+}
+
 R_API void r_bin_import_free(void *_imp) {
 	RBinImport *imp = (RBinImport *)_imp;
 	if (imp) {
@@ -176,6 +187,17 @@ R_API void r_bin_import_free(void *_imp) {
 		R_FREE (imp->descriptor);
 		free (imp);
 	}
+}
+
+R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *o) {
+	RBinSymbol *res = r_mem_dup (o, sizeof (*o));
+	if (!res) {
+		return NULL;
+	}
+	res->name = o->name ? strdup (o->name) : NULL;
+	res->dname = o->dname ? strdup (o->dname) : NULL;
+	res->classname = o->classname ? strdup (o->classname) : NULL;
+	return res;
 }
 
 R_API void r_bin_symbol_free(void *_sym) {

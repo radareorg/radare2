@@ -590,6 +590,9 @@ typedef struct r_bin_options_t {
 	char *name; // or comment :?
 } RBinOptions;
 
+R_API RBinImport *r_bin_import_clone(RBinImport *o);
+R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *o);
+
 R_API RBinOptions *r_bin_options_new (ut64 offset, ut64 baddr, int rawstr);
 R_API void r_bin_options_free(RBinOptions *bo);
 R_API int r_bin_open(RBin *bin, const char *filename, RBinOptions *bo);

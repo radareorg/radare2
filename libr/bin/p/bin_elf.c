@@ -51,22 +51,16 @@ static void setsymord(ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
 	if (!eobj->symbols_by_ord || ord >= eobj->symbols_by_ord_size) {
 		return;
 	}
-	free (eobj->symbols_by_ord[ord]);
-	eobj->symbols_by_ord[ord] = r_mem_dup (ptr, sizeof (RBinSymbol));
-	eobj->symbols_by_ord[ord]->name = ptr->name ? strdup (ptr->name) : NULL;
+	r_bin_symbol_free (eobj->symbols_by_ord[ord]);
+	eobj->symbols_by_ord[ord] = r_bin_symbol_clone (ptr);
 }
 
-static inline bool setimpord(ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
+static void setimpord(ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
 	if (!eobj->imports_by_ord || ord >= eobj->imports_by_ord_size) {
-		return false;
+		return;
 	}
-	if (eobj->imports_by_ord[ord]) {
-		free (eobj->imports_by_ord[ord]->name);
-		free (eobj->imports_by_ord[ord]);
-	}
-	eobj->imports_by_ord[ord] = r_mem_dup (ptr, sizeof (RBinImport));
-	eobj->imports_by_ord[ord]->name = strdup (ptr->name);
-	return true;
+	r_bin_import_free (eobj->imports_by_ord[ord]);
+	eobj->imports_by_ord[ord] = r_bin_import_clone (ptr);
 }
 
 static Sdb* get_sdb(RBinFile *bf) {
@@ -595,7 +589,7 @@ static RList* imports(RBinFile *bf) {
 		ptr->bind = r_str_const (import[i].bind);
 		ptr->type = r_str_const (import[i].type);
 		ptr->ordinal = import[i].ordinal;
-		(void)setimpord (bin, ptr->ordinal, ptr);
+		setimpord (bin, ptr->ordinal, ptr);
 		r_list_append (ret, ptr);
 	}
 	return ret;
