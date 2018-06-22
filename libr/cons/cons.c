@@ -115,7 +115,6 @@ static void cons_context_deinit(RConsContext *context) {
 
 static void cons_context_break(RConsContext *context) {
 	context->breaked = true;
-	r_print_set_interrupted (context->breaked);
 	if (context->event_interrupt) {
 		context->event_interrupt (context->event_interrupt_data);
 	}
@@ -248,7 +247,6 @@ R_API void r_cons_break_pop() {
 	//restore old state
 	if (I.context->break_stack) {
 		RConsBreakStack *b = NULL;
-		r_print_set_interrupted (I.context->breaked);
 		b = r_stack_pop (I.context->break_stack);
 		if (b) {
 			I.context->event_interrupt = b->event_interrupt;
@@ -295,7 +293,6 @@ R_API void r_cons_break_timeout(int timeout) {
 R_API void r_cons_break_end() {
 	I.context->breaked = false;
 	I.timeout = 0;
-	r_print_set_interrupted (I.context->breaked);
 #if __UNIX__ || __CYGWIN__
 	signal (SIGINT, SIG_IGN);
 #endif
@@ -416,6 +413,9 @@ R_API RCons *r_cons_new() {
 	r_cons_reset ();
 	r_cons_rgb_init ();
 	r_cons_pal_init ();
+
+	r_print_set_is_interrupted_cb (r_cons_is_breaked);
+
 	return &I;
 }
 

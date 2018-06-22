@@ -14,7 +14,8 @@ static void libc_printf(const char *format, ...) {
 	vprintf (format, ap);
 	va_end (ap);
 }
-static bool isInterrupted = false;
+
+static RPrintIsInterruptedCallback is_interrupted_cb = NULL;
 
 R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions) {
 	const int use_color = p->flags & R_PRINT_FLAGS_COLOR;
@@ -108,12 +109,15 @@ R_API int r_util_lines_getline(ut64 *lines_cache, int lines_cache_sz, ut64 off) 
 	return imin;
 }
 
-R_API int r_print_is_interrupted() {
-	return isInterrupted;
+R_API bool r_print_is_interrupted() {
+	if (is_interrupted_cb) {
+		return is_interrupted_cb ();
+	}
+	return false;
 }
 
-R_API void r_print_set_interrupted(int i) {
-	isInterrupted = i;
+R_API void r_print_set_is_interrupted_cb(RPrintIsInterruptedCallback cb) {
+	is_interrupted_cb = cb;
 }
 
 R_API bool r_print_mute(RPrint *p, int x) {

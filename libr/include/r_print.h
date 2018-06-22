@@ -106,9 +106,12 @@ typedef struct r_print_t {
 } RPrint;
 
 #ifdef R_API
+
 /* RConsBreak handlers */
-R_API int r_print_is_interrupted(void);
-R_API void r_print_set_interrupt(int i);
+typedef bool (*RPrintIsInterruptedCallback)();
+
+R_API bool r_print_is_interrupted(void);
+R_API void r_print_set_is_interrupted_cb(RPrintIsInterruptedCallback cb);
 
 /* ... */
 R_API char *r_print_hexpair(RPrint *p, const char *str, int idx);
