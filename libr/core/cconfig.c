@@ -2580,6 +2580,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("bin.minstr", 0, &cb_binminstr, "Minimum string length for r_bin");
 	SETICB ("bin.maxstr", 0, &cb_binmaxstr, "Maximum string length for r_bin");
 	SETICB ("bin.maxstrbuf", 1024*1024*10, & cb_binmaxstrbuf, "Maximum size of range to load strings from");
+	SETI ("bin.maxuniblocks", -1, "Max number of Unicode blocks that a UTF string can consist of (-1 for no limit)");
 	SETCB ("bin.prefix", NULL, &cb_binprefix, "Prefix all symbols/sections/relocs with a specific string");
 	SETCB ("bin.rawstr", "false", &cb_rawstr, "Load strings from raw binaries");
 	SETCB ("bin.strings", "true", &cb_binstrings, "Load strings from rbin on startup");
