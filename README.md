@@ -40,9 +40,11 @@ code, debugging programs, attaching to remote gdb servers, ..
    x86-64, zimg, risc-v.
 
    * **File Formats:**
-	* bios, CGC, dex, elf, elf64, filesystem, java, fatmach0, mach0,
-   mach0-64, MZ, PE, PE+, TE, COFF, plan9, dyldcache, Commodore VICE emulator,
-   Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs.
+	* ELF, Mach-O, Fatmach-O, PE, PE+, MZ, COFF, OMF, TE, XBE, BIOS/UEFI,
+	Dyldcache, DEX, ART, CGC, Java class, Android boot image, Plan9 executable,
+	ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump),
+	WASM (WebAssembly binary), Commodore VICE emulator, 
+	Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs, various filesystems.
 
    * **Operating Systems:**
 	* Android, GNU/Linux, [Net|Free|Open]BSD, iOS, OSX, QNX, w32,
