@@ -1362,9 +1362,9 @@ static ut32 tmp_get_realsize (RAnalFunction *f) {
 
 static void ds_show_functions_argvar(RDisasmState *ds, RAnalVar *var, const char *base, bool is_var, char sign) {
 	int delta = sign == '+' ? var->delta : -var->delta;
-	const char *arg_or_var = is_var ? "var" : "arg";
-	r_cons_printf ("%s %s %s @ %s%c0x%x", arg_or_var, var->type, var->name,
-		base, sign, delta);
+	const char *pfx = is_var ? "var" : "arg";
+	r_cons_printf ("%s %s%s%s @ %s%c0x%x", pfx, var->type, r_str_endswith (var->type, "*") ? "" : " ",
+			var->name, base, sign, delta);
 }
 
 static void printVarSummary(RDisasmState *ds, RList *list) {
