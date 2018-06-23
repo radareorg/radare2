@@ -15,7 +15,8 @@
 
 R_LIB_VERSION (r_cons);
 
-static RCons r_cons_instance = {{{{0}}}};
+static RConsContext r_cons_context_default = {{{{0}}}};
+static RCons r_cons_instance = {0};
 #define I r_cons_instance
 
 //this structure goes into cons_stack when r_cons_push/pop
@@ -28,8 +29,8 @@ typedef struct {
 
 typedef struct {
 	bool breaked;
-	void *data;
 	RConsEvent event_interrupt;
+	void *event_interrupt_data;
 } RConsBreakStack;
 
 static void break_stack_free(void *ptr) {
@@ -53,29 +54,29 @@ static RConsStack *cons_stack_dump(bool recreate) {
 		return NULL;
 	}
 
-	if (I.buffer) {
-		data->buf = I.buffer;
-		data->buf_len = I.buffer_len;
-		data->buf_size = I.buffer_sz;
+	if (I.context->buffer) {
+		data->buf = I.context->buffer;
+		data->buf_len = I.context->buffer_len;
+		data->buf_size = I.context->buffer_sz;
 	}
 
 	data->grep = R_NEW0 (RConsGrep);
 	if (data->grep) {
-		memcpy (data->grep, &I.grep, sizeof (RConsGrep));
-		if (I.grep.str) {
-			data->grep->str = strdup (I.grep.str);
+		memcpy (data->grep, &I.context->grep, sizeof (RConsGrep));
+		if (I.context->grep.str) {
+			data->grep->str = strdup (I.context->grep.str);
 		}
 	}
 
-	if (recreate && I.buffer_sz > 0) {
-		I.buffer = malloc (I.buffer_sz);
-		if (!I.buffer) {
-			I.buffer = data->buf;
+	if (recreate && I.context->buffer_sz > 0) {
+		I.context->buffer = malloc (I.context->buffer_sz);
+		if (!I.context->buffer) {
+			I.context->buffer = data->buf;
 			free (data);
 			return NULL;
 		}
 	} else {
-		I.buffer = NULL;
+		I.context->buffer = NULL;
 	}
 
 	return data;
@@ -83,25 +84,44 @@ static RConsStack *cons_stack_dump(bool recreate) {
 
 static void cons_stack_load(RConsStack *data, bool free_current) {
 	if (free_current) {
-		free (I.buffer);
+		free (I.context->buffer);
 	}
-	I.buffer = data->buf;
+	I.context->buffer = data->buf;
 	data->buf = NULL;
-	I.buffer_len = data->buf_len;
-	I.buffer_sz = data->buf_size;
+	I.context->buffer_len = data->buf_len;
+	I.context->buffer_sz = data->buf_size;
 
 	if (data->grep) {
-		free (I.grep.str);
-		memcpy (&I.grep, data->grep, sizeof (RConsGrep));
+		free (I.context->grep.str);
+		memcpy (&I.context->grep, data->grep, sizeof (RConsGrep));
+	}
+}
+
+static void cons_context_init(RConsContext *context) {
+	context->breaked = false;
+	context->buffer = NULL;
+	context->buffer_sz = 0;
+	context->buffer_len = 0;
+	context->cons_stack = r_stack_newf (6, cons_stack_free);
+	context->break_stack = r_stack_newf (6, break_stack_free);
+	context->event_interrupt = NULL;
+	context->event_interrupt_data = NULL;
+}
+
+static void cons_context_deinit(RConsContext *context) {
+	r_stack_free (context->cons_stack);
+	r_stack_free (context->break_stack);
+}
+
+static void cons_context_break(RConsContext *context) {
+	context->breaked = true;
+	if (context->event_interrupt) {
+		context->event_interrupt (context->event_interrupt_data);
 	}
 }
 
 static void break_signal(int sig) {
-	I.breaked = true;
-	r_print_set_interrupted (I.breaked);
-	if (I.event_interrupt) {
-		I.event_interrupt (I.data);
-	}
+	cons_context_break (&r_cons_context_default);
 }
 
 static inline void r_cons_write(const char *buf, int len) {
@@ -197,46 +217,49 @@ R_API RCons *r_cons_singleton() {
 }
 
 R_API void r_cons_break_clear() {
-	I.breaked = false;
+	I.context->breaked = false;
 }
 
 R_API void r_cons_break_push(RConsBreak cb, void *user) {
-	if (I.break_stack) {
+	if (I.context->break_stack) {
 		//if we don't have any element in the stack start the signal
 		RConsBreakStack *b = R_NEW0 (RConsBreakStack);
 		if (!b) return;
-		if (r_stack_is_empty (I.break_stack)) {
+		if (r_stack_is_empty (I.context->break_stack)) {
 #if __UNIX__ || __CYGWIN__
-			signal (SIGINT, break_signal);
+			if (r_cons_context_is_main ()) {
+				signal (SIGINT, break_signal);
+			}
 #endif
-			I.breaked = false;
+			I.context->breaked = false;
 		}
 		//save the actual state
-		b->event_interrupt = I.event_interrupt;
-		b->data = I.data;
-		r_stack_push (I.break_stack, b);
+		b->event_interrupt = I.context->event_interrupt;
+		b->event_interrupt_data = I.context->event_interrupt_data;
+		r_stack_push (I.context->break_stack, b);
 		//configure break
-		I.event_interrupt = cb;
-		I.data = user;
+		I.context->event_interrupt = cb;
+		I.context->event_interrupt_data = user;
 	}
 }
 
 R_API void r_cons_break_pop() {
 	//restore old state
-	if (I.break_stack) {
+	if (I.context->break_stack) {
 		RConsBreakStack *b = NULL;
-		r_print_set_interrupted (I.breaked);
-		b = r_stack_pop (I.break_stack);
+		b = r_stack_pop (I.context->break_stack);
 		if (b) {
-			I.event_interrupt = b->event_interrupt;
-			I.data = b->data;
+			I.context->event_interrupt = b->event_interrupt;
+			I.context->event_interrupt_data = b->event_interrupt_data;
 			break_stack_free (b);
 		} else {
 			//there is not more elements in the stack
 #if __UNIX__ || __CYGWIN__
-			signal (SIGINT, SIG_IGN);
+			if (r_cons_context_is_main ()) {
+				signal (SIGINT, SIG_IGN);
+			}
 #endif
-			I.breaked = false;
+			I.context->breaked = false;
 		}
 	}
 }
@@ -247,12 +270,12 @@ R_API bool r_cons_is_breaked() {
 	}
 	if (I.timeout) {
 		if (r_sys_now () > I.timeout) {
-			I.breaked = true;
+			I.context->breaked = true;
 			eprintf ("\nTimeout!\n");
 			I.timeout = 0;
 		}
 	}
-	return I.breaked;
+	return I.context->breaked;
 }
 
 R_API void r_cons_break_timeout(int timeout) {
@@ -268,19 +291,18 @@ R_API void r_cons_break_timeout(int timeout) {
 }
 
 R_API void r_cons_break_end() {
-	I.breaked = false;
+	I.context->breaked = false;
 	I.timeout = 0;
-	r_print_set_interrupted (I.breaked);
 #if __UNIX__ || __CYGWIN__
 	signal (SIGINT, SIG_IGN);
 #endif
-	if (!r_stack_is_empty (I.break_stack)) {
+	if (!r_stack_is_empty (I.context->break_stack)) {
 		//free all the stack
-		r_stack_free (I.break_stack);
+		r_stack_free (I.context->break_stack);
 		//create another one
-		I.break_stack = r_stack_newf (6, break_stack_free);
-		I.data = NULL;
-		I.event_interrupt = NULL;
+		I.context->break_stack = r_stack_newf (6, break_stack_free);
+		I.context->event_interrupt_data = NULL;
+		I.context->event_interrupt = NULL;
 	}
 }
 
@@ -338,7 +360,6 @@ R_API RCons *r_cons_new() {
 	I.rgbstr = r_cons_rgb_str_off;
 	I.line = r_line_new ();
 	I.highlight = NULL;
-	I.event_interrupt = NULL;
 	I.is_wine = -1;
 	I.fps = 0;
 	I.color = COLOR_MODE_DISABLED;
@@ -350,19 +371,18 @@ R_API RCons *r_cons_new() {
 	I.force_rows = 0;
 	I.force_columns = 0;
 	I.event_resize = NULL;
-	I.data = NULL;
 	I.event_data = NULL;
 	I.is_interactive = true;
 	I.noflush = false;
 	I.linesleep = 0;
 	I.fdin = stdin;
 	I.fdout = 1;
-	I.breaked = false;
 	I.break_lines = false;
 	I.lines = 0;
-	I.buffer = NULL;
-	I.buffer_sz = 0;
-	I.buffer_len = 0;
+
+	I.context = &r_cons_context_default;
+	cons_context_init (I.context);
+
 	r_cons_get_size (&I.pagesize);
 	I.num = NULL;
 	I.null = 0;
@@ -390,11 +410,12 @@ R_API RCons *r_cons_new() {
 #endif
 	I.pager = NULL; /* no pager by default */
 	I.mouse = 0;
-	I.cons_stack = r_stack_newf (6, cons_stack_free);
-	I.break_stack = r_stack_newf (6, break_stack_free);
 	r_cons_reset ();
 	r_cons_rgb_init ();
 	r_cons_pal_init ();
+
+	r_print_set_is_interrupted_cb (r_cons_is_breaked);
+
 	return &I;
 }
 
@@ -408,13 +429,12 @@ R_API RCons *r_cons_free() {
 		r_line_free ();
 		I.line = NULL;
 	}
-	if (I.buffer) {
-		free (I.buffer);
-		I.buffer = NULL;
+	if (I.context->buffer) {
+		free (I.context->buffer);
+		I.context->buffer = NULL;
 	}
 	R_FREE (I.break_word);
-	r_stack_free (I.cons_stack);
-	r_stack_free (I.break_stack);
+	cons_context_deinit (I.context);
 	return NULL;
 }
 
@@ -424,7 +444,7 @@ static bool palloc(int moar) {
 	if (moar <= 0) {
 		return false;
 	}
-	if (!I.buffer) {
+	if (!I.context->buffer) {
 		int new_sz;
 		if ((INT_MAX - MOAR) < moar) {
 			return false;
@@ -432,22 +452,22 @@ static bool palloc(int moar) {
 		new_sz = moar + MOAR;
 		temp = calloc (1, new_sz);
 		if (temp) {
-			I.buffer_sz = new_sz;
-			I.buffer = temp;
-			I.buffer[0] = '\0';
+			I.context->buffer_sz = new_sz;
+			I.context->buffer = temp;
+			I.context->buffer[0] = '\0';
 		}
-	} else if (moar + I.buffer_len > I.buffer_sz) {
+	} else if (moar + I.context->buffer_len > I.context->buffer_sz) {
 		char *new_buffer;
-		int old_buffer_sz = I.buffer_sz;
-		if ((INT_MAX - MOAR - moar) < I.buffer_sz) {
+		int old_buffer_sz = I.context->buffer_sz;
+		if ((INT_MAX - MOAR - moar) < I.context->buffer_sz) {
 			return false;
 		}
-		I.buffer_sz += moar + MOAR;
-		new_buffer = realloc (I.buffer, I.buffer_sz);
+		I.context->buffer_sz += moar + MOAR;
+		new_buffer = realloc (I.context->buffer, I.context->buffer_sz);
 		if (new_buffer) {
-			I.buffer = new_buffer;
+			I.context->buffer = new_buffer;
 		} else {
-			I.buffer_sz = old_buffer_sz;
+			I.context->buffer_sz = old_buffer_sz;
 			return false;
 		}
 	}
@@ -532,60 +552,60 @@ static void cons_grep_reset(RConsGrep *grep) {
 }
 
 R_API void r_cons_reset() {
-	if (I.buffer) {
-		I.buffer[0] = '\0';
+	if (I.context->buffer) {
+		I.context->buffer[0] = '\0';
 	}
-	I.buffer_len = 0;
+	I.context->buffer_len = 0;
 	I.lines = 0;
-	I.lastline = I.buffer;
-	cons_grep_reset (&I.grep);
+	I.lastline = I.context->buffer;
+	cons_grep_reset (&I.context->grep);
 }
 
 R_API const char *r_cons_get_buffer() {
 	//check len otherwise it will return trash
-	return I.buffer_len? I.buffer : NULL;
+	return I.context->buffer_len? I.context->buffer : NULL;
 }
 
 R_API void r_cons_filter() {
 	/* grep */
-	if (I.filter || I.grep.nstrings > 0 || I.grep.tokens_used || I.grep.less || I.grep.json) {
-		r_cons_grepbuf (I.buffer, I.buffer_len);
+	if (I.filter || I.context->grep.nstrings > 0 || I.context->grep.tokens_used || I.context->grep.less || I.context->grep.json) {
+		r_cons_grepbuf (I.context->buffer, I.context->buffer_len);
 		I.filter = false;
 	}
 	/* html */
 	if (I.is_html) {
 		int newlen = 0;
-		char *input = r_str_ndup (I.buffer, I.buffer_len);
+		char *input = r_str_ndup (I.context->buffer, I.context->buffer_len);
 		char *res = r_cons_html_filter (input, &newlen);
-		free (I.buffer);
+		free (I.context->buffer);
 		free (input);
-		I.buffer = res;
-		I.buffer_len = newlen;
-		I.buffer_sz = newlen;
+		I.context->buffer = res;
+		I.context->buffer_len = newlen;
+		I.context->buffer_sz = newlen;
 	}
 	/* TODO */
 }
 
 R_API void r_cons_push() {
-	if (!I.cons_stack) {
+	if (!I.context->cons_stack) {
 		return;
 	}
 	RConsStack *data = cons_stack_dump (true);
 	if (!data) {
 		return;
 	}
-	r_stack_push (I.cons_stack, data);
-	I.buffer_len = 0;
-	if (I.buffer) {
-		memset (I.buffer, 0, I.buffer_sz);
+	r_stack_push (I.context->cons_stack, data);
+	I.context->buffer_len = 0;
+	if (I.context->buffer) {
+		memset (I.context->buffer, 0, I.context->buffer_sz);
 	}
 }
 
 R_API void r_cons_pop() {
-	if (!I.cons_stack) {
+	if (!I.context->cons_stack) {
 		return;
 	}
-	RConsStack *data = (RConsStack *)r_stack_pop (I.cons_stack);
+	RConsStack *data = (RConsStack *)r_stack_pop (I.context->cons_stack);
 	if (!data) {
 		return;
 	}
@@ -593,7 +613,14 @@ R_API void r_cons_pop() {
 	cons_stack_free ((void *)data);
 }
 
-R_API RStack *r_cons_dump_new(void) {
+R_API RConsContext *r_cons_context_new(void) {
+	RConsContext *context = R_NEW0 (RConsContext);
+	if (!context) {
+		return NULL;
+	}
+	cons_context_init (context);
+	return context;
+	/*
 	RStack *stack = r_stack_newf (6, cons_stack_free);
 	if (!stack) {
 		return NULL;
@@ -615,37 +642,27 @@ R_API RStack *r_cons_dump_new(void) {
 
 	r_stack_push (stack, data);
 
-	return stack;
+	return stack;*/
 }
 
-R_API void r_cons_dump_free(RStack *stack) {
-	r_stack_free (stack);
-}
-
-/* pushes the current state to the cons stack and returns the stack */
-R_API RStack *r_cons_dump(void) {
-	RStack *stack = I.cons_stack;
-	if (!stack) {
-		return NULL;
+R_API void r_cons_context_free(RConsContext *context) {
+	if (!context) {
+		return;
 	}
-	RConsStack *cur = cons_stack_dump (false);
-	if (!cur) {
-		return NULL;
-	}
-	r_stack_push (stack, cur);
-	return stack;
+	cons_context_deinit (context);
+	free (context);
 }
 
-/* pops the top item from the stack and loads it.
- * The rest of the stack will be the current cons stack */
-R_API void r_cons_load(RStack *stack) {
-	RConsStack *cur = r_stack_pop (stack);
-	cons_stack_load (cur, false);
-	// cur->buf is moved to cons instance by cons_stack_load(),
-	// make sure it is not freed by cons_stack_free()
-	cur->buf = NULL;
-	cons_stack_free (cur);
-	I.cons_stack = stack;
+R_API void r_cons_context_load(RConsContext *context) {
+	I.context = context;
+}
+
+R_API void r_cons_context_reset() {
+	I.context = &r_cons_context_default;
+}
+
+R_API bool r_cons_context_is_main() {
+	return I.context == &r_cons_context_default;
 }
 
 R_API void r_cons_flush() {
@@ -660,17 +677,17 @@ R_API void r_cons_flush() {
 	r_cons_filter ();
 	if (I.is_interactive && I.fdout == 1) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
-		if (I.pager && *I.pager && I.buffer_len > 0
-				&& r_str_char_count (I.buffer, '\n') >= I.rows) {
-			I.buffer[I.buffer_len-1] = 0;
-			r_sys_cmd_str_full (I.pager, I.buffer, NULL, NULL, NULL);
+		if (I.pager && *I.pager && I.context->buffer_len > 0
+				&& r_str_char_count (I.context->buffer, '\n') >= I.rows) {
+			I.context->buffer[I.context->buffer_len-1] = 0;
+			r_sys_cmd_str_full (I.pager, I.context->buffer, NULL, NULL, NULL);
 			r_cons_reset ();
 
-		} else if (I.buffer_len > CONS_MAX_USER) {
+		} else if (I.context->buffer_len > CONS_MAX_USER) {
 #if COUNT_LINES
 			int i, lines = 0;
-			for (i = 0; I.buffer[i]; i++) {
-				if (I.buffer[i] == '\n') {
+			for (i = 0; I.context->buffer[i]; i++) {
+				if (I.context->buffer[i] == '\n') {
 					lines ++;
 				}
 			}
@@ -680,7 +697,7 @@ R_API void r_cons_flush() {
 			}
 #else
 			char buf[64];
-			char *buflen = r_num_units (buf, I.buffer_len);
+			char *buflen = r_num_units (buf, I.context->buffer_len);
 			if (buflen && !r_cons_yesno ('n',"Do you want to print %s chars? (y/N)", buflen)) {
 				r_cons_reset ();
 				return;
@@ -693,7 +710,7 @@ R_API void r_cons_flush() {
 	if (tee && *tee) {
 		FILE *d = r_sandbox_fopen (tee, "a+");
 		if (d) {
-			if (I.buffer_len != fwrite (I.buffer, 1, I.buffer_len, d)) {
+			if (I.context->buffer_len != fwrite (I.context->buffer, 1, I.context->buffer_len, d)) {
 				eprintf ("r_cons_flush: fwrite: error (%s)\n", tee);
 			}
 			fclose (d);
@@ -707,10 +724,10 @@ R_API void r_cons_flush() {
 		if (I.linesleep > 0 && I.linesleep < 1000) {
 			int i = 0;
 			int pagesize = R_MAX (1, I.pagesize);
-			char *ptr = I.buffer;
+			char *ptr = I.context->buffer;
 			char *nl = strchr (ptr, '\n');
-			int len = I.buffer_len;
-			I.buffer[I.buffer_len] = 0;
+			int len = I.context->buffer_len;
+			I.context->buffer[I.context->buffer_len] = 0;
 			r_cons_break_push (NULL, NULL);
 			while (nl && !r_cons_is_breaked ()) {
 				r_cons_write (ptr, nl - ptr + 1);
@@ -721,13 +738,13 @@ R_API void r_cons_flush() {
 				nl = strchr (ptr, '\n');
 				i++;
 			}
-			r_cons_write (ptr, I.buffer + len - ptr);
+			r_cons_write (ptr, I.context->buffer + len - ptr);
 			r_cons_break_pop ();
 		} else {
-			r_cons_write (I.buffer, I.buffer_len);
+			r_cons_write (I.context->buffer, I.context->buffer_len);
 		}
 	} else {
-		r_cons_write (I.buffer, I.buffer_len);
+		r_cons_write (I.context->buffer, I.context->buffer_len);
 	}
 
 	r_cons_reset ();
@@ -746,12 +763,12 @@ R_API void r_cons_visual_flush() {
 /* TODO: this ifdef must go in the function body */
 #if __WINDOWS__ && !__CYGWIN__
 		if (I.ansicon) {
-			r_cons_visual_write (I.buffer);
+			r_cons_visual_write (I.context->buffer);
 		} else {
-			r_cons_w32_print ((const ut8*)I.buffer, I.buffer_len, 1);
+			r_cons_w32_print ((const ut8*)I.context->buffer, I.context->buffer_len, 1);
 		}
 #else
-		r_cons_visual_write (I.buffer);
+		r_cons_visual_write (I.context->buffer);
 #endif
 	}
 	r_cons_reset ();
@@ -872,16 +889,16 @@ R_API void r_cons_printf_list(const char *format, va_list ap) {
 	if (strchr (format, '%')) {
 		palloc (MOAR + strlen (format) * 20);
 club:
-		size = I.buffer_sz - I.buffer_len - 1; /* remaining space in I.buffer */
-		written = vsnprintf (I.buffer + I.buffer_len, size, format, ap3);
+		size = I.context->buffer_sz - I.context->buffer_len - 1; /* remaining space in I.context->buffer */
+		written = vsnprintf (I.context->buffer + I.context->buffer_len, size, format, ap3);
 		if (written >= size) { /* not all bytes were written */
 			palloc (written);
 			va_end (ap3);
 			va_copy (ap3, ap2);
 			goto club;
 		}
-		I.buffer_len += written;
-		I.buffer[I.buffer_len] = 0;
+		I.context->buffer_len += written;
+		I.context->buffer[I.context->buffer_len] = 0;
 	} else {
 		r_cons_strcat (format);
 	}
@@ -900,17 +917,17 @@ R_API void r_cons_printf(const char *format, ...) {
 }
 
 R_API int r_cons_get_column() {
-	char *line = strrchr (I.buffer, '\n');
+	char *line = strrchr (I.context->buffer, '\n');
 	if (!line) {
-		line = I.buffer;
+		line = I.context->buffer;
 	}
-	I.buffer[I.buffer_len] = 0;
+	I.context->buffer[I.context->buffer_len] = 0;
 	return r_str_ansi_len (line);
 }
 
 /* final entrypoint for adding stuff in the buffer screen */
 R_API int r_cons_memcat(const char *str, int len) {
-	if (len < 0 || (I.buffer_len + len) < 0) {
+	if (len < 0 || (I.context->buffer_len + len) < 0) {
 		return -1;
 	}
 	if (I.echo) {
@@ -918,9 +935,9 @@ R_API int r_cons_memcat(const char *str, int len) {
 	}
 	if (str && len > 0 && !I.null) {
 		if (palloc (len + 1)) {
-			memcpy (I.buffer + I.buffer_len, str, len);
-			I.buffer_len += len;
-			I.buffer[I.buffer_len] = 0;
+			memcpy (I.context->buffer + I.context->buffer_len, str, len);
+			I.context->buffer_len += len;
+			I.context->buffer[I.context->buffer_len] = 0;
 		}
 	}
 	if (I.flush) {
@@ -928,7 +945,7 @@ R_API int r_cons_memcat(const char *str, int len) {
 	}
 	if (I.break_word && str && len > 0) {
 		if (r_mem_mem ((const ut8*)str, len, (const ut8*)I.break_word, I.break_word_len)) {
-			I.breaked = true;
+			I.context->breaked = true;
 		}
 	}
 	return len;
@@ -937,9 +954,9 @@ R_API int r_cons_memcat(const char *str, int len) {
 R_API void r_cons_memset(char ch, int len) {
 	if (!I.null && len > 0) {
 		palloc (len + 1);
-		memset (I.buffer + I.buffer_len, ch, len);
-		I.buffer_len += len;
-		I.buffer[I.buffer_len] = 0;
+		memset (I.context->buffer + I.context->buffer_len, ch, len);
+		I.context->buffer_len += len;
+		I.context->buffer[I.context->buffer_len] = 0;
 	}
 }
 
@@ -973,11 +990,11 @@ R_API int r_cons_get_cursor(int *rows) {
 	int i, col = 0;
 	int row = 0;
 	// TODO: we need to handle GOTOXY and CLRSCR ansi escape code too
-	for (i = 0; i < I.buffer_len; i++) {
+	for (i = 0; i < I.context->buffer_len; i++) {
 		// ignore ansi chars, copypasta from r_str_ansi_len
-		if (I.buffer[i] == 0x1b) {
-			char ch2 = I.buffer[i + 1];
-			char *str = I.buffer;
+		if (I.context->buffer[i] == 0x1b) {
+			char ch2 = I.context->buffer[i + 1];
+			char *str = I.context->buffer;
 			if (ch2 == '\\') {
 				i++;
 			} else if (ch2 == ']') {
@@ -986,7 +1003,7 @@ R_API int r_cons_get_cursor(int *rows) {
 			} else if (ch2 == '[') {
 				for (++i; str[i] && str[i] != 'J' && str[i] != 'm' && str[i] != 'H'; i++);
 			}
-		} else if (I.buffer[i] == '\n') {
+		} else if (I.context->buffer[i] == '\n') {
 			row++;
 			col = 0;
 		} else {
@@ -1206,12 +1223,12 @@ R_API void r_cons_set_cup(int enable) {
 }
 
 R_API void r_cons_column(int c) {
-	char *b = malloc (I.buffer_len + 1);
+	char *b = malloc (I.context->buffer_len + 1);
 	if (!b) {
 		return;
 	}
-	memcpy (b, I.buffer, I.buffer_len);
-	b[I.buffer_len] = 0;
+	memcpy (b, I.context->buffer, I.context->buffer_len);
+	b[I.context->buffer_len] = 0;
 	r_cons_reset ();
 	// align current buffer N chars right
 	r_cons_strcat_justify (b, c, 0);
@@ -1253,12 +1270,12 @@ R_API void r_cons_highlight(const char *word) {
 		strlen (inv[1])
 	};
 
-	if (word && *word && I.buffer) {
+	if (word && *word && I.context->buffer) {
 		int word_len = strlen (word);
 		char *orig;
-		clean = r_str_ndup (I.buffer, I.buffer_len);
+		clean = r_str_ndup (I.context->buffer, I.context->buffer_len);
 		l = r_str_ansi_filter (clean, &orig, &cpos, -1);
-		I.buffer = orig;
+		I.context->buffer = orig;
 		if (I.highlight) {
 			if (strcmp (word, I.highlight)) {
 				free (I.highlight);
@@ -1276,17 +1293,17 @@ R_API void r_cons_highlight(const char *word) {
 		strcpy (rword, inv[0]);
 		strcpy (rword + linv[0], word);
 		strcpy (rword + linv[0] + word_len, inv[1]);
-		res = r_str_replace_thunked (I.buffer, clean, cpos,
+		res = r_str_replace_thunked (I.context->buffer, clean, cpos,
 					     l, word, rword, 1);
 		if (res) {
-			I.buffer = res;
-			I.buffer_len = I.buffer_sz = strlen (res);
+			I.context->buffer = res;
+			I.context->buffer_len = I.context->buffer_sz = strlen (res);
 		}
 		free (rword);
 		free (clean);
 		free (cpos);
 		/* don't free orig - it's assigned
-		 * to I.buffer and possibly realloc'd */
+		 * to I.context->buffer and possibly realloc'd */
 	} else {
 		free (I.highlight);
 		I.highlight = NULL;
@@ -1294,8 +1311,8 @@ R_API void r_cons_highlight(const char *word) {
 }
 
 R_API char *r_cons_lastline(int *len) {
-	char *b = I.buffer + I.buffer_len;
-	while (b > I.buffer) {
+	char *b = I.context->buffer + I.context->buffer_len;
+	while (b > I.context->buffer) {
 		if (*b == '\n') {
 			b++;
 			break;
@@ -1303,8 +1320,8 @@ R_API char *r_cons_lastline(int *len) {
 		b--;
 	}
 	if (len) {
-		int delta = b - I.buffer;
-		*len = I.buffer_len - delta;
+		int delta = b - I.context->buffer;
+		*len = I.context->buffer_len - delta;
 	}
 	return b;
 }
@@ -1316,12 +1333,12 @@ R_API char *r_cons_lastline_utf8_ansi_len(int *len) {
 		return r_cons_lastline (0);
 	}
 
-	char *b = I.buffer + I.buffer_len;
+	char *b = I.context->buffer + I.context->buffer_len;
 	int l = 0;
 	int last_possible_ansi_end = 0;
 	char ch = '\0';
 	char ch2;
-	while (b > I.buffer) {
+	while (b > I.context->buffer) {
 		ch2 = ch;
 		ch = *b;
 
@@ -1372,21 +1389,21 @@ R_API char *r_cons_swap_ground(const char *col) {
 }
 
 R_API bool r_cons_drop(int n) {
-	if (n > I.buffer_len) {
-		I.buffer_len = 0;
+	if (n > I.context->buffer_len) {
+		I.context->buffer_len = 0;
 		return false;
 	}
-	I.buffer_len -= n;
+	I.context->buffer_len -= n;
 	return true;
 }
 
 R_API void r_cons_chop() {
-	while (I.buffer_len > 0) {
-		char ch = I.buffer[I.buffer_len - 1];
+	while (I.context->buffer_len > 0) {
+		char ch = I.context->buffer[I.context->buffer_len - 1];
 		if (ch != '\n' && !IS_WHITESPACE (ch)) {
 			break;
 		}
-		I.buffer_len--;
+		I.context->buffer_len--;
 	}
 }
 

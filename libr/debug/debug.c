@@ -1459,7 +1459,7 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 	for (;;) {
 		RDebugReasonType reason;
 
-		if (r_cons_singleton ()->breaked)
+		if (r_cons_singleton ()->context->breaked)
 			break;
 #if __linux__
 		// step is needed to avoid dupped contsc results
