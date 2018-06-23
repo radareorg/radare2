@@ -1,34 +1,36 @@
-FROM ubuntu:14.04
+FROM fedora:28
 
 MAINTAINER tbd
 
-ENV PATH=$PATH:/build/install/bin:/bin/versions/node/v8.11.3/bin
-
 WORKDIR /src
 
-RUN apt-get update -qq -y && apt-get install python-software-properties -y
-RUN apt-get install software-properties-common -y && add-apt-repository ppa:ubuntu-toolchain-r/test -y && apt-get update -qq -y
-RUN apt-get install -y \
-	gcc-7 \
+RUN dnf install -y \
+	gcc \
+	gcc-c++ \
+	clang \
+	llvm \
 	make \
+	patch \
+	findutils \
+	which \
 	bison \
 	curl \
 	git \
-	dc \
 	binutils \
 	cabextract \
-	libcurl4-openssl-dev \
-	libelf-dev \
-	libdw-dev \
+	libcurl-devel \
+	elfutils-libelf-devel \
+	elfutils-libelf-devel-static \
+	libdwarf-devel \
+	libdwarf-static \
 	jq \
-	pkg-config \
-	glib-2.0 \
-	libc6 \
-	libncurses5 \
-	libstdc++6 \
+	pkgconf-pkg-config \
+	glib2 \
+	glib2-devel \
+	ncurses-devel \
 	gnupg2 \
-	python-pip \
-	xz-utils
+	python2-pip \
+	xz
 
 RUN rm -rf /src/.nvm && git clone https://github.com/creationix/nvm.git /src/.nvm && (cd /src/.nvm && git checkout `git describe --abbrev=0 --tags`) && . /src/.nvm/nvm.sh && nvm install 8.11.3
 
