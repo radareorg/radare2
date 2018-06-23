@@ -155,7 +155,6 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 	bool b64str = r_config_get_i (r->config, "bin.b64str");
 	int minstr = r_config_get_i (r->config, "bin.minstr");
 	int maxstr = r_config_get_i (r->config, "bin.maxstr");
-	int maxuniblocks = r_config_get_i (r->config, "bin.maxuniblocks");
 	RBin *bin = r->bin;
 	RBinObject *obj = r_bin_cur_object (bin);
 	RListIter *iter;
@@ -180,7 +179,6 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 	r_list_foreach (list, iter, string) {
 		const char *section_name, *type_string;
 		ut64 paddr, vaddr, addr;
-		int *block_list = NULL;
 		paddr = string->paddr;
 		vaddr = r_bin_get_vaddr (bin, paddr, string->vaddr);
 		addr = va ? vaddr : paddr;
@@ -192,24 +190,6 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 		}
 		if (maxstr && string->length > maxstr) {
 			continue;
-		}
-		if (maxuniblocks > -1) {
-			int i;
-			switch (string->type) {
-			case R_STRING_TYPE_UTF8:
-			case R_STRING_TYPE_WIDE:
-			case R_STRING_TYPE_WIDE32:
-				block_list = r_utf_block_list ((const ut8*)string->string);
-				if (block_list) {
-					int len = 0;
-					for (i = 0; block_list[i] != -1; i++) {
-						len++;
-					}
-					if (len > maxuniblocks) {
-						goto beach;
-					}
-				}
-			}
 		}
 
 		section = r_bin_get_section_at (obj, paddr, 0);
@@ -248,6 +228,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 		} else if (IS_MODE_SIMPLEST (mode)) {
 			r_cons_println (string->string);
 		} else if (IS_MODE_JSON (mode)) {
+			int *block_list;
 			q = r_base64_encode_dyn (string->string, -1);
 			r_cons_printf ("%s{\"vaddr\":%"PFMT64u
 				",\"paddr\":%"PFMT64u",\"ordinal\":%d"
@@ -260,9 +241,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			case R_STRING_TYPE_UTF8:
 			case R_STRING_TYPE_WIDE:
 			case R_STRING_TYPE_WIDE32:
-				if (!block_list) {
-					block_list = r_utf_block_list ((const ut8*)string->string);
-				}
+				block_list = r_utf_block_list ((const ut8*)string->string);
 				if (block_list) {
 					if (block_list[0] == 0 && block_list[1] == -1) {
 						/* Don't include block list if
@@ -279,6 +258,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 						r_cons_printf ("\"%s\"", utfName? utfName: "");
 					}
 					r_cons_printf ("]");
+					R_FREE (block_list);
 				}
 			}
 			r_cons_printf ("}");
@@ -371,8 +351,6 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			r_cons_printf ("\n");
 		}
 		last_processed = iter;
-beach:
-		R_FREE (block_list);
 	}
 	R_FREE (b64.string);
 	if (IS_MODE_JSON (mode)) {
