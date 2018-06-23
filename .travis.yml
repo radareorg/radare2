@@ -1,20 +1,27 @@
 # travis.yml for testing radare2. Initially written in 2014-2016, by jn__.  Updated 2018 by damo22
 
-os:
-  - linux
-
-language: c
+language: generic
 dist: trusty
 sudo: required
 
 services:
   - docker
 
+os: osx
+matrix:
+  include:
+    - os: linux
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc
+    - os: linux
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang
+    - os: osx
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang
+
 cache:
   - ccache
 
 before_install:
-  - docker pull damo22/r2-travis:latest || docker build -t damo22/r2-travis:latest -f Dockerfile.travis .
+  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then docker build -t damo22/r2-travis:latest -f Dockerfile.travis . ; else rm -rf .nvm && git clone https://github.com/creationix/nvm.git .nvm && (cd .nvm && git checkout `git describe --abbrev=0 --tags`) && . .nvm/nvm.sh && nvm install 8.11.3; fi
 
 script:
   - export PR_NAME=$(echo $TRAVIS_PULL_REQUEST_SLUG | cut -d'/' -f1)
@@ -25,7 +32,7 @@ script:
   - export R2R_BRANCH=$([ -n "${TRAVIS_PULL_REQUEST_BRANCH}" ] && echo "${TRAVIS_PULL_REQUEST_BRANCH}" || echo "${R2R_DEFAULT_BRANCH}")
   - if [ "${R2R_BRANCH}" = master ]; then USER_NAME=radare; fi
   - export R2R_REPO=$(doc/repo PR_REGRESSIONS | sed "s/__USER__/${USER_NAME}/g")
-  - docker run -v /home/travis/.ccache:/root/.ccache -v ${TRAVIS_BUILD_DIR}:/build --entrypoint "/bin/bash" damo22/r2-travis:latest -c "cd /build; R2R_BRANCH=${R2R_BRANCH} R2R_REPO=${R2R_REPO} R2R_DEFAULT_BRANCH=${R2R_DEFAULT_BRANCH} R2R_DEFAULT_REPO=${R2R_DEFAULT_REPO} bash travis-script"
+  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then docker run -v /home/travis/.ccache:/root/.ccache -v ${TRAVIS_BUILD_DIR}:${TRAVIS_BUILD_DIR} --entrypoint "/bin/bash" damo22/r2-travis:latest -c ". /src/.nvm/nvm.sh; cd ${TRAVIS_BUILD_DIR}; R2R_BRANCH=${R2R_BRANCH} R2R_REPO=${R2R_REPO} R2R_DEFAULT_BRANCH=${R2R_DEFAULT_BRANCH} R2R_DEFAULT_REPO=${R2R_DEFAULT_REPO} TRAVIS_BUILD_DIR=${TRAVIS_BUILD_DIR} bash travis-script"; else bash travis-script; fi
 
 notifications:
   irc: "chat.freenode.net#radare"
