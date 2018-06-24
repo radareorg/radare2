@@ -1235,6 +1235,11 @@ repeat:
 			}
 			break;
 		case R_ANAL_OP_TYPE_JMP:
+			if (op.jump == UT64_MAX) {
+				FITFCNSZ ();
+				r_anal_op_fini (&op);
+				return R_ANAL_RET_END;
+			}
 			{
 				RFlagItem *fi = anal->flb.get_at (anal->flb.f, op.jump, false);
 				if (fi && strstr (fi->name, "imp.")) {
@@ -1242,11 +1247,6 @@ repeat:
 					r_anal_op_fini (&op);
 					return R_ANAL_RET_END;
 				}
-			}
-			if (op.jump == UT64_MAX) {
-				FITFCNSZ ();
-				r_anal_op_fini (&op);
-				return R_ANAL_RET_END;
 			}
 			if (r_cons_is_breaked ()) {
 				return R_ANAL_RET_END;
@@ -1263,9 +1263,6 @@ repeat:
 				FITFCNSZ ();
 				r_anal_op_fini (&op);
 				return R_ANAL_RET_END;
-			}
-			if (r_cons_is_breaked ()) {
-				break;
 			}
 			{
 				bool must_eob = anal->opt.eobjmp;
