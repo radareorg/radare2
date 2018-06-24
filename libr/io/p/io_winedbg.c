@@ -45,7 +45,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		free (cmd);
 	}
 
-    int left = count % wordSize;
+	int left = count % wordSize;
 	if(left > 0) {
 		ut32 leftW = -1;
 		memcpy(&leftW, w + words, left);
