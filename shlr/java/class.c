@@ -7037,12 +7037,15 @@ R_API RBinJavaAttrInfo *r_bin_java_rtv_annotations_attr_new(ut8 *buffer, ut64 sz
 		offset += 2;
 		attr->info.annotation_array.annotations = r_list_newf (r_bin_java_annotation_free);
 		for (i = 0; i < attr->info.annotation_array.num_annotations; i++) {
-			RBinJavaAnnotation *annotation = r_bin_java_annotation_new (buffer + offset, sz - offset, buf_offset + offset);
-			if (annotation == NULL) {}
+			int len = sz - offset;
+			if (len < 1) {
+				break;
+			}
+			RBinJavaAnnotation *annotation = r_bin_java_annotation_new (buffer + offset, len, buf_offset + offset);
 			if (annotation) {
 				offset += annotation->size;
+				r_list_append (attr->info.annotation_array.annotations, (void *) annotation);
 			}
-			r_list_append (attr->info.annotation_array.annotations, (void *) annotation);
 		}
 		attr->size = offset;
 	}
