@@ -329,7 +329,7 @@ static int expand_line (RConsCanvas *c, int real_len, int utf8_len) {
 }
 
 R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
-	if (!c || !s || !*s) {
+	if (!c || !s || !*s || !R_BETWEEN (0, c->y, c->h - 1) || !R_BETWEEN (0, c->x, c->w - 1)) {
 		return;
 	}
 
