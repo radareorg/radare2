@@ -989,6 +989,7 @@ static z80_opcode ed[]={				//ed
 	{"cpdr",		Z80_OP16		,NULL},
 	{"indr",		Z80_OP16		,NULL},
 	{"otdr",		Z80_OP16		,NULL},
+	{"invalid",		Z80_OP16		,NULL},
 	{"invalid",		Z80_OP16		,NULL}
 };
 
