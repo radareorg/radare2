@@ -38,14 +38,20 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	ut32 *w = (ut32*)buf;
 	int i;
 	int words = count / wordSize; // XXX must pad align to 4
-	if (count % wordSize) {
-		eprintf ("Buffer is not size-aligned\n");
-		return -1;
-	}
 	for (i = 0; i < words ; i++) {
 		ut64 addr = io->off + (i * wordSize);
 		char *cmd = r_str_newf ("set *0x%"PFMT64x" = 0x%x", addr, w[i]);
 		free (runcmd (cmd));
+		free (cmd);
+	}
+
+    int left = count % wordSize;
+	if(left > 0) {
+		ut32 leftW = -1;
+		memcpy(&leftW, w + words, left);
+		ut64 addr = io->off + (words * wordSize);
+		char *cmd = r_str_newf ("set *0x%"PFMT64x" = 0x%x", addr, leftW);
+		free(runcmd (cmd));
 		free (cmd);
 	}
 	return count;
