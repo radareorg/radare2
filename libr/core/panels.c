@@ -37,6 +37,8 @@
 #define PANEL_CMD_DISASSEMBLY    "pd $r"
 #define PANEL_CMD_GRAPH          "agf"
 
+#define PANEL_CONFIG_PAGE        10
+
 static const int layoutMaxCount = 2;
 
 enum {
@@ -108,6 +110,8 @@ static const char **menus_sub[] = {
 };
 
 static void layoutMenu(RPanel *panel);
+static void layoutDefault(RPanels *panels);
+static void layoutBalance(RPanels *panels);
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color);
 static void addPanelFrame(RCore* core, RPanels* panels, const char *title, const char *cmd);
 static bool checkFunc(RCore *core);
@@ -231,92 +235,77 @@ static void layoutMenu(RPanel *panel) {
 	panel->h += 4;
 }
 
-R_API void r_core_panels_layout(RPanels *panels) {
-	int h, w = r_cons_get_size (&h);
-	int i, j;
-	int colpos = w - panels->columnWidth;
-	RPanel *panel = panels->panel;
-
-	if (colpos < 0) {
-		panels->columnWidth = w;
-		colpos = 0;
-	}
+R_API void r_core_panels_layout (RPanels *panels) {
 	panels->can->sx = 0;
 	panels->can->sy = 0;
-	for (i = j = 0; i < panels->n_panels; i++) {
-		switch (panel[i].type) {
-		case PANEL_TYPE_MENU:
-			layoutMenu (&panel[i]);
+	layoutMenu (&panels->panel[panels->menu_pos]);
+	switch (panels->layout) {
+		case LAYOUT_DEFAULT:
+			layoutDefault (panels);
 			break;
-		case PANEL_TYPE_FRAME:
-			switch (panels->layout) {
-			case LAYOUT_DEFAULT:
-				if (j == 0) {
-					panel[i].x = 0;
-					panel[i].y = 1;
-					if (panel[j + 1].title) {
-						panel[i].w = colpos + 1;
-					} else {
-						panel[i].w = w;
-					}
-					panel[i].h = h - 1;
-				} else {
-					int ph = ((h - 1) / (panels->n_panels - 2));
-					panel[i].x = colpos;
-					panel[i].y = 1 + (ph * (j - 1));
-					panel[i].w = w - colpos;
-					if (panel[i].w < 0) {
-						panel[i].w = 0;
-					}
-					panel[i].h = ph;
-					if (!panel[i + 1].title) {
-						panel[i].h = h - panel[i].y;
-					}
-					if (j != 1) {
-						panel[i].y--;
-						panel[i].h++;
-					}
-				}
-				break;
-			case LAYOUT_BALANCE:
-				if (j == 0) {
-					panel[i].x = 0;
-					panel[i].y = 1;
-					if (panel[j + 1].title) {
-						panel[i].w = colpos + 1;
-					} else {
-						panel[i].w = w;
-					}
-					panel[i].h = (h / 2) + 1;
-				} else if (j == 1) {
-					panel[i].x = 0;
-					panel[i].y = (h / 2) + 1;
-					if (panel[j + 1].title) {
-						panel[i].w = colpos + 1;
-					} else {
-						panel[i].w = w;
-					}
-					panel[i].h = (h - 1) / 2;
-				} else {
-					int ph = ((h - 1) / (panels->n_panels - 3));
-					panel[i].x = colpos;
-					panel[i].y = 1 + (ph * (j - 2));
-					panel[i].w = w - colpos;
-					if (panel[i].w < 0) {
-						panel[i].w = 0;
-					}
-					panel[i].h = ph;
-					if (!panel[i + 1].title) {
-						panel[i].h = h - panel[i].y;
-					}
-					if (j != 2) {
-						panel[i].y--;
-						panel[i].h++;
-					}
-				}
-				break;
+		case LAYOUT_BALANCE:
+			layoutBalance (panels);
+			break;
+	}
+}
+
+static void layoutDefault(RPanels *panels) {
+	int h, w = r_cons_get_size (&h);
+	int ph = (h - 1) / (panels->n_panels - 2);
+	int i;
+	int colpos = w - panels->columnWidth;
+	RPanel *panel = panels->panel;
+	panel[1].x = 0;
+	panel[1].y = 1;
+	if (panels->n_panels > 2) {
+		panel[1].w = colpos + 1;
+	} else {
+		panel[1].w = w;
+	}
+	panel[1].h = h - 1;
+	for (i = 2; i < panels->n_panels; i++) {
+		panel[i].x = colpos;
+		panel[i].y = 2 + (ph * (i - 2));
+		panel[i].w = w - colpos;
+		if (panel[i].w < 0) {
+			panel[i].w = 0;
+		}
+		if ((i + 1) == panels->n_panels) {
+			panel[i].h = h - panel[i].y;
+		} else {
+			panel[i].h = ph;
+		}
+		panel[i].y--;
+		panel[i].h++;
+	}
+}
+
+static void layoutBalance(RPanels *panels) {
+	int h, w = r_cons_get_size (&h);
+	int i;
+	int pw = w / 2;
+	RPanel *panel = panels->panel;
+	for (i = 1; i < panels->n_panels; i++) {
+		if (i < 3) {
+			panel[i].x = 0;
+			panel[i].y = 1 + (i - 1) * (h / 2 - 1);
+			if (panels->n_panels > 3) {
+				panel[i].w = pw + 2;
+			} else {
+				panel[i].w = w;
 			}
-			j++;
+			panel[i].h = h / 2 + (i - 1);
+		} else {
+			panel[i].x = pw + 1;
+			panel[i].y = 2 + (h / 3 * (i - 3));
+			panel[i].w = pw - 1;
+			if ((i + 1) == panels->n_panels) {
+				panel[i].h = h - panel[i].y;
+			} else {
+				panel[i].h = h / 3;
+			}
+			panel[i].y--;
+			panel[i].h++;
 		}
 	}
 }
@@ -1164,7 +1153,7 @@ repeat:
 		} else {
 			r_core_cmd0 (core, "s entry0; px");
 		}
-		doPanelsRefresh (core);
+		setRefreshAll (panels);
 		break;
 	case ' ':
 	case '\r':
@@ -1228,7 +1217,7 @@ repeat:
 		// FIX: Issue with visual mode instruction highlighter
 		// not updating after 'ds' or 'dcu' commands.
 		r_core_cmd0 (core, ".dr*");
-		doPanelsRefresh (core);
+		setRefreshAll (panels);
 		break;
 	case 'c':
 		if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_STACK) || !strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_REGISTERS)) {
@@ -1240,7 +1229,7 @@ repeat:
 		can->color = !can->color;
 		// r_config_toggle (core->config, "scr.color");
 		// refresh graph
-		doPanelsRefresh (core);
+		setRefreshAll (panels);
 		break;
 	case 'R':
 		if (r_config_get_i (core->config, "scr.randpal")) {
@@ -1261,12 +1250,12 @@ repeat:
 		replaceCmd (panels, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY);
 		break;
 	case 'J':
-		for (i = 0; i < 10; i++) {
+		for (i = 0; i < PANEL_CONFIG_PAGE; i++) {
 			handleDownKey (core);
 		}
 		break;
 	case 'K':
-		for (i = 0; i < 10; i++) {
+		for (i = 0; i < PANEL_CONFIG_PAGE; i++) {
 			handleUpKey (core);
 		}
 		break;
