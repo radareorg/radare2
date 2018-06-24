@@ -393,7 +393,7 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		{
 			ut32 count = 0, *table = NULL, def = 0;
 			size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &count);
-			if (!(n > 0 && n < buf_len)) {
+			if (!(n > 0 && n < buf_len && count < 0xffff)) {
 				goto err;
 			}
 			if (!(table = calloc (count, sizeof (ut32)))) {
@@ -405,6 +405,9 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 				n = read_u32_leb128 (buf + op->len, buf + buf_len, &table[i]);
 				if (!(op->len + n <= buf_len)) {
 					goto beach;
+				}
+				if (n < 1) {
+					break;
 				}
 				op->len += n;
 			}
