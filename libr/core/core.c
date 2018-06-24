@@ -1288,7 +1288,7 @@ static bool find_autocomplete(RLine *line) {
 			arg[0] = 0;
 		}
 		int length = strlen (arg);
-		for (i = 0; j < TMP_ARGV_SZ && i < parent->n_subcmds; i++) {
+		for (i = 0; j < (TMP_ARGV_SZ - 1) && i < parent->n_subcmds; i++) {
 			if (!strncmp (arg, parent->subcmds[i]->cmd, length)) {
 				tmp_argv[j++] = parent->subcmds[i]->cmd;
 			}
