@@ -1668,7 +1668,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 	// update tinyrange for the function
 	r_anal_fcn_update_tinyrange_bbs (fcn);
 
-	if (ret == R_ANAL_RET_END && r_anal_fcn_size (fcn)) {   // cfg analysis completed
+	if (anal->opt.endsize && ret == R_ANAL_RET_END && r_anal_fcn_size (fcn)) {   // cfg analysis completed
 		RListIter *iter;
 		RAnalBlock *bb;
 		ut64 endaddr = fcn->addr;
@@ -1688,6 +1688,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		// fcn is not yet in anal => pass NULL
 		r_anal_fcn_resize (NULL, fcn, endaddr - fcn->addr);
 #endif
+		// TODO: unnecessary? add an option?
 		r_anal_trim_jmprefs (anal, fcn);
 	}
 	return ret;
