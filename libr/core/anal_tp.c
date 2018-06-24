@@ -56,7 +56,11 @@ static void var_rename (RAnal *anal, RAnalVar *v, const char *name, ut64 addr) {
 	if (!name || !v) {
 		return;
 	}
-	bool is_default = strncmp (v->name, "local_", 6)? false: true;
+	if (!*name || !strcmp (name , "...")) {
+		return;
+	}
+	bool is_default = (!strncmp (v->name, "local_", 6)
+			|| !strncmp (v->name, "arg_", 4))? true: false;
 	if (*name == '*') {
 		name++;
 	}
@@ -77,7 +81,13 @@ static void var_retype (RAnal *anal, RAnalVar *var, const char *vname, char *typ
 	if (!type || !var) {
 		return;
 	}
+	if (!*type) {
+		return;
+	}
 	if (!strncmp (type, "int", 3)) {
+		return;
+	}
+	if (strncmp (var->type, "void", 4) && strncmp (var->type, "int", 3)) {
 		return;
 	}
 	char *vtype = NULL;
@@ -88,12 +98,8 @@ static void var_retype (RAnal *anal, RAnalVar *var, const char *vname, char *typ
 		ntype = type + 6;
 	}
 	if (vname && *vname == '*') {
-		if (!strcmp (type, "void") && strcmp (var->type, "int")) {
-			ntype = var->type;
-		} else {
-			//type *ptr => type *
-			vtype = r_str_newf ("%s %c", ntype, '*');
-		}
+		//type *ptr => type *
+		vtype = r_str_newf ("%s %c", ntype, '*');
 	}
 	if (vtype && *vtype) {
 		ntype = vtype;

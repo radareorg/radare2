@@ -4180,11 +4180,14 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 	} else {
 		for (i = 0; i < arg_max; i++) {
 			char *type = r_type_func_args_type (TDB, name, i);
+			char *tname = r_type_func_args_name (TDB, name, i);
 			if (type && *type) {
 				r_cons_printf ("%s%s%s%s%s", i == 0 ? "": " ", type,
 						type[strlen (type) -1] == '*' ? "": " ",
-						r_type_func_args_name (TDB, name, i),
-						i == arg_max - 1 ? ")": ",");
+						tname, i == arg_max - 1 ? ")": ",");
+			} else if (tname && !strcmp (tname, "...")) {
+				r_cons_printf ("%s%s%s", i == 0 ? "": " ",
+						tname, i == arg_max - 1 ? ")": ",");
 			}
 			free (type);
 		}
