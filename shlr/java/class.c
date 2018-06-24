@@ -6691,6 +6691,9 @@ R_API RBinJavaElementValue *r_bin_java_element_value_new(ut8 *buffer, ut64 sz, u
 		offset += 2;
 		element_value->value.array_value.values = r_list_new ();
 		for (i = 0; i < element_value->value.array_value.num_values; i++) {
+			if (offset >= sz) {
+				break;
+			}
 			RBinJavaElementValue *ev_element = r_bin_java_element_value_new (buffer + offset, sz - offset, buf_offset + offset);
 			if (ev_element) {
 				element_value->size += ev_element->size;
