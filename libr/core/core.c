@@ -946,13 +946,13 @@ static void autocomplete_default(RLine *line) {
 	int i, j;
 	j = 0;
 	if (a) {
-		for (i = 0; j < TMP_ARGV_SZ && i < a->n_subcmds; i++) {
+		for (i = 0; j < (TMP_ARGV_SZ - 1) && i < a->n_subcmds; i++) {
 			if (line->buffer.data[0] == 0 || !strncmp (a->subcmds[i]->cmd, line->buffer.data, a->subcmds[i]->length)) {
 				tmp_argv[j++] = a->subcmds[i]->cmd;
 			}
 		}
 	} else {
-		for (i = 0; j < TMP_ARGV_SZ && i < radare_argc && radare_argv[i]; i++) {
+		for (i = 0; j < (TMP_ARGV_SZ - 1) && i < radare_argc && radare_argv[i]; i++) {
 			int length = strlen (radare_argv[i]);
 			if (!strncmp (radare_argv[i], line->buffer.data, length)) {
 				tmp_argv[j++] = radare_argv[i];
