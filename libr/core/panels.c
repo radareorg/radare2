@@ -112,6 +112,7 @@ static const char **menus_sub[] = {
 static void layoutMenu(RPanel *panel);
 static void layoutDefault(RPanels *panels);
 static void layoutBalance(RPanels *panels);
+static void splitPanel(RCore *core);
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color);
 static void addPanelFrame(RCore* core, RPanels* panels, const char *title, const char *cmd);
 static bool checkFunc(RCore *core);
@@ -136,7 +137,6 @@ static void panelSingleStepOver(RCore *core);
 static void setRefreshAll(RPanels *panels);
 static void setCursor(RCore *core, bool cur);
 static void replaceCmd(RPanels* panels, char *title, char *cmd);
-static void zoom(RPanels *panels);
 
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) {
 	if (!can || !panel|| !panel->refresh) {
@@ -282,37 +282,59 @@ static void layoutDefault(RPanels *panels) {
 
 static void layoutBalance(RPanels *panels) {
 	int h, w = r_cons_get_size (&h);
-	int i;
+	int i, ii;
+	int panelNum = panels->n_panels - 1;
+	int leftCol = panelNum / 2;
+	int rightCol = panelNum - leftCol;
 	int pw = w / 2;
 	RPanel *panel = panels->panel;
-	for (i = 1; i < panels->n_panels; i++) {
-		if (i < 3) {
-			panel[i].x = 0;
-			panel[i].y = 1 + (i - 1) * (h / 2 - 1);
-			if (panels->n_panels > 3) {
-				panel[i].w = pw + 2;
-			} else {
-				panel[i].w = w;
-			}
-			panel[i].h = h / 2 + (i - 1);
+	for (i = 0; i < leftCol; i++) {
+		ii = i + 1;
+		panel[ii].x = 0;
+		panel[ii].y = 1 + i * (h / leftCol - 1);
+		panel[ii].w = pw + 2;
+		panel[ii].h = h / leftCol;
+		if (i == leftCol - 1) {
+			panel[ii].h = h - panel[ii].y;
 		} else {
-			panel[i].x = pw + 1;
-			panel[i].y = 2 + (h / 3 * (i - 3));
-			panel[i].w = pw - 1;
-			if ((i + 1) == panels->n_panels) {
-				panel[i].h = h - panel[i].y;
-			} else {
-				panel[i].h = h / 3;
-			}
-			panel[i].y--;
-			panel[i].h++;
+			panel[ii].h = h / leftCol;
+		}
+	}
+	for (i = 0; i < rightCol; i++) {
+		ii = i + 1 + leftCol;
+		panel[ii].x = pw + 1;
+		panel[ii].y = 1 + i * (h / rightCol - 1);
+		panel[ii].w = pw - 1;
+		if (i == rightCol - 1) {
+			panel[ii].h = h - panel[ii].y;
+		} else {
+			panel[ii].h = h / rightCol;
 		}
 	}
 }
 
+static void splitPanel(RCore *core) {
+	RPanels *panels = core->panels;
+	RPanel *panel = panels->panel;
+	int i;
+	const int curnode = panels->curnode;
+
+	addPanelFrame (core, panels, panel[curnode].title, panel[curnode].cmd);
+	RPanel tmpPanel = panel[panels->n_panels - 1];
+	for (i = panels->n_panels - 1; i >= curnode + 2; i--) {
+		panel[i] = panel[i - 1];
+	}
+	panel[curnode + 1] = tmpPanel;
+	panel[curnode].w = panel[curnode].w / 2 + 1;
+	panel[curnode + 1].x = panel[curnode].x + panel[curnode].w - 1;
+	panel[curnode + 1].y = panel[curnode].y;
+	panel[curnode + 1].w = panel[curnode].w - 1;
+	panel[curnode + 1].h = panel[curnode].h;
+	setRefreshAll (panels);
+}
+
 R_API void r_core_panels_layout_refresh(RCore *core) {
 	r_core_panels_check_stackbase (core);
-	r_core_panels_layout (core->panels);
 	r_core_panels_refresh (core);
 }
 
@@ -539,18 +561,6 @@ static void replaceCmd(RPanels* panels, char *title, char *cmd) {
 	setRefreshAll (panels);
 }
 
-static void zoom(RPanels *panels) {
-	if (panels->n_panels > 2) {
-		if (panels->curnode < 2) {
-			panels->curnode = 2;
-		}
-		RPanel ocurnode = panels->panel[panels->curnode];
-		panels->panel[panels->curnode] = panels->panel[1];
-		panels->panel[1] = ocurnode;
-		panels->curnode = 1;
-	}
-}
-
 static bool checkFunc(RCore *core) {
 	RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
 	if (!fun) {
@@ -591,8 +601,6 @@ static void addPanelFrame(RCore *core, RPanels* panels, const char *title, const
 		panel[panels->n_panels].addr = stackbase - r_config_get_i (core->config, "stack.delta");
 	}
 	panels->n_panels++;
-	panels->curnode = panels->n_panels - 1;
-	zoom (panels);
 	panels->menu_y = 0;
 }
 
@@ -606,11 +614,11 @@ static bool initPanels(RCore *core, RPanels *panels) {
 	panels->panel[panels->n_panels].refresh = true;
 	panels->n_panels++;
 
+	addPanelFrame (core, panels, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY);
 	addPanelFrame (core, panels, PANEL_TITLE_SYMBOLS, PANEL_CMD_SYMBOLS);
 	addPanelFrame (core, panels, PANEL_TITLE_STACK, PANEL_CMD_STACK);
 	addPanelFrame (core, panels, PANEL_TITLE_REGISTERS, PANEL_CMD_REGISTERS);
 	addPanelFrame (core, panels, PANEL_TITLE_REGISTERREFS, PANEL_CMD_REGISTERREFS);
-	addPanelFrame (core, panels, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY);
 	panels->curnode = 1;
 	return true;
 }
@@ -1024,12 +1032,8 @@ static bool handleEnterKey(RCore *core) {
 			return false;
 		}
 	} else {
-		if (panels->curnode > 0) {
-			zoom (panels);
-		} else {
-			panels->curnode = panels->menu_pos;
-			panels->menu_y = 1;
-		}
+		panels->curnode = panels->menu_pos;
+		panels->menu_y = 1;
 	}
 	return true;
 }
@@ -1087,6 +1091,7 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 	core->print->cur_enabled = false;
 	core->print->col = 0;
 
+	r_core_panels_layout (panels);
 repeat:
 	core->panels = panels;
 	core->cons->event_data = core;
@@ -1270,6 +1275,7 @@ repeat:
 		break;
 	case 'x':
 		delCurPanel (panels);
+		r_core_panels_layout (core->panels);
 		setRefreshAll (panels);
 		break;
 	case 9: // TAB
@@ -1326,6 +1332,7 @@ repeat:
 		if (panels->columnWidth + 4 < panels->can->w) {
 			panels->columnWidth += 4;
 		}
+		r_core_panels_layout (panels);
 		break;
 	case 'L':
 		r_cons_switchbuf (false);
@@ -1333,6 +1340,7 @@ repeat:
 		if (panels->columnWidth - 4 > 0) {
 			panels->columnWidth -= 4;
 		}
+		r_core_panels_layout (panels);
 		break;
 	case 'g':
 		if (checkFunc (core)) {
@@ -1358,6 +1366,9 @@ repeat:
 			}
 		}
 		break;
+	case 'v':
+		splitPanel (core);
+		break;
 	case ']':
 		r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") + 1);
 		break;
@@ -1369,6 +1380,7 @@ repeat:
 		if (panels->layout >= layoutMaxCount) {
 			panels->layout = 0;
 		}
+		r_core_panels_layout (panels);
 		setRefreshAll (panels);
 		break;
 	case R_CONS_KEY_F1:
