@@ -91,7 +91,7 @@ static void var_retype (RAnal *anal, RAnalVar *var, const char *vname, char *typ
 		return;
 	}
 	char *vtype = NULL;
-	char *ntype = type;
+	char *ntype = r_str_trim (type);
 	if (!strncmp (type, "const ", 6)) {
 		// Droping const from type
 		//TODO: Infering const type
