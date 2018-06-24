@@ -6482,6 +6482,9 @@ R_API RBinJavaAnnotation *r_bin_java_annotation_new(ut8 *buffer, ut64 sz, ut64 b
 	annotation->element_value_pairs = r_list_newf (r_bin_java_element_pair_free);
 	// read annotation_value.num_element_value_pairs, and append to annotation_value.element_value_pairs
 	for (i = 0; i < annotation->num_element_value_pairs; i++) {
+		if (offset > sz) {
+			break;
+		}
 		ev_pairs = r_bin_java_element_pair_new (buffer + offset, sz - offset, buf_offset + offset);
 		if (ev_pairs) {
 			offset += ev_pairs->size;
@@ -6713,6 +6716,9 @@ R_API RBinJavaElementValue *r_bin_java_element_value_new(ut8 *buffer, ut64 sz, u
 		element_value->value.annotation_value.element_value_pairs = r_list_newf (r_bin_java_element_pair_free);
 		// read annotation_value.num_element_value_pairs, and append to annotation_value.element_value_pairs
 		for (i = 0; i < element_value->value.annotation_value.num_element_value_pairs; i++) {
+			if (offset > sz) {
+				break;
+			}
 			ev_pairs = r_bin_java_element_pair_new (buffer + offset, sz - offset, buf_offset + offset);
 			if (ev_pairs) {
 				element_value->size += ev_pairs->size;
