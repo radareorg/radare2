@@ -4,7 +4,7 @@
 
 // maybe too big sometimes? 2KB of stack eaten here..
 #define R_STRING_SCAN_BUFFER_SIZE 2048
-#define R_STRING_MAX_UNI_BLOCKS 5
+#define R_STRING_MAX_UNI_BLOCKS 4
 
 static void print_string(RBinString *string, RBinFile *bf) {
 	if (!string || !bf) {
