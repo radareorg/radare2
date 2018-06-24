@@ -964,16 +964,16 @@ static void autocomplete_default(RLine *line) {
 	line->completion.argv = tmp_argv;
 }
 
-static void autocomplete_evals(RLine* line, const char* input) {
+static void autocomplete_evals(RLine* line, const char* str) {
 	RCore *core = line->user;
-	if (!core) {
+	if (!core && !str) {
 		return;
 	}
-	int i = 0, n = strlen (input);
+	int i = 0, n = strlen (str);
 	RConfigNode *bt;
 	RListIter *iter;
 	r_list_foreach (core->config->nodes, iter, bt) {
-		if (!strncmp (bt->name, input, n)) {
+		if (!strncmp (bt->name, str, n)) {
 			tmp_argv[i++] = bt->name;
 			if (i == TMP_ARGV_SZ - 1) {
 				break;
@@ -985,20 +985,20 @@ static void autocomplete_evals(RLine* line, const char* input) {
 	line->completion.argv = tmp_argv;
 }
 
-static void autocomplete_project(RLine* line, const char* input) {
+static void autocomplete_project(RLine* line, const char* str) {
 	RCore *core = line->user;
-	if (!core) {
+	if (!core && !str) {
 		return;
 	}
 	char *foo, *projects_path = r_file_abspath (r_config_get (core->config, "dir.projects"));
 	RList *list = r_sys_dir (projects_path);
 	RListIter *iter;
-	int n = strlen (input);
+	int n = strlen (str);
 	int i = 0;
 	if (projects_path) {
 		r_list_foreach (list, iter, foo) {
 			if (r_core_is_project (core, foo)) {
-				if (!strncmp (foo, input, n)) {
+				if (!strncmp (foo, str, n)) {
 					tmp_argv[i++] = r_str_newf ("%s", foo);
 					if (i == TMP_ARGV_SZ - 1) {
 						break;
@@ -1014,18 +1014,18 @@ static void autocomplete_project(RLine* line, const char* input) {
 	line->completion.argv = tmp_argv;
 }
 
-static void autocomplete_minus(RLine* line, const char* input) {
+static void autocomplete_minus(RLine* line, const char* str) {
 	RCore *core = line->user;
-	if (!core) {
+	if (!core && !str) {
 		return;
 	}
 	int count;
-	int length = strlen (input);
+	int length = strlen (str);
 	char **keys = r_cmd_alias_keys(core->rcmd, &count);
 	if (keys) {
 		int i, j;
 		for (i=j=0; i<count; i++) {
-			if (!strncmp (keys[i], input, length)) {
+			if (!strncmp (keys[i], str, length)) {
 				tmp_argv[j++] = keys[i];
 			}
 		}
@@ -1040,7 +1040,7 @@ static void autocomplete_minus(RLine* line, const char* input) {
 
 static void autocomplete_breakpoints(RLine* line, const char* str) {
 	RCore *core = line->user;
-	if (!core) {
+	if (!core && !str) {
 		return;
 	}
 	RListIter *iter;
@@ -1063,7 +1063,7 @@ static void autocomplete_breakpoints(RLine* line, const char* str) {
 
 static void autocomplete_flags(RLine* line, const char* str) {
 	RCore *core = line->user;
-	if (!core) {
+	if (!core && !str) {
 		return;
 	}
 	RListIter *iter;
@@ -1073,19 +1073,19 @@ static void autocomplete_flags(RLine* line, const char* str) {
 	r_list_foreach (core->flags->flags, iter, flag) {
 		if (!strncmp (flag->name, str, n)) {
 			tmp_argv[i++] = flag->name;
-			if (i == TMP_ARGV_SZ - 1) {
+			if (i == (TMP_ARGV_SZ - 1)) {
 				break;
 			}
 		}
 	}
-	tmp_argv[i > 255 ? 255 : i] = NULL;
+	tmp_argv[i] = NULL;
 	line->completion.argc = i;
 	line->completion.argv = tmp_argv;
 }
 
 static void autocomplete_zignatures(RLine* line, const char* msg) {
 	RCore *core = line->user;
-	if (!core) {
+	if (!core && !msg) {
 		return;
 	}
 	int length = strlen (msg);
@@ -1113,7 +1113,7 @@ static void autocomplete_zignatures(RLine* line, const char* msg) {
 
 static void autocomplete_flagspaces(RLine* line, const char* msg) {
 	RCore *core = line->user;
-	if (!core) {
+	if (!core && !msg) {
 		return;
 	}
 	int length = strlen (msg);
@@ -1143,7 +1143,7 @@ static void autocomplete_flagspaces(RLine* line, const char* msg) {
 
 static void autocomplete_macro(RLine* line, const char* str) {
 	RCore *core = line->user;
-	if (!core) {
+	if (!core && !str) {
 		return;
 	}
 	RCmdMacroItem *item;
@@ -1153,7 +1153,7 @@ static void autocomplete_macro(RLine* line, const char* str) {
 	n = strlen(str);
 	r_list_foreach (core->rcmd->macro.macros, iter, item) {
 		char *p = item->name;
-		if (!str || !*str || !strncmp (str, p, n)) {
+		if (!*str || !strncmp (str, p, n)) {
 			snprintf (buf, sizeof (buf), "%s%s)", str, p);
 			// eprintf ("------ %p (%s) = %s\n", tmp_argv[i], buf, p);
 			if (r_is_heap ((void*)tmp_argv[i])) {
@@ -1174,7 +1174,7 @@ static void autocomplete_macro(RLine* line, const char* str) {
 
 static void autocomplete_file(RLine* line, const char* str) {
 	RCore *core = line->user;
-	if (!core) {
+	if (!core && !str) {
 		return;
 	}
 	char *pipe = strchr (str, '>');
@@ -1192,7 +1192,7 @@ static void autocomplete_file(RLine* line, const char* str) {
 
 static void autocomplete_theme(RLine* line, const char* str) {
 	RCore *core = line->user;
-	if (!core) {
+	if (!core && !str) {
 		return;
 	}
 	int i = 0;
@@ -1246,6 +1246,10 @@ static bool find_autocomplete(RLine *line) {
 	}
 	int i, j;
 	j = 0;
+	/* if something went wrong this will prevent bad behavior */
+	tmp_argv[j] = NULL;
+	line->completion.argc = j;
+	line->completion.argv = tmp_argv;
 	switch (parent->type) {
 	case R_CORE_AUTOCMPLT_FLAG:
 		autocomplete_flags (line, p);
@@ -1278,9 +1282,7 @@ static bool find_autocomplete(RLine *line) {
 		autocomplete_theme (line, p);
 		break;
 	case R_CORE_AUTOCMPLT_OPTN:
-		tmp_argv[j] = NULL;
-		line->completion.argc = j;
-		line->completion.argv = tmp_argv;
+		// handled before
 		break;
 	default:
 		if (p && !*p) {
