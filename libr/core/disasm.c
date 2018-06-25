@@ -1866,7 +1866,9 @@ static void ds_show_flags(RDisasmState *ds) {
 				switch_addr = saddr;
 				case_prev = case_current;
 				case_start = case_current;
-				continue;
+				if (iter != uniqlist->tail) {
+					continue;
+				}
 			}
 			if (case_current == case_prev + 1 && switch_addr == saddr) {
 				case_prev = case_current;
@@ -1899,7 +1901,9 @@ static void ds_show_flags(RDisasmState *ds) {
 		}
 		if (ds->asm_demangle && flag->realname) {
 			if (!strncmp (flag->name, "case.", 5)) {
-				if (case_prev != case_start) {
+				if (!strncmp (flag->name + 5, "default", 7)) {
+					r_cons_printf ("%s:", flag->name);
+				} else if (case_prev != case_start) {
 					r_cons_printf ("cases %d...%d (%s):", case_start, case_prev, addr);
 					if (iter != uniqlist->head) {
 						iter = iter->p;
