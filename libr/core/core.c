@@ -966,7 +966,7 @@ static void autocomplete_default(RLine *line) {
 
 static void autocomplete_evals(RLine* line, const char* str) {
 	RCore *core = line->user;
-	if (!core && !str) {
+	if (!core || !str) {
 		return;
 	}
 	int i = 0, n = strlen (str);
@@ -987,7 +987,7 @@ static void autocomplete_evals(RLine* line, const char* str) {
 
 static void autocomplete_project(RLine* line, const char* str) {
 	RCore *core = line->user;
-	if (!core && !str) {
+	if (!core || !str) {
 		return;
 	}
 	char *foo, *projects_path = r_file_abspath (r_config_get (core->config, "dir.projects"));
@@ -1016,7 +1016,7 @@ static void autocomplete_project(RLine* line, const char* str) {
 
 static void autocomplete_minus(RLine* line, const char* str) {
 	RCore *core = line->user;
-	if (!core && !str) {
+	if (!core || !str) {
 		return;
 	}
 	int count;
@@ -1040,7 +1040,7 @@ static void autocomplete_minus(RLine* line, const char* str) {
 
 static void autocomplete_breakpoints(RLine* line, const char* str) {
 	RCore *core = line->user;
-	if (!core && !str) {
+	if (!core || !str) {
 		return;
 	}
 	RListIter *iter;
@@ -1063,7 +1063,7 @@ static void autocomplete_breakpoints(RLine* line, const char* str) {
 
 static void autocomplete_flags(RLine* line, const char* str) {
 	RCore *core = line->user;
-	if (!core && !str) {
+	if (!core || !str) {
 		return;
 	}
 	RListIter *iter;
@@ -1085,7 +1085,7 @@ static void autocomplete_flags(RLine* line, const char* str) {
 
 static void autocomplete_zignatures(RLine* line, const char* msg) {
 	RCore *core = line->user;
-	if (!core && !msg) {
+	if (!core || !msg) {
 		return;
 	}
 	int length = strlen (msg);
@@ -1113,7 +1113,7 @@ static void autocomplete_zignatures(RLine* line, const char* msg) {
 
 static void autocomplete_flagspaces(RLine* line, const char* msg) {
 	RCore *core = line->user;
-	if (!core && !msg) {
+	if (!core || !msg) {
 		return;
 	}
 	int length = strlen (msg);
@@ -1143,7 +1143,7 @@ static void autocomplete_flagspaces(RLine* line, const char* msg) {
 
 static void autocomplete_macro(RLine* line, const char* str) {
 	RCore *core = line->user;
-	if (!core && !str) {
+	if (!core || !str) {
 		return;
 	}
 	RCmdMacroItem *item;
@@ -1174,7 +1174,7 @@ static void autocomplete_macro(RLine* line, const char* str) {
 
 static void autocomplete_file(RLine* line, const char* str) {
 	RCore *core = line->user;
-	if (!core && !str) {
+	if (!core || !str) {
 		return;
 	}
 	char *pipe = strchr (str, '>');
@@ -1192,7 +1192,7 @@ static void autocomplete_file(RLine* line, const char* str) {
 
 static void autocomplete_theme(RLine* line, const char* str) {
 	RCore *core = line->user;
-	if (!core && !str) {
+	if (!core || !str) {
 		return;
 	}
 	int i = 0;
