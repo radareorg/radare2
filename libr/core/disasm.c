@@ -1848,6 +1848,9 @@ static void ds_show_flags(RDisasmState *ds) {
 	}
 	RCore *core = ds->core;
 	// f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
+	char addr[64];
+	ut64 switch_addr;
+	int case_start = -1, case_prev = 0, case_current = 0;
 	f = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
 	flaglist = r_flag_get_list (core->flags, ds->at);
 	RList *uniqlist = r_list_uniq (flaglist, flagCmp);
@@ -1855,6 +1858,20 @@ static void ds_show_flags(RDisasmState *ds) {
 		if (f && f->addr == flag->offset && !strcmp (flag->name, f->name)) {
 			// do not show flags that have the same name as the function
 			continue;
+		}
+		if (!strncmp (flag->name, "case.", 5)) {
+			sscanf (flag->name + 5, "%d.%s", &case_current, addr);
+			ut64 saddr = r_num_math (core->num, addr);
+			if (case_start == -1) {
+				switch_addr = saddr;
+				case_prev = case_current;
+				case_start = case_current;
+				continue;
+			}
+			if (case_current == case_prev + 1 && switch_addr == saddr) {
+				case_prev = case_current;
+				continue;
+			}
 		}
 		ds_begin_json_line (ds);
 		if (ds->show_flgoff) {
@@ -1881,10 +1898,24 @@ static void ds_show_flags(RDisasmState *ds) {
 			}
 		}
 		if (ds->asm_demangle && flag->realname) {
-			const char *lang = r_config_get (core->config, "bin.lang");
-			char *name = r_bin_demangle (core->bin->cur, lang, flag->realname, flag->offset);
-			r_cons_printf ("%s:", name? name: flag->realname);
-			R_FREE (name);
+			if (!strncmp (flag->name, "case.", 5)) {
+				if (case_prev != case_start) {
+					r_cons_printf ("cases %d...%d (%s):", case_start, case_prev, addr);
+					if (iter != uniqlist->head) {
+						iter = iter->p;
+					}
+					case_start = case_current;
+				} else {
+					r_cons_printf ("case %d (%s):", case_prev, addr);
+					case_start = -1;
+				}
+				case_prev = case_current;
+			} else {
+				const char *lang = r_config_get (core->config, "bin.lang");
+				char *name = r_bin_demangle (core->bin->cur, lang, flag->realname, flag->offset);
+				r_cons_printf ("%s:", name? name: flag->realname);
+				R_FREE (name);
+			}
 		} else {
 			r_cons_printf ("%s:", flag->name);
 		}
