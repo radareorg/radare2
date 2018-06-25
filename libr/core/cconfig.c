@@ -2392,7 +2392,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("anal.ptrdepth", 3, "Maximum number of nested pointers to follow in analysis");
 	SETICB ("anal.maxreflines", 0, &cb_analmaxrefs, "Maximum number of reflines to be analyzed and displayed in asm.lines with pd");
 
-	SETCB ("anal.jmptbl", "false", &cb_anal_jmptbl, "Analyze jump tables in switch statements");
+	SETCB ("anal.jmptbl", "true", &cb_anal_jmptbl, "Analyze jump tables in switch statements");
 
 	SETCB ("anal.cjmpref", "false", &cb_anal_cjmpref, "Create references for conditional jumps");
 	SETCB ("anal.jmpref", "true", &cb_anal_jmpref, "Create references for unconditional jumps");
