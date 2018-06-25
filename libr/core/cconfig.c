@@ -2372,7 +2372,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("anal.sleep", 0, &cb_analsleep, "Sleep N usecs every so often during analysis. Avoid 100% CPU usage");
 	SETPREF ("anal.calls", "false", "Make basic af analysis walk into calls");
 	SETPREF ("anal.autoname", "true", "Automatically set a name for the functions, may result in some false positives");
-	SETPREF ("anal.hasnext", "false", "Continue analysis after each function");
+	SETPREF ("anal.hasnext", "true", "Continue analysis after each function");
 	SETPREF ("anal.esil", "false", "Use the new ESIL code analysis");
 	SETCB ("anal.strings", "false", &cb_analstrings, "Identify and register strings during analysis (aar only)");
 	SETCB ("anal.vars", "true", &cb_analvars, "Analyze local variables and arguments");
