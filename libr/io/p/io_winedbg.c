@@ -46,12 +46,12 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	}
 
 	int left = count % wordSize;
-	if(left > 0) {
+	if (left > 0) {
 		ut32 leftW = -1;
-		memcpy(&leftW, w + words, left);
+		memcpy (&leftW, w + words, left);
 		ut64 addr = io->off + (words * wordSize);
 		char *cmd = r_str_newf ("set *0x%"PFMT64x" = 0x%x", addr, leftW);
-		free(runcmd (cmd));
+		free (runcmd (cmd));
 		free (cmd);
 	}
 	return count;
