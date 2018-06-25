@@ -246,7 +246,7 @@ R_API bool r_socket_spawn (RSocket *s, const char *cmd, unsigned int timeout) {
 	if (!sock) {
 		return false;
 	}
-
+#if __UNIX__
 	r_sys_sleep (4);
 	r_sys_usleep (timeout);
 
@@ -256,6 +256,7 @@ R_API bool r_socket_spawn (RSocket *s, const char *cmd, unsigned int timeout) {
 		r_socket_close (s);
 		return false;
 	}
+#endif
 	return true;
 }
 
