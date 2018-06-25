@@ -443,7 +443,7 @@ static void queue_case(RAnal *anal, ut64 switch_addr, ut64 case_addr, ut64 id, u
 	// 	id, case_addr);
 	anal->cmdtail = r_str_appendf (anal->cmdtail,
 		"f case.%d.0x%"PFMT64x " 1 @ 0x%08"PFMT64x "\n",
-		id, case_addr, case_addr);
+		id, switch_addr, case_addr);
 }
 
 static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, int ret0) {
