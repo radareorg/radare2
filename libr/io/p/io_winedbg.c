@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017 - pancake */
+/* radare - LGPL - Copyright 2017-2018 - pancake */
 
 #include "r_types_base.h"
 #include "r_io.h"
@@ -9,13 +9,14 @@
 
 static RSocket *gs = NULL;
 
+// TODO: make it vargarg...
 static char *runcmd (const char *cmd) {
 	char buf[4096] = {0};
 	if (cmd) {
 		r_socket_printf (gs, "%s\n", cmd);
 	}
 	int timeout = 1000000;
-	char * str = NULL;
+	char *str = NULL;
 	r_socket_block_time (gs, 1, timeout);
 	while (true) {
 		memset (buf, 0, sizeof (buf));
@@ -27,6 +28,7 @@ static char *runcmd (const char *cmd) {
 		}
 		str = r_str_append (str, buf);
 	}
+	free (str);
 	return NULL;
 }
 
@@ -70,8 +72,10 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		ut64 addr = io->off + (i * wordSize);
 		char *cmd = r_str_newf ("x 0x%"PFMT64x, addr);
 		char *res = runcmd (cmd);
-		sscanf (res, "%x", &w[i]);
-		free (res);
+		if (res) {
+			sscanf (res, "%x", &w[i]);
+			free (res);
+		}
 		free (cmd);
 	}
 
@@ -300,7 +304,7 @@ const char *msg =
 					sscanf (ptr, "%08"PFMT64x" %08"PFMT64x, &from, &to);
 				}
 				char *row = r_str_newf ("0x%08"PFMT64x" - 0x%08" PFMT64x" %s %s\n", from, to, perm, "");
-				ptr = nl + 1;
+				ptr = nl;
 				res = r_str_append (res, row);
 				free (row);
 			}
