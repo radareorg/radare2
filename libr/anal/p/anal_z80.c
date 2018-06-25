@@ -9,10 +9,10 @@
 #include "../../asm/arch/z80/z80_tab.h"
 
 static void z80_op_size(const ut8 *data, int len, int *size, int *size_prefix) {
-	int type;
-if (len <1) {
-return;
-}
+	int type = 0;
+	if (len <1) {
+		return;
+	}
 	switch (data[0]) {
 	case 0xed:
 		if (len > 1) {
@@ -24,14 +24,14 @@ return;
 		type = Z80_OP16;
 		break;
 	case 0xdd:
-if (len >1) {
-		type = dd[z80_fddd_branch_index_res(data[1])].type;
-}
+		if (len >1) {
+			type = dd[z80_fddd_branch_index_res(data[1])].type;
+		}
 		break;
 	case 0xfd:
-if (len >1) {
-		type = fd[z80_fddd_branch_index_res(data[1])].type;
-}
+		if (len > 1) {
+			type = fd[z80_fddd_branch_index_res(data[1])].type;
+		}
 		break;
 	default:
 		type = z80_op[data[0]].type;
