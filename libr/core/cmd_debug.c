@@ -61,17 +61,21 @@ static const char *help_msg_db[] = {
 	"dbn", " [<name>]", "Show or set name for current breakpoint",
 	//
 	"dbi", "", "List breakpoint indexes",
-	"dbic", " <index> <cmd>", "Run command at breakpoint index",
-	"dbie", " <index>", "Enable breakpoint by index",
-	"dbid", " <index>", "Disable breakpoint by index",
-	"dbis", " <index>", "Swap Nth breakpoint",
-	"dbite", " <index>", "Enable breakpoint Trace by index",
-	"dbitd", " <index>", "Disable breakpoint Trace by index",
-	"dbits", " <index>", "Swap Nth breakpoint trace",
+	"dbi", " <addr>", "Show breakpoint index in givengiven  offset",
+	"dbi.", "", "Show breakpoint index in current offset",
+	"dbix", " <idx> [expr]", "Set expression for bp at given index",
+	"dbic", " <idx> <cmd>", "Run command at breakpoint index",
+	"dbie", " <idx>", "Enable breakpoint by index",
+	"dbid", " <idx>", "Disable breakpoint by index",
+	"dbis", " <idx>", "Swap Nth breakpoint",
+	"dbite", " <idx>", "Enable breakpoint Trace by index",
+	"dbitd", " <idx>", "Disable breakpoint Trace by index",
+	"dbits", " <idx>", "Swap Nth breakpoint trace",
 	//
 	"dbh", " x86", "Set/list breakpoint plugin handlers",
 	"dbh-", " <name>", "Remove breakpoint plugin handler",
 	"dbt", "[?]", "Show backtrace. See dbt? for more details",
+	"dbx", " [expr]", "Set expression for bp in current offset",
 	"dbw", " <addr> <rw>", "Add watchpoint",
 	"drx", " number addr len rwx", "Modify hardware breakpoint",
 	"drx-", "number", "Clear hardware breakpoint",
@@ -2802,6 +2806,125 @@ static void static_debug_stop(void *u) {
 	r_debug_stop (dbg);
 }
 
+static void core_cmd_dbi (RCore *core, const char *input, ut64 addr) {
+	int i;
+	char *p;
+	RBreakpointItem *bpi;
+	switch (input[2]) {
+	case ' ': // "dbi."
+		{
+			int idx = r_bp_get_index_at (core->dbg->bp, addr);
+			if (idx != -1) {
+				r_cons_printf ("%d\n", idx);
+			}
+		}
+		break;
+	case '.': // "dbi."
+		{
+			int idx = r_bp_get_index_at (core->dbg->bp, core->offset);
+			if (idx != -1) {
+				r_cons_printf ("%d\n", idx);
+			}
+		}
+		break;
+	case 0: // "dbi"
+		for (i = 0; i < core->dbg->bp->bps_idx_count; i++) {
+			if ((bpi = core->dbg->bp->bps_idx[i])) {
+				r_cons_printf ("%d 0x%08"PFMT64x" E:%d T:%d\n",
+						i, bpi->addr, bpi->enabled, bpi->trace);
+			}
+		}
+		break;
+	case 'x': // "dbix"
+		if (input[3] == ' ') {
+			int idx = r_bp_get_index_at (core->dbg->bp, addr);
+			if (idx != -1) {
+				bpi = r_bp_get_index (core->dbg->bp, idx);
+				if (bpi) {
+					char *expr = strchr (input + 4, ' ');
+					if (expr) {
+						free (bpi->expr);
+						bpi->expr = strdup (expr);
+					}
+				}
+				r_cons_printf ("%d\n", idx);
+			}
+		} else {
+			for (i = 0; i < core->dbg->bp->bps_idx_count; i++) {
+				RBreakpointItem *bp = core->dbg->bp->bps_idx[i];
+				if (bp) {
+					r_cons_printf ("%d 0x%08"PFMT64x" %s\n", i, bp->addr, bp->expr);
+				}
+			}
+		}
+		break;
+	case 'c': // "dbic"
+		p = strchr (input + 3, ' ');
+		if (p) {
+			char *q = strchr (p + 1, ' ');
+			if (q) {
+				*q++ = 0;
+				ut64 addr = r_num_math (core->num, p);
+				bpi = r_bp_get_index (core->dbg->bp, addr);
+				if (bpi) {
+					bpi->data = strdup (q);
+				} else {
+					eprintf ("Cannot set command\n");
+				}
+			} else {
+				eprintf ("|Usage: dbic # cmd\n");
+			}
+		} else {
+			eprintf ("|Usage: dbic # cmd\n");
+		}
+		break;
+	case 'e': // "dbie"
+		if ((bpi = r_bp_get_index (core->dbg->bp, addr))) {
+			bpi->enabled = true;
+		} else {
+			eprintf ("Cannot unset tracepoint\n");
+		}
+		break;
+	case 'd': // "dbid"
+		if ((bpi = r_bp_get_index (core->dbg->bp, addr))) {
+			bpi->enabled = false;
+		} else {
+			eprintf ("Cannot unset tracepoint\n");
+		}
+		break;
+	case 's': // "dbis"
+		if ((bpi = r_bp_get_index (core->dbg->bp, addr))) {
+			bpi->enabled = !!!bpi->enabled;
+		} else {
+			eprintf ("Cannot unset tracepoint\n");
+		}
+		break;
+	case 't': // "dbite" "dbitd" ...
+		switch (input[3]) {
+		case 'e':
+			if ((bpi = r_bp_get_index (core->dbg->bp, addr))) {
+				bpi->trace = true;
+			} else {
+				eprintf ("Cannot unset tracepoint\n");
+			}
+			break;
+		case 'd':
+			if ((bpi = r_bp_get_index (core->dbg->bp, addr))) {
+				bpi->trace = false;
+			} else eprintf ("Cannot unset tracepoint\n");
+			break;
+		case 's':
+			if ((bpi = r_bp_get_index (core->dbg->bp, addr))) {
+				bpi->trace = !!!bpi->trace;
+			} else {
+				eprintf ("Cannot unset tracepoint\n");
+			}
+			break;
+		}
+		break;
+	}
+}
+
 static void r_core_cmd_bp(RCore *core, const char *input) {
 	RBreakpointItem *bpi;
 	int i, hwbp = r_config_get_i (core->config, "dbg.hwbp");
@@ -2846,7 +2969,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		RList *symbols = r_bin_get_symbols (core->bin);
 		RBinSymbol *symbol;
 		r_list_foreach (symbols, iter, symbol) {
-			if (symbol->type && !strcmp (symbol->type, "FUNC")) {
+			if (symbol->type && !strcmp (symbol->type, R_BIN_TYPE_FUNC_STR)) {
 				if (r_anal_noreturn_at (core->anal, symbol->vaddr)) {
 					bpi = r_debug_bp_add (core->dbg, symbol->vaddr, hwbp, false, 0, NULL, 0);
 					if (bpi) {
@@ -2859,6 +2982,23 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				}
 			}
 		}
+		}
+		break;
+	case 'x': // "dbx"
+		if (input[2] == ' ') {
+			if (addr == UT64_MAX) {
+				addr = core->offset;
+			}
+			bpi = r_bp_get_at (core->dbg->bp, addr);
+			if (bpi) {
+				free (bpi->expr);
+				bpi->expr = strdup (input + 3);
+			}
+		} else {
+			RBreakpointItem *bp;
+			r_list_foreach (core->dbg->bp->bps, iter, bp) {
+				r_cons_printf ("0x%08"PFMT64x" %s\n", bp->addr, r_str_get2 (bp->expr));
+			}
 		}
 		break;
 	case 't': // "dbt"
@@ -3237,72 +3377,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		}
 		break;
 	case 'i':
-		switch (input[2]) {
-		case 0: // "dbi"
-			for (i = 0;i < core->dbg->bp->bps_idx_count; i++) {
-				if ((bpi = core->dbg->bp->bps_idx[i])) {
-					r_cons_printf ("%d 0x%08"PFMT64x" E:%d T:%d\n",
-							i, bpi->addr, bpi->enabled, bpi->trace);
-				}
-			}
-			break;
-		case 'c': // "dbic"
-			p = strchr (input + 3, ' ');
-			if (p) {
-				char *q = strchr (p + 1, ' ');
-				if (q) {
-					*q++ = 0;
-					ut64 addr = r_num_math (core->num, p);
-					bpi = r_bp_get_index (core->dbg->bp, addr);
-					if (bpi) {
-						bpi->data = strdup (q);
-					} else {
-						eprintf ("Cannot set command\n");
-					}
-				} else {
-					eprintf ("|Usage: dbic # cmd\n");
-				}
-			} else {
-				eprintf ("|Usage: dbic # cmd\n");
-			}
-			break;
-		case 'e': // "dbie"
-			if ((bpi = r_bp_get_index (core->dbg->bp, addr))) {
-				bpi->enabled = true;
-			} else eprintf ("Cannot unset tracepoint\n");
-			break;
-		case 'd': // "dbid"
-			if ((bpi = r_bp_get_index (core->dbg->bp, addr))) {
-				bpi->enabled = false;
-			} else eprintf ("Cannot unset tracepoint\n");
-			break;
-		case 's': // "dbis"
-			if ((bpi = r_bp_get_index (core->dbg->bp, addr))) {
-				bpi->enabled = !!!bpi->enabled;
-			} else eprintf ("Cannot unset tracepoint\n");
-			break;
-		case 't': // "dbite" "dbitd" ...
-			switch (input[3]) {
-			case 'e':
-				if ((bpi = r_bp_get_index (core->dbg->bp, addr))) {
-					bpi->trace = true;
-				} else eprintf ("Cannot unset tracepoint\n");
-				break;
-			case 'd':
-				if ((bpi = r_bp_get_index (core->dbg->bp, addr))) {
-					bpi->trace = false;
-				} else eprintf ("Cannot unset tracepoint\n");
-				break;
-			case 's':
-				if ((bpi = r_bp_get_index (core->dbg->bp, addr))) {
-					bpi->trace = !!!bpi->trace;
-				} else {
-					eprintf ("Cannot unset tracepoint\n");
-				}
-				break;
-			}
-			break;
-		}
+		core_cmd_dbi (core, input, addr);
 		break;
 	case '?':
 	default:
@@ -3865,9 +3940,10 @@ static bool cmd_dcu (RCore *core, const char *input) {
 		eprintf ("Continue until 0x%08"PFMT64x" using %d bpsize\n", addr, core->dbg->bpsize);
 		r_reg_arena_swap (core->dbg->reg, true);
 		if (r_bp_add_sw (core->dbg->bp, addr, core->dbg->bpsize, R_BP_PROT_EXEC)) {
-			int ret = r_debug_continue (core->dbg);
-			if (!ret && r_debug_is_dead (core->dbg)) {
+			if (r_debug_is_dead (core->dbg)) {
 				eprintf ("Cannot continue, run ood?\n");
+			} else {
+				r_debug_continue (core->dbg);
 			}
 			r_bp_del (core->dbg->bp, addr);
 		} else {
@@ -3887,10 +3963,12 @@ static int cmd_debug_continue (RCore *core, const char *input) {
 		r_reg_arena_swap (core->dbg->reg, true);
 #if __linux__
 		core->dbg->continue_all_threads = true;
-		r_debug_continue (core->dbg);
-#else
-		r_debug_continue (core->dbg);
 #endif
+		if (r_debug_is_dead (core->dbg)) {
+			eprintf ("Cannot continue, run ood?\n");
+			break;
+		}
+		r_debug_continue (core->dbg);
 		break;
 	case 'a': // "dca"
 		eprintf ("TODO: dca\n");
@@ -4567,6 +4645,7 @@ static int cmd_debug(void *data, const char *input) {
 					P ("baddr=0x%"PFMT64x"\n", r_debug_get_baddr (core->dbg, NULL));
 					P ("pid=%d\n", rdi->pid);
 					P ("tid=%d\n", rdi->tid);
+					P ("stopaddr=0x%"PFMT64x"\n", core->dbg->stopaddr);
 					if (rdi->uid != -1) {
 						P ("uid=%d\n", rdi->uid);
 					}

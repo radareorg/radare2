@@ -902,13 +902,15 @@ static void GH(print_heap_segment)(RCore *core, GH(RHeap_MallocState) *main_aren
 	GHT next_chunk = *initial_brk, prev_chunk = next_chunk;
 	top_size = main_arena->top - brk_start;
 	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
-	if (!cnk) {
+	GH(RHeapChunk) *cnk_next = R_NEW0 (GH(RHeapChunk));
+	if (!cnk || !cnk_next) {
 		return;
 	}
 
+	(void)r_io_read_at (core->io, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
+	size_tmp = (cnk->size >> 3) << 3;
+
 	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->top) {
-		(void)r_io_read_at (core->io, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
-		size_tmp = (cnk->size >> 3) << 3;
 		if (size_tmp < min_size || size_tmp > top_size || next_chunk + size_tmp > main_arena->top) {
 			PRINT_YA ("\n  Malloc chunk @ ");
 			PRINTF_BA ("0x%"PFMT64x" ", (ut64)next_chunk);
@@ -919,47 +921,73 @@ static void GH(print_heap_segment)(RCore *core, GH(RHeap_MallocState) *main_aren
 		}
 
 		PRINT_YA ("\n  Malloc chunk @ ");
-		PRINTF_BA ("0x%"PFMT64x" ", (ut64)prev_chunk);
-
-		bool is_free = false;
-		GHT double_free = GHT_MAX;
-		if (size_tmp >= SZ * 4 && size_tmp <= global_max_fast) {
-			int i = (size_tmp / (SZ * 2)) - 2;
-			GHT next = (GHT)main_arena->fastbinsY[i];
-			double_free = next;
-			while (next && next >= brk_start && next < main_arena->top) {
-				if (prev_chunk == next) {
-					 is_free = true;
-				}
-				(void)r_io_read_at (core->io, next, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
-				next = cnk->fd;
-				if (double_free == next) {
-					if (prev_chunk <= double_free) {
-						PRINT_RA ("Double free detected ");
-					}
-					break;
-				}
-			}
-		}
+		PRINTF_BA ("0x%"PFMT64x" ", (ut64)next_chunk);
 
 		PRINT_GA ("[size: ");
 		PRINTF_BA ("0x%"PFMT64x, (ut64)cnk->size);
 		PRINT_GA ("]");
-
-		if (is_free) {
-			PRINT_GA ("[free]");
-		} else  {
-			if (cnk->size % 2 == 0) {
-				PRINT_GA ("[free]");
-			} else {
-				PRINT_GA ("[allocated]");
+		
+		bool fastbin = size_tmp >= SZ * 4 && size_tmp <= global_max_fast;
+		bool is_free = false, double_free = false;
+		if (fastbin) {
+			int i = (size_tmp / (SZ * 2)) - 2;
+			GHT idx = (GHT)main_arena->fastbinsY[i];
+			(void)r_io_read_at (core->io, idx, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
+			GHT next = cnk->fd;
+			if (prev_chunk == idx && idx && !next) {
+				is_free = true;
+			}
+			while (next && next >= brk_start && next < main_arena->top) {
+				if (prev_chunk == idx || prev_chunk == next || idx == next) {
+					is_free = true;
+					if (idx == next) {
+						double_free = true;
+						break;
+					}
+					(void)r_io_read_at (core->io, next, (ut8 *)cnk_next, sizeof (GH(RHeapChunk)));
+					GHT next_node = cnk_next->fd;
+					// avoid triple while?
+					while (next_node && next_node >= brk_start && next_node < main_arena->top) {
+						if (prev_chunk == next_node) {
+							double_free = true;
+							break;
+						}
+						(void)r_io_read_at (core->io, next_node, (ut8 *)cnk_next, sizeof (GH(RHeapChunk)));
+						next_node = cnk_next->fd;
+					}
+					if (double_free) {
+						break;
+					}
+				}
+				(void)r_io_read_at (core->io, next, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
+				next = cnk->fd;
+			}
+			if (double_free) {
+				PRINT_RA (" Double free in simple-linked list detected ");
+				break;
 			}
 		}
 
 		next_chunk += size_tmp;
 		prev_chunk = next_chunk;
 		r_io_read_at (core->io, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
+		size_tmp = (cnk->size >> 3) << 3;
+
+		if (fastbin) {
+			if (is_free) {
+				PRINT_GA ("[free]");
+			} else {
+				PRINT_GA ("[allocated]");
+			}
+		} else {
+			if (!(cnk->size & 1)) {
+				PRINT_GA ("[free]");
+			} else {
+				PRINT_GA ("[allocated]");
+			}		
+		}
 	}
+
 	PRINT_YA ("\n  Top chunk @ ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)main_arena->top);
 	PRINT_GA (" - [brk_start: ");
@@ -970,6 +998,7 @@ static void GH(print_heap_segment)(RCore *core, GH(RHeap_MallocState) *main_aren
 	//r_cons_println (); giving me a compile error
 	r_cons_printf ("\n");
 	free (cnk);
+	free (cnk_next);
 }
 
 static void GH(print_heap_segment_json)(RCore *core, GH(RHeap_MallocState) *main_arena, GHT *initial_brk, GHT global_max_fast) {

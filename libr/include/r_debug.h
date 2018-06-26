@@ -277,6 +277,7 @@ typedef struct r_debug_t {
 	int steps; /* counter of steps done */
 	RDebugReason reason; /* stop reason */
 	RDebugRecoilMode recoil_mode; /* what did the user want to do? */
+	ut64 stopaddr;  /* stop address  */
 
 	/* tracing vars */
 	RDebugTrace *trace;
@@ -297,6 +298,9 @@ typedef struct r_debug_t {
 
 	struct r_debug_plugin_t *h;
 	RList *plugins;
+
+	bool pc_at_bp; /* after a breakpoint, is the pc at the bp? */
+	bool pc_at_bp_set; /* is the pc_at_bp variable set already? */
 
 	RAnal *anal;
 	RList *maps; // <RDebugMap>

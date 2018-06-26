@@ -44,7 +44,7 @@ static int visual_repeat_thread_anykey(RThread *th) {
 	RCore *core = th->user;
 	r_cons_any_key (NULL);
 	eprintf ("^C  \n");
-	core->cons->breaked = true;
+	core->cons->context->breaked = true;
 	return 0;
 }
 
@@ -64,7 +64,7 @@ static int visual_repeat_thread(RThread *th) {
 		r_sys_sleep (1);
 	}
 	r_cons_break_pop ();
-	core->cons->breaked = true;
+	core->cons->context->breaked = true;
 	r_th_wait (th);
 	return 0;
 }

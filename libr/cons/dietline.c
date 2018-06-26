@@ -310,6 +310,7 @@ R_API const char *r_line_hist_get(int n) {
 	if (!I.history.data) {
 		inithist ();
 	}
+	n--;
 	if (I.history.data) {
 		for (i = 0; i < I.history.size && I.history.data[i]; i++) {
 			if (n == i) {
@@ -377,7 +378,10 @@ R_API int r_line_hist_save(const char *file) {
 		p = (char *) r_str_lastbut (path, R_SYS_DIR[0], NULL);	// TODO: use fs
 		if (p) {
 			*p = 0;
-			r_sys_mkdirp (path);
+			if (!r_sys_mkdirp (path)) {
+				eprintf ("could not save history into %s\n", path);
+				goto end;
+			}
 			*p = R_SYS_DIR[0];
 		}
 		fd = fopen (path, "w");
@@ -394,6 +398,7 @@ R_API int r_line_hist_save(const char *file) {
 			}
 		}
 	}
+end:
 	free (path);
 	return ret;
 }

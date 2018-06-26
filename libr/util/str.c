@@ -2947,11 +2947,11 @@ R_API wchar_t* r_str_mb_to_wc(const char *buf) {
 R_API char *r_str_from_ut64(ut64 val) {
 	int i = 0;
 	char *v = (char *)&val;
-	char *str = (char *)calloc(1, 65);
+	char *str = (char *)calloc(1, 9);
 	if (!str) {
 		return NULL;
 	}
-	while (i < 64 && *v && *v >= '!' && *v <= '~') {
+	while (i < 8 && *v && *v >= '!' && *v <= '~') {
 		str[i++] = *v++;
 	}
 	return str;

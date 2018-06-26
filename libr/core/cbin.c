@@ -241,7 +241,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			case R_STRING_TYPE_UTF8:
 			case R_STRING_TYPE_WIDE:
 			case R_STRING_TYPE_WIDE32:
-				block_list = r_utf_block_list ((const ut8*)string->string);
+				block_list = r_utf_block_list ((const ut8*)string->string, -1);
 				if (block_list) {
 					if (block_list[0] == 0 && block_list[1] == -1) {
 						/* Don't include block list if
@@ -328,7 +328,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			case R_STRING_TYPE_UTF8:
 			case R_STRING_TYPE_WIDE:
 			case R_STRING_TYPE_WIDE32:
-				block_list = r_utf_block_list ((const ut8*)string->string);
+				block_list = r_utf_block_list ((const ut8*)string->string, -1);
 				if (block_list) {
 					if (block_list[0] == 0 && block_list[1] == -1) {
 						/* Don't show block list if
@@ -1330,7 +1330,7 @@ static bool is_section_symbol(RBinSymbol *s) {
 	if (!s || *s->name) {
 		return false;
 	}
-	return (s->type && !strcmp (s->type, "SECTION"));
+	return (s->type && !strcmp (s->type, R_BIN_TYPE_SECTION_STR));
 }
 
 static bool is_section_reloc(RBinReloc *r) {
@@ -1339,7 +1339,7 @@ static bool is_section_reloc(RBinReloc *r) {
 
 static bool is_file_symbol(RBinSymbol *s) {
 	/* workaround for some bin plugs (e.g. ELF) */
-	return (s && s->type && !strcmp (s->type, "FILE"));
+	return (s && s->type && !strcmp (s->type, R_BIN_TYPE_FILE_STR));
 }
 
 static bool is_file_reloc(RBinReloc *r) {
@@ -1676,10 +1676,11 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 
 static const char *getPrefixFor(const char *s) {
 	if (s) {
-		if (!strcmp (s, "NOTYPE")) {
+		// workaround for ELF
+		if (!strcmp (s, R_BIN_TYPE_NOTYPE_STR)) {
 			return "loc";
 		}
-		if (!strcmp (s, "OBJECT")) {
+		if (!strcmp (s, R_BIN_TYPE_OBJECT_STR)) {
 			return "obj";
 		}
 	}
@@ -1753,7 +1754,7 @@ static bool isAnExport(RBinSymbol *s) {
 	if (!strncmp (s->name, "imp.", 4)) {
 		return false;
 	}
-	return (s->bind && !strcmp (s->bind, "GLOBAL"));
+	return (s->bind && !strcmp (s->bind, R_BIN_BIND_GLOBAL_STR));
 }
 
 static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly, const char *args) {
@@ -1952,12 +1953,16 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 						r->bin->prefix, name, symbol->size, addr);
 				}
 			} else {
-				if (symbol->dup_count) {
-					r_cons_printf ("f sym.%s_%d %u 0x%08"PFMT64x"\n",
-						name, symbol->dup_count, symbol->size, addr);
+				if (*name) {
+					if (symbol->dup_count) {
+						r_cons_printf ("f sym.%s_%d %u 0x%08"PFMT64x"\n",
+								name, symbol->dup_count, symbol->size, addr);
+					} else {
+						r_cons_printf ("f sym.%s %u 0x%08"PFMT64x"\n",
+								name, symbol->size, addr);
+					}
 				} else {
-					r_cons_printf ("f sym.%s %u 0x%08"PFMT64x"\n",
-						name, symbol->size, addr);
+					// we dont want unnamed symbol flags
 				}
 			}
 			binfile = r_core_bin_cur (r);
@@ -1986,10 +1991,10 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 			const char *name = r_str_get (sn.demname? sn.demname: symbol->name);
 			// const char *fwd = r_str_get (symbol->forwarder);
 			r_cons_printf ("%03u 0x%08"PFMT64x" 0x%08"PFMT64x" "
-				"%6s %6s %4d %s\n",
+				"%6s %6s %4d%s%s\n",
 				symbol->ordinal,
 				symbol->paddr, addr, bind, type,
-				symbol->size, name);
+				symbol->size, *name? " ": "", name);
 			// r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" ord=%03u "
 			//	"fwd=%s sz=%u bind=%s type=%s name=%s\n",
 			//	addr, symbol->paddr, symbol->ordinal, fwd,

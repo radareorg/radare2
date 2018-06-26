@@ -372,14 +372,21 @@ typedef void (*RConsBreakCallback)(void *core);
 typedef void *(*RConsSleepBeginCallback)(void *core);
 typedef void (*RConsSleepEndCallback)(void *core, void *user);
 
-typedef struct r_cons_t {
+typedef struct r_cons_context_t {
 	RConsGrep grep;
 	RStack *cons_stack;
-	RStack *break_stack;
 	char *buffer;
-	//int line;
 	int buffer_len;
 	int buffer_sz;
+
+	bool breaked;
+	RStack *break_stack;
+	RConsEvent event_interrupt;
+	void *event_interrupt_data;
+} RConsContext;
+
+typedef struct r_cons_t {
+	RConsContext *context;
 	char *lastline;
 	int is_html;
 	int is_interactive;
@@ -392,16 +399,13 @@ typedef struct r_cons_t {
 	int force_columns;
 	int fix_rows;
 	int fix_columns;
-	bool breaked;
 	bool break_lines;
 	int noflush;
 	FILE *fdin; // FILE? and then int ??
 	int fdout; // only used in pipe.c :?? remove?
 	const char *teefile;
 	int (*user_fgets)(char *buf, int len);
-	RConsEvent event_interrupt;
 	RConsEvent event_resize;
-	void *data;
 	void *event_data;
 	int mouse_event;
 
@@ -652,10 +656,11 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int empty);
 
 R_API void r_cons_push(void);
 R_API void r_cons_pop(void);
-R_API RStack *r_cons_dump_new(void);
-R_API void r_cons_dump_free(RStack *stack);
-R_API RStack *r_cons_dump(void);
-R_API void r_cons_load(RStack *stack);
+R_API RConsContext *r_cons_context_new(void);
+R_API void r_cons_context_free(RConsContext *context);
+R_API void r_cons_context_load(RConsContext *context);
+R_API void r_cons_context_reset();
+R_API bool r_cons_context_is_main();
 R_API void r_cons_break_pop(void);
 R_API void r_cons_break_push(RConsBreak cb, void*user);
 R_API void r_cons_break_clear(void);
@@ -901,6 +906,7 @@ typedef struct r_ascii_graph_t {
 	bool is_tiny;
 	bool is_dis;
 	int edgemode;
+	bool altedgepos;
 	int mode;
 	bool is_callgraph;
 	bool is_interactive;

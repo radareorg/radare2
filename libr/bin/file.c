@@ -4,6 +4,7 @@
 
 // maybe too big sometimes? 2KB of stack eaten here..
 #define R_STRING_SCAN_BUFFER_SIZE 2048
+#define R_STRING_MAX_UNI_BLOCKS 4
 
 static void print_string(RBinString *string, RBinFile *bf) {
 	if (!string || !bf) {
@@ -168,9 +169,9 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 		tmp[i++] = '\0';
 
 		if (runes >= min) {
+			// reduce false positives
+			int j, num_blocks, *block_list;
 			if (str_type == R_STRING_TYPE_ASCII) {
-				// reduce false positives
-				int j;
 				for (j = 0; j < i; j++) {
 					char ch = tmp[j];
 					if (ch != '\n' && ch != '\r' && ch != '\t') {
@@ -178,6 +179,22 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 							continue;
 						}
 					}
+				}
+			}
+			switch (str_type) {
+			case R_STRING_TYPE_UTF8:
+			case R_STRING_TYPE_WIDE:
+			case R_STRING_TYPE_WIDE32:
+				num_blocks = 0;
+				block_list = r_utf_block_list ((const ut8*)tmp, i - 1);
+				if (block_list) {
+					for (j = 0; block_list[j] != -1; j++) {
+						num_blocks++;
+					}
+				}
+				free (block_list);
+				if (num_blocks > R_STRING_MAX_UNI_BLOCKS) {
+					continue;
 				}
 			}
 			RBinString *bs = R_NEW0 (RBinString);

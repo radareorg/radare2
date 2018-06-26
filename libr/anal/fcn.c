@@ -419,10 +419,12 @@ static char *get_varname(RAnal *a, RAnalFunction *fcn, char type, const char *pf
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth);
 #define recurseAt(x) {\
 		ut8 *bbuf = malloc (MAXBBSIZE);\
-		anal->iob.read_at (anal->iob.io, x, bbuf, MAXBBSIZE);\
-		ret = fcn_recurse (anal, fcn, x, bbuf, MAXBBSIZE, depth - 1);\
-		r_anal_fcn_update_tinyrange_bbs (fcn);\
-		free (bbuf);\
+		if (bbuf) {\
+			anal->iob.read_at (anal->iob.io, x, bbuf, MAXBBSIZE);\
+			ret = fcn_recurse (anal, fcn, x, bbuf, MAXBBSIZE, depth - 1);\
+			r_anal_fcn_update_tinyrange_bbs (fcn);\
+			free (bbuf);\
+		}\
 }
 
 static void queue_case(RAnal *anal, ut64 switch_addr, ut64 case_addr, ut64 id, ut64 case_addr_loc) {
@@ -773,6 +775,19 @@ static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAna
 		return false;
 	}
 
+	/* if UJMP is in .plt section just skip it */
+	RBinSection *s = anal->binb.get_vsect_at (anal->binb.bin, addr);
+	if (s && s->name[0]) {
+		bool in_plt = strstr (s->name, ".plt") != NULL;
+		if (!in_plt && strstr (s->name, "_stubs") != NULL) {
+			/* for mach0 */
+			in_plt = true;
+		}
+		if (in_plt) {
+			return false;
+		}
+	}
+
 	// search for the predecessor bb
 	r_list_foreach (fcn->bbs, iter, tmp_bb) {
 		if (tmp_bb->jump == my_bb->addr || tmp_bb->fail == my_bb->addr) {
@@ -782,7 +797,7 @@ static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAna
 	}
 	// predecessor must be a conditional jump
 	if (!prev_bb || !prev_bb->jump || !prev_bb->fail) {
-		eprintf ("missing cjmp bb in predecesor\n");
+		eprintf ("[anal.jmptbl] Missing cjmp bb in predecesor at 0x%08"PFMT64x"\n", addr);
 		return false;
 	}
 
@@ -934,7 +949,6 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	if (r_cons_is_breaked ()) {
 		return R_ANAL_RET_END;
 	}
-
 	if (anal->sleep) {
 		r_sys_usleep (anal->sleep);
 	}
@@ -1140,8 +1154,8 @@ repeat:
 					// try_get_delta_jmptbl_info doesn't work at times where the
 					// lea comes after the cmp/default case cjmp, which can be
 					// handled with try_get_jmptbl_info
-					if (try_get_jmptbl_info(anal, fcn, jmp_aop.addr, bb, &table_size, &default_case)
-						|| try_get_delta_jmptbl_info(anal, fcn, jmp_aop.addr, op.addr, &table_size, &default_case)) {
+					if (try_get_jmptbl_info (anal, fcn, jmp_aop.addr, bb, &table_size, &default_case)
+						|| try_get_delta_jmptbl_info (anal, fcn, jmp_aop.addr, op.addr, &table_size, &default_case)) {
 						ret = try_walkthrough_jmptbl (anal, fcn, depth, jmp_aop.addr, jmptbl_addr, op.ptr, 4, table_size, default_case, 4);
 					}
 				}
@@ -1221,6 +1235,11 @@ repeat:
 			}
 			break;
 		case R_ANAL_OP_TYPE_JMP:
+			if (op.jump == UT64_MAX) {
+				FITFCNSZ ();
+				r_anal_op_fini (&op);
+				return R_ANAL_RET_END;
+			}
 			{
 				RFlagItem *fi = anal->flb.get_at (anal->flb.f, op.jump, false);
 				if (fi && strstr (fi->name, "imp.")) {
@@ -1228,11 +1247,6 @@ repeat:
 					r_anal_op_fini (&op);
 					return R_ANAL_RET_END;
 				}
-			}
-			if (op.jump == UT64_MAX) {
-				FITFCNSZ ();
-				r_anal_op_fini (&op);
-				return R_ANAL_RET_END;
 			}
 			if (r_cons_is_breaked ()) {
 				return R_ANAL_RET_END;
@@ -1249,9 +1263,6 @@ repeat:
 				FITFCNSZ ();
 				r_anal_op_fini (&op);
 				return R_ANAL_RET_END;
-			}
-			if (r_cons_is_breaked ()) {
-				break;
 			}
 			{
 				bool must_eob = anal->opt.eobjmp;
@@ -1464,6 +1475,7 @@ repeat:
 				}
 			}
 #if 0
+	// xxx i think we can remove this
 			if (anal->cur) {
 				/* if UJMP is in .plt section just skip it */
 				RBinSection *s = anal->binb.get_vsect_at (anal->binb.bin, addr);
@@ -1656,7 +1668,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 	// update tinyrange for the function
 	r_anal_fcn_update_tinyrange_bbs (fcn);
 
-	if (ret == R_ANAL_RET_END && r_anal_fcn_size (fcn)) {   // cfg analysis completed
+	if (anal->opt.endsize && ret == R_ANAL_RET_END && r_anal_fcn_size (fcn)) {   // cfg analysis completed
 		RListIter *iter;
 		RAnalBlock *bb;
 		ut64 endaddr = fcn->addr;
@@ -1676,6 +1688,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		// fcn is not yet in anal => pass NULL
 		r_anal_fcn_resize (NULL, fcn, endaddr - fcn->addr);
 #endif
+		// TODO: unnecessary? add an option?
 		r_anal_trim_jmprefs (anal, fcn);
 	}
 	return ret;

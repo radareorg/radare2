@@ -66,7 +66,7 @@ static const char *help_msg_ab[] = {
 	"Usage:", "ab", "",
 	"ab", " [addr]", "show basic block information at given address",
 	"abb", " [length]", "analyze N bytes and extract basic blocks",
-	"abj", "", "display basic block information in JSON",
+	"abj", " [addr]", "display basic block information in JSON (alias to afbj)",
 	"abx", " [hexpair-bytes]", "analyze N bytes",
 	NULL
 };
@@ -240,7 +240,7 @@ static const char *help_msg_afb[] = {
 	"afb+", " fcn_at bbat bbsz [jump] [fail] ([type] ([diff]))", "add basic block by hand",
 	"afbr", "", "Show addresses of instructions which leave the function",
 	"afbi", "", "print current basic block information",
-	"afbj", "", "show basic blocks information in json",
+	"afbj", " [addr]", "show basic blocks information in json",
 	"afbe", " bbfrom bbto", "add basic-block edge for switch-cases",
 	"afB", " [bits]", "define asm.bits for the given function",
 	NULL
@@ -5672,7 +5672,7 @@ static void agraph_print_node(RANode *n, void *user) {
 	char *encbody, *cmd;
 	int len = strlen (n->body);
 
-	if (n->body[len - 1] == '\n') {
+	if (len > 0 && n->body[len - 1] == '\n') {
 		len--;
 	}
 	encbody = r_base64_encode_dyn (n->body, len);
@@ -6765,8 +6765,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					rowlog_done (core);
 				}
 				if (input[1] == 'a') { // "aaaa"
-					bool ioCache = r_config_get_i (core->config, "io.pcache");
-					r_config_set_i (core->config, "io.pcache", 1);
+					bool ioCache = r_config_get_i (core->config, "io.cache");
+					r_config_set_i (core->config, "io.cache", 1);
 					if (sdb_count (core->anal->sdb_zigns) > 0) {
 						rowlog (core, "Check for zignature from zigns folder (z/)");
 						r_core_cmd0 (core, "z/");
@@ -6777,7 +6777,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					if (!ioCache) {
 						r_core_cmd0 (core, "wc-*");
 					}
-					r_config_set_i (core->config, "io.pcache", ioCache);
+					r_config_set_i (core->config, "io.cache", ioCache);
 				}
 				r_core_cmd0 (core, "s-");
 				if (dh_orig) {
@@ -7012,6 +7012,8 @@ static int cmd_anal(void *data, const char *input) {
 				r_list_purge (list);
 				free (list);
 			}
+		} else if (input[1] == 'j') { // "abj"
+			anal_fcn_list_bb (core, input + 1, false);
 		} else if (input[1] == ' ' || !input[1]) {
 			// find block
 			ut64 addr = core->offset;

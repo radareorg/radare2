@@ -92,6 +92,30 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_METH_CONSTRUCTOR 0x0000000000100000L
 #define R_BIN_METH_DECLARED_SYNCHRONIZED 0x0000000000200000L
 
+#define R_BIN_BIND_LOCAL_STR "LOCAL"
+#define R_BIN_BIND_GLOBAL_STR "GLOBAL"
+#define R_BIN_BIND_WEAK_STR "WEAK"
+#define R_BIN_BIND_NUM_STR "NUM"
+#define R_BIN_BIND_LOOS_STR "LOOS"
+#define R_BIN_BIND_HIOS_STR "HIOS"
+#define R_BIN_BIND_LOPROC_STR "LOPROC"
+#define R_BIN_BIND_HIPROC_STR "HIPROC"
+#define R_BIN_BIND_UNKNOWN_STR "UNKNOWN"
+
+#define R_BIN_TYPE_NOTYPE_STR "NOTYPE"
+#define R_BIN_TYPE_OBJECT_STR "OBJ"
+#define R_BIN_TYPE_FUNC_STR "FUNC"
+#define R_BIN_TYPE_SECTION_STR "SECT"
+#define R_BIN_TYPE_FILE_STR "FILE"
+#define R_BIN_TYPE_COMMON_STR "COMMON"
+#define R_BIN_TYPE_TLS_STR "TLS"
+#define R_BIN_TYPE_NUM_STR "NUM"
+#define R_BIN_TYPE_LOOS_STR "LOOS"
+#define R_BIN_TYPE_HIOS_STR "HIOS"
+#define R_BIN_TYPE_LOPROC_STR "LOPROC"
+#define R_BIN_TYPE_HIPROC_STR "HIPROC"
+#define R_BIN_TYPE_UNKNOWN_STR "UNK"
+
 enum {
 	R_BIN_SYM_ENTRY,
 	R_BIN_SYM_INIT,
@@ -582,13 +606,16 @@ typedef struct r_bin_bind_t {
 typedef struct r_bin_options_t {
 	ut64 offset; // starting physical address to read from the target file
 	ut64 baseaddr; // where the linker maps the binary in memory
+	ut64 loadaddr; // the desired offset where the binary should be loaded
 	ut64 size; // restrict the size of the target fd
-	// ut64 loadaddr; // DEPRECATED ?
 	int xtr_idx; // load Nth binary
 	int rawstr;
 	int iofd;
 	char *name; // or comment :?
 } RBinOptions;
+
+R_API RBinImport *r_bin_import_clone(RBinImport *o);
+R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *o);
 
 R_API RBinOptions *r_bin_options_new (ut64 offset, ut64 baddr, int rawstr);
 R_API void r_bin_options_free(RBinOptions *bo);

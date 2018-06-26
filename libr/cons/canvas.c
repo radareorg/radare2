@@ -114,7 +114,7 @@ static void stamp_attr(RConsCanvas *c, int loc, int length) {
 	s = attr_at (c, loc);
 
 	if (s) {
-		if (strlen (*s) > 2 && *(*s + 2) == '0') {
+		if (*s != 0 && strlen (*s) > 2 && *(*s + 2) == '0') {
 			if (strlen (c->attr) == 5 && *(c->attr + 2) != '0') {
 				char tmp[9];
 				memcpy (tmp, c->attr, 2);
@@ -135,7 +135,7 @@ static void stamp_attr(RConsCanvas *c, int loc, int length) {
 	for (i = 1; i < length; i++) {
 		s = attr_at (c, loc + i);
 		if (s) {
-			*s = Color_RESET;
+			*s = 0;
 		}
 	}
 }
@@ -285,10 +285,13 @@ static int bytes_utf8len(const char *s, int n, int left) {
 		}
 		i++;
 	}
-	return i - 1;
+	return n == -1 ? i - 1 : i;
 }
 
 static int expand_line (RConsCanvas *c, int real_len, int utf8_len) {
+	if (real_len == 0) {
+		return true;
+	}
 	int buf_utf8_len = bytes_utf8len (c->b[c->y] + c->x, utf8_len, c->blen[c->y] - c->x);
 	int goback = R_MAX (0, (buf_utf8_len - real_len));
 	int padding = (real_len - utf8_len) - goback;
@@ -304,13 +307,20 @@ static int expand_line (RConsCanvas *c, int real_len, int utf8_len) {
 			c->b[c->y] = newline;
 			c->bsize[c->y] = newsize;
 		}
-		int size = c->blen[c->y] - c->x - utf8_len;
+		int size = R_MAX (c->blen[c->y] - c->x - utf8_len, 0);
 		char *start = c->b[c->y] + c->x + utf8_len;
 		char *tmp = malloc (size);
 		if (!tmp) {
 			return false;
 		}
 		memcpy (tmp, start, size);
+		if (padding < 0) {
+			int lap = R_MAX (0, c->b[c->y] - (start + padding));
+			memcpy (start + padding + lap,  tmp + lap, size - lap);
+			free (tmp);
+			c->blen[c->y] += padding;
+			return true;
+		}
 		memcpy (start + padding, tmp, size);
 		free (tmp);
 		c->blen[c->y] += padding;
@@ -319,7 +329,7 @@ static int expand_line (RConsCanvas *c, int real_len, int utf8_len) {
 }
 
 R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
-	if (!c || !s || !*s) {
+	if (!c || !s || !*s || !R_BETWEEN (0, c->y, c->h - 1) || !R_BETWEEN (0, c->x, c->w - 1)) {
 		return;
 	}
 
@@ -339,8 +349,15 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 		if (piece_len == 0 && ch == '\0' && s_part == s) {
 			break;
 		}
-		left =  c->blen[c->y] - c->x;
-		slen = R_MIN (left, piece_len);
+		left = c->blen[c->y] - c->x;
+		slen = piece_len;
+
+		if (piece_len > left) {
+			int utf8_piece_len = utf8len_fixed (s_part, piece_len);
+			if (utf8_piece_len >= c->w - attr_x) {
+				slen = left;
+			}
+		}
 
 		int real_len = r_str_nlen (s_part, slen);
 		int utf8_len = utf8len_fixed (s_part, slen); 
@@ -360,6 +377,8 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 
 		s = s_part;
 		if (ch == '\n') {
+			c->attr = Color_RESET;
+			stamp_attr (c, c->y*c->w + attr_x, 0);
 			c->y++;
 			s++;
 			if (*s == '\0' || c->y  >= c->h) {
@@ -424,7 +443,7 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 				o[olen++] = c->b[y][x];
 			}
 		}
-		while (o[olen - 1] == ' ') {
+		while (olen > 0 && o[olen - 1] == ' ') {
 			o[--olen] = '\0';
 		}
 	}

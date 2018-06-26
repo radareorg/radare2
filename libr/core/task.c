@@ -64,7 +64,6 @@ R_API void r_core_task_join (RCore *core, RCoreTask *current, RCoreTask *task) {
 		return;
 	}
 	if (task) {
-		r_cons_break_push (NULL, NULL);
 		if (current) {
 			r_core_task_sleep_begin (current);
 		}
@@ -72,7 +71,6 @@ R_API void r_core_task_join (RCore *core, RCoreTask *current, RCoreTask *task) {
 		if (current) {
 			r_core_task_sleep_end (current);
 		}
-		r_cons_break_pop ();
 	} else {
 		r_list_foreach_prev (core->tasks, iter, task) {
 			if (current == task) {
@@ -89,7 +87,7 @@ R_API void r_core_task_join (RCore *core, RCoreTask *current, RCoreTask *task) {
 	}
 }
 
-R_API RCoreTask *r_core_task_new (RCore *core, const char *cmd, RCoreTaskCallback cb, void *user) {
+R_API RCoreTask *r_core_task_new (RCore *core, bool create_cons, const char *cmd, RCoreTaskCallback cb, void *user) {
 	RCoreTask *task = R_NEW0 (RCoreTask);
 	if (!task) {
 		goto hell;
@@ -101,8 +99,15 @@ R_API RCoreTask *r_core_task_new (RCore *core, const char *cmd, RCoreTaskCallbac
 	task->res = NULL;
 	task->dispatch_cond = r_th_cond_new ();
 	task->dispatch_lock = r_th_lock_new (false);
-	if (!task->dispatch_cond || !task->dispatch_cond) {
+	if (!task->dispatch_cond || !task->dispatch_lock) {
 		goto hell;
+	}
+
+	if (create_cons) {
+		task->cons_context = r_cons_context_new ();
+		if (!task->cons_context) {
+			goto hell;
+		}
 	}
 
 	task->id = core->task_id_next++;
@@ -127,7 +132,7 @@ R_API void r_core_task_free (RCoreTask *task) {
 	r_th_free (task->thread);
 	r_th_cond_free (task->dispatch_cond);
 	r_th_lock_free (task->dispatch_lock);
-	r_cons_dump_free (task->cons);
+	r_cons_context_free (task->cons_context);
 	free (task);
 }
 
@@ -154,31 +159,31 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 	r_th_lock_leave (core->tasks_lock);
 
 	if (next) {
-		current->cons = r_cons_dump ();
+		r_cons_context_reset ();
 		r_th_lock_enter (next->dispatch_lock);
 		r_th_cond_signal (next->dispatch_cond);
 		r_th_lock_leave (next->dispatch_lock);
 		if (!stop) {
 			r_th_cond_wait (current->dispatch_cond, current->dispatch_lock);
-			r_cons_load (current->cons);
-			current->cons = NULL;
 		}
-	} else if (current != core->main_task && stop) {
-		// all tasks done, reset to main cons
-		current->cons = r_cons_dump ();
-		r_cons_load (core->main_task->cons);
-		core->main_task->cons = NULL;
 	}
 
 	if (!stop) {
 		core->current_task = current;
+		if (current->cons_context) {
+			r_cons_context_load (current->cons_context);
+		} else {
+			r_cons_context_reset ();
+		}
+	} else {
+		r_cons_context_reset ();
 	}
 }
 
 static void task_wakeup(RCoreTask *current) {
 	RCore *core = current->core;
 
-	r_th_lock_enter (current->core->tasks_lock);
+	r_th_lock_enter (core->tasks_lock);
 
 	current->state = R_CORE_TASK_STATE_RUNNING;
 
@@ -186,7 +191,7 @@ static void task_wakeup(RCoreTask *current) {
 	bool single = true;
 	RCoreTask *task;
 	RListIter *iter;
-	r_list_foreach (current->core->tasks, iter, task) {
+	r_list_foreach (core->tasks, iter, task) {
 		if (task != current && task->state == R_CORE_TASK_STATE_RUNNING) {
 			single = false;
 			break;
@@ -201,30 +206,18 @@ static void task_wakeup(RCoreTask *current) {
 		r_list_append (current->core->tasks_queue, current);
 	}
 
-	r_th_lock_leave (current->core->tasks_lock);
+	r_th_lock_leave (core->tasks_lock);
 
 	if(!single) {
 		r_th_cond_wait (current->dispatch_cond, current->dispatch_lock);
 	}
 
-	current->core->current_task = current;
+	core->current_task = current;
 
-	// swap cons
-	if (current->cons) {
-		// we are the main task and some other task has already dumped the main cons for us
-		// or we were sleeping.
-		r_cons_load (current->cons);
-		current->cons = NULL;
-	} if (core->main_task != current) {
-		// we are not the main task, so we need a new cons
-		current->cons = r_cons_dump_new ();
-		if (single) {
-			// no other tasks are currently running, so the main cons is currently loaded
-			// and has to be dumped.
-			core->main_task->cons = r_cons_dump ();
-		}
-		r_cons_load (current->cons);
-		current->cons = NULL;
+	if (current->cons_context) {
+		r_cons_context_load (current->cons_context);
+	} else {
+		r_cons_context_reset ();
 	}
 }
 
@@ -288,10 +281,12 @@ R_API int r_core_task_run_sync(RCore *core, RCoreTask *task) {
 /* begin running stuff synchronously on the main task */
 R_API void r_core_task_sync_begin(RCore *core) {
 	RCoreTask *task = core->main_task;
+	r_th_lock_enter (core->tasks_lock);
 	task->thread = NULL;
 	task->cmd = NULL;
 	task->cmd_log = false;
 	task->state = R_CORE_TASK_STATE_BEFORE_START;
+	r_th_lock_leave (core->tasks_lock);
 	task_wakeup (task);
 }
 
@@ -332,17 +327,21 @@ R_API RCoreTask *r_core_task_self (RCore *core) {
 R_API int r_core_task_del (RCore *core, int id) {
 	RCoreTask *task;
 	RListIter *iter;
+	bool ret = false;
+	r_th_lock_enter (core->tasks_lock);
 	r_list_foreach (core->tasks, iter, task) {
 		if (task->id == id) {
 			if (task == core->main_task
 				|| task->state != R_CORE_TASK_STATE_DONE) {
-				return false;
+				break;
 			}
 			r_list_delete (core->tasks, iter);
-			return true;
+			ret = true;
+			break;
 		}
 	}
-	return false;
+	r_th_lock_leave (core->tasks_lock);
+	return ret;
 }
 
 R_API void r_core_task_del_all_done (RCore *core) {

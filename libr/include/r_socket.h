@@ -78,7 +78,7 @@ typedef struct r_socket_t {
 R_API RSocket *r_socket_new_from_fd(int fd);
 R_API RSocket *r_socket_new(int is_ssl);
 R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int proto, unsigned int timeout);
-R_API int r_socket_spawn (RSocket *s, const char *cmd, unsigned int timeout);
+R_API bool r_socket_spawn (RSocket *s, const char *cmd, unsigned int timeout);
 R_API int r_socket_connect_serial(RSocket *sock, const char *path, int speed, int parity);
 #define r_socket_connect_tcp(a, b, c, d) r_socket_connect (a, b, c, R_SOCKET_PROTO_TCP, d)
 #define r_socket_connect_udp(a, b, c, d) r_socket_connect (a, b, c, R_SOCKET_PROTO_UDP, d)
@@ -92,6 +92,7 @@ R_API int r_socket_close(RSocket *s);
 R_API int r_socket_free(RSocket *s);
 R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile);
 R_API RSocket *r_socket_accept(RSocket *s);
+R_API RSocket *r_socket_accept_timeout(RSocket *s, unsigned int timeout);
 R_API int r_socket_block_time(RSocket *s, int block, int sec);
 R_API int r_socket_flush(RSocket *s);
 R_API int r_socket_ready(RSocket *s, int secs, int usecs);
@@ -136,7 +137,7 @@ typedef struct r_socket_http_request {
 	int data_length;
 } RSocketHTTPRequest;
 
-R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, int timeout);
+R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, int accept_timeout, int timeout);
 R_API void r_socket_http_response(RSocketHTTPRequest *rs, int code, const char *out, int x, const char *headers);
 R_API void r_socket_http_close(RSocketHTTPRequest *rs);
 R_API ut8 *r_socket_http_handle_upload(const ut8 *str, int len, int *olen);

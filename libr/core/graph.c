@@ -2739,15 +2739,20 @@ static void agraph_print_edges(RAGraph *g) {
 				a_x_inc = R_EDGES_X_INC + 2 * (out_nth + 1);
 				b_x_inc = R_EDGES_X_INC + 2 * (in_nth + 1);
 
-				ax = a->is_dummy ? a->x : (a->x + a->w - a_x_inc);
-				ay = a->y + a->h;
+				if (g->altedgepos) {
+					ax = a->is_dummy ? a->x : (a->x + a->w - a_x_inc);
+					bx = b->is_dummy ? b->x : (b->x + b_x_inc);
+				} else {
+					ax = a->is_dummy ? a->x : (a->x + a_x_inc);
+					bx = b->is_dummy ? b->x : (b->x + a_x_inc);
+				}
 
-				bx = b->is_dummy ? b->x : (b->x + b_x_inc);
+				ay = a->y + a->h;
 				by = b->y - 1;
 
 				if (!a->is_dummy && itn == neighbours->head && out_nth == 0 && bx > ax) {
 					a_x_inc += 4;
-					ax -= 4;
+					ax += g->altedgepos ? -4 : 4;
 				}
 				if (a->h < a->layer_height) {
 					r_cons_canvas_line (g->can, ax, ay, ax, ay + a->layer_height - a->h, &style);
@@ -3726,6 +3731,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	g->on_curnode_change = (RANodeCallback) seek_to_node;
 	g->on_curnode_change_data = core;
 	g->edgemode = r_config_get_i (core->config, "graph.edges");
+	g->altedgepos = r_config_get_i (core->config, "graph.altedgepos");
 	g->is_interactive = is_interactive;
 	bool asm_comments = r_config_get_i (core->config, "asm.comments");
 	r_config_set (core->config, "asm.comments",
@@ -4043,13 +4049,13 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			r_core_cmd (core, "sr PC", 0);
 			break;
 		case 'R':
-			if (!fcn) {
-				break;
-			}
 			if (r_config_get_i (core->config, "scr.randpal")) {
 				r_core_cmd0 (core, "ecr");
 			} else {
 				r_core_cmd0 (core, "ecn");
+			}
+			if (!fcn) {
+				break;
 			}
 			g->edgemode = r_config_get_i (core->config, "graph.edges");
 			get_bbupdate (g, core, fcn);

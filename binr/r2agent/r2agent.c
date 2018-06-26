@@ -97,11 +97,11 @@ int main(int argc, char **argv) {
 		eprintf ("sandbox: Cannot be enabled.\n");
 		return 1;
 	}
-	while (!r_cons_singleton ()->breaked) {
+	while (!r_cons_singleton ()->context->breaked) {
 		char *result_heap = NULL;
 		const char *result = page_index;
 
-		rs = r_socket_http_accept (s, timeout);
+		rs = r_socket_http_accept (s, 0, timeout);
 		if (!rs) continue;
 		if (!strcmp (rs->method, "GET")) {
 			if (!strncmp (rs->path, "/proc/kill/", 11)) {

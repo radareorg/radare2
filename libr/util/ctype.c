@@ -518,6 +518,9 @@ R_API char *r_type_func_guess(Sdb *TDB, char *func_name) {
 	}
 	slen -= offset;
 	str += offset;
+	if (!strncmp (str, "__isoc99_", 9)) {
+		str += 9;
+	}
 	if ((result = type_func_try_guess (TDB, str))) {
 		return result;
 	}

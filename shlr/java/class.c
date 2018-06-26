@@ -1,4 +1,4 @@
-/* Apache 2.0 - Copyright 2007-2017 - pancake and dso
+/* Apache 2.0 - Copyright 2007-2018 - pancake and dso
    class.c rewrite: Adam Pridgen <dso@rice.edu || adam.pridgen@thecoverofnight.com>
  */
 #include <stdio.h>
@@ -1573,7 +1573,7 @@ R_API RBinJavaCPTypeObj *r_bin_java_clone_cp_item(RBinJavaCPTypeObj *obj) {
 		memcpy (clone_obj, obj, sizeof (RBinJavaCPTypeObj));
 		clone_obj->metas = (RBinJavaMetaInfo *) R_NEW0 (RBinJavaMetaInfo);
 		clone_obj->metas->type_info = (void *) &R_BIN_JAVA_CP_METAS[clone_obj->tag];
-		clone_obj->name = strdup (obj->name);
+		clone_obj->name = strdup (obj->name? obj->name: "unk");
 		if (obj->tag == R_BIN_JAVA_CP_UTF8) {
 			clone_obj->info.cp_utf8.bytes = (ut8 *) malloc (obj->info.cp_utf8.length + 1);
 			if (clone_obj->info.cp_utf8.bytes) {
@@ -2543,7 +2543,7 @@ R_API RBinSymbol *r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type
 		sym->name = strdup (fm_type->name);
 		// strncpy (sym->type, fm_type->descriptor, R_BIN_SIZEOF_STRINGS);
 		if (fm_type->type == R_BIN_JAVA_FIELD_TYPE_METHOD) {
-			sym->type = r_str_const ("FUNC");
+			sym->type = r_str_const (R_BIN_TYPE_FUNC_STR);
 			sym->paddr = r_bin_java_get_method_code_offset (fm_type);
 			sym->vaddr = r_bin_java_get_method_code_offset (fm_type) + baddr;
 			sym->size = r_bin_java_get_method_code_size (fm_type);
@@ -2554,11 +2554,11 @@ R_API RBinSymbol *r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type
 			sym->size = fm_type->size;
 		}
 		if (r_bin_java_is_fm_type_protected (fm_type)) {
-			sym->bind = r_str_const ("LOCAL");
+			sym->bind = r_str_const (R_BIN_BIND_LOCAL_STR);
 		} else if (r_bin_java_is_fm_type_private (fm_type)) {
-			sym->bind = r_str_const ("LOCAL");
+			sym->bind = r_str_const (R_BIN_BIND_LOCAL_STR);
 		} else if (r_bin_java_is_fm_type_protected (fm_type)) {
-			sym->bind = r_str_const ("GLOBAL");
+			sym->bind = r_str_const (R_BIN_BIND_GLOBAL_STR);
 		}
 		sym->forwarder = r_str_const ("NONE");
 		if (fm_type->class_name) {
@@ -2590,11 +2590,11 @@ R_API RBinSymbol *r_bin_java_create_new_symbol_from_fm_type_meta(RBinJavaField *
 		sym->type = r_str_const ("FIELD_META");
 	}
 	if (r_bin_java_is_fm_type_protected (fm_type)) {
-		sym->bind = r_str_const ("LOCAL");
+		sym->bind = r_str_const (R_BIN_BIND_LOCAL_STR);
 	} else if (r_bin_java_is_fm_type_private (fm_type)) {
-		sym->bind = r_str_const ("LOCAL");
+		sym->bind = r_str_const (R_BIN_BIND_LOCAL_STR);
 	} else if (r_bin_java_is_fm_type_protected (fm_type)) {
-		sym->bind = r_str_const ("GLOBAL");
+		sym->bind = r_str_const (R_BIN_BIND_GLOBAL_STR);
 	}
 	sym->forwarder = r_str_const ("NONE");
 	if (fm_type->class_name) {
@@ -2942,7 +2942,7 @@ R_API void r_bin_add_import(RBinJavaObj *bin, RBinJavaCPTypeObj *obj, const char
 	char *name = r_bin_java_get_name_from_bin_cp_list (bin, obj->info.cp_method.name_and_type_idx);
 	char *descriptor = r_bin_java_get_desc_from_bin_cp_list (bin, obj->info.cp_method.name_and_type_idx);
 	class_name = class_name ? class_name : strdup ("INVALID CLASS NAME INDEX");
-	name = name ? name : strdup ("INVALID NAME INDEX");
+	name = name ? name : strdup ("InvalidNameIndex");
 	descriptor = descriptor ? descriptor : strdup ("INVALID DESCRIPTOR INDEX");
 	imp->classname = class_name;
 	imp->name = name;
@@ -3687,6 +3687,10 @@ R_API RBinJavaAttrInfo *r_bin_java_inner_classes_attr_new(ut8 *buffer, ut64 sz, 
 	attr->info.inner_classes_attr.classes = r_list_newf (r_bin_java_inner_classes_attr_entry_free);
 	for (i = 0; i < attr->info.inner_classes_attr.number_of_classes; i++) {
 		curpos = buf_offset + offset;
+		if (offset + 8 > sz) {
+			eprintf ("Invalid amount of inner classes\n");
+			break;
+		}
 		icattr = R_NEW0 (RBinJavaClassesAttribute);
 		if (!icattr) {
 			break;
@@ -3708,15 +3712,16 @@ R_API RBinJavaAttrInfo *r_bin_java_inner_classes_attr_new(ut8 *buffer, ut64 sz, 
 			eprintf ("BINCPLIS IS HULL %d\n", icattr->inner_name_idx);
 		}
 		icattr->name = r_bin_java_get_item_name_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, obj);
-		if (icattr->name == NULL) {
+		if (!icattr->name) {
 			obj = r_bin_java_get_item_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, icattr->inner_class_info_idx);
 			if (!obj) {
 				eprintf ("BINCPLIST IS NULL %d\n", icattr->inner_class_info_idx);
 			}
 			icattr->name = r_bin_java_get_item_name_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, obj);
-			if (icattr->name == NULL) {
+			if (!icattr->name) {
 				icattr->name = r_str_dup (NULL, "NULL");
 				eprintf ("r_bin_java_inner_classes_attr: Unable to find the name for %d index.\n", icattr->inner_name_idx);
+				break;
 			}
 		}
 
@@ -6477,6 +6482,9 @@ R_API RBinJavaAnnotation *r_bin_java_annotation_new(ut8 *buffer, ut64 sz, ut64 b
 	annotation->element_value_pairs = r_list_newf (r_bin_java_element_pair_free);
 	// read annotation_value.num_element_value_pairs, and append to annotation_value.element_value_pairs
 	for (i = 0; i < annotation->num_element_value_pairs; i++) {
+		if (offset > sz) {
+			break;
+		}
 		ev_pairs = r_bin_java_element_pair_new (buffer + offset, sz - offset, buf_offset + offset);
 		if (ev_pairs) {
 			offset += ev_pairs->size;
@@ -6683,6 +6691,9 @@ R_API RBinJavaElementValue *r_bin_java_element_value_new(ut8 *buffer, ut64 sz, u
 		offset += 2;
 		element_value->value.array_value.values = r_list_new ();
 		for (i = 0; i < element_value->value.array_value.num_values; i++) {
+			if (offset >= sz) {
+				break;
+			}
 			RBinJavaElementValue *ev_element = r_bin_java_element_value_new (buffer + offset, sz - offset, buf_offset + offset);
 			if (ev_element) {
 				element_value->size += ev_element->size;
@@ -6708,6 +6719,9 @@ R_API RBinJavaElementValue *r_bin_java_element_value_new(ut8 *buffer, ut64 sz, u
 		element_value->value.annotation_value.element_value_pairs = r_list_newf (r_bin_java_element_pair_free);
 		// read annotation_value.num_element_value_pairs, and append to annotation_value.element_value_pairs
 		for (i = 0; i < element_value->value.annotation_value.num_element_value_pairs; i++) {
+			if (offset > sz) {
+				break;
+			}
 			ev_pairs = r_bin_java_element_pair_new (buffer + offset, sz - offset, buf_offset + offset);
 			if (ev_pairs) {
 				element_value->size += ev_pairs->size;
@@ -7032,12 +7046,15 @@ R_API RBinJavaAttrInfo *r_bin_java_rtv_annotations_attr_new(ut8 *buffer, ut64 sz
 		offset += 2;
 		attr->info.annotation_array.annotations = r_list_newf (r_bin_java_annotation_free);
 		for (i = 0; i < attr->info.annotation_array.num_annotations; i++) {
-			RBinJavaAnnotation *annotation = r_bin_java_annotation_new (buffer + offset, sz - offset, buf_offset + offset);
-			if (annotation == NULL) {}
+			int len = sz - offset;
+			if (len < 1) {
+				break;
+			}
+			RBinJavaAnnotation *annotation = r_bin_java_annotation_new (buffer + offset, len, buf_offset + offset);
 			if (annotation) {
 				offset += annotation->size;
+				r_list_append (attr->info.annotation_array.annotations, (void *) annotation);
 			}
-			r_list_append (attr->info.annotation_array.annotations, (void *) annotation);
 		}
 		attr->size = offset;
 	}

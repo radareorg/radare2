@@ -25,6 +25,8 @@ static inline void r_str_rmch(char *s, char ch) {
 			memmove (s, s+1, strlen (s));
 	}
 }
+
+#define R_STR_DUP(x) ((x) ? strdup ((x)) : NULL)
 #define r_str_array(x,y) ((y>=0 && y<(sizeof(x)/sizeof(*x)))?x[y]:"")
 R_API const char *r_str_pad(const char ch, int len);
 R_API const char *r_str_rstr(const char *base, const char *p);
@@ -84,6 +86,7 @@ R_API char *r_str_word_get_first(const char *string);
 R_API char *r_str_trim(char *str);
 R_API char *r_str_trim_head(char *str);
 R_API const char *r_str_trim_ro(const char *str);
+R_API const char *r_str_trim_wp(const char *str);
 R_API char *r_str_trim_tail(char *str);
 R_API char *r_str_trim_head_tail(char *str);
 R_API ut32 r_str_hash(const char *str);

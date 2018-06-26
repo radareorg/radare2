@@ -155,6 +155,7 @@ static const char *help_msg_question_v[] = {
 	"$v", "", "opcode immediate value (e.g. lui a0,0x8010 => 0x8010)",
 	"$w", "", "get word size, 4 if asm.bits=32, 8 if 64, ...",
 	"${ev}", "", "get value of eval config variable",
+	"$r{reg}", "", "get value of named register",
 	"$k{kv}", "", "get value of an sdb query value",
 	"$s{flag}", "", "get size of flag",
 	"RNum", "", "$variables usable in math expressions",

@@ -87,6 +87,15 @@ R_API const char *r_str_trim_ro(const char *str) {
 	return str;
 }
 
+// Returns a pointer to the first whitespace character of str.
+// TODO: rename to r_str_trim_head_wp()
+R_API const char *r_str_trim_wp(const char *str) {
+	if (str) {
+		for (; *str && !IS_WHITESPACE (*str); str++);
+	}
+	return str;
+}
+
 /* remove spaces from the head of the string.
  * the string is changed in place */
 R_API char *r_str_trim_head(char *str) {

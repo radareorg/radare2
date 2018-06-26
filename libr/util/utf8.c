@@ -645,12 +645,15 @@ R_API int r_utf_block_idx (RRune ch) {
 	return r_utf_blocks_count - 1; /* index for "No_Block" */
 }
 
-R_API int *r_utf_block_list (const ut8 *str) {
+/* str must be UTF8-encoded */
+R_API int *r_utf_block_list(const ut8 *str, int len) {
 	if (!str) {
 		return NULL;
 	}
+	if (len < 0) {
+		len = strlen ((const char *)str);
+	}
 	static bool has_block[r_utf_blocks_count] = {0};
-	int len = strlen ((const char *)str);
 	int *list = R_NEWS (int, len + 1);
 	if (!list) {
 		return NULL;

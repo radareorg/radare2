@@ -2188,30 +2188,74 @@ static char* _resource_lang_str(int id) {
 }
 
 static char* _resource_type_str(int type) {
+	char * typeName;
 	switch (type) {
-	case 1: return "CURSOR";
-	case 2: return "BITMAP";
-	case 3: return "ICON";
-	case 4: return "MENU";
-	case 5: return "DIALOG";
-	case 6: return "STRING";
-	case 7: return "FONTDIR";
-	case 8: return "FONT";
-	case 9: return "ACCELERATOR";
-	case 10: return "RCDATA";
-	case 11: return "MESSAGETABLE";
-	case 12: return "GROUP_CURSOR";
-	case 14: return "GROUP_ICON";
-	case 16: return "VERSION";
-	case 17: return "DLGINCLUDE";
-	case 19: return "PLUGPLAY";
-	case 20: return "VXD";
-	case 21: return "ANICURSOR";
-	case 22: return "ANIICON";
-	case 23: return "HTML";
-	case 24: return "MANIFEST";
-	default: return "UNKNOWN";
+	case 1:
+		typeName = "CURSOR";
+		break;
+	case 2:
+		typeName = "BITMAP";
+		break;
+	case 3:
+		typeName = "ICON";
+		break;
+	case 4:
+		typeName = "MENU";
+		break;
+	case 5:
+		typeName = "DIALOG";
+		break;
+	case 6:
+		typeName = "STRING";
+		break;
+	case 7:
+		typeName = "FONTDIR";
+		break;
+	case 8:
+		typeName = "FONT";
+		break;
+	case 9:
+		typeName = "ACCELERATOR";
+		break;
+	case 10:
+		typeName = "RCDATA";
+		break;
+	case 11:
+		typeName = "MESSAGETABLE";
+		break;
+	case 12:
+		typeName = "GROUP_CURSOR";
+		break;
+	case 14:
+		typeName = "GROUP_ICON";
+		break;
+	case 16:
+		typeName = "VERSION";
+		break;
+	case 17:
+		typeName = "DLGINCLUDE";
+		break;
+	case 19:
+		typeName = "PLUGPLAY";
+		break;
+	case 20:
+		typeName = "VXD";
+		break;
+	case 21:
+		typeName = "ANICURSOR";
+		break;
+	case 22:
+		typeName = "ANIICON";
+		break;
+	case 23:
+		typeName = "HTML";
+		break;
+	case 24:
+		typeName = "MANIFEST";
+		break;
+	default: return r_str_newf ("UNKNOWN (%d)",type);
 	}
+	return strdup (typeName);
 }
 
 static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_resource_directory *dir, ut64 offDir, int type, int id, SdbHash *dirs) {

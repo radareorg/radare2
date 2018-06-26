@@ -20,7 +20,7 @@ R_API RDebugInfo *r_debug_info(RDebug *dbg, const char *arg) {
 	return dbg->h->info (dbg, arg);
 }
 
-R_API void r_debug_info_free (RDebugInfo *rdi) {
+R_API void r_debug_info_free(RDebugInfo *rdi) {
 	if (rdi) {
 		free (rdi->cwd);
 		free (rdi->exe);
@@ -28,6 +28,17 @@ R_API void r_debug_info_free (RDebugInfo *rdi) {
 		free (rdi->libname);
 		free (rdi->usr);
 		free (rdi);
+	}
+}
+
+R_API void r_debug_bp_update(RDebug *dbg) {
+	/* update all bp->addr if they are named bps */
+	RBreakpointItem *bp;
+	RListIter *iter;
+	r_list_foreach (dbg->bp->bps, iter, bp) {
+		if (bp->expr) {
+			bp->addr = dbg->corebind.numGet (dbg->corebind.core, bp->expr);
+		}
 	}
 }
 
@@ -60,6 +71,7 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 	 * this is necessary because while stopped we don't want any breakpoints in
 	 * the code messing up our analysis.
 	 */
+	r_debug_bp_update (dbg);
 	if (!r_bp_restore (dbg->bp, false)) { // unset sw breakpoints
 		return false;
 	}
@@ -81,6 +93,40 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 # else
 	int pc_off = dbg->bpsize;
 	/* see if we really have a breakpoint here... */
+	if (!dbg->pc_at_bp_set) {
+		b = r_bp_get_at (dbg->bp, pc - dbg->bpsize);
+		if (!b) { /* we don't. nothing left to do */
+			/* Some targets set pc to breakpoint */
+			b = r_bp_get_at (dbg->bp, pc);
+			if (!b) {
+				/* Couldn't find the break point. Nothing more to do... */
+				return true;
+			}
+			else {
+				dbg->pc_at_bp_set = true;
+				dbg->pc_at_bp = true;
+			}
+		} else {
+			dbg->pc_at_bp_set = true;
+			dbg->pc_at_bp = false;
+		}
+	}
+	
+	if (!dbg->pc_at_bp_set) {
+		eprintf ("failed to determine position of pc after breakpoint");
+	}
+	
+	if (dbg->pc_at_bp) {
+		pc_off = 0;
+		b = r_bp_get_at (dbg->bp, pc);
+	} else {
+		b = r_bp_get_at (dbg->bp, pc - dbg->bpsize);
+	}
+	
+	if (!b) {
+		return true;
+	}
+	
 	b = r_bp_get_at (dbg->bp, pc - dbg->bpsize);
 	if (!b) { /* we don't. nothing left to do */
 		/* Some targets set pc to breakpoint */
@@ -137,9 +183,9 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 static int r_debug_bps_enable(RDebug *dbg) {
 	/* restore all sw breakpoints. we are about to step/continue so these need
 	 * to be in place. */
-	if (!r_bp_restore (dbg->bp, true))
+	if (!r_bp_restore (dbg->bp, true)) {
 		return false;
-
+	}
 	/* done recoiling... */
 	dbg->recoil_mode = R_DBG_RECOIL_NONE;
 	return true;
@@ -336,13 +382,13 @@ R_API RDebug *r_debug_new(int hard) {
 	return dbg;
 }
 
-static int free_tracenodes_entry (RDebug *dbg, const char *k, const char *v) {
+static int free_tracenodes_entry(RDebug *dbg, const char *k, const char *v) {
 	ut64 v_num = r_num_get (NULL, v);
 	free((void *)(size_t)v_num);
 	return true;
 }
 
-R_API void r_debug_tracenodes_reset (RDebug *dbg) {
+R_API void r_debug_tracenodes_reset(RDebug *dbg) {
 	sdb_foreach (dbg->tracenodes, (SdbForeachCallback)free_tracenodes_entry, dbg);
 	sdb_reset (dbg->tracenodes);
 }
@@ -1112,10 +1158,15 @@ repeat:
 			reason == R_DEBUG_REASON_EXIT_TID ) {
 			goto repeat;
 		}
-		if (reason == R_DEBUG_REASON_EXIT_PID) {
-			dbg->pid = -1;
-		}
 #endif
+		if (reason == R_DEBUG_REASON_EXIT_PID) {
+#if __WINDOWS__
+			dbg->pid = -1;
+#elif __linux__
+			r_debug_bp_update (dbg);
+			r_bp_restore (dbg->bp, false); // (vdf) there has got to be a better way
+#endif
+		}
 
 		/* if continuing killed the inferior, we won't be able to get
 		 * the registers.. */
@@ -1408,7 +1459,7 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 	for (;;) {
 		RDebugReasonType reason;
 
-		if (r_cons_singleton ()->breaked)
+		if (r_cons_singleton ()->context->breaked)
 			break;
 #if __linux__
 		// step is needed to avoid dupped contsc results
@@ -1499,7 +1550,7 @@ R_API int r_debug_child_clone(RDebug *dbg) {
 	return 0;
 }
 
-R_API bool r_debug_is_dead (RDebug *dbg) {
+R_API bool r_debug_is_dead(RDebug *dbg) {
 	if (!dbg->h) {
 		return false;
 	}

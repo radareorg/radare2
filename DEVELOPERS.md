@@ -41,11 +41,11 @@ You may find some additional notes on this topic in doc/vim.
 
 ```c
 switch(n) {
-  case 1:
-    break;
-  case 2:
-    break;
-  default:
+case 1:
+	break;
+case 2:
+	break;
+default:
 }
 ```
 

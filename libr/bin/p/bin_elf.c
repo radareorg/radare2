@@ -51,21 +51,16 @@ static void setsymord(ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
 	if (!eobj->symbols_by_ord || ord >= eobj->symbols_by_ord_size) {
 		return;
 	}
-	free (eobj->symbols_by_ord[ord]);
-	eobj->symbols_by_ord[ord] = r_mem_dup (ptr, sizeof (RBinSymbol));
+	r_bin_symbol_free (eobj->symbols_by_ord[ord]);
+	eobj->symbols_by_ord[ord] = r_bin_symbol_clone (ptr);
 }
 
-static inline bool setimpord(ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
+static void setimpord(ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
 	if (!eobj->imports_by_ord || ord >= eobj->imports_by_ord_size) {
-		return false;
+		return;
 	}
-	if (eobj->imports_by_ord[ord]) {
-		free (eobj->imports_by_ord[ord]->name);
-		free (eobj->imports_by_ord[ord]);
-	}
-	eobj->imports_by_ord[ord] = r_mem_dup (ptr, sizeof (RBinImport));
-	eobj->imports_by_ord[ord]->name = strdup (ptr->name);
-	return true;
+	r_bin_import_free (eobj->imports_by_ord[ord]);
+	eobj->imports_by_ord[ord] = r_bin_import_clone (ptr);
 }
 
 static Sdb* get_sdb(RBinFile *bf) {
@@ -475,6 +470,46 @@ arm_symbol:
 	}
 }
 
+static RBinSymbol *convert_symbol(struct Elf_(r_bin_elf_obj_t) *bin,
+				  struct r_bin_elf_symbol_t *symbol,
+				  const char *namefmt) {
+	ut64 paddr = symbol->offset;
+	ut64 vaddr = Elf_(r_bin_elf_p2v) (bin, paddr);
+	RBinSymbol *ptr = NULL;
+
+	if (!(ptr = R_NEW0 (RBinSymbol))) {
+		return NULL;
+	}
+	ptr->name = symbol->name[0] ? r_str_newf (namefmt, &symbol->name[0]) : strdup("");
+	ptr->forwarder = r_str_const ("NONE");
+	ptr->bind = r_str_const (symbol->bind);
+	ptr->type = r_str_const (symbol->type);
+	ptr->paddr = paddr;
+	ptr->vaddr = vaddr;
+	ptr->size = symbol->size;
+	ptr->ordinal = symbol->ordinal;
+	// detect thumb
+	if (bin->ehdr.e_machine == EM_ARM && *ptr->name) {
+		_set_arm_thumb_bits (bin, &ptr);
+	}
+
+	return ptr;
+}
+
+static void insert_symbol(struct Elf_(r_bin_elf_obj_t) *bin,
+			  RBinSymbol *ptr,
+			  bool is_sht_null,
+			  RList *ret) {
+	// put the symbol in symbols_ord table
+	setsymord (bin, ptr->ordinal, ptr);
+	// add it to the list of symbols only if it doesn't point to SHT_NULL
+	if (is_sht_null) {
+		r_bin_symbol_free (ptr);
+	} else {
+		r_list_append (ret, ptr);
+	}
+}
+
 static RList* symbols(RBinFile *bf) {
 	struct Elf_(r_bin_elf_obj_t) *bin;
 	struct r_bin_elf_symbol_t *symbol = NULL;
@@ -491,63 +526,40 @@ static RList* symbols(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
+
+	// traverse symbols
 	if (!(symbol = Elf_(r_bin_elf_get_symbols) (bin))) {
 		return ret;
 	}
 	for (i = 0; !symbol[i].last; i++) {
-		ut64 paddr = symbol[i].offset;
-		ut64 vaddr = Elf_(r_bin_elf_p2v) (bin, paddr);
-		if (!(ptr = R_NEW0 (RBinSymbol))) {
+		ptr = convert_symbol (bin, &symbol[i], "%s");
+		if (!ptr) {
 			break;
 		}
-		ptr->name = strdup (symbol[i].name);
-		ptr->forwarder = r_str_const ("NONE");
-		ptr->bind = r_str_const (symbol[i].bind);
-		ptr->type = r_str_const (symbol[i].type);
-		ptr->paddr = paddr;
-		ptr->vaddr = vaddr;
-		ptr->size = symbol[i].size;
-		ptr->ordinal = symbol[i].ordinal;
-		setsymord (bin, ptr->ordinal, ptr);
-		if (bin->ehdr.e_machine == EM_ARM && *ptr->name) {
-			_set_arm_thumb_bits (bin, &ptr);
-		}
-		r_list_append (ret, ptr);
+		insert_symbol (bin, ptr, symbol[i].is_sht_null, ret);
 	}
+
+	// traverse imports
 	if (!(symbol = Elf_(r_bin_elf_get_imports) (bin))) {
 		return ret;
 	}
 	for (i = 0; !symbol[i].last; i++) {
-		ut64 paddr = symbol[i].offset;
-		ut64 vaddr = Elf_(r_bin_elf_p2v) (bin, paddr);
 		if (!symbol[i].size) {
 			continue;
 		}
-		if (!(ptr = R_NEW0 (RBinSymbol))) {
+
+		ptr = convert_symbol (bin, &symbol[i], "imp.%s");
+		if (!ptr) {
 			break;
 		}
-		// TODO(eddyb) make a better distinction between imports and other symbols.
-		//snprintf (ptr->name, R_BIN_SIZEOF_STRINGS-1, "imp.%s", symbol[i].name);
-		ptr->name = r_str_newf ("imp.%s", symbol[i].name);
-		ptr->forwarder = r_str_const ("NONE");
-		//strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
-		ptr->bind = r_str_const (symbol[i].bind);
-		ptr->type = r_str_const (symbol[i].type);
-		ptr->paddr = paddr;
-		ptr->vaddr = vaddr;
-		//special case where there is not entry in the plt for the import
+
+		// special case where there is not entry in the plt for the import
 		if (ptr->vaddr == UT32_MAX) {
 			ptr->paddr = 0;
 			ptr->vaddr = 0;
 		}
-		ptr->size = symbol[i].size;
-		ptr->ordinal = symbol[i].ordinal;
-		setsymord (bin, ptr->ordinal, ptr);
-		/* detect thumb */
-		if (bin->ehdr.e_machine == EM_ARM) {
-			_set_arm_thumb_bits (bin, &ptr);
-		}
-		r_list_append (ret, ptr);
+
+		insert_symbol (bin, ptr, symbol[i].is_sht_null, ret);
 	}
 	return ret;
 }
@@ -578,7 +590,7 @@ static RList* imports(RBinFile *bf) {
 		ptr->bind = r_str_const (import[i].bind);
 		ptr->type = r_str_const (import[i].type);
 		ptr->ordinal = import[i].ordinal;
-		(void)setimpord (bin, ptr->ordinal, ptr);
+		setimpord (bin, ptr->ordinal, ptr);
 		r_list_append (ret, ptr);
 	}
 	return ret;

@@ -31,26 +31,34 @@ commandline hexadecimal editor able to open disk files,
 but later support for analyzing binaries, disassembling
 code, debugging programs, attaching to remote gdb servers, ..
 
-   radare2 is portable.
+radare2 is portable.
 
-   * **Architectures:**
-	* 6502, 8051, CRIS, H8/300, LH5801, T8200, arc, arm, avr, bf, blackfin, xap,
-   dalvik, dcpu16, gameboy, i386, i4004, i8080, m68k, malbolge, mips, msil,
-   msp430, nios II, powerpc, rar, sh, snes, sparc, tms320 (c54x c55x c55+), V810,
-   x86-64, zimg, risc-v.
+## Architectures
 
-   * **File Formats:**
-	* bios, CGC, dex, elf, elf64, filesystem, java, fatmach0, mach0,
-   mach0-64, MZ, PE, PE+, TE, COFF, plan9, dyldcache, Commodore VICE emulator,
-   Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs.
+i386, x86-64, ARM, MIPS, PowerPC, SPARC, RISC-V, SH, m68k, AVR, XAP,
+System Z, XCore, CR16, HPPA, ARC, Blackfin, Z80, H8/300, V810, V850,
+CRIS, XAP, PIC, LM32, 8051, 6502, i4004, i8080, Propeller, Tricore, Chip8
+LH5801, T8200, GameBoy, SNES, MSP430, Xtensa, NIOS II,
+Dalvik, WebAssembly, MSIL, EBC, TMS320 (c54x, c55x, c55+, c66),
+Hexagon, Brainfuck, Malbolge, DCPU16
 
-   * **Operating Systems:**
-	* Android, GNU/Linux, [Net|Free|Open]BSD, iOS, OSX, QNX, w32,
-   w64, Solaris, Haiku, FirefoxOS
+## File Formats
 
-   * **Bindings:**
-	* Vala/Genie, Python (2, 3), NodeJS, Lua, Go, Perl,
-   Guile, php5, newlisp, Ruby, Java, OCaml, ...
+ELF, Mach-O, Fatmach-O, PE, PE+, MZ, COFF, OMF, TE, XBE, BIOS/UEFI,
+Dyldcache, DEX, ART, CGC, Java class, Android boot image, Plan9 executable,
+ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump),
+WASM (WebAssembly binary), Commodore VICE emulator, 
+Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs, various filesystems.
+
+## Operating Systems
+
+Windows (since XP), GNU/Linux, OS X, [Net|Free|Open]BSD,
+Android, iOS, OSX, QNX, Solaris, Haiku, FirefoxOS
+
+## Bindings
+
+Vala/Genie, Python (2, 3), NodeJS, Lua, Go, Perl,
+Guile, PHP, Newlisp, Ruby, Java, OCaml, ...
 
 # Dependencies
 

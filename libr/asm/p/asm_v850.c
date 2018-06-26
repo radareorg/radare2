@@ -10,6 +10,7 @@
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct v850_cmd cmd = {
+		.addr = a->pc,
 		.instr = "",
 		.operands = ""
 	};

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017 - pancake */
+/* radare - LGPL - Copyright 2017-2018 - pancake */
 
 #include "r_types_base.h"
 #include "r_io.h"
@@ -9,13 +9,33 @@
 
 static RSocket *gs = NULL;
 
+R_PACKED (struct winedbg_x86_32 {
+	ut16 cs;
+	ut16 ss;
+	ut16 ds;
+	ut16 es;
+	ut16 fs;
+	ut16 gs;
+	ut32 eip;
+	ut32 esp;
+	ut32 ebp;
+	ut32 eflags;
+	ut32 eax;
+	ut32 ebx;
+	ut32 ecx;
+	ut32 edx;
+	ut32 esi;
+	ut32 edi;
+});
+
+// TODO: make it vargarg...
 static char *runcmd (const char *cmd) {
 	char buf[4096] = {0};
 	if (cmd) {
 		r_socket_printf (gs, "%s\n", cmd);
 	}
 	int timeout = 1000000;
-	char * str = NULL;
+	char *str = NULL;
 	r_socket_block_time (gs, 1, timeout);
 	while (true) {
 		memset (buf, 0, sizeof (buf));
@@ -27,6 +47,7 @@ static char *runcmd (const char *cmd) {
 		}
 		str = r_str_append (str, buf);
 	}
+	free (str);
 	return NULL;
 }
 
@@ -38,13 +59,19 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	ut32 *w = (ut32*)buf;
 	int i;
 	int words = count / wordSize; // XXX must pad align to 4
-	if (count % wordSize) {
-		eprintf ("Buffer is not size-aligned\n");
-		return -1;
-	}
 	for (i = 0; i < words ; i++) {
 		ut64 addr = io->off + (i * wordSize);
 		char *cmd = r_str_newf ("set *0x%"PFMT64x" = 0x%x", addr, w[i]);
+		free (runcmd (cmd));
+		free (cmd);
+	}
+
+	int left = count % wordSize;
+	if (left > 0) {
+		ut32 leftW = -1;
+		memcpy (&leftW, w + words, left);
+		ut64 addr = io->off + (words * wordSize);
+		char *cmd = r_str_newf ("set *0x%"PFMT64x" = 0x%x", addr, leftW);
 		free (runcmd (cmd));
 		free (cmd);
 	}
@@ -55,6 +82,23 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	if (!fd || !fd->data) {
 		return -1;
 	}
+	if (count > (1024*128)) {
+		// cannot read that much
+		return -1;
+	}
+#if 0
+// TODO: use x/${count}b for performance and solve alignment issues
+Wine-dbg>x/128b 0x7b444730
+0x7b444730 _start_process+0x10a:  cc 83 ec 08 57 56 e8 b5 fe ff ff 83 c4 04 50 e8
+0x7b444740 _start_process+0x11a:  24 2f 01 00 83 c4 0c 8b 44 24 68 83 ec 08 ff 70
+0x7b444750 _start_process+0x12a:  5c 6a fe e8 27 2f 01 00 83 c4 08 e8 34 de 01 00
+0x7b444760 _debugstr_w:  55 89 e5 83 ec 08 83 ec 08 6a ff 51 e8 45 e0 01
+0x7b444770 _debugstr_w+0x10:  00 83 c4 18 5d c3 55 89 e5 53 57 56 83 e4 f0 81
+0x7b444780 ___wine_kernel_init+0xa:  ec e0 0e 00 00 e8 00 00 00 00 5e 64 a1 18 00 00
+0x7b444790 ___wine_kernel_init+0x1a:  00 89 44 24 40 8b 40 30 89 44 24 44 8b 78 10 8b
+0x7b4447a0 ___wine_kernel_init+0x2a:  86 ca 48 1b 00 83 ec 08 31 db 53 ff 30 e8 e4 de
+Wine-dbg>
+#endif
 	int wordSize = 4;
 	ut32 *w = (ut32*)buf;
 	int i;
@@ -64,8 +108,10 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		ut64 addr = io->off + (i * wordSize);
 		char *cmd = r_str_newf ("x 0x%"PFMT64x, addr);
 		char *res = runcmd (cmd);
-		sscanf (res, "%x", &w[i]);
-		free (res);
+		if (res) {
+			sscanf (res, "%x", &w[i]);
+			free (res);
+		}
 		free (cmd);
 	}
 
@@ -140,26 +186,6 @@ static void printcmd (RIO *io, const char *cmd) {
 	io->cb_printf ("%s\n", res);
 	free (res);
 }
-
-R_PACKED (
-struct winedbg_x86_32 {
-	ut16 cs;
-	ut16 ss;
-	ut16 ds;
-	ut16 es;
-	ut16 fs;
-	ut16 gs;
-	ut32 eip;
-	ut32 esp;
-	ut32 ebp;
-	ut32 eflags;
-	ut32 eax;
-	ut32 ebx;
-	ut32 ecx;
-	ut32 edx;
-	ut32 esi;
-	ut32 edi;
-});
 
 static struct winedbg_x86_32 regState() {
 	struct winedbg_x86_32 r = {0};
@@ -261,6 +287,24 @@ const char *msg =
 "flg	rf	.1	.202	0\n"\
 "flg	vm	.1	.203	0\n";
 		return strdup (msg);
+	} else if (!strncmp (cmd, "dr*", 2)) {
+		struct winedbg_x86_32 r = regState ();
+		io->cb_printf ("f eip = 0x%08x\n", r.eip);
+		io->cb_printf ("f esp = 0x%08x\n", r.esp);
+		io->cb_printf ("f ebp = 0x%08x\n", r.ebp);
+		io->cb_printf ("f eax = 0x%08x\n", r.eax);
+		io->cb_printf ("f ebx = 0x%08x\n", r.ebx);
+		io->cb_printf ("f ecx = 0x%08x\n", r.ecx);
+		io->cb_printf ("f edx = 0x%08x\n", r.edx);
+		io->cb_printf ("f esi = 0x%08x\n", r.esi);
+		io->cb_printf ("f edi = 0x%08x\n", r.edi);
+		io->cb_printf ("f eflags = 0x%08x\n", r.eflags);
+		io->cb_printf ("f cs = 0x%08x\n", r.cs);
+		io->cb_printf ("f ss = 0x%08x\n", r.ss);
+		io->cb_printf ("f ds = 0x%08x\n", r.ds);
+		io->cb_printf ("f es = 0x%08x\n", r.es);
+		io->cb_printf ("f fs = 0x%08x\n", r.fs);
+		io->cb_printf ("f gs = 0x%08x\n", r.gs);
 	} else if (!strncmp (cmd, "dr", 2)) {
 		printcmd (io, "info reg");
 	} else if (!strncmp (cmd, "db ", 3)) {
@@ -294,7 +338,7 @@ const char *msg =
 					sscanf (ptr, "%08"PFMT64x" %08"PFMT64x, &from, &to);
 				}
 				char *row = r_str_newf ("0x%08"PFMT64x" - 0x%08" PFMT64x" %s %s\n", from, to, perm, "");
-				ptr = nl + 1;
+				ptr = nl;
 				res = r_str_append (res, row);
 				free (row);
 			}

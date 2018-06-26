@@ -137,6 +137,32 @@ typedef struct r_core_asmsteps_t {
 
 typedef struct r_core_task_t RCoreTask;
 
+typedef enum r_core_autocomplete_types_t {
+	R_CORE_AUTOCMPLT_DFLT = 0,
+	R_CORE_AUTOCMPLT_FLAG,
+	R_CORE_AUTOCMPLT_FLSP,
+	R_CORE_AUTOCMPLT_ZIGN,
+	R_CORE_AUTOCMPLT_EVAL,
+	R_CORE_AUTOCMPLT_PRJT,
+	R_CORE_AUTOCMPLT_MINS,
+	R_CORE_AUTOCMPLT_BRKP,
+	R_CORE_AUTOCMPLT_MACR,
+	R_CORE_AUTOCMPLT_FILE,
+	R_CORE_AUTOCMPLT_THME,
+	R_CORE_AUTOCMPLT_OPTN,
+// --- left as last always
+	R_CORE_AUTOCMPLT_END,
+} RCoreAutocompleteType;
+
+typedef struct r_core_autocomplete_t {
+	const char* cmd;
+	int length;
+	int n_subcmds;
+	bool locked;
+	int type;
+	struct r_core_autocomplete_t** subcmds;
+} RCoreAutocomplete;
+
 typedef struct r_core_t {
 	RBin *bin;
 	RConfig *config;
@@ -224,6 +250,7 @@ typedef struct r_core_t {
 	bool fixedbits;
 	bool fixedarch;
 	struct r_core_t *c2;
+	RCoreAutocomplete *autocomplete;
 } RCore;
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd);
@@ -696,7 +723,7 @@ typedef struct r_core_task_t {
 	char *cmd;
 	char *res;
 	bool cmd_log;
-	RStack *cons;
+	RConsContext *cons_context;
 	RCoreTaskCallback cb;
 } RCoreTask;
 
@@ -704,7 +731,7 @@ R_API RCoreTask *r_core_task_get(RCore *core, int id);
 R_API void r_core_task_print(RCore *core, RCoreTask *task, int mode);
 R_API void r_core_task_list(RCore *core, int mode);
 R_API const char *r_core_task_status(RCoreTask *task);
-R_API RCoreTask *r_core_task_new(RCore *core, const char *cmd, RCoreTaskCallback cb, void *user);
+R_API RCoreTask *r_core_task_new(RCore *core, bool create_cons, const char *cmd, RCoreTaskCallback cb, void *user);
 R_API void r_core_task_free(RCoreTask *task);
 R_API void r_core_task_enqueue(RCore *core, RCoreTask *task);
 R_API int r_core_task_run_sync(RCore *core, RCoreTask *task);
@@ -721,6 +748,11 @@ typedef void (*inRangeCb) (RCore *core, ut64 from, ut64 to, int vsize,
 			   bool asterisk, int count);
 R_API int r_core_search_value_in_range (RCore *core, RInterval search_itv,
 		ut64 vmin, ut64 vmax, int vsize, bool asterisk, inRangeCb cb);
+
+R_API RCoreAutocomplete *r_core_autocomplete_add(RCoreAutocomplete *parent, const char* cmd, int type, bool lock);
+R_API void r_core_autocomplete_free(RCoreAutocomplete *obj);
+R_API RCoreAutocomplete *r_core_autocomplete_find(RCoreAutocomplete *parent, const char* cmd, bool exact);
+R_API bool r_core_autocomplete_remove(RCoreAutocomplete *parent, const char* cmd);
 
 /* PLUGINS */
 extern RCorePlugin r_core_plugin_java;

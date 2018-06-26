@@ -3187,7 +3187,7 @@ R_API int r_core_anal_ref_list(RCore *core, int rad) {
 static bool isValidSymbol(RBinSymbol *symbol) {
 	if (symbol && symbol->type) {
 		const char *type = symbol->type;
-		return (!strcmp (type, "FUNC") || !strcmp (type, "METH"));
+		return (!strcmp (type, R_BIN_TYPE_FUNC_STR) || !strcmp (type, "METH"));
 	}
 	return false;
 }

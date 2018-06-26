@@ -43,7 +43,7 @@ typedef struct {
 } RapThread;
 
 R_API void r_core_wait(RCore *core) {
-	r_cons_singleton () -> breaked = true;
+	r_cons_singleton ()->context->breaked = true;
 	r_th_kill (httpthread, true);
 	r_th_kill (rapthread, true);
 	r_th_wait (httpthread);
@@ -342,7 +342,7 @@ R_API int r_core_rtr_http_stop(RCore *u) {
 	RSocket* sock;
 
 #if __WINDOWS__
-	r_socket_http_server_set_breaked (&r_cons_singleton ()->breaked);
+	r_socket_http_server_set_breaked (&r_cons_singleton ()->context->breaked);
 #endif
 	if (((size_t)u) > 0xff) {
 		port = listenport? listenport: r_config_get (
@@ -466,6 +466,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 		eprintf ("Cannot listen on http.port\n");
 		return 1;
 	}
+
 	if (launch=='H') {
 		const char *browser = r_config_get (core->config, "http.browser");
 		r_sys_cmdf ("%s http://%s:%d/%s &",
@@ -525,7 +526,8 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 
 		/* this is blocking */
 		activateDieTime (core);
-		rs = r_socket_http_accept (s, timeout);
+
+		rs = r_socket_http_accept (s, 1, timeout);
 
 		origoff = core->offset;
 		origblk = core->block;
@@ -1668,14 +1670,14 @@ static bool r_core_rtr_rap_run(RCore *core, const char *input) {
 	if (fd) {
 		if (r_io_is_listener (core->io)) {
 			if (!r_core_serve (core, fd)) {
-				r_cons_singleton () -> breaked = true;
+				r_cons_singleton () ->context->breaked = true;
 			}
 			r_io_desc_free (fd);
 		}
 	} else {
-		r_cons_singleton ()->breaked = true;
+		r_cons_singleton ()->context->breaked = true;
 	}
-	return !r_cons_singleton ()->breaked;
+	return !r_cons_singleton ()->context->breaked;
 	// r_core_cmdf (core, "o rap://%s", input);
 }
 

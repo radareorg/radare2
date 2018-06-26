@@ -7,6 +7,7 @@ files = [
   'filter.c',
   'file.c',
   'obj.c',
+  'open.c',
   'p/bin_any.c',
   'p/bin_art.c',
   'p/bin_avr.c',

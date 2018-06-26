@@ -38,6 +38,7 @@ typedef struct r_bin_elf_symbol_t {
 	char name[ELF_STRING_LENGTH];
 	int last;
 	bool in_shdr;
+	bool is_sht_null;
 } RBinElfSymbol;
 
 typedef struct r_bin_elf_reloc_t {

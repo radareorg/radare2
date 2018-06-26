@@ -49,7 +49,9 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 		return false;
 	}
 	ut8 *obuf = calloc (1, len);
-	if (!obuf) return false;
+	if (!obuf) {
+		return false;
+	}
 	ror_crypt (&st, buf, obuf, len);
 	r_crypto_append (cry, obuf, len);
 	free (obuf);
