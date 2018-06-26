@@ -172,7 +172,7 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, const char* cc, i
 				r_anal_op_fini (op);
 				break;
 			}
-			RAnalVar *var = op ? op->var: NULL;
+			RAnalVar *var = (op && op->var && op->var->kind != 'r') ? op->var: NULL;
 			// Match type from function param to instr
 			if (type_pos_hit (anal, trace, in_stack, j, size, place)) {
 				if (!cmt_set) {
@@ -309,8 +309,10 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			// Forward propgation of function return type
 			if (!resolved && ret_type && ret_reg) {
 				const char *reg = get_regname (anal, trace, cur_idx);
-				if (reg && !strcmp (reg, ret_reg) && aop.var) {
-					var_retype (anal, aop.var, aop.var->name, ret_type, addr);
+				//TODO: Type inference for register based arg
+				RAnalVar *var = (aop.var && aop.var && (aop.var->kind != 'r'))? aop.var: NULL;
+				if (reg && !strcmp (reg, ret_reg) && var) {
+					var_retype (anal, aop.var, var->name, ret_type, addr);
 					resolved = true;
 				}
 				if (SDB_CONTAINS (cur_idx, ret_reg)) {

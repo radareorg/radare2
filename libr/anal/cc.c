@@ -25,6 +25,22 @@ R_API const char *r_anal_cc_arg(RAnal *anal, const char *convention, int n) {
 
 }
 
+R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
+	int ret = 0;
+	const char *query, *res;
+	if (!anal || !cc) {
+		return 0;
+	}
+	do {
+		query = sdb_fmt ("cc.%s.arg%d", cc, ret + 1);
+		res = sdb_const_get (DB, query, 0);
+		if (res) {
+			ret++;
+		}
+	} while (res && ret < 6);
+	return ret;
+}
+
 R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention) {
 	char *query = sdb_fmt ("cc.%s.ret", convention);
 	return sdb_const_get (DB, query, 0);

@@ -1635,8 +1635,9 @@ static void ds_show_functions(RDisasmState *ds) {
 					eprintf("Register not found");
 					break;
 				}
-				r_cons_printf ("reg %s %s @ %s",
-					var->type, var->name, i->name);
+				r_cons_printf ("reg %s%s%s @ %s",
+					var->type, r_str_endswith (var->type, "*") ? "" : " ",
+					var->name, i->name);
 				}
 				break;
 			case 's': {

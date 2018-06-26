@@ -372,13 +372,15 @@ static void set_offset_hint(RCore *core, RAnalOp op, const char *type, ut64 ladd
 	}
 }
 
-static int get_stacksz (RCore *core, ut64 from, ut64 to, int minopcode) {
-	int ret = 0;
+R_API int r_core_get_stacksz (RCore *core, ut64 from, ut64 to) {
+	int stack = 0, maxstack = 0;
 	ut64 at = from;
 
 	if (from >= to) {
 		return 0;
 	}
+	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	const int minopcode = R_MAX (1, mininstrsz);
 	while (at < to) {
 		RAnalOp *op = r_core_anal_op (core, at, R_ANAL_OP_MASK_BASIC);
 		if (!op || op->size <= 0) {
@@ -386,12 +388,15 @@ static int get_stacksz (RCore *core, ut64 from, ut64 to, int minopcode) {
 			continue;
 		}
 		if ((op->stackop == R_ANAL_STACK_INC) && R_ABS (op->stackptr) < 8096) {
-			ret += op->stackptr;
+			stack += op->stackptr;
+			if (stack > maxstack) {
+				maxstack = stack;
+			}
 		}
 		at += op->size;
 		r_anal_op_fini (op);
 	}
-	return ret;
+	return maxstack;
 }
 
 static void set_retval (RCore *core, ut64 at) {
@@ -459,7 +464,7 @@ static void link_struct_offset(RCore *core, RAnalFunction *fcn) {
 		// reset stack pointer to intial value
 		RRegItem *sp = r_reg_get (esil->anal->reg, sp_name, -1);
 		ut64 curpc = r_reg_getv (esil->anal->reg, pc_name);
-		int stacksz = get_stacksz (core, fcn->addr, curpc, minopcode);
+		int stacksz = r_core_get_stacksz (core, fcn->addr, curpc);
 		if (stacksz > 0) {
 			r_reg_arena_zero (esil->anal->reg); // clear prev reg values
 			r_reg_set_value (esil->anal->reg, sp, spval + stacksz);
@@ -520,7 +525,8 @@ static void link_struct_offset(RCore *core, RAnalFunction *fcn) {
 			char *slink = r_type_link_at (TDB, src_addr);
 			char *vlink = r_type_link_at (TDB, src_addr + src_imm);
 			char *dlink = r_type_link_at (TDB, dst_addr);
-			if (vlink && var) {
+			//TODO: Handle register based arg for struct offset propgation
+			if (vlink && var && var->kind != 'r') {
 				if (r_type_kind (TDB, vlink) == R_TYPE_UNION) {
 					varpfx = "union";
 				} else {
