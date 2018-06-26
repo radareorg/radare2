@@ -549,7 +549,7 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd);
 R_API void r_core_sysenv_end(RCore *core, const char *cmd);
 R_API void r_core_sysenv_help(const RCore* core);
 
-R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn);
+R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly);
 /* bin.c */
 #define R_CORE_BIN_PRINT	0x000 
 #define R_CORE_BIN_RADARE	0x001

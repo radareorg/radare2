@@ -1455,6 +1455,8 @@ R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int i
 R_API const char *r_anal_var_scope_to_str(RAnal *anal, int scope);
 R_API int r_anal_var_access_add(RAnal *anal, RAnalVar *var, ut64 from, int set);
 R_API int r_anal_var_access_del(RAnal *anal, RAnalVar *var, ut64 from);
+R_API void extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op);
+R_API void extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count);
 R_API RAnalVarAccess *r_anal_var_access_get(RAnal *anal, RAnalVar *var, ut64 from);
 R_API RAnalVar *r_anal_var_get_byname (RAnal *anal, RAnalFunction *fcn, const char* name);
 
