@@ -28,7 +28,7 @@ R_API int r_bin_open(RBin *bin, const char *filename, RBinOptions *bo) {
 		rawstr = bo->rawstr;
 	}
 	if (r_bin_load (bin, filename, baddr, laddr, xtr_idx, iofd, rawstr)) {
-		int id = bin->cur->id;
+		int id = bin->cur->id; // TODO rename to bd?
 		r_id_storage_set (bin->ids, bin->cur, id);
 		return id;
 	}

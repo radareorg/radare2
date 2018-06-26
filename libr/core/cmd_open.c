@@ -1440,7 +1440,21 @@ static int cmd_open(void *data, const char *input) {
 				} else {
 					fd = core->io->desc->fd;
 				}
-				r_io_reopen (core->io, fd, R_IO_READ, 644);
+				if (r_config_get_i (core->config, "cfg.debug")) {
+					RBinFile *bf = r_core_bin_cur (core);
+					if (bf && r_file_exists (bf->file)) {
+						char *file = strdup (bf->file);
+						r_core_cmd0 (core, "ob-*");
+						r_io_close_all (core->io);
+						r_config_set (core->config, "cfg.debug", "false");
+						r_core_cmdf (core, "o %s", file);
+						free (file);
+					} else {
+						eprintf ("Nothing to do.\n");
+					}
+				} else {
+					r_io_reopen (core->io, fd, R_IO_READ, 644);
+				}
 			}
 			break;
 		case '?':
