@@ -1003,6 +1003,9 @@ repeat:
 			bb->stackptr = 0;
 			break;
 		}
+		if (anal->opt.vars) {
+			extract_vars(anal, fcn, &op);
+		}
 		if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
 			// swapped parameters wtf
 			r_anal_xrefs_set (anal, op.addr, op.ptr, R_ANAL_REF_TYPE_DATA);

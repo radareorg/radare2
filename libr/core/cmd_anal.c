@@ -955,7 +955,7 @@ static int var_cmd(RCore *core, const char *str) {
 		r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_REG);
 		r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_BPV);
 		r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_SPV);
-		r_core_recover_vars (core, fcn);
+		r_core_recover_vars (core, fcn, false);
 		free (p);
 		return true;
 	case 'n':
@@ -2780,7 +2780,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				if (r_cons_is_breaked ()) {
 					break;
 				}
-				r_core_recover_vars (core, fcni);
+				r_core_recover_vars (core, fcni, true);
 			}
 		}
 		flag_every_function (core);
@@ -6789,6 +6789,17 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				if (r_config_get_i (core->config, "anal.autoname")) {
 					r_core_anal_autoname_all_fcns (core);
 					rowlog_done (core);
+				}
+				if (core->anal->opt.vars) {
+					RAnalFunction *fcni;
+					RListIter *iter;
+					r_list_foreach (core->anal->fcns, iter, fcni) {
+						if (r_cons_is_breaked ()) {
+							break;
+						}
+						//extract only reg based var here
+						r_core_recover_vars (core, fcni, true);
+					}
 				}
 				if (input[1] == 'a') { // "aaaa"
 					bool ioCache = r_config_get_i (core->config, "io.cache");

@@ -235,7 +235,7 @@ static int parse(RParse *p, const char *data, char *str) {
 }
 
 static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
-	RList *spargs, *bpargs, *regargs;
+	RList *spargs, *bpargs;
 	RAnalVar *var;
 	RListIter *iter;
 	char *oldstr, *newstr;
@@ -275,7 +275,6 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		}
 	}
 
-	regargs = p->varlist (p->anal, f, 'r');
 	bpargs = p->varlist (p->anal, f, 'b');
 	spargs = p->varlist (p->anal, f, 's');
 	bool ucase = IS_UPPER (*tstr);
@@ -373,12 +372,6 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 			break;
 		}
 		free (oldstr);
-	}
-	r_list_foreach (regargs, iter, var) {
-		RRegItem *r = r_reg_index_get (p->anal->reg, var->delta);
-		if (r && r->name && strstr (tstr, r->name)) {
-			tstr = r_str_replace (tstr, r->name, var->name, 1);
-		}
 	}
 	if (len > strlen (tstr)) {
 		strncpy (str, tstr, strlen (tstr));

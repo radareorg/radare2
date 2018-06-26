@@ -394,7 +394,7 @@ R_API int r_core_get_stacksz (RCore *core, ut64 from, ut64 to) {
 			}
 		}
 		at += op->size;
-		r_anal_op_fini (op);
+		r_anal_op_free (op);
 	}
 	return maxstack;
 }
