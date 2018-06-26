@@ -538,7 +538,7 @@ R_API const char *r_cons_pal_get_name(int index) {
 	return (index >= 0 && index < keys_len) ? keys[index].name : NULL;
 }
 
-R_API const int r_cons_pal_len() {
+R_API int r_cons_pal_len() {
 	return keys_len;
 }
 

@@ -44,7 +44,7 @@ static int textlog_chat(RCore *core) {
 	char buf[1024];
 	int lastmsg = 0;
 	const char *me = r_config_get (core->config, "cfg.user");
-	char msg[1024];
+	char msg[2048];
 
 	eprintf ("Type '/help' for commands:\n");
 	snprintf (prompt, sizeof (prompt) - 1, "[%s]> ", me);
@@ -83,7 +83,7 @@ static int textlog_chat(RCore *core) {
 		} else if (*buf == '/') {
 			eprintf ("Unknown command: %s\n", buf);
 		} else {
-			snprintf (msg, sizeof (msg) - 1, "[%s] %s", me, buf);
+			snprintf (msg, sizeof (msg), "[%s] %s", me, buf);
 			r_core_log_add (core, msg);
 		}
 	}
