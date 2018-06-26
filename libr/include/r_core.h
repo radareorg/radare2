@@ -715,6 +715,7 @@ typedef enum {
 typedef struct r_core_task_t {
 	int id;
 	RTaskState state;
+	RThreadLock *running_lock;
 	void *user;
 	RCore *core;
 	RThreadCond *dispatch_cond;

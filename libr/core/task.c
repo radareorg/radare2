@@ -41,7 +41,7 @@ R_API void r_core_task_print (RCore *core, RCoreTask *task, int mode) {
 	}
 }
 
-R_API void r_core_task_list (RCore *core, int mode) {
+R_API void r_core_task_list(RCore *core, int mode) {
 	RListIter *iter;
 	RCoreTask *task;
 	if (mode == 'j') {
@@ -58,7 +58,16 @@ R_API void r_core_task_list (RCore *core, int mode) {
 	}
 }
 
-R_API void r_core_task_join (RCore *core, RCoreTask *current, RCoreTask *task) {
+static void task_join(RCoreTask *task) {
+	RThreadLock *lock = task->running_lock;
+	if (!lock) {
+		return;
+	}
+	r_th_lock_wait (lock);
+	r_th_lock_leave (lock);
+}
+
+R_API void r_core_task_join(RCore *core, RCoreTask *current, RCoreTask *task) {
 	RListIter *iter;
 	if (current && task == current) {
 		return;
@@ -67,7 +76,7 @@ R_API void r_core_task_join (RCore *core, RCoreTask *current, RCoreTask *task) {
 		if (current) {
 			r_core_task_sleep_begin (current);
 		}
-		r_th_wait (task->thread);
+		task_join (task);
 		if (current) {
 			r_core_task_sleep_end (current);
 		}
@@ -79,7 +88,7 @@ R_API void r_core_task_join (RCore *core, RCoreTask *current, RCoreTask *task) {
 			if (current) {
 				r_core_task_sleep_begin (current);
 			}
-			r_th_wait (task->thread);
+			task_join (task);
 			if (current) {
 				r_core_task_sleep_end (current);
 			}
@@ -87,7 +96,7 @@ R_API void r_core_task_join (RCore *core, RCoreTask *current, RCoreTask *task) {
 	}
 }
 
-R_API RCoreTask *r_core_task_new (RCore *core, bool create_cons, const char *cmd, RCoreTaskCallback cb, void *user) {
+R_API RCoreTask *r_core_task_new(RCore *core, bool create_cons, const char *cmd, RCoreTaskCallback cb, void *user) {
 	RCoreTask *task = R_NEW0 (RCoreTask);
 	if (!task) {
 		goto hell;
@@ -97,6 +106,7 @@ R_API RCoreTask *r_core_task_new (RCore *core, bool create_cons, const char *cmd
 	task->cmd = cmd ? strdup (cmd) : NULL;
 	task->cmd_log = false;
 	task->res = NULL;
+	task->running_lock = NULL;
 	task->dispatch_cond = r_th_cond_new ();
 	task->dispatch_lock = r_th_lock_new (false);
 	if (!task->dispatch_cond || !task->dispatch_lock) {
@@ -130,6 +140,7 @@ R_API void r_core_task_free (RCoreTask *task) {
 	free (task->cmd);
 	free (task->res);
 	r_th_free (task->thread);
+	r_th_lock_free (task->running_lock);
 	r_th_cond_free (task->dispatch_cond);
 	r_th_lock_free (task->dispatch_lock);
 	r_cons_context_free (task->cons_context);
@@ -259,6 +270,10 @@ static int task_run(RCoreTask *task) {
 		task->cb (task->user, task->res);
 	}
 
+	if (task->running_lock) {
+		r_th_lock_leave (task->running_lock);
+	}
+
 	return res;
 }
 
@@ -268,6 +283,12 @@ static int task_run_thread(RThread *th) {
 
 R_API void r_core_task_enqueue(RCore *core, RCoreTask *task) {
 	r_th_lock_enter (core->tasks_lock);
+	if (!task->running_lock) {
+		task->running_lock = r_th_lock_new (false);
+	}
+	if (task->running_lock) {
+		r_th_lock_enter (task->running_lock);
+	}
 	r_list_append (core->tasks, task);
 	task->thread = r_th_new (task_run_thread, task, 0);
 	r_th_lock_leave (core->tasks_lock);
