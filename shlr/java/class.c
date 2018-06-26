@@ -3789,6 +3789,9 @@ R_API RBinJavaAttrInfo *r_bin_java_line_number_table_attr_new(ut8 *buffer, ut64 
 		if (!lnattr) {
 			break;
 		}
+		if (offset + 8 >= sz) {
+			break;
+		}
 		lnattr->start_pc = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
 		lnattr->line_number = R_BIN_JAVA_USHORT (buffer, offset);
