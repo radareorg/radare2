@@ -1136,18 +1136,22 @@ static int cmd_open(void *data, const char *input) {
 #endif
 	case 'p': // "op"
 		/* handle prioritize */
-		{
+		if (input[1]) {
 			int fd = r_num_math (core->num, input + 1);
 			if (fd) {
 				RIODesc *desc = r_io_desc_get (core->io, fd);
 				if (desc) {
 					// only useful for io.va=0
 					core->io->desc = desc;
+#if 0
 					// load bininfo for given fd
 					r_core_cmdf (core, "ob %d", fd);
+#endif
 				}
 			}
 			r_core_block_read (core);
+		} else {
+			r_cons_printf ("%d\n", core->io->desc->fd);
 		}
 		return 0;
 		break;
