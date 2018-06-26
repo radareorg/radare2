@@ -728,7 +728,7 @@ R_API void r_cons_pal_random(void);
 R_API RColor r_cons_pal_get(const char *key);
 R_API RColor r_cons_pal_get_i(int index);
 R_API const char *r_cons_pal_get_name(int index);
-R_API const int r_cons_pal_len();
+R_API int r_cons_pal_len();
 R_API int r_cons_rgb_parse(const char *p, ut8 *r, ut8 *g, ut8 *b, ut8 *a);
 R_API char *r_cons_rgb_tostring(ut8 r, ut8 g, ut8 b);
 R_API void r_cons_pal_list(int rad, const char *arg);

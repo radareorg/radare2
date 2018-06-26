@@ -273,7 +273,7 @@ static void seek_to_register(RCore *core, const char *input, bool is_silent) {
 }
 
 static int cmd_seek_opcode_backward(RCore *core, int n) {
-	int xx = 0, val = 0;
+	int val = 0;
 	// N previous instructions
 	ut64 addr = core->offset;
 	int ret = 0;
@@ -287,14 +287,10 @@ static int cmd_seek_opcode_backward(RCore *core, int n) {
 		ret = r_core_asm_bwdis_len (core, &instr_len, &addr, numinstr);
 #endif
 		ut64 prev_addr = prevop_addr (core, core->offset);
-		if (prev_addr > core->offset) {
-			// prev_roff = 0;
-			xx = 1;
-		} else {
+		if (prev_addr <= core->offset) {
 			RAsmOp op;
-			// prev_roff = 0;
 			r_core_seek (core, prev_addr, 1);
-			xx = r_asm_disassemble (core->assembler, &op,
+			r_asm_disassemble (core->assembler, &op,
 					core->block, 32);
 			val += op.size;
 			return val;
