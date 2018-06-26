@@ -441,6 +441,8 @@ R_API RList *r_core_get_func_args(RCore *core, const char *func_name);
 R_API void r_core_print_func_args(RCore *core);
 R_API char *resolve_fcn_name(RAnal *anal, const char * func_name);
 
+R_API int r_core_get_stacksz (RCore *core, ut64 from, ut64 to);
+
 /* anal.c */
 R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask);
 R_API void r_core_anal_esil(RCore *core, const char *str, const char *addr);
@@ -547,7 +549,7 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd);
 R_API void r_core_sysenv_end(RCore *core, const char *cmd);
 R_API void r_core_sysenv_help(const RCore* core);
 
-R_API void fcn_callconv (RCore *core, RAnalFunction *fcn);
+R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn);
 /* bin.c */
 #define R_CORE_BIN_PRINT	0x000 
 #define R_CORE_BIN_RADARE	0x001

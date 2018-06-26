@@ -955,7 +955,7 @@ static int var_cmd(RCore *core, const char *str) {
 		r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_REG);
 		r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_BPV);
 		r_anal_var_delete_all (core->anal, fcn->addr, R_ANAL_VAR_KIND_SPV);
-		fcn_callconv (core, fcn);
+		r_core_recover_vars (core, fcn);
 		free (p);
 		return true;
 	case 'n':
@@ -2687,6 +2687,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		int depth = r_config_get_i (core->config, "anal.depth");
 		bool analyze_recursively = r_config_get_i (core->config, "anal.calls");
 		RAnalFunction *fcn;
+		RAnalFunction *fcni;
+		RListIter *iter;
 		ut64 addr = core->offset;
 		if (input[1] == 'r') {
 			input++;
@@ -2767,12 +2769,19 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				r_list_free (refs);
 			}
 		}
-
 		if (name) {
 			if (*name && !setFunctionName (core, addr, name, true)) {
 				eprintf ("Cannot find function '%s' at 0x%08" PFMT64x "\n", name, (ut64)addr);
 			}
 			free (name);
+		}
+		if (core->anal->opt.vars) {
+			r_list_foreach (core->anal->fcns, iter, fcni) {
+				if (r_cons_is_breaked ()) {
+					break;
+				}
+				r_core_recover_vars (core, fcni);
+			}
 		}
 		flag_every_function (core);
 	}

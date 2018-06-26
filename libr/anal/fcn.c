@@ -387,35 +387,6 @@ static RAnalBlock *appendBasicBlock(RAnal *anal, RAnalFunction *fcn, ut64 addr) 
 		r_anal_fcn_set_size (NULL, fcn, 0);\
 		return R_ANAL_RET_ERROR; }
 
-// ETOOSLOW
-static char *get_varname(RAnal *a, RAnalFunction *fcn, char type, const char *pfx, int idx) {
-	char *varname = r_str_newf ("%s_%xh", pfx, idx);
-	int i = 2;
-	char v_kind;
-	int v_delta;
-	while (1) {
-		char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", fcn->addr, 1, varname);
-		char *name_value = sdb_get (DB, name_key, 0);
-		if (!name_value) {
-			break;
-		}
-		const char *comma = strchr (name_value, ',');
-		if (comma && *comma) {
-			v_delta = r_num_math (NULL, comma + 1);
-			v_kind = *name_value;
-		}
-		if (v_kind == type && R_ABS (v_delta) == idx) {
-			free (name_value);
-			return varname;
-		}
-		free (varname);
-		free (name_value);
-		varname = r_str_newf ("%s_%xh_%d", pfx, idx, i);
-		i++;
-	}
-	return varname;
-}
-
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 len, int depth);
 #define recurseAt(x) {\
 		ut8 *bbuf = malloc (MAXBBSIZE);\
@@ -544,75 +515,6 @@ static ut64 search_reg_val(RAnal *anal, ut8 *buf, ut64 len, ut64 addr, char *reg
 
 #define gotoBeach(x) ret = x; goto beach;
 #define gotoBeachRet() goto beach;
-
-static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
-	char sigstr[16] = {0};
-	st64 ptr;
-	char *addr;
-	if (!anal || !fcn || !op) {
-		return;
-	}
-	// snprintf (sigstr, sizeof (sigstr), ",%s,%s", reg, sign);
-	snprintf (sigstr, sizeof (sigstr), ",%s,%s", reg, sign);
-	const char *op_esil = r_strbuf_get (&op->esil);
-	if (!op_esil) {
-		return;
-	}
-	char *esil_buf = strdup (op_esil);
-	if (!esil_buf) {
-		return;
-	}
-	char *ptr_end = strstr (esil_buf, sigstr);
-	if (!ptr_end) {
-		free (esil_buf);
-		return;
-	}
-	*ptr_end = 0;
-	addr = ptr_end;
-	while ((addr[0] != '0' || addr[1] != 'x') && addr >= esil_buf + 1 && *addr != ',') {
-		addr--;
-	}
-	if (strncmp (addr, "0x", 2)) {
-		//XXX: This is a workaround for inconsistent esil
-		if ((op->stackop == R_ANAL_STACK_SET) || (op->stackop == R_ANAL_STACK_GET)) {
-			ptr = R_ABS (op->ptr);
-			if (ptr%4) {
-				goto beach;
-			}
-		} else {
-			goto beach;
-		}
-	} else {
-		ptr = (st64) r_num_get (NULL, addr);
-	}
-	int rw = (op->direction == R_ANAL_OP_DIR_WRITE) ? 1 : 0;
-	if (*sign == '+') {
-		const char *pfx = ((ptr < fcn->maxstack) && (type == 's')) ? VARPREFIX : ARGPREFIX;
-		bool isarg = strcmp(pfx , ARGPREFIX) ? false : true;
-		char *varname = get_varname (anal, fcn, type, pfx, R_ABS (ptr));
-		r_anal_var_add (anal, fcn->addr, 1, ptr, type, NULL, anal->bits / 8, isarg, varname);
-		r_anal_var_access (anal, fcn->addr, type, 1, ptr, rw, op->addr);
-		free (varname);
-	} else {
-		char *varname = get_varname (anal, fcn, type, VARPREFIX, R_ABS (ptr));
-		r_anal_var_add (anal, fcn->addr, 1, -ptr, type, NULL, anal->bits / 8, 0, varname);
-		r_anal_var_access (anal, fcn->addr, type, 1, -ptr, rw, op->addr);
-		free (varname);
-	}
-beach:
-	free (esil_buf);
-}
-
-R_API void r_anal_fcn_fill_args(RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
-	if (!anal || !fcn || !op) {
-		return;
-	}
-	const char *BP = anal->reg->name[R_REG_NAME_BP];
-	const char *SP =  anal->reg->name[R_REG_NAME_SP];
-	extract_arg (anal, fcn, op, BP, "+", 'b');
-	extract_arg (anal, fcn, op, BP, "-", 'b');
-	extract_arg (anal, fcn, op, SP, "+", 's');
-}
 
 static bool isInvalidMemory(const ut8 *buf, int len) {
 	// can be wrong
@@ -931,9 +833,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	RAnalBlock *bbg = NULL;
 	int ret = R_ANAL_RET_END, skip_ret = 0;
 	int overlapped = 0;
-	RAnalOp op = {
-		0
-	};
+	RAnalOp op = {0};
 	int oplen, idx = 0;
 	struct {
 		int cnt;
@@ -946,6 +846,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 		0
 	};
 	char tmp_buf[MAX_FLG_NAME_SIZE + 5] = "skip";
+
 	if (r_cons_is_breaked ()) {
 		return R_ANAL_RET_END;
 	}
@@ -1088,7 +989,6 @@ repeat:
 		}
 		// Note: if we got two branch delay instructions in a row due to an
 		// compiler bug or junk or something it wont get treated as a delay
-		/* TODO: Parse fastargs (R_ANAL_VAR_ARGREG) */
 		switch (op.stackop) {
 		case R_ANAL_STACK_INC:
 			if (R_ABS (op.stackptr) < 8096) {
@@ -1102,9 +1002,6 @@ repeat:
 		case R_ANAL_STACK_RESET:
 			bb->stackptr = 0;
 			break;
-		}
-		if (anal->opt.vars) {
-			r_anal_fcn_fill_args (anal, fcn, &op);
 		}
 		if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
 			// swapped parameters wtf
