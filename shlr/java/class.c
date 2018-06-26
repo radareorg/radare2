@@ -2543,7 +2543,7 @@ R_API RBinSymbol *r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type
 		sym->name = strdup (fm_type->name);
 		// strncpy (sym->type, fm_type->descriptor, R_BIN_SIZEOF_STRINGS);
 		if (fm_type->type == R_BIN_JAVA_FIELD_TYPE_METHOD) {
-			sym->type = r_str_const ("FUNC");
+			sym->type = r_str_const (R_BIN_TYPE_FUNC_STR);
 			sym->paddr = r_bin_java_get_method_code_offset (fm_type);
 			sym->vaddr = r_bin_java_get_method_code_offset (fm_type) + baddr;
 			sym->size = r_bin_java_get_method_code_size (fm_type);
@@ -2554,11 +2554,11 @@ R_API RBinSymbol *r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type
 			sym->size = fm_type->size;
 		}
 		if (r_bin_java_is_fm_type_protected (fm_type)) {
-			sym->bind = r_str_const ("LOCAL");
+			sym->bind = r_str_const (R_BIN_BIND_LOCAL_STR);
 		} else if (r_bin_java_is_fm_type_private (fm_type)) {
-			sym->bind = r_str_const ("LOCAL");
+			sym->bind = r_str_const (R_BIN_BIND_LOCAL_STR);
 		} else if (r_bin_java_is_fm_type_protected (fm_type)) {
-			sym->bind = r_str_const ("GLOBAL");
+			sym->bind = r_str_const (R_BIN_BIND_GLOBAL_STR);
 		}
 		sym->forwarder = r_str_const ("NONE");
 		if (fm_type->class_name) {
@@ -2590,11 +2590,11 @@ R_API RBinSymbol *r_bin_java_create_new_symbol_from_fm_type_meta(RBinJavaField *
 		sym->type = r_str_const ("FIELD_META");
 	}
 	if (r_bin_java_is_fm_type_protected (fm_type)) {
-		sym->bind = r_str_const ("LOCAL");
+		sym->bind = r_str_const (R_BIN_BIND_LOCAL_STR);
 	} else if (r_bin_java_is_fm_type_private (fm_type)) {
-		sym->bind = r_str_const ("LOCAL");
+		sym->bind = r_str_const (R_BIN_BIND_LOCAL_STR);
 	} else if (r_bin_java_is_fm_type_protected (fm_type)) {
-		sym->bind = r_str_const ("GLOBAL");
+		sym->bind = r_str_const (R_BIN_BIND_GLOBAL_STR);
 	}
 	sym->forwarder = r_str_const ("NONE");
 	if (fm_type->class_name) {

@@ -977,8 +977,8 @@ void symbols_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
 		}
 		sym->forwarder = r_str_const ("NONE");
 		sym->bind = r_str_const ((symbols[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)?
-			"LOCAL": "GLOBAL");
-		sym->type = r_str_const ("FUNC");
+			R_BIN_BIND_LOCAL_STR: R_BIN_BIND_GLOBAL_STR);
+		sym->type = r_str_const (R_BIN_TYPE_FUNC_STR);
 		sym->paddr = symbols[i].offset + bf->o->boffset;
 		sym->size = symbols[i].size;
 		sym->ordinal = i;

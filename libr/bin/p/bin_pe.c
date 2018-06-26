@@ -246,8 +246,8 @@ static RList* symbols(RBinFile *bf) {
 			ptr->name = strdup ((char *)symbols[i].name);
 			ptr->forwarder = r_str_const ((char *)symbols[i].forwarder);
 			//strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
-			ptr->bind = r_str_const ("GLOBAL");
-			ptr->type = r_str_const ("FUNC");
+			ptr->bind = r_str_const (R_BIN_BIND_GLOBAL_STR);
+			ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR);
 			ptr->size = 0;
 			ptr->vaddr = symbols[i].vaddr;
 			ptr->paddr = symbols[i].paddr;
@@ -267,7 +267,7 @@ static RList* symbols(RBinFile *bf) {
 			ptr->name = r_str_newf ("imp.%s", imports[i].name);
 			//strncpy (ptr->forwarder, (char*)imports[i].forwarder, R_BIN_SIZEOF_STRINGS);
 			ptr->bind = r_str_const ("NONE");
-			ptr->type = r_str_const ("FUNC");
+			ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR);
 			ptr->size = 0;
 			ptr->vaddr = imports[i].vaddr;
 			ptr->paddr = imports[i].paddr;

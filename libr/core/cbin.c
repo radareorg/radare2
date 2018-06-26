@@ -1330,7 +1330,7 @@ static bool is_section_symbol(RBinSymbol *s) {
 	if (!s || *s->name) {
 		return false;
 	}
-	return (s->type && !strcmp (s->type, "SECTION"));
+	return (s->type && !strcmp (s->type, R_BIN_TYPE_SECTION_STR));
 }
 
 static bool is_section_reloc(RBinReloc *r) {
@@ -1339,7 +1339,7 @@ static bool is_section_reloc(RBinReloc *r) {
 
 static bool is_file_symbol(RBinSymbol *s) {
 	/* workaround for some bin plugs (e.g. ELF) */
-	return (s && s->type && !strcmp (s->type, "FILE"));
+	return (s && s->type && !strcmp (s->type, R_BIN_TYPE_FILE_STR));
 }
 
 static bool is_file_reloc(RBinReloc *r) {
@@ -1676,10 +1676,11 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 
 static const char *getPrefixFor(const char *s) {
 	if (s) {
-		if (!strcmp (s, "NOTYPE")) {
+		// workaround for ELF
+		if (!strcmp (s, R_BIN_TYPE_NOTYPE_STR)) {
 			return "loc";
 		}
-		if (!strcmp (s, "OBJ")) {
+		if (!strcmp (s, R_BIN_TYPE_OBJECT_STR)) {
 			return "obj";
 		}
 	}
@@ -1753,7 +1754,7 @@ static bool isAnExport(RBinSymbol *s) {
 	if (!strncmp (s->name, "imp.", 4)) {
 		return false;
 	}
-	return (s->bind && !strcmp (s->bind, "GLOBAL"));
+	return (s->bind && !strcmp (s->bind, R_BIN_BIND_GLOBAL_STR));
 }
 
 static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly, const char *args) {

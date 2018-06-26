@@ -2631,35 +2631,41 @@ RBinElfSection* Elf_(r_bin_elf_get_sections)(ELFOBJ *bin) {
 	return ret;
 }
 
-static void fill_symbol_bind_and_type (struct r_bin_elf_symbol_t *ret, Elf_(Sym) *sym) {
-	#define s_bind(x) ret->bind = x
-	#define s_type(x) ret->type = x
+static const char *bind2str(Elf_(Sym) *sym) {
 	switch (ELF_ST_BIND(sym->st_info)) {
-	case STB_LOCAL:  s_bind ("LOCAL"); break;
-	case STB_GLOBAL: s_bind ("GLOBAL"); break;
-	case STB_WEAK:   s_bind ("WEAK"); break;
-	case STB_NUM:    s_bind ("NUM"); break;
-	case STB_LOOS:   s_bind ("LOOS"); break;
-	case STB_HIOS:   s_bind ("HIOS"); break;
-	case STB_LOPROC: s_bind ("LOPROC"); break;
-	case STB_HIPROC: s_bind ("HIPROC"); break;
-	default:         s_bind ("UNKNOWN");
+	case STB_LOCAL:  return R_BIN_BIND_LOCAL_STR;
+	case STB_GLOBAL: return R_BIN_BIND_GLOBAL_STR;
+	case STB_WEAK:   return R_BIN_BIND_WEAK_STR;
+	case STB_NUM:    return R_BIN_BIND_NUM_STR;
+	case STB_LOOS:   return R_BIN_BIND_LOOS_STR;
+	case STB_HIOS:   return R_BIN_BIND_HIOS_STR;
+	case STB_LOPROC: return R_BIN_BIND_LOPROC_STR;
+	case STB_HIPROC: return R_BIN_BIND_HIPROC_STR;
+	default:         return R_BIN_BIND_UNKNOWN_STR;
 	}
+}
+
+static const char *type2str(Elf_(Sym) *sym) {
 	switch (ELF_ST_TYPE (sym->st_info)) {
-	case STT_NOTYPE:  s_type ("NOTYPE"); break;
-	case STT_OBJECT:  s_type ("OBJ"); break;
-	case STT_FUNC:    s_type ("FUNC"); break;
-	case STT_SECTION: s_type ("SECT"); break;
-	case STT_FILE:    s_type ("FILE"); break;
-	case STT_COMMON:  s_type ("COMMON"); break;
-	case STT_TLS:     s_type ("TLS"); break;
-	case STT_NUM:     s_type ("NUM"); break;
-	case STT_LOOS:    s_type ("LOOS"); break;
-	case STT_HIOS:    s_type ("HIOS"); break;
-	case STT_LOPROC:  s_type ("LOPROC"); break;
-	case STT_HIPROC:  s_type ("HIPROC"); break;
-	default:          s_type ("UNK");
+	case STT_NOTYPE:  return R_BIN_TYPE_NOTYPE_STR;
+	case STT_OBJECT:  return R_BIN_TYPE_OBJECT_STR;
+	case STT_FUNC:    return R_BIN_TYPE_FUNC_STR;
+	case STT_SECTION: return R_BIN_TYPE_SECTION_STR;
+	case STT_FILE:    return R_BIN_TYPE_FILE_STR;
+	case STT_COMMON:  return R_BIN_TYPE_COMMON_STR;
+	case STT_TLS:     return R_BIN_TYPE_TLS_STR;
+	case STT_NUM:     return R_BIN_TYPE_NUM_STR;
+	case STT_LOOS:    return R_BIN_TYPE_LOOS_STR;
+	case STT_HIOS:    return R_BIN_TYPE_HIOS_STR;
+	case STT_LOPROC:  return R_BIN_TYPE_LOPROC_STR;
+	case STT_HIPROC:  return R_BIN_TYPE_HIPROC_STR;
+	default:          return R_BIN_TYPE_UNKNOWN_STR;
 	}
+}
+
+static void fill_symbol_bind_and_type (struct r_bin_elf_symbol_t *ret, Elf_(Sym) *sym) {
+	ret->bind = bind2str (sym);
+	ret->type = type2str (sym);
 }
 
 static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
@@ -2770,7 +2776,10 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		} else {
 			continue;
 		}
-
+		if (!strcmp (bind2str (&sym[i]), R_BIN_BIND_UNKNOWN_STR) ||
+		    !strcmp (type2str (&sym[i]), R_BIN_TYPE_UNKNOWN_STR)) {
+			goto done;
+		}
 		tmp_offset = Elf_(r_bin_elf_v2p) (bin, toffset);
 		if (tmp_offset > bin->size) {
 			goto done;
@@ -3348,13 +3357,12 @@ static bool get_nt_file_maps (ELFOBJ *bin, RList *core_maps) {
 			}
 			ut64 i = bin->phdr[ph].p_offset + offset;
 			ut64 n_maps;
-			ut64 page_size;
 			if (bits == 64) {
 				n_maps = BREAD64 (bin->b, i);
-				page_size = BREAD64 (bin->b, i);
+				(void)BREAD64 (bin->b, i);
 			} else {
 				n_maps = BREAD32 (bin->b, i);
-				page_size = BREAD32 (bin->b, i);
+				(void)BREAD32 (bin->b, i);
 			}
 			ut64 jump = ((size_of * 3) * n_maps) + i;
 			int len_str = 0;
