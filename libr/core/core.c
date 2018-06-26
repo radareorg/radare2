@@ -2957,6 +2957,24 @@ R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args) 
 	return b;
 }
 
+static bool isValidAddress (RCore *core, ut64 addr) {
+	// check if address is mapped
+	RIOMap* map = r_io_map_get (core->io, addr);
+	if (!map) {
+		return false;
+	}
+	// check if associated file is opened
+	RIODesc *desc = r_io_desc_get (core->io, map->fd);
+	if (!desc) {
+		return false;
+	}
+	// check if current map->fd is null://
+	if (!strncmp (desc->name, "null://", 7)) {
+		return false;
+	}
+	return true;
+}
+
 R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 vmin,
 				     ut64 vmax, int vsize, bool asterisk, inRangeCb cb) {
 	int i, match, align = core->search->align, hitctr = 0;
@@ -2994,9 +3012,11 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 			goto beach;
 		}
 		bool res = r_io_read_at (core->io, from, buf, sizeof (buf));
-		if (!res || !memcmp (buf, "\xff\xff\xff\xff", 4)) {
-			from += sizeof (buf);
-			continue;
+		if (!res || !memcmp (buf, "\xff\xff\xff\xff", 4) || !memcmp (buf, "\x00\x00\x00\x00", 4)) {
+			if (!isValidAddress (core, from)) {
+				from += sizeof (buf);
+				continue;
+			}
 		}
 		for (i = 0; i < sizeof (buf) - vsize; i++) {
 			void *v = (buf + i);
