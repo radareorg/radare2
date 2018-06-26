@@ -2757,7 +2757,7 @@ static void set_opdir(RAnalOp *op) {
 
 static void op_fillval(RAnalOp *op , csh handle, cs_insn *insn, int bits) {
 	static RRegItem reg;
-	switch (op->type) {
+	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_LOAD:
 		op->src[0] = r_anal_value_new ();
 		ZERO_FILL (reg);
