@@ -158,6 +158,7 @@ void windbg_ctx_free(WindCtx *ctx) {
 		return;
 	}
 	r_list_free (ctx->plist_cache);
+	r_list_free (ctx->tlist_cache);
 	iob_close (ctx->io_ptr);
 	free (ctx);
 }
@@ -666,7 +667,9 @@ int windbg_sync(WindCtx *ctx) {
 	ctx->cpu = stc64->cpu;
 	ctx->cpu_count = stc64->cpu_count;
 	ctx->target = NULL;
+	r_list_free (ctx->plist_cache);
 	ctx->plist_cache = NULL;
+	r_list_free (ctx->tlist_cache);
 	ctx->tlist_cache = NULL;
 	ctx->pae = 0;
 	// We're ready to go
