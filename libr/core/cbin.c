@@ -1330,7 +1330,7 @@ static bool is_section_symbol(RBinSymbol *s) {
 	if (!s || *s->name) {
 		return false;
 	}
-	return (s->type && !strcmp (s->type, "SECTION"));
+	return (s->type && !strcmp (s->type, R_BIN_TYPE_SECTION_STR));
 }
 
 static bool is_section_reloc(RBinReloc *r) {
@@ -1339,7 +1339,7 @@ static bool is_section_reloc(RBinReloc *r) {
 
 static bool is_file_symbol(RBinSymbol *s) {
 	/* workaround for some bin plugs (e.g. ELF) */
-	return (s && s->type && !strcmp (s->type, "FILE"));
+	return (s && s->type && !strcmp (s->type, R_BIN_TYPE_FILE_STR));
 }
 
 static bool is_file_reloc(RBinReloc *r) {
@@ -1676,10 +1676,11 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 
 static const char *getPrefixFor(const char *s) {
 	if (s) {
-		if (!strcmp (s, "NOTYPE")) {
+		// workaround for ELF
+		if (!strcmp (s, R_BIN_TYPE_NOTYPE_STR)) {
 			return "loc";
 		}
-		if (!strcmp (s, "OBJ")) {
+		if (!strcmp (s, R_BIN_TYPE_OBJECT_STR)) {
 			return "obj";
 		}
 	}
@@ -1753,7 +1754,7 @@ static bool isAnExport(RBinSymbol *s) {
 	if (!strncmp (s->name, "imp.", 4)) {
 		return false;
 	}
-	return (s->bind && !strcmp (s->bind, "GLOBAL"));
+	return (s->bind && !strcmp (s->bind, R_BIN_BIND_GLOBAL_STR));
 }
 
 static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, bool exponly, const char *args) {
@@ -1879,24 +1880,20 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 			} else {
 				const char *fn, *n;
 				RFlagItem *fi;
-				if (*sn.name && symbol->paddr) {
-					n = sn.demname ? sn.demname : sn.name;
-					fn = sn.demflag ? sn.demflag : sn.nameflag;
-					char *fnp = (r->bin->prefix) ?
-						r_str_newf ("%s.%s", r->bin->prefix, fn):
-						strdup (fn);
-					fi = r_flag_set (r->flags, fnp, addr, symbol->size);
-					if (fi) {
-						r_flag_item_set_realname (fi, n);
-					} else {
-						if (fn) {
-							eprintf ("[Warning] Can't find flag (%s)\n", fn);
-						}
-					}
-					free (fnp);
+				n = sn.demname ? sn.demname : sn.name;
+				fn = sn.demflag ? sn.demflag : sn.nameflag;
+				char *fnp = (r->bin->prefix) ?
+					r_str_newf ("%s.%s", r->bin->prefix, fn):
+					strdup (fn);
+				fi = r_flag_set (r->flags, fnp, addr, symbol->size);
+				if (fi) {
+					r_flag_item_set_realname (fi, n);
 				} else {
-					// we dont want unnamed symbols to be flagged
+					if (fn) {
+						eprintf ("[Warning] Can't find flag (%s)\n", fn);
+					}
 				}
+				free (fnp);
 			}
 			if (sn.demname) {
 				r_meta_add (r->anal, R_META_TYPE_COMMENT,
