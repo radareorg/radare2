@@ -35,6 +35,7 @@ typedef struct WindThread {
 	bool runnable;
 	char status;
 	ut64 ethread;
+	ut64 entrypoint;
 } WindThread;
 
 enum {
@@ -56,7 +57,7 @@ enum {
 	R_ImagePathName,      // RTL_USER_PROCESS_PARAMETERS
 	ET_Tcb,               // ETHREAD
 	ET_ThreadListEntry,   // ETHREAD
-	ET_StartAddress,      // ETHREAD
+	ET_Win32StartAddress, // ETHREAD
 	ET_Cid,               // ETHREAD
 	C_UniqueThread,       // CLIENT_ID
 	O_Max,

@@ -202,7 +202,7 @@ static int r_debug_windbg_select(int pid, int tid) {
 
 static RList *r_debug_windbg_threads(RDebug *dbg, int pid) {
 	RListIter *it;
-	RDebugPid *p;
+	WindThread *t;
 
 	RList *ret = r_list_newf (free);
 	if (!ret) {
@@ -214,15 +214,15 @@ static RList *r_debug_windbg_threads(RDebug *dbg, int pid) {
 		return NULL;
 	}
 
-	r_list_foreach (threads, it, p) {
+	r_list_foreach (threads, it, t) {
 		RDebugPid *newpid = R_NEW0 (RDebugPid);
 		if (!newpid) {
 			r_list_free (ret);
 			return NULL;
 		}
-		newpid->pid = p->pid;
-		newpid->status = p->status;
-		newpid->runnable = p->runnable;
+		newpid->pid = t->uniqueid;
+		newpid->status = t->status;
+		newpid->runnable = t->runnable;
 		r_list_append (ret, newpid);
 	}
 
