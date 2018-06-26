@@ -415,6 +415,9 @@ RList *windbg_list_threads(WindCtx *ctx) {
 		// Adjust the ptr so that it points to the ETHREAD base
 		ptr -= O_(ET_ThreadListEntry);
 
+		ut64 entrypoint = 0;
+		windbg_read_at (ctx, (uint8_t *) &entrypoint, ptr + O_(ET_Win32StartAddress), 4 << ctx->is_x64);
+
 		ut64 uniqueid = 0;
 		windbg_read_at (ctx, (uint8_t *) &uniqueid, ptr + O_(ET_Cid) + O_(C_UniqueThread), 4 << ctx->is_x64);
 		if (uniqueid) {
@@ -423,6 +426,7 @@ RList *windbg_list_threads(WindCtx *ctx) {
 			thread->status = 's';
 			thread->runnable = true;
 			thread->ethread = ptr;
+			thread->entrypoint = entrypoint;
 
 			r_list_append (ret, thread);
 		}
