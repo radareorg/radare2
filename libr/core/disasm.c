@@ -1860,7 +1860,7 @@ static void ds_show_flags(RDisasmState *ds) {
 			continue;
 		}
 		if (!strncmp (flag->name, "case.", 5)) {
-			sscanf (flag->name + 5, "%d.%63s", &case_current, addr);
+			sscanf (flag->name + 5, "%63[^.].%d", addr, &case_current);
 			ut64 saddr = r_num_math (core->num, addr);
 			if (case_start == -1) {
 				switch_addr = saddr;
