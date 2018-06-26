@@ -200,6 +200,35 @@ static int r_debug_windbg_select(int pid, int tid) {
 	return true;
 }
 
+static RList *r_debug_windbg_threads(RDebug *dbg, int pid) {
+	RListIter *it;
+	RDebugPid *p;
+
+	RList *ret = r_list_newf (free);
+	if (!ret) {
+		return NULL;
+	}
+
+	RList *threads = windbg_list_threads (wctx);
+	if (!threads) {
+		return NULL;
+	}
+
+	r_list_foreach (threads, it, p) {
+		RDebugPid *newpid = R_NEW0 (RDebugPid);
+		if (!newpid) {
+			r_list_free (ret);
+			return NULL;
+		}
+		newpid->pid = p->pid;
+		newpid->status = p->status;
+		newpid->runnable = p->runnable;
+		r_list_append (ret, newpid);
+	}
+
+	return ret;
+}
+
 RDebugPlugin r_debug_plugin_windbg = {
 	.name = "windbg",
 	.license = "LGPL3",
@@ -216,7 +245,8 @@ RDebugPlugin r_debug_plugin_windbg = {
 	.breakpoint = (RBreakpointCallback)&r_debug_windbg_breakpoint,
 	.reg_read = &r_debug_windbg_reg_read,
 	.reg_write = &r_debug_windbg_reg_write,
-	.reg_profile = &r_debug_windbg_reg_profile
+	.reg_profile = &r_debug_windbg_reg_profile,
+	.threads = &r_debug_windbg_threads
 };
 
 #ifndef CORELIB

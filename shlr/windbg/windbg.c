@@ -73,6 +73,7 @@ struct _WindCtx {
 	int is_x64;
 	Profile *os_profile;
 	RList *plist_cache;
+	RList *tlist_cache;
 	ut64 dbg_addr;
 	WindProc *target;
 };
@@ -352,6 +353,7 @@ RList *windbg_list_process(WindCtx *ctx) {
 		WindProc *proc = calloc (1, sizeof(WindProc));
 
 		strcpy (proc->name, (const char *) buf);
+		proc->eprocess = ptr;
 		proc->vadroot = vadroot;
 		proc->uniqueid = uniqueid;
 		proc->dir_base_table = dir_base_table;
@@ -364,6 +366,71 @@ RList *windbg_list_process(WindCtx *ctx) {
 	} while (ptr != base);
 
 	ctx->plist_cache = ret;
+
+	return ret;
+}
+
+RList *windbg_list_threads(WindCtx *ctx) {
+	RList *ret;
+	ut64 ptr, base, ptl;
+
+	if (!ctx || !ctx->io_ptr || !ctx->syncd) {
+		return NULL;
+	}
+
+	if (ctx->tlist_cache) {
+		return ctx->tlist_cache;
+	}
+
+	if (!ctx->target) {
+		WIND_DBG eprintf ("No target process\n");
+		return NULL;
+	}
+
+	ptr = ctx->target->eprocess;
+	if (!ptr) {
+		WIND_DBG eprintf ("No _EPROCESS\n");
+		return NULL;
+	}
+
+	// Grab the ThreadListHead from _EPROCESS
+	windbg_read_at (ctx, (uint8_t *) &ptr, ptr + O_(E_ThreadListHead), 4 << ctx->is_x64);
+	if (!ptr) {
+		return NULL;
+	}
+
+	base = ptr;
+
+	ret = r_list_newf (free);
+
+	do {
+		ut64 next = 0;
+
+		windbg_read_at (ctx, (uint8_t *) &next, ptr, 4 << ctx->is_x64);
+		if (!next) {
+			WIND_DBG eprintf ("Corrupted ThreadListEntry found at: 0x%"PFMT64x"\n", ptr);
+			break;
+		}
+
+		// Adjust the ptr so that it points to the ETHREAD base
+		ptr -= O_(ET_ThreadListEntry);
+
+		ut64 uniqueid = 0;
+		windbg_read_at (ctx, (uint8_t *) &uniqueid, ptr + O_(ET_Cid) + O_(C_UniqueThread), 4 << ctx->is_x64);
+		if (uniqueid) {
+			WindThread *thread = calloc (1, sizeof(WindThread));
+			thread->uniqueid = uniqueid;
+			thread->status = 's';
+			thread->runnable = true;
+			thread->ethread = ptr;
+
+			r_list_append (ret, thread);
+		}
+
+		ptr = next;
+	} while (ptr != base);
+
+	ctx->tlist_cache = ret;
 
 	return ret;
 }
@@ -596,6 +663,7 @@ int windbg_sync(WindCtx *ctx) {
 	ctx->cpu_count = stc64->cpu_count;
 	ctx->target = NULL;
 	ctx->plist_cache = NULL;
+	ctx->tlist_cache = NULL;
 	ctx->pae = 0;
 	// We're ready to go
 	ctx->syncd = 1;
