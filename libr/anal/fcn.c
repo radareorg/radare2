@@ -1281,66 +1281,20 @@ repeat:
 					return R_ANAL_RET_END;
 				}
 			}
-			if (anal->opt.bbsplit) {
 #if FIX_JMP_FWD
+			bb->jump = op.jump;
+			bb->fail = UT64_MAX;
+			FITFCNSZ ();
+			return R_ANAL_RET_END;
+#else
+			if (!overlapped) {
 				bb->jump = op.jump;
 				bb->fail = UT64_MAX;
-				FITFCNSZ ();
-				return R_ANAL_RET_END;
-#else
-				if (!overlapped) {
-					bb->jump = op.jump;
-					bb->fail = UT64_MAX;
-				}
-				recurseAt (op.jump);
-				FITFCNSZ ();
-				gotoBeachRet ();
-#endif
-			} else {
-				if (continue_after_jump) {
-					recurseAt (op.jump);
-					recurseAt (op.fail);
-				} else {
-					// This code seems to break #1519
-					if (anal->opt.eobjmp) {
-#if JMP_IS_EOB
-						if (!overlapped) {
-							bb->jump = op.jump;
-							bb->fail = UT64_MAX;
-						}
-						FITFCNSZ ();
-						return R_ANAL_RET_END;
-#else
-						// hardcoded jmp size // must be checked at the end wtf?
-						// always fitfcnsz and retend
-						if (r_anal_fcn_is_in_offset (fcn, op.jump)) {
-							/* jump inside the same function */
-							FITFCNSZ ();
-							return R_ANAL_RET_END;
-#if JMP_IS_EOB_RANGE > 0
-						} else {
-							if (op.jump < addr - JMP_IS_EOB_RANGE && op.jump < addr) {
-								gotoBeach (R_ANAL_RET_END);
-							}
-							if (op.jump > addr + JMP_IS_EOB_RANGE) {
-								gotoBeach (R_ANAL_RET_END);
-							}
-#endif
-						}
-#endif
-					} else {
-						/* if not eobjmp. a jump will break the function if jumps before the beginning of the function */
-						if (op.jump < fcn->addr) {
-							if (!overlapped) {
-								bb->jump = op.jump;
-								bb->fail = UT64_MAX;
-							}
-							FITFCNSZ ();
-							return R_ANAL_RET_END;
-						}
-					}
-				}
 			}
+			recurseAt (op.jump);
+			FITFCNSZ ();
+			gotoBeachRet ();
+#endif
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
 			if (anal->opt.cjmpref) {

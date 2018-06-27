@@ -600,7 +600,6 @@ typedef struct r_anal_options_t {
 	int afterjmp; // continue analysis after jmp eax or forward jmp // option
 	int recont; // continue on recurse analysis mode
 	int eobjmp; // option
-	int bbsplit;
 	int noncode;
 	int nopskip; // skip nops at the beginning of functions
 	int hpskip; // skip `mov reg,reg` and `lea reg,[reg]`
