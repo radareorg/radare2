@@ -112,7 +112,9 @@ static const char **menus_sub[] = {
 static void layoutMenu(RPanel *panel);
 static void layoutDefault(RPanels *panels);
 static void layoutBalance(RPanels *panels);
-static void splitPanel(RCore *core);
+static void sortPanelForSplit(RPanels *panels);
+static void splitPanelVertical(RCore *core);
+static void splitPanelHorizontal(RCore *core);
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color);
 static void addPanelFrame(RCore* core, RPanels* panels, const char *title, const char *cmd);
 static bool checkFunc(RCore *core);
@@ -178,6 +180,7 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 		char *cmdStr;
 		bool ce = core->print->cur_enabled;
 		if (!strcmp (panel->title, PANEL_TITLE_DISASSEMBLY)) {
+			core->offset = panel->addr;
 			core->print->cur_enabled = false;
 			cmdStr = r_core_cmd_str (core, panel->cmd);
 		} else if (!strcmp (panel->title, PANEL_TITLE_STACK)) {
@@ -188,7 +191,7 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 		} else {
 			cmdStr = r_core_cmd_str (core, panel->cmd);
 		}
-		if (!strcmp (core->panels->panel[core->panels->curnode].title, PANEL_TITLE_GRAPH)) {
+		if (!strcmp (panel->title, PANEL_TITLE_GRAPH)) {
 			graph_pad = 1;
 			core->cons->event_data = core;
 			core->cons->event_resize = (RConsEvent) doPanelsRefresh;
@@ -313,23 +316,50 @@ static void layoutBalance(RPanels *panels) {
 	}
 }
 
-static void splitPanel(RCore *core) {
-	RPanels *panels = core->panels;
+static void sortPanelForSplit(RPanels *panels) {
 	RPanel *panel = panels->panel;
-	int i;
+	const int n_panels = panels->n_panels;
 	const int curnode = panels->curnode;
+	int i;
 
-	addPanelFrame (core, panels, panel[curnode].title, panel[curnode].cmd);
-	RPanel tmpPanel = panel[panels->n_panels - 1];
-	for (i = panels->n_panels - 1; i >= curnode + 2; i--) {
+	RPanel tmpPanel = panel[n_panels - 1];
+	for (i = n_panels - 1; i >= curnode + 2; i--) {
 		panel[i] = panel[i - 1];
 	}
 	panel[curnode + 1] = tmpPanel;
+}
+
+static void splitPanelVertical(RCore *core) {
+	RPanels *panels = core->panels;
+	RPanel *panel = panels->panel;
+	const int curnode = panels->curnode;
+
+	addPanelFrame (core, panels, panel[curnode].title, panel[curnode].cmd);
+
+	sortPanelForSplit (panels);
+
 	panel[curnode].w = panel[curnode].w / 2 + 1;
 	panel[curnode + 1].x = panel[curnode].x + panel[curnode].w - 1;
 	panel[curnode + 1].y = panel[curnode].y;
 	panel[curnode + 1].w = panel[curnode].w - 1;
 	panel[curnode + 1].h = panel[curnode].h;
+	setRefreshAll (panels);
+}
+
+static void splitPanelHorizontal(RCore *core) {
+	RPanels *panels = core->panels;
+	RPanel *panel = panels->panel;
+	const int curnode = panels->curnode;
+
+	addPanelFrame (core, panels, panel[curnode].title, panel[curnode].cmd);
+
+    sortPanelForSplit (panels);
+
+	panel[curnode].h = panel[curnode].h / 2 + 1;
+	panel[curnode + 1].x = panel[curnode].x;
+	panel[curnode + 1].y = panel[curnode].y + panel[curnode].h - 1;
+	panel[curnode + 1].w = panel[curnode].w;
+	panel[curnode + 1].h = panel[curnode].h - 1;
 	setRefreshAll (panels);
 }
 
@@ -377,7 +407,9 @@ static void handleUpKey(RCore *core) {
 		}
 	} else {
 		if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_DISASSEMBLY)) {
+			core->offset = panels->panel[panels->curnode].addr;
 			r_core_cmd0 (core, "s-8");
+			panels->panel[panels->curnode].addr = core->offset;
 		} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_STACK)) {
 			int width = r_config_get_i (core->config, "hex.cols");
 			if (width < 1) {
@@ -419,6 +451,7 @@ static void handleDownKey(RCore *core) {
 		}
 	} else {
 		if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_DISASSEMBLY)) {
+			core->offset = panels->panel[panels->curnode].addr;
 			int cols = core->print->cols;
 			RAnalFunction *f = NULL;
 			RAsmOp op;
@@ -436,6 +469,7 @@ static void handleDownKey(RCore *core) {
 			}
 			r_core_seek (core, core->offset + cols, 1);
 			r_core_block_read (core);
+			panels->panel[panels->curnode].addr = core->offset;
 		} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_STACK)) {
 			int width = r_config_get_i (core->config, "hex.cols");
 			if (width < 1) {
@@ -583,7 +617,7 @@ static void setRefreshAll(RPanels *panels) {
 
 static void addPanelFrame(RCore *core, RPanels* panels, const char *title, const char *cmd) {
 	RPanel* panel = panels->panel;
-	int n_panels = panels->n_panels;
+	const int n_panels = panels->n_panels;
 	if (title) {
 		panel[n_panels].title = strdup (title);
 		panel[n_panels].cmd = r_str_newf (cmd);
@@ -591,14 +625,17 @@ static void addPanelFrame(RCore *core, RPanels* panels, const char *title, const
 		panel[n_panels].title = r_core_cmd_str (core, cmd);
 		panel[n_panels].cmd = NULL;
 	}
-	panel[panels->n_panels].type = PANEL_TYPE_FRAME;
-	panel[panels->n_panels].refresh = true;
-	panel[panels->n_panels].curpos = 0;
-	if (!strcmp (panel[panels->n_panels].title, PANEL_TITLE_STACK)) {
+	panel[n_panels].type = PANEL_TYPE_FRAME;
+	panel[n_panels].refresh = true;
+	panel[n_panels].curpos = 0;
+	if (!strcmp (panel[n_panels].title, PANEL_TITLE_DISASSEMBLY)) {
+		panel[n_panels].addr = core->offset;
+	}
+	if (!strcmp (panel[n_panels].title, PANEL_TITLE_STACK)) {
 		const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 		const ut64 stackbase = r_reg_getv (core->anal->reg, sp);
-		panel[panels->n_panels].baseAddr = stackbase;
-		panel[panels->n_panels].addr = stackbase - r_config_get_i (core->config, "stack.delta");
+		panel[n_panels].baseAddr = stackbase;
+		panel[n_panels].addr = stackbase - r_config_get_i (core->config, "stack.delta");
 	}
 	panels->n_panels++;
 	panels->menu_y = 0;
@@ -760,6 +797,9 @@ static void panelSingleStepIn(RCore *core) {
 		r_core_cmd (core, "aes", 0);
 		r_core_cmd (core, ".ar*", 0);
 	}
+	if (!strcmp (core->panels->panel[core->panels->curnode].title, PANEL_TITLE_DISASSEMBLY)) {
+		core->panels->panel[core->panels->curnode].addr = core->offset;
+	}
 }
 
 static void panelSingleStepOver(RCore *core) {
@@ -773,6 +813,9 @@ static void panelSingleStepOver(RCore *core) {
 		r_core_cmd (core, ".ar*", 0);
 	}
 	r_config_set_i (core->config, "io.cache", io_cache);
+	if (!strcmp (core->panels->panel[core->panels->curnode].title, PANEL_TITLE_DISASSEMBLY)) {
+		core->panels->panel[core->panels->curnode].addr = core->offset;
+	}
 }
 
 static void panelBreakpoint(RCore *core) {
@@ -792,11 +835,11 @@ R_API void r_core_panels_check_stackbase(RCore *core) {
 	const ut64 stackbase = r_reg_getv (core->anal->reg, sp);
 	RPanels *panels = core->panels;
 	for (i = 1; i < panels->n_panels; i++) {
-		const RPanel panel = panels->panel[i];
-		if (!strcmp (panel.title, PANEL_TITLE_STACK) && panel.baseAddr != stackbase) {
-			panels->panel[panels->curnode].baseAddr = stackbase;
-			panels->panel[panels->curnode].addr = stackbase - r_config_get_i (core->config, "stack.delta") + core->print->cur;
-			panels->panel[panels->curnode].refresh = true;
+		RPanel *panel = &panels->panel[i];
+		if (!strcmp (panel->title, PANEL_TITLE_STACK) && panel->baseAddr != stackbase) {
+			panel->baseAddr = stackbase;
+			panel->addr = stackbase - r_config_get_i (core->config, "stack.delta") + core->print->cur;
+			panel->refresh = true;
 		}
 	}
 }
@@ -1176,8 +1219,10 @@ repeat:
 			" :    - run r2 command in prompt\n"
 			" _    - start the hud input mode\n"
 			" ?    - show this help\n"
-			" x    - close current panel\n"
+			" x    - split current panel horizontally\n"
+			" X    - close current panel\n"
 			" m    - open menubar\n"
+			" v    - split current panel vertically\n"
 			" V    - view graph\n"
 			" b    - browse symbols, flags, configurations, classes, ...\n"
 			" c    - toggle cursor\n"
@@ -1273,10 +1318,13 @@ repeat:
 	case '_':
 		r_core_visual_hud (core);
 		break;
-	case 'x':
+	case 'X':
 		delCurPanel (panels);
 		r_core_panels_layout (core->panels);
 		setRefreshAll (panels);
+		break;
+	case 'x':
+		splitPanelHorizontal (core);
 		break;
 	case 9: // TAB
 		r_cons_switchbuf (false);
@@ -1367,7 +1415,7 @@ repeat:
 		}
 		break;
 	case 'v':
-		splitPanel (core);
+		splitPanelVertical (core);
 		break;
 	case ']':
 		r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") + 1);
