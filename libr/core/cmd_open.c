@@ -62,16 +62,18 @@ static const char *help_msg_ob[] = {
 	"Usage:", "ob", " # List open binary files backed by fd",
 	"ob", "", "List opened binary files and objid",
 	"ob*", "", "List opened binary files and objid (r2 commands)",
+// those 3 commands are VERY SIMILAR, need love
 	"ob", " [fd objid]", "Switch to open binary file by fd number and objid",
+	"obo", " [objid]", "Switch to open binary file by objid",
+	"obb", " [fd]", "Switch to open binfile by fd number",
+
 	"oba", " [addr]", "Open bin info from the given address",
 	"oba", " [addr] [filename]", "Open file and load bin info at given address",
-	"obb", " [fd]", "Switch to open binfile by fd number",
 	"obf", " ([file])", "Load bininfo for current file (useful for r2 -n)",
 	"obj", "", "List opened binary files and objid (JSON format)",
 	"obr", " [baddr]", "Rebase current bin object",
 	"ob-", "[objid]", "Delete binfile by binobjid",
 	"ob-", "*", "Delete all binfiles",
-	"obo", " [objid]", "Switch to open binary file by objid",
 	NULL
 };
 
@@ -1142,11 +1144,9 @@ static int cmd_open(void *data, const char *input) {
 				RIODesc *desc = r_io_desc_get (core->io, fd);
 				if (desc) {
 					// only useful for io.va=0
-					core->io->desc = desc;
-#if 0
 					// load bininfo for given fd
-					r_core_cmdf (core, "ob %d", fd);
-#endif
+					r_core_cmdf (core, "obb %d", fd);
+					core->io->desc = desc;
 				}
 			}
 			r_core_block_read (core);
