@@ -68,7 +68,6 @@ static void task_join(RCoreTask *task) {
 		return;
 	}
 	r_th_lock_wait (lock);
-	r_th_lock_leave (lock);
 }
 
 R_API void r_core_task_join(RCore *core, RCoreTask *current, RCoreTask *task) {
