@@ -305,6 +305,8 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 								continue;
 							}
 							if (*ptr_right == ']') {
+								char *dptr_left;
+								int c;
 								ptr_left = ptr_esc = ptr_end - flag_len;
 								while (ptr_left >= str) {
 									if (*ptr_left == '[' &&
@@ -325,9 +327,11 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 									break;
 								}
 								memmove (ptr_left, ptr_esc, copied_len);
-								sprintf (ptr_left + copied_len, "%s%s",
-										ansi_found && ptr_right - ptr_end + 1 >= 4 ? "\x1b[0m" : "",
-										ptr_right + 1);
+								c = ansi_found && ptr_right - ptr_end + 1 >= 4;
+								dptr_left = strcpy (ptr_left + copied_len,
+									c ? "\x1b[0m" : "");
+								dptr_left ++;
+								memmove (dptr_left, ptr_right + 1, strlen(ptr_right + 1));
 							}
 							break;
 						}
