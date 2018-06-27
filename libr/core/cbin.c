@@ -9,6 +9,8 @@
 #define VA_TRUE     1
 #define VA_NOREBASE 2
 
+#define LOAD_BSS_MALLOC 0
+
 #define IS_MODE_SET(mode) (mode & R_CORE_BIN_SET)
 #define IS_MODE_SIMPLE(mode) (mode & R_CORE_BIN_SIMPLE)
 #define IS_MODE_SIMPLEST(mode) (mode & R_CORE_BIN_SIMPLEST)
@@ -2118,8 +2120,9 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	else if (IS_MODE_RAD (mode) && !at) r_cons_printf ("fs %ss\n", type);
 	else if (IS_MODE_NORMAL (mode) && !at && !printHere) {
 		r_cons_printf ("[%s]\n", print_segments ? "Segments" : "Sections");
-	} else if (IS_MODE_NORMAL (mode) && printHere) r_cons_printf("Current section\n");
-	else if (IS_MODE_SET (mode)) {
+	} else if (IS_MODE_NORMAL (mode) && printHere) {
+		r_cons_printf("Current section\n");
+	} else if (IS_MODE_SET (mode)) {
 		fd = r_core_file_cur_fd (r);
 		r_flag_space_set (r->flags, print_segments ? "segments" : "sections");
 	}

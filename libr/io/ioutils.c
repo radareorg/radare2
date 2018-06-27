@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2017 - condret */
+/* radare - LGPL - Copyright 2017-2018 - condret */
 
 #include <r_io.h>
 #include <r_util.h>
@@ -8,6 +8,30 @@ static int __access_log_e_cmp (const void *a, const void *b) {
 	RIOAccessLogElement *A = (RIOAccessLogElement *)a;
 	RIOAccessLogElement *B = (RIOAccessLogElement *)b;
 	return (A->buf_idx > B->buf_idx);
+}
+
+typedef struct {
+	const char *uri;
+	RIODesc *desc;
+} FindFile;
+
+static bool findFile(void *user, void *data, ut32 id) {
+	FindFile *res = (FindFile*)user;
+	RIODesc *desc = (RIODesc*)data;
+	if (!strcmp (desc->uri, res->uri)) {
+		res->desc = desc;
+		return false;
+	}
+	return true;
+}
+
+static RIODesc *findReusableFile(RIO *io, const char *uri) {
+	FindFile arg = {
+		.uri = uri,
+		.desc = NULL,
+	};
+	r_id_storage_foreach (io->files, findFile, &arg);
+	return arg.desc;
 }
 
 R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, bool do_skyline) {
@@ -20,10 +44,13 @@ R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, boo
 	}
 	if (null) {
 		uri = r_str_newf ("null://%"PFMT64u "", sec->vsize - sec->size);
+		desc = findReusableFile (io, uri);
 	} else {
 		uri = r_str_newf ("malloc://%"PFMT64u "", sec->vsize - sec->size);
 	}
-	desc = r_io_open_at (io, uri, sec->flags, 664, at);
+	if (!desc) {
+		desc = r_io_open_at (io, uri, sec->flags, 664, at);
+	}
 	free (uri);
 	if (!desc) {
 		return false;
