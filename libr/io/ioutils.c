@@ -12,22 +12,24 @@ static int __access_log_e_cmp (const void *a, const void *b) {
 
 typedef struct {
 	const char *uri;
+	int flags;
 	RIODesc *desc;
 } FindFile;
 
 static bool findFile(void *user, void *data, ut32 id) {
 	FindFile *res = (FindFile*)user;
 	RIODesc *desc = (RIODesc*)data;
-	if (!strcmp (desc->uri, res->uri)) {
+	if (desc->flags && res->flags && !strcmp (desc->uri, res->uri)) {
 		res->desc = desc;
 		return false;
 	}
 	return true;
 }
 
-static RIODesc *findReusableFile(RIO *io, const char *uri) {
+static RIODesc *findReusableFile(RIO *io, const char *uri, int flags) {
 	FindFile arg = {
 		.uri = uri,
+		.flags = flags,
 		.desc = NULL,
 	};
 	r_id_storage_foreach (io->files, findFile, &arg);
@@ -35,18 +37,26 @@ static RIODesc *findReusableFile(RIO *io, const char *uri) {
 }
 
 R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, bool do_skyline) {
-	RIOMap *map = NULL;
 	RIODesc *desc = NULL;
 	char *uri = NULL;
+	bool reused = false;
 
 	if (!io || !sec) {
 		return false;
 	}
+	ut64 gap = sec->vsize - sec->size;
 	if (null) {
-		uri = r_str_newf ("null://%"PFMT64u "", sec->vsize - sec->size);
-		desc = findReusableFile (io, uri);
+		uri = r_str_newf ("null://%"PFMT64u, gap);
+		desc = findReusableFile (io, uri, sec->flags);
+		if (desc) {
+			RIOMap *map = r_io_map_get (io, at);
+			if (!map) {
+				r_io_map_new (io, desc->fd, desc->flags, 0LL, at, gap, false);
+			}
+			reused = true;
+		}
 	} else {
-		uri = r_str_newf ("malloc://%"PFMT64u "", sec->vsize - sec->size);
+		uri = r_str_newf ("malloc://%"PFMT64u, gap);
 	}
 	if (!desc) {
 		desc = r_io_open_at (io, uri, sec->flags, 664, at);
@@ -59,10 +69,12 @@ R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, boo
 		r_io_map_calculate_skyline (io);
 	}
 	// this works, because new maps are allways born on the top
-	map = r_io_map_get (io, at);
+	RIOMap *map = r_io_map_get (io, at);
 	// check if the mapping failed
 	if (!map) {
-		r_io_desc_close (desc);
+		if (!reused) {
+			r_io_desc_close (desc);
+		}
 		return false;
 	}
 	// let the section refere to the map as a memory-map
