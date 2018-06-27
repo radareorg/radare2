@@ -3400,7 +3400,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		if (ds->immstr) {
 			char *str = r_str_from_ut64 (r_read_ble64 (&v, core->print->big_endian));
 			if (str && *str) {
-				_ALIGN;
+				ds_begin_comment (ds);
 				ds_comment (ds, true, "; '%s'", str);
 			}
 			free (str);
