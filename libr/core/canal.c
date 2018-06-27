@@ -2553,7 +2553,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 
 	r_list_sort (fcns, &cmpfcn);
 	switch (*rad) {
-	case 's':
+	case 't':
 		r_core_anal_fcn_list_size (core);
 		break;
 	case 'l':
