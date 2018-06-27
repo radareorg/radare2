@@ -216,7 +216,7 @@ static const char *help_msg_af[] = {
 	"aff", "", "re-adjust function boundaries to fit",
 	"afF", "[1|0|]", "fold/unfold/toggle",
 	"afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
-	"afl", "[?] [l*] [fcn name]", "list functions (addr, size, bbs, name) (see afll)",
+	"afl", "[?] [ls*] [fcn name]", "list functions (addr, size, bbs, name) (see afll)",
 	"afm", " name", "merge two functions",
 	"afM", " name", "print functions map",
 	"afn", "[?] name [addr]", "rename name for function at address (change flag too)",
@@ -279,13 +279,14 @@ static const char *help_msg_afi[] = {
 static const char *help_msg_afl[] = {
 	"Usage:", "afl", " List all functions",
 	"afl", "", "list functions",
+	"afl+", "", "display sum all function sizes",
 	"aflc", "", "count of functions",
 	"aflj", "", "list functions in json",
 	"afll", "", "list functions in verbose mode",
 	"afllj", "", "list functions in verbose mode (alias to aflj)",
 	"aflq", "", "list functions in quiet mode",
 	"aflqj", "", "list functions in json quiet mode",
-	"afls", "", "print sum of sizes of all functions",
+	"afls", "", "sort function list by address",
 	NULL
 };
 
@@ -604,6 +605,11 @@ static void cmd_anal_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, arw);
 	DEFINE_CMD_DESCRIPTOR (core, as);
 	DEFINE_CMD_DESCRIPTOR (core, ax);
+}
+
+static int cmpaddr (const void *_a, const void *_b) {
+	const RAnalFunction *a = _a, *b = _b;
+	return a->addr - b->addr;
 }
 
 static int listOpDescriptions(void *_core, const char *k, const char *v) {
@@ -2262,9 +2268,12 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				break;
 			}
 			/* fallthrough */
+		case 's': // "afls"
+			r_list_sort (core->anal->fcns, cmpaddr);
+			break;
 		case 'j': // "aflj"
 		case 'q': // "aflq"
-		case 's': // "afls"
+		case '+': // "afl+"
 		case '*': // "afl*"
 			r_core_anal_fcn_list (core, NULL, input + 2);
 			break;
@@ -2280,7 +2289,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		{
 		ut64 addr;
 		RAnalFunction *f;
-		const char *arg = input + 3;
+		const char *arg = input + 2;
 		if (input[2] && (addr = r_num_math (core->num, arg))) {
 			arg = strchr (arg, ' ');
 			if (arg) {
@@ -6887,11 +6896,6 @@ static bool anal_fcn_data (RCore *core, const char *input) {
 		return true;
 	}
 	return false;
-}
-
-static int cmpaddr (const void *_a, const void *_b) {
-	const RAnalFunction *a = _a, *b = _b;
-	return a->addr - b->addr;
 }
 
 static bool anal_fcn_data_gaps (RCore *core, const char *input) {
