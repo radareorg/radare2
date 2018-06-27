@@ -151,6 +151,10 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 	RCore *core = current->core;
 	bool stop = next_state != R_CORE_TASK_STATE_RUNNING;
 
+	if (!stop && core->tasks_running == 1) {
+		return;
+	}
+
 	core->current_task = NULL;
 	
 	r_th_lock_enter (core->tasks_lock);
@@ -158,6 +162,7 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 	current->state = next_state;
 
 	if (stop) {
+		core->tasks_running--;
 		r_th_lock_leave (current->dispatch_lock);
 	}
 
@@ -196,18 +201,11 @@ static void task_wakeup(RCoreTask *current) {
 
 	r_th_lock_enter (core->tasks_lock);
 
+	core->tasks_running++;
 	current->state = R_CORE_TASK_STATE_RUNNING;
 
 	// check if there are other tasks running
-	bool single = true;
-	RCoreTask *task;
-	RListIter *iter;
-	r_list_foreach (core->tasks, iter, task) {
-		if (task != current && task->state == R_CORE_TASK_STATE_RUNNING) {
-			single = false;
-			break;
-		}
-	}
+	bool single = core->tasks_running == 1;
 
 	r_th_lock_enter (current->dispatch_lock);
 
