@@ -2369,7 +2369,6 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 		if (selectPanel) {
 			r_cons_printf ("-- functions -----------------[ %s ]-->>\n", printCmds[printMode]);
 		} else {
-eprintf ("%d\n", printMode);
 			r_cons_printf ("-[ functions ]----------------- %s --- \n", printCmds[printMode]);
 		}
 		r_cons_printf (

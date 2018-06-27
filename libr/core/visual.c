@@ -1587,6 +1587,7 @@ R_API void r_core_visual_browse(RCore *core) {
 		" v  vars\n"
 		" x  xrefs\n"
 		" X  refs\n"
+		" :  run command\n"
 	;
 	for (;;) {
 		r_cons_clear00 ();
@@ -1598,7 +1599,8 @@ R_API void r_core_visual_browse(RCore *core) {
 			r_core_visual_trackflags (core);
 			break;
 		case 'F':
-			r_core_cmd0 (core, "s $(afl~...)");
+			r_core_visual_anal (core);
+			// r_core_cmd0 (core, "s $(afl~...)");
 			break;
 		case 'c':
 			r_core_visual_classes (core);
@@ -1646,6 +1648,9 @@ R_API void r_core_visual_browse(RCore *core) {
 			break;
 		case '_':
 			r_core_visual_hudstuff (core);
+			break;
+		case ':':
+			r_core_visual_prompt_input (core);
 			break;
 		case 127: // backspace
 		case 'q':
