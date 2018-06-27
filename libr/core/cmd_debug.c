@@ -1399,14 +1399,28 @@ static void get_hash_debug_file(const char *path, char *hash, int hash_len) {
 	RListIter *iter;
 	RBinSection *s;
 	RCore *core = r_core_new ();
-	RList * sects = NULL;
+	RList *sects = NULL;
+	RBinOptions *bo = NULL;
 	char buf[20] = R_EMPTY;
 	int offset, err, i, j = 0;
 
 	if (!core) {
 		return;
 	}
-	r_bin_load (core->bin, path, 0, 0, 0, -1, false);
+
+	bo = r_bin_options_new (0LL, 0LL, NULL);
+	if (!bo) {
+		eprintf ("Could not create RBinOptions\n");
+		goto out_error;
+	}
+
+	bo->iofd = -1;
+
+	if (!r_bin_open (core->bin, path, bo)) {
+		eprintf ("Could not open binary\n");
+		goto out_error;
+	}
+
 	sects = r_bin_get_sections (core->bin);
 	if (!sects) {
 		goto out_error;
@@ -1431,6 +1445,7 @@ static void get_hash_debug_file(const char *path, char *hash, int hash_len) {
 	offset = j + 2 * i;
 	snprintf (hash + offset, hash_len - offset - strlen (".debug"), ".debug");
 out_error:
+	r_bin_options_free (bo);
 	r_core_free (core);
 }
 
