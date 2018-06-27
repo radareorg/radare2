@@ -2070,11 +2070,9 @@ R_API RBinJavaAttrInfo *r_bin_java_read_next_attr(RBinJavaObj *bin, const ut64 o
 
 R_API RBinJavaAttrInfo *r_bin_java_read_next_attr_from_buffer(ut8 *buffer, st64 sz, st64 buf_offset) {
 	RBinJavaAttrInfo *attr = NULL;
-	char *name = NULL;
 	ut64 offset = 0;
 	ut16 name_idx;
 	st64 nsz;
-	RBinJavaAttrMetas *type_info = NULL;
 
 	if (!buffer || ((int) sz) < 4 || buf_offset < 0) {
 		eprintf ("r_bin_Java_read_next_attr_from_buffer: invalid buffer size %d\n", (int) sz);
@@ -2084,12 +2082,13 @@ R_API RBinJavaAttrInfo *r_bin_java_read_next_attr_from_buffer(ut8 *buffer, st64 
 	offset += 2;
 	nsz = R_BIN_JAVA_UINT (buffer, offset);
 	offset += 4;
-	name = r_bin_java_get_utf8_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, name_idx);
+
+	char *name = r_bin_java_get_utf8_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, name_idx);
 	if (!name) {
 		name = strdup ("unknown");
 	}
 	IFDBG eprintf("r_bin_java_read_next_attr: name_idx = %d is %s\n", name_idx, name);
-	type_info = r_bin_java_get_attr_type_by_name (name);
+	RBinJavaAttrMetas *type_info = r_bin_java_get_attr_type_by_name (name);
 	if (type_info) {
 		IFDBG eprintf("Typeinfo: %s, was %s\n", type_info->name, name);
 		// printf ("SZ %d %d %d\n", nsz, sz, buf_offset);
@@ -3432,7 +3431,7 @@ R_API RBinJavaAttrInfo *r_bin_java_code_attr_new(ut8 *buffer, ut64 sz, ut64 buf_
 	// BUG: possible unsigned integer overflow here
 	attr->info.code_attr.code_offset = buf_offset + offset;
 	attr->info.code_attr.code = (ut8 *) malloc (attr->info.code_attr.code_length);
-	if (attr->info.code_attr.code == NULL) {
+	if (!attr->info.code_attr.code) {
 		eprintf ("Handling Code Attributes: Unable to allocate memory "
 			"(%u bytes) for a code.\n", attr->info.code_attr.code_length);
 		return attr;
@@ -3777,16 +3776,16 @@ R_API RBinJavaAttrInfo *r_bin_java_line_number_table_attr_new(ut8 *buffer, ut64 
 
 	ut32 linenum_len = attr->info.line_number_table_attr.line_number_table_length;
 	RList *linenum_list = attr->info.line_number_table_attr.line_number_table;
-	if (linenum_len > sz) {
-		free (attr);
-		return NULL;
-	}
 	for (i = 0; i < linenum_len; i++) {
 		curpos = buf_offset + offset;
 		// printf ("%llx %llx \n", curpos, sz);
 		// XXX if (curpos + 8 >= sz) break;
 		lnattr = R_NEW0 (RBinJavaLineNumberAttribute);
 		if (!lnattr) {
+			break;
+		}
+		// wtf it works
+		if (offset - 2 > sz) {
 			break;
 		}
 		lnattr->start_pc = R_BIN_JAVA_USHORT (buffer, offset);
@@ -3980,6 +3979,10 @@ R_API RBinJavaAttrInfo *r_bin_java_local_variable_type_table_attr_new(ut8 *buffe
 		lvattr = R_NEW0 (RBinJavaLocalVariableTypeAttribute);
 		if (!lvattr) {
 			perror ("calloc");
+			break;
+		}
+		if (offset + 10 > sz) {
+			eprintf ("oob");
 			break;
 		}
 		lvattr->start_pc = R_BIN_JAVA_USHORT (buffer, offset);
