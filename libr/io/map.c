@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017 - condret, MaskRay */
+/* radare2 - LGPL - Copyright 2017-2018 - condret, MaskRay */
 
 #include <r_io.h>
 #include <stdlib.h>
@@ -152,6 +152,7 @@ R_API RIOMap* r_io_map_new(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut
 	map->fd = fd;
 	map->delta = delta;
 	if ((UT64_MAX - size + 1) < addr) {
+		/// XXX: this is leaking a map!!!
 		r_io_map_new (io, fd, flags, delta - addr, 0LL, size + addr, do_skyline);
 		size = -(st64)addr;
 	}
