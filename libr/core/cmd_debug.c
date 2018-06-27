@@ -280,7 +280,9 @@ static const char *help_msg_dp[] = {
 	"Usage:", "dp", " # Process commands",
 	"dp", "", "List current pid and children",
 	"dp", " <pid>", "List children of pid",
+	"dpj", " <pid>", "List children of pid in JSON format",
 	"dp*", "", "List all attachable pids",
+	"dp*j", "", "List all attachable pids in JSON format",
 	"dp-", " <pid>", "Detach select pid",
 	"dp=", "<pid>", "Select pid",
 	"dpa", " <pid>", "Attach and select pid",
@@ -1068,7 +1070,14 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		core->dbg->main_pid = r_num_math (core->num, input + 2);
 		break;
 	case '*': // "dp*"
-		r_debug_pid_list (core->dbg, 0, 0);
+		switch (input[2]) {
+		case '\0': // "dp*"
+			r_debug_pid_list (core->dbg, 0, 0);
+			break;
+		case 'j': // "dp*j"
+			r_debug_pid_list (core->dbg, 0, 'j');
+			break;
+		}
 		break;
 	case 'j': // "dpj"
 		r_debug_pid_list (core->dbg, core->dbg->pid, 'j');
