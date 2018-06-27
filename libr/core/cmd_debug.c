@@ -1416,7 +1416,7 @@ static void get_hash_debug_file(const char *path, char *hash, int hash_len) {
 
 	bo->iofd = -1;
 
-	if(!r_bin_open (core->bin, path, bo)) {
+	if (!r_bin_open (core->bin, path, bo)) {
 		eprintf ("Could not open binary\n");
 		goto out_error;
 	}
