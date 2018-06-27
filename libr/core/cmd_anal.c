@@ -217,7 +217,6 @@ static const char *help_msg_af[] = {
 	"afF", "[1|0|]", "fold/unfold/toggle",
 	"afi", " [addr|fcn.name]", "show function(s) information (verbose afl)",
 	"afl", "[?] [ls*] [fcn name]", "list functions (addr, size, bbs, name) (see afll)",
-	"afls", "", "sort function list by address",
 	"afm", " name", "merge two functions",
 	"afM", " name", "print functions map",
 	"afn", "[?] name [addr]", "rename name for function at address (change flag too)",
@@ -280,14 +279,14 @@ static const char *help_msg_afi[] = {
 static const char *help_msg_afl[] = {
 	"Usage:", "afl", " List all functions",
 	"afl", "", "list functions",
+	"afl+", "", "display sum all function sizes",
 	"aflc", "", "count of functions",
-	"afls", "", "sort function list by address",
 	"aflj", "", "list functions in json",
 	"afll", "", "list functions in verbose mode",
 	"afllj", "", "list functions in verbose mode (alias to aflj)",
 	"aflq", "", "list functions in quiet mode",
 	"aflqj", "", "list functions in json quiet mode",
-	"aflt", "", "print total sum of sizes of all functions",
+	"afls", "", "sort function list by address",
 	NULL
 };
 
@@ -2274,7 +2273,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			break;
 		case 'j': // "aflj"
 		case 'q': // "aflq"
-		case 't': // "aflt"
+		case '+': // "afl+"
 		case '*': // "afl*"
 			r_core_anal_fcn_list (core, NULL, input + 2);
 			break;
