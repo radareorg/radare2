@@ -2027,6 +2027,7 @@ R_API bool r_core_init(RCore *core) {
 	core->tasks = r_list_newf ((RListFree)r_core_task_free);
 	core->tasks_queue = r_list_new ();
 	core->tasks_lock = r_th_lock_new (false);
+	core->tasks_running = 0;
 	core->main_task = r_core_task_new (core, false, NULL, NULL, NULL);
 	r_list_append (core->tasks, core->main_task);
 	core->current_task = NULL;

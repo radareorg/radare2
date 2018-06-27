@@ -8,23 +8,23 @@ R_API void r_core_task_print (RCore *core, RCoreTask *task, int mode) {
 		r_cons_printf ("{\"id\":%d,\"state\":\"", task->id);
 		switch (task->state) {
 			case R_CORE_TASK_STATE_BEFORE_START:
-				r_cons_print("before_start");
+				r_cons_print ("before_start");
 				break;
 			case R_CORE_TASK_STATE_RUNNING:
-				r_cons_print("running");
+				r_cons_print ("running");
 				break;
 			case R_CORE_TASK_STATE_SLEEPING:
-				r_cons_print("sleeping");
+				r_cons_print ("sleeping");
 				break;
 			case R_CORE_TASK_STATE_DONE:
-				r_cons_print("done");
+				r_cons_print ("done");
 				break;
 		}
-		r_cons_print("\",\"cmd\":");
+		r_cons_print ("\",\"cmd\":");
 		if (task->cmd) {
-			r_cons_printf("\"%s\"}", task->cmd);
+			r_cons_printf ("\"%s\"}", task->cmd);
 		} else {
-			r_cons_printf("null}");
+			r_cons_printf ("null}");
 		}
 		break;
 	default: {
@@ -47,6 +47,7 @@ R_API void r_core_task_list(RCore *core, int mode) {
 	if (mode == 'j') {
 		r_cons_printf ("[");
 	}
+	r_th_lock_enter (core->tasks_lock);
 	r_list_foreach (core->tasks, iter, task) {
 		r_core_task_print (core, task, mode);
 		if (mode == 'j' && iter->n) {
@@ -55,7 +56,10 @@ R_API void r_core_task_list(RCore *core, int mode) {
 	}
 	if (mode == 'j') {
 		r_cons_printf ("]\n");
+	} else {
+		r_cons_printf ("--\ntotal running: %d\n", core->tasks_running);
 	}
+	r_th_lock_leave (core->tasks_lock);
 }
 
 static void task_join(RCoreTask *task) {
@@ -151,6 +155,10 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 	RCore *core = current->core;
 	bool stop = next_state != R_CORE_TASK_STATE_RUNNING;
 
+	if (!stop && core->tasks_running == 1) {
+		return;
+	}
+
 	core->current_task = NULL;
 	
 	r_th_lock_enter (core->tasks_lock);
@@ -158,6 +166,7 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 	current->state = next_state;
 
 	if (stop) {
+		core->tasks_running--;
 		r_th_lock_leave (current->dispatch_lock);
 	}
 
@@ -196,18 +205,11 @@ static void task_wakeup(RCoreTask *current) {
 
 	r_th_lock_enter (core->tasks_lock);
 
+	core->tasks_running++;
 	current->state = R_CORE_TASK_STATE_RUNNING;
 
 	// check if there are other tasks running
-	bool single = true;
-	RCoreTask *task;
-	RListIter *iter;
-	r_list_foreach (core->tasks, iter, task) {
-		if (task != current && task->state == R_CORE_TASK_STATE_RUNNING) {
-			single = false;
-			break;
-		}
-	}
+	bool single = core->tasks_running == 1;
 
 	r_th_lock_enter (current->dispatch_lock);
 

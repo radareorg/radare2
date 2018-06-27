@@ -233,6 +233,7 @@ typedef struct r_core_t {
 	RCoreTask *current_task;
 	RCoreTask *main_task;
 	RThreadLock *tasks_lock;
+	int tasks_running;
 	int cmd_depth;
 	int max_cmd_depth;
 	ut8 switch_file_view;
