@@ -8,23 +8,23 @@ R_API void r_core_task_print (RCore *core, RCoreTask *task, int mode) {
 		r_cons_printf ("{\"id\":%d,\"state\":\"", task->id);
 		switch (task->state) {
 			case R_CORE_TASK_STATE_BEFORE_START:
-				r_cons_print("before_start");
+				r_cons_print ("before_start");
 				break;
 			case R_CORE_TASK_STATE_RUNNING:
-				r_cons_print("running");
+				r_cons_print ("running");
 				break;
 			case R_CORE_TASK_STATE_SLEEPING:
-				r_cons_print("sleeping");
+				r_cons_print ("sleeping");
 				break;
 			case R_CORE_TASK_STATE_DONE:
-				r_cons_print("done");
+				r_cons_print ("done");
 				break;
 		}
-		r_cons_print("\",\"cmd\":");
+		r_cons_print ("\",\"cmd\":");
 		if (task->cmd) {
-			r_cons_printf("\"%s\"}", task->cmd);
+			r_cons_printf ("\"%s\"}", task->cmd);
 		} else {
-			r_cons_printf("null}");
+			r_cons_printf ("null}");
 		}
 		break;
 	default: {
@@ -151,6 +151,10 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 	RCore *core = current->core;
 	bool stop = next_state != R_CORE_TASK_STATE_RUNNING;
 
+	if (r_list_length (core->tasks) == 1) {
+		return;
+	}
+
 	core->current_task = NULL;
 	
 	r_th_lock_enter (core->tasks_lock);
@@ -193,6 +197,9 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 
 static void task_wakeup(RCoreTask *current) {
 	RCore *core = current->core;
+	if (r_list_length (core->tasks) == 1) {
+		return;
+	}
 
 	r_th_lock_enter (core->tasks_lock);
 
@@ -301,6 +308,9 @@ R_API int r_core_task_run_sync(RCore *core, RCoreTask *task) {
 
 /* begin running stuff synchronously on the main task */
 R_API void r_core_task_sync_begin(RCore *core) {
+	if (r_list_length (core->tasks) == 1) {
+		return;
+	}
 	RCoreTask *task = core->main_task;
 	r_th_lock_enter (core->tasks_lock);
 	task->thread = NULL;
