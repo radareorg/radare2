@@ -1881,7 +1881,7 @@ static void ds_show_flags(RDisasmState *ds) {
 			ds_print_offset (ds);
 			r_cons_printf (" ");
 		} else {
-			ds_pre_xrefs (ds, true);
+			ds_pre_xrefs (ds, false);
 			r_cons_printf (";-- ");
 		}
 		if (ds->show_color) {
