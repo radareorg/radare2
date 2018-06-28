@@ -495,6 +495,7 @@ static const char *help_msg_ar[] = {
 	"ar", " <type>", "Show all registers of given type",
 	"arC", "", "Display register profile comments",
 	"arr", "", "Show register references (telescoping)",
+	"arrj", "", "Show register references (telescoping) in JSON format",
 	"ar=", "([size])(:[regs])", "Show register values in columns",
 	"ar?", " <reg>", "Show register value",
 	"arb", " <type>", "Display hexdump of the given arena",
@@ -2941,7 +2942,14 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		}
 		break;
 	case 'r': // "arr"
-		r_core_debug_rr (core, core->anal->reg);
+		switch (str[1]) {
+		case 'j': // "arrj"
+			r_core_debug_rr (core, core->dbg->reg, 'j');
+			break;
+		default:
+			r_core_debug_rr (core, core->dbg->reg, 0);
+			break;
+		}
 		break;
 	case 'S': { // "arS"
 		int sz;
