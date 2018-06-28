@@ -172,7 +172,7 @@ static const char *help_msg_pj[] = {
 };
 
 static const char *help_msg_p_minus[] = {
-	"Usage:", "p-[hj] [pieces]", "bar|json|histogram blocks",
+	"Usage:", "p-[hj] [nblocks] ", "bar|json|histogram blocks",
 	"p-", "", "show ascii-art bar of metadata in file boundaries",
 	"p-h", "", "show histogram analysis of metadata per block",
 	"p-j", "", "show json format",
@@ -2275,10 +2275,22 @@ static void cmd_print_pv(RCore *core, const char *input, const ut8* block) {
 
 static int cmd_print_blocks(RCore *core, const char *input) {
 	char mode = input[0];
-	int w = (int)(core->print->cols * 2.7);
-	if (mode == 'j') {
-		r_cons_strcat ("{");
+	if (mode == '?') {
+		r_core_cmd_help (core, help_msg_p_minus);
+		return 0;
 	}
+
+	if (mode && mode != ' ') {
+		input++;
+	}
+
+	int w;
+	if (input[0] == ' ') {
+		w = (int)r_num_math (core->num, input + 1);
+	} else {
+		w = (int)(core->print->cols * 2.7);
+	}
+
 	ut64 off = core->offset;
 	ut64 from;
 	ut64 to;
@@ -2293,17 +2305,14 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 	}
 	ut64 piece = R_MAX ((to - from) / w, 1);
 	RCoreAnalStats *as = r_core_anal_get_stats (core, from, to, piece);
-	if (!as && mode != '?') {
+	if (!as) {
 		return 0;
 	}
-	// eprintf ("RANGE = %llx %llx\n", from, to);
+
 	switch (mode) {
-		case '?':
-			r_core_cmd_help (core, help_msg_p_minus);
-			return 0;
 		case 'j': // "p-j"
 			r_cons_printf (
-					"\"from\":%"PFMT64d ","
+					"{\"from\":%"PFMT64d ","
 					"\"to\":%"PFMT64d ","
 					"\"blocksize\":%d,"
 					"\"blocks\":[", from, to, piece);
