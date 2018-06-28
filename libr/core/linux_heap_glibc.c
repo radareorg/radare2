@@ -45,13 +45,13 @@ static void GH(get_brks)(RCore *core, GHT *brk_start, GHT *brk_end) {
 }
 
 static void GH(print_main_arena)(RCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, int format) {
-	int i, j, k, start;
+	int i, j, k, start; 
 
-       #if __GLIBC_MINOR__ > 25
+        #if __GLIBC_MINOR__ > 25
                 GHT offset = 16;
-       #else
-            	GHT offset = sizeof (int) * 2;
-       #endif
+        #else
+                GHT offset = 12 * SZ + sizeof (int) * 2;
+        #endif
 
 	GHT apart[NSMALLBINS + 1] = { 0LL };
 	if (format == '*') {
@@ -512,7 +512,11 @@ static int GH(print_double_linked_list_bin)(RCore *core, MallocState *main_arena
 		return -1;
 	}
 
-	bin = m_arena + offset + SZ * num_bin * 2 - SZ * 2;
+	#if __GLIBC_MINOR__ > 25
+		bin = m_arena + offset + SZ * num_bin * 2 + 10 * SZ;
+	#else
+		bin = m_arena + offset + SZ * num_bin * 2 - SZ * 2;
+	#endif
 
 	switch (num_bin) {
 	case 0:
@@ -538,12 +542,12 @@ static int GH(print_double_linked_list_bin)(RCore *core, MallocState *main_arena
 static void GH(print_heap_bin)(RCore *core, GHT m_arena, MallocState *main_arena, const char *input) {
 	int i, j = 2;
 	GHT num_bin = GHT_MAX;
-	
-       #if __GLIBC_MINOR__ > 25
-                GHT offset = 16;
-       #else
-             	GHT offset = sizeof (int) * 2;
-       #endif
+
+	#if __GLIBC_MINOR__ > 25
+		GHT offset = 16;
+	#else
+		GHT offset = 12 * SZ + sizeof (int) * 2;
+	#endif
 
 	switch (input[0]) {
 	case '\0': // dmhb
