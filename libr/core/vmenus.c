@@ -2431,18 +2431,24 @@ R_API void r_core_visual_anal(RCore *core) {
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case '?':
-			r_cons_clear ();
+			r_cons_clear00 ();
 			r_cons_printf (
-				"Usage: vv [\n"
+				"Usage: vv\n"
 				"Actions supported:\n"
 				" functions: Add, Modify, Delete, Xrefs Calls Vars\n"
 				" variables: Add, Modify, Delete\n"
-				"Moving:\n"
+				"Keys:\n"
 				" j,k     select next/prev item or scroll if tab pressed\n"
 				" J,K     scroll next/prev page \"\"\n"
 				" h,q     go back, quit\n"
 				" p,P     switch next/prev print mode\n"
+				" v       view selected function arguments and variables\n"
+				" x       see xrefs to the selected function\n"
 				" tab     toggle disasm column selection (to scroll in code)\n"
+				" !       run 'afls' to sort all functions by address\n"
+				" .       seek to current function address\n"
+				" :       run r2 commands\n"
+				" _       hud mode. same as: s $(afl~...)\n"
 				" enter   enter function view (variables), xrefs\n"
 			);
 			r_cons_flush ();
@@ -2540,6 +2546,9 @@ R_API void r_core_visual_anal(RCore *core) {
 		case 'x': level = 3; break;
 		case 'c': level = 2; break;
 		case 'v': level = 1; variable_option = 0; break;
+		case '_':
+			r_core_cmd0 (core, "s $(afl~...)");
+			break;
 		case 'j':
 			if (selectPanel) {
 				printMode = 1;
@@ -2556,6 +2565,9 @@ R_API void r_core_visual_anal(RCore *core) {
 					break;
 				}
 			}
+			break;
+		case '!':
+			r_core_cmd0 (core, "afls");
 			break;
 		case 'k':
 			if (selectPanel) {
@@ -2575,7 +2587,10 @@ R_API void r_core_visual_anal(RCore *core) {
 
 			break;
 		case 'J':
-			{
+			if (selectPanel) {
+				printMode = 1;
+				delta += 40;
+			} else {
 				int rows = 0;
 				r_cons_get_size (&rows);
 				option += (rows - 5);
@@ -2585,7 +2600,10 @@ R_API void r_core_visual_anal(RCore *core) {
 			}
 			break;
 		case 'K':
-			{
+			if (selectPanel) {
+				printMode = 1;
+				delta -= 40;
+			} else {
 				int rows = 0;
 				r_cons_get_size (&rows);
 				option -= (rows - 5);
