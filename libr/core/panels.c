@@ -128,6 +128,7 @@ static void handleDownKey(RCore *core);
 static void handleLeftKey(RCore *core);
 static void handleRightKey(RCore *core);
 static bool handleEnterKey(RCore *core);
+static bool handleTabKey(RCore *core, bool shift);
 static int  havePanel(RPanels *panels, const char *s);
 static bool init(RCore *core, RPanels *panels, int w, int h);
 static bool initPanels(RCore *core, RPanels *panels);
@@ -181,6 +182,8 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 		bool ce = core->print->cur_enabled;
 		if (!strcmp (panel->title, PANEL_TITLE_DISASSEMBLY)) {
 			core->offset = panel->addr;
+			r_core_seek (core, panel->addr, 1);
+			r_core_block_read (core);
 			core->print->cur_enabled = false;
 			cmdStr = r_core_cmd_str (core, panel->cmd);
 		} else if (!strcmp (panel->title, PANEL_TITLE_STACK)) {
@@ -1081,6 +1084,32 @@ static bool handleEnterKey(RCore *core) {
 	return true;
 }
 
+static bool handleTabKey(RCore *core, bool shift) {
+	RPanels *panels = core->panels;
+	r_cons_switchbuf (false);
+	panels->menu_y = 0;
+	panels->menu_x = -1;
+	panels->panel[panels->curnode].refresh = true;
+	if (!shift) {
+		if (panels->curnode >= panels->n_panels - 1) {
+			panels->curnode = 0;
+			panels->menu_x = 0;
+		} else {
+			panels->curnode++;
+		}
+	} else {
+		if (panels->curnode > 0) {
+			panels->curnode--;
+		} else {
+			panels->curnode = panels->n_panels - 1;
+		}
+		if (!panels->curnode) {
+			panels->menu_x = 0;
+		}
+	}
+	panels->panel[panels->curnode].refresh = true;
+}
+
 R_API RPanels *r_core_panels_new(RCore *core) {
 	int w, h;
 	RPanels *panels = R_NEW0 (RPanels);
@@ -1218,11 +1247,11 @@ repeat:
 			" .    - seek to PC or entrypoint\n"
 			" :    - run r2 command in prompt\n"
 			" _    - start the hud input mode\n"
+			" |    - split current panel vertically\n"
+			" -    - split current panel horizontally\n"
 			" ?    - show this help\n"
-			" x    - split current panel horizontally\n"
 			" X    - close current panel\n"
 			" m    - open menubar\n"
-			" v    - split current panel vertically\n"
 			" V    - view graph\n"
 			" b    - browse symbols, flags, configurations, classes, ...\n"
 			" c    - toggle cursor\n"
@@ -1323,35 +1352,11 @@ repeat:
 		r_core_panels_layout (core->panels);
 		setRefreshAll (panels);
 		break;
-	case 'x':
-		splitPanelHorizontal (core);
-		break;
 	case 9: // TAB
-		r_cons_switchbuf (false);
-		panels->menu_y = 0;
-		panels->menu_x = -1;
-		panels->panel[panels->curnode].refresh = true;
-		panels->curnode++;
-		panels->panel[panels->curnode].refresh = true;
-		if (!panels->panel[panels->curnode].title) {
-			panels->curnode = 0;
-			panels->menu_x = 0;
-		}
+		handleTabKey (core, false);
 		break;
 	case 'Z': // SHIFT-TAB
-		r_cons_switchbuf (false);
-		panels->menu_y = 0;
-		panels->menu_x = -1;
-		panels->panel[panels->curnode].refresh = true;
-		if (panels->curnode > 0) {
-			panels->curnode--;
-		} else {
-			panels->curnode = panels->n_panels - 1;
-		}
-		panels->panel[panels->curnode].refresh = true;
-		if (!panels->curnode) {
-			panels->menu_x = 0;
-		}
+		handleTabKey (core, true);
 		break;
 	case 'M':
 	{
@@ -1414,9 +1419,6 @@ repeat:
 			}
 		}
 		break;
-	case 'v':
-		splitPanelVertical (core);
-		break;
 	case ']':
 		r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") + 1);
 		break;
@@ -1430,6 +1432,12 @@ repeat:
 		}
 		r_core_panels_layout (panels);
 		setRefreshAll (panels);
+		break;
+	case '|':
+		splitPanelVertical (core);
+		break;
+	case '-':
+		splitPanelHorizontal (core);
 		break;
 	case R_CONS_KEY_F1:
 		cmd = r_config_get (core->config, "key.f1");
