@@ -45,7 +45,14 @@ static void GH(get_brks)(RCore *core, GHT *brk_start, GHT *brk_end) {
 }
 
 static void GH(print_main_arena)(RCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, int format) {
-	int i, j, k, start, offset = SZ * 12 + sizeof (int) * 2;
+	int i, j, k, start;
+
+       #if __GLIBC_MINOR__ > 25
+                GHT offset = 16;
+       #else
+            	GHT offset = sizeof (int) * 2;
+       #endif
+
 	GHT apart[NSMALLBINS + 1] = { 0LL };
 	if (format == '*') {
 		for (i = 0; i < NBINS * 2 - 2; i += 2) {
@@ -484,7 +491,7 @@ static int GH(print_double_linked_list_bin_graph)(RCore *core, GHT bin, MallocSt
 	return 0;
 }
 
-static int GH(print_double_linked_list_bin)(RCore *core, MallocState*main_arena, GHT m_arena, GHT offset, GHT num_bin, int graph) {
+static int GH(print_double_linked_list_bin)(RCore *core, MallocState *main_arena, GHT m_arena, GHT offset, GHT num_bin, int graph) {
 	if (!core || !core->dbg || !core->dbg->maps) {
                 return -1;
 	}
@@ -531,7 +538,12 @@ static int GH(print_double_linked_list_bin)(RCore *core, MallocState*main_arena,
 static void GH(print_heap_bin)(RCore *core, GHT m_arena, MallocState *main_arena, const char *input) {
 	int i, j = 2;
 	GHT num_bin = GHT_MAX;
-	GHT offset = 12 * SZ + sizeof (int) * 2;
+	
+       #if __GLIBC_MINOR__ > 25
+                GHT offset = 16;
+       #else
+             	GHT offset = sizeof (int) * 2;
+       #endif
 
 	switch (input[0]) {
 	case '\0': // dmhb
