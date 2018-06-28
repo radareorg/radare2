@@ -2307,7 +2307,7 @@ static bool selectPanel = false;
 static char printCmds3[64] = {0};
 #define lastPrintMode 6
 static const char *cmd, *printCmds[lastPrintMode] = {
-	"pdf", "pd $r", "afi", printCmds3, "pdc", "pdr"
+	"pdf", "pd $r", "afi", "pdsf", "pdc", "pdr"
 };
 
 static void r_core_visual_anal_refresh_column (RCore *core, int colpos) {
@@ -2317,12 +2317,6 @@ static void r_core_visual_anal_refresh_column (RCore *core, int colpos) {
 	// RAnalFunction* fcn = r_anal_get_fcn_in(core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 	int h, w = r_cons_get_size (&h);
 	// int sz = (fcn)? R_MIN (r_anal_fcn_size (fcn), h * 15) : 16; // max instr is 15 bytes.
-	char *cmd_pds = r_str_newf ("pds %d", h * 6);
-	if (!cmd_pds) {
-		return;
-	}
-	strcpy (printCmds3, cmd_pds);
-	free (cmd_pds);
 
 	if (printMode > 0 && printMode < lastPrintMode) {
 		cmd = printCmds[printMode];
@@ -2347,6 +2341,7 @@ static void r_core_visual_anal_refresh_column (RCore *core, int colpos) {
 static ut64 r_core_visual_anal_refresh (RCore *core) {
 	ut64 addr;
 	char old[1024];
+	bool color = r_config_get_i (core->config, "scr.color");
 	int cols = r_cons_get_size (NULL);
 	if (!core) {
 		return 0LL;
@@ -2366,10 +2361,16 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 	switch (level) {
 	// Show functions list help in visual mode
 	case 0:
+		if (color) {
+			r_cons_strcat (core->cons->pal.prompt);
+		}
 		if (selectPanel) {
-			r_cons_printf ("-- functions -----------------[ %s ]-->>\n", printCmds[printMode]);
+			r_cons_printf ("-- functions -----------------[ %s ]-->>", printCmds[printMode]);
 		} else {
-			r_cons_printf ("-[ functions ]----------------- %s --- \n", printCmds[printMode]);
+			r_cons_printf ("-[ functions ]----------------- %s ---", printCmds[printMode]);
+		}
+		if (color) {
+			r_cons_strcat ("\n" Color_RESET);
 		}
 		r_cons_printf (
 			"(a) add     (x) xrefs  (q) quit  (jk) next/prev\n"
@@ -2456,6 +2457,10 @@ R_API void r_core_visual_anal(RCore *core) {
 			break;
 		case 9:
 			selectPanel = !selectPanel;
+			if (!selectPanel) {
+				delta = 0;
+				printMode = 0;
+			}
 			break;
 		case ':':
 			r_core_visual_prompt (core);
@@ -2523,6 +2528,9 @@ R_API void r_core_visual_anal(RCore *core) {
 		case '.':
 			delta = 0;
 			break;
+		case 'R':
+			r_core_cmd0 (core, "ecn");
+			break;
 		case 'p':
 			printMode ++;
 			break;
@@ -2536,10 +2544,7 @@ R_API void r_core_visual_anal(RCore *core) {
 		case 'd':
 			switch (level) {
 			case 0:
-				eprintf ("TODO\n");
-				//data_del(addr, DATA_FUN, 0);
-				// XXX correcly remove all the data contained inside the size of the function
-				//flag_remove_at(addr);
+				r_core_cmdf (core, "af-0x%"PFMT64x, addr);
 				break;
 			}
 			break;
