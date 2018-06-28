@@ -910,32 +910,26 @@ static void GH(print_heap_graph)(RCore *core, MallocState *main_arena, GHT *init
 }
 
 
+#if __GLIBC_MINOR__ > 25
 static void GH(print_tcache_instance)(RCore *core, MallocState *main_arena, GHT *initial_brk) {
         if (!core || !core->dbg || !core->dbg->maps) {
                 return;
         }
-	if(__GLIBC_MINOR__ < 25){
-		eprintf ("This glib release does not implement tcache\n");
-		return;
-	}
+
 
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, tcache_fd = GHT_MAX;
         GH(get_brks) (core, &brk_start, &brk_end);
 	GHT tcache_tmp = GHT_MAX;
 
 
-        #if __GLIBC_MINOR__ > 25
-                *initial_brk = ( (brk_start >> 12) << 12 ) + sizeof(GH(RHeapTcache)) + MALLOC_ALIGNMENT;
-        #else
-             	*initial_brk = (brk_start >> 12) << 12;
-        #endif
+       *initial_brk = ( (brk_start >> 12) << 12 ) + sizeof(GH(RHeapTcache)) + MALLOC_ALIGNMENT;
 
         if (brk_start == GHT_MAX || brk_end == GHT_MAX || *initial_brk == GHT_MAX) {
                 eprintf ("No heap section\n");
                 return;
         }
 
-	GH(RHeapTcache) *tcache = R_NEW0 (GH(RHeapTcache));
+		GH(RHeapTcache) *tcache = R_NEW0 (GH(RHeapTcache));
 
 	(void)r_io_read_at (core->io, brk_start + MALLOC_ALIGNMENT, (ut8 *)tcache, sizeof ( GH(RHeapTcache) ));
 
@@ -961,7 +955,7 @@ static void GH(print_tcache_instance)(RCore *core, MallocState *main_arena, GHT 
                 }
         }
 }
-
+#endif
 
 static void GH(print_heap_segment)(RCore *core, MallocState *main_arena, GHT *initial_brk, GHT global_max_fast) {
 	if (!core || !core->dbg || !core->dbg->maps) {
@@ -1577,11 +1571,13 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 		}
 		break;
 
+	#if __GLIBC_MINOR__ < 25
 	case 't':
 		if (GH(r_resolve_main_arena) (core, &m_arena, main_arena) && GH(r_resolve_global_max_fast) (core, &g_max_fast, &global_max_fast)) {
        	                GH(print_tcache_instance) (core, main_arena, &initial_brk);
                	}
                 break;
+	#endif
 	case '?':
 		r_core_cmd_help (core, GH(help_msg));
 		break;
