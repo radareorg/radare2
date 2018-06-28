@@ -2444,7 +2444,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.slow", "true", "Perform slow analysis operations in disasm");
 	SETPREF ("asm.decode", "false", "Use code analysis as a disassembler");
 	SETICB ("asm.imm.arm", false,  &cb_asm_armimm, "Display # for immediates in ARM");
-	SETPREF ("asm.imm.str", "false", "Show immediates values as strings");
+	SETPREF ("asm.imm.str", "true", "Show immediates values as strings");
 	SETPREF ("asm.imm.trim", "false", "Remove all offsets and constants from disassembly");
 	SETPREF ("asm.indent", "false", "Indent disassembly based on reflines depth");
 	SETI ("asm.indentspace", 2, "How many spaces to indent the code");
