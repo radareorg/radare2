@@ -962,11 +962,13 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena, GHT *in
 		return;
 	}
 
-	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, size_tmp, top_size = GHT_MAX, min_size = SZ * 4, tcache_fd = GHT_MAX;
+	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, size_tmp, top_size = GHT_MAX, min_size = SZ * 4; 
+
 	GH(get_brks) (core, &brk_start, &brk_end);
-	GHT  tcache_tmp;
 
 	#if __GLIBC_MINOR__ > 25
+		tcache_fd = GHT_MAX;
+		GHT  tcache_tmp;
 		*initial_brk = ( (brk_start >> 12) << 12 ) + sizeof(GH(RHeapTcache)) + MALLOC_ALIGNMENT;
 	#else
 		*initial_brk = (brk_start >> 12) << 12;
@@ -1433,7 +1435,9 @@ static const char* GH(help_msg)[] = {
 	"dmhi", " @[malloc_state]", "Display heap_info structure/structures for a given arena",
 	"dmhm", "", "List all elements of struct malloc_state of main thread (main_arena)",
 	"dmhm", " [malloc_state]", "List all malloc_state instance of a particular arena",
-	"dmht", "", "Display all parsed thead cache bins of main_arena's tcache instance",
+	#if __GLIBC_MINOR__ > 25
+		"dmht", "", "Display all parsed thead cache bins of main_arena's tcache instance",
+	#endif
 	"dmh?", "", "Show map heap help",
 	NULL
 };
@@ -1571,7 +1575,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 		}
 		break;
 
-	#if __GLIBC_MINOR__ < 25
+	#if __GLIBC_MINOR__ > 25
 	case 't':
 		if (GH(r_resolve_main_arena) (core, &m_arena, main_arena) && GH(r_resolve_global_max_fast) (core, &g_max_fast, &global_max_fast)) {
        	                GH(print_tcache_instance) (core, main_arena, &initial_brk);
