@@ -336,15 +336,16 @@ static void splitPanelVertical(RCore *core) {
 	RPanels *panels = core->panels;
 	RPanel *panel = panels->panel;
 	const int curnode = panels->curnode;
+	const int owidth = panel[curnode].w;
 
 	addPanelFrame (core, panels, panel[curnode].title, panel[curnode].cmd);
 
 	sortPanelForSplit (panels);
 
-	panel[curnode].w = panel[curnode].w / 2 + 1;
+	panel[curnode].w = owidth / 2 + 1;
 	panel[curnode + 1].x = panel[curnode].x + panel[curnode].w - 1;
 	panel[curnode + 1].y = panel[curnode].y;
-	panel[curnode + 1].w = panel[curnode].w - 1;
+	panel[curnode + 1].w = owidth - panel[curnode].w + 1;
 	panel[curnode + 1].h = panel[curnode].h;
 	setRefreshAll (panels);
 }
@@ -353,16 +354,17 @@ static void splitPanelHorizontal(RCore *core) {
 	RPanels *panels = core->panels;
 	RPanel *panel = panels->panel;
 	const int curnode = panels->curnode;
+	const int oheight = panel[curnode].h;
 
 	addPanelFrame (core, panels, panel[curnode].title, panel[curnode].cmd);
 
     sortPanelForSplit (panels);
 
-	panel[curnode].h = panel[curnode].h / 2 + 1;
+	panel[curnode].h = oheight / 2 + 1;
 	panel[curnode + 1].x = panel[curnode].x;
 	panel[curnode + 1].y = panel[curnode].y + panel[curnode].h - 1;
 	panel[curnode + 1].w = panel[curnode].w;
-	panel[curnode + 1].h = panel[curnode].h - 1;
+	panel[curnode + 1].h = oheight - panel[curnode].h + 1;
 	setRefreshAll (panels);
 }
 
