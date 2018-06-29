@@ -128,7 +128,7 @@ static void handleDownKey(RCore *core);
 static void handleLeftKey(RCore *core);
 static void handleRightKey(RCore *core);
 static bool handleEnterKey(RCore *core);
-static bool handleTabKey(RCore *core, bool shift);
+static void handleTabKey(RCore *core, bool shift);
 static int  havePanel(RPanels *panels, const char *s);
 static bool init(RCore *core, RPanels *panels, int w, int h);
 static bool initPanels(RCore *core, RPanels *panels);
@@ -1084,7 +1084,7 @@ static bool handleEnterKey(RCore *core) {
 	return true;
 }
 
-static bool handleTabKey(RCore *core, bool shift) {
+static void handleTabKey(RCore *core, bool shift) {
 	RPanels *panels = core->panels;
 	r_cons_switchbuf (false);
 	panels->menu_y = 0;
