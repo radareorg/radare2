@@ -1550,6 +1550,8 @@ static int autocomplete(RLine *line) {
 			} else {
 				autocompleteFilename (line, NULL, 1);
 			}
+		} else if (line->offset_prompt) {
+			autocomplete_flags (line, line->buffer.data);
 		} else if (!find_autocomplete (line)) {
 			int i, cfg_newtab = r_config_get_i (core->config, "cfg.newtab");
 			if (cfg_newtab) {
