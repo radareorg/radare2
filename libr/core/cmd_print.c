@@ -2292,8 +2292,8 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 	}
 
 	ut64 off = core->offset;
-	ut64 from;
-	ut64 to;
+	ut64 from = 0;
+	ut64 to = 0;
 	{
 		RList *list = r_core_get_boundaries_prot (core, -1, NULL, "search");
 		RIOMap *map = r_list_first (list);
