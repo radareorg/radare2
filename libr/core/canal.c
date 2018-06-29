@@ -3370,6 +3370,10 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 		}
 		piece = (F->addr - from) / step;
 		as->block[piece].functions++;
+		int last_piece = R_MIN ((F->addr + F->_size - 1) / step, blocks - 1);
+		for (; piece <= last_piece; piece++) {
+			as->block[piece].in_functions++;
+		}
 	}
 	// iter all symbols
 	r_list_foreach (r_bin_get_symbols (core->bin), iter, S) {

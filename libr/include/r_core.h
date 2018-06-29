@@ -680,6 +680,7 @@ typedef struct {
 	ut32 flags;
 	ut32 comments;
 	ut32 functions;
+	ut32 in_functions;
 	ut32 symbols;
 	ut32 strings;
 	ut32 rwx;

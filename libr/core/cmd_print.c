@@ -2347,26 +2347,22 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 					r_cons_printf ("\"offset\":%"PFMT64d ",", at), l++;
 					r_cons_printf ("\"size\":%"PFMT64d ",", piece), l++;
 				}
-				// TODO: simplify with macro
 				l = 0;
-				if (as->block[p].flags) {
-					r_cons_printf ("%s\"flags\":%d", l? ",": "", as->block[p].flags), l++;
-				}
-				if (as->block[p].functions) {
-					r_cons_printf ("%s\"functions\":%d", l? ",": "", as->block[p].functions), l++;
-				}
-				if (as->block[p].comments) {
-					r_cons_printf ("%s\"comments\":%d", l? ",": "", as->block[p].comments), l++;
-				}
-				if (as->block[p].symbols) {
-					r_cons_printf ("%s\"symbols\":%d", l? ",": "", as->block[p].symbols), l++;
-				}
-				if (as->block[p].strings) {
-					r_cons_printf ("%s\"strings\":%d", l? ",": "", as->block[p].strings), l++;
-				}
-				if (as->block[p].rwx) {
-					r_cons_printf ("%s\"rwx\":\"%s\"", l? ",": "", r_str_rwx_i (as->block[p].rwx)), l++;
-				}
+#define PRINT_VALUE(name, cond, v) { \
+				if (cond) { \
+					r_cons_printf ("%s\"" name "\":%d", l? ",": "", (v)); \
+					l++; \
+				}}
+#define PRINT_VALUE2(name, v) PRINT_VALUE(name, v, v)
+				PRINT_VALUE2 ("flags", as->block[p].flags);
+				PRINT_VALUE2 ("functions", as->block[p].functions);
+				PRINT_VALUE2 ("in_functions", as->block[p].in_functions);
+				PRINT_VALUE2 ("comments", as->block[p].comments);
+				PRINT_VALUE2 ("symbols", as->block[p].symbols);
+				PRINT_VALUE2 ("strings", as->block[p].strings);
+				PRINT_VALUE ("rwx", as->block[p].rwx, r_str_rwx_i (as->block[p].rwx));
+#undef PRINT_VALUE
+#undef PRINT_VALUE2
 				r_cons_strcat ("}");
 				len++;
 				break;
@@ -2415,6 +2411,8 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 						r_cons_memcat ("c", 1);
 					} else if (as->block[p].flags > 0) {
 						r_cons_memcat (".", 1);
+					} else if (as->block[p].in_functions > 0) {
+						r_cons_memcat ("f", 1);
 					} else {
 						r_cons_memcat ("_", 1);
 					}
