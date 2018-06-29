@@ -2339,13 +2339,13 @@ static void r_core_visual_anal_refresh_column (RCore *core, int colpos) {
 }
 
 static ut64 r_core_visual_anal_refresh (RCore *core) {
+	if (!core) {
+		return 0LL;
+	}
 	ut64 addr;
 	char old[1024];
 	bool color = r_config_get_i (core->config, "scr.color");
 	int cols = r_cons_get_size (NULL);
-	if (!core) {
-		return 0LL;
-	}
 	old[0] = '\0';
 	addr = core->offset;
 	cols -= 50;
