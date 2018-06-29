@@ -69,6 +69,9 @@ static void var_rename (RAnal *anal, RAnalVar *v, const char *name, ut64 addr) {
 		return;
 	}
 	RAnalFunction *fcn = r_anal_get_fcn_in (anal, addr, 0);
+	if (!fcn) {
+		return;
+	}
 	RAnalVar *v1 = r_anal_var_get_byname (anal, fcn, name);
 	if (v1) {
 		r_anal_var_free (v1);
