@@ -32,9 +32,51 @@ R_LIB_VERSION_HEADER(r_heap_glibc);
 #define BITSPERMAP (1U << BINMAPSHIFT)
 #define BINMAPSIZE (NBINS / BITSPERMAP)
 #define MAX(a,b) (((a)>(b))?(a):(b))
+
+#if __GLIBC_MINOR__ > 25
+#define MALLOC_ALIGNMENT 16
+#else
 #define MALLOC_ALIGNMENT MAX (2 * SZ,  __alignof__ (long double))
+#endif
+
 #define MALLOC_ALIGN_MASK (MALLOC_ALIGNMENT - 1)
 #define NPAD -6
+
+
+#if __GLIBC_MINOR__ > 25
+#define MallocState GH(RHeap_MallocState_tcache)
+#define SIZE_SZ (sizeof (size_t))
+#define MIN_CHUNK_SIZE SZ*4
+#define MINSIZE  \
+  (unsigned long)(((MIN_CHUNK_SIZE+MALLOC_ALIGN_MASK) & ~MALLOC_ALIGN_MASK))
+#define request2size(req)                                         \
+  (((req) + SIZE_SZ + MALLOC_ALIGN_MASK < MINSIZE)  ?             \
+   MINSIZE :                                                      \
+   ((req) + SIZE_SZ + MALLOC_ALIGN_MASK) & ~MALLOC_ALIGN_MASK)
+
+# define TCACHE_MAX_BINS        	64
+# define MAX_TCACHE_SIZE        	tidx2usize (TCACHE_MAX_BINS-1)
+/* Only used to pre-fill the tunables.  */
+# define tidx2usize(idx)        (((size_t) idx) * MALLOC_ALIGNMENT + MINSIZE - SIZE_SZ)
+
+/* When "x" is from chunksize().  */
+# define csize2tidx(x) (((x) - MINSIZE + MALLOC_ALIGNMENT - 1) / MALLOC_ALIGNMENT)
+/* When "x" is a user-provided size.  */
+# define usize2tidx(x) csize2tidx (request2size (x))
+
+/* With rounding and alignment, the bins are...
+   idx 0   bytes 0..24 (64-bit) or 0..12 (32-bit)
+   idx 1   bytes 25..40 or 13..20
+   idx 2   bytes 41..56 or 21..28
+   etc.  */
+ 
+/* This is another arbitrary limit, which tunables can change.  Each
+tcache bin will hold at most this number of chunks.  */
+# define TCACHE_FILL_COUNT 7
+
+#else
+#define MallocState GH(RHeap_MallocState)
+#endif
 
 #define largebin_index_32(size)				       \
 (((((ut32)(size)) >>  6) <= 38)?  56 + (((ut32)(size)) >>  6): \
@@ -128,9 +170,62 @@ typedef struct r_malloc_state_64 {
 	ut64 next; 				/* double linked list of chunks */
 	ut64 next_free; 			/* double linked list of free chunks */
 
-	ut64 system_mem;	 		/* current allocated memory of current arena */
+	ut64 system_mem; 			/* current allocated memory of current arena */
 	ut64 max_system_mem;  			/* maximum system memory */
 } RHeap_MallocState_64; 
+
+#if __GLIBC_MINOR__ > 25
+typedef struct r_tcache_perthread_struct_32 {
+	ut8 counts[TCACHE_MAX_BINS];
+	unsigned int *entries[TCACHE_MAX_BINS];
+} RHeapTcache_32;
+
+typedef struct r_tcache_perthread_struct_64 {
+	ut8 counts[TCACHE_MAX_BINS];
+	unsigned int *entries[TCACHE_MAX_BINS];
+} RHeapTcache_64;
+
+typedef struct r_malloc_state_tcache_32 {
+	int mutex; 				/* serialized access */
+	int flags; 				/* flags */
+
+	int have_fast_chunks;                   /* have fast chunks */
+
+	ut32 fastbinsY[NFASTBINS];		/* array of fastchunks */
+	ut32 top; 				/* top chunk's base addr */
+	ut32 last_remainder;			/* remainder top chunk's addr */
+	ut32 bins[NBINS * 2 - 2];   		/* array of remainder free chunks */
+	unsigned int binmap[BINMAPSIZE]; 	/* bitmap of bins */
+
+	ut32 next; 				/* double linked list of chunks */
+	ut32 next_free; 			/* double linked list of free chunks */
+	unsigned int attached_threads;          /* threads attached */
+
+	ut32 system_mem;	 		/* current allocated memory of current arena */
+	ut32 max_system_mem;  			/* maximum system memory */
+} RHeap_MallocState_tcache_32;
+
+
+typedef struct r_malloc_state_tcache_64 {
+	int mutex; 				/* serialized access */
+	int flags; 				/* flags */
+
+	int have_fast_chunks;                   /* have fast chunks */
+
+	ut64 fastbinsY[NFASTBINS];		/* array of fastchunks */
+	ut64 top; 				/* top chunk's base addr */
+	ut64 last_remainder;			/* remainder top chunk's addr */
+	ut64 bins[NBINS * 2 - 2];   		/* array of remainder free chunks */
+	unsigned int binmap[BINMAPSIZE]; 	/* bitmap of bins */
+
+	ut64 next; 				/* double linked list of chunks */
+	ut64 next_free; 			/* double linked list of free chunks */
+	unsigned int attached_threads;          /* threads attached */
+
+	ut64 system_mem;	 		/* current allocated memory of current arena */
+	ut64 max_system_mem;  			/* maximum system memory */
+} RHeap_MallocState_tcache_64;
+#endif
 
 typedef struct r_heap_info_32 {
 	ut32 ar_ptr;			/* Arena for this heap. */
