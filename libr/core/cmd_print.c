@@ -2356,6 +2356,7 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 #define PRINT_VALUE2(name, v) PRINT_VALUE(name, v, v)
 				PRINT_VALUE2 ("flags", as->block[p].flags);
 				PRINT_VALUE2 ("functions", as->block[p].functions);
+				PRINT_VALUE2 ("in_functions", as->block[p].in_functions);
 				PRINT_VALUE2 ("comments", as->block[p].comments);
 				PRINT_VALUE2 ("symbols", as->block[p].symbols);
 				PRINT_VALUE2 ("strings", as->block[p].strings);
@@ -2410,6 +2411,8 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 						r_cons_memcat ("c", 1);
 					} else if (as->block[p].flags > 0) {
 						r_cons_memcat (".", 1);
+					} else if (as->block[p].in_functions > 0) {
+						r_cons_memcat ("f", 1);
 					} else {
 						r_cons_memcat ("_", 1);
 					}
