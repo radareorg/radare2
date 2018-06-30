@@ -81,7 +81,7 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 }
 
 static int show_help(char *argv0, int line) {
-	printf ("Usage: %s [-mXnzZhv] [-a align] [-b sz] [-f/t from/to] [-[e|s|S] str] [-x hex] file ..\n", argv0);
+	printf ("Usage: %s [-mXnzZhv] [-a align] [-b sz] [-f/t from/to] [-[e|s|S] str] [-x hex] file|dir ..\n", argv0);
 	if (line) return 0;
 	printf (
 	" -a [align] only accept aligned hits\n"
@@ -106,7 +106,9 @@ static int show_help(char *argv0, int line) {
 	return 0;
 }
 
-static int rafind_open(char *file) {
+static int rafind_open(char *file);
+
+static int rafind_open_file(char *file) {
 	const char *kw;
 	RListIter *iter;
 	bool last = false;
@@ -201,6 +203,39 @@ static int rafind_open(char *file) {
 	rs = r_search_free (rs);
 	free (buf);
 	return 0;
+}
+
+static int rafind_open_dir(char *dir) {
+	RList *files;
+	RListIter *iter;
+	char *fullpath;
+	char *fname = NULL;
+
+	files = r_sys_dir (dir);
+
+	if (files) {
+		r_list_foreach (files, iter, fname) {
+			/* Filter-out unwanted entries */
+			if (*fname == '.') {
+				continue;
+			}
+
+			fullpath = r_str_newf ("%s"R_SYS_DIR"%s", dir, fname);
+			rafind_open (fullpath);
+			free (fullpath);
+		}
+		r_list_free (files);
+	}
+
+	return 0;
+}
+
+static int rafind_open(char *file) {
+	if (r_file_is_directory (file)) {
+		return rafind_open_dir (file);
+	}
+
+	return rafind_open_file (file);
 }
 
 int main(int argc, char **argv) {
