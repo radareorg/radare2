@@ -3,6 +3,7 @@
 #include <r_flag.h>
 #include <r_util.h>
 #include <r_cons.h>
+#include <r_core.h>
 #include <stdio.h>
 
 R_LIB_VERSION(r_flag);
@@ -330,8 +331,9 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 				f->cb_printf ("%s %"PFMT64d" %s\n",
 					flag->alias, flag->size, flag->name);
 			} else {
+				bool utf8 = r_cons_singleton ()->use_utf8;
 				f->cb_printf ("0x%08"PFMT64x" %"PFMT64d" %s\n",
-					flag->offset, flag->size, flag->realname);
+					flag->offset, flag->size, utf8 ? flag->realname : flag->name);
 			}
 		}
 		break;
