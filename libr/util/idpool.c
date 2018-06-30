@@ -403,7 +403,7 @@ R_API bool r_oids_foreach (ROIDStorage *storage, RIDStorageForeachCb cb, void *u
 		|| !storage->permutation) {
 		return false;
 	}
-	for (i = storage->ptop; i != 0; i--) {
+	for (i = storage->ptop - 1; i != 0; i--) {
 		id = storage->permutation[i];
 		if (!cb (user, storage->data->data[id], id)) {
 			return false;
