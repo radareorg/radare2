@@ -213,13 +213,14 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			}
 			r_meta_add (r->anal, R_META_TYPE_STRING, addr, addr + string->size, string->string);
 			f_name = strdup (string->string);
+			r_name_filter (f_name, -1);
 			if (r->bin->prefix) {
 				str = r_str_newf ("%s.str.%s", r->bin->prefix, f_name);
+				f_realname = r_str_newf ("%s.str.%s", r->bin->prefix, string->string);
 			} else {
 				str = r_str_newf ("str.%s", f_name);
+				f_realname = r_str_newf ("str.%s", string->string);
 			}
-			f_realname = strdup (str);
-			r_name_filter (str, -1);
 			RFlagItem *flag = r_flag_set (r->flags, str, addr, string->size);
 			r_flag_item_set_realname (flag, f_realname);
 			free (str);
