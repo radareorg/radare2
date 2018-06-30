@@ -22,6 +22,7 @@ static ut64 from = 0LL, to = -1;
 static char *mask = NULL;
 static int nonstop = 0;
 static bool identify = false;
+static bool quiet = false;
 static int mode = R_SEARCH_STRING;
 static ut64 cur = 0;
 static ut8 *buf = NULL;
@@ -81,7 +82,7 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 }
 
 static int show_help(char *argv0, int line) {
-	printf ("Usage: %s [-mXnzZhv] [-a align] [-b sz] [-f/t from/to] [-[e|s|S] str] [-x hex] file|dir ..\n", argv0);
+	printf ("Usage: %s [-mXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|S] str] [-x hex] file|dir ..\n", argv0);
 	if (line) return 0;
 	printf (
 	" -a [align] only accept aligned hits\n"
@@ -97,6 +98,7 @@ static int show_help(char *argv0, int line) {
 	" -s [str]   search for a specific string (can be used multiple times)\n"
 	" -S [str]   search for a specific wide string (can be used multiple times)\n"
 	" -t [to]    stop search at address 'to'\n"
+	" -q         quiet - do not show headings (filenames) above matching contents (default for searching a single file)\n"
 	" -v         print version and exit\n"
 	" -x [hex]   search for hexpair string (909090) (can be used multiple times)\n"
 	" -X         show hexdump of search results\n"
@@ -113,6 +115,10 @@ static int rafind_open_file(char *file) {
 	RListIter *iter;
 	bool last = false;
 	int ret;
+
+	if (!quiet) {
+		printf ("File: %s\n", file);
+	}
 
 	if (identify) {
 		char *cmd = r_str_newf ("r2 -e search.show=false -e search.maxhits=1 -nqcpm '%s'", file);
@@ -242,7 +248,7 @@ int main(int argc, char **argv) {
 	int c;
 
 	keywords = r_list_new ();
-	while ((c = getopt (argc, argv, "a:ie:b:mM:s:S:x:Xzf:t:rnhvZ")) != -1) {
+	while ((c = getopt (argc, argv, "a:ie:b:mM:s:S:x:Xzf:t:rqnhvZ")) != -1) {
 		switch (c) {
 		case 'a':
 			align = r_num_math (NULL, optarg);
@@ -298,6 +304,9 @@ int main(int argc, char **argv) {
 		case 'X':
 			pr = r_print_new ();
 			break;
+		case 'q':
+			quiet = true;
+			break;
 		case 'v':
 			printf ("rafind2 v"R2_VERSION"\n");
 			return 0;
@@ -315,6 +324,10 @@ int main(int argc, char **argv) {
 	}
 	if (optind == argc) {
 		return show_help (argv[0], 1);
+	}
+	/* Enable quiet mode if searching just a single file */
+	if (optind + 1 == argc && !r_file_is_directory (argv[optind])) {
+		quiet = true;
 	}
 	for (; optind < argc; optind++) {
 		rafind_open (argv[optind]);
