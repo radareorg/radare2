@@ -51,8 +51,8 @@ R_API const char *r_syscall_reg(RSyscall *s, int idx, int num) {
 }
 
 static Sdb *openDatabase(Sdb *db, const char *name) {
-	char *file = r_str_newf ("%s/%s/%s.sdb",
-		r_sys_prefix (NULL), "share/radare2/last", name);
+	char *file = r_str_newf ( R_JOIN_3_PATHS ("%s", R2_SDB, "%s.sdb"),
+		r_sys_prefix (NULL), name);
 	if (r_file_exists (file)) {
 		if (db) {
 			sdb_reset (db);
@@ -112,11 +112,13 @@ R_API bool r_syscall_setup(RSyscall *s, const char *arch, int bits, const char *
 		}
 	}
 
-	char *dbName = r_str_newf ("syscall/%s-%s-%d", os, arch, bits);
+	char *dbName = r_str_newf (R_JOIN_2_PATHS ("syscall", "%s-%s-%d"),
+		os, arch, bits);
 	s->db = openDatabase (s->db, dbName);
 	free (dbName);
 
-	dbName = r_str_newf ("sysregs/%s-%d-%s", arch, bits, cpu ? cpu: arch);
+	dbName = r_str_newf (R_JOIN_2_PATHS ("sysregs", "%s-%d-%s"),
+		arch, bits, cpu ? cpu: arch);
 	sdb_free (s->srdb);
 	s->srdb = NULL;
 	s->srdb = openDatabase (s->srdb, dbName);
@@ -197,11 +199,11 @@ R_API RSyscallItem *r_syscall_get(RSyscall *s, int num, int swi) {
 	}
 	ret = sdb_const_get (s->db, key, 0);
 	if (!ret) {
-		key = sdb_fmt ("0x%02x.0x%02x", swi, num); // Workaround until Syscall SDB is fixed 
+		key = sdb_fmt ("0x%02x.0x%02x", swi, num); // Workaround until Syscall SDB is fixed
 		ret = sdb_const_get (s->db, key, 0);
 		if (!ret) {
 			return NULL;
-		}	
+		}
 	}
 	ret2 = sdb_const_get (s->db, ret, 0);
 	if (!ret2) {
