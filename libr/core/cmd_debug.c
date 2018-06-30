@@ -1405,36 +1405,35 @@ beach:
 static int cmd_dbg_map_heap_glibc_32 (RCore *core, const char *input);
 static int cmd_dbg_map_heap_glibc_64 (RCore *core, const char *input);
 
-static void get_hash_debug_file(const char *path, char *hash, int hash_len) {
+static void get_hash_debug_file(RCore *core, const char *path, char *hash, int hash_len) {
 	RListIter *iter;
-	RBinSection *s;
-	RCore *core = r_core_new ();
-	RList *sects = NULL;
-	RBinOptions *bo = NULL;
 	char buf[20] = R_EMPTY;
 	int offset, err, i, j = 0;
+	int bd = -1;
+	RBinFile *old_cur = r_bin_cur (core->bin);
 
-	if (!core) {
-		return;
-	}
-
-	bo = r_bin_options_new (0LL, 0LL, NULL);
+	RBinOptions *bo = r_bin_options_new (0LL, 0LL, NULL);
 	if (!bo) {
 		eprintf ("Could not create RBinOptions\n");
 		goto out_error;
 	}
-
 	bo->iofd = -1;
 
-	if (!r_bin_open (core->bin, path, bo)) {
+	bd = r_bin_open (core->bin, path, bo);
+	if (bd < 0) {
 		eprintf ("Could not open binary\n");
 		goto out_error;
 	}
 
-	sects = r_bin_get_sections (core->bin);
-	if (!sects) {
+	RBinFile *binfile = r_bin_file_find_by_id (core->bin, (unsigned int) bd);
+	if (!binfile || !binfile->o) {
 		goto out_error;
 	}
+
+	r_io_map_priorize_for_fd (core->io, binfile->fd);
+
+	RList *sects = binfile->o->sections;
+	RBinSection *s;
 	r_list_foreach (sects, iter, s) {
 		if (strstr (s->name, ".note.gnu.build-id")) {
 			err = r_io_read_at (core->io, s->vaddr + 16, (ut8 *) buf, 20);
@@ -1455,8 +1454,11 @@ static void get_hash_debug_file(const char *path, char *hash, int hash_len) {
 	offset = j + 2 * i;
 	snprintf (hash + offset, hash_len - offset - strlen (".debug"), ".debug");
 out_error:
+	if (bd >= 0) {
+		r_bin_file_delete (core->bin, (unsigned int) bd);
+		r_bin_file_set_cur_binfile (core->bin, old_cur);
+	}
 	r_bin_options_free (bo);
-	r_core_free (core);
 }
 
 static int str_start_with(const char *ptr, const char *str) {

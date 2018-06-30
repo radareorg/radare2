@@ -277,7 +277,7 @@ static bool GH(r_resolve_symbol)(RCore *core, GHT *symbol, const char *symname) 
 
 	if ((is_debug_file[3] || is_debug_file[4] || is_debug_file[5]) && \
 	r_file_is_directory ("/usr/lib/debug/.build-id")) {
-		get_hash_debug_file (libc_ver_end, hash, sizeof (hash) - 1);
+		get_hash_debug_file (core, libc_ver_end, hash, sizeof (hash) - 1);
 		libc_ver_end = hash;
 		free (path);
 		path = r_str_newf ("%s%s%s", dir_dbg, dir_build_id, libc_ver_end);
