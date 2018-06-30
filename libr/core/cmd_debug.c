@@ -1406,17 +1406,24 @@ static int cmd_dbg_map_heap_glibc_32 (RCore *core, const char *input);
 static int cmd_dbg_map_heap_glibc_64 (RCore *core, const char *input);
 
 static void get_hash_debug_file(const char *path, char *hash, int hash_len) {
-	RListIter *iter;
-	RBinSection *s;
-	RCore *core = r_core_new ();
-	RList *sects = NULL;
+	RBin *bin = NULL;
+	RIO *io = NULL;
 	RBinOptions *bo = NULL;
+	RListIter *iter;
 	char buf[20] = R_EMPTY;
 	int offset, err, i, j = 0;
 
-	if (!core) {
-		return;
+	bin = r_bin_new ();
+	if (!bin) {
+		goto out_error;
 	}
+
+	io = r_io_new ();
+	if (!io) {
+		goto out_error;
+	}
+	io->va = 1;
+	r_io_bind (io, &(bin->iob));
 
 	bo = r_bin_options_new (0LL, 0LL, NULL);
 	if (!bo) {
@@ -1426,18 +1433,19 @@ static void get_hash_debug_file(const char *path, char *hash, int hash_len) {
 
 	bo->iofd = -1;
 
-	if (r_bin_open (core->bin, path, bo) < 0) {
+	if (r_bin_open (bin, path, bo) < 0) {
 		eprintf ("Could not open binary\n");
 		goto out_error;
 	}
 
-	sects = r_bin_get_sections (core->bin);
+	RList *sects = r_bin_get_sections (bin);
 	if (!sects) {
 		goto out_error;
 	}
+	RBinSection *s;
 	r_list_foreach (sects, iter, s) {
 		if (strstr (s->name, ".note.gnu.build-id")) {
-			err = r_io_read_at (core->io, s->vaddr + 16, (ut8 *) buf, 20);
+			err = r_io_read_at (io, s->vaddr + 16, (ut8 *) buf, 20);
 			if (!err) {
 				eprintf ("Unable to read from memory\n");
 				goto out_error;
@@ -1455,8 +1463,9 @@ static void get_hash_debug_file(const char *path, char *hash, int hash_len) {
 	offset = j + 2 * i;
 	snprintf (hash + offset, hash_len - offset - strlen (".debug"), ".debug");
 out_error:
+	r_io_free (io);
+	r_bin_free (bin);
 	r_bin_options_free (bo);
-	r_core_free (core);
 }
 
 static int str_start_with(const char *ptr, const char *str) {
