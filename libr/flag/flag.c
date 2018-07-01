@@ -3,7 +3,6 @@
 #include <r_flag.h>
 #include <r_util.h>
 #include <r_cons.h>
-#include <r_core.h>
 #include <stdio.h>
 
 R_LIB_VERSION(r_flag);
@@ -209,7 +208,7 @@ R_API RFlag *r_flag_free(RFlag *f) {
 }
 
 /* print with r_cons the flag items in the flag f, given as a parameter */
-R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
+R_API void r_flag_list(RFlag *f, int rad, const char *pfx, bool flag_realnames) {
 	bool in_range = false;
 	ut64 range_from = UT64_MAX;
 	ut64 range_to = UT64_MAX;
@@ -331,9 +330,8 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 				f->cb_printf ("%s %"PFMT64d" %s\n",
 					flag->alias, flag->size, flag->name);
 			} else {
-				bool utf8 = r_cons_singleton ()->use_utf8;
 				f->cb_printf ("0x%08"PFMT64x" %"PFMT64d" %s\n",
-					flag->offset, flag->size, utf8 ? flag->realname : flag->name);
+					flag->offset, flag->size, flag_realnames ? flag->realname : flag->name);
 			}
 		}
 		break;
