@@ -817,7 +817,7 @@ rep:
 	case '*': // "f*"
 	case 'j': // "fj"
 	case 'q': // "fq"
-		r_flag_list (core->flags, *input, input[0]? input + 1: "");
+		r_flag_list (core->flags, *input, input[0]? input + 1: "", core->cons->use_utf8);
 		break;
 	case 'i': // "fi"
 		if (input[1] == ' ' || input[2] == ' ') {
@@ -840,13 +840,13 @@ rep:
 				arg = r_str_newf (" 0x%"PFMT64x" 0x%"PFMT64x,
 					core->offset, core->offset + core->blocksize);
 			}
-			r_flag_list (core->flags, 'i', arg);
+			r_flag_list (core->flags, 'i', arg, core->cons->use_utf8);
 			free (arg);
 		} else {
 			// XXX dupe for prev case
 			char *arg = r_str_newf (" 0x%"PFMT64x" 0x%"PFMT64x,
 				core->offset, core->offset + core->blocksize);
-			r_flag_list (core->flags, 'i', arg);
+			r_flag_list (core->flags, 'i', arg, core->cons->use_utf8);
 			free (arg);
 		}
 		break;

@@ -91,7 +91,7 @@ R_API int r_flag_bind(RFlag *io, RFlagBind *bnd);
 #ifdef R_API
 R_API RFlag * r_flag_new(void);
 R_API RFlag * r_flag_free(RFlag *f);
-R_API void r_flag_list(RFlag *f, int rad, const char *pfx);
+R_API void r_flag_list(RFlag *f, int rad, const char *pfx, bool flag_realnames);
 R_API bool r_flag_exist_at(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64 off);
 R_API RFlagItem *r_flag_get(RFlag *f, const char *name);
 R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off);
