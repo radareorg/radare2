@@ -2438,6 +2438,7 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 			r_cons_printf ("] 0x%"PFMT64x "\n", to);
 	}
 	r_core_anal_stats_free (as);
+	return len;
 }
 
 
