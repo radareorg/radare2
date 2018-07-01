@@ -360,6 +360,23 @@ R_API void r_oids_delete (ROIDStorage *storage, ut32 id) {
 	}
 }
 
+R_API void r_oids_odelete (ROIDStorage *st, ut32 od) {
+	ut32 n;
+	if (!st || !st->permutation || od >= st->ptop) {
+		return;
+	}
+	n = st->ptop - od - 1;
+	r_id_storage_delete (st->data, st->permutation[od]);
+	memmove (&st->permutation[od], &st->permutation[od + 1], n * sizeof(ut32));
+	st->ptop--;
+	if (!st->ptop) {
+		R_FREE (st->permutation);
+		st->psize = 0;
+	} else if ((st->ptop + 1) < (st->psize / 4)) {
+		oid_storage_preallocate (st, st->psize / 2);
+	}
+}
+
 R_API void *r_oids_take (ROIDStorage *storage, ut32 id) {
 	void *ret;
 	if (!storage) {
@@ -367,6 +384,12 @@ R_API void *r_oids_take (ROIDStorage *storage, ut32 id) {
 	}
 	ret = r_id_storage_get (storage->data, id);
 	r_oids_delete (storage, id);
+	return ret;
+}
+
+R_API void *r_oids_otake (ROIDStorage *st, ut32 od) {
+	void *ret = r_oids_oget (st, od);
+	r_oids_odelete (st, od);
 	return ret;
 }
 
