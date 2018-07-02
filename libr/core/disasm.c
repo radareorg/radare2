@@ -3416,6 +3416,9 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 						break;
 					}
 				}
+				if (r_flag_get_i (core->flags, v)) {
+					printable = false;
+				}
 				if (printable) {
 					ds_begin_comment (ds);
 					ds_comment (ds, true, "; '%s'", str);
