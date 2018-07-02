@@ -3633,10 +3633,12 @@ R_API RBinJavaAttrInfo *r_bin_java_exceptions_attr_new(ut8 *buffer, ut64 sz, ut6
 	ut32 i = 0, offset = 0;
 	ut64 size;
 	RBinJavaAttrInfo *attr = NULL;
+	if (sz < 8) {
+		return NULL;
+	}
 	attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
 	offset += 6;
-	if (attr == NULL) {
-		// TODO eprintf
+	if (!attr) {
 		return attr;
 	}
 	attr->type = R_BIN_JAVA_ATTR_TYPE_LINE_NUMBER_TABLE_ATTR;
@@ -3653,6 +3655,9 @@ R_API RBinJavaAttrInfo *r_bin_java_exceptions_attr_new(ut8 *buffer, ut64 sz, ut6
 		return NULL;
 	}
 	for (i = 0; i < attr->info.exceptions_attr.number_of_exceptions; i++) {
+		if (offset + 2 > sz) {
+			break;
+		}
 		attr->info.exceptions_attr.exception_idx_table[i] = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
 	}
