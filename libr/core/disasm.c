@@ -1877,14 +1877,15 @@ static void ds_show_flags(RDisasmState *ds) {
 			}
 		}
 		ds_begin_json_line (ds);
+
 		if (ds->show_flgoff) {
 			ds_beginline (ds);
 			ds_print_offset (ds);
 			r_cons_printf (" ");
 		} else {
 			ds_pre_xrefs (ds, false);
-			r_cons_printf (";-- ");
 		}
+
 		if (ds->show_color) {
 			bool hasColor = false;
 			if (flag->color) {
@@ -1900,6 +1901,11 @@ static void ds_show_flags(RDisasmState *ds) {
 				r_cons_strcat (ds->color_flag);
 			}
 		}
+
+		if (!ds->show_flgoff) {
+			r_cons_printf (";-- ");
+		}
+
 		if (ds->asm_demangle && flag->realname) {
 			if (!strncmp (flag->name, "case.", 5)) {
 				if (!strncmp (flag->name + 5, "default", 7)) {
@@ -2465,6 +2471,7 @@ static bool ds_print_data_type(RDisasmState *ds, const ut8 *buf, int ib, int siz
 		}
 	}
 
+	r_cons_strcat (ds->color_mov);
 	switch (ib) {
 	case 1:
 		r_str_bits (msg, buf, size * 8, NULL);
