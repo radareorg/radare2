@@ -6362,7 +6362,12 @@ R_API void r_bin_java_element_value_free(void /*RBinJavaElementValue*/ *e) {
 			obj = element_value->value.enum_const_value.const_name_cp_obj;
 			((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->delete_obj (obj);
 			obj = element_value->value.enum_const_value.type_name_cp_obj;
-			((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->delete_obj (obj);
+			if (obj && obj->metas) {
+				RBinJavaCPTypeMetas *tm = obj->metas->type_info;
+				if (tm && tm->allocs && tm->allocs->delete_obj) {
+					tm->allocs->delete_obj (obj);
+				}
+			}
 			break;
 		case R_BIN_JAVA_EV_TAG_CLASS:
 			// Delete the CP Type Object
@@ -6426,7 +6431,7 @@ R_API void r_bin_java_annotation_default_attr_free(void /*RBinJavaAttrInfo*/ *a)
 	RBinJavaElementValue *element_value = NULL, *ev_element = NULL;
 	RBinJavaCPTypeObj *obj = NULL;
 	RListIter *iter = NULL, *iter_tmp = NULL;
-	if (attr == NULL || attr->type != R_BIN_JAVA_ATTR_TYPE_ANNOTATION_DEFAULT_ATTR) {
+	if (!attr || attr->type != R_BIN_JAVA_ATTR_TYPE_ANNOTATION_DEFAULT_ATTR) {
 		return;
 	}
 	element_value = (attr->info.annotation_default_attr.default_value);
