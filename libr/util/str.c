@@ -1509,7 +1509,6 @@ R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len) {
 	return j;
 }
 
-
 R_API char *r_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
 	char *r, *r_end, *ret;
 	const char *s, *s_start;
