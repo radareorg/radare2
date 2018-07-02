@@ -325,9 +325,9 @@ static inline void mk_reg_str(const char *regname, int delta, bool sign, bool at
 }
 
 static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data, char *str, int len) {
-	RList *regs, *bpargs, *spargs;
-	RAnalVar *reg, *bparg, *sparg;
-	RListIter *regiter, *bpargiter, *spiter;
+	RList *bpargs, *spargs;
+	RAnalVar *bparg, *sparg;
+	RListIter *bpargiter, *spiter;
 	char oldstr[64], newstr[64];
 	char *tstr = strdup (data);
 	if (!tstr) {
@@ -390,7 +390,6 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
                 free (tstr);
 		return false;
         }
-	regs = p->varlist (p->anal, f, 'r');
 	bpargs = p->varlist (p->anal, f, 'b');
 	spargs = p->varlist (p->anal, f, 's');
 	/*iterate over stack pointer arguments/variables*/
@@ -482,13 +481,6 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 		bp[0] = 0;
 	}
 
-	r_list_foreach (regs, regiter, reg) {
-		RRegItem *r = r_reg_index_get (p->anal->reg, reg->delta);
-		if (r && r->name && strstr (tstr, r->name)){
-			tstr = r_str_replace (tstr, r->name, reg->name, 1);
-		}
-	}
-
 	bool ret = true;
 	if (len > strlen (tstr)) {
 		strncpy (str, tstr, strlen (tstr));
@@ -500,7 +492,6 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 	free (tstr);
 	r_list_free (spargs);
 	r_list_free (bpargs);
-	r_list_free (regs);
 	return ret;
 }
 

@@ -564,7 +564,7 @@ static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num)
 
 static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
 	static RRegItem reg;
-	switch (op->type) {
+	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_LOAD:
 		if (INSOP(1).type == PPC_OP_MEM) {
 			ZERO_FILL (reg);

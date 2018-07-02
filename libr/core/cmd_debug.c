@@ -322,6 +322,7 @@ static const char *help_msg_dr[] = {
 	"drps", "", "Fake register profile size",
 	"drpj", "", "Show the current register profile (JSON)",
 	"drr", "", "Show registers references (telescoping)",
+	"drrj", "", "Show registers references (telescoping) in JSON format",
 	// TODO: 'drs' to swap register arenas and display old register valuez
 	"drs", "[?]", "Stack register states",
 	"drt", " 16", "Show 16 bit registers",
@@ -1404,36 +1405,35 @@ beach:
 static int cmd_dbg_map_heap_glibc_32 (RCore *core, const char *input);
 static int cmd_dbg_map_heap_glibc_64 (RCore *core, const char *input);
 
-static void get_hash_debug_file(const char *path, char *hash, int hash_len) {
+static void get_hash_debug_file(RCore *core, const char *path, char *hash, int hash_len) {
 	RListIter *iter;
-	RBinSection *s;
-	RCore *core = r_core_new ();
-	RList *sects = NULL;
-	RBinOptions *bo = NULL;
 	char buf[20] = R_EMPTY;
 	int offset, err, i, j = 0;
+	int bd = -1;
+	RBinFile *old_cur = r_bin_cur (core->bin);
 
-	if (!core) {
-		return;
-	}
-
-	bo = r_bin_options_new (0LL, 0LL, NULL);
+	RBinOptions *bo = r_bin_options_new (0LL, 0LL, NULL);
 	if (!bo) {
 		eprintf ("Could not create RBinOptions\n");
 		goto out_error;
 	}
-
 	bo->iofd = -1;
 
-	if (!r_bin_open (core->bin, path, bo)) {
+	bd = r_bin_open (core->bin, path, bo);
+	if (bd < 0) {
 		eprintf ("Could not open binary\n");
 		goto out_error;
 	}
 
-	sects = r_bin_get_sections (core->bin);
-	if (!sects) {
+	RBinFile *binfile = r_bin_file_find_by_id (core->bin, (unsigned int) bd);
+	if (!binfile || !binfile->o) {
 		goto out_error;
 	}
+
+	r_io_map_priorize_for_fd (core->io, binfile->fd);
+
+	RList *sects = binfile->o->sections;
+	RBinSection *s;
 	r_list_foreach (sects, iter, s) {
 		if (strstr (s->name, ".note.gnu.build-id")) {
 			err = r_io_read_at (core->io, s->vaddr + 16, (ut8 *) buf, 20);
@@ -1454,8 +1454,11 @@ static void get_hash_debug_file(const char *path, char *hash, int hash_len) {
 	offset = j + 2 * i;
 	snprintf (hash + offset, hash_len - offset - strlen (".debug"), ".debug");
 out_error:
+	if (bd >= 0) {
+		r_bin_file_delete (core->bin, (unsigned int) bd);
+		r_bin_file_set_cur_binfile (core->bin, old_cur);
+	}
 	r_bin_options_free (bo);
-	r_core_free (core);
 }
 
 static int str_start_with(const char *ptr, const char *str) {
@@ -1872,7 +1875,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 #include "linux_heap_glibc.c"
 #endif
 
-R_API void r_core_debug_rr(RCore *core, RReg *reg) {
+R_API void r_core_debug_rr(RCore *core, RReg *reg, int mode) {
 	char *use_color, *color = "";
 	int use_colors = r_config_get_i (core->config, "scr.color");
 	int delta = 0;
@@ -1889,6 +1892,9 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg) {
 		use_color = NULL;
 	}
 	r_debug_map_sync (core->dbg);
+	if (mode == 'j') {
+		r_cons_printf("[");
+	}
 	r_list_foreach (list, iter, r) {
 		char *rrstr, *tmp = NULL;
 		if (r->size != bits) {
@@ -1909,28 +1915,47 @@ R_API void r_core_debug_rr(RCore *core, RReg *reg) {
 		} else {
 			color = "";
 		}
-		if (bits == 64) {
+		switch (mode) {
+		case 'j':
 			if (r->flags) {
 				tmp = r_reg_get_bvalue (reg, r);
-				r_cons_printf ("%s%6s %018s%s", color, r->name, tmp, Color_RESET);
+				r_cons_printf ("%s{\"reg\":\"%s\",\"value\":\"%s\"", iter->p?",":"", r->name, tmp);
 			} else {
-				r_cons_printf ("%s%6s 0x%016"PFMT64x"%s", color, r->name, value, Color_RESET);
+				r_cons_printf ("%s{\"reg\":\"%s\",\"value\":\"0x%"PFMT64x"\"", iter->p?",":"", r->name, value);
 			}
-		} else {
-			if (r->flags) {
-				tmp = r_reg_get_bvalue (reg, r);
-				r_cons_printf ("%6s %010s", r->name, tmp);
+			break;
+		default:
+			if (bits == 64) {
+				if (r->flags) {
+					tmp = r_reg_get_bvalue (reg, r);
+					r_cons_printf ("%s%6s %-18s%s", color, r->name, tmp, Color_RESET);
+				} else {
+					r_cons_printf ("%s%6s 0x%-16"PFMT64x"%s", color, r->name, value, Color_RESET);
+				}
 			} else {
-				r_cons_printf ("%6s 0x%08"PFMT64x, r->name, value);
+				if (r->flags) {
+					tmp = r_reg_get_bvalue (reg, r);
+					r_cons_printf ("%s%6s %-10s%s", color, r->name, tmp, Color_RESET);
+				} else {
+					r_cons_printf ("%s%6s 0x%-8"PFMT64x"%s", color, r->name, value, Color_RESET);
+				}
 			}
+			break;
 		}
 		if (r->flags) {
 			free (tmp);
 		}
 		if (rrstr) {
-			r_cons_printf (" %s\n", rrstr);
+			if (mode == 'j') {
+				r_cons_printf (",\"ref\":\"%s\"}", rrstr);
+			} else {
+				r_cons_printf (" %s\n", rrstr);
+			}
 			free (rrstr);
 		}
+	}
+	if (mode == 'j') {
+		r_cons_printf("]\n");
 	}
 }
 
@@ -2555,7 +2580,14 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		}
 		break;
 	case 'r': // "drr"
-		r_core_debug_rr (core, core->dbg->reg);
+		switch (str[1]) {
+		case 'j': // "drrj"
+			r_core_debug_rr (core, core->dbg->reg, 'j');
+			break;
+		default:
+			r_core_debug_rr (core, core->dbg->reg, 0);
+			break;
+		}
 		break;
 	case 'j': // "drj"
 	case '\0': // "dr"
@@ -4719,6 +4751,7 @@ static int cmd_debug(void *data, const char *input) {
 					P ("\"addr\":%"PFMT64d",", core->dbg->reason.addr);
 					P ("\"inbp\":%s,", r_str_bool (core->dbg->reason.bp_addr));
 					P ("\"baddr\":%"PFMT64d",", r_debug_get_baddr (core->dbg, NULL));
+					P ("\"stopaddr\":%"PFMT64d",", core->dbg->stopaddr);
 					P ("\"pid\":%d,", rdi->pid);
 					P ("\"tid\":%d,", rdi->tid);
 					P ("\"uid\":%d,", rdi->uid);

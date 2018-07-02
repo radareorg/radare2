@@ -32,7 +32,7 @@ typedef struct r_id_storage_t {
 } RIDStorage;
 
 typedef bool (*RIDStorageForeachCb)(void *user, void *data, ut32 id);
-typedef int (*ROIDStorageCompareCb)(void *data0, void *data1);
+typedef bool (*ROIDStorageCompareCb)(void *in, void *incoming, void *user, int *cmp_res);
 
 R_API RIDStorage *r_id_storage_new(ut32 start_id, ut32 last_id);
 R_API bool r_id_storage_set(RIDStorage *storage, void *data, ut32 id);
@@ -57,14 +57,19 @@ R_API void *r_oids_get(ROIDStorage *storage, ut32 id);
 R_API void *r_oids_oget(ROIDStorage *storage, ut32 od);
 R_API bool r_oids_get_id(ROIDStorage *storage, ut32 od, ut32 *id);
 R_API bool r_oids_get_od(ROIDStorage *storage, ut32 id, ut32 *od);
-R_API bool r_oids_to_front (ROIDStorage *storage, const ut32 id);
-R_API bool r_oids_to_rear (ROIDStorage *storage, const ut32 id);
+R_API bool r_oids_to_front(ROIDStorage *storage, const ut32 id);
+R_API bool r_oids_to_rear(ROIDStorage *storage, const ut32 id);
 R_API void r_oids_delete(ROIDStorage *storage, ut32 id);
+R_API void r_oids_odelete(ROIDStorage *st, ut32 od);
 R_API void r_oids_free(ROIDStorage *storage);
 R_API bool r_oids_add(ROIDStorage *storage, void *data, ut32 *id, ut32 *od);
 R_API void *r_oids_take(ROIDStorage *storage, ut32 id);
+R_API void *r_oids_otake(ROIDStorage *st, ut32 od);
 R_API bool r_oids_foreach(ROIDStorage* storage, RIDStorageForeachCb cb, void* user);
 R_API bool r_oids_foreach_prev(ROIDStorage* storage, RIDStorageForeachCb cb, void* user);
+R_API bool r_oids_insert(ROIDStorage *storage, void *data, ut32 *id, ut32 *od, void *user); 
+R_API bool r_oids_sort(ROIDStorage *storage, void *user);
+R_API ut32 r_oids_find (ROIDStorage *storage, void *incoming, void *user);
 R_API void *r_oids_last(ROIDStorage *storage);
 R_API void *r_oids_first(ROIDStorage *storage);
 

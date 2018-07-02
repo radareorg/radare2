@@ -289,6 +289,7 @@ do_it_again:
 	void *bed = r_cons_sleep_begin ();
 	if (usec) {
 		if (WaitForSingleObject (h, usec) == WAIT_TIMEOUT) {
+			r_cons_sleep_end (bed);
 			return -1;
 		}
 	}
@@ -464,9 +465,7 @@ R_API int r_cons_readchar() {
 	}
 #if __WINDOWS__ && !__CYGWIN__ //&& !MINGW32
 	#if 1   // if something goes wrong set this to 0. skuater.....
-	bed = r_cons_sleep_begin ();
 	return readchar_win(0);
-	r_cons_sleep_end (bed);
 	#endif
 	BOOL ret;
 	DWORD out;

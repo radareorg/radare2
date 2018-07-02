@@ -250,6 +250,7 @@ typedef struct r_core_t {
 	RList *undos;
 	bool fixedbits;
 	bool fixedarch;
+	bool pava;
 	struct r_core_t *c2;
 	RCoreAutocomplete *autocomplete;
 } RCore;
@@ -287,6 +288,7 @@ R_API int r_core_prompt_exec(RCore *core);
 R_API int r_core_lines_initcache (RCore *core, ut64 start_addr, ut64 end_addr);
 R_API int r_core_lines_currline (RCore *core);
 R_API void r_core_prompt_loop(RCore *core);
+R_API ut64 r_core_pava(RCore *core, ut64 addr);
 R_API int r_core_cmd(RCore *core, const char *cmd, int log);
 R_API void r_core_cmd_repeat(RCore *core, int next);
 R_API int r_core_cmd_task_sync(RCore *core, const char *cmd, bool log);
@@ -388,7 +390,7 @@ R_API int r_core_set_file_by_name (RBin * bin, const char * name);
 R_API RBinFile * r_core_bin_cur (RCore *core);
 R_API ut32 r_core_file_cur_fd (RCore *core);
 
-R_API void r_core_debug_rr (RCore *core, RReg *reg);
+R_API void r_core_debug_rr (RCore *core, RReg *reg, int mode);
 
 /* fortune */
 R_API void r_core_fortune_list_types(void);
@@ -440,6 +442,8 @@ R_API char *r_core_disassemble_bytes(RCore *core, ut64 addr, int b);
 R_API RList *r_core_get_func_args(RCore *core, const char *func_name);
 R_API void r_core_print_func_args(RCore *core);
 R_API char *resolve_fcn_name(RAnal *anal, const char * func_name);
+
+R_API int r_core_get_stacksz (RCore *core, ut64 from, ut64 to);
 
 /* anal.c */
 R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask);
@@ -547,7 +551,7 @@ R_API char *r_core_sysenv_begin(RCore *core, const char *cmd);
 R_API void r_core_sysenv_end(RCore *core, const char *cmd);
 R_API void r_core_sysenv_help(const RCore* core);
 
-R_API void fcn_callconv (RCore *core, RAnalFunction *fcn);
+R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly);
 /* bin.c */
 #define R_CORE_BIN_PRINT	0x000 
 #define R_CORE_BIN_RADARE	0x001
@@ -678,6 +682,7 @@ typedef struct {
 	ut32 flags;
 	ut32 comments;
 	ut32 functions;
+	ut32 in_functions;
 	ut32 symbols;
 	ut32 strings;
 	ut32 rwx;

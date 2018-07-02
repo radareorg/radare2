@@ -2951,7 +2951,7 @@ R_API char *r_str_from_ut64(ut64 val) {
 	if (!str) {
 		return NULL;
 	}
-	while (i < 8 && *v && *v >= '!' && *v <= '~') {
+	while (i < 8 && *v) {
 		str[i++] = *v++;
 	}
 	return str;

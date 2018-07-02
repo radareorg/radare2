@@ -2611,11 +2611,13 @@ static RList *recurse(RCore *core, RAnalBlock *from, RAnalBlock *dest) {
 	return NULL;
 }
 
-R_API void fcn_callconv(RCore *core, RAnalFunction *fcn) {
-	ut8 *tbuf, *buf;
+R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
+	ut8 *buf;
 	RListIter *tmp = NULL;
 	RAnalBlock *bb = NULL;
 	RAnalOp *op = NULL;
+	int count = 0;
+	int reg_set[10] = {0};
 	ut64 pos;
 
 	if (!core || !core->anal || !fcn || core->anal->opt.bb_max_size < 1) {
@@ -2634,16 +2636,10 @@ R_API void fcn_callconv(RCore *core, RAnalFunction *fcn) {
 			continue;
 		}
 		if (bb->size > bb_size) {
-			tbuf = realloc (buf, bb->size);
-			if (!tbuf) {
-				eprintf ("Cannot realloc bb to %d\n", (int)bb->size);
-				continue;
-			}
-			buf = tbuf;
-			bb_size = bb->size;
+			continue;
 		}
 		if (!r_io_read_at (core->io, bb->addr, buf, bb->size)) {
-	//		eprintf ("read error\n");
+			//eprintf ("read error\n");
 			break;
 		}
 		pos = bb->addr;
@@ -2651,12 +2647,15 @@ R_API void fcn_callconv(RCore *core, RAnalFunction *fcn) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			op = r_core_anal_op (core, pos, R_ANAL_OP_MASK_ESIL);
+			op = r_core_anal_op (core, pos, R_ANAL_OP_MASK_ALL);
 			if (!op) {
-	//			eprintf ("Cannot get op\n");
+				//eprintf ("Cannot get op\n");
 				break;
 			}
-			r_anal_fcn_fill_args (core->anal, fcn, op);
+			extract_rarg (core->anal, op, fcn, reg_set, &count);
+			if (!argonly) {
+				extract_vars (core->anal, fcn, op);
+			}
 			int opsize = op->size;
 			r_anal_op_free (op);
 			if (opsize < 1) {
@@ -2665,7 +2664,6 @@ R_API void fcn_callconv(RCore *core, RAnalFunction *fcn) {
 			pos += opsize;
 		}
 	}
-
 	free (buf);
 	return;
 }
@@ -3248,6 +3246,7 @@ R_API int r_core_anal_all(RCore *core) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
+			r_core_recover_vars (core, fcni, true);
 			if (!strncmp (fcni->name, "sym.", 4) || !strncmp (fcni->name, "main", 4)) {
 				fcni->type = R_ANAL_FCN_TYPE_SYM;
 			}
@@ -3371,6 +3370,10 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 		}
 		piece = (F->addr - from) / step;
 		as->block[piece].functions++;
+		int last_piece = R_MIN ((F->addr + F->_size - 1) / step, blocks - 1);
+		for (; piece <= last_piece; piece++) {
+			as->block[piece].in_functions++;
+		}
 	}
 	// iter all symbols
 	r_list_foreach (r_bin_get_symbols (core->bin), iter, S) {

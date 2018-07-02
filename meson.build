@@ -247,6 +247,7 @@ r_userconf_h = configure_file(
 )
 
 versionconf = configuration_data()
+versionconf.set('MESON_VERSION', meson.version())
 versionconf.set('VERSIONCOMMIT', version_commit)
 versionconf.set('R2_VERSION', r2_version)
 versionconf.set('R2_GITTAP', gittap)
@@ -269,7 +270,7 @@ pcconf.set('VERSION', r2_version)
 libr_pc = configure_file(
   input: 'libr/libr.pc.acr',
   output: 'libr.pc',
-  configuration: userconf,
+  configuration: pcconf,
   install_dir: join_paths(get_option('libdir'), 'pkgconfig')
 )
 
