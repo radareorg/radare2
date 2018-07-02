@@ -121,6 +121,7 @@ static bool checkFunc(RCore *core);
 static void cursorLeft(RCore *core);
 static void cursorRight(RCore *core);
 static void delCurPanel(RPanels *panels);
+static void dismantlePanel(RPanels *panels);
 static void doPanelsRefresh(RCore *core);
 static bool handleCursorMode(RCore *core, const int key);
 static void handleUpKey(RCore *core);
@@ -579,6 +580,7 @@ static bool handleCursorMode(RCore *core, const int key) {
 }
 
 static void delCurPanel(RPanels *panels) {
+	dismantlePanel (panels);
 	int i;
 	if (panels->curnode > 0 && panels->n_panels > 3) {
 		for (i = panels->curnode; i < (panels->n_panels - 1); i++) {
@@ -588,6 +590,118 @@ static void delCurPanel(RPanels *panels) {
 		panels->n_panels--;
 		if (panels->curnode >= panels->n_panels) {
 			panels->curnode = panels->n_panels - 1;
+		}
+	}
+}
+
+static void dismantlePanel(RPanels *panels) {
+	RPanel *justLeftPanel = NULL, *justRightPanel = NULL, *justUpPanel = NULL, *justDownPanel = NULL;
+	RPanel *tmpPanel = NULL;
+	bool leftUpValid = false, leftDownValid = false, rightUpValid = false, rightDownValid = false, upLeftValid = false, upRightValid = false, downLeftValid = false, downRightValid = false;
+	int left[LIMIT], right[LIMIT], up[LIMIT], down[LIMIT];
+	memset (left, -1, sizeof (left));
+	memset (right, -1, sizeof (right));
+	memset (up, -1, sizeof (up));
+	memset (down, -1, sizeof (down));
+	int i, ox, oy, ow, oh;
+	ox = panels->panel[panels->curnode].x;
+	oy = panels->panel[panels->curnode].y;
+	ow = panels->panel[panels->curnode].w;
+	oh = panels->panel[panels->curnode].h;
+	for (i = 0; i < panels->n_panels; i++) {
+		tmpPanel = &panels->panel[i];
+		if (tmpPanel->x + tmpPanel->w - 1 == ox) {
+			left[i] = 1;
+			if (oy == tmpPanel->y) {
+				leftUpValid = true;
+				if (oh == tmpPanel->h) {
+					justLeftPanel = tmpPanel;
+					break;
+				}
+			}
+			if (oy + oh == tmpPanel->y + tmpPanel->h) {
+				leftDownValid = true;
+			}
+		}
+		if (tmpPanel->x == ox + ow - 1) {
+			right[i] = 1;
+			if (oy == tmpPanel->y) {
+				rightUpValid = true;
+				if (oh == tmpPanel->h) {
+					rightDownValid = true;
+					justRightPanel = tmpPanel;
+				}
+			}
+			if (oy + oh == tmpPanel->y + tmpPanel->h) {
+				rightDownValid = true;
+			}
+		}
+		if (tmpPanel->y + tmpPanel->h - 1 == oy) {
+			up[i] = 1;
+			if (ox == tmpPanel->x) {
+				upLeftValid = true;
+				if (ow == tmpPanel->w) {
+					upRightValid = true;
+					justUpPanel = tmpPanel;
+				}
+			}
+			if (ox + ow == tmpPanel->x + tmpPanel->w) {
+				upRightValid = true;
+			}
+		}
+		if (tmpPanel->y == oy + oh - 1) {
+			down[i] = 1;
+			if (ox == tmpPanel->x) {
+				downLeftValid = true;
+				if (ow == tmpPanel->w) {
+					downRightValid = true;
+					justDownPanel = tmpPanel;
+				}
+			}
+			if (ox + ow == tmpPanel->x + tmpPanel->w) {
+				downRightValid = true;
+			}
+		}
+	}
+	if (justLeftPanel) {
+		justLeftPanel->w += ox + ow - (justLeftPanel->x + justLeftPanel->w);
+	} else if (justRightPanel) {
+		justRightPanel->w = justRightPanel->x + justRightPanel->w - ox;
+		justRightPanel->x = ox;
+	} else if (justUpPanel) {
+		justUpPanel->h += oy + oh - (justUpPanel->y + justUpPanel->h);
+	} else if (justDownPanel) {
+		justDownPanel->h = oh + justDownPanel->y + justDownPanel->h - (oy + oh);
+		justDownPanel->y = oy;
+	} else if (leftUpValid && leftDownValid) {
+		for (i = 0; i < panels->n_panels; i++) {
+			if (left[i] != -1) {
+				tmpPanel = &panels->panel[i];
+				tmpPanel->w += ox + ow - (tmpPanel->x + tmpPanel->w);
+			}
+		}
+	} else if (rightUpValid && rightDownValid) {
+		for (i = 0; i < panels->n_panels; i++) {
+			if (right[i] != -1) {
+				tmpPanel = &panels->panel[i];
+				tmpPanel->w = tmpPanel->x + tmpPanel->w - ox;
+				tmpPanel->x = ox;
+			}
+		}
+	} else if (upLeftValid && upLeftValid) {
+		for (i = 0; i < panels->n_panels; i++) {
+			if (up[i] != -1) {
+				tmpPanel = &panels->panel[i];
+				tmpPanel->h += oy + oh - (tmpPanel->y + tmpPanel->h);
+			}
+		}
+	} else if (downLeftValid && downRightValid) {
+		for (i = 0; i < panels->n_panels; i++) {
+			if (down[i] != -1) {
+				tmpPanel = &panels->panel[i];
+				tmpPanel->h = oh + tmpPanel->y + tmpPanel->h - (oy + oh);
+				tmpPanel->y = oy;
+			}
 		}
 	}
 }
@@ -1351,7 +1465,6 @@ repeat:
 		break;
 	case 'X':
 		delCurPanel (panels);
-		r_core_panels_layout (core->panels);
 		setRefreshAll (panels);
 		break;
 	case 9: // TAB
