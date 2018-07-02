@@ -4881,7 +4881,7 @@ static int cmd_print(void *data, const char *input) {
 	case '3': // "p3" [file]
 		if (input[1] == '?') {
 			eprintf ("Usage: p3 [file] - print 3D stereogram image of current block\n");
-		} else if (input[1] == ' ')          {
+		} else if (input[1] == ' ') {
 			char *data = r_file_slurp (input + 2, NULL);
 			char *res = r_print_stereogram (data, 78, 20);
 			r_print_stereogram_print (core->print, res);
@@ -5401,7 +5401,7 @@ static int cmd_print(void *data, const char *input) {
 					if (!r_core_block_size (core, len)) {
 						len = core->blocksize;
 					}
-					r_print_hexdump (core->print, core->offset,
+					r_print_hexdump (core->print, r_core_pava (core, core->offset),
 						core->block, len, 16, 1, 1);
 				} else {
 					r_core_print_cmp (core, from, to);

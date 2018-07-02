@@ -316,17 +316,13 @@ static void ds_start_line_highlight(RDisasmState *ds);
 static void ds_end_line_highlight(RDisasmState *ds);
 static bool line_highlighted(RDisasmState *ds);
 
-static ut64 p2v(RDisasmState *ds, ut64 addr) {
-#if 0
-	if (ds->core->io->pava) {
-		ut64 at = r_io_section_get_vaddr (ds->core->io, addr);
-		if (at == UT64_MAX || (!at && ds->at)) {
-			addr = ds->at;
-		} else {
-			addr = at + addr;
+R_API ut64 r_core_pava (RCore *core, ut64 addr) {
+	if (core->pava) {
+		RIOMap *map = r_io_map_get_paddr (core->io, addr);
+		if (map) {
+			return addr - map->delta + map->itv.addr;
 		}
 	}
-#endif
 	return addr;
 }
 
@@ -4027,7 +4023,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	const char *pc;
 	int (*hook_mem_write)(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) = NULL;
 	int i, nargs;
-	ut64 at = p2v (ds, ds->at);
+	ut64 at = r_core_pava (core, ds->at);
 	RConfigHold *hc = r_config_hold_new (core->config);
 	/* apply hint */
 	RAnalHint *hint = r_anal_hint_get (core->anal, at);
@@ -4491,7 +4487,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	}
 toro:
 	// uhm... is this necesary? imho can be removed
-	r_asm_set_pc (core->assembler, p2v (ds, ds->addr + idx));
+	r_asm_set_pc (core->assembler, r_core_pava (core, ds->addr + idx));
 	core->cons->vline = r_config_get_i (core->config, "scr.utf8") ? (r_config_get_i (core->config, "scr.utf8.curvy") ? r_vline_uc : r_vline_u) : r_vline_a;
 
 	if (core->print->cur_enabled) {
@@ -4521,7 +4517,7 @@ toro:
 	r_anal_build_range_on_hints (core->anal);
 	for (i = idx = ret = 0; addrbytes * idx < len && ds->lines < ds->l; idx += inc, i++, ds->index += inc, ds->lines++) {
 		ds->at = ds->addr + idx;
-		ds->vat = p2v (ds, ds->at);
+		ds->vat = r_core_pava (core, ds->at);
 		if (r_cons_is_breaked ()) {
 			dorepeat = 0;
 			R_FREE (nbuf);
@@ -4941,8 +4937,8 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 	r_anal_build_range_on_hints (core->anal);
 #define isNotTheEnd (nb_opcodes ? j < nb_opcodes: addrbytes * i < nb_bytes)
 	for (i = j = 0; isNotTheEnd; i += ret, j++) {
-		ds->at = core->offset +i;
-		ds->vat = p2v (ds, ds->at);
+		ds->at = core->offset + i;
+		ds->vat = r_core_pava (core, ds->at);
 		hasanal = false;
 		r_core_seek_archbits (core, ds->at);
 		if (r_cons_is_breaked ()) {
@@ -5375,7 +5371,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 	r_cons_break_push (NULL, NULL);
 	for (i = 0; i < l; i++) {
 		ds->at = addr + i;
-		ds->vat = p2v (ds, ds->at);
+		ds->vat = r_core_pava (core, ds->at);
 		r_asm_set_pc (core->assembler, ds->vat);
 		if (r_cons_is_breaked ()) {
 			break;
@@ -5534,7 +5530,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 		ut32 bb_size_consumed = 0;
 		// internal loop to consume bb that contain case-like operations
 		ds->at = bb->addr;
-		ds->vat = p2v (ds, ds->at);
+		ds->vat = r_core_pava (core, ds->at);
 		ds->addr = bb->addr;
 		len = bb->size;
 

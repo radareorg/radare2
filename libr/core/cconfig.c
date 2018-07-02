@@ -1559,6 +1559,16 @@ static int cb_ioaslr(void *user, void *data) {
 	return true;
 }
 
+static int cb_io_pava(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->pava = node->i_value;
+	if (node->i_value && core->io->va) {
+		eprintf ("WARNING: You may probably want to disable io.va too\n");
+	}
+	return true;
+}
+
 static int cb_iova(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2962,6 +2972,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("io.0xff", 0xff, &cb_io_oxff, "Use this value instead of 0xff to fill unallocated areas");
 	SETCB ("io.aslr", "false", &cb_ioaslr, "Disable ASLR for spawn and such");
 	SETCB ("io.va", "true", &cb_iova, "Use virtual address layout");
+	SETCB ("io.pava", "false", &cb_io_pava, "Use EXPERIMENTAL paddr -> vaddr address mode");
 	SETCB ("io.autofd", "true", &cb_ioautofd, "Change fd when opening a new file");
 
 	/* file */
