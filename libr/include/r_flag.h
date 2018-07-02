@@ -52,6 +52,7 @@ typedef struct r_flag_t {
 	st64 base;         /* base address for all flag items */
 	int space_idx;     /* index of the selected space in spaces array */
 	bool space_strict; /* when true returned flag items must belong to the selected space */
+	bool realnames;
 	char *spaces[R_FLAG_SPACES_MAX]; /* array of flag spaces */
 	Sdb *tags;
 	RNum *num;
@@ -91,7 +92,7 @@ R_API int r_flag_bind(RFlag *io, RFlagBind *bnd);
 #ifdef R_API
 R_API RFlag * r_flag_new(void);
 R_API RFlag * r_flag_free(RFlag *f);
-R_API void r_flag_list(RFlag *f, int rad, const char *pfx, bool flag_realnames);
+R_API void r_flag_list(RFlag *f, int rad, const char *pfx);
 R_API bool r_flag_exist_at(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64 off);
 R_API RFlagItem *r_flag_get(RFlag *f, const char *name);
 R_API RFlagItem *r_flag_get_i(RFlag *f, ut64 off);

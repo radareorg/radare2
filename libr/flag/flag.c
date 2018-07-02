@@ -208,7 +208,7 @@ R_API RFlag *r_flag_free(RFlag *f) {
 }
 
 /* print with r_cons the flag items in the flag f, given as a parameter */
-R_API void r_flag_list(RFlag *f, int rad, const char *pfx, bool flag_realnames) {
+R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 	bool in_range = false;
 	ut64 range_from = UT64_MAX;
 	ut64 range_to = UT64_MAX;
@@ -331,7 +331,7 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx, bool flag_realnames) 
 					flag->alias, flag->size, flag->name);
 			} else {
 				f->cb_printf ("0x%08"PFMT64x" %"PFMT64d" %s\n",
-					flag->offset, flag->size, flag_realnames ? flag->realname : flag->name);
+					flag->offset, flag->size, f->realnames ? flag->realname : flag->name);
 			}
 		}
 		break;

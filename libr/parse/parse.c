@@ -175,7 +175,7 @@ static char *findNextNumber(char *op) {
 	return NULL;
 }
 
-static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_endian, bool flag_realnames) {
+static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_endian) {
 	char *ptr = data, *ptr2, *ptr_backup;
 	RAnalFunction *fcn;
 	RFlagItem *flag;
@@ -276,7 +276,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 						}
 					}
 					*ptr = 0;
-					snprintf (str, len, "%s%s%s", data, flag_realnames? flag->realname : flag->name,
+					snprintf (str, len, "%s%s%s", data, f->realnames? flag->realname : flag->name,
 							(ptr != ptr2) ? ptr2 : "");
 					bool banned = false;
 					{
@@ -527,8 +527,8 @@ R_API bool r_parse_immtrim (char *opstr) {
 	return changed;
 }
 
-R_API int r_parse_filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_endian, bool flag_realnames) {
-	filter (p, f, data, str, len, big_endian, flag_realnames);
+R_API int r_parse_filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_endian) {
+	filter (p, f, data, str, len, big_endian);
 	if (p->cur && p->cur->filter) {
 		return p->cur->filter (p, f, data, str, len, big_endian);
 	}

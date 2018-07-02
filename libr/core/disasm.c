@@ -968,7 +968,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 				}
 			}
 			r_parse_filter (core->parser, core->flags, asm_str,
-				ds->str, sizeof (ds->str), core->print->big_endian, core->cons->use_utf8);
+				ds->str, sizeof (ds->str), core->print->big_endian);
 			core->parser->flagspace = ofs;
 			free (ds->opstr);
 			ds->opstr = strdup (ds->str);
@@ -5029,7 +5029,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 				}
 				core->parser->hint = ds->hint;
 				r_parse_filter (core->parser, core->flags, ds->asmop.buf_asm, ds->str,
-						sizeof (ds->str), core->print->big_endian, core->cons->use_utf8);
+						sizeof (ds->str), core->print->big_endian);
 				ds->opstr = strdup (ds->str);
 				asm_str = colorize_asm_string (core, ds, true);
 				core->parser->flagspace = ofs;
@@ -5223,7 +5223,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			}
 		}
 		r_parse_filter (core->parser, core->flags, asmop.buf_asm, str,
-			sizeof (str), core->print->big_endian, core->cons->use_utf8);
+			sizeof (str), core->print->big_endian);
 
 		r_cons_printf (j > 0 ? ",{" : "{");
 		r_cons_printf ("\"offset\":%"PFMT64d, at);
@@ -5401,7 +5401,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 			switch (mode) {
 			case 'i':
 				r_parse_filter (core->parser, core->flags, asmop.buf_asm,
-						str, sizeof (str), core->print->big_endian, core->cons->use_utf8);
+						str, sizeof (str), core->print->big_endian);
 				if (scr_color) {
 					char *buf_asm;
 					RAnalOp aop;
@@ -5887,7 +5887,7 @@ toro:
 				if (filter) {
 					core->parser->hint = r_anal_hint_get (core->anal, at);
 					r_parse_filter (core->parser, core->flags,
-						asm_str, opstr, sizeof (opstr) - 1, core->print->big_endian, core->cons->use_utf8);
+						asm_str, opstr, sizeof (opstr) - 1, core->print->big_endian);
 					asm_str = (char *)&opstr;
 				}
 				if (show_color) {
