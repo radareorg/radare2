@@ -250,6 +250,7 @@ typedef struct r_core_t {
 	RList *undos;
 	bool fixedbits;
 	bool fixedarch;
+	bool pava;
 	struct r_core_t *c2;
 	RCoreAutocomplete *autocomplete;
 } RCore;
@@ -287,6 +288,7 @@ R_API int r_core_prompt_exec(RCore *core);
 R_API int r_core_lines_initcache (RCore *core, ut64 start_addr, ut64 end_addr);
 R_API int r_core_lines_currline (RCore *core);
 R_API void r_core_prompt_loop(RCore *core);
+R_API ut64 r_core_pava(RCore *core, ut64 addr);
 R_API int r_core_cmd(RCore *core, const char *cmd, int log);
 R_API void r_core_cmd_repeat(RCore *core, int next);
 R_API int r_core_cmd_task_sync(RCore *core, const char *cmd, bool log);
