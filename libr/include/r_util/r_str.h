@@ -38,6 +38,8 @@ R_API bool r_str_range_in(const char *r, ut64 addr);
 R_API int r_str_len_utf8(const char *s);
 R_API int r_str_len_utf8char(const char *s, int left);
 R_API void r_str_filter_zeroline(char *str, int len);
+R_API int r_str_utf8_codepoint (char* s, int left);
+R_API bool r_str_char_fullwidth (char* s, int left);
 R_API int r_str_write(int fd, const char *b);
 R_API void r_str_ncpy(char *dst, const char *src, int n);
 R_API void r_str_sanitize(char *c);
