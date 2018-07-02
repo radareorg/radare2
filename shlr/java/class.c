@@ -3118,7 +3118,12 @@ R_API void r_bin_java_attribute_free(void /*RBinJavaAttrInfo*/ *a) {
 	RBinJavaAttrInfo *attr = a;
 	if (attr) {
 		IFDBG eprintf("Deleting attr %s, %p\n", attr->name, attr);
-		((RBinJavaAttrMetas *) attr->metas->type_info)->allocs->delete_obj (attr);
+		if (attr && attr->metas && attr->metas->type_info && attr->metas->type_info) {
+			RBinJavaAttrMetas *a = attr->metas->type_info;
+			if (a && a->allocs && a->allocs->delete_obj) {
+				a->allocs->delete_obj (attr);
+			}
+		}
 		// free (attr->metas);
 		// free (attr);
 	}
@@ -6256,7 +6261,7 @@ R_API void r_bin_java_print_element_value_summary(RBinJavaElementValue *element_
 	RBinJavaElementValue *ev_element = NULL;
 	RListIter *iter = NULL, *iter_tmp = NULL;
 	char *name;
-	if (element_value == NULL) {
+	if (!element_value) {
 		eprintf ("Attempting to print an invalid RBinJavaElementValuePair *pair.\n");
 		return;
 	}
@@ -6277,23 +6282,31 @@ R_API void r_bin_java_print_element_value_summary(RBinJavaElementValue *element_
 		eprintf ("   EV Value Constant Value index: 0x%02x\n", element_value->value.const_value.const_value_idx);
 		eprintf ("   EV Value Constant Value Information:\n");
 		obj = element_value->value.const_value.const_value_cp_obj;
-		((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->print_summary (obj);
+		if (obj && obj->metas && obj->metas->type_info) {
+			((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->print_summary (obj);
+		}
 		break;
 	case R_BIN_JAVA_EV_TAG_ENUM:
 		eprintf ("   EV Value Enum Constant Value Const Name Index: 0x%02x\n", element_value->value.enum_const_value.const_name_idx);
 		eprintf ("   EV Value Enum Constant Value Type Name Index: 0x%02x\n", element_value->value.enum_const_value.type_name_idx);
 		eprintf ("   EV Value Enum Constant Value Const CP Information:\n");
 		obj = element_value->value.enum_const_value.const_name_cp_obj;
-		((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->print_summary (obj);
+		if (obj && obj->metas && obj->metas->type_info) {
+			((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->print_summary (obj);
+		}
 		eprintf ("   EV Value Enum Constant Value Type CP Information:\n");
 		obj = element_value->value.enum_const_value.type_name_cp_obj;
-		((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->print_summary (obj);
+		if (obj && obj->metas && obj->metas->type_info) {
+			((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->print_summary (obj);
+		}
 		break;
 	case R_BIN_JAVA_EV_TAG_CLASS:
 		eprintf ("   EV Value Class Info Index: 0x%02x\n", element_value->value.class_value.class_info_idx);
 		eprintf ("   EV Value Class Info CP Information:\n");
 		obj = element_value->value.class_value.class_info_cp_obj;
-		((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->print_summary (obj);
+		if (obj && obj->metas && obj->metas->type_info) {
+			((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->print_summary (obj);
+		}
 		break;
 	case R_BIN_JAVA_EV_TAG_ARRAY:
 		eprintf ("   EV Value Array Value Number of Values: 0x%04x\n", element_value->value.array_value.num_values);
@@ -6429,12 +6442,22 @@ R_API void r_bin_java_annotation_default_attr_free(void /*RBinJavaAttrInfo*/ *a)
 	case R_BIN_JAVA_EV_TAG_STRING:
 		// Delete the CP Type Object
 		obj = element_value->value.const_value.const_value_cp_obj;
-		((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->delete_obj (obj);
+		if (obj && obj->metas && obj->metas->type_info) {
+			RBinJavaCPTypeMetas *ti = obj->metas->type_info;
+			if (ti && ti->allocs && ti->allocs->delete_obj) {
+				ti->allocs->delete_obj (obj);
+			}
+		}
 		break;
 	case R_BIN_JAVA_EV_TAG_ENUM:
 		// Delete the CP Type Objects
 		obj = element_value->value.enum_const_value.const_name_cp_obj;
-		((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->delete_obj (obj);
+		if (obj && obj->metas && obj->metas->type_info) {
+			RBinJavaCPTypeMetas *ti = obj->metas->type_info;
+			if (ti && ti->allocs && ti->allocs->delete_obj) {
+				ti->allocs->delete_obj (obj);
+			}
+		}
 		obj = element_value->value.enum_const_value.type_name_cp_obj;
 		((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->delete_obj (obj);
 		break;
