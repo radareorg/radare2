@@ -653,7 +653,7 @@ static bool projectSaveScript(RCore *core, const char *file, int opts) {
 		r_str_write (fd, "# flags\n");
 		tmp = core->flags->space_idx;
 		core->flags->space_idx = -1;
-		r_flag_list (core->flags, true, NULL, core->cons->use_utf8);
+		r_flag_list (core->flags, true, NULL);
 		core->flags->space_idx = tmp;
 		r_cons_flush ();
 	}

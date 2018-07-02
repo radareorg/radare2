@@ -1823,7 +1823,7 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 			r_asm_disassemble (core->assembler, &asmop, buf, size);
 			fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 			r_parse_filter (core->parser, core->flags,
-					asmop.buf_asm, str, sizeof (str), core->print->big_endian, core->cons->use_utf8);
+					asmop.buf_asm, str, sizeof (str), core->print->big_endian);
 			comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
 			char *buf_fcn = comment
 				? r_str_newf ("%s; %s", fcn ?  fcn->name : "(nofunc)", strtok (comment, "\n"))
@@ -2083,7 +2083,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 							0
 						};
 						r_parse_filter (core->parser, core->flags, hit->code, tmp, sizeof (tmp),
-								core->print->big_endian, core->cons->use_utf8);
+								core->print->big_endian);
 						r_cons_printf ("0x%08"PFMT64x "   # %i: %s\n",
 							hit->addr, hit->len, tmp);
 					} else {

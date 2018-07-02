@@ -782,7 +782,7 @@ static int cmdInfo(void *data, const char *input) {
 	}
 	RCore *core = (RCore *) data;
 	r_flag_space_push (core->flags, "sign");
-	r_flag_list (core->flags, *input, input[0] ? input + 1: "", core->cons->use_utf8);
+	r_flag_list (core->flags, *input, input[0] ? input + 1: "");
 	r_flag_space_pop (core->flags);
 	return true;
 }
