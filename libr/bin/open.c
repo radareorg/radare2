@@ -5,9 +5,11 @@
 R_API RBinOptions *r_bin_options_new (ut64 offset, ut64 baddr, int rawstr) {
 	RBinOptions *bo = R_NEW0 (RBinOptions);
 	if (bo) {
+		bo->loadaddr = UT64_MAX;
 		bo->offset = offset;
 		bo->baseaddr = baddr;
 		bo->rawstr = rawstr;
+		bo->iofd = -1;
 	}
 	return bo;
 }
