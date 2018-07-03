@@ -703,7 +703,7 @@ static void dismantlePanel(RPanels *panels) {
 				tmpPanel->x = ox;
 			}
 		}
-	} else if (upLeftValid && upLeftValid) {
+	} else if (upLeftValid && upRightValid) {
 		for (i = 0; i < panels->n_panels; i++) {
 			if (up[i] != -1) {
 				tmpPanel = &panels->panel[i];
