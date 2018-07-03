@@ -107,7 +107,7 @@ static void var_retype (RAnal *anal, RAnalVar *var, const char *vname, char *typ
 	if (vtype && *vtype) {
 		ntype = vtype;
 	}
-	r_anal_var_retype (anal, addr, 1, -1, var->kind, ntype, -1, var->isarg, var->name);
+	r_anal_var_retype (anal, addr, 1, var->delta, var->kind, ntype, var->size, var->isarg, var->name);
 	free (vtype);
 }
 
@@ -136,7 +136,23 @@ static ut64 get_addr (Sdb *trace, const char *regname, int idx) {
 	return r_num_math (NULL, sdb_const_get (trace, query, 0));
 }
 
-static void type_match(RCore *core, ut64 addr, char *fcn_name, const char* cc, int prev_idx) {
+static RAnalVar *get_op_var (RAnal *a, ut64 addr, RAnalOp *op) {
+	if (!op || !op->var) {
+		return NULL;
+	}
+	if (op->var->kind == 'r') {
+		const char *query = sdb_fmt ("var.0x%"PFMT64x".%d.%d.%s",
+				addr, 1, op->var->delta, "reads");
+		const char *xss = sdb_const_get (a->sdb_fcns, query, 0);
+		ut64 addr = r_num_math (NULL, xss);
+		if (addr != op->addr) {
+			return NULL;
+		}
+	}
+	return op->var;
+}
+
+static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 faddr, const char* cc, int prev_idx) {
 	Sdb *trace = core->anal->esil->db_trace;
 	Sdb *TDB = core->anal->sdb_types;
 	RAnal *anal = core->anal;
@@ -170,12 +186,16 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, const char* cc, i
 		// Backtrace instruction from source sink to prev source sink
 		for (j = idx; j >= prev_idx; j--) {
 			ut64 instr_addr = sdb_num_get (trace, sdb_fmt ("%d.addr", j), 0);
+			if (instr_addr < faddr) {
+				free (type);
+				goto beach;
+			}
 			RAnalOp *op = r_core_anal_op (core, instr_addr, R_ANAL_OP_MASK_BASIC);
 			if (op && op->type == R_ANAL_OP_TYPE_CALL) {
-				r_anal_op_fini (op);
+				r_anal_op_free (op);
 				break;
 			}
-			RAnalVar *var = (op && op->var && op->var->kind != 'r') ? op->var: NULL;
+			RAnalVar *var = get_op_var (anal, faddr, op);
 			// Match type from function param to instr
 			if (type_pos_hit (anal, trace, in_stack, j, size, place)) {
 				if (!cmt_set) {
@@ -215,6 +235,7 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, const char* cc, i
 		size += anal->bits / 8;
 		free (type);
 	}
+beach:
 	r_cons_break_pop ();
 }
 
@@ -300,7 +321,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 					}
 					const char* cc = r_anal_cc_func (anal, fcn_name);
 					if (cc && r_anal_cc_exist (anal, cc)) {
-						type_match (core, addr, fcn_name, cc, prev_idx);
+						type_match (core, addr, fcn_name, fcn->addr, cc, prev_idx);
 						prev_idx = cur_idx;
 						ret_type = (char *) r_type_func_ret (TDB, fcn_name);
 						ret_reg = r_anal_cc_ret (anal, cc);
@@ -312,10 +333,9 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			// Forward propgation of function return type
 			if (!resolved && ret_type && ret_reg) {
 				const char *reg = get_regname (anal, trace, cur_idx);
-				//TODO: Type inference for register based arg
-				RAnalVar *var = (aop.var && aop.var && (aop.var->kind != 'r'))? aop.var: NULL;
+				RAnalVar *var = get_op_var (anal, fcn->addr, &aop);
 				if (reg && !strcmp (reg, ret_reg) && var) {
-					var_retype (anal, aop.var, var->name, ret_type, addr);
+					var_retype (anal, var, var->name, ret_type, addr);
 					resolved = true;
 				}
 				if (SDB_CONTAINS (cur_idx, ret_reg)) {
@@ -329,6 +349,19 @@ beach:
 
 		}
 	}
+	// Type propgation for register based args
+	RList *list = r_anal_var_list (anal, fcn, 'r');
+	RAnalVar *rvar;
+	RListIter *iter;
+	r_list_foreach (list, iter, rvar) {
+		RAnalVar *local_var = get_link_var (anal, fcn->addr, rvar);
+		if (local_var) {
+			r_anal_var_retype (anal, fcn->addr, 1, -1, rvar->kind, local_var->type,
+					-1, rvar->isarg, rvar->name);
+		}
+		r_anal_var_free (local_var);
+	}
+	r_list_free (list);
 out_function:
 	free (buf);
 	r_cons_break_pop();

@@ -1595,6 +1595,9 @@ static void ds_show_functions(RDisasmState *ds) {
 		r_list_join (args, sp_vars);
 		r_list_join (args, regs);
 		r_list_foreach (args, iter, var) {
+			if ((var->kind == 'r') && get_link_var (ds->core->anal, f->addr, var)) {
+				continue;
+			}
 			ds_begin_json_line (ds);
 			char *tmp;
 			int idx;

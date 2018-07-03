@@ -835,6 +835,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	int overlapped = 0;
 	RAnalOp op = {0};
 	int oplen, idx = 0;
+	bool varset = false;
 	struct {
 		int cnt;
 		int idx;
@@ -890,6 +891,15 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	ut64 last_push_addr = UT64_MAX;
 	if (anal->limit && addr + idx < anal->limit->from) {
 		return R_ANAL_RET_END;
+	}
+	RAnalFunction *tmp_fcn = r_anal_get_fcn_in (anal, addr, 0);
+	if (tmp_fcn) {
+		// Checks if var is already analyzed at given addr
+		RList *list = r_anal_var_all_list (anal, tmp_fcn);
+		if (!r_list_empty (list)) {
+			varset = true;
+		}
+		r_list_free (list);
 	}
 	ut64 movptr = UT64_MAX; // used by jmptbl when coded as "mov reg,[R*4+B]"
 	while (addrbytes * idx < len) {
@@ -1003,7 +1013,7 @@ repeat:
 			bb->stackptr = 0;
 			break;
 		}
-		if (anal->opt.vars) {
+		if (anal->opt.vars && !varset) {
 			extract_vars(anal, fcn, &op);
 		}
 		if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {

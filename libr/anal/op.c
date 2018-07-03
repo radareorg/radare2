@@ -64,6 +64,28 @@ R_API void r_anal_op_free(void *_op) {
 	free (_op);
 }
 
+R_API RAnalVar *get_link_var(RAnal *anal, ut64 faddr, RAnalVar *var) {
+	const char *var_local = sdb_fmt ("var.0x%"PFMT64x".%d.%d.%s",
+			faddr, 1, var->delta, "reads");
+	const char *xss = sdb_const_get (anal->sdb_fcns, var_local, 0);
+	ut64 addr = r_num_math (NULL, xss);
+	char *inst_key = r_str_newf ("inst.0x%"PFMT64x".lvar", addr);
+	char *var_def = sdb_get (anal->sdb_fcns, inst_key, 0);
+
+	if (!var_def) {
+		return NULL;
+	}
+	struct VarUsedType vut;
+	RAnalVar *res = NULL;
+	if (sdb_fmt_tobin (var_def, SDB_VARUSED_FMT, &vut) == 4) {
+		res = r_anal_var_get (anal, vut.fcn_addr, vut.type[0], vut.scope, vut.delta);
+		sdb_fmt_free (&vut, SDB_VARUSED_FMT);
+	}
+	free (inst_key);
+	free (var_def);
+	return res;
+}
+
 static RAnalVar *get_used_var(RAnal *anal, RAnalOp *op) {
 	char *inst_key = r_str_newf ("inst.0x%"PFMT64x".vars", op->addr);
 	char *var_def = sdb_get (anal->sdb_fcns, inst_key, 0);
@@ -86,7 +108,6 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 
 	anal->decode = mask & R_ANAL_OP_MASK_ESIL ? true : false;
 	anal->fillval = mask & R_ANAL_OP_MASK_VAL ? true : false;
-
 	if (anal->pcalign) {
 		if (addr % anal->pcalign) {
 			memset (op, 0, sizeof (RAnalOp));
