@@ -345,7 +345,7 @@ static int visual_help() {
 	return ret;
 }
 
-static void prompt_read (const char *p, char *buf, int buflen) {
+static void prompt_read(const char *p, char *buf, int buflen) {
 	if (!buf || buflen < 1) {
 		return;
 	}
