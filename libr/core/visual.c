@@ -35,7 +35,7 @@ static const char *help_msg_visual[] = {
 	"?", "show this help",
 	"??", "show the user-friendly hud",
 	"%", "in cursor mode finds matching pair, otherwise toggle autoblocksz",
-  "@", "redraw screen every 1s (multi-user view), in cursor set position",
+	"@", "redraw screen every 1s (multi-user view), in cursor set position",
 	"^", "seek to the begining of the function",
 	"!", "enter into the visual panels mode",
 	"_", "enter the flag/comment/functions/.. hud (same as VF_)",
@@ -305,27 +305,22 @@ R_API int r_core_visual_hud(RCore *core) {
 	return (int) (size_t) p;
 }
 
-// FIXME: Formatting & cleanup
-// FIXME: Safety checks
-static void append_help_to_strpool (RStrpool *p, const char *title, const char **help) {
-	int i, max_length;
+static void append_help_to_strpool(RStrpool *p, const char *title, const char **help) {
+	int i, max_length, padding = 0;
 	RCons *cons = r_cons_singleton ();
-	bool use_color = cons->color;
-	const char *pal_args_color = use_color ? cons->pal.args : "",
-		   *pal_help_color = use_color ? cons->pal.help : "",
-		   *pal_reset = use_color ? cons->pal.reset : "";
-
+	const char *pal_args_color = cons->color ? cons->pal.args : "",
+		   *pal_help_color = cons->color ? cons->pal.help : "",
+		   *pal_reset = cons->color ? cons->pal.reset : "";
+	char strbuf[128];
 	for (i = 0; help[i]; i += 2) {
-		int len = strlen (help[i]);
-		max_length = R_MAX (max_length, len);
+		max_length = R_MAX (max_length, strlen (help[i]) );
 	}
 
-	char strbuf[128];
 	sprintf (strbuf, "|%s:\n", title);
 	r_strpool_memcat (p, strbuf, strlen (strbuf));
 
 	for (i = 0; help[i]; i += 2) {
-		int padding = max_length - (strlen (help[i]));
+		padding = max_length - (strlen (help[i]));
 		sprintf (strbuf, "| %s%s%*s  %s%s%s\n",
 			 pal_args_color, help[i],
 			 padding, "",
@@ -334,28 +329,23 @@ static void append_help_to_strpool (RStrpool *p, const char *title, const char *
 	}
 }
 
-// FIXME: Should this return 0 on failure?
-// FIXME: Formatting & cleanup
-// FIXME: Is the ugly null termination after appending the help strings?
-static int visual_help () {
+static int visual_help() {
 	int ret;
-
 	RStrpool *p = r_strpool_new (0);
 	if (!p) {
 		return 0;
 	}
 	r_cons_clear00 ();
 	append_help_to_strpool (p, "Visual mode help", help_msg_visual);
-	append_help_to_strpool (
-		p, "Function Keys: (See 'e key.'), defaults to", help_msg_visual_fn);
-
+	append_help_to_strpool (p, "Function Keys: (See 'e key.'), defaults to",
+		help_msg_visual_fn);
 	r_strpool_append (p, "");
 	ret = r_cons_less_str (p->str, "?");
 	r_strpool_free (p);
 	return ret;
 }
 
-static void prompt_read(const char *p, char *buf, int buflen) {
+static void prompt_read (const char *p, char *buf, int buflen) {
 	if (!buf || buflen < 1) {
 		return;
 	}
