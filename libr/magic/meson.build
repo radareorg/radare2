@@ -13,6 +13,7 @@ r_magic = library('r_magic', files,
   include_directories: [platform_inc],
   c_args: ['-DCORELIB=1'],
   link_with: [r_util],
+  dependencies: lmagics,
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion

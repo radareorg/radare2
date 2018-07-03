@@ -196,6 +196,21 @@ config_h = configure_file(
 )
 
 userconf = configuration_data()
+
+# handle lib magic dependency
+libmagic_opt = cc.find_library('libmagic', required: false)
+have_lib_magic = libmagic_opt.found()
+use_sys_libmagic = false
+lmagics = []
+if have_lib_magic
+  use_sys_libmagic = get_option('use_sys_libmagic')
+  if use_sys_libmagic
+    lmagics += [libmagic_opt]
+  endif
+endif
+
+userconf.set('HAVE_LIB_MAGIC', have_lib_magic.to_int())
+userconf.set('USE_LIB_MAGIC', use_sys_libmagic.to_int())
 userconf.set('DEBUGGER', 1)
 userconf.set('PREFIX', r2_prefix)
 userconf.set('LIBDIR', r2_libdir)
@@ -211,8 +226,6 @@ userconf.set('HUD', r2_hud)
 userconf.set('PLUGINS', r2_plugins)
 userconf.set('EXTRAS', r2_extras)
 userconf.set('BINDINGS', r2_bindings)
-userconf.set('HAVE_LIB_MAGIC', 0)
-userconf.set('USE_LIB_MAGIC', 0)
 userconf.set('HAVE_OPENSSL', 0)
 userconf.set('HAVE_FORK', 1)
 userconf.set('WITH_GPL', 1)

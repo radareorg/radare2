@@ -131,6 +131,7 @@ r_bin = library('r_bin', files,
     r_magic,
     libr_shlr
   ],
+  dependencies: lmagics,
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion

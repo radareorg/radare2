@@ -1,4 +1,5 @@
 option('static_runtime', type: 'boolean', value: false)
+option('use_sys_libmagic', type: 'boolean', value: false)
 option('r2_libdir', type: 'string', value: '')
 option('r2_incdir', type: 'string', value: '')
 option('r2_datdir', type: 'string', value: '')
