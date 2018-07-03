@@ -455,6 +455,14 @@ R_API int r_anal_var_rename(RAnal *a, ut64 var_addr, int scope, char kind, const
 	return 1;
 }
 
+// Used for linking reg based arg and local-var like "mov [local_8h], rsi"
+static void r_anal_var_link (RAnal *a, ut64 addr, RAnalVar *var) {
+	const char *inst_key = sdb_fmt ("inst.0x%"PFMT64x ".lvar", addr);
+	const char *var_def = sdb_fmt ("0x%"PFMT64x ",%c,0x%x,0x%x", var->addr,
+			var->kind, var->scope, var->delta);
+	sdb_set (DB, inst_key, var_def, 0);
+}
+
 // avr
 R_API int r_anal_var_access(RAnal *a, ut64 var_addr, char kind, int scope, int delta, int xs_type, ut64 xs_addr) {
 	const char *var_global;
@@ -694,15 +702,16 @@ R_API void extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_s
 				char *vname = r_str_newf ("%s%d", "arg", i + 1);
 				r_anal_var_add (anal, fcn->addr, 1, delta, 'r', NULL, anal->bits / 8,
 						1, vname);
+				if (op->var && op->var->kind != 'r') {
+					r_anal_var_link (anal, op->addr, op->var);
+				}
 				r_anal_var_access (anal, fcn->addr, 'r', 1, delta, 0, op->addr);
 				r_meta_set_string (anal, R_META_TYPE_COMMENT, op->addr, vname);
 				free (vname);
-				break;
 			}
-			if (op->dst && opdreg &&!strcmp (opdreg, regname)) {
+			if (op->dst && opdreg && !strcmp (opdreg, regname)) {
 				reg_set [i] = 1;
 				count++;
-				break;
 			}
 		}
 	}
