@@ -1110,6 +1110,7 @@ static int var_cmd(RCore *core, const char *str) {
 	case ' ': {
 		const char *name;
 		char *vartype;
+		bool isarg = false;
 		int size = 4;
 		int scope = 1;
 		for (str++; *str == ' ';) str++;
@@ -1126,19 +1127,29 @@ static int var_cmd(RCore *core, const char *str) {
 				break;
 			}
 			delta = i->index;
+			isarg = true;
 		} else {
 			delta = r_num_math (core->num, str);
 		}
 		name = p;
-		vartype = strchr (name, ' ');
-		if (vartype) {
-			*vartype++ = 0;
-			r_anal_var_add (core->anal, fcn->addr,
-					scope, delta, type,
-					vartype, size, 0, name);
-		} else {
+		if (!name) {
 			eprintf ("Missing name\n");
+			break;
 		}
+		vartype = strchr (name, ' ');
+		if (!vartype) {
+			vartype = "int";
+		} else {
+			*vartype++ = 0;
+		}
+		if ((type == 'b') && delta > 0) {
+			isarg = true;
+		} else if ((type == 's') && delta > fcn->maxstack) {
+			isarg = true;
+		}
+		r_anal_var_add (core->anal, fcn->addr,scope,
+				delta, type, vartype,
+				size, isarg, name);
 		}
 		break;
 	};
@@ -6796,6 +6807,11 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_list_foreach (core->anal->fcns, iter, fcni) {
 						if (r_cons_is_breaked ()) {
 							break;
+						}
+						RList *list = r_anal_var_list (core->anal, fcni, 'r');
+						if (!r_list_empty (list)) {
+							r_list_free (list);
+							continue;
 						}
 						//extract only reg based var here
 						r_core_recover_vars (core, fcni, true);
