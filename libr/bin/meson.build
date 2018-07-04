@@ -128,9 +128,9 @@ r_bin = library('r_bin', files,
     r_util,
     r_io,
     r_socket,
-    r_magic,
     libr_shlr
   ],
+  dependencies: [r_magic],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion

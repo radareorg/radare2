@@ -197,7 +197,16 @@ config_h = configure_file(
   configuration: conf_data
 )
 
+sys_magic = cc.find_library('magic', required: false)
+use_lib_magic = false
+
+if sys_magic.found() and get_option('use_sys_magic')
+  use_lib_magic = true
+endif
+
 userconf = configuration_data()
+userconf.set('HAVE_LIB_MAGIC', sys_magic.found().to_int())
+userconf.set('USE_LIB_MAGIC', use_lib_magic.to_int())
 userconf.set('DEBUGGER', 1)
 userconf.set('PREFIX', r2_prefix)
 userconf.set('LIBDIR', r2_libdir)
@@ -213,8 +222,6 @@ userconf.set('HUD', r2_hud)
 userconf.set('PLUGINS', r2_plugins)
 userconf.set('EXTRAS', r2_extras)
 userconf.set('BINDINGS', r2_bindings)
-userconf.set('HAVE_LIB_MAGIC', 0)
-userconf.set('USE_LIB_MAGIC', 0)
 userconf.set('HAVE_OPENSSL', 0)
 userconf.set('HAVE_FORK', 1)
 userconf.set('WITH_GPL', 1)
@@ -339,7 +346,6 @@ else
       r_hash,
       r_io,
       r_lang,
-      r_magic,
       r_parse,
       r_reg,
       r_search,
@@ -347,6 +353,7 @@ else
       r_syscall,
       r_util
     ],
+    dependencies: [r_magic],
     include_directories: include_directories('.', 'libr/include'),
     version: r2_version
   )
