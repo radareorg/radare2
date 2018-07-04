@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2017 nodepad */
+/* radare - LGPL - Copyright 2015-2018 nodepad */
 
 #include <r_types.h>
 #include <r_bin.h>
@@ -28,7 +28,7 @@ static bool checkEntrypoint(const ut8 *buf, ut64 length) {
 	pa &= 0xffff;
 	if (pa >= 0x20 && pa + 1 < length) {
 		ut16 pe = r_read_ble16 (buf + 0x3c, false);
-		if (pe < length && length > 0x104 && !memcmp (buf + pe, "PE", 2)) {
+		if (pe + 2 < length && length > 0x104 && !memcmp (buf + pe, "PE", 2)) {
 			return false;
 		}
 		return true;
