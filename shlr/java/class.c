@@ -6434,10 +6434,18 @@ R_API RBinJavaAttrInfo *r_bin_java_annotation_default_attr_new(ut8 *buffer, ut64
 	return attr;
 }
 
+static void delete_obj(RBinJavaCPTypeObj *obj) {
+	if (obj && obj->metas && obj->metas->type_info) {
+		RBinJavaCPTypeMetas *ti = obj->metas->type_info;
+		if (ti && ti->allocs && ti->allocs->delete_obj) {
+			ti->allocs->delete_obj (obj);
+		}
+	}
+}
+
 R_API void r_bin_java_annotation_default_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 	RBinJavaAttrInfo *attr = a;
 	RBinJavaElementValue *element_value = NULL, *ev_element = NULL;
-	RBinJavaCPTypeObj *obj = NULL;
 	RListIter *iter = NULL, *iter_tmp = NULL;
 	if (!attr || attr->type != R_BIN_JAVA_ATTR_TYPE_ANNOTATION_DEFAULT_ATTR) {
 		return;
@@ -6454,30 +6462,15 @@ R_API void r_bin_java_annotation_default_attr_free(void /*RBinJavaAttrInfo*/ *a)
 	case R_BIN_JAVA_EV_TAG_BOOLEAN:
 	case R_BIN_JAVA_EV_TAG_STRING:
 		// Delete the CP Type Object
-		obj = element_value->value.const_value.const_value_cp_obj;
-		if (obj && obj->metas && obj->metas->type_info) {
-			RBinJavaCPTypeMetas *ti = obj->metas->type_info;
-			if (ti && ti->allocs && ti->allocs->delete_obj) {
-				ti->allocs->delete_obj (obj);
-			}
-		}
+		delete_obj (element_value->value.const_value.const_value_cp_obj);
 		break;
 	case R_BIN_JAVA_EV_TAG_ENUM:
 		// Delete the CP Type Objects
-		obj = element_value->value.enum_const_value.const_name_cp_obj;
-		if (obj && obj->metas && obj->metas->type_info) {
-			RBinJavaCPTypeMetas *ti = obj->metas->type_info;
-			if (ti && ti->allocs && ti->allocs->delete_obj) {
-				ti->allocs->delete_obj (obj);
-			}
-		}
-		obj = element_value->value.enum_const_value.type_name_cp_obj;
-		((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->delete_obj (obj);
+		delete_obj (element_value->value.enum_const_value.const_name_cp_obj);
 		break;
 	case R_BIN_JAVA_EV_TAG_CLASS:
 		// Delete the CP Type Object
-		obj = element_value->value.class_value.class_info_cp_obj;
-		((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->delete_obj (obj);
+		delete_obj (element_value->value.class_value.class_info_cp_obj);
 		break;
 	case R_BIN_JAVA_EV_TAG_ARRAY:
 		// Delete the Element Value array List
