@@ -1357,15 +1357,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 		return false;
 	}
 
-	if (core->anal->split) {
-		ret = r_anal_fcn_split_bb (core->anal, fcn, bb, at);
-	} else {
-		r_list_foreach (fcn->bbs, iter, bbi) {
-			if (at == bbi->addr) {
-				ret = R_ANAL_RET_DUP;
-			}
-		}
-	}
+	ret = r_anal_fcn_split_bb (core->anal, fcn, bb, at);
 	if (ret == R_ANAL_RET_DUP) {
 		/* Dupped basic block */
 		goto error;
@@ -1397,9 +1389,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 				goto error;
 			}
 			if (bblen == R_ANAL_RET_END) { /* bb analysis complete */
-				if (core->anal->split) {
-					ret = r_anal_fcn_bb_overlaps (fcn, bb);
-				}
+				ret = r_anal_fcn_bb_overlaps (fcn, bb);
 				if (ret == R_ANAL_RET_NEW) {
 					r_anal_fcn_bbadd (fcn, bb);
 					fail = bb->fail;
