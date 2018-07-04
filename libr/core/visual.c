@@ -31,6 +31,74 @@ static const char *printfmtColumns[] = {
 	"pCw", "pCc", "pCA", "pss", "prc", "pCa", "pxr"
 };
 
+static const char *help_msg_visual[] = {
+	"?", "show this help",
+	"??", "show the user-friendly hud",
+	"%", "in cursor mode finds matching pair, otherwise toggle autoblocksz",
+	"@", "redraw screen every 1s (multi-user view), in cursor set position",
+	"^", "seek to the begining of the function",
+	"!", "enter into the visual panels mode",
+	"_", "enter the flag/comment/functions/.. hud (same as VF_)",
+	"=", "set cmd.vprompt (top row)",
+	"|", "set cmd.cprompt (right column)",
+	".", "seek to program counter",
+	"#", "toggle bytes in disasm view",
+	"\\", "toggle visual split mode",
+	"\"", "toggle the column mode (uses pC..)",
+	"/", "in cursor mode search in current block",
+	"(", "toggle snow",
+	")", "toggle emu.str",
+	":cmd", "run radare command",
+	";[-]cmt", "add/remove comment",
+	"0", "seek to beginning of current function",
+	"[1-9]", "follow jmp/call identified by shortcut (like ;[1])",
+	",file", "add a link to the text file",
+	"/*+-[]", "change block size, [] = resize hex.cols",
+	"</>", "seek aligned to block size (seek cursor in cursor mode)",
+	"a/A", "(a)ssemble code, visual (A)ssembler",
+	"b", "browse symbols, flags, configurations, classes, ...",
+	"B", "toggle breakpoint",
+	"c/C", "toggle (c)ursor and (C)olors",
+	"d[f?]", "define function, data, code, ..",
+	"D", "enter visual diff mode (set diff.from/to)",
+	"e", "edit eval configuration variables",
+	"f/F", "set/unset or browse flags. f- to unset, F to browse, ..",
+	"gG", "go seek to begin and end of file (0-$s)",
+	"hjkl", "move around (or HJKL) (left-down-up-right)",
+	"i", "insert hex or string (in hexdump) use tab to toggle",
+	"I", "insert hexpair block ",
+	"mK/'K", "mark/go to Key (any key)",
+	"M", "walk the mounted filesystems",
+	"n/N", "seek next/prev function/flag/hit (scr.nkey)",
+	"o", "go/seek to given offset",
+	"O", "toggle asm.pseudo and asm.esil",
+	"p/P", "rotate print modes (hex, disasm, debug, words, buf)",
+	"q", "back to radare shell",
+	"r", "toggle jmphints/leahints",
+	"R", "randomize color palette (ecr)",
+	"sS", "step / step over",
+	"T", "enter textlog chat console (TT)",
+	"uU", "undo/redo seek",
+	"v", "visual function/vars code analysis menu",
+	"V", "(V)iew interactive ascii art graph (agfv)",
+	"wW", "seek cursor to next/prev word",
+	"xX", "show xrefs/refs of current function from/to data/code",
+	"yY", "copy and paste selection",
+	"z", "fold/unfold comments in disassembly",
+	"Z", "toggle zoom mode",
+	"Enter", "follow address of jump/call",
+	NULL
+};
+
+static const char *help_msg_visual_fn[] = {
+	"F2", "toggle breakpoint",
+	"F4", "run to cursor",
+	"F7", "single step",
+	"F8", "step over",
+	"F9", "continue",
+	NULL
+};
+
 static const char **printfmt = printfmtSingle;
 
 static bool splitView = false;
@@ -237,72 +305,44 @@ R_API int r_core_visual_hud(RCore *core) {
 	return (int) (size_t) p;
 }
 
+static void append_help_to_strpool(RStrpool *p, const char *title, const char **help) {
+	int i, max_length, padding = 0;
+	RCons *cons = r_cons_singleton ();
+	const char *pal_args_color = cons->color ? cons->pal.args : "",
+		   *pal_help_color = cons->color ? cons->pal.help : "",
+		   *pal_reset = cons->color ? cons->pal.reset : "";
+	char strbuf[128];
+	for (i = 0; help[i]; i += 2) {
+		max_length = R_MAX (max_length, strlen (help[i]) );
+	}
+
+	sprintf (strbuf, "|%s:\n", title);
+	r_strpool_memcat (p, strbuf, strlen (strbuf));
+
+	for (i = 0; help[i]; i += 2) {
+		padding = max_length - (strlen (help[i]));
+		sprintf (strbuf, "| %s%s%*s  %s%s%s\n",
+			 pal_args_color, help[i],
+			 padding, "",
+			 pal_help_color, help[i + 1], pal_reset);
+		r_strpool_memcat (p, strbuf, strlen (strbuf));
+	}
+}
+
 static int visual_help() {
+	int ret;
+	RStrpool *p = r_strpool_new (0);
+	if (!p) {
+		return 0;
+	}
 	r_cons_clear00 ();
-	return r_cons_less_str (
-		"Visual mode help:\n"
-		" ?        show this help\n"
-		" ??       show the user-friendly hud\n"
-		" %        in cursor mode finds matching pair, otherwise toggle autoblocksz\n"
-		" @        redraw screen every 1s (multi-user view), in cursor set position\n"
-		" ^        seek to the begining of the function\n"
-		" !        enter into the visual panels mode\n"
-		" _        enter the flag/comment/functions/.. hud (same as VF_)\n"
-		" =        set cmd.vprompt (top row)\n"
-		" |        set cmd.cprompt (right column)\n"
-		" .        seek to program counter\n"
-		" #        toggle bytes in disasm view\n"
-		" \\        toggle visual split mode\n"
-		" \"        toggle the column mode (uses pC..)\n"
-		" /        in cursor mode search in current block\n"
-		" (        toggle snow\n"
-		" )        toggle emu.str\n"
-		" :cmd     run radare command\n"
-		" ;[-]cmt  add/remove comment\n"
-		" 0        seek to beginning of current function\n"
-		" [1-9]    follow jmp/call identified by shortcut (like ;[1])\n"
-		" ,file    add a link to the text file\n"
-		" /*+-[]   change block size, [] = resize hex.cols\n"
-		" </>      seek aligned to block size (seek cursor in cursor mode)\n"
-		" a/A      (a)ssemble code, visual (A)ssembler\n"
-		" b        browse symbols, flags, configurations, classes, ...\n"
-		" B        toggle breakpoint\n"
-		" c/C      toggle (c)ursor and (C)olors\n"
-		" d[f?]    define function, data, code, ..\n"
-		" D        enter visual diff mode (set diff.from/to)\n"
-		" e        edit eval configuration variables\n"
-		" f/F      set/unset or browse flags. f- to unset, F to browse, ..\n"
-		" gG       go seek to begin and end of file (0-$s)\n"
-		" hjkl     move around (or HJKL) (left-down-up-right)\n"
-		" i        insert hex or string (in hexdump) use tab to toggle\n"
-		" I        insert hexpair block \n"
-		" mK/'K    mark/go to Key (any key)\n"
-		" M        walk the mounted filesystems\n"
-		" n/N      seek next/prev function/flag/hit (scr.nkey)\n"
-		" o        go/seek to given offset\n"
-		" O        toggle asm.pseudo and asm.esil\n"
-		" p/P      rotate print modes (hex, disasm, debug, words, buf)\n"
-		" q        back to radare shell\n"
-		" r        toggle jmphints/leahints\n"
-		" R        randomize color palette (ecr)\n"
-		" sS       step / step over\n"
-		" T        enter textlog chat console (TT)\n"
-		" uU       undo/redo seek\n"
-		" v        visual function/vars code analysis menu\n"
-		" V        (V)iew interactive ascii art graph (agfv)\n"
-		" wW       seek cursor to next/prev word\n"
-		" xX       show xrefs/refs of current function from/to data/code\n"
-		" yY       copy and paste selection\n"
-		" z        fold/unfold comments in disassembly\n"
-		" Z        toggle zoom mode\n"
-		" Enter    follow address of jump/call\n"
-		"Function Keys: (See 'e key.'), defaults to:\n"
-		"  F2      toggle breakpoint\n"
-		"  F4      run to cursor\n"
-		"  F7      single step\n"
-		"  F8      step over\n"
-		"  F9      continue\n",
-		"?");
+	append_help_to_strpool (p, "Visual mode help", help_msg_visual);
+	append_help_to_strpool (p, "Function Keys: (See 'e key.'), defaults to",
+		help_msg_visual_fn);
+	r_strpool_append (p, "");
+	ret = r_cons_less_str (p->str, "?");
+	r_strpool_free (p);
+	return ret;
 }
 
 static void prompt_read(const char *p, char *buf, int buflen) {
@@ -2839,7 +2879,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 		ut64 sz = r_io_size (core->io);
 		ut64 pa;
 		{
-			RIOSection *s = r_io_section_vget (core->io, core->offset); 
+			RIOSection *s = r_io_section_vget (core->io, core->offset);
 			pa =  s ? core->offset - s->vaddr + s->paddr : core->offset;
 		}
 		if (sz == UT64_MAX) {
