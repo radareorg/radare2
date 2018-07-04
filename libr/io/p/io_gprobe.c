@@ -711,6 +711,8 @@ static int gprobe_read (struct gport *port, ut32 addr, ut8 *buf, ut32 count) {
 	int res;
 
 	if (!request || !reply) {
+		r_buf_free (request);
+		r_buf_free (reply);
 		return -1;
 	}
 
@@ -754,6 +756,8 @@ static int gprobe_write (struct gport *port, ut32 addr, const ut8 *buf, ut32 cou
 	ut8 count_be[4];
 
 	if (!request || !reply) {
+		r_buf_free (request);
+		r_buf_free (reply);
 		return -1;
 	}
 

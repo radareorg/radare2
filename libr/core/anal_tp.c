@@ -268,6 +268,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	ut8 *buf = malloc (bsize);
 	if (!buf) {
 		free (buf);
+		r_anal_emul_restore (core, hc);
 		return;
 	}
 	char *fcn_name = NULL;
