@@ -131,7 +131,7 @@ R_API void r_bin_java_local_variable_type_table_attr_free(void /*RBinJavaAttrInf
 R_API void r_bin_java_signature_attr_free(void /*RBinJavaAttrInfo*/ *attr);
 R_API void r_bin_java_source_debug_attr_free(void /*RBinJavaAttrInfo*/ *attr);
 R_API void r_bin_java_element_value_free(void /*RBinJavaElementValue*/ *element_value);
-R_API void r_bin_java_element_pair_free(void /*RBinJavaElementValuePair*/ *ev_pair);
+R_API void r_bin_java_element_pair_free(void /*RBinJavaElementValuePair*/ *evp);
 R_API void r_bin_java_annotation_free(void /*RBinJavaAnnotation*/ *annotation);
 R_API void r_bin_java_rtv_annotations_attr_free(void /*RBinJavaAttrInfo*/ *attr);
 R_API void r_bin_java_rti_annotations_attr_free(void /*RBinJavaAttrInfo*/ *attr);
@@ -160,7 +160,7 @@ R_API void r_bin_java_print_signature_attr_summary(RBinJavaAttrInfo *attr);
 R_API void r_bin_java_print_source_debug_attr_summary(RBinJavaAttrInfo *attr);
 R_API void r_bin_java_print_element_value_summary(RBinJavaElementValue *element_value);
 R_API void r_bin_java_print_annotation_summary(RBinJavaAnnotation *annotation);
-R_API void r_bin_java_print_element_pair_summary(RBinJavaElementValuePair *ev_pair);
+R_API void r_bin_java_print_element_pair_summary(RBinJavaElementValuePair *evp);
 R_API void r_bin_java_print_bootstrap_methods_attr_summary(RBinJavaAttrInfo *attr);
 // R_API void r_bin_java_bootstrap_method_summary(RBinJavaBootStrapMethod *bsm);
 // R_API void r_bin_java_bootstrap_method_argument_summary(RBinJavaBootStrapArgument *bsm_arg);
@@ -231,7 +231,7 @@ R_API ut64 r_bin_java_source_code_file_attr_calc_size(RBinJavaAttrInfo *attr);
 R_API ut64 r_bin_java_stack_map_table_attr_calc_size(RBinJavaAttrInfo *attr);
 R_API ut64 r_bin_java_synthetic_attr_calc_size(RBinJavaAttrInfo *attr);
 R_API ut64 r_bin_java_bootstrap_method_calc_size(RBinJavaBootStrapMethod *bsm);
-R_API ut64 r_bin_java_element_pair_calc_size(RBinJavaElementValuePair *ev_pair);
+R_API ut64 r_bin_java_element_pair_calc_size(RBinJavaElementValuePair *evp);
 R_API ut64 r_bin_java_element_value_calc_size(RBinJavaElementValue *element_value);
 
 R_API ut64 r_bin_java_unknown_cp_calc_size(RBinJavaCPTypeObj *obj);
@@ -6225,43 +6225,48 @@ R_API char *r_bin_java_print_unknown_cp_stringify(RBinJavaCPTypeObj *obj) {
 }
 
 R_API RBinJavaElementValuePair *r_bin_java_element_pair_new(ut8 *buffer, ut64 sz, ut64 buf_offset) {
-	RBinJavaElementValuePair *ev_pair = NULL;
-	ut64 offset = 0;
-	if (!buffer) {
+	if (!buffer || sz < 4) {
 		return NULL;
 	}
-	ev_pair = R_NEW0 (RBinJavaElementValuePair);
-	if (!ev_pair) {
-		// TODO eprintf ev_pair failed to allocate
+	RBinJavaElementValuePair *evp = R_NEW0 (RBinJavaElementValuePair);
+	if (!evp) {
 		return NULL;
 	}
-	// TODO: What is the signifigance of ev_pair element
-	ev_pair->element_name_idx = R_BIN_JAVA_USHORT (buffer, offset);
-	offset += 2;
-	ev_pair->file_offset = buf_offset;
-	ev_pair->name = r_bin_java_get_utf8_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, ev_pair->element_name_idx);
-	if (ev_pair->name == NULL) {
+	// TODO: What is the signifigance of evp element
+	evp->element_name_idx = R_BIN_JAVA_USHORT (buffer, 0);
+	ut64 offset = 2;
+	evp->file_offset = buf_offset;
+	evp->name = r_bin_java_get_utf8_from_bin_cp_list (R_BIN_JAVA_GLOBAL_BIN, evp->element_name_idx);
+	if (!evp->name) {
 		// TODO: eprintf unable to find the name for the given index
 		eprintf ("ElementValue Name is invalid.\n");
-		ev_pair->name = strdup ("UNKNOWN");
+		evp->name = strdup ("UNKNOWN");
 	}
-	ev_pair->value = r_bin_java_element_value_new (buffer + offset, sz - offset, buf_offset + offset);
-	offset += ev_pair->value->size;
-	ev_pair->size = offset;
-	return ev_pair;
+	if (offset >= sz) {
+		free (evp);
+		return NULL;
+	}
+	evp->value = r_bin_java_element_value_new (buffer + offset, sz - offset, buf_offset + offset);
+	offset += evp->value->size;
+if (offset >= sz) {
+eprintf("moskito\n");
+return NULL;
+}
+	evp->size = offset;
+	return evp;
 }
 
-R_API void r_bin_java_print_element_pair_summary(RBinJavaElementValuePair *ev_pair) {
-	if (!ev_pair) {
+R_API void r_bin_java_print_element_pair_summary(RBinJavaElementValuePair *evp) {
+	if (!evp) {
 		eprintf ("Attempting to print an invalid RBinJavaElementValuePair *pair.\n");
 		return;
 	}
 	Eprintf ("Element Value Pair information:\n");
-	Eprintf ("  EV Pair File Offset: 0x%08"PFMT64x "\n", ev_pair->file_offset);
-	Eprintf ("  EV Pair Element Name index: 0x%02x\n", ev_pair->element_name_idx);
-	Eprintf ("  EV Pair Element Name: %s\n", ev_pair->name);
+	Eprintf ("  EV Pair File Offset: 0x%08"PFMT64x "\n", evp->file_offset);
+	Eprintf ("  EV Pair Element Name index: 0x%02x\n", evp->element_name_idx);
+	Eprintf ("  EV Pair Element Name: %s\n", evp->name);
 	Eprintf ("  EV Pair Element Value:\n");
-	r_bin_java_print_element_value_summary (ev_pair->value);
+	r_bin_java_print_element_value_summary (evp->value);
 }
 
 R_API void r_bin_java_print_element_value_summary(RBinJavaElementValue *element_value) {
@@ -6334,13 +6339,13 @@ R_API void r_bin_java_print_element_value_summary(RBinJavaElementValue *element_
 }
 
 R_API void r_bin_java_element_pair_free(void /*RBinJavaElementValuePair*/ *e) {
-	RBinJavaElementValuePair *ev_pair = e;
-	if (ev_pair) {
-		free (ev_pair->name);
-		r_bin_java_element_value_free (ev_pair->value);
-		free (ev_pair);
+	RBinJavaElementValuePair *evp = e;
+	if (evp) {
+		free (evp->name);
+		r_bin_java_element_value_free (evp->value);
+		free (evp);
 	}
-	ev_pair = NULL;
+	evp = NULL;
 }
 
 R_API void r_bin_java_element_value_free(void /*RBinJavaElementValue*/ *e) {
@@ -6388,7 +6393,7 @@ R_API void r_bin_java_element_value_free(void /*RBinJavaElementValue*/ *e) {
 				if (ev_element) {
 					r_bin_java_element_value_free (ev_element);
 				} else {
-					// TODO eprintf ev_pairs value was NULL
+					// TODO eprintf evps value was NULL
 				}
 				// r_list_delete (element_value->value.array_value.values, iter);
 				ev_element = NULL;
@@ -6499,7 +6504,7 @@ R_API void r_bin_java_annotation_default_attr_free(void /*RBinJavaAttrInfo*/ *a)
 R_API RBinJavaAnnotation *r_bin_java_annotation_new(ut8 *buffer, ut64 sz, ut64 buf_offset) {
 	ut32 i = 0;
 	RBinJavaAnnotation *annotation = NULL;
-	RBinJavaElementValuePair *ev_pairs = NULL;
+	RBinJavaElementValuePair *evps = NULL;
 	ut64 offset = 0;
 	annotation = R_NEW0 (RBinJavaAnnotation);
 	if (!annotation) {
@@ -6517,10 +6522,10 @@ R_API RBinJavaAnnotation *r_bin_java_annotation_new(ut8 *buffer, ut64 sz, ut64 b
 		if (offset > sz) {
 			break;
 		}
-		ev_pairs = r_bin_java_element_pair_new (buffer + offset, sz - offset, buf_offset + offset);
-		if (ev_pairs) {
-			offset += ev_pairs->size;
-			r_list_append (annotation->element_value_pairs, (void *) ev_pairs);
+		evps = r_bin_java_element_pair_new (buffer + offset, sz - offset, buf_offset + offset);
+		if (evps) {
+			offset += evps->size;
+			r_list_append (annotation->element_value_pairs, (void *) evps);
 		}
 	}
 	annotation->size = offset;
@@ -6530,7 +6535,7 @@ R_API RBinJavaAnnotation *r_bin_java_annotation_new(ut8 *buffer, ut64 sz, ut64 b
 R_API ut64 r_bin_java_annotation_calc_size(RBinJavaAnnotation *annotation) {
 	ut64 sz = 0;
 	RListIter *iter, *iter_tmp;
-	RBinJavaElementValuePair *ev_pairs = NULL;
+	RBinJavaElementValuePair *evps = NULL;
 	if (!annotation) {
 		// TODO eprintf allocation fail
 		return sz;
@@ -6539,9 +6544,9 @@ R_API ut64 r_bin_java_annotation_calc_size(RBinJavaAnnotation *annotation) {
 	sz += 2;
 	// annotation->num_element_value_pairs = R_BIN_JAVA_USHORT (buffer, offset);
 	sz += 2;
-	r_list_foreach_safe (annotation->element_value_pairs, iter, iter_tmp, ev_pairs) {
-		if (ev_pairs) {
-			sz += r_bin_java_element_pair_calc_size (ev_pairs);
+	r_list_foreach_safe (annotation->element_value_pairs, iter, iter_tmp, evps) {
+		if (evps) {
+			sz += r_bin_java_element_pair_calc_size (evps);
 		}
 	}
 	return sz;
@@ -6557,7 +6562,7 @@ R_API void r_bin_java_annotation_free(void /*RBinJavaAnnotation*/ *a) {
 
 R_API void r_bin_java_print_annotation_summary(RBinJavaAnnotation *annotation) {
 	RListIter *iter = NULL, *iter_tmp = NULL;
-	RBinJavaElementValuePair *ev_pair = NULL;
+	RBinJavaElementValuePair *evp = NULL;
 	if (!annotation) {
 		// TODO eprintf invalid annotation
 		return;
@@ -6566,22 +6571,22 @@ R_API void r_bin_java_print_annotation_summary(RBinJavaAnnotation *annotation) {
 	Eprintf ("  Annotation Number of EV Pairs: 0x%04x\n", annotation->num_element_value_pairs);
 	Eprintf ("  Annotation EV Pair Values:\n");
 	if (annotation->element_value_pairs) {
-		r_list_foreach_safe (annotation->element_value_pairs, iter, iter_tmp, ev_pair) {
-			r_bin_java_print_element_pair_summary (ev_pair);
+		r_list_foreach_safe (annotation->element_value_pairs, iter, iter_tmp, evp) {
+			r_bin_java_print_element_pair_summary (evp);
 		}
 	}
 }
 
-R_API ut64 r_bin_java_element_pair_calc_size(RBinJavaElementValuePair *ev_pair) {
+R_API ut64 r_bin_java_element_pair_calc_size(RBinJavaElementValuePair *evp) {
 	ut64 sz = 0;
-	if (ev_pair == NULL) {
+	if (evp == NULL) {
 		return sz;
 	}
-	// ev_pair->element_name_idx = r_bin_java_read_short(bin, bin->b->cur);
+	// evp->element_name_idx = r_bin_java_read_short(bin, bin->b->cur);
 	sz += 2;
-	// ev_pair->value = r_bin_java_element_value_new (bin, offset+2);
-	if (ev_pair->value) {
-		sz += r_bin_java_element_value_calc_size (ev_pair->value);
+	// evp->value = r_bin_java_element_value_new (bin, offset+2);
+	if (evp->value) {
+		sz += r_bin_java_element_value_calc_size (evp->value);
 	}
 	return sz;
 }
@@ -6589,7 +6594,7 @@ R_API ut64 r_bin_java_element_pair_calc_size(RBinJavaElementValuePair *ev_pair) 
 R_API ut64 r_bin_java_element_value_calc_size(RBinJavaElementValue *element_value) {
 	RListIter *iter, *iter_tmp;
 	RBinJavaElementValue *ev_element;
-	RBinJavaElementValuePair *ev_pairs;
+	RBinJavaElementValuePair *evps;
 	ut64 sz = 0;
 	if (element_value == NULL) {
 		return sz;
@@ -6643,9 +6648,9 @@ R_API ut64 r_bin_java_element_value_calc_size(RBinJavaElementValue *element_valu
 		// element_value->value.annotation_value.num_element_value_pairs = r_bin_java_read_short(bin, bin->b->cur);
 		sz += 2;
 		element_value->value.annotation_value.element_value_pairs = r_list_newf (r_bin_java_element_pair_free);
-		r_list_foreach_safe (element_value->value.annotation_value.element_value_pairs, iter, iter_tmp, ev_pairs) {
-			if (ev_pairs) {
-				sz += r_bin_java_element_pair_calc_size (ev_pairs);
+		r_list_foreach_safe (element_value->value.annotation_value.element_value_pairs, iter, iter_tmp, evps) {
+			if (evps) {
+				sz += r_bin_java_element_pair_calc_size (evps);
 			}
 		}
 		break;
@@ -6663,7 +6668,7 @@ R_API RBinJavaElementValue *r_bin_java_element_value_new(ut8 *buffer, ut64 sz, u
 	if (!element_value) {
 		return NULL;
 	}
-	RBinJavaElementValuePair *ev_pairs = NULL;
+	RBinJavaElementValuePair *evps = NULL;
 	element_value->metas = R_NEW0 (RBinJavaMetaInfo);
 	if (!element_value->metas) {
 		R_FREE (element_value);
@@ -6730,39 +6735,38 @@ R_API RBinJavaElementValue *r_bin_java_element_value_new(ut8 *buffer, ut64 sz, u
 			if (ev_element) {
 				element_value->size += ev_element->size;
 				offset += ev_element->size;
-			}
-			// read array_value.num_values, and append to array_value.values
-			r_list_append (element_value->value.array_value.values, (void *) ev_element);
-			if (ev_element == NULL) {
-				// TODO: eprintf error when reading element value
+				// read array_value.num_values, and append to array_value.values
+				r_list_append (element_value->value.array_value.values, (void *) ev_element);
 			}
 		}
 		break;
 	case R_BIN_JAVA_EV_TAG_ANNOTATION:
 		// annotation new is not used here.
 		// (ut16) read and set annotation_value.type_idx;
-		element_value->value.annotation_value.type_idx = R_BIN_JAVA_USHORT (buffer, offset);
-		element_value->size += 2;
-		offset += 2;
-		// (ut16) read and set annotation_value.num_element_value_pairs;
-		element_value->value.annotation_value.num_element_value_pairs = R_BIN_JAVA_USHORT (buffer, offset);
-		element_value->size += 2;
-		offset += 2;
+		if (offset + 8 < sz) {
+			element_value->value.annotation_value.type_idx = R_BIN_JAVA_USHORT (buffer, offset);
+			element_value->size += 2;
+			offset += 2;
+			// (ut16) read and set annotation_value.num_element_value_pairs;
+			element_value->value.annotation_value.num_element_value_pairs = R_BIN_JAVA_USHORT (buffer, offset);
+			element_value->size += 2;
+			offset += 2;
+		}
 		element_value->value.annotation_value.element_value_pairs = r_list_newf (r_bin_java_element_pair_free);
 		// read annotation_value.num_element_value_pairs, and append to annotation_value.element_value_pairs
 		for (i = 0; i < element_value->value.annotation_value.num_element_value_pairs; i++) {
 			if (offset > sz) {
 				break;
 			}
-			ev_pairs = r_bin_java_element_pair_new (buffer + offset, sz - offset, buf_offset + offset);
-			if (ev_pairs) {
-				element_value->size += ev_pairs->size;
-				offset += ev_pairs->size;
+			evps = r_bin_java_element_pair_new (buffer + offset, sz - offset, buf_offset + offset);
+			if (evps) {
+				element_value->size += evps->size;
+				offset += evps->size;
 			}
-			if (ev_pairs == NULL) {
+			if (evps == NULL) {
 				// TODO: eprintf error when reading element pair
 			}
-			r_list_append (element_value->value.annotation_value.element_value_pairs, (void *) ev_pairs);
+			r_list_append (element_value->value.annotation_value.element_value_pairs, (void *) evps);
 		}
 		break;
 	default:
@@ -7053,14 +7057,14 @@ R_API RBinJavaAnnotationsArray *r_bin_java_annotation_array_new(ut8 *buffer, ut6
 	offset += 2;
 	annotation_array->annotations = r_list_new ();
 	for (i = 0; i < annotation_array->num_annotations; i++) {
+		if (offset > sz) {
+			break;
+		}
 		annotation = r_bin_java_annotation_new (buffer + offset, sz - offset, buf_offset + offset);
 		if (annotation) {
 			offset += annotation->size;
+			r_list_append (annotation_array->annotations, (void *) annotation);
 		}
-		if (annotation == NULL) {
-			// TODO eprintf
-		}
-		r_list_append (annotation_array->annotations, (void *) annotation);
 	}
 	annotation_array->size = offset;
 	return annotation_array;
@@ -7216,19 +7220,21 @@ R_API RBinJavaAttrInfo *r_bin_java_rtip_annotations_attr_new(ut8 *buffer, ut64 s
 	ut64 offset = 0;
 	attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
 	offset += 6;
-	RBinJavaAnnotationsArray *annotation_array;
 	if (attr) {
 		attr->type = R_BIN_JAVA_ATTR_TYPE_RUNTIME_INVISIBLE_PARAMETER_ANNOTATION_ATTR;
 		attr->info.rtip_annotations_attr.num_parameters = buffer[offset];
 		offset += 1;
 		attr->info.rtip_annotations_attr.parameter_annotations = r_list_newf (r_bin_java_annotation_array_free);
 		for (i = 0; i < attr->info.rtip_annotations_attr.num_parameters; i++) {
-			annotation_array = r_bin_java_annotation_array_new (buffer + offset, sz - offset, buf_offset + offset);
-			if (annotation_array == NULL) {}
+			if (offset >= sz) {
+				break;
+			}
+			RBinJavaAnnotationsArray *annotation_array = r_bin_java_annotation_array_new (
+				buffer + offset, sz - offset, buf_offset + offset);
 			if (annotation_array) {
 				offset += annotation_array->size;
+				r_list_append (attr->info.rtip_annotations_attr.parameter_annotations, (void *) annotation_array);
 			}
-			r_list_append (attr->info.rtip_annotations_attr.parameter_annotations, (void *) annotation_array);
 		}
 		attr->size = offset;
 	}
