@@ -11,14 +11,17 @@
 #define R_TH_TID HANDLE
 #define R_TH_LOCK_T CRITICAL_SECTION
 #define R_TH_COND_T CONDITION_VARIABLE
+#define R_TH_SEM_T HANDLE
 //HANDLE
 
 #elif HAVE_PTHREAD
 #define __GNU
+#include <semaphore.h>
 #include <pthread.h>
 #define R_TH_TID pthread_t
 #define R_TH_LOCK_T pthread_mutex_t
 #define R_TH_COND_T pthread_cond_t
+#define R_TH_SEM_T sem_t
 
 #else
 #error Threading library only supported for pthread and w32
@@ -29,6 +32,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef struct r_th_sem_t {
+	R_TH_SEM_T sem;
+} RThreadSemaphore;
 
 typedef struct r_th_lock_t {
 	int refs;
@@ -70,6 +77,11 @@ R_API bool r_th_kill(RThread *th, bool force);
 R_API bool r_th_pause(RThread *th, bool enable);
 R_API bool r_th_try_pause(RThread *th);
 R_API R_TH_TID r_th_self(void);
+
+R_API RThreadSemaphore *r_th_sem_new(unsigned int initial);
+R_API void r_th_sem_free(RThreadSemaphore *sem);
+R_API void r_th_sem_post(RThreadSemaphore *sem);
+R_API void r_th_sem_wait(RThreadSemaphore *sem);
 
 R_API RThreadLock *r_th_lock_new(bool recursive);
 R_API int r_th_lock_wait(RThreadLock *th);

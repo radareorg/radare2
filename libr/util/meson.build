@@ -62,6 +62,7 @@ files = [
   'sys.c',
   'syscmd.c',
   'thread.c',
+  'thread_sem.c',
   'thread_lock.c',
   'thread_cond.c',
   'thread_pipe.c',
