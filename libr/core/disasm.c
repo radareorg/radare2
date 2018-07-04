@@ -3234,6 +3234,9 @@ static void ds_print_dwarf(RDisasmState *ds) {
 				}
 				// handle_set_pre (ds, "  ");
 				ds_align_comment (ds);
+				if (ds->use_json) {
+					chopstr = r_str_escape (chopstr);
+				}
 				if (ds->show_color) {
 					r_cons_printf ("%s; %s"Color_RESET, ds->pal_comment, chopstr);
 				} else {
