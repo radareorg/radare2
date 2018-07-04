@@ -4385,6 +4385,9 @@ R_API RBinJavaStackMapFrame *r_bin_java_stack_map_frame_new(ut8 *buffer, ut64 sz
 		// IFDBG eprintf ("r_bin_java_stack_map_frame_new: Max ustack items > 65535, read(%d byte(s)), number_of_locals = 0x%08x.\n", var_sz, stack_frame->number_of_stack_items);
 		// read the stack items
 		for (i = 0; i < stack_frame->number_of_stack_items; i++) {
+			if (offset >= sz) {
+				break;
+			}
 			se = r_bin_java_read_from_buffer_verification_info_new (buffer + offset, sz - offset, buf_offset + offset);
 			if (se) {
 				offset += se->size;
@@ -4547,7 +4550,7 @@ R_API RBinJavaAttrInfo *r_bin_java_stack_map_table_attr_new(ut8 *buffer, ut64 sz
 			stack_frame = R_BIN_JAVA_GLOBAL_BIN->current_code_attr->info.code_attr.implicit_frame;
 		}
 		IFDBG eprintf("Reading StackMap Entry #%d @ 0x%08"PFMT64x ", current stack_frame: %p\n", i, buf_offset + offset, stack_frame);
-		if (offset > sz) {
+		if (offset >= sz) {
 			r_bin_java_stack_map_table_attr_free (attr);
 			return NULL;
 		}
