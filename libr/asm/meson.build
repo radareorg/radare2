@@ -179,6 +179,7 @@ r_asm = library('r_asm', files,
     r_socket,
     libr_shlr
   ],
+  dependencies: [capstone_dep],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
