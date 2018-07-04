@@ -3593,7 +3593,7 @@ R_API ut64 r_bin_java_signature_attr_calc_size(RBinJavaAttrInfo *attr) {
 R_API RBinJavaAttrInfo *r_bin_java_enclosing_methods_attr_new(ut8 *buffer, ut64 sz, ut64 buf_offset) {
 	ut64 offset = 6;
 	RBinJavaAttrInfo *attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
-	if (!attr) {
+	if (!attr || sz < 10) {
 		return NULL;
 	}
 	attr->type = R_BIN_JAVA_ATTR_TYPE_ENCLOSING_METHOD_ATTR;
