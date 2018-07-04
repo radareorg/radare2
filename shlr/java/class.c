@@ -6431,7 +6431,7 @@ R_API RBinJavaAttrInfo *r_bin_java_annotation_default_attr_new(ut8 *buffer, ut64
 	RBinJavaAttrInfo *attr = NULL;
 	attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
 	offset += 6;
-	if (attr) {
+	if (attr && sz >= offset) {
 		attr->type = R_BIN_JAVA_ATTR_TYPE_ANNOTATION_DEFAULT_ATTR;
 		attr->info.annotation_default_attr.default_value = r_bin_java_element_value_new (buffer + offset, sz - offset, buf_offset + offset);
 		if (attr->info.annotation_default_attr.default_value) {
@@ -6453,12 +6453,15 @@ static void delete_obj(RBinJavaCPTypeObj *obj) {
 
 R_API void r_bin_java_annotation_default_attr_free(void /*RBinJavaAttrInfo*/ *a) {
 	RBinJavaAttrInfo *attr = a;
-	RBinJavaElementValue *element_value = NULL, *ev_element = NULL;
+	RBinJavaElementValue *ev_element = NULL;
 	RListIter *iter = NULL, *iter_tmp = NULL;
 	if (!attr || attr->type != R_BIN_JAVA_ATTR_TYPE_ANNOTATION_DEFAULT_ATTR) {
 		return;
 	}
-	element_value = (attr->info.annotation_default_attr.default_value);
+	RBinJavaElementValue *element_value = attr->info.annotation_default_attr.default_value;
+	if (!element_value) {
+		return;
+	}
 	switch (element_value->tag) {
 	case R_BIN_JAVA_EV_TAG_BYTE:
 	case R_BIN_JAVA_EV_TAG_CHAR:
