@@ -116,6 +116,7 @@ static void sortPanelForSplit(RPanels *panels);
 static void splitPanelVertical(RCore *core);
 static void splitPanelHorizontal(RCore *core);
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color);
+static void panelAllClear(RPanels *panels);
 static void addPanelFrame(RCore* core, RPanels* panels, const char *title, const char *cmd);
 static bool checkFunc(RCore *core);
 static void cursorLeft(RCore *core);
@@ -235,6 +236,20 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 	} else {
 		r_cons_canvas_box (can, panel->x, panel->y, panel->w, panel->h, cons->pal.graph_box);
 	}
+}
+
+static void panelAllClear(RPanels *panels) {
+	if (!panels) {
+		return;
+	}
+	int i;
+	RPanel *panel = NULL;
+	for (i = 0; i < panels->n_panels; i++) {
+		panel = &panels->panel[i];
+		r_cons_canvas_fill (panels->can, panel->x, panel->y, panel->w, panel->h, ' ');
+	}
+	r_cons_canvas_print (panels->can);
+	r_cons_flush ();
 }
 
 static void layoutMenu(RPanel *panel) {
@@ -688,7 +703,7 @@ static void dismantlePanel(RPanels *panels) {
 				tmpPanel->x = ox;
 			}
 		}
-	} else if (upLeftValid && upLeftValid) {
+	} else if (upLeftValid && upRightValid) {
 		for (i = 0; i < panels->n_panels; i++) {
 			if (up[i] != -1) {
 				tmpPanel = &panels->panel[i];
@@ -884,7 +899,7 @@ static void doPanelsRefresh(RCore *core) {
 		return;
 	}
 	core->panels->isResizing = true;
-	r_core_panels_layout (core->panels);
+	panelAllClear (core->panels);
 	r_core_panels_refresh (core);
 }
 
