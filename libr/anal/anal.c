@@ -87,7 +87,6 @@ R_API RAnal *r_anal_new() {
 	(void)r_anal_xrefs_init (anal);
 	anal->diff_thbb = R_ANAL_THRESHOLDBB;
 	anal->diff_thfcn = R_ANAL_THRESHOLDFCN;
-	anal->split = true; // used from core
 	anal->syscall = r_syscall_new ();
 	r_io_bind_init (anal->iob);
 	r_flag_bind_init (anal->flb);
