@@ -26,7 +26,9 @@ if meson.is_subproject()
   endif
 endif
 
-version_commit = ''
+# by default, not version commit is used
+version_commit = '0'
+
 gittap = ''
 gittip = 'unknown'
 
