@@ -620,7 +620,6 @@ typedef struct r_anal_t {
 	int bits;
 	int lineswidth; // wtf
 	int big_endian;
-	int split; // used only from core
 	int sleep; // sleep some usecs before analyzing more (avoid 100% cpu usages)
 	RAnalCPPABI cpp_abi;
 	void *user;
