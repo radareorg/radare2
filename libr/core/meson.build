@@ -97,7 +97,7 @@ r_core = library('r_core', files,
     r_bp,
     libr_shlr
   ],
-  dependencies: [platform_deps],
+  dependencies: [platform_deps] + lmagics,
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion

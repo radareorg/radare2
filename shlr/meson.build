@@ -1,12 +1,96 @@
-res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("capstone"))')
-if res.returncode() == 0
-  if not git_exe.found()
-    error('Cannot load capstone library. Either provide capstone in ./shlr/capstone or install git, so it can be downloaded')
+libr_shlr = []
+
+capstone_opt = dependency('capstone', version: '>=3.0.4', required: false)
+if not capstone_opt.found()
+  res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("capstone"))')
+  if res.returncode() == 0
+    if not git_exe.found()
+      error('Cannot load capstone library. Either provide capstone in ./shlr/capstone or install git, so it can be downloaded')
+    endif
+
+    message('Cloning capstone')
+    git_cmd = 'clone -b next --depth 10 https://github.com/aquynh/capstone.git capstone'
+    run_command(git_exe, git_cmd.split())
   endif
 
-  message('Cloning capstone')
-  git_cmd = 'clone -b next --depth 10 https://github.com/aquynh/capstone.git capstone'
-  run_command(git_exe, git_cmd.split())
+  cs_files = [
+    'capstone/arch/AArch64/AArch64BaseInfo.c',
+    'capstone/arch/AArch64/AArch64Disassembler.c',
+    'capstone/arch/AArch64/AArch64InstPrinter.c',
+    'capstone/arch/AArch64/AArch64Mapping.c',
+    'capstone/arch/AArch64/AArch64Module.c',
+    'capstone/arch/ARM/ARMDisassembler.c',
+    'capstone/arch/ARM/ARMInstPrinter.c',
+    'capstone/arch/ARM/ARMMapping.c',
+    'capstone/arch/ARM/ARMModule.c',
+    'capstone/arch/M68K/M68KDisassembler.c',
+    'capstone/arch/M68K/M68KInstPrinter.c',
+    'capstone/arch/M68K/M68KModule.c',
+    'capstone/arch/Mips/MipsDisassembler.c',
+    'capstone/arch/Mips/MipsInstPrinter.c',
+    'capstone/arch/Mips/MipsMapping.c',
+    'capstone/arch/Mips/MipsModule.c',
+    'capstone/arch/PowerPC/PPCDisassembler.c',
+    'capstone/arch/PowerPC/PPCInstPrinter.c',
+    'capstone/arch/PowerPC/PPCMapping.c',
+    'capstone/arch/PowerPC/PPCModule.c',
+    'capstone/arch/Sparc/SparcDisassembler.c',
+    'capstone/arch/Sparc/SparcInstPrinter.c',
+    'capstone/arch/Sparc/SparcMapping.c',
+    'capstone/arch/Sparc/SparcModule.c',
+    'capstone/arch/SystemZ/SystemZDisassembler.c',
+    'capstone/arch/SystemZ/SystemZInstPrinter.c',
+    'capstone/arch/SystemZ/SystemZMapping.c',
+    'capstone/arch/SystemZ/SystemZMCTargetDesc.c',
+    'capstone/arch/SystemZ/SystemZModule.c',
+    'capstone/arch/TMS320C64x/TMS320C64xDisassembler.c',
+    'capstone/arch/TMS320C64x/TMS320C64xInstPrinter.c',
+    'capstone/arch/TMS320C64x/TMS320C64xMapping.c',
+    'capstone/arch/TMS320C64x/TMS320C64xModule.c',
+    'capstone/arch/X86/X86ATTInstPrinter.c',
+    'capstone/arch/X86/X86Disassembler.c',
+    'capstone/arch/X86/X86DisassemblerDecoder.c',
+    'capstone/arch/X86/X86IntelInstPrinter.c',
+    'capstone/arch/X86/X86Mapping.c',
+    'capstone/arch/X86/X86Module.c',
+    'capstone/arch/XCore/XCoreDisassembler.c',
+    'capstone/arch/XCore/XCoreInstPrinter.c',
+    'capstone/arch/XCore/XCoreMapping.c',
+    'capstone/arch/XCore/XCoreModule.c',
+    'capstone/cs.c',
+    'capstone/MCInst.c',
+    'capstone/MCInstrDesc.c',
+    'capstone/MCRegisterInfo.c',
+    'capstone/SStream.c',
+    'capstone/utils.c',
+  ]
+
+  libr2capstone = static_library('r2capstone', cs_files,
+    c_args: [
+      '-DCAPSTONE_X86_ATT_DISABLE_NO',
+      '-DCAPSTONE_X86_REDUCE_NO',
+      '-DCAPSTONE_USE_SYS_DYN_MEM',
+      '-DCAPSTONE_DIET_NO',
+      '-DCAPSTONE_HAS_ARM',
+      '-DCAPSTONE_HAS_ARM64',
+      '-DCAPSTONE_HAS_M68K',
+      '-DCAPSTONE_HAS_MIPS',
+      '-DCAPSTONE_HAS_POWERPC',
+      '-DCAPSTONE_HAS_SPARC',
+      '-DCAPSTONE_HAS_SYSZ',
+      '-DCAPSTONE_HAS_X86',
+      '-DCAPSTONE_HAS_XCORE',
+      '-DCAPSTONE_HAS_TMS320C64X',
+    ],
+    include_directories: [
+      include_directories([
+	'capstone/include'
+      ])
+    ],
+    implicit_include_directories: false
+  )
+
+  libr_shlr += [libr2capstone]
 endif
 
 bochs_files = [
@@ -275,83 +359,6 @@ libr2zip = static_library('r2zip', zlib_files,
   implicit_include_directories: false
 )
 
-cs_files = [
-  'capstone/arch/AArch64/AArch64BaseInfo.c',
-  'capstone/arch/AArch64/AArch64Disassembler.c',
-  'capstone/arch/AArch64/AArch64InstPrinter.c',
-  'capstone/arch/AArch64/AArch64Mapping.c',
-  'capstone/arch/AArch64/AArch64Module.c',
-  'capstone/arch/ARM/ARMDisassembler.c',
-  'capstone/arch/ARM/ARMInstPrinter.c',
-  'capstone/arch/ARM/ARMMapping.c',
-  'capstone/arch/ARM/ARMModule.c',
-  'capstone/arch/M68K/M68KDisassembler.c',
-  'capstone/arch/M68K/M68KInstPrinter.c',
-  'capstone/arch/M68K/M68KModule.c',
-  'capstone/arch/Mips/MipsDisassembler.c',
-  'capstone/arch/Mips/MipsInstPrinter.c',
-  'capstone/arch/Mips/MipsMapping.c',
-  'capstone/arch/Mips/MipsModule.c',
-  'capstone/arch/PowerPC/PPCDisassembler.c',
-  'capstone/arch/PowerPC/PPCInstPrinter.c',
-  'capstone/arch/PowerPC/PPCMapping.c',
-  'capstone/arch/PowerPC/PPCModule.c',
-  'capstone/arch/Sparc/SparcDisassembler.c',
-  'capstone/arch/Sparc/SparcInstPrinter.c',
-  'capstone/arch/Sparc/SparcMapping.c',
-  'capstone/arch/Sparc/SparcModule.c',
-  'capstone/arch/SystemZ/SystemZDisassembler.c',
-  'capstone/arch/SystemZ/SystemZInstPrinter.c',
-  'capstone/arch/SystemZ/SystemZMapping.c',
-  'capstone/arch/SystemZ/SystemZMCTargetDesc.c',
-  'capstone/arch/SystemZ/SystemZModule.c',
-  'capstone/arch/TMS320C64x/TMS320C64xDisassembler.c',
-  'capstone/arch/TMS320C64x/TMS320C64xInstPrinter.c',
-  'capstone/arch/TMS320C64x/TMS320C64xMapping.c',
-  'capstone/arch/TMS320C64x/TMS320C64xModule.c',
-  'capstone/arch/X86/X86ATTInstPrinter.c',
-  'capstone/arch/X86/X86Disassembler.c',
-  'capstone/arch/X86/X86DisassemblerDecoder.c',
-  'capstone/arch/X86/X86IntelInstPrinter.c',
-  'capstone/arch/X86/X86Mapping.c',
-  'capstone/arch/X86/X86Module.c',
-  'capstone/arch/XCore/XCoreDisassembler.c',
-  'capstone/arch/XCore/XCoreInstPrinter.c',
-  'capstone/arch/XCore/XCoreMapping.c',
-  'capstone/arch/XCore/XCoreModule.c',
-  'capstone/cs.c',
-  'capstone/MCInst.c',
-  'capstone/MCInstrDesc.c',
-  'capstone/MCRegisterInfo.c',
-  'capstone/SStream.c',
-  'capstone/utils.c',
-]
-
-libr2capstone = static_library('r2capstone', cs_files,
-  c_args: [
-    '-DCAPSTONE_X86_ATT_DISABLE_NO',
-    '-DCAPSTONE_X86_REDUCE_NO',
-    '-DCAPSTONE_USE_SYS_DYN_MEM',
-    '-DCAPSTONE_DIET_NO',
-    '-DCAPSTONE_HAS_ARM',
-    '-DCAPSTONE_HAS_ARM64',
-    '-DCAPSTONE_HAS_M68K',
-    '-DCAPSTONE_HAS_MIPS',
-    '-DCAPSTONE_HAS_POWERPC',
-    '-DCAPSTONE_HAS_SPARC',
-    '-DCAPSTONE_HAS_SYSZ',
-    '-DCAPSTONE_HAS_X86',
-    '-DCAPSTONE_HAS_XCORE',
-    '-DCAPSTONE_HAS_TMS320C64X',
-  ],
-  include_directories: [
-    include_directories([
-      'capstone/include'
-    ])
-  ],
-  implicit_include_directories: false
-)
-
 grub_files = [
   'grub/fs/affs.c',
   #'grub/fs/afs.c',
@@ -447,8 +454,8 @@ libr2ar = static_library('r2ar', ar_files,
   implicit_include_directories: false
 )
 
-libr_shlr = [
-  libr2ar, libr2bochs, libr2capstone, libr2gdb, libr2grub, libr2java, libr2lz4,
+libr_shlr += [
+  libr2ar, libr2bochs, libr2gdb, libr2grub, libr2java, libr2lz4,
   libr2qnx, libr2sdb, libr2spp, libr2spp, libr2tcc, libr2windbg, libr2zip
 ]
 

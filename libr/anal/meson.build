@@ -142,6 +142,7 @@ r_anal = library('r_anal', files,
     r_flag,
     libr_shlr
   ],
+  dependencies: [capstone_opt],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
