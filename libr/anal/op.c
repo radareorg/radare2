@@ -73,6 +73,7 @@ R_API RAnalVar *get_link_var(RAnal *anal, ut64 faddr, RAnalVar *var) {
 	char *var_def = sdb_get (anal->sdb_fcns, inst_key, 0);
 
 	if (!var_def) {
+		free (inst_key);
 		return NULL;
 	}
 	struct VarUsedType vut;

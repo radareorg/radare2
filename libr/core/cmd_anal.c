@@ -674,7 +674,10 @@ static void type_cmd(RCore *core, const char *input) {
 		r_core_cmd0 (core, "aei");
 		r_core_cmd0 (core, "aeim");
 		r_reg_arena_push (core->anal->reg);
-		r_list_foreach (core->anal->fcns, it, fcn) {
+		RList *fcns = r_list_clone (core->anal->fcns);
+		// Reversing list so that we get function in top-bottom call order
+		r_list_reverse (fcns);
+		r_list_foreach (fcns, it, fcn) {
 			int ret = r_core_seek (core, fcn->addr, true);
 			if (!ret) {
 				continue;
@@ -685,6 +688,7 @@ static void type_cmd(RCore *core, const char *input) {
 				break;
 			}
 		}
+		r_list_free (fcns);
 		r_core_cmd0 (core, "aeim-");
 		r_core_cmd0 (core, "aei-");
 		r_core_seek (core, seek, true);
