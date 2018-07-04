@@ -154,7 +154,6 @@ r_asm = library('r_asm', files,
   include_directories: [
     platform_inc,
     include_directories(
-      '../../shlr/capstone/include',
       '../../shlr',
       'arch/include',
       'arch',

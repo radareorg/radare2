@@ -127,7 +127,6 @@ r_anal = library('r_anal', files,
       '../asm/arch/v850',
       '../asm/arch/wasm',
       '../asm/arch/include/',
-      '../../shlr/capstone/include',
       '../../shlr'
     )
   ],
