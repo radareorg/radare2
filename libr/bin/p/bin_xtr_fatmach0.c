@@ -18,7 +18,7 @@ static bool checkHeader(const ut8 *h, int sz) {
 	if (sz >= 0x300 && !memcmp (h, "\xca\xfe\xba\xbe", 4)) {
 		// XXX assuming BE
 		int off = r_read_at_be32 (h, 4 * sizeof (int));
-		if (off > 0 && off < sz) {
+		if (off > 0 && off + 4 < sz) {
 			memcpy (buf, h + off, 4);
 			if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
 				!memcmp (buf, "\xfe\xed\xfa\xce", 4) ||
