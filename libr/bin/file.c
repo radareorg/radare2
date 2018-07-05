@@ -80,6 +80,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 	int len = to - from;
 	ut8 *buf = calloc (len, 1);
 	if (!buf || !min) {
+		free (buf);
 		return -1;
 	}
 	r_buf_read_at (bf->buf, from, buf, len);
