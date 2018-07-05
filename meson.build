@@ -331,29 +331,29 @@ if not meson.is_subproject()
   subdir('binr/rax2')
 else
   libr2_dep = declare_dependency(
-    link_with: [
-      r_anal,
-      r_asm,
-      r_bin,
-      r_bp,
-      r_config,
-      r_cons,
-      r_core,
-      r_crypto,
-      r_egg,
-      r_flag,
-      r_fs,
-      r_hash,
-      r_io,
-      r_lang,
-      r_parse,
-      r_reg,
-      r_search,
-      r_socket,
-      r_syscall,
-      r_util
+    dependencies: [
+      r_anal_dep,
+      r_asm_dep,
+      r_bin_dep,
+      r_bp_dep,
+      r_config_dep,
+      r_cons_dep,
+      r_core_dep,
+      r_crypto_dep,
+      r_egg_dep,
+      r_flag_dep,
+      r_fs_dep,
+      r_hash_dep,
+      r_io_dep,
+      r_lang_dep,
+      r_magic_dep,
+      r_parse_dep,
+      r_reg_dep,
+      r_search_dep,
+      r_socket_dep,
+      r_syscall_dep,
+      r_util_dep
     ],
-    dependencies: [r_magic],
     include_directories: include_directories('.', 'libr/include'),
     version: r2_version
   )
