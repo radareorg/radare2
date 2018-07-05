@@ -297,7 +297,7 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 		r_list_free (mla[i]);
 	}
 	free (mla);
-	if (rx) r_regex_free (rx);
+	r_regex_free (rx);
 	free (lines);
 	free (p);
 	r_cons_reset_colors ();

@@ -305,43 +305,36 @@ R_API int r_core_visual_hud(RCore *core) {
 	return (int) (size_t) p;
 }
 
-static void append_help_to_strpool(RStrpool *p, const char *title, const char **help) {
-	int i, max_length, padding = 0;
+static void append_help(RStrBuf *p, const char *title, const char **help) {
+	int i, max_length = 0, padding = 0;
 	RCons *cons = r_cons_singleton ();
 	const char *pal_args_color = cons->color ? cons->pal.args : "",
 		   *pal_help_color = cons->color ? cons->pal.help : "",
 		   *pal_reset = cons->color ? cons->pal.reset : "";
-	char strbuf[128];
 	for (i = 0; help[i]; i += 2) {
-		max_length = R_MAX (max_length, strlen (help[i]) );
+		max_length = R_MAX (max_length, strlen (help[i]));
 	}
-
-	sprintf (strbuf, "|%s:\n", title);
-	r_strpool_memcat (p, strbuf, strlen (strbuf));
+	r_strbuf_appendf (p, "|%s:\n", title);
 
 	for (i = 0; help[i]; i += 2) {
 		padding = max_length - (strlen (help[i]));
-		sprintf (strbuf, "| %s%s%*s  %s%s%s\n",
+		r_strbuf_appendf (p, "| %s%s%*s  %s%s%s\n",
 			 pal_args_color, help[i],
 			 padding, "",
 			 pal_help_color, help[i + 1], pal_reset);
-		r_strpool_memcat (p, strbuf, strlen (strbuf));
 	}
 }
 
 static int visual_help() {
-	int ret;
-	RStrpool *p = r_strpool_new (0);
+	RStrBuf *p = r_strbuf_new (NULL);
 	if (!p) {
 		return 0;
 	}
 	r_cons_clear00 ();
-	append_help_to_strpool (p, "Visual mode help", help_msg_visual);
-	append_help_to_strpool (p, "Function Keys: (See 'e key.'), defaults to",
-		help_msg_visual_fn);
-	r_strpool_append (p, "");
-	ret = r_cons_less_str (p->str, "?");
-	r_strpool_free (p);
+	append_help (p, "Visual mode help", help_msg_visual);
+	append_help (p, "Function Keys: (See 'e key.'), defaults to", help_msg_visual_fn);
+	int ret = r_cons_less_str (r_strbuf_get (p), "?");
+	r_strbuf_free (p);
 	return ret;
 }
 
