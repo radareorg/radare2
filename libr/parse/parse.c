@@ -332,7 +332,9 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 								int dlen = strlen (dptr_left);
 								dptr_left += dlen;
 								dptr_end = ptr_right + 1;
-								while (*dptr_end && ++dptr_end != '\0');
+								while (*dptr_end) {
+									dptr_end++;
+								}
 								int llen = dptr_end - (ptr_right + 1);
 								memmove (dptr_left, ptr_right + 1, llen);
 								dptr_left[llen] = 0;
