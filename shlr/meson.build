@@ -96,6 +96,42 @@ else
 endif
 
 
+# handle sdb dependency
+sdb_files = [
+  'sdb/src/array.c',
+  'sdb/src/base64.c',
+  'sdb/src/buffer.c',
+  'sdb/src/cdb.c',
+  'sdb/src/cdb_make.c',
+  'sdb/src/dict.c',
+  'sdb/src/disk.c',
+  'sdb/src/fmt.c',
+  'sdb/src/ht.c',
+  'sdb/src/journal.c',
+  'sdb/src/json.c',
+  'sdb/src/lock.c',
+  'sdb/src/ls.c',
+  # 'sdb/src/main.c',
+  'sdb/src/match.c',
+  'sdb/src/ns.c',
+  'sdb/src/num.c',
+  'sdb/src/query.c',
+  'sdb/src/sdb.c',
+  'sdb/src/sdbht.c',
+  'sdb/src/util.c'
+]
+
+sdb_inc = [platform_inc, include_directories('sdb/src')]
+
+libr2sdb = static_library('r2sdb', sdb_files,
+			  include_directories: sdb_inc,
+			  implicit_include_directories: false
+			 )
+
+sdb_dep = declare_dependency(link_with: libr2sdb,
+			     include_directories: sdb_inc)
+
+
 # handle bochs dependency
 bochs_files = [
   'bochs/src/libbochs.c'
@@ -151,6 +187,7 @@ java_inc = [platform_inc, include_directories('java')]
 
 libr2java = static_library('r2java', java_files,
   include_directories: java_inc,
+  dependencies: [sdb_dep],
   implicit_include_directories: false
 )
 
@@ -211,42 +248,6 @@ libr2spp = static_library('r2spp', spp_files,
 
 spp_dep = declare_dependency(link_with: libr2spp,
 			     include_directories: spp_inc)
-
-
-# handle sdb dependency
-sdb_files = [
-  'sdb/src/array.c',
-  'sdb/src/base64.c',
-  'sdb/src/buffer.c',
-  'sdb/src/cdb.c',
-  'sdb/src/cdb_make.c',
-  'sdb/src/dict.c',
-  'sdb/src/disk.c',
-  'sdb/src/fmt.c',
-  'sdb/src/ht.c',
-  'sdb/src/journal.c',
-  'sdb/src/json.c',
-  'sdb/src/lock.c',
-  'sdb/src/ls.c',
-  # 'sdb/src/main.c',
-  'sdb/src/match.c',
-  'sdb/src/ns.c',
-  'sdb/src/num.c',
-  'sdb/src/query.c',
-  'sdb/src/sdb.c',
-  'sdb/src/sdbht.c',
-  'sdb/src/util.c'
-]
-
-sdb_inc = [platform_inc, include_directories('sdb/src')]
-
-libr2sdb = static_library('r2sdb', sdb_files,
-  include_directories: sdb_inc,
-  implicit_include_directories: false
-)
-
-sdb_dep = declare_dependency(link_with: libr2sdb,
-			     include_directories: sdb_inc)
 
 
 # handle lz4 dependency
