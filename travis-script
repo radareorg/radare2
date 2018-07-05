@@ -6,11 +6,13 @@ git clone --depth 1 --branch "${R2R_BRANCH}" "${R2R_REPO}" || true # If cloning 
 ls radare2-regressions >/dev/null 2>&1 || git clone --depth 1 --branch "${R2R_DEFAULT_BRANCH}" "${R2R_DEFAULT_REPO}"
 
 if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
+    echo "Installing with meson"
     meson build
     cd build
     ninja
     ninja install
 else
+    echo "Installing with acr + make"
     ./configure --prefix=${TRAVIS_BUILD_DIR}/install > /dev/null
     make -s -j2 > /dev/null
     make install > /dev/null
