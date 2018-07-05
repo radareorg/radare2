@@ -25,6 +25,7 @@ r_parse = library('r_parse', files,
     r_flag_dep,
     r_syscall_dep,
     r_reg_dep,
+    sdb_dep,
     tcc_dep
   ],
   install: true,

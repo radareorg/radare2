@@ -5,7 +5,10 @@ files = [
 
 r_config = library('r_config', files,
   include_directories: [platform_inc],
-  dependencies: [r_util_dep],
+  dependencies: [
+    r_util_dep,
+    sdb_dep
+  ],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
