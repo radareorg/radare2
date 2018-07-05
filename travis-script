@@ -8,9 +8,10 @@ ls radare2-regressions >/dev/null 2>&1 || git clone --depth 1 --branch "${R2R_DE
 if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
     echo "Installing with meson + ninja"
     meson build
-    cd build
+    pushd build
     ninja
     ninja install
+    popd
 else
     echo "Installing with acr + make"
     ./configure --prefix=${TRAVIS_BUILD_DIR}/install > /dev/null
