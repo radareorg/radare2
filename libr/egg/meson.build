@@ -20,7 +20,8 @@ r_egg = library('r_egg', files,
   dependencies: [
     r_util_dep,
     r_asm_dep,
-    r_syscall_dep
+    r_syscall_dep,
+    sdb_dep
   ],
   install: true,
   implicit_include_directories: false,
