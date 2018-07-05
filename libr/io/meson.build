@@ -60,6 +60,7 @@ r_io = library('r_io', files,
   dependencies: [
     r_util_dep,
     r_socket_dep,
+    sdb_dep,
     bochs_dep,
     gdb_dep,
     windbg_dep,
