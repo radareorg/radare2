@@ -6,7 +6,8 @@ files = [
 r_syscall = library('r_syscall', files,
   include_directories: [platform_inc],
   dependencies: [
-    r_util_dep
+    r_util_dep,
+    sdb_dep
   ],
   install: true,
   implicit_include_directories: false,
