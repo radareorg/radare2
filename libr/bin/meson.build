@@ -115,26 +115,25 @@ files = [
   'pdb/tpi.c'
 ]
 
+r_bin_inc = [platform_inc, include_directories('mangling', 'format')]
+
 r_bin = library('r_bin', files,
-  include_directories: [
-    platform_inc,
-    include_directories(
-      'mangling',
-      'format'
-    )
-  ],
+  include_directories: r_bin_inc,
   c_args: ['-DCORELIB=1', '-DR_API_BIN_ONLY=1'],
-  link_with: [
-    r_util,
-    r_io,
-    r_socket,
-    libr_shlr
+  dependencies: [
+    r_util_dep,
+    r_io_dep,
+    r_magic_dep,
+    r_socket_dep,
+    java_dep
   ],
-  dependencies: [r_magic],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
 )
+
+r_bin_dep = declare_dependency(link_with: r_bin,
+			       include_directories: r_bin_inc)
 
 pkgconfig_mod.generate(
   libraries: [r_bin],

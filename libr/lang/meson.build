@@ -11,14 +11,14 @@ files = [
 r_lang = library('r_lang', files,
   include_directories: [platform_inc],
   c_args: ['-DCORELIB=1'],
-  link_with: [
-    r_util,
-    r_cons
-  ],
+  dependencies: [r_util_dep, r_cons_dep],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
 )
+
+r_lang_dep = declare_dependency(link_with: r_lang,
+			        include_directories: [platform_inc])
 
 pkgconfig_mod.generate(
   libraries: [r_lang],

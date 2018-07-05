@@ -22,12 +22,15 @@ files = [
 
 r_crypto = library('r_crypto', files,
   include_directories: [platform_inc],
-  link_with: [r_util],
+  dependencies: [r_util_dep],
   c_args: ['-DCORELIB=1'],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
 )
+
+r_crypto_dep = declare_dependency(link_with: r_crypto,
+				  include_directories: [platform_inc])
 
 pkgconfig_mod.generate(
   libraries: [r_crypto],

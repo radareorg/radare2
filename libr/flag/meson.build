@@ -8,14 +8,16 @@ files = [
 
 r_flag = library('r_flag', files,
   include_directories: [platform_inc],
-  link_with: [
-    r_util,
-    libr_shlr
+  dependencies: [
+    r_util_dep
   ],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
 )
+
+r_flag_dep = declare_dependency(link_with: r_flag,
+			        include_directories: [platform_inc])
 
 pkgconfig_mod.generate(
   libraries: [r_flag],

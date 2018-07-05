@@ -108,44 +108,47 @@ files = [
   '../asm/arch/xtensa/gnu/xtensa-modules.c'
 ]
 
+r_anal_inc = [
+  platform_inc,
+  include_directories(
+    'arch/gb',
+    'arch/hexagon',
+    '../asm/arch/8051',
+    '../asm/arch/cr16',
+    '../asm/arch/ebc',
+    '../asm/arch/h8300',
+    '../asm/arch/hexagon',
+    '../asm/arch/msp430',
+    '../asm/arch/propeller',
+    '../asm/arch/rsp',
+    '../asm/arch/tms320',
+    '../asm/arch/v810',
+    '../asm/arch/v850',
+    '../asm/arch/wasm',
+    '../asm/arch/include/'
+  )
+]
+
 r_anal = library('r_anal', files,
-  include_directories: [
-    platform_inc,
-    include_directories(
-      'arch/gb',
-      'arch/hexagon',
-      '../asm/arch/8051',
-      '../asm/arch/cr16',
-      '../asm/arch/ebc',
-      '../asm/arch/h8300',
-      '../asm/arch/hexagon',
-      '../asm/arch/msp430',
-      '../asm/arch/propeller',
-      '../asm/arch/rsp',
-      '../asm/arch/tms320',
-      '../asm/arch/v810',
-      '../asm/arch/v850',
-      '../asm/arch/wasm',
-      '../asm/arch/include/',
-      '../../shlr'
-    )
-  ],
+  include_directories: r_anal_inc,
   c_args: ['-DCORELIB=1'],
-  link_with: [
-    r_util,
-    r_reg,
-    r_asm,
-    r_syscall,
-    r_search,
-    r_cons,
-    r_flag,
-    libr_shlr
+  dependencies: [
+    r_util_dep,
+    r_reg_dep,
+    r_asm_dep,
+    r_search_dep,
+    r_cons_dep,
+    r_syscall_dep,
+    r_flag_dep,
+    capstone_dep
   ],
-  dependencies: [capstone_dep],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
 )
+
+r_anal_dep = declare_dependency(link_with: r_anal,
+			        include_directories: r_anal_inc)
 
 pkgconfig_mod.generate(
   libraries: [r_anal],

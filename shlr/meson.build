@@ -1,3 +1,4 @@
+# handle capstone dependency
 capstone_dep = dependency('capstone', version: '>=3.0.4', required: false)
 if not capstone_dep.found() or not get_option('use_sys_capstone')
   message('Use bundled capstone')
@@ -65,7 +66,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     'capstone/utils.c',
   ]
 
-  libr2capstone_includes = include_directories(['capstone/include'])
+  capstone_includes = [platform_inc, include_directories('capstone/include')]
 
   libr2capstone = static_library('r2capstone', cs_files,
     c_args: [
@@ -84,32 +85,34 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
       '-DCAPSTONE_HAS_XCORE',
       '-DCAPSTONE_HAS_TMS320C64X',
     ],
-    include_directories: [
-      libr2capstone_includes
-    ],
+    include_directories: capstone_includes,
     implicit_include_directories: false
   )
 
   capstone_dep = declare_dependency(link_with: libr2capstone,
-				    include_directories: libr2capstone_includes)
+				    include_directories: capstone_includes)
 else
   message('Use system-provided capstone library')
 endif
 
+
+# handle bochs dependency
 bochs_files = [
   'bochs/src/libbochs.c'
 ]
 
+bochs_inc = [platform_inc, include_directories('bochs/include')]
+
 libr2bochs = static_library('r2bochs', bochs_files,
-  include_directories: [
-    platform_inc,
-    include_directories([
-      'bochs/include'
-    ])
-  ],
+  include_directories: bochs_inc,
   implicit_include_directories: false
 )
 
+bochs_dep = declare_dependency(link_with: libr2bochs,
+			       include_directories: bochs_inc)
+
+
+# handle gdb dependency
 gdb_files = [
   'gdb/src/arch.c',
   'gdb/src/common.c',
@@ -124,18 +127,18 @@ gdb_files = [
   'gdb/src/gdbserver/core.c',
 ]
 
+gdb_inc = [platform_inc, include_directories('./gdb/include', './gdb/include/gdbclient', './gdb/include/gdbserver')]
+
 libr2gdb = static_library('r2gdb', gdb_files,
-  include_directories: [
-    platform_inc,
-    include_directories([
-      './gdb/include',
-      './gdb/include/gdbclient',
-      './gdb/include/gdbserver'
-    ])
-  ],
+  include_directories: gdb_inc,
   implicit_include_directories: false
 )
 
+gdb_dep = declare_dependency(link_with: libr2gdb,
+			     include_directories: gdb_inc)
+
+
+# handle java dependency
 java_files = [
   'java/class.c',
   'java/code.c',
@@ -144,16 +147,18 @@ java_files = [
   #'java/main.c',
 ]
 
+java_inc = [platform_inc, include_directories('java')]
+
 libr2java = static_library('r2java', java_files,
-  include_directories: [
-    platform_inc,
-    include_directories([
-      'java'
-    ])
-  ],
+  include_directories: java_inc,
   implicit_include_directories: false
 )
 
+java_dep = declare_dependency(link_with: libr2java,
+			      include_directories: java_inc)
+
+
+# handle qnx dependency
 qnx_files = [
   'qnx/src/core.c',
   'qnx/src/libqnxr.c',
@@ -162,47 +167,53 @@ qnx_files = [
   'qnx/src/utils.c',
 ]
 
+qnx_inc = [platform_inc, include_directories('qnx/include')]
+
 libr2qnx = static_library('r2qnx', qnx_files,
-  include_directories: [
-    platform_inc,
-    include_directories([
-      'qnx/include'
-    ])
-  ],
+  include_directories: qnx_inc,
   implicit_include_directories: false
 )
 
+qnx_dep = declare_dependency(link_with: libr2qnx,
+			     include_directories: qnx_inc)
+
+
+# handle tcc dependency (heavily modified version)
 tcc_files = [
   'tcc/libtcc.c',
   'tcc/tccgen.c',
   'tcc/tccpp.c'
 ]
 
+tcc_inc = [platform_inc, include_directories('tcc')]
+
 libr2tcc = static_library('r2tcc', tcc_files,
-  include_directories: [
-    platform_inc,
-    include_directories([
-      'tcc'
-    ])
-  ],
+  include_directories: tcc_inc,
   implicit_include_directories: false
 )
 
+tcc_dep = declare_dependency(link_with: libr2tcc,
+			     include_directories: tcc_inc)
+
+
+# handle spp dependency
 spp_files = [
   'spp/spp.c'
 ]
 
+spp_inc = [platform_inc, include_directories('spp')]
+
 libr2spp = static_library('r2spp', spp_files,
-  include_directories: [
-    platform_inc,
-    include_directories([
-      'spp/'
-    ])
-  ],
+  include_directories: spp_inc,
   c_args: ['-DHAVE_R_UTIL'],
   implicit_include_directories: false
 )
 
+spp_dep = declare_dependency(link_with: libr2spp,
+			     include_directories: spp_inc)
+
+
+# handle sdb dependency
 sdb_files = [
   'sdb/src/array.c',
   'sdb/src/base64.c',
@@ -227,31 +238,34 @@ sdb_files = [
   'sdb/src/util.c'
 ]
 
+sdb_inc = [platform_inc, include_directories('sdb/src')]
+
 libr2sdb = static_library('r2sdb', sdb_files,
-  include_directories: [
-    platform_inc,
-    include_directories([
-      'sdb/src',
-      '../libr/include/sdb'
-    ])
-  ],
+  include_directories: sdb_inc,
   implicit_include_directories: false
 )
 
+sdb_dep = declare_dependency(link_with: libr2sdb,
+			     include_directories: sdb_inc)
+
+
+# handle lz4 dependency
 lz4_files = [
   'lz4/lz4.c',
 ]
 
+lz4_inc = [platform_inc, include_directories('lz4')]
+
 libr2lz4 = static_library('r2lz4', lz4_files,
-  include_directories: [
-    platform_inc,
-    include_directories([
-      'lz4'
-    ])
-  ],
+  include_directories: lz4_inc,
   implicit_include_directories: false
 )
 
+lz4_dep = declare_dependency(link_with: libr2lz4,
+			     include_directories: lz4_inc)
+
+
+# handle zip dependency
 zlib_files = [
   'zip/zip/zip_add.c',
   'zip/zip/zip_add_dir.c',
@@ -352,16 +366,18 @@ zlib_files = [
   'zip/zlib/zutil.c'
 ]
 
+zip_inc = [platform_inc, include_directories('zip/include')]
+
 libr2zip = static_library('r2zip', zlib_files,
-  include_directories: [
-    platform_inc,
-    include_directories([
-      'zip/include'
-    ])
-  ],
+  include_directories: zip_inc,
   implicit_include_directories: false
 )
 
+zip_dep = declare_dependency(link_with: libr2zip,
+			     include_directories: zip_inc)
+
+
+# handle grub dependency
 grub_files = [
   'grub/fs/affs.c',
   #'grub/fs/afs.c',
@@ -415,17 +431,18 @@ grub_files = [
   'grub/partmap/sunpc.c',
 ]
 
+grub_inc = [platform_inc, include_directories('grub', 'grub/include')]
+
 libr2grub = static_library('r2grub', grub_files,
-  include_directories: [
-    platform_inc,
-    include_directories([
-      'grub',
-      'grub/include'
-    ])
-  ],
+  include_directories: grub_inc,
   implicit_include_directories: false
 )
 
+grub_dep = declare_dependency(link_with: libr2grub,
+			      include_directories: grub_inc)
+
+
+# handle windbg dependency
 windbg_files = [
   'windbg/iob_pipe.c',
   'windbg/kd.c',
@@ -433,29 +450,31 @@ windbg_files = [
   'windbg/windbg.c',
 ]
 
+windbg_inc = [platform_inc, include_directories('windbg')]
+
 libr2windbg = static_library('r2windbg', windbg_files,
-  include_directories: [
-    platform_inc,
-    include_directories([
-      'windbg'
-    ])
-  ],
+  include_directories: windbg_inc,
   implicit_include_directories: false
 )
 
+windbg_dep = declare_dependency(link_with: libr2windbg,
+			        include_directories: windbg_inc)
+
+
+# handle ar dependency
 ar_files = [
   'ar/ar.c'
 ]
 
+ar_inc = [platform_inc, include_directories(['ar'])]
+
 libr2ar = static_library('r2ar', ar_files,
-  include_directories: [
-    platform_inc,
-    include_directories([
-      'ar'
-    ])
-  ],
+  include_directories: ar_inc,
   implicit_include_directories: false
 )
+
+ar_dep = declare_dependency(link_with: libr2ar,
+			    include_directories: ar_inc)
 
 libr_shlr = [
   libr2ar, libr2bochs, libr2gdb, libr2grub, libr2java, libr2lz4,

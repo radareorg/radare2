@@ -27,21 +27,19 @@ files = [
 ]
 
 r_fs = library('r_fs', files,
-  include_directories: [
-    platform_inc,
-    include_directories(
-      '../../shlr/grub/include'
-    )
-  ],
+  include_directories: platform_inc,
   c_args: ['-DCORELIB=1'],
-  link_with: [
-    r_util,
-    libr_shlr
+  dependencies: [
+    r_util_dep,
+    grub_dep
   ],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
 )
+
+r_fs_dep = declare_dependency(link_with: r_fs,
+			      include_directories: platform_inc)
 
 pkgconfig_mod.generate(
   libraries: [r_fs],

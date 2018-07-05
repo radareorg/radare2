@@ -17,16 +17,18 @@ files = [
 r_egg = library('r_egg', files,
   include_directories: [platform_inc],
   c_args: ['-DCORELIB=1'],
-  link_with: [
-    r_util,
-    r_asm,
-    r_syscall,
-    libr_shlr
+  dependencies: [
+    r_util_dep,
+    r_asm_dep,
+    r_syscall_dep
   ],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
 )
+
+r_egg_dep = declare_dependency(link_with: r_egg,
+			       include_directories: [platform_inc])
 
 pkgconfig_mod.generate(
   libraries: [r_egg],

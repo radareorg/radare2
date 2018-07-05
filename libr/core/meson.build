@@ -61,46 +61,48 @@ files = [
   'p/core_java.c',
 ]
 
-
-includes =  ['../../shlr']
+r_core_inc = []
 if host_machine.system() != 'windows'
-  includes += ['../../shlr/heap/include']
+  r_core_inc += ['../../shlr/heap/include']
 endif
+r_core_inc = [platform_inc, include_directories(r_core_inc)]
 
 r_core = library('r_core', files,
-  include_directories: [
-    platform_inc,
-    include_directories(includes)
-  ],
+  include_directories: r_core_inc,
   c_args: ['-DCORELIB=1'],
-  link_with: [
-    r_util,
-    r_reg,
-    r_syscall,
-    r_search,
-    r_cons,
-    r_anal,
-    r_socket,
-    r_io,
-    r_fs,
-    r_lang,
-    r_hash,
-    r_flag,
-    r_parse,
-    r_egg,
-    r_debug,
-    r_crypto,
-    r_config,
-    r_bin,
-    r_asm,
-    r_bp,
-    libr_shlr
+  dependencies: [
+    r_util_dep,
+    r_reg_dep,
+    r_syscall_dep,
+    r_search_dep,
+    r_cons_dep,
+    r_anal_dep,
+    r_socket_dep,
+    r_io_dep,
+    r_fs_dep,
+    r_lang_dep,
+    r_magic_dep,
+    r_hash_dep,
+    r_flag_dep,
+    r_parse_dep,
+    r_egg_dep,
+    r_debug_dep,
+    r_crypto_dep,
+    r_config_dep,
+    r_bin_dep,
+    r_asm_dep,
+    r_bp_dep,
+    platform_deps,
+    sdb_dep,
+    gdb_dep
   ],
-  dependencies: [platform_deps, r_magic],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
 )
+
+r_core_dep = declare_dependency(link_with: r_core,
+			        include_directories: r_core_inc)
 
 pkgconfig_mod.generate(
   libraries: [r_core],
