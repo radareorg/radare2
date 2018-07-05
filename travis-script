@@ -4,9 +4,17 @@ export PATH=${TRAVIS_BUILD_DIR}/install/bin:${PATH}
 export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/install/lib:${LD_LIBRARY_PATH}
 git clone --depth 1 --branch "${R2R_BRANCH}" "${R2R_REPO}" || true # If cloning fails that's not an error: we simply fallback to master.
 ls radare2-regressions >/dev/null 2>&1 || git clone --depth 1 --branch "${R2R_DEFAULT_BRANCH}" "${R2R_DEFAULT_REPO}"
-./configure --prefix=${TRAVIS_BUILD_DIR}/install > /dev/null
-make -s -j2 > /dev/null
-make install > /dev/null
+
+if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
+    meson build
+    cd build
+    ninja
+    ninja install
+else
+    ./configure --prefix=${TRAVIS_BUILD_DIR}/install > /dev/null
+    make -s -j2 > /dev/null
+    make install > /dev/null
+fi
 #[ "$TRAVIS_OS_NAME" != "osx" ] && mkdir -p /tmp/kcov && pushd /tmp/kcov
 #[ "$TRAVIS_OS_NAME" != "osx" ] && mkdir ${TRAVIS_BUILD_DIR}/kcov
 #[ "$TRAVIS_OS_NAME" != "osx" ] && wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz && tar xzf master.tar.gz && mkdir kcov-master/build && cd kcov-master/build && cmake .. && make && make install DESTDIR=../tmp && popd
