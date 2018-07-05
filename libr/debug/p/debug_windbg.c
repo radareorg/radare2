@@ -211,6 +211,7 @@ static RList *r_debug_windbg_threads(RDebug *dbg, int pid) {
 
 	RList *threads = windbg_list_threads (wctx);
 	if (!threads) {
+		r_list_free (ret);
 		return NULL;
 	}
 
