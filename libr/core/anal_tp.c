@@ -398,7 +398,9 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 		}
 		if (type && strcmp (type, "int")) {
 			var_retype (anal, rvar, rvar->name, type, fcn->addr);
-			var_retype (anal, lvar, lvar->name, type, fcn->addr);
+			if (lvar) {
+				var_retype (anal, lvar, lvar->name, type, fcn->addr);
+			}
 		}
 		r_anal_var_free (lvar);
 	}
