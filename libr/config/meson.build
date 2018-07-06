@@ -15,7 +15,7 @@ r_config = library('r_config', files,
 )
 
 r_config_dep = declare_dependency(link_with: r_config,
-				  include_directories: [platform_inc])
+                                  include_directories: [platform_inc])
 
 pkgconfig_mod.generate(
   libraries: [r_config],
