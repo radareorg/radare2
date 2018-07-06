@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
 		r_socket_free (s);
 		return 1;
 	}
-	
+
 	eprintf ("http://localhost:%d/\n", s->port);
 	if (dosandbox && !r_sandbox_enable (true)) {
 		eprintf ("sandbox: Cannot be enabled.\n");
