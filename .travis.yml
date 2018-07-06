@@ -36,7 +36,7 @@ script:
   - export R2R_BRANCH=$([ -n "${TRAVIS_PULL_REQUEST_BRANCH}" ] && echo "${TRAVIS_PULL_REQUEST_BRANCH}" || echo "${R2R_DEFAULT_BRANCH}")
   - if [ "${R2R_BRANCH}" = master ]; then USER_NAME=radare; fi
   - export R2R_REPO=$(doc/repo PR_REGRESSIONS | sed "s/__USER__/${USER_NAME}/g")
-  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then bash ./travis-extract-var.sh > docker-env.txt ; fi
+  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then bash ./travis-extract-var.sh > docker-env.txt ; cat docker-env.txt ; fi
   - if [ "$TRAVIS_OS_NAME" != "osx" ]; then docker run -v /home/travis/.ccache:/root/.ccache -v ${TRAVIS_BUILD_DIR}:${TRAVIS_BUILD_DIR} --env-file=docker-env.txt --entrypoint "/bin/bash" damo22/r2-travis:latest -c ". /src/.nvm/nvm.sh; cd ${TRAVIS_BUILD_DIR}; bash travis-script"; else bash travis-script; fi
 
 notifications:
