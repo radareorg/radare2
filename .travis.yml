@@ -15,12 +15,12 @@ matrix:
     - os: linux
       env: COMPILER_NAME=clang CXX=clang++ CC=clang
     - os: linux
-      env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" LDFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer"
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" LDFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" ASAN_OPTIONS=detect_odr_violation=0
     - os: osx
       env: COMPILER_NAME=clang CXX=clang++ CC=clang
   allow_failures:
     - os: linux
-      env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" LDFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer"
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" LDFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" ASAN_OPTIONS=detect_odr_violation=0
 cache:
   - ccache
 
