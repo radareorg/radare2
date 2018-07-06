@@ -103,7 +103,7 @@ r_core = library('r_core', files,
 )
 
 r_core_dep = declare_dependency(link_with: r_core,
-			        include_directories: r_core_inc)
+                                include_directories: r_core_inc)
 
 pkgconfig_mod.generate(
   libraries: [r_core],
