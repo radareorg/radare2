@@ -5,7 +5,7 @@ print_var()
     VAR_NAME=$1
     VAR_VALUE=$2
     if [ "${VAR_VALUE}" != "" ] ; then
-	echo "${VAR_NAME}='${VAR_VALUE}'"
+	echo "${VAR_NAME}=\"${VAR_VALUE}\""
     fi
 }
 
