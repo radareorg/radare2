@@ -18,6 +18,7 @@ RUN dnf install -y \
 	git \
 	binutils \
 	cabextract \
+	libasan \
 	libcurl-devel \
 	elfutils-libelf-devel \
 	elfutils-libelf-devel-static \
