@@ -6,11 +6,11 @@
 #define _R_LIST_C_
 #include "r_util.h"
 
-inline RListIter *r_list_iter_new () {
+inline RListIter *r_list_iter_new() {
 	return calloc (1, sizeof (RListIter));
 }
 
-void r_list_iter_free (RListIter *list) {
+void r_list_iter_free(RListIter *list) {
 	/* do nothing? */
 }
 
