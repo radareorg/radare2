@@ -11,7 +11,7 @@ print_var()
 
 # print all variables that start with TRAVIS_ and R2R_
 env -0 | while IFS='=' read -r -d '' n v; do
-    if [ "${n}" == "TRAVIS_*" ] || [ "%{n}" == "R2R_*" ]; then
+    if [[ "${n}" =~ ^TRAVIS_* || "${n}" =~ ^R2R_* ]]; then
 	print_var "${n}" "${v}"
     fi
 done
