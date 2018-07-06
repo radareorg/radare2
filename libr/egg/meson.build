@@ -29,7 +29,7 @@ r_egg = library('r_egg', files,
 )
 
 r_egg_dep = declare_dependency(link_with: r_egg,
-			       include_directories: [platform_inc])
+                               include_directories: [platform_inc])
 
 pkgconfig_mod.generate(
   libraries: [r_egg],

@@ -134,7 +134,7 @@ r_bin = library('r_bin', files,
 )
 
 r_bin_dep = declare_dependency(link_with: r_bin,
-			       include_directories: r_bin_inc)
+                               include_directories: r_bin_inc)
 
 pkgconfig_mod.generate(
   libraries: [r_bin],

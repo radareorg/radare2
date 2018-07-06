@@ -34,7 +34,7 @@ r_parse = library('r_parse', files,
 )
 
 r_parse_dep = declare_dependency(link_with: r_parse,
-				 include_directories: platform_inc)
+                                 include_directories: platform_inc)
 
 pkgconfig_mod.generate(
   libraries: [r_parse],

@@ -75,7 +75,7 @@ r_io = library('r_io', files,
 )
 
 r_io_dep = declare_dependency(link_with: r_io,
-			      include_directories: platform_inc)
+                              include_directories: platform_inc)
 
 pkgconfig_mod.generate(
   libraries: [r_io],

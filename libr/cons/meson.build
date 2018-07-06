@@ -26,7 +26,7 @@ r_cons = library('r_cons', files,
 )
 
 r_cons_dep = declare_dependency(link_with: r_cons,
-			        include_directories: [platform_inc])
+                                include_directories: [platform_inc])
 
 pkgconfig_mod.generate(
   libraries: [r_cons],

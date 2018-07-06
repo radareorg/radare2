@@ -91,7 +91,7 @@ r_debug = library('r_debug', files,
 )
 
 r_debug_dep = declare_dependency(link_with: r_debug,
-				 include_directories: r_debug_inc)
+                                 include_directories: r_debug_inc)
 
 pkgconfig_mod.generate(
   libraries: [r_debug],

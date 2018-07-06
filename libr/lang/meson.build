@@ -18,7 +18,7 @@ r_lang = library('r_lang', files,
 )
 
 r_lang_dep = declare_dependency(link_with: r_lang,
-			        include_directories: [platform_inc])
+                                include_directories: [platform_inc])
 
 pkgconfig_mod.generate(
   libraries: [r_lang],

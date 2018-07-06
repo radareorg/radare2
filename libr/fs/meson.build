@@ -39,7 +39,7 @@ r_fs = library('r_fs', files,
 )
 
 r_fs_dep = declare_dependency(link_with: r_fs,
-			      include_directories: platform_inc)
+                              include_directories: platform_inc)
 
 pkgconfig_mod.generate(
   libraries: [r_fs],

@@ -24,7 +24,7 @@ else
 		   )
 
   r_magic_dep = declare_dependency(link_with: r_magic,
-				   include_directories: platform_inc)
+                                   include_directories: platform_inc)
 
   pkgconfig_mod.generate(
     libraries: [r_magic],

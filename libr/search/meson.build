@@ -19,7 +19,7 @@ r_search = library('r_search', files,
 )
 
 r_search_dep = declare_dependency(link_with: r_search,
-				  include_directories: [platform_inc])
+                                  include_directories: [platform_inc])
 
 pkgconfig_mod.generate(
   libraries: [r_search],

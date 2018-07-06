@@ -18,7 +18,7 @@ r_flag = library('r_flag', files,
 )
 
 r_flag_dep = declare_dependency(link_with: r_flag,
-			        include_directories: [platform_inc])
+                                include_directories: [platform_inc])
 
 pkgconfig_mod.generate(
   libraries: [r_flag],

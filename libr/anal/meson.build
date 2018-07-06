@@ -150,7 +150,7 @@ r_anal = library('r_anal', files,
 )
 
 r_anal_dep = declare_dependency(link_with: r_anal,
-			        include_directories: r_anal_inc)
+                                include_directories: r_anal_inc)
 
 pkgconfig_mod.generate(
   libraries: [r_anal],

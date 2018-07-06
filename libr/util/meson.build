@@ -89,7 +89,7 @@ r_util = library('r_util', files,
 )
 
 r_util_dep = declare_dependency(link_with: r_util,
-			        include_directories: platform_inc)
+                                include_directories: platform_inc)
 
 pkgconfig_mod.generate(
   libraries: [r_util],
