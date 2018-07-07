@@ -731,9 +731,6 @@ static st32 getregmemend(const char *input) {
 	}
 
 	char *temp = malloc (strlen (input));
-	if (!temp) {
-		return -1;
-	}
 	r_str_ncpy (temp, input, strlen (input) - 1);
 	res = getreg (temp);
 	free (temp);
@@ -785,10 +782,6 @@ static st32 getnummemendbang (const char *input) {
 		return 0;
 	}
 	char *temp = malloc (strlen (input));
-	if (!temp) {
-		err = true;
-		return 0;
-	}
 	r_str_ncpy (temp, input, strlen (input) - 2);
 	res = getnum (temp);
 	free (temp);
@@ -801,9 +794,6 @@ static st32 getregmembang(const char *input) {
 		return -1;
 	}
 	char *temp = malloc (strlen (input));
-	if (!temp) {
-		return -1;
-	}
 	r_str_ncpy (temp, input, strlen (input) - 1);
 	res = getreg (temp);
 	free (temp);
