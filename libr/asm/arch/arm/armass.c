@@ -5114,7 +5114,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				return 4;
 			}
 			if (reg2 == 13) {
-				if ((reg1 == 13) && (!(m & DOTW_BIT)) && (!(m & W_BIT)) && (num < 512) && (num % 4 == 0)) {
+				if ((reg1 == 13) && (!(m & DOTW_BIT)) && (!(m & W_BIT)) && (num <= 4096) && (num % 4 == 0)) {
 					ao->o = 0x80b0;
 					ao->o |= (num >> 2) << 8;
 					return 2;
@@ -5132,7 +5132,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					return 4;
 				}
 
-				if (num > 4095) {
+				if (num > 4096) {
 					return -1;
 				}
 
@@ -5167,7 +5167,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				return std_32bit_2reg (ao, m, false);
 			}
 
-			if (num > 4095) {
+			if (num > 4096) {
 				return -1;
 			}
 
