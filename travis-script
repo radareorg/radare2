@@ -19,5 +19,4 @@ cd radare2-regressions
 git remote -v
 git branch
 git rev-parse HEAD
-# VERBOSE=1 make -k all
-rabin2 -k /bin/ls
+VERBOSE=1 make -k all
