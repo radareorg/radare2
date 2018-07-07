@@ -4,6 +4,9 @@
 #include <r_util.h>
 #include <r_types.h>
 
+// TODO: we may probably take care of this when the binfiles have an associated list of fds
+#define REUSE_NULL_MAPS 1
+
 static int __access_log_e_cmp (const void *a, const void *b) {
 	RIOAccessLogElement *A = (RIOAccessLogElement *)a;
 	RIOAccessLogElement *B = (RIOAccessLogElement *)b;
@@ -15,6 +18,8 @@ typedef struct {
 	int flags;
 	RIODesc *desc;
 } FindFile;
+
+#if REUSE_NULL_MAPS
 
 static bool findFile(void *user, void *data, ut32 id) {
 	FindFile *res = (FindFile*)user;
@@ -35,6 +40,14 @@ static RIODesc *findReusableFile(RIO *io, const char *uri, int flags) {
 	r_id_storage_foreach (io->files, findFile, &arg);
 	return arg.desc;
 }
+
+#else
+
+static RIODesc *findReusableFile(RIO *io, const char *uri, int flags) {
+	return NULL;
+}
+
+#endif
 
 R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, bool do_skyline) {
 	RIODesc *desc = NULL;
