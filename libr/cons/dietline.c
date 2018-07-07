@@ -57,6 +57,22 @@ static void backward_kill_word() {
 	}
 }
 
+static void kill_word() {
+	int i;
+	for (i = I.buffer.index + 1; i < I.buffer.length && is_word_break_char (I.buffer.data[i]); i++) {
+		/* Move the cursor index forward until we hit a non-word-break-character */
+	}
+	for (; i < I.buffer.length && !is_word_break_char (I.buffer.data[i]); i++) {
+		/* Move the cursor index forward we hit a word-break-character */
+	}
+	if (I.buffer.index >= I.buffer.length) {
+		I.buffer.length = I.buffer.index;
+	}
+	memmove (I.buffer.data + I.buffer.index, I.buffer.data + i,
+			I.buffer.length - i + 1);
+	I.buffer.length = strlen (I.buffer.data);
+}
+
 static void unix_word_rubout() {
 	int i;
 	if (I.buffer.index > 0) {
@@ -1220,6 +1236,10 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				if (i < 0) {
 					I.buffer.index = 0;
 				}
+				break;
+			case 'D':
+			case 'd':
+				kill_word ();
 				break;
 			case 'F':
 			case 'f':
