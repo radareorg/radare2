@@ -5,7 +5,7 @@ print_var()
     VAR_NAME=$1
     VAR_VALUE=$2
     if [ "${VAR_VALUE}" != "" ] ; then
-	printf "%s=%q\n" "${VAR_NAME}" "${VAR_VALUE}"
+	printf "export %s=%q\n" "${VAR_NAME}" "${VAR_VALUE}"
     fi
 }
 
