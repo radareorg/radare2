@@ -265,6 +265,10 @@ static void mini_RANode_print(const RAGraph *g, const RANode *n, int cur, bool d
 				W (n->body);
 			}
 		} else {
+
+
+
+
 			char *str = "____";
 			if (n->title) {
 				int l = strlen (n->title);
@@ -274,6 +278,14 @@ static void mini_RANode_print(const RAGraph *g, const RANode *n, int cur, bool d
 				}
 			}
 			snprintf (title, sizeof (title) - 1, "__%s__", str);
+
+			char *shortcut;
+			shortcut = sdb_get (g->db, sdb_fmt ("agraph.nodes.%s.shortcut", n->title), 0);
+			if (shortcut) {
+				strncat (title, sdb_fmt (" [g%s]", shortcut), sizeof (title) - strlen (title) - 1);
+				free (shortcut);
+			}
+			
 			W (title + delta_x);
 		}
 	} else {
