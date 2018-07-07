@@ -356,6 +356,23 @@ R_API bool r_io_map_priorize(RIO* io, ut32 id) {
 	return false;
 }
 
+R_API bool r_io_map_depriorize(RIO* io, ut32 id) {
+	if (io) {
+		RIOMap* map;
+		SdbListIter* iter;
+		ls_foreach (io->maps, iter, map) {
+			// search for iter with the correct map
+			if (map->id == id) {
+				ls_split_iter (io->maps, iter);
+				ls_prepend (io->maps, map);
+				r_io_map_calculate_skyline (io);
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 R_API bool r_io_map_priorize_for_fd(RIO* io, int fd) {
 	SdbListIter* iter, * ator;
 	RIOMap *map;
