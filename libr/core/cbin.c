@@ -374,6 +374,9 @@ static bool bin_raw_strings(RCore *r, int mode, int va) {
 	}
 	if (!r->file) {
 		eprintf ("Core file not open\n");
+		if (IS_MODE_JSON (mode)) {
+			r_cons_print ("[]");
+		}
 		return false;
 	}
 	if (!bf) {
