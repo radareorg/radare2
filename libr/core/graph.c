@@ -2641,6 +2641,21 @@ static void agraph_print_edges_simple(RAGraph *g) {
 	}
 }
 
+static int first_x_cmp (RGraphNode *ga, RGraphNode *gb) {
+       RANode *a = (RANode*) ga->data;
+       RANode *b = (RANode*) gb->data;
+       if (b->y < a->y) {
+	       return -1;
+       }
+       if (a->x < b->x) {
+               return 1;
+       } else if (a->x > b->x) {
+               return -1;
+       } else {
+               return 0;
+       }
+}
+
 static void agraph_print_edges(RAGraph *g) {
 	if (!g->edgemode) {
 		return;
@@ -2649,7 +2664,7 @@ static void agraph_print_edges(RAGraph *g) {
 		agraph_print_edges_simple (g);
 		return;
 	}
-	int out_nth, in_nth;
+	int out_nth, in_nth, bendpoint;
 	RListIter *itn, *itm, *ito;
 	RCanvasLineStyle style = {0};
 	const RList *nodes = r_graph_get_nodes (g->graph);
@@ -2706,13 +2721,27 @@ static void agraph_print_edges(RAGraph *g) {
 			}
 		}
 
-
 		bool many = r_list_length (neighbours) > 2;
+
+		if (many) {
+			ga->out_nodes->sorted = false;
+			r_list_sort (neighbours, first_x_cmp);
+		}
+
 		graph_foreach_anode (neighbours, itn, gb, b) {
 			out_nth = get_edge_number (g, a, b, true);
 			in_nth = get_edge_number (g, a, b, false);
 
-			if (many) {
+			bool parent_many = false;
+			if (a->is_dummy) {
+				RANode *in = (RANode *) (((RGraphNode *)r_list_first (ga->in_nodes))->data);
+				while (in && in->is_dummy) {
+					in = (RANode *) (((RGraphNode *)r_list_first ((in->gnode)->in_nodes))->data);
+				}
+				parent_many = r_list_length ((in->gnode)->out_nodes) > 2;
+			}
+
+			if (many || parent_many) {
 				style.color = LINE_UNCJMP;
 			} else {
 				switch (out_nth) {
@@ -2739,20 +2768,22 @@ static void agraph_print_edges(RAGraph *g) {
 				a_x_inc = R_EDGES_X_INC + 2 * (out_nth + 1);
 				b_x_inc = R_EDGES_X_INC + 2 * (in_nth + 1);
 
-				if (g->altedgepos) {
-					ax = a->is_dummy ? a->x : (a->x + a->w - a_x_inc);
-					bx = b->is_dummy ? b->x : (b->x + b_x_inc);
-				} else {
-					ax = a->is_dummy ? a->x : (a->x + a_x_inc);
-					bx = b->is_dummy ? b->x : (b->x + a_x_inc);
-				}
-
+				bx = b->is_dummy ? b->x : (b->x + b_x_inc);
 				ay = a->y + a->h;
 				by = b->y - 1;
 
+				if (many) {
+					int t = R_EDGES_X_INC + 2 * (neighbours->length + 1);
+					ax = a->is_dummy ? a->x : (a->x + a->w/2 + (t/2 - a_x_inc));
+					bendpoint = bx < ax ? neighbours->length - out_nth :  out_nth;
+				} else {
+					ax = a->is_dummy ? a->x : (a->x + a_x_inc);
+					bendpoint = tm->edgectr;
+				}
+
 				if (!a->is_dummy && itn == neighbours->head && out_nth == 0 && bx > ax) {
 					a_x_inc += 4;
-					ax += g->altedgepos ? -4 : 4;
+					ax += many ? 0 : 4;
 				}
 				if (a->h < a->layer_height) {
 					r_cons_canvas_line (g->can, ax, ay, ax, ay + a->layer_height - a->h, &style);
@@ -2760,14 +2791,14 @@ static void agraph_print_edges(RAGraph *g) {
 					style.symbol = LINE_NOSYM_VERT;
 				}
 				if (by >= ay) {
-					r_cons_canvas_line_square_defined (g->can, ax, ay, bx, by, &style, tm->edgectr, true);
+					r_cons_canvas_line_square_defined (g->can, ax, ay, bx, by, &style, bendpoint, true);
 				} else {
 					struct tmpbackedgeinfo *tmp = calloc (1, sizeof (struct tmpbackedgeinfo));
 					tmp->ax = ax;
 					tmp->bx = bx;
 					tmp->ay = ay;
 					tmp->by = by;
-					tmp->edgectr = tm->edgectr;
+					tmp->edgectr = bendpoint;
 					tmp->fromlayer = a->layer;
 					tmp->tolayer = b->layer;
 					tmp->style = style;
@@ -3731,7 +3762,6 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	g->on_curnode_change = (RANodeCallback) seek_to_node;
 	g->on_curnode_change_data = core;
 	g->edgemode = r_config_get_i (core->config, "graph.edges");
-	g->altedgepos = r_config_get_i (core->config, "graph.altedgepos");
 	g->is_interactive = is_interactive;
 	bool asm_comments = r_config_get_i (core->config, "asm.comments");
 	r_config_set (core->config, "asm.comments",

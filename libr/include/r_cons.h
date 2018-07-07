@@ -906,7 +906,6 @@ typedef struct r_ascii_graph_t {
 	bool is_tiny;
 	bool is_dis;
 	int edgemode;
-	bool altedgepos;
 	int mode;
 	bool is_callgraph;
 	bool is_interactive;
