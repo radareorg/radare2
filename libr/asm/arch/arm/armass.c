@@ -459,7 +459,7 @@ static ut64 getnumbang(const char *str) {
 		err = true;
 		return 0;
 	}
-	char *temp = malloc (strlen (str));
+	char *temp = malloc (strlen (str) + 1);
 	if (!temp) {
 		return -1;
 	}
@@ -714,7 +714,7 @@ static st32 getregmemstartend(const char *input) {
 		return -1;
 	}
 	input++;
-	char *temp = malloc (strlen (input));
+	char *temp = malloc (strlen (input) + 1);
 	if (!temp) {
 		return -1;
 	}
@@ -749,7 +749,7 @@ static st32 getreglist(const char *input) {
 	if (*input) {
 		input++;
 	}
-	char *temp = malloc (strlen (input));
+	char *temp = malloc (strlen (input) + 1);
 	if (!temp) {
 		return -1;
 	}
@@ -766,7 +766,7 @@ static st32 getnummemend (const char *input) {
 		err = true;
 		return -1;
 	}
-	char *temp = malloc (strlen (input));
+	char *temp = malloc (strlen (input) + 1);
 	if (!temp) {
 		err = true;
 		return -1;
@@ -784,7 +784,7 @@ static st32 getnummemendbang (const char *input) {
 		err = true;
 		return 0;
 	}
-	char *temp = malloc (strlen (input) - 1);
+	char *temp = malloc (strlen (input));
 	if (!temp) {
 		err = true;
 		return 0;
@@ -950,7 +950,7 @@ static st32 getshiftmemend(const char *input) {
 		return -1;
 	}
 
-	char *temp = malloc (strlen (input));
+	char *temp = malloc (strlen (input) + 1);
 	if (!temp) {
 		return -1;
 	}
