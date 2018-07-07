@@ -101,6 +101,7 @@ static const char *help_msg_om[] = {
 	"omb.", " addr", "relocate current map",
 	"omr", " mapid newsize", "resize map with corresponding id",
 	"omp", " mapid", "prioritize map with corresponding id",
+	"ompd", " mapid", "deprioritize map with corresponding id",
 	"ompf", "[fd]", "prioritize map by fd",
 	"ompb", " binid", "prioritize maps of mapped bin with binid",
 	"omps", " sectionid", "prioritize maps of mapped section with sectionid",
@@ -591,6 +592,14 @@ static void cmd_open_map(RCore *core, const char *input) {
 		break;
 	case 'p':
 		switch (input[2]) {
+		case 'd': // "ompf"
+			id = r_num_math (core->num, input + 3);		//mapid
+			if (r_io_map_exists_for_id (core->io, id)) {
+				r_io_map_depriorize (core->io, id);
+			} else {
+				eprintf ("Cannot find any map with mapid %d\n", id);
+			}
+			break;
 		case 'f': // "ompf"
 			fd = r_num_math (core->num, input + 3);
 			if (!r_io_map_priorize_for_fd (core->io, (int)fd)) {
