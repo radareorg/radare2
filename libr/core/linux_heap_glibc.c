@@ -195,11 +195,22 @@ static void GH(print_main_arena)(RCore *core, GHT m_arena, MallocState *main_are
 static GHT GH(get_vaddr_symbol)(RCore *core, const char *path, const char *symname) {
 	RListIter *iter;
 	RBinSymbol *s;
+	RBinOptions *bo = r_bin_options_new (0LL, 0LL, false);
+	if (!bo) {
+		eprintf ("Failed to create bin options\n");
+		return (GHT) -1;
+	}
 
 	// TODO: avoid loading twice?
-	r_bin_load (core->bin, path, 0, 0, 0, -1, false);
+	if (r_bin_open (core->bin, path, bo) == -1) {
+		eprintf ("Failed to open binary\n");
+		r_bin_options_free (bo);
+		return (GHT) -1;
+	}
+
 	RList *syms = r_bin_get_symbols (core->bin);
 	if (!syms) {
+		r_bin_options_free (bo);
 		return (GHT) -1;
 	}
 	GHT vaddr = 0LL;
@@ -209,6 +220,7 @@ static GHT GH(get_vaddr_symbol)(RCore *core, const char *path, const char *symna
 			break;
 		}
 	}
+	r_bin_options_free (bo);
 	return vaddr;
 }
 
