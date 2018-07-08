@@ -51,6 +51,7 @@ static const char *menus[] = {
 	"File", "Edit", "View", "Tools", "Search", "Debug", "Analyze", "Help",
 	NULL
 };
+static const int menuNum = ((int)sizeof (menus) - 1) / sizeof (const char*);
 
 static const char *menus_File[] = {
 	"New", "Open", "Close", ".", "Sections", "Strings", "Symbols", "Imports", "Info", "Database", ".", "Quit",
@@ -523,8 +524,10 @@ static void handleLeftKey(RCore *core) {
 		if (panels->curnode == panels->menu_pos) {
 			if (panels->menu_x) {
 				panels->menu_x--;
-				panels->menu_y = panels->menu_y? 1: 0;
+			} else {
+				panels->menu_x = menuNum - 1;
 			}
+			panels->menu_y = panels->menu_y ? 1 : 0;
 		} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_GRAPH)) {
 			if (panels->panel[panels->curnode].sx > 0) {
 				panels->panel[panels->curnode].sx -= r_config_get_i (core->config, "graph.scroll");
@@ -546,10 +549,9 @@ static void handleRightKey(RCore *core) {
 		cursorRight (core);
 	} else {
 		if (panels->curnode == panels->menu_pos) {
-			if (menus[panels->menu_x + 1]) {
-				panels->menu_x++;
-				panels->menu_y = panels->menu_y ? 1: 0;
-			}
+			panels->menu_x++;
+			panels->menu_x %= menuNum;
+			panels->menu_y = panels->menu_y ? 1: 0;
 		} else if (!strcmp (panels->panel[panels->curnode].title, PANEL_TITLE_GRAPH)) {
 			panels->panel[panels->curnode].sx += r_config_get_i (core->config, "graph.scroll");
 		} else {
