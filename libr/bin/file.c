@@ -26,7 +26,7 @@ static void print_string(RBinString *string, RBinFile *bf) {
 	type_string = r_bin_string_type (string->type);
 	vaddr = addr = r_bin_get_vaddr (bin, string->paddr, string->vaddr);
 
-	switch(mode) {
+	switch (mode) {
 	case MODE_SIMPLE :
 		io->cb_printf ("0x%08" PFMT64x " %s\n", addr, string->string);
 		break;

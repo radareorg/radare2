@@ -334,6 +334,7 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 	RBinOptions *bo = NULL;
 	int xtr_idx = 0; // if 0, load all if xtr is used
 
+	// TODO : Honor file.path eval var too?
 	if (!strncmp ("dbg://", filenameuri, 6)) {
 		filenameuri += 6;
 	}

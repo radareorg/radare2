@@ -774,7 +774,14 @@ static void cmd_open_map(RCore *core, const char *input) {
 	case 'j': // "omj"
 	case '*': // "om*"
 	case 'q': // "omq"
-		map_list (core->io, input[1], core->print, -1);
+		if (input[2] == '.') {
+			map = r_io_map_get (core->io, core->offset);
+			if (map) {
+				core->print->cb_printf ("%i\n", map->id);
+			}
+		} else {
+			map_list (core->io, input[1], core->print, -1);
+		}
 		break;
 	case '=': // "om="
 		list_maps_visual (core->io, core->offset, core->blocksize,
