@@ -456,15 +456,14 @@ static ut64 getnum(const char *str) {
 static ut64 getnumbang(const char *str) {
 	ut64 res;
 
-	if (!str || (strlen (str) < 1) || (str[strlen (str) - 1] != '!')) {
+	if (!str || !*str || !r_str_endswith (str, "!")) {
 		err = true;
 		return 0;
 	}
-	char *temp = malloc (strlen (str) + 1);
+	char *temp = r_str_ndup (str, strlen (str) - 1);
 	if (!temp) {
 		return -1;
 	}
-	r_str_ncpy (temp, str, strlen (str) - 1);
 	err = false;
 	res = getnum (temp);
 	free (temp);
@@ -711,15 +710,14 @@ static st32 getregmemstart(const char *input) {
 	
 static st32 getregmemstartend(const char *input) {
 	st32 res;
-	if (!input || (strlen (input) < 2) || (*input != '[') || (input[strlen (input) - 1] != ']')) {
+	if (!input || (strlen (input) < 2) || (*input != '[') || !r_str_endswith (input, "]")) {
 		return -1;
 	}
 	input++;
-	char *temp = malloc (strlen (input) + 1);
+	char *temp = r_str_ndup (input, strlen (input) - 1);
 	if (!temp) {
 		return -1;
 	}
-	r_str_ncpy (temp, input, strlen (input) - 1);
 	res = getreg (temp);
 	free (temp);
 	return res;
@@ -727,12 +725,14 @@ static st32 getregmemstartend(const char *input) {
 	
 static st32 getregmemend(const char *input) {
 	st32 res;
-	if (!input || (strlen (input) < 1) || (input[strlen (input) - 1] != ']')) {
+	if (!input || !*input || !r_str_endswith (input, "]")) {
 		return -1;
 	}
 
-	char *temp = malloc (strlen (input) + 1);
-	r_str_ncpy (temp, input, strlen (input) - 1);
+	char *temp = r_str_ndup (input, strlen (input) - 1);
+	if (!temp) {
+		return -1;
+	}
 	res = getreg (temp);
 	free (temp);
 	return res;
@@ -741,17 +741,16 @@ static st32 getregmemend(const char *input) {
 static st32 getreglist(const char *input) {
 	st32 res;
 	
-	if (!input || (strlen (input) < 2) || (*input != '{') || (input[strlen (input) - 1] != '}')) {
+	if (!input || (strlen (input) < 2) || (*input != '{') || !r_str_endswith (input, "}")) {
 		return -1;
 	}
 	if (*input) {
 		input++;
 	}
-	char *temp = malloc (strlen (input) + 1);
+	char *temp = r_str_ndup (input, strlen (input) - 1);
 	if (!temp) {
 		return -1;
 	}
-	r_str_ncpy (temp, input, strlen (input) - 1);
 	res = getlistmask (temp);
 	free (temp);
 	return res;
@@ -760,16 +759,15 @@ static st32 getreglist(const char *input) {
 static st32 getnummemend (const char *input) {
 	st32 res;
 	err = false;
-	if (!input || (strlen(input) < 1) || (input[strlen(input) - 1] != ']')) {
+	if (!input || !*input || !r_str_endswith (input, "]")) {
 		err = true;
 		return -1;
 	}
-	char *temp = malloc (strlen (input) + 1);
+	char *temp = r_str_ndup (input, strlen (input) - 1);
 	if (!temp) {
 		err = true;
 		return -1;
 	}
-	r_str_ncpy (temp, input, strlen (input) - 1);
 	res = getnum (temp);
 	free (temp);
 	return res;
@@ -778,16 +776,15 @@ static st32 getnummemend (const char *input) {
 static st32 getnummemendbang (const char *input) {
 	st32 res;
 	err = false;
-	if (!input || (strlen (input) < 2) || (input[strlen(input) - 2] != ']' || input[strlen(input) - 1] != '!')) {
+	if (!input || (strlen (input) < 2) || (input[strlen(input) - 2] != ']' || !r_str_endswith (input, "!"))) {
 		err = true;
 		return 0;
 	}
-	char *temp = malloc (strlen (input) + 1);
+	char *temp = r_str_ndup (input, strlen (input) - 2);
 	if (!temp) {
 		err = true;
 		return 0;
 	}
-	r_str_ncpy (temp, input, strlen (input) - 2);
 	res = getnum (temp);
 	free (temp);
 	return res;
@@ -795,14 +792,13 @@ static st32 getnummemendbang (const char *input) {
 
 static st32 getregmembang(const char *input) {
 	st32 res;
-	if (!input || (strlen (input) < 1) || (!(input[strlen (input) - 1] == '!'))) {
+	if (!input || !*input || !r_str_endswith (input, "!")) {
 		return -1;
 	}
-	char *temp = malloc (strlen (input) + 1);
+	char *temp = r_str_ndup (input, strlen (input) - 1);
 	if (!temp) {
 		return -1;
 	}
-	r_str_ncpy (temp, input, strlen (input) - 1);
 	res = getreg (temp);
 	free (temp);
 	return res;
@@ -944,15 +940,14 @@ static ut32 thumb_getshift(const char *str) {
 
 static st32 getshiftmemend(const char *input) {
 	st32 res;
-	if (!input || (strlen (input) < 1) || (input[strlen (input) - 1] != ']')) {
+	if (!input || !*input || !r_str_endswith (input, "]")) {
 		return -1;
 	}
 
-	char *temp = malloc (strlen (input) + 1);
+	char *temp = r_str_ndup (input, strlen (input) - 1);
 	if (!temp) {
 		return -1;
 	}
-	r_str_ncpy (temp, input, strlen (input) - 1);
 	res = thumb_getshift (temp);
 	free (temp);
 	return res;
