@@ -1154,7 +1154,7 @@ static int cmd_r2cmd(RCore *core, const char *input) {
 	};
 	int i;
 	for (i = 0; r2cmds[i]; i++) {
-		if (!r_str_startswith (input, r2cmds[i])) {
+		if (r_str_startswith (input, r2cmds[i])) {
 			r_sys_cmdf ("r%s", input);
 			return true;
 		}
