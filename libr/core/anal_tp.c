@@ -314,11 +314,11 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	const char *ret_reg = NULL;
 	const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
 	RRegItem *r = r_reg_get (core->dbg->reg, pc, -1);
+	r_cons_break_push (NULL, NULL);
 	r_list_foreach (fcn->bbs, it, bb) {
 		ut64 addr = bb->addr;
 		int i = 0;
 		r_reg_set_value (core->dbg->reg, r, addr);
-		r_cons_break_push (NULL, NULL);
 		while (1) {
 			if (r_cons_is_breaked ()) {
 				goto out_function;
