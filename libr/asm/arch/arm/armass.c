@@ -456,7 +456,7 @@ static ut64 getnum(const char *str) {
 static ut64 getnumbang(const char *str) {
 	ut64 res;
 
-	if ((strlen (str) < 1) || (str[strlen (str) - 1] != '!')) {
+	if (!str || (strlen (str) < 1) || (str[strlen (str) - 1] != '!')) {
 		err = true;
 		return 0;
 	}
@@ -711,7 +711,7 @@ static st32 getregmemstart(const char *input) {
 	
 static st32 getregmemstartend(const char *input) {
 	st32 res;
-	if ((strlen (input) < 2) || (*input != '[') || (input[strlen (input) - 1] != ']')) {
+	if (!input || (strlen (input) < 2) || (*input != '[') || (input[strlen (input) - 1] != ']')) {
 		return -1;
 	}
 	input++;
@@ -727,7 +727,7 @@ static st32 getregmemstartend(const char *input) {
 	
 static st32 getregmemend(const char *input) {
 	st32 res;
-	if ((strlen (input) < 1) || (input[strlen (input) - 1] != ']')) {
+	if (!input || (strlen (input) < 1) || (input[strlen (input) - 1] != ']')) {
 		return -1;
 	}
 
@@ -741,7 +741,7 @@ static st32 getregmemend(const char *input) {
 static st32 getreglist(const char *input) {
 	st32 res;
 	
-	if ((strlen (input) < 2) || (*input != '{') || (input[strlen (input) - 1] != '}')) {
+	if (!input || (strlen (input) < 2) || (*input != '{') || (input[strlen (input) - 1] != '}')) {
 		return -1;
 	}
 	if (*input) {
@@ -760,7 +760,7 @@ static st32 getreglist(const char *input) {
 static st32 getnummemend (const char *input) {
 	st32 res;
 	err = false;
-	if ((strlen(input) < 1) || (input[strlen(input) - 1] != ']')) {
+	if (!input || (strlen(input) < 1) || (input[strlen(input) - 1] != ']')) {
 		err = true;
 		return -1;
 	}
@@ -778,11 +778,15 @@ static st32 getnummemend (const char *input) {
 static st32 getnummemendbang (const char *input) {
 	st32 res;
 	err = false;
-	if ((strlen (input) < 2) || (input[strlen(input) - 2] != ']' || input[strlen(input) - 1] != '!')) {
+	if (!input || (strlen (input) < 2) || (input[strlen(input) - 2] != ']' || input[strlen(input) - 1] != '!')) {
 		err = true;
 		return 0;
 	}
 	char *temp = malloc (strlen (input) + 1);
+	if (!temp) {
+		err = true;
+		return 0;
+	}
 	r_str_ncpy (temp, input, strlen (input) - 2);
 	res = getnum (temp);
 	free (temp);
@@ -791,10 +795,13 @@ static st32 getnummemendbang (const char *input) {
 
 static st32 getregmembang(const char *input) {
 	st32 res;
-	if ((strlen (input) < 1) || (!(input[strlen (input) - 1] == '!'))) {
+	if (!input || (strlen (input) < 1) || (!(input[strlen (input) - 1] == '!'))) {
 		return -1;
 	}
 	char *temp = malloc (strlen (input) + 1);
+	if (!temp) {
+		return -1;
+	}
 	r_str_ncpy (temp, input, strlen (input) - 1);
 	res = getreg (temp);
 	free (temp);
@@ -937,7 +944,7 @@ static ut32 thumb_getshift(const char *str) {
 
 static st32 getshiftmemend(const char *input) {
 	st32 res;
-	if ((strlen (input) < 1) || (input[strlen (input) - 1] != ']')) {
+	if (!input || (strlen (input) < 1) || (input[strlen (input) - 1] != ']')) {
 		return -1;
 	}
 
