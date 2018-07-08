@@ -1408,7 +1408,7 @@ static int cmd_dbg_map_heap_glibc_64 (RCore *core, const char *input);
 static void get_hash_debug_file(RCore *core, const char *path, char *hash, int hash_len) {
 	RListIter *iter;
 	char buf[20] = R_EMPTY;
-	int offset, err, i, j = 0;
+	int offset, i, j = 0;
 	int bd = -1;
 	RBinFile *old_cur = r_bin_cur (core->bin);
 
@@ -1436,12 +1436,11 @@ static void get_hash_debug_file(RCore *core, const char *path, char *hash, int h
 	RBinSection *s;
 	r_list_foreach (sects, iter, s) {
 		if (strstr (s->name, ".note.gnu.build-id")) {
-			err = r_io_read_at (core->io, s->vaddr + 16, (ut8 *) buf, 20);
-			if (!err) {
-				eprintf ("Unable to read from memory\n");
-				goto out_error;
+			if (r_buf_read_at (binfile->buf, s->vaddr + 16, buf, 20) == 20) {
+				break;
 			}
-			break;
+			eprintf ("Cannot read from buffer\n");
+			goto out_error;
 		}
 	}
 	for (i = 0; i < 20; i++) {

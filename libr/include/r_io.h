@@ -311,6 +311,7 @@ R_API RIOMap *r_io_map_get_paddr (RIO *io, ut64 paddr);		//returns the map at pa
 R_API void r_io_map_reset(RIO* io);
 R_API bool r_io_map_del (RIO *io, ut32 id);
 R_API bool r_io_map_del_for_fd (RIO *io, int fd);
+R_API bool r_io_map_depriorize(RIO* io, ut32 id);
 R_API bool r_io_map_priorize (RIO *io, ut32 id);
 R_API bool r_io_map_priorize_for_fd (RIO *io, int fd);
 R_API void r_io_map_cleanup (RIO *io);

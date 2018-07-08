@@ -3674,15 +3674,13 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *) data;
-	RCoreAnalStats *as;
-	RCoreAnalStatsItem total = {0};
-	int mode, w, p, i, l, len, ret;
+	int w, p, i, l, len, ret;
 	ut8* block;
 	ut32 tbs = core->blocksize;
 	ut64 n, off, from, to, at, ate, piece;
 	ut64 tmpseek = UT64_MAX;
 	const int addrbytes = core->io->addrbytes;
-	mode = w = p = i = l = len = ret = 0;
+	w = p = i = l = len = ret = 0;
 	n = off = from = to = at = ate = piece = 0;
 
 	r_print_init_rowoffsets (core->print);
@@ -5646,7 +5644,6 @@ static int cmd_print(void *data, const char *input) {
 			if (input[1] && input[1] != ' ') {
 				oldmode = strdup (r_config_get (core->config, "zoom.byte"));
 				if (!r_config_set (core->config, "zoom.byte", input + 1)) {
-					eprintf ("Invalid zoom.byte mode (%s)\n", input + 1);
 					do_zoom = false;
 				}
 			}

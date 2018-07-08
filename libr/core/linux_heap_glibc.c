@@ -195,11 +195,22 @@ static void GH(print_main_arena)(RCore *core, GHT m_arena, MallocState *main_are
 static GHT GH(get_vaddr_symbol)(RCore *core, const char *path, const char *symname) {
 	RListIter *iter;
 	RBinSymbol *s;
+	RBinOptions *bo = r_bin_options_new (0LL, 0LL, false);
+	if (!bo) {
+		eprintf ("Failed to create bin options\n");
+		return (GHT) -1;
+	}
 
 	// TODO: avoid loading twice?
-	r_bin_load (core->bin, path, 0, 0, 0, -1, false);
+	if (r_bin_open (core->bin, path, bo) == -1) {
+		eprintf ("Failed to open binary\n");
+		r_bin_options_free (bo);
+		return (GHT) -1;
+	}
+
 	RList *syms = r_bin_get_symbols (core->bin);
 	if (!syms) {
+		r_bin_options_free (bo);
 		return (GHT) -1;
 	}
 	GHT vaddr = 0LL;
@@ -209,6 +220,7 @@ static GHT GH(get_vaddr_symbol)(RCore *core, const char *path, const char *symna
 			break;
 		}
 	}
+	r_bin_options_free (bo);
 	return vaddr;
 }
 
@@ -963,7 +975,11 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena, GHT *in
 
 #if __GLIBC_MINOR__ > 25
 	GHT tcache_fd = GHT_MAX, tcache_tmp = GHT_MAX;
-	*initial_brk = ( (brk_start >> 12) << 12 ) + sizeof(GH(RHeapTcache)) + MALLOC_ALIGNMENT;
+#if HEAP32
+	*initial_brk = ( (brk_start >> 12) << 12 ) + sizeof (GH(RHeapTcache)) + MALLOC_ALIGNMENT + 0x418;
+#else
+	*initial_brk = ( (brk_start >> 12) << 12 ) + sizeof (GH(RHeapTcache)) + MALLOC_ALIGNMENT;
+#endif
 #else
 	*initial_brk = (brk_start >> 12) << 12;
 #endif
@@ -1047,15 +1063,15 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena, GHT *in
 		(void)r_io_read_at (core->io, brk_start + MALLOC_ALIGNMENT, (ut8 *)tcache, sizeof ( GH(RHeapTcache) ));
 		for (int i=0; i < TCACHE_MAX_BINS; i++){
 			if( tcache->counts[i] > 0 ) {
-				if ( (ut64)tcache->entries[i]-MALLOC_ALIGNMENT == (ut64)prev_chunk ){
+				if ( (ut64)tcache->entries[i] - SZ * 2 == (ut64)prev_chunk ){
 					is_free = true;
 					break;
 				}
 				if( tcache->counts[i] > 1 ) {
 					tcache_fd = (ut64)tcache->entries[i];
 					for (int n = 1; n < tcache->counts[i]; n++) {
-						(void)r_io_read_at (core->io, tcache_fd, &tcache_tmp, sizeof ( GHT ) );
-						if ( (ut64)tcache_tmp-MALLOC_ALIGNMENT == (ut64)prev_chunk ) {
+						(void)r_io_read_at (core->io, tcache_fd, (ut8*)&tcache_tmp, sizeof ( GHT ) );
+						if ( (ut64)tcache_tmp - SZ * 2 == (ut64)prev_chunk ) {
 							is_free = true;
 							break;
 						}

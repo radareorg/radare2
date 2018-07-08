@@ -34,6 +34,7 @@ typedef struct {
 typedef struct {
 	RCore *core;
 	int launch;
+	int browse;
 	char *path;
 } HttpThread;
 
@@ -393,7 +394,7 @@ static void activateDieTime (RCore *core) {
 }
 
 // return 1 on error
-static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
+static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *path) {
 	RConfig *newcfg = NULL, *origcfg = NULL;
 	char headers[128] = R_EMPTY;
 	RSocketHTTPRequest *rs;
@@ -416,7 +417,10 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 		}
 		return false;
 	}
-
+	char *arg = strchr (path, ' ');
+	if (arg) {
+		path = arg + 1;
+	}
 	if (path && atoi (path)) {
 		port = path;
 		path = NULL;
@@ -467,7 +471,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 		return 1;
 	}
 
-	if (launch=='H') {
+	if (browse == 'H') {
 		const char *browser = r_config_get (core->config, "http.browser");
 		r_sys_cmdf ("%s http://%s:%d/%s &",
 			browser, host, atoi (port), path? path:"");
@@ -851,7 +855,8 @@ static int r_core_rtr_http_thread (RThread *th) {
 	if (!ht || !ht->core) {
 		return false;
 	}
-	int ret = r_core_rtr_http_run (ht->core, ht->launch, ht->path);
+	eprintf ("WARNING: Background webserver requires http.sandbox=false to run properly\n");
+	int ret = r_core_rtr_http_run (ht->core, ht->launch, ht->browse, ht->path);
 	R_FREE (ht->path);
 	if (ret) {
 		int p = r_config_get_i (ht->core->config, "http.port");
@@ -863,7 +868,7 @@ static int r_core_rtr_http_thread (RThread *th) {
 	return ret;
 }
 
-R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
+R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path) {
 	int ret;
 	if (r_sandbox_enable (0)) {
 		eprintf ("sandbox: connect disabled\n");
@@ -895,6 +900,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 			HttpThread *ht = calloc (sizeof (HttpThread), 1);
 			ht->core = core;
 			ht->launch = launch;
+			ht->browse = browse;
 			ht->path = strdup (tpath);
 			httpthread = r_th_new (r_core_rtr_http_thread, ht, false);
 			r_th_start (httpthread, true);
@@ -903,7 +909,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 		return 0;
 	}
 	do {
-		ret = r_core_rtr_http_run (core, launch, path);
+		ret = r_core_rtr_http_run (core, launch, browse, path);
 	} while (ret == -2);
 	return ret;
 }

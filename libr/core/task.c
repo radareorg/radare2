@@ -101,6 +101,10 @@ R_API void r_core_task_join(RCore *core, RCoreTask *current, RCoreTask *task) {
 }
 
 R_API RCoreTask *r_core_task_new(RCore *core, bool create_cons, const char *cmd, RCoreTaskCallback cb, void *user) {
+	if (cmd && *cmd == '=') {
+		eprintf ("=* commands disabled in tasks\n");
+		return NULL;
+	}
 	RCoreTask *task = R_NEW0 (RCoreTask);
 	if (!task) {
 		goto hell;
@@ -284,6 +288,9 @@ static int task_run_thread(RThread *th) {
 }
 
 R_API void r_core_task_enqueue(RCore *core, RCoreTask *task) {
+	if (!core || !task) {
+		return;
+	}
 	r_th_lock_enter (core->tasks_lock);
 	if (!task->running_sem) {
 		task->running_sem = r_th_sem_new (1);
@@ -315,7 +322,7 @@ R_API void r_core_task_sync_begin(RCore *core) {
 
 /* end running stuff synchronously, initially started with r_core_task_sync_begin() */
 R_API void r_core_task_sync_end(RCore *core) {
-	task_end(core->main_task);
+	task_end (core->main_task);
 }
 
 /* To be called from within a task.

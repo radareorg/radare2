@@ -1907,14 +1907,14 @@ static int cb_zoombyte(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	switch (*node->value) {
-		case 'p': case 'f': case 's': case '0':
-		case 'F': case 'e': case 'h':
-			core->print->zoom->mode = *node->value;
-			break;
-		default:
-			r_cons_printf ("p\nf\ns\n0\nF\ne\nh\n");
-			// eprintf ("Invalid zoom.byte value. See pz? for help\n");
-			return false;
+	case 'p': case 'f': case 's': case '0':
+	case 'F': case 'e': case 'h':
+		core->print->zoom->mode = *node->value;
+		break;
+	default:
+		eprintf ("Invalid zoom.byte value. See pz? for help\n");
+		r_cons_printf ("pzp\npzf\npzs\npz0\npzF\npze\npzh\n");
+		return false;
 	}
 	return true;
 }
@@ -2828,7 +2828,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("graph.extension", "gif", &cb_graphformat, "Graph extension when using 'w' format (png, jpg, pdf, ps, svg, json)");
 	SETPREF ("graph.refs", "false", "Graph references in callgraphs (.agc*;aggi)");
 	SETI ("graph.edges", 2, "0=no edges, 1=simple edges, 2=avoid collisions");
-	SETPREF ("graph.altedgepos", "false", "Switch to alternative (very experimental) positioning of edges");
 	SETI ("graph.layout", 0, "Graph layout (0=vertical, 1=horizontal)");
 	SETI ("graph.linemode", 1, "Graph edges (0=diagonal, 1=square)");
 	SETPREF ("graph.font", "Courier", "Font for dot graphs");

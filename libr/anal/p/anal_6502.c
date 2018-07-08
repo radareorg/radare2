@@ -296,6 +296,9 @@ static void _6502_anal_esil_flags(RAnalOp *op, ut8 data0) {
 static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	char addrbuf[64];
 	const int buffsize = sizeof (addrbuf) - 1;
+	if (len < 1) {
+		return -1;
+	}
 
 	memset (op, '\0', sizeof (RAnalOp));
 	op->size = snes_op_get_size (1, 1, &snes_op[data[0]]);	//snes-arch is similiar to nes/6502
@@ -707,7 +710,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	case 0x20: // jsr $ffff
 		op->cycles = 6;
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = data[1] | data[2] << 8;
+		op->jump = (len > 2)? data[1] | data[2] << 8: 0;
 		op->stackop = R_ANAL_STACK_INC;
 		op->stackptr = 2;
 		// JSR pushes the address-1 of the next operation on to the stack before transferring program
@@ -719,7 +722,7 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	case 0x4c: // jmp $ffff
 		op->cycles = 3;
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = data[1] | data[2] << 8;
+		op->jump = (len > 2)? data[1] | data[2] << 8: 0;
 		r_strbuf_setf (&op->esil, "0x%04x,pc,=", op->jump);
 		break;
 	case 0x6c: // jmp ($ffff)
@@ -780,9 +783,11 @@ static int _6502_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	case 0xbe: // ldx $ffff,y
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		_6502_anal_esil_get_addr_pattern2 (op, data, len, addrbuf, buffsize, 'y');
-		if (data[0] == 0xa2) // immediate mode
+		if (data[0] == 0xa2) { // immediate mode
 			r_strbuf_setf (&op->esil, "%s,x,=", addrbuf);
-		else	r_strbuf_setf (&op->esil, "%s,[1],x,=", addrbuf);
+		} else {
+			r_strbuf_setf (&op->esil, "%s,[1],x,=", addrbuf);
+		}
 		_6502_anal_update_flags (op, _6502_FLAGS_NZ);
 		break;
 	// LDY

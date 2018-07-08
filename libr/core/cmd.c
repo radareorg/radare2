@@ -232,7 +232,7 @@ static const char *help_msg_r[] = {
 	"r+", "num", "insert num bytes, move following data up",
 	"rm" ," [file]", "remove file",
 	"rh" ,"", "show size in human format",
-	"r2" ," [file]", "launch r2",
+	"r2" ," [file]", "launch r2 (same for rax2, rasm2, ...)",
 	NULL
 };
 
@@ -590,7 +590,7 @@ static int cmd_rap(void *data, const char *input) {
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_equalh);
 		} else {
-			r_core_rtr_http (core, getArg (input[1], 'h'), input + 1);
+			r_core_rtr_http (core, getArg (input[1], 'h'), 'h', input + 1);
 		}
 		break;
 	case 'H': // "=H"
@@ -600,7 +600,7 @@ static int cmd_rap(void *data, const char *input) {
 			while (input[1] == ' ') {
 				input++;
 			}
-			r_core_rtr_http (core, getArg (input[1], 'H'), input + 1);
+			r_core_rtr_http (core, getArg (input[1], 'H'), 'H', input + 1);
 		}
 		break;
 	case '?': // "=?"
@@ -1147,11 +1147,30 @@ static int cmd_bsize(void *data, const char *input) {
 	return 0;
 }
 
+static int cmd_r2cmd(RCore *core, const char *input) {
+	const char *r2cmds[] = {
+		"rax2", "r2pm", "rasm2", "rabin2", "rahash2", "rafind2", "rarun2", "ragg2",
+		NULL
+	};
+	int i;
+	for (i = 0; r2cmds[i]; i++) {
+		if (r_str_startswith (input, r2cmds[i])) {
+			r_sys_cmdf ("r%s", input);
+			return true;
+		}
+	}
+	return false;
+}
+
 static int cmd_resize(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	ut64 newsize = 0;
 	st64 delta = 0;
 	int grow, ret;
+
+	if (cmd_r2cmd (core, input)) {
+		return true;
+	}
 
 	ut64 oldsize = (core->file) ? r_io_fd_size (core->io, core->file->fd): 0;
 	switch (*input) {

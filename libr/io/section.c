@@ -393,33 +393,27 @@ R_API bool r_io_section_priorize_bin(RIO *io, ut32 bin_id) {
 }
 
 static bool _section_apply_for_anal_patch(RIO *io, RIOSection *sec, bool patch) {
-	ut64 at;
 	if (sec->vsize > sec->size) {
 		// in that case, we just have to allocate some memory of the size (vsize-size)
 		if (!sec->memmap) {
 			// offset,where the memory should be mapped to
-			at = sec->vaddr + sec->size;
+			ut64 at = sec->vaddr + sec->size;
 			// TODO: harden this, handle mapslit
 			// craft the uri for the null-fd
-			if (!r_io_create_mem_map (io, sec, at, true, false)) {
-				return false;
-			}
+			if (r_io_create_mem_map (io, sec, at, true, false)) {
 			// we need to create this map for transfering the flags, no real remapping here
-			if (!r_io_create_file_map (io, sec, sec->size, patch, false)) {
-				return false;
+				if (r_io_create_file_map (io, sec, sec->size, patch, false)) {
+					return true;
+				}
 			}
-			return true;
-		} else {
-			// the section is already applied
-			return false;
 		}
 	} else {
 		// same as above
 		if (!sec->filemap && r_io_create_file_map (io, sec, sec->vsize, patch, false)) {
 			return true;
 		}
-		return false;
 	}
+	return false;
 }
 
 static bool _section_apply_for_emul(RIO *io, RIOSection *sec) {

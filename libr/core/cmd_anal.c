@@ -2273,6 +2273,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case '?':
 			r_core_cmd_help (core, help_msg_afl);
 			break;
+		case 's': // "afls"
+			r_list_sort (core->anal->fcns, cmpaddr);
+			break;
 		case 'l': // "afll"
 			if (input[3] == '?') {
 				// TODO #7967 help refactor
@@ -2281,9 +2284,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				break;
 			}
 			/* fallthrough */
-		case 's': // "afls"
-			r_list_sort (core->anal->fcns, cmpaddr);
-			break;
 		case 'j': // "aflj"
 		case 'q': // "aflq"
 		case '+': // "afl+"
@@ -6819,8 +6819,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					}
 				}
 				if (input[1] == 'a') { // "aaaa"
-					bool ioCache = r_config_get_i (core->config, "io.cache");
-					r_config_set_i (core->config, "io.cache", 1);
 					if (sdb_count (core->anal->sdb_zigns) > 0) {
 						rowlog (core, "Check for zignature from zigns folder (z/)");
 						r_core_cmd0 (core, "z/");
@@ -6828,10 +6826,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					rowlog (core, "Type matching analysis for all functions (afta)");
 					r_core_cmd0 (core, "afta");
 					rowlog_done (core);
-					if (!ioCache) {
-						r_core_cmd0 (core, "wc-*");
-					}
-					r_config_set_i (core->config, "io.cache", ioCache);
 				}
 				r_core_cmd0 (core, "s-");
 				if (dh_orig) {

@@ -111,6 +111,7 @@ R_API RTrie *r_trie_new() {
 	}
 	n->root = r_trie_new_node ();
 	if (!n->root) {
+		R_FREE (n);
 		return NULL;
 	}
 	return n;
