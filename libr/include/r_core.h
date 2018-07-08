@@ -622,7 +622,7 @@ R_API void r_core_rtr_add(RCore *core, const char *input);
 R_API void r_core_rtr_remove(RCore *core, const char *input);
 R_API void r_core_rtr_session(RCore *core, const char *input);
 R_API void r_core_rtr_cmd(RCore *core, const char *input);
-R_API int r_core_rtr_http(RCore *core, int launch, const char *path);
+R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path);
 R_API int r_core_rtr_http_stop(RCore *u);
 R_API int r_core_rtr_gdb(RCore *core, int launch, const char *path);
 

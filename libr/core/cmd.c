@@ -590,7 +590,7 @@ static int cmd_rap(void *data, const char *input) {
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_equalh);
 		} else {
-			r_core_rtr_http (core, getArg (input[1], 'h'), input + 1);
+			r_core_rtr_http (core, getArg (input[1], 'h'), 'h', input + 1);
 		}
 		break;
 	case 'H': // "=H"
@@ -600,7 +600,7 @@ static int cmd_rap(void *data, const char *input) {
 			while (input[1] == ' ') {
 				input++;
 			}
-			r_core_rtr_http (core, getArg (input[1], 'H'), input + 1);
+			r_core_rtr_http (core, getArg (input[1], 'H'), 'H', input + 1);
 		}
 		break;
 	case '?': // "=?"
