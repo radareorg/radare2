@@ -224,12 +224,19 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case M68K_INS_BLT:
 	case M68K_INS_BGT:
 	case M68K_INS_BLE:
+#if CS_API_MAJOR >= 4
 		if (m68k->operands[0].type == M68K_OP_BR_DISP) {
 			op->type = R_ANAL_OP_TYPE_CJMP;
 			// TODO: disp_size is ignored
 			op->jump = addr + m68k->operands[0].br_disp.disp + 2;
 			op->fail = addr + insn->size;
 		}
+#else
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		// TODO: disp_size is ignored
+		op->jump = addr + m68k->operands[0].br_disp.disp + 2;
+		op->fail = addr + insn->size;
+#endif
 		break;
 	case M68K_INS_BRA:
 		op->type = R_ANAL_OP_TYPE_JMP;

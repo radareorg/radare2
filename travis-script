@@ -1,4 +1,6 @@
 #!/bin/bash
+set -x
+
 export PKG_CONFIG_PATH=${TRAVIS_BUILD_DIR}/pkgcfg:${PKG_CONFIG_PATH}
 export PATH=${TRAVIS_BUILD_DIR}/install/bin:${PATH}
 export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/install/lib:${LD_LIBRARY_PATH}
@@ -14,9 +16,9 @@ if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
     popd
 else
     echo "Installing with acr + make"
-    ./configure --prefix=${TRAVIS_BUILD_DIR}/install > /dev/null
-    make -s -j2 > /dev/null
-    make install > /dev/null
+    ./configure --prefix=${TRAVIS_BUILD_DIR}/install > /dev/null || exit 1
+    make -s -j2 > /dev/null || exit 1
+    make install > /dev/null || exit 1
 fi
 #[ "$TRAVIS_OS_NAME" != "osx" ] && mkdir -p /tmp/kcov && pushd /tmp/kcov
 #[ "$TRAVIS_OS_NAME" != "osx" ] && mkdir ${TRAVIS_BUILD_DIR}/kcov

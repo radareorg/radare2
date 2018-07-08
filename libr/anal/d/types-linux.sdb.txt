@@ -77,6 +77,35 @@ func.access.arg.0=const char *,path
 func.access.arg.1=int,mode
 func.access.ret=int
 
+prctl=func
+func.prctl.args=5
+func.prctl.arg.0=int,option
+func.prctl.arg.1=unsigned long,v2
+func.prctl.arg.2=unsigned long,v3
+func.prctl.arg.3=unsigned long,v4
+func.prctl.arg.4=unsigned long,v5
+func.prctl.ret=int
+
+waitpid=func
+func.waitpid.args=3
+func.waitpid.arg.0=pid_t,pid
+func.waitpid.arg.1=int *,wstatus
+func.waitpid.arg.2=int,options
+func.waitpid.ret=pid_t
+
+wait=func
+func.wait.args=1
+func.wait.arg.0=int *,wstatus
+func.wait.ret=pid_t
+
+waitid=func
+func.waitid.args=4
+func.waitid.arg.0=idtype_t,idtype
+func.waitid.arg.1=id_t,id
+func.waitid.arg.2=siginfo_t *,infop
+func.waitid.arg.3=int,options
+func.waitid.ret=int
+
 __stack_chk_fail=func
 func.__stack_chk_fail.args=0
 func.__stack_chk_fail.noreturn=true

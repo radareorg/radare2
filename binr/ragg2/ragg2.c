@@ -157,7 +157,7 @@ int main(int argc, char **argv) {
 		case 'C':
 			contents = optarg;
 			break;
-		case 'w': 
+		case 'w':
 			{
 			char *arg = strdup (optarg);
 			char *p = strchr (arg, ':');
@@ -180,14 +180,14 @@ int main(int argc, char **argv) {
 			free (arg);
 			}
 			break;
-		case 'n': 
+		case 'n':
 			{
 			ut32 n = r_num_math (NULL, optarg);
 			append = 1;
 			r_egg_patch (egg, -1, (const ut8*)&n, 4);
 			}
 			break;
-		case 'N': 
+		case 'N':
 			{
 			ut64 n = r_num_math (NULL, optarg);
 			r_egg_patch (egg, -1, (const ut8*)&n, 8);
@@ -465,7 +465,7 @@ int main(int argc, char **argv) {
 
 	// add padding
 	if (padding) {
-		r_egg_padding (egg, padding); 
+		r_egg_padding (egg, padding);
 	}
 
 	// add pattern
@@ -484,7 +484,7 @@ int main(int argc, char **argv) {
 	r_egg_finalize (egg);
 
 	if (show_asm) {
-		printf ("%s\n", r_egg_get_assembly (egg));	
+		printf ("%s\n", r_egg_get_assembly (egg));
 	}
 
 	if (show_raw || show_hex || show_execute) {

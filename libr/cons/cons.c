@@ -986,6 +986,7 @@ R_API void r_cons_newline() {
 }
 
 /* return the aproximated x,y of cursor before flushing */
+// XXX this function is a huge bottleneck
 R_API int r_cons_get_cursor(int *rows) {
 	int i, col = 0;
 	int row = 0;

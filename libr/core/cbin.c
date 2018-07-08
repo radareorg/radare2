@@ -9,6 +9,8 @@
 #define VA_TRUE     1
 #define VA_NOREBASE 2
 
+#define LOAD_BSS_MALLOC 0
+
 #define IS_MODE_SET(mode) (mode & R_CORE_BIN_SET)
 #define IS_MODE_SIMPLE(mode) (mode & R_CORE_BIN_SIMPLE)
 #define IS_MODE_SIMPLEST(mode) (mode & R_CORE_BIN_SIMPLEST)
@@ -29,14 +31,10 @@ static void pair(const char *a, const char *b, int mode, bool last) {
 		r_cons_printf ("\"%s\":%s%s", a, b, lst);
 	} else {
 		char ws[16];
-		int al = strlen (a);
-		if (al > PAIR_WIDTH) {
-			al = 0;
-		} else {
-			al = PAIR_WIDTH - al;
-		}
-		memset (ws, ' ', al);
-		ws[al] = 0;
+		const int al = strlen (a);
+		const int wl = (al > PAIR_WIDTH)? 0: PAIR_WIDTH - al;
+		memset (ws, ' ', wl);
+		ws[wl] = 0;
 		r_cons_printf ("%s%s%s\n", a, ws, b);
 	}
 }
@@ -374,6 +372,9 @@ static bool bin_raw_strings(RCore *r, int mode, int va) {
 	}
 	if (!r->file) {
 		eprintf ("Core file not open\n");
+		if (IS_MODE_JSON (mode)) {
+			r_cons_print ("[]");
+		}
 		return false;
 	}
 	if (!bf) {
@@ -641,7 +642,9 @@ static int bin_info(RCore *r, int mode) {
 			r_config_set (r->config, "asm.dwarf",
 				(R_BIN_DBG_STRIPPED & info->dbg_info) ? "false" : "true");
 			v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_ALIGN);
-			if (v != -1) r_config_set_i (r->config, "asm.pcalign", v);
+			if (v != -1) {
+				r_config_set_i (r->config, "asm.pcalign", v);
+			}
 		}
 	} else if (IS_MODE_SIMPLE (mode)) {
 		r_cons_printf ("arch %s\n", info->arch);
@@ -691,7 +694,9 @@ static int bin_info(RCore *r, int mode) {
 				r_cons_printf ("e asm.cpu=%s\n", info->cpu);
 			}
 			v = r_anal_archinfo (r->anal, R_ANAL_ARCHINFO_ALIGN);
-			if (v != -1) r_cons_printf ("e asm.pcalign=%d\n", v);
+			if (v != -1) {
+				r_cons_printf ("e asm.pcalign=%d\n", v);
+			}
 		}
 	} else {
 		// XXX: if type is 'fs' show something different?
@@ -811,7 +816,9 @@ static int bin_info(RCore *r, int mode) {
 				r_cons_newline ();
 			}
 		}
-		if (IS_MODE_JSON (mode)) r_cons_printf ("}");
+		if (IS_MODE_JSON (mode)) {
+			r_cons_printf ("}");
+		}
 	}
 	r_core_anal_type_init (r);
 	r_core_anal_cc_init (r);
@@ -969,7 +976,7 @@ R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
 		return false;
 	}
 	if (mode == R_CORE_BIN_JSON) {
-		r_cons_printf("[");
+		r_cons_printf ("[");
 	}
 
 	switch (mode) {
@@ -1707,7 +1714,9 @@ static void snInit(RCore *r, SymName *sn, RBinSymbol *sym, const char *lang) {
 #define MAXFLAG_LEN 128
 	int bin_demangle = lang != NULL;
 	const char *pfx;
-	if (!r || !sym || !sym->name) return;
+	if (!r || !sym || !sym->name) {
+		return;
+	}
 	pfx = getPrefixFor (sym->type);
 	sn->name = strdup (sym->name);
 	if (sym->dup_count) {
@@ -2035,7 +2044,9 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 			}
 		}
 	}
-	if (IS_MODE_JSON (mode) && !printHere) r_cons_printf ("]");
+	if (IS_MODE_JSON (mode) && !printHere) {
+		r_cons_printf ("]");
+	}
 #if 0
 	if (IS_MODE_NORMAL (mode) && !at) {
 		r_cons_printf ("\n%i %s\n", i, exponly ? "exports" : "symbols");
@@ -2111,12 +2122,15 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	if (chksum && *chksum == '.') {
 		printHere = true;
 	}
-	if (IS_MODE_JSON (mode) && !printHere) r_cons_printf ("[");
-	else if (IS_MODE_RAD (mode) && !at) r_cons_printf ("fs %ss\n", type);
-	else if (IS_MODE_NORMAL (mode) && !at && !printHere) {
+	if (IS_MODE_JSON (mode) && !printHere) {
+		r_cons_printf ("[");
+	} else if (IS_MODE_RAD (mode) && !at) {
+		r_cons_printf ("fs %ss\n", type);
+	} else if (IS_MODE_NORMAL (mode) && !at && !printHere) {
 		r_cons_printf ("[%s]\n", print_segments ? "Segments" : "Sections");
-	} else if (IS_MODE_NORMAL (mode) && printHere) r_cons_printf("Current section\n");
-	else if (IS_MODE_SET (mode)) {
+	} else if (IS_MODE_NORMAL (mode) && printHere) {
+		r_cons_printf ("Current section\n");
+	} else if (IS_MODE_SET (mode)) {
 		fd = r_core_file_cur_fd (r);
 		r_flag_space_set (r->flags, print_segments ? "segments" : "sections");
 	}
@@ -2782,7 +2796,7 @@ static void bin_mem_print(RList *mems, int perms, int depth, int mode) {
 			}
 			bin_mem_print (mem->mirrors, mem->perms & perms, depth + 1, mode);
 		}
-		if (IS_MODE_JSON(mode)) {
+		if (IS_MODE_JSON (mode)) {
 			if (iter->n) {
 				r_cons_printf (",");
 			}
@@ -2793,7 +2807,7 @@ static void bin_mem_print(RList *mems, int perms, int depth, int mode) {
 static int bin_mem(RCore *r, int mode) {
 	RList *mem = NULL;
 	if (!r)	return false;
-	if (!IS_MODE_JSON(mode)) {
+	if (!IS_MODE_JSON (mode)) {
 		if (!(IS_MODE_RAD (mode) || IS_MODE_SET (mode))) {
 			r_cons_println ("[Memory]\n");
 		}
@@ -3166,7 +3180,7 @@ static void bin_pe_resources(RCore *r, int mode) {
 		} else if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("f resource.%d %d 0x%08"PFMT32x"\n", index, size, vaddr);
 		} else if (IS_MODE_JSON (mode)) {
-			r_cons_printf("%s{\"name\":%d,\"index\":%d, \"type\":\"%s\","
+			r_cons_printf ("%s{\"name\":%d,\"index\":%d, \"type\":\"%s\","
 					"\"vaddr\":%"PFMT64d", \"size\":%d, \"lang\":\"%s\"}",
 					index? ",": "", name, index, type, vaddr, size, lang);
 		} else {
@@ -3398,10 +3412,10 @@ R_API int r_core_bin_set_arch_bits(RCore *r, const char *name, const char * arch
 	RIODesc *desc = r_io_desc_get (r->io, fd);
 	RBinFile *curfile, *binfile = NULL;
 	if (!name) {
-		name = (desc) ? desc->name : NULL;
-	}
-	if (!name) {
-		return false;
+		if (!desc || !desc->name) {
+			return false;
+		}
+		name = desc->name;
 	}
 	/* Check if the arch name is a valid name */
 	if (!r_asm_is_valid (r->assembler, arch)) {

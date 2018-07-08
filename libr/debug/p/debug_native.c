@@ -454,7 +454,10 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 #ifdef WAIT_ON_ALL_CHILDREN
 	int ret = waitpid (-1, &status, WAITPID_FLAGS);
 #else
-	int ret = waitpid (pid, &status, WAITPID_FLAGS);
+	int ret = waitpid (-1, &status, 0);
+	if (ret != -1) {
+		reason = R_DEBUG_REASON_TRAP;
+	}
 #endif // WAIT_ON_ALL_CHILDREN
 	if (ret == -1) {
 		r_sys_perror ("waitpid");
@@ -467,10 +470,9 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 	if (ret != pid) {
 		reason = R_DEBUG_REASON_NEW_PID;
 		eprintf ("switching to pid %d\n", ret);
-		r_debug_select(dbg, ret, ret);
+		r_debug_select (dbg, ret, ret);
 	}
 #endif // WAIT_ON_ALL_CHILDREN
-
 	// TODO: switch status and handle reasons here
 #if __linux__ && defined(PT_GETEVENTMSG)
 	reason = linux_ptrace_event (dbg, pid, status);

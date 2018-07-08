@@ -285,7 +285,7 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 	unsigned char UCLen = 0;
 	unsigned short USLen = 0;
 	int ILen = 0;
-	
+
 	// we copy from gdiff_start to a_off
 	if (offset_diff > 0) {
 
@@ -332,7 +332,7 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 		} else {
 			print_bytes (&gdiff_start, sizeof (gdiff_start), true);
 		}
-		
+
 		// print length for COPY
 		switch (opcode) {
 		case 249:
@@ -350,7 +350,7 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 			break;
 		}
 	}
-	
+
 	// we append data
 	if (op->b_len <= 246) {
 		ut8 data = op->b_len;

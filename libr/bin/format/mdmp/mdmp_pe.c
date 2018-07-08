@@ -91,16 +91,17 @@ RList *PE_(r_bin_mdmp_pe_get_imports)(struct PE_(r_bin_mdmp_pe_bin) *pe_bin) {
 	RBinReloc *rel;
 	RList *ret, *relocs;
 
-	if (!(imports = PE_(r_bin_pe_get_imports) (pe_bin->bin))) {
-		return NULL;
-	}
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
-	if (!(relocs = r_list_newf (free))) {
+	imports = PE_(r_bin_pe_get_imports) (pe_bin->bin);
+	ret = r_list_new ();
+	relocs = r_list_newf (free);
+
+	if (!imports || !ret || !relocs) {
+		free (imports);
 		free (ret);
+		free (relocs);
 		return NULL;
 	}
+
 	pe_bin->bin->relocs = relocs;
 	for (i = 0; !imports[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinImport))) {

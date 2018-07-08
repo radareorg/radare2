@@ -26,7 +26,7 @@ static void print_string(RBinString *string, RBinFile *bf) {
 	type_string = r_bin_string_type (string->type);
 	vaddr = addr = r_bin_get_vaddr (bin, string->paddr, string->vaddr);
 
-	switch(mode) {
+	switch (mode) {
 	case MODE_SIMPLE :
 		io->cb_printf ("0x%08" PFMT64x " %s\n", addr, string->string);
 		break;
@@ -80,6 +80,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 	int len = to - from;
 	ut8 *buf = calloc (len, 1);
 	if (!buf || !min) {
+		free (buf);
 		return -1;
 	}
 	r_buf_read_at (bf->buf, from, buf, len);
