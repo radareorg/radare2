@@ -2273,6 +2273,9 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case '?':
 			r_core_cmd_help (core, help_msg_afl);
 			break;
+		case 's': // "afls"
+			r_list_sort (core->anal->fcns, cmpaddr);
+			break;
 		case 'l': // "afll"
 			if (input[3] == '?') {
 				// TODO #7967 help refactor
@@ -2281,9 +2284,6 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				break;
 			}
 			/* fallthrough */
-		case 's': // "afls"
-			r_list_sort (core->anal->fcns, cmpaddr);
-			break;
 		case 'j': // "aflj"
 		case 'q': // "aflq"
 		case '+': // "afl+"
