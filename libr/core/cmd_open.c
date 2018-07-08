@@ -102,6 +102,7 @@ static const char *help_msg_om[] = {
 	"omb", " mapid addr", "relocate map with corresponding id",
 	"omb.", " addr", "relocate current map",
 	"omr", " mapid newsize", "resize map with corresponding id",
+	"omo", " fd", "map the given fd with lowest priority",
 	"omp", " mapid", "prioritize map with corresponding id",
 	"ompd", " mapid", "deprioritize map with corresponding id",
 	"ompf", "[fd]", "prioritize map by fd",
@@ -592,6 +593,13 @@ static void cmd_open_map(RCore *core, const char *input) {
 			}
 		}
 		break;
+	case 'o': // "omo"
+		if (input[2] == ' ') {
+			r_core_cmdf (core, "om %s 0x%08" PFMT64x " $s r omo", input + 2);
+		} else {
+			r_core_cmd0 (core, "om `oq.` $B $s r");
+		}
+		break;
 	case 'p':
 		switch (input[2]) {
 		case 'd': // "ompf"
@@ -741,7 +749,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 		break;
 	case 'm': // "omm"
 		{
-			ut32 fd = input[3]? r_num_math (core->num, input + 3): r_io_fd_get_current (core->io);
+			ut32 fd = input[2]? r_num_math (core->num, input + 2): r_io_fd_get_current (core->io);
 			RIODesc *desc = r_io_desc_get (core->io, fd);
 			if (desc) {
 				ut64 size = r_io_desc_size (desc);
@@ -935,6 +943,13 @@ static bool desc_list_visual_cb(void *user, void *data, ut32 id) {
 	}
 #endif
 	return true;
+}
+
+static bool desc_list_quiet2_cb(void *user, void *data, ut32 id) {
+	RPrint *p = (RPrint *)user;
+	RIODesc *desc = (RIODesc *)data;
+	p->cb_printf ("%d\n", desc->fd);
+	return false;
 }
 
 static bool desc_list_quiet_cb(void *user, void *data, ut32 id) {
@@ -1228,7 +1243,11 @@ static int cmd_open(void *data, const char *input) {
 		r_id_storage_foreach (core->io->files, desc_list_visual_cb, core->print);
 		break;
 	case 'q': // "oq"
-		r_id_storage_foreach (core->io->files, desc_list_quiet_cb, core->print);
+		if (input[1] == '.') {
+			r_id_storage_foreach (core->io->files, desc_list_quiet2_cb, core->print);
+		} else {
+			r_id_storage_foreach (core->io->files, desc_list_quiet_cb, core->print);
+		}
 		break;
 	case '\0': // "o"
 		r_id_storage_foreach (core->io->files, desc_list_cb, core->print);
