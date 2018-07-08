@@ -414,6 +414,9 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 		free (emitted_debug_locals);
 		return;
 	}
+	if (p4 >= p4_end) {
+		return;
+	}
 	ut8 opcode = *(p4++) & 0xff;
 	while (keep) {
 		switch (opcode) {
