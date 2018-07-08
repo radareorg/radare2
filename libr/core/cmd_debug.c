@@ -1438,10 +1438,9 @@ static void get_hash_debug_file(RCore *core, const char *path, char *hash, int h
 		if (strstr (s->name, ".note.gnu.build-id")) {
 			if (r_buf_read_at (binfile->buf, s->vaddr + 16, buf, 20) == 20) {
 				break;
-			} else {
-				eprintf ("Cannot read from buffer\n");
-				goto out_error;
 			}
+			eprintf ("Cannot read from buffer\n");
+			goto out_error;
 		}
 	}
 	for (i = 0; i < 20; i++) {

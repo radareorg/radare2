@@ -1051,7 +1051,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena, GHT *in
 		(void)r_io_read_at (core->io, brk_start + MALLOC_ALIGNMENT, (ut8 *)tcache, sizeof ( GH(RHeapTcache) ));
 		for (int i=0; i < TCACHE_MAX_BINS; i++){
 			if( tcache->counts[i] > 0 ) {
-				if ( (ut64)tcache->entries[i] - SZ*2 == (ut64)prev_chunk ){
+				if ( (ut64)tcache->entries[i] - SZ * 2 == (ut64)prev_chunk ){
 					is_free = true;
 					break;
 				}
@@ -1059,7 +1059,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena, GHT *in
 					tcache_fd = (ut64)tcache->entries[i];
 					for (int n = 1; n < tcache->counts[i]; n++) {
 						(void)r_io_read_at (core->io, tcache_fd, &tcache_tmp, sizeof ( GHT ) );
-						if ( (ut64)tcache_tmp - SZ*2 == (ut64)prev_chunk ) {
+						if ( (ut64)tcache_tmp - SZ * 2 == (ut64)prev_chunk ) {
 							is_free = true;
 							break;
 						}
