@@ -2726,7 +2726,7 @@ static void agraph_print_edges(RAGraph *g) {
 
 		bool many = r_list_length (neighbours) > 2;
 
-		if (many) {
+		if (many && !g->is_callgraph) {
 			ga->out_nodes->sorted = false;
 			r_list_sort (neighbours, first_x_cmp);
 		}
@@ -2775,7 +2775,7 @@ static void agraph_print_edges(RAGraph *g) {
 				ay = a->y + a->h;
 				by = b->y - 1;
 
-				if (many) {
+				if (many && !g->is_callgraph) {
 					int t = R_EDGES_X_INC + 2 * (neighbours->length + 1);
 					ax = a->is_dummy ? a->x : (a->x + a->w/2 + (t/2 - a_x_inc));
 					bendpoint = bx < ax ? neighbours->length - out_nth :  out_nth;
@@ -2786,7 +2786,7 @@ static void agraph_print_edges(RAGraph *g) {
 
 				if (!a->is_dummy && itn == neighbours->head && out_nth == 0 && bx > ax) {
 					a_x_inc += 4;
-					ax += many ? 0 : 4;
+					ax += (many && !g->is_callgraph) ? 0 : 4;
 				}
 				if (a->h < a->layer_height) {
 					r_cons_canvas_line (g->can, ax, ay, ax, ay + a->layer_height - a->h, &style);
