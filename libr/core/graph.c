@@ -2647,6 +2647,9 @@ static int first_x_cmp (RGraphNode *ga, RGraphNode *gb) {
        if (b->y < a->y) {
 	       return -1;
        }
+       if (b->y > a->y) {
+		return 1;
+       }
        if (a->x < b->x) {
                return 1;
        } else if (a->x > b->x) {
