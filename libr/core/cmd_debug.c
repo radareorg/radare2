@@ -1436,8 +1436,12 @@ static void get_hash_debug_file(RCore *core, const char *path, char *hash, int h
 	RBinSection *s;
 	r_list_foreach (sects, iter, s) {
 		if (strstr (s->name, ".note.gnu.build-id")) {
-			memcpy(buf, binfile->buf->buf + s->vaddr + 16, 20);
-			break;
+			if (r_buf_read_at (binfile->buf, s->vaddr + 16, buf, 20) == 20) {
+				break;
+			} else {
+				eprintf ("Cannot read from buffer\n");
+				goto out_error;
+			}
 		}
 	}
 	for (i = 0; i < 20; i++) {

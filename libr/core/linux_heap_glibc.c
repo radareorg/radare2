@@ -964,9 +964,9 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena, GHT *in
 #if __GLIBC_MINOR__ > 25
 	GHT tcache_fd = GHT_MAX, tcache_tmp = GHT_MAX;
 #if HEAP32
-	*initial_brk = ( (brk_start >> 12) << 12 ) + sizeof(GH(RHeapTcache)) + MALLOC_ALIGNMENT + 0x418;
+	*initial_brk = ( (brk_start >> 12) << 12 ) + sizeof (GH(RHeapTcache)) + MALLOC_ALIGNMENT + 0x418;
 #else
-	*initial_brk = ( (brk_start >> 12) << 12 ) + sizeof(GH(RHeapTcache)) + MALLOC_ALIGNMENT;
+	*initial_brk = ( (brk_start >> 12) << 12 ) + sizeof (GH(RHeapTcache)) + MALLOC_ALIGNMENT;
 #endif
 #else
 	*initial_brk = (brk_start >> 12) << 12;
