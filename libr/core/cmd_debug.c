@@ -1408,7 +1408,7 @@ static int cmd_dbg_map_heap_glibc_64 (RCore *core, const char *input);
 static void get_hash_debug_file(RCore *core, const char *path, char *hash, int hash_len) {
 	RListIter *iter;
 	char buf[20] = R_EMPTY;
-	int offset, err, i, j = 0;
+	int offset, i, j = 0;
 	int bd = -1;
 	RBinFile *old_cur = r_bin_cur (core->bin);
 

@@ -485,6 +485,8 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 			}
 			free (node->value);
 			node->value = strdup (ov? ov: "");
+free (ov);
+			return NULL;
 		}
 	}
 beach:

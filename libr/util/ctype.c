@@ -42,7 +42,7 @@ R_API int r_type_kind(Sdb *TDB, const char *name) {
 }
 
 R_API RList* r_type_get_enum (Sdb *TDB, const char *name) {
-	char *p, *val, var[128], var2[128];
+	char *p, *val, var[130], var2[130];
 	int n;
 
 	if (r_type_kind (TDB, name) != R_TYPE_ENUM) {
@@ -297,17 +297,20 @@ static void filter_type(char *t) {
 
 R_API char *r_type_format(Sdb *TDB, const char *t) {
 	int n;
-	char *p, var[128], var2[128], var3[128];
+	char *p, var[130], var2[132];
 	char *fmt = NULL;
 	char *vars = NULL;
 	const char *kind = sdb_const_get (TDB, t, NULL);
-	if (!kind) return NULL;
+	if (!kind) {
+		return NULL;
+	}
 	// only supports struct atm
 	snprintf (var, sizeof (var), "%s.%s", kind, t);
 	if (!strcmp (kind, "type")) {
 		const char *fmt = sdb_const_get (TDB, var, NULL);
-		if (fmt)
+		if (fmt) {
 			return strdup (fmt);
+		}
 	} else if (!strcmp (kind, "struct") || !strcmp (kind, "union")) {
 		// assumes var list is sorted by offset.. should do more checks here
 		for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
@@ -322,6 +325,7 @@ R_API char *r_type_format(Sdb *TDB, const char *t) {
 			int alen = sdb_array_size (TDB, var2);
 			int elements = sdb_array_get_num (TDB, var2, alen - 1, NULL);
 			if (type) {
+				char var3[128] = {0};
 				// Handle general pointers except for char *
 				if ((strstr (type, "*(") || strstr (type, " *")) &&
 						strncmp (type, "char *", 7)) {

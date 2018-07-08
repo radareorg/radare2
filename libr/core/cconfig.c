@@ -1907,14 +1907,14 @@ static int cb_zoombyte(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	switch (*node->value) {
-		case 'p': case 'f': case 's': case '0':
-		case 'F': case 'e': case 'h':
-			core->print->zoom->mode = *node->value;
-			break;
-		default:
-			r_cons_printf ("p\nf\ns\n0\nF\ne\nh\n");
-			// eprintf ("Invalid zoom.byte value. See pz? for help\n");
-			return false;
+	case 'p': case 'f': case 's': case '0':
+	case 'F': case 'e': case 'h':
+		core->print->zoom->mode = *node->value;
+		break;
+	default:
+		eprintf ("Invalid zoom.byte value. See pz? for help\n");
+		r_cons_printf ("pzp\npzf\npzs\npz0\npzF\npze\npzh\n");
+		return false;
 	}
 	return true;
 }

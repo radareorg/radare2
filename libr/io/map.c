@@ -7,7 +7,7 @@
 #include "r_util.h"
 #include "r_vector.h"
 
-#define END_OF_MAP_IDS  0xffffffff
+#define END_OF_MAP_IDS UT32_MAX
 
 #define MAP_USE_HALF_CLOSED 0
 

@@ -211,7 +211,7 @@ static void visual_repeat(RCore *core) {
 #if __UNIX__ && !__APPLE__
 // TODO: Add support for iterm2 and terminal for mac, see rarop source for more info
 		int port = r_config_get_i (core->config, "http.port");
-		if (!r_core_rtr_http (core, '&', NULL)) {
+		if (!r_core_rtr_http (core, '&', 'H', NULL)) {
 			const char *xterm = r_config_get (core->config, "cmd.xterm");
 			// TODO: this must be configurable
 			r_sys_cmdf ("%s 'r2 -C http://localhost:%d/cmd/V;sleep 1' &", xterm, port);
@@ -2740,7 +2740,7 @@ R_API void r_core_visual_title(RCore *core, int color) {
 	static ut64 oldpc = 0;
 	const char *BEGIN = core->cons->pal.prompt;
 	const char *filename;
-	char pos[512], foo[512], bar[512], pcs[32];
+	char pos[512], bar[512], pcs[32];
 	if (!oldpc) {
 		oldpc = r_debug_reg_get (core->dbg, "PC");
 	}
@@ -2886,22 +2886,26 @@ R_API void r_core_visual_title(RCore *core, int color) {
 			sprintf (pcs, "%d%% ", pc);
 		}
 	}
-	if (__ime) {
-		snprintf (foo, sizeof (foo), "[0x%08"PFMT64x " + %d> * INSERT MODE *\n",
-			core->offset, core->print->cur);
-	} else {
-		if (core->print->cur_enabled) {
-			snprintf (foo, sizeof (foo), "[0x%08"PFMT64x " %s%d (0x%x:%d=%d)]> %s %s\n",
-				core->offset, pcs, core->blocksize,
-				core->print->cur, core->print->ocur, core->print->ocur == -1 ?
-				1: R_ABS (core->print->cur - core->print->ocur) + 1,
-				bar, pos);
+	{
+		char *title;
+		if (__ime) {
+			title = r_str_newf ("[0x%08"PFMT64x " + %d> * INSERT MODE *\n",
+				core->offset, core->print->cur);
 		} else {
-			snprintf (foo, sizeof (foo), "[0x%08"PFMT64x " %s%d %s]> %s %s\n",
-				core->offset, pcs, core->blocksize, filename, bar, pos);
+			if (core->print->cur_enabled) {
+				title = r_str_newf ("[0x%08"PFMT64x " %s%d (0x%x:%d=%d)]> %s %s\n",
+					core->offset, pcs, core->blocksize,
+					core->print->cur, core->print->ocur, core->print->ocur == -1 ?
+					1: R_ABS (core->print->cur - core->print->ocur) + 1,
+					bar, pos);
+			} else {
+				title = r_str_newf ("[0x%08"PFMT64x " %s%d %s]> %s %s\n",
+					core->offset, pcs, core->blocksize, filename, bar, pos);
+			}
 		}
+		r_cons_print (title);
+		free (title);
 	}
-	r_cons_print (foo);
 	if (color) {
 		r_cons_strcat (Color_RESET);
 	}

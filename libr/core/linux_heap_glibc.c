@@ -1070,7 +1070,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena, GHT *in
 				if( tcache->counts[i] > 1 ) {
 					tcache_fd = (ut64)tcache->entries[i];
 					for (int n = 1; n < tcache->counts[i]; n++) {
-						(void)r_io_read_at (core->io, tcache_fd, &tcache_tmp, sizeof ( GHT ) );
+						(void)r_io_read_at (core->io, tcache_fd, (ut8*)&tcache_tmp, sizeof ( GHT ) );
 						if ( (ut64)tcache_tmp - SZ * 2 == (ut64)prev_chunk ) {
 							is_free = true;
 							break;
