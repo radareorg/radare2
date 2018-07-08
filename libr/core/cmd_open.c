@@ -599,6 +599,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 		} else {
 			r_core_cmd0 (core, "om `oq.` $B $s r");
 		}
+		r_core_cmd0 (core, "ompd `omq.`");
 		break;
 	case 'p':
 		switch (input[2]) {
@@ -784,7 +785,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 	case 'j': // "omj"
 	case '*': // "om*"
 	case 'q': // "omq"
-		if (input[2] == '.') {
+		if (input[1] && input[2] == '.') {
 			map = r_io_map_get (core->io, core->offset);
 			if (map) {
 				core->print->cb_printf ("%i\n", map->id);

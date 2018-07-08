@@ -1341,8 +1341,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 
 /* analyze a RAnalBlock at the address at and add that to the fcn function. */
 R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
-	RAnalBlock *bb, *bbi;
-	RListIter *iter;
+	RAnalBlock *bb;
 	ut64 jump, fail;
 	ut8 *buf = NULL;
 	int buflen, bblen = 0, rc = true;

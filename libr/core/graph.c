@@ -2641,22 +2641,24 @@ static void agraph_print_edges_simple(RAGraph *g) {
 	}
 }
 
-static int first_x_cmp (RGraphNode *ga, RGraphNode *gb) {
-       RANode *a = (RANode*) ga->data;
-       RANode *b = (RANode*) gb->data;
-       if (b->y < a->y) {
-	       return -1;
-       }
-       if (b->y > a->y) {
+static int first_x_cmp (const void *_a, const void *_b) {
+	RGraphNode *ga = (RGraphNode *)_a;
+	RGraphNode *gb = (RGraphNode *)_b;
+	RANode *a = (RANode*) ga->data;
+	RANode *b = (RANode*) gb->data;
+	if (b->y < a->y) {
+		return -1;
+	}
+	if (b->y > a->y) {
 		return 1;
-       }
-       if (a->x < b->x) {
-               return 1;
-       } else if (a->x > b->x) {
-               return -1;
-       } else {
-               return 0;
-       }
+	}
+	if (a->x < b->x) {
+		return 1;
+	}
+	if (a->x > b->x) {
+		return -1;
+	}
+	return 0;
 }
 
 static void agraph_print_edges(RAGraph *g) {
@@ -2681,7 +2683,7 @@ static void agraph_print_edges(RAGraph *g) {
 	graph_foreach_anode (nodes, itm, ga, a) {
 		const RGraphNode *gb;
 		RANode *b;
-		const RList *neighbours = r_graph_get_neighbours (g->graph, ga);
+		RList *neighbours = (RList *)r_graph_get_neighbours (g->graph, ga);
 		int ax, ay, bx, by, a_x_inc, b_x_inc;
 		tl = tm = NULL;
 
@@ -2708,7 +2710,7 @@ static void agraph_print_edges(RAGraph *g) {
 		}
 
 		if (!tm) {
-			tm = calloc (1, sizeof (struct tmplayer));
+			tm = R_NEW0 (struct tmplayer);
 			if (tm) {
 				tm->layer = a->layer;
 				tm->edgectr = 0;

@@ -2304,7 +2304,6 @@ static int option = 0;
 static int variable_option = 0;
 static int printMode = 0;
 static bool selectPanel = false;
-static char printCmds3[64] = {0};
 #define lastPrintMode 6
 static const char *cmd, *printCmds[lastPrintMode] = {
 	"pdf", "pd $r", "afi", "pdsf", "pdc", "pdr"

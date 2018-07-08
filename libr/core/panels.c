@@ -8,6 +8,7 @@
 
 #define PANEL_TITLE_SYMBOLS      "Symbols"
 #define PANEL_TITLE_STACK        "Stack"
+#define PANEL_TITLE_STACKREFS    "StackRefs"
 #define PANEL_TITLE_REGISTERS    "Registers"
 #define PANEL_TITLE_REGISTERREFS "RegisterRefs"
 #define PANEL_TITLE_DISASSEMBLY  "Disassembly"
@@ -32,6 +33,7 @@
 
 #define PANEL_CMD_SYMBOLS        "isq"
 #define PANEL_CMD_STACK          "px 256@r:SP"
+#define PANEL_CMD_STACKREFS      "pxr 256@r:SP"
 #define PANEL_CMD_REGISTERS      "dr="
 #define PANEL_CMD_REGISTERREFS   "drr"
 #define PANEL_CMD_DISASSEMBLY    "pd $r"
@@ -54,7 +56,7 @@ static const char *menus[] = {
 static const int menuNum = ((int)sizeof (menus) - 1) / sizeof (const char*);
 
 static const char *menus_File[] = {
-	"New", "Open", "Close", ".", "Sections", "Strings", "Symbols", "Imports", "Info", "Database", ".", "Quit",
+	"New", "Open", "ReOpen", "ReOpen in RW", "Close", ".", "Sections", "Strings", "Symbols", "Imports", "Info", "Database", ".", "Quit",
 	NULL
 };
 
@@ -65,6 +67,7 @@ static const char *menus_Edit[] = {
 
 static const char *menus_View[] = {
 	"Hexdump", "Disassembly", "Graph", "FcnInfo", "Functions", "Comments", "Entropy", "Colors",
+	"Stack", "StackRefs",
 	NULL
 };
 
@@ -85,11 +88,12 @@ static const char *menus_Debug[] = {
 	".",
 	"Continue", "Cont until.",
 	"Step", "Step Over",
+	"Reload",
 	NULL
 };
 
 static const char *menus_Analyze[] = {
-	"Function", "Program", "Calls", "References",
+	"Function", "Symbols", "Program", "BasicBlocks", "Calls", "References",
 	NULL
 };
 
@@ -789,7 +793,8 @@ static bool initPanels(RCore *core, RPanels *panels) {
 
 	addPanelFrame (core, panels, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY);
 	addPanelFrame (core, panels, PANEL_TITLE_SYMBOLS, PANEL_CMD_SYMBOLS);
-	addPanelFrame (core, panels, PANEL_TITLE_STACK, PANEL_CMD_STACK);
+	// addpanelframe (core, panels, PANEL_TITLE_STACK, PANEL_CMD_STACK);
+	addPanelFrame (core, panels, PANEL_TITLE_STACKREFS, PANEL_CMD_STACKREFS);
 	addPanelFrame (core, panels, PANEL_TITLE_REGISTERS, PANEL_CMD_REGISTERS);
 	addPanelFrame (core, panels, PANEL_TITLE_REGISTERREFS, PANEL_CMD_REGISTERREFS);
 	panels->curnode = 1;
@@ -1053,6 +1058,10 @@ static bool handleEnterKey(RCore *core) {
 			addPanelFrame (core, panels, PANEL_TITLE_COMMENTS, "CC");
 		} else if (strstr (action, "Entropy")) {
 			addPanelFrame (core, panels, PANEL_TITLE_ENTROPY, "p=e");
+		} else if (strstr (action, "Symbols")) {
+			r_core_cmdf (core, "aa");
+		} else if (strstr (action, "BasicBlocks")) {
+			r_core_cmdf (core, "aab");
 		} else if (strstr (action, "Function")) {
 			r_core_cmdf (core, "af");
 		} else if (strstr (action, "DRX")) {
@@ -1155,9 +1164,22 @@ static bool handleEnterKey(RCore *core) {
 		} else if (strstr (action, "Step")) {
 			r_core_cmd (core, "ds", 0);
 			r_cons_flush ();
+		} else if (strstr (action, "ReOpen")) {
+			r_core_cmd (core, "oo", 0);
+			r_cons_flush ();
+		} else if (strstr (action, "ReOpen in RW")) {
+			r_core_cmd (core, "oo+", 0);
+			r_cons_flush ();
+		} else if (strstr (action, "Reload")) {
+			r_core_cmd (core, "ood", 0);
+			r_cons_flush ();
 		} else if (strstr (action, "Step Over")) {
 			r_core_cmd (core, "dso", 0);
 			r_cons_flush ();
+		} else if (strstr (action, "StackRefs")) {
+			addPanelFrame (core, panels, PANEL_TITLE_STACKREFS, PANEL_CMD_STACKREFS);
+		} else if (strstr (action, "Stack")) {
+			addPanelFrame (core, panels, PANEL_TITLE_STACK, PANEL_CMD_STACK);
 		} else if (strstr (action, "Continue")) {
 			r_core_cmd (core, "dc", 0);
 			r_cons_flush ();
