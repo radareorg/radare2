@@ -253,7 +253,7 @@ static bool varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *data
 		if (!rip) {
 			rip = (char *)r_str_casestr (tstr, "[PC, ");
 		}
-		if (rip) {
+		if (rip && !strchr (rip + 4, ',')) {
 			rip += 4;
 			char *tstr_new, *ripend = strchr (rip, ']');
 			const char *neg = strchr (rip, '-');
