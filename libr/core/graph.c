@@ -3293,6 +3293,10 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 	return agraph_print (g, grd->fs, core, *fcn);
 }
 
+static void agraph_refresh_oneshot(struct agraph_refresh_data *grd) {
+	r_core_task_enqueue_oneshot (grd->core, (RCoreTaskOneShot) agraph_refresh, grd);
+}
+
 static void agraph_toggle_speed(RAGraph *g, RCore *core) {
 	int alt = r_config_get_i (core->config, "graph.scroll");
 	g->movspeed = g->movspeed == DEFAULT_SPEED? alt: DEFAULT_SPEED;
@@ -3811,8 +3815,10 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		is_error = !ret;
 	}
 
+	core->cons->event_resize = NULL; // avoid running old event with new data
 	core->cons->event_data = grd;
-	core->cons->event_resize = (RConsEvent) agraph_refresh;
+	core->cons->event_resize = (RConsEvent) agraph_refresh_oneshot;
+
 	r_cons_break_push (NULL, NULL);
 
 	while (!exit_graph && !is_error && !r_cons_is_breaked ()) {
@@ -4400,8 +4406,8 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	}
 	r_cons_break_pop ();
 	r_config_set (core->config, "asm.comments", r_str_bool (asm_comments));
-	core->cons->event_data = NULL;
 	core->cons->event_resize = NULL;
+	core->cons->event_data = NULL;
 	core->vmode = o_vmode;
 	core->is_asmqjmps_letter = o_asmqjmps_letter;
 	core->keep_asmqjmps = false;

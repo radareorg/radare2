@@ -149,6 +149,7 @@ static void delCurPanel(RPanels *panels);
 static void delInvalidPanels(RPanels *panels);
 static void dismantlePanel(RPanels *panels);
 static void doPanelsRefresh(RCore *core);
+static void doPanelsRefreshOneShot(RCore *core);
 static bool handleCursorMode(RCore *core, const int key);
 static void handleUpKey(RCore *core);
 static void handleDownKey(RCore *core);
@@ -221,8 +222,9 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 		}
 		if (!strcmp (panel->title, PANEL_TITLE_GRAPH)) {
 			graph_pad = 1;
+			core->cons->event_resize = NULL; // avoid running old event with new data
 			core->cons->event_data = core;
-			core->cons->event_resize = (RConsEvent) doPanelsRefresh;
+			core->cons->event_resize = (RConsEvent) doPanelsRefreshOneShot;
 		}
 		if (delta_y < 0) {
 			delta_y = 0;
@@ -972,6 +974,24 @@ static void doPanelsRefresh(RCore *core) {
 	r_core_panels_refresh (core);
 }
 
+static void doPanelsRefreshOneShot(RCore *core) {
+	r_core_task_enqueue_oneshot (core, (RCoreTaskOneShot) doPanelsRefresh, core);
+}
+
+static int havePanel(RPanels *panels, const char *s) {
+	int i;
+	if (!panels->panel || !panels->panel[0].title) {
+		return 0;
+	}
+	// add new panel for testing
+	for (i = 1; panels->panel[i].title; i++) {
+		if (!strcmp (panels->panel[i].title, s)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
 static void panelSingleStepIn(RCore *core) {
 	if (r_config_get_i (core->config, "cfg.debug")) {
 		if (core->print->cur_enabled) {
@@ -1403,8 +1423,9 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 	r_core_panels_layout (panels);
 repeat:
 	core->panels = panels;
+	core->cons->event_resize = NULL; // avoid running old event with new data
 	core->cons->event_data = core;
-	core->cons->event_resize = (RConsEvent) doPanelsRefresh;
+	core->cons->event_resize = (RConsEvent) doPanelsRefreshOneShot;
 	r_core_panels_layout_refresh (core);
 	wheel = r_config_get_i (core->config, "scr.wheel");
 	if (wheel) {
@@ -1781,6 +1802,8 @@ repeat:
 	}
 	goto repeat;
 exit:
+	core->cons->event_resize = NULL;
+	core->cons->event_data = NULL;
 	core->print->cur = originCursor;
 	core->print->cur_enabled = false;
 	core->print->col = 0;
