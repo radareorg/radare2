@@ -481,6 +481,24 @@ R_API RIOMap* r_io_map_add_next_available(RIO* io, int fd, int flags, ut64 delta
 	return r_io_map_new (io, fd, flags, delta, next_addr, size, true);
 }
 
+R_API ut64 r_io_map_next_address(RIO* io, ut64 addr) {
+	RIOMap* map;
+	SdbListIter* iter;
+	ut64 lowest = UT64_MAX;
+
+	ls_foreach (io->maps, iter, map) {
+		ut64 from = r_itv_begin (map->itv);
+		if (from > addr && addr < lowest) {
+			lowest = from;
+		}
+		ut64 to = r_itv_end (map->itv);
+		if (to > addr && to < lowest) {
+			lowest = to;
+		}
+	}
+	return lowest;
+}
+
 R_API RList* r_io_map_get_for_fd(RIO* io, int fd) {
 	RList* map_list = r_list_newf (NULL);
 	SdbListIter* iter;
