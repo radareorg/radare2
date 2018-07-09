@@ -2893,6 +2893,7 @@ R_API int r_anal_esil_parse(RAnalEsil *esil, const char *str) {
 	if (!esil || !str || !*str) {
 		return 0;
 	}
+	const char *hashbang = strstr (str, "#!");
 	esil->trap = 0;
 	if (esil->cmd && esil->cmd_todo) {
 		if (!strncmp (str, "TODO", 4)) {
@@ -2904,15 +2905,17 @@ loop:
 	esil->skip = 0;
 	esil->parse_goto = -1;
 	esil->parse_stop = 0;
-	if (esil->anal) {
-		esil->parse_goto_count = esil->anal->esil_goto_limit;
-	} else {
-		esil->parse_goto_count = R_ANAL_ESIL_GOTO_LIMIT;
-	}
+	esil->parse_goto_count = esil->anal? esil->anal->esil_goto_limit: R_ANAL_ESIL_GOTO_LIMIT;
 	str = ostr;
 repeat:
 	wordi = 0;
 	while (*str) {
+		if (str == hashbang) {
+			if (esil->anal && esil->anal->coreb.setab) {
+				esil->anal->coreb.cmd (esil->anal->coreb.core, str + 2);
+			}
+			break;
+		}
 		if (wordi > 62) {
 			ERR ("Invalid esil string");
 			return -1;

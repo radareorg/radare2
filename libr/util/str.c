@@ -49,7 +49,35 @@ R_API int r_str_ncasecmp(const char *s1, const char *s2, size_t n) {
 #endif
 }
 
+// GOOD
 // In-place replace the first instance of the character a, with the character b.
+R_API int r_str_replace_ch(char *s, char a, char b, int global) {
+	int ret = 0;
+	char *o = s;
+	if (!s || a == b) {
+		return 0;
+	}
+	for (; *o; s++, o++) {
+		if (*o == a) {
+			ret++;
+			if (b) {
+				*s = b;
+			} else {
+				/* remove char */
+				s--;
+			}
+			if (!global) {
+				return 1;
+			}
+		} else {
+			*s = *o;
+		}
+	}
+	*s = 0;
+	return ret;
+}
+
+// DEPRECATED
 R_API int r_str_replace_char_once(char *s, int a, int b) {
 	int ret = 0;
 	char *o = s;
@@ -70,8 +98,7 @@ R_API int r_str_replace_char_once(char *s, int a, int b) {
 	return ret;
 }
 
-// Spagetti.. must unify and support 'g', 'i' ...
-// In-place replace all instances of character a with character b.
+// DEPRECATED
 R_API int r_str_replace_char(char *s, int a, int b) {
 	int ret = 0;
 	char *o = s;
@@ -2706,6 +2733,7 @@ R_API RList *r_str_split_list(char *str, const char *c)  {
 		if (!aux) {
 			break;
 		}
+		r_str_trim (aux);
 		r_list_append (lst, aux);
 	}
 

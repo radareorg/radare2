@@ -56,6 +56,7 @@ R_API int r_str_bits(char *strout, const ut8 *buf, int len, const char *bitz);
 R_API int r_str_bits64(char *strout, ut64 in);
 R_API ut64 r_str_bits_from_string(const char *buf, const char *bitz);
 R_API int r_str_rwx(const char *str);
+R_API int r_str_replace_ch(char *s, char a, char b, bool g);
 R_API int r_str_replace_char(char *s, int a, int b);
 R_API int r_str_replace_char_once(char *s, int a, int b);
 R_API const char *r_str_rwx_i(int rwx);
