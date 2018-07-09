@@ -672,7 +672,7 @@ R_API int r_bin_file_ref(RBin *bin, RBinFile *a);
 R_API void r_bin_file_free(void /*RBinFile*/ *bf_);
 R_API RBinFile *r_bin_file_create_append(RBin *bin, const char *file, const ut8 *bytes, ut64 sz, ut64 file_sz, int rawstr, int fd, const char *xtrname, bool steal_ptr);
 R_API RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const char *filename, const ut8 *bytes, ut64 sz, ut64 file_sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr);
-R_API int r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz, bool steal_ptr);
+R_API bool r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz, bool steal_ptr);
 R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *binfile);
 
 /* obj.c */

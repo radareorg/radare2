@@ -483,13 +483,9 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 		}
 	}
 	if (!binfile) {
-		if (true) {
-			binfile = r_bin_file_new_from_bytes (
-				bin, fname, buf_bytes, sz, file_sz, bin->rawstr,
-				baseaddr, loadaddr, fd, name, NULL, offset, true);
-		} else {
-			binfile = r_bin_file_new_from_fd (bin, tfd, NULL);
-		}
+		binfile = r_bin_file_new_from_bytes (
+			bin, fname, buf_bytes, sz, file_sz, bin->rawstr,
+			baseaddr, loadaddr, fd, name, NULL, offset, true);
 	}
 	return binfile? r_bin_file_set_cur_binfile (bin, binfile): false;
 }
@@ -1078,8 +1074,14 @@ R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name
 				bin->cur->curplugin = plugin;
 			}
 			binfile = r_bin_file_new (bin, "-", NULL, 0, 0, 0, 999, NULL, NULL, false);
+			if (!binfile) {
+				return false;
+			}
 			// create object and set arch/bits
 			obj = r_bin_object_new (binfile, plugin, 0, 0, 0, 1024);
+			if (!obj) {
+				return false;
+			}
 			binfile->o = obj;
 			obj->info = R_NEW0 (RBinInfo);
 			obj->info->arch = strdup (arch);

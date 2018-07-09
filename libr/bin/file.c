@@ -436,7 +436,7 @@ int file_sz = 0;
 		}
 		if (!plugin) {
 			ut8 bytes[1024];
-			int sz = 1024;
+			int sz = sizeof (bytes);
 			r_buf_read_at (bf->buf, 0, bytes, sz);
 			plugin = r_bin_get_binplugin_by_bytes (bin, bytes, sz);
 			if (!plugin) {
@@ -856,7 +856,7 @@ R_API RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const c
 }
 
 #define LIMIT_SIZE 0
-R_API int r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz, bool steal_ptr) {
+R_API bool r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz, bool steal_ptr) {
 	if (!binfile) {
 		return false;
 	}
