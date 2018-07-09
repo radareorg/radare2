@@ -2963,7 +2963,8 @@ static bool isValidAddress (RCore *core, ut64 addr) {
 	if (!map) {
 		return false;
 	}
-	if (map->delta > r_io_fd_size (core->io, map->fd)) {
+	st64 fdsz = (st64)r_io_fd_size (core->io, map->fd);
+	if (fdsz > 0 && map->delta > fdsz) {
 		return false;
 	}
 	// check if associated file is opened
