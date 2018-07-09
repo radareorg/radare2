@@ -1017,55 +1017,38 @@ static bool init (RCore *core, RPanels *panels, int w, int h) {
 
 R_API int file_history_up(RLine *line) {
 	RCore *core = line->user;
-	RIOUndo *undo = &core->io->undo;
-	if (line->offset_hist_index <= -undo->undos) {
+	RList *files = r_id_storage_list (core->io->files);
+	int num_files = r_list_length (files);
+	if (line->file_hist_index >= num_files || line->file_hist_index < 0) {
 		return false;
 	}
-	line->offset_hist_index--;
-	ut64 off = undo->seek[undo->idx + line->offset_hist_index].off;
-	RFlagItem *f = r_flag_get_at (core->flags, off, false);
-	char *command;
-	if (f && f->offset == off && f->offset > 0) {
-		command = r_str_newf ("%s", f->name);
-	}
-	else {
-		command = r_str_newf ("0x%"PFMT64x, off);
-	}
-	strncpy (line->buffer.data, command, R_LINE_BUFSIZE - 1);
+	line->file_hist_index++;
+	RIODesc *desc = r_list_get_n (files, num_files - line->file_hist_index);
+	strncpy (line->buffer.data, desc->name, R_LINE_BUFSIZE - 1);
 	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
+	r_list_free (files);
 	return true;
 }
 
 R_API int file_history_down(RLine *line) {
 	RCore *core = line->user;
-	RIOUndo *undo = &core->io->undo;
-	if (line->offset_hist_index >= undo->redos) {
+	RList *files = r_id_storage_list (core->io->files);
+	int num_files = r_list_length (files);
+	if (line->file_hist_index <= 0 || line->file_hist_index > num_files) {
 		return false;
 	}
-	line->offset_hist_index++;
-	if (line->offset_hist_index == undo->redos) {
+	line->file_hist_index--;
+	if (line->file_hist_index <= 0) {
 		line->buffer.data[0] = '\0';
 		line->buffer.index = line->buffer.length = 0;
 		return false;
 	}
-	ut64 off = undo->seek[undo->idx + line->offset_hist_index].off;
-	RFlagItem *f = r_flag_get_at (core->flags, off, false);
-	char *command;
-	if (f && f->offset == off && f->offset > 0) {
-		command = r_str_newf ("%s", f->name);
-	}
-	else {
-		command = r_str_newf ("0x%"PFMT64x, off);
-	}
-	strncpy (line->buffer.data, command, R_LINE_BUFSIZE - 1);
+	RIODesc *desc = r_list_get_n (files, num_files - line->file_hist_index);
+	strncpy (line->buffer.data, desc->name, R_LINE_BUFSIZE - 1);
 	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
+	r_list_free (files);
 	return true;
 }
-
-
-
-
-
 
 static bool handleEnterKey(RCore *core) {
 	RPanels *panels = core->panels;
@@ -1074,7 +1057,6 @@ static bool handleEnterKey(RCore *core) {
 		if (strstr (action, "New")) {
 			addPanelFrame (core, panels, PANEL_TITLE_NEWFILES, "o");
 		} else if (strstr (action, "Open")) {
-			/* XXX doesnt autocompletes filenames */
 			r_cons_enable_mouse (false);
 			core->cons->line->file_prompt = true;
 			r_line_set_hist_callback (core->cons->line, &file_history_up, &file_history_down);
