@@ -1432,11 +1432,7 @@ repeat:
 		r_core_visual_browse (core);
 		break;
 	case 's':
-		if (r_config_get_i (core->config, "cfg.debug")) {
-			r_core_cmd0 (core, "ds;.dr*"); // ;sr PC");
-		} else {
-			panelSingleStepIn (core);
-		}
+		panelSingleStepIn (core);
 		setRefreshAll (panels);
 		break;
 	case 'S':
