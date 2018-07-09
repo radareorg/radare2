@@ -31,6 +31,8 @@ RUN dnf install -y \
 	ncurses-devel \
 	gnupg2 \
 	python2-pip \
+	meson \
+	ninja-build \
 	xz
 
 RUN rm -rf /src/.nvm && git clone https://github.com/creationix/nvm.git /src/.nvm && (cd /src/.nvm && git checkout `git describe --abbrev=0 --tags`) && . /src/.nvm/nvm.sh && nvm install 8.11.3

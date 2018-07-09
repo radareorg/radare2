@@ -9,11 +9,14 @@ files = [
 
 r_reg = library('r_reg', files,
   include_directories: [platform_inc],
-  link_with: [r_util],
+  dependencies: [r_util_dep],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
 )
+
+r_reg_dep = declare_dependency(link_with: r_reg,
+                               include_directories: [platform_inc])
 
 pkgconfig_mod.generate(
   libraries: [r_reg],

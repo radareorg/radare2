@@ -18,24 +18,23 @@ files = [
 ]
 
 r_parse = library('r_parse', files,
-  include_directories: [
-    platform_inc,
-    include_directories(
-      '../../shlr/tcc',
-    )
-  ],
+  include_directories: platform_inc,
   c_args: ['-DCORELIB=1'],
-  link_with: [
-    r_util,
-    r_flag,
-    r_syscall,
-    r_reg,
-    libr_shlr
+  dependencies: [
+    r_util_dep,
+    r_flag_dep,
+    r_syscall_dep,
+    r_reg_dep,
+    sdb_dep,
+    tcc_dep
   ],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
 )
+
+r_parse_dep = declare_dependency(link_with: r_parse,
+                                 include_directories: platform_inc)
 
 pkgconfig_mod.generate(
   libraries: [r_parse],

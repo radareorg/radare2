@@ -150,39 +150,46 @@ files = [
   #'arch/z80/z80asm.c',
 ]
 
+r_asm_inc = [
+  platform_inc,
+  include_directories(
+    '../../shlr',
+    'arch/include',
+    'arch',
+    'arch/h8300',
+    'arch/hexagon',
+    'arch/msp430',
+    'arch/rsp',
+    'arch/v850',
+    'arch/propeller',
+    'arch/ebc',
+    'arch/cr16',
+    'arch/8051',
+    'arch/v810'
+  )
+]
+
 r_asm = library('r_asm', files,
-  include_directories: [
-    platform_inc,
-    include_directories(
-      '../../shlr/capstone/include',
-      '../../shlr',
-      'arch/include',
-      'arch',
-      'arch/h8300',
-      'arch/hexagon',
-      'arch/msp430',
-      'arch/rsp',
-      'arch/v850',
-      'arch/propeller',
-      'arch/ebc',
-      'arch/cr16',
-      'arch/8051',
-    )
-  ],
+  include_directories: r_asm_inc,
   c_args: ['-DCORELIB=1'],
-  link_with: [
-    r_util,
-    r_syscall,
-    r_parse,
-    r_lang,
-    r_flag,
-    r_socket,
-    libr_shlr
+  dependencies: [
+    r_util_dep,
+    r_syscall_dep,
+    r_parse_dep,
+    r_lang_dep,
+    r_flag_dep,
+    r_socket_dep,
+    capstone_dep,
+    spp_dep,
+    java_dep
   ],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
 )
+
+r_asm_dep = declare_dependency(link_with: r_asm,
+                               include_directories: r_asm_inc)
 
 pkgconfig_mod.generate(
   libraries: [r_asm],

@@ -55,38 +55,43 @@ if host_machine.system() == 'darwin'
   ]
 endif
 
+r_debug_inc = [
+  platform_inc,
+  include_directories(
+    '../bin/format/elf'
+  )
+]
+
 r_debug = library('r_debug', files,
-  include_directories: [
-    platform_inc,
-    include_directories(
-      '../bin/format/elf',
-      '../../shlr/gdb/include',
-      '../../shlr/qnx/include',
-      '../../shlr/bochs/include',
-      '../../shlr/windbg'
-    )
-  ],
+  include_directories: r_debug_inc,
   c_args: ['-DCORELIB=1'],
-  link_with: [
-    r_util,
-    r_hash,
-    r_reg,
-    r_syscall,
-    r_anal,
-    r_flag,
-    r_io,
-    r_bp,
-    r_search,
-    r_cons,
-    r_lang,
-    r_egg,
-    r_socket,
-    libr_shlr
+  dependencies: [
+    r_util_dep,
+    r_hash_dep,
+    r_reg_dep,
+    r_syscall_dep,
+    r_anal_dep,
+    r_flag_dep,
+    r_io_dep,
+    r_bp_dep,
+    r_search_dep,
+    r_cons_dep,
+    r_lang_dep,
+    r_egg_dep,
+    r_socket_dep,
+    windbg_dep,
+    qnx_dep,
+    gdb_dep,
+    bochs_dep,
+    sdb_dep
   ],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
 )
+
+r_debug_dep = declare_dependency(link_with: r_debug,
+                                 include_directories: r_debug_inc)
 
 pkgconfig_mod.generate(
   libraries: [r_debug],

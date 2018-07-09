@@ -1,7 +1,3 @@
-# 'big-gmp.c',
-# 'big-ssl.c',
-# 'mixed.c',
-# 'iconv.c',
 
 files = [
   'ascii_table.c',
@@ -85,18 +81,15 @@ files = [
 ]
 
 r_util = library('r_util', files,
-  include_directories: [
-    platform_inc,
-    include_directories(
-      '../../shlr/zip/include'
-    )
-  ],
-  dependencies: [ldl, mth, pth, utl],
-  link_with: [libr_shlr],
+  include_directories: platform_inc,
+  dependencies: [ldl, mth, pth, utl, sdb_dep, zip_dep],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
 )
+
+r_util_dep = declare_dependency(link_with: r_util,
+                                include_directories: platform_inc)
 
 pkgconfig_mod.generate(
   libraries: [r_util],

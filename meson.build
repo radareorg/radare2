@@ -26,7 +26,9 @@ if meson.is_subproject()
   endif
 endif
 
-version_commit = ''
+# by default, not version commit is used
+version_commit = '0'
+
 gittap = ''
 gittip = 'unknown'
 
@@ -195,7 +197,16 @@ config_h = configure_file(
   configuration: conf_data
 )
 
+sys_magic = cc.find_library('magic', required: false)
+use_lib_magic = false
+
+if sys_magic.found() and get_option('use_sys_magic')
+  use_lib_magic = true
+endif
+
 userconf = configuration_data()
+userconf.set('HAVE_LIB_MAGIC', sys_magic.found().to_int())
+userconf.set('USE_LIB_MAGIC', use_lib_magic.to_int())
 userconf.set('DEBUGGER', 1)
 userconf.set('PREFIX', r2_prefix)
 userconf.set('LIBDIR', r2_libdir)
@@ -211,8 +222,6 @@ userconf.set('HUD', r2_hud)
 userconf.set('PLUGINS', r2_plugins)
 userconf.set('EXTRAS', r2_extras)
 userconf.set('BINDINGS', r2_bindings)
-userconf.set('HAVE_LIB_MAGIC', 0)
-userconf.set('USE_LIB_MAGIC', 0)
 userconf.set('HAVE_OPENSSL', 0)
 userconf.set('HAVE_FORK', 1)
 userconf.set('WITH_GPL', 1)
@@ -322,28 +331,28 @@ if not meson.is_subproject()
   subdir('binr/rax2')
 else
   libr2_dep = declare_dependency(
-    link_with: [
-      r_anal,
-      r_asm,
-      r_bin,
-      r_bp,
-      r_config,
-      r_cons,
-      r_core,
-      r_crypto,
-      r_egg,
-      r_flag,
-      r_fs,
-      r_hash,
-      r_io,
-      r_lang,
-      r_magic,
-      r_parse,
-      r_reg,
-      r_search,
-      r_socket,
-      r_syscall,
-      r_util
+    dependencies: [
+      r_anal_dep,
+      r_asm_dep,
+      r_bin_dep,
+      r_bp_dep,
+      r_config_dep,
+      r_cons_dep,
+      r_core_dep,
+      r_crypto_dep,
+      r_egg_dep,
+      r_flag_dep,
+      r_fs_dep,
+      r_hash_dep,
+      r_io_dep,
+      r_lang_dep,
+      r_magic_dep,
+      r_parse_dep,
+      r_reg_dep,
+      r_search_dep,
+      r_socket_dep,
+      r_syscall_dep,
+      r_util_dep
     ],
     include_directories: include_directories('.', 'libr/include'),
     version: r2_version

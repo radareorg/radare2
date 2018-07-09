@@ -12,11 +12,14 @@ files = [
 
 r_search = library('r_search', files,
   include_directories: [platform_inc],
-  link_with: [r_util],
+  dependencies: [r_util_dep],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
 )
+
+r_search_dep = declare_dependency(link_with: r_search,
+                                  include_directories: [platform_inc])
 
 pkgconfig_mod.generate(
   libraries: [r_search],

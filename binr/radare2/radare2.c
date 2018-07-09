@@ -86,7 +86,9 @@ static int verify_version(int show) {
 		{ "r_hash", &r_hash_version },
 		{ "r_fs", &r_fs_version },
 		{ "r_io", &r_io_version },
+#if !USE_LIB_MAGIC
 		{ "r_magic", &r_magic_version },
+#endif
 		{ "r_parse", &r_parse_version },
 		{ "r_reg", &r_reg_version },
 		{ "r_sign", &r_sign_version },

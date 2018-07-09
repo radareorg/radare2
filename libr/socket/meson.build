@@ -11,13 +11,15 @@ files = [
 
 r_socket = library('r_socket', files,
   include_directories: [platform_inc],
-  dependencies: [utl, platform_deps],
-  link_with: [r_util],
+  dependencies: [utl, r_util_dep, platform_deps],
   c_args: ['-DCORELIB=1'],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
 )
+
+r_socket_dep = declare_dependency(link_with: r_socket,
+                                  include_directories: [platform_inc])
 
 pkgconfig_mod.generate(
   libraries: [r_socket],
