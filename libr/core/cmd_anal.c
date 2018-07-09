@@ -6771,9 +6771,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				rowlog (core, "Analyze len bytes of instructions for references (aar)");
 				(void)r_core_anal_refs (core, ""); // "aar"
 				rowlog_done (core);
-				rowlog (core, "Type matching analysis for all functions (afta)");
-				r_core_cmd0 (core, "afta");
-				rowlog_done (core);
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
@@ -6821,14 +6818,14 @@ static int cmd_anal_all(RCore *core, const char *input) {
 						r_core_recover_vars (core, fcni, true);
 					}
 				}
+				rowlog (core, "Type matching analysis for all functions (afta)");
+				r_core_cmd0 (core, "afta");
+				rowlog_done (core);
 				if (input[1] == 'a') { // "aaaa"
 					if (sdb_count (core->anal->sdb_zigns) > 0) {
 						rowlog (core, "Check for zignature from zigns folder (z/)");
 						r_core_cmd0 (core, "z/");
 					}
-					rowlog (core, "Type matching analysis for all functions (afta)");
-					r_core_cmd0 (core, "afta");
-					rowlog_done (core);
 				}
 				r_core_cmd0 (core, "s-");
 				if (dh_orig) {
