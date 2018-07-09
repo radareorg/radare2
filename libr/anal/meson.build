@@ -80,7 +80,32 @@ files = [
   'p/anal_xtensa.c',
   'p/anal_z80.c',
   #'arch/gb/meta_gb_cmt.c',
-  'arch/hexagon/hexagon_anal.c'
+  'arch/hexagon/hexagon_anal.c',
+  '../asm/arch/arm/winedbg/be_arm.c',
+  '../asm/arch/cr16/cr16_disas.c',
+  '../asm/arch/ebc/ebc_disas.c',
+  '../asm/arch/h8300/h8300_disas.c',
+  '../asm/arch/hexagon/hexagon.c',
+  '../asm/arch/hexagon/hexagon_disas.c',
+  '../asm/arch/msp430/msp430_disas.c',
+  '../asm/arch/pic/pic_midrange.c',
+  '../asm/arch/ppc/libvle/vle.c',
+  '../asm/arch/propeller/propeller_disas.c',
+  '../asm/arch/rsp/rsp_idec.c',
+  '../asm/arch/tms320/tms320_dasm.c',
+  '../asm/arch/tms320/c55x_plus/ins.c',
+  '../asm/arch/tms320/c55x_plus/c55plus.c',
+  '../asm/arch/tms320/c55x_plus/c55plus_decode.c',
+  '../asm/arch/tms320/c55x_plus/decode_funcs.c',
+  '../asm/arch/tms320/c55x_plus/hashtable.c',
+  '../asm/arch/tms320/c55x_plus/utils.c',
+  '../asm/arch/v810/v810_disas.c',
+  '../asm/arch/v850/v850_disas.c',
+  '../asm/arch/wasm/wasm.c',
+  '../asm/arch/xtensa/gnu/xtensa-dis.c',
+  '../asm/arch/xtensa/gnu/elf32-xtensa.c',
+  '../asm/arch/xtensa/gnu/xtensa-isa.c',
+  '../asm/arch/xtensa/gnu/xtensa-modules.c'
 ]
 
 r_anal_inc = [
