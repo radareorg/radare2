@@ -326,6 +326,9 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			if (i >= (bsize - 32)) {
 				i = 0;
 			}
+			if ((addr >= bb->addr + bb->size) || (addr < bb->addr)) {
+				break;
+			}
 			if (!i) {
 				r_io_read_at (core->io, addr, buf, bsize);
 			}
@@ -337,8 +340,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 				continue;
 			}
 			int loop_count = sdb_num_get (anal->esil->db_trace, sdb_fmt ("0x%"PFMT64x".count", addr), 0);
-			if (loop_count > LOOP_MAX || aop.type == R_ANAL_OP_TYPE_RET
-					|| addr >= bb->addr + bb->size || addr < bb->addr) {
+			if (loop_count > LOOP_MAX || aop.type == R_ANAL_OP_TYPE_RET) {
 				r_anal_op_fini (&aop);
 				break;
 			}
