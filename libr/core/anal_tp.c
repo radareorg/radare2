@@ -133,7 +133,9 @@ static char *get_src_regname (RCore *core, ut64 addr) {
 	RRegItem *ri = r_reg_get (anal->reg, regname, -1);
 	if (ri) {
 		if ((anal->bits == 64) && (ri->size == 32)) {
-			regname = strdup (r_reg_32_to_64 (anal->reg, regname));
+			char *foo = strdup (r_reg_32_to_64 (anal->reg, regname));
+			free (regname);
+			regname = foo;
 		}
 	} else {
 		regname = NULL;
@@ -200,19 +202,19 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 faddr, const
 				goto beach;
 			}
 			RAnalOp *op = r_core_anal_op (core, instr_addr, R_ANAL_OP_MASK_BASIC);
-			if (op && op->type == R_ANAL_OP_TYPE_CALL) {
+			if (!op || (op && op->type == R_ANAL_OP_TYPE_CALL)) {
 				r_anal_op_free (op);
 				break;
 			}
 			char *key = NULL;
-			RAnalVar *var = op? op->var: NULL;
+			RAnalVar *var = op->var;
 			if (!in_stack) {
 				key = sdb_fmt ("fcn.0x%08"PFMT64x".arg.%s", caddr, place);
 			} else {
 				key = sdb_fmt ("fcn.0x%08"PFMT64x".arg.%d", caddr, size);
 			}
 			const char *query = sdb_fmt ("%d.mem.read", j);
-			if ((op->type == R_ANAL_OP_TYPE_MOV) && sdb_const_get (trace, query, 0)) {
+			if (op->type == R_ANAL_OP_TYPE_MOV && sdb_const_get (trace, query, 0)) {
 				memref = (!memref && var && (var->kind != R_ANAL_VAR_KIND_REG))? false: true;
 			}
 			// Match type from function param to instr
@@ -247,14 +249,17 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 faddr, const
 					}
 					res = true;
 				} else {
-					if (op && (op->type == R_ANAL_OP_TYPE_MOV
-							|| op->type == R_ANAL_OP_TYPE_PUSH)) {
+					switch (op->type) {
+					case R_ANAL_OP_TYPE_MOV:
+					case R_ANAL_OP_TYPE_PUSH:
 						free (regname);
 						regname = get_src_regname (core, instr_addr);
-					} else if (op && (op->type == R_ANAL_OP_TYPE_LEA
-								|| op->type == R_ANAL_OP_TYPE_LOAD
-								|| op->type == R_ANAL_OP_TYPE_STORE)){
-						regname = NULL;
+						break;
+					case R_ANAL_OP_TYPE_LEA:
+					case R_ANAL_OP_TYPE_LOAD:
+					case R_ANAL_OP_TYPE_STORE:
+						R_FREE (regname);
+						break;
 					}
 				}
 			} else if (var && res && (xaddr != UT64_MAX)) { // Type progation using value

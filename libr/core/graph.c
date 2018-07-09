@@ -338,7 +338,9 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 		append_shortcut (g, title, n->title, sizeof (title) - strlen (title) - 1);
 	}
 	if ((delta_x < strlen (title)) && G (n->x + MARGIN_TEXT_X + delta_x, n->y + 1)) {
-		W (r_str_ansi_crop (title, delta_x, 0, n->w - BORDER_WIDTH, 1));
+		char *res = r_str_ansi_crop (title, delta_x, 0, n->w - BORDER_WIDTH, 1);
+		W (res);
+		free (res);
 	}
 
 	/* print the body */

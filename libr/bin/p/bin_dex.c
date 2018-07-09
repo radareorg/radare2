@@ -407,14 +407,11 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 		parameters_size--;
 	}
 
-	if (!p4) {
+	if (!p4 || p4 >= p4_end) {
 		free (debug_positions);
 		free (params);
 		free (debug_locals);
 		free (emitted_debug_locals);
-		return;
-	}
-	if (p4 >= p4_end) {
 		return;
 	}
 	ut8 opcode = *(p4++) & 0xff;
@@ -623,7 +620,8 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 #endif
 		RBinDwarfRow *rbindwardrow = R_NEW0 (RBinDwarfRow);
 		if (!rbindwardrow) {
-			return;
+			dexdump = false;
+			break;
 		}
 		if (line) {
 			rbindwardrow->file = strdup (line);
