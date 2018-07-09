@@ -6771,6 +6771,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				rowlog (core, "Analyze len bytes of instructions for references (aar)");
 				(void)r_core_anal_refs (core, ""); // "aar"
 				rowlog_done (core);
+				rowlog (core, "Type matching analysis for all functions (afta)");
+				r_core_cmd0 (core, "afta");
+				rowlog_done (core);
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
