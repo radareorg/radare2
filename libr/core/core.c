@@ -2963,6 +2963,9 @@ static bool isValidAddress (RCore *core, ut64 addr) {
 	if (!map) {
 		return false;
 	}
+	if (map->delta > r_io_fd_size (core->io, map->fd)) {
+		return false;
+	}
 	// check if associated file is opened
 	RIODesc *desc = r_io_desc_get (core->io, map->fd);
 	if (!desc) {
@@ -3014,7 +3017,12 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 		bool res = r_io_read_at (core->io, from, buf, sizeof (buf));
 		if (!res || !memcmp (buf, "\xff\xff\xff\xff", 4) || !memcmp (buf, "\x00\x00\x00\x00", 4)) {
 			if (!isValidAddress (core, from)) {
-				from += sizeof (buf);
+				ut64 next = r_io_map_next_address (core->io, from);
+				if (next == UT64_MAX) {
+					from += sizeof (buf);
+				} else {
+					from += (next - from);
+				}
 				continue;
 			}
 		}
