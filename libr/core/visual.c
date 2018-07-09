@@ -967,9 +967,9 @@ static void visual_offset(RCore *core) {
 		}
 		r_core_cmd0 (core, buf);
 		restore_current_addr (core, addr, bsze, newaddr);
-		r_line_set_hist_callback (core->cons->line, &cmd_history_up, &cmd_history_down);
-		core->cons->line->offset_prompt = false;
 	}
+	r_line_set_hist_callback (core->cons->line, &cmd_history_up, &cmd_history_down);
+	core->cons->line->offset_prompt = false;
 }
 
 static int prevopsz(RCore *core, ut64 addr) {
