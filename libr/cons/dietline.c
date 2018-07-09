@@ -78,7 +78,7 @@ static void kill_word() {
 	I.buffer.length = strlen (I.buffer.data);
 }
 
-static void yank() {
+static void paste() {
 	if (I.clipboard) {
 		char *cursor = I.buffer.data + I.buffer.index;
 		int dist = (I.buffer.data + I.buffer.length) - cursor;
@@ -825,7 +825,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 		case 24:// ^X -- do nothing but store in prev = *buf
 			break;
 		case 25:// ^Y - paste
-			yank ();
+			paste ();
 			break;
 		case 14:// ^n
 			if (gcomp) {
@@ -1190,7 +1190,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		case 24:// ^X -- do nothing but store in prev = *buf
 			break;
 		case 25:// ^Y - paste
-			yank ();
+			paste ();
 			break;
 		case 14:// ^n
 			if (gcomp) {
