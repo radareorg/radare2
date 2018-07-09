@@ -251,7 +251,8 @@ do_it_again:
 R_API int r_line_set_hist_callback(RLine *line, RLineHistoryUpCb up, RLineHistoryDownCb down) {
 	line->cb_history_up = up;
 	line->cb_history_down = down;
-	line->offset_index = 0;
+	line->offset_hist_index = 0;
+	line->file_hist_index = 0;
 	return 1;
 }
 
