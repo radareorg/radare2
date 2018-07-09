@@ -153,7 +153,6 @@ files = [
 r_asm_inc = [
   platform_inc,
   include_directories(
-    '../../shlr',
     'arch/include',
     'arch',
     'arch/h8300',
