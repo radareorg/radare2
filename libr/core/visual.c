@@ -908,11 +908,11 @@ R_API ut64 r_core_prevop_addr_force(RCore *core, ut64 start_addr, int numinstrs)
 R_API int offset_history_up(RLine *line) {
 	RCore *core = line->user;
 	RIOUndo *undo = &core->io->undo;
-	if (line->offset_index <= -undo->undos) {
+	if (line->offset_hist_index <= -undo->undos) {
 		return false;
 	}
-	line->offset_index--;
-	ut64 off = undo->seek[undo->idx + line->offset_index].off;
+	line->offset_hist_index--;
+	ut64 off = undo->seek[undo->idx + line->offset_hist_index].off;
 	RFlagItem *f = r_flag_get_at (core->flags, off, false);
 	char *command;
 	if (f && f->offset == off && f->offset > 0) {
@@ -929,16 +929,16 @@ R_API int offset_history_up(RLine *line) {
 R_API int offset_history_down(RLine *line) {
 	RCore *core = line->user;
 	RIOUndo *undo = &core->io->undo;
-	if (line->offset_index >= undo->redos) {
+	if (line->offset_hist_index >= undo->redos) {
 		return false;
 	}
-	line->offset_index++;
-	if (line->offset_index == undo->redos) {
+	line->offset_hist_index++;
+	if (line->offset_hist_index == undo->redos) {
 		line->buffer.data[0] = '\0';
 		line->buffer.index = line->buffer.length = 0;
 		return false;
 	}
-	ut64 off = undo->seek[undo->idx + line->offset_index].off;
+	ut64 off = undo->seek[undo->idx + line->offset_hist_index].off;
 	RFlagItem *f = r_flag_get_at (core->flags, off, false);
 	char *command;
 	if (f && f->offset == off && f->offset > 0) {

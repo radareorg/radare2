@@ -1015,6 +1015,58 @@ static bool init (RCore *core, RPanels *panels, int w, int h) {
 	return true;
 }
 
+R_API int file_history_up(RLine *line) {
+	RCore *core = line->user;
+	RIOUndo *undo = &core->io->undo;
+	if (line->offset_hist_index <= -undo->undos) {
+		return false;
+	}
+	line->offset_hist_index--;
+	ut64 off = undo->seek[undo->idx + line->offset_hist_index].off;
+	RFlagItem *f = r_flag_get_at (core->flags, off, false);
+	char *command;
+	if (f && f->offset == off && f->offset > 0) {
+		command = r_str_newf ("%s", f->name);
+	}
+	else {
+		command = r_str_newf ("0x%"PFMT64x, off);
+	}
+	strncpy (line->buffer.data, command, R_LINE_BUFSIZE - 1);
+	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
+	return true;
+}
+
+R_API int file_history_down(RLine *line) {
+	RCore *core = line->user;
+	RIOUndo *undo = &core->io->undo;
+	if (line->offset_hist_index >= undo->redos) {
+		return false;
+	}
+	line->offset_hist_index++;
+	if (line->offset_hist_index == undo->redos) {
+		line->buffer.data[0] = '\0';
+		line->buffer.index = line->buffer.length = 0;
+		return false;
+	}
+	ut64 off = undo->seek[undo->idx + line->offset_hist_index].off;
+	RFlagItem *f = r_flag_get_at (core->flags, off, false);
+	char *command;
+	if (f && f->offset == off && f->offset > 0) {
+		command = r_str_newf ("%s", f->name);
+	}
+	else {
+		command = r_str_newf ("0x%"PFMT64x, off);
+	}
+	strncpy (line->buffer.data, command, R_LINE_BUFSIZE - 1);
+	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
+	return true;
+}
+
+
+
+
+
+
 static bool handleEnterKey(RCore *core) {
 	RPanels *panels = core->panels;
 	if (panels->curnode == 0 && panels->menu_y) {
@@ -1024,6 +1076,8 @@ static bool handleEnterKey(RCore *core) {
 		} else if (strstr (action, "Open")) {
 			/* XXX doesnt autocompletes filenames */
 			r_cons_enable_mouse (false);
+			core->cons->line->file_prompt = true;
+			r_line_set_hist_callback (core->cons->line, &file_history_up, &file_history_down);
 			char *res = r_cons_input ("open file: ");
 			if (res) {
 				if (*res) {
@@ -1031,6 +1085,8 @@ static bool handleEnterKey(RCore *core) {
 				}
 				free (res);
 			}
+			core->cons->line->file_prompt = false;
+			r_line_set_hist_callback (core->cons->line, &cmd_history_up, &cmd_history_down);
 			r_cons_enable_mouse (true);
 		} else if (strstr (action, "RegisterRefs")) {
 			addPanelFrame (core, panels, "drr", "drr");
