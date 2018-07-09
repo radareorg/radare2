@@ -2,8 +2,8 @@
 
 #include "r_core.h"
 #include "r_socket.h"
-#include "gdb/include/libgdbr.h"
-#include "gdb/include/gdbserver/core.h"
+#include "libgdbr.h"
+#include "gdbserver/core.h"
 
 #if 0
 SECURITY IMPLICATIONS

@@ -4,7 +4,7 @@
 #include <r_list.h>
 #include <r_flag.h>
 #include <r_core.h>
-#include <spp/spp.h>
+#include <spp.h>
 
 #if 0
 static void __section_list_for_projects (RIO *io, RPrint *print) {

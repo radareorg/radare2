@@ -94,6 +94,7 @@ r_core = library('r_core', files,
     r_bp_dep,
     platform_deps,
     sdb_dep,
+    spp_dep,
     gdb_dep,
     java_dep
   ],

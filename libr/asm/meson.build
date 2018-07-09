@@ -164,6 +164,7 @@ r_asm_inc = [
     'arch/ebc',
     'arch/cr16',
     'arch/8051',
+    'arch/v810',
   )
 ]
 
