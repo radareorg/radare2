@@ -50,15 +50,9 @@ static void backward_kill_word() {
 		if (I.buffer.index > I.buffer.length) {
 			I.buffer.length = I.buffer.index;
 		}
-
 		len = I.buffer.index - i + 1;
 		free (I.clipboard);
-		I.clipboard = malloc (len + 1);
-		if (I.clipboard != NULL) {
-			strncpy (I.clipboard, I.buffer.data + i, len);
-			I.clipboard[len - 1] = '\0';
-		}
-
+		I.clipboard = r_str_ndup(I.buffer.data + i, len);
 		memmove (I.buffer.data + i, I.buffer.data + I.buffer.index,
 				I.buffer.length - I.buffer.index + 1);
 		I.buffer.length = strlen (I.buffer.data);
@@ -77,15 +71,9 @@ static void kill_word() {
 	if (I.buffer.index >= I.buffer.length) {
 		I.buffer.length = I.buffer.index;
 	}
-
 	len = i - I.buffer.index + 1;
 	free (I.clipboard);
-	I.clipboard = malloc (len + 1);
-	if (I.clipboard != NULL) {
-		strncpy (I.clipboard, I.buffer.data + I.buffer.index, len);
-		I.clipboard[len - 1] = '\0';
-	}
-
+	I.clipboard = r_str_ndup(I.buffer.data + I.buffer.index, len);
 	memmove (I.buffer.data + I.buffer.index, I.buffer.data + i, len);
 	I.buffer.length = strlen (I.buffer.data);
 }
@@ -93,7 +81,7 @@ static void kill_word() {
 static void yank() {
 	int len, dist;
 	char *cursor;
-	if (I.clipboard != NULL) {
+	if (I.clipboard) {
 		cursor = I.buffer.data + I.buffer.index;
 		dist = (I.buffer.data + I.buffer.length) - cursor;
 		len = strlen (I.clipboard);
@@ -839,7 +827,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 		case 24:// ^X -- do nothing but store in prev = *buf
 			break;
 		case 25:// ^Y - paste
-			yank();
+			yank ();
 			break;
 		case 14:// ^n
 			if (gcomp) {
@@ -1204,7 +1192,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		case 24:// ^X -- do nothing but store in prev = *buf
 			break;
 		case 25:// ^Y - paste
-			yank();
+			yank ();
 			break;
 		case 14:// ^n
 			if (gcomp) {
