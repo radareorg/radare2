@@ -1633,6 +1633,7 @@ repeat:
 			key = r_core_cmd0 (core, cmd);
 		} else {
 			panelSingleStepIn (core);
+			setRefreshAll (panels);
 		}
 		break;
 	case R_CONS_KEY_F8:
@@ -1641,6 +1642,7 @@ repeat:
 			key = r_core_cmd0 (core, cmd);
 		} else {
 			panelSingleStepOver (core);
+			setRefreshAll (panels);
 		}
 		break;
 	case R_CONS_KEY_F9:
