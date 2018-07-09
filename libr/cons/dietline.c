@@ -34,7 +34,7 @@ static inline bool is_word_break_char(char ch) {
 
 /* https://www.gnu.org/software/bash/manual/html_node/Commands-For-Killing.html */
 static void backward_kill_word() {
-	int i;
+	int i, len;
 	if (I.buffer.index > 0) {
 		for (i = I.buffer.index - 1; i > 0 && is_word_break_char (I.buffer.data[i]); i--) {
 			/* Move the cursor index back until we hit a non-word-break-character */
@@ -50,6 +50,9 @@ static void backward_kill_word() {
 		if (I.buffer.index > I.buffer.length) {
 			I.buffer.length = I.buffer.index;
 		}
+		len = I.buffer.index - i + 1;
+		free (I.clipboard);
+		I.clipboard = r_str_ndup (I.buffer.data + i, len);
 		memmove (I.buffer.data + i, I.buffer.data + I.buffer.index,
 				I.buffer.length - I.buffer.index + 1);
 		I.buffer.length = strlen (I.buffer.data);
@@ -58,7 +61,7 @@ static void backward_kill_word() {
 }
 
 static void kill_word() {
-	int i;
+	int i, len;
 	for (i = I.buffer.index + 1; i < I.buffer.length && is_word_break_char (I.buffer.data[i]); i++) {
 		/* Move the cursor index forward until we hit a non-word-break-character */
 	}
@@ -68,9 +71,23 @@ static void kill_word() {
 	if (I.buffer.index >= I.buffer.length) {
 		I.buffer.length = I.buffer.index;
 	}
-	memmove (I.buffer.data + I.buffer.index, I.buffer.data + i,
-			I.buffer.length - i + 1);
+	len = i - I.buffer.index + 1;
+	free (I.clipboard);
+	I.clipboard = r_str_ndup (I.buffer.data + I.buffer.index, len);
+	memmove (I.buffer.data + I.buffer.index, I.buffer.data + i, len);
 	I.buffer.length = strlen (I.buffer.data);
+}
+
+static void paste() {
+	if (I.clipboard) {
+		char *cursor = I.buffer.data + I.buffer.index;
+		int dist = (I.buffer.data + I.buffer.length) - cursor;
+		int len = strlen (I.clipboard);
+		I.buffer.length += len;
+		memmove (cursor + len, cursor, dist);
+		memcpy (cursor, I.clipboard, len);
+		I.buffer.index += len;
+	}
 }
 
 static void unix_word_rubout() {
@@ -808,16 +825,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 		case 24:// ^X -- do nothing but store in prev = *buf
 			break;
 		case 25:// ^Y - paste
-			if (I.clipboard != NULL) {
-				I.buffer.length += strlen (I.clipboard);
-				// TODO: support endless strings
-				if (I.buffer.length < R_LINE_BUFSIZE) {
-					I.buffer.index = I.buffer.length;
-					strcat (I.buffer.data, I.clipboard);
-				} else {
-					I.buffer.length -= strlen (I.clipboard);
-				}
-			}
+			paste ();
 			break;
 		case 14:// ^n
 			if (gcomp) {
@@ -1182,16 +1190,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 		case 24:// ^X -- do nothing but store in prev = *buf
 			break;
 		case 25:// ^Y - paste
-			if (I.clipboard != NULL) {
-				I.buffer.length += strlen (I.clipboard);
-				// TODO: support endless strings
-				if (I.buffer.length < R_LINE_BUFSIZE) {
-					I.buffer.index = I.buffer.length;
-					strcat (I.buffer.data, I.clipboard);
-				} else {
-					I.buffer.length -= strlen (I.clipboard);
-				}
-			}
+			paste ();
 			break;
 		case 14:// ^n
 			if (gcomp) {
