@@ -2,6 +2,11 @@
 
 #include <r_core.h>
 
+typedef struct oneshot_t {
+	RCoreTaskOneShot func;
+	void *user;
+} OneShot;
+
 R_API void r_core_task_print (RCore *core, RCoreTask *task, int mode) {
 	switch (mode) {
 	case 'j':
@@ -174,6 +179,14 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 		r_th_lock_leave (current->dispatch_lock);
 	}
 
+	// oneshots always have priority.
+	// if there are any queued, run them immediately.
+	OneShot *oneshot;
+	while ((oneshot = r_list_pop_head (core->oneshot_queue))) {
+		oneshot->func (oneshot->user);
+		free (oneshot);
+	}
+
 	RCoreTask *next = r_list_pop_head (core->tasks_queue);
 
 	if (next && !stop) {
@@ -300,6 +313,24 @@ R_API void r_core_task_enqueue(RCore *core, RCoreTask *task) {
 	}
 	r_list_append (core->tasks, task);
 	task->thread = r_th_new (task_run_thread, task, 0);
+	r_th_lock_leave (core->tasks_lock);
+}
+
+R_API void r_core_task_enqueue_oneshot(RCore *core, RCoreTaskOneShot func, void *user) {
+	if (!core || !func) {
+		return;
+	}
+	r_th_lock_enter (core->tasks_lock);
+	if (core->tasks_running == 0) {
+		// nothing is running right now and no other task can be scheduled
+		// while core->tasks_lock is locked => just run it
+		func (user);
+	} else {
+		OneShot *oneshot = R_NEW (OneShot);
+		if (oneshot) {
+			r_list_append (core->oneshot_queue, oneshot);
+		}
+	}
 	r_th_lock_leave (core->tasks_lock);
 }
 

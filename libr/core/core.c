@@ -2035,6 +2035,7 @@ R_API bool r_core_init(RCore *core) {
 	core->task_id_next = 0;
 	core->tasks = r_list_newf ((RListFree)r_core_task_free);
 	core->tasks_queue = r_list_new ();
+	core->oneshot_queue = r_list_newf (free);
 	core->tasks_lock = r_th_lock_new (false);
 	core->tasks_running = 0;
 	core->main_task = r_core_task_new (core, false, NULL, NULL, NULL);
@@ -2241,6 +2242,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	r_list_free (c->scriptstack);
 	r_list_free (c->tasks);
 	r_list_free (c->tasks_queue);
+	r_list_free (c->oneshot_queue);
 	r_th_lock_free (c->tasks_lock);
 	c->rcmd = r_cmd_free (c->rcmd);
 	r_list_free (c->cmd_descriptors);
