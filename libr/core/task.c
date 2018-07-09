@@ -164,7 +164,7 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 	RCore *core = current->core;
 	bool stop = next_state != R_CORE_TASK_STATE_RUNNING;
 
-	if (!stop && core->tasks_running == 1) {
+	if (!stop && (core->tasks_running == 1 || core->oneshot_running)) {
 		return;
 	}
 
@@ -183,7 +183,9 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 	// if there are any queued, run them immediately.
 	OneShot *oneshot;
 	while ((oneshot = r_list_pop_head (core->oneshot_queue))) {
+		core->oneshot_running = true;
 		oneshot->func (oneshot->user);
+		core->oneshot_running = false;
 		free (oneshot);
 	}
 
@@ -324,7 +326,9 @@ R_API void r_core_task_enqueue_oneshot(RCore *core, RCoreTaskOneShot func, void 
 	if (core->tasks_running == 0) {
 		// nothing is running right now and no other task can be scheduled
 		// while core->tasks_lock is locked => just run it
+		core->oneshot_running = true;
 		func (user);
+		core->oneshot_running = false;
 	} else {
 		OneShot *oneshot = R_NEW (OneShot);
 		if (oneshot) {

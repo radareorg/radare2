@@ -3075,6 +3075,10 @@ static void visual_refresh(RCore *core) {
 	}
 }
 
+static void visual_refresh_oneshot(RCore *core) {
+	r_core_task_enqueue_oneshot (core, (RCoreTaskOneShot) visual_refresh, core);
+}
+
 R_API int r_core_visual(RCore *core, const char *input) {
 	const char *cmdprompt, *teefile;
 	ut64 scrseek;
@@ -3165,8 +3169,9 @@ dodo:
 		if (wheel) {
 			r_cons_enable_mouse (true);
 		}
+		core->cons->event_resize = NULL; // avoid running old event with new data
 		core->cons->event_data = core;
-		core->cons->event_resize = (RConsEvent) visual_refresh;
+		core->cons->event_resize = (RConsEvent) visual_refresh_oneshot;
 		flags = core->print->flags;
 		color = r_config_get_i (core->config, "scr.color");
 		if (color) {

@@ -2338,6 +2338,7 @@ static void r_core_visual_anal_refresh_column (RCore *core, int colpos) {
 }
 
 static ut64 r_core_visual_anal_refresh (RCore *core) {
+	eprintf("r_core_visual_anal_refresh\n");
 	if (!core) {
 		return 0LL;
 	}
@@ -2405,13 +2406,22 @@ static ut64 r_core_visual_anal_refresh (RCore *core) {
 	return addr;
 }
 
+static void r_core_visual_anal_refresh_oneshot (RCore *core) {
+	r_core_task_enqueue_oneshot (core, (RCoreTaskOneShot) r_core_visual_anal_refresh, core);
+}
+
 /* Like emenu but for real */
 R_API void r_core_visual_anal(RCore *core) {
 	char old[218];
 	int nfcns, ch, _option = 0;
+
 	RConsEvent olde = core->cons->event_resize;
-	core->cons->event_resize = (RConsEvent) r_core_visual_anal_refresh;
-	core->cons->event_data = (void *) core;
+	void *olde_user = core->cons->event_data;
+
+	core->cons->event_resize = NULL; // avoid running old event with new data
+	core->cons->event_data = core;
+	core->cons->event_resize = (RConsEvent) r_core_visual_anal_refresh_oneshot;
+
 	level = 0;
 	addr = core->offset;
 
@@ -2645,6 +2655,8 @@ R_API void r_core_visual_anal(RCore *core) {
 		}
 	}
 beach:
+	core->cons->event_resize = NULL; // avoid running old event with new data
+	core->cons->event_data = olde_user;
 	core->cons->event_resize = olde;
 	level = 0;
 	r_config_set_i (core->config, "asm.bytes", asmbytes);
