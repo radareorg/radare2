@@ -32,7 +32,7 @@ static const char *mousemodes[] = {
 #define PAGEKEY_SPEED (h / 2)
 /* 15 */
 #define MINIGRAPH_NODE_TEXT_CUR "<@@@@@@>"
-#define MINIGRAPH_NODE_MIN_WIDTH 8
+#define MINIGRAPH_NODE_MIN_WIDTH 12
 #define MINIGRAPH_NODE_TITLE_LEN 4
 #define MINIGRAPH_NODE_CENTER_X 3
 #define MININODE_MIN_WIDTH 16
@@ -231,6 +231,18 @@ static void update_node_dimension(const RGraph *g, int is_mini, int zoom, int ed
 	}
 }
 
+static void append_shortcut (const RAGraph *g, char *title, char *nodetitle, int left) {
+	char *shortcut = sdb_get (g->db, sdb_fmt ("agraph.nodes.%s.shortcut", nodetitle), 0);
+	if (shortcut) {
+		if (g->can->color) {
+			strncat (title, sdb_fmt ("\x1b[33m[g%s]",  shortcut), left);
+		} else {
+			strncat (title, sdb_fmt ("[g%s]", shortcut), left);
+		}
+		free (shortcut);
+	}
+}
+
 static void mini_RANode_print(const RAGraph *g, const RANode *n, int cur, bool details) {
 	char title[TITLE_LEN];
 	int x, delta_x = 0;
@@ -265,10 +277,6 @@ static void mini_RANode_print(const RAGraph *g, const RANode *n, int cur, bool d
 				W (n->body);
 			}
 		} else {
-
-
-
-
 			char *str = "____";
 			if (n->title) {
 				int l = strlen (n->title);
@@ -277,16 +285,13 @@ static void mini_RANode_print(const RAGraph *g, const RANode *n, int cur, bool d
 					str += l - MINIGRAPH_NODE_TITLE_LEN;
 				}
 			}
-			snprintf (title, sizeof (title) - 1, "__%s__", str);
-
-			char *shortcut;
-			shortcut = sdb_get (g->db, sdb_fmt ("agraph.nodes.%s.shortcut", n->title), 0);
-			if (shortcut) {
-				strncat (title, sdb_fmt (" [g%s]", shortcut), sizeof (title) - strlen (title) - 1);
-				free (shortcut);
+			if (g->can->color) {
+				snprintf (title, sizeof (title) - 1, "%s__%s__", Color_RESET, str);
+			} else {
+				snprintf (title, sizeof (title) - 1, "__%s__", str);
 			}
-			
-			W (title + delta_x);
+			append_shortcut (g, title, n->title, sizeof (title) - strlen (title) - 1);
+			W (r_str_ansi_crop (title, delta_x, 0, 20, 1));
 		}
 	} else {
 		snprintf (title, sizeof (title) - 1,
@@ -312,7 +317,6 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	char title[TITLE_LEN];
 	char *body;
 	int x, y;
-	char *shortcut;
 
 	x = n->x + g->can->sx;
 	y = n->y + g->can->sy;
@@ -325,19 +329,16 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	if (y < -1) {
 		delta_y = R_MIN (n->h - BORDER_HEIGHT - 1, -y - MARGIN_TEXT_Y);
 	}
-	shortcut = sdb_get (g->db, sdb_fmt ("agraph.nodes.%s.shortcut", n->title), 0);
 	/* print the title */
 	if (cur) {
 		snprintf (title, sizeof (title) - 1, "[%s]", n->title);
 	} else {
-		snprintf (title, sizeof (title) - 1, " %s", n->title);
-	}
-	if (shortcut) {
-		strncat (title, sdb_fmt (" ;[g%s]", shortcut), sizeof (title) - strlen (title) - 1);
-		free (shortcut);
+		char *color = g->can->color ? Color_RESET : "";
+		snprintf (title, sizeof (title) - 1, " %s%s ", color, n->title);
+		append_shortcut (g, title, n->title, sizeof (title) - strlen (title) - 1);
 	}
 	if ((delta_x < strlen (title)) && G (n->x + MARGIN_TEXT_X + delta_x, n->y + 1)) {
-		W (title + delta_x);
+		W (r_str_ansi_crop (title, delta_x, 0, n->w - BORDER_WIDTH, 1));
 	}
 
 	/* print the body */
