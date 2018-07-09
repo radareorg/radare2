@@ -52,7 +52,7 @@ static void backward_kill_word() {
 		}
 		len = I.buffer.index - i + 1;
 		free (I.clipboard);
-		I.clipboard = r_str_ndup(I.buffer.data + i, len);
+		I.clipboard = r_str_ndup (I.buffer.data + i, len);
 		memmove (I.buffer.data + i, I.buffer.data + I.buffer.index,
 				I.buffer.length - I.buffer.index + 1);
 		I.buffer.length = strlen (I.buffer.data);
@@ -73,18 +73,16 @@ static void kill_word() {
 	}
 	len = i - I.buffer.index + 1;
 	free (I.clipboard);
-	I.clipboard = r_str_ndup(I.buffer.data + I.buffer.index, len);
+	I.clipboard = r_str_ndup (I.buffer.data + I.buffer.index, len);
 	memmove (I.buffer.data + I.buffer.index, I.buffer.data + i, len);
 	I.buffer.length = strlen (I.buffer.data);
 }
 
 static void yank() {
-	int len, dist;
-	char *cursor;
 	if (I.clipboard) {
-		cursor = I.buffer.data + I.buffer.index;
-		dist = (I.buffer.data + I.buffer.length) - cursor;
-		len = strlen (I.clipboard);
+		char *cursor = I.buffer.data + I.buffer.index;
+		int dist = (I.buffer.data + I.buffer.length) - cursor;
+		int len = strlen (I.clipboard);
 		I.buffer.length += len;
 		memmove (cursor + len, cursor, dist);
 		memcpy (cursor, I.clipboard, len);
