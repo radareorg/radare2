@@ -1730,6 +1730,12 @@ repeat:
 		// sleep (1);
 		break;
 	}
+	const int keyNum = key - 48;
+	if ('0' <= key && key <= '9' && keyNum < panels->n_panels) {
+		panels->panel[panels->curnode].refresh = true;
+		panels->curnode = keyNum;
+		panels->panel[panels->curnode].refresh = true;
+	}
 	goto repeat;
 exit:
 	core->print->cur = originCursor;
