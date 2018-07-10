@@ -6731,9 +6731,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			rowlog_done (core);
 			// Run pending analysis immediately after analysis
 			// Usefull when running commands with ";" or via r2 -c,-i
-			if (core->anal && core->anal->cmdtail) {
-				r_core_cmd0 (core, "");
-			}
+			run_pending_anal (core);
 			dh_orig = core->dbg->h
 					? strdup (core->dbg->h->name)
 					: strdup ("esil");
@@ -6779,9 +6777,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
-				if (core->anal && core->anal->cmdtail) {
-					r_core_cmd0 (core, "");
-				}
+				run_pending_anal (core);
 				r_config_set_i (core->config, "anal.calls", c);
 				rowlog (core, "Constructing a function name for fcn.* and sym.func.* functions (aan)");
 				if (r_cons_is_breaked ()) {

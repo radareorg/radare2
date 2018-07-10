@@ -3482,6 +3482,15 @@ out_finish:
 	return false;
 }
 
+R_API void run_pending_anal(RCore *core) {
+	if (core && core->anal && core->anal->cmdtail) {
+		char *res = core->anal->cmdtail;
+		core->anal->cmdtail = NULL;
+		r_core_cmd_lines (core, res);
+		free (res);
+	}
+}
+
 R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	char *cmd, *ocmd, *ptr, *rcmd;
 	int ret = false, i;
@@ -3567,12 +3576,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 	}
 	r_th_lock_leave (core->lock);
 	/* run pending analysis commands */
-	if (core && core->anal && core->anal->cmdtail) {
-		char *res = core->anal->cmdtail;
-		core->anal->cmdtail = NULL;
-		r_core_cmd_lines (core, res);
-		free (res);
-	}
+	run_pending_anal (core);
 	core->cmd_depth++;
 	free (ocmd);
 	free (core->oobi);
@@ -3590,12 +3594,7 @@ beach:
 		}
 	}
 	/* run pending analysis commands */
-	if (core->anal->cmdtail) {
-		char *res = core->anal->cmdtail;
-		core->anal->cmdtail = NULL;
-		r_core_cmd0 (core, res);
-		free (res);
-	}
+	run_pending_anal (core);
 	return ret;
 }
 
