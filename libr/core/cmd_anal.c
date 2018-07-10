@@ -6729,6 +6729,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
 			r_core_anal_all (core);
 			rowlog_done (core);
+			// Run pending analysis immediately after analysis
+			// Usefull when running commands with ";" or via r2 -c,-i
+			run_pending_anal (core);
 			dh_orig = core->dbg->h
 					? strdup (core->dbg->h->name)
 					: strdup ("esil");
@@ -6774,25 +6777,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
-
-				if (input[1] == 'a') { // "aaaa"
-					bool ioCache = r_config_get_i (core->config, "io.pcache");
-					r_config_set_i (core->config, "io.pcache", 1);
-					rowlog (core, "Emulate code to find computed references (aae)");
-					r_core_cmd0 (core, "aae $SS @ $S");
-					rowlog_done (core);
-					rowlog (core, "Analyze consecutive function (aat)");
-					r_core_cmd0 (core, "aat");
-					rowlog_done (core);
-					// drop cache writes is no cache was
-					if (!ioCache) {
-						r_core_cmd0 (core, "wc-*");
-					}
-					r_config_set_i (core->config, "io.pcache", ioCache);
-				} else {
-					rowlog (core, "Use -AA or aaaa to perform additional experimental analysis.");
-					rowlog_done (core);
-				}
+				run_pending_anal (core);
 				r_config_set_i (core->config, "anal.calls", c);
 				rowlog (core, "Constructing a function name for fcn.* and sym.func.* functions (aan)");
 				if (r_cons_is_breaked ()) {
@@ -6818,13 +6803,29 @@ static int cmd_anal_all(RCore *core, const char *input) {
 						r_core_recover_vars (core, fcni, true);
 					}
 				}
+				if (sdb_count (core->anal->sdb_zigns) > 0) {
+					rowlog (core, "Check for zignature from zigns folder (z/)");
+					r_core_cmd0 (core, "z/");
+				}
+				rowlog (core, "Type matching analysis for all functions (afta)");
+				r_core_cmd0 (core, "afta");
+				rowlog_done (core);
 				if (input[1] == 'a') { // "aaaa"
-					if (sdb_count (core->anal->sdb_zigns) > 0) {
-						rowlog (core, "Check for zignature from zigns folder (z/)");
-						r_core_cmd0 (core, "z/");
+					bool ioCache = r_config_get_i (core->config, "io.pcache");
+					r_config_set_i (core->config, "io.pcache", 1);
+					rowlog (core, "Emulate code to find computed references (aae)");
+					r_core_cmd0 (core, "aae $SS @ $S");
+					rowlog_done (core);
+					rowlog (core, "Analyze consecutive function (aat)");
+					r_core_cmd0 (core, "aat");
+					rowlog_done (core);
+					// drop cache writes is no cache was
+					if (!ioCache) {
+						r_core_cmd0 (core, "wc-*");
 					}
-					rowlog (core, "Type matching analysis for all functions (afta)");
-					r_core_cmd0 (core, "afta");
+					r_config_set_i (core->config, "io.pcache", ioCache);
+				} else {
+					rowlog (core, "Use -AA or aaaa to perform additional experimental analysis.");
 					rowlog_done (core);
 				}
 				r_core_cmd0 (core, "s-");
