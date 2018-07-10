@@ -9,6 +9,7 @@ services:
 
 os: osx
 matrix:
+  fast_finish: true
   include:
     - os: linux
       env: COMPILER_NAME=gcc CXX=g++ CC=gcc
