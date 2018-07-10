@@ -51,7 +51,7 @@ R_API int r_str_ncasecmp(const char *s1, const char *s2, size_t n) {
 
 // GOOD
 // In-place replace the first instance of the character a, with the character b.
-R_API int r_str_replace_ch(char *s, char a, char b, int global) {
+R_API int r_str_replace_ch(char *s, char a, char b, bool global) {
 	int ret = 0;
 	char *o = s;
 	if (!s || a == b) {
