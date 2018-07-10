@@ -21,7 +21,7 @@ matrix:
       env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" LDFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0
       branches:
         only:
-        - master
+        - /all-*/
     - os: osx
       env: COMPILER_NAME=clang CXX=clang++ CC=clang
   allow_failures:
