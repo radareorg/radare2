@@ -567,9 +567,7 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 
 	  {
 	    const char *s;
-
-	    if (opcode->args[0] != ',')
-	      (*info->fprintf_func) (stream, " ");
+	    int brackets = 0;
 
 	    for (s = opcode->args; *s != '\0'; ++s)
 	      {
@@ -599,7 +597,17 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 		      }
 		  }
 
-		(*info->fprintf_func) (stream, " ");
+		  if (*s != '[' && !brackets) {
+		      (*info->fprintf_func) (stream, " ");
+		  } else if (*s == ']') {
+		      (*info->fprintf_func) (stream, "%c", *s);
+		      brackets = 0;
+		      continue;
+		  } else if (*s == '[') {
+		      (*info->fprintf_func) (stream, " %c", *s);
+		      brackets = 1;
+		      continue;
+		  }
 
 		switch (*s)
 		  {
