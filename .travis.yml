@@ -11,20 +11,20 @@ os: osx
 matrix:
   include:
     - os: linux
-      env: COMPILER_NAME=gcc CXX=g++ CC=gcc
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc NOOK=1
     - os: linux
-      env: COMPILER_NAME=clang CXX=clang++ CC=clang
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang NOOK=1
     - os: linux
-      env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson NOOK=1
     - os: linux
-      env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" LDFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang NOOK=1 CFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" LDFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0
     - os: osx
-      env: COMPILER_NAME=clang CXX=clang++ CC=clang
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang NOOK=1
   allow_failures:
     - os: linux
-      env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson NOOK=1
     - os: linux
-      env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" LDFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang NOOK=1 CFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" LDFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0
 cache:
   - ccache
 
