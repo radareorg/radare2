@@ -174,9 +174,8 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 		}
 	} else {
 		if (color) {
-			const char *k = cons->pal.graph_box;
 			snprintf (title, sizeof (title) - 1,
-				"%s[x] %s"Color_RESET, k, panel->title);
+				"%s[x] %s"Color_RESET, cons->pal.graph_box2, panel->title);
 		} else {
 			snprintf (title, sizeof (title) - 1,
 				"   %s   ", panel->title);
@@ -808,19 +807,28 @@ static bool initPanels(RCore *core, RPanels *panels) {
 // necessary
 R_API void r_core_panels_refresh(RCore *core) {
 	RPanels *panels = core->panels;
+	if (!panels) {
+		return;
+	}
 	RPanel *panel = panels->panel;
+	if (!panel) {
+		return;
+	}
 	RConsCanvas *can = panels->can;
-	int menu_pos = panels->menu_pos;
+	if (!can) {
+		return;
+	}
+	if (panels->curnode) {
+		panels->menu_x = -1;
+	}
 	int menu_x = panels->menu_x;
 	int menu_y = panels->menu_y;
+	int menu_pos = panels->menu_pos;
 	char title[1024];
 	char str[1024];
 	int i, j, h, w = r_cons_get_size (&h);
 	const char *color = panels->curnode ? core->cons->pal.graph_box : core->cons->pal.graph_box2;
 	r_cons_gotoxy (0, 0);
-	if (!can) {
-		return;
-	}
 	if (panels->isResizing) {
 		panels->isResizing = false;
 		if (!r_cons_canvas_resize (can, w, h)) {
@@ -828,48 +836,41 @@ R_API void r_core_panels_refresh(RCore *core) {
 		}
 		setRefreshAll (panels);
 	}
-#if 0
-	/* avoid flickering */
-	r_cons_canvas_clear (can);
-	r_cons_flush ();
-#endif
-	if (panel) {
-		if (panel[panels->curnode].type == PANEL_TYPE_MENU) {
-			setRefreshAll (panels);
-		}
-		panel[menu_pos].x = (menu_y > 0) ? menu_x * 6 : w;
-		panel[menu_pos].y = 1;
-		free (panel[menu_pos].title);
-		panel[menu_pos].title = calloc (1, 1024); // r_str_newf ("%d", menu_y);
-		int maxsub = 0;
-		for (i = 0; menus_sub[i]; i++) {
-			maxsub = i;
-		}
-		if (menu_x < 0) {
-			panels->menu_x = 0;
-		}
-		if (menu_x > maxsub) {
-			panels->menu_x = maxsub;
-		}
-		if (menu_x >= 0 && menu_x <= maxsub && menus_sub[menu_x]) {
-			for (j = 0; menus_sub[menu_x][j]; j++) {
-				if (menu_y - 1 == j) {
-					strcat (panel[menu_pos].title, "> ");
-				} else {
-					strcat (panel[menu_pos].title, "  ");
-				}
-				strcat (panel[menu_pos].title, menus_sub[menu_x][j]);
-				strcat (panel[menu_pos].title, "          \n");
-			}
-			layoutMenu (&panel[menu_pos]);
-		}
-		for (i = 0; i < panels->n_panels; i++) {
-			if (i != panels->curnode) {
-				panelPrint (core, can, &panel[i], 0);
-			}
-		}
-		panelPrint (core, can, &panel[panels->curnode], 1);
+	if (panel[panels->curnode].type == PANEL_TYPE_MENU) {
+		setRefreshAll (panels);
 	}
+	panel[menu_pos].x = (menu_y > 0) ? menu_x * 6 : w;
+	panel[menu_pos].y = 1;
+	free (panel[menu_pos].title);
+	panel[menu_pos].title = calloc (1, 1024); // r_str_newf ("%d", menu_y);
+	int maxsub = 0;
+	for (i = 0; menus_sub[i]; i++) {
+		maxsub = i;
+	}
+	if (menu_x < 0) {
+		panels->menu_x = 0;
+	}
+	if (menu_x > maxsub) {
+		panels->menu_x = maxsub;
+	}
+	if (menu_x >= 0 && menu_x <= maxsub && menus_sub[menu_x]) {
+		for (j = 0; menus_sub[menu_x][j]; j++) {
+			if (menu_y - 1 == j) {
+				strcat (panel[menu_pos].title, "> ");
+			} else {
+				strcat (panel[menu_pos].title, "  ");
+			}
+			strcat (panel[menu_pos].title, menus_sub[menu_x][j]);
+			strcat (panel[menu_pos].title, "          \n");
+		}
+		layoutMenu (&panel[menu_pos]);
+	}
+	for (i = 0; i < panels->n_panels; i++) {
+		if (i != panels->curnode) {
+			panelPrint (core, can, &panel[i], 0);
+		}
+	}
+	panelPrint (core, can, &panel[panels->curnode], 1);
 
 	(void) r_cons_canvas_gotoxy (can, -can->sx, -can->sy);
 	title[0] = 0;
