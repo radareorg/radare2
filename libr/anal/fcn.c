@@ -1069,6 +1069,7 @@ repeat:
 						ret = try_walkthrough_jmptbl (anal, fcn, depth, jmp_aop.addr, jmptbl_addr, op.ptr, 4, table_size, default_case, 4);
 					}
 				}
+				r_anal_op_fini (&jmp_aop);
 			}
 			break;
 		// Case of valid but unused "add [rax], al"
