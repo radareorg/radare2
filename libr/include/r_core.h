@@ -231,6 +231,7 @@ typedef struct r_core_t {
 	RList *tasks;
 	RList *tasks_queue;
 	RList *oneshot_queue;
+	int oneshots_enqueued;
 	RCoreTask *current_task;
 	RCoreTask *main_task;
 	RThreadLock *tasks_lock;

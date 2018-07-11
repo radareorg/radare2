@@ -2,6 +2,24 @@
 
 #include <r_core.h>
 
+#if HAVE_PTHREAD
+#define TASK_SIGSET_T sigset_t
+static void tasks_lock_block_signals(sigset_t *old_sigset) {
+	sigset_t block_sigset;
+	sigemptyset (&block_sigset);
+	sigaddset (&block_sigset, SIGWINCH);
+	r_signal_sigmask (SIG_BLOCK, &block_sigset, old_sigset);
+}
+
+static void tasks_lock_block_signals_reset(sigset_t *old_sigset) {
+	r_signal_sigmask (SIG_SETMASK, old_sigset, NULL);
+}
+#else
+#define TASK_SIGSET_T void *
+static void tasks_lock_block_signals(TASK_SIGSET_T *old_sigset) { (void)old_sigset; }
+static void tasks_lock_block_signals_reset(TASK_SIGSET_T *old_sigset) { (void)old_sigset; }
+#endif
+
 typedef struct oneshot_t {
 	RCoreTaskOneShot func;
 	void *user;
@@ -52,6 +70,8 @@ R_API void r_core_task_list(RCore *core, int mode) {
 	if (mode == 'j') {
 		r_cons_printf ("[");
 	}
+	TASK_SIGSET_T old_sigset;
+	tasks_lock_block_signals (&old_sigset);
 	r_th_lock_enter (core->tasks_lock);
 	r_list_foreach (core->tasks, iter, task) {
 		r_core_task_print (core, task, mode);
@@ -65,6 +85,7 @@ R_API void r_core_task_list(RCore *core, int mode) {
 		r_cons_printf ("--\ntotal running: %d\n", core->tasks_running);
 	}
 	r_th_lock_leave (core->tasks_lock);
+	tasks_lock_block_signals_reset (&old_sigset);
 }
 
 static void task_join(RCoreTask *task) {
@@ -164,12 +185,14 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 	RCore *core = current->core;
 	bool stop = next_state != R_CORE_TASK_STATE_RUNNING;
 
-	if (!stop && (core->tasks_running == 1 || core->oneshot_running)) {
+	if (core->oneshot_running || (!stop && core->tasks_running == 1 && core->oneshots_enqueued == 0)) {
 		return;
 	}
 
 	core->current_task = NULL;
-	
+
+	TASK_SIGSET_T old_sigset;
+	tasks_lock_block_signals (&old_sigset);
 	r_th_lock_enter (core->tasks_lock);
 
 	current->state = next_state;
@@ -183,6 +206,7 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 	// if there are any queued, run them immediately.
 	OneShot *oneshot;
 	while ((oneshot = r_list_pop_head (core->oneshot_queue))) {
+		core->oneshots_enqueued--;
 		core->oneshot_running = true;
 		oneshot->func (oneshot->user);
 		core->oneshot_running = false;
@@ -196,6 +220,7 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 	}
 
 	r_th_lock_leave (core->tasks_lock);
+	tasks_lock_block_signals_reset (&old_sigset);
 
 	if (next) {
 		r_cons_context_reset ();
@@ -222,6 +247,8 @@ R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
 static void task_wakeup(RCoreTask *current) {
 	RCore *core = current->core;
 
+	TASK_SIGSET_T old_sigset;
+	tasks_lock_block_signals (&old_sigset);
 	r_th_lock_enter (core->tasks_lock);
 
 	core->tasks_running++;
@@ -239,6 +266,7 @@ static void task_wakeup(RCoreTask *current) {
 	}
 
 	r_th_lock_leave (core->tasks_lock);
+	tasks_lock_block_signals_reset (&old_sigset);
 
 	if(!single) {
 		r_th_cond_wait (current->dispatch_cond, current->dispatch_lock);
@@ -306,6 +334,8 @@ R_API void r_core_task_enqueue(RCore *core, RCoreTask *task) {
 	if (!core || !task) {
 		return;
 	}
+	TASK_SIGSET_T old_sigset;
+	tasks_lock_block_signals (&old_sigset);
 	r_th_lock_enter (core->tasks_lock);
 	if (!task->running_sem) {
 		task->running_sem = r_th_sem_new (1);
@@ -316,12 +346,15 @@ R_API void r_core_task_enqueue(RCore *core, RCoreTask *task) {
 	r_list_append (core->tasks, task);
 	task->thread = r_th_new (task_run_thread, task, 0);
 	r_th_lock_leave (core->tasks_lock);
+	tasks_lock_block_signals_reset (&old_sigset);
 }
 
 R_API void r_core_task_enqueue_oneshot(RCore *core, RCoreTaskOneShot func, void *user) {
 	if (!core || !func) {
 		return;
 	}
+	TASK_SIGSET_T old_sigset;
+	tasks_lock_block_signals (&old_sigset);
 	r_th_lock_enter (core->tasks_lock);
 	if (core->tasks_running == 0) {
 		// nothing is running right now and no other task can be scheduled
@@ -331,11 +364,15 @@ R_API void r_core_task_enqueue_oneshot(RCore *core, RCoreTaskOneShot func, void 
 		core->oneshot_running = false;
 	} else {
 		OneShot *oneshot = R_NEW (OneShot);
+		oneshot->func = func;
+		oneshot->user = user;
 		if (oneshot) {
 			r_list_append (core->oneshot_queue, oneshot);
+			core->oneshots_enqueued++;
 		}
 	}
 	r_th_lock_leave (core->tasks_lock);
+	tasks_lock_block_signals_reset (&old_sigset);
 }
 
 R_API int r_core_task_run_sync(RCore *core, RCoreTask *task) {
@@ -346,12 +383,15 @@ R_API int r_core_task_run_sync(RCore *core, RCoreTask *task) {
 /* begin running stuff synchronously on the main task */
 R_API void r_core_task_sync_begin(RCore *core) {
 	RCoreTask *task = core->main_task;
+	TASK_SIGSET_T old_sigset;
+	tasks_lock_block_signals (&old_sigset);
 	r_th_lock_enter (core->tasks_lock);
 	task->thread = NULL;
 	task->cmd = NULL;
 	task->cmd_log = false;
 	task->state = R_CORE_TASK_STATE_BEFORE_START;
 	r_th_lock_leave (core->tasks_lock);
+	tasks_lock_block_signals_reset (&old_sigset);
 	task_wakeup (task);
 }
 
@@ -393,6 +433,8 @@ R_API int r_core_task_del (RCore *core, int id) {
 	RCoreTask *task;
 	RListIter *iter;
 	bool ret = false;
+	TASK_SIGSET_T old_sigset;
+	tasks_lock_block_signals (&old_sigset);
 	r_th_lock_enter (core->tasks_lock);
 	r_list_foreach (core->tasks, iter, task) {
 		if (task->id == id) {
@@ -406,6 +448,7 @@ R_API int r_core_task_del (RCore *core, int id) {
 		}
 	}
 	r_th_lock_leave (core->tasks_lock);
+	tasks_lock_block_signals_reset (&old_sigset);
 	return ret;
 }
 
