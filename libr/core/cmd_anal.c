@@ -6801,6 +6801,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 						}
 						//extract only reg based var here
 						r_core_recover_vars (core, fcni, true);
+						r_list_free (list);
 					}
 				}
 				if (sdb_count (core->anal->sdb_zigns) > 0) {
