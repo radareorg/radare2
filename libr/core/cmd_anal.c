@@ -4592,7 +4592,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		}
 		break;
 	case 'd': // "aod"
-                if (input[1] == 'a') {
+                if (input[1] == 'a') { // "aoda"
                         // list sdb database
                         sdb_foreach (core->assembler->pair, listOpDescriptions, core);
                 } else if (input[1] == 0) {
