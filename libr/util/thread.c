@@ -21,9 +21,8 @@ static void *_r_th_launcher(void *_th) {
 		r_th_lock_wait (th->lock);
 	}
 #endif
+	r_th_lock_enter (th->lock);
 	do {
-		// CID 1378280:  API usage errors  (LOCK)
-		// "r_th_lock_leave" unlocks "th->lock->lock" while it is unlocked.
 		r_th_lock_leave (th->lock);
 		th->running = true;
 		ret = th->fun (th);
