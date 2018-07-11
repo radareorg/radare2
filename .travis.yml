@@ -33,7 +33,7 @@ before_install:
   - if [ "$TRAVIS_OS_NAME" != "osx" ]; then docker pull radareorg/r2-travis || docker build -t radareorg/r2-travis:latest -f Dockerfile.travis . ; else rm -rf .nvm && git clone https://github.com/creationix/nvm.git .nvm && (cd .nvm && git checkout `git describe --abbrev=0 --tags`) && . .nvm/nvm.sh && nvm install 8.11.3; fi
 
 script:
-  - export PR_NAME=$(echo $TRAVIS_PULL_REQUEST_SLUG | cut -d'/' -f1)
+  - export PR_NAME=$(echo  $TRAVIS_PULL_REQUEST_SLUG | cut -d'/' -f1)
   - export DEFAULT_NAME=$(echo $TRAVIS_REPO_SLUG | cut -d'/' -f1)
   - export R2R_DEFAULT_REPO=$(doc/repo PR_REGRESSIONS | sed "s/__USER__/${DEFAULT_NAME}/g")
   - export R2R_DEFAULT_BRANCH=master
