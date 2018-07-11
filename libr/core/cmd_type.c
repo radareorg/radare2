@@ -754,10 +754,9 @@ static int cmd_type(void *data, const char *input) {
 					}
 				}
 				if (!strcmp (filename, "-")) {
-					char *out, *tmp;
-					tmp = r_core_editor (core, NULL, "");
+					char *tmp = r_core_editor (core, "*.h", "");
 					if (tmp) {
-						out = r_parse_c_string (core->anal, tmp);
+						char *out = r_parse_c_string (core->anal, tmp);
 						if (out) {
 							//		r_cons_strcat (out);
 							save_parsed_type (core, out);

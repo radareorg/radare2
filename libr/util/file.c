@@ -939,10 +939,24 @@ err_r_file_mkstemp:
 	free (prefix_);
 #else
 	char name[1024];
+	char pfxx[1024];
+	const char *suffix = strchr (prefix, '*');
 
-	snprintf (name, sizeof (name) - 1, "%s/r2.%s.XXXXXX", path, prefix);
+	if (suffix) {
+		suffix++;
+		r_str_ncpy (pfxx, prefix, (size_t)(suffix - prefix));
+		prefix = pfxx;
+	} else {
+		suffix = "";
+	}
+
+	snprintf (name, sizeof (name) - 1, "%s/r2.%s.XXXXXX%s", path, prefix, suffix);
 	mode_t mask = umask (S_IWGRP | S_IWOTH);
-	h = mkstemp (name);
+	if (suffix && *suffix) {
+		h = mkstemps (name, strlen (suffix));
+	} else {
+		h = mkstemp (name);
+	}
 	umask (mask);
 	if (oname) {
 		*oname = (h!=-1)? strdup (name): NULL;
