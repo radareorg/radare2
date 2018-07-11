@@ -2,6 +2,7 @@
 
 language: generic
 dist: trusty
+conditions: v1
 sudo: required
 
 services:
@@ -9,6 +10,7 @@ services:
 
 os: osx
 matrix:
+  fast_finish: true
   include:
     - os: linux
       env: COMPILER_NAME=gcc CXX=g++ CC=gcc
@@ -16,7 +18,8 @@ matrix:
       env: COMPILER_NAME=clang CXX=clang++ CC=clang
     - os: linux
       env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson
-    - os: linux
+    - if: head_branch = asan-test-travis
+      os: linux
       env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" LDFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0
     - os: osx
       env: COMPILER_NAME=clang CXX=clang++ CC=clang
@@ -33,7 +36,7 @@ before_install:
 
 script:
   - export PR_NAME=$(echo $TRAVIS_PULL_REQUEST_SLUG | cut -d'/' -f1)
-  - export DEFAULT_NAME=$(echo $TRAVIS_REPO_SLUG | cut -d'/' -f1)
+  - export DEFAULT_NAME=$(echo  $TRAVIS_REPO_SLUG | cut -d'/' -f1)
   - export R2R_DEFAULT_REPO=$(doc/repo PR_REGRESSIONS | sed "s/__USER__/${DEFAULT_NAME}/g")
   - export R2R_DEFAULT_BRANCH=master
   - export USER_NAME=$([ -n "${PR_NAME}" ] && echo "${PR_NAME}" || echo "${DEFAULT_NAME}")
