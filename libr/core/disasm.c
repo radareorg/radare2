@@ -1133,11 +1133,12 @@ static void ds_show_refs(RDisasmState *ds) {
 
 static void ds_show_xrefs(RDisasmState *ds) {
 	RAnalRef *refi;
-	RListIter *iter;
+	RListIter *iter, *it;
 	RCore *core = ds->core;
 	bool demangle = r_config_get_i (core->config, "bin.demangle");
 	const char *lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
 	char *name, *tmp;
+	ut64 addr;
 	int count = 0;
 	if (!ds->show_xrefs || !ds->show_comments) {
 		return;
@@ -1182,11 +1183,21 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		return;
 	}
 
+	RList *addrs = r_list_new ();
+	RAnalFunction *fun, *next_fun;
 	r_list_foreach (xrefs, iter, refi) {
 		if (refi->at == ds->at) {
-			RAnalFunction *fun = fcnIn (ds, refi->addr, -1); //r_anal_get_fcn_in (core->anal, refi->addr, -1);
+			fun = fcnIn (ds, refi->addr, -1); //r_anal_get_fcn_in (core->anal, refi->addr, -1);
 			if (fun) {
 				name = strdup (fun->name);
+				if (iter != xrefs->tail) {
+					ut64 next_addr = ((RAnalRef *)(iter->n->data))->addr;
+					next_fun = r_anal_get_fcn_in (core->anal, next_addr, -1); //r_anal_get_fcn_in (core->anal, refi->addr, -1);
+					if (next_fun && next_fun->addr == fun->addr) {
+						r_list_append (addrs, refi->addr);
+						continue;
+					}
+				}
 			} else {
 				RFlagItem *f = r_flag_get_at (core->flags, refi->addr, true);
 				if (f) {
@@ -1202,12 +1213,18 @@ static void ds_show_xrefs(RDisasmState *ds) {
 					name = tmp;
 				}
 			}
+			r_list_append (addrs, refi->addr);
 			ds_begin_json_line (ds);
 			ds_pre_xrefs (ds, false);
-			ds_comment (ds, false, "%s; %s XREF from 0x%08"PFMT64x" (%s)%s",
-				COLOR (ds, pal_comment), r_anal_xrefs_type_tostring (refi->type),
-				refi->addr, name, COLOR_RESET (ds));
+			ds_comment (ds, false, "%s; %s XREF from %s (",
+				COLOR (ds, pal_comment), r_anal_xrefs_type_tostring (refi->type), name);
+			r_list_foreach (addrs, it, addr) {
+				ds_comment (ds, false, "%s0x%"PFMT64x, it == addrs->head ? "" : ", ", addr);
+			}
+			ds_comment (ds, false, ")%s", COLOR_RESET (ds));
 			ds_newline (ds);
+
+			r_list_purge (addrs);
 			R_FREE (name);
 		} else {
 			eprintf ("Corrupted database?\n");
