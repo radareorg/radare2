@@ -38,8 +38,25 @@
 #define PANEL_CMD_REGISTERREFS   "drr"
 #define PANEL_CMD_DISASSEMBLY    "pd $r"
 #define PANEL_CMD_GRAPH          "agf"
+#define PANEL_CMD_INFO           "i"
+#define PANEL_CMD_DATABASE       "k ***"
+#define PANEL_CMD_HEXDUMP        "px 512"
+#define PANEL_CMD_FUNCTIONS      "afl"
+#define PANEL_CMD_COMMENTS       "CC"
+#define PANEL_CMD_ENTROPY        "p=e"
+#define PANEL_CMD_DRX            "drx"
+#define PANEL_CMD_SECTIONS       "iSq"
+#define PANEL_CMD_STRINGS        "izq"
+#define PANEL_CMD_MAPS           "dm"
+#define PANEL_CMD_MODULES        "dmm"
+#define PANEL_CMD_BACKTRACE      "dbt"
+#define PANEL_CMD_BREAKPOINTS    "db"
+#define PANEL_CMD_IMPORTS        "iiq"
+#define PANEL_CMD_CLIPBOARD      "yx"
+#define PANEL_CMD_FCNINFO        "afi"
 
 #define PANEL_CONFIG_PAGE        10
+#define PANEL_CONFIG_SIDEPANEL_W 60
 
 static const int layoutMaxCount = 2;
 
@@ -117,7 +134,8 @@ static const char **menus_sub[] = {
 static void layoutMenu(RPanel *panel);
 static void layoutDefault(RPanels *panels);
 static void layoutBalance(RPanels *panels);
-static void sortPanelForSplit(RPanels *panels);
+static void layoutSidePanel(RCore *core, const char *title, const char *cmd);
+static void changePanelNum(RPanels *panels, int now, int after);
 static void splitPanelVertical(RCore *core);
 static void splitPanelHorizontal(RCore *core);
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color);
@@ -126,7 +144,9 @@ static void addPanelFrame(RCore* core, RPanels* panels, const char *title, const
 static bool checkFunc(RCore *core);
 static void cursorLeft(RCore *core);
 static void cursorRight(RCore *core);
+static void delPanel(RPanels *panels, int delPanelNum);
 static void delCurPanel(RPanels *panels);
+static void delInvalidPanels(RPanels *panels);
 static void dismantlePanel(RPanels *panels);
 static void doPanelsRefresh(RCore *core);
 static bool handleCursorMode(RCore *core, const int key);
@@ -136,7 +156,6 @@ static void handleLeftKey(RCore *core);
 static void handleRightKey(RCore *core);
 static bool handleEnterKey(RCore *core);
 static void handleTabKey(RCore *core, bool shift);
-static int  havePanel(RPanels *panels, const char *s);
 static bool init(RCore *core, RPanels *panels, int w, int h);
 static bool initPanels(RCore *core, RPanels *panels);
 static void panelBreakpoint(RCore *core);
@@ -339,17 +358,30 @@ static void layoutBalance(RPanels *panels) {
 	}
 }
 
-static void sortPanelForSplit(RPanels *panels) {
+static void layoutSidePanel(RCore *core, const char *title, const char *cmd) {
+	RPanels *panels = core->panels;
 	RPanel *panel = panels->panel;
-	const int n_panels = panels->n_panels;
-	const int curnode = panels->curnode;
+	int h, w = r_cons_get_size (&h);
 	int i;
 
-	RPanel tmpPanel = panel[n_panels - 1];
-	for (i = n_panels - 1; i >= curnode + 2; i--) {
-		panel[i] = panel[i - 1];
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *p = &panel[i];
+		if (p->x == 0) {
+			if (p->w >= PANEL_CONFIG_SIDEPANEL_W) {
+				p->x += PANEL_CONFIG_SIDEPANEL_W - 1;
+				p->w -= PANEL_CONFIG_SIDEPANEL_W - 1;
+			}
+		}
 	}
-	panel[curnode + 1] = tmpPanel;
+
+	addPanelFrame (core, panels, title, cmd);
+	changePanelNum (panels, panels->n_panels - 1, 1);
+	panel[1].x = 0;
+	panel[1].y = 1;
+	panel[1].w = PANEL_CONFIG_SIDEPANEL_W;
+	panel[1].h = h - 1;
+	panels->curnode = 1;
+	setRefreshAll (panels);
 }
 
 static void splitPanelVertical(RCore *core) {
@@ -360,7 +392,7 @@ static void splitPanelVertical(RCore *core) {
 
 	addPanelFrame (core, panels, panel[curnode].title, panel[curnode].cmd);
 
-	sortPanelForSplit (panels);
+	changePanelNum (panels, panels->n_panels - 1, panels->curnode + 1);
 
 	panel[curnode].w = owidth / 2 + 1;
 	panel[curnode + 1].x = panel[curnode].x + panel[curnode].w - 1;
@@ -378,7 +410,7 @@ static void splitPanelHorizontal(RCore *core) {
 
 	addPanelFrame (core, panels, panel[curnode].title, panel[curnode].cmd);
 
-    sortPanelForSplit (panels);
+    changePanelNum (panels, panels->n_panels - 1, panels->curnode + 1);
 
 	panel[curnode].h = oheight / 2 + 1;
 	panel[curnode + 1].x = panel[curnode].x;
@@ -389,8 +421,22 @@ static void splitPanelHorizontal(RCore *core) {
 }
 
 R_API void r_core_panels_layout_refresh(RCore *core) {
+	delInvalidPanels (core->panels);
 	r_core_panels_check_stackbase (core);
 	r_core_panels_refresh (core);
+}
+
+static void changePanelNum(RPanels *panels, int now, int after) {
+	RPanel *panel = panels->panel;
+	const int n_panels = panels->n_panels;
+	const int curnode = panels->curnode;
+	int i;
+
+	RPanel tmpPanel = panel[now];
+	for (i = n_panels - 1; i > after; i--) {
+		panel[i] = panel[i - 1];
+	}
+	panel[after] = tmpPanel;
 }
 
 static void setCursor(RCore *core, bool cur) {
@@ -599,17 +645,33 @@ static bool handleCursorMode(RCore *core, const int key) {
 	return false;
 }
 
+static void delPanel(RPanels *panels, int delPanelNum) {
+	int i;
+	for (i = delPanelNum; i < (panels->n_panels - 1); i++) {
+		panels->panel[i] = panels->panel[i + 1];
+	}
+	panels->panel[i].title = 0;
+	panels->n_panels--;
+	if (panels->curnode >= panels->n_panels) {
+		panels->curnode = panels->n_panels - 1;
+	}
+}
+
 static void delCurPanel(RPanels *panels) {
 	dismantlePanel (panels);
-	int i;
 	if (panels->curnode > 0 && panels->n_panels > 3) {
-		for (i = panels->curnode; i < (panels->n_panels - 1); i++) {
-			panels->panel[i] = panels->panel[i + 1];
-		}
-		panels->panel[i].title = 0;
-		panels->n_panels--;
-		if (panels->curnode >= panels->n_panels) {
-			panels->curnode = panels->n_panels - 1;
+		delPanel (panels, panels->curnode);
+	}
+}
+
+static void delInvalidPanels(RPanels *panels) {
+	int i, j;
+	for (i = 1; i < panels->n_panels; i++) {
+		RPanel *panel = &panels->panel[i];
+		if (panel->w < 2) {
+			delPanel (panels, i);
+			delInvalidPanels (panels);
+			break;
 		}
 	}
 }
@@ -781,7 +843,6 @@ static void addPanelFrame(RCore *core, RPanels* panels, const char *title, const
 }
 
 static bool initPanels(RCore *core, RPanels *panels) {
-	panels->panel = NULL;
 	panels->panel = calloc (sizeof (RPanel), LIMIT);
 	if (!panels->panel) return false;
 	panels->n_panels = 0;
@@ -909,20 +970,6 @@ static void doPanelsRefresh(RCore *core) {
 	core->panels->isResizing = true;
 	panelAllClear (core->panels);
 	r_core_panels_refresh (core);
-}
-
-static int havePanel(RPanels *panels, const char *s) {
-	int i;
-	if (!panels->panel || !panels->panel[0].title) {
-		return 0;
-	}
-	// add new panel for testing
-	for (i = 1; panels->panel[i].title; i++) {
-		if (!strcmp (panels->panel[i].title, s)) {
-			return 1;
-		}
-	}
-	return 0;
 }
 
 static void panelSingleStepIn(RCore *core) {
@@ -1072,31 +1119,27 @@ static bool handleEnterKey(RCore *core) {
 			r_line_set_hist_callback (core->cons->line, &cmd_history_up, &cmd_history_down);
 			r_cons_enable_mouse (true);
 		} else if (strstr (action, "RegisterRefs")) {
-			addPanelFrame (core, panels, "drr", "drr");
+			layoutSidePanel (core, PANEL_TITLE_REGISTERREFS, PANEL_CMD_REGISTERREFS);
 		} else if (strstr (action, "Registers")) {
-			addPanelFrame (core, panels, "dr=", "dr=");
+			layoutSidePanel (core, PANEL_TITLE_REGISTERS, PANEL_CMD_REGISTERS);
 		} else if (strstr (action, "Info")) {
-			addPanelFrame (core, panels, PANEL_TITLE_INFO, "i");
+			layoutSidePanel (core, PANEL_TITLE_INFO, PANEL_CMD_INFO);
 		} else if (strstr (action, "Database")) {
-			addPanelFrame (core, panels, PANEL_TITLE_DATABASE, "k ***");
-		} else if (strstr (action, "Registers")) {
-			if (!havePanel (panels, "Registers")) {
-				addPanelFrame (core, panels, PANEL_TITLE_REGISTERS, "dr=");
-			}
+			layoutSidePanel (core, PANEL_TITLE_DATABASE, PANEL_CMD_DATABASE);
 		} else if (strstr (action, "About")) {
 			char *s = r_core_cmd_str (core, "?V");
 			r_cons_message (s);
 			free (s);
 		} else if (strstr (action, "Hexdump")) {
-			addPanelFrame (core, panels, PANEL_TITLE_HEXDUMP, "px 512");
+			layoutSidePanel (core, PANEL_TITLE_HEXDUMP, PANEL_CMD_HEXDUMP);
 		} else if (strstr (action, "Disassembly")) {
-			addPanelFrame (core, panels, PANEL_TITLE_DISASSEMBLY, "pd 128");
+			layoutSidePanel (core, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY);
 		} else if (strstr (action, "Functions")) {
-			addPanelFrame (core, panels, PANEL_TITLE_FUNCTIONS, "afl");
+			layoutSidePanel (core, PANEL_TITLE_FUNCTIONS, PANEL_CMD_FUNCTIONS);
 		} else if (strstr (action, "Comments")) {
-			addPanelFrame (core, panels, PANEL_TITLE_COMMENTS, "CC");
+			layoutSidePanel (core, PANEL_TITLE_COMMENTS, PANEL_CMD_COMMENTS);
 		} else if (strstr (action, "Entropy")) {
-			addPanelFrame (core, panels, PANEL_TITLE_ENTROPY, "p=e");
+			layoutSidePanel (core, PANEL_TITLE_ENTROPY, PANEL_CMD_ENTROPY);
 		} else if (strstr (action, "Symbols")) {
 			r_core_cmdf (core, "aa");
 		} else if (strstr (action, "BasicBlocks")) {
@@ -1104,7 +1147,7 @@ static bool handleEnterKey(RCore *core) {
 		} else if (strstr (action, "Function")) {
 			r_core_cmdf (core, "af");
 		} else if (strstr (action, "DRX")) {
-			addPanelFrame (core, panels, PANEL_TITLE_DRX, "drx");
+			layoutSidePanel (core, PANEL_TITLE_DRX, PANEL_CMD_DRX);
 		} else if (strstr (action, "Program")) {
 			r_core_cmdf (core, "aaa");
 		} else if (strstr (action, "Calls")) {
@@ -1189,17 +1232,17 @@ static bool handleEnterKey(RCore *core) {
 		} else if (strstr (action, "Assemble")) {
 			r_core_visual_asm (core, core->offset);
 		} else if (strstr (action, "Sections")) {
-			addPanelFrame (core, panels, PANEL_TITLE_SECTIONS, "iSq");
+			layoutSidePanel (core, PANEL_TITLE_SECTIONS, PANEL_CMD_SECTIONS);
 		} else if (strstr (action, "Close")) {
 			r_core_cmd0 (core, "o-*");
 		} else if (strstr (action, "Strings")) {
-			addPanelFrame (core, panels, PANEL_TITLE_STRINGS, "izq");
+			layoutSidePanel (core, PANEL_TITLE_STRINGS, PANEL_CMD_STRINGS);
 		} else if (strstr (action, "Maps")) {
-			addPanelFrame (core, panels, PANEL_TITLE_MAPS, "dm");
+			layoutSidePanel (core, PANEL_TITLE_MAPS, PANEL_CMD_MAPS);
 		} else if (strstr (action, "Modules")) {
-			addPanelFrame (core, panels, PANEL_TITLE_MODULES, "dmm");
+			layoutSidePanel (core, PANEL_TITLE_MODULES, PANEL_CMD_MODULES);
 		} else if (strstr (action, "Backtrace")) {
-			addPanelFrame (core, panels, PANEL_TITLE_BACKTRACE, "dbt");
+			layoutSidePanel (core, PANEL_TITLE_BACKTRACE, PANEL_CMD_BACKTRACE);
 		} else if (strstr (action, "Step")) {
 			r_core_cmd (core, "ds", 0);
 			r_cons_flush ();
@@ -1216,22 +1259,22 @@ static bool handleEnterKey(RCore *core) {
 			r_core_cmd (core, "dso", 0);
 			r_cons_flush ();
 		} else if (strstr (action, "StackRefs")) {
-			addPanelFrame (core, panels, PANEL_TITLE_STACKREFS, PANEL_CMD_STACKREFS);
+			layoutSidePanel (core, PANEL_TITLE_STACKREFS, PANEL_CMD_STACKREFS);
 		} else if (strstr (action, "Stack")) {
-			addPanelFrame (core, panels, PANEL_TITLE_STACK, PANEL_CMD_STACK);
+			layoutSidePanel (core, PANEL_TITLE_STACK, PANEL_CMD_STACK);
 		} else if (strstr (action, "Continue")) {
 			r_core_cmd (core, "dc", 0);
 			r_cons_flush ();
 		} else if (strstr (action, "Breakpoints")) {
-			addPanelFrame (core, panels, PANEL_TITLE_BREAKPOINTS, "db");
+			layoutSidePanel (core, PANEL_TITLE_BREAKPOINTS, PANEL_CMD_BREAKPOINTS);
 		} else if (strstr (action, "Symbols")) {
-			addPanelFrame (core, panels, PANEL_TITLE_SYMBOLS, "isq");
+			layoutSidePanel (core, PANEL_TITLE_SYMBOLS, PANEL_CMD_SYMBOLS);
 		} else if (strstr (action, "Imports")) {
-			addPanelFrame (core, panels, PANEL_TITLE_IMPORTS, "iiq");
+			layoutSidePanel (core, PANEL_TITLE_IMPORTS, PANEL_CMD_IMPORTS);
 		} else if (strstr (action, "Paste")) {
 			r_core_cmd0 (core, "yy");
 		} else if (strstr (action, "Clipboard")) {
-			addPanelFrame (core, panels, PANEL_TITLE_CLIPBOARD, "yx");
+			layoutSidePanel (core, PANEL_TITLE_CLIPBOARD, PANEL_CMD_CLIPBOARD);
 		} else if (strstr (action, "io.cache")) {
 			r_core_cmd0 (core, "e!io.cache");
 		} else if (strstr (action, "Fill")) {
@@ -1243,7 +1286,7 @@ static bool handleEnterKey(RCore *core) {
 		} else if (strstr (action, "References")) {
 			r_core_cmdf (core, "aar");
 		} else if (strstr (action, "FcnInfo")) {
-			addPanelFrame (core, panels, PANEL_TITLE_FCNINFO, "afi");
+			layoutSidePanel (core, PANEL_TITLE_FCNINFO, PANEL_CMD_FCNINFO);
 		} else if (strstr (action, "Graph")) {
 			r_core_visual_graph (core, NULL, NULL, true);
 			// addPanelFrame ("Graph", "agf");
@@ -1731,10 +1774,10 @@ repeat:
 		break;
 	}
 	const int keyNum = key - 48;
-	if ('0' <= key && key <= '9' && keyNum < panels->n_panels) {
+	if (0 <= keyNum && keyNum < panels->n_panels) {
 		panels->panel[panels->curnode].refresh = true;
+		panels->panel[keyNum].refresh = true;
 		panels->curnode = keyNum;
-		panels->panel[panels->curnode].refresh = true;
 	}
 	goto repeat;
 exit:
