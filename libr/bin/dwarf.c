@@ -1361,7 +1361,7 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 					&cu->hdr, debug_str, debug_str_len);
 			if (cu->dies[cu->length].attr_values[i].name == DW_AT_comp_dir) {
 				const char *name = cu->dies[cu->length].attr_values[i].encoding.str_struct.string;
-				if (name > 1024) { // solve some null derefs
+				if ((size_t)name > 1024) { // solve some null derefs
 					sdb_set (s, "DW_AT_comp_dir", name, 0);
 				} else {
 					eprintf ("Invalid string pointer at %p\n", name);
