@@ -2,6 +2,7 @@
 
 language: generic
 dist: trusty
+conditions: v1
 sudo: required
 
 services:
