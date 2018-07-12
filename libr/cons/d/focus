@@ -19,7 +19,6 @@ ec b0x00 green
 ec b0x7f cyan 
 ec b0xff red 
 ec btext yellow 
-ec text rgb:666
 ec other rgb:666
 ec num rgb:888
 ec reg rgb:6f0 rgb:000
