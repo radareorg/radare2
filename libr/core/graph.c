@@ -2125,6 +2125,23 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	core->anal->stackptr = saved_stackptr;
 }
 
+static void delete_dup_edges (RAGraph *g) {
+	RListIter *iter, *in_iter, *in_iter2;
+	RGraphNode *n, *a, *b;
+	r_list_foreach (g->graph->nodes, iter, n) {
+		r_list_foreach (n->out_nodes, in_iter, a) {
+			r_list_foreach (n->out_nodes, in_iter2, b) {
+				if (in_iter == in_iter2) {
+					continue;
+				}
+				if (a->idx == b->idx) {
+					r_graph_del_edge (g->graph, n, b);
+				}
+			}
+		}
+	}
+}
+
 /* build the RGraph inside the RAGraph g, starting from the Basic Blocks */
 static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
@@ -2207,6 +2224,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		}
 	}
 
+	delete_dup_edges (g);
 	ret = true;
 
 cleanup:
