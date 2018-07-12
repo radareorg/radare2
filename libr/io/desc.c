@@ -222,7 +222,6 @@ static bool _map_flags_cb(void *user, void *data, ut32 id) {
 
 R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
 	RIODesc *desc, *descx;
-	RIOMap *map;
 	if (!(desc = r_io_desc_get (io, fd)) || !(descx = r_io_desc_get (io, fdx))) {
 		return false;
 	}
@@ -238,8 +237,8 @@ R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
 		r_io_desc_cache_cleanup (descx);
 	}
 	if (io->maps) {
-		r_oids_foreach(io->maps, _map_flags_cb, desc);
-		r_oids_foreach(io->maps, _map_flags_cb, descx);
+		r_oids_foreach (io->maps, _map_flags_cb, desc);
+		r_oids_foreach (io->maps, _map_flags_cb, descx);
 	}
 	return true;
 }

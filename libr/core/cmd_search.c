@@ -619,7 +619,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		ut64 begin = UT64_MAX;
 		ut64 end = UT64_MAX;
 		ut32 od;
-		for (od = 0; !!(sm = r_oids_oget(core->io->submaps, od)); od++) {
+		for (od = 0; (sm = r_oids_oget (core->io->submaps, od)); od++) {
 			ut64 from = sm->from;
 			ut64 to = sm->to + 1;	//stupid half opened intervals
 			// eprintf ("--------- %llx %llx    (%llx %llx)\n", from, to, begin, end);
