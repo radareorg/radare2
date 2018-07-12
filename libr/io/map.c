@@ -287,6 +287,7 @@ R_API void r_io_map_fini(RIO* io) {
 	r_io_submap_fini (io);
 	r_oids_foreach (io->maps, _map_free_cb, NULL);
 	r_oids_free (io->maps);
+	io->maps = NULL;
 }
 
 R_API void r_io_map_set_name(RIOMap* map, const char* name) {
