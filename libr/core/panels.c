@@ -978,20 +978,6 @@ static void doPanelsRefreshOneShot(RCore *core) {
 	r_core_task_enqueue_oneshot (core, (RCoreTaskOneShot) doPanelsRefresh, core);
 }
 
-static int havePanel(RPanels *panels, const char *s) {
-	int i;
-	if (!panels->panel || !panels->panel[0].title) {
-		return 0;
-	}
-	// add new panel for testing
-	for (i = 1; panels->panel[i].title; i++) {
-		if (!strcmp (panels->panel[i].title, s)) {
-			return 1;
-		}
-	}
-	return 0;
-}
-
 static void panelSingleStepIn(RCore *core) {
 	if (r_config_get_i (core->config, "cfg.debug")) {
 		if (core->print->cur_enabled) {
