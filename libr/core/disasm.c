@@ -1185,23 +1185,34 @@ static void ds_show_xrefs(RDisasmState *ds) {
 
 	RList *addrs = r_list_new ();
 	RAnalFunction *fun, *next_fun;
+	RFlagItem *f, *next_f;
 	r_list_foreach (xrefs, iter, refi) {
 		if (refi->at == ds->at) {
-			fun = fcnIn (ds, refi->addr, -1); //r_anal_get_fcn_in (core->anal, refi->addr, -1);
+			fun = fcnIn (ds, refi->addr, -1); 
 			if (fun) {
 				name = strdup (fun->name);
 				if (iter != xrefs->tail) {
 					ut64 next_addr = ((RAnalRef *)(iter->n->data))->addr;
-					next_fun = r_anal_get_fcn_in (core->anal, next_addr, -1); //r_anal_get_fcn_in (core->anal, refi->addr, -1);
+					next_fun = r_anal_get_fcn_in (core->anal, next_addr, -1);
 					if (next_fun && next_fun->addr == fun->addr) {
 						r_list_append (addrs, refi->addr);
 						continue;
 					}
 				}
+				r_list_append (addrs, refi->addr);
 			} else {
-				RFlagItem *f = r_flag_get_at (core->flags, refi->addr, true);
+				f = r_flag_get_at (core->flags, refi->addr, true);
 				if (f) {
-					name = r_str_newf ("%s + %d", f->name, refi->addr - f->offset);
+					name = strdup (f->name);
+					if (iter != xrefs->tail) {
+						ut64 next_addr = ((RAnalRef *)(iter->n->data))->addr;
+						next_f = r_flag_get_at (core->flags, next_addr, true);
+						if (next_f && f->offset == next_f->offset) {
+							r_list_append (addrs, refi->addr - f->offset);
+							continue;
+						}
+					}
+					r_list_append (addrs, refi->addr - f->offset);
 				} else {
 					name = strdup ("unk");
 				}
@@ -1213,17 +1224,17 @@ static void ds_show_xrefs(RDisasmState *ds) {
 					name = tmp;
 				}
 			}
-			r_list_append (addrs, refi->addr);
 			ds_begin_json_line (ds);
 			ds_pre_xrefs (ds, false);
-			ds_comment (ds, false, "%s; %s XREF from %s (",
-				COLOR (ds, pal_comment), r_anal_xrefs_type_tostring (refi->type), name);
+			char* plural = r_list_length (addrs) > 1 ? "S" : "";
+			char* plus = fun ? "" : "+";
+			ds_comment (ds, false, "%s; %s XREF%s from %s (",
+				COLOR (ds, pal_comment), r_anal_xrefs_type_tostring (refi->type), plural, name);
 			r_list_foreach (addrs, it, addr) {
-				ds_comment (ds, false, "%s0x%"PFMT64x, it == addrs->head ? "" : ", ", addr);
+				ds_comment (ds, false, "%s%s0x%"PFMT64x, it == addrs->head ? "" : ", ", plus, addr);
 			}
 			ds_comment (ds, false, ")%s", COLOR_RESET (ds));
 			ds_newline (ds);
-
 			r_list_purge (addrs);
 			R_FREE (name);
 		} else {
