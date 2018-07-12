@@ -2087,17 +2087,11 @@ R_API bool r_core_init(RCore *core) {
 	core->print->cons = core->cons;
 	r_cons_bind (&core->print->consbind);
 
-	// We save the old num, in order to restore it after free
-	core->old_num = core->cons->num;
-	core->cons->num = core->num;
+	// We save the old num ad user, in order to restore it after free
 	core->lang = r_lang_new ();
 	core->lang->cmd_str = (char *(*)(void *, const char *))r_core_cmd_str;
 	core->lang->cmdf = (int (*)(void *, const char *, ...))r_core_cmdf;
-	core->cons->cb_editor = (RConsEditorCallback)r_core_editor;
-	core->cons->cb_break = (RConsBreakCallback)r_core_break;
-	core->cons->cb_sleep_begin = (RConsSleepBeginCallback)r_core_sleep_begin;
-	core->cons->cb_sleep_end = (RConsSleepEndCallback)r_core_sleep_end;
-	core->cons->user = (void*)core;
+	r_core_bind_cons (core);
 	core->lang->cb_printf = r_cons_printf;
 	r_lang_define (core->lang, "RCore", "core", core);
 	r_lang_set_user_ptr (core->lang, core);
@@ -2208,6 +2202,15 @@ R_API bool r_core_init(RCore *core) {
 	return 0;
 }
 
+R_API void r_core_bind_cons(RCore *core) {
+	core->cons->num = core->num;
+	core->cons->cb_editor = (RConsEditorCallback)r_core_editor;
+	core->cons->cb_break = (RConsBreakCallback)r_core_break;
+	core->cons->cb_sleep_begin = (RConsSleepBeginCallback)r_core_sleep_begin;
+	core->cons->cb_sleep_end = (RConsSleepEndCallback)r_core_sleep_end;
+	core->cons->user = (void*)core;
+}
+
 R_API RCore *r_core_fini(RCore *c) {
 	if (!c) {
 		return NULL;
@@ -2228,11 +2231,6 @@ R_API RCore *r_core_fini(RCore *c) {
 	free (c->block);
 	r_core_autocomplete_free (c->autocomplete);
 
-	// Check if the old num is saved. If yes, we restore it.
-	if (c->cons && c->old_num) {
-		c->cons->num = c->old_num;
-		c->old_num = NULL;
-	}
 	r_list_free (c->undos);
 	r_num_free (c->num);
 	// TODO: sync or not? sdb_sync (c->sdb);

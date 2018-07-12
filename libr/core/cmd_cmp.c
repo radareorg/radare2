@@ -715,6 +715,7 @@ static int cmd_cmp(void *data, const char *input) {
 		if (!r_core_file_open (core2, file2, 0, 0LL)) {
 			eprintf ("Cannot open diff file '%s'\n", file2);
 			r_core_free (core2);
+			r_core_bind_cons (core);
 			return false;
 		}
 		// TODO: must replicate on core1 too
@@ -729,6 +730,7 @@ static int cmd_cmp(void *data, const char *input) {
 		/* exchange a segfault with a memleak */
 		core2->config = NULL;
 		r_core_free (core2);
+		r_core_bind_cons (core);
 	}
 	break;
 	case 'u': // "cu"
