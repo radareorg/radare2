@@ -68,7 +68,7 @@ asm_plugins = [
   'gb',
   'h8300',
   'hexagon',
-  'hexagon_gnu',
+  #'hexagon_gnu',
   'hppa_gnu',
   'i4004',
   'i8080',
