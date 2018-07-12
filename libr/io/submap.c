@@ -2,11 +2,11 @@
 #include <r_types.h>
 #include <r_util.h>
 
-ut64 _map_from(RIOMap *map) {
+static ut64 _map_from(RIOMap *map) {
 	return map->itv.addr;
 }
 
-ut64 _map_to(RIOMap *map) {
+static ut64 _map_to(RIOMap *map) {
 	return map->itv.addr + map->itv.size - 1;
 }
 
@@ -28,16 +28,16 @@ beach:
 	return true;
 }
 
-bool _submap_free_cb(void *user, void *data, ut32 id) {
-	free(data);
+static bool _submap_free_cb(void *user, void *data, ut32 id) {
+	free (data);
 	return true;
 }
 
 //only use this, when no overlapping is guaranteed with the incoming data
-bool _submap_insert_no_overlap_cb(void *vin, void *vincoming, void *user, int *cmp_res) {
+static bool _submap_insert_no_overlap_cb(void *vin, void *vincoming, void *user, int *cmp_res) {
 	RIOSubMap *sm = (RIOSubMap *)vincoming;
 
-	return _submap_find_cb(vin, &sm->from, user, cmp_res);
+	return _submap_find_cb (vin, &sm->from, user, cmp_res);
 }
 
 R_API void r_io_submap_init(RIO *io) {
@@ -48,8 +48,8 @@ R_API void r_io_submap_init(RIO *io) {
 
 R_API void r_io_submap_fini(RIO *io) {
 	if (io && io->submaps) {
-		r_oids_foreach(io->submaps, _submap_free_cb, NULL);
-		r_oids_free(io->submaps);
+		r_oids_foreach (io->submaps, _submap_free_cb, NULL);
+		r_oids_free (io->submaps);
 		io->submaps = NULL;
 	}
 }
@@ -57,15 +57,14 @@ R_API void r_io_submap_fini(RIO *io) {
 //existing partially overlapping submaps get adjusted,
 //so that they don't overlap with the new submap
 R_API void r_io_submap_repress(RIO *io, RIOMap *map) {	//change to bool maybe later
-	RIOSubMap *bd, *sm;
-	ut64 off;
-	ut32 od;
+/*	RIOSubMap *sm;
+	ut32 od;	*/
 
 	if (!io || !io->submaps || !map) {
 		return;
 	}
 
-	sm = R_NEW (RIOSubMap);
+	RIOSubMap *sm = R_NEW (RIOSubMap);
 	if (!sm) {
 		return;
 	}
@@ -74,6 +73,7 @@ R_API void r_io_submap_repress(RIO *io, RIOMap *map) {	//change to bool maybe la
 	sm->id = map->id;
 	r_io_submap_cut_out (io, sm->from, sm->to);
 	io->submaps->cmp = _submap_insert_no_overlap_cb;
+	ut32 od;
 	r_oids_insert (io->submaps, sm, &sm->sid, &od, NULL);
 }
 
@@ -82,7 +82,7 @@ R_API bool r_io_submap_cut_out(RIO *io, ut64 from, ut64 to) {
 	RIOSubMap *bd, *sm;
 	ut32 od;
 	if (to < from) {
-		if (!r_io_submap_cut_out(io, from, UT64_MAX)) {
+		if (!r_io_submap_cut_out (io, from, UT64_MAX)) {
 			return false;
 		}
 		from = 0LL;
@@ -95,7 +95,7 @@ R_API bool r_io_submap_cut_out(RIO *io, ut64 from, ut64 to) {
 	}
 	io->submaps->cmp = _submap_find_cb;
 	od = r_oids_find (io->submaps, &from, NULL);
-	while ((sm = r_oids_oget(io->submaps, od))) {
+	while ((sm = r_oids_oget (io->submaps, od))) {
 //sm->to is guaranteed to be bigger or equal to from,
 //because that's how r_oids_find works
 		if (sm->from < from) {
@@ -105,7 +105,7 @@ R_API bool r_io_submap_cut_out(RIO *io, ut64 from, ut64 to) {
 //becomes
 //      ##cut this out##
 //##sm##                ##bd##
-				bd = R_NEW(RIOSubMap);
+				bd = R_NEW (RIOSubMap);
 				if (!bd) {
 					return false;
 				}
@@ -131,7 +131,7 @@ R_API bool r_io_submap_cut_out(RIO *io, ut64 from, ut64 to) {
 //          ####sm####
 //sm gets deleted
 			free (sm);
-			r_oids_odelete(io->submaps, od);
+			r_oids_odelete (io->submaps, od);
 			continue;
 		}
 		if (sm->from <= to) {
@@ -150,13 +150,11 @@ R_API bool r_io_submap_cut_out(RIO *io, ut64 from, ut64 to) {
 }
 
 //in - incoming
-bool _submap_hack_n_slash_insert(void *vin, void *vincoming, void *user, int *cmp_res) {
-	RIOSubMap *in, *incoming, *map;
-	RQueue *todo;
-
-	in = (RIOSubMap *)vin;
-	incoming = (RIOSubMap *)vincoming;
-	todo = (RQueue *)user;
+static bool _submap_hack_n_slash_insert(void *vin, void *vincoming, void *user, int *cmp_res) {
+	RIOSubMap *in = (RIOSubMap *)vin;
+	RIOSubMap *incoming = (RIOSubMap *)vincoming;
+	RQueue *todo = (RQueue *)user;
+	RIOSubMap *map;
 #if 0
 	      ########in#########
 #incoming#
@@ -189,11 +187,11 @@ bool _submap_hack_n_slash_insert(void *vin, void *vincoming, void *user, int *cm
 #############incoming###############
 #endif
 			//slash submap into 2 submaps, that don't intersect with the existing submap in
-			map = R_NEW0(RIOSubMap);	//check needed
+			map = R_NEW0 (RIOSubMap);	//check needed
 			map->id = incoming->id;
 			map->to = incoming->to;
 			map->from = in->to + 1;
-			r_queue_enqueue(todo, map);	//will be inserted on the later iterations
+			r_queue_enqueue (todo, map);	//will be inserted on the later iterations
 			incoming->to = in->from - 1;
 			cmp_res[0] = 1;
 			return true;
@@ -221,18 +219,18 @@ bool _submap_hack_n_slash_insert(void *vin, void *vincoming, void *user, int *cm
 }
 
 R_API void r_io_submap_sink_in(RIO *io, RIOMap *map) {
-	RIOSubMap *sm;
+/*	RIOSubMap *sm;
 	RQueue *todo;
-	ut32 od;
+	ut32 od;	*/
 
 	if (!io || !io->submaps || !map) {
 		return;
 	}
-	todo = r_queue_new(4);
+	RQueue *todo = r_queue_new (4);
 	if (!todo) {
 		return;
 	}
-	sm = R_NEW (RIOSubMap);
+	RIOSubMap *sm = R_NEW (RIOSubMap);
 	if (!sm) {
 		r_queue_free (todo);
 		return;
@@ -242,6 +240,7 @@ R_API void r_io_submap_sink_in(RIO *io, RIOMap *map) {
 	sm->id = map->id;
 	io->submaps->cmp = _submap_hack_n_slash_insert;
 
+	ut32 od;
 	do {
 		if (!r_oids_insert (io->submaps, sm, &sm->sid, &od, todo)) {
 			free (sm);
@@ -266,25 +265,25 @@ R_API void r_io_submap_sink_in_all(RIO *io) {
 	r_oids_foreach (io->maps, _sink_in_all_cb, io);
 }
 
-R_API ut32 r_io_map_get_next (RIO *io, ut64 addr) {
-	RIOSubMap *sm;
-	ut32 od;
+R_API ut32 r_io_map_get_next(RIO *io, ut64 addr) {
+/*	RIOSubMap *sm;
+	ut32 od;	*/
 	if (!io || !io->maps || !io->submaps) {
 		return 0;
 	}
 	io->submaps->cmp = _submap_find_cb;
-	od = r_oids_find(io->submaps, &addr, NULL);
-	sm = r_oids_oget(io->submaps, od);
+	ut32 od = r_oids_find (io->submaps, &addr, NULL);
+	RIOSubMap *sm = r_oids_oget (io->submaps, od);
 	return sm ? sm->id : 0;
 }
 
-R_API RIOMap *r_io_map_get (RIO *io, ut64 addr) {
-	RIOMap *map;
+R_API RIOMap *r_io_map_get(RIO *io, ut64 addr) {
+/*	RIOMap *map;	*/
 	ut32 id = r_io_map_get_next (io, addr);
 
 	if (!id) {
 		return NULL;
 	}
-	map = r_oids_get(io->maps, id);
+	RIOMap *map = r_oids_get (io->maps, id);
 	return r_itv_contain (map->itv, addr) ? map : NULL;
 }

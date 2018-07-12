@@ -1496,7 +1496,7 @@ static int cmd_open(void *data, const char *input) {
 					perms |= core->io->desc->flags;
 				}
 				if (r_io_reopen (core->io, fd, perms, 644)) {
-					RList *maps = r_io_map_get_for_fd(core->io, fd);
+					RList *maps = r_io_map_get_for_fd (core->io, fd);
 					RListIter *iter;
 					RIOMap *map;
 					r_list_foreach (maps, iter, map) {
