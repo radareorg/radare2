@@ -17,7 +17,7 @@ anal_plugins = [
   'i4004',
   'i8080',
   'java',
-  'm68k',
+  'm68k_cs',
   'malbolge',
   'mips_cs',
   'mips_gnu',
