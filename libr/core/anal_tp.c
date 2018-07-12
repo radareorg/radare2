@@ -159,6 +159,7 @@ static ut64 get_addr (Sdb *trace, const char *regname, int idx) {
 }
 
 #define DEFAULT_MAX 3
+#define REG_SZ 10
 
 static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 faddr, const char* cc,
 		int prev_idx, bool userfnc, ut64 caddr) {
@@ -195,7 +196,7 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 faddr, const
 		if (!in_stack) {
 			place = r_anal_cc_arg (anal, cc, arg_num + 1);
 		}
-		char regname[10] = {0};
+		char regname[REG_SZ] = {0};
 		ut64 xaddr = UT64_MAX;
 		bool memref = false;
 		bool cmt_set = false;
@@ -268,7 +269,7 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 faddr, const
 					}
 				}
 			} else if (var && res && (xaddr != UT64_MAX)) { // Type progation using value
-				char tmp[10] = {0};
+				char tmp[REG_SZ] = {0};
 				get_src_regname (core, instr_addr, tmp, sizeof (tmp));
 				ut64 ptr = get_addr (trace, tmp, j);
 				if (ptr == xaddr) {
@@ -395,7 +396,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 				bool sign = false;
 				// Forward propgation of function return type
 				if (!resolved && ret_type && ret_reg) {
-					char tmp[10] = {0};
+					char tmp[REG_SZ] = {0};
 					get_src_regname (core, aop.addr, tmp, sizeof (tmp));
 					if ((type == R_ANAL_OP_TYPE_MOV) && *tmp && !strcmp (tmp, ret_reg) && var) {
 						var_retype (anal, var, NULL, ret_type, addr, false, false);
@@ -421,7 +422,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 				// lea rax , str.hello ; mov [local_ch], rax;
 				if (prop && (type == R_ANAL_OP_TYPE_MOV)) {
 					char *vtype = str_flag ? "const char *": prev_type;
-					char reg[10] = {0};
+					char reg[REG_SZ] = {0};
 					bool match = false;
 					get_src_regname (core, addr, reg, sizeof (reg));
 					char *tmp = strchr (reg , ',');
