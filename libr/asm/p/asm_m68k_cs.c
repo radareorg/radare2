@@ -117,7 +117,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	return ret;
 }
 
-RAsmPlugin r_asm_plugin_m68k_cs = {
+RAsmPlugin r_asm_plugin_m68k = {
 	.name = "m68k",
 	.desc = "Capstone M68K disassembler",
 	.cpus = "68000,68010,68020,68030,68040,68060",
@@ -137,13 +137,13 @@ static bool check_features(RAsm *a, cs_insn *insn) {
 #ifndef CORELIB
 RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_m68k_cs,
+	.data = &r_asm_plugin_m68k,
 	.version = R2_VERSION
 };
 #endif
 
 #else
-RAsmPlugin r_asm_plugin_m68k_cs = {
+RAsmPlugin r_asm_plugin_m68k = {
 	.name = "m68k.cs (unsupported)",
 	.desc = "Capstone M68K disassembler (unsupported)",
 	.license = "BSD",
@@ -155,7 +155,7 @@ RAsmPlugin r_asm_plugin_m68k_cs = {
 #ifndef CORELIB
 RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_m68k_cs,
+	.data = &r_asm_plugin_m68k,
 	.version = R2_VERSION
 };
 #endif
