@@ -310,14 +310,14 @@ R_API int r_asm_use(RAsm *a, const char *name) {
 		if (!strcmp (h->name, name) && h->arch) {
 			if (!a->cur || (a->cur && strcmp (a->cur->arch, h->arch))) {
 				char *file = r_str_newf ("%s/%s.sdb", r_str_r2_prefix (R2_SDB_OPCODES), h->arch);
-				eprintf("loading = '%s'\n", file);
+				printf("loading = '%s'\n", file);
 				r_asm_set_cpu (a, NULL);
 				sdb_free (a->pair);
 				a->pair = sdb_new (NULL, file, 0);
 				free (file);
 			}
 			a->cur = h;
-			eprintf("h->name = '%s'\n", h->name);
+			printf("h->name = '%s'\n", h->name);
 			return true;
 		}
 	}
