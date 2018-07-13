@@ -12,6 +12,21 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     message('Cloning capstone')
     git_cmd = 'clone -b next --depth 10 https://github.com/aquynh/capstone.git capstone'
     run_command(git_exe, git_cmd.split())
+
+    patches_files = [
+      'capstone-calloc.patch',
+      'fix-m68k-oob.patch'
+      'fix-underflow-tms.patch'
+      'fix-x86-16.patch'
+      'sparc-crash.patch'
+      'sstream-null.patch'
+    ]
+
+    message('Patching capstone with radare\'s patches')
+    foreach file : patches_files
+      patch_cmd = 'patch -p1 -d capstone -i ../capstone-patches/@0@'.format(file)
+      run_command(patch_cmd.split())
+    endforeach
   endif
 
   cs_files = [
