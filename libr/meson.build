@@ -96,6 +96,7 @@ asm_plugins = [
   'spc700',
   'sysz',
   'tms320',
+  'tms320c64x',
   'tricore',
   'v810',
   'v850',
@@ -104,7 +105,6 @@ asm_plugins = [
   'ws',
   'x86_as',
   'x86_cs',
-  #'x86_gas',
   'x86_nasm',
   'x86_nz',
   'xap',
@@ -116,6 +116,7 @@ asm_plugins = [
 bin_plugins = [
   'any',
   'art',
+  'avr',
   'bf',
   'bflt',
   'bios',
