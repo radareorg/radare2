@@ -1190,7 +1190,6 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		if (refi->at == ds->at) {
 			fun = fcnIn (ds, refi->addr, -1); 
 			if (fun) {
-				name = strdup (fun->name);
 				if (iter != xrefs->tail) {
 					ut64 next_addr = ((RAnalRef *)(iter->n->data))->addr;
 					next_fun = r_anal_get_fcn_in (core->anal, next_addr, -1);
@@ -1199,11 +1198,11 @@ static void ds_show_xrefs(RDisasmState *ds) {
 						continue;
 					}
 				}
+				name = strdup (fun->name);
 				r_list_append (addrs, refi->addr);
 			} else {
 				f = r_flag_get_at (core->flags, refi->addr, true);
 				if (f) {
-					name = strdup (f->name);
 					if (iter != xrefs->tail) {
 						ut64 next_addr = ((RAnalRef *)(iter->n->data))->addr;
 						next_f = r_flag_get_at (core->flags, next_addr, true);
@@ -1212,6 +1211,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 							continue;
 						}
 					}
+					name = strdup (f->name);
 					r_list_append (addrs, refi->addr - f->offset);
 				} else {
 					name = strdup ("unk");
