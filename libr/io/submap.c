@@ -285,5 +285,5 @@ R_API RIOMap *r_io_map_get(RIO *io, ut64 addr) {
 		return NULL;
 	}
 	RIOMap *map = r_oids_get (io->maps, id);
-	return r_itv_contain (map->itv, addr) ? map : NULL;
+	return map ? (r_itv_contain (map->itv, addr) ? map : NULL) : NULL;
 }
