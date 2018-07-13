@@ -15,10 +15,10 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
 
     patches_files = [
       'capstone-calloc.patch',
-      'fix-m68k-oob.patch'
-      'fix-underflow-tms.patch'
-      'fix-x86-16.patch'
-      'sparc-crash.patch'
+      'fix-m68k-oob.patch',
+      'fix-underflow-tms.patch',
+      'fix-x86-16.patch',
+      'sparc-crash.patch',
       'sstream-null.patch'
     ]
 
