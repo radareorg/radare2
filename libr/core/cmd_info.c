@@ -14,7 +14,7 @@ static const char *help_msg_i[] = {
 	"'j'", "", "Output in json",
 	"'q'", "", "Simple quiet output",
 	"Actions:", "", "",
-	"i|ij", "", "Show info of current file (in JSON)",
+	"i|ij", "", "Show file and binary info of current file (in JSON)",
 	"iA", "", "List archs",
 	"ia", "", "Show all info (imports, exports, sections..)",
 	"ib", "", "Reload the current buffer for setting of the bin (use once only)",
@@ -28,6 +28,7 @@ static const char *help_msg_i[] = {
 	"iee", "", "Show Entry and Exit (preinit, init and fini)",
 	"iE", "", "Exports (global symbols)",
 	"iE.", "", "Current export",
+	"iF", "", "File info",
 	"ih", "", "Headers (alias for iH)",
 	"iHH", "", "Verbose Headers in raw text",
 	"ii", "", "Imports",
@@ -268,32 +269,45 @@ static int bin_is_executable(RBinObject *obj){
 	return false;
 }
 
-static void cmd_info_bin(RCore *core, int va, int mode) {
+static void cmd_info_file_bin_(RCore *core, int va, int mode, bool file_only) {
 	RBinObject *obj = r_bin_cur_object (core->bin);
 	int array = 0;
 	if (core->file) {
 		if ((mode & R_CORE_BIN_JSON) && !(mode & R_CORE_BIN_ARRAY)) {
 			mode = R_CORE_BIN_JSON;
-			r_cons_printf ("{\"core\":");
+			if (!file_only) {
+				r_cons_printf ("{\"core\":");
+			}
 		}
 		if ((mode & R_CORE_BIN_JSON) && (mode & R_CORE_BIN_ARRAY)) {
 			mode = R_CORE_BIN_JSON;
 			array = 1;
-			r_cons_printf (",\"core\":");
+			r_cons_printf ("\"core\":");
 		}
 		r_core_file_info (core, mode);
-		if (bin_is_executable (obj)) {
+		if (!file_only && bin_is_executable (obj)) {
 			if ((mode & R_CORE_BIN_JSON)) {
 				r_cons_printf (",\"bin\":");
 			}
 			r_core_bin_info (core, R_CORE_BIN_ACC_INFO, mode, va, NULL, NULL);
 		}
 		if (mode == R_CORE_BIN_JSON && array == 0) {
-			r_cons_printf ("}\n");
+			if (!file_only) {
+				r_cons_printf ("}");
+			}
+			r_cons_printf ("\n");
 		}
 	} else {
 		eprintf ("No file selected\n");
 	}
+}
+
+static void cmd_info_file(RCore *core, int va, int mode) {
+	cmd_info_file_bin_ (core, va, mode, true);
+}
+
+static void cmd_info_file_bin(RCore *core, int va, int mode) {
+	cmd_info_file_bin_ (core, va, mode, false);
 }
 
 static void playMsg(RCore *core, const char *n, int len) {
@@ -343,7 +357,7 @@ static int cmd_info(void *data, const char *input) {
 		r_cons_printf ("{");
 	}
 	if (!*input) {
-		cmd_info_bin (core, va, mode);
+		cmd_info_file_bin (core, va, mode);
 	}
 	/* i* is an alias for iI* */
 	if (!strcmp (input, "*")) {
@@ -659,6 +673,17 @@ static int cmd_info(void *data, const char *input) {
 						  obj? r_list_length (obj->imports): 0);
 			  }
 			  break;
+		case 'F':
+			if (is_array) {
+				if (is_array == 1) {
+					is_array++;
+				} else {
+					r_cons_printf (",");
+				}
+				mode |= R_CORE_BIN_ARRAY;
+			}
+			cmd_info_file (core, va, mode);
+			break;
 		case 'I': RBININFO ("info", R_CORE_BIN_ACC_INFO, NULL, 0); break;
 		case 'e':
 			  if (input[1] == 'e') {
@@ -850,10 +875,10 @@ static int cmd_info(void *data, const char *input) {
 			return 0;
 		case 'a':
 			switch (mode) {
-			case R_CORE_BIN_RADARE: cmd_info (core, "IieEcsSmz*"); break;
-			case R_CORE_BIN_JSON: cmd_info (core, "IieEcsSmzj"); break;
-			case R_CORE_BIN_SIMPLE: cmd_info (core, "IieEcsSmzq"); break;
-			default: cmd_info (core, "IiEecsSmz"); break;
+			case R_CORE_BIN_RADARE: cmd_info (core, "FIieEcsSmz*"); break;
+			case R_CORE_BIN_JSON: cmd_info (core, "FIieEcsSmzj"); break;
+			case R_CORE_BIN_SIMPLE: cmd_info (core, "FIieEcsSmzq"); break;
+			default: cmd_info (core, "FIiEecsSmz"); break;
 			}
 			break;
 		case '?':
@@ -864,17 +889,17 @@ static int cmd_info(void *data, const char *input) {
 			goto done;
 		case 'q':
 			mode = R_CORE_BIN_SIMPLE;
-			cmd_info_bin (core, va, mode);
+			cmd_info_file_bin (core, va, mode);
 			goto done;
 		case 'j':
 			mode = R_CORE_BIN_JSON;
 			if (is_array > 1) {
 				mode |= R_CORE_BIN_ARRAY;
 			}
-			cmd_info_bin (core, va, mode);
+			cmd_info_file_bin (core, va, mode);
 			goto done;
 		default:
-			cmd_info_bin (core, va, mode);
+			cmd_info_file_bin (core, va, mode);
 			break;
 		}
 		// input can be overwritten like the 'input = " ";' a few lines above
