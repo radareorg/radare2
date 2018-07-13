@@ -152,7 +152,7 @@ R_API char *r_syscmd_ls(const char *input) {
 	}
 	if (!path || !*path) {
 		path = ".";
-	} else if (*path == '~') {
+	} else if (!strncmp (path, "~/", 2)) {
 		homepath = r_str_home (path + 2);
 		if (homepath) {
 			path = (const char *)homepath;

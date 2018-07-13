@@ -910,6 +910,9 @@ R_API char *r_file_temp (const char *prefix) {
 R_API int r_file_mkstemp(const char *prefix, char **oname) {
 	int h = -1;
 	char *path = r_file_tmpdir ();
+	if (!prefix) {
+		prefix = "r2";
+	}
 #if __WINDOWS__
 	LPTSTR name = NULL;
 	LPTSTR path_ = r_sys_conv_utf8_to_utf16 (path);

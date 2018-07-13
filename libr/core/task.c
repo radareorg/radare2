@@ -364,9 +364,9 @@ R_API void r_core_task_enqueue_oneshot(RCore *core, RCoreTaskOneShot func, void 
 		core->oneshot_running = false;
 	} else {
 		OneShot *oneshot = R_NEW (OneShot);
-		oneshot->func = func;
-		oneshot->user = user;
 		if (oneshot) {
+			oneshot->func = func;
+			oneshot->user = user;
 			r_list_append (core->oneshot_queue, oneshot);
 			core->oneshots_enqueued++;
 		}
