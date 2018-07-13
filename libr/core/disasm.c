@@ -3365,10 +3365,10 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 }
 
 static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refaddr) {
-	const char *prefix;
-	if (!r_bin_string_filter (ds->core->bin, str, refaddr)) {
+	if (ds->core->flags->realnames || !r_bin_string_filter (ds->core->bin, str, refaddr)) {
 		return;
 	}
+	const char *prefix;
 	char *escstr = ds_esc_str (ds, str, len, &prefix);
 	if (escstr) {
 		bool inv = ds->show_color && !ds->show_emu_strinv;
