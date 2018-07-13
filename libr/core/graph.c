@@ -2126,16 +2126,17 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 }
 
 static void delete_dup_edges (RAGraph *g) {
-	RListIter *iter, *in_iter, *in_iter2;
+	RListIter *it, *in_it, *in_it2, *in_it2_tmp;
 	RGraphNode *n, *a, *b;
-	r_list_foreach (g->graph->nodes, iter, n) {
-		r_list_foreach (n->out_nodes, in_iter, a) {
-			r_list_foreach (n->out_nodes, in_iter2, b) {
-				if (in_iter == in_iter2) {
-					continue;
-				}
+	r_list_foreach (g->graph->nodes, it, n) {
+		r_list_foreach (n->out_nodes, in_it, a) {
+			for (in_it2 = in_it->n; in_it2 && (b = in_it2->data, in_it2_tmp = in_it2->n, 1); in_it2 = in_it2_tmp) {
 				if (a->idx == b->idx) {
-					r_graph_del_edge (g->graph, n, b);
+					r_list_delete (n->out_nodes, in_it2);
+					r_list_delete_data (n->all_neighbours, b);
+					r_list_delete_data (b->in_nodes, n);
+					r_list_delete_data (b->all_neighbours, n);
+					g->graph->n_edges--;
 				}
 			}
 		}
