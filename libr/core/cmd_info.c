@@ -276,26 +276,26 @@ static void cmd_info_file_bin_(RCore *core, int va, int mode, bool file_only) {
 		if ((mode & R_CORE_BIN_JSON) && !(mode & R_CORE_BIN_ARRAY)) {
 			mode = R_CORE_BIN_JSON;
 			if (!file_only) {
-				r_cons_printf ("{\"core\":");
+				r_cons_strcat ("{\"core\":");
 			}
 		}
 		if ((mode & R_CORE_BIN_JSON) && (mode & R_CORE_BIN_ARRAY)) {
 			mode = R_CORE_BIN_JSON;
 			array = 1;
-			r_cons_printf ("\"core\":");
+			r_cons_strcat ("\"core\":");
 		}
 		r_core_file_info (core, mode);
 		if (!file_only && bin_is_executable (obj)) {
 			if ((mode & R_CORE_BIN_JSON)) {
-				r_cons_printf (",\"bin\":");
+				r_cons_strcat (",\"bin\":");
 			}
 			r_core_bin_info (core, R_CORE_BIN_ACC_INFO, mode, va, NULL, NULL);
 		}
 		if (mode == R_CORE_BIN_JSON && array == 0) {
 			if (!file_only) {
-				r_cons_printf ("}");
+				r_cons_strcat ("}");
 			}
-			r_cons_printf ("\n");
+			r_cons_newline ();
 		}
 	} else {
 		eprintf ("No file selected\n");
