@@ -28,11 +28,11 @@ static const char *help_msg_i[] = {
 	"iee", "", "Show Entry and Exit (preinit, init and fini)",
 	"iE", "", "Exports (global symbols)",
 	"iE.", "", "Current export",
-	"iF", "", "File info",
 	"ih", "", "Headers (alias for iH)",
 	"iHH", "", "Verbose Headers in raw text",
 	"ii", "", "Imports",
 	"iI", "", "Binary info",
+	"iII", "", "File info",
 	"ik", " [query]", "Key-value database from RBinObject",
 	"il", "", "Libraries",
 	"iL ", "[plugin]", "List all RBin plugins loaded or plugin details",
@@ -346,7 +346,7 @@ static int cmd_info(void *data, const char *input) {
 	}
 	if (mode == R_CORE_BIN_JSON) {
 		int suffix_shift = 0;
-		if (!strncmp (input, "SS", 2)) {
+		if (!strncmp (input, "SS", 2) || !strncmp (input, "II", 2)) {
 			suffix_shift = 1;
 		}
 		if (strlen (input + 1 + suffix_shift) > 1) {
@@ -673,18 +673,22 @@ static int cmd_info(void *data, const char *input) {
 						  obj? r_list_length (obj->imports): 0);
 			  }
 			  break;
-		case 'F':
-			if (is_array) {
-				if (is_array == 1) {
-					is_array++;
-				} else {
-					r_cons_printf (",");
+		case 'I':
+			if (input[1] == 'I') {
+				if (is_array) {
+					if (is_array == 1) {
+						is_array++;
+					} else {
+						r_cons_printf (",");
+					}
+					mode |= R_CORE_BIN_ARRAY;
 				}
-				mode |= R_CORE_BIN_ARRAY;
+				cmd_info_file (core, va, mode);
+				input++;
+			} else {
+				RBININFO ("info", R_CORE_BIN_ACC_INFO, NULL, 0);
 			}
-			cmd_info_file (core, va, mode);
 			break;
-		case 'I': RBININFO ("info", R_CORE_BIN_ACC_INFO, NULL, 0); break;
 		case 'e':
 			  if (input[1] == 'e') {
 				  RBININFO ("entries", R_CORE_BIN_ACC_INITFINI, NULL, 0);
@@ -875,10 +879,10 @@ static int cmd_info(void *data, const char *input) {
 			return 0;
 		case 'a':
 			switch (mode) {
-			case R_CORE_BIN_RADARE: cmd_info (core, "FIieEcsSmz*"); break;
-			case R_CORE_BIN_JSON: cmd_info (core, "FIieEcsSmzj"); break;
-			case R_CORE_BIN_SIMPLE: cmd_info (core, "FIieEcsSmzq"); break;
-			default: cmd_info (core, "FIiEecsSmz"); break;
+			case R_CORE_BIN_RADARE: cmd_info (core, "IIIieEcsSmz*"); break;
+			case R_CORE_BIN_JSON: cmd_info (core, "IIIieEcsSmzj"); break;
+			case R_CORE_BIN_SIMPLE: cmd_info (core, "IIIieEcsSmzq"); break;
+			default: cmd_info (core, "IIIiEecsSmz"); break;
 			}
 			break;
 		case '?':
