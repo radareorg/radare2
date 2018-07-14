@@ -470,6 +470,7 @@ static int try_loadlib(RCore *core, const char *lib, ut64 addr) {
 
 R_API bool r_core_file_loadlib(RCore *core, const char *lib, ut64 libaddr) {
 	const char *ldlibrarypath[] = {
+		R2_LIBDIR,
 		"/usr/local/lib",
 		"/usr/lib",
 		"/lib",

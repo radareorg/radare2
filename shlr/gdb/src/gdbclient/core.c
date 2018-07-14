@@ -1,4 +1,4 @@
-/* libgdbr - LGPL - Copyright 2014-2017 - defragger */
+/* libgdbr - LGPL - Copyright 2014-2018 - defragger */
 
 #include "gdbclient/responses.h"
 #include "gdbclient/commands.h"
@@ -107,7 +107,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	// Initial max_packet_size for remote target (minimum so far for AVR = 64)
 	g->stub_features.pkt_sz = 64;
 	char *env_pktsz_str;
-	ut32 env_pktsz;
+	ut32 env_pktsz = 0;
 	if ((env_pktsz_str = r_sys_getenv ("R2_GDB_PKTSZ"))) {
 		if ((env_pktsz = (ut32) strtoul (env_pktsz_str, NULL, 10))) {
 			g->stub_features.pkt_sz = R_MAX (env_pktsz, GDB_MAX_PKTSZ);

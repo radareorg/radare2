@@ -2766,10 +2766,13 @@ static bool get_rsds(ut8* dbg_data, int dbg_data_len, SCV_RSDS_HEADER* res) {
 	return true;
 }
 
-static void get_nb10(ut8* dbg_data, SCV_NB10_HEADER* res) {
+static void get_nb10(ut8* dbg_data, int dbg_data_len, SCV_NB10_HEADER* res) {
 	const int nb10sz = 16;
-	// memcpy (res, dbg_data, nb10sz);
-	// res->file_name = (ut8*) strdup ((const char*) dbg_data + nb10sz);
+	if (dbg_data_len < nb10sz) {
+		return;
+	}
+	memcpy (res, dbg_data, nb10sz);
+	res->file_name = (ut8*) strdup ((const char*) dbg_data + nb10sz);
 }
 
 static int get_debug_info(struct PE_(r_bin_pe_obj_t)* bin, PE_(image_debug_directory_entry)* dbg_dir_entry, ut8* dbg_data, int dbg_data_len, SDebugInfo* res) {
@@ -2814,7 +2817,7 @@ static int get_debug_info(struct PE_(r_bin_pe_obj_t)* bin, PE_(image_debug_direc
 			}
 			SCV_NB10_HEADER nb10_hdr = {{0}};
 			init_cv_nb10_header (&nb10_hdr);
-			get_nb10 (dbg_data, &nb10_hdr);
+			get_nb10 (dbg_data, dbg_data_len, &nb10_hdr);
 			snprintf (res->guidstr, sizeof (res->guidstr),
 				"%x%x", nb10_hdr.timestamp, nb10_hdr.age);
 			res->file_name[0] = 0;

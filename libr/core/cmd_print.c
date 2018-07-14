@@ -3674,13 +3674,13 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *) data;
-	int w, p, i, l, len, ret;
+	int i, l, len, ret;
 	ut8* block;
 	ut32 tbs = core->blocksize;
 	ut64 n, off, from, to, at, ate, piece;
 	ut64 tmpseek = UT64_MAX;
 	const int addrbytes = core->io->addrbytes;
-	w = p = i = l = len = ret = 0;
+	i = l = len = ret = 0;
 	n = off = from = to = at = ate = piece = 0;
 
 	r_print_init_rowoffsets (core->print);

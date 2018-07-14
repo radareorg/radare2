@@ -53,7 +53,7 @@ export LDFLAGS="-flto"
 export USE_SIMULATOR=0
 
 if [ "${APPSTORE_FRIENDLY}" = 1 ]; then
-	CFGFLAGS="--without-fork --without-debugger"
+	CFGFLAGS="--without-fork --disable-debugger"
 else
 	CFGFLAGS=""
 fi
