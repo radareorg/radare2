@@ -293,9 +293,8 @@ static void cmd_info_file_bin_(RCore *core, int va, int mode, bool file_only) {
 		}
 		if (mode == R_CORE_BIN_JSON && array == 0) {
 			if (!file_only) {
-				r_cons_strcat ("}");
+				r_cons_strcat ("}\n");
 			}
-			r_cons_newline ();
 		}
 	} else {
 		eprintf ("No file selected\n");
