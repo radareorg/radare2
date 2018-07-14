@@ -125,7 +125,7 @@ int linux_handle_signals (RDebug *dbg) {
 			eprintf ("[+] SIGNAL %d errno=%d addr=0x%08"PFMT64x
 				" code=%d ret=%d\n",
 				siginfo.si_signo, siginfo.si_errno,
-				(ut64)siginfo.si_addr, siginfo.si_code, ret);
+				(ut64)(size_t)siginfo.si_addr, siginfo.si_code, ret);
 		}
 		return true;
 	}
