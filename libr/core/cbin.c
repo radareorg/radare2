@@ -817,7 +817,7 @@ static int bin_info(RCore *r, int mode) {
 			}
 		}
 		if (IS_MODE_JSON (mode)) {
-			r_cons_printf ("}\n");
+			r_cons_printf ("}");
 		}
 	}
 	r_core_anal_type_init (r);
