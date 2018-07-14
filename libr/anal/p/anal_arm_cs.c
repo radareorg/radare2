@@ -2614,6 +2614,9 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->stackop = R_ANAL_STACK_GET;
 			op->stackptr = 0;
 			op->ptr = -MEMDISP(1);
+		} else if (REGBASE(1) == ARM_REG_PC) {
+			op->refptr = 4;
+			op->ptr = (addr & ~3LL) + (thumb? 4: 8) + MEMDISP(1);
 		}
 		break;
 	case ARM_INS_BLX:

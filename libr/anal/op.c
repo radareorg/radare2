@@ -242,6 +242,7 @@ R_API int r_anal_op_execute(RAnal *anal, RAnalOp *op) {
 }
 
 R_API bool r_anal_op_nonlinear(int t) {
+	t &= R_ANAL_OP_TYPE_MASK;
 	switch (t) {
 	//call
 	case R_ANAL_OP_TYPE_CALL:
@@ -271,6 +272,7 @@ R_API bool r_anal_op_nonlinear(int t) {
 }
 
 R_API bool r_anal_op_ismemref(int t) {
+	t &= R_ANAL_OP_TYPE_MASK;
 	switch (t) {
 	case R_ANAL_OP_TYPE_LOAD:
 	case R_ANAL_OP_TYPE_MOV:
