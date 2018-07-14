@@ -667,7 +667,6 @@ R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 }
 
 static ut64 r_num_tailff(RNum *num, const char *hex) {
-        ut64 mask = 0LL;
         ut64 n = 0;
         char *p;
         int i;
@@ -689,7 +688,6 @@ static ut64 r_num_tailff(RNum *num, const char *hex) {
                 }
                 free (p);
         }
-        mask = UT64_MAX << i;
 	ut64 left = ((UT64_MAX >>i) << i);
         return left | n;
 }

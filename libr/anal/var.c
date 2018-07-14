@@ -577,7 +577,7 @@ static char *get_varname(RAnal *a, RAnalFunction *fcn, char type, const char *pf
 	char *varname = r_str_newf ("%s_%xh", pfx, idx);
 	int i = 2;
 	char v_kind;
-	int v_delta;
+	int v_delta = 0;
 	while (1) {
 		char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", fcn->addr, 1, varname);
 		char *name_value = sdb_get (a->sdb_fcns, name_key, 0);

@@ -986,10 +986,10 @@ static bool desc_list_json_cb(void *user, void *data, ut32 id) {
 static int cmd_open(void *data, const char *input) {
 	RCore *core = (RCore*)data;
 	int perms = R_IO_READ;
-	ut64 baddr = r_config_get_i (core->config, "bin.baddr"),
-	     addr = 0LL;
-	int nowarn = r_config_get_i (core->config, "file.nowarn"),
-	    argc, fd;
+	ut64 baddr = r_config_get_i (core->config, "bin.baddr");
+	ut64 addr = 0LL;
+	int nowarn = r_config_get_i (core->config, "file.nowarn");
+	int argc, fd = -1;
 	RCoreFile *file;
 	bool silence = false;
 	bool write = false;
