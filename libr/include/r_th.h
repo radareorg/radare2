@@ -21,7 +21,7 @@
 #define R_TH_TID pthread_t
 #define R_TH_LOCK_T pthread_mutex_t
 #define R_TH_COND_T pthread_cond_t
-#define R_TH_SEM_T sem_t
+#define R_TH_SEM_T sem_t *
 
 #else
 #error Threading library only supported for pthread and w32
