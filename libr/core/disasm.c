@@ -1390,8 +1390,9 @@ static ut32 tmp_get_realsize (RAnalFunction *f) {
 static void ds_show_functions_argvar(RDisasmState *ds, RAnalVar *var, const char *base, bool is_var, char sign) {
 	int delta = sign == '+' ? var->delta : -var->delta;
 	const char *pfx = is_var ? "var" : "arg";
-	r_cons_printf ("%s %s%s%s @ %s%c0x%x", pfx, var->type, r_str_endswith (var->type, "*") ? "" : " ",
-			var->name, base, sign, delta);
+	r_cons_printf ("%s%s %s%s%s%s %s@ %s%c0x%x", COLOR (ds, color_push), pfx, COLOR (ds, color_invalid), var->type, 
+			r_str_endswith (var->type, "*") ? "" : " ",
+			var->name, COLOR(ds, color_reg), base, sign, delta);
 }
 
 static void printVarSummary(RDisasmState *ds, RList *list) {
@@ -1665,9 +1666,9 @@ static void ds_show_functions(RDisasmState *ds) {
 					eprintf("Register not found");
 					break;
 				}
-				r_cons_printf ("arg %s%s%s @ %s",
+				r_cons_printf ("%sarg %s%s%s%s %s@ %s", COLOR (ds, color_push), COLOR (ds, color_invalid),
 					var->type, r_str_endswith (var->type, "*") ? "" : " ",
-					var->name, i->name);
+					var->name, COLOR (ds, color_reg), i->name);
 				}
 				break;
 			case 's': {
