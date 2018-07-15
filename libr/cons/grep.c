@@ -67,7 +67,7 @@ R_API void r_cons_grep_help(void) {
 static void parse_grep_expression(const char *str) {
 	static char buf[R_CONS_GREP_BUFSIZE];
 	int wlen, len, is_range, num_is_parsed, fail = 0;
-	char *ptr, *optr, *ptr2, *ptr3;
+	char *ptr, *optr, *ptr2, *ptr3, *end_ptr = NULL, last;
 	ut64 range_begin, range_end;
 
 	if (!str || !*str) {
@@ -198,13 +198,16 @@ while_end:
 	range_begin = range_end = -1;
 
 	if (ptr2 && ptr3) {
-		ptr2[0] = '\0';
+		end_ptr = ptr2;
+		last = ptr3[1];
+		ptr3[1] = '\0';
 		ptr2++;
 		for (; ptr2 <= ptr3; ++ptr2) {
 			if (fail) {
 				ZERO_FILL (grep->tokens);
 				grep->tokens_used = 0;
 				fail = 0;
+				eprintf ("Fail :( \n");
 				break;
 			}
 			switch (*ptr2) {
@@ -247,12 +250,13 @@ while_end:
 				}
 			}
 		}
+		ptr3[1] = last;
 	}
 
 	ptr2 = strchr_ns (ptr, ':'); // line number
 	grep->range_line = 2; // there is not :
 	if (ptr2 && ptr2[1] != ':' && ptr2[1]) {
-		*ptr2 = '\0';
+		end_ptr = end_ptr ? R_MIN (end_ptr, ptr2) : ptr2;
 		char *p, *token = ptr + 1;
 		p = strstr (token, "..");
 		if (!p) {
@@ -272,6 +276,18 @@ while_end:
 				grep->l_line = -1;
 			}
 		}
+	}
+	if (end_ptr) {
+		*end_ptr = '\0';
+		eprintf ("line:%d, rangeline:%d, from_line:%d, l_line:%d\n", grep->line, grep->range_line, grep->f_line, grep->l_line);
+		eprintf ("columns :");
+		int i;
+		for (i = 0; i < R_CONS_GREP_TOKENS; i++) {
+			if (grep->tokens[i]) {
+				eprintf ("%d", i);
+			}
+		}
+		eprintf("\n");
 	}
 	free (grep->str);
 	if (*ptr) {
@@ -714,12 +730,7 @@ R_API int r_cons_grep_line(char *buf, int len) {
 				use_tok = true;
 			}
 		} else if (grep->range_line == 1) {
-			if (grep->f_line == cons->lines) {
-				use_tok = true;
-			}
-			if (grep->l_line == cons->lines) {
-				use_tok = false;
-			}
+			use_tok = R_BETWEEN (grep->f_line, cons->lines, grep->l_line);
 		} else {
 			use_tok = true;
 		}
