@@ -222,7 +222,7 @@ R_API ut64 r_reg_set_bvalue(RReg *reg, RRegItem *item, const char *str) {
 R_API R_HEAP char *r_reg_get_bvalue(RReg *reg, RRegItem *item) {
 	char *out = NULL;
 	if (reg && item && item->flags) {
-		if (out = malloc (strlen (item->flags) + 1)) {
+		if ((out = malloc (strlen (item->flags) + 1))) {
 			ut64 num = r_reg_get_value (reg, item);
 			r_str_bits (out, (ut8 *)&num,
 				strlen (item->flags) * 8, item->flags);

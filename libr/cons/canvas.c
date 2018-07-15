@@ -511,7 +511,7 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 			newline = malloc ((w + 1));
 		}
 		if (!newline) {
-			r_con_canvas_free(c);
+			r_cons_canvas_free(c);
 			return false;
 		}
 		c->blen[i] = w;
