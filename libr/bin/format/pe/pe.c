@@ -2355,7 +2355,7 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			break;
 		}
 		rs->timestr = _time_stamp_to_str (dir->TimeDateStamp);
-		rs->type = strdup (_resource_type_str (type));
+		rs->type = _resource_type_str (type);
 		rs->language = strdup (_resource_lang_str (entry.u1.Name & 0x3ff));
 		rs->data = data;
 		rs->name = id;
