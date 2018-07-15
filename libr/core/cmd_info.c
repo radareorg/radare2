@@ -133,7 +133,7 @@ static int demangle(RCore *core, const char *s) {
 }
 
 #define STR(x) (x)? (x): ""
-static void r_core_file_info(RCore *core, int mode) {
+R_API void r_core_file_info(RCore *core, int mode) {
 	const char *fn = NULL;
 	int dbg = r_config_get_i (core->config, "cfg.debug");
 	bool io_cache = r_config_get_i (core->config, "io.cache");
