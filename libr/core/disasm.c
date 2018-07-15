@@ -1243,6 +1243,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 			eprintf ("Corrupted database?\n");
 		}
 	}
+	r_list_free (addrs);
 	r_list_free (xrefs);
 }
 
