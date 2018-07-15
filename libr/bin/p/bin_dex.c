@@ -453,9 +453,9 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 			// Emit what was previously there, if anything
 			// emitLocalCbIfLive
 			if (debug_locals[register_num].live) {
-				struct dex_debug_local_t *local = malloc (
-					sizeof (struct dex_debug_local_t));
-				if (!local) {
+				struct dex_debug_local_t *local;
+				if (!(local = malloc (
+					sizeof (struct dex_debug_local_t)))) {
 					keep = false;
 					break;
 				}
@@ -496,9 +496,9 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 			// Emit what was previously there, if anything
 			// emitLocalCbIfLive
 			if (debug_locals[register_num].live) {
-				struct dex_debug_local_t *local = malloc (
-					sizeof (struct dex_debug_local_t));
-				if (!local) {
+				struct dex_debug_local_t *local;
+				if (!(local = malloc (
+					sizeof (struct dex_debug_local_t)))) {
 					keep = false;
 					break;
 				}
@@ -531,9 +531,9 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 				return;
 			}
 			if (debug_locals[register_num].live) {
-				struct dex_debug_local_t *local = malloc (
-					sizeof (struct dex_debug_local_t));
-				if (!local) {
+				struct dex_debug_local_t *local;
+				if (!(local = malloc (
+					sizeof (struct dex_debug_local_t)))) {
 					keep = false;
 					break;
 				}
@@ -580,9 +580,8 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 			int adjusted_opcode = opcode - 10;
 			address += (adjusted_opcode / 15);
 			line += -4 + (adjusted_opcode % 15);
-			struct dex_debug_position_t *position =
-				malloc (sizeof (struct dex_debug_position_t));
-			if (!position) {
+			struct dex_debug_position_t *position;
+			if (!(position = malloc (sizeof (struct dex_debug_position_t)))) {
 				keep = false;
 				break;
 			}
@@ -856,8 +855,7 @@ static RList *strings(RBinFile *bf) {
 		len = dex_read_uleb128 (buf, sizeof (buf));
 
 		if (len > 5 && len < R_BIN_SIZEOF_STRINGS) {
-			ptr->string = malloc (len + 1);
-			if (!ptr->string) {
+			if (!(ptr->string = malloc (len + 1))) {
 				goto out_error;
 			}
 			off = bin->strings[i] + dex_uleb128_len (buf, sizeof (buf));
@@ -1522,9 +1520,10 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c,
 
 		p = r_buf_get_at (binfile->buf, c->class_data_offset, NULL);
 		p_end = p + binfile->buf->length - c->class_data_offset;
-		//XXX check for NULL!!
-		c->class_data = (struct dex_class_data_item_t *)malloc (
-			sizeof (struct dex_class_data_item_t));
+		if (!(c->class_data = (struct dex_class_data_item_t *)malloc (
+			sizeof (struct dex_class_data_item_t)))) {
+			return;
+		}
 		p = r_uleb128 (p, p_end - p, &c->class_data->static_fields_size);
 		p = r_uleb128 (p, p_end - p, &c->class_data->instance_fields_size);
 		p = r_uleb128 (p, p_end - p, &c->class_data->direct_methods_size);

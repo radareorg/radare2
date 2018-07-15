@@ -29,8 +29,7 @@ R_API RASN1String *r_asn1_concatenate_strings (RASN1String *s0, RASN1String *s1,
 		return NULL;
 	}
 	len = s0->length + s1->length - 1;
-	str = (char*) malloc (len);
-	if (!str) {
+	if (!(str = (char*) malloc (len))) {
 		if (freestr) {
 			r_asn1_free_string (s0);
 			r_asn1_free_string (s1);
@@ -63,8 +62,8 @@ R_API RASN1String *r_asn1_stringify_utctime (const ut8 *buffer, ut32 length) {
 		return NULL;
 	}
 	const int str_sz = 24;
-	char *str = malloc (str_sz);
-	if (!str) {
+	char *str;
+	if (!(str = malloc (str_sz))) {
 		return NULL;
 	}
 	str[0] = buffer[4];
@@ -100,8 +99,8 @@ R_API RASN1String *r_asn1_stringify_time (const ut8 *buffer, ut32 length) {
 		return NULL;
 	}
 	const int str_sz = 24;
-	char *str = malloc (str_sz);
-	if (!str) {
+	char *str;
+	if (!(str = malloc (str_sz))) {
 		return NULL;
 	}
 
@@ -142,8 +141,7 @@ R_API RASN1String *r_asn1_stringify_bits (const ut8 *buffer, ut32 length) {
 		return NULL;
 	}
 	size = 1 + ((length - 1)* 8) - buffer[0];
-	str = (char*) malloc (size);
-	if (!str) {
+	if (!(str = (char*) malloc (size))) {
 		return NULL;
 	}
 	for (i = 1, j = 0; i < length && j < size; ++i) {
@@ -173,8 +171,7 @@ R_API RASN1String *r_asn1_stringify_integer (const ut8 *buffer, ut32 length) {
 		return NULL;
 	}
 	size = 3 * length;
-	str = (char*) malloc (size);
-	if (!str) {
+	if (!(str = (char*) malloc (size))) {
 		return NULL;
 	}
 	memset (str, 0, size);
@@ -198,8 +195,7 @@ R_API RASN1String* r_asn1_stringify_bytes (const ut8 *buffer, ut32 length) {
 	}
 	size = (4 * length);
 	size += (64 - (size % 64));
-	str = (char*) malloc (size);
-	if (!str) {
+	if (!(str = (char*) malloc (size))) {
 		return NULL;
 	}
 	memset (str, 0x20, size);

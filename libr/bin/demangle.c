@@ -291,7 +291,9 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 		} else {
 			if (nargs) {
 				const char *arg = "int";
-				args = malloc (((strlen (arg) + 4) * nargs) + 1);
+				if (!(args = malloc (((strlen (arg) + 4) * nargs) + 1))) {
+					return NULL;
+				}
 				args[0] = 0;
 				for (i = 0;i < nargs; i++) {
 					strcat (args, arg);
@@ -339,7 +341,7 @@ R_API char *r_bin_demangle_rust(RBinFile *binfile, const char *sym, ut64 vaddr) 
 	char *str, *out, *in;
 
 	str = r_bin_demangle_cxx (binfile, sym, vaddr);
-	
+
 	if (!str) {
 		return str;
 	}

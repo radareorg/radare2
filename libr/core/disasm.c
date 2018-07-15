@@ -876,7 +876,9 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds, bool print_color
 			scol2 = strdup ("");
 		}
 
-		source = malloc (strlen (scol1) + strlen (scol2) + 2 + 1); // reuse source variable
+		if (!(source = malloc (strlen (scol1) + strlen (scol2) + 2 + 1))) { // reuse source variable
+			return NULL;
+		}
 		sprintf (source, "%s||%s", scol1, scol2);
 		free (scol1);
 		free (scol2);
@@ -1005,8 +1007,8 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			free (ds->opstr);
 			ds->opstr = strdup (R_STRBUF_SAFEGET (&ds->analop.esil));
 		} else {
-			char *p = malloc (strlen (ds->opstr) + 6); /* What's up '\0' ? */
-			if (p) {
+			char *p;
+			if ((p = malloc (strlen (ds->opstr) + 6))) { /* What's up '\0' ? */
 				strcpy (p, "TODO,");
 				strcpy (p + 5, ds->opstr);
 				free (ds->opstr);
@@ -1269,7 +1271,9 @@ static void ds_atabs_option(RDisasmState *ds) {
 		return;
 	}
 	free (ds->opstr);
-	ds->opstr = b = malloc (size + 1);
+	if (!(ds->opstr = b = malloc (size + 1))) {
+		return;
+	}
 	strncpy (b, ds->asmop.buf_asm, R_MIN (size, R_ASM_BUFSIZE));
 	b[size] = 0;
 	for (; *b; b++, i++) {
@@ -2230,8 +2234,8 @@ static void printCol(RDisasmState *ds, char *sect, int cols, const char *color) 
 	int pre, post;
 	if (cols < 8) cols = 8;
 	int outsz = cols + 32;
-	char *out = malloc (outsz);
-	if (!out) {
+	char *out;
+	if (!(out = malloc (outsz))) {
 		return;
 	}
 	memset (out, ' ', outsz);
@@ -2454,8 +2458,7 @@ static void ds_print_offset(RDisasmState *ds) {
 		if (ds->_tabsoff != ds->atabsoff) {
 			char *b = ds->_tabsbuf;
 			// TODO optimize to avoid down resizing
-			b = malloc (ds->atabsoff + 1);
-			if (b) {
+			if ((b = malloc (ds->atabsoff + 1))) {
 				memset (b, ' ', ds->atabsoff);
 				b[ds->atabsoff] = 0;
 				free (ds->_tabsbuf);
@@ -4885,7 +4888,9 @@ toro:
 		if (nbuf) {
 			free (nbuf);
 		}
-		buf = nbuf = malloc (len);
+		if ((buf = nbuf = malloc (len))) {
+			goto toro;
+		}
 		if (ds->tries > 0) {
 			if (r_io_read_at (core->io, ds->addr, buf, len)) {
 				goto toro;
@@ -5432,7 +5437,9 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 	}
 	RDisasmState *ds = ds_init (core);
 	if (l > core->blocksize || addr != core->offset) {
-		buf = malloc (l + 1);
+		if (!(buf = malloc (l + 1))) {
+			return 0;
+		}
 		r_io_read_at (core->io, addr, buf, l);
 	}
 	if (mode == 'j') {
@@ -5540,8 +5547,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 	}
 
 	cur_buf_sz = r_anal_fcn_size (fcn) + 1;
-	buf = malloc (cur_buf_sz);
-	if (!buf) {
+	if (!(buf = malloc (cur_buf_sz))) {
 		return -1;
 	}
 	len = r_anal_fcn_size (fcn);
@@ -5607,7 +5613,9 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 
 		if (len > cur_buf_sz) {
 			free (buf);
-			buf = malloc (cur_buf_sz);
+			if (!(buf = malloc (cur_buf_sz))) {
+				return 0;
+			}
 			ds->buf = buf;
 			if (buf) {
 				cur_buf_sz = len;

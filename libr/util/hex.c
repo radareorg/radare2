@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2016 - pancake */ 
+/* radare - LGPL - Copyright 2007-2016 - pancake */
 #include "r_types.h"
 #include "r_util.h"
 #include <stdio.h>
@@ -268,8 +268,8 @@ R_API char *r_hex_from_js(const char *code) {
 	char * str = r_str_ndup (start + 1, end - start - 1);
 
 	/* assuming base64 input, output will always be shorter */
-	ut8 *b64d = malloc (end - start);
-	if (!b64d) {
+	ut8 *b64d;
+	if (!(b64d = malloc (end - start))) {
 		free (str);
 		return NULL;
 	}
@@ -283,8 +283,8 @@ R_API char *r_hex_from_js(const char *code) {
 
 	// TODO: use r_str_bin2hex
 	int i, len = strlen ((const char *)b64d);
-	char * out = malloc (len * 2 + 1);
-	if (!out) {
+	char *out;
+	if (!(out = malloc (len * 2 + 1))) {
 		free (str);
 		free (b64d);
 		return NULL;
@@ -389,8 +389,9 @@ R_API char *r_hex_bin2strdup(const ut8 *in, int len) {
 	char tmp[5], *out;
 
 	if ((len + 1) * 2 < len) return NULL;
-	out = malloc ((len + 1) * 2);
-	if (!out) return NULL;
+	if (!(out = malloc ((len + 1) * 2))) {
+		return NULL;
+	}
 	for (i = idx = 0; i < len; i++, idx += 2)  {
 		snprintf (tmp, sizeof (tmp), "%02x", in[i]);
 		memcpy (out+idx, tmp, 2);

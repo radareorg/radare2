@@ -232,11 +232,10 @@ R_API RDebugSnapDiff *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 		snap->addr_end = map->addr_end;
 		snap->size = map->size;
 		snap->page_num = page_num;
-		snap->data = malloc (map->size);
-		snap->perm = map->perm;
-		if (!snap->data) {
+		if (!(snap->data = malloc (map->size))) {
 			goto error;
 		}
+		snap->perm = map->perm;
 		snap->hashes = R_NEWS0 (ut8 *, page_num);
 		if (!snap->hashes) {
 			free (snap->data);
@@ -351,7 +350,10 @@ R_API RDebugSnapDiff *r_debug_diff_add(RDebug *dbg, RDebugSnap *base) {
 	/* Compare hash of pages. */
 	for (addr = base->addr; addr < base->addr_end; addr += SNAP_PAGE_SIZE) {
 		ut8 *prev_hash, *cur_hash;
-		ut8 *buf = malloc (clust_page);
+		ut8 *buf;
+		if (!(buf = malloc (clust_page))) {
+			return NULL;
+		}
 		/* Copy current memory value to buf and calculate cur_hash from it. */
 		dbg->iob.read_at (dbg->iob.io, addr, buf, clust_page);
 		digest_size = r_hash_calculate (base->hash_ctx, algobit, buf, clust_page);

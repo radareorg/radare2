@@ -676,7 +676,10 @@ static int node_match_functions(const RAnal *anal, const RFlirtNode *root_node) 
 		}
 
 		int func_size = r_anal_fcn_size (func);
-		func_buf = malloc (func_size);
+		if (!(func_buf = malloc (func_size))) {
+			ret = false;
+			goto exit;
+		}
 		if (!anal->iob.read_at (anal->iob.io, func->addr, func_buf, func_size)) {
 			eprintf ("Couldn't read function\n");
 			ret = false;
@@ -1342,8 +1345,7 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 		}
 	}
 
-	name = malloc (header->library_name_len + 1);
-	if (!name) {
+	if (!(name = malloc (header->library_name_len + 1))) {
 		goto exit;
 	}
 
@@ -1361,7 +1363,9 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 #endif
 
 	size = r_buf_size (flirt_buf) - flirt_buf->cur;
-	buf = malloc (size);
+	if (!(buf = malloc (size))) {
+		goto exit;
+	}
 	if (r_buf_read_at (flirt_buf, flirt_buf->cur, buf, size) != size) {
 		goto exit;
 	}

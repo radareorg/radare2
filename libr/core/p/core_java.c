@@ -710,7 +710,9 @@ static char * r_cmd_replace_name (const char *s_new, ut32 replace_len, const cha
 		ut32 consumed = 0;
 		const char * next = r_cmd_get_next_classname_str (buffer+consumed, s_old);
 		IFDBG r_cons_printf ("Replacing \"%s\" with \"%s\" in: %s\n", s_old, s_new, buffer);
-		result = malloc (num_occurrences*replace_len + buf_len);
+		if (!(result = malloc (num_occurrences*replace_len + buf_len))) {
+			return NULL;
+		}
 		memset (result, 0, num_occurrences*replace_len + buf_len);
 		p_result = result;
 		while (next && consumed < buf_len) {
@@ -758,7 +760,9 @@ static int r_cmd_java_get_class_names_from_input (const char *input, char **clas
 
 		if (p && end && p != end) {
 			*class_name_len = end - p + 1;
-			*class_name = malloc (*class_name_len);
+			if (!(*class_name = malloc (*class_name_len))) {
+				return 0;
+			}
 			snprintf (*class_name, *class_name_len, "%s", p );
 			cmd_sz = *class_name_len - 1 < cmd_sz ? cmd_sz - *class_name_len : 0;
 		}
@@ -771,7 +775,9 @@ static int r_cmd_java_get_class_names_from_input (const char *input, char **clas
 
 			if (p && end && p != end) {
 				*new_class_name_len = end - p + 1;
-				*new_class_name = malloc (*new_class_name_len);
+				if (!(*new_class_name = malloc (*new_class_name_len))) {
+					return 0;
+				}
 				snprintf (*new_class_name, *new_class_name_len, "%s", p );
 				res = true;
 			}
@@ -821,7 +827,9 @@ static int r_cmd_java_handle_replace_classname_value (RCore *core, const char *c
 
 			if (!buffer) continue;
 			len = R_BIN_JAVA_USHORT ( buffer, 1);
-			name = malloc (len+3);
+			if (!(name = malloc (len+3))) {
+				return false;
+			}
 			memcpy (name, buffer+3, len);
 			name[len] = 0;
 
@@ -887,7 +895,9 @@ static int r_cmd_java_handle_reload_bin (RCore *core, const char *cmd) {
 	if (buf_size == 0) {
 		res = r_io_use_fd (core->io, core->file->fd);
 		buf_size = r_io_size (core->io);
-		buf = malloc (buf_size);
+		if (!(buf = malloc (buf_size))) {
+			return false;
+		}
 		memset (buf, 0, buf_size);
 		r_io_read_at (core->io, addr, buf, buf_size);
 	}
@@ -1755,7 +1765,9 @@ static char * r_cmd_java_get_descriptor (RCore *core, RBinJavaObj *bin, ut16 idx
 		fn_len += strlen (class_name);
 		fn_len += strlen (name);
 		fn_len += 2; // dot + null
-		fullname = malloc (fn_len);
+		if (!(fullname = malloc (fn_len))) {
+			return NULL;
+		}
 		snprintf (fullname, fn_len, "%s.%s", class_name, name);
 	}
 	if (fullname) prototype = r_bin_java_unmangle_without_flags (fullname, descriptor);

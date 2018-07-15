@@ -84,8 +84,7 @@ R_API char *r_num_units(char *buf, ut64 num) {
 	int tnum;
 	double fnum = num;
 	if (!buf) {
-		buf = malloc (32);
-		if (!buf) {
+		if (!(buf = malloc (32))) {
 			return NULL;
 		}
 	}
@@ -399,7 +398,9 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 	if (!str) return 0LL;
 
 	len = strlen (str)+1;
-	os = malloc (len+1);
+	if (!(os = malloc (len+1))) {
+		return 0LL;
+	}
 
 	s = os;
 	memcpy (s, str, len);

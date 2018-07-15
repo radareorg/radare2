@@ -40,12 +40,10 @@ R_API void r_mem_copyloop(ut8 *dest, const ut8 *orig, int dsize, int osize) {
 R_API int r_mem_cmp_mask(const ut8 *dest, const ut8 *orig, const ut8 *mask, int len) {
 	int i, ret = -1;
 	ut8 *mdest, *morig;
-	mdest = malloc (len);
-	if (!mdest) {
+	if (!(mdest = malloc (len))) {
 		return ret;
 	}
-	morig = malloc (len);
-	if (!morig) {
+	if (!(morig = malloc (len))) {
 		free (mdest);
 		return ret;
 	}
@@ -281,8 +279,8 @@ R_API int r_mem_protect(void *ptr, int size, const char *prot) {
 }
 
 R_API void *r_mem_dup(void *s, int l) {
-	void *d = malloc (l);
-	if (!d) {
+	void *d;
+	if (!(d = malloc (l))) {
 		return NULL;
 	}
 	memcpy (d, s, l);

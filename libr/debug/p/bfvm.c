@@ -41,9 +41,9 @@ R_API int bfvm_init(BfvmCPU *c, ut32 size, int circular) {
 	memset (c, '\0', sizeof (BfvmCPU));
 
 	/* data */
-	c->mem = (ut8 *)malloc (size);
-	if (!c->mem)
+	if (!(c->mem = (ut8 *)malloc (size))) {
 		return 0;
+	}
 	memset (c->mem, '\0', size);
 
 	/* setup */
@@ -54,12 +54,16 @@ R_API int bfvm_init(BfvmCPU *c, ut32 size, int circular) {
 	/* screen */
 	c->screen = BFVM_SCREEN_ADDR;
 	c->screen_size = BFVM_SCREEN_SIZE;
-	c->screen_buf = (ut8*)malloc (c->screen_size);
+	if (!(c->screen_buf = (ut8*)malloc (c->screen_size))) {
+		return -1;
+	}
 	memset (c->screen_buf, '\0', c->screen_size);
 
 	/* input */
 	c->input_size = BFVM_INPUT_SIZE;
-	c->input_buf = (ut8*)malloc (c->input_size);
+	if (!(c->input_buf = (ut8*)malloc (c->input_size))) {
+		return -1;
+	}
 	bfvm_reset (c);
 	return 1;
 }

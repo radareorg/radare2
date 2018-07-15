@@ -279,7 +279,7 @@ R_API void r_str_case(char *str, bool up) {
 			*str = (*str=='x' && oc=='0') ? 'x': toupper ((int)(ut8)*str);
 		}
 	} else {
-		for (; *str; str++) { 
+		for (; *str; str++) {
 			*str = tolower ((int)(ut8)*str);
 		}
 	}
@@ -298,8 +298,7 @@ R_API char *r_str_home(const char *str) {
 	if (str) {
 		length += strlen (R_SYS_DIR) + strlen (str);
 	}
-	dst = (char *)malloc (length);
-	if (!dst) {
+	if (!(dst = (char *)malloc (length))) {
 		goto fail;
 	}
 	strcpy (dst, home);
@@ -500,8 +499,7 @@ R_API char *r_str_word_get0set(char *stra, int stralen, int idx, const char *new
 	}
 	if (!p) {
 		int nslen = strlen (newstr);
-		out = malloc (nslen + 1);
-		if (!out) {
+		if (!(out = malloc (nslen + 1))) {
 			return NULL;
 		}
 		strcpy (out, newstr);
@@ -517,8 +515,7 @@ R_API char *r_str_word_get0set(char *stra, int stralen, int idx, const char *new
 		blen = 0;
 	}
 	nlen = alen + blen + strlen (newstr);
-	out = malloc (nlen + 2);
-	if (!out) {
+	if (!(out = malloc (nlen + 2))) {
 		return NULL;
 	}
 	if (alen > 0) {
@@ -670,8 +667,7 @@ R_API char *r_str_newlen(const char *str, int len) {
 	if (len < 1) {
 		return NULL;
 	}
-	buf = malloc (len + 1);
-	if (!buf) {
+	if (!(buf = malloc (len + 1))) {
 		return NULL;
 	}
 	memcpy (buf, str, len);
@@ -787,8 +783,7 @@ R_API char *r_str_word_get_first(const char *text) {
 	for (;*text && IS_SEPARATOR (*text); text++);
 	/* strdup */
 	len = strlen (text);
-	ret = (char *)malloc (len + 1);
-	if (!ret) {
+	if (!(ret = (char *)malloc (len + 1))) {
 		eprintf ("Cannot allocate %d byte(s).\n", len+1);
 		return NULL;
 	}
@@ -809,8 +804,8 @@ R_API char *r_str_ndup(const char *ptr, int len) {
 	if (len < 0) {
 		return NULL;
 	}
-	char *out = malloc (len + 1);
-	if (!out) {
+	char *out;
+	if (!(out = malloc (len + 1))) {
 		return NULL;
 	}
 	strncpy (out, ptr, len);
@@ -826,8 +821,7 @@ R_API char *r_str_dup(char *ptr, const char *string) {
 		return NULL;
 	}
 	len = strlen (string)+1;
-	ptr = malloc (len+1);
-	if (!ptr) {
+	if (!(ptr = malloc (len+1))) {
 		return NULL;
 	}
 	memcpy (ptr, string, len);
@@ -838,7 +832,7 @@ R_API void r_str_writef(int fd, const char *fmt, ...) {
 	char *buf;
 	va_list ap;
 	va_start (ap, fmt);
-	if ((buf = malloc (4096)) != NULL) {
+	if ((buf = malloc (4096))) {
 		vsnprintf (buf, 4096, fmt, ap);
 		r_str_write (fd, buf);
 		free (buf);
@@ -903,8 +897,8 @@ R_API char *r_str_appendf(char *ptr, const char *fmt, ...) {
 	va_start (ap, fmt);
 	ret = vsnprintf (string, sizeof (string), fmt, ap);
 	if (ret >= sizeof (string)) {
-		char *p = malloc (ret + 2);
-		if (!p) {
+		char *p;
+		if (!(p = malloc (ret + 2))) {
 			va_end (ap);
 			return NULL;
 		}
@@ -1210,8 +1204,7 @@ static char *r_str_escape_(const char *buf, int dot_nl, bool ign_esc_seq, bool s
 	}
 	/* Worst case scenario, we convert every byte to a single-char escape
 	 * (e.g. \n) if show_asciidot, or \xhh if !show_asciidot */
-	new_buf = malloc (1 + strlen (buf) * (show_asciidot ? 2 : 4));
-	if (!new_buf) {
+	if (!(new_buf = malloc (1 + strlen (buf) * (show_asciidot ? 2 : 4)))) {
 		return NULL;
 	}
 	p = buf;
@@ -1287,8 +1280,7 @@ static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool s
 		end = buf + len;
 	}
 	/* Worst case scenario, we convert every byte to \xhh */
-	new_buf = malloc (1 + (len * 4));
-	if (!new_buf) {
+	if (!(new_buf = malloc (1 + (len * 4)))) {
 		return NULL;
 	}
 	p = buf;
@@ -1498,8 +1490,7 @@ R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len) {
 	if (len < 0) {
 		len = strlen (str);
 	}
-	tmp = malloc (len + 1);
-	if (!tmp) {
+	if (!(tmp = malloc (len + 1))) {
 		return -1;
 	}
 	memcpy (tmp, str, len + 1);
@@ -1553,8 +1544,7 @@ R_API char *r_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
 		s++;
 	}
 	r_len = str_len + nr_of_lines * strlen (Color_RESET) + 1;
-	r = ret = malloc (r_len);
-	if (!r) {
+	if (!(r = ret = malloc (r_len))) {
 		return NULL;
 	}
 	r_end = r + r_len;
@@ -1743,8 +1733,7 @@ R_API char *r_str_arg_escape(const char *arg) {
 	if (!arg) {
 		return NULL;
 	}
-	str = malloc ((2 * strlen (arg) + 1) * sizeof (char)); // Worse case when every character need to be escaped
-	if (!str) {
+	if (!(str = malloc ((2 * strlen (arg) + 1) * sizeof (char)))) { // Worse case when every character need to be escaped
 		return NULL;
 	}
 	for (src_i = 0; arg[src_i] != '\0'; src_i++) {
@@ -1778,12 +1767,11 @@ R_API char **r_str_argv(const char *cmdline, int *_argc) {
 		return NULL;
 	}
 
-	char **argv = malloc (argv_len * sizeof (char *));
-	if (!argv) {
+	char **argv;
+	if (!(argv = malloc (argv_len * sizeof (char *)))) {
 		return NULL;
 	}
-	args = malloc (128 + strlen (cmdline) * sizeof (char)); // Unescaped args will be shorter, so strlen (cmdline) will be enough
-	if (!args) {
+	if (!(args = malloc (128 + strlen (cmdline) * sizeof (char)))) { // Unescaped args will be shorter, so strlen (cmdline) will be enough
 		free (argv);
 		return NULL;
 	}
@@ -2087,8 +2075,7 @@ R_API char *r_str_uri_encode(const char *s) {
 	if (!s) {
 		return NULL;
 	}
-	od = d = malloc (1 + (strlen (s) * 4));
-	if (!d) {
+	if (!(od = d = malloc (1 + (strlen (s) * 4)))) {
 		return NULL;
 	}
 	for (; *s; s++) {
@@ -2228,8 +2215,7 @@ R_API char *r_str_utf16_encode(const char *s, int len) {
 	if ((len * 7) + 1 < len) {
 		return NULL;
 	}
-	od = d = malloc (1 + (len * 7));
-	if (!d) {
+	if (!(od = d = malloc (1 + (len * 7)))) {
 		return NULL;
 	}
 	for (i = 0; i < len; s++, i++) {
@@ -2410,8 +2396,8 @@ R_API char *r_str_prefix_all(const char *s, const char *pfx) {
 			newlines++;
 		}
 	}
-	char *o = malloc (len + (pfx_len * newlines) + 1);
-	if (!o) {
+	char *o;
+	if (!(o = malloc (len + (pfx_len * newlines) + 1))) {
 		return NULL;
 	}
 	memcpy (o, pfx, pfx_len);
@@ -2655,8 +2641,7 @@ R_API const char *r_str_const_at(char ***consts, const char *ptr) {
 		}
 		*consts = res;
 	} else {
-		*consts = malloc (sizeof (void*) * 2);
-		if (!*consts) {
+		if (!(*consts = malloc (sizeof (void*) * 2))) {
 			return NULL;
 		}
 	}
@@ -3040,7 +3025,7 @@ R_API int r_snprintf(char *string, int len, const char *fmt, ...) {
 // Strips all the lines in str that contain key
 R_API void r_str_stripLine(char *str, const char *key) {
 	size_t i, j, klen, slen, off;
-	const char *ptr; 
+	const char *ptr;
 
 	if (!str || !key) {
 		return;
@@ -3058,7 +3043,7 @@ R_API void r_str_stripLine(char *str, const char *key) {
 			}
 			break;
 		}
-			
+
 		off = (size_t) (ptr - (str + i)) + 1;
 
 		ptr = (char*) r_mem_mem ((ut8*) str + i, off, (ut8*) key, klen);

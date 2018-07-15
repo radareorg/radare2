@@ -248,8 +248,9 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 	names_l = r_list_new();
 
 #define SET_OPERATOR_CODE(str) { \
-	str_info = (SStrInfo *) malloc (sizeof(SStrInfo)); \
-	if (!str_info) break; \
+	if (!(str_info = (SStrInfo *) malloc (sizeof(SStrInfo)))) { \
+		break; \
+	} \
 	str_info->len = strlen (str); \
 	str_info->str_ptr = str; \
 	r_list_append (names_l, str_info); \
@@ -298,8 +299,9 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 		case '$':
 		{
 			int i = 0;
-			str_info = (SStrInfo *) malloc (sizeof(SStrInfo));
-			if (!str_info) break;
+			if (!(str_info = (SStrInfo *) malloc (sizeof(SStrInfo)))) {
+				break;
+			}
 			i = get_template (buf + 1, str_info);
 			if (!i) {
 				R_FREE (str_info);
@@ -384,7 +386,9 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 		// check is it teamplate???
 		if ((*tmp == '?') && (*(tmp + 1) == '$')) {
 			int i = 0;
-			str_info = (SStrInfo *) malloc (sizeof(SStrInfo));
+			if (!(str_info = (SStrInfo *) malloc (sizeof(SStrInfo)))) {
+				goto get_namespace_and_name_err;
+			}
 			i = get_template (tmp + 2, str_info);
 			if (!i) {
 				R_FREE (str_info);
@@ -407,13 +411,17 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 			}
 			len = 1;
 		} else {
-			tmp = (char *) malloc (len + 1);
+			if (!(tmp = (char *) malloc (len + 1))) {
+				goto get_namespace_and_name_err;
+			}
 			memset (tmp, 0, len + 1);
 			memcpy (tmp, prev_pos, len);
 			r_list_append (abbr_names, tmp);
 		}
 
-		str_info = (SStrInfo *) malloc (sizeof (SStrInfo));
+		if (!(str_info = (SStrInfo *) malloc (sizeof (SStrInfo)))) {
+			goto get_namespace_and_name_err;
+		}
 		str_info->str_ptr = tmp;
 		str_info->len = strlen (tmp);
 
@@ -642,13 +650,17 @@ char* get_num(SStateInfo *state)
 {
 	char *ptr = 0;
 	if (*state->buff_for_parsing >= '0' && *state->buff_for_parsing <= '8') {
-		ptr = (char *) malloc (2);
+		if (!(ptr = (char *) malloc (2))) {
+			return NULL;
+		}
 		ptr[0] = *state->buff_for_parsing + 1;
 		ptr[1] = '\0';
 		state->buff_for_parsing++;
 		state->amount_of_read_chars++;
 	} else if (*state->buff_for_parsing == '9') {
-		ptr = (char *) malloc (3);
+		if (!(ptr = (char *) malloc (3))) {
+			return NULL;
+		}
 		ptr[0] = '1';
 		ptr[1] = '0';
 		ptr[2] = '\0';
@@ -667,7 +679,9 @@ char* get_num(SStateInfo *state)
 		if (*state->buff_for_parsing != '@')
 			return ptr;
 
-		ptr = (char *)malloc (16);
+		if (!(ptr = (char *)malloc (16))) {
+			return NULL;
+		}
 		sprintf (ptr, "%u", ret);
 		state->buff_for_parsing++;
 		state->amount_of_read_chars++;
@@ -1327,7 +1341,9 @@ static EDemanglerErr parse_microsoft_mangled_name(char *sym, char **demangled_na
 				r_list_append (abbr_types, strdup (tmp));
 			}
 
-			str_arg = (SStrInfo *) malloc (sizeof(SStrInfo));
+			if (!(str_arg = (SStrInfo *) malloc (sizeof(SStrInfo)))) {
+				goto parse_microsoft_mangled_name_err;
+			}
 			str_arg->str_ptr = strdup (tmp);
 			str_arg->len = strlen (tmp);
 

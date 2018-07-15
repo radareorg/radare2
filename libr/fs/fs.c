@@ -341,15 +341,13 @@ R_API int r_fs_dir_dump(RFS* fs, const char* path, const char* name) {
 		if (!strcmp (file->name, ".") || !strcmp (file->name, "..")) {
 			continue;
 		}
-		str = (char*) malloc (strlen (name) + strlen (file->name) + 2);
-		if (!str) {
+		if (!(str = (char*) malloc (strlen (name) + strlen (file->name) + 2))) {
 			return false;
 		}
 		strcpy (str, name);
 		strcat (str, "/");
 		strcat (str, file->name);
-		npath = malloc (strlen (path) + strlen (file->name) + 2);
-		if (!npath) {
+		if (!(npath = malloc (strlen (path) + strlen (file->name) + 2))) {
 			free (str);
 			return false;
 		}
@@ -397,8 +395,7 @@ static void r_fs_find_off_aux(RFS* fs, const char* name, ut64 offset, RList* lis
 			continue;
 		}
 
-		found = (char*) malloc (strlen (name) + strlen (item->name) + 2);
-		if (!found) {
+		if (!(found = (char*) malloc (strlen (name) + strlen (item->name) + 2))) {
 			break;
 		}
 		strcpy (found, name);
@@ -440,8 +437,7 @@ static void r_fs_find_name_aux(RFS* fs, const char* name, const char* glob, RLis
 	dirs = r_fs_dir (fs, name);
 	r_list_foreach (dirs, iter, item) {
 		if (r_str_glob (item->name, glob)) {
-			found = (char*) malloc (strlen (name) + strlen (item->name) + 2);
-			if (!found) {
+			if (!(found = (char*) malloc (strlen (name) + strlen (item->name) + 2))) {
 				break;
 			}
 			strcpy (found, name);
@@ -453,8 +449,7 @@ static void r_fs_find_name_aux(RFS* fs, const char* name, const char* glob, RLis
 			continue;
 		}
 		if (item->type == R_FS_FILE_TYPE_DIRECTORY) {
-			found = (char*) malloc (strlen (name) + strlen (item->name) + 2);
-			if (!found) {
+			if (!(found = (char*) malloc (strlen (name) + strlen (item->name) + 2))) {
 				break;
 			}
 			strcpy (found, name);

@@ -87,7 +87,10 @@ static RList* sections(RBinFile *bf){
 	r_buf_read_at (bf->buf, 0x148, &bank, 1);
 	bank = gb_get_rombanks(bank);
 #ifdef _MSC_VER
-	RBinSection **rombank = (RBinSection**) malloc (sizeof (RBinSection*) * bank);
+	RBinSection **rombank;
+	if (!(rombank = (RBinSection**) malloc (sizeof (RBinSection*) * bank))) {
+		return NULL;
+	}
 #else
 	RBinSection *rombank[bank];
 #endif
@@ -207,7 +210,10 @@ static RBinInfo* info(RBinFile *bf) {
 	r_buf_read_at (bf->buf, 0x104, rom_header, 76);
 	ret->file = calloc (1, 17);
 	strncpy (ret->file, (const char*)&rom_header[48], 16);
-	ret->type = malloc (128);
+	if (!(ret->type = malloc (128))) {
+		free(ret);
+		return NULL;
+	}
 	ret->type[0] = 0;
 	gb_get_gbtype (ret->type, rom_header[66], rom_header[63]);
 	gb_add_cardtype (ret->type, rom_header[67]); // XXX

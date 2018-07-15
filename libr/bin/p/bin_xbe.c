@@ -22,8 +22,7 @@ static bool load(RBinFile *bf) {
 	if (!bf || !bf->o) {
 		return false;
 	}
-	bf->o->bin_obj = malloc (sizeof (r_bin_plugin_xbe));
-	if (!bf->o->bin_obj) {
+	if (!(bf->o->bin_obj = malloc (sizeof (r_bin_plugin_xbe)))) {
 		return false;
 	}
 	obj = bf->o->bin_obj;

@@ -167,8 +167,8 @@ R_API char* r_print_json_indent(const char* s, bool color, const char* tab, cons
 		return NULL;
 	}
 
-	char *O = malloc (osz);
-	if (!O) {
+	char *O;
+	if (!(O = malloc (osz))) {
 		return NULL;
 	}
 	OE = O + osz;

@@ -35,8 +35,7 @@ R_API RThreadSemaphore *r_th_sem_new(unsigned int initial) {
 		return NULL;
 	}
 #  else
-	sem->sem = malloc (sizeof (sem_t));
-	if (!sem->sem) {
+	if (!(sem->sem = malloc (sizeof (sem_t)))) {
 		free (sem);
 		return NULL;
 	}

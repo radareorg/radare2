@@ -162,8 +162,9 @@ R_API RRegex *r_regex_new (const char *pattern, const char *flags) {
 	memset(&rx, 0, sizeof(RRegex));
 	if (r_regex_comp (&rx, pattern, r_regex_flags (flags)))
 		return NULL;
-	r = malloc (sizeof (RRegex));
-	if (!r) return NULL;
+	if (!(r = malloc (sizeof (RRegex)))) {
+		return NULL;
+	}
 	memcpy (r, &rx, sizeof (RRegex));
 	return r;
 }
@@ -1424,7 +1425,7 @@ doinsert(struct parse *p, sop op, size_t opnd, sopno pos)
 				p->pend[i]++;
 			}
 		}
-	}	
+	}
 
 	memmove((char *)&p->strip[pos+1], (char *)&p->strip[pos],
 						(HERE()-pos-1)*sizeof(sop));

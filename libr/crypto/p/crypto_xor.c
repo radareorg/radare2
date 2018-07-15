@@ -17,7 +17,9 @@ static bool xor_init(struct xor_state *const state, const ut8 *key, int keylen) 
 		return false;
 	}
 	state->key_size = keylen;
-	state->key = malloc (keylen);
+	if (!(state->key = malloc (keylen))) {
+		return false;
+	}
 	memcpy (state->key, key, keylen);
 	return true;
 }
@@ -69,7 +71,7 @@ RCryptoPlugin r_crypto_plugin_xor = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = { 
+RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_xor,
 	.version = R2_VERSION

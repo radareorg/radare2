@@ -516,13 +516,13 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 	DIR *dir;
 	struct dirent *d;
 	char subfn[MAXPATHLEN];
-#else	
+#else
 	HANDLE hdir;
 	WIN32_FIND_DATAW entry;
 	wchar_t dir[MAX_PATH];
 	wchar_t *wcpath;
 	char *cfname;
-	char subfn[1024];	
+	char subfn[1024];
 #endif
 	ms->flags |= R_MAGIC_CHECK;	/* Enable checks for parsed files */
 
@@ -1373,7 +1373,7 @@ static int check_format(RMagic *ms, struct r_magic *m) {
 
 	if (file_nformats != file_nnames) {
 		return -1;
-	}		
+	}
 
 	if (m->type >= file_nformats) {
 		file_magwarn(ms, "Internal error inconsistency between "
@@ -1763,7 +1763,7 @@ static int apprentice_compile(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp
 
 	dbname = mkdbname(fn, 1);
 
-	if (!dbname) 
+	if (!dbname)
 		goto out;
 
 	if ((fd = r_sandbox_open(dbname, O_WRONLY|O_CREAT|O_TRUNC|O_BINARY, 0644)) == -1) {
@@ -1813,8 +1813,7 @@ static char *mkdbname(const char *fn, int strip) {
 	if (fnlen + extlen + 1 > MAXPATHLEN) {
 		return NULL;
 	}
-	buf = malloc (fnlen + extlen + 1);
-	if (buf) {
+	if ((buf = malloc (fnlen + extlen + 1))) {
 		memcpy (buf, fn, fnlen);
 		memcpy (buf+fnlen, ext, extlen);
 		buf[fnlen+extlen] = 0;

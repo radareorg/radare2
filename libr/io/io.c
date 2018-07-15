@@ -219,8 +219,7 @@ R_API RIO* r_io_init(RIO* io) {
 R_API RBuffer *r_io_read_buf(RIO *io, ut64 addr, int len) {
 	RBuffer *b = R_NEW0 (RBuffer);
 	if (!b) return NULL;
-	b->buf = malloc (len);
-	if (!b->buf) {
+	if (!(b->buf = malloc (len))) {
 		free (b);
 		return NULL;
 	}
@@ -708,10 +707,13 @@ R_API bool r_io_set_write_mask(RIO* io, const ut8* mask, int len) {
 		io->write_mask_len = 0;
 		return true;
 	}
-	io->write_mask = (ut8*) malloc (len);
-	memcpy (io->write_mask, mask, len);
-	io->write_mask_len = len;
-	return true;
+	if (io->write_mask = (ut8*) malloc (len)) {
+		memcpy (io->write_mask, mask, len);
+		io->write_mask_len = len;
+		return true;
+	} else {
+		return false;
+	}
 }
 
 R_API int r_io_bind(RIO* io, RIOBind* bnd) {

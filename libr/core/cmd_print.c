@@ -764,8 +764,8 @@ static void cmd_pDj(RCore *core, const char *arg) {
 		bsize = -bsize;
 	}
 	r_cons_print ("[");
-	ut8 *buf = malloc (bsize);
-	if (buf) {
+	ut8 *buf;
+	if ((buf = malloc (bsize))) {
 		r_io_read_at (core->io, core->offset, buf, bsize);
 		r_core_print_disasm_json (core, core->offset, buf, bsize, 0);
 		free (buf);
@@ -1505,7 +1505,10 @@ static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 si
 R_API void r_core_print_cmp(RCore *core, ut64 from, ut64 to) {
 	long int delta = 0;
 	int col = core->cons->columns > 123;
-	ut8 *b = malloc (core->blocksize);
+	ut8 *b;
+	if (!(b = malloc (core->blocksize))) {
+		return;
+	}
 	ut64 addr = core->offset;
 	memset (b, 0xff, core->blocksize);
 	delta = addr - from;
@@ -2491,8 +2494,7 @@ static ut8 *analBars(RCore *core, int type, int nblocks, int blocksize, int skip
 		eprintf ("Error: failed to malloc memory");
 		return NULL;
 	}
-	p = malloc (blocksize);
-	if (!p) {
+	if (!(p = malloc (blocksize))) {
 		R_FREE (ptr);
 		eprintf ("Error: failed to malloc memory");
 		return NULL;
@@ -2686,8 +2688,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				eprintf ("Error: failed to malloc memory");
 				goto beach;
 			}
-			p = malloc (blocksize);
-			if (!p) {
+			if (!(p = malloc (blocksize))) {
 				R_FREE (ptr);
 				eprintf ("Error: failed to malloc memory");
 				goto beach;
@@ -2755,8 +2756,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			eprintf ("Error: failed to malloc memory");
 			goto beach;
 		}
-		p = malloc (blocksize);
-		if (!p) {
+		if (!(p = malloc (blocksize))) {
 			R_FREE (ptr);
 			eprintf ("Error: failed to malloc memory");
 			goto beach;
@@ -2782,8 +2782,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			eprintf ("Error: failed to malloc memory");
 			goto beach;
 		}
-		p = malloc (blocksize);
-		if (!p) {
+		if (!(p = malloc (blocksize))) {
 			R_FREE (ptr);
 			eprintf ("Error: failed to malloc memory");
 			goto beach;
@@ -3387,8 +3386,8 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 				}
 // const char *cmd = (type_print == 'D')? "pDj": "pIj";
 // r_core_cmdf (core, "%s %d @ 0x%"PFMT64x, cmd, b->size, b->addr);
-				ut8 *buf = malloc (b->size);
-				if (buf) {
+				ut8 *buf;
+				if ((buf = malloc (b->size))) {
 					r_io_read_at (core->io, b->addr, buf, b->size);
 					r_core_print_disasm_json (core, b->addr, buf, b->size, 0);
 					free (buf);
@@ -3415,8 +3414,8 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 			const char *cmd = (type_print == 'D')? "pDj": "pIj";
 			r_core_cmdf (core, "%s %d @ 0x%"PFMT64x, cmd, b->size, b->addr);
 #endif
-			ut8 *buf = malloc (b->size);
-			if (buf) {
+			ut8 *buf;
+			if ((buf = malloc (b->size))) {
 				r_io_read_at (core->io, b->addr, buf, b->size);
 				r_core_print_disasm_json (core, b->addr, buf, b->size, 0);
 				free (buf);
@@ -3445,8 +3444,8 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 				const char *cmd = (type_print == 'D')? "pDj": "pIj";
 				r_core_cmdf (core, "%s %d @0x%"PFMT64x, cmd, b->size, b->addr);
 #endif
-				ut8 *buf = malloc (b->size);
-				if (buf) {
+				ut8 *buf;
+				if ((buf = malloc (b->size))) {
 					r_io_read_at (core->io, b->addr, buf, b->size);
 					r_core_print_disasm_json (core, b->addr, buf, b->size, 0);
 					free (buf);
@@ -3628,7 +3627,10 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 		}
 	} break;
 	case 'J': { // "pcJ"
-		char *out = malloc (len * 3);
+		char *out;
+		if (!(out = malloc (len * 3))) {
+			break;
+		}
 		p->cb_printf ("var buffer = new Buffer(\"");
 		out[0] = 0;
 		r_base64_encode (out, buf, len);
@@ -3868,7 +3870,10 @@ static int cmd_print(void *data, const char *input) {
 					0
 				};
 				const char *str;
-				char *hex_arg = malloc (strlen (arg));
+				char *hex_arg;
+				if (!(hex_arg = malloc (strlen (arg)))) {
+					break;
+				}
 
 				bufsz = r_hex_str2bin (arg, (ut8 *) hex_arg);
 				ret = r_anal_op (core->anal, &aop, core->offset,
@@ -3927,7 +3932,10 @@ static int cmd_print(void *data, const char *input) {
 		} else if (l != 0) {
 			int from, to;
 			const int size = len * 8;
-			char *spc, *buf = malloc (size + 1);
+			char *spc, *buf;
+			if (!(buf = malloc (size + 1))) {
+				break;
+			}
 			spc = strchr (input, ' ');
 			if (spc) {
 				len = r_num_math (core->num, spc + 1);
@@ -3978,8 +3986,7 @@ static int cmd_print(void *data, const char *input) {
 				len = core->blocksize;
 			}
 			size = len * 8;
-			buf = malloc (size + 1);
-			if (buf) {
+			if ((buf = malloc (size + 1))) {
 				r_str_bits (buf, core->block, size, NULL);
 				r_cons_println (buf);
 				free (buf);
@@ -4190,8 +4197,8 @@ static int cmd_print(void *data, const char *input) {
 			} else {
 				RAnalBlock *b = r_anal_bb_from_offset (core->anal, core->offset);
 				if (b) {
-					ut8 *block = malloc (b->size + 1);
-					if (block) {
+					ut8 *block;
+					if ((block = malloc (b->size + 1))) {
 						r_io_read_at (core->io, b->addr, block, b->size);
 
 						if (input[2] == 'j') {
@@ -4278,8 +4285,8 @@ static int cmd_print(void *data, const char *input) {
 					prev_result = true;
 					r_list_foreach (f->bbs, locs_it, b) {
 
-						ut8 *buf = malloc (b->size);
-						if (buf) {
+						ut8 *buf;
+						if ((buf = malloc (b->size))) {
 							if (first) {
 								first = false;
 							} else if (!first && prev_result) {
@@ -4408,11 +4415,10 @@ static int cmd_print(void *data, const char *input) {
 			ut64 start;
 
 			if (bw_disassemble) {
-				block1 = malloc (core->blocksize);
 				if (l < 0) {
 					l = -l;
 				}
-				if (block1) {
+				if ((block1 = malloc (core->blocksize))) {
 					if (*input == 'D') { // pD
 						free (block1);
 						if (!(block1 = malloc (l))) {
@@ -4458,8 +4464,7 @@ static int cmd_print(void *data, const char *input) {
 						eprintf ("Block size too big\n");
 						return 1;
 					}
-					block1 = malloc (addrbytes * l);
-					if (block1) {
+					if ((block1 = malloc (addrbytes * l))) {
 						if (addrbytes * l > core->blocksize) {
 							r_io_read_at (core->io, addr, block1, addrbytes * l); // core->blocksize);
 						} else {
@@ -4472,8 +4477,7 @@ static int cmd_print(void *data, const char *input) {
 					}
 				} else {
 					int bs1 = l * 16;
-					block1 = malloc (R_MAX (bs, bs1));
-					if (block1) {
+					if ((block1 = malloc (R_MAX (bs, bs1)))) {
 						memcpy (block1, block, bs);
 						if (bs1 > bs) {
 							r_io_read_at (core->io, addr + bs / addrbytes, block1 + (bs - bs % addrbytes),
@@ -4538,12 +4542,12 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'i': // "psi"
 			if (l > 0) {
-				ut8 *buf = malloc (1024);
-				int delta = 512;
-				ut8 *p, *e, *b;
-				if (!buf) {
+				ut8 *buf;
+				if (!(buf = malloc (1024))) {
 					return 0;
 				}
+				int delta = 512;
+				ut8 *p, *e, *b;
 				if (core->offset < delta) {
 					delta = core->offset;
 				}
@@ -4577,9 +4581,9 @@ static int cmd_print(void *data, const char *input) {
 		case 'b': // "psb"
 			if (l > 0) {
 				int quiet = input[2] == 'q'; // "psbq"
-				char *s = malloc (core->blocksize + 1);
+				char *s;
 				int i, j, hasnl = 0;
-				if (s) {
+				if ((s = malloc (core->blocksize + 1))) {
 					memset (s, 0, core->blocksize);
 					if (!quiet) {
 						r_print_offset (core->print, core->offset, 0, 0, 0, 0, NULL);
@@ -4615,9 +4619,9 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'z': // psz
 			if (l > 0) {
-				char *s = malloc (core->blocksize + 1);
+				char *s;
 				int i, j;
-				if (s) {
+				if ((s = malloc (core->blocksize + 1))) {
 					memset (s, 0, core->blocksize);
 					// TODO: filter more chars?
 					for (i = j = 0; i < core->blocksize; i++) {
@@ -5424,8 +5428,8 @@ static int cmd_print(void *data, const char *input) {
 	case '6': // "p6"
 		if (l) {
 			int malen = (core->blocksize * 4) + 1;
-			ut8 *buf = malloc (malen);
-			if (!buf) {
+			ut8 *buf;
+			if (!(buf = malloc (malen))) {
 				break;
 			}
 			memset (buf, 0, malen);

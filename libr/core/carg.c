@@ -60,8 +60,8 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 	int width = (core->anal->bits == 64)? 8: 4;
 	int bsize = R_MIN (64, core->blocksize);
 
-	ut8 *buf = malloc (bsize);
-	if (!buf) {
+	ut8 *buf;
+	if (!(buf = malloc (bsize))) {
 		eprintf ("Cannot allocate %d byte(s)\n", bsize);
 		free (buf);
 		return;

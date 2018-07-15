@@ -5,7 +5,9 @@
 R_API RConstr* r_constr_new (int size) {
 	RConstr *c = R_NEW (RConstr);
 	c->l = size>0? size: 1024;
-	c->b = malloc (c->l);
+	if (!(c->b = malloc (c->l))) {
+		return NULL;
+	}
 	c->i = *c->b = 0;
 	return c;
 }

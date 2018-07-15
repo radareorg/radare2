@@ -348,7 +348,9 @@ R_API char *r_hash_to_string(RHash *ctx, const char *name, const ut8 *data, int 
 		if (digest_size * 2 < digest_size) {
 			digest_hex = NULL;
 		} else {
-			digest_hex = malloc ((digest_size * 2) + 1);
+			if (!(digest_hex = malloc ((digest_size * 2) + 1))) {
+				return NULL;
+			}
 			for (i = 0; i < digest_size; i++) {
 				sprintf (digest_hex + (i * 2), "%02x", ctx->digest[i]);
 			}

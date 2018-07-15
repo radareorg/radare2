@@ -506,7 +506,10 @@ R_API RFlagItem *r_flag_set_next(RFlag *f, const char *name, ut64 off, ut32 size
 		return r_flag_set (f, name, off, size);
 	}
 	int i, newNameSize = strlen (name);
-	char *newName = malloc (newNameSize + 16);
+	char *newName;
+	if (!(newName = malloc (newNameSize + 16))) {
+		return NULL;
+	}
 	strcpy (newName, name);
 	for (i = 0; ; i++) {
 		snprintf (newName + newNameSize, 15, ".%d", i);

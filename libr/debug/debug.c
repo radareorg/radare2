@@ -111,22 +111,22 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 			dbg->pc_at_bp = false;
 		}
 	}
-	
+
 	if (!dbg->pc_at_bp_set) {
 		eprintf ("failed to determine position of pc after breakpoint");
 	}
-	
+
 	if (dbg->pc_at_bp) {
 		pc_off = 0;
 		b = r_bp_get_at (dbg->bp, pc);
 	} else {
 		b = r_bp_get_at (dbg->bp, pc - dbg->bpsize);
 	}
-	
+
 	if (!b) {
 		return true;
 	}
-	
+
 	b = r_bp_get_at (dbg->bp, pc - dbg->bpsize);
 	if (!b) { /* we don't. nothing left to do */
 		/* Some targets set pc to breakpoint */
@@ -506,8 +506,7 @@ R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore) {
 		rpc = r_reg_get_value (dbg->reg, ripc);
 		rsp = r_reg_get_value (dbg->reg, risp);
 
-		backup = malloc (len);
-		if (!backup) {
+		if (!(backup = malloc (len))) {
 			free (orig);
 			return 0LL;
 		}
@@ -981,9 +980,8 @@ static ut64 get_prev_instr(RDebug *dbg, ut64 from, ut64 to) {
 	RAnalOp aop = {0};
 	const int mininstrsz = r_anal_archinfo (dbg->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
-	ut8 *buf = malloc (bsize);
-
-	if (!buf) {
+	ut8 *buf;
+	if (!(buf = malloc (bsize))) {
 		eprintf ("Cannot allocate %d byte(s)\n", bsize);
 		free (buf);
 		return 0;

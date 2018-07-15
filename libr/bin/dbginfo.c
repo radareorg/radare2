@@ -76,7 +76,10 @@ R_API char *r_bin_addr2text(RBin *bin, ut64 addr, int origin) {
 		if (!out) {
 			return r_str_newf ("%s:%d", file, line);
 		}
-		out2 = malloc ((strlen (file) + 64 + strlen (out)) * sizeof (char));
+		if (!(out2 = malloc ((strlen (file) + 64 + strlen (out)) * sizeof (char)))) {
+			free(out);
+			return NULL;
+		}
 		if (origin > 1) {
 			file_nopath = NULL;
 		} else {

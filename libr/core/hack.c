@@ -175,8 +175,8 @@ R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 	int i, size = analop->size;
 	if (!strcmp (op, "nop")) {
 		if (size * 2 + 1 < size) return false;
-		char *str = malloc (size * 2 + 1);
-		if (!str) {
+		char *str;
+		if (!(str = malloc (size * 2 + 1))) {
 			return false;
 		}
 		for (i = 0; i < size; i++)

@@ -257,8 +257,7 @@ R_API char *r_stdin_slurp (int *sz) {
 	if ((newfd = dup (0)) < 0) {
 		return NULL;
 	}
-	buf = malloc (BS);
-	if (!buf) {
+	if (!(buf = malloc (BS))) {
 		close (newfd);
 		return NULL;
 	}
@@ -378,8 +377,7 @@ R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
 	(void) fseek (fd, 0, SEEK_END);
 	sz = ftell (fd);
 	(void) fseek (fd, 0, SEEK_SET);
-	ret = (ut8*)malloc ((sz>>1)+1);
-	if (!ret) {
+	if (!(ret = (ut8*)malloc ((sz>>1)+1))) {
 		fclose (fd);
 		return NULL;
 	}
@@ -418,8 +416,7 @@ R_API char *r_file_slurp_range(const char *str, ut64 off, int sz, int *osz) {
 		fclose (fd);
 		return NULL;
 	}
-	ret = (char *) malloc (sz + 1);
-	if (ret) {
+	if (!(ret = (char *) malloc (sz + 1))) {
 		if (osz) {
 			*osz = (int)(size_t) fread (ret, 1, sz, fd);
 		} else {
@@ -810,7 +807,10 @@ err_r_file_mmap_windows:
 #else
 static RMmap *r_file_mmap_other (RMmap *m) {
 	ut8 empty = m->len == 0;
-	m->buf = malloc ((empty?1024:m->len));
+	if (!(m->buf = malloc ((empty?1024:m->len)))) {
+		free(m);
+		return NULL;
+	}
 	if (!empty && m->buf) {
 		lseek (m->fd, (off_t)0, SEEK_SET);
 		read (m->fd, m->buf, m->len);
@@ -901,7 +901,9 @@ R_API char *r_file_temp (const char *prefix) {
 		prefix = "";
 	}
 	namesz = strlen (prefix) + strlen (path) + 32;
-	name = malloc (namesz);
+	if (!(name = malloc (namesz))) {
+		return NULL;
+	}
 	snprintf (name, namesz, "%s/%s.%"PFMT64x, path, prefix, r_sys_now ());
 	free (path);
 	return name;
@@ -918,8 +920,7 @@ R_API int r_file_mkstemp(const char *prefix, char **oname) {
 	LPTSTR path_ = r_sys_conv_utf8_to_utf16 (path);
 	LPTSTR prefix_ = r_sys_conv_utf8_to_utf16 (prefix);
 
-	name = (LPTSTR)malloc (sizeof (TCHAR) * (MAX_PATH + 1));
-	if (!name) {
+	if (!(name = (LPTSTR)malloc (sizeof (TCHAR) * (MAX_PATH + 1)))) {
 		goto err_r_file_mkstemp;
 	}
 	if (GetTempFileName (path_, prefix_, 0, name)) {

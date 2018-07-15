@@ -396,7 +396,7 @@ static int decode_known(struct state *s, struct directive *d) {
 		if (d->d_operand < 0) {
 			d->d_operand *= -1;
 			sign = "-";
-		}	
+		}
 	} else {
 		d->d_operand = s->s_prefix_val | in->in_operand;
 		if (d->d_operand & 0x80) {
@@ -464,8 +464,8 @@ static int read_bin(struct state *s, struct directive *d) {
 
 static inline struct directive *next_inst(struct state *s) {
 	int rd;
-	struct directive *d = malloc (sizeof (*d));
-	if (!d) {
+	struct directive *d;
+	if (!(d = malloc (sizeof (*d)))) {
 		perror ("malloc()");
 		return NULL;
 	}

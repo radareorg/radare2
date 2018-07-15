@@ -59,8 +59,7 @@ R_API void *r_mem_pool_alloc(RMemoryPool *pool) {
 			eprintf ("FAIL: Cannot allocate more memory in the pool\n");
 			return NULL;
 		}
-		pool->nodes[pool->npool] = malloc (pool->nodesize * pool->poolsize);
-		if (!pool->nodes[pool->npool]) {
+		if (!(pool->nodes[pool->npool] = malloc (pool->nodesize * pool->poolsize))) {
 			return NULL;
 		}
 		pool->ncount = 0;

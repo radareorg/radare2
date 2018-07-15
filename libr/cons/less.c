@@ -73,8 +73,7 @@ static int *splitlines (char *s, int *lines_count) {
 	if (lines_size * sizeof (int) < lines_size) {
 		return NULL;
 	}
-	lines = malloc (lines_size * sizeof (int));
-	if (!lines) {
+	if (!(lines = malloc (lines_size * sizeof (int)))) {
 		return NULL;
 	}
 	lines[row++] = 0;

@@ -51,8 +51,7 @@ static int download(struct SPDBDownloader *pd) {
 	}
 	// dbg_file len is > 0
 	archive_name_len = strlen (opt->dbg_file);
-	archive_name = malloc (archive_name_len + 1);
-	if (!archive_name) {
+	if (!(archive_name = malloc (archive_name_len + 1))) {
 		return 0;
 	}
 	memcpy (archive_name, opt->dbg_file, archive_name_len + 1);

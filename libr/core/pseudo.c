@@ -42,8 +42,7 @@ static void find_and_change (char* in, int len) {
 			if (ctx.type != TYPE_NONE && ctx.right && ctx.left && ctx.rightlen > 0 && ctx.leftlen > 0) {
 				char* copy = NULL;
 				if (ctx.leftlen > ctx.rightlen) {
-					copy = (char*) malloc (ctx.leftlen);
-					if (copy) {
+					if ((copy = (char*) malloc (ctx.leftlen))) {
 						memcpy (copy, ctx.left, ctx.leftlen);
 						memcpy (ctx.left, ctx.right, ctx.rightlen);
 						memmove (ctx.comment - ctx.leftlen + ctx.rightlen, ctx.comment, ctx.right - ctx.comment);
@@ -51,8 +50,7 @@ static void find_and_change (char* in, int len) {
 					}
 				} else if (ctx.leftlen < ctx.rightlen) {
 					if (ctx.linecount < 1) {
-						copy = (char*) malloc (ctx.rightlen);
-						if (copy) {
+						if ((copy = (char*) malloc (ctx.rightlen))) {
 							memcpy (copy, ctx.right, ctx.rightlen);
 							memcpy (ctx.right + ctx.rightlen - ctx.leftlen, ctx.left, ctx.leftlen);
 							memmove (ctx.comment + ctx.rightlen - ctx.leftlen, ctx.comment, ctx.right - ctx.comment);
@@ -70,8 +68,7 @@ static void find_and_change (char* in, int len) {
 //						}
 					}
 				} else if (ctx.leftlen == ctx.rightlen) {
-					copy = (char*) malloc (ctx.leftlen);
-					if (copy) {
+					if ((copy = (char*) malloc (ctx.leftlen))) {
 						memcpy (copy, ctx.right, ctx.leftlen);
 						memcpy (ctx.right, ctx.left, ctx.leftlen);
 						memcpy (ctx.left, copy, ctx.leftlen);

@@ -270,8 +270,7 @@ static void free_info_stream(void *stream) {
 			stream_parse_func->parse_stream = (parse_func);			\
 			stream_parse_func->free = (free_func);				\
 			if (stream_size) {						\
-				stream_parse_func->stream = malloc (stream_size);	\
-				if (!stream_parse_func->stream) {			\
+				if (!(stream_parse_func->stream = malloc (stream_size))) 	 { \
 					R_FREE (stream_parse_func);			\
 					return;						\
 				}							\
@@ -687,8 +686,7 @@ static int build_format_flags(R_PDB *pdb, char *type, int pos, char *res_field, 
 		case eStructState:
 			res_field[pos] = '?';
 			tmp = strtok (NULL, " ");
-			name = (char *) malloc (strlen (tmp) + strlen (*name_field) + 1 + 2);
-			if (!name) {
+			if (!(name = (char *) malloc (strlen (tmp) + strlen (*name_field) + 1 + 2))) {
 				return 0;
 			}
 			r_name_filter (tmp, -1);
@@ -743,8 +741,7 @@ static int build_format_flags(R_PDB *pdb, char *type, int pos, char *res_field, 
 			}
 			res_field[pos] = 'E';
 			tmp = strtok (NULL, " ");
-			name = (char *) malloc (strlen (tmp) + strlen (*name_field) + 1 + 2);
-			if (!name) {
+			if (!(name = (char *) malloc (strlen (tmp) + strlen (*name_field) + 1 + 2))) {
 				return 0;
 			}
 			strcpy (name, tmp);
@@ -759,8 +756,7 @@ static int build_format_flags(R_PDB *pdb, char *type, int pos, char *res_field, 
 		case eBitfieldState:
 			res_field[pos] = 'B';
 			tmp = strtok (NULL, " ");
-			name = (char *) malloc (strlen (tmp) + strlen (*name_field) + 1 + 2);
-			if (!name) {
+			if (!(name = (char *) malloc (strlen (tmp) + strlen (*name_field) + 1 + 2))) {
 				return 0;
 			}
 			strcpy (name, tmp);
@@ -798,15 +794,13 @@ void build_command_field(ELeafType lt, char **command_field) {
 	switch (lt) {
 	case eLF_STRUCTURE:
 	case eLF_UNION:
-		*command_field = (char *) malloc (strlen ("pf.") + 1);
-		if (!(*command_field)) {
+		if (!(*command_field = (char *) malloc (strlen ("pf.") + 1))) {
 			break;
 		}
 		strcpy (*command_field, "pf.");
 		break;
 	case eLF_ENUM:
-		*command_field = (char *) malloc (strlen ("\"td enum ") + 1);
-		if (!(*command_field)) {
+		if (!(*command_field = (char *) malloc (strlen ("\"td enum ") + 1))) {
 			break;
 		}
 		strcpy (*command_field, "\"td enum ");
@@ -831,8 +825,7 @@ int build_flags_format_and_members_field(R_PDB *pdb, ELeafType lt, char *name, c
 	switch (lt) {
 	case eLF_STRUCTURE:
 	case eLF_UNION:
-		members_field[i] = (char *) malloc (sizeof(char) * strlen (name) + 1);
-		if (!members_field[i]) {
+		if (!(members_field[i] = (char *) malloc (sizeof(char) * strlen (name) + 1))) {
 			return 0;
 		}
 		strcpy (members_field[i], name);
@@ -869,11 +862,15 @@ int alloc_format_flag_and_member_fields(RList *ptmp, char **flags_format_field, 
 	if (!*members_amount) {
 		return 0;
 	}
-	*flags_format_field = (char *) malloc (*members_amount + 1);
+	if (!(*flags_format_field = (char *) malloc (*members_amount + 1))) {
+		return 0;
+	}
 	memset (*flags_format_field, 0, *members_amount + 1);
 
 	size = sizeof *members_name_field * (*members_amount);
-	*members_name_field = (char **) malloc (size);
+	if (!(*members_name_field = (char **) malloc (size))) {
+		return 0;
+	}
 	for (i = 0; i < *members_amount; i++) {
 		(*members_name_field)[i] = 0;
 	}

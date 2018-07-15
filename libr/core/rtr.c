@@ -504,7 +504,9 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	int newblksz, origblksz = core->blocksize;
 	ut8 *newblk, *origblk = core->block;
 
-	newblk = malloc (core->blocksize);
+	if (!(newblk = malloc (core->blocksize))) {
+		return 0;
+	}
 	memcpy (newblk, core->block, core->blocksize);
 
 	core->block = newblk;
@@ -1654,8 +1656,8 @@ R_API void r_core_rtr_session(RCore *core, const char *input) {
 }
 
 static ut8 *r_rap_packet(ut8 type, ut32 len) {
-	ut8 *buf = malloc (len + 5);
-	if (buf) {
+	ut8 *buf;
+	if ((buf = malloc (len + 5))) {
 		buf[0] = type;
 		r_write_be32 (buf + 1, len);
 	}

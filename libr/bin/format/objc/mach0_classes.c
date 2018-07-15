@@ -288,7 +288,9 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 				left = strlen (name) + 1;
 			} else {
 				int name_len = R_MIN (MAX_CLASS_NAME_LEN, left);
-				name = malloc (name_len + 1);
+				if (!(name = malloc (name_len + 1))) {
+					goto error;
+				}
 				len = r_buf_read_at (bf->buf, r, (ut8 *)name, name_len);
 				if (len < 1) {
 					eprintf ("Error reading\n");
@@ -575,7 +577,9 @@ static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinCl
 				left = strlen (name) + 1;
 			} else {
 				int name_len = R_MIN (MAX_CLASS_NAME_LEN, left);
-				name = malloc (name_len + 1);
+				if (!(name = malloc (name_len + 1))) {
+					goto error;
+				}
 				len = r_buf_read_at (bf->buf, r, (ut8 *)name, name_len);
 				name[name_len] = 0;
 				if (len < 1) {
@@ -598,8 +602,7 @@ static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinCl
 				left = strlen (rtype) + 1;
 			} else {
 				left = 1;
-				rtype = malloc (left + 1);
-				if (!rtype) {
+				if (!(rtype = malloc (left + 1))) {
 					goto error;
 				}
 				if (r_buf_read_at (bf->buf, r, (ut8 *)rtype, left) != left) {
@@ -758,8 +761,7 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 				left = strlen (name) + 1;
 			} else {
 				int name_len = R_MIN (MAX_CLASS_NAME_LEN, left);
-				name = malloc (name_len + 1);
-				if (!name) {
+				if (!(name = malloc (name_len + 1))) {
 					return;
 				}
 				if (r_buf_read_at (bf->buf, r, (ut8 *)name, name_len) != name_len) {
@@ -896,8 +898,8 @@ static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinCl
 			left = strlen (klass->name) + 1;
 		} else {
 			int name_len = R_MIN (MAX_CLASS_NAME_LEN, left);
-			char *name = malloc (name_len + 1);
-			if (name) {
+			char *name;
+			if (name = malloc (name_len + 1)) {
 				int rc = r_buf_read_at (bf->buf, r, (ut8 *)name, name_len);
 				if (rc != name_len) {
 					rc = 0;

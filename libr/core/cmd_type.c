@@ -451,8 +451,8 @@ static void link_struct_offset(RCore *core, RAnalFunction *fcn) {
 	int i, ret, bsize = R_MAX (64, core->blocksize);
 	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
-	ut8 *buf = malloc (bsize);
-	if (!buf) {
+	ut8 *buf;
+	if (!(buf = malloc (bsize))) {
 		free (buf);
 		r_anal_esil_free (esil);
 		return;
@@ -1044,9 +1044,9 @@ static int cmd_type(void *data, const char *input) {
 				if (!type)
 					break;
 				int tmp_len = strlen (name) + strlen (type);
-				char *tmp = malloc (tmp_len + 1);
+				char *tmp;
 				r_type_del (TDB, name);
-				if (tmp) {
+				if ((tmp = malloc (tmp_len + 1))) {
 					snprintf (tmp, tmp_len + 1, "%s.%s.", type, name);
 					SdbList *l = sdb_foreach_list (TDB, true);
 					ls_foreach (l, iter, kv) {

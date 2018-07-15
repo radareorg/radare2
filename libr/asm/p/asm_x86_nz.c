@@ -4370,7 +4370,9 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 				// scale with the offset (scale + offset) otherwise the scale
 				// will be the sum of the two. This splits the numbers
 				char *tmp;
-				tmp = malloc (strlen (str + pos) + 1);
+				if (!(tmp = malloc (strlen (str + pos) + 1))) {
+					return nextpos;
+				}
 				strcpy (tmp, str + pos);
 				strtok (tmp, "+-");
 				st64 read = getnum (a, tmp);

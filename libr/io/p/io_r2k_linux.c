@@ -425,8 +425,7 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			r2k_struct.beid = beid;
 			r2k_struct.pid = (beid == 1) ? pid : 0;
 
-			cmd = (char *) malloc (27);
-			if (!cmd) {
+			if (!(cmd = (char *) malloc (27))) {
 				io->cb_printf ("io_r2k_linux : Malloc failed. Seeking to 0x0\n");
 				io->cb_core_cmd (io->user, "s 0");
 			} else {

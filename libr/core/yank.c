@@ -77,7 +77,9 @@ static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const ch
 		ut64 actual_len = len <= yank_file_sz? len: 0;
 		ut8 *buf = NULL;
 		if (actual_len > 0 && res == addr) {
-			buf = malloc (actual_len);
+			if (!(buf = malloc (actual_len))) {
+				return 0;
+			}
 			if (!r_io_read_at (core->io, addr, buf, actual_len)) {
 				actual_len = 0;
 			}
@@ -136,8 +138,7 @@ R_API int r_core_yank(struct r_core_t *core, ut64 addr, int len) {
 	if (len == 0) {
 		len = core->blocksize;
 	}
-	buf = malloc (len);
-	if (!buf) {
+	if (!(buf = malloc (len))) {
 		return false;
 	}
 	if (addr != core->offset) {

@@ -111,7 +111,9 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->file = bf->file? strdup (bf->file): NULL;
 	ret->type = strdup ("ART");
 
-	ret->bclass = malloc (5);
+	if (!(ret->bclass = malloc (5))) {
+		return NULL;
+	}
 	memcpy (ret->bclass, &ao->art.version, 4);
 	ret->bclass[3] = 0;
 

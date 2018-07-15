@@ -1150,8 +1150,8 @@ static int __r_debug_snap_diff(RCore *core, int idx) {
 	core->print->flags |= R_PRINT_FLAGS_DIFFOUT;
 	r_list_foreach (dbg->snaps, iter, snap) {
 		if (count == idx) {
-			ut8 *b = malloc (snap->size);
-			if (!b) {
+			ut8 *b;
+			if (!(b = malloc (snap->size))) {
 				eprintf ("Cannot allocate snapshot\n");
 				continue;
 			}
@@ -1301,9 +1301,9 @@ static int dump_maps(RCore *core, int perm, const char *filename) {
 			do_dump = true;
 		}
 		if (do_dump) {
-			ut8 *buf = malloc (map->size);
+			ut8 *buf;
+			if (!(buf = malloc (map->size))) {
 			//TODO: use mmap here. we need a portable implementation
-			if (!buf) {
 				eprintf ("Cannot allocate 0x%08"PFMT64x" bytes\n", map->size);
 				free (buf);
 				/// XXX: TODO: read by blocks!!1
@@ -3449,7 +3449,9 @@ static RTreeNode *add_trace_tree_child (Sdb *db, RTree *t, RTreeNode *cur, ut64 
 	snprintf (dbkey, TN_KEY_LEN, TN_KEY_FMT, addr);
 	t_node = (struct trace_node *)(size_t)sdb_num_get (db, dbkey, NULL);
 	if (!t_node) {
-		t_node = (struct trace_node *)malloc (sizeof (*t_node));
+		if (!(t_node = (struct trace_node *)malloc (sizeof (*t_node)))) {
+			return NULL;
+		}
 		t_node->addr = addr;
 		t_node->refs = 1;
 		sdb_num_set (db, dbkey, (ut64)(size_t)t_node, 0);

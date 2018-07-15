@@ -237,8 +237,8 @@ R_API char* r_print_stereogram_bytes(const ut8 *buf, int len) {
 	int rows = len / cols;
 
 	int size = (2 + cols) * rows;
-	char *bump = malloc (size + 1); //(cols+2) * rows);
-	if (!bump) {
+	char *bump;
+	if (!(bump = malloc (size + 1))) { //(cols+2) * rows);
 		return NULL;
 	}
 	for (i = bumpi = 0; bumpi < size && i < len; i++) {
@@ -1106,8 +1106,8 @@ static const char* getchardiff(char *fmt, ut8 a, ut8 b) {
 #define CD(a, b) getchardiff (fmt, a[i + j], b[i + j])
 
 static ut8* M(const ut8 *b, int len) {
-	ut8 *r = malloc (len + 16);
-	if (!r) {
+	ut8 *r;
+	if (!(r = malloc (len + 16))) {
 		return NULL;
 	}
 	memset (r, 0xff, len + 16);
@@ -1922,8 +1922,8 @@ R_API void r_print_hex_from_bin (RPrint *p, char *bin_str) {
 	int i, j, index;
 	RPrint myp = {.cb_printf = libc_printf};
 	const int len = strlen (bin_str);
-	ut64 n, *buf = malloc (sizeof (ut64) * ((len + 63) / 64));
-	if (buf == NULL) {
+	ut64 n, *buf;
+	if (!(buf = malloc (sizeof (ut64) * ((len + 63) / 64)))) {
 		eprintf ("allocation failed\n");
 		return;
 	}

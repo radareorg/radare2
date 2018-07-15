@@ -672,8 +672,7 @@ static void *get_ntfile_data(linux_map_entry_t *head) {
 	}
 	n_segments = mapping_file.count;
 	n_pag = 1;
-	pp = maps_data = malloc (size);
-	if (!maps_data)	{
+	if (!(pp = maps_data = malloc (size))) {
 		return NULL;
 	}
 	memcpy (maps_data, &n_segments, sizeof (n_segments));
@@ -763,8 +762,7 @@ static bool dump_elf_map_content(RDebug *dbg, RBuffer *dest, linux_map_entry_t *
 			continue;
 		}
 		size = p->end_addr - p->start_addr;
-		map_content = malloc (size);
-		if (!map_content) {
+		if (!(map_content = malloc (size))) {
 			return false;
 		}
 		ret = dbg->iob.read_at (dbg->iob.io, p->start_addr, map_content, size);

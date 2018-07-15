@@ -45,8 +45,7 @@ R_API const ut8 *r_cache_get(RCache *c, ut64 addr, int *len) {
 
 R_API int r_cache_set(RCache *c, ut64 addr, const ut8 *buf, int len) {
 	if (!c->buf) {
-		c->buf = malloc (len);
-		if (!c->buf) {
+		if (!(c->buf = malloc (len))) {
 			return 0;
 		}
 		memcpy (c->buf, buf, len);
@@ -57,8 +56,7 @@ R_API int r_cache_set(RCache *c, ut64 addr, const ut8 *buf, int len) {
 		int baselen = (c->base - addr);
 		int newlen = baselen + ((len > c->len)? len: c->base);
 		// XXX expensive heap usage. must simplify
-		b = malloc (newlen);
-		if (!b) {
+		if (!(b = malloc (newlen))) {
 			return 0;
 		}
 		memset (b, 0xff, newlen);

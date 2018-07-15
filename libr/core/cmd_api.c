@@ -254,8 +254,7 @@ R_API int r_cmd_call_long(RCmd *cmd, const char *input) {
 			int lcmd = strlen (c->cmd_short);
 			int linp = strlen (input+c->cmd_len);
 			/// SLOW malloc on most situations. use stack
-			inp = malloc (lcmd+linp+2); // TODO: use static buffer with R_CMD_MAXLEN
-			if (!inp) {
+			if (!(inp = malloc (lcmd+linp+2))) { // TODO: use static buffer with R_CMD_MAXLEN
 				return -1;
 			}
 			memcpy (inp, c->cmd_short, lcmd);
@@ -347,13 +346,17 @@ R_API int r_cmd_macro_add(RCmdMacro *mac, const char *oname) {
 		*ptr = ' ';
 	}
 	if (!macro) {
-		macro = (struct r_cmd_macro_item_t *)malloc (
-			sizeof (struct r_cmd_macro_item_t));
+		if (!(macro = (struct r_cmd_macro_item_t *)malloc (
+			sizeof (struct r_cmd_macro_item_t)))) {
+			return -1;
+		}
 		macro->name = strdup (name);
 	}
 
 	macro->codelen = (pbody[0])? strlen (pbody)+2 : 4096;
-	macro->code = (char *)malloc (macro->codelen);
+	if (!(macro->code = (char *)malloc (macro->codelen))) {
+		return -1;
+	}
 	*macro->code = '\0';
 	macro->nargs = 0;
 	if (!args)

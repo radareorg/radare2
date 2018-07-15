@@ -50,8 +50,8 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	va_start (ap, format);
 	int flen = strlen (format);
 	int glen = strlen (buf_global);
-	char *tmp = malloc (flen + glen + 2);
-	if (!tmp) {
+	char *tmp;
+	if (!(tmp = malloc (flen + glen + 2))) {
 		return 0;
 	}
 	memcpy (tmp, buf_global, glen);

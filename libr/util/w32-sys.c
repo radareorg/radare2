@@ -105,7 +105,7 @@ R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE out) {
 			NULL,          // use parent's environment
 			NULL,          // use parent's current directory
 			&si,  // STARTUPINFO pointer
-			&pi))) {  // receives PROCESS_INFORMATION 
+			&pi))) {  // receives PROCESS_INFORMATION
 		ret = 1;
 		CloseHandle (pi.hProcess);
 		CloseHandle (pi.hThread);
@@ -124,8 +124,7 @@ char *ReadFromPipe(HANDLE fh) {
 	int strl = 0;
 	int strsz = BUFSIZE+1;
 
-	str = malloc (strsz);
-	if (!str) {
+	if (!(str = malloc (strsz))) {
 		return NULL;
 	}
 	for (;;) {

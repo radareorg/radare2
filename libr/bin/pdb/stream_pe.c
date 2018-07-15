@@ -13,8 +13,7 @@ void parse_pe_stream(void *stream, R_STREAM_FILE *stream_file)
 	int sctn_header_size =0;
 
 	stream_file_get_size (stream_file, &data_size);
-	data = (char *) malloc (data_size);
-	if (!data) {
+	if (!(data = (char *) malloc (data_size))) {
 		return;
 	}
 	stream_file_get_data (stream_file, data);
@@ -23,8 +22,7 @@ void parse_pe_stream(void *stream, R_STREAM_FILE *stream_file)
 	ptmp = data;
 	pe_stream->sections_hdrs = r_list_new ();
 	while (read_bytes < data_size) {
-		sctn_header = (SIMAGE_SECTION_HEADER *) malloc (sctn_header_size);
-		if (!sctn_header) {
+		if (!(sctn_header = (SIMAGE_SECTION_HEADER *) malloc (sctn_header_size))) {
 			break;
 		}
 		memcpy (sctn_header, ptmp, sctn_header_size);

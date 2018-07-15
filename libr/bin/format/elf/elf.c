@@ -1393,7 +1393,7 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 									 : r_read_le64 (buf);
 
 						if (!plt_sym_addr) {
-							//XXX HACK ALERT!!!! full relro?? try to fix it 
+							//XXX HACK ALERT!!!! full relro?? try to fix it
 							//will there always be .plt.got, what would happen if is .got.plt?
 							RBinElfSection *s = get_section_by_name (bin, ".plt.got");
  							if (Elf_(r_bin_elf_has_relro)(bin) < R_ELF_PART_RELRO || !s) {
@@ -1403,7 +1403,7 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 							of = of + got_addr - got_offset;
 							while (plt_addr + 2 + 4 < s->offset + s->size) {
 								/*we try to locate the plt entry that correspond with the relocation
-								  since got does not point back to .plt. In this case it has the following 
+								  since got does not point back to .plt. In this case it has the following
 								  form
 
 								  ff253a152000   JMP QWORD [RIP + 0x20153A]
@@ -1412,7 +1412,7 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 								  ff25ec9f0408   JMP DWORD [reloc.puts_236]
 
 								  plt_addr + 2 to remove jmp opcode and get the imm reading 4
-								  and if RIP (plt_addr + 6) + imm == rel->offset 
+								  and if RIP (plt_addr + 6) + imm == rel->offset
 								  return plt_addr, that will be our sym addr
 
 								  perhaps this hack doesn't work on 32 bits
@@ -1861,8 +1861,7 @@ char *Elf_(r_bin_elf_intrp)(ELFOBJ *bin) {
 			if (sz < 1) {
 				return NULL;
 			}
-			str = malloc (sz + 1);
-			if (!str) {
+			if (!(str = malloc (sz + 1))) {
 				return NULL;
 			}
 			if (r_buf_read_at (bin->b, addr, (ut8*)str, sz) < 1) {
@@ -2266,8 +2265,8 @@ ut8 *Elf_(r_bin_elf_grab_regstate)(ELFOBJ *bin, int *len) {
 					regdelta = reginf[X86_64].regdelta;
 					break;
 			}
-			ut8 *buf = malloc (regsize);
-			if (r_buf_read_at (bin->b, bin->phdr[i].p_offset + offset + regdelta, buf, regsize) != regsize) {
+			ut8 *buf;
+			if ((buf = malloc (regsize)) && r_buf_read_at (bin->b, bin->phdr[i].p_offset + offset + regdelta, buf, regsize) != regsize) {
 				free (buf);
 				bprintf ("Cannot read register state from CORE file\n");
 				return NULL;
@@ -3056,7 +3055,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 					tsize = 16;
 				} else if (type == R_BIN_ELF_SYMBOLS) {
 					tsize = sym[k].st_size;
-					toffset = (ut64)sym[k].st_value; 
+					toffset = (ut64)sym[k].st_value;
 					is_sht_null = sym[k].st_shndx == SHT_NULL;
 				} else {
 					continue;

@@ -129,7 +129,7 @@ static char *is_string_at(RCore *core, ut64 addr, int *olen) {
 		}
 		return (char*) str;
 	}
-	
+
 	ut64 *cstr = (ut64*)str;
 	ut64 lowptr = cstr[0];
 	if (lowptr >> 32) { // must be pa mode only
@@ -142,7 +142,7 @@ static char *is_string_at(RCore *core, ut64 addr, int *olen) {
 		if (ptr >> 32) { // must be pa mode only
 			ptr &= UT32_MAX;
 		}
-		if (ptr) {	
+		if (ptr) {
 			r_io_read_at (core->io, ptr, rstr, sizeof (rstr));
 			rstr[127] = 0;
 			ret = is_string (rstr, 128, &len);
@@ -1109,7 +1109,10 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 			sdb_num_set (DB, key, bbi->size, 0); // bb.<addr>.size=<num>
 		} else if (is_json) {
 			RDebugTracepoint *t = r_debug_trace_get (core->dbg, bbi->addr);
-			ut8 *buf = malloc (bbi->size);
+			ut8 *buf;
+			if (!(buf = malloc (bbi->size))) {
+				return 0;
+			}
 			if (count > 1) {
 				r_cons_printf (",");
 			}
@@ -1364,8 +1367,7 @@ R_API int r_core_anal_bb(RCore *core, RAnalFunction *fcn, ut64 at, int head) {
 
 	if (ret == R_ANAL_RET_NEW) { /* New bb */
 		// XXX: use static buffer size of 512 or so
-		buf = malloc (core->anal->opt.bb_max_size);
-		if (!buf) {
+		if (!(buf = malloc (core->anal->opt.bb_max_size))) {
 			goto error;
 		}
 		do {
@@ -2834,8 +2836,8 @@ static bool opiscall(RCore *core, RAnalOp *aop, ut64 addr, const ut8* buf, int l
 // TODO(maskray) RAddrInterval API
 #define OPSZ 8
 R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode) {
-	ut8 *buf = (ut8 *)malloc (core->blocksize);
-	if (!buf) {
+	ut8 *buf;
+	if (!(buf = (ut8 *)malloc (core->blocksize))) {
 		return -1;
 	}
 	int ptrdepth = r_config_get_i (core->config, "anal.ptrdepth");
@@ -3018,7 +3020,7 @@ static void found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, in
 		// Add to SDB
 		if (xref_to) {
 			r_anal_xrefs_set (core->anal, at, xref_to, type);
-		}	
+		}
 	} else if (rad == 'j') {
 		// Output JSON
 		if (count > 0) {
@@ -3073,17 +3075,15 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 		eprintf ("Error: block size too small\n");
 		return -1;
 	}
-	buf = malloc (bsz);
-	if (!buf) {
+	if (!(buf = malloc (bsz))) {
 		eprintf ("Error: cannot allocate a block\n");
 		return -1;
 	}
-	block = malloc (bsz);
-	if (!block) {
+	if (!(block = malloc (bsz))) {
 		eprintf ("Error: cannot allocate a temp block\n");
 		free (buf);
 		return -1;
-	}	
+	}
 	if (rad == 'j') {
 		r_cons_printf ("{");
 	}
@@ -3252,8 +3252,7 @@ R_API int r_core_anal_data (RCore *core, ut64 addr, int count, int depth, int wo
 	int i, j;
 
 	count = R_MIN (count, len);
-	buf = malloc (len + 1);
-	if (!buf) {
+	if (!(buf = malloc (len + 1))) {
 		return false;
 	}
 	memset (buf, 0xff, len);
@@ -3328,9 +3327,8 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 	}
 	blocks = (to - from) / step;
 	as_size = (1 + blocks) * sizeof (RCoreAnalStatsItem);
-	as->block = malloc (as_size);
-	if (!as->block) {
-		free (as);
+	if (!(as->block = malloc (as_size))) {
+		free(as);
 		return NULL;
 	}
 	memset (as->block, 0, as_size);
@@ -3825,8 +3823,7 @@ static void getpcfromstack(RCore *core, RAnalEsil *esil) {
 		return;
 	}
 
-	buf = malloc (size + 2);
-	if (!buf) {
+	if (!(buf = malloc (size + 2))) {
 		perror ("malloc");
 		return;
 	}
@@ -3853,8 +3850,7 @@ static void getpcfromstack(RCore *core, RAnalEsil *esil) {
 		goto err_anal_op;
 	}
 	tmp_esil_str_len = strlen (esilstr) + strlen (spname) + maxaddrlen;
-	tmp_esil_str = (char*) malloc (tmp_esil_str_len);
-	if (!tmp_esil_str) {
+	if (!(tmp_esil_str = (char*) malloc (tmp_esil_str_len))) {
 		goto err_anal_op;
 	}
 	tmp_esil_str[tmp_esil_str_len - 1] = '\0';
@@ -3962,8 +3958,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	if (iend < 0) {
 		return;
 	}
-	buf = malloc (iend + 2);
-	if (!buf) {
+	if (!(buf = malloc (iend + 2))) {
 		perror ("malloc");
 		return;
 	}

@@ -132,7 +132,11 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	}
 	cmd_len += i-1; // Add argc-1 spaces
 
-	char *cmdline = malloc ((cmd_len + 1) * sizeof (char));
+	char *cmdline;
+	if (!(cmdline = malloc ((cmd_len + 1) * sizeof (char)))) {
+		eprintf("Cannot allocate %d byte(s)\n", (cmd_len + 1) * sizeof (char));
+		return -1;
+	}
 	int cmd_i = 0; // Next character to write in cmdline
 	i = 0;
 	while (argv[i]) {

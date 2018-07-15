@@ -671,7 +671,10 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 		exp = (struct r_bin_pe_export_t*) (((const ut8*) exports) + osz);
 	} else {
 		sz = exports_sz;
-		exports = malloc (sz);
+		if (!(exports = malloc (sz))) {
+			free(buf);
+			return NULL;
+		}
 		exp = exports;
 	}
 

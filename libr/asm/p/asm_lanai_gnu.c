@@ -49,8 +49,7 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	va_start (ap, format);
 	flen = strlen (format);
 	glen = strlen (buf_global);
-	tmp = malloc (flen + glen + 2);
-	if (!tmp) {
+	if (!(tmp = malloc (flen + glen + 2))) {
 		va_end (ap);
 		return 0;
 	}

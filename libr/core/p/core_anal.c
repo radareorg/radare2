@@ -97,8 +97,8 @@ static int bbAdd(Sdb *db, ut64 from, ut64 to, ut64 jump, ut64 fail) {
 
 void addTarget(RCore *core, RStack *stack, Sdb *db, ut64 addr) {
 	if (!sdb_num_get (db, Fhandled(addr), NULL)) {
-		ut64* value = (ut64*) malloc (1 * sizeof(ut64));
-		if (!value) {
+		ut64* value;
+		if (!(value = (ut64*) malloc (1 * sizeof(ut64)))) {
 			eprintf ("Failed to allocate memory for address stack\n");
 			return;
 		}

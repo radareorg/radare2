@@ -183,8 +183,7 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 				eprintf ("Hash length is bigger than range 0x%"PFMT64x "\n", from);
 				continue;
 			}
-			buf = malloc (bufsz);
-			if (!buf) {
+			if (!(buf = malloc (bufsz))) {
 				eprintf ("Cannot allocate %"PFMT64d " bytes\n", bufsz);
 				goto hell;
 			}
@@ -265,8 +264,8 @@ static int __prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 
 R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen) {
 	ut64 at;
-	ut8 *b = (ut8 *) malloc (core->blocksize);
-	if (!b) {
+	ut8 *b;
+	if (!(b = (ut8 *) malloc (core->blocksize))) {
 		return 0;
 	}
 	// TODO: handle sections ?
@@ -326,7 +325,10 @@ R_API int r_core_search_preludes(RCore *core) {
 		from = p->itv.addr;
 		to = r_itv_end (p->itv);
 		if (prelude && *prelude) {
-			ut8 *kw = malloc (strlen (prelude) + 1);
+			ut8 *kw;
+			if (!(kw = malloc (strlen (prelude) + 1))) {
+				return 0;
+			}
 			int kwlen = r_hex_str2bin (prelude, kw);
 			ret = r_core_search_prelude (core, from, to, kw, kwlen, NULL, 0);
 			free (kw);
@@ -393,9 +395,9 @@ R_API int r_core_search_preludes(RCore *core) {
 
 /* TODO: maybe move into util/str */
 static char *getstring(char *b, int l) {
-	char *r, *res = malloc (l + 1);
+	char *r, *res;
 	int i;
-	if (!res) {
+	if (!(res = malloc (l + 1))) {
 		return NULL;
 	}
 	for (i = 0, r = res; i < l; b++, i++) {
@@ -421,8 +423,8 @@ static int _cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		extra = (json)? 3: 1;
 		const char *type = "hexpair";
 		bool escaped = false;
-		ut8 *buf = malloc (keyword_len);
-		if (!buf) {
+		ut8 *buf;
+		if (!(buf = malloc (keyword_len))) {
 			return 0;
 		}
 		switch (kw->type) {
@@ -1043,7 +1045,10 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 		}
 		r_cons_printf ("{\"opcodes\":[");
 		r_list_foreach (hitlist, iter, hit) {
-			ut8 *buf = malloc (hit->len);
+			ut8 *buf;
+			if (!(buf = malloc (hit->len))) {
+				return;
+			}
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->assembler, hit->addr);
 			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
@@ -1076,7 +1081,10 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 		r_cons_printf ("0x%08"PFMT64x ":",
 			((RCoreAsmHit *) hitlist->head->data)->addr);
 		r_list_foreach (hitlist, iter, hit) {
-			ut8 *buf = malloc (hit->len);
+			ut8 *buf;
+			if (!(buf = malloc (hit->len))) {
+				return;
+			}
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->assembler, hit->addr);
 			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
@@ -1115,7 +1123,10 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 				eprintf ("Invalid hit length here\n");
 				continue;
 			}
-			ut8 *buf = malloc (1 + hit->len);
+			ut8 *buf;
+			if (!(buf = malloc (1 + hit->len))) {
+				return;
+			}
 			buf[hit->len] = 0;
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->assembler, hit->addr);
@@ -1663,9 +1674,8 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 	const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
 	RRegItem *r = r_reg_get (core->dbg->reg, pc, -1);
 	RRegItem *reg_a0 = r_reg_get (core->dbg->reg, a0, -1);
-	
-	arr = malloc (bsize);
-	if (!arr) {
+
+	if (!(arr = malloc (bsize))) {
 		eprintf ("Cannot allocate %d byte(s)\n", bsize);
 		free (arr);
 		return -1;
@@ -1679,11 +1689,11 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 			r_io_read_at (core->io, curpc, arr, bsize);
 		}
 		inslen = r_anal_op (core->anal, &aop, curpc, arr + i, bsize - i, R_ANAL_OP_MASK_BASIC);
-		if (inslen) {	
+		if (inslen) {
  			int incr = (core->search->align > 0)? core->search->align - 1:  inslen - 1;
 			if (incr < 0) {
 				incr = minopcode;
-			}	
+			}
 			i += incr;
 			curpc += incr;
 			if (r_anal_op_nonlinear (aop.type)) {	// skip the instr
@@ -1697,7 +1707,7 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 	int sysno = r_debug_reg_get (core->dbg, a0);
 	r_reg_set_value (core->dbg->reg, reg_a0, -2); // clearing register A0
 	return sysno;
-}	
+}
 
 static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	RSearch *search = core->search;
@@ -1726,8 +1736,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 		r_anal_esil_free (esil);
 		return;
 	}
-	buf = malloc (bsize);
-	if (!buf) {
+	if (!(buf = malloc (bsize))) {
 		eprintf ("Cannot allocate %d byte(s)\n", bsize);
 		r_anal_esil_free (esil);
 		free (buf);
@@ -1755,7 +1764,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 			}
 			if (align && (at % align)) {
 				continue;
-			}	
+			}
 			if (!i) {
 				r_io_read_at (core->io, at, buf, bsize);
 			}
@@ -1771,7 +1780,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 				int off = emulateSyscallPrelude (core, at, curpc);
 				RSyscallItem *item = r_syscall_get (core->anal->syscall, off, -1);
 				if (item) {
-					r_cons_printf ("0x%08"PFMT64x" %s\n", at, item->name);	
+					r_cons_printf ("0x%08"PFMT64x" %s\n", at, item->name);
 				}
 				memset (previnstr, 0, sizeof (previnstr) * sizeof (*previnstr)); // clearing the buffer
 				if (searchflags) {
@@ -1814,7 +1823,7 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 	RAnalRef *ref;
 	RListIter *iter;
 	ut8 buf[12];
-	RAsmOp asmop;	
+	RAsmOp asmop;
 	RList *list = r_anal_xrefs_get (core->anal, addr);
 	if (list) {
 		r_list_foreach (list, iter, ref) {
@@ -1837,12 +1846,12 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 					r_core_cmd (core, param->cmd_hit, 0);
 					r_core_seek (core, here, true);
 				}
-			}	 	
+			}
 			free (buf_fcn);
-		}	
+		}
 	}
 	r_list_free (list);
-}	
+}
 
 static void do_anal_search(RCore *core, struct search_parameters *param, const char *input) {
 	RSearch *search = core->search;
@@ -1897,8 +1906,7 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 		return;
 	}
 	input = r_str_trim_ro (input);
-	buf = malloc (bsize);
-	if (!buf) {
+	if (!(buf = malloc (bsize))) {
 		eprintf ("Cannot allocate %d byte(s)\n", bsize);
 		return;
 	}
@@ -2435,7 +2443,7 @@ static ut8 *v_writebuf(RCore *core, RList *nums, int len, char ch, int bsize) {
 		eprintf ("Cannot allocate %d byte(s)\n", bsize);
 		free (buf);
 		return NULL;
-	}	
+	}
 	ptr = buf;
 	for (i = 0; i < len; i++) {
 		switch (ch) {
@@ -2448,22 +2456,22 @@ static ut8 *v_writebuf(RCore *core, RList *nums, int len, char ch, int bsize) {
 			n16 = r_num_math (core->num, r_list_pop_head (nums));
 			r_write_le16 (ptr, n16);
 			ptr = (ut8 *) ptr + sizeof (ut16);
-			break;	
+			break;
 		case '4':
 			n32 = (ut32)r_num_math (core->num, r_list_pop_head (nums));
 			r_write_le32 (ptr, n32);
 			ptr = (ut8 *) ptr + sizeof (ut32);
 			break;
-		default:	
+		default:
 		case '8':
 			n64 = r_num_math (core->num, r_list_pop_head (nums));
 			r_write_le64 (ptr, n64);
 			ptr = (ut8 *) ptr + sizeof (ut64);
-			break;	
+			break;
 		}
 		if (ptr > ptr + bsize) {
 			return NULL;
-		}	
+		}
 	}
 	return buf;
 }
@@ -2768,7 +2776,7 @@ reread:
 					}
 					if (r_cons_is_breaked ()) {
 						break;
-					}	
+					}
 				}
 			}
 			break;
@@ -2980,7 +2988,7 @@ reread:
 		case '8':
 			if (input[param_offset]) {
 				bsize = sizeof (ut64) * len;
-				v_buf = v_writebuf (core, nums, len, '8', bsize);	
+				v_buf = v_writebuf (core, nums, len, '8', bsize);
 			} else {
 				eprintf ("Usage: /v8 value\n");
 			}
@@ -2996,7 +3004,7 @@ reread:
 		case '2':
 			if (input[param_offset]) {
 				bsize = sizeof (ut16) * len;
-				v_buf = v_writebuf (core, nums, len, '2', bsize);	
+				v_buf = v_writebuf (core, nums, len, '2', bsize);
 			} else {
 				eprintf ("Usage: /v2 value\n");
 			}
@@ -3017,7 +3025,7 @@ reread:
 			r_search_kw_add (core->search,
 					r_search_keyword_new ((const ut8 *) v_buf, bsize, NULL, 0, NULL));
 			free (v_buf);
-		}	
+		}
 		r_search_begin (core->search);
 		dosearch = true;
 		break;
@@ -3299,7 +3307,10 @@ reread:
 	case '+': // "/+"
 		if (input[1] == ' ') {
 			// TODO: support /+j
-			char *buf = malloc (strlen (input) * 2);
+			char *buf;
+			if (!(buf = malloc (strlen (input) * 2))) {
+				goto beach;
+			}
 			char *str = strdup (input + 2);
 			int ochunksize;
 			int i, len, chunksize = r_config_get_i (core->config, "search.chunk");

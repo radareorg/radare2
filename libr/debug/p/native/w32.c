@@ -411,7 +411,7 @@ static int debug_exception_event (DEBUG_EVENT *de) {
 	case EXCEPTION_INT_DIVIDE_BY_ZERO:
 	case EXCEPTION_STACK_OVERFLOW:
 		eprintf ("(%d) Fatal exception (%s) in thread %d\n",
-			(int)de->dwProcessId, 
+			(int)de->dwProcessId,
 			get_w32_excep_name(code),
 			(int)de->dwThreadId);
 		break;
@@ -442,8 +442,7 @@ static char *get_file_name_from_handle (HANDLE handle_file) {
 	if (!handle_file_map) {
 		goto err_get_file_name_from_handle;
 	}
-	filename = malloc ((MAX_PATH + 1) * sizeof (TCHAR));
-	if (!filename) {
+	if (!(filename = malloc ((MAX_PATH + 1) * sizeof (TCHAR)))) {
 		goto err_get_file_name_from_handle;
 	}
 	/* Create a file mapping to get the file name. */
@@ -478,7 +477,7 @@ static char *get_file_name_from_handle (HANDLE handle_file) {
 			}
 		}
 		cur_drive++;
-	} 
+	}
 err_get_file_name_from_handle:
 	if (map) {
 		UnmapViewOfFile (map);
@@ -491,7 +490,7 @@ err_get_file_name_from_handle:
 		free (filename);
 		return filename_;
 
-	}	
+	}
 	return NULL;
 }
 
@@ -1148,8 +1147,7 @@ static void w32_info_user(RDebug *dbg, RDebugInfo *rdi) {
 		r_sys_perror ("w32_info_user/GetTokenInformation");
 		goto err_w32_info_user;
 	}
-	tok_usr = (PTOKEN_USER)malloc (tok_len);
-	if (!tok_usr) {
+	if (!(tok_usr = (PTOKEN_USER)malloc (tok_len))) {
 		perror ("w32_info_user/malloc tok_usr");
 		goto err_w32_info_user;
 	}
@@ -1157,14 +1155,12 @@ static void w32_info_user(RDebug *dbg, RDebugInfo *rdi) {
 		r_sys_perror ("w32_info_user/GetTokenInformation");
 		goto err_w32_info_user;
 	}
-	usr = (LPTSTR)malloc (usr_len);
-	if (!usr) {
+	if (!(usr = (LPTSTR)malloc (usr_len))) {
 		perror ("w32_info_user/malloc usr");
 		goto err_w32_info_user;
 	}
 	*usr = '\0';
-	usr_dom = (LPTSTR)malloc (usr_dom_len);
-	if (!usr_dom) {
+	if (!(usr_dom = (LPTSTR)malloc (usr_dom_len))) {
 		perror ("w32_info_user/malloc usr_dom");
 		goto err_w32_info_user;
 	}
@@ -1174,7 +1170,7 @@ static void w32_info_user(RDebug *dbg, RDebugInfo *rdi) {
 		goto err_w32_info_user;
 	}
 	if (*usr_dom) {
-		rdi->usr = r_str_newf (W32_TCHAR_FSTR"\\"W32_TCHAR_FSTR, usr_dom, usr);		
+		rdi->usr = r_str_newf (W32_TCHAR_FSTR"\\"W32_TCHAR_FSTR, usr_dom, usr);
 	} else {
 		rdi->usr = r_sys_conv_utf16_to_utf8 (usr);
 	}
@@ -1203,8 +1199,7 @@ static void w32_info_exe(RDebug *dbg, RDebugInfo *rdi) {
 		r_sys_perror ("w32_info_exe/OpenProcess");
 		goto err_w32_info_exe;
 	}
-	path = (LPTSTR)malloc (MAX_PATH + 1);
-	if (!path) {
+	if (!(path = (LPTSTR)malloc (MAX_PATH + 1))) {
 		perror ("w32_info_exe/malloc path");
 		goto err_w32_info_exe;
 	}

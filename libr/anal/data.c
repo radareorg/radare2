@@ -96,8 +96,7 @@ R_API char *r_anal_data_to_string(RAnalData *d, RConsPrintablePalette *pal) {
 
 	if (!d) return NULL;
 
-	line = malloc (mallocsz);
-	if (!line) {
+	if (!(line = malloc (mallocsz))) {
 		eprintf ("Cannot allocate %d byte(s)\n", mallocsz);
 		return NULL;
 	}
@@ -214,15 +213,13 @@ R_API RAnalData *r_anal_data_new_string(ut64 addr, const char *p, int len, int t
 	if (type == R_ANAL_DATA_TYPE_WIDE_STRING) {
 		/* TODO: add support for wide strings */
 	} else {
-		ad->str = malloc (len + 1);
-		if (!ad->str) {
+		if (!(ad->str = malloc (len + 1))) {
 			r_anal_data_free (ad);
 			return NULL;
 		}
 		memcpy (ad->str, p, len);
 		ad->str[len] = 0;
-		ad->buf = malloc (len + 1);
-		if (!ad->buf) {
+		if (!(ad->buf = malloc (len + 1))) {
 			r_anal_data_free (ad);
 			eprintf ("Cannot allocate %d byte(s)\n", len + 1);
 			return NULL;
