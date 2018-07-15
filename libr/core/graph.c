@@ -2821,7 +2821,6 @@ static void agraph_print_edges(RAGraph *g) {
 				}
 
 				if (!a->is_dummy && itn == neighbours->head && out_nth == 0 && bx > ax) {
-					a_x_inc += 4;
 					ax += (many && !g->is_callgraph) ? 0 : 4;
 				}
 				if (a->h < a->layer_height) {
