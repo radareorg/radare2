@@ -1,8 +1,8 @@
 diff --git a/MCInst.c b/MCInst.c
-index 40d1aba..fdec580 100644
+index 1694e5d..758c43f 100644
 --- a/MCInst.c
 +++ b/MCInst.c
-@@ -17,20 +17,10 @@
+@@ -18,20 +18,10 @@
  void MCInst_Init(MCInst *inst)
  {
  	unsigned int i;
@@ -25,10 +25,10 @@ index 40d1aba..fdec580 100644
  
  void MCInst_clear(MCInst *inst)
 diff --git a/cs.c b/cs.c
-index 449b1da5..fe87a318 100644
+index d2ffecc..f12051a 100644
 --- a/cs.c
 +++ b/cs.c
-@@ -641,7 +641,7 @@ size_t CAPSTONE_API cs_disasm(csh ud, const uint8_t *buffer, size_t size, uint64
+@@ -840,7 +840,7 @@ size_t CAPSTONE_API cs_disasm(csh ud, const uint8_t *buffer, size_t size, uint64
  	size_org = size;
  
  	total_size = sizeof(cs_insn) * cache_size;
@@ -37,7 +37,7 @@ index 449b1da5..fe87a318 100644
  	if (total == NULL) {
  		// insufficient memory
  		handle->errnum = CS_ERR_MEM;
-@@ -659,7 +659,7 @@ size_t CAPSTONE_API cs_disasm(csh ud, const uint8_t *buffer, size_t size, uint64
+@@ -858,7 +858,7 @@ size_t CAPSTONE_API cs_disasm(csh ud, const uint8_t *buffer, size_t size, uint64
  
  		if (handle->detail) {
  			// allocate memory for @detail pointer
@@ -46,7 +46,7 @@ index 449b1da5..fe87a318 100644
  		} else {
  			insn_cache->detail = NULL;
  		}
-@@ -747,6 +747,7 @@ size_t CAPSTONE_API cs_disasm(csh ud, const uint8_t *buffer, size_t size, uint64
+@@ -946,6 +946,7 @@ size_t CAPSTONE_API cs_disasm(csh ud, const uint8_t *buffer, size_t size, uint64
  		if (f == cache_size) {
  			// full cache, so expand the cache to contain incoming insns
  			cache_size = cache_size * 8 / 5; // * 1.6 ~ golden ratio
@@ -54,7 +54,7 @@ index 449b1da5..fe87a318 100644
  			total_size += (sizeof(cs_insn) * cache_size);
  			tmp = cs_mem_realloc(total, total_size);
  			if (tmp == NULL) {	// insufficient memory
-@@ -761,7 +762,7 @@ size_t CAPSTONE_API cs_disasm(csh ud, const uint8_t *buffer, size_t size, uint64
+@@ -960,7 +961,7 @@ size_t CAPSTONE_API cs_disasm(csh ud, const uint8_t *buffer, size_t size, uint64
  				handle->errnum = CS_ERR_MEM;
  				return 0;
  			}
