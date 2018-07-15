@@ -1,5 +1,5 @@
 diff --git a/arch/M68K/M68KInstPrinter.c b/arch/M68K/M68KInstPrinter.c
-index c545115..aec6a05 100644
+index 14a86e4..d826283 100644
 --- a/arch/M68K/M68KInstPrinter.c
 +++ b/arch/M68K/M68KInstPrinter.c
 @@ -28,7 +28,8 @@
@@ -12,7 +12,7 @@ index c545115..aec6a05 100644
  	"invalid",
  	"d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7",
  	"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
-@@ -326,6 +327,9 @@ const char* M68K_reg_name(csh handle, unsigned int reg)
+@@ -338,6 +339,9 @@ const char* M68K_reg_name(csh handle, unsigned int reg)
  #ifdef CAPSTONE_DIET
  	return NULL;
  #else
