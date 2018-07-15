@@ -378,7 +378,7 @@ R_API char *r_buf_to_string(RBuffer *b) {
 	if (!b) {
 		return strdup ("");
 	}
-	if (s = malloc (b->length + 1)) {
+	if ((s = malloc (b->length + 1))) {
 		memmove (s, b->buf, b->length);
 		s[b->length] = 0;
 	}
@@ -895,7 +895,7 @@ R_API bool r_buf_resize (RBuffer *b, ut64 newsize) {
 		int buf_len = newsize - last_addr;
 		if (buf_len > 0) {
 			ut8 *buf;
-			if (buf = malloc (buf_len)) {
+			if ((buf = malloc (buf_len))) {
 				memset (buf, b->Oxff, buf_len);
 				sparse_write (b->sparse, last_addr, buf, buf_len);
 				free (buf);

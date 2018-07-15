@@ -155,6 +155,7 @@ R_API RSearchKeyword* r_search_keyword_new_hex(const char *kwstr, const char *bm
 R_API RSearchKeyword* r_search_keyword_new_hexmask(const char *kwstr, const char *data) {
 	RSearchKeyword *ks = NULL;
 	ut8 *kw, *bm;
+	kw = bm = NULL;
 	if (kwstr != NULL) {
 		int len = strlen (kwstr);
 		if ((kw = malloc (len + 4)) && (bm = malloc (len + 4))) {

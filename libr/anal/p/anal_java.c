@@ -410,7 +410,7 @@ static int handle_bb_cf_linear_sweep (RAnal *anal, RAnalState *state) {
 			result = R_ANAL_RET_ERROR;
 			break;
 		case R_ANAL_OP_TYPE_JMP:
-			if (paddr64 = malloc (sizeof(ut64))) {
+			if ((paddr64 = malloc (sizeof(ut64)))) {
 				*paddr64 = bb->jump;
 				IFDBG eprintf (" - Handling a jmp @ 0x%04"PFMT64x", adding for future visit\n", addr);
 				r_list_append (nodes->cfg_node_addrs, paddr64);
@@ -418,12 +418,12 @@ static int handle_bb_cf_linear_sweep (RAnal *anal, RAnalState *state) {
 			result = R_ANAL_RET_END;
 			break;
 		case R_ANAL_OP_TYPE_CJMP:
-			if (paddr64 = malloc (sizeof(ut64))) {
+			if ((paddr64 = malloc (sizeof(ut64)))) {
 				*paddr64 = bb->jump;
 				IFDBG eprintf (" - Handling a bb->jump @ 0x%04"PFMT64x", adding 0x%04"PFMT64x" for future visit\n", addr, *paddr64);
 				r_list_append (nodes->cfg_node_addrs, paddr64);
 			}
-			if (paddr64 = malloc (sizeof(ut64))) {
+			if ((paddr64 = malloc (sizeof(ut64)))) {
 				*paddr64 = bb->fail;
 				IFDBG eprintf (" - Handling a bb->fail @ 0x%04"PFMT64x", adding 0x%04"PFMT64x" for future visit\n", addr, *paddr64);
 				r_list_append (nodes->cfg_node_addrs, paddr64);
@@ -439,7 +439,7 @@ static int handle_bb_cf_linear_sweep (RAnal *anal, RAnalState *state) {
 				r_list_foreach (bb->switch_op->cases, iter, caseop) {
 					ut64 * paddr64;
 					if (caseop) {
-						if (paddr64 = malloc (sizeof(ut64))) {
+						if ((paddr64 = malloc (sizeof(ut64)))) {
 							*paddr64 = caseop->jump;
 							IFDBG eprintf ("Adding 0x%04"PFMT64x" for future visit\n", *paddr64);
 							r_list_append (nodes->cfg_node_addrs, paddr64);

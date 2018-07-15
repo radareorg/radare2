@@ -208,7 +208,7 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 			}
 			a_count = count + (aligned-(count%aligned));
 
-			if (a_buf = malloc (a_count+aligned)) {
+			if ((a_buf = malloc (a_count+aligned))) {
 				int i;
 				memset (a_buf, 0xff, a_count + aligned);
 				if (lseek (mmo->fd, a_off, SEEK_SET) < 0) {
@@ -261,7 +261,7 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 				return -1;
 			}
 			a_count = count + (aligned - (count % aligned));
-			if (a_buf = malloc (a_count + aligned)) {
+			if ((a_buf = malloc (a_count + aligned))) {
 				int i;
 				memset (a_buf, 0xff, a_count+aligned);
 				for (i = 0; i < a_count; i += aligned) {

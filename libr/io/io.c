@@ -707,7 +707,7 @@ R_API bool r_io_set_write_mask(RIO* io, const ut8* mask, int len) {
 		io->write_mask_len = 0;
 		return true;
 	}
-	if (io->write_mask = (ut8*) malloc (len)) {
+	if ((io->write_mask = (ut8*) malloc (len))) {
 		memcpy (io->write_mask, mask, len);
 		io->write_mask_len = len;
 		return true;

@@ -40,7 +40,7 @@ static void fini_fi(fnditem* fi) {
 static void add_fi (fnditem* n, unsigned char* blk, int patlen) {
 	fnditem* p;
 	for (p=n; p->next!=NULL; p=p->next);
-	if (p->next = (fnditem*) malloc (sizeof (fnditem))) {
+	if ((p->next = (fnditem*) malloc (sizeof (fnditem)))) {
 		p = p->next;
 		memcpy (p->str, blk, patlen);
 		p->next = NULL;

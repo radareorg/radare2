@@ -899,7 +899,7 @@ static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinCl
 		} else {
 			int name_len = R_MIN (MAX_CLASS_NAME_LEN, left);
 			char *name;
-			if (name = malloc (name_len + 1)) {
+			if ((name = malloc (name_len + 1))) {
 				int rc = r_buf_read_at (bf->buf, r, (ut8 *)name, name_len);
 				if (rc != name_len) {
 					rc = 0;

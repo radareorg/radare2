@@ -4793,11 +4793,12 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 		return;
 	}
 	ut8 *buf, *block0, *block1;
+	buf = block0 = block1 = NULL;
 	if (!(buf = malloc (bsz))) {
 		return;
 	}
-	*block0 = calloc (1, bsz);
-	if (!(*block1 = malloc (bsz))) {
+	block0 = calloc (1, bsz);
+	if (!(block1 = malloc (bsz))) {
 		return;
 	}
 	if (!buf || !block0 || !block1) {
