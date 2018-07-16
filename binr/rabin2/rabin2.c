@@ -1123,7 +1123,7 @@ int main(int argc, char **argv) {
 		rabin_do_operation (op);
 	}
 	if (isradjson) {
-		r_cons_print ("}");
+		r_cons_print ("}\n");
 	}
 	r_cons_flush ();
 	r_bin_options_free (bo);
