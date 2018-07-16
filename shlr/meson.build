@@ -268,6 +268,7 @@ spp_dep = declare_dependency(link_with: libr2spp,
 # handle lz4 dependency
 lz4_dep = dependency('liblz4', required: false)
 if not lz4_dep.found() or not get_option('use_sys_lz4')
+  message('Use bundled lz4')
   lz4_files = [
     'lz4/lz4.c',
   ]
