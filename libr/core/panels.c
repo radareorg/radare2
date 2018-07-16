@@ -1504,6 +1504,7 @@ repeat:
 			" c    - toggle cursor\n"
 			" C    - toggle color\n"
 			" d    - define in current address. Same as Vd\n"
+			" e    - change title and command of current panel\n"
 			" D    - show disassembly in current frame\n"
 			" i    - insert hex\n"
 			" M    - open new custom frame\n"
@@ -1610,6 +1611,19 @@ repeat:
 		}
 		free (name);
 		free (cmd);
+		r_cons_enable_mouse (true);
+	}
+	break;
+	case 'e':
+	{
+		r_cons_enable_mouse (false);
+		char *new_name = r_cons_input ("New name: ");
+		char *new_cmd = r_cons_input ("New command: ");
+		if (new_name && *new_name && new_cmd && *new_cmd) {
+			replaceCmd (panels, new_name, new_cmd);
+		}
+		free (new_name);
+		free (new_cmd);
 		r_cons_enable_mouse (true);
 	}
 	break;
