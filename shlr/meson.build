@@ -287,6 +287,43 @@ else
 endif
 
 
+# handle zlib dependency
+zlib_dep = dependency('zlib', required: false)
+if not zlib_dep.found() or not get_option('use_sys_zlib')
+  message('Use bundled zlib')
+
+  zlib_files = [
+    'zip/zlib/adler32.c',
+    'zip/zlib/compress.c',
+    'zip/zlib/crc32.c',
+    'zip/zlib/deflate.c',
+    'zip/zlib/gzclose.c',
+    'zip/zlib/gzlib.c',
+    'zip/zlib/gzread.c',
+    'zip/zlib/gzwrite.c',
+    'zip/zlib/infback.c',
+    'zip/zlib/inffast.c',
+    'zip/zlib/inflate.c',
+    'zip/zlib/inftrees.c',
+    'zip/zlib/trees.c',
+    'zip/zlib/uncompr.c',
+    'zip/zlib/zutil.c'
+  ]
+
+  zlib_inc = [platform_inc, include_directories('zip/zlib')]
+
+  libr2zlib = static_library('r2zlib', zlib_files,
+			     include_directories: zlib_inc,
+			     implicit_include_directories: false
+			    )
+
+  zlib_dep = declare_dependency(link_with: libr2zlib,
+			        include_directories: zlib_inc)
+else
+  message('Use system-provided zlib library')
+endif
+
+
 # handle zip dependency
 zip_dep = dependency('libzip', required: false)
 if not zip_dep.found() or not get_option('use_sys_zip')
@@ -381,49 +418,14 @@ if not zip_dep.found() or not get_option('use_sys_zip')
 
   libr2zip = static_library('r2zip', zip_files,
     include_directories: zip_inc,
-    implicit_include_directories: false
+    implicit_include_directories: false,
+    dependencies: zlib_dep
   )
 
   zip_dep = declare_dependency(link_with: libr2zip,
 			      include_directories: zip_inc)
 else
   message('Use system-provided zip library')
-endif
-
-# handle zlib dependency
-zlib_dep = dependency('zlib', required: false)
-if not zlib_dep.found() or not get_option('use_sys_zlib')
-  message('Use bundled zlib')
-
-  zlib_files = [
-    'zip/zlib/adler32.c',
-    'zip/zlib/compress.c',
-    'zip/zlib/crc32.c',
-    'zip/zlib/deflate.c',
-    'zip/zlib/gzclose.c',
-    'zip/zlib/gzlib.c',
-    'zip/zlib/gzread.c',
-    'zip/zlib/gzwrite.c',
-    'zip/zlib/infback.c',
-    'zip/zlib/inffast.c',
-    'zip/zlib/inflate.c',
-    'zip/zlib/inftrees.c',
-    'zip/zlib/trees.c',
-    'zip/zlib/uncompr.c',
-    'zip/zlib/zutil.c'
-  ]
-
-  zlib_inc = [platform_inc, include_directories('zip/zlib')]
-
-  libr2zlib = static_library('r2zlib', zlib_files,
-    include_directories: zlib_inc,
-    implicit_include_directories: false
-  )
-
-  zlib_dep = declare_dependency(link_with: libr2zlib,
-			        include_directories: zlib_inc)
-else
-  message('Use system-provided zlib library')
 endif
 
 
