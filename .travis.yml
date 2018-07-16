@@ -20,7 +20,7 @@ matrix:
       env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson
     - if: head_branch =~ ^fedora-* OR tag =~ ^release-* OR type = push
       os: linux
-      env: TYPE=fedora-sys COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_SYS_CAPSTONE=true R2_SYS_MAGIC=true R2_SYS_ZIP=true R2_SYS_LZ4=true
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_SYS_CAPSTONE=true R2_SYS_MAGIC=true R2_SYS_ZIP=true R2_SYS_LZ4=true
     - if: head_branch =~ ^asan-* OR tag =~ ^release-* OR type = push
       os: linux
       env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" LDFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0
@@ -28,7 +28,7 @@ matrix:
       env: COMPILER_NAME=clang CXX=clang++ CC=clang
   allow_failures:
     - os: linux
-      env: TYPE=fedora-sys COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_SYS_CAPSTONE=1 R2_SYS_MAGIC=1 R2_SYS_ZIP=1 R2_SYS_LZ4=1
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_SYS_CAPSTONE=true R2_SYS_MAGIC=true R2_SYS_ZIP=true R2_SYS_LZ4=true
     - os: linux
       env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" LDFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0
 cache:
