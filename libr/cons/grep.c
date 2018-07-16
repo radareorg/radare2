@@ -255,7 +255,7 @@ while_end:
 
 	ptr2 = strchr_ns (ptr, ':'); // line number
 	grep->range_line = 2; // there is not :
-	if (ptr2 && ptr2[1] != ':' && ptr2[1]) {
+	if (ptr2 && ptr2[1] != ':' && ptr2[1] && (IS_DIGIT (ptr2[1]) || ptr2[1] == '-' || ptr2[1] == '.')) {
 		end_ptr = end_ptr ? R_MIN (end_ptr, ptr2) : ptr2;
 		char *p, *token = ptr2 + 1;
 		p = strstr (token, "..");
