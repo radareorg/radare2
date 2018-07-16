@@ -1999,8 +1999,8 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 				}
 			}
 		} else {
-			const char *bind = r_str_get (symbol->bind);
-			const char *type = r_str_get (symbol->type);
+			const char *bind = symbol->bind? symbol->bind: "NONE";
+			const char *type = symbol->type? symbol->type: "NONE";
 			const char *name = r_str_get (sn.demname? sn.demname: symbol->name);
 			// const char *fwd = r_str_get (symbol->forwarder);
 			r_cons_printf ("%03u 0x%08"PFMT64x" 0x%08"PFMT64x" "
@@ -2008,10 +2008,6 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 				symbol->ordinal,
 				symbol->paddr, addr, bind, type,
 				symbol->size, *name? " ": "", name);
-			// r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"PFMT64x" ord=%03u "
-			//	"fwd=%s sz=%u bind=%s type=%s name=%s\n",
-			//	addr, symbol->paddr, symbol->ordinal, fwd,
-			//	symbol->size, bind, type, name);
 		}
 		snFini (&sn);
 		i++;
@@ -2047,11 +2043,6 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 	if (IS_MODE_JSON (mode) && !printHere) {
 		r_cons_printf ("]");
 	}
-#if 0
-	if (IS_MODE_NORMAL (mode) && !at) {
-		r_cons_printf ("\n%i %s\n", i, exponly ? "exports" : "symbols");
-	}
-#endif
 
 	r_space_set (&r->anal->meta_spaces, NULL);
 	return true;
