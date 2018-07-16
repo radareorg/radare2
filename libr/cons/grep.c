@@ -207,7 +207,6 @@ while_end:
 				ZERO_FILL (grep->tokens);
 				grep->tokens_used = 0;
 				fail = 0;
-				eprintf ("Fail :( \n");
 				break;
 			}
 			switch (*ptr2) {
@@ -257,7 +256,7 @@ while_end:
 	grep->range_line = 2; // there is not :
 	if (ptr2 && ptr2[1] != ':' && ptr2[1]) {
 		end_ptr = end_ptr ? R_MIN (end_ptr, ptr2) : ptr2;
-		char *p, *token = ptr + 1;
+		char *p, *token = ptr2 + 1;
 		p = strstr (token, "..");
 		if (!p) {
 			grep->line = r_num_get (cons->num, ptr2 + 1);
@@ -279,15 +278,6 @@ while_end:
 	}
 	if (end_ptr) {
 		*end_ptr = '\0';
-		eprintf ("line:%d, rangeline:%d, from_line:%d, l_line:%d\n", grep->line, grep->range_line, grep->f_line, grep->l_line);
-		eprintf ("columns :");
-		int i;
-		for (i = 0; i < R_CONS_GREP_TOKENS; i++) {
-			if (grep->tokens[i]) {
-				eprintf ("%d", i);
-			}
-		}
-		eprintf("\n");
 	}
 	free (grep->str);
 	if (*ptr) {
