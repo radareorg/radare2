@@ -871,7 +871,7 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 				r_cons_printf ("0x%" PFMT64x "\n", tgt_addr);
 			} else {
 				r_cons_printf ("{\"type\":\"address\",\"offset\":"
-							   "%" PFMT64d "}", tgt_addr);
+							   "%" PFMT64u "}", tgt_addr);
 			}
 		}
 	}
@@ -1228,7 +1228,7 @@ R_API char *cmd_syscall_dostr(RCore *core, int n) {
 				res = r_str_appendf (res, "0x%08" PFMT64x "", arg);
 				break;
 			case 'i':
-				res = r_str_appendf (res, "%" PFMT64d "", arg);
+				res = r_str_appendf (res, "%" PFMT64u "", arg);
 				break;
 			case 'z':
 				memset (str, 0, sizeof (str));
@@ -1399,22 +1399,22 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				r_cons_printf ("\"ophint\":\"%s\",", hint->opcode);
 			}
 			r_cons_printf ("\"sign\":%s,", r_str_bool (op.sign));
-			r_cons_printf ("\"prefix\":%" PFMT64d ",", op.prefix);
+			r_cons_printf ("\"prefix\":%" PFMT64u ",", op.prefix);
 			r_cons_printf ("\"id\":%d,", op.id);
 			if (opexstr && *opexstr) {
 				r_cons_printf ("\"opex\":%s,", opexstr);
 			}
-			r_cons_printf ("\"addr\":%" PFMT64d ",", core->offset + idx);
+			r_cons_printf ("\"addr\":%" PFMT64u ",", core->offset + idx);
 			r_cons_printf ("\"bytes\":\"");
 			for (j = 0; j < size; j++) {
 				r_cons_printf ("%02x", buf[j + idx]);
 			}
 			r_cons_printf ("\",");
 			if (op.val != UT64_MAX) {
-				r_cons_printf ("\"val\": %" PFMT64d ",", op.val);
+				r_cons_printf ("\"val\": %" PFMT64u ",", op.val);
 			}
 			if (op.ptr != UT64_MAX) {
-				r_cons_printf ("\"ptr\": %" PFMT64d ",", op.ptr);
+				r_cons_printf ("\"ptr\": %" PFMT64u ",", op.ptr);
 			}
 			r_cons_printf ("\"size\": %d,", size);
 			r_cons_printf ("\"type\": \"%s\",",
@@ -1437,7 +1437,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				op.jump = hint->jump;
 			}
 			if (op.jump != UT64_MAX) {
-				r_cons_printf ("\"jump\":%" PFMT64d ",", op.jump);
+				r_cons_printf ("\"jump\":%" PFMT64u ",", op.jump);
 			}
 			if (hint && hint->fail != UT64_MAX) {
 				op.fail = hint->fail;
@@ -1446,7 +1446,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				r_cons_printf ("\"refptr\":%d,", op.refptr);
 			}
 			if (op.fail != UT64_MAX) {
-				r_cons_printf ("\"fail\":%" PFMT64d ",", op.fail);
+				r_cons_printf ("\"fail\":%" PFMT64u ",", op.fail);
 			}
 			r_cons_printf ("\"cycles\":%d,", op.cycles);
 			if (op.failcycles) {
@@ -1492,7 +1492,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				}
 #endif
 			}
-			printline ("prefix", "%" PFMT64d "\n", op.prefix);
+			printline ("prefix", "%" PFMT64u "\n", op.prefix);
 			printline ("id", "%d\n", op.id);
 #if 0
 // no opex here to avoid lot of tests broken..and having json in here is not much useful imho
@@ -1570,7 +1570,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 			printline ("family", "%s\n", r_anal_op_family_to_string (op.family));
 			printline ("stackop", "%s\n", r_anal_stackop_tostring (op.stackop));
 			if (op.stackptr) {
-				printline ("stackptr", "%"PFMT64d"\n", op.stackptr);
+				printline ("stackptr", "%"PFMT64u"\n", op.stackptr);
 			}
 		}
 		//r_cons_printf ("false: 0x%08"PFMT64x"\n", core->offset+idx);
@@ -1666,7 +1666,7 @@ static int anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			r_cons_printf ("0x%08" PFMT64x "\n", b->addr);
 			break;
 		case 'j':
-			//r_cons_printf ("%" PFMT64d "%s", b->addr, iter->n? ",": "");
+			//r_cons_printf ("%" PFMT64u "%s", b->addr, iter->n? ",": "");
 			{
 			RListIter *iter2;
 			RAnalBlock *b2;
@@ -1689,12 +1689,12 @@ static int anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			r_cons_printf ("%s{", firstItem? "": ",");
 			firstItem = false;
 			if (b->jump != UT64_MAX) {
-				r_cons_printf ("\"jump\":%"PFMT64d",", b->jump);
+				r_cons_printf ("\"jump\":%"PFMT64u",", b->jump);
 			}
 			if (b->fail != UT64_MAX) {
-				r_cons_printf ("\"fail\":%"PFMT64d",", b->fail);
+				r_cons_printf ("\"fail\":%"PFMT64u",", b->fail);
 			}
-			r_cons_printf ("\"addr\":%" PFMT64d ",\"size\":%d,\"inputs\":%d,\"outputs\":%d,\"ninstr\":%d,\"traced\":%s}",
+			r_cons_printf ("\"addr\":%" PFMT64u ",\"size\":%d,\"inputs\":%d,\"outputs\":%d,\"ninstr\":%d,\"traced\":%s}",
 				b->addr, b->size, inputs, outputs, b->ninstr, r_str_bool (b->traced));
 			}
 			break;
@@ -2655,7 +2655,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					RList *refs = r_anal_fcn_get_refs (core->anal, fcn);
 					r_list_foreach (refs, iter, ref) {
 						if (input[2] == 'j') {
-							r_cons_printf ("{\"type\":\"%c\",\"from\":%"PFMT64d",\"to\":%"PFMT64d"}%s",
+							r_cons_printf ("{\"type\":\"%c\",\"from\":%"PFMT64u",\"to\":%"PFMT64u"}%s",
 									ref->type, ref->at, ref->addr, iter->n? ",": "");
 						} else {
 							r_cons_printf ("%c 0x%08" PFMT64x " -> 0x%08" PFMT64x "\n",
@@ -3529,13 +3529,13 @@ static void initialize_stack (RCore *core, ut64 addr, ut64 size) {
 		//	r_core_cmdf (core, "wx 10203040 @ 0x%llx", addr);
 			switch (*mode) {
 			case 'd': // "debrujn"
-				r_core_cmdf (core, "wopD %"PFMT64d" @ 0x%"PFMT64x, left, addr + i);
+				r_core_cmdf (core, "wopD %"PFMT64u" @ 0x%"PFMT64x, left, addr + i);
 				break;
 			case 's': // "seq"
 				r_core_cmdf (core, "woe 1 0xff 1 4 @ 0x%"PFMT64x"!0x%"PFMT64x, addr + i, left);
 				break;
 			case 'r': // "random"
-				r_core_cmdf (core, "woR %"PFMT64d" @ 0x%"PFMT64x"!0x%"PFMT64x, left, addr + i, left);
+				r_core_cmdf (core, "woR %"PFMT64u" @ 0x%"PFMT64x"!0x%"PFMT64x, left, addr + i, left);
 				break;
 			case 'z': // "zero"
 			case '0':
@@ -5093,8 +5093,8 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db, int op
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
 		if (fcn) {
 			if (is_json) {
-				r_cons_printf ("{\"%"PFMT64d"\":{\"type\":\"fcn\","
-					"\"fcn_addr\":%"PFMT64d",\"name\":\"%s\",\"refs\":[",
+				r_cons_printf ("{\"%"PFMT64u"\":{\"type\":\"fcn\","
+					"\"fcn_addr\":%"PFMT64u",\"name\":\"%s\",\"refs\":[",
 					addr, fcn->addr, fcn->name);
 			} else {
 				//if (sdb_add (db, fcn->name, "1", 0)) {
@@ -5104,7 +5104,7 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db, int op
 			}
 		} else {
 			if (is_json) {
-				r_cons_printf ("{\"%"PFMT64d"\":{\"refs\":[", addr);
+				r_cons_printf ("{\"%"PFMT64u"\":{\"refs\":[", addr);
 			} else {
 			//snprintf (arg, sizeof (arg), "0x%08"PFMT64x, addr);
 			//if (sdb_add (db, arg, "1", 0)) {
@@ -5118,9 +5118,9 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db, int op
 		if (fcn) {
 			if (is_json) {
 				if (level == 0) {
-					r_cons_printf ("{\"%"PFMT64d"\":{\"type\":\"fcn\",\"fcn_addr\": %"PFMT64d",\"name\":\"%s\",\"refs\":[", ref->addr, fcn->addr, fcn->name);
+					r_cons_printf ("{\"%"PFMT64u"\":{\"type\":\"fcn\",\"fcn_addr\": %"PFMT64u",\"name\":\"%s\",\"refs\":[", ref->addr, fcn->addr, fcn->name);
 				} else {
-					r_cons_printf ("]}},{\"%"PFMT64d"\":{\"type\":\"fcn\",\"fcn_addr\": %"PFMT64d",\"name\":\"%s\",\"refs\":[", ref->addr, fcn->addr, fcn->name);
+					r_cons_printf ("]}},{\"%"PFMT64u"\":{\"type\":\"fcn\",\"fcn_addr\": %"PFMT64u",\"name\":\"%s\",\"refs\":[", ref->addr, fcn->addr, fcn->name);
 
 				}
 			} else {
@@ -5141,7 +5141,7 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db, int op
 			}
 		} else {
 			if (is_json) {
-				r_cons_printf ("{\"%"PFMT64d"\":{\"type\":\"???\",\"refs\":[", ref->addr);
+				r_cons_printf ("{\"%"PFMT64u"\":{\"type\":\"???\",\"refs\":[", ref->addr);
 			} else {
 				r_cons_printf ("%s0x%08"PFMT64x" ???\n", pre, ref->addr);
 			}
@@ -5278,7 +5278,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 
 					r_cons_printf ("{\"from\":%" PFMT64u ",\"type\":\"%s\",\"opcode\":\"%s\"", ref->addr, r_anal_xrefs_type_tostring (ref->type), str);
 					if (fcn) {
-						r_cons_printf (",\"fcn_addr\":%"PFMT64d",\"fcn_name\":\"%s\"", fcn->addr, fcn->name);
+						r_cons_printf (",\"fcn_addr\":%"PFMT64u",\"fcn_name\":\"%s\"", fcn->addr, fcn->name);
 					}
 					RFlagItem *fi = r_flag_get_at (core->flags, fcn? fcn->addr: ref->addr, true);
 					if (fi) {
@@ -5397,7 +5397,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_io_read_at (core->io, ref->at, buf, 12);
 					r_asm_set_pc (core->assembler, ref->at);
 					r_asm_disassemble (core->assembler, &asmop, buf, 12);
-					r_cons_printf ("{\"from\":%" PFMT64d ",\"to\":%" PFMT64d ",\"type\":\"%s\",\"opcode\":\"%s\"}%s",
+					r_cons_printf ("{\"from\":%" PFMT64u ",\"to\":%" PFMT64u ",\"type\":\"%s\",\"opcode\":\"%s\"}%s",
 						ref->at, ref->addr, r_anal_xrefs_type_tostring (ref->type), asmop.buf_asm, iter->n? ",": "");
 				}
 				r_cons_print ("]\n");
@@ -5969,7 +5969,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			}
 		case 'k':{ // "agfk"
 			ut64 addr = (*(input + 2)) ? r_num_math (core->num, input + 2) : core->offset;
-			r_core_cmdf (core, "ag-; .agf* %"PFMT64d"; aggk", addr);
+			r_core_cmdf (core, "ag-; .agf* %"PFMT64u"; aggk", addr);
 			break;
 			}
 		case '*':{// "agf*"
@@ -5982,7 +5982,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			if (r_config_get_i (core->config, "graph.web")) {
 				r_core_cmd0 (core, "=H /graph/");
 			} else {
-				char *cmdargs = r_str_newf ("agfd %"PFMT64d, r_num_math (core->num, input + 2));
+				char *cmdargs = r_str_newf ("agfd %"PFMT64u, r_num_math (core->num, input + 2));
 				char *cmd = r_core_graph_cmd (core, cmdargs);
 				if (cmd && *cmd) {
 					r_core_cmd0 (core, cmd);
@@ -6055,7 +6055,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		case ' ': {
 			core->graph->is_callgraph = true;
 			ut64 addr = input[2] ? r_num_math (core->num, input + 2) : core->offset;
-			r_core_cmdf (core, "ag-; .agr* %"PFMT64d"; agg%c;", addr, input[1]);
+			r_core_cmdf (core, "ag-; .agr* %"PFMT64u"; agg%c;", addr, input[1]);
 			core->graph->is_callgraph = false;
 			break;
 			}
@@ -6118,7 +6118,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		case 'w':
 		case ' ': {
 			ut64 addr = input[2] ? r_num_math (core->num, input + 2) : core->offset;
-			r_core_cmdf (core, "ag-; .agx* %"PFMT64d"; agg%c;", addr, input[1]);
+			r_core_cmdf (core, "ag-; .agx* %"PFMT64u"; agg%c;", addr, input[1]);
 			break;
 			}
 		case '*': {
@@ -6165,7 +6165,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		case ' ': {
 			core->graph->is_callgraph = true;
 			ut64 addr = input[2] ? r_num_math (core->num, input + 2) : core->offset;
-			r_core_cmdf (core, "ag-; .agc* %"PFMT64d"; agg%c;", addr, input[1]);
+			r_core_cmdf (core, "ag-; .agc* %"PFMT64u"; agg%c;", addr, input[1]);
 			core->graph->is_callgraph = false;
 			break;
 			}
@@ -6224,7 +6224,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		case 'd':
 		case ' ': {
 			ut64 addr = input[2] ? r_num_math (core->num, input + 2): core->offset;
-			r_core_cmdf (core, "ag-; .aga* %"PFMT64d"; agg%c;", addr, input[1]);
+			r_core_cmdf (core, "ag-; .aga* %"PFMT64u"; agg%c;", addr, input[1]);
 			break;
 			}
 		case 0:
@@ -6292,7 +6292,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			break;
 			}
 		case 'w': {
-			char *cmdargs = r_str_newf ("agdd %"PFMT64d,
+			char *cmdargs = r_str_newf ("agdd %"PFMT64u,
 				input[2] ? r_num_math (core->num, input + 2) : core->offset);
 			char *cmd = r_core_graph_cmd (core, cmdargs);
 			if (cmd && *cmd) {
@@ -6311,7 +6311,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 		if (r_config_get_i (core->config, "graph.web")) {
 			r_core_cmd0 (core, "=H /graph/");
 		} else {
-			char *cmdargs = r_str_newf ("agfd %"PFMT64d, r_num_math (core->num, input + 1));
+			char *cmdargs = r_str_newf ("agfd %"PFMT64u, r_num_math (core->num, input + 1));
 			char *cmd = r_core_graph_cmd (core, cmdargs);
 			if (cmd && *cmd) {
 				r_core_cmd0 (core, cmd);
