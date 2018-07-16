@@ -1237,7 +1237,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 			}
 			ds_comment (ds, false, ")%s", COLOR_RESET (ds));
 			ds_newline (ds);
-			r_list_free (addrs);
+			r_list_purge (addrs);
 			R_FREE (name);
 		} else {
 			eprintf ("Corrupted database?\n");
