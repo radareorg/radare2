@@ -207,6 +207,9 @@ typedef struct r_cons_palette_t {
 	RColor gui_border;
 	RColor wordhl;
 	RColor linehl;
+	RColor func_arg;
+	RColor func_arg_type;
+	RColor func_arg_addr;
 
 	/* Graph colors */
 	RColor graph_box;
@@ -272,6 +275,9 @@ typedef struct r_cons_printable_palette_t {
 	char *gui_border;
 	char *wordhl;
 	char *linehl;
+	char *func_arg;
+	char *func_arg_type;
+	char *func_arg_addr;
 
 	/* graph colors */
 	char *graph_box;

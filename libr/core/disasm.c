@@ -12,6 +12,7 @@
 #define R_MIDFLAGS_SYMALIGN 3
 
 #define COLOR(ds, field) (ds->show_color ? ds->field : "")
+#define COLOR_ARG(ds, field) (ds->show_color && ds->show_color_args ? ds->field : "")
 #define COLOR_CONST(ds, color) (ds->show_color ? Color_ ## color : "")
 #define COLOR_RESET(ds) COLOR_CONST(ds, RESET)
 
@@ -80,6 +81,7 @@ typedef struct {
 	bool use_esil;
 	bool show_color;
 	bool show_color_bytes;
+	bool show_color_args;
 	int colorop;
 	int acase;
 	bool capitalize;
@@ -209,6 +211,9 @@ typedef struct {
 	const char *color_gui_alt_background;
 	const char *color_gui_border;
 	const char *color_linehl;
+	const char *color_func_arg;
+	const char *color_func_arg_type;
+	const char *color_func_arg_addr;
 
 	RFlagItem *lastflag;
 	RAnalHint *hint;
@@ -556,6 +561,9 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->color_gui_alt_background = P(gui_alt_background): Color_GRAY;
 	ds->color_gui_border = P(gui_border): Color_BGGRAY;
 	ds->color_linehl = P(linehl): Color_BGBLUE;
+	ds->color_func_arg = P(func_arg): Color_WHITE;
+	ds->color_func_arg_type = P(func_arg_type): Color_BLUE;
+	ds->color_func_arg_addr = P(func_arg_addr): Color_CYAN;
 
 	ds->immstr = r_config_get_i (core->config, "asm.imm.str");
 	ds->immtrim = r_config_get_i (core->config, "asm.imm.trim");
@@ -570,6 +578,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->asm_anal = r_config_get_i (core->config, "asm.anal");
 	ds->show_color = r_config_get_i (core->config, "scr.color");
 	ds->show_color_bytes = r_config_get_i (core->config, "scr.color.bytes"); // maybe rename to asm.color.bytes
+	ds->show_color_args = r_config_get_i (core->config, "scr.color.args"); 
 	ds->colorop = r_config_get_i (core->config, "scr.color.ops"); // XXX confusing name // asm.color.inst (mnemonic + operands) ?
 	ds->show_utf8 = r_config_get_i (core->config, "scr.utf8");
 	ds->acase = r_config_get_i (core->config, "asm.ucase");
@@ -1390,9 +1399,10 @@ static ut32 tmp_get_realsize (RAnalFunction *f) {
 static void ds_show_functions_argvar(RDisasmState *ds, RAnalVar *var, const char *base, bool is_var, char sign) {
 	int delta = sign == '+' ? var->delta : -var->delta;
 	const char *pfx = is_var ? "var" : "arg";
-	r_cons_printf ("%s%s %s%s%s%s %s@ %s%c0x%x", COLOR (ds, color_push), pfx, COLOR (ds, color_invalid), var->type, 
+	r_cons_printf ("%s%s %s%s%s%s %s@ %s%c0x%x", COLOR_ARG (ds, color_func_arg), pfx, 
+			COLOR_ARG (ds, color_func_arg_type), var->type, 
 			r_str_endswith (var->type, "*") ? "" : " ",
-			var->name, COLOR(ds, color_reg), base, sign, delta);
+			var->name, COLOR_ARG (ds, color_func_arg_addr), base, sign, delta);
 }
 
 static void printVarSummary(RDisasmState *ds, RList *list) {
@@ -1666,9 +1676,10 @@ static void ds_show_functions(RDisasmState *ds) {
 					eprintf("Register not found");
 					break;
 				}
-				r_cons_printf ("%sarg %s%s%s%s %s@ %s", COLOR (ds, color_push), COLOR (ds, color_invalid),
+				r_cons_printf ("%sarg %s%s%s%s %s@ %s", COLOR_ARG (ds, color_func_arg),
+					COLOR_ARG (ds, color_func_arg_type),
 					var->type, r_str_endswith (var->type, "*") ? "" : " ",
-					var->name, COLOR (ds, color_reg), i->name);
+					var->name, COLOR_ARG (ds, color_func_arg_addr), i->name);
 				}
 				break;
 			case 's': {
