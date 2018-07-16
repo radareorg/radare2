@@ -1138,7 +1138,6 @@ static void ds_show_xrefs(RDisasmState *ds) {
 	bool demangle = r_config_get_i (core->config, "bin.demangle");
 	const char *lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
 	char *name, *tmp;
-	ut64 addr;
 	int count = 0;
 	if (!ds->show_xrefs || !ds->show_comments) {
 		return;
@@ -1183,7 +1182,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		return;
 	}
 
-	RList *addrs = r_list_new ();
+	RList *addrs = r_list_newf (free);
 	RAnalFunction *fun, *next_fun;
 	RFlagItem *f, *next_f;
 	r_list_foreach (xrefs, iter, refi) {
@@ -1194,12 +1193,12 @@ static void ds_show_xrefs(RDisasmState *ds) {
 					ut64 next_addr = ((RAnalRef *)(iter->n->data))->addr;
 					next_fun = r_anal_get_fcn_in (core->anal, next_addr, -1);
 					if (next_fun && next_fun->addr == fun->addr) {
-						r_list_append (addrs, refi->addr);
+						r_list_append (addrs, r_num_dup (refi->addr));
 						continue;
 					}
 				}
 				name = strdup (fun->name);
-				r_list_append (addrs, refi->addr);
+				r_list_append (addrs, r_num_dup (refi->addr));
 			} else {
 				f = r_flag_get_at (core->flags, refi->addr, true);
 				if (f) {
@@ -1207,12 +1206,12 @@ static void ds_show_xrefs(RDisasmState *ds) {
 						ut64 next_addr = ((RAnalRef *)(iter->n->data))->addr;
 						next_f = r_flag_get_at (core->flags, next_addr, true);
 						if (next_f && f->offset == next_f->offset) {
-							r_list_append (addrs, refi->addr - f->offset);
+							r_list_append (addrs, r_num_dup (refi->addr - f->offset));
 							continue;
 						}
 					}
 					name = strdup (f->name);
-					r_list_append (addrs, refi->addr - f->offset);
+					r_list_append (addrs, r_num_dup (refi->addr - f->offset));
 				} else {
 					name = strdup ("unk");
 				}
@@ -1230,12 +1229,13 @@ static void ds_show_xrefs(RDisasmState *ds) {
 			char* plus = fun ? "" : "+";
 			ds_comment (ds, false, "%s; %s XREF%s from %s (",
 				COLOR (ds, pal_comment), r_anal_xrefs_type_tostring (refi->type), plural, name);
-			r_list_foreach (addrs, it, addr) {
-				ds_comment (ds, false, "%s%s0x%"PFMT64x, it == addrs->head ? "" : ", ", plus, addr);
+			ut64 *addrptr;
+			r_list_foreach (addrs, it, addrptr) {
+				ds_comment (ds, false, "%s%s0x%"PFMT64x, it == addrs->head ? "" : ", ", plus, *addrptr);
 			}
 			ds_comment (ds, false, ")%s", COLOR_RESET (ds));
 			ds_newline (ds);
-			r_list_purge (addrs);
+			r_list_free (addrs);
 			R_FREE (name);
 		} else {
 			eprintf ("Corrupted database?\n");

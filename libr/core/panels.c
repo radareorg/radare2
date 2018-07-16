@@ -363,8 +363,9 @@ static void layoutBalance(RPanels *panels) {
 static void layoutSidePanel(RCore *core, const char *title, const char *cmd) {
 	RPanels *panels = core->panels;
 	RPanel *panel = panels->panel;
-	int h, w = r_cons_get_size (&h);
+	int h;
 	int i;
+	(void)r_cons_get_size (&h);
 
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p = &panel[i];
@@ -431,9 +432,7 @@ R_API void r_core_panels_layout_refresh(RCore *core) {
 static void changePanelNum(RPanels *panels, int now, int after) {
 	RPanel *panel = panels->panel;
 	const int n_panels = panels->n_panels;
-	const int curnode = panels->curnode;
 	int i;
-
 	RPanel tmpPanel = panel[now];
 	for (i = n_panels - 1; i > after; i--) {
 		panel[i] = panel[i - 1];
@@ -667,7 +666,7 @@ static void delCurPanel(RPanels *panels) {
 }
 
 static void delInvalidPanels(RPanels *panels) {
-	int i, j;
+	int i;
 	for (i = 1; i < panels->n_panels; i++) {
 		RPanel *panel = &panels->panel[i];
 		if (panel->w < 2) {

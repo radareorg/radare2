@@ -80,6 +80,7 @@ R_API bool r_num_is_op(const char c);
 R_API int r_num_str_len(const char *str);
 R_API int r_num_str_split(char *str);
 R_API RList *r_num_str_split_list(char *str);
+R_API void *r_num_dup(ut64 n);
 
 #ifdef __cplusplus
 }

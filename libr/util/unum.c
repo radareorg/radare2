@@ -776,3 +776,12 @@ R_API RList *r_num_str_split_list(char *str) {
 	}
 	return list;
 }
+
+R_API void *r_num_dup(ut64 n) {
+	ut64 *hn = malloc (sizeof (ut64));
+	if (!hn) {
+		return NULL;
+	}
+	*hn = n;
+	return (void*)hn;
+}
