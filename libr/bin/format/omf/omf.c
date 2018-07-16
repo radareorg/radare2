@@ -1,3 +1,5 @@
+/* radare2 - LGPL - Copyright 2009-2018 - pancake, ampotos */
+
 #include "omf.h"
 
 static int is_valid_omf_type(ut8 type) {
@@ -31,7 +33,7 @@ int r_bin_checksum_omf_ok(const char *buf, ut64 buf_size) {
 		return false;
 	}
 	size = ut8p_bw (buf + 1);
-	if (buf_size < size + 3) {
+	if (size + 3 >= buf_size) {
 		eprintf ("Invalid record (too short)\n");
 		return false;
 	}

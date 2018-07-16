@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2016 nodepad, pancake */
+/* radare - LGPL - Copyright 2015-2018 nodepad, pancake */
 
 #include "mz.h"
 #include <btree.h>
@@ -16,7 +16,7 @@ int r_bin_mz_get_entrypoint (const struct r_bin_mz_obj_t *bin) {
 	/* Value of CS in DOS header may be negative */
 	const short cs = bin->dos_header->cs;
 	ut32 pa = bin->dos_header->header_paragraphs + cs;
-	const ut32 paddr = (pa<<4) + bin->dos_header->ip;
+	const ut32 paddr = (pa << 4) + bin->dos_header->ip;
 	if (paddr < bin->dos_file_size) {
 		return paddr;
 	}
@@ -25,7 +25,7 @@ int r_bin_mz_get_entrypoint (const struct r_bin_mz_obj_t *bin) {
 
 // This function reads from the file buffer,
 // thus using endian-agnostic functions
-int cmp_segs(const void *a, const void *b) {
+static int cmp_segs(const void *a, const void *b) {
 	const ut16 * const ma = (const ut16 * const)a;
 	const ut16 * const mb = (const ut16 * const)b;
 	if (!ma || !mb) {
@@ -40,7 +40,7 @@ void trv_segs (const void *seg, const void *segs) {
 	const ut8 * const mseg = (const ut8 * const)seg;
 	ut16 ** const msegs = (ut16 **)segs;
 	if (mseg && msegs && *msegs) {
-		r_write_le16(*msegs, r_read_le16(mseg));
+		r_write_le16 (*msegs, r_read_le16 (mseg));
 		*msegs = *msegs + 1;
 	}
 }
@@ -72,24 +72,27 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments(const struct r_bin_mz_obj_t *b
 #if 1
 	struct btree_node *tree;
 	struct r_bin_mz_segment_t *ret;
-	ut16 *segments, *curr_seg;
+	ut16 *curr_seg;
 	int i, num_segs;
-	ut64 paddr;
 	const ut16 first_segment = 0;
 	const ut16 stack_segment = bin->dos_header->ss;
 	const MZ_image_relocation_entry * const relocs = bin->relocation_entries;
-	const int num_relocs = bin->dos_header->num_relocs;
+	int num_relocs = bin->dos_header->num_relocs;
 	const ut64 last_parag = ((bin->dos_file_size + 0xF) >> 4) - \
 		bin->dos_header->header_paragraphs;
 
 	btree_init (&tree);
 	for (i = 0; i < num_relocs; i++) {
-		paddr = r_bin_mz_seg_to_paddr (bin, relocs[i].segment) + relocs[i].offset;
+		ut64 paddr = r_bin_mz_seg_to_paddr (bin, relocs[i].segment) + relocs[i].offset;
 		if ((paddr + 2) < bin->dos_file_size) {
-			curr_seg = (ut16 *)(bin->b->buf + paddr);
+			ut8 bb[32] = {0};
+			r_buf_read_at (bin->b, paddr, bb, sizeof (bb));
 			/* Add segment only if it's located inside dos executable data */
-			if (r_read_le16 (curr_seg) <= last_parag) {
-				btree_add (&tree, curr_seg, cmp_segs);
+			if (r_read_le16 (bb) <= last_parag) {
+				btree_add (&tree, bb, cmp_segs);
+			} else {
+				num_relocs = i;
+				break;
 			}
 		}
 	}
@@ -109,7 +112,7 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments(const struct r_bin_mz_obj_t *b
 		btree_cleartree (tree, NULL);
 		return NULL;
 	}
-	segments = calloc (1 + num_relocs, sizeof (*segments));
+	ut16 *segments = calloc (1 + num_relocs, sizeof (*segments));
 	if (!segments) {
 		eprintf ("Error: calloc (segments)\n");
 		btree_cleartree (tree, NULL);

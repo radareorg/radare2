@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Meson build for radare2"""
 
 import argparse
