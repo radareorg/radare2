@@ -7,7 +7,9 @@
 #include <r_io.h>
 #include <r_cons.h>
 #include "nxo/nxo.h"
-#ifndef R_MESON_VERSION
+#ifdef R_MESON_VERSION
+#include <lz4.h>
+#else
 #include "../../../shlr/lz4/lz4.c"
 #endif
 

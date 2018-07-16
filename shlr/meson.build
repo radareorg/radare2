@@ -292,7 +292,7 @@ zip_dep = dependency('libzip', required: false)
 if not zip_dep.found() or not get_option('use_sys_zip')
   message('Use bundled zip')
 
-  zlib_files = [
+  zip_files = [
     'zip/zip/zip_add.c',
     'zip/zip/zip_add_dir.c',
     'zip/zip/zip_add_entry.c',
@@ -374,7 +374,28 @@ if not zip_dep.found() or not get_option('use_sys_zip')
     'zip/zip/zip_unchange_all.c',
     'zip/zip/zip_unchange_archive.c',
     'zip/zip/zip_unchange_data.c',
-    'zip/zip/zip_utf-8.c',
+    'zip/zip/zip_utf-8.c'
+  ]
+
+  zip_inc = [platform_inc, include_directories('zip/include')]
+
+  libr2zip = static_library('r2zip', zip_files,
+    include_directories: zip_inc,
+    implicit_include_directories: false
+  )
+
+  zip_dep = declare_dependency(link_with: libr2zip,
+			      include_directories: zip_inc)
+else
+  message('Use system-provided zip library')
+endif
+
+# handle zlib dependency
+zlib_dep = dependency('zlib', required: false)
+if not zlib_dep.found() or not get_option('use_sys_zlib')
+  message('Use bundled zlib')
+
+  zlib_files = [
     'zip/zlib/adler32.c',
     'zip/zlib/compress.c',
     'zip/zlib/crc32.c',
@@ -392,18 +413,19 @@ if not zip_dep.found() or not get_option('use_sys_zip')
     'zip/zlib/zutil.c'
   ]
 
-  zip_inc = [platform_inc, include_directories('zip/include')]
+  zlib_inc = [platform_inc, include_directories('zip/zlib')]
 
-  libr2zip = static_library('r2zip', zlib_files,
-    include_directories: zip_inc,
+  libr2zlib = static_library('r2zlib', zlib_files,
+    include_directories: zlib_inc,
     implicit_include_directories: false
   )
 
-  zip_dep = declare_dependency(link_with: libr2zip,
-			      include_directories: zip_inc)
+  zlib_dep = declare_dependency(link_with: libr2zlib,
+			        include_directories: zlib_inc)
 else
-  message('Use system-provided zip library')
+  message('Use system-provided zlib library')
 endif
+
 
 # handle grub dependency
 grub_files = [
