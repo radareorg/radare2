@@ -32,7 +32,7 @@ cache:
   - ccache
 
 before_install:
-  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then docker pull radareorg/r2-travis || docker build -t radareorg/r2-travis:latest -f Dockerfile.travis . ; else rm -rf .nvm && git clone https://github.com/creationix/nvm.git .nvm && (cd .nvm && git checkout `git describe --abbrev=0 --tags`) && . .nvm/nvm.sh && nvm install 8.11.3; fi
+  - bash travis-before-install.sh
 
 script:
   - export PR_NAME=$(echo $TRAVIS_PULL_REQUEST_SLUG | cut -d'/' -f1)
@@ -44,7 +44,7 @@ script:
   - if [ "${R2R_BRANCH}" = master ]; then USER_NAME=radare; fi
   - export R2R_REPO=$(doc/repo PR_REGRESSIONS | sed "s/__USER__/${USER_NAME}/g")
   - if [ "$TRAVIS_OS_NAME" != "osx" ]; then bash ./travis-extract-var.sh > ${TRAVIS_BUILD_DIR}/docker-env.sh ; cat ${TRAVIS_BUILD_DIR}/docker-env.sh ; fi
-  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then docker run -v /home/travis/.ccache:/root/.ccache -v ${TRAVIS_BUILD_DIR}:${TRAVIS_BUILD_DIR} --entrypoint "/bin/bash" radareorg/r2-travis:latest -c ". /src/.nvm/nvm.sh; cd ${TRAVIS_BUILD_DIR}; . docker-env.sh; bash travis-script"; else bash travis-script; fi
+  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then docker run -v /home/travis/.ccache:/root/.ccache -v ${TRAVIS_BUILD_DIR}:${TRAVIS_BUILD_DIR} --entrypoint "/bin/bash" radareorg/r2-travis:${DOCKER_TAG} -c ". /src/.nvm/nvm.sh; cd ${TRAVIS_BUILD_DIR}; . docker-env.sh; bash travis-script"; else bash travis-script; fi
 
 notifications:
   irc: "chat.freenode.net#radare"
