@@ -615,7 +615,6 @@ R_API int r_core_bin_set_arch_bits (RCore *r, const char *name, const char * arc
 R_API int r_core_bin_update_arch_bits (RCore *r);
 R_API char *r_core_bin_method_flags_str(ut64 flags, int mode);
 R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode);
-R_API void r_core_file_info(RCore *core, int mode);
 
 /* rtr */
 R_API int r_core_rtr_cmds (RCore *core, const char *port);

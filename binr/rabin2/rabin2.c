@@ -45,13 +45,12 @@ static int rabin_show_help(int v) {
 		" -E              globally exportable symbols\n"
 		" -f [str]        select sub-bin named str\n"
 		" -F [binfmt]     force to use that bin plugin (ignore header check)\n"
-		" -g              same as -II -SMZIHVResizcld -SS -ee (show all info)\n"
+		" -g              same as -SMZIHVResizcld -SS -ee (show all info)\n"
 		" -G [addr]       load address . offset to header\n"
 		" -h              this help message\n"
 		" -H              header fields\n"
 		" -i              imports (symbols imported from libraries)\n"
 		" -I              binary info\n"
-		" -II             file info\n"
 		" -j              output in json\n"
 		" -k [sdb-query]  run sdb query. for example: '*'\n"
 		" -K [algo]       calculate checksums (md5, sha1, ..)\n"
@@ -631,7 +630,6 @@ int main(int argc, char **argv) {
 			set_action (R_BIN_REQ_SEGMENTS);
 			set_action (R_BIN_REQ_STRINGS);
 			set_action (R_BIN_REQ_SIZE);
-			set_action (R_BIN_REQ_FILE);
 			set_action (R_BIN_REQ_INFO);
 			set_action (R_BIN_REQ_FIELDS);
 			set_action (R_BIN_REQ_DWARF);
@@ -695,14 +693,7 @@ int main(int argc, char **argv) {
 			}
 			break;
 		case 'Z': set_action (R_BIN_REQ_SIZE); break;
-		case 'I':
-			if (is_active (R_BIN_REQ_INFO)) {
-				action &= ~R_BIN_REQ_INFO;
-				action |= R_BIN_REQ_FILE;
-			} else {
-				set_action (R_BIN_REQ_INFO);
-			}
-			break;
+		case 'I': set_action (R_BIN_REQ_INFO); break;
 		case 'H':
 			set_action (R_BIN_REQ_FIELDS);
 			break;
@@ -1094,13 +1085,6 @@ int main(int argc, char **argv) {
 		free (tmp);
 	}
 
-	if (action & R_BIN_REQ_FILE) {
-		if (isradjson) {
-			r_cons_printf ("%s\"core\":", actions_done ? "," : "");
-		}
-		r_core_file_info (&core, rad);
-		actions_done++;
-	}
 	run_action ("sections", R_BIN_REQ_SECTIONS, R_CORE_BIN_ACC_SECTIONS);
 	run_action ("segments", R_BIN_REQ_SEGMENTS, R_CORE_BIN_ACC_SEGMENTS);
 	run_action ("entries", R_BIN_REQ_ENTRIES, R_CORE_BIN_ACC_ENTRIES);
@@ -1139,7 +1123,7 @@ int main(int argc, char **argv) {
 		rabin_do_operation (op);
 	}
 	if (isradjson) {
-		r_cons_print ("}\n");
+		r_cons_print ("}");
 	}
 	r_cons_flush ();
 	r_bin_options_free (bo);

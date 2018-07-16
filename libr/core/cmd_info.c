@@ -14,7 +14,7 @@ static const char *help_msg_i[] = {
 	"'j'", "", "Output in json",
 	"'q'", "", "Simple quiet output",
 	"Actions:", "", "",
-	"i|ij", "", "Show file and binary info of current file (in JSON)",
+	"i|ij", "", "Show info of current file (in JSON)",
 	"iA", "", "List archs",
 	"ia", "", "Show all info (imports, exports, sections..)",
 	"ib", "", "Reload the current buffer for setting of the bin (use once only)",
@@ -32,7 +32,6 @@ static const char *help_msg_i[] = {
 	"iHH", "", "Verbose Headers in raw text",
 	"ii", "", "Imports",
 	"iI", "", "Binary info",
-	"iII", "", "File info",
 	"ik", " [query]", "Key-value database from RBinObject",
 	"il", "", "Libraries",
 	"iL ", "[plugin]", "List all RBin plugins loaded or plugin details",
@@ -133,7 +132,7 @@ static int demangle(RCore *core, const char *s) {
 }
 
 #define STR(x) (x)? (x): ""
-R_API void r_core_file_info(RCore *core, int mode) {
+static void r_core_file_info(RCore *core, int mode) {
 	const char *fn = NULL;
 	int dbg = r_config_get_i (core->config, "cfg.debug");
 	bool io_cache = r_config_get_i (core->config, "io.cache");
@@ -269,44 +268,32 @@ static int bin_is_executable(RBinObject *obj){
 	return false;
 }
 
-static void cmd_info_file_bin_(RCore *core, int va, int mode, bool file_only) {
+static void cmd_info_bin(RCore *core, int va, int mode) {
 	RBinObject *obj = r_bin_cur_object (core->bin);
 	int array = 0;
 	if (core->file) {
 		if ((mode & R_CORE_BIN_JSON) && !(mode & R_CORE_BIN_ARRAY)) {
 			mode = R_CORE_BIN_JSON;
-			if (!file_only) {
-				r_cons_strcat ("{\"core\":");
-			}
+			r_cons_printf ("{\"core\":");
 		}
 		if ((mode & R_CORE_BIN_JSON) && (mode & R_CORE_BIN_ARRAY)) {
 			mode = R_CORE_BIN_JSON;
 			array = 1;
-			r_cons_strcat ("\"core\":");
+			r_cons_printf (",\"core\":");
 		}
 		r_core_file_info (core, mode);
-		if (!file_only && bin_is_executable (obj)) {
+		if (bin_is_executable (obj)) {
 			if ((mode & R_CORE_BIN_JSON)) {
-				r_cons_strcat (",\"bin\":");
+				r_cons_printf (",\"bin\":");
 			}
 			r_core_bin_info (core, R_CORE_BIN_ACC_INFO, mode, va, NULL, NULL);
 		}
 		if (mode == R_CORE_BIN_JSON && array == 0) {
-			if (!file_only) {
-				r_cons_strcat ("}\n");
-			}
+			r_cons_printf ("}\n");
 		}
 	} else {
 		eprintf ("No file selected\n");
 	}
-}
-
-static void cmd_info_file(RCore *core, int va, int mode) {
-	cmd_info_file_bin_ (core, va, mode, true);
-}
-
-static void cmd_info_file_bin(RCore *core, int va, int mode) {
-	cmd_info_file_bin_ (core, va, mode, false);
 }
 
 static void playMsg(RCore *core, const char *n, int len) {
@@ -345,7 +332,7 @@ static int cmd_info(void *data, const char *input) {
 	}
 	if (mode == R_CORE_BIN_JSON) {
 		int suffix_shift = 0;
-		if (!strncmp (input, "SS", 2) || !strncmp (input, "II", 2)) {
+		if (!strncmp (input, "SS", 2)) {
 			suffix_shift = 1;
 		}
 		if (strlen (input + 1 + suffix_shift) > 1) {
@@ -356,7 +343,7 @@ static int cmd_info(void *data, const char *input) {
 		r_cons_printf ("{");
 	}
 	if (!*input) {
-		cmd_info_file_bin (core, va, mode);
+		cmd_info_bin (core, va, mode);
 	}
 	/* i* is an alias for iI* */
 	if (!strcmp (input, "*")) {
@@ -672,22 +659,7 @@ static int cmd_info(void *data, const char *input) {
 						  obj? r_list_length (obj->imports): 0);
 			  }
 			  break;
-		case 'I':
-			if (input[1] == 'I') {
-				if (is_array) {
-					if (is_array == 1) {
-						is_array++;
-					} else {
-						r_cons_printf (",");
-					}
-					mode |= R_CORE_BIN_ARRAY;
-				}
-				cmd_info_file (core, va, mode);
-				input++;
-			} else {
-				RBININFO ("info", R_CORE_BIN_ACC_INFO, NULL, 0);
-			}
-			break;
+		case 'I': RBININFO ("info", R_CORE_BIN_ACC_INFO, NULL, 0); break;
 		case 'e':
 			  if (input[1] == 'e') {
 				  RBININFO ("entries", R_CORE_BIN_ACC_INITFINI, NULL, 0);
@@ -878,10 +850,10 @@ static int cmd_info(void *data, const char *input) {
 			return 0;
 		case 'a':
 			switch (mode) {
-			case R_CORE_BIN_RADARE: cmd_info (core, "IIIieEcsSmz*"); break;
-			case R_CORE_BIN_JSON: cmd_info (core, "IIIieEcsSmzj"); break;
-			case R_CORE_BIN_SIMPLE: cmd_info (core, "IIIieEcsSmzq"); break;
-			default: cmd_info (core, "IIIiEecsSmz"); break;
+			case R_CORE_BIN_RADARE: cmd_info (core, "IieEcsSmz*"); break;
+			case R_CORE_BIN_JSON: cmd_info (core, "IieEcsSmzj"); break;
+			case R_CORE_BIN_SIMPLE: cmd_info (core, "IieEcsSmzq"); break;
+			default: cmd_info (core, "IiEecsSmz"); break;
 			}
 			break;
 		case '?':
@@ -892,17 +864,17 @@ static int cmd_info(void *data, const char *input) {
 			goto done;
 		case 'q':
 			mode = R_CORE_BIN_SIMPLE;
-			cmd_info_file_bin (core, va, mode);
+			cmd_info_bin (core, va, mode);
 			goto done;
 		case 'j':
 			mode = R_CORE_BIN_JSON;
 			if (is_array > 1) {
 				mode |= R_CORE_BIN_ARRAY;
 			}
-			cmd_info_file_bin (core, va, mode);
+			cmd_info_bin (core, va, mode);
 			goto done;
 		default:
-			cmd_info_file_bin (core, va, mode);
+			cmd_info_bin (core, va, mode);
 			break;
 		}
 		// input can be overwritten like the 'input = " ";' a few lines above
