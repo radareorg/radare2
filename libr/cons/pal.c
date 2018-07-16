@@ -47,12 +47,16 @@ static struct {
 	{ "creg", r_offsetof (RConsPrintablePalette, creg), r_offsetof (RConsPalette, creg) },
 	{ "num", r_offsetof (RConsPrintablePalette, num), r_offsetof (RConsPalette, num) },
 	{ "mov", r_offsetof (RConsPrintablePalette, mov), r_offsetof (RConsPalette, mov) },
+	{ "func_arg", r_offsetof (RConsPrintablePalette, func_arg), r_offsetof (RConsPalette, func_arg) },
+	{ "func_arg_type", r_offsetof (RConsPrintablePalette, func_arg_type), r_offsetof (RConsPalette, func_arg_type) },
+	{ "func_arg_addr", r_offsetof (RConsPrintablePalette, func_arg_addr), r_offsetof (RConsPalette, func_arg_addr) },
 
 	{ "ai.read", r_offsetof (RConsPrintablePalette, ai_read), r_offsetof (RConsPalette, ai_read) },
 	{ "ai.write", r_offsetof (RConsPrintablePalette, ai_write), r_offsetof (RConsPalette, ai_write) },
 	{ "ai.exec", r_offsetof (RConsPrintablePalette, ai_exec), r_offsetof (RConsPalette, ai_exec) },
 	{ "ai.seq", r_offsetof (RConsPrintablePalette, ai_seq), r_offsetof (RConsPalette, ai_seq) },
 	{ "ai.ascii", r_offsetof (RConsPrintablePalette, ai_ascii), r_offsetof (RConsPalette, ai_ascii) },
+
 
 	{ "graph.box", r_offsetof (RConsPrintablePalette, graph_box), r_offsetof (RConsPalette, graph_box) },
 	{ "graph.box2", r_offsetof (RConsPrintablePalette, graph_box2), r_offsetof (RConsPalette, graph_box2) },
@@ -71,6 +75,8 @@ static struct {
 	{ "gui.border", r_offsetof (RConsPrintablePalette, gui_border), r_offsetof (RConsPalette, gui_border) },
 	{ "wordhl", r_offsetof (RConsPrintablePalette, wordhl), r_offsetof (RConsPalette, wordhl) },
 	{ "linehl", r_offsetof (RConsPrintablePalette, linehl), r_offsetof (RConsPalette, linehl) },
+
+
 	{ NULL, 0, 0 }
 };
 static const int keys_len = sizeof (keys) / sizeof (keys[0]) - 1;
@@ -162,6 +168,10 @@ R_API void r_cons_pal_init() {
 	cons->cpal.gui_border         = (RColor) RColor_BLACK;
 	cons->cpal.wordhl             = (RColor) RColor_BGRED;
 	cons->cpal.linehl             = (RColor) RCOLOR (ALPHA_BG, 0x00, 0x00, 0x7f, 0x00, 0x00, 0x00);
+
+	cons->cpal.func_arg           = (RColor) RColor_WHITE;
+	cons->cpal.func_arg_type      = (RColor) RColor_BLUE;
+	cons->cpal.func_arg_addr      = (RColor) RColor_CYAN;
 
 	cons->cpal.graph_box          = (RColor) RColor_NULL;
 	cons->cpal.graph_box2         = (RColor) RColor_BLUE;
