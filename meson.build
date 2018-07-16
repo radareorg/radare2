@@ -329,6 +329,7 @@ if not meson.is_subproject()
   subdir('binr/radiff2')
   subdir('binr/rafind2')
   subdir('binr/rax2')
+  subdir('binr/r2pm')
 else
   libr2_dep = declare_dependency(
     dependencies: [
