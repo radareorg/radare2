@@ -8,6 +8,7 @@
 
 #define PANEL_TITLE_SYMBOLS      "Symbols"
 #define PANEL_TITLE_STACK        "Stack"
+#define PANEL_TITLE_LOCALS       "Locals"
 #define PANEL_TITLE_STACKREFS    "StackRefs"
 #define PANEL_TITLE_REGISTERS    "Registers"
 #define PANEL_TITLE_REGISTERREFS "RegisterRefs"
@@ -34,6 +35,7 @@
 #define PANEL_CMD_SYMBOLS        "isq"
 #define PANEL_CMD_STACK          "px 256@r:SP"
 #define PANEL_CMD_STACKREFS      "pxr 256@r:SP"
+#define PANEL_CMD_LOCALS         "afvd"
 #define PANEL_CMD_REGISTERS      "dr="
 #define PANEL_CMD_REGISTERREFS   "drr"
 #define PANEL_CMD_DISASSEMBLY    "pd $r"
@@ -101,7 +103,7 @@ static const char *menus_Search[] = {
 static const char *menus_Debug[] = {
 	"Registers", "RegisterRefs", "DRX", "Breakpoints",
 	"Watchpoints", "Maps", "Modules",
-	"Backtrace",
+	"Backtrace", "Locals",
 	".",
 	"Continue", "Cont until.",
 	"Step", "Step Over",
@@ -1263,6 +1265,8 @@ static bool handleEnterKey(RCore *core) {
 		} else if (strstr (action, "Step Over")) {
 			r_core_cmd (core, "dso", 0);
 			r_cons_flush ();
+		} else if (strstr (action, "Locals")) {
+			layoutSidePanel (core, PANEL_TITLE_LOCALS, PANEL_CMD_LOCALS);
 		} else if (strstr (action, "StackRefs")) {
 			layoutSidePanel (core, PANEL_TITLE_STACKREFS, PANEL_CMD_STACKREFS);
 		} else if (strstr (action, "Stack")) {
