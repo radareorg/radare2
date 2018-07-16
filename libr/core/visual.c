@@ -3156,7 +3156,7 @@ dodo:
 				const char sign = (delta < 0)? '+': '-';
 				const int absdelta = R_ABS (delta);
 				snprintf (debugstr, sizeof (debugstr),
-					"?0;f tmp;ssr SP;%s %d@$$%c%d;"
+					"diq;?0;f tmp;ssr SP;%s %d@$$%c%d;"
 					"?1;%s;"
 					"?1;ss tmp;f-tmp;afal;pd $r",
 					pxa? "pxa": pxw, size, sign, absdelta,

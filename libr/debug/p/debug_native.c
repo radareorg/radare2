@@ -249,8 +249,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	}
 	return tid;
 #elif __APPLE__
-	bool ret;
-	ret = xnu_continue (dbg, pid, tid, sig);
+	bool ret = xnu_continue (dbg, pid, tid, sig);
 	if (!ret) {
 		return -1;
 	}

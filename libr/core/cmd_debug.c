@@ -174,6 +174,7 @@ static const char *help_msg_di[] = {
 	"Usage: di", "", "Debugger target information",
 	"di", "", "Show debugger target information",
 	"di*", "", "Same as above, but in r2 commands",
+	"diq", "", "Same as above, but in one line",
 	"dij", "", "Same as above, but in JSON format",
 	NULL
 };
@@ -4723,7 +4724,9 @@ static int cmd_debug(void *data, const char *input) {
 						P ("kernel_stack=\n%s\n", rdi->kernel_stack);
 					}
 				}
-				if (stop != -1) P ("stopreason=%d\n", stop);
+				if (stop != -1) {
+					P ("stopreason=%d\n", stop);
+				}
 				break;
 			case '*': // "di*"
 				if (rdi) {
@@ -4772,6 +4775,15 @@ static int cmd_debug(void *data, const char *input) {
 				break;
 #undef P
 #undef PS
+			case 'q':
+				{
+					const char *r = r_debug_reason_to_string (core->dbg->reason.type);
+					if (!r) {
+						r = "none";
+					}
+					r_cons_printf ("%s at 0x%08"PFMT64x"\n", r, core->dbg->stopaddr);
+				}
+				break;
 			case '?': // "dij"
 			default:
 				r_core_cmd_help (core, help_msg_di);
