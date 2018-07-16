@@ -266,132 +266,143 @@ spp_dep = declare_dependency(link_with: libr2spp,
 
 
 # handle lz4 dependency
-lz4_files = [
-  'lz4/lz4.c',
-]
+lz4_dep = dependency('liblz4', required: false)
+if not lz4_dep.found() or not get_option('use_sys_lz4')
+  lz4_files = [
+    'lz4/lz4.c',
+  ]
 
-lz4_inc = [platform_inc, include_directories('lz4')]
+  lz4_inc = [platform_inc, include_directories('lz4')]
 
-libr2lz4 = static_library('r2lz4', lz4_files,
-  include_directories: lz4_inc,
-  implicit_include_directories: false
-)
+  libr2lz4 = static_library('r2lz4', lz4_files,
+    include_directories: lz4_inc,
+    implicit_include_directories: false
+  )
 
-lz4_dep = declare_dependency(link_with: libr2lz4,
-			     include_directories: lz4_inc)
+  lz4_dep = declare_dependency(link_with: libr2lz4,
+			      include_directories: lz4_inc)
+else
+  message('Use system-provided lz4 library')
+endif
 
 
 # handle zip dependency
-zlib_files = [
-  'zip/zip/zip_add.c',
-  'zip/zip/zip_add_dir.c',
-  'zip/zip/zip_add_entry.c',
-  'zip/zip/zip_close.c',
-  'zip/zip/zip_delete.c',
-  'zip/zip/zip_dir_add.c',
-  'zip/zip/zip_dirent.c',
-  'zip/zip/zip_discard.c',
-  'zip/zip/zip_entry.c',
-  'zip/zip/zip_err_str.c',
-  'zip/zip/zip_error.c',
-  #'zip/zip/zip_error_clear.c',
-  'zip/zip/zip_error_get.c',
-  'zip/zip/zip_error_get_sys_type.c',
-  'zip/zip/zip_error_strerror.c',
-  'zip/zip/zip_error_to_str.c',
-  'zip/zip/zip_extra_field.c',
-  'zip/zip/zip_extra_field_api.c',
-  'zip/zip/zip_fclose.c',
-  'zip/zip/zip_fdopen.c',
-  'zip/zip/zip_file_add.c',
-  #'zip/zip/zip_file_error_clear.c',
-  'zip/zip/zip_file_error_get.c',
-  'zip/zip/zip_file_get_comment.c',
-  'zip/zip/zip_file_get_offset.c',
-  'zip/zip/zip_file_rename.c',
-  'zip/zip/zip_file_replace.c',
-  'zip/zip/zip_file_set_comment.c',
-  'zip/zip/zip_file_strerror.c',
-  'zip/zip/zip_filerange_crc.c',
-  'zip/zip/zip_fopen.c',
-  'zip/zip/zip_fopen_encrypted.c',
-  'zip/zip/zip_fopen_index.c',
-  'zip/zip/zip_fopen_index_encrypted.c',
-  'zip/zip/zip_fread.c',
-  'zip/zip/zip_get_archive_comment.c',
-  'zip/zip/zip_get_archive_flag.c',
-  'zip/zip/zip_get_compression_implementation.c',
-  'zip/zip/zip_get_encryption_implementation.c',
-  'zip/zip/zip_get_file_comment.c',
-  'zip/zip/zip_get_name.c',
-  'zip/zip/zip_get_num_entries.c',
-  'zip/zip/zip_get_num_files.c',
-  'zip/zip/zip_name_locate.c',
-  'zip/zip/zip_new.c',
-  'zip/zip/zip_open.c',
-  'zip/zip/zip_rename.c',
-  'zip/zip/zip_replace.c',
-  'zip/zip/zip_set_archive_comment.c',
-  'zip/zip/zip_set_archive_flag.c',
-  'zip/zip/zip_set_default_password.c',
-  'zip/zip/zip_set_file_comment.c',
-  'zip/zip/zip_set_file_compression.c',
-  'zip/zip/zip_set_name.c',
-  'zip/zip/zip_source_buffer.c',
-  'zip/zip/zip_source_close.c',
-  'zip/zip/zip_source_crc.c',
-  'zip/zip/zip_source_deflate.c',
-  'zip/zip/zip_source_error.c',
-  'zip/zip/zip_source_file.c',
-  'zip/zip/zip_source_filep.c',
-  'zip/zip/zip_source_free.c',
-  'zip/zip/zip_source_function.c',
-  'zip/zip/zip_source_layered.c',
-  'zip/zip/zip_source_open.c',
-  'zip/zip/zip_source_pkware.c',
-  'zip/zip/zip_source_pop.c',
-  'zip/zip/zip_source_read.c',
-  'zip/zip/zip_source_stat.c',
-  'zip/zip/zip_source_window.c',
-  'zip/zip/zip_source_zip.c',
-  'zip/zip/zip_source_zip_new.c',
-  'zip/zip/zip_stat.c',
-  'zip/zip/zip_stat_index.c',
-  'zip/zip/zip_stat_init.c',
-  'zip/zip/zip_strerror.c',
-  'zip/zip/zip_string.c',
-  'zip/zip/zip_unchange.c',
-  'zip/zip/zip_unchange_all.c',
-  'zip/zip/zip_unchange_archive.c',
-  'zip/zip/zip_unchange_data.c',
-  'zip/zip/zip_utf-8.c',
-  'zip/zlib/adler32.c',
-  'zip/zlib/compress.c',
-  'zip/zlib/crc32.c',
-  'zip/zlib/deflate.c',
-  'zip/zlib/gzclose.c',
-  'zip/zlib/gzlib.c',
-  'zip/zlib/gzread.c',
-  'zip/zlib/gzwrite.c',
-  'zip/zlib/infback.c',
-  'zip/zlib/inffast.c',
-  'zip/zlib/inflate.c',
-  'zip/zlib/inftrees.c',
-  'zip/zlib/trees.c',
-  'zip/zlib/uncompr.c',
-  'zip/zlib/zutil.c'
-]
+zip_dep = dependency('libzip', required: false)
+if not zip_dep.found() or not get_option('use_sys_zip')
+  message('Use bundled zip')
 
-zip_inc = [platform_inc, include_directories('zip/include')]
+  zlib_files = [
+    'zip/zip/zip_add.c',
+    'zip/zip/zip_add_dir.c',
+    'zip/zip/zip_add_entry.c',
+    'zip/zip/zip_close.c',
+    'zip/zip/zip_delete.c',
+    'zip/zip/zip_dir_add.c',
+    'zip/zip/zip_dirent.c',
+    'zip/zip/zip_discard.c',
+    'zip/zip/zip_entry.c',
+    'zip/zip/zip_err_str.c',
+    'zip/zip/zip_error.c',
+    #'zip/zip/zip_error_clear.c',
+    'zip/zip/zip_error_get.c',
+    'zip/zip/zip_error_get_sys_type.c',
+    'zip/zip/zip_error_strerror.c',
+    'zip/zip/zip_error_to_str.c',
+    'zip/zip/zip_extra_field.c',
+    'zip/zip/zip_extra_field_api.c',
+    'zip/zip/zip_fclose.c',
+    'zip/zip/zip_fdopen.c',
+    'zip/zip/zip_file_add.c',
+    #'zip/zip/zip_file_error_clear.c',
+    'zip/zip/zip_file_error_get.c',
+    'zip/zip/zip_file_get_comment.c',
+    'zip/zip/zip_file_get_offset.c',
+    'zip/zip/zip_file_rename.c',
+    'zip/zip/zip_file_replace.c',
+    'zip/zip/zip_file_set_comment.c',
+    'zip/zip/zip_file_strerror.c',
+    'zip/zip/zip_filerange_crc.c',
+    'zip/zip/zip_fopen.c',
+    'zip/zip/zip_fopen_encrypted.c',
+    'zip/zip/zip_fopen_index.c',
+    'zip/zip/zip_fopen_index_encrypted.c',
+    'zip/zip/zip_fread.c',
+    'zip/zip/zip_get_archive_comment.c',
+    'zip/zip/zip_get_archive_flag.c',
+    'zip/zip/zip_get_compression_implementation.c',
+    'zip/zip/zip_get_encryption_implementation.c',
+    'zip/zip/zip_get_file_comment.c',
+    'zip/zip/zip_get_name.c',
+    'zip/zip/zip_get_num_entries.c',
+    'zip/zip/zip_get_num_files.c',
+    'zip/zip/zip_name_locate.c',
+    'zip/zip/zip_new.c',
+    'zip/zip/zip_open.c',
+    'zip/zip/zip_rename.c',
+    'zip/zip/zip_replace.c',
+    'zip/zip/zip_set_archive_comment.c',
+    'zip/zip/zip_set_archive_flag.c',
+    'zip/zip/zip_set_default_password.c',
+    'zip/zip/zip_set_file_comment.c',
+    'zip/zip/zip_set_file_compression.c',
+    'zip/zip/zip_set_name.c',
+    'zip/zip/zip_source_buffer.c',
+    'zip/zip/zip_source_close.c',
+    'zip/zip/zip_source_crc.c',
+    'zip/zip/zip_source_deflate.c',
+    'zip/zip/zip_source_error.c',
+    'zip/zip/zip_source_file.c',
+    'zip/zip/zip_source_filep.c',
+    'zip/zip/zip_source_free.c',
+    'zip/zip/zip_source_function.c',
+    'zip/zip/zip_source_layered.c',
+    'zip/zip/zip_source_open.c',
+    'zip/zip/zip_source_pkware.c',
+    'zip/zip/zip_source_pop.c',
+    'zip/zip/zip_source_read.c',
+    'zip/zip/zip_source_stat.c',
+    'zip/zip/zip_source_window.c',
+    'zip/zip/zip_source_zip.c',
+    'zip/zip/zip_source_zip_new.c',
+    'zip/zip/zip_stat.c',
+    'zip/zip/zip_stat_index.c',
+    'zip/zip/zip_stat_init.c',
+    'zip/zip/zip_strerror.c',
+    'zip/zip/zip_string.c',
+    'zip/zip/zip_unchange.c',
+    'zip/zip/zip_unchange_all.c',
+    'zip/zip/zip_unchange_archive.c',
+    'zip/zip/zip_unchange_data.c',
+    'zip/zip/zip_utf-8.c',
+    'zip/zlib/adler32.c',
+    'zip/zlib/compress.c',
+    'zip/zlib/crc32.c',
+    'zip/zlib/deflate.c',
+    'zip/zlib/gzclose.c',
+    'zip/zlib/gzlib.c',
+    'zip/zlib/gzread.c',
+    'zip/zlib/gzwrite.c',
+    'zip/zlib/infback.c',
+    'zip/zlib/inffast.c',
+    'zip/zlib/inflate.c',
+    'zip/zlib/inftrees.c',
+    'zip/zlib/trees.c',
+    'zip/zlib/uncompr.c',
+    'zip/zlib/zutil.c'
+  ]
 
-libr2zip = static_library('r2zip', zlib_files,
-  include_directories: zip_inc,
-  implicit_include_directories: false
-)
+  zip_inc = [platform_inc, include_directories('zip/include')]
 
-zip_dep = declare_dependency(link_with: libr2zip,
-			     include_directories: zip_inc)
+  libr2zip = static_library('r2zip', zlib_files,
+    include_directories: zip_inc,
+    implicit_include_directories: false
+  )
 
+  zip_dep = declare_dependency(link_with: libr2zip,
+			      include_directories: zip_inc)
+else
+  message('Use system-provided zip library')
+endif
 
 # handle grub dependency
 grub_files = [
@@ -491,24 +502,3 @@ libr2ar = static_library('r2ar', ar_files,
 
 ar_dep = declare_dependency(link_with: libr2ar,
 			    include_directories: ar_inc)
-
-libr_shlr = [
-  libr2ar, libr2bochs, libr2gdb, libr2grub, libr2java, libr2lz4,
-  libr2qnx, libr2sdb, libr2spp, libr2spp, libr2tcc, libr2windbg, libr2zip
-]
-
-if cc.get_id() == 'msvc'
-  cmd = ['lib', '/OUT:@OUTPUT@', '@INPUT@']
-else
-  cmd = ['ar', 'csr', '@OUTPUT@', '@INPUT@']
-endif
-
-custom_target('libr_shlr',
-  input: libr_shlr,
-  output: 'libr_shlr.a',
-  command: cmd,
-  build_by_default: true,
-  build_always: false,
-  install: true,
-  install_dir: get_option('libdir')
-)

@@ -167,7 +167,6 @@ def win_dist(args):
         copy(r'{BUILDDIR}\libr\*\*.lib', r'{DIST}\{R2_LIBDIR}')
     else:
         copy(r'{BUILDDIR}\libr\*\*.a', r'{DIST}\{R2_LIBDIR}')
-    copy(r'{BUILDDIR}\shlr\libr_shlr.a', r'{DIST}\{R2_LIBDIR}')
     win_dist_libr2()
 
 def win_dist_libr2(**path_fmt):

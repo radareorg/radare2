@@ -126,7 +126,8 @@ r_bin = library('r_bin', files,
     r_magic_dep,
     r_socket_dep,
     sdb_dep,
-    java_dep
+    java_dep,
+    lz4_dep
   ],
   install: true,
   implicit_include_directories: false,

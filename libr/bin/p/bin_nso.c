@@ -6,8 +6,6 @@
 #include <r_bin.h>
 #include <r_io.h>
 #include <r_cons.h>
-// #include "../../../shlr/lz4/lz4.h"
-#include "../../../shlr/lz4/lz4.c"
 #include "nxo/nxo.h"
 
 #define NSO_OFF(x) r_offsetof (NSOHeader, x)
