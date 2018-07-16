@@ -1231,7 +1231,9 @@ static void ds_show_xrefs(RDisasmState *ds) {
 				COLOR (ds, pal_comment), r_anal_xrefs_type_tostring (refi->type), plural, name);
 			ut64 *addrptr;
 			r_list_foreach (addrs, it, addrptr) {
-				ds_comment (ds, false, "%s%s0x%"PFMT64x, it == addrs->head ? "" : ", ", plus, *addrptr);
+				if (*addrptr) {
+					ds_comment (ds, false, "%s%s0x%"PFMT64x, it == addrs->head ? "" : ", ", plus, *addrptr);
+				}
 			}
 			ds_comment (ds, false, ")%s", COLOR_RESET (ds));
 			ds_newline (ds);
