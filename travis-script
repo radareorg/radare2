@@ -16,6 +16,9 @@ if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
     if [ "${R2_SYS_MAGIC}" != "" ] ; then
 	OPTS="${OPTS} -D use_sys_magic=${R2_SYS_MAGIC}"
     fi
+    if [ "${R2_SYS_ZLIB}" != "" ] ; then
+	OPTS="${OPTS} -D use_sys_zlib=${R2_SYS_ZLIB}"
+    fi
     if [ "${R2_SYS_ZIP}" != "" ] ; then
 	OPTS="${OPTS} -D use_sys_zip=${R2_SYS_ZIP}"
     fi
