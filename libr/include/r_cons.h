@@ -969,11 +969,15 @@ typedef struct r_panels_t {
 	int columnWidth;
 	int layout;
 	int menu_pos;
-	int menu_x;
-	int menu_y;
 	int callgraph;
 	int curnode;
 	bool isResizing;
+	const char ***menuStack;
+	int *menuIndexStack;
+	int menuStackDepth;
+	const char **currentMenu;
+	int currentMenuIndex;
+	RPanel *menuPanel;
 } RPanels;
 
 #ifdef __cplusplus
