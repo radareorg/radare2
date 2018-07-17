@@ -594,11 +594,11 @@ int main () {
 
 	{
 		char *str;
-		r_list_foreach(l, iter, str) {
+		r_list_foreach (l, iter, str) {
 			printf("-- %s\n", str);
 		}
 		printf("--**--\n");
-		r_list_foreach_prev(l, iter, str) {
+		r_list_foreach_prev (l, iter, str) {
 			printf("-- %s\n", str);
 		}
 	}

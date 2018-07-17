@@ -3600,6 +3600,7 @@ R_API void r_core_anal_fcn_merge (RCore *core, ut64 addr, ut64 addr2) {
 	RAnalBlock *bb;
 	RAnalFunction *f1 = r_anal_get_fcn_at (core->anal, addr, 0);
 	RAnalFunction *f2 = r_anal_get_fcn_at (core->anal, addr2, 0);
+	RAnalFunction *f3 = NULL;
 	if (!f1 || !f2) {
 		eprintf ("Cannot find function\n");
 		return;
@@ -3647,7 +3648,12 @@ R_API void r_core_anal_fcn_merge (RCore *core, ut64 addr, ut64 addr2) {
 	// resize
 	f2->bbs = NULL;
 	r_anal_fcn_tree_delete (&core->anal->fcn_tree, f2);
-	r_list_delete_data (core->anal->fcns, f2);
+	r_list_foreach (core->anal->fcns, iter, f2) {
+		if (f2 == f3) {
+			r_list_delete (core->anal->fcns, iter);
+			f3->bbs = NULL;
+		}
+	}
 }
 
 R_API void r_core_anal_auto_merge (RCore *core, ut64 addr) {
