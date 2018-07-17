@@ -4054,7 +4054,7 @@ LookupTable oplookup[] = {
 
 static x86newTokenType getToken(const char *str, size_t *begin, size_t *end) {
 	// Skip whitespace
-	while (*begin && isspace ((int)str[*begin])) {
+	while (begin && isspace ((int)str[*begin])) {
 		++(*begin);
 	}
 
@@ -4063,13 +4063,13 @@ static x86newTokenType getToken(const char *str, size_t *begin, size_t *end) {
 		return TT_EOF;
 	} else if (isalpha ((int)str[*begin])) {   // word token
 		*end = *begin;
-		while (*end && isalnum ((int)str[*end])) {
+		while (end && isalnum ((int)str[*end])) {
 			++(*end);
 		}
 		return TT_WORD;
 	} else if (isdigit ((int)str[*begin])) {   // number token
 		*end = *begin;
-		while (*end && isalnum ((int)str[*end])) {     // accept alphanumeric characters, because hex.
+		while (end && isalnum ((int)str[*end])) {     // accept alphanumeric characters, because hex.
 			++(*end);
 		}
 		return TT_NUMBER;
