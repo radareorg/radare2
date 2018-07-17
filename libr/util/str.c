@@ -2861,7 +2861,7 @@ static int strncmp_skip_color_codes(const char *s1, const char *s2, int n) {
 static char *strchr_skip_color_codes(const char *s, int c) {
 	int i = 0;
 	for (i = 0; s[i]; i++) {
-		while (s[i] == 0x1b) {
+		while (s[i] && s[i] == 0x1b) {
 			while (s[i] && s[i] != 'm') {
 				i++;
 			}
@@ -2869,7 +2869,7 @@ static char *strchr_skip_color_codes(const char *s, int c) {
 				i++;
 			}
 		}
-		if (s[i] == (char)c) {
+		if (!s[i] || s[i] == (char)c) {
 			return (char*)s + i;
 		}
 	}

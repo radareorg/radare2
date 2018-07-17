@@ -890,7 +890,7 @@ static void ds_highlight_word(RDisasmState * ds, char *word, char *color) {
 	char *source = ds->opstr? ds->opstr: ds->asmop.buf_asm;
 	const char *color_reset = line_highlighted (ds) ? ds->color_linehl : Color_RESET_BG;
 	char *asm_str = r_str_highlight (source, word, color, color_reset);
-	ds->opstr = asm_str? asm_str:source;
+	ds->opstr = asm_str? asm_str: source;
 }
 
 static void ds_build_op_str(RDisasmState *ds, bool print_color) {
