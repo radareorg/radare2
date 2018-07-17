@@ -344,3 +344,23 @@ foreach arch : sflib_arch
     install_headers(join_paths('include/sflib', arch, file), subdir: join_paths('libr/sflib', arch))
   endforeach
 endforeach
+
+sdb_readlink_script = '''#script
+import os
+import sys
+infile = sys.argv[1]
+if os.name == 'nt' and os.path.getsize(infile) <= 64:
+    with open(infile) as sdb_txt:
+        fname = sdb_txt.readline()
+    if fname.endswith('.sdb.txt'):
+        infile = fname
+else:
+    infile = os.path.basename(infile)
+print(infile)
+'''
+
+sdb_readlink_cmd = [
+  py3_exe,
+  '-c',
+  sdb_readlink_script
+]

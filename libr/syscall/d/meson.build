@@ -21,21 +21,38 @@ sdb_files = [
   'windows-x86-64'
 ]
 
-sdbtmp_gen_path = '@0@/@1@'.format(meson.current_source_dir(), 'gen.sh')
-sdbtmp_gen_cmd = [
+sdb_pre_script = '''#script
+import re
+import sys
+inf = open(sys.argv[1])
+outf = open(sys.argv[2], 'w')
+for line in inf:
+    if not line.startswith('_') and '=' in line:
+        arr = re.split('=|,', line)
+        print('%s.%s=%s' % (arr[1], arr[2], arr[0]), file=outf)
+    print(line, file=outf, end='')
+inf.close()
+outf.close()
+'''
+
+sdb_pre_cmd = [
   py3_exe,
   '-c',
-  'from sys import argv; __import__("os").system("@0@ <%s >%s" % (argv[1], argv[2]))'.format(sdbtmp_gen_path),
+  sdb_pre_script,
   '@INPUT@',
   '@OUTPUT@'
 ]
 
 foreach file : sdb_files
-  outfile_tmp = '@0@.sdb.txt.tmp'.format(file)
-  outfile_tmp_dep = custom_target(outfile_tmp,
-    input: '@0@.sdb.txt'.format(file),
-    output: outfile_tmp,
-    command: sdbtmp_gen_cmd,
+  infile = '@0@.sdb.txt'.format(file)
+  if host_machine.system() == 'windows'
+    infile = run_command(sdb_readlink_cmd + [join_paths(meson.current_source_dir(), infile)]).stdout().strip()
+  endif
+  tmp_outfile = '@0@.sdb.txt.tmp'.format(file)
+  pre_sdb_txt = custom_target(tmp_outfile,
+    input: infile,
+    output: tmp_outfile,
+    command: sdb_pre_cmd,
     build_by_default: true,
     build_always: false,
     install: false
@@ -43,7 +60,7 @@ foreach file : sdb_files
 
   outfile = '@0@.sdb'.format(file)
   custom_target(outfile,
-    input: [outfile_tmp_dep],
+    input: pre_sdb_txt,
     output: outfile,
     command: sdb_gen_cmd,
     depends: sdb_exe,
