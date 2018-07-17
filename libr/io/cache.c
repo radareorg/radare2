@@ -75,10 +75,10 @@ R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
 				io->cached = 0;
 				r_io_write_at (io, r_itv_begin (c->itv), c->odata, r_itv_size (c->itv));
 				io->cached = cached;
+				c->written = false;
 				if (!c->written) {
 					r_list_delete (io->cache, iter);
 				}
-				c->written = false;
 				done = true;
 				break;
 			}
