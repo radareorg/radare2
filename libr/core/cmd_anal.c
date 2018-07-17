@@ -789,7 +789,7 @@ static void list_vars(RCore *core, RAnalFunction *fcn, int type, const char *nam
 	}
 	const char *typestr = type == 'R'?"reads":"writes";
 	if (name && *name) {
-		var = r_anal_var_get_byname (core->anal, fcn, name);
+		var = r_anal_var_get_byname (core->anal, fcn->addr, name);
 		if (var) {
 			r_cons_printf ("%10s  ", var->name);
 			var_accesses_list (core->anal, fcn, var->delta, typestr);
@@ -820,17 +820,11 @@ static int cmd_an(RCore *core, bool use_json, const char *name)
 	if (op.var) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 		if (fcn) {
-			RAnalVar *bar = r_anal_var_get_byname (core->anal, fcn, op.var->name);
-			if (!bar) {
-				bar = r_anal_var_get_byname (core->anal, fcn, op.var->name);
-				if (!bar) {
-					bar = r_anal_var_get_byname (core->anal, fcn, op.var->name);
-				}
-			}
+			RAnalVar *bar = r_anal_var_get_byname (core->anal, fcn->addr, op.var->name);
 			if (bar) {
 				if (name) {
 					r_anal_var_rename (core->anal, fcn->addr, bar->scope,
-									bar->kind, bar->name, name);
+									bar->kind, bar->name, name, true);
 				} else if (!use_json) {
 					r_cons_println (bar->name);
 				} else {
@@ -970,10 +964,10 @@ static int var_cmd(RCore *core, const char *str) {
 			}
 			*new_name++ = 0;
 			r_str_trim (new_name);
-			v1 = r_anal_var_get_byname (core->anal, fcn, old_name);
+			v1 = r_anal_var_get_byname (core->anal, fcn->addr, old_name);
 			if (v1) {
 				r_anal_var_rename (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
-						v1->kind, old_name, new_name);
+						v1->kind, old_name, new_name, true);
 				r_anal_var_free (v1);
 			} else {
 				eprintf ("Cant find var by name\n");
@@ -995,7 +989,7 @@ static int var_cmd(RCore *core, const char *str) {
 				free (ostr);
 				return false;
 			}
-			v1 = r_anal_var_get_byname (core->anal, fcn, p);
+			v1 = r_anal_var_get_byname (core->anal, fcn->addr, p);
 			if (!v1) {
 				free (ostr);
 				return false;
@@ -1032,7 +1026,7 @@ static int var_cmd(RCore *core, const char *str) {
 			return false;
 		}
 		*type++ = 0;
-		v1 = r_anal_var_get_byname (core->anal, fcn, p);
+		v1 = r_anal_var_get_byname (core->anal, fcn->addr, p);
 		if (!v1) {
 			eprintf ("Cant find get by name %s\n", p);
 			free (ostr);

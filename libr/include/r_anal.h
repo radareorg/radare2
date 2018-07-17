@@ -1434,21 +1434,21 @@ R_API RList* r_anal_get_fcns (RAnal *anal);
 /* var.c */
 R_API void r_anal_var_access_clear (RAnal *a, ut64 var_addr, int scope, int index);
 R_API int r_anal_var_access (RAnal *a, ut64 var_addr, char kind, int scope, int index, int xs_type, ut64 xs_addr);
-
 R_API RAnalVar *r_anal_var_new(void);
-R_API int r_anal_var_rename (RAnal *a, ut64 var_addr, int scope, char kind, const char *old_name, const char *new_name);
-R_API int r_anal_var_retype (RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, bool isarg, const char *name);
+R_API int r_anal_var_rename (RAnal *a, ut64 var_addr, int scope, char kind,
+		const char *old_name, const char *new_name, bool verbose);
+R_API int r_anal_var_retype (RAnal *a, ut64 addr, int scope, int delta, char kind,
+		const char *type, int size, bool isarg, const char *name);
 R_API RAnalVarAccess *r_anal_var_access_new(void);
 R_API RList *r_anal_var_list_new(void);
 R_API RList *r_anal_var_access_list_new(void);
 R_API void r_anal_var_free(RAnalVar *var);
 R_API void r_anal_var_access_free(void *access);
-//R_API int r_anal_var_add(RAnal *anal, RAnalFunction *fcn, ut64 from, int delta, int scope,
-//		RAnalType *type, const char *name, int set);
 R_API int r_anal_var_delete_all (RAnal *a, ut64 addr, const char kind);
 R_API int r_anal_var_delete (RAnal *a, ut64 var_addr, const char kind, int scope, int delta);
 R_API bool r_anal_var_delete_byname (RAnal *a, RAnalFunction *fcn, int type, const char *name);
-R_API bool r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size, bool isarg, const char *name);
+R_API bool r_anal_var_add (RAnal *a, ut64 addr, int scope, int delta, char kind,
+		const char *type, int size, bool isarg, const char *name);
 R_API int r_anal_var_del(RAnal *anal, RAnalFunction *fcn, int delta, int scope);
 R_API ut64 r_anal_var_addr(RAnal *a, RAnalFunction *fcn, const char *name);
 R_API RAnalVar *r_anal_var_get (RAnal *a, ut64 addr, char kind, int scope, int index);
@@ -1458,7 +1458,7 @@ R_API int r_anal_var_access_del(RAnal *anal, RAnalVar *var, ut64 from);
 R_API void extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op);
 R_API void extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count);
 R_API RAnalVarAccess *r_anal_var_access_get(RAnal *anal, RAnalVar *var, ut64 from);
-R_API RAnalVar *r_anal_var_get_byname (RAnal *anal, RAnalFunction *fcn, const char* name);
+R_API RAnalVar *r_anal_var_get_byname (RAnal *anal, ut64 addr, const char* name);
 
 /* project */
 R_API bool r_anal_xrefs_init (RAnal *anal);
