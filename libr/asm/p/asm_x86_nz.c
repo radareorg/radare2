@@ -4054,21 +4054,24 @@ LookupTable oplookup[] = {
 
 static x86newTokenType getToken(const char *str, size_t *begin, size_t *end) {
 	// Skip whitespace
-	while (isspace ((int)str[*begin]))
+	while (*begin && isspace ((int)str[*begin])) {
 		++(*begin);
+	}
 
 	if (!str[*begin]) {                // null byte
 		*end = *begin;
 		return TT_EOF;
 	} else if (isalpha ((int)str[*begin])) {   // word token
 		*end = *begin;
-		while (isalnum ((int)str[*end]))
+		while (*end && isalnum ((int)str[*end])) {
 			++(*end);
+		}
 		return TT_WORD;
 	} else if (isdigit ((int)str[*begin])) {   // number token
 		*end = *begin;
-		while (isalnum ((int)str[*end]))     // accept alphanumeric characters, because hex.
+		while (*end && isalnum ((int)str[*end])) {     // accept alphanumeric characters, because hex.
 			++(*end);
+		}
 		return TT_NUMBER;
 	} else {                             // special character: [, ], +, *, ...
 		*end = *begin + 1;
