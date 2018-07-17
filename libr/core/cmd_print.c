@@ -1105,7 +1105,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	}
 	char *format = compact ? " %X %X" : " %X %X ";
 	int step = compact ? 4 : 5;
-	
+
 	// Adjust the number of columns
 	if (nb_cols < 1) {
 		nb_cols = 16;
@@ -2069,7 +2069,7 @@ r_cons_pop();
 						if (show_offset) {
 							r_cons_printf ("0x%08"PFMT64x" ", addr);
 						}
-						r_cons_printf ("%s%s%s%s%s\n", 
+						r_cons_printf ("%s%s%s%s%s\n",
 							string2? string2: "", string2? " ": "", string,
 							flag? " ": "", flag? flag->name: "");
 					}
@@ -4719,7 +4719,7 @@ static int cmd_print(void *data, const char *input) {
 				"|   foo@0x40   # use 'foo' magic file on address 0x40\n"
 				"|   @0x40      # use current magic file on address 0x40\n"
 				"|   \\n         # append newline\n"
-				"| e dir.magic  # defaults to "R2_SDB_MAGIC "\n"
+				"| e dir.magic  # defaults to " R_JOIN_2_PATHS ("{R2_PREFIX}", R2_SDB_MAGIC) "\n"
 				"| /m           # search for magic signatures\n"
 				);
 		} else {
@@ -5630,11 +5630,11 @@ static int cmd_print(void *data, const char *input) {
 				from = map1->itv.addr;
 				r_list_foreach (list, iter, map) {
 					to = r_itv_end (map->itv);
-				}	
+				}
 			} else {
 				from = core->offset;
 				to = from + core->blocksize;
-			}	
+			}
 			ut64 maxsize = r_config_get_i (core->config, "zoom.maxsz");
 			int oldva = core->io->va;
 			char *oldmode = NULL;
