@@ -1796,13 +1796,24 @@ static void ds_show_comments_right(RDisasmState *ds) {
 	}
 	//RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 	item = r_flag_get_i (core->flags, ds->at);
-	ds->comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ds->at);
-	if (!ds->comment && item && item->comment && *item->comment) {
-		ds->ocomment = item->comment;
-		ds->comment = strdup (item->comment);
-	}
-	if (!ds->comment) {
-		return;
+	char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ds->at);
+	char *vartype = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, ds->at);
+	if (!comment) {
+		if (vartype) {
+			ds->comment = r_str_newf ("%s%s", COLOR_ARG (ds, color_func_arg_type), vartype);
+			free (vartype);
+		} else if (item && item->comment && *item->comment) {
+			ds->ocomment = item->comment;
+			ds->comment = strdup (item->comment);
+		} else {
+			return;
+		}
+	} else if (vartype) {
+		ds->comment = r_str_newf ("%s%s %s; %s", COLOR_ARG (ds, color_func_arg_type), vartype, COLOR (ds, color_usrcmt), comment);
+		free (vartype);
+		free (comment);
+	} else {
+		ds->comment = comment;
 	}
 	maxclen = strlen (ds->comment) + 5;
 	linelen = maxclen;
