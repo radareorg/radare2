@@ -29,6 +29,10 @@ RUN dnf install -y \
 	glib2 \
 	glib2-devel \
 	ncurses-devel \
+	capstone-devel \
+	libzip-devel \
+	file-devel \
+	lz4-devel \
 	gnupg2 \
 	python2-pip \
 	meson \

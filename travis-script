@@ -8,7 +8,25 @@ ls radare2-regressions >/dev/null 2>&1 || git clone --depth 1 --branch "${R2R_DE
 
 if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
     echo "Installing with meson + ninja"
-    meson --prefix=${TRAVIS_BUILD_DIR}/install build
+
+    OPTS=""
+    if [ "${R2_SYS_CAPSTONE}" != "" ] ; then
+	OPTS="${OPTS} -D use_sys_capstone=${R2_SYS_CAPSTONE}"
+    fi
+    if [ "${R2_SYS_MAGIC}" != "" ] ; then
+	OPTS="${OPTS} -D use_sys_magic=${R2_SYS_MAGIC}"
+    fi
+    if [ "${R2_SYS_ZLIB}" != "" ] ; then
+	OPTS="${OPTS} -D use_sys_zlib=${R2_SYS_ZLIB}"
+    fi
+    if [ "${R2_SYS_ZIP}" != "" ] ; then
+	OPTS="${OPTS} -D use_sys_zip=${R2_SYS_ZIP}"
+    fi
+    if [ "${R2_SYS_LZ4}" != "" ] ; then
+	OPTS="${OPTS} -D use_sys_lz4=${R2_SYS_LZ4}"
+    fi
+
+    meson --prefix=${TRAVIS_BUILD_DIR}/install ${OPTS} build
     pushd build
     ninja
     ninja install
