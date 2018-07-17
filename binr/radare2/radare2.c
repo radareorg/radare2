@@ -191,7 +191,7 @@ static int main_help(int line) {
 		"Environment:\n"
 		" RDATAHOME    %s\n" // TODO: rename to RHOME R2HOME?
 		" RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
-		" MAGICPATH    "R2_SDB_MAGIC"\n"
+		" MAGICPATH    " R_JOIN_2_PATHS ("%s", R2_SDB_MAGIC) "\n"
 		" R_DEBUG      if defined, show error messages and crash signal\n"
 		" VAPIDIR      path to extra vapi directory\n"
 		" R2_NOPLUGINS do not load r2 shared plugins\n"
@@ -200,7 +200,7 @@ static int main_help(int line) {
 		" R2_INCDIR    "R2_INCDIR"\n"
 		" R2_LIBDIR    "R2_LIBDIR"\n"
 		" R2_LIBEXT    "R_LIB_EXT"\n"
-		, dirPrefix, datahome);
+		, dirPrefix, datahome, dirPrefix);
 		free (datahome);
 	}
 	return 0;
@@ -214,12 +214,13 @@ static int main_print_var(const char *var_name) {
 	char *homeplugins = r_str_home (R2_HOME_PLUGINS);
 	char *homezigns = r_str_home (R2_HOME_ZIGNS);
 	char *plugins = r_str_r2_prefix (R2_PLUGINS);
+	char *magicpath = r_str_r2_prefix (R2_SDB_MAGIC);
 	struct radare2_var_t {
 		const char *name;
 		const char *value;
 	} r2_vars[] = {
 		{ "R2_PREFIX", R2_PREFIX },
-		{ "MAGICPATH", R2_SDB_MAGIC },
+		{ "MAGICPATH", magicpath },
 		{ "PREFIX", R2_PREFIX },
 		{ "INCDIR", R2_INCDIR },
 		{ "LIBDIR", R2_LIBDIR },
@@ -252,6 +253,7 @@ static int main_print_var(const char *var_name) {
 	free (homeplugins);
 	free (homezigns);
 	free (plugins);
+	free (magicpath);
 	return 0;
 }
 
