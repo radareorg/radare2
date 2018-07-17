@@ -309,7 +309,7 @@ R_API char *r_hex_no_code(const char *code) {
 	if (!code) {
 		return NULL;
 	}
-	char * const ret = malloc (strlen (code) * 3);
+	char * const ret = calloc (1, strlen (code) * 3);
 	if (!ret) {
 		return NULL;
 	}
@@ -327,7 +327,6 @@ R_API char *r_hex_no_code(const char *code) {
 		out = r_hex_from_c_str (out, &code);
 		code = strchr (code + 1, '"');
 	}
-	*out = 0;
 	return ret;
 }
 
