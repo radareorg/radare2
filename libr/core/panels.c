@@ -175,9 +175,7 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 	int delta_x, delta_y, graph_pad = 0;
 	delta_x = panel->sx;
 	delta_y = panel->sy;
-	// clear the canvas first
 	r_cons_canvas_fill (can, panel->x, panel->y, panel->w, panel->h, ' ');
-	// for menu
 	RCons *cons = r_cons_singleton ();
 	if (panel->type == PANEL_TYPE_MENU) {
 		(void) r_cons_canvas_gotoxy (can, panel->x + 2, panel->y + 2);
