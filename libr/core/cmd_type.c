@@ -539,7 +539,7 @@ static void link_struct_offset(RCore *core, RAnalFunction *fcn) {
 					r_anal_var_retype (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
 							-1, var->kind, varpfx, -1, var->isarg, var->name);
 					r_anal_var_rename (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
-							var->kind, var->name, vlink);
+							var->kind, var->name, vlink, false);
 				}
 			} else if (slink) {
 				set_offset_hint (core, aop, slink, src_addr, at - ret, src_imm);

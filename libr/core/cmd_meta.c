@@ -852,7 +852,7 @@ void r_comment_vars(RCore *core, const char *input) {
 				comment = heap_comment;
 			}
 		}
-		var = r_anal_var_get_byname (core->anal, fcn, name);
+		var = r_anal_var_get_byname (core->anal, fcn->addr, name);
 		if (var) {
 			idx = var->delta;
 		} else if (!strncmp (name, "0x", 2))  {
@@ -885,7 +885,7 @@ void r_comment_vars(RCore *core, const char *input) {
 		}
 		break;
 	case '-':
-		var = r_anal_var_get_byname (core->anal,fcn, name);
+		var = r_anal_var_get_byname (core->anal, fcn->addr, name);
 		if (var) {
 			idx = var->delta;
 		} else if (!strncmp (name, "0x", 2)) {
@@ -906,7 +906,7 @@ void r_comment_vars(RCore *core, const char *input) {
 		break;
 	case '!': {
 		char *comment;
-		var = r_anal_var_get_byname (core->anal,fcn, name);
+		var = r_anal_var_get_byname (core->anal, fcn->addr, name);
 		if (!var) {
 			eprintf ("cant find variable named `%s`\n",name);
 			break;

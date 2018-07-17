@@ -114,7 +114,6 @@ R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, 
 		const char *var_def = sdb_fmt ("%c.%s,%d,%s", kind, type, size, name);
 		sdb_array_add (DB, var_global, var_def, 0);
 	}
-// ls_sort (DB->ht->list, mystrcmp);
 	return true;
 }
 
@@ -131,7 +130,6 @@ R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind
 	}
 	RAnalFunction *fcn = r_anal_get_fcn_in (a, addr, 0);
 	if (!fcn) {
-		eprintf ("Cant find function here\n");
 		return false;
 	}
 	if ((size == -1) && (delta == -1) ) {
@@ -287,12 +285,12 @@ R_API bool r_anal_var_delete_byname(RAnal *a, RAnalFunction *fcn, int kind, cons
 	return false;
 }
 
-R_API RAnalVar *r_anal_var_get_byname(RAnal *a, RAnalFunction *fcn, const char *name) {
-	if (!fcn || !a || !name) {
+R_API RAnalVar *r_anal_var_get_byname(RAnal *a, ut64 addr, const char *name) {
+	if (!a || !name) {
 		// eprintf ("No something\n");
 		return NULL;
 	}
-	char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", fcn->addr, 1, name);
+	char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", addr, 1, name);
 	char *name_value = sdb_get (DB, name_key, 0);
 	if (!name_value) {
 		// eprintf ("Cant find key for %s\n", name_key);
@@ -301,8 +299,7 @@ R_API RAnalVar *r_anal_var_get_byname(RAnal *a, RAnalFunction *fcn, const char *
 	const char *comma = strchr (name_value, ',');
 	if (comma && *comma) {
 		int delta = r_num_math (NULL, comma + 1);
-		// eprintf ("Silently failing (%s)\n", name_value);
-		RAnalVar *res = r_anal_var_get (a, fcn->addr, *name_value, 1, delta);
+		RAnalVar *res = r_anal_var_get (a, addr, *name_value, 1, delta);
 		free (name_value);
 		return res;
 	}
@@ -372,7 +369,7 @@ R_API ut64 r_anal_var_addr(RAnal *a, RAnalFunction *fcn, const char *name) {
 	if (!a || !fcn) {
 		return ret;
 	}
-	RAnalVar *v1 = r_anal_var_get_byname (a, fcn, name);
+	RAnalVar *v1 = r_anal_var_get_byname (a, fcn->addr, name);
 	if (v1) {
 		if (v1->kind == R_ANAL_VAR_KIND_BPV) {
 			regname = r_reg_get_name (a->reg, R_REG_NAME_BP);
@@ -398,19 +395,19 @@ R_API bool r_anal_var_check_name(const char *name) {
 }
 
 // afvn local_48 counter
-R_API int r_anal_var_rename(RAnal *a, ut64 var_addr, int scope, char kind, const char *old_name, const char *new_name) {
+R_API int r_anal_var_rename(RAnal *a, ut64 addr, int scope, char kind, const char *old_name, const char *new_name, bool verbose) {
 	char key[128], *stored_name;
 	int delta;
 
 	if (!r_anal_var_check_name (new_name)) {
-		// eprintf ("Invalid name\n");
 		return 0;
 	}
-	RAnalFunction *fcn = r_anal_get_fcn_in (a, var_addr, 0);
-	RAnalVar *v1 = r_anal_var_get_byname (a, fcn, new_name);
+	RAnalVar *v1 = r_anal_var_get_byname (a, addr, new_name);
 	if (v1) {
 		r_anal_var_free (v1);
-		eprintf ("variable or arg with name `%s` already exist\n", new_name);
+		if (verbose) {
+			eprintf ("variable or arg with name `%s` already exist\n", new_name);
+		}
 		return false;
 	}
 	// XXX: This is hardcoded because ->kind seems to be 0
@@ -418,40 +415,40 @@ R_API int r_anal_var_rename(RAnal *a, ut64 var_addr, int scope, char kind, const
 	// XXX. this is pretty weak, because oldname may not exist  too and error returned.
 	if (scope > 0) { // local
 		const char *sign = "";
-		SETKEY ("var.0x%"PFMT64x ".%d.%s", var_addr, scope, old_name);
+		SETKEY ("var.0x%"PFMT64x ".%d.%s", addr, scope, old_name);
 		char *name_val = sdb_get (DB, key, 0);
+		if (!name_val) {
+			return 0;
+		}
 		char *comma = strchr (name_val, ',');
 		if (comma) {
 			delta = r_num_math (NULL, comma + 1);
 			sdb_unset (DB, key, 0);
-			SETKEY ("var.0x%"PFMT64x ".%d.%s", var_addr, scope, new_name);
+			SETKEY ("var.0x%"PFMT64x ".%d.%s", addr, scope, new_name);
 			sdb_set (DB, key, name_val, 0);
 			free (name_val);
 			if (delta < 0) {
 				delta = -delta;
 				sign = "_";
 			}
-			SETKEY ("var.0x%"PFMT64x ".%c.%d.%s%d", var_addr, kind, scope, sign, delta);
+			SETKEY ("var.0x%"PFMT64x ".%c.%d.%s%d", addr, kind, scope, sign, delta);
 			sdb_array_set (DB, key, R_ANAL_VAR_SDB_NAME, new_name, 0);
 		}
 	} else { // global
-		SETKEY ("var.0x%"PFMT64x, var_addr);
+		SETKEY ("var.0x%"PFMT64x, addr);
 		stored_name = sdb_array_get (DB, key, R_ANAL_VAR_SDB_NAME, 0);
 		if (!stored_name) {
-			eprintf ("Cannot find key in storage.\n");
 			return 0;
 		}
 		if (!old_name) {
 			old_name = stored_name;
 		} else if (strcmp (stored_name, old_name)) {
-			eprintf ("Old name missmatch %s vs %s.\n", stored_name, old_name);
 			return 0;
 		}
 		sdb_unset (DB, key, 0);
-		SETKEY ("var.0x%"PFMT64x, var_addr);
+		SETKEY ("var.0x%"PFMT64x, addr);
 		sdb_array_set (DB, key, R_ANAL_VAR_SDB_NAME, new_name, 0);
 	}
-	// var.sdb_hash(old_name)=var_addr.scope.delta
 	return 1;
 }
 

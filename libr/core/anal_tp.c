@@ -70,12 +70,7 @@ static void var_rename (RAnal *anal, RAnalVar *v, const char *name, ut64 addr) {
 	if (!fcn) {
 		return;
 	}
-	RAnalVar *v1 = r_anal_var_get_byname (anal, fcn, name);
-	if (v1) {
-		r_anal_var_free (v1);
-		return;
-	}
-	r_anal_var_rename (anal, fcn->addr, 1, v->kind, v->name, name);
+	r_anal_var_rename (anal, fcn->addr, 1, v->kind, v->name, name, false);
 }
 
 static void var_retype (RAnal *anal, RAnalVar *var, const char *vname, char *type, ut64 addr, bool ref, bool pfx) {
