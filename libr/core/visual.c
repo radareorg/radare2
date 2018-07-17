@@ -1915,12 +1915,16 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		break;
 		case 'A':
 		{
-			int oc = core->print->cur_enabled;
-			ut64 off = oc? core->offset + core->print->cur: core->offset;
+			int oce = core->print->cur_enabled;
+			int oco = core->print->ocur;
+			int occ = core->print->cur;
+			ut64 off = oce? core->offset + core->print->cur: core->offset;
 			core->print->cur_enabled = 0;
 			r_cons_enable_mouse (false);
 			r_core_visual_asm (core, off);
-			core->print->cur_enabled = oc;
+			core->print->cur_enabled = oce;
+			core->print->cur = occ;
+			core->print->ocur = oco;
 			int wheel = r_config_get_i (core->config, "scr.wheel");
 			if (wheel) {
 				r_cons_enable_mouse (true);
