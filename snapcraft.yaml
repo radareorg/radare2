@@ -55,7 +55,8 @@ parts:
     plugin: meson
     meson-parameters: [--prefix=/usr]
     override-build: |
-      sudo -H pip3 install --system meson
+      pip3 install --system meson
       snapcraftctl build
     build-packages:
       - python3-pip
+      - python3-setuptools
