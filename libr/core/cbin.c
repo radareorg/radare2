@@ -106,8 +106,7 @@ R_API int r_core_bin_set_env(RCore *r, RBinFile *binfile) {
 		ut16 bits = info->bits;
 		ut64 baseaddr = r_bin_get_baddr (r->bin);
 		r_config_set_i (r->config, "bin.baddr", baseaddr);
-		char *orig_baddr_str = r_str_newf ("%"PFMT64u, baseaddr);
-		sdb_add (r->sdb, "orig_baddr", orig_baddr_str, 0);
+		sdb_array_add_num (r->sdb, "orig_baddr", baseaddr, 0);
 		r_config_set (r->config, "asm.arch", arch);
 		r_config_set_i (r->config, "asm.bits", bits);
 		r_config_set (r->config, "anal.arch", arch);

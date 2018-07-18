@@ -1486,8 +1486,7 @@ static int cmd_open(void *data, const char *input) {
 						r_core_cmd0 (core, "ob-*");
 						r_io_close_all (core->io);
 						r_config_set (core->config, "cfg.debug", "false");
-						char *orig_baddr_str = sdb_get(core->sdb, "orig_baddr", 0);
-						ut64 orig_baddr = r_num_math (NULL, orig_baddr_str);
+						ut64 orig_baddr = sdb_array_get_num (core->sdb, "orig_baddr", 0, 0);
 						r_bin_set_baddr (core->bin, orig_baddr);
 						r_config_set_i (core->config, "bin.baddr", orig_baddr);
 						r_core_bin_rebase (core, orig_baddr);
