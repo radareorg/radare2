@@ -480,7 +480,9 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 			if (i == ocur - n) {
 				memcat (d, Color_RESET);
 			}
-			memcat (d, lastcol);
+			if (colors) {
+				memcat (d, lastcol);
+			}
 			if (i >= cur - n && i < ocur - n) {
 				memcat (d, Color_INVERT);
 			}
