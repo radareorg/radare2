@@ -1045,6 +1045,7 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 	char str[R_FLAG_NAME_SIZE];
 	RList *entries = r_bin_get_entries (r->bin);
 	RListIter *iter;
+	RListIter *last_processed = NULL;
 	RBinAddr *entry = NULL;
 	int i = 0;
 	ut64 baddr = r_bin_get_baddr (r->bin);
@@ -1119,7 +1120,7 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 				"\"laddr\":%" PFMT64d ","
 				"\"haddr\":%" PFMT64d ","
 				"\"type\":\"%s\"}",
-				iter->p ? "," : "", at, paddr, baddr, laddr, haddr, type);
+				last_processed ? "," : "", at, paddr, baddr, laddr, haddr, type);
 		} else if (IS_MODE_RAD (mode)) {
 			char *name = NULL;
 			if (entry->type == R_BIN_ENTRY_TYPE_INIT) {
@@ -1155,6 +1156,7 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 			}
 		}
 		i++;
+		last_processed = iter;
 	}
 	if (IS_MODE_SET (mode)) {
 		if (entry) {
