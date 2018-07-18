@@ -7,6 +7,8 @@
 
 #define DFLT_ROWS 16
 
+#define IS_ALPHA(C) (((C) >= 'a' && (C) <= 'z') || ((C) >= 'A' && (C) <= 'Z'))
+
 static void nullprinter(const char *a, ...) { }
 static void libc_printf(const char *format, ...) {
 	va_list ap;
@@ -1709,17 +1711,38 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 					eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
 					return strdup (p);
 				}
+
+				bool found_var = false;
+				if (print->vars) {
+					int z;
+					for (z = i + 1; p[z] && (IS_ALPHA (p[z]) || IS_DIGIT (p[z]) || p[z] == '_'); z++);
+					char tmp = p[z];
+					p[z] = '\0';
+					RAnalVar *var;
+					RListIter *iter;
+					r_list_foreach (print->vars, iter, var) {
+						/*eprintf ("%s - %s\n", str, p + i + 1);*/
+						if (!strcmp (var->name, p + i + 1)) {
+							found_var = true;
+							break;
+						}
+					}
+					eprintf ("%d\n", found_var);
+					p[z] = tmp;
+				}
+
 				strcpy (o + j, reset);
 				j += strlen (reset);
 				o[j] = p[i];
 				if (!(p[i+1] == '$' || ((p[i+1] > '0') && (p[i+1] < '9')))) {
-					ut32 reg_len = strlen (reg);
-					if (reg_len + j + 10 >= COLORIZE_BUFSIZE) {
+					char *color = found_var ? print->cons->pal.func_arg_type : reg;
+					ut32 colo_len = strlen (color);
+					if (colo_len + j + 10 >= COLORIZE_BUFSIZE) {
 						eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
 						return strdup (p);
 					}
-					strcpy (o + j + 1, reg);
-					j += strlen (reg);
+					strcpy (o + j + 1, color);
+					j += strlen (color);
 				}
 				continue;
 			}

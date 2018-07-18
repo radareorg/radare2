@@ -882,6 +882,32 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds, bool print_color
 		return source;
 	}
 
+	if (ds->varsub && ds->opstr && ds->show_color_args) {
+		RAnalFunction *f = fcnIn (ds, ds->vat, R_ANAL_FCN_TYPE_NULL);
+		if (f) {
+			/*RList *vars = r_anal_var_all_list (core->parser->anal, f);*/
+			/*if (r_list_length (vars) > 0) {*/
+				/*ds->core->print->var_names = r_list_newf (free);*/
+				/*RAnalVar *var;*/
+				/*RListIter *iter;*/
+				/*r_list_foreach (vars, iter, var) {*/
+					/*r_list_append (ds->core->print->var_names, strdup (var->name));*/
+				/*}*/
+				/*char *ret = r_print_colorize_opcode (ds->core->print, source, ds->color_reg, ds->color_num, partial_reset);*/
+				/*r_list_free (ds->core->print->var_names);*/
+				/*ds->core->print->var_names = NULL;*/
+				/*return ret;*/
+			/*}*/
+			/*r_list_free (vars);*/
+
+			/*ds->core->print->vars = r_anal_var_all_list (core->parser->anal, f);*/
+			ds->core->print->vars = r_anal_var_list (core->parser->anal, f, 's');
+			/*char *ret = r_print_colorize_opcode (ds->core->print, source, ds->color_reg, ds->color_num, partial_reset);*/
+			r_list_free (ds->core->print->vars);
+			ds->core->print->vars = NULL;
+			/*return ret;*/
+		}
+	}
 	return r_print_colorize_opcode (ds->core->print, source, ds->color_reg, ds->color_num, partial_reset);
 }
 

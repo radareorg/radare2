@@ -90,6 +90,7 @@ typedef struct r_print_t {
 	int lines_abs;
 	bool esc_bslash;
 	const char *strconv_mode;
+	RList *vars;
 
 	// when true it uses row_offsets
 	bool calc_row_offsets;
