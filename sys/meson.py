@@ -253,6 +253,8 @@ def main():
             help='Adds support for Windows XP')
     parser.add_argument('--pull', action='store_true',
             help='git pull before building')
+    parser.add_argument('--uninstall', action='store_true',
+            help='Uninstall')
     parser.add_argument('--symstall', action='store_true',
             help='Install using symlinks')
     if os.name == 'nt':
@@ -305,6 +307,8 @@ def main():
     # Build it!
     log.debug('Arguments: %s', args)
     build(args)
+    if args.uninstall:
+        os.system('make uninstall PWD="$PWD/build" BTOP="$PWD/build/binr"')
     if args.install:
         install(args)
     if args.symstall:
