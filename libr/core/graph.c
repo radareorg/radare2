@@ -2777,7 +2777,11 @@ static void agraph_print_edges(RAGraph *g) {
 				while (in && in->is_dummy) {
 					in = (RANode *) (((RGraphNode *)r_list_first ((in->gnode)->in_nodes))->data);
 				}
-				parent_many = r_list_length ((in->gnode)->out_nodes) > 2;
+				if (in && in->gnode) {
+					parent_many = r_list_length (in->gnode->out_nodes) > 2;
+				} else {
+					parent_many = false;
+				}
 			}
 
 			if (many || parent_many) {
