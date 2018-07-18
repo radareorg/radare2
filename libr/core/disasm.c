@@ -1671,7 +1671,7 @@ static void ds_show_functions(RDisasmState *ds) {
 				ds_print_offset (ds);
 				r_cons_printf ("     ");
 			}
-			r_cons_printf ("%s; ", COLOR (ds, color_other));
+			r_cons_printf ("%s; ", COLOR_ARG (ds, color_func_var));
 			switch (var->kind) {
 			case 'b': {
 				char sign = var->delta > 0 ? '+' : '-';

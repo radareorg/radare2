@@ -45,3 +45,7 @@ ec graph.box rgb:431
 ec graph.box2 rgb:ca6
 ec graph.box3 rgb:ca6
 ec graph.box4 rgb:ca6
+
+ec func_var rgb:fd9
+ec func_var_type rgb:850
+ec func_var_addr rgb:960

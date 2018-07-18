@@ -61,3 +61,7 @@ ec ai.write rgb:f0f
 ec ai.exec rgb:f0f
 ec ai.seq rgb:f0f
 ec ai.ascii rgb:f0f
+
+ec func_var rgb:f0f
+ec func_var_type rgb:f0f
+ec func_var_addr rgb:0ff

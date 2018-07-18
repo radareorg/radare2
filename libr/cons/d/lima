@@ -48,3 +48,7 @@ ec graph.false rgb:5d5
 ec graph.trufae rgb:af2
 ec graph.current rgb:af2
 ec graph.traced rgb:090
+
+ec func_var yellow
+ec func_var_type green
+ec func_var_addr yellow

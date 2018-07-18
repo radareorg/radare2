@@ -54,3 +54,7 @@ ec linehl rgb:1f1f1f
 # background of the terminal must be #121212
 # foreground of the terminal must be #5fff5f
 # xterm -bg rgb:12/12/12 -fg rgb:5f/ff/5f
+
+ec func_var rgb:ff005f
+ec func_var_type blue
+ec func_var_addr rgb:5f87ff

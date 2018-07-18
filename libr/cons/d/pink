@@ -52,3 +52,7 @@ ec gui.background black
 ##  ai.ascii
 ##  gui.alt_background
 ##  gui.border
+
+ec func_var rgb:72d
+ec func_var_type blue
+ec func_var_addr rgb:72d
