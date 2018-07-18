@@ -249,6 +249,8 @@ def main():
             help='Destination build directory (default: %(default)s)')
     parser.add_argument('--xp', action='store_true',
             help='Adds support for Windows XP')
+    parser.add_argument('--symstall', action='store_true',
+            help='Install using symlinks')
     if os.name == 'nt':
         parser.add_argument('--install', help='Installation directory')
     else:
@@ -289,6 +291,8 @@ def main():
     build(args)
     if args.install:
         install(args)
+    if args.symstall:
+        os.system('make symstall PWD="$PWD/build" BTOP="$PWD/build/binr"')
 
 if __name__ == '__main__':
     main()
