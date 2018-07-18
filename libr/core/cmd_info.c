@@ -662,7 +662,7 @@ static int cmd_info(void *data, const char *input) {
 		case 'I': RBININFO ("info", R_CORE_BIN_ACC_INFO, NULL, 0); break;
 		case 'e':
 			  if (input[1] == 'e') {
-				  RBININFO ("entries", R_CORE_BIN_ACC_INITFINI, NULL, 0);
+				  RBININFO ("initfini", R_CORE_BIN_ACC_INITFINI, NULL, 0);
 				  input++;
 			  } else {
 				  RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES, NULL, 0);

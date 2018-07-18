@@ -1088,7 +1088,7 @@ int main(int argc, char **argv) {
 	run_action ("sections", R_BIN_REQ_SECTIONS, R_CORE_BIN_ACC_SECTIONS);
 	run_action ("segments", R_BIN_REQ_SEGMENTS, R_CORE_BIN_ACC_SEGMENTS);
 	run_action ("entries", R_BIN_REQ_ENTRIES, R_CORE_BIN_ACC_ENTRIES);
-	run_action ("entries", R_BIN_REQ_INITFINI, R_CORE_BIN_ACC_INITFINI);
+	run_action ("initfini", R_BIN_REQ_INITFINI, R_CORE_BIN_ACC_INITFINI);
 	run_action ("main", R_BIN_REQ_MAIN, R_CORE_BIN_ACC_MAIN);
 	run_action ("imports", R_BIN_REQ_IMPORTS, R_CORE_BIN_ACC_IMPORTS);
 	run_action ("classes", R_BIN_REQ_CLASSES, R_CORE_BIN_ACC_CLASSES);
