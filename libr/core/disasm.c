@@ -211,9 +211,9 @@ typedef struct {
 	const char *color_gui_alt_background;
 	const char *color_gui_border;
 	const char *color_linehl;
-	const char *color_func_arg;
-	const char *color_func_arg_type;
-	const char *color_func_arg_addr;
+	const char *color_func_var;
+	const char *color_func_var_type;
+	const char *color_func_var_addr;
 
 	RFlagItem *lastflag;
 	RAnalHint *hint;
@@ -561,9 +561,9 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->color_gui_alt_background = P(gui_alt_background): Color_GRAY;
 	ds->color_gui_border = P(gui_border): Color_BGGRAY;
 	ds->color_linehl = P(linehl): Color_BGBLUE;
-	ds->color_func_arg = P(func_arg): Color_WHITE;
-	ds->color_func_arg_type = P(func_arg_type): Color_BLUE;
-	ds->color_func_arg_addr = P(func_arg_addr): Color_CYAN;
+	ds->color_func_var = P(func_var): Color_WHITE;
+	ds->color_func_var_type = P(func_var_type): Color_BLUE;
+	ds->color_func_var_addr = P(func_var_addr): Color_CYAN;
 
 	ds->immstr = r_config_get_i (core->config, "asm.imm.str");
 	ds->immtrim = r_config_get_i (core->config, "asm.imm.trim");
@@ -578,7 +578,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->asm_anal = r_config_get_i (core->config, "asm.anal");
 	ds->show_color = r_config_get_i (core->config, "scr.color");
 	ds->show_color_bytes = r_config_get_i (core->config, "scr.color.bytes"); // maybe rename to asm.color.bytes
-	ds->show_color_args = r_config_get_i (core->config, "scr.color.args"); 
+	ds->show_color_args = r_config_get_i (core->config, "scr.color.args");
 	ds->colorop = r_config_get_i (core->config, "scr.color.ops"); // XXX confusing name // asm.color.inst (mnemonic + operands) ?
 	ds->show_utf8 = r_config_get_i (core->config, "scr.utf8");
 	ds->acase = r_config_get_i (core->config, "asm.ucase");
@@ -885,27 +885,11 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds, bool print_color
 	if (ds->varsub && ds->opstr && ds->show_color_args) {
 		RAnalFunction *f = fcnIn (ds, ds->vat, R_ANAL_FCN_TYPE_NULL);
 		if (f) {
-			/*RList *vars = r_anal_var_all_list (core->parser->anal, f);*/
-			/*if (r_list_length (vars) > 0) {*/
-				/*ds->core->print->var_names = r_list_newf (free);*/
-				/*RAnalVar *var;*/
-				/*RListIter *iter;*/
-				/*r_list_foreach (vars, iter, var) {*/
-					/*r_list_append (ds->core->print->var_names, strdup (var->name));*/
-				/*}*/
-				/*char *ret = r_print_colorize_opcode (ds->core->print, source, ds->color_reg, ds->color_num, partial_reset);*/
-				/*r_list_free (ds->core->print->var_names);*/
-				/*ds->core->print->var_names = NULL;*/
-				/*return ret;*/
-			/*}*/
-			/*r_list_free (vars);*/
-
-			/*ds->core->print->vars = r_anal_var_all_list (core->parser->anal, f);*/
-			ds->core->print->vars = r_anal_var_list (core->parser->anal, f, 's');
-			/*char *ret = r_print_colorize_opcode (ds->core->print, source, ds->color_reg, ds->color_num, partial_reset);*/
+			ds->core->print->vars = r_anal_var_all_list (core->parser->anal, f);
+			char *ret = r_print_colorize_opcode (ds->core->print, source, ds->color_reg, ds->color_num, partial_reset);
 			r_list_free (ds->core->print->vars);
 			ds->core->print->vars = NULL;
-			/*return ret;*/
+			return ret;
 		}
 	}
 	return r_print_colorize_opcode (ds->core->print, source, ds->color_reg, ds->color_num, partial_reset);
@@ -1222,7 +1206,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 	RFlagItem *f, *next_f;
 	r_list_foreach (xrefs, iter, refi) {
 		if (refi->at == ds->at) {
-			fun = fcnIn (ds, refi->addr, -1); 
+			fun = fcnIn (ds, refi->addr, -1);
 			if (fun) {
 				if (iter != xrefs->tail) {
 					ut64 next_addr = ((RAnalRef *)(iter->n->data))->addr;
@@ -1425,10 +1409,10 @@ static ut32 tmp_get_realsize (RAnalFunction *f) {
 static void ds_show_functions_argvar(RDisasmState *ds, RAnalVar *var, const char *base, bool is_var, char sign) {
 	int delta = sign == '+' ? var->delta : -var->delta;
 	const char *pfx = is_var ? "var" : "arg";
-	r_cons_printf ("%s%s %s%s%s%s %s@ %s%c0x%x", COLOR_ARG (ds, color_func_arg), pfx, 
-			COLOR_ARG (ds, color_func_arg_type), var->type, 
+	r_cons_printf ("%s%s %s%s%s%s %s@ %s%c0x%x", COLOR_ARG (ds, color_func_var), pfx,
+			COLOR_ARG (ds, color_func_var_type), var->type,
 			r_str_endswith (var->type, "*") ? "" : " ",
-			var->name, COLOR_ARG (ds, color_func_arg_addr), base, sign, delta);
+			var->name, COLOR_ARG (ds, color_func_var_addr), base, sign, delta);
 }
 
 static void printVarSummary(RDisasmState *ds, RList *list) {
@@ -1702,10 +1686,10 @@ static void ds_show_functions(RDisasmState *ds) {
 					eprintf("Register not found");
 					break;
 				}
-				r_cons_printf ("%sarg %s%s%s%s %s@ %s", COLOR_ARG (ds, color_func_arg),
-					COLOR_ARG (ds, color_func_arg_type),
+				r_cons_printf ("%sarg %s%s%s%s %s@ %s", COLOR_ARG (ds, color_func_var),
+					COLOR_ARG (ds, color_func_var_type),
 					var->type, r_str_endswith (var->type, "*") ? "" : " ",
-					var->name, COLOR_ARG (ds, color_func_arg_addr), i->name);
+					var->name, COLOR_ARG (ds, color_func_var_addr), i->name);
 				}
 				break;
 			case 's': {
@@ -1826,7 +1810,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 	char *vartype = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, ds->at);
 	if (!comment) {
 		if (vartype) {
-			ds->comment = r_str_newf ("%s%s", COLOR_ARG (ds, color_func_arg_type), vartype);
+			ds->comment = r_str_newf ("%s%s", COLOR_ARG (ds, color_func_var_type), vartype);
 			free (vartype);
 		} else if (item && item->comment && *item->comment) {
 			ds->ocomment = item->comment;
@@ -1835,7 +1819,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 			return;
 		}
 	} else if (vartype) {
-		ds->comment = r_str_newf ("%s%s %s; %s", COLOR_ARG (ds, color_func_arg_type), vartype, COLOR (ds, color_usrcmt), comment);
+		ds->comment = r_str_newf ("%s%s %s; %s", COLOR_ARG (ds, color_func_var_type), vartype, COLOR (ds, color_usrcmt), comment);
 		free (vartype);
 		free (comment);
 	} else {

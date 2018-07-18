@@ -1631,6 +1631,26 @@ static bool issymbol(char c) {
 	}
 }
 
+static bool check_arg_name (char *p, RList *vars) {
+	bool found_var = false;
+	if (vars) {
+		int z;
+		for (z = 0; p[z] && (IS_ALPHA (p[z]) || IS_DIGIT (p[z]) || p[z] == '_'); z++);
+		char tmp = p[z];
+		p[z] = '\0';
+		RAnalVar *var;
+		RListIter *iter;
+		r_list_foreach (vars, iter, var) {
+			if (!strcmp (var->name, p)) {
+				found_var = true;
+				break;
+			}
+		}
+		p[z] = tmp;
+	}
+	return found_var;
+}
+
 static bool ishexprefix(char *p) {
 	return (p[0] == '0' && p[1] == 'x');
 }
@@ -1712,32 +1732,14 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 					return strdup (p);
 				}
 
-				bool found_var = false;
-				if (print->vars) {
-					int z;
-					for (z = i + 1; p[z] && (IS_ALPHA (p[z]) || IS_DIGIT (p[z]) || p[z] == '_'); z++);
-					char tmp = p[z];
-					p[z] = '\0';
-					RAnalVar *var;
-					RListIter *iter;
-					r_list_foreach (print->vars, iter, var) {
-						/*eprintf ("%s - %s\n", str, p + i + 1);*/
-						if (!strcmp (var->name, p + i + 1)) {
-							found_var = true;
-							break;
-						}
-					}
-					eprintf ("%d\n", found_var);
-					p[z] = tmp;
-				}
-
+				bool found_var = check_arg_name (p + i + 1, print->vars);
 				strcpy (o + j, reset);
 				j += strlen (reset);
 				o[j] = p[i];
 				if (!(p[i+1] == '$' || ((p[i+1] > '0') && (p[i+1] < '9')))) {
-					char *color = found_var ? print->cons->pal.func_arg_type : reg;
-					ut32 colo_len = strlen (color);
-					if (colo_len + j + 10 >= COLORIZE_BUFSIZE) {
+					char *color = found_var ? print->cons->pal.func_var_type : reg;
+					ut32 color_len = strlen (color);
+					if (color_len + j + 10 >= COLORIZE_BUFSIZE) {
 						eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
 						return strdup (p);
 					}

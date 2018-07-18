@@ -47,9 +47,9 @@ static struct {
 	{ "creg", r_offsetof (RConsPrintablePalette, creg), r_offsetof (RConsPalette, creg) },
 	{ "num", r_offsetof (RConsPrintablePalette, num), r_offsetof (RConsPalette, num) },
 	{ "mov", r_offsetof (RConsPrintablePalette, mov), r_offsetof (RConsPalette, mov) },
-	{ "func_arg", r_offsetof (RConsPrintablePalette, func_arg), r_offsetof (RConsPalette, func_arg) },
-	{ "func_arg_type", r_offsetof (RConsPrintablePalette, func_arg_type), r_offsetof (RConsPalette, func_arg_type) },
-	{ "func_arg_addr", r_offsetof (RConsPrintablePalette, func_arg_addr), r_offsetof (RConsPalette, func_arg_addr) },
+	{ "func_var", r_offsetof (RConsPrintablePalette, func_var), r_offsetof (RConsPalette, func_var) },
+	{ "func_var_type", r_offsetof (RConsPrintablePalette, func_var_type), r_offsetof (RConsPalette, func_var_type) },
+	{ "func_var_addr", r_offsetof (RConsPrintablePalette, func_var_addr), r_offsetof (RConsPalette, func_var_addr) },
 
 	{ "ai.read", r_offsetof (RConsPrintablePalette, ai_read), r_offsetof (RConsPalette, ai_read) },
 	{ "ai.write", r_offsetof (RConsPrintablePalette, ai_write), r_offsetof (RConsPalette, ai_write) },
@@ -169,9 +169,9 @@ R_API void r_cons_pal_init() {
 	cons->cpal.wordhl             = (RColor) RColor_BGRED;
 	cons->cpal.linehl             = (RColor) RCOLOR (ALPHA_BG, 0x00, 0x00, 0x7f, 0x00, 0x00, 0x00);
 
-	cons->cpal.func_arg           = (RColor) RColor_WHITE;
-	cons->cpal.func_arg_type      = (RColor) RColor_BLUE;
-	cons->cpal.func_arg_addr      = (RColor) RColor_CYAN;
+	cons->cpal.func_var           = (RColor) RColor_WHITE;
+	cons->cpal.func_var_type      = (RColor) RColor_BLUE;
+	cons->cpal.func_var_addr      = (RColor) RColor_CYAN;
 
 	cons->cpal.graph_box          = (RColor) RColor_NULL;
 	cons->cpal.graph_box2         = (RColor) RColor_BLUE;
