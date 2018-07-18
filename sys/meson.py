@@ -251,6 +251,8 @@ def main():
             help='Destination build directory (default: %(default)s)')
     parser.add_argument('--xp', action='store_true',
             help='Adds support for Windows XP')
+    parser.add_argument('--pull', action='store_true',
+            help='git pull before building')
     parser.add_argument('--symstall', action='store_true',
             help='Install using symlinks')
     if os.name == 'nt':
@@ -272,6 +274,8 @@ def main():
           os.environ['LDFLAGS'] = ldflags + ' -lasan'
 
     # Check arguments
+    if args.pull:
+        os.system('git pull')
     if args.project and args.backend == 'ninja':
         log.error('--project is not compatible with --backend ninja')
         sys.exit(1)
