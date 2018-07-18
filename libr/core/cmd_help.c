@@ -551,6 +551,7 @@ static int cmd_help(void *data, const char *input) {
 		switch (input[1]) {
 		case '?':
 			r_cons_printf ("|Usage: ?v[id][ num]  # Show value\n"
+				"|?vx number  -> show 8 digit padding in hex\n"
 				"|?vi1 200    -> 1 byte size value (char)\n"
 				"|?vi2 0xffff -> 2 byte size value (short)\n"
 				"|?vi4 0xffff -> 4 byte size value (int)\n"
@@ -560,6 +561,9 @@ static int cmd_help(void *data, const char *input) {
 			break;
 		case '\0':
 			r_cons_printf ("%d\n", (st32)n);
+			break;
+		case 'x': // "?vx"
+			r_cons_printf ("0x%08"PFMT64d"\n", n);
 			break;
 		case 'i': // "?vi"
 			switch (input[2]) {
