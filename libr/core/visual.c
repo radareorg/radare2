@@ -9,7 +9,6 @@ static int autoblocksize = 1;
 static int disMode = 0;
 static void visual_refresh(RCore *core);
 
-
 static bool snowMode = false;
 static RList *snows = NULL;
 typedef struct {

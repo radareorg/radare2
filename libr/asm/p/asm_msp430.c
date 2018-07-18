@@ -6,12 +6,9 @@
 
 #include <msp430_disas.h>
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len)
-{
+static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct msp430_cmd cmd;
-
 	int ret = msp430_decode_command (buf, len, &cmd);
-
 	if (ret > 0) {
 		if (cmd.operands[0]) {
 			snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %s", cmd.instr, cmd.operands);
@@ -20,9 +17,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len)
 		}
 	}
 
-	op->size = ret;
-
-	return ret;
+	return op->size = ret;
 }
 
 RAsmPlugin r_asm_plugin_msp430 = {
