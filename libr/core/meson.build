@@ -112,7 +112,7 @@ pkgconfig_mod.generate(
   version: r2_version,
   name: 'r_core',
   filebase: 'r_core',
-  requires: [
+  requires: pkgconfig_magic_requires + [
     'r_util',
     'r_reg',
     'r_syscall',
@@ -128,7 +128,6 @@ pkgconfig_mod.generate(
     'r_parse',
     'r_egg',
     'r_debug',
-    'r_magic',
     'r_crypto',
     'r_config',
     'r_bin',
