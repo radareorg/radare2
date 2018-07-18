@@ -563,7 +563,7 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_printf ("%d\n", (st32)n);
 			break;
 		case 'x': // "?vx"
-			r_cons_printf ("0x%08"PFMT64d"\n", n);
+			r_cons_printf ("0x%08"PFMT64x"\n", n);
 			break;
 		case 'i': // "?vi"
 			switch (input[2]) {
