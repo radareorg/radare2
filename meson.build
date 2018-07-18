@@ -198,15 +198,15 @@ config_h = configure_file(
 )
 
 sys_magic = cc.find_library('magic', required: false)
-use_lib_magic = false
+use_syslib_magic = false
 
 if sys_magic.found() and get_option('use_sys_magic')
-  use_lib_magic = true
+  use_syslib_magic = true
 endif
 
 userconf = configuration_data()
 userconf.set('HAVE_LIB_MAGIC', sys_magic.found().to_int())
-userconf.set('USE_LIB_MAGIC', use_lib_magic.to_int())
+userconf.set('USE_LIB_MAGIC', use_syslib_magic.to_int())
 userconf.set('DEBUGGER', 1)
 userconf.set('PREFIX', r2_prefix)
 userconf.set('LIBDIR', r2_libdir)

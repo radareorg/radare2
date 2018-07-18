@@ -9,9 +9,10 @@ files = [
   'softmagic.c'
 ]
 
-if use_lib_magic
+if use_syslib_magic
   message('Use system-provided magic library')
   r_magic_dep = sys_magic
+  pkgconfig_magic_requires = []
 else
   message('Use bundled magic library')
   r_magic = library('r_magic', files,
@@ -37,4 +38,5 @@ else
     ],
     description: 'radare foundation libraries'
   )
+  pkgconfig_magic_requires = ['r_magic']
 endif
