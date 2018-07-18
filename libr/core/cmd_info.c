@@ -332,7 +332,7 @@ static int cmd_info(void *data, const char *input) {
 	}
 	if (mode == R_CORE_BIN_JSON) {
 		int suffix_shift = 0;
-		if (!strncmp (input, "SS", 2)) {
+		if (!strncmp (input, "SS", 2) || !strncmp (input, "ee", 2)) {
 			suffix_shift = 1;
 		}
 		if (strlen (input + 1 + suffix_shift) > 1) {
