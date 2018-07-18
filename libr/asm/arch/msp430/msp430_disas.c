@@ -445,16 +445,13 @@ static int decode_oneop_opcode(ut16 instr, ut16 op, struct msp430_cmd *cmd)
 	return ret;
 }
 
-int msp430_decode_command(const ut8 *in, struct msp430_cmd *cmd)
-{
+int msp430_decode_command(const ut8 *in, int len, struct msp430_cmd *cmd) {
 	int ret = -1;
-	ut16 instr;
 	ut16 operand1, operand2;
-	ut8 opcode;
 
-	instr = r_read_le16 (in);
+	ut16 instr = r_read_le16 (in);
 
-	opcode = get_twoop_opcode(instr);
+	ut8 opcode = get_twoop_opcode(instr);
 
 	switch (opcode) {
 	case MSP430_MOV:
@@ -469,9 +466,11 @@ int msp430_decode_command(const ut8 *in, struct msp430_cmd *cmd)
 	case MSP430_BIS:
 	case MSP430_XOR:
 	case MSP430_AND:
-		cmd->type = MSP430_TWOOP;
-		operand1 = r_read_at_le16 (in, 2);
-		operand2 = r_read_at_le16 (in, 4);
+		if (len >= 6) {
+			cmd->type = MSP430_TWOOP;
+			operand1 = r_read_at_le16 (in, 2);
+			operand2 = r_read_at_le16 (in, 4);
+		}
 		ret = decode_twoop_opcode(instr, operand1, operand2, cmd);
 	break;
 	}
@@ -480,10 +479,11 @@ int msp430_decode_command(const ut8 *in, struct msp430_cmd *cmd)
 		return ret;
 	}
 
-	ret = decode_jmp(instr, cmd);
+	ret = decode_jmp (instr, cmd);
 
-	if (ret > 0)
+	if (ret > 0) {
 		return ret;
+	}
 
 	operand1 = r_read_at_le16 (in, 2);
 	ret = decode_oneop_opcode(instr, operand1, cmd);

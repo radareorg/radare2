@@ -8,10 +8,9 @@
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len)
 {
-	int ret;
 	struct msp430_cmd cmd;
 
-	ret = msp430_decode_command (buf, &cmd);
+	int ret = msp430_decode_command (buf, len, &cmd);
 
 	if (ret > 0) {
 		if (cmd.operands[0]) {
