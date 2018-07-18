@@ -235,6 +235,8 @@ def main():
 
     # Create parser
     parser = argparse.ArgumentParser(description='Mesonbuild scripts for radare2')
+    parser.add_argument('--asan', action='store_true',
+            help='Build radare2 with ASAN support.')
     parser.add_argument('--project', action='store_true',
             help='Create a visual studio project and do not build.')
     parser.add_argument('--release', action='store_true',
@@ -258,6 +260,16 @@ def main():
             help='Install radare2 after building')
     parser.add_argument('--options', nargs='*', default=[])
     args = parser.parse_args()
+    if args.asan:
+        cflags = os.environ.get('CFLAGS')
+        if not cflags:
+            cflags = ''
+        os.environ['CFLAGS'] = cflags + ' -fsanitize=address'
+        if os.uname().sysname != 'Darwin':
+          ldflags = os.environ.get('LDFLAGS')
+          if not ldflags:
+              ldflags = ''
+          os.environ['LDFLAGS'] = ldflags + ' -lasan'
 
     # Check arguments
     if args.project and args.backend == 'ninja':
