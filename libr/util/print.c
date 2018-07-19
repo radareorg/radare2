@@ -1,6 +1,5 @@
 /* radare - LGPL - Copyright 2007-2018 - pancake */
 
-#include "r_core.h"
 #include "r_anal.h"
 #include "r_cons.h"
 #include "r_print.h"
@@ -1633,16 +1632,14 @@ static bool issymbol(char c) {
 }
 
 static bool check_arg_name (RPrint *print, char *p, ut64 func_addr) {
-	if (func_addr) {
+	if (func_addr && print->exists_var) {
 		int z;
 		for (z = 0; p[z] && (IS_ALPHA (p[z]) || IS_DIGIT (p[z]) || p[z] == '_'); z++);
 		char tmp = p[z];
 		p[z] = '\0';
-		char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", func_addr, 1, p);
+		bool ret = print->exists_var (print, func_addr, p);
 		p[z] = tmp;
-		if (sdb_const_get_len (((RCore*)(print->user))->anal->sdb_fcns, name_key, NULL, 0)) {
-			return true;
-		}
+		return ret;
 	}
 	return false;
 }

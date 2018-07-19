@@ -85,6 +85,7 @@ typedef struct r_print_t {
 	RReg *reg;
 	RRegItem* (*get_register)(RReg *reg, const char *name, int type);
 	ut64 (*get_register_value)(RReg *reg, RRegItem *item);
+	bool (*exists_var)(struct RPrint *print, ut64 func_addr, char *str);
 	ut64* lines_cache;
 	int lines_cache_sz;
 	int lines_abs;
