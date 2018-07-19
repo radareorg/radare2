@@ -505,7 +505,7 @@ int main(int argc, char **argv, char **envp) {
 		return 0;
 	}
 	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
-	if (argc > 1 && !strcmp (argv[1], "-") && !strcmp (argv[2], "-i")) {
+	if (argc > 2 && !strcmp (argv[1], "-") && !strcmp (argv[2], "-i")) {
 		argv[1] = argv[0];
 		prefile = 1;
 		argc--;

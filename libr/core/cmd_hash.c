@@ -516,6 +516,10 @@ static int cmd_hash_bang (RCore *core, const char *input) {
 		r_lang_list (core->lang);
 		return true;
 	}
+	if (lang && !*lang) {
+		// do nothing
+		return true;
+	}
 	p = strchr (input, ' ');
 	bool doEval = false;
 	if (p) {
