@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2007-2018 - pancake */
 
+#include "r_core.h"
 #include "r_anal.h"
 #include "r_cons.h"
 #include "r_print.h"
@@ -1631,31 +1632,26 @@ static bool issymbol(char c) {
 	}
 }
 
-static bool check_arg_name (char *p, RList *vars) {
-	bool found_var = false;
-	if (vars) {
+static bool check_arg_name (RPrint *print, char *p, ut64 func_addr) {
+	if (func_addr) {
 		int z;
 		for (z = 0; p[z] && (IS_ALPHA (p[z]) || IS_DIGIT (p[z]) || p[z] == '_'); z++);
 		char tmp = p[z];
 		p[z] = '\0';
-		RAnalVar *var;
-		RListIter *iter;
-		r_list_foreach (vars, iter, var) {
-			if (!strcmp (var->name, p)) {
-				found_var = true;
-				break;
-			}
-		}
+		char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", func_addr, 1, p);
 		p[z] = tmp;
+		if (sdb_const_get_len (((RCore*)(print->user))->anal->sdb_fcns, name_key, NULL, 0)) {
+			return true;
+		}
 	}
-	return found_var;
+	return false;
 }
 
 static bool ishexprefix(char *p) {
 	return (p[0] == '0' && p[1] == 'x');
 }
 
-R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num, bool partial_reset) {
+R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr) {
 	int i, j, k, is_mod, is_float = 0, is_arg = 0;
 	char *reset = partial_reset ? Color_RESET_NOBG : Color_RESET;
 	ut32 c_reset = strlen (reset);
@@ -1732,7 +1728,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 					return strdup (p);
 				}
 
-				bool found_var = check_arg_name (p + i + 1, print->vars);
+				bool found_var = check_arg_name (print, p + i + 1, func_addr);
 				strcpy (o + j, reset);
 				j += strlen (reset);
 				o[j] = p[i];

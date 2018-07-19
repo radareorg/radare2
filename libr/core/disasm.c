@@ -850,6 +850,7 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds, bool print_color
 	char *source = ds->opstr? ds->opstr: ds->asmop.buf_asm;
 	char *hlstr = r_meta_get_string (ds->core->anal, R_META_TYPE_HIGHLIGHT, ds->at);
 	bool partial_reset = line_highlighted (ds) ? true : ((hlstr && *hlstr) ? true : false);
+	RAnalFunction *f = ds->show_color_args ? fcnIn (ds, ds->vat, R_ANAL_FCN_TYPE_NULL) : NULL;
 
 	if (!ds->show_color || !ds->colorop) {
 		return strdup (source);
@@ -864,9 +865,9 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds, bool print_color
 		char *scol1, *s1 = r_str_ndup (source, spacer - source);
 		char *scol2, *s2 = strdup (spacer + 2);
 
-		scol1 = r_print_colorize_opcode (ds->core->print, s1, ds->color_reg, ds->color_num, partial_reset);
+		scol1 = r_print_colorize_opcode (ds->core->print, s1, ds->color_reg, ds->color_num, partial_reset, f ? f->addr : 0);
 		free (s1);
-		scol2 = r_print_colorize_opcode (ds->core->print, s2, ds->color_reg, ds->color_num, partial_reset);
+		scol2 = r_print_colorize_opcode (ds->core->print, s2, ds->color_reg, ds->color_num, partial_reset, f ? f->addr : 0);
 		free (s2);
 		if (!scol1) {
 			scol1 = strdup ("");
@@ -882,17 +883,7 @@ static char *colorize_asm_string(RCore *core, RDisasmState *ds, bool print_color
 		return source;
 	}
 
-	if (ds->varsub && ds->opstr && ds->show_color_args) {
-		RAnalFunction *f = fcnIn (ds, ds->vat, R_ANAL_FCN_TYPE_NULL);
-		if (f) {
-			ds->core->print->vars = r_anal_var_all_list (core->parser->anal, f);
-			char *ret = r_print_colorize_opcode (ds->core->print, source, ds->color_reg, ds->color_num, partial_reset);
-			r_list_free (ds->core->print->vars);
-			ds->core->print->vars = NULL;
-			return ret;
-		}
-	}
-	return r_print_colorize_opcode (ds->core->print, source, ds->color_reg, ds->color_num, partial_reset);
+	return r_print_colorize_opcode (ds->core->print, source, ds->color_reg, ds->color_num, partial_reset, f ? f->addr : 0);
 }
 
 static bool ds_must_strip(RDisasmState *ds) {
@@ -5478,9 +5469,10 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 				if (scr_color) {
 					char *buf_asm;
 					RAnalOp aop;
+					RAnalFunction *f = fcnIn (ds, ds->vat, R_ANAL_FCN_TYPE_NULL);
 					r_anal_op (core->anal, &aop, addr, buf+i, l-i, R_ANAL_OP_MASK_ALL);
 					buf_asm = r_print_colorize_opcode (core->print, str,
-							core->cons->pal.reg, core->cons->pal.num, false);
+							core->cons->pal.reg, core->cons->pal.num, false, f ? f : 0);
 					r_cons_printf ("%s%s\n",
 							r_print_color_op_type (core->print, aop.type),
 							buf_asm);
@@ -5967,9 +5959,10 @@ toro:
 					RAnalOp aop = {
 						0
 					};
+					RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset + i, R_ANAL_FCN_TYPE_NULL);
 					r_anal_op (core->anal, &aop, core->offset + i,
 						core->block + addrbytes * i, core->blocksize - addrbytes * i, R_ANAL_OP_MASK_BASIC);
-					asm_str = r_print_colorize_opcode (core->print, asm_str, color_reg, color_num, false);
+					asm_str = r_print_colorize_opcode (core->print, asm_str, color_reg, color_num, false, f ? f->addr : 0);
 					r_cons_printf ("%s%s"Color_RESET "\n",
 						r_print_color_op_type (core->print, aop.type),
 						asm_str);
