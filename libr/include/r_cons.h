@@ -667,6 +667,7 @@ R_API void r_cons_context_free(RConsContext *context);
 R_API void r_cons_context_load(RConsContext *context);
 R_API void r_cons_context_reset();
 R_API bool r_cons_context_is_main();
+R_API void r_cons_context_break(RConsContext *context);
 R_API void r_cons_break_pop(void);
 R_API void r_cons_break_push(RConsBreak cb, void*user);
 R_API void r_cons_break_clear(void);

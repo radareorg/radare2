@@ -113,15 +113,8 @@ static void cons_context_deinit(RConsContext *context) {
 	r_stack_free (context->break_stack);
 }
 
-static void cons_context_break(RConsContext *context) {
-	context->breaked = true;
-	if (context->event_interrupt) {
-		context->event_interrupt (context->event_interrupt_data);
-	}
-}
-
 static void break_signal(int sig) {
-	cons_context_break (&r_cons_context_default);
+	r_cons_context_break (&r_cons_context_default);
 }
 
 static inline void r_cons_write(const char *buf, int len) {
@@ -663,6 +656,13 @@ R_API void r_cons_context_reset() {
 
 R_API bool r_cons_context_is_main() {
 	return I.context == &r_cons_context_default;
+}
+
+R_API void r_cons_context_break(RConsContext *context) {
+	context->breaked = true;
+	if (context->event_interrupt) {
+		context->event_interrupt (context->event_interrupt_data);
+	}
 }
 
 R_API void r_cons_flush() {
