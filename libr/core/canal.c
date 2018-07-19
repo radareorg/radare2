@@ -2509,16 +2509,13 @@ static int fcn_list_legacy(RCore *core, RList *fcns)
 }
 
 R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) {
-	RList *fcns = NULL;
-	if (!core || !core->anal) {
+	if (!core || !core->anal || r_list_empty (core->anal->fcns)) {
 		return 0;
 	}
 
-	if (r_list_empty (core->anal->fcns)) {
-		return 0;
+	if (rad && (*rad == 'l' || *rad == 'j')) {
+		fcnlist_gather_metadata (core->anal, core->anal->fcns);
 	}
-
-	fcnlist_gather_metadata (core->anal, core->anal->fcns);
 
 	const char *name = input;
 	ut64 addr;
@@ -2528,7 +2525,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		addr = r_num_math (core->num, name);
 	}
 
-	fcns = r_list_new ();
+	RList *fcns = r_list_new ();
 	if (!fcns) {
 		return -1;
 	}
