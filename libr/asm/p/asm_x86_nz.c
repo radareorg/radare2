@@ -1538,19 +1538,19 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 
 			if (reg_bits == 16) {
 				if (op->operands[0].regs[0] == X86R_BX && op->operands[0].regs[1] == X86R_SI) {
-					rm = 0b000;
+					rm = B0000;
 				} else if (op->operands[0].regs[0] == X86R_BX && op->operands[0].regs[1] == X86R_DI) {
-					rm = 0b001;
+					rm = B0001;
 				} else if (op->operands[0].regs[0] == X86R_BP && op->operands[0].regs[1] == X86R_SI) {
-					rm = 0b010;
+					rm = B0010;
 				} else if (op->operands[0].regs[0] == X86R_BP && op->operands[0].regs[1] == X86R_DI) {
-					rm = 0b011;
+					rm = B0011;
 				} else if (op->operands[0].regs[0] == X86R_SI && op->operands[0].regs[1] == -1) {
-					rm = 0b100;
+					rm = B0100;
 				} else if (op->operands[0].regs[0] == X86R_DI && op->operands[0].regs[1] == -1) {
-					rm = 0b101;
+					rm = B0101;
 				} else if (op->operands[0].regs[0] == X86R_BX && op->operands[0].regs[1] == -1) {
-					rm = 0b111;
+					rm = B0111;
 				} else {
 					//TODO allow for displacement only when parser is reworked
 					return -1;
@@ -1579,11 +1579,11 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 					sib = 0x24;
 				}
 				if (use_sib) {
-					rm = 0b100;
+					rm = B0100;
 				}
 				if (rip_rel) {
-					modrm = (0b00 << 6) | (reg << 3) | 0b101;
-					sib = (scale << 6) | (0b100 << 3) | 0b101;
+					modrm = (B0000 << 6) | (reg << 3) | B0101;
+					sib = (scale << 6) | (B0100 << 3) | B0101;
 				} else {
 					modrm = (mod << 6) | (reg << 3) | rm;
 				}
