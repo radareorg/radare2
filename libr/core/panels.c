@@ -734,7 +734,7 @@ static void delPanel(RPanels *panels, int delPanelNum) {
 
 static void delCurPanel(RPanels *panels) {
 	dismantlePanel (panels);
-	if (panels->curnode > -1 && panels->n_panels > 2) {
+	if (panels->curnode >= 0 && panels->n_panels > 2) {
 		delPanel (panels, panels->curnode);
 	}
 }
@@ -917,11 +917,9 @@ static void addPanelFrame(RCore *core, RPanels* panels, const char *title, const
 }
 
 static RPanel createMenuPanel(int x, int y, char *title) {
-	RPanel panel;
+	RPanel panel = {0};
 	panel.x = x;
 	panel.y = y;
-	panel.sx = 0;
-	panel.sy = 0;
 	panel.title = title;
 	panel.refresh = true;
 	panel.type = PANEL_TYPE_MENU;
@@ -930,9 +928,10 @@ static RPanel createMenuPanel(int x, int y, char *title) {
 
 static bool initPanels(RCore *core, RPanels *panels) {
 	panels->panel = calloc (sizeof (RPanel), PANEL_NUM_LIMIT);
-	if (!panels->panel) return false;
+	if (!panels->panel) {
+		return false;
+	}
 	panels->n_panels = 0;
-
 	addPanelFrame (core, panels, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY);
 	addPanelFrame (core, panels, PANEL_TITLE_SYMBOLS, PANEL_CMD_SYMBOLS);
 	//addPanelFrame (core, panels, PANEL_TITLE_STACK, PANEL_CMD_STACK);
