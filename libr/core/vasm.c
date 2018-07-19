@@ -2,10 +2,12 @@
 
 #include <r_core.h>
 
+#define R_VISUAL_ASM_BUFSIZE 1024
+
 typedef struct {
 	RCore *core;
-	char blockbuf[1024];
-	char codebuf[1024];
+	char blockbuf[R_VISUAL_ASM_BUFSIZE];
+	char codebuf[R_VISUAL_ASM_BUFSIZE];
 	int oplen;
 	ut8 buf[128];
 	RAsmCode *acode;
@@ -40,7 +42,7 @@ static int readline_callback(void *_a, const char *str) {
 		if (a->acode) {
 			xlen = strlen (a->acode->buf_hex);
 			strcpy (a->codebuf, a->blockbuf);
-			memcpy (a->codebuf, a->acode->buf_hex, xlen);
+			memcpy (a->codebuf, a->acode->buf_hex, R_MIN (xlen, R_VISUAL_ASM_BUFSIZE - 1));
 		}
 		{
 			int rows = 0;
