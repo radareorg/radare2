@@ -93,7 +93,7 @@ static const char *menus_Edit[] = {
 
 static const char *menus_View[] = {
 	"Hexdump", "Disassembly", "Graph", "FcnInfo", "Functions", "Comments", "Entropy", "Colors",
-	"Stack", "StackRefs",
+	"Stack", "StackRefs", "Pseudo",
 	NULL
 };
 
@@ -1241,6 +1241,8 @@ static bool handleMenu(RCore *core, const char *menu) {
 		layoutSidePanel (core, PANEL_TITLE_COMMENTS, PANEL_CMD_COMMENTS);
 	} else if (!strcmp (menu, "Entropy")) {
 		layoutSidePanel (core, PANEL_TITLE_ENTROPY, PANEL_CMD_ENTROPY);
+	} else if (!strcmp (menu, "Pseudo")) {
+		layoutSidePanel (core, PANEL_TITLE_PSEUDO, PANEL_CMD_PSEUDO);
 	} else if (!strcmp (menu, "Symbols")) {
 		r_core_cmdf (core, "aa");
 	} else if (!strcmp (menu, "BasicBlocks")) {
