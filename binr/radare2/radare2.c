@@ -505,7 +505,7 @@ int main(int argc, char **argv, char **envp) {
 		return 0;
 	}
 	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
-	if (argc > 1 && !strcmp (argv[1], "-")) {
+	if (argc > 1 && !strcmp (argv[1], "-") && !strcmp (argv[2], "-i")) {
 		argv[1] = argv[0];
 		prefile = 1;
 		argc--;
@@ -814,12 +814,15 @@ int main(int argc, char **argv, char **envp) {
 	ret = run_commands (NULL, prefiles, false);
 	r_list_free (prefiles);
 
+#if 0
+	/* if "- -i" is used we will open malloc:// instead
 	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
 	if (prefile) {
 		optind = 1;
 		argc = 2;
 		argv[1] = "-";
 	}
+#endif
 	r_bin_force_plugin (r.bin, forcebin);
 
 	//cverify_version (0);
