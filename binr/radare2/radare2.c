@@ -815,7 +815,7 @@ int main(int argc, char **argv, char **envp) {
 	r_list_free (prefiles);
 
 #if 0
-	/* if "- -i" is used we will open malloc:// instead
+	// if "- -i" is used we will open malloc:// instead
 	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
 	if (prefile) {
 		optind = 1;
