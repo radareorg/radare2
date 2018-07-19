@@ -135,8 +135,6 @@ typedef struct r_core_asmsteps_t {
 	int cols;
 } RCoreAsmsteps;
 
-typedef struct r_core_task_t RCoreTask;
-
 typedef enum r_core_autocomplete_types_t {
 	R_CORE_AUTOCMPLT_DFLT = 0,
 	R_CORE_AUTOCMPLT_FLAG,
@@ -231,8 +229,8 @@ typedef struct r_core_t {
 	RList *tasks_queue;
 	RList *oneshot_queue;
 	int oneshots_enqueued;
-	RCoreTask *current_task;
-	RCoreTask *main_task;
+	struct r_core_task_t *current_task;
+	struct r_core_task_t *main_task;
 	RThreadLock *tasks_lock;
 	int tasks_running;
 	bool oneshot_running;
