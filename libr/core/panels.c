@@ -14,6 +14,7 @@
 #define PANEL_TITLE_REGISTERS    "Registers"
 #define PANEL_TITLE_REGISTERREFS "RegisterRefs"
 #define PANEL_TITLE_DISASSEMBLY  "Disassembly"
+#define PANEL_TITLE_PSEUDO       "Pseudo"
 #define PANEL_TITLE_NEWFILES     "New files"
 #define PANEL_TITLE_INFO         "Info"
 #define PANEL_TITLE_DATABASE     "Database"
@@ -40,6 +41,7 @@
 #define PANEL_CMD_REGISTERS      "dr="
 #define PANEL_CMD_REGISTERREFS   "drr"
 #define PANEL_CMD_DISASSEMBLY    "pd $r"
+#define PANEL_CMD_PSEUDO         "pdc"
 #define PANEL_CMD_GRAPH          "agf"
 #define PANEL_CMD_INFO           "i"
 #define PANEL_CMD_DATABASE       "k ***"
@@ -164,6 +166,7 @@ static void setCursor(RCore *core, bool cur);
 static void replaceCmd(RPanels* panels, char *title, char *cmd);
 static bool handleMenu(RCore *core, const char *menu);
 static void changeMenu(RPanels *panels, const char **dstMenu);
+static RConsCanvas *createNewCanvas(RCore *core, int w, int h);
 
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) {
 	if (!can || !panel|| !panel->refresh) {
@@ -176,7 +179,6 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 	delta_x = panel->sx;
 	delta_y = panel->sy;
 	r_cons_canvas_fill (can, panel->x, panel->y, panel->w, panel->h, ' ');
-	RCons *cons = r_cons_singleton ();
 	if (panel->type == PANEL_TYPE_MENU) {
 		(void) r_cons_canvas_gotoxy (can, panel->x + 2, panel->y + 2);
 		text = r_str_ansi_crop (panel->title,
@@ -190,7 +192,7 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 	} else {
 		if (color) {
 			snprintf (title, sizeof (title) - 1,
-				"%s[x] %s"Color_RESET, cons->pal.graph_box2, panel->title);
+				"%s[x] %s"Color_RESET, core->cons->pal.graph_box2, panel->title);
 		} else {
 			snprintf (title, sizeof (title) - 1,
 				"   %s   ", panel->title);
@@ -252,9 +254,9 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 		core->print->cur_enabled = ce;
 	}
 	if (color) {
-		r_cons_canvas_box (can, panel->x, panel->y, panel->w, panel->h, cons->pal.graph_box2);
+		r_cons_canvas_box (can, panel->x, panel->y, panel->w, panel->h, core->cons->pal.graph_box2);
 	} else {
-		r_cons_canvas_box (can, panel->x, panel->y, panel->w, panel->h, cons->pal.graph_box);
+		r_cons_canvas_box (can, panel->x, panel->y, panel->w, panel->h, core->cons->pal.graph_box);
 	}
 }
 
@@ -891,6 +893,18 @@ static void setRefreshAll(RPanels *panels) {
 	}
 }
 
+static RConsCanvas *createNewCanvas(RCore *core, int w, int h) {
+	RConsCanvas *can = r_cons_canvas_new (w, h);
+	if (!can) {
+		eprintf ("Cannot create RCons.canvas context\n");
+		return false;
+	}
+	r_cons_canvas_fill (can, 0, 0, w, h, ' ');
+	can->linemode = r_config_get_i (core->config, "graph.linemode");
+	can->color = r_config_get_i (core->config, "scr.color");
+	return can;
+}
+
 static void addPanelFrame(RCore *core, RPanels* panels, const char *title, const char *cmd) {
 	RPanel* panel = panels->panel;
 	const int n_panels = panels->n_panels;
@@ -969,7 +983,6 @@ R_API void r_core_panels_refresh(RCore *core) {
 	char title[1024];
 	char str[1024];
 	int i, h, w = r_cons_get_size (&h);
-	const char *color = panels->curnode == panels->menu_pos ? core->cons->pal.graph_box : core->cons->pal.graph_box2;
 	r_cons_gotoxy (0, 0);
 	if (panels->isResizing) {
 		panels->isResizing = false;
@@ -998,6 +1011,7 @@ R_API void r_core_panels_refresh(RCore *core) {
 	if (panels->curnode == panels->menu_pos) {
 		strcpy (title, "> ");
 	}
+	const char *color = panels->curnode == panels->menu_pos ? core->cons->pal.graph_box : core->cons->pal.graph_box2;
 	for (i = 0; menus[i]; i++) {
 		if (panels->curnode == panels->menu_pos) {
 			if (panels->menuStackDepth > 0) {
@@ -1129,14 +1143,7 @@ static bool init (RCore *core, RPanels *panels, int w, int h) {
 	panels->menuPanel = malloc (sizeof (RPanel) * PANEL_MENU_LIMIT);
 	panels->callgraph = 0;
 	panels->isResizing = false;
-	panels->can = r_cons_canvas_new (w, h);
-	r_cons_canvas_fill (panels->can, 0, 0, w, h, ' ');
-	if (!panels->can) {
-		eprintf ("Cannot create RCons.canvas context\n");
-		return false;
-	}
-	panels->can->linemode = r_config_get_i (core->config, "graph.linemode");
-	panels->can->color = r_config_get_i (core->config, "scr.color");
+	panels->can = createNewCanvas (core, w, h);
 	if (w < 140) {
 		panels->columnWidth = w / 3;
 	}
@@ -1759,10 +1766,10 @@ repeat:
 			r_core_cmd0 (core, "agv $$");
 		} else {
 			if (checkFunc (core)) {
-				int ocolor;
-				ocolor = r_config_get_i (core->config, "scr.color");
+				int ocolor = r_config_get_i (core->config, "scr.color");
 				r_core_visual_graph (core, NULL, NULL, true);
 				r_config_set_i (core->config, "scr.color", ocolor);
+				core->panels->can = createNewCanvas (core, core->panels->can->w, core->panels->can->h);
 				setRefreshAll (panels);
 			}
 		}
@@ -1786,6 +1793,12 @@ repeat:
 		break;
 	case '-':
 		splitPanelHorizontal (core);
+		break;
+	case '*':
+		if (checkFunc (core)) {
+			replaceCmd (panels, PANEL_TITLE_PSEUDO, PANEL_CMD_PSEUDO);
+			core->panels->can = createNewCanvas (core, core->panels->can->w, core->panels->can->h);
+		}
 		break;
 	case R_CONS_KEY_F1:
 		cmd = r_config_get (core->config, "key.f1");
