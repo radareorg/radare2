@@ -914,6 +914,18 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		}
 		break;
 	}
+	case ARM64_INS_REV32:
+	{
+		const char *r0 = REG64(0);
+		const char *r1 = REG64(1);
+		r_strbuf_setf (&op->esil,
+			"24,0x000000ff000000ff,%s,&,<<,%s,=,"
+			"16,0x000000ff000000ff,8,%s,>>,&,<<,%s,|=,"
+			"8,0x000000ff000000ff,16,%s,>>,&,<<,%s,|=,"
+			"0x000000ff000000ff,24,%s,>>,&,%s,|=,",
+			r1, r0, r1, r0, r1, r0, r1, r0);
+		break;
+	}
 	case ARM64_INS_REV16:
 	{
 		const char *r0 = REG64(0);
