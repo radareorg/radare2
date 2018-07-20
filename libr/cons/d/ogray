@@ -46,3 +46,7 @@ ec gui.dataoffset rgb:f72
 ec crypto rgb:f72
 ec floc rgb:777
 ec linehl rgb:111
+
+ec func_var rgb:f72
+ec func_var_type rgb:777
+ec func_var_addr rgb:555

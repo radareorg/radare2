@@ -44,5 +44,9 @@ ec graph.trufae rgb:899
 ec graph.current rgb:f00
 ec graph.traced red
 
+ec func_var rgb:28d
+ec func_var_type rgb:cc8
+ec func_var_addr rgb:9aa
+
 # background of the terminal must be 134 o 033
 # xterm -fn 10x20 -bg rgb:00/30/30 -fg rgb:e0/e0/e0 -e "r2 -c 'eco solarized' /bin/ls"

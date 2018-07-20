@@ -225,7 +225,7 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const
 			// Match type from function param to instr
 			if (type_pos_hit (anal, trace, in_stack, j, size, place)) {
 				if (!cmt_set && type && name) {
-					r_meta_set_string (anal, R_META_TYPE_COMMENT, instr_addr,
+					r_meta_set_string (anal, R_META_TYPE_VARTYPE, instr_addr,
 							sdb_fmt ("%s%s%s", type, r_str_endswith (type, "*") ? "" : " ", name));
 					cmt_set = true;
 				}

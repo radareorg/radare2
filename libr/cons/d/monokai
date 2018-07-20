@@ -44,3 +44,7 @@ ec graph.true rgb:A6df2E
 ec graph.false rgb:f92672
 ec graph.trufae rgb:a398e5
 ec graph.current rgb:fff
+
+ec func_var cyan
+ec func_var_type rgb:a398e5
+ec func_var_addr rgb:f92672
