@@ -50,7 +50,7 @@ static bool type_pos_hit(RAnal *anal, Sdb *trace, bool in_stack, int idx, int si
 	}
 }
 
-static void var_rename (RAnal *anal, RAnalVar *v, const char *name, ut64 addr) {
+static void var_rename(RAnal *anal, RAnalVar *v, const char *name, ut64 addr) {
 	if (!name || !v) {
 		return;
 	}
@@ -73,7 +73,7 @@ static void var_rename (RAnal *anal, RAnalVar *v, const char *name, ut64 addr) {
 	r_anal_var_rename (anal, fcn->addr, 1, v->kind, v->name, name, false);
 }
 
-static void var_retype (RAnal *anal, RAnalVar *var, const char *vname, char *type, ut64 addr, bool ref, bool pfx) {
+static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, char *type, ut64 addr, bool ref, bool pfx) {
 	if (!type || !var) {
 		return;
 	}
@@ -120,7 +120,7 @@ static void var_retype (RAnal *anal, RAnalVar *var, const char *vname, char *typ
 	r_anal_var_retype (anal, addr, 1, var->delta, var->kind, ntype, var->size, var->isarg, var->name);
 }
 
-static void get_src_regname (RCore *core, ut64 addr, char *regname, int size) {
+static void get_src_regname(RCore *core, ut64 addr, char *regname, int size) {
 	RAnal *anal = core->anal;
 	RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_ESIL);
 	char *op_esil = strdup (r_strbuf_get (&op->esil));
@@ -142,12 +142,66 @@ static void get_src_regname (RCore *core, ut64 addr, char *regname, int size) {
 	r_anal_op_free (op);
 }
 
-static ut64 get_addr (Sdb *trace, const char *regname, int idx) {
+static ut64 get_addr(Sdb *trace, const char *regname, int idx) {
 	if (!regname || !*regname) {
 		return UT64_MAX;
 	}
 	const char *query = sdb_fmt ("%d.reg.read.%s", idx, regname);
 	return r_num_math (NULL, sdb_const_get (trace, query, 0));
+}
+
+static RList *parse_format(char *fmt) {
+	RList *ret = r_list_new();
+	char *ptr = strchr (fmt, '%');
+	char *type = NULL;
+	while (ptr) {
+		ptr += 1;
+		switch(ptr[0]) {
+		case 'c':
+			type = "char";
+			break;
+		case 'f':
+			type = "float";
+			break;
+		case 'g':
+			type = "double";
+			break;
+		case 'l':
+			switch (ptr [1]) {
+			case 'f': // "%lf"
+				type = "double";
+				break;
+			case 'u': // "%lu"
+				type = "unsigned long int";
+				break;
+			case 'l':
+				if (ptr [2] == 'u') { // "%llu"
+					type = "unsigned long long int";
+				} else {
+					type = "long long int";
+				}
+				break;
+			default:
+				type = "long int";
+			}
+			break;
+		case 'p':
+			type = "void *";
+			break;
+		case 's':
+			type = "const char *";
+			break;
+		case 'u':
+			type = "unsigned int";
+			break;
+		case 'd':
+		default:
+			type = "int";
+		}
+		r_list_append (ret, type);
+		ptr = strchr (ptr, '%');
+	}
+	return ret;
 }
 
 #define DEFAULT_MAX 3
@@ -158,13 +212,14 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const
 	Sdb *trace = core->anal->esil->db_trace;
 	Sdb *TDB = core->anal->sdb_types;
 	RAnal *anal = core->anal;
+	RList *types = NULL;
 	int idx = sdb_num_get (trace, "idx", 0);
-	bool stack_rev = false, in_stack = false;
+	bool stack_rev = false, in_stack = false, format = false;
 
 	if (!fcn_name || !cc) {
 		return;
 	}
-	int i, j, size = 0, max = r_type_func_args_count (TDB, fcn_name);
+	int i, j, pos = 0, size = 0, max = r_type_func_args_count (TDB, fcn_name);
 	const char *place = r_anal_cc_arg (anal, cc, 1);
 	r_cons_break_push (NULL, NULL);
 
@@ -183,9 +238,22 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const
 	}
 	for (i = 0; i < max; i++) {
 		int arg_num = stack_rev ? (max - 1 - i) : i;
-		char *type = r_type_func_args_type (TDB, fcn_name, arg_num);
-		const char *name = r_type_func_args_name (TDB, fcn_name, arg_num);
+		char *type = NULL;
+		const char *name = NULL;
+		if (format) {
+			if (r_list_empty (types)) {
+				break;
+			}
+			type = r_str_new (r_list_get_n (types, pos++));
+		} else {
+			type = r_type_func_args_type (TDB, fcn_name, arg_num);
+			name = r_type_func_args_name (TDB, fcn_name, arg_num);
+		}
+		if (!type && !userfnc) {
+			continue;
+		}
 		if (!in_stack) {
+			//XXX: param arg_num must be fixed to support floating point register
 			place = r_anal_cc_arg (anal, cc, arg_num + 1);
 		}
 		char regname[REG_SZ] = {0};
@@ -228,6 +296,14 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const
 					r_meta_set_string (anal, R_META_TYPE_VARTYPE, instr_addr,
 							sdb_fmt ("%s%s%s", type, r_str_endswith (type, "*") ? "" : " ", name));
 					cmt_set = true;
+					if ((op->ptr && op->ptr != UT64_MAX) && !strcmp (name, "format")) {
+						RFlagItem *f = r_flag_get_i (core->flags, op->ptr);
+						if (f && !strncmp (f->name, "str", 3)) {
+							types = parse_format (f->realname);
+							max += r_list_length (types);
+							format = true;
+						}
+					}
 				}
 				if (var) {
 					if (!userfnc) {
@@ -280,6 +356,7 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const
 		size += anal->bits / 8;
 		free (type);
 	}
+	r_list_free (types);
 	r_cons_break_pop ();
 }
 
