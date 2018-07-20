@@ -3,7 +3,7 @@ capstone_dep = dependency('capstone', version: '>=3.0.4', required: false)
 if not capstone_dep.found() or not get_option('use_sys_capstone')
   message('Use bundled capstone')
 
-  capstone_path = '@0@/capstone'.format(meson.current_build_dir())
+  capstone_path = join_paths(meson.current_build_dir(), 'capstone')
   res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("@0@"))'.format(capstone_path))
   if res.returncode() == 0
     if not git_exe.found()
@@ -89,7 +89,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
 
   cs_files = []
   foreach rel_cs_file : rel_cs_files
-    cs_files += ['@0@/@1@'.format(capstone_path, rel_cs_file)]
+    cs_files += [join_paths(capstone_path, rel_cs_file)]
   endforeach
 
   capstone_includes = [platform_inc, include_directories('capstone/include')]
