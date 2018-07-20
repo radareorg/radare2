@@ -10,7 +10,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
       error('Cannot load capstone library. Either provide capstone in ./shlr/capstone or install git, so it can be downloaded')
     endif
 
-    # NOTE: when you update CS_TIP, also update it in shlr/capstone.sh
+    # NOTE: when you update CS_TIP, also update it in shlr/Makefile
     CS_TIP = 'd03cab449dee0c882912e836d19da9a432c89cc2'
 
     message('Cloning capstone next branch, commit ' + CS_TIP + ', into ' + capstone_path)
