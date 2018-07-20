@@ -15,9 +15,16 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
 
     message('Cloning capstone next branch, commit ' + CS_TIP + ', into ' + capstone_path)
     git_cmd = 'clone -b next https://github.com/aquynh/capstone.git @0@'.format(capstone_path)
-    run_command(git_exe, git_cmd.split())
-    git_cmd = 'reset --hard ' + CS_TIP
-    run_command(git_exe, git_cmd.split())
+    clone_cmd = run_command(git_exe, git_cmd.split())
+    if clone_cmd.returncode() != 0
+      error('Cannot execute git clone command')
+    endif
+
+    reset_cmd_str = '-C @0@ reset --hard @1@'.format(capstone_path, CS_TIP)
+    reset_cmd = run_command(git_exe, reset_cmd_str.split())
+    if reset_cmd.returncode() != 0
+      error('Cannot execute git reset command')
+    endif
 
     patches_files = [
       'capstone-calloc.patch',
@@ -30,8 +37,12 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
 
     message('Patching capstone with radare\'s patches')
     foreach file : patches_files
-      patch_cmd = 'patch -p1 -d @0@ -i ../capstone-patches/@1@'.format(capstone_path, file)
-      run_command(patch_cmd.split())
+      patch_path = join_paths(meson.current_source_dir(), 'capstone-patches', file)
+      patch_cmd_str = '-C @0@ apply -p1 @1@'.format(capstone_path, patch_path)
+      patch_cmd = run_command(git_exe, patch_cmd_str.split())
+      if patch_cmd.returncode() != 0
+        error('Cannot apply patch ' + file)
+      endif
     endforeach
   endif
 
