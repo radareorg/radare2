@@ -12,12 +12,13 @@ static const char *help_msg_C[] = {
 	"Usage:", "C[-LCvsdfm*?][*?] [...]", " # Metadata management",
 	"C", "", "list meta info in human friendly form",
 	"C*", "", "list meta info in r2 commands",
-	"C[Chsdmf]", "", "list comments/hidden/strings/data/magic/formatted in human friendly form",
-	"C[Chsdmf]*", "", "list comments/hidden/strings/data/magic/formatted in r2 commands",
+	"C[Cthsdmf]", "", "list comments/types/hidden/strings/data/magic/formatted in human friendly form",
+	"C[Cthsdmf]*", "", "list comments/types/hidden/strings/data/magic/formatted in r2 commands",
 	"C-", " [len] [[@]addr]", "delete metadata at given address range",
 	"CL", "[-][*] [file:line] [addr]", "show or add 'code line' information (bininfo)",
 	"CS", "[-][space]", "manage meta-spaces to filter comments, etc..",
 	"CC", "[?] [-] [comment-text] [@addr]", "add/remove comment",
+	"Ct", "[?] [-] [comment-text] [@addr]", "add/remove type analysis comment",
 	"CC.", "[addr]", "show comment in current address",
 	"CC!", " [@addr]", "edit comment with $EDITOR",
 	"CCa", "[-at]|[at] [text] [@addr]", "add/remove comment at given address",
@@ -46,6 +47,22 @@ static const char *help_msg_CC[] = {
 	"CC-", " @ cmt_addr", "remove comment at given address",
 	"CCu", " good boy @ addr", "add good boy comment at given address",
 	"CCu", " base64:AA== @ addr", "add comment in base64",
+	NULL
+};
+
+static const char *help_msg_Ct[] = {
+	"Usage:", "Ct[-+!*au] [base64:..|str] @ addr", "",
+	"Ct", "", "list all comments in human friendly form",
+	"Ct*", "", "list all comments in r2 commands",
+	"Ct.", "", "show comment at current offset",
+	"Ct,", " [file]", "show or set comment file",
+	"Ct", " [text]", "append comment at current address",
+	"Ctf", "", "list comments in function",
+	"Ct+", " [text]", "append comment at current address",
+	"Ct!", "", "edit comment using cfg.editor (vim, ..)",
+	"Ct-", " @ cmt_addr", "remove comment at given address",
+	"Ctu", " good boy @ addr", "add good boy comment at given address",
+	"Ctu", " base64:AA== @ addr", "add comment in base64",
 	NULL
 };
 
@@ -319,31 +336,41 @@ error:
 	return -1;
 }
 
-static int cmd_meta_comment(RCore *core, const char *input) {
+static int cmd_meta_comment(RCore *core, const char *input, char cmt_type) {
 	ut64 addr = core->offset;
 	switch (input[1]) {
 	case '?':
-		r_core_cmd_help (core, help_msg_CC);
+		switch (cmt_type) {
+		case R_META_TYPE_COMMENT:
+			r_core_cmd_help (core, help_msg_CC);
+			break;
+		case R_META_TYPE_VARTYPE:
+			r_core_cmd_help (core, help_msg_Ct);
+			break;
+		default:
+			r_core_cmd_help (core, help_msg_C);
+			break;
+		}
 		break;
 	case ',': // "CC,"
 		if (input[2]=='?') {
-			eprintf ("Usage: CC, [file]\n");
+			eprintf ("Usage: C%c, [file]\n", cmt_type);
 		} else if (input[2] == ' ') {
 			const char *fn = input+2;
-			char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+			char *comment = r_meta_get_string (core->anal, cmt_type, addr);
 			while (*fn== ' ')fn++;
 			if (comment && *comment) {
 				// append filename in current comment
 				char *nc = r_str_newf ("%s ,(%s)", comment, fn);
-				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, nc);
+				r_meta_set_string (core->anal, cmt_type, addr, nc);
 				free (nc);
 			} else {
 				char *comment = r_str_newf (",(%s)", fn);
-				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, comment);
+				r_meta_set_string (core->anal, cmt_type, addr, comment);
 				free (comment);
 			}
 		} else {
-			char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+			char *comment = r_meta_get_string (core->anal, cmt_type, addr);
 			if (comment && *comment) {
 				char *cmtfile = r_str_between (comment, ",(", ")");
 				if (cmtfile && *cmtfile) {
@@ -361,7 +388,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		  {
 			  ut64 at = input[2]? r_num_math (core->num, input + 2): addr;
 			  char *comment = r_meta_get_string (
-					  core->anal, R_META_TYPE_COMMENT, at);
+					  core->anal, cmt_type, at);
 			  if (comment) {
 				  r_cons_println (comment);
 				  free (comment);
@@ -369,32 +396,32 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		  }
 		break;
 	case 0: // "CC"
-		r_meta_list (core->anal, R_META_TYPE_COMMENT, 0);
+		r_meta_list (core->anal, cmt_type, 0);
 		break;
 	case 'f': // "CCf"
 		switch (input[2]) {
 		case 'j': // "CCfj"
-			r_meta_list_at (core->anal, R_META_TYPE_COMMENT, 'j', core->offset);
+			r_meta_list_at (core->anal, cmt_type, 'j', core->offset);
 			break;
 		default:
-			r_meta_list_at (core->anal, R_META_TYPE_COMMENT, 'f', core->offset);
+			r_meta_list_at (core->anal, cmt_type, 'f', core->offset);
 			break;
 		}
 		break;
 	case 'j': // "CCj"
-		r_meta_list (core->anal, R_META_TYPE_COMMENT, 'j');
+		r_meta_list (core->anal, cmt_type, 'j');
 		break;
 	case '!':
 		{
 			char *out, *comment = r_meta_get_string (
-					core->anal, R_META_TYPE_COMMENT, addr);
+					core->anal, cmt_type, addr);
 			out = r_core_editor (core, NULL, comment);
 			if (out) {
-				//r_meta_add (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
-				r_core_cmdf (core, "CC-@0x%08"PFMT64x, addr);
+				//r_meta_add (core->anal->meta, cmt_type, addr, 0, out);
+				r_core_cmdf (core, "C%c-@0x%08"PFMT64x, cmt_type, addr);
 				//r_meta_del (core->anal->meta, input[0], addr, addr+1);
 				r_meta_set_string (core->anal,
-						R_META_TYPE_COMMENT, addr, out);
+						cmt_type, addr, out);
 				free (out);
 			}
 			free (comment);
@@ -404,7 +431,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	case ' ':
 		{
 		const char* newcomment = r_str_trim_ro (input + 2);
-		char *text, *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+		char *text, *comment = r_meta_get_string (core->anal, cmt_type, addr);
 		char *nc = strdup (newcomment);
 		r_str_unescape (nc);
 		if (comment) {
@@ -413,22 +440,22 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 				strcpy (text, comment);
 				strcat (text, " ");
 				strcat (text, nc);
-				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, text);
+				r_meta_set_string (core->anal, cmt_type, addr, text);
 				free (text);
 			} else {
 				r_sys_perror ("malloc");
 			}
 		} else {
-			r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, nc);
+			r_meta_set_string (core->anal, cmt_type, addr, nc);
 		}
 		free (nc);
 		}
 		break;
 	case '*':
-		r_meta_list (core->anal, R_META_TYPE_COMMENT, 1);
+		r_meta_list (core->anal, cmt_type, 1);
 		break;
 	case '-': // "CC-"
-		r_meta_del (core->anal, R_META_TYPE_COMMENT, core->offset, 1);
+		r_meta_del (core->anal, cmt_type, core->offset, 1);
 		break;
 	case 'u':
 		//
@@ -448,9 +475,9 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		}
 		if (newcomment) {
 			char *comment = r_meta_get_string (
-					core->anal, R_META_TYPE_COMMENT, addr);
+					core->anal, cmt_type, addr);
 			if (!comment || (comment && !strstr (comment, newcomment))) {
-				r_meta_set_string (core->anal, R_META_TYPE_COMMENT,
+				r_meta_set_string (core->anal, cmt_type,
 						addr, newcomment);
 			}
 			free (comment);
@@ -477,9 +504,9 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			if (input[3]) {
 				addr = r_num_math (core->num, input+3);
 				r_meta_del (core->anal,
-						R_META_TYPE_COMMENT,
+						cmt_type,
 						addr, 1);
-			} else eprintf ("Usage: CCa-[address]\n");
+			} else eprintf ("Usage: C%ca-[address]\n", cmt_type);
 			free (s);
 			return true;
 		}
@@ -488,26 +515,26 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		if (p) {
 			if (input[2]=='+') {
 				char *comment = r_meta_get_string (
-						core->anal, R_META_TYPE_COMMENT,
+						core->anal, cmt_type,
 						addr);
 				if (comment) {
 					char* text = r_str_newf ("%s\n%s", comment, p);
 					r_meta_add (core->anal,
-							R_META_TYPE_COMMENT,
+							cmt_type,
 							addr, addr+1, text);
 					free (text);
 				} else {
 					r_meta_add (core->anal,
-							R_META_TYPE_COMMENT,
+							cmt_type,
 							addr, addr+1, p);
 				}
 			} else {
 				r_meta_add (core->anal,
-						R_META_TYPE_COMMENT,
+						cmt_type,
 						addr, addr + 1, p);
 			}
 		} else {
-			eprintf ("Usage: CCa [address] [comment]\n");
+			eprintf ("Usage: C%ca [address] [comment]\n", cmt_type);
 		}
 		free (s);
 		return true;
@@ -569,6 +596,7 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 				/* fallthrough */
 			}
 		default:
+			eprintf ("deleting\n");
 			core->num->value = r_meta_del (core->anal,
 					input[0], addr, 1);
 			break;
@@ -943,8 +971,11 @@ static int cmd_meta(void *data, const char *input) {
 	case 'L': // "CL"
 		cmd_meta_lineinfo (core, input + 1);
 		break;
+	case 't':
+		cmd_meta_comment (core, input, R_META_TYPE_VARTYPE);
+		break;
 	case 'C': // "CC"
-		cmd_meta_comment (core, input);
+		cmd_meta_comment (core, input, R_META_TYPE_COMMENT);
 		break;
 	case 'r': /* Cr run command*/
 	case 'h': /* Ch comment */
