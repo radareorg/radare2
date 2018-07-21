@@ -1903,6 +1903,13 @@ static int cb_utf8_curvy(void *user, void *data) {
 	return true;
 }
 
+static int cb_dotted(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->cons->dotted_lines = node->i_value;
+	return true;
+}
+
 static int cb_zoombyte(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
@@ -2846,6 +2853,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("graph.gv.graph", "", "Graphviz global style attributes. (bgcolor=white)");
 	SETPREF ("graph.gv.current", "false", "Highlight the current node in graphviz graph.");
 	SETPREF ("graph.nodejmps", "true", "Enables shortcuts for every node.");
+	SETCB ("graph.dotted", "false", &cb_dotted, "Dotted lines for conditional jumps in graph");
 
 	/* hud */
 	SETPREF ("hud.path", "", "Set a custom path for the HUD file");

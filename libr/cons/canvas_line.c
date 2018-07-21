@@ -6,6 +6,7 @@
 
 #define useUtf8 (r_cons_singleton ()->use_utf8)
 #define useUtf8Curvy (r_cons_singleton ()->use_utf8_curvy)
+#define dotted (r_cons_singleton ()->dotted_lines)
 
 enum {
 	APEX_DOT = 0,
@@ -62,12 +63,12 @@ static void apply_line_style(RConsCanvas *c, int x, int y, int x2, int y2,
 		break;
 	case LINE_NOSYM_VERT:
 		if (G (x, y)) {
-			W (useUtf8 ? RUNECODESTR_LINE_VERT : "|");
+			W (useUtf8 ? (dotted ? "┊" : RUNECODESTR_LINE_VERT) : "|");
 		}
 		break;
 	case LINE_NOSYM_HORIZ:
 		if (G (x, y)) {
-			W (useUtf8 ? RUNECODESTR_LINE_HORIZ : "-");
+			W (useUtf8 ? (dotted ? "┄" : RUNECODESTR_LINE_HORIZ) : "-");
 		}
 		break;
 	case LINE_NONE:
@@ -278,7 +279,7 @@ static void draw_horizontal_line (RConsCanvas *c, int x, int y, int width, int s
 		W (l_corner);
 	}
 
-	const char *hline = useUtf8? RUNECODESTR_LINE_HORIZ : "-";
+	const char *hline = useUtf8 ? (dotted ? "┄" : RUNECODESTR_LINE_HORIZ) : "-";
 	r_cons_break_push (NULL, NULL);
 	for (i = x + 1; i < x + width - 1; i++) {
 		if (r_cons_is_breaked ()) {
@@ -304,7 +305,7 @@ static void draw_vertical_line (RConsCanvas *c, int x, int y, int height) {
 	if (x + c->sx > c->w) {
 		return;
 	}
-	const char *vline = useUtf8? RUNECODESTR_LINE_VERT : "|";
+	const char *vline = useUtf8 ? (dotted ? "┊" : RUNECODESTR_LINE_VERT) : "|";
 	r_cons_break_push (NULL, NULL);
 	for (i = y; i < y + height; i++) {
 		if (r_cons_is_breaked ()) {
