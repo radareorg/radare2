@@ -331,7 +331,12 @@ static int task_run(RCoreTask *task) {
 }
 
 static int task_run_thread(RThread *th) {
-	return task_run (th->user);
+	RCoreTask *task = (RCoreTask *)th->user;
+	int ret = task_run (task);
+	if (task->cons_context && task->cons_context->break_stack) {
+		r_cons_context_break_pop (task->cons_context, false);
+	}
+	return ret;
 }
 
 R_API void r_core_task_enqueue(RCore *core, RCoreTask *task) {
@@ -345,6 +350,9 @@ R_API void r_core_task_enqueue(RCore *core, RCoreTask *task) {
 	}
 	if (task->running_sem) {
 		r_th_sem_wait (task->running_sem);
+	}
+	if (task->cons_context) {
+		r_cons_context_break_push (task->cons_context, NULL, NULL, false);
 	}
 	r_list_append (core->tasks, task);
 	task->thread = r_th_new (task_run_thread, task, 0);
