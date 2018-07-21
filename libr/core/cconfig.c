@@ -2650,6 +2650,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("diff.levenstein", "false", "Use faster (and buggy) levenstein algorithm for buffer distance diffing");
 
 	/* dir */
+	SETI ("dir.depth", 10,  "Maximum depth when searching recursively for files");
 	SETCB ("dir.dbgsnap", ".", &cb_dbgsnap, "Path to session dump files");
 	{
 		char *path = r_str_newf (R_JOIN_2_PATHS ("%s", R2_SDB_MAGIC), r_config_get (core->config, "dir.prefix"));

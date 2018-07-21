@@ -1037,3 +1037,69 @@ R_API bool r_file_copy (const char *src, const char *dst) {
 	return rc == 0;
 #endif
 }
+
+static void recursive_search_glob (const char *path, const char *glob, RList* list, int depth) {
+	if (depth < 1) {
+		return;
+	}
+	char* file;
+	RListIter *iter;
+	RList *dir = r_sys_dir (path);
+	r_list_foreach (dir, iter, file) {
+		if (!strcmp (file, ".") || !strcmp (file, "..")) {
+			continue;
+		}
+		char *filename = malloc (strlen (path) + strlen (file) + 2);
+		strcpy (filename, path);
+		strcat (filename, file);
+		if (r_file_is_directory (filename)) {
+			strcat (filename, R_SYS_DIR);
+			recursive_search_glob (filename, glob, list, depth - 1);
+			free (filename);
+		} else if (r_str_glob (file, glob)) {
+			r_list_append (list, filename);
+		} else {
+			free (filename);
+		}
+	}
+	r_list_free (dir);
+}
+
+R_API RList* r_file_globsearch (char *globbed_path, int maxdepth) {
+	RList *files = r_list_newf (free);
+	char *glob = strchr (globbed_path, '*');
+	if (!glob) {
+		r_list_append (files, strdup (globbed_path));
+	} else {
+		*glob = '\0';
+		char *last_slash = (char *)r_str_last (globbed_path, R_SYS_DIR);
+		*glob = '*';
+		char *path, *glob_ptr;
+		if (last_slash) {
+			glob_ptr = last_slash + 1;
+			if (globbed_path[0] == '~') {
+				char *rpath = strndup (globbed_path + 2, last_slash - globbed_path - 1);
+				path = r_str_home (rpath);
+				free (rpath);
+			} else {
+				path = strndup (globbed_path, last_slash - globbed_path + 1);
+			}
+		} else {
+			glob_ptr = globbed_path;
+			path = r_str_newf (".%s", R_SYS_DIR);
+		}
+
+		if (!path) {
+			r_list_free (files);
+			return NULL;
+		}
+
+		if (*(glob + 1) == '*') {  // "**"
+			recursive_search_glob (path, glob_ptr, files, maxdepth);
+		} else {                   // "*"
+			recursive_search_glob (path, glob_ptr, files, 1);
+		}
+		free (path);
+	}
+	return files;
+}

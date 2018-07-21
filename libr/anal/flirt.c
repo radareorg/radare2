@@ -1471,12 +1471,12 @@ R_API void r_sign_flirt_scan(const RAnal *anal, const char *flirt_file) {
 	r_buf_free (flirt_buf);
 	if (node) {
 		if (!node_match_functions (anal, node)) {
-			eprintf ("Error while scanning the file\n");
+			eprintf ("Error while scanning the file %s\n", flirt_file);
 		}
 		node_free (node);
 		return;
 	} else {
-		eprintf ("We encountered an error while parsing the file. Sorry.\n");
+		eprintf ("We encountered an error while parsing the file %s. Sorry.\n", flirt_file);
 		return;
 	}
 }
