@@ -4888,7 +4888,7 @@ toro:
 		if (nbuf) {
 			free (nbuf);
 		}
-		if ((buf = nbuf = malloc (len))) {
+		if (!(buf = nbuf = malloc (len))) {
 			goto toro;
 		}
 		if (ds->tries > 0) {
