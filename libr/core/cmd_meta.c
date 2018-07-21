@@ -52,17 +52,17 @@ static const char *help_msg_CC[] = {
 
 static const char *help_msg_Ct[] = {
 	"Usage:", "Ct[-+!*au] [base64:..|str] @ addr", "",
-	"Ct", "", "list all comments in human friendly form",
-	"Ct*", "", "list all comments in r2 commands",
-	"Ct.", "", "show comment at current offset",
-	"Ct,", " [file]", "show or set comment file",
-	"Ct", " [text]", "append comment at current address",
-	"Ctf", "", "list comments in function",
-	"Ct+", " [text]", "append comment at current address",
-	"Ct!", "", "edit comment using cfg.editor (vim, ..)",
-	"Ct-", " @ cmt_addr", "remove comment at given address",
+	"Ct", "", "list all type analysis comments in human friendly form",
+	"Ct*", "", "list all type analysis comments in r2 commands",
+	"Ct.", "", "show type analysis comment at current offset",
+	"Ct,", " [file]", "show or set type analysis comment file",
+	"Ct", " [text]", "append type analysis comment at current address",
+	"Ctf", "", "list type analysis comments in function",
+	"Ct+", " [text]", "append type analysis comment at current address",
+	"Ct!", "", "edit type analysis comment using cfg.editor (vim, ..)",
+	"Ct-", " @ cmt_addr", "remove type analysis comment at given address",
 	"Ctu", " good boy @ addr", "add good boy comment at given address",
-	"Ctu", " base64:AA== @ addr", "add comment in base64",
+	"Ctu", " base64:AA== @ addr", "add type analysis comment in base64",
 	NULL
 };
 
