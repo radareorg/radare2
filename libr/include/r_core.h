@@ -752,6 +752,7 @@ R_API void r_core_task_sync_end(RCore *core);
 R_API void r_core_task_continue(RCoreTask *t);
 R_API void r_core_task_sleep_begin(RCoreTask *task);
 R_API void r_core_task_sleep_end(RCoreTask *task);
+R_API void r_core_task_break(RCore *core, int id);
 R_API int r_core_task_del(RCore *core, int id);
 R_API void r_core_task_del_all_done(RCore *core);
 R_API RCoreTask *r_core_task_self(RCore *core);

@@ -429,6 +429,19 @@ R_API RCoreTask *r_core_task_self (RCore *core) {
 	return core->current_task ? core->current_task : core->main_task;
 }
 
+R_API void r_core_task_break(RCore *core, int id) {
+	r_th_lock_enter (core->tasks_lock);
+	RCoreTask *task = r_core_task_get (core, id);
+	if (!task || task->state == R_CORE_TASK_STATE_DONE) {
+		r_th_lock_leave (core->tasks_lock);
+		return;
+	}
+	if (task->cons_context) {
+		r_cons_context_break (task->cons_context);
+	}
+	r_th_lock_leave (core->tasks_lock);
+}
+
 R_API int r_core_task_del (RCore *core, int id) {
 	RCoreTask *task;
 	RListIter *iter;

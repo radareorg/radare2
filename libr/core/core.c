@@ -2049,7 +2049,7 @@ R_API bool r_core_init(RCore *core) {
 	core->tasks_queue = r_list_new ();
 	core->oneshot_queue = r_list_newf (free);
 	core->oneshots_enqueued = 0;
-	core->tasks_lock = r_th_lock_new (false);
+	core->tasks_lock = r_th_lock_new (true);
 	core->tasks_running = 0;
 	core->oneshot_running = false;
 	core->main_task = r_core_task_new (core, false, NULL, NULL, NULL);
