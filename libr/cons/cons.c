@@ -213,48 +213,59 @@ R_API void r_cons_break_clear() {
 	I.context->breaked = false;
 }
 
-R_API void r_cons_break_push(RConsBreak cb, void *user) {
-	if (I.context->break_stack) {
-		//if we don't have any element in the stack start the signal
-		RConsBreakStack *b = R_NEW0 (RConsBreakStack);
-		if (!b) return;
-		if (r_stack_is_empty (I.context->break_stack)) {
+R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void *user, bool sig) {
+	if (!context->break_stack) {
+		return;
+	}
+
+	//if we don't have any element in the stack start the signal
+	RConsBreakStack *b = R_NEW0 (RConsBreakStack);
+	if (!b) return;
+	if (r_stack_is_empty (context->break_stack)) {
 #if __UNIX__ || __CYGWIN__
-			if (r_cons_context_is_main ()) {
-				signal (SIGINT, break_signal);
-			}
-#endif
-			I.context->breaked = false;
+		if (sig && r_cons_context_is_main ()) {
+			signal (SIGINT, break_signal);
 		}
-		//save the actual state
-		b->event_interrupt = I.context->event_interrupt;
-		b->event_interrupt_data = I.context->event_interrupt_data;
-		r_stack_push (I.context->break_stack, b);
-		//configure break
-		I.context->event_interrupt = cb;
-		I.context->event_interrupt_data = user;
+#endif
+		context->breaked = false;
+	}
+	//save the actual state
+	b->event_interrupt = context->event_interrupt;
+	b->event_interrupt_data = context->event_interrupt_data;
+	r_stack_push (context->break_stack, b);
+	//configure break
+	context->event_interrupt = cb;
+	context->event_interrupt_data = user;
+}
+
+R_API void r_cons_context_break_pop(RConsContext *context, bool sig) {
+	if (!context->break_stack) {
+		return;
+	}
+	//restore old state
+	RConsBreakStack *b = NULL;
+	b = r_stack_pop (context->break_stack);
+	if (b) {
+		context->event_interrupt = b->event_interrupt;
+		context->event_interrupt_data = b->event_interrupt_data;
+		break_stack_free (b);
+	} else {
+		//there is not more elements in the stack
+#if __UNIX__ || __CYGWIN__
+		if (sig && r_cons_context_is_main ()) {
+			signal (SIGINT, SIG_IGN);
+		}
+#endif
+		context->breaked = false;
 	}
 }
 
+R_API void r_cons_break_push(RConsBreak cb, void *user) {
+	r_cons_context_break_push (I.context, cb, user, true);
+}
+
 R_API void r_cons_break_pop() {
-	//restore old state
-	if (I.context->break_stack) {
-		RConsBreakStack *b = NULL;
-		b = r_stack_pop (I.context->break_stack);
-		if (b) {
-			I.context->event_interrupt = b->event_interrupt;
-			I.context->event_interrupt_data = b->event_interrupt_data;
-			break_stack_free (b);
-		} else {
-			//there is not more elements in the stack
-#if __UNIX__ || __CYGWIN__
-			if (r_cons_context_is_main ()) {
-				signal (SIGINT, SIG_IGN);
-			}
-#endif
-			I.context->breaked = false;
-		}
-	}
+	r_cons_context_break_pop (I.context, true);
 }
 
 R_API bool r_cons_is_breaked() {
