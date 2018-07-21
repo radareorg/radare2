@@ -1285,7 +1285,9 @@ static void task_test(RCore *core, int usecs) {
 		r_cons_printf ("task %d doing work %d/%d\n", task->id, i, 10);
 		eprintf ("task %d doing work %d/%d\n", task->id, i, 10);
 		if (usecs > 0) {
+			void *bed = r_cons_sleep_begin ();
 			r_sys_usleep (usecs);
+			r_cons_sleep_end (bed);
 		}
 	}
 	r_cons_break_pop ();
@@ -1305,6 +1307,17 @@ static int cmd_thread(void *data, const char *input) {
 			usecs = (int) r_num_math (core->num, input + 1);
 		}
 		task_test (core, usecs);
+		break;
+	}
+	case 'b': {
+		if (r_sandbox_enable (0)) {
+			eprintf ("This command is disabled in sandbox mode\n");
+			return 0;
+		}
+		int tid = r_num_math (core->num, input + 1);
+		if (tid) {
+			r_core_task_break (core, tid);
+		}
 		break;
 	}
 	case '&': { // "&&"
