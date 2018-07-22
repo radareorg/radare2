@@ -36,7 +36,6 @@ foreach file : sdb_files
     command: sdb_gen_cmd,
     depends: sdb_exe,
     build_by_default: true,
-    build_always: false,
     install: true,
     install_dir: join_paths(r2_sdb, 'opcodes')
   )
