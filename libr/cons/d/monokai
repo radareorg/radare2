@@ -36,6 +36,7 @@ ec linehl rgb:008
 ec ai.read rgb:66d
 ec ai.write rgb:d66
 ec ai.exec rgb:6d6
+ec ai.ascii rgb:a398e5
 ec graph.box rgb:66d9ef
 ec graph.box2 rgb:ef8d1a
 ec graph.box3 rgb:66d9ef
