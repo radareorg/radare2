@@ -653,6 +653,7 @@ typedef struct r_anal_t {
 	RAnalRange *limit;
 	RList *plugins;
 	Sdb *sdb_types;
+	Sdb *sdb_fmts;
 	Sdb *sdb_meta; // TODO: Future r_meta api
 	Sdb *sdb_zigns;
 
