@@ -48,3 +48,9 @@ ec graph.current rgb:fff
 ec func_var rgb:99a
 ec func_var_type rgb:df077e
 ec func_var_addr rgb:ababab
+
+ec ai.read rgb:be077e
+ec ai.write rgb:df077e
+ec ai.exec rgb:9dd600
+ec ai.seq rgb:9dd600
+ec ai.ascii rgb:d25032

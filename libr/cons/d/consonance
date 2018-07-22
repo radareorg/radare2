@@ -51,3 +51,9 @@ ec graph.traced rgb:090
 ec func_var rgb:fcc
 ec func_var_type rgb:f2a
 ec func_var_addr white
+
+ec ai.read rgb:fcc
+ec ai.write rgb:f2a
+ec ai.exec rgb:f2a
+ec ai.seq rgb:f0f
+ec ai.ascii rgb:fff

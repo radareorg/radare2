@@ -58,3 +58,9 @@ ec gui.border rgb:5fd700
 ec func_var rgb:64604f
 ec func_var_type rgb:00afd7
 ec func_var_addr rgb:afafaf
+
+ec ai.read rgb:a55f00
+ec ai.write rgb:d75f00
+ec ai.exec rgb:ff5f87
+ec ai.seq rgb:9dd600
+ec ai.ascii rgb:d25032

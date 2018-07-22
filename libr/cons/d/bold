@@ -60,3 +60,9 @@ ec linehl rgb:008
 ec func_var yellow . bold
 ec func_var_type blue . bold
 ec func_var_addr cyan . bold
+
+ec ai.read white . bold
+ec ai.write white . bold
+ec ai.exec red . bold
+ec ai.seq green . bold
+ec ai.ascii yellow . bold
