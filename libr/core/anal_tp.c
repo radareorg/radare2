@@ -150,55 +150,26 @@ static ut64 get_addr(Sdb *trace, const char *regname, int idx) {
 	return r_num_math (NULL, sdb_const_get (trace, query, 0));
 }
 
-static RList *parse_format(char *fmt) {
+static RList *parse_format(RCore *core, char *fmt) {
 	RList *ret = r_list_new();
+	Sdb *s = core->anal->sdb_fmts;
+	const char *spec = r_config_get (core->config, "anal.spec");
+	char arr[10] = {0};
 	char *ptr = strchr (fmt, '%');
-	char *type = NULL;
+	fmt[strlen(fmt) - 1] = '\0';
 	while (ptr) {
 		ptr += 1;
-		switch(ptr[0]) {
-		case 'c':
-			type = "char";
-			break;
-		case 'f':
-			type = "float";
-			break;
-		case 'g':
-			type = "double";
-			break;
-		case 'l':
-			switch (ptr [1]) {
-			case 'f': // "%lf"
-				type = "double";
-				break;
-			case 'u': // "%lu"
-				type = "unsigned long int";
-				break;
-			case 'l':
-				if (ptr [2] == 'u') { // "%llu"
-					type = "unsigned long long int";
-				} else {
-					type = "long long int";
-				}
-				break;
-			default:
-				type = "long int";
-			}
-			break;
-		case 'p':
-			type = "void *";
-			break;
-		case 's':
-			type = "const char *";
-			break;
-		case 'u':
-			type = "unsigned int";
-			break;
-		case 'd':
-		default:
-			type = "int";
+		// strip [width] specifier
+		while (IS_DIGIT (*ptr)) { ptr++; }
+		strncpy (arr, ptr, sizeof(arr));
+		char *tmp = arr;
+		while (tmp && (IS_LOWER (*tmp) || IS_UPPER (*tmp))) { tmp++; }
+		*tmp = '\0';
+		const char *query = sdb_fmt ("spec.%s.%s", spec, arr);
+		char *type = (char *) sdb_const_get (s, query, 0);
+		if (type) {
+			r_list_append (ret, type);
 		}
-		r_list_append (ret, type);
 		ptr = strchr (ptr, '%');
 	}
 	return ret;
@@ -299,7 +270,7 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const
 					if ((op->ptr && op->ptr != UT64_MAX) && !strcmp (name, "format")) {
 						RFlagItem *f = r_flag_get_i (core->flags, op->ptr);
 						if (f && !strncmp (f->name, "str", 3)) {
-							types = parse_format (f->realname);
+							types = parse_format (core, f->realname);
 							max += r_list_length (types);
 							format = true;
 						}

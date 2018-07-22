@@ -823,6 +823,11 @@ static int bin_info(RCore *r, int mode) {
 	}
 	r_core_anal_type_init (r);
 	r_core_anal_cc_init (r);
+	const char *dir_prefix = r_config_get (r->config, "dir.prefix");
+	char *spath = sdb_fmt ("%s/"R2_SDB_FCNSIGN"/spec.sdb", dir_prefix);
+	if (r_file_exists (spath)) {
+		sdb_concat_by_path (r->anal->sdb_fmts, spath);
+	}
 	return true;
 }
 

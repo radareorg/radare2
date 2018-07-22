@@ -12,6 +12,7 @@ F+= types-x86-macos-64
 F+= types-arm-ios-16
 F+= types-arm-ios-32
 F+= types-arm-ios-64
+F+= spec
 F+= cc-x86-64
 F+= cc-x86-32
 F+= cc-mips-32
