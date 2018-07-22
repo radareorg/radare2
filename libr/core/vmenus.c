@@ -481,6 +481,7 @@ static int sdbforcb (void *p, const char *k, const char *v) {
 	const char *pre = " ";
 	RCoreVisualTypes *vt = (RCoreVisualTypes*)p;
 	bool use_color = vt->core->print->flags & R_PRINT_FLAGS_COLOR;
+	char *color_sel = vt->core->cons->pal.prompt;
 	if (vt->optword) {
 		if (!strcmp (vt->type, "struct")) {
 			char *s = r_str_newf ("struct.%s.", vt->optword);
@@ -494,7 +495,7 @@ static int sdbforcb (void *p, const char *k, const char *v) {
 					pre = ">";
 				}
 				if (use_color && *pre=='>')
-					r_cons_printf (Color_YELLOW" %s %s  %s\n"
+					r_cons_printf ("%s %s %s  %s\n", color_sel,
 						Color_RESET, pre, k+strlen (s), v);
 				else
 					r_cons_printf (" %s %s  %s\n",
@@ -515,7 +516,7 @@ static int sdbforcb (void *p, const char *k, const char *v) {
 						pre = ">";
 					}
 					if (use_color && *pre=='>') {
-						r_cons_printf (Color_YELLOW" %s %s  %s\n"
+						r_cons_printf ("%s %s %s  %s\n", color_sel,
 							Color_RESET, pre, k, v);
 					} else {
 						r_cons_printf (" %s %s  %s\n",
@@ -537,8 +538,8 @@ static int sdbforcb (void *p, const char *k, const char *v) {
 				pre = ">";
 			}
 			if (use_color && *pre=='>') {
-				r_cons_printf (Color_YELLOW" %s pf %3s   %s\n"
-					Color_RESET,pre, fmt, k);
+				r_cons_printf ("%s %s pf %3s   %s\n"Color_RESET,
+					color_sel, pre, fmt, k);
 			} else {
 				r_cons_printf (" %s pf %3s   %s\n",
 					pre, fmt, k);
@@ -553,7 +554,7 @@ static int sdbforcb (void *p, const char *k, const char *v) {
 				pre = ">";
 			}
 			if (use_color && *pre == '>') {
-				r_cons_printf (Color_YELLOW" %s %s\n"Color_RESET,
+				r_cons_printf ("%s %s %s\n"Color_RESET, color_sel,
 					(vt->t_idx == vt->t_ctr)?
 					">":" ", k);
 			} else {
@@ -597,14 +598,17 @@ R_API int r_core_visual_types(RCore *core) {
 	for (;;) {
 		r_cons_clear00 ();
 		for (i = 0; opts[i]; i++) {
-			const char *fmt = use_color
-				? (h_opt == i)
-					? Color_BGREEN"[%s] "Color_RESET
-					: Color_GREEN" %s  "Color_RESET
-				: (h_opt == i)
-					? "[%s] "
-					: " %s  ";
-			r_cons_printf (fmt, opts[i]);
+			if (use_color) {
+				if (h_opt == i) {
+					r_cons_printf ("%s[%s]%s ", core->cons->pal.call, 
+						opts[i], Color_RESET);
+				} else {
+					r_cons_printf ("%s%s%s  ", core->cons->pal.other, 
+						opts[i], Color_RESET);
+				}
+			} else {
+				r_cons_printf (h_opt == i ? "[%s] " : " %s  ", opts[i]);
+			}
 		}
 		r_cons_newline ();
 		if (optword) {
