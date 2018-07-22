@@ -40,9 +40,12 @@ static int readline_callback(void *_a, const char *str) {
 			r_cons_print ("\n\n");
 		}
 		if (a->acode) {
-			xlen = strlen (a->acode->buf_hex);
+			xlen = R_MIN (strlen (a->acode->buf_hex), R_VISUAL_ASM_BUFSIZE - 2);
 			strcpy (a->codebuf, a->blockbuf);
-			memcpy (a->codebuf, a->acode->buf_hex, R_MIN (xlen, R_VISUAL_ASM_BUFSIZE - 1));
+			memcpy (a->codebuf, a->acode->buf_hex, xlen);
+			if (xlen >= strlen (a->blockbuf)) {
+				a->codebuf[xlen] = '\0';
+			}
 		}
 		{
 			int rows = 0;
