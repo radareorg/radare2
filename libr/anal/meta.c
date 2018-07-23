@@ -234,12 +234,12 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size) {
 		r_meta_del (a, R_META_TYPE_COMMENT, addr, size);
 		r_meta_del (a, R_META_TYPE_VARTYPE, addr, size);
 	}
-	meta_inrange_del (a, addr, size);
 	if (type == R_META_TYPE_COMMENT || type == R_META_TYPE_VARTYPE) {
 		snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, type, addr);
 	} else {
 		snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, addr);
 	}
+	meta_inrange_del (a, addr, size);
 	val = sdb_const_get (DB, key, 0);
 	if (val) {
 		if (type == R_META_TYPE_ANY) {
