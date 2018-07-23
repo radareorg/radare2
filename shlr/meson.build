@@ -11,7 +11,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     endif
 
     # NOTE: when you update CS_TIP, also update it in shlr/Makefile
-    CS_TIP = 'd03cab449dee0c882912e836d19da9a432c89cc2'
+    CS_TIP = '443f82ee74f8e0308d53f5833414c07cd866219f'
 
     message('Cloning capstone next branch, commit ' + CS_TIP + ', into ' + capstone_path)
     git_cmd = 'clone -b next https://github.com/aquynh/capstone.git @0@'.format(capstone_path)
