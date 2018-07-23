@@ -1390,9 +1390,9 @@ static int autocomplete(RLine *line) {
 				ADDARG("creg")
 				ADDARG("num")
 				ADDARG("mov")
-				ADDARG("func_var")
-				ADDARG("func_var_type")
-				ADDARG("func_var_addr")
+				ADDARG("func_arg")
+				ADDARG("func_arg_type")
+				ADDARG("func_arg_addr")
 				ADDARG("ai.read")
 				ADDARG("ai.write")
 				ADDARG("ai.exec")
@@ -1867,14 +1867,6 @@ static int mywrite(const ut8 *buf, int len) {
 	return r_cons_memcat ((const char *)buf, len);
 }
 
-static bool exists_var(RPrint *print, ut64 func_addr, char *str) {
-	char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", func_addr, 1, str);
-	if (sdb_const_get_len (((RCore*)(print->user))->anal->sdb_fcns, name_key, NULL, 0)) {
-		return true;
-	}
-	return false;
-}
-
 static bool r_core_anal_log(struct r_anal_t *anal, const char *msg) {
 	RCore *core = anal->user;
 	if (core->cfglog) {
@@ -2036,7 +2028,6 @@ R_API bool r_core_init(RCore *core) {
 	core->print->cb_printf = r_cons_printf;
 	core->print->cb_color = r_cons_rainbow_get;
 	core->print->write = mywrite;
-	core->print->exists_var = exists_var;
 	core->print->disasm = __disasm;
 	core->print->colorfor = (RPrintColorFor)r_core_anal_optype_colorfor;
 	core->print->hasrefs = (RPrintColorFor)r_core_anal_hasrefs;

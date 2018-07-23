@@ -7,8 +7,6 @@
 
 #define DFLT_ROWS 16
 
-#define IS_ALPHA(C) (((C) >= 'a' && (C) <= 'z') || ((C) >= 'A' && (C) <= 'Z'))
-
 static void nullprinter(const char *a, ...) { }
 static void libc_printf(const char *format, ...) {
 	va_list ap;
@@ -1631,24 +1629,11 @@ static bool issymbol(char c) {
 	}
 }
 
-static bool check_arg_name (RPrint *print, char *p, ut64 func_addr) {
-	if (func_addr && print->exists_var) {
-		int z;
-		for (z = 0; p[z] && (IS_ALPHA (p[z]) || IS_DIGIT (p[z]) || p[z] == '_'); z++);
-		char tmp = p[z];
-		p[z] = '\0';
-		bool ret = print->exists_var (print, func_addr, p);
-		p[z] = tmp;
-		return ret;
-	}
-	return false;
-}
-
 static bool ishexprefix(char *p) {
 	return (p[0] == '0' && p[1] == 'x');
 }
 
-R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr) {
+R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num, bool partial_reset) {
 	int i, j, k, is_mod, is_float = 0, is_arg = 0;
 	char *reset = partial_reset ? Color_RESET_NOBG : Color_RESET;
 	ut32 c_reset = strlen (reset);
@@ -1724,20 +1709,17 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 					eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
 					return strdup (p);
 				}
-
-				bool found_var = check_arg_name (print, p + i + 1, func_addr);
 				strcpy (o + j, reset);
 				j += strlen (reset);
 				o[j] = p[i];
 				if (!(p[i+1] == '$' || ((p[i+1] > '0') && (p[i+1] < '9')))) {
-					char *color = found_var ? print->cons->pal.func_var_type : reg;
-					ut32 color_len = strlen (color);
-					if (color_len + j + 10 >= COLORIZE_BUFSIZE) {
+					ut32 reg_len = strlen (reg);
+					if (reg_len + j + 10 >= COLORIZE_BUFSIZE) {
 						eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
 						return strdup (p);
 					}
-					strcpy (o + j + 1, color);
-					j += strlen (color);
+					strcpy (o + j + 1, reg);
+					j += strlen (reg);
 				}
 				continue;
 			}

@@ -58,13 +58,12 @@ static inline char *getformat (RCoreVisualTypes *vt, const char *k) {
 		sdb_fmt ("type.%s", k), 0);
 }
 
-static char *colorize_asm_string(RCore *core, const char *buf_asm, int optype, ut64 addr) {
+static char *colorize_asm_string(RCore *core, const char *buf_asm, int optype) {
 	char *tmp, *spacer = NULL;
 	char *source = (char*)buf_asm;
 	bool use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	const char *color_num = core->cons->pal.num;
 	const char *color_reg = core->cons->pal.reg;
-	RAnalFunction* fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
 
 	if (!use_color) {
 		return strdup (source);
@@ -74,8 +73,8 @@ static char *colorize_asm_string(RCore *core, const char *buf_asm, int optype, u
 	if (spacer) {
 		char *s1 = r_str_ndup (source, spacer - source);
 		char *s2 = strdup (spacer + 2);
-		char *scol1 = r_print_colorize_opcode (core->print, s1, color_reg, color_num, false, fcn ? fcn->addr : 0);
-		char *scol2 = r_print_colorize_opcode (core->print, s2, color_reg, color_num, false, fcn ? fcn->addr : 0);
+		char *scol1 = r_print_colorize_opcode (core->print, s1, color_reg, color_num, false);
+		char *scol2 = r_print_colorize_opcode (core->print, s2, color_reg, color_num, false);
 		char *source = r_str_newf ("%s||%s", r_str_get2 (scol1), r_str_get2 (scol2));
 		free (scol1);
 		free (scol2);
@@ -85,7 +84,7 @@ static char *colorize_asm_string(RCore *core, const char *buf_asm, int optype, u
 	}
 	char *res = strdup ("");
 	res = r_str_append (res, r_print_color_op_type (core->print, optype));
-	tmp = r_print_colorize_opcode (core->print, source, color_reg, color_num, false, fcn ? fcn->addr : 0);
+	tmp = r_print_colorize_opcode (core->print, source, color_reg, color_num, false);
 	res = r_str_append (res, tmp);
 	free (tmp);
 	return res;
@@ -157,7 +156,7 @@ R_API bool r_core_visual_esil(RCore *core) {
 			free (res);
 		}
 		{
-			char *op = colorize_asm_string (core, asmop.buf_asm, analopType, core->offset);
+			char *op = colorize_asm_string (core, asmop.buf_asm, analopType);
 			r_cons_printf (Color_RESET"asm: %s\n"Color_RESET, op);
 			free (op);
 		}
@@ -300,7 +299,7 @@ static bool edit_bits (RCore *core) {
 			r_cons_printf ("shift: >> %d << %d\n", word, (asmop.size * 8) - word - 1);
 		}
 		{
-			char *op = colorize_asm_string (core, asmop.buf_asm, analopType, core->offset);
+			char *op = colorize_asm_string (core, asmop.buf_asm, analopType);
 			r_cons_printf (Color_RESET"asm: %s\n"Color_RESET, op);
 			free (op);
 		}
