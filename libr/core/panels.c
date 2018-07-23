@@ -1574,13 +1574,15 @@ repeat:
 		r_core_cmd0 (core, "sn");
 		break;
 	case '.':
-		if (r_config_get_i (core->config, "cfg.debug")) {
-			r_core_cmd0 (core, "sr PC");
-			// r_core_seek (core, r_num_math (core->num, "entry0"), 1);
-		} else {
-			r_core_cmd0 (core, "s entry0; px");
+		if (panels->curnode != panels->menu_pos && !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
+			if (r_config_get_i (core->config, "cfg.debug")) {
+				r_core_cmd0 (core, "sr PC");
+			} else {
+				r_core_cmd0 (core, "s entry0; px");
+			}
+			panels->panel[panels->curnode].addr = core->offset;
+			panels->panel[panels->curnode].refresh = true;
 		}
-		setRefreshAll (panels);
 		break;
 	case ' ':
 	case '\r':
@@ -1594,7 +1596,7 @@ repeat:
 		r_cons_clear00 ();
 		r_cons_printf ("Visual Ascii Art Panels:\n"
 			" !    - run r2048 game\n"
-			//" .    - seek to PC or entrypoint\n"
+			" .    - seek to PC or entrypoint\n"
 			" :    - run r2 command in prompt\n"
 			" _    - start the hud input mode\n"
 			" |    - split the current panel vertically\n"
