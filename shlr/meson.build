@@ -3,15 +3,28 @@ capstone_dep = dependency('capstone', version: '>=3.0.4', required: false)
 if not capstone_dep.found() or not get_option('use_sys_capstone')
   message('Use bundled capstone')
 
-  res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("capstone"))')
+  capstone_path = join_paths(meson.current_build_dir(), 'capstone')
+  res = run_command(py3_exe, '-c', '__import__("sys").exit(__import__("os").path.exists("@0@"))'.format(capstone_path))
   if res.returncode() == 0
     if not git_exe.found()
       error('Cannot load capstone library. Either provide capstone in ./shlr/capstone or install git, so it can be downloaded')
     endif
 
-    message('Cloning capstone')
-    git_cmd = 'clone -b next --depth 10 https://github.com/aquynh/capstone.git capstone'
-    run_command(git_exe, git_cmd.split())
+    # NOTE: when you update CS_TIP, also update it in shlr/Makefile
+    CS_TIP = 'd03cab449dee0c882912e836d19da9a432c89cc2'
+
+    message('Cloning capstone next branch, commit ' + CS_TIP + ', into ' + capstone_path)
+    git_cmd = 'clone -b next https://github.com/aquynh/capstone.git @0@'.format(capstone_path)
+    clone_cmd = run_command(git_exe, git_cmd.split())
+    if clone_cmd.returncode() != 0
+      error('Cannot execute git clone command')
+    endif
+
+    reset_cmd_str = '-C @0@ reset --hard @1@'.format(capstone_path, CS_TIP)
+    reset_cmd = run_command(git_exe, reset_cmd_str.split())
+    if reset_cmd.returncode() != 0
+      error('Cannot execute git reset command')
+    endif
 
     patches_files = [
       'capstone-calloc.patch',
@@ -24,62 +37,71 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
 
     message('Patching capstone with radare\'s patches')
     foreach file : patches_files
-      patch_cmd = 'patch -p1 -d capstone -i ../capstone-patches/@0@'.format(file)
-      run_command(patch_cmd.split())
+      patch_path = join_paths(meson.current_source_dir(), 'capstone-patches', file)
+      patch_cmd_str = '-C @0@ apply -p1 @1@'.format(capstone_path, patch_path)
+      patch_cmd = run_command(git_exe, patch_cmd_str.split())
+      if patch_cmd.returncode() != 0
+        error('Cannot apply patch ' + file)
+      endif
     endforeach
   endif
 
-  cs_files = [
-    'capstone/arch/AArch64/AArch64BaseInfo.c',
-    'capstone/arch/AArch64/AArch64Disassembler.c',
-    'capstone/arch/AArch64/AArch64InstPrinter.c',
-    'capstone/arch/AArch64/AArch64Mapping.c',
-    'capstone/arch/AArch64/AArch64Module.c',
-    'capstone/arch/ARM/ARMDisassembler.c',
-    'capstone/arch/ARM/ARMInstPrinter.c',
-    'capstone/arch/ARM/ARMMapping.c',
-    'capstone/arch/ARM/ARMModule.c',
-    'capstone/arch/M68K/M68KDisassembler.c',
-    'capstone/arch/M68K/M68KInstPrinter.c',
-    'capstone/arch/M68K/M68KModule.c',
-    'capstone/arch/Mips/MipsDisassembler.c',
-    'capstone/arch/Mips/MipsInstPrinter.c',
-    'capstone/arch/Mips/MipsMapping.c',
-    'capstone/arch/Mips/MipsModule.c',
-    'capstone/arch/PowerPC/PPCDisassembler.c',
-    'capstone/arch/PowerPC/PPCInstPrinter.c',
-    'capstone/arch/PowerPC/PPCMapping.c',
-    'capstone/arch/PowerPC/PPCModule.c',
-    'capstone/arch/Sparc/SparcDisassembler.c',
-    'capstone/arch/Sparc/SparcInstPrinter.c',
-    'capstone/arch/Sparc/SparcMapping.c',
-    'capstone/arch/Sparc/SparcModule.c',
-    'capstone/arch/SystemZ/SystemZDisassembler.c',
-    'capstone/arch/SystemZ/SystemZInstPrinter.c',
-    'capstone/arch/SystemZ/SystemZMapping.c',
-    'capstone/arch/SystemZ/SystemZMCTargetDesc.c',
-    'capstone/arch/SystemZ/SystemZModule.c',
-    'capstone/arch/TMS320C64x/TMS320C64xDisassembler.c',
-    'capstone/arch/TMS320C64x/TMS320C64xInstPrinter.c',
-    'capstone/arch/TMS320C64x/TMS320C64xMapping.c',
-    'capstone/arch/TMS320C64x/TMS320C64xModule.c',
-    'capstone/arch/X86/X86ATTInstPrinter.c',
-    'capstone/arch/X86/X86Disassembler.c',
-    'capstone/arch/X86/X86DisassemblerDecoder.c',
-    'capstone/arch/X86/X86IntelInstPrinter.c',
-    'capstone/arch/X86/X86Mapping.c',
-    'capstone/arch/X86/X86Module.c',
-    'capstone/arch/XCore/XCoreDisassembler.c',
-    'capstone/arch/XCore/XCoreInstPrinter.c',
-    'capstone/arch/XCore/XCoreMapping.c',
-    'capstone/arch/XCore/XCoreModule.c',
-    'capstone/cs.c',
-    'capstone/MCInst.c',
-    'capstone/MCInstrDesc.c',
-    'capstone/MCRegisterInfo.c',
-    'capstone/SStream.c',
-    'capstone/utils.c',
+  rel_cs_files = [
+    'arch/AArch64/AArch64BaseInfo.c',
+    'arch/AArch64/AArch64Disassembler.c',
+    'arch/AArch64/AArch64InstPrinter.c',
+    'arch/AArch64/AArch64Mapping.c',
+    'arch/AArch64/AArch64Module.c',
+    'arch/ARM/ARMDisassembler.c',
+    'arch/ARM/ARMInstPrinter.c',
+    'arch/ARM/ARMMapping.c',
+    'arch/ARM/ARMModule.c',
+    'arch/M68K/M68KDisassembler.c',
+    'arch/M68K/M68KInstPrinter.c',
+    'arch/M68K/M68KModule.c',
+    'arch/Mips/MipsDisassembler.c',
+    'arch/Mips/MipsInstPrinter.c',
+    'arch/Mips/MipsMapping.c',
+    'arch/Mips/MipsModule.c',
+    'arch/PowerPC/PPCDisassembler.c',
+    'arch/PowerPC/PPCInstPrinter.c',
+    'arch/PowerPC/PPCMapping.c',
+    'arch/PowerPC/PPCModule.c',
+    'arch/Sparc/SparcDisassembler.c',
+    'arch/Sparc/SparcInstPrinter.c',
+    'arch/Sparc/SparcMapping.c',
+    'arch/Sparc/SparcModule.c',
+    'arch/SystemZ/SystemZDisassembler.c',
+    'arch/SystemZ/SystemZInstPrinter.c',
+    'arch/SystemZ/SystemZMapping.c',
+    'arch/SystemZ/SystemZMCTargetDesc.c',
+    'arch/SystemZ/SystemZModule.c',
+    'arch/TMS320C64x/TMS320C64xDisassembler.c',
+    'arch/TMS320C64x/TMS320C64xInstPrinter.c',
+    'arch/TMS320C64x/TMS320C64xMapping.c',
+    'arch/TMS320C64x/TMS320C64xModule.c',
+    'arch/X86/X86ATTInstPrinter.c',
+    'arch/X86/X86Disassembler.c',
+    'arch/X86/X86DisassemblerDecoder.c',
+    'arch/X86/X86IntelInstPrinter.c',
+    'arch/X86/X86Mapping.c',
+    'arch/X86/X86Module.c',
+    'arch/XCore/XCoreDisassembler.c',
+    'arch/XCore/XCoreInstPrinter.c',
+    'arch/XCore/XCoreMapping.c',
+    'arch/XCore/XCoreModule.c',
+    'cs.c',
+    'MCInst.c',
+    'MCInstrDesc.c',
+    'MCRegisterInfo.c',
+    'SStream.c',
+    'utils.c',
   ]
+
+  cs_files = []
+  foreach rel_cs_file : rel_cs_files
+    cs_files += [join_paths(capstone_path, rel_cs_file)]
+  endforeach
 
   capstone_includes = [platform_inc, include_directories('capstone/include')]
 
