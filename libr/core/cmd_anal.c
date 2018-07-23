@@ -5335,7 +5335,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							asmop.buf_asm, str, sizeof (str), core->print->big_endian);
 					if (has_color) {
 						buf_asm = r_print_colorize_opcode (core->print, str,
-							core->cons->pal.reg, core->cons->pal.num, false, fcn ? fcn->addr : 0);
+							core->cons->pal.reg, core->cons->pal.num, false);
 					} else {
 						buf_asm = r_str_new (str);
 					}
@@ -5364,7 +5364,6 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		RAnalRef *ref;
 		RListIter *iter;
 		char *space = strchr (input, ' ');
-		RAnalFunction * fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 
 		if (space) {
 			addr = r_num_math (core->num, space + 1);
@@ -5374,6 +5373,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		if (input[1] == '.') { // axf.
 			list = list_ = r_anal_xrefs_get_from (core->anal, addr);
 			if (!list) {
+				RAnalFunction * fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 				list = r_anal_fcn_get_refs (core->anal, fcn);
 			}
 		} else {
@@ -5412,7 +5412,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							asmop.buf_asm, str, sizeof (str), core->print->big_endian);
 					if (has_color) {
 						buf_asm = r_print_colorize_opcode (core->print, str,
-							core->cons->pal.reg, core->cons->pal.num, false, fcn ? fcn->addr : 0);
+							core->cons->pal.reg, core->cons->pal.num, false);
 					} else {
 						buf_asm = r_str_new (str);
 					}

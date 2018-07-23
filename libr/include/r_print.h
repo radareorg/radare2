@@ -85,13 +85,11 @@ typedef struct r_print_t {
 	RReg *reg;
 	RRegItem* (*get_register)(RReg *reg, const char *name, int type);
 	ut64 (*get_register_value)(RReg *reg, RRegItem *item);
-	bool (*exists_var)(struct r_print_t *print, ut64 func_addr, char *str);
 	ut64* lines_cache;
 	int lines_cache_sz;
 	int lines_abs;
 	bool esc_bslash;
 	const char *strconv_mode;
-	RList *vars;
 
 	// when true it uses row_offsets
 	bool calc_row_offsets;
@@ -176,7 +174,7 @@ R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 ma
 R_API char * r_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr);
 R_API void r_print_2bpp_row(RPrint *p, ut8 *buf);
 R_API void r_print_2bpp_tiles(RPrint *p, ut8 *buf, ut32 tiles);
-R_API char * r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr);
+R_API char * r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num, bool partial_reset);
 R_API const char * r_print_color_op_type(RPrint *p, ut64 anal_type);
 R_API void r_print_set_interrupted(int i);
 R_API void r_print_init_rowoffsets(RPrint *p);
