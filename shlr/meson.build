@@ -25,25 +25,6 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     if reset_cmd.returncode() != 0
       error('Cannot execute git reset command')
     endif
-
-    patches_files = [
-      'capstone-calloc.patch',
-      'fix-m68k-oob.patch',
-      'fix-underflow-tms.patch',
-      'fix-x86-16.patch',
-      'sparc-crash.patch',
-      'sstream-null.patch'
-    ]
-
-    message('Patching capstone with radare\'s patches')
-    foreach file : patches_files
-      patch_path = join_paths(meson.current_source_dir(), 'capstone-patches', file)
-      patch_cmd_str = '-C @0@ apply -p1 @1@'.format(capstone_path, patch_path)
-      patch_cmd = run_command(git_exe, patch_cmd_str.split())
-      if patch_cmd.returncode() != 0
-        error('Cannot apply patch ' + file)
-      endif
-    endforeach
   endif
 
   rel_cs_files = [

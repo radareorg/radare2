@@ -29,7 +29,7 @@ CS_BRA=master
 CS_TIP=782ea67e17a391ca0d3faafdc365b335a1a8930a
 # REVERT THIS COMMIT BECAUSE ITS WRONG
 CS_REV=
-CS_PATCHES=1
+CS_PATCHES=0
 endif
 
 .PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwindbg bochs
