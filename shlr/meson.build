@@ -126,8 +126,10 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     implicit_include_directories: false
   )
 
-  capstone_dep = declare_dependency(link_with: libr2capstone,
-				    include_directories: capstone_includes)
+  capstone_dep = declare_dependency(
+    link_with: libr2capstone,
+    include_directories: capstone_includes
+  )
 else
   message('Use system-provided capstone library')
 endif
@@ -161,12 +163,14 @@ sdb_files = [
 sdb_inc = [platform_inc, include_directories('sdb/src')]
 
 libr2sdb = static_library('r2sdb', sdb_files,
-			  include_directories: sdb_inc,
-			  implicit_include_directories: false
-			 )
+  include_directories: sdb_inc,
+  implicit_include_directories: false
+)
 
-sdb_dep = declare_dependency(link_with: libr2sdb,
-			     include_directories: sdb_inc)
+sdb_dep = declare_dependency(
+  link_with: libr2sdb,
+  include_directories: sdb_inc
+)
 
 
 # handle bochs dependency
@@ -181,8 +185,10 @@ libr2bochs = static_library('r2bochs', bochs_files,
   implicit_include_directories: false
 )
 
-bochs_dep = declare_dependency(link_with: libr2bochs,
-			       include_directories: bochs_inc)
+bochs_dep = declare_dependency(
+  link_with: libr2bochs,
+  include_directories: bochs_inc
+)
 
 
 # handle gdb dependency
@@ -200,15 +206,24 @@ gdb_files = [
   'gdb/src/gdbserver/core.c',
 ]
 
-gdb_inc = [platform_inc, include_directories('./gdb/include', './gdb/include/gdbclient', './gdb/include/gdbserver')]
+gdb_inc = [
+  platform_inc,
+  include_directories(
+    './gdb/include',
+    './gdb/include/gdbclient',
+    './gdb/include/gdbserver'
+  )
+]
 
 libr2gdb = static_library('r2gdb', gdb_files,
   include_directories: gdb_inc,
   implicit_include_directories: false
 )
 
-gdb_dep = declare_dependency(link_with: libr2gdb,
-			     include_directories: gdb_inc)
+gdb_dep = declare_dependency(
+  link_with: libr2gdb,
+  include_directories: gdb_inc
+)
 
 
 # handle java dependency
@@ -228,8 +243,10 @@ libr2java = static_library('r2java', java_files,
   implicit_include_directories: false
 )
 
-java_dep = declare_dependency(link_with: libr2java,
-			      include_directories: java_inc)
+java_dep = declare_dependency(
+  link_with: libr2java,
+  include_directories: java_inc
+)
 
 
 # handle qnx dependency
@@ -248,8 +265,10 @@ libr2qnx = static_library('r2qnx', qnx_files,
   implicit_include_directories: false
 )
 
-qnx_dep = declare_dependency(link_with: libr2qnx,
-			     include_directories: qnx_inc)
+qnx_dep = declare_dependency(
+  link_with: libr2qnx,
+  include_directories: qnx_inc
+)
 
 
 # handle tcc dependency (heavily modified version)
@@ -266,8 +285,10 @@ libr2tcc = static_library('r2tcc', tcc_files,
   implicit_include_directories: false
 )
 
-tcc_dep = declare_dependency(link_with: libr2tcc,
-			     include_directories: tcc_inc)
+tcc_dep = declare_dependency(
+  link_with: libr2tcc,
+  include_directories: tcc_inc
+)
 
 
 # handle spp dependency
@@ -283,8 +304,10 @@ libr2spp = static_library('r2spp', spp_files,
   implicit_include_directories: false
 )
 
-spp_dep = declare_dependency(link_with: libr2spp,
-			     include_directories: spp_inc)
+spp_dep = declare_dependency(
+  link_with: libr2spp,
+  include_directories: spp_inc
+)
 
 
 # handle lz4 dependency
@@ -302,8 +325,10 @@ if not lz4_dep.found() or not get_option('use_sys_lz4')
     implicit_include_directories: false
   )
 
-  lz4_dep = declare_dependency(link_with: libr2lz4,
-			      include_directories: lz4_inc)
+  lz4_dep = declare_dependency(
+    link_with: libr2lz4,
+    include_directories: lz4_inc
+  )
 else
   message('Use system-provided lz4 library')
 endif
@@ -335,12 +360,14 @@ if not zlib_dep.found() or not get_option('use_sys_zlib')
   zlib_inc = [platform_inc, include_directories('zip/zlib')]
 
   libr2zlib = static_library('r2zlib', zlib_files,
-			     include_directories: zlib_inc,
-			     implicit_include_directories: false
-			    )
+    include_directories: zlib_inc,
+    implicit_include_directories: false
+  )
 
-  zlib_dep = declare_dependency(link_with: libr2zlib,
-			        include_directories: zlib_inc)
+  zlib_dep = declare_dependency(
+    link_with: libr2zlib,
+    include_directories: zlib_inc
+  )
 else
   message('Use system-provided zlib library')
 endif
@@ -444,8 +471,10 @@ if not zip_dep.found() or not get_option('use_sys_zip')
     dependencies: zlib_dep
   )
 
-  zip_dep = declare_dependency(link_with: libr2zip,
-			      include_directories: zip_inc)
+  zip_dep = declare_dependency(
+    link_with: libr2zip,
+    include_directories: zip_inc
+  )
 else
   message('Use system-provided zip library')
 endif
@@ -512,8 +541,10 @@ libr2grub = static_library('r2grub', grub_files,
   implicit_include_directories: false
 )
 
-grub_dep = declare_dependency(link_with: libr2grub,
-			      include_directories: grub_inc)
+grub_dep = declare_dependency(
+  link_with: libr2grub,
+  include_directories: grub_inc
+)
 
 
 # handle windbg dependency
@@ -531,8 +562,10 @@ libr2windbg = static_library('r2windbg', windbg_files,
   implicit_include_directories: false
 )
 
-windbg_dep = declare_dependency(link_with: libr2windbg,
-			        include_directories: windbg_inc)
+windbg_dep = declare_dependency(
+  link_with: libr2windbg,
+  include_directories: windbg_inc
+)
 
 
 # handle ar dependency
@@ -547,5 +580,7 @@ libr2ar = static_library('r2ar', ar_files,
   implicit_include_directories: false
 )
 
-ar_dep = declare_dependency(link_with: libr2ar,
-			    include_directories: ar_inc)
+ar_dep = declare_dependency(
+  link_with: libr2ar,
+  include_directories: ar_inc
+)
