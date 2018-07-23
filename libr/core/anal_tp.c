@@ -161,7 +161,7 @@ static RList *parse_format(RCore *core, char *fmt) {
 		ptr += 1;
 		// strip [width] specifier
 		while (IS_DIGIT (*ptr)) { ptr++; }
-		strncpy (arr, ptr, sizeof(arr));
+		strncpy (arr, ptr, sizeof(arr) - 1);
 		char *tmp = arr;
 		while (tmp && (IS_LOWER (*tmp) || IS_UPPER (*tmp))) { tmp++; }
 		*tmp = '\0';
@@ -538,6 +538,9 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	r_list_foreach (list, iter, rvar) {
 		RAnalVar *lvar = get_link_var (anal, fcn->addr, rvar);
 		RRegItem *i = r_reg_index_get (anal->reg, rvar->delta);
+		if (!i) {
+			continue;
+		}
 		bool res = true;
 		const char *query = sdb_fmt ("fcn.0x%08"PFMT64x".arg.%s", fcn->addr, i->name);
 		char *type = (char *) sdb_const_get (anal->sdb_fcns, query, NULL);
