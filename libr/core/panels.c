@@ -1585,7 +1585,7 @@ repeat:
 	case ' ':
 	case '\r':
 	case '\n':
-		if (!handleMenu (core, panels->currentMenu[panels->currentMenuIndex])) {
+		if (panels->currentMenu && !handleMenu (core, panels->currentMenu[panels->currentMenuIndex])) {
 			goto exit;
 		}
 		doPanelsRefresh (core);
