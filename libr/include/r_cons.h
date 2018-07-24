@@ -449,7 +449,7 @@ typedef struct r_cons_t {
 	bool flush;
 	bool use_utf8; // use utf8 features
 	bool use_utf8_curvy; // use utf8 curved corners
-	bool dotted_lines; 
+	bool dotted_lines;
 	int linesleep;
 	int pagesize;
 	char *break_word;
