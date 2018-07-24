@@ -102,6 +102,7 @@ static const struct {const char* name; ut64 bit;} arch_bit_array[] = {
     {"i8080", R_SYS_ARCH_I8080},
     {"rar", R_SYS_ARCH_RAR},
     {"lm32", R_SYS_ARCH_LM32},
+    {"v850", R_SYS_ARCH_V850},
     {NULL, 0}
 };
 
