@@ -138,8 +138,9 @@ void parse_dbi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream_file)
 	stream_file_seek (stream_file, pos, 0);
 
 	size = dbi_stream->dbi_header.module_size;
-	dbiexhdr_data = (char *) malloc(size);
-	if (!dbiexhdr_data) return;
+	if (!(dbiexhdr_data = (char *) malloc(size))) {
+		return;
+	}
 	stream_file_read (stream_file, size, dbiexhdr_data);
 
 	dbi_stream->dbiexhdrs = r_list_new();

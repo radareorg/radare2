@@ -9,8 +9,7 @@ R_API RStrpool* r_strpool_new (int sz) {
 		return NULL;
 	}
 	if (sz < 1) sz = 1024;
-	p->str = malloc (sz);
-	if (!p->str) {
+	if (!(p->str = malloc (sz))) {
 		eprintf ("Malloc failed!\n");
 		free (p);
 		return NULL;
@@ -145,8 +144,7 @@ R_API char *r_strpool_slice (RStrpool *p, int index) {
 	}
 	idx = (size_t)(x - p->str);
 	len = p->len - idx;
-	o = malloc (len + 128);
-	if (!o) {
+	if (!(o = malloc (len + 128))) {
 		return NULL;
 	}
 	memcpy (o, x, len);

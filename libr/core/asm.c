@@ -429,8 +429,7 @@ R_API RList *r_core_asm_bwdisassemble(RCore *core, ut64 addr, int n, int len) {
 		return NULL;
 	}
 
-	buf = (ut8 *)malloc (len);
-	if (!buf) {
+	if (!(buf = (ut8 *)malloc (len))) {
 		r_list_free (hits);
 		return NULL;
 	} else if (!hits) {
@@ -479,7 +478,10 @@ static RList * r_core_asm_back_disassemble_all(RCore *core, ut64 addr, ut64 len,
 	RCoreAsmHit dummy_value;
 	RCoreAsmHit *hit = NULL;
 	RAsmOp op;
-	ut8 *buf = (ut8 *)malloc (len + extra_padding);
+	ut8 *buf;
+	if (!(buf = (ut8 *)malloc (len + extra_padding))) {
+		return NULL;
+	}
 	int current_instr_len = 0;
 	ut64 current_instr_addr = addr,
 		 current_buf_pos = len - 1,

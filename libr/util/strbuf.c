@@ -29,8 +29,7 @@ R_API bool r_strbuf_set(RStrBuf *sb, const char *s) {
 	if (l >= sizeof (sb->buf)) {
 		char *ptr = sb->ptr;
 		if (!ptr || l+1 > sb->ptrlen) {
-			ptr = malloc (l + 1);
-			if (!ptr) {
+			if (!(ptr = malloc (l + 1))) {
 				return false;
 			}
 			sb->ptrlen = l + 1;
@@ -57,8 +56,8 @@ R_API bool r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
 	va_copy (ap2, ap);
 	rc = vsnprintf (string, sizeof (string), fmt, ap);
 	if (rc >= sizeof (string)) {
-		char *p = malloc (rc + 1);
-		if (!p) {
+		char *p;
+		if (!(p = malloc (rc + 1))) {
 			ret = false;
 			goto done;
 		}
@@ -91,8 +90,7 @@ R_API int r_strbuf_append_n(RStrBuf *sb, const char *s, int l) {
 		char *p = sb->ptr;
 		bool allocated = true;
 		if (!sb->ptr) {
-			p = malloc (newlen);
-			if (p && sb->len > 0) {
+			if ((p = malloc (newlen)) && sb->len > 0) {
 				memcpy (p, sb->buf, sb->len);
 			}
 		} else if (sb->len + l + 1 > sb->ptrlen) {
@@ -119,8 +117,8 @@ R_API int r_strbuf_appendf(RStrBuf *sb, const char *fmt, ...) {
 	va_start (ap, fmt);
 	ret = vsnprintf (string, sizeof (string) - 1, fmt, ap);
 	if (ret >= sizeof (string)) {
-		char *p = malloc (ret + 2);
-		if (!p) {
+		char *p;
+		if (!(p = malloc (ret + 2))) {
 			va_end (ap);
 			return false;
 		}

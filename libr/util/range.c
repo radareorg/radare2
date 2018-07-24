@@ -49,8 +49,7 @@ R_API int r_range_set_data(RRange *rgs, ut64 addr, const ut8 *buf, int len) {
 	if (!r) {
 		return 0;
 	}
-	r->data = (ut8*)malloc (len);
-	if (!r->data) {
+	if (!(r->data = (ut8*)malloc (len))) {
 		return 0;
 	}
 	r->datalen = len;
@@ -89,8 +88,8 @@ R_API RRange *r_range_new_from_string(const char *string) {
 R_API int r_range_add_from_string(RRange *rgs, const char *string) {
 	ut64 addr, addr2;
 	int i, len = strlen (string) + 1;
-	char *str, *ostr = malloc (len);
-	if (!ostr) {
+	char *str, *ostr;
+	if (!(ostr = malloc (len))) {
 		return 0;
 	}
 	char *p = str = ostr;

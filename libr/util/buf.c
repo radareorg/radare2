@@ -378,8 +378,7 @@ R_API char *r_buf_to_string(RBuffer *b) {
 	if (!b) {
 		return strdup ("");
 	}
-	s = malloc (b->length + 1);
-	if (s) {
+	if ((s = malloc (b->length + 1))) {
 		memmove (s, b->buf, b->length);
 		s[b->length] = 0;
 	}
@@ -811,7 +810,9 @@ R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len) {
 		}
 		b->empty = 0;
 		free (b->buf);
-		b->buf = (ut8 *) malloc (addr + len);
+		if (!(b->buf = (ut8 *) malloc (addr + len))) {
+			return 0;
+		}
 	}
 	return r_buf_cpy (b, addr, b->buf, buf, len, true);
 }
@@ -868,8 +869,7 @@ R_API char *r_buf_free_to_string(RBuffer *b) {
 		p = r_buf_to_string (b);
 	} else {
 		r_buf_append_bytes (b, (const ut8*)"", 1);
-		p = malloc (b->length + 1);
-		if (!p) {
+		if (!(p = malloc (b->length + 1))) {
 			return NULL;
 		}
 		memmove (p, b->buf, b->length);
@@ -894,8 +894,8 @@ R_API bool r_buf_resize (RBuffer *b, ut64 newsize) {
 		sparse_limits (b->sparse, 0, &last_addr);
 		int buf_len = newsize - last_addr;
 		if (buf_len > 0) {
-			ut8 *buf = malloc (buf_len);
-			if (buf) {
+			ut8 *buf;
+			if ((buf = malloc (buf_len))) {
 				memset (buf, b->Oxff, buf_len);
 				sparse_write (b->sparse, last_addr, buf, buf_len);
 				free (buf);

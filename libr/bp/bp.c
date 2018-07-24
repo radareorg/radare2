@@ -178,8 +178,7 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 			return NULL;
 		}
 		if (obytes) {
-			b->obytes = malloc (size);
-			if (!b->obytes) {
+			if (!(b->obytes = malloc (size))) {
 				free (b->bbytes);
 				return NULL;
 			}

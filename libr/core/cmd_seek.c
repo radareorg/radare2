@@ -215,8 +215,7 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 
 	line_count = start_addr? 0: 1;
 	core->print->lines_cache[0] = start_addr? 0: baddr;
-	buf = malloc (bsz);
-	if (!buf) {
+	if (!(buf = malloc (bsz))) {
 		return -1;
 	}
 	r_cons_break_push (NULL, NULL);
@@ -553,8 +552,8 @@ static int cmd_seek(void *data, const char *input) {
 					if (!name) {
 						name = strdup ("");
 					}
-					ut64 *val = malloc (sizeof (ut64));
-					if (!val) {
+					ut64 *val;
+					if (!(val = malloc (sizeof (ut64)))) {
 						free (name);
 						break;
 					}

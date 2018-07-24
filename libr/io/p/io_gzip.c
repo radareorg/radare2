@@ -18,7 +18,7 @@ static inline ut32 _io_malloc_sz(RIODesc *desc) {
 	}
 	RIOGzip *mal = (RIOGzip*)desc->data;
 	return mal? mal->size: 0;
-} 
+}
 
 static inline void _io_malloc_set_sz(RIODesc *desc, ut32 sz) {
 	if (!desc) {
@@ -28,7 +28,7 @@ static inline void _io_malloc_set_sz(RIODesc *desc, ut32 sz) {
 	if (mal) {
 		mal->size = sz;
 	}
-} 
+}
 
 static inline ut8* _io_malloc_buf(RIODesc *desc) {
 	if (!desc) {
@@ -90,8 +90,7 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 count) {
 	if (_io_malloc_off (fd) > mallocsz) {
 		return false;
 	}
-	new_buf = malloc (count);
-	if (!new_buf) {
+	if (!(new_buf = malloc (count))) {
 		return -1;
 	}
 	memcpy (new_buf, _io_malloc_buf (fd), R_MIN (count, mallocsz));

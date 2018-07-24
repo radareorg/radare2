@@ -67,8 +67,7 @@ R_API int r_core_cmpwatch_add(RCore *core, ut64 addr, int size, const char *cmd)
 	cmpw->size = size;
 	snprintf (cmpw->cmd, sizeof (cmpw->cmd), "%s", cmd);
 	cmpw->odata = NULL;
-	cmpw->ndata = malloc (size);
-	if (!cmpw->ndata) {
+	if (!(cmpw->ndata = malloc (size))) {
 		free (cmpw);
 		return false;
 	}
@@ -124,8 +123,7 @@ R_API int r_core_cmpwatch_update(RCore *core, ut64 addr) {
 	r_list_foreach (core->watchers, iter, w) {
 		free (w->odata);
 		w->odata = w->ndata;
-		w->ndata = malloc (w->size);
-		if (!w->ndata) {
+		if (!(w->ndata = malloc (w->size))) {
 			return false;
 		}
 		r_io_read_at (core->io, w->addr, w->ndata, w->size);
@@ -204,12 +202,10 @@ static int radare_compare_unified(RCore *core, ut64 of, ut64 od, int len) {
 	if (len < 1) {
 		return false;
 	}
-	f = malloc (len);
-	if (!f) {
+	if (!(f = malloc (len))) {
 		return false;
 	}
-	d = malloc (len);
-	if (!d) {
+	if (!(d = malloc (len))) {
 		free (f);
 		return false;
 	}
@@ -548,8 +544,7 @@ static int cmd_cmp(void *data, const char *input) {
 		free (filled);
 		break;
 	case 'X':
-		buf = malloc (core->blocksize);
-		if (buf) {
+		if ((buf = malloc (core->blocksize))) {
 			if (!r_io_read_at (core->io, r_num_math (core->num,
 					    input + 1), buf, core->blocksize)) {
 				eprintf ("Cannot read hexdump\n");
@@ -570,8 +565,7 @@ static int cmd_cmp(void *data, const char *input) {
 			eprintf ("Cannot open file '%s'\n", input + 2);
 			return false;
 		}
-		buf = (ut8 *) malloc (core->blocksize);
-		if (buf) {
+		if ((buf = (ut8 *) malloc (core->blocksize))) {
 			if (fread (buf, 1, core->blocksize, fd) < 1) {
 				eprintf ("Cannot read file %s\n", input + 2);
 			} else {
@@ -657,8 +651,8 @@ static int cmd_cmp(void *data, const char *input) {
 				}
 			}
 			int col = core->cons->columns > 123;
-			ut8 *b = malloc (core->blocksize);
-			if (b != NULL) {
+			ut8 *b;
+			if ((b = malloc (core->blocksize))) {
 				memset (b, 0xff, core->blocksize);
 				r_io_read_at (core->io, addr, b, core->blocksize);
 				r_print_hexdiff (core->print, core->offset, block,

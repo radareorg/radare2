@@ -221,20 +221,19 @@ R_API RConsCanvas *r_cons_canvas_new(int w, int h) {
 	c->color = 0;
 	c->sx = 0;
 	c->sy = 0;
-	c->b = malloc (sizeof *c->b * h);
-	if (!c->b) {
+	if (!(c->b = malloc (sizeof *c->b * h))) {
 		goto beach;
 	}
-	c->blen = malloc (sizeof *c->blen * h);
-	if (!c->blen) {
+	if (!(c->blen = malloc (sizeof *c->blen * h))) {
 		goto beach;
 	}
-	c->bsize = malloc (sizeof *c->bsize * h);
-	if (!c->bsize) {
+	if (!(c->bsize = malloc (sizeof *c->bsize * h))) {
 		goto beach;
 	}
 	for (i = 0; i < h; i++) {
-		c->b[i] = malloc (w + 1);
+		if (!(c->b[i] = malloc (w + 1))) {
+			goto beach;
+		}
 		c->blen[i] = w;
 		c->bsize[i] = w + 1;
 		if (!c->b[i]) {
@@ -306,7 +305,7 @@ static int expand_line (RConsCanvas *c, int real_len, int utf8_len) {
 	if (padding) {
 		if (padding > 0 && c->blen[c->y] + padding > c->bsize[c->y]) {
 			int newsize = R_MAX (c->bsize[c->y] * 1.5, c->blen[c->y] + padding);
-			char * newline = realloc (c->b[c->y], sizeof (*c->b[c->y])*(newsize)); 
+			char * newline = realloc (c->b[c->y], sizeof (*c->b[c->y])*(newsize));
 			if (!newline) {
 				return false;
 			}
@@ -316,8 +315,8 @@ static int expand_line (RConsCanvas *c, int real_len, int utf8_len) {
 		}
 		int size = R_MAX (c->blen[c->y] - c->x - utf8_len, 0);
 		char *start = c->b[c->y] + c->x + utf8_len;
-		char *tmp = malloc (size);
-		if (!tmp) {
+		char *tmp;
+		if (!(tmp = malloc (size))) {
 			return false;
 		}
 		memcpy (tmp, start, size);
@@ -367,7 +366,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 		}
 
 		int real_len = r_str_nlen (s_part, slen);
-		int utf8_len = utf8len_fixed (s_part, slen); 
+		int utf8_len = utf8len_fixed (s_part, slen);
 
 		if (!expand_line (c, real_len, utf8_len)) {
 			break;
@@ -511,6 +510,10 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 		} else {
 			newline = malloc ((w + 1));
 		}
+		if (!newline) {
+			r_cons_canvas_free(c);
+			return false;
+		}
 		c->blen[i] = w;
 		c->bsize[i] = w + 1;
 		if (!newline) {
@@ -561,8 +564,7 @@ R_API void r_cons_canvas_box(RConsCanvas *c, int x, int y, int w, int h, const c
 	if (!c->color) {
 		c->attr = Color_RESET;
 	}
-	row = malloc (w + 1);
-	if (!row) {
+	if (!(row = malloc (w + 1))) {
 		return;
 	}
 	row[0] = roundcorners? '.': tl_corner[0];
@@ -607,8 +609,8 @@ R_API void r_cons_canvas_fill(RConsCanvas *c, int x, int y, int w, int h, char c
 	if (w < 0) {
 		return;
 	}
-	char *row = malloc (w + 1);
-	if (!row) {
+	char *row;
+	if (!(row = malloc (w + 1))) {
 		return;
 	}
 	memset (row, ch, w);

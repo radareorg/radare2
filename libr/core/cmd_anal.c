@@ -3915,8 +3915,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 		buf_sz = maxopsize;
 	}
 	addr_end = addr + buf_sz;
-	buf = malloc (buf_sz);
-	if (!buf) {
+	if (!(buf = malloc (buf_sz))) {
 		return false;
 	}
 	(void)r_io_read_at (core->io, addr, (ut8 *)buf, buf_sz);
@@ -4068,8 +4067,7 @@ static void cmd_aespc(RCore *core, ut64 addr, int off) {
 			return;
 		}
 	}
-	buf = malloc (bsize);
-	if (!buf) {
+	if (!(buf = malloc (bsize))) {
 		eprintf ("Cannot allocate %d byte(s)\n", bsize);
 		free (buf);
 		return;
@@ -4794,9 +4792,15 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 	if (addr_end - addr > UT32_MAX) {
 		return;
 	}
-	ut8 *buf = malloc (bsz);
-	ut8 *block0 = calloc (1, bsz);
-	ut8 *block1 = malloc (bsz);
+	ut8 *buf, *block0, *block1;
+	buf = block0 = block1 = NULL;
+	if (!(buf = malloc (bsz))) {
+		return;
+	}
+	block0 = calloc (1, bsz);
+	if (!(block1 = malloc (bsz))) {
+		return;
+	}
 	if (!buf || !block0 || !block1) {
 		eprintf ("Error: cannot allocate buf or block\n");
 		free (buf);
@@ -5878,8 +5882,8 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 		r_agraph_foreach (core->graph, agraph_print_node, NULL);
 		r_agraph_foreach_edge (core->graph, agraph_print_edge, NULL);
 		break;
-	case 'J': 
-	case 'j': 
+	case 'J':
+	case 'j':
 		r_cons_printf ("{\"nodes\":[");
 		r_agraph_print_json (core->graph);
 		r_cons_printf ("]}\n");
@@ -6301,7 +6305,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 	case 'v': // "agv" alias for "agfv"
 		r_core_cmdf (core, "agfv%s", input + 1);
 		break;
-	case 'w':// "agw" 
+	case 'w':// "agw"
 		if (r_config_get_i (core->config, "graph.web")) {
 			r_core_cmd0 (core, "=H /graph/");
 		} else {
@@ -7019,8 +7023,8 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case '8':
 		{
-			ut8 *buf = malloc (strlen (input) + 1);
-			if (buf) {
+			ut8 *buf;
+			if ((buf = malloc (strlen (input) + 1))) {
 				int len = r_hex_str2bin (input + 1, buf);
 				if (len > 0) {
 					core_anal_bytes (core, buf, len, 0, input[1]);

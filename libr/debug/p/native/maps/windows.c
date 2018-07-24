@@ -143,8 +143,7 @@ static int set_mod_inf(HANDLE h_proc, RDebugMap *map, RWinModInfo *mod) {
 			mod->sect_count = nt_hdrs->FileHeader.NumberOfSections;
 			sect_hdr = (IMAGE_SECTION_HEADER *)((char *)nt_hdrs + sizeof (IMAGE_NT_HEADERS));
 		}
-		mod->sect_hdr = (IMAGE_SECTION_HEADER *)malloc (sizeof (IMAGE_SECTION_HEADER) * mod->sect_count);
-		if (!mod->sect_hdr) {
+		if (!(mod->sect_hdr = (IMAGE_SECTION_HEADER *)malloc (sizeof (IMAGE_SECTION_HEADER) * mod->sect_count))) {
 			perror ("malloc set_mod_inf()");
 			goto err_set_mod_info;
 		}
@@ -172,7 +171,7 @@ static void proc_mem_img(HANDLE h_proc, RList *map_list, RList *mod_list, RWinMo
 				mod->map = map;
 				set_mod_inf (h_proc, map, mod);
 				break;
-			}	
+			}
 		}
 	}
 	if (mod->map && mod->sect_hdr && mod->sect_count > 0) {
@@ -254,7 +253,7 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 	/* get process modules list */
 	mod_list = w32_dbg_modules (dbg);
 	/* process memory map */
-	while (cur_addr < si.lpMaximumApplicationAddress && 
+	while (cur_addr < si.lpMaximumApplicationAddress &&
 		VirtualQueryEx (h_proc, cur_addr, &mbi, sizeof (mbi)) != 0) {
 		if (mbi.State != MEM_FREE) {
 			switch (mbi.Type) {
@@ -272,6 +271,6 @@ static RList *w32_dbg_maps(RDebug *dbg) {
 	}
 err_w32_dbg_maps:
 	free (mod_inf.sect_hdr);
-	r_list_free (mod_list);		
+	r_list_free (mod_list);
 	return map_list;
 }

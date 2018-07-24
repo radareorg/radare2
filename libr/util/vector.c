@@ -45,8 +45,7 @@ R_API RVector *r_vector_clone(RVector *vec) {
 		if (!vec->len) {
 			ret->a = NULL;
 		} else {
-			ret->a = malloc (sizeof (void *) * vec->len);
-			if (!ret->a) {
+			if (!(ret->a = malloc (sizeof (void *) * vec->len))) {
 				R_FREE (ret);
 			} else {
 				memcpy (ret->a, vec->a, sizeof (void *) * vec->len);

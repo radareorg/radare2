@@ -74,9 +74,8 @@ R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size,
 	data->metadata = metadata;
 	data->loaded = 0;
 	// TODO: USE RBuffer *buf inside RBinXtrData*
-	data->buffer = malloc (size + 1);
-	// data->laddr = 0; /// XXX
-	if (!data->buffer) {
+	if (!(data->buffer = malloc (size + 1))) {
+		// data->laddr = 0; /// XXX
 		free (data);
 		return NULL;
 	}
@@ -327,7 +326,7 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 			res = false;
 			goto error;
 		}
-		// OMG NOES we want to use io, not this shit. 
+		// OMG NOES we want to use io, not this shit.
 		buf_bytes = calloc (1, sz + 1);
 		if (!buf_bytes) {
 			iob->fd_close (iob->io, tfd);

@@ -320,7 +320,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 			r_cons_printf ("%03u 0x%08"PFMT64x" 0x%08"
 				PFMT64x" %3u %3u "
 				"(%s) %5s %s",
-				string->ordinal, paddr, vaddr, 
+				string->ordinal, paddr, vaddr,
 				string->length, string->size,
 				section_name, type_string, str);
 #endif
@@ -2117,7 +2117,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	if (!dup_chk_ht) {
 		return false;
 	}
-	
+
 	if (chksum && *chksum == '.') {
 		printHere = true;
 	}
@@ -2243,8 +2243,8 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		} else if (IS_MODE_SIMPLE (mode)) {
 			char *hashstr = NULL;
 			if (chksum) {
-				ut8 *data = malloc (section->size);
-				if (!data) {
+				ut8 *data;
+				if (!(data = malloc (section->size))) {
 					goto out;
 				}
 				ut32 datalen = section->size;
@@ -2263,8 +2263,8 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		} else if (IS_MODE_JSON (mode)) {
 			char *hashstr = NULL;
 			if (chksum) {
-				ut8 *data = malloc (section->size);
-				if (!data) {
+				ut8 *data;
+				if (!(data = malloc (section->size))) {
 					goto out;
 				}
 				ut32 datalen = section->size;
@@ -2343,8 +2343,8 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		} else {
 			char *hashstr = NULL, str[128];
 			if (chksum) {
-				ut8 *data = malloc (section->size);
-				if (!data) {
+				ut8 *data;
+				if (!(data = malloc (section->size))) {
 					goto out;
 				}
 				ut32 datalen = section->size;
@@ -3356,7 +3356,7 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 	if (filter && filter->name) {
 		name = filter->name;
 	}
-	
+
 	// use our internal values for va
 	va = va ? VA_TRUE : VA_FALSE;
 #if 0

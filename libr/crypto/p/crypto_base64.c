@@ -22,8 +22,7 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	ut8 *obuf = NULL;
 	if (cry->dir == 0) {
 		olen = ((len + 2) / 3 ) * 4;
-		obuf = malloc (olen + 1);
-		if (!obuf) {
+		if (!(obuf = malloc (olen + 1))) {
 			return false;
 		}
 		r_base64_encode ((char *)obuf, (const ut8 *)buf, len);
@@ -32,8 +31,7 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 		if (len > 0) {
 			olen -= (buf[len-1] == '=') ? ((buf[len-2] == '=') ? 2 : 1) : 0;
 		}
-		obuf = malloc (olen + 1);
-		if (!obuf) {
+		if (!(obuf = malloc (olen + 1))) {
 			return false;
 		}
 		olen = r_base64_decode (obuf, (const char *)buf, len);

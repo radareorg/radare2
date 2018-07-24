@@ -24,8 +24,8 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	if (!cry || !buf || len < 1) {
 		return false;
 	}
-	ut8 *obuf = malloc (olen);
-	if (!obuf) {
+	ut8 *obuf;
+	if (!(obuf = malloc (olen))) {
 		return false;
 	}
 	if (cry->dir == 0) {

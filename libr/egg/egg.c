@@ -198,8 +198,9 @@ R_API void r_egg_math (REgg *egg) {//, char eq, const char *vs, char type, const
 R_API int r_egg_raw(REgg *egg, const ut8 *b, int len) {
 	char *out;
 	int outlen = len*2; // two hexadecimal digits per byte
-	out = malloc (outlen+1);
-	if (!out) return false;
+	if (!(out = malloc (outlen + 1))) {
+		return false;
+	}
 	r_hex_bin2str (b, len, out);
 	r_buf_append_bytes (egg->buf, (const ut8*)".hex ", 5);
 	r_buf_append_bytes (egg->buf, (const ut8*)out, outlen);
@@ -211,8 +212,9 @@ R_API int r_egg_raw(REgg *egg, const ut8 *b, int len) {
 static int r_egg_raw_prepend(REgg *egg, const ut8 *b, int len) {
 	char *out;
 	int outlen = len*2; // two hexadecimal digits per byte
-	out = malloc (outlen+1);
-	if (!out) return false;
+	if (!(out = malloc (outlen + 1))) {
+		return false;
+	}
 	r_hex_bin2str (b, len, out);
 	r_buf_prepend_bytes (egg->buf, (const ut8*)"\n", 1);
 	r_buf_prepend_bytes (egg->buf, (const ut8*)out, outlen);
@@ -403,8 +405,7 @@ R_API int r_egg_padding (REgg *egg, const char *pad) {
 			return false;
 		}
 
-		buf = malloc (number);
-		if (!buf) {
+		if (!(buf = malloc (number))) {
 			free (o);
 			return false;
 		}

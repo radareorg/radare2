@@ -622,7 +622,7 @@ int xnu_get_vmmap_entries_for_pid (pid_t pid) {
 		if (info.is_submap) {
 			nesting_depth++;
 		} else {
-			address += size; 
+			address += size;
 			n++;
 		}
 	}
@@ -636,7 +636,7 @@ int xnu_get_vmmap_entries_for_pid (pid_t pid) {
 	segment_count * segment_command_sz + thread_count * \
 	sizeof (struct thread_command) + tstate_size * thread_count
 
-static void get_mach_header_sizes(size_t *mach_header_sz, 
+static void get_mach_header_sizes(size_t *mach_header_sz,
 									size_t *segment_command_sz) {
 #if __ppc64__ || __x86_64__
 	*mach_header_sz = sizeof(struct mach_header_64);
@@ -686,11 +686,11 @@ static void xnu_build_corefile_header (vm_offset_t header,
 	mh64 = (struct mach_header_64 *)header;
 	mh64->magic = MH_MAGIC_64;
 	mh64->cputype = xnu_get_cpu_type (pid);
-	mh64->cpusubtype = xnu_get_cpu_subtype (); 
+	mh64->cpusubtype = xnu_get_cpu_subtype ();
 	mh64->filetype = MH_CORE;
 	mh64->ncmds = segment_count + thread_count;
 	mh64->sizeofcmds = command_size;
-	mh64->reserved = 0; // 8-byte alignment 
+	mh64->reserved = 0; // 8-byte alignment
 #elif __i386__ || __ppc__ || __POWERPC__
 	struct mach_header *mh;
 	mh = (struct mach_header *)header;
@@ -745,7 +745,7 @@ static int xnu_write_mem_maps_to_buffer (RBuffer *buffer, RList *mem_maps, int s
 	struct segment_command *sc;
 #endif
 	r_list_foreach_safe (mem_maps, iter, iter2, curr_map) {
-		eprintf ("Writing section from 0x%"PFMT64x" to 0x%"PFMT64x" (%"PFMT64d")\n", 
+		eprintf ("Writing section from 0x%"PFMT64x" to 0x%"PFMT64x" (%"PFMT64d")\n",
 			curr_map->addr, curr_map->addr_end, curr_map->size);
 
 		vm_map_offset_t vmoffset = curr_map->addr;
@@ -832,7 +832,7 @@ cleanup:
 	return error;
 }
 
-static int xnu_get_thread_status (register thread_t thread, int flavor, 
+static int xnu_get_thread_status (register thread_t thread, int flavor,
 	thread_state_t tstate, mach_msg_type_number_t *count) {
 	return thread_get_state (thread, flavor, tstate, count);
 }
@@ -925,7 +925,7 @@ bool xnu_generate_corefile (RDebug *dbg, RBuffer *dest) {
 			(flavors[i].count * sizeof(int));
 	}
 
-	command_size = COMMAND_SIZE (segment_count,segment_command_sz, 
+	command_size = COMMAND_SIZE (segment_count,segment_command_sz,
 		r_list_length (threads_list), tstate_size);
 	header_size = command_size + mach_header_sz; // XXX: Add here the round_page() ?
 	header = (vm_offset_t)calloc (1, header_size);
@@ -986,8 +986,7 @@ RDebugPid *xnu_get_pid (int pid) {
 	uid = uidFromPid (pid);
 
 	/* Allocate space for the arguments. */
-	procargs = (char *)malloc (argmax);
-	if (!procargs) {
+	if (!(procargs = (char *)malloc (argmax))) {
 		eprintf ("getcmdargs(): insufficient memory for procargs %d\n",
 			(int)(size_t)argmax);
 		return NULL;
@@ -1411,7 +1410,7 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 				}
 			}
 		}
-		r_list_append (list, m2);	
+		r_list_append (list, m2);
 	}
 	r_list_sort (list, cmp);
  	r_list_free (modules);

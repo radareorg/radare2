@@ -44,9 +44,9 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	int ret;
 	if (!buf_global)
 		return 0;
-	tmp = malloc (strlen (format)+strlen (buf_global)+2);
-	if (!tmp)
+	if (!(tmp = malloc (strlen (format)+strlen (buf_global)+2))) {
 		return 0;
+	}
 	va_start (ap, format);
 	sprintf (tmp, "%s%s", buf_global, format);
 	ret = vsprintf (buf_global, tmp, ap);

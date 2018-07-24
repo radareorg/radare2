@@ -212,8 +212,7 @@ RX509Certificate * r_x509_parse_certificate (RASN1Object *object) {
 	if (!object) {
 		return NULL;
 	}
-	certificate = (RX509Certificate*) malloc (sizeof (RX509Certificate));
-	if (!certificate) {
+	if (!(certificate = (RX509Certificate*) malloc (sizeof (RX509Certificate)))) {
 		r_asn1_free_object (object);
 		return NULL;
 	}
@@ -268,8 +267,7 @@ RX509CRLEntry *r_x509_parse_crlentry (RASN1Object *object) {
 	if (!object || object->list.length != 2) {
 		return NULL;
 	}
-	entry = (RX509CRLEntry *) malloc (sizeof (RX509CRLEntry));
-	if (!entry) {
+	if (!(entry = (RX509CRLEntry *) malloc (sizeof (RX509CRLEntry)))) {
 		return NULL;
 	}
 	entry->userCertificate = r_asn1_create_binary (object->list.objects[0]->sector, object->list.objects[0]->length);
@@ -283,8 +281,7 @@ RX509CertificateRevocationList* r_x509_parse_crl (RASN1Object *object) {
 	if (!object || object->list.length < 4) {
 		return NULL;
 	}
-	crl = (RX509CertificateRevocationList *) malloc (sizeof (RX509CertificateRevocationList));
-	if (!crl) {
+	if (!(crl = (RX509CertificateRevocationList *) malloc (sizeof (RX509CertificateRevocationList)))) {
 		return NULL;
 	}
 	memset (crl, 0, sizeof (RX509CertificateRevocationList));

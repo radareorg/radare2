@@ -64,7 +64,7 @@ R_API void btree_traverse(struct btree_node *root, int reverse, void *context, B
 R_API bool btree_del(struct btree_node *proot, void *x, BTREE_CMP(cmp), BTREE_DEL(del)) {
 	struct btree_node *p = btree_search (proot, x, cmp, 1);
 	if (p) {
-		// p->right = 
+		// p->right =
 		btree_remove (p->left, del);
 		p->left = NULL;
 		return true;
@@ -102,7 +102,10 @@ R_API void btree_insert(struct btree_node **T, struct btree_node *p, BTREE_CMP(c
 }
 
 R_API void btree_add(struct btree_node **T, void *e, BTREE_CMP(cmp)) {
-	struct btree_node *p = (struct btree_node*) malloc (sizeof (struct btree_node));
+	struct btree_node *p;
+	if (!(p = (struct btree_node*) malloc (sizeof (struct btree_node)))) {
+		return;
+	}
 	p->data = e;
 	p->hits = 0;
 	p->left = p->right = NULL;

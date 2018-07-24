@@ -76,8 +76,8 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			return NULL;
 		}
 		if (size > 0) {
-			ut8 *data = malloc (size);
-			if (!data) {
+			ut8 *data;
+			if (!(data = malloc (size))) {
 				eprintf ("Cannot allocate (%s) %d byte(s)\n",
 					pathname+9, size);
 				mal->offset = 0;

@@ -312,7 +312,9 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 		case -1:
 			return -1;
 		case 1:
-			buf = malloc (2);
+			if (!(buf = malloc (2))) {
+				return -1;
+			}
 			if (snprintf (buf, 2, "%c", (ut8)v)<0) {
 				free (buf);
 				return -1;
@@ -337,7 +339,9 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 		case -1:
 			return -1;
 		case 1:
-			buf = malloc (32);
+			if (!(buf = malloc (32))) {
+				return -1;
+			}
 			if (snprintf (buf, 32, "%hu", (unsigned short)v) < 0) {
 				free (buf);
 				return -1;
@@ -363,7 +367,9 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 		case -1:
 			return -1;
 		case 1:
-			buf = malloc (32);
+			if (!(buf = malloc (32))) {
+				return -1;
+			}
 			if (snprintf (buf, 32, "%u", (ut32)v) < 0) {
 				free (buf);
 				return -1;
@@ -448,7 +454,9 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 		case -1:
 			return -1;
 		case 1:
-			buf = malloc (32);
+			if (!(buf = malloc (32))) {
+				return -1;
+			}
 			if (snprintf (buf, 32, "%g", vf) < 0) {
 				free (buf);
 				return -1;
@@ -473,7 +481,9 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 		case -1:
 			return -1;
 		case 1:
-			buf = malloc (32);
+			if (!(buf = malloc (32))) {
+				return -1;
+			}
 			if (snprintf (buf, 32, "%g", vd) < 0) {
 				free (buf);
 				return -1;

@@ -433,8 +433,7 @@ static int cmd_alias(void *data, const char *input) {
 		return 0;
 	}
 	i = strlen (input);
-	buf = malloc (i + 2);
-	if (!buf) {
+	if (!(buf = malloc (i + 2))) {
 		return 0;
 	}
 	*buf = '$'; // prefix aliases with a dash
@@ -490,8 +489,7 @@ static int cmd_alias(void *data, const char *input) {
 		if (v) {
 			if (q) {
 				char *out, *args = q + 1;
-				out = malloc (strlen (v) + strlen (args) + 2);
-				if (out) { //XXX slow
+				if ((out = malloc (strlen (v) + strlen (args) + 2))) { //XXX slow
 					strcpy (out, v);
 					strcat (out, " ");
 					strcat (out, args);
@@ -2610,8 +2608,7 @@ repeat_arroba:
 			case 'f': // "@f:" // slurp file in block
 				f = r_file_slurp (ptr + 2, &sz);
 				if (f) {
-					buf = malloc (sz);
-					if (buf) {
+					if ((buf = malloc (sz))) {
 						free (core->block);
 						core->block = buf;
 						core->blocksize = sz;
@@ -2671,8 +2668,7 @@ repeat_arroba:
 				break;
 			case 'x': // "@x:" // hexpairs
 				if (ptr[1] == ':') {
-					buf = malloc (strlen (ptr + 2) + 1);
-					if (buf) {
+					if ((buf = malloc (strlen (ptr + 2) + 1))) {
 						len = r_hex_str2bin (ptr + 2, buf);
 						r_core_block_size (core, R_ABS(len));
 						memcpy (core->block, buf, core->blocksize);
@@ -3033,7 +3029,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			r_list_foreach (obj->sections, it, sec){
 				ut64 addr = sec->vaddr;
 				ut64 size = sec->vsize;
-				// TODO: 
+				// TODO:
 				//if (R_BIN_SCN_EXECUTABLE & sec->srwx) {
 				//	continue;
 				//}
@@ -3554,8 +3550,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, int log) {
 		core->lastcmd = strdup (cstr);
 	}
 
-	ocmd = cmd = malloc (strlen (cstr) + 4096);
-	if (!ocmd) {
+	if (!(ocmd = cmd = malloc (strlen (cstr) + 4096))) {
 		goto beach;
 	}
 	r_str_cpy (cmd, cstr);

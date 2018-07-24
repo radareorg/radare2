@@ -162,8 +162,8 @@ static RBinAddr* binsym(RBinFile *bf, int sym) {
 		ret->vaddr = Elf_(r_bin_elf_p2v) (obj, addr);
 		if (is_arm && addr & 1) {
 			ret->bits = 16;
-			ret->vaddr--; 
-			ret->paddr--; 
+			ret->vaddr--;
+			ret->paddr--;
 		}
 	}
 	return ret;
@@ -898,8 +898,8 @@ static void _patch_reloc (ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 
 }
 
 static bool ht_insert_intu64(SdbHash* ht, int key, ut64 value) {
-	ut64 *mvalue = malloc (sizeof (ut64));
-	if (!mvalue) {
+	ut64 *mvalue;
+	if (!(mvalue = malloc (sizeof (ut64)))) {
 		return false;
 	}
 	*mvalue = value;

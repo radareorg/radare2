@@ -11,8 +11,10 @@ static void appendstring(const char *msg, char **s) {
 	if (!s) {
 		printf ("%s\n", msg);
 	} else if (*s) {
-		char *p = malloc (strlen (msg) + strlen (*s) + 1);
-		if (!p) return;
+		char *p;
+		if (!(p = malloc (strlen (msg) + strlen (*s) + 1))) {
+			return;
+		}
 		strcpy (p, *s);
 		free (*s);
 		*s = p;

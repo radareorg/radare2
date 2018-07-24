@@ -69,8 +69,7 @@ static RConsStack *cons_stack_dump(bool recreate) {
 	}
 
 	if (recreate && I.context->buffer_sz > 0) {
-		I.context->buffer = malloc (I.context->buffer_sz);
-		if (!I.context->buffer) {
+		if (!(I.context->buffer = malloc (I.context->buffer_sz))) {
 			I.context->buffer = data->buf;
 			free (data);
 			return NULL;
@@ -1235,8 +1234,8 @@ R_API void r_cons_set_cup(int enable) {
 }
 
 R_API void r_cons_column(int c) {
-	char *b = malloc (I.context->buffer_len + 1);
-	if (!b) {
+	char *b;
+	if (!(b = malloc (I.context->buffer_len + 1))) {
 		return;
 	}
 	memcpy (b, I.context->buffer, I.context->buffer_len);
@@ -1296,8 +1295,7 @@ R_API void r_cons_highlight(const char *word) {
 		} else {
 			I.highlight = strdup (word);
 		}
-		rword = malloc (word_len + linv[0] + linv[1] + 1);
-		if (!rword) {
+		if (!(rword = malloc (word_len + linv[0] + linv[1] + 1))) {
 			free (cpos);
 			free (clean);
 			return;

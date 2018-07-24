@@ -21,7 +21,7 @@ static const char *help_msg_S[] = {
 	"Sj","","list sections in JSON (alias for iSj)",
 	"Sl"," [file]","load contents of file into current section (see dml)",
 	"Sr"," [name]","rename section on current seek",
-	"SR", "[?]", "Remap sections with different mode of operation", 
+	"SR", "[?]", "Remap sections with different mode of operation",
 	NULL
 };
 
@@ -37,7 +37,7 @@ static const char *help_msg_Sr[] = {
 
 static const char* help_msg_SR[] = {
 	"Usage:","SR[b|s][a|p|e] [id]","",
-	"SRb", "[a|p|e] binid", "Remap sections of binid for Analysis, Patch or Emulation", 
+	"SRb", "[a|p|e] binid", "Remap sections of binid for Analysis, Patch or Emulation",
 	"SRs","[a|p|e] secid","Remap section with sectid for Analysis, Patch or Emulation",
 	NULL
 };
@@ -187,7 +187,10 @@ static bool dumpSectionsToDisk(RCore *core) {
 	RIOSection *s;
 
 	ls_foreach (core->io->sections, iter, s) {
-		ut8 *buf = malloc (s->size);
+		ut8 *buf;
+		if (!(buf = malloc (s->size))) {
+			return false;
+		}
 		r_io_read_at (core->io, s->paddr, buf, s->size);
 		snprintf (file, sizeof (file),
 			"0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
@@ -219,11 +222,13 @@ static bool dumpSectionToDisk(RCore *core, char *file) {
 	}
 	ls_foreach (core->io->sections, iter, s) {
 		if (o >= s->paddr && o < s->paddr + s->size) {
-			ut8 *buf = malloc (s->size);
+			ut8 *buf;
+			if (!(buf = malloc (s->size))) {
+				return false;
+			}
 			r_io_read_at (core->io, s->paddr, buf, s->size);
 			if (!file) {
-				heapfile = (char *)malloc (len);
-				if (!heapfile) {
+				if (!(heapfile = (char *)malloc (len))) {
 					free (buf);
 					return false;
 				}
@@ -338,7 +343,7 @@ static int cmd_section(void *data, const char *input) {
 // TODO: add command to resize current section
 		break;
 	case 'R' : // "SR"
-		return cmd_section_reapply (core, input + 1);	
+		return cmd_section_reapply (core, input + 1);
 	case 'f': // "Sf"
 		if (input[1] == ' ') {
 			ut64 n = r_num_math (core->num, input + 1);
@@ -458,7 +463,7 @@ static int cmd_section(void *data, const char *input) {
 			return false;
 		}
 		if (core->io->va || core->io->debug) {
-			s = r_io_section_vget (core->io, core->offset); 
+			s = r_io_section_vget (core->io, core->offset);
 			o = s ? core->offset - s->vaddr + s->paddr : core->offset;
 		}
 		ls_foreach (core->io->sections, iter, s) {
@@ -564,7 +569,7 @@ static int cmd_section(void *data, const char *input) {
 			SdbListIter *iter, *iter2;
 			RIOSection *s;
 			if (core->io->va || core->io->debug) {
-				s = r_io_section_vget (core->io, o); 
+				s = r_io_section_vget (core->io, o);
 				o = s ? o - s->vaddr + s->paddr : o;
 			}
 			ls_foreach_safe (core->io->sections, iter, iter2, s) {
@@ -580,7 +585,7 @@ static int cmd_section(void *data, const char *input) {
 			SdbListIter *iter;
 			RIOSection *s;
 			if (core->io->va || core->io->debug) {
-				s = r_io_section_vget (core->io, o); 
+				s = r_io_section_vget (core->io, o);
 				o = s ? o - s->vaddr + s->paddr : o;
 			}
 			if (input[1] == 'j') { // "S.j"

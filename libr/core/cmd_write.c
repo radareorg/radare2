@@ -183,7 +183,10 @@ static void cmd_write_fail() {
 }
 
 R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
-	ut8 *buf = malloc (strlen (pairs) + 1);
+	ut8 *buf;
+	if (!(buf = malloc (strlen (pairs) + 1))) {
+		return -1;
+	}
 	int len = r_hex_str2bin (pairs, buf);
 	if (len != 0) {
 		if (len < 0) {
@@ -231,7 +234,10 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 		}
 		if (r_crypto_set_key (cry, binkey, keylen, 0, direction)) {
 			if (iv) {
-				ut8 *biniv = malloc (strlen (iv) + 1);
+				ut8 *biniv;
+				if (!(biniv = malloc (strlen (iv) + 1))) {
+					return false;
+				}
 				int ivlen = r_hex_str2bin (iv, biniv);
 				if (ivlen < 1) {
 					ivlen = strlen(iv);
@@ -412,7 +418,7 @@ static void cmd_write_op (RCore *core, const char *input) {
 								len -= res;
 								addr += res;
 							}
-						} 
+						}
 					}
 					free (buf);
 				} else {
@@ -790,8 +796,7 @@ static int cmd_write(void *data, const char *input) {
 		if (!fail) {
 			switch (input[1]) {
 			case 'd': // "w6d"
-				buf = malloc (str_len);
-				if (!buf) {
+				if (!(buf = malloc (str_len))) {
 					eprintf ("Error: failed to malloc memory");
 					break;
 				}
@@ -802,8 +807,8 @@ static int cmd_write(void *data, const char *input) {
 				}
 				break;
 			case 'e': { // "w6e"
-				ut8 *bin_buf = malloc (str_len);
-				if (!bin_buf) {
+				ut8 *bin_buf;
+				if (!(bin_buf = malloc (str_len))) {
 					eprintf ("Error: failed to malloc memory");
 					break;
 				}
@@ -1040,8 +1045,7 @@ static int cmd_write(void *data, const char *input) {
 		off = r_num_math (core->num, input+1);
 		len = (int)off;
 		if (len > 0) {
-			buf = malloc (len);
-			if (buf != NULL) {
+			if ((buf = malloc (len))) {
 				r_num_irand ();
 				for (i=0; i<len; i++)
 					buf[i] = r_num_rand (256);
@@ -1467,8 +1471,8 @@ static int cmd_write(void *data, const char *input) {
 		break;
 	case 'b': { // "wb"
 		int len = strlen (input);
-		ut8 *buf = malloc (len+1);
-		if (buf) {
+		ut8 *buf;
+		if ((buf = malloc (len+1))) {
 			len = r_hex_str2bin (input+1, buf);
 			if (len > 0) {
 				r_mem_copyloop (core->block, buf, core->blocksize, len);
@@ -1523,7 +1527,10 @@ static int cmd_write(void *data, const char *input) {
 				*arg = 0;
 				ut64 addr = r_num_math (core->num, input+2);
 				ut64 len = r_num_math (core->num, arg+1);
-				ut8 *data = malloc (len);
+				ut8 *data;
+				if (!(data = malloc (len))) {
+					return -1;
+				}
 				r_io_read_at (core->io, addr, data, len);
 				r_io_write_at (core->io, core->offset, data, len);
 				free (data);

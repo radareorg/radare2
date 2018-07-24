@@ -191,15 +191,13 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				input++;
 			if (input[0] == '/') {
 				if (root) {
-					s = malloc (strlen (root) + strlen (input) + 2);
-					if (!s) {
+					if (!(s = malloc (strlen (root) + strlen (input) + 2))) {
 						goto beach;
 					}
 					strcpy (s, root);
 				}
 			} else {
-				s = malloc (strlen (path) + strlen (input) + 2);
-				if (!s) {
+				if (!(s = malloc (strlen (path) + strlen (input) + 2))) {
 					goto beach;
 				}
 				strcpy (s, path);

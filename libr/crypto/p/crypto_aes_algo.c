@@ -42,7 +42,11 @@ void aes_expkey (const struct aes_state *st, ut32 ***expkey)
 	// memcpy (&expkey, _expkey, 2 * (st->rounds + 1) * Nb);
 	int ROUND_KEY_COUNT = 4 * (1 + st->rounds);
 #ifdef _MSC_VER
-	ut32 *tk = (ut32*)malloc (sizeof (ut32) * st->columns);
+	ut32 *tk;
+	if (!(tk = (ut32*)malloc (sizeof (ut32) * st->columns))) {
+		return;
+	}
+
 #else
 	ut32 tk[st->columns];
 #endif
@@ -208,7 +212,7 @@ void aes_decrypt (struct aes_state *st, ut8 *in, ut8 *result) {
 #else
 	ut32 expkey[2][st->rounds + 1][Nb];
 #endif
-	
+
 	aes_expkey(st, expkey);
 
 	ut32 t0, t1, t2, t3, tt;

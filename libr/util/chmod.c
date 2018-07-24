@@ -122,9 +122,11 @@ int parsemode(const char *str) {
 }
 
 char * agetcwd(void) {
-        char *buf = malloc (4096);
-	if (!buf) return NULL;
-        if(!getcwd(buf, 4096))
+        char *buf;
+	if (!(buf = malloc (4096))) {
+		return NULL;
+	}
+	if(!getcwd(buf, 4096))
                 eprintf("getcwd:");
         return buf;
 }

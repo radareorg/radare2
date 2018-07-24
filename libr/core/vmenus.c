@@ -1084,13 +1084,13 @@ R_API int r_core_visual_classes(RCore *core) {
 			break;
 		case 'J': index += 10; break;
 		case 'j': index++; break;
-		case 'k': 
+		case 'k':
 			if (--index < 0) {
 				index = 0;
 			}
 			break;
-		case 'K': 
-			index -= 10; 
+		case 'K':
+			index -= 10;
 			if (index < 0) {
 				index = 0;
 			}
@@ -3079,7 +3079,9 @@ repeat:
 			n = r_str_nlen_w ((const char *)p + ntotal,
 					plen - ntotal) + 1;
 			if (n < 2) break;
-			name = malloc (n + 10);
+			if (!(name = malloc (n + 10))) {
+				return;
+			}
 			strcpy (name, "str.");
 			for (i = 0, j = 0; i < n; i++, j++) {
 				name[4 + i] = p[j + ntotal];
@@ -3127,8 +3129,7 @@ repeat:
 		} else {
 			n = r_str_nlen_w ((const char*)p, plen) + 1;
 		}
-		name = malloc (n + 10);
-		if (!name) {
+		if (!(name = malloc (n + 10))) {
 			break;
 		}
 		strcpy (name, "str.");

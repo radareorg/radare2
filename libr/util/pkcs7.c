@@ -83,10 +83,9 @@ bool r_pkcs7_parse_digestalgorithmidentifier (RPKCS7DigestAlgorithmIdentifiers *
 		for (i = 0; i < dai->length; ++i) {
 			// r_x509_parse_algorithmidentifier returns bool,
 			// so i have to allocate before calling the function
-			dai->elements[i] = (RX509AlgorithmIdentifier *) malloc (sizeof (RX509AlgorithmIdentifier));
+			if ((dai->elements[i] = (RX509AlgorithmIdentifier *) malloc (sizeof (RX509AlgorithmIdentifier)))) {
 			//should i handle invalid memory? the function checks the pointer
 			//or it should return if dai->elements[i] == NULL ?
-			if (dai->elements[i]) {
 				//Memset is needed to initialize to 0 the structure and avoid garbage.
 				memset (dai->elements[i], 0, sizeof (RX509AlgorithmIdentifier));
 				r_x509_parse_algorithmidentifier (dai->elements[i], object->list.objects[i]);
@@ -251,7 +250,7 @@ bool r_pkcs7_parse_signeddata (RPKCS7SignedData *sd, RASN1Object *object) {
 	memset (sd, 0, sizeof (RPKCS7SignedData));
 	RASN1Object **elems = object->list.objects;
 	//Following RFC
-	sd->version = (ut32) elems[0]->sector[0]; 
+	sd->version = (ut32) elems[0]->sector[0];
 	r_pkcs7_parse_digestalgorithmidentifier (&sd->digestAlgorithms, elems[1]);
 	r_pkcs7_parse_contentinfo (&sd->contentInfo, elems[2]);
 	//Optional
@@ -602,7 +601,7 @@ char *r_pkcs7_cms_dump (RCMS* container) {
 	if (length <= p) {
 		free (buffer);
 		return NULL;
-	}	
+	}
 	r = snprintf (buffer + p, length - p, "  SignerInfos:\n");
 	p += (ut32) r;
 	if (r < 0 || length <= p) {
@@ -712,7 +711,7 @@ RJSVar *r_pkcs7_cms_json (RCMS* container) {
 
 	var = r_json_number_new (container->signedData.version);
 	R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "Version", var), var);
-	
+
 	if (container->signedData.digestAlgorithms.elements) {
 		array = r_json_array_new (container->signedData.digestAlgorithms.length);
 		for (i = 0; i < container->signedData.digestAlgorithms.length; ++i) {

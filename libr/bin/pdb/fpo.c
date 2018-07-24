@@ -39,7 +39,9 @@ void parse_fpo_stream(void *stream, R_STREAM_FILE *stream_file)
 	SFPOStream *fpo_stream = 0;
 
 	stream_file_get_size(stream_file, &data_size);
-	data = (char *) malloc(data_size);
+	if (!(data = (char *) malloc(data_size))) {
+		return;
+	}
 	stream_file_get_data(stream_file, data);
 
 	fpo_stream = (SFPOStream *) stream;
@@ -47,7 +49,9 @@ void parse_fpo_stream(void *stream, R_STREAM_FILE *stream_file)
 	curr_read_bytes = 0;
 	ptmp = data;
 	while (read_bytes < data_size) {
-		fpo_data = (SFPO_DATA *) malloc(sizeof(SFPO_DATA));
+		if (!(fpo_data = (SFPO_DATA *) malloc(sizeof(SFPO_DATA)))) {
+			break;
+		}
 		curr_read_bytes = parse_fpo_data(ptmp, data_size, &read_bytes, fpo_data);
 		ptmp += curr_read_bytes;
 
@@ -102,8 +106,9 @@ void parse_fpo_new_stream(void *stream, R_STREAM_FILE *stream_file)
 	SFPONewStream *fpo_stream = 0;
 
 	stream_file_get_size (stream_file, &data_size);
-	data = (char *) malloc (data_size);
-	if (!data) return;
+	if (!(data = (char *) malloc (data_size))) {
+		return;
+	}
 	stream_file_get_data (stream_file, data);
 
 	fpo_stream = (SFPONewStream *) stream;
@@ -111,10 +116,8 @@ void parse_fpo_new_stream(void *stream, R_STREAM_FILE *stream_file)
 	curr_read_bytes = 0;
 	ptmp = data;
 	while (read_bytes < data_size) {
-		fpo_data = (SFPO_DATA_V2 *) malloc (sizeof(SFPO_DATA_V2));
-		if (!fpo_data) {
-			free (data);
-			return;
+		if (!(fpo_data = (SFPO_DATA_V2 *) malloc (sizeof(SFPO_DATA_V2)))) {
+			break;
 		}
 		curr_read_bytes = parse_fpo_data_v2 (ptmp, data_size, &read_bytes, fpo_data);
 		ptmp += curr_read_bytes;

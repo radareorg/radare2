@@ -87,8 +87,8 @@ static bool addFcnBytes(RCore *core, RAnalFunction *fcn, const char *name) {
 	int fcnlen = r_anal_fcn_realsize (fcn);
 	int len = R_MIN (core->io->addrbytes * fcnlen, maxsz);
 
-	ut8 *buf = malloc (len);
-	if (!buf) {
+	ut8 *buf;
+	if (!(buf = malloc (len))) {
 		return false;
 	}
 
@@ -197,8 +197,12 @@ static bool addBytesZign(RCore *core, const char *name, int type, const char *ar
 
 	hexbytes = r_str_word_get0 (args0, 0);
 	blen = strlen (hexbytes) + 4;
-	bytes = malloc (blen);
-	mask = malloc (blen);
+	if (!(bytes = malloc (blen))) {
+		goto out;
+	}
+	if (!(mask = malloc (blen))) {
+		goto out;
+	}
 
 	size = r_hex_str2binmask (hexbytes, bytes, mask);
 	if (size <= 0) {
@@ -559,7 +563,10 @@ static int fcnMatchCB(RSignItem *it, RAnalFunction *fcn, void *user) {
 }
 
 static bool searchRange(RCore *core, ut64 from, ut64 to, bool rad, struct ctxSearchCB *ctx) {
-	ut8 *buf = malloc (core->blocksize);
+	ut8 *buf;
+	if (!(buf = malloc (core->blocksize))) {
+		return false;
+	}
 	ut64 at;
 	int rlen;
 	bool retval = true;

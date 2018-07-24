@@ -141,9 +141,9 @@ static int r_io_zip_slurp_file(RIOZipFileObj *zfo) {
 		}
 		zip_stat_init (&sb);
 		if (zFile && zfo->b && !zip_stat_index (zipArch, zfo->entry, 0, &sb)) {
-			ut8 *buf = malloc (sb.size);
-			memset (buf, 0, sb.size);
-			if (buf) {
+			ut8 *buf;
+			if ((buf = malloc (sb.size))) {
+				memset (buf, 0, sb.size);
 				zip_fread (zFile, buf, sb.size);
 				r_buf_set_bytes (zfo->b, buf, sb.size);
 				res = true;
@@ -356,7 +356,7 @@ char * r_io_zip_get_by_file_idx(const char * archivename, const char *idx, ut32 
 }
 
 static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
-	RIODesc *res = NULL;	
+	RIODesc *res = NULL;
 	char *pikaboo, *tmp;
 	RIOZipFileObj *zfo = NULL;
 	char *zip_uri = NULL, *zip_filename = NULL, *filename_in_zipfile = NULL;
@@ -547,8 +547,7 @@ static int r_io_zip_realloc_buf(RIOZipFileObj *zfo, int count) {
 		if (!buffer) {
 			return false;
 		}
-		buffer->buf = malloc (zfo->b->cur + count );
-		if (!buffer->buf) {
+		if (!(buffer->buf = malloc (zfo->b->cur + count ))) {
 			r_buf_free (buffer);
 			return false;
 		}
@@ -568,8 +567,8 @@ static bool r_io_zip_truncate_buf(RIOZipFileObj *zfo, int size) {
 		return r_io_zip_realloc_buf (zfo, size - zfo->b->length);
 	}
 	if (size > 0) {
-		ut8 *buf = malloc (size);
-		if (!buf) {
+		ut8 *buf;
+		if (!(buf = malloc (size))) {
 			return false;
 		}
 		memcpy (buf, zfo->b->buf, size);

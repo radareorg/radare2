@@ -125,9 +125,9 @@ struct XXH_state32_t {
 };
 
 void *XXH32_init (ut32 seed) {
-	struct XXH_state32_t *state =
-		(struct XXH_state32_t *) malloc (sizeof (struct XXH_state32_t));
-	if (!state) {
+	struct XXH_state32_t *state;
+	if (!(state =
+		(struct XXH_state32_t *) malloc (sizeof (struct XXH_state32_t)))) {
 		return NULL;
 	}
 	state->seed = seed;

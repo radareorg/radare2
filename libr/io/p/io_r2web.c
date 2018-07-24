@@ -20,8 +20,9 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	if (!fd || !fd->data)
 		return -1;
 	if (count * 3 < count) return -1;
-	hexbuf = malloc (count * 3);
-	if (!hexbuf) return -1;
+	if (!(hexbuf = malloc (count * 3))) {
+		return -1;
+	}
 	hexbuf[0] = 0;
 	r_hex_bin2str (buf, count, hexbuf);
 	url = r_str_newf ("%s/wx%%20%s@%"PFMT64d,
@@ -43,8 +44,10 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		rURL(fd), count, io->off);
 	out = r_socket_http_get (url, &code, &rlen);
 	if (out && rlen>0) {
-		ut8 *tmp = malloc (rlen+1);
-		if (!tmp) goto beach;
+		ut8 *tmp;
+		if (!(tmp = malloc (rlen+1))) {
+			goto beach;
+		}
 		ret = r_hex_str2bin (out, tmp);
 		memcpy (buf, tmp, R_MIN (count, rlen));
 		free (tmp);

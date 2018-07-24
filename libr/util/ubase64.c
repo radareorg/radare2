@@ -102,8 +102,7 @@ R_API char *r_base64_encode_dyn(const char *str, int len) {
 	if (olen < len) {
 		return NULL;
 	}
-	bout = (char *)malloc (olen);
-	if (!bout) {
+	if (!(bout = (char *)malloc (olen))) {
 		return NULL;
 	}
 	for (in = out = 0; in < len; in += 3, out += 4)

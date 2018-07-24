@@ -11,7 +11,7 @@
 #endif
 #if defined(__FreeBSD__)
 # include <sys/param.h>
-# if __FreeBSD_version >= 1000000 
+# if __FreeBSD_version >= 1000000
 #  define FREEBSD_WITH_BACKTRACE
 # endif
 #endif
@@ -186,7 +186,7 @@ R_API RList *r_sys_dir(const char *path) {
 		}
 		closedir (dir);
 	}
-#endif	
+#endif
 	return list;
 }
 
@@ -397,8 +397,7 @@ R_API char *r_sys_getenv(const char *key) {
 	if (!key) {
 		return NULL;
 	}
-	envbuf = (LPTSTR)malloc (sizeof (TCHAR) * TMP_BUFSIZE);
-	if (!envbuf) {
+	if (!(envbuf = (LPTSTR)malloc (sizeof (TCHAR) * TMP_BUFSIZE))) {
 		goto err_r_sys_get_env;
 	}
 	key_ = r_sys_conv_utf8_to_utf16 (key);
@@ -489,7 +488,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 			close (sh_out[1]);
 		}
 		if (sterr) {
-			dup2 (sh_err[1], 2); 
+			dup2 (sh_err[1], 2);
 		} else {
 			close (2);
 		}
@@ -825,7 +824,10 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 	int st, pid;
 #endif
 // TODO: define R_SYS_ALIGN_FORWARD in r_util.h
-	ut8 *ptr, *p = malloc ((sz + len) << 1);
+	ut8 *ptr, *p;
+	if (!(p = malloc ((sz + len) << 1))) {
+		return false;
+	}
 	ptr = p;
 	pdelta = ((size_t)(p)) & (4096 - 1);
 	if (pdelta) {
@@ -871,7 +873,10 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 }
 
 R_API int r_is_heap (void *p) {
-	void *q = malloc (8);
+	void *q;
+	if (!(q = malloc (8))) {
+		return 0;
+	}
 	ut64 mask = UT64_MAX;
 	ut64 addr = (ut64)(size_t)q;
 	addr >>= 16;

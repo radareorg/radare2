@@ -2,7 +2,7 @@
 /*
  * Copyright (c) Christos Zoulas 2003.
  * All Rights Reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
@@ -12,7 +12,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- *  
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -73,8 +73,7 @@ int file_vprintf(RMagic *ms, const char *fmt, va_list ap) {
 	if (ms->o.buf != NULL) {
 		int obuflen = strlen (ms->o.buf);
 		len = obuflen + buflen+1;
-		newstr = malloc (len+1);
-		if (!newstr) {
+		if (!(newstr = malloc (len+1))) {
 			free (buf);
 			return -1;
 		}
@@ -286,7 +285,7 @@ const char *file_getbuffer(RMagic *ms) {
 #endif
 	for (np = ms->o.pbuf, op = ms->o.buf; *op; op++) {
 		if (isprint ((ut8)*op)) {
-			*np++ = *op;	
+			*np++ = *op;
 		} else {
 			OCTALIFY (np, op);
 		}

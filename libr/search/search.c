@@ -155,8 +155,7 @@ R_API int r_search_deltakey_update(RSearch *s, ut64 from, const ut8 *buf, int le
 			left->len = 0;
 		}
 	} else {
-		left = malloc (sizeof(RSearchLeftover) + (size_t)2 * (longest - 1));
-		if (!left) {
+		if (!(left = malloc (sizeof(RSearchLeftover) + (size_t)2 * (longest - 1)))) {
 			return -1;
 		}
 		s->data = left;
@@ -371,8 +370,7 @@ R_API int r_search_mybinparse_update(RSearch *s, ut64 from, const ut8 *buf, int 
 			left->len = 0;
 		}
 	} else {
-		left = malloc (sizeof(RSearchLeftover) + (size_t)2 * (longest - 1));
-		if (!left) {
+		if (!(left = malloc (sizeof(RSearchLeftover) + (size_t)2 * (longest - 1)))) {
 			return -1;
 		}
 		s->data = left;

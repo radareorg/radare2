@@ -205,8 +205,8 @@ static ut32 dumb_ctzll(ut64 x) {
 
 static ut64 estimate_slide(RBinFile *bf, RDyldCache *cache, ut64 value_mask) {
 	ut64 slide = 0;
-	ut64 *classlist = malloc (64);
-	if (!classlist) {
+	ut64 *classlist;
+	if (!(classlist = malloc (64))) {
 		goto beach;
 	}
 
@@ -330,7 +330,9 @@ static RDyldRebaseInfo *get_rebase_info(RBinFile *bf, RDyldCache *cache) {
 	if (slide_info.page_starts_count > 0) {
 		ut64 size = slide_info.page_starts_count * 2;
 		ut64 at = cache->hdr->slideInfoOffset + slide_info.page_starts_offset;
-		page_starts = malloc (size);
+		if (!(page_starts = malloc (size))) {
+			return NULL;
+		}
 		if (r_buf_fread_at (cache_buf, at, (ut8*) page_starts, "s", slide_info.page_starts_count) != size) {
 			R_FREE (page_starts);
 			return NULL;
@@ -340,7 +342,9 @@ static RDyldRebaseInfo *get_rebase_info(RBinFile *bf, RDyldCache *cache) {
 	if (slide_info.page_extras_count > 0) {
 		ut64 size = slide_info.page_extras_count * 2;
 		ut64 at = cache->hdr->slideInfoOffset + slide_info.page_extras_offset;
-		page_extras = malloc (size);
+		if (!(page_extras = malloc (size))) {
+			return NULL;
+		}
 		if (r_buf_fread_at (cache_buf, at, (ut8*) page_extras, "s", slide_info.page_extras_count) != size) {
 			R_FREE (page_starts);
 			R_FREE (page_extras);
@@ -349,7 +353,11 @@ static RDyldRebaseInfo *get_rebase_info(RBinFile *bf, RDyldCache *cache) {
 	}
 
 	if (slide_info.page_size > 0) {
-		one_page_buf = malloc (slide_info.page_size);
+		if (!(one_page_buf = malloc (slide_info.page_size))) {
+			R_FREE(page_starts);
+			R_FREE(page_extras);
+			return NULL;
+		}
 		if (!one_page_buf) {
 			goto beach;
 		}
@@ -708,7 +716,9 @@ static int dyldcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 
 		ut8 *internal_buf = rebase_info->one_page_buf;
 		if (rounded_count > rebase_info->page_size) {
-			internal_buf = malloc (rounded_count);
+			if (!(internal_buf = malloc (rounded_count))) {
+				return -1;
+			}
 		}
 
 		ut64 original_off = io->off;
@@ -1169,7 +1179,10 @@ static RList *classes(RBinFile *bf) {
 				continue;
 			}
 
-			ut8 *pointers = malloc (sections[i].size);
+			ut8 *pointers;
+			if (!(pointers = malloc (sections[i].size))) {
+				goto beach;
+			}
 			if (r_buf_read_at (cache->buf, sections[i].offset, pointers, sections[i].size) < sections[i].size) {
 				R_FREE (pointers);
 				continue;

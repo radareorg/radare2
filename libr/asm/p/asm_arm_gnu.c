@@ -107,8 +107,7 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 		return false;
 	}
 	va_start (ap, format);
-	tmp = malloc (strlen (format) + strlen (buf_global) + 2);
-	if (!tmp) {
+	if (!(tmp = malloc (strlen (format) + strlen (buf_global) + 2))) {
 		va_end (ap);
 		return false;
 	}

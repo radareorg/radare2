@@ -519,15 +519,15 @@ R_API int r_cons_grepbuf(char *buf, int len) {
 	}
 	if (!cons->context->buffer) {
 		cons->context->buffer_len = len + 20;
-		cons->context->buffer = malloc (cons->context->buffer_len);
+		if (!(cons->context->buffer = malloc (cons->context->buffer_len))) {
+			return 0;
+		}
 		cons->context->buffer[0] = 0;
 	}
-	out = tbuf = calloc (1, len);
-	if (!out) {
+	if (!(out = tbuf = calloc (1, len))) {
 		return 0;
 	}
-	tline = malloc (len);
-	if (!tline) {
+	if (!(tline = malloc (len))) {
 		free (out);
 		return 0;
 	}

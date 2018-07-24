@@ -78,8 +78,7 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 	/* some io backends seems to be buggy in those cases */
 	if (bs > 4096)
 		bs = 4096;
-	buf = malloc (bs);
-	if (!buf) {
+	if (!(buf = malloc (bs))) {
 		eprintf ("Cannot alloc %d byte(s)\n", bs);
 		fclose (fd);
 		return false;
@@ -110,8 +109,7 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 	ut8 *buf;
 
 	// XXX we can work with config.block instead of dupping it
-	buf = (ut8 *)malloc (core->blocksize);
-	if (!buf) {
+	if (!(buf = (ut8 *)malloc (core->blocksize))) {
 		goto beach;
 	}
 	memcpy (buf, core->block, core->blocksize);
@@ -121,9 +119,9 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 		if (arg) {  // parse arg for key
 			// r_hex_str2bin() is guaranteed to output maximum half the
 			// input size, or 1 byte if there is just a single nibble.
-			str = (char *)malloc (strlen (arg) / 2 + 1);
-			if (!str)
+			if (!(str = (char *)malloc (strlen (arg) / 2 + 1))) {
 				goto beach;
+			}
 			len = r_hex_str2bin (arg, (ut8 *)str);
 			// Output is invalid if there was just a single nibble,
 			// but in that case, len is negative (-1).

@@ -130,12 +130,10 @@ R_API bool r_json_object_add (RJSVar* object, const char* name, RJSVar* value) {
 		value->ref--;;
 		return false;
 	}
-	v = (RJSVar**) malloc (len * sizeof (RJSVar*));
-	if (!v) {
+	if (!(v = (RJSVar**) malloc (len * sizeof (RJSVar*)))) {
 		return false;
 	}
-	c = (char**) malloc (len * sizeof (char*));
-	if (!c) {
+	if (!(c = (char**) malloc (len * sizeof (char*)))) {
 		free (v);
 		return false;
 	}
@@ -198,8 +196,8 @@ static char* _r_json_null_str (bool expanded) {
 		return NULL;
 	}
 	const int len = sizeof (R_JSON_NULL);
-	char *c = (char*) malloc (len);
-	if (c) {
+	char *c;
+	if ((c = (char*) malloc (len))) {
 		memcpy (c, R_JSON_NULL, len);
 	}
 	return c;
@@ -217,24 +215,21 @@ R_API char* r_json_var_string (RJSVar* var, bool expanded) {
 		break;
 	case R_JS_NUMBERS:
 		len = snprintf (NULL, 0, "%d", var->number) + 1;
-		c = (char*) malloc (len);
-		if (!c) {
+		if (!(c = (char*) malloc (len))) {
 			break;
 		}
 		snprintf (c, len, "%d", var->number);
 		break;
 	case R_JS_BOOLEAN:
 		len = var->boolean ? sizeof (R_JSON_TRUE) : sizeof (R_JSON_FALSE);
-		c = (char*) malloc (len);
-		if (!c) {
+		if (!(c = (char*) malloc (len))) {
 			break;
 		}
 		snprintf (c, len, "%s", var->boolean ? R_JSON_TRUE : R_JSON_FALSE);
 		break;
 	case R_JS_STRING:
 		len = var->string.l + 2;
-		c = (char*) malloc (len);
-		if (!c) {
+		if (!(c = (char*) malloc (len))) {
 			break;
 		}
 		memcpy (c + 1, var->string.s, var->string.l);
@@ -248,7 +243,10 @@ R_API char* r_json_var_string (RJSVar* var, bool expanded) {
 			char* p, *e;
 			char** t = R_NEWS0 (char*, var->array.l);
 			if (!t) {
-				c = (char*) malloc (sizeof (R_JSON_EMPTY_ARR));
+				if (!(c = (char*) malloc (sizeof (R_JSON_EMPTY_ARR)))) {
+					free(t);
+					return NULL;
+				}
 				memcpy (c, R_JSON_EMPTY_ARR, sizeof (R_JSON_EMPTY_ARR));
 				break;
 			}
@@ -276,7 +274,9 @@ R_API char* r_json_var_string (RJSVar* var, bool expanded) {
 			}
 			free (t);
 		} else {
-			c = (char*) malloc (sizeof (R_JSON_EMPTY_ARR));
+			if (!(c = (char*) malloc (sizeof (R_JSON_EMPTY_ARR)))) {
+				return NULL;
+			}
 			memcpy (c, R_JSON_EMPTY_ARR, sizeof (R_JSON_EMPTY_ARR));
 		}
 		break;
@@ -285,7 +285,10 @@ R_API char* r_json_var_string (RJSVar* var, bool expanded) {
 			char* p, *e;
 			char** t = R_NEWS0 (char*, var->object.l);
 			if (!t) {
-				c = (char*) malloc (sizeof (R_JSON_EMPTY_OBJ));
+				if (!(c = (char*) malloc (sizeof (R_JSON_EMPTY_OBJ)))) {
+					free(t);
+					return NULL;
+				}
 				memcpy (c, R_JSON_EMPTY_OBJ, sizeof (R_JSON_EMPTY_OBJ));
 				break;
 			}
@@ -296,7 +299,10 @@ R_API char* r_json_var_string (RJSVar* var, bool expanded) {
 				fflush (stdout);
 				len += strlen (t[i]) + strlen (var->object.n[i]) + 4;
 			}
-			c = (char*) malloc (len);
+			if (!(c = (char*) malloc (len))) {
+				free(t);
+				return NULL;
+			}
 			p = c + 1;
 			e = p + len;
 			for (i = 0; i < var->object.l; i++) {
@@ -315,7 +321,9 @@ R_API char* r_json_var_string (RJSVar* var, bool expanded) {
 			}
 			free (t);
 		} else {
-			c = (char*) malloc (sizeof (R_JSON_EMPTY_OBJ));
+			if (!(c = (char*) malloc (sizeof (R_JSON_EMPTY_OBJ)))) {
+				return NULL;
+			}
 			memcpy (c, R_JSON_EMPTY_OBJ, sizeof (R_JSON_EMPTY_OBJ));
 		}
 		break;

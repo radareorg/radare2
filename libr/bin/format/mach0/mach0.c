@@ -1073,8 +1073,8 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 					dy.name = r_read_ble32 (&sdy[8], bin->big_endian);
 
 					int len = dy.cmdsize;
-					char *buf = malloc (len+1);
-					if (buf) {
+					char *buf;
+					if ((buf = malloc (len+1))) {
 						// wtf @ off + 0xc ?
 						r_buf_read_at (bin->b, off + 0xc, (ut8*)buf, len);
 						buf[len] = 0;

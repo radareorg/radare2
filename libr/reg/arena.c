@@ -14,8 +14,7 @@ R_API ut8* r_reg_get_bytes(RReg* reg, int type, int* size) {
 		/* serialize ALL register types in a single buffer */
 		// owned buffer is returned
 		osize = sz = 0;
-		buf = malloc (8);
-		if (!buf) {
+		if (!(buf = malloc (8))) {
 			return NULL;
 		}
 		for (i = 0; i < R_REG_TYPE_LAST; i++) {
@@ -41,8 +40,7 @@ R_API ut8* r_reg_get_bytes(RReg* reg, int type, int* size) {
 	if (size) {
 		*size = sz;
 	}
-	buf = malloc (sz);
-	if (buf) {
+	if ((buf = malloc (sz))) {
 		memcpy (buf, reg->regset[type].arena->bytes, sz);
 	}
 	return buf;
@@ -255,8 +253,8 @@ R_API ut8* r_reg_arena_peek(RReg* reg) {
 	if (!reg || !regset || !regset->arena || (regset->arena->size < 1)) {
 		return NULL;
 	}
-	ut8* ret = malloc (regset->arena->size);
-	if (!ret) {
+	ut8* ret;
+	if (!(ret = malloc (regset->arena->size))) {
 		return NULL;
 	}
 	memcpy (ret, regset->arena->bytes, regset->arena->size);
@@ -276,8 +274,8 @@ R_API ut8* r_reg_arena_dup(RReg* reg, const ut8* source) {
 	if (!reg || !regset || !regset->arena || (regset->arena->size < 1)) {
 		return NULL;
 	}
-	ut8* ret = malloc (regset->arena->size);
-	if (!ret) {
+	ut8* ret;
+	if (!(ret = malloc (regset->arena->size))) {
 		return NULL;
 	}
 	memcpy (ret, source, regset->arena->size);
@@ -294,8 +292,8 @@ R_API int r_reg_arena_set_bytes(RReg* reg, const char* str) {
 		return -1;
 	}
 	int bin_str_len = (len + 1) / 2; //2 hex chrs for 1 byte
-	ut8* bin_str = malloc (bin_str_len);
-	if (!bin_str) {
+	ut8* bin_str;
+	if (!(bin_str = malloc (bin_str_len))) {
 		eprintf ("Failed to decode hex str.\n");
 		return -1;
 	}

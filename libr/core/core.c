@@ -545,7 +545,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			free (bptr);
 			break;
 		case 'c': return r_cons_get_size (NULL);
-		case 'r': 
+		case 'r':
 			if (str[2] == '{') {
 				bptr = strdup (str + 3);
 				ptr = strchr (bptr, '}');
@@ -615,7 +615,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				}
 				*ptr = '\0';
 				RFlagItem *flag = r_flag_get (core->flags, bptr);
-				ret = flag? flag->size: 0LL; // flag 
+				ret = flag? flag->size: 0LL; // flag
 				free (bptr);
 				free (out);
 				return ret;
@@ -762,7 +762,7 @@ static const char *radare_argv[] = {
 	"b", "bf", "b?",
 	"/", "//", "/a", "/c", "/h", "/m", "/x", "/v", "/v2", "/v4", "/v8", "/r", "/re",
 	"y", "yy", "y?",
-	"wa", "waf", "wao", 
+	"wa", "waf", "wao",
 	"wv", "wv1", "wv2",  "wv4", "wv8",
 	"wx", "wxf", "ww", "w?",
 	"p6d", "p6e", "p8", "pb", "pc",
@@ -2609,9 +2609,8 @@ reaccept:
 				eprintf ("open (%d): ", cmd);
 				r_socket_read_block (c, &cmd, 1); // len
 				pipefd = -1;
-				ptr = malloc (cmd + 1);
+				if (!(ptr = malloc (cmd + 1))) {
 				//XXX cmd is ut8..so <256 if (cmd<RMT_MAX)
-				if (!ptr) {
 					eprintf ("Cannot malloc in rmt-open len = %d\n", cmd);
 				} else {
 					ut64 baddr = r_config_get_i (core->config, "bin.laddr");
@@ -2649,8 +2648,7 @@ reaccept:
 			case RMT_READ:
 				r_socket_read_block (c, (ut8*)&buf, 4);
 				i = r_read_be32 (buf);
-				ptr = (ut8 *)malloc (i + core->blocksize + 5);
-				if (ptr) {
+				if ((ptr = (ut8 *)malloc (i + core->blocksize + 5))) {
 					r_core_block_read (core);
 					ptr[0] = RMT_READ | RMT_REPLY;
 					if (i > RMT_MAX) {
@@ -2712,7 +2710,11 @@ reaccept:
 				if (once) {
 					const char *cmd = "pd 4";
 					int cmd_len = strlen (cmd) + 1;
-					ut8 *b = malloc (cmd_len + 5);
+					ut8 *b;
+					if (!(b = malloc (cmd_len + 5))) {
+						eprintf("Cannot allocate %d byte(s)\n", cmd_len + 5);
+						goto out_of_function;
+					}
 					b[0] = RMT_CMD;
 					r_write_be32 (b + 1, cmd_len);
 					strcpy ((char *)b+ 5, cmd);
@@ -2736,7 +2738,10 @@ reaccept:
 					once = false;
 				}
 #endif
-				bufw = malloc (cmd_len + 5);
+				if (!(bufw = malloc (cmd_len + 5))) {
+					eprintf("Cannot allocate %d byte(s)\n", cmd_len + 5);
+					goto out_of_function;
+				}
 				bufw[0] = (ut8) (RMT_CMD | RMT_REPLY);
 				r_write_be32 (bufw + 1, cmd_len);
 				memcpy (bufw + 5, cmd_output, cmd_len);
@@ -2749,7 +2754,10 @@ reaccept:
 			case RMT_WRITE:
 				r_socket_read (c, buf, 4);
 				x = r_read_at_be32 (buf, 0);
-				ptr = malloc (x);
+				if (!(ptr = malloc (x))) {
+					eprintf("Cannot allocate byte(s)\n");
+					goto out_of_function;
+				}
 				r_socket_read (c, ptr, x);
 				int ret = r_core_write_at (core, core->offset, ptr, x);
 				buf[0] = RMT_WRITE | RMT_REPLY;

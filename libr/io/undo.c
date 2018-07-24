@@ -204,14 +204,12 @@ R_API void r_io_wundo_new(RIO *io, ut64 off, const ut8 *data, int len) {
 	uw->set = true;
 	uw->off = off;
 	uw->len = len;
-	uw->n = (ut8*) malloc (len);
-	if (!uw->n) {
+	if (!(uw->n = (ut8*) malloc (len))) {
 		free (uw);
 		return;
 	}
 	memcpy (uw->n, data, len);
-	uw->o = (ut8*) malloc (len);
-	if (!uw->o) {
+	if (!(uw->o = (ut8*) malloc (len))) {
 		R_FREE (uw);
 		return;
 	}

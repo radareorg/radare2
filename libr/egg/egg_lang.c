@@ -124,7 +124,7 @@ R_API void r_egg_lang_init(REgg *egg) {
 	egg->lang.varsize = 'l';
 	/* do call or inline it ? */	// BOOL
 	egg->lang.docall = 1;
-	egg->lang.line = 1;	
+	egg->lang.line = 1;
 	egg->lang.file = "stdin";
 	egg->lang.oc = '\n';
 	egg->lang.mode = NORMAL;
@@ -649,7 +649,10 @@ static void rcc_fun(REgg *egg, const char *str) {
 				} else {
 					egg->lang.mode = INLINE;
 					free (egg->lang.syscallbody);
-					egg->lang.syscallbody = malloc (4096);	// XXX hardcoded size
+					if (!(egg->lang.syscallbody = malloc (4096))) {	// XXX hardcoded size
+						R_FREE(egg->lang.dstvar);
+						return;
+					}
 					egg->lang.dstval = egg->lang.syscallbody;
 					R_FREE (egg->lang.dstvar);
 					egg->lang.ndstval = 0;
@@ -671,7 +674,9 @@ static void rcc_fun(REgg *egg, const char *str) {
 				egg->lang.mode = DATA;
 				egg->lang.ndstval = 0;
 				egg->lang.dstvar = strdup (skipspaces (str));
-				egg->lang.dstval = malloc (4096);
+				if (!(egg->lang.dstval = malloc (4096))) {
+					return;
+				}
 			} else if (strstr (ptr, "naked")) {
 				egg->lang.mode = NAKED;
 				/*
@@ -685,7 +690,9 @@ static void rcc_fun(REgg *egg, const char *str) {
 				egg->lang.mode = INLINE;
 				free (egg->lang.dstvar);
 				egg->lang.dstvar = strdup (skipspaces (str));
-				egg->lang.dstval = malloc (4096);
+				if (!(egg->lang.dstval = malloc (4096))) {
+					return;
+				}
 				egg->lang.ndstval = 0;
 			} else {
 				// naked label

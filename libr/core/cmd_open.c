@@ -826,9 +826,8 @@ static bool reopen_in_malloc_cb(void *user, void *data, ut32 id) {
 		return false;
 	}
 
-	ut8 *buf = malloc (size);
-// if malloc fails, we can just abort the loop by returning false
-	if (!buf) {
+	ut8 *buf;
+	if (!(buf = malloc (size))) {
 		free (uri);
 		return false;
 	}
