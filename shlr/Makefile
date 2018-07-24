@@ -26,7 +26,7 @@ CS_URL=$(GIT_PREFIX)github.com/aquynh/capstone.git
 CS_UPD=20180723
 CS_BRA=master
 # NOTE: when you update CS_TIP, also update it in shlr/meson.build
-CS_TIP=443f82ee74f8e0308d53f5833414c07cd866219f
+CS_TIP=782ea67e17a391ca0d3faafdc365b335a1a8930a
 # REVERT THIS COMMIT BECAUSE ITS WRONG
 CS_REV=
 CS_PATCHES=1
