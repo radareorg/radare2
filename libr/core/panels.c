@@ -1574,13 +1574,15 @@ repeat:
 		r_core_cmd0 (core, "sn");
 		break;
 	case '.':
-		if (r_config_get_i (core->config, "cfg.debug")) {
-			r_core_cmd0 (core, "sr PC");
-			// r_core_seek (core, r_num_math (core->num, "entry0"), 1);
-		} else {
-			r_core_cmd0 (core, "s entry0; px");
+		if (panels->curnode != panels->menu_pos && !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
+			if (r_config_get_i (core->config, "cfg.debug")) {
+				r_core_cmd0 (core, "sr PC");
+			} else {
+				r_core_cmd0 (core, "s entry0; px");
+			}
+			panels->panel[panels->curnode].addr = core->offset;
+			panels->panel[panels->curnode].refresh = true;
 		}
-		setRefreshAll (panels);
 		break;
 	case ' ':
 	case '\r':
@@ -1597,24 +1599,27 @@ repeat:
 			" .    - seek to PC or entrypoint\n"
 			" :    - run r2 command in prompt\n"
 			" _    - start the hud input mode\n"
-			" |    - split current panel vertically\n"
-			" -    - split current panel horizontally\n"
+			" |    - split the current panel vertically\n"
+			" -    - split the current panel horizontally\n"
+			" w    - change the current layout of the panels\n"
 			" ?    - show this help\n"
 			" X    - close current panel\n"
-			" m    - open menubar\n"
-			" V    - view graph\n"
+			" m    - move to the menu\n"
+			" V    - go to the graph mode\n"
 			" b    - browse symbols, flags, configurations, classes, ...\n"
 			" c    - toggle cursor\n"
 			" C    - toggle color\n"
-			" d    - define in current address. Same as Vd\n"
+			" d    - define in the current address. Same as Vd\n"
 			" e    - change title and command of current panel\n"
-			" D    - show disassembly in current frame\n"
+			" D    - show disassembly in the current panel\n"
+			" g    - show graph in the current panel\n"
+			" *    - show pseudo code/r2dec in the current panel\n"
 			" i    - insert hex\n"
 			" M    - open new custom frame\n"
-			" hl   - toggle scr.color\n"
-			" HL   - move vertical column split\n"
-			" jk   - scroll/select menu\n"
-			" JK   - select prev/next panels (same as TAB)\n"
+			" hl   - scroll panels horizontally\n"
+			" HL   - resize panels horizontally\n"
+			" jk   - scroll panels vertically\n"
+			" JK   - scroll panels vertically by page\n"
 			" sS   - step in / step over\n"
 			" uU   - undo / redo seek\n"
 			" pP   - seek to next or previous scr.nkey\n"
@@ -1884,6 +1889,8 @@ repeat:
 		}
 		break;
 	case '!':
+		r_cons_2048 (core->panels->can->color);
+		break;
 	case 'q':
 	case -1: // EOF
 		if (panels->menuStackDepth == 0) {
