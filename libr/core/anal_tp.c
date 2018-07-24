@@ -161,7 +161,7 @@ static RList *parse_format(RCore *core, char *fmt) {
 		ptr += 1;
 		// strip [width] specifier
 		while (IS_DIGIT (*ptr)) { ptr++; }
-		strncpy (arr, ptr, sizeof(arr) - 1);
+		r_str_ncpy (arr, ptr, sizeof (arr) - 1);
 		char *tmp = arr;
 		while (tmp && (IS_LOWER (*tmp) || IS_UPPER (*tmp))) { tmp++; }
 		*tmp = '\0';
