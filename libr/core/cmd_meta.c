@@ -518,7 +518,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	return true;
 }
 
-static int cmd_meta_hsdmf(RCore *core, const char *input) {
+static int cmd_meta_others(RCore *core, const char *input) {
 	int n, type = input[0], subtype;
 	char *t = 0, *p, *p2, name[256];
 	int repeat = 1;
@@ -955,7 +955,7 @@ static int cmd_meta(void *data, const char *input) {
 	case 'm': /* Cm magic */
 	case 'f': /* Cf formatted */
 	case 't': /* Ct type analysis commnets */
-		cmd_meta_hsdmf (core, input);
+		cmd_meta_others (core, input);
 		break;
 	case '-':
 		if (input[1] != '*') {
