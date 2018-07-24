@@ -87,7 +87,7 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 	}
 	if (where & R_CORE_LOADLIBS_HOME) {
 		char *homeplugindir = r_str_home (R2_HOME_PLUGINS);
-		// eprintf ("OPENDIR (%s)\n", homeplugindir);
+		// R_LOGFI ("OPENDIR (%s)\n", homeplugindir);
 		r_lib_opendir (core->lib, homeplugindir);
 		free (homeplugindir);
 	}
@@ -111,7 +111,7 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 	r_list_foreach (files, iter, file) {
 		bool isScript = r_str_endswith (file, ".py") || r_str_endswith (file, ".js") || r_str_endswith (file, ".lua");
 		if (isScript) {
-			// eprintf ("-> %s\n", file);
+			// R_LOGFI ("-> %s\n", file);
 			r_core_cmdf (core, ". %s/%s", homeplugindir, file);
 		}
 	}

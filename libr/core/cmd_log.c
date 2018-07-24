@@ -46,7 +46,7 @@ static int textlog_chat(RCore *core) {
 	const char *me = r_config_get (core->config, "cfg.user");
 	char msg[2048];
 
-	eprintf ("Type '/help' for commands:\n");
+	R_LOGFI ("Type '/help' for commands:\n");
 	snprintf (prompt, sizeof (prompt) - 1, "[%s]> ", me);
 	r_line_set_prompt (prompt);
 	for (;;) {
@@ -59,10 +59,10 @@ static int textlog_chat(RCore *core) {
 			continue;
 		}
 		if (!strcmp (buf, "/help")) {
-			eprintf ("/quit           quit the chat (same as ^D)\n");
-			eprintf ("/name <nick>    set cfg.user name\n");
-			eprintf ("/log            show full log\n");
-			eprintf ("/clear          clear text log messages\n");
+			R_LOGFI ("/quit           quit the chat (same as ^D)\n");
+			R_LOGFI ("/name <nick>    set cfg.user name\n");
+			R_LOGFI ("/log            show full log\n");
+			R_LOGFI ("/clear          clear text log messages\n");
 		} else if (!strncmp (buf, "/name ", 6)) {
 			snprintf (msg, sizeof (msg) - 1, "* '%s' is now known as '%s'", me, buf + 6);
 			r_core_log_add (core, msg);
@@ -81,7 +81,7 @@ static int textlog_chat(RCore *core) {
 		} else if (!strcmp (buf, "/quit")) {
 			return 0;
 		} else if (*buf == '/') {
-			eprintf ("Unknown command: %s\n", buf);
+			R_LOGFI ("Unknown command: %s\n", buf);
 		} else {
 			snprintf (msg, sizeof (msg), "[%s] %s", me, buf);
 			r_core_log_add (core, msg);
@@ -114,10 +114,10 @@ static int cmd_log(void *data, const char *input) {
 				r_cons_less_str (b, NULL);
 				free (b);
 			} else {
-				eprintf ("File not found\n");
+				R_LOGFI ("File not found\n");
 			}
 		} else {
-			eprintf ("Usage: less [filename]\n");
+			R_LOGFI ("Usage: less [filename]\n");
 		}
 	}
 	break;
@@ -134,7 +134,7 @@ static int cmd_log(void *data, const char *input) {
 		if (r_config_get_i (core->config, "scr.interactive")) {
 			textlog_chat (core);
 		} else {
-			eprintf ("Only available when the screen is interactive\n");
+			R_LOGFI ("Only available when the screen is interactive\n");
 		}
 		break;
 	case ' ':

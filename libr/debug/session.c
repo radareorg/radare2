@@ -251,7 +251,7 @@ R_API void r_debug_session_save(RDebug *dbg, const char *file) {
 	ut32 i;
 	const char *path = dbg->snap_path;
 	if (!r_file_is_directory (path)) {
-		eprintf ("%s is not correct path\n", path);
+		R_LOGFI ("%s is not correct path\n", path);
 		return;
 	}
 	char *base_file = r_str_newf ("%s/%s.dump", path, file);
@@ -295,13 +295,13 @@ R_API void r_debug_session_save(RDebug *dbg, const char *file) {
 			RRegArena *arena = session->reg[i]->data;
 			r_file_dump (diff_file, (const ut8 *) &arena->size, sizeof (int), 1);
 			r_file_dump (diff_file, (const ut8 *) arena->bytes, arena->size, 1);
-			// eprintf ("arena[%d] size=%d\n", i, arena->size);
+			// R_LOGFI ("arena[%d] size=%d\n", i, arena->size);
 		}
 		if (!header.difflist_len) {
 			continue;
 		}
-		// eprintf ("#### Sesssion ####\n");
-		// eprintf ("Saved all registers off=0x%"PFMT64x"\n", curp);
+		// R_LOGFI ("#### Sesssion ####\n");
+		// R_LOGFI ("Saved all registers off=0x%"PFMT64x"\n", curp);
 
 		/* Dump all diff entries */
 		r_list_foreach (session->memlist, iter2, snapdiff) {
@@ -318,7 +318,7 @@ R_API void r_debug_session_save(RDebug *dbg, const char *file) {
 			}
 		}
 	}
-	eprintf ("Session saved in %s and dump in %s\n", diff_file, base_file);
+	R_LOGFI ("Session saved in %s and dump in %s\n", diff_file, base_file);
 	free (base_file);
 	free (diff_file);
 }
@@ -335,7 +335,7 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 	RReg *reg = dbg->reg;
 	const char *path = dbg->snap_path;
 	if (!r_file_is_directory (path)) {
-		eprintf ("%s is not correct path\n", path);
+		R_LOGFI ("%s is not correct path\n", path);
 		return;
 	}
 	char *base_file = r_str_newf ("%s/%s.dump", path, file);
@@ -423,7 +423,7 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 		session->key.id = header.id;
 		session->key.addr = header.addr;
 		r_list_append (dbg->sessions, session);
-		eprintf ("session: %d, 0x%"PFMT64x " diffs: %d\n", header.id, header.addr, header.difflist_len);
+		R_LOGFI ("session: %d, 0x%"PFMT64x " diffs: %d\n", header.id, header.addr, header.difflist_len);
 		/* Restore registers */
 		for (i = 0; i < R_REG_TYPE_LAST; i++) {
 			/* Resotre RReagArena from raw dump */
@@ -457,7 +457,7 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file) {
 		/* Restore diff entries */
 		for (i = 0; i < header.difflist_len; i++) {
 			(void) fread (&diffentry, sizeof (RDiffEntry), 1, fd);
-			// eprintf ("diffentry base=%d pages=%d\n", diffentry.base_idx, diffentry.pages_len);
+			// R_LOGFI ("diffentry base=%d pages=%d\n", diffentry.base_idx, diffentry.pages_len);
 			snapdiff = R_NEW0 (RDebugSnapDiff);
 			if (!snapdiff) {
 				break;

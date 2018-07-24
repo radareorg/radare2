@@ -136,7 +136,7 @@ R_API void r_core_task_join(RCore *core, RCoreTask *current, RCoreTask *task) {
 
 R_API RCoreTask *r_core_task_new(RCore *core, bool create_cons, const char *cmd, RCoreTaskCallback cb, void *user) {
 	if (cmd && *cmd == '=') {
-		eprintf ("=* commands disabled in tasks\n");
+		R_LOGFI ("=* commands disabled in tasks\n");
 		return NULL;
 	}
 	RCoreTask *task = R_NEW0 (RCoreTask);
@@ -314,7 +314,7 @@ static int task_run(RCoreTask *task) {
 	task->res = res_str;
 
 	if (task != core->main_task) {
-		eprintf ("\nTask %d finished\n", task->id);
+		R_LOGFI ("\nTask %d finished\n", task->id);
 	}
 
 	task_end (task);

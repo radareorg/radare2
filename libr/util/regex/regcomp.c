@@ -41,6 +41,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include "r_regex.h"
+#include "r_util/r_log.h"
 
 #include "utils.h"
 #include "regex2.h"
@@ -142,7 +143,7 @@ R_API int r_regex_match (const char *pattern, const char *flags, const char *tex
 	RRegex rx;
 	int re_flags = r_regex_flags (flags);
 	if (r_regex_comp (&rx, pattern, re_flags)) {
-		eprintf ("FAIL TO COMPILE %s\n", pattern);
+		R_LOGFI ("FAIL TO COMPILE %s\n", pattern);
 		return 0;
 	}
 	ret = r_regex_exec (&rx, text, 0, 0, re_flags);

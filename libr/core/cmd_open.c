@@ -294,7 +294,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 					r_io_desc_close (desc);
 					r_core_cmd0 (core, ".is*");
 				} else {
-					eprintf ("Cannot open %s\n", filename + 1);
+					R_LOGFI ("Cannot open %s\n", filename + 1);
 				}
 			} else {
 				ut64 addr = r_num_math (core->num, input + 2);
@@ -304,12 +304,12 @@ static void cmd_open_bin(RCore *core, const char *input) {
 					r_bin_load_io (core->bin, desc->fd, addr, 0, 0);
 					r_core_cmd0 (core, ".is*");
 				} else {
-					eprintf ("No file to load bin from?\n");
+					R_LOGFI ("No file to load bin from?\n");
 				}
 			}
 			free (arg);
 		} else {
-			eprintf ("RCoreFile has been killed here, this needs to be redone properly from non-uri iofiles\n");
+			R_LOGFI ("RCoreFile has been killed here, this needs to be redone properly from non-uri iofiles\n");
 			RList *files = r_id_storage_list (core->io->files);
 			RIODesc *desc;
 			RListIter *iter;
@@ -331,7 +331,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				value = NULL;
 			}
 			if (!value) {
-				eprintf ("Invalid fd number.");
+				R_LOGFI ("Invalid fd number.");
 				break;
 			}
 			binfile_num = UT32_MAX;
@@ -339,7 +339,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				r_get_input_num_value (core->num, value) : UT32_MAX;
 			binfile_num = find_binfile_id_by_fd (core->bin, fd);
 			if (binfile_num == UT32_MAX) {
-				eprintf ("Invalid fd number.");
+				R_LOGFI ("Invalid fd number.");
 				break;
 			}
 			r_core_bin_raise (core, binfile_num, -1);
@@ -353,13 +353,13 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		char *v;
 		v = input[2] ? strdup (input + 2) : NULL;
 		if (!v) {
-			eprintf ("Invalid arguments");
+			R_LOGFI ("Invalid arguments");
 			break;
 		}
 		n = r_str_word_set0 (v);
 		if (n < 1 || n > 2) {
-			eprintf ("Invalid arguments\n");
-			eprintf ("usage: ob fd obj\n");
+			R_LOGFI ("Invalid arguments\n");
+			R_LOGFI ("usage: ob fd obj\n");
 			free (v);
 			break;
 		}
@@ -392,14 +392,14 @@ static void cmd_open_bin(RCore *core, const char *input) {
 	case 'o': // "obo"
 		value = input[2] ? input + 2 : NULL;
 		if (!value) {
-			eprintf ("Invalid argument");
+			R_LOGFI ("Invalid argument");
 			break;
 		}
 		if (*value == ' ') value ++;
 		binobj_num  = *value && r_is_valid_input_num_value (core->num, value) ?
 				r_get_input_num_value (core->num, value) : UT32_MAX;
 		if (binobj_num == UT32_MAX) {
-			eprintf ("Invalid binobj_num");
+			R_LOGFI ("Invalid binobj_num");
 			break;
 		}
 		r_core_bin_raise (core, -1, binobj_num);
@@ -411,19 +411,19 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			ut32 fd;
 			value = r_str_trim_ro (input + 2);
 			if (!value) {
-				eprintf ("Invalid argument\n");
+				R_LOGFI ("Invalid argument\n");
 				break;
 			}
 			fd  = *value && r_is_valid_input_num_value (core->num, value) ?
 					r_get_input_num_value (core->num, value) : UT32_MAX;
 			RBinObject *bo = find_binfile_by_id (core->bin, fd);
 			if (!bo) {
-				eprintf ("Invalid binid\n");
+				R_LOGFI ("Invalid binid\n");
 				break;
 			}
 			if (r_core_bin_delete (core, binfile_num, bo->id)) {
 				if (!r_bin_file_delete (core->bin, fd)) {
-					eprintf ("Cannot find an RBinFile associated with that fd.\n");
+					R_LOGFI ("Cannot find an RBinFile associated with that fd.\n");
 				}
 			}
 		}
@@ -608,25 +608,25 @@ static void cmd_open_map(RCore *core, const char *input) {
 			if (r_io_map_exists_for_id (core->io, id)) {
 				r_io_map_depriorize (core->io, id);
 			} else {
-				eprintf ("Cannot find any map with mapid %d\n", id);
+				R_LOGFI ("Cannot find any map with mapid %d\n", id);
 			}
 			break;
 		case 'f': // "ompf"
 			fd = r_num_math (core->num, input + 3);
 			if (!r_io_map_priorize_for_fd (core->io, (int)fd)) {
-				eprintf ("Cannot prioritize any map for fd %d\n", (int)fd);
+				R_LOGFI ("Cannot prioritize any map for fd %d\n", (int)fd);
 			}
 			break;
 		case 'b': // "ompb"
 			id = (ut32)r_num_math (core->num, input + 4);
 			if (!r_io_section_priorize_bin (core->io, id)) {
-				eprintf ("Cannot prioritize bin with binid %d\n", id);
+				R_LOGFI ("Cannot prioritize bin with binid %d\n", id);
 			}
 			break;
 		case 's': // "omps"
 			id = (ut32)r_num_math (core->num, input + 4);
 			if (!r_io_section_priorize (core->io, id)) {
-				eprintf ("Cannot prioritize section with sectionid %d\n", id);
+				R_LOGFI ("Cannot prioritize section with sectionid %d\n", id);
 			}
 			break;
 		case ' ': // "omp"
@@ -634,7 +634,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 			if (r_io_map_exists_for_id (core->io, id)) {
 				r_io_map_priorize (core->io, id);
 			} else {
-				eprintf ("Cannot find any map with mapid %d\n", id);
+				R_LOGFI ("Cannot find any map with mapid %d\n", id);
 			}
 			break;
 		}
@@ -667,7 +667,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 				fd = r_num_math (core->num, r_str_word_get0 (s, 0));
 			}
 			if (fd < 3) {
-				eprintf ("wrong fd, it must be greater than 3\n");
+				R_LOGFI ("wrong fd, it must be greater than 3\n");
 				break;
 			}
 			desc = r_io_desc_get (core->io, fd);
@@ -683,7 +683,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 			if (r_io_desc_get (core->io, fd)) {
 				map_list (core->io, 0, core->print, fd);
 			} else {
-				eprintf ("Invalid fd %d\n", (int)fd);
+				R_LOGFI ("Invalid fd %d\n", (int)fd);
 			}
 		}
 		R_FREE (s);
@@ -757,7 +757,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 				map = r_io_map_add (core->io, fd, desc->flags, 0, 0, size, true);
 				r_io_map_set_name (map, desc->name);
 			} else {
-				eprintf ("Usage: omm [fd]\n");
+				R_LOGFI ("Usage: omm [fd]\n");
 			}
 		}
 		break;
@@ -861,7 +861,7 @@ R_API void r_core_file_reopen_debug (RCore *core, const char *args) {
 	RIODesc *desc;
 	char *binpath = NULL;
 	if (!ofile || !(desc = r_io_desc_get (core->io, ofile->fd)) || !desc->uri) {
-		eprintf ("No file open?\n");
+		R_LOGFI ("No file open?\n");
 		return;
 	}
 	bf = r_bin_file_find_by_fd (core->bin, ofile->fd);
@@ -1005,7 +1005,7 @@ static int cmd_open(void *data, const char *input) {
 				RBinFile *bf = NULL;
 				r_list_foreach (core->bin->binfiles, iter, bf) {
 					if (bf && bf->o && bf->o->info) {
-						eprintf ("oa %s %d %s\n", bf->o->info->arch, bf->o->info->bits, bf->file);
+						R_LOGFI ("oa %s %d %s\n", bf->o->info->arch, bf->o->info->bits, bf->file);
 					}
 				}
 				return 1;
@@ -1020,7 +1020,7 @@ static int cmd_open(void *data, const char *input) {
 				const char *filename = NULL;
 				i = r_str_word_set0 (ptr);
 				if (i < 2) {
-					eprintf ("Missing argument\n");
+					R_LOGFI ("Missing argument\n");
 					free (ptr);
 					return 0;
 				}
@@ -1032,7 +1032,7 @@ static int cmd_open(void *data, const char *input) {
 				r_core_bin_set_arch_bits (core, filename, arch, bits);
 				RBinFile *file = r_bin_file_find_by_name (core->bin, filename);
 				if (!file) {
-					eprintf ("Cannot find file %s\n", filename);
+					R_LOGFI ("Cannot find file %s\n", filename);
 					free (ptr);
 					return 0;
 				}
@@ -1046,7 +1046,7 @@ static int cmd_open(void *data, const char *input) {
 			}
 		break;
 		default:
-			eprintf ("Usage: oa[-][arch] [bits] [filename]\n");
+			R_LOGFI ("Usage: oa[-][arch] [bits] [filename]\n");
 			return 0;
 	}
 	case 'n': // "on"
@@ -1057,7 +1057,7 @@ static int cmd_open(void *data, const char *input) {
 			write = true;
 			perms |= R_IO_WRITE;
 			if (input[2] != ' ') {
-				eprintf ("Usage: on+ file [addr] [rwx]\n");
+				R_LOGFI ("Usage: on+ file [addr] [rwx]\n");
 				return 0;
 			}
 			ptr = input + 3;
@@ -1067,30 +1067,30 @@ static int cmd_open(void *data, const char *input) {
 				write = true;
 				perms |= R_IO_WRITE;
 				if (input[3] != ' ') {
-					eprintf ("Usage: ons+ file [addr] [rwx]\n");
+					R_LOGFI ("Usage: ons+ file [addr] [rwx]\n");
 					return 0;
 				}
 				ptr = input + 4;
 			} else if (input[2] == ' ') {
 				ptr = input + 3;
 			} else {
-				eprintf ("Usage: ons file [addr] [rwx]\n");
+				R_LOGFI ("Usage: ons file [addr] [rwx]\n");
 				return 0;
 			}
 		} else if (input[1] == ' ') {
 			ptr = input + 2;
 		} else {
-			eprintf ("Usage: on file [addr] [rwx]\n");
+			R_LOGFI ("Usage: on file [addr] [rwx]\n");
 			return 0;
 		}
 		argv = r_str_argv (ptr, &argc);
 		if (!argc) {
 			if (write) {
-				if (silence) eprintf ("Usage: ons+ file [addr] [rwx]\n");
-				else eprintf ("Usage: on+ file [addr] [rwx]\n");
+				if (silence) R_LOGFI ("Usage: ons+ file [addr] [rwx]\n");
+				else R_LOGFI ("Usage: on+ file [addr] [rwx]\n");
 			} else {
-				if (silence) eprintf ("Usage: ons file [addr] [rwx]\n");
-				else eprintf ("Usage: on file [addr] [rwx]\n");
+				if (silence) R_LOGFI ("Usage: ons file [addr] [rwx]\n");
+				else R_LOGFI ("Usage: on file [addr] [rwx]\n");
 			}
 			r_str_argv_free (argv);
 			return 0;
@@ -1115,7 +1115,7 @@ static int cmd_open(void *data, const char *input) {
 		}
 		r_str_argv_free (argv);
 		if (!silence) {
-			eprintf ("%d\n", fd);
+			R_LOGFI ("%d\n", fd);
 		}
 		r_core_block_read (core);
 		return 0;
@@ -1128,12 +1128,12 @@ static int cmd_open(void *data, const char *input) {
 		} else if (input[1] == ' ') {
 			ptr = input + 2;
 		} else {
-			eprintf ("wrong\n");
+			R_LOGFI ("wrong\n");
 			return 0;
 		}
 		argv = r_str_argv (ptr, &argc);
 		if (argc == 0) {
-			eprintf ("wrong\n");
+			R_LOGFI ("wrong\n");
 			r_str_argv_free (argv);
 			return 0;
 		} else if (argc == 2) {
@@ -1141,7 +1141,7 @@ static int cmd_open(void *data, const char *input) {
 		}
 		fd = r_io_fd_open (core->io, argv[0], perms, 0);
 		if (!silence) {
-			eprintf ("%d\n", fd);
+			R_LOGFI ("%d\n", fd);
 		}
 		r_str_argv_free (argv);
 		return 0;
@@ -1156,11 +1156,11 @@ static int cmd_open(void *data, const char *input) {
 			if ((file = r_core_file_open (core, argv0, perms, addr))) {
 				fd = file->fd;
 				if (!silence) {
-					eprintf ("%d\n", fd);
+					R_LOGFI ("%d\n", fd);
 				}
 				r_core_bin_load (core, argv0, baddr);
 			} else if (!nowarn) {
-				eprintf ("cannot open file %s\n", argv0);
+				R_LOGFI ("cannot open file %s\n", argv0);
 			}
 			r_str_argv_free (argv);
 		}
@@ -1198,12 +1198,12 @@ static int cmd_open(void *data, const char *input) {
 			ptr = input + 1;
 		}
 		if (ptr[-1] != ' ') {
-			eprintf ("wrong\n");
+			R_LOGFI ("wrong\n");
 			return 0;
 		}
 		argv = r_str_argv (ptr, &argc);
 		if (argc == 0) {
-			eprintf ("wrong\n");
+			R_LOGFI ("wrong\n");
 			r_str_argv_free (argv);
 			return 0;
 		}
@@ -1225,11 +1225,11 @@ static int cmd_open(void *data, const char *input) {
 			if ((file = r_core_file_open (core, argv0, perms, addr))) {
 				fd = file->fd;
 				if (!silence) {
-					eprintf ("%d\n", fd);
+					R_LOGFI ("%d\n", fd);
 				}
 				r_core_bin_load (core, argv0, baddr);
 			} else if (!nowarn) {
-				eprintf ("cannot open file %s\n", argv0);
+				R_LOGFI ("cannot open file %s\n", argv0);
 			}
 			r_str_argv_free (argv);
 		}
@@ -1271,12 +1271,12 @@ static int cmd_open(void *data, const char *input) {
 		break;
 	case 'L': // "oL"
 		if (r_sandbox_enable (0)) {
-			eprintf ("This command is disabled in sandbox mode\n");
+			R_LOGFI ("This command is disabled in sandbox mode\n");
 			return 0;
 		}
 		if (input[1] == ' ') {
 			if (r_lib_open (core->lib, input+2) == R_FAIL) {
-				eprintf ("Oops\n");
+				R_LOGFI ("Oops\n");
 			}
 		} else {
 			if ('j' == input[1]) {
@@ -1359,7 +1359,7 @@ static int cmd_open(void *data, const char *input) {
 			r_list_purge (core->files);
 			break;
 		case '-': // "o--"
-			eprintf ("All core files, io, anal and flags info purged.\n");
+			R_LOGFI ("All core files, io, anal and flags info purged.\n");
 			r_core_file_close_fd (core, -1);
 			r_io_close_all (core->io);
 			r_bin_file_delete_all (core->bin);
@@ -1374,7 +1374,7 @@ static int cmd_open(void *data, const char *input) {
 			{
 				int fd = (int)r_num_math (core->num, input + 1);
 				if (!r_core_file_close_fd (core, fd)) {
-					eprintf ("Unable to find filedescriptor %d\n", fd);
+					R_LOGFI ("Unable to find filedescriptor %d\n", fd);
 				}
 			}
 			break;
@@ -1493,7 +1493,7 @@ static int cmd_open(void *data, const char *input) {
 						r_core_cmdf (core, "o %s", file);
 						free (file);
 					} else {
-						eprintf ("Nothing to do.\n");
+						R_LOGFI ("Nothing to do.\n");
 					}
 				} else {
 					r_io_reopen (core->io, fd, R_IO_READ, 644);
@@ -1509,7 +1509,7 @@ static int cmd_open(void *data, const char *input) {
 	case 'c': // "oc"
 		if (input[1] && input[2]) {
 			if (r_sandbox_enable (0)) {
-				eprintf ("This command is disabled in sandbox mode\n");
+				R_LOGFI ("This command is disabled in sandbox mode\n");
 				return 0;
 			}
 			// memleak? lose all settings wtf
@@ -1517,11 +1517,11 @@ static int cmd_open(void *data, const char *input) {
 			r_core_fini (core);
 			r_core_init (core);
 			if (!r_core_file_open (core, input + 2, R_IO_READ, 0)) {
-				eprintf ("Cannot open file\n");
+				R_LOGFI ("Cannot open file\n");
 			}
 			(void)r_core_bin_load (core, NULL, baddr);
 		} else {
-			eprintf ("Missing argument\n");
+			R_LOGFI ("Missing argument\n");
 		}
 		break;
 	case 'x': // "ox"
@@ -1542,7 +1542,7 @@ static int cmd_open(void *data, const char *input) {
 			r_io_desc_exchange (core->io, fd, fdx);
 			r_core_block_read (core);
 		} else {
-			eprintf ("Usage: ox [fd] [fdx] - exchange two file descriptors\n");
+			R_LOGFI ("Usage: ox [fd] [fdx] - exchange two file descriptors\n");
 		}
 		break;
 	case '?': // "o?"

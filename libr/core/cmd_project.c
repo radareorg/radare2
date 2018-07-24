@@ -67,7 +67,7 @@ static int cmd_project(void *data, const char *input) {
 		if (input[1] == ' ') {
 			r_core_project_cat (core, input + 2);
 		} else {
-			eprintf ("Usage: Pc [prjname]\n");
+			R_LOGFI ("Usage: Pc [prjname]\n");
 		}
 		break;
 	case 'o':
@@ -98,14 +98,14 @@ static int cmd_project(void *data, const char *input) {
 		if (input[1] == ' ') {
 			r_core_project_save_rdb (core, input + 2, R_CORE_PRJ_ALL);
 		} else {
-			eprintf ("Usage: PS [file]\n");
+			R_LOGFI ("Usage: PS [file]\n");
 		}
 		break;
 	case 'n': // "Pn"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_Pn);
 		} else if (!fileproject || !*fileproject) {
-			eprintf ("No project\n");
+			R_LOGFI ("No project\n");
 		} else {
 			switch (input[1]) {
 			case '-': // "Pn-"
@@ -113,7 +113,7 @@ static int cmd_project(void *data, const char *input) {
 			{
 				FILE *fd = r_sandbox_fopen (str, "w");
 				if (!fd) {
-					eprintf ("Cannot open %s\n", str);
+					R_LOGFI ("Cannot open %s\n", str);
 				} else {
 					char *str = r_core_project_notes_file (core, fileproject);
 					char *data = r_file_slurp (str, NULL);
@@ -134,7 +134,7 @@ static int cmd_project(void *data, const char *input) {
 						free (data);
 					}
 					if (del > 0) {
-						eprintf ("Deleted %d lines\n", del);
+						R_LOGFI ("Deleted %d lines\n", del);
 					}
 					free (str);
 					fclose (fd);
@@ -149,7 +149,7 @@ static int cmd_project(void *data, const char *input) {
 					if (str && *str && editor && *editor) {
 						r_sys_cmdf ("%s %s", editor, str);
 					} else {
-						eprintf ("No cfg.editor configured\n");
+						R_LOGFI ("No cfg.editor configured\n");
 					}
 					free (str);
 				} else {
@@ -204,7 +204,7 @@ static int cmd_project(void *data, const char *input) {
 						free (data);
 					}
 				} else {
-					eprintf ("Usage: `Pnj` or `Pnj ...`\n");
+					R_LOGFI ("Usage: `Pnj` or `Pnj ...`\n");
 				}
 				break;
 			case 'x': // "Pnx"

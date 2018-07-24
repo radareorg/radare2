@@ -5,13 +5,13 @@
 R_API RStrpool* r_strpool_new (int sz) {
 	RStrpool *p = R_NEW (RStrpool);
 	if (!p) {
-		eprintf ("Malloc failed!\n");
+		R_LOGFI ("Malloc failed!\n");
 		return NULL;
 	}
 	if (sz < 1) sz = 1024;
 	p->str = malloc (sz);
 	if (!p->str) {
-		eprintf ("Malloc failed!\n");
+		R_LOGFI ("Malloc failed!\n");
 		free (p);
 		return NULL;
 	}
@@ -38,13 +38,13 @@ R_API char *r_strpool_alloc (RStrpool *p, int l) {
 			p->size += R_STRPOOL_INC;
 		}
 		if (p->size < osize) {
-			eprintf ("Underflow!\n");
+			R_LOGFI ("Underflow!\n");
 			p->size = osize;
 			return NULL;
 		}
 		ret = realloc (p->str, p->size);
 		if (!ret) {
-			eprintf ("Realloc failed!\n");
+			R_LOGFI ("Realloc failed!\n");
 			free (p->str);
 			return NULL;
 		}
@@ -89,7 +89,7 @@ R_API int r_strpool_fit(RStrpool *p) {
 	s = realloc (p->str, p->len);
 	if (!s)
 	{
-		eprintf ("Realloc failed!\n");
+		R_LOGFI ("Realloc failed!\n");
 		free (p->str);
 		return false;
 	}

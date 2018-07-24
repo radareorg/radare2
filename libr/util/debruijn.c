@@ -82,7 +82,7 @@ R_API char* r_debruijn_pattern(int size, int start, const char* charset) {
 	if (start == 0) {
 		len = strlen (pat);
 		if (size != len) {
-			eprintf ("warning: requested pattern of length %d, "
+			R_LOGFI ("warning: requested pattern of length %d, "
 				 "generated length %"PFMT64d"\n", size, len);
 		}
 		return pat;
@@ -97,7 +97,7 @@ R_API char* r_debruijn_pattern(int size, int start, const char* charset) {
 	free (pat);
 	len = strlen (pat2);
 	if (size != len) {
-		eprintf ("warning: requested pattern of length %d, "
+		R_LOGFI ("warning: requested pattern of length %d, "
 				 "generated length %"PFMT64d"\n",
 				 size, len);
 	}

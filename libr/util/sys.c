@@ -159,7 +159,7 @@ R_API RList *r_sys_dir(const char *path) {
 	char *cfname;
 	fh = r_sandbox_opendir (path, &entry);
 	if (fh == INVALID_HANDLE_VALUE) {
-		//IFDGB eprintf ("Cannot open directory %ls\n", wcpath);
+		//IFDGB R_LOGFI ("Cannot open directory %ls\n", wcpath);
 		return list;
 	}
 	list = r_list_newf (free);
@@ -215,7 +215,7 @@ R_API void r_sys_backtrace(void) {
 #ifdef HAVE_BACKTRACE
 	void *array[10];
 	size_t size = backtrace (array, 10);
-	eprintf ("Backtrace %zd stack frames.\n", size);
+	R_LOGFI ("Backtrace %zd stack frames.\n", size);
 	backtrace_symbols_fd (array, size, 2);
 #elif __APPLE__
 	void **fp = (void **) __builtin_frame_address (0);
@@ -577,9 +577,9 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 		bool ret = true;
 		if (status) {
 			// char *escmd = r_str_escape (cmd);
-			// eprintf ("error code %d (%s): %s\n", WEXITSTATUS (status), escmd, *sterr);
-			// eprintf ("(%s)\n", output);
-			// eprintf ("%s: failed command '%s'\n", __func__, escmd);
+			// R_LOGFI ("error code %d (%s): %s\n", WEXITSTATUS (status), escmd, *sterr);
+			// R_LOGFI ("(%s)\n", output);
+			// R_LOGFI ("%s: failed command '%s'\n", __func__, escmd);
 			// free (escmd);
 			ret = false;
 		}
@@ -610,7 +610,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 }
 #else
 R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, int *len, char **sterr) {
-	eprintf ("r_sys_cmd_str: not yet implemented for this platform\n");
+	R_LOGFI ("r_sys_cmd_str: not yet implemented for this platform\n");
 	return false;
 }
 #endif
@@ -636,7 +636,7 @@ R_API int r_sys_cmdbg (const char *str) {
 		return pid;
 	}
 	ret = r_sandbox_system (str, 0);
-	eprintf ("{exit: %d, pid: %d, cmd: \"%s\"}", ret, pid, str);
+	R_LOGFI ("{exit: %d, pid: %d, cmd: \"%s\"}", ret, pid, str);
 	exit (0);
 	return -1;
 #else
@@ -709,7 +709,7 @@ R_API bool r_sys_mkdirp(const char *dir) {
 	char slash = R_SYS_DIR[0];
 	char *path = strdup (dir), *ptr = path;
 	if (!path) {
-		eprintf ("r_sys_mkdirp: Unable to allocate memory\n");
+		R_LOGFI ("r_sys_mkdirp: Unable to allocate memory\n");
 		return false;
 	}
 	if (*ptr == slash) {
@@ -736,7 +736,7 @@ R_API bool r_sys_mkdirp(const char *dir) {
 		}
 		*ptr = 0;
 		if (!r_sys_mkdir (path) && r_sys_mkdir_failed ()) {
-			eprintf ("r_sys_mkdirp: fail '%s' of '%s'\n", path, dir);
+			R_LOGFI ("r_sys_mkdirp: fail '%s' of '%s'\n", path, dir);
 			free (path);
 			return false;
 		}
@@ -768,10 +768,10 @@ R_API void r_sys_perror_str(const char *fun) {
 			MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
 			(LPTSTR)&lpMsgBuf,
 			0, NULL )) {
-		eprintf ("%s: " W32_TCHAR_FSTR "\n", fun, lpMsgBuf);
+		R_LOGFI ("%s: " W32_TCHAR_FSTR "\n", fun, lpMsgBuf);
 		LocalFree (lpMsgBuf);
 	} else {
-		eprintf ("%s\n", fun);
+		R_LOGFI ("%s\n", fun);
 	}
 #endif
 }
@@ -831,7 +831,7 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 		ptr += (4096 - pdelta);
 	}
 	if (!ptr || !buf) {
-		eprintf ("r_sys_run: Cannot run empty buffer\n");
+		R_LOGFI ("r_sys_run: Cannot run empty buffer\n");
 		free (p);
 		return false;
 	}
@@ -857,7 +857,7 @@ R_API int r_sys_run(const ut8 *buf, int len) {
 	waitpid (pid, &st, 0);
 	if (WIFSIGNALED (st)) {
 		int num = WTERMSIG(st);
-		eprintf ("Got signal %d\n", num);
+		R_LOGFI ("Got signal %d\n", num);
 		ret = num;
 	} else {
 		ret = WEXITSTATUS (st);
@@ -885,7 +885,7 @@ R_API char *r_sys_pid_to_path(int pid) {
 #if __WINDOWS__
 	HANDLE kernel32 = GetModuleHandle (TEXT("kernel32"));
 	if (!kernel32) {
-		eprintf ("Error getting the handle to kernel32.dll\n");
+		R_LOGFI ("Error getting the handle to kernel32.dll\n");
 		return NULL;
 	}
 #ifndef _MSC_VER
@@ -897,12 +897,12 @@ R_API char *r_sys_pid_to_path(int pid) {
 			// QueryFullProcessImageName does not exist before Vista, fallback to GetProcessImageFileName
 			HANDLE psapi = LoadLibrary (TEXT("Psapi.dll"));
 			if (!psapi) {
-				eprintf ("Error getting the handle to Psapi.dll\n");
+				R_LOGFI ("Error getting the handle to Psapi.dll\n");
 				return NULL;
 			}
 			GetProcessImageFileName = (GetProcessImageFileName_t) GetProcAddress (psapi, W32_TCALL ("GetProcessImageFileName"));
 			if (!GetProcessImageFileName) {
-				eprintf ("Error getting the address of GetProcessImageFileName\n");
+				R_LOGFI ("Error getting the address of GetProcessImageFileName\n");
 				return NULL;
 			}
 		}
@@ -914,13 +914,13 @@ R_API char *r_sys_pid_to_path(int pid) {
 	if (handle != NULL) {
 		if (QueryFullProcessImageName) {
 			if (QueryFullProcessImageName (handle, 0, filename, &maxlength) == 0) {
-				eprintf ("Error calling QueryFullProcessImageName\n");
+				R_LOGFI ("Error calling QueryFullProcessImageName\n");
 				CloseHandle (handle);
 				return NULL;
 			}
 		} else {
 			if (GetProcessImageFileName (handle, filename, maxlength) == 0) {
-				eprintf ("Error calling GetProcessImageFileName\n");
+				R_LOGFI ("Error calling GetProcessImageFileName\n");
 				CloseHandle (handle);
 				return NULL;
 			}
@@ -936,13 +936,13 @@ R_API char *r_sys_pid_to_path(int pid) {
 	processHandle = OpenProcess (PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
 	if (processHandle != NULL) {
 		if (GetModuleFileNameEx (processHandle, NULL, filename, FILENAME_MAX) == 0) {
-			eprintf ("r_sys_pid_to_path: Cannot get module filename.");
+			R_LOGFI ("r_sys_pid_to_path: Cannot get module filename.");
 		} else {
 			return strdup (filename);
 		}
 		CloseHandle (processHandle);
 	} else {
-		eprintf ("r_sys_pid_to_path: Cannot open process.");
+		R_LOGFI ("r_sys_pid_to_path: Cannot open process.");
 	}
 	return NULL;
 #endif

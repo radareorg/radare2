@@ -22,7 +22,7 @@ static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 	op->type = 0;
 	op->size = 4;
 
-	//eprintf("OPCODE IS %08x : %02x (opcode=%d) baddr = %d\n", addr, bytes[0], opcode, baddr);
+	//R_LOGFI("OPCODE IS %08x : %02x (opcode=%d) baddr = %d\n", addr, bytes[0], opcode, baddr);
 
 	switch (opcode) {
 //	case 0: // bl op->type = R_ANAL_OP_TYPE_NOP; break;

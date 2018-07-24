@@ -608,7 +608,7 @@ int main () {
 		const char *str = r_list_iter_get (iter);
 		printf ("-> %s\n", str);
 	}
-	eprintf ("--sort--\n");
+	R_LOGFI ("--sort--\n");
 	r_list_sort (l, (RListComparator)strcmp);
 	iter = r_list_iterator (l);
 	while (r_list_iter_next (iter)) {

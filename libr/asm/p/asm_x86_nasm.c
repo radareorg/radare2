@@ -11,7 +11,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	char asm_buf[R_ASM_BUFSIZE];
 	int len = 0;
 	if (a->syntax != R_ASM_SYNTAX_INTEL) {
-		eprintf ("asm.x86.nasm does not support non-intel syntax\n");
+		R_LOGFI ("asm.x86.nasm does not support non-intel syntax\n");
 		return -1;
 	}
 
@@ -34,7 +34,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	if ( !r_sys_cmdf ("nasm %s -o %s", ipath, opath)) {
 		len = read (ofd, op->buf, R_ASM_BUFSIZE);
 	} else {
-		eprintf ("Error running 'nasm'\n");
+		R_LOGFI ("Error running 'nasm'\n");
 		len = 0;
 	}
 

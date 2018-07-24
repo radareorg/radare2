@@ -24,7 +24,7 @@ R_API bool r_anal_var_display(RAnal *anal, int delta, char kind, const char *typ
 	char *fmt = r_type_format (anal->sdb_types, type);
 	RRegItem *i;
 	if (!fmt) {
-		eprintf ("type:%s doesn't exist\n", type);
+		R_LOGFI ("type:%s doesn't exist\n", type);
 		return false;
 	}
 	bool usePxr = !strcmp (type, "int"); // hacky but useful
@@ -38,7 +38,7 @@ R_API bool r_anal_var_display(RAnal *anal, int delta, char kind, const char *typ
 				anal->cb_printf ("pf r (%s)\n", i->name);
 			}
 		} else {
-			eprintf ("register not found\n");
+			R_LOGFI ("register not found\n");
 		}
 		break;
 	case R_ANAL_VAR_KIND_BPV:
@@ -85,7 +85,7 @@ R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, 
 	case R_ANAL_VAR_KIND_REG: // registers args
 		break;
 	default:
-		eprintf ("Invalid var kind '%c'\n", kind);
+		R_LOGFI ("Invalid var kind '%c'\n", kind);
 		return false;
 	}
 	const char *var_def = sdb_fmt ("%d,%s,%d,%s", isarg, type, size, name);
@@ -151,7 +151,7 @@ R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind
 	case R_ANAL_VAR_KIND_SPV:
 		break;
 	default:
-		eprintf ("Invalid var kind '%c'\n", kind);
+		R_LOGFI ("Invalid var kind '%c'\n", kind);
 		return false;
 	}
 	const char *var_def = sdb_fmt ("%d,%s,%d,%s", isarg, type, size, name);
@@ -275,7 +275,7 @@ R_API bool r_anal_var_delete_byname(RAnal *a, RAnalFunction *fcn, int kind, cons
 						}
 					}
 				} else {
-					eprintf ("Inconsistent Sdb storage, Cannot find '%s'\n", word);
+					R_LOGFI ("Inconsistent Sdb storage, Cannot find '%s'\n", word);
 				}
 				ptr = next;
 			} while (next);
@@ -287,13 +287,13 @@ R_API bool r_anal_var_delete_byname(RAnal *a, RAnalFunction *fcn, int kind, cons
 
 R_API RAnalVar *r_anal_var_get_byname(RAnal *a, ut64 addr, const char *name) {
 	if (!a || !name) {
-		// eprintf ("No something\n");
+		// R_LOGFI ("No something\n");
 		return NULL;
 	}
 	char *name_key = sdb_fmt ("var.0x%"PFMT64x ".%d.%s", addr, 1, name);
 	char *name_value = sdb_get (DB, name_key, 0);
 	if (!name_value) {
-		// eprintf ("Cant find key for %s\n", name_key);
+		// R_LOGFI ("Cant find key for %s\n", name_key);
 		return NULL;
 	}
 	const char *comma = strchr (name_value, ',');
@@ -406,7 +406,7 @@ R_API int r_anal_var_rename(RAnal *a, ut64 addr, int scope, char kind, const cha
 	if (v1) {
 		r_anal_var_free (v1);
 		if (verbose) {
-			eprintf ("variable or arg with name `%s` already exist\n", new_name);
+			R_LOGFI ("variable or arg with name `%s` already exist\n", new_name);
 		}
 		return false;
 	}
@@ -760,7 +760,7 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dyn
 				}
 				if (!vt.name || !vt.type) {
 					// This should be properly fixed
-					eprintf ("Warning null var in fcn.0x%"PFMT64x ".%c.%s\n",
+					R_LOGFI ("Warning null var in fcn.0x%"PFMT64x ".%c.%s\n",
 						fcn->addr, kind, word);
 					free (av);
 					continue;
@@ -777,7 +777,7 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dyn
 				}
 				sdb_fmt_free (&vt, SDB_VARTYPE_FMT);
 			} else {
-				eprintf ("Cannot find var definition for '%s'\n", word);
+				R_LOGFI ("Cannot find var definition for '%s'\n", word);
 			}
 			ptr = next;
 		} while (next);
@@ -836,7 +836,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 			if (kind == R_ANAL_VAR_KIND_REG) { // registers
 				RRegItem *i = r_reg_index_get (anal->reg, var->delta);
 				if (!i) {
-					eprintf ("Register not found");
+					R_LOGFI ("Register not found");
 					break;
 				}
 				anal->cb_printf ("afv%c %s %s %s @ 0x%"PFMT64x "\n",
@@ -867,7 +867,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 			case R_ANAL_VAR_KIND_REG: {
 				RRegItem *i = r_reg_index_get (anal->reg, var->delta);
 				if (!i) {
-					eprintf ("Register not found");
+					R_LOGFI ("Register not found");
 					break;
 				}
 				anal->cb_printf ("{\"name\":\"%s\","
@@ -913,7 +913,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 			case R_ANAL_VAR_KIND_REG: {
 				RRegItem *i = r_reg_index_get (anal->reg, var->delta);
 				if (!i) {
-					eprintf ("Register not found");
+					R_LOGFI ("Register not found");
 					break;
 				}
 				anal->cb_printf ("arg %s %s @ %s\n",

@@ -31,7 +31,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		io->off, bufnum);
 	rv = r2p_write (R2P (fd), fmt);
 	if (rv <1) {
-		eprintf ("r2p_write: error\n");
+		R_LOGFI ("r2p_write: error\n");
 		return -1;
 	}
 	res = r2p_read (R2P (fd));
@@ -60,7 +60,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		io->off, count);
 	rv = r2p_write (R2P (fd), fmt);
 	if (rv < 1) {
-		eprintf ("r2p_write: error\n");
+		R_LOGFI ("r2p_write: error\n");
 		return -1;
 	}
 	res = r2p_read (R2P (fd));
@@ -155,16 +155,16 @@ static char *__system(RIO *io, RIODesc *fd, const char *msg) {
 	snprintf (fmt, sizeof (fmt), "{\"op\":\"system\",\"cmd\":\"%s\"}", msg);
 	rv = r2p_write (R2P (fd), fmt);
 	if (rv < 1) {
-		eprintf ("r2p_write: error\n");
+		R_LOGFI ("r2p_write: error\n");
 		return NULL;
 	}
 	res = r2p_read (R2P (fd));
-	//eprintf ("%s\n", res);
+	//R_LOGFI ("%s\n", res);
 	/* TODO: parse json back */
 	r = strstr (res, "result");
 	if (r) {
 		rescount = atoi (r + 6 + 1);
-		eprintf ("RESULT %d\n", rescount);
+		R_LOGFI ("RESULT %d\n", rescount);
 	}
 	free (res);
 	return NULL;

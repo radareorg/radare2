@@ -149,7 +149,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 		break;
 	case 'r':
 		if (disasm) {
-			eprintf ("r2cmds (-r) + disasm (-D) not yet implemented\n");
+			R_LOGFI ("r2cmds (-r) + disasm (-D) not yet implemented\n");
 		}
 		if (op->a_len == op->b_len) {
 			printf ("wx ");
@@ -176,7 +176,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 		return 1;
 	case 'j':
 		if (disasm) {
-			eprintf ("JSON (-j) + disasm (-D) not yet implemented\n");
+			R_LOGFI ("JSON (-j) + disasm (-D) not yet implemented\n");
 		}
 		if (json_started) {
 			printf (",\n");
@@ -443,7 +443,7 @@ static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
 			"0 1 2 3 4 5 6 7 8 9 A B C D E F 0123456789ABCDEF\n");
 		break;
 	default:
-		eprintf ("Invalid column width\n");
+		R_LOGFI ("Invalid column width\n");
 		return;
 	}
 	for (i = 0; i < sz; i += w) {
@@ -552,7 +552,7 @@ static ut8 *slurp(RCore **c, const char *file, int *sz) {
 			*c = opencore (NULL);
 		}
 		if (!*c) {
-			eprintf ("opencore failed\n");
+			R_LOGFI ("opencore failed\n");
 			return NULL;
 		}
 		io = (*c)->io;
@@ -568,11 +568,11 @@ static ut8 *slurp(RCore **c, const char *file, int *sz) {
 					*sz = size;
 				}
 			} else {
-				eprintf ("slurp: read error\n");
+				R_LOGFI ("slurp: read error\n");
 				R_FREE (data);
 			}
 		} else {
-			eprintf ("slurp: Invalid file size\n");
+			R_LOGFI ("slurp: Invalid file size\n");
 		}
 		r_io_desc_close (d);
 		return data;
@@ -802,11 +802,11 @@ int main(int argc, char **argv) {
 	case MODE_DIFF_IMPORTS:
 		c = opencore (file);
 		if (!c) {
-			eprintf ("Cannot open '%s'\n", r_str_get (file));
+			R_LOGFI ("Cannot open '%s'\n", r_str_get (file));
 		}
 		c2 = opencore (file2);
 		if (!c || !c2) {
-			eprintf ("Cannot open '%s'\n", r_str_get (file2));
+			R_LOGFI ("Cannot open '%s'\n", r_str_get (file2));
 			return 1;
 		}
 		c->c2 = c2;
@@ -893,17 +893,17 @@ int main(int argc, char **argv) {
 	default:
 		bufa = slurp (&c, file, &sza);
 		if (!bufa) {
-			eprintf ("radiff2: Cannot open %s\n", r_str_get (file));
+			R_LOGFI ("radiff2: Cannot open %s\n", r_str_get (file));
 			return 1;
 		}
 		bufb = slurp (&c, file2, &szb);
 		if (!bufb) {
-			eprintf ("radiff2: Cannot open: %s\n", r_str_get (file2));
+			R_LOGFI ("radiff2: Cannot open: %s\n", r_str_get (file2));
 			free (bufa);
 			return 1;
 		}
 		if (sza != szb) {
-			eprintf ("File size differs %d vs %d\n", sza, szb);
+			R_LOGFI ("File size differs %d vs %d\n", sza, szb);
 		}
 		break;
 	}

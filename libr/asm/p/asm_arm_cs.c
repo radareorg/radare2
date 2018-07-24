@@ -119,7 +119,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	} else {
 		opcode = armass_assemble (buf, a->pc, is_thumb);
 		if (a->bits != 32 && a->bits != 16) {
-			eprintf ("Error: ARM assembler only supports 16 or 32 bits\n");
+			R_LOGFI ("Error: ARM assembler only supports 16 or 32 bits\n");
 			return -1;
 		}
 	}
@@ -196,7 +196,7 @@ static int check_features(RAsm *a, cs_insn *insn) {
 			return 1;
 		}
 		if (!strstr (a->features, name)) {
-			//eprintf ("CANNOT FIND %s\n", name);
+			//R_LOGFI ("CANNOT FIND %s\n", name);
 			return 0;
 		}
 	}

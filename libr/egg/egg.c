@@ -102,7 +102,7 @@ R_API int r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const c
 	egg->remit = NULL;
 
 	egg->os = os? r_str_hash (os): R_EGG_OS_DEFAULT;
-//eprintf ("%s -> %x (linux=%x) (darwin=%x)\n", os, egg->os, R_EGG_OS_LINUX, R_EGG_OS_DARWIN);
+//R_LOGFI ("%s -> %x (linux=%x) (darwin=%x)\n", os, egg->os, R_EGG_OS_LINUX, R_EGG_OS_DARWIN);
 	// TODO: setup egg->arch for all archs
 	if (!strcmp (arch, "x86")) {
 		egg->arch = R_SYS_ARCH_X86;
@@ -292,7 +292,7 @@ R_API int r_egg_assemble_asm(REgg *egg, char **asm_list) {
 			}
 			// LEAK r_asm_code_free (asmcode);
 		} else {
-			eprintf ("fail assembling\n");
+			R_LOGFI ("fail assembling\n");
 		}
 	}
 	free (code);
@@ -326,7 +326,7 @@ R_API int r_egg_compile(REgg *egg) {
 		}
 	}
 	if (egg->context>0) {
-		eprintf ("ERROR: expected '}' at the end of the file. %d left\n", egg->context);
+		R_LOGFI ("ERROR: expected '}' at the end of the file. %d left\n", egg->context);
 		return false;
 	}
 	// TODO: handle errors here
@@ -381,7 +381,7 @@ R_API int r_egg_padding (REgg *egg, const char *pad) {
 		number = strtol(p, NULL, 10);
 
 		if (number < 1) {
-			eprintf ("Invalid padding length at %d\n", number);
+			R_LOGFI ("Invalid padding length at %d\n", number);
 			free (o);
 			return false;
 		}
@@ -393,12 +393,12 @@ R_API int r_egg_padding (REgg *egg, const char *pad) {
 		case 'a': case 'A': padding_byte = 'A'; break;
 		case 't': case 'T': padding_byte = 0xcc; break;
 		default:
-			eprintf ("Invalid padding format (%c)\n", *p);
-			eprintf ("Valid ones are:\n");
-			eprintf ("	s S : NULL byte");
-			eprintf ("	n N : nop");
-			eprintf ("	a A : 0x41");
-			eprintf ("	t T : trap (0xcc)");
+			R_LOGFI ("Invalid padding format (%c)\n", *p);
+			R_LOGFI ("Valid ones are:\n");
+			R_LOGFI ("	s S : NULL byte");
+			R_LOGFI ("	n N : nop");
+			R_LOGFI ("	a A : 0x41");
+			R_LOGFI ("	t T : trap (0xcc)");
 			free (o);
 			return false;
 		}
@@ -441,7 +441,7 @@ R_API int r_egg_shellcode(REgg *egg, const char *name) {
 		if (p->type == R_EGG_PLUGIN_SHELLCODE && !strcmp (name, p->name)) {
 			b = p->build (egg);
 			if (!b) {
-				eprintf ("%s Shellcode has failed\n", p->name);
+				R_LOGFI ("%s Shellcode has failed\n", p->name);
 				return false;
 			}
 			r_egg_raw (egg, b->buf, b->length);
@@ -492,7 +492,7 @@ R_API void r_egg_finalize(REgg *egg) {
 		} else {
 			// TODO: use r_buf_cpy_buf or what
 			if (b->length+b->cur > egg->bin->length) {
-				eprintf ("Fuck this shit. Cannot patch outside\n");
+				R_LOGFI ("Fuck this shit. Cannot patch outside\n");
 				return;
 			}
 			memcpy (egg->bin->buf + b->cur, b->buf, b->length);
@@ -505,5 +505,5 @@ R_API void r_egg_pattern(REgg *egg, int size) {
 	if (ret) {
 		r_egg_prepend_bytes (egg, (const ut8*)ret, strlen(ret));
 		free (ret);
-	} else eprintf ("Invalid debruijn pattern length.\n");
+	} else R_LOGFI ("Invalid debruijn pattern length.\n");
 }

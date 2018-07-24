@@ -44,7 +44,7 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 			r_reg_set_profile_string (dbg->reg, p);
 			free (p);
 		} else {
-			eprintf ("Cannot retrieve reg profile from debug plugin (%s)\n", dbg->h->name);
+			R_LOGFI ("Cannot retrieve reg profile from debug plugin (%s)\n", dbg->h->name);
 		}
 	}
 	return (dbg && dbg->h);

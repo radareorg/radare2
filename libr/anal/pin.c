@@ -11,7 +11,7 @@ static void pin_strlen(RAnal *a) {
 	// get a0 register
 	// read memory and interpret it as a string
 	// set a0 to the result of strlen;
-	eprintf ("esilpin: strlen\n");
+	R_LOGFI ("esilpin: strlen\n");
 }
 
 static void pin_write(RAnal *a) {
@@ -20,7 +20,7 @@ static void pin_write(RAnal *a) {
 	// get a2 register for len
 	// read len bytes from data and print them to screen + fd
 	// set a0 to the result of write;
-	eprintf ("esilpin: write\n");
+	R_LOGFI ("esilpin: write\n");
 }
 #endif
 

@@ -411,7 +411,7 @@ R_API int r_line_hist_save(const char *file) {
 		if (p) {
 			*p = 0;
 			if (!r_sys_mkdirp (path)) {
-				eprintf ("could not save history into %s\n", path);
+				R_LOGFI ("could not save history into %s\n", path);
 				goto end;
 			}
 			*p = R_SYS_DIR[0];
@@ -744,7 +744,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			break;
 		case 3:	// ^C
 			if (I.echo) {
-				eprintf ("^C\n");
+				R_LOGFI ("^C\n");
 			}
 			I.buffer.index = I.buffer.length = 0;
 			*I.buffer.data = '\0';
@@ -779,7 +779,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 					 ? I.buffer.index + 1
 					 : I.buffer.length;
 			if (I.echo) {
-				eprintf ("\x1b[2J\x1b[0;0H");
+				R_LOGFI ("\x1b[2J\x1b[0;0H");
 			}
 			fflush (stdout);
 			break;
@@ -1102,7 +1102,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			break;
 		case 3:	// ^C
 			if (I.echo) {
-				eprintf ("^C\n");
+				R_LOGFI ("^C\n");
 			}
 			I.buffer.index = I.buffer.length = 0;
 			*I.buffer.data = '\0';
@@ -1154,7 +1154,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 					 ? I.buffer.index + 1
 					 : I.buffer.length;
 			if (I.echo) {
-				eprintf ("\x1b[2J\x1b[0;0H");
+				R_LOGFI ("\x1b[2J\x1b[0;0H");
 			}
 			fflush (stdout);
 			break;

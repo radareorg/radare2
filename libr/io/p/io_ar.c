@@ -29,7 +29,7 @@ static RIODesc *r_io_ar_open(RIO *io, const char *file, int rw, int mode) {
 }
 
 static RList *r_io_ar_open_many(RIO *io, const char *file, int rw, int mode) {
-	eprintf ("Not implemented\n");
+	R_LOGFI ("Not implemented\n");
 	return NULL;
 }
 

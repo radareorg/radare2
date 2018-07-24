@@ -265,7 +265,7 @@ R_API char *r_stdin_slurp (int *sz) {
 	for (i = ret = 0; ; i += ret) {
 		char *new = realloc (buf, i + BS);
 		if (!new) {
-			eprintf ("Cannot realloc to %d\n", i+BS);
+			R_LOGFI ("Cannot realloc to %d\n", i+BS);
 			break;
 		}
 		buf = new;
@@ -333,7 +333,7 @@ R_API char *r_file_slurp(const char *str, int *usz) {
 	}
 	rsz = fread (ret, 1, sz, fd);
 	if (rsz != sz) {
-		// eprintf ("r_file_slurp: fread: error\n");
+		// R_LOGFI ("r_file_slurp: fread: error\n");
 		sz = rsz;
 	}
 	fclose (fd);
@@ -537,7 +537,7 @@ R_API bool r_file_hexdump(const char *file, const ut8 *buf, int len, int append)
 	FILE *fd;
 	int i,j;
 	if (!file || !*file || !buf || len < 0) {
-		eprintf ("r_file_hexdump file: %s buf: %p\n", file, buf);
+		R_LOGFI ("r_file_hexdump file: %s buf: %p\n", file, buf);
 		return false;
 	}
 	if (append) {
@@ -547,7 +547,7 @@ R_API bool r_file_hexdump(const char *file, const ut8 *buf, int len, int append)
 		fd = r_sandbox_fopen (file, "wb");
 	}
 	if (!fd) {
-		eprintf ("Cannot open '%s' for writing\n", file);
+		R_LOGFI ("Cannot open '%s' for writing\n", file);
 		return false;
 	}
 	for (i = 0; i < len; i += 16) {
@@ -579,7 +579,7 @@ R_API bool r_file_touch(const char *file) {
 R_API bool r_file_dump(const char *file, const ut8 *buf, int len, bool append) {
 	FILE *fd;
 	if (!file || !*file) {
-		eprintf ("r_file_dump file: %s buf: %p\n", file, buf);
+		R_LOGFI ("r_file_dump file: %s buf: %p\n", file, buf);
 		return false;
 	}
 	if (append) {
@@ -589,7 +589,7 @@ R_API bool r_file_dump(const char *file, const ut8 *buf, int len, bool append) {
 		fd = r_sandbox_fopen (file, "wb");
 	}
 	if (!fd) {
-		eprintf ("Cannot open '%s' for writing\n", file);
+		R_LOGFI ("Cannot open '%s' for writing\n", file);
 		return false;
 	}
 	if (buf) {
@@ -831,7 +831,7 @@ R_API RMmap *r_file_mmap (const char *file, bool rw, ut64 base) {
 	}
 	fd = r_sandbox_open (file, rw? O_RDWR: O_RDONLY, 0644);
 	if (fd == -1 && !rw) {
-		eprintf ("r_file_mmap: file does not exis.\n");
+		R_LOGFI ("r_file_mmap: file does not exis.\n");
 		//m->buf = malloc (m->len);
 		return m;
 	}
@@ -1016,7 +1016,7 @@ R_API char *r_file_tmpdir() {
 	}
 #endif
 	if (!r_file_is_directory (path)) {
-		eprintf ("Cannot find temporary directory '%s'\n", path);
+		R_LOGFI ("Cannot find temporary directory '%s'\n", path);
 	}
 	return path;
 }

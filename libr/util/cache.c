@@ -39,7 +39,7 @@ R_API const ut8 *r_cache_get(RCache *c, ut64 addr, int *len) {
 	if (len) {
 		*len = c->len - (addr - c->base);
 	}
-	// eprintf ("4 - %d\n", (addr-c->base));
+	// R_LOGFI ("4 - %d\n", (addr-c->base));
 	return c->buf + (addr - c->base);
 }
 

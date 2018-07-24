@@ -88,14 +88,14 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 	while (idx < len) {
 		// TODO: too slow object construction
 		if (!(op = r_anal_op_new ())) {
-			eprintf ("Error: new (op)\n");
+			R_LOGFI ("Error: new (op)\n");
 			return R_ANAL_RET_ERROR;
 		}
 		if ((oplen = r_anal_op (anal, op, addr + idx, buf + idx, len - idx, R_ANAL_OP_MASK_VAL)) == 0) {
 			r_anal_op_free (op);
 			op = NULL;
 			if (idx == 0) {
-				VERBOSE_ANAL eprintf ("Unknown opcode at 0x%08"PFMT64x"\n", addr+idx);
+				VERBOSE_ANAL R_LOGFI ("Unknown opcode at 0x%08"PFMT64x"\n", addr+idx);
 				return R_ANAL_RET_END;
 			}
 			break;
@@ -118,7 +118,7 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 			if (bb->cond) {
 				// TODO: get values from anal backend
 				bb->cond->type = R_ANAL_COND_EQ;
-			} else VERBOSE_ANAL eprintf ("Unknown conditional for block 0x%"PFMT64x"\n", bb->addr);
+			} else VERBOSE_ANAL R_LOGFI ("Unknown conditional for block 0x%"PFMT64x"\n", bb->addr);
 			bb->conditional = 1;
 			bb->fail = op->fail;
 			bb->jump = op->jump;

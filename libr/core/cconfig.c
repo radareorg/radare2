@@ -91,7 +91,7 @@ static int cb_diff_sort(void *_core, void *_node) {
 		return true;
 	}
 fail:
-	eprintf ("e diff.sort = [name, namelen, addr, type, size, dist]\n");
+	R_LOGFI ("e diff.sort = [name, namelen, addr, type, size, dist]\n");
 	return false;
 }
 
@@ -288,7 +288,7 @@ static int cb_analarch(void *user, void *data) {
 		}
 		const char *aa = r_config_get (core->config, "asm.arch");
 		if (!aa || strcmp (aa, node->value)) {
-			eprintf ("anal.arch: cannot find '%s'\n", node->value);
+			R_LOGFI ("anal.arch: cannot find '%s'\n", node->value);
 		} else {
 			r_config_set (core->config, "anal.arch", "null");
 			return true;
@@ -436,7 +436,7 @@ static int cb_asmarch(void *user, void *data) {
 	r_egg_setup (core->egg, node->value, bits, 0, R_SYS_OS);
 
 	if (!r_asm_use (core->assembler, node->value)) {
-		eprintf ("asm.arch: cannot find (%s)\n", node->value);
+		R_LOGFI ("asm.arch: cannot find (%s)\n", node->value);
 		return false;
 	}
 	//we should strdup here otherwise will crash if any r_config_set
@@ -495,7 +495,7 @@ static int cb_asmarch(void *user, void *data) {
 	if (core->anal) {
 		const char *asmcpu = r_config_get (core->config, "asm.cpu");
 		if (!r_syscall_setup (core->anal->syscall, node->value, core->anal->bits, asmcpu, asmos)) {
-			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
+			//R_LOGFI ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, R2_LIBDIR"/radare2/"R2_VERSION"/syscall");
 		}
 	}
@@ -560,7 +560,7 @@ static int cb_asmbits(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	int ret = 0, bits;
 	if (!core) {
-		eprintf ("user can't be NULL\n");
+		R_LOGFI ("user can't be NULL\n");
 		return false;
 	}
 
@@ -577,13 +577,13 @@ static int cb_asmbits(void *user, void *data) {
 		if (!ret) {
 			RAsmPlugin *h = core->assembler->cur;
 			if (!h) {
-				eprintf ("e asm.bits: Cannot set value, no plugins defined yet\n");
+				R_LOGFI ("e asm.bits: Cannot set value, no plugins defined yet\n");
 				ret = true;
 			}
-			// else { eprintf ("Cannot set bits %d to '%s'\n", bits, h->name); }
+			// else { R_LOGFI ("Cannot set bits %d to '%s'\n", bits, h->name); }
 		}
 		if (!r_anal_set_bits (core->anal, bits)) {
-			eprintf ("asm.arch: Cannot setup '%d' bits analysis engine\n", bits);
+			R_LOGFI ("asm.arch: Cannot setup '%d' bits analysis engine\n", bits);
 		}
 		core->print->bits = bits;
 	}
@@ -614,7 +614,7 @@ static int cb_asmbits(void *user, void *data) {
 	asmcpu = r_config_get (core->config, "asm.cpu");
 	if (core->anal) {
 		if (!r_syscall_setup (core->anal->syscall, asmarch, bits, asmcpu, asmos)) {
-			//eprintf ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
+			//R_LOGFI ("asm.arch: Cannot setup syscall '%s/%s' from '%s'\n",
 			//	node->value, asmos, R2_LIBDIR"/radare2/"R2_VERSION"/syscall");
 		}
 		__setsegoff (core->config, asmarch, core->anal->bits);
@@ -972,7 +972,7 @@ static int cb_cfgsanbox(void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	int ret = r_sandbox_enable (node->i_value);
 	if (node->i_value != ret) {
-		eprintf ("Cannot disable sandbox\n");
+		R_LOGFI ("Cannot disable sandbox\n");
 	}
 	return (!node->i_value && ret)? 0: 1;
 }
@@ -1234,7 +1234,7 @@ static int cb_gotolimit(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode*) data;
 	if (r_sandbox_enable (0)) {
-		eprintf ("Cannot change gotolimit\n");
+		R_LOGFI ("Cannot change gotolimit\n");
 		return false;
 	}
 	if (core->anal->esil) {
@@ -1255,7 +1255,7 @@ static int cb_esilverbose (void *user, void *data) {
 static int cb_esilstackdepth (void *user, void *data) {
 	RConfigNode *node = (RConfigNode*) data;
 	if (node->i_value < 3) {
-		eprintf ("esil.stack.depth must be greater than 2\n");
+		R_LOGFI ("esil.stack.depth must be greater than 2\n");
 		node->i_value = 32;
 	}
 	return true;
@@ -1499,7 +1499,7 @@ static int cb_iobuffer(void *user, void *data) {
 		from = r_config_get_i (core->config, "io.buffer.from");
 		to = r_config_get_i (core->config, "io.buffer.to");
 		if (from>=to) {
-			eprintf ("ERROR: io.buffer.from >= io.buffer.to"
+			R_LOGFI ("ERROR: io.buffer.from >= io.buffer.to"
 					" (0x%"PFMT64x" >= 0x%"PFMT64x")\n", from, to);
 		} else {
 			r_io_buffer_load (core->io, from, (int)(to-from));
@@ -1564,7 +1564,7 @@ static int cb_io_pava(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	core->pava = node->i_value;
 	if (node->i_value && core->io->va) {
-		eprintf ("WARNING: You may probably want to disable io.va too\n");
+		R_LOGFI ("WARNING: You may probably want to disable io.va too\n");
 	}
 	return true;
 }
@@ -1912,7 +1912,7 @@ static int cb_zoombyte(void *user, void *data) {
 		core->print->zoom->mode = *node->value;
 		break;
 	default:
-		eprintf ("Invalid zoom.byte value. See pz? for help\n");
+		R_LOGFI ("Invalid zoom.byte value. See pz? for help\n");
 		r_cons_printf ("pzp\npzf\npzs\npz0\npzF\npze\npzh\n");
 		return false;
 	}
@@ -2192,7 +2192,7 @@ static int cb_anal_cpp_abi(void *user, void *data) {
 			core->anal->cpp_abi = R_ANAL_CPP_ABI_MSVC;
 			return true;
 		}
-		eprintf ("anal.cpp.abi: cannot find '%s'\n", node->value);
+		R_LOGFI ("anal.cpp.abi: cannot find '%s'\n", node->value);
 	}
 	return false;
 }
@@ -2208,15 +2208,15 @@ static int cb_linesto(void *user, void *data) {
 		return false;
 	}
 	if (to > from+io_sz) {
-		eprintf ("ERROR: \"lines.to\" can't exceed addr 0x%08"PFMT64x
+		R_LOGFI ("ERROR: \"lines.to\" can't exceed addr 0x%08"PFMT64x
 			" 0x%08"PFMT64x" %d\n", from, to, io_sz);
 		return true;
 	}
 	if (to > from) {
 		core->print->lines_cache_sz = r_core_lines_initcache (core, from, to);
-		//if (core->print->lines_cache_sz == -1) { eprintf ("ERROR: Can't allocate memory\n"); }
+		//if (core->print->lines_cache_sz == -1) { R_LOGFI ("ERROR: Can't allocate memory\n"); }
 	} else {
-		eprintf ("Invalid range 0x%08"PFMT64x" .. 0x%08"PFMT64x"\n", from, to);
+		R_LOGFI ("Invalid range 0x%08"PFMT64x" .. 0x%08"PFMT64x"\n", from, to);
 	}
 	return true;
 }
@@ -2230,9 +2230,9 @@ static int cb_linesabs(void *user, void *data) {
 		ut64 to = (ut64)r_config_get_i (core->config, "lines.to");
 		core->print->lines_cache_sz = r_core_lines_initcache (core, from, to);
 		if (core->print->lines_cache_sz == -1) {
-			eprintf ("ERROR: \"lines.from\" and \"lines.to\" must be set\n");
+			R_LOGFI ("ERROR: \"lines.from\" and \"lines.to\" must be set\n");
 		} else {
-			eprintf ("Found %d lines\n", core->print->lines_cache_sz-1);
+			R_LOGFI ("Found %d lines\n", core->print->lines_cache_sz-1);
 		}
 	}
 	return true;

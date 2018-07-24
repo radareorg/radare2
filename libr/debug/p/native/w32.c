@@ -223,13 +223,13 @@ static bool w32dbg_SeDebugPrivilege() {
 	tokenPriv.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
 	if (AdjustTokenPrivileges (hToken, FALSE, &tokenPriv, 0, NULL, NULL) != FALSE) {
 		if (tokenPriv.Privileges[0].Attributes == SE_PRIVILEGE_ENABLED) {
-		//	eprintf ("PRIV ENABLED\n");
+		//	R_LOGFI ("PRIV ENABLED\n");
 		}
 		// Always successful, even in the cases which lead to OpenProcess failure
-		//	eprintf ("Successfully changed token privileges.\n");
+		//	R_LOGFI ("Successfully changed token privileges.\n");
 		// XXX if we cant get the token nobody tells?? wtf
 	} else {
-		eprintf ("Failed to change token privileges 0x%x\n", (int)GetLastError());
+		R_LOGFI ("Failed to change token privileges 0x%x\n", (int)GetLastError());
 		ret = false;
 	}
 	CloseHandle (hToken);
@@ -276,7 +276,7 @@ static int w32_dbg_init() {
 		GetProcAddress(GetModuleHandle (TEXT ("kernel32")), "SetXStateFeaturesMask");
 	lib = LoadLibrary (TEXT("psapi.dll"));
 	if(!lib) {
-		eprintf ("Cannot load psapi.dll. Aborting\n");
+		R_LOGFI ("Cannot load psapi.dll. Aborting\n");
 		return false;
 	}
 	w32_GetMappedFileName = (DWORD (WINAPI *)(HANDLE, LPVOID, LPTSTR, DWORD))
@@ -299,7 +299,7 @@ static int w32_dbg_init() {
 	if (!w32_DebugActiveProcessStop || !w32_OpenThread || !w32_DebugBreakProcess ||
 	    !w32_GetModuleBaseName || !w32_GetModuleInformation) {
 		// OOPS!
-		eprintf ("debug_init_calls:\n"
+		R_LOGFI ("debug_init_calls:\n"
 			"DebugActiveProcessStop: 0x%p\n"
 			"OpenThread: 0x%p\n"
 			"DebugBreakProcess: 0x%p\n"
@@ -344,17 +344,17 @@ static int w32_first_thread(int pid) {
 	te32.dwSize = sizeof (THREADENTRY32);
 
 	if (!w32_OpenThread) {
-		eprintf("w32_thread_list: no w32_OpenThread?\n");
+		R_LOGFI("w32_thread_list: no w32_OpenThread?\n");
 		return -1;
 	}
 	th = CreateToolhelp32Snapshot (TH32CS_SNAPTHREAD, pid);
 	if (th == INVALID_HANDLE_VALUE) {
-		eprintf ("w32_thread_list: invalid handle\n");
+		R_LOGFI ("w32_thread_list: invalid handle\n");
 		return -1;
 	}
 	if (!Thread32First (th, &te32)) {
 		CloseHandle (th);
-		eprintf ("w32_thread_list: no thread first\n");
+		R_LOGFI ("w32_thread_list: no thread first\n");
 		return -1;
 	}
 	do {
@@ -370,7 +370,7 @@ static int w32_first_thread(int pid) {
 		}
 	} while (Thread32Next (th, &te32));
 err_load_th:
-	eprintf ("Could not find an active thread for pid %d\n", pid);
+	R_LOGFI ("Could not find an active thread for pid %d\n", pid);
 	CloseHandle (th);
 	return pid;
 }
@@ -410,18 +410,18 @@ static int debug_exception_event (DEBUG_EVENT *de) {
 	case EXCEPTION_ILLEGAL_INSTRUCTION:
 	case EXCEPTION_INT_DIVIDE_BY_ZERO:
 	case EXCEPTION_STACK_OVERFLOW:
-		eprintf ("(%d) Fatal exception (%s) in thread %d\n",
+		R_LOGFI ("(%d) Fatal exception (%s) in thread %d\n",
 			(int)de->dwProcessId, 
 			get_w32_excep_name(code),
 			(int)de->dwThreadId);
 		break;
 	/* MS_VC_EXCEPTION */
 	case 0x406D1388:
-		eprintf ("(%d) MS_VC_EXCEPTION (%x) in thread %d\n",
+		R_LOGFI ("(%d) MS_VC_EXCEPTION (%x) in thread %d\n",
 			(int)de->dwProcessId, (int)code, (int)de->dwThreadId);
 		return 1;
 	default:
-		eprintf ("(%d) Unknown exception %x in thread %d\n",
+		R_LOGFI ("(%d) Unknown exception %x in thread %d\n",
 			(int)de->dwProcessId, (int)code, (int)de->dwThreadId);
 		break;
 	}
@@ -534,7 +534,7 @@ static void r_debug_lstLibAdd(DWORD pid,LPVOID lpBaseOfDll, HANDLE hFile,char * 
 		}
 		lstLibPtr++;
 	}
-	eprintf("r_debug_lstLibAdd: Cannot find slot\n");
+	R_LOGFI("r_debug_lstLibAdd: Cannot find slot\n");
 }
 static void * r_debug_findlib (void * BaseOfDll) {
 	PLIB_ITEM libPtr = NULL;
@@ -588,7 +588,7 @@ static void r_debug_lstThreadAdd (DWORD pid, DWORD tid, HANDLE hThread, LPVOID  
 		}
 		lstThreadPtr++;
 	}
-	eprintf ("r_debug_lstThreadAdd: Cannot find slot\n");
+	R_LOGFI ("r_debug_lstThreadAdd: Cannot find slot\n");
 }
 
 static void * r_debug_findthread (int pid, int tid) {
@@ -633,7 +633,7 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 		/* TODO: DEBUG_CONTROL_C */
 		switch (code) {
 		case CREATE_PROCESS_DEBUG_EVENT:
-			eprintf ("(%d) created process (%d:%p)\n",
+			R_LOGFI ("(%d) created process (%d:%p)\n",
 				pid, w32_h2t (de.u.CreateProcessInfo.hProcess),
 				de.u.CreateProcessInfo.lpStartAddress);
 			r_debug_native_continue (dbg, pid, tid, -1);
@@ -641,7 +641,7 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			ret = R_DEBUG_REASON_NEW_PID;
 			break;
 		case EXIT_PROCESS_DEBUG_EVENT:
-			//eprintf ("(%d) Process %d exited with exit code %d\n", (int)de.dwProcessId, (int)de.dwProcessId,
+			//R_LOGFI ("(%d) Process %d exited with exit code %d\n", (int)de.dwProcessId, (int)de.dwProcessId,
 			//	(int)de.u.ExitProcess.dwExitCode);
 			r_cons_printf ("(%d) Process %d exited with exit code %d\n", (int)de.dwProcessId, (int)de.dwProcessId,
 				(int)de.u.ExitProcess.dwExitCode);
@@ -652,14 +652,14 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			ret = R_DEBUG_REASON_EXIT_PID;
 			break;
 		case CREATE_THREAD_DEBUG_EVENT:
-			//eprintf ("(%d) Created thread %d (start @ %p)\n", pid, tid, de.u.CreateThread.lpStartAddress);
+			//R_LOGFI ("(%d) Created thread %d (start @ %p)\n", pid, tid, de.u.CreateThread.lpStartAddress);
 			r_debug_lstThreadAdd (pid, tid, de.u.CreateThread.hThread, de.u.CreateThread.lpThreadLocalBase, de.u.CreateThread.lpStartAddress, FALSE);
 			//r_debug_native_continue (dbg, pid, tid, -1);
 			ret = R_DEBUG_REASON_NEW_TID;
 			next_event = 0;
 			break;
 		case EXIT_THREAD_DEBUG_EVENT:
-			//eprintf ("(%d) Finished thread %d\n", pid, tid);
+			//R_LOGFI ("(%d) Finished thread %d\n", pid, tid);
 			lstThreadPtr = (PTHREAD_ITEM)r_debug_findthread (pid, tid);
 			if (lstThreadPtr) {
 				lstThreadPtr->bFinished = TRUE;
@@ -673,7 +673,7 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			break;
 		case LOAD_DLL_DEBUG_EVENT:
 			dllname = get_file_name_from_handle (de.u.LoadDll.hFile);
-			//eprintf ("(%d) Loading library at %p (%s)\n",pid, de.u.LoadDll.lpBaseOfDll, dllname ? dllname : "no name");
+			//R_LOGFI ("(%d) Loading library at %p (%s)\n",pid, de.u.LoadDll.lpBaseOfDll, dllname ? dllname : "no name");
 			r_debug_lstLibAdd (pid,de.u.LoadDll.lpBaseOfDll, de.u.LoadDll.hFile, dllname);
 			if (dllname) {
 				free (dllname);
@@ -682,7 +682,7 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			ret = R_DEBUG_REASON_NEW_LIB;
 			break;
 		case UNLOAD_DLL_DEBUG_EVENT:
-			//eprintf ("(%d) Unloading library at %p\n", pid, de.u.UnloadDll.lpBaseOfDll);
+			//R_LOGFI ("(%d) Unloading library at %p\n", pid, de.u.UnloadDll.lpBaseOfDll);
 			lstLibPtr = (PLIB_ITEM)r_debug_findlib (de.u.UnloadDll.lpBaseOfDll);
 			if (lstLibPtr != NULL) {
 				lstLibPtr->hFile = (HANDLE)-1;
@@ -695,7 +695,7 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			ret = R_DEBUG_REASON_EXIT_LIB;
 			break;
 		case OUTPUT_DEBUG_STRING_EVENT:
-			//eprintf ("(%d) Debug string\n", pid);
+			//R_LOGFI ("(%d) Debug string\n", pid);
 			r_cons_printf ("(%d) Debug string\n", pid);
 			r_cons_flush ();
 
@@ -703,7 +703,7 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			next_event = 1;
 			break;
 		case RIP_EVENT:
-			//eprintf ("(%d) RIP event\n", pid);
+			//R_LOGFI ("(%d) RIP event\n", pid);
 			r_cons_printf ("(%d) RIP event\n", pid);
 			r_cons_flush ();
 			r_debug_native_continue (dbg, pid, tid, -1);
@@ -739,7 +739,7 @@ static int w32_dbg_wait(RDebug *dbg, int pid) {
 			}
 			break;
 		default:
-			eprintf ("(%d) unknown event: %d\n", pid, code);
+			R_LOGFI ("(%d) unknown event: %d\n", pid, code);
 			return -1;
 		}
 	} while (next_event);
@@ -775,7 +775,7 @@ RList *w32_thread_list (int pid, RList *list) {
         te32.dwSize = sizeof(THREADENTRY32);
 
 	if (!w32_OpenThread) {
-		eprintf("w32_thread_list: no w32_OpenThread?\n");
+		R_LOGFI("w32_thread_list: no w32_OpenThread?\n");
 		return list;
 	}
         th = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, pid);
@@ -891,7 +891,7 @@ bool w32_terminate_process (RDebug *dbg, int pid) {
 		goto err_w32_terminate_process;
 	}
 	if (ret_wait == WAIT_TIMEOUT) {
-		eprintf ("(%d) Waiting for process to terminate timed out.\n", pid);
+		R_LOGFI ("(%d) Waiting for process to terminate timed out.\n", pid);
 		goto err_w32_terminate_process;
 	}
 	ret = true;
@@ -999,10 +999,10 @@ static void printwincontext(HANDLE hThread, CONTEXT * ctx) {
 	ut16 top = 0;
 	int x = 0, nxmm = 0, nymm = 0;
 #if __MINGW64__ || _WIN64
-	eprintf ("ControlWord   = %08x StatusWord   = %08x\n", ctx->FltSave.ControlWord, ctx->FltSave.StatusWord);
-	eprintf ("MxCsr         = %08x TagWord      = %08x\n", ctx->MxCsr, ctx->FltSave.TagWord);
-	eprintf ("ErrorOffset   = %08x DataOffset   = %08x\n", ctx->FltSave.ErrorOffset, ctx->FltSave.DataOffset);
-	eprintf ("ErrorSelector = %08x DataSelector = %08x\n", ctx->FltSave.ErrorSelector, ctx->FltSave.DataSelector);
+	R_LOGFI ("ControlWord   = %08x StatusWord   = %08x\n", ctx->FltSave.ControlWord, ctx->FltSave.StatusWord);
+	R_LOGFI ("MxCsr         = %08x TagWord      = %08x\n", ctx->MxCsr, ctx->FltSave.TagWord);
+	R_LOGFI ("ErrorOffset   = %08x DataOffset   = %08x\n", ctx->FltSave.ErrorOffset, ctx->FltSave.DataOffset);
+	R_LOGFI ("ErrorSelector = %08x DataSelector = %08x\n", ctx->FltSave.ErrorSelector, ctx->FltSave.DataSelector);
 	for (x = 0; x < 8; x++) {
 		st[x].Low = ctx->FltSave.FloatRegisters[x].Low;
 		st[x].High = (ut16)ctx->FltSave.FloatRegisters[x].High;
@@ -1022,10 +1022,10 @@ static void printwincontext(HANDLE hThread, CONTEXT * ctx) {
 	}
 	nxmm = 16;
 #else
-	eprintf ("ControlWord   = %08x StatusWord   = %08x\n", (ut32) ctx->FloatSave.ControlWord, (ut32) ctx->FloatSave.StatusWord);
-	eprintf ("MxCsr         = %08x TagWord      = %08x\n", *(ut32 *)&ctx->ExtendedRegisters[24], (ut32)ctx->FloatSave.TagWord);
-	eprintf ("ErrorOffset   = %08x DataOffset   = %08x\n", (ut32)ctx->FloatSave.ErrorOffset, (ut32)ctx->FloatSave.DataOffset);
-	eprintf ("ErrorSelector = %08x DataSelector = %08x\n", (ut32)ctx->FloatSave.ErrorSelector, (ut32) ctx->FloatSave.DataSelector);
+	R_LOGFI ("ControlWord   = %08x StatusWord   = %08x\n", (ut32) ctx->FloatSave.ControlWord, (ut32) ctx->FloatSave.StatusWord);
+	R_LOGFI ("MxCsr         = %08x TagWord      = %08x\n", *(ut32 *)&ctx->ExtendedRegisters[24], (ut32)ctx->FloatSave.TagWord);
+	R_LOGFI ("ErrorOffset   = %08x DataOffset   = %08x\n", (ut32)ctx->FloatSave.ErrorOffset, (ut32)ctx->FloatSave.DataOffset);
+	R_LOGFI ("ErrorSelector = %08x DataSelector = %08x\n", (ut32)ctx->FloatSave.ErrorSelector, (ut32) ctx->FloatSave.DataSelector);
 	for (x = 0; x < 8; x++) {
 		st[x].High = (ut16) *((ut16 *)(&ctx->FloatSave.RegisterArea[x * 10] + 8));
 		st[x].Low = (ut64)  *((ut64 *)&ctx->FloatSave.RegisterArea[x * 10]);
@@ -1050,19 +1050,19 @@ static void printwincontext(HANDLE hThread, CONTEXT * ctx) {
 		//   in mingw long double is 12 bytes size
 		//   in msvc long double is alias for double = 8 bytes size
 		//   in gcc long double is 10 bytes (correct representation)
-		eprintf ("ST%i %04x %016"PFMT64x" (%f)\n", x, st[x].High, st[x].Low, (double)(*((long double *)&st[x])));
+		R_LOGFI ("ST%i %04x %016"PFMT64x" (%f)\n", x, st[x].High, st[x].Low, (double)(*((long double *)&st[x])));
 	}
 	for (x = 0; x < 8; x++) {
-		eprintf ("MM%i %016"PFMT64x"\n", x, mm[x]);
+		R_LOGFI ("MM%i %016"PFMT64x"\n", x, mm[x]);
 	}
 	for (x = 0; x < nxmm; x++) {
-		eprintf ("XMM%i %016"PFMT64x" %016"PFMT64x"\n", x, xmm[x].High, xmm[x].Low);
+		R_LOGFI ("XMM%i %016"PFMT64x" %016"PFMT64x"\n", x, xmm[x].High, xmm[x].Low);
 	}
 	// show Ymm regs
 	nymm = GetAVX (hThread, xmm, ymm);
 	if (nymm) {
 		for (x = 0; x < nymm; x++) {
-			eprintf ("Ymm%d: %016"PFMT64x" %016"PFMT64x" %016"PFMT64x" %016"PFMT64x"\n", x, ymm[x].High, ymm[x].Low, xmm[x].High, xmm[x].Low );
+			R_LOGFI ("Ymm%d: %016"PFMT64x" %016"PFMT64x" %016"PFMT64x" %016"PFMT64x"\n", x, ymm[x].High, ymm[x].Low, xmm[x].High, xmm[x].Low );
 		}
 	}
 }

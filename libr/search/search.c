@@ -20,7 +20,7 @@ R_API RSearch *r_search_new(int mode) {
 	if (!s) return NULL;
 	if (!r_search_set_mode (s, mode)) {
 		free (s);
-		eprintf ("Cannot init search for mode %d\n", mode);
+		R_LOGFI ("Cannot init search for mode %d\n", mode);
 		return false;
 	}
 	s->inverse = false;
@@ -68,7 +68,7 @@ R_API int r_search_set_string_limits(RSearch *s, ut32 min, ut32 max) {
 }
 
 R_API int r_search_magic_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
-	eprintf ("TODO: import libr/core/cmd_search.c /m implementation into rsearch\n");
+	R_LOGFI ("TODO: import libr/core/cmd_search.c /m implementation into rsearch\n");
 	return false;
 }
 
@@ -104,14 +104,14 @@ R_API int r_search_begin(RSearch *s) {
 R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
 	RSearchHit* hit;
 	if (s->align && (addr%s->align)) {
-		eprintf ("0x%08"PFMT64x" unaligned\n", addr);
+		R_LOGFI ("0x%08"PFMT64x" unaligned\n", addr);
 		return 1;
 	}
 	if (!s->contiguous) {
 		if (kw->last && addr == kw->last) {
 			kw->count--;
 			kw->last = s->bckwrds ? addr : addr + kw->keyword_length;
-			eprintf ("0x%08"PFMT64x" Sequencial hit ignored.\n", addr);
+			R_LOGFI ("0x%08"PFMT64x" Sequencial hit ignored.\n", addr);
 			return 1;
 		}
 	}
@@ -446,7 +446,7 @@ R_API int r_search_mybinparse_update(RSearch *s, ut64 from, const ut8 *buf, int 
 
 R_API void r_search_set_distance(RSearch *s, int dist) {
 	if (dist>=R_SEARCH_DISTANCE_MAX) {
-		eprintf ("Invalid distance\n");
+		R_LOGFI ("Invalid distance\n");
 		s->distance = 0;
 	} else {
 		s->distance = (dist>0)?dist:0;
@@ -476,7 +476,7 @@ R_API int r_search_update(RSearch *s, ut64 from, const ut8 *buf, long len) {
 			ret = R_MIN (R_SEARCH_AES_BOX_SIZE, len);
 		}
 	} else {
-		eprintf ("r_search_update: No search method defined\n");
+		R_LOGFI ("r_search_update: No search method defined\n");
 	}
 	return ret;
 }
@@ -538,7 +538,7 @@ R_API void r_search_string_prepare_backward(RSearch *s) {
 R_API void r_search_reset(RSearch *s, int mode) {
 	s->nhits = 0;
 	if (!r_search_set_mode (s, mode)) {
-		eprintf ("Cannot init search for mode %d\n", mode);
+		R_LOGFI ("Cannot init search for mode %d\n", mode);
 	}
 }
 

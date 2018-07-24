@@ -65,7 +65,7 @@ static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, S
 			}
 		}
 		if (i >= MACHINES_MAX) {
-			eprintf("Unsupported machine: %s\n", machine);
+			R_LOGFI("Unsupported machine: %s\n", machine);
 			free (res);
 			return NULL;
 		}
@@ -75,7 +75,7 @@ static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, S
 			struct vsf_module module;
 			int read = r_buf_fread_at (bf->buf, offset, (ut8*)&module, "16ccci", 1);
 			if (read != sizeof(module)) {
-				eprintf ("Truncated Header\n");
+				R_LOGFI ("Truncated Header\n");
 				free (res);
 				return NULL;
 			}
@@ -309,7 +309,7 @@ static RBinInfo* info(RBinFile *bf) {
 	memset (&hdr, 0, sizeof(hdr));
 	int read = r_buf_read_at (bf->buf, 0, (ut8*)&hdr, sizeof(hdr));
 	if (read != sizeof(hdr)) {
-		eprintf ("Truncated Header\n");
+		R_LOGFI ("Truncated Header\n");
 		return NULL;
 	}
 	if (!(ret = R_NEW0 (RBinInfo))) {

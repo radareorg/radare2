@@ -44,7 +44,7 @@ static void filesave() {
 	char buf[128];
 	int i;
 	if (!path) {
-		eprintf ("File: ");
+		R_LOGFI ("File: ");
 		buf[0] = 0;
 		fgets (buf, sizeof (buf) - 1, stdin);
 		buf[sizeof (buf) - 1] = 0;
@@ -63,9 +63,9 @@ static void filesave() {
 		}
 	}
 	if (r_file_dump (path, (const ut8 *)lines, bytes, 0)) {
-		eprintf ("File '%s' saved (%d byte(s))\n", path, bytes);
+		R_LOGFI ("File '%s' saved (%d byte(s))\n", path, bytes);
 	} else {
-		eprintf ("Cannot save file\n");
+		R_LOGFI ("Cannot save file\n");
 	}
 	nlines = r_str_split (lines, '\n');
 }
@@ -82,7 +82,7 @@ R_API char *r_cons_editor(const char *file, const char *str) {
 		bytes = 0;
 		lines = r_file_slurp (file, &bytes);
 		nlines = r_str_split (lines, '\n');
-		eprintf ("Loaded %d lines on %d byte(s)\n",
+		R_LOGFI ("Loaded %d lines on %d byte(s)\n",
 			(nlines? (nlines - 1): 0), bytes);
 	} else {
 		path = NULL;

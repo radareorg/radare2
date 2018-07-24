@@ -16,7 +16,7 @@ extern int memorystatus_control(uint32_t command, pid_t pid, uint32_t flags, voi
 
 #if __WINDOWS__
 int main() {
-	eprintf ("r2agent: Not yet implemented for this platform.\n");
+	R_LOGFI ("r2agent: Not yet implemented for this platform.\n");
 	return 1;
 }
 #else
@@ -87,14 +87,14 @@ int main(int argc, char **argv) {
 	s = r_socket_new (false);
 	s->local = listenlocal;
 	if (!r_socket_listen (s, port, NULL)) {
-		eprintf ("Cannot listen on %d\n", s->port);
+		R_LOGFI ("Cannot listen on %d\n", s->port);
 		r_socket_free (s);
 		return 1;
 	}
 
-	eprintf ("http://localhost:%d/\n", s->port);
+	R_LOGFI ("http://localhost:%d/\n", s->port);
 	if (dosandbox && !r_sandbox_enable (true)) {
-		eprintf ("sandbox: Cannot be enabled.\n");
+		R_LOGFI ("sandbox: Cannot be enabled.\n");
 		return 1;
 	}
 	while (!r_cons_singleton ()->context->breaked) {
@@ -141,7 +141,7 @@ int main(int argc, char **argv) {
 				" - <a target='_blank' href='http://localhost:%d/'>open</a><br />"
 				" - <a href='/proc/kill/%d'>kill</a><br />"
 				"</body></html>", session_port, pid);
-				eprintf ("\nchild pid %d\n\n", pid);
+				R_LOGFI ("\nchild pid %d\n\n", pid);
 			}
 		}
 		r_socket_http_response (rs, 200, result, 0, NULL);

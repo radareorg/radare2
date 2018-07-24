@@ -13,7 +13,7 @@ char* r_bin_dex_get_version(RBinDexObj *bin) {
 	return NULL;
 }
 
-#define FAIL(x) { eprintf(x"\n"); goto fail; }
+#define FAIL(x) { R_LOGFI(x"\n"); goto fail; }
 RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
 	if (!buf) {
 		return NULL;

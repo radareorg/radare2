@@ -173,10 +173,10 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		if (reply) {
 			int rw = 7;
 			free (reply);
-			eprintf ("Wine-dbg is ready to go!\n");
+			R_LOGFI ("Wine-dbg is ready to go!\n");
 			return r_io_desc_new (io, &r_io_plugin_winedbg, pathname, rw, mode, gs);
 		}
-		eprintf ("Can't find the Wine-dbg prompt\n");
+		R_LOGFI ("Can't find the Wine-dbg prompt\n");
 	}
 	return NULL;
 }
@@ -225,15 +225,15 @@ static struct winedbg_x86_32 regState() {
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strncmp (cmd, "?", 1)) {
-		eprintf ("dr  : show registers\n");
-		eprintf ("dr* : show registers as flags\n");
-		eprintf ("drp : show reg profile\n");
-		eprintf ("dr8 : show hexpairs with regstate\n");
-		eprintf ("ds  : step into\n");
-		eprintf ("dp  : show process info\n");
-		eprintf ("dc  : continue\n");
-		eprintf ("dm  : show maps\n");
-		eprintf ("pid : show current process id\n");
+		R_LOGFI ("dr  : show registers\n");
+		R_LOGFI ("dr* : show registers as flags\n");
+		R_LOGFI ("drp : show reg profile\n");
+		R_LOGFI ("dr8 : show hexpairs with regstate\n");
+		R_LOGFI ("ds  : step into\n");
+		R_LOGFI ("dp  : show process info\n");
+		R_LOGFI ("dc  : continue\n");
+		R_LOGFI ("dm  : show maps\n");
+		R_LOGFI ("pid : show current process id\n");
 	} else if (!strncmp (cmd, "dr8", 3)) {
 		struct winedbg_x86_32 r = regState ();
 		ut8 *arena = (ut8*)calloc (sizeof (struct winedbg_x86_32), 3);
@@ -314,7 +314,7 @@ const char *msg =
 	} else if (!strncmp (cmd, "dc", 2)) {
 		free (runcmd ("cont"));
 	} else if (!strncmp (cmd, "dso", 3)) {
-		eprintf ("TODO: dso\n");
+		R_LOGFI ("TODO: dso\n");
 	} else if (!strncmp (cmd, "dp", 3)) {
 		printcmd (io, "info thread");
 	} else if (!strncmp (cmd, "dm", 3)) {

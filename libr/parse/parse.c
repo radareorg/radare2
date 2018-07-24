@@ -215,7 +215,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 		ptr = nptr;
 		if (x86) {
 			for (ptr2 = ptr; *ptr2 && !isx86separator (*ptr2); ptr2++) {
-		//		eprintf ("(%s) (%c)\n", optr, *ptr2);
+		//		R_LOGFI ("(%s) (%c)\n", optr, *ptr2);
 			}
 		} else {
 			for (ptr2 = ptr; *ptr2 && (*ptr2 != ']' && (*ptr2 != '\x1b') && !IS_SEPARATOR (*ptr2)); ptr2++);

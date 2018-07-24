@@ -67,7 +67,7 @@ static int format_output(char mode, const char *s) {
 		}
 		break;
 	default:
-		eprintf ("Unknown output mode %d\n", mode);
+		R_LOGFI ("Unknown output mode %d\n", mode);
 		break;
 	}
 	return true;
@@ -394,7 +394,7 @@ dotherax:
 				fflush (stdout);
 				free (res);
 			} else {
-				eprintf ("Invalid input.\n");
+				R_LOGFI ("Invalid input.\n");
 			}
 			free (str);
 		}
@@ -408,7 +408,7 @@ dotherax:
 		ut64 n = r_num_math (num, str);
 
 		if (num->dbz) {
-			eprintf ("RNum ERROR: Division by Zero\n");
+			R_LOGFI ("RNum ERROR: Division by Zero\n");
 			return false;
 		}
 		n32 = (ut32) (n & UT32_MAX);
@@ -421,22 +421,22 @@ dotherax:
 		a = n & 0x0fff;
 		r_num_units (unit, n);
 #if 0
-		eprintf ("%" PFMT64d " 0x%" PFMT64x " 0%" PFMT64o
+		R_LOGFI ("%" PFMT64d " 0x%" PFMT64x " 0%" PFMT64o
 			" %s %04x:%04x ",
 			n, n, n, unit, s, a);
 
 		if (n >> 32) {
-			eprintf ("%" PFMT64d " ", (st64) n);
+			R_LOGFI ("%" PFMT64d " ", (st64) n);
 		} else {
-			eprintf ("%d ", (st32) n);
+			R_LOGFI ("%d ", (st32) n);
 		}
 		if (asnum) {
-			eprintf ("\"%s\" ", asnum);
+			R_LOGFI ("\"%s\" ", asnum);
 			free (asnum);
 		}
 		/* binary and floating point */
 		r_str_bits (out, (const ut8 *) &n, sizeof (n), NULL);
-		eprintf ("%s %.01lf %ff %lf\n",
+		R_LOGFI ("%s %.01lf %ff %lf\n",
 			out, num->fvalue, f, d);
 #endif
 				printf ("hex     0x%"PFMT64x"\n", n);

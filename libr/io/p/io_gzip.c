@@ -128,7 +128,7 @@ static int __close(RIODesc *fd) {
 	riom = fd->data;
 	R_FREE (riom->buf);
 	R_FREE (fd->data);
-	eprintf ("TODO: Writing changes into gzipped files is not yet supported\n");
+	R_LOGFI ("TODO: Writing changes into gzipped files is not yet supported\n");
 	return 0;
 }
 
@@ -171,7 +171,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			return r_io_desc_new (io, &r_io_plugin_gzip, pathname, rw, mode, mal);
 		}
 		free (data);
-		eprintf ("Cannot allocate (%s) %d byte(s)\n", pathname+9, mal->size);
+		R_LOGFI ("Cannot allocate (%s) %d byte(s)\n", pathname+9, mal->size);
 		free (mal);
 	}
 	return NULL;

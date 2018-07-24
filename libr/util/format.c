@@ -351,7 +351,7 @@ static int r_print_format_string(const RPrint* p, ut64 seeki, ut64 addr64, ut64 
 	ut8 buffer[255];
 	buffer[0] = 0;
 	if (!p->iob.read_at) {
-		eprintf ("(cannot read memory)\n");
+		R_LOGFI ("(cannot read memory)\n");
 		return -1;
 	}
 	int res = (is64 == 1)
@@ -1020,7 +1020,7 @@ static void r_print_format_nulltermstring(const RPrint* p, const int len, int en
 			vallen -= 2;
 		}
 		if (vallen > buflen) {
-			eprintf ("Warning: new string is longer than previous one\n");
+			R_LOGFI ("Warning: new string is longer than previous one\n");
 		}
 		p->cb_printf ("wx ");
 		for (i = 0; i < vallen; i++) {
@@ -1080,7 +1080,7 @@ static void r_print_format_nulltermwidestring(const RPrint* p, const int len, in
 			vallen -= 2;
 		}
 		if ((size = strlen (setval)) > r_wstr_clen((char*)(buf+seeki))) {
-			eprintf ("Warning: new string is longer than previous one\n");
+			R_LOGFI ("Warning: new string is longer than previous one\n");
 		}
 		p->cb_printf ("ww %s @ 0x%08"PFMT64x"\n", newstring, seeki);
 		free(ons);
@@ -1318,7 +1318,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 		if (fmt[i] == '[') {
 			char *end = strchr (fmt + i,']');
 			if (!end) {
-				eprintf ("No end bracket.\n");
+				R_LOGFI ("No end bracket.\n");
 				continue;
 			}
 			*end = '\0';
@@ -1375,7 +1375,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 				case 4: size += 4; break;
 				case 8: size += 8; break;
 				default:
-					eprintf ("Unknown enum format size: %d\n", tabsize);
+					R_LOGFI ("Unknown enum format size: %d\n", tabsize);
 					break;
 				}
 			} else {
@@ -1389,7 +1389,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 			char *endname = NULL, *structname = NULL;
 			char tmp = 0;
 			if (words < idx) {
-				eprintf ("Index out of bounds\n");
+				R_LOGFI ("Index out of bounds\n");
 			} else {
 				wordAtIndex = r_str_word_get0 (args, idx);
 			}
@@ -1423,12 +1423,12 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 				}
 			}
 			if (!format) {
-				eprintf ("Cannot find format for struct `%s'\n", structname + 1);
+				R_LOGFI ("Cannot find format for struct `%s'\n", structname + 1);
 				return 0;
 			}
 			int newsize = r_print_format_struct_size (format, p, mode, n + 1);
 			if (newsize < 1) {
-				eprintf ("Cannot find size for `%s'\n", format);
+				R_LOGFI ("Cannot find size for `%s'\n", format);
 				return 0;
 			}
 			if (format && newsize > 0) {
@@ -1483,7 +1483,7 @@ int r_print_format_struct_size(const char *f, RPrint *p, int mode, int n) {
 			} else if (fmt[i+1] == '8') {
 				size += tabsize * 8;
 			} else {
-				eprintf ("Invalid n format.\n");
+				R_LOGFI ("Invalid n format.\n");
 				free (o);
 				free (args);
 				return -2;
@@ -1517,7 +1517,7 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, co
 	char namefmt[128];
 	slide++;
 	if ((slide % STRUCTPTR) > NESTDEPTH || (slide % STRUCTFLAG)/STRUCTPTR > NESTDEPTH) {
-		eprintf ("Too much nested struct, recursion too deep...\n");
+		R_LOGFI ("Too much nested struct, recursion too deep...\n");
 		return 0;
 	}
 	if (anon) {
@@ -1529,7 +1529,7 @@ static int r_print_format_struct(RPrint* p, ut64 seek, const ut8* b, int len, co
 		}
 	}
 	if (!fmt || !*fmt) {
-		eprintf ("Undefined struct '%s'.\n", name);
+		R_LOGFI ("Undefined struct '%s'.\n", name);
 		return 0;
 	}
 	if (MUSTSEE && !SEEVALUE) {
@@ -1614,7 +1614,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 	if (bracket) {
 		char *end = strchr (arg, '}');
 		if (!end) {
-			eprintf ("No end bracket. Try pf {ecx}b @ esi\n");
+			R_LOGFI ("No end bracket. Try pf {ecx}b @ esi\n");
 			goto beach;
 		}
 		*end = '\0';
@@ -1714,7 +1714,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			if (arg[0] == '[') {
 				char *end = strchr (arg,']');
 				if (!end) {
-					eprintf ("No end bracket.\n");
+					R_LOGFI ("No end bracket.\n");
 					goto beach;
 				}
 				*end = '\0';
@@ -1743,7 +1743,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 					addr = addr64;
 				}
 			} else {
-				// eprintf ("Format strings is too big for this buffer\n");
+				// R_LOGFI ("Format strings is too big for this buffer\n");
 				goto beach;
 			}
 
@@ -1772,11 +1772,11 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 						if (fieldname) {
 							*fieldname++ = '\0';
 						} else {
-							eprintf ("Missing closing parenthesis in format ')'\n");
+							R_LOGFI ("Missing closing parenthesis in format ')'\n");
 							goto beach;
 						}
 					} else {
-						eprintf ("Missing name (%s)\n", fieldname);
+						R_LOGFI ("Missing name (%s)\n", fieldname);
 						goto beach;
 					}
 				}
@@ -1794,7 +1794,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				if (field && (bracket = strchr (field, '[')) && mode & R_PRINT_ISFIELD) {
 					char *end = strchr (field, ']');
 					if (!end) {
-						eprintf ("Missing closing bracket\n");
+						R_LOGFI ("Missing closing bracket\n");
 						goto beach;
 					}
 					*end = '\0';
@@ -1838,11 +1838,11 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 							updateAddr (buf + i, len - i, endian, &addr, &addr64);
 						}
 					} else {
-						eprintf ("Likely a heap buffer overflow.\n");
+						R_LOGFI ("Likely a heap buffer overflow.\n");
 						goto beach;
 					}
 				} else {
-					eprintf ("(SEGFAULT: cannot read memory at 0x%08"PFMT64x", Block: %s, blocksize: 0x%x)\n",
+					R_LOGFI ("(SEGFAULT: cannot read memory at 0x%08"PFMT64x", Block: %s, blocksize: 0x%x)\n",
 							addr, b, len);
 					p->cb_printf ("\n");
 					goto beach;
@@ -2225,7 +2225,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 				} //switch
 #if 0
 			} else {
-				eprintf ("r_print_format: Likely a heap buffer overflow (%s)\n", buf);
+				R_LOGFI ("r_print_format: Likely a heap buffer overflow (%s)\n", buf);
 				goto beach;
 			}
 #endif

@@ -230,10 +230,10 @@ R_API bool r_socket_spawn (RSocket *s, const char *cmd, unsigned int timeout) {
 		free (profile);
 #endif
 		if (res != 0) {
-			eprintf ("r_socket_spawn: rarun2 failed\n");
+			R_LOGFI ("r_socket_spawn: rarun2 failed\n");
 			exit (1);
 		}
-		eprintf ("r_socket_spawn: %s is dead\n", cmd);
+		R_LOGFI ("r_socket_spawn: %s is dead\n", cmd);
 		exit (0);
 	}
 	r_sys_sleep (1);
@@ -270,7 +270,7 @@ R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int
 	Timeout.tv_usec = 0;
 
 	if (WSAStartup (MAKEWORD (1, 1), &wsadata) == SOCKET_ERROR) {
-		eprintf ("Error creating socket.");
+		R_LOGFI ("Error creating socket.");
 		return false;
 	}
 	s->fd = socket (AF_INET, SOCK_STREAM, 0);
@@ -284,7 +284,7 @@ R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int
 	unsigned long iMode = 1;
 	int iResult = ioctlsocket (s->fd, FIONBIO, &iMode);
 	if (iResult != NO_ERROR) {
-		eprintf ("ioctlsocket error: %d\n", iResult);
+		R_LOGFI ("ioctlsocket error: %d\n", iResult);
 	}
 	memset (&sa, 0, sizeof(sa));
 	sa.sin_family = AF_INET;
@@ -311,7 +311,7 @@ R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int
 	iMode = 0;
 	iResult = ioctlsocket (s->fd, FIONBIO, &iMode);
 	if (iResult != NO_ERROR) {
-		eprintf ("ioctlsocket error: %d\n", iResult);
+		R_LOGFI ("ioctlsocket error: %d\n", iResult);
 	}
 	fd_set Write, Err;
 	FD_ZERO (&Write);
@@ -340,7 +340,7 @@ R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int
 		hints.ai_protocol = proto;
 		int gai = getaddrinfo (host, port, &hints, &res);
 		if (gai != 0) {
-			eprintf ("Error in getaddrinfo: %s\n", gai_strerror (gai));
+			R_LOGFI ("Error in getaddrinfo: %s\n", gai_strerror (gai));
 			return false;
 		}
 		for (rp = res; rp != NULL; rp = rp->ai_next) {
@@ -399,7 +399,7 @@ R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int
 		}
 		freeaddrinfo (res);
 		if (!rp) {
-			eprintf ("Could not resolve address '%s' or failed to connect\n", host);
+			R_LOGFI ("Could not resolve address '%s' or failed to connect\n", host);
 			return false;
 		}
 	}
@@ -494,7 +494,7 @@ R_API bool r_socket_listen (RSocket *s, const char *port, const char *certfile) 
 #if __WINDOWS__ && !defined(__CYGWIN__) //&& !defined(__MINGW64__)
 	WSADATA wsadata;
 	if (WSAStartup (MAKEWORD (1, 1), &wsadata) == SOCKET_ERROR) {
-		eprintf ("Error creating socket.");
+		R_LOGFI ("Error creating socket.");
 		return false;
 	}
 #endif
@@ -720,7 +720,7 @@ R_API char *r_socket_to_string(RSocket *s) {
 		if ((str = malloc (32)))
 			sprintf (str, "%d.%d.%d.%d:%d",
 				a[0],a[1],a[2],a[3], ntohs (sain->sin_port));
-	} else eprintf ("getperrname: failed\n"); //r_sys_perror ("getpeername");
+	} else R_LOGFI ("getperrname: failed\n"); //r_sys_perror ("getpeername");
 	return str;
 #else
 	return NULL;

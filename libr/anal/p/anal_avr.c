@@ -165,7 +165,7 @@ static CPU_MODEL *__get_cpu_model_recursive(char *model) {
 	if (cpu->inherit && !cpu->inherit_cpu_p) {
 		cpu->inherit_cpu_p = get_cpu_model (cpu->inherit);
 		if (!cpu->inherit_cpu_p) {
-			eprintf ("ERROR: Cannot inherit from unknown CPU model '%s'.\n", cpu->inherit);
+			R_LOGFI ("ERROR: Cannot inherit from unknown CPU model '%s'.\n", cpu->inherit);
 		}
 	}
 
@@ -201,7 +201,7 @@ static CPU_CONST *const_by_name(CPU_MODEL *cpu, int type, char *c) {
 	}
 	if (cpu->inherit_cpu_p)
 		return const_by_name (cpu->inherit_cpu_p, type, c);
-	eprintf ("ERROR: CONSTANT key[%s] NOT FOUND.\n", c);
+	R_LOGFI ("ERROR: CONSTANT key[%s] NOT FOUND.\n", c);
 	return NULL;
 }
 
@@ -1496,7 +1496,7 @@ INST_HANDLER (spm) {	// SPM Z+
 		break;
 
 	default:
-		eprintf ("SPM: I dont know what to do with SPMCSR %02x.\n",
+		R_LOGFI ("SPM: I dont know what to do with SPMCSR %02x.\n",
 				(unsigned int) spmcsr);
 	}
 
@@ -1723,7 +1723,7 @@ static OPCODE_DESC* avr_op_analyze(RAnal *anal, RAnalOp *op, ut64 addr, const ut
 				goto INVALID_OP;
 			}
 			if (op->cycles <= 0) {
-				// eprintf ("opcode %s @%"PFMT64x" returned 0 cycles.\n", opcode_desc->name, op->addr);
+				// R_LOGFI ("opcode %s @%"PFMT64x" returned 0 cycles.\n", opcode_desc->name, op->addr);
 				opcode_desc->cycles = 2;
 			}
 			op->nopcode = (op->type == R_ANAL_OP_TYPE_UNK);
@@ -1874,7 +1874,7 @@ static int avr_custom_spm_page_erase(RAnalEsil *esil) {
 	addr &= ~(MASK (page_size_bits));
 
 	// perform erase
-	//eprintf ("SPM_PAGE_ERASE %ld bytes @ 0x%08" PFMT64x ".\n", page_size, addr);
+	//R_LOGFI ("SPM_PAGE_ERASE %ld bytes @ 0x%08" PFMT64x ".\n", page_size, addr);
 	c = 0xff;
 	for (i = 0; i < (1ULL << page_size_bits); i++) {
 		r_anal_esil_mem_write (
@@ -1918,7 +1918,7 @@ static int avr_custom_spm_page_fill(RAnalEsil *esil) {
 	addr &= (MASK (page_size_bits) ^ 1);
 
 	// perform write to temporary page
-	//eprintf ("SPM_PAGE_FILL bytes (%02x, %02x) @ 0x%08" PFMT64x ".\n", r1, r0, addr);
+	//R_LOGFI ("SPM_PAGE_FILL bytes (%02x, %02x) @ 0x%08" PFMT64x ".\n", r1, r0, addr);
 	r_anal_esil_mem_write (esil, addr++, &r0, 1);
 	r_anal_esil_mem_write (esil, addr++, &r1, 1);
 
@@ -1951,9 +1951,9 @@ static int avr_custom_spm_page_write(RAnalEsil *esil) {
 	addr &= (~(MASK (page_size_bits)) & CPU_PC_MASK (cpu));
 
 	// perform writing
-	//eprintf ("SPM_PAGE_WRITE %ld bytes @ 0x%08" PFMT64x ".\n", page_size, addr);
+	//R_LOGFI ("SPM_PAGE_WRITE %ld bytes @ 0x%08" PFMT64x ".\n", page_size, addr);
 	if (!(t = malloc (1 << page_size_bits))) {
-		eprintf ("Cannot alloc a buffer for copying the temporary page.\n");
+		R_LOGFI ("Cannot alloc a buffer for copying the temporary page.\n");
 		return false;
 	}
 	r_anal_esil_mem_read (esil, tmp_page, (ut8 *) t, 1 << page_size_bits);

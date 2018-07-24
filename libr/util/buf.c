@@ -62,7 +62,7 @@ static int sparse_write(RList *l, ut64 addr, const ut8 *data, int len) {
 				if (ndata) {
 					s->data = ndata;
 				} else {
-					eprintf ("sparse write fail\n");
+					R_LOGFI ("sparse write fail\n");
 					return -1;
 				}
 			}
@@ -172,7 +172,7 @@ R_API RBuffer *r_buf_new_sparse(ut8 Oxff) {
 
 R_API RBuffer *r_buf_new_slice(RBuffer *b, ut64 offset, ut64 size) {
 	if (b && b->sparse) {
-		eprintf ("r_buf_new_slice not supported yet for sparse buffers\n");
+		R_LOGFI ("r_buf_new_slice not supported yet for sparse buffers\n");
 		return NULL;
 	}
 	RBuffer *buf = R_NEW0 (RBuffer);
@@ -569,7 +569,7 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 		return 0;
 	}
 	if ((b->iob || b->fd != -1) && write) {
-		eprintf ("r_buf_fcpy_at write not supported yet for r_buf_new_file\n");
+		R_LOGFI ("r_buf_fcpy_at write not supported yet for r_buf_new_file\n");
 		return 0;
 	}
 	ut64 vaddr;
@@ -692,7 +692,7 @@ R_API ut8 *r_buf_get_at (RBuffer *b, ut64 addr, int *left) {
 	}
 	if (b->iob) {
 		if (b->fd != -1) {
-			eprintf ("r_buf_get_at not supported for r_buf_new_file\n");
+			R_LOGFI ("r_buf_get_at not supported for r_buf_new_file\n");
 			return NULL;
 		}
 		static ut8 buf[8];
@@ -902,7 +902,7 @@ R_API bool r_buf_resize (RBuffer *b, ut64 newsize) {
 				return true;
 			}
 		}
-		eprintf ("Invalid resize for an sparse RBuffer\n");
+		R_LOGFI ("Invalid resize for an sparse RBuffer\n");
 		return false;
 	}
 	ut8 *buf = calloc (newsize, 1);

@@ -43,7 +43,7 @@ static int r_asm_pseudo_string(RAsmOp *op, char *input, int zero) {
 
 static inline int r_asm_pseudo_arch(RAsm *a, char *input) {
 	if (!r_asm_use (a, input)) {
-		eprintf ("Error: Unknown plugin\n");
+		R_LOGFI ("Error: Unknown plugin\n");
 		return -1;
 	}
 	return 0;
@@ -51,7 +51,7 @@ static inline int r_asm_pseudo_arch(RAsm *a, char *input) {
 
 static inline int r_asm_pseudo_bits(RAsm *a, char *input) {
 	if (!(r_asm_set_bits (a, r_num_math (NULL, input)))) {
-		eprintf ("Error: Unsupported bits value\n");
+		R_LOGFI ("Error: Unsupported bits value\n");
 		return -1;
 	}
 	return 0;
@@ -74,7 +74,7 @@ static inline int r_asm_pseudo_intN(RAsm *a, RAsmOp *op, char *input, int n) {
 	long int l;
 	ut64 s64 = r_num_math (NULL, input);
 	if (n != 8 && s64 >> (n * 8)) {
-		eprintf ("int16 Out is out of range\n");
+		R_LOGFI ("int16 Out is out of range\n");
 		return 0;
 	}
 	// XXX honor endian here
@@ -370,7 +370,7 @@ R_API bool r_asm_set_big_endian(RAsm *a, bool b) {
 		a->big_endian = true;
 		break;
 	default:
-		eprintf ("RAsmPlugin doesn't specify endianness\n");
+		R_LOGFI ("RAsmPlugin doesn't specify endianness\n");
 		break;
 	}
 	return a->big_endian;
@@ -906,7 +906,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				else if ((!strncmp (ptr, ".byte ", 6)) || (!strncmp (ptr, ".int8 ", 6)))
 					ret = r_asm_pseudo_byte (&op, ptr+6);
 				else if (!strncmp (ptr, ".glob", 5)) { // .global .globl
-				//	eprintf (".global directive not yet implemented\n");
+				//	R_LOGFI (".global directive not yet implemented\n");
 					ret = 0;
 					continue;
 				} else if (!strncmp (ptr, ".equ ", 5)) {
@@ -919,7 +919,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 						*ptr2 = '\0';
 						r_asm_code_set_equ (acode, ptr + 5, ptr2 + 1);
 					} else {
-						eprintf ("Invalid syntax for '.equ': Use '.equ <word> <word>'\n");
+						R_LOGFI ("Invalid syntax for '.equ': Use '.equ <word> <word>'\n");
 					}
 				} else if (!strncmp (ptr, ".org ", 5)) {
 					ret = r_asm_pseudo_org (a, ptr+5);
@@ -930,19 +930,19 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					acode->data_offset = a->pc;
 				} else if (!strncmp (ptr, ".incbin", 7)) {
 					if (ptr[7] != ' ') {
-						eprintf ("incbin missing filename\n");
+						R_LOGFI ("incbin missing filename\n");
 						continue;
 					}
 					ret = r_asm_pseudo_incbin (&op, ptr + 8);
 				} else {
-					eprintf ("Unknown directive (%s)\n", ptr);
+					R_LOGFI ("Unknown directive (%s)\n", ptr);
 					return r_asm_code_free (acode);
 				}
 				if (!ret) {
 					continue;
 				}
 				if (ret < 0) {
-					eprintf ("!!! Oops\n");
+					R_LOGFI ("!!! Oops\n");
 					return r_asm_code_free (acode);
 				}
 			} else { /* Instruction */
@@ -967,7 +967,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 			}
 			if (stage == STAGES - 1) {
 				if (ret < 1) {
-					eprintf ("Cannot assemble '%s' at line %d\n", ptr_start, linenum);
+					R_LOGFI ("Cannot assemble '%s' at line %d\n", ptr_start, linenum);
 					return r_asm_code_free (acode);
 				}
 				acode->len = idx + ret;

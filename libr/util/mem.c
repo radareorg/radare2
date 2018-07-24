@@ -89,7 +89,7 @@ static char readbit(const ut8 *src, int bitoffset) {
 static void writebit (ut8 *dst, int i, bool c) {
 	int byte = i / 8;
 	int bit = (i % 8);
-// eprintf ("Write %d %d = %d\n", byte, bit, c);
+// R_LOGFI ("Write %d %d = %d\n", byte, bit, c);
 dst += byte;
 	if (c) {
 		//dst[byte] |= (1 << bit);
@@ -108,7 +108,7 @@ R_API void r_mem_copybits_delta(ut8 *dst, int doff, const ut8 *src, int soff, in
 	}
 	for (i = 0; i < bits; i++) {
 		bool c = readbit (src, i + soff);
-// eprintf ("%d %d\n", i, c);
+// R_LOGFI ("%d %d\n", i, c);
 		writebit (dst, i + doff, c);
 	}
 }

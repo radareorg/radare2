@@ -42,7 +42,7 @@ R_API void r_bin_filter_name(Sdb *db, ut64 vaddr, char *name, int maxlen) {
 		if (namelen > maxlen) name[maxlen] = 0;
 		strcat (name, sdb_fmt ("_%d", count - 1));
 		// two symbols at different addresses and same name wtf
-		//	eprintf ("Symbol '%s' dupped!\n", sym->name);
+		//	R_LOGFI ("Symbol '%s' dupped!\n", sym->name);
 	}
 }
 
@@ -103,7 +103,7 @@ R_API void r_bin_filter_sections(RList *list) {
 			r_bin_filter_name (db, sec->vaddr, sec->name, maxlen);
 		}
 	} else {
-		eprintf ("SectionName is not dynamic\n");
+		R_LOGFI ("SectionName is not dynamic\n");
 	}
 	sdb_free (db);
 }
@@ -128,7 +128,7 @@ R_API void r_bin_filter_classes(RList *list) {
 				if (sym->name)
 					r_bin_filter_sym (db, sym->vaddr, sym);
 			}
-		} else eprintf ("Cannot alloc %d byte(s)\n", namepad_len);
+		} else R_LOGFI ("Cannot alloc %d byte(s)\n", namepad_len);
 	}
 	sdb_free (db);
 }

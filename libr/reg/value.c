@@ -27,7 +27,7 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 			val->v80.Low = *((ut64 *)(regset->arena->bytes+off));
 			val->v80.High =*((ut16 *)(regset->arena->bytes+off+8));
 		} else {
-			eprintf ("r_reg_get_value: null or oob arena for current regset\n");
+			R_LOGFI ("r_reg_get_value: null or oob arena for current regset\n");
 		}
 		ret = val->v80.Low;
 		break;
@@ -36,7 +36,7 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 			val->v96.Low = *((ut64 *)(regset->arena->bytes+off));
 			val->v96.High =*((ut32 *)(regset->arena->bytes+off+8));
 		} else {
-			eprintf ("r_reg_get_value: null or oob arena for current regset\n");
+			R_LOGFI ("r_reg_get_value: null or oob arena for current regset\n");
 		}
 		ret = val->v96.Low;
 		break;
@@ -45,14 +45,14 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 			val->v128.Low = *((ut64 *)(regset->arena->bytes+off));
 			val->v128.High =*((ut64 *)(regset->arena->bytes+off+8));
 		} else {
-			eprintf ("r_reg_get_value: null or oob arena for current regset\n");
+			R_LOGFI ("r_reg_get_value: null or oob arena for current regset\n");
 		}
 		ret = val->v128.Low;
 		break;
 	//case 256:// qword + qword + qword + qword
 	//	break;
 	default:
-		eprintf ("r_reg_get_value_big: Bit size %d not supported\n", item->size);
+		R_LOGFI ("r_reg_get_value_big: Bit size %d not supported\n", item->size);
 		break;
 	}
 	return ret;
@@ -102,14 +102,14 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 		if (off + 4 <= regset->arena->size) {
 			ret = r_read_ble32 (regset->arena->bytes + off, reg->big_endian);
 		} else {
-			eprintf ("r_reg_get_value: 32bit oob read %d\n", off);
+			R_LOGFI ("r_reg_get_value: 32bit oob read %d\n", off);
 		}
 		break;
 	case 64:
 		if (regset->arena->bytes && (off + 8 <= regset->arena->size)) {
 			ret = r_read_ble64 (regset->arena->bytes + off, reg->big_endian);
 		} else {
-			eprintf ("r_reg_get_value: null or oob arena for current regset\n");
+			R_LOGFI ("r_reg_get_value: null or oob arena for current regset\n");
 		}
 		break;
 	case 80: // long double
@@ -118,7 +118,7 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 		ret = (ut64)r_reg_get_longdouble (reg, item);
 		break;
 	default:
-		eprintf ("r_reg_get_value: Bit size %d not supported\n", item->size);
+		R_LOGFI ("r_reg_get_value: Bit size %d not supported\n", item->size);
 		break;
 	}
 	return ret;
@@ -135,7 +135,7 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	ut8 *src = bytes;
 
 	if (!item) {
-		eprintf ("r_reg_set_value: item is NULL\n");
+		R_LOGFI ("r_reg_set_value: item is NULL\n");
 		return false;
 	}
 	switch (item->size) {
@@ -177,7 +177,7 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 			int idx = item->offset / 8;
 			RRegArena *arena = reg->regset[item->arena].arena;
 			if (idx + item->size > arena->size) {
-				eprintf ("RRegSetOverflow %d vs %d\n", idx + item->size, arena->size);
+				R_LOGFI ("RRegSetOverflow %d vs %d\n", idx + item->size, arena->size);
 				return false;
 			}
 			ut8 *buf = arena->bytes + idx;
@@ -187,7 +187,7 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 		}
 		return true;
 	default:
-		eprintf ("r_reg_set_value: Bit size %d not supported\n", item->size);
+		R_LOGFI ("r_reg_set_value: Bit size %d not supported\n", item->size);
 		return false;
 	}
 	fits_in_arena = (reg->regset[item->arena].arena->size - BITS2BYTES (item->offset) - BITS2BYTES (item->size)) >= 0;
@@ -197,7 +197,7 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 				src, item->size);
 		return true;
 	}
-	eprintf ("r_reg_set_value: Cannot set %s to 0x%" PFMT64x "\n", item->name, value);
+	R_LOGFI ("r_reg_set_value: Cannot set %s to 0x%" PFMT64x "\n", item->name, value);
 	return false;
 }
 
@@ -250,7 +250,7 @@ R_API ut64 r_reg_get_pack(RReg *reg, RRegItem *item, int packidx, int packbits) 
 	packbytes = packbits / 8;
 	packmod = packbits % 8;
 	if (packmod) {
-		eprintf ("Invalid bit size for packet register\n");
+		R_LOGFI ("Invalid bit size for packet register\n");
 		return 0LL;
 	}
 	off = BITS2BYTES (item->offset);
@@ -266,7 +266,7 @@ R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, u
 	int off, packbytes, packmod;
 
 	if (!reg || !item) {
-		eprintf ("r_reg_set_value: item is NULL\n");
+		R_LOGFI ("r_reg_set_value: item is NULL\n");
 		return false;
 	}
 	if (packbits < 1) {
@@ -276,11 +276,11 @@ R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, u
 	packbytes = packbits / 8;
 	packmod = packbits % 8;
 	if (packidx * packbits > item->size) {
-		eprintf ("Packed index is beyond the register size\n");
+		R_LOGFI ("Packed index is beyond the register size\n");
 		return false;
 	}
 	if (packmod) {
-		eprintf ("Invalid bit size for packet register\n");
+		R_LOGFI ("Invalid bit size for packet register\n");
 		return false;
 	}
 	if (reg->regset[item->arena].arena->size - BITS2BYTES (off) - BITS2BYTES (packbytes) >= 0) {
@@ -288,6 +288,6 @@ R_API int r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, u
 		r_mem_copybits (dst, (ut8 *)&val, packbytes);
 		return true;
 	}
-	eprintf ("r_reg_set_value: Cannot set %s to 0x%" PFMT64x "\n", item->name, val);
+	R_LOGFI ("r_reg_set_value: Cannot set %s to 0x%" PFMT64x "\n", item->name, val);
 	return false;
 }

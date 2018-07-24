@@ -102,12 +102,12 @@ static int download(struct SPDBDownloader *pd) {
 		R_FREE (abspath_to_dir);
 #endif
 		if ((cmd_ret = r_sys_cmd (curl_cmd) != 0)) {
-			eprintf("curl exited with error %d\n", cmd_ret);
+			R_LOGFI("curl exited with error %d\n", cmd_ret);
 			res = 0;
 		}
 		if (opt->extract > 0) {
 			if (res && ((cmd_ret = r_sys_cmd (extractor_cmd)) != 0)) {
-				eprintf ("cab extractor exited with error %d\n", cmd_ret);
+				R_LOGFI ("cab extractor exited with error %d\n", cmd_ret);
 				res = 0;
 			}
 			r_file_rm (abspath_to_archive);
@@ -116,7 +116,7 @@ static int download(struct SPDBDownloader *pd) {
 		R_FREE (abspath_to_archive);
 	}
 	if (res == 0) {
-		eprintf ("Falling back to uncompressed pdb\n");
+		R_LOGFI ("Falling back to uncompressed pdb\n");
 		res = 1;
 		archive_name[archive_name_len - 1] = 'b';
 		R_FREE (archive_name_escaped);
@@ -135,7 +135,7 @@ static int download(struct SPDBDownloader *pd) {
 		                       archive_name_escaped,
 		                       abspath_to_archive);
 		if ((cmd_ret = r_sys_cmd (curl_cmd) != 0)) {
-			eprintf("curl exited with error %d\n", cmd_ret);
+			R_LOGFI("curl exited with error %d\n", cmd_ret);
 			res = 0;
 		}
 		R_FREE (curl_cmd);
@@ -183,12 +183,12 @@ int r_bin_pdb_download(RCore *core, int isradjson, int *actions_done, SPDBOption
 	RBinInfo *info = r_bin_get_info (core->bin);
 
 	if (!info || !info->debug_file_name) {
-		eprintf ("Can't find debug filename\n");
+		R_LOGFI ("Can't find debug filename\n");
 		return 1;
 	}
 
 	if (!options || !options->symbol_server || !options->user_agent) {
-		eprintf ("Can't retrieve pdb configurations\n");
+		R_LOGFI ("Can't retrieve pdb configurations\n");
 		return 1;
 	}
 

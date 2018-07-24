@@ -142,7 +142,7 @@ R_API bool r_socket_rap_server_continue (RSocketRapServer *rap_s) {
 		r_socket_flush (rap_s->fd);
 		break;
 	default:
-		eprintf ("unknown command 0x%02x\n", (ut8)(rap_s->buf[0] & 0xff));
+		R_LOGFI ("unknown command 0x%02x\n", (ut8)(rap_s->buf[0] & 0xff));
 		r_socket_close (rap_s->fd);
 		ret = false;
 		break;

@@ -3,7 +3,7 @@
 #include "demangler.h"
 #include <stdlib.h>
 
-#include <r_types.h> // eprintf()
+#include <r_types.h> // R_LOGFI()
 
 #include "microsoft_demangle.h"
 

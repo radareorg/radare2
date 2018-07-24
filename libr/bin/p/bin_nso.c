@@ -68,7 +68,7 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sd
 	ut64 ba = baddr (bf);
 
 	if (rbin->iob.io && !(rbin->iob.io->cached & R_IO_WRITE)) {
-		eprintf ("Please add \'-e io.cache=true\' option to r2 command\n");
+		R_LOGFI ("Please add \'-e io.cache=true\' option to r2 command\n");
 		goto fail;
 	}
 	/* Decompress each sections */
@@ -87,7 +87,7 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sd
 	bin->methods_list = r_list_newf ((RListFree)free);
 	bin->imports_list = r_list_newf ((RListFree)free);
 	bin->classes_list = r_list_newf ((RListFree)free);
-	eprintf ("MOD Offset = 0x%"PFMT64x"\n", (ut64)modoff);
+	R_LOGFI ("MOD Offset = 0x%"PFMT64x"\n", (ut64)modoff);
 	parseMod (newbuf, bin, modoff, ba);
 	r_buf_free (newbuf);
 	return (void *) bin;
@@ -206,7 +206,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = readLE32 (b, NSO_OFF (data_loc)) + ba;
 	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE;	// rw-
 	ptr->add = true;
-	eprintf ("BSS Size 0x%08"PFMT64x "\n", (ut64)
+	R_LOGFI ("BSS Size 0x%08"PFMT64x "\n", (ut64)
 		readLE32 (bf->buf, NSO_OFF (bss_size)));
 	r_list_append (ret, ptr);
 	return ret;

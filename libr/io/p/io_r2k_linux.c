@@ -581,7 +581,7 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			}
 			ret = WriteMemory (io, iodesc, ioctl_n, pid, addr, (const ut8 *) databuf, len);
 		} else {
-			eprintf ("Failed to allocate buffer.\n");
+			R_LOGFI ("Failed to allocate buffer.\n");
 		}
 		break;
 	case 'M':

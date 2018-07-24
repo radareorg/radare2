@@ -84,7 +84,7 @@ static RBuffer *build (REgg *egg) {
 		}
 		break;
 	case R_EGG_OS_LINUX:
-		if (suid) eprintf ("no suid for this platform\n");
+		if (suid) R_LOGFI ("no suid for this platform\n");
 		suid = 0;
 		switch (egg->arch) {
 		case R_SYS_ARCH_X86:
@@ -96,7 +96,7 @@ static RBuffer *build (REgg *egg) {
 				sc = x86_64_linux_binsh; 
 				break;
 			default: 
-				eprintf ("Unsupported arch %d bits\n", egg->bits);
+				R_LOGFI ("Unsupported arch %d bits\n", egg->bits);
 			}
 			break;
 		case R_SYS_ARCH_ARM:
@@ -108,13 +108,13 @@ static RBuffer *build (REgg *egg) {
 				sc = arm_linux_binsh;
 				break;
 			default:
-				eprintf ("Unsupported arch %d bits\n", egg->bits);
+				R_LOGFI ("Unsupported arch %d bits\n", egg->bits);
 			}
 			break;
 		}
 		break;
 	default:
-		eprintf ("Unsupported os %x\n", egg->os);
+		R_LOGFI ("Unsupported os %x\n", egg->os);
 		break;		
 	}
 
@@ -122,7 +122,7 @@ static RBuffer *build (REgg *egg) {
 		r_buf_set_bytes (buf, sc, strlen ((const char *)sc));
 		if (shell && *shell) {
 			if (cd) r_buf_write_at (buf, cd, (const ut8*)shell, strlen (shell)+1);
-			else eprintf ("Cannot set shell\n");
+			else R_LOGFI ("Cannot set shell\n");
 		}
 	}
 	free (suid);

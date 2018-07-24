@@ -80,7 +80,7 @@
 int drx_set(drxt *drx, int n, ut64 addr, int len, int rwx, int global) {
 	ut32 control = drx[DR_CONTROL];
 	if (n < 0 || n >= DR_NADDR) {
-		eprintf ("Invalid DRX index (0-%d)\n", DR_NADDR - 1);
+		R_LOGFI ("Invalid DRX index (0-%d)\n", DR_NADDR - 1);
 		return false;
 	}
 	switch (rwx) {
@@ -104,7 +104,7 @@ int drx_set(drxt *drx, int n, ut64 addr, int len, int rwx, int global) {
 		return true;
 	}
 	default:
-		eprintf ("Invalid DRX length (%d) must be 1, 2, 4, 8 bytes\n", len);
+		R_LOGFI ("Invalid DRX length (%d) must be 1, 2, 4, 8 bytes\n", len);
 		return false;
 	}
 	I386_DR_SET_RW_LEN (control, n, len | rwx);
@@ -117,9 +117,9 @@ int drx_set(drxt *drx, int n, ut64 addr, int len, int rwx, int global) {
 	}
 	control &= I386_DR_CONTROL_MASK;
 	drx[n] = addr;
-// eprintf ("drx[DR_CONTROL] = %x \n", drx[DR_CONTROL]);
+// R_LOGFI ("drx[DR_CONTROL] = %x \n", drx[DR_CONTROL]);
 	drx[DR_CONTROL] = control;
-// eprintf ("CONTROL = %x\n", control);
+// R_LOGFI ("CONTROL = %x\n", control);
 	return true;
 }
 

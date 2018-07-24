@@ -130,7 +130,7 @@ static int remove_meta_offset(RCore *core, ut64 offset) {
 	char aoffset[64];
 	char *aoffsetptr = sdb_itoa (offset, aoffset, 16);
 	if (!aoffsetptr) {
-		eprintf ("Failed to convert %"PFMT64x" to a key", offset);
+		R_LOGFI ("Failed to convert %"PFMT64x" to a key", offset);
 		return -1;
 	}
 	return sdb_unset (core->bin->cur->sdb_addrinfo, aoffsetptr, 0);
@@ -156,10 +156,10 @@ static void print_meta_offset(RCore *core, ut64 offset) {
 				}
 			}
 		} else {
-			eprintf ("Cannot open '%s'\n", file);
+			R_LOGFI ("Cannot open '%s'\n", file);
 		}
 	} else {
-		eprintf ("Cannot find meta information at 0x%08"
+		R_LOGFI ("Cannot find meta information at 0x%08"
 			PFMT64x"\n", offset);
 	}
 }
@@ -222,7 +222,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	char *colon, *space, *file_line = 0;
 
 	if (*p == '?') {
-		eprintf ("Usage: CL[-][*] [file:line] [addr]");
+		R_LOGFI ("Usage: CL[-][*] [file:line] [addr]");
 		return 0;
 	}
 
@@ -285,7 +285,7 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 			ret = sscanf (p, "0x%"PFMT64x, &offset);
 			if (ret != 1) {
 				remove = 0;
-				eprintf ("Failed to parse addr at %s\n", p);
+				R_LOGFI ("Failed to parse addr at %s\n", p);
 				// goto error;
 			} else {
 				ret = cmd_meta_add_fileline (core->bin->cur->sdb_addrinfo,
@@ -327,7 +327,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		break;
 	case ',': // "CC,"
 		if (input[2]=='?') {
-			eprintf ("Usage: CC, [file]\n");
+			R_LOGFI ("Usage: CC, [file]\n");
 		} else if (input[2] == ' ') {
 			const char *fn = input+2;
 			char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
@@ -465,7 +465,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		if (s) {
 			s = strdup (s + 1);
 		} else {
-			eprintf ("Usage\n");
+			R_LOGFI ("Usage\n");
 			return false;
 		}
 		p = strchr (s, ' ');
@@ -479,7 +479,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 				r_meta_del (core->anal,
 						R_META_TYPE_COMMENT,
 						addr, 1);
-			} else eprintf ("Usage: CCa-[address]\n");
+			} else R_LOGFI ("Usage: CCa-[address]\n");
 			free (s);
 			return true;
 		}
@@ -507,7 +507,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 						addr, addr + 1, p);
 			}
 		} else {
-			eprintf ("Usage: CCa [address] [comment]\n");
+			R_LOGFI ("Usage: CCa [address] [comment]\n");
 		}
 		free (s);
 		return true;
@@ -681,7 +681,7 @@ static int cmd_meta_hsdmf(RCore *core, const char *input) {
 						if (n < 1) {
 							n = r_print_format_struct_size (p + 1, core->print, 0, 0);
 							if (n < 1) {
-								eprintf ("Cannot resolve struct size\n");
+								R_LOGFI ("Cannot resolve struct size\n");
 								n = 32; //
 							}
 p = t;
@@ -696,7 +696,7 @@ p = t;
 							n  = -1;
 						}
 					} else {
-						eprintf ("Usage: Cf [size] [pf-format-string]\n");
+						R_LOGFI ("Usage: Cf [size] [pf-format-string]\n");
 						break;
 					}
 				} else if (type == 's') { //Cs
@@ -776,7 +776,7 @@ p = t;
 		//r_meta_cleanup (core->anal->meta, 0LL, UT64_MAX);
 		break;
 	default:
-		eprintf ("Missing space after CC\n");
+		R_LOGFI ("Missing space after CC\n");
 		break;
 	}
 
@@ -813,7 +813,7 @@ void r_comment_vars(RCore *core, const char *input) {
 		return;
 	}
 	if (!fcn) {
-		eprintf ("Cant find function here\n");
+		R_LOGFI ("Cant find function here\n");
 		return;
 	}
 	oname = name = strdup (input + 2);
@@ -860,13 +860,13 @@ void r_comment_vars(RCore *core, const char *input) {
 		} else if (!strncmp (name, "-0x", 3)) {
 			idx = -(int) r_num_get (NULL, name+1);
 		} else {
-			eprintf ("cant find variable named `%s`\n",name);
+			R_LOGFI ("cant find variable named `%s`\n",name);
 			free (heap_comment);
 			break;
 		}
 		r_anal_var_free (var);
 		if (!r_anal_var_get (core->anal, fcn->addr, input[0], 1, idx)) {
-			eprintf ("cant find variable at given offset\n");
+			R_LOGFI ("cant find variable at given offset\n");
 		} else {
 			oldcomment = r_meta_get_var_comment (core->anal, input[0], idx, fcn->addr);
 			if (oldcomment) {
@@ -893,13 +893,13 @@ void r_comment_vars(RCore *core, const char *input) {
 		} else if (!strncmp (name, "-0x", 3)) {
 			idx = -(int) r_num_get (NULL, name+1);
 		 }else {
-			eprintf ("cant find variable named `%s`\n",name);
+			R_LOGFI ("cant find variable named `%s`\n",name);
 			break;
 		}
 		r_anal_var_free (var);
 		//XXX TODO here we leak a var
 		if (!r_anal_var_get (core->anal, fcn->addr, input[0],1,idx)) {
-			eprintf ("cant find variable at given offset\n");
+			R_LOGFI ("cant find variable at given offset\n");
 			break;
 		}
 		r_meta_var_comment_del (core->anal, input[0], idx, fcn->addr);
@@ -908,7 +908,7 @@ void r_comment_vars(RCore *core, const char *input) {
 		char *comment;
 		var = r_anal_var_get_byname (core->anal, fcn->addr, name);
 		if (!var) {
-			eprintf ("cant find variable named `%s`\n",name);
+			R_LOGFI ("cant find variable named `%s`\n",name);
 			break;
 		}
 		oldcomment = r_meta_get_var_comment (core->anal, input[0], var->delta, fcn->addr);
@@ -970,7 +970,7 @@ static int cmd_meta(void *data, const char *input) {
 		if (f) {
 			r_anal_str_to_fcn (core->anal, f, input + 2);
 		} else {
-			eprintf ("Cannot find function here\n");
+			R_LOGFI ("Cannot find function here\n");
 		}
 		break;
 	case 'S': // "CS"
@@ -987,7 +987,7 @@ static int cmd_meta(void *data, const char *input) {
 			if (input[2] == ' ') {
 				r_space_rename (ms, NULL, input+2);
 			} else {
-				eprintf ("Usage: CSr [newname]\n");
+				R_LOGFI ("Usage: CSr [newname]\n");
 			}
 			break;
 		case '-':
@@ -1018,7 +1018,7 @@ static int cmd_meta(void *data, const char *input) {
 				f = r_flag_get_i (core->flags, off);
 				if (f) {
 					f->space = core->flags->space_idx;
-				} else eprintf ("Cannot find any flag at 0x%"PFMT64x".\n", off);
+				} else R_LOGFI ("Cannot find any flag at 0x%"PFMT64x".\n", off);
 			}
 			break;
 #endif

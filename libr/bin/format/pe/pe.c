@@ -10,7 +10,7 @@
 
 #define PE_IMAGE_FILE_MACHINE_RPI2 452
 #define MAX_METADATA_STRING_LENGTH 256
-#define bprintf if(bin->verbose) eprintf
+#define bprintf if(bin->verbose) R_LOGFI
 #define COFF_SYMBOL_SIZE 18
 
 struct SCV_NB10_HEADER;
@@ -961,7 +961,7 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 		goto fail;
 	}
 
-	eprintf ("Metadata Signature: 0x%"PFMT64x" 0x%"PFMT64x" %d\n",
+	R_LOGFI ("Metadata Signature: 0x%"PFMT64x" 0x%"PFMT64x" %d\n",
 		(ut64)metadata_directory, (ut64)metadata->Signature, (int)metadata->VersionStringLength);
 
 	// read the version string
@@ -974,12 +974,12 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 
 		rr = r_buf_read_at (bin->b, metadata_directory + 16, (ut8*)(metadata->VersionString),  len);
 		if (rr != len) {
-			eprintf ("Warning: read (metadata header) - cannot parse version string\n");
+			R_LOGFI ("Warning: read (metadata header) - cannot parse version string\n");
 			free (metadata->VersionString);
 			free (metadata);
 			return 0;
 		}
-		eprintf (".NET Version: %s\n", metadata->VersionString);
+		R_LOGFI (".NET Version: %s\n", metadata->VersionString);
 	}
 
 	// read the header after the string
@@ -990,7 +990,7 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 		goto fail;
 	}
 
-	eprintf ("Number of Metadata Streams: %d\n", metadata->NumberOfStreams);
+	R_LOGFI ("Number of Metadata Streams: %d\n", metadata->NumberOfStreams);
 	bin->metadata_header = metadata;
 
 
@@ -1015,7 +1015,7 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 			free (streams);
 			goto fail;
 		}
-		eprintf ("DirectoryAddress: %x Size: %x\n", stream->Offset, stream->Size);
+		R_LOGFI ("DirectoryAddress: %x Size: %x\n", stream->Offset, stream->Size);
 		char* stream_name = calloc (1, MAX_METADATA_STRING_LENGTH + 1);
 
 		if (!stream_name) {
@@ -1038,7 +1038,7 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 			free (streams);
 			goto fail;
 		}
-		eprintf ("Stream name: %s %d\n", stream_name, c);
+		R_LOGFI ("Stream name: %s %d\n", stream_name, c);
 		stream->Name = stream_name;
 		streams[count] = stream;
 		start_of_stream += 8 + c;
@@ -1047,7 +1047,7 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->streams = streams;
 	return 1;
 fail:
-	eprintf ("Warning: read (metadata header)\n");
+	R_LOGFI ("Warning: read (metadata header)\n");
 	free (metadata);
 	return 0;
 }
@@ -2278,7 +2278,7 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			break;
 		}
 		if (r_buf_read_at (bin->b, off, (ut8*)&entry, sizeof(entry)) < 1) {
-			eprintf ("Warning: read resource entry\n");
+			R_LOGFI ("Warning: read resource entry\n");
 			break;
 		}
 		if (entry.u2.s.DataIsDirectory) {
@@ -2287,7 +2287,7 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			off = rsrc_base + entry.u2.s.OffsetToDirectory;
 			int len = r_buf_read_at (bin->b, off, (ut8*) &identEntry, sizeof (identEntry));
 			if (len < 1 || len != sizeof (Pe_image_resource_directory)) {
-				eprintf ("Warning: parsing resource directory\n");
+				R_LOGFI ("Warning: parsing resource directory\n");
 			}
 			_parse_resource_directory (bin, &identEntry,
 				entry.u2.s.OffsetToDirectory, type, entry.u1.Id, dirs);
@@ -2304,7 +2304,7 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			break;
 		}
 		if (r_buf_read_at (bin->b, off, (ut8*)data, sizeof (*data)) != sizeof (*data)) {
-			eprintf ("Warning: read (resource data entry)\n");
+			R_LOGFI ("Warning: read (resource data entry)\n");
 			free (data);
 			break;
 		}
@@ -2410,7 +2410,7 @@ R_API void PE_(bin_pe_parse_resource)(struct PE_(r_bin_pe_obj_t) *bin) {
 	curRes = rs_directory->NumberOfNamedEntries;
 	totalRes = curRes + rs_directory->NumberOfIdEntries;
 	if (totalRes > R_PE_MAX_RESOURCES) {
-		eprintf ("Error parsing resource directory\n");
+		R_LOGFI ("Error parsing resource directory\n");
 		sdb_ht_free (dirs);
 		return;
 	}
@@ -2422,7 +2422,7 @@ R_API void PE_(bin_pe_parse_resource)(struct PE_(r_bin_pe_obj_t) *bin) {
 			break;
 		}
 		if (r_buf_read_at (bin->b, off, (ut8*)&typeEntry, sizeof(typeEntry)) < 1) {
-			eprintf ("Warning: read resource  directory entry\n");
+			R_LOGFI ("Warning: read resource  directory entry\n");
 			break;
 		}
 		if (typeEntry.u2.s.DataIsDirectory) {
@@ -2430,7 +2430,7 @@ R_API void PE_(bin_pe_parse_resource)(struct PE_(r_bin_pe_obj_t) *bin) {
 			off = rsrc_base + typeEntry.u2.s.OffsetToDirectory;
 			int len = r_buf_read_at (bin->b, off, (ut8*)&identEntry, sizeof(identEntry));
 			if (len < 1 || len != sizeof (identEntry)) {
-				eprintf ("Warning: parsing resource directory\n");
+				R_LOGFI ("Warning: parsing resource directory\n");
 			}
 			_parse_resource_directory (bin, &identEntry, typeEntry.u2.s.OffsetToDirectory, typeEntry.u1.Id, 0, dirs);
 		}
@@ -2481,11 +2481,11 @@ static int bin_pe_init(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->data_directory = NULL;
 	bin->big_endian = 0;
 	if (!bin_pe_init_hdr (bin)) {
-		eprintf ("Warning: File is not PE\n");
+		R_LOGFI ("Warning: File is not PE\n");
 		return false;
 	}
 	if (!bin_pe_init_sections (bin)) {
-		eprintf ("Warning: Cannot initialize sections\n");
+		R_LOGFI ("Warning: Cannot initialize sections\n");
 		return false;
 	}
 	bin_pe_init_imports (bin);
@@ -2812,7 +2812,7 @@ static int get_debug_info(struct PE_(r_bin_pe_obj_t)* bin, PE_(image_debug_direc
 			rsds_hdr.free ((struct SCV_RSDS_HEADER*) &rsds_hdr);
 		} else if (strncmp ((const char*) dbg_data, "NB10", 4) == 0) {
 			if (dbg_data_len < 20) {
-				eprintf ("Truncated NB10 entry, not enough data to parse\n");
+				R_LOGFI ("Truncated NB10 entry, not enough data to parse\n");
 				return 0;
 			}
 			SCV_NB10_HEADER nb10_hdr = {{0}};

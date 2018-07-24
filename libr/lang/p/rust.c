@@ -15,7 +15,7 @@ static int lang_rust_file(RLang *lang, const char *file) {
 		sprintf (name, "%s.rs", file);
 	else strcpy (name, file);
 	if (!r_file_exists (name)) {
-		eprintf ("file not found (%s)\n", name);
+		R_LOGFI ("file not found (%s)\n", name);
 		return false;
 	}
 
@@ -49,9 +49,9 @@ static int lang_rust_file(RLang *lang, const char *file) {
 		void (*fcn)(RCore *);
 		fcn = r_lib_dl_sym (lib, "entry");
 		if (fcn) fcn (lang->user);
-		else eprintf ("Cannot find 'entry' symbol in library\n");
+		else R_LOGFI ("Cannot find 'entry' symbol in library\n");
 		r_lib_dl_close (lib);
-	} else eprintf ("Cannot open library\n");
+	} else R_LOGFI ("Cannot open library\n");
 	r_file_rm (buf); // remove lib
 	return 0;
 }
@@ -100,7 +100,7 @@ static int lang_rust_run(RLang *lang, const char *code, int len) {
 		fclose (fd);
 		lang_rust_file (lang, "_tmp.rs");
 		r_file_rm ("_tmp.rs");
-	} else eprintf ("Cannot open _tmp.rs\n");
+	} else R_LOGFI ("Cannot open _tmp.rs\n");
 	return true;
 }
 

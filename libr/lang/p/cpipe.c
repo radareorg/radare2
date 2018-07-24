@@ -17,7 +17,7 @@ static int lang_cpipe_file(RLang *lang, const char *file) {
 		sprintf (name, "%s.c", file);
 	else strcpy (name, file);
 	if (!r_file_exists (name)) {
-		eprintf ("file not found (%s)\n", name);
+		R_LOGFI ("file not found (%s)\n", name);
 		return false;
 	}
 
@@ -69,7 +69,7 @@ static int lang_cpipe_run(RLang *lang, const char *code, int len) {
 		fclose (fd);
 		lang_cpipe_file (lang, ".tmp.c");
 		r_file_rm (".tmp.c");
-	} else eprintf ("Cannot open .tmp.c\n");
+	} else R_LOGFI ("Cannot open .tmp.c\n");
 	return true;
 }
 

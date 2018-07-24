@@ -44,7 +44,7 @@ vm_address_t get_kernel_base(task_t ___task) {
 	if (ret != KERN_SUCCESS)
 		return 0;
 	ut64 naddr;
-	eprintf ("%d vs %d\n", task, ___task);
+	R_LOGFI ("%d vs %d\n", task, ___task);
 	for (count=128; count; count--) {
 		// get next memory region
 		naddr = addr;
@@ -57,7 +57,7 @@ vm_address_t get_kernel_base(task_t ___task) {
 			addr += size;
 			continue;
 		}
-		eprintf ("0x%08"PFMT64x" size 0x%08"PFMT64x" perm 0x%x\n", (ut64)addr, (ut64)size, info.max_protection);
+		R_LOGFI ("0x%08"PFMT64x" size 0x%08"PFMT64x" perm 0x%x\n", (ut64)addr, (ut64)size, info.max_protection);
 		// the kernel maps over a GB of RAM at the address where it maps
 		// itself so we use that fact to detect it's position
 		if (size > 1024*1024*1024) {
@@ -90,7 +90,7 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 #if 0
 	if (dbg->pid == 0) {
 		vm_address_t base = get_kernel_base (task);
-		eprintf ("Kernel Base Address: 0x%"PFMT64x"\n", (ut64)base);
+		R_LOGFI ("Kernel Base Address: 0x%"PFMT64x"\n", (ut64)base);
 		return NULL;
 	}
 #endif
@@ -106,7 +106,7 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 		kr = mach_vm_region_recurse (task, &address, &size, &depth,
 			(vm_region_recurse_info_t) &info, &info_count);
 		if (kr != KERN_SUCCESS) {
-			//eprintf ("Cannot kern succ recurse\n");
+			//R_LOGFI ("Cannot kern succ recurse\n");
 			break;
 		}
 		if (!list) {
@@ -154,7 +154,7 @@ static RList *ios_dbg_maps(RDebug *dbg) {
 			mr = r_debug_map_new (buf, address, address+size,
 					xwr2rwx (info.protection), 0);
 			if (!mr) {
-				eprintf ("Cannot create r_debug_map_new\n");
+				R_LOGFI ("Cannot create r_debug_map_new\n");
 				break;
 			}
 			mr->file = strdup (module_name);
@@ -259,7 +259,7 @@ static RList *osx_dbg_maps (RDebug *dbg) {
 			mr = r_debug_map_new (buf, prev_address, prev_address+prev_size,
 				xwr2rwx (prev_info.protection), 0);
 			if (!mr) {
-				eprintf ("Cannot create r_debug_map_new\n");
+				R_LOGFI ("Cannot create r_debug_map_new\n");
 				break;
 			}
 			mr->file = strdup (module_name);

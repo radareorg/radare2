@@ -40,7 +40,7 @@ static int r_debug_qnx_select (int pid, int tid) {
 }
 
 static RList *r_debug_qnx_tids (RDebug *dbg, int pid) {
-	eprintf ("%s: TODO: Threads\n", __func__);
+	R_LOGFI ("%s: TODO: Threads\n", __func__);
 	return NULL;
 }
 
@@ -71,7 +71,7 @@ static int r_debug_qnx_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 	// read the len of the current area
 	free (r_reg_get_bytes (dbg->reg, type, &buflen));
 	if (size < len) {
-		eprintf ("r_debug_qnx_reg_read: small buffer %d vs %d\n",
+		R_LOGFI ("r_debug_qnx_reg_read: small buffer %d vs %d\n",
 			 (int)size, (int)len);
 	}
 	copy_size = R_MIN (len, size);
@@ -182,7 +182,7 @@ static int r_debug_qnx_attach (RDebug *dbg, int pid) {
 					if (bits == 16 || bits == 32) {
 						qnxr_set_architecture (&g->desc, X86_32);
 					} else {
-						eprintf ("Not supported register %s %d profile\n", dbg->arch, bits);
+						R_LOGFI ("Not supported register %s %d profile\n", dbg->arch, bits);
 						return false;
 					}
 					break;
@@ -190,7 +190,7 @@ static int r_debug_qnx_attach (RDebug *dbg, int pid) {
 					if (bits == 16 || bits == 32) {
 						qnxr_set_architecture (&g->desc, ARM_32);
 					} else {
-						eprintf ("Not supported register %s %d profile\n", dbg->arch, bits);
+						R_LOGFI ("Not supported register %s %d profile\n", dbg->arch, bits);
 						return false;
 					}
 					break;
@@ -198,7 +198,7 @@ static int r_debug_qnx_attach (RDebug *dbg, int pid) {
 			if (pid)
 				qnxr_attach (desc, pid);
 		} else {
-			eprintf ("%s: error: underlying IO descriptor isn't a QNX one\n", __func__);
+			R_LOGFI ("%s: error: underlying IO descriptor isn't a QNX one\n", __func__);
 			return false;
 		}
 	}

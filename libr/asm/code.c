@@ -28,7 +28,7 @@ R_API bool r_asm_code_set_equ (RAsmCode *code, const char *key, const char *valu
 	RAsmEqu *equ;
 	RListIter *iter;
 	if (!code || !key || !value) {
-		eprintf ("Oops, no key or value defined in r_asm_code_set_equ ()\n");
+		R_LOGFI ("Oops, no key or value defined in r_asm_code_set_equ ()\n");
 		return false;
 	}
 	if (!code->equs) {

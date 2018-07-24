@@ -48,7 +48,7 @@ static void lang_pipe_run_win(RLang *lang) {
 	r_cons_break_push (NULL, NULL);
 	res = ConnectNamedPipe (hPipeInOut, NULL);
 	if (!res) {
-		eprintf ("ConnectNamedPipe failed\n");
+		R_LOGFI ("ConnectNamedPipe failed\n");
 		return;
 	}
 	do {
@@ -76,13 +76,13 @@ static void lang_pipe_run_win(RLang *lang) {
 						break;
 					}
 					if (!rc) {
-						eprintf ("WriteFile: failed 0x%x\n", (int)GetLastError());
+						R_LOGFI ("WriteFile: failed 0x%x\n", (int)GetLastError());
 					}
 					if (dwWritten > 0) {
 						i += dwWritten - 1;
 					} else {
 						/* send null termination // chop */
-						eprintf ("w32-lang-pipe: 0x%x\n", (ut32)GetLastError ());
+						R_LOGFI ("w32-lang-pipe: 0x%x\n", (ut32)GetLastError ());
 						//WriteFile (hPipeInOut, "", 1, &dwWritten, NULL);
 						//break;
 					}
@@ -99,7 +99,7 @@ static void lang_pipe_run_win(RLang *lang) {
 static void env(const char *s, int f) {
 	char *a = r_str_newf ("%d", f);
 	r_sys_setenv (s, a);
-//	eprintf ("%s %s\n", s, a);
+//	R_LOGFI ("%s %s\n", s, a);
 	free (a);
 }
 #endif
@@ -148,12 +148,12 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 			}
 			buf[sizeof (buf) - 1] = 0;
 			res = lang->cmd_str ((RCore*)lang->user, buf);
-			//eprintf ("%d %s\n", ret, buf);
+			//R_LOGFI ("%d %s\n", ret, buf);
 			if (res) {
 				write (input[1], res, strlen (res) + 1);
 				free (res);
 			} else {
-				eprintf ("r_lang_pipe: NULL reply for (%s)\n", buf);
+				R_LOGFI ("r_lang_pipe: NULL reply for (%s)\n", buf);
 				write (input[1], "", 1); // NULL byte
 			}
 		}
@@ -166,7 +166,7 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 		if (safe_in != -1) {
 			dup2 (safe_in, 0);
 		} else {
-			eprintf ("Cannot open ttyname(0) %s\n", ttyname(0));
+			R_LOGFI ("Cannot open ttyname(0) %s\n", ttyname(0));
 		}
 	}
 

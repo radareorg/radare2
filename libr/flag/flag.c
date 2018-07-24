@@ -468,7 +468,7 @@ R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest) {
 				continue;
 			}
 			if (item->offset == off) {
-				eprintf ("XXX Should never happend\n");
+				R_LOGFI ("XXX Should never happend\n");
 				return evalFlag (f, item);
 			}
 			nice = item;
@@ -544,7 +544,7 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 off, ut32 size) {
 			return NULL;
 		}
 		if (!set_name (item, name)) {
-			eprintf ("Invalid flag name '%s'.\n", name);
+			R_LOGFI ("Invalid flag name '%s'.\n", name);
 			r_flag_item_free (item);
 			return NULL;
 		}

@@ -99,12 +99,12 @@ void addTarget(RCore *core, RStack *stack, Sdb *db, ut64 addr) {
 	if (!sdb_num_get (db, Fhandled(addr), NULL)) {
 		ut64* value = (ut64*) malloc (1 * sizeof(ut64));
 		if (!value) {
-			eprintf ("Failed to allocate memory for address stack\n");
+			R_LOGFI ("Failed to allocate memory for address stack\n");
 			return;
 		}
 		*value = addr;
 		if (!r_stack_push (stack, (void*)value)) {
-			eprintf ("Failed to push address on stack\n");
+			R_LOGFI ("Failed to push address on stack\n");
 			free (value);
 			return;
 		}
@@ -131,7 +131,7 @@ ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_commands)
 		block_end = false;
 		value = (ut64*) r_stack_pop (stack);
 		if (!value) {
-			eprintf ("Failed to pop next address from stack\n");
+			R_LOGFI ("Failed to pop next address from stack\n");
 			break;
 		}
 
@@ -141,12 +141,12 @@ ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_commands)
 		while (!block_end) {
 			op = r_core_anal_op (core, addr + cur, R_ANAL_OP_MASK_BASIC);
 			if (!op || !op->mnemonic) {
-				eprintf ("Cannot analyze opcode at %"PFMT64d"\n", addr+cur);
+				R_LOGFI ("Cannot analyze opcode at %"PFMT64d"\n", addr+cur);
 				oaddr = UT64_MAX;
 				break;
 			}
 			if (op->mnemonic[0] == '?') {
-				eprintf ("Cannot analyze opcode at %"PFMT64d"\n", addr+cur);
+				R_LOGFI ("Cannot analyze opcode at %"PFMT64d"\n", addr+cur);
 				oaddr = UT64_MAX;
 				break;
 			}
@@ -224,7 +224,7 @@ ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_commands)
 				break;
 			case R_ANAL_OP_TYPE_UNK:
 			case R_ANAL_OP_TYPE_ILL:
-				eprintf ("a2f: Invalid instruction\n");
+				R_LOGFI ("a2f: Invalid instruction\n");
 				block_end = true;
 				break;
 			default:
@@ -278,20 +278,20 @@ static int analyzeFunction(RCore *core, ut64 addr) {
 	char *function_label;
 	bool vars = r_config_get_i (core->config, "anal.vars");
 	if (!db) {
-		eprintf ("Cannot create db\n");
+		R_LOGFI ("Cannot create db\n");
 		return false;
 	}
 
 	delayed_commands = r_list_newf (free);
 	if (!delayed_commands) {
-		eprintf ("Failed to initialize the delayed command list\n");
+		R_LOGFI ("Failed to initialize the delayed command list\n");
 		sdb_free (db);
 		return false;
 	}
 
 	ut64 a = analyzeStackBased (core, db, addr, delayed_commands);
 	if (addr == UT64_MAX) {
-		eprintf ("Initial analysis failed\n");
+		R_LOGFI ("Initial analysis failed\n");
 		return false;
 	}
 	addr = a;
@@ -299,13 +299,13 @@ static int analyzeFunction(RCore *core, ut64 addr) {
 
 	//TODO add the possible addresses to the analysis stack
 	//TODO add xrefs
-	//eprintf ("addr: %s\n", sdb_const_get (db, "addr", NULL));
-	//eprintf ("calls: %s\n", sdb_const_get (db, "calls", NULL));
-	//eprintf ("ucalls: %s\n", sdb_const_get (db, "ucalls", NULL));
-	//eprintf ("cjmps: %s\n", sdb_const_get (db, "cjmps", NULL));
-	//eprintf ("ujmps: %s\n", sdb_const_get (db, "ujmps", NULL));
-	//eprintf ("rets: %s\n", sdb_const_get (db, "rets", NULL));
-	//eprintf ("bbs: %s\n", sdb_const_get (db, "bbs", NULL));
+	//R_LOGFI ("addr: %s\n", sdb_const_get (db, "addr", NULL));
+	//R_LOGFI ("calls: %s\n", sdb_const_get (db, "calls", NULL));
+	//R_LOGFI ("ucalls: %s\n", sdb_const_get (db, "ucalls", NULL));
+	//R_LOGFI ("cjmps: %s\n", sdb_const_get (db, "cjmps", NULL));
+	//R_LOGFI ("ujmps: %s\n", sdb_const_get (db, "ujmps", NULL));
+	//R_LOGFI ("rets: %s\n", sdb_const_get (db, "rets", NULL));
+	//R_LOGFI ("bbs: %s\n", sdb_const_get (db, "bbs", NULL));
 
 	// fcnfit to get fcn size
 	sdb_num_set (db, "size", getFunctionSize (db), 0);
@@ -371,13 +371,13 @@ static int r_cmd_anal_call(void *user, const char *input) {
 		switch (input[2]) {
 		case 'f':
 			if (!analyzeFunction (core, core->offset)) {
-				eprintf ("a2f: Failed to analyze function.\n");
+				R_LOGFI ("a2f: Failed to analyze function.\n");
 			}
 			break;
 		default:
-			eprintf ("Usage: a2f\n");
-			eprintf ("a2f is the new (experimental) analysis engine\n");
-			eprintf ("Use with caution.\n");
+			R_LOGFI ("Usage: a2f\n");
+			R_LOGFI ("a2f is the new (experimental) analysis engine\n");
+			R_LOGFI ("Use with caution.\n");
 			break;
 		}
 		return true;

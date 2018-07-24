@@ -163,12 +163,12 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 		libname = data->metadata->libname;
 	}
 	if (bin_size == bf->size && bin_size) {
-		eprintf ("This is not a fat bin\n");
+		R_LOGFI ("This is not a fat bin\n");
 		return false;
 	}
 	bytes = data->buffer;
 	if (!bytes) {
-		eprintf ("error: BinFile buffer is empty\n");
+		R_LOGFI ("error: BinFile buffer is empty\n");
 		return false;
 	}
 	if (!arch) {
@@ -189,7 +189,7 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 	if (!outpath || !r_sys_mkdirp (outpath)) {
 		free (path);
 		free (outpath);
-		eprintf ("Error creating dir structure\n");
+		R_LOGFI ("Error creating dir structure\n");
 		return false;
 	}
 
@@ -198,7 +198,7 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 		: r_str_newf ("%s/%s.%s_%i.%d", outpath, ptr, arch, bits, idx);
 
 	if (!outfile || !r_file_dump (outfile, bytes, bin_size, 0)) {
-		eprintf ("Error extracting %s\n", outfile);
+		R_LOGFI ("Error extracting %s\n", outfile);
 		res = false;
 	} else {
 		printf ("%s created (%"PFMT64d")\n", outfile, bin_size);
@@ -270,7 +270,7 @@ static int rabin_dump_symbols(int len) {
 			r_hex_bin2str (buf, len, ret);
 			printf ("%s %s\n", symbol->name, ret);
 		} else {
-			eprintf ("Cannot read from buffer\n");
+			R_LOGFI ("Cannot read from buffer\n");
 		}
 		free (buf);
 		free (ret);
@@ -445,11 +445,11 @@ static int rabin_do_operation(const char *op) {
 		break;
 	default:
 	_rabin_do_operation_error:
-		eprintf ("Unknown operation. use -O help\n");
+		R_LOGFI ("Unknown operation. use -O help\n");
 		goto error;
 	}
 	if (!rc) {
-		eprintf ("Cannot dump :(\n");
+		R_LOGFI ("Cannot dump :(\n");
 	}
 	free (arg);
 	return true;
@@ -514,7 +514,7 @@ static char *demangleAs(int type) {
 	case R_BIN_NM_MSVC: res = r_bin_demangle_msvc (file); break;
 	case R_BIN_NM_RUST: res = r_bin_demangle_rust (NULL, file, 0); break;
 	default:
-		eprintf ("Unsupported demangler\n");
+		R_LOGFI ("Unsupported demangler\n");
 		break;
 	}
 	return res;
@@ -749,7 +749,7 @@ int main(int argc, char **argv) {
 				return 0;
 			}
 			if (optind == argc) {
-				eprintf ("Missing filename\n");
+				R_LOGFI ("Missing filename\n");
 				r_core_fini (&core);
 				return 1;
 			}
@@ -815,7 +815,7 @@ int main(int argc, char **argv) {
 				}
 				res = demangleAs (type);
 				if (!res) {
-					eprintf ("Unknown lang to demangle. Use: cxx, java, objc, swift\n");
+					R_LOGFI ("Unknown lang to demangle. Use: cxx, java, objc, swift\n");
 					return 1;
 				}
 				if (res && *res) {
@@ -837,7 +837,7 @@ int main(int argc, char **argv) {
 			}
 		}
 		free (res);
-		//eprintf ("%s\n", file);
+		//R_LOGFI ("%s\n", file);
 		return 1;
 	}
 	file = argv[optind];
@@ -861,7 +861,7 @@ int main(int argc, char **argv) {
 		ut8 *data = NULL, *code = NULL;
 		char *p2, *p = strchr (create, ':');
 		if (!p) {
-			eprintf ("Invalid format for -C flag. Use 'format:codehexpair:datahexpair'\n");
+			R_LOGFI ("Invalid format for -C flag. Use 'format:codehexpair:datahexpair'\n");
 			r_core_fini (&core);
 			return 1;
 		}
@@ -890,21 +890,21 @@ int main(int argc, char **argv) {
 			bits = 32;
 		}
 		if (!r_bin_use_arch (bin, arch, bits, create)) {
-			eprintf ("Cannot set arch\n");
+			R_LOGFI ("Cannot set arch\n");
 			r_core_fini (&core);
 			return 1;
 		}
 		b = r_bin_create (bin, code, codelen, data, datalen);
 		if (b) {
 			if (r_file_dump (file, b->buf, b->length, 0)) {
-				eprintf ("Dumped %"PFMT64d" bytes in '%s'\n", b->length, file);
+				R_LOGFI ("Dumped %"PFMT64d" bytes in '%s'\n", b->length, file);
 				r_file_chmod (file, "+x", 0);
 			} else {
-				eprintf ("Error dumping into a.out\n");
+				R_LOGFI ("Error dumping into a.out\n");
 			}
 			r_buf_free (b);
 		} else {
-			eprintf ("Cannot create binary for this format '%s'.\n", create);
+			R_LOGFI ("Cannot create binary for this format '%s'.\n", create);
 		}
 		r_core_fini (&core);
 		return 0;
@@ -915,7 +915,7 @@ int main(int argc, char **argv) {
 	r_config_set_i (core.config, "bin.rawstr", rawstr);
 
 	if (!file) {
-		eprintf ("Missing file.\n");
+		R_LOGFI ("Missing file.\n");
 		return 1;
 	}
 
@@ -931,11 +931,11 @@ int main(int argc, char **argv) {
 #endif
 		void *addr = r_lib_dl_open (file);
 		if (addr) {
-			eprintf ("%s is loaded at 0x%"PFMT64x"\n", file, (ut64)(size_t)(addr));
+			R_LOGFI ("%s is loaded at 0x%"PFMT64x"\n", file, (ut64)(size_t)(addr));
 			r_lib_dl_close (addr);
 			return 0;
 		}
-		eprintf ("Cannot open the '%s' library\n", file);
+		R_LOGFI ("Cannot open the '%s' library\n", file);
 		return 0;
 	}
 	if (action & R_BIN_REQ_PACKAGE) {
@@ -945,13 +945,13 @@ int main(int argc, char **argv) {
 		int i, rc = 0;
 
 		if (optind + 3 > argc) {
-			eprintf ("Usage: rabin2 -X [fat|zip] foo.zip a b c\n");
+			R_LOGFI ("Usage: rabin2 -X [fat|zip] foo.zip a b c\n");
 			return 1;
 		}
-		eprintf ("FMT %s\n", format);
-		eprintf ("PKG %s\n", file);
+		R_LOGFI ("FMT %s\n", format);
+		R_LOGFI ("PKG %s\n", file);
 		for (i = optind + 2; i < argc; i++) {
-			eprintf ("ADD %s\n", argv[i]);
+			R_LOGFI ("ADD %s\n", argv[i]);
 			r_list_append (files, argv[i]);
 		}
 		RBuffer *buf = r_bin_package (core.bin, format, file, files);
@@ -971,7 +971,7 @@ int main(int argc, char **argv) {
 		if (r_core_file_open (&core, file, R_IO_READ, 0)) {
 			fd = r_io_fd_get_current (core.io);
 			if (fd == -1) {
-				eprintf ("r_core: Cannot open file '%s'\n", file);
+				R_LOGFI ("r_core: Cannot open file '%s'\n", file);
 				r_core_fini (&core);
 				return 1;
 			}
@@ -985,7 +985,7 @@ int main(int argc, char **argv) {
 
 	RBinOptions *bo = r_bin_options_new (0LL, baddr, rawstr);
 	if (!bo) {
-		eprintf ("Could not create RBinOptions\n");
+		R_LOGFI ("Could not create RBinOptions\n");
 		r_core_fini (&core);
 		return 1;
 	}
@@ -998,7 +998,7 @@ int main(int argc, char **argv) {
 		//if this return null means that we did not return a valid bin object
 		//but we have yet the chance that this file is a fat binary
 		if (!bin->cur || !bin->cur->xtr_data) {
-			eprintf ("r_bin: Cannot open file\n");
+			R_LOGFI ("r_bin: Cannot open file\n");
 			r_bin_options_free (bo);
 			r_core_fini (&core);
 			return 1;
@@ -1113,7 +1113,7 @@ int main(int argc, char **argv) {
 		if (bf && bf->xtr_data) {
 			rabin_extract ((!arch && !arch_name && !bits));
 		} else {
-			eprintf (
+			R_LOGFI (
 				"Cannot extract bins from '%s'. No supported "
 				"plugins found!\n",
 				bin->file);

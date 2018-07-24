@@ -130,7 +130,7 @@ static int gprobe_get_reply_i2c (struct gport *port, ut8 cmd, RBuffer *reply) {
 	checksum = gprobe_checksum_i2c (&addr, 1, 0);
 
 	if (gprobe_checksum_i2c (buf, ddc2bi3_len + 2, checksum) != buf[ddc2bi3_len + 2]) {
-		eprintf ("gprobe rx checksum error\n");
+		R_LOGFI ("gprobe rx checksum error\n");
 	}
 
 	r_buf_append_bytes (reply, buf + 7, buf[5] - 3);

@@ -91,13 +91,13 @@ R_API bool r_sandbox_disable (bool e) {
 	if (e) {
 #if LIBC_HAVE_PLEDGE
 		if (enabled) {
-			eprintf ("sandbox mode couldn't be disabled when pledged\n");
+			R_LOGFI ("sandbox mode couldn't be disabled when pledged\n");
 			return enabled;
 		}
 #endif
 #if HAVE_CAPSICUM
 		if (enabled) {
-			eprintf ("sandbox mode couldn't be disabled in capability mode\n");
+			R_LOGFI ("sandbox mode couldn't be disabled in capability mode\n");
 			return enabled;
 		}
 #endif
@@ -112,20 +112,20 @@ R_API bool r_sandbox_disable (bool e) {
 R_API bool r_sandbox_enable (bool e) {
 	if (enabled) {
 		if (!e) {
-			// eprintf ("Cant disable sandbox\n");
+			// R_LOGFI ("Cant disable sandbox\n");
 		}
 		return true;
 	}
 	enabled = e;
 #if LIBC_HAVE_PLEDGE
 	if (enabled && pledge ("stdio rpath tty prot_exec", NULL) == -1) {
-		eprintf ("sandbox: pledge call failed\n");
+		R_LOGFI ("sandbox: pledge call failed\n");
 		return false;
 	}
 #endif
 #if HAVE_CAPSICUM
 	if (enabled && cap_enter () != 0) {
-		eprintf ("sandbox: call_enter failed\n");
+		R_LOGFI ("sandbox: call_enter failed\n");
 		return false;
 	}
 #endif
@@ -134,7 +134,7 @@ R_API bool r_sandbox_enable (bool e) {
 
 R_API int r_sandbox_system (const char *x, int n) {
 	if (enabled) {
-		eprintf ("sandbox: system call disabled\n");
+		R_LOGFI ("sandbox: system call disabled\n");
 		return -1;
 	}
 #if LIBC_HAVE_FORK
@@ -167,7 +167,7 @@ R_API int r_sandbox_system (const char *x, int n) {
 		if (argv) {
 			char *argv0 = r_file_path (argv[0]);
 			if (!argv0) {
-				eprintf ("Cannot find '%s'\n", argv[0]);
+				R_LOGFI ("Cannot find '%s'\n", argv[0]);
 				return -1;
 			}
 			pid = 0;
@@ -182,7 +182,7 @@ R_API int r_sandbox_system (const char *x, int n) {
 			free (argv0);
 			return rc;
 		}
-		eprintf ("Error parsing command arguments\n");
+		R_LOGFI ("Error parsing command arguments\n");
 		return -1;
 	}
 	int child = fork();

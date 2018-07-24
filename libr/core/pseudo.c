@@ -181,7 +181,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_config_save_num (hc, "scr.color", "emu.str", "asm.emu", "emu.write", NULL);
 	r_config_save_num (hc, "io.cache", NULL);
 	if (!fcn) {
-		eprintf ("Cannot find function in 0x%08"PFMT64x"\n", core->offset);
+		R_LOGFI ("Cannot find function in 0x%08"PFMT64x"\n", core->offset);
 		r_config_hold_free (hc);
 		return false;
 	}
@@ -241,7 +241,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		SET_INDENT (indent);
 		code = r_str_prefix_all (code, indentstr);
 		if (!code) {
-			eprintf ("No code here\n");
+			R_LOGFI ("No code here\n");
 			break;
 		}
 		int len = strlen (code);
@@ -265,7 +265,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		if (sdb_const_get (db, K_INDENT (bb->addr), 0)) {
 			// already analyzed, go pop and continue
 			// XXX check if cant pop
-			//eprintf ("%s// 0x%08llx already analyzed\n", indentstr, bb->addr);
+			//R_LOGFI ("%s// 0x%08llx already analyzed\n", indentstr, bb->addr);
 			ut64 addr = sdb_array_pop_num (db, "indent", NULL);
 			if (addr == UT64_MAX) {
 				int i;
@@ -304,10 +304,10 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			}
 			bb = r_anal_bb_from_offset (core->anal, addr);
 			if (!bb) {
-				eprintf ("failed block\n");
+				R_LOGFI ("failed block\n");
 				break;
 			}
-			//eprintf ("next is %llx\n", addr);
+			//R_LOGFI ("next is %llx\n", addr);
 			nindent = sdb_num_get (db, K_INDENT (addr), NULL);
 			if (indent > nindent && !strcmp (blocktype, "else")) {
 				int i;
@@ -339,7 +339,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				} else {
 					bb = r_anal_bb_from_offset (core->anal, jump);
 					if (!bb) {
-						eprintf ("failed to retrieve blcok at 0x%"PFMT64x"\n", jump);
+						R_LOGFI ("failed to retrieve blcok at 0x%"PFMT64x"\n", jump);
 						break;
 					}
 					if (fail != UT64_MAX) {
@@ -347,7 +347,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 						indent++;
 						if (sdb_get (db, K_INDENT (bb->fail), 0)) {
 							/* do nothing here */
-							eprintf ("BlockAlready 0x%"PFMT64x"\n", bb->addr);
+							R_LOGFI ("BlockAlready 0x%"PFMT64x"\n", bb->addr);
 						} else {
 							//		r_cons_printf (" { RADICAL %llx\n", bb->addr);
 							sdb_array_push_num (db, "indent", fail, 0);

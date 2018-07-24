@@ -18,7 +18,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (plugin) {
 		if (!strcmp (plugin->name, "java")) { // XXX slow
 			obj = bin->cur->o->bin_obj; //o;
-			//eprintf("Handling: %s disasm.\n", b->cur.file);
+			//R_LOGFI("Handling: %s disasm.\n", b->cur.file);
 		}
 	}
 

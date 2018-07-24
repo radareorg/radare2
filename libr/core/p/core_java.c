@@ -320,7 +320,7 @@ static ut32 r_cmd_get_num_classname_str_occ (const char * str, const char *match
 	while (result && *result && (result - str < len)) {
 		result = strstr (result, match_me);
 		if (result) {
-			IFDBG eprintf ("result: %s\n", result);
+			IFDBG R_LOGFI ("result: %s\n", result);
 			result+=len;
 			occ++;
 		}
@@ -363,7 +363,7 @@ static RAnal * get_anal (RCore *core) {
 }
 
 static void r_cmd_java_print_cmd_help (RCmdJavaCmd *cmd) {
-	eprintf ("[*] %s %s\n[+] %s\n\n", cmd->name, cmd->args, cmd->desc);
+	R_LOGFI ("[*] %s %s\n[+] %s\n\n", cmd->name, cmd->args, cmd->desc);
 }
 
 static int r_cmd_java_handle_help (RCore * core, const char * input) {
@@ -390,7 +390,7 @@ static int r_cmd_java_handle_prototypes (RCore *core, const char *cmd) {
 	IFDBG r_cons_printf ("Function call made: %s\n", cmd);
 
 	if (!obj) {
-		eprintf ("[-] r_cmd_java: no valid java bins found.\n");
+		R_LOGFI ("[-] r_cmd_java: no valid java bins found.\n");
 		return true;
 	}
 
@@ -411,7 +411,7 @@ static int r_cmd_java_handle_summary_info (RCore *core, const char *cmd) {
 	IFDBG r_cons_printf ("Function call made: %s\n", cmd);
 
 	if (!obj) {
-		eprintf ("[-] r_cmd_java: no valid java bins found.\n");
+		R_LOGFI ("[-] r_cmd_java: no valid java bins found.\n");
 		return true;
 	}
 
@@ -470,7 +470,7 @@ static int cpfind (RCore *core, const char *cmd) {
 	ut32 *idx;
 
 	if (!obj) {
-		eprintf ("[-] r_cmd_java: no valid java bins found.\n");
+		R_LOGFI ("[-] r_cmd_java: no valid java bins found.\n");
 		return true;
 	}
 	IFDBG r_cons_printf ("Function call made: %s\n", p);
@@ -487,7 +487,7 @@ static int cpfind (RCore *core, const char *cmd) {
 	case 'f': find_list = cpfind_float (core, obj, r_cmd_java_consumetok (p, ' ', -1)); break;
 	case 'd': find_list = cpfind_double (core, obj, r_cmd_java_consumetok (p, ' ', -1)); break;
 	default:
-		eprintf ("[-] r_cmd_java: invalid java type to search for.\n");
+		R_LOGFI ("[-] r_cmd_java: invalid java type to search for.\n");
 		return true;
 	}
 
@@ -538,7 +538,7 @@ static int r_cmd_java_get_cp_bytes_and_write (RCore *core, RBinJavaObj *obj, ut1
 	} else if (n_sz > c_sz) {
 		res = r_core_extend_at(core, addr,  (int)n_sz - (int)c_sz);
 	} else {
-		eprintf ("[X] r_cmd_java_get_cp_bytes_and_write: Failed to resize the file correctly aborting.\n");
+		R_LOGFI ("[X] r_cmd_java_get_cp_bytes_and_write: Failed to resize the file correctly aborting.\n");
 		return res;
 	}
 
@@ -547,7 +547,7 @@ static int r_cmd_java_get_cp_bytes_and_write (RCore *core, RBinJavaObj *obj, ut1
 	}
 
 	if (res == false) {
-		eprintf ("[X] r_cmd_java_get_cp_bytes_and_write: Failed to write the bytes to the file correctly aborting.\n");
+		R_LOGFI ("[X] r_cmd_java_get_cp_bytes_and_write: Failed to write the bytes to the file correctly aborting.\n");
 		return res;
 	}
 
@@ -567,7 +567,7 @@ static int r_cmd_java_get_cp_bytes_and_write (RCore *core, RBinJavaObj *obj, ut1
 			if (res == true) {
 				res = r_cmd_java_reload_bin_from_buf (
 					core, obj, bin_buffer, n_file_sz);
-			} else eprintf ("[X] r_cmd_java_get_cp_bytes_and_write: Failed to read the file in aborted, bin reload.\n");
+			} else R_LOGFI ("[X] r_cmd_java_get_cp_bytes_and_write: Failed to read the file in aborted, bin reload.\n");
 			free (bin_buffer);
 		}
 	}
@@ -630,9 +630,9 @@ static int r_cmd_java_handle_replace_cp_value (RCore *core, const char *cmd) {
 		}
 	}
 	if (idx == (ut16) -1 ) {
-		eprintf ("[-] r_cmd_java: Invalid index value.\n");
+		R_LOGFI ("[-] r_cmd_java: Invalid index value.\n");
 	} else if (!obj) {
-		eprintf ("[-] r_cmd_java: The current binary is not a Java Bin Object.\n");
+		R_LOGFI ("[-] r_cmd_java: The current binary is not a Java Bin Object.\n");
 	} else if (!p || (p && !*p)) {
 		r_cmd_java_print_cmd_help (JAVA_CMDS+REPLACE_CP_VALUE_IDX);
 		return true;
@@ -652,7 +652,7 @@ static int r_cmd_java_handle_replace_cp_value (RCore *core, const char *cmd) {
 		case R_BIN_JAVA_CP_DOUBLE: return r_cmd_java_handle_replace_cp_value_double (
 			core, obj, r_cmd_java_consumetok (p, ' ', -1), idx, addr);
 		default:
-			eprintf ("[-] r_cmd_java: invalid java type to search for.\n");
+			R_LOGFI ("[-] r_cmd_java: invalid java type to search for.\n");
 			return false;
 		}
 		return true;
@@ -795,7 +795,7 @@ static int r_cmd_java_handle_replace_classname_value (RCore *core, const char *c
 	IFDBG r_cons_printf ("Function call made: %s\n", p);
 	obj = (RBinJavaObj *) r_cmd_java_get_bin_obj (anal);
 	if (!obj) {
-		eprintf ("The current binary is not a Java Bin Object.\n");
+		R_LOGFI ("The current binary is not a Java Bin Object.\n");
 		return true;
 	}
 	res = r_cmd_java_get_class_names_from_input (cmd, &class_name,
@@ -846,7 +846,7 @@ static int r_cmd_java_handle_replace_classname_value (RCore *core, const char *c
 						core, obj, idx, addr,
 						(const ut8*)result, res_len);
 					if  (res == false) {
-						eprintf ("ERROR: r_cmd_java: Failed to write bytes or reload the binary.\n");
+						R_LOGFI ("ERROR: r_cmd_java: Failed to write bytes or reload the binary.\n");
 					}
 				}
 				free (result);
@@ -914,16 +914,16 @@ static int r_cmd_java_handle_find_cp_const (RCore *core, const char *cmd) {
 	IFDBG r_cons_printf ("Function call made: %s\n", cmd);
 
 	if (!obj) {
-		eprintf ("[-] r_cmd_java: no valid java bins found.\n");
+		R_LOGFI ("[-] r_cmd_java: no valid java bins found.\n");
 		return true;
 	}
 	if (!cmd || !*cmd) {
-		eprintf ("[-] r_cmd_java: invalid command syntax.\n");
+		R_LOGFI ("[-] r_cmd_java: invalid command syntax.\n");
 		r_cmd_java_print_cmd_help (JAVA_CMDS+FIND_CP_CONST_IDX);
 		return true;
 	}
 	if (idx == 0) {
-		eprintf ("[-] r_cmd_java: invalid CP Obj Index Supplied.\n");
+		R_LOGFI ("[-] r_cmd_java: invalid CP Obj Index Supplied.\n");
 		return true;
 	}
 	find_list = r_list_new ();
@@ -976,10 +976,10 @@ static int r_cmd_java_handle_field_info (RCore *core, const char *cmd) {
 	ut16 idx = -1;
 
 	if (!obj) {
-		eprintf ("[-] r_cmd_java: no valid java bins found.\n");
+		R_LOGFI ("[-] r_cmd_java: no valid java bins found.\n");
 		return true;
 	} else if (!cmd || !*cmd) {
-		eprintf ("[-] r_cmd_java: invalid command syntax.\n");
+		R_LOGFI ("[-] r_cmd_java: invalid command syntax.\n");
 		r_cmd_java_print_cmd_help (JAVA_CMDS+FIELD_INFO_IDX);
 		return true;
 	}
@@ -994,7 +994,7 @@ static int r_cmd_java_handle_field_info (RCore *core, const char *cmd) {
 		case 'n': return r_cmd_java_print_field_name (obj, idx);
 	}
 	IFDBG r_cons_printf ("Command is (%s)\n", cmd);
-	eprintf ("[-] r_cmd_java: invalid command syntax.\n");
+	R_LOGFI ("[-] r_cmd_java: invalid command syntax.\n");
 	r_cmd_java_print_cmd_help (JAVA_CMDS+FIELD_INFO_IDX);
 	return false;
 }
@@ -1006,10 +1006,10 @@ static int r_cmd_java_handle_method_info (RCore *core, const char *cmd) {
 	ut16 idx = -1;
 
 	if (!obj) {
-		eprintf ("[-] r_cmd_java: no valid java bins found.\n");
+		R_LOGFI ("[-] r_cmd_java: no valid java bins found.\n");
 		return true;
 	} else if (!cmd || !*cmd) {
-		eprintf ("[-] r_cmd_java: invalid command syntax.\n");
+		R_LOGFI ("[-] r_cmd_java: invalid command syntax.\n");
 		r_cmd_java_print_cmd_help (JAVA_CMDS+METHOD_INFO_IDX);
 		return false;
 	}
@@ -1025,7 +1025,7 @@ static int r_cmd_java_handle_method_info (RCore *core, const char *cmd) {
 	}
 
 	IFDBG r_cons_printf ("Command is (%s)\n", cmd);
-	eprintf ("[-] r_cmd_java: invalid command syntax.\n");
+	R_LOGFI ("[-] r_cmd_java: invalid command syntax.\n");
 	r_cmd_java_print_cmd_help (JAVA_CMDS+METHOD_INFO_IDX);
 	return false;
 }
@@ -1153,9 +1153,9 @@ static int r_cmd_java_handle_resolve_cp (RCore *core, const char *cmd) {
 		res = true;
 	} else {
 		if (!obj) {
-			eprintf ("[-] r_cmd_java: no valid java bins found.\n");
+			R_LOGFI ("[-] r_cmd_java: no valid java bins found.\n");
 		} else {
-			eprintf ("[-] r_cmd_java: invalid cp index given, must idx > 1.\n");
+			R_LOGFI ("[-] r_cmd_java: invalid cp index given, must idx > 1.\n");
 			r_cmd_java_print_cmd_help (JAVA_CMDS+RESOLVE_CP_IDX);
 		}
 		res = true;
@@ -1174,7 +1174,7 @@ static int r_cmd_java_get_all_access_flags_value (const char *cmd) {
 		case 'c': the_list = retrieve_all_class_access_string_and_value (); break;
 	}
 	if (!the_list) {
-		eprintf ("[-] r_cmd_java: incorrect syntax for the flags calculation.\n");
+		R_LOGFI ("[-] r_cmd_java: incorrect syntax for the flags calculation.\n");
 		r_cmd_java_print_cmd_help (JAVA_CMDS+CALC_FLAGS_IDX);
 		return false;
 	}
@@ -1203,7 +1203,7 @@ static int r_cmd_java_handle_calc_flags (RCore *core, const char *cmd) {
 
 	if ( *(cmd) == 'l') {
 		const char *lcmd = *cmd+1 == ' '? cmd+2 : cmd+1;
-		IFDBG eprintf ("Seeing %s and accepting %s\n", cmd, lcmd);
+		IFDBG R_LOGFI ("Seeing %s and accepting %s\n", cmd, lcmd);
 		switch (*(lcmd)) {
 			case 'f':
 			case 'm':
@@ -1217,7 +1217,7 @@ static int r_cmd_java_handle_calc_flags (RCore *core, const char *cmd) {
 		}
 	}
 	if (res == false) {
-		eprintf ("[-] r_cmd_java: incorrect syntax for the flags calculation.\n");
+		R_LOGFI ("[-] r_cmd_java: incorrect syntax for the flags calculation.\n");
 		r_cmd_java_print_cmd_help (JAVA_CMDS+CALC_FLAGS_IDX);
 		res = true;
 	}
@@ -1256,7 +1256,7 @@ static int r_cmd_java_handle_flags_str (RCore *core, const char *cmd) {
 		res = true;
 	}
 	if (res == false) {
-		eprintf ("[-] r_cmd_java: incorrect syntax for the flags calculation.\n");
+		R_LOGFI ("[-] r_cmd_java: incorrect syntax for the flags calculation.\n");
 		r_cmd_java_print_cmd_help (JAVA_CMDS+FLAGS_STR_IDX);
 		res = true;
 	}
@@ -1303,7 +1303,7 @@ static int r_cmd_java_handle_flags_str_at (RCore *core, const char *cmd) {
 		res = true;
 	}
 	if (res == false) {
-		eprintf ("[-] r_cmd_java: incorrect syntax for the flags calculation.\n");
+		R_LOGFI ("[-] r_cmd_java: incorrect syntax for the flags calculation.\n");
 		r_cmd_java_print_cmd_help (JAVA_CMDS+FLAGS_STR_IDX);
 		res = true;
 	}
@@ -1349,13 +1349,13 @@ static int r_cmd_java_handle_set_flags (RCore * core, const char * input) {
 		flag_value = r_cmd_java_is_valid_input_num_value(core, p) ? r_cmd_java_get_input_num_value (core, p) : -1;
 
 	if (!input) {
-		eprintf ("[-] r_cmd_java: no address provided .\n");
+		R_LOGFI ("[-] r_cmd_java: no address provided .\n");
 		res = true;
 	} else if (addr == -1) {
-		eprintf ("[-] r_cmd_java: no address provided .\n");
+		R_LOGFI ("[-] r_cmd_java: no address provided .\n");
 		res = true;
 	} else if (!f_type && flag_value == -1) {
-		eprintf ("[-] r_cmd_java: no flag type provided .\n");
+		R_LOGFI ("[-] r_cmd_java: no flag type provided .\n");
 		res = true;
 	}
 
@@ -1376,7 +1376,7 @@ static int r_cmd_java_handle_set_flags (RCore * core, const char * input) {
 			default: flag_value = -1;
 		}
 		if (flag_value == -1) {
-			eprintf ("[-] r_cmd_java: in valid flag type provided .\n");
+			R_LOGFI ("[-] r_cmd_java: in valid flag type provided .\n");
 			res = true;
 		}
 	}
@@ -1385,7 +1385,7 @@ static int r_cmd_java_handle_set_flags (RCore * core, const char * input) {
 		res = r_cmd_java_set_acc_flags (core, addr, ((ut16) flag_value) & 0xffff);
 		IFDBG r_cons_printf ("Writing 0x%04x to 0x%"PFMT64x": %d.", flag_value, addr, res);
 	} else {
-		eprintf ("[-] r_cmd_java: invalid flag value or type provided .\n");
+		R_LOGFI ("[-] r_cmd_java: invalid flag value or type provided .\n");
 		r_cmd_java_print_cmd_help (JAVA_CMDS+SET_ACC_FLAGS_IDX);
 		res = true;
 	}
@@ -1653,7 +1653,7 @@ static int r_cmd_java_set_acc_flags (RCore *core, ut64 addr, ut16 num_acc_flag) 
 	res = true;
 	IFDBG r_cons_printf ("Executed cmd: %s == %d\n", cmd_buf, res);
 	/*if (cur_offset != core->offset) {
-		IFDBG eprintf ("Ooops, write advanced the cursor, moving it back.");
+		IFDBG R_LOGFI ("Ooops, write advanced the cursor, moving it back.");
 		r_core_seek (core, cur_offset-2, 1);
 	}*/
 	return res;
@@ -1683,7 +1683,7 @@ static int r_cmd_java_print_method_num_name (RBinJavaObj *obj) {
 static int r_cmd_java_print_field_summary (RBinJavaObj *obj, ut16 idx) {
 	int res = r_bin_java_print_field_idx_summary (obj, idx);
 	if (res == false) {
-		eprintf ("Error: Field or Method @ index (%d) not found in the RBinJavaObj.\n", idx);
+		R_LOGFI ("Error: Field or Method @ index (%d) not found in the RBinJavaObj.\n", idx);
 		res = true;
 	}
 	return res;
@@ -1701,7 +1701,7 @@ static int r_cmd_java_print_field_name (RBinJavaObj *obj, ut16 idx) {
 	if (res) {
 		r_cons_println (res);
 	} else {
-		eprintf ("Error: Field or Method @ index (%d) not found in the RBinJavaObj.\n", idx);
+		R_LOGFI ("Error: Field or Method @ index (%d) not found in the RBinJavaObj.\n", idx);
 	}
 	free (res);
 	return true;
@@ -1710,7 +1710,7 @@ static int r_cmd_java_print_field_name (RBinJavaObj *obj, ut16 idx) {
 static int r_cmd_java_print_method_summary (RBinJavaObj *obj, ut16 idx) {
 	int res = r_bin_java_print_method_idx_summary (obj, idx);
 	if (res == false) {
-		eprintf ("Error: Field or Method @ index (%d) not found in the RBinJavaObj.\n", idx);
+		R_LOGFI ("Error: Field or Method @ index (%d) not found in the RBinJavaObj.\n", idx);
 		res = true;
 	}
 	return res;
@@ -1728,7 +1728,7 @@ static int r_cmd_java_print_method_name (RBinJavaObj *obj, ut16 idx) {
 	if (res) {
 		r_cons_println (res);
 	} else {
-		eprintf ("Error: Field or Method @ index (%d) not found in the RBinJavaObj.\n", idx);
+		R_LOGFI ("Error: Field or Method @ index (%d) not found in the RBinJavaObj.\n", idx);
 	}
 	free (res);
 	return true;
@@ -1778,11 +1778,11 @@ static int r_cmd_java_handle_list_code_references (RCore *core, const char *inpu
 
 
 	if (!core || !anal || !bin) {
-		eprintf ("Unable to access the current bin.\n");
+		R_LOGFI ("Unable to access the current bin.\n");
 		return false;
 	}
 	if (r_list_length (anal->fcns) == 0) {
-		eprintf ("Unable to access the current analysis, perform 'af' for function analysis.\n");
+		R_LOGFI ("Unable to access the current analysis, perform 'af' for function analysis.\n");
 		return true;
 	}
 
@@ -1865,7 +1865,7 @@ static int r_cmd_java_handle_list_code_references (RCore *core, const char *inpu
 				cp_ref_idx = R_BIN_JAVA_USHORT (bb->op_bytes, 1);
 				full_bird = r_cmd_java_get_descriptor (core, bin, cp_ref_idx);
 				if (!full_bird) {
-					eprintf ("Error identifying reference @ 0x%"PFMT64x"\n", bb->addr);
+					R_LOGFI ("Error identifying reference @ 0x%"PFMT64x"\n", bb->addr);
 					full_bird = strdup ("ANALYSIS_ERROR");
 				}
 				r_cons_printf (fmt, addr, fcn->name, operation, type, full_bird);
@@ -1888,7 +1888,7 @@ static int r_cmd_java_handle_yara_code_extraction_refs (RCore *core, const char 
 
 	if (!bin) return res;
 	else if (!anal || !anal->fcns || r_list_length (anal->fcns) == 0) {
-		eprintf ("Unable to access the current analysis, perform 'af' for function analysis.\n");
+		R_LOGFI ("Unable to access the current analysis, perform 'af' for function analysis.\n");
 		return true;
 	}
 
@@ -1937,7 +1937,7 @@ static int r_cmd_java_handle_insert_method_ref (RCore *core, const char *input) 
 		return res;
 	}
 	if (!anal || !anal->fcns || r_list_length (anal->fcns) == 0) {
-		eprintf ("Unable to access the current analysis, perform 'af' for function analysis.\n");
+		R_LOGFI ("Unable to access the current analysis, perform 'af' for function analysis.\n");
 		return true;
 	}
 	if (!p) return res;

@@ -34,7 +34,7 @@ static char* r_egg_Cfile_getCompiler(void) {
 		free (output);
 	}
 
-	eprintf ("Couldn't find a compiler ! Please, set CC.\n");
+	R_LOGFI ("Couldn't find a compiler ! Please, set CC.\n");
 	return NULL;
 }
 
@@ -79,7 +79,7 @@ static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int
 	if (!cEnv->SFLIBPATH) {
 		output = r_sys_cmd_strf ("r2 -hh | grep INCDIR | awk '{print $2}'");
 		if (!output || (output[0] == '\0')) {
-			eprintf ("Cannot find SFLIBPATH env var.\n"
+			R_LOGFI ("Cannot find SFLIBPATH env var.\n"
 		  		 "Please define it, or fix r2 installation.\n");
 			goto fail;
 		}
@@ -187,7 +187,7 @@ static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int
 	cEnv->LDFLAGS = strdup (buffer);
 
 	if (r_egg_Cfile_check_cEnv (cEnv)) {
-		eprintf ("Error with cEnv allocation!\n");
+		R_LOGFI ("Error with cEnv allocation!\n");
 		goto fail;
 	}
 
@@ -219,7 +219,7 @@ static bool r_egg_Cfile_parseCompiled(const char *file) {
 	free (fileExt);
 	fileExt = r_str_newf ("%s.s", file);
 	if (!r_file_dump (fileExt, (const ut8*) buffer, strlen (buffer), true)) {
-		eprintf ("Error while opening %s.s\n", file);
+		R_LOGFI ("Error while opening %s.s\n", file);
 		goto fail;
 	}
 
@@ -250,7 +250,7 @@ R_API char* r_egg_Cfile_parser(const char *file, const char *arch, const char *o
 	output = r_sys_cmd_strf ("('%s' %s -o '%s.tmp' -S -Os '%s') 2>&1",
 	  			cEnv->CC, cEnv->CFLAGS, file, file);
 	if (output == NULL) {
-		eprintf ("Compilation failed!\n");
+		R_LOGFI ("Compilation failed!\n");
 		goto fail;
 	}
 	printf ("%s", output);
@@ -260,7 +260,7 @@ R_API char* r_egg_Cfile_parser(const char *file, const char *arch, const char *o
 	}
 
 	if (!r_file_dump (fileExt, (const ut8*) cEnv->SHDR, strlen (cEnv->SHDR), false)) {
-		eprintf ("Error while opening %s.s\n", file);
+		R_LOGFI ("Error while opening %s.s\n", file);
 		goto fail;
 	}
 
@@ -275,7 +275,7 @@ R_API char* r_egg_Cfile_parser(const char *file, const char *arch, const char *o
 	output = r_sys_cmd_strf ("'%s' %s -Os -o '%s.o' '%s.s'",
 		   		cEnv->CC, cEnv->LDFLAGS, file, file);
 	if (!output) {
-		eprintf ("Assembly failed!\n");
+		R_LOGFI ("Assembly failed!\n");
 		goto fail;
 	}
 	printf ("%s", output);
@@ -287,7 +287,7 @@ R_API char* r_egg_Cfile_parser(const char *file, const char *arch, const char *o
 	output = r_sys_cmd_strf ("rabin2 -o '%s.text' -O d/S/'%s' '%s'.o",
 		   		file, cEnv->TEXT, file);
 	if (!output) {
-		eprintf ("Linkage failed!\n");
+		R_LOGFI ("Linkage failed!\n");
 		goto fail;
 	}
 
@@ -297,7 +297,7 @@ R_API char* r_egg_Cfile_parser(const char *file, const char *arch, const char *o
 	}
 
 	if (!r_file_exists (fileExt)) {
-		eprintf ("Cannot find %s.o\n", file);
+		R_LOGFI ("Cannot find %s.o\n", file);
 		goto fail;
 	}
 
@@ -312,7 +312,7 @@ R_API char* r_egg_Cfile_parser(const char *file, const char *arch, const char *o
 		output = r_sys_cmd_strf ("'%s' -j .text -O binary '%s.o' '%s.text'", 
 		  		cEnv->OBJCOPY, file, file);
 		if (!output) {
-			eprintf ("objcopy failed!\n");
+			R_LOGFI ("objcopy failed!\n");
 			goto fail;
 		}
 	}

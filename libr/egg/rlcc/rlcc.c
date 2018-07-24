@@ -1,7 +1,7 @@
 /* Radare Language Code Compiler */
 
 #include <mpc.h>
-#define eprintf(x,y...) fprintf(stderr,x,##y)
+#define R_LOGFI(x,y...) fprintf(stderr,x,##y)
 
 static int isComment(mpc_ast_t *node) {
 	if (!strcmp (node->tag, "comment|regex")) {
@@ -65,7 +65,7 @@ static void processNode (mpc_ast_t *node) {
 					if (!strcmp (node->children[i]->tag, "stmt|>")) {
 						processNode (node->children[i]);
 					} else {
-						eprintf ("UNK %s\n", node->children[i]->tag);
+						R_LOGFI ("UNK %s\n", node->children[i]->tag);
 					}
 				}
 				break;
@@ -202,7 +202,7 @@ int main(int argc, char **argv) {
 				mpc_ast_t *root = r.output;
 				for (i=0; i< root->children_num; i++) {
 					mpc_ast_t *node = root->children[i];
-					eprintf ("; TAG = %s    (%s)\n", node->tag, node->contents);
+					R_LOGFI ("; TAG = %s    (%s)\n", node->tag, node->contents);
 					processNode (node);
 				}
 			}

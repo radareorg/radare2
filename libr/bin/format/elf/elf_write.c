@@ -22,7 +22,7 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 	int i, j, done = 0;
 
 	if (size == 0) {
-		eprintf ("0 size section?\n");
+		R_LOGFI ("0 size section?\n");
 		return 0;
 	}
 
@@ -41,11 +41,11 @@ ut64 Elf_(r_bin_elf_resize_section)(struct Elf_(r_bin_elf_obj_t) *bin, const cha
 	}
 
 	if (delta == 0) {
-		eprintf ("Cannot find section\n");
+		R_LOGFI ("Cannot find section\n");
 		return 0;
 	}
  
-	eprintf ("delta: %"PFMT64d"\n", delta);
+	R_LOGFI ("delta: %"PFMT64d"\n", delta);
 	
 	/* rewrite rel's (imports) */
 	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
@@ -194,7 +194,7 @@ bool Elf_(r_bin_elf_del_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 			return false;
 		}
 		if (r_buf_read_at (bin->b, bin->phdr[i].p_offset, (ut8*)dyn, bin->phdr[i].p_filesz) == -1) {
-			eprintf ("Error: read (dyn)\n");
+			R_LOGFI ("Error: read (dyn)\n");
 			free (dyn);
 			return false;
 		}
@@ -209,7 +209,7 @@ bool Elf_(r_bin_elf_del_rpath)(struct Elf_(r_bin_elf_obj_t) *bin) {
 				if (dyn[j].d_tag == DT_RPATH || dyn[j].d_tag == DT_RUNPATH) {
 					if (r_buf_write_at (bin->b, stroff + dyn[j].d_un.d_val,
 								(ut8*)"", 1) == -1) {
-						eprintf ("Error: write (rpath)\n");
+						R_LOGFI ("Error: write (rpath)\n");
 						free (dyn);
 						return false;
 					}
@@ -261,7 +261,7 @@ bool Elf_(r_bin_elf_entry_write)(struct Elf_(r_bin_elf_obj_t) *bin, ut64 addr) {
 	int patchoff = 0x18;
 #if R_BIN_ELF64
 	printf ("wv8 0x%"PFMT64x" @ 0x%x\n", addr, patchoff);
-	eprintf ("%d\n", r_buf_write_at (bin->b, patchoff, (ut8*)&addr, sizeof (addr)));
+	R_LOGFI ("%d\n", r_buf_write_at (bin->b, patchoff, (ut8*)&addr, sizeof (addr)));
 #else
 	ut32 addr32 = (ut32)addr;
 	printf ("wv4 0x%x @ 0x%x\n", addr32, patchoff);

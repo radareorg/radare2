@@ -174,7 +174,7 @@
 extern "C" {
 #endif
 
-#define TODO(x) eprintf(__func__"  " x)
+#define TODO(x) R_LOGFI(__func__"  " x)
 
 // TODO: FS or R_SYS_DIR ??
 #undef FS

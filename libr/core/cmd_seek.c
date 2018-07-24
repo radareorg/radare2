@@ -125,7 +125,7 @@ static void __init_seek_line(RCore *core) {
 	from = r_config_get_i (core->config, "lines.from");
 	to = r_config_get_i (core->config, "lines.to");
 	if (r_core_lines_initcache (core, from, to) == -1) {
-		eprintf ("ERROR: \"lines.from\" and \"lines.to\" must be set\n");
+		R_LOGFI ("ERROR: \"lines.from\" and \"lines.to\" must be set\n");
 	}
 }
 
@@ -149,7 +149,7 @@ static void __get_current_line(RCore *core) {
 
 static void __seek_line_absolute(RCore *core, int numline) {
 	if (numline < 1 || numline > core->print->lines_cache_sz - 1) {
-		eprintf ("ERROR: Line must be between 1 and %d\n", core->print->lines_cache_sz - 1);
+		R_LOGFI ("ERROR: Line must be between 1 and %d\n", core->print->lines_cache_sz - 1);
 	} else {
 		r_core_seek (core, core->print->lines_cache[numline - 1], 1);
 	}
@@ -158,9 +158,9 @@ static void __seek_line_absolute(RCore *core, int numline) {
 static void __seek_line_relative(RCore *core, int numlines) {
 	int curr = r_util_lines_getline (core->print->lines_cache, core->print->lines_cache_sz, core->offset);
 	if (numlines > 0 && curr + numlines >= core->print->lines_cache_sz - 1) {
-		eprintf ("ERROR: Line must be < %d\n", core->print->lines_cache_sz - 1);
+		R_LOGFI ("ERROR: Line must be < %d\n", core->print->lines_cache_sz - 1);
 	} else if (numlines < 0 && curr + numlines < 1) {
-		eprintf ("ERROR: Line must be > 1\n");
+		R_LOGFI ("ERROR: Line must be > 1\n");
 	} else {
 		r_core_seek (core, core->print->lines_cache[curr + numlines - 1], 1);
 	}
@@ -321,7 +321,7 @@ static int cmd_seek_opcode_forward (RCore *core, int n) {
 
 static void cmd_seek_opcode(RCore *core, const char *input) {
 	if (input[0] == '?') {
-		eprintf ("Usage: so [-][n]\n");
+		R_LOGFI ("Usage: so [-][n]\n");
 		return;
 	}
 	if (!strcmp (input, "-")) {
@@ -390,7 +390,7 @@ static int cmd_seek(void *data, const char *input) {
 		if (input[1] && input[2]) {
 			seek_to_register (core, input + 2, silent);
 		} else {
-			eprintf ("|Usage| 'sr PC' seek to program counter register\n");
+			R_LOGFI ("|Usage| 'sr PC' seek to program counter register\n");
 		}
 		break;
 	case 'C': // "sC"
@@ -431,7 +431,7 @@ static int cmd_seek(void *data, const char *input) {
 							}
 						}
 					} else {
-						eprintf ("sdb_const_get key not found '%s'\n", key);
+						R_LOGFI ("sdb_const_get key not found '%s'\n", key);
 					}
 					if (!next) {
 						break;
@@ -442,7 +442,7 @@ static int cmd_seek(void *data, const char *input) {
 
 			switch (count) {
 			case 0:
-				eprintf ("No matching comments\n");
+				R_LOGFI ("No matching comments\n");
 				break;
 			case 1:
 				off = cb.addr;
@@ -453,7 +453,7 @@ static int cmd_seek(void *data, const char *input) {
 				r_core_block_read (core);
 				break;
 			default:
-				eprintf ("Too many results\n");
+				R_LOGFI ("Too many results\n");
 				break;
 			}
 			free (cb.str);
@@ -465,7 +465,7 @@ static int cmd_seek(void *data, const char *input) {
 	{
 		ut64 addr = r_num_math (core->num, input + 1);
 		if (core->num->nc.errors && r_cons_singleton ()->is_interactive) {
-			eprintf ("Cannot seek to unknown address '%s'\n", core->num->nc.calc_buf);
+			R_LOGFI ("Cannot seek to unknown address '%s'\n", core->num->nc.calc_buf);
 			break;
 		}
 		if (!silent) {
@@ -510,11 +510,11 @@ static int cmd_seek(void *data, const char *input) {
 			r_config_set_i (core->config, "search.maxhits", saved_maxhits);
 			break;
 		case '?':
-			eprintf ("Usage: s/.. arg.\n");
+			R_LOGFI ("Usage: s/.. arg.\n");
 			r_cons_printf ("/?\n");
 			break;
 		default:
-			eprintf ("unknown search method\n");
+			R_LOGFI ("unknown search method\n");
 			break;
 		}
 	}
@@ -816,7 +816,7 @@ static int cmd_seek(void *data, const char *input) {
 			if (!core->print->lines_cache) {
 				__init_seek_line (core);
 			}
-			eprintf ("%d lines\n", core->print->lines_cache_sz - 1);
+			R_LOGFI ("%d lines\n", core->print->lines_cache_sz - 1);
 			break;
 		case '?': // "sl?"
 			r_core_cmd_help (core, help_msg_sl);

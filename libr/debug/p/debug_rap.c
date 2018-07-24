@@ -33,9 +33,9 @@ static int r_debug_rap_attach(RDebug *dbg, int pid) {
 	RIODesc *d = dbg->iob.io->desc;
 	if (d && d->plugin && d->plugin->name) {
 		if (!strcmp ("rap", d->plugin->name)) {
-			eprintf ("SUCCESS: rap attach with inferior rap rio worked\n");
+			R_LOGFI ("SUCCESS: rap attach with inferior rap rio worked\n");
 		} else {
-			eprintf ("ERROR: Underlaying IO descriptor is not a rap one..\n");
+			R_LOGFI ("ERROR: Underlaying IO descriptor is not a rap one..\n");
 		}
 	}
 	return true;

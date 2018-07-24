@@ -13,10 +13,10 @@ R_API int r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 			snprintf (var, sizeof (var), "%s.%s.%s", p, kind, field);
 			int off = sdb_array_get_num (TDB, var, 1, NULL);
 			//int siz = sdb_array_get_num (DB, var, 2, NULL);
-			eprintf ("wv 0x%08"PFMT64x" @ 0x%08"PFMT64x, val, at+off);
+			R_LOGFI ("wv 0x%08"PFMT64x" @ 0x%08"PFMT64x, val, at+off);
 			return true;
 		}
-		eprintf ("Invalid kind of type\n");
+		R_LOGFI ("Invalid kind of type\n");
 	}
 	return false;
 }
@@ -178,7 +178,7 @@ R_API char *r_type_get_struct_memb(Sdb *TDB, const char *type, int offset) {
 	char* query = sdb_fmt ("struct.%s", type);
 	char *members = sdb_get (TDB, query, 0);
 	if (!members) {
-		//eprintf ("%s is not a struct\n", type);
+		//R_LOGFI ("%s is not a struct\n", type);
 		return NULL;
 	}
 	int nargs = r_str_split (members, ',');
@@ -265,7 +265,7 @@ R_API int r_type_set_link(Sdb *TDB, const char *type, ut64 addr) {
 		free (laddr);
 		return true;
 	}
-	// eprintf ("Cannot find type\n");
+	// R_LOGFI ("Cannot find type\n");
 	return false;
 }
 
@@ -276,7 +276,7 @@ R_API int r_type_link_offset(Sdb *TDB, const char *type, ut64 addr) {
 		free (laddr);
 		return true;
 	}
-	// eprintf ("Cannot find type\n");
+	// R_LOGFI ("Cannot find type\n");
 	return false;
 }
 
@@ -378,7 +378,7 @@ R_API char *r_type_format(Sdb *TDB, const char *t) {
 						vars = r_str_append (vars, " ");
 					}
 				} else {
-					eprintf ("Cannot resolve type '%s'\n", var3);
+					R_LOGFI ("Cannot resolve type '%s'\n", var3);
 				}
 			}
 			free (type);
@@ -433,7 +433,7 @@ R_API void r_type_del(Sdb *TDB, const char *name) {
 		}
 		sdb_unset (TDB, name, 0);
 	} else {
-		eprintf ("Unrecognized type \"%s\"\n", kind);
+		R_LOGFI ("Unrecognized type \"%s\"\n", kind);
 	}
 }
 

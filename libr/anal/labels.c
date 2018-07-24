@@ -34,7 +34,7 @@ R_API int r_anal_fcn_label_set (RAnal *anal, RAnalFunction *fcn, const char *nam
 			sdb_unset (DB, ADDR (addr), 0);
 		}
 	} else {
-		eprintf ("Cannot add\n");
+		R_LOGFI ("Cannot add\n");
 	}
 	return false;
 }
@@ -72,7 +72,7 @@ R_API int r_anal_fcn_labels(RAnal *anal, RAnalFunction *fcn, int rad) {
 					loc.name, loc.addr);
 				break;
 			case 'j':
-				eprintf ("TODO\n");
+				R_LOGFI ("TODO\n");
 				break;
 			default:
 				anal->cb_printf ("0x%08"PFMT64x" %s   [%s + %"PFMT64d"]\n",

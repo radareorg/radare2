@@ -37,7 +37,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 	// Be endian aware
 	opcode = r_read_ble32 (b, anal->big_endian);
 
-	// eprintf ("MIPS: %02x %02x %02x %02x (after endian: big=%d)\n", b[0], b[1], b[2], b[3], anal->big_endian);
+	// R_LOGFI ("MIPS: %02x %02x %02x %02x (after endian: big=%d)\n", b[0], b[1], b[2], b[3], anal->big_endian);
 	if (opcode == 0) {
 		op->type = R_ANAL_OP_TYPE_NOP;
 		return oplen;
@@ -85,7 +85,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		case 7: // srav
 			break;
 		case 8: // jr
-			//eprintf ("%llx jr\n", addr);
+			//R_LOGFI ("%llx jr\n", addr);
 			// TODO: check return value or gtfo
 			if (((b[0]&3)<<3) + (b[1]>>5) == 31) {
 				op->type = R_ANAL_OP_TYPE_RET;
@@ -95,7 +95,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 			op->delay = 1;
 			break;
 		case 9: // jalr
-			//eprintf ("%llx jalr\n", addr);
+			//R_LOGFI ("%llx jalr\n", addr);
 			op->type = R_ANAL_OP_TYPE_UCALL;
 			op->delay = 1;
 			break;
@@ -141,7 +141,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 
 			break;
 		default:
-		//	eprintf ("%llx %d\n", addr, optype);
+		//	R_LOGFI ("%llx %d\n", addr, optype);
 			break;
 		}
 		//family = 'R';
@@ -329,7 +329,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		break;
 	}
 #endif
-	//eprintf ("MIPS: family=%c optype=%d oplen=%d op=>type=%d\n", family, optype, oplen, op->type);
+	//R_LOGFI ("MIPS: family=%c optype=%d oplen=%d op=>type=%d\n", family, optype, oplen, op->type);
 	return oplen;
 /*
  R - all instructions that only take registers as arguments (jalr, jr)

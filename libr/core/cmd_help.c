@@ -342,7 +342,7 @@ static int cmd_help(void *data, const char *input) {
 			free (buf);
 		} else if (input[1] == 't' && input[2] == 'w') { // "?btw"
 			if (r_num_between (core->num, input + 3) == -1) {
-				eprintf ("Usage: ?btw num|(expr) num|(expr) num|(expr)\n");
+				R_LOGFI ("Usage: ?btw num|(expr) num|(expr) num|(expr)\n");
 			}
 		} else {
 			n = r_num_get (core->num, input+1);
@@ -362,7 +362,7 @@ static int cmd_help(void *data, const char *input) {
 		if (input[1] == ' ') {
 			r_cons_printf ("0x%08x\n", (ut32)r_str_hash (input + 2));
 		} else {
-			eprintf ("Usage: ?h [string-to-hash]\n");
+			R_LOGFI ("Usage: ?h [string-to-hash]\n");
 		}
 		break;
 	case 'y': // "?y"
@@ -380,7 +380,7 @@ static int cmd_help(void *data, const char *input) {
 		if (input[1] == ' ') {
 			char *q, *p = strdup (input + 2);
 			if (!p) {
-				eprintf ("Cannot strdup\n");
+				R_LOGFI ("Cannot strdup\n");
 				return 0;
 			}
 			q = strchr (p, ' ');
@@ -390,11 +390,11 @@ static int cmd_help(void *data, const char *input) {
 				r_str_bits (out, (const ut8*)&n, sizeof (n) * 8, q + 1);
 				r_cons_println (out);
 			} else {
-				eprintf ("Usage: \"?b value bitstring\"\n");
+				R_LOGFI ("Usage: \"?b value bitstring\"\n");
 			}
 			free (p);
 		} else {
-			eprintf ("Whitespace expected after '?f'\n");
+			R_LOGFI ("Whitespace expected after '?f'\n");
 		}
 		break;
 	case 'o': // "?o"
@@ -474,7 +474,7 @@ static int cmd_help(void *data, const char *input) {
 				}
 				n = r_num_math (core->num, str);
 				if (core->num->dbz) {
-					eprintf ("RNum ERROR: Division by Zero\n");
+					R_LOGFI ("RNum ERROR: Division by Zero\n");
 				}
 				asnum  = r_num_as_string (NULL, n, false);
 				/* decimal, hexa, octal */
@@ -521,7 +521,7 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case 'q': // "?q"
 		if (core->num->dbz) {
-			eprintf ("RNum ERROR: Division by Zero\n");
+			R_LOGFI ("RNum ERROR: Division by Zero\n");
 		}
 		if (input[1] == '?') {
 			r_cons_printf ("|Usage: ?q [num]  # Update $? without printing anything\n"
@@ -546,7 +546,7 @@ static int cmd_help(void *data, const char *input) {
 			}
 		}
 		if (core->num->dbz) {
-			eprintf ("RNum ERROR: Division by Zero\n");
+			R_LOGFI ("RNum ERROR: Division by Zero\n");
 		}
 		switch (input[1]) {
 		case '?':
@@ -659,7 +659,7 @@ static int cmd_help(void *data, const char *input) {
 			};
 			while (vars[i]) {
 				const char *pad = r_str_pad (' ', 6 - strlen (vars[i]));
-				eprintf ("%s %s 0x%08"PFMT64x"\n", vars[i], pad, r_num_math (core->num, vars[i]));
+				R_LOGFI ("%s %s 0x%08"PFMT64x"\n", vars[i], pad, r_num_math (core->num, vars[i]));
 				i++;
 			}
 		}
@@ -809,13 +809,13 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_newline ();
 			break;
 		default:
-			eprintf ("Usage: ?e[...]\n");
-			eprintf (" e msg       echo message\n");
-			eprintf (" ep N...     echo pie chart\n");
-			eprintf (" eb N...     echo portions bar\n");
-			eprintf (" en msg      echo without newline\n");
-			eprintf (" eg x y      gotoxy\n");
-			eprintf (" es msg      use text-to-speech technology\n");
+			R_LOGFI ("Usage: ?e[...]\n");
+			R_LOGFI (" e msg       echo message\n");
+			R_LOGFI (" ep N...     echo pie chart\n");
+			R_LOGFI (" eb N...     echo portions bar\n");
+			R_LOGFI (" en msg      echo without newline\n");
+			R_LOGFI (" eg x y      gotoxy\n");
+			R_LOGFI (" es msg      use text-to-speech technology\n");
 			break;
 		}
 		break;
@@ -891,12 +891,12 @@ static int cmd_help(void *data, const char *input) {
 	case 'i': // "?i" input num
 		r_cons_set_raw(0);
 		if (!r_config_get_i (core->config, "scr.interactive")) {
-			eprintf ("Not running in interactive mode\n");
+			R_LOGFI ("Not running in interactive mode\n");
 		} else {
 			switch (input[1]) {
 			case 'f': // "?if"
 				core->num->value = !r_num_conditional (core->num, input + 2);
-				eprintf ("%s\n", r_str_bool (!core->num->value));
+				R_LOGFI ("%s\n", r_str_bool (!core->num->value));
 				break;
 			case 'm': // "?im"
 				r_cons_message (input+2);
@@ -944,7 +944,7 @@ static int cmd_help(void *data, const char *input) {
 		r_core_cmd (core, input + 1, 0);
 		r_prof_end (&prof);
 		core->num->value = (ut64)(int)prof.result;
-		eprintf ("%lf\n", prof.result);
+		R_LOGFI ("%lf\n", prof.result);
 		break;
 	}
 	case '?': // "??"
@@ -967,7 +967,7 @@ static int cmd_help(void *data, const char *input) {
 			}
 		} else {
 			if (core->num->dbz) {
-				eprintf ("RNum ERROR: Division by Zero\n");
+				R_LOGFI ("RNum ERROR: Division by Zero\n");
 			}
 			r_cons_printf ("%"PFMT64d"\n", core->num->value);
 		}

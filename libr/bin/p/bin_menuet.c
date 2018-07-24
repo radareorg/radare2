@@ -57,7 +57,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 		case '2':
 			return true;
 		}
-		eprintf ("Unsupported MENUET version header\n");
+		R_LOGFI ("Unsupported MENUET version header\n");
 	}
 	return false;
 }

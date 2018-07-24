@@ -53,12 +53,12 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments(const struct r_bin_mz_obj_t *b
 	const MZ_image_relocation_entry * const relocs = bin->relocation_entries;
 	const int num_relocs = bin->dos_header->num_relocs;
 
-	eprintf ("cs 0x%x\n", bin->dos_header->cs);
-	eprintf ("ss 0x%x\n", bin->dos_header->ss);
+	R_LOGFI ("cs 0x%x\n", bin->dos_header->cs);
+	R_LOGFI ("ss 0x%x\n", bin->dos_header->ss);
 	for (i = 0; i < num_relocs; i++) {
-		eprintf ("0x%08x segment 0x%08lx\n", relocs[i].offset, relocs[i].segment);
+		R_LOGFI ("0x%08x segment 0x%08lx\n", relocs[i].offset, relocs[i].segment);
 		// ut65 paddr = r_bin_mz_seg_to_paddr (bin, relocs[i].segment) + relocs[i].offset;
-		// eprintf ("pa 0x%08llx\n", paddr);
+		// R_LOGFI ("pa 0x%08llx\n", paddr);
 	}
 	btree_add (&tree, (void *)&first_segment, cmp_segs);
 	/* Add segment address of stack segment if it's resides inside dos
@@ -109,7 +109,7 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments(const struct r_bin_mz_obj_t *b
 	}
 	ut16 *segments = calloc (2 + num_relocs, sizeof (*segments));
 	if (!segments) {
-		eprintf ("Error: calloc (segments)\n");
+		R_LOGFI ("Error: calloc (segments)\n");
 		btree_cleartree (tree, NULL);
 		return NULL;
 	}
@@ -120,7 +120,7 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments(const struct r_bin_mz_obj_t *b
 	if (!ret) {
 		free (segments);
 		btree_cleartree (tree, NULL);
-		eprintf ("Error: calloc (struct r_bin_mz_segment_t)\n");
+		R_LOGFI ("Error: calloc (struct r_bin_mz_segment_t)\n");
 		return NULL;
 	}
 
@@ -147,7 +147,7 @@ struct r_bin_mz_reloc_t *r_bin_mz_get_relocs(const struct r_bin_mz_obj_t *bin) {
 
 	relocs = calloc (num_relocs + 1, sizeof (*relocs));
 	if (!relocs) {
-		eprintf ("Error: calloc (struct r_bin_mz_reloc_t)\n");
+		R_LOGFI ("Error: calloc (struct r_bin_mz_reloc_t)\n");
 		return NULL;
 	}
 
@@ -185,7 +185,7 @@ static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t* bin) {
 	// TODO: read field by field to avoid endian and alignment issues
 	if (r_buf_read_at (bin->b, 0, (ut8*)bin->dos_header,
 			sizeof (*bin->dos_header)) == -1) {
-		eprintf ("Error: read (MZ_image_dos_header)\n");
+		R_LOGFI ("Error: read (MZ_image_dos_header)\n");
 		return false;
 	}
 
@@ -227,7 +227,7 @@ static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t* bin) {
 		if (r_buf_read_at (bin->b, sizeof (MZ_image_dos_header),
 				(ut8*)bin->dos_extended_header,
 				bin->dos_extended_header_size) == -1) {
-			eprintf ("Error: read (dos extended header)\n");
+			R_LOGFI ("Error: read (dos extended header)\n");
 			return false;
 		}
 	}
@@ -239,7 +239,7 @@ static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t* bin) {
 		}
 		if (r_buf_read_at (bin->b, bin->dos_header->reloc_table_offset,
 				(ut8*)bin->relocation_entries, relocations_size) == -1) {
-			eprintf ("Error: read (dos relocation entries)\n");
+			R_LOGFI ("Error: read (dos relocation entries)\n");
 			R_FREE (bin->relocation_entries);
 			return false;
 		}
@@ -254,7 +254,7 @@ static int r_bin_mz_init(struct r_bin_mz_obj_t* bin) {
 	bin->kv = sdb_new0 ();
 
 	if (!r_bin_mz_init_hdr (bin)) {
-		eprintf ("Warning: File is not MZ\n");
+		R_LOGFI ("Warning: File is not MZ\n");
 		return false;
 	}
 
@@ -306,7 +306,7 @@ ut64 r_bin_mz_get_main_vaddr(struct r_bin_mz_obj_t *bin) {
 	entry = r_bin_mz_get_entrypoint (bin);
 	ZERO_FILL (b);
 	if (r_buf_read_at (bin->b, entry, b, sizeof (b)) < 0) {
-		eprintf ("Warning: Cannot read entry at 0x%08"PFMT32x "\n", (ut32) entry);
+		R_LOGFI ("Warning: Cannot read entry at 0x%08"PFMT32x "\n", (ut32) entry);
 		return 0LL;
 	}
 	// MSVC

@@ -61,7 +61,7 @@ static int update_self_regions(RIO *io, int pid) {
 	kern_return_t rc;
 	rc = task_for_pid (mach_task_self (), pid, &task);
 	if (rc) {
-		eprintf ("task_for_pid failed\n");
+		R_LOGFI ("task_for_pid failed\n");
 		return false;
 	}
 	macosx_debug_regions (io, task, (size_t)1, 1000);
@@ -196,7 +196,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 #if (!defined(__WINDOWS__)) || defined(__CYGWIN__)
 	} else if (!strncmp (cmd, "kill", 4)) {
 		if (r_sandbox_enable (false)) {
-			eprintf ("This is unsafe, so disabled by the sandbox\n");
+			R_LOGFI ("This is unsafe, so disabled by the sandbox\n");
 			return NULL;
 		}
 		/* do nothing here */
@@ -205,14 +205,14 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	} else if (!strncmp (cmd, "call ", 5)) {
 		size_t cbptr = 0;
 		if (r_sandbox_enable (false)) {
-			eprintf ("This is unsafe, so disabled by the sandbox\n");
+			R_LOGFI ("This is unsafe, so disabled by the sandbox\n");
 			return NULL;
 		}
 		ut64 result = 0;
 		char *argv = strdup (cmd + 5);
 		int argc = r_str_word_set0 (argv);
 		if (argc == 0) {
-			eprintf ("Usage: =!call [fcnptr] [a0] [a1] ...\n");
+			R_LOGFI ("Usage: =!call [fcnptr] [a0] [a1] ...\n");
 			free (argv);
 			return NULL;
 		}
@@ -233,7 +233,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			if (cb) {
 				result = cb ();
 			} else {
-				eprintf ("No callback defined\n");
+				R_LOGFI ("No callback defined\n");
 			}
 		} else if (argc == 2) {
 			size_t (*cb)(size_t a0) = (size_t(*)(size_t))cbptr;
@@ -241,7 +241,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 				ut64 a0 = r_num_math (NULL, r_str_word_get0 (argv, 1));
 				result = cb (a0);
 			} else {
-				eprintf ("No callback defined\n");
+				R_LOGFI ("No callback defined\n");
 			}
 		} else if (argc == 3) {
 			size_t (*cb)(size_t a0, size_t a1) = (size_t(*)(size_t,size_t))cbptr;
@@ -250,7 +250,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			if (cb) {
 				result = cb (a0, a1);
 			} else {
-				eprintf ("No callback defined\n");
+				R_LOGFI ("No callback defined\n");
 			}
 		} else if (argc == 4) {
 			size_t (*cb)(size_t a0, size_t a1, size_t a2) = \
@@ -261,7 +261,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			if (cb) {
 				result = cb (a0, a1, a2);
 			} else {
-				eprintf ("No callback defined\n");
+				R_LOGFI ("No callback defined\n");
 			}
 		} else if (argc == 5) {
 			size_t (*cb)(size_t a0, size_t a1, size_t a2, size_t a3) = \
@@ -273,7 +273,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			if (cb) {
 				result = cb (a0, a1, a2, a3);
 			} else {
-				eprintf ("No callback defined\n");
+				R_LOGFI ("No callback defined\n");
 			}
 		} else if (argc == 6) {
 			size_t (*cb)(size_t a0, size_t a1, size_t a2, size_t a3, size_t a4) = \
@@ -286,12 +286,12 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			if (cb) {
 				result = cb (a0, a1, a2, a3, a4);
 			} else {
-				eprintf ("No callback defined\n");
+				R_LOGFI ("No callback defined\n");
 			}
 		} else {
-			eprintf ("Unsupported number of arguments in call\n");
+			R_LOGFI ("Unsupported number of arguments in call\n");
 		}
-		eprintf ("RES %"PFMT64d"\n", result);
+		R_LOGFI ("RES %"PFMT64d"\n", result);
 		free (argv);
 #if (!defined(__WINDOWS__)) || defined(__CYGWIN__)
 	} else if (!strncmp (cmd, "alarm ", 6)) {
@@ -309,7 +309,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		const char *symbol = cmd + 6;
 		void *lib = r_lib_dl_open (NULL);
 		void *ptr = r_lib_dl_sym (lib, symbol);
-		eprintf ("(%s) 0x%08"PFMT64x"\n", symbol, (ut64)(size_t)ptr);
+		R_LOGFI ("(%s) 0x%08"PFMT64x"\n", symbol, (ut64)(size_t)ptr);
 		r_lib_dl_close (lib);
 	} else if (!strcmp (cmd, "mameio")) {
 		void *lib = r_lib_dl_open (NULL);
@@ -318,31 +318,31 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		// readmem(0, )
 		if (ptr) {
 		//	gothis =
-			eprintf ("TODO: No MAME IO implemented yet\n");
+			R_LOGFI ("TODO: No MAME IO implemented yet\n");
 			mameio = true;
 		} else {
-			eprintf ("This process is not a MAME!");
+			R_LOGFI ("This process is not a MAME!");
 		}
 		r_lib_dl_close (lib);
 	} else if (!strcmp (cmd, "maps")) {
 		int i;
 		for (i = 0; i < self_sections_count; i++) {
-			eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %s %s\n",
+			R_LOGFI ("0x%08"PFMT64x" - 0x%08"PFMT64x" %s %s\n",
 				self_sections[i].from, self_sections[i].to,
 				r_str_rwx_i (self_sections[i].perm),
 				self_sections[i].name);
 		}
 	} else {
-		eprintf ("|Usage: =![cmd] [args]\n");
-		eprintf ("| =!pid               show getpid()\n");
-		eprintf ("| =!maps              show map regions\n");
-		eprintf ("| =!kill              commit suicide\n");
+		R_LOGFI ("|Usage: =![cmd] [args]\n");
+		R_LOGFI ("| =!pid               show getpid()\n");
+		R_LOGFI ("| =!maps              show map regions\n");
+		R_LOGFI ("| =!kill              commit suicide\n");
 #if (!defined(__WINDOWS__)) || defined(__CYGWIN__)
-		eprintf ("| =!alarm [secs]      setup alarm signal to raise r2 prompt\n");
+		R_LOGFI ("| =!alarm [secs]      setup alarm signal to raise r2 prompt\n");
 #endif
-		eprintf ("| =!dlsym [sym]       dlopen\n");
-		eprintf ("| =!call [sym] [...]  nativelly call a function\n");
-		eprintf ("| =!mameio            enter mame IO mode\n");
+		R_LOGFI ("| =!dlsym [sym]       dlopen\n");
+		R_LOGFI ("| =!call [sym] [...]  nativelly call a function\n");
+		R_LOGFI ("| =!mameio            enter mame IO mode\n");
 	}
 	return NULL;
 }
@@ -402,7 +402,7 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 		(vm_region_info_t) &info, &count, &object_name);
 
 	if (kret) {
-		eprintf ("mach_vm_region: Error %d - %s", kret, mach_error_string(kret));
+		R_LOGFI ("mach_vm_region: Error %d - %s", kret, mach_error_string(kret));
 		return;
 	}
 	memcpy (&prev_info, &info, sizeof (vm_region_basic_info_data_t));
@@ -434,7 +434,7 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 					(vm_region_info_t) &info, &count, &object_name);
 			}
 			if (kret != KERN_SUCCESS) {
-				eprintf ("mach_vm_region failed for address %p - Error: %x\n",
+				R_LOGFI ("mach_vm_region failed for address %p - Error: %x\n",
 					(void*)(size_t)address, kret);
 				size = 0;
 				if (address >= 0x4000000) {
@@ -498,7 +498,7 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 		}
 
 		if ((max > 0) && (num_printed >= max)) {
-			eprintf ("Max %d num_printed %d\n", max, num_printed);
+			R_LOGFI ("Max %d num_printed %d\n", max, num_printed);
 			done = 1;
 		}
 		if (done) {

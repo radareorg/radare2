@@ -51,7 +51,7 @@ static int r_debug_gdb_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	// read the len of the current area
 	free (r_reg_get_bytes (dbg->reg, type, &buflen));
 	if (size < desc->data_len) {
-		eprintf ("r_debug_gdb_reg_read: small buffer %d vs %d\n",
+		R_LOGFI ("r_debug_gdb_reg_read: small buffer %d vs %d\n",
 			(int)size, (int)desc->data_len);
 		//	return -1;
 	}
@@ -178,7 +178,7 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 		if (ret == 3) {
 			name[0] = '\0';
 		} else if (ret != 4) {
-			eprintf ("%s: Unable to parse \"%s\"\nContent:\n%s\n",
+			R_LOGFI ("%s: Unable to parse \"%s\"\nContent:\n%s\n",
 				 __func__, path, buf);
 			gdbr_close_file (desc);
 			free (buf);
@@ -206,7 +206,7 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 		map_start = r_num_get (NULL, region1);
 		map_end = r_num_get (NULL, region2);
 		if (map_start == map_end || map_end == 0) {
-			eprintf ("%s: ignoring invalid map size: %s - %s\n",
+			R_LOGFI ("%s: ignoring invalid map size: %s - %s\n",
 				 __func__, region1, region2);
 			ptr = strtok (NULL, "\n");
 			continue;
@@ -309,7 +309,7 @@ static int r_debug_gdb_continue(RDebug *dbg, int pid, int tid, int sig) {
 	gdbr_continue (desc, pid, -1, sig); // Continue all threads
 	if (desc->stop_reason.is_valid && desc->stop_reason.thread.present) {
 		//if (desc->tid != desc->stop_reason.thread.tid) {
-		//	eprintf ("thread id (%d) in reason differs from current thread id (%d)\n", dbg->pid, dbg->tid);
+		//	R_LOGFI ("thread id (%d) in reason differs from current thread id (%d)\n", dbg->pid, dbg->tid);
 		//}
 		desc->tid = desc->stop_reason.thread.tid;
 	}
@@ -329,7 +329,7 @@ static RDebugReasonType r_debug_gdb_wait(RDebug *dbg, int pid) {
 		dbg->pid = desc->stop_reason.thread.pid;
 		dbg->tid = desc->stop_reason.thread.tid;
 		if (dbg->pid != desc->pid || dbg->tid != desc->tid) {
-			//eprintf ("= attach %d %d\n", dbg->pid, dbg->tid);
+			//R_LOGFI ("= attach %d %d\n", dbg->pid, dbg->tid);
 			gdbr_select (desc, dbg->pid, dbg->tid);
 		}
 	}
@@ -342,7 +342,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 	RIODesc *d = dbg->iob.io->desc;
 	// TODO: the core must update the dbg.swstep config var when this var is changed
 	dbg->swstep = false;
-	//eprintf ("XWJSTEP TOFALSE\n");
+	//R_LOGFI ("XWJSTEP TOFALSE\n");
 	if (d && d->plugin && d->plugin->name && d->data) {
 		if (!strcmp ("gdb", d->plugin->name)) {
 			RIOGdb *g = d->data;
@@ -358,7 +358,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 				} else if (bits == 64) {
 					gdbr_set_architecture (desc, "x86", 64);
 				} else {
-					eprintf ("Not supported register %s %d profile\n", dbg->arch, bits);
+					R_LOGFI ("Not supported register %s %d profile\n", dbg->arch, bits);
 					return false;
 				}
 				break;
@@ -371,7 +371,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 				} else if (bits == 64) {
 					gdbr_set_architecture (desc, "arm", 64);
 				} else {
-					eprintf ("Not supported register %s %d profile\n", dbg->arch, bits);
+					R_LOGFI ("Not supported register %s %d profile\n", dbg->arch, bits);
 					return false;
 				}
 				break;
@@ -379,7 +379,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 				if (bits == 32) {
 					gdbr_set_architecture(desc, "lm32", 32);
 				} else {
-					eprintf ("Not supported register %s %d profile\n", dbg->arch, bits);
+					R_LOGFI ("Not supported register %s %d profile\n", dbg->arch, bits);
 					return false;
 				}
 				break;
@@ -387,7 +387,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 				if (bits == 32 || bits == 64) {
 					gdbr_set_architecture (desc, "mips", bits);
 				} else {
-					eprintf ("Not supported register %s %d profile\n", dbg->arch, bits);
+					R_LOGFI ("Not supported register %s %d profile\n", dbg->arch, bits);
 					return false;
 				}
 				break;
@@ -396,7 +396,7 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 				break;
 			}
 		} else {
-			eprintf ("ERROR: Underlaying IO descriptor is not a GDB one..\n");
+			R_LOGFI ("ERROR: Underlaying IO descriptor is not a GDB one..\n");
 		}
 	}
 	return true;
@@ -983,7 +983,7 @@ static RDebugInfo* r_debug_gdb_info(RDebug *dbg, const char *arg) {
 	rdi->uid = found ? th->uid : -1;
 	rdi->gid = found ? th->gid : -1;
 	if (gdbr_stop_reason (desc) >= 0) {
-		eprintf ("signal: %d\n", desc->stop_reason.signum);
+		R_LOGFI ("signal: %d\n", desc->stop_reason.signum);
 		rdi->signum = desc->stop_reason.signum;
 	}
 	if (list_alloc) {

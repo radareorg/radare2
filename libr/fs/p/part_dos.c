@@ -36,7 +36,7 @@ static int fs_part_dos(void *disk, void *ptr, void *closure) {
 	memset (&mbr, 0, sizeof (mbr));
 	fs->iob.read_at (fs->iob.io, 0, (ut8*)&mbr, sizeof (mbr));
 	if (mbr.aa55 != 0xaa55) {
-		eprintf ("Invalid DOS signature at 0x%x\n",
+		R_LOGFI ("Invalid DOS signature at 0x%x\n",
 			(int)r_offsetof (MBR, aa55));
 		return 0;
 	}

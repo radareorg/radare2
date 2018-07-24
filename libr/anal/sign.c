@@ -277,7 +277,7 @@ static bool addItem(RAnal *a, RSignItem *it) {
 	curval = sdb_const_get (a->sdb_zigns, key, 0);
 	if (curval) {
 		if (!deserialize (a, curit, key, curval)) {
-			eprintf ("error: cannot deserialize zign\n");
+			R_LOGFI ("error: cannot deserialize zign\n");
 			retval = false;
 			goto out;
 		}
@@ -296,7 +296,7 @@ static bool addBytes(RAnal *a, const char *name, ut64 size, const ut8 *bytes, co
 	bool retval = true;
 
 	if (r_mem_is_zero (mask, size)) {
-		eprintf ("error: zero mask\n");
+		R_LOGFI ("error: zero mask\n");
 		return false;
 	}
 
@@ -587,7 +587,7 @@ static int listCB(void *user, const char *k, const char *v) {
 	RAnal *a = ctx->anal;
 
 	if (!deserialize (a, it, k, v)) {
-		eprintf ("error: cannot deserialize zign\n");
+		R_LOGFI ("error: cannot deserialize zign\n");
 		goto out;
 	}
 
@@ -692,7 +692,7 @@ static int countForCB(void *user, const char *k, const char *v) {
 	RSignItem *it = r_sign_item_new ();
 
 	if (!deserialize (ctx->anal, it, k, v)) {
-		eprintf ("error: cannot deserialize zign\n");
+		R_LOGFI ("error: cannot deserialize zign\n");
 		goto out;
 	}
 
@@ -732,7 +732,7 @@ static int unsetForCB(void *user, const char *k, const char *v) {
 	RAnal *a = ctx->anal;
 
 	if (!deserialize (a, it, k, v)) {
-		eprintf ("error: cannot deserialize zign\n");
+		R_LOGFI ("error: cannot deserialize zign\n");
 		goto out;
 	}
 
@@ -813,7 +813,7 @@ static int foreachCB(void *user, const char *k, const char *v) {
 	int retval = 1;
 
 	if (!deserialize (a, it, k, v)) {
-		eprintf ("error: cannot deserialize zign\n");
+		R_LOGFI ("error: cannot deserialize zign\n");
 		goto out;
 	}
 
@@ -1142,7 +1142,7 @@ static int loadCB(void *user, const char *k, const char *v) {
 	RSignItem *it = r_sign_item_new ();
 
 	if (!deserialize (a, it, k, v)) {
-		eprintf ("error: cannot deserialize zign\n");
+		R_LOGFI ("error: cannot deserialize zign\n");
 		goto out;
 	}
 
@@ -1195,7 +1195,7 @@ R_API bool r_sign_load(RAnal *a, const char *file) {
 	}
 	char *path = r_sign_path (a, file);
 	if (!r_file_exists (path)) {
-		eprintf ("error: file %s does not exist\n", file);
+		R_LOGFI ("error: file %s does not exist\n", file);
 		free (path);
 		return false;
 	}
@@ -1219,37 +1219,37 @@ R_API bool r_sign_load_gz(RAnal *a, const char *filename) {
 
 	char *path = r_sign_path (a, filename);
 	if (!r_file_exists (path)) {
-		eprintf ("error: file %s does not exist\n", filename);
+		R_LOGFI ("error: file %s does not exist\n", filename);
 		retval = false;
 		goto out;
 	}
 
 	if (!(buf = r_file_gzslurp (path, &size, 0))) {
-		eprintf ("error: cannot decompress file\n");
+		R_LOGFI ("error: cannot decompress file\n");
 		retval = false;
 		goto out;
 	}
 
 	if (!(tmpfile = r_file_temp ("r2zign"))) {
-		eprintf ("error: cannot create temp file\n");
+		R_LOGFI ("error: cannot create temp file\n");
 		retval = false;
 		goto out;
 	}
 
 	if (!r_file_dump (tmpfile, buf, size, 0)) {
-		eprintf ("error: cannot dump file\n");
+		R_LOGFI ("error: cannot dump file\n");
 		retval = false;
 		goto out;
 	}
 
 	if (!r_sign_load (a, tmpfile)) {
-		eprintf ("error: cannot load file\n");
+		R_LOGFI ("error: cannot load file\n");
 		retval = false;
 		goto out;
 	}
 
 	if (!r_file_rm (tmpfile)) {
-		eprintf ("error: cannot delete temp file\n");
+		R_LOGFI ("error: cannot delete temp file\n");
 		retval = false;
 		goto out;
 	}
@@ -1270,7 +1270,7 @@ R_API bool r_sign_save(RAnal *a, const char *file) {
 	}
 	
 	if (sdb_count (a->sdb_zigns) == 0) {
-		eprintf ("WARNING: no zignatures to save\n");
+		R_LOGFI ("WARNING: no zignatures to save\n");
 		return false;
 	}
 

@@ -614,7 +614,7 @@ static ut32 adrp(ArmOp *op, ut64 addr, ut32 k) { //, int reg, ut64 dst) {
 	if (op->operands[0].type == ARM_GPR) {
 		data += ((op->operands[0].reg & 0xff) << 24);
 	} else {
-		eprintf ("Usage: adrp x0, addr\n");
+		R_LOGFI ("Usage: adrp x0, addr\n");
 		return UT32_MAX;
 	}
 	if (op->operands[1].type == ARM_CONSTANT) {
@@ -622,7 +622,7 @@ static ut32 adrp(ArmOp *op, ut64 addr, ut32 k) { //, int reg, ut64 dst) {
 		at = op->operands[1].immediate - addr;
 		at /= 4;
 	} else {
-		eprintf ("Usage: adrp, x0, addr\n");
+		R_LOGFI ("Usage: adrp, x0, addr\n");
 		return UT32_MAX;
 	}
 	ut8 b0 = at;

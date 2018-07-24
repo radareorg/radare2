@@ -123,7 +123,7 @@ static void emit_syscall_args(REgg *egg, int nargs) {
 		k = j * R_SZ;
 		const char *reg = getreg (j + 1);
 		if (!reg) {
-			eprintf ("Cannot find gpr %d\n", j + 1);
+			R_LOGFI ("Cannot find gpr %d\n", j + 1);
 			break;
 		}
 		if (attsyntax) {
@@ -222,7 +222,7 @@ static void emit_jmp(REgg *egg, const char *str, int atr) {
 			r_egg_printf (egg, "  jmp %s\n", str);
 		}
 	} else {
-		eprintf ("Jump without destionation\n");
+		R_LOGFI ("Jump without destionation\n");
 	}
 }
 
@@ -304,7 +304,7 @@ static void emit_get_var (REgg *egg, int type, char *out, int idx) {
 		break;
 	case 1: /* argument */
 // OMG WE CANT stuff found in relative address in stack in the stack
-		eprintf ("WARNING: Using stack vars in naked functions\n");
+		R_LOGFI ("WARNING: Using stack vars in naked functions\n");
 		idx = 8; // HACK to make arg0, arg4, ... work
 		if (idx>0) sprintf (out, "["R_SP"+%d]", idx);
 		else if (idx<0) sprintf (out, "["R_SP"%d]", idx);
@@ -328,7 +328,7 @@ static void emit_load_ptr(REgg *egg, const char *dst) {
 		char *p = strchr (dst, '+');
 		if (p) d = atoi (p+1);
 	}
-	//eprintf ("emit_load_ptr: HACK\n");
+	//R_LOGFI ("emit_load_ptr: HACK\n");
 	// XXX: 32/64bit care
 	//r_egg_printf (egg, "# DELTA IS (%s)\n", dst);
 	if (attsyntax) {
@@ -444,9 +444,9 @@ static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, con
 		if (!p) p = R_AX;
 	// TODO:
 #if 0
-		eprintf ("TYPE = %c\n", type);
-		eprintf ("  %s%c %c%s, %s\n", op, vs, type, eq, p);
-		eprintf ("  %s %s, [%s]\n", op, p, eq);
+		R_LOGFI ("TYPE = %c\n", type);
+		R_LOGFI ("  %s%c %c%s, %s\n", op, vs, type, eq, p);
+		R_LOGFI ("  %s %s, [%s]\n", op, p, eq);
 #endif
 		if (type == '*') r_egg_printf (egg, "  %s %s, [%s]\n", op, p, eq);
 		else r_egg_printf (egg, "  %s %s, %s\n", op, p, eq);

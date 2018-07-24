@@ -111,7 +111,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			}
 			free (me);
 		} else if (!strncmp (buf, "pwd", 3)) {
-			eprintf ("%s\n", path);
+			R_LOGFI ("%s\n", path);
 		} else if (!memcmp (buf, "cd ", 3)) {
 			char opath[PROMPT_PATH_BUFSIZE];
 			strncpy (opath, path, sizeof (opath) - 1);
@@ -177,12 +177,12 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				free (file->data);
 				r_fs_close (fs, file);
 			} else {
-				eprintf ("Cannot open file\n");
+				R_LOGFI ("Cannot open file\n");
 			}
 		} else if (!memcmp (buf, "mount", 5)) {
 			RFSRoot* r;
 			r_list_foreach (fs->roots, iter, r) {
-				eprintf ("%s %s\n", r->path, r->p->name);
+				R_LOGFI ("%s %s\n", r->path, r->p->name);
 			}
 		} else if (!memcmp (buf, "get ", 4)) {
 			char* s = 0;
@@ -227,7 +227,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			}
 			free (s);
 		} else if (!memcmp (buf, "help", 4) || !strcmp (buf, "?")) {
-			eprintf (
+			R_LOGFI (
 				"Commands:\n"
 				" !cmd        ; escape to system\n"
 				" ls [path]   ; list current directory\n"
@@ -239,7 +239,7 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 				" ?/help      ; show this help\n");
 		} else {
 			if (*buf) {
-				eprintf ("Unknown command %s\n", buf);
+				R_LOGFI ("Unknown command %s\n", buf);
 			}
 		}
 	}

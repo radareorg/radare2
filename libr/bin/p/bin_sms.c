@@ -64,34 +64,34 @@ static RBinInfo* info(RBinFile *bf) {
 	} else if (!CMP8(0x8ff0, "TMR SEGA")) {
 		hdr = (SMS_Header*)(bs + 0x8ff0);
 	} else {
-		eprintf ("Cannot find magic SEGA copyright\n");
+		R_LOGFI ("Cannot find magic SEGA copyright\n");
 		free (ret);
 		return NULL;
 	}
 
-	eprintf ("Checksum: 0x%04x\n", (ut32)hdr->CheckSum);
-	eprintf ("ProductCode: %02d%02X%02X\n", (hdr->Version >> 4), hdr->ProductCode[1],
+	R_LOGFI ("Checksum: 0x%04x\n", (ut32)hdr->CheckSum);
+	R_LOGFI ("ProductCode: %02d%02X%02X\n", (hdr->Version >> 4), hdr->ProductCode[1],
 			hdr->ProductCode[0]);
 	switch (hdr->RegionRomSize >> 4) {
 	case 3:
-		eprintf ("Console: Sega Master System\n");
-		eprintf ("Region: Japan\n");
+		R_LOGFI ("Console: Sega Master System\n");
+		R_LOGFI ("Region: Japan\n");
 		break;
 	case 4:
-		eprintf ("Console: Sega Master System\n");
-		eprintf ("Region: Export\n");
+		R_LOGFI ("Console: Sega Master System\n");
+		R_LOGFI ("Region: Export\n");
 		break;
 	case 5:
-		eprintf ("Console: Game Gear\n");
-		eprintf ("Region: Japan\n");
+		R_LOGFI ("Console: Game Gear\n");
+		R_LOGFI ("Region: Japan\n");
 		break;
 	case 6:
-		eprintf ("Console: Game Gear\n");
-		eprintf ("Region: Export\n");
+		R_LOGFI ("Console: Game Gear\n");
+		R_LOGFI ("Region: Export\n");
 		break;
 	case 7:
-		eprintf ("Console: Game Gear\n");
-		eprintf ("Region: International\n");
+		R_LOGFI ("Console: Game Gear\n");
+		R_LOGFI ("Region: International\n");
 		break;
 	}
 	int romsize = 0;
@@ -106,7 +106,7 @@ static RBinInfo* info(RBinFile *bf) {
 	case 0x1: romsize = 512; break;
 	case 0x2: romsize = 1024; break;
 	}
-	eprintf ("RomSize: %dKB\n", romsize);
+	R_LOGFI ("RomSize: %dKB\n", romsize);
 	return ret;
 }
 

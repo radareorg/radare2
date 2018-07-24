@@ -228,11 +228,11 @@ static void cmd_flag_tags (RCore *core, const char *input) {
 		return;
 	}
 	if (mode == '?') {
-		eprintf ("Usage: ft [k] [v ...]\n");
-		eprintf (" ft tag strcpy strlen ... # set words for the 'string' tag\n");
-		eprintf (" ft tag                   # get offsets of all matching flags\n");
-		eprintf (" ft                       # list all tags\n");
-		eprintf (" ftn tag                  # get matching flagnames fot given tag\n");
+		R_LOGFI ("Usage: ft [k] [v ...]\n");
+		R_LOGFI (" ft tag strcpy strlen ... # set words for the 'string' tag\n");
+		R_LOGFI (" ft tag                   # get offsets of all matching flags\n");
+		R_LOGFI (" ft                       # list all tags\n");
+		R_LOGFI (" ftn tag                  # get matching flagnames fot given tag\n");
 		free (inp);
 		return;
 	}
@@ -323,7 +323,7 @@ rep:
 			flagenum = 0;
 			break;
 		default:
-			eprintf ("|Usage: fe[-| name] @@= 1 2 3 4\n");
+			R_LOGFI ("|Usage: fe[-| name] @@= 1 2 3 4\n");
 			break;
 		}
 		break;
@@ -337,7 +337,7 @@ rep:
 			break;
 		default:
 		case '?':
-			eprintf ("Usage: f= [glob] to grep for matching flag names\n");
+			R_LOGFI ("Usage: f= [glob] to grep for matching flag names\n");
 			break;
 		}
 		break;
@@ -359,10 +359,10 @@ rep:
 			if (fi) {
 				r_flag_item_set_alias (fi, ptr);
 			} else {
-				eprintf ("Cannot find flag '%s'\n", name);
+				R_LOGFI ("Cannot find flag '%s'\n", name);
 			}
 		} else {
-			eprintf ("Usage: fa flagname flagalias\n");
+			R_LOGFI ("Usage: fa flagname flagalias\n");
 		}
 		break;
 	case 'V': // visual marks
@@ -378,8 +378,8 @@ rep:
 			}
 			break;
 		case '?':
-			eprintf ("Usage: fV[*-] [nkey] [offset]\n");
-			eprintf ("Dump/Restore visual marks (mK/'K)\n");
+			R_LOGFI ("Usage: fV[*-] [nkey] [offset]\n");
+			R_LOGFI ("Dump/Restore visual marks (mK/'K)\n");
 			break;
 		default:
 			r_core_visual_mark_dump (core);
@@ -395,8 +395,8 @@ rep:
 	case 'R': // "fR"
 		switch(*str) {
 		case '\0':
-			eprintf ("Usage: fR [from] [to] ([mask])\n");
-			eprintf ("Example to relocate PIE flags on debugger:\n"
+			R_LOGFI ("Usage: fR [from] [to] ([mask])\n");
+			R_LOGFI ("Example to relocate PIE flags on debugger:\n"
 				" > fR entry0 `dm~:1[1]`\n");
 			break;
 		case '?':
@@ -419,10 +419,10 @@ rep:
 					from = r_num_math (core->num, str+1);
 					to = r_num_math (core->num, p+1);
 					ret = r_flag_relocate (core->flags, from, mask, to);
-					eprintf ("Relocated %d flags\n", ret);
+					R_LOGFI ("Relocated %d flags\n", ret);
 				} else {
-					eprintf ("Usage: fR [from] [to] ([mask])\n");
-					eprintf ("Example to relocate PIE flags on debugger:\n"
+					R_LOGFI ("Usage: fR [from] [to] ([mask])\n");
+					R_LOGFI ("Example to relocate PIE flags on debugger:\n"
 						" > fR entry0 `dm~:1[1]`\n");
 				}
 			}
@@ -456,7 +456,7 @@ rep:
 				core->flags->base);
 			break;
 		default:
-			eprintf ("Usage: fb [addr] [[flags*]]\n");
+			R_LOGFI ("Usage: fb [addr] [[flags*]]\n");
 			break;
 		}
 		break;
@@ -510,10 +510,10 @@ rep:
 			if (*flagname=='.') {
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 				if (fcn) {
-					eprintf ("TODO: local_del_name has been deprecated\n");
+					R_LOGFI ("TODO: local_del_name has been deprecated\n");
 					//;r_anal_fcn_local_del_name (core->anal, fcn, flagname+1);
 				} else {
-					eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
+					R_LOGFI ("Cannot find function at 0x%08"PFMT64x"\n", off);
 				}
 			} else {
 				if (strchr (flagname, '*')) {
@@ -535,7 +535,7 @@ rep:
 				} else {
 					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 					if (fcn) r_anal_fcn_labels (core->anal, fcn, 1);
-					else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
+					else R_LOGFI ("Cannot find function at 0x%08"PFMT64x"\n", off);
 				}
 			} else {
 				char *name = strdup (input + ((input[2] == ' ')? 2: 1));
@@ -553,19 +553,19 @@ rep:
 						} else {
 							r_anal_fcn_label_set (core->anal, fcn, name, off);
 						}
-					} else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
+					} else R_LOGFI ("Cannot find function at 0x%08"PFMT64x"\n", off);
 					free (name);
 				}
 			}
 		} else {
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 			if (fcn) r_anal_fcn_labels (core->anal, fcn, 0);
-			else eprintf ("Cannot find function at 0x%08"PFMT64x"\n", off);
+			else R_LOGFI ("Cannot find function at 0x%08"PFMT64x"\n", off);
 		}
 		break;
 	case 'l': // "fl"
 		if (input[1] == '?') { // "fl?"
-			eprintf ("Usage: fl[a] [flagname] [flagsize]\n");
+			R_LOGFI ("Usage: fl[a] [flagname] [flagsize]\n");
 		} else
 		if (input[1] == 'a') { // "fla"
 			// TODO: we can optimize this if core->flags->flags is sorted by flagitem->offset
@@ -633,7 +633,7 @@ rep:
 					 item->offset, item->size);
 				r_core_cmd0 (core, cmd);
 			}
-		} else eprintf ("Missing arguments\n");
+		} else R_LOGFI ("Missing arguments\n");
 		break;
 #endif
 	case 'z':
@@ -651,7 +651,7 @@ rep:
 				r_core_cmd0 (core, cmd);
 			}
 		} else {
-			eprintf ("Missing arguments\n");
+			R_LOGFI ("Missing arguments\n");
 		}
 		break;
 	case 't': // "ft"
@@ -672,7 +672,7 @@ rep:
 			if (input[2] ==' ') {
 				r_flag_space_rename (core->flags, NULL, input + 2);
 			} else {
-				eprintf ("Usage: fsr [newname]\n");
+				R_LOGFI ("Usage: fsr [newname]\n");
 			}
 			break;
 		case 's':
@@ -716,7 +716,7 @@ rep:
 			if (f) {
 				f->space = core->flags->space_idx;
 			} else {
-				eprintf ("Cannot find any flag at 0x%"PFMT64x".\n", off);
+				R_LOGFI ("Cannot find any flag at 0x%"PFMT64x".\n", off);
 			}
 			}
 			break;
@@ -751,7 +751,7 @@ rep:
 				if (!color && ret)
 					r_cons_println (ret);
 			} else {
-				eprintf ("Unknown flag '%s'\n", arg);
+				R_LOGFI ("Unknown flag '%s'\n", arg);
 			}
 			free (arg);
 		}
@@ -767,18 +767,18 @@ rep:
 				if (item) {
 					r_flag_item_set_comment (item, q+1);
 				} else {
-					eprintf ("Cannot find flag with name '%s'\n", p);
+					R_LOGFI ("Cannot find flag with name '%s'\n", p);
 				}
 			} else {
 				item = r_flag_get_i (core->flags, r_num_math (core->num, p));
 				if (item && item->comment) {
 					r_cons_println (item->comment);
 				} else {
-					eprintf ("Cannot find item\n");
+					R_LOGFI ("Cannot find item\n");
 				}
 			}
 			free (p);
-		} else eprintf ("Usage: fC [name] [comment]\n");
+		} else R_LOGFI ("Usage: fC [name] [comment]\n");
 		break;
 	case 'o': // "fo"
 		r_core_fortune_print_random (core);
@@ -805,10 +805,10 @@ rep:
 			}
 			if (item) {
 				if (!r_flag_rename (core->flags, item, new)) {
-					eprintf ("Invalid name\n");
+					R_LOGFI ("Invalid name\n");
 				}
 			} else {
-				eprintf ("Cannot find flag (%s)\n", old);
+				R_LOGFI ("Cannot find flag (%s)\n", old);
 			}
 		}
 		break;

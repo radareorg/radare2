@@ -264,7 +264,7 @@ static int radare_compare(RCore *core, const ut8 *f, const ut8 *d, int len, int 
 		}
 	}
 	if (mode == 0) {
-		eprintf ("Compare %d/%d equal bytes (%d%%)\n", eq, len, (eq / len) * 100);
+		R_LOGFI ("Compare %d/%d equal bytes (%d%%)\n", eq, len, (eq / len) * 100);
 	}
 	return len - eq;
 }
@@ -286,9 +286,9 @@ static void cmd_cmp_watcher(RCore *core, const char *input) {
 				size = atoi (q);
 			}
 			r_core_cmpwatch_add (core, addr, size, r);
-			// eprintf ("ADD (%llx) %d (%s)\n", addr, size, r);
+			// R_LOGFI ("ADD (%llx) %d (%s)\n", addr, size, r);
 		} else {
-			eprintf ("Missing parameters\n");
+			R_LOGFI ("Missing parameters\n");
 		}
 		free (p);
 		break;
@@ -435,8 +435,8 @@ static int cmd_cp(void *data, const char *input) {
 		return true;
 	}
 	if (strlen (input) < 3) {
-		eprintf ("Usage: cp src dst\n");
-		eprintf ("Usage: cp.orig  # cp $file $file.orig\n");
+		R_LOGFI ("Usage: cp src dst\n");
+		R_LOGFI ("Usage: cp.orig  # cp $file $file.orig\n");
 		return false;
 	}
 	char *src = strdup (input + 2);
@@ -449,7 +449,7 @@ static int cmd_cp(void *data, const char *input) {
 		free (src);
 		return rc;
 	}
-	eprintf ("Usage: cp src dst\n");
+	R_LOGFI ("Usage: cp src dst\n");
 	free (src);
 	return false;
 }
@@ -490,7 +490,7 @@ static int cmd_cmp(void *data, const char *input) {
 		break;
 	case '*':
 		if (!input[2]) {
-			eprintf ("Usage: cx* 00..22'\n");
+			R_LOGFI ("Usage: cx* 00..22'\n");
 			return 0;
 		}
 
@@ -513,14 +513,14 @@ static int cmd_cmp(void *data, const char *input) {
 			break;
 		case '*':
 			if (input[2] != ' ') {
-				eprintf ("Usage: cx* 00..22'\n");
+				R_LOGFI ("Usage: cx* 00..22'\n");
 				return 0;
 			}
 			mode = '*';
 			input += 3;
 			break;
 		default:
-			eprintf ("Usage: cx 00..22'\n");
+			R_LOGFI ("Usage: cx 00..22'\n");
 			return 0;
 		}
 		if (!(filled = (char *) malloc (strlen (input) + 1))) {
@@ -540,7 +540,7 @@ static int cmd_cmp(void *data, const char *input) {
 
 		ret = r_hex_str2bin (filled, buf);
 		if (ret < 1) {
-			eprintf ("Cannot parse hexpair\n");
+			R_LOGFI ("Cannot parse hexpair\n");
 		} else {
 			val = radare_compare (core, block, buf, ret, mode);
 		}
@@ -552,7 +552,7 @@ static int cmd_cmp(void *data, const char *input) {
 		if (buf) {
 			if (!r_io_read_at (core->io, r_num_math (core->num,
 					    input + 1), buf, core->blocksize)) {
-				eprintf ("Cannot read hexdump\n");
+				R_LOGFI ("Cannot read hexdump\n");
 			} else {
 				val = radare_compare (core, block, buf, ret, mode);
 			}
@@ -562,18 +562,18 @@ static int cmd_cmp(void *data, const char *input) {
 		break;
 	case 'f':
 		if (input[1] != ' ') {
-			eprintf ("Please. use 'cf [file]'\n");
+			R_LOGFI ("Please. use 'cf [file]'\n");
 			return false;
 		}
 		fd = r_sandbox_fopen (input + 2, "rb");
 		if (!fd) {
-			eprintf ("Cannot open file '%s'\n", input + 2);
+			R_LOGFI ("Cannot open file '%s'\n", input + 2);
 			return false;
 		}
 		buf = (ut8 *) malloc (core->blocksize);
 		if (buf) {
 			if (fread (buf, 1, core->blocksize, fd) < 1) {
-				eprintf ("Cannot read file %s\n", input + 2);
+				R_LOGFI ("Cannot read file %s\n", input + 2);
 			} else {
 				val = radare_compare (core, block, buf, core->blocksize, 0);
 			}
@@ -592,7 +592,7 @@ static int cmd_cmp(void *data, const char *input) {
 					char *newdir = oldcwd;
 					oldcwd = r_sys_getdir ();
 					if (r_sandbox_chdir (newdir) == -1) {
-						eprintf ("Cannot chdir to %s\n", newdir);
+						R_LOGFI ("Cannot chdir to %s\n", newdir);
 						free (oldcwd);
 						oldcwd = newdir;
 					} else {
@@ -608,24 +608,24 @@ static int cmd_cmp(void *data, const char *input) {
 						free (oldcwd);
 						oldcwd = r_sys_getdir ();
 						if (r_sandbox_chdir (homepath) == -1) {
-							eprintf ("Cannot chdir to %s\n", homepath);
+							R_LOGFI ("Cannot chdir to %s\n", homepath);
 						}
 					}
 					free (homepath);
 				} else {
-					eprintf ("Cannot find home\n");
+					R_LOGFI ("Cannot find home\n");
 				}
 			} else {
 				free (oldcwd);
 				oldcwd = r_sys_getdir ();
 				if (r_sandbox_chdir (input + 1) == -1) {
-					eprintf ("Cannot chdir to %s\n", input + 1);
+					R_LOGFI ("Cannot chdir to %s\n", input + 1);
 				}
 			}
 		} else {
 			char *home = r_sys_getenv (R_SYS_HOME);
 			if (!home || r_sandbox_chdir (home) == -1) {
-				eprintf ("Cannot find home.\n");
+				R_LOGFI ("Cannot find home.\n");
 			}
 			free (home);
 		}
@@ -679,7 +679,7 @@ static int cmd_cmp(void *data, const char *input) {
 			r_anal_diff_setup (core->anal, true, -1, -1);
 			break;
 		case 'f':         // "cgf"
-			eprintf ("TODO: agf is experimental\n");
+			R_LOGFI ("TODO: agf is experimental\n");
 			r_anal_diff_setup (core->anal, true, -1, -1);
 			r_core_gdiff_fcn (core, core->offset,
 				r_num_math (core->num, input + 2));
@@ -702,18 +702,18 @@ static int cmd_cmp(void *data, const char *input) {
 		}
 
 		if (r_file_size (file2) <= 0) {
-			eprintf ("Cannot compare with file %s\n", file2);
+			R_LOGFI ("Cannot compare with file %s\n", file2);
 			return false;
 		}
 
 		if (!(core2 = r_core_new ())) {
-			eprintf ("Cannot init diff core\n");
+			R_LOGFI ("Cannot init diff core\n");
 			return false;
 		}
 		r_core_loadlibs (core2, R_CORE_LOADLIBS_ALL, NULL);
 		core2->io->va = core->io->va;
 		if (!r_core_file_open (core2, file2, 0, 0LL)) {
-			eprintf ("Cannot open diff file '%s'\n", file2);
+			R_LOGFI ("Cannot open diff file '%s'\n", file2);
 			r_core_free (core2);
 			r_core_bind_cons (core);
 			return false;
@@ -822,7 +822,7 @@ static int cmd_cmp(void *data, const char *input) {
 		}
 		default:
 		case '?':
-			eprintf ("Usage: cv[1248] [num]\n"
+			R_LOGFI ("Usage: cv[1248] [num]\n"
 				"Show offset if current value equals to the one specified\n"
 				" /v 18312   # serch for a known value\n"
 				" dc\n"
@@ -843,7 +843,7 @@ static int cmd_cmp(void *data, const char *input) {
 			default: sz = '4'; break; // default
 			}
 		} else if (sz == '?') {
-			eprintf ("Usage: cV[1248] [addr] @ addr2\n"
+			R_LOGFI ("Usage: cV[1248] [addr] @ addr2\n"
 				"Compare n bytes from one address to current one and return in $? 0 or 1\n");
 		}
 		sz -= '0';

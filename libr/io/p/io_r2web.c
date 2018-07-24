@@ -94,10 +94,10 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		RIOR2Web *mal = R_NEW0 (RIOR2Web);
 		if (!mal) return NULL;
 		char *url = r_str_newf ("http://%s/?V", pathname+8);
-		//eprintf  ("URL:(%s)\n", url);
+		//R_LOGFI  ("URL:(%s)\n", url);
 		out = r_socket_http_get (url, &code, &rlen);
-		//eprintf ("RES %d %d\n", code, rlen);
-		//eprintf ("OUT(%s)\n", out);
+		//R_LOGFI ("RES %d %d\n", code, rlen);
+		//R_LOGFI ("OUT(%s)\n", out);
 		if (out && rlen>0) {
 			mal->fd = getmalfd (mal);
 			mal->url = r_str_newf ("http://%s", pathname+8);

@@ -157,7 +157,7 @@ R_API int r_cons_w32_print(const ut8 *ptr, int len, int vmode) {
 		if (esc == 1) {
 			// \x1b[2J
 			if (ptr[0] != '[') {
-				eprintf ("Oops invalid escape char\n");
+				R_LOGFI ("Oops invalid escape char\n");
 				esc = 0;
 				str = ptr + 1;
 				continue;

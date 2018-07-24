@@ -30,6 +30,7 @@
 #include <errno.h>
 #include <ctype.h>
 #include <r_types.h>
+#include "r_util/r_log.h"
 
 static int getc_nospace(FILE *f) {
 	int c;
@@ -154,7 +155,7 @@ R_API bool r_base85_decode(FILE *fp, int delims, int ignore_garbage) {
 			if (ignore_garbage) {
 				continue;
 			}
-			eprintf ("ascii85: invalid character '%c'\n", c);
+			R_LOGFI ("ascii85: invalid character '%c'\n", c);
 			return false;
 		}
 		tuple += (c - '!') * pows[count++];

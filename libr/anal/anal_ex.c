@@ -295,7 +295,7 @@ R_API RList* r_anal_ex_analysis_driver(RAnal *anal, RAnalState *state, ut64 addr
 		state->current_op = NULL;
 		state->current_bb = NULL;
 		if (!consumed_iter) {
-			eprintf ("No bytes consumed, bailing!\n");
+			R_LOGFI ("No bytes consumed, bailing!\n");
 			break;
 		}
 		consumed_iter = 0;

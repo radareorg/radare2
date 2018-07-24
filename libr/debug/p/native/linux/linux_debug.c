@@ -122,7 +122,7 @@ int linux_handle_signals (RDebug *dbg) {
 				break;
 		}
 		if (dbg->reason.signum != SIGTRAP) {
-			eprintf ("[+] SIGNAL %d errno=%d addr=0x%08"PFMT64x
+			R_LOGFI ("[+] SIGNAL %d errno=%d addr=0x%08"PFMT64x
 				" code=%d ret=%d\n",
 				siginfo.si_signo, siginfo.si_errno,
 				(ut64)(size_t)siginfo.si_addr, siginfo.si_code, ret);
@@ -173,7 +173,7 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 				r_sys_perror ("ptrace GETEVENTMSG");
 				return R_DEBUG_REASON_ERROR;
 			}
-		//	eprintf ("PTRACE_EVENT_CLONE new_thread=%"PFMT64d"\n", (ut64)data);
+		//	R_LOGFI ("PTRACE_EVENT_CLONE new_thread=%"PFMT64d"\n", (ut64)data);
 			linux_add_and_attach_new_thread (dbg, (int)data);
 			return R_DEBUG_REASON_NEW_TID;
 		}
@@ -185,7 +185,7 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 				return R_DEBUG_REASON_ERROR;
 			}
 
-		//	eprintf ("PTRACE_EVENT_FORK new_pid=%"PFMT64d"\n", (ut64)data);
+		//	R_LOGFI ("PTRACE_EVENT_FORK new_pid=%"PFMT64d"\n", (ut64)data);
 			dbg->forked_pid = data;
 			// TODO: more handling here?
 			/* we have a new process that we are already tracing */
@@ -197,10 +197,10 @@ RDebugReasonType linux_ptrace_event (RDebug *dbg, int pid, int status) {
 			r_sys_perror ("ptrace GETEVENTMSG");
 			return R_DEBUG_REASON_ERROR;
 		}
-		//eprintf ("PTRACE_EVENT_EXIT pid=%d, status=0x%"PFMT64x"\n", pid, (ut64)data);
+		//R_LOGFI ("PTRACE_EVENT_EXIT pid=%d, status=0x%"PFMT64x"\n", pid, (ut64)data);
 		return pid != dbg->pid ? R_DEBUG_REASON_EXIT_TID : R_DEBUG_REASON_EXIT_PID;
 	default:
-		eprintf ("Unknown PTRACE_EVENT encountered: %d\n", pt_evt);
+		R_LOGFI ("Unknown PTRACE_EVENT encountered: %d\n", pt_evt);
 		break;
 	}
 	return R_DEBUG_REASON_UNKNOWN;
@@ -289,7 +289,7 @@ void linux_attach_new_process (RDebug *dbg) {
 	}
 	int stopped = linux_stop_process (dbg->forked_pid);
 	if (!stopped) {
-		eprintf ("Could not stop pid (%d)\n", dbg->forked_pid);
+		R_LOGFI ("Could not stop pid (%d)\n", dbg->forked_pid);
 	}
 	linux_attach (dbg, dbg->forked_pid);
 	r_debug_select (dbg, dbg->forked_pid, dbg->forked_pid);
@@ -325,7 +325,7 @@ repeat:
 			}
 
 			if (WIFEXITED (status)) {
-				eprintf ("child exited with status %d\n", WEXITSTATUS (status));
+				R_LOGFI ("child exited with status %d\n", WEXITSTATUS (status));
 				if (pid == dbg->main_pid) {
 					reason = R_DEBUG_REASON_DEAD;
 				} else {
@@ -333,35 +333,35 @@ repeat:
 					linux_remove_thread (dbg, pid);
 				}
 			} else if (WIFSIGNALED (status)) {
-				eprintf ("child received signal %d\n", WTERMSIG (status));
+				R_LOGFI ("child received signal %d\n", WTERMSIG (status));
 				reason = R_DEBUG_REASON_SIGNAL;
 			} else if (WIFSTOPPED (status)) {
 				if (WSTOPSIG (status) != SIGTRAP &&
 					WSTOPSIG (status) != SIGSTOP) {
-					eprintf ("child stopped with signal %d\n", WSTOPSIG (status));
+					R_LOGFI ("child stopped with signal %d\n", WSTOPSIG (status));
 					reason = R_DEBUG_REASON_DEAD;
 				}
 				if (!linux_handle_signals (dbg)) {
-					eprintf ("can't handle signals\n");
+					R_LOGFI ("can't handle signals\n");
 					return R_DEBUG_REASON_ERROR;
 				}
 				reason = dbg->reason.type;
 #ifdef WIFCONTINUED
 			} else if (WIFCONTINUED (status)) {
-				eprintf ("child continued...\n");
+				R_LOGFI ("child continued...\n");
 				reason = R_DEBUG_REASON_NONE;
 #endif
 			} else if (status == 1) {
-				eprintf ("EEK DEAD DEBUGEE!\n");
+				R_LOGFI ("EEK DEAD DEBUGEE!\n");
 				reason = R_DEBUG_REASON_DEAD;
 			} else if (status == 0) {
-				eprintf ("STATUS=0?!?!?!?\n");
+				R_LOGFI ("STATUS=0?!?!?!?\n");
 				reason = R_DEBUG_REASON_DEAD;
 			} else {
 				if (ret != pid) {
 					reason = R_DEBUG_REASON_NEW_PID;
 				} else {
-					eprintf ("CRAP. returning from wait without knowing why...\n");
+					R_LOGFI ("CRAP. returning from wait without knowing why...\n");
 				}
 			}
 			if (reason != R_DEBUG_REASON_UNKNOWN) {
@@ -433,7 +433,7 @@ static void linux_attach_all (RDebug *dbg) {
 			if (th->pid && th->pid != dbg->main_pid) {
 				ret = linux_attach_single_pid (dbg, th->pid);
 				if (ret == -1) {
-					eprintf ("PID %d\n", th->pid);
+					R_LOGFI ("PID %d\n", th->pid);
 					perror ("ptrace (PT_ATTACH)");
 				}
 			}
@@ -652,23 +652,23 @@ RList *linux_thread_list(int pid, RList *list) {
 }
 
 #define PRINT_FPU(fpregs) \
-	eprintf ("cwd = 0x%04x  ; control   ", (fpregs).cwd);\
-	eprintf ("swd = 0x%04x  ; status\n", (fpregs).swd);\
-	eprintf ("ftw = 0x%04x              ", (fpregs).ftw);\
-	eprintf ("fop = 0x%04x\n", fpregs.fop);\
-	eprintf ("rip = 0x%016"PFMT64x"  ", (ut64)(fpregs).rip);\
-	eprintf ("rdp = 0x%016"PFMT64x"\n", (ut64)(fpregs).rdp);\
-	eprintf ("mxcsr = 0x%08x        ", (fpregs).mxcsr);\
-	eprintf ("mxcr_mask = 0x%08x\n", (fpregs).mxcr_mask)\
+	R_LOGFI ("cwd = 0x%04x  ; control   ", (fpregs).cwd);\
+	R_LOGFI ("swd = 0x%04x  ; status\n", (fpregs).swd);\
+	R_LOGFI ("ftw = 0x%04x              ", (fpregs).ftw);\
+	R_LOGFI ("fop = 0x%04x\n", fpregs.fop);\
+	R_LOGFI ("rip = 0x%016"PFMT64x"  ", (ut64)(fpregs).rip);\
+	R_LOGFI ("rdp = 0x%016"PFMT64x"\n", (ut64)(fpregs).rdp);\
+	R_LOGFI ("mxcsr = 0x%08x        ", (fpregs).mxcsr);\
+	R_LOGFI ("mxcr_mask = 0x%08x\n", (fpregs).mxcr_mask)\
 
 #define PRINT_FPU_NOXMM(fpregs) \
-	eprintf ("cwd = 0x%04lx  ; control   ", (fpregs).cwd);\
-	eprintf ("swd = 0x%04lx  ; status\n", (fpregs).swd);\
-	eprintf ("twd = 0x%04lx              ", (fpregs).twd);\
-	eprintf ("fip = 0x%04lx          \n", (fpregs).fip);\
-	eprintf ("fcs = 0x%04lx              ", (fpregs).fcs);\
-	eprintf ("foo = 0x%04lx          \n", (fpregs).foo);\
-	eprintf ("fos = 0x%04lx              ", (fpregs).fos)
+	R_LOGFI ("cwd = 0x%04lx  ; control   ", (fpregs).cwd);\
+	R_LOGFI ("swd = 0x%04lx  ; status\n", (fpregs).swd);\
+	R_LOGFI ("twd = 0x%04lx              ", (fpregs).twd);\
+	R_LOGFI ("fip = 0x%04lx          \n", (fpregs).fip);\
+	R_LOGFI ("fcs = 0x%04lx              ", (fpregs).fcs);\
+	R_LOGFI ("foo = 0x%04lx          \n", (fpregs).foo);\
+	R_LOGFI ("fos = 0x%04lx              ", (fpregs).fos)
 
 void print_fpu (void *f, int r){
 #if __x86_64__ || __i386__
@@ -676,13 +676,13 @@ void print_fpu (void *f, int r){
 	struct user_fpregs_struct fpregs = *(struct user_fpregs_struct*)f;
 #if __x86_64__
 #if !__ANDROID__
-	eprintf ("---- x86-64 ----\n");
+	R_LOGFI ("---- x86-64 ----\n");
 	PRINT_FPU (fpregs);
-	eprintf ("size = 0x%08x\n", (ut32)sizeof (fpregs));
+	R_LOGFI ("size = 0x%08x\n", (ut32)sizeof (fpregs));
 	for (i = 0; i < 16; i++) {
 		ut32 *a = (ut32*)&fpregs.xmm_space;
 		a = a + (i * 4);
-		eprintf ("xmm%d = %08x %08x %08x %08x   ", i, (int)a[0], (int)a[1],
+		R_LOGFI ("xmm%d = %08x %08x %08x %08x   ", i, (int)a[0], (int)a[1],
 			(int)a[2], (int)a[3] );
 		if (i < 8) {
 			ut64 *b = (ut64*)&fpregs.st_space[i * 4];
@@ -691,11 +691,11 @@ void print_fpu (void *f, int r){
 			double *d = (double *)&fpregs.st_space[i*4];
 			c = c + (i * 4);
 			f = f + (i * 4);
-			eprintf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (%08x)  |\
+			R_LOGFI ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (%08x)  |\
 				%0.3f (%08x) \n", i, *d, *b,
 				(float)f[0], c[0], (float)f[1], c[1]);
 		} else {
-			eprintf ("\n");
+			R_LOGFI ("\n");
 		}
 	}
 #else
@@ -706,7 +706,7 @@ void print_fpu (void *f, int r){
 		float *f = (float *)&fpregs.st_space;
 		c = c + (i * 4);
 		f = f + (i * 4);
-		eprintf ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (%08x)  | \
+		R_LOGFI ("st%d =%0.3lg (0x%016"PFMT64x") | %0.3f (%08x)  | \
 			%0.3f (%08x) \n", i,
 			(double)*((double*)&fpregs.st_space[i*4]), *b, (float) f[0],
 			c[0], (float) f[1], c[1]);
@@ -716,16 +716,16 @@ void print_fpu (void *f, int r){
 	if (!r) {
 #if !__ANDROID__
 		struct user_fpxregs_struct fpxregs = *(struct user_fpxregs_struct*)f;
-		eprintf ("---- x86-32 ----\n");
-		eprintf ("cwd = 0x%04x  ; control   ", fpxregs.cwd);
-		eprintf ("swd = 0x%04x  ; status\n", fpxregs.swd);
-		eprintf ("twd = 0x%04x ", fpxregs.twd);
-		eprintf ("fop = 0x%04x\n", fpxregs.fop);
-		eprintf ("fip = 0x%08x\n", fpxregs.fip);
-		eprintf ("fcs = 0x%08x\n", fpxregs.fcs);
-		eprintf ("foo = 0x%08x\n", fpxregs.foo);
-		eprintf ("fos = 0x%08x\n", fpxregs.fos);
-		eprintf ("mxcsr = 0x%08x\n", fpxregs.mxcsr);
+		R_LOGFI ("---- x86-32 ----\n");
+		R_LOGFI ("cwd = 0x%04x  ; control   ", fpxregs.cwd);
+		R_LOGFI ("swd = 0x%04x  ; status\n", fpxregs.swd);
+		R_LOGFI ("twd = 0x%04x ", fpxregs.twd);
+		R_LOGFI ("fop = 0x%04x\n", fpxregs.fop);
+		R_LOGFI ("fip = 0x%08x\n", fpxregs.fip);
+		R_LOGFI ("fcs = 0x%08x\n", fpxregs.fcs);
+		R_LOGFI ("foo = 0x%08x\n", fpxregs.foo);
+		R_LOGFI ("fos = 0x%08x\n", fpxregs.fos);
+		R_LOGFI ("mxcsr = 0x%08x\n", fpxregs.mxcsr);
 		for(i = 0; i < 8; i++) {
 			ut32 *a = (ut32*)(&fpxregs.xmm_space);
 			ut64 *b = (ut64 *)(&fpxregs.st_space[i * 4]);
@@ -734,16 +734,16 @@ void print_fpu (void *f, int r){
 			a = a + (i * 4);
 			c = c + (i * 4);
 			f = f + (i * 4);
-			eprintf ("xmm%d = %08x %08x %08x %08x   ", i, (int)a[0],
+			R_LOGFI ("xmm%d = %08x %08x %08x %08x   ", i, (int)a[0],
 				(int)a[1], (int)a[2], (int)a[3] );
-			eprintf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x) |\
+			R_LOGFI ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x) |\
 				%0.3f (0x%08x)\n", i,
 				(double)*((double*)(&fpxregs.st_space[i*4])), b[0],
 				f[0], c[0], f[1], c[1]);
 		}
 #endif // !__ANDROID__
 	} else {
-		eprintf ("---- x86-32-noxmm ----\n");
+		R_LOGFI ("---- x86-32-noxmm ----\n");
 		PRINT_FPU_NOXMM (fpregs);
 		for(i = 0; i < 8; i++) {
 			ut64 *b = (ut64 *)(&fpregs.st_space[i*4]);
@@ -752,7 +752,7 @@ void print_fpu (void *f, int r){
 			float *f = (float *)&fpregs.st_space;
 			c = c + (i * 4);
 			f = f + (i * 4);
-			eprintf ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x)  | \
+			R_LOGFI ("st%d = %0.3lg (0x%016"PFMT64x") | %0.3f (0x%08x)  | \
 				%0.3f (0x%08x)\n", i, d[0], b[0], f[0], c[0], f[1], c[1]);
 		}
 	}
@@ -784,7 +784,7 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 			long ret = ptrace (PTRACE_PEEKUSER, pid,
 					r_offsetof (struct user, u_debugreg[i]), 0);
 			if ((i+1) * sizeof (ret) > size) {
-				eprintf ("linux_reg_get: Buffer too small %d\n", size);
+				R_LOGFI ("linux_reg_get: Buffer too small %d\n", size);
 				break;
 			}
 			memcpy (buf + (i * sizeof (ret)), &ret, sizeof (ret));
@@ -903,7 +903,7 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 			if (i == 4 || i == 5) continue;
 			if (ptrace (PTRACE_POKEUSER, dbg->pid, r_offsetof (
 					struct user, u_debugreg[i]), val[i])) {
-				eprintf ("ptrace error for dr %d\n", i);
+				R_LOGFI ("ptrace error for dr %d\n", i);
 				r_sys_perror ("ptrace POKEUSER");
 			}
 		}
@@ -962,7 +962,7 @@ RList *linux_desc_list (int pid) {
 		if (len + len2 + 1 >= sizeof(file)) {
 			r_list_free (ret);
 			closedir (dd);
-			eprintf ("Filename is too long");
+			R_LOGFI ("Filename is too long");
 			return NULL;
 		}
 		memcpy (file, path, len);

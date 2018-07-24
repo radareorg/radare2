@@ -532,7 +532,7 @@ static int analop_vle(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 		case R_ANAL_OP_TYPE_XOR:
 			break;
 		default:
-			//eprintf ("Missing an R_ANAL_OP_TYPE (%"PFMT64u")\n", op->type);
+			//R_LOGFI ("Missing an R_ANAL_OP_TYPE (%"PFMT64u")\n", op->type);
 			break;
 		}
 		vle_free (instr);

@@ -11,7 +11,7 @@ R_API int r_core_setup_debugger (RCore *r, const char *debugbackend, bool attach
 	p = fd ? fd->data : NULL;
 	r_config_set_i (r->config, "cfg.debug", 1);
 	if (!p) {
-		eprintf ("Invalid debug io\n");
+		R_LOGFI ("Invalid debug io\n");
 		return false;
 	}
 
@@ -72,7 +72,7 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 		fd = r_sandbox_fopen (file, "wb");
 	}
 	if (!fd) {
-		eprintf ("Cannot open '%s' for writing\n", file);
+		R_LOGFI ("Cannot open '%s' for writing\n", file);
 		return false;
 	}
 	/* some io backends seems to be buggy in those cases */
@@ -80,7 +80,7 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 		bs = 4096;
 	buf = malloc (bs);
 	if (!buf) {
-		eprintf ("Cannot alloc %d byte(s)\n", bs);
+		R_LOGFI ("Cannot alloc %d byte(s)\n", bs);
 		fclose (fd);
 		return false;
 	}
@@ -94,7 +94,7 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 		}
 		r_io_read_at (core->io, addr + i, buf, bs);
 		if (fwrite (buf, bs, 1, fd) < 1) {
-			eprintf ("write error\n");
+			R_LOGFI ("write error\n");
 			break;
 		}
 	}
@@ -128,13 +128,13 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 			// Output is invalid if there was just a single nibble,
 			// but in that case, len is negative (-1).
 			if (len <= 0) {
-				eprintf ("Invalid hexpair string\n");
+				R_LOGFI ("Invalid hexpair string\n");
 				goto beach;
 			}
 		} else {  // use clipboard as key
 			len = core->yank_buf->length;
 			if (len <= 0) {
-				eprintf ("Clipboard is empty and no value argument(s) given\n");
+				R_LOGFI ("Clipboard is empty and no value argument(s) given\n");
 				goto beach;
 			}
 			str = r_mem_dup (core->yank_buf->buf, len);
@@ -174,7 +174,7 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 			step = r_num_math (core->num, s);
 		}
 		free (os);
-		eprintf ("from %d to %d step %d size %d\n", from, to, step, wordsize);
+		R_LOGFI ("from %d to %d step %d size %d\n", from, to, step, wordsize);
 		dif = (to <= from)? UT8_MAX: to - from + 1;
 		if (wordsize == 1) {
 			if (to < 1 || to > UT8_MAX) {
@@ -211,7 +211,7 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 				r_write_le64 (buf + i, num64);
 			}
 		} else {
-			eprintf ("Invalid word size. Use 1, 2, 4 or 8\n");
+			R_LOGFI ("Invalid word size. Use 1, 2, 4 or 8\n");
 		}
 	} else if (op=='2' || op=='4') {
 		op -= '0';
@@ -377,7 +377,7 @@ R_API int r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist) {
 	}
 	shift_buf = calloc (b_size, 1);
 	if (!shift_buf) {
-		eprintf ("Cannot allocated %d byte(s)\n", (int)b_size);
+		R_LOGFI ("Cannot allocated %d byte(s)\n", (int)b_size);
 		return false;
 	}
 
@@ -416,7 +416,7 @@ R_API int r_core_block_read(RCore *core) {
 
 R_API int r_core_is_valid_offset (RCore *core, ut64 offset) {
 	if (!core) {
-		eprintf ("r_core_is_valid_offset: core is NULL\n");
+		R_LOGFI ("r_core_is_valid_offset: core is NULL\n");
 		r_sys_backtrace ();
 		return R_FAIL;
 	}

@@ -25,12 +25,12 @@ R_API void r_anal_esil_session_list(RAnalEsil *esil) {
 
 R_API RAnalEsilSession *r_anal_esil_session_add(RAnalEsil *esil) {
 	if (!esil || !esil->stack_addr || !esil->stack_size) {
-		eprintf ("r_anal_esil_session_add: Cannot find any stack, use 'aeim' first.\n");
+		R_LOGFI ("r_anal_esil_session_add: Cannot find any stack, use 'aeim' first.\n");
 		return NULL;
 	}
 	const char *name = r_reg_get_name (esil->anal->reg, R_REG_NAME_PC);
 	if (!name) {
-		eprintf ("Cannot get alias name for the program counter register. Wrong register profile?\n");
+		R_LOGFI ("Cannot get alias name for the program counter register. Wrong register profile?\n");
 		return NULL;
 	}
 	RAnalEsilSession *session = R_NEW0 (RAnalEsilSession);
@@ -42,7 +42,7 @@ R_API RAnalEsilSession *r_anal_esil_session_add(RAnalEsil *esil) {
 	session->size = esil->stack_size;
 	session->data = (ut8 *) R_NEWS0 (ut8, session->size);
 	if (!session->data) {
-		eprintf ("Cannot allocate 0x%"PFMT64x" bytes for stack\n", session->size);
+		R_LOGFI ("Cannot allocate 0x%"PFMT64x" bytes for stack\n", session->size);
 		R_FREE (session);
 		return NULL;
 	}

@@ -45,7 +45,7 @@ static int loading_thread(RThread *th) {
 	int i = 0;
 	if (th) {
 		while (!th->breaked) {
-			eprintf ("%c] Loading..%c     \r[", tok[i%4], "."[i%2]);
+			R_LOGFI ("%c] Loading..%c     \r[", tok[i%4], "."[i%2]);
 			r_sys_usleep (100000);
 			i++;
 		}
@@ -114,9 +114,9 @@ static int verify_version(int show) {
 	}
 	if (ret) {
 		if (show) {
-			eprintf ("WARNING: r2 library versions mismatch!\n");
+			R_LOGFI ("WARNING: r2 library versions mismatch!\n");
 		} else {
-			eprintf ("WARNING: r2 library versions mismatch! See r2 -V\n");
+			R_LOGFI ("WARNING: r2 library versions mismatch! See r2 -V\n");
 		}
 	}
 	return ret;
@@ -288,7 +288,7 @@ static int rabin_delegate(RThread *th) {
 		rabin_cmd = NULL;
 	}
 	if (th) {
-		eprintf ("rabin2: done\n");
+		R_LOGFI ("rabin2: done\n");
 	}
 	return 0;
 }
@@ -304,7 +304,7 @@ static void radare2_rc(RCore *r) {
 	char *homerc = r_str_home (".radare2rc");
 	if (homerc && r_file_is_regular (homerc)) {
 		if (has_debug) {
-			eprintf ("USER CONFIG loaded from %s\n", homerc);
+			R_LOGFI ("USER CONFIG loaded from %s\n", homerc);
 		}
 		r_core_cmd_file (r, homerc);
 	}
@@ -312,7 +312,7 @@ static void radare2_rc(RCore *r) {
 	homerc = r_str_home (R2_HOME_RC);
 	if (homerc && r_file_is_regular (homerc)) {
 		if (has_debug) {
-			eprintf ("USER CONFIG loaded from %s\n", homerc);
+			R_LOGFI ("USER CONFIG loaded from %s\n", homerc);
 		}
 		r_core_cmd_file (r, homerc);
 	}
@@ -328,7 +328,7 @@ static void radare2_rc(RCore *r) {
 					char *path = r_str_newf ("%s/%s", homerc, file);
 					if (r_file_is_regular (path)) {
 						if (has_debug) {
-							eprintf ("USER CONFIG loaded from %s\n", homerc);
+							R_LOGFI ("USER CONFIG loaded from %s\n", homerc);
 						}
 						r_core_cmd_file (r, path);
 					}
@@ -349,12 +349,12 @@ static bool run_commands(RList *cmds, RList *files, bool quiet) {
 	/* -i */
 	r_list_foreach (files, iter, file) {
 		if (!r_file_exists (file)) {
-			eprintf ("Script '%s' not found.\n", file);
+			R_LOGFI ("Script '%s' not found.\n", file);
 			return false;
 		}
 		ret = r_core_run_script (&r, file);
 		if (ret == -2) {
-			eprintf ("[c] Cannot open '%s'\n", file);
+			R_LOGFI ("[c] Cannot open '%s'\n", file);
 		}
 		if (ret < 0 || (ret == 0 && quiet)) {
 			r_cons_flush ();
@@ -571,7 +571,7 @@ int main(int argc, char **argv, char **envp) {
 #if DEBUGGER
 		case 'd': debug = 1; break;
 #else
-		case 'd': eprintf ("Sorry. No debugger backend available.\n"); return 1;
+		case 'd': R_LOGFI ("Sorry. No debugger backend available.\n"); return 1;
 #endif
 		case 'D':
 			debug = 2;
@@ -702,22 +702,22 @@ int main(int argc, char **argv, char **envp) {
 	}
 	if (noStderr) {
 		if (-1 == close (2)) {
-			eprintf ("Failed to close stderr");
+			R_LOGFI ("Failed to close stderr");
 			return 1;
 		}
 		const char nul[] = R_SYS_DEVNULL;
 		int new_stderr = open (nul, O_RDWR);
 		if (-1 == new_stderr) {
-			eprintf ("Failed to open %s", nul);
+			R_LOGFI ("Failed to open %s", nul);
 			return 1;
 		}
 		if (2 != new_stderr) {
 			if (-1 == dup2 (new_stderr, 2)) {
-				eprintf ("Failed to dup2 stderr");
+				R_LOGFI ("Failed to dup2 stderr");
 				return 1;
 			}
 			if (-1 == close (new_stderr)) {
-				eprintf ("Failed to close %s", nul);
+				R_LOGFI ("Failed to close %s", nul);
 				return 1;
 			}
 		}
@@ -742,7 +742,7 @@ int main(int argc, char **argv, char **envp) {
 				}
 				free (msg);
 			} else {
-				eprintf ("Cannot read dbg.profile\n");
+				R_LOGFI ("Cannot read dbg.profile\n");
 				pfile = NULL; //strdup ("");
 			}
 		} else {
@@ -771,7 +771,7 @@ int main(int argc, char **argv, char **envp) {
 	if (customRarunProfile) {
 		char *tfn = r_file_temp (".rarun2");
 		if (!r_file_dump (tfn, (const ut8*)customRarunProfile, strlen (customRarunProfile), 0)) {
-			eprintf ("Cannot create %s\n", tfn);
+			R_LOGFI ("Cannot create %s\n", tfn);
 		} else {
 			haveRarunProfile = true;
 			r_config_set (r.config, "dbg.profile", tfn);
@@ -780,7 +780,7 @@ int main(int argc, char **argv, char **envp) {
 	}
 	if (debug == 1) {
 		if (optind >= argc && !haveRarunProfile) {
-			eprintf ("Missing argument for -d\n");
+			R_LOGFI ("Missing argument for -d\n");
 			return 1;
 		}
 		const char *src = haveRarunProfile? pfile: argv[optind];
@@ -829,7 +829,7 @@ int main(int argc, char **argv, char **envp) {
 	if (do_connect) {
 		const char *uri = argv[optind];
 		if (optind >= argc) {
-			eprintf ("Missing URI for -C\n");
+			R_LOGFI ("Missing URI for -C\n");
 			return 1;
 		}
 		if (!strncmp (uri, "http://", 7)) {
@@ -877,11 +877,11 @@ int main(int argc, char **argv, char **envp) {
 	// if (argv[optind] && r_file_is_directory (argv[optind]))
 	if (pfile && r_file_is_directory (pfile)) {
 		if (debug) {
-			eprintf ("Error: Cannot debug directories, yet.\n");
+			R_LOGFI ("Error: Cannot debug directories, yet.\n");
 			return 1;
 		}
 		if (chdir (argv[optind])) {
-			eprintf ("[d] Cannot open directory\n");
+			R_LOGFI ("[d] Cannot open directory\n");
 			return 1;
 		}
 	} else if (argv[optind] && !strcmp (argv[optind], "=")) {
@@ -896,7 +896,7 @@ int main(int argc, char **argv, char **envp) {
 			if (!fh) {
 				r_cons_flush ();
 				free (buf);
-				eprintf ("[=] Cannot open '%s'\n", path);
+				R_LOGFI ("[=] Cannot open '%s'\n", path);
 				return 1;
 			}
 			r_io_write_at (r.io, 0, buf, sz);
@@ -904,7 +904,7 @@ int main(int argc, char **argv, char **envp) {
 			free (buf);
 			// TODO: load rbin thing
 		} else {
-			eprintf ("Cannot slurp from stdin\n");
+			R_LOGFI ("Cannot slurp from stdin\n");
 			return 1;
 		}
 	} else if (strcmp (argv[optind - 1], "--") && !(r_config_get (r.config, "prj.name") && r_config_get (r.config, "prj.name")[0]) ) {
@@ -919,7 +919,7 @@ int main(int argc, char **argv, char **envp) {
 			r_config_set (r.config, "cfg.debug", "true");
 			perms = R_IO_READ | R_IO_WRITE | R_IO_EXEC;
 			if (optind >= argc) {
-				eprintf ("No program given to -d\n");
+				R_LOGFI ("No program given to -d\n");
 				return 1;
 			}
 			if (debug == 2) {
@@ -1050,7 +1050,7 @@ int main(int argc, char **argv, char **envp) {
 						if (r_io_create (r.io, pfile, 0644, 0)) {
 							fh = r_core_file_open (&r, pfile, perms, mapaddr);
 						} else {
-							eprintf ("r_io_create: Permission denied.\n");
+							R_LOGFI ("r_io_create: Permission denied.\n");
 						}
 					}
 					if (fh) {
@@ -1099,7 +1099,7 @@ int main(int argc, char **argv, char **envp) {
 						// run_anal = 0;
 						run_anal = -1;
 					} else {
-						eprintf ("Cannot find project file\n");
+						R_LOGFI ("Cannot find project file\n");
 					}
 				} else {
 					if (fh) {
@@ -1112,8 +1112,8 @@ int main(int argc, char **argv, char **envp) {
 				}
 			}
 			if (mapaddr) {
-				eprintf ("WARNING: using oba to load the syminfo from different mapaddress.\n");
-				eprintf ("TODO: Must use the API instead of running commands to speedup loading times.\n");
+				R_LOGFI ("WARNING: using oba to load the syminfo from different mapaddress.\n");
+				R_LOGFI ("TODO: Must use the API instead of running commands to speedup loading times.\n");
 				if (r_config_get_i (r.config, "file.info")) {
 					// load symbols when using r2 -m 0x1000 /bin/ls
 					r_core_cmdf (&r, "oba 0x%"PFMT64x, mapaddr);
@@ -1132,16 +1132,16 @@ int main(int argc, char **argv, char **envp) {
 			// NOTE: the baddr is redefined to support PIE/ASLR
 			baddr = r_debug_get_baddr (r.dbg, pfile);
 			if (baddr != UT64_MAX && baddr != 0) {
-				eprintf ("bin.baddr 0x%08" PFMT64x "\n", baddr);
+				R_LOGFI ("bin.baddr 0x%08" PFMT64x "\n", baddr);
 			}
 			if (run_anal > 0) {
 				if (baddr && baddr != UT64_MAX) {
-					eprintf ("Using 0x%" PFMT64x "\n", baddr);
+					R_LOGFI ("Using 0x%" PFMT64x "\n", baddr);
 				}
 				if (r_core_bin_load (&r, pfile, baddr)) {
 					RBinObject *obj = r_bin_get_object (r.bin);
 					if (obj && obj->info) {
-						eprintf ("asm.bits %d\n", obj->info->bits);
+						R_LOGFI ("asm.bits %d\n", obj->info->bits);
 					}
 				}
 			}
@@ -1157,12 +1157,12 @@ int main(int argc, char **argv, char **envp) {
 			if (pfile && *pfile) {
 				r_cons_flush ();
 				if (perms & R_IO_WRITE) {
-					eprintf ("[w] Cannot open '%s' for writing.\n", pfile);
+					R_LOGFI ("[w] Cannot open '%s' for writing.\n", pfile);
 				} else {
-					eprintf ("[r] Cannot open '%s'\n", pfile);
+					R_LOGFI ("[r] Cannot open '%s'\n", pfile);
 				}
 			} else {
-				eprintf ("Missing file to open\n");
+				R_LOGFI ("Missing file to open\n");
 			}
 			return 1;
 		}
@@ -1184,7 +1184,7 @@ int main(int argc, char **argv, char **envp) {
 			lock = r_th_lock_new (false);
 			rabin_th = r_th_new (&rabin_delegate, lock, 0);
 			// rabin_delegate (NULL);
-		} // else eprintf ("Metadata loaded from 'prj.name'\n");
+		} // else R_LOGFI ("Metadata loaded from 'prj.name'\n");
 #endif
 		if (mapaddr) {
 			r_core_seek (&r, mapaddr, 1);
@@ -1242,15 +1242,15 @@ int main(int argc, char **argv, char **envp) {
 				r_config_set (r.config, "bin.strings", "false");
 			}
 			if (r_core_hash_load (&r, iod->name) == false) {
-				//eprintf ("WARNING: File hash not calculated\n");
+				//R_LOGFI ("WARNING: File hash not calculated\n");
 			}
 			nsha1 = r_config_get (r.config, "file.sha1");
 			npath = r_config_get (r.config, "file.path");
 			if (!quiet && sha1 && *sha1 && nsha1 && strcmp (sha1, nsha1)) {
-				eprintf ("WARNING: file.sha1 change: %s => %s\n", sha1, nsha1);
+				R_LOGFI ("WARNING: file.sha1 change: %s => %s\n", sha1, nsha1);
 			}
 			if (!quiet && path && *path && npath && strcmp (path, npath)) {
-				eprintf ("WARNING: file.path change: %s => %s\n", path, npath);
+				R_LOGFI ("WARNING: file.path change: %s => %s\n", path, npath);
 			}
 			free (sha1);
 			free (path);
@@ -1345,7 +1345,7 @@ int main(int argc, char **argv, char **envp) {
 			r_core_seek (&r, 0, 1);
 			free (data);
 		} else {
-			eprintf ("[p] Cannot open '%s'\n", patchfile);
+			R_LOGFI ("[p] Cannot open '%s'\n", patchfile);
 		}
 	}
 	if ((patchfile && !quiet) || !patchfile) {
@@ -1380,7 +1380,7 @@ int main(int argc, char **argv, char **envp) {
 				}
 				if (lock) r_th_lock_leave (lock);
 				if (rabin_th && !r_th_wait_async (rabin_th)) {
-					// eprintf ("rabin thread end \n");
+					// R_LOGFI ("rabin thread end \n");
 					r_th_free (rabin_th);
 					r_th_lock_free (lock);
 					lock = NULL;

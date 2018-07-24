@@ -789,7 +789,7 @@ R_API char *r_str_word_get_first(const char *text) {
 	len = strlen (text);
 	ret = (char *)malloc (len + 1);
 	if (!ret) {
-		eprintf ("Cannot allocate %d byte(s).\n", len+1);
+		R_LOGFI ("Cannot allocate %d byte(s).\n", len+1);
 		return NULL;
 	}
 	strncpy (ret, text, len);
@@ -959,7 +959,7 @@ R_API char* r_str_replace(char *str, const char *key, const char *val, int g) {
 		// HACK: this 32 avoids overwrites wtf
 		newstr = realloc (str, slen + klen + 1);
 		if (!newstr) {
-			eprintf ("realloc fail\n");
+			R_LOGFI ("realloc fail\n");
 			free (str);
 			free (scnd);
 			str = NULL;
@@ -1027,7 +1027,7 @@ R_API char* r_str_replace_thunked(char *str, char *clean, int *thunk, int clen,
 		// HACK: this 32 avoids overwrites wtf
 		newstr = realloc (str, slen + klen);
 		if (!newstr) {
-			eprintf ("realloc fail\n");
+			R_LOGFI ("realloc fail\n");
 			free (str);
 			free (scnd);
 			str = NULL;
@@ -1084,13 +1084,13 @@ R_API int r_str_unescape(char *buf) {
 		} else if (buf[i + 1] == 'x') {
 			err = ch2 = ch = 0;
 			if (!buf[i + 2] || !buf[i + 3]) {
-				eprintf ("Unexpected end of string.\n");
+				R_LOGFI ("Unexpected end of string.\n");
 				return 0;
 			}
 			err |= r_hex_to_byte (&ch,  buf[i + 2]);
 			err |= r_hex_to_byte (&ch2, buf[i + 3]);
 			if (err) {
-				eprintf ("Error: Non-hexadecimal chars in input.\n");
+				R_LOGFI ("Error: Non-hexadecimal chars in input.\n");
 				return 0; // -1?
 			}
 			buf[i] = (ch << 4) + ch2;
@@ -1109,7 +1109,7 @@ R_API int r_str_unescape(char *buf) {
 			memmove (buf + i + 1, buf + i + 1 + num_digits,
 			         strlen (buf + i + 1 + num_digits) + 1);
 		} else {
-			eprintf ("'\\x' expected.\n");
+			R_LOGFI ("'\\x' expected.\n");
 			return 0; // -1?
 		}
 	}
@@ -1908,7 +1908,7 @@ R_API const char *r_str_firstbut(const char *s, char ch, const char *but) {
 		return strchr (s, ch);
 	}
 	if (strlen (but) >= bsz) {
-		eprintf ("r_str_firstbut: but string too long\n");
+		R_LOGFI ("r_str_firstbut: but string too long\n");
 		return NULL;
 	}
 	for (p = s; *p; p++) {
@@ -1934,7 +1934,7 @@ R_API const char *r_str_lastbut(const char *s, char ch, const char *but) {
 		return r_str_lchr (s, ch);
 	}
 	if (strlen (but) >= bsz) {
-		eprintf ("r_str_lastbut: but string too long\n");
+		R_LOGFI ("r_str_lastbut: but string too long\n");
 		return NULL;
 	}
 	for (p = s; *p; p++) {
@@ -2284,7 +2284,7 @@ R_API int r_print_format_length(const char *fmt) {
 	if (bracket) {
 		char *end = strchr (arg,'}');
 		if (!end) {
-			eprintf ("No end bracket. Try pm {ecx}b @ esi\n");
+			R_LOGFI ("No end bracket. Try pm {ecx}b @ esi\n");
 			return 0;
 		}
 		*end='\0';

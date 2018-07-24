@@ -138,8 +138,8 @@ R_API int r_core_patch (RCore *core, const char *patch) {
 		}
 		str = p;
 	}
-//	eprintf ("%d\n", *p);
-//	eprintf ("Missing newline\n");
+//	R_LOGFI ("%d\n", *p);
+//	R_LOGFI ("Missing newline\n");
 	free (p0);
 	return 0;
 }

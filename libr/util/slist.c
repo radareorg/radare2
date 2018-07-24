@@ -119,7 +119,7 @@ R_API void r_slist_optimize(RSList *s) {
 		}
 	}
 
-	//eprintf ("MIN %d\nMAX %d\n", (int)min, (int)max);
+	//R_LOGFI ("MIN %d\nMAX %d\n", (int)min, (int)max);
 
 	s->min = min;
 	s->max = max;
@@ -129,7 +129,7 @@ R_API void r_slist_optimize(RSList *s) {
 	} else {
 		s->items = malloc (1 + (sizeof (void *) * s->nitems));
 	}
-//eprintf ("MOD %d (block size)\n", s->mod);
+//R_LOGFI ("MOD %d (block size)\n", s->mod);
 // store integers as indexes inside the allocated heap
 
 /*

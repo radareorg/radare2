@@ -89,7 +89,7 @@ static xnu_thread_t* get_xnu_thread(RDebug *dbg, int tid) {
 		return NULL;
 	}
 	if (!xnu_update_thread_list (dbg)) {
-		eprintf ("Failed to update thread_list xnu_udpate_thread_list\n");
+		R_LOGFI ("Failed to update thread_list xnu_udpate_thread_list\n");
 		return NULL;
 	}
 	//TODO get the current thread
@@ -100,7 +100,7 @@ static xnu_thread_t* get_xnu_thread(RDebug *dbg, int tid) {
 		it = r_list_find (dbg->threads, (const void *)(size_t)&tid,
 			  (RListComparator)&thread_find);
 		if (!it) {
-			eprintf ("Thread not found get_xnu_thread\n");
+			R_LOGFI ("Thread not found get_xnu_thread\n");
 			return NULL;
 		}
 	}
@@ -123,7 +123,7 @@ static task_t task_for_pid_workaround(int Pid) {
 	}
 	kr = host_processor_set_priv (myhost, psDefault, &psDefault_control);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("host_processor_set_priv failed with error 0x%x\n", kr);
+		R_LOGFI ("host_processor_set_priv failed with error 0x%x\n", kr);
 		//mach_error ("host_processor_set_priv",kr);
 		return -1;
 	}
@@ -131,7 +131,7 @@ static task_t task_for_pid_workaround(int Pid) {
 	numTasks = 0;
 	kr = processor_set_tasks (psDefault_control, &tasks, &numTasks);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("processor_set_tasks failed with error %x\n", kr);
+		R_LOGFI ("processor_set_tasks failed with error %x\n", kr);
 		return -1;
 	}
 	/* kernel task */
@@ -171,7 +171,7 @@ bool xnu_step(RDebug *dbg) {
 	int ret = ptrace (PT_STEP, dbg->pid, (caddr_t)1, 0) == 0; //SIGINT
 	if (!ret) {
 		perror ("ptrace-step");
-		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
+		R_LOGFI ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
 	}
 	return ret;
 #else
@@ -179,7 +179,7 @@ bool xnu_step(RDebug *dbg) {
 	//we must find a way to get the current thread not just the first one
 	task_t task = pid_to_task (dbg->pid);
 	if (!task) {
-		eprintf ("step failed on task %d for pid %d\n", task, dbg->tid);
+		R_LOGFI ("step failed on task %d for pid %d\n", task, dbg->tid);
 		return false;
 	}
 	xnu_thread_t *th = get_xnu_thread (dbg, getcurthread (dbg));
@@ -188,7 +188,7 @@ bool xnu_step(RDebug *dbg) {
 	}
 	ret = set_trace_bit (dbg, th);
 	if (!ret) {
-		eprintf ("xnu_step modificy_trace_bit error\n");
+		R_LOGFI ("xnu_step modificy_trace_bit error\n");
 		return false;
 	}
 	th->stepping = true;
@@ -207,7 +207,7 @@ int xnu_attach(RDebug *dbg, int pid) {
 #else
 	dbg->pid = pid;
 	if (!xnu_create_exception_thread (dbg)) {
-		eprintf ("error setting up exception thread\n");
+		R_LOGFI ("error setting up exception thread\n");
 		return -1;
 	}
 	xnu_stop (dbg, pid);
@@ -225,7 +225,7 @@ int xnu_detach(RDebug *dbg, int pid) {
 	(void)xnu_restore_exception_ports (pid);
 	kr = mach_port_deallocate (mach_task_self (), task_dbg);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("xnu_detach: failed to deallocate port\n");
+		R_LOGFI ("xnu_detach: failed to deallocate port\n");
 		return false;
 	}
 	//we mark the task as not longer available since we deallocated the ref
@@ -242,7 +242,7 @@ static int task_suspend_count(task_t task) {
 	mach_msg_type_number_t count = TASK_BASIC_INFO_COUNT;
 	kr = task_info (task, TASK_BASIC_INFO, (task_info_t) &info, &count);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("failed to get task info\n");
+		R_LOGFI ("failed to get task info\n");
 		return -1;
 	}
 	return info.suspend_count;
@@ -250,7 +250,7 @@ static int task_suspend_count(task_t task) {
 
 int xnu_stop(RDebug *dbg, int pid) {
 #if XNU_USE_PTRACE
-	eprintf ("xnu_stop: not implemented\n");
+	R_LOGFI ("xnu_stop: not implemented\n");
 	return false;
 #else
 	kern_return_t kr;
@@ -277,7 +277,7 @@ int xnu_stop(RDebug *dbg, int pid) {
 
 	kr = task_suspend (task);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("failed to suspend task\n");
+		R_LOGFI ("failed to suspend task\n");
 		return false;
 	}
 
@@ -305,13 +305,13 @@ int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 	//TODO free refs count threads
 	xnu_thread_t *th = get_xnu_thread (dbg, getcurthread (dbg));
 	if (!th) {
-		eprintf ("failed to get thread in xnu_continue\n");
+		R_LOGFI ("failed to get thread in xnu_continue\n");
 		return false;
 	}
 	//disable trace bit if enable
 	if (th->stepping) {
 		if (!clear_trace_bit (dbg, th)) {
-			eprintf ("error clearing trace bit in xnu_continue\n");
+			R_LOGFI ("error clearing trace bit in xnu_continue\n");
 			return false;
 		}
 	}
@@ -320,7 +320,7 @@ int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 // it fails because the process is in a syscall like read() waiting to finish
 // so it cant resume
 	if (kr != KERN_SUCCESS) {
-		eprintf ("Failed to resume task xnu_continue\n");
+		R_LOGFI ("Failed to resume task xnu_continue\n");
 	}
 #endif
 	return true;
@@ -334,7 +334,7 @@ char *xnu_reg_profile(RDebug *dbg) {
 	} else if (dbg->bits == R_SYS_BITS_64) {
 #		include "reg/darwin-x64.h"
 	} else {
-		eprintf ("invalid bit size\n");
+		R_LOGFI ("invalid bit size\n");
 		return NULL;
 	}
 #elif __POWERPC__
@@ -433,7 +433,7 @@ RDebugMap *xnu_map_alloc(RDebug *dbg, ut64 addr, int size) {
 	ret = vm_allocate (th->port, (vm_address_t *)&base,
 			  (vm_size_t)size, anywhere);
 	if (ret != KERN_SUCCESS) {
-		eprintf ("vm_allocate failed\n");
+		R_LOGFI ("vm_allocate failed\n");
 		return NULL;
 	}
 	r_debug_map_sync (dbg); // update process memory maps
@@ -478,7 +478,7 @@ RDebugInfo *xnu_info (RDebug *dbg, const char *arg) {
 	kinfo_proc_error = xnu_get_kinfo_proc(dbg->pid, &kp);
 
 	if (kinfo_proc_error) {
-		eprintf ("Error while querying the process info to sysctl\n");
+		R_LOGFI ("Error while querying the process info to sysctl\n");
 		return NULL;
 	}
 	rdi->status = R_DBG_PROC_SLEEP; // TODO: Fix this
@@ -497,7 +497,7 @@ static void xnu_free_threads_ports (RDebugPid *p) {
 	if (p->pid != old_pid) {
 		kr = mach_port_deallocate (old_pid, p->pid);
 		if (kr != KERN_SUCCESS) {
-			eprintf ("error mach_port_deallocate in "
+			R_LOGFI ("error mach_port_deallocate in "
 				"xnu_free_threads ports\n");
 		}
 	}
@@ -521,7 +521,7 @@ RList *xnu_thread_list (RDebug *dbg, int pid, RList *list) {
 	list->free = (RListFree)&r_debug_pid_free;
 	r_list_foreach (dbg->threads, iter, thread) {
 		if (!xnu_thread_get_gpr (dbg, thread)) {
-			eprintf ("Failed to get gpr registers xnu_thread_list\n");
+			R_LOGFI ("Failed to get gpr registers xnu_thread_list\n");
 			continue;
 		}
 		thread->state_size = sizeof (thread->gpr);
@@ -567,7 +567,7 @@ task_t pid_to_task (int pid) {
 		//since we are going to get a new task
 		kr = mach_port_deallocate (mach_task_self (), task_dbg);
 		if (kr != KERN_SUCCESS) {
-			eprintf ("pid_to_task: fail to deallocate port\n");
+			R_LOGFI ("pid_to_task: fail to deallocate port\n");
 			/* ignore on purpose to not break process reload: ood */
 			//return 0;
 		}
@@ -580,12 +580,12 @@ task_t pid_to_task (int pid) {
 			task = task_for_pid_ios9pangu (pid);
 			if (task != MACH_PORT_NULL) {
 				if (pid != -1) {
-					eprintf ("Failed to get task %d for pid %d.\n",
+					R_LOGFI ("Failed to get task %d for pid %d.\n",
 							(int)task, (int)pid);
-					eprintf ("Reason: 0x%x: %s\n", err,
+					R_LOGFI ("Reason: 0x%x: %s\n", err,
 							(char *)MACH_ERROR_STRING (err));
 				}
-				eprintf ("You probably need to run as root or sign "
+				R_LOGFI ("You probably need to run as root or sign "
 					"the binary.\n Read doc/ios.md || doc/macos.md\n"
 					" make -C binr/radare2 ios-sign || macos-sign\n");
 				return 0;
@@ -745,7 +745,7 @@ static int xnu_write_mem_maps_to_buffer (RBuffer *buffer, RList *mem_maps, int s
 	struct segment_command *sc;
 #endif
 	r_list_foreach_safe (mem_maps, iter, iter2, curr_map) {
-		eprintf ("Writing section from 0x%"PFMT64x" to 0x%"PFMT64x" (%"PFMT64d")\n", 
+		R_LOGFI ("Writing section from 0x%"PFMT64x" to 0x%"PFMT64x" (%"PFMT64d")\n", 
 			curr_map->addr, curr_map->addr_end, curr_map->size);
 
 		vm_map_offset_t vmoffset = curr_map->addr;
@@ -796,11 +796,11 @@ static int xnu_write_mem_maps_to_buffer (RBuffer *buffer, RList *mem_maps, int s
 					&local_address, &local_size);
 
 				if ((kr != KERN_SUCCESS) || (xfer_size != local_size)) {
-					eprintf ("Failed to read target memory\n"); // XXX: Improve this message?
-					eprintf ("[DEBUG] kr = %d\n", kr);
-					eprintf ("[DEBUG] KERN_SUCCESS = %d\n", KERN_SUCCESS);
-					eprintf ("[DEBUG] xfer_size = %"PFMT64d"\n", (ut64)xfer_size);
-					eprintf ("[DEBUG] local_size = %d\n", local_size);
+					R_LOGFI ("Failed to read target memory\n"); // XXX: Improve this message?
+					R_LOGFI ("[DEBUG] kr = %d\n", kr);
+					R_LOGFI ("[DEBUG] KERN_SUCCESS = %d\n", KERN_SUCCESS);
+					R_LOGFI ("[DEBUG] xfer_size = %"PFMT64d"\n", (ut64)xfer_size);
+					R_LOGFI ("[DEBUG] local_size = %d\n", local_size);
 					if (kr > 1) error = -1; // XXX: INVALID_ADDRESS is not a bug right know
 					goto cleanup;
 				}
@@ -813,7 +813,7 @@ static int xnu_write_mem_maps_to_buffer (RBuffer *buffer, RList *mem_maps, int s
 #endif
 				if (!rc) {
 					error = errno;
-					eprintf ("Failed to write in the destination\n");
+					R_LOGFI ("Failed to write in the destination\n");
 					goto cleanup;
 				}
 
@@ -848,7 +848,7 @@ static void xnu_collect_thread_state (thread_t port, void *tirp) {
 	header = tir->header;
 	hoffset = tir->hoffset;
 	flavors = tir->flavors;
-	eprintf ("[DEBUG] tc location: 0x%" PFMT64x "\n", hoffset);
+	R_LOGFI ("[DEBUG] tc location: 0x%" PFMT64x "\n", hoffset);
 
 	tc = (struct thread_command *)(header + hoffset);
 	tc->cmd = LC_THREAD;
@@ -856,7 +856,7 @@ static void xnu_collect_thread_state (thread_t port, void *tirp) {
 	hoffset += sizeof (struct thread_command);
 
 	for (i = 0; i < coredump_nflavors; i++) {
-		eprintf ("[DEBUG] %d/%d\n", i+1, coredump_nflavors);
+		R_LOGFI ("[DEBUG] %d/%d\n", i+1, coredump_nflavors);
 		*(coredump_thread_state_flavor_t *)(header + hoffset) = flavors[i];
 		hoffset += sizeof (coredump_thread_state_flavor_t);
 		xnu_get_thread_status (port, flavors[i].flavor,
@@ -937,7 +937,7 @@ bool xnu_generate_corefile (RDebug *dbg, RBuffer *dest) {
 	}
 	if (xnu_write_mem_maps_to_buffer (mem_maps_buffer, dbg->maps, round_page (header_size),
 		header, mach_header_sz, segment_command_sz, &hoffset) < 0) {
-		eprintf ("There was an error while writing the memory maps");
+		R_LOGFI ("There was an error while writing the memory maps");
 		error = false;
 		goto cleanup;
 	}
@@ -979,7 +979,7 @@ RDebugPid *xnu_get_pid (int pid) {
 	mib[1] = KERN_ARGMAX;
 	size = sizeof(argmax);
 	if (sysctl (mib, 2, &argmax, &size, NULL, 0) == -1) {
-		eprintf ("sysctl() error on getting argmax\n");
+		R_LOGFI ("sysctl() error on getting argmax\n");
 		return NULL;
 	}
 #endif
@@ -988,7 +988,7 @@ RDebugPid *xnu_get_pid (int pid) {
 	/* Allocate space for the arguments. */
 	procargs = (char *)malloc (argmax);
 	if (!procargs) {
-		eprintf ("getcmdargs(): insufficient memory for procargs %d\n",
+		R_LOGFI ("getcmdargs(): insufficient memory for procargs %d\n",
 			(int)(size_t)argmax);
 		return NULL;
 	}
@@ -1004,11 +1004,11 @@ RDebugPid *xnu_get_pid (int pid) {
 	procargs[0] = 0;
 	if (sysctl (mib, 3, procargs, &size, NULL, 0) == -1) {
 		if (EINVAL == errno) { // invalid == access denied for some reason
-			//eprintf("EINVAL returned fetching argument space\n");
+			//R_LOGFI("EINVAL returned fetching argument space\n");
 			free (procargs);
 			return NULL;
 		}
-		eprintf ("sysctl(): unspecified sysctl error - %i\n", errno);
+		R_LOGFI ("sysctl(): unspecified sysctl error - %i\n", errno);
 		free (procargs);
 		return NULL;
 	}
@@ -1018,7 +1018,7 @@ RDebugPid *xnu_get_pid (int pid) {
 	iter_args = procargs + sizeof (nargs);
 	end_args = &procargs[size - 30]; // end of the argument space
 	if (iter_args >= end_args) {
-		eprintf ("getcmdargs(): argument length mismatch");
+		R_LOGFI ("getcmdargs(): argument length mismatch");
 		free (procargs);
 		return NULL;
 	}
@@ -1064,7 +1064,7 @@ RDebugPid *xnu_get_pid (int pid) {
 	 */
 	if (curr_arg == start_args || nargs > 0) {
 		psname[0] = 0;
-//		eprintf ("getcmdargs(): argument parsing failed");
+//		R_LOGFI ("getcmdargs(): argument parsing failed");
 		free (procargs);
 		return NULL;
 	}
@@ -1112,7 +1112,7 @@ vm_address_t get_kernel_base(task_t ___task) {
 	if (ret != KERN_SUCCESS) {
 		return 0;
 	}
-	// eprintf ("%d vs %d\n", task, ___task);
+	// R_LOGFI ("%d vs %d\n", task, ___task);
 	for (count = 128; count; count--) {
 		// get next memory region
 		naddr = addr;
@@ -1129,7 +1129,7 @@ vm_address_t get_kernel_base(task_t ___task) {
 			addr += size;
 			continue;
 		}
-		eprintf ("0x%08"PFMT64x" size 0x%08"PFMT64x" perm 0x%x\n",
+		R_LOGFI ("0x%08"PFMT64x" size 0x%08"PFMT64x" perm 0x%x\n",
 			(ut64)addr, (ut64)size, info.max_protection);
 		// the kernel maps over a GB of RAM at the address where it maps
 		// itself so we use that fact to detect it's position
@@ -1140,7 +1140,7 @@ vm_address_t get_kernel_base(task_t ___task) {
 	}
 	ret = mach_port_deallocate (mach_task_self (), 0);
 	if (ret != KERN_SUCCESS) {
-		eprintf ("get_kernel_base: leaking kernel port\n");
+		R_LOGFI ("get_kernel_base: leaking kernel port\n");
 	}
 	return (vm_address_t)0;
 }
@@ -1208,7 +1208,7 @@ static RList *xnu_dbg_modules(RDebug *dbg) {
 	info_array_size = R_ABS (info_array_size);
 	info_array = calloc (1, info_array_size);
 	if (!info_array) {
-		eprintf ("Cannot allocate info_array_size %d\n",
+		R_LOGFI ("Cannot allocate info_array_size %d\n",
 			info_array_size);
 		return NULL;
 	}
@@ -1234,11 +1234,11 @@ static RList *xnu_dbg_modules(RDebug *dbg) {
 		}
 		dbg->iob.read_at (dbg->iob.io, file_path_address,
 				(ut8*)file_path, MAXPATHLEN);
-		//eprintf ("--> %d 0x%08"PFMT64x" %s\n", i, addr, file_path);
+		//R_LOGFI ("--> %d 0x%08"PFMT64x" %s\n", i, addr, file_path);
 		size = mach0_size (dbg, addr);
 		mr = r_debug_map_new (file_path, addr, addr + size, 7, 0);
 		if (!mr) {
-			eprintf ("Cannot create r_debug_map_new\n");
+			R_LOGFI ("Cannot create r_debug_map_new\n");
 			break;
 		}
 		mr->file = strdup (file_path);
@@ -1315,7 +1315,7 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 #if 0
 	if (dbg->pid == 0) {
 		vm_address_t base = get_kernel_base (task);
-		eprintf ("Kernel Base Address: 0x%"PFMT64x"\n", (ut64)base);
+		R_LOGFI ("Kernel Base Address: 0x%"PFMT64x"\n", (ut64)base);
 		return NULL;
 	}
 #endif
@@ -1367,7 +1367,7 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 				"", info.is_submap ? "_submap": "",
 				module_name, maxperm, depthstr);
 			if (!(mr = r_debug_map_new (buf, address, address + size, xwr2rwx (info.protection), 0))) {
-				eprintf ("Cannot create r_debug_map_new\n");
+				R_LOGFI ("Cannot create r_debug_map_new\n");
 				break;
 			}
 			RDebugMap *rdm = moduleAt (modules, address);
@@ -1392,7 +1392,7 @@ RList *xnu_dbg_maps(RDebug *dbg, int only_modules) {
 			r_list_append (list, mr);
 		}
 		if (size < 1) {
-			eprintf ("size error\n");
+			R_LOGFI ("size error\n");
 			size = osize;
 		}
 		address += size;

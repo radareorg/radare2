@@ -38,7 +38,7 @@ static int show_analinfo(const char *arg, ut64 offset) {
 				printf ("{\"bytes\": \"%s\",", r_hex_bin2strdup (buf, ret));
 				printf ("\"type\": \"Invalid\"}");
 			} else {
-				eprintf ("Invalid\n");
+				R_LOGFI ("Invalid\n");
 			}
 			break;
 		}
@@ -277,7 +277,7 @@ static int rasm_disasm(char *buf, ut64 offset, int len, int bits, int ascii, int
 				printf ("%s\n", R_STRBUF_SAFEGET (&aop.esil));
 			}
 			if (aop.size < 1) {
-				eprintf ("Invalid\n");
+				R_LOGFI ("Invalid\n");
 				break;
 			}
 			ret += aop.size;
@@ -447,7 +447,7 @@ int main (int argc, char *argv[]) {
 
 		if (1) {
 			char *homeplugindir = r_str_home (R2_HOME_PLUGINS);
-			// eprintf ("OPENDIR (%s)\n", homeplugindir);
+			// R_LOGFI ("OPENDIR (%s)\n", homeplugindir);
 			r_lib_opendir (l, homeplugindir);
 			free (homeplugindir);
 		}
@@ -589,7 +589,7 @@ int main (int argc, char *argv[]) {
 
 	if (arch) {
 		if (!r_asm_use (a, arch)) {
-			eprintf ("rasm2: Unknown asm plugin '%s'\n", arch);
+			R_LOGFI ("rasm2: Unknown asm plugin '%s'\n", arch);
 			ret = 0;
 			goto beach;
 		}
@@ -598,12 +598,12 @@ int main (int argc, char *argv[]) {
 			ascii = 1;
 	} else if (env_arch) {
 		if (!r_asm_use (a, env_arch)) {
-			eprintf ("rasm2: Unknown asm plugin '%s'\n", env_arch);
+			R_LOGFI ("rasm2: Unknown asm plugin '%s'\n", env_arch);
 			ret = 0;
 			goto beach;
 		}
 	} else if (!r_asm_use (a, "x86")) {
-		eprintf ("rasm2: Cannot find asm.x86 plugin\n");
+		R_LOGFI ("rasm2: Cannot find asm.x86 plugin\n");
 		ret = 0;
 		goto beach;
 	}
@@ -615,7 +615,7 @@ int main (int argc, char *argv[]) {
 	{
 		bool canbebig = r_asm_set_big_endian (a, isbig);
 		if (isbig && !canbebig) {
-			eprintf ("Warning: This architecture can't swap to big endian.\n");
+			R_LOGFI ("Warning: This architecture can't swap to big endian.\n");
 		}
 		r_anal_set_big_endian (anal, canbebig);
 	}
@@ -654,7 +654,7 @@ int main (int argc, char *argv[]) {
 		if (!strcmp (file, "-")) {
 			ret = read (0, buf, sizeof (buf) - 1);
 			if (ret == R_ASM_BUFSIZE) {
-				eprintf ("rasm2: Cannot slurp all stdin data\n");
+				R_LOGFI ("rasm2: Cannot slurp all stdin data\n");
 			}
 			if (ret >= 0) { // only for text
 				buf[ret] = '\0';
@@ -700,7 +700,7 @@ int main (int argc, char *argv[]) {
 				ret = !ret;
 				free (content);
 			} else {
-				eprintf ("rasm2: Cannot open file %s\n", file);
+				R_LOGFI ("rasm2: Cannot open file %s\n", file);
 				ret = 1;
 			}
 		}
@@ -749,7 +749,7 @@ int main (int argc, char *argv[]) {
 			len = strlen (buf);
 			if (skip && len > skip) {
 				skip *= 2;
-				//eprintf ("SKIP (%s) (%lld)\n", buf, skip);
+				//R_LOGFI ("SKIP (%s) (%lld)\n", buf, skip);
 				memmove (buf, buf + skip, len - skip);
 				len -= skip;
 				buf[len] = 0;
@@ -772,7 +772,7 @@ int main (int argc, char *argv[]) {
 							bin, use_spp, rad, arch);
 		}
 		if (!ret) {
-			eprintf ("invalid\n");
+			R_LOGFI ("invalid\n");
 		}
 		ret = !ret;
 	}

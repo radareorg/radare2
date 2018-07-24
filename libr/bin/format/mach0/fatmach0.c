@@ -22,7 +22,7 @@ static int r_bin_fatmach0_init(struct r_bin_fatmach0_obj_t* bin) {
 		return false;
 	}
 	if (bin->hdr.magic != FAT_MAGIC || !bin->nfat_arch || bin->nfat_arch < 1) {
-		eprintf ("Endian FAT_MAGIC failed (?)\n");
+		R_LOGFI ("Endian FAT_MAGIC failed (?)\n");
 		return false;
 	}
 	size = bin->nfat_arch * sizeof (struct fat_arch);
@@ -69,7 +69,7 @@ struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t
 		return NULL;
 	}
 	if (!bin->archs[idx].size || bin->archs[idx].size > bin->size) {
-		eprintf ("Skipping corrupted sub-bin %d arch %d\n", idx, bin->archs[idx].size);
+		R_LOGFI ("Skipping corrupted sub-bin %d arch %d\n", idx, bin->archs[idx].size);
 		free (ret);
 		return NULL;
 	}

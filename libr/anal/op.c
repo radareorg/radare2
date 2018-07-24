@@ -207,8 +207,8 @@ R_API int r_anal_op_execute(RAnal *anal, RAnalOp *op) {
 			{
 			ut64 div = r_anal_value_to_ut64 (anal, op->src[1]);
 			if (div == 0) {
-				eprintf ("r_anal_op_execute: division by zero\n");
-				eprintf ("TODO: throw RAnalException\n");
+				R_LOGFI ("r_anal_op_execute: division by zero\n");
+				R_LOGFI ("TODO: throw RAnalException\n");
 			} else r_anal_value_set_ut64 (anal, op->dst,
 				r_anal_value_to_ut64 (anal, op->src[0])/div);
 			}
@@ -504,7 +504,7 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	case R_ANAL_OP_TYPE_ROR:
 	case R_ANAL_OP_TYPE_SWITCH:
 	case R_ANAL_OP_TYPE_CASE:
-		eprintf ("Command not implemented.\n");
+		R_LOGFI ("Command not implemented.\n");
 		free (r0);
 		free (a0);
 		free (a1);

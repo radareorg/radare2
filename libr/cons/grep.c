@@ -173,7 +173,7 @@ while_end:
 
 	len = strlen (str) - 1;
 	if (len > R_CONS_GREP_BUFSIZE - 1) {
-		eprintf ("r_cons_grep: too long!\n");
+		R_LOGFI ("r_cons_grep: too long!\n");
 		return;
 	}
 	if (len > 0 && str[len] == '?') {
@@ -294,14 +294,14 @@ while_end:
 				continue;
 			}
 			if (wlen >= R_CONS_GREP_WORD_SIZE - 1) {
-				eprintf ("grep string too long\n");
+				R_LOGFI ("grep string too long\n");
 				continue;
 			}
 			strncpy (grep->strings[grep->nstrings],
 				optr, R_CONS_GREP_WORD_SIZE - 1);
 			grep->nstrings++;
 			if (grep->nstrings > R_CONS_GREP_WORDS - 1) {
-				eprintf ("too many grep strings\n");
+				R_LOGFI ("too many grep strings\n");
 				break;
 			}
 		} while (ptr);
@@ -754,7 +754,7 @@ R_API int r_cons_grep_line(char *buf, int len) {
 
 			outlen = outlen > 0? outlen - 1: 0;
 			if (outlen > len) { // should never happen
-				eprintf ("r_cons_grep_line: wtf, how you reach this?\n");
+				R_LOGFI ("r_cons_grep_line: wtf, how you reach this?\n");
 				free (in);
 				free (out);
 				return -1;
@@ -873,7 +873,7 @@ R_API char *r_cons_html_filter(const char *ptr, int *newlen) {
 		if (esc == 1) {
 			// \x1b[2J
 			if (ptr[0] != '[') {
-				eprintf ("Oops invalid escape char\n");
+				R_LOGFI ("Oops invalid escape char\n");
 				esc = 0;
 				str = ptr + 1;
 				continue;

@@ -67,7 +67,7 @@ R_API char *r_socket_http_get (const char *url, int *code, int *rlen) {
 	host = strstr (uri, "://");
 	if (!host) {
 		free (uri);
-		eprintf ("r_socket_http_get: Invalid URI");
+		R_LOGFI ("r_socket_http_get: Invalid URI");
 		return NULL;
 	}
 	host += 3;
@@ -84,7 +84,7 @@ R_API char *r_socket_http_get (const char *url, int *code, int *rlen) {
 	else *path++ = 0;
 	s = r_socket_new (ssl);
 	if (!s) {
-		eprintf ("r_socket_http_get: Cannot create socket\n");
+		R_LOGFI ("r_socket_http_get: Cannot create socket\n");
 		free (uri);
 		return NULL;
 	}
@@ -97,7 +97,7 @@ R_API char *r_socket_http_get (const char *url, int *code, int *rlen) {
 				"\r\n", path, host, port);
 		response = r_socket_http_answer (s, code, rlen);
 	} else {
-		eprintf ("Cannot connect to %s:%s\n", host, port);
+		R_LOGFI ("Cannot connect to %s:%s\n", host, port);
 		response = NULL;
 	}
 	free (uri);
@@ -136,7 +136,7 @@ R_API char *r_socket_http_post (const char *url, const char *data, int *code, in
 		return NULL;
 	}
 	if (!r_socket_connect_tcp (s, host, port, 0)) {
-		eprintf ("Cannot connect to %s:%s\n", host, port);
+		R_LOGFI ("Cannot connect to %s:%s\n", host, port);
 		free (uri);
 		return NULL;
 	}

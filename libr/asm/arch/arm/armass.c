@@ -6176,14 +6176,14 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 					// TODO: control if branch out of range
 					ret = (getnum (ao->a[0]) - (int)ao->off - 8) / 4;
 					if (ret >= 0x00800000 || ret < (int)0xff800000) {
-						eprintf("Branch into out of range\n");
+						R_LOGFI("Branch into out of range\n");
 						return 0;
 					}
 					ao->o |= ((ret >> 16) & 0xff) << 8;
 					ao->o |= ((ret >> 8) & 0xff) << 16;
 					ao->o |= ((ret) & 0xff) << 24;
 				} else {
-					eprintf("This branch does not accept reg as arg\n");
+					R_LOGFI("This branch does not accept reg as arg\n");
 					return 0;
 				}
 				break;
@@ -6374,7 +6374,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 						ao->o |= (y << 24);
 						ao->o |= (z << 16);
 					} else {
-						eprintf ("Parameter %d out0x3000a0e1 of range (0-255)\n", (int)b);
+						R_LOGFI ("Parameter %d out0x3000a0e1 of range (0-255)\n", (int)b);
 						return 0;
 					}
 				} else {
@@ -6386,7 +6386,7 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 				if (ao->a[2]) {
 					int n = getnum (ao->a[2]);
 					if (n & 1) {
-						eprintf ("Invalid multiplier\n");
+						R_LOGFI ("Invalid multiplier\n");
 						return 0;
 					}
 					ao->o |= (n >> 1) << 16;
@@ -6528,7 +6528,7 @@ ut32 armass_assemble(const char *str, ut64 off, int thumb) {
 		return -1;
 	}
 	if (!assemble[thumb] (&aop, off, buf)) {
-		//eprintf ("armass: Unknown opcode (%s)\n", buf);
+		//R_LOGFI ("armass: Unknown opcode (%s)\n", buf);
 		return -1;
 	}
 	return aop.o;

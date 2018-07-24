@@ -142,7 +142,7 @@ static void open_pidmem (RIOPtrace *iop) {
 		iop->fd = open (pidmem, O_RDONLY);
 #if 0
 	if (iop->fd == -1)
-		eprintf ("Warning: Cannot open /proc/%d/mem. "
+		R_LOGFI ("Warning: Cannot open /proc/%d/mem. "
 			"Fallback to ptrace io.\n", iop->pid);
 #endif
 #else
@@ -177,22 +177,22 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			ret = 0;
 		else if (ret == -1) {
 #ifdef __ANDROID__
-			eprintf ("ptrace_attach: Operation not permitted\n");
+			R_LOGFI ("ptrace_attach: Operation not permitted\n");
 #else
 			switch (errno) {
 			case EPERM:
 				ret = pid;
-				eprintf ("ptrace_attach: Operation not permitted\n");
+				R_LOGFI ("ptrace_attach: Operation not permitted\n");
 				break;
 			case EINVAL:
 				perror ("ptrace: Cannot attach");
-				eprintf ("ERRNO: %d (EINVAL)\n", errno);
+				R_LOGFI ("ERRNO: %d (EINVAL)\n", errno);
 				break;
 			}
 #endif
 		} else if (__waitpid (pid)) {
 			ret = pid;
-		} else eprintf ("Error in waitpid\n");
+		} else R_LOGFI ("Error in waitpid\n");
 		if (ret != -1) {
 			RIOPtrace *riop = R_NEW0 (RIOPtrace);
 			if (!riop) {
@@ -242,7 +242,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	//printf("ptrace io command (%s)\n", cmd);
 	/* XXX ugly hack for testing purposes */
 	if (!strcmp (cmd, "help")) {
-		eprintf ("Usage: =!cmd args\n"
+		R_LOGFI ("Usage: =!cmd args\n"
 			" =!ptrace   - use ptrace io\n"
 			" =!mem      - use /proc/pid/mem io if possible\n"
 			" =!pid      - show targeted pid\n"
@@ -270,7 +270,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			return r_str_newf ("%d", iop->pid);
 		}
 	} else {
-		eprintf ("Try: '=!pid'\n");
+		R_LOGFI ("Try: '=!pid'\n");
 	}
 	return NULL;
 }

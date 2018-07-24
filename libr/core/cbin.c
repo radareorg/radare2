@@ -372,7 +372,7 @@ static bool bin_raw_strings(RCore *r, int mode, int va) {
 		r_io_read_at (r->io, 0, bf->buf->buf, bf->size);
 	}
 	if (!r->file) {
-		eprintf ("Core file not open\n");
+		R_LOGFI ("Core file not open\n");
 		if (IS_MODE_JSON (mode)) {
 			r_cons_print ("[]");
 		}
@@ -621,7 +621,7 @@ static int bin_info(RCore *r, int mode) {
 		if (info->rclass && !strcmp (info->rclass, "fs")) {
 			// r_config_set (r->config, "asm.arch", info->arch);
 			// r_core_seek (r, 0, 1);
-			// eprintf ("m /root %s 0", info->arch);
+			// R_LOGFI ("m /root %s 0", info->arch);
 	//		r_core_cmdf (r, "m /root hfs @ 0", info->arch);
 		} else {
 			if (info->lang) {
@@ -788,7 +788,7 @@ static int bin_info(RCore *r, int mode) {
 				int len = r_hash_calculate (rh, hash, (const ut8*)
 						binfile->buf->buf+h->from, h->to);
 				if (len < 1) {
-					eprintf ("Invaild checksum length\n");
+					R_LOGFI ("Invaild checksum length\n");
 				}
 				r_hash_free (rh);
 				r_cons_printf ("%s\"%s\":{\"hex\":\"", i?",": "", h->type);
@@ -807,7 +807,7 @@ static int bin_info(RCore *r, int mode) {
 				int len = r_hash_calculate (rh, hash, (const ut8*)
 						binfile->buf->buf+h->from, h->to);
 				if (len < 1) {
-					eprintf ("Invaild wtf\n");
+					R_LOGFI ("Invaild wtf\n");
 				}
 				r_hash_free (rh);
 				r_cons_printf ("%s  %d-%dc  ", h->type, h->from, h->to+h->from);
@@ -977,7 +977,7 @@ R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
 		return false;
 	}
 	if (!pdb.pdb_parse (&pdb)) {
-		eprintf ("pdb was not parsed\n");
+		R_LOGFI ("pdb was not parsed\n");
 		pdb.finish_pdb_parse (&pdb);
 		return false;
 	}
@@ -1068,7 +1068,7 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 		}
 	}
 	if (r_list_length (entries) > 1024) {
-		eprintf ("Too many entrypoints (%d)\n", r_list_length (entries));
+		R_LOGFI ("Too many entrypoints (%d)\n", r_list_length (entries));
 		return false;
 	}
 
@@ -1522,11 +1522,11 @@ static RBinSymbol *get_symbol(RBin *bin, RList *symbols, const char *name, ut64 
 		r_list_foreach (symbols, iter, symbol) {
 			/* ${name}=${ptrToSymbol} */
 			if (!sdb_num_add (mydb, sdb_fmt ("%x", sdb_hash (symbol->name)), (ut64)(size_t)symbol, 0)) {
-			//	eprintf ("DUP (%s)\n", symbol->name);
+			//	R_LOGFI ("DUP (%s)\n", symbol->name);
 			}
 			/* 0x${vaddr}=${ptrToSymbol} */
 			if (!sdb_num_add (mydb, sdb_fmt ("0x"PFMT64x, symbol->vaddr), (ut64)(size_t)symbol, 0)) {
-			//	eprintf ("DUP (%s)\n", symbol->name);
+			//	R_LOGFI ("DUP (%s)\n", symbol->name);
 			}
 			if (name) {
 				if (!res && !strcmp (symbol->name, name)) {
@@ -1911,7 +1911,7 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 					r_flag_item_set_realname (fi, n);
 				} else {
 					if (fn) {
-						eprintf ("[Warning] Can't find flag (%s)\n", fn);
+						R_LOGFI ("[Warning] Can't find flag (%s)\n", fn);
 					}
 				}
 				free (fnp);
@@ -2956,7 +2956,7 @@ static void bin_pe_versioninfo(RCore *r, int mode) {
 
 					if (r_str_utf16_to_utf8 (key_utf8, lenkey * 2, key_utf16, lenkey, true) < 0
 						|| r_str_utf16_to_utf8 (val_utf8, lenval * 2, val_utf16, lenval, true) < 0) {
-						eprintf ("Warning: Cannot decode utf16 to utf8\n");
+						R_LOGFI ("Warning: Cannot decode utf16 to utf8\n");
 					} else if (IS_MODE_JSON (mode)) {
 						char *escaped_key_utf8 = r_str_escape ((char*)key_utf8);
 						char *escaped_val_utf8 = r_str_escape ((char*)val_utf8);

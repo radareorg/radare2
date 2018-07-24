@@ -25,8 +25,8 @@ static bool r_anal_emul_init(RCore *core, RConfigHold *hc) {
 	const char *bp = r_reg_get_name (core->anal->reg, R_REG_NAME_BP);
 	const char *sp = r_reg_get_name (core->anal->reg, R_REG_NAME_SP);
 	if ((bp && !r_reg_getv (core->anal->reg, bp)) && (sp && !r_reg_getv (core->anal->reg, sp))) {
-		eprintf ("Stack isn't initiatized.\n");
-		eprintf ("Try running aei and aeim commands before aftm for default stack initialization\n");
+		R_LOGFI ("Stack isn't initiatized.\n");
+		R_LOGFI ("Try running aei and aeim commands before aftm for default stack initialization\n");
 		return false;
 	}
 	return (core->anal->esil != NULL);

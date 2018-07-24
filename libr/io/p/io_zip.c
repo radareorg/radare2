@@ -105,19 +105,19 @@ struct zip *r_io_zip_open_archive(const char *archivename, ut32 flags, int mode,
 		return zipArch;
 	}
 	if (zip_errorp == ZIP_ER_INVAL) {
-		eprintf ("ZIP File Error: Invalid file name (NULL).\n");
+		R_LOGFI ("ZIP File Error: Invalid file name (NULL).\n");
 	} else if (zip_errorp == ZIP_ER_OPEN) {
-		eprintf ("ZIP File Error: File could not be opened file name.\n");
+		R_LOGFI ("ZIP File Error: File could not be opened file name.\n");
 	} else if (zip_errorp == ZIP_ER_NOENT) {
-		eprintf ("ZIP File Error: File does not exist.\n");
+		R_LOGFI ("ZIP File Error: File does not exist.\n");
 	} else if (zip_errorp == ZIP_ER_READ) {
-		eprintf ("ZIP File Error: Read error occurred.\n");
+		R_LOGFI ("ZIP File Error: Read error occurred.\n");
 	} else if (zip_errorp == ZIP_ER_NOZIP) {
-		eprintf ("ZIP File Error: File is not a valid ZIP archive.\n");
+		R_LOGFI ("ZIP File Error: File is not a valid ZIP archive.\n");
 	} else if (zip_errorp == ZIP_ER_INCONS) {
-		eprintf ("ZIP File Error: ZIP file had some inconsistencies archive.\n");
+		R_LOGFI ("ZIP File Error: ZIP file had some inconsistencies archive.\n");
 	} else {
-		eprintf ("ZIP File Error: Something bad happened, get your debug on.\n");
+		R_LOGFI ("ZIP File Error: Something bad happened, get your debug on.\n");
 	}
 	return NULL;
 }
@@ -312,7 +312,7 @@ static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode) {
 
 
 		if (zfo && zfo->entry == -1)
-			eprintf ("Warning: File did not exist, creating a new one.\n");
+			R_LOGFI ("Warning: File did not exist, creating a new one.\n");
 
 		if (zfo) {
 			zfo->io_backref = io;
@@ -448,7 +448,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 
 	if (!zip_filename) {// && !filename_in_zipfile) {
 		//free (zip_uri);
-		eprintf ("usage: zip:///path/to/archive//filepath\n"
+		R_LOGFI ("usage: zip:///path/to/archive//filepath\n"
 			"usage: zip:///path/to/archive::[number]\n"
 			"Archive was not found.\n");
 		//return res;
@@ -459,7 +459,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 		RList *files = NULL;
 		RListIter *iter;
 		char *name;
-		//eprintf("usage: zip:///path/to/archive//filepath\n");
+		//R_LOGFI("usage: zip:///path/to/archive//filepath\n");
 		files = r_io_zip_get_files (zip_filename, 0, mode, rw);
 		if (files) {
 			ut32 i = 0;
@@ -471,15 +471,15 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 		}
 		goto done;
 	}
-	//eprintf("After parsing the given uri: %s\n", file);
-	//eprintf("Zip filename the given uri: %s\n", zip_filename);
-	//eprintf("File in the zip: %s\n", filename_in_zipfile);
+	//R_LOGFI("After parsing the given uri: %s\n", file);
+	//R_LOGFI("Zip filename the given uri: %s\n", zip_filename);
+	//R_LOGFI("File in the zip: %s\n", filename_in_zipfile);
 	zfo = r_io_zip_alloc_zipfileobj (zip_filename,
 		filename_in_zipfile, ZIP_CREATE, mode, rw);
 
 	if (zfo) {
 		if (zfo->entry == -1) {
-			eprintf ("Warning: File did not exist, creating a new one.\n");
+			R_LOGFI ("Warning: File did not exist, creating a new one.\n");
 		}
 		zfo->io_backref = io;
 		res = r_io_desc_new (io, &r_io_plugin_zip,
@@ -487,7 +487,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 	}
 
 	if (!res) {
-		eprintf ("Failed to open the archive %s and file %s\n",
+		R_LOGFI ("Failed to open the archive %s and file %s\n",
 			zip_filename, filename_in_zipfile);
 		//free (zfo); zfo is already freed by r_io_desc_new	//WTF
 		r_io_desc_free (res);

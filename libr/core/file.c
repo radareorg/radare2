@@ -30,12 +30,12 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 	}
 
 	if (r_sandbox_enable (0)) {
-		eprintf ("Cannot reopen in sandbox\n");
+		R_LOGFI ("Cannot reopen in sandbox\n");
 		free (obinfilepath);
 		return false;
 	}
 	if (!core->file) {
-		eprintf ("No file opened to reopen\n");
+		R_LOGFI ("No file opened to reopen\n");
 		free (ofilepath);
 		free (obinfilepath);
 		return false;
@@ -51,7 +51,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		}
 	}
 	if (!ofilepath) {
-		eprintf ("Unknown file path");
+		R_LOGFI ("Unknown file path");
 		free (obinfilepath);
 		return false;
 	}
@@ -78,7 +78,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		ofile = NULL;
 		odesc = NULL;
 		//	core->file = file;
-		eprintf ("File %s reopened in %s mode\n", path,
+		R_LOGFI ("File %s reopened in %s mode\n", path,
 			(perm & R_IO_WRITE)? "read-write": "read-only");
 
 		if (loadbin && (loadbin == 2 || had_rbin_info)) {
@@ -86,7 +86,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 			ret = r_core_bin_load (core, obinfilepath, baddr);
 			r_core_bin_update_arch_bits (core);
 			if (!ret) {
-				eprintf ("Error: Failed to reload rbin for: %s", path);
+				R_LOGFI ("Error: Failed to reload rbin for: %s", path);
 			}
 		}
 
@@ -96,13 +96,13 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		}
 		// close old file
 	} else if (ofile) {
-		eprintf ("r_core_file_reopen: Cannot reopen file: %s with perms 0x%04x,"
+		R_LOGFI ("r_core_file_reopen: Cannot reopen file: %s with perms 0x%04x,"
 			" attempting to open read-only.\n", path, perm);
 		// lower it down back
 		//ofile = r_core_file_open (core, path, R_IO_READ, addr);
 		r_core_file_set_by_file (core, ofile);
 	} else {
-		eprintf ("Cannot reopen\n");
+		R_LOGFI ("Cannot reopen\n");
 	}
 	if (isdebug) {
 		int newtid = newpid;
@@ -131,7 +131,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 #if 0
 		else {
 			const char *name = (cf && cf->desc)? cf->desc->name: "ERROR";
-			eprintf ("Error: Unable to switch the view to file: %s\n", name);
+			R_LOGFI ("Error: Unable to switch the view to file: %s\n", name);
 		}
 #endif
 	}
@@ -321,7 +321,7 @@ static bool setbpint(RCore *r, const char *mode, const char *sym) {
 #endif
 		return true;
 	}
-	eprintf ("Cannot set breakpoint at %s\n", sym);
+	R_LOGFI ("Cannot set breakpoint at %s\n", sym);
 	return false;
 }
 
@@ -357,14 +357,14 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 
 	bo = r_bin_options_new (0LL, baseaddr, false);
 	if (!bo) {
-		eprintf ("Failed to create bin options\n");
+		R_LOGFI ("Failed to create bin options\n");
 		return false;
 	}
 
 	bo->xtr_idx = xtr_idx;
 	bo->iofd = fd;
 	if (r_bin_open (r->bin, filenameuri, bo) == -1) {
-		eprintf ("RBinLoad: Cannot open %s\n", filenameuri);
+		R_LOGFI ("RBinLoad: Cannot open %s\n", filenameuri);
 		if (r_config_get_i (r->config, "bin.rawstr")) {
 			bo->rawstr = true;
 			if (r_bin_open (r->bin, filenameuri, bo) == -1) {
@@ -423,7 +423,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 	}
 	r_io_use_fd (r->io, fd);
 	if (!r_bin_load_io (r->bin, fd, baseaddr, loadaddr, xtr_idx)) {
-		//eprintf ("Failed to load the bin with an IO Plugin.\n");
+		//R_LOGFI ("Failed to load the bin with an IO Plugin.\n");
 		return false;
 	}
 	binfile = r_bin_cur (r->bin);
@@ -522,11 +522,11 @@ static void load_scripts_for(RCore *core, const char *name) {
 	char *path = r_str_home (hdir);
 	RList *files = r_sys_dir (path);
 	if (!r_list_empty (files)) {
-		eprintf ("[binrc] path: %s\n", path);
+		R_LOGFI ("[binrc] path: %s\n", path);
 	}
 	r_list_foreach (files, iter, file) {
 		if (*file && *file != '.') {
-			eprintf ("[binrc] loading %s\n", file);
+			R_LOGFI ("[binrc] loading %s\n", file);
 			r_core_cmdf (core, ". %s/%s", path, file);
 		}
 	}
@@ -559,7 +559,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			// either that RCoreFIle * needs to be loaded or a
 			// new RCoreFile * should be opened.
 			if (!suppress_warning) {
-				eprintf ("Error: The filenameuri '%s' is not the same as in RCoreFile: %s\n",
+				R_LOGFI ("Error: The filenameuri '%s' is not the same as in RCoreFile: %s\n",
 					filenameuri, desc->name);
 			}
 		}
@@ -568,7 +568,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	}
 
 	if (!filenameuri) {
-		eprintf ("r_core_bin_load: no file specified\n");
+		R_LOGFI ("r_core_bin_load: no file specified\n");
 		return false;
 	}
 
@@ -648,7 +648,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		RListIter *iter;
 		RList *libs = r_bin_get_libs (r->bin);
 		r_list_foreach (libs, iter, lib) {
-			eprintf ("Opening %s\n", lib);
+			R_LOGFI ("Opening %s\n", lib);
 			r_core_file_loadlib (r, lib, libaddr);
 			libaddr += 0x2000000;
 		}
@@ -670,7 +670,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		// Setting the right arch and bits, so regstate will be shown correctly
 		if (plugin->info) {
 			RBinInfo *inf = plugin->info (binfile);
-			eprintf ("Setting up coredump: asm.arch <-> %s and asm.bits <-> %d\n",
+			R_LOGFI ("Setting up coredump: asm.arch <-> %s and asm.bits <-> %d\n",
 									inf->arch,
 									inf->bits);
 			r_config_set (r->config, "asm.arch", inf->arch);
@@ -678,9 +678,9 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
                 }
 		if (binfile->o->regstate) {
 			if (r_reg_arena_set_bytes (r->anal->reg, binfile->o->regstate)) {
-				eprintf ("Setting up coredump: Problem while setting the registers\n");
+				R_LOGFI ("Setting up coredump: Problem while setting the registers\n");
 			} else {
-				eprintf ("Setting up coredump: Registers have been set\n");
+				R_LOGFI ("Setting up coredump: Registers have been set\n");
 				const char *regname = r_reg_get_name (r->anal->reg, R_REG_NAME_SP);
 				RRegItem *reg = r_reg_get (r->anal->reg, regname, -1);
 				sp_addr = r_reg_get_value (r->anal->reg, reg);
@@ -706,7 +706,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			r_list_free (maps);
 			o->maps = NULL;
 		}
-		eprintf ("Setting up coredump: %d maps have been found and created\n", map);
+		R_LOGFI ("Setting up coredump: %d maps have been found and created\n", map);
 		goto beach;
 	}
 
@@ -746,7 +746,7 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 		}
 		fh = R_NEW0 (RCoreFile);
 		if (!fh) {
-			eprintf ("file.c:r_core_many failed to allocate new RCoreFile.\n");
+			R_LOGFI ("file.c:r_core_many failed to allocate new RCoreFile.\n");
 			break;
 		}
 		fh->alive = 1;
@@ -810,7 +810,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 
 	fh = R_NEW0 (RCoreFile);
 	if (!fh) {
-		eprintf ("core/file.c: r_core_open failed to allocate RCoreFile.\n");
+		R_LOGFI ("core/file.c: r_core_open failed to allocate RCoreFile.\n");
 		goto beach;
 	}
 	fh->alive = 1;
@@ -921,7 +921,7 @@ R_API int r_core_file_close(RCore *r, RCoreFile *fh) {
 		if (prev_cf) {
 			RIODesc *desc = prev_cf && r ? r_io_desc_get (r->io, prev_cf->fd) : NULL;
 			if (!desc) {
-				eprintf ("Error: RCoreFile's found with out a supporting RIODesc.\n");
+				R_LOGFI ("Error: RCoreFile's found with out a supporting RIODesc.\n");
 			}
 			ret = r_core_file_set_by_file (r, prev_cf);
 		}

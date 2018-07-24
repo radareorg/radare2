@@ -301,7 +301,7 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 	sz = iob->fd_size (iob->io, fd);
 	if (sz == UT64_MAX) { // || sz > (64 * 1024 * 1024)) {
 		// too big, probably wrong
-		eprintf ("Too big\n");
+		R_LOGFI ("Too big\n");
 		res = false;
 		goto error;
 	}
@@ -435,13 +435,13 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 	// this thing works for 2GB ELF core from vbox
 	if (!buf_bytes) {
 		if ((int)sz < 0) {
-			eprintf ("Cannot allocate %d bytes\n", (int)(sz));
+			R_LOGFI ("Cannot allocate %d bytes\n", (int)(sz));
 			return false;
 		}
 		const int asz = sz? sz: 1;
 		buf_bytes = calloc (1, asz);
 		if (!buf_bytes) {
-			eprintf ("Cannot allocate %d bytes.\n", asz);
+			R_LOGFI ("Cannot allocate %d bytes.\n", asz);
 			return false;
 		}
 		ut64 seekaddr = is_debugger? baseaddr: loadaddr;
@@ -762,7 +762,7 @@ R_API int r_bin_list_plugin(RBin *bin, const char* name, int json) {
 		return r_bin_print_xtrplugin_details (bin, bx, json);
 	}
 
-	eprintf ("cannot find plugin %s\n", name);
+	R_LOGFI ("cannot find plugin %s\n", name);
 	return false;
 }
 
@@ -1207,10 +1207,10 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 	}
 	Sdb *binfile_sdb = binfile? binfile->sdb: NULL;
 	if (!binfile_sdb) {
-		eprintf ("Cannot find SDB!\n");
+		R_LOGFI ("Cannot find SDB!\n");
 		return;
 	} else if (!binfile) {
-		eprintf ("Binary format not currently loaded!\n");
+		R_LOGFI ("Binary format not currently loaded!\n");
 		return;
 	}
 	sdb_unset (binfile_sdb, ARCHS_KEY, 0);
@@ -1297,7 +1297,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 					"0x%08" PFMT64x ":%d:%s:%d",
 					boffset, obj_size, "unk", 0);
 			} else {
-				eprintf ("Error: Invalid RBinFile.\n");
+				R_LOGFI ("Error: Invalid RBinFile.\n");
 			}
 			//sdb_array_push (binfile_sdb, ARCHS_KEY, archline, 0);
 		}
@@ -1350,22 +1350,22 @@ R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RLis
 		if (z) {
 			RListIter *iter;
 			const char *f;
-			eprintf ("zip file created\n");
+			R_LOGFI ("zip file created\n");
 			r_list_foreach (files, iter, f) {
 				struct zip_source *zs = NULL;
 				zs = zip_source_file (z, f, 0, 1024);
 				if (zs) {
-					eprintf ("ADD %s\n", f);
+					R_LOGFI ("ADD %s\n", f);
 					zip_add (z, f, zs);
 					zip_source_free (zs);
 				} else {
-					eprintf ("Cannot find file %s\n", f);
+					R_LOGFI ("Cannot find file %s\n", f);
 				}
-				eprintf ("zS %p\n", zs);
+				R_LOGFI ("zS %p\n", zs);
 			}
 			zip_close (z);
 		} else {
-			eprintf ("Cannot create zip file\n");
+			R_LOGFI ("Cannot create zip file\n");
 		}
 #endif
 	} else if (!strcmp (type, "fat")) {
@@ -1386,9 +1386,9 @@ R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RLis
 			int f_len = 0;
 			ut8 *f_buf = (ut8 *)r_file_slurp (f, &f_len);
 			if (f_buf && f_len >= 0) {
-				eprintf ("ADD %s %d\n", f, f_len);
+				R_LOGFI ("ADD %s %d\n", f, f_len);
 			} else {
-				eprintf ("Cannot open %s\n", f);
+				R_LOGFI ("Cannot open %s\n", f);
 				free (f_buf);
 				continue;
 			}
@@ -1420,7 +1420,7 @@ R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RLis
 		r_buf_free (buf);
 		return NULL;
 	} else {
-		eprintf ("Usage: rabin2 -X [fat|zip] [filename] [files ...]\n");
+		R_LOGFI ("Usage: rabin2 -X [fat|zip] [filename] [files ...]\n");
 	}
 	return NULL;
 }
@@ -1503,7 +1503,7 @@ R_API RBinSymbol *r_bin_class_add_method(RBinFile *binfile, const char *classnam
 	if (!c) {
 		c = r_bin_class_new (binfile, classname, NULL, 0);
 		if (!c) {
-			eprintf ("Cannot allocate class %s\n", classname);
+			R_LOGFI ("Cannot allocate class %s\n", classname);
 			return NULL;
 		}
 	}
@@ -1525,7 +1525,7 @@ R_API RBinSymbol *r_bin_class_add_method(RBinFile *binfile, const char *classnam
 
 R_API void r_bin_class_add_field(RBinFile *binfile, const char *classname, const char *name) {
 	//TODO: add_field into class
-	//eprintf ("TODO add field: %s \n", name);
+	//R_LOGFI ("TODO add field: %s \n", name);
 }
 
 /* returns vaddr, rebased with the baseaddr of binfile, if va is enabled for

@@ -14,7 +14,7 @@ R_API RBreakpointItem* r_bp_watch_add(RBreakpoint *bp, ut64 addr, int size, int 
 		return NULL;
 	}
 	if (r_bp_get_in (bp, addr, rw)) {
-		eprintf ("Breakpoint already set at this address.\n");
+		R_LOGFI ("Breakpoint already set at this address.\n");
 		return NULL;
 	}
 	b = r_bp_item_new (bp);
@@ -26,7 +26,7 @@ R_API RBreakpointItem* r_bp_watch_add(RBreakpoint *bp, ut64 addr, int size, int 
 	if (hw) {
 		r_bp_watch_add_hw (bp, b);
 	} else {
-		eprintf ("[TODO]: Software watchpoint is not implmented yet (use ESIL)\n");
+		R_LOGFI ("[TODO]: Software watchpoint is not implmented yet (use ESIL)\n");
 		/* TODO */
 	}
 	bp->nbps++;

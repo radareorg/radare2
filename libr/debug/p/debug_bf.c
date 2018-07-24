@@ -124,9 +124,9 @@ static int r_debug_bf_attach(RDebug *dbg, int pid) {
 #if 0
 	RIOBdescbg *o;
 	o = dbg->iob.io->desc->data;
-eprintf ("base = %llx\n", o->bfvm->base);
-eprintf ("screen = %llx\n", o->bfvm->screen);
-eprintf ("input = %llx\n", o->bfvm->input);
+R_LOGFI ("base = %llx\n", o->bfvm->base);
+R_LOGFI ("screen = %llx\n", o->bfvm->screen);
+R_LOGFI ("input = %llx\n", o->bfvm->input);
 #endif
 	return true;
 }

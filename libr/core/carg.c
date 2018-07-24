@@ -62,7 +62,7 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 
 	ut8 *buf = malloc (bsize);
 	if (!buf) {
-		eprintf ("Cannot allocate %d byte(s)\n", bsize);
+		R_LOGFI ("Cannot allocate %d byte(s)\n", bsize);
 		free (buf);
 		return;
 	}

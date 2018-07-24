@@ -22,11 +22,11 @@ static int r_bin_te_init_hdr(struct r_bin_te_obj_t *bin) {
 		return false;
 	}
 	if (r_buf_read_at (bin->b, 0, (ut8*)bin->header, sizeof (TE_image_file_header)) == -1) {
-		eprintf("Error: read (header)\n");
+		R_LOGFI("Error: read (header)\n");
 		return false;
 	}
 	if (!bin->kv) {
-		eprintf("Error: sdb instance is empty\n");
+		R_LOGFI("Error: sdb instance is empty\n");
 		return false;
 	}
 
@@ -69,7 +69,7 @@ ut64 r_bin_te_get_main_paddr(struct r_bin_te_obj_t *bin) {
 		return 0LL;
 	}
 	if (r_buf_read_at (bin->b, entry->paddr, buf, sizeof (buf)) == -1) {
-		eprintf ("Error: read (entry)\n");
+		R_LOGFI ("Error: read (entry)\n");
 	} else {
 		if (buf[367] == 0xe8) {
 			int delta = (buf[368] | buf[369]<<8 | buf[370]<<16 | buf[371]<<24);
@@ -102,7 +102,7 @@ static TE_DWord r_bin_te_vaddr_to_paddr(struct r_bin_te_obj_t* bin, TE_DWord vad
 static int r_bin_te_init_sections(struct r_bin_te_obj_t* bin) {
 	int sections_size = sizeof(TE_image_section_header) * bin->header->NumberOfSections;
 	if (sections_size > bin->size) {
-		eprintf ("Invalid NumberOfSections value\n");
+		R_LOGFI ("Invalid NumberOfSections value\n");
 		return false;
 	}
 	if (!(bin->section_header = malloc (sections_size))) {
@@ -111,7 +111,7 @@ static int r_bin_te_init_sections(struct r_bin_te_obj_t* bin) {
 	}
 	if (r_buf_read_at (bin->b, sizeof(TE_image_file_header),
 				(ut8*)bin->section_header, sections_size) == -1) {
-		eprintf ("Error: read (sections headers)\n");
+		R_LOGFI ("Error: read (sections headers)\n");
 		return false;
 	}
 	return true;
@@ -122,11 +122,11 @@ static int r_bin_te_init(struct r_bin_te_obj_t* bin) {
 	bin->section_header = NULL;
 	bin->endian = 0;
 	if (!r_bin_te_init_hdr (bin)) {
-		eprintf("Warning: File is not TE\n");
+		R_LOGFI("Warning: File is not TE\n");
 		return false;
 	}
 	if (!r_bin_te_init_sections (bin)) {
-		eprintf("Warning: Cannot initialize sections\n");
+		R_LOGFI("Warning: Cannot initialize sections\n");
 		return false;
 	}
 	return true;

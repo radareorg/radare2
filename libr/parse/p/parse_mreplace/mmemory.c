@@ -84,7 +84,7 @@ void memCopy(memChunk *dest,memChunk *source) {
 	if ((!source->address) || (!dest->address)) return;
 	nbytes=dest->size > source->size ? source->size : dest->size;
 	#if DEBUG3
-	eprintf ("Copying %d byte(s) to dest (size %d)\n", nbytes, dest->address, dest->size);
+	R_LOGFI ("Copying %d byte(s) to dest (size %d)\n", nbytes, dest->address, dest->size);
 	#endif
 	memcpy (dest->address, source->address, nbytes);
 }

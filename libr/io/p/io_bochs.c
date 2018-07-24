@@ -28,7 +28,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 	if (r_sandbox_enable (false)) {
-		eprintf ("sandbox exit\n");
+		R_LOGFI ("sandbox exit\n");
 		return NULL;
 	}
 	if (riobochs) {
@@ -43,7 +43,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		fileCfg = strdup (i + 1);
 	} else {
 		free (fileCfg);
-		eprintf ("Error cant find :\n");
+		R_LOGFI ("Error cant find :\n");
 		return NULL;
 	}
 	riob = R_NEW0 (RIOBochs);

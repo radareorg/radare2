@@ -179,20 +179,20 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 
 	/* check if is a create process debug event */
 	if (de.dwDebugEventCode != CREATE_PROCESS_DEBUG_EVENT) {
-		eprintf ("exception code 0x%04x\n", (ut32)de.dwDebugEventCode);
+		R_LOGFI ("exception code 0x%04x\n", (ut32)de.dwDebugEventCode);
 		goto err_fork;
 	}
 
 	if (th != INVALID_HANDLE_VALUE) {
 		CloseHandle (th);
 	}
-	eprintf ("Spawned new process with pid %d, tid = %d\n", pid, tid);
+	R_LOGFI ("Spawned new process with pid %d, tid = %d\n", pid, tid);
 	winbase = (ut64)de.u.CreateProcessInfo.lpBaseOfImage;
 	wintid = tid;
 	return pid;
 
 err_fork:
-	eprintf ("ERRFORK\n");
+	R_LOGFI ("ERRFORK\n");
 	TerminateProcess (pi.hProcess, 1);
 	if (th != INVALID_HANDLE_VALUE) CloseHandle (th);
 	return -1;
@@ -202,7 +202,7 @@ err_fork:
 #if (__APPLE__ && __POWERPC__) || !__APPLE__
 #if __APPLE__ || __BSD__
 static void inferior_abort_handler(int pid) {
-	eprintf ("Inferior received signal SIGABRT. Executing BKPT.\n");
+	R_LOGFI ("Inferior received signal SIGABRT. Executing BKPT.\n");
 }
 #endif
 
@@ -229,16 +229,16 @@ static void trace_me () {
 void handle_posix_error(int err) {
 	switch (err) {
 	case 0:
-		// eprintf ("Success\n");
+		// R_LOGFI ("Success\n");
 		break;
 	case 22:
-		eprintf ("posix_spawnp: Invalid argument\n");
+		R_LOGFI ("posix_spawnp: Invalid argument\n");
 		break;
 	case 86:
-		eprintf ("Unsupported architecture. Please specify -b 32\n");
+		R_LOGFI ("Unsupported architecture. Please specify -b 32\n");
 		break;
 	default:
-		eprintf ("posix_spawnp: unknown error %d\n", err);
+		R_LOGFI ("posix_spawnp: unknown error %d\n", err);
 		perror ("posix_spawnp");
 		break;
 	}
@@ -264,7 +264,7 @@ static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 	rp->_dodebug = true;
 	if (io->runprofile && *io->runprofile) {
 		if (!r_run_parsefile (rp, io->runprofile)) {
-			eprintf ("Can't find profile '%s'\n", io->runprofile);
+			R_LOGFI ("Can't find profile '%s'\n", io->runprofile);
 			r_run_free (rp);
 			return NULL;
 		}
@@ -279,7 +279,7 @@ static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 	}
 	free (expr);
 	if (r_run_config_env (rp)) {
-		eprintf ("Can't config the environment.\n");
+		R_LOGFI ("Can't config the environment.\n");
 		r_run_free (rp);
 		return NULL;
 	}
@@ -349,7 +349,7 @@ static int fork_and_ptraceme_for_mac(RIO *io, int bits, const char *cmd) {
 		if (!*argv) {
 			r_str_argv_free (argv);
 			free (_cmd);
-			eprintf ("Invalid execvp\n");
+			R_LOGFI ("Invalid execvp\n");
 			return -1;
 		}
 		if (useASLR != -1) {
@@ -511,11 +511,11 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 					(void)close (i);
 				}
 				if (execvp (argv[0], argv) == -1) {
-					eprintf ("Could not execvp: %s\n", strerror (errno));
+					R_LOGFI ("Could not execvp: %s\n", strerror (errno));
 					exit (MAGIC_EXIT);
 				}
 			} else {
-				eprintf ("Invalid execvp\n");
+				R_LOGFI ("Invalid execvp\n");
 			}
 			r_str_argv_free (argv);
 			free (path_escaped);
@@ -531,12 +531,12 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 			ret = wait (&status);
 			if (ret == -1) return -1;
 			if (ret != child_pid) {
-				eprintf ("Wait event received by "
+				R_LOGFI ("Wait event received by "
 					"different pid %d\n", ret);
 			}
 		} while (ret != child_pid);
 		if (WIFSTOPPED (status)) {
-			eprintf ("Process with PID %d started...\n", (int)child_pid);
+			R_LOGFI ("Process with PID %d started...\n", (int)child_pid);
 		}
 		if (WEXITSTATUS (status) == MAGIC_EXIT) {
 			child_pid = -1;
@@ -569,12 +569,12 @@ static int get_pid_of(RIO *io, const char *procname) {
 		RList *pids = d->h->pids (d, 0);
 		r_list_foreach (pids, iter, proc) {
 			if (strstr (proc->path, procname)) {
-				eprintf ("Matching PID %d %s\n", proc->pid, proc->path);
+				R_LOGFI ("Matching PID %d %s\n", proc->pid, proc->path);
 				return proc->pid;
 			}
 		}
 	} else {
-		eprintf ("Cannot enumerate processes\n");
+		R_LOGFI ("Cannot enumerate processes\n");
 	}
 	return -1;
 }
@@ -585,7 +585,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	char uri[128];
 	if (!strncmp (file, "waitfor://", 10)) {
 		const char *procname = file + 10;
-		eprintf ("Waiting for %s\n", procname);
+		R_LOGFI ("Waiting for %s\n", procname);
 		while (true) {
 			int target_pid = get_pid_of (io, procname);
 			if (target_pid != -1) {
@@ -599,7 +599,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		const char *procname = file + 8;
 		int target_pid = get_pid_of (io, procname);
 		if (target_pid == -1) {
-			eprintf ("Cannot find matching process for %s\n", file);
+			R_LOGFI ("Cannot find matching process for %s\n", file);
 			return NULL;
 		}
 		snprintf (uri, sizeof (uri), "dbg://%d", target_pid);
@@ -663,9 +663,9 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 
 static int __close (RIODesc *desc) {
 	int ret = -2;
-	eprintf ("something went wrong\n");
+	R_LOGFI ("something went wrong\n");
 	if (desc) {
-		eprintf ("trying to close %d with io_debug\n", desc->fd);
+		R_LOGFI ("trying to close %d with io_debug\n", desc->fd);
 		ret = -1;
 	}
 	r_sys_backtrace ();

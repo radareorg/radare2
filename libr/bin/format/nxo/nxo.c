@@ -94,7 +94,7 @@ static void walkSymbols (RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab
 			}
 			sym->paddr = pltSym - 8;
 			sym->vaddr = sym->paddr + baddr;
-			eprintf ("f sym.imp.%s = 0x%"PFMT64x"\n", symName, pltSym - 8);
+			R_LOGFI ("f sym.imp.%s = 0x%"PFMT64x"\n", symName, pltSym - 8);
 		} else {
 			sym->name = strdup (symName);
 			if (!sym->name) {
@@ -103,7 +103,7 @@ static void walkSymbols (RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab
 			}
 			sym->paddr = addr;
 			sym->vaddr = sym->paddr + baddr;
-			eprintf ("f sym.%s %"PFMT64u "0x%"PFMT64x"\n", symName, size, addr);
+			R_LOGFI ("f sym.%s %"PFMT64u "0x%"PFMT64x"\n", symName, size, addr);
 		}
 		r_list_append (bin->methods_list, sym);
 		i += 8 - 1;
@@ -118,9 +118,9 @@ out_walk_symbol:
 
 void parseMod (RBuffer *buf, RBinNXOObj *bin, ut32 mod0, ut64 baddr) {
 	ut32 ptr = readLE32 (buf, mod0);
-	eprintf ("magic %x at 0x%x\n", ptr, mod0);
+	R_LOGFI ("magic %x at 0x%x\n", ptr, mod0);
 	if (ptr == 0x30444f4d) { // MOD0
-		eprintf ("is mode0\n");
+		R_LOGFI ("is mode0\n");
 		MODHeader mh = {
 			.magic = readLE32 (buf, mod0),
 			.dynamic = readLE32 (buf, mod0 + 4),
@@ -131,12 +131,12 @@ void parseMod (RBuffer *buf, RBinNXOObj *bin, ut32 mod0, ut64 baddr) {
 			.mod_object = readLE32 (buf, mod0 + 24),
 		};
 		mh.mod_object += mod0;
-		eprintf ("magic 0x%x\n", mh.magic);
-		eprintf ("dynamic 0x%x\n", mh.dynamic);
-		eprintf ("bss 0x%x 0x%x\n", mh.bss_start, mh.bss_end);
-		eprintf ("unwind 0x%x 0x%x\n", mh.unwind_start, mh.unwind_end);
-		eprintf ("-------------\n");
-		eprintf ("mod 0x%x\n", mh.mod_object);
+		R_LOGFI ("magic 0x%x\n", mh.magic);
+		R_LOGFI ("dynamic 0x%x\n", mh.dynamic);
+		R_LOGFI ("bss 0x%x 0x%x\n", mh.bss_start, mh.bss_end);
+		R_LOGFI ("unwind 0x%x 0x%x\n", mh.unwind_start, mh.unwind_end);
+		R_LOGFI ("-------------\n");
+		R_LOGFI ("mod 0x%x\n", mh.mod_object);
 #define MO_(x) readLE64(buf, mh.mod_object + r_offsetof(MODObject, x))
 		MODObject mo = {
 			.next = MO_(next),
@@ -155,15 +155,15 @@ void parseMod (RBuffer *buf, RBinNXOObj *bin, ut32 mod0, ut64 baddr) {
 			.symtab = MO_(symtab),
 			.strtab_size = MO_(strtab_size)
 		};
-		eprintf ("next 0x%"PFMT64x"\n", mo.next);
-		eprintf ("prev 0x%"PFMT64x"\n", mo.prev);
-		eprintf ("base 0x%"PFMT64x"\n", mo.base);
-		eprintf ("init 0x%"PFMT64x"\n", mo.init);
-		eprintf ("fini 0x%"PFMT64x"\n", mo.fini);
-		eprintf ("relplt 0x%"PFMT64x"\n", mo.relplt - mo.base);
-		eprintf ("symtab = 0x%"PFMT64x"\n", mo.symtab - mo.base);
-		eprintf ("strtab = 0x%"PFMT64x"\n", mo.strtab - mo.base);
-		eprintf ("strtabsz = 0x%"PFMT64x"\n", mo.strtab_size);
+		R_LOGFI ("next 0x%"PFMT64x"\n", mo.next);
+		R_LOGFI ("prev 0x%"PFMT64x"\n", mo.prev);
+		R_LOGFI ("base 0x%"PFMT64x"\n", mo.base);
+		R_LOGFI ("init 0x%"PFMT64x"\n", mo.init);
+		R_LOGFI ("fini 0x%"PFMT64x"\n", mo.fini);
+		R_LOGFI ("relplt 0x%"PFMT64x"\n", mo.relplt - mo.base);
+		R_LOGFI ("symtab = 0x%"PFMT64x"\n", mo.symtab - mo.base);
+		R_LOGFI ("strtab = 0x%"PFMT64x"\n", mo.strtab - mo.base);
+		R_LOGFI ("strtabsz = 0x%"PFMT64x"\n", mo.strtab_size);
 		//ut32 modo = mh.mod_object;
 		ut64 strtab = mo.strtab - mo.base;
 		ut64 symtab = mo.symtab - mo.base;

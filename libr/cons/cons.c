@@ -275,7 +275,7 @@ R_API bool r_cons_is_breaked() {
 	if (I.timeout) {
 		if (r_sys_now () > I.timeout) {
 			I.context->breaked = true;
-			eprintf ("\nTimeout!\n");
+			R_LOGFI ("\nTimeout!\n");
 			I.timeout = 0;
 		}
 	}
@@ -329,7 +329,7 @@ static HANDLE h;
 static BOOL __w32_control(DWORD type) {
 	if (type == CTRL_C_EVENT) {
 		break_signal (2); // SIGINT
-		eprintf ("{ctrl+c} pressed.\n");
+		R_LOGFI ("{ctrl+c} pressed.\n");
 		return true;
 	}
 	return false;
@@ -419,7 +419,7 @@ R_API RCons *r_cons_new() {
 	GetConsoleMode (h, &I.term_buf);
 	I.term_raw = 0;
 	if (!SetConsoleCtrlHandler ((PHANDLER_ROUTINE)__w32_control, TRUE)) {
-		eprintf ("r_cons: Cannot set control console handler\n");
+		R_LOGFI ("r_cons: Cannot set control console handler\n");
 	}
 #endif
 	I.pager = NULL; /* no pager by default */
@@ -734,11 +734,11 @@ R_API void r_cons_flush() {
 		FILE *d = r_sandbox_fopen (tee, "a+");
 		if (d) {
 			if (I.context->buffer_len != fwrite (I.context->buffer, 1, I.context->buffer_len, d)) {
-				eprintf ("r_cons_flush: fwrite: error (%s)\n", tee);
+				R_LOGFI ("r_cons_flush: fwrite: error (%s)\n", tee);
 			}
 			fclose (d);
 		} else {
-			eprintf ("Cannot write on '%s'\n", tee);
+			R_LOGFI ("Cannot write on '%s'\n", tee);
 		}
 	}
 	r_cons_highlight (I.highlight);
@@ -772,7 +772,7 @@ R_API void r_cons_flush() {
 
 	r_cons_reset ();
 	if (I.newline) {
-		eprintf ("\n");
+		R_LOGFI ("\n");
 		I.newline = false;
 	}
 }
@@ -811,7 +811,7 @@ R_API void r_cons_visual_flush() {
 		} else {
 			prev = r_sys_now ();
 		}
-		eprintf ("\x1b[0;%dH[%d FPS] \n", w-10, fps);
+		R_LOGFI ("\x1b[0;%dH[%d FPS] \n", w-10, fps);
 	}
 }
 

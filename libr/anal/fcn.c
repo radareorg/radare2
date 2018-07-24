@@ -383,7 +383,7 @@ static RAnalBlock *appendBasicBlock(RAnal *anal, RAnalFunction *fcn, ut64 addr) 
 		st64 n = bb->addr + bb->size - fcn->addr;\
 		if (n >= 0 && r_anal_fcn_size (fcn) < n) { r_anal_fcn_set_size (NULL, fcn, n); } }\
 	if (r_anal_fcn_size (fcn) > MAX_FCN_SIZE) {\
-		/* eprintf ("Function too big at 0x%"PFMT64x" + %d\n", bb->addr, fcn->size); */\
+		/* R_LOGFI ("Function too big at 0x%"PFMT64x" + %d\n", bb->addr, fcn->size); */\
 		r_anal_fcn_set_size (NULL, fcn, 0);\
 		return R_ANAL_RET_ERROR; }
 
@@ -399,7 +399,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 }
 
 static void queue_case(RAnal *anal, ut64 switch_addr, ut64 case_addr, ut64 id, ut64 case_addr_loc) {
-	// eprintf("\tqueue_case: 0x%"PFMT64x " from 0x%"PFMT64x "\n", case_addr, case_addr_loc);
+	// R_LOGFI("\tqueue_case: 0x%"PFMT64x " from 0x%"PFMT64x "\n", case_addr, case_addr_loc);
 	anal->cmdtail = r_str_appendf (anal->cmdtail,
 		"axc 0x%"PFMT64x " 0x%"PFMT64x "\n",
 		case_addr, switch_addr);
@@ -428,7 +428,7 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 	if (!jmptbl) {
 		return 0;
 	}
-	// eprintf ("JMPTBL AT 0x%"PFMT64x"\n", jmptbl_loc);
+	// R_LOGFI ("JMPTBL AT 0x%"PFMT64x"\n", jmptbl_loc);
 	anal->iob.read_at (anal->iob.io, jmptbl_loc, jmptbl, jmptbl_size * sz);
 	for (offs = 0; offs + sz - 1 < jmptbl_size * sz; offs += sz) {
 		switch (sz) {
@@ -448,7 +448,7 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 			jmpptr = r_read_le64 (jmptbl + offs);
 			break;
 		}
-		// eprintf ("WALKING %llx\n", jmpptr);
+		// R_LOGFI ("WALKING %llx\n", jmpptr);
 		// if we don't check for 0 here, the next check with ptr+jmpptr
 		// will obviously be a good offset since it will be the start
 		// of the table, which is not what we want
@@ -473,7 +473,7 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 	}
 
 	if (offs > 0) {
-		// eprintf("\n\nSwitch statement at 0x%llx:\n", ip);
+		// R_LOGFI("\n\nSwitch statement at 0x%llx:\n", ip);
 		anal->cmdtail = r_str_appendf (anal->cmdtail,
 			"CCu switch table (%d cases) at 0x%"PFMT64x " @ 0x%"PFMT64x "\n",
 			offs/sz, jmptbl_loc, ip);
@@ -570,7 +570,7 @@ static bool is_delta_pointer_table (RAnal *anal, RAnalFunction *fcn, ut64 addr, 
 	// jmp reg2
 	if (mov_aop.type && add_aop.type && mov_aop.addr < add_aop.addr && add_aop.addr < jmp_aop->addr && mov_aop.ptr) {
 		// ptr in this case should be tbl_loc_off
-		// eprintf ("JMPTBL ADDR %llx\n", mov_aop.ptr);
+		// R_LOGFI ("JMPTBL ADDR %llx\n", mov_aop.ptr);
 		*jmptbl_addr += mov_aop.ptr;
 	}
 #if 0 
@@ -659,7 +659,7 @@ static bool try_get_delta_jmptbl_info (RAnal *anal, RAnalFunction *fcn, ut64 jmp
 		return false;
 	}
 
-	// eprintf ("switch at 0x%" PFMT64x "\n\tdefault case 0x%" PFMT64x "\n\t#cases: %d\n",
+	// R_LOGFI ("switch at 0x%" PFMT64x "\n\tdefault case 0x%" PFMT64x "\n\t#cases: %d\n",
 	// 		addr,
 	// 		*default_case,
 	// 		*table_size);
@@ -699,7 +699,7 @@ static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAna
 	}
 	// predecessor must be a conditional jump
 	if (!prev_bb || !prev_bb->jump || !prev_bb->fail) {
-		eprintf ("[anal.jmptbl] Missing cjmp bb in predecessor at 0x%08"PFMT64x"\n", addr);
+		R_LOGFI ("[anal.jmptbl] Missing cjmp bb in predecessor at 0x%08"PFMT64x"\n", addr);
 		return false;
 	}
 
@@ -747,7 +747,7 @@ static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAna
 		return false;
 	}
 
-	// eprintf ("switch at 0x%" PFMT64x "\n\tdefault case 0x%" PFMT64x "\n\t#cases: %d\n",
+	// R_LOGFI ("switch at 0x%" PFMT64x "\n\tdefault case 0x%" PFMT64x "\n\t#cases: %d\n",
 	// 		addr,
 	// 		*default_case,
 	// 		*table_size);
@@ -795,7 +795,7 @@ R_API int r_anal_case(RAnal *anal, RAnalFunction *fcn, ut64 addr_bbsw, ut64 addr
 		case R_ANAL_OP_TYPE_TRAP:
 		case R_ANAL_OP_TYPE_RET:
 		case R_ANAL_OP_TYPE_JMP:
-			// eprintf ("CASE AT 0x%llx size %d\n", addr, idx + oplen);
+			// R_LOGFI ("CASE AT 0x%llx size %d\n", addr, idx + oplen);
 			anal->cmdtail = r_str_appendf (anal->cmdtail, "afb+ 0x%"PFMT64x " 0x%"PFMT64x " %d\n",
 				fcn->addr, addr, idx + oplen);
 			anal->cmdtail = r_str_appendf (anal->cmdtail, "afbe 0x%"PFMT64x " 0x%"PFMT64x "\n",
@@ -811,7 +811,7 @@ R_API int r_anal_case(RAnal *anal, RAnalFunction *fcn, ut64 addr_bbsw, ut64 addr
 static int walk_switch(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 at) {
 	ut8 buf[1024];
 	int i;
-	eprintf ("WALK SWITCH TABLE INTO (0x%"PFMT64x ") %"PFMT64x "\n", from, at);
+	R_LOGFI ("WALK SWITCH TABLE INTO (0x%"PFMT64x ") %"PFMT64x "\n", from, at);
 	for (i = 0; i < 10; i++) {
 		(void) anal->iob.read_at (anal->iob.io, at, buf, sizeof (buf));
 		// TODO check for return value
@@ -866,7 +866,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	// check if address is readable //:
 	if (!anal->iob.is_valid_offset (anal->iob.io, addr, 0)) {
 		if (addr != UT64_MAX && !anal->iob.io->va) {
-			eprintf ("Invalid address 0x%"PFMT64x ". Try with io.va=true\n", addr);
+			R_LOGFI ("Invalid address 0x%"PFMT64x ". Try with io.va=true\n", addr);
 		}
 		return R_ANAL_RET_ERROR; // MUST BE TOO DEEP
 	}
@@ -885,7 +885,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 
 	bb = appendBasicBlock (anal, fcn, addr);
 
-	VERBOSE_ANAL eprintf ("Append bb at 0x%08"PFMT64x" (fcn 0x%08"PFMT64x ")\n", addr, fcn->addr);
+	VERBOSE_ANAL R_LOGFI ("Append bb at 0x%08"PFMT64x" (fcn 0x%08"PFMT64x ")\n", addr, fcn->addr);
 
 	bool last_is_push = false;
 	ut64 last_push_addr = UT64_MAX;
@@ -911,20 +911,20 @@ repeat:
 			break;
 		}
 		if ((len - addrbytes * idx) < 5) {
-			eprintf (" WARNING : block size exceeding max block size at 0x%08"PFMT64x"\n", addr);
-			eprintf ("[+] Try changing it with e anal.bb.maxsize\n");
+			R_LOGFI (" WARNING : block size exceeding max block size at 0x%08"PFMT64x"\n", addr);
+			R_LOGFI ("[+] Try changing it with e anal.bb.maxsize\n");
 			break;
 		}
 		r_anal_op_fini (&op);
 		if (isInvalidMemory (buf + addrbytes * idx, len - addrbytes * idx)) {
 			FITFCNSZ ();
-			VERBOSE_ANAL eprintf ("FFFF opcode at 0x%08"PFMT64x "\n", addr + idx);
+			VERBOSE_ANAL R_LOGFI ("FFFF opcode at 0x%08"PFMT64x "\n", addr + idx);
 			return R_ANAL_RET_ERROR;
 		}
 		// check if opcode is in another basic block
 		// in that case we break
 		if ((oplen = r_anal_op (anal, &op, addr + idx, buf + addrbytes * idx, len - addrbytes * idx, R_ANAL_OP_MASK_ALL)) < 1) {
-			VERBOSE_ANAL eprintf ("Unknown opcode at 0x%08"PFMT64x "\n", addr + idx);
+			VERBOSE_ANAL R_LOGFI ("Unknown opcode at 0x%08"PFMT64x "\n", addr + idx);
 			if (!idx) {
 				gotoBeach (R_ANAL_RET_END);
 			} else {
@@ -939,7 +939,7 @@ repeat:
 			if (bbg && bbg != bb) {
 				bb->jump = addr + idx;
 				overlapped = 1;
-				VERBOSE_ANAL eprintf("Overlapped at 0x%08"PFMT64x "\n", addr + idx);
+				VERBOSE_ANAL R_LOGFI("Overlapped at 0x%08"PFMT64x "\n", addr + idx);
 				// return R_ANAL_RET_END;
 			}
 		}
@@ -958,7 +958,7 @@ repeat:
 			// Save the location of it in `delay.idx`
 			// note, we have still increased size of basic block
 			// (and function)
-			VERBOSE_DELAY eprintf("Enter branch delay at 0x%08"PFMT64x ". bb->sz=%d\n", addr + idx - oplen, bb->size);
+			VERBOSE_DELAY R_LOGFI("Enter branch delay at 0x%08"PFMT64x ". bb->sz=%d\n", addr + idx - oplen, bb->size);
 			delay.idx = idx - oplen;
 			delay.cnt = op.delay;
 			delay.pending = 1; // we need this in case the actual idx is zero...
@@ -971,7 +971,7 @@ repeat:
 			// track of how many still to process.
 			delay.cnt--;
 			if (!delay.cnt) {
-				VERBOSE_DELAY eprintf("Last branch delayed opcode at 0x%08"PFMT64x ". bb->sz=%d\n", addr + idx - oplen, bb->size);
+				VERBOSE_DELAY R_LOGFI("Last branch delayed opcode at 0x%08"PFMT64x ". bb->sz=%d\n", addr + idx - oplen, bb->size);
 				delay.after = idx;
 				idx = delay.idx;
 				// At this point, we are still looking at the
@@ -981,14 +981,14 @@ repeat:
 				// the branch delay.
 			}
 		} else if (op.delay > 0 && delay.pending) {
-			VERBOSE_DELAY eprintf("Revisit branch delay jump at 0x%08"PFMT64x ". bb->sz=%d\n", addr + idx - oplen, bb->size);
+			VERBOSE_DELAY R_LOGFI("Revisit branch delay jump at 0x%08"PFMT64x ". bb->sz=%d\n", addr + idx - oplen, bb->size);
 			// This is the second pass of the branch delaying opcode
 			// But we also already counted this instruction in the
 			// size of the current basic block, so we need to fix that
 			if (delay.adjust) {
 				bb->size -= oplen;
 				fcn->ninstr--;
-				VERBOSE_DELAY eprintf("Correct for branch delay @ %08"PFMT64x " bb.addr=%08"PFMT64x " corrected.bb=%d f.uncorr=%d\n",
+				VERBOSE_DELAY R_LOGFI("Correct for branch delay @ %08"PFMT64x " bb.addr=%08"PFMT64x " corrected.bb=%d f.uncorr=%d\n",
 				addr + idx - oplen, bb->addr, bb->size, r_anal_fcn_size (fcn));
 				FITFCNSZ ();
 			}
@@ -1402,7 +1402,7 @@ analopfinish:
 				gotoBeachRet ();
 			} else {
 				if (!op.cond) {
-					VERBOSE_ANAL eprintf("RET 0x%08"PFMT64x ". %d %d %d\n",
+					VERBOSE_ANAL R_LOGFI("RET 0x%08"PFMT64x ". %d %d %d\n",
 					addr + delay.un_idx - oplen, overlapped,
 					bb->size, r_anal_fcn_size (fcn));
 					FITFCNSZ ();
@@ -1748,7 +1748,7 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 		}
 	}
 	if (mid) {
-		// eprintf ("Basic Block overlaps another one that should be shrinked\n");
+		// R_LOGFI ("Basic Block overlaps another one that should be shrinked\n");
 		if (bbi) {
 			/* shrink overlapped basic block */
 			bbi->size = addr - (bbi->addr);
@@ -1758,7 +1758,7 @@ R_API int r_anal_fcn_add_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 siz
 	if (!bb) {
 		bb = appendBasicBlock (anal, fcn, addr);
 		if (!bb) {
-			eprintf ("appendBasicBlock failed\n");
+			R_LOGFI ("appendBasicBlock failed\n");
 			return false;
 		}
 	}
@@ -1916,14 +1916,14 @@ R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction *fs) {
 R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
 	int length = 0;
 	if (!a || !f || !sig) {
-		eprintf ("r_anal_str_to_fcn: No function received\n");
+		R_LOGFI ("r_anal_str_to_fcn: No function received\n");
 		return false;
 	}
 	length = strlen (sig) + 10;
 	/* Add 'function' keyword */
 	char *str = calloc (1, length);
 	if (!str) {
-		eprintf ("Cannot allocate %d byte(s)\n", length);
+		R_LOGFI ("Cannot allocate %d byte(s)\n", length);
 		return false;
 	}
 	strcpy (str, "function ");

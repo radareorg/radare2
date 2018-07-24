@@ -303,7 +303,7 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 		len = write (fd->fd, buf, count);
 	}
 	if (!r_io_def_mmap_refresh_def_mmap_buf (mmo) ) {
-		eprintf ("io_def_mmap: failed to refresh the def_mmap backed buffer.\n");
+		R_LOGFI ("io_def_mmap: failed to refresh the def_mmap backed buffer.\n");
 		// XXX - not sure what needs to be done here (error handling).
 	}
 	return len;
@@ -327,10 +327,10 @@ static ut64 r_io_def_mmap_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 static int r_io_def_mmap_truncate(RIOMMapFileObj *mmo, ut64 size) {
 	bool res = r_file_truncate (mmo->filename, size);
 	if (res && !r_io_def_mmap_refresh_def_mmap_buf (mmo) ) {
-		eprintf ("r_io_def_mmap_truncate: Error trying to refresh the def_mmap'ed file.");
+		R_LOGFI ("r_io_def_mmap_truncate: Error trying to refresh the def_mmap'ed file.");
 		res = false;
 	} else if (!res) {
-		eprintf ("r_io_def_mmap_truncate: Error trying to resize the file.");
+		R_LOGFI ("r_io_def_mmap_truncate: Error trying to resize the file.");
 	}
 	return res;
 }

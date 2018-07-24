@@ -56,7 +56,7 @@ R_API void *r_mem_pool_alloc(RMemoryPool *pool) {
 	}
 	if (pool->ncount >= pool->poolsize) {
 		if (++pool->npool >= pool->poolcount) {
-			eprintf ("FAIL: Cannot allocate more memory in the pool\n");
+			R_LOGFI ("FAIL: Cannot allocate more memory in the pool\n");
 			return NULL;
 		}
 		pool->nodes[pool->npool] = malloc (pool->nodesize * pool->poolsize);
@@ -132,11 +132,11 @@ R_API int r_poolfactory_dealloc(RPoolFactory *pool, void *p) {
 // TODO: add support for ranged limits, from-to
 R_API void r_poolfactory_stats(RPoolFactory *pf) {
 	int i = 0;
-	eprintf ("RPoolFactory stats:\n");
-	eprintf ("  limits: %d\n", pf->limit);
+	R_LOGFI ("RPoolFactory stats:\n");
+	R_LOGFI ("  limits: %d\n", pf->limit);
 	for (i = 0; i < pf->limit; i++) {
 		if (pf->pools[i]) {
-			eprintf ("  size: %d\t npool: %d\t count: %d\n",
+			R_LOGFI ("  size: %d\t npool: %d\t count: %d\n",
 				pf->pools[i]->nodesize,
 				pf->pools[i]->npool,
 				pf->pools[i]->ncount);

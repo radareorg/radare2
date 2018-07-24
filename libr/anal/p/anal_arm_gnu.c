@@ -252,7 +252,7 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 			// op->ptr = 4+addr+b[0]; // sure? :)
 			// op->ptrptr = true;
 		}
-		// eprintf("0x%08x\n", code[i] & ARM_DTX_LOAD);
+		// R_LOGFI("0x%08x\n", code[i] & ARM_DTX_LOAD);
 		// 0x0001B4D8,           1eff2fe1        bx    lr
 	} else if (b[3] == 0xe2 && b[2] == 0x8d && b[1] == 0xd0) {
 		// ADD SP, SP, ...

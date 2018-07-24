@@ -17,7 +17,7 @@ static void xnu_thread_free (xnu_thread_t *thread) {
 	// count
 	kr = mach_port_deallocate (mach_task_self (), thread->port);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("failed to deallocate thread port\n");
+		R_LOGFI ("failed to deallocate thread port\n");
 	}
 	free (thread);
 }
@@ -227,14 +227,14 @@ static bool xnu_fill_info_thread (RDebug *dbg, xnu_thread_t *thread) {
 	kern_return_t kr = thread_info (thread->port, THREAD_BASIC_INFO,
 		(thread_info_t)&thread->basic_info, &count);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("Fail to get thread_basic_info\n");
+		R_LOGFI ("Fail to get thread_basic_info\n");
 		return false;
 	}
 	count = THREAD_IDENTIFIER_INFO_COUNT;
 	kr = thread_info (thread->port, THREAD_IDENTIFIER_INFO,
 			  (thread_info_t)&identifier_info, &count);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("Fail to get thread_identifier_info\n");
+		R_LOGFI ("Fail to get thread_identifier_info\n");
 		return false;
 	}
 	R_FREE (thread->name);
@@ -307,7 +307,7 @@ static int xnu_update_thread_list (RDebug *dbg) {
 	if (kr != KERN_SUCCESS) {
 		// we can get into this when the process has terminated but we
 		// still hold the old task because we are caching it
-		eprintf ("Failed to get list of task's threads\n");
+		R_LOGFI ("Failed to get list of task's threads\n");
 		return false;
 	}
 	if (r_list_empty (dbg->threads)) {
@@ -315,11 +315,11 @@ static int xnu_update_thread_list (RDebug *dbg) {
 		for (i = 0; i < thread_count; i++) {
 			thread = xnu_get_thread_with_info (dbg, thread_list[i]);
 			if (!thread) {
-				eprintf ("Failed to fill_thread\n");
+				R_LOGFI ("Failed to fill_thread\n");
 				continue;
 			}
 			if (!r_list_append (dbg->threads, thread)) {
-				eprintf ("Failed to add thread to list\n");
+				R_LOGFI ("Failed to add thread to list\n");
 				xnu_thread_free (thread);
 			}
 		}
@@ -356,7 +356,7 @@ static int xnu_update_thread_list (RDebug *dbg) {
 				kr = mach_port_deallocate (mach_task_self (),
 							   thread_list[i]);
 				if (kr != KERN_SUCCESS) {
-					eprintf ("Failed to deallocate port\n");
+					R_LOGFI ("Failed to deallocate port\n");
 				}
 				continue;
 			}

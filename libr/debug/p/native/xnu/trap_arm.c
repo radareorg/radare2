@@ -51,7 +51,7 @@ static bool ios_hwstep_enable32(RDebug *dbg, bool enable) {
 	if (ret != KERN_SUCCESS) {
 		perror ("thread_get_state(unified)");
 	}
-	//eprintf ("PC = 0x%08x\n", state.ts_32.__pc);
+	//R_LOGFI ("PC = 0x%08x\n", state.ts_32.__pc);
 	if (enable) {
 		int i;
 		RIOBind *bio = &dbg->iob;
@@ -73,7 +73,7 @@ static bool ios_hwstep_enable32(RDebug *dbg, bool enable) {
 			/* check for thumb */
 			bio->read_at (bio->io, pc, (void *)&op, 2);
 			if (isThumb32 (op)) {
-				eprintf ("Thumb32 chain stepping not supported yet\n");
+				R_LOGFI ("Thumb32 chain stepping not supported yet\n");
 			} else {
 				ds.__bcr[i] |= BAS_IMVA_ALL;
 			}

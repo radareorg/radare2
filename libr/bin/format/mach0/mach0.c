@@ -5,7 +5,7 @@
 #include <r_util.h>
 #include "mach0.h"
 
-#define bprintf if (bin->verbose) eprintf
+#define bprintf if (bin->verbose) R_LOGFI
 
 typedef struct _ulebr {
 	ut8 *p;
@@ -21,12 +21,12 @@ static ut64 read_uleb128(ulebr *r, ut8 *end) {
 	ut8 *p = r->p;
 	do {
 		if (p == end) {
-			eprintf ("malformed uleb128");
+			R_LOGFI ("malformed uleb128");
 			break;
 		}
 		slice = *p & 0x7f;
 		if (bit > 63) {
-			eprintf ("uleb128 too big for uint64, bit=%d, result=0x%"PFMT64x, bit, result);
+			R_LOGFI ("uleb128 too big for uint64, bit=%d, result=0x%"PFMT64x, bit, result);
 		} else {
 			result |= (slice << bit);
 			bit += 7;
@@ -43,7 +43,7 @@ static st64 read_sleb128(ulebr *r, ut8 *end) {
 	ut8 *p = r->p;
 	do {
 		if (p == end) {
-			eprintf ("malformed sleb128");
+			R_LOGFI ("malformed sleb128");
 			break;
 		}
 		byte = *p++;
@@ -2002,7 +2002,7 @@ struct addr_t* MACH0_(get_entrypoint)(struct MACH0_(obj_t)* bin) {
 				sdb_num_set (bin->kv, "mach0.entry", entry->offset, 0);
 				entry->addr = (ut64)bin->sects[i].addr;
 				if (!entry->addr) { // workaround for object files
-					eprintf ("entrypoint is 0...\n");
+					R_LOGFI ("entrypoint is 0...\n");
 					// XXX(lowlyw) there's technically not really entrypoints
 					// for .o files, so ignore this...
 					// entry->addr = entry->offset;
@@ -2423,7 +2423,7 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 #define READWORD() \
 		addr += 4; \
 		if (!r_buf_read_at (buf, addr, (ut8*)wordbuf, 4)) { \
-			eprintf ("Invalid address in buffer."); \
+			R_LOGFI ("Invalid address in buffer."); \
 			break; \
 		} \
 		word = r_read_le32 (wordbuf);
@@ -2431,14 +2431,14 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 		printf ("\n# Load Command %d\n", n);
 		READWORD();
 		int lcType = word;
-		eprintf ("0x%08"PFMT64x"  cmd          0x%x %s\n",
+		R_LOGFI ("0x%08"PFMT64x"  cmd          0x%x %s\n",
 			addr, lcType, cmd_to_string (lcType));
 		READWORD();
 		int lcSize = word;
 		word &= 0xFFFFFF;
 		printf ("0x%08"PFMT64x"  cmdsize      %d\n", addr, word);
 		if (lcSize < 1) {
-			eprintf ("Invalid size for a load command\n");
+			R_LOGFI ("Invalid size for a load command\n");
 			break;
 		}
 		switch (lcType) {

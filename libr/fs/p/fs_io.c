@@ -38,7 +38,7 @@ static bool fs_io_read(RFSFile *file, ut64 addr, int len) {
 	if (res) {
 		int encoded_size = strlen (res);
 		if (encoded_size != len * 2) {
-			eprintf ("Wrong size\n");
+			R_LOGFI ("Wrong size\n");
 			R_FREE (res);
 			return NULL;
 		}
@@ -49,7 +49,7 @@ static bool fs_io_read(RFSFile *file, ut64 addr, int len) {
 		}
 		int ret = r_hex_str2bin (res, file->data);
 		if (ret != len) {
-			eprintf ("Inconsistent read\n");
+			R_LOGFI ("Inconsistent read\n");
 			R_FREE (file->data);
 		}
 		R_FREE (res);

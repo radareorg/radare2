@@ -310,7 +310,7 @@ static RList *r_bin_wasm_get_type_entries (RBinWasmObj *bin, RBinWasmSection *se
 	}
 	return ret;
 beach:
-	eprintf ("err: beach type entries\n");
+	R_LOGFI ("err: beach type entries\n");
 	r_bin_wasm_free_types (ptr);
 	return ret;
 }
@@ -387,7 +387,7 @@ static RList *r_bin_wasm_get_import_entries (RBinWasmObj *bin, RBinWasmSection *
 	}
 	return ret;
 beach:
-	eprintf("err: beach import entries\n");
+	R_LOGFI("err: beach import entries\n");
 	free (ptr);
 	return ret;
 }
@@ -431,7 +431,7 @@ static RList *r_bin_wasm_get_export_entries (RBinWasmObj *bin, RBinWasmSection *
 	}
 	return ret;
 beach:
-	eprintf("err: beach export entries\n");
+	R_LOGFI("err: beach export entries\n");
 	free (ptr);
 	return ret;
 }
@@ -489,7 +489,7 @@ static RList *r_bin_wasm_get_code_entries (RBinWasmObj *bin, RBinWasmSection *se
 	}
 	return ret;
 beach:
-	eprintf("err: beach code entries\n");
+	R_LOGFI("err: beach code entries\n");
 	r_bin_wasm_free_codes (ptr);
 	return ret;
 }
@@ -536,7 +536,7 @@ static RList *r_bin_wasm_get_data_entries (RBinWasmObj *bin, RBinWasmSection *se
 	}
 	return ret;
 beach:
-	eprintf("err: beach data entries\n");
+	R_LOGFI("err: beach data entries\n");
 	free (ptr);
 	return ret;
 }
@@ -559,7 +559,7 @@ static RBinWasmStartEntry *r_bin_wasm_get_start (RBinWasmObj *bin, RBinWasmSecti
 	}
 	return ptr;
 beach:
-	eprintf("err: beach start\n");
+	R_LOGFI("err: beach start\n");
 	free (ptr);
 	return NULL;
 }
@@ -598,7 +598,7 @@ static RList *r_bin_wasm_get_memory_entries (RBinWasmObj *bin, RBinWasmSection *
 	}
 	return ret;
 beach:
-	eprintf("err: beach memory entries\n");
+	R_LOGFI("err: beach memory entries\n");
 	free (ptr);
 	return ret;
 }
@@ -640,7 +640,7 @@ static RList *r_bin_wasm_get_table_entries (RBinWasmObj *bin, RBinWasmSection *s
 	}
 	return ret;
 beach:
-	eprintf("err: beach table entries\n");
+	R_LOGFI("err: beach table entries\n");
 	free (ptr);
 	return ret;
 }
@@ -685,7 +685,7 @@ static RList *r_bin_wasm_get_global_entries (RBinWasmObj *bin, RBinWasmSection *
 	}
 	return ret;
 beach:
-	eprintf("err: beach global entries\n");
+	R_LOGFI("err: beach global entries\n");
 	free (ptr);
 	return ret;
 }
@@ -737,7 +737,7 @@ static RList *r_bin_wasm_get_element_entries (RBinWasmObj *bin, RBinWasmSection 
 	}
 	return ret;
 beach:
-	eprintf("err: beach element entries\n");
+	R_LOGFI("err: beach element entries\n");
 	free (ptr);
 	return ret;
 }
@@ -843,72 +843,72 @@ RList *r_bin_wasm_get_sections (RBinWasmObj *bin) {
 		ptr->offset = b->cur;
 		switch (ptr->id) {
 		case R_BIN_WASM_SECTION_CUSTOM:
-			eprintf("custom section: 0x%x, ", (ut32)b->cur);
+			R_LOGFI("custom section: 0x%x, ", (ut32)b->cur);
 			if (!(consume_u32_r (b, max, &ptr->name_len))) {
 				goto beach;
 			}
 			if (consume_str_r (b, max, ptr->name_len, ptr->name) < ptr->name_len) {
 				goto beach;
 			}
-			eprintf("name: %s\n", ptr->name);
+			R_LOGFI("name: %s\n", ptr->name);
 			break;
 		case R_BIN_WASM_SECTION_TYPE:
-			eprintf("section type: 0x%x, ", (ut32)b->cur);
+			R_LOGFI("section type: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "type");
 			ptr->name_len = 4;
 			break;
 		case R_BIN_WASM_SECTION_IMPORT:
-			eprintf("section import: 0x%x, ", (ut32)b->cur);
+			R_LOGFI("section import: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "import");
 			ptr->name_len = 6;
 			break;
 		case R_BIN_WASM_SECTION_FUNCTION:
-			eprintf("section function: 0x%x, ", (ut32)b->cur);
+			R_LOGFI("section function: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "function");
 			ptr->name_len = 8;
 			break;
 		case R_BIN_WASM_SECTION_TABLE:
-			eprintf("section table: 0x%x, ", (ut32)b->cur);
+			R_LOGFI("section table: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "table");
 			ptr->name_len = 5;
 			break;
 		case R_BIN_WASM_SECTION_MEMORY:
-			eprintf("section memory: 0x%x, ", (ut32)b->cur);
+			R_LOGFI("section memory: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "memory");
 			ptr->name_len = 6;
 			break;
 		case R_BIN_WASM_SECTION_GLOBAL:
-			eprintf("section global: 0x%x, ", (ut32)b->cur);
+			R_LOGFI("section global: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "global");
 			ptr->name_len = 6;
 			break;
 		case R_BIN_WASM_SECTION_EXPORT:
-			eprintf("section export: 0x%x, ", (ut32)b->cur);
+			R_LOGFI("section export: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "export");
 			ptr->name_len = 6;
 			break;
 		case R_BIN_WASM_SECTION_START:
-			eprintf("section start: 0x%x\n", (ut32)b->cur);
+			R_LOGFI("section start: 0x%x\n", (ut32)b->cur);
 			strcpy (ptr->name, "start");
 			ptr->name_len = 5;
 			break;
 		case R_BIN_WASM_SECTION_ELEMENT:
-			eprintf("section element: 0x%x, ", (ut32)b->cur);
+			R_LOGFI("section element: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "element");
 			ptr->name_len = 7;
 			break;
 		case R_BIN_WASM_SECTION_CODE:
-			eprintf("section code: 0x%x, ", (ut32)b->cur);
+			R_LOGFI("section code: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "code");
 			ptr->name_len = 4;
 			break;
 		case R_BIN_WASM_SECTION_DATA:
-			eprintf("section data: 0x%x, ", (ut32)b->cur);
+			R_LOGFI("section data: 0x%x, ", (ut32)b->cur);
 			strcpy (ptr->name, "data");
 			ptr->name_len = 4;
 			break;
 		default:
-			eprintf("unkown section id: %d\n", ptr->id);
+			R_LOGFI("unkown section id: %d\n", ptr->id);
 			r_buf_seek (b, ptr->size - 1, R_IO_SEEK_CUR);
 			continue;
 		}
@@ -917,7 +917,7 @@ RList *r_bin_wasm_get_sections (RBinWasmObj *bin) {
 			if (!(consume_u32_r (b, max, &ptr->count))) {
 				goto beach;
 			}
-			eprintf("count %d\n", ptr->count);
+			R_LOGFI("count %d\n", ptr->count);
 		}
 		ptr->payload_data = b->cur;
 		ptr->payload_len = ptr->size - (ptr->payload_data - ptr->offset);
@@ -934,7 +934,7 @@ RList *r_bin_wasm_get_sections (RBinWasmObj *bin) {
 	bin->g_sections = ret;
 	return ret;
 beach:
-	eprintf("err: beach sections\n");
+	R_LOGFI("err: beach sections\n");
 	free (ptr);
 	return ret;
 }

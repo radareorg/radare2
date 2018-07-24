@@ -69,7 +69,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		begin = r_mem_mem (op->buf, len, (const ut8*)"BEGINMARK", 9);
 		end = r_mem_mem (op->buf, len, (const ut8*)"ENDMARK", 7);
 		if (!begin || !end) {
-			eprintf ("Cannot find water marks\n");
+			R_LOGFI ("Cannot find water marks\n");
 			len = 0;
 		} else {
 			len = (int)(size_t)(end - begin - 9);
@@ -80,8 +80,8 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 			}
 		}
 	} else {
-		eprintf ("Error running: %s %s -o %s", as, ipath, opath);
-		eprintf ("export PATH=~/NDK/toolchains/arm-linux*/prebuilt/darwin-arm_64/bin\n");
+		R_LOGFI ("Error running: %s %s -o %s", as, ipath, opath);
+		R_LOGFI ("export PATH=~/NDK/toolchains/arm-linux*/prebuilt/darwin-arm_64/bin\n");
 		len = 0;
 	}
 

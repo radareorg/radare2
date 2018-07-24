@@ -3,7 +3,7 @@
 #include <r_bin.h>
 #include <r_util.h>
 
-#define bprintf if(binfile->rbin->verbose)eprintf
+#define bprintf if(binfile->rbin->verbose)R_LOGFI
 
 R_API void r_bin_object_free(void /*RBinObject*/ *o_) {
 	RBinObject *o = o_;

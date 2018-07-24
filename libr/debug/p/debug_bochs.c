@@ -24,17 +24,17 @@ static int r_debug_bochs_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool s
 	char bufcmd[100];
 	ut64 a;
 	int  n,i,lenRec;
-	//eprintf ("bochs_breakpoint\n");
+	//R_LOGFI ("bochs_breakpoint\n");
 	if (!b) {
 		return false;
 	}
 	if (set) {
-		//eprintf("[set] bochs_breakpoint %016"PFMT64x"\n",bp->addr);
+		//R_LOGFI("[set] bochs_breakpoint %016"PFMT64x"\n",bp->addr);
 		sprintf (cmd, "lb 0x%x", (ut32)b->addr);
 		bochs_send_cmd (desc, cmd, true);
 		bCapturaRegs = true;
 	} else {
-		//eprintf("[unset] bochs_breakpoint %016"PFMT64x"\n",bp->addr);
+		//R_LOGFI("[unset] bochs_breakpoint %016"PFMT64x"\n",bp->addr);
 		/*
 		Num Type           Disp Enb Address
 		  1 lbreakpoint    keep y   0x0000000000007c00
@@ -55,7 +55,7 @@ static int r_debug_bochs_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool s
 					addr[18] = 0;
 					n = r_num_get (NULL,num);
 					a = r_num_get (NULL,addr);
-					//eprintf("parseado %x %016"PFMT64x"\n",n,a);
+					//R_LOGFI("parseado %x %016"PFMT64x"\n",n,a);
 					if (a == b->addr) {
 						break;
 					}
@@ -65,7 +65,7 @@ static int r_debug_bochs_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool s
 		}
 		if (a == b->addr) {
 			snprintf (bufcmd, sizeof (bufcmd), "d %i", n);
-			//eprintf("[unset] Break point localizado indice = %x (%x) %s \n",n,(DWORD)a,bufcmd);
+			//R_LOGFI("[unset] Break point localizado indice = %x (%x) %s \n",n,(DWORD)a,bufcmd);
 			bochs_send_cmd (desc, bufcmd, true);
 		}
 
@@ -81,7 +81,7 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	int i = 0, pos = 0, lenRec = 0;
 	ut64 val = 0, valRIP = 0; //, posRIP = 0;
 
-	//eprintf ("bochs_reg_read\n");
+	//R_LOGFI ("bochs_reg_read\n");
 	if (bCapturaRegs == true) {
 		bochs_send_cmd (desc, "regs", true);
 		//r14: 00000000_00000000 r15: 00000000_00000000
@@ -101,7 +101,7 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 				strReg[18] = 0;
 				i += 22;
 				val = r_num_get (NULL, strReg);
-				// eprintf("parseado %s = %s valx64 = %016"PFMT64x"\n", regname, strReg,val);
+				// R_LOGFI("parseado %s = %s valx64 = %016"PFMT64x"\n", regname, strReg,val);
 				memcpy (&buf[pos], &val, 8);
 				// guardamos la posicion del rip y su valor para ajustarlo al obtener el CS
 				if (!strncmp (regname, "rip", 3)) {
@@ -116,14 +116,14 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		bochs_send_cmd (desc, "info cpu", true);
 		if (strstr (desc->data,"PC_32")) {
 			bAjusta = true;
-			//eprintf("[modo PC_32]\n");
+			//R_LOGFI("[modo PC_32]\n");
 		} else if (strstr (desc->data,"PC_80")) {
 			bAjusta = false;
-			//eprintf("[modo PC_80]\n");
+			//R_LOGFI("[modo PC_80]\n");
 		} else if (strstr (desc->data,"PC_64")) {
 			bAjusta = false;
-			//eprintf("[modo PC_64]\n");
-		} else eprintf ("[unknown mode]\n%s\n",desc->data);
+			//R_LOGFI("[modo PC_64]\n");
+		} else R_LOGFI ("[unknown mode]\n%s\n",desc->data);
 		  /*
 		   es:0x0000, dh=0x00009300, dl=0x0000ffff, valid=7
 		   Data segment, base=0x00000000, limit=0x0000ffff, Read/Write, Accessed
@@ -163,13 +163,13 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 						strLimit[10] = 0;
 					}
 				}
-				//eprintf("%s localizado %s %04x base = %s limit = %s\n",regname,strReg,(WORD)val,strBase,strLimit);
+				//R_LOGFI("%s localizado %s %04x base = %s limit = %s\n",regname,strReg,(WORD)val,strBase,strLimit);
 				memcpy (&buf[pos], &val, 2);
 				pos += 2;
 				if (bAjusta) {
 					if (!strncmp (regname,"cs",2)) {
 						valRIP += (val*0x10); // desplazamos CS y lo añadimos a RIP
-					//eprintf("%016"PFMT64x"\n",valRIP);
+					//R_LOGFI("%016"PFMT64x"\n",valRIP);
 					}
 				}
 			}
@@ -180,19 +180,19 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		} else {
 			memcpy (&buf[0], &valRIP, 8);	// guardamos el valor cs:ip en el registro virtual "vip"
 		}
-		//eprintf("guardando regs procesados%x\n",size);
+		//R_LOGFI("guardando regs procesados%x\n",size);
 		memcpy (saveRegs,buf,size);
 		bCapturaRegs = false;
-		//eprintf("bochs_reg_read\n");
+		//R_LOGFI("bochs_reg_read\n");
 	} else {
 		memcpy (buf, saveRegs, size);
-		//eprintf("[cache] bochs_reg_read\n");
+		//R_LOGFI("[cache] bochs_reg_read\n");
 	}
 	return size;
 }
 
 static int r_debug_bochs_reg_write(RDebug *dbg, int type, const ut8 *buf, int size) {
-	//eprintf("bochs_reg_write\n");
+	//R_LOGFI("bochs_reg_write\n");
 	return -1;
 }
 
@@ -202,7 +202,7 @@ void map_free(RDebugMap *map) {
 }
 
 static RList *r_debug_bochs_map_get(RDebug* dbg) { //TODO
-	//eprintf("bochs_map_getdebug:\n");
+	//R_LOGFI("bochs_map_getdebug:\n");
 	RDebugMap *mr;
 	RList *list = r_list_newf ((RListFree)map_free);
 	if (!list) return NULL;
@@ -222,7 +222,7 @@ static RList *r_debug_bochs_map_get(RDebug* dbg) { //TODO
 }
 
 static int r_debug_bochs_step(RDebug *dbg) {
-	//eprintf ("bochs_step\n");
+	//R_LOGFI ("bochs_step\n");
 	bochs_send_cmd (desc,"s",true);
 	bCapturaRegs = true;
 	bStep = true;
@@ -230,7 +230,7 @@ static int r_debug_bochs_step(RDebug *dbg) {
 }
 
 static int r_debug_bochs_continue(RDebug *dbg, int pid, int tid, int sig) {
-	//eprintf ("bochs_continue:\n");
+	//R_LOGFI ("bochs_continue:\n");
 	bochs_send_cmd (desc, "c", false);
 	bCapturaRegs = true;
 	bBreak = false;
@@ -238,7 +238,7 @@ static int r_debug_bochs_continue(RDebug *dbg, int pid, int tid, int sig) {
 }
 
 static void bochs_debug_break(void *u) {
-	eprintf("bochs_debug_break: Sending break...\n");
+	R_LOGFI("bochs_debug_break: Sending break...\n");
 	bochs_cmd_stop (desc);
 	bBreak = true;
 }
@@ -249,7 +249,7 @@ static int r_debug_bochs_wait(RDebug *dbg, int pid) {
 	const char *x;
 	char *ini = 0, *fin = 0;
 
-	//eprintf ("bochs_wait:\n");
+	//R_LOGFI ("bochs_wait:\n");
 
 	if (bStep) {
 		bStep = false;
@@ -260,24 +260,24 @@ static int r_debug_bochs_wait(RDebug *dbg, int pid) {
 			bochs_wait (desc);
 			if (bBreak) {
 				if (desc->data[0]) {
-					eprintf ("ctrl+c %s\n", desc->data);
+					R_LOGFI ("ctrl+c %s\n", desc->data);
 					bBreak = false;
 					break;
 				}
 				i--;
 				if (!i) {
 					bBreak = false;
-					eprintf ("empty ctrl+c.\n");
+					R_LOGFI ("empty ctrl+c.\n");
 					break;
 				}
 			} else if (desc->data[0]) {
-				//eprintf("stop on breakpoint%s\n",desc->data);
+				//R_LOGFI("stop on breakpoint%s\n",desc->data);
 				break;
 			}
 		} while(1);
 		r_cons_break_pop ();
 	}
-	//eprintf ("bochs_wait: loop done\n");
+	//R_LOGFI ("bochs_wait: loop done\n");
 	i = 0;
 	// Next at t=394241428
 	// (0) [0x000000337635] 0020:0000000000337635 (unk. ctxt): add eax, esi              ; 03c6
@@ -288,7 +288,7 @@ static int r_debug_bochs_wait(RDebug *dbg, int pid) {
 				int len = fin - ini - 1;
 				strncpy (strIP, ini+1, len);
 				strIP[len] = 0;
-				//eprintf(" parada EIP = %s\n",strIP);
+				//R_LOGFI(" parada EIP = %s\n",strIP);
 				ripStop = r_num_get (NULL, strIP);
 			}
 		}
@@ -299,7 +299,7 @@ static int r_debug_bochs_wait(RDebug *dbg, int pid) {
 }
 
 static int r_debug_bochs_stop(RDebug *dbg) {
-	//eprintf("bochs_stop:\n");
+	//R_LOGFI("bochs_stop:\n");
 	//RIOBdescbg *o = dbg->iob.io->desc->data;
 	//BfvmCPU *c = o->bfvm;
 	//c->breaked = true;
@@ -308,7 +308,7 @@ static int r_debug_bochs_stop(RDebug *dbg) {
 
 static int r_debug_bochs_attach(RDebug *dbg, int pid) {
 	RIODesc *d = dbg->iob.io->desc;
-	//eprintf ("bochs_attach:\n");
+	//R_LOGFI ("bochs_attach:\n");
 	dbg->swstep = false;
 	if (d && d->plugin && d->plugin->name && d->data) {
 		if (!strcmp ("bochs", d->plugin->name)) {
@@ -316,7 +316,7 @@ static int r_debug_bochs_attach(RDebug *dbg, int pid) {
 			//int arch = r_sys_arch_id (dbg->arch);
 			// int bits = dbg->anal->bits;
 			if (( desc = &g->desc )) {
-				eprintf("bochs attach: ok\n");
+				R_LOGFI("bochs attach: ok\n");
 				saveRegs = malloc(1024);
 				bCapturaRegs = true;
 				bStep = false;
@@ -328,7 +328,7 @@ static int r_debug_bochs_attach(RDebug *dbg, int pid) {
 }
 
 static int r_debug_bochs_detach(RDebug *dbg, int pid) {
-	//eprintf ("bochs_detach:\n");
+	//R_LOGFI ("bochs_detach:\n");
 	free (saveRegs);
 	return true;
 }
