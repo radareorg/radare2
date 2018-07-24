@@ -356,6 +356,16 @@ R_API bool r_cons_enable_mouse(const bool enable) {
 #endif
 }
 
+static void cons_log(RLogLevel level, const char *str) {
+	(void)level;
+	fprintf (stderr, "%s", str);
+}
+
+static void cons_logf_list(RLogLevel level, const char *format, va_list ap) {
+	(void)level;
+	vfprintf (stderr, format, ap);
+}
+
 R_API RCons *r_cons_new() {
 	I.refcnt++;
 	if (I.refcnt != 1) {
@@ -419,6 +429,7 @@ R_API RCons *r_cons_new() {
 	r_cons_pal_init ();
 
 	r_print_set_is_interrupted_cb (r_cons_is_breaked);
+	r_log_set (cons_log, cons_logf_list);
 
 	return &I;
 }
@@ -439,6 +450,7 @@ R_API RCons *r_cons_free() {
 	}
 	R_FREE (I.break_word);
 	cons_context_deinit (I.context);
+	r_log_set (NULL, NULL);
 	return NULL;
 }
 
