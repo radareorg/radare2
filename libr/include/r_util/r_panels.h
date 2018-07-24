@@ -25,6 +25,7 @@ typedef struct r_panel_t {
 	PanelType type;
 	ut64 baseAddr;
 	ut64 addr;
+	char *cmdStrCache;
 } RPanel;
 
 #ifdef __cplusplus
