@@ -4,7 +4,6 @@
 
 #define useUtf8 (r_cons_singleton ()->use_utf8)
 #define useUtf8Curvy (r_cons_singleton ()->use_utf8_curvy)
-#define dotted (r_cons_singleton ()->dotted_lines)
 
 #define W(y) r_cons_canvas_write (c, y)
 #define G(x, y) r_cons_canvas_gotoxy (c, x, y)
@@ -283,8 +282,8 @@ static int utf8len_fixed(const char *s, int n) {
 
 static int bytes_utf8len(const char *s, int n, int left) {
 	int i = 0, fullwidths = 0;
-	while (s[i] && n > -1 && i < left) {
-		if (r_str_char_fullwidth (s + i, left)) {
+	while (n > -1 && i < left && s[i]) {
+		if (r_str_char_fullwidth (s + i, left - i)) {
 			fullwidths++;
 		}
 		if ((s[i] & 0xc0) != 0x80) {
@@ -301,7 +300,7 @@ static int expand_line (RConsCanvas *c, int real_len, int utf8_len) {
 		return true;
 	}
 	int buf_utf8_len = bytes_utf8len (c->b[c->y] + c->x, utf8_len, c->blen[c->y] - c->x);
-	int goback = R_MAX (0, (buf_utf8_len - real_len));
+	int goback = R_MAX (0, (buf_utf8_len - utf8_len));
 	int padding = (real_len - utf8_len) - goback;
 
 	if (padding) {
@@ -315,8 +314,8 @@ static int expand_line (RConsCanvas *c, int real_len, int utf8_len) {
 			c->b[c->y] = newline;
 			c->bsize[c->y] = newsize;
 		}
-		int size = R_MAX (c->blen[c->y] - c->x - utf8_len, 0);
-		char *start = c->b[c->y] + c->x + utf8_len;
+		int size = R_MAX (c->blen[c->y] - c->x - goback, 0);
+		char *start = c->b[c->y] + c->x + goback;
 		char *tmp = malloc (size);
 		if (!tmp) {
 			return false;
@@ -362,7 +361,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *s) {
 
 		if (piece_len > left) {
 			int utf8_piece_len = utf8len_fixed (s_part, piece_len);
-			if (utf8_piece_len >= c->w - attr_x) {
+			if (utf8_piece_len > c->w - attr_x) {
 				slen = left;
 			}
 		}
@@ -438,7 +437,7 @@ R_API char *r_cons_canvas_to_string(RConsCanvas *c) {
 					olen += len;
 				}
 				attr_x++;
-				if (r_str_char_fullwidth (c->b[y] + x, c->bsize[c->y] - x)) {
+				if (r_str_char_fullwidth (c->b[y] + x, c->blen[y] - x)) {
 					attr_x++;
 				}
 			}
