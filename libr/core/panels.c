@@ -1643,8 +1643,10 @@ repeat:
 			" sS   - step in / step over\n"
 			" uU   - undo / redo seek\n"
 			" pP   - seek to next or previous scr.nkey\n"
+			" o    - go/seek to given offset\n"
 			" nN   - create new panel with given command\n"
 			" q    - quit, back to visual mode\n"
+			" 0-9  - jump to the nth panel. n is the number you hit\n"
 			);
 		r_cons_flush ();
 		r_cons_any_key (NULL);
