@@ -3,6 +3,7 @@ files = [
   'anal_ex.c',
   'bb.c',
   'cc.c',
+  'class.c',
   'cond.c',
   'cycles.c',
   'data.c',

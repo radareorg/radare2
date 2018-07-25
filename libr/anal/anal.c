@@ -170,6 +170,7 @@ R_API RAnal *r_anal_new() {
 	anal->sdb_fmts = sdb_ns (anal->sdb, "spec", 1);
 	anal->sdb_cc = sdb_ns (anal->sdb, "cc", 1);
 	anal->sdb_zigns = sdb_ns (anal->sdb, "zigns", 1);
+	anal->sdb_classes = sdb_ns (anal->sdb, "classes", 1);
 	anal->zign_path = strdup ("");
 	anal->cb_printf = (PrintfCallback) printf;
 	(void)r_anal_pin_init (anal);
@@ -483,6 +484,7 @@ R_API int r_anal_purge (RAnal *anal) {
 	sdb_reset (anal->sdb_hints);
 	sdb_reset (anal->sdb_types);
 	sdb_reset (anal->sdb_zigns);
+	sdb_reset (anal->sdb_classes);
 	r_list_free (anal->fcns);
 	anal->fcns = r_anal_fcn_list_new ();
 	anal->fcn_tree = NULL;
