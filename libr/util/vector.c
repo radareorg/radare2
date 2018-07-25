@@ -79,7 +79,7 @@ R_API bool r_vector_empty(RVector *vec) {
 	return vec->len == 0;
 }
 
-R_API void r_vector_free(RVector *vec, void (*elem_free)(void *)) {
+R_API void r_vector_free(RVector *vec, RVectorFree elem_free) {
 	if (elem_free) {
 		while (vec->len > 0) {
 			elem_free (vec->a[--vec->len]);
