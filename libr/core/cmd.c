@@ -991,7 +991,6 @@ R_API int sdbshell_history_down(RLine *line) {
 	return true;
 }
 
-
 static int cmd_kuery(void *data, const char *input) {
 	char buf[1024], *out;
 	RCore *core = (RCore*)data;
