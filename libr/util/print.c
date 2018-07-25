@@ -1730,7 +1730,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				j += strlen (reset);
 				o[j] = p[i];
 				if (!(p[i+1] == '$' || ((p[i+1] > '0') && (p[i+1] < '9')))) {
-					char *color = found_var ? print->cons->pal.func_var_type : reg;
+					const char *color = found_var ? print->cons->pal.func_var_type : reg;
 					ut32 color_len = strlen (color);
 					if (color_len + j + 10 >= COLORIZE_BUFSIZE) {
 						eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
