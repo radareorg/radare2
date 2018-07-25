@@ -1413,7 +1413,7 @@ static void get_hash_debug_file(RCore *core, const char *path, char *hash, int h
 	int bd = -1;
 	RBinFile *old_cur = r_bin_cur (core->bin);
 
-	RBinOptions *bo = r_bin_options_new (0LL, 0LL, NULL);
+	RBinOptions *bo = r_bin_options_new (0LL, 0LL, 0);
 	if (!bo) {
 		eprintf ("Could not create RBinOptions\n");
 		goto out_error;

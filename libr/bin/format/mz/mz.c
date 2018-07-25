@@ -87,7 +87,7 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments(const struct r_bin_mz_obj_t *b
 		paddr = r_bin_mz_seg_to_paddr (bin, relocs[i].segment) + relocs[i].offset;
 		if ((paddr + 2) < bin->dos_file_size) {
 			int left;
-			ut16 *curr_seg = r_buf_get_at (bin->b, paddr, &left);
+			ut16 *curr_seg = (ut16 *)r_buf_get_at (bin->b, paddr, &left);
 			/* Add segment only if it's located inside dos executable data */
 			if (left >= 2 && r_read_le16 (curr_seg) <= last_parag) {
 				btree_add (&tree, curr_seg, cmp_segs);
