@@ -971,20 +971,37 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 	return NULL;
 }
 
-static int r_debug_gdb_breakpoint (void *bp, RBreakpointItem *b, bool set) {
-	int ret;
+static int r_debug_gdb_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set) {
+	int ret, arch, bpsize;
 	if (!b) {
 		return false;
 	}
+
+	arch = r_sys_arch_id (bp->arch);
+	switch (arch) {
+	case R_SYS_ARCH_ARM:
+		// TODO check if thumb or not (bpsize must be 2/3 for thumb instructions)
+		// More info: https://sourceware.org/gdb/onlinedocs/gdb/ARM-Breakpoint-Kinds.html#ARM-Breakpoint-Kinds
+		bpsize = 4;
+		break;
+	case R_SYS_ARCH_MIPS:
+		// Using standard mips breakpoint size
+		// More info: https://sourceware.org/gdb/onlinedocs/gdb/MIPS-Breakpoint-Kinds.html#MIPS-Breakpoint-Kinds
+		bpsize = 4;
+		break;
+	default:
+		bpsize = 1;
+	}
+
 	// TODO handle rwx and conditions
 	if (set)
 		ret = b->hw?
-			gdbr_set_hwbp (desc, b->addr, ""):
-			gdbr_set_bp (desc, b->addr, "");
+			gdbr_set_hwbp (desc, b->addr, "", bpsize):
+			gdbr_set_bp (desc, b->addr, "", bpsize);
 	else
 		ret = b->hw?
-			gdbr_remove_hwbp (desc, b->addr):
-			gdbr_remove_bp (desc, b->addr);
+			gdbr_remove_hwbp (desc, b->addr, bpsize):
+			gdbr_remove_bp (desc, b->addr, bpsize);
 	return !ret;
 }
 
