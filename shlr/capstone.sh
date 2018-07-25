@@ -14,6 +14,7 @@ clone_capstone() {
 	else
 		HEAD="`git log|head -n1 | awk '{print $2}'`"
 	fi
+	BRANCH="`git branch | grep '*' | cut -d'*' -f2 | cut -d' ' -f2`"
 
 	if [ "${HEAD}" = "${CS_TIP}" ]; then
 		echo "[capstone] Already in TIP, no need to update from git"
@@ -30,10 +31,12 @@ if [ -d capstone -a ! -d capstone/.git ]; then
 else
 	clone_capstone
 
-	echo "[capstone] Reset capstone"
-	cd ..
-	rm -rf capstone
-	clone_capstone
+	if [ "${BRANCH}" != "${CS_BRA}" ]; then
+	    echo "[capstone] Reset capstone"
+	    cd ..
+	    rm -rf capstone
+	    clone_capstone
+	fi
 
 	echo "[capstone] Updating capstone from git..."
 	echo "HEAD ${HEAD}"
