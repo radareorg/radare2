@@ -582,7 +582,6 @@ static void handleUpKey(RCore *core) {
 
 static void handleDownKey(RCore *core) {
 	RPanels *panels = core->panels;
-
 	r_cons_switchbuf (false);
 	if (panels->curnode == panels->menu_pos) {
 		if (!panels->menuStackDepth) {
@@ -637,67 +636,67 @@ static void handleDownKey(RCore *core) {
 
 static void handleLeftKey(RCore *core) {
 	RPanels *panels = core->panels;
-
 	r_cons_switchbuf (false);
-	if (core->print->cur_enabled) {
-		cursorLeft (core);
+	if (panels->curnode == panels->menu_pos) {
+		if (!panels->menuStackDepth) {
+			if (panels->currentMenuIndex) {
+				panels->currentMenuIndex--;
+			} else  {
+				panels->currentMenuIndex = menuNum - 1;
+			}
+		} else if (panels->menuStackDepth > 0) {
+			panels->menuStackDepth = 0;
+			panels->currentMenu = panels->menuStack[0];
+			if (panels->menuIndexStack[0]) {
+				panels->currentMenuIndex = panels->menuIndexStack[0] - 1;
+			} else {
+				panels->currentMenuIndex = menuNum - 1;
+			}
+			setRefreshAll (panels);
+		}
+	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_GRAPH)) {
+		if (panels->panel[panels->curnode].sx > 0) {
+			panels->panel[panels->curnode].sx -= r_config_get_i (core->config, "graph.scroll");
+			panels->panel[panels->curnode].refresh = true;
+		}
+	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS) || !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
+		if (core->print->cur_enabled) {
+			cursorLeft (core);
+			panels->panel[panels->curnode].refresh = true;
+		}
 	} else {
-		if (panels->curnode < 0) {
-			if (!panels->menuStackDepth) {
-				if (panels->currentMenuIndex) {
-					panels->currentMenuIndex--;
-				} else  {
-					panels->currentMenuIndex = menuNum - 1;
-				}
-			} else if (panels->menuStackDepth > 0) {
-				panels->menuStackDepth = 0;
-				panels->currentMenu = panels->menuStack[0];
-				if (panels->menuIndexStack[0]) {
-					panels->currentMenuIndex = panels->menuIndexStack[0] - 1;
-				} else {
-					panels->currentMenuIndex = menuNum - 1;
-				}
-				setRefreshAll (panels);
-			}
-		} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_GRAPH)) {
-			if (panels->panel[panels->curnode].sx > 0) {
-				panels->panel[panels->curnode].sx -= r_config_get_i (core->config, "graph.scroll");
-				panels->panel[panels->curnode].refresh = true;
-			}
-		} else {
-			if (panels->panel[panels->curnode].sx > 0) {
-				panels->panel[panels->curnode].sx--;
-				panels->panel[panels->curnode].refresh = true;
-			}
+		if (panels->panel[panels->curnode].sx > 0) {
+			panels->panel[panels->curnode].sx--;
+			panels->panel[panels->curnode].refresh = true;
 		}
 	}
 }
 
 static void handleRightKey(RCore *core) {
 	RPanels *panels = core->panels;
-
 	r_cons_switchbuf (false);
-	if (core->print->cur_enabled) {
-		cursorRight (core);
-	} else {
-		if (panels->curnode < 0) {
-			if (!panels->menuStackDepth) {
-				panels->currentMenuIndex++;
-				panels->currentMenuIndex %= menuNum;
-			} else if (panels->menuStackDepth > 0) {
-				panels->menuStackDepth = 0;
-				panels->currentMenu = panels->menuStack[0];
-				panels->currentMenuIndex = panels->menuIndexStack[0] + 1;
-				panels->currentMenuIndex %= menuNum;
-				setRefreshAll (panels);
-			}
-		} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_GRAPH)) {
-			panels->panel[panels->curnode].sx += r_config_get_i (core->config, "graph.scroll");
-			panels->panel[panels->curnode].refresh = true;
-		} else {
-			panels->panel[panels->curnode].sx++;
+	if (panels->curnode ==  panels->menu_pos) {
+		if (!panels->menuStackDepth) {
+			panels->currentMenuIndex++;
+			panels->currentMenuIndex %= menuNum;
+		} else if (panels->menuStackDepth > 0) {
+			panels->menuStackDepth = 0;
+			panels->currentMenu = panels->menuStack[0];
+			panels->currentMenuIndex = panels->menuIndexStack[0] + 1;
+			panels->currentMenuIndex %= menuNum;
+			setRefreshAll (panels);
+		}
+	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_GRAPH)) {
+		panels->panel[panels->curnode].sx += r_config_get_i (core->config, "graph.scroll");
+		panels->panel[panels->curnode].refresh = true;
+	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS) || !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
+		if (core->print->cur_enabled) {
+			cursorRight (core);
 			panels->panel[panels->curnode].refresh = true;
 		}
+	} else {
+		panels->panel[panels->curnode].sx++;
+		panels->panel[panels->curnode].refresh = true;
 	}
 }
 
@@ -1444,6 +1443,7 @@ static bool handleMenu(RCore *core, const char *menu) {
 	} else if (!strcmp (menu, "Quit")) {
 		return false;
 	}
+	doPanelsRefresh (core);
 	return true;
 }
 
@@ -1608,10 +1608,9 @@ repeat:
 	case ' ':
 	case '\r':
 	case '\n':
-		if (panels->currentMenu && !handleMenu (core, panels->currentMenu[panels->currentMenuIndex])) {
+		if (panels->curnode == panels->menu_pos && !handleMenu (core, panels->currentMenu[panels->currentMenuIndex])) {
 			goto exit;
 		}
-		doPanelsRefresh (core);
 		break;
 	case '?':
 		r_cons_clear00 ();
@@ -1653,6 +1652,15 @@ repeat:
 	case 'b':
 		r_core_visual_browse (core);
 		break;
+	case 'o':
+		if (panels->curnode != panels->menu_pos && !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
+			r_core_visual_showcursor (core, true);
+			r_core_visual_offset (core);
+			r_core_visual_showcursor (core, false);
+			panels->panel[panels->curnode].addr = core->offset;
+			panels->panel[panels->curnode].refresh = true;
+		}
+		break;
 	case 's':
 		panelSingleStepIn (core);
 		setRefreshAll (panels);
@@ -1672,7 +1680,7 @@ repeat:
 		setRefreshAll (panels);
 		break;
 	case 'c':
-		if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK) || !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS)) {
+		if (panels->curnode != panels->menu_pos && (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK) || !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS))) {
 			setCursor (core, !core->print->cur_enabled);
 			panels->panel[panels->curnode].refresh = true;
 		}
@@ -1721,8 +1729,10 @@ repeat:
 		r_core_visual_hud (core);
 		break;
 	case 'X':
-		delCurPanel (panels);
-		setRefreshAll (panels);
+		if (panels->curnode != panels->menu_pos) {
+			delCurPanel (panels);
+			setRefreshAll (panels);
+		}
 		break;
 	case 9: // TAB
 		handleTabKey (core, false);

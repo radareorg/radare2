@@ -239,7 +239,7 @@ static void visual_repeat(RCore *core) {
 }
 #endif
 
-static void showcursor(RCore *core, int x) {
+R_API void r_core_visual_showcursor(RCore *core, int x) {
 	if (core && core->vmode) {
 		r_cons_show_cursor (x);
 		if (!x) {
@@ -273,7 +273,7 @@ R_API int r_core_visual_hud(RCore *core) {
 	char *p = 0;
 	r_cons_singleton ()->color = use_color;
 
-	showcursor (core, true);
+	r_core_visual_showcursor (core, true);
 	if (c && *c && r_file_exists (c)) {
 		res = r_cons_hud_file (c);
 	}
@@ -297,7 +297,7 @@ R_API int r_core_visual_hud(RCore *core) {
 		}
 		free (res);
 	}
-	showcursor (core, false);
+	r_core_visual_showcursor (core, false);
 	r_cons_flush ();
 	free (homehud);
 	free (f);
@@ -343,9 +343,9 @@ static void prompt_read(const char *p, char *buf, int buflen) {
 	}
 	*buf = 0;
 	r_line_set_prompt (p);
-	showcursor (NULL, true);
+	r_core_visual_showcursor (NULL, true);
 	r_cons_fgets (buf, buflen, 0, NULL);
-	showcursor (NULL, false);
+	r_core_visual_showcursor (NULL, false);
 }
 
 static void reset_print_cur(RPrint *p) {
@@ -430,7 +430,7 @@ R_API int r_core_visual_prompt(RCore *core) {
 #else
 	r_line_set_prompt (":> ");
 #endif
-	showcursor (core, true);
+	r_core_visual_showcursor (core, true);
 	r_cons_fgets (buf, sizeof (buf), 0, NULL);
 	if (!strcmp (buf, "q")) {
 		ret = false;
@@ -443,7 +443,7 @@ R_API int r_core_visual_prompt(RCore *core) {
 		ret = false;
 		//r_cons_any_key (NULL);
 		r_cons_clear00 ();
-		showcursor (core, false);
+		r_core_visual_showcursor (core, false);
 	}
 	return ret;
 }
@@ -655,7 +655,7 @@ static void findPair(RCore *core) {
 	if (q) {
 		core->print->cur = (int) (size_t) (q - core->block);
 		core->print->ocur = -1;
-		showcursor (core, true);
+		r_core_visual_showcursor (core, true);
 	}
 }
 
@@ -670,7 +670,7 @@ static void findNextWord(RCore *core) {
 			if (core->print->cur_enabled) {
 				core->print->cur = i + 1;
 				core->print->ocur = -1;
-				showcursor (core, true);
+				r_core_visual_showcursor (core, true);
 			} else {
 				r_core_seek (core, core->offset + i + 1, 1);
 			}
@@ -707,7 +707,7 @@ static void findPrevWord(RCore *core) {
 			if (core->print->cur_enabled) {
 				core->print->cur = i + 1;
 				core->print->ocur = -1;
-				showcursor (core, true);
+				r_core_visual_showcursor (core, true);
 			} else {
 				// r_core_seek (core, core->offset + i + 1, 1);
 			}
@@ -747,7 +747,7 @@ static void visual_search(RCore *core) {
 		} else {
 			core->print->ocur = -1;
 		}
-		showcursor (core, true);
+		r_core_visual_showcursor (core, true);
 		eprintf ("Found in offset 0x%08"PFMT64x" + %d\n", core->offset, core->print->cur);
 		r_cons_any_key (NULL);
 	} else {
@@ -951,7 +951,7 @@ R_API int offset_history_down(RLine *line) {
 	return true;
 }
 
-static void visual_offset(RCore *core) {
+R_API void r_core_visual_offset(RCore *core) {
 	ut64 addr, bsze, newaddr;
 	char buf[256];
 
@@ -1214,9 +1214,9 @@ static void visual_comma(RCore *core) {
 	cwd = getcommapath (core);
 	if (!cmtfile) {
 		char *fn;
-		showcursor (core, true);
+		r_core_visual_showcursor (core, true);
 		fn = r_cons_input ("<comment-file> ");
-		showcursor (core, false);
+		r_core_visual_showcursor (core, false);
 		if (fn && *fn) {
 			cmtfile = strdup (fn);
 			if (!comment || !*comment) {
@@ -1837,7 +1837,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				return true;
 			}
 			r_cons_printf ("Enter assembler opcodes separated with ';':\n");
-			showcursor (core, true);
+			r_core_visual_showcursor (core, true);
 			r_cons_flush ();
 			r_cons_set_raw (false);
 			strcpy (buf, "wa ");
@@ -1861,13 +1861,13 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					r_core_seek (core, t, 1);
 				}
 			}
-			showcursor (core, false);
+			r_core_visual_showcursor (core, false);
 			r_cons_set_raw (true);
 		}
 		break;
 		case '=':
 		{ // TODO: edit
-			showcursor (core, true);
+			r_core_visual_showcursor (core, true);
 			const char *buf = NULL;
 			#define I core->cons
 			const char *cmd = r_config_get (core->config, "cmd.vprompt");
@@ -1877,12 +1877,12 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 //		if (r_cons_fgets (buf, sizeof (buf)-4, 0, NULL) <0) buf[0]='\0';
 			I->line->contents = NULL;
 			(void)r_config_set (core->config, "cmd.vprompt", buf);
-			showcursor (core, false);
+			r_core_visual_showcursor (core, false);
 		}
 		break;
 		case '|':
 		{ // TODO: edit
-			showcursor (core, true);
+			r_core_visual_showcursor (core, true);
 			const char *buf = NULL;
 			#define I core->cons
 			const char *cmd = r_config_get (core->config, "cmd.cprompt");
@@ -1899,7 +1899,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				R_FREE (I->line->contents);
 				(void)r_config_set (core->config, "cmd.cprompt", buf? buf: "");
 			}
-			showcursor (core, false);
+			r_core_visual_showcursor (core, false);
 		}
 		break;
 		case '!':
@@ -1907,9 +1907,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'o':
 		{
-			showcursor (core, true);
-			visual_offset (core);
-			showcursor (core, false);
+			r_core_visual_showcursor (core, true);
+			r_core_visual_offset (core);
+			r_core_visual_showcursor (core, false);
 		}
 		break;
 		case 'A':
@@ -1959,9 +1959,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (r_config_get_i (core->config, "asm.esil")) {
 				r_core_visual_esil (core);
 			} else {
-				showcursor (core, true);
+				r_core_visual_showcursor (core, true);
 				r_core_visual_define (core, arg + 1);
-				showcursor (core, false);
+				r_core_visual_showcursor (core, false);
 			}
 			break;
 		case 'D':
@@ -1972,7 +1972,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			int range, min, max;
 			char name[256], *n;
 			r_line_set_prompt ("flag name: ");
-			showcursor (core, true);
+			r_core_visual_showcursor (core, true);
 			if (r_cons_fgets (name, sizeof (name), 0, NULL) >= 0 && *name) {
 				n = r_str_trim (name);
 				if (core->print->ocur != -1) {
@@ -2006,7 +2006,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 			}
 		}
-			showcursor (core, false);
+			r_core_visual_showcursor (core, false);
 			break;
 		case ',':
 			visual_comma (core);
@@ -2050,7 +2050,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				r_cons_any_key (NULL);
 				return true;
 			}
-			showcursor (core, true);
+			r_core_visual_showcursor (core, true);
 			r_cons_flush ();
 			r_cons_set_raw (0);
 			if (ch == 'I') {
@@ -2099,7 +2099,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				r_core_seek (core, offset, 1);
 			}
 			r_cons_set_raw (1);
-			showcursor (core, false);
+			r_core_visual_showcursor (core, false);
 			break;
 		case 'R':
 			if (r_config_get_i (core->config, "scr.randpal")) {
@@ -2605,7 +2605,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_cons_enable_mouse (false);
 			r_cons_gotoxy (0, 0);
 			r_cons_printf ("Enter a comment: ('-' to remove, '!' to use $EDITOR)\n");
-			showcursor (core, true);
+			r_core_visual_showcursor (core, true);
 			r_cons_flush ();
 			r_cons_set_raw (false);
 			r_line_set_prompt ("comment: ");
@@ -2658,7 +2658,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 			}
 			r_cons_set_raw (true);
-			showcursor (core, false);
+			r_core_visual_showcursor (core, false);
 			break;
 		case 'b':
 			r_core_visual_browse (core);
