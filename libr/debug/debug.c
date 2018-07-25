@@ -377,7 +377,7 @@ R_API RDebug *r_debug_new(int hard) {
 	if (hard) {
 		dbg->bp = r_bp_new ();
 		r_debug_plugin_init (dbg);
-        dbg->bp->arch = dbg->arch;
+		dbg->bp->arch = dbg->arch;
 		dbg->bp->iob.init = false;
 	}
 	return dbg;
