@@ -659,7 +659,8 @@ static void handleLeftKey(RCore *core) {
 			panels->panel[panels->curnode].sx -= r_config_get_i (core->config, "graph.scroll");
 			panels->panel[panels->curnode].refresh = true;
 		}
-	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS) || !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
+	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS)
+			|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
 		if (core->print->cur_enabled) {
 			cursorLeft (core);
 			panels->panel[panels->curnode].refresh = true;
@@ -689,7 +690,8 @@ static void handleRightKey(RCore *core) {
 	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_GRAPH)) {
 		panels->panel[panels->curnode].sx += r_config_get_i (core->config, "graph.scroll");
 		panels->panel[panels->curnode].refresh = true;
-	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS) || !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
+	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS)
+			|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
 		if (core->print->cur_enabled) {
 			cursorRight (core);
 			panels->panel[panels->curnode].refresh = true;
@@ -781,7 +783,8 @@ static void delInvalidPanels(RPanels *panels) {
 static void dismantlePanel(RPanels *panels) {
 	RPanel *justLeftPanel = NULL, *justRightPanel = NULL, *justUpPanel = NULL, *justDownPanel = NULL;
 	RPanel *tmpPanel = NULL;
-	bool leftUpValid = false, leftDownValid = false, rightUpValid = false, rightDownValid = false, upLeftValid = false, upRightValid = false, downLeftValid = false, downRightValid = false;
+	bool leftUpValid = false, leftDownValid = false, rightUpValid = false, rightDownValid = false,
+		 upLeftValid = false, upRightValid = false, downLeftValid = false, downRightValid = false;
 	int left[PANEL_NUM_LIMIT], right[PANEL_NUM_LIMIT], up[PANEL_NUM_LIMIT], down[PANEL_NUM_LIMIT];
 	memset (left, -1, sizeof (left));
 	memset (right, -1, sizeof (right));
@@ -1693,7 +1696,8 @@ repeat:
 		setRefreshAll (panels);
 		break;
 	case 'c':
-		if (panels->curnode != panels->menu_pos && (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK) || !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS))) {
+		if (panels->curnode != panels->menu_pos && (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)
+					|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS))) {
 			setCursor (core, !core->print->cur_enabled);
 			panels->panel[panels->curnode].refresh = true;
 		}
