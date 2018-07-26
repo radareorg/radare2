@@ -659,8 +659,7 @@ static void handleLeftKey(RCore *core) {
 			panels->panel[panels->curnode].sx -= r_config_get_i (core->config, "graph.scroll");
 			panels->panel[panels->curnode].refresh = true;
 		}
-	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS) \
-			|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
+	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS) || !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
 		if (core->print->cur_enabled) {
 			cursorLeft (core);
 			panels->panel[panels->curnode].refresh = true;
@@ -690,8 +689,7 @@ static void handleRightKey(RCore *core) {
 	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_GRAPH)) {
 		panels->panel[panels->curnode].sx += r_config_get_i (core->config, "graph.scroll");
 		panels->panel[panels->curnode].refresh = true;
-	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS) \
-			|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
+	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS) || !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
 		if (core->print->cur_enabled) {
 			cursorRight (core);
 			panels->panel[panels->curnode].refresh = true;
