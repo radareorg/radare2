@@ -659,7 +659,8 @@ static void handleLeftKey(RCore *core) {
 			panels->panel[panels->curnode].sx -= r_config_get_i (core->config, "graph.scroll");
 			panels->panel[panels->curnode].refresh = true;
 		}
-	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS) || !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
+	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS) \
+			|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
 		if (core->print->cur_enabled) {
 			cursorLeft (core);
 			panels->panel[panels->curnode].refresh = true;
@@ -689,7 +690,8 @@ static void handleRightKey(RCore *core) {
 	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_GRAPH)) {
 		panels->panel[panels->curnode].sx += r_config_get_i (core->config, "graph.scroll");
 		panels->panel[panels->curnode].refresh = true;
-	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS) || !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
+	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS) \
+			|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
 		if (core->print->cur_enabled) {
 			cursorRight (core);
 			panels->panel[panels->curnode].refresh = true;
@@ -704,16 +706,28 @@ static bool handleCursorMode(RCore *core, const int key) {
 	const char *creg;
 	const RPanels *panels = core->panels;
 	char buf[128];
+	if (!core->print->cur_enabled) {
+		return false;
+	}
 	if (core->print->cur_enabled) {
 		switch (key) {
-		case 9: // TAB
-		case 'Z': // SHIFT-TAB
-			return true;
+		case 'h':
+			handleLeftKey (core);
+			break;
+		case 'j':
+			handleDownKey (core);
+			break;
+		case 'k':
+			handleUpKey (core);
+			break;
+		case 'l':
+			handleRightKey (core);
+			break;
 		case 'Q':
 		case 'q':
 			setCursor (core, !core->print->cur_enabled);
 			panels->panel[panels->curnode].refresh = true;
-			return true;
+			break;
 		case 'i':
 			if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
 				// insert mode
@@ -730,10 +744,9 @@ static bool handleCursorMode(RCore *core, const int key) {
 					panels->panel[panels->curnode].refresh = true;
 				}
 			}
-			return true;
 		}
 	}
-	return false;
+	return true;
 }
 
 static void delPanel(RPanels *panels, int delPanelNum) {
