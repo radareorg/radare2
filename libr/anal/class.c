@@ -3,9 +3,6 @@
 #include <r_anal.h>
 
 R_API RAnalClass *r_anal_class_new(const char *name) {
-	if (!name) {
-		return NULL;
-	}
 	RAnalClass *cls = R_NEW (RAnalClass);
 	if (!cls) {
 		return NULL;
@@ -13,7 +10,8 @@ R_API RAnalClass *r_anal_class_new(const char *name) {
 	cls->name = name ? strdup (name) : NULL;
 	cls->addr = UT64_MAX;
 	cls->vtable_addr = UT64_MAX;
-	cls->base_classes = NULL;
+	r_vector_init (&cls->base_classes);
+	r_vector_init (&cls->methods);
 	return cls;
 }
 
@@ -22,7 +20,8 @@ R_API void r_anal_class_free(RAnalClass *cls) {
 		return;
 	}
 	free (cls->name);
-	r_list_free (cls->base_classes);
+	r_vector_clear (&cls->base_classes, free);
+	r_vector_clear (&cls->methods, (RVectorFree)r_anal_method_free);
 }
 
 R_API RAnalMethod *r_anal_method_new() {
@@ -32,6 +31,7 @@ R_API RAnalMethod *r_anal_method_new() {
 	}
 	meth->addr = UT64_MAX;
 	meth->name = NULL;
+	meth->vtable_index = -1;
 	return meth;
 }
 
@@ -42,6 +42,32 @@ R_API void r_anal_method_free(RAnalMethod *meth) {
 	free (meth->name);
 }
 
+
+
+R_API void r_anal_class_add(RAnal *anal, RAnalClass *cls) {
+	r_vector_push (&anal->classes, cls);
+}
+
+R_API void r_anal_class_remove(RAnal *anal, RAnalClass *cls) {
+	int index = r_vector_index (&anal->classes, cls);
+	if (index >= 0) {
+		r_vector_delete_at (&anal->classes, index);
+	}
+}
+
+R_API RAnalClass *r_anal_class_get(RAnal *anal, const char *name) {
+	void **it;
+	r_vector_foreach (&anal->classes, it) {
+		RAnalClass *cls = (RAnalClass *)*it;
+		if (strcmp (cls->name, name) == 0) {
+			return cls;
+		}
+	}
+	return NULL;
+}
+
+
+#if R_ANAL_CLASSES_SDB
 
 // escape src and write into dst
 // dst must be at least of size strlen(src) * 2 + 1
@@ -188,3 +214,5 @@ R_API bool r_anal_class_rename(RAnal *anal, const char *old, const char *new_nam
 	r_anal_class_set (anal, cls);
 	return true;
 }
+
+#endif

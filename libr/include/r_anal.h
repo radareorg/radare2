@@ -688,7 +688,11 @@ typedef struct r_anal_t {
 	RHintCb hint_cbs;
 	Sdb *sdb_fcnsign; // OK
 	Sdb *sdb_cc; // calling conventions
+#if R_ANAL_CLASSES_SDB
 	Sdb *sdb_classes;
+#else
+	RVector classes;
+#endif
 	//RList *hints; // XXX use better data structure here (slist?)
 	RAnalCallbacks cb;
 	RAnalOptions opt;
@@ -1150,18 +1154,20 @@ typedef struct r_anal_esil_t {
 typedef struct r_anal_method_t {
 	char *name;
 	ut64 addr;
+	int vtable_index; // >= 0 if method is virtual, else -1
 } RAnalMethod;
 
 typedef struct r_anal_base_class_t {
-	ut64 offset;
-	char *name;
+	ut64 offset; // offset of the base class inside the derived class
+	struct r_anal_class_t *cls;
 } RAnalBaseClass;
 
 typedef struct r_anal_class_t {
 	char *name;
 	ut64 addr;
 	ut64 vtable_addr;
-	RList *base_classes; // <RAnalBaseClass>
+	RVector base_classes; // <RAnalBaseClass>
+	RVector methods; // <RAnalMethod>
 } RAnalClass;
 
 typedef int (*RAnalEsilOp)(RAnalEsil *esil);
@@ -1781,6 +1787,10 @@ R_API RAnalClass *r_anal_class_new(const char *name);
 R_API void r_anal_class_free(RAnalClass *cls);
 R_API RAnalMethod *r_anal_method_new();
 R_API void r_anal_method_free(RAnalMethod *meth);
+
+R_API void r_anal_class_add(RAnal *anal, RAnalClass *cls);
+R_API void r_anal_class_remove(RAnal *anal, RAnalClass *cls);
+R_API RAnalClass *r_anal_class_get(RAnal *anal, const char *name);
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
