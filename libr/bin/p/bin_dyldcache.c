@@ -373,7 +373,7 @@ static RDyldRebaseInfo *get_rebase_info(RBinFile *bf, RDyldCache *cache) {
 	rebase_info->one_page_buf = one_page_buf;
 	rebase_info->slide = estimate_slide (bf, cache, rebase_info->value_mask);
 	if (rebase_info->slide) {
-		eprintf ("dyldcache is slid: 0x%"PFMT64x"\n", rebase_info->slide);
+		R_LOGFI ("dyldcache is slid: 0x%"PFMT64x"\n", rebase_info->slide);
 	}
 
 	return rebase_info;
@@ -393,7 +393,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 		rc = !memcmp (buf, "dyld", 4);
 		if (rc) {
 			if (*arch) {
-				eprintf ("Arch: %s\n", arch);
+				R_LOGFI ("Arch: %s\n", arch);
 				if (!strstr (arch, "arm64")) {
 					return false;
 				}
@@ -530,7 +530,7 @@ static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *h
 				R_FREE (lib_name);
 				continue;
 			}
-			eprintf ("FILTER: %s\n", lib_name);
+			R_LOGFI ("FILTER: %s\n", lib_name);
 			R_FREE (lib_name);
 			deps[i]++;
 
@@ -542,7 +542,7 @@ static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *h
 					deps[dep_index]++;
 
 					char *dep_name = get_lib_name (cache_buf, &img[dep_index]);
-					eprintf ("-> %s\n", dep_name);
+					R_LOGFI ("-> %s\n", dep_name);
 					R_FREE (dep_name);
 				}
 			}
@@ -604,7 +604,7 @@ static RList *create_cache_bins(RBinFile *bf, RBuffer *cache_buf, cache_hdr_t *h
 			break;
 		}
 		default:
-			eprintf ("Unknown sub-bin\n");
+			R_LOGFI ("Unknown sub-bin\n");
 			break;
 		}
 	}
@@ -723,7 +723,7 @@ static int dyldcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 			result = R_MIN (count, internal_result);
 			memcpy (buf, internal_buf + page_offset, result);
 		} else {
-			eprintf ("ERROR rebasing\n");
+			R_LOGFI ("ERROR rebasing\n");
 			result = cache->original_io_read (io, fd, buf, count);
 		}
 

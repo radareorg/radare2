@@ -117,7 +117,7 @@ R_API char *r_syscmd_ls(const char *input) {
 		input++;
 	}
 	if (r_sandbox_enable (0)) {
-		eprintf ("Sandbox forbids listing directories\n");
+		R_LOGFI ("Sandbox forbids listing directories\n");
 		return NULL;
 	}
 	if (*input && input[0] == ' ') {
@@ -125,7 +125,7 @@ R_API char *r_syscmd_ls(const char *input) {
 	}
 	if (*input) {
 		if ((!strncmp (input, "-h", 2))) {
-			eprintf ("Usage: ls ([-l,-j,-q]) ([path]) # long, json, quiet\n");
+			R_LOGFI ("Usage: ls ([-l,-j,-q]) ([path]) # long, json, quiet\n");
 		} else if ((!strncmp (input, "-q", 2))) {
 			printfmt = 'q';
 			path ++;
@@ -245,12 +245,12 @@ R_API char *r_syscmd_cat(const char *file) {
 		filename = r_str_trim (filename);
 		char *data = r_file_slurp (filename, &sz);
 		if (!data) {
-			eprintf ("No such file or directory\n");
+			R_LOGFI ("No such file or directory\n");
 		}
 		free (filename);
 		return data;
 	} else {
-		eprintf ("Usage: cat [file]\n");
+		R_LOGFI ("Usage: cat [file]\n");
 	}
 	return NULL;
 }
@@ -282,7 +282,7 @@ R_API char *r_syscmd_mkdir(const char *dir) {
 
 R_API bool r_syscmd_mv(const char *input) {
 	if (strlen (input) < 3) {
-		eprintf ("Usage: mv src dst\n");
+		R_LOGFI ("Usage: mv src dst\n");
 		return false;
 	}
 	input = input + 2;

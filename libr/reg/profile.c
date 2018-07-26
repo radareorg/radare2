@@ -190,9 +190,9 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 			}
 			// Warn the user if something went wrong
 			if (r) {
-				eprintf ("%s: Parse error @ line %d (%s)\n",
+				R_LOGFI ("%s: Parse error @ line %d (%s)\n",
 					__FUNCTION__, l, r);
-				//eprintf ("(%s)\n", str);
+				//R_LOGFI ("(%s)\n", str);
 				// Clean up
 				r_reg_free_internal (reg, false);
 				return false;
@@ -202,7 +202,7 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 	reg->size = 0;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		RRegSet *rs = &reg->regset[i];
-		//eprintf ("* arena %s size %d\n", r_reg_get_type (i), rs->arena->size);
+		//R_LOGFI ("* arena %s size %d\n", r_reg_get_type (i), rs->arena->size);
 		reg->size += rs->arena->size;
 
 	}
@@ -232,7 +232,7 @@ R_API int r_reg_set_profile(RReg *reg, const char *profile) {
 		}
 	}
 	if (!str) {
-		eprintf ("r_reg_set_profile: Cannot find '%s'\n", profile);
+		R_LOGFI ("r_reg_set_profile: Cannot find '%s'\n", profile);
 		return false;
 	}
 	ret = r_reg_set_profile_string (reg, str);
@@ -275,7 +275,7 @@ static int gdb_to_r2_profile(char *gdb) {
 			      &offset, &size, type, groups);
 		// Groups is optional, others not
 		if (ret < 6) {
-			eprintf ("Could not parse line: %s\n", ptr);
+			R_LOGFI ("Could not parse line: %s\n", ptr);
 			if (!ptr1) {
 				return true;
 			}
@@ -342,7 +342,7 @@ static int gdb_to_r2_profile(char *gdb) {
 			type_bits |= gpr;
 		}
 		// Print line
-		eprintf ("%s\t%s\t.%d\t%d\t0\n",
+		R_LOGFI ("%s\t%s\t.%d\t%d\t0\n",
 			 // Ref: Comment above about more register type mappings
 			 ((type_bits & mmx) || (type_bits & float_)
 			  || (type_bits & sse)) ? "fpu" : "gpr",
@@ -369,7 +369,7 @@ R_API int r_reg_parse_gdb_profile(const char *profile_file) {
 		}
 	}
 	if (!str) {
-		eprintf ("r_reg_parse_gdb_profile: Cannot find '%s'\n", profile_file);
+		R_LOGFI ("r_reg_parse_gdb_profile: Cannot find '%s'\n", profile_file);
 		return false;
 	}
 	ret = gdb_to_r2_profile (str);

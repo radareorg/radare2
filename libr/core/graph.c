@@ -443,7 +443,7 @@ static int **get_crossing_matrix(const RGraph *g,
 							// this should never happen
 							// but it happens if we do graph.dummy = false, so better hide it for now
 #if 0
-							eprintf ("(WARNING) \"%s\" (%d) or \"%s\" (%d) are not on the right layer (%d)\n",
+							R_LOGFI ("(WARNING) \"%s\" (%d) or \"%s\" (%d) are not on the right layer (%d)\n",
 								ak->title, ak->layer,
 								at->title, at->layer,
 								i);
@@ -2301,7 +2301,7 @@ static int get_cgnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	}
 	r_list_free (refs);
 #else
-	eprintf ("Must be sdbized\n");
+	R_LOGFI ("Must be sdbized\n");
 #endif
 	return true;
 }
@@ -3771,7 +3771,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		h = 25;
 		can = r_cons_canvas_new (w, h);
 		if (!can) {
-			eprintf ("Cannot create RCons.canvas context. Invalid screen "
+			R_LOGFI ("Cannot create RCons.canvas context. Invalid screen "
 					"size? See scr.columns + scr.rows\n");
 			r_config_hold_free (hc);
 			return false;
@@ -3784,7 +3784,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		graph_allocated = true;
 		fcn = _fcn? _fcn: r_anal_get_fcn_in (core->anal, core->offset, 0);
 		if (!fcn) {
-			eprintf ("No function in current seek\n");
+			R_LOGFI ("No function in current seek\n");
 			r_config_restore (hc);
 			r_config_hold_free (hc);
 			r_cons_canvas_free (can);
@@ -4100,7 +4100,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			if (undo) {
 				r_core_seek (core, undo->off, 0);
 			} else {
-				eprintf ("Cannot undo\n");
+				R_LOGFI ("Cannot undo\n");
 			}
 			break;
 		}
@@ -4113,7 +4113,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			if (undo) {
 				r_core_seek (core, undo->off, 0);
 			} else {
-				eprintf ("Cannot redo\n");
+				R_LOGFI ("Cannot redo\n");
 			}
 			break;
 		}

@@ -60,9 +60,9 @@ R_API int r_search_pattern(RSearch *s, ut64 from, ut64 to) {
 	int patlen = s->pattern_size;
 	fnditem* root;
 
-	eprintf ("Searching patterns between 0x%08"PFMT64x" and 0x%08"PFMT64x"\n", from, to);
+	R_LOGFI ("Searching patterns between 0x%08"PFMT64x" and 0x%08"PFMT64x"\n", from, to);
 	if (patlen < 1 || patlen > MAX_PATLEN) {
-		eprintf ("Invalid pattern length (must be > 1 and < %d)\n", MAX_PATLEN);
+		R_LOGFI ("Invalid pattern length (must be > 1 and < %d)\n", MAX_PATLEN);
 		return false;
 	}
 	bact = from;
@@ -107,23 +107,23 @@ R_API int r_search_pattern(RSearch *s, ut64 from, ut64 to) {
 					if (cnt == 0) {
 						add_fi (root, sblk, patlen);
 						pcnt++;
-						eprintf ("\nbytes: %d: ", pcnt);
+						R_LOGFI ("\nbytes: %d: ", pcnt);
 						for (k = 0; k<patlen; k++)
-							eprintf ("%02x", sblk[k]);
-						eprintf ("\nfound: %d: 0x%08"PFMT64x" ", pcnt, intaddr);
+							R_LOGFI ("%02x", sblk[k]);
+						R_LOGFI ("\nfound: %d: 0x%08"PFMT64x" ", pcnt, intaddr);
 					}
 					moar++;
 					cnt++;
-					eprintf ("0x%08"PFMT64x" ", bproc+i);
+					R_LOGFI ("0x%08"PFMT64x" ", bproc+i);
 				}
 			}
 			if (moar>0)
-				eprintf ("\ncount: %d: %d\n", pcnt, moar+1);
+				R_LOGFI ("\ncount: %d: %d\n", pcnt, moar+1);
 			bproc += rb;
 		}
 		bact += (moar > 0)? patlen: 1;
 	}
-	eprintf ("\n");
+	R_LOGFI ("\n");
 	fini_fi (root);
 	return 0;
 }

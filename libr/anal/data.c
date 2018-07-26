@@ -98,7 +98,7 @@ R_API char *r_anal_data_to_string(RAnalData *d, RConsPrintablePalette *pal) {
 
 	line = malloc (mallocsz);
 	if (!line) {
-		eprintf ("Cannot allocate %d byte(s)\n", mallocsz);
+		R_LOGFI ("Cannot allocate %d byte(s)\n", mallocsz);
 		return NULL;
 	}
 	if (pal) {
@@ -224,7 +224,7 @@ R_API RAnalData *r_anal_data_new_string(ut64 addr, const char *p, int len, int t
 		ad->buf = malloc (len + 1);
 		if (!ad->buf) {
 			r_anal_data_free (ad);
-			eprintf ("Cannot allocate %d byte(s)\n", len + 1);
+			R_LOGFI ("Cannot allocate %d byte(s)\n", len + 1);
 			return NULL;
 		}
 		memcpy (ad->buf, ad->str, len + 1);

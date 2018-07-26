@@ -55,7 +55,7 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 	RBreakpointItem *b;
 
 	if (!pb) {
-		eprintf ("BreakpointItem is NULL!\n");
+		R_LOGFI ("BreakpointItem is NULL!\n");
 		return false;
 	}
 	/* initialize the output parameter */
@@ -113,7 +113,7 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 	}
 	
 	if (!dbg->pc_at_bp_set) {
-		eprintf ("failed to determine position of pc after breakpoint");
+		R_LOGFI ("failed to determine position of pc after breakpoint");
 	}
 	
 	if (dbg->pc_at_bp) {
@@ -141,11 +141,11 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 	if (pc_off) {
 		pc -= pc_off;
 		if (!r_reg_set_value (dbg->reg, pc_ri, pc)) {
-			eprintf ("failed to set PC!\n");
+			R_LOGFI ("failed to set PC!\n");
 			return false;
 		}
 		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, true)) {
-			eprintf ("cannot set registers!\n");
+			R_LOGFI ("cannot set registers!\n");
 			return false;
 		}
 	}
@@ -164,7 +164,7 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 
 	/* inform the user of what happened */
 	if (dbg->hitinfo) {
-		//eprintf ("hit %spoint at: %"PFMT64x "\n",
+		//R_LOGFI ("hit %spoint at: %"PFMT64x "\n",
 		//		b->trace ? "trace" : "break", pc);
 		r_cons_printf ("hit %spoint at: %"PFMT64x "\n",
 			b->trace ? "trace" : "break", pc);
@@ -287,13 +287,13 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, bool watch
 				}
 				perm = ((map->perm & 1) << 2) | (map->perm & 2) | ((map->perm & 4) >> 2);
 				if (!(perm & R_BP_PROT_EXEC)) {
-					eprintf ("WARNING: setting bp within mapped memory without exec perm\n");
+					R_LOGFI ("WARNING: setting bp within mapped memory without exec perm\n");
 				}
 				break;
 			}
 		}
 		if (!valid) {
-			eprintf ("WARNING: module's base addr + delta is not a valid address\n");
+			R_LOGFI ("WARNING: module's base addr + delta is not a valid address\n");
 			return NULL;
 		}
 	}
@@ -328,7 +328,7 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, bool watch
 
 static const char *r_debug_str_callback(RNum *userptr, ut64 off, int *ok) {
 	// RDebug *dbg = (RDebug *)userptr;
-	eprintf ("STR CALLBACK WTF WTF WTF\n");
+	R_LOGFI ("STR CALLBACK WTF WTF WTF\n");
 	return NULL;
 }
 
@@ -500,7 +500,7 @@ R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore) {
 		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false);
 		orig = r_reg_get_bytes (dbg->reg, -1, &orig_sz);
 		if (!orig) {
-			eprintf ("Cannot get register arena bytes\n");
+			R_LOGFI ("Cannot get register arena bytes\n");
 			return 0LL;
 		}
 		rpc = r_reg_get_value (dbg->reg, ripc);
@@ -540,8 +540,8 @@ R_API ut64 r_debug_execute(RDebug *dbg, const ut8 *buf, int len, int restore) {
 		r_debug_reg_sync (dbg, R_REG_TYPE_GPR, true);
 		free (backup);
 		free (orig);
-		eprintf ("ra0=0x%08"PFMT64x"\n", ra0);
-	} else eprintf ("r_debug_execute: Cannot get program counter\n");
+		R_LOGFI ("ra0=0x%08"PFMT64x"\n", ra0);
+	} else R_LOGFI ("r_debug_execute: Cannot get program counter\n");
 	return (ra0);
 }
 
@@ -572,11 +572,11 @@ R_API bool r_debug_select(RDebug *dbg, int pid, int tid) {
 	}
 	if (pid != -1 && tid != -1) {
 		if (pid != dbg->pid || tid != dbg->tid) {
-			eprintf ("= attach %d %d\n", pid, tid);
+			R_LOGFI ("= attach %d %d\n", pid, tid);
 		}
 	} else {
 		if (dbg->pid != -1) {
-			eprintf ("Child %d is dead\n", dbg->pid);
+			R_LOGFI ("Child %d is dead\n", dbg->pid);
 		}
 	}
 	if (pid < 0 || tid < 0) {
@@ -661,7 +661,7 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 	if (dbg->h && dbg->h->wait) {
 		reason = dbg->h->wait (dbg, dbg->pid);
 		if (reason == R_DEBUG_REASON_DEAD) {
-			eprintf ("\n==> Process finished\n\n");
+			R_LOGFI ("\n==> Process finished\n\n");
 			// XXX(jjd): TODO: handle fallback or something else
 			//r_debug_select (dbg, -1, -1);
 			return R_DEBUG_REASON_DEAD;
@@ -897,7 +897,7 @@ R_API int r_debug_step(RDebug *dbg, int steps) {
 			ret = r_debug_step_hard (dbg);
 		}
 		if (!ret) {
-			eprintf ("Stepping failed!\n");
+			R_LOGFI ("Stepping failed!\n");
 			return steps_taken;
 		}
 		dbg->steps++;
@@ -944,7 +944,7 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 		}
 		// Analyze the opcode
 		if (!r_anal_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc), R_ANAL_OP_MASK_BASIC)) {
-			eprintf ("Decode error at %"PFMT64x"\n", pc);
+			R_LOGFI ("Decode error at %"PFMT64x"\n", pc);
 			return steps_taken;
 		}
 		if (op.fail == -1) {
@@ -957,13 +957,13 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 		if ((op.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_CALL ||
 			(op.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_UCALL) {
 			if (!r_debug_continue_until (dbg, ins_size)) {
-				eprintf ("Could not step over call @ 0x%"PFMT64x"\n", pc);
+				R_LOGFI ("Could not step over call @ 0x%"PFMT64x"\n", pc);
 				return steps_taken;
 			}
 		} else if ((op.prefix & (R_ANAL_OP_PREFIX_REP | R_ANAL_OP_PREFIX_REPNE | R_ANAL_OP_PREFIX_LOCK))) {
-			//eprintf ("REP: skip to next instruction...\n");
+			//R_LOGFI ("REP: skip to next instruction...\n");
 			if (!r_debug_continue_until (dbg, ins_size)) {
-				eprintf ("step over failed over rep\n");
+				R_LOGFI ("step over failed over rep\n");
 				return steps_taken;
 			}
 		} else {
@@ -984,7 +984,7 @@ static ut64 get_prev_instr(RDebug *dbg, ut64 from, ut64 to) {
 	ut8 *buf = malloc (bsize);
 
 	if (!buf) {
-		eprintf ("Cannot allocate %d byte(s)\n", bsize);
+		R_LOGFI ("Cannot allocate %d byte(s)\n", bsize);
 		free (buf);
 		return 0;
 	}
@@ -1032,13 +1032,13 @@ R_API bool r_debug_step_back(RDebug *dbg) {
 	}
 #if 0
 	ut64 cnt = 0;
-	//eprintf ("before session (%d) 0x%08"PFMT64x"\n", before->key.id, before->key.addr);
+	//R_LOGFI ("before session (%d) 0x%08"PFMT64x"\n", before->key.id, before->key.addr);
 
 	/* Rollback to previous state */
 	r_debug_session_set (dbg, before);
 
 	pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-	//eprintf ("execute from 0x%08"PFMT64x" to 0x%08"PFMT64x"\n", pc, end);
+	//R_LOGFI ("execute from 0x%08"PFMT64x" to 0x%08"PFMT64x"\n", pc, end);
 
 	/* Get the previous operation address.
 	 * XXX: too slow... */
@@ -1052,9 +1052,9 @@ R_API bool r_debug_step_back(RDebug *dbg) {
 			break;
 		}
 		prev = pc;
-		//eprintf ("executing 0x%08"PFMT64x"\n", pc);
+		//R_LOGFI ("executing 0x%08"PFMT64x"\n", pc);
 		if (cnt > CHECK_POINT_LIMIT) {
-			//eprintf ("Hit count limit %lld\n", cnt);
+			//R_LOGFI ("Hit count limit %lld\n", cnt);
 			r_debug_session_add (dbg, NULL);
 			cnt = 0;
 		}
@@ -1069,7 +1069,7 @@ R_API bool r_debug_step_back(RDebug *dbg) {
 	pc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 	prev = get_prev_instr (dbg, pc, end);
 	if (prev) {
-		eprintf ("continue until 0x%08"PFMT64x"\n", prev);
+		R_LOGFI ("continue until 0x%08"PFMT64x"\n", prev);
 		r_debug_continue_until_nonblock (dbg, prev);
 	}
 	return true;
@@ -1195,7 +1195,7 @@ repeat:
 			int what = r_debug_signal_what (dbg, dbg->reason.signum);
 			if (what & R_DBG_SIGNAL_CONT) {
 				sig = dbg->reason.signum;
-				eprintf ("Continue into the signal %d handler\n", sig);
+				R_LOGFI ("Continue into the signal %d handler\n", sig);
 				goto repeat;
 			} else if (what & R_DBG_SIGNAL_SKIP) {
 				// skip signal. requires skipping one instruction
@@ -1207,12 +1207,12 @@ repeat:
 				if (op.size > 0) {
 					const char *signame = r_signal_to_string (dbg->reason.signum);
 					r_debug_reg_set (dbg, "PC", pc+op.size);
-					eprintf ("Skip signal %d handler %s\n",
+					R_LOGFI ("Skip signal %d handler %s\n",
 						dbg->reason.signum, signame);
 					goto repeat;
 				} else {
 					ut64 pc = r_debug_reg_get (dbg, "PC");
-					eprintf ("Stalled with an exception at 0x%08"PFMT64x"\n", pc);
+					R_LOGFI ("Stalled with an exception at 0x%08"PFMT64x"\n", pc);
 				}
 			}
 		}
@@ -1235,7 +1235,7 @@ R_API int r_debug_continue_pass_exception(RDebug *dbg) {
 #endif
 
 R_API int r_debug_continue_until_nontraced(RDebug *dbg) {
-	eprintf ("TODO\n");
+	R_LOGFI ("TODO\n");
 	return false;
 }
 
@@ -1250,7 +1250,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 	}
 
 	if (!dbg->anal || !dbg->reg) {
-		eprintf ("Undefined pointer at dbg->anal\n");
+		R_LOGFI ("Undefined pointer at dbg->anal\n");
 		return false;
 	}
 
@@ -1274,7 +1274,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 		}
 		// Analyze the opcode
 		if (!r_anal_op (dbg->anal, &op, pc, buf + (pc - buf_pc), sizeof (buf) - (pc - buf_pc), R_ANAL_OP_MASK_BASIC)) {
-			eprintf ("Decode error at %"PFMT64x"\n", pc);
+			R_LOGFI ("Decode error at %"PFMT64x"\n", pc);
 			return false;
 		}
 		if (op.type == type)
@@ -1285,7 +1285,7 @@ R_API int r_debug_continue_until_optype(RDebug *dbg, int type, int over) {
 			: r_debug_step (dbg, 1);
 
 		if (!ret) {
-			eprintf ("r_debug_step: failed\n");
+			R_LOGFI ("r_debug_step: failed\n");
 			break;
 		}
 		n++;
@@ -1356,7 +1356,7 @@ R_API bool r_debug_continue_back(RDebug *dbg) {
 	before = r_list_head (dbg->sessions)->data; //XXX: currently use first session.
 
 	end_addr = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
-	//eprintf ("before session (%d) 0x%08"PFMT64x"=> to 0x%08"PFMT64x"\n", before->key.id, before->key.addr, end_addr);
+	//R_LOGFI ("before session (%d) 0x%08"PFMT64x"=> to 0x%08"PFMT64x"\n", before->key.id, before->key.addr, end_addr);
 
 	/* Rollback to previous state */
 	r_debug_session_set (dbg, before);
@@ -1387,7 +1387,7 @@ R_API bool r_debug_continue_back(RDebug *dbg) {
 	if (!prev) {
 		return false;
 	}
-	//eprintf ("prev->addr = 0x%08"PFMT64x"\n", prev->addr);
+	//R_LOGFI ("prev->addr = 0x%08"PFMT64x"\n", prev->addr);
 	/* Now we got previous breakpoint.
 	 * ### Continue until prev breakpoint ### */
 
@@ -1419,19 +1419,19 @@ static int show_syscall(RDebug *dbg, const char *sysreg) {
 		sysname = "unknown";
 		args = 3;
 	}
-	eprintf ("--> %s 0x%08"PFMT64x" syscall %d %s (", sysreg,
+	R_LOGFI ("--> %s 0x%08"PFMT64x" syscall %d %s (", sysreg,
 			r_debug_reg_get (dbg, "PC"), reg, sysname);
 	for (i=0; i<args; i++) {
 		ut64 val;
 		snprintf (regname, sizeof (regname)-1, "A%d", i);
 		val = r_debug_reg_get (dbg, regname);
 		if (((st64)val<0) && ((st64)val>-0xffff)) {
-			eprintf ("%"PFMT64d"%s", val, (i+1==args)?"":" ");
+			R_LOGFI ("%"PFMT64d"%s", val, (i+1==args)?"":" ");
 		} else {
-			eprintf ("0x%"PFMT64x"%s", val, (i+1==args)?"":" ");
+			R_LOGFI ("0x%"PFMT64x"%s", val, (i+1==args)?"":" ");
 		}
 	}
-	eprintf (")\n");
+	R_LOGFI (")\n");
 	r_syscall_item_free (si);
 	return reg;
 }
@@ -1448,12 +1448,12 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 	}
 
 	if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)) {
-		eprintf ("--> cannot read registers\n");
+		R_LOGFI ("--> cannot read registers\n");
 		return -1;
 	}
 	reg = (int)r_debug_reg_get_err (dbg, "SN", &err, NULL);
 	if (err) {
-		eprintf ("Cannot find 'sn' register for current arch-os.\n");
+		R_LOGFI ("Cannot find 'sn' register for current arch-os.\n");
 		return -1;
 	}
 	for (;;) {
@@ -1476,12 +1476,12 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 		}
 #if 0
 		if (reason != R_DEBUG_REASON_STEP) {
-			eprintf ("astep\n");
+			R_LOGFI ("astep\n");
 			break;
 		}
 #endif
 		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)) {
-			eprintf ("--> cannot sync regs, process is probably dead\n");
+			R_LOGFI ("--> cannot sync regs, process is probably dead\n");
 			return -1;
 		}
 		reg = show_syscall (dbg, "SN");
@@ -1511,7 +1511,7 @@ R_API int r_debug_syscall(RDebug *dbg, int num) {
 	if (dbg->h->contsc) {
 		ret = dbg->h->contsc (dbg, dbg->pid, num);
 	}
-	eprintf ("TODO: show syscall information\n");
+	R_LOGFI ("TODO: show syscall information\n");
 	/* r2rc task? ala inject? */
 	return (int)ret;
 }
@@ -1526,7 +1526,7 @@ R_API int r_debug_kill(RDebug *dbg, int pid, int tid, int sig) {
 		}
 		return -1;
 	}
-	eprintf ("Backend does not implement kill()\n");
+	R_LOGFI ("Backend does not implement kill()\n");
 	return false;
 }
 

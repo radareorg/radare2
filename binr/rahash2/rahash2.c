@@ -25,7 +25,7 @@ void compare_hashes(const RHash *ctx, const ut8 *compare, int length, int *ret) 
 		if (!memcmp (ctx->digest, compare, length)) {
 			printf ("rahash2: Computed hash matches the expected one.\n");
 		} else {
-			eprintf ("rahash2: Computed hash doesn't match the expected one.\n");
+			R_LOGFI ("rahash2: Computed hash doesn't match the expected one.\n");
 			*ret = 1;
 		}
 	}
@@ -65,7 +65,7 @@ static void do_hash_seed(const char *seed) {
 		if (s.len < 1) {
 			strcpy ((char *) s.buf, sptr);
 			s.len = strlen (sptr);
-			eprintf ("Warning: This is not an hexpair, assuming a string, prefix it with 's:' to skip this message.");
+			R_LOGFI ("Warning: This is not an hexpair, assuming a string, prefix it with 's:' to skip this message.");
 		}
 	}
 }
@@ -146,12 +146,12 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 	ut64 i;
 	bool first = true;
 	if (algobit == R_HASH_NONE) {
-		eprintf ("rahash2: Invalid hashing algorithm specified\n");
+		R_LOGFI ("rahash2: Invalid hashing algorithm specified\n");
 		return 1;
 	}
 	fsize = r_io_desc_size (io->desc);
 	if (fsize < 1) {
-		eprintf ("rahash2: Invalid file size\n");
+		R_LOGFI ("rahash2: Invalid file size\n");
 		return 1;
 	}
 	if (bsize < 0) {
@@ -164,11 +164,11 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 		to = fsize;
 	}
 	if (from > to) {
-		eprintf ("rahash2: Invalid -f -t range\n");
+		R_LOGFI ("rahash2: Invalid -f -t range\n");
 		return 1;
 	}
 	if (fsize == -1LL) {
-		eprintf ("rahash2: Unknown file size\n");
+		R_LOGFI ("rahash2: Unknown file size\n");
 		return 1;
 	}
 	buf = calloc (1, bsize + 1);
@@ -230,7 +230,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 	} else {
 		/* iterate over all algorithm bits */
 		if (s.buf) {
-			eprintf ("Warning: Seed ignored on per-block hashing.\n");
+			R_LOGFI ("Warning: Seed ignored on per-block hashing.\n");
 		}
 		for (i = 1; i < R_HASH_ALL; i <<= 1) {
 			ut64 f, t, ofrom, oto;
@@ -297,7 +297,7 @@ static int do_help(int line) {
 static void algolist() {
 	ut64 bits;
 	ut64 i;
-	eprintf ("Available Hashes: \n");
+	R_LOGFI ("Available Hashes: \n");
 	for (i = 0; i < R_HASH_NBITS; i++) {
 		bits = 1ULL << i;
 		const char *name = r_hash_name (bits);
@@ -305,12 +305,12 @@ static void algolist() {
 			printf ("h  %s\n", name);
 		}
 	}
-	eprintf ("\nAvailable Encoders/Decoders: \n");
+	R_LOGFI ("\nAvailable Encoders/Decoders: \n");
 	// TODO: do not hardcode
 	printf ("e  base64\n");
 	printf ("e  base91\n");
 	printf ("e  punycode\n");
-	eprintf ("\nAvailable Crypto Algos: \n");
+	R_LOGFI ("\nAvailable Crypto Algos: \n");
 	for (i = 0;; i++) {
 		bits = ((ut64) 1) << i;
 		const char *name = r_crypto_name (bits);
@@ -323,7 +323,7 @@ static void algolist() {
 
 #define setHashString(x, y) {\
 		if (hashstr) {\
-			eprintf ("Hashstring already defined\n");\
+			R_LOGFI ("Hashstring already defined\n");\
 			return 1;\
 		}\
 		hashstr_hex = y;\
@@ -345,7 +345,7 @@ static int encrypt_or_decrypt(const char *algo, int direction, const char *hashs
 				int buflen = hashstr_len;
 
 				if (iv && !r_crypto_set_iv (cry, iv, ivlen)) {
-					eprintf ("Invalid IV.\n");
+					R_LOGFI ("Invalid IV.\n");
 					return 0;
 				}
 
@@ -359,15 +359,15 @@ static int encrypt_or_decrypt(const char *algo, int direction, const char *hashs
 					free (result);
 				}
 			} else {
-				eprintf ("Invalid key\n");
+				R_LOGFI ("Invalid key\n");
 			}
 			return 0;
 		} else {
-			eprintf ("Unknown %s algorithm '%s'\n", ((!direction)? "encryption": "decryption"), algo);
+			R_LOGFI ("Unknown %s algorithm '%s'\n", ((!direction)? "encryption": "decryption"), algo);
 		}
 		r_crypto_free (cry);
 	} else {
-		eprintf ("%s key not defined. Use -S [key]\n", ((!direction)? "Encryption": "Decryption"));
+		R_LOGFI ("%s key not defined. Use -S [key]\n", ((!direction)? "Encryption": "Decryption"));
 	}
 	return 1;
 }
@@ -383,12 +383,12 @@ static int encrypt_or_decrypt_file(const char *algo, int direction, char *filena
 				           ? (ut8 *) r_file_slurp (filename, &file_size)
 					   : (ut8 *) r_stdin_slurp (&file_size);
 				if (!buf) {
-					eprintf ("rahash2: Cannot open '%s'\n", filename);
+					R_LOGFI ("rahash2: Cannot open '%s'\n", filename);
 					return -1;
 				}
 
 				if (iv && !r_crypto_set_iv (cry, iv, ivlen)) {
-					eprintf ("Invalid IV.\n");
+					R_LOGFI ("Invalid IV.\n");
 					free (buf);
 					return 0;
 				}
@@ -404,15 +404,15 @@ static int encrypt_or_decrypt_file(const char *algo, int direction, char *filena
 				}
 				free (buf);
 			} else {
-				eprintf ("Invalid key\n");
+				R_LOGFI ("Invalid key\n");
 			}
 			return 0;
 		} else {
-			eprintf ("Unknown %s algorithm '%s'\n", ((!direction)? "encryption": "decryption"), algo);
+			R_LOGFI ("Unknown %s algorithm '%s'\n", ((!direction)? "encryption": "decryption"), algo);
 		}
 		r_crypto_free (cry);
 	} else {
-		eprintf ("%s key not defined. Use -S [key]\n", ((!direction)? "Encryption": "Decryption"));
+		R_LOGFI ("%s key not defined. Use -S [key]\n", ((!direction)? "Encryption": "Decryption"));
 	}
 	return 1;
 }
@@ -444,7 +444,7 @@ int main(int argc, char **argv) {
 		case 'i':
 			iterations = atoi (optarg);
 			if (iterations < 0) {
-				eprintf ("error: -i argument must be positive\n");
+				R_LOGFI ("error: -i argument must be positive\n");
 				return 1;
 			}
 			break;
@@ -473,13 +473,13 @@ int main(int argc, char **argv) {
 		}
 	}
 	if (encrypt && decrypt) {
-		eprintf ("rahash2: Option -E and -D are incompatible with each other.\n");
+		R_LOGFI ("rahash2: Option -E and -D are incompatible with each other.\n");
 		return 1;
 	}
 	if (compareStr) {
 		int compareBin_len;
 		if (bsize && !incremental) {
-			eprintf ("rahash2: Option -c incompatible with -b and -B options.\n");
+			R_LOGFI ("rahash2: Option -c incompatible with -b and -B options.\n");
 			return 1;
 		}
 		bool flag = false;
@@ -489,13 +489,13 @@ int main(int argc, char **argv) {
 			flag = !strcmp (decrypt, "base64") || !strcmp (decrypt, "base91");
 		}
 		if (flag) {
-			eprintf ("rahash2: Option -c incompatible with -E base64, -E base91, -D base64 or -D base91 options.\n");
+			R_LOGFI ("rahash2: Option -c incompatible with -E base64, -E base91, -D base64 or -D base91 options.\n");
 			return 1;
 		}
 		algobit = r_hash_name_to_bits (algo);
 		// if algobit represents a single algorithm then it's a power of 2
 		if (!is_power_of_two (algobit)) {
-			eprintf ("rahash2: Option -c incompatible with multiple algorithms in -a.\n");
+			R_LOGFI ("rahash2: Option -c incompatible with multiple algorithms in -a.\n");
 			return 1;
 		}
 		compareBin = malloc ((strlen (compareStr) + 1) * 2);
@@ -504,11 +504,11 @@ int main(int argc, char **argv) {
 		}
 		compareBin_len = r_hex_str2bin (compareStr, compareBin);
 		if (compareBin_len < 1) {
-			eprintf ("rahash2: Invalid -c hex hash\n");
+			R_LOGFI ("rahash2: Invalid -c hex hash\n");
 			free (compareBin);
 			return 1;
 		} else if (compareBin_len != r_hash_size (algobit))   {
-			eprintf (
+			R_LOGFI (
 				"rahash2: Given -c hash has %d byte(s) but the selected algorithm returns %d byte(s).\n",
 				compareBin_len,
 				r_hash_size (algobit));
@@ -521,7 +521,7 @@ int main(int argc, char **argv) {
 	}
 	if (from || to) {
 		if (to && from >= to) {
-			eprintf ("Invalid -f or -t offsets\n");
+			R_LOGFI ("Invalid -f or -t offsets\n");
 			return 1;
 		}
 	}
@@ -569,7 +569,7 @@ int main(int argc, char **argv) {
 			ut8 *out = malloc ((strlen (hashstr) + 1) * 2);
 			hashstr_len = r_hex_str2bin (hashstr, out);
 			if (hashstr_len < 1) {
-				eprintf ("Invalid hex string\n");
+				R_LOGFI ("Invalid hex string\n");
 				free (out);
 				return 1;
 			}
@@ -582,13 +582,13 @@ int main(int argc, char **argv) {
 		}
 		if (from) {
 			if (from >= hashstr_len) {
-				eprintf ("Invalid -f.\n");
+				R_LOGFI ("Invalid -f.\n");
 				return 1;
 			}
 		}
 		if (to) {
 			if (to > hashstr_len) {
-				eprintf ("Invalid -t.\n");
+				R_LOGFI ("Invalid -t.\n");
 				return 1;
 			}
 		} else {
@@ -622,7 +622,7 @@ int main(int argc, char **argv) {
 			}
 			algobit = r_hash_name_to_bits (algo);
 			if (algobit == 0) {
-				eprintf ("Invalid algorithm. See -E, -D maybe?\n");
+				R_LOGFI ("Invalid algorithm. See -E, -D maybe?\n");
 				if (str != hashstr) {
 					free (str);
 				}
@@ -654,7 +654,7 @@ int main(int argc, char **argv) {
 	if (numblocks) {
 		bsize = -bsize;
 	} else if (bsize < 0) {
-		eprintf ("rahash2: Invalid block size\n");
+		R_LOGFI ("rahash2: Invalid block size\n");
 		return 1;
 	}
 
@@ -681,7 +681,7 @@ int main(int argc, char **argv) {
 				char *uri = r_str_newf ("malloc://%d", sz);
 				if (sz > 0) {
 					if (!r_io_open_nomap (io, uri, R_IO_READ, 0)) {
-						eprintf ("rahash2: Cannot open malloc://1024\n");
+						R_LOGFI ("rahash2: Cannot open malloc://1024\n");
 						return 1;
 					}
 					r_io_pwrite_at (io, 0, buf, sz);
@@ -689,11 +689,11 @@ int main(int argc, char **argv) {
 				free (uri);
 			} else {
 				if (r_file_is_directory (argv[i])) {
-					eprintf ("rahash2: Cannot hash directories\n");
+					R_LOGFI ("rahash2: Cannot hash directories\n");
 					return 1;
 				}
 				if (!r_io_open_nomap (io, argv[i], R_IO_READ, 0)) {
-					eprintf ("rahash2: Cannot open '%s'\n", argv[i]);
+					R_LOGFI ("rahash2: Cannot open '%s'\n", argv[i]);
 					return 1;
 				}
 			}

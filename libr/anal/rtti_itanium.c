@@ -200,7 +200,7 @@ static void rtti_itanium_print_si_class_type_info_json (si_class_type_info *si_c
 R_API void r_anal_rtti_itanium_print_class_type_info(RVTableContext *context, ut64 addr, int mode) {
 	class_type_info cti;
 	if (!rtti_itanium_read_class_type_info (context, addr, &cti)) {
-		eprintf ("Failed to parse Type Info at 0x%08"PFMT64x"\n", addr);
+		R_LOGFI ("Failed to parse Type Info at 0x%08"PFMT64x"\n", addr);
 		return;
 	}
 	if (mode == 'j') {
@@ -213,7 +213,7 @@ R_API void r_anal_rtti_itanium_print_class_type_info(RVTableContext *context, ut
 R_API void r_anal_rtti_itanium_print_si_class_type_info(RVTableContext *context, ut64 addr, int mode) {
 	si_class_type_info si_cti;
 	if (!rtti_itanium_read_si_class_type_info (context, addr, &si_cti)) {
-		eprintf ("Failed to parse Type Info at 0x%08"PFMT64x"\n", addr);
+		R_LOGFI ("Failed to parse Type Info at 0x%08"PFMT64x"\n", addr);
 		return;
 	}
 	if (mode == 'j') {
@@ -226,7 +226,7 @@ R_API void r_anal_rtti_itanium_print_si_class_type_info(RVTableContext *context,
 R_API void r_anal_rtti_itanium_print_vmi_class_type_info(RVTableContext *context, ut64 addr, int mode) {
 	vmi_class_type_info vmi_cti;
 	if (!rtti_itanium_read_vmi_class_type_info (context, addr, &vmi_cti)) {
-		eprintf ("Failed to parse Type Info at 0x%08"PFMT64x"\n", addr);
+		R_LOGFI ("Failed to parse Type Info at 0x%08"PFMT64x"\n", addr);
 		return;
 	}
 	if (mode == 'j') {
@@ -261,14 +261,14 @@ static bool rtti_itanium_print_class_type_info_recurse(RVTableContext *context, 
 
 	flag = r_flag_get_i(core->flags, class_type_offset);
 	if (!flag) {
-		eprintf ("No RTTI found\n");
+		R_LOGFI ("No RTTI found\n");
 		return false;
 	}
 
 	if (r_str_cmp (flag->name, vmi_class_type_info_name, r_str_len_utf8 (flag->name))) {
 		vmi_class_type_info vmi_cti;
 		if (!rtti_itanium_read_vmi_class_type_info (context, colAddr, &vmi_cti)) {
-			eprintf ("Failed to parse Type Info at 0x%08"PFMT64x" (referenced from 0x%08"PFMT64x")\n", colAddr, colRefAddr);
+			R_LOGFI ("Failed to parse Type Info at 0x%08"PFMT64x" (referenced from 0x%08"PFMT64x")\n", colAddr, colRefAddr);
 			return false;
 		}
 		if (use_json) {
@@ -281,7 +281,7 @@ static bool rtti_itanium_print_class_type_info_recurse(RVTableContext *context, 
 	if (r_str_cmp (flag->name, si_class_type_info_name, r_str_len_utf8 (flag->name))) {
 		si_class_type_info si_cti;
 		if (!rtti_itanium_read_si_class_type_info (context, colAddr, &si_cti)) {
-			eprintf ("Failed to parse Type Info at 0x%08"PFMT64x" (referenced from 0x%08"PFMT64x")\n", colAddr, colRefAddr);
+			R_LOGFI ("Failed to parse Type Info at 0x%08"PFMT64x" (referenced from 0x%08"PFMT64x")\n", colAddr, colRefAddr);
 			return false;
 		}
 		if (use_json) {
@@ -294,7 +294,7 @@ static bool rtti_itanium_print_class_type_info_recurse(RVTableContext *context, 
 	if (r_str_cmp (flag->name, class_type_info_name, r_str_len_utf8 (flag->name))) {
 		class_type_info cti;
 		if (!rtti_itanium_read_class_type_info (context, colAddr, &cti)) {
-			eprintf ("Failed to parse Type Info at 0x%08"PFMT64x" (referenced from 0x%08"PFMT64x")\n", colAddr, colRefAddr);
+			R_LOGFI ("Failed to parse Type Info at 0x%08"PFMT64x" (referenced from 0x%08"PFMT64x")\n", colAddr, colRefAddr);
 			return false;
 		}
 		if (use_json) {

@@ -66,7 +66,7 @@ R_API int r_reg_cond_from_string(const char *str) {
 	if (!strcmp (str, "gt")) return R_REG_COND_GT;
 	if (!strcmp (str, "lt")) return R_REG_COND_LT;
 	if (!strcmp (str, "le")) return R_REG_COND_LE;
-	eprintf ("| Usage: drc [condition]\n"
+	R_LOGFI ("| Usage: drc [condition]\n"
 		"| eq    equal\n"
 		"| ne    not equal\n"
 		"| cf    carry flag set\n"

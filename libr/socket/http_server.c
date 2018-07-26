@@ -33,7 +33,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int accept_timeout, 
 		memset (buf, 0, sizeof (buf));
 		xx = r_socket_gets (hr->s, buf, sizeof (buf));
 		yy = r_socket_ready (hr->s, 0, 20 * 1000); //this function uses usecs as argument
-//		eprintf ("READ %d (%s) READY %d\n", xx, buf, yy);
+//		R_LOGFI ("READ %d (%s) READY %d\n", xx, buf, yy);
 		if (!yy || (!xx && !pxx)) {
 			break;
 		}
@@ -141,7 +141,7 @@ R_API void r_socket_http_close (RSocketHTTPRequest *rs) {
 int main() {
 	RSocket *s = r_socket_new (false);
 	if (!r_socket_listen (s, "8080", NULL)) {
-		eprintf ("Cannot listen here\n");
+		R_LOGFI ("Cannot listen here\n");
 		return 1;
 	}
 	for (;;) {

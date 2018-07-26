@@ -123,7 +123,7 @@ static mach0_ut get_pointer(mach0_ut p, ut32 *offset, ut32 *left, RBinFile *bf) 
 		sctns = r_bin_plugin_mach.sections (bf);
 		if (!sctns) {
 			// retain just for debug
-			// eprintf ("there is no sections\n");
+			// R_LOGFI ("there is no sections\n");
 			return 0;
 		}
 	}
@@ -177,7 +177,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 	ut8 offs[sizeof (mach0_ut)] = {0};
 
 	if (!bf || !bf->o || !bf->o->bin_obj || !bf->o->info) {
-		eprintf ("uncorrect RBinFile pointer\n");
+		R_LOGFI ("uncorrect RBinFile pointer\n");
 		return;
 	}
 	bigendian = bf->o->info->big_endian;
@@ -215,7 +215,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 		}
 		if (!(field = R_NEW0 (RBinField))) {
 			// retain just for debug
-			// eprintf ("RBinField allocation error\n");
+			// R_LOGFI ("RBinField allocation error\n");
 			return;
 		}
 		memset (&i, '\0', sizeof (struct MACH0_(SIVar)));
@@ -267,7 +267,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 		if (ivar_offset_p != 0 && left >= sizeof (mach0_ut)) {
 			len = r_buf_read_at (bf->buf, ivar_offset_p, offs, sizeof (mach0_ut));
 			if (len != sizeof (mach0_ut)) {
-				eprintf ("Error reading\n");
+				R_LOGFI ("Error reading\n");
 				goto error;
 			}
 			ivar_offset = r_read_ble (offs, bigendian, 8 * sizeof (mach0_ut));
@@ -291,7 +291,7 @@ static void get_ivar_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 				name = malloc (name_len + 1);
 				len = r_buf_read_at (bf->buf, r, (ut8 *)name, name_len);
 				if (len < 1) {
-					eprintf ("Error reading\n");
+					R_LOGFI ("Error reading\n");
 					R_FREE (name);
 					goto error;
 				}
@@ -348,7 +348,7 @@ static void get_objc_property_list(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 	ut8 sop[sizeof (struct MACH0_(SObjcProperty))] = {0};
 
 	if (!bf || !bf->o || !bf->o->bin_obj || !bf->o->info) {
-		eprintf ("uncorrect RBinFile pointer\n");
+		R_LOGFI ("uncorrect RBinFile pointer\n");
 		return;
 	}
 	bigendian = bf->o->info->big_endian;
@@ -390,7 +390,7 @@ static void get_objc_property_list(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 
 		if (!(property = R_NEW0 (RBinField))) {
 			// retain just for debug
-			// eprintf("RBinClass allocation error\n");
+			// R_LOGFI("RBinClass allocation error\n");
 			return;
 		}
 
@@ -492,7 +492,7 @@ static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinCl
 
 	RBinSymbol *method = NULL;
 	if (!bf || !bf->o || !bf->o->bin_obj || !bf->o->info) {
-		eprintf ("incorrect RBinFile pointer\n");
+		R_LOGFI ("incorrect RBinFile pointer\n");
 		return;
 	}
 	bigendian = bf->o->info->big_endian;
@@ -534,7 +534,7 @@ static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinCl
 
 		if (!(method = R_NEW0 (RBinSymbol))) {
 			// retain just for debug
-			// eprintf ("RBinClass allocation error\n");
+			// R_LOGFI ("RBinClass allocation error\n");
 			return;
 		}
 		memset (&m, '\0', sizeof (struct MACH0_(SMethod)));
@@ -621,7 +621,7 @@ static void get_method_list_t(mach0_ut p, RBinFile *bf, char *class_name, RBinCl
 			if (method->vaddr & 1) {
 				method->vaddr >>= 1;
 				method->vaddr <<= 1;
-				//eprintf ("0x%08llx METHOD %s\n", method->vaddr, method->name);
+				//R_LOGFI ("0x%08llx METHOD %s\n", method->vaddr, method->name);
 			}
 		}
 		r_list_append (klass->methods, method);
@@ -649,7 +649,7 @@ static void get_protocol_list_t(mach0_ut p, RBinFile *bf, RBinClass *klass) {
 	ut8 sptr[sizeof (mach0_ut)] = {0};
 
 	if (!bf || !bf->o || !bf->o->bin_obj || !bf->o->info) {
-		eprintf ("get_protocol_list_t: Invalid RBinFile pointer\n");
+		R_LOGFI ("get_protocol_list_t: Invalid RBinFile pointer\n");
 		return;
 	}
 	bigendian = bf->o->info->big_endian;
@@ -829,13 +829,13 @@ static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinCl
 	ut8 scro[sizeof (struct MACH0_(SClassRoT))] = {0};
 
 	if (!bf || !bf->o || !bf->o->bin_obj || !bf->o->info) {
-		eprintf ("Invalid RBinFile pointer\n");
+		R_LOGFI ("Invalid RBinFile pointer\n");
 		return;
 	}
 	bigendian = bf->o->info->big_endian;
 	bin = (struct MACH0_(obj_t) *)bf->o->bin_obj;
 	if (!(r = get_pointer (p, &offset, &left, bf))) {
-		// eprintf ("No pointer\n");
+		// R_LOGFI ("No pointer\n");
 		return;
 	}
 
@@ -851,7 +851,7 @@ static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinCl
 
 	// TODO: use r_buf_fread to avoid endianness issues
 	if (left < sizeof (cro)) {
-		eprintf ("Not enough data for SClassRoT\n");
+		R_LOGFI ("Not enough data for SClassRoT\n");
 		return;
 	}
 	len = r_buf_read_at (bf->buf, r, scro, sizeof (cro));
@@ -907,7 +907,7 @@ static void get_class_ro_t(mach0_ut p, RBinFile *bf, ut32 *is_meta_class, RBinCl
 				free (name);
 			}
 		}
-		//eprintf ("0x%x  %s\n", s, klass->name);
+		//R_LOGFI ("0x%x  %s\n", s, klass->name);
 		sdb_num_set (bin->kv, sdb_fmt ("objc_class_%s.offset", klass->name), s, 0);
 	}
 #ifdef R_BIN_MACH064
@@ -970,7 +970,7 @@ void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe) 
 		return;
 	}
 	if (left < size) {
-		eprintf ("Cannot parse obj class info out of bounds\n");
+		R_LOGFI ("Cannot parse obj class info out of bounds\n");
 		return;
 	}
 	len = r_buf_read_at (bf->buf, r, sc, size);
@@ -994,7 +994,7 @@ void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe) 
 
 #if SWIFT_SUPPORT
 	if (q (c.data + n_value) & 7) {
-		eprintf ("This is a Swift class");
+		R_LOGFI ("This is a Swift class");
 	}
 #endif
 	if (!is_meta_class && !dupe) {
@@ -1085,36 +1085,36 @@ RList *MACH0_(parse_classes)(RBinFile *bf) {
 
 	if (!is_found) {
 		// retain just for debug
-		// eprintf ("there is no section __objc_classlist\n");
+		// R_LOGFI ("there is no section __objc_classlist\n");
 		goto get_classes_error;
 	}
 	// end of seaching of section with name __objc_classlist
 
 	if (!ret && !(ret = r_list_newf ((RListFree)r_bin_class_free))) {
 		// retain just for debug
-		// eprintf ("RList<RBinClass> allocation error\n");
+		// R_LOGFI ("RList<RBinClass> allocation error\n");
 		goto get_classes_error;
 	}
 	// start of getting information about each class in file
 	for (i = 0; i < s_size; i += sizeof (mach0_ut)) {
 		left = s_size - i;
 		if (left < sizeof (mach0_ut)) {
-			eprintf ("Chopped classlist data\n");
+			R_LOGFI ("Chopped classlist data\n");
 			break;
 		}
 		if (!(klass = R_NEW0 (RBinClass))) {
 			// retain just for debug
-			// eprintf ("RBinClass allocation error\n");
+			// R_LOGFI ("RBinClass allocation error\n");
 			goto get_classes_error;
 		}
 		if (!(klass->methods = r_list_new ())) {
 			// retain just for debug
-			// eprintf ("RList<RBinField> allocation error\n");
+			// R_LOGFI ("RList<RBinField> allocation error\n");
 			goto get_classes_error;
 		}
 		if (!(klass->fields = r_list_new ())) {
 			// retain just for debug
-			// eprintf ("RList<RBinSymbol> allocation error\n");
+			// R_LOGFI ("RList<RBinSymbol> allocation error\n");
 			goto get_classes_error;
 		}
 		size = sizeof (mach0_ut);

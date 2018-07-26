@@ -218,7 +218,7 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 
 	if (r_list_empty (vtables)) {
 		// stripped binary?
-		eprintf ("No virtual tables found\n");
+		R_LOGFI ("No virtual tables found\n");
 		r_list_free (vtables);
 		return NULL;
 	}

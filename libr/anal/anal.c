@@ -489,7 +489,7 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (anal, addr, -1);
 		RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
 		if (!fcn && !fi) {
-			eprintf ("Cant find Function at given address\n");
+			R_LOGFI ("Cant find Function at given address\n");
 			return false;
 		}
 		tmp_name = fcn ? fcn->name: fi->name;
@@ -497,7 +497,7 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 	if (r_type_func_exist (TDB, tmp_name)) {
 		fnl_name = strdup (tmp_name);
 	} else if (!(fnl_name = r_type_func_guess (TDB, (char *)tmp_name))) {
-		eprintf ("Cant find prototype for %s in types databse\n", tmp_name);
+		R_LOGFI ("Cant find prototype for %s in types databse\n", tmp_name);
 		return false;
 	}
 	sdb_bool_set (TDB, K_NORET_FUNC(fnl_name), true, 0);
@@ -525,7 +525,7 @@ R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr) {
 			ut64 n = r_num_math (NULL, expr);
 			RAnalFunction *fcn = r_anal_get_fcn_in (anal, n, -1);
 			if (!fcn) {
-				eprintf ("can't find function at 0x%"PFMT64x"\n", n);
+				R_LOGFI ("can't find function at 0x%"PFMT64x"\n", n);
 				return false;
 			}
 			fcnname = fcn->name;
@@ -540,7 +540,7 @@ R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr) {
 			free (tmp);
 			return true;
 		} else {
-			eprintf ("Cant find prototype for %s in types databse", fcnname);
+			R_LOGFI ("Cant find prototype for %s in types databse", fcnname);
 			return false;
 		}
 	}
@@ -570,7 +570,7 @@ bool noreturn_recurse(RAnal *anal, ut64 addr) {
 	ut8 bbuf[0x10] = {0};
 	ut64 recurse_addr = UT64_MAX;
 	if (!anal->iob.read_at (anal->iob.io, addr, bbuf, sizeof (bbuf))) {
-		eprintf ("Couldn't read buffer\n");
+		R_LOGFI ("Couldn't read buffer\n");
 		return false;
 	}
 	// TODO: check return value

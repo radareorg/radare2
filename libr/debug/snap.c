@@ -120,7 +120,7 @@ R_API void r_debug_diff_set(RDebug *dbg, RDebugSnapDiff *diff) {
 		return;
 	}
 
-	//eprintf ("Apply diff [0x%08"PFMT64x ", 0x%08"PFMT64x "]\n", snap->addr, snap->addr_end);
+	//R_LOGFI ("Apply diff [0x%08"PFMT64x ", 0x%08"PFMT64x "]\n", snap->addr, snap->addr_end);
 
 	/* Roll back page datas that's been changed **after** specified SnapDiff 'diff' */
 	for (addr = snap->addr; addr < snap->addr_end; addr += SNAP_PAGE_SIZE) {
@@ -131,7 +131,7 @@ R_API void r_debug_diff_set(RDebug *dbg, RDebugSnapDiff *diff) {
 			ut64 off = (ut64) last_page->page_off * SNAP_PAGE_SIZE;
 			/* Copy a page data of base snap to current addr. (i.e. roll back) */
 			dbg->iob.write_at (dbg->iob.io, addr, snap->data + off, SNAP_PAGE_SIZE);
-			//eprintf ("Roll back 0x%08"PFMT64x "(page: %d)\n", addr, page_off);
+			//R_LOGFI ("Roll back 0x%08"PFMT64x "(page: %d)\n", addr, page_off);
 		}
 	}
 
@@ -140,7 +140,7 @@ R_API void r_debug_diff_set(RDebug *dbg, RDebugSnapDiff *diff) {
 		page_off = (addr - snap->addr) / SNAP_PAGE_SIZE;
 		if ((prev_page = diff->last_changes[page_off])) {
 			r_page_data_set (dbg, prev_page);
-			//eprintf ("Update 0x%08"PFMT64x "(page: %d)\n", addr, page_off);
+			//R_LOGFI ("Update 0x%08"PFMT64x "(page: %d)\n", addr, page_off);
 		}
 	}
 	r_list_pop (snap->history);
@@ -161,7 +161,7 @@ R_API void r_debug_diff_set_base(RDebug *dbg, RDebugSnap *base) {
 		return;
 	}
 
-	//eprintf ("Roll back to base [0x%08"PFMT64x ", 0x%08"PFMT64x "]\n", cur_map->addr, cur_map->addr_end);
+	//R_LOGFI ("Roll back to base [0x%08"PFMT64x ", 0x%08"PFMT64x "]\n", cur_map->addr, cur_map->addr_end);
 
 	for (addr = base->addr; addr < base->addr_end; addr += SNAP_PAGE_SIZE) {
 		page_off = (addr - base->addr) / SNAP_PAGE_SIZE;
@@ -169,7 +169,7 @@ R_API void r_debug_diff_set_base(RDebug *dbg, RDebugSnap *base) {
 			ut64 off = (ut64) last_page->page_off * SNAP_PAGE_SIZE;
 			/* Copy a page data of base snap to current addr. (i.e. roll back) */
 			dbg->iob.write_at (dbg->iob.io, addr, base->data + off, SNAP_PAGE_SIZE);
-			//eprintf ("Roll back 0x%08"PFMT64x "(page: %d)\n", addr, page_off);
+			//R_LOGFI ("Roll back 0x%08"PFMT64x "(page: %d)\n", addr, page_off);
 		}
 	}
 
@@ -204,15 +204,15 @@ R_API int r_debug_snap_set_idx(RDebug *dbg, int idx) {
 static void print_hash(ut8 *hash, int digest_size) {
 	int i = 0;
 	for (i = 0; i < digest_size; i++) {
-		eprintf ("%02"PFMT32x, hash[i]);
+		R_LOGFI ("%02"PFMT32x, hash[i]);
 	}
-	eprintf ("\n");
+	R_LOGFI ("\n");
 }
 #endif
 
 R_API RDebugSnapDiff *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 	if (!dbg || !map || map->size < 1) {
-		eprintf ("Invalid map size\n");
+		R_LOGFI ("Invalid map size\n");
 		return NULL;
 	}
 	ut8 *hash;
@@ -242,7 +242,7 @@ R_API RDebugSnapDiff *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 			free (snap->data);
 			goto error;
 		}
-		eprintf ("Reading %d byte(s) from 0x%08"PFMT64x "...\n", snap->size, snap->addr);
+		R_LOGFI ("Reading %d byte(s) from 0x%08"PFMT64x "...\n", snap->size, snap->addr);
 		dbg->iob.read_at (dbg->iob.io, snap->addr, snap->data, snap->size);
 
 		ut32 clust_page = R_MIN (SNAP_PAGE_SIZE, snap->size);
@@ -254,7 +254,7 @@ R_API RDebugSnapDiff *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 			hash = calloc (128, 1);	// Fix hash size to 128 byte
 			memcpy (hash, snap->hash_ctx->digest, digest_size);
 			snap->hashes[page_off] = hash;
-			// eprintf ("0x%08"PFMT64x"(page: %d)...\n",addr, page_off);
+			// R_LOGFI ("0x%08"PFMT64x"(page: %d)...\n",addr, page_off);
 			// print_hash (hash, digest_size);
 		}
 
@@ -286,7 +286,7 @@ R_API int r_debug_snap_all(RDebug *dbg, int perms) {
 R_API int r_debug_snap(RDebug *dbg, ut64 addr) {
 	RDebugMap *map = r_debug_map_get (dbg, addr);
 	if (!map) {
-		eprintf ("Cannot find map at 0x%08"PFMT64x "\n", addr);
+		R_LOGFI ("Cannot find map at 0x%08"PFMT64x "\n", addr);
 		return 0;
 	}
 	if (!r_debug_snap_map (dbg, map)) {
@@ -361,11 +361,11 @@ R_API RDebugSnapDiff *r_debug_diff_add(RDebug *dbg, RDebugSnap *base) {
 		/* Check If there is any last change for this page. */
 		if (prev_diff && (last_page = prev_diff->last_changes[page_off])) {
 			/* Use hash of last SnapDiff */
-			// eprintf ("use hash of diff\n");
+			// R_LOGFI ("use hash of diff\n");
 			prev_hash = last_page->hash;
 		} else {
 			/* Use hash of base snapshot */
-			// eprintf ("use hash of base\n");
+			// R_LOGFI ("use hash of base\n");
 			prev_hash = base->hashes[page_off];
 		}
 		/* Memory has been changed. So add new diff entry for this addr */
@@ -386,11 +386,11 @@ R_API RDebugSnapDiff *r_debug_diff_add(RDebug *dbg, RDebugSnap *base) {
 #if 0
 		RPageData *page;
 		RListIter *iter;
-		eprintf ("saved: 0x%08"PFMT64x "(page: ", base->addr);
+		R_LOGFI ("saved: 0x%08"PFMT64x "(page: ", base->addr);
 		r_list_foreach (new_diff->pages, iter, page) {
-			eprintf ("%d ", page->page_off);
+			R_LOGFI ("%d ", page->page_off);
 		}
-		eprintf (")\n");
+		R_LOGFI (")\n");
 #endif
 		r_list_append (base->history, new_diff);
 		return new_diff;

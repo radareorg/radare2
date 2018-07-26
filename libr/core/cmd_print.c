@@ -648,7 +648,7 @@ static void cmd_pCx(RCore *core, const char *input, const char *xcmd) {
 	r_cons_push ();
 	RConsCanvas *c = r_cons_canvas_new (w, rows);
 	if (!c) {
-		eprintf ("Couldn't allocate a canvas with %d rows\n", rows);
+		R_LOGFI ("Couldn't allocate a canvas with %d rows\n", rows);
 		goto err;
 	}
 
@@ -770,7 +770,7 @@ static void cmd_pDj(RCore *core, const char *arg) {
 		r_core_print_disasm_json (core, core->offset, buf, bsize, 0);
 		free (buf);
 	} else {
-		eprintf ("cannot allocate %d byte(s)\n", bsize);
+		R_LOGFI ("cannot allocate %d byte(s)\n", bsize);
 	}
 	r_cons_print ("]");
 }
@@ -825,7 +825,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			if (val) {
 				r_cons_printf ("%d\n", r_print_format_struct_size (val, core->print, mode, 0));
 			} else {
-				eprintf ("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
+				R_LOGFI ("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
 			}
 		} else if (*_input == ' ') {
 			while (*_input == ' ' && *_input != '\0') {
@@ -834,10 +834,10 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			if (*_input) {
 				r_cons_printf ("%d\n", r_print_format_struct_size (_input, core->print, mode, 0));
 			} else {
-				eprintf ("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
+				R_LOGFI ("Struct %s not defined\nUsage: pfs.struct_name | pfs format\n", _input);
 			}
 		} else {
-			eprintf ("Usage: pfs.struct_name | pfs format\n");
+			R_LOGFI ("Usage: pfs.struct_name | pfs format\n");
 		}
 	}
 		return;
@@ -875,7 +875,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 	// "pfo" // open formatted thing
 	if (input[1] == 'o') { // "pfo"
 		if (input[2] == '?') {
-			eprintf ("|Usage: pfo [format-file]\n"
+			R_LOGFI ("|Usage: pfo [format-file]\n"
 				" " R_JOIN_3_PATHS ("~", R2_HOME_SDB_FORMAT, "") "\n"
 				" " R_JOIN_3_PATHS ("%s", R2_SDB_FORMAT, "") "\n",
 				r_sys_prefix (NULL));
@@ -888,7 +888,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			path = r_str_r2_prefix (tmp);
 			if (!r_core_cmd_file (core, home) && !r_core_cmd_file (core, path)) {
 				if (!r_core_cmd_file (core, input + 3)) {
-					eprintf ("ecf: cannot open colorscheme profile (%s)\n", path);
+					R_LOGFI ("ecf: cannot open colorscheme profile (%s)\n", path);
 				}
 			}
 			free (home);
@@ -982,7 +982,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 				*space++ = 0;
 				// fields = strchr (space, ' ');
 				if (strchr (name, '.')) {// || (fields != NULL && strchr(fields, '.') != NULL)) // if anon struct, then field can have '.'
-					eprintf ("Struct or fields name can not contain dot symbol (.)\n");
+					R_LOGFI ("Struct or fields name can not contain dot symbol (.)\n");
 				} else {
 					sdb_set (core->print->formats, name, space, 0);
 				}
@@ -993,7 +993,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 
 			if (!strchr (name, '.') &&
 			!sdb_get (core->print->formats, name, NULL)) {
-				eprintf ("Cannot find '%s' format.\n", name);
+				R_LOGFI ("Cannot find '%s' format.\n", name);
 				free (name);
 				free (input);
 				return;
@@ -1038,7 +1038,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		int size = R_MAX (core->blocksize, struct_sz);
 		ut8 *buf = calloc (1, size);
 		if (!buf) {
-			eprintf ("cannot allocate %d byte(s)\n", size);
+			R_LOGFI ("cannot allocate %d byte(s)\n", size);
 			goto stage_left;
 		}
 		if ((struct_sz > core->blocksize) && !core->fixedblock) {
@@ -1389,7 +1389,7 @@ R_API void r_core_print_examine(RCore *core, const char *str) {
 	}
 	switch (*str) {
 	case '?':
-		eprintf (
+		R_LOGFI (
 			"Format is x/[num][format][size]\n"
 			"Num specifies the number of format elements to display\n"
 			"Format letters are o(octal), x(hex), d(decimal), u(unsigned decimal),\n"
@@ -1533,7 +1533,7 @@ static int cmd_print_pxA(RCore *core, int len, const char *data) {
 	RAnalOp op;
 
 	if (len < 0 || len > core->blocksize) {
-		eprintf ("Invalid length\n");
+		R_LOGFI ("Invalid length\n");
 		return 0;
 	}
 	if (onechar) {
@@ -1848,7 +1848,7 @@ line = NULL;
 		if (fcn) {
 			line = s = r_core_cmd_str (core, "pdr");
 		} else {
-			eprintf ("Cannot find function.\n");
+			R_LOGFI ("Cannot find function.\n");
 			r_config_set_i (core->config, "scr.color", use_color);
 			r_config_set_i (core->config, "asm.cmt.right", asm_cmt_right);
 			goto restore_conf;
@@ -2057,7 +2057,7 @@ r_cons_pop();
 					string = r_str_trim (string);
 					string2 = r_str_trim (string2);
 					//// TODO implememnt avoid duplicated strings
-					// eprintf ("---> %s\n", string);
+					// R_LOGFI ("---> %s\n", string);
 					if (use_color) {
 						if (show_offset) {
 							r_cons_printf ("%s0x%08"PFMT64x" "Color_RESET, use_color? pal->offset: "", addr);
@@ -2135,7 +2135,7 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 		if (nlen > core->blocksize) {
 			r_core_block_size (core, nlen);
 			if (nlen != core->blocksize) {
-				eprintf ("Invalid block size\n");
+				R_LOGFI ("Invalid block size\n");
 				r_core_block_size (core, osize);
 				return false;
 			}
@@ -2488,13 +2488,13 @@ static ut8 *analBars(RCore *core, int type, int nblocks, int blocksize, int skip
 	int j, i = 0;
 	ut8 *ptr = calloc (1, nblocks);
 	if (!ptr) {
-		eprintf ("Error: failed to malloc memory");
+		R_LOGFI ("Error: failed to malloc memory");
 		return NULL;
 	}
 	p = malloc (blocksize);
 	if (!p) {
 		R_FREE (ptr);
-		eprintf ("Error: failed to malloc memory");
+		R_LOGFI ("Error: failed to malloc memory");
 		return NULL;
 	}
 	for (i = 0; i < nblocks; i++) {
@@ -2578,13 +2578,13 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			}
 		}
 		if (totalsize == UT64_MAX) {
-			eprintf ("Cannot determine file size\n");
+			R_LOGFI ("Cannot determine file size\n");
 			return;
 		}
 	}
 	blocksize = (blocksize > 0)? (totalsize / blocksize): (core->blocksize);
 	if (blocksize < 1) {
-		eprintf ("Invalid block size: %d\n", (int)blocksize);
+		R_LOGFI ("Invalid block size: %d\n", (int)blocksize);
 		return;
 	}
 	if (list) {
@@ -2603,7 +2603,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	} else {
 		blocksize = totalsize / nblocks;
 		 if (blocksize < 1) {
-			eprintf ("Invalid block size: %d\n", (int)blocksize);
+			R_LOGFI ("Invalid block size: %d\n", (int)blocksize);
 			return;
 		}
 	}
@@ -2626,13 +2626,13 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				ut64 i, j, k;
 				ptr = calloc (1, nblocks);
 				if (!ptr) {
-					eprintf ("Error: failed to malloc memory");
+					R_LOGFI ("Error: failed to malloc memory");
 					goto beach;
 				}
 				p = calloc (1, blocksize);
 				if (!p) {
 					R_FREE (ptr);
-					eprintf ("Error: failed to malloc memory");
+					R_LOGFI ("Error: failed to malloc memory");
 					goto beach;
 				}
 				int len = 0;
@@ -2683,13 +2683,13 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			int i = 0;
 			ptr = calloc (1, nblocks);
 			if (!ptr) {
-				eprintf ("Error: failed to malloc memory");
+				R_LOGFI ("Error: failed to malloc memory");
 				goto beach;
 			}
 			p = malloc (blocksize);
 			if (!p) {
 				R_FREE (ptr);
-				eprintf ("Error: failed to malloc memory");
+				R_LOGFI ("Error: failed to malloc memory");
 				goto beach;
 			}
 			for (i = 0; i < nblocks; i++) {
@@ -2752,13 +2752,13 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		int j, i = 0;
 		ptr = calloc (1, nblocks);
 		if (!ptr) {
-			eprintf ("Error: failed to malloc memory");
+			R_LOGFI ("Error: failed to malloc memory");
 			goto beach;
 		}
 		p = malloc (blocksize);
 		if (!p) {
 			R_FREE (ptr);
-			eprintf ("Error: failed to malloc memory");
+			R_LOGFI ("Error: failed to malloc memory");
 			goto beach;
 		}
 		for (i = 0; i < nblocks; i++) {
@@ -2779,13 +2779,13 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		int i = 0;
 		ptr = calloc (1, nblocks);
 		if (!ptr) {
-			eprintf ("Error: failed to malloc memory");
+			R_LOGFI ("Error: failed to malloc memory");
 			goto beach;
 		}
 		p = malloc (blocksize);
 		if (!p) {
 			R_FREE (ptr);
-			eprintf ("Error: failed to malloc memory");
+			R_LOGFI ("Error: failed to malloc memory");
 			goto beach;
 		}
 		for (i = 0; i < nblocks; i++) {
@@ -2806,13 +2806,13 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		ut64 i, j, k;
 		ptr = calloc (1, nblocks);
 		if (!ptr) {
-			eprintf ("Error: failed to malloc memory");
+			R_LOGFI ("Error: failed to malloc memory");
 			goto beach;
 		}
 		p = calloc (1, blocksize);
 		if (!p) {
 			R_FREE (ptr);
-			eprintf ("Error: failed to malloc memory");
+			R_LOGFI ("Error: failed to malloc memory");
 			goto beach;
 		}
 		int len = 0;
@@ -2856,7 +2856,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		free (p);
 		print_bars = true;
 	} else {
-		eprintf ("Invalid blocksize\n");
+		R_LOGFI ("Invalid blocksize\n");
 	}
 	break;
 	case 'b': // bytes
@@ -3101,7 +3101,7 @@ static void disasm_recursive_old(RCore *core, ut64 addr, char type_print) {
 		case R_ANAL_OP_TYPE_CJMP:
 			if (aop.jump > addr + i) {
 				if (pushes > 500) {
-					eprintf ("Too deep\n");
+					R_LOGFI ("Too deep\n");
 				}
 				push[pushes++] = i + aop.size;
 				i = aop.jump - addr - 1;
@@ -3150,7 +3150,7 @@ r_cons_printf ("base:\n");
 			case R_ANAL_OP_TYPE_CJMP:
 				if (aop.jump > addr + i) {
 					if (pushes > 500) {
-						eprintf ("Too deep\n");
+						R_LOGFI ("Too deep\n");
 					}
 					push[pushes++] = i + aop.size;
 					i = aop.jump - addr - 1;
@@ -3195,7 +3195,7 @@ static void disasm_until_ret(RCore *core, ut64 addr, char type_print) {
 			}
 			p += op->size;
 		} else {
-			eprintf ("[pdp] Cannot get op at 0x%08"PFMT64x"\n", addr + p);
+			R_LOGFI ("[pdp] Cannot get op at 0x%08"PFMT64x"\n", addr + p);
 			r_anal_op_free (op);
 			break;
 		}
@@ -3283,7 +3283,7 @@ static void _disasm_recursive(RCore *core, ut64 addr, char type_print) {
 			r_anal_op_fini (&aop);
 			r_asm_set_pc (core->assembler, addr + i);
 			//if (i + 8 >= len) {
-			//	eprintf ("WARNING: block size is too small\n");
+			//	R_LOGFI ("WARNING: block size is too small\n");
 			// TODO: reimplement using dynamic memory accesses, not just the block
 			//	break;
 			//}
@@ -3393,7 +3393,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 					r_core_print_disasm_json (core, b->addr, buf, b->size, 0);
 					free (buf);
 				} else {
-					eprintf ("cannot allocate %d byte(s)\n", b->size);
+					R_LOGFI ("cannot allocate %d byte(s)\n", b->size);
 				}
 			}
 		}
@@ -3421,7 +3421,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 				r_core_print_disasm_json (core, b->addr, buf, b->size, 0);
 				free (buf);
 			} else {
-				eprintf ("cannot allocate %d byte(s)\n", b->size);
+				R_LOGFI ("cannot allocate %d byte(s)\n", b->size);
 			}
 		}
 		for (; locs_it && (tmp_func = locs_it->data); locs_it = locs_it->n) {
@@ -3451,7 +3451,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 					r_core_print_disasm_json (core, b->addr, buf, b->size, 0);
 					free (buf);
 				} else {
-					eprintf ("cannot allocate %d byte(s)\n", b->size);
+					R_LOGFI ("cannot allocate %d byte(s)\n", b->size);
 				}
 			}
 		}
@@ -3707,7 +3707,7 @@ static int cmd_print(void *data, const char *input) {
 							l *= core->print->cols;
 						}
 						if (!r_core_block_size (core, l)) {
-							eprintf ("This block size is too big. Did you mean 'p%c @ %s' instead?\n",
+							R_LOGFI ("This block size is too big. Did you mean 'p%c @ %s' instead?\n",
 								*input, input + 2);
 							goto beach;
 						}
@@ -3733,7 +3733,7 @@ static int cmd_print(void *data, const char *input) {
 			i = 0;
 		}
 		if (i && l > i) {
-			eprintf ("This block size is too big (0x%"PFMT64x
+			R_LOGFI ("This block size is too big (0x%"PFMT64x
 				" < 0x%x). Did you mean 'p%c @ %s' instead?\n",
 				n, l, *input, input + 2);
 			goto beach;
@@ -3742,7 +3742,7 @@ static int cmd_print(void *data, const char *input) {
 	if (input[0] == 'x' || input[0] == 'D') {
 		if (l > 0 && tmpseek == UT64_MAX) {
 			if (!r_core_block_size (core, l)) {
-				eprintf ("This block size is too big. Did you mean 'p%c @ %s' instead?\n",
+				R_LOGFI ("This block size is too big. Did you mean 'p%c @ %s' instead?\n",
 					*input, input + 2);
 				goto beach;
 			}
@@ -3755,7 +3755,7 @@ static int cmd_print(void *data, const char *input) {
 		if (f) {
 			len = r_anal_fcn_size (f);
 		} else {
-			eprintf ("p: Cannot find function at 0x%08"PFMT64x "\n", core->offset);
+			R_LOGFI ("p: Cannot find function at 0x%08"PFMT64x "\n", core->offset);
 			core->num->value = 0;
 			goto beach;
 		}
@@ -3797,7 +3797,7 @@ static int cmd_print(void *data, const char *input) {
 					(void)r_io_read_at (core->io, 0, data, core->offset);
 					char *res = r_print_json_path ((const char *)data, core->offset);
 					if (res) {
-						eprintf ("-> res(%s)\n", res);
+						R_LOGFI ("-> res(%s)\n", res);
 					}
 /*
 					char *res = r_print_json_indent ((char*)data, false, "  ", NULL);
@@ -3805,14 +3805,14 @@ static int cmd_print(void *data, const char *input) {
 					free (res);
 */
 				} else {
-					eprintf ("Cannot allocate %d\n", (int)(core->offset));
+					R_LOGFI ("Cannot allocate %d\n", (int)(core->offset));
 				}
 			} else {
 				r_core_cmdf (core, "pj %"PFMT64d" @ 0", core->offset);
 			}
 		} else {
 			if (core->blocksize < 4 || !memcmp (core->block, "\xff\xff\xff\xff", 4)) {
-				eprintf ("Cannot read\n");
+				R_LOGFI ("Cannot read\n");
 			} else {
 				char *res = r_print_json_indent ((const char *)core->block, true, "  ", NULL);
 				r_cons_printf ("%s\n", res);
@@ -3897,7 +3897,7 @@ static int cmd_print(void *data, const char *input) {
 					r_cons_print (c->buf_asm);
 					r_asm_code_free (c);
 				} else {
-					eprintf ("Invalid hexstr\n");
+					R_LOGFI ("Invalid hexstr\n");
 				}
 			}
 		} else if (input[1] == '?') {
@@ -3963,7 +3963,7 @@ static int cmd_print(void *data, const char *input) {
 				}
 				free (buf);
 			} else {
-				eprintf ("ERROR: Cannot malloc %d byte(s)\n", size);
+				R_LOGFI ("ERROR: Cannot malloc %d byte(s)\n", size);
 			}
 		}
 	}
@@ -3984,7 +3984,7 @@ static int cmd_print(void *data, const char *input) {
 				r_cons_println (buf);
 				free (buf);
 			} else {
-				eprintf ("ERROR: Cannot malloc %d byte(s)\n", size);
+				R_LOGFI ("ERROR: Cannot malloc %d byte(s)\n", size);
 			}
 		}
 	}
@@ -4076,7 +4076,7 @@ static int cmd_print(void *data, const char *input) {
 			if (f) {
 				func_walk_blocks (core, f, input[1], 'I', input[2] == '.');
 			} else {
-				eprintf ("Cannot find function at 0x%08"PFMT64x "\n", core->offset);
+				R_LOGFI ("Cannot find function at 0x%08"PFMT64x "\n", core->offset);
 				core->num->value = 0;
 			}
 		}
@@ -4087,7 +4087,7 @@ static int cmd_print(void *data, const char *input) {
 			if (b) {
 					r_core_print_disasm_instructions (core, b->size - (core->offset - b->addr), 0);
 			} else {
-				eprintf ("Cannot find function at 0x%08"PFMT64x "\n", core->offset);
+				R_LOGFI ("Cannot find function at 0x%08"PFMT64x "\n", core->offset);
 				core->num->value = 0;
 			}
 		}
@@ -4119,7 +4119,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 
 		if (core->blocksize_max < use_blocksize && (int) use_blocksize < -core->blocksize_max) {
-			eprintf ("This block size is too big (%"PFMT64d "<%"PFMT64d "). Did you mean 'p%c @ 0x%08"PFMT64x "' instead?\n",
+			R_LOGFI ("This block size is too big (%"PFMT64d "<%"PFMT64d "). Did you mean 'p%c @ 0x%08"PFMT64x "' instead?\n",
 				(ut64) core->blocksize_max, (ut64) use_blocksize, input[0], (ut64) use_blocksize);
 			goto beach;
 		} else if (core->blocksize_max < use_blocksize && (int) use_blocksize > -(int)core->blocksize_max) {
@@ -4178,7 +4178,7 @@ static int cmd_print(void *data, const char *input) {
 				if (f) {
 					func_walk_blocks (core, f, input[2], 'D', input[2] == '.');
 				} else {
-					eprintf ("Cannot find function at 0x%08"PFMT64x "\n", core->offset);
+					R_LOGFI ("Cannot find function at 0x%08"PFMT64x "\n", core->offset);
 				}
 				pd_result = true;
 			}
@@ -4207,7 +4207,7 @@ static int cmd_print(void *data, const char *input) {
 						pd_result = 0;
 					}
 				} else {
-					eprintf ("Cannot find function at 0x%08"PFMT64x "\n", core->offset);
+					R_LOGFI ("Cannot find function at 0x%08"PFMT64x "\n", core->offset);
 					core->num->value = 0;
 				}
 			}
@@ -4289,7 +4289,7 @@ static int cmd_print(void *data, const char *input) {
 							prev_result = r_core_print_disasm_json (core, b->addr, buf, b->size, 0);
 							free (buf);
 						} else {
-							eprintf ("cannot allocate %d byte(s)\n", b->size);
+							R_LOGFI ("cannot allocate %d byte(s)\n", b->size);
 						}
 					}
 					prev_result = true;
@@ -4322,7 +4322,7 @@ static int cmd_print(void *data, const char *input) {
 					ut32 linear = f->_size;
 					ut32 bbsum = r_anal_fcn_realsize (f);
 					if (bbsum + 4096 < linear) {
-						eprintf ("Linear size differs too much from the bbsum, please use pdr instead.\n");
+						R_LOGFI ("Linear size differs too much from the bbsum, please use pdr instead.\n");
 					} else {
 						ut64 at = f->addr;
 						ut64 sz = f->_size > 0 ? f->_size : r_anal_fcn_realsize (f);
@@ -4340,7 +4340,7 @@ static int cmd_print(void *data, const char *input) {
 #endif
 					pd_result = 0;
 				} else {
-					eprintf ("pdf: Cannot find function at 0x%08"PFMT64x "\n", core->offset);
+					R_LOGFI ("pdf: Cannot find function at 0x%08"PFMT64x "\n", core->offset);
 					processed_cmd = true;
 					core->num->value = 0;
 				}
@@ -4451,11 +4451,11 @@ static int cmd_print(void *data, const char *input) {
 				// XXX: issue with small blocks
 				if (*input == 'D' && l > 0) {
 					if (l < 1) {
-						// eprintf ("Block size too small\n");
+						// R_LOGFI ("Block size too small\n");
 						return 1;
 					}
 					if (l > R_CORE_MAX_DISASM) { // pD
-						eprintf ("Block size too big\n");
+						R_LOGFI ("Block size too big\n");
 						return 1;
 					}
 					block1 = malloc (addrbytes * l);
@@ -4468,7 +4468,7 @@ static int cmd_print(void *data, const char *input) {
 						core->num->value = r_core_print_disasm (core->print,
 							core, addr, block1, addrbytes * l, l, 0, 1, formatted_json, NULL);
 					} else {
-						eprintf ("Cannot allocate %d byte(s)\n", addrbytes * l);
+						R_LOGFI ("Cannot allocate %d byte(s)\n", addrbytes * l);
 					}
 				} else {
 					int bs1 = l * 16;
@@ -4689,7 +4689,7 @@ static int cmd_print(void *data, const char *input) {
 			if (l > 0) {
 				ut64 bitness = r_config_get_i (core->config, "asm.bits");
 				if (bitness != 32 && bitness != 64) {
-					eprintf ("Error: bitness of %" PFMT64u " not supported", bitness);
+					R_LOGFI ("Error: bitness of %" PFMT64u " not supported", bitness);
 					break;
 				}
 				if (*core->block & 0x1) { // "long" string
@@ -4798,7 +4798,7 @@ static int cmd_print(void *data, const char *input) {
 			cmd_pCx (core, input + 2, "pc");
 			break;
 		default:
-			eprintf ("Usage: pCd\n");
+			R_LOGFI ("Usage: pCd\n");
 			break;
 		}
 		break;
@@ -4879,12 +4879,12 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case '3': // "p3" [file]
 		if (input[1] == '?') {
-			eprintf ("Usage: p3 [file] - print 3D stereogram image of current block\n");
+			R_LOGFI ("Usage: p3 [file] - print 3D stereogram image of current block\n");
 		} else if (input[1] == ' ') {
 			char *data = r_file_slurp (input + 2, NULL);
 			char *res = r_print_stereogram (data, 78, 20);
 			r_print_stereogram_print (core->print, res);
-			// if (data) eprintf ("%s\n", data);
+			// if (data) R_LOGFI ("%s\n", data);
 			free (res);
 			free (data);
 		} else {
@@ -4956,7 +4956,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'A': // "pxA"
 			if (input[2] == '?') {
-				eprintf ("Usage: pxA [len]   # f.ex: pxA 4K\n"
+				R_LOGFI ("Usage: pxA [len]   # f.ex: pxA 4K\n"
 					" mv    move,lea,li\n"
 					" ->    push\n"
 					" <-    pop\n"
@@ -5436,7 +5436,7 @@ static int cmd_print(void *data, const char *input) {
 				} else if (r_base64_decode (buf, (const char *) block, len)) {
 					r_cons_println ((const char *) buf);
 				} else {
-					eprintf ("r_base64_decode: invalid stream\n");
+					R_LOGFI ("r_base64_decode: invalid stream\n");
 				}
 				break;
 			case 'e': // "p6e"
@@ -5538,7 +5538,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 		break;
 	case 'n': // easter
-		eprintf ("easter egg license has expired\n");
+		R_LOGFI ("easter egg license has expired\n");
 		break;
 	case 't': // "pt"
 		switch (input[1]) {
@@ -5546,7 +5546,7 @@ static int cmd_print(void *data, const char *input) {
 		case '\0':
 			// len must be multiple of 4 since r_mem_copyendian move data in fours - sizeof(ut32)
 			if (len < sizeof (ut32)) {
-				eprintf ("You should change the block size: b %d\n", (int) sizeof (ut32));
+				R_LOGFI ("You should change the block size: b %d\n", (int) sizeof (ut32));
 			}
 			if (len % sizeof (ut32)) {
 				len = len - (len % sizeof (ut32));
@@ -5558,7 +5558,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'h': // "pth"
 			// len must be multiple of 4 since r_mem_copyendian move data in fours - sizeof(ut32)
 			if (len < sizeof (ut32)) {
-				eprintf ("You should change the block size: b %d\n", (int) sizeof (ut32));
+				R_LOGFI ("You should change the block size: b %d\n", (int) sizeof (ut32));
 			}
 			if (len % sizeof (ut32)) {
 				len = len - (len % sizeof (ut32));
@@ -5571,7 +5571,7 @@ static int cmd_print(void *data, const char *input) {
 			// len must be multiple of 4 since r_print_date_dos read buf+3
 			// if block size is 1 or 5 for example it reads beyond the buffer
 			if (len < sizeof (ut32)) {
-				eprintf ("You should change the block size: b %d\n", (int) sizeof (ut32));
+				R_LOGFI ("You should change the block size: b %d\n", (int) sizeof (ut32));
 			}
 			if (len % sizeof (ut32)) {
 				len = len - (len % sizeof (ut32));
@@ -5582,7 +5582,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'n': // "ptn"
 			if (len < sizeof (ut64)) {
-				eprintf ("You should change the block size: b %d\n", (int) sizeof (ut64));
+				R_LOGFI ("You should change the block size: b %d\n", (int) sizeof (ut64));
 			}
 			if (len % sizeof (ut64)) {
 				len = len - (len % sizeof (ut64));
@@ -5598,7 +5598,7 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'q': // "pq"
 		if (input[1] == '?') {
-			eprintf ("Usage: pq[z] [len]\n");
+			R_LOGFI ("Usage: pq[z] [len]\n");
 			break;
 		}
 		if (input[1] == 'z') { // "pqz"

@@ -162,7 +162,7 @@ R_API bool r_flag_zone_around(RFlag *f, ut64 addr, const char **prev, const char
 }
 
 static int cb_list(void *user, const char *name, const char *from_to) {
-	eprintf ("%s\t%s\n", name, from_to);
+	R_LOGFI ("%s\t%s\n", name, from_to);
 	return 1;
 }
 

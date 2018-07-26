@@ -65,7 +65,7 @@ bin.close(fd);
 
 int bd = bin->cur;
 r_list_foreach (r_bin_list (bin, bd, R_BIN_REQ_SYMBOLS), iter, sym) {
-	eprintf ("Symbol: %s\n", sym->name);
+	R_LOGFI ("Symbol: %s\n", sym->name);
 }
 
 bool cb(void *user, void *data) {
@@ -86,7 +86,7 @@ R_API bool r_bin_query(RBin *bin, const char *query) {
 		// symbols
 		ret = true;
 	} else {
-		eprintf ("Unknown command\n");
+		R_LOGFI ("Unknown command\n");
 	}
 	return ret;
 	// r_bin_query (bin, "o@0x8048080"); // return symbol at given address

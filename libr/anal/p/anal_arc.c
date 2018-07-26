@@ -33,7 +33,7 @@ typedef struct arc_fields_t {
 static void arccompact_dump_fields(ut64 addr, ut32 words[2], arc_fields *f) {
 #if DEBUG
 	/* Quick and dirty debug print */
-	eprintf ("DEBUG: 0x%04llx: %08x op=0x%x subop=0x%x format=0x%x fields.a=0x%x fields.b=0x%x fields.c=0x%x imm=%i limm=%lli\n",
+	R_LOGFI ("DEBUG: 0x%04llx: %08x op=0x%x subop=0x%x format=0x%x fields.a=0x%x fields.b=0x%x fields.c=0x%x imm=%i limm=%lli\n",
 		addr, words[0], f->opcode, f->subopcode, f->format, f->a, f->b, f->c, f->imm, f->limm);
 #endif
 }
@@ -483,7 +483,7 @@ static int arcompact_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, in
 
 	op->size = (fields.opcode >= 0x0c)? 2: 4;
 	op->nopcode = op->size;
-// eprintf ("%x\n", fields.opcode);
+// R_LOGFI ("%x\n", fields.opcode);
 
 	switch (fields.opcode) {
 	case 0:

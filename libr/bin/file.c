@@ -74,7 +74,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 		type = R_STRING_TYPE_DETECT;
 	}
 	if (from >= to) {
-		eprintf ("Invalid range to find strings 0x%"PFMT64x" .. 0x%"PFMT64x"\n", from, to);
+		R_LOGFI ("Invalid range to find strings 0x%"PFMT64x" .. 0x%"PFMT64x"\n", from, to);
 		return -1;
 	}
 	int len = to - from;
@@ -283,19 +283,19 @@ R_API RList *r_bin_classes_from_symbols (RBinFile *bf, RBinObject *o) {
 			char *dn = sym->dname;
 			char *fn = swiftField (dn, cn);
 			if (fn) {
-				// eprintf ("FIELD %s  %s\n", cn, fn);
+				// R_LOGFI ("FIELD %s  %s\n", cn, fn);
 				RBinField *f = r_bin_field_new (sym->paddr, sym->vaddr, sym->size, fn, NULL, NULL);
 				r_list_append (c->fields, f);
 				free (fn);
 			} else {
 				char *mn = strstr (dn, "..");
 				if (mn) {
-					// eprintf ("META %s  %s\n", sym->classname, mn);
+					// R_LOGFI ("META %s  %s\n", sym->classname, mn);
 				} else {
 					char *mn = strstr (dn, cn);
 					if (mn && mn[strlen(cn)] == '.') {
 						mn += strlen (cn) + 1;
-						// eprintf ("METHOD %s  %s\n", sym->classname, mn);
+						// R_LOGFI ("METHOD %s  %s\n", sym->classname, mn);
 						r_list_append (c->methods, sym);
 					}
 				}
@@ -867,7 +867,7 @@ R_API bool r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz, bo
 	binfile->buf = r_buf_new ();
 #if LIMIT_SIZE
 	if (sz > 1024 * 1024) {
-		eprintf ("Too big\n");
+		R_LOGFI ("Too big\n");
 		// TODO: use r_buf_io instead of setbytes all the time to save memory
 		return NULL;
 	}
@@ -998,7 +998,7 @@ R_API void r_bin_file_get_strings_range(RBinFile *bf, RList *list, int min, int 
 		// in case of dump ignore here
 		if (bf->rbin->maxstrbuf && size && size > bf->rbin->maxstrbuf) {
 			if (bf->rbin->verbose) {
-				eprintf ("WARNING: bin_strings buffer is too big "
+				R_LOGFI ("WARNING: bin_strings buffer is too big "
 					"(0x%08" PFMT64x
 					")."
 					" Use -zzz or set bin.maxstrbuf "

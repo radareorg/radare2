@@ -48,7 +48,7 @@ int chmodr(const char *path, int rflag) {
 		break;
 	}
 	if (chmod (path, st.st_mode) == -1) {
-		eprintf ("chmod %s:", path);
+		R_LOGFI ("chmod %s:", path);
 		return false;
 	}
 	if (rflag)
@@ -113,7 +113,7 @@ int parsemode(const char *str) {
 			break;
 		/* error */
 		default:
-			eprintf ("%s: invalid mode\n", str);
+			R_LOGFI ("%s: invalid mode\n", str);
 			return false;
 		}
 	if (mask)
@@ -125,7 +125,7 @@ char * agetcwd(void) {
         char *buf = malloc (4096);
 	if (!buf) return NULL;
         if(!getcwd(buf, 4096))
-                eprintf("getcwd:");
+                R_LOGFI("getcwd:");
         return buf;
 }
 
@@ -138,12 +138,12 @@ static void recurse(const char *path, int rec, int (*fn)(const char *,int)) {
         if (lstat (path, &st) == -1 || !S_ISDIR (st.st_mode))
                 return;
         else if (!(dp = opendir (path))) {
-                eprintf ("opendir %s:", path);
+                R_LOGFI ("opendir %s:", path);
 		return;
 	}
         cwd = agetcwd();
         if (chdir (path) == -1) {
-                eprintf ("chdir %s:", path);
+                R_LOGFI ("chdir %s:", path);
 		closedir (dp);
 		free (cwd);
 		return;
@@ -154,7 +154,7 @@ static void recurse(const char *path, int rec, int (*fn)(const char *,int)) {
 
         closedir (dp);
         if (chdir (cwd) == -1)
-                eprintf ("chdir %s:", cwd);
+                R_LOGFI ("chdir %s:", cwd);
         free (cwd);
 }
 #endif

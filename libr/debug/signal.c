@@ -153,7 +153,7 @@ R_API RList *r_debug_kill_list(RDebug *dbg) {
 }
 
 R_API int r_debug_kill_setup(RDebug *dbg, int sig, int action) {
-	eprintf ("TODO: set signal handlers of child\n");
+	R_LOGFI ("TODO: set signal handlers of child\n");
 	// TODO: must inject code to call signal()
 #if 0
 	if (dbg->h->kill_setup)

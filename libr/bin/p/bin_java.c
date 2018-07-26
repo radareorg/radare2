@@ -15,22 +15,22 @@ static void add_bin_obj_to_sdb(RBinJavaObj *bin);
 static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj);
 
 static int init(void *user) {
-	IFDBG_BIN_JAVA eprintf("Calling plugin init = %d.\n", DB? 1: 0);
+	IFDBG_BIN_JAVA R_LOGFI("Calling plugin init = %d.\n", DB? 1: 0);
 	if (!DB) {
-		IFDBG_BIN_JAVA eprintf("plugin DB beeing initted.\n");
+		IFDBG_BIN_JAVA R_LOGFI("plugin DB beeing initted.\n");
 		DB = sdb_new ("bin.java", NULL, 0);
 	} else {
-		IFDBG_BIN_JAVA eprintf("plugin DB already initted.\n");
+		IFDBG_BIN_JAVA R_LOGFI("plugin DB already initted.\n");
 	}
 	return 0;
 }
 
 static int fini(void *user) {
-	IFDBG_BIN_JAVA eprintf("Calling plugin fini = %d.\n", DB? 1: 0);
+	IFDBG_BIN_JAVA R_LOGFI("Calling plugin fini = %d.\n", DB? 1: 0);
 	if (!DB) {
-		IFDBG_BIN_JAVA eprintf("plugin DB already uninited.\n");
+		IFDBG_BIN_JAVA R_LOGFI("plugin DB already uninited.\n");
 	} else {
-		IFDBG_BIN_JAVA eprintf("plugin DB beeing uninited.\n");
+		IFDBG_BIN_JAVA R_LOGFI("plugin DB beeing uninited.\n");
 		sdb_free (DB);
 		DB = NULL;
 	}
@@ -44,7 +44,7 @@ static int add_sdb_bin_obj(const char *key, RBinJavaObj *bin_obj) {
 	};
 	addr = sdb_itoa ((ut64) (size_t) bin_obj, value, 16);
 	if (key && bin_obj && DB) {
-		IFDBG_BIN_JAVA eprintf("Adding %s:%s to the bin_objs db\n", key, addr);
+		IFDBG_BIN_JAVA R_LOGFI("Adding %s:%s to the bin_objs db\n", key, addr);
 		sdb_set (DB, key, addr, 0);
 		result = true;
 	}

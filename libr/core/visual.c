@@ -110,7 +110,7 @@ static ut64 splitPtr = UT64_MAX;
 static int visual_repeat_thread_anykey(RThread *th) {
 	RCore *core = th->user;
 	r_cons_any_key (NULL);
-	eprintf ("^C  \n");
+	R_LOGFI ("^C  \n");
 	core->cons->context->breaked = true;
 	return 0;
 }
@@ -219,7 +219,7 @@ static void visual_repeat(RCore *core) {
 			r_cons_any_key (NULL);
 		}
 #else
-		eprintf ("Unsupported on this platform\n");
+		R_LOGFI ("Unsupported on this platform\n");
 		r_cons_any_key (NULL);
 #endif
 	} else {
@@ -748,10 +748,10 @@ static void visual_search(RCore *core) {
 			core->print->ocur = -1;
 		}
 		showcursor (core, true);
-		eprintf ("Found in offset 0x%08"PFMT64x" + %d\n", core->offset, core->print->cur);
+		R_LOGFI ("Found in offset 0x%08"PFMT64x" + %d\n", core->offset, core->print->cur);
 		r_cons_any_key (NULL);
 	} else {
-		eprintf ("Cannot find bytes.\n");
+		R_LOGFI ("Cannot find bytes.\n");
 		r_cons_any_key (NULL);
 		r_cons_clear00 ();
 	}
@@ -1166,7 +1166,7 @@ repeat:
 	}
 	r_list_free (xrefs);
 #else
-	eprintf ("TODO: sdbize xrefs here\n");
+	R_LOGFI ("TODO: sdbize xrefs here\n");
 #endif
 	return ret;
 }
@@ -1240,7 +1240,7 @@ static void visual_comma(RCore *core) {
 		free (odata);
 		free (cwf);
 	} else {
-		eprintf ("No commafile found.\n");
+		R_LOGFI ("No commafile found.\n");
 	}
 	free (comment);
 }
@@ -2013,7 +2013,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'T':
 			if (r_sandbox_enable (0)) {
-				eprintf ("sandbox not enabled\n");
+				R_LOGFI ("sandbox not enabled\n");
 			} else {
 				if (r_config_get_i (core->config, "scr.interactive")) {
 					r_core_cmd0 (core, "TT");
@@ -2154,7 +2154,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					break;
 				}
 				reset_print_cur (core->print);
-				eprintf ("\rRendering graph...");
+				R_LOGFI ("\rRendering graph...");
 				r_core_visual_graph (core, NULL, NULL, true);
 				r_config_set_i (core->config, "scr.color", ocolor);
 			}
@@ -2684,7 +2684,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				r_core_visual_seek_animation (core, undo->off);
 				core->print->cur = undo->cursor;
 			} else {
-				eprintf ("Cannot undo\n");
+				R_LOGFI ("Cannot undo\n");
 			}
 		}
 		break;
@@ -3094,7 +3094,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	splitPtr = UT64_MAX;
 
 	if (r_cons_get_size (&ch) < 1 || ch < 1) {
-		eprintf ("Cannot create Visual context. Use scr.fix_{columns|rows}\n");
+		R_LOGFI ("Cannot create Visual context. Use scr.fix_{columns|rows}\n");
 		return 0;
 	}
 

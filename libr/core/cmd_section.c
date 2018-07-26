@@ -194,11 +194,11 @@ static bool dumpSectionsToDisk(RCore *core) {
 			s->vaddr, s->vaddr+s->size,
 			r_str_rwx_i (s->flags));
 		if (!r_file_dump (file, buf, s->size, 0)) {
-			eprintf ("Cannot write '%s'\n", file);
+			R_LOGFI ("Cannot write '%s'\n", file);
 			free (buf);
 			return false;
 		}
-		eprintf ("Dumped %d byte(s) into %s\n", (int)s->size, file);
+		R_LOGFI ("Dumped %d byte(s) into %s\n", (int)s->size, file);
 		free (buf);
 	}
 	return true;
@@ -234,12 +234,12 @@ static bool dumpSectionToDisk(RCore *core, char *file) {
 					r_str_rwx_i (s->flags));
 			}
 			if (!r_file_dump (file, buf, s->size, 0)) {
-				eprintf ("Cannot write '%s'\n", file);
+				R_LOGFI ("Cannot write '%s'\n", file);
 				free (buf);
 				free (heapfile);
 				return false;
 			}
-			eprintf ("Dumped %d byte(s) into %s\n", (int)s->size, file);
+			R_LOGFI ("Dumped %d byte(s) into %s\n", (int)s->size, file);
 			free (buf);
 			free (heapfile);
 			return true;
@@ -314,12 +314,12 @@ static int cmd_section_reapply(RCore *core, const char *input) {
 		if (*input == 'b') {
 			id = (ut32)r_num_math (core->num, input + 2);
 			if (!r_io_section_reapply_bin (core->io, id, mode)) {
-				eprintf ("Cannot reapply section with binid %d\n", id);
+				R_LOGFI ("Cannot reapply section with binid %d\n", id);
 			}
 		} else {
 			id = (ut32)r_num_math (core->num, input + 2);
 			if (!r_io_section_reapply (core->io, id, mode)) {
-				eprintf ("Cannot reapply section with secid %d\n", id);
+				R_LOGFI ("Cannot reapply section with secid %d\n", id);
 			}
 		}
 		break;
@@ -366,7 +366,7 @@ static int cmd_section(void *data, const char *input) {
 			break;
 		case '?': // "Sa?"
 		default:
-			eprintf ("Usage: Sa[-][arch] [bits] [[off]]\n");
+			R_LOGFI ("Usage: Sa[-][arch] [bits] [[off]]\n");
 			break;
 		case ' ': // "Sa "
 			{
@@ -377,7 +377,7 @@ static int cmd_section(void *data, const char *input) {
 				ut64 offset = core->offset;
 				i = r_str_word_set0 (ptr);
 				if (i < 2) {
-					eprintf ("Missing argument\n");
+					R_LOGFI ("Missing argument\n");
 					free (ptr);
 					break;
 				}
@@ -390,7 +390,7 @@ static int cmd_section(void *data, const char *input) {
 					core->section = NULL;
 					r_core_seek (core, core->offset, 0);
 				} else {
-					eprintf ("Cannot set arch/bits at 0x%08"PFMT64x"\n",offset);
+					R_LOGFI ("Cannot set arch/bits at 0x%08"PFMT64x"\n",offset);
 				}
 				free (ptr);
 				break;
@@ -418,7 +418,7 @@ static int cmd_section(void *data, const char *input) {
 				update_section_flag_at_with_oldname (s, core->flags, s->vaddr, oldname);
 				free (oldname);
 			} else {
-				eprintf ("No section found in  0x%08"PFMT64x"\n", core->offset);
+				R_LOGFI ("No section found in  0x%08"PFMT64x"\n", core->offset);
 			}
 		} else {
 			r_core_cmd_help (core, help_msg_Sr);
@@ -467,18 +467,18 @@ static int cmd_section(void *data, const char *input) {
 				char *buf = r_file_slurp (input + 2, &sz);
 				// TODO: use mmap here. we need a portable implementation
 				if (!buf) {
-					eprintf ("Cannot allocate 0x%08"PFMT64x""
+					R_LOGFI ("Cannot allocate 0x%08"PFMT64x""
 						" bytes\n", s->size);
 					return false;
 				}
 				r_io_write_at (core->io, s->vaddr, (const ut8*)buf, sz);
-				eprintf ("Loaded %d byte(s) into the map region "
+				R_LOGFI ("Loaded %d byte(s) into the map region "
 					" at 0x%08"PFMT64x"\n", sz, s->vaddr);
 				free (buf);
 				return true;
 			}
 		}
-		eprintf ("No debug region found here\n");
+		R_LOGFI ("No debug region found here\n");
 		return false;
 		}
 		break;
@@ -503,7 +503,7 @@ static int cmd_section(void *data, const char *input) {
 		switch (input[1]) {
 		case '-': // "S -" remove
 			if (input[2] == '?' || input[2] == '\0') {
-				eprintf ("Usage: S -N   # where N is the "
+				R_LOGFI ("Usage: S -N   # where N is the "
 					" section index\n");
 			} else {
 				r_io_section_rm (core->io, atoi (input + 1));

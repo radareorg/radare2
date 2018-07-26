@@ -15,11 +15,11 @@ R_API void r_bin_demangle_list(RBin *bin) {
 		return;
 	}
 	for (i = 0; langs[i]; i++) {
-		eprintf ("%s\n", langs[i]);
+		R_LOGFI ("%s\n", langs[i]);
 	}
 	r_list_foreach (bin->plugins, it, plugin) {
 		if (plugin->demangle) {
-			eprintf ("%s\n", plugin->name);
+			R_LOGFI ("%s\n", plugin->name);
 		}
 	}
 }

@@ -34,7 +34,7 @@ static char* regstate(RBinFile *bf) {
 		obj->ehdr.e_machine != EM_ARM &&
 		obj->ehdr.e_machine != EM_386 &&
 		obj->ehdr.e_machine != EM_X86_64) {
-		eprintf ("Cannot retrieve regstate on: %s (not yet supported)\n",
+		R_LOGFI ("Cannot retrieve regstate on: %s (not yet supported)\n",
 					Elf_(r_bin_elf_get_machine_name)(obj));
 		return NULL;
 	}
@@ -664,7 +664,7 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		case R_386_PC8:      ADD(8, -P);
 		case R_386_COPY:     ADD(64, 0); // XXX: copy symbol at runtime
 		case R_386_IRELATIVE: r->is_ifunc = true; SET(32);
-		default: break; //eprintf("TODO(eddyb): uninmplemented ELF/x86 reloc type %i\n", rel->type);
+		default: break; //R_LOGFI("TODO(eddyb): uninmplemented ELF/x86 reloc type %i\n", rel->type);
 		}
 		break;
 	case EM_X86_64: switch (rel->type) {
@@ -685,7 +685,7 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		case R_X86_64_GOTPCREL:	ADD(64, GOT-P);
 		case R_X86_64_COPY:	ADD(64, 0); // XXX: copy symbol at runtime
 		case R_X86_64_IRELATIVE: r->is_ifunc = true; SET(64);
-		default: break; ////eprintf("TODO(eddyb): uninmplemented ELF/x64 reloc type %i\n", rel->type);
+		default: break; ////R_LOGFI("TODO(eddyb): uninmplemented ELF/x64 reloc type %i\n", rel->type);
 		}
 		break;
 	case EM_ARM: switch (rel->type) {
@@ -700,7 +700,7 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 		case R_ARM_RELATIVE:	ADD(32, B);
 		case R_ARM_GOTOFF:	ADD(32,-GOT);
 		default: ADD(32,GOT); break; // reg relocations
-		 ////eprintf("TODO(eddyb): uninmplemented ELF/ARM reloc type %i\n", rel->type);
+		 ////R_LOGFI("TODO(eddyb): uninmplemented ELF/ARM reloc type %i\n", rel->type);
 		}
 		break;
 	default: break;
@@ -869,7 +869,7 @@ static void _patch_reloc (ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 
 			val = B + A;
 			break;
 		default:
-			//eprintf ("relocation %d not handle at this time\n", rel->type);
+			//R_LOGFI ("relocation %d not handle at this time\n", rel->type);
 			break;
 		}
 		switch (word) {
@@ -945,7 +945,7 @@ static RList* patch_relocs(RBin *b) {
 		return NULL;
 	}
 	if (!io->cached) {
-	   	eprintf ("Warning: run r2 with -e io.cache=true to fix relocations in disassembly\n");
+	   	R_LOGFI ("Warning: run r2 with -e io.cache=true to fix relocations in disassembly\n");
 		return relocs (r_bin_cur (b));
 	}
 
@@ -1298,7 +1298,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 
 	if (data && datalen > 0) {
 		//ut32 data_section = buf->length;
-		eprintf ("Warning: DATA section not support for ELF yet\n");
+		R_LOGFI ("Warning: DATA section not support for ELF yet\n");
 		B (data, datalen);
 	}
 	return buf;

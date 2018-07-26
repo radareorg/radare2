@@ -133,7 +133,7 @@ static void addsym(RList *ret, const char *name, ut64 addr) {
 
 static void showstr(const char *str, const ut8 *s, int len) {
 	char *msg = r_str_ndup ((const char *) s, len);
-	eprintf ("%s: %s\n", str, msg);
+	R_LOGFI ("%s: %s\n", str, msg);
 	free (msg);
 }
 
@@ -158,7 +158,7 @@ static RList *symbols(RBinFile *bf) {
 	showstr ("DomesticName", hdr->DomesticName, 48);
 	showstr ("OverseasName", hdr->OverseasName, 48);
 	showstr ("ProductCode", hdr->ProductCode, 14);
-	eprintf ("Checksum: 0x%04x\n", (ut32) hdr->CheckSum);
+	R_LOGFI ("Checksum: 0x%04x\n", (ut32) hdr->CheckSum);
 	showstr ("Peripherials", hdr->Peripherials, 16);
 	showstr ("SramCode", hdr->CountryCode, 12);
 	showstr ("ModemCode", hdr->CountryCode, 12);

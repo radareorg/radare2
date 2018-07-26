@@ -2715,7 +2715,7 @@ static int x86_int_0x80(RAnalEsil *esil, int interrupt) {
 			return true;
 		}
 	}
-	eprintf ("syscall %d not implemented yet\n", syscall);
+	R_LOGFI ("syscall %d not implemented yet\n", syscall);
 	return false;
 }
 #endif
@@ -2723,7 +2723,7 @@ static int x86_int_0x80(RAnalEsil *esil, int interrupt) {
 #if 0
 static int esil_x86_cs_intr(RAnalEsil *esil, int intr) {
 	if (!esil) return false;
-	eprintf ("INTERRUPT 0x%02x HAPPENS\n", intr);
+	R_LOGFI ("INTERRUPT 0x%02x HAPPENS\n", intr);
 	return true;
 }
 #endif

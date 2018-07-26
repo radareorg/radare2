@@ -42,7 +42,7 @@ static int r_debug_windbg_reg_write(RDebug *dbg, int type, const ut8 *buf, int s
 	int arena_size;
 	ut8 *arena = r_reg_get_bytes (dbg->reg, R_REG_TYPE_ALL, &arena_size);
 	if (!arena) {
-		eprintf ("Could not retrieve the register arena!\n");
+		R_LOGFI ("Could not retrieve the register arena!\n");
 		return false;
 	}
 	int ret = windbg_write_reg (wctx, arena, arena_size);
@@ -114,7 +114,7 @@ static int r_debug_windbg_attach(RDebug *dbg, int pid) {
 
 	// Handshake
 	if (!windbg_sync (wctx)) {
-		eprintf ("Could not connect to windbg\n");
+		R_LOGFI ("Could not connect to windbg\n");
 		windbg_ctx_free (wctx);
 		return false;
 	}
@@ -129,7 +129,7 @@ static int r_debug_windbg_attach(RDebug *dbg, int pid) {
 }
 
 static int r_debug_windbg_detach(RDebug *dbg, int pid) {
-	eprintf ("Detaching...\n");
+	R_LOGFI ("Detaching...\n");
 	return true;
 }
 
@@ -196,7 +196,7 @@ static int r_debug_windbg_select(int pid, int tid) {
 		windbg_set_target (wctx, old);
 		return false;
 	}
-	eprintf ("Process base is 0x%"PFMT64x"\n", base);
+	R_LOGFI ("Process base is 0x%"PFMT64x"\n", base);
 	return true;
 }
 

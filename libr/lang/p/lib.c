@@ -34,7 +34,7 @@ static int lang_lib_file_run (RLang *user, const char *file) {
 		if (fcn) {
 			fcn (user->user);
 		} else {
-			eprintf ("Cannot find 'entry' symbol in library\n");
+			R_LOGFI ("Cannot find 'entry' symbol in library\n");
 		}
 		r_lib_dl_close (lib);
 	}

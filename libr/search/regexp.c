@@ -18,7 +18,7 @@ R_API int r_search_regexp_update(RSearch *s, ut64 from, const ut8 *buf, int len)
 			reflags |= R_REGEX_ICASE;
 
 		if (r_regex_comp (&compiled, (char *)kw->bin_keyword, reflags)) {
-			eprintf ("Cannot compile '%s' regexp\n", kw->bin_keyword);
+			R_LOGFI ("Cannot compile '%s' regexp\n", kw->bin_keyword);
 			return -1;
 		}
 

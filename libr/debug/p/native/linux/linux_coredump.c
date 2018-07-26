@@ -82,7 +82,7 @@ static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg, proc_per_process_t *proc_data
 
 	p = R_NEW0 (prpsinfo_t);
 	if (!p) {
-		eprintf ("Couldn't allocate memory for prpsinfo_t\n");
+		R_LOGFI ("Couldn't allocate memory for prpsinfo_t\n");
 		return NULL;
 	}
 
@@ -91,7 +91,7 @@ static prpsinfo_t *linux_get_prpsinfo(RDebug *dbg, proc_per_process_t *proc_data
 	file = sdb_fmt ("/proc/%d/cmdline", mypid);
 	buffer = r_file_slurp (file, &len);
 	if (!buffer) {
-		eprintf ("buffer NULL\n");
+		R_LOGFI ("buffer NULL\n");
 		goto error;
 	}
 	buffer[len] = 0;
@@ -531,7 +531,7 @@ static linux_map_entry_t *linux_get_mapped_files(RDebug *dbg, ut8 filter_flags) 
 			pmentry->file_backed = true;
 		}
 		pmentry->dumpeable = dump_this_map (buff_smaps, pmentry, filter_flags);
-		eprintf (fmt_addr" - anonymous: %d, kernel_mapping: %d, file_backed: %d, dumpeable: %d\n",
+		R_LOGFI (fmt_addr" - anonymous: %d, kernel_mapping: %d, file_backed: %d, dumpeable: %d\n",
 							pmentry->start_addr, pmentry->end_addr,
 							pmentry->anonymous, pmentry->kernel_mapping,
 							pmentry->file_backed, pmentry->dumpeable);
@@ -756,7 +756,7 @@ static bool dump_elf_map_content(RDebug *dbg, RBuffer *dest, linux_map_entry_t *
 	size_t size;
 	bool ret;
 
-	eprintf ("dump_elf_map_content starting\n\n");
+	R_LOGFI ("dump_elf_map_content starting\n\n");
 
 	for (p = head; p; p = p->n) {
 		if (!p->dumpeable) {
@@ -769,16 +769,16 @@ static bool dump_elf_map_content(RDebug *dbg, RBuffer *dest, linux_map_entry_t *
 		}
 		ret = dbg->iob.read_at (dbg->iob.io, p->start_addr, map_content, size);
 		if (!ret) {
-			eprintf ("Problems reading %"PFMTSZd" bytes at %"PFMT64x"\n", size, (ut64)p->start_addr);
+			R_LOGFI ("Problems reading %"PFMTSZd" bytes at %"PFMT64x"\n", size, (ut64)p->start_addr);
 		} else {
 			ret = r_buf_append_bytes (dest, (const ut8*)map_content, size);
 			if (!ret) {
-				eprintf ("r_buf_append_bytes - failed\n");
+				R_LOGFI ("r_buf_append_bytes - failed\n");
 			}
 		}
 		free (map_content);
 	}
-	eprintf ("dump_elf_map_content - done\n");
+	R_LOGFI ("dump_elf_map_content - done\n");
 	return true;
 }
 
@@ -818,7 +818,7 @@ static proc_per_process_t *get_proc_process_content (RDebug *dbg) {
 	}
 	if (!p->num_threads || p->num_threads < 1) {
 		free (p);
-		eprintf ("Warning: number of threads is < 1\n");
+		R_LOGFI ("Warning: number of threads is < 1\n");
 		return NULL;
 	}
 	file = sdb_fmt ("/proc/%d/status", dbg->pid);

@@ -678,7 +678,7 @@ static int node_match_functions(const RAnal *anal, const RFlirtNode *root_node) 
 		int func_size = r_anal_fcn_size (func);
 		func_buf = malloc (func_size);
 		if (!anal->iob.read_at (anal->iob.io, func->addr, func_buf, func_size)) {
-			eprintf ("Couldn't read function\n");
+			R_LOGFI ("Couldn't read function\n");
 			ret = false;
 			goto exit;
 		}
@@ -736,7 +736,7 @@ static ut8 read_module_tail_bytes(RFlirtModule *module, RBuffer *b) {
 		}
 		r_list_append (module->tail_bytes, tail_byte);
 #if DEBUG
-		eprintf ("READ TAIL BYTE: %04X: %02X\n", tail_byte->offset, tail_byte->value);
+		R_LOGFI ("READ TAIL BYTE: %04X: %02X\n", tail_byte->offset, tail_byte->value);
 #endif
 	}
 
@@ -811,7 +811,7 @@ static ut8 read_module_referenced_functions(RFlirtModule *module, RBuffer *b) {
 		}
 		r_list_append (module->referenced_functions, ref_function);
 #if DEBUG
-		eprintf ("(REF: %04X: %s)\n", ref_function->offset, ref_function->name);
+		R_LOGFI ("(REF: %04X: %s)\n", ref_function->offset, ref_function->name);
 #endif
 	}
 
@@ -862,7 +862,7 @@ static ut8 read_module_public_functions(RFlirtModule *module, RBuffer *b, ut8 *f
 			if (current_byte & 0x01 || current_byte & 0x04) { // appears as 'd' or '?' in dumpsig
 #if DEBUG
 				// XXX investigate
-				eprintf ("INVESTIGATE PUBLIC NAME FLAG: %02X @ %04X\n", current_byte, b->cur + header_size);
+				R_LOGFI ("INVESTIGATE PUBLIC NAME FLAG: %02X @ %04X\n", current_byte, b->cur + header_size);
 #endif
 			}
 			current_byte = read_byte (b);
@@ -880,20 +880,20 @@ static ut8 read_module_public_functions(RFlirtModule *module, RBuffer *b, ut8 *f
 		}
 
 		if (i == R_FLIRT_NAME_MAX) {
-			eprintf ("Function name too long\n");
+			R_LOGFI ("Function name too long\n");
 			function->name[R_FLIRT_NAME_MAX - 1] = '\0';
 		} else {
 			function->name[i] = '\0';
 		}
 
 #if DEBUG
-		eprintf ("%04X:%s ", function->offset, function->name);
+		R_LOGFI ("%04X:%s ", function->offset, function->name);
 #endif
 		*flags = current_byte;
 		r_list_append (module->public_functions, function);
 	} while (*flags & IDASIG__PARSE__MORE_PUBLIC_NAMES);
 #if DEBUG
-	eprintf ("\n");
+	R_LOGFI ("\n");
 #endif
 
 	return true;
@@ -921,9 +921,9 @@ static ut8 parse_leaf(const RAnal *anal, RBuffer *b, RFlirtNode *node) {
 		}
 #if DEBUG
 		if (crc_length == 0x00 && crc16 != 0x0000) {
-			eprintf ("WARNING non zero crc of zero length @ %04X\n", b->cur + header_size);
+			R_LOGFI ("WARNING non zero crc of zero length @ %04X\n", b->cur + header_size);
 		}
-		eprintf ("crc_len: %02X crc16: %04X\n", crc_length, crc16);
+		R_LOGFI ("crc_len: %02X crc16: %04X\n", crc_length, crc16);
 #endif
 
 		do { // loop for all modules having the same crc
@@ -948,7 +948,7 @@ static ut8 parse_leaf(const RAnal *anal, RBuffer *b, RFlirtNode *node) {
 				}
 			}
 #if DEBUG
-			eprintf ("module_length: %04X\n", module->length);
+			R_LOGFI ("module_length: %04X\n", module->length);
 #endif
 
 			if (!read_module_public_functions (module, b, &flags)) {
@@ -983,7 +983,7 @@ static ut8 read_node_length(RFlirtNode *node, RBuffer *b) {
 		return false;
 	}
 #if DEBUG
-	eprintf ("node length: %02X\n", node->length);
+	R_LOGFI ("node length: %02X\n", node->length);
 #endif
 	return true;
 }
@@ -1081,7 +1081,7 @@ err_exit:
 }
 
 #if DEBUG
-#define PRINT_ARCH(define, str) if (arch == define) { eprintf (" %s", str); return; }
+#define PRINT_ARCH(define, str) if (arch == define) { R_LOGFI (" %s", str); return; }
 static void print_arch(ut8 arch) {
 	PRINT_ARCH (IDASIG__ARCH__386, "386");
 	PRINT_ARCH (IDASIG__ARCH__Z80, "Z80");
@@ -1146,7 +1146,7 @@ static void print_arch(ut8 arch) {
 	PRINT_ARCH (IDASIG__ARCH__DALVIK, "DALVIK");
 }
 
-#define PRINT_FLAG(define, str) if (flags & define) { eprintf (" %s", str); }
+#define PRINT_FLAG(define, str) if (flags & define) { R_LOGFI (" %s", str); }
 static void print_file_types(ut32 flags) {
 	PRINT_FLAG (IDASIG__FILE__DOS_EXE_OLD, "DOS_EXE_OLD");
 	PRINT_FLAG (IDASIG__FILE__DOS_COM_OLD, "DOS_COM_OLD");
@@ -1204,18 +1204,18 @@ static void print_features(ut16 flags) {
 }
 
 static void print_header(idasig_v5_t *header) {
-	/*eprintf("magic: %s\n", header->magic);*/
-	eprintf ("version: %d\n", header->version);
-	eprintf ("arch:"); print_arch (header->arch); eprintf ("\n");
-	eprintf ("file_types:"); print_file_types (header->file_types); eprintf ("\n");
-	eprintf ("os_types:"); print_os_types (header->os_types); eprintf ("\n");
-	eprintf ("app_types:"); print_app_types (header->app_types); eprintf ("\n");
-	eprintf ("features:"); print_features (header->features); eprintf ("\n");
-	eprintf ("old_n_functions: %04x\n", header->old_n_functions);
-	eprintf ("crc16: %04x\n", header->crc16);
-	eprintf ("ctype: %s\n", header->ctype);
-	eprintf ("library_name_len: %d\n", header->library_name_len);
-	eprintf ("ctypes_crc16: %04x\n", header->ctypes_crc16);
+	/*R_LOGFI("magic: %s\n", header->magic);*/
+	R_LOGFI ("version: %d\n", header->version);
+	R_LOGFI ("arch:"); print_arch (header->arch); R_LOGFI ("\n");
+	R_LOGFI ("file_types:"); print_file_types (header->file_types); R_LOGFI ("\n");
+	R_LOGFI ("os_types:"); print_os_types (header->os_types); R_LOGFI ("\n");
+	R_LOGFI ("app_types:"); print_app_types (header->app_types); R_LOGFI ("\n");
+	R_LOGFI ("features:"); print_features (header->features); R_LOGFI ("\n");
+	R_LOGFI ("old_n_functions: %04x\n", header->old_n_functions);
+	R_LOGFI ("crc16: %04x\n", header->crc16);
+	R_LOGFI ("ctype: %s\n", header->ctype);
+	R_LOGFI ("library_name_len: %d\n", header->library_name_len);
+	R_LOGFI ("ctypes_crc16: %04x\n", header->ctypes_crc16);
 }
 #endif
 
@@ -1305,7 +1305,7 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 	}
 
 	if (version < 5 || version > 10) {
-		eprintf ("Unsupported flirt signature version\n");
+		R_LOGFI ("Unsupported flirt signature version\n");
 		goto exit;
 	}
 
@@ -1368,11 +1368,11 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 
 	if (header->features & IDASIG__FEATURE__COMPRESSED) {
 		if (version == 5) {
-			eprintf ("Sorry we do not support the signatures version 5 compression.\n");
+			R_LOGFI ("Sorry we do not support the signatures version 5 compression.\n");
 			goto exit;
 		}
 		if (!(decompressed_buf = r_inflate (buf, size, NULL, &decompressed_size))) {
-			eprintf ("Decompressing failed.\n");
+			R_LOGFI ("Decompressing failed.\n");
 			goto exit;
 		}
 
@@ -1441,7 +1441,7 @@ R_API void r_sign_flirt_dump(const RAnal *anal, const char *flirt_file) {
 	RFlirtNode *node;
 
 	if (!(flirt_buf = r_buf_new_slurp (flirt_file))) {
-		eprintf ("Can't open %s\n", flirt_file);
+		R_LOGFI ("Can't open %s\n", flirt_file);
 		return;
 	}
 
@@ -1452,7 +1452,7 @@ R_API void r_sign_flirt_dump(const RAnal *anal, const char *flirt_file) {
 		node_free (node);
 		return;
 	} else {
-		eprintf ("We encountered an error while parsing the file. Sorry.\n");
+		R_LOGFI ("We encountered an error while parsing the file. Sorry.\n");
 		return;
 	}
 }
@@ -1463,7 +1463,7 @@ R_API void r_sign_flirt_scan(const RAnal *anal, const char *flirt_file) {
 	RFlirtNode *node;
 
 	if (!(flirt_buf = r_buf_new_slurp (flirt_file))) {
-		eprintf ("Can't open %s\n", flirt_file);
+		R_LOGFI ("Can't open %s\n", flirt_file);
 		return;
 	}
 
@@ -1471,12 +1471,12 @@ R_API void r_sign_flirt_scan(const RAnal *anal, const char *flirt_file) {
 	r_buf_free (flirt_buf);
 	if (node) {
 		if (!node_match_functions (anal, node)) {
-			eprintf ("Error while scanning the file\n");
+			R_LOGFI ("Error while scanning the file\n");
 		}
 		node_free (node);
 		return;
 	} else {
-		eprintf ("We encountered an error while parsing the file. Sorry.\n");
+		R_LOGFI ("We encountered an error while parsing the file. Sorry.\n");
 		return;
 	}
 }

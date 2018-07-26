@@ -40,7 +40,7 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 		delta = cur - addr;
 	}
 	if (delta < 0 || delta >= bsize) {
-		eprintf ("Invalid delta\n");
+		R_LOGFI ("Invalid delta\n");
 		return 0;
 	}
 	if (rad) {
@@ -130,7 +130,7 @@ static int rafind_open_file(char *file) {
 	io = r_io_new ();
 	fd = r_io_open_nomap (io, file, R_IO_READ, 0);
 	if (!fd) {
-		eprintf ("Cannot open file '%s'\n", file);
+		R_LOGFI ("Cannot open file '%s'\n", file);
 		return 1;
 	}
 
@@ -139,7 +139,7 @@ static int rafind_open_file(char *file) {
 	if (!rs) return 1;
 	buf = calloc (1, bsize);
 	if (!buf) {
-		eprintf ("Cannot allocate %"PFMT64d" bytes\n", bsize);
+		R_LOGFI ("Cannot allocate %"PFMT64d" bytes\n", bsize);
 		return 1;
 	}
 	rs->align = align;
@@ -194,7 +194,7 @@ static int rafind_open_file(char *file) {
 			if (nonstop) {
 				continue;
 			}
-		//	eprintf ("Error reading at 0x%08"PFMT64x"\n", cur);
+		//	R_LOGFI ("Error reading at 0x%08"PFMT64x"\n", cur);
 			return 1;
 		}
 		if (ret != bsize && ret > 0) {
@@ -202,7 +202,7 @@ static int rafind_open_file(char *file) {
 		}
 
 		if (r_search_update (rs, cur, buf, ret) == -1) {
-			eprintf ("search: update read error at 0x%08"PFMT64x"\n", cur);
+			R_LOGFI ("search: update read error at 0x%08"PFMT64x"\n", cur);
 			break;
 		}
 	}

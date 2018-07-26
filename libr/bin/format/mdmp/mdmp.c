@@ -311,18 +311,18 @@ static bool r_bin_mdmp_init_hdr(struct r_bin_mdmp_obj *obj) {
 	obj->hdr = (struct minidump_header *)obj->b->buf;
 
 	if (obj->hdr->number_of_streams == 0) {
-		eprintf ("[WARN] No streams present!\n");
+		R_LOGFI ("[WARN] No streams present!\n");
 		return false;
 	}
 
 	if (obj->hdr->stream_directory_rva < sizeof (struct minidump_header))
 	{
-		eprintf ("[ERROR] RVA for directory resides in the header!\n");
+		R_LOGFI ("[ERROR] RVA for directory resides in the header!\n");
 		return false;
 	}
 
 	if (obj->hdr->check_sum) {
-		eprintf ("[INFO] Checksum present but needs validating!\n");
+		R_LOGFI ("[INFO] Checksum present but needs validating!\n");
 		return false;
 	}
 
@@ -362,7 +362,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 	/* We could confirm data sizes but a malcious MDMP will always get around
 	** this! But we can ensure that the data is not outside of the file */
 	if (entry->location.rva + entry->location.data_size > obj->b->length) {
-		eprintf ("[ERROR] Size Mismatch - Stream data is larger than file size!\n");
+		R_LOGFI ("[ERROR] Size Mismatch - Stream data is larger than file size!\n");
 		return false;
 	}
 
@@ -638,7 +638,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		/* Silently ignore reserved streams */
 		break;
 	default:
-		eprintf ("[WARN] Invalid or unsupported enumeration encountered %i\n", entry->stream_type);
+		R_LOGFI ("[WARN] Invalid or unsupported enumeration encountered %i\n", entry->stream_type);
 		return false;
 	}
 	return true;
@@ -780,17 +780,17 @@ static int r_bin_mdmp_init(struct r_bin_mdmp_obj *obj) {
 	r_bin_mdmp_init_parsing (obj);
 
 	if (!r_bin_mdmp_init_hdr (obj)) {
-		eprintf ("[ERROR] Failed to initialise header\n");
+		R_LOGFI ("[ERROR] Failed to initialise header\n");
 		return false;
 	}
 
 	if (!r_bin_mdmp_init_directory (obj)) {
-		eprintf ("[ERROR] Failed to initialise directory structures!\n");
+		R_LOGFI ("[ERROR] Failed to initialise directory structures!\n");
 		return false;
 	}
 
 	if (!r_bin_mdmp_init_pe_bins (obj)) {
-		eprintf ("[ERROR] Failed to initialise pe binaries!\n");
+		R_LOGFI ("[ERROR] Failed to initialise pe binaries!\n");
 		return false;
 	}
 

@@ -97,7 +97,7 @@ R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 	lb = R_ABS (lb);
 	if (la != lb) {
 	 	len = R_MIN (la, lb);
-		eprintf ("Buffer truncated to %d byte(s) (%d not compared)\n", len, R_ABS(lb-la));
+		R_LOGFI ("Buffer truncated to %d byte(s) (%d not compared)\n", len, R_ABS(lb-la));
 	} else {
 		len = la;
 	}
@@ -252,13 +252,13 @@ R_API bool r_diff_buffers_distance_levenstein(RDiff *d, const ut8 *a, ut32 la, c
 	// calloc v0 & v1 and check they initialised
 	v0 = (int*) calloc ((bLen + 3), sizeof (int));
 	if (!v0) {
-		eprintf ("Error: cannot allocate %i bytes.", bLen + 3);
+		R_LOGFI ("Error: cannot allocate %i bytes.", bLen + 3);
 		return false;
 	}
 
 	v1 = (int*) calloc ((bLen + 3), sizeof (int));
 	if (!v1) {
-		eprintf ("Error: cannot allocate %i bytes", 2 * (bLen + 3));
+		R_LOGFI ("Error: cannot allocate %i bytes", 2 * (bLen + 3));
 		free (v0);
 		return false;
 	}
@@ -345,12 +345,12 @@ R_API bool r_diff_buffers_distance_levenstein(RDiff *d, const ut8 *a, ut32 la, c
 
 		//Print a processing update every 10K of outer loop
 		if (verbose && i % 10000==0) {
-			eprintf ("\rProcessing %d of %d\r", i, aLen);
+			R_LOGFI ("\rProcessing %d of %d\r", i, aLen);
 		}
 	}
 	//Clean up output on loop exit (purely aesthetic)
 	if (verbose) {
-		eprintf ("\rProcessing %d of %d (loops=%"PFMT64d")\n", i, aLen,loops);
+		R_LOGFI ("\rProcessing %d of %d (loops=%"PFMT64d")\n", i, aLen,loops);
 	}
 	if (distance) {
 		// the final distance is the last byte we processed in the inner loop.
@@ -404,13 +404,13 @@ R_API bool r_diff_buffers_distance_myers(RDiff *diff, const ut8 *a, ut32 la, con
 			}
 		}
 		if (verbose && di % 10000 == 0) {
-			eprintf ("\rProcessing dist %" PFMT64d " of max %" PFMT64d "\r", di, m);
+			R_LOGFI ("\rProcessing dist %" PFMT64d " of max %" PFMT64d "\r", di, m);
 		}
 	}
 
 out:
 	if (verbose) {
-		eprintf ("\n");
+		R_LOGFI ("\n");
 	}
 	free (v0);
 	//Clean up output on loop exit (purely aesthetic)
@@ -461,12 +461,12 @@ R_API bool r_diff_buffers_distance_original(RDiff *diff, const ut8 *a, ut32 la, 
 			ul = u;
 		}
 		if (verbose && i % 10000 == 0) {
-			eprintf ("\rProcessing %" PFMT32u " of %" PFMT32u "\r", i, la);
+			R_LOGFI ("\rProcessing %" PFMT32u " of %" PFMT32u "\r", i, la);
 		}
 	}
 
 	if (verbose) {
-		eprintf ("\n");
+		R_LOGFI ("\n");
 	}
 	if (distance) {
 		*distance = d[lb];

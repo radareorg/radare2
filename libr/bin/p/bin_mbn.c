@@ -44,15 +44,15 @@ static bool check_bytes(const ut8 *buf, ut64 bufsz) {
 		if (sb.sign_sz >= 0xf0000) return false;
 		if (sb.load_index < 1 || sb.load_index > 0x40) return false; // should be 0x19 ?
 #if 0
-		eprintf ("V=%d\n", sb.version);
-		eprintf ("PA=0x%08x sz=0x%x\n", sb.paddr, sb.psize);
-		eprintf ("VA=0x%08x sz=0x%x\n", sb.vaddr, sb.psize);
-		eprintf ("CODE=0x%08x\n", sb.code_pa + sb.vaddr+40);
-		eprintf ("SIGN=0x%08x sz=0x%x\n", sb.sign_va, sb.sign_sz);
+		R_LOGFI ("V=%d\n", sb.version);
+		R_LOGFI ("PA=0x%08x sz=0x%x\n", sb.paddr, sb.psize);
+		R_LOGFI ("VA=0x%08x sz=0x%x\n", sb.vaddr, sb.psize);
+		R_LOGFI ("CODE=0x%08x\n", sb.code_pa + sb.vaddr+40);
+		R_LOGFI ("SIGN=0x%08x sz=0x%x\n", sb.sign_va, sb.sign_sz);
 		if (sb.cert_sz > 0) {
-			eprintf ("CERT=0x%08x sz=0x%x\n", sb.cert_va, sb.cert_sz);
+			R_LOGFI ("CERT=0x%08x sz=0x%x\n", sb.cert_va, sb.cert_sz);
 		} else {
-			eprintf ("No certificate found.\n");
+			R_LOGFI ("No certificate found.\n");
 		}
 #endif
 // TODO: Add more checks here

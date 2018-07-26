@@ -23,7 +23,7 @@
 #define R_ELF_PART_RELRO 1
 #define R_ELF_FULL_RELRO 2
 
-#define bprintf if(bin->verbose)eprintf
+#define bprintf if(bin->verbose)R_LOGFI
 
 #define READ8(x, i) r_read_ble8(x + i); i += 1;
 #define READ16(x, i) r_read_ble16(x + i, bin->endian); i += 2;
@@ -875,7 +875,7 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 			goto out_error;
 		}
 		if ((st32)verdef->vd_next < 1) {
-			eprintf ("Warning: Invalid vd_next in the ELF version\n");
+			R_LOGFI ("Warning: Invalid vd_next in the ELF version\n");
 			break;
 		}
 		i += verdef->vd_next;
@@ -1475,13 +1475,13 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 						const int sizeOfPltEntry = 16;
 						return plt_section->rva + sizeOfProcedureLinkageTable + (k * sizeOfPltEntry);
 					} else {
-						eprintf ("Unsupported relocs type %d for arch %d\n",
+						R_LOGFI ("Unsupported relocs type %d for arch %d\n",
 								reloc_type, bin->ehdr.e_machine);
 					}
 				}
 				break;
 			default:
-				eprintf ("Unsupported relocs type %d for arch %d\n",
+				R_LOGFI ("Unsupported relocs type %d for arch %d\n",
 					reloc_type, bin->ehdr.e_machine);
 				break;
 			}
@@ -3335,7 +3335,7 @@ static bool get_nt_file_maps (ELFOBJ *bin, RList *core_maps) {
 						bin->phdr[ph].p_offset + offset,
 						elf_nhdr, elf_nhdr_size);
 				if (ret != elf_nhdr_size) {
-					eprintf ("Cannot read more NOTES header from CORE\n");
+					R_LOGFI ("Cannot read more NOTES header from CORE\n");
 					free (elf_nhdr);
 					goto fail;
 				}
@@ -3377,7 +3377,7 @@ static bool get_nt_file_maps (ELFOBJ *bin, RList *core_maps) {
 					addr = BREAD32 (bin->b, i);
 				}
 				if (addr == UT64_MAX) {
-					eprintf ("ffbreak\n");
+					R_LOGFI ("ffbreak\n");
 					break;
 				}
 				r_buf_read_at (bin->b, jump + len_str,
@@ -3432,7 +3432,7 @@ RList *Elf_(r_bin_elf_get_maps)(ELFOBJ *bin) {
 
 	if (!r_list_empty (maps)) {
 		if (!get_nt_file_maps (bin, maps)) {
-			eprintf ("Could not retrieve the names of all maps from NT_FILE\n");
+			R_LOGFI ("Could not retrieve the names of all maps from NT_FILE\n");
 		}
 	}
 

@@ -491,7 +491,7 @@ static int cmd_hash_bang (RCore *core, const char *input) {
 	char *p;
 	const char *lang = input + 1;
 	if (r_sandbox_enable (0)) {
-		eprintf ("hashbang disabled in sandbox mode\n");
+		R_LOGFI ("hashbang disabled in sandbox mode\n");
 		return false;
 	}
 	if (*lang=='/') {
@@ -544,11 +544,11 @@ static int cmd_hash_bang (RCore *core, const char *input) {
 			if (r_config_get_i (core->config, "scr.interactive")) {
 				r_lang_prompt (core->lang);
 			} else {
-				eprintf ("Error: scr.interactive required to run the rlang prompt\n");
+				R_LOGFI ("Error: scr.interactive required to run the rlang prompt\n");
 			}
 		}
 	} else {
-		eprintf ("Invalid hashbang. See '#!' for help.\n");
+		R_LOGFI ("Invalid hashbang. See '#!' for help.\n");
 	}
 	return true;
 }

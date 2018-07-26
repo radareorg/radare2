@@ -290,14 +290,14 @@ static void core_post_write_callback(void *user, ut64 maddr, ut8 *bytes, int cnt
 
 	char *hex_pairs = r_hex_bin2strdup (bytes, cnt);
 	if (!hex_pairs) {
-		eprintf ("core_post_write_callback: Cannot obtain hex pairs\n");
+		R_LOGFI ("core_post_write_callback: Cannot obtain hex pairs\n");
 		return;
 	}
 
 	char *comment = r_str_newf ("patch: %d byte(s) (%s)", cnt, hex_pairs);
 	free (hex_pairs);
 	if (!comment) {
-		eprintf ("core_post_write_callback: Cannot create comment\n");
+		R_LOGFI ("core_post_write_callback: Cannot create comment\n");
 		return;
 	}
 
@@ -492,7 +492,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 1:
 			return r_read_ble8 (buf);
 		default:
-			eprintf ("Invalid reference size: %d (%s)\n", refsz, str);
+			R_LOGFI ("Invalid reference size: %d (%s)\n", refsz, str);
 			return 0LL;
 		}
 }
@@ -509,7 +509,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			return r_debug_reg_get (core->dbg, str + 2);
 		case 'k':
 			if (str[2] != '{') {
-				eprintf ("Expected '{' after 'k'.\n");
+				R_LOGFI ("Expected '{' after 'k'.\n");
 				break;
 			}
 			bptr = strdup (str + 3);
@@ -524,7 +524,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			out = sdb_querys (core->sdb, NULL, 0, bptr);
 			if (out && *out) {
 				if (strstr (out, "$k{")) {
-					eprintf ("Recursivity is not permitted here\n");
+					R_LOGFI ("Recursivity is not permitted here\n");
 				} else {
 					ret = r_num_math (core->num, out);
 				}
@@ -1155,7 +1155,7 @@ static void autocomplete_macro(RLine* line, const char* str) {
 		char *p = item->name;
 		if (!*str || !strncmp (str, p, n)) {
 			snprintf (buf, sizeof (buf), "%s%s)", str, p);
-			// eprintf ("------ %p (%s) = %s\n", tmp_argv[i], buf, p);
+			// R_LOGFI ("------ %p (%s) = %s\n", tmp_argv[i], buf, p);
 			if (r_is_heap ((void*)tmp_argv[i])) {
 				free ((char *)tmp_argv[i]);
 			}
@@ -1792,7 +1792,7 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 				r = r_utf8_encode_str ((const RRune *)buf, widebuf,
 						       sizeof (widebuf) - 1);
 				if (r == -1) {
-					eprintf ("Something was wrong with refs\n");
+					R_LOGFI ("Something was wrong with refs\n");
 				} else {
 					r_strbuf_appendf (s, " (%s%s%s)", c, widebuf, cend);
 				}
@@ -2012,7 +2012,7 @@ R_API bool r_core_init(RCore *core) {
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8*)calloc (R_CORE_BLOCKSIZE + 1, 1);
 	if (!core->block) {
-		eprintf ("Cannot allocate %d byte(s)\n", R_CORE_BLOCKSIZE);
+		R_LOGFI ("Cannot allocate %d byte(s)\n", R_CORE_BLOCKSIZE);
 		/* XXX memory leak */
 		return false;
 	}
@@ -2302,11 +2302,11 @@ R_API void r_core_prompt_loop(RCore *r) {
 		}
 //			if (lock) r_th_lock_enter (lock);
 		if ((ret = r_core_prompt_exec (r))==-1) {
-			eprintf ("Invalid command\n");
+			R_LOGFI ("Invalid command\n");
 		}
 /*			if (lock) r_th_lock_leave (lock);
 		if (rabin_th && !r_th_wait_async (rabin_th)) {
-			eprintf ("rabin thread end \n");
+			R_LOGFI ("rabin thread end \n");
 			r_th_free (rabin_th);
 			r_th_lock_free (lock);
 			lock = NULL;
@@ -2473,25 +2473,25 @@ R_API int r_core_seek_size(RCore *core, ut64 addr, int bsize) {
 	if (r_sandbox_enable (0)) {
 		// TODO : restrict to filesize?
 		if (bsize > 1024*32) {
-			eprintf ("Sandbox mode restricts blocksize bigger than 32k\n");
+			R_LOGFI ("Sandbox mode restricts blocksize bigger than 32k\n");
 			return false;
 		}
 	}
 	if (bsize > core->blocksize_max) {
-		eprintf ("Block size %d is too big\n", bsize);
+		R_LOGFI ("Block size %d is too big\n", bsize);
 		return false;
 	}
 	core->offset = addr;
 	if (bsize < 1) {
 		bsize = 1;
 	} else if (core->blocksize_max && bsize>core->blocksize_max) {
-		eprintf ("bsize is bigger than `bm`. dimmed to 0x%x > 0x%x\n",
+		R_LOGFI ("bsize is bigger than `bm`. dimmed to 0x%x > 0x%x\n",
 			bsize, core->blocksize_max);
 		bsize = core->blocksize_max;
 	}
 	bump = realloc (core->block, bsize + 1);
 	if (!bump) {
-		eprintf ("Oops. cannot allocate that much (%u)\n", bsize);
+		R_LOGFI ("Oops. cannot allocate that much (%u)\n", bsize);
 		ret = false;
 	} else {
 		ret = true;
@@ -2571,11 +2571,11 @@ R_API bool r_core_serve(RCore *core, RIODesc *file) {
 
 	RIORap *rior = (RIORap *)file->data;
 	if (!rior|| !rior->fd) {
-		eprintf ("rap: cannot listen.\n");
+		R_LOGFI ("rap: cannot listen.\n");
 		return false;
 	}
 	RSocket *fd = rior->fd;
-	eprintf ("RAP Server started (rap.loop=%s)\n",
+	R_LOGFI ("RAP Server started (rap.loop=%s)\n",
 			r_config_get (core->config, "rap.loop"));
 	r_cons_break_push (rap_break, rior);
 reaccept:
@@ -2588,16 +2588,16 @@ reaccept:
 			goto out_of_function;
 		}
 		if (!c) {
-			eprintf ("rap: cannot accept\n");
+			R_LOGFI ("rap: cannot accept\n");
 			r_socket_free (c);
 			goto out_of_function;
 		}
-		eprintf ("rap: client connected\n");
+		R_LOGFI ("rap: client connected\n");
 		for (;!r_cons_is_breaked ();) {
 			if (!r_socket_read (c, &cmd, 1)) {
-				eprintf ("rap: connection closed\n");
+				R_LOGFI ("rap: connection closed\n");
 				if (r_config_get_i (core->config, "rap.loop")) {
-					eprintf ("rap: waiting for new connection\n");
+					R_LOGFI ("rap: waiting for new connection\n");
 					r_socket_free (c);
 					goto reaccept;
 				}
@@ -2606,13 +2606,13 @@ reaccept:
 			switch ((ut8)cmd) {
 			case RMT_OPEN:
 				r_socket_read_block (c, &flg, 1); // flags
-				eprintf ("open (%d): ", cmd);
+				R_LOGFI ("open (%d): ", cmd);
 				r_socket_read_block (c, &cmd, 1); // len
 				pipefd = -1;
 				ptr = malloc (cmd + 1);
 				//XXX cmd is ut8..so <256 if (cmd<RMT_MAX)
 				if (!ptr) {
-					eprintf ("Cannot malloc in rmt-open len = %d\n", cmd);
+					R_LOGFI ("Cannot malloc in rmt-open len = %d\n", cmd);
 				} else {
 					ut64 baddr = r_config_get_i (core->config, "bin.laddr");
 					r_socket_read_block (c, ptr, cmd);
@@ -2630,11 +2630,11 @@ reaccept:
 						} else {
 							pipefd = -1;
 						}
-						eprintf ("(flags: %d) len: %d filename: '%s'\n",
+						R_LOGFI ("(flags: %d) len: %d filename: '%s'\n",
 							flg, cmd, ptr); //config.file);
 					} else {
 						pipefd = -1;
-						eprintf ("Cannot open file (%s)\n", ptr);
+						R_LOGFI ("Cannot open file (%s)\n", ptr);
 						r_socket_close (c);
 						goto out_of_function; //XXX: Close conection and goto accept
 					}
@@ -2669,7 +2669,7 @@ reaccept:
 					free (ptr);
 					ptr = NULL;
 				} else {
-					eprintf ("Cannot read %d byte(s)\n", i);
+					R_LOGFI ("Cannot read %d byte(s)\n", i);
 					r_socket_free (c);
 					// TODO: reply error here
 					goto out_of_function;
@@ -2689,15 +2689,15 @@ reaccept:
 					if ((cmd = malloc (i + 1))) {
 						r_socket_read_block (c, (ut8*)cmd, i);
 						cmd[i] = '\0';
-						eprintf ("len: %d cmd:'%s'\n", i, cmd);
+						R_LOGFI ("len: %d cmd:'%s'\n", i, cmd);
 						fflush (stdout);
 						cmd_output = r_core_cmd_str (core, cmd);
 						free (cmd);
 					} else {
-						eprintf ("rap: cannot malloc\n");
+						R_LOGFI ("rap: cannot malloc\n");
 					}
 				} else {
-					eprintf ("rap: invalid length '%d'\n", i);
+					R_LOGFI ("rap: invalid length '%d'\n", i);
 				}
 				/* write */
 				if (cmd_output) {
@@ -2723,11 +2723,11 @@ reaccept:
 					r_socket_read (c, b, 5);
 					if (b[0] == (RMT_CMD | RMT_REPLY)) {
 						ut32 n = r_read_be32 (b + 1);
-						eprintf ("REPLY %d\n", n);
+						R_LOGFI ("REPLY %d\n", n);
 						if (n > 0) {
 							ut8 *res = calloc (1, n);
 							r_socket_read (c, res, n);
-							eprintf ("RESPONSE(%s)\n", (const char *)res);
+							R_LOGFI ("RESPONSE(%s)\n", (const char *)res);
 							free (res);
 						}
 					}
@@ -2793,14 +2793,14 @@ reaccept:
 				}
 				break;
 			default:
-				eprintf ("unknown command 0x%02x\n", cmd);
+				R_LOGFI ("unknown command 0x%02x\n", cmd);
 				r_socket_close (c);
 				free (ptr);
 				ptr = NULL;
 				goto out_of_function;
 			}
 		}
-		eprintf ("client: disconnected\n");
+		R_LOGFI ("client: disconnected\n");
 		r_socket_free (c);
 	}
 out_of_function:
@@ -2818,7 +2818,7 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 				len = (int)delta;
 			}
 			if (!r_io_read_at (core->io, from, buf, len)) {
-				eprintf ("Cannot read at 0x%"PFMT64x"\n", from);
+				R_LOGFI ("Cannot read at 0x%"PFMT64x"\n", from);
 				break;
 			}
 			for (ret = 0; ret < len;) {
@@ -2833,7 +2833,7 @@ R_API int r_core_search_cb(RCore *core, ut64 from, ut64 to, RCoreSearchCallback 
 		}
 		free (buf);
 	} else {
-		eprintf ("Cannot allocate blocksize\n");
+		R_LOGFI ("Cannot allocate blocksize\n");
 	}
 	return true;
 }
@@ -2919,7 +2919,7 @@ R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args) 
 
 	//arch check
 	if (strcmp (core->anal->cur->arch, "x86")) {
-		eprintf ("architecture not yet supported!\n");
+		R_LOGFI ("architecture not yet supported!\n");
 		return 0;
 	}
 
@@ -2929,18 +2929,18 @@ R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args) 
 	switch (core->assembler->bits) {
 	case 32:
 		if (strcmp (name, "setup") && !num ) {
-			eprintf ("syscall not found!\n");
+			R_LOGFI ("syscall not found!\n");
 			return 0;
 		}
 		break;
 	case 64:
 		if (strcmp (name, "read") && !num ) {
-			eprintf ("syscall not found!\n");
+			R_LOGFI ("syscall not found!\n");
 			return 0;
 		}
 		break;
 	default:
-		eprintf ("syscall not found!\n");
+		R_LOGFI ("syscall not found!\n");
 		return 0;
 	}
 
@@ -2954,10 +2954,10 @@ R_API RBuffer *r_core_syscall (RCore *core, const char *name, const char *args) 
 	r_egg_load (core->egg, code, 0);
 
 	if (!r_egg_compile (core->egg)) {
-		eprintf ("Cannot compile.\n");
+		R_LOGFI ("Cannot compile.\n");
 	}
 	if (!r_egg_assemble (core->egg)) {
-		eprintf ("r_egg_assemble: invalid assembly\n");
+		R_LOGFI ("r_egg_assemble: invalid assembly\n");
 	}
 	if ((b = r_egg_get_bin (core->egg))) {
 #if 0
@@ -3005,7 +3005,7 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 	ut32 v32;
 	ut16 v16;
 	if (from >= to) {
-		eprintf ("Error: from must be lower than to\n");
+		R_LOGFI ("Error: from must be lower than to\n");
 		return -1;
 	}
 	bool maybeThumb = false;
@@ -3016,11 +3016,11 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 	}
 
 	if (vmin >= vmax) {
-		eprintf ("Error: vmin must be lower than vmax\n");
+		R_LOGFI ("Error: vmin must be lower than vmax\n");
 		return -1;
 	}
 	if (to == UT64_MAX) {
-		eprintf ("Error: Invalid destination boundary\n");
+		R_LOGFI ("Error: Invalid destination boundary\n");
 		return -1;
 	}
 	r_cons_break_push (NULL, NULL);
@@ -3057,7 +3057,7 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 			case 2: v16 = *((ut16 *) (v)); match = (v16 >= vmin && v16 <= vmax); value = v16; break;
 			case 4: v32 = *((ut32 *) (v)); match = (v32 >= vmin && v32 <= vmax); value = v32; break;
 			case 8: v64 = *((ut64 *) (v)); match = (v64 >= vmin && v64 <= vmax); value = v64; break;
-			default: eprintf ("Unknown vsize %d\n", vsize); return -1;
+			default: R_LOGFI ("Unknown vsize %d\n", vsize); return -1;
 			}
 			if (match && !vinfun) {
 				if (vinfunr) {
@@ -3163,7 +3163,7 @@ R_API bool r_core_autocomplete_remove(RCoreAutocomplete *parent, const char* cmd
 			r_core_autocomplete_free (ac);
 			RCoreAutocomplete **updated = realloc (parent->subcmds, (parent->n_subcmds - 1) * sizeof (RCoreAutocomplete*));
 			if (!updated && (parent->n_subcmds - 1) > 0) {
-				eprintf ("Something really bad has happen.. this should never ever happen..\n");
+				R_LOGFI ("Something really bad has happen.. this should never ever happen..\n");
 				return false;
 			}
 			parent->subcmds = updated;

@@ -72,7 +72,7 @@ static int create(const char *format, const char *arch, int bits, const ut8 *cod
 	RBin *bin = r_bin_new ();
 	RBuffer *b;
 	if (!r_bin_use_arch (bin, arch, bits, format)) {
-		eprintf ("Cannot set arch\n");
+		R_LOGFI ("Cannot set arch\n");
 		r_bin_free (bin);
 		return 1;
 	}
@@ -81,7 +81,7 @@ static int create(const char *format, const char *arch, int bits, const ut8 *cod
 		write (1, b->buf, b->length);
 		r_buf_free (b);
 	} else {
-		eprintf ("Cannot create binary for this format '%s'.\n", format);
+		R_LOGFI ("Cannot create binary for this format '%s'.\n", format);
 	}
 	r_bin_free (bin);
 	return 0;
@@ -171,11 +171,11 @@ int main(int argc, char **argv) {
 				if (len > 0) {
 					r_egg_patch (egg, off, (const ut8*)b, len);
 				} else {
-					eprintf ("Invalid hexstr for -w\n");
+					R_LOGFI ("Invalid hexstr for -w\n");
 				}
 				free (b);
 			} else {
-				eprintf ("Missing colon in -w\n");
+				R_LOGFI ("Missing colon in -w\n");
 			}
 			free (arg);
 			}
@@ -206,7 +206,7 @@ int main(int argc, char **argv) {
 				// TODO: honor endianness here
 				r_egg_patch (egg, off, (const ut8*)&n, 4);
 			} else {
-				eprintf ("Missing colon in -d\n");
+				R_LOGFI ("Missing colon in -d\n");
 			}
 			}
 			break;
@@ -219,7 +219,7 @@ int main(int argc, char **argv) {
 				// TODO: honor endianness here
 				r_egg_patch (egg, off, (const ut8*)&n, 8);
 			} else {
-				eprintf ("Missing colon in -d\n");
+				R_LOGFI ("Missing colon in -d\n");
 			}
 			}
 			break;
@@ -317,7 +317,7 @@ int main(int argc, char **argv) {
 	// catch this first
 	if (get_offset) {
 		if (strncmp (sequence, "0x", 2)) {
-			eprintf ("Need hex value with `0x' prefix e.g. 0x41414142\n");
+			R_LOGFI ("Need hex value with `0x' prefix e.g. 0x41414142\n");
 			free (sequence);
 			return 1;
 		}
@@ -347,7 +347,7 @@ int main(int argc, char **argv) {
 			char *textFile = r_egg_Cfile_parser (fileSanitized, arch, os, bits);
 
 			if (!textFile) {
-				eprintf ("Failure while parsing '%s'\n", fileSanitized);
+				R_LOGFI ("Failure while parsing '%s'\n", fileSanitized);
 				goto fail;
 			}
 
@@ -356,7 +356,7 @@ int main(int argc, char **argv) {
 			if (buf && l > 0) {
 				r_egg_raw (egg, (const ut8*)buf, l);
 			} else {
-				eprintf ("Error loading '%s'\n", textFile);
+				R_LOGFI ("Error loading '%s'\n", textFile);
 			}
 
 			r_file_rm (textFile);
@@ -370,7 +370,7 @@ int main(int argc, char **argv) {
 				fmt = 0;
 			}
 			if (!r_egg_include (egg, file, fmt)) {
-				eprintf ("Cannot open '%s'\n", file);
+				R_LOGFI ("Cannot open '%s'\n", file);
 				goto fail;
 			}
 		}
@@ -379,7 +379,7 @@ int main(int argc, char **argv) {
 	// compile source code to assembly
 	if (!r_egg_compile (egg)) {
 		if (!fmt) {
-			eprintf ("r_egg_compile: fail\n");
+			R_LOGFI ("r_egg_compile: fail\n");
 			return 1;
 		}
 	}
@@ -391,7 +391,7 @@ int main(int argc, char **argv) {
 		if (buf && l > 0) {
 			r_egg_raw (egg, (const ut8*)buf, l);
 		} else {
-			eprintf ("Error loading '%s'\n", contents);
+			R_LOGFI ("Error loading '%s'\n", contents);
 		}
 		free (buf);
 	}
@@ -399,7 +399,7 @@ int main(int argc, char **argv) {
 	// add shellcode
 	if (shellcode) {
 		if (!r_egg_shellcode (egg, shellcode)) {
-			eprintf ("Unknown shellcode '%s'\n", shellcode);
+			R_LOGFI ("Unknown shellcode '%s'\n", shellcode);
 			return 1;
 		}
 	}
@@ -410,11 +410,11 @@ int main(int argc, char **argv) {
 		int len = r_hex_str2bin (bytes, b);
 		if (len > 0) {
 			if (!r_egg_raw (egg, b, len)) {
-				eprintf ("Unknown '%s'\n", shellcode);
+				R_LOGFI ("Unknown '%s'\n", shellcode);
 				return 1;
 			}
 		} else {
-			eprintf ("Invalid hexpair string for -B\n");
+			R_LOGFI ("Invalid hexpair string for -B\n");
 		}
 		free (b);
 		free (bytes);
@@ -440,25 +440,25 @@ int main(int argc, char **argv) {
 			fd = openfile ("a.out", ISEXEC);
 		}
 		if (fd == -1) {
-			eprintf ("cannot open file '%s'\n", optarg);
+			R_LOGFI ("cannot open file '%s'\n", optarg);
 			goto fail;
 		}
 	}
 	if (ofile) {
 		if (openfile (ofile, ISEXEC) == -1) {
-			eprintf ("cannot open file '%s'\n", ofile);
+			R_LOGFI ("cannot open file '%s'\n", ofile);
 			goto fail;
 		}
 	}
 
 	// assemble to binary
 	if (!r_egg_assemble (egg)) {
-		eprintf ("r_egg_assemble: invalid assembly\n");
+		R_LOGFI ("r_egg_assemble: invalid assembly\n");
 		goto fail;
 	}
 	if (encoder) {
 		if (!r_egg_encode (egg, encoder)) {
-			eprintf ("Invalid encoder '%s'\n", encoder);
+			R_LOGFI ("Invalid encoder '%s'\n", encoder);
 			return 1;
 		}
 	}
@@ -478,7 +478,7 @@ int main(int argc, char **argv) {
 		egg->bin = r_buf_new ();
 	}
 	if (!(b = r_egg_get_bin (egg))) {
-		eprintf ("r_egg_get_bin: invalid egg :(\n");
+		R_LOGFI ("r_egg_get_bin: invalid egg :(\n");
 		goto fail;
 	}
 	r_egg_finalize (egg);
@@ -496,7 +496,7 @@ int main(int argc, char **argv) {
 			write (1, b->buf, b->length);
 		} else {
 			if (!format) {
-				eprintf ("No format specified wtf\n");
+				R_LOGFI ("No format specified wtf\n");
 				goto fail;
 			}
 			RPrint *p = r_print_new ();
@@ -531,7 +531,7 @@ int main(int argc, char **argv) {
 				create (format, arch, bits, b->buf, b->length);
 				break;
 			default:
-				eprintf ("unknown executable format (%s)\n", format);
+				R_LOGFI ("unknown executable format (%s)\n", format);
 				goto fail;
 			}
 		}

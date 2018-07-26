@@ -171,7 +171,7 @@ R_API bool r_core_visual_esil(RCore *core) {
 			word = r_str_ndup (expr + (wp?(wp+1):0), (wp2 - wp) - (wp?1:0));
 			if (wp == wp2) {
 				// x --;
-				eprintf ("Done\n");
+				R_LOGFI ("Done\n");
 				x = 0;
 				r_sys_sleep (1);
 				free (pas);
@@ -216,13 +216,13 @@ R_API bool r_core_visual_esil(RCore *core) {
 		case 'q':
 			goto beach;
 		case 's':
-			eprintf ("step ((%s))\n", word);
+			R_LOGFI ("step ((%s))\n", word);
 			r_sys_usleep (500);
 			x = R_MIN (x + 1, nbits - 1);
 			r_anal_esil_runword (esil, word);
 			break;
 		case 'S':
-			eprintf ("esil step over :D\n");
+			R_LOGFI ("esil step over :D\n");
 			r_sys_usleep (500);
 			break;
 		case 'r':
@@ -887,7 +887,7 @@ static bool r_core_visual_config_hud(RCore *core) {
 		r_cons_show_cursor (true);
 		r_cons_set_raw (0);
 		cmd[0] = '\0';
-		eprintf ("set new value for %s (old=%s)\n", res, oldvalue);
+		R_LOGFI ("set new value for %s (old=%s)\n", res, oldvalue);
 		r_line_set_prompt (":> ");
 		if (r_cons_fgets (cmd, sizeof (cmd) - 1, 0, NULL) < 0)
 			cmd[0]='\0';
@@ -955,7 +955,7 @@ static void *show_class(RCore *core, int mode, int idx, RBinClass *_c, const cha
 	case 'm':
 		// show methods
 		if (!_c) {
-			eprintf ("No class defined\n");
+			R_LOGFI ("No class defined\n");
 			return mur;
 		}
 		r_cons_printf ("MethodsFor: %s\n\n", _c->name);
@@ -1356,7 +1356,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			break;
 		case 'e':
 			/* TODO: prompt for addr, size, name */
-			eprintf ("TODO\n");
+			R_LOGFI ("TODO\n");
 			r_sys_sleep (1);
 			break;
 		case '*':
@@ -1385,7 +1385,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 				// TODO: use r_flag_rename or wtf?..fr doesnt uses this..
 				snprintf (cmd, sizeof (cmd), "fr %s ", fs2);
 				len = strlen (cmd);
-				eprintf ("Rename flag '%s' as:\n", fs2);
+				R_LOGFI ("Rename flag '%s' as:\n", fs2);
 				r_line_set_prompt (":> ");
 				if (r_cons_fgets (cmd + len, sizeof (cmd) - len - 1, 0, NULL) < 0) {
 					cmd[0] = '\0';
@@ -1400,7 +1400,7 @@ R_API int r_core_visual_trackflags(RCore *core) {
 				char line[1024];
 				r_cons_show_cursor (true);
 				r_cons_set_raw (0);
-				eprintf ("Rename function '%s' as:\n", fs2);
+				R_LOGFI ("Rename function '%s' as:\n", fs2);
 				r_line_set_prompt (":> ");
 				if (r_cons_fgets (line, sizeof (line), 0, NULL) < 0) {
 					cmd[0]='\0';
@@ -2153,7 +2153,7 @@ static void var_index_show(RAnal *anal, RAnalFunction *fcn, ut64 addr, int idx) 
 				else r_cons_printf ("   ");
 #if 0
 				if (v->type->type == R_ANAL_TYPE_ARRAY) {
-eprintf ("TODO: support for arrays\n");
+R_LOGFI ("TODO: support for arrays\n");
 					r_cons_printf ("0x%08llx - 0x%08llx scope=%s type=%s name=%s delta=%d array=%d\n",
 						v->addr, v->eaddr, r_anal_var_scope_to_str (anal, v->scope),
 						r_anal_type_to_str (anal, v->type, ""),
@@ -2343,7 +2343,7 @@ static void r_core_visual_anal_refresh_column (RCore *core, int colpos) {
 }
 
 static ut64 r_core_visual_anal_refresh (RCore *core) {
-	eprintf("r_core_visual_anal_refresh\n");
+	R_LOGFI("r_core_visual_anal_refresh\n");
 	if (!core) {
 		return 0LL;
 	}
@@ -2483,7 +2483,7 @@ R_API void r_core_visual_anal(RCore *core) {
 		case 'a':
 			switch (level) {
 			case 0:
-				eprintf ("TODO: Add new function manually\n");
+				R_LOGFI ("TODO: Add new function manually\n");
 /*
 				r_cons_show_cursor (true);
 				r_cons_set_raw (false);
@@ -2675,7 +2675,7 @@ R_API void r_core_seek_next(RCore *core, const char *type) {
 		if (r_anal_op (core->anal, &aop, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC)) {
 			next = core->offset + aop.size;
 		} else {
-			eprintf ("Invalid opcode\n");
+			R_LOGFI ("Invalid opcode\n");
 		}
 	} else if (strstr (type, "fun")) {
 		RAnalFunction *fcni;
@@ -2711,7 +2711,7 @@ R_API void r_core_seek_previous (RCore *core, const char *type) {
 	RListIter *iter;
 	ut64 next = 0;
 	if (strstr (type, "opc")) {
-		eprintf ("TODO: r_core_seek_previous (opc)\n");
+		R_LOGFI ("TODO: r_core_seek_previous (opc)\n");
 	} else
 	if (strstr (type, "fun")) {
 		RAnalFunction *fcni;
@@ -2964,11 +2964,11 @@ repeat:
 						free (newname);
 					}
 				} else {
-					eprintf ("Cannot find variable\n");
+					R_LOGFI ("Cannot find variable\n");
 					r_sys_sleep (1);
 				}
 			} else {
-				eprintf ("Cannot find function\n");
+				R_LOGFI ("Cannot find function\n");
 				r_sys_sleep (1);
 			}
 		} else if (tgt_addr != UT64_MAX) {
@@ -3007,7 +3007,7 @@ repeat:
 					r_cons_show_cursor (false);
 				}
 			} else {
-				eprintf ("Sorry. No flag here\n");
+				R_LOGFI ("Sorry. No flag here\n");
 				r_cons_any_key (NULL);
 			}
 		}
@@ -3027,7 +3027,7 @@ repeat:
 					r_cons_show_cursor (false);
 				}
 			} else {
-				eprintf ("Sorry. No flag here\n");
+				R_LOGFI ("Sorry. No flag here\n");
 				r_cons_any_key (NULL);
 			}
 		}
@@ -3054,7 +3054,7 @@ repeat:
 		r_core_cmdf (core, "afm $$+$F @0x%08"PFMT64x, off);
 		break;
 	case 'k':
-		eprintf ("TODO: merge up\n");
+		R_LOGFI ("TODO: merge up\n");
 		r_cons_any_key (NULL);
 		break;
 	case 'h': // "Vdh"
@@ -3068,7 +3068,7 @@ repeat:
 		r_core_cmdf (core, "?i zone name;fz `?y` @ 0x%08"PFMT64x, off);
 		break;
 	case 'R': // "VdR"
-		eprintf ("Finding references to 0x%08"PFMT64x" ...\n", off);
+		R_LOGFI ("Finding references to 0x%08"PFMT64x" ...\n", off);
 		r_core_cmdf (core, "./r 0x%08"PFMT64x" @ $S", off);
 		break;
 	case 'S':
@@ -3206,7 +3206,7 @@ repeat:
 			N = strtoull (end_off, &endptr, 16);
 		}
 		if (!end_off || end_off == endptr) {
-			eprintf ("Invalid numeric input\n");
+			R_LOGFI ("Invalid numeric input\n");
 			r_cons_any_key (NULL);
 			free (end_off);
 			break;
@@ -3251,15 +3251,15 @@ repeat:
 						free (newname);
 					}
 				} else {
-					eprintf ("Cannot find variable\n");
+					R_LOGFI ("Cannot find variable\n");
 					r_cons_any_key (NULL);
 				}
 			} else {
-				eprintf ("Cannot find function\n");
+				R_LOGFI ("Cannot find function\n");
 				r_cons_any_key (NULL);
 			}
 		} else {
-			eprintf ("Cannot find instruction with a variable\n");
+			R_LOGFI ("Cannot find instruction with a variable\n");
 			r_cons_any_key (NULL);
 		}
 

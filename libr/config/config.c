@@ -328,7 +328,7 @@ R_API const char* r_config_get(RConfig *cfg, const char *name) {
 		}
 		return node->value;
 	} else {
-		eprintf ("r_config_get: variable '%s' not found\n", name);
+		R_LOGFI ("r_config_get: variable '%s' not found\n", name);
 	}
 	cfg->last_notfound = 1;
 	return NULL;
@@ -410,7 +410,7 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 	node = r_config_node_get (cfg, name);
 	if (node) {
 		if (node->flags & CN_RO) {
-			eprintf ("(error: '%s' config key is read only)\n", name);
+			R_LOGFI ("(error: '%s' config key is read only)\n", name);
 			return node;
 		}
 		oi = node->i_value;
@@ -470,10 +470,10 @@ R_API RConfigNode* r_config_set(RConfig *cfg, const char *name, const char *valu
 					cfg->n_nodes++;
 				}
 			} else {
-				eprintf ("r_config_set: unable to create a new RConfigNode\n");
+				R_LOGFI ("r_config_set: unable to create a new RConfigNode\n");
 			}
 		} else {
-			eprintf ("r_config_set: variable '%s' not found\n", name);
+			R_LOGFI ("r_config_set: variable '%s' not found\n", name);
 		}
 	}
 
@@ -577,7 +577,7 @@ R_API RConfigNode* r_config_set_i(RConfig *cfg, const char *name, const ut64 i) 
 				cfg->n_nodes++;
 			}
 		} else {
-			eprintf ("(locked: no new keys can be created (%s))\n", name);
+			R_LOGFI ("(locked: no new keys can be created (%s))\n", name);
 		}
 	}
 

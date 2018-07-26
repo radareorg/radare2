@@ -272,7 +272,7 @@ static RList *symbols(RBinFile *bf) {
 		return NULL;
 	}
 	ret->free = free;
-	eprintf ("sections %d\n", h->sections);
+	R_LOGFI ("sections %d\n", h->sections);
 	int limit = h->sections;
 	if (limit * (sizeof(xbe_section)) >= bf->size - h->sechdr_addr) {
 		goto out_error;
@@ -306,7 +306,7 @@ static RList *symbols(RBinFile *bf) {
 		const ut32 thunk_index = thunk_addr[i] ^ 0x80000000;
 		// Basic sanity checks
 		if (thunk_addr[i] & 0x80000000 && thunk_index < XBE_MAX_THUNK) {
-			eprintf ("%d\n", thunk_index);
+			R_LOGFI ("%d\n", thunk_index);
 			sym->name = r_str_newf ("kt.%s", kt_name[thunk_index]);
 			sym->vaddr = (h->kernel_thunk_addr ^ obj->kt_key) + (4 * i);
 			sym->paddr = sym->vaddr - h->base;

@@ -156,7 +156,7 @@ static void nextpal(RCore *core, int mode) {
 						r_list_free (files);
 						return;
 					}
-					eprintf ("%s %s %s\n", nfn, curtheme, fn);
+					R_LOGFI ("%s %s %s\n", nfn, curtheme, fn);
 					if (nfn && !strcmp (nfn, curtheme)) {
 						r_list_free (files);
 						files = NULL;
@@ -191,7 +191,7 @@ static void nextpal(RCore *core, int mode) {
 						r_list_free (files);
 						return;
 					}
-					eprintf ("%s %s %s\n", nfn, curtheme, fn);
+					R_LOGFI ("%s %s %s\n", nfn, curtheme, fn);
 					if (nfn && !strcmp (nfn, curtheme)) {
 						free (curtheme);
 						curtheme = strdup (fn);
@@ -252,7 +252,7 @@ static int cmd_eval(void *data, const char *input) {
 				}
 			}
 		} else {
-			eprintf ("Usage: et [varname]  ; show type of eval var\n");
+			R_LOGFI ("Usage: et [varname]  ; show type of eval var\n");
 		}
 		break;
 	case 'n': // "en"
@@ -326,7 +326,7 @@ static int cmd_eval(void *data, const char *input) {
 							curtheme = r_str_dup (curtheme, input + 3);
 						} else {
 							char *absfile = r_file_abspath (input + 3);
-							eprintf ("eco: cannot open colorscheme profile (%s)\n", absfile);
+							R_LOGFI ("eco: cannot open colorscheme profile (%s)\n", absfile);
 							free (absfile);
 							failed = true;
 						}
@@ -335,10 +335,10 @@ static int cmd_eval(void *data, const char *input) {
 				free (home);
 				free (path);
 				if (failed) {
-					eprintf ("Something went wrong\n");
+					R_LOGFI ("Something went wrong\n");
 				}
 			} else if (input[2] == '?') {
-				eprintf ("Usage: eco [themename]  ;load theme from "
+				R_LOGFI ("Usage: eco [themename]  ;load theme from "
 					R_JOIN_3_PATHS ("%s", R2_THEMES, "") " (see dir.prefix)\n",
 					r_sys_prefix (NULL));
 
@@ -407,7 +407,7 @@ static int cmd_eval(void *data, const char *input) {
 				break;
 			case 'w': // "ecHw"
 				if (!argc) {
-					eprintf ("Usage: echw word [color]\n");
+					R_LOGFI ("Usage: echw word [color]\n");
 					r_str_argv_free (argv);
 					return true;
 				}
@@ -416,7 +416,7 @@ static int cmd_eval(void *data, const char *input) {
 					char *dup = r_str_newf ("bgonly %s", argv[1]);
 					color_code = r_cons_pal_parse (dup, NULL);
 					if (!color_code) {
-						eprintf ("Unknown color %s\n", argv[1]);
+						R_LOGFI ("Unknown color %s\n", argv[1]);
 						r_str_argv_free (argv);
 						free (dup);
 						free (word);
@@ -426,7 +426,7 @@ static int cmd_eval(void *data, const char *input) {
 				}
 				break;
 			default:
-				eprintf ("See ecH?\n");
+				R_LOGFI ("See ecH?\n");
 				r_str_argv_free (argv);
 				return true;
 			}
@@ -454,7 +454,7 @@ static int cmd_eval(void *data, const char *input) {
 				char color[32];
 				RColor rcolor = r_cons_pal_get (p);
 				r_cons_rgb_str (color, sizeof (color), &rcolor);
-				eprintf ("(%s)(%sCOLOR"Color_RESET")\n", p, color);
+				R_LOGFI ("(%s)(%sCOLOR"Color_RESET")\n", p, color);
 			}
 			free (p);
 		}
@@ -462,10 +462,10 @@ static int cmd_eval(void *data, const char *input) {
 		break;
 	case 'd': // "ed"
 		if (input[1] == '?') {
-			eprintf ("Usage: ed[-][?] - edit ~/.radare2rc with cfg.editor\n");
-			eprintf ("NOTE: ~ is HOME and this can be changed with %%HOME=/tmp\n");
-			eprintf ("  ed    : ${cfg.editor} ~/.radare2rc\n");
-			eprintf ("  ed-   : rm ~/.radare2rc\n");
+			R_LOGFI ("Usage: ed[-][?] - edit ~/.radare2rc with cfg.editor\n");
+			R_LOGFI ("NOTE: ~ is HOME and this can be changed with %%HOME=/tmp\n");
+			R_LOGFI ("  ed    : ${cfg.editor} ~/.radare2rc\n");
+			R_LOGFI ("  ed-   : rm ~/.radare2rc\n");
 		} else if (input[1] == '-') {
 			char *file = r_str_home (".radare2rc");
 			r_cons_printf ("rm %s\n", file);
@@ -499,20 +499,20 @@ static int cmd_eval(void *data, const char *input) {
 				r_config_set (core->config, input2, p);
 			}
 		} else {
-			eprintf ("Usage: ee varname\n");
+			R_LOGFI ("Usage: ee varname\n");
 		}
 		break;
 	case '!': // "e!"
 		input = r_str_trim_ro (input+1);
 		if (!r_config_toggle (core->config, input))
-			eprintf ("r_config: '%s' is not a boolean variable.\n", input);
+			R_LOGFI ("r_config: '%s' is not a boolean variable.\n", input);
 		break;
 	case 's': // "es"
 		r_config_list (core->config, (input[1])? input + 1: NULL, 's');
 		break;
 	case '-': // "e-"
 		r_core_config_init (core);
-		//eprintf ("BUG: 'e-' command locks the eval hashtable. patches are welcome :)\n");
+		//R_LOGFI ("BUG: 'e-' command locks the eval hashtable. patches are welcome :)\n");
 		break;
 	case '*': // "e*"
 		r_config_list (core->config, NULL, 1);
@@ -521,10 +521,10 @@ static int cmd_eval(void *data, const char *input) {
 		if (input[1]) {
 			const char *key = input+((input[1]==' ')?2:1);
 			if (!r_config_readonly (core->config, key)) {
-				eprintf ("cannot find key '%s'\n", key);
+				R_LOGFI ("cannot find key '%s'\n", key);
 			}
 		} else {
-			eprintf ("Usage: er [key]\n");
+			R_LOGFI ("Usage: er [key]\n");
 		}
 		break;
 	case ' ': r_config_eval (core->config, input+1); break;

@@ -29,7 +29,7 @@ static int lang_c_file(RLang *lang, const char *file) {
 		strcpy (name, file);
 	}
 	if (!r_file_exists (name)) {
-		eprintf ("file not found (%s)\n", name);
+		R_LOGFI ("file not found (%s)\n", name);
 		return false;
 	}
 
@@ -67,11 +67,11 @@ static int lang_c_file(RLang *lang, const char *file) {
 			ac = 0;
 			av = NULL;
 		} else {
-			eprintf ("Cannot find 'entry' symbol in library\n");
+			R_LOGFI ("Cannot find 'entry' symbol in library\n");
 		}
 		r_lib_dl_close (lib);
 	} else {
-		eprintf ("Cannot open library\n");
+		R_LOGFI ("Cannot open library\n");
 	}
 	r_file_rm (buf); // remove lib
 	return 0;
@@ -91,7 +91,7 @@ static int lang_c_run(RLang *lang, const char *code, int len) {
 		fclose (fd);
 		lang_c_file (lang, ".tmp.c");
 		r_file_rm (".tmp.c");
-	} else eprintf ("Cannot open .tmp.c\n");
+	} else R_LOGFI ("Cannot open .tmp.c\n");
 	return true;
 }
 

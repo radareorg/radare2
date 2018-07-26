@@ -30,20 +30,20 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	}
 
 	if (!iob_select ("pipe")) {
-		eprintf("Could not initialize the IO backend\n");
+		R_LOGFI("Could not initialize the IO backend\n");
 		return NULL;
 	}
 
 	void *io_ctx = iob_open (file + 9);
 	if (!io_ctx) {
-		eprintf ("Could not open the pipe\n");
+		R_LOGFI ("Could not open the pipe\n");
 		return NULL;
 	}
-	eprintf ("Opened pipe %s with fd %p\n", file + 9, io_ctx);
+	R_LOGFI ("Opened pipe %s with fd %p\n", file + 9, io_ctx);
 
 	WindCtx *ctx = windbg_ctx_new (io_ctx);
 	if (!ctx) {
-		eprintf ("Failed to initialize windbg context\n");
+		R_LOGFI ("Failed to initialize windbg context\n");
 		return NULL;
 	}
 	return r_io_desc_new (io, &r_io_plugin_windbg, file, rw, mode, ctx);

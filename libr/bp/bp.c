@@ -77,7 +77,7 @@ repeat:
 		/* if not found try to pad with the first one */
 		b = &bp->cur->bps[0];
 		if (len % b->length) {
-			eprintf ("No matching bpsize\n");
+			R_LOGFI ("No matching bpsize\n");
 			return 0;
 		}
 		for (i = 0; i < len; i++) {
@@ -111,7 +111,7 @@ R_API RBreakpointItem *r_bp_get_in(RBreakpoint *bp, ut64 addr, int rwx) {
 	RBreakpointItem *b;
 	RListIter *iter;
 	r_list_foreach (bp->bps, iter, b) {
-		// eprintf ("---ataddr--- 0x%08"PFMT64x" %d %d %x\n", b->addr, b->size, b->recoil, b->rwx);
+		// R_LOGFI ("---ataddr--- 0x%08"PFMT64x" %d %d %x\n", b->addr, b->size, b->recoil, b->rwx);
 		// Check addr within range and provided rwx matches (or null)
 		if (inRange (b, addr) && matchProt (b, rwx)) {
 			return b;
@@ -162,7 +162,7 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 		return NULL;
 	}
 	if (r_bp_get_in (bp, addr, rwx)) {
-		eprintf ("Breakpoint already set at this address.\n");
+		R_LOGFI ("Breakpoint already set at this address.\n");
 		return NULL;
 	}
 	b = r_bp_item_new (bp);
@@ -190,7 +190,7 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 		/* XXX: endian .. use bp->endian */
 		ret = r_bp_get_bytes (bp, b->bbytes, size, bp->endian, 0);
 		if (ret != size) {
-			eprintf ("Cannot get breakpoint bytes. No architecture selected?\n");
+			R_LOGFI ("Cannot get breakpoint bytes. No architecture selected?\n");
 			unlinkBreakpoint (bp, b);
 			return NULL;
 		}
@@ -276,7 +276,7 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 	if (rad == 'j') {
 		bp->cb_printf ("[");
 	}
-	//eprintf ("Breakpoint list:\n");
+	//R_LOGFI ("Breakpoint list:\n");
 	r_list_foreach (bp->bps, iter, b) {
 		switch (rad) {
 		case 0:

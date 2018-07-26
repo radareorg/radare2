@@ -173,7 +173,7 @@ R_API void r_mixed_change_begin(RMixed *m, void *p) {
 	for (i = 0; i < RMIXED_MAXKEYS; i++)
 		if (m->keys[i]) {
 			m->state[i] = r_mixed_get_value (i, m->keys[i]->size, p);
-			eprintf ("store state %d (0x%08"PFMT64x")\n", i, m->state[i]);
+			R_LOGFI ("store state %d (0x%08"PFMT64x")\n", i, m->state[i]);
 		}
 }
 
@@ -190,7 +190,7 @@ R_API bool r_mixed_change_end(RMixed *m, void *p) {
 				RListIter *iter;
 				RList *list = r_mixed_get (m, i, m->state[i]);
 				if (!list) {
-					eprintf ("RMixed internal corruption?\n");
+					R_LOGFI ("RMixed internal corruption?\n");
 					return false;
 				}
 				/* No _safe loop necessary because we return immediately after the delete. */
@@ -282,9 +282,9 @@ int main () {
 		printf ("NAM: %s\n", ts->name);
 		printf ("LEN: %d\n", ts->length);
 		printf ("OFF: %llx\n", ts->offset);
-	} else eprintf ("oops. cannot find 'food'\n");
+	} else R_LOGFI ("oops. cannot find 'food'\n");
 
-	eprintf ("--\n");
+	R_LOGFI ("--\n");
 	list = r_mixed_get (mx, r_offsetof (TestStruct, offset), 0x224944);
 	r_list_foreach (list, iter, ts) {
 		printf ("NAM: %s\n", ts->name);
@@ -295,7 +295,7 @@ int main () {
 	r_mixed_change_begin (mx, ts2);
 	ts2->length = 666;
 	if (!r_mixed_change_end (mx, ts2)) {
-		eprintf ("MixedChange failed\n");
+		R_LOGFI ("MixedChange failed\n");
 	}
 	r_mixed_free (mx);
 }

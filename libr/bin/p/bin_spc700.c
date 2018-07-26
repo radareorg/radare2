@@ -23,7 +23,7 @@ static RBinInfo* info(RBinFile *bf) {
 	memset (&spchdr, 0, SPC_HDR_SIZE);
 	int reat = r_buf_read_at (bf->buf, 0, (ut8*)&spchdr, SPC_HDR_SIZE);
 	if (reat != SPC_HDR_SIZE) {
-		eprintf ("Truncated Header\n");
+		R_LOGFI ("Truncated Header\n");
 		return NULL;
 	}
 	if (!(ret = R_NEW0 (RBinInfo))) {
@@ -46,7 +46,7 @@ static RList* sections(RBinFile *bf) {
 	memset (&spchdr, 0, SPC_HDR_SIZE);
 	int reat = r_buf_read_at (bf->buf, 0, (ut8*)&spchdr, SPC_HDR_SIZE);
 	if (reat != SPC_HDR_SIZE) {
-		eprintf ("Truncated Header\n");
+		R_LOGFI ("Truncated Header\n");
 		return NULL;
 	}
 	if (!(ret = r_list_new ())) {

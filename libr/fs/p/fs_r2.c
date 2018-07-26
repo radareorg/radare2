@@ -86,7 +86,7 @@ static bool fs_r2_read(RFSFile *file, ut64 addr, int len) {
 }
 
 static void fs_r2_close(RFSFile *file) {
-	// eprintf ("TODO: fs.r2.close\n");
+	// R_LOGFI ("TODO: fs.r2.close\n");
 	//fclose (file->ptr);
 }
 
@@ -98,7 +98,7 @@ static RFSFile *__version(RFSRoot *root, const char *path, RFSFile *file) {
 	r_str_replace_char (a, '/', '.');
 	char *res = root->cob.cmdstrf (root->cob.core, "?V");
 	/// root->iob.io->cb_printf ("%s\n", res);
-	// eprintf ("%s", res);
+	// R_LOGFI ("%s", res);
 	// RFSFile *
 	if (file) {
 		file->ptr = NULL;
@@ -125,7 +125,7 @@ static RFSFile *__cfg_cat(RFSRoot *root, const char *path, RFSFile *file) {
 	r_str_replace_char (a, '/', '.');
 	char *res = root->cob.cmdstrf (root->cob.core, "e %s", a);
 	// root->iob.io->cb_printf ("%s\n", res);
-	// eprintf ("%s", res);
+	// R_LOGFI ("%s", res);
 	if (file) {
 		file->ptr = NULL;
 		file->data = (ut8*)res;

@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include "r_util/r_rbtree.h"
+#include "r_util/r_log.h"
 
 static inline bool red(RBNode *x) {
 	return x && x->red;
@@ -101,7 +102,7 @@ R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, RBNo
 		}
 		if (q != &head) {
 			if (dep >= R_RBTREE_MAX_HEIGHT) {
-				eprintf ("Too deep tree\n");
+				R_LOGFI ("Too deep tree\n");
 				break;
 			}
 			path[dep++] = q;
@@ -117,7 +118,7 @@ R_API bool r_rbtree_aug_delete(RBNode **root, void *data, RBComparator cmp, RBNo
 			p->child[d2] = zag (q, !d, sum);
 			p = p->child[d2];
 			if (dep >= R_RBTREE_MAX_HEIGHT) {
-				eprintf ("Too deep tree\n");
+				R_LOGFI ("Too deep tree\n");
 				break;
 			}
 			path[dep++] = p;
@@ -224,7 +225,7 @@ R_API void r_rbtree_aug_insert(RBNode **root, void *data, RBNode *node, RBCompar
 		g = p;
 		p = q;
 		if (dep >= R_RBTREE_MAX_HEIGHT) {
-			eprintf ("Too deep tree\n");
+			R_LOGFI ("Too deep tree\n");
 			break;
 		}
 		path[dep++] = q;
@@ -251,7 +252,7 @@ R_API bool r_rbtree_aug_update_sum(RBNode *root, void *data, RBNode *node, RBCom
 	RBNode *cur = root;
 	for (;;) {
 		if (dep >= R_RBTREE_MAX_HEIGHT) {
-			eprintf ("Too deep tree\n");
+			R_LOGFI ("Too deep tree\n");
 			return false;
 		}
 		if (!cur) {

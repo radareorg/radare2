@@ -71,7 +71,7 @@ static RBinInfo* info(RBinFile *bf) {
 	memset (&pai, 0, sizeof (pai));
 	int reat = r_buf_read_at (bf->buf, 0, (ut8*)&pai, sizeof (pai));
 	if (reat != sizeof (pai)) {
-		eprintf ("Truncated Header\n");
+		R_LOGFI ("Truncated Header\n");
 		return NULL;
 	}
 	if (!(ret = R_NEW0 (RBinInfo)))
@@ -99,7 +99,7 @@ static RList* sections(RBinFile *bf) {
 	PebbleAppInfo pai;
 	memset (&pai, 0, sizeof (pai));
 	if (!r_buf_read_at (bf->buf, 0, (ut8*)&pai, sizeof(pai))) {
-		eprintf ("Truncated Header\n");
+		R_LOGFI ("Truncated Header\n");
 		return NULL;
 	}
 	if (!(ret = r_list_new ()))
@@ -170,7 +170,7 @@ static RList* entries(RBinFile *bf) {
 	RList *ret;
 	PebbleAppInfo pai;
 	if (!r_buf_read_at (bf->buf, 0, (ut8*)&pai, sizeof(pai))) {
-		eprintf ("Truncated Header\n");
+		R_LOGFI ("Truncated Header\n");
 		return NULL;
 	}
 	if (!(ret = r_list_new ()))

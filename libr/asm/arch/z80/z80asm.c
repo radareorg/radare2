@@ -123,7 +123,7 @@ static const char *delspc(const char *ptr) {
 static void rd_comma(const char **p) {
 	*p = delspc (*p);
 	if (**p != ',') {
-		eprintf ("`,' expected. Remainder of line: %s\n", *p);
+		R_LOGFI ("`,' expected. Remainder of line: %s\n", *p);
 		return;
 	}
 	*p = delspc ((*p) + 1);
@@ -152,7 +152,7 @@ static int indx(const char **ptr, const char **list, int error, const char **exp
 	*ptr = delspc (*ptr);
 	if (!**ptr) {
 		if (error) {
-			eprintf ("unexpected end of line\n");
+			R_LOGFI ("unexpected end of line\n");
 			return 0;
 		} else {
 			return 0;
@@ -204,7 +204,7 @@ static int indx(const char **ptr, const char **list, int error, const char **exp
 		comma++;
 		return i + 1;
 	}
-	// if (error) eprintf ("parse error. Remainder of line=%s\n", *ptr);
+	// if (error) R_LOGFI ("parse error. Remainder of line=%s\n", *ptr);
 	return 0;
 }
 
@@ -229,7 +229,7 @@ static void readlabel(const char **p, int store) {
 		return;
 	}
 	if (pos == *p) {
-		eprintf ("`:' found without a label");
+		R_LOGFI ("`:' found without a label");
 		return;
 	}
 	if (!store) {
@@ -240,12 +240,12 @@ static void readlabel(const char **p, int store) {
 	dummy = *p;
 	j = rd_label (&dummy, &i, &previous, sp, 0);
 	if (i || j) {
-		eprintf ("duplicate definition of label %s\n", *p);
+		R_LOGFI ("duplicate definition of label %s\n", *p);
 		*p = c;
 		return;
 	}
 	if (!(buf = malloc (sizeof (struct label) + c - *p))) {
-		eprintf ("not enough memory to store label %s\n", *p);
+		R_LOGFI ("not enough memory to store label %s\n", *p);
 #if 0
 		*p = c;
 		return;
@@ -760,7 +760,7 @@ static int rd_ldbcdehla(const char **p) {
 		int x;
 		x = 0xdd + 0x20 * (i > 12);
 		if (indexed && indexed != x) {
-			eprintf ("illegal use of index registers\n");
+			R_LOGFI ("illegal use of index registers\n");
 			return 0;
 		}
 		indexed = x;
@@ -768,7 +768,7 @@ static int rd_ldbcdehla(const char **p) {
 	}
 	if (i > 8) {
 		if (indexed) {
-			eprintf ("illegal use of index registers\n");
+			R_LOGFI ("illegal use of index registers\n");
 			return 0;
 		}
 		indexed = 0xDD + 0x20 * (i == 10);
@@ -889,7 +889,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 			}
 			if (has_argument (&ptr)) {
 				if (r != A) {
-					eprintf ("parse error before: %s\n", ptr);
+					R_LOGFI ("parse error before: %s\n", ptr);
 					break;
 				}
 				if (!(r = rd_r (&ptr))) {
@@ -1391,7 +1391,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 			}
 			if (has_argument (&ptr)) {		/* SUB A,r ?  */
 				if (r != A) {
-					eprintf ("parse error before: %s\n", ptr);
+					R_LOGFI ("parse error before: %s\n", ptr);
 					break;
 				}
 				if (!(r = rd_r (&ptr))) {
@@ -1420,7 +1420,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 					while (*ptr != quote) {
 						write_one_byte (rd_character (&ptr, NULL, 1), 0);
 						if (*ptr == 0) {
-							eprintf ("end of line in quoted string\n");
+							R_LOGFI ("end of line in quoted string\n");
 							break;
 						}
 					}
@@ -1435,7 +1435,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 					continue;
 				}
 				if (*ptr != 0) {
-					eprintf ("junk in byte definition: %s\n", ptr);
+					R_LOGFI ("junk in byte definition: %s\n", ptr);
 				}
 				break;
 			}
@@ -1443,7 +1443,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 		case Z80_DEFW:
 		case Z80_DW:
 			if (!(r = rd_word (&ptr, ','))) {
-				eprintf ("No data for word definition\n");
+				R_LOGFI ("No data for word definition\n");
 				break;
 			}
 			while (1) {
@@ -1453,7 +1453,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 				}
 				++ptr;
 				if (!(r = rd_word (&ptr, ','))) {
-					eprintf ("Missing expression in defw\n");
+					R_LOGFI ("Missing expression in defw\n");
 				}
 			}
 			break;
@@ -1461,7 +1461,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 		case Z80_DS:
 			r = rd_expr (&ptr, ',', NULL, sp, 1);
 			if (r < 0) {
-				eprintf ("ds should have its first argument >=0"
+				R_LOGFI ("ds should have its first argument >=0"
 					" (not -0x%x)\n", -r);
 				break;
 			}
@@ -1491,7 +1491,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 			break;
 		case Z80_ELSE:
 			if (ifcount == 0) {
-				eprintf ("else without if\n");
+				R_LOGFI ("else without if\n");
 				break;
 			}
 			noifcount = 1;
@@ -1499,7 +1499,7 @@ static int assemble(const char *str, unsigned char *_obuf) {
 			break;
 		case Z80_ENDIF:
 			if (noifcount == 0 && ifcount == 0) {
-				eprintf ("endif without if\n");
+				R_LOGFI ("endif without if\n");
 				break;
 			}
 			if (noifcount) {
@@ -1510,14 +1510,14 @@ static int assemble(const char *str, unsigned char *_obuf) {
 			break;
 		case Z80_ENDM:
 			if (stack[sp].file) {
-				eprintf ("endm outside macro definition\n");
+				R_LOGFI ("endm outside macro definition\n");
 			}
 			break;
 		case Z80_SEEK:
-			eprintf ("seek error\n");
+			R_LOGFI ("seek error\n");
 			break;
 		default:
-			// eprintf ("command or comment expected (was %s)\n", ptr);
+			// R_LOGFI ("command or comment expected (was %s)\n", ptr);
 			return 0;
 		}
 	} while (false);

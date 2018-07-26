@@ -74,7 +74,7 @@ static void check_values(Bitmap *bitmap, const uint32_t *values, int len, bool i
 	int i;
 	for(i = 0; i < len; i++) {
 		if (r_bitmap_test(bitmap, values[i]) != is_set) {
-			eprintf ("Value not set\n");
+			R_LOGFI ("Value not set\n");
 		}
 	}
 }

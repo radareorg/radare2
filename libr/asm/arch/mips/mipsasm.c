@@ -124,7 +124,7 @@ static int mips_j(ut8 *b, int op, int addr) {
 static int getreg(const char *p) {
 	int n;
 	if (!p || !*p) {
-		eprintf ("Missing argument\n");
+		R_LOGFI ("Missing argument\n");
 		return -1;
 	}
 	/* check if it's a register */
@@ -143,7 +143,7 @@ static int getreg(const char *p) {
 	if (n != 0 || p[0] == '0') {
 		return n;
 	}
-	eprintf ("Invalid reg name (%s) at pos %d\n", p, n);
+	R_LOGFI ("Invalid reg name (%s) at pos %d\n", p, n);
 	return -1;
 }
 

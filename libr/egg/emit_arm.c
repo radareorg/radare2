@@ -146,7 +146,7 @@ static void emit_arg(REgg *egg, int xs, int num, const char *str) {
 			strncpy (lastargs[num - 1], str, sizeof(lastargs[0]) - 1);
 		} else {
 			if (!atoi (str)) {
-				eprintf ("WARNING: probably a bug?\n");
+				R_LOGFI ("WARNING: probably a bug?\n");
 			}
 			r_egg_printf (egg, "  mov r0, %s\n", str);
 			snprintf (lastargs[num - 1], sizeof (lastargs[0]), "sp, %d", 8 + (num * 4));
@@ -276,9 +276,9 @@ static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, con
 	}
 #if 0
 	// TODO:
-	eprintf ("TYPE = %c\n", type);
-	eprintf ("  %s%c %c%s, %s\n", op, vs, type, eq, p);
-	eprintf ("  %s %s, [%s]\n", op, p, eq);
+	R_LOGFI ("TYPE = %c\n", type);
+	R_LOGFI ("  %s%c %c%s, %s\n", op, vs, type, eq, p);
+	R_LOGFI ("  %s %s, [%s]\n", op, p, eq);
 #endif
 	if (type == '*') {
 		r_egg_printf (egg, "  %s %s, [%s]\n", op, p, eq);

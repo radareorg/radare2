@@ -216,7 +216,7 @@ static int process_group_1(RAsm *a, ut8 *data, const Opcode *op) {
 		}
 	} else if (op->operands[0].type & OT_BYTE) {
 		if (op->operands[1].immediate > 255) {
-			eprintf ("Error: Immediate exceeds bounds\n");
+			R_LOGFI ("Error: Immediate exceeds bounds\n");
 			return -1;
 		}
 		data[l++] = 0x80;
@@ -295,7 +295,7 @@ static int process_group_2(RAsm *a, ut8 *data, const Opcode *op) {
 
 	st32 immediate = op->operands[1].immediate * op->operands[1].sign;
 	if (immediate > 255 || immediate < -128) {
-		eprintf ("Error: Immediate exceeds bounds\n");
+		R_LOGFI ("Error: Immediate exceeds bounds\n");
 		return -1;
 	}
 
@@ -379,7 +379,7 @@ static int process_1byte_op(RAsm *a, ut8 *data, const Opcode *op, int op1) {
 			   op->operands[1].type & (OT_DWORD | OT_QWORD)) {
 			data[l++] = op1 + 0x1;
 		} else {
-			eprintf ("Error: mismatched operand sizes\n");
+			R_LOGFI ("Error: mismatched operand sizes\n");
 			return -1;
 		}
 		reg = op->operands[1].reg;
@@ -407,7 +407,7 @@ static int process_1byte_op(RAsm *a, ut8 *data, const Opcode *op, int op1) {
 					   op->operands[1].type & (OT_DWORD | OT_QWORD)) {
 				data[l++] = op1 + 0x3;
 			} else {
-				eprintf ("Error: mismatched operand sizes\n");
+				R_LOGFI ("Error: mismatched operand sizes\n");
 				return -1;
 			}
 			reg = op->operands[0].reg;
@@ -864,7 +864,7 @@ static int opaam(RAsm *a, ut8 *data, const Opcode *op) {
 static int opdec(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	if (op->operands[1].type) {
-		eprintf ("Error: Invalid operands\n");
+		R_LOGFI ("Error: Invalid operands\n");
 		return -1;
 	}
 	if (op->operands[0].type & OT_MEMORY) {
@@ -980,7 +980,7 @@ static int opimul(RAsm *a, ut8 *data, const Opcode *op) {
 		if (op->operands[0].type & OT_GPREG) {
 			if (op->operands[1].type & OT_CONSTANT) {
 				if (op->operands[1].immediate == -1) {
-					eprintf ("Error: Immediate exceeds max\n");
+					R_LOGFI ("Error: Immediate exceeds max\n");
 					return -1;
 				}
 				immediate = op->operands[1].immediate * op->operands[1].sign;
@@ -2192,7 +2192,7 @@ static int opset(RAsm *a, ut8 *data, const Opcode *op) {
 static int optest(RAsm *a, ut8 *data, const Opcode *op) {
 	int l = 0;
 	if (!op->operands[0].type || !op->operands[1].type) {
-		eprintf ("Error: Invalid operands\n");
+		R_LOGFI ("Error: Invalid operands\n");
 		return -1;
 	}
 	if (a->bits == 64) {
@@ -4183,7 +4183,7 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 		if (getToken (str, pos, &nextpos) != TT_NUMBER ||
 				(reg = getnum (a, str + *pos)) > 7) {
 			if ((int)reg > 15) {
-				eprintf ("Too large register index!\n");
+				R_LOGFI ("Too large register index!\n");
 				return X86R_UNDEFINED;
 			} else {
 				reg -= 8;
@@ -4199,7 +4199,7 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 		// Safety to prevent a shift bigger than 31. Reg
 		// should never be > 8 anyway
 		if (reg > 7) {
-			eprintf ("Too large register index!\n");
+			R_LOGFI ("Too large register index!\n");
 			return X86R_UNDEFINED;
 		}
 		*type |= (OT_REG (reg) & ~OT_REGTYPE);

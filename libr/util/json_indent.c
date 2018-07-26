@@ -102,7 +102,7 @@ R_API char* r_print_json_path(const char* s, int pos) {
 				arrpos = 0;
 			}
 			if (indent > 128) {
-				eprintf ("JSON indentation is too deep\n");
+				R_LOGFI ("JSON indentation is too deep\n");
 				indent = 0;
 			} else {
 				indent++;
@@ -129,7 +129,7 @@ R_API char* r_print_json_path(const char* s, int pos) {
 			if (cur > pos) {
 				break;
 			}
-			eprintf ("0x%08"PFMT64x"  %d  [%d]\n", cur, i, indexs[i]);
+			R_LOGFI ("0x%08"PFMT64x"  %d  [%d]\n", cur, i, indexs[i]);
 		} else {
 			char *a = r_str_ndup (words[i], lengths[i]);
 			ut64 cur = words[i] - os - 1;
@@ -144,7 +144,7 @@ R_API char* r_print_json_path(const char* s, int pos) {
 			if (q) {
 				*q = 0;
 			}
-			eprintf ("0x%08"PFMT64x"  %d  %s\n", cur, i, a);
+			R_LOGFI ("0x%08"PFMT64x"  %d  %s\n", cur, i, a);
 			free (a);
 		}
 	}
@@ -246,7 +246,7 @@ R_API char* r_print_json_indent(const char* s, bool color, const char* tab, cons
 			*o++ = *s;
 			*o++ = (indent != -1)? '\n': ' ';
 			if (indent > 128) {
-				eprintf ("JSON indentation is too deep\n");
+				R_LOGFI ("JSON indentation is too deep\n");
 				indent = 0;
 			} else {
 				indent++;

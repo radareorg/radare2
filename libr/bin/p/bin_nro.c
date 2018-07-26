@@ -140,7 +140,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->add = false;
 		r_list_append (ret, ptr);
 	} else {
-		eprintf ("Invalid MOD0 address\n");
+		R_LOGFI ("Invalid MOD0 address\n");
 	}
 
 	ut32 sig0 = readLE32 (bf->buf, 0x18);
@@ -158,7 +158,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	} else {
-		eprintf ("Invalid SIG0 address\n");
+		R_LOGFI ("Invalid SIG0 address\n");
 	}
 
 	// add text segment
@@ -198,8 +198,8 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = ptr->paddr + ba;
 	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE; // rw-
 	ptr->add = true;
-	eprintf ("Base Address 0x%08"PFMT64x "\n", ba);
-	eprintf ("BSS Size 0x%08"PFMT64x "\n", (ut64)
+	R_LOGFI ("Base Address 0x%08"PFMT64x "\n", ba);
+	R_LOGFI ("BSS Size 0x%08"PFMT64x "\n", (ut64)
 			readLE32 (bf->buf, NRO_OFF (bss_size)));
 	r_list_append (ret, ptr);
 	return ret;

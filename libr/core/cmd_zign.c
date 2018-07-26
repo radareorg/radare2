@@ -94,7 +94,7 @@ static bool addFcnBytes(RCore *core, RAnalFunction *fcn, const char *name) {
 
 	bool retval = false;
 	if (!r_io_is_valid_offset (core->io, fcn->addr, 0)) {
-		eprintf ("error: cannot read at 0x%08"PFMT64x"\n", fcn->addr);
+		R_LOGFI ("error: cannot read at 0x%08"PFMT64x"\n", fcn->addr);
 		goto out;
 	}
 	(void)r_io_read_at (core->io, fcn->addr, buf, len);
@@ -177,7 +177,7 @@ static bool parseGraphMetrics(const char *args0, int nargs, RSignGraph *graph) {
 static bool addGraphZign(RCore *core, const char *name, const char *args0, int nargs) {
 	RSignGraph graph = {0};
 	if (!parseGraphMetrics (args0, nargs, &graph)) {
-		eprintf ("error: invalid arguments\n");
+		R_LOGFI ("error: invalid arguments\n");
 		return false;
 	}
 	return r_sign_add_graph (core->anal, name, graph);
@@ -190,7 +190,7 @@ static bool addBytesZign(RCore *core, const char *name, int type, const char *ar
 	bool retval = true;
 
 	if (nargs != 1) {
-		eprintf ("error: invalid syntax\n");
+		R_LOGFI ("error: invalid syntax\n");
 		retval = false;
 		goto out;
 	}
@@ -202,7 +202,7 @@ static bool addBytesZign(RCore *core, const char *name, int type, const char *ar
 
 	size = r_hex_str2binmask (hexbytes, bytes, mask);
 	if (size <= 0) {
-		eprintf ("error: cannot parse hexpairs\n");
+		R_LOGFI ("error: cannot parse hexpairs\n");
 		retval = false;
 		goto out;
 	}
@@ -228,7 +228,7 @@ static bool addOffsetZign(RCore *core, const char *name, const char *args0, int 
 	ut64 offset = UT64_MAX;
 
 	if (nargs != 1) {
-		eprintf ("error: invalid syntax\n");
+		R_LOGFI ("error: invalid syntax\n");
 		return false;
 	}
 
@@ -241,7 +241,7 @@ static bool addOffsetZign(RCore *core, const char *name, const char *args0, int 
 static bool addRefsZign(RCore *core, const char *name, const char *args0, int nargs) {
 	int i = 0;
 	if (nargs < 1) {
-		eprintf ("error: invalid syntax\n");
+		R_LOGFI ("error: invalid syntax\n");
 		return false;
 	}
 
@@ -267,7 +267,7 @@ static bool addZign(RCore *core, const char *name, int type, const char *args0, 
 	case R_SIGN_REFS:
 		return addRefsZign (core, name, args0, nargs);
 	default:
-		eprintf ("error: unknown zignature type\n");
+		R_LOGFI ("error: unknown zignature type\n");
 	}
 
 	return false;
@@ -288,7 +288,7 @@ static int cmdAdd(void *data, const char *input) {
 			n = r_str_word_set0 (args);
 
 			if (n < 3) {
-				eprintf ("usage: za zigname type params\n");
+				R_LOGFI ("usage: za zigname type params\n");
 				retval = false;
 				goto out_case_manual;
 			}
@@ -320,7 +320,7 @@ out_case_manual:
 			n = r_str_word_set0 (args);
 
 			if (n > 2) {
-				eprintf ("usage: zaf [fcnname] [zigname]\n");
+				R_LOGFI ("usage: zaf [fcnname] [zigname]\n");
 				retval = false;
 				goto out_case_fcn;
 			}
@@ -365,7 +365,7 @@ out_case_fcn:
 				count++;
 			}
 			r_cons_break_pop ();
-			eprintf ("generated zignatures: %d\n", count);
+			R_LOGFI ("generated zignatures: %d\n", count);
 		}
 		break;
 	case '?':
@@ -397,7 +397,7 @@ out_case_fcn:
 		}
 		break;
 	default:
-		eprintf ("usage: za[fF?] [args]\n");
+		R_LOGFI ("usage: za[fF?] [args]\n");
 		return false;
 	}
 
@@ -413,25 +413,25 @@ static int cmdOpen(void *data, const char *input) {
 		if (input[1]) {
 			return r_sign_load (core->anal, input + 1);
 		}
-		eprintf ("usage: zo filename\n");
+		R_LOGFI ("usage: zo filename\n");
 		return false;
 	case 's':
 		if (input[1] == ' ' && input[2]) {
 			return r_sign_save (core->anal, input + 2);
 		}
-		eprintf ("usage: zos filename\n");
+		R_LOGFI ("usage: zos filename\n");
 		return false;
 	case 'z':
 		if (input[1] == ' ' && input[2]) {
 			return r_sign_load_gz (core->anal, input + 2);
 		}
-		eprintf ("usage: zoz filename\n");
+		R_LOGFI ("usage: zoz filename\n");
 		return false;
 	case '?':
 		r_core_cmd_help (core, help_msg_zo);
 		break;
 	default:
-		eprintf ("usage: zo[zs] filename\n");
+		R_LOGFI ("usage: zo[zs] filename\n");
 		return false;
 	}
 
@@ -445,14 +445,14 @@ static int cmdSpace(void *data, const char *input) {
 	switch (*input) {
 	case '+':
 		if (!input[1]) {
-			eprintf ("usage: zs+zignspace\n");
+			R_LOGFI ("usage: zs+zignspace\n");
 			return false;
 		}
 		r_space_push (zs, input + 1);
 		break;
 	case 'r':
 		if (input[1] != ' ' || !input[2]) {
-			eprintf ("usage: zsr newname\n");
+			R_LOGFI ("usage: zsr newname\n");
 			return false;
 		}
 		r_space_rename (zs, NULL, input + 2);
@@ -473,7 +473,7 @@ static int cmdSpace(void *data, const char *input) {
 		break;
 	case ' ':
 		if (!input[1]) {
-			eprintf ("usage: zs zignspace\n");
+			R_LOGFI ("usage: zs zignspace\n");
 			return false;
 		}
 		r_space_set (zs, input + 1);
@@ -482,7 +482,7 @@ static int cmdSpace(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_zs);
 		break;
 	default:
-		eprintf ("usage: zs[+-*] [namespace]\n");
+		R_LOGFI ("usage: zs[+-*] [namespace]\n");
 		return false;
 	}
 
@@ -496,7 +496,7 @@ static int cmdFlirt(void *data, const char *input) {
 	case 'd':
 		// TODO
 		if (input[1] != ' ') {
-			eprintf ("usage: zfd filename\n");
+			R_LOGFI ("usage: zfd filename\n");
 			return false;
 		}
 		r_sign_flirt_dump (core->anal, input + 2);
@@ -504,7 +504,7 @@ static int cmdFlirt(void *data, const char *input) {
 	case 's':
 		// TODO
 		if (input[1] != ' ') {
-			eprintf ("usage: zfs filename\n");
+			R_LOGFI ("usage: zfs filename\n");
 			return false;
 		}
 		r_sign_flirt_scan (core->anal, input + 2);
@@ -516,7 +516,7 @@ static int cmdFlirt(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_zf);
 		break;
 	default:
-		eprintf ("usage: zf[dsz] filename\n");
+		R_LOGFI ("usage: zf[dsz] filename\n");
 		return false;
 	}
 	return true;
@@ -585,7 +585,7 @@ static bool searchRange(RCore *core, ut64 from, ut64 to, bool rad, struct ctxSea
 		}
 		(void)r_io_read_at (core->io, at, buf, rlen);
 		if (r_sign_search_update (core->anal, ss, &at, buf, rlen) == -1) {
-			eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
+			R_LOGFI ("search: update read error at 0x%08"PFMT64x"\n", at);
 			retval = false;
 			break;
 		}
@@ -622,7 +622,7 @@ static bool search(RCore *core, bool rad) {
 		r_cons_printf ("fs+%s\n", zign_prefix);
 	} else {
 		if (!r_flag_space_push (core->flags, zign_prefix)) {
-			eprintf ("error: cannot create flagspace\n");
+			R_LOGFI ("error: cannot create flagspace\n");
 			return false;
 		}
 	}
@@ -631,7 +631,7 @@ static bool search(RCore *core, bool rad) {
 	if (useBytes) {
 		list = r_core_get_boundaries_prot (core, -1, mode, "search");
 		r_list_foreach (list, iter, map) {
-			eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
+			R_LOGFI ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
 			retval &= searchRange (core, map->itv.addr, r_itv_end (map->itv), rad, &bytes_search_ctx);
 		}
 		r_list_free (list);
@@ -639,7 +639,7 @@ static bool search(RCore *core, bool rad) {
 
 	// Function search
 	if (useGraph || useOffset || useRefs) {
-		eprintf ("[+] searching function metrics\n");
+		R_LOGFI ("[+] searching function metrics\n");
 		r_cons_break_push (NULL, NULL);
 		r_list_foreach (core->anal->fcns, iter, fcni) {
 			if (r_cons_is_breaked ()) {
@@ -662,14 +662,14 @@ static bool search(RCore *core, bool rad) {
 		r_cons_printf ("fs-\n");
 	} else {
 		if (!r_flag_space_pop (core->flags)) {
-			eprintf ("error: cannot restore flagspace\n");
+			R_LOGFI ("error: cannot restore flagspace\n");
 			return false;
 		}
 	}
 
 	hits = bytes_search_ctx.count + graph_match_ctx.count +
 		offset_match_ctx.count + refs_match_ctx.count;
-	eprintf ("hits: %d\n", hits);
+	R_LOGFI ("hits: %d\n", hits);
 
 	return retval;
 }
@@ -685,7 +685,7 @@ static int cmdSearch(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_z_slash);
 		break;
 	default:
-		eprintf ("usage: z/[*]\n");
+		R_LOGFI ("usage: z/[*]\n");
 		return false;
 	}
 
@@ -719,18 +719,18 @@ static int cmdCheck(void *data, const char *input) {
 		r_cons_printf ("fs+%s\n", zign_prefix);
 	} else {
 		if (!r_flag_space_push (core->flags, zign_prefix)) {
-			eprintf ("error: cannot create flagspace\n");
+			R_LOGFI ("error: cannot create flagspace\n");
 			return false;
 		}
 	}
 
 	// Bytes search
 	if (useBytes) {
-		eprintf ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", at, at + core->blocksize);
+		R_LOGFI ("[+] searching 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", at, at + core->blocksize);
 		ss = r_sign_search_new ();
 		r_sign_search_init (core->anal, ss, minsz, searchHitCB, &bytes_search_ctx);
 		if (r_sign_search_update (core->anal, ss, &at, core->block, core->blocksize) == -1) {
-			eprintf ("search: update read error at 0x%08"PFMT64x"\n", at);
+			R_LOGFI ("search: update read error at 0x%08"PFMT64x"\n", at);
 			retval = false;
 		}
 		r_sign_search_free (ss);
@@ -738,7 +738,7 @@ static int cmdCheck(void *data, const char *input) {
 
 	// Function search
 	if (useGraph || useOffset || useRefs) {
-		eprintf ("[+] searching function metrics\n");
+		R_LOGFI ("[+] searching function metrics\n");
 		r_cons_break_push (NULL, NULL);
 		r_list_foreach (core->anal->fcns, iter, fcni) {
 			if (r_cons_is_breaked ()) {
@@ -764,14 +764,14 @@ static int cmdCheck(void *data, const char *input) {
 		r_cons_printf ("fs-\n");
 	} else {
 		if (!r_flag_space_pop (core->flags)) {
-			eprintf ("error: cannot restore flagspace\n");
+			R_LOGFI ("error: cannot restore flagspace\n");
 			return false;
 		}
 	}
 
 	hits = bytes_search_ctx.count + graph_match_ctx.count +
 		offset_match_ctx.count + refs_match_ctx.count;
-	eprintf ("hits: %d\n", hits);
+	R_LOGFI ("hits: %d\n", hits);
 
 	return retval;
 }
@@ -819,7 +819,7 @@ static int cmd_zign(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_z);
 		break;
 	default:
-		eprintf ("usage: z[*j-aof/cs] [args]\n");
+		R_LOGFI ("usage: z[*j-aof/cs] [args]\n");
 		return false;
 	}
 

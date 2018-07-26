@@ -19,7 +19,7 @@ mv core_test.so ~/.config/radare2/plugins
 #define R_IPI static
 
 static int r_cmd_test_call() {
-	eprintf ("Dummy!\n");
+	R_LOGFI ("Dummy!\n");
 	return false;
 }
 

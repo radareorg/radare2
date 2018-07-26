@@ -188,7 +188,7 @@ R_API int r_syscall_get_swi(RSyscall *s) {
 R_API RSyscallItem *r_syscall_get(RSyscall *s, int num, int swi) {
 	const char *ret, *ret2, *key;
 	if (!s || !s->db) {
-		eprintf ("Syscall database not loaded\n");
+		R_LOGFI ("Syscall database not loaded\n");
 		return NULL;
 	}
 	swi = getswi (s, swi);

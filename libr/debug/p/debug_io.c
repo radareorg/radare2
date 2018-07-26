@@ -97,7 +97,7 @@ static int __reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 	if (!dr8) {
 		const char *fb = r_cons_get_buffer ();
 		if (!fb || !*fb) {
-			eprintf ("debug.io: Failed to get dr8 from io\n");
+			R_LOGFI ("debug.io: Failed to get dr8 from io\n");
 			return -1;
 		}
 		dr8 = strdup (fb);
@@ -116,7 +116,7 @@ static int __reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		free (dr8);
 		return size;
 	} else {
-		// eprintf ("SIZE %d (%s)\n", sz, regs);
+		// R_LOGFI ("SIZE %d (%s)\n", sz, regs);
 	}
 	free (bregs);
 	free (dr8);

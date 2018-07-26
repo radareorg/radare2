@@ -179,7 +179,7 @@ static void cmd_write_init(RCore *core) {
 }
 
 static void cmd_write_fail() {
-	eprintf ("Failed to write\n");
+	R_LOGFI ("Failed to write\n");
 }
 
 R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
@@ -200,7 +200,7 @@ R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 		}
 		r_core_block_read (core);
 	} else {
-		eprintf ("Error: invalid hexpair string\n");
+		R_LOGFI ("Error: invalid hexpair string\n");
 	}
 	free (buf);
 	return len;
@@ -219,13 +219,13 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 		keylen = r_hex_str2bin (key, binkey);
 	}
 	if (!no_key_mode && keylen < 1) {
-		eprintf ("%s key not defined. Use -S [key]\n", ((!direction) ? "Encryption" : "Decryption"));
+		R_LOGFI ("%s key not defined. Use -S [key]\n", ((!direction) ? "Encryption" : "Decryption"));
 		return false;
 	}
 	RCrypto *cry = r_crypto_new ();
 	if (r_crypto_use (cry, algo)) {
 		if (!binkey) {
-			eprintf ("Cannot allocate %d byte(s)\n", keylen);
+			R_LOGFI ("Cannot allocate %d byte(s)\n", keylen);
 			r_crypto_free (cry);
 			return false;
 		}
@@ -238,7 +238,7 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 					strcpy ((char *)biniv, iv);
 				}
 				if (!r_crypto_set_iv (cry, biniv, ivlen)) {
-					eprintf ("Invalid IV.\n");
+					R_LOGFI ("Invalid IV.\n");
 					return 0;
 				}
 			}
@@ -249,17 +249,17 @@ static bool encrypt_or_decrypt_block(RCore *core, const char *algo, const char *
 			ut8 *result = r_crypto_get_output (cry, &result_size);
 			if (result) {
 				r_io_write_at (core->io, core->offset, result, result_size);
-				eprintf ("Written %d byte(s)\n", result_size);
+				R_LOGFI ("Written %d byte(s)\n", result_size);
 				free (result);
 			}
 		} else {
-			eprintf ("Invalid key\n");
+			R_LOGFI ("Invalid key\n");
 		}
 		free (binkey);
 		r_crypto_free (cry);
 		return 0;
 	} else {
-		eprintf ("Unknown %s algorithm '%s'\n", ((!direction) ? "encryption" : "decryption") ,algo);
+		R_LOGFI ("Unknown %s algorithm '%s'\n", ((!direction) ? "encryption" : "decryption") ,algo);
 	}
 	r_crypto_free (cry);
 	return 1;
@@ -356,8 +356,8 @@ static void cmd_write_op (RCore *core, const char *input) {
 			if (algo && *algo && key) {
 				encrypt_or_decrypt_block (core, algo, key, direction, iv);
 			} else {
-				eprintf ("Usage: wo%c [algo] [key] [IV]\n", ((!direction)?'E':'D'));
-				eprintf ("Currently supported hashes:\n");
+				R_LOGFI ("Usage: wo%c [algo] [key] [IV]\n", ((!direction)?'E':'D'));
+				R_LOGFI ("Currently supported hashes:\n");
 				ut64 bits;
 				int i;
 				for (i = 0; ; i++) {
@@ -366,12 +366,12 @@ static void cmd_write_op (RCore *core, const char *input) {
 					if (!name || !*name) break;
 					printf ("  %s\n", name);
 				}
-				eprintf ("Available Encoders/Decoders: \n");
+				R_LOGFI ("Available Encoders/Decoders: \n");
 				// TODO: do not hardcode
-				eprintf ("  base64\n");
-				eprintf ("  base91\n");
-				eprintf ("  punycode\n");
-				eprintf ("Currently supported crypto algos:\n");
+				R_LOGFI ("  base64\n");
+				R_LOGFI ("  base91\n");
+				R_LOGFI ("  punycode\n");
+				R_LOGFI ("Currently supported crypto algos:\n");
 				for (i = 0; ; i++) {
 					bits = ((ut64)1) << i;
 					const char *name = r_crypto_name (bits);
@@ -416,13 +416,13 @@ static void cmd_write_op (RCore *core, const char *input) {
 					}
 					free (buf);
 				} else {
-					eprintf ("Couldn't generate pattern of length %d\n", len);
+					R_LOGFI ("Couldn't generate pattern of length %d\n", len);
 				}
 			}
 			break;
 		case 'O': // "wopO"
 			if (strlen (input) > 4 && strncmp (input + 4, "0x", 2)) {
-				eprintf ("Need hex value with `0x' prefix e.g. 0x41414142\n");
+				R_LOGFI ("Need hex value with `0x' prefix e.g. 0x41414142\n");
 			} else if (input[3] == ' ') {
 				value = r_num_get (core->num, input + 4);
 				core->num->value = r_debruijn_offset (value, r_config_get_i (core->config, "cfg.bigendian"));
@@ -525,7 +525,7 @@ static bool cmd_wff(RCore *core, const char *input) {
 	}
 
 	if (*arg =='?' || !*arg) {
-		eprintf ("Usage: wf [file] ([size] ([offset]))\n");
+		R_LOGFI ("Usage: wf [file] ([size] ([offset]))\n");
 	}
 	if (!strcmp (arg, "-")) {
 		char *out = r_core_editor (core, NULL, NULL);
@@ -545,7 +545,7 @@ static bool cmd_wff(RCore *core, const char *input) {
 			*p++ = 0;
 			u_offset = r_num_math (core->num, p);
 			if (u_offset > size) {
-				eprintf ("Invalid offset\n");
+				R_LOGFI ("Invalid offset\n");
 				free (buf);
 				return false;
 			}
@@ -556,7 +556,7 @@ static bool cmd_wff(RCore *core, const char *input) {
 		free (buf);
 		r_core_block_read (core);
 	} else {
-		eprintf ("Cannot open file '%s'\n", arg);
+		R_LOGFI ("Cannot open file '%s'\n", arg);
 	}
 	return true;
 }
@@ -571,10 +571,10 @@ static bool ioMemcpy (RCore *core, ut64 dst, ut64 src, int len) {
 					r_core_block_read (core);
 					ret = true;
 				} else {
-					eprintf ("r_io_write_at failed at 0x%08"PFMT64x"\n", dst);
+					R_LOGFI ("r_io_write_at failed at 0x%08"PFMT64x"\n", dst);
 				}
 			} else {
-				eprintf ("r_io_read_at failed at 0x%08"PFMT64x"\n", src);
+				R_LOGFI ("r_io_read_at failed at 0x%08"PFMT64x"\n", src);
 			}
 			free (buf);
 		}
@@ -601,10 +601,10 @@ static bool cmd_wfs(RCore *core, const char *input) {
 				if (r_io_write_at (core->io, src, buf, len)) {
 					r_core_block_read (core);
 				} else {
-					eprintf ("Failed to write at 0x%08"PFMT64x"\n", src);
+					R_LOGFI ("Failed to write at 0x%08"PFMT64x"\n", src);
 				}
 			} else {
-				eprintf ("cmd_wfs: failed to read at 0x%08"PFMT64x"\n", dst);
+				R_LOGFI ("cmd_wfs: failed to read at 0x%08"PFMT64x"\n", dst);
 			}
 			free (buf);
 		}
@@ -618,7 +618,7 @@ static bool cmd_wf(RCore *core, const char *input) {
 		return false;
 	}
 	if (input[1] == '?') {
-		eprintf ("Usage: wf [file] ([size] ([offset]))\n");
+		R_LOGFI ("Usage: wf [file] ([size] ([offset]))\n");
 		r_core_cmd_help (core, help_msg_wf);
 		return false;
 	}
@@ -735,7 +735,7 @@ static int cmd_write(void *data, const char *input) {
 			cmd_write_bits (core, 0, r_num_math (core->num, input + 2));
 			break;
 		default:
-			eprintf ("Usage: wB 0x2000  # or wB-0x2000\n");
+			R_LOGFI ("Usage: wB 0x2000  # or wB-0x2000\n");
 			break;
 		}
 		break;
@@ -748,7 +748,7 @@ static int cmd_write(void *data, const char *input) {
 					r_io_write_at (core->io, core->offset, buf, len);
 					r_core_block_read (core);
 					free (buf);
-				} else eprintf ("Cannot allocate %d byte(s)\n", (int)len);
+				} else R_LOGFI ("Cannot allocate %d byte(s)\n", (int)len);
 			}
 		}
 		break;
@@ -769,7 +769,7 @@ static int cmd_write(void *data, const char *input) {
 			cmd_write_inc (core, *input-'0', -num);
 			break;
 		default:
-			eprintf ("Usage: w[1248][+-][num]   # inc/dec byte/word/..\n");
+			R_LOGFI ("Usage: w[1248][+-][num]   # inc/dec byte/word/..\n");
 		}
 		break;
 	case '6': // "w6"
@@ -792,7 +792,7 @@ static int cmd_write(void *data, const char *input) {
 			case 'd': // "w6d"
 				buf = malloc (str_len);
 				if (!buf) {
-					eprintf ("Error: failed to malloc memory");
+					R_LOGFI ("Error: failed to malloc memory");
 					break;
 				}
 				len = r_base64_decode (buf, str, -1);
@@ -804,7 +804,7 @@ static int cmd_write(void *data, const char *input) {
 			case 'e': { // "w6e"
 				ut8 *bin_buf = malloc (str_len);
 				if (!bin_buf) {
-					eprintf ("Error: failed to malloc memory");
+					R_LOGFI ("Error: failed to malloc memory");
 					break;
 				}
 				const int bin_len = r_hex_str2bin (str, bin_buf);
@@ -832,7 +832,7 @@ static int cmd_write(void *data, const char *input) {
 			r_core_block_read (core);
 			free (buf);
 		} else {
-			eprintf ("Usage: w6[de] base64/hex\n");
+			R_LOGFI ("Usage: w6[de] base64/hex\n");
 		}
 		break;
 		}
@@ -1021,7 +1021,7 @@ static int cmd_write(void *data, const char *input) {
 						} else if (sign) {
 							if (offs && hexa) {
 								r_cons_printf ("wx %s @ %s\n", data+hexa, data+offs);
-							} else eprintf ("food\n");
+							} else R_LOGFI ("food\n");
 							offs = 0;
 							line = 0;
 						} else hexa = 0;
@@ -1033,7 +1033,7 @@ static int cmd_write(void *data, const char *input) {
 				free (data);
 			}
 		} else {
-			eprintf ("|Usage: wu [unified-diff-patch]    # see 'cu'\n");
+			R_LOGFI ("|Usage: wu [unified-diff-patch]    # see 'cu'\n");
 		}
 		break;
 	case 'r': //wr
@@ -1048,7 +1048,7 @@ static int cmd_write(void *data, const char *input) {
 				r_core_write_at (core, core->offset, buf, len);
 				WSEEK (core, len);
 				free (buf);
-			} else eprintf ("Cannot allocate %d byte(s)\n", len);
+			} else R_LOGFI ("Cannot allocate %d byte(s)\n", len);
 		}
 		break;
 	case 'A':
@@ -1056,15 +1056,15 @@ static int cmd_write(void *data, const char *input) {
 		case ' ':
 			if (input[2] && input[3]==' ') {
 				r_asm_set_pc (core->assembler, core->offset);
-				eprintf ("modify (%c)=%s\n", input[2], input+4);
+				R_LOGFI ("modify (%c)=%s\n", input[2], input+4);
 				len = r_asm_modify (core->assembler, core->block, input[2],
 					r_num_math (core->num, input+4));
-				eprintf ("len=%d\n", len);
+				R_LOGFI ("len=%d\n", len);
 				if (len>0) {
 					r_core_write_at (core, core->offset, core->block, len);
 					WSEEK (core, len);
-				} else eprintf ("r_asm_modify = %d\n", len);
-			} else eprintf ("Usage: wA [type] [value]\n");
+				} else R_LOGFI ("r_asm_modify = %d\n", len);
+			} else R_LOGFI ("Usage: wA [type] [value]\n");
 			break;
 		case '?':
 		default:
@@ -1089,7 +1089,7 @@ static int cmd_write(void *data, const char *input) {
 		case '+':
 			if (input[2]=='*') {
 				//r_io_cache_reset (core->io, true);
-				eprintf ("TODO\n");
+				R_LOGFI ("TODO\n");
 			} else if (input[2]==' ') {
 				char *p = strchr (input+3, ' ');
 				ut64 to, from;
@@ -1098,7 +1098,7 @@ static int cmd_write(void *data, const char *input) {
 					*p = 0;
 					to = r_num_math (core->num, input+3);
 					if (to<from) {
-						eprintf ("Invalid range (from>to)\n");
+						R_LOGFI ("Invalid range (from>to)\n");
 						return 0;
 					}
 				} else {
@@ -1106,7 +1106,7 @@ static int cmd_write(void *data, const char *input) {
 				}
 				r_io_cache_commit (core->io, from, to);
 			} else {
-				eprintf ("Invalidate write cache at 0x%08"PFMT64x"\n", core->offset);
+				R_LOGFI ("Invalidate write cache at 0x%08"PFMT64x"\n", core->offset);
 				r_io_cache_commit (core->io, core->offset, core->offset+1);
 			}
 			break;
@@ -1121,7 +1121,7 @@ static int cmd_write(void *data, const char *input) {
 					from = r_num_math (core->num, input+3);
 					to = r_num_math (core->num, input+3);
 					if (to<from) {
-						eprintf ("Invalid range (from>to)\n");
+						R_LOGFI ("Invalid range (from>to)\n");
 						return 0;
 					}
 				} else {
@@ -1130,7 +1130,7 @@ static int cmd_write(void *data, const char *input) {
 				}
 				r_io_cache_invalidate (core->io, from, to);
 			} else {
-				eprintf ("Invalidate write cache at 0x%08"PFMT64x"\n", core->offset);
+				R_LOGFI ("Invalidate write cache at 0x%08"PFMT64x"\n", core->offset);
 				r_io_cache_invalidate (core->io, core->offset, core->offset+core->blocksize);
 			}
 			/* See 'r' above. */
@@ -1151,7 +1151,7 @@ static int cmd_write(void *data, const char *input) {
 			break;
 		case '\0':
 			//if (!r_config_get_i (core->config, "io.cache"))
-			//	eprintf ("[warning] e io.cache must be true\n");
+			//	R_LOGFI ("[warning] e io.cache must be true\n");
 			r_io_cache_list (core->io, 0);
 			break;
 		}
@@ -1185,7 +1185,7 @@ static int cmd_write(void *data, const char *input) {
 	case 't': // "wt"
 		if (*str == 's') { // "wts"
 			if (str[1] == ' ') {
-				eprintf ("Write to server\n");
+				R_LOGFI ("Write to server\n");
 				st64 sz = r_io_size (core->io);
 				if (sz > 0) {
 					ut64 addr = 0;
@@ -1204,28 +1204,28 @@ static int cmd_write(void *data, const char *input) {
 						RSocket *s = r_socket_new (false);
 						if (r_socket_connect (s, host, port, R_SOCKET_PROTO_TCP, 0)) {
 							int done = 0;
-							eprintf ("Transfering file to the end-point...\n");
+							R_LOGFI ("Transfering file to the end-point...\n");
 							while (done < sz) {
 								int rc = r_socket_write (s, buf + done, sz - done);
 								if (rc <1) {
-									eprintf ("oops\n");
+									R_LOGFI ("oops\n");
 									break;
 								}
 								done += rc;
 							}
 						} else {
-							eprintf ("Cannot connect\n");
+							R_LOGFI ("Cannot connect\n");
 						}
 						r_socket_free (s);
 						free (buf);
 					} else {
-						eprintf ("Usage wts host:port [sz]\n");
+						R_LOGFI ("Usage wts host:port [sz]\n");
 					}
 				} else {
-					eprintf ("Unknown file size\n");
+					R_LOGFI ("Unknown file size\n");
 				}
 			} else {
-				eprintf ("Usage wts host:port [sz]\n");
+				R_LOGFI ("Usage wts host:port [sz]\n");
 			}
 		} else if (*str == '?' || *str == '\0') {
 			r_core_cmd_help (core, help_msg_wt);
@@ -1317,7 +1317,7 @@ static int cmd_write(void *data, const char *input) {
 				}
 			}
 			if (sz >= 0) {
-				eprintf ("Dumped %"PFMT64d" bytes from 0x%08"PFMT64x" into %s\n",
+				R_LOGFI ("Dumped %"PFMT64d" bytes from 0x%08"PFMT64x" into %s\n",
 						sz, poff, filename);
 			}
 		}
@@ -1341,7 +1341,7 @@ static int cmd_write(void *data, const char *input) {
 			r_core_block_read (core);
 			free (tmp);
 		} else {
-			eprintf ("Cannot malloc %d\n", len);
+			R_LOGFI ("Cannot malloc %d\n", len);
 		}
 		break;
 	case 'x': // "wx"
@@ -1376,10 +1376,10 @@ static int cmd_write(void *data, const char *input) {
 					free (buf);
 					r_core_block_read (core);
 				} else {
-					eprintf ("This file doesnt contains hexpairs\n");
+					R_LOGFI ("This file doesnt contains hexpairs\n");
 				}
 			} else {
-				eprintf ("Cannot open file '%s'\n", arg);
+				R_LOGFI ("Cannot open file '%s'\n", arg);
 			}
 			break;
 		case 's': // "wxs"
@@ -1426,7 +1426,7 @@ static int cmd_write(void *data, const char *input) {
 						cmd_write_fail ();
 					} else {
 						if (r_config_get_i (core->config, "scr.prompt")) {
-							eprintf ("Written %d byte(s) (%s) = wx %s\n", acode->len, input+2, acode->buf_hex);
+							R_LOGFI ("Written %d byte(s) (%s) = wx %s\n", acode->len, input+2, acode->buf_hex);
 						}
 						WSEEK (core, acode->len);
 					}
@@ -1447,7 +1447,7 @@ static int cmd_write(void *data, const char *input) {
 						cmd_write_hexpair(core, acode->buf_hex);
 					} else {
 						if (r_config_get_i (core->config, "scr.prompt")) {
-							eprintf ("Written %d byte(s) (%s)=wx %s\n", acode->len, input+1, acode->buf_hex);
+							R_LOGFI ("Written %d byte(s) (%s)=wx %s\n", acode->len, input+1, acode->buf_hex);
 						}
 						if (!r_core_write_at (core, core->offset, acode->buf, acode->len)) {
 							cmd_write_fail ();
@@ -1457,8 +1457,8 @@ static int cmd_write(void *data, const char *input) {
 						r_core_block_read (core);
 					}
 					r_asm_code_free (acode);
-				} else eprintf ("Cannot assemble file\n");
-			} else eprintf ("Wrong argument\n");
+				} else R_LOGFI ("Cannot assemble file\n");
+			} else R_LOGFI ("Wrong argument\n");
 			break;
 		default:
 			r_core_cmd_help (core, help_msg_wa);
@@ -1478,34 +1478,34 @@ static int cmd_write(void *data, const char *input) {
 					WSEEK (core, core->blocksize);
 				}
 				r_core_block_read (core);
-			} else eprintf ("Wrong argument\n");
+			} else R_LOGFI ("Wrong argument\n");
 			free (buf);
-		} else eprintf ("Cannot malloc %d\n", len+1);
+		} else R_LOGFI ("Cannot malloc %d\n", len+1);
 		break;
 	}
 	case 'm':
 		size = r_hex_str2bin (input+1, (ut8*)str);
 		switch (input[1]) {
 		case '\0':
-			eprintf ("Current write mask: TODO\n");
+			R_LOGFI ("Current write mask: TODO\n");
 			// TODO
 			break;
 		case '?':
 			break;
 		case '-':
 			r_io_set_write_mask (core->io, 0, 0);
-			eprintf ("Write mask disabled\n");
+			R_LOGFI ("Write mask disabled\n");
 			break;
 		case ' ':
 			if (size>0) {
 				r_io_use_fd (core->io, core->file->fd);
 				r_io_set_write_mask (core->io, (const ut8*)str, size);
 				WSEEK (core, size);
-				eprintf ("Write mask set to '");
+				R_LOGFI ("Write mask set to '");
 				for (i=0; i<size; i++)
-					eprintf ("%02x", str[i]);
-				eprintf ("'\n");
-			} else eprintf ("Invalid string\n");
+					R_LOGFI ("%02x", str[i]);
+				R_LOGFI ("'\n");
+			} else R_LOGFI ("Invalid string\n");
 			break;
 		}
 		break;
@@ -1527,15 +1527,15 @@ static int cmd_write(void *data, const char *input) {
 				r_io_read_at (core->io, addr, data, len);
 				r_io_write_at (core->io, core->offset, data, len);
 				free (data);
-			} else eprintf ("See wd?\n");
+			} else R_LOGFI ("See wd?\n");
 			free (inp);
-		} else eprintf ("Usage: wd [source-offset] [length] @ [dest-offset]\n");
+		} else R_LOGFI ("Usage: wd [source-offset] [length] @ [dest-offset]\n");
 		break;
 	case 's':
 		if (str && *str && str[1]) {
 			len = r_str_unescape (str+1);
 			if (len>255) {
-				eprintf ("Too large\n");
+				R_LOGFI ("Too large\n");
 			} else {
 				ut8 ulen = (ut8)len;
 				if (!r_core_write_at (core, core->offset, &ulen, 1) ||
@@ -1546,12 +1546,12 @@ static int cmd_write(void *data, const char *input) {
 				}
 				r_core_block_read (core);
 			}
-		} else eprintf ("Too short.\n");
+		} else R_LOGFI ("Too short.\n");
 		break;
 	default:
 	case '?':
 		if (core->oobi) {
-			eprintf ("Writing oobi buffer!\n");
+			R_LOGFI ("Writing oobi buffer!\n");
 			r_io_use_fd (core->io, core->file->fd);
 			r_io_write (core->io, core->oobi, core->oobi_len);
 			WSEEK (core, core->oobi_len);

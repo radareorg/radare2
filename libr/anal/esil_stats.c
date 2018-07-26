@@ -34,7 +34,7 @@ static int hook_reg_write(RAnalEsil *esil, const char *name, ut64 *val) {
 }
 
 static int hook_NOP_mem_write(RAnalEsil *esil, ut64 addr, const ut8 *buf, int len) {
-	eprintf ("NOP WRITE AT 0x%08"PFMT64x"\n", addr);
+	R_LOGFI ("NOP WRITE AT 0x%08"PFMT64x"\n", addr);
 	return 1; // override
 }
 

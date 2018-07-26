@@ -26,10 +26,10 @@ R_API int r_cons_pipe_open(const char *file, int fdn, int append) {
 	int fd = r_sandbox_open (targetFile,
 		O_BINARY | O_RDWR | O_CREAT | (append? O_APPEND: O_TRUNC), 0644);
 	if (fd==-1) {
-		eprintf ("r_cons_pipe_open: Cannot open file '%s'\n", file);
+		R_LOGFI ("r_cons_pipe_open: Cannot open file '%s'\n", file);
 		free (targetFile);
 		return -1;
-	}// else eprintf ("%s created\n", file);
+	}// else R_LOGFI ("%s created\n", file);
 	if (backup_fd != -1) {
 		close (backup_fd);
 	}
@@ -42,7 +42,7 @@ R_API int r_cons_pipe_open(const char *file, int fdn, int append) {
 	if (backup_fd <2) backup_fd = 2002-(fd-2); // fallback
 	if (dup2 (fdn, backup_fd) == -1) {
 #endif
-		eprintf ("Cannot dup stdout to %d\n", backup_fd);
+		R_LOGFI ("Cannot dup stdout to %d\n", backup_fd);
 		free (targetFile);
 		return -1;
 	}

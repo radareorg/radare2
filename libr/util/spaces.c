@@ -195,7 +195,7 @@ R_API bool r_space_rename (RSpaces *s, const char *oname, const char *nname) {
 	}
 
 	if (r_space_get (s, nname) != -1) {
-		eprintf ("error: dupplicated name\n");
+		R_LOGFI ("error: dupplicated name\n");
 		return false;
 	}
 

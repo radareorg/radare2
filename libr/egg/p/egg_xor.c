@@ -15,34 +15,34 @@ static RBuffer *build (REgg *egg) {
 	if (!key || !*key) {
 		free (key);
 		key = strdup (default_key);
-		eprintf ("XOR key not provided. Using (%s) as the key\n", key);
+		R_LOGFI ("XOR key not provided. Using (%s) as the key\n", key);
 	}
 	nkey = r_num_math (NULL, key);
 	if (nkey == 0) {
-		eprintf ("Invalid key (%s)\n", key);
+		R_LOGFI ("Invalid key (%s)\n", key);
 		free (key);
 		return false;
 	}
 	if (nkey != (nkey & 0xff)) {
 		nkey &= 0xff;
-		eprintf ("xor key wrapped to (%d)\n", nkey);
+		R_LOGFI ("xor key wrapped to (%d)\n", nkey);
 	}
 	if (egg->bin->length > 240) { // XXX
-		eprintf ("shellcode is too long :(\n");
+		R_LOGFI ("shellcode is too long :(\n");
 		free (key);
 		return NULL;
 	}
 	sc = egg->bin; // hack
 	if (!sc->length) {
-		eprintf ("No shellcode found!\n");
+		R_LOGFI ("No shellcode found!\n");
 		free (key);
 		return NULL;
 	}
 
 	for (i = 0; i<sc->length; i++) {
-		// eprintf ("%02x -> %02x\n", sc->buf[i], sc->buf[i] ^nkey);
+		// R_LOGFI ("%02x -> %02x\n", sc->buf[i], sc->buf[i] ^nkey);
 		if ((sc->buf[i]^nkey)==0) {
-			eprintf ("This xor key generates null bytes. Try again.\n");
+			R_LOGFI ("This xor key generates null bytes. Try again.\n");
 			free (key);
 			return NULL;
 		}
@@ -77,7 +77,7 @@ static RBuffer *build (REgg *egg) {
 		r_buf_append_bytes (buf, stub, STUBLEN);
 
 		for (i = 0; i<sc->length; i++) {
-//			 eprintf ("%02x -> %02x\n", sc->buf[i], sc->buf[i] ^nkey);
+//			 R_LOGFI ("%02x -> %02x\n", sc->buf[i], sc->buf[i] ^nkey);
 			sc->buf[i]^=nkey;
 		}
 		r_buf_append_buf (buf, sc);

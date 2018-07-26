@@ -649,7 +649,7 @@ static RDisasmState * ds_init(RCore *core) {
 		RIOMap *map = r_io_map_add (core->io, ds->stackFd, R_IO_RW, 0LL, addr, size, true);
 		if (!map) {
 			r_io_fd_close (core->io, ds->stackFd);
-			eprintf ("Cannot create map for tha stack, fd %d got closed again\n", ds->stackFd);
+			R_LOGFI ("Cannot create map for tha stack, fd %d got closed again\n", ds->stackFd);
 			ds->stackFd = -1;
 		} else {
 			r_io_map_set_name (map, "fake.stack");
@@ -823,7 +823,7 @@ static void ds_free(RDisasmState *ds) {
 	}
 	if (ds->show_emu_stack) {
 		// TODO: destroy fake stack in here
-		eprintf ("Free fake stack\n");
+		R_LOGFI ("Free fake stack\n");
 		if (ds->stackFd != -1) {
 			r_io_fd_close (ds->core->io, ds->stackFd);
 		}
@@ -1250,7 +1250,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 			r_list_purge (addrs);
 			R_FREE (name);
 		} else {
-			eprintf ("Corrupted database?\n");
+			R_LOGFI ("Corrupted database?\n");
 		}
 	}
 	r_list_free (addrs);
@@ -1674,7 +1674,7 @@ static void ds_show_functions(RDisasmState *ds) {
 			case 'r': {
 				RRegItem *i = r_reg_index_get (anal->reg, var->delta);
 				if (!i) {
-					eprintf("Register not found");
+					R_LOGFI("Register not found");
 					break;
 				}
 				r_cons_printf ("%sarg %s%s%s%s %s@ %s", COLOR_ARG (ds, color_func_var),
@@ -3830,7 +3830,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 				}
 				(void)r_io_read_at (esil->anal->iob.io, addr,
 					(ut8*)str, sizeof (str)-1);
-			//	eprintf ("IS CSTRING 0x%llx %s\n", addr, str);
+			//	R_LOGFI ("IS CSTRING 0x%llx %s\n", addr, str);
 				type = r_str_newf ("(cstr 0x%08"PFMT64x") ", addr);
 				ds->printed_str_addr = cstr[2];
 			} else if (r_io_is_valid_offset (esil->anal->iob.io, addr, 0)) {
@@ -3838,7 +3838,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 				type = r_str_newf ("(pstr 0x%08"PFMT64x") ", addr);
 				(void)r_io_read_at (esil->anal->iob.io, addr,
 					(ut8*)str, sizeof (str)-1);
-			//	eprintf ("IS PSTRING 0x%llx %s\n", addr, str);
+			//	R_LOGFI ("IS PSTRING 0x%llx %s\n", addr, str);
 			}
 		}
 
@@ -4964,7 +4964,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 				if (core->blocksize == nb_bytes) {
 					r_io_read_at (core->io, core->offset, core->block, nb_bytes);
 				} else {
-					eprintf ("Cannot read that much!\n");
+					R_LOGFI ("Cannot read that much!\n");
 					r_core_block_size (core, obsz);
 					len = -1;
 					goto err_offset;
@@ -5157,7 +5157,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			nb_opcodes = -nb_opcodes;
 
 			if (nb_opcodes > 0xffff) {
-				eprintf ("Too many backward instructions\n");
+				R_LOGFI ("Too many backward instructions\n");
 				return false;
 			}
 
@@ -5584,7 +5584,7 @@ R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int 
 		}
 		r_io_read_at (core->io, bb->addr, buf+idx, bb->size);
 		//ret = r_asm_disassemble (core->assembler, &ds->asmop, buf+idx, bb->size);
-		//if (ret > 0) eprintf ("%s\n",ds->asmop.buf_asm);
+		//if (ret > 0) R_LOGFI ("%s\n",ds->asmop.buf_asm);
 		idx += bb->size;
 	}
 	ds_reflines_fcn_init (ds, fcn, buf);

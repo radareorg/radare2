@@ -34,8 +34,8 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 			int v = ((int)1 << i);
 			// skip checks on same request arena and check if this arena have inside the request arena type
 			if (n != i && (mask & v)) {
-				//eprintf(" req = %i arena = %i mask = %x search = %x \n", i, n, mask, v);
-				//eprintf(" request arena %i found at arena %i\n", i, n );
+				//R_LOGFI(" req = %i arena = %i mask = %x search = %x \n", i, n, mask, v);
+				//R_LOGFI(" request arena %i found at arena %i\n", i, n );
 				// if this arena have the request arena type, force to use this arena.
 				i = n;
 				break;
@@ -47,7 +47,7 @@ R_API int r_debug_reg_sync(RDebug *dbg, int type, int write) {
 			ut8 *buf = r_reg_get_bytes (dbg->reg, i, &size);
 			if (!buf || !dbg->h->reg_write (dbg, i, buf, size)) {
 				if (!i) {
-					eprintf ("r_debug_reg: error writing "
+					R_LOGFI ("r_debug_reg: error writing "
 						"registers %d to %d\n", i, dbg->tid);
 				}
 				free (buf);
@@ -322,7 +322,7 @@ R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err, utX *val
 	if (role != -1) {
 		name = r_reg_get_name (dbg->reg, role);
 		if (!name || *name == '\0') {
-			eprintf ("No debug register profile defined for '%s'.\n", pname);
+			R_LOGFI ("No debug register profile defined for '%s'.\n", pname);
 			if (err) {
 				*err = 1;
 			}

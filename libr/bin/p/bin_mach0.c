@@ -146,7 +146,7 @@ static RList* sections(RBinFile *bf) {
 		if (!ptr->vaddr) {
 			// XXX(lowlyw) this is a valid macho, but rarely will anything
 			// be mapped at va = 0
-			eprintf ("mapping text to va = 0\n");
+			R_LOGFI ("mapping text to va = 0\n");
 			// ptr->vaddr = ptr->paddr;
 		}
 		ptr->srwx = sections[i].srwx;
@@ -567,7 +567,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int clen, const ut8 *data, in
 	RBuffer *buf = r_buf_new ();
 #ifndef R_BIN_MACH064
 	if (bin->cur->o->info->bits == 64) {
-		eprintf ("TODO: Please use mach064 instead of mach0\n");
+		R_LOGFI ("TODO: Please use mach064 instead of mach0\n");
 		free (buf);
 		return NULL;
 	}

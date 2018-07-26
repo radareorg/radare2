@@ -73,7 +73,7 @@ static RList *patch_relocs(RBin *b) {
 		return NULL;
 	}
 	if (!(b->iob.io->cached & R_IO_WRITE)) {
-		eprintf (
+		R_LOGFI (
 			"Warning: please run r2 with -e io.cache=true to patch "
 			"relocations\n");
 		return list;
@@ -246,7 +246,7 @@ static RList *relocs(RBinFile *bf) {
 					(ut8 *) &reloc_fixed,
 					sizeof (ut32));
 				if (len != sizeof (ut32)) {
-					eprintf ("problem while reading relocation entries\n");
+					R_LOGFI ("problem while reading relocation entries\n");
 					free (reloc_table);
 					free (reloc_pointer_table);
 					goto out_error;

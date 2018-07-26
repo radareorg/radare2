@@ -20,7 +20,7 @@ static int lang_vala_file(RLang *lang, const char *file, bool silent) {
 		strcpy (name, file);
 	}
 	if (!r_file_exists (name)) {
-		eprintf ("file not found (%s)\n", name);
+		R_LOGFI ("file not found (%s)\n", name);
 		return false;
 	}
 
@@ -84,11 +84,11 @@ static int lang_vala_file(RLang *lang, const char *file, bool silent) {
 		if (fcn) {
 			fcn (lang->user);
 		} else {
-			eprintf ("Cannot find 'entry' symbol in library\n");
+			R_LOGFI ("Cannot find 'entry' symbol in library\n");
 		}
 		r_lib_dl_close (lib);
 	} else {
-		eprintf ("Cannot open library\n");
+		R_LOGFI ("Cannot open library\n");
 	}
 	r_file_rm (buf); // remove lib
 	snprintf (buf, sizeof (buf) - 1, "%s.c", name); // remove .c
@@ -120,7 +120,7 @@ static int lang_vala_run(RLang *lang, const char *code, int len) {
 		r_file_rm (".tmp.vala");
 		return true;
 	}
-	eprintf ("Cannot open .tmp.vala\n");
+	R_LOGFI ("Cannot open .tmp.vala\n");
 	return false;
 }
 

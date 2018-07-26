@@ -1197,7 +1197,7 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 			value->encoding.address = READ (buf, ut64);
 			break;
 		default:
-			eprintf ("DWARF: Unexpected pointer size: %u\n", (unsigned)hdr->pointer_size);
+			R_LOGFI ("DWARF: Unexpected pointer size: %u\n", (unsigned)hdr->pointer_size);
 			return NULL;
 		}
 		break;
@@ -1303,7 +1303,7 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		value->encoding.data = READ (buf, ut8);
 		break;
 	default:
-		eprintf ("Unknown DW_FORM 0x%02"PFMT64x"\n", spec->attr_form);
+		R_LOGFI ("Unknown DW_FORM 0x%02"PFMT64x"\n", spec->attr_form);
 		value->encoding.data = 0;
 		return NULL;
 	}
@@ -1351,7 +1351,7 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 				r_bin_dwarf_expand_die (&cu->dies[cu->length]);
 			}
 			if (i >= cu->dies[cu->length].capacity || i >= da->decls[abbr_code - 1].capacity) {
-				eprintf ("Warning: malformed dwarf attribute capacity doesn't match length\n");
+				R_LOGFI ("Warning: malformed dwarf attribute capacity doesn't match length\n");
 				break;
 			}
 			memset (&cu->dies[cu->length].attr_values[i], 0, sizeof (cu->dies[cu->length].attr_values[i]));
@@ -1364,7 +1364,7 @@ static const ut8 *r_bin_dwarf_parse_comp_unit(Sdb *s, const ut8 *obuf,
 				if ((size_t)name > 1024) { // solve some null derefs
 					sdb_set (s, "DW_AT_comp_dir", name, 0);
 				} else {
-					eprintf ("Invalid string pointer at %p\n", name);
+					R_LOGFI ("Invalid string pointer at %p\n", name);
 				}
 			}
 			cu->dies[cu->length].length++;
@@ -1409,7 +1409,7 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 		inf->comp_units[curr_unit].hdr.version = READ (buf, ut16);
 
 		if (inf->comp_units[curr_unit].hdr.version != 2) {
-//			eprintf ("DWARF: version %d is not yet supported.\n",
+//			R_LOGFI ("DWARF: version %d is not yet supported.\n",
 //					inf->comp_units[curr_unit].hdr.version);
 			ret = false;
 			goto out_debug_info;
@@ -1425,7 +1425,7 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 
 		/* Linear search FIXME */
 		if (da->decls->length >= da->capacity) {
-			eprintf ("WARNING: malformed dwarf have not enough buckets for decls.\n");
+			R_LOGFI ("WARNING: malformed dwarf have not enough buckets for decls.\n");
 		}
 		const int k_max = R_MIN (da->capacity, da->decls->length);
 		for (k = 0; k < k_max; k++) {

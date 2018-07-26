@@ -235,7 +235,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 				// if (!*buf)
 				// return NULL;
 				if (current_entry_n >= 1) {
-					// eprintf ("%s\n", buf);
+					// R_LOGFI ("%s\n", buf);
 					// i = buf[0] = 0;
 					return strdup (selected_entry);
 				}	// no match!
@@ -301,7 +301,7 @@ R_API char *r_cons_hud_path(const char *path, int dir) {
 		}
 		r_list_free (files);
 	} else {
-		eprintf ("No files found\n");
+		R_LOGFI ("No files found\n");
 	}
 	if (!ret) {
 		free (tmp);

@@ -107,7 +107,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 	char *heapFsType = NULL;
 
 	if (path[0] != '/') {
-		eprintf ("r_fs_mount: invalid mountpoint %s\n", path);
+		R_LOGFI ("r_fs_mount: invalid mountpoint %s\n", path);
 		return NULL;
 	}
 	if (!fstype || !*fstype) {
@@ -115,7 +115,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 		fstype = (const char *)heapFsType;
 	}
 	if (!(p = r_fs_plugin_get (fs, fstype))) {
-		// eprintf ("r_fs_mount: Invalid filesystem type\n");
+		// R_LOGFI ("r_fs_mount: Invalid filesystem type\n");
 		free (heapFsType);
 		return NULL;
 	}
@@ -126,7 +126,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 	}
 	r_str_trim_path (str);
 	if (*str && strchr (str + 1, '/')) {
-		eprintf ("r_fs_mount: mountpoint must have no subdirectories\n");
+		R_LOGFI ("r_fs_mount: mountpoint must have no subdirectories\n");
 		free (heapFsType);
 		return NULL;
 	}
@@ -141,7 +141,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 			if (len > lenstr && root->path[lenstr] == '/') {
 				continue;
 			}
-			eprintf ("r_fs_mount: Invalid mount point\n");
+			R_LOGFI ("r_fs_mount: Invalid mount point\n");
 			free (str);
 			free (heapFsType);
 			return NULL;
@@ -150,7 +150,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 	file = r_fs_open (fs, str);
 	if (file) {
 		r_fs_close (fs, file);
-		eprintf ("r_fs_mount: Invalid mount point\n");
+		R_LOGFI ("r_fs_mount: Invalid mount point\n");
 		free (heapFsType);
 		free (str);
 		return NULL;
@@ -158,7 +158,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 	list = r_fs_dir (fs, str);
 	if (!r_list_empty (list)) {
 		//XXX: list need free ??
-		eprintf ("r_fs_mount: Invalid mount point\n");
+		R_LOGFI ("r_fs_mount: Invalid mount point\n");
 		free (str);
 		free (heapFsType);
 		return NULL;
@@ -175,7 +175,7 @@ R_API RFSRoot* r_fs_mount(RFS* fs, const char* fstype, const char* path, ut64 de
 		return NULL;
 	}
 	r_list_append (fs->roots, root);
-	eprintf ("Mounted %s on %s at 0x%" PFMT64x "\n", fstype, str, delta);
+	R_LOGFI ("Mounted %s on %s at 0x%" PFMT64x "\n", fstype, str, delta);
 	free (str);
 	free (heapFsType);
 	return root;
@@ -275,7 +275,7 @@ R_API void r_fs_close(RFS* fs, RFSFile* file) {
 
 R_API int r_fs_read(RFS* fs, RFSFile* file, ut64 addr, int len) {
 	if (len < 1) {
-		eprintf ("r_fs_read: too short read\n");
+		R_LOGFI ("r_fs_read: too short read\n");
 		return false;
 	}
 	if (fs && file) {
@@ -286,7 +286,7 @@ R_API int r_fs_read(RFS* fs, RFSFile* file, ut64 addr, int len) {
 			file->p->read (file, addr, len);
 			return true;
 		} else {
-			eprintf ("r_fs_read: file->p->read is null\n");
+			R_LOGFI ("r_fs_read: file->p->read is null\n");
 		}
 	}
 	return false;
@@ -333,7 +333,7 @@ R_API int r_fs_dir_dump(RFS* fs, const char* path, const char* name) {
 	}
 	if (!r_sys_mkdir (name)) {
 		if (r_sys_mkdir_failed ()) {
-			eprintf ("Cannot create \"%s\"\n", name);
+			R_LOGFI ("Cannot create \"%s\"\n", name);
 			return false;
 		}
 	}
@@ -489,14 +489,14 @@ R_API RFSFile* r_fs_slurp(RFS* fs, const char* path) {
 			if (file) {
 				root->p->read (file, 0, file->size); //file->data
 			}else {
-				eprintf ("r_fs_slurp: cannot open file\n");
+				R_LOGFI ("r_fs_slurp: cannot open file\n");
 			}
 		} else {
 			if (root->p->slurp) {
 				free (roots);
 				return root->p->slurp (root, path);
 			}
-			eprintf ("r_fs_slurp: null root->p->slurp\n");
+			R_LOGFI ("r_fs_slurp: null root->p->slurp\n");
 		}
 	}
 	free (roots);
@@ -590,13 +590,13 @@ R_API RList* r_fs_partitions(RFS* fs, const char* ptype, ut64 delta) {
 		return list;
 	}
 	if (ptype && *ptype) {
-		eprintf ("Unknown partition type '%s'.\n", ptype);
+		R_LOGFI ("Unknown partition type '%s'.\n", ptype);
 	}
-	eprintf ("Supported types:\n");
+	R_LOGFI ("Supported types:\n");
 	for (i = 0; partitions[i].name; i++) {
-		eprintf (" %s", partitions[i].name);
+		R_LOGFI (" %s", partitions[i].name);
 	}
-	eprintf ("\n");
+	R_LOGFI ("\n");
 	return NULL;
 }
 

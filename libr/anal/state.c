@@ -54,7 +54,7 @@ R_API void r_anal_state_insert_bb(RAnalState* state, RAnalBlock *bb) {
 		state->bytes_consumed += state->current_bb->op_sz;
 		const char *key = sdb_fmt ("0x%08"PFMT64x, bb->addr);
 		if (!ht_insert (state->ht, key, bb)) {
-			eprintf ("Inserted bb 0x%04"PFMT64x" failure\n", bb->addr);
+			R_LOGFI ("Inserted bb 0x%04"PFMT64x" failure\n", bb->addr);
 		}
 	}
 }
@@ -98,7 +98,7 @@ R_API void r_anal_state_merge_bb_list (RAnalState *state, RList* bbs) {
 	RListIter *iter;
 	RAnalBlock *bb;
 	r_list_foreach (bbs, iter, bb) {
-		IFDBG eprintf ("Inserting bb from 0x%04"PFMT64x"\n", bb->addr);
+		IFDBG R_LOGFI ("Inserting bb from 0x%04"PFMT64x"\n", bb->addr);
 		r_anal_state_insert_bb (state, bb);
 	}
 }

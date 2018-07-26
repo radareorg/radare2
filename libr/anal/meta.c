@@ -398,7 +398,7 @@ R_API RAnalMetaItem *r_meta_find(RAnal *a, ut64 at, int type, int where) {
 	static RAnalMetaItem mi = {0};
 	// XXX: return allocated item? wtf
 	if (where != R_META_WHERE_HERE) {
-		eprintf ("THIS WAS NOT SUPOSED TO HAPPEN\n");
+		R_LOGFI ("THIS WAS NOT SUPOSED TO HAPPEN\n");
 		return NULL;
 	}
 
@@ -466,7 +466,7 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 	char *pstr, *str, *base64_str;
 	RCore *core = a->coreb.core;
 	bool esc_bslash = core ? core->print->esc_bslash : false;
-	//eprintf ("%d %d\n", d->space, a->meta_spaces.space_idx);
+	//R_LOGFI ("%d %d\n", d->space, a->meta_spaces.space_idx);
 	if (a->meta_spaces.space_idx != -1) {
 		if (a->meta_spaces.space_idx != d->space) {
 			return;

@@ -137,7 +137,7 @@ static char *getstr(const char *src) {
 					ret[len] = 0;
 					return ret;
 				}
-				eprintf ("Missing \"\n");
+				R_LOGFI ("Missing \"\n");
 			}
 			free (ret);
 		}
@@ -153,7 +153,7 @@ static char *getstr(const char *src) {
 					r_str_unescape (ret);
 					return ret;
 				}
-				eprintf ("Missing \"\n");
+				R_LOGFI ("Missing \"\n");
 			}
 			free (ret);
 		}
@@ -205,7 +205,7 @@ static char *getstr(const char *src) {
 			ret[len] = 0;
 			return ret;
 		}
-		eprintf ("Invalid hexpair string\n");
+		R_LOGFI ("Invalid hexpair string\n");
 		free (ret);
 		return NULL;
 #if 0
@@ -259,7 +259,7 @@ static void setASLR(RRunProfile *r, int enabled) {
 		: r->_program ? r->_program
 		: r->_args[0] ? r->_args[0]
 		: "/path/to/exec";
-	eprintf ("To disable aslr patch mach0.hdr.flags with:\n"
+	R_LOGFI ("To disable aslr patch mach0.hdr.flags with:\n"
 		"r2 -qwnc 'wx 000000 @ 0x18' %s\n", argv0);
 	// f MH_PIE=0x00200000; wB-MH_PIE @ 24\n");
 	// for osxver>=10.7
@@ -382,7 +382,7 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 				close (0);
 				dup2 (pipes[0], 0);
 			} else {
-				eprintf ("[ERROR] rarun2: Cannot create pipe\n");
+				R_LOGFI ("[ERROR] rarun2: Cannot create pipe\n");
 			}
 		}
 #else
@@ -409,7 +409,7 @@ static int handle_redirection(const char *cmd, bool in, bool out, bool err) {
 #endif
 		f = open (cmd, flag, mode);
 		if (f < 0) {
-			eprintf ("[ERROR] rarun2: Cannot open: %s\n", cmd);
+			R_LOGFI ("[ERROR] rarun2: Cannot open: %s\n", cmd);
 			return 1;
 		}
 #define DUP(x) { close(x); dup2(f,x); }
@@ -500,14 +500,14 @@ R_API bool r_run_parseline(RRunProfile *p, char *b) {
 			p->_args[n] = getstr (e);
 			p->_argc++;
 		} else {
-			eprintf ("Out of bounds args index: %d\n", n);
+			R_LOGFI ("Out of bounds args index: %d\n", n);
 		}
 	} else if (!strcmp (b, "envfile")) {
 		char *p, buf[1024];
 		size_t len;
 		FILE *fd = fopen (e, "r");
 		if (!fd) {
-			eprintf ("Cannot open '%s'\n", e);
+			R_LOGFI ("Cannot open '%s'\n", e);
 			if (must_free == true) {
 				free (e);
 			}
@@ -609,7 +609,7 @@ static int fd_forward(int in_fd, int out_fd, char **buff) {
 
 	char *new_buff = realloc (*buff, size);
 	if (!new_buff) {
-		eprintf ("Failed to allocate buffer for redirection");
+		R_LOGFI ("Failed to allocate buffer for redirection");
 		return -1;
 	}
 	*buff = new_buff;
@@ -652,7 +652,7 @@ static int redirect_socket_to_pty(RSocket *sock) {
 	pid_t child_pid = r_sys_fork ();
 
 	if (child_pid == -1) {
-		eprintf ("cannot fork\n");
+		R_LOGFI ("cannot fork\n");
 		close(fdm);
 		close(fds);
 		return -1;
@@ -748,7 +748,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 		set_limit (p->_maxstack, RLIMIT_STACK, p->_maxstack);
 #else
 	if (p->_docore || p->_maxfd || p->_maxproc || p->_maxstack)
-		eprintf ("Warning: setrlimits not supported for this platform\n");
+		R_LOGFI ("Warning: setrlimits not supported for this platform\n");
 #endif
 	if (p->_connect) {
 		char *q = strchr (p->_connect, ':');
@@ -756,12 +756,12 @@ R_API int r_run_config_env(RRunProfile *p) {
 			RSocket *fd = r_socket_new (0);
 			*q = 0;
 			if (!r_socket_connect_tcp (fd, p->_connect, q+1, 30)) {
-				eprintf ("Cannot connect\n");
+				R_LOGFI ("Cannot connect\n");
 				return 1;
 			}
 			if (p->_pty) {
 				if (redirect_socket_to_pty (fd) != 0) {
-					eprintf ("socket redirection failed\n");
+					R_LOGFI ("socket redirection failed\n");
 					r_socket_free (fd);
 					return 1;
 				}
@@ -769,7 +769,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 				redirect_socket_to_stdio (fd);
 			}
 		} else {
-			eprintf ("Invalid format for connect. missing ':'\n");
+			R_LOGFI ("Invalid format for connect. missing ':'\n");
 			return 1;
 		}
 	}
@@ -777,7 +777,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 		RSocket *child, *fd = r_socket_new (0);
 		bool is_child = false;
 		if (!r_socket_listen (fd, p->_listen, NULL)) {
-			eprintf ("rarun2: cannot listen\n");
+			R_LOGFI ("rarun2: cannot listen\n");
 			r_socket_free (fd);
 			return 1;
 		}
@@ -793,7 +793,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 					pid_t child_pid = r_sys_fork ();
 #endif
 					if (child_pid == -1) {
-						eprintf("rarun2: cannot fork\n");
+						R_LOGFI("rarun2: cannot fork\n");
 						r_socket_free (child);
 						r_socket_free (fd);
 						return 1;
@@ -805,10 +805,10 @@ R_API int r_run_config_env(RRunProfile *p) {
 
 				if (is_child) {
 					r_socket_close_fd (fd);
-					eprintf ("connected\n");
+					R_LOGFI ("connected\n");
 					if (p->_pty) {
 						if (redirect_socket_to_pty (child) != 0) {
-							eprintf ("socket redirection failed\n");
+							R_LOGFI ("socket redirection failed\n");
 							r_socket_free (child);
 							r_socket_free (fd);
 							return 1;
@@ -833,17 +833,17 @@ R_API int r_run_config_env(RRunProfile *p) {
 #if __UNIX__
 	if (p->_chroot) {
 		if (chdir (p->_chroot) == -1) {
-			eprintf ("Cannot chdir to chroot in %s\n", p->_chroot);
+			R_LOGFI ("Cannot chdir to chroot in %s\n", p->_chroot);
 			return 1;
 		} else {
 			if (chroot (".") == -1) {
-				eprintf ("Cannot chroot to %s\n", p->_chroot);
+				R_LOGFI ("Cannot chroot to %s\n", p->_chroot);
 				return 1;
 			} else {
 				(void) chdir ("/");
 				if (p->_chgdir) {
 					if (chdir (p->_chgdir) == -1) {
-						eprintf ("Cannot chdir after chroot to %s\n", p->_chgdir);
+						R_LOGFI ("Cannot chdir after chroot to %s\n", p->_chgdir);
 						return 1;
 					}
 				}
@@ -851,7 +851,7 @@ R_API int r_run_config_env(RRunProfile *p) {
 		}
 	} else if (p->_chgdir) {
 		if (chdir (p->_chgdir) == -1) {
-			eprintf ("Cannot chdir after chroot to %s\n", p->_chgdir);
+			R_LOGFI ("Cannot chdir after chroot to %s\n", p->_chgdir);
 			return 1;
 		}
 	}
@@ -904,19 +904,19 @@ R_API int r_run_config_env(RRunProfile *p) {
 			close (f2[1]);
 			free (inp);
 		} else {
-			eprintf ("Invalid input\n");
+			R_LOGFI ("Invalid input\n");
 		}
 	}
 #endif
 	if (p->_r2preload) {
 		if (p->_preload) {
-			eprintf ("WARNING: Only one library can be opened at a time\n");
+			R_LOGFI ("WARNING: Only one library can be opened at a time\n");
 		}
 		p->_preload = R2_LIBDIR"/libr2."R_LIB_EXT;
 	}
 	if (p->_libpath) {
 #if __WINDOWS__
-		eprintf ("rarun2: libpath unsupported for this platform\n");
+		R_LOGFI ("rarun2: libpath unsupported for this platform\n");
 #elif __HAIKU__
 		r_sys_setenv ("LIBRARY_PATH", p->_libpath);
 #elif __APPLE__
@@ -948,13 +948,13 @@ R_API int r_run_config_env(RRunProfile *p) {
 			}
 			sleep (p->_timeout);
 			if (!kill (mypid, 0)) {
-				eprintf ("\nrarun2: Interrupted by timeout\n");
+				R_LOGFI ("\nrarun2: Interrupted by timeout\n");
 			}
 			kill (mypid, use_signal);
 			exit (0);
 		}
 #else
-		eprintf ("timeout not supported for this platform\n");
+		R_LOGFI ("timeout not supported for this platform\n");
 #endif
 	}
 	return 0;
@@ -1000,13 +1000,13 @@ R_API int r_run_start(RRunProfile *p) {
 		case 0:
 			break;
 		case 22:
-			eprintf ("posix_spawnp: Invalid argument\n");
+			R_LOGFI ("posix_spawnp: Invalid argument\n");
 			break;
 		case 86:
-			eprintf ("posix_spawnp: Unsupported architecture\n");
+			R_LOGFI ("posix_spawnp: Unsupported architecture\n");
 			break;
 		default:
-			eprintf ("posix_spawnp: unknown error %d\n", ret);
+			R_LOGFI ("posix_spawnp: unknown error %d\n", ret);
 			perror ("posix_spawnp");
 			break;
 		}
@@ -1015,7 +1015,7 @@ R_API int r_run_start(RRunProfile *p) {
 #endif
 	if (p->_system) {
 		if (p->_pid) {
-			eprintf ("PID: Cannot determine pid with 'system' directive. Use 'program'.\n");
+			R_LOGFI ("PID: Cannot determine pid with 'system' directive. Use 'program'.\n");
 		}
 		exit (r_sys_cmd (p->_system));
 	}
@@ -1027,7 +1027,7 @@ R_API int r_run_start(RRunProfile *p) {
 				p->_program = progpath;
 			} else {
 				free (progpath);
-				eprintf ("rarun2: %s: file not found\n", p->_program);
+				R_LOGFI ("rarun2: %s: file not found\n", p->_program);
 				return 1;
 			}
 		}
@@ -1041,7 +1041,7 @@ R_API int r_run_start(RRunProfile *p) {
 				return 1;
 		}
 		if (p->_pid) {
-			eprintf ("PID: %d\n", getpid ());
+			R_LOGFI ("PID: %d\n", getpid ());
 		}
 		if (p->_pidfile) {
 			char pidstr[32];
@@ -1058,7 +1058,7 @@ R_API int r_run_start(RRunProfile *p) {
 				return 1;
 			}
 #else
-			eprintf ("nice not supported for this platform\n");
+			R_LOGFI ("nice not supported for this platform\n");
 #endif
 		}
 // TODO: must be HAVE_EXECVE
@@ -1068,17 +1068,17 @@ R_API int r_run_start(RRunProfile *p) {
 	}
 	if (p->_runlib) {
 		if (!p->_runlib_fcn) {
-			eprintf ("No function specified. Please set runlib.fcn\n");
+			R_LOGFI ("No function specified. Please set runlib.fcn\n");
 			return 1;
 		}
 		void *addr = r_lib_dl_open (p->_runlib);
 		if (!addr) {
-			eprintf ("Could not load the library '%s'\n", p->_runlib);
+			R_LOGFI ("Could not load the library '%s'\n", p->_runlib);
 			return 1;
 		}
 		void (*fcn)(void) = r_lib_dl_sym (addr, p->_runlib_fcn);
 		if (!fcn) {
-			eprintf ("Could not find the function '%s'\n", p->_runlib_fcn);
+			R_LOGFI ("Could not find the function '%s'\n", p->_runlib_fcn);
 			return 1;
 		}
 		switch (p->_argc) {
@@ -1122,7 +1122,7 @@ R_API int r_run_start(RRunProfile *p) {
 				p->_args[5], p->_args[6], p->_args[7], p->_args[8], p->_args[9], p->_args[10]);
 			break;
 		default:
-			eprintf ("Too many arguments.\n");
+			R_LOGFI ("Too many arguments.\n");
 			return 1;
 		}
 		r_lib_dl_close (addr);

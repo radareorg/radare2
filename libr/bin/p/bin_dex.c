@@ -65,7 +65,7 @@ static char *getstr(RBinDexObj *bin, int idx) {
 	}
 
 	if (len != r_utf8_strlen ((const ut8*)ptr)) {
-		// eprintf ("WARNING: Invalid string for index %d\n", idx);
+		// R_LOGFI ("WARNING: Invalid string for index %d\n", idx);
 		return NULL;
 	}
 	return ptr;
@@ -247,7 +247,7 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 		size += buff_len + 1;
 		char *newsig = realloc (signature, size);
 		if (!newsig) {
-			eprintf ("Cannot realloc to %d\n", size);
+			R_LOGFI ("Cannot realloc to %d\n", size);
 			break;
 		}
 		signature = newsig;
@@ -473,7 +473,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 			debug_locals[register_num].startAddress = address;
 			debug_locals[register_num].signature = NULL;
 			debug_locals[register_num].live = true;
-			//eprintf("DBG_START_LOCAL %x %x %x\n", register_num, name_idx, type_idx);
+			//R_LOGFI("DBG_START_LOCAL %x %x %x\n", register_num, name_idx, type_idx);
 			}
 			break;
 		case 0x4: //DBG_START_LOCAL_EXTENDED
@@ -812,8 +812,8 @@ static RBinInfo *info(RBinFile *bf) {
 		ut32 *fc = (ut32 *)(bf->buf->buf + 8);
 		ut32  cc = __adler32 (bf->buf->buf + 12, bf->buf->length - 12);
 		if (*fc != cc) {
-			eprintf ("# adler32 checksum doesn't match. Type this to fix it:\n");
-			eprintf ("wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8\n");
+			R_LOGFI ("# adler32 checksum doesn't match. Type this to fix it:\n");
+			R_LOGFI ("wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8\n");
 		}
 	}
 	ret->arch = strdup ("dalvik");
@@ -1100,7 +1100,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 	const ut8 *encoded_method_addr = NULL;
 
 	if (DM > 4096) {
-		eprintf ("This DEX is probably corrupted. Chopping DM from %d to 4KB\n", (int)DM);
+		R_LOGFI ("This DEX is probably corrupted. Chopping DM from %d to 4KB\n", (int)DM);
 		DM = 4096;
 	}
 	for (i = 0; i < DM; i++) {
@@ -1319,7 +1319,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 				//if (is_direct) {
 				sym->size = insns_size * 2;
 				//}
-				//eprintf("%s (0x%x-0x%x) size=%d\nregsz=%d\ninsns_size=%d\nouts_size=%d\ntries_size=%d\ninsns_size=%d\n", flag_name, sym->vaddr, sym->vaddr+sym->size, prolog_size, regsz, ins_size, outs_size, tries_size, insns_size);
+				//R_LOGFI("%s (0x%x-0x%x) size=%d\nregsz=%d\ninsns_size=%d\nouts_size=%d\ntries_size=%d\ninsns_size=%d\n", flag_name, sym->vaddr, sym->vaddr+sym->size, prolog_size, regsz, ins_size, outs_size, tries_size, insns_size);
 				r_list_append (bin->methods_list, sym);
 				r_list_append (cls->methods, sym);
 
@@ -1631,7 +1631,7 @@ static int dex_loadcode(RBinFile *bf, RBinDexObj *bin) {
 
 	// TODO: is this posible after R_MIN ??
 	if (bin->header.strings_size > bin->size) {
-		eprintf ("Invalid strings size\n");
+		R_LOGFI ("Invalid strings size\n");
 		return false;
 	}
 

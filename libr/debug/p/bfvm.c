@@ -148,21 +148,21 @@ R_API int bfvm_trace_op(BfvmCPU *c, ut8 op) {
 	ut8 g;
 	switch (op) {
 	case '\0':
-		eprintf (" ; trap (%02x)\n", op);
+		R_LOGFI (" ; trap (%02x)\n", op);
 	case '.':
 	case ',':
 	case '+':
 	case '-':
 	case '>':
 	case '<':
-		eprintf ("%c", op);
+		R_LOGFI ("%c", op);
 		break;
 	case '[':
 	case ']':
 		g = bfvm_get (c);
-		eprintf ("%c  ; [ptr] = %d\n", op, g);
+		R_LOGFI ("%c  ; [ptr] = %d\n", op, g);
 		if (g!= 0)
-			eprintf ("[");
+			R_LOGFI ("[");
 		break;
 	}
 	return 0;
@@ -228,16 +228,16 @@ R_API int bfvm_contsc(BfvmCPU *c) {
 	while (!c->breaked) {
 		bfvm_step (c, 0);
 		if (bfvm_in_trap (c)) {
-			eprintf ("Trap instruction at 0x%08"PFMT64x"\n", c->eip);
+			R_LOGFI ("Trap instruction at 0x%08"PFMT64x"\n", c->eip);
 			break;
 		}
 		switch (bfvm_op (c)) {
 		case ',':
-			eprintf("contsc: read from input trap\n");
+			R_LOGFI("contsc: read from input trap\n");
 			c->breaked = 1;
 			continue;
 		case '.':
-			eprintf ("contsc: print to screen trap\n");
+			R_LOGFI ("contsc: print to screen trap\n");
 			c->breaked = 1;
 			continue;
 		}
@@ -250,7 +250,7 @@ R_API int bfvm_cont(BfvmCPU *c, ut64 until) {
 	while (!c->breaked && c->eip != until) {
 		bfvm_step (c, 0);
 		if (bfvm_in_trap (c)) {
-			eprintf ("Trap instruction at 0x%"PFMT64x"\n", c->eip);
+			R_LOGFI ("Trap instruction at 0x%"PFMT64x"\n", c->eip);
 			break;
 		}
 	}
@@ -266,43 +266,43 @@ R_API int bfvm_trace(BfvmCPU *c, ut64 until) {
 
 R_API void bfvm_show_regs(BfvmCPU *c, int rad) {
 	if (rad) {
-		eprintf ("fs regs\n");
-		eprintf ("f eip @ 0x%08"PFMT64x"\n", (ut64)c->eip);
-		eprintf ("f esp @ 0x%08"PFMT64x"\n", (ut64)c->esp);
-		eprintf ("f ptr @ 0x%08"PFMT64x"\n", (ut64)c->ptr+c->base);
-		eprintf ("fs *\n");
+		R_LOGFI ("fs regs\n");
+		R_LOGFI ("f eip @ 0x%08"PFMT64x"\n", (ut64)c->eip);
+		R_LOGFI ("f esp @ 0x%08"PFMT64x"\n", (ut64)c->esp);
+		R_LOGFI ("f ptr @ 0x%08"PFMT64x"\n", (ut64)c->ptr+c->base);
+		R_LOGFI ("fs *\n");
 	} else {
 		ut8 ch = bfvm_get (c);
-		eprintf ("  eip  0x%08"PFMT64x"     esp  0x%08"PFMT64x"\n",
+		R_LOGFI ("  eip  0x%08"PFMT64x"     esp  0x%08"PFMT64x"\n",
 			(ut64)c->eip, (ut64)c->esp);
-		eprintf ("  ptr  0x%08x     [ptr]  %d = 0x%02x '%c'\n",
+		R_LOGFI ("  ptr  0x%08x     [ptr]  %d = 0x%02x '%c'\n",
 			(ut32)c->ptr, ch, ch, IS_PRINTABLE (ch)? ch:' ');
 	}
 }
 
 R_API void bfvm_maps(BfvmCPU *c, int rad) {
 	if (rad) {
-		eprintf ("fs sections\n");
-		eprintf ("e cmd.vprompt=px@screen\n");
-		eprintf ("f section_code @ 0x%08"PFMT64x"\n", (ut64)BFVM_CODE_ADDR);
-		eprintf ("f section_code_end @ 0x%08"PFMT64x"\n", (ut64)BFVM_CODE_ADDR+BFVM_CODE_SIZE);
-		eprintf ("f section_data @ 0x%08"PFMT64x"\n", (ut64)c->base);
-		eprintf ("f section_data_end @ 0x%08"PFMT64x"\n", (ut64)c->base+c->size);
-		eprintf ("f screen @ 0x%08"PFMT64x"\n", (ut64)c->screen);
-		eprintf ("f section_screen @ 0x%08"PFMT64x"\n", (ut64)c->screen);
-		eprintf ("f section_screen_end @ 0x%08"PFMT64x"\n", (ut64)c->screen+c->screen_size);
-		eprintf ("f input @ 0x%08"PFMT64x"\n", (ut64)c->input);
-		eprintf ("f section_input @ 0x%08"PFMT64x"\n", (ut64)c->input);
-		eprintf ("f section_input_end @ 0x%08"PFMT64x"\n", (ut64)c->input+c->input_size);
-		eprintf ("fs *\n");
+		R_LOGFI ("fs sections\n");
+		R_LOGFI ("e cmd.vprompt=px@screen\n");
+		R_LOGFI ("f section_code @ 0x%08"PFMT64x"\n", (ut64)BFVM_CODE_ADDR);
+		R_LOGFI ("f section_code_end @ 0x%08"PFMT64x"\n", (ut64)BFVM_CODE_ADDR+BFVM_CODE_SIZE);
+		R_LOGFI ("f section_data @ 0x%08"PFMT64x"\n", (ut64)c->base);
+		R_LOGFI ("f section_data_end @ 0x%08"PFMT64x"\n", (ut64)c->base+c->size);
+		R_LOGFI ("f screen @ 0x%08"PFMT64x"\n", (ut64)c->screen);
+		R_LOGFI ("f section_screen @ 0x%08"PFMT64x"\n", (ut64)c->screen);
+		R_LOGFI ("f section_screen_end @ 0x%08"PFMT64x"\n", (ut64)c->screen+c->screen_size);
+		R_LOGFI ("f input @ 0x%08"PFMT64x"\n", (ut64)c->input);
+		R_LOGFI ("f section_input @ 0x%08"PFMT64x"\n", (ut64)c->input);
+		R_LOGFI ("f section_input_end @ 0x%08"PFMT64x"\n", (ut64)c->input+c->input_size);
+		R_LOGFI ("fs *\n");
 	} else {
-		eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" rwxu 0x%08"PFMT64x" .code\n",
+		R_LOGFI ("0x%08"PFMT64x" - 0x%08"PFMT64x" rwxu 0x%08"PFMT64x" .code\n",
 			(ut64)0, (ut64)c->size, (ut64)c->size);
-		eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" rw-- 0x%08"PFMT64x" .data\n",
+		R_LOGFI ("0x%08"PFMT64x" - 0x%08"PFMT64x" rw-- 0x%08"PFMT64x" .data\n",
 			(ut64)c->base, (ut64)(c->base+c->size), (ut64)c->size);
-		eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" rw-- 0x%08"PFMT64x" .screen\n",
+		R_LOGFI ("0x%08"PFMT64x" - 0x%08"PFMT64x" rw-- 0x%08"PFMT64x" .screen\n",
 			(ut64)c->screen, (ut64)(c->screen+c->screen_size), (ut64)c->screen_size);
-		eprintf ("0x%08"PFMT64x" - 0x%08"PFMT64x" rw-- 0x%08"PFMT64x" .input\n",
+		R_LOGFI ("0x%08"PFMT64x" - 0x%08"PFMT64x" rw-- 0x%08"PFMT64x" .input\n",
 			(ut64)c->input, (ut64)(c->input+c->input_size), (ut64)c->input_size);
 	}
 }

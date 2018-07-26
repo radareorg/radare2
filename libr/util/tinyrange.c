@@ -98,9 +98,9 @@ main() {
 	r_tinyrange_add (bbr, 100, 200);
 	r_tinyrange_add (bbr, 300, 400);
 	r_tinyrange_add (bbr, 400, 500);
-	eprintf ("%d\n", r_tinyrange_in (bbr, 100));
-	eprintf ("%d\n", r_tinyrange_in (bbr, 250));
-	eprintf ("%d\n", r_tinyrange_in (bbr, 450));
+	R_LOGFI ("%d\n", r_tinyrange_in (bbr, 100));
+	R_LOGFI ("%d\n", r_tinyrange_in (bbr, 250));
+	R_LOGFI ("%d\n", r_tinyrange_in (bbr, 450));
 //	r_tinyrange_free (bbr);
 }
 #endif

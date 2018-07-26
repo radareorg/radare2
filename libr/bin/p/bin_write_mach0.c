@@ -5,7 +5,7 @@
 #include "mach0/mach0.h"
 
 static bool MACH0_(write_addlib)(struct MACH0_(obj_t) *obj, const char *lib) {
-	eprintf ("TODO\n");
+	R_LOGFI ("TODO\n");
 	return false;
 }
 

@@ -163,7 +163,7 @@ static void show_help(RCore *core) {
 static void showFormat(RCore *core, const char *name, int mode) {
 	const char *isenum = sdb_const_get (core->anal->sdb_types, name, 0);
 	if (isenum && !strcmp (isenum, "enum")) {
-		eprintf ("IS ENUM\n");
+		R_LOGFI ("IS ENUM\n");
 	} else {
 		char *fmt = r_type_format (core->anal->sdb_types, name);
 		if (fmt) {
@@ -175,7 +175,7 @@ static void showFormat(RCore *core, const char *name, int mode) {
 			}
 			free (fmt);
 		} else {
-			eprintf ("Cannot find '%s' type\n", name);
+			R_LOGFI ("Cannot find '%s' type\n", name);
 		}
 	}
 }
@@ -289,7 +289,7 @@ static int linklist_readable (void *p, const char *k, const char *v) {
 	if (!strncmp (k, "link.", strlen ("link."))) {
 		char *fmt = r_type_format (core->anal->sdb_types, v);
 		if (!fmt) {
-			eprintf("Cant fint type %s", v);
+			R_LOGFI("Cant fint type %s", v);
 			return 1;
 		}
 		r_cons_printf ("(%s)\n", v);
@@ -685,7 +685,7 @@ static int cmd_type(void *data, const char *input) {
 			*member_name++ = 0;
 		}
 		if (name && (r_type_kind (TDB, name) != R_TYPE_ENUM)) {
-			eprintf ("%s is not an enum\n", name);
+			R_LOGFI ("%s is not an enum\n", name);
 			break;
 		}
 		switch (input[1]) {
@@ -728,7 +728,7 @@ static int cmd_type(void *data, const char *input) {
 		if (res) {
 			r_cons_println (res);
 		} else if (member_name) {
-			eprintf ("Invalid enum member\n");
+			R_LOGFI ("Invalid enum member\n");
 		}
 	} break;
 	case ' ':
@@ -783,7 +783,7 @@ static int cmd_type(void *data, const char *input) {
 				}
 			}
 		} else {
-			eprintf ("Sandbox: system call disabled\n");
+			R_LOGFI ("Sandbox: system call disabled\n");
 		}
 		break;
 	// td - parse string with cparse engine and load types from it
@@ -804,7 +804,7 @@ static int cmd_type(void *data, const char *input) {
 				free (out);
 			}
 		} else {
-			eprintf ("Invalid use of td. See td? for help\n");
+			R_LOGFI ("Invalid use of td. See td? for help\n");
 		}
 		break;
 	// ta - link immediate type offset to an address
@@ -835,11 +835,11 @@ static int cmd_type(void *data, const char *input) {
 				if (fcn) {
 					link_struct_offset (core, fcn);
 				} else {
-					eprintf ("cannot find function at %08"PFMT64x"\n", addr);
+					R_LOGFI ("cannot find function at %08"PFMT64x"\n", addr);
 				}
 			} else {
 				if (r_list_length (core->anal->fcns) == 0) {
-					eprintf ("couldn't find any functions\n");
+					R_LOGFI ("couldn't find any functions\n");
 					break;
 				}
 				r_list_foreach (core->anal->fcns, it, fcn) {
@@ -864,7 +864,7 @@ static int cmd_type(void *data, const char *input) {
 				if (ptr && *ptr) {
 					addr = r_num_math (core->num, ptr);
 				} else {
-					eprintf ("address is unvalid\n");
+					R_LOGFI ("address is unvalid\n");
 					free (type);
 					break;
 				}
@@ -904,14 +904,14 @@ static int cmd_type(void *data, const char *input) {
 					char *otype = NULL;
 					r_list_foreach (otypes, iter, otype) {
 						if (!strcmp(type, otype)) {
-							//eprintf ("Adding type offset %s\n", type);
+							//R_LOGFI ("Adding type offset %s\n", type);
 							r_type_link_offset (TDB, type, addr);
 							r_anal_hint_set_offset (core->anal, addr, otype);
 							break;
 						}
 					}
 					if (!otype) {
-						eprintf ("wrong type for opcode offset\n");
+						R_LOGFI ("wrong type for opcode offset\n");
 					}
 				}
 			}
@@ -941,7 +941,7 @@ static int cmd_type(void *data, const char *input) {
 				if (ptr && *ptr) {
 					addr = r_num_math (core->num, ptr);
 				} else {
-					eprintf ("address is unvalid\n");
+					R_LOGFI ("address is unvalid\n");
 					free (type);
 					break;
 				}
@@ -958,7 +958,7 @@ static int cmd_type(void *data, const char *input) {
 				}
 				free (tmp);
 			} else {
-				eprintf ("unknown type %s\n", type);
+				R_LOGFI ("unknown type %s\n", type);
 			}
 			free (type);
 			}
@@ -1007,7 +1007,7 @@ static int cmd_type(void *data, const char *input) {
 			const char *arg = nargs > 1? r_str_word_get0 (ptr, 1): NULL;
 			char *fmt = r_type_format (TDB, type);
 			if (!fmt) {
-				eprintf ("Cannot find '%s' type\n", type);
+				R_LOGFI ("Cannot find '%s' type\n", type);
 				break;
 			}
 			if (input[1] == 'x' && arg) {
@@ -1024,7 +1024,7 @@ static int cmd_type(void *data, const char *input) {
 			}
 			free (fmt);
 		} else {
-			eprintf ("see t?\n");
+			R_LOGFI ("see t?\n");
 			break;
 		}
 		free (tmp);
@@ -1057,7 +1057,7 @@ static int cmd_type(void *data, const char *input) {
 					ls_free (l);
 					free (tmp);
 				}
-			} else eprintf ("Invalid use of t- . See t-? for help.\n");
+			} else R_LOGFI ("Invalid use of t- . See t-? for help.\n");
 		}
 		break;
 	// tv - get/set type value linked to a given address
@@ -1106,7 +1106,7 @@ static int cmd_type(void *data, const char *input) {
 			if (res)
 				r_cons_println (res);
 		} else {
-			eprintf ("This is not an typedef\n");
+			R_LOGFI ("This is not an typedef\n");
 		}
 		free (s);
 	} break;

@@ -24,7 +24,7 @@ int procfs_pid_slurp(int pid, char *prop, char *out, size_t len) {
 	} else if (nr < 0) {
 		r_sys_perror ("read");
 	} else {
-		eprintf ("proc_pid_slurp: got EOF reading from \"%s\"\n", filename);
+		R_LOGFI ("proc_pid_slurp: got EOF reading from \"%s\"\n", filename);
 	}
 	close (fd);
 	free (filename);

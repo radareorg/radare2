@@ -36,14 +36,14 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 	if (core->search->align) {
 		int mod = addr % core->search->align;
 		if (mod) {
-			eprintf ("Unaligned search at %d\n", mod);
+			R_LOGFI ("Unaligned search at %d\n", mod);
 			ret = mod;
 			goto seek_exit;
 		}
 	}
 	if (((addr&7)==0) && ((addr&(7<<8))==0))
 		if (!json) {
-			eprintf ("0x%08"PFMT64x"\r", addr);
+			R_LOGFI ("0x%08"PFMT64x"\r", addr);
 		}
 	if (file) {
 		if (*file == ' ') file++;
@@ -64,7 +64,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 			free (ofile);
 			ofile = strdup (file);
 			if (r_magic_load (ck, file) == -1) {
-				eprintf ("failed r_magic_load (\"%s\") %s\n", file, r_magic_error (ck));
+				R_LOGFI ("failed r_magic_load (\"%s\") %s\n", file, r_magic_error (ck));
 				ck = NULL;
 				ret = -1;
 				goto seek_exit;
@@ -73,7 +73,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 			const char *magicpath = r_config_get (core->config, "dir.magic");
 			if (r_magic_load (ck, magicpath) == -1) {
 				ck = NULL;
-				eprintf ("failed r_magic_load (dir.magic) %s\n", r_magic_error (ck));
+				R_LOGFI ("failed r_magic_load (dir.magic) %s\n", r_magic_error (ck));
 				ret = -1;
 				goto seek_exit;
 			}
@@ -82,7 +82,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 //repeat:
 	//if (v) r_cons_printf ("  %d # pm %s @ 0x%"PFMT64x"\n", depth, file? file: "", addr);
 	if (delta + 2 > core->blocksize) {
-		eprintf ("EOB\n");
+		R_LOGFI ("EOB\n");
 		ret = -1;
 		goto seek_exit;
 	}
@@ -133,7 +133,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 					addr + adelta, magicdepth-depth, p);
 		}
 		r_cons_clear_line (1);
-		//eprintf ("0x%08"PFMT64x" 0x%08"PFMT64x" %d %s\n", addr+adelta, addr+adelta, magicdepth-depth, p);
+		//R_LOGFI ("0x%08"PFMT64x" 0x%08"PFMT64x" %d %s\n", addr+adelta, addr+adelta, magicdepth-depth, p);
 		// walking children
 		for (q = p; *q; q++) {
 			switch (*q) {

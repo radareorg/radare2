@@ -27,7 +27,7 @@ static int debug_os_read_at(RIOW32Dbg *dbg, void *buf, int len, ut64 addr) {
 	SIZE_T ret;
 	ReadProcessMemory (dbg->pi.hProcess, (void*)(size_t)addr, buf, len, &ret);
 //	if (len != ret)
-//		eprintf ("Cannot read 0x%08llx\n", addr);
+//		R_LOGFI ("Cannot read 0x%08llx\n", addr);
 	return len; // XXX: Handle read correctly and not break r2 shell
 	//return (int)ret; //(int)len; //ret;
 }
@@ -93,7 +93,7 @@ static int __w32_first_thread(int pid) {
 		}
 	} while (Thread32Next (th, &te32));
 err_first_th:
-	eprintf ("Could not find an active thread for pid %d\n", pid);
+	R_LOGFI ("Could not find an active thread for pid %d\n", pid);
 	CloseHandle (th);
 	return pid;
 }
@@ -119,7 +119,7 @@ static int __open_proc (RIOW32Dbg *dbg, bool attach) {
 			goto att_exit;
 		}
 		if (de.dwDebugEventCode != CREATE_PROCESS_DEBUG_EVENT) {
-			eprintf ("exception code 0x%04x\n", (ut32)de.dwDebugEventCode);
+			R_LOGFI ("exception code 0x%04x\n", (ut32)de.dwDebugEventCode);
 			goto att_exit;
 		}
 		dbg->winbase = (ut64)de.u.CreateProcessInfo.lpBaseOfImage;
@@ -188,14 +188,14 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 				if (iop->pi.hProcess) {
 					iop->pid = iop->tid = pid;
 				} else {
-					eprintf ("Cannot attach to %d\n", pid);
+					R_LOGFI ("Cannot attach to %d\n", pid);
 				}
 			}
 			/* TODO: Implement child attach */
 		}
 		return r_str_newf ("%d", iop->pid);
 	} else {
-		eprintf ("Try: '=!pid'\n");
+		R_LOGFI ("Try: '=!pid'\n");
 	}
 	return NULL;
 }

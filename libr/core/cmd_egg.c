@@ -56,11 +56,11 @@ static int compileShellcode(REgg *egg, const char *input){
 	int i = 0;
 	RBuffer *b;
 	if (!r_egg_shellcode (egg, input)) {
-		eprintf ("Unknown shellcode '%s'\n", input);
+		R_LOGFI ("Unknown shellcode '%s'\n", input);
 		return 1;
 	}
 	if (!r_egg_assemble (egg)) {
-		eprintf ("r_egg_assemble : invalid assembly\n");
+		R_LOGFI ("r_egg_assemble : invalid assembly\n");
 		r_egg_reset (egg);
 		return 1;
 	}
@@ -68,7 +68,7 @@ static int compileShellcode(REgg *egg, const char *input){
 		egg->bin = r_buf_new ();
 	}
 	if (!(b = r_egg_get_bin (egg))) {
-		eprintf ("r_egg_get_bin: invalid egg :(\n");
+		R_LOGFI ("r_egg_get_bin: invalid egg :(\n");
 		r_egg_reset (egg);
 		return 1;
 	}
@@ -88,20 +88,20 @@ static int cmd_egg_compile(REgg *egg) {
 	char *p = r_egg_option_get (egg, "egg.shellcode");
 	if (p && *p) {
 		if (!r_egg_shellcode (egg, p)) {
-			eprintf ("Unknown shellcode '%s'\n", p);
+			R_LOGFI ("Unknown shellcode '%s'\n", p);
 			free (p);
 			return false;
 		}
 		free (p);
 	} else {
-		eprintf ("Setup a shellcode before (gi command)\n");
+		R_LOGFI ("Setup a shellcode before (gi command)\n");
 		free (p);
 		return false;
 	}
 
 	r_egg_compile (egg);
 	if (!r_egg_assemble (egg)) {
-		eprintf ("r_egg_assemble: invalid assembly\n");
+		R_LOGFI ("r_egg_assemble: invalid assembly\n");
 		return false;
 	}
 	p = r_egg_option_get (egg, "egg.padding");
@@ -158,22 +158,22 @@ static int cmd_egg(void *data, const char *input) {
 			}
 			egg->lang.nsyscalls = 0;
 		} else {
-			eprintf ("Usage: gs [syscallname] [parameters]\n");
+			R_LOGFI ("Usage: gs [syscallname] [parameters]\n");
 		}
 		break;
 	case ' ': // "g "
 		if (input[1] && input[2]) {
 			r_egg_load (egg, input + 2, 0);
 			if (!cmd_egg_compile (egg)) {
-				eprintf ("Cannot compile '%s'\n", input + 2);
+				R_LOGFI ("Cannot compile '%s'\n", input + 2);
 			}
 		} else {
-			eprintf ("wat\n");
+			R_LOGFI ("wat\n");
 		}
 		break;
 	case '\0': // "g"
 		if (!cmd_egg_compile (egg)) {
-			eprintf ("Cannot compile\n");
+			R_LOGFI ("Cannot compile\n");
 		}
 		break;
 	case 'p': // "gp"
@@ -182,7 +182,7 @@ static int cmd_egg(void *data, const char *input) {
 				r_egg_option_set (egg, "egg.padding", input + 2);
 			}
 		} else {
-			eprintf ("Usage: gp [padding]\n");	
+			R_LOGFI ("Usage: gp [padding]\n");	
 		}
 		break;
 	case 'e': // "ge"
@@ -200,11 +200,11 @@ static int cmd_egg(void *data, const char *input) {
 				r_egg_option_set (egg, "key", p + 1);
 				r_egg_option_set (egg, "egg.encoder", oa);
 			} else {
-				eprintf ("Usage: ge [encoder] [key]\n");	
+				R_LOGFI ("Usage: ge [encoder] [key]\n");	
 			}
 			free (oa);
 		} else {
-			eprintf ("Usage: ge [encoder] [key]\n");
+			R_LOGFI ("Usage: ge [encoder] [key]\n");
 		}
 		break;
 	case 'i': // "gi" 
@@ -212,10 +212,10 @@ static int cmd_egg(void *data, const char *input) {
 			if (input[0] && input[2]) {
 				r_egg_option_set (egg, "egg.shellcode", input + 2);
 			} else {
-				eprintf ("Usage: gi [shellcode-type]\n");
+				R_LOGFI ("Usage: gi [shellcode-type]\n");
 			}
 		} else {
-			eprintf ("Usage: gi [shellcode-type]\n");
+			R_LOGFI ("Usage: gi [shellcode-type]\n");
 		}
 		break;
 	case 'l': // "gl"
@@ -281,10 +281,10 @@ static int cmd_egg(void *data, const char *input) {
 			break;
 		case '\0':
 			// r_pair_list (egg->pair,NULL);
-			eprintf ("TODO: list options\n");
+			R_LOGFI ("TODO: list options\n");
 			break;
 		default:
-			eprintf ("Usage: gc [k=v]\n");
+			R_LOGFI ("Usage: gc [k=v]\n");
 			break;
 		}
 		break;

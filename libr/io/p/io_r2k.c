@@ -16,7 +16,7 @@ struct io_r2k_linux r2k_struct;		//TODO: move this into desc->data
 
 int r2k__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 #if __WINDOWS__
-	//eprintf("writing to: 0x%"PFMT64x" len: %x\n",io->off, count);
+	//R_LOGFI("writing to: 0x%"PFMT64x" len: %x\n",io->off, count);
 	return WriteKernelMemory (io->off, buf, count);
 #elif defined (__linux__) && !defined (__GNU__)
 	switch (r2k_struct.beid) {
@@ -70,7 +70,7 @@ static int r2k__close(RIODesc *fd) {
 		close ((int)(size_t)fd->data);
 	}
 #else
-	eprintf ("TODO: r2k not implemented for this plataform.\n");
+	R_LOGFI ("TODO: r2k not implemented for this plataform.\n");
 #endif
 	return 0;
 }
@@ -94,7 +94,7 @@ static char *r2k__system(RIO *io, RIODesc *fd, const char *cmd) {
 		(void)run_ioctl_command (io, fd, cmd);
 		return NULL;
 #else
-		eprintf ("Try: '=!mod'\n    '.=!mod'\n");
+		R_LOGFI ("Try: '=!mod'\n    '.=!mod'\n");
 #endif
 	}
 	return NULL;
@@ -107,7 +107,7 @@ static RIODesc *r2k__open(RIO *io, const char *pathname, int rw, int mode) {
 #if __WINDOWS__
 		RIOW32 *w32 = R_NEW0 (RIOW32);
 		if (Init (&pathname[6]) == FALSE) {
-			eprintf ("r2k__open: Error cant init driver: %s\n", &pathname[6]);
+			R_LOGFI ("r2k__open: Error cant init driver: %s\n", &pathname[6]);
 			free (w32);
 			return NULL;
 		}

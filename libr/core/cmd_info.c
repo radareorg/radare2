@@ -292,7 +292,7 @@ static void cmd_info_bin(RCore *core, int va, int mode) {
 			r_cons_strcat ("}\n");
 		}
 	} else {
-		eprintf ("No file selected\n");
+		R_LOGFI ("No file selected\n");
 	}
 }
 
@@ -370,7 +370,7 @@ static int cmd_info(void *data, const char *input) {
 		{
 			RBinObject *o = r_bin_cur_object (core->bin);
 			db = o? o->kv: NULL;
-			//:eprintf ("db = %p\n", db);
+			//:R_LOGFI ("db = %p\n", db);
 			switch (input[1]) {
 			case 'v':
 				if (db) {
@@ -405,8 +405,8 @@ static int cmd_info(void *data, const char *input) {
 				break;
 			case '?':
 			default:
-				eprintf ("Usage: ik [sdb-query]\n");
-				eprintf ("Usage: ik*    # load all header information\n");
+				R_LOGFI ("Usage: ik [sdb-query]\n");
+				R_LOGFI ("Usage: ik*    # load all header information\n");
 			}
 			goto done;
 		}
@@ -414,7 +414,7 @@ static int cmd_info(void *data, const char *input) {
 		case 'o':
 		{
 			if (!desc) {
-				eprintf ("Core file not open\n");
+				R_LOGFI ("Core file not open\n");
 				return 0;
 			}
 			const char *fn = input[1] == ' '? input + 2: desc->name;
@@ -573,7 +573,7 @@ static int cmd_info(void *data, const char *input) {
 					pdbopts.symbol_store_path = (char*) r_config_get (core->config, "pdb.symstore");
 					int r = r_bin_pdb_download (core, 0, NULL, &pdbopts);
 					if (r > 0) {
-						eprintf ("Error while downloading pdb file");
+						R_LOGFI ("Error while downloading pdb file");
 					}
 					input++;
 					break;
@@ -589,7 +589,7 @@ static int cmd_info(void *data, const char *input) {
 					} else {
 						/* Autodetect local file */
 						if (!info || !info->debug_file_name) {
-							eprintf ("Cannot get file's debug information");
+							R_LOGFI ("Cannot get file's debug information");
 							break;
 						}
 						// Check raw path for debug filename
@@ -626,7 +626,7 @@ static int cmd_info(void *data, const char *input) {
 					}
 
 					if (!file_found) {
-						eprintf ("File '%s' not found in file directory or symbol store", info->debug_file_name);
+						R_LOGFI ("File '%s' not found in file directory or symbol store", info->debug_file_name);
 						free (filename);
 						break;
 					}
@@ -634,7 +634,7 @@ static int cmd_info(void *data, const char *input) {
 					if (core->bin->cur && core->bin->cur->o) {
 						baddr = core->bin->cur->o->baddr;
 					} else {
-						eprintf ("Warning: Cannot find base address, flags will probably be misplaced\n");
+						R_LOGFI ("Warning: Cannot find base address, flags will probably be misplaced\n");
 					}
 					r_core_pdb_info (core, filename, baddr, mode);
 					free (filename);
@@ -743,7 +743,7 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		case 'c': // for r2 `ic`
 			if (input[1] == '?') {
-				eprintf ("Usage: ic[ljqc*] [class-index or name]\n");
+				R_LOGFI ("Usage: ic[ljqc*] [class-index or name]\n");
 			} else if (input[1] == ' ' || input[1] == 'q' || input[1] == 'j' || input[1] == 'l' || input[1] == 'c') {
 				RBinClass *cls;
 				RBinSymbol *sym;
@@ -845,7 +845,7 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		case 'D':
 			if (input[1] != ' ' || !demangle (core, input + 2)) {
-				eprintf ("|Usage: iD lang symbolname\n");
+				R_LOGFI ("|Usage: iD lang symbolname\n");
 			}
 			return 0;
 		case 'a':

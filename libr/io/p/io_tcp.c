@@ -83,7 +83,7 @@ static ut8 *tcpme (const char *pathname, int *code, int *len) {
 		/* listen and wait for connection */
 		RSocket *sl = r_socket_new (false);
 		if (!r_socket_listen (sl, pathname + 1, NULL)) {
-			eprintf ("Cannot listen\n");
+			R_LOGFI ("Cannot listen\n");
 			r_socket_free (sl);
 			return NULL;
 		}
@@ -119,7 +119,7 @@ static ut8 *tcpme (const char *pathname, int *code, int *len) {
 			}
 			r_socket_free (s);
 		} else {
-			eprintf ("Missing port.\n");
+			R_LOGFI ("Missing port.\n");
 		}
 		free (host);
 	}
@@ -152,7 +152,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 				return r_io_desc_new (io, &r_io_plugin_tcp,
 					pathname, rw, mode, mal);
 			}
-			eprintf ("Cannot allocate (%s) %d byte(s)\n", pathname + 9, mal->size);
+			R_LOGFI ("Cannot allocate (%s) %d byte(s)\n", pathname + 9, mal->size);
 			free (mal);
 		}
 		free (out);

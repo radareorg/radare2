@@ -269,7 +269,7 @@ R_API RDebugMap *r_debug_map_new(char *name, ut64 addr, ut64 addr_end, int perm,
 	RDebugMap *map;
 	/* range could be 0k on OpenBSD, it's a honeypot */
 	if (!name || addr > addr_end) {
-		eprintf ("r_debug_map_new: error (\
+		R_LOGFI ("r_debug_map_new: error (\
 			%"PFMT64x">%"PFMT64x")\n", addr, addr_end);
 		return NULL;
 	}

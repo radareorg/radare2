@@ -309,7 +309,7 @@ static RList *sections(RBinFile *bf) {
 			}
 		}
 	}
-	eprintf("[INFO] Parsing data sections for large dumps can take time, "
+	R_LOGFI("[INFO] Parsing data sections for large dumps can take time, "
 		"please be patient (but if strings ain't your thing try with "
 		"-z)!\n");
 	return ret;

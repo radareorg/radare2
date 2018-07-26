@@ -382,7 +382,7 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 	}
 	ret = r_num_calc (num, str, &err);
 	if (err) {
-		eprintf ("r_num_calc error: (%s) in (%s)\n", err, str);
+		R_LOGFI ("r_num_calc error: (%s) in (%s)\n", err, str);
 	} else if (num) {
 		num->value = ret;
 	}
@@ -428,7 +428,7 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 					p = p2+1;
 					continue;
 				}
-				eprintf ("WTF!\n");
+				R_LOGFI ("WTF!\n");
 			} else {
 				ret = r_num_op (op, ret, r_num_math_internal (num, p));
 			}
@@ -657,7 +657,7 @@ R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 		if (isHexDigit (hex[0])) {
 			n = r_num_math (num, p);
 		} else {
-			eprintf ("Invalid argument\n");
+			R_LOGFI ("Invalid argument\n");
 			return addr;
 		}
 		free (p);
@@ -682,7 +682,7 @@ static ut64 r_num_tailff(RNum *num, const char *hex) {
                 if (isHexDigit (hex[0])) {
                         n = r_num_math (num, p);
                 } else {
-                        eprintf ("Invalid argument\n");
+                        R_LOGFI ("Invalid argument\n");
 			free (p);
                         return UT64_MAX;
                 }

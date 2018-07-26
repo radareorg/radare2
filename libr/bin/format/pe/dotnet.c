@@ -40,17 +40,17 @@ typedef struct _IMAGE_DATA_DIRECTORY {
 
 static void set_string(const char *k, const char *f, const char *v, ...) {
 	// TODO
-	eprintf ("-> %s = %s\n", k, v);
+	R_LOGFI ("-> %s = %s\n", k, v);
 }
 
 static void set_integer(int a, void *b, const char *name, ...) {
 	// TODO
-	eprintf ("-> %s = %d\n", name, a);
+	R_LOGFI ("-> %s = %d\n", name, a);
 }
 
 static void set_sized_string(char *a, int len, void *p, const char *fmt, ...) {
 	// TODO
-	eprintf ("-> %s = %d (%s)\n", fmt, len, (char *)a);
+	R_LOGFI ("-> %s = %d (%s)\n", fmt, len, (char *)a);
 }
 
 static ut64 pe_rva_to_offset(void *pe, ut64 addr) {

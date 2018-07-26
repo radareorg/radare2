@@ -87,7 +87,7 @@ static char *find_include(const char *prefix, const char *file) {
 
 	if (env) {
 		char *str, *ptr = strchr (env, ':');
-		// eprintf ("MUST FIND IN PATH (%s)\n", env);
+		// R_LOGFI ("MUST FIND IN PATH (%s)\n", env);
 		str = env;
 		while (str) {
 			if (ptr) {
@@ -97,7 +97,7 @@ static char *find_include(const char *prefix, const char *file) {
 			ret = r_str_appendf (NULL, "%s/%s", pfx, file);
 			{
 				char *filepath = r_str_appendf (NULL, "%s/%s/%s", str, pfx, file);
-				// eprintf ("try (%s)\n", filepath);
+				// R_LOGFI ("try (%s)\n", filepath);
 				if (r_file_exists (filepath)) {
 					free (env);
 					free (pfx);
@@ -209,7 +209,7 @@ static char *get_end_frame_label(REgg *egg) {
 	static char label[128];
 	snprintf (label, sizeof (label) - 1, FRAME_END_FMT,
 		egg->lang.nfunctions, egg->lang.nbrackets, context - 1);
-// eprintf ("--> (egg->lang.endframe: %d %d %d)\n", egg->lang.nfunctions, egg->lang.nbrackets, context);
+// R_LOGFI ("--> (egg->lang.endframe: %d %d %d)\n", egg->lang.nfunctions, egg->lang.nbrackets, context);
 	// snprintf (label, sizeof (label)-1, "frame_end_%d_%d", egg->lang.nfunctions, egg->lang.nbrackets);
 	return label;
 }
@@ -375,12 +375,12 @@ static void rcc_element(REgg *egg, char *str) {
 		switch (egg->lang.mode) {
 		case ALIAS:
 			if (!egg->lang.dstvar) {
-				eprintf ("does not set name or content for alias\n");
+				R_LOGFI ("does not set name or content for alias\n");
 				break;
 			}
 			e->equ (egg, egg->lang.dstvar, str);
 			if (egg->lang.nalias > 255) {
-				eprintf ("global-buffer-overflow in aliases\n");
+				R_LOGFI ("global-buffer-overflow in aliases\n");
 				break;
 			}
 			for (i = 0; i < egg->lang.nalias; i++) {
@@ -399,11 +399,11 @@ static void rcc_element(REgg *egg, char *str) {
 			break;
 		case SYSCALL:
 			if (!egg->lang.dstvar) {
-				eprintf ("does not set name or arg for syscall\n");
+				R_LOGFI ("does not set name or arg for syscall\n");
 				break;
 			}
 			if (egg->lang.nsyscalls > 255) {
-				eprintf ("global-buffer-overflow in syscalls\n");
+				R_LOGFI ("global-buffer-overflow in syscalls\n");
 				break;
 			}
 			// XXX the mem for name and arg are not freed - MEMLEAK
@@ -426,11 +426,11 @@ static void rcc_element(REgg *egg, char *str) {
 					if ((p = strchr (ptr, '"'))) {
 						*p = '\x00';
 					} else {
-						eprintf ("loss back quote in include directory\n");
+						R_LOGFI ("loss back quote in include directory\n");
 					}
 					egg->lang.includedir = strdup (ptr);
 				} else {
-					eprintf ("wrong include syntax\n");
+					R_LOGFI ("wrong include syntax\n");
 					// for must use string to symbolize directory
 					egg->lang.includedir = NULL;
 				}
@@ -488,7 +488,7 @@ static void rcc_pushstr(REgg *egg, char *str, int filter) {
 				case 'x':
 					ch = r_hex_pair2bin (str + i + 2);
 					if (ch == -1) {
-						eprintf ("%s:%d Error string format\n",
+						R_LOGFI ("%s:%d Error string format\n",
 							egg->lang.file, egg->lang.line);
 					}
 					str[i] = (char) ch;
@@ -572,9 +572,9 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 							return strdup (egg->lang.syscalls[i].arg);
 						}
 					}
-					eprintf ("Unknown arg for syscall '%s'\n", egg->lang.callname);
+					R_LOGFI ("Unknown arg for syscall '%s'\n", egg->lang.callname);
 				} else {
-					eprintf ("NO CALLNAME '%s'\n", egg->lang.callname);
+					R_LOGFI ("NO CALLNAME '%s'\n", egg->lang.callname);
 				}
 			}
 		} else if (!strncmp (str + 1, "reg", 3)) {
@@ -586,7 +586,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 			}
 		} else {
 			out = str;	/* TODO: show error, invalid var name? */
-			eprintf ("Something is really wrong\n");
+			R_LOGFI ("Something is really wrong\n");
 		}
 		ret = strdup (out);
 		free (oldstr);
@@ -596,7 +596,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 		str++;
 		len = strlen (str) - 1;
 		if (!egg->lang.stackfixed || egg->lang.stackfixed < len) {
-			eprintf ("WARNING: No room in the static stackframe! (%d must be %d)\n",
+			R_LOGFI ("WARNING: No room in the static stackframe! (%d must be %d)\n",
 				egg->lang.stackfixed, len);
 		}
 		str[len] = '\0';
@@ -636,7 +636,7 @@ static void rcc_fun(REgg *egg, const char *str) {
 			*ptr++ = '\0';
 			egg->lang.mode = NORMAL;
 			if (strstr (ptr, "env")) {
-				// eprintf ("SETENV (%s)\n", str);
+				// R_LOGFI ("SETENV (%s)\n", str);
 				free (egg->lang.setenviron);
 				egg->lang.setenviron = strdup (skipspaces (str));
 				egg->lang.slurp = 0;
@@ -698,7 +698,7 @@ static void rcc_fun(REgg *egg, const char *str) {
 			// e->jmp (egg, egg->lang.ctxpush[context], 0);
 			if (CTX > 0) {
 				// WTF?
-				eprintf ("LABEL %d\n", CTX);
+				R_LOGFI ("LABEL %d\n", CTX);
 				r_egg_printf (egg, "\n%s:\n", str);
 			} else {
 				if (!strcmp (str, "goto")) {
@@ -715,11 +715,11 @@ static void rcc_fun(REgg *egg, const char *str) {
 #if 0
 static void shownested() {
 	int i;
-	eprintf ("[[[NESTED %d]]] ", context);
+	R_LOGFI ("[[[NESTED %d]]] ", context);
 	for (i = 0; egg->lang.nested[i]; i++) {
-		eprintf ("%s ", egg->lang.nested[i]);
+		R_LOGFI ("%s ", egg->lang.nested[i]);
 	}
-	eprintf ("\n");
+	R_LOGFI ("\n");
 }
 #endif
 
@@ -757,7 +757,7 @@ static void rcc_context(REgg *egg, int delta) {
 	}
 	if (egg->lang.callname && CTX > 0) {	// && delta>0) {
 		// set_nested (callname);
-// eprintf (" - - - - - - -  set nested d=%d c=%d (%s)\n", delta, context-1, callname);
+// R_LOGFI (" - - - - - - -  set nested d=%d c=%d (%s)\n", delta, context-1, callname);
 // shownested();
 	}
 	CTX += delta;
@@ -773,18 +773,18 @@ static void rcc_context(REgg *egg, int delta) {
 		egg->lang.mode = NORMAL;
 	} else {
 		/* conditional block */
-// eprintf ("Callname is (%s)\n", callname);
+// R_LOGFI ("Callname is (%s)\n", callname);
 		const char *elm = skipspaces (egg->lang.elem);
 		// const char *cn = callname;
 		// seems cn is useless in nowdays content
 // if (egg->lang.nested[context-1])
 #if 0
 		if (delta < 0 && context > 0) {
-			eprintf ("close bracket foo!!!\n");
+			R_LOGFI ("close bracket foo!!!\n");
 			shownested ();
 			cn = strdup (egg->lang.nested[context - 1]);
-			eprintf ("STATEMENT cn=(%s) idx=%d (%s)\n", cn, context - 1, egg->lang.nested[context - 1]);
-			eprintf ("CNTXXXPUSH (%s)\n", egg->lang.ctxpush[context - 1]);
+			R_LOGFI ("STATEMENT cn=(%s) idx=%d (%s)\n", cn, context - 1, egg->lang.nested[context - 1]);
+			R_LOGFI ("CNTXXXPUSH (%s)\n", egg->lang.ctxpush[context - 1]);
 #if 0
 			if (!strcmp (cn, "while")) {
 				emit->while_end (egg, get_frame_label (context - 1));
@@ -795,9 +795,9 @@ static void rcc_context(REgg *egg, int delta) {
 #endif
 		}
 #endif
-// eprintf ("ELEM (%s)\n", elm);
-// eprintf ("END BLOCK %d, (%s)\n", context, egg->lang.nested[context-1]);
-// eprintf ("CN = (%s) %d (%s) delta=%d\n", cn, context, egg->lang.nested[context-1], delta);
+// R_LOGFI ("ELEM (%s)\n", elm);
+// R_LOGFI ("END BLOCK %d, (%s)\n", context, egg->lang.nested[context-1]);
+// R_LOGFI ("CN = (%s) %d (%s) delta=%d\n", cn, context, egg->lang.nested[context-1], delta);
 		if (egg->lang.callname) {
 			// if (callname) { // handle 'foo() {'
 			/* TODO: this must be an array */
@@ -820,7 +820,7 @@ static void rcc_context(REgg *egg, int delta) {
 				// so we should decrease it in label
 				emit->get_while_end (egg, str, egg->lang.ctxpush[CTX - 1], lab);	// get_frame_label (2));
 // get_frame_label (2));
-// eprintf ("------ (%s)\n", egg->lang.ctxpush[context-1]);
+// R_LOGFI ("------ (%s)\n", egg->lang.ctxpush[context-1]);
 				// free (egg->lang.endframe);
 // XXX: egg->lang.endframe is deprecated, must use set_nested only
 				if (delta > 0) {
@@ -842,7 +842,7 @@ static void rcc_context(REgg *egg, int delta) {
 				}
 				rcc_reset_callname (egg);
 				R_FREE (egg->lang.conditionstr);
-			}	// else eprintf ("Unknown statement (%s)(%s)\n", cn, elem);
+			}	// else R_LOGFI ("Unknown statement (%s)(%s)\n", cn, elem);
 		}	// handle '{ ..'
 	}
 }
@@ -942,7 +942,7 @@ static int parseinlinechar(REgg *egg, char c) {
 				R_FREE (egg->lang.dstval);
 				return 1;
 			}
-			eprintf ("Parse error\n");
+			R_LOGFI ("Parse error\n");
 		}
 	}
 	if (egg->lang.dstval) {
@@ -970,7 +970,7 @@ static void rcc_next(REgg *egg) {
 		egg->lang.elem[egg->lang.elem_n - 1] = 0;
 		path = find_include (egg->lang.includedir, egg->lang.includefile);
 		if (!path) {
-			eprintf ("Cannot find include file '%s'\n", egg->lang.elem);
+			R_LOGFI ("Cannot find include file '%s'\n", egg->lang.elem);
 			return;
 		}
 		free (egg->lang.includefile);
@@ -989,7 +989,7 @@ static void rcc_next(REgg *egg) {
 			free (q);
 			egg->lang.line = oline;
 		} else {
-			eprintf ("Cannot find '%s'\n", path);
+			R_LOGFI ("Cannot find '%s'\n", path);
 		}
 		free (path);
 		return;
@@ -998,7 +998,7 @@ static void rcc_next(REgg *egg) {
 	if (egg->lang.callname) {
 		if (!strcmp (egg->lang.callname, "goto")) {
 			if (egg->lang.nargs != 1) {
-				eprintf ("Invalid number of arguments for goto()\n");
+				R_LOGFI ("Invalid number of arguments for goto()\n");
 				return;
 			}
 			e->jmp (egg, egg->lang.ctxpush[CTX], 0);
@@ -1021,7 +1021,7 @@ static void rcc_next(REgg *egg) {
 		}
 		str = r_egg_mkvar (egg, buf, ocn, 0);
 		if (!str) {
-			eprintf ("Cannot mkvar\n");
+			R_LOGFI ("Cannot mkvar\n");
 			return;
 		}
 		if (*ocn == '.') {
@@ -1030,12 +1030,13 @@ static void rcc_next(REgg *egg) {
 		if (!strcmp (str, "while")) {
 			char var[128];
 			if (egg->lang.lastctxdelta >= 0) {
-				exit (eprintf ("ERROR: Unsupported while syntax\n"));
+				R_LOGFI ("ERROR: Unsupported while syntax\n");
+				exit (1);
 			}
 			sprintf (var, "__begin_%d_%d_%d\n", egg->lang.nfunctions, CTX, egg->lang.nestedi[CTX - 1]);
 			e->while_end (egg, var);// get_frame_label (1));
 #if 0
-			eprintf ("------------------------------------------ lastctx: %d\n", egg->lang.lastctxdelta);
+			R_LOGFI ("------------------------------------------ lastctx: %d\n", egg->lang.lastctxdelta);
 			// TODO: the pushvar is required for the if(){}while(); constructions
 			// char *pushvar = egg->lang.ctxpush[context+egg->lang.nbrackets-1];
 			/* TODO: support to compare more than one expression (LOGICAL OR) */
@@ -1074,7 +1075,7 @@ static void rcc_next(REgg *egg) {
 							}
 							free (s);
 						} else {
-							eprintf ("Cannot get @syscall payload\n");
+							R_LOGFI ("Cannot get @syscall payload\n");
 						}
 					}
 					egg->lang.docall = 0;
@@ -1115,7 +1116,7 @@ static void rcc_next(REgg *egg) {
 		    str = r_egg_mkvar (egg, buf, ocn, 0);
 		    if (*buf)
 		        e->get_result (egg, buf); // Why should get_result into ocn?
-		    //else { eprintf("external symbol %s\n", ocn); }
+		    //else { R_LOGFI("external symbol %s\n", ocn); }
 		}
 		*/
 
@@ -1126,7 +1127,7 @@ static void rcc_next(REgg *egg) {
 			free (str);
 			str = r_egg_mkvar (egg, buf, egg->lang.dstvar, 0);
 			if (*buf == 0) {
-				eprintf ("Cannot resolve variable '%s'\n", egg->lang.dstvar);
+				R_LOGFI ("Cannot resolve variable '%s'\n", egg->lang.dstvar);
 			} else {
 				e->get_result (egg, buf);
 			}
@@ -1161,7 +1162,7 @@ static void rcc_next(REgg *egg) {
 						p = q;
 					}
 					if (egg->lang.varxs == '*' || egg->lang.varxs == '&') {
-						eprintf ("not support for *ptr in egg->lang.dstvar\n");
+						R_LOGFI ("not support for *ptr in egg->lang.dstvar\n");
 					}
 					// XXX: Not support for pointer
 					type = ' ';
@@ -1191,11 +1192,11 @@ static void rcc_next(REgg *egg) {
 				        type = ' ';
 				    } else type = '$';
 				    vs = 'l'; // XXX: add support for != 'l' size
-				eprintf("Getting into e->mathop with ch: %c\n", ch);
-				eprintf("Getting into e->mathop with vs: %c\n", vs);
-				eprintf("Getting into e->mathop with type: %c\n", type);
-				eprintf("Getting into e->mathop with eq: %s\n", eq);
-				eprintf("Getting into e->mathop with p: %s\n", p);
+				R_LOGFI("Getting into e->mathop with ch: %c\n", ch);
+				R_LOGFI("Getting into e->mathop with vs: %c\n", vs);
+				R_LOGFI("Getting into e->mathop with type: %c\n", type);
+				R_LOGFI("Getting into e->mathop with eq: %s\n", eq);
+				R_LOGFI("Getting into e->mathop with p: %s\n", p);
 				    e->mathop (egg, ch, vs, type, eq, p);
 				    free(p);
 				*/
@@ -1275,9 +1276,9 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 	}
 	if (egg->lang.slurp) {
 		if (egg->lang.slurp != '"' && c == egg->lang.slurpin) {	// only happend when (...(...)...)
-			exit (eprintf (
-					"%s:%d Nesting of expressions not yet supported\n",
-					egg->lang.file, egg->lang.line));
+			R_LOGFI ("%s:%d Nesting of expressions not yet supported\n",
+					egg->lang.file, egg->lang.line);
+			exit (1);
 		}
 		if (c == egg->lang.slurp && egg->lang.oc != '\\') {	// close egg->lang.slurp
 			egg->lang.elem[egg->lang.elem_n] = '\0';

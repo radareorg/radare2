@@ -58,7 +58,7 @@ R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) 
 		}
 		err = inflate (&stream, Z_NO_FLUSH);
 		if (err<0) {
-			eprintf ("inflate error: %d %s\n",
+			R_LOGFI ("inflate error: %d %s\n",
 				err, gzerr (-err));
 			goto err_exit;
 		}

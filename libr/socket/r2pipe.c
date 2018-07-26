@@ -82,14 +82,14 @@ static R2Pipe* r2p_open_spawn(R2Pipe* r2p, const char *cmd) {
 		}
 	}
 	if (!done) {
-		eprintf ("Cannot find R2PIPE_IN or R2PIPE_OUT environment\n");
+		R_LOGFI ("Cannot find R2PIPE_IN or R2PIPE_OUT environment\n");
 		R_FREE (r2p);
 	}
 	free (in);
 	free (out);
 	return r2p;
 #else
-	eprintf ("r2p_open(NULL) not supported on windows\n");
+	R_LOGFI ("r2p_open(NULL) not supported on windows\n");
 	return NULL;
 #endif
 }
@@ -125,14 +125,14 @@ R_API R2Pipe *r2p_open(const char *cmd) {
 
 	if (r2p->child) {
 		char ch;
-		// eprintf ("[+] r2pipe child is %d\n", r2p->child);
+		// R_LOGFI ("[+] r2pipe child is %d\n", r2p->child);
 		if (read (r2p->output[0], &ch, 1) != 1) {
-			eprintf ("Failed to read 1 byte\n");
+			R_LOGFI ("Failed to read 1 byte\n");
 			r2p_close (r2p);
 			return NULL;
 		}
 		if (ch != 0x00) {
-			eprintf ("[+] r2pipe-io link failed. Expected two null bytes.\n");
+			R_LOGFI ("[+] r2pipe-io link failed. Expected two null bytes.\n");
 			r2p_close (r2p);
 			return NULL;
 		}

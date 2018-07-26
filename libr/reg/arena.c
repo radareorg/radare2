@@ -112,7 +112,7 @@ R_API bool r_reg_set_bytes(RReg* reg, int type, const ut8* buf, const int len) {
 	if (arena->size != maxsz) {
 		ut8* tmp = realloc (arena->bytes, maxsz);
 		if (!tmp) {
-			eprintf ("Error resizing arena to %d\n", len);
+			R_LOGFI ("Error resizing arena to %d\n", len);
 			return false;
 		}
 		arena->size = maxsz;
@@ -195,7 +195,7 @@ R_API void r_reg_arena_swap(RReg* reg, int copy) {
 			ib->data = tmp;
 			reg->regset[i].arena = ia->data;
 		} else {
-			//eprintf ("Cannot pop more\n");
+			//R_LOGFI ("Cannot pop more\n");
 			break;
 		}
 	}
@@ -290,13 +290,13 @@ R_API int r_reg_arena_set_bytes(RReg* reg, const char* str) {
 	}
 	int len = r_hex_str_is_valid (str);
 	if (len == -1) {
-		eprintf ("Invalid input\n");
+		R_LOGFI ("Invalid input\n");
 		return -1;
 	}
 	int bin_str_len = (len + 1) / 2; //2 hex chrs for 1 byte
 	ut8* bin_str = malloc (bin_str_len);
 	if (!bin_str) {
-		eprintf ("Failed to decode hex str.\n");
+		R_LOGFI ("Failed to decode hex str.\n");
 		return -1;
 	}
 	r_hex_str2bin (str, bin_str);

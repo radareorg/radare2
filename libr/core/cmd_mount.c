@@ -67,13 +67,13 @@ static char **getFilesFor(RLine *line, const char *path, int *ac) {
 	}
 	free (lpath);
 
-	//eprintf ("autocompleting for path '%s'\n", full_path);
+	//R_LOGFI ("autocompleting for path '%s'\n", full_path);
 
 	RList *list = r_fs_dir (fs, full_path);
 	int count = 0;
 	if (list) {
 		r_list_foreach (list, iter, file) {
-			eprintf ("==> %c %s\n", file->type, file->name);
+			R_LOGFI ("==> %c %s\n", file->type, file->name);
 			if (count >= av_max) {
 				break;
 			}
@@ -94,7 +94,7 @@ static char **getFilesFor(RLine *line, const char *path, int *ac) {
 		}
 		// TODO: adjust contents between //
 		if (!strcmp (me, base)) {
-			//eprintf ("m %s\n", (r->path && r->path[0]) ? r->path + 1: "");
+			//R_LOGFI ("m %s\n", (r->path && r->path[0]) ? r->path + 1: "");
 			if (count >= av_max) {
 				break;
 			}
@@ -122,7 +122,7 @@ static int ms_autocomplete(RLine *line) {
 	 	|| !strncmp (data, "get ", 4)) {
 		const char *file = strchr (data, ' ');
 		if (file++) {
-			//eprintf ("FILE (%s)\n", file);
+			//R_LOGFI ("FILE (%s)\n", file);
 			int tmp_argc = 0;
 			// TODO: handle abs vs rel
 			char **tmp_argv = getFilesFor (line, file, &tmp_argc);
@@ -169,14 +169,14 @@ static int cmd_mount(void *data, const char *_input) {
 				off = r_num_math (core->num, ptr2+1);
 			}
 			if (!r_fs_mount (core->fs, ptr, input, off)) {
-				eprintf ("Cannot mount %s\n", input);
+				R_LOGFI ("Cannot mount %s\n", input);
 			}
 		} else {
 			if (!(ptr = r_fs_name (core->fs, core->offset))) {
-				eprintf ("Unknown filesystem type\n");
+				R_LOGFI ("Unknown filesystem type\n");
 			}
 			if (!r_fs_mount (core->fs, ptr, input, core->offset)) {
-				eprintf ("Cannot mount %s\n", input);
+				R_LOGFI ("Cannot mount %s\n", input);
 			}
 			free (ptr);
 		}
@@ -185,7 +185,7 @@ static int cmd_mount(void *data, const char *_input) {
 		r_fs_umount (core->fs, input+1);
 		break;
 	case '*':
-		eprintf ("List commands in radare format\n");
+		R_LOGFI ("List commands in radare format\n");
 		r_list_foreach (core->fs->roots, iter, root) {
 			r_cons_printf ("m %s %s 0x%"PFMT64x"\n",
 				root-> path, root->p->name, root->delta);
@@ -252,7 +252,7 @@ static int cmd_mount(void *data, const char *_input) {
 			}
 			r_list_free (list);
 		} else {
-			eprintf ("Cannot read partition\n");
+			R_LOGFI ("Cannot read partition\n");
 		}
 		break;
 	case 'o': //"mo"
@@ -269,7 +269,7 @@ static int cmd_mount(void *data, const char *_input) {
 				r_io_desc_write (fd, file->data, file->size);
 			}
 		} else {
-			eprintf ("Cannot open file\n");
+			R_LOGFI ("Cannot open file\n");
 		}
 		break;
 	case 'i':
@@ -284,7 +284,7 @@ static int cmd_mount(void *data, const char *_input) {
 			r_cons_printf ("f file %d 0x%08"PFMT64x"\n", file->size, file->off);
 			r_fs_close (core->fs, file);
 		} else {
-			eprintf ("Cannot open file\n");
+			R_LOGFI ("Cannot open file\n");
 		}
 		break;
 	case 'g': // "mg"
@@ -305,7 +305,7 @@ static int cmd_mount(void *data, const char *_input) {
 			r_fs_close (core->fs, file);
 			r_cons_memcat ("\n", 1);
 		} else if (!r_fs_dir_dump (core->fs, input, ptr)) {
-			eprintf ("Cannot open file\n");
+			R_LOGFI ("Cannot open file\n");
 		}
 		break;
 	case 'f':
@@ -331,7 +331,7 @@ static int cmd_mount(void *data, const char *_input) {
 					printf ("%s\n", ptr);
 				}
 				//XXX: r_list_purge (list);
-			} else eprintf ("Unknown store path\n");
+			} else R_LOGFI ("Unknown store path\n");
 			break;
 		case 'o':
 			input++;
@@ -347,7 +347,7 @@ static int cmd_mount(void *data, const char *_input) {
 					printf ("%s\n", ptr);
 				}
 				//XXX: r_list_purge (list);
-			} else eprintf ("Unknown store path\n");
+			} else R_LOGFI ("Unknown store path\n");
 			break;
 		}
 		break;
@@ -380,7 +380,7 @@ static int cmd_mount(void *data, const char *_input) {
 		}
 		break;
 	case 'y':
-		eprintf ("TODO\n");
+		R_LOGFI ("TODO\n");
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg_m);

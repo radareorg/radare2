@@ -247,13 +247,13 @@ R_API char *r_cons_pal_parse(const char *str, RColor *outcol) {
 		if (strlen (fgcolor) == 7) {
 			i = sscanf (fgcolor + 1, "%02hhx%02hhx%02hhx", &rcolor.r, &rcolor.g, &rcolor.b);
 			if (i != 3) {
-				eprintf ("Error while parsing HTML color: %s\n", fgcolor);
+				R_LOGFI ("Error while parsing HTML color: %s\n", fgcolor);
 			}
 			if (!outcol) {
 				r_cons_rgb_str (out, sizeof (out), &rcolor);
 			}
 		} else {
-			eprintf ("Invalid html color code\n");
+			R_LOGFI ("Invalid html color code\n");
 		}
 	} else if (!strncmp (fgcolor, "rgb:", 4)) { // "rgb:123" rgb format
 		if (strlen (fgcolor) == 7) {
@@ -331,7 +331,7 @@ R_API char *r_cons_pal_parse(const char *str, RColor *outcol) {
 			} else if (!strncmp(p, "blink", 5)) {
 				rcolor.attr |= 1u << 5;
 			} else {
-				eprintf ("Failed to parse terminal attributes: %s\n", p);
+				R_LOGFI ("Failed to parse terminal attributes: %s\n", p);
 				break;
 			}
 			p = strchr (p, ' ');
@@ -521,7 +521,7 @@ R_API int r_cons_pal_set(const char *key, const char *val) {
 			return true;
 		}
 	}
-	eprintf ("Invalid color %s\n", key);
+	R_LOGFI ("Invalid color %s\n", key);
 	return false;
 }
 

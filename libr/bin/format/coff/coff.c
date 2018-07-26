@@ -4,7 +4,7 @@
 
 #include "coff.h"
 
-#define bprintf if(obj->verbose)eprintf
+#define bprintf if(obj->verbose)R_LOGFI
 
 bool r_coff_supported_arch(const ut8 *buf) {
 	ut16 arch = *(ut16*)buf;

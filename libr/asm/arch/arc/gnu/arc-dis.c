@@ -38,10 +38,10 @@
 
 #include <stdlib.h>
   /*
-    warning: implicit declaration of function `eprintf'
+    warning: implicit declaration of function `R_LOGFI'
     if dbg is 1 then this definition is required
   */
-//#define eprintf(x,y...) fprintf(stderr,x,##y)
+//#define R_LOGFI(x,y...) fprintf(stderr,x,##y)
 #include "r_types.h"
 
 #ifndef dbg
@@ -902,7 +902,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
       fieldC = FIELDD (state->words[0]);
 
       if (dbg)
-	eprintf ("6:b reg %d %d c 0x%x  \n",
+	R_LOGFI ("6:b reg %d %d c 0x%x  \n",
 			   fieldBisReg, fieldB, fieldC);
       state->_ea_present = 1;
       state->_offset = fieldC;
@@ -947,7 +947,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState * state)
       fieldA = FIELDD(state->words[0]); /* shimm */
 
       /* [B,A offset] */
-      if (dbg) eprintf("7:b reg %d %x off %x\n",
+      if (dbg) R_LOGFI("7:b reg %d %x off %x\n",
 				 fieldBisReg,fieldB,fieldA);
       state->_ea_present = 1;
       state->_offset = fieldA;

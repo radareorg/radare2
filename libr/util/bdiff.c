@@ -42,7 +42,7 @@ static int splitlines(const char *a, int len, struct line **lr) {
 	struct line *l;
 
 	if (!a) {
-		eprintf ("null pointer received\n");
+		R_LOGFI ("null pointer received\n");
 		return 0;
 	}
 
@@ -289,13 +289,13 @@ R_API int r_diff_buffers_delta(RDiff *d, const ut8 *sa, int la, const ut8 *sb, i
 		return -1;
 	}
 	if (!al || !bl) {
-		eprintf ("bindiff_buffers: Out of memory.\n");
+		R_LOGFI ("bindiff_buffers: Out of memory.\n");
 		goto beach;
 	}
 
 	l = diff (al, an, bl, bn);
 	if (!l.head) {
-		eprintf ("bindiff_buffers: Out of memory.\n");
+		R_LOGFI ("bindiff_buffers: Out of memory.\n");
 		goto beach;
 	}
 

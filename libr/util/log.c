@@ -2,30 +2,37 @@
 
 #include <r_util.h>
 
-// XXX: This api is kinda ugly.. we need to redefine it
+static RLog log_g = NULL;
+static RLogF logf_g = NULL;
 
-static const char *logfile = "radare.log";
-
-R_API void r_log_file(const char *str) {
-	FILE *fd = r_sandbox_fopen (logfile, "a+");
-	if (fd) {
-		fputs (str, fd);
-		fclose (fd);
-	} else eprintf ("ERR: Cannot open %s\n", logfile);
+R_API void r_log_set(RLog log, RLogF logf) {
+	log_g = log;
+	logf_g = logf;
 }
 
-R_API void r_log_msg(const char *str) {
-	fputs ("LOG: ", stderr);
-	fputs (str, stderr);
-	r_log_file (str);
+R_API void r_log(RLogLevel level, const char *str) {
+	if (log_g) {
+		log_g (level, str);
+	} else {
+		fprintf (stderr, "%s", str);
+	}
 }
 
-R_API void r_log_error(const char *str) {
-	fputs ("ERR: ", stderr);
-	fputs (str, stderr);
-	r_log_file (str);
+R_API void r_logf_list(RLogLevel level, const char *format, va_list ap) {
+	if (logf_g) {
+		logf_g (level, format, ap);
+	} else {
+		vfprintf (stderr, format, ap);
+	}
 }
 
-R_API void r_log_progress(const char *str, int percent) {
-	printf ("%d%%: %s\n", percent, str);
+R_API void r_logf(RLogLevel level, const char *format, ...) {
+	(void)level;
+	va_list ap;
+	if (!format || !*format) {
+		return;
+	}
+	va_start (ap, format);
+	r_logf_list (level, format, ap);
+	va_end (ap);
 }

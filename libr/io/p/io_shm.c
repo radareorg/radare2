@@ -101,10 +101,10 @@ static RIODesc *shm__open(RIO *io, const char *pathname, int rw, int mode) {
 		shm->fd = getshmfd (shm);
 		shm->size = SHMATSZ;
 		if (shm->fd != -1) {
-			eprintf ("Connected to shared memory 0x%08x\n", shm->id);
+			R_LOGFI ("Connected to shared memory 0x%08x\n", shm->id);
 			return r_io_desc_new (io, &r_io_plugin_shm, pathname, rw, mode, shm);
 		}
-		eprintf ("Cannot connect to shared memory (%d)\n", shm->id);
+		R_LOGFI ("Cannot connect to shared memory (%d)\n", shm->id);
 		free (shm);
 	}
 	return NULL;

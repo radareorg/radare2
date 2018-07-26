@@ -75,12 +75,12 @@ R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b) {
 }
 
 R_API void r_big_div_ut(RNumBig *c, RNumBig *a, ut32 b) {
-	eprintf (__FUNCTION__": TODO\n");
+	R_LOGFI (__FUNCTION__": TODO\n");
 //	mpz_divexact_ui (*c, *a, b);
 }
 
 R_API int r_big_divisible_ut(RNumBig *n, ut32 v) {
-	eprintf (__FUNCTION__": TODO\n");
+	R_LOGFI (__FUNCTION__": TODO\n");
 //	return mpz_divisible_ui_p (*n, v);
 }
 

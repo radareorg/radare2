@@ -82,7 +82,7 @@ static int cmd_macro(void *data, const char *input) {
 				memmove (comma + 1, buf + mustcall, strlen (buf + mustcall) + 1);
 				r_cmd_macro_call (&core->rcmd->macro, buf);
 			} else {
-				eprintf ("Invalid syntax for macro\n");
+				R_LOGFI ("Invalid syntax for macro\n");
 			}
 		}
 		free (buf);

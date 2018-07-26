@@ -271,7 +271,7 @@ R_API void r_io_wundo_apply_all(RIO *io, int set) {
 
 	r_list_foreach_prev (io->undo.w_list, iter, u) {
 		r_io_wundo_apply (io, u, set); //UNDO_WRITE_UNSET);
-		eprintf ("%s 0x%08"PFMT64x"\n", set?"redo":"undo", u->off);
+		R_LOGFI ("%s 0x%08"PFMT64x"\n", set?"redo":"undo", u->off);
 	}
 }
 
@@ -291,9 +291,9 @@ R_API int r_io_wundo_set(RIO *io, int n, int set) {
 			r_io_wundo_apply (io, u, set);
 			return true;
 		}
-		eprintf ("invalid undo-write index\n");
+		R_LOGFI ("invalid undo-write index\n");
 	} else {
-		eprintf ("no writes done\n");
+		R_LOGFI ("no writes done\n");
 	}
 	return false;
 }

@@ -44,23 +44,23 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->big_endian = 0;
 	ret->dbg_info = 0;
 	/* TODO: move this somewhere else */
-	eprintf ("f input 128 0x3000\n");
-	eprintf ("o malloc://128 0x3000\n");
-	eprintf ("f screen 80*25 0x4000\n");
-	eprintf ("o malloc://80*25 0x4000\n");
-	eprintf ("f stack 0x200 0x5000\n");
-	eprintf ("o malloc://0x200 0x5000\n");
-	eprintf ("f data 0x1000 0x6000\n");
-	eprintf ("o malloc://0x1000 0x6000\n");
-	eprintf ("ar\n"); // hack to init
-	eprintf ("ar brk=stack\n");
-	eprintf ("ar scr=screen\n");
-	eprintf ("ar kbd=input\n");
-	eprintf ("ar ptr=data\n");
-	eprintf ("\"e cmd.vprompt=pxa 32@stack;pxa 32@screen;pxa 32@data\"\n");
-	eprintf ("s 0\n");
-	eprintf ("e asm.bits=32\n");
-	eprintf ("dL bf\n");
+	R_LOGFI ("f input 128 0x3000\n");
+	R_LOGFI ("o malloc://128 0x3000\n");
+	R_LOGFI ("f screen 80*25 0x4000\n");
+	R_LOGFI ("o malloc://80*25 0x4000\n");
+	R_LOGFI ("f stack 0x200 0x5000\n");
+	R_LOGFI ("o malloc://0x200 0x5000\n");
+	R_LOGFI ("f data 0x1000 0x6000\n");
+	R_LOGFI ("o malloc://0x1000 0x6000\n");
+	R_LOGFI ("ar\n"); // hack to init
+	R_LOGFI ("ar brk=stack\n");
+	R_LOGFI ("ar scr=screen\n");
+	R_LOGFI ("ar kbd=input\n");
+	R_LOGFI ("ar ptr=data\n");
+	R_LOGFI ("\"e cmd.vprompt=pxa 32@stack;pxa 32@screen;pxa 32@data\"\n");
+	R_LOGFI ("s 0\n");
+	R_LOGFI ("e asm.bits=32\n");
+	R_LOGFI ("dL bf\n");
 	return ret;
 }
 

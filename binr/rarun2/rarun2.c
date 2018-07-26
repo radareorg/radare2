@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
 	RRunProfile *p;
 	int i, ret;
 	if (argc == 1 || !strcmp (argv[1], "-h")) {
-		eprintf ("Usage: rarun2 -v|-t|script.rr2 [directive ..]\n");
+		R_LOGFI ("Usage: rarun2 -v|-t|script.rr2 [directive ..]\n");
 		printf ("%s", r_run_help ());
 		return 1;
 	}
@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
 		rarun2_tty ();
 		return 0;
 #else
-		eprintf ("Not supported\n");
+		R_LOGFI ("Not supported\n");
 		return 1;
 #endif
 	}

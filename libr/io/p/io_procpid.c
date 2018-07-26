@@ -64,17 +64,17 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 				switch (errno) {
 				case EPERM:
 					ret = pid;
-					eprintf ("Operation not permitted\n");
+					R_LOGFI ("Operation not permitted\n");
 					break;
 				case EINVAL:
 					perror ("ptrace: Cannot attach");
-					eprintf ("ERRNO: %d (EINVAL)\n", errno);
+					R_LOGFI ("ERRNO: %d (EINVAL)\n", errno);
 					break;
 				}
 			} else if (__waitpid (pid)) {
 				ret = pid;
 			} else {
-				eprintf ("Error in waitpid\n");
+				R_LOGFI ("Error in waitpid\n");
 			}
 		} else {
 			ret = pid;
@@ -95,7 +95,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			return d;
 		}
 		/* kill children */
-		eprintf ("Cannot open /proc/%d/mem of already attached process\n", pid);
+		R_LOGFI ("Cannot open /proc/%d/mem of already attached process\n", pid);
 		(void)ptrace (PTRACE_DETACH, pid, 0, 0);
 	}
 	return NULL;
@@ -121,7 +121,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		}
 		io->cb_printf ("%d\n", iop->pid);
 	} else {
-		eprintf ("Try: '=!pid'\n");
+		R_LOGFI ("Try: '=!pid'\n");
 	}
 	return NULL;
 }

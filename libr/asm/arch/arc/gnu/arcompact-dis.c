@@ -34,7 +34,7 @@
 #include "r_types.h"
 
   /*
-    warning: implicit declaration of function `eprintf'
+    warning: implicit declaration of function `R_LOGFI'
     if dbg is 1 then this definition is required
   */
 static bfd_vma bfd_getm32 (unsigned int);
@@ -47,7 +47,7 @@ static bfd_vma bfd_getm32_ac (unsigned int) ATTRIBUTE_UNUSED;
 
   /*
     Ravi:
-    : undefined reference to `eprintf'
+    : undefined reference to `R_LOGFI'
     if dbg is 1 then this definition is required
   */
 #undef _NELEM
@@ -2704,7 +2704,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       fieldC = FIELDD9(state->words[0]);
       fieldCisReg = 0;
 
-      if (dbg) eprintf("6:b reg %d %d c 0x%x  \n",
+      if (dbg) R_LOGFI("6:b reg %d %d c 0x%x  \n",
 				 fieldBisReg,fieldB,fieldC);
       state->_ea_present = 1;
       state->_offset = fieldC;
@@ -2752,7 +2752,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       fieldAisReg=0;
 
       /* [B,A offset] */
-      if (dbg) eprintf("7:b reg %d %x off %x\n",
+      if (dbg) R_LOGFI("7:b reg %d %x off %x\n",
 				 fieldBisReg,fieldB,fieldA);
       state->_ea_present = 1;
       state->_offset = fieldA;

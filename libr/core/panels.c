@@ -911,7 +911,7 @@ static void setRefreshAll(RPanels *panels) {
 static RConsCanvas *createNewCanvas(RCore *core, int w, int h) {
 	RConsCanvas *can = r_cons_canvas_new (w, h);
 	if (!can) {
-		eprintf ("Cannot create RCons.canvas context\n");
+		R_LOGFI ("Cannot create RCons.canvas context\n");
 		return false;
 	}
 	r_cons_canvas_fill (can, 0, 0, w, h, ' ');
@@ -1930,7 +1930,7 @@ repeat:
 		break;
 #endif
 	default:
-		// eprintf ("Key %d\n", key);
+		// R_LOGFI ("Key %d\n", key);
 		// sleep (1);
 		break;
 	}

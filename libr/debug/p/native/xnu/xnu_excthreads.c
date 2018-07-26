@@ -18,7 +18,7 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 	int ret;
 	ret = xnu_thread_get_gpr (dbg, th);
 	if (!ret) {
-		eprintf ("error to get gpr registers in trace bit intel\n");
+		R_LOGFI ("error to get gpr registers in trace bit intel\n");
 		return false;
 	}
 	state = (R_REG_T *)&th->gpr;
@@ -29,11 +29,11 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 		state->uts.ts64.__rflags = (state->uts.ts64.__rflags & \
 					~0x100UL) | (enable ? 0x100UL : 0);
 	} else {
-		eprintf ("Invalid bit size\n");
+		R_LOGFI ("Invalid bit size\n");
 		return false;
 	}
 	if (!xnu_thread_set_gpr (dbg, th)) {
-		eprintf ("error xnu_thread_set_gpr in modify_trace_bit intel\n");
+		R_LOGFI ("error xnu_thread_set_gpr in modify_trace_bit intel\n");
 		return false;
 	}
 	return true;
@@ -54,14 +54,14 @@ static bool modify_trace_bit(RDebug *dbg, xnu_thread *th, int enable) {
 	kr = thread_get_state (th->tid, R_REG_STATE_T,
 			(thread_state_t)&state, &state_count);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("error modify_trace_bit\n");
+		R_LOGFI ("error modify_trace_bit\n");
 		return false;
 	}
 	state.srr1 = (state.srr1 & ~0x400UL) | (enable ? 0x400UL : 0);
 	kr = thread_set_state (th->tid, R_REG_STATE_T,
 			(thread_state_t)&state, state_count);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("Error to set thread state modificy_trace_bit ppc\n");
+		R_LOGFI ("Error to set thread state modificy_trace_bit ppc\n");
 		return false;
 	}
 	return true;
@@ -113,7 +113,7 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 	int i = 0;
 	int ret = xnu_thread_get_drx (dbg, th);
 	if (!ret) {
-		eprintf ("error to get drx registers modificy_trace_bit arm\n");
+		R_LOGFI ("error to get drx registers modificy_trace_bit arm\n");
 		return false;
 	}
 	if (th->flavor == ARM_DEBUG_STATE32) {
@@ -124,7 +124,7 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 		R_REG_T *regs;
 		ret = xnu_thread_get_gpr (dbg, th);
 		if (!ret) {
-			eprintf ("error to get gpr register modificy_trace_bit arm\n");
+			R_LOGFI ("error to get gpr register modificy_trace_bit arm\n");
 			return false;
 		}
 		regs = (R_REG_T*)&th->gpr;
@@ -153,7 +153,7 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 				else
 					state->__bcr[i] |= BAS_IMVA_0_1;
 				if (bio->read_at (bio->io, regs->ts_32.__pc, (void *)&op, 2) < 1) {
-					eprintf ("Failed to read opcode modify_trace_bit\n");
+					R_LOGFI ("Failed to read opcode modify_trace_bit\n");
 					return false;
 				}
 				if (is_thumb_32 (op)) {
@@ -179,12 +179,12 @@ static int modify_trace_bit(RDebug *dbg, xnu_thread_t *th, int enable) {
 			}
 		}
 	} else {
-		eprintf ("Bad flavor modificy_trace_bit arm\n");
+		R_LOGFI ("Bad flavor modificy_trace_bit arm\n");
 		return false;
 	}
 	//set state
 	if (!xnu_thread_set_drx (dbg, th)) {
-		eprintf ("error to set drx modificy_trace_bit arm\n");
+		R_LOGFI ("error to set drx modificy_trace_bit arm\n");
 		return false;
 	}
 	return true;
@@ -212,13 +212,13 @@ static bool xnu_restore_exception_ports (int pid) {
 		kr = task_set_exception_ports (task, ex.masks[i], ex.ports[i],
 					       ex.behaviors[i], ex.flavors[i]);
 		if (kr != KERN_SUCCESS) {
-			eprintf ("fail to restore exception ports\n");
+			R_LOGFI ("fail to restore exception ports\n");
 			return false;
 		}
 	}
 	kr = mach_port_deallocate (mach_task_self (), ex.exception_port);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("failed to deallocate exception port\n");
+		R_LOGFI ("failed to deallocate exception port\n");
 		return false;
 	}
 	return true;
@@ -276,11 +276,11 @@ static bool validate_mach_message (RDebug *dbg, exc_msg *msg) {
 		/*we got new rights to the task, get rid of it.*/
 		kr = mach_port_deallocate (mach_task_self (), msg->task.name);
 		if (kr != KERN_SUCCESS) {
-			eprintf ("validate_mach_message: failed to deallocate task port\n");
+			R_LOGFI ("validate_mach_message: failed to deallocate task port\n");
 		}
 		kr = mach_port_deallocate (mach_task_self (), msg->thread.name);
 		if (kr != KERN_SUCCESS) {
-			eprintf ("validate_mach_message2: failed to deallocated task port\n");
+			R_LOGFI ("validate_mach_message2: failed to deallocated task port\n");
 		}
 		return false;
 	}
@@ -305,46 +305,46 @@ static int handle_exception_message (RDebug *dbg, exc_msg *msg, int *ret_code) {
 		*ret_code = KERN_FAILURE;
 		kr = task_suspend (msg->task.name);
 		if (kr != KERN_SUCCESS) {
-			eprintf ("failed to suspend task bad access\n");
+			R_LOGFI ("failed to suspend task bad access\n");
 		}
-		eprintf ("EXC_BAD_ACCESS\n");
+		R_LOGFI ("EXC_BAD_ACCESS\n");
 		break;
 	case EXC_BAD_INSTRUCTION:
 		ret = R_DEBUG_REASON_ILLEGAL;
 		*ret_code = KERN_FAILURE;
 		kr = task_suspend (msg->task.name);
 		if (kr != KERN_SUCCESS) {
-			eprintf ("failed to suspend task bad instruction\n");
+			R_LOGFI ("failed to suspend task bad instruction\n");
 		}
-		eprintf ("EXC_BAD_INSTRUCTION\n");
+		R_LOGFI ("EXC_BAD_INSTRUCTION\n");
 		break;
 	case EXC_ARITHMETIC:
-		eprintf ("EXC_ARITHMETIC\n");
+		R_LOGFI ("EXC_ARITHMETIC\n");
 		break;
 	case EXC_EMULATION:
-		eprintf ("EXC_EMULATION\n");
+		R_LOGFI ("EXC_EMULATION\n");
 		break;
 	case EXC_SOFTWARE:
-		eprintf ("EXC_SOFTWARE\n");
+		R_LOGFI ("EXC_SOFTWARE\n");
 		break;
 	case EXC_BREAKPOINT:
 		kr = task_suspend (msg->task.name);
 		if (kr != KERN_SUCCESS) {
-			eprintf ("failed to suspend task breakpoint\n");
+			R_LOGFI ("failed to suspend task breakpoint\n");
 		}
 		ret = R_DEBUG_REASON_BREAKPOINT;
 		break;
 	default:
-		eprintf ("UNKNOWN\n");
+		R_LOGFI ("UNKNOWN\n");
 		break;
 	}
 	kr = mach_port_deallocate (mach_task_self (), msg->task.name);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("failed to deallocate task port\n");
+		R_LOGFI ("failed to deallocate task port\n");
 	}
 	kr = mach_port_deallocate (mach_task_self (), msg->thread.name);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("failed to deallocated task port\n");
+		R_LOGFI ("failed to deallocated task port\n");
 	}
 	return ret;
 }
@@ -372,7 +372,7 @@ static int __xnu_wait (RDebug *dbg, int pid) {
 			reason = R_DEBUG_REASON_MACH_RCV_INTERRUPTED;
 			break;
 		} else if (kr != MACH_MSG_SUCCESS) {
-			eprintf ("message didn't succeded\n");
+			R_LOGFI ("message didn't succeded\n");
 			break;
 		}
 		ret = validate_mach_message (dbg, &msg);
@@ -392,7 +392,7 @@ static int __xnu_wait (RDebug *dbg, int pid) {
 			if (reply.Head.msgh_remote_port != 0 && kr != MACH_MSG_SUCCESS) {
 				kr = mach_port_deallocate(mach_task_self (), reply.Head.msgh_remote_port);
 				if (kr != KERN_SUCCESS) {
-					eprintf ("failed to deallocate reply port\n");
+					R_LOGFI ("failed to deallocate reply port\n");
 				}
 			}
 			continue;
@@ -407,7 +407,7 @@ static int __xnu_wait (RDebug *dbg, int pid) {
 		if (reply.Head.msgh_remote_port != 0 && kr != MACH_MSG_SUCCESS) {
 			kr = mach_port_deallocate(mach_task_self (), reply.Head.msgh_remote_port);
 			if (kr != KERN_SUCCESS)
-				eprintf ("failed to deallocate reply port\n");
+				R_LOGFI ("failed to deallocate reply port\n");
 		}
 		break; // to avoid infinite loops
 	}
@@ -426,12 +426,12 @@ bool xnu_create_exception_thread(RDebug *dbg) {
 	mach_port_t task_self = mach_task_self ();
 	task_t task = pid_to_task (dbg->pid);
 	if (!task) {
-		eprintf ("error to get task for the debuggee process"
+		R_LOGFI ("error to get task for the debuggee process"
 			" xnu_start_exception_thread\n");
 		return false;
 	}
 	if (!MACH_PORT_VALID (task_self)) {
-		eprintf ("error to get the task for the current process"
+		R_LOGFI ("error to get the task for the current process"
 			" xnu_start_exception_thread\n");
 		return false;
 	}
@@ -454,7 +454,7 @@ bool xnu_create_exception_thread(RDebug *dbg) {
 	kr = mach_port_request_notification (task_self, task, MACH_NOTIFY_DEAD_NAME,
 		 0, exception_port, MACH_MSG_TYPE_MAKE_SEND_ONCE, &req_port);
 	if (kr != KERN_SUCCESS) {
-		eprintf ("Termination notification request failed\n");
+		R_LOGFI ("Termination notification request failed\n");
 	}
 	ex.exception_port = exception_port;
 	return true;

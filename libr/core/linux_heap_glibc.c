@@ -197,13 +197,13 @@ static GHT GH(get_vaddr_symbol)(RCore *core, const char *path, const char *symna
 	RBinSymbol *s;
 	RBinOptions *bo = r_bin_options_new (0LL, 0LL, false);
 	if (!bo) {
-		eprintf ("Failed to create bin options\n");
+		R_LOGFI ("Failed to create bin options\n");
 		return (GHT) -1;
 	}
 
 	// TODO: avoid loading twice?
 	if (r_bin_open (core->bin, path, bo) == -1) {
-		eprintf ("Failed to open binary\n");
+		R_LOGFI ("Failed to open binary\n");
 		r_bin_options_free (bo);
 		return (GHT) -1;
 	}
@@ -247,7 +247,7 @@ static bool GH(r_resolve_symbol)(RCore *core, GHT *symbol, const char *symname) 
 		}
 	}
 	if (!libc_ver_end) {
-		eprintf ("Warning: Can't find glibc mapped in memory (see dm)\n");
+		R_LOGFI ("Warning: Can't find glibc mapped in memory (see dm)\n");
 		return false;
 	}
 	is_debug_file[0] = str_start_with (libc_ver_end, "/usr/lib/");
@@ -307,7 +307,7 @@ found:
 		return true;
 	}
 not_found:
-	eprintf (
+	R_LOGFI (
 	  "Warning: glibc library with symbol %s could not be "
 	"found. Is libc6-dbg installed?\n", symname);
 	free (path);
@@ -518,7 +518,7 @@ static int GH(print_double_linked_list_bin)(RCore *core, MallocState *main_arena
 
 	GH(get_brks) (core, &brk_start, &brk_end);
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX) {
-		eprintf ("No Heap section\n");
+		R_LOGFI ("No Heap section\n");
 		return -1;
 	}
 
@@ -577,7 +577,7 @@ static void GH(print_heap_bin)(RCore *core, GHT m_arena, MallocState *main_arena
 	case 'g': // dmhbg [bin_num]
 		num_bin = r_num_math (core->num, input + j) - 1;
 		if (num_bin > NBINS - 2) {
-			eprintf ("Error: 0 < bin <= %d\n", NBINS - 1);
+			R_LOGFI ("Error: 0 < bin <= %d\n", NBINS - 1);
 			break;
 		}
 		PRINTF_YA ("  Bin %03d:\n", num_bin + 1);
@@ -608,7 +608,7 @@ static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena
 
         GH(get_brks)(core, &brk_start, &brk_end);
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX) {
-		eprintf ("No Heap section\n");
+		R_LOGFI ("No Heap section\n");
 		free (cnk);
 		return 0;
 	}
@@ -695,7 +695,7 @@ void GH(print_heap_fastbin)(RCore *core, GHT m_arena, MallocState *main_arena, G
 	case ' ': // dmhf [bin_num]
 		num_bin = r_num_math (core->num, input + 1) - 1;
 		if (num_bin >= NFASTBINS) {
-			eprintf ("Error: 0 < bin <= %d\n", NFASTBINS);
+			R_LOGFI ("Error: 0 < bin <= %d\n", NFASTBINS);
 			break;
 		}
 		if (!GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, num_bin)) {
@@ -860,7 +860,7 @@ static void GH(print_heap_graph)(RCore *core, MallocState *main_arena, GHT *init
 	GH (get_brks)(core, &brk_start, &brk_end);
 	*initial_brk = (brk_start >> 12) << 12;
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX || *initial_brk == GHT_MAX) {
-		eprintf ("No Heap section\n");
+		R_LOGFI ("No Heap section\n");
 		r_cons_canvas_free (can);
 		r_config_restore (hc);
 		r_config_hold_free (hc);
@@ -933,7 +933,7 @@ static void GH(print_tcache_instance)(RCore *core, MallocState *main_arena, GHT 
 	*initial_brk = ( (brk_start >> 12) << 12 ) + sizeof(GH(RHeapTcache)) + MALLOC_ALIGNMENT;
 
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX || *initial_brk == GHT_MAX) {
-		eprintf ("No heap section\n");
+		R_LOGFI ("No heap section\n");
 		return;
 	}
 
@@ -985,7 +985,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena, GHT *in
 #endif
 
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX || *initial_brk == GHT_MAX) {
-		eprintf ("No heap section\n");
+		R_LOGFI ("No heap section\n");
 		return;
 	}
 
@@ -1138,7 +1138,7 @@ static void GH(print_heap_segment_json)(RCore *core, MallocState *main_arena, GH
 	*initial_brk = (brk_start >> 12) << 12;
 
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX || *initial_brk == GHT_MAX) {
-		eprintf ("No heap section\n");
+		R_LOGFI ("No heap section\n");
 		free (cnk);
 		return;
 	}
@@ -1211,7 +1211,7 @@ static void GH(print_heap_segment_r2)(RCore *core, MallocState *main_arena, GHT 
 	*initial_brk = (brk_start >> 12) << 12;
 
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX || *initial_brk == GHT_MAX) {
-		eprintf ("No heap section\n");
+		R_LOGFI ("No heap section\n");
 		return;
 	}
 

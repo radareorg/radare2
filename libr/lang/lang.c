@@ -295,18 +295,18 @@ R_API int r_lang_prompt(RLang *lang) {
 		if (!strcmp (buf, "?")) {
 			RLangDef *def;
 			RListIter *iter;
-			eprintf("  ?        - show this help message\n"
+			R_LOGFI("  ?        - show this help message\n"
 				"  !        - run $EDITOR\n"
 				"  !command - run system command\n"
 				"  . file   - interpret file\n"
 				"  q        - quit prompt\n");
-			eprintf ("%s example:\n", lang->cur->name);
+			R_LOGFI ("%s example:\n", lang->cur->name);
 			if (lang->cur->help)
-				eprintf ("%s", *lang->cur->help);
+				R_LOGFI ("%s", *lang->cur->help);
 			if (!r_list_empty (lang->defs))
-				eprintf ("variables:\n");
+				R_LOGFI ("variables:\n");
 			r_list_foreach (lang->defs, iter, def) {
-				eprintf ("  %s %s\n", def->type, def->name);
+				R_LOGFI ("  %s %s\n", def->type, def->name);
 			}
 		} else r_lang_run (lang, buf, strlen (buf));
 	}

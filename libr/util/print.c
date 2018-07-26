@@ -26,7 +26,7 @@ R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions) {
 	for (i = 0; i < n_portions; i++) {
 		ut64 sum = total + portions[i];
 		if (total > sum) {
-			eprintf ("portionbar overflow aborted\n");
+			R_LOGFI ("portionbar overflow aborted\n");
 			return;
 		}
 		total = sum;
@@ -219,7 +219,7 @@ R_API char* r_print_stereogram(const char *bump, int w, int h) {
 	if (!out) {
 		return NULL;
 	}
-	//eprintf ("%s\n", bump);
+	//R_LOGFI ("%s\n", bump);
 	(void) r_print_stereogram_private (bump, w, h, out, size);
 	return out;
 }
@@ -1673,7 +1673,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 		if ((ishexprefix (&p[i]) && previous != ':') || (isdigit (p[i]) && issymbol (previous))) {
 			int nlen = strlen (num);
 			if (nlen + j >= sizeof (o)) {
-				eprintf ("Colorize buffer is too small\n");
+				R_LOGFI ("Colorize buffer is too small\n");
 				break;
 			}
 			memcpy (o + j, num, nlen + 1);
@@ -1681,7 +1681,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 		}
 		previous = p[i];
 		if (j + 100 >= COLORIZE_BUFSIZE) {
-			eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
+			R_LOGFI ("r_print_colorize_opcode(): buffer overflow!\n");
 			return strdup (p);
 		}
 		switch (p[i]) {
@@ -1721,7 +1721,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				is_float = 0;
 			} else if (is_arg) {
 				if (c_reset + j + 10 >= COLORIZE_BUFSIZE) {
-					eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
+					R_LOGFI ("r_print_colorize_opcode(): buffer overflow!\n");
 					return strdup (p);
 				}
 
@@ -1733,7 +1733,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 					const char *color = found_var ? print->cons->pal.func_var_type : reg;
 					ut32 color_len = strlen (color);
 					if (color_len + j + 10 >= COLORIZE_BUFSIZE) {
-						eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
+						R_LOGFI ("r_print_colorize_opcode(): buffer overflow!\n");
 						return strdup (p);
 					}
 					strcpy (o + j + 1, color);
@@ -1772,7 +1772,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				ut32 reg_len = strlen (reg);
 				/* if (reg_len+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, reg_len+100); */
 				if (reg_len + j + 10 >= COLORIZE_BUFSIZE) {
-					eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
+					R_LOGFI ("r_print_colorize_opcode(): buffer overflow!\n");
 					return strdup (p);
 				}
 				strcpy (o + j, reg);
@@ -1792,7 +1792,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 					}
 					if (s) {
 						if (strlen (s->name) + j + 1 >= COLORIZE_BUFSIZE) {
-							eprintf ("stop before overflow\n");
+							R_LOGFI ("stop before overflow\n");
 							break;
 						}
 						strcpy (o + j, s->name);
@@ -1924,7 +1924,7 @@ R_API void r_print_hex_from_bin (RPrint *p, char *bin_str) {
 	const int len = strlen (bin_str);
 	ut64 n, *buf = malloc (sizeof (ut64) * ((len + 63) / 64));
 	if (buf == NULL) {
-		eprintf ("allocation failed\n");
+		R_LOGFI ("allocation failed\n");
 		return;
 	}
 	if (!p) {
