@@ -377,7 +377,6 @@ R_API RDebug *r_debug_new(int hard) {
 	if (hard) {
 		dbg->bp = r_bp_new ();
 		r_debug_plugin_init (dbg);
-		dbg->bp->arch = dbg->arch;
 		dbg->bp->iob.init = false;
 	}
 	return dbg;
@@ -441,6 +440,26 @@ R_API int r_debug_stop(RDebug *dbg) {
 		return dbg->h->stop (dbg);
 	}
 	return false;
+}
+
+R_API void r_debug_set_bpsize(RDebug *dbg, const char *archs) {
+	int bpsize, arch;
+	arch = r_sys_arch_id (archs);
+	switch (arch) {
+	case R_SYS_ARCH_ARM:
+		// TODO check if thumb or not (bpsize must be 2/3 for thumb instructions)
+		// More info: https://sourceware.org/gdb/onlinedocs/gdb/ARM-Breakpoint-Kinds.html#ARM-Breakpoint-Kinds
+		bpsize = 4;
+		break;
+	case R_SYS_ARCH_MIPS:
+		// Using standard mips breakpoint size
+		// More info: https://sourceware.org/gdb/onlinedocs/gdb/MIPS-Breakpoint-Kinds.html#MIPS-Breakpoint-Kinds
+		bpsize = 4;
+		break;
+	default:
+		bpsize = 1;
+	}
+	dbg->bpsize = bpsize;
 }
 
 R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {

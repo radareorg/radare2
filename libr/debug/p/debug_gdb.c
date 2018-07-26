@@ -977,22 +977,7 @@ static int r_debug_gdb_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set
 		return false;
 	}
 
-	arch = r_sys_arch_id (bp->arch);
-	switch (arch) {
-	case R_SYS_ARCH_ARM:
-		// TODO check if thumb or not (bpsize must be 2/3 for thumb instructions)
-		// More info: https://sourceware.org/gdb/onlinedocs/gdb/ARM-Breakpoint-Kinds.html#ARM-Breakpoint-Kinds
-		bpsize = 4;
-		break;
-	case R_SYS_ARCH_MIPS:
-		// Using standard mips breakpoint size
-		// More info: https://sourceware.org/gdb/onlinedocs/gdb/MIPS-Breakpoint-Kinds.html#MIPS-Breakpoint-Kinds
-		bpsize = 4;
-		break;
-	default:
-		bpsize = 1;
-	}
-
+	bpsize = b->size;
 	// TODO handle rwx and conditions
 	if (set)
 		ret = b->hw?
