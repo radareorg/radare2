@@ -149,7 +149,7 @@ RList *PE_(r_bin_mdmp_pe_get_sections)(struct PE_(r_bin_mdmp_pe_bin) *pe_bin) {
 	if (!(ret = r_list_new ())) {
 		return NULL;
 	}
-	if (!(sections = PE_(r_bin_pe_get_sections) (pe_bin->bin))){
+	if (!pe_bin->bin || !(sections = pe_bin->bin->sections)){
 		r_list_free (ret);
 		return NULL;
 	}
@@ -201,7 +201,6 @@ RList *PE_(r_bin_mdmp_pe_get_sections)(struct PE_(r_bin_mdmp_pe_bin) *pe_bin) {
 		}
 		r_list_append (ret, ptr);
 	}
-	free (sections);
 	return ret;
 }
 
