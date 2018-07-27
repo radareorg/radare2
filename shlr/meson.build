@@ -10,11 +10,14 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
       error('Cannot load capstone library. Either provide capstone in ./shlr/capstone or install git, so it can be downloaded')
     endif
 
-    # NOTE: when you update CS_TIP, also update it in shlr/Makefile
+    # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
     CS_TIP = '782ea67e17a391ca0d3faafdc365b335a1a8930a'
+    CS_BRA = 'master'
 
-    message('Cloning capstone next branch, commit ' + CS_TIP + ', into ' + capstone_path)
-    git_cmd = 'clone -b next https://github.com/aquynh/capstone.git @0@'.format(capstone_path)
+    capstone_git_user = 'aquynh'
+
+    message('Cloning capstone ' + CS_BRA + ' branch, commit ' + CS_TIP + ', into ' + capstone_path)
+    git_cmd = 'clone -b @0@ https://github.com/@1@/capstone.git @2@'.format(CS_BRA, capstone_git_user, capstone_path)
     clone_cmd = run_command(git_exe, git_cmd.split())
     if clone_cmd.returncode() != 0
       error('Cannot execute git clone command')
