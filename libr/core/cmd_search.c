@@ -619,7 +619,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		ut64 end = UT64_MAX;
 		int i;
 		for (i = 0; i < skyline->len; i++) {
-			const RIOMapSkyline *part = skyline->a[i];
+			const RIOMapSkyline *part = r_pvector_at (&skyline, i);
 			ut64 from = part->itv.addr;
 			ut64 to = part->itv.addr + part->itv.size;
 			// eprintf ("--------- %llx %llx    (%llx %llx)\n", from, to, begin, end);
