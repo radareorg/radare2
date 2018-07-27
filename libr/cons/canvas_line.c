@@ -10,8 +10,8 @@
 #define DOTTED_LINE_HORIZ "┄"
 #define DOTTED_LINE_VERT "┊"
 
-#define DASHED_LINE_VERT "┋"
-#define DASHED_LINE_HORIZ "┅"
+#define DASHED_LINE_VERT "╵"
+#define DASHED_LINE_HORIZ "╴"
 
 enum {
 	APEX_DOT = 0,

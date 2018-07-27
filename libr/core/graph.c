@@ -2705,7 +2705,7 @@ static void agraph_print_edges(RAGraph *g) {
 	}
 	int out_nth, in_nth, bendpoint;
 	RListIter *itn, *itm, *ito;
-	RCanvasLineStyle style = {};
+	RCanvasLineStyle style = {0};
 	const RList *nodes = r_graph_get_nodes (g->graph);
 	RGraphNode *ga;
 	RANode *a;
@@ -2809,18 +2809,18 @@ static void agraph_print_edges(RAGraph *g) {
 			switch (g->layout) {
 			case 0:
 			default:
-				style.symbol = a->is_dummy ? LINE_NOSYM_VERT : style.color;
+				style.symbol = (!g->hints || a->is_dummy) ? LINE_NOSYM_VERT : style.color;
+				if (a->y + a->h > b->y) {
+					style.dot_style = DOT_STYLE_BACKEDGE;
+				}
 
 				a_x_inc = R_EDGES_X_INC + 2 * (out_nth + 1);
 				b_x_inc = R_EDGES_X_INC + 2 * (in_nth + 1);
 
 				bx = b->is_dummy ? b->x : (b->x + b_x_inc);
-				ay = a->y + a->h;
+				ay = a->y + a->h + 1;
 				by = b->y - 1;
 
-				if (ay > by) {
-					style.dot_style = DOT_STYLE_BACKEDGE;
-				}
 
 				if (many && !g->is_callgraph) {
 					int t = R_EDGES_X_INC + 2 * (neighbours->length + 1);
@@ -2828,7 +2828,7 @@ static void agraph_print_edges(RAGraph *g) {
 					bendpoint = bx < ax ? neighbours->length - out_nth :  out_nth;
 				} else {
 					ax = a->is_dummy ? a->x : (a->x + a_x_inc);
-					bendpoint = tm->edgectr;
+					bendpoint = tm->edgectr - 1;
 				}
 
 				if (!a->is_dummy && itn == neighbours->head && out_nth == 0 && bx > ax) {
@@ -2836,7 +2836,7 @@ static void agraph_print_edges(RAGraph *g) {
 				}
 				if (a->h < a->layer_height) {
 					r_cons_canvas_line (g->can, ax, ay, ax, ay + a->layer_height - a->h, &style);
-					ay = a->y + a->layer_height;
+					ay = a->y + a->layer_height + 1;
 					style.symbol = LINE_NOSYM_VERT;
 				}
 				if (by >= ay) {
@@ -2862,15 +2862,16 @@ static void agraph_print_edges(RAGraph *g) {
 				}
 				break;
 			case 1:
-				style.symbol = a->is_dummy ? LINE_NOSYM_HORIZ : style.color;
+				style.symbol = (!g->hints || a->is_dummy) ? LINE_NOSYM_HORIZ : style.color;
+				if (a->x + a->w > b->x) {
+					style.dot_style = DOT_STYLE_BACKEDGE;
+				}
+
 				ax = a->x + a->w;
 				ay = a->is_dummy ? a->y : a->y + R_EDGES_X_INC + out_nth;
 				bx = b->x - 1;
 				by = b->is_dummy ? b->y : b->y + R_EDGES_X_INC + out_nth;
 
-				if (ax > bx) {
-					style.dot_style = DOT_STYLE_BACKEDGE;
-				}
 
 				if (a->w < a->layer_width) {
 					r_cons_canvas_line_square_defined (g->can, ax, ay, a->x + a->layer_width, ay, &style, 0, false);
@@ -3162,6 +3163,7 @@ static int check_changes(RAGraph *g, int is_interactive,
 		}
 		free (title);
 		g->can->color = r_config_get_i (core->config, "scr.color");
+		g->hints = r_config_get_i (core->config, "graph.hints");
 	}
 	if (g->update_seek_on || g->force_update_seek) {
 		RANode *n = g->update_seek_on;
@@ -3345,6 +3347,7 @@ static void agraph_init(RAGraph *g) {
 	g->nodes = sdb_new0 ();
 	g->edgemode = 2;
 	g->zoom = ZOOM_DEFAULT;
+	g->hints = 1;
 	g->movspeed = DEFAULT_SPEED; // r_config_get_i (g->core->config, "graph.scroll");
 	g->db = sdb_new0 ();
 }
@@ -3820,6 +3823,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 	g->on_curnode_change = (RANodeCallback) seek_to_node;
 	g->on_curnode_change_data = core;
 	g->edgemode = r_config_get_i (core->config, "graph.edges");
+	g->hints = r_config_get_i (core->config, "graph.hints");
 	g->is_interactive = is_interactive;
 	bool asm_comments = r_config_get_i (core->config, "asm.comments");
 	r_config_set (core->config, "asm.comments",
@@ -4028,6 +4032,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				" :cmd         - run radare command\n"
 				" '            - toggle graph.comments\n"
 				" \"            - toggle graph.refs\n"
+				" #            - toggle graph.hints\n"
 				" /            - highlight text\n"
 				" |            - set cmd.gprompt\n"
 				" _            - enter hud selector\n"
@@ -4071,6 +4076,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 			break;
 		case '"':
 			r_config_toggle (core->config, "graph.refs");
+			break;
+		case '#':
+			r_config_toggle (core->config, "graph.hints");
 			break;
 		case 'p':
 			if (!fcn) {
