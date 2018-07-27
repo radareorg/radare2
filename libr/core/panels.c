@@ -1703,6 +1703,7 @@ repeat:
 			" g    - show graph in the current panel\n"
 			" *    - show pseudo code/r2dec in the current panel\n"
 			" i    - insert hex\n"
+			" r    - toggle jmphints/leahints\n"
 			" M    - open new custom frame\n"
 			" hl   - scroll panels horizontally\n"
 			" HL   - resize panels horizontally\n"
@@ -1714,7 +1715,7 @@ repeat:
 			" o    - go/seek to given offset\n"
 			" nN   - create new panel with given command\n"
 			" q    - quit, back to visual mode\n"
-			" 0-9  - jump to the nth panel. n is the number you hit\n"
+			" 1-9  - follow jmp/call identified by shortcut (like ;[1])\n"
 			);
 		r_cons_flush ();
 		r_cons_any_key (NULL);
