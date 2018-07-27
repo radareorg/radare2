@@ -7597,6 +7597,34 @@ static void cmd_anal_virtual_functions(RCore *core, const char* input) {
 	}
 }
 
+static void cmd_anal_classes(RCore *core, const char *input) {
+	switch (input[0]) {
+	case 'l': // "aCl"
+		r_anal_class_list (core->anal, input[1]);
+	case ' ': { // "aC"
+		const char *str = r_str_trim_ro (input + 1);
+		if (!*str) {
+			break;
+		}
+		char *cstr = strdup (str);
+		if (!cstr) {
+			break;
+		}
+		char *end = strchr (cstr, ' ');
+		if (end) {
+			*end = '\0';
+		}
+		RAnalClass *cls = r_anal_class_new (cstr);
+		free (cstr);
+		r_anal_class_add (core->anal, cls);
+		break;
+	}
+	default: // "aC?"
+		eprintf ("TODO: aC?");
+		break;
+	}
+}
+
 static int cmd_anal(void *data, const char *input) {
 	const char *r;
 	RCore *core = (RCore *)data;
@@ -7664,6 +7692,7 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 'L': return r_core_cmd0 (core, "e asm.arch=??"); break;
+	case 'C': cmd_anal_classes (core, input + 1); break; // "aC"
 	case 'i': cmd_anal_info (core, input + 1); break; // "ai"
 	case 'r': cmd_anal_reg (core, input + 1); break;  // "ar"
 	case 'e': cmd_anal_esil (core, input + 1); break; // "ae"

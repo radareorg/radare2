@@ -45,11 +45,28 @@ R_API void r_anal_method_free(RAnalMethod *meth) {
 
 
 R_API void r_anal_class_add(RAnal *anal, RAnalClass *cls) {
+	if (r_vector_contains (&anal->classes, cls)) {
+		return;
+	}
 	r_vector_push (&anal->classes, cls);
 }
 
+static bool base_class_is_class(RAnalBaseClass *base, RAnalClass *cls) {
+	return base->cls == cls;
+}
+
 R_API void r_anal_class_remove(RAnal *anal, RAnalClass *cls) {
-	int index = r_vector_index (&anal->classes, cls);
+	int index = -1;
+	int i;
+	for (i = 0; i < anal->classes.len; i++) {
+		RAnalClass *c = (RAnalClass *) anal->classes.a[i];
+		if (c == cls) {
+			index = i;
+		}
+		r_vector_delete_where (&cls->base_classes,
+				(RVectorComparator) base_class_is_class,
+				cls, free);
+	}
 	if (index >= 0) {
 		r_vector_delete_at (&anal->classes, index);
 	}
@@ -66,6 +83,26 @@ R_API RAnalClass *r_anal_class_get(RAnal *anal, const char *name) {
 	return NULL;
 }
 
+R_API void r_anal_class_list(RAnal *anal, int mode) {
+	void **it;
+	r_vector_foreach (&anal->classes, it) {
+		RAnalClass *cls = (RAnalClass *)*it;
+		r_cons_print (cls->name);
+		bool first = true;
+		void **it2;
+		r_vector_foreach (&cls->base_classes, it2) {
+			RAnalBaseClass *bcls = (RAnalBaseClass *)*it2;
+			if (first) {
+				r_cons_print (": ");
+				first = false;
+			} else {
+				r_cons_print (", ");
+			}
+			r_cons_print (bcls->cls->name);
+		}
+		r_cons_print ("\n");
+	}
+}
 
 #if R_ANAL_CLASSES_SDB
 
