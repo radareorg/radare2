@@ -69,7 +69,7 @@ static st64 on_map_skyline(RIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg
 	if (!len) {
 		i = skyline->len;
 	} else {
-		r_vector_lower_bound (skyline, addr, i, CMP);
+		r_pvector_lower_bound (skyline, addr, i, CMP);
 		if (i == skyline->len && wrap) {
 			wrap = false;
 			i = 0;
@@ -78,7 +78,7 @@ static st64 on_map_skyline(RIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg
 	}
 #undef CMP
 	while (i < skyline->len) {
-		const RIOMapSkyline *part = skyline->a[i];
+		const RIOMapSkyline *part = r_pvector_at (skyline, i);
 		// Right endpoint <= addr
 		if (r_itv_end (part->itv) - 1 < addr) {
 			i++;
@@ -208,6 +208,7 @@ R_API RIO* r_io_init(RIO* io) {
 	}
 	io->addrbytes = 1;
 	r_io_desc_init (io);
+	r_pvector_init (&io->map_skyline);
 	r_io_map_init (io);
 	r_io_section_init (io);
 	r_io_cache_init (io);

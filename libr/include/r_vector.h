@@ -41,46 +41,63 @@ extern "C" {
  */
 
 typedef struct r_vector_t {
-	void **a;
-	int len;
-	int capacity;
+	void *a;
+	size_t len;
+	size_t capacity;
+	size_t elem_size;
 } RVector;
 
-typedef int (*RVectorComparator)(const void *a, const void *b);
-typedef void (*RVectorFree)(void *e);
+typedef int (*RPVectorComparator)(const void *a, const void *b);
+typedef void (*RVectorFree)(void *e, void *user);
+typedef void (*RPVectorFree)(void *e);
 
-R_API void r_vector_clear(RVector *vec, void (*elem_free)(void *));
+R_API void r_vector_init(RVector *vec, size_t elem_size);
+R_API RVector *r_vector_new(size_t elem_size);
+R_API void r_vector_free(RVector *vec, RVectorFree elem_free, void *user);
+R_API void r_vector_clear(RVector *vec, RVectorFree elem_free, void *user);
 R_API RVector *r_vector_clone(RVector *vec);
-R_API void **r_vector_contains(RVector *vec, void *x);
-R_API void *r_vector_delete_at(RVector *vec, int n);
+
 R_API bool r_vector_empty(RVector *vec);
-R_API void r_vector_fini(RVector *vec);
-R_API void r_vector_free(RVector *vec, RVectorFree elem_free);
-R_API void r_vector_init(RVector *vec);
-R_API void **r_vector_insert(RVector *vec, int n, void *x);
-R_API void **r_vector_insert_range(RVector *vec, int n, void **first, void **last);
-R_API RVector *r_vector_new(void);
-R_API void *r_vector_pop(RVector *vec);
-R_API void *r_vector_pop_front(RVector *vec);
-R_API void **r_vector_push(RVector *vec, void *x);
-R_API void **r_vector_push_front(RVector *vec, void *x);
-R_API void **r_vector_reserve(RVector *vec, int capacity);
+R_API void r_vector_delete_at(RVector *vec, size_t index, void *into);
+R_API void *r_vector_insert(RVector *vec, size_t index, void *x);
+R_API void *r_vector_insert_range(RVector *vec, size_t index, void *first, size_t count);
+R_API void r_vector_pop(RVector *vec, void *into);
+R_API void r_vector_pop_front(RVector *vec, void *into);
+R_API void *r_vector_push(RVector *vec, void *x);
+R_API void *r_vector_push_front(RVector *vec, void *x);
+R_API void *r_vector_reserve(RVector *vec, size_t capacity);
 /* shrink capacity to len, NB. delete operations do not shrink space */
-R_API void **r_vector_shrink(RVector *vec);
-R_API void r_vector_sort(RVector *vec, RVectorComparator cmp);
+R_API void *r_vector_shrink(RVector *vec);
 
-#define r_vector_find(vec, it, cmp_eq) \
-	for (it = (vec)->a; it != (vec)->a + (vec)->len && !(cmp_eq (*it, x)); it++);
+static inline void r_pvector_init(RVector *vec)	{ r_vector_init (vec, sizeof (void *)); }
+static inline RVector *r_pvector_new()			{ return r_vector_new (sizeof (void *)); }
+R_API void r_pvector_free(RVector *vec, RPVectorFree elem_free);
+R_API void r_pvector_clear(RVector *vec, RPVectorFree);
 
-#define r_vector_foreach(vec, it) \
-	for (it = (vec)->a; it != (vec)->a + (vec)->len; it++)
+static inline void *r_pvector_at(const RVector *vec, size_t index)		{ return ((void **)vec->a)[index]; }
+static inline void r_pvector_set(RVector *vec, size_t index, void *e)	{ ((void **)vec->a)[index] = e; }
 
-#define r_vector_lower_bound(vec, x, i, cmp) \
+R_API void **r_pvector_contains(RVector *vec, void *x);
+R_API void *r_pvector_delete_at(RVector *vec, size_t index);
+static inline void **r_pvector_insert(RVector *vec, size_t index, void *x) { return (void **)r_vector_insert (vec, index, &x); }
+R_API void *r_pvector_pop(RVector *vec);
+R_API void *r_pvector_pop_front(RVector *vec);
+static inline void **r_pvector_push(RVector *vec, void *x) { return (void **)r_vector_push (vec, &x); }
+static inline void **r_pvector_push_front(RVector *vec, void *x) { return (void **)r_vector_push_front (vec, &x); }
+R_API void r_pvector_sort(RVector *vec, RPVectorComparator cmp);
+
+#define r_pvector_find(vec, it, cmp_eq) \
+	for (it = (void **)(vec)->a; it != (void **)(vec)->a + (vec)->len && !(cmp_eq (*it, x)); it++);
+
+#define r_pvector_foreach(vec, it) \
+	for (it = (void **)(vec)->a; it != (void **)(vec)->a + (vec)->len; it++)
+
+#define r_pvector_lower_bound(vec, x, i, cmp) \
 	do { \
 		int h = (vec)->len, m; \
 		for (i = 0; i < h; ) { \
 			m = i + ((h - i) >> 1); \
-			if ((cmp (x, (vec)->a[m])) > 0) { \
+			if ((cmp (x, ((void **)(vec)->a)[m])) > 0) { \
 				i = m + 1; \
 			} else { \
 				h = m; \
@@ -88,12 +105,12 @@ R_API void r_vector_sort(RVector *vec, RVectorComparator cmp);
 		} \
 	} while (0) \
 
-#define r_vector_upper_bound(vec, x, i, cmp) \
+#define rp_vector_upper_bound(vec, x, i, cmp) \
 	do { \
 		int h = (vec)->len, m; \
 		for (i = 0; i < h; ) { \
 			m = i + ((h - i) >> 1); \
-			if (!((cmp (x, (vec)->a[m])) < 0)) { \
+			if (!((cmp (x, ((void **)(vec)->a)[m])) < 0)) { \
 				i = m + 1; \
 			} else { \
 				h = m; \
