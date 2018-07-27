@@ -323,10 +323,10 @@ static PE_DWord bin_pe_rva_to_paddr(RBinPEObj* bin, PE_DWord rva) {
 	PE_DWord section_base;
 	int i, section_size;
 	for (i = 0; i < bin->num_sections; i++) {
-		section_base = bin->section_header[i].VirtualAddress;
-		section_size = bin->section_header[i].Misc.VirtualSize;
+		section_base = bin->sections[i].vaddr;
+		section_size = bin->sections[i].vsize;
 		if (rva >= section_base && rva < section_base + section_size) {
-			return bin->section_header[i].PointerToRawData + (rva - section_base);
+			return bin->sections[i].paddr + (rva - section_base);
 		}
 	}
 	return rva;
@@ -3365,7 +3365,11 @@ static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe
 		}
 		sections[j].vaddr = shdr[i].VirtualAddress;
 		sections[j].size = shdr[i].SizeOfRawData;
-		sections[j].vsize = shdr[i].Misc.VirtualSize;
+		if (shdr[i].Misc.VirtualSize) {
+			sections[j].vsize = shdr[i].Misc.VirtualSize;
+		} else {
+			sections[j].vsize = shdr[i].SizeOfRawData;
+		}
 		if (bin->optional_header) {
 			ut32 sa = bin->optional_header->SectionAlignment;
 			if (sa) {
