@@ -229,6 +229,7 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, 
 		return false;
 	}
 	//Use the current RIODesc otherwise r_io_map_select can swap them later on
+	//think it remaps the opened file 
 	return r_bin_load_io (bin, fd, baseaddr, loadaddr, xtr_idx);
 }
 
@@ -360,6 +361,7 @@ R_API int r_bin_load_io(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr
 	return r_bin_load_io_at_offset_as (bin, fd, baseaddr, loadaddr, xtr_idx, 0, NULL);
 }
 
+//somehow somewhere during this function call, the presence of multiple bins are detected
 R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 		ut64 loadaddr, int xtr_idx, ut64 offset, const char *name, ut64 sz) {
 	RIOBind *iob = &(bin->iob);
@@ -421,17 +423,25 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 			return false;
 		}
 		ut64 seekaddr = is_debugger? baseaddr: loadaddr;
+		//read asz bytes
 		if (!iob->fd_read_at (io, fd, seekaddr, buf_bytes, asz)) {
 			sz = 0LL;
 		}
 	}
+
 	if (bin->use_xtr && !name && (st64)sz > 0) {
 		// XXX - for the time being this is fine, but we may want to
 		// change the name to something like
 		// <xtr_name>:<bin_type_name>
+
+		/*
+		#define r_list_foreach(list, it, pos)\
+		if (list)\
+			for (it = list->head; it && (pos = it->data, 1); it = it->n)
+		*/
 		r_list_foreach (bin->binxtrs, it, xtr) {
-			if (xtr && xtr->check_bytes (buf_bytes, sz)) {
-				if (xtr && (xtr->extract_from_bytes || xtr->extractall_from_bytes)) {
+			if (xtr && xtr->check_bytes (buf_bytes, sz)) {  //single bin pe fails this check
+				if (xtr && (xtr->extract_from_bytes || xtr->extractall_from_bytes)) { 
 					if (is_debugger && sz != file_sz) {
 						R_FREE (buf_bytes);
 						if (tfd < 0) {
@@ -476,6 +486,8 @@ static bool r_bin_load_io_at_offset_as(RBin *bin, int fd, ut64 baseaddr,
 	// in this case the number of bytes read will be limited to 2MB
 	// (MIN_LOAD_SIZE)
 	// if it fails, the whole file is loaded.
+
+	//determines size of bytes to be read
 	const ut64 MAX_LOAD_SIZE = 0;  // 0xfffff; //128 * (1 << 10 << 10);
 	int res = r_bin_load_io_at_offset_as_sz (bin, fd, baseaddr,
 		loadaddr, xtr_idx, offset, name, MAX_LOAD_SIZE);
@@ -1172,7 +1184,7 @@ R_API void r_bin_list_archs(RBin *bin, int mode) {
 	RBinFile *binfile = r_bin_cur (bin);
 	RBinObject *obj = NULL;
 	const char *name = binfile? binfile->file: NULL;
-	int narch = binfile? binfile->narch: 0;
+	int narch = binfile? binfile->narch: 0; //narchs is detected sub binaries
 
 	//are we with xtr format?
 	if (binfile && binfile->curxtr) {

@@ -63,6 +63,7 @@ files = [
   'p/bin_xbe.c',
   'p/bin_xtr_dyldcache.c',
   'p/bin_xtr_fatmach0.c',
+  'p/bin_xtr_pemixed.c',
   'p/bin_z64.c',
   'p/bin_zimg.c',
 
@@ -90,6 +91,7 @@ files = [
   'format/pe/pe64.c',
   'format/pe/pe64_write.c',
   'format/pe/pe_write.c',
+  'format/pe/pemixed.c',
   'format/te/te.c',
   'format/wasm/wasm.c',
   'format/zimg/zimg.c',

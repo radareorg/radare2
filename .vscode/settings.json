@@ -1,0 +1,25 @@
+{
+    "files.associations": {
+        "typeinfo": "c",
+        "*.tcc": "c",
+        "fatmach0.h": "c",
+        "array": "c",
+        "r_types.h": "c",
+        "hash_map": "c",
+        "initializer_list": "c",
+        "utility": "c",
+        "mach0_specs.h": "c",
+        "functional": "c",
+        "istream": "c",
+        "tuple": "c",
+        "r_util.h": "c",
+        "deque": "c",
+        "list": "c",
+        "vector": "c",
+        "dyldcache.h": "c",
+        "pemixed.h": "c",
+        "pe.h": "c",
+        "pe_specs.h": "c",
+        "string.h": "c"
+    }
+}

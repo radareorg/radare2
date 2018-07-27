@@ -147,6 +147,7 @@ static bool isBinopHelp(const char *op) {
 static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 	ut64 bin_size = data ? data->size : 0;
 	ut8 *bytes;
+	char *xtr_type;
 	char *arch = "unknown";
 	int bits = 0;
 	char *libname = NULL;
@@ -161,8 +162,9 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 		arch = data->metadata->arch;
 		bits = data->metadata->bits;
 		libname = data->metadata->libname;
-	}
-	if (bin_size == bf->size && bin_size) {
+		xtr_type = data->metadata->xtr_type;
+	} 
+	if (bin_size == bf->size && bin_size && strcmp(xtr_type, "fat") == 0) {
 		eprintf ("This is not a fat bin\n");
 		return false;
 	}
@@ -185,14 +187,24 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 	} else {
 		ptr = path;
 	}
-	char *outpath = r_str_newf ("%s.fat", ptr);
+	char *outpath;
+	
+	if(strcmp (xtr_type, "fat") == 0){
+		outpath  = r_str_newf ("%s.fat", ptr);
+	}
+	else if(strcmp (xtr_type, "net") == 0){
+		outpath = r_str_newf ("%s.net", ptr);
+	}
+	else{
+		outpath = r_str_newf ("%s.bins", ptr);
+	}
+
 	if (!outpath || !r_sys_mkdirp (outpath)) {
 		free (path);
 		free (outpath);
 		eprintf ("Error creating dir structure\n");
 		return false;
 	}
-
 	char *outfile = libname
 		? r_str_newf ("%s/%s.%s.%s_%i.%d", outpath, ptr, arch, libname, bits, idx)
 		: r_str_newf ("%s/%s.%s_%i.%d", outpath, ptr, arch, bits, idx);
@@ -223,6 +235,8 @@ static int rabin_extract(int all) {
 	if (all) {
 		int idx = 0;
 		RListIter *iter;
+		// #define r_list_foreach(list, it, pos)\
+		// for (it = list->head; it && (pos = it->data, 1); it = it->n)
 		r_list_foreach (bf->xtr_data, iter, data) {
 			res = extract_binobj (bf, data, idx++);
 			if (!res) {
@@ -250,7 +264,6 @@ static int rabin_dump_symbols(int len) {
 	if (!(symbols = r_bin_get_symbols (bin))) {
 		return false;
 	}
-
 	r_list_foreach (symbols, iter, symbol) {
 		if (symbol->size && (olen > symbol->size || !olen)) {
 			len = symbol->size;
@@ -551,7 +564,7 @@ int main(int argc, char **argv) {
 	int rawstr = 0;
 	int fd = -1;
 	RCore core = {0};
-
+	//intializes core->bin = r_bin_new();
 	r_core_init (&core);
 	bin = core.bin;
 
@@ -617,6 +630,8 @@ int main(int argc, char **argv) {
 		free (tmp);
 	}
 
+//each x is a macro that has one bit set in a 64bit field
+//in the end, bit field is read to determine which action to take
 #define is_active(x) (action & x)
 #define set_action(x) { actions++; action |= x; }
 #define unset_action(x) action &= ~x
@@ -983,6 +998,19 @@ int main(int argc, char **argv) {
 	r_bin_force_plugin (bin, forcebin);
 	r_bin_load_filter (bin, action);
 
+	/*
+	typedef struct r_bin_options_t {
+		ut64 offset; // starting physical address to read from the target file
+		ut64 baseaddr; // where the linker maps the binary in memory
+		ut64 loadaddr; // the desired offset where the binary should be loaded
+		ut64 size; // restrict the size of the target fd
+		int xtr_idx; // load Nth binary
+		int rawstr;
+		int iofd;
+		char *name; // or comment :?
+	} RBinOptions;
+	*/
+	//sets some fields in RBinOptions
 	RBinOptions *bo = r_bin_options_new (0LL, baddr, rawstr);
 	if (!bo) {
 		eprintf ("Could not create RBinOptions\n");

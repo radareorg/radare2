@@ -63,6 +63,7 @@ static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MAC
 	meta->machine = MACH0_(get_cpusubtype_from_hdr) (hdr);
 	meta->type = MACH0_(get_filetype_from_hdr) (hdr);
 	meta->libname = NULL;
+	strcpy(meta->xtr_type, "fat");
 }
 
 static RBinXtrData * extract(RBin* bin, int idx) {
@@ -109,8 +110,8 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx) {
 		return NULL;
 	}
 
-	if (!bin->cur->xtr_obj) {
-		bin->cur->xtr_obj = r_bin_fatmach0_from_bytes_new (buf, size);
+	if (!bin->cur->xtr_obj) {  //bin->cur is a RbinFile
+		bin->cur->xtr_obj = r_bin_fatmach0_from_bytes_new (buf, size); //initializes fatmach0 file from buf
 	}
 
 	fb = bin->cur->xtr_obj;
@@ -165,7 +166,7 @@ static RList * extractall(RBin *bin) {
 static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
 	RList *res = NULL;
 	int narch, i = 0;
-	RBinXtrData *data = oneshot (bin, buf, size, i);
+	RBinXtrData *data = oneshot (bin, buf, size, i); //i is the ith subbinary to be xtracted
 
 	if (!data) {
 		return res;

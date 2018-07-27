@@ -682,7 +682,7 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 		len += tsize * m;
 		m = 1;
 	}
-	b->cur = vaddr + len;
+	b->cur = vaddr + len; //updating the pointer to RBuff by the length of the string written
 	return len;
 }
 

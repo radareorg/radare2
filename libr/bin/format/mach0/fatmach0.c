@@ -5,6 +5,7 @@
 #include <r_util.h>
 #include "fatmach0.h"
 
+//start populating bin object with fatmach0 specific information
 static int r_bin_fatmach0_init(struct r_bin_fatmach0_obj_t* bin) {
 	ut32 size;
 	ut32 i;
@@ -16,7 +17,7 @@ static int r_bin_fatmach0_init(struct r_bin_fatmach0_obj_t* bin) {
 	}
 	bin->hdr.magic = r_read_be32 (&hdrbytes[0]);
 	bin->hdr.nfat_arch = r_read_be32 (&hdrbytes[4]);
-	bin->nfat_arch = bin->hdr.nfat_arch;
+	bin->nfat_arch = bin->hdr.nfat_arch; //number of archs following fatmach header
 	if (sizeof (struct fat_header) + bin->nfat_arch *
 		sizeof (struct fat_arch) > bin->size) {
 		return false;
@@ -26,13 +27,21 @@ static int r_bin_fatmach0_init(struct r_bin_fatmach0_obj_t* bin) {
 		return false;
 	}
 	size = bin->nfat_arch * sizeof (struct fat_arch);
-	if (size < bin->nfat_arch) {
+	if (size < bin->nfat_arch) { //check for integer overflow??
 		return false;
 	}
 	if (!(bin->archs = malloc (size))) {
 		perror ("malloc (fat_arch)");
 		return false;
 	}
+	//populating this bin->archs[i] is this struct
+	//struct fat_arch {
+	//     cpu_type_t  cputype;    /* cpu specifier (int) */
+	//     cpu_subtype_t   cpusubtype; /* machine specifier (int) */
+	//     uint32_t    offset;     /* file offset to this object file */
+	//     uint32_t    size;       /* size of this object file */
+	//     uint32_t    align;      /* alignment as a power of 2 */
+	// };
 	for (i = 0; i < bin->nfat_arch; i++) {
 		ut8 archbytes[sizeof (struct fat_arch)] = {0};
 		len = r_buf_read_at (bin->b, 8 + i * sizeof (struct fat_arch), &archbytes[0], sizeof (struct fat_arch));
@@ -50,6 +59,7 @@ static int r_bin_fatmach0_init(struct r_bin_fatmach0_obj_t* bin) {
 	return true;
 }
 
+//r_bin_fatmach0_arch_t contains enough information to extract the files 
 struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t* bin, int idx, int *narch) {
 	struct r_bin_fatmach0_arch_t *ret;
 	ut8 *buf = NULL;
@@ -143,7 +153,7 @@ struct r_bin_fatmach0_obj_t* r_bin_fatmach0_from_bytes_new(const ut8* buf, ut64 
 	}
 	bin->b = r_buf_new ();
 	bin->size = size;
-	if (!r_buf_set_bytes (bin->b, buf, size)) {
+	if (!r_buf_set_bytes (bin->b, buf, size)) { //copy buf to bin->b
 		return r_bin_fatmach0_free (bin);
 	}
 	if (!r_bin_fatmach0_init (bin)) {

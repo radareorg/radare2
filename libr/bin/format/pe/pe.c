@@ -986,6 +986,8 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	rr = r_buf_fread_at (bin->b, metadata_directory + 16 + metadata->VersionStringLength,
 		(ut8*) (&metadata->Flags), bin->big_endian? "2S": "2s", 1);
 
+	eprintf ("Flags : %x\n", metadata->Flags);
+
 	if (rr < 1) {
 		goto fail;
 	}
@@ -1064,7 +1066,7 @@ static int bin_pe_init_overlay(struct PE_(r_bin_pe_obj_t)* bin) {
 
 static int bin_pe_init_clr_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	PE_(image_data_directory) * clr_dir = &bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR];
-	PE_DWord image_clr_hdr_paddr = bin_pe_rva_to_paddr (bin, clr_dir->VirtualAddress);
+	PE_DWord image_clr_hdr_paddr = bin_pe_rva_to_paddr (bin, clr_dir->VirtualAddress); 
 	// int clr_dir_size = clr_dir? clr_dir->Size: 0;
 	PE_(image_clr_header) * clr_hdr = R_NEW0 (PE_(image_clr_header));
 	int rr, len = sizeof (PE_(image_clr_header));
@@ -2452,8 +2454,8 @@ static int bin_pe_init(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->big_endian = PE_(r_bin_pe_is_big_endian) (bin);
 
 	bin_pe_init_tls (bin);
-	bin_pe_init_clr_hdr (bin);
-	bin_pe_init_metadata_hdr (bin);
+	bin_pe_init_clr_hdr (bin); 
+	bin_pe_init_metadata_hdr (bin); //probably need to be changed
 	bin_pe_init_overlay (bin);
 	PE_(bin_pe_parse_resource) (bin);
 	bin->relocs = NULL;
