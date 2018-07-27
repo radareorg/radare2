@@ -587,9 +587,14 @@ enum {
 	LINE_NOSYM_HORIZ
 };
 
+#define DOT_STYLE_NORMAL 0
+#define DOT_STYLE_CONDITIONAL 1
+#define DOT_STYLE_BACKEDGE 2
+
 typedef struct r_cons_canvas_line_style_t {
 	int color;
 	int symbol;
+	int dot_style;
 } RCanvasLineStyle;
 
 // UTF-8 symbols indexes
