@@ -675,7 +675,7 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 		exp = exports;
 	}
 
-	sections = PE_(r_bin_pe_get_sections) (bin);
+	sections = bin->sections;
 	for (i = 0; i < bin->num_sections; i++) {
 		//XXX search by section with +x permission since the section can be left blank
 		if (!strcmp ((char*) sections[i].name, ".text")) {
@@ -684,7 +684,6 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 			textn = i + 1;
 		}
 	}
-	free (sections);
 	symctr = 0;
 	if (r_buf_read_at (bin->b, sym_tbl_off, (ut8*) buf, bufsz)) {
 		for (i = 0; i < shsz; i += srsz) {
@@ -724,6 +723,7 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 	return exports;
 }
 
+static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)* bin);
 static int bin_pe_init_sections(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->num_sections = bin->nt_headers->file_header.NumberOfSections;
 	int sections_size;
@@ -879,8 +879,7 @@ int PE_(bin_pe_get_overlay)(struct PE_(r_bin_pe_obj_t)* bin, ut64* size) {
 				&largest_size);
 	}
 
-	struct r_bin_pe_section_t *sects = NULL;
-	sects = PE_(r_bin_pe_get_sections) (bin);
+	struct r_bin_pe_section_t *sects = bin->sections;
 	for (i = 0; !sects[i].last; i++) {
 		computeOverlayOffset(
 				sects[i].paddr,
@@ -909,10 +908,8 @@ int PE_(bin_pe_get_overlay)(struct PE_(r_bin_pe_obj_t)* bin, ut64* size) {
 
 	if ((ut64) bin->size > largest_offset + largest_size) {
 		*size = bin->size - largest_offset - largest_size;
-		free (sects);
 		return largest_offset + largest_size;
 	}
-	free (sects);
 	return 0;
 }
 
@@ -2488,6 +2485,7 @@ static int bin_pe_init(struct PE_(r_bin_pe_obj_t)* bin) {
 		eprintf ("Warning: Cannot initialize sections\n");
 		return false;
 	}
+	bin->sections = PE_(r_bin_pe_get_sections) (bin);
 	bin_pe_init_imports (bin);
 	bin_pe_init_exports (bin);
 	bin_pe_init_resource (bin);
@@ -2564,7 +2562,7 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 	entry->haddr = bin->dos_header->e_lfanew + 4 + sizeof (PE_(image_file_header)) + 16;
 
 	if (entry->paddr >= bin->size) {
-		struct r_bin_pe_section_t* sections = PE_(r_bin_pe_get_sections) (bin);
+		struct r_bin_pe_section_t* sections = bin->sections;
 		ut64 paddr = 0;
 		if (!debug) {
 			bprintf ("Warning: Invalid entrypoint ... "
@@ -2597,14 +2595,12 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 				entry->vaddr = entry->paddr + base_addr;
 			}
 		}
-		free (sections);
-
 	}
 	if (!entry->paddr) {
 		if (!debug) {
 			bprintf ("Warning: NULL entrypoint\n");
 		}
-		struct r_bin_pe_section_t* sections = PE_(r_bin_pe_get_sections) (bin);
+		struct r_bin_pe_section_t* sections = bin->sections;
 		for (i = 0; i < bin->num_sections; i++) {
 			//If there is a section with x without w perm is a good candidate to be the entrypoint
 			if (sections[i].flags & PE_IMAGE_SCN_MEM_EXECUTE && !(sections[i].flags & PE_IMAGE_SCN_MEM_WRITE)) {
@@ -2614,7 +2610,6 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 			}
 
 		}
-		free (sections);
 	}
 
 	if (is_arm (bin) && entry->vaddr & 1) {
@@ -3317,7 +3312,7 @@ out_function:
 
 }
 
-struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)* bin) {
+static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)* bin) {
 	struct r_bin_pe_section_t* sections = NULL;
 	PE_(image_section_header) * shdr;
 	int i, j, section_count = 0;
@@ -3487,7 +3482,6 @@ int PE_(r_bin_pe_is_stripped_debug)(struct PE_(r_bin_pe_obj_t)* bin) {
 	return HASCHR (PE_IMAGE_FILE_DEBUG_STRIPPED);
 }
 
-
 void* PE_(r_bin_pe_free)(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!bin) {
 		return NULL;
@@ -3500,6 +3494,9 @@ void* PE_(r_bin_pe_free)(struct PE_(r_bin_pe_obj_t)* bin) {
 	free (bin->resource_directory);
 	free (bin->delay_import_directory);
 	free (bin->tls_directory);
+	if (bin->sections) {
+		free (bin->sections);
+	}
 	r_list_free (bin->resources);
 	r_pkcs7_free_cms (bin->cms);
 	r_buf_free (bin->b);

@@ -157,7 +157,7 @@ static RList* sections(RBinFile *bf) {
 	if (!(ret = r_list_newf ((RListFree)free))) {
 		return NULL;
 	}
-	if (!(sections = PE_(r_bin_pe_get_sections) (bin))){
+	if (!bin || !(sections = bin->sections)){
 		r_list_free (ret);
 		return NULL;
 	}
@@ -215,7 +215,6 @@ static RList* sections(RBinFile *bf) {
 		}
 		r_list_append (ret, ptr);
 	}
-	free (sections);
 	return ret;
 }
 
