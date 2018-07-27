@@ -3236,7 +3236,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	RAnalOp op = {0};
 	RAnalEsil *esil = core->anal->esil;
 	const char *name = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-	int breakoninvalid = r_config_get_i (core->config, "esil.breakoninvalid");
+	bool breakoninvalid = r_config_get_i (core->config, "esil.breakoninvalid");
 	if (!esil) {
 // TODO		inititalizeEsil (core);
 
@@ -3312,7 +3312,7 @@ repeat:
 	esil = core->anal->esil;
 	if (op.size < 1 || ret < 0) {
 		if (breakoninvalid) {
-			r_cons_printf ("[ESIL] Stopped execution in an invalid instruction\n");
+			r_cons_printf ("[ESIL] Stopped execution in an invalid instruction (see e??esil.breakoninvalid)\n");
 			return_tail (0);
 		}
 		if (esil->cmd && esil->cmd_todo) {
