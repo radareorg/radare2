@@ -11,10 +11,10 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     endif
 
     # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
-    CS_TIP = '782ea67e17a391ca0d3faafdc365b335a1a8930a'
-    CS_BRA = 'master'
+    CS_TIP = ''
+    CS_BRA = 'fix-x86-16-pcrel'
 
-    capstone_git_user = 'aquynh'
+    capstone_git_user = 'ret2libc'
 
     message('Cloning capstone ' + CS_BRA + ' branch, commit ' + CS_TIP + ', into ' + capstone_path)
     git_cmd = 'clone -b @0@ https://github.com/@1@/capstone.git @2@'.format(CS_BRA, capstone_git_user, capstone_path)
@@ -23,30 +23,13 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
       error('Cannot execute git clone command')
     endif
 
-    reset_cmd_str = '-C @0@ reset --hard @1@'.format(capstone_path, CS_TIP)
-    reset_cmd = run_command(git_exe, reset_cmd_str.split())
-    if reset_cmd.returncode() != 0
-      error('Cannot execute git reset command')
-    endif
-
-    patches_files = [
-      'capstone-calloc.patch',
-      'fix-m68k-oob.patch',
-      'fix-underflow-tms.patch',
-      'fix-x86-16.patch',
-      'sparc-crash.patch',
-      'sstream-null.patch'
-    ]
-
-    message('Patching capstone with radare\'s patches')
-    foreach file : patches_files
-      patch_path = join_paths(meson.current_source_dir(), 'capstone-patches', file)
-      patch_cmd_str = '-C @0@ apply -p1 @1@'.format(capstone_path, patch_path)
-      patch_cmd = run_command(git_exe, patch_cmd_str.split())
-      if patch_cmd.returncode() != 0
-        error('Cannot apply patch ' + file)
+    if CS_TIP != ''
+      reset_cmd_str = '-C @0@ reset --hard @1@'.format(capstone_path, CS_TIP)
+      reset_cmd = run_command(git_exe, reset_cmd_str.split())
+      if reset_cmd.returncode() != 0
+        error('Cannot execute git reset command')
       endif
-    endforeach
+    endif
   endif
 
   rel_cs_files = [
