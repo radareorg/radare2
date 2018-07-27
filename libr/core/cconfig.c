@@ -2435,7 +2435,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("esil.stack.addr", 0x100000, "Number of elements that can be pushed on the esilstack");
 	SETPREF ("esil.stack.pattern", "0", "Specify fill pattern to initialize the stack (0, w, d, i)");
 	SETI ("esil.addr.size", 64, "Maximum address size in accessed by the ESIL VM");
-	SETPREF ("esil.breakoninvalid", "true", "Break esil execution when instruction is invalid");
+	SETPREF ("esil.breakoninvalid", "false", "Break esil execution when instruction is invalid");
 
 	/* asm */
 	//asm.os needs to be first, since other asm.* depend on it
