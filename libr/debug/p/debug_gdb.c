@@ -972,7 +972,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 }
 
 static int r_debug_gdb_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set) {
-	int ret, arch, bpsize;
+	int ret, bpsize;
 	if (!b) {
 		return false;
 	}
