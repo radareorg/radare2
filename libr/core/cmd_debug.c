@@ -922,7 +922,7 @@ beach:
 
 /* until end of frame */
 static int step_until_eof(RCore *core) {
-	int maxLoops = 1024;
+	int maxLoops = 200000;
 	ut64 off, now = r_debug_reg_get (core->dbg, "SP");
 	r_cons_break_push (NULL, NULL);
 	do {
