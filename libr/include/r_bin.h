@@ -92,6 +92,30 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_METH_CONSTRUCTOR 0x0000000000100000L
 #define R_BIN_METH_DECLARED_SYNCHRONIZED 0x0000000000200000L
 
+#define R_BIN_BIND_LOCAL_STR "LOCAL"
+#define R_BIN_BIND_GLOBAL_STR "GLOBAL"
+#define R_BIN_BIND_WEAK_STR "WEAK"
+#define R_BIN_BIND_NUM_STR "NUM"
+#define R_BIN_BIND_LOOS_STR "LOOS"
+#define R_BIN_BIND_HIOS_STR "HIOS"
+#define R_BIN_BIND_LOPROC_STR "LOPROC"
+#define R_BIN_BIND_HIPROC_STR "HIPROC"
+#define R_BIN_BIND_UNKNOWN_STR "UNKNOWN"
+
+#define R_BIN_TYPE_NOTYPE_STR "NOTYPE"
+#define R_BIN_TYPE_OBJECT_STR "OBJ"
+#define R_BIN_TYPE_FUNC_STR "FUNC"
+#define R_BIN_TYPE_SECTION_STR "SECT"
+#define R_BIN_TYPE_FILE_STR "FILE"
+#define R_BIN_TYPE_COMMON_STR "COMMON"
+#define R_BIN_TYPE_TLS_STR "TLS"
+#define R_BIN_TYPE_NUM_STR "NUM"
+#define R_BIN_TYPE_LOOS_STR "LOOS"
+#define R_BIN_TYPE_HIOS_STR "HIOS"
+#define R_BIN_TYPE_LOPROC_STR "LOPROC"
+#define R_BIN_TYPE_HIPROC_STR "HIPROC"
+#define R_BIN_TYPE_UNKNOWN_STR "UNK"
+
 enum {
 	R_BIN_SYM_ENTRY,
 	R_BIN_SYM_INIT,
@@ -306,9 +330,8 @@ typedef struct r_bin_xtr_metadata_t {
 	char *arch;
 	int bits;
 	char *libname;
-	char *machine; 
+	char *machine;
 	char *type;
-	char xtr_type[10];
 } RBinXtrMetadata;
 
 typedef int (*FREE_XTR)(void *xtr_obj);
@@ -591,6 +614,9 @@ typedef struct r_bin_options_t {
 	char *name; // or comment :?
 } RBinOptions;
 
+R_API RBinImport *r_bin_import_clone(RBinImport *o);
+R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *o);
+
 R_API RBinOptions *r_bin_options_new (ut64 offset, ut64 baddr, int rawstr);
 R_API void r_bin_options_free(RBinOptions *bo);
 R_API int r_bin_open(RBin *bin, const char *filename, RBinOptions *bo);
@@ -646,7 +672,7 @@ R_API int r_bin_file_ref(RBin *bin, RBinFile *a);
 R_API void r_bin_file_free(void /*RBinFile*/ *bf_);
 R_API RBinFile *r_bin_file_create_append(RBin *bin, const char *file, const ut8 *bytes, ut64 sz, ut64 file_sz, int rawstr, int fd, const char *xtrname, bool steal_ptr);
 R_API RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const char *filename, const ut8 *bytes, ut64 sz, ut64 file_sz, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr);
-R_API int r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz, bool steal_ptr);
+R_API bool r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz, bool steal_ptr);
 R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *binfile);
 
 /* obj.c */
@@ -814,7 +840,6 @@ extern RBinPlugin r_bin_plugin_mach064;
 extern RBinPlugin r_bin_plugin_mdmp;
 extern RBinPlugin r_bin_plugin_java;
 extern RBinPlugin r_bin_plugin_dex;
-extern RBinPlugin r_bin_plugin_dummy;
 extern RBinPlugin r_bin_plugin_coff;
 extern RBinPlugin r_bin_plugin_ningb;
 extern RBinPlugin r_bin_plugin_ningba;
@@ -824,7 +849,6 @@ extern RBinPlugin r_bin_plugin_xbe;
 extern RBinPlugin r_bin_plugin_bflt;
 extern RBinXtrPlugin r_bin_xtr_plugin_xtr_fatmach0;
 extern RBinXtrPlugin r_bin_xtr_plugin_xtr_dyldcache;
-extern RBinXtrPlugin r_bin_xtr_plugin_xtr_pemixed;
 extern RBinLdrPlugin r_bin_ldr_plugin_ldr_linux;
 extern RBinPlugin r_bin_plugin_zimg;
 extern RBinPlugin r_bin_plugin_omf;

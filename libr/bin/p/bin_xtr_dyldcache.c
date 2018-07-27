@@ -184,7 +184,7 @@ RBinXtrPlugin r_bin_xtr_plugin_xtr_dyldcache = {
 #ifndef CORELIB
 RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN_XTR,
-	.data = &r_bin_xtr_plugin_pemixed,
+	.data = &r_bin_xtr_plugin_dyldcache,
 	.version = R2_VERSION
 };
 #endif

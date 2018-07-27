@@ -205,6 +205,7 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 		eprintf ("Error creating dir structure\n");
 		return false;
 	}
+
 	char *outfile = libname
 		? r_str_newf ("%s/%s.%s.%s_%i.%d", outpath, ptr, arch, libname, bits, idx)
 		: r_str_newf ("%s/%s.%s_%i.%d", outpath, ptr, arch, bits, idx);
@@ -235,8 +236,6 @@ static int rabin_extract(int all) {
 	if (all) {
 		int idx = 0;
 		RListIter *iter;
-		// #define r_list_foreach(list, it, pos)\
-		// for (it = list->head; it && (pos = it->data, 1); it = it->n)
 		r_list_foreach (bf->xtr_data, iter, data) {
 			res = extract_binobj (bf, data, idx++);
 			if (!res) {
@@ -264,6 +263,7 @@ static int rabin_dump_symbols(int len) {
 	if (!(symbols = r_bin_get_symbols (bin))) {
 		return false;
 	}
+
 	r_list_foreach (symbols, iter, symbol) {
 		if (symbol->size && (olen > symbol->size || !olen)) {
 			len = symbol->size;
@@ -564,7 +564,7 @@ int main(int argc, char **argv) {
 	int rawstr = 0;
 	int fd = -1;
 	RCore core = {0};
-	//intializes core->bin = r_bin_new();
+
 	r_core_init (&core);
 	bin = core.bin;
 
@@ -630,8 +630,6 @@ int main(int argc, char **argv) {
 		free (tmp);
 	}
 
-//each x is a macro that has one bit set in a 64bit field
-//in the end, bit field is read to determine which action to take
 #define is_active(x) (action & x)
 #define set_action(x) { actions++; action |= x; }
 #define unset_action(x) action &= ~x
@@ -998,19 +996,6 @@ int main(int argc, char **argv) {
 	r_bin_force_plugin (bin, forcebin);
 	r_bin_load_filter (bin, action);
 
-	/*
-	typedef struct r_bin_options_t {
-		ut64 offset; // starting physical address to read from the target file
-		ut64 baseaddr; // where the linker maps the binary in memory
-		ut64 loadaddr; // the desired offset where the binary should be loaded
-		ut64 size; // restrict the size of the target fd
-		int xtr_idx; // load Nth binary
-		int rawstr;
-		int iofd;
-		char *name; // or comment :?
-	} RBinOptions;
-	*/
-	//sets some fields in RBinOptions
 	RBinOptions *bo = r_bin_options_new (0LL, baddr, rawstr);
 	if (!bo) {
 		eprintf ("Could not create RBinOptions\n");
@@ -1116,7 +1101,7 @@ int main(int argc, char **argv) {
 	run_action ("sections", R_BIN_REQ_SECTIONS, R_CORE_BIN_ACC_SECTIONS);
 	run_action ("segments", R_BIN_REQ_SEGMENTS, R_CORE_BIN_ACC_SEGMENTS);
 	run_action ("entries", R_BIN_REQ_ENTRIES, R_CORE_BIN_ACC_ENTRIES);
-	run_action ("entries", R_BIN_REQ_INITFINI, R_CORE_BIN_ACC_INITFINI);
+	run_action ("initfini", R_BIN_REQ_INITFINI, R_CORE_BIN_ACC_INITFINI);
 	run_action ("main", R_BIN_REQ_MAIN, R_CORE_BIN_ACC_MAIN);
 	run_action ("imports", R_BIN_REQ_IMPORTS, R_CORE_BIN_ACC_IMPORTS);
 	run_action ("classes", R_BIN_REQ_CLASSES, R_CORE_BIN_ACC_CLASSES);

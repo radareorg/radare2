@@ -986,8 +986,6 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	rr = r_buf_fread_at (bin->b, metadata_directory + 16 + metadata->VersionStringLength,
 		(ut8*) (&metadata->Flags), bin->big_endian? "2S": "2s", 1);
 
-	eprintf ("Flags : %x\n", metadata->Flags);
-
 	if (rr < 1) {
 		goto fail;
 	}
@@ -1066,7 +1064,7 @@ static int bin_pe_init_overlay(struct PE_(r_bin_pe_obj_t)* bin) {
 
 static int bin_pe_init_clr_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	PE_(image_data_directory) * clr_dir = &bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR];
-	PE_DWord image_clr_hdr_paddr = bin_pe_rva_to_paddr (bin, clr_dir->VirtualAddress); 
+	PE_DWord image_clr_hdr_paddr = bin_pe_rva_to_paddr (bin, clr_dir->VirtualAddress);
 	// int clr_dir_size = clr_dir? clr_dir->Size: 0;
 	PE_(image_clr_header) * clr_hdr = R_NEW0 (PE_(image_clr_header));
 	int rr, len = sizeof (PE_(image_clr_header));
@@ -2190,30 +2188,74 @@ static char* _resource_lang_str(int id) {
 }
 
 static char* _resource_type_str(int type) {
+	char * typeName;
 	switch (type) {
-	case 1: return "CURSOR";
-	case 2: return "BITMAP";
-	case 3: return "ICON";
-	case 4: return "MENU";
-	case 5: return "DIALOG";
-	case 6: return "STRING";
-	case 7: return "FONTDIR";
-	case 8: return "FONT";
-	case 9: return "ACCELERATOR";
-	case 10: return "RCDATA";
-	case 11: return "MESSAGETABLE";
-	case 12: return "GROUP_CURSOR";
-	case 14: return "GROUP_ICON";
-	case 16: return "VERSION";
-	case 17: return "DLGINCLUDE";
-	case 19: return "PLUGPLAY";
-	case 20: return "VXD";
-	case 21: return "ANICURSOR";
-	case 22: return "ANIICON";
-	case 23: return "HTML";
-	case 24: return "MANIFEST";
-	default: return "UNKNOWN";
+	case 1:
+		typeName = "CURSOR";
+		break;
+	case 2:
+		typeName = "BITMAP";
+		break;
+	case 3:
+		typeName = "ICON";
+		break;
+	case 4:
+		typeName = "MENU";
+		break;
+	case 5:
+		typeName = "DIALOG";
+		break;
+	case 6:
+		typeName = "STRING";
+		break;
+	case 7:
+		typeName = "FONTDIR";
+		break;
+	case 8:
+		typeName = "FONT";
+		break;
+	case 9:
+		typeName = "ACCELERATOR";
+		break;
+	case 10:
+		typeName = "RCDATA";
+		break;
+	case 11:
+		typeName = "MESSAGETABLE";
+		break;
+	case 12:
+		typeName = "GROUP_CURSOR";
+		break;
+	case 14:
+		typeName = "GROUP_ICON";
+		break;
+	case 16:
+		typeName = "VERSION";
+		break;
+	case 17:
+		typeName = "DLGINCLUDE";
+		break;
+	case 19:
+		typeName = "PLUGPLAY";
+		break;
+	case 20:
+		typeName = "VXD";
+		break;
+	case 21:
+		typeName = "ANICURSOR";
+		break;
+	case 22:
+		typeName = "ANIICON";
+		break;
+	case 23:
+		typeName = "HTML";
+		break;
+	case 24:
+		typeName = "MANIFEST";
+		break;
+	default: return r_str_newf ("UNKNOWN (%d)",type);
 	}
+	return strdup (typeName);
 }
 
 static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_resource_directory *dir, ut64 offDir, int type, int id, SdbHash *dirs) {
@@ -2313,7 +2355,7 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			break;
 		}
 		rs->timestr = _time_stamp_to_str (dir->TimeDateStamp);
-		rs->type = strdup (_resource_type_str (type));
+		rs->type = _resource_type_str (type);
 		rs->language = strdup (_resource_lang_str (entry.u1.Name & 0x3ff));
 		rs->data = data;
 		rs->name = id;
@@ -2454,8 +2496,8 @@ static int bin_pe_init(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->big_endian = PE_(r_bin_pe_is_big_endian) (bin);
 
 	bin_pe_init_tls (bin);
-	bin_pe_init_clr_hdr (bin); 
-	bin_pe_init_metadata_hdr (bin); //probably need to be changed
+	bin_pe_init_clr_hdr (bin);
+	bin_pe_init_metadata_hdr (bin);
 	bin_pe_init_overlay (bin);
 	PE_(bin_pe_parse_resource) (bin);
 	bin->relocs = NULL;
@@ -2724,10 +2766,13 @@ static bool get_rsds(ut8* dbg_data, int dbg_data_len, SCV_RSDS_HEADER* res) {
 	return true;
 }
 
-static void get_nb10(ut8* dbg_data, SCV_NB10_HEADER* res) {
+static void get_nb10(ut8* dbg_data, int dbg_data_len, SCV_NB10_HEADER* res) {
 	const int nb10sz = 16;
-	// memcpy (res, dbg_data, nb10sz);
-	// res->file_name = (ut8*) strdup ((const char*) dbg_data + nb10sz);
+	if (dbg_data_len < nb10sz) {
+		return;
+	}
+	memcpy (res, dbg_data, nb10sz);
+	res->file_name = (ut8*) strdup ((const char*) dbg_data + nb10sz);
 }
 
 static int get_debug_info(struct PE_(r_bin_pe_obj_t)* bin, PE_(image_debug_directory_entry)* dbg_dir_entry, ut8* dbg_data, int dbg_data_len, SDebugInfo* res) {
@@ -2772,7 +2817,7 @@ static int get_debug_info(struct PE_(r_bin_pe_obj_t)* bin, PE_(image_debug_direc
 			}
 			SCV_NB10_HEADER nb10_hdr = {{0}};
 			init_cv_nb10_header (&nb10_hdr);
-			get_nb10 (dbg_data, &nb10_hdr);
+			get_nb10 (dbg_data, dbg_data_len, &nb10_hdr);
 			snprintf (res->guidstr, sizeof (res->guidstr),
 				"%x%x", nb10_hdr.timestamp, nb10_hdr.age);
 			res->file_name[0] = 0;

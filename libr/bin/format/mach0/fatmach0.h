@@ -1,6 +1,5 @@
 /* radare - LGPL - Copyright 2009-2011 nibble<.ds@gmail.com> */
 
-// #include 
 #include <r_types.h>
 #include "mach0_specs.h"
 

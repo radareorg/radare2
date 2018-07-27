@@ -116,7 +116,7 @@ struct PE_(r_bin_pe_obj_t) {
 	int big_endian;
 	RList* relocs;
 	RList* resources; //RList of r_pe_resources
-	const char* file; 
+	const char* file;
 	struct r_buf_t* b;
 	Sdb *kv;
 	RCMS* cms;
