@@ -841,6 +841,8 @@ struct r_line_t {
 	int offset_hist_index;
 	bool file_prompt;
 	int file_hist_index;
+	RList *sdbshell_hist;
+	RListIter *sdbshell_hist_iter;
 }; /* RLine */
 
 #ifdef R_API

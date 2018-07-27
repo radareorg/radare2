@@ -253,6 +253,7 @@ R_API int r_line_set_hist_callback(RLine *line, RLineHistoryUpCb up, RLineHistor
 	line->cb_history_down = down;
 	line->offset_hist_index = 0;
 	line->file_hist_index = 0;
+	line->sdbshell_hist_iter = r_list_head (line->sdbshell_hist);
 	return 1;
 }
 
@@ -376,6 +377,7 @@ R_API void r_line_hist_free() {
 		}
 	}
 	R_FREE (I.history.data);
+	R_FREE (I.sdbshell_hist);
 	I.history.index = 0;
 }
 

@@ -971,6 +971,26 @@ static int callback_foreach_kv (void *user, const char *k, const char *v) {
 	return 1;
 }
 
+R_API int sdbshell_history_up(RLine *line) {
+	if (!line->sdbshell_hist_iter || !line->sdbshell_hist_iter->n) {
+		return false;
+	}
+	line->sdbshell_hist_iter = line->sdbshell_hist_iter->n;
+	strncpy (line->buffer.data, line->sdbshell_hist_iter->data, R_LINE_BUFSIZE - 1);
+	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
+	return true;
+}
+
+R_API int sdbshell_history_down(RLine *line) {
+	if (!line->sdbshell_hist_iter || !line->sdbshell_hist_iter->p) {
+		return false;
+	}
+	line->sdbshell_hist_iter = line->sdbshell_hist_iter->p;
+	strncpy (line->buffer.data, line->sdbshell_hist_iter->data, R_LINE_BUFSIZE - 1);
+	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
+	return true;
+}
+
 static int cmd_kuery(void *data, const char *input) {
 	char buf[1024], *out;
 	RCore *core = (RCore*)data;
@@ -1010,6 +1030,13 @@ static int cmd_kuery(void *data, const char *input) {
 			free (p);
 		}
 		if (!s) s = core->sdb;
+		RLine *line = core->cons->line;
+		if (!line->sdbshell_hist) {
+			line->sdbshell_hist = r_list_newf (free);
+			r_list_append (line->sdbshell_hist, r_str_new ("\0"));
+		}
+		RList *sdb_hist = line->sdbshell_hist;
+		r_line_set_hist_callback (line, &sdbshell_history_up, &sdbshell_history_down);
 		for (;;) {
 			r_line_set_prompt (p);
 			if (r_cons_fgets (buf, buflen, 0, NULL) < 1) {
@@ -1018,11 +1045,19 @@ static int cmd_kuery(void *data, const char *input) {
 			if (!*buf) {
 				break;
 			}
+
+			if (sdb_hist && r_list_length (sdb_hist) == 1 || 
+				(r_list_length (sdb_hist) > 1 && strcmp (r_list_get_n (sdb_hist, 1), buf))) {
+				r_list_insert (sdb_hist, 1, strdup (buf));
+			}
+			line->sdbshell_hist_iter = sdb_hist->head;
+
 			out = sdb_querys (s, NULL, 0, buf);
 			if (out) {
 				r_cons_println (out);
 			}
 		}
+		r_line_set_hist_callback (core->cons->line, &cmd_history_up, &cmd_history_down);
 		break;
 	case 'o':
 		if (r_sandbox_enable (0)) {
