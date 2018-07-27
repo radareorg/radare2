@@ -415,6 +415,7 @@ static int r_debug_gdb_detach(RDebug *dbg, int pid) {
 static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 	int arch = r_sys_arch_id (dbg->arch);
 	int bits = dbg->anal->bits;
+	eprintf("%s %d\n", dbg->arch, bits);
 	check_connection (dbg);
 	if (desc && desc->target.valid && desc->target.regprofile) {
 		return strdup (desc->target.regprofile);
@@ -625,6 +626,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			"gpr	pstate	.64	264	0\n"
 			);
 		} else {
+			eprintf("ARM 32bit\n");
 			return strdup (
 #if 0
 			"=PC	r15\n"
@@ -662,8 +664,8 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			"gpr	fps	.96	160	0\n"
 			"gpr	cpsr	.32	172	0\n"
 #else
-			"=PC	r15\n"
-			"=SP	r14\n" // XXX
+			"=PC	pc\n"
+			"=SP	sp\n" // XXX
 			"=A0	r0\n"
 			"=A1	r1\n"
 			"=A2	r2\n"

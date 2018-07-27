@@ -228,8 +228,8 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 		switch (g->target.bits) {
 		case 32:
 			if (!(profile = r_str_prefix (profile,
-							"=PC	r15\n"
-							"=SP	r14\n" // XXX
+							"=PC	pc\n"
+							"=SP	sp\n" // XXX
 							"=A0	r0\n"
 							"=A1	r1\n"
 							"=A2	r2\n"
