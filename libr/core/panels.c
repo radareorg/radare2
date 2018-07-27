@@ -165,7 +165,8 @@ static void panelSingleStepOver(RCore *core);
 static void setRefreshAll(RPanels *panels);
 static void setCursor(RCore *core, bool cur);
 static void replaceCmd(RPanels* panels, char *title, char *cmd);
-static bool handleMenu(RCore *core, const char *menu);
+static void handleMenu(RCore *core, const int key, int *exit);
+static void onMenu(RCore *core, const char *menu, int *exit);
 static void changeMenu(RPanels *panels, const char **dstMenu);
 static RConsCanvas *createNewCanvas(RCore *core, int w, int h);
 
@@ -585,7 +586,8 @@ static void handleDownKey(RCore *core) {
 	r_cons_switchbuf (false);
 	if (panels->curnode == panels->menu_pos) {
 		if (!panels->menuStackDepth) {
-			handleMenu (core, panels->currentMenu[panels->currentMenuIndex]);
+			int exit = 0;
+			onMenu (core, panels->currentMenu[panels->currentMenuIndex], &exit);
 		} else {
 			if (panels->currentMenu[panels->currentMenuIndex + 1]) {
 				panels->currentMenuIndex++;
@@ -1219,7 +1221,46 @@ R_API int file_history_down(RLine *line) {
 	return true;
 }
 
-static bool handleMenu(RCore *core, const char *menu) {
+static void handleMenu(RCore *core, const int key, int *exit) {
+	RPanels *panels = core->panels;
+	switch (key) {
+		case 'h':
+			handleLeftKey (core);
+			break;
+		case 'j':
+			handleDownKey (core);
+			break;
+		case 'k':
+			handleUpKey (core);
+			break;
+		case 'l':
+			handleRightKey (core);
+			break;
+		case 'q':
+		case -1:
+			if (panels->menuStackDepth == 0) {
+				*exit = 1;
+				return;
+			}
+			panels->menuStackDepth--;
+			panels->currentMenu = panels->menuStack[panels->menuStackDepth];
+			panels->currentMenuIndex = panels->menuIndexStack[panels->menuStackDepth];
+			setRefreshAll (core->panels);
+			break;
+		case ' ':
+		case '\r':
+		case '\n':
+			onMenu (core, panels->currentMenu[panels->currentMenuIndex], exit);
+			break;
+		case 9:
+			handleTabKey (core, false);
+			break;
+		case 'Z':
+			handleTabKey (core, true);
+	}
+}
+
+static void onMenu(RCore *core, const char *menu, int *exit) {
 	RPanels *panels = core->panels;
 	if (!strcmp (menu, "File")) {
 		changeMenu (panels, menus_File);
@@ -1455,10 +1496,10 @@ static bool handleMenu(RCore *core, const char *menu) {
 	} else if (!strcmp (menu, "Colors")) {
 		r_core_cmd0 (core, "e!scr.color");
 	} else if (!strcmp (menu, "Quit")) {
-		return false;
+		*exit = 1;
+		return;
 	}
 	doPanelsRefresh (core);
-	return true;
 }
 
 static void changeMenu(RPanels *panels, const char **dstMenu) {
@@ -1546,6 +1587,8 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 	core->print->cur = 0;
 	core->print->cur_enabled = false;
 	core->print->col = 0;
+	bool originVmode = core->vmode;
+	core->vmode = true;
 
 	r_core_panels_layout (panels);
 repeat:
@@ -1562,7 +1605,25 @@ repeat:
 	key = r_cons_arrow_to_hjkl (okey);
 	r_cons_switchbuf (true);
 
+	if (panels->curnode == panels->menu_pos) {
+		int exit = 0;
+		handleMenu (core, key, &exit);
+		if (exit) {
+			goto exit;
+		}
+		goto repeat;
+	}
+
 	if (handleCursorMode (core, key)) {
+		goto repeat;
+	}
+
+	if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)
+			&& '0' < key && key <= '9') {
+		ut8 ch = key;
+		r_core_visual_jump (core, ch);
+		panels->panel[panels->curnode].addr = core->offset;
+		panels->panel[panels->curnode].refresh = true;
 		goto repeat;
 	}
 
@@ -1609,7 +1670,7 @@ repeat:
 		r_core_cmd0 (core, "sn");
 		break;
 	case '.':
-		if (panels->curnode != panels->menu_pos && !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
+		if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
 			if (r_config_get_i (core->config, "cfg.debug")) {
 				r_core_cmd0 (core, "sr PC");
 			} else {
@@ -1617,13 +1678,6 @@ repeat:
 			}
 			panels->panel[panels->curnode].addr = core->offset;
 			panels->panel[panels->curnode].refresh = true;
-		}
-		break;
-	case ' ':
-	case '\r':
-	case '\n':
-		if (panels->curnode == panels->menu_pos && !handleMenu (core, panels->currentMenu[panels->currentMenuIndex])) {
-			goto exit;
 		}
 		break;
 	case '?':
@@ -1669,7 +1723,7 @@ repeat:
 		r_core_visual_browse (core);
 		break;
 	case 'o':
-		if (panels->curnode != panels->menu_pos && !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
+		if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
 			r_core_visual_showcursor (core, true);
 			r_core_visual_offset (core);
 			r_core_visual_showcursor (core, false);
@@ -1696,7 +1750,7 @@ repeat:
 		setRefreshAll (panels);
 		break;
 	case 'c':
-		if (panels->curnode != panels->menu_pos && (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)
+		if ((!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)
 					|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS))) {
 			setCursor (core, !core->print->cur_enabled);
 			panels->panel[panels->curnode].refresh = true;
@@ -1706,6 +1760,11 @@ repeat:
 		can->color = !can->color;
 		// r_config_toggle (core->config, "scr.color");
 		// refresh graph
+		setRefreshAll (panels);
+		break;
+	case 'r':
+		r_core_cmd0 (core, "e!asm.jmphints");
+		r_core_cmd0 (core, "e!asm.leahints");
 		setRefreshAll (panels);
 		break;
 	case 'R':
@@ -1746,10 +1805,8 @@ repeat:
 		r_core_visual_hud (core);
 		break;
 	case 'X':
-		if (panels->curnode != panels->menu_pos) {
-			delCurPanel (panels);
-			setRefreshAll (panels);
-		}
+		delCurPanel (panels);
+		setRefreshAll (panels);
 		break;
 	case 9: // TAB
 		handleTabKey (core, false);
@@ -1941,14 +1998,7 @@ repeat:
 		break;
 	case 'q':
 	case -1: // EOF
-		if (panels->menuStackDepth == 0) {
-			goto exit;
-		}
-		panels->menuStackDepth--;
-		panels->currentMenu = panels->menuStack[panels->menuStackDepth];
-		panels->currentMenuIndex = panels->menuIndexStack[panels->menuStackDepth];
-		setRefreshAll (core->panels);
-		break;
+		goto exit;
 #if 0
 	case 27: // ESC
 		if (r_cons_readchar () == 91) {
@@ -1961,12 +2011,6 @@ repeat:
 		// sleep (1);
 		break;
 	}
-	const int keyNum = key - 48;
-	if (0 <= keyNum && keyNum < panels->n_panels) {
-		panels->panel[panels->curnode].refresh = true;
-		panels->panel[keyNum].refresh = true;
-		panels->curnode = keyNum;
-	}
 	goto repeat;
 exit:
 	core->cons->event_resize = NULL;
@@ -1974,6 +2018,7 @@ exit:
 	core->print->cur = originCursor;
 	core->print->cur_enabled = false;
 	core->print->col = 0;
+	core->vmode = originVmode;
 
 	r_core_panels_free (panels);
 	core->panels = NULL;
