@@ -2705,7 +2705,7 @@ static void agraph_print_edges(RAGraph *g) {
 	}
 	int out_nth, in_nth, bendpoint;
 	RListIter *itn, *itm, *ito;
-	RCanvasLineStyle style = {0};
+	RCanvasLineStyle style = {};
 	const RList *nodes = r_graph_get_nodes (g->graph);
 	RGraphNode *ga;
 	RANode *a;
@@ -2784,15 +2784,18 @@ static void agraph_print_edges(RAGraph *g) {
 				}
 			}
 
+			style.dot_style = DOT_STYLE_NORMAL;
 			if (many || parent_many) {
 				style.color = LINE_UNCJMP;
 			} else {
 				switch (out_nth) {
 				case 0:
 					style.color = LINE_TRUE;
+					style.dot_style = DOT_STYLE_CONDITIONAL;
 					break;
 				case 1:
 					style.color = LINE_FALSE;
+					style.dot_style = DOT_STYLE_CONDITIONAL;
 					break;
 				case -1:
 					style.color = LINE_UNCJMP;
@@ -2814,6 +2817,10 @@ static void agraph_print_edges(RAGraph *g) {
 				bx = b->is_dummy ? b->x : (b->x + b_x_inc);
 				ay = a->y + a->h;
 				by = b->y - 1;
+
+				if (ay > by) {
+					style.dot_style = DOT_STYLE_BACKEDGE;
+				}
 
 				if (many && !g->is_callgraph) {
 					int t = R_EDGES_X_INC + 2 * (neighbours->length + 1);
@@ -2860,6 +2867,11 @@ static void agraph_print_edges(RAGraph *g) {
 				ay = a->is_dummy ? a->y : a->y + R_EDGES_X_INC + out_nth;
 				bx = b->x - 1;
 				by = b->is_dummy ? b->y : b->y + R_EDGES_X_INC + out_nth;
+
+				if (ax > bx) {
+					style.dot_style = DOT_STYLE_BACKEDGE;
+				}
+
 				if (a->w < a->layer_width) {
 					r_cons_canvas_line_square_defined (g->can, ax, ay, a->x + a->layer_width, ay, &style, 0, false);
 					ax = a->x + a->layer_width;
