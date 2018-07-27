@@ -3377,10 +3377,15 @@ repeat:
 			r_core_cmd0 (core, "sr PC");
 		}
 	}
-
+	// check breakpoints
+	ut64 pc = r_reg_getv (core->anal->reg, name);
+	if (r_bp_get_at (core->dbg->bp, pc)) {
+		r_cons_printf ("[ESIL] hit breakpoint at 0x%"PFMT64x "\n", pc);
+		return_tail (0);
+	}
 	// check addr
 	if (until_addr != UT64_MAX) {
-		if (r_reg_getv (core->anal->reg, name) == until_addr) {
+		if (pc == until_addr) {
 			return_tail (0);
 		}
 		goto repeat;
