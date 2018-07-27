@@ -90,7 +90,8 @@ static const char *help_msg_ae[] = {
 	"ae??", "", "show ESIL help",
 	"ae[aA]", "[f] [count]", "analyse esil accesses (regs, mem..)",
 	"aec", "[?]", "continue until ^C",
-	"aecs", " [sn]", "continue until syscall number",
+	"aecs", "", "continue until syscall",
+	"aecc", "", "continue until call",
 	"aecu", " [addr]", "continue until address",
 	"aecue", " [esil]", "continue until esil expression match",
 	"aef", " [addr]", "emulate function",
@@ -180,6 +181,7 @@ static const char *help_msg_aec[] = {
 	"Examples:", "aec", " continue until ^c",
 	"aec", "", "Continue until exception",
 	"aecs", "", "Continue until syscall",
+	"aecc", "", "Continue until call",
 	"aecu", "[addr]", "Continue until address",
 	"aecue", "[addr]", "Continue until esil expression",
 	NULL
@@ -4256,9 +4258,12 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			r_core_cmd_help (core, help_msg_aec);
 		} else if (input[1] == 's') { // "aecs"
 			const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
-			ut64 newaddr;
-			int ret;
 			for (;;) {
+				if (!r_core_esil_step (core, UT64_MAX, NULL, NULL)) {
+					break;
+				}
+				r_core_cmd0 (core, ".ar*");
+				addr = r_num_get (core->num, pc);
 				op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_BASIC);
 				if (!op) {
 					break;
@@ -4266,26 +4271,39 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				if (op->type == R_ANAL_OP_TYPE_SWI) {
 					eprintf ("syscall at 0x%08" PFMT64x "\n", addr);
 					break;
-				}
-				if (op->type == R_ANAL_OP_TYPE_TRAP) {
+				} else if (op->type == R_ANAL_OP_TYPE_TRAP) {
 					eprintf ("trap at 0x%08" PFMT64x "\n", addr);
 					break;
 				}
-				ret = r_core_esil_step (core, UT64_MAX, NULL, NULL);
 				r_anal_op_free (op);
 				op = NULL;
 				if (core->anal->esil->trap || core->anal->esil->trap_code) {
 					break;
 				}
-				if (!ret)
+			}
+			if (op) {
+				r_anal_op_free (op);
+			}
+		} else if (input[1] == 'c') { // "aecc"
+			const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
+			for (;;) {
+				if (!r_core_esil_step (core, UT64_MAX, NULL, NULL)) {
 					break;
+				}
 				r_core_cmd0 (core, ".ar*");
-				newaddr = r_num_get (core->num, pc);
-				if (addr == newaddr) {
-					addr++;
+				addr = r_num_get (core->num, pc);
+				op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_BASIC);
+				if (!op) {
 					break;
-				} else {
-					addr = newaddr;
+				}
+				if (op->type == R_ANAL_OP_TYPE_CALL || op->type == R_ANAL_OP_TYPE_UCALL) {
+					eprintf ("call at 0x%08" PFMT64x "\n", addr);
+					break;
+				}
+				r_anal_op_free (op);
+				op = NULL;
+				if (core->anal->esil->trap || core->anal->esil->trap_code) {
+					break;
 				}
 			}
 			if (op) {
