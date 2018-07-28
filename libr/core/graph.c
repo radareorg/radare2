@@ -2818,9 +2818,8 @@ static void agraph_print_edges(RAGraph *g) {
 				b_x_inc = R_EDGES_X_INC + 2 * (in_nth + 1);
 
 				bx = b->is_dummy ? b->x : (b->x + b_x_inc);
-				ay = a->y + a->h + 1;
+				ay = a->y + a->h;
 				by = b->y - 1;
-
 
 				if (many && !g->is_callgraph) {
 					int t = R_EDGES_X_INC + 2 * (neighbours->length + 1);
@@ -2828,7 +2827,7 @@ static void agraph_print_edges(RAGraph *g) {
 					bendpoint = bx < ax ? neighbours->length - out_nth :  out_nth;
 				} else {
 					ax = a->is_dummy ? a->x : (a->x + a_x_inc);
-					bendpoint = tm->edgectr - 1;
+					bendpoint = tm->edgectr;
 				}
 
 				if (!a->is_dummy && itn == neighbours->head && out_nth == 0 && bx > ax) {
@@ -2836,7 +2835,7 @@ static void agraph_print_edges(RAGraph *g) {
 				}
 				if (a->h < a->layer_height) {
 					r_cons_canvas_line (g->can, ax, ay, ax, ay + a->layer_height - a->h, &style);
-					ay = a->y + a->layer_height + 1;
+					ay = a->y + a->layer_height;
 					style.symbol = LINE_NOSYM_VERT;
 				}
 				if (by >= ay) {
@@ -3228,18 +3227,18 @@ static int agraph_print(RAGraph *g, int is_interactive, RCore *core, RAnalFuncti
 		r_config_set_i (core->config, "asm.bytes", asm_bytes);
 		r_config_set_i (core->config, "asm.cmt.right", asm_cmt_right);
 	}
+	if (g->title && *g->title) {
+		g->can->sy ++;
+	}
 	if (preEdges) {
 		agraph_print_edges (g);
 	}
-	if (g->title && *g->title) {
-		g->can->sy ++;
-		agraph_print_nodes (g);
-		g->can->sy --;
-	} else {
-		agraph_print_nodes (g);
-	}
+	agraph_print_nodes (g);
 	if (!preEdges) {
 		agraph_print_edges (g);
+	}
+	if (g->title && *g->title) {
+		g->can->sy --;
 	}
 	/* print the graph title */
 	(void) G (-g->can->sx, -g->can->sy);

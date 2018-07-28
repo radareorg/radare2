@@ -106,6 +106,7 @@ static bool apply_line_style(RConsCanvas *c, int x, int y, int x2, int y2,
 
 R_API void r_cons_canvas_line_diagonal (RConsCanvas *c, int x, int y, int x2, int y2, RCanvasLineStyle *style) {
 	if (x == x2 || y == y2) {
+		style->dot_style = DOT_STYLE_NORMAL;
 		r_cons_canvas_line_square (c, x, y +1, x2, y2, style);
 		return;
 	}
