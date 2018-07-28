@@ -2273,19 +2273,23 @@ static int cb_dbgsnap(void *user, void *data) {
 static char *getViewerPath() {
 	int i;
 	const char *viewers[] = {
+#if __WINDOWS__
+		"explorer",
+#else
 		"open",
 		"geeqie",
 		"gqview",
 		"eog",
 		"xdg-open",
+#endif
 		NULL
 	};
 	for (i = 0; viewers[i]; i++) {
-		char *dotPath = r_file_path (viewers[i]);
-		if (dotPath && strcmp (dotPath, viewers[i])) {
-			return dotPath;
+		char *viewerPath = r_file_path (viewers[i]);
+		if (viewerPath && strcmp (viewerPath, viewers[i])) {
+			return viewerPath;
 		}
-		free (dotPath);
+		free (viewerPath);
 	}
 	return NULL;
 }
@@ -2305,7 +2309,7 @@ R_API char* r_core_graph_cmd(RCore *core, char *r2_cmd) {
 				cmd = r_str_newf ("%s > a.dot;!dot -T%s -oa.%s a.dot;!%s a.%s", r2_cmd, ext, ext, viewer, ext);
 				free (viewer);
 			} else {
-				cmd = "?e cannot find a valid picture viewer";
+				eprintf ("Cannot find a valid picture viewer");
 			}
 		} else {
 			cmd = r_str_new ("agf");

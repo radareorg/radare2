@@ -214,10 +214,11 @@ R_API char *r_file_abspath(const char *file) {
 }
 
 R_API char *r_file_path(const char *bin) {
-	char file[1024];
 	char *path_env;
+	char *file = NULL;
 	char *path = NULL;
 	char *str, *ptr;
+	const char *extension = "";
 	if (!bin) {
 		return NULL;
 	}
@@ -228,17 +229,22 @@ R_API char *r_file_path(const char *bin) {
 		return NULL;
 	}
 	path_env = (char *)r_sys_getenv ("PATH");
+#if __WINDOWS__
+	if (!r_str_endswith (bin, ".exe")) {
+		extension = ".exe";
+	}
+#endif
 	if (path_env) {
 		str = path = strdup (path_env);
 		do {
-			ptr = strchr (str, ':');
+			ptr = strchr (str, R_SYS_ENVSEP[0]);
 			if (ptr) {
 				*ptr = '\0';
-				snprintf (file, sizeof (file), "%s"R_SYS_DIR"%s", str, bin);
+				file = r_str_newf (R_JOIN_2_PATHS ("%s", "%s%s"), str, bin, extension);
 				if (r_file_exists (file)) {
 					free (path);
 					free (path_env);
-					return strdup (file);
+					return file;
 				}
 				str = ptr + 1;
 			}
@@ -246,6 +252,7 @@ R_API char *r_file_path(const char *bin) {
 	}
 	free (path_env);
 	free (path);
+	free (file);
 	return strdup (bin);
 }
 
