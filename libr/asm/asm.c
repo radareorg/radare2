@@ -936,6 +936,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					ret = r_asm_pseudo_incbin (&op, ptr + 8);
 				} else {
 					eprintf ("Unknown directive (%s)\n", ptr);
+					free(lbuf);
 					return r_asm_code_free (acode);
 				}
 				if (!ret) {
@@ -943,6 +944,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				}
 				if (ret < 0) {
 					eprintf ("!!! Oops\n");
+					free(lbuf);
 					return r_asm_code_free (acode);
 				}
 			} else { /* Instruction */
@@ -968,16 +970,19 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 			if (stage == STAGES - 1) {
 				if (ret < 1) {
 					eprintf ("Cannot assemble '%s' at line %d\n", ptr_start, linenum);
+					free(lbuf);
 					return r_asm_code_free (acode);
 				}
 				acode->len = idx + ret;
 				char *newbuf = realloc (acode->buf, (idx + ret) * 2);
 				if (!newbuf) {
+					free(lbuf);
 					return r_asm_code_free (acode);
 				}
 				acode->buf = (ut8*)newbuf;
 				newbuf = realloc (acode->buf_hex, strlen (acode->buf_hex) + strlen (op.buf_hex) + r_buf_size (op.buf_inc) + 1);
 				if (!newbuf) {
+					free(lbuf);
 					return r_asm_code_free (acode);
 				}
 				acode->buf_hex = newbuf;
