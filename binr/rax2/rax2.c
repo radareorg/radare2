@@ -177,10 +177,10 @@ static int rax(char *str, int len, int last) {
 				/* not as complete as for positive numbers */
 				out_mode = (flags ^ 32)? '0': 'I';
 				if (str[1] >= '0' && str[1] <= '9') {
-					if (r_str_endswith (str, "f")) {
-						out_mode = 'l';
-					} else if (str[2] == 'x') {
+					if (str[2] == 'x') {
 						out_mode = 'I';
+					} else if (r_str_endswith (str, "f")) {
+						out_mode = 'l';
 					}
 					return format_output (out_mode, str);
 				}
