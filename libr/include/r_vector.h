@@ -105,7 +105,7 @@ R_API void r_pvector_sort(RVector *vec, RPVectorComparator cmp);
 		} \
 	} while (0) \
 
-#define rp_vector_upper_bound(vec, x, i, cmp) \
+#define r_pvector_upper_bound(vec, x, i, cmp) \
 	do { \
 		int h = (vec)->len, m; \
 		for (i = 0; i < h; ) { \
