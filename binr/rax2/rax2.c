@@ -35,7 +35,7 @@ static int format_output(char mode, const char *s) {
 		break;
 	case '0': {
 		int len = strlen (s);
-		if (len > 0 && s[len - 1] == 'f') {
+		if (len > 0 && s[len - 1] == 'f' && !r_str_startswith (s, "0x")) {
 			R_STATIC_ASSERT (sizeof (float) == 4)
 			float f = (float) num->fvalue;
 			ut8 *p = (ut8 *) &f;
