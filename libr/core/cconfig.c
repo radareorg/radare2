@@ -2295,29 +2295,30 @@ static char *getViewerPath() {
 	return NULL;
 }
 
-R_API char* r_core_graph_cmd(RCore *core, char *r2_cmd) {
+R_API char* r_core_graph_cmd(RCore *core, char *r2_cmd, char *save_path) {
 	char *cmd = NULL;
-	char *xdotPath = r_file_path ("xdot");
 	const char *ext = r_config_get (core->config, "graph.extension");
-	if (r_file_exists (xdotPath)) {
-		cmd = r_str_newf ("%s > a.dot;!xdot a.dot", r2_cmd);
-	} else {
-		char *dotPath = r_file_path ("dot");
-		if (r_file_exists (dotPath)) {
-			R_FREE (dotPath);
+	char *dotPath = r_file_path ("dot");
+	if (!r_file_exists (dotPath)) {
+		free (dotPath);
+		dotPath = r_file_path ("xdot");
+	}
+	if (r_file_exists (dotPath)) {
+		if (save_path && *save_path) {
+			cmd = r_str_newf ("%s > a.dot;!%s -T%s -o%s a.dot;", r2_cmd, dotPath, ext, save_path);
+		} else {
 			char *viewer = getViewerPath();
 			if (viewer) {
-				cmd = r_str_newf ("%s > a.dot;!dot -T%s -oa.%s a.dot;!%s a.%s", r2_cmd, ext, ext, viewer, ext);
+				cmd = r_str_newf ("%s > a.dot;!%s -T%s -oa.%s a.dot;!%s a.%s", r2_cmd, dotPath, ext, ext, viewer, ext);
 				free (viewer);
 			} else {
 				eprintf ("Cannot find a valid picture viewer");
 			}
-		} else {
-			cmd = r_str_new ("agf");
 		}
-		free (dotPath);
+	} else {
+		cmd = r_str_new ("agf");
 	}
-	free (xdotPath);
+	free (dotPath);
 	return cmd;
 }
 

@@ -283,7 +283,7 @@ R_API void r_core_wait(RCore *core);
 R_API RCore *r_core_ncast(ut64 p);
 R_API RCore *r_core_cast(void *p);
 R_API int r_core_config_init(RCore *core);
-R_API char* r_core_graph_cmd(RCore *core, char *r2_cmd);
+R_API char* r_core_graph_cmd(RCore *core, char *r2_cmd, char *save_path);
 R_API int r_core_prompt(RCore *core, int sync);
 R_API int r_core_prompt_exec(RCore *core);
 R_API int r_core_lines_initcache (RCore *core, ut64 start_addr, ut64 end_addr);
