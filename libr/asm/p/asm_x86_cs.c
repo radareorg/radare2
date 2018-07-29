@@ -39,6 +39,12 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	mode =  (a->bits == 64)? CS_MODE_64: 
 		(a->bits == 32)? CS_MODE_32:
 		(a->bits == 16)? CS_MODE_16: 0;
+
+	if (mode == CS_MODE_16) {
+		// NOTE: when in 16bits mode, we assume segmentation
+		off = off & 0xffff;
+	}
+
 	if (cd && mode != omode) {
 		cs_close (&cd);
 		cd = 0;

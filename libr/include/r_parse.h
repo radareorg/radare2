@@ -25,6 +25,7 @@ typedef struct r_parse_t {
 	bool pseudo;
 	bool relsub; // replace rip relative expressions in instruction
 	bool localvar_only; // if true use only the local variable name (e.g. [local_10h] instead of [ebp + local10h])
+	bool cs_segment; // if true replace "cs:XXXX" addresses with the cs value
 	int relsub_addr;
 	int minval;
 	char *retleave_asm;

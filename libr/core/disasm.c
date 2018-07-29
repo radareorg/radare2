@@ -598,6 +598,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->jmpsub = r_config_get_i (core->config, "asm.jmpsub");
 	ds->varsub = r_config_get_i (core->config, "asm.var.sub");
 	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
+	core->parser->cs_segment = r_config_get_i (core->config, "asm.segoff") && core->assembler->bits == 16;
 	core->parser->localvar_only = r_config_get_i (core->config, "asm.var.subonly");
 	core->parser->retleave_asm = NULL;
 	ds->show_vars = r_config_get_i (core->config, "asm.var");
@@ -937,7 +938,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			r_list_free (list);
 		}
 	}
-	char *asm_str = colorize_asm_string (core, ds, print_color);
+	char *asm_str = strdup (ds->opstr);
 	asm_str = ds_sub_jumps (ds, asm_str);
 	if (ds->immtrim) {
 		r_parse_immtrim (ds->opstr);
@@ -987,6 +988,11 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			ds->opstr = strdup (asm_str? asm_str: "");
 		}
 	}
+
+	asm_str = colorize_asm_string (core, ds, print_color);
+	free (ds->opstr);
+	ds->opstr = strdup (asm_str);
+
 	if (ds->show_color) {
 		int i = 0;
 		char *word = NULL;

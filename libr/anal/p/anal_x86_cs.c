@@ -1738,6 +1738,25 @@ static void set_opdir(RAnalOp *op, cs_insn *insn) {
 	}
 }
 
+// when necessary, it converts a segmented offset in its linear address
+static ut64 handle_segment(RAnal *a, cs_insn *insn, ut64 current_addr, ut64 value) {
+	ut64 value_mask = 0xffff;
+
+	// we support only segments in 16bit, of 64KB size
+	if (a->bits != 16) {
+		return value;
+	}
+
+	// NOTE: since radare2 doesn't properly support segments, we use the
+	//       instruction prefixes to know whether the value should be
+	//       truncated to 64Kb or not
+	if (insn->detail->x86.prefix[2] == 0x66) {
+		value_mask = 0xffffffff;
+	}
+
+	return (current_addr & (~value_mask)) + (value & value_mask);
+}
+
 static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
 	struct Getarg gop = {
 		.handle = *handle,
@@ -2243,7 +2262,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 	case X86_INS_LOOPE:
 	case X86_INS_LOOPNE:
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = INSOP(0).imm;
+		op->jump = handle_segment (a, insn, addr, INSOP(0).imm);
 		op->fail = addr + op->size;
 		op->cycles = CYCLE_JMP;
 		switch (insn->id) {
@@ -2264,7 +2283,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 			op->type = R_ANAL_OP_TYPE_CALL;
 			// TODO: what if UCALL?
 			// TODO: use imm_size
-			op->jump = INSOP(0).imm;
+			op->jump = handle_segment (a, insn, addr, INSOP(0).imm);
 			op->fail = addr+op->size;
 			break;
 		case X86_OP_MEM:
@@ -2312,7 +2331,7 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 				op->ptr = INSOP (0).mem.disp;
 				op->jump = (seg << a->seggrn) + off;
 			} else {
-				op->jump = INSOP(0).imm;
+				op->jump = handle_segment (a, insn, addr, INSOP(0).imm);
 			}
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->cycles = CYCLE_JMP;

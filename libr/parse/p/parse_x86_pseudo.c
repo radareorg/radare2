@@ -8,6 +8,10 @@
 #include <r_util.h>
 #include <r_anal.h>
 #include <r_parse.h>
+
+#define CS_SEGMENT_INTEL " cs:"
+#define CS_SEGMENT_ATT " \%cs:"
+
 // 16 bit examples
 //    0x0001f3a4      9a67620eca       call word 0xca0e:0x6267
 //    0x0001f41c      eabe76de12       jmp word 0x12de:0x76be [2]
@@ -157,7 +161,7 @@ static int replace (int argc, char *argv[], char *newstr) {
 #undef MAXPSEUDOOPS
 }
 
-static int parse (RParse *p, const char *data, char *str) {
+static int parse(RParse *p, const char *data, char *str) {
 	char w0[256], w1[256], w2[256], w3[256];
 	int i;
 	size_t len = strlen (data);
@@ -495,11 +499,47 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 	return ret;
 }
 
+static bool do_replace_segment(ut64 seg, char *data, char *str, int len, const char *needle) {
+	char *ptr, *rest;
+	if ((ptr = strstr (data, needle)) != NULL) {
+		rest = ptr + strlen(needle);
+		*ptr = '\0';
+
+		snprintf(str, len, "%s 0x%" PFMT64x ":%s", data, seg, rest);
+		return true;
+	}
+	return false;
+
+}
+
+static bool replace_segments(RParse *p, ut64 addr, char *data, char *str, int len) {
+	// TODO: for now we only support segments of 64KB in size
+	ut64 segment_value = (addr & ~(0xffff)) >> 4;
+	bool changed = false;
+
+	changed |= do_replace_segment (segment_value, data, str, len, CS_SEGMENT_INTEL);
+	changed |= do_replace_segment (segment_value, data, str, len, CS_SEGMENT_ATT);
+	return changed;
+}
+
+static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_endian) {
+	bool changed = false;
+
+	if (p->cs_segment) {
+		eprintf("pre cs_segment : data = '%s', str = '%s', len = %d\n", data, str, len);
+		changed |= replace_segments (p, 0xf0000, data, str, len);
+		eprintf("post cs_segment : data = '%s', str = '%s', len = %d\n", data, str, len);
+	}
+
+	return changed;
+}
+
 RParsePlugin r_parse_plugin_x86_pseudo = {
 	.name = "x86.pseudo",
 	.desc = "X86 pseudo syntax",
 	.parse = &parse,
 	.varsub = &varsub,
+	.filter = &filter,
 };
 
 #ifndef CORELIB
