@@ -157,7 +157,7 @@ R_API void *r_vector_push(RVector *vec, void *x) {
 	if (vec->len >= vec->capacity) {
 		RESIZE_OR_RETURN_NULL (NEXT_VECTOR_CAPACITY);
 	}
-	return vector_assign_at (vec, vec->len, x);
+	return vector_assign_at (vec, vec->len++, x);
 }
 
 R_API void *r_vector_push_front(RVector *vec, void *x) {
