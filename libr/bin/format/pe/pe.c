@@ -3372,10 +3372,16 @@ struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)
 		sections[j].size = shdr[i].SizeOfRawData;
 		sections[j].vsize = shdr[i].Misc.VirtualSize;
 		if (bin->optional_header) {
-			int sa = R_MAX (bin->optional_header->SectionAlignment, 0x1000);
-			ut64 diff = sections[j].vsize % sa;
-			if (diff) {
-				sections[j].vsize += sa - diff;
+			ut32 sa = bin->optional_header->SectionAlignment;
+			if (sa) {
+				ut64 diff = sections[j].vsize % sa;
+				if (diff) {
+					sections[j].vsize += sa - diff;
+				}
+				if (sections[j].vaddr % sa) {
+					bprintf ("Warning: section %s not aligned to SectionAlignment.\n",
+							sections[j].name);
+				}
 			}
 		}
 		sections[j].paddr = shdr[i].PointerToRawData;
