@@ -1742,7 +1742,7 @@ static void set_opdir(RAnalOp *op, cs_insn *insn) {
 static ut64 handle_segment(RAnal *a, cs_insn *insn, ut64 current_addr, ut64 value) {
 	ut64 value_mask = 0xffff;
 
-	// we support only segments in 16bit, of 64KB size
+	// we support only segments in 16bit
 	if (a->bits != 16) {
 		return value;
 	}
