@@ -548,8 +548,10 @@ static void handleUpKey(RCore *core) {
 	} else {
 		panels->panel[panels->curnode].refresh = true;
 		if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
+			int cols = core->print->cols;
 			core->offset = panels->panel[panels->curnode].addr;
-			r_core_cmd0 (core, "s-8");
+			r_core_visual_disasm_up (core, &cols);
+			r_core_seek_delta (core, -cols);
 			panels->panel[panels->curnode].addr = core->offset;
 		} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
 			int width = r_config_get_i (core->config, "hex.cols");
@@ -597,21 +599,9 @@ static void handleDownKey(RCore *core) {
 		panels->panel[panels->curnode].refresh = true;
 		if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
 			core->offset = panels->panel[panels->curnode].addr;
-			int cols = core->print->cols;
-			RAnalFunction *f = NULL;
 			RAsmOp op;
-			f = r_anal_get_fcn_in (core->anal, core->offset, 0);
-			op.size = 1;
-			if (f && f->folded) {
-				cols = core->offset - f->addr + r_anal_fcn_size (f);
-			} else {
-				r_asm_set_pc (core->assembler, core->offset);
-				cols = r_asm_disassemble (core->assembler,
-						&op, core->block, 32);
-			}
-			if (cols < 1) {
-				cols = op.size > 1 ? op.size : 1;
-			}
+			int cols = core->print->cols;
+			r_core_visual_disasm_down (core, &op, &cols);
 			r_core_seek (core, core->offset + cols, 1);
 			r_core_block_read (core);
 			panels->panel[panels->curnode].addr = core->offset;

@@ -2255,19 +2255,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					} else {
 						while (times--) {
 							if (isDisasmPrint (core->printidx)) {
-								RAnalFunction *f = NULL;
-								f = r_anal_get_fcn_in (core->anal, core->offset, 0);
-								op.size = 1;
-								if (f && f->folded) {
-									cols = core->offset - f->addr + r_anal_fcn_size (f);
-								} else {
-									r_asm_set_pc (core->assembler, core->offset);
-									cols = r_asm_disassemble (core->assembler,
-											&op, core->block, 32);
-								}
-								if (cols < 1) {
-									cols = op.size > 1 ? op.size : 1;
-								}
+								r_core_visual_disasm_down (core, &op, &cols);
 							}
 							r_core_seek (core, core->offset + cols, 1);
 						}
@@ -2303,15 +2291,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					}
 					while (times--) {
 						if (isDisasmPrint (core->printidx)) {
-							RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
-							if (f && f->folded) {
-								cols = core->offset - f->addr; // + f->size;
-								if (cols < 1) {
-									cols = 4;
-								}
-							} else {
-								cols = prevopsz (core, core->offset);
-							}
+							r_core_visual_disasm_up (core, &cols);
 						}
 						r_core_seek_delta (core, -cols);
 					}
@@ -3083,6 +3063,34 @@ static void visual_refresh(RCore *core) {
 
 static void visual_refresh_oneshot(RCore *core) {
 	r_core_task_enqueue_oneshot (core, (RCoreTaskOneShot) visual_refresh, core);
+}
+
+R_API void r_core_visual_disasm_up(RCore *core, int *cols) {
+	RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+	if (f && f->folded) {
+		*cols = core->offset - f->addr; // + f->size;
+		if (*cols < 1) {
+			*cols = 4;
+		}
+	} else {
+		*cols = prevopsz (core, core->offset);
+	}
+}
+
+R_API void r_core_visual_disasm_down(RCore *core, RAsmOp *op, int *cols) {
+	RAnalFunction *f = NULL;
+	f = r_anal_get_fcn_in (core->anal, core->offset, 0);
+	op->size = 1;
+	if (f && f->folded) {
+		*cols = core->offset - f->addr + r_anal_fcn_size (f);
+	} else {
+		r_asm_set_pc (core->assembler, core->offset);
+		*cols = r_asm_disassemble (core->assembler,
+				op, core->block, 32);
+	}
+	if (*cols < 1) {
+		*cols = op->size > 1 ? op->size : 1;
+	}
 }
 
 R_API int r_core_visual(RCore *core, const char *input) {
