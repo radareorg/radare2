@@ -64,11 +64,12 @@ static bool _map_skyline_push(RVector *map_skyline, ut64 from, ut64 to, RIOMap *
 R_API void r_io_map_calculate_skyline(RIO *io) {
 	SdbListIter *iter;
 	RIOMap *map;
-	RVector events = {0};
+	RVector events;
 	RBinHeap heap;
 	struct map_event_t *ev;
 	bool *deleted = NULL;
 	r_pvector_clear (&io->map_skyline, free);
+	r_pvector_init (&events);
 	if (!r_vector_reserve (&events, ls_length (io->maps) * 2) ||
 			!(deleted = calloc (ls_length (io->maps), 1))) {
 		goto out;
