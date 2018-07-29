@@ -548,6 +548,78 @@ static RList *r_debug_native_tids (RDebug *dbg, int pid) {
 	return NULL;
 }
 
+static void r_debug_native_list_proc(RList **list, int pid){
+	DIR *dh;
+	struct dirent *de;
+	char *ptr, st, buf[1024];
+	int i, uid;
+	if (pid) {
+		/* add the requested pid. should we do this? we don't even know if it's valid still.. */
+		r_list_append (*list, r_debug_pid_new ("(current)", pid, 0, 's', 0));
+	}
+	dh = opendir ("/proc");
+	if (!dh) {
+		r_sys_perror ("opendir /proc");
+		r_list_free (*list);
+		*list = NULL;
+	}
+	while ((de = readdir (dh))) {
+		uid = 0;
+		st = ' ';
+		/* for each existing pid file... */
+		i = atoi (de->d_name);
+		if (i <= 0) {
+			continue;
+		}
+
+		/* try to read the status */
+		buf[0] = 0;
+		if (procfs_pid_slurp (i, "status", buf, sizeof (buf)) == -1) {
+			continue;
+		}
+		buf[sizeof (buf) - 1] = 0;
+
+		// get process State
+		ptr = strstr (buf, "State:");
+		if (ptr) {
+			st = ptr[7];
+		}
+		/* look for the parent process id */
+		ptr = strstr (buf, "PPid:");
+		if (pid && ptr) {
+			int ppid = atoi (ptr + 5);
+
+			/* if this is the requested process... */
+			if (i == pid) {
+				// append it to the list with parent
+				r_list_append (*list, r_debug_pid_new (
+					"(ppid)", ppid, uid, st, 0));
+			}
+
+			/* ignore it if it is not one of our children */
+			if (ppid != pid) {
+				continue;
+			}
+		}
+
+		// get process Uid
+		ptr = strstr (buf, "Uid:");
+		if (ptr) {
+			uid = atoi (ptr + 4);
+		}
+		// TODO: add support for gid in RDebugPid.new()
+		// ptr = strstr (buf, "Gid:");
+		// if (ptr) {
+		// 	gid = atoi (ptr + 4);
+		// }
+		if (procfs_pid_slurp (i, "cmdline", buf, sizeof (buf)) == -1) {
+			continue;
+		}
+		r_list_append (*list, r_debug_pid_new (buf, i, uid, st, 0));
+	}
+	closedir (dh);
+}
+
 static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 	RList *list = r_list_new ();
 	if (!list) {
@@ -571,93 +643,8 @@ static RList *r_debug_native_pids (RDebug *dbg, int pid) {
 		}
 	}
 #elif __linux__
-	int i;
-	char *ptr, buf[1024];
-
 	list->free = (RListFree)&r_debug_pid_free;
-	if (pid) {
-		DIR *dh;
-		struct dirent *de;
-
-		/* add the requested pid. should we do this? we don't even know if it's valid still.. */
-		r_list_append (list, r_debug_pid_new ("(current)", pid, 0, 's', 0));
-
-		/* list parents */
-		dh = opendir ("/proc");
-		if (!dh) {
-			r_sys_perror ("opendir /proc");
-			r_list_free (list);
-			return NULL;
-		}
-		while ((de = readdir (dh))) {
-			int uid = 0;
-			int gid = 0; // unused
-			/* for each existing pid file... */
-			i = atoi (de->d_name);
-			if (i <= 0) {
-				continue;
-			}
-
-			/* try to read the status */
-			buf[0] = 0;
-			if (procfs_pid_slurp (i, "status", buf, sizeof (buf)) == -1) {
-				continue;
-			}
-			buf[sizeof (buf) - 1] = 0;
-
-			ptr = strstr (buf, "Uid:");
-			if (ptr) {
-				uid = atoi (ptr + 4);
-			}
-
-			ptr = strstr (buf, "Gid:");
-			if (ptr) {
-				gid = atoi (ptr + 4);
-			}
-
-			/* look for the parent process id */
-			ptr = strstr (buf, "PPid:");
-			if (ptr) {
-				int ppid = atoi (ptr + 5);
-
-				/* if this is the requested process... */
-				if (i == pid) {
-					// eprintf ("PPid: %d\n", ppid);
-					// append it to the list with parent
-					r_list_append (list, r_debug_pid_new (
-						"(ppid)", ppid, uid, 's', 0));
-				}
-
-				/* ignore it if it is not one of our children */
-				if (ppid != pid) {
-					continue;
-				}
-
-				/* it's a child of the requested pid, read it's command line and add it */
-				if (procfs_pid_slurp (ppid, "cmdline", buf, sizeof (buf)) == -1) {
-					continue;
-				}
-				// TODO: add support for gid in RDebugPid.new()
-				eprintf ("uid %d gid %d\n", uid, gid);
-				r_list_append (list, r_debug_pid_new (buf, i, uid, 's', 0));
-			}
-		}
-		closedir (dh);
-	} else {
-		/* try to bruteforce the processes
-		 * XXX(jjd): wouldn't listing the processes like before work better?
-		 */
-		for (i = 2; i < MAXPID; i++) {
-			/* try to send signal 0, if it fails it must not be valid */
-			if (r_sandbox_kill (i, 0) == -1) {
-				continue;
-			}
-			if (procfs_pid_slurp (i, "cmdline", buf, sizeof (buf)) == -1) {
-				continue;
-			}
-			r_list_append (list, r_debug_pid_new (buf, i, 0, 's', 0));
-		}
-	}
+	r_debug_native_list_proc (&list, pid);
 #else /* rest is BSD */
 #ifdef __NetBSD__
 # define KVM_OPEN_FLAG KVM_NO_FILES
