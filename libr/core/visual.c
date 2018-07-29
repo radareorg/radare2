@@ -304,6 +304,25 @@ R_API int r_core_visual_hud(RCore *core) {
 	return (int) (size_t) p;
 }
 
+R_API void r_core_visual_jump(RCore *core, ut8 ch) {
+	char chbuf[2];
+	ut64 off;
+	chbuf[0] = ch;
+	chbuf[1] = '\0';
+	off = r_core_get_asmqjmps (core, chbuf);
+	if (off != UT64_MAX) {
+		int delta = R_ABS ((st64) off - (st64) core->offset);
+		r_io_sundo_push (core->io, core->offset, r_print_get_cursor (core->print));
+		if (core->print->cur_enabled && delta < 100) {
+			core->print->cur = delta;
+		} else {
+			r_core_visual_seek_animation (core, off);
+			core->print->cur = 0;
+		}
+		r_core_block_read (core);
+	}
+}
+
 static void append_help(RStrBuf *p, const char *title, const char **help) {
 	int i, max_length = 0, padding = 0;
 	RCons *cons = r_cons_singleton ();
@@ -1734,23 +1753,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	// do we need hotkeys for data references? not only calls?
 	// '0' is handled to seek at the beginning of the function
 	if (ch > '0' && ch <= '9') {
-		char chbuf[2];
-		ut64 off;
-
-		chbuf[0] = ch;
-		chbuf[1] = '\0';
-		off = r_core_get_asmqjmps (core, chbuf);
-		if (off != UT64_MAX) {
-			int delta = R_ABS ((st64) off - (st64) offset);
-			r_io_sundo_push (core->io, offset, r_print_get_cursor (core->print));
-			if (core->print->cur_enabled && delta < 100) {
-				core->print->cur = delta;
-			} else {
-				r_core_visual_seek_animation (core, off);
-				core->print->cur = 0;
-			}
-			r_core_block_read (core);
-		}
+		r_core_visual_jump (core, ch);
 	} else {
 		switch (ch) {
 #if __WINDOWS__ && !__CYGWIN__
