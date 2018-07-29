@@ -24,23 +24,8 @@
 		vec->a = new_a; \
 		vec->capacity = new_capacity; \
 	} while (0)
-
-
-static void *vector_elem_offset(RVector *vec, size_t index) {
-	return (char *)vec->a + vec->elem_size * index;
-}
-
-static void vector_assign(RVector *vec, void *p, void *elem) {
-	memcpy (p, elem, vec->elem_size);
-}
-
-static void *vector_assign_at(RVector *vec, size_t index, void *elem) {
-	void *p = vector_elem_offset (vec, index);
-	vector_assign (vec, p, elem);
-	return p;
-}
-
-
+		
+		
 
 R_API void r_vector_init(RVector *vec, size_t elem_size) {
 	vec->a = NULL;
@@ -60,7 +45,7 @@ R_API RVector *r_vector_new(size_t elem_size) {
 static void vector_free_elems(RVector *vec, RVectorFree elem_free, void *user) {
 	if (elem_free) {
 		while (vec->len > 0) {
-			elem_free (vector_elem_offset (vec, --vec->len), user);
+			elem_free (r_vector_index_ptr (vec, --vec->len), user);
 		}
 	} else {
 		vec->len = 0;
@@ -99,10 +84,27 @@ R_API RVector *r_vector_clone(RVector *vec) {
 }
 
 
+
+void *r_vector_index_ptr(RVector *vec, size_t index) {
+	return (char *)vec->a + vec->elem_size * index;
+}
+
+void r_vector_assign(RVector *vec, void *p, void *elem) {
+	memcpy (p, elem, vec->elem_size);
+}
+
+void *r_vector_assign_at(RVector *vec, size_t index, void *elem) {
+	void *p = r_vector_index_ptr (vec, index);
+	r_vector_assign (vec, p, elem);
+	return p;
+}
+
+
+
 R_API void r_vector_delete_at(RVector *vec, size_t index, void *into) {
-	void *p = vector_elem_offset (vec, index);
+	void *p = r_vector_index_ptr (vec, index);
 	if (into) {
-		vector_assign (vec, into, p);
+		r_vector_assign (vec, into, p);
 	}
 	vec->len--;
 	if (index < vec->len) {
@@ -120,11 +122,12 @@ R_API void *r_vector_insert(RVector *vec, size_t index, void *x) {
 	if (vec->len >= vec->capacity) {
 		RESIZE_OR_RETURN_NULL (NEXT_VECTOR_CAPACITY);
 	}
-	void *p = vector_elem_offset (vec, index);
+	void *p = r_vector_index_ptr (vec, index);
 	if (index < vec->len) {
 		memmove (p + vec->elem_size, p, vec->elem_size * (vec->len - index));
 	}
-	vector_assign (vec, p, x);
+	vec->len++;
+	r_vector_assign (vec, p, x);
 	return p;
 }
 
@@ -133,7 +136,7 @@ R_API void *r_vector_insert_range(RVector *vec, size_t index, void *first, size_
 		RESIZE_OR_RETURN_NULL (R_MAX (NEXT_VECTOR_CAPACITY, vec->len + count));
 	}
 	size_t sz = count * vec->elem_size;
-	void *p = vector_elem_offset (vec, index);
+	void *p = r_vector_index_ptr (vec, index);
 	if (index < vec->len) {
 		memmove (p + sz, p, vec->elem_size * (vec->len - index));
 	}
@@ -144,7 +147,7 @@ R_API void *r_vector_insert_range(RVector *vec, size_t index, void *first, size_
 
 R_API void r_vector_pop(RVector *vec, void *into) {
 	if (into) {
-		vector_assign (vec, into, vector_elem_offset (vec, vec->len - 1));
+		r_vector_assign (vec, into, r_vector_index_ptr (vec, vec->len - 1));
 	}
 	vec->len--;
 }
@@ -157,7 +160,7 @@ R_API void *r_vector_push(RVector *vec, void *x) {
 	if (vec->len >= vec->capacity) {
 		RESIZE_OR_RETURN_NULL (NEXT_VECTOR_CAPACITY);
 	}
-	return vector_assign_at (vec, vec->len++, x);
+	return r_vector_assign_at (vec, vec->len++, x);
 }
 
 R_API void *r_vector_push_front(RVector *vec, void *x) {

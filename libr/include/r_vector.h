@@ -57,6 +57,10 @@ R_API void r_vector_free(RVector *vec, RVectorFree elem_free, void *user);
 R_API void r_vector_clear(RVector *vec, RVectorFree elem_free, void *user);
 R_API RVector *r_vector_clone(RVector *vec);
 
+void *r_vector_index_ptr(RVector *vec, size_t index);
+void r_vector_assign(RVector *vec, void *p, void *elem);
+void *r_vector_assign_at(RVector *vec, size_t index, void *elem);
+
 R_API bool r_vector_empty(RVector *vec);
 R_API void r_vector_delete_at(RVector *vec, size_t index, void *into);
 R_API void *r_vector_insert(RVector *vec, size_t index, void *x);
