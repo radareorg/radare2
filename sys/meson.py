@@ -265,6 +265,9 @@ def main():
     parser.add_argument('--options', nargs='*', default=[])
     args = parser.parse_args()
     if args.asan:
+        if os.uname().sysname == 'OpenBSD':
+            log.error("Asan insupported under OpenBSD")
+            sys.exit(1)
         cflags = os.environ.get('CFLAGS')
         if not cflags:
             cflags = ''
