@@ -69,10 +69,11 @@ R_API RVector *r_vector_clone(RVector *vec) {
 	if (ret) {
 		ret->capacity = vec->capacity;
 		ret->len = vec->len;
+		ret->elem_size = vec->elem_size;
 		if (!vec->len) {
 			ret->a = NULL;
 		} else {
-			ret->a = malloc (vec->elem_size * vec->len);
+			ret->a = malloc (vec->elem_size * vec->capacity);
 			if (!ret->a) {
 				R_FREE (ret);
 			} else {
