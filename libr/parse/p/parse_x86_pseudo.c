@@ -502,10 +502,10 @@ static bool varsub (RParse *p, RAnalFunction *f, ut64 addr, int oplen, char *dat
 static bool do_replace_segment(ut64 seg, char *data, char *str, int len, const char *needle) {
 	char *ptr, *rest;
 	if ((ptr = strstr (data, needle)) != NULL) {
-		rest = ptr + strlen(needle);
+		rest = ptr + strlen (needle);
 		*ptr = '\0';
 
-		snprintf(str, len, "%s 0x%" PFMT64x ":%s", data, seg, rest);
+		snprintf (str, len, "%s 0x%" PFMT64x ":%s", data, seg, rest);
 		return true;
 	}
 	return false;
@@ -526,9 +526,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 	bool changed = false;
 
 	if (p->cs_segment) {
-		eprintf("pre cs_segment : data = '%s', str = '%s', len = %d\n", data, str, len);
 		changed |= replace_segments (p, 0xf0000, data, str, len);
-		eprintf("post cs_segment : data = '%s', str = '%s', len = %d\n", data, str, len);
 	}
 
 	return changed;
