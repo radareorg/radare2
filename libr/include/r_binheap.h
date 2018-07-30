@@ -7,12 +7,12 @@ extern "C" {
 #endif
 
 typedef struct r_binheap_t {
-	RVector a;
+	RPVector a;
 	RPVectorComparator cmp;
 } RBinHeap;
 
-R_API void r_binheap_clear(RBinHeap *h, void (*elem_free)(void *));
-#define r_binheap_empty(h) (!(h)->a.len)
+R_API void r_binheap_clear(RBinHeap *h);
+#define r_binheap_empty(h) (r_pvector_empty (&(h)->a))
 R_API void r_binheap_init(RBinHeap *h, RPVectorComparator cmp);
 R_API RBinHeap *r_binheap_new(RPVectorComparator cmp);
 R_API bool r_binheap_push(RBinHeap *h, void *x);
