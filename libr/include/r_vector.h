@@ -61,15 +61,15 @@ typedef struct r_pvector_t {
 
 R_API void r_vector_init(RVector *vec, size_t elem_size);
 R_API RVector *r_vector_new(size_t elem_size);
-R_API void r_vector_free(RVector *vec, RVectorFree elem_free, void *user);
 R_API void r_vector_clear(RVector *vec, RVectorFree elem_free, void *user);
+R_API void r_vector_free(RVector *vec, RVectorFree elem_free, void *user);
 R_API RVector *r_vector_clone(RVector *vec);
 
+static inline bool r_vector_empty(RVector *vec)							{ return vec->len == 0; }
 void *r_vector_index_ptr(RVector *vec, size_t index);
 void r_vector_assign(RVector *vec, void *p, void *elem);
 void *r_vector_assign_at(RVector *vec, size_t index, void *elem);
 
-static inline bool r_vector_empty(RVector *vec)							{ return vec->len == 0; }
 R_API void r_vector_remove_at(RVector *vec, size_t index, void *into);
 R_API void *r_vector_insert(RVector *vec, size_t index, void *x);
 R_API void *r_vector_insert_range(RVector *vec, size_t index, void *first, size_t count);
@@ -88,7 +88,6 @@ R_API void r_pvector_init(RPVector *vec, RPVectorFree free);
 R_API RPVector *r_pvector_new(RPVectorFree free);
 R_API void r_pvector_clear(RPVector *vec);
 R_API void r_pvector_free(RPVector *vec);
-R_API RPVector *r_pvector_clone(RPVector *vec);
 
 static inline size_t r_pvector_len(const RPVector *vec)					{ return vec->v.len; }
 static inline void *r_pvector_at(const RPVector *vec, size_t index)		{ return ((void **)vec->v.a)[index]; }
