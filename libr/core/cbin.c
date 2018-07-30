@@ -1075,6 +1075,7 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 	r_list_foreach (entries, iter, entry) {
 		ut64 paddr = entry->paddr;
 		ut64 haddr = UT64_MAX;
+		ut64 hvaddr = UT64_MAX;
 		if (mode != R_CORE_BIN_SET) {
 			if (inifin) {
 				if (entry->type == R_BIN_ENTRY_TYPE_PROGRAM) {
@@ -1100,12 +1101,20 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 		if (entry->haddr) {
 			haddr = entry->haddr;
 		}
+		if (entry->hvaddr) {
+			hvaddr = entry->hvaddr;
+		}
 		ut64 at = rva (r->bin, paddr, entry->vaddr, va);
 		const char *type = r_bin_entry_type_string (entry->type);
 		if (!type) {
 			type = "unknown";
 		}
 		if (IS_MODE_SET (mode)) {
+			RBinFile * binfile = r->bin->cur;
+			RBinObject *binobj = binfile ? binfile->o : NULL;
+			RBinInfo *info = binobj ? binobj->info : NULL;
+			int bits = info ? info->bits : 0;
+
 			r_flag_space_set (r->flags, "symbols");
 			if (entry->type == R_BIN_ENTRY_TYPE_INIT) {
 				snprintf (str, R_FLAG_NAME_SIZE, "entry%i.init", i);
@@ -1117,6 +1126,14 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 				snprintf (str, R_FLAG_NAME_SIZE, "entry%i", i);
 			}
 			r_flag_set (r->flags, str, at, 1);
+			switch (entry->type) {
+			case R_BIN_ENTRY_TYPE_INIT:
+			case R_BIN_ENTRY_TYPE_FINI:
+			case R_BIN_ENTRY_TYPE_PREINIT:
+				if (hvaddr != UT64_MAX && (bits == 32 || bits == 64)) {
+					r_meta_add (r->anal, R_META_TYPE_DATA, hvaddr, hvaddr + bits / 8, NULL);
+				}
+			}
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("0x%08"PFMT64x"\n", at);
 		} else if (IS_MODE_JSON (mode)) {
