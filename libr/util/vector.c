@@ -115,7 +115,7 @@ R_API void r_vector_remove_at(RVector *vec, size_t index, void *into) {
 	}
 	vec->len--;
 	if (index < vec->len) {
-		memmove (p, p + vec->elem_size, vec->elem_size * (vec->len - index));
+		memmove (p, (char *)p + vec->elem_size, vec->elem_size * (vec->len - index));
 	}
 }
 
@@ -127,7 +127,7 @@ R_API void *r_vector_insert(RVector *vec, size_t index, void *x) {
 	}
 	void *p = r_vector_index_ptr (vec, index);
 	if (index < vec->len) {
-		memmove (p + vec->elem_size, p, vec->elem_size * (vec->len - index));
+		memmove ((char *)p + vec->elem_size, p, vec->elem_size * (vec->len - index));
 	}
 	vec->len++;
 	r_vector_assign (vec, p, x);
@@ -141,7 +141,7 @@ R_API void *r_vector_insert_range(RVector *vec, size_t index, void *first, size_
 	size_t sz = count * vec->elem_size;
 	void *p = r_vector_index_ptr (vec, index);
 	if (index < vec->len) {
-		memmove (p + sz, p, vec->elem_size * (vec->len - index));
+		memmove ((char *)p + sz, p, vec->elem_size * (vec->len - index));
 	}
 	vec->len += count;
 	memcpy (p, first, sz);
