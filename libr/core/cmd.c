@@ -1045,13 +1045,12 @@ static int cmd_kuery(void *data, const char *input) {
 			if (!*buf) {
 				break;
 			}
-
-			if (sdb_hist && r_list_length (sdb_hist) == 1 || 
-				(r_list_length (sdb_hist) > 1 && strcmp (r_list_get_n (sdb_hist, 1), buf))) {
-				r_list_insert (sdb_hist, 1, strdup (buf));
+			if (sdb_hist) {
+				if ((r_list_length (sdb_hist) == 1) || (r_list_length (sdb_hist) > 1 && strcmp (r_list_get_n (sdb_hist, 1), buf))) {
+					r_list_insert (sdb_hist, 1, strdup (buf));
+				}
+				line->sdbshell_hist_iter = sdb_hist->head;
 			}
-			line->sdbshell_hist_iter = sdb_hist->head;
-
 			out = sdb_querys (s, NULL, 0, buf);
 			if (out) {
 				r_cons_println (out);

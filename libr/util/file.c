@@ -1065,7 +1065,8 @@ static void recursive_search_glob (const char *path, const char *glob, RList* li
 	r_list_free (dir);
 }
 
-R_API RList* r_file_globsearch (char *globbed_path, int maxdepth) {
+R_API RList* r_file_globsearch (const char *_globbed_path, int maxdepth) {
+	char *globbed_path = strdup (_globbed_path);
 	RList *files = r_list_newf (free);
 	char *glob = strchr (globbed_path, '*');
 	if (!glob) {
@@ -1101,5 +1102,6 @@ R_API RList* r_file_globsearch (char *globbed_path, int maxdepth) {
 		}
 		free (path);
 	}
+	free (globbed_path);
 	return files;
 }
