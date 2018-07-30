@@ -24,8 +24,8 @@ else
 CS_TAR=
 CS_URL=$(GIT_PREFIX)github.com/aquynh/capstone.git
 CS_UPD=20180723
+# NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/meson.build
 CS_BRA=master
-# NOTE: when you update CS_TIP, also update it in shlr/meson.build
 CS_TIP=782ea67e17a391ca0d3faafdc365b335a1a8930a
 # REVERT THIS COMMIT BECAUSE ITS WRONG
 CS_REV=
