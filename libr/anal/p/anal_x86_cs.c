@@ -1747,14 +1747,7 @@ static ut64 handle_segment(RAnal *a, cs_insn *insn, ut64 current_addr, ut64 valu
 		return value;
 	}
 
-	// NOTE: since radare2 doesn't properly support segments, we use the
-	//       instruction prefixes to know whether the value should be
-	//       truncated to 64Kb or not
-	if (insn->detail->x86.prefix[2] == 0x66) {
-		value_mask = 0xffffffff;
-	}
-
-	return (current_addr & (~value_mask)) + (value & value_mask);
+	return (current_addr & (~0xffff)) + (value & 0xffff);
 }
 
 static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
@@ -2620,7 +2613,13 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	int mode = (a->bits==64)? CS_MODE_64:
 		(a->bits==32)? CS_MODE_32:
 		(a->bits==16)? CS_MODE_16: 0;
+	ut64 cs_addr = addr;
 	int n, ret;
+
+	if (mode == CS_MODE_16) {
+		// NOTE: when in 16bits mode, we assume segmentation
+		cs_addr = cs_addr & 0xffff;
+	}
 
 	if (handle && mode != omode) {
 		cs_close (&handle);
@@ -2650,7 +2649,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	// capstone-next
 #if USE_ITER_API
 	{
-		ut64 naddr = addr;
+		ut64 naddr = cs_addr;
 		size_t size = len;
 		if (!insn)
 			insn = cs_malloc (handle);
@@ -2658,7 +2657,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			&size, (uint64_t*)&naddr, insn);
 	}
 #else
-	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
+	n = cs_disasm (handle, (const ut8*)buf, len, cs_addr, 1, &insn);
 #endif
 	if (n < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
