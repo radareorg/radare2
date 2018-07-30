@@ -255,15 +255,15 @@ int sdb_ns_set(Sdb *s, const char *name, Sdb *r);
 bool sdb_ns_unset(Sdb *s, const char *name, Sdb *r);
 
 // array
-int sdb_array_contains(Sdb* s, const char *key, const char *val, ut32 *cas);
-int sdb_array_contains_num(Sdb *s, const char *key, ut64 val, ut32 *cas);
+bool sdb_array_contains(Sdb* s, const char *key, const char *val, ut32 *cas);
+bool sdb_array_contains_num(Sdb *s, const char *key, ut64 val, ut32 *cas);
 int sdb_array_indexof(Sdb *s, const char *key, const char *val, ut32 cas);
 int sdb_array_set(Sdb* s, const char *key, int idx, const char *val, ut32 cas);
 int sdb_array_set_num(Sdb* s, const char *key, int idx, ut64 val, ut32 cas);
 bool sdb_array_append(Sdb *s, const char *key, const char *val, ut32 cas);
 bool sdb_array_append_num(Sdb *s, const char *key, ut64 val, ut32 cas);
-int sdb_array_prepend(Sdb *s, const char *key, const char *val, ut32 cas);
-int sdb_array_prepend_num(Sdb *s, const char *key, ut64 val, ut32 cas);
+bool sdb_array_prepend(Sdb *s, const char *key, const char *val, ut32 cas);
+bool sdb_array_prepend_num(Sdb *s, const char *key, ut64 val, ut32 cas);
 char *sdb_array_get(Sdb* s, const char *key, int idx, ut32 *cas);
 ut64 sdb_array_get_num(Sdb* s, const char *key, int idx, ut32 *cas);
 int sdb_array_get_idx(Sdb *s, const char *key, const char *val, ut32 cas); // agetv
@@ -304,7 +304,7 @@ int sdb_array_length(Sdb* s, const char *key);
 int sdb_array_list(Sdb* s, const char *key);
 
 // Adds the string `val` to the start of array `key`.
-int sdb_array_push(Sdb *s, const char *key, const char *val, ut32 cas);
+SDB_API bool sdb_array_push(Sdb *s, const char *key, const char *val, ut32 cas);
 
 // Returns the string at the start of array `key` or
 // NULL if there are no elements.
