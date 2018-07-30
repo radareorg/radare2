@@ -598,7 +598,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->jmpsub = r_config_get_i (core->config, "asm.jmpsub");
 	ds->varsub = r_config_get_i (core->config, "asm.var.sub");
 	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
-	core->parser->cs_segment = r_config_get_i (core->config, "asm.segoff") && core->assembler->bits == 16;
+	core->parser->cs_segment = r_config_get_i (core->config, "asm.segsub") && core->assembler->bits == 16;
 	core->parser->localvar_only = r_config_get_i (core->config, "asm.var.subonly");
 	core->parser->retleave_asm = NULL;
 	ds->show_vars = r_config_get_i (core->config, "asm.var");

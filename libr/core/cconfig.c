@@ -2550,6 +2550,7 @@ R_API int r_core_config_init(RCore *core) {
 	update_asmfeatures_options (core, n);
 	SETCB ("asm.parser", "x86.pseudo", &cb_asmparser, "Set the asm parser to use");
 	SETCB ("asm.segoff", "false", &cb_segoff, "Show segmented address in prompt (x86-16)");
+	SETPREF ("asm.segsub", "false", "Replace CS segment register with its value (x86-16)");
 	SETCB ("asm.decoff", "false", &cb_decoff, "Show segmented address in prompt (x86-16)");
 	SETICB ("asm.seggrn", 4, &cb_seggrn, "Segment granularity in bits (x86-16)");
 	n = NODECB ("asm.syntax", "intel", &cb_asmsyntax);
