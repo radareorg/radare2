@@ -1130,8 +1130,10 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 			case R_BIN_ENTRY_TYPE_INIT:
 			case R_BIN_ENTRY_TYPE_FINI:
 			case R_BIN_ENTRY_TYPE_PREINIT:
-				if (hvaddr != UT64_MAX && (bits == 32 || bits == 64)) {
-					r_meta_add (r->anal, R_META_TYPE_DATA, hvaddr, hvaddr + bits / 8, NULL);
+				if (haddr != UT64_MAX && hvaddr != UT64_MAX && (bits == 32 || bits == 64)) {
+					ut64 elem_addr = rva (r->bin, haddr, hvaddr, va);
+					r_meta_add (r->anal, R_META_TYPE_DATA, elem_addr, elem_addr + bits / 8,
+					            NULL);
 				}
 			}
 		} else if (IS_MODE_SIMPLE (mode)) {
