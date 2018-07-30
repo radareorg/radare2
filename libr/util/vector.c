@@ -94,15 +94,15 @@ R_API RVector *r_vector_clone(RVector *vec) {
 
 
 
-void *r_vector_index_ptr(RVector *vec, size_t index) {
+R_API void *r_vector_index_ptr(RVector *vec, size_t index) {
 	return (char *)vec->a + vec->elem_size * index;
 }
 
-void r_vector_assign(RVector *vec, void *p, void *elem) {
+R_API void r_vector_assign(RVector *vec, void *p, void *elem) {
 	memcpy (p, elem, vec->elem_size);
 }
 
-void *r_vector_assign_at(RVector *vec, size_t index, void *elem) {
+R_API void *r_vector_assign_at(RVector *vec, size_t index, void *elem) {
 	void *p = r_vector_index_ptr (vec, index);
 	r_vector_assign (vec, p, elem);
 	return p;

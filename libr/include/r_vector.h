@@ -49,15 +49,15 @@ R_API RVector *r_vector_clone(RVector *vec);
 static inline bool r_vector_empty(RVector *vec)							{ return vec->len == 0; }
 
 // returns a pointer to the offset inside the array where the element of the index lies.
-void *r_vector_index_ptr(RVector *vec, size_t index);
+R_API void *r_vector_index_ptr(RVector *vec, size_t index);
 
 // helper function to assign an element of size vec->elem_size from elem to p.
 // elem is a pointer to the actual data to assign!
-void r_vector_assign(RVector *vec, void *p, void *elem);
+R_API void r_vector_assign(RVector *vec, void *p, void *elem);
 
 // assign the value of size vec->elem_size at elem to vec at the given index.
 // elem is a pointer to the actual data to assign!
-void *r_vector_assign_at(RVector *vec, size_t index, void *elem);
+R_API void *r_vector_assign_at(RVector *vec, size_t index, void *elem);
 
 // remove the element at the given index and write the content to into.
 // It is the caller's responsibility to free potential resources associated with the element.
