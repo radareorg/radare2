@@ -1082,7 +1082,15 @@ static void cmd_debug_pid(RCore *core, const char *input) {
 		}
 		break;
 	case 'j': // "dpj"
-		r_debug_pid_list (core->dbg, core->dbg->pid, 'j');
+		switch (input[2]) {
+		case '\0': // "dpj"
+			r_debug_pid_list (core->dbg, core->dbg->pid, 'j');
+			break;
+		case ' ': // "dpj "
+			r_debug_pid_list (core->dbg,
+					(int) R_MAX (0, (int)r_num_math (core->num, input + 2)), 'j');
+			break;
+		}
 		break;
 	case 'e': // "dpe"
 		{

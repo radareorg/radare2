@@ -548,20 +548,43 @@ static RList *r_debug_native_tids (RDebug *dbg, int pid) {
 	return NULL;
 }
 
-static void r_debug_native_list_proc(RList **list, int pid){
+static RList *r_debug_native_pids (RDebug *dbg, int pid) {
+	RList *list = r_list_new ();
+	if (!list) {
+		return NULL;
+	}
+#if __WINDOWS__ && !__CYGWIN__
+	return w32_pids (pid, list);
+#elif __APPLE__
+	if (pid) {
+		RDebugPid *p = xnu_get_pid (pid);
+		if (p) {
+			r_list_append (list, p);
+		}
+	} else {
+		int i;
+		for (i = 1; i < MAXPID; i++) {
+			RDebugPid *p = xnu_get_pid (i);
+			if (p) {
+				r_list_append (list, p);
+			}
+		}
+	}
+#elif __linux__
+	list->free = (RListFree)&r_debug_pid_free;
 	DIR *dh;
 	struct dirent *de;
 	char *ptr, st, buf[1024];
 	int i, uid;
 	if (pid) {
 		/* add the requested pid. should we do this? we don't even know if it's valid still.. */
-		r_list_append (*list, r_debug_pid_new ("(current)", pid, 0, 's', 0));
+		r_list_append (list, r_debug_pid_new ("(current)", pid, 0, 's', 0));
 	}
 	dh = opendir ("/proc");
 	if (!dh) {
 		r_sys_perror ("opendir /proc");
-		r_list_free (*list);
-		*list = NULL;
+		r_list_free (list);
+		list = NULL;
 	}
 	while ((de = readdir (dh))) {
 		uid = 0;
@@ -592,7 +615,7 @@ static void r_debug_native_list_proc(RList **list, int pid){
 			/* if this is the requested process... */
 			if (i == pid) {
 				// append it to the list with parent
-				r_list_append (*list, r_debug_pid_new (
+				r_list_append (list, r_debug_pid_new (
 					"(ppid)", ppid, uid, st, 0));
 			}
 
@@ -615,36 +638,9 @@ static void r_debug_native_list_proc(RList **list, int pid){
 		if (procfs_pid_slurp (i, "cmdline", buf, sizeof (buf)) == -1) {
 			continue;
 		}
-		r_list_append (*list, r_debug_pid_new (buf, i, uid, st, 0));
+		r_list_append (list, r_debug_pid_new (buf, i, uid, st, 0));
 	}
 	closedir (dh);
-}
-
-static RList *r_debug_native_pids (RDebug *dbg, int pid) {
-	RList *list = r_list_new ();
-	if (!list) {
-		return NULL;
-	}
-#if __WINDOWS__ && !__CYGWIN__
-	return w32_pids (pid, list);
-#elif __APPLE__
-	if (pid) {
-		RDebugPid *p = xnu_get_pid (pid);
-		if (p) {
-			r_list_append (list, p);
-		}
-	} else {
-		int i;
-		for (i = 1; i < MAXPID; i++) {
-			RDebugPid *p = xnu_get_pid (i);
-			if (p) {
-				r_list_append (list, p);
-			}
-		}
-	}
-#elif __linux__
-	list->free = (RListFree)&r_debug_pid_free;
-	r_debug_native_list_proc (&list, pid);
 #else /* rest is BSD */
 #ifdef __NetBSD__
 # define KVM_OPEN_FLAG KVM_NO_FILES
