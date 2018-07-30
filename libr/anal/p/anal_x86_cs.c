@@ -1747,7 +1747,7 @@ static ut64 handle_segment(RAnal *a, cs_insn *insn, ut64 current_addr, ut64 valu
 		return value;
 	}
 
-	return (current_addr & (~0xffff)) + (value & 0xffff);
+	return (current_addr & (~value_mask)) + (value & value_mask);
 }
 
 static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn) {
