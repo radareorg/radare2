@@ -386,11 +386,11 @@ static const char *help_msg_afvs[] = {
 static const char *help_msg_ag[] = {
 	"Usage:", "ag<graphtype><format> [addr]", "",
 	"Graph commands:", "", "",
-	"agc", "[format] [fcn addr]", "Function callgraph",
-	"agf", "[format] [fcn addr]", "Basic blocks function graph",
-	"agx", "[format] [addr]", "Cross references graph",
-	"agr", "[format] [fcn addr]", "References graph",
-	"aga", "[format] [fcn addr]", "Data references graph",
+	"agc", "[format] [@ fcn addr]", "Function callgraph",
+	"agf", "[format] [@ fcn addr]", "Basic blocks function graph",
+	"agx", "[format] [@ addr]", "Cross references graph",
+	"agr", "[format] [@ fcn addr]", "References graph",
+	"aga", "[format] [@ fcn addr]", "Data references graph",
 	"agd", "[format] [fcn addr]", "Diff graph",
 	"agi", "[format]", "Imports graph",
 	"agC", "[format]", "Global callgraph",
@@ -410,7 +410,7 @@ static const char *help_msg_ag[] = {
 	"g", "", "Graph Modelling Language (gml)",
 	"k", "", "SDB key-value",
 	"*", "", "r2 commands",
-	"w", "", "Web/image (see graph.extension and graph.web)",
+	"w", "[path]", "Web/image display or save to path (see graph.extension and graph.web)",
 	NULL
 };
 
@@ -5925,6 +5925,10 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 		} else {
 			char *cmd = r_core_graph_cmd (core, "aggd", input + 1);
 			if (cmd && *cmd) {
+				if (*(input + 1)) {
+					r_cons_printf ("Saving to file %s ...\n", input + 1);
+					r_cons_flush ();
+				}
 				r_core_cmd0 (core, cmd);
 			}
 			free (cmd);
@@ -6008,6 +6012,10 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 				char *cmdargs = r_str_newf ("agfd @ 0x%"PFMT64x, core->offset);
 				char *cmd = r_core_graph_cmd (core, cmdargs, input + 2);
 				if (cmd && *cmd) {
+					if (*(input + 1)) {
+						r_cons_printf ("Saving to file %s ...\n", input + 2);
+						r_cons_flush ();
+					}
 					r_core_cmd0 (core, cmd);
 				}
 				free (cmd);
@@ -6315,7 +6323,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			break;
 			}
 		case 'w': {
-			char *cmdargs = r_str_newf ("agdd @ 0x%"PFMT64x, core->offset);
+			char *cmdargs = r_str_newf ("agdd 0x%"PFMT64x, core->offset);
 			char *cmd = r_core_graph_cmd (core, cmdargs, input + 2);
 			if (cmd && *cmd) {
 				r_core_cmd0 (core, cmd);
@@ -6334,8 +6342,12 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			r_core_cmd0 (core, "=H /graph/");
 		} else {
 			char *cmdargs = r_str_newf ("agfd @ 0x%"PFMT64x, core->offset);
-			char *cmd = r_core_graph_cmd (core, cmdargs, input + 1);
+			char *cmd = r_core_graph_cmd (core, cmdargs, input + 2);
 			if (cmd && *cmd) {
+				if (*(input + 1)) {
+					r_cons_printf ("Saving to file %s ...\n", input + 2);
+					r_cons_flush ();
+				}
 				r_core_cmd0 (core, cmd);
 			}
 			free (cmd);
