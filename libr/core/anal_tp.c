@@ -132,9 +132,12 @@ static void get_src_regname(RCore *core, ut64 addr, char *regname, int size) {
 	RRegItem *ri = r_reg_get (anal->reg, op_esil, -1);
 	if (ri) {
 		if ((anal->bits == 64) && (ri->size == 32)) {
-			char *foo = strdup (r_reg_32_to_64 (anal->reg, op_esil));
-			free (op_esil);
-			op_esil = foo;
+			const char *reg = r_reg_32_to_64 (anal->reg, op_esil);
+			if (reg) {
+				char *foo = strdup (reg);
+				free (op_esil);
+				op_esil = foo;
+			}
 		}
 		strncpy (regname, op_esil, size - 1);
 	}
