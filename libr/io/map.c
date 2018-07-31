@@ -34,7 +34,7 @@ static int _cmp_map_event_by_id(const void *a_, const void *b_) {
 }
 
 // Precondition: from == 0 && to == 0 (full address) or from < to
-static bool _map_skyline_push(RPVector *map_skyline, ut64 from, ut64 to, RIOMap *map) {
+static bool _map_skyline_push(RVector *map_skyline, ut64 from, ut64 to, RIOMap *map) {
 	RIOMapSkyline *part = R_NEW (RIOMapSkyline), *part1;
 	if (!part) {
 		return false;
@@ -49,11 +49,11 @@ static bool _map_skyline_push(RPVector *map_skyline, ut64 from, ut64 to, RIOMap 
 		}
 		part1->map = map;
 		part1->itv = (RInterval){ UT64_MAX, 1 };
-		if (!r_pvector_push (map_skyline, part1)) {
+		if (!r_vector_push (map_skyline, part1)) {
 			free (part1);
 		}
 	}
-	if (!r_pvector_push (map_skyline, part)) {
+	if (!r_vector_push (map_skyline, part)) {
 		free (part);
 		return false;
 	}
@@ -64,13 +64,12 @@ static bool _map_skyline_push(RPVector *map_skyline, ut64 from, ut64 to, RIOMap 
 R_API void r_io_map_calculate_skyline(RIO *io) {
 	SdbListIter *iter;
 	RIOMap *map;
-	RPVector events;
+	RVector events = {0};
 	RBinHeap heap;
 	struct map_event_t *ev;
 	bool *deleted = NULL;
-	r_pvector_clear (&io->map_skyline);
-	r_pvector_init (&events, free);
-	if (!r_pvector_reserve (&events, ls_length (io->maps) * 2) ||
+	r_vector_clear (&io->map_skyline, free);
+	if (!r_vector_reserve (&events, ls_length (io->maps) * 2) ||
 			!(deleted = calloc (ls_length (io->maps), 1))) {
 		goto out;
 	}
@@ -84,7 +83,7 @@ R_API void r_io_map_calculate_skyline(RIO *io) {
 		ev->addr = map->itv.addr;
 		ev->is_to = false;
 		ev->id = i;
-		r_pvector_push (&events, ev);
+		r_vector_push (&events, ev);
 		if (!(ev = R_NEW (struct map_event_t))) {
 			goto out;
 		}
@@ -92,16 +91,16 @@ R_API void r_io_map_calculate_skyline(RIO *io) {
 		ev->addr = r_itv_end (map->itv);
 		ev->is_to = true;
 		ev->id = i;
-		r_pvector_push (&events, ev);
+		r_vector_push (&events, ev);
 		i++;
 	}
-	r_pvector_sort (&events, _cmp_map_event);
+	r_vector_sort (&events, _cmp_map_event);
 
 	r_binheap_init (&heap, _cmp_map_event_by_id);
 	ut64 last;
 	RIOMap *last_map = NULL;
-	for (i = 0; i < r_pvector_len (&events); i++) {
-		ev = r_pvector_at (&events, i);
+	for (i = 0; i < events.len; i++) {
+		ev = events.a[i];
 		if (ev->is_to) {
 			deleted[ev->id] = true;
 		} else {
@@ -135,9 +134,9 @@ R_API void r_io_map_calculate_skyline(RIO *io) {
 		}
 	}
 
-	r_binheap_clear (&heap);
+	r_binheap_clear (&heap, NULL);
 out:
-	r_pvector_clear (&events);
+	r_vector_clear (&events, free);
 	free (deleted);
 }
 
@@ -440,7 +439,7 @@ R_API void r_io_map_fini(RIO* io) {
 	io->maps = NULL;
 	r_id_pool_free (io->map_ids);
 	io->map_ids = NULL;
-	r_pvector_clear (&io->map_skyline);
+	r_vector_clear (&io->map_skyline, free);
 }
 
 R_API void r_io_map_set_name(RIOMap* map, const char* name) {
