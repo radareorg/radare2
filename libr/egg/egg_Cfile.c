@@ -151,7 +151,7 @@ static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int
 		cEnv->TEXT = "0.__TEXT.__text";
 	}
 
-	buffer = r_str_newf ("%s -nostdinc -include '%s'/'%s'/sflib.h",
+	buffer = r_str_newf ("%s -fno-stack-protector -nostdinc -include '%s'/'%s'/sflib.h",
 	  		cEnv->CFLAGS, cEnv->SFLIBPATH, cEnv->TRIPLET);
 	if (!buffer) {
 		goto fail;
