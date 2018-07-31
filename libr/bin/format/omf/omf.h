@@ -56,8 +56,8 @@ typedef struct {
 // if someone want to implement rellocation for omf he has to remove this
 #define OMF_BASE_ADDR 0x1000
 
-int r_bin_checksum_omf_ok(const char *buf, ut64 buf_size);
-r_bin_omf_obj *r_bin_internal_omf_load(const char *buf, ut64 size);
+int r_bin_checksum_omf_ok(const ut8 *buf, ut64 buf_size);
+r_bin_omf_obj *r_bin_internal_omf_load(const ut8 *buf, ut64 size);
 void r_bin_free_all_omf_obj(r_bin_omf_obj *obj);
 int r_bin_omf_get_entry(r_bin_omf_obj *obj, RBinAddr *addr);
 int r_bin_omf_get_bits(r_bin_omf_obj *obj);
