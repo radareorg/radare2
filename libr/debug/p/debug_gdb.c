@@ -663,7 +663,7 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			"gpr	cpsr	.32	172	0\n"
 #else
 			"=PC	pc\n"
-			"=SP	sp\n" // XXX
+			"=SP	sp\n"
 			"=A0	r0\n"
 			"=A1	r1\n"
 			"=A2	r2\n"
