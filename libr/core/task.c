@@ -21,7 +21,7 @@ static void tasks_lock_block_signals_reset(TASK_SIGSET_T *old_sigset) { (void)ol
 #endif
 
 static void tasks_lock_enter(RCore *core, TASK_SIGSET_T *old_sigset) {
-	tasks_lock_block_signals_reset (old_sigset);
+	tasks_lock_block_signals (old_sigset);
 	r_th_lock_enter (core->tasks_lock);
 }
 
