@@ -242,3 +242,5 @@ Noot noot
 This is an unregistered copy.
 10 reasons you want to bt on all threads - you will be shocked by number 3!
 Place a cat on your keyboard while running r2, you'll not believe what will happen next
+This binary may contain traces of human
+Help subcommand will be eventually removed.
