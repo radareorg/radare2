@@ -5760,7 +5760,7 @@ static char *getViewerPath() {
 	return NULL;
 }
 
-static char* r_core_graph_cmd(RCore *core, char *r2_cmd, const char *save_path) {
+static char* graph_cmd(RCore *core, char *r2_cmd, const char *save_path) {
 	char *cmd = NULL;
 	const char *ext = r_config_get (core->config, "graph.extension");
 	char *dotPath = r_file_path ("dot");
@@ -5970,7 +5970,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 		if (r_config_get_i (core->config, "graph.web")) {
 			r_core_cmd0 (core, "=H /graph/");
 		} else {
-			char *cmd = r_core_graph_cmd (core, "aggd", input + 1);
+			char *cmd = graph_cmd (core, "aggd", input + 1);
 			if (cmd && *cmd) {
 				if (*(input + 1)) {
 					r_cons_printf ("Saving to file %s ...\n", input + 1);
@@ -6051,7 +6051,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 				r_core_cmd0 (core, "=H /graph/");
 			} else {
 				char *cmdargs = r_str_newf ("agfd @ 0x%"PFMT64x, core->offset);
-				char *cmd = r_core_graph_cmd (core, cmdargs, input + 2);
+				char *cmd = graph_cmd (core, cmdargs, input + 2);
 				if (cmd && *cmd) {
 					if (*(input + 2)) {
 						r_cons_printf ("Saving to file %s ...\n", input + 2);
@@ -6354,7 +6354,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			}
 		case 'w': {
 			char *cmdargs = r_str_newf ("agdd 0x%"PFMT64x, core->offset);
-			char *cmd = r_core_graph_cmd (core, cmdargs, input + 2);
+			char *cmd = graph_cmd (core, cmdargs, input + 2);
 			if (cmd && *cmd) {
 				r_core_cmd0 (core, cmd);
 			}
@@ -6372,7 +6372,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			r_core_cmd0 (core, "=H /graph/");
 		} else {
 			char *cmdargs = r_str_newf ("agfd @ 0x%"PFMT64x, core->offset);
-			char *cmd = r_core_graph_cmd (core, cmdargs, input + 2);
+			char *cmd = graph_cmd (core, cmdargs, input + 2);
 			if (cmd && *cmd) {
 				if (*(input + 1)) {
 					r_cons_printf ("Saving to file %s ...\n", input + 2);
