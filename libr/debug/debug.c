@@ -255,7 +255,6 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, bool watch
 	const char *module_name = module;
 	RListIter *iter;
 	RDebugMap *map;
-	eprintf("bpsz %d\n", bpsz);
 	if (!addr && module) {
 		bool detect_module, valid = false;
 		int perm;
