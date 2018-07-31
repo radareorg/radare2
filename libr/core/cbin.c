@@ -1134,11 +1134,11 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 		} else if (IS_MODE_SIMPLE (mode)) {
 			r_cons_printf ("0x%08"PFMT64x"\n", at);
 		} else if (IS_MODE_JSON (mode)) {
-			r_cons_printf ("%s{\"vaddr\":%" PFMT64d ","
-				"\"paddr\":%" PFMT64d ","
-				"\"baddr\":%" PFMT64d ","
-				"\"laddr\":%" PFMT64d ","
-				"\"haddr\":%" PFMT64d ","
+			r_cons_printf ("%s{\"vaddr\":%" PFMT64u ","
+				"\"paddr\":%" PFMT64u ","
+				"\"baddr\":%" PFMT64u ","
+				"\"laddr\":%" PFMT64u ","
+				"\"haddr\":%" PFMT64u ","
 				"\"type\":\"%s\"}",
 				last_processed ? "," : "", at, paddr, baddr, laddr, haddr, type);
 		} else if (IS_MODE_RAD (mode)) {
