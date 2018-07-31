@@ -2312,6 +2312,9 @@ char *Elf_(r_bin_elf_get_rpath)(ELFOBJ *bin) {
 	return ret;
 }
 
+static bool sectionIsInvalid(ELFOBJ *bin, RBinElfSection *sect) {
+	return (sect->offset + sect->size > bin->size);
+}
 
 static size_t get_relocs_num(ELFOBJ *bin) {
 	size_t i, size, ret = 0;
@@ -2325,6 +2328,9 @@ static size_t get_relocs_num(ELFOBJ *bin) {
 	}
 	size = bin->is_rela == DT_REL ? sizeof (Elf_(Rel)) : sizeof (Elf_(Rela));
 	for (i = 0; !bin->g_sections[i].last; i++) {
+		if (sectionIsInvalid (bin, &bin->g_sections[i])) {
+			continue;
+		}
 		if (!strncmp (bin->g_sections[i].name, ".rela.", strlen (".rela."))) {
 			if (!bin->is_rela) {
 				size = sizeof (Elf_(Rela));
@@ -2400,7 +2406,7 @@ RBinElfReloc* Elf_(r_bin_elf_get_relocs)(ELFOBJ *bin) {
 		return NULL;
 	}
 	bin->reloc_num = reloc_num;
-	ret = (RBinElfReloc*)calloc ((size_t)reloc_num + 1, sizeof(RBinElfReloc));
+	ret = (RBinElfReloc*)calloc ((size_t)reloc_num + 1, sizeof (RBinElfReloc));
 	if (!ret) {
 		return NULL;
 	}
