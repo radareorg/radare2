@@ -79,7 +79,7 @@ r_io_dep = declare_dependency(link_with: r_io,
 
 pkgconfig_mod.generate(
   libraries: [r_io],
-  subdirs: 'libr',
+  subdirs: ['.', 'libr'],
   version: r2_version,
   name: 'r_io',
   filebase: 'r_io',

@@ -43,7 +43,7 @@ r_fs_dep = declare_dependency(link_with: r_fs,
 
 pkgconfig_mod.generate(
   libraries: [r_fs],
-  subdirs: 'libr',
+  subdirs: ['.', 'libr'],
   version: r2_version,
   name: 'r_fs',
   filebase: 'r_fs',

@@ -34,7 +34,7 @@ r_crypto_dep = declare_dependency(link_with: r_crypto,
 
 pkgconfig_mod.generate(
   libraries: [r_crypto],
-  subdirs: 'libr',
+  subdirs: ['.', 'libr'],
   version: r2_version,
   name: 'r_crypto',
   filebase: 'r_crypto',

@@ -29,7 +29,7 @@ else
 
   pkgconfig_mod.generate(
     libraries: [r_magic],
-    subdirs: 'libr',
+    subdirs: ['.', 'libr'],
     version: r2_version,
     name: 'r_magic',
     filebase: 'r_magic',

@@ -139,7 +139,7 @@ r_bin_dep = declare_dependency(link_with: r_bin,
 
 pkgconfig_mod.generate(
   libraries: [r_bin],
-  subdirs: 'libr',
+  subdirs: ['.', 'libr'],
   version: r2_version,
   name: 'r_bin',
   filebase: 'r_bin',
