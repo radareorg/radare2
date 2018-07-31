@@ -1410,10 +1410,17 @@ static int parse_import_stub(struct MACH0_(obj_t)* bin, struct symbol_t *symbol,
 	}
 	for (i = 0; i < bin->nsects; i++) {
 		if ((bin->sects[i].flags & SECTION_TYPE) == S_SYMBOL_STUBS && bin->sects[i].reserved2 > 0) {
-			nsyms = (int)(bin->sects[i].size / bin->sects[i].reserved2);
-			if (nsyms > bin->size) {
-				bprintf ("mach0: Invalid symbol table size\n");
+			ut64 sect_size = bin->sects[i].size;
+			ut32 sect_fragment = bin->sects[i].reserved2;
+			if (bin->sects[i].offset > bin->size) {
+				bprintf ("mach0: section offset starts way beyond the end of the file\n");
+				continue;
 			}
+			if (sect_size > bin->size) {
+				bprintf ("mach0: Invalid symbol table size\n");
+				sect_size = bin->size - bin->sects[i].offset;
+			}
+			nsyms = (int)(sect_size / sect_fragment);
 			for (j = 0; j < nsyms; j++) {
 				if (bin->sects) {
 					if (bin->sects[i].reserved1 + j >= bin->nindirectsyms) {
