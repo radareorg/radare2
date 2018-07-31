@@ -308,12 +308,13 @@ static RList* sections(RBinFile *bf) {
 	return ret;
 }
 
-static RBinAddr* newEntry(ut64 haddr, ut64 paddr, int type, int bits) {
+static RBinAddr* newEntry(ut64 haddr, ut64 hvaddr, ut64 paddr, int type, int bits) {
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	if (ptr) {
 		ptr->paddr = paddr;
 		ptr->vaddr = paddr;
 		ptr->haddr = haddr;
+		ptr->hvaddr = hvaddr;
 		ptr->bits = bits;
 		ptr->type = type;
 		//realign due to thumb
@@ -349,7 +350,8 @@ static void process_constructors (RBinFile *bf, RList *ret, int bits) {
 				for (i = 0; (i + 3) < sec->size; i += 4) {
 					ut32 addr32 = r_read_le32 (buf + i);
 					if (addr32) {
-						RBinAddr *ba = newEntry (sec->paddr + i, (ut64)addr32, type, bits);
+						RBinAddr *ba = newEntry (sec->paddr + i, sec->vaddr + i,
+						                         (ut64)addr32, type, bits);
 						r_list_append (ret, ba);
 					}
 				}
@@ -357,7 +359,8 @@ static void process_constructors (RBinFile *bf, RList *ret, int bits) {
 				for (i = 0; (i + 7) < sec->size; i += 8) {
 					ut64 addr64 = r_read_le64 (buf + i);
 					if (addr64) {
-						RBinAddr *ba = newEntry (sec->paddr + i, addr64, type, bits);
+						RBinAddr *ba = newEntry (sec->paddr + i, sec->vaddr + i,
+						                         addr64, type, bits);
 						r_list_append (ret, ba);
 					}
 				}
