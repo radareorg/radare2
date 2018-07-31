@@ -926,6 +926,9 @@ R_API RList *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw) {
 				int i;
 // XXX do not walk if bin.strings == 0
 				ut8 *p;
+				if (section->size > a->size) {
+					continue;
+				}
 				for (i = 0; i < section->size; i += cfstr_size) {
 					ut8 buf[32];
 					if (!r_buf_read_at (
