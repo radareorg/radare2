@@ -937,6 +937,7 @@ static int cb_cfgdebug(void *user, void *data) {
 		return false;
 	}
 	if (core->io) {
+		core->io->va = !node->i_value;
 		core->io->debug = node->i_value;
 	}
 	if (core->dbg && node->i_value) {
