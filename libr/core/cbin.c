@@ -1110,11 +1110,6 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 			type = "unknown";
 		}
 		if (IS_MODE_SET (mode)) {
-			RBinFile * binfile = r->bin->cur;
-			RBinObject *binobj = binfile ? binfile->o : NULL;
-			RBinInfo *info = binobj ? binobj->info : NULL;
-			int bits = info ? info->bits : 0;
-
 			r_flag_space_set (r->flags, "symbols");
 			if (entry->type == R_BIN_ENTRY_TYPE_INIT) {
 				snprintf (str, R_FLAG_NAME_SIZE, "entry%i.init", i);
@@ -1130,10 +1125,10 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 			case R_BIN_ENTRY_TYPE_INIT:
 			case R_BIN_ENTRY_TYPE_FINI:
 			case R_BIN_ENTRY_TYPE_PREINIT:
-				if (haddr != UT64_MAX && hvaddr != UT64_MAX && (bits == 32 || bits == 64)) {
+				if (haddr != UT64_MAX && hvaddr != UT64_MAX) {
 					ut64 elem_addr = rva (r->bin, haddr, hvaddr, va);
-					r_meta_add (r->anal, R_META_TYPE_DATA, elem_addr, elem_addr + bits / 8,
-					            NULL);
+					r_meta_add (r->anal, R_META_TYPE_DATA, elem_addr,
+					            elem_addr + entry->bits / 8, NULL);
 				}
 			}
 		} else if (IS_MODE_SIMPLE (mode)) {
