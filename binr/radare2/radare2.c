@@ -1439,7 +1439,7 @@ int main(int argc, char **argv, char **envp) {
 		}
 	}
 
-	if (mustSaveHistory(r.config)) {
+	if (mustSaveHistory (r.config)) {
 		r_line_hist_save (R2_HOME_HISTORY);
 	}
 	// TODO: kill thread
