@@ -134,7 +134,9 @@ static RList* sections(RBinFile *bf) {
 			const int sz = 8;
 #endif
 			int len = sections[i].size / sz;
-			ptr->format = r_str_newf ("Cd %d[%d]", sz, len);
+			if (len < bf->size) {
+				ptr->format = r_str_newf ("Cd %d[%d]", sz, len);
+			}
 		}
 		ptr->name[R_BIN_SIZEOF_STRINGS] = 0;
 		handle_data_sections (ptr);

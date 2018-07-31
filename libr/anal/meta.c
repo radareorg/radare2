@@ -34,7 +34,7 @@ Keys:
 static char *meta_inrange_get (RAnal *a, ut64 addr, int size) {
 	ut64 base = META_RANGE_BASE (addr);
 	ut64 base2 = META_RANGE_BASE (addr + size) + 1;
-	char * res = NULL;
+	char *res = NULL;
 	// return string array of all the offsets where there are stuff
 	for (; base < base2; base += META_RANGE_SIZE) {
 		const char *key = sdb_fmt ("range.0x%"PFMT64x, base);
