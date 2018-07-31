@@ -24,7 +24,6 @@ R_API bool r_debug_use(RDebug *dbg, const char *str) {
 				dbg->h = h;
 				if (dbg->anal && dbg->anal->cur) {
 					r_debug_set_arch (dbg, dbg->anal->cur->arch, dbg->bits);
-					r_debug_set_bpsize (dbg, dbg->anal->cur->arch);
 				}
 				dbg->bp->breakpoint = dbg->h->breakpoint;
 				dbg->bp->user = dbg;

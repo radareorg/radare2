@@ -455,7 +455,6 @@ R_API RDebugPid *r_debug_pid_new(const char *path, int pid, int uid, char status
 R_API RDebugPid *r_debug_pid_free(RDebugPid *pid);
 R_API RList *r_debug_pids(RDebug *dbg, int pid);
 
-R_API void r_debug_set_bpsize(RDebug *dbg, const char *archs);
 R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits);
 R_API bool r_debug_use(RDebug *dbg, const char *str);
 

@@ -255,7 +255,7 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, bool watch
 	const char *module_name = module;
 	RListIter *iter;
 	RDebugMap *map;
-
+	eprintf("bpsz %d\n", bpsz);
 	if (!addr && module) {
 		bool detect_module, valid = false;
 		int perm;
@@ -440,26 +440,6 @@ R_API int r_debug_stop(RDebug *dbg) {
 		return dbg->h->stop (dbg);
 	}
 	return false;
-}
-
-R_API void r_debug_set_bpsize(RDebug *dbg, const char *archs) {
-	int bpsize, arch;
-	arch = r_sys_arch_id (archs);
-	switch (arch) {
-	case R_SYS_ARCH_ARM:
-		// TODO check if thumb or not (bpsize must be 2/3 for thumb instructions)
-		// More info: https://sourceware.org/gdb/onlinedocs/gdb/ARM-Breakpoint-Kinds.html#ARM-Breakpoint-Kinds
-		bpsize = 4;
-		break;
-	case R_SYS_ARCH_MIPS:
-		// Using standard mips breakpoint size
-		// More info: https://sourceware.org/gdb/onlinedocs/gdb/MIPS-Breakpoint-Kinds.html#MIPS-Breakpoint-Kinds
-		bpsize = 4;
-		break;
-	default:
-		bpsize = 1;
-	}
-	dbg->bpsize = bpsize;
 }
 
 R_API bool r_debug_set_arch(RDebug *dbg, const char *arch, int bits) {
