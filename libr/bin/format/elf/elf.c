@@ -3000,6 +3000,17 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 			if (nsym < 0) {
 				goto beach;
 			}
+			{
+				ut64 sh_begin = bin->shdr[i].sh_offset;
+				ut64 sh_end = sh_begin + bin->shdr[i].sh_size;
+				if (sh_begin > bin->size) {
+					goto beach;
+				}
+				if (sh_end > bin->size) {
+					st64 newshsize = bin->size - sh_begin;
+					nsym = (int)(newshsize / sizeof (Elf_(Sym)));
+				}
+			}
 			if (!(sym = (Elf_(Sym) *)calloc (nsym, sizeof (Elf_(Sym))))) {
 				bprintf ("calloc (syms)");
 				goto beach;
