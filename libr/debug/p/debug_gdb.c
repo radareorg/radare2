@@ -662,8 +662,8 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			"gpr	fps	.96	160	0\n"
 			"gpr	cpsr	.32	172	0\n"
 #else
-			"=PC	r15\n"
-			"=SP	r14\n" // XXX
+			"=PC	pc\n"
+			"=SP	sp\n"
 			"=A0	r0\n"
 			"=A1	r1\n"
 			"=A2	r2\n"
@@ -971,20 +971,22 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 	return NULL;
 }
 
-static int r_debug_gdb_breakpoint (void *bp, RBreakpointItem *b, bool set) {
-	int ret;
+static int r_debug_gdb_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set) {
+	int ret, bpsize;
 	if (!b) {
 		return false;
 	}
+
+	bpsize = b->size;
 	// TODO handle rwx and conditions
 	if (set)
 		ret = b->hw?
-			gdbr_set_hwbp (desc, b->addr, ""):
-			gdbr_set_bp (desc, b->addr, "");
+			gdbr_set_hwbp (desc, b->addr, "", bpsize):
+			gdbr_set_bp (desc, b->addr, "", bpsize);
 	else
 		ret = b->hw?
-			gdbr_remove_hwbp (desc, b->addr):
-			gdbr_remove_bp (desc, b->addr);
+			gdbr_remove_hwbp (desc, b->addr, bpsize):
+			gdbr_remove_bp (desc, b->addr, bpsize);
 	return !ret;
 }
 

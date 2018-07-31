@@ -99,10 +99,10 @@ int test_command(libgdbr_t *g, const char *command);
  * \param conditions TODO: examine how this condition string should look like
  * \returns a failure code (currently -1) or 0 if call successfully
  */
-int gdbr_set_bp(libgdbr_t *g, ut64 address, const char *conditions);
-int gdbr_set_hwbp(libgdbr_t *g, ut64 address, const char *conditions);
-int gdbr_remove_bp(libgdbr_t *g, ut64 address);
-int gdbr_remove_hwbp(libgdbr_t *g, ut64 address);
+int gdbr_set_bp(libgdbr_t *g, ut64 address, const char *conditions, int sizebp);
+int gdbr_set_hwbp(libgdbr_t *g, ut64 address, const char *conditions, int sizebp);
+int gdbr_remove_bp(libgdbr_t *g, ut64 address, int sizebp);
+int gdbr_remove_hwbp(libgdbr_t *g, ut64 address, int sizebp);
 
 /*!
  * File read from remote target (only one file open at a time for now)

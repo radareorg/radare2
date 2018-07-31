@@ -255,7 +255,6 @@ R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, bool watch
 	const char *module_name = module;
 	RListIter *iter;
 	RDebugMap *map;
-
 	if (!addr && module) {
 		bool detect_module, valid = false;
 		int perm;
@@ -689,6 +688,7 @@ R_API RDebugReasonType r_debug_wait(RDebug *dbg, RBreakpointItem **bp) {
 			/* get the program coounter */
 			pc_ri = r_reg_get (dbg->reg, dbg->reg->name[R_REG_NAME_PC], -1);
 			if (!pc_ri) { /* couldn't find PC?! */
+				eprintf ("Couldn't find PC!\n");
 				return R_DEBUG_REASON_ERROR;
 			}
 
