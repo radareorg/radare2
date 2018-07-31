@@ -2118,8 +2118,8 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			// case R_META_TYPE_DATA:
 			//	break;
 			default:
-				snprintf (ds->asmop.buf_asm, sizeof (ds->asmop.buf_asm) - 6,
-					".hex %s", ds->asmop.buf_hex);
+				snprintf (ds->asmop.buf_asm, sizeof (ds->asmop.buf_asm),
+				          ".hex %.*s", (int)sizeof (ds->asmop.buf_asm) - 6, ds->asmop.buf_hex);
 				break;
 			}
 			ds->asmop.buf_asm[sizeof (ds->asmop.buf_asm) - 1] = 0;
