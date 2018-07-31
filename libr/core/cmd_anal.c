@@ -5740,6 +5740,53 @@ static void agraph_print_node(RANode *n, void *user) {
 	free (encbody);
 }
 
+static char *getViewerPath() {
+	int i;
+	const char *viewers[] = {
+		"open",
+		"geeqie",
+		"gqview",
+		"eog",
+		"xdg-open",
+		NULL
+	};
+	for (i = 0; viewers[i]; i++) {
+		char *dotPath = r_file_path (viewers[i]);
+		if (dotPath && strcmp (dotPath, viewers[i])) {
+			return dotPath;
+		}
+		free (dotPath);
+	}
+	return NULL;
+}
+
+static char* r_core_graph_cmd(RCore *core, char *r2_cmd, const char *save_path) {
+	char *cmd = NULL;
+	const char *ext = r_config_get (core->config, "graph.extension");
+	char *dotPath = r_file_path ("dot");
+	if (!r_file_exists (dotPath)) {
+		free (dotPath);
+		dotPath = r_file_path ("xdot");
+	}
+	if (r_file_exists (dotPath)) {
+		if (save_path && *save_path) {
+			cmd = r_str_newf ("%s > a.dot;!%s -T%s -o%s a.dot;", r2_cmd, dotPath, ext, save_path);
+		} else {
+			char *viewer = getViewerPath();
+			if (viewer) {
+				cmd = r_str_newf ("%s > a.dot;!%s -T%s -oa.%s a.dot;!%s a.%s", r2_cmd, dotPath, ext, ext, viewer, ext);
+				free (viewer);
+			} else {
+				cmd = "?e cannot find a valid picture viewer";
+			}
+		}
+	} else {
+		cmd = r_str_new ("agf");
+	}
+	free (dotPath);
+	return cmd;
+}
+
 static void agraph_print_edge_dot(RANode *from, RANode *to, void *user) {
 	r_cons_printf ("\"%s\" -> \"%s\"\n", from->title, to->title);
 }
