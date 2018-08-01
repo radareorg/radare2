@@ -164,10 +164,10 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 		libname = data->metadata->libname;
 		xtr_type = data->metadata->xtr_type;
 	}
-	if (strcmp(xtr_type, "fat") == 0 && bin_size == bf->size && bin_size) {
+	if (!strcmp (xtr_type, "fat") && bin_size == bf->size && bin_size) {
 		eprintf ("This is not a fat bin\n");
 		return false;
-	} 
+	}
 	bytes = data->buffer;
 	if (!bytes) {
 		eprintf ("error: BinFile buffer is empty\n");

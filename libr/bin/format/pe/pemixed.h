@@ -9,13 +9,13 @@
 #define _INCLUDE_R_BIN_PEMIXED_H_
 
 struct r_bin_pemixed_obj_t {
-    const char* file;
-    int size;
-    struct PE_(r_bin_pe_obj_t)* sub_bin_dos;
-    struct PE_(r_bin_pe_obj_t)* sub_bin_native;
-    struct PE_(r_bin_pe_obj_t)* sub_bin_net;
-    
-    struct r_buf_t* b;
+	const char* file;
+	int size;
+	struct PE_(r_bin_pe_obj_t)* sub_bin_dos;
+	struct PE_(r_bin_pe_obj_t)* sub_bin_native;
+	struct PE_(r_bin_pe_obj_t)* sub_bin_net;
+	
+	struct r_buf_t* b;
 };
 
 static int r_bin_pemixed_init(struct r_bin_pemixed_obj_t* bin, struct PE_(r_bin_pe_obj_t)* pe_bin);

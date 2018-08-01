@@ -52,12 +52,12 @@ static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
 	res = r_list_newf (r_bin_xtrdata_free); 
 	r_list_append (res, data); 
 	
-	if((data = oneshot(bin, buf, size, SUB_BIN_NATIVE))){
-		r_list_append(res, data);
+	if ((data = oneshot (bin, buf, size, SUB_BIN_NATIVE))){
+		r_list_append (res, data);
 	}
 
-	if((data = oneshot(bin, buf, size, SUB_BIN_NET))){
-		r_list_append(res, data);
+	if ((data = oneshot (bin, buf, size, SUB_BIN_NET))){
+		r_list_append (res, data);
 	}
 
 	return res;
@@ -70,7 +70,7 @@ static void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct Pe_32_r_bi
 	meta->machine = NULL;
 	meta->type = NULL;
 	meta->libname =NULL;
-	strcpy(meta->xtr_type, "net");
+	strcpy (meta->xtr_type, "net");
 }
 
 static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int sub_bin_type) {
@@ -81,23 +81,23 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int sub_bin_t
 	if (!bin || !bin->cur) {
 		return NULL;
 	}
-	if(!bin->cur->xtr_obj){
+	if (!bin->cur->xtr_obj){
 		bin->cur->xtr_obj = r_bin_pemixed_from_bytes_new(buf, size);
 	}
 	
 	fb = bin->cur->xtr_obj;
 
 	//this function is prolly not nessescary
-	pe = r_bin_pemixed_extract(fb, sub_bin_type);
+	pe = r_bin_pemixed_extract (fb, sub_bin_type);
 
 	if (!pe){
 		return res;
 	} 
 	
 	RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
-	fill_metadata_info_from_hdr(metadata, pe);
+	fill_metadata_info_from_hdr (metadata, pe);
 		
-	res = r_bin_xtrdata_new(pe->b, 0, pe->size, 3, metadata);
+	res = r_bin_xtrdata_new (pe->b, 0, pe->size, 3, metadata);
 	return res; 
 }
 
@@ -105,23 +105,24 @@ static int destroy(RBin *bin) {
 	return free_xtr (bin->cur->xtr_obj);
 }
 
-static int free_xtr (void *xtr_obj) {
-	r_bin_pemixed_free((struct r_bin_pemixed_obj_t*) xtr_obj);
+static int free_xtr (void *xtr_obj
+) {
+	r_bin_pemixed_free ((struct r_bin_pemixed_obj_t*) xtr_obj);
 	return true;
 }
 
 
 RBinXtrPlugin r_bin_xtr_plugin_xtr_pemixed = {
-    .name = "xtr.pemixed",
-    .desc = "managed/unmanaged code extractor",
-    .load = NULL, 		//not yet implemented
-    .extract = NULL, 	//not yet implemented
-    .extractall = NULL, //not yet implemented
-    .destroy = &destroy,
-    .extract_from_bytes = &oneshot,
-    .extractall_from_bytes = &oneshotall,
-    .free_xtr = &free_xtr,
-    .check_bytes = &check_bytes,
+	.name = "xtr.pemixed",
+	.desc = "managed/unmanaged code extractor",
+	.load = NULL, 		//not yet implemented
+	.extract = NULL, 	//not yet implemented
+	.extractall = NULL, //not yet implemented
+	.destroy = &destroy,
+	.extract_from_bytes = &oneshot,
+	.extractall_from_bytes = &oneshotall,
+	.free_xtr = &free_xtr,
+	.check_bytes = &check_bytes,
 };
 
 #ifndef CORELIB
