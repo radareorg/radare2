@@ -166,6 +166,15 @@ static int rafind_open_file(char *file) {
 		free (tostr);
 		return 0;
 	}
+	if (mode == R_SEARCH_ESIL) {
+		char *cmd;
+		r_list_foreach (keywords, iter, kw) {
+			cmd = r_str_newf ("r2 -qc \"/E %s\" %s", kw, file);
+			r_sandbox_system (cmd, 1);
+			free (cmd);
+		}
+		return 0;
+	}
 	if (mode == R_SEARCH_KEYWORD) {
 		r_list_foreach (keywords, iter, kw) {
 			if (hexstr) {
@@ -248,7 +257,7 @@ int main(int argc, char **argv) {
 	int c;
 
 	keywords = r_list_new ();
-	while ((c = getopt (argc, argv, "a:ie:b:mM:s:S:x:Xzf:t:rqnhvZ")) != -1) {
+	while ((c = getopt (argc, argv, "a:ie:b:mM:s:S:x:Xzf:t:E:rqnhvZ")) != -1) {
 		switch (c) {
 		case 'a':
 			align = r_num_math (NULL, optarg);
@@ -268,6 +277,10 @@ int main(int argc, char **argv) {
 		case 'e':
 			mode = R_SEARCH_REGEXP;
 			hexstr = 0;
+			r_list_append (keywords, optarg);
+			break;
+		case 'E':
+			mode = R_SEARCH_ESIL;
 			r_list_append (keywords, optarg);
 			break;
 		case 's':
