@@ -675,7 +675,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		}
 		break;
 	default:
-		if (*str > 'A') {
+		if (*str >= 'A') {
 			// NOTE: functions override flags
 			RAnalFunction *fcn = r_anal_fcn_find_name (core->anal, str);
 			if (fcn) {
