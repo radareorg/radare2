@@ -511,7 +511,7 @@ R_API void r_cons_fill_line() {
 R_API void r_cons_clear_line(int std_err) {
 #if __WINDOWS__
 	if (I.ansicon) {
-		fprintf (std_err? stderr: stdout,"\x1b[0K\r");
+		fprintf (std_err? stderr: stdout,"%s", ANSI_ESC_CLEAR_LINE);
 	} else {
 		char white[1024];
 		memset (&white, ' ', sizeof (white));
@@ -525,7 +525,7 @@ R_API void r_cons_clear_line(int std_err) {
 		fprintf (std_err? stderr: stdout, "\r%s\r", white);
 	}
 #else
-	fprintf (std_err? stderr: stdout,"\x1b[0K\r");
+	fprintf (std_err? stderr: stdout,"%s", ANSI_ESC_CLEAR_LINE);
 #endif
 	fflush (std_err? stderr: stdout);
 }

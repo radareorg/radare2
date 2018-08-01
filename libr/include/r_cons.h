@@ -487,6 +487,8 @@ typedef struct r_cons_t {
 
 #define R_CONS_KEY_ESC 0x1b
 
+#define ANSI_ESC_CLEAR_LINE "\r\x1b[0K\r"
+
 #define Color_BLINK        "\x1b[5m"
 #define Color_INVERT       "\x1b[7m"
 #define Color_INVERT_RESET "\x1b[27m"
@@ -795,6 +797,18 @@ R_API const char* r_cons_get_rune(const ut8 ch);
 
 #define R_EDGES_X_INC 4
 
+#define R_SELWIDGET_MAXH 15
+#define R_SELWIDGET_MAXW 30
+
+typedef struct r_selection_widget_t {
+	char **options;
+	int options_len;
+	int selection;
+	int w, h;
+	int scroll;
+	bool complete_common;
+} RSelWidget;
+
 typedef struct r_line_hist_t {
 	char **data;
 	int size;
@@ -827,6 +841,7 @@ struct r_line_t {
 	RLineCompletion completion;
 	RLineBuffer buffer;
 	RLineHistory history;
+	RSelWidget *sel_widget;
 	/* callbacks */
 	RLineHistoryUpCb cb_history_up;
 	RLineHistoryDownCb cb_history_down;
