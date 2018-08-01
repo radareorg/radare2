@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2018 - pancake, nibble */
 
 #include <r_core.h>
 #include <r_anal.h>
@@ -45,6 +45,7 @@ static const char *help_msg_zf[] = {
 	"Usage:", "zf[dsz] filename ", "# Manage FLIRT signatures",
 	"zfd ", "filename", "open FLIRT file and dump",
 	"zfs ", "filename", "open FLIRT file and scan",
+	"zfs ", "/path/**.sig", "recursively search for FLIRT files and scan them (see dir.depth)",
 	"zfz ", "filename", "open FLIRT file and get sig commands (zfz flirt_file > zignatures.sig)",
 	NULL
 };
@@ -507,7 +508,14 @@ static int cmdFlirt(void *data, const char *input) {
 			eprintf ("usage: zfs filename\n");
 			return false;
 		}
-		r_sign_flirt_scan (core->anal, input + 2);
+		int depth = r_config_get_i (core->config, "dir.depth");
+		char *file;
+		RListIter *iter;
+		RList *files = r_file_globsearch (input + 2, depth);
+		r_list_foreach (files, iter, file) {
+			r_sign_flirt_scan (core->anal, file);
+		}
+		r_list_free (files);
 		break;
 	case 'z':
 		// TODO

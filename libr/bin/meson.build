@@ -7,6 +7,7 @@ files = [
   'filter.c',
   'file.c',
   'obj.c',
+  'open.c',
   'p/bin_any.c',
   'p/bin_art.c',
   'p/bin_avr.c',
@@ -114,26 +115,27 @@ files = [
   'pdb/tpi.c'
 ]
 
+r_bin_inc = [platform_inc, include_directories('mangling', 'format')]
+
 r_bin = library('r_bin', files,
-  include_directories: [
-    platform_inc,
-    include_directories(
-      'mangling',
-      'format'
-    )
-  ],
+  include_directories: r_bin_inc,
   c_args: ['-DCORELIB=1', '-DR_API_BIN_ONLY=1'],
-  link_with: [
-    r_util,
-    r_io,
-    r_socket,
-    r_magic,
-    libr_shlr
+  dependencies: [
+    r_util_dep,
+    r_io_dep,
+    r_magic_dep,
+    r_socket_dep,
+    sdb_dep,
+    java_dep,
+    lz4_dep
   ],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
 )
+
+r_bin_dep = declare_dependency(link_with: r_bin,
+                               include_directories: r_bin_inc)
 
 pkgconfig_mod.generate(
   libraries: [r_bin],
@@ -141,11 +143,10 @@ pkgconfig_mod.generate(
   version: r2_version,
   name: 'r_bin',
   filebase: 'r_bin',
-  requires: [
+  requires: pkgconfig_magic_requires + [
     'r_util',
     'r_io',
-    'r_socket',
-    'r_magic'
+    'r_socket'
   ],
   description: 'radare foundation libraries'
 )

@@ -214,10 +214,11 @@ R_API char *r_file_abspath(const char *file) {
 }
 
 R_API char *r_file_path(const char *bin) {
-	char file[1024];
 	char *path_env;
+	char *file = NULL;
 	char *path = NULL;
 	char *str, *ptr;
+	const char *extension = "";
 	if (!bin) {
 		return NULL;
 	}
@@ -228,17 +229,22 @@ R_API char *r_file_path(const char *bin) {
 		return NULL;
 	}
 	path_env = (char *)r_sys_getenv ("PATH");
+#if __WINDOWS__
+	if (!r_str_endswith (bin, ".exe")) {
+		extension = ".exe";
+	}
+#endif
 	if (path_env) {
 		str = path = strdup (path_env);
 		do {
-			ptr = strchr (str, ':');
+			ptr = strchr (str, R_SYS_ENVSEP[0]);
 			if (ptr) {
 				*ptr = '\0';
-				snprintf (file, sizeof (file), "%s"R_SYS_DIR"%s", str, bin);
+				file = r_str_newf (R_JOIN_2_PATHS ("%s", "%s%s"), str, bin, extension);
 				if (r_file_exists (file)) {
 					free (path);
 					free (path_env);
-					return strdup (file);
+					return file;
 				}
 				str = ptr + 1;
 			}
@@ -246,6 +252,7 @@ R_API char *r_file_path(const char *bin) {
 	}
 	free (path_env);
 	free (path);
+	free (file);
 	return strdup (bin);
 }
 
@@ -444,16 +451,14 @@ R_API char *r_file_slurp_random_line_count(const char *file, int *line) {
 	/* Reservoir Sampling */
 	char *ptr = NULL, *str;
 	int sz, i, lines, selection = -1;
-	struct timeval tv;
 	int start = *line;
 	if ((str = r_file_slurp (file, &sz))) {
-		gettimeofday (&tv, NULL);
-		srand (getpid() + tv.tv_usec);
+		r_num_irand ();
 		for (i = 0; str[i]; i++) {
 			if (str[i] == '\n') {
 				//here rand doesn't have any security implication
 				// https://www.securecoding.cert.org/confluence/display/c/MSC30-C.+Do+not+use+the+rand()+function+for+generating+pseudorandom+numbers
-				if (!(rand() % (++(*line)))) {
+				if (!(r_num_rand ((++(*line))))) {
 					selection = (*line - 1);  /* The line we want. */
 				}
 			}
@@ -912,6 +917,9 @@ R_API char *r_file_temp (const char *prefix) {
 R_API int r_file_mkstemp(const char *prefix, char **oname) {
 	int h = -1;
 	char *path = r_file_tmpdir ();
+	if (!prefix) {
+		prefix = "r2";
+	}
 #if __WINDOWS__
 	LPTSTR name = NULL;
 	LPTSTR path_ = r_sys_conv_utf8_to_utf16 (path);
@@ -941,10 +949,24 @@ err_r_file_mkstemp:
 	free (prefix_);
 #else
 	char name[1024];
+	char pfxx[1024];
+	const char *suffix = strchr (prefix, '*');
 
-	snprintf (name, sizeof (name) - 1, "%s/r2.%s.XXXXXX", path, prefix);
+	if (suffix) {
+		suffix++;
+		r_str_ncpy (pfxx, prefix, (size_t)(suffix - prefix));
+		prefix = pfxx;
+	} else {
+		suffix = "";
+	}
+
+	snprintf (name, sizeof (name) - 1, "%s/r2.%s.XXXXXX%s", path, prefix, suffix);
 	mode_t mask = umask (S_IWGRP | S_IWOTH);
-	h = mkstemp (name);
+	if (suffix && *suffix) {
+		h = mkstemps (name, strlen (suffix));
+	} else {
+		h = mkstemp (name);
+	}
 	umask (mask);
 	if (oname) {
 		*oname = (h!=-1)? strdup (name): NULL;
@@ -1021,4 +1043,73 @@ R_API bool r_file_copy (const char *src, const char *dst) {
 	free (dst2);
 	return rc == 0;
 #endif
+}
+
+static void recursive_search_glob (const char *path, const char *glob, RList* list, int depth) {
+	if (depth < 1) {
+		return;
+	}
+	char* file;
+	RListIter *iter;
+	RList *dir = r_sys_dir (path);
+	r_list_foreach (dir, iter, file) {
+		if (!strcmp (file, ".") || !strcmp (file, "..")) {
+			continue;
+		}
+		char *filename = malloc (strlen (path) + strlen (file) + 2);
+		strcpy (filename, path);
+		strcat (filename, file);
+		if (r_file_is_directory (filename)) {
+			strcat (filename, R_SYS_DIR);
+			recursive_search_glob (filename, glob, list, depth - 1);
+			free (filename);
+		} else if (r_str_glob (file, glob)) {
+			r_list_append (list, filename);
+		} else {
+			free (filename);
+		}
+	}
+	r_list_free (dir);
+}
+
+R_API RList* r_file_globsearch (const char *_globbed_path, int maxdepth) {
+	char *globbed_path = strdup (_globbed_path);
+	RList *files = r_list_newf (free);
+	char *glob = strchr (globbed_path, '*');
+	if (!glob) {
+		r_list_append (files, strdup (globbed_path));
+	} else {
+		*glob = '\0';
+		char *last_slash = (char *)r_str_last (globbed_path, R_SYS_DIR);
+		*glob = '*';
+		char *path, *glob_ptr;
+		if (last_slash) {
+			glob_ptr = last_slash + 1;
+			if (globbed_path[0] == '~') {
+				char *rpath = r_str_newlen (globbed_path + 2, last_slash - globbed_path - 1);
+				path = r_str_home (rpath ? rpath : "");
+				free (rpath);
+			} else {
+				path = r_str_newlen (globbed_path, last_slash - globbed_path + 1);
+			}
+		} else {
+			glob_ptr = globbed_path;
+			path = r_str_newf (".%s", R_SYS_DIR);
+		}
+
+		if (!path) {
+			r_list_free (files);
+			free (globbed_path);
+			return NULL;
+		}
+
+		if (*(glob + 1) == '*') {  // "**"
+			recursive_search_glob (path, glob_ptr, files, maxdepth);
+		} else {                   // "*"
+			recursive_search_glob (path, glob_ptr, files, 1);
+		}
+		free (path);
+	}
+	free (globbed_path);
+	return files;
 }

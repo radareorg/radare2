@@ -298,24 +298,18 @@ static int decode_addressing_mode(ut16 instr, ut16 op1, ut16 op2, struct msp430_
 
 static int decode_twoop_opcode(ut16 instr, ut16 op1, ut16 op2, struct msp430_cmd *cmd)
 {
-	int ret;
-	ut8 opcode;
+	ut8 opcode = get_twoop_opcode(instr);
 
-	opcode = get_twoop_opcode(instr);
-
-	snprintf(cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", two_op_instrs[opcode]);
-	if (get_bw(instr)) {
-		strncat(cmd->instr, ".b", MSP430_INSTR_MAXLEN - 1 - strlen(cmd->instr));
+	snprintf (cmd->instr, MSP430_INSTR_MAXLEN - 1, "%s", two_op_instrs[opcode]);
+	if (get_bw (instr)) {
+		strncat (cmd->instr, ".b", MSP430_INSTR_MAXLEN - 1 - strlen(cmd->instr));
 	}
 
-	cmd->opcode = get_twoop_opcode(instr);
-	ret = decode_addressing_mode(instr, op1, op2, cmd);
-
-	return ret;
+	cmd->opcode = get_twoop_opcode (instr);
+	return decode_addressing_mode (instr, op1, op2, cmd);
 }
 
-static ut8 get_jmp_opcode(ut16 instr)
-{
+static ut8 get_jmp_opcode(ut16 instr) {
 	return instr >> 13;
 }
 
@@ -445,16 +439,14 @@ static int decode_oneop_opcode(ut16 instr, ut16 op, struct msp430_cmd *cmd)
 	return ret;
 }
 
-int msp430_decode_command(const ut8 *in, struct msp430_cmd *cmd)
-{
+int msp430_decode_command(const ut8 *in, int len, struct msp430_cmd *cmd) {
 	int ret = -1;
-	ut16 instr;
 	ut16 operand1, operand2;
-	ut8 opcode;
-
-	instr = r_read_le16 (in);
-
-	opcode = get_twoop_opcode(instr);
+	if (len < 2) {
+		return -1;
+	}
+	ut16 instr = r_read_le16 (in);
+	ut8 opcode = get_twoop_opcode (instr);
 
 	switch (opcode) {
 	case MSP430_MOV:
@@ -469,21 +461,28 @@ int msp430_decode_command(const ut8 *in, struct msp430_cmd *cmd)
 	case MSP430_BIS:
 	case MSP430_XOR:
 	case MSP430_AND:
-		cmd->type = MSP430_TWOOP;
-		operand1 = r_read_at_le16 (in, 2);
-		operand2 = r_read_at_le16 (in, 4);
-		ret = decode_twoop_opcode(instr, operand1, operand2, cmd);
-	break;
+		// XXX this conditional is wrong, but seems to be safe
+		if (len >= 4) {
+			cmd->type = MSP430_TWOOP;
+			operand1 = r_read_at_le16 (in, 2);
+			operand2 = r_read_at_le16 (in, 4);
+		} else {
+			operand1 = 0;
+			operand2 = 0;
+		}
+		ret = decode_twoop_opcode (instr, operand1, operand2, cmd);
+		break;
 	}
 
 	if (ret > 0) {
 		return ret;
 	}
 
-	ret = decode_jmp(instr, cmd);
+	ret = decode_jmp (instr, cmd);
 
-	if (ret > 0)
+	if (ret > 0) {
 		return ret;
+	}
 
 	operand1 = r_read_at_le16 (in, 2);
 	ret = decode_oneop_opcode(instr, operand1, cmd);

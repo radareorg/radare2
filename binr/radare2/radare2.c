@@ -86,7 +86,9 @@ static int verify_version(int show) {
 		{ "r_hash", &r_hash_version },
 		{ "r_fs", &r_fs_version },
 		{ "r_io", &r_io_version },
+#if !USE_LIB_MAGIC
 		{ "r_magic", &r_magic_version },
+#endif
 		{ "r_parse", &r_parse_version },
 		{ "r_reg", &r_reg_version },
 		{ "r_sign", &r_sign_version },
@@ -189,7 +191,7 @@ static int main_help(int line) {
 		"Environment:\n"
 		" RDATAHOME    %s\n" // TODO: rename to RHOME R2HOME?
 		" RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
-		" MAGICPATH    "R2_SDB_MAGIC"\n"
+		" MAGICPATH    " R_JOIN_2_PATHS ("%s", R2_SDB_MAGIC) "\n"
 		" R_DEBUG      if defined, show error messages and crash signal\n"
 		" VAPIDIR      path to extra vapi directory\n"
 		" R2_NOPLUGINS do not load r2 shared plugins\n"
@@ -198,7 +200,7 @@ static int main_help(int line) {
 		" R2_INCDIR    "R2_INCDIR"\n"
 		" R2_LIBDIR    "R2_LIBDIR"\n"
 		" R2_LIBEXT    "R_LIB_EXT"\n"
-		, dirPrefix, datahome);
+		, dirPrefix, datahome, dirPrefix);
 		free (datahome);
 	}
 	return 0;
@@ -212,12 +214,13 @@ static int main_print_var(const char *var_name) {
 	char *homeplugins = r_str_home (R2_HOME_PLUGINS);
 	char *homezigns = r_str_home (R2_HOME_ZIGNS);
 	char *plugins = r_str_r2_prefix (R2_PLUGINS);
+	char *magicpath = r_str_r2_prefix (R2_SDB_MAGIC);
 	struct radare2_var_t {
 		const char *name;
 		const char *value;
 	} r2_vars[] = {
 		{ "R2_PREFIX", R2_PREFIX },
-		{ "MAGICPATH", R2_SDB_MAGIC },
+		{ "MAGICPATH", magicpath },
 		{ "PREFIX", R2_PREFIX },
 		{ "INCDIR", R2_INCDIR },
 		{ "LIBDIR", R2_LIBDIR },
@@ -250,6 +253,7 @@ static int main_print_var(const char *var_name) {
 	free (homeplugins);
 	free (homezigns);
 	free (plugins);
+	free (magicpath);
 	return 0;
 }
 
@@ -359,7 +363,8 @@ static bool run_commands(RList *cmds, RList *files, bool quiet) {
 	}
 	/* -c */
 	r_list_foreach (cmds, iter, cmdn) {
-		r_core_cmd0 (&r, cmdn);
+		//r_core_cmd0 (&r, cmdn);
+		r_core_cmd (&r, cmdn, false);
 		r_cons_flush ();
 	}
 	if (quiet) {
@@ -492,6 +497,7 @@ int main(int argc, char **argv, char **envp) {
 		return main_help (1);
 	}
 	r_core_init (&r);
+	r_core_task_sync_begin (&r);
 	if (argc == 2 && !strcmp (argv[1], "-p")) {
 		r_core_project_list (&r, 0);
 		r_cons_flush ();
@@ -499,7 +505,7 @@ int main(int argc, char **argv, char **envp) {
 		return 0;
 	}
 	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
-	if (argc > 1 && !strcmp (argv[1], "-")) {
+	if (argc > 2 && !strcmp (argv[1], "-") && !strcmp (argv[2], "-i")) {
 		argv[1] = argv[0];
 		prefile = 1;
 		argc--;
@@ -699,11 +705,7 @@ int main(int argc, char **argv, char **envp) {
 			eprintf ("Failed to close stderr");
 			return 1;
 		}
-#if __WINDOWS__ && !__CYGWIN__
-		const char nul[] = "nul";
-#else
-		const char nul[] = "/dev/null";
-#endif
+		const char nul[] = R_SYS_DEVNULL;
 		int new_stderr = open (nul, O_RDWR);
 		if (-1 == new_stderr) {
 			eprintf ("Failed to open %s", nul);
@@ -812,12 +814,15 @@ int main(int argc, char **argv, char **envp) {
 	ret = run_commands (NULL, prefiles, false);
 	r_list_free (prefiles);
 
+#if 0
+	// if "- -i" is used we will open malloc:// instead
 	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
 	if (prefile) {
 		optind = 1;
 		argc = 2;
 		argv[1] = "-";
 	}
+#endif
 	r_bin_force_plugin (r.bin, forcebin);
 
 	//cverify_version (0);
@@ -1241,10 +1246,10 @@ int main(int argc, char **argv, char **envp) {
 			}
 			nsha1 = r_config_get (r.config, "file.sha1");
 			npath = r_config_get (r.config, "file.path");
-			if (!quiet && sha1 && *sha1 && strcmp (sha1, nsha1)) {
+			if (!quiet && sha1 && *sha1 && nsha1 && strcmp (sha1, nsha1)) {
 				eprintf ("WARNING: file.sha1 change: %s => %s\n", sha1, nsha1);
 			}
-			if (!quiet && path && *path && strcmp (path, npath)) {
+			if (!quiet && path && *path && npath && strcmp (path, npath)) {
 				eprintf ("WARNING: file.path change: %s => %s\n", path, npath);
 			}
 			free (sha1);
@@ -1434,7 +1439,7 @@ int main(int argc, char **argv, char **envp) {
 		}
 	}
 
-	if (mustSaveHistory(r.config)) {
+	if (mustSaveHistory (r.config)) {
 		r_line_hist_save (R2_HOME_HISTORY);
 	}
 	// TODO: kill thread
@@ -1446,6 +1451,9 @@ beach:
 		exit (ret);
 		return ret;
 	}
+
+	r_core_task_sync_end (&r);
+
 	// not really needed, cause r_core_fini will close the file
 	// and this fh may be come stale during the command
 	// execution.

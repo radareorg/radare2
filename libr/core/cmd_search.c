@@ -601,6 +601,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		protection = R_IO_RWX;
 	}
 	if (!core) {
+		r_list_free (list);
 		return NULL;
 	}
 	if (!core->io->va) {
@@ -613,12 +614,12 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 			append_bound (list, core->io, search_itv, m->itv.addr, m->itv.size);
 		}
 	} else if (!strcmp (mode, "io.maps")) { // Non-overlapping RIOMap parts not overriden by others (skyline)
-		const RVector *skyline = &core->io->map_skyline;
+		const RPVector *skyline = &core->io->map_skyline;
 		ut64 begin = UT64_MAX;
 		ut64 end = UT64_MAX;
-		int i;
-		for (i = 0; i < skyline->len; i++) {
-			const RIOMapSkyline *part = skyline->a[i];
+		size_t i;
+		for (i = 0; i < r_pvector_len (skyline); i++) {
+			const RIOMapSkyline *part = r_pvector_at (skyline, i);
 			ut64 from = part->itv.addr;
 			ut64 to = part->itv.addr + part->itv.size;
 			// eprintf ("--------- %llx %llx    (%llx %llx)\n", from, to, begin, end);
@@ -1046,7 +1047,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->assembler, hit->addr);
 			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
-			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ANAL_OP_MASK_ALL);
+			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ANAL_OP_MASK_ESIL);
 			size += hit->len;
 			if (analop.type != R_ANAL_OP_TYPE_RET) {
 				char *opstr_n = r_str_newf (" %s", R_STRBUF_SAFEGET (&analop.esil));
@@ -1079,7 +1080,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->assembler, hit->addr);
 			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
-			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ANAL_OP_MASK_ALL);
+			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ANAL_OP_MASK_BASIC);
 			size += hit->len;
 			const char *opstr = R_STRBUF_SAFEGET (&analop.esil);
 			if (analop.type != R_ANAL_OP_TYPE_RET) {
@@ -1090,7 +1091,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 				r_cons_printf ("%s\n", opstr);
 			} else if (colorize) {
 				buf_asm = r_print_colorize_opcode (core->print, asmop.buf_asm,
-					core->cons->pal.reg, core->cons->pal.num, false);
+					core->cons->pal.reg, core->cons->pal.num, false, 0);
 				r_cons_printf (" %s%s;", buf_asm, Color_RESET);
 				free (buf_asm);
 			} else {
@@ -1119,7 +1120,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->assembler, hit->addr);
 			r_asm_disassemble (core->assembler, &asmop, buf, hit->len);
-			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ANAL_OP_MASK_ALL);
+			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ANAL_OP_MASK_ESIL);
 			size += hit->len;
 			if (analop.type != R_ANAL_OP_TYPE_RET) {
 				char *opstr_n = r_str_newf (" %s", R_STRBUF_SAFEGET (&analop.esil));
@@ -1127,7 +1128,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 			}
 			if (colorize) {
 				buf_asm = r_print_colorize_opcode (core->print, asmop.buf_asm,
-					core->cons->pal.reg, core->cons->pal.num, false);
+					core->cons->pal.reg, core->cons->pal.num, false, 0);
 				otype = r_print_color_op_type (core->print, analop.type);
 				if (comment) {
 					r_cons_printf ("  0x%08"PFMT64x " %18s%s  %s%s ; %s\n",
@@ -1352,7 +1353,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 			RAnalOp end_gadget = R_EMPTY;
 			// Disassemble one.
 			if (r_anal_op (core->anal, &end_gadget, from + i, buf + i,
-				    delta - i, R_ANAL_OP_MASK_ALL) <= 0) {
+				    delta - i, R_ANAL_OP_MASK_BASIC) <= 0) {
 				r_anal_op_fini (&end_gadget);
 				continue;
 			}
@@ -1652,11 +1653,6 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 #define MAXINSTR 8
 #define SUMARRAY(arr, size, res) do (res) += (arr)[--(size)]; while ((size))
 
-static inline bool isnonlinear(int optype) {
-	return (optype ==  R_ANAL_OP_TYPE_CALL || optype ==  R_ANAL_OP_TYPE_JMP || optype ==  R_ANAL_OP_TYPE_CJMP ||
-			optype == R_ANAL_OP_TYPE_RET);
-}	
-
 static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 	int i, inslen, bsize = R_MIN (64, core->blocksize);
 	ut8 *arr;
@@ -1682,7 +1678,7 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 		if (!i) {
 			r_io_read_at (core->io, curpc, arr, bsize);
 		}
-		inslen = r_anal_op (core->anal, &aop, curpc, arr + i, bsize - i, R_ANAL_OP_MASK_ALL);
+		inslen = r_anal_op (core->anal, &aop, curpc, arr + i, bsize - i, R_ANAL_OP_MASK_BASIC);
 		if (inslen) {	
  			int incr = (core->search->align > 0)? core->search->align - 1:  inslen - 1;
 			if (incr < 0) {
@@ -1690,7 +1686,7 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 			}	
 			i += incr;
 			curpc += incr;
-			if (isnonlinear (aop.type)) {	// skip the instr
+			if (r_anal_op_nonlinear (aop.type)) {	// skip the instr
 				r_reg_set_value (core->dbg->reg, r, curpc + 1);
 			} else {	// step instr
 				r_core_esil_step (core, UT64_MAX, NULL, NULL);
@@ -1763,7 +1759,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 			if (!i) {
 				r_io_read_at (core->io, at, buf, bsize);
 			}
-			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i, R_ANAL_OP_MASK_ALL);
+			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i, R_ANAL_OP_MASK_BASIC);
 			curpos = idx++ % (MAXINSTR + 1);
 			previnstr[curpos] = ret; // This array holds prev n instr size + cur instr size
 			if ((aop.type == R_ANAL_OP_TYPE_SWI) && ret && (aop.val > 10)) {
@@ -1922,7 +1918,7 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 			if (!i) {
 				r_io_read_at (core->io, at, buf, bsize);
 			}
-			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i, R_ANAL_OP_MASK_ALL);
+			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i, R_ANAL_OP_MASK_BASIC);
 			if (ret) {
 				bool match = false;
 				if (chk_family) {
@@ -2086,7 +2082,8 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 						char tmp[128] = {
 							0
 						};
-						r_parse_filter (core->parser, core->flags, hit->code, tmp, sizeof (tmp), core->print->big_endian);
+						r_parse_filter (core->parser, core->flags, hit->code, tmp, sizeof (tmp),
+								core->print->big_endian);
 						r_cons_printf ("0x%08"PFMT64x "   # %i: %s\n",
 							hit->addr, hit->len, tmp);
 					} else {

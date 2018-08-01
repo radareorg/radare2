@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017 - condret, pancake, alvaro */
+/* radare2 - LGPL - Copyright 2017-2018 - condret, pancake, alvaro */
 
 #include <r_io.h>
 #include <sdb.h>
@@ -148,20 +148,12 @@ R_API int r_io_desc_write(RIODesc *desc, const ut8* buf, int len) {
 		return r_io_desc_cache_write (desc,
 				r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR), buf, len);
 	}
-	//check permissions
-	if (!(desc->flags & R_IO_WRITE)) {
-		return 0;
-	}
-	if (desc->plugin->write) {
-		return desc->plugin->write (desc->io, desc, buf, len);
-	}
-	return 0;
+	return r_io_plugin_write (desc, buf, len);
 }
 
 // returns length of read bytes
 R_API int r_io_desc_read(RIODesc *desc, ut8 *buf, int len) {
 	ut64 seek;
-	int ret = -1;
 	// check pointers and permissions
 	if (!buf || !desc || !desc->plugin || len < 1 || !(desc->flags & R_IO_READ)) {
 		return 0;
@@ -172,9 +164,7 @@ R_API int r_io_desc_read(RIODesc *desc, ut8 *buf, int len) {
 			return r_io_cache_read (desc->io, seek, buf, len);
 		}
 	}
-	if (desc->plugin->read) {
-		ret = desc->plugin->read (desc->io, desc, buf, len);
-	}
+	int ret = r_io_plugin_read (desc, buf, len);
 	if (ret > 0 && desc->io->cachemode) {
 		r_io_cache_write (desc->io, seek, buf, len);
 	} else if ((ret > 0) && desc->io && (desc->io->p_cache & 1)) {

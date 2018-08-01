@@ -1,5 +1,5 @@
 PKGNAME radare2
-VERSION 2.7.0-git
+VERSION 2.8.0-git
 CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
@@ -26,7 +26,7 @@ ARG_DISABLE LOADLIBS loadlibs disable loading plugins ;
 
 ARG_WITHOUT HAVE_FORK fork disable fork ;
 
-ARG_ENABLE BUILD_MERGED merged build merged r library ;
+ARG_WITH WITH_LIBR libr build libr.a and libr.dylib ;
 
 ARG_WITH WITH_CAPSTONE syscapstone force to use system-wide capstone ;
 PKGCFG CAPSTONE_CFLAGS CAPSTONE_LDFLAGS capstone
@@ -55,6 +55,8 @@ IFAND HAVE_LIB_Z USE_ZIP {
 ARG_WITHOUT WITH_GPL gpl do not build GPL code (grub, cxx, ... ) ;
 
 CHKDECL sys/personality.h ADDR_NO_RANDOMIZE
+CHKFNC c arc4random_uniform
+CHKFNC c explicit_bzero
 
 (( TODO must deprecate
 CHKLIB gmp
@@ -128,8 +130,6 @@ IFEQ USEROSTYPE auto ; {
 	} } } } } } } } } }
 }
 
-ARG_WITHOUT WITHPIC pic do not build libr as a program independent location ;
-ARG_WITH WITHNONPIC nonpic build the library archives .a ;
 (( this hack is required for openbsd ports ))
 ARG_WITH LIBVERSION=xxx libversion specify different libversion ;
 ARG_WITHOUT HAVE_JEMALLOC jemalloc build without jemalloc ;
@@ -139,8 +139,8 @@ IFEQ LIBVERSION xxx ; {
 }
 
 REPORT PREFIX HAVE_LIB_GMP HAVE_OPENSSL USE_CAPSTONE HAVE_FORK
-	VERSION USE_LIB_ZIP USE_LIB_MAGIC DEBUGGER CC USERCC
-	USEROSTYPE LIBVERSION BUILD HOST TARGET ;
+	VERSION USE_LIB_ZIP USE_LIB_MAGIC DEBUGGER CC USERCC HAVE_ARC4RANDOM_UNIFORM
+	HAVE_EXPLICIT_BZERO USEROSTYPE LIBVERSION BUILD HOST TARGET ;
 
 (( TODO: Add the rest of .pc files here.. add a rule for acr? ))
 SUBDIRS ./config-user.mk

@@ -11,6 +11,7 @@ sdb_files = [
   'types-arm-ios-16',
   'types-arm-ios-32',
   'types-arm-ios-64',
+  'spec',
   'cc-x86-64',
   'cc-x86-32',
   'cc-mips-32',
@@ -33,8 +34,7 @@ foreach file : sdb_files
     command: sdb_gen_cmd,
     depends: sdb_exe,
     build_by_default: true,
-    build_always: false,
     install: true,
-    install_dir: join_paths(get_option('datadir'), 'radare2', r2_version, 'fcnsign')
+    install_dir: join_paths(r2_sdb, 'fcnsign')
   )
 endforeach

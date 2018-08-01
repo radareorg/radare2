@@ -137,10 +137,10 @@ static RList *symbols(RBinFile *bf) {
 		ptr->forwarder = r_str_const ("NONE");
 		ptr->bind = r_str_const ("NONE");
 		switch (imp->kind) {
-		case 0: ptr->type = r_str_const ("FUNC"); break;
+		case 0: ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR); break;
 		case 1: ptr->type = r_str_const ("TABLE"); break;
 		case 2: ptr->type = r_str_const ("MEMORY"); break;
-		case 3: ptr->type = r_str_const ("GLOBAL"); break;
+		case 3: ptr->type = r_str_const (R_BIN_BIND_GLOBAL_STR); break;
 		}
 		ptr->size = 0;
 		ptr->vaddr = -1;
@@ -160,7 +160,7 @@ static RList *symbols(RBinFile *bf) {
 		ptr->name = strdup(tmp);
 		ptr->forwarder = r_str_const ("NONE");
 		ptr->bind = r_str_const ("NONE");
-		ptr->type = r_str_const ("FUNC");
+		ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR);
 		ptr->size = func->len;
 		ptr->vaddr = (ut64)func->code;
 		ptr->paddr = (ut64)func->code;

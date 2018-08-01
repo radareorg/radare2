@@ -12,12 +12,13 @@ static const char *help_msg_C[] = {
 	"Usage:", "C[-LCvsdfm*?][*?] [...]", " # Metadata management",
 	"C", "", "list meta info in human friendly form",
 	"C*", "", "list meta info in r2 commands",
-	"C[Chsdmf]", "", "list comments/hidden/strings/data/magic/formatted in human friendly form",
-	"C[Chsdmf]*", "", "list comments/hidden/strings/data/magic/formatted in r2 commands",
+	"C[Cthsdmf]", "", "list comments/types/hidden/strings/data/magic/formatted in human friendly form",
+	"C[Cthsdmf]*", "", "list comments/types/hidden/strings/data/magic/formatted in r2 commands",
 	"C-", " [len] [[@]addr]", "delete metadata at given address range",
 	"CL", "[-][*] [file:line] [addr]", "show or add 'code line' information (bininfo)",
 	"CS", "[-][space]", "manage meta-spaces to filter comments, etc..",
 	"CC", "[?] [-] [comment-text] [@addr]", "add/remove comment",
+	"Ct", "[?] [-] [comment-text] [@addr]", "add/remove type analysis comment",
 	"CC.", "[addr]", "show comment in current address",
 	"CC!", " [@addr]", "edit comment with $EDITOR",
 	"CCa", "[-at]|[at] [text] [@addr]", "add/remove comment at given address",
@@ -517,7 +518,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	return true;
 }
 
-static int cmd_meta_hsdmf(RCore *core, const char *input) {
+static int cmd_meta_others(RCore *core, const char *input) {
 	int n, type = input[0], subtype;
 	char *t = 0, *p, *p2, name[256];
 	int repeat = 1;
@@ -852,7 +853,7 @@ void r_comment_vars(RCore *core, const char *input) {
 				comment = heap_comment;
 			}
 		}
-		var = r_anal_var_get_byname (core->anal, fcn, name);
+		var = r_anal_var_get_byname (core->anal, fcn->addr, name);
 		if (var) {
 			idx = var->delta;
 		} else if (!strncmp (name, "0x", 2))  {
@@ -885,7 +886,7 @@ void r_comment_vars(RCore *core, const char *input) {
 		}
 		break;
 	case '-':
-		var = r_anal_var_get_byname (core->anal,fcn, name);
+		var = r_anal_var_get_byname (core->anal, fcn->addr, name);
 		if (var) {
 			idx = var->delta;
 		} else if (!strncmp (name, "0x", 2)) {
@@ -906,7 +907,7 @@ void r_comment_vars(RCore *core, const char *input) {
 		break;
 	case '!': {
 		char *comment;
-		var = r_anal_var_get_byname (core->anal,fcn, name);
+		var = r_anal_var_get_byname (core->anal, fcn->addr, name);
 		if (!var) {
 			eprintf ("cant find variable named `%s`\n",name);
 			break;
@@ -953,7 +954,8 @@ static int cmd_meta(void *data, const char *input) {
 	case 'd': /* "Cd" data */
 	case 'm': /* Cm magic */
 	case 'f': /* Cf formatted */
-		cmd_meta_hsdmf (core, input);
+	case 't': /* Ct type analysis commnets */
+		cmd_meta_others (core, input);
 		break;
 	case '-':
 		if (input[1] != '*') {

@@ -541,6 +541,51 @@ static int analop_vle(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 	return -1;
 }
 
+#define ZERO_FILL(x) memset (&x, 0, sizeof (x))
+
+static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
+	if (!reg) {
+		return -1;
+	}
+	switch (INSOP (reg_num).type) {
+	case PPC_OP_REG:
+		reg->name = (char *)cs_reg_name (handle, INSOP (reg_num).reg);
+		break;
+	case PPC_OP_MEM:
+		if (INSOP (reg_num).mem.base != PPC_REG_INVALID) {
+			reg->name = (char *)cs_reg_name (handle, INSOP (reg_num).mem.base);
+		}
+		break;
+	default :
+		break;
+	}
+	return 0;
+}
+
+static void op_fillval(RAnalOp *op, csh handle, cs_insn *insn) {
+	static RRegItem reg;
+	switch (op->type & R_ANAL_OP_TYPE_MASK) {
+	case R_ANAL_OP_TYPE_LOAD:
+		if (INSOP(1).type == PPC_OP_MEM) {
+			ZERO_FILL (reg);
+			op->src[0] = r_anal_value_new ();
+			op->src[0]->reg = &reg;
+			parse_reg_name (op->src[0]->reg, handle, insn, 1);
+			op->src[0]->delta = INSOP(1).mem.disp;
+		}
+		break;
+	case R_ANAL_OP_TYPE_STORE:
+		if (INSOP(1).type == PPC_OP_MEM) {
+			ZERO_FILL (reg);
+			op->dst = r_anal_value_new ();
+			op->dst->reg = &reg;
+			parse_reg_name (op->dst->reg, handle, insn, 1);
+			op->dst->delta = INSOP(1).mem.disp;
+		}
+		break;
+	}
+}
+
 static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	static csh handle = 0;
 	static int omode = -1, obits = -1;
@@ -609,6 +654,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case PPC_INS_CMPW:
 		case PPC_INS_CMPWI:
 			op->type = R_ANAL_OP_TYPE_CMP;
+			op->sign = true;
 			if (ARG (2)[0] == '\0') esilprintf (op, "%s,%s,-,0xff,&,cr0,=", ARG (1), ARG (0));
 			else esilprintf (op, "%s,%s,-,0xff,&,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
@@ -642,15 +688,18 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			esilprintf (op, "0,$");
 			break;
 		case PPC_INS_EXTSB:
+			op->sign = true;
 			op->type = R_ANAL_OP_TYPE_MOV;
 			if (a->bits == 64) esilprintf (op, "%s,0x80,&,?{,0xFFFFFFFFFFFFFF00,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
 			else esilprintf (op, "%s,0x80,&,?{,0xFFFFFF00,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
 			break;
 		case PPC_INS_EXTSH:
+			op->sign = true;
 			if (a->bits == 64) esilprintf (op, "%s,0x8000,&,?{,0xFFFFFFFFFFFF0000,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
 			else esilprintf (op, "%s,0x8000,&,?{,0xFFFF0000,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
 			break;
 		case PPC_INS_EXTSW:
+			op->sign = true;
 			esilprintf (op, "%s,0x80000000,&,?{,0xFFFFFFFF00000000,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
 			break;
 		case PPC_INS_SYNC:
@@ -771,6 +820,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			esilprintf (op, "%s,%s,>>,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
 		case PPC_INS_MULLI:
+			op->sign = true;
 		case PPC_INS_MULLW:
 		case PPC_INS_MULLD:
 			op->type = R_ANAL_OP_TYPE_MUL;
@@ -786,6 +836,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			break;
 		case PPC_INS_ADD:
 		case PPC_INS_ADDI:
+			op->sign = true;
 			op->type = R_ANAL_OP_TYPE_ADD;
 			esilprintf (op, "%s,%s,+,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
@@ -1026,8 +1077,12 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			esilprintf (op, "16,%s,<<,%s,^,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
 		case PPC_INS_DIVD:
-		case PPC_INS_DIVDU:
 		case PPC_INS_DIVW:
+			op->sign = true;
+			op->type = R_ANAL_OP_TYPE_DIV;
+			esilprintf (op, "%s,%s,/,%s,=", ARG (2), ARG (1), ARG (0));
+			break;
+		case PPC_INS_DIVDU:
 		case PPC_INS_DIVWU:
 			op->type = R_ANAL_OP_TYPE_DIV;
 			esilprintf (op, "%s,%s,/,%s,=", ARG (2), ARG (1), ARG (0));
@@ -1040,6 +1095,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			esilprintf (op, "pc,lr,=,%s,pc,=", ARG (0));
 			break;
 		case PPC_INS_TRAP:
+			op->sign = true;
 			op->type = R_ANAL_OP_TYPE_TRAP;
 			break;
 		case PPC_INS_AND:
@@ -1133,6 +1189,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			op->type = R_ANAL_OP_TYPE_ROL;
 			esilprintf (op, "%s,%s,<<<,%s,&,%s,=", ARG (2), ARG (1), cmask64 (0, ARG (3)), ARG (0));
 			break;
+		}
+		if (a->fillval) {
+			op_fillval (op, handle, insn);
 		}
 		r_strbuf_fini (&op->esil);
 		cs_free (insn, n);

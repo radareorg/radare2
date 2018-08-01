@@ -115,16 +115,13 @@ R_API void r_bin_xtrdata_free(void /*RBinXtrData*/ *data_) {
 R_API RList* r_bin_raw_strings(RBinFile *bf, int min) {
 	RList *l = NULL;
 	if (bf) {
-		int tmp = bf->rawstr;
-		bf->rawstr = 2;
-		l = r_bin_file_get_strings (bf, min, 0);
-		bf->rawstr = tmp;
+		l = r_bin_file_get_strings (bf, min, 0, 2);
 	}
 	return l;
 }
 
-R_API int r_bin_dump_strings(RBinFile *a, int min) {
-	r_bin_file_get_strings (a, min, 1);
+R_API int r_bin_dump_strings(RBinFile *a, int min, int raw) {
+	r_bin_file_get_strings (a, min, 1, raw);
 	return 0;
 }
 
@@ -171,6 +168,17 @@ R_API void r_bin_info_free(RBinInfo *rb) {
 	free (rb);
 }
 
+R_API RBinImport *r_bin_import_clone(RBinImport *o) {
+	RBinImport *res = r_mem_dup (o, sizeof (*o));
+	if (!res) {
+		return NULL;
+	}
+	res->name = R_STR_DUP (o->name);
+	res->classname = R_STR_DUP (o->classname);
+	res->descriptor = R_STR_DUP (o->descriptor);
+	return res;
+}
+
 R_API void r_bin_import_free(void *_imp) {
 	RBinImport *imp = (RBinImport *)_imp;
 	if (imp) {
@@ -181,11 +189,24 @@ R_API void r_bin_import_free(void *_imp) {
 	}
 }
 
+R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *o) {
+	RBinSymbol *res = r_mem_dup (o, sizeof (*o));
+	if (!res) {
+		return NULL;
+	}
+	res->name = R_STR_DUP (o->name);
+	res->dname = R_STR_DUP (o->dname);
+	res->classname = R_STR_DUP (o->classname);
+	return res;
+}
+
 R_API void r_bin_symbol_free(void *_sym) {
 	RBinSymbol *sym = (RBinSymbol *)_sym;
-	free (sym->name);
-	free (sym->classname);
-	free (sym);
+	if (sym) {
+		free (sym->name);
+		free (sym->classname);
+		free (sym);
+	}
 }
 
 R_API void r_bin_string_free(void *_str) {
@@ -411,40 +432,23 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 			}
 		}
 	}
-#if 0
-	if (!buf_bytes) {
-		if (sz < 1) {
-			eprintf ("Cannot allocate %d bytes\n", sz + 1);
-			return false;
-		}
-		buf_bytes = calloc (1, sz + 1);
-		if (!buf_bytes) {
-			eprintf ("Cannot allocate %d bytes.\n", sz + 1);
-			return false;
-		}
-		ut64 seekaddr = is_debugger? baseaddr: loadaddr;
-		if (!iob->fd_read_at (io, fd, seekaddr, buf_bytes, sz)) {
-			sz = 0LL;
-		}
-	}
-#else
 	// this thing works for 2GB ELF core from vbox
 	if (!buf_bytes) {
-		if (sz < 1) {
+		if ((int)sz < 0) {
 			eprintf ("Cannot allocate %d bytes\n", (int)(sz));
 			return false;
 		}
-		buf_bytes = calloc (1, sz);
+		const int asz = sz? sz: 1;
+		buf_bytes = calloc (1, asz);
 		if (!buf_bytes) {
-			eprintf ("Cannot allocate %d bytes.\n", (int)(sz + 1));
+			eprintf ("Cannot allocate %d bytes.\n", asz);
 			return false;
 		}
 		ut64 seekaddr = is_debugger? baseaddr: loadaddr;
-		if (!iob->fd_read_at (io, fd, seekaddr, buf_bytes, sz)) {
+		if (!iob->fd_read_at (io, fd, seekaddr, buf_bytes, asz)) {
 			sz = 0LL;
 		}
 	}
-#endif
 	if (bin->use_xtr && !name && (st64)sz > 0) {
 		// XXX - for the time being this is fine, but we may want to
 		// change the name to something like
@@ -479,13 +483,9 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 		}
 	}
 	if (!binfile) {
-		if (true) {
-			binfile = r_bin_file_new_from_bytes (
-				bin, fname, buf_bytes, sz, file_sz, bin->rawstr,
-				baseaddr, loadaddr, fd, name, NULL, offset, true);
-		} else {
-			binfile = r_bin_file_new_from_fd (bin, tfd, NULL);
-		}
+		binfile = r_bin_file_new_from_bytes (
+			bin, fname, buf_bytes, sz, file_sz, bin->rawstr,
+			baseaddr, loadaddr, fd, name, NULL, offset, true);
 	}
 	return binfile? r_bin_file_set_cur_binfile (bin, binfile): false;
 }
@@ -898,7 +898,7 @@ R_API RList *r_bin_reset_strings(RBin *bin) {
 	if (plugin && plugin->strings) {
 		o->strings = plugin->strings (a);
 	} else {
-		o->strings = r_bin_file_get_strings (a, bin->minstrlen, 0);
+		o->strings = r_bin_file_get_strings (a, bin->minstrlen, 0, a->rawstr);
 	}
 	if (bin->debase64) {
 		r_bin_object_filter_strings (o);
@@ -1074,8 +1074,14 @@ R_API int r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name
 				bin->cur->curplugin = plugin;
 			}
 			binfile = r_bin_file_new (bin, "-", NULL, 0, 0, 0, 999, NULL, NULL, false);
+			if (!binfile) {
+				return false;
+			}
 			// create object and set arch/bits
 			obj = r_bin_object_new (binfile, plugin, 0, 0, 0, 1024);
+			if (!obj) {
+				return false;
+			}
 			binfile->o = obj;
 			obj->info = R_NEW0 (RBinInfo);
 			obj->info->arch = strdup (arch);

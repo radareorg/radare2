@@ -407,7 +407,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 		parameters_size--;
 	}
 
-	if (!p4) {
+	if (!p4 || p4 >= p4_end) {
 		free (debug_positions);
 		free (params);
 		free (debug_locals);
@@ -620,7 +620,8 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 #endif
 		RBinDwarfRow *rbindwardrow = R_NEW0 (RBinDwarfRow);
 		if (!rbindwardrow) {
-			return;
+			dexdump = false;
+			break;
 		}
 		if (line) {
 			rbindwardrow->file = strdup (line);
@@ -1277,7 +1278,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 			// if method has code *addr points to code
 			// otherwise it points to the encoded method
 			if (MC > 0) {
-				sym->type = r_str_const ("FUNC");
+				sym->type = r_str_const (R_BIN_TYPE_FUNC_STR);
 				sym->paddr = MC;// + 0x10;
 				sym->vaddr = MC;// + 0x10;
 			} else {
@@ -1286,9 +1287,9 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 				sym->vaddr = encoded_method_addr - binfile->buf->buf;
 			}
 			if ((MA & 0x1) == 0x1) {
-				sym->bind = r_str_const ("GLOBAL");
+				sym->bind = r_str_const (R_BIN_BIND_GLOBAL_STR);
 			} else {
-				sym->bind = r_str_const ("LOCAL");
+				sym->bind = r_str_const (R_BIN_BIND_LOCAL_STR);
 			}
 
 			sym->method_flags = get_method_flags (MA);
@@ -1705,7 +1706,7 @@ static int dex_loadcode(RBinFile *bf, RBinDexObj *bin) {
 					return false;
 				}
 				sym->name = r_str_newf ("imp.%s", imp->name);
-				sym->type = r_str_const ("FUNC");
+				sym->type = r_str_const (R_BIN_TYPE_FUNC_STR);
 				sym->bind = r_str_const ("NONE");
 				//XXX so damn unsafe check buffer boundaries!!!!
 				//XXX use r_buf API!!
@@ -1789,7 +1790,7 @@ static RList *entries(RBinFile *bf) {
 	// STEP 1. ".onCreate(Landroid/os/Bundle;)V"
 	r_list_foreach (bin->methods_list, iter, m) {
 		if (strlen (m->name) > 30 && m->bind &&
-			(!strcmp (m->bind, "LOCAL") || !strcmp (m->bind, "GLOBAL")) &&
+			(!strcmp (m->bind, R_BIN_BIND_LOCAL_STR) || !strcmp (m->bind, R_BIN_BIND_GLOBAL_STR)) &&
 		    !strcmp (m->name + strlen (m->name) - 31,
 			     ".onCreate(Landroid/os/Bundle;)V")) {
 			if (!already_entry (ret, m->paddr)) {

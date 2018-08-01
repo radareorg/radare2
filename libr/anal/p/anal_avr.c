@@ -2060,14 +2060,14 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 		"gpr	r31	.8	31	0\n"
 
 // 16 bit overlapped registers for 16 bit math
-		"gpr	r17:r16	.16	16	0\n"
-		"gpr	r19:r18	.16	18	0\n"
-		"gpr	r21:r20	.16	20	0\n"
-		"gpr	r23:r22	.16	22	0\n"
-		"gpr	r25:r24	.16	24	0\n"
-		"gpr	r27:r26	.16	26	0\n"
-		"gpr	r29:r28	.16	28	0\n"
-		"gpr	r31:r30	.16	30	0\n"
+		"gpr	r17_r16	.16	16	0\n"
+		"gpr	r19_r18	.16	18	0\n"
+		"gpr	r21_r20	.16	20	0\n"
+		"gpr	r23_r22	.16	22	0\n"
+		"gpr	r25_r24	.16	24	0\n"
+		"gpr	r27_r26	.16	26	0\n"
+		"gpr	r29_r28	.16	28	0\n"
+		"gpr	r31_r30	.16	30	0\n"
 
 // 16 bit overlapped registers for memory addressing
 		"gpr	x	.16	26	0\n"

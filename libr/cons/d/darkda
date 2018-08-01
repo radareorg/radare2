@@ -32,6 +32,7 @@ ec trap rgb:d66
 ec swi rgb:df077e
 ec creg rgb:69d200
 ec flag rgb:00b1ab
+ec linehl rgb:00007f
 ec ai.read rgb:66d
 ec ai.write rgb:d66
 ec ai.exec rgb:6d6
@@ -43,3 +44,13 @@ ec graph.true rgb:009100
 ec graph.false rgb:bc0000
 ec graph.trufae rgb:0043cb
 ec graph.current rgb:fff
+
+ec func_var rgb:99a
+ec func_var_type rgb:df077e
+ec func_var_addr rgb:ababab
+
+ec ai.read rgb:be077e
+ec ai.write rgb:df077e
+ec ai.exec rgb:9dd600
+ec ai.seq rgb:9dd600
+ec ai.ascii rgb:d25032

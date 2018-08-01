@@ -75,13 +75,13 @@ static bool _fill_bin_symbol(struct r_bin_coff_obj *bin, int idx, RBinSymbol **s
 
 	switch (s->n_sclass) {
 	case COFF_SYM_CLASS_FUNCTION:
-		ptr->type = r_str_const ("FUNC");
+		ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR);
 		break;
 	case COFF_SYM_CLASS_FILE:
 		ptr->type = r_str_const ("FILE");
 		break;
 	case COFF_SYM_CLASS_SECTION:
-		ptr->type = r_str_const ("SECTION");
+		ptr->type = r_str_const (R_BIN_TYPE_SECTION_STR);
 		break;
 	case COFF_SYM_CLASS_EXTERNAL:
 		ptr->type = r_str_const ("EXTERNAL");

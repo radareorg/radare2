@@ -13,12 +13,12 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx);
 static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size );
 static int free_xtr (void *xtr_obj) ;
 
-static bool checkHeader(const ut8 *h, int sz) {
+static bool checkHeader(const ut8 *h, ut64 sz) {
 	ut8 buf[4];
 	if (sz >= 0x300 && !memcmp (h, "\xca\xfe\xba\xbe", 4)) {
 		// XXX assuming BE
-		int off = r_read_at_be32 (h, 4 * sizeof (int));
-		if (off > 0 && off < sz) {
+		ut64 off = (ut64)r_read_at_be32 (h, 4 * sizeof (ut32));
+		if (off > 0 && off + 4 < sz) {
 			memcpy (buf, h + off, 4);
 			if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
 				!memcmp (buf, "\xfe\xed\xfa\xce", 4) ||

@@ -204,7 +204,7 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 		if (cp->strings) {
 			o->strings = cp->strings (binfile);
 		} else {
-			o->strings = r_bin_file_get_strings (binfile, minlen, 0);
+			o->strings = r_bin_file_get_strings (binfile, minlen, 0, binfile->rawstr);
 		}
 		if (bin->debase64) {
 			r_bin_object_filter_strings (o);

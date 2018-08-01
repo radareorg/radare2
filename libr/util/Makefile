@@ -15,7 +15,7 @@ OBJS=binheap.o mem.o pool.o unum.o str.o hex.o file.o range.o tinyrange.o
 OBJS+=prof.o cache.o sys.o buf.o w32-sys.o ubase64.o base85.o base91.o
 OBJS+=list.o flist.o mixed.o btree.o chmod.o graph.o
 OBJS+=regex/regcomp.o regex/regerror.o regex/regexec.o uleb128.o
-OBJS+=sandbox.o calc.o thread.o thread_lock.o thread_msg.o
+OBJS+=sandbox.o calc.o thread.o thread_sem.o thread_lock.o thread_cond.o
 OBJS+=strpool.o bitmap.o date.o format.o pie.o print.o ctype.o
 OBJS+=seven.o slist.o randomart.o log.o zip.o debruijn.o
 OBJS+=utf8.o utf16.o utf32.o strbuf.o lib.o name.o spaces.o signal.o syscmd.o
@@ -46,6 +46,13 @@ LDFLAGS+=-lm
 # NetBSD 7.0 ships with backtrace(3) in -lexecinfo
 ifeq (${BUILD_OS},netbsd)
 ifneq ($(shell expr "`uname -r`" : '[0-6]\.'), 2)
+  LDFLAGS+=-lexecinfo
+endif
+endif
+
+# FreeBSD 10.0 ships with backtrace(3) in -lexecinfo
+ifeq (${BUILD_OS},freebsd)
+ifneq ($(shell expr "`uname -r`" : '[0-9]\.'), 2)
   LDFLAGS+=-lexecinfo
 endif
 endif

@@ -5,8 +5,6 @@
 #include <r_util.h>
 #include <r_core.h>
 #define LOOP_MAX 10
-#define SUMARRAY(arr, size, res) do (res) += (arr)[--(size)]; while ((size))
-#define MAXINSTR 20
 
 enum {
 	ROMEM = 0,
@@ -39,30 +37,7 @@ static void r_anal_emul_restore(RCore *core, RConfigHold *hc) {
 	r_config_hold_free (hc);
 }
 
-static void type_match_var(RAnal *anal , Sdb *trace, ut64 addr,const char *type, int idx) {
-	RAnalVar *v;
-	const char *sp_name = r_reg_get_name (anal->reg, R_REG_NAME_SP);
-	const char *bp_name = r_reg_get_name (anal->reg, R_REG_NAME_BP);
-	ut64 sp = r_reg_getv (anal->reg, sp_name);
-	ut64 bp = r_reg_getv (anal->reg, bp_name);
-	char *key = sdb_fmt ("%d.mem.read", idx);
-	int i, array_size = sdb_array_size (trace, key);
-
-	for (i = 0; i < array_size; i++) {
-		if (bp_name) {
-			int bp_idx = sdb_array_get_num (trace, key, i, 0) - bp;
-			if ((v = r_anal_var_get (anal, addr, R_ANAL_VAR_KIND_BPV, 1, bp_idx))) {
-				r_anal_var_retype (anal, addr, 1, bp_idx, R_ANAL_VAR_KIND_BPV, type, -1, v->isarg, v->name);
-				r_anal_var_free (v);
-			}
-		}
-		int sp_idx = sdb_array_get_num (trace, key, i, 0) - sp;
-		if ((v = r_anal_var_get (anal, addr, R_ANAL_VAR_KIND_SPV, 1, sp_idx))) {
-			r_anal_var_retype (anal, addr, 1, sp_idx, R_ANAL_VAR_KIND_SPV, type, -1, v->isarg, v->name);
-			r_anal_var_free (v);
-		}
-	}
-}
+#define SDB_CONTAINS(i,s) sdb_array_contains (trace, sdb_fmt ("%d.reg.write", i), s, 0)
 
 static bool type_pos_hit(RAnal *anal, Sdb *trace, bool in_stack, int idx, int size, const char *place) {
 	if (in_stack) {
@@ -71,30 +46,154 @@ static bool type_pos_hit(RAnal *anal, Sdb *trace, bool in_stack, int idx, int si
 		ut64 write_addr = sdb_num_get (trace, sdb_fmt ("%d.mem.write", idx), 0);
 		return (write_addr == sp + size);
 	} else {
-		return sdb_array_contains (trace, sdb_fmt ("%d.reg.write", idx), place, 0);
+		return SDB_CONTAINS (idx, place);
 	}
 }
 
-static void type_match(RCore *core, ut64 addr, char *name, int prev_idx) {
+static void var_rename(RAnal *anal, RAnalVar *v, const char *name, ut64 addr) {
+	if (!name || !v) {
+		return;
+	}
+	if (!*name || !strcmp (name , "...")) {
+		return;
+	}
+	bool is_default = (!strncmp (v->name, "local_", 6)
+			|| !strncmp (v->name, "arg_", 4))? true: false;
+	if (*name == '*') {
+		name++;
+	}
+	// longer name tends to be meaningful like "src" instead of "s1"
+	if (!is_default && (strlen (v->name) > strlen (name))) {
+		return;
+	}
+	RAnalFunction *fcn = r_anal_get_fcn_in (anal, addr, 0);
+	if (!fcn) {
+		return;
+	}
+	r_anal_var_rename (anal, fcn->addr, 1, v->kind, v->name, name, false);
+}
+
+static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, char *type, ut64 addr, bool ref, bool pfx) {
+	if (!type || !var) {
+		return;
+	}
+	char *trim = r_str_trim (type);
+	if (!*trim) {
+		return;
+	}
+	bool is_ptr = (vname && *vname == '*')? true: false;
+	if (!strncmp (trim, "int", 3) || (!is_ptr && !strcmp (trim, "void"))) {
+		// default or void type
+		return;
+	}
+	const char *tmp = strstr (var->type, "int");
+	bool is_default = tmp? true: false;
+	if (!is_default && strncmp (var->type, "void", 4)) {
+		// return since type is already propgated
+		// except for "void *", since "void *" => "char *" is possible
+		return;
+	}
+	char ntype[256];
+	int len = sizeof (ntype) - 1;
+	if (pfx) {
+		if (is_default && strncmp (var->type, "signed", 6)) {
+			snprintf (ntype, len, "%s %s", type, tmp);
+		} else {
+			return;
+		}
+	} else {
+		strncpy (ntype, trim, len);
+	}
+	if (!strncmp (ntype, "const ", 6)) {
+		// Droping const from type
+		//TODO: Infering const type
+		snprintf (ntype, len, "%s", type + 6);
+	}
+	if (is_ptr) {
+		//type *ptr => type *
+		strncat (ntype, " *", len);
+	}
+	if (ref && r_str_endswith (ntype, "*")) {
+		// char * => char **
+		strncat (ntype, "*", len);
+	}
+	r_anal_var_retype (anal, addr, 1, var->delta, var->kind, ntype, var->size, var->isarg, var->name);
+}
+
+static void get_src_regname(RCore *core, ut64 addr, char *regname, int size) {
+	RAnal *anal = core->anal;
+	RAnalOp *op = r_core_anal_op (core, addr, R_ANAL_OP_MASK_ESIL);
+	char *op_esil = strdup (r_strbuf_get (&op->esil));
+	char *tmp = strchr (op_esil, ',');
+	if (tmp) {
+		*tmp = '\0';
+	}
+	memset (regname, 0, size);
+	RRegItem *ri = r_reg_get (anal->reg, op_esil, -1);
+	if (ri) {
+		if ((anal->bits == 64) && (ri->size == 32)) {
+			const char *reg = r_reg_32_to_64 (anal->reg, op_esil);
+			if (reg) {
+				char *foo = strdup (reg);
+				free (op_esil);
+				op_esil = foo;
+			}
+		}
+		strncpy (regname, op_esil, size - 1);
+	}
+	free (op_esil);
+	r_anal_op_free (op);
+}
+
+static ut64 get_addr(Sdb *trace, const char *regname, int idx) {
+	if (!regname || !*regname) {
+		return UT64_MAX;
+	}
+	const char *query = sdb_fmt ("%d.reg.read.%s", idx, regname);
+	return r_num_math (NULL, sdb_const_get (trace, query, 0));
+}
+
+static RList *parse_format(RCore *core, char *fmt) {
+	RList *ret = r_list_new();
+	Sdb *s = core->anal->sdb_fmts;
+	const char *spec = r_config_get (core->config, "anal.spec");
+	char arr[10] = {0};
+	char *ptr = strchr (fmt, '%');
+	fmt[strlen(fmt) - 1] = '\0';
+	while (ptr) {
+		ptr += 1;
+		// strip [width] specifier
+		while (IS_DIGIT (*ptr)) { ptr++; }
+		r_str_ncpy (arr, ptr, sizeof (arr) - 1);
+		char *tmp = arr;
+		while (tmp && (IS_LOWER (*tmp) || IS_UPPER (*tmp))) { tmp++; }
+		*tmp = '\0';
+		const char *query = sdb_fmt ("spec.%s.%s", spec, arr);
+		char *type = (char *) sdb_const_get (s, query, 0);
+		if (type) {
+			r_list_append (ret, type);
+		}
+		ptr = strchr (ptr, '%');
+	}
+	return ret;
+}
+
+#define DEFAULT_MAX 3
+#define REG_SZ 10
+
+static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const char* cc,
+		int prev_idx, bool userfnc, ut64 caddr) {
 	Sdb *trace = core->anal->esil->db_trace;
 	Sdb *TDB = core->anal->sdb_types;
 	RAnal *anal = core->anal;
-	char *fcn_name;
+	RList *types = NULL;
 	int idx = sdb_num_get (trace, "idx", 0);
-	bool stack_rev = false, in_stack = false;
+	bool stack_rev = false, in_stack = false, format = false;
 
-	if (r_type_func_exist (TDB, name)) {
-		fcn_name = strdup (name);
-	} else if (!(fcn_name = r_type_func_guess (TDB, name))) {
-		//eprintf ("can't find function prototype for %s\n", name);
+	if (!fcn_name || !cc) {
 		return;
 	}
-	const char* cc = r_anal_cc_func (anal, fcn_name);
-	if (!cc || !r_anal_cc_exist (anal, cc)) {
-		//eprintf ("can't find %s calling convention %s\n", fcn_name, cc);
-		return;
-	}
-	int i, j, size = 0, max = r_type_func_args_count (TDB, fcn_name);
+	int i, j, pos = 0, size = 0, max = r_type_func_args_count (TDB, fcn_name);
 	const char *place = r_anal_cc_arg (anal, cc, 1);
 	r_cons_break_push (NULL, NULL);
 
@@ -102,90 +201,146 @@ static void type_match(RCore *core, ut64 addr, char *name, int prev_idx) {
 		stack_rev = true;
 	}
 	if (!strncmp (place, "stack", 5)) {
-		// type_match_reg
 		in_stack = true;
+	}
+	if (!max) {
+		if (!in_stack) {
+			max = r_anal_cc_max_arg(anal, cc);
+		} else {
+			max = DEFAULT_MAX;
+		}
 	}
 	for (i = 0; i < max; i++) {
 		int arg_num = stack_rev ? (max - 1 - i) : i;
-		char *type = r_type_func_args_type (TDB, fcn_name, arg_num);
-		const char *name = r_type_func_args_name (TDB, fcn_name, arg_num);
-		if (!in_stack) {
-			place = r_anal_cc_arg (anal, cc, arg_num + 1);
-		}
-		for (j = idx; j >= prev_idx; j--) {
-			if (type_pos_hit (anal, trace, in_stack, j, size, place)) {
-				ut64 instr_addr = sdb_num_get (trace, sdb_fmt ("%d.addr", j), 0);
-				r_meta_set_string (anal, R_META_TYPE_COMMENT, instr_addr,
-						sdb_fmt ("%s%s%s", type, r_str_endswith (type, "*") ? "" : " ", name));
-				if (strncmp (type, "int", 3)) {
-					// change type only if not int
-					type_match_var (anal, trace, addr, type , j);
-				}
+		char *type = NULL;
+		const char *name = NULL;
+		if (format) {
+			if (r_list_empty (types)) {
 				break;
 			}
+			type = r_str_new (r_list_get_n (types, pos++));
+		} else {
+			type = r_type_func_args_type (TDB, fcn_name, arg_num);
+			name = r_type_func_args_name (TDB, fcn_name, arg_num);
 		}
-		size += r_type_get_bitsize (TDB, type) / 8;
-	}
-	r_cons_break_pop ();
-	free (fcn_name);
-}
-
-// Avoid Emulating these instructions
-static inline bool isnonlinear(int optype) {
-	return (optype ==  R_ANAL_OP_TYPE_CALL || optype ==  R_ANAL_OP_TYPE_JMP
-			|| optype == R_ANAL_OP_TYPE_TRAP || optype == R_ANAL_OP_TYPE_UJMP
-			|| optype ==  R_ANAL_OP_TYPE_CJMP|| optype == R_ANAL_OP_TYPE_UCALL
-			|| optype == R_ANAL_OP_TYPE_RET);
-}
-
-// Emulates previous N instr
-static void emulate_prev_N_instr(RCore *core, ut64 at, ut64 curpc) {
-	int i, inslen, bsize = R_MIN (64, core->blocksize);
-	RAnalOp aop;
-	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
-	const int minopcode = R_MAX (1, mininstrsz);
-	const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
-	RRegItem *r = r_reg_get (core->dbg->reg, pc, -1);
-
-	ut8 *arr = malloc (bsize);
-	if (!arr) {
-		eprintf ("Cannot allocate %d byte(s)\n", bsize);
-		free (arr);
-		return;
-	}
-	r_reg_set_value (core->dbg->reg, r, curpc);
-	for (i = 0; curpc < at; curpc++, i++) {
-		if (i >= (bsize - 32)) {
-			i = 0;
+		if (!type && !userfnc) {
+			continue;
 		}
-		if (!i) {
-			r_io_read_at (core->io, curpc, arr, bsize);
+		if (!in_stack) {
+			//XXX: param arg_num must be fixed to support floating point register
+			place = r_anal_cc_arg (anal, cc, arg_num + 1);
 		}
-		inslen = r_anal_op (core->anal, &aop, curpc, arr + i, bsize - i, R_ANAL_OP_MASK_ALL);
-		int incr = inslen - 1;
-		if (incr < 0) {
-			incr = minopcode;
-		}
-		i += incr;
-		curpc += incr;
-		if ((inslen > 0) || (inslen < 50)) {
-			if (isnonlinear (aop.type)) {   // skip the instr
-				r_reg_set_value (core->dbg->reg, r, curpc + 1);
-			} else {                       // step instr
-				r_core_esil_step (core, UT64_MAX, NULL, NULL);
+		char regname[REG_SZ] = {0};
+		ut64 xaddr = UT64_MAX;
+		bool memref = false;
+		bool cmt_set = false;
+		bool res = false;
+		// Backtrace instruction from source sink to prev source sink
+		for (j = idx; j >= prev_idx; j--) {
+			ut64 instr_addr = sdb_num_get (trace, sdb_fmt ("%d.addr", j), 0);
+			if (instr_addr < baddr) {
+				break;
 			}
+			RAnalOp *op = r_core_anal_op (core, instr_addr, R_ANAL_OP_MASK_BASIC);
+			if (!op) {
+				r_anal_op_free (op);
+				break;
+			}
+			RAnalOp *next_op = r_core_anal_op (core, instr_addr + op->size, R_ANAL_OP_MASK_BASIC);
+			if (!next_op || (j != idx && (next_op->type == R_ANAL_OP_TYPE_CALL
+							|| next_op->type == R_ANAL_OP_TYPE_JMP))) {
+				r_anal_op_free (op);
+				r_anal_op_free (next_op);
+				break;
+			}
+			char *key = NULL;
+			RAnalVar *var = op->var;
+			if (!in_stack) {
+				key = sdb_fmt ("fcn.0x%08"PFMT64x".arg.%s", caddr, place);
+			} else {
+				key = sdb_fmt ("fcn.0x%08"PFMT64x".arg.%d", caddr, size);
+			}
+			const char *query = sdb_fmt ("%d.mem.read", j);
+			if (op->type == R_ANAL_OP_TYPE_MOV && sdb_const_get (trace, query, 0)) {
+				memref = (!memref && var && (var->kind != R_ANAL_VAR_KIND_REG))? false: true;
+			}
+			// Match type from function param to instr
+			if (type_pos_hit (anal, trace, in_stack, j, size, place)) {
+				if (!cmt_set && type && name) {
+					r_meta_set_string (anal, R_META_TYPE_VARTYPE, instr_addr,
+							sdb_fmt ("%s%s%s", type, r_str_endswith (type, "*") ? "" : " ", name));
+					cmt_set = true;
+					if ((op->ptr && op->ptr != UT64_MAX) && !strcmp (name, "format")) {
+						RFlagItem *f = r_flag_get_i (core->flags, op->ptr);
+						if (f && !strncmp (f->name, "str", 3)) {
+							types = parse_format (core, f->realname);
+							max += r_list_length (types);
+							format = true;
+						}
+					}
+				}
+				if (var) {
+					if (!userfnc) {
+						var_retype (anal, var, name, type, addr, memref, false);
+						var_rename (anal, var, name, addr);
+					} else {
+						// Set callee argument info
+						sdb_set (anal->sdb_fcns, key, var->type, 0);
+					}
+					res = true;
+				} else {
+					get_src_regname (core, instr_addr, regname, sizeof (regname));
+					xaddr = get_addr (trace, regname, j);
+				}
+			}
+			// Type propagate by following source reg
+			if (!res && *regname && SDB_CONTAINS (j, regname)) {
+				if (var) {
+					if (!userfnc) {
+						var_retype (anal, var, name, type, addr, memref, false);
+						var_rename (anal, var, name, addr);
+					} else {
+						sdb_set (anal->sdb_fcns, key, var->type, 0);
+					}
+					res = true;
+				} else {
+					switch (op->type) {
+					case R_ANAL_OP_TYPE_MOV:
+					case R_ANAL_OP_TYPE_PUSH:
+						get_src_regname (core, instr_addr, regname, sizeof (regname));
+						break;
+					case R_ANAL_OP_TYPE_LEA:
+					case R_ANAL_OP_TYPE_LOAD:
+					case R_ANAL_OP_TYPE_STORE:
+						res = true;
+						break;
+					}
+				}
+			} else if (var && res && xaddr && (xaddr != UT64_MAX)) { // Type progation using value
+				char tmp[REG_SZ] = {0};
+				get_src_regname (core, instr_addr, tmp, sizeof (tmp));
+				ut64 ptr = get_addr (trace, tmp, j);
+				if (ptr == xaddr) {
+					var_retype (anal, var, name, type, addr, memref, false);
+				}
+			}
+			r_anal_op_free (op);
+			r_anal_op_free (next_op);
 		}
-		r_anal_op_fini (&aop);
-
+		size += anal->bits / 8;
+		free (type);
 	}
-	free (arr);
+	r_list_free (types);
+	r_cons_break_pop ();
 }
 
 R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *it;
 	RAnalOp aop = {0};
-	ut64 prevpc;
+	RAnal *anal = core->anal;
+	Sdb *TDB = anal->sdb_types;
+	bool resolved = false;
 
 	if (!core|| !fcn) {
 		return;
@@ -194,9 +349,9 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 		return;
 	}
 	int ret, bsize = R_MAX (64, core->blocksize);
-	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	const int mininstrsz = r_anal_archinfo (anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
-	int cur_idx , prev_idx = core->anal->esil->trace_idx;
+	int cur_idx , prev_idx = anal->esil->trace_idx;
 	RConfigHold *hc = r_config_hold_new (core->config);
 	if (!hc) {
 		return;
@@ -208,17 +363,24 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	ut8 *buf = malloc (bsize);
 	if (!buf) {
 		free (buf);
+		r_anal_emul_restore (core, hc);
 		return;
 	}
+	char *fcn_name = NULL;
+	char *ret_type = NULL;
+	bool str_flag = false;
+	bool prop = false;
+	bool prev_var = false;
+	char prev_type[256] = {0};
+	const char *prev_dest = NULL;
+	const char *ret_reg = NULL;
+	const char *pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
+	RRegItem *r = r_reg_get (core->dbg->reg, pc, -1);
+	r_cons_break_push (NULL, NULL);
 	r_list_foreach (fcn->bbs, it, bb) {
 		ut64 addr = bb->addr;
-		int i = 0, curpos, idx = 0;
-		int *previnstr = calloc (MAXINSTR + 1, sizeof (int));
-		if (!previnstr) {
-			eprintf ("Cannot allocate %d byte(s)\n", MAXINSTR + 1);
-			return;
-		}
-		r_cons_break_push (NULL, NULL);
+		int i = 0;
+		r_reg_set_value (core->dbg->reg, r, addr);
 		while (1) {
 			if (r_cons_is_breaked ()) {
 				goto out_function;
@@ -226,48 +388,197 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			if (i >= (bsize - 32)) {
 				i = 0;
 			}
+			ut64 pcval = r_reg_getv (core->anal->reg, pc);
+			if ((addr >= bb->addr + bb->size) || (addr < bb->addr) || pcval != addr) {
+				break;
+			}
 			if (!i) {
 				r_io_read_at (core->io, addr, buf, bsize);
 			}
-			ret = r_anal_op (core->anal, &aop, addr, buf + i, bsize - i, R_ANAL_OP_MASK_ALL);
+			ret = r_anal_op (anal, &aop, addr, buf + i, bsize - i, R_ANAL_OP_MASK_BASIC);
 			if (ret <= 0) {
 				i += minopcode;
 				addr += minopcode;
 				r_anal_op_fini (&aop);
 				continue;
 			}
-			int loop_count = sdb_num_get (core->anal->esil->db_trace, sdb_fmt ("0x%"PFMT64x".count", addr), 0);
-			if (loop_count > LOOP_MAX || aop.type == R_ANAL_OP_TYPE_RET
-					|| addr >= bb->addr + bb->size || addr < bb->addr) {
+			int loop_count = sdb_num_get (anal->esil->db_trace, sdb_fmt ("0x%"PFMT64x".count", addr), 0);
+			if (loop_count > LOOP_MAX || aop.type == R_ANAL_OP_TYPE_RET) {
+				r_anal_op_fini (&aop);
 				break;
 			}
-			sdb_num_set (core->anal->esil->db_trace, sdb_fmt ("0x%"PFMT64x".count", addr), loop_count + 1, 0);
-			curpos = idx++ % (MAXINSTR + 1);
-			previnstr[curpos] = ret; // This array holds prev n instr size + cur instr size
+			sdb_num_set (anal->esil->db_trace, sdb_fmt ("0x%"PFMT64x".count", addr), loop_count + 1, 0);
+			if (r_anal_op_nonlinear (aop.type)) {   // skip the instr
+				r_reg_set_value (core->dbg->reg, r, addr + ret);
+			} else {
+				r_core_esil_step (core, UT64_MAX, NULL, NULL);
+			}
+			bool userfnc = false;
+			Sdb *trace = anal->esil->db_trace;
+			cur_idx = sdb_num_get (trace, "idx", 0);
+			RAnalVar *var = aop.var;
+			RAnalOp *next_op = r_core_anal_op (core, addr + ret, R_ANAL_OP_MASK_BASIC);
+			ut32 type = aop.type & R_ANAL_OP_TYPE_MASK;
 			if (aop.type == R_ANAL_OP_TYPE_CALL) {
-				int nbytes = 0;
-				int nb_opcodes = MAXINSTR;
-				SUMARRAY (previnstr, nb_opcodes, nbytes);
-				prevpc = addr - (nbytes - previnstr[curpos]);
-				emulate_prev_N_instr (core, addr, prevpc);
-				RAnalFunction *fcn_call = r_anal_get_fcn_in (core->anal, aop.jump, -1);
+				RAnalFunction *fcn_call = r_anal_get_fcn_in (anal, aop.jump, -1);
 				if (fcn_call) {
-					cur_idx = sdb_num_get (core->anal->esil->db_trace, "idx", 0);
-					type_match (core, addr, fcn_call->name, prev_idx);
-					prev_idx = cur_idx;
+					if (r_type_func_exist (TDB, fcn_call->name)) {
+						fcn_name = strdup (fcn_call->name);
+					} else {
+						fcn_name = r_type_func_guess (TDB, fcn_call->name);
+					}
+					if (!fcn_name) {
+						fcn_name = strdup (fcn_call->name);
+						userfnc = true;
+					}
+					const char* cc = r_anal_cc_func (anal, fcn_name);
+					if (cc && r_anal_cc_exist (anal, cc)) {
+						type_match (core, addr, fcn_name, bb->addr, cc, prev_idx,
+								userfnc, fcn_call->addr);
+						prev_idx = cur_idx;
+						ret_type = (char *) r_type_func_ret (TDB, fcn_name);
+						ret_reg = r_anal_cc_ret (anal, cc);
+						resolved = false;
+					}
+					free (fcn_name);
 				}
-				memset (previnstr, 0, sizeof (previnstr) * sizeof (*previnstr)); // clearing the buffer
+			} else if (!resolved && ret_type && ret_reg) {
+				// Forward propgation of function return type
+				char src[REG_SZ] = {0};
+				const char *query = sdb_fmt ("%d.reg.write", cur_idx);
+				const char *cur_dest = sdb_const_get (trace, query, 0);
+				get_src_regname (core, aop.addr, src, sizeof (src));
+				if (ret_reg && *src && strstr (ret_reg, src)) {
+					if (var && aop.direction == R_ANAL_OP_DIR_WRITE) {
+						var_retype (anal, var, NULL, ret_type, addr, false, false);
+						resolved = true;
+					} else if (type == R_ANAL_OP_TYPE_MOV) {
+						ret_reg = cur_dest;
+					}
+				} else if (cur_dest) {
+					char *foo = r_str_new (cur_dest);
+					char *tmp = strchr (foo, ',');
+					if (tmp) {
+						*tmp = '\0';
+					}
+					if (strstr (ret_reg, foo) || (tmp && strstr (ret_reg, tmp + 1))) {
+						resolved = true;
+					}
+					free (foo);
+				}
+			}
+			// Type Propgation using intruction access pattern
+			if (var) {
+				bool sign = false;
+				if ((type == R_ANAL_OP_TYPE_CMP) && next_op) {
+					if (next_op->sign) {
+						sign = true;
+					} else {
+						// cmp [local_ch], rax ; jb
+						var_retype (anal, var, NULL, "unsigned", addr, false, true);
+					}
+				}
+				// cmp [local_ch], rax ; jge
+				if (sign || aop.sign) {
+					var_retype (anal, var, NULL, "signed", addr, false, true);
+				}
+				// lea rax , str.hello  ; mov [local_ch], rax;
+				// mov rdx , [local_4h] ; mov [local_8h], rdx;
+				if (prev_dest && (type == R_ANAL_OP_TYPE_MOV || type == R_ANAL_OP_TYPE_STORE)) {
+					char reg[REG_SZ] = {0};
+					get_src_regname (core, addr, reg, sizeof (reg));
+					bool match = strstr (prev_dest, reg)? true: false;
+					if (str_flag && match) {
+						var_retype (anal, var, NULL, "const char *", addr, false, false);
+					}
+					if (prop && match && prev_var) {
+						var_retype (anal, var, NULL, prev_type, addr, false, false);
+					}
+				}
+			}
+			prev_var = (var && aop.direction == R_ANAL_OP_DIR_READ)? true: false;
+			str_flag = false;
+			prop = false;
+			prev_dest = NULL;
+			switch (type) {
+			case R_ANAL_OP_TYPE_MOV:
+			case R_ANAL_OP_TYPE_LEA:
+			case R_ANAL_OP_TYPE_LOAD:
+				if (aop.ptr && aop.refptr && aop.ptr != UT64_MAX) {
+					if (type == R_ANAL_OP_TYPE_LOAD) {
+						ut8 buf[256] = {0};
+						r_io_read_at (core->io, aop.ptr, buf, sizeof (buf) - 1);
+						ut64 ptr = r_read_ble (buf, core->print->big_endian, aop.refptr * 8);
+						if (ptr && ptr != UT64_MAX) {
+							RFlagItem *f = r_flag_get_i (core->flags, ptr);
+							if (f && !strncmp (f->name, "str", 3)) {
+								str_flag = true;
+							}
+						}
+					} else if (r_flag_exist_at (core->flags, "str", 3, aop.ptr)) {
+						str_flag = true;
+					}
+				}
+				const char *query = sdb_fmt ("%d.reg.write", cur_idx);
+				prev_dest = sdb_const_get (trace, query, 0);
+				if (var) {
+					strncpy (prev_type, var->type, sizeof (prev_type) - 1);
+					prop = true;
+				}
 			}
 			i += ret;
 			addr += ret;
+			r_anal_op_free (next_op);
 			r_anal_op_fini (&aop);
 
 		}
-		r_cons_break_pop();
 	}
+	const char *place = r_anal_cc_arg (anal, fcn->cc, 1);
+	// Type propgation for register based args
+	RList *list = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_REG);
+	RAnalVar *rvar, *bp_var;
+	RListIter *iter , *iter2;
+	r_list_foreach (list, iter, rvar) {
+		RAnalVar *lvar = get_link_var (anal, fcn->addr, rvar);
+		RRegItem *i = r_reg_index_get (anal->reg, rvar->delta);
+		if (!i) {
+			continue;
+		}
+		bool res = true;
+		const char *query = sdb_fmt ("fcn.0x%08"PFMT64x".arg.%s", fcn->addr, i->name);
+		char *type = (char *) sdb_const_get (anal->sdb_fcns, query, NULL);
+		if (lvar) {
+			var_retype (anal, rvar, NULL, lvar->type, fcn->addr, false, false);
+			if (!strstr (lvar->type, "int")) {
+				res = false;
+			}
+		}
+		if (type && res) {
+			var_retype (anal, rvar, NULL, type, fcn->addr, false, false);
+			if (lvar) {
+				var_retype (anal, lvar, NULL, type, fcn->addr, false, false);
+			}
+		}
+		r_anal_var_free (lvar);
+	}
+	// Type propgation from caller to callee function for stack based arguments
+	if (place && !strncmp (place, "stack", 5)) {
+		RList *list2 = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_BPV);
+		r_list_foreach (list2, iter2, bp_var) {
+			if (bp_var->isarg) {
+				const char *query = sdb_fmt ("fcn.0x%08"PFMT64x".arg.%d", fcn->addr, (bp_var->delta - 8));
+				char *type = (char *) sdb_const_get (anal->sdb_fcns, query, NULL);
+				if (type) {
+					var_retype (anal, bp_var, NULL, type, fcn->addr, false, false);
+				}
+			}
+		}
+		r_list_free (list2);
+	}
+	r_list_free (list);
 out_function:
 	free (buf);
 	r_cons_break_pop();
 	r_anal_emul_restore (core, hc);
-	sdb_reset (core->anal->esil->db_trace);
+	sdb_reset (anal->esil->db_trace);
 }

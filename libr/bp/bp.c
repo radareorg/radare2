@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2017 - pancake */
+/* radare2 - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_bp.h>
 #include <config.h>
@@ -92,8 +92,9 @@ R_API RBreakpointItem *r_bp_get_at(RBreakpoint *bp, ut64 addr) {
 	RListIter *iter;
 	RBreakpointItem *b;
 	r_list_foreach(bp->bps, iter, b) {
-		if (b->addr == addr)
+		if (b->addr == addr) {
 			return b;
+		}
 	}
 	return NULL;
 }
@@ -143,6 +144,16 @@ R_API int r_bp_stepy_continuation(RBreakpoint *bp) {
 	return bp->stepcont;
 }
 
+static void unlinkBreakpoint(RBreakpoint *bp, RBreakpointItem *b) {
+	int i;
+	for (i = 0; i < bp->bps_idx_count; i++) {
+		if (bp->bps_idx[i] == b) {
+			bp->bps_idx[i] = NULL;
+		}
+	}
+	r_list_delete_data (bp->bps, b);
+}
+
 /* TODO: detect overlapping of breakpoints */
 static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, int size, int hw, int rwx) {
 	int ret;
@@ -163,8 +174,15 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 	// NOTE: for hw breakpoints there are no bytes to save/restore
 	if (!hw) {
 		b->bbytes = calloc (size + 16, 1);
+		if (!b->bbytes) {
+			return NULL;
+		}
 		if (obytes) {
 			b->obytes = malloc (size);
+			if (!b->obytes) {
+				free (b->bbytes);
+				return NULL;
+			}
 			memcpy (b->obytes, obytes, size);
 		} else {
 			b->obytes = NULL;
@@ -173,7 +191,7 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 		ret = r_bp_get_bytes (bp, b->bbytes, size, bp->endian, 0);
 		if (ret != size) {
 			eprintf ("Cannot get breakpoint bytes. No architecture selected?\n");
-			r_bp_item_free (b);
+			unlinkBreakpoint (bp, b);
 			return NULL;
 		}
 		b->recoil = ret;
@@ -224,7 +242,8 @@ R_API int r_bp_del(RBreakpoint *bp, ut64 addr) {
 	/* No _safe loop necessary because we return immediately after the delete. */
 	r_list_foreach (bp->bps, iter, b) {
 		if (b->addr == addr) {
-			r_list_delete (bp->bps, iter);
+			unlinkBreakpoint (bp, b);
+			// r_list_delete (bp->bps, iter);
 			return true;
 		}
 	}
@@ -248,12 +267,15 @@ R_API int r_bp_set_trace_all(RBreakpoint *bp, int set) {
 	}
 	return true;
 }
+
 // TODO: deprecate
 R_API int r_bp_list(RBreakpoint *bp, int rad) {
 	int n = 0;
 	RBreakpointItem *b;
 	RListIter *iter;
-	if (rad == 'j') bp->cb_printf ("[");
+	if (rad == 'j') {
+		bp->cb_printf ("[");
+	}
 	//eprintf ("Breakpoint list:\n");
 	r_list_foreach (bp->bps, iter, b) {
 		switch (rad) {
@@ -323,7 +345,12 @@ R_API RBreakpointItem *r_bp_item_new (RBreakpoint *bp) {
 	}
 	/* allocate new slot */
 	bp->bps_idx_count += 16; // alocate space for 16 more bps
-	bp->bps_idx = realloc (bp->bps_idx, bp->bps_idx_count * sizeof(RBreakpointItem*));
+	RBreakpointItem **newbps = realloc (bp->bps_idx, bp->bps_idx_count * sizeof (RBreakpointItem*));
+	if (newbps) {
+		bp->bps_idx = newbps;
+	} else {
+		bp->bps_idx_count -= 16; // alocate space for 16 more bps
+	}
 	for (j = i; j < bp->bps_idx_count; j++) {
 		bp->bps_idx[j] = NULL;
 	}
@@ -337,6 +364,16 @@ R_API RBreakpointItem *r_bp_get_index(RBreakpoint *bp, int idx) {
 		return bp->bps_idx[idx];
 	}
 	return NULL;
+}
+
+R_API int r_bp_get_index_at (RBreakpoint *bp, ut64 addr) {
+	int i;
+	for (i = 0; i< bp->bps_idx_count; i++) {
+		if (bp->bps_idx[i] && bp->bps_idx[i]->addr == addr) {
+			return i;
+		}
+	}
+	return -1;
 }
 
 R_API int r_bp_del_index(RBreakpoint *bp, int idx) {

@@ -1,5 +1,6 @@
 clang-log/
 .clang-format
+.clang_complete
 .tmp-format
 .#*
 *._d
@@ -99,8 +100,17 @@ r2-static/*
 binr/rasign2/rasign2
 binr/rasign2/rasign2.exe
 compile_commands.json
+libr/flag/d/tags.r2
 # CLion
 .idea/
 CMakeLists.txt
 *.cmake
 cmake-build-*
+# Snap packaging
+/parts
+/prime
+/stage
+/snap
+/*.snap
+# doxygen autogen
+doc/doxygen/html

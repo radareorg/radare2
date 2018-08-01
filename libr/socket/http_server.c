@@ -8,13 +8,17 @@ R_API void r_socket_http_server_set_breaked(bool *b) {
 	breaked = b;
 }
 
-R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int timeout) {
+R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int accept_timeout, int timeout) {
 	int content_length = 0, xx, yy;
 	int pxx = 1, first = 0;
 	char buf[1500], *p, *q;
 	RSocketHTTPRequest *hr = R_NEW0 (RSocketHTTPRequest);
 	if (!hr) return NULL;
-	hr->s = r_socket_accept (s);
+	if (accept_timeout > 0) {
+		hr->s = r_socket_accept_timeout (s, 1);
+	} else {
+		hr->s = r_socket_accept (s);
+	}
 	if (!hr->s) {
 		free (hr);
 		return NULL;

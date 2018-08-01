@@ -290,6 +290,7 @@ enum v850_flags {
 };
 
 struct v850_cmd {
+	ut64 addr;
 	unsigned type;
 	char	instr[V850_INSTR_MAXLEN];
 	char	operands[V850_INSTR_MAXLEN];
@@ -312,5 +313,5 @@ static inline ut8 get_reg2(const ut16 instr) {
 	return instr >> 11;
 }
 
-int v850_decode_command (const ut8 *instr, struct v850_cmd *cmd);
+int v850_decode_command (const ut8 *instr, int len, struct v850_cmd *cmd);
 #endif /* R2_V850_DISASM_H */

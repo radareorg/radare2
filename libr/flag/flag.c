@@ -200,6 +200,7 @@ R_API RFlag *r_flag_free(RFlag *f) {
 	ht_free (f->ht_name);
 
 	r_list_free (f->flags);
+	sdb_free (f->tags);
 	r_list_free (f->spacestack);
 	r_num_free (f->num);
 	free (f);
@@ -330,7 +331,7 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 					flag->alias, flag->size, flag->name);
 			} else {
 				f->cb_printf ("0x%08"PFMT64x" %"PFMT64d" %s\n",
-					flag->offset, flag->size, flag->name);
+					flag->offset, flag->size, f->realnames ? flag->realname : flag->name);
 			}
 		}
 		break;

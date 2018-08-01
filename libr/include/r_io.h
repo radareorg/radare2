@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017 - condret, pancake, alvaro */
+/* radare2 - LGPL - Copyright 2017-2018 - condret, pancake, alvaro */
 
 #ifndef R2_IO_H
 #define R2_IO_H
@@ -77,7 +77,7 @@ typedef struct r_io_t {
 	RIDPool *sec_ids;
 	RIDPool *map_ids;
 	SdbList *maps; //from tail backwards maps with higher priority are found
-	RVector map_skyline; // map parts that are not covered by others
+	RPVector map_skyline; // map parts that are not covered by others
 	SdbList *sections;
 	RIDStorage *files;
 	RCache *buffer;
@@ -299,6 +299,7 @@ typedef struct r_io_bind_t {
 
 //map.c
 R_API RIOMap *r_io_map_new (RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size, bool do_skyline);
+R_API ut64 r_io_map_next_address(RIO* io, ut64 addr);
 R_API void r_io_map_init (RIO *io);
 R_API bool r_io_map_remap (RIO *io, ut32 id, ut64 addr);
 R_API bool r_io_map_remap_fd (RIO *io, int fd, ut64 addr);
@@ -311,6 +312,7 @@ R_API RIOMap *r_io_map_get_paddr (RIO *io, ut64 paddr);		//returns the map at pa
 R_API void r_io_map_reset(RIO* io);
 R_API bool r_io_map_del (RIO *io, ut32 id);
 R_API bool r_io_map_del_for_fd (RIO *io, int fd);
+R_API bool r_io_map_depriorize(RIO* io, ut32 id);
 R_API bool r_io_map_priorize (RIO *io, ut32 id);
 R_API bool r_io_map_priorize_for_fd (RIO *io, int fd);
 R_API void r_io_map_cleanup (RIO *io);
@@ -368,6 +370,10 @@ R_API int r_io_plugin_generate(RIO *io);
 R_API bool r_io_plugin_add(RIO *io, RIOPlugin *plugin);
 R_API int r_io_plugin_list(RIO *io);
 R_API int r_io_plugin_list_json(RIO *io);
+R_API int r_io_plugin_read(RIODesc *desc, ut8 *buf, int len);
+R_API int r_io_plugin_write(RIODesc *desc, const ut8 *buf, int len);
+R_API int r_io_plugin_read_at(RIODesc *desc, ut64 addr, ut8 *buf, int len);
+R_API int r_io_plugin_write_at(RIODesc *desc, ut64 addr, const ut8 *buf, int len);
 R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, bool many);
 R_API RIOPlugin *r_io_plugin_resolve_fd(RIO *io, int fd);
 R_API RIOPlugin *r_io_plugin_get_default(RIO *io, const char *filename, bool many);

@@ -47,12 +47,16 @@ static struct {
 	{ "creg", r_offsetof (RConsPrintablePalette, creg), r_offsetof (RConsPalette, creg) },
 	{ "num", r_offsetof (RConsPrintablePalette, num), r_offsetof (RConsPalette, num) },
 	{ "mov", r_offsetof (RConsPrintablePalette, mov), r_offsetof (RConsPalette, mov) },
+	{ "func_var", r_offsetof (RConsPrintablePalette, func_var), r_offsetof (RConsPalette, func_var) },
+	{ "func_var_type", r_offsetof (RConsPrintablePalette, func_var_type), r_offsetof (RConsPalette, func_var_type) },
+	{ "func_var_addr", r_offsetof (RConsPrintablePalette, func_var_addr), r_offsetof (RConsPalette, func_var_addr) },
 
 	{ "ai.read", r_offsetof (RConsPrintablePalette, ai_read), r_offsetof (RConsPalette, ai_read) },
 	{ "ai.write", r_offsetof (RConsPrintablePalette, ai_write), r_offsetof (RConsPalette, ai_write) },
 	{ "ai.exec", r_offsetof (RConsPrintablePalette, ai_exec), r_offsetof (RConsPalette, ai_exec) },
 	{ "ai.seq", r_offsetof (RConsPrintablePalette, ai_seq), r_offsetof (RConsPalette, ai_seq) },
 	{ "ai.ascii", r_offsetof (RConsPrintablePalette, ai_ascii), r_offsetof (RConsPalette, ai_ascii) },
+
 
 	{ "graph.box", r_offsetof (RConsPrintablePalette, graph_box), r_offsetof (RConsPalette, graph_box) },
 	{ "graph.box2", r_offsetof (RConsPrintablePalette, graph_box2), r_offsetof (RConsPalette, graph_box2) },
@@ -69,10 +73,13 @@ static struct {
 	{ "gui.background", r_offsetof (RConsPrintablePalette, gui_background), r_offsetof (RConsPalette, gui_background) },
 	{ "gui.alt_background", r_offsetof (RConsPrintablePalette, gui_alt_background), r_offsetof (RConsPalette, gui_alt_background) },
 	{ "gui.border", r_offsetof (RConsPrintablePalette, gui_border), r_offsetof (RConsPalette, gui_border) },
-	{ "highlight", r_offsetof (RConsPrintablePalette, highlight), r_offsetof (RConsPalette, highlight) },
-	{ "line_highlight", r_offsetof (RConsPrintablePalette, line_highlight), r_offsetof (RConsPalette, line_highlight) },
+	{ "wordhl", r_offsetof (RConsPrintablePalette, wordhl), r_offsetof (RConsPalette, wordhl) },
+	{ "linehl", r_offsetof (RConsPrintablePalette, linehl), r_offsetof (RConsPalette, linehl) },
+
+
 	{ NULL, 0, 0 }
 };
+static const int keys_len = sizeof (keys) / sizeof (keys[0]) - 1;
 
 struct {
 	const char *name;
@@ -159,8 +166,12 @@ R_API void r_cons_pal_init() {
 	cons->cpal.gui_background     = (RColor) RColor_BLACK;
 	cons->cpal.gui_alt_background = (RColor) RColor_WHITE;
 	cons->cpal.gui_border         = (RColor) RColor_BLACK;
-	cons->cpal.highlight          = (RColor) RColor_BGRED;
-	cons->cpal.line_highlight     = (RColor) RCOLOR (ALPHA_BG, 0x00, 0x00, 0x7f, 0x00, 0x00, 0x00);
+	cons->cpal.wordhl             = (RColor) RColor_BGRED;
+	cons->cpal.linehl             = (RColor) RCOLOR (ALPHA_BG, 0x00, 0x00, 0x7f, 0x00, 0x00, 0x00);
+
+	cons->cpal.func_var           = (RColor) RColor_WHITE;
+	cons->cpal.func_var_type      = (RColor) RColor_BLUE;
+	cons->cpal.func_var_addr      = (RColor) RColor_CYAN;
 
 	cons->cpal.graph_box          = (RColor) RColor_NULL;
 	cons->cpal.graph_box2         = (RColor) RColor_BLUE;
@@ -534,9 +545,11 @@ R_API RColor r_cons_pal_get_i(int index) {
 
 /* Get color name at index */
 R_API const char *r_cons_pal_get_name(int index) {
-	int i;
-	for (i = 0; i < index && keys[i].name; i++) {}
-	return (i == index) ? keys[index].name : NULL;
+	return (index >= 0 && index < keys_len) ? keys[index].name : NULL;
+}
+
+R_API int r_cons_pal_len() {
+	return keys_len;
 }
 
 R_API void r_cons_pal_update_event() {

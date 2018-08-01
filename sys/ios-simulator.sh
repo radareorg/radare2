@@ -71,9 +71,8 @@ fi
 if true; then
 make mrproper
 cp -f ${PLGCFG} plugins.cfg
-./configure --prefix=${PREFIX} --with-ostype=darwin \
-	--without-fork --without-pic --with-nonpic \
-	--disable-debugger --with-compiler=ios-sdk \
+./configure --prefix=${PREFIX} --with-ostype=darwin --with-libr \
+	--without-fork --disable-debugger --with-compiler=ios-sdk \
 	--target=arm-unknown-darwin
 fi
 

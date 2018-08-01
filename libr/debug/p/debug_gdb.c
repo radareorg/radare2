@@ -394,6 +394,9 @@ static int r_debug_gdb_attach(RDebug *dbg, int pid) {
 			case R_SYS_ARCH_AVR:
 				gdbr_set_architecture (desc, "avr", 16);
 				break;
+			case R_SYS_ARCH_V850:
+				gdbr_set_architecture (desc, "v850", 32);
+				break;
 			}
 		} else {
 			eprintf ("ERROR: Underlaying IO descriptor is not a GDB one..\n");
@@ -659,8 +662,8 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			"gpr	fps	.96	160	0\n"
 			"gpr	cpsr	.32	172	0\n"
 #else
-			"=PC	r15\n"
-			"=SP	r14\n" // XXX
+			"=PC	pc\n"
+			"=SP	sp\n"
 			"=A0	r0\n"
 			"=A1	r1\n"
 			"=A2	r2\n"
@@ -918,24 +921,72 @@ static const char *r_debug_gdb_reg_profile(RDebug *dbg) {
 			"gpr	pc	.32	35	0\n"
 	/*		"gpr	pc	.32	39	0\n" */
 	);
+	case R_SYS_ARCH_V850:
+		return strdup (
+			"=PC    pc\n"
+			"=SP    sp\n"
+			"gpr	r0	.32	0	0\n"
+			"gpr	r1	.32	4	0\n"
+			"gpr	r2	.32	8	0\n"
+			"gpr	sp	.32	12	0\n" // r3
+			"gpr	gp	.32	16	0\n" // r4
+			"gpr	r5	.32	20	0\n"
+			"gpr	r6	.32	24	0\n"
+			"gpr	r7	.32	28	0\n"
+			"gpr	r8	.32	32	0\n"
+			"gpr	r9	.32	36	0\n"
+			"gpr	r10	.32	40	0\n"
+			"gpr	r11	.32	44	0\n"
+			"gpr	r12	.32	48	0\n"
+			"gpr	r13	.32	52	0\n"
+			"gpr	r14	.32	56	0\n"
+			"gpr	r15	.32	60	0\n"
+			"gpr	r16	.32	64	0\n"
+			"gpr	r17	.32	68	0\n"
+			"gpr	r18	.32	72	0\n"
+			"gpr	r19	.32	76	0\n"
+			"gpr	r20	.32	80	0\n"
+			"gpr	r21	.32	84	0\n"
+			"gpr	r22	.32	88	0\n"
+			"gpr	r23	.32	92	0\n"
+			"gpr	r24	.32	96	0\n"
+			"gpr	r25	.32	100	0\n"
+			"gpr	r26	.32	104	0\n"
+			"gpr	r27	.32	108	0\n"
+			"gpr	r28	.32	112	0\n"
+			"gpr	r29	.32	116	0\n"
+			"gpr	ep	.32	120	0\n" // r30
+			"gpr	lp	.32	124	0\n" // r31
+			"gpr	eipc	.32	128	0\n"
+			"gpr	eipsw	.32	132	0\n"
+			"gpr	fepc	.32	136	0\n"
+			"gpr	fepsw	.32	140	0\n"
+			"gpr	ecr	.32	144	0\n"
+			"gpr	psw	.32	148	0\n"
+			// 5x reserved, sccfg, scbp, eiic, feic, dbic, ctpc, ctpsw, dbpc, dbpsw, ctbp
+			// debug stuff, eiwr, fewr, dbwr, bsel
+			"gpr	pc	.32	256	0\n"
+	);
 	}
 	return NULL;
 }
 
-static int r_debug_gdb_breakpoint (void *bp, RBreakpointItem *b, bool set) {
-	int ret;
+static int r_debug_gdb_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set) {
+	int ret, bpsize;
 	if (!b) {
 		return false;
 	}
+
+	bpsize = b->size;
 	// TODO handle rwx and conditions
 	if (set)
 		ret = b->hw?
-			gdbr_set_hwbp (desc, b->addr, ""):
-			gdbr_set_bp (desc, b->addr, "");
+			gdbr_set_hwbp (desc, b->addr, "", bpsize):
+			gdbr_set_bp (desc, b->addr, "", bpsize);
 	else
 		ret = b->hw?
-			gdbr_remove_hwbp (desc, b->addr):
-			gdbr_remove_bp (desc, b->addr);
+			gdbr_remove_hwbp (desc, b->addr, bpsize):
+			gdbr_remove_bp (desc, b->addr, bpsize);
 	return !ret;
 }
 
@@ -1002,7 +1053,7 @@ RDebugPlugin r_debug_plugin_gdb = {
 	.name = "gdb",
 	/* TODO: Add support for more architectures here */
 	.license = "LGPL3",
-	.arch = "x86,arm,sh,mips,avr,lm32",
+	.arch = "x86,arm,sh,mips,avr,lm32,v850",
 	.bits = R_SYS_BITS_16 | R_SYS_BITS_32 | R_SYS_BITS_64,
 	.step = r_debug_gdb_step,
 	.cont = r_debug_gdb_continue,

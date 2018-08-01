@@ -304,16 +304,18 @@ static int handle_exception_message (RDebug *dbg, exc_msg *msg, int *ret_code) {
 		ret = R_DEBUG_REASON_SEGFAULT;
 		*ret_code = KERN_FAILURE;
 		kr = task_suspend (msg->task.name);
-		if (kr != KERN_SUCCESS)
+		if (kr != KERN_SUCCESS) {
 			eprintf ("failed to suspend task bad access\n");
+		}
 		eprintf ("EXC_BAD_ACCESS\n");
 		break;
 	case EXC_BAD_INSTRUCTION:
 		ret = R_DEBUG_REASON_ILLEGAL;
 		*ret_code = KERN_FAILURE;
 		kr = task_suspend (msg->task.name);
-		if (kr != KERN_SUCCESS)
+		if (kr != KERN_SUCCESS) {
 			eprintf ("failed to suspend task bad instruction\n");
+		}
 		eprintf ("EXC_BAD_INSTRUCTION\n");
 		break;
 	case EXC_ARITHMETIC:
@@ -327,8 +329,9 @@ static int handle_exception_message (RDebug *dbg, exc_msg *msg, int *ret_code) {
 		break;
 	case EXC_BREAKPOINT:
 		kr = task_suspend (msg->task.name);
-		if (kr != KERN_SUCCESS)
+		if (kr != KERN_SUCCESS) {
 			eprintf ("failed to suspend task breakpoint\n");
+		}
 		ret = R_DEBUG_REASON_BREAKPOINT;
 		break;
 	default:
@@ -388,8 +391,9 @@ static int __xnu_wait (RDebug *dbg, int pid) {
 					MACH_PORT_NULL);
 			if (reply.Head.msgh_remote_port != 0 && kr != MACH_MSG_SUCCESS) {
 				kr = mach_port_deallocate(mach_task_self (), reply.Head.msgh_remote_port);
-				if (kr != KERN_SUCCESS)
+				if (kr != KERN_SUCCESS) {
 					eprintf ("failed to deallocate reply port\n");
+				}
 			}
 			continue;
 		}
@@ -407,6 +411,7 @@ static int __xnu_wait (RDebug *dbg, int pid) {
 		}
 		break; // to avoid infinite loops
 	}
+	dbg->stopaddr = r_debug_reg_get (dbg, "PC");
 	return reason;
 }
 

@@ -6,7 +6,9 @@
 
 R_API RStrBuf *r_strbuf_new(const char *str) {
 	RStrBuf *s = R_NEW0 (RStrBuf);
-	if (str) r_strbuf_set (s, str);
+	if (str) {
+		r_strbuf_set (s, str);
+	}
 	return s;
 }
 

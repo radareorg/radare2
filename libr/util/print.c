@@ -7,6 +7,8 @@
 
 #define DFLT_ROWS 16
 
+#define IS_ALPHA(C) (((C) >= 'a' && (C) <= 'z') || ((C) >= 'A' && (C) <= 'Z'))
+
 static void nullprinter(const char *a, ...) { }
 static void libc_printf(const char *format, ...) {
 	va_list ap;
@@ -14,7 +16,8 @@ static void libc_printf(const char *format, ...) {
 	vprintf (format, ap);
 	va_end (ap);
 }
-static bool isInterrupted = false;
+
+static RPrintIsInterruptedCallback is_interrupted_cb = NULL;
 
 R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions) {
 	const int use_color = p->flags & R_PRINT_FLAGS_COLOR;
@@ -108,12 +111,15 @@ R_API int r_util_lines_getline(ut64 *lines_cache, int lines_cache_sz, ut64 off) 
 	return imin;
 }
 
-R_API int r_print_is_interrupted() {
-	return isInterrupted;
+R_API bool r_print_is_interrupted() {
+	if (is_interrupted_cb) {
+		return is_interrupted_cb ();
+	}
+	return false;
 }
 
-R_API void r_print_set_interrupted(int i) {
-	isInterrupted = i;
+R_API void r_print_set_is_interrupted_cb(RPrintIsInterruptedCallback cb) {
+	is_interrupted_cb = cb;
 }
 
 R_API bool r_print_mute(RPrint *p, int x) {
@@ -476,7 +482,9 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 			if (i == ocur - n) {
 				memcat (d, Color_RESET);
 			}
-			memcat (d, lastcol);
+			if (colors) {
+				memcat (d, lastcol);
+			}
 			if (i >= cur - n && i < ocur - n) {
 				memcat (d, Color_INVERT);
 			}
@@ -872,9 +880,10 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 	if (p) {
 		p->interrupt = 0;
 	}
+	// is this necessary?
+	r_print_set_screenbounds (p, addr);
 	for (i = j = 0; i < len; i += (stride? stride: inc), j += (stride? stride: 0)) {
-		r_print_set_screenbounds (p, addr + i);
-		if (p && p->cons && p->cons->breaked) {
+		if (p && p->cons && p->cons->context && p->cons->context->breaked) {
 			break;
 		}
 		if (use_sparse) {
@@ -1622,11 +1631,24 @@ static bool issymbol(char c) {
 	}
 }
 
+static bool check_arg_name (RPrint *print, char *p, ut64 func_addr) {
+	if (func_addr && print->exists_var) {
+		int z;
+		for (z = 0; p[z] && (IS_ALPHA (p[z]) || IS_DIGIT (p[z]) || p[z] == '_'); z++);
+		char tmp = p[z];
+		p[z] = '\0';
+		bool ret = print->exists_var (print, func_addr, p);
+		p[z] = tmp;
+		return ret;
+	}
+	return false;
+}
+
 static bool ishexprefix(char *p) {
 	return (p[0] == '0' && p[1] == 'x');
 }
 
-R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num, bool partial_reset) {
+R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr) {
 	int i, j, k, is_mod, is_float = 0, is_arg = 0;
 	char *reset = partial_reset ? Color_RESET_NOBG : Color_RESET;
 	ut32 c_reset = strlen (reset);
@@ -1702,17 +1724,20 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 					eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
 					return strdup (p);
 				}
+
+				bool found_var = check_arg_name (print, p + i + 1, func_addr);
 				strcpy (o + j, reset);
 				j += strlen (reset);
 				o[j] = p[i];
 				if (!(p[i+1] == '$' || ((p[i+1] > '0') && (p[i+1] < '9')))) {
-					ut32 reg_len = strlen (reg);
-					if (reg_len + j + 10 >= COLORIZE_BUFSIZE) {
+					const char *color = found_var ? print->cons->pal.func_var_type : reg;
+					ut32 color_len = strlen (color);
+					if (color_len + j + 10 >= COLORIZE_BUFSIZE) {
 						eprintf ("r_print_colorize_opcode(): buffer overflow!\n");
 						return strdup (p);
 					}
-					strcpy (o + j + 1, reg);
-					j += strlen (reg);
+					strcpy (o + j + 1, color);
+					j += strlen (color);
 				}
 				continue;
 			}

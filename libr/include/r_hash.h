@@ -2,6 +2,7 @@
 #define R2_HASH_H
 
 #include "r_types.h"
+#include "r_util/r_mem.h"
 
 #ifdef __cplusplus
 extern "C" {

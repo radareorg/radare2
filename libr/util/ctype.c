@@ -21,23 +21,31 @@ R_API int r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 	return false;
 }
 
-R_API bool r_type_isenum(Sdb *TDB, const char *name) {
+R_API int r_type_kind(Sdb *TDB, const char *name) {
 	if (!name) {
-		return false;
+		return -1;
 	}
 	const char *type = sdb_const_get (TDB, name, 0);
-	if (type && !strcmp (type, "enum")) {
-		return true;
-	} else {
-		return false;
+	if (!type) {
+		return -1;
 	}
+	if (!strcmp (type, "enum")) {
+		return R_TYPE_ENUM;
+	} else if (!strcmp (type, "struct")){
+		return R_TYPE_STRUCT;
+	} else if (!strcmp (type, "union")){
+		return R_TYPE_UNION;
+	} else if (!strcmp (type, "type")){
+		return R_TYPE_BASIC;
+	}
+	return -1;
 }
 
 R_API RList* r_type_get_enum (Sdb *TDB, const char *name) {
-	char *p, *val, var[128], var2[128];
+	char *p, *val, var[130], var2[130];
 	int n;
 
-	if (!r_type_isenum (TDB, name)) {
+	if (r_type_kind (TDB, name) != R_TYPE_ENUM) {
 		return NULL;
 	}
 	RList *res = r_list_new ();
@@ -55,7 +63,7 @@ R_API RList* r_type_get_enum (Sdb *TDB, const char *name) {
 
 R_API char *r_type_enum_member(Sdb *TDB, const char *name, const char *member, ut64 val) {
 	const char *q;
-	if (!r_type_isenum (TDB, name)) {
+	if (r_type_kind (TDB, name) != R_TYPE_ENUM) {
 		return NULL;
 	}
 	if (member) {
@@ -71,7 +79,7 @@ R_API char *r_type_enum_getbitfield(Sdb *TDB, const char *name, ut64 val) {
 	const char *res;
 	int i;
 
-	if (!r_type_isenum (TDB, name)) {
+	if (r_type_kind (TDB, name) != R_TYPE_ENUM) {
 		return NULL;
 	}
 	bool isFirst = true;
@@ -104,6 +112,10 @@ R_API int r_type_get_bitsize(Sdb *TDB, const char *type) {
 		tmptype = type + 7;
 	} else {
 		tmptype = type;
+	}
+	if ((strstr (type, "*(") || strstr (type, " *")) &&
+			strncmp (type, "char *", 7)) {
+		return 32;
 	}
 	const char *t = sdb_const_get (TDB, tmptype, 0);
 	if (!t) {
@@ -156,57 +168,47 @@ R_API int r_type_get_bitsize(Sdb *TDB, const char *type) {
 	return 0;
 }
 
-// FIXME: Make it recursive
-static int get_types_by_offset(Sdb *TDB, RList *offtypes, int offset, const char *k, const char *v) {
-	char buf[256] = {0};
-	//r_cons_printf ("tk %s=%s\n", k, v);
-	// TODO: Add unions support
-	if (!strncmp (v, "struct", 6) && strncmp (k, "struct.", 7)) {
-		char* query = sdb_fmt ("struct.%s", k);
-		char *members = sdb_get (TDB, query, 0);
-		char *next, *ptr = members;
-		if (members) {
-			// Search for members, summarize the size
-			int typesize = 0;
-			do {
-				char *name = sdb_anext (ptr, &next);
-				if (!name) {
-					break;
-				}
-				query = sdb_fmt ("struct.%s.%s", k, name);
-				char *subtype = sdb_get (TDB, query, 0);
-				if (!subtype) {
-					break;
-				}
-				char *tmp = strchr (subtype, ',');
-				if (tmp) {
-					*tmp++ = 0;
-					tmp = strchr (tmp, ',');
-					if (tmp) {
-						*tmp++ = 0;
-					}
-					// TODO: Go recurse here
-					int elements = r_num_math (NULL, tmp);
-					if (elements == 0) {
-						elements = 1;
-					}
-					// TODO: Handle also alignment, unions, etc
-					// If previous types size matches the offset
-					if ((typesize / 8) == offset) {
-						// Add them in the list
-						buf[0] = '\0';
-						sprintf (buf, "%s.%s", k, name);
-						r_list_append (offtypes, strdup (buf));
-					}
-					typesize += r_type_get_bitsize (TDB, subtype) * elements;
-				}
-				free (subtype);
-				ptr = next;
-			} while (next);
-			free (members);
-		}
+R_API char *r_type_get_struct_memb(Sdb *TDB, const char *type, int offset) {
+	int i, typesize = 0;
+	char *res = NULL;
+
+	if (offset < 0) {
+		return NULL;
 	}
-	return 0;
+	char* query = sdb_fmt ("struct.%s", type);
+	char *members = sdb_get (TDB, query, 0);
+	if (!members) {
+		//eprintf ("%s is not a struct\n", type);
+		return NULL;
+	}
+	int nargs = r_str_split (members, ',');
+	for (i = 0; i < nargs ; i++) {
+		const char *name = r_str_word_get0 (members, i);
+		if (!name) {
+			break;
+		}
+		query = sdb_fmt ("struct.%s.%s", type, name);
+		char *subtype = sdb_get (TDB, query, 0);
+		if (!subtype) {
+			break;
+		}
+		int len = r_str_split (subtype, ',');
+		if (len < 3) {
+			free (subtype);
+			break;
+		}
+		int val = r_num_math (NULL, r_str_word_get0 (subtype, len - 1));
+		int arrsz = val ? val : 1;
+		if ((typesize / 8) == offset) {
+			res = r_str_newf ("%s.%s", type, name);
+			free (subtype);
+			break;
+		}
+		typesize += r_type_get_bitsize (TDB, subtype) * arrsz;
+		free (subtype);
+	}
+	free (members);
+	return res;
 }
 
 R_API RList* r_type_get_by_offset(Sdb *TDB, ut64 offset) {
@@ -215,13 +217,48 @@ R_API RList* r_type_get_by_offset(Sdb *TDB, ut64 offset) {
 	SdbListIter *lsi;
 	SdbKv *kv;
 	ls_foreach (ls, lsi, kv) {
-		get_types_by_offset (TDB, offtypes, offset, kv->key, kv->value);
+		// TODO: Add unions support
+		if (!strncmp (kv->value, "struct", 6) && strncmp (kv->key, "struct.", 7)) {
+			char *res = r_type_get_struct_memb (TDB, kv->key, offset);
+			if (res) {
+				r_list_append (offtypes, res);
+			}
+		}
 	}
 	ls_free (ls);
 	return offtypes;
 }
 
-R_API int r_type_link(Sdb *TDB, const char *type, ut64 addr) {
+R_API char *r_type_link_at (Sdb *TDB, ut64 addr) {
+	char* res = NULL;
+
+	if (addr == UT64_MAX) {
+		return NULL;
+	}
+	char* query = sdb_fmt ("link.%08"PFMT64x, addr);
+	res = sdb_get (TDB, query, 0);
+	if (!res) { // resolve struct memb if possible for given addr
+		SdbKv *kv;
+		SdbListIter *sdb_iter;
+		SdbList *sdb_list = sdb_foreach_list (TDB, true);
+		ls_foreach (sdb_list, sdb_iter, kv) {
+			if (strncmp (kv->key, "link.", strlen ("link."))) {
+				continue;
+			}
+			const char *linkptr = sdb_fmt ("0x%s", kv->key + strlen ("link."));
+			ut64 baseaddr = r_num_math (NULL, linkptr);
+			int delta = (addr > baseaddr)? addr - baseaddr: -1;
+			res = r_type_get_struct_memb (TDB, kv->value, delta);
+			if (res) {
+				break;
+			}
+		}
+		ls_free (sdb_list);
+	}
+	return res;
+}
+
+R_API int r_type_set_link(Sdb *TDB, const char *type, ut64 addr) {
 	if (sdb_const_get (TDB, type, 0)) {
 		char *laddr = r_str_newf ("link.%08"PFMT64x, addr);
 		sdb_set (TDB, laddr, type, 0);
@@ -260,33 +297,40 @@ static void filter_type(char *t) {
 
 R_API char *r_type_format(Sdb *TDB, const char *t) {
 	int n;
-	char *p, var[128], var2[128], var3[128];
+	char *p, var[130], var2[132];
 	char *fmt = NULL;
 	char *vars = NULL;
 	const char *kind = sdb_const_get (TDB, t, NULL);
-	if (!kind) return NULL;
+	if (!kind) {
+		return NULL;
+	}
 	// only supports struct atm
 	snprintf (var, sizeof (var), "%s.%s", kind, t);
 	if (!strcmp (kind, "type")) {
 		const char *fmt = sdb_const_get (TDB, var, NULL);
-		if (fmt)
+		if (fmt) {
 			return strdup (fmt);
-	} else
-	if (!strcmp (kind, "struct")) {
+		}
+	} else if (!strcmp (kind, "struct") || !strcmp (kind, "union")) {
 		// assumes var list is sorted by offset.. should do more checks here
 		for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
-			const char *tfmt;
 			char *type;
 			char *struct_name;
+			const char *tfmt = NULL;
 			bool isStruct = false;
 			bool isEnum = false;
+			bool isfp = false;
 			snprintf (var2, sizeof (var2), "%s.%s", var, p);
 			type = sdb_array_get (TDB, var2, 0, NULL);
-			int elements = sdb_array_get_num (TDB, var2, 2, NULL);
+			int alen = sdb_array_size (TDB, var2);
+			int elements = sdb_array_get_num (TDB, var2, alen - 1, NULL);
 			if (type) {
-				//off = sdb_array_get_num (DB, var2, 1, NULL);
-				//size = sdb_array_get_num (DB, var2, 2, NULL);
-				if (!strncmp (type, "struct ", 7)) {
+				char var3[128] = {0};
+				// Handle general pointers except for char *
+				if ((strstr (type, "*(") || strstr (type, " *")) &&
+						strncmp (type, "char *", 7)) {
+					isfp = true;
+				} else if (!strncmp (type, "struct ", 7)) {
 					struct_name = type + 7;
 					// TODO: iterate over all the struct fields, and format the format and vars
 					snprintf (var3, sizeof (var3), "struct.%s", struct_name);
@@ -310,7 +354,12 @@ R_API char *r_type_format(Sdb *TDB, const char *t) {
 					}
 
 				}
-				if (tfmt) {
+				if (isfp) {
+					// consider function pointer as void * for printing
+					fmt = r_str_append (fmt, "p");
+					vars = r_str_append (vars, p);
+					vars = r_str_append (vars, " ");
+				} else if (tfmt) {
 					filter_type (type);
 					if (elements > 0) {
 						fmt = r_str_appendf (fmt, "[%d]", elements);
@@ -473,6 +522,9 @@ R_API char *r_type_func_guess(Sdb *TDB, char *func_name) {
 	}
 	slen -= offset;
 	str += offset;
+	if (!strncmp (str, "__isoc99_", 9)) {
+		str += 9;
+	}
 	if ((result = type_func_try_guess (TDB, str))) {
 		return result;
 	}
@@ -481,6 +533,9 @@ R_API char *r_type_func_guess(Sdb *TDB, char *func_name) {
 	// also try module.dll_function and function_number
 	if ((first = strchr (str, '_'))) {
 		last = (char *)r_str_lchr (first, '_');
+		if (!last) {
+			goto out;
+		}
 		// middle + suffix or right half
 		if ((result = type_func_try_guess (TDB, first + 1))) {
 			goto out;
@@ -497,7 +552,6 @@ R_API char *r_type_func_guess(Sdb *TDB, char *func_name) {
 			}
 		}
 		result = NULL;
-		goto out;
 	}
 out:
 	free (str);

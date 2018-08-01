@@ -14,6 +14,7 @@ if [ -z "${CPU}" ]; then
 #	export CPU=armv7
 fi
 
+R2BINS="radare2 rabin2 rasm2 r2pm r2agent radiff2 rafind2 ragg2 rahash2 rarun2 rasm2 rax2"
 CAPSTONE_ARCHS="arm aarch64"
 #export CAPSTONE_MAKEFLAGS="CAPSTONE_ARCHS=\"arm aarch64\""
 # Build all archs for capstone, not just ARM/ARM64
@@ -52,7 +53,7 @@ export LDFLAGS="-flto"
 export USE_SIMULATOR=0
 
 if [ "${APPSTORE_FRIENDLY}" = 1 ]; then
-	CFGFLAGS="--without-fork --without-debugger"
+	CFGFLAGS="--without-fork --disable-debugger"
 else
 	CFGFLAGS=""
 fi
@@ -63,15 +64,13 @@ cp -f plugins.tiny.cfg plugins.cfg
 cp -f plugins.ios.cfg plugins.cfg
 ./configure --prefix="${PREFIX}" \
 	${CFGFLAGS} \
-	--with-ostype=darwin \
-	--without-pic --with-nonpic \
+	--with-ostype=darwin --with-libr \
 	--with-compiler=ios-sdk \
 	--target=arm-unknown-darwin
 fi
 
 if [ $? = 0 ]; then
 	time ${MAKE} -j${MAKE_JOBS} CAPSTONE_ARCHS="${CAPSTONE_ARCHS}"
-	#time ${MAKE} -j${MAKE_JOBS}
 	if [ $? = 0 ]; then
 		( cd binr/radare2 ; ${MAKE} ios_sdk_sign )
 		rm -rf /tmp/r2ios
@@ -87,7 +86,7 @@ if [ $? = 0 ]; then
 		export D=radare2-ios-${CPU}
 		rm -rf $D
 		mkdir -p $D/bin
-		for a in radare2 rabin2 rasm2 r2pm r2agent radiff2 rafind2 ragg2 rahash2 rarun2 rasm2 rax2 ; do
+		for a in ${R2BINS} ; do
 			cp -f binr/$a/$a "$D/bin"
 		done
 		mkdir -p "$D/include"

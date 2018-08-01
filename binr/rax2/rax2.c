@@ -33,22 +33,20 @@ static int format_output(char mode, const char *s) {
 	case 'I':
 		printf ("%" PFMT64d "\n", n);
 		break;
-	case '0': {
-		int len = strlen (s);
-		if (len > 0 && s[len - 1] == 'f') {
-			R_STATIC_ASSERT (sizeof (float) == 4)
-			float f = (float) num->fvalue;
-			ut8 *p = (ut8 *) &f;
-			printf ("Fx%02x%02x%02x%02x\n", p[3], p[2], p[1], p[0]);
-		} else {
-			printf ("0x%" PFMT64x "\n", n);
-		}
-	} break;
+	case '0':
+		printf ("0x%" PFMT64x "\n", n);
+		break;
 	case 'F': {
 		float *f = (float *) &n;
 		printf ("%ff\n", *f);
 	} break;
 	case 'f': printf ("%.01lf\n", num->fvalue); break;
+	case 'l':
+		R_STATIC_ASSERT (sizeof (float) == 4);
+		float f = (float) num->fvalue;
+		ut8 *p = (ut8 *) &f;
+		printf ("Fx%02x%02x%02x%02x\n", p[3], p[2], p[1], p[0]);
+		break;
 	case 'O': printf ("0%" PFMT64o "\n", n); break;
 	case 'B':
 		if (n) {
@@ -127,7 +125,6 @@ static int help() {
 }
 
 static int rax(char *str, int len, int last) {
-	float f;
 	ut8 *buf;
 	char *p, out_mode = (flags & 128)? 'I': '0';
 	int i;
@@ -177,10 +174,13 @@ static int rax(char *str, int len, int last) {
 			case 'v': blob_version ("rax2"); return 0;
 			case '\0': return !use_stdin ();
 			default:
+				/* not as complete as for positive numbers */
 				out_mode = (flags ^ 32)? '0': 'I';
 				if (str[1] >= '0' && str[1] <= '9') {
 					if (str[2] == 'x') {
 						out_mode = 'I';
+					} else if (r_str_endswith (str, "f")) {
+						out_mode = 'l';
 					}
 					return format_output (out_mode, str);
 				}
@@ -515,10 +515,7 @@ dotherax:
 		str[strlen (str) - 1] = 'b';
 		// TODO: Move print into format_output
 	} else if (r_str_endswith (str, "f")) {
-		ut8 *p = (ut8 *) &f;
-		sscanf (str, "%f", &f);
-		printf ("Fx%02x%02x%02x%02x\n", p[3], p[2], p[1], p[0]);
-		return true;
+		out_mode = 'l';
 	} else if (r_str_endswith (str, "dt")) {
 		out_mode = 'I';
 		str[strlen (str) - 2] = 't';

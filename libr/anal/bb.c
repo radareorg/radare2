@@ -62,7 +62,11 @@ R_API void r_anal_bb_free(RAnalBlock *bb) {
 		bb->failbb->prev = NULL;
 		bb->failbb = NULL;
 	}
-	R_FREE (bb);
+	if (bb->next) {
+		// avoid double free
+		bb->next->prev = NULL;
+	}
+	R_FREE (bb); // double free
 }
 
 R_API RList *r_anal_bb_list_new() {
@@ -87,7 +91,7 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 			eprintf ("Error: new (op)\n");
 			return R_ANAL_RET_ERROR;
 		}
-		if ((oplen = r_anal_op (anal, op, addr + idx, buf + idx, len - idx, R_ANAL_OP_MASK_ALL)) == 0) {
+		if ((oplen = r_anal_op (anal, op, addr + idx, buf + idx, len - idx, R_ANAL_OP_MASK_VAL)) == 0) {
 			r_anal_op_free (op);
 			op = NULL;
 			if (idx == 0) {

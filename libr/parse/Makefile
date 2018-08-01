@@ -23,14 +23,6 @@ OBJS=parse.o code.o ${STATIC_OBJS}
 bins:
 #	@cd t && ${MAKE} all
 
-pre:
-ifeq ($(WITHNONPIC),1)
-	@if [ ! -e libr_parse.${EXT_AR} ]; then rm -f ${STATIC_OBJS} ; fi
-endif
-ifeq ($(WITHPIC),1)
-	@if [ ! -e libr_parse.${EXT_SO} ]; then rm -f ${STATIC_OBJS} ; fi
-endif
-
 plugins:
 	@cd p && ${MAKE} all
 

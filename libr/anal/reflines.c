@@ -131,7 +131,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 		addr += sz;
 		// This can segfault if opcode length and buffer check fails
 		r_anal_op_fini (&op);
-		sz = r_anal_op (anal, &op, addr, ptr, (int)(end - ptr), R_ANAL_OP_MASK_ALL);
+		sz = r_anal_op (anal, &op, addr, ptr, (int)(end - ptr), R_ANAL_OP_MASK_BASIC);
 		if (sz <= 0) {
 			sz = 1;
 			goto __next;
@@ -394,7 +394,7 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 		return NULL;
 	}
 	r_list_foreach (anal->reflines, iter, ref) {
-		if (core->cons && core->cons->breaked) {
+		if (core->cons && core->cons->context->breaked) {
 			r_list_free (lvls);
 			return NULL;
 		}
@@ -405,7 +405,7 @@ R_API char* r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	b = r_buf_new ();
 	r_buf_append_string (b, " ");
 	r_list_foreach (lvls, iter, ref) {
-		if (core->cons && core->cons->breaked) {
+		if (core->cons && core->cons->context->breaked) {
 			r_list_free (lvls);
 			r_buf_free (b);
 			return NULL;

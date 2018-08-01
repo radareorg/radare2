@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Meson build for radare2"""
 
 import argparse
@@ -166,7 +167,6 @@ def win_dist(args):
         copy(r'{BUILDDIR}\libr\*\*.lib', r'{DIST}\{R2_LIBDIR}')
     else:
         copy(r'{BUILDDIR}\libr\*\*.a', r'{DIST}\{R2_LIBDIR}')
-    copy(r'{BUILDDIR}\shlr\libr_shlr.a', r'{DIST}\{R2_LIBDIR}')
     win_dist_libr2()
 
 def win_dist_libr2(**path_fmt):
@@ -196,6 +196,8 @@ def win_dist_libr2(**path_fmt):
     copy(r'{BUILDDIR}\libr\bin\d\*.sdb', r'{DIST}\{R2_SDB}\format\dll')
     copytree(r'{ROOT}\libr\cons\d', r'{DIST}\{R2_THEMES}',
              exclude=('Makefile', 'meson.build'))
+    makedirs(r'{DIST}\{R2_FLAGS}')
+    copy(r'{BUILDDIR}\libr\flag\d\*.r2', r'{DIST}\{R2_FLAGS}')
     makedirs(r'{DIST}\{R2_HUD}')
     copy(r'{ROOT}\doc\hud', r'{DIST}\{R2_HUD}\main')
 
@@ -233,6 +235,8 @@ def main():
 
     # Create parser
     parser = argparse.ArgumentParser(description='Mesonbuild scripts for radare2')
+    parser.add_argument('--asan', action='store_true',
+            help='Build radare2 with ASAN support.')
     parser.add_argument('--project', action='store_true',
             help='Create a visual studio project and do not build.')
     parser.add_argument('--release', action='store_true',
@@ -245,8 +249,18 @@ def main():
             help='Set project installation prefix')
     parser.add_argument('--dir', default=BUILDDIR, required=False,
             help='Destination build directory (default: %(default)s)')
+    parser.add_argument('--alias', action='store_true',
+            help='Show the "m" alias shell command')
     parser.add_argument('--xp', action='store_true',
             help='Adds support for Windows XP')
+    parser.add_argument('--pull', action='store_true',
+            help='git pull before building')
+    parser.add_argument('--nosudo', action='store_true',
+            help='Do not use sudo for install/symstall/uninstall')
+    parser.add_argument('--uninstall', action='store_true',
+            help='Uninstall')
+    parser.add_argument('--symstall', action='store_true',
+            help='Install using symlinks')
     if os.name == 'nt':
         parser.add_argument('--install', help='Installation directory')
     else:
@@ -254,8 +268,26 @@ def main():
             help='Install radare2 after building')
     parser.add_argument('--options', nargs='*', default=[])
     args = parser.parse_args()
+    if args.alias:
+        print("alias m=\"" + os.path.abspath(__file__) + "\"")
+        sys.exit(0);
+    if args.asan:
+        if os.uname().sysname == 'OpenBSD':
+            log.error("Asan insupported under OpenBSD")
+            sys.exit(1)
+        cflags = os.environ.get('CFLAGS')
+        if not cflags:
+            cflags = ''
+        os.environ['CFLAGS'] = cflags + ' -fsanitize=address'
+        if os.uname().sysname != 'Darwin':
+          ldflags = os.environ.get('LDFLAGS')
+          if not ldflags:
+              ldflags = ''
+          os.environ['LDFLAGS'] = ldflags + ' -lasan'
 
     # Check arguments
+    if args.pull:
+        os.system('git pull')
     if args.project and args.backend == 'ninja':
         log.error('--project is not compatible with --backend ninja')
         sys.exit(1)
@@ -282,11 +314,18 @@ def main():
 
     PATH_FMT.update(R2_PATH)
 
+    sudo = 'sudo '
+    if args.nosudo:
+        sudo = ''
     # Build it!
     log.debug('Arguments: %s', args)
     build(args)
+    if args.uninstall:
+        os.system(sudo + 'make uninstall PWD="$PWD/build" BTOP="$PWD/build/binr"')
     if args.install:
         install(args)
+    if args.symstall:
+        os.system(sudo + 'make symstall PWD="$PWD/build" BTOP="$PWD/build/binr"')
 
 if __name__ == '__main__':
     main()

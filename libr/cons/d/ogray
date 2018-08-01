@@ -45,3 +45,14 @@ ec gui.cflow rgb:f72
 ec gui.dataoffset rgb:f72
 ec crypto rgb:f72
 ec floc rgb:777
+ec linehl rgb:111
+
+ec func_var rgb:f72
+ec func_var_type rgb:777
+ec func_var_addr rgb:555
+
+ec ai.read rgb:eee
+ec ai.write rgb:ddd
+ec ai.exec rgb:fff
+ec ai.seq rgb:f72
+ec ai.ascii rgb:f72

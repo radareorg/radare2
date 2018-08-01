@@ -19,14 +19,14 @@ files = [
 
 r_cons = library('r_cons', files,
   include_directories: [platform_inc],
-  link_with: [
-    r_util,
-    libr_shlr
-  ],
+  dependencies: [r_util_dep, sdb_dep],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
 )
+
+r_cons_dep = declare_dependency(link_with: r_cons,
+                                include_directories: [platform_inc])
 
 pkgconfig_mod.generate(
   libraries: [r_cons],

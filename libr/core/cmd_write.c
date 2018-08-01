@@ -675,17 +675,17 @@ static void cmd_write_pcache(RCore *core, const char *input) {
 					core->print->cb_printf ("e io.va = false\n");
 					r_list_foreach (caches, iter, c) {
 						core->print->cb_printf ("wx %02x", c->data[0]);
-						const int cacheSize = R_ITV_SIZE (c);
+						const int cacheSize = r_itv_size (c->itv);
 						for (i = 1; i < cacheSize; i++) {
 							core->print->cb_printf ("%02x", c->data[i]);
 						}
-						core->print->cb_printf (" @ 0x%08"PFMT64x" \n", R_ITV_BEGIN (c));
+						core->print->cb_printf (" @ 0x%08"PFMT64x" \n", r_itv_begin (c->itv));
 					}
 				} else {
 					r_list_foreach (caches, iter, c) {
 						core->print->cb_printf ("0x%08"PFMT64x": %02x",
-							R_ITV_BEGIN (c), c->odata[0]);
-						const int cacheSize = R_ITV_SIZE (c);
+							r_itv_begin (c->itv), c->odata[0]);
+						const int cacheSize = r_itv_size (c->itv);
 						for (i = 1; i < cacheSize; i++) {
 							core->print->cb_printf ("%02x", c->odata[i]);
 						}
@@ -795,7 +795,7 @@ static int cmd_write(void *data, const char *input) {
 					eprintf ("Error: failed to malloc memory");
 					break;
 				}
-				len = r_base64_decode (buf, str, 0);
+				len = r_base64_decode (buf, str, -1);
 				if (len < 0) {
 					free (buf);
 					fail = 1;

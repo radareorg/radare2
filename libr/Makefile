@@ -34,16 +34,19 @@ all:
 	$(MAKE) $(LIBS5)
 	$(MAKE) $(LIBS6)
 	$(MAKE) $(LIBS7)
+ifeq ($(WITH_LIBR),1)
 	$(MAKE) libr.${EXT_AR}
 	$(MAKE) libr.${EXT_SO}
+endif
 
-ifeq ($(BUILD_MERGED),1)
+ifeq ($(WITH_LIBR),1)
 
 ifeq ($(OSTYPE),darwin)
 MLFLAGS+=-install_name @rpath/libr2.dylib
 endif
 ifeq ($(OSTYPE),ios)
 MLFLAGS+=-install_name @rpath/libr2.dylib
+MLFLAGS+=-fembed-bitcode
 endif
 LDFLAGS+=${SSL_LDFLAGS}
 # XXX version-script only works with shlib as output
@@ -54,7 +57,7 @@ LDFLAGS+=${SSL_LDFLAGS}
 
 .libr: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
 	rm -rf .libr
-	mkdir .libr
+	mkdir -p .libr
 	for LIB in $^ ; do \
 		${PARTIALLD} $(ALFLAGS) $(MLFLAGS) $(PLFLAGS) -o .libr/$$(basename $${LIB} .a).o $${LIB} ; \
 	done
@@ -100,13 +103,13 @@ libr.${EXT_SO}: .libr
 
 else
 
-# BUILD_MERGED=0
+# WITH_LIBR=0
 
 libr.${EXT_SO}:
-	$(MAKE) libr.${EXT_SO} BUILD_MERGED=1
+	$(MAKE) libr.${EXT_SO} WITH_LIBR=1
 
 libr.${EXT_AR}:
-	$(MAKE) libr.${EXT_AR} BUILD_MERGED=1
+	$(MAKE) libr.${EXT_AR} WITH_LIBR=1
 endif
 
 ../shlr/libr_shlr.${EXT_AR}:
@@ -172,12 +175,15 @@ install: install-includes install-pkgconfig
 	# TODO :Use INSTALL_DATA_DIR instead of mkdir
 	# libraries
 	@${INSTALL_DIR} "${DESTDIR}${LIBDIR}"
-	@$(foreach lib,$(shell find * -type f -iname "*.${EXT_SO}" | grep -v '(lib|parse)/t/' | grep lib | grep -v /bin/ | grep -v /p/), \
+	@$(foreach lib,$(shell find * -type f -iname "*.${EXT_SO}" | grep -vE '^libr\.${EXT_SO}$$' | grep -v '(lib|parse)/t/' | grep lib | grep -v /bin/ | grep -v /p/), \
 	  echo " ${DESTDIR}${LIBDIR}/$(call libpath-to-name-version,$(lib),${LIBVERSION})"; \
 	  rm -f "${DESTDIR}${LIBDIR}/$(call libpath-to-name-version,$(lib),${LIBVERSION})"; \
 	  ${INSTALL_LIB} "$(lib)" "${DESTDIR}${LIBDIR}/$(call libpath-to-name-version,$(lib),${LIBVERSION})"; \
 	  ( cd "${DESTDIR}${LIBDIR}" ; ln -fs "$(call libpath-to-name-version,$(lib),${LIBVERSION})" "$(call libpath-to-name,$(lib))" ) ; \
 	)
+	lib=libr.$(EXT_SO) ; if [ -f "$$lib" ]; then \
+	  ${INSTALL_LIB} "$$lib" "${DESTDIR}${LIBDIR}/$$lib"; \
+	fi
 	# object archives
 	@for FILE in `find * -type f -iname "*.${EXT_AR}" | grep -v fs/p` ; do \
 	  echo " ${DESTDIR}${LIBDIR}/$$FILE"; ${INSTALL_DATA} $$FILE "${DESTDIR}${LIBDIR}" ; done || true

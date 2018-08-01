@@ -9,8 +9,25 @@
 
 static ut64 r_num_tailff(RNum *num, const char *hex);
 
+void r_srand (int seed) {
+#if HAVE_ARC4RANDOM_UNIFORM
+	// no-op
+	(void)seed;
+#else
+	srand (seed);
+#endif
+}
+
+int r_rand (int mod) {
+#if HAVE_ARC4RANDOM_UNIFORM
+	return (int)arc4random_uniform (mod);
+#else
+	return rand ()%mod;
+#endif
+}
+
 R_API void r_num_irand() {
-	srand (r_sys_now ());
+	r_srand (r_sys_now ());
 }
 
 static int rand_initialized = 0;
@@ -19,8 +36,10 @@ R_API int r_num_rand(int max) {
 		r_num_irand ();
 		rand_initialized = 1;
 	}
-	if (!max) max = 1;
-	return rand()%max;
+	if (!max) {
+		max = 1;
+	}
+	return r_rand (max);
 }
 
 R_API void r_num_minmax_swap(ut64 *a, ut64 *b) {
@@ -648,7 +667,6 @@ R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 }
 
 static ut64 r_num_tailff(RNum *num, const char *hex) {
-        ut64 mask = 0LL;
         ut64 n = 0;
         char *p;
         int i;
@@ -665,11 +683,11 @@ static ut64 r_num_tailff(RNum *num, const char *hex) {
                         n = r_num_math (num, p);
                 } else {
                         eprintf ("Invalid argument\n");
+			free (p);
                         return UT64_MAX;
                 }
                 free (p);
         }
-        mask = UT64_MAX << i;
 	ut64 left = ((UT64_MAX >>i) << i);
         return left | n;
 }
@@ -757,4 +775,13 @@ R_API RList *r_num_str_split_list(char *str) {
 		str += strlen (str) + 1;
 	}
 	return list;
+}
+
+R_API void *r_num_dup(ut64 n) {
+	ut64 *hn = malloc (sizeof (ut64));
+	if (!hn) {
+		return NULL;
+	}
+	*hn = n;
+	return (void*)hn;
 }

@@ -18,7 +18,7 @@ R_API const char* r_reg_32_to_64(RReg* reg, const char* rreg32) {
 	RRegItem* item;
 	for (i = 0; i < R_REG_TYPE_LAST; ++i) {
 		r_list_foreach (reg->regset[i].regs, iter, item) {
-			if (!r_str_casecmp (rreg32, item->name) && item->size == 32) {
+			if (item->size == 32 && !r_str_casecmp (rreg32, item->name)) {
 				j = item->offset;
 				break;
 			}

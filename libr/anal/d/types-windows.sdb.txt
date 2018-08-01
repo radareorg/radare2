@@ -1552,7 +1552,8 @@ func.GetFileAttributesA.args=0
 func.GetFileAttributesA.ret=fileflagsandattributes
 
 GetFileAttributesW=func
-func.GetFileAttributesW.args=0
+func.GetFileAttributesW.args=1
+func.GetFileAttributesW.arg.0=LPCWSTR,lpFileName
 func.GetFileAttributesW.ret=fileflagsandattributes
 
 GetFileAttributesExA=func

@@ -1,0 +1,20 @@
+#!/bin/sh
+
+[ -z "${CPU}" ] && CPU="arm64"
+CWD="$(dirname "$0")"
+[ -z "${IOSINC}" ] && IOSINC="${CWD}/ios-include"
+CPUS=""
+CPU=`echo $CPU | sed -e 's,+, ,g'`
+for a in `IFS=+ echo ${CPU}` ; do
+	CPUS="-arch $a ${CPUS}"
+done
+[ -z "${SDK}" ] && SDK=iphoneos
+APPLE_SDK=`echo ${SDK} | tr a-z A-Z`
+LD="xcrun --sdk ${SDK} ld ${CPUS} -bitcode_bundle"
+echo "$LD $*"
+${LD} $*
+r=$?
+if [ "$r" != 0 ]; then
+	echo ${LD} $* >&2
+fi
+exit $r

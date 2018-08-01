@@ -68,6 +68,56 @@ static void cmd_seek_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, ss);
 }
 
+#define OPDELTA 32
+static ut64 prevop_addr(RCore *core, ut64 addr) {
+	ut8 buf[OPDELTA * 2];
+	ut64 target, base;
+	RAnalBlock *bb;
+	RAnalOp op;
+	int len, ret, i;
+	int minop = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+	int maxop = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MAX_OP_SIZE);
+
+	if (minop == maxop) {
+		if (minop == -1) {
+			return addr - 4;
+		}
+		return addr - minop;
+	}
+
+	// let's see if we can use anal info to get the previous instruction
+	// TODO: look in the current basicblock, then in the current function
+	// and search in all functions only as a last chance, to try to speed
+	// up the process.
+	bb = r_anal_bb_from_offset (core->anal, addr - minop);
+	if (bb) {
+		ut64 res = r_anal_bb_opaddr_at (bb, addr - minop);
+		if (res != UT64_MAX) {
+			return res;
+		}
+	}
+	// if we anal info didn't help then fallback to the dumb solution.
+	target = addr;
+	base = target - OPDELTA;
+	r_io_read_at (core->io, base, buf, sizeof (buf));
+	for (i = 0; i < sizeof (buf); i++) {
+		ret = r_anal_op (core->anal, &op, base + i,
+			buf + i, sizeof (buf) - i, R_ANAL_OP_MASK_BASIC);
+		if (!ret) {
+			continue;
+		}
+		len = op.size;
+		r_anal_op_fini (&op); // XXX
+		if (len < 1) {
+			continue;
+		}
+		if (target == base + i + len) {
+			return base + i;
+		}
+		i += len - 1;
+	}
+	return target - 4;
+}
 static void __init_seek_line(RCore *core) {
 	ut64 from, to;
 
@@ -220,6 +270,71 @@ static void seek_to_register(RCore *core, const char *input, bool is_silent) {
 		}
 		r_core_seek (core, off, 1);
 	}
+}
+
+static int cmd_seek_opcode_backward(RCore *core, int n) {
+	int val = 0;
+	// N previous instructions
+	ut64 addr = core->offset;
+	int ret = 0;
+	int numinstr = n * -1;
+	if (r_core_prevop_addr (core, core->offset, numinstr, &addr)) {
+		ret = core->offset - addr;
+	} else {
+#if 0
+		// core_asm_bwdis_len is buggy as hell we should kill it. seems like prevop_addr
+		// works as expected, because is the one used from visual
+		ret = r_core_asm_bwdis_len (core, &instr_len, &addr, numinstr);
+#endif
+		ut64 prev_addr = prevop_addr (core, core->offset);
+		if (prev_addr <= core->offset) {
+			RAsmOp op;
+			r_core_seek (core, prev_addr, 1);
+			r_asm_disassemble (core->assembler, &op,
+					core->block, 32);
+			val += op.size;
+			return val;
+		}
+	}
+	r_core_seek (core, addr, true);
+	val += ret;
+	return val;
+}
+
+static int cmd_seek_opcode_forward (RCore *core, int n) {
+	// N forward instructions
+	int i, ret, val = 0;
+	for (val = i = 0; i < n; i++) {
+		RAnalOp op;
+
+		ret = r_anal_op (core->anal, &op,
+				core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC);
+		if (ret < 1) {
+			ret = 1;
+		}
+		r_core_seek_delta (core, ret);
+		r_anal_op_fini (&op);
+		val += ret;
+	}
+	return val;
+}
+
+static void cmd_seek_opcode(RCore *core, const char *input) {
+	if (input[0] == '?') {
+		eprintf ("Usage: so [-][n]\n");
+		return;
+	}
+	if (!strcmp (input, "-")) {
+		input = "-1";
+	}
+	int n = r_num_math (core->num, input);
+	if (n == 0) {
+		n = 1;
+	}
+	int val = (n < 0)
+		? cmd_seek_opcode_backward (core, n)
+		: cmd_seek_opcode_forward (core, n);
+	core->num->value = val;
 }
 
 static int cmd_seek(void *data, const char *input) {
@@ -645,41 +760,8 @@ static int cmd_seek(void *data, const char *input) {
 		break;
 	}
 	case 'o': // "so"
-	if (input[1] == '?') {
-		eprintf ("Usage: so [n-instructions]\n");
-	} else {
-		int val = 0, ret, i, n = r_num_math (core->num, input + 1);
-		if (n == 0) {
-			n = 1;
-		}
-		if (n < 0) {
-			int instr_len;
-			ut64 addr = core->offset;
-			int numinstr = n * -1;
-			if (r_core_prevop_addr (core, core->offset, numinstr, &addr)) {
-				ret = core->offset - addr;
-			} else {
-				ret = r_core_asm_bwdis_len (core, &instr_len, &addr, numinstr);
-			}
-			r_core_seek (core, addr, true);
-			val += ret;
-		} else {
-			for (val = i = 0; i < n; i++) {
-				RAnalOp op;
-
-				ret = r_anal_op (core->anal, &op,
-					core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_ALL);
-				if (ret < 1) {
-					ret = 1;
-				}
-				r_core_seek_delta (core, ret);
-				r_anal_op_fini (&op);
-				val += ret;
-			}
-		}
-		core->num->value = val;
-	}
-	break;
+		cmd_seek_opcode (core, input + 1);
+		break;
 	case 'g': // "sg"
 	{
 		RIOSection *s = r_io_section_vget (core->io, core->offset);

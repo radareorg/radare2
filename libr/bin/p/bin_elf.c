@@ -16,7 +16,9 @@ static RBinInfo* info(RBinFile *bf);
 static int get_file_type(RBinFile *bf) {
 	struct Elf_(r_bin_elf_obj_t) *obj = bf->o->bin_obj;
 	char *type = Elf_(r_bin_elf_get_file_type (obj));
-	return type? ((!strncmp (type, "CORE", 4)) ? R_BIN_TYPE_CORE : R_BIN_TYPE_DEFAULT) : -1;
+	int res = type? ((!strncmp (type, "CORE", 4)) ? R_BIN_TYPE_CORE : R_BIN_TYPE_DEFAULT) : -1;
+	free (type);
+	return res;
 }
 
 static RList *maps(RBinFile *bf) {
@@ -49,21 +51,16 @@ static void setsymord(ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
 	if (!eobj->symbols_by_ord || ord >= eobj->symbols_by_ord_size) {
 		return;
 	}
-	free (eobj->symbols_by_ord[ord]);
-	eobj->symbols_by_ord[ord] = r_mem_dup (ptr, sizeof (RBinSymbol));
+	r_bin_symbol_free (eobj->symbols_by_ord[ord]);
+	eobj->symbols_by_ord[ord] = r_bin_symbol_clone (ptr);
 }
 
-static inline bool setimpord(ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
+static void setimpord(ELFOBJ* eobj, ut32 ord, RBinImport *ptr) {
 	if (!eobj->imports_by_ord || ord >= eobj->imports_by_ord_size) {
-		return false;
+		return;
 	}
-	if (eobj->imports_by_ord[ord]) {
-		free (eobj->imports_by_ord[ord]->name);
-		free (eobj->imports_by_ord[ord]);
-	}
-	eobj->imports_by_ord[ord] = r_mem_dup (ptr, sizeof (RBinImport));
-	eobj->imports_by_ord[ord]->name = strdup (ptr->name);
-	return true;
+	r_bin_import_free (eobj->imports_by_ord[ord]);
+	eobj->imports_by_ord[ord] = r_bin_import_clone (ptr);
 }
 
 static Sdb* get_sdb(RBinFile *bf) {
@@ -165,8 +162,8 @@ static RBinAddr* binsym(RBinFile *bf, int sym) {
 		ret->vaddr = Elf_(r_bin_elf_p2v) (obj, addr);
 		if (is_arm && addr & 1) {
 			ret->bits = 16;
-			ret->vaddr--; 
-			ret->paddr--; 
+			ret->vaddr--;
+			ret->paddr--;
 		}
 	}
 	return ret;
@@ -228,6 +225,7 @@ static RList* sections(RBinFile *bf) {
 			ptr->paddr = phdr[i].p_offset;
 			ptr->vaddr = phdr[i].p_vaddr;
 			ptr->srwx = phdr[i].p_flags;
+			ptr->is_segment = true;
 			switch (phdr[i].p_type) {
 			case PT_DYNAMIC:
 				strncpy (ptr->name, "DYNAMIC", R_BIN_SIZEOF_STRINGS);
@@ -304,17 +302,19 @@ static RList* sections(RBinFile *bf) {
 			ptr->add = true;
 		}
 		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE;
+		ptr->is_segment = true;
 		r_list_append (ret, ptr);
 	}
 	return ret;
 }
 
-static RBinAddr* newEntry(ut64 haddr, ut64 paddr, int type, int bits) {
+static RBinAddr* newEntry(ut64 haddr, ut64 hvaddr, ut64 paddr, int type, int bits) {
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	if (ptr) {
 		ptr->paddr = paddr;
 		ptr->vaddr = paddr;
 		ptr->haddr = haddr;
+		ptr->hvaddr = hvaddr;
 		ptr->bits = bits;
 		ptr->type = type;
 		//realign due to thumb
@@ -350,7 +350,8 @@ static void process_constructors (RBinFile *bf, RList *ret, int bits) {
 				for (i = 0; (i + 3) < sec->size; i += 4) {
 					ut32 addr32 = r_read_le32 (buf + i);
 					if (addr32) {
-						RBinAddr *ba = newEntry (sec->paddr + i, (ut64)addr32, type, bits);
+						RBinAddr *ba = newEntry (sec->paddr + i, sec->vaddr + i,
+						                         (ut64)addr32, type, bits);
 						r_list_append (ret, ba);
 					}
 				}
@@ -358,7 +359,8 @@ static void process_constructors (RBinFile *bf, RList *ret, int bits) {
 				for (i = 0; (i + 7) < sec->size; i += 8) {
 					ut64 addr64 = r_read_le64 (buf + i);
 					if (addr64) {
-						RBinAddr *ba = newEntry (sec->paddr + i, addr64, type, bits);
+						RBinAddr *ba = newEntry (sec->paddr + i, sec->vaddr + i,
+						                         addr64, type, bits);
 						r_list_append (ret, ba);
 					}
 				}
@@ -471,6 +473,46 @@ arm_symbol:
 	}
 }
 
+static RBinSymbol *convert_symbol(struct Elf_(r_bin_elf_obj_t) *bin,
+				  struct r_bin_elf_symbol_t *symbol,
+				  const char *namefmt) {
+	ut64 paddr = symbol->offset;
+	ut64 vaddr = Elf_(r_bin_elf_p2v) (bin, paddr);
+	RBinSymbol *ptr = NULL;
+
+	if (!(ptr = R_NEW0 (RBinSymbol))) {
+		return NULL;
+	}
+	ptr->name = symbol->name[0] ? r_str_newf (namefmt, &symbol->name[0]) : strdup("");
+	ptr->forwarder = r_str_const ("NONE");
+	ptr->bind = r_str_const (symbol->bind);
+	ptr->type = r_str_const (symbol->type);
+	ptr->paddr = paddr;
+	ptr->vaddr = vaddr;
+	ptr->size = symbol->size;
+	ptr->ordinal = symbol->ordinal;
+	// detect thumb
+	if (bin->ehdr.e_machine == EM_ARM && *ptr->name) {
+		_set_arm_thumb_bits (bin, &ptr);
+	}
+
+	return ptr;
+}
+
+static void insert_symbol(struct Elf_(r_bin_elf_obj_t) *bin,
+			  RBinSymbol *ptr,
+			  bool is_sht_null,
+			  RList *ret) {
+	// put the symbol in symbols_ord table
+	setsymord (bin, ptr->ordinal, ptr);
+	// add it to the list of symbols only if it doesn't point to SHT_NULL
+	if (is_sht_null) {
+		r_bin_symbol_free (ptr);
+	} else {
+		r_list_append (ret, ptr);
+	}
+}
+
 static RList* symbols(RBinFile *bf) {
 	struct Elf_(r_bin_elf_obj_t) *bin;
 	struct r_bin_elf_symbol_t *symbol = NULL;
@@ -487,63 +529,40 @@ static RList* symbols(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
+
+	// traverse symbols
 	if (!(symbol = Elf_(r_bin_elf_get_symbols) (bin))) {
 		return ret;
 	}
 	for (i = 0; !symbol[i].last; i++) {
-		ut64 paddr = symbol[i].offset;
-		ut64 vaddr = Elf_(r_bin_elf_p2v) (bin, paddr);
-		if (!(ptr = R_NEW0 (RBinSymbol))) {
+		ptr = convert_symbol (bin, &symbol[i], "%s");
+		if (!ptr) {
 			break;
 		}
-		ptr->name = strdup (symbol[i].name);
-		ptr->forwarder = r_str_const ("NONE");
-		ptr->bind = r_str_const (symbol[i].bind);
-		ptr->type = r_str_const (symbol[i].type);
-		ptr->paddr = paddr;
-		ptr->vaddr = vaddr;
-		ptr->size = symbol[i].size;
-		ptr->ordinal = symbol[i].ordinal;
-		setsymord (bin, ptr->ordinal, ptr);
-		if (bin->ehdr.e_machine == EM_ARM && *ptr->name) {
-			_set_arm_thumb_bits (bin, &ptr);
-		}
-		r_list_append (ret, ptr);
+		insert_symbol (bin, ptr, symbol[i].is_sht_null, ret);
 	}
+
+	// traverse imports
 	if (!(symbol = Elf_(r_bin_elf_get_imports) (bin))) {
 		return ret;
 	}
 	for (i = 0; !symbol[i].last; i++) {
-		ut64 paddr = symbol[i].offset;
-		ut64 vaddr = Elf_(r_bin_elf_p2v) (bin, paddr);
 		if (!symbol[i].size) {
 			continue;
 		}
-		if (!(ptr = R_NEW0 (RBinSymbol))) {
+
+		ptr = convert_symbol (bin, &symbol[i], "imp.%s");
+		if (!ptr) {
 			break;
 		}
-		// TODO(eddyb) make a better distinction between imports and other symbols.
-		//snprintf (ptr->name, R_BIN_SIZEOF_STRINGS-1, "imp.%s", symbol[i].name);
-		ptr->name = r_str_newf ("imp.%s", symbol[i].name);
-		ptr->forwarder = r_str_const ("NONE");
-		//strncpy (ptr->forwarder, "NONE", R_BIN_SIZEOF_STRINGS);
-		ptr->bind = r_str_const (symbol[i].bind);
-		ptr->type = r_str_const (symbol[i].type);
-		ptr->paddr = paddr;
-		ptr->vaddr = vaddr;
-		//special case where there is not entry in the plt for the import
+
+		// special case where there is not entry in the plt for the import
 		if (ptr->vaddr == UT32_MAX) {
 			ptr->paddr = 0;
 			ptr->vaddr = 0;
 		}
-		ptr->size = symbol[i].size;
-		ptr->ordinal = symbol[i].ordinal;
-		setsymord (bin, ptr->ordinal, ptr);
-		/* detect thumb */
-		if (bin->ehdr.e_machine == EM_ARM) {
-			_set_arm_thumb_bits (bin, &ptr);
-		}
-		r_list_append (ret, ptr);
+
+		insert_symbol (bin, ptr, symbol[i].is_sht_null, ret);
 	}
 	return ret;
 }
@@ -574,7 +593,7 @@ static RList* imports(RBinFile *bf) {
 		ptr->bind = r_str_const (import[i].bind);
 		ptr->type = r_str_const (import[i].type);
 		ptr->ordinal = import[i].ordinal;
-		(void)setimpord (bin, ptr->ordinal, ptr);
+		setimpord (bin, ptr->ordinal, ptr);
 		r_list_append (ret, ptr);
 	}
 	return ret;
@@ -1099,6 +1118,7 @@ static RBinInfo* info(RBinFile *bf) {
 }
 
 static RList* fields(RBinFile *bf) {
+	int left = 0;
 	RList *ret = NULL;
 	const ut8 *buf = NULL;
 
@@ -1107,7 +1127,7 @@ static RList* fields(RBinFile *bf) {
 	}
 	ret->free = free;
 
-	if (!(buf = r_buf_get_at (bf->buf, 0, NULL))) {
+	if (!(buf = r_buf_get_at (bf->buf, 0, &left))) {
 		RBinField *ptr = NULL;
 		struct r_bin_elf_field_t *field = NULL;
 		int i;
@@ -1130,13 +1150,16 @@ static RList* fields(RBinFile *bf) {
 	} else {
 		#define ROW(nam,siz,val,fmt) \
 		r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt ("0x%08x", val), fmt));
+		if (left < 40) {
+			return ret;
+		}
 		ut64 addr = 0;
 		ROW ("ELF", 4, r_read_le32 (buf), "x"); addr+=0x10;
 		ROW ("Type", 2, r_read_le16 (buf + addr), "x"); addr+=0x2;
 		ROW ("Machine", 2, r_read_le16 (buf + addr), "x"); addr+=0x2;
 		ROW ("Version", 4, r_read_le32 (buf + addr), "x"); addr+=0x4;
 
-		if (r_read_le8(buf + 0x04) == 1) {
+		if (r_read_le8 (buf + 0x04) == 1) {
 			ROW ("Entry point", 4, r_read_le32 (buf + addr), "x"); addr+=0x4;
 			ROW ("PhOff", 4, r_read_le32 (buf + addr), "x"); addr+=0x4;
 			ROW ("ShOff", 4, r_read_le32 (buf + addr), "x");

@@ -80,6 +80,10 @@ uid_t=type
 type.uid_t=i
 type.uid_t.size=64
 
+arc4random=func
+func.arc4random.args=0
+func.arc4random.ret=uint32_t
+
 calloc=func
 func.calloc.args=2
 func.calloc.arg.0=size_t,nmeb
@@ -2330,8 +2334,8 @@ func.remove.ret=int
 
 rename=func
 func.rename.args=2
-func.rename.arg.0=const char *,old
-func.rename.arg.1=,const char *
+func.rename.arg.0=const char *,oldpath
+func.rename.arg.1=const char *,newpath
 func.rename.ret=int
 
 tmpfile=func
@@ -2351,20 +2355,20 @@ func.fflush.ret=int
 fopen=func
 func.fopen.args=2
 func.fopen.arg.0=const char *,filename
-func.fopen.arg.1=,const char *
+func.fopen.arg.1=const char *,mode
 func.fopen.ret=file*
 
 freopen=func
 func.freopen.args=3
 func.freopen.arg.0=const char *,filename
-func.freopen.arg.1=,const char
-func.freopen.arg.2=FILE,*
+func.freopen.arg.1=const char *,mode
+func.freopen.arg.2=FILE,*stream
 func.freopen.ret=file*
 
 setbuf=func
 func.setbuf.args=2
 func.setbuf.arg.0=FILE,*stream
-func.setbuf.arg.1=,char *
+func.setbuf.arg.1=char *,buf
 func.setbuf.ret=void
 
 setvbuf=func
@@ -2385,7 +2389,7 @@ func.fprintf.ret=int
 fscanf=func
 func.fscanf.args=3
 func.fscanf.arg.0=FILE,*stream
-func.fscanf.arg.1=,const char
+func.fscanf.arg.1=const char *,format
 func.fscanf.arg.2=,...
 func.fscanf.ret=int
 
@@ -2413,15 +2417,15 @@ func.scanf.ret=int
 snprintf=func
 func.snprintf.args=4
 func.snprintf.arg.0=char,*s
-func.snprintf.arg.1=,size_t
-func.snprintf.arg.2=,const char *
+func.snprintf.arg.1=size_t,size
+func.snprintf.arg.2=const char *,format
 func.snprintf.arg.3=,...
 func.snprintf.ret=int
 
 sprintf=func
 func.sprintf.args=3
 func.sprintf.arg.0=char,*s
-func.sprintf.arg.1=,const char *
+func.sprintf.arg.1=const char *,format
 func.sprintf.arg.2=,...
 func.sprintf.ret=int
 
@@ -2435,61 +2439,61 @@ func.sscanf.ret=int
 vfprintf=func
 func.vfprintf.args=3
 func.vfprintf.arg.0=FILE,*stream
-func.vfprintf.arg.1=,const char *
-func.vfprintf.arg.2=,va_list
+func.vfprintf.arg.1=const char *,format
+func.vfprintf.arg.2=va_list,ap
 func.vfprintf.ret=int
 
 vfscanf=func
 func.vfscanf.args=3
 func.vfscanf.arg.0=FILE,*stream
-func.vfscanf.arg.1=,const char *
-func.vfscanf.arg.2=,va_list
+func.vfscanf.arg.1=const char *,format
+func.vfscanf.arg.2=va_list,ap
 func.vfscanf.ret=int
 
 vprintf=func
 func.vprintf.args=2
 func.vprintf.arg.0=const char *,format
-func.vprintf.arg.1=,va_list
+func.vprintf.arg.1=va_list,ap
 func.vprintf.ret=int
 
 vscanf=func
 func.vscanf.args=2
 func.vscanf.arg.0=const char *,format
-func.vscanf.arg.1=,va_list
+func.vscanf.arg.1=va_list,ap
 func.vscanf.ret=int
 
 vsnprintf=func
 func.vsnprintf.args=4
 func.vsnprintf.arg.0=char,*s
-func.vsnprintf.arg.1=,size_t
-func.vsnprintf.arg.2=,const char *
+func.vsnprintf.arg.1=size_t,size
+func.vsnprintf.arg.2=const char *,format
 func.vsnprintf.arg.3=va_list,arg
 func.vsnprintf.ret=int
 
 vsprintf=func
 func.vsprintf.args=3
 func.vsprintf.arg.0=char,*s
-func.vsprintf.arg.1=,const char *
-func.vsprintf.arg.2=,va_list
+func.vsprintf.arg.1=const char *,format
+func.vsprintf.arg.2=va_list,arg
 func.vsprintf.ret=int
 
 vsscanf=func
 func.vsscanf.args=3
 func.vsscanf.arg.0=const char *,s
-func.vsscanf.arg.1=,const char *
-func.vsscanf.arg.2=,va_list
+func.vsscanf.arg.1=const char *,format
+func.vsscanf.arg.2=va_list,arg
 func.vsscanf.ret=int
 
 fputc=func
 func.fputc.args=2
 func.fputc.arg.0=int,c
-func.fputc.arg.1=,FILE*
+func.fputc.arg.1=FILE,*stream
 func.fputc.ret=int
 
 fputs=func
 func.fputs.args=2
 func.fputs.arg.0=const char *,s
-func.fputs.arg.1=,FILE*
+func.fputs.arg.1=FILE,*stream
 func.fputs.ret=int
 
 gets=func
@@ -2500,7 +2504,7 @@ func.gets.ret=char *
 putc=func
 func.putc.args=2
 func.putc.arg.0=int,c
-func.putc.arg.1=,FILE*
+func.putc.arg.1=FILE,*stream
 func.putc.ret=int
 
 putchar=func
@@ -2516,28 +2520,28 @@ func.puts.ret=int
 fread=func
 func.fread.args=4
 func.fread.arg.0=void,*ptr
-func.fread.arg.1=,size_t
-func.fread.arg.2=,size_t
+func.fread.arg.1=size_t,size
+func.fread.arg.2=size_t,nmemb
 func.fread.arg.3=FILE,*stream
 func.fread.ret=size_t
 
 fgetpos=func
 func.fgetpos.args=2
 func.fgetpos.arg.0=FILE,*stream
-func.fgetpos.arg.1=,fpos_t*
+func.fgetpos.arg.1=fpos_t*,pos
 func.fgetpos.ret=int
 
 fseek=func
 func.fseek.args=3
 func.fseek.arg.0=FILE,*stream
-func.fseek.arg.1=,long
-func.fseek.arg.2=,int
+func.fseek.arg.1=long,offset
+func.fseek.arg.2=int,whence
 func.fseek.ret=int
 
 fsetpos=func
 func.fsetpos.args=2
 func.fsetpos.arg.0=FILE,*stream
-func.fsetpos.arg.1=,const fpos_t*
+func.fsetpos.arg.1=const fpos_t*,pos
 func.fsetpos.ret=int
 
 ftell=func

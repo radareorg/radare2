@@ -341,14 +341,13 @@ static bool __plugin_open_default(RIO *io, const char *file, bool many) {
 
 // default open should permit opening
 static RIODesc *__open_default(RIO *io, const char *file, int flags, int mode) {
-	RIODesc *iod;
 	if (r_str_startswith (file, "file://")) {
 		file += strlen ("file://");
 	}
 	if (!r_io_def_mmap_check_default (file)) {
 		return NULL;
 	}
-	iod = r_io_def_mmap_open (io, file, flags, mode);
+	RIODesc *iod = r_io_def_mmap_open (io, file, flags, mode);
 	return iod;
 // NTOE: uncomment this line to support loading files in ro as fallback is rw fails
 //	return iod? iod: r_io_def_mmap_open (io, file, R_IO_READ, mode);

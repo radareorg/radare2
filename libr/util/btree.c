@@ -51,11 +51,11 @@ R_API void btree_traverse(struct btree_node *root, int reverse, void *context, B
 	if (root) {
 		if (reverse) {
 			btree_traverse (root->right, reverse, context, trv);
-			trv(root->data, context);
+			trv (root->data, context);
 			btree_traverse (root->left, reverse, context, trv);
 		} else {
 			btree_traverse (root->left, reverse, context, trv);
-			trv(root->data, context);
+			trv (root->data, context);
 			btree_traverse (root->right, reverse, context, trv);
 		}
 	}

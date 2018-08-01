@@ -15,5 +15,5 @@ R_API char *r_utf16_to_utf8(const wchar_t *wc);
 R_API const char *r_utf_block_name(int idx);
 R_API wchar_t *r_utf8_to_utf16(const char *cstring);
 R_API int r_utf_block_idx (RRune ch);
-R_API int *r_utf_block_list (const ut8 *str);
+R_API int *r_utf_block_list (const ut8 *str, int len);
 #endif //  R_UTF8_H

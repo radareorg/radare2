@@ -57,11 +57,19 @@ R_API int r_debug_plugin_list(RDebug *dbg, int mode) {
 	spaces[15] = 0;
 	RDebugPlugin *h;
 	RListIter *iter;
+	if (mode == 'j') {
+		dbg->cb_printf ("[");
+	}
 	r_list_foreach (dbg->plugins, iter, h) {
 		int sp = 8-strlen (h->name);
 		spaces[sp] = 0;
 		if (mode == 'q') {
 			dbg->cb_printf ("%s\n", h->name);
+		} else if (mode == 'j') {
+			dbg->cb_printf ("%s{\"name\":\"%s\",\"license\":\"%s\"}",
+							(count ? "," : ""),
+							h->name,
+							h->license);
 		} else {
 			dbg->cb_printf ("%d  %s  %s %s%s\n",
 					count, (h == dbg->h)? "dbg": "---",
@@ -69,6 +77,9 @@ R_API int r_debug_plugin_list(RDebug *dbg, int mode) {
 		}
 		spaces[sp] = ' ';
 		count++;
+	}
+	if (mode == 'j') {
+		dbg->cb_printf ("]");
 	}
 	return false;
 }

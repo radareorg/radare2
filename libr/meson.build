@@ -96,6 +96,7 @@ asm_plugins = [
   'spc700',
   'sysz',
   'tms320',
+  'tms320c64x',
   'tricore',
   'v810',
   'v850',
@@ -104,7 +105,6 @@ asm_plugins = [
   'ws',
   'x86_as',
   'x86_cs',
-  #'x86_gas',
   'x86_nasm',
   'x86_nz',
   'xap',
@@ -116,6 +116,7 @@ asm_plugins = [
 bin_plugins = [
   'any',
   'art',
+  'avr',
   'bf',
   'bflt',
   'bios',
@@ -179,7 +180,7 @@ bp_plugins = [
 ]
 
 core_plugins = [
-  'anal',
+  'a2f',
   'java'
 ]
 
@@ -343,3 +344,23 @@ foreach arch : sflib_arch
     install_headers(join_paths('include/sflib', arch, file), subdir: join_paths('libr/sflib', arch))
   endforeach
 endforeach
+
+sdb_readlink_script = '''#script
+import os
+import sys
+infile = sys.argv[1]
+if os.name == 'nt' and os.path.getsize(infile) <= 64:
+    with open(infile) as sdb_txt:
+        fname = sdb_txt.readline()
+    if fname.endswith('.sdb.txt'):
+        infile = fname
+else:
+    infile = os.path.basename(infile)
+print(infile)
+'''
+
+sdb_readlink_cmd = [
+  py3_exe,
+  '-c',
+  sdb_readlink_script
+]

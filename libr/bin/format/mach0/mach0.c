@@ -270,7 +270,6 @@ static int parse_segments(struct MACH0_(obj_t)* bin, ut64 off) {
 			memcpy (&bin->sects[k].sectname, &sec[i], 16);
 			i += 16;
 			memcpy (&bin->sects[k].segname, &sec[i], 16);
-			bin->sects[k].segname[15] = 0;
 			i += 16;
 #if R_BIN_MACH064
 			bin->sects[k].addr = r_read_ble64 (&sec[i], bin->big_endian);
@@ -1323,7 +1322,7 @@ static int prot2perm (int x) {
 
 struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 	struct section_t *sections;
-	char segname[32], sectname[32];
+	char segname[32], sectname[32], raw_segname[17];
 	int i, j, to;
 
 	if (!bin) {
@@ -1343,7 +1342,8 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 			sections[i].vsize = seg->vmsize;
 			sections[i].align = 4096;
 			sections[i].flags = seg->flags;
-			r_str_ncpy (sectname, seg->segname, sizeof (sectname));
+			r_str_ncpy (sectname, seg->segname, 16);
+			sectname[16] = 0;
 			r_str_filter (sectname, -1);
 			// hack to support multiple sections with same name
 			sections[i].srwx = prot2perm (seg->initprot);
@@ -1370,11 +1370,13 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 		sections[i].vsize = (ut64)bin->sects[i].size;
 		sections[i].align = bin->sects[i].align;
 		sections[i].flags = bin->sects[i].flags;
-		r_str_ncpy (sectname, bin->sects[i].sectname, sizeof (sectname));
+		r_str_ncpy (sectname, bin->sects[i].sectname, 17);
 		r_str_filter (sectname, -1);
 		// hack to support multiple sections with same name
 		// snprintf (segname, sizeof (segname), "%d", i); // wtf
-		snprintf (segname, sizeof (segname), "%d.%s", i, bin->sects[i].segname);
+		memcpy (raw_segname, bin->sects[i].segname, 16);
+		raw_segname[16] = 0;
+		snprintf (segname, sizeof (segname), "%d.%s", i, raw_segname);
 		for (j = 0; j < bin->nsegs; j++) {
 			if (sections[i].addr >= bin->segs[j].vmaddr &&
 				sections[i].addr < (bin->segs[j].vmaddr + bin->segs[j].vmsize)) {
@@ -1408,10 +1410,17 @@ static int parse_import_stub(struct MACH0_(obj_t)* bin, struct symbol_t *symbol,
 	}
 	for (i = 0; i < bin->nsects; i++) {
 		if ((bin->sects[i].flags & SECTION_TYPE) == S_SYMBOL_STUBS && bin->sects[i].reserved2 > 0) {
-			nsyms = (int)(bin->sects[i].size / bin->sects[i].reserved2);
-			if (nsyms > bin->size) {
-				bprintf ("mach0: Invalid symbol table size\n");
+			ut64 sect_size = bin->sects[i].size;
+			ut32 sect_fragment = bin->sects[i].reserved2;
+			if (bin->sects[i].offset > bin->size) {
+				bprintf ("mach0: section offset starts way beyond the end of the file\n");
+				continue;
 			}
+			if (sect_size > bin->size) {
+				bprintf ("mach0: Invalid symbol table size\n");
+				sect_size = bin->size - bin->sects[i].offset;
+			}
+			nsyms = (int)(sect_size / sect_fragment);
 			for (j = 0; j < nsyms; j++) {
 				if (bin->sects) {
 					if (bin->sects[i].reserved1 + j >= bin->nindirectsyms) {
@@ -2000,7 +2009,10 @@ struct addr_t* MACH0_(get_entrypoint)(struct MACH0_(obj_t)* bin) {
 				sdb_num_set (bin->kv, "mach0.entry", entry->offset, 0);
 				entry->addr = (ut64)bin->sects[i].addr;
 				if (!entry->addr) { // workaround for object files
-					entry->addr = entry->offset;
+					eprintf ("entrypoint is 0...\n");
+					// XXX(lowlyw) there's technically not really entrypoints
+					// for .o files, so ignore this...
+					// entry->addr = entry->offset;
 				}
 				break;
 			}

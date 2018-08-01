@@ -25,11 +25,6 @@ LINK+=-fvisibility=hidden
 LINK+=$(addprefix -L../,$(subst r_,,$(BINDEPS)))
 LINK+=$(addprefix -l,$(BINDEPS))
 
-# for libraries (DUP)
-# implemented in libr/config.mk.tail
-#LDFLAGS+=$(addprefix -L../,$(subst r_,,$(DEPS)))
-#LDFLAGS+=$(addprefix -l,$(DEPS))
-
 SRC=$(subst .o,.c,$(OBJ))
 
 BEXE=$(BIN)$(EXT_EXE)
@@ -74,8 +69,6 @@ else
 	@-if [ -f p/Makefile ] ; then (echo "DIR ${NAME}/p"; cd p && ${MAKE}) ; fi
 endif
 
-ifeq (1,1)
-#$(WITHPIC),1)
 $(LIBSO): $(EXTRA_TARGETS) ${WFD} ${OBJS} ${SHARED_OBJ}
 	@for a in ${OBJS} ${SHARED_OBJ} ${SRC}; do \
 	  do=0 ; [ ! -e ${LIBSO} ] && do=1 ; \
@@ -88,19 +81,15 @@ $(LIBSO): $(EXTRA_TARGETS) ${WFD} ${OBJS} ${SHARED_OBJ}
 	    [ -f "$(LIBR)/stripsyms.sh" ] && sh $(LIBR)/stripsyms.sh ${LIBSO} ${NAME} ; \
 	  break ; \
 	fi ; done
-else
-${LIBSO}: ;
-endif
 
-ifeq (1,1) #$(WITHNONPIC),1)
+ifeq ($(WITH_LIBR),1)
 $(LIBAR): ${OBJS}
-ifneq ($(SILENT),)
-	echo "CC_AR $(LIBAR)"
-endif
+	[ "${SILENT}" = 1 ] && @echo "CC_AR $(LIBAR)" || true
 	rm -f $(LIBAR)
 	${CC_AR} ${OBJS} ${SHARED_OBJ}
 	${RANLIB} $(LIBAR)
 else
+# ${LIBSO} $(LIBAR): ;
 $(LIBAR): ;
 endif
 

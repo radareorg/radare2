@@ -1538,19 +1538,19 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 
 			if (reg_bits == 16) {
 				if (op->operands[0].regs[0] == X86R_BX && op->operands[0].regs[1] == X86R_SI) {
-					rm = 0b000;
+					rm = B0000;
 				} else if (op->operands[0].regs[0] == X86R_BX && op->operands[0].regs[1] == X86R_DI) {
-					rm = 0b001;
+					rm = B0001;
 				} else if (op->operands[0].regs[0] == X86R_BP && op->operands[0].regs[1] == X86R_SI) {
-					rm = 0b010;
+					rm = B0010;
 				} else if (op->operands[0].regs[0] == X86R_BP && op->operands[0].regs[1] == X86R_DI) {
-					rm = 0b011;
+					rm = B0011;
 				} else if (op->operands[0].regs[0] == X86R_SI && op->operands[0].regs[1] == -1) {
-					rm = 0b100;
+					rm = B0100;
 				} else if (op->operands[0].regs[0] == X86R_DI && op->operands[0].regs[1] == -1) {
-					rm = 0b101;
+					rm = B0101;
 				} else if (op->operands[0].regs[0] == X86R_BX && op->operands[0].regs[1] == -1) {
-					rm = 0b111;
+					rm = B0111;
 				} else {
 					//TODO allow for displacement only when parser is reworked
 					return -1;
@@ -1579,11 +1579,11 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 					sib = 0x24;
 				}
 				if (use_sib) {
-					rm = 0b100;
+					rm = B0100;
 				}
 				if (rip_rel) {
-					modrm = (0b00 << 6) | (reg << 3) | 0b101;
-					sib = (scale << 6) | (0b100 << 3) | 0b101;
+					modrm = (B0000 << 6) | (reg << 3) | B0101;
+					sib = (scale << 6) | (B0100 << 3) | B0101;
 				} else {
 					modrm = (mod << 6) | (reg << 3) | rm;
 				}
@@ -1671,15 +1671,14 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 
 		if (op->operands[0].scale[0] > 1) {
 				data[l++] = op->operands[1].reg << 3 | 4;
-				if (op->operands[0].scale[0] > 2) {
-					data[l++] = getsib (op->operands[0].scale[0]) << 6 |
-										op->operands[0].regs[0] << 3 | 5;
+				data[l++] = getsib (op->operands[0].scale[0]) << 6 |
+						    op->operands[0].regs[0] << 3 | 5;
 
-					data[l++] = offset;
-					data[l++] = offset >> 8;
-					data[l++] = offset >> 16;
-					data[l++] = offset >> 24;
-				}
+				data[l++] = offset;
+				data[l++] = offset >> 8;
+				data[l++] = offset >> 16;
+				data[l++] = offset >> 24;
+
 				return l;
 			}
 
@@ -1816,7 +1815,7 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 			if (op->operands[1].scale[0] > 1) {
 				data[l++] = op->operands[0].reg << 3 | 4;
 
-				if (op->operands[1].scale[0] > 2) {
+				if (op->operands[1].scale[0] >= 2) {
 					base = 5;
 				}
 				if (base) {
@@ -2037,16 +2036,16 @@ static int opout(RAsm *a, ut8 *data, const Opcode *op) {
 	st32 immediate = 0;
 	if (op->operands[0].reg == X86R_DX) {
 		if (op->operands[1].reg == X86R_AL && op->operands[1].type & OT_BYTE) {
-			data[l++] = 0xec;
+			data[l++] = 0xee;
 			return l;
 		}
 		if (op->operands[1].reg == X86R_AX && op->operands[1].type & OT_WORD) {
 			data[l++] = 0x66;
-			data[l++] = 0xed;
+			data[l++] = 0xef;
 			return l;
 		}
 		if (op->operands[1].reg == X86R_EAX && op->operands[1].type & OT_DWORD) {
-			data[l++] = 0xed;
+			data[l++] = 0xef;
 			return l;
 		}
 	} else if (op->operands[0].type & OT_CONSTANT) {
@@ -4055,21 +4054,24 @@ LookupTable oplookup[] = {
 
 static x86newTokenType getToken(const char *str, size_t *begin, size_t *end) {
 	// Skip whitespace
-	while (isspace ((int)str[*begin]))
+	while (begin && isspace ((int)str[*begin])) {
 		++(*begin);
+	}
 
 	if (!str[*begin]) {                // null byte
 		*end = *begin;
 		return TT_EOF;
 	} else if (isalpha ((int)str[*begin])) {   // word token
 		*end = *begin;
-		while (isalnum ((int)str[*end]))
+		while (end && isalnum ((int)str[*end])) {
 			++(*end);
+		}
 		return TT_WORD;
 	} else if (isdigit ((int)str[*begin])) {   // number token
 		*end = *begin;
-		while (isalnum ((int)str[*end]))     // accept alphanumeric characters, because hex.
+		while (end && isalnum ((int)str[*end])) {     // accept alphanumeric characters, because hex.
 			++(*end);
+		}
 		return TT_NUMBER;
 	} else {                             // special character: [, ], +, *, ...
 		*end = *begin + 1;

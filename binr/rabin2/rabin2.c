@@ -27,7 +27,7 @@ static RLib *l;
 static int rabin_show_help(int v) {
 	printf ("Usage: rabin2 [-AcdeEghHiIjlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
 		"              [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M] [-P[-P] pdb]\n"
-		"              [-o str] [-O str] [-k query] [-D lang symname] | file\n");
+		"              [-o str] [-O str] [-k query] [-D lang symname] file\n");
 	if (v) {
 		printf (
 		" -@ [addr]       show section, symbol or import at addr\n"
@@ -45,7 +45,7 @@ static int rabin_show_help(int v) {
 		" -E              globally exportable symbols\n"
 		" -f [str]        select sub-bin named str\n"
 		" -F [binfmt]     force to use that bin plugin (ignore header check)\n"
-		" -g              same as -SMZIHVResizcld (show all info)\n"
+		" -g              same as -SMZIHVResizcld -SS -ee (show all info)\n"
 		" -G [addr]       load address . offset to header\n"
 		" -h              this help message\n"
 		" -H              header fields\n"
@@ -72,6 +72,7 @@ static int rabin_show_help(int v) {
 		" -R              relocations\n"
 		" -s              symbols\n"
 		" -S              sections\n"
+		" -SS             segments\n"
 		" -u              unfiltered (no rename duplicated symbols/sections)\n"
 		" -U              resoUrces\n"
 		" -v              display version and quit\n"
@@ -150,8 +151,7 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 	int bits = 0;
 	char *libname = NULL;
 	const char *filename = bf ? bf->file : NULL;
-	char *path = NULL, *outpath = NULL, *outfile = NULL, *ptr = NULL;
-	ut32 outfile_sz = 0, outpath_sz = 0;
+	char *path = NULL, *ptr = NULL;
 	bool res = false;
 
 	if (!bf || !data || !filename) {
@@ -185,14 +185,7 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 	} else {
 		ptr = path;
 	}
-	outpath_sz = strlen (path) + 20;
-	if (outpath_sz > 0) {
-		outpath = malloc (outpath_sz);
-	}
-
-	if (outpath) {
-		snprintf (outpath, outpath_sz, "%s.fat", ptr);
-	}
+	char *outpath = r_str_newf ("%s.fat", ptr);
 	if (!outpath || !r_sys_mkdirp (outpath)) {
 		free (path);
 		free (outpath);
@@ -200,20 +193,9 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 		return false;
 	}
 
-	outfile_sz = outpath_sz + strlen (ptr) + strlen (arch) + 23;
-	if (outfile_sz) {
-		outfile = malloc (outfile_sz);
-	}
-
-	if (outfile) {
-		if (libname) {
-			snprintf (outfile, outfile_sz, "%s/%s.%s.%s_%i.%d",
-					  outpath, ptr, arch, libname, bits, idx);
-		} else {
-			snprintf (outfile, outfile_sz, "%s/%s.%s_%i.%d",
-					  outpath, ptr, arch, bits, idx);
-		}
-	}
+	char *outfile = libname
+		? r_str_newf ("%s/%s.%s.%s_%i.%d", outpath, ptr, arch, libname, bits, idx)
+		: r_str_newf ("%s/%s.%s_%i.%d", outpath, ptr, arch, bits, idx);
 
 	if (!outfile || !r_file_dump (outfile, bytes, bin_size, 0)) {
 		eprintf ("Error extracting %s\n", outfile);
@@ -645,12 +627,14 @@ int main(int argc, char **argv) {
 			set_action (R_BIN_REQ_IMPORTS);
 			set_action (R_BIN_REQ_SYMBOLS);
 			set_action (R_BIN_REQ_SECTIONS);
+			set_action (R_BIN_REQ_SEGMENTS);
 			set_action (R_BIN_REQ_STRINGS);
 			set_action (R_BIN_REQ_SIZE);
 			set_action (R_BIN_REQ_INFO);
 			set_action (R_BIN_REQ_FIELDS);
 			set_action (R_BIN_REQ_DWARF);
 			set_action (R_BIN_REQ_ENTRIES);
+			set_action (R_BIN_REQ_INITFINI);
 			set_action (R_BIN_REQ_MAIN);
 			set_action (R_BIN_REQ_LIBS);
 			set_action (R_BIN_REQ_RELOCS);
@@ -671,11 +655,11 @@ int main(int argc, char **argv) {
 		case 'u': bin->filter = 0; break;
 		case 'k': query = optarg; break;
 		case 'K': chksum = optarg; break;
-		case 'c': 
+		case 'c':
 			if (is_active (R_BIN_REQ_CLASSES)) {
 				rad = R_CORE_BIN_CLASSDUMP;
 			} else {
-			  	set_action (R_BIN_REQ_CLASSES); 
+			  	set_action (R_BIN_REQ_CLASSES);
 			}
 			break;
 		case 'f': arch_name = strdup (optarg); break;
@@ -687,7 +671,14 @@ int main(int argc, char **argv) {
 			break;
 		case 'i': set_action (R_BIN_REQ_IMPORTS); break;
 		case 's': set_action (R_BIN_REQ_SYMBOLS); break;
-		case 'S': set_action (R_BIN_REQ_SECTIONS); break;
+		case 'S':
+			if (is_active (R_BIN_REQ_SECTIONS)) {
+				action &= ~R_BIN_REQ_SECTIONS;
+				action |= R_BIN_REQ_SEGMENTS;
+			} else {
+				set_action (R_BIN_REQ_SECTIONS);
+			}
+			break;
 		case 'z':
 			if (is_active (R_BIN_REQ_STRINGS)) {
 				if (rawstr) {
@@ -991,11 +982,24 @@ int main(int argc, char **argv) {
 
 	r_bin_force_plugin (bin, forcebin);
 	r_bin_load_filter (bin, action);
-	if (!r_bin_load (bin, file, baddr, laddr, xtr_idx, fd, rawstr)) {
+
+	RBinOptions *bo = r_bin_options_new (0LL, baddr, rawstr);
+	if (!bo) {
+		eprintf ("Could not create RBinOptions\n");
+		r_core_fini (&core);
+		return 1;
+	}
+
+	bo->loadaddr = laddr;
+	bo->xtr_idx = xtr_idx;
+	bo->iofd = fd;
+
+	if (!r_bin_open (bin, file, bo)) {
 		//if this return null means that we did not return a valid bin object
 		//but we have yet the chance that this file is a fat binary
 		if (!bin->cur || !bin->cur->xtr_data) {
 			eprintf ("r_bin: Cannot open file\n");
+			r_bin_options_free (bo);
 			r_core_fini (&core);
 			return 1;
 		}
@@ -1011,7 +1015,7 @@ int main(int argc, char **argv) {
 		RBinFile *bf = r_core_bin_cur (&core);
 		if (bf) {
 			bf->strmode = rad;
-			r_bin_dump_strings (bf, bin->minstrlen);
+			r_bin_dump_strings (bf, bin->minstrlen, bf->rawstr);
 		}
 	}
 	if (query) {
@@ -1025,6 +1029,7 @@ int main(int argc, char **argv) {
 				sdb_query (bin->cur->sdb, query);
 			}
 		}
+		r_bin_options_free (bo);
 		r_core_fini (&core);
 		return 0;
 	}
@@ -1070,6 +1075,7 @@ int main(int argc, char **argv) {
 		}
 		pdbopts.symbol_store_path = (char*) r_config_get (core.config, "pdb.symstore");
 		int r = r_bin_pdb_download (&core, isradjson, &actions_done, &pdbopts);
+		r_bin_options_free (bo);
 		r_core_fini (&core);
 		return r;
 	}
@@ -1080,8 +1086,9 @@ int main(int argc, char **argv) {
 	}
 
 	run_action ("sections", R_BIN_REQ_SECTIONS, R_CORE_BIN_ACC_SECTIONS);
+	run_action ("segments", R_BIN_REQ_SEGMENTS, R_CORE_BIN_ACC_SEGMENTS);
 	run_action ("entries", R_BIN_REQ_ENTRIES, R_CORE_BIN_ACC_ENTRIES);
-	run_action ("entries", R_BIN_REQ_INITFINI, R_CORE_BIN_ACC_INITFINI);
+	run_action ("initfini", R_BIN_REQ_INITFINI, R_CORE_BIN_ACC_INITFINI);
 	run_action ("main", R_BIN_REQ_MAIN, R_CORE_BIN_ACC_MAIN);
 	run_action ("imports", R_BIN_REQ_IMPORTS, R_CORE_BIN_ACC_IMPORTS);
 	run_action ("classes", R_BIN_REQ_CLASSES, R_CORE_BIN_ACC_CLASSES);
@@ -1116,9 +1123,10 @@ int main(int argc, char **argv) {
 		rabin_do_operation (op);
 	}
 	if (isradjson) {
-		printf ("}");
+		r_cons_print ("}");
 	}
 	r_cons_flush ();
+	r_bin_options_free (bo);
 	r_core_fini (&core);
 	free (stdin_buf);
 

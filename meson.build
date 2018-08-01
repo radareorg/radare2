@@ -26,7 +26,9 @@ if meson.is_subproject()
   endif
 endif
 
-version_commit = ''
+# by default, not version commit is used
+version_commit = '0'
+
 gittap = ''
 gittip = 'unknown'
 
@@ -36,13 +38,13 @@ if git_exe.found()
   if git_rev_list.returncode() == 0
     version_commit = git_rev_list.stdout().strip()
   endif
-  
+
   # Get gittap
   git_describe = run_command(git_exe, '-C', repo, 'describe', '--tags', '--match', '[0-9]*')
   if git_describe.returncode() == 0
     gittap = git_describe.stdout().strip()
   endif
-  
+
   # Get gittip
   git_rev_parse = run_command(git_exe, '-C', repo, 'rev-parse', 'HEAD')
   if git_rev_parse.returncode() == 0
@@ -121,6 +123,7 @@ if host_machine.system() == 'windows'
   r2_zigns = join_paths(r2_datdir, 'zigns')
   r2_themes = join_paths(r2_datdir, 'cons')
   r2_fortunes = join_paths(r2_datdir, 'doc')
+  r2_flags = join_paths(r2_datdir, 'flag')
   r2_hud = join_paths(r2_datdir, 'hud')
 
   opts2 = [
@@ -129,6 +132,7 @@ if host_machine.system() == 'windows'
     'r2_zigns',
     'r2_themes',
     'r2_fortunes',
+    'r2_flags',
     'r2_hud'
   ]
   foreach opt : opts2
@@ -162,6 +166,7 @@ else
   r2_zigns = join_paths(get_option('datadir'), 'radare2', r2_version, 'zigns')
   r2_themes = join_paths(get_option('datadir'), 'radare2', r2_version, 'cons')
   r2_fortunes = join_paths(get_option('datadir'), 'doc/radare2')
+  r2_flags = join_paths(get_option('datadir'), 'radare2', r2_version, 'flag')
   r2_hud = join_paths(get_option('datadir'), 'radare2', r2_version, 'hud')
   r2_plugins = join_paths(get_option('libdir'), 'radare2', r2_version)
   r2_extras = join_paths(get_option('libdir'), 'radare2-extras', r2_version)
@@ -192,7 +197,16 @@ config_h = configure_file(
   configuration: conf_data
 )
 
+sys_magic = cc.find_library('magic', required: false)
+use_syslib_magic = false
+
+if sys_magic.found() and get_option('use_sys_magic')
+  use_syslib_magic = true
+endif
+
 userconf = configuration_data()
+userconf.set('HAVE_LIB_MAGIC', sys_magic.found().to_int())
+userconf.set('USE_LIB_MAGIC', use_syslib_magic.to_int())
 userconf.set('DEBUGGER', 1)
 userconf.set('PREFIX', r2_prefix)
 userconf.set('LIBDIR', r2_libdir)
@@ -203,12 +217,11 @@ userconf.set('SDB', r2_sdb)
 userconf.set('ZIGNS', r2_zigns)
 userconf.set('THEMES', r2_themes)
 userconf.set('FORTUNES', r2_fortunes)
+userconf.set('FLAGS', r2_flags)
 userconf.set('HUD', r2_hud)
 userconf.set('PLUGINS', r2_plugins)
 userconf.set('EXTRAS', r2_extras)
 userconf.set('BINDINGS', r2_bindings)
-userconf.set('HAVE_LIB_MAGIC', 0)
-userconf.set('USE_LIB_MAGIC', 0)
 userconf.set('HAVE_OPENSSL', 0)
 userconf.set('HAVE_FORK', 1)
 userconf.set('WITH_GPL', 1)
@@ -222,14 +235,28 @@ if cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
 else
   userconf.set('HAVE_DECL_ADDR_NO_RANDOMIZE', 0)
 endif
+
+if cc.has_function('arc4random_uniform')
+  userconf.set('HAVE_ARC4RANDOM_UNIFORM', 1)
+else
+  userconf.set('HAVE_ARC4RANDOM_UNIFORM', 0)
+endif
+
+if cc.has_function('explicit_bzero')
+  userconf.set('HAVE_EXPLICIT_BZERO', 1)
+else
+  userconf.set('HAVE_EXPLICIT_BZERO', 0)
+endif
+
 r_userconf_h = configure_file(
-  input: 'libr/include/r_userconf.h.in',
+  input: 'libr/include/r_userconf.h.acr',
   output: 'r_userconf.h',
   configuration: userconf,
   install_dir: join_paths(get_option('includedir'), 'libr')
 )
 
 versionconf = configuration_data()
+versionconf.set('MESON_VERSION', meson.version())
 versionconf.set('VERSIONCOMMIT', version_commit)
 versionconf.set('R2_VERSION', r2_version)
 versionconf.set('R2_GITTAP', gittap)
@@ -252,7 +279,7 @@ pcconf.set('VERSION', r2_version)
 libr_pc = configure_file(
   input: 'libr/libr.pc.acr',
   output: 'libr.pc',
-  configuration: userconf,
+  configuration: pcconf,
   install_dir: join_paths(get_option('libdir'), 'pkgconfig')
 )
 
@@ -289,6 +316,7 @@ subdir('libr/bin/d')
 subdir('libr/syscall/d')
 subdir('libr/cons/d')
 subdir('libr/magic/d')
+subdir('libr/flag/d')
 
 if not meson.is_subproject()
   subdir('binr/rahash2')
@@ -301,30 +329,31 @@ if not meson.is_subproject()
   subdir('binr/radiff2')
   subdir('binr/rafind2')
   subdir('binr/rax2')
+  subdir('binr/r2pm')
 else
   libr2_dep = declare_dependency(
-    link_with: [
-      r_anal,
-      r_asm,
-      r_bin,
-      r_bp,
-      r_config,
-      r_cons,
-      r_core,
-      r_crypto,
-      r_egg,
-      r_flag,
-      r_fs,
-      r_hash,
-      r_io,
-      r_lang,
-      r_magic,
-      r_parse,
-      r_reg,
-      r_search,
-      r_socket,
-      r_syscall,
-      r_util
+    dependencies: [
+      r_anal_dep,
+      r_asm_dep,
+      r_bin_dep,
+      r_bp_dep,
+      r_config_dep,
+      r_cons_dep,
+      r_core_dep,
+      r_crypto_dep,
+      r_egg_dep,
+      r_flag_dep,
+      r_fs_dep,
+      r_hash_dep,
+      r_io_dep,
+      r_lang_dep,
+      r_magic_dep,
+      r_parse_dep,
+      r_reg_dep,
+      r_search_dep,
+      r_socket_dep,
+      r_syscall_dep,
+      r_util_dep
     ],
     include_directories: include_directories('.', 'libr/include'),
     version: r2_version
@@ -332,12 +361,13 @@ else
 endif
 
 install_subdir('shlr/www',
-  install_dir: join_paths(get_option('prefix'), get_option('datadir'), 'radare2', r2_version)
+  install_dir: r2_wwwroot,
+  strip_directory: true
 )
 
 fortunes_files = run_command(glob_cmd + ['doc/fortunes.*']).stdout().strip().split(';')
 install_data(fortunes_files,
-  install_dir: join_paths(get_option('datadir'), 'doc/radare2')
+  install_dir: r2_fortunes
 )
 
 man1_files = run_command(glob_cmd + ['man/*.1']).stdout().strip().split(';')
@@ -351,6 +381,6 @@ install_data(man7_files,
 )
 
 install_data('doc/hud',
-  install_dir: join_paths(get_option('datadir'), 'radare2', r2_version, 'hud'),
+  install_dir: r2_hud,
   rename: 'main'
 )

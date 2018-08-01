@@ -33,7 +33,8 @@ typedef struct ls_t {
 		for (it = list->tail; it && (pos = it->data); it = it->p)
 
 #define ls_iterator(x) (x)?(x)->head:NULL
-#define ls_empty(x) (!x || (!x->head && !x->tail))
+// #define ls_empty(x) (!x || (!x->head && !x->tail))
+#define ls_empty(x) (!x || !x->length)
 #define ls_head(x) x->head
 #define ls_tail(x) x->tail
 #define ls_unref(x) x

@@ -55,3 +55,14 @@ ec gui.dataoffset rgb:f72
 ec crypto rgb:f72
 ec floc rgb:777
 ec invalid red
+ec linehl rgb:008
+
+ec func_var yellow . bold
+ec func_var_type blue . bold
+ec func_var_addr cyan . bold
+
+ec ai.read white . bold
+ec ai.write white . bold
+ec ai.exec red . bold
+ec ai.seq green . bold
+ec ai.ascii yellow . bold

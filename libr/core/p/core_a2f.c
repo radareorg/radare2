@@ -1,4 +1,4 @@
-/* radare - Copyright 2014-2016 pancake, defragger */
+/* radare - Copyright 2014-2018 pancake, defragger */
 
 #include <r_types.h>
 #include <r_core.h>
@@ -139,7 +139,7 @@ ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_commands)
 		free (value);
 		cur = 0;
 		while (!block_end) {
-			op = r_core_anal_op (core, addr + cur);
+			op = r_core_anal_op (core, addr + cur, R_ANAL_OP_MASK_BASIC);
 			if (!op || !op->mnemonic) {
 				eprintf ("Cannot analyze opcode at %"PFMT64d"\n", addr+cur);
 				oaddr = UT64_MAX;
@@ -294,7 +294,9 @@ static int analyzeFunction(RCore *core, ut64 addr) {
 		eprintf ("Initial analysis failed\n");
 		return false;
 	}
-	addr = a;
+	if (a != UT64_MAX) {
+		addr = a;
+	}
 	sdb_num_set (db, "addr", addr, 0);
 
 	//TODO add the possible addresses to the analysis stack
@@ -317,19 +319,21 @@ static int analyzeFunction(RCore *core, ut64 addr) {
 	} else {
 		function_label = r_str_newf ("fcn2.%08"PFMT64x, addr);
 	}
+	// loc_addr = core->offset; // sdb_num_get (db, "addr", NULL);
 	loc_addr = sdb_num_get (db, "addr", NULL);
-	r_core_cmdf (core, "af+ 0x%08"PFMT64x" %s\n",
-		loc_addr, function_label);
+	// r_cons_printf ("af+ 0x%08"PFMT64x" %s\n", loc_addr, function_label);
+	r_core_cmdf (core, "af+ 0x%08"PFMT64x" %s", loc_addr, function_label);
 	{
 		char *c, *bbs = sdb_get (db, "bbs", NULL);
 		sdb_aforeach (c, bbs) {
-			ut64 jump, fail;
 			ut64 addr = sdb_atoi (c);
-			ut64 addr_end = sdb_num_get (db, Fbb(addr), NULL);
+			ut64 addr_end = sdb_num_get (db, Fbb (addr), NULL);
 			// check if call destination is inside the function boundaries
-			jump = sdb_array_get_num (db, FbbTo(addr), 0, NULL);
-			fail = sdb_array_get_num (db, FbbTo(addr), 1, NULL);
+			ut64 jump = sdb_array_get_num (db, FbbTo (addr), 0, NULL);
+			ut64 fail = sdb_array_get_num (db, FbbTo (addr), 1, NULL);
 
+			// r_cons_printf ("afb+ 0x%"PFMT64x" 0x%"PFMT64x" %d 0x%"PFMT64x" 0x%"PFMT64x"\n",
+			// 	loc_addr, addr, (int)(addr_end - addr), jump, fail);
 			r_core_cmdf (core, "afb+ 0x%"PFMT64x" 0x%"PFMT64x" %d 0x%"PFMT64x" 0x%"PFMT64x,
 			  	loc_addr, addr, (int)(addr_end - addr), jump, fail);
 			sdb_aforeach_next (c);
@@ -386,8 +390,8 @@ static int r_cmd_anal_call(void *user, const char *input) {
 }
 
 // PLUGIN Definition Info
-RCorePlugin r_core_plugin_anal = {
-	.name = "anal",
+RCorePlugin r_core_plugin_a2f = {
+	.name = "a2f",
 	.desc = "The reworked analysis from scratch thing",
 	.license = "LGPL3",
 	.call = r_cmd_anal_call,
@@ -396,7 +400,7 @@ RCorePlugin r_core_plugin_anal = {
 #ifndef CORELIB
 RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CORE,
-	.data = &r_core_plugin_anal,
+	.data = &r_core_plugin_a2f,
 	.version = R2_VERSION
 };
 #endif

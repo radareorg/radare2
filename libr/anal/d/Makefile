@@ -12,6 +12,7 @@ F+= types-x86-macos-64
 F+= types-arm-ios-16
 F+= types-arm-ios-32
 F+= types-arm-ios-64
+F+= spec
 F+= cc-x86-64
 F+= cc-x86-32
 F+= cc-mips-32
@@ -76,7 +77,7 @@ install: ${F_SDB}
 CWD=$(shell pwd)
 symstall install-symlink: ${F_SDB}
 	cd ../../.. && mkdir -p "${FCNSIGNPATH}" && \
-	for FILE in $(shell cd libr/anal/d ; ls *.sdb); do \
+	for FILE in $(shell cd $(TOP)/libr/anal/d ; ls *.sdb); do \
 		ln -fs "$(CWD)/$$FILE" "$(FCNSIGNPATH)/$$FILE" ; \
 	done
 

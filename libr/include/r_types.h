@@ -98,7 +98,7 @@
   #define __BSD__ 0
   #define __UNIX__ 1
 #endif
-#if __KFBSD__ || defined(__NetBSD__) || defined(__OpenBSD__)
+#if __KFBSD__ || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__)
   #define __BSD__ 1
   #define __UNIX__ 1
 #endif
@@ -256,7 +256,7 @@ R_API const char *x##_version () { return "" R2_GITTAP; }
 #define BITS2BYTES(x) (((x)/8)+(((x)%8)?1:0))
 #define ZERO_FILL(x) memset (&x, 0, sizeof (x))
 #define R_NEWS0(x,y) (x*)calloc(y,sizeof(x))
-#define R_NEWS(x,y) (x*)malloc(sizeof(x)*y)
+#define R_NEWS(x,y) (x*)malloc(sizeof(x)*(y))
 #define R_NEW0(x) (x*)calloc(1,sizeof(x))
 #define R_NEW(x) (x*)malloc(sizeof(x))
 #define R_NEWCOPY(x,y) (x*)r_new_copy(sizeof(x), y)

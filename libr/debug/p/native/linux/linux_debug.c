@@ -75,7 +75,7 @@ int linux_handle_signals (RDebug *dbg) {
 		//ptrace (PTRACE_SETSIGINFO, dbg->pid, 0, &siginfo);
 		dbg->reason.type = R_DEBUG_REASON_SIGNAL;
 		dbg->reason.signum = siginfo.si_signo;
-		//dbg->stopaddr = siginfo.si_addr;
+		dbg->stopaddr = siginfo.si_addr;
 		//dbg->errno = siginfo.si_errno;
 		// siginfo.si_code -> HWBKPT, USER, KERNEL or WHAT
 #warning DO MORE RDEBUGREASON HERE
@@ -125,7 +125,7 @@ int linux_handle_signals (RDebug *dbg) {
 			eprintf ("[+] SIGNAL %d errno=%d addr=0x%08"PFMT64x
 				" code=%d ret=%d\n",
 				siginfo.si_signo, siginfo.si_errno,
-				(ut64)siginfo.si_addr, siginfo.si_code, ret);
+				(ut64)(size_t)siginfo.si_addr, siginfo.si_code, ret);
 		}
 		return true;
 	}

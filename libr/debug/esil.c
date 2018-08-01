@@ -242,7 +242,7 @@ R_API int r_debug_esil_stepi (RDebug *d) {
 		//	npc = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 	}
 
-	if (r_anal_op (dbg->anal, &op, opc, obuf, sizeof (obuf), R_ANAL_OP_MASK_ALL)) {
+	if (r_anal_op (dbg->anal, &op, opc, obuf, sizeof (obuf), R_ANAL_OP_MASK_ESIL)) {
 		if (esilbreak_check_pc (dbg, opc)) {
 			eprintf ("STOP AT 0x%08"PFMT64x"\n", opc);
 			ret = 0;

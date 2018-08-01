@@ -1,0 +1,44 @@
+FROM fedora:28
+
+MAINTAINER tbd
+
+WORKDIR /src
+
+RUN dnf install -y \
+	gcc \
+	gcc-c++ \
+	clang \
+	llvm \
+	make \
+	patch \
+	findutils \
+	which \
+	bison \
+	curl \
+	git \
+	binutils \
+	cabextract \
+	libasan \
+	libcurl-devel \
+	elfutils-libelf-devel \
+	elfutils-libelf-devel-static \
+	libdwarf-devel \
+	libdwarf-static \
+	jq \
+	pkgconf-pkg-config \
+	glib2 \
+	glib2-devel \
+	ncurses-devel \
+	capstone-devel \
+	libzip-devel \
+	file-devel \
+	lz4-devel \
+	gnupg2 \
+	python2-pip \
+	meson \
+	ninja-build \
+	xz
+
+RUN rm -rf /src/.nvm && git clone https://github.com/creationix/nvm.git /src/.nvm && (cd /src/.nvm && git checkout `git describe --abbrev=0 --tags`) && . /src/.nvm/nvm.sh && nvm install 8.11.3
+
+CMD []

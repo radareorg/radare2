@@ -3,6 +3,12 @@
 
 #include <r_list.h>
 
+#if __WINDOWS__ && !__CYGWIN__
+#define R_SYS_DEVNULL "nul"
+#else
+#define R_SYS_DEVNULL "/dev/null"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -72,10 +72,12 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 			eprintf ("Cannot find water marks\n");
 			len = 0;
 		} else {
-			len = (int)(size_t)(end-begin-9);
-			if (len>0) {
-				memcpy (op->buf, begin+9, len);
-			} else len = 0;
+			len = (int)(size_t)(end - begin - 9);
+			if (len > 0) {
+				memcpy (op->buf, begin + 9, len);
+			} else {
+				len = 0;
+			}
 		}
 	} else {
 		eprintf ("Error running: %s %s -o %s", as, ipath, opath);

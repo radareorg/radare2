@@ -4,6 +4,7 @@
 
 // maybe too big sometimes? 2KB of stack eaten here..
 #define R_STRING_SCAN_BUFFER_SIZE 2048
+#define R_STRING_MAX_UNI_BLOCKS 4
 
 static void print_string(RBinString *string, RBinFile *bf) {
 	if (!string || !bf) {
@@ -25,7 +26,7 @@ static void print_string(RBinString *string, RBinFile *bf) {
 	type_string = r_bin_string_type (string->type);
 	vaddr = addr = r_bin_get_vaddr (bin, string->paddr, string->vaddr);
 
-	switch(mode) {
+	switch (mode) {
 	case MODE_SIMPLE :
 		io->cb_printf ("0x%08" PFMT64x " %s\n", addr, string->string);
 		break;
@@ -79,6 +80,7 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 	int len = to - from;
 	ut8 *buf = calloc (len, 1);
 	if (!buf || !min) {
+		free (buf);
 		return -1;
 	}
 	r_buf_read_at (bf->buf, from, buf, len);
@@ -168,9 +170,9 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 		tmp[i++] = '\0';
 
 		if (runes >= min) {
+			// reduce false positives
+			int j, num_blocks, *block_list;
 			if (str_type == R_STRING_TYPE_ASCII) {
-				// reduce false positives
-				int j;
 				for (j = 0; j < i; j++) {
 					char ch = tmp[j];
 					if (ch != '\n' && ch != '\r' && ch != '\t') {
@@ -178,6 +180,22 @@ static int string_scan_range(RList *list, RBinFile *bf, int min,
 							continue;
 						}
 					}
+				}
+			}
+			switch (str_type) {
+			case R_STRING_TYPE_UTF8:
+			case R_STRING_TYPE_WIDE:
+			case R_STRING_TYPE_WIDE32:
+				num_blocks = 0;
+				block_list = r_utf_block_list ((const ut8*)tmp, i - 1);
+				if (block_list) {
+					for (j = 0; block_list[j] != -1; j++) {
+						num_blocks++;
+					}
+				}
+				free (block_list);
+				if (num_blocks > R_STRING_MAX_UNI_BLOCKS) {
+					continue;
 				}
 			}
 			RBinString *bs = R_NEW0 (RBinString);
@@ -418,7 +436,7 @@ int file_sz = 0;
 		}
 		if (!plugin) {
 			ut8 bytes[1024];
-			int sz = 1024;
+			int sz = sizeof (bytes);
 			r_buf_read_at (bf->buf, 0, bytes, sz);
 			plugin = r_bin_get_binplugin_by_bytes (bin, bytes, sz);
 			if (!plugin) {
@@ -838,7 +856,7 @@ R_API RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const c
 }
 
 #define LIMIT_SIZE 0
-R_API int r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz, bool steal_ptr) {
+R_API bool r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz, bool steal_ptr) {
 	if (!binfile) {
 		return false;
 	}
@@ -875,7 +893,7 @@ static int is_data_section(RBinFile *a, RBinSection *s) {
 	return strstr (s->name, "_const") != NULL;
 }
 
-R_API RList *r_bin_file_get_strings(RBinFile *a, int min, int dump) {
+R_API RList *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw) {
 	RListIter *iter;
 	RBinSection *section;
 	RBinObject *o = a? a->o: NULL;
@@ -890,10 +908,10 @@ R_API RList *r_bin_file_get_strings(RBinFile *a, int min, int dump) {
 			return NULL;
 		}
 	}
-	if (o && o->sections && !r_list_empty (o->sections) && !a->rawstr) {
+	if (!raw && o && o->sections && !r_list_empty (o->sections)) {
 		r_list_foreach (o->sections, iter, section) {
 			if (is_data_section (a, section)) {
-				r_bin_file_get_strings_range (a, ret, min, section->paddr,
+				r_bin_file_get_strings_range (a, ret, min, raw, section->paddr,
 						section->paddr + section->size);
 			}
 		}
@@ -908,6 +926,9 @@ R_API RList *r_bin_file_get_strings(RBinFile *a, int min, int dump) {
 				int i;
 // XXX do not walk if bin.strings == 0
 				ut8 *p;
+				if (section->size > a->size) {
+					continue;
+				}
 				for (i = 0; i < section->size; i += cfstr_size) {
 					ut8 buf[32];
 					if (!r_buf_read_at (
@@ -940,13 +961,13 @@ R_API RList *r_bin_file_get_strings(RBinFile *a, int min, int dump) {
 		}
 	} else {
 		if (a) {
-			r_bin_file_get_strings_range (a, ret, min, 0, a->size);
+			r_bin_file_get_strings_range (a, ret, min, raw, 0, a->size);
 		}
 	}
 	return ret;
 }
 
-R_API void r_bin_file_get_strings_range(RBinFile *bf, RList *list, int min, ut64 from, ut64 to) {
+R_API void r_bin_file_get_strings_range(RBinFile *bf, RList *list, int min, int raw, ut64 from, ut64 to) {
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 	RBinString *ptr;
 	RListIter *it;
@@ -954,7 +975,7 @@ R_API void r_bin_file_get_strings_range(RBinFile *bf, RList *list, int min, ut64
 	if (!bf || !bf->buf) {
 		return;
 	}
-	if (!bf->rawstr) {
+	if (!raw) {
 		if (!plugin || !plugin->info) {
 			return;
 		}
@@ -975,7 +996,7 @@ R_API void r_bin_file_get_strings_range(RBinFile *bf, RList *list, int min, ut64
 	if (!to) {
 		return;
 	}
-	if (bf->rawstr != 2) {
+	if (raw != 2) {
 		ut64 size = to - from;
 		// in case of dump ignore here
 		if (bf->rbin->maxstrbuf && size && size > bf->rbin->maxstrbuf) {

@@ -285,7 +285,7 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 	unsigned char UCLen = 0;
 	unsigned short USLen = 0;
 	int ILen = 0;
-	
+
 	// we copy from gdiff_start to a_off
 	if (offset_diff > 0) {
 
@@ -332,7 +332,7 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 		} else {
 			print_bytes (&gdiff_start, sizeof (gdiff_start), true);
 		}
-		
+
 		// print length for COPY
 		switch (opcode) {
 		case 249:
@@ -350,7 +350,7 @@ static int bcb(RDiff *d, void *user, RDiffOp *op) {
 			break;
 		}
 	}
-	
+
 	// we append data
 	if (op->b_len <= 246) {
 		ut8 data = op->b_len;
@@ -430,6 +430,9 @@ static void dump_cols(ut8 *a, int as, ut8 *b, int bs, int w) {
 	ut32 i, j;
 	int ctx = DUMP_CONTEXT;
 	int pad = 0;
+	if (!a || !b || as < 0 || bs < 0) {
+		return;
+	}
 	switch (w) {
 	case 8:
 		r_cons_printf ("  offset     0 1 2 3 4 5 6 7 01234567    0 1 2 3 4 5 6 7 01234567\n");
@@ -673,7 +676,7 @@ int main(int argc, char **argv) {
 	const char *addr = NULL;
 	RCore *c = NULL, *c2 = NULL;
 	RDiff *d;
-	ut8 *bufa, *bufb;
+	ut8 *bufa = NULL, *bufb = NULL;
 	int o, sza, szb, /*diffmode = 0,*/ delta = 0;
 	int mode = MODE_DIFF;
 	int diffops = 0;

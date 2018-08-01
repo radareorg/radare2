@@ -1,4 +1,4 @@
-/* libgdbr - LGPL - Copyright 2014-2017 - defragger */
+/* libgdbr - LGPL - Copyright 2014-2018 - defragger */
 
 #include "gdbclient/responses.h"
 #include "gdbclient/commands.h"
@@ -107,7 +107,7 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	// Initial max_packet_size for remote target (minimum so far for AVR = 64)
 	g->stub_features.pkt_sz = 64;
 	char *env_pktsz_str;
-	ut32 env_pktsz;
+	ut32 env_pktsz = 0;
 	if ((env_pktsz_str = r_sys_getenv ("R2_GDB_PKTSZ"))) {
 		if ((env_pktsz = (ut32) strtoul (env_pktsz_str, NULL, 10))) {
 			g->stub_features.pkt_sz = R_MAX (env_pktsz, GDB_MAX_PKTSZ);
@@ -965,7 +965,7 @@ int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 	return handle_cont (g);
 }
 
-int set_bp(libgdbr_t *g, ut64 address, const char *conditions, enum Breakpoint type) {
+int set_bp(libgdbr_t *g, ut64 address, const char *conditions, enum Breakpoint type, int sizebp) {
 	char tmp[255] = {0};
 	int ret = -1;
 	if (!g) {
@@ -974,11 +974,11 @@ int set_bp(libgdbr_t *g, ut64 address, const char *conditions, enum Breakpoint t
 	switch (type) {
 	case BREAKPOINT:
 		ret = snprintf (tmp, sizeof (tmp) - 1,
-			"%s,%"PFMT64x ",1", CMD_BP, address);
+			"%s,%"PFMT64x ",%d", CMD_BP, address, sizebp);
 		break;
 	case HARDWARE_BREAKPOINT:
 		ret = snprintf (tmp, sizeof (tmp) - 1,
-			"%s,%"PFMT64x ",1", CMD_HBP, address);
+			"%s,%"PFMT64x ",%d", CMD_HBP, address, sizebp);
 		break;
 	case WRITE_WATCHPOINT:
 		break;
@@ -1004,23 +1004,23 @@ int set_bp(libgdbr_t *g, ut64 address, const char *conditions, enum Breakpoint t
 	return 0;
 }
 
-int gdbr_set_bp(libgdbr_t *g, ut64 address, const char *conditions) {
-	return set_bp (g, address, conditions, BREAKPOINT);
+int gdbr_set_bp(libgdbr_t *g, ut64 address, const char *conditions, int sizebp) {
+	return set_bp (g, address, conditions, BREAKPOINT, sizebp);
 }
 
-int gdbr_set_hwbp(libgdbr_t *g, ut64 address, const char *conditions) {
-	return set_bp (g, address, conditions, HARDWARE_BREAKPOINT);
+int gdbr_set_hwbp(libgdbr_t *g, ut64 address, const char *conditions, int sizebp) {
+	return set_bp (g, address, conditions, HARDWARE_BREAKPOINT, sizebp);
 }
 
-int gdbr_remove_bp(libgdbr_t *g, ut64 address) {
-	return remove_bp (g, address, BREAKPOINT);
+int gdbr_remove_bp(libgdbr_t *g, ut64 address, int sizebp) {
+	return remove_bp (g, address, BREAKPOINT, sizebp);
 }
 
-int gdbr_remove_hwbp(libgdbr_t *g, ut64 address) {
-	return remove_bp (g, address, HARDWARE_BREAKPOINT);
+int gdbr_remove_hwbp(libgdbr_t *g, ut64 address, int sizebp) {
+	return remove_bp (g, address, HARDWARE_BREAKPOINT, sizebp);
 }
 
-int remove_bp(libgdbr_t *g, ut64 address, enum Breakpoint type) {
+int remove_bp(libgdbr_t *g, ut64 address, enum Breakpoint type, int sizebp) {
 	char tmp[255] = {0};
 	int ret = -1;
 	if (!g) {
@@ -1028,10 +1028,10 @@ int remove_bp(libgdbr_t *g, ut64 address, enum Breakpoint type) {
 	}
 	switch (type) {
 	case BREAKPOINT:
-		ret = snprintf (tmp, sizeof (tmp) - 1, "%s,%"PFMT64x ",1", CMD_RBP, address);
+		ret = snprintf (tmp, sizeof (tmp) - 1, "%s,%"PFMT64x ",%d", CMD_RBP, address, sizebp);
 		break;
 	case HARDWARE_BREAKPOINT:
-		ret = snprintf (tmp, sizeof (tmp) - 1, "%s,%"PFMT64x ",1", CMD_RHBP, address);
+		ret = snprintf (tmp, sizeof (tmp) - 1, "%s,%"PFMT64x ",%d", CMD_RHBP, address, sizebp);
 		break;
 	case WRITE_WATCHPOINT:
 		break;

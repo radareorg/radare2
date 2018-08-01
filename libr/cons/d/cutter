@@ -32,6 +32,7 @@ ec flow rgb:8d0
 ec flow2 rgb:8d0
 ec mov black
 ec invalid rgb:e33
+ec linehl rgb:efefef
 ec graph.box rgb:28d
 ec graph.box2 rgb:8d0
 ec graph.box3 rgb:e33
@@ -41,3 +42,13 @@ ec graph.false rgb:e33
 ec graph.trufae rgb:28d
 ec graph.current rgb:0ff
 ec graph.traced rgb:e33
+
+ec func_var rgb:d38
+ec func_var_type blue
+ec func_var_addr rgb:bbb
+
+ec ai.read rgb:18d
+ec ai.write rgb:28d
+ec ai.exec rgb:b80
+ec ai.seq rgb:d38
+ec ai.ascii black

@@ -34,7 +34,7 @@ Keys:
 static char *meta_inrange_get (RAnal *a, ut64 addr, int size) {
 	ut64 base = META_RANGE_BASE (addr);
 	ut64 base2 = META_RANGE_BASE (addr + size) + 1;
-	char * res = NULL;
+	char *res = NULL;
 	// return string array of all the offsets where there are stuff
 	for (; base < base2; base += META_RANGE_SIZE) {
 		const char *key = sdb_fmt ("range.0x%"PFMT64x, base);
@@ -232,10 +232,14 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size) {
 	if (type == R_META_TYPE_ANY) {
 		/* special case */
 		r_meta_del (a, R_META_TYPE_COMMENT, addr, size);
+		r_meta_del (a, R_META_TYPE_VARTYPE, addr, size);
+	}
+	if (type == R_META_TYPE_COMMENT || type == R_META_TYPE_VARTYPE) {
+		snprintf (key, sizeof (key)-1, "meta.%c.0x%"PFMT64x, type, addr);
+	} else {
+		snprintf (key, sizeof (key)-1, "meta.0x%"PFMT64x, addr);
 	}
 	meta_inrange_del (a, addr, size);
-	snprintf (key, sizeof (key)-1, type == R_META_TYPE_COMMENT ?
-		"meta.C.0x%"PFMT64x : "meta.0x%"PFMT64x, addr);
 	val = sdb_const_get (DB, key, 0);
 	if (val) {
 		if (type == R_META_TYPE_ANY) {

@@ -64,6 +64,29 @@ R_API void r_anal_op_free(void *_op) {
 	free (_op);
 }
 
+R_API RAnalVar *get_link_var(RAnal *anal, ut64 faddr, RAnalVar *var) {
+	const char *var_local = sdb_fmt ("var.0x%"PFMT64x".%d.%d.%s",
+			faddr, 1, var->delta, "reads");
+	const char *xss = sdb_const_get (anal->sdb_fcns, var_local, 0);
+	ut64 addr = r_num_math (NULL, xss);
+	char *inst_key = r_str_newf ("inst.0x%"PFMT64x".lvar", addr);
+	char *var_def = sdb_get (anal->sdb_fcns, inst_key, 0);
+
+	if (!var_def) {
+		free (inst_key);
+		return NULL;
+	}
+	struct VarUsedType vut;
+	RAnalVar *res = NULL;
+	if (sdb_fmt_tobin (var_def, SDB_VARUSED_FMT, &vut) == 4) {
+		res = r_anal_var_get (anal, vut.fcn_addr, vut.type[0], vut.scope, vut.delta);
+		sdb_fmt_free (&vut, SDB_VARUSED_FMT);
+	}
+	free (inst_key);
+	free (var_def);
+	return res;
+}
+
 static RAnalVar *get_used_var(RAnal *anal, RAnalOp *op) {
 	char *inst_key = r_str_newf ("inst.0x%"PFMT64x".vars", op->addr);
 	char *var_def = sdb_get (anal->sdb_fcns, inst_key, 0);
@@ -86,7 +109,6 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 
 	anal->decode = mask & R_ANAL_OP_MASK_ESIL ? true : false;
 	anal->fillval = mask & R_ANAL_OP_MASK_VAL ? true : false;
-
 	if (anal->pcalign) {
 		if (addr % anal->pcalign) {
 			memset (op, 0, sizeof (RAnalOp));
@@ -217,6 +239,50 @@ R_API int r_anal_op_execute(RAnal *anal, RAnalOp *op) {
 		}
 	}
 	return true;
+}
+
+R_API bool r_anal_op_nonlinear(int t) {
+	t &= R_ANAL_OP_TYPE_MASK;
+	switch (t) {
+	//call
+	case R_ANAL_OP_TYPE_CALL:
+	case R_ANAL_OP_TYPE_RCALL:
+	case R_ANAL_OP_TYPE_ICALL:
+	case R_ANAL_OP_TYPE_UCALL:
+	case R_ANAL_OP_TYPE_IRCALL:
+	case R_ANAL_OP_TYPE_UCCALL:
+	// jmp
+	case R_ANAL_OP_TYPE_JMP:
+	case R_ANAL_OP_TYPE_MJMP:
+	case R_ANAL_OP_TYPE_UJMP:
+	case R_ANAL_OP_TYPE_CJMP:
+	case R_ANAL_OP_TYPE_UCJMP:
+	case R_ANAL_OP_TYPE_RJMP:
+	case R_ANAL_OP_TYPE_IJMP:
+	case R_ANAL_OP_TYPE_IRJMP:
+	// trap| ill| unk
+	case R_ANAL_OP_TYPE_TRAP:
+	case R_ANAL_OP_TYPE_ILL:
+	case R_ANAL_OP_TYPE_UNK:
+	case R_ANAL_OP_TYPE_SWI:
+		return true;
+	default:
+		return false;
+	}
+}
+
+R_API bool r_anal_op_ismemref(int t) {
+	t &= R_ANAL_OP_TYPE_MASK;
+	switch (t) {
+	case R_ANAL_OP_TYPE_LOAD:
+	case R_ANAL_OP_TYPE_MOV:
+	case R_ANAL_OP_TYPE_STORE:
+	case R_ANAL_OP_TYPE_LEA:
+	case R_ANAL_OP_TYPE_CMP:
+		return true;
+	default:
+		return false;
+	}
 }
 
 R_API const char *r_anal_optype_to_string(int t) {

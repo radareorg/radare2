@@ -17,55 +17,30 @@
 #endif
 
 static char *r_line_nullstr = "";
-static const char dl_basic_word_break_characters[] =  " \t\n\"\\'`@$><=;|&{(";
-
-#define ONLY_VALID_CHARS 1
-
-#if ONLY_VALID_CHARS
-static inline int is_valid_char(unsigned char ch) {
-	if (ch >= 32 && ch <= 127) {
-		return true;
-	}
-	switch (ch) {
-	// case 0: // wat
-	case 1:	// ^a
-	case 2:	// ^b -> emacs left
-	case 4:	// ^d
-	case 5:	// ^e
-	case 6:	// ^f -> emacs right
-	case 8:	// backspace
-	case 9:	// tab
-	case 10:// newline
-	case 13:// carriage return
-	case 23:// ^w
-	case 27:// arrow
-		return true;
-	}
-	return false;
-}
-#endif
+static const char word_break_characters[] = "\t\n ~`!@#$%^&*()-_=+[]{}\\|;:\"'<>,./";
 
 static inline bool is_word_break_char(char ch) {
 	int i;
 	int len =
-		sizeof (dl_basic_word_break_characters) /
-		sizeof (dl_basic_word_break_characters[0]);
+		sizeof (word_break_characters) /
+		sizeof (word_break_characters[0]);
 	for (i = 0; i < len; ++i) {
-		if (ch == dl_basic_word_break_characters[i]) {
+		if (ch == word_break_characters[i]) {
 			return true;
 		}
 	}
 	return false;
 }
 
-static void unix_word_rubout() {
-	int i;
+/* https://www.gnu.org/software/bash/manual/html_node/Commands-For-Killing.html */
+static void backward_kill_word() {
+	int i, len;
 	if (I.buffer.index > 0) {
 		for (i = I.buffer.index - 1; i > 0 && is_word_break_char (I.buffer.data[i]); i--) {
-			/*nothing to see here*/
+			/* Move the cursor index back until we hit a non-word-break-character */
 		}
-		for (; i && !is_word_break_char (I.buffer.data[i]); i--) {
-			/*nothing to see here*/
+		for (; i > 0 && !is_word_break_char (I.buffer.data[i]); i--) {
+			/* Move the cursor index back until we hit a word-break-character */
 		}
 		if (i > 0) {
 			i++;
@@ -75,8 +50,68 @@ static void unix_word_rubout() {
 		if (I.buffer.index > I.buffer.length) {
 			I.buffer.length = I.buffer.index;
 		}
+		len = I.buffer.index - i + 1;
+		free (I.clipboard);
+		I.clipboard = r_str_ndup (I.buffer.data + i, len);
 		memmove (I.buffer.data + i, I.buffer.data + I.buffer.index,
 				I.buffer.length - I.buffer.index + 1);
+		I.buffer.length = strlen (I.buffer.data);
+		I.buffer.index = i;
+	}
+}
+
+static void kill_word() {
+	int i, len;
+	for (i = I.buffer.index + 1; i < I.buffer.length && is_word_break_char (I.buffer.data[i]); i++) {
+		/* Move the cursor index forward until we hit a non-word-break-character */
+	}
+	for (; i < I.buffer.length && !is_word_break_char (I.buffer.data[i]); i++) {
+		/* Move the cursor index forward we hit a word-break-character */
+	}
+	if (I.buffer.index >= I.buffer.length) {
+		I.buffer.length = I.buffer.index;
+	}
+	len = i - I.buffer.index + 1;
+	free (I.clipboard);
+	I.clipboard = r_str_ndup (I.buffer.data + I.buffer.index, len);
+	memmove (I.buffer.data + I.buffer.index, I.buffer.data + i, len);
+	I.buffer.length = strlen (I.buffer.data);
+}
+
+static void paste() {
+	if (I.clipboard) {
+		char *cursor = I.buffer.data + I.buffer.index;
+		int dist = (I.buffer.data + I.buffer.length) - cursor;
+		int len = strlen (I.clipboard);
+		I.buffer.length += len;
+		memmove (cursor + len, cursor, dist);
+		memcpy (cursor, I.clipboard, len);
+		I.buffer.index += len;
+	}
+}
+
+static void unix_word_rubout() {
+	int i;
+	if (I.buffer.index > 0) {
+		for (i = I.buffer.index - 1; i > 0 && I.buffer.data[i] == ' '; i--) {
+			/* Move cursor backwards until we hit a non-space character or EOL */
+			/* This removes any trailing spaces from the input */
+		}
+		for (; i > 0 && I.buffer.data[i] != ' '; i--) {
+			/* Move cursor backwards until we hit a space character or EOL */
+			/* This deletes everything back to the previous space character */
+		}
+		if (i > 0) {
+			i++;
+		} else if (i < 0) {
+			i = 0;
+		}
+		if (I.buffer.index > I.buffer.length) {
+			I.buffer.length = I.buffer.index;
+		}
+		memmove (I.buffer.data + i,
+			I.buffer.data + I.buffer.index,
+			I.buffer.length - I.buffer.index + 1);
 		I.buffer.length = strlen (I.buffer.data);
 		I.buffer.index = i;
 	}
@@ -153,126 +188,62 @@ static int r_line_readchar_utf8(ut8 *s, int slen) {
 
 #if __WINDOWS__ && !__CYGWIN__
 static int r_line_readchar_win(int *vch) { // this function handle the input in console mode
-	INPUT_RECORD irInBuf[128];
+	INPUT_RECORD irInBuf;
 	BOOL ret, bCtrl = FALSE;
 	DWORD mode, out;
 	ut8 buf[2];
 	HANDLE h;
 	int i;
+	void *bed;
 
 	if (I.zerosep) {
 		*vch = 0;
 		buf[0] = 0;
-		if (read (0, buf, 1) != 1)
+		bed = r_cons_sleep_begin ();
+		int rsz = read (0, buf, 1);
+		r_cons_sleep_end (bed);
+		if (rsz != 1)
 			return -1;
 		return buf[0];
 	}
 
 	*buf = '\0';
-do_it_again:
+
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, 0);	// RAW
+do_it_again:
 	*vch = 0;
-	ret = ReadConsoleInput (h, irInBuf, 128, &out);
+	bed = r_cons_sleep_begin ();
+	ret = ReadConsoleInput (h, &irInBuf, 1, &out);
+	r_cons_sleep_end (bed);
 	if (ret < 1) {
 		return 0;
 	}
-	for (i = 0; i < out; i++) {
-		if (irInBuf[i].EventType != KEY_EVENT) {
-			continue;
-		}
-		if (!irInBuf[i].Event.KeyEvent.bKeyDown) {
-			continue;
-		}
-		*buf = irInBuf[i].Event.KeyEvent.uChar.AsciiChar;
-		bCtrl = irInBuf[i].Event.KeyEvent.dwControlKeyState & 8;
-		if (irInBuf[i].Event.KeyEvent.uChar.AsciiChar) {
-			continue;
-		}
-		switch (irInBuf[i].Event.KeyEvent.wVirtualKeyCode) {
-		case VK_DOWN: *vch = bCtrl? 140: 40; break;
-		case VK_UP: *vch = bCtrl? 138: 38; break;
-		case VK_RIGHT: *vch = bCtrl? 139: 39; break;
-		case VK_LEFT: *vch = bCtrl? 137: 37; break;
-		case 46: *vch = bCtrl? 146: 46; break;	// SUPR KEY
-		case VK_PRIOR: *vch = bCtrl? 136: 36; break;	// HOME KEY
-		case VK_NEXT: *vch = bCtrl? 135: 35; break;	// END KEY
-		default: *vch = *buf = 0; break;
+	if (irInBuf.EventType == KEY_EVENT) {
+		if (irInBuf.Event.KeyEvent.bKeyDown) {
+			if (irInBuf.Event.KeyEvent.uChar.AsciiChar) {
+				*buf = irInBuf.Event.KeyEvent.uChar.AsciiChar;
+				bCtrl = irInBuf.Event.KeyEvent.dwControlKeyState & 8;
+			}
+			else {
+				switch (irInBuf.Event.KeyEvent.wVirtualKeyCode) {
+				case VK_DOWN: *vch = bCtrl ? 140 : 40; break;
+				case VK_UP: *vch = bCtrl ? 138 : 38; break;
+				case VK_RIGHT: *vch = bCtrl ? 139 : 39; break;
+				case VK_LEFT: *vch = bCtrl ? 137 : 37; break;
+				case VK_DELETE: *vch = bCtrl ? 146 : 46; break;	// SUPR KEY
+				case VK_HOME: *vch = bCtrl ? 136 : 36; break;	// HOME KEY
+				case VK_END: *vch = bCtrl ? 135 : 35; break;	// END KEY
+				default: *vch = *buf = 0; break;
+				}
+			}
 		}
 	}
-	SetConsoleMode (h, mode);
 	if (buf[0] == 0 && *vch == 0) {
 		goto do_it_again;
 	}
-	return buf[0];
-}
-#endif
-
-#if 0
-// TODO use define here to hac
-static int r_line_readchar() {
-	ut8 buf[2];
-	*buf = '\0';
-#if __WINDOWS__ && !__CYGWIN__
-#if 1		// new implementation for read input at windows by skuater. If something fail set this to 0
-	int dummy = 0;
-	return r_line_readchar_win (&dummy);
-#endif
-	BOOL ret;
-	DWORD mode, out;
-	HANDLE h;
-#else
-	int ret;
-#endif
-
-do_it_again:
-#if __WINDOWS__ && !__CYGWIN__
-	h = GetStdHandle (STD_INPUT_HANDLE);
-	GetConsoleMode (h, &mode);
-	SetConsoleMode (h, 0);	// RAW
-	ret = ReadConsole (h, buf, 1, &out, NULL);
-	// wine hack-around
-	if (!ret && read (0, buf, 1) != 1) {
-		return -1;
-	}
 	SetConsoleMode (h, mode);
-#else
-	do {
-		buf[0] = 0;
-		ret = read (0, buf, 1);
-		buf[0] = r_cons_controlz (buf[0]);
-		// VTE HOME/END support
-		if (buf[0] == 79) {
-			if (read (0, buf, 1) != 1) {
-				return -1;
-			}
-			if (buf[0] == 70) {
-				return 5;
-			}
-			if (buf[0] == 72) {
-				return 1;
-			}
-			return 0;
-		}
-		if (ret == -1) {
-			return 0;	// read no char
-		}
-		if (!buf[0] || !ret) {
-			return -1;	// eof
-		}
-		// TODO: add support for other invalid chars
-		if (*buf == 0xc2 || *buf == 0xc3) {
-			read (0, buf + 1, 1);
-			*buf = '\0';
-		}
-	} while (*buf == '\0');
-#endif
-#if ONLY_VALID_CHARS
-	if (!is_valid_char (buf[0])) {
-		goto do_it_again;
-	}
-#endif
 	return buf[0];
 }
 #endif
@@ -280,7 +251,9 @@ do_it_again:
 R_API int r_line_set_hist_callback(RLine *line, RLineHistoryUpCb up, RLineHistoryDownCb down) {
 	line->cb_history_up = up;
 	line->cb_history_down = down;
-	line->offset_index = 0;
+	line->offset_hist_index = 0;
+	line->file_hist_index = 0;
+	line->sdbshell_hist_iter = line->sdbshell_hist? r_list_head (line->sdbshell_hist): NULL;
 	return 1;
 }
 
@@ -370,6 +343,7 @@ R_API const char *r_line_hist_get(int n) {
 	if (!I.history.data) {
 		inithist ();
 	}
+	n--;
 	if (I.history.data) {
 		for (i = 0; i < I.history.size && I.history.data[i]; i++) {
 			if (n == i) {
@@ -403,6 +377,7 @@ R_API void r_line_hist_free() {
 		}
 	}
 	R_FREE (I.history.data);
+	R_FREE (I.sdbshell_hist);
 	I.history.index = 0;
 }
 
@@ -437,7 +412,10 @@ R_API int r_line_hist_save(const char *file) {
 		p = (char *) r_str_lastbut (path, R_SYS_DIR[0], NULL);	// TODO: use fs
 		if (p) {
 			*p = 0;
-			r_sys_mkdirp (path);
+			if (!r_sys_mkdirp (path)) {
+				eprintf ("could not save history into %s\n", path);
+				goto end;
+			}
 			*p = R_SYS_DIR[0];
 		}
 		fd = fopen (path, "w");
@@ -454,6 +432,7 @@ R_API int r_line_hist_save(const char *file) {
 			}
 		}
 	}
+end:
 	free (path);
 	return ret;
 }
@@ -849,16 +828,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 		case 24:// ^X -- do nothing but store in prev = *buf
 			break;
 		case 25:// ^Y - paste
-			if (I.clipboard != NULL) {
-				I.buffer.length += strlen (I.clipboard);
-				// TODO: support endless strings
-				if (I.buffer.length < R_LINE_BUFSIZE) {
-					I.buffer.index = I.buffer.length;
-					strcat (I.buffer.data, I.clipboard);
-				} else {
-					I.buffer.length -= strlen (I.clipboard);
-				}
-			}
+			paste ();
 			break;
 		case 14:// ^n
 			if (gcomp) {
@@ -1217,47 +1187,13 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			I.buffer.length = 0;
 			I.buffer.index = 0;
 			break;
-		case 23:// ^W ^w
-			if (I.buffer.index > 0) {
-				for (i = I.buffer.index - 1; i > 0 && I.buffer.data[i] == ' '; i--) {
-					/*nothing to see here*/
-				}
-				for (; i && I.buffer.data[i] != ' '; i--) {
-					/*nothing to see here*/
-				}
-				if (!i) {
-					for (; i > 0 && I.buffer.data[i] == ' '; i--) {
-						/*nothing to see here*/
-					}
-				}
-				if (i > 0) {
-					i++;
-				} else if (i < 0) {
-					i = 0;
-				}
-				if (I.buffer.index > I.buffer.length) {
-					I.buffer.length = I.buffer.index;
-				}
-				memmove (I.buffer.data + i,
-					I.buffer.data + I.buffer.index,
-					I.buffer.length - I.buffer.index + 1);
-				I.buffer.length = strlen (I.buffer.data);
-				I.buffer.index = i;
-			}
+		case 23:// ^W ^w unix-word-rubout
+			unix_word_rubout ();
 			break;
 		case 24:// ^X -- do nothing but store in prev = *buf
 			break;
 		case 25:// ^Y - paste
-			if (I.clipboard != NULL) {
-				I.buffer.length += strlen (I.clipboard);
-				// TODO: support endless strings
-				if (I.buffer.length < R_LINE_BUFSIZE) {
-					I.buffer.index = I.buffer.length;
-					strcat (I.buffer.data, I.clipboard);
-				} else {
-					I.buffer.length -= strlen (I.clipboard);
-				}
-			}
+			paste ();
 			break;
 		case 14:// ^n
 			if (gcomp) {
@@ -1275,11 +1211,11 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				r_line_hist_up ();
 			}
 			break;
-		case 27:// esc-5b-41-00-00
+		case 27: // esc-5b-41-00-00 alt/meta key
 			buf[0] = r_cons_readchar ();
 			switch (buf[0]) {
 			case 127: // alt+bkspace
-				unix_word_rubout ();
+				backward_kill_word ();
 				break;
 			case -1:
 				r_cons_break_pop ();
@@ -1294,7 +1230,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			case 'b':
 				// previous word
 				for (i = I.buffer.index - 2; i >= 0; i--) {
-					if (I.buffer.data[i] == ' ' && I.buffer.data[i + 1] != ' ') {
+					if (is_word_break_char (I.buffer.data[i]) && !is_word_break_char (I.buffer.data[i + 1])) {
 						I.buffer.index = i + 1;
 						break;
 					}
@@ -1303,11 +1239,15 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 					I.buffer.index = 0;
 				}
 				break;
+			case 'D':
+			case 'd':
+				kill_word ();
+				break;
 			case 'F':
 			case 'f':
 				// next word
 				for (i = I.buffer.index + 1; i < I.buffer.length; i++) {
-					if (I.buffer.data[i] != ' ' && I.buffer.data[i - 1] == ' ') {
+					if (!is_word_break_char (I.buffer.data[i]) && is_word_break_char (I.buffer.data[i - 1])) {
 						I.buffer.index = i;
 						break;
 					}

@@ -75,6 +75,8 @@ export LDFLAGS="-L${R2PM_HOMEPREFIX}/lib"
 export R2PM_PYPATH="${R2PM_PREFIX}/python"
 export R2PM_OLDPWD="${PWD}"
 
+export RHOMEDIR="`r2 -H RHOMEDIR`"
+
 if [ "`uname`" = Darwin ]; then
 	export LD_LIBRARY_PATH="${R2PM_HOMEPREFIX}/lib"
 else
@@ -145,10 +147,11 @@ commitSuicide() {
 		exit 1
 	fi
 	countDown "Self destroying in" 3
-	confirm "> Delete ~/config.radare2" && (
-		rm -rf ~/.config/radare2
+	confirm "> Delete $RHOMEDIR" && (
+		rm -rf "$RHOMEDIR"
 	)
-	R2PATHS="${PREFIX} /usr /usr/local /opt/radare2 ~/config/radare2/prefix /"
+	R2PATHS="${PREFIX}:/usr:/usr/local:/opt/radare2:${RHOMEDIR}/prefix:/"
+	IFS=:
 	for a in $R2PATHS ; do
 		if [ -x "${a}/bin/radare2" ]; then
 			confirm "> Delete r2 from ${a}" && (
@@ -156,12 +159,14 @@ commitSuicide() {
 			)
 		fi
 	done
+	unset IFS
 }
 
 case "$1" in
 init|up|update)
 	[ -z "$R2PM_DBDIR" ] && R2PM_DBDIR="${R2PM_USRDIR}/db"
 	mkdir -p "${R2PM_GITDIR}"
+	mkdir -p "${HOME}/.config"
 	cd "${R2PM_GITDIR}"
 	if [ -d radare2-pm ]; then
 		cd radare2-pm

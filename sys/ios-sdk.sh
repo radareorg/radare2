@@ -20,8 +20,10 @@ export CC=`pwd`/sys/ios-sdk-gcc
 export LD="xcrun --sdk iphoneos ld"
 export IOSVER=9.0
 export IOSINC=`pwd`/sys/ios-include
-export USE_IOS_STORE=1
 export USE_IOS_STATIC=0
+
+PLUGINS_CFG=plugins.ios-store.cfg
+#PLUGINS_CFG=plugins.ios.cfg
 
 if [ "${EMBED_BITCODE}" = 1 ]; then
 	export CFLAGS="$CFLAGS -fembed-bitcode"
@@ -29,14 +31,9 @@ if [ "${EMBED_BITCODE}" = 1 ]; then
 fi
 
 iosConfigure() {
-	if [ "${USE_IOS_STORE}" = 1 ]; then
-		cp -f plugins.ios-store.cfg plugins.cfg
-	else
-		cp -f plugins.ios.cfg plugins.cfg
-	fi
-	./configure --enable-merged --prefix=${PREFIX} --with-ostype=darwin \
-	  --without-pic --with-nonpic --without-fork \
-	  --with-compiler=ios-sdk --target=arm-unknown-darwin
+	cp -f ${PLUGINS_CFG} plugins.cfg
+	./configure --with-libr --prefix=${PREFIX} --with-ostype=darwin \
+		--without-fork --with-compiler=ios-sdk --target=arm-unknown-darwin
 	return $?
 }
 
@@ -121,7 +118,7 @@ showHelp() {
 
 	echo "Examples:"
 	echo "    sys/ios-sdk.sh -archs arm64"
-	echo "    sys/ios-sdk.sh -archs armv7+arm64 -simulator"
+	echo "    sys/ios-sdk.sh -archs armv7s+arm64 -simulator"
 	echo "    sys/ios-sdk.sh -archs all -simulator"
 
 	echo "You can also modify some variables in sys/ios-sdk.sh."
@@ -140,7 +137,7 @@ while test $# -gt 0; do
 	case "$1" in 
 		-full|--full|-f)
 			shift
-			ARCHS="armv7+armv7s+arm64"
+			ARCHS="armv7s+arm64"
 			USE_SIMULATOR=1
 			;;
 		-shell|--shell|-s)
@@ -190,7 +187,7 @@ if [ "${DOSH}" = 1 ]; then
 		export CPU="$SIMULATOR_ARCHS"
 		export SDK=iphonesimulator
 	else
-		[ -z "$ARCHS" ] && ARCHS="armv7+armv7s+arm64"
+		[ -z "$ARCHS" ] && ARCHS="armv7s+arm64"
 		export CPU="$ARCHS"
 		export SDK=iphoneos
 	fi
@@ -200,6 +197,7 @@ EXTRA=""
 for a in `IFS=+ echo ${CPU}` ; do
         CPUS="-arch $a ${CPUS}"
 done
+export CPUS="${CPUS}"
 export ALFLAGS="${CPUS}"
 export LDFLAGS="${LDFLAGS} ${CPUS}"
 	export PS1="[ios-sdk-$CPU]> "

@@ -286,12 +286,15 @@ do_it_again:
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, 0 | ENABLE_MOUSE_INPUT); // RAW
+	void *bed = r_cons_sleep_begin ();
 	if (usec) {
 		if (WaitForSingleObject (h, usec) == WAIT_TIMEOUT) {
+			r_cons_sleep_end (bed);
 			return -1;
 		}
 	}
 	ret = ReadConsoleInput (h, irInBuf, 128, &out);
+	r_cons_sleep_end (bed);
 	if (ret) {
 		for (i = 0; i < out; i++) {
 			if (irInBuf[i].EventType==MOUSE_EVENT) {
@@ -451,6 +454,7 @@ R_API void r_cons_switchbuf(bool active) {
 }
 
 R_API int r_cons_readchar() {
+	void *bed;
 	char buf[2];
 	buf[0] = -1;
 	if (readbuffer_length > 0) {
@@ -469,7 +473,9 @@ R_API int r_cons_readchar() {
 	HANDLE h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &mode);
 	SetConsoleMode (h, 0); // RAW
+	bed = r_cons_sleep_begin ();
 	ret = ReadConsole (h, buf, 1, &out, NULL);
+	r_cons_sleep_end (bed);
 	FlushConsoleInputBuffer (h);
 	if (!ret) {
 		return -1;
@@ -477,7 +483,10 @@ R_API int r_cons_readchar() {
 	SetConsoleMode (h, mode);
 #else
 	r_cons_set_raw (1);
-	if (read (0, buf, 1) == -1) {
+	bed = r_cons_sleep_begin ();
+	ssize_t ret = read (0, buf, 1);
+	r_cons_sleep_end (bed);
+	if (ret != 1) {
 		return -1;
 	}
 	if (bufactive) {

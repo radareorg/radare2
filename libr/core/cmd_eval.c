@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2017 - pancake */
+/* radare2 - LGPL - Copyright 2009-2018 - pancake */
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -227,7 +227,6 @@ done:
 }
 
 static int cmd_eval(void *data, const char *input) {
-	char *p;
 	RCore *core = (RCore *)data;
 	switch (input[0]) {
 	case '\0': // "e"
@@ -350,11 +349,13 @@ static int cmd_eval(void *data, const char *input) {
 		case 's': r_cons_pal_show (); break; // "ecs"
 		case '*': r_cons_pal_list (1, NULL); break; // "ec*"
 		case 'h': // echo
-			if (( p = strchr (input, ' ') )) {
-				r_cons_strcat (p+1);
-				r_cons_newline ();
+			if (input[2] == 'o') {
+				char *p = strchr (input, ' ');
+				if (p) {
+					r_cons_strcat (p + 1);
+					r_cons_newline ();
+				}
 			} else {
-				// "ech"
 				r_cons_pal_list ('h', NULL);
 			}
 			break;
@@ -430,7 +431,7 @@ static int cmd_eval(void *data, const char *input) {
 				return true;
 			}
 			char *str = r_meta_get_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset);
-			char *dup = r_str_newf ("%s \"%s%s\"", str?str:"", word?word:"", color_code?color_code:r_cons_singleton ()->pal.highlight);
+			char *dup = r_str_newf ("%s \"%s%s\"", str?str:"", word?word:"", color_code?color_code:r_cons_singleton ()->pal.wordhl);
 			r_meta_set_string (core->anal, R_META_TYPE_HIGHLIGHT, core->offset, dup);
 			r_str_argv_free (argv);
 			R_FREE (word);

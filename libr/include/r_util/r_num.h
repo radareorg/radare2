@@ -49,6 +49,9 @@ typedef struct r_num_t {
 typedef ut64 (*RNumCallback)(struct r_num_t *self, const char *str, int *ok);
 typedef const char *(*RNumCallback2)(struct r_num_t *self, ut64, int *ok);
 
+void r_srand(int seed);
+int r_rand(int mod);
+
 R_API RNum *r_num_new(RNumCallback cb, RNumCallback2 cb2, void *ptr);
 R_API void r_num_free(RNum *num);
 R_API char *r_num_units(char *buf, ut64 num);
@@ -77,6 +80,7 @@ R_API bool r_num_is_op(const char c);
 R_API int r_num_str_len(const char *str);
 R_API int r_num_str_split(char *str);
 R_API RList *r_num_str_split_list(char *str);
+R_API void *r_num_dup(ut64 n);
 
 #ifdef __cplusplus
 }

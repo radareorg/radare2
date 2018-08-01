@@ -1,7 +1,3 @@
-# 'big-gmp.c',
-# 'big-ssl.c',
-# 'mixed.c',
-# 'iconv.c',
 
 files = [
   'ascii_table.c',
@@ -62,8 +58,9 @@ files = [
   'sys.c',
   'syscmd.c',
   'thread.c',
+  'thread_sem.c',
   'thread_lock.c',
-  'thread_msg.c',
+  'thread_cond.c',
   'thread_pipe.c',
   'tinyrange.c',
   'tree.c',
@@ -84,18 +81,15 @@ files = [
 ]
 
 r_util = library('r_util', files,
-  include_directories: [
-    platform_inc,
-    include_directories(
-      '../../shlr/zip/include'
-    )
-  ],
-  dependencies: [ldl, mth, pth, utl],
-  link_with: [libr_shlr],
+  include_directories: platform_inc,
+  dependencies: [ldl, mth, pth, utl, sdb_dep, zlib_dep],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
 )
+
+r_util_dep = declare_dependency(link_with: r_util,
+                                include_directories: platform_inc)
 
 pkgconfig_mod.generate(
   libraries: [r_util],

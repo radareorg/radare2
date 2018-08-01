@@ -6,11 +6,11 @@
 #define _R_LIST_C_
 #include "r_util.h"
 
-inline RListIter *r_list_iter_new () {
+inline RListIter *r_list_iter_new() {
 	return calloc (1, sizeof (RListIter));
 }
 
-void r_list_iter_free (RListIter *list) {
+void r_list_iter_free(RListIter *list) {
 	/* do nothing? */
 }
 
@@ -594,11 +594,11 @@ int main () {
 
 	{
 		char *str;
-		r_list_foreach(l, iter, str) {
+		r_list_foreach (l, iter, str) {
 			printf("-- %s\n", str);
 		}
 		printf("--**--\n");
-		r_list_foreach_prev(l, iter, str) {
+		r_list_foreach_prev (l, iter, str) {
 			printf("-- %s\n", str);
 		}
 	}

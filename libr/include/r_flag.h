@@ -52,6 +52,7 @@ typedef struct r_flag_t {
 	st64 base;         /* base address for all flag items */
 	int space_idx;     /* index of the selected space in spaces array */
 	bool space_strict; /* when true returned flag items must belong to the selected space */
+	bool realnames;
 	char *spaces[R_FLAG_SPACES_MAX]; /* array of flag spaces */
 	Sdb *tags;
 	RNum *num;

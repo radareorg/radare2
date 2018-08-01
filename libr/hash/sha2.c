@@ -286,7 +286,7 @@ void SHA256_Init(R_SHA256_CTX *context) {
 		return;
 	}
 	memcpy (context->state, sha256_initial_hash_value, SHA256_DIGEST_LENGTH);
-	memset (context->buffer, 0, SHA256_BLOCK_LENGTH);
+	r_mem_memzero (context->buffer, SHA256_BLOCK_LENGTH);
 	context->bitcount = 0;
 }
 
@@ -578,7 +578,7 @@ void SHA256_Final(ut8 digest[], R_SHA256_CTX *context) {
 	}
 
 	/* Clean up state data: */
-	memset (context, 0, sizeof(*context));
+	r_mem_memzero (context, sizeof(*context));
 	usedspace = 0;
 }
 
@@ -600,9 +600,9 @@ char *SHA256_End(R_SHA256_CTX *context, char buffer[]) {
 		}
 		*buffer = (char) 0;
 	} else {
-		memset (context, 0, sizeof(*context));
+		r_mem_memzero (context, sizeof(*context));
 	}
-	memset (digest, 0, SHA256_DIGEST_LENGTH);
+	r_mem_memzero (digest, SHA256_DIGEST_LENGTH);
 	return buffer;
 }
 
@@ -621,7 +621,7 @@ void SHA512_Init(R_SHA512_CTX *context) {
 		return;
 	}
 	memcpy (context->state, sha512_initial_hash_value, SHA512_DIGEST_LENGTH);
-	memset (context->buffer, 0, SHA512_BLOCK_LENGTH);
+	r_mem_memzero (context->buffer, SHA512_BLOCK_LENGTH);
 	context->bitcount[0] = context->bitcount[1] = 0;
 }
 
@@ -922,7 +922,7 @@ void SHA512_Final(ut8 digest[], R_SHA512_CTX *context) {
 	}
 
 	/* Zero out state data */
-	memset (context, 0, sizeof(*context));
+	r_mem_memzero (context, sizeof(*context));
 }
 
 char *SHA512_End(R_SHA512_CTX *context, char buffer[]) {
@@ -944,9 +944,9 @@ char *SHA512_End(R_SHA512_CTX *context, char buffer[]) {
 		}
 		*buffer = (char) 0;
 	} else {
-		memset (context, 0, sizeof(*context));
+		r_mem_memzero (context, sizeof(*context));
 	}
-	memset (digest, 0, SHA512_DIGEST_LENGTH);
+	r_mem_memzero (digest, SHA512_DIGEST_LENGTH);
 	return buffer;
 }
 

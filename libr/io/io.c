@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2008-2017 - condret, pancake, alvaro_fe */
+/* radare2 - LGPL - Copyright 2008-2018 - condret, pancake, alvaro_fe */
 
 #include <r_io.h>
 #include <sdb.h>
@@ -59,30 +59,30 @@ typedef int (*cbOnIterMap)(RIO *io, int fd, ut64 addr, ut8 *buf, int len, RIOMap
 // If prefix_mode is true, returns the number of bytes of operated prefix; returns < 0 on error.
 // If prefix_mode is false, operates in non-stop mode and returns true iff all IO operations on overlapped maps are complete.
 static st64 on_map_skyline(RIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg, cbOnIterMap op, bool prefix_mode) {
-	const RVector *skyline = &io->map_skyline;
+	const RPVector *skyline = &io->map_skyline;
 	ut64 addr = vaddr;
-	int i;
+	size_t i;
 	bool ret = true, wrap = !prefix_mode && vaddr + len < vaddr;
 #define CMP(addr, part) (addr < r_itv_end (((RIOMapSkyline *)part)->itv) - 1 ? -1 : \
 			addr > r_itv_end (((RIOMapSkyline *)part)->itv) - 1 ? 1 : 0)
 	// Let i be the first skyline part whose right endpoint > addr
 	if (!len) {
-		i = skyline->len;
+		i = r_pvector_len (skyline);
 	} else {
-		r_vector_lower_bound (skyline, addr, i, CMP);
-		if (i == skyline->len && wrap) {
+		r_pvector_lower_bound (skyline, addr, i, CMP);
+		if (i == r_pvector_len (skyline) && wrap) {
 			wrap = false;
 			i = 0;
 			addr = 0;
 		}
 	}
 #undef CMP
-	while (i < skyline->len) {
-		const RIOMapSkyline *part = skyline->a[i];
+	while (i < r_pvector_len (skyline)) {
+		const RIOMapSkyline *part = r_pvector_at (skyline, i);
 		// Right endpoint <= addr
 		if (r_itv_end (part->itv) - 1 < addr) {
 			i++;
-			if (wrap && i == skyline->len) {
+			if (wrap && i == r_pvector_len (skyline)) {
 				wrap = false;
 				i = 0;
 				addr = 0;
@@ -208,6 +208,7 @@ R_API RIO* r_io_init(RIO* io) {
 	}
 	io->addrbytes = 1;
 	r_io_desc_init (io);
+	r_pvector_init (&io->map_skyline, free);
 	r_io_map_init (io);
 	r_io_section_init (io);
 	r_io_cache_init (io);

@@ -49,7 +49,35 @@ R_API int r_str_ncasecmp(const char *s1, const char *s2, size_t n) {
 #endif
 }
 
+// GOOD
 // In-place replace the first instance of the character a, with the character b.
+R_API int r_str_replace_ch(char *s, char a, char b, bool global) {
+	int ret = 0;
+	char *o = s;
+	if (!s || a == b) {
+		return 0;
+	}
+	for (; *o; s++, o++) {
+		if (*o == a) {
+			ret++;
+			if (b) {
+				*s = b;
+			} else {
+				/* remove char */
+				s--;
+			}
+			if (!global) {
+				return 1;
+			}
+		} else {
+			*s = *o;
+		}
+	}
+	*s = 0;
+	return ret;
+}
+
+// DEPRECATED
 R_API int r_str_replace_char_once(char *s, int a, int b) {
 	int ret = 0;
 	char *o = s;
@@ -70,8 +98,7 @@ R_API int r_str_replace_char_once(char *s, int a, int b) {
 	return ret;
 }
 
-// Spagetti.. must unify and support 'g', 'i' ...
-// In-place replace all instances of character a with character b.
+// DEPRECATED
 R_API int r_str_replace_char(char *s, int a, int b) {
 	int ret = 0;
 	char *o = s;
@@ -731,6 +758,9 @@ R_API int r_str_cmp(const char *a, const char *b, int len) {
 	}
 	if (a == b) {
 		return true;
+	}
+	if (len < 0) {
+		return strcmp (a, b);
 	}
 	for (;len--;) {
 		if (*a == '\0' || *b == '\0' || *a != *b) {
@@ -1508,13 +1538,13 @@ R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len) {
 
 R_API char *r_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
 	char *r, *r_end, *ret;
-	const char *s;
+	const char *s, *s_start;
 	size_t r_len, str_len = 0, nr_of_lines = 0;
 	ut32 ch = 0, cw = 0;
 	if (x2 < 1 || y2 < 1 || !str) {
 		return strdup ("");
 	}
-	s = str;
+	s = s_start = str;
 	while (*s) {
 		str_len++;
 		if (*s == '\n') {
@@ -1549,6 +1579,22 @@ R_API char *r_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
 			cw = 0;
 		} else {
 			if (ch >= y && ch < y2) {
+				if ((*str & 0xc0) == 0x80) {
+					if (cw > x) {
+						*r++ = *str++;
+					} else {
+						str++;
+					}
+					continue;
+				}
+				if (r_str_char_fullwidth (str, str_len - (str - s_start))) {
+					cw++;
+					if (cw == x) {
+						*r++ = ' ';
+						str++;
+						continue;
+					}
+				}
 				if (*str == 0x1b && *(str + 1) == '[') {
 					const char *ptr = str;
 					if ((r_end - r) > 2) {
@@ -1579,6 +1625,38 @@ R_API char *r_str_ansi_crop(const char *str, ut32 x, ut32 y, ut32 x2, ut32 y2) {
 	}
 	*r = 0;
 	return ret;
+}
+
+R_API int r_str_utf8_codepoint (const char* s, int left) {
+	bool safe = left >= 0;
+	if ((*s & 0x80) != 0x80) {
+		return 0;
+	} else if ((*s & 0xe0) == 0xc0 && (safe ? left >= 1 : *(s + 1))) {
+		return ((*s & 0x1f) << 6) + (*(s + 1) & 0x3f);
+	} else if ((*s & 0xf0) == 0xe0 && (safe ? left >= 2 : (*(s + 1) && *(s + 2)))) {
+		return ((*s & 0xf) << 12) + ((*(s + 1) & 0x3f) << 6) + (*(s + 2) & 0x3f);
+	} else if ((*s & 0xf8) == 0xf0 && (safe ? left >= 3 : (*(s + 1) && *(s + 2) && *(s + 3)))) {
+		return ((*s & 0x7) << 18) + ((*(s + 1) & 0x3f) << 12) + ((*(s + 2) & 0x3f) << 6) + (*(s + 3) & 0x3f);
+	}
+	return 0;
+}
+
+R_API bool r_str_char_fullwidth (const char* s, int left) {
+	int codepoint = r_str_utf8_codepoint (s, left);
+	return (codepoint >= 0x1100 &&
+		 (codepoint <= 0x115f ||                  /* Hangul Jamo init. consonants */
+			  codepoint == 0x2329 || codepoint == 0x232a ||
+		 (R_BETWEEN (0x2e80, codepoint, 0xa4cf)
+			&& codepoint != 0x303f) ||        /* CJK ... Yi */
+		 R_BETWEEN (0xac00, codepoint, 0xd7a3) || /* Hangul Syllables */
+		 R_BETWEEN (0xf900, codepoint, 0xfaff) || /* CJK Compatibility Ideographs */
+		 R_BETWEEN (0xfe10, codepoint, 0xfe19) || /* Vertical forms */
+		 R_BETWEEN (0xfe30, codepoint, 0xfe6f) || /* CJK Compatibility Forms */
+		 R_BETWEEN (0xff00, codepoint, 0xff60) || /* Fullwidth Forms */
+		 R_BETWEEN (0xffe0, codepoint, 0xffe6) ||
+		 R_BETWEEN (0x20000, codepoint, 0x2fffd) ||
+		 R_BETWEEN (0x30000, codepoint, 0x3fffd)));
+
 }
 
 R_API void r_str_filter_zeroline(char *str, int len) {
@@ -1887,14 +1965,17 @@ R_API int r_str_len_utf8char(const char *s, int left) {
 }
 
 R_API int r_str_len_utf8(const char *s) {
-	int i = 0, j = 0;
+	int i = 0, j = 0, fullwidths = 0;
 	while (s[i]) {
 		if ((s[i] & 0xc0) != 0x80) {
 			j++;
+			if (r_str_char_fullwidth (s + i, 4)) {
+				fullwidths++;
+			}
 		}
 		i++;
 	}
-	return j;
+	return j + fullwidths;
 }
 
 R_API const char *r_str_casestr(const char *a, const char *b) {
@@ -2652,6 +2733,7 @@ R_API RList *r_str_split_list(char *str, const char *c)  {
 		if (!aux) {
 			break;
 		}
+		r_str_trim (aux);
 		r_list_append (lst, aux);
 	}
 
@@ -2779,7 +2861,7 @@ static int strncmp_skip_color_codes(const char *s1, const char *s2, int n) {
 static char *strchr_skip_color_codes(const char *s, int c) {
 	int i = 0;
 	for (i = 0; s[i]; i++) {
-		while (s[i] == 0x1b) {
+		while (s[i] && s[i] == 0x1b) {
 			while (s[i] && s[i] != 'm') {
 				i++;
 			}
@@ -2787,7 +2869,7 @@ static char *strchr_skip_color_codes(const char *s, int c) {
 				i++;
 			}
 		}
-		if (s[i] == (char)c) {
+		if (!s[i] || s[i] == (char)c) {
 			return (char*)s + i;
 		}
 	}
@@ -2936,11 +3018,11 @@ R_API wchar_t* r_str_mb_to_wc(const char *buf) {
 R_API char *r_str_from_ut64(ut64 val) {
 	int i = 0;
 	char *v = (char *)&val;
-	char *str = (char *)calloc(1, 65);
+	char *str = (char *)calloc(1, 9);
 	if (!str) {
 		return NULL;
 	}
-	while (i < 64 && *v && *v >= '!' && *v <= '~') {
+	while (i < 8 && *v) {
 		str[i++] = *v++;
 	}
 	return str;

@@ -22,7 +22,7 @@ static int is_valid_omf_type(ut8 type) {
 	return false;
 }
 
-int r_bin_checksum_omf_ok(const char *buf, ut64 buf_size) {
+int r_bin_checksum_omf_ok(const ut8 *buf, ut64 buf_size) {
 	ut16 size;
 	ut8 checksum = 0;
 
@@ -53,7 +53,10 @@ int r_bin_checksum_omf_ok(const char *buf, ut64 buf_size) {
 	return !checksum ? true : false;
 }
 
-static ut16 omf_get_idx(const char *buf) {
+static ut16 omf_get_idx(const ut8 *buf, int buf_size) {
+	if (buf_size < 2) {
+		return 0;
+	}
 	if (*buf & 0x80) {
 		return (ut16)((*buf & 0x7f) * 0x100 + buf[1]);
 	}
@@ -71,7 +74,7 @@ static void free_lname(OMF_multi_datas *lname) {
 	R_FREE (lname);
 }
 
-static int load_omf_lnames(OMF_record *record, const char *buf, ut64 buf_size) {
+static int load_omf_lnames(OMF_record *record, const ut8 *buf, ut64 buf_size) {
 	ut32 tmp_size = 0;
 	ut32 ct_name = 0;
 	OMF_multi_datas *ret = NULL;
@@ -125,7 +128,7 @@ static int load_omf_lnames(OMF_record *record, const char *buf, ut64 buf_size) {
 	return true;
 }
 
-static int load_omf_segdef(OMF_record *record, const char *buf, ut64 buf_size) {
+static int load_omf_segdef(OMF_record *record, const ut8 *buf, ut64 buf_size) {
 	OMF_segment *ret = NULL;
 	int off_add;
 
@@ -145,7 +148,7 @@ static int load_omf_segdef(OMF_record *record, const char *buf, ut64 buf_size) {
 			eprintf ("Invalid Segdef record (bad size)\n");
 			return false;
 		}
-		ret->name_idx = omf_get_idx (buf + 8 + off_add);
+		ret->name_idx = omf_get_idx (buf + 8 + off_add, buf_size - 8 - off_add);
 		if (buf[3] & 2) {
 			ret->size = UT32_MAX;
 		} else {
@@ -156,18 +159,14 @@ static int load_omf_segdef(OMF_record *record, const char *buf, ut64 buf_size) {
 			eprintf ("Invalid Segdef record (bad size)\n");
 			return false;
 		}
-		ret->name_idx = omf_get_idx (buf + 6 + off_add);
+		ret->name_idx = omf_get_idx (buf + 6 + off_add, buf_size - 6 - off_add);
 		if (buf[3] & 2) {
 			ret->size = UT16_MAX;
 		}
 		ret->size = r_read_le16 (buf + 4 + off_add);
 	}
 
-	if (buf[3] & 1) {
-		ret->bits = 32;
-	} else {
-		ret->bits = 16;
-	}
+	ret->bits = (buf[3] & 1)? 32: 16;
 
 	// tricks to keep the save index when copying content from record
 	record->type = OMF_SEGDEF;
@@ -175,9 +174,8 @@ static int load_omf_segdef(OMF_record *record, const char *buf, ut64 buf_size) {
 	return true;
 }
 
-static ut32 omf_count_symb(ut16 total_size, ut32 ct, const char *buf, int bits) {
+static ut32 omf_count_symb(ut16 total_size, ut32 ct, const ut8 *buf, int bits) {
 	ut32 nb_symb = 0;
-
 	while (ct < total_size - 1) {
 		ct += buf[ct] + 1 + (bits == 32 ? 4 : 2);
 		if (ct > total_size - 1) {
@@ -193,7 +191,7 @@ static ut32 omf_count_symb(ut16 total_size, ut32 ct, const char *buf, int bits) 
 	return nb_symb;
 }
 
-static int load_omf_symb(OMF_record *record, ut32 ct, const char *buf, int bits, ut16 seg_idx) {
+static int load_omf_symb(OMF_record *record, ut32 ct, const ut8 *buf, int buf_size, int bits, ut16 seg_idx) {
 	ut32 nb_symb = 0;
 	ut8 str_size = 0;
 	OMF_symbol *symbol;
@@ -230,6 +228,9 @@ static int load_omf_symb(OMF_record *record, ut32 ct, const char *buf, int bits,
 		memcpy (symbol->name, buf + ct + 1, sizeof(char) * str_size);
 
 		ct += 1 + str_size + (bits == 32 ? 4 : 2);
+		if (ct >= buf_size) {
+			return false;
+		}
 		if (buf[ct] & 0x80) { //type index
 			ct += 2;
 		} else {
@@ -240,7 +241,7 @@ static int load_omf_symb(OMF_record *record, ut32 ct, const char *buf, int bits,
 	return true;
 }
 
-static int load_omf_pubdef(OMF_record *record, const char *buf) {
+static int load_omf_pubdef(OMF_record *record, const ut8 *buf, int buf_size) {
 	OMF_multi_datas *ret = NULL;
 	ut16 seg_idx;
 	ut16 ct = 0;
@@ -252,7 +253,7 @@ static int load_omf_pubdef(OMF_record *record, const char *buf) {
 	}
 
 	ct = 3;
-	base_grp = omf_get_idx (buf + ct);
+	base_grp = omf_get_idx (buf + ct, buf_size - ct);
 	if (buf[ct] & 0x80) { // sizeof base groups index
 		ct += 2;
 	} else {
@@ -264,7 +265,7 @@ static int load_omf_pubdef(OMF_record *record, const char *buf) {
 		return false;
 	}
 
-	seg_idx = omf_get_idx (buf + ct);
+	seg_idx = omf_get_idx (buf + ct, buf_size - ct);
 
 	if (buf[ct] & 0x80) { // sizeof base segment index
 		ct += 2;
@@ -292,7 +293,7 @@ static int load_omf_pubdef(OMF_record *record, const char *buf) {
 				return false;
 			}
 		}
-		if (!load_omf_symb (record, ct, buf, 16, seg_idx)) {
+		if (!load_omf_symb (record, ct, buf, buf_size, 16, seg_idx)) {
 			return false;
 		}
 	} else { // 32 bit addr
@@ -302,7 +303,7 @@ static int load_omf_pubdef(OMF_record *record, const char *buf) {
 				return false;
 			}
 		}
-		if (!load_omf_symb (record, ct, buf, 32, seg_idx)) {
+		if (!load_omf_symb (record, ct, buf, buf_size, 32, seg_idx)) {
 			return false;
 		}
 	}
@@ -312,7 +313,7 @@ static int load_omf_pubdef(OMF_record *record, const char *buf) {
 	return true;
 }
 
-static int load_omf_data(const char *buf, OMF_record *record, ut64 global_ct) {
+static int load_omf_data(const ut8 *buf, int buf_size, OMF_record *record, ut64 global_ct) {
 	ut16 seg_idx;
 	ut32 offset;
 	ut16 ct = 4;
@@ -322,7 +323,7 @@ static int load_omf_data(const char *buf, OMF_record *record, ut64 global_ct) {
 		eprintf ("Invalid Ledata record (bad size)\n");
 		return false;
 	}
-	seg_idx = omf_get_idx (buf + 3);
+	seg_idx = omf_get_idx (buf + 3, buf_size - 3);
 	if (seg_idx & 0xff00) {
 		if ((!(record->type & 1) && record->size < 5) || (record->size < 7)) {
 			eprintf ("Invalid Ledata record (bad size)\n");
@@ -352,28 +353,32 @@ static int load_omf_data(const char *buf, OMF_record *record, ut64 global_ct) {
 }
 
 
-static int load_omf_content(OMF_record *record, const char *buf, ut64 global_ct, ut64 buf_size) {
-	if (record->type == OMF_LNAMES)
+static int load_omf_content(OMF_record *record, const ut8 *buf, ut64 global_ct, ut64 buf_size) {
+	if (record->type == OMF_LNAMES) {
 		return load_omf_lnames (record, buf, buf_size);
-	else if (record->type == OMF_SEGDEF || record->type == OMF_SEGDEF32)
+	}
+	if (record->type == OMF_SEGDEF || record->type == OMF_SEGDEF32) {
 		return load_omf_segdef (record, buf, buf_size);
-	else if (record->type == OMF_PUBDEF || record->type == OMF_PUBDEF32 || record->type == OMF_LPUBDEF || record->type == OMF_LPUBDEF32)
-		return load_omf_pubdef (record, buf);
-	else if (record->type == OMF_LEDATA || record->type == OMF_LEDATA32)
-		return load_omf_data (buf, record, global_ct);
-
+	}
+	if (record->type == OMF_PUBDEF || record->type == OMF_PUBDEF32 || record->type == OMF_LPUBDEF || record->type == OMF_LPUBDEF32) {
+		return load_omf_pubdef (record, buf, buf_size);
+	}
+	if (record->type == OMF_LEDATA || record->type == OMF_LEDATA32) {
+		return load_omf_data (buf, buf_size, record, global_ct);
+	}
 	// generic loader just copy data from buf to content
 	if (!record->size) {
 		eprintf("Invalid record (size to short)\n");
 		return false;
 	}
-	if (!(record->content = R_NEWS0 (char, record->size)))
+	if (!(record->content = R_NEWS0 (char, record->size))) {
 		return false;
+	}
 	((char *)record->content)[record->size - 1] = 0;
 	return true;
 }
 
-static OMF_record_handler *load_record_omf(const char *buf, ut64 global_ct, ut64 buf_size){
+static OMF_record_handler *load_record_omf(const ut8 *buf, ut64 global_ct, ut64 buf_size){
 	OMF_record_handler *new = NULL;
 
 	if (is_valid_omf_type (*buf) && r_bin_checksum_omf_ok (buf, buf_size)) {
@@ -400,7 +405,7 @@ static OMF_record_handler *load_record_omf(const char *buf, ut64 global_ct, ut64
 	return new;
 }
 
-static int load_all_omf_records(r_bin_omf_obj *obj, const char *buf, ut64 size) {
+static int load_all_omf_records(r_bin_omf_obj *obj, const ut8 *buf, ut64 size) {
 	ut64 ct = 0;
 	OMF_record_handler *new_rec = NULL;
 	OMF_record_handler *tmp = NULL;
@@ -614,7 +619,7 @@ static void free_all_omf_sections(r_bin_omf_obj *obj) {
 			R_FREE(obj->sections[ct]->data);
 			obj->sections[ct]->data = data;
 		}
-		R_FREE(obj->sections[ct]);
+		R_FREE (obj->sections[ct]);
 		ct++;
 	}
 	R_FREE (obj->sections);
@@ -657,7 +662,7 @@ void r_bin_free_all_omf_obj(r_bin_omf_obj *obj) {
 	R_FREE(obj);
 }
 
-r_bin_omf_obj *r_bin_internal_omf_load(const char *buf, ut64 size) {
+r_bin_omf_obj *r_bin_internal_omf_load(const ut8 *buf, ut64 size) {
 	r_bin_omf_obj *ret = NULL;
 
 	if (!(ret = R_NEW0 (r_bin_omf_obj))) {

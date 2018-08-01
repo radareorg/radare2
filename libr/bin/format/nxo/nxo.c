@@ -62,7 +62,7 @@ static void walkSymbols (RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab
 		if (!sym) {
 			break;
 		}
-		sym->type = r_str_const ("FUNC");
+		sym->type = r_str_const (R_BIN_TYPE_FUNC_STR);
 		sym->bind = r_str_const ("NONE");
 		sym->size = size;
 

@@ -37,6 +37,7 @@ ec num rgb:ef0
 ec help rgb:af2
 ec invalid rgb:ef0
 ec trap rgb:000 rgb:af2
+ec linehl rgb:140
 
 ec graph.box rgb:af2
 ec graph.box2 rgb:0a0
@@ -47,3 +48,13 @@ ec graph.false rgb:5d5
 ec graph.trufae rgb:af2
 ec graph.current rgb:af2
 ec graph.traced rgb:090
+
+ec func_var yellow
+ec func_var_type green
+ec func_var_addr yellow
+
+ec ai.read rgb:8e2
+ec ai.write rgb:9e2
+ec ai.exec rgb:af2
+ec ai.seq rgb:ef0
+ec ai.ascii rgb:ef0

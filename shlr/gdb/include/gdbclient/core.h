@@ -50,8 +50,8 @@ enum Breakpoint {
  */
 int send_vcont(libgdbr_t* g, const char* command, const char *thread_id);
 
-int set_bp(libgdbr_t* g, ut64 address, const char* conditions, enum Breakpoint type);
+int set_bp(libgdbr_t* g, ut64 address, const char* conditions, enum Breakpoint type, int sizebp);
 
-int remove_bp(libgdbr_t* g, ut64 address, enum Breakpoint type);
+int remove_bp(libgdbr_t* g, ut64 address, enum Breakpoint type, int sizebp);
 
 #endif  // GDB_CLIENT_CORE_H

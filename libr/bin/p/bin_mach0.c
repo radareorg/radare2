@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -134,7 +134,9 @@ static RList* sections(RBinFile *bf) {
 			const int sz = 8;
 #endif
 			int len = sections[i].size / sz;
-			ptr->format = r_str_newf ("Cd %d[%d]", sz, len);
+			if (len < bf->size) {
+				ptr->format = r_str_newf ("Cd %d[%d]", sz, len);
+			}
 		}
 		ptr->name[R_BIN_SIZEOF_STRINGS] = 0;
 		handle_data_sections (ptr);
@@ -144,7 +146,10 @@ static RList* sections(RBinFile *bf) {
 		ptr->vaddr = sections[i].addr;
 		ptr->add = true;
 		if (!ptr->vaddr) {
-			ptr->vaddr = ptr->paddr;
+			// XXX(lowlyw) this is a valid macho, but rarely will anything
+			// be mapped at va = 0
+			eprintf ("mapping text to va = 0\n");
+			// ptr->vaddr = ptr->paddr;
 		}
 		ptr->srwx = sections[i].srwx;
 		r_list_append (ret, ptr);
@@ -306,8 +311,8 @@ static RList* symbols(RBinFile *bf) {
 		}
 		ptr->forwarder = r_str_const ("NONE");
 		ptr->bind = r_str_const ((symbols[i].type == R_BIN_MACH0_SYMBOL_TYPE_LOCAL)?
-				"LOCAL": "GLOBAL");
-		ptr->type = r_str_const ("FUNC");
+				R_BIN_BIND_LOCAL_STR: R_BIN_BIND_GLOBAL_STR);
+		ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR);
 		ptr->vaddr = symbols[i].addr;
 		ptr->paddr = symbols[i].offset + obj->boffset;
 		ptr->size = symbols[i].size;
@@ -340,9 +345,9 @@ static RList* symbols(RBinFile *bf) {
 			ptr->paddr = address;
 			ptr->size = 0;
 			ptr->name = r_str_newf ("func.%08"PFMT64x, ptr->vaddr);
-			ptr->type = "FUNC";
+			ptr->type = R_BIN_TYPE_FUNC_STR;
 			ptr->forwarder = "NONE";
-			ptr->bind = "LOCAL";
+			ptr->bind = R_BIN_BIND_LOCAL_STR;
 			ptr->ordinal = i++;
 			if (bin->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {
 				_handle_arm_thumb (bin, &ptr);

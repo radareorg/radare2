@@ -34,6 +34,7 @@ typedef struct {
 typedef struct {
 	RCore *core;
 	int launch;
+	int browse;
 	char *path;
 } HttpThread;
 
@@ -43,7 +44,7 @@ typedef struct {
 } RapThread;
 
 R_API void r_core_wait(RCore *core) {
-	r_cons_singleton () -> breaked = true;
+	r_cons_singleton ()->context->breaked = true;
 	r_th_kill (httpthread, true);
 	r_th_kill (rapthread, true);
 	r_th_wait (httpthread);
@@ -342,7 +343,7 @@ R_API int r_core_rtr_http_stop(RCore *u) {
 	RSocket* sock;
 
 #if __WINDOWS__
-	r_socket_http_server_set_breaked (&r_cons_singleton ()->breaked);
+	r_socket_http_server_set_breaked (&r_cons_singleton ()->context->breaked);
 #endif
 	if (((size_t)u) > 0xff) {
 		port = listenport? listenport: r_config_get (
@@ -393,7 +394,7 @@ static void activateDieTime (RCore *core) {
 }
 
 // return 1 on error
-static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
+static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *path) {
 	RConfig *newcfg = NULL, *origcfg = NULL;
 	char headers[128] = R_EMPTY;
 	RSocketHTTPRequest *rs;
@@ -416,7 +417,10 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 		}
 		return false;
 	}
-
+	char *arg = strchr (path, ' ');
+	if (arg) {
+		path = arg + 1;
+	}
 	if (path && atoi (path)) {
 		port = path;
 		path = NULL;
@@ -466,7 +470,8 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 		eprintf ("Cannot listen on http.port\n");
 		return 1;
 	}
-	if (launch=='H') {
+
+	if (browse == 'H') {
 		const char *browser = r_config_get (core->config, "http.browser");
 		r_sys_cmdf ("%s http://%s:%d/%s &",
 			browser, host, atoi (port), path? path:"");
@@ -525,7 +530,8 @@ static int r_core_rtr_http_run(RCore *core, int launch, const char *path) {
 
 		/* this is blocking */
 		activateDieTime (core);
-		rs = r_socket_http_accept (s, timeout);
+
+		rs = r_socket_http_accept (s, 1, timeout);
 
 		origoff = core->offset;
 		origblk = core->block;
@@ -849,7 +855,8 @@ static int r_core_rtr_http_thread (RThread *th) {
 	if (!ht || !ht->core) {
 		return false;
 	}
-	int ret = r_core_rtr_http_run (ht->core, ht->launch, ht->path);
+	eprintf ("WARNING: Background webserver requires http.sandbox=false to run properly\n");
+	int ret = r_core_rtr_http_run (ht->core, ht->launch, ht->browse, ht->path);
 	R_FREE (ht->path);
 	if (ret) {
 		int p = r_config_get_i (ht->core->config, "http.port");
@@ -861,7 +868,7 @@ static int r_core_rtr_http_thread (RThread *th) {
 	return ret;
 }
 
-R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
+R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path) {
 	int ret;
 	if (r_sandbox_enable (0)) {
 		eprintf ("sandbox: connect disabled\n");
@@ -893,6 +900,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 			HttpThread *ht = calloc (sizeof (HttpThread), 1);
 			ht->core = core;
 			ht->launch = launch;
+			ht->browse = browse;
 			ht->path = strdup (tpath);
 			httpthread = r_th_new (r_core_rtr_http_thread, ht, false);
 			r_th_start (httpthread, true);
@@ -901,7 +909,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, const char *path) {
 		return 0;
 	}
 	do {
-		ret = r_core_rtr_http_run (core, launch, path);
+		ret = r_core_rtr_http_run (core, launch, browse, path);
 	} while (ret == -2);
 	return ret;
 }
@@ -1572,7 +1580,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 			continue;
 		}
 		rtr_host[i].proto = proto;
-		strncpy (rtr_host[i].host, host, sizeof (rtr_host[i].proto)-1);
+		strncpy (rtr_host[i].host, host, sizeof (rtr_host[i].host)-1);
 		rtr_host[i].port = r_num_get (core->num, port);
 		strncpy (rtr_host[i].file, file, sizeof (rtr_host[i].file)-1);
 		rtr_host[i].fd = fd;
@@ -1668,14 +1676,14 @@ static bool r_core_rtr_rap_run(RCore *core, const char *input) {
 	if (fd) {
 		if (r_io_is_listener (core->io)) {
 			if (!r_core_serve (core, fd)) {
-				r_cons_singleton () -> breaked = true;
+				r_cons_singleton () ->context->breaked = true;
 			}
 			r_io_desc_free (fd);
 		}
 	} else {
-		r_cons_singleton ()->breaked = true;
+		r_cons_singleton ()->context->breaked = true;
 	}
-	return !r_cons_singleton ()->breaked;
+	return !r_cons_singleton ()->context->breaked;
 	// r_core_cmdf (core, "o rap://%s", input);
 }
 
@@ -1796,7 +1804,7 @@ R_API void r_core_rtr_cmd(RCore *core, const char *input) {
 		eprintf ("Error: Allocating cmd output\n");
 		return;
 	}
-	r_socket_read (fh, (ut8*)cmd_output, cmd_len);
+	r_socket_read_block (fh, (ut8*)cmd_output, cmd_len);
 	//ensure the termination
 	cmd_output[cmd_len] = 0;
 	r_cons_println (cmd_output);

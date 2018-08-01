@@ -7,6 +7,10 @@
 #include <direct.h>  // to compile chdir under msvc windows
 #endif
 
+#if HAVE_CAPSICUM
+#include <sys/capsicum.h>
+#endif
+
 static bool enabled = false;
 static bool disabled = false;
 
@@ -91,6 +95,12 @@ R_API bool r_sandbox_disable (bool e) {
 			return enabled;
 		}
 #endif
+#if HAVE_CAPSICUM
+		if (enabled) {
+			eprintf ("sandbox mode couldn't be disabled in capability mode\n");
+			return enabled;
+		}
+#endif
 		disabled = enabled;
 		enabled = false;
 	} else {
@@ -110,6 +120,12 @@ R_API bool r_sandbox_enable (bool e) {
 #if LIBC_HAVE_PLEDGE
 	if (enabled && pledge ("stdio rpath tty prot_exec", NULL) == -1) {
 		eprintf ("sandbox: pledge call failed\n");
+		return false;
+	}
+#endif
+#if HAVE_CAPSICUM
+	if (enabled && cap_enter () != 0) {
+		eprintf ("sandbox: call_enter failed\n");
 		return false;
 	}
 #endif

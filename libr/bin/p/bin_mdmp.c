@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2016-2017 - Davis, Alex Kornitzer */
+/* radare2 - LGPL - Copyright 2016-2018 - Davis, Alex Kornitzer */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -108,7 +108,8 @@ static RBinInfo *info(RBinFile *bf) {
 			ret->bits = 64;
 			break;
 		default:
-			strncpy (ret->machine, "Unknown", R_BIN_SIZEOF_STRINGS);
+			ret->machine = strdup ("Unknown");
+			break;
 		}
 
 		switch (obj->streams.system_info->product_type) {
@@ -316,7 +317,7 @@ static RList *sections(RBinFile *bf) {
 }
 
 static RList *mem (RBinFile *bf) {
-	struct minidump_location_descriptor *location;
+	struct minidump_location_descriptor *location = NULL;
 	struct minidump_memory_descriptor *module;
 	struct minidump_memory_descriptor64 *module64;
 	struct minidump_memory_info *mem_info;
@@ -340,7 +341,7 @@ static RList *mem (RBinFile *bf) {
 			return ret;
 		}
 		ptr->addr = module->start_of_memory_range;
-		ptr->size = (location->data_size);
+		ptr->size = location? location->data_size: 0;
 		ptr->perms = r_bin_mdmp_get_srwx (obj, ptr->addr);
 
 		/* [1] */

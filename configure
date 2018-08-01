@@ -22,7 +22,7 @@ DEBUGGER=1
 USE_MAGIC=0
 LOADLIBS=1
 HAVE_FORK=1
-BUILD_MERGED=0
+WITH_LIBR=0
 WITH_CAPSTONE=0
 USE_ZIP=0
 WITH_GPL=1
@@ -30,8 +30,6 @@ WANT_OPENSSL=0
 USE_RPATH=0
 [ -z "${USERCC}" ] && USERCC="gcc"
 [ -z "${USEROSTYPE}" ] && USEROSTYPE="auto"
-WITHPIC=1
-WITHNONPIC=0
 [ -z "${LIBVERSION}" ] && LIBVERSION="xxx"
 HAVE_JEMALLOC=1
 split_host() {
@@ -118,12 +116,12 @@ done
 : ${INSTALL_PROGRAM_STRIP:=${INSTALL} -m 755 -s}
 : ${INSTALL_MAN:=${INSTALL} -m 444}
 : ${INSTALL_LIB:=${INSTALL} -m 755 -c}
- PKGNAME='radare2' ; VERSION='2.7.0-git' ; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
+ PKGNAME='radare2' ; VERSION='2.8.0-git' ; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
 }
 
 show_usage() {
 cat <<EOF2
-'configure' configures radare2-2.7.0-git to adapt to many kinds of systems.
+'configure' configures radare2-2.8.0-git to adapt to many kinds of systems.
 
 Usage: ./configure [OPTION]... [VAR=VALUE]...
 
@@ -169,7 +167,7 @@ Optional Features:
   --with-sysmagic        force to use system's magic
   --disable-loadlibs     disable loading plugins
   --without-fork         disable fork
-  --enable-merged        build merged r library
+  --with-libr            build libr.a and libr.dylib
   --with-syscapstone     force to use system-wide capstone
   --with-syszip          force to use system's libzip and zlib
   --without-gpl          do not build GPL code (grub, cxx, ... )
@@ -177,8 +175,6 @@ Optional Features:
   --with-rpath           use rpath to build
   --with-compiler        Define compiler to use (see mk/) (USERCC=gcc)
   --with-ostype          Choose OS type ( gnulinux windows darwin haiku ) (USEROSTYPE=auto)
-  --without-pic          do not build libr as a program independent location
-  --with-nonpic          build the library archives .a
   --with-libversion      specify different libversion (LIBVERSION=xxx)
   --without-jemalloc     build without jemalloc
 "
@@ -207,7 +203,7 @@ take_environ() {
 }
 
 show_version() {
-echo "radare2-2.7.0-git configuration script done with acr v1.6.2.
+echo "radare2-2.8.0-git configuration script done with acr v1.6.2.
 The 'Free Software Foundation' message is only for autodetection.
 Originally written by pancake <nopcode.org>."
 exit 0
@@ -231,12 +227,12 @@ case $flag in
 	show_version ; ;;
 -r|--r|--report)
 echo "PKGNAME:   radare2"
-echo "VERSION:   2.7.0-git"
+echo "VERSION:   2.8.0-git"
 echo "LANGS:     c"
 echo "REQUIRED:  libdl"
 echo "OPTIONAL:  libmagic libz libzip libssl"
 echo "PKG-CONFIG:  capstone openssl"
-echo "FLAGS:     --disable-debugger --with-sysmagic --disable-loadlibs --without-fork --enable-merged --with-syscapstone --with-syszip --without-gpl --with-openssl --with-rpath --with-compiler=gcc --with-ostype=auto --without-pic --with-nonpic --with-libversion=xxx --without-jemalloc"
+echo "FLAGS:     --disable-debugger --with-sysmagic --disable-loadlibs --without-fork --with-libr --with-syscapstone --with-syszip --without-gpl --with-openssl --with-rpath --with-compiler=gcc --with-ostype=auto --with-libversion=xxx --without-jemalloc"
 	exit 0
 	;;
 --cache-file)
@@ -286,7 +282,7 @@ echo "FLAGS:     --disable-debugger --with-sysmagic --disable-loadlibs --without
 "--with-sysmagic") USE_MAGIC="1"; ;;
 "--disable-loadlibs") LOADLIBS="0"; ;;
 "--without-fork") HAVE_FORK="0"; ;;
-"--enable-merged") BUILD_MERGED="1"; ;;
+"--with-libr") WITH_LIBR="1"; ;;
 "--with-syscapstone") WITH_CAPSTONE="1"; ;;
 "--with-syszip") USE_ZIP="1"; ;;
 "--without-gpl") WITH_GPL="0"; ;;
@@ -294,8 +290,6 @@ echo "FLAGS:     --disable-debugger --with-sysmagic --disable-loadlibs --without
 "--with-rpath") USE_RPATH="1"; ;;
 --with-compiler) if [ -z "${value}" ]; then USERCC="gcc"; else USERCC="${value}" ; fi ;;
 --with-ostype) if [ -z "${value}" ]; then USEROSTYPE="auto"; else USEROSTYPE="${value}" ; fi ;;
-"--without-pic") WITHPIC="0"; ;;
-"--with-nonpic") WITHNONPIC="1"; ;;
 --with-libversion) if [ -z "${value}" ]; then LIBVERSION="xxx"; else LIBVERSION="${value}" ; fi ;;
 "--without-jemalloc") HAVE_JEMALLOC="0"; ;;
 *) if [ "$value" ]; then eval "`echo $flag2=$value`" ;
@@ -315,7 +309,7 @@ parse_options "$1"
 shift
 done
 
-ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR DOCDIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_PROGRAM_STRIP INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS CPPFLAGS LDFLAGS HAVE_LANG_C DEBUGGER HAVE_LIB_DL DL_LIBS HAVE_PATCH PATCH HAVE_GIT GIT HAVE_LIB_MAGIC USE_MAGIC USE_LIB_MAGIC LIBMAGIC LOADLIBS HAVE_FORK BUILD_MERGED WITH_CAPSTONE CAPSTONE_CFLAGS CAPSTONE_LDFLAGS HAVE_PKGCFG_CAPSTONE USE_CAPSTONE HAVE_LIB_Z HAVE_LIB_ZIP USE_ZIP USE_LIB_ZIP LIBZIP WITH_GPL HAVE_DECL_ADDR_NO_RANDOMIZE HAVE_LIB_GMP HAVE_LIB_SSL SSL_CFLAGS SSL_LDFLAGS HAVE_PKGCFG_OPENSSL HAVE_OPENSSL WANT_OPENSSL USE_RPATH USERCC USEROSTYPE WITHPIC WITHNONPIC LIBVERSION HAVE_JEMALLOC"
+ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR DOCDIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_PROGRAM_STRIP INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS CPPFLAGS LDFLAGS HAVE_LANG_C DEBUGGER HAVE_LIB_DL DL_LIBS HAVE_PATCH PATCH HAVE_GIT GIT HAVE_LIB_MAGIC USE_MAGIC USE_LIB_MAGIC LIBMAGIC LOADLIBS HAVE_FORK WITH_LIBR WITH_CAPSTONE CAPSTONE_CFLAGS CAPSTONE_LDFLAGS HAVE_PKGCFG_CAPSTONE USE_CAPSTONE HAVE_LIB_Z HAVE_LIB_ZIP USE_ZIP USE_LIB_ZIP LIBZIP WITH_GPL HAVE_DECL_ADDR_NO_RANDOMIZE HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO HAVE_LIB_GMP HAVE_LIB_SSL SSL_CFLAGS SSL_LDFLAGS HAVE_PKGCFG_OPENSSL HAVE_OPENSSL WANT_OPENSSL USE_RPATH USERCC USEROSTYPE LIBVERSION HAVE_JEMALLOC"
 
 create_environ
 
@@ -475,6 +469,20 @@ if [ $? = 0 ]; then
 	echo yes ; HAVE_DECL_ADDR_NO_RANDOMIZE=1
 else
 	HAVE_DECL_ADDR_NO_RANDOMIZE=0 ; echo no ; fi
+printf "checking function arc4random_uniform() in c... "
+echo "int main(int ac, char **av){ arc4random_uniform(0); return 0; }" > test.c
+${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -lc test.c >/dev/null 2>&1
+if [ $? = 0 ]; then
+	echo yes ; HAVE_ARC4RANDOM_UNIFORM=1
+else
+	HAVE_ARC4RANDOM_UNIFORM=0 ; echo no ; fi
+printf "checking function explicit_bzero() in c... "
+echo "int main(int ac, char **av){ explicit_bzero(0); return 0; }" > test.c
+${CC} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -lc test.c >/dev/null 2>&1
+if [ $? = 0 ]; then
+	echo yes ; HAVE_EXPLICIT_BZERO=1
+else
+	HAVE_EXPLICIT_BZERO=0 ; echo no ; fi
 HAVE_LIB_GMP="0"
 check_library HAVE_LIB_SSL ssl 0
 [ -z "${PKGCONFIG}" ] && PKGCONFIG=pkg-config
@@ -579,7 +587,7 @@ done
 do_remove
 echo
 echo "Final report:"
-for A in  PREFIX HAVE_LIB_GMP HAVE_OPENSSL USE_CAPSTONE HAVE_FORK VERSION USE_LIB_ZIP USE_LIB_MAGIC DEBUGGER CC USERCC USEROSTYPE LIBVERSION BUILD HOST TARGET ; do # REPORT
+for A in  PREFIX HAVE_LIB_GMP HAVE_OPENSSL USE_CAPSTONE HAVE_FORK VERSION USE_LIB_ZIP USE_LIB_MAGIC DEBUGGER CC USERCC HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO USEROSTYPE LIBVERSION BUILD HOST TARGET ; do # REPORT
 eval VAL="\$${A}"
 [ -z "${VAL}" ] && VAL="(null)"
 echo " - ${A} = ${VAL}"

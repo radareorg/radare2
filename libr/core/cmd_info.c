@@ -45,6 +45,7 @@ static const char *help_msg_i[] = {
 	"is.", "", "Current symbol",
 	"iS ", "[entropy,sha1]", "Sections (choose which hash algorithm to use)",
 	"iS.", "", "Current section",
+	"iSS", " [entropy,sha1]", "Segments",
 	"iV", "", "Display file version info",
 	"iz|izj", "", "Strings in data sections (in JSON/Base64)",
 	"izz", "", "Search for Strings in the whole binary",
@@ -273,22 +274,22 @@ static void cmd_info_bin(RCore *core, int va, int mode) {
 	if (core->file) {
 		if ((mode & R_CORE_BIN_JSON) && !(mode & R_CORE_BIN_ARRAY)) {
 			mode = R_CORE_BIN_JSON;
-			r_cons_printf ("{\"core\":");
+			r_cons_strcat ("{\"core\":");
 		}
 		if ((mode & R_CORE_BIN_JSON) && (mode & R_CORE_BIN_ARRAY)) {
 			mode = R_CORE_BIN_JSON;
 			array = 1;
-			r_cons_printf (",\"core\":");
+			r_cons_strcat (",\"core\":");
 		}
 		r_core_file_info (core, mode);
 		if (bin_is_executable (obj)) {
 			if ((mode & R_CORE_BIN_JSON)) {
-				r_cons_printf (",\"bin\":");
+				r_cons_strcat (",\"bin\":");
 			}
 			r_core_bin_info (core, R_CORE_BIN_ACC_INFO, mode, va, NULL, NULL);
 		}
 		if (mode == R_CORE_BIN_JSON && array == 0) {
-			r_cons_printf ("}\n");
+			r_cons_strcat ("}\n");
 		}
 	} else {
 		eprintf ("No file selected\n");
@@ -330,7 +331,11 @@ static int cmd_info(void *data, const char *input) {
 		}
 	}
 	if (mode == R_CORE_BIN_JSON) {
-		if (strlen (input + 1) > 1) {
+		int suffix_shift = 0;
+		if (!strncmp (input, "SS", 2) || !strncmp (input, "ee", 2)) {
+			suffix_shift = 1;
+		}
+		if (strlen (input + 1 + suffix_shift) > 1) {
 			is_array = 1;
 		}
 	}
@@ -463,25 +468,35 @@ static int cmd_info(void *data, const char *input) {
 			//we comes from ia or iS
 			if ((input[1] == 'm' && input[2] == 'z') || !input[1]) {
 				RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, NULL, 0);
-			} else {  //iS entropy,sha1
+			} else if (input[1] == 'S' && !input[2]) {  // "iSS"
+				RBININFO ("segments", R_CORE_BIN_ACC_SEGMENTS, NULL, 0);
+			} else {  //iS/iSS entropy,sha1
+				const char *name = "sections";
+				int action = R_CORE_BIN_ACC_SECTIONS;
+				int param_shift = 0;
+				if (input[1] == 'S') {
+					name = "segments";
+					action = R_CORE_BIN_ACC_SEGMENTS;
+					param_shift = 1;
+				}
 				// case for iSj.
 				if (input[1] == 'j' && input[2] == '.') {
 					mode = R_CORE_BIN_JSON;
 				}
 				RBinObject *obj = r_bin_cur_object (core->bin);
 				if (mode == R_CORE_BIN_RADARE || mode == R_CORE_BIN_JSON || mode == R_CORE_BIN_SIMPLE) {
-					RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, input + 2,
+					RBININFO (name, action, input + 2 + param_shift,
 						obj? r_list_length (obj->sections): 0);
 				} else {
-					RBININFO ("sections", R_CORE_BIN_ACC_SECTIONS, input + 1,
+					RBININFO (name, action, input + 1 + param_shift,
 						obj? r_list_length (obj->sections): 0);
 				}
-				//we move input until get '\0'
-				while (*(++input)) ;
-				//input-- because we are inside a while that does input++
-				// oob read if not input--
-				input--;
 			}
+			//we move input until get '\0'
+			while (*(++input)) ;
+			//input-- because we are inside a while that does input++
+			// oob read if not input--
+			input--;
 			break;
 		case 'H':
 			if (input[1] == 'H') { // "iHH"
@@ -647,7 +662,7 @@ static int cmd_info(void *data, const char *input) {
 		case 'I': RBININFO ("info", R_CORE_BIN_ACC_INFO, NULL, 0); break;
 		case 'e':
 			  if (input[1] == 'e') {
-				  RBININFO ("entries", R_CORE_BIN_ACC_INITFINI, NULL, 0);
+				  RBININFO ("initfini", R_CORE_BIN_ACC_INITFINI, NULL, 0);
 				  input++;
 			  } else {
 				  RBININFO ("entries", R_CORE_BIN_ACC_ENTRIES, NULL, 0);
@@ -706,11 +721,8 @@ static int cmd_info(void *data, const char *input) {
 					RBinFile *bf = r_core_bin_cur (core);
 					int min = r_config_get_i (core->config, "bin.minstr");
 					if (bf) {
-						int tmp = bf->rawstr;
-						bf->rawstr = 2;
 						bf->strmode = mode;
-						r_bin_dump_strings (bf, min);
-						bf->rawstr = tmp;
+						r_bin_dump_strings (bf, min, 2);
 					}
 					goto done;
 				}

@@ -6,9 +6,12 @@
 #include <r_bin.h>
 #include <r_io.h>
 #include <r_cons.h>
-// #include "../../../shlr/lz4/lz4.h"
-#include "../../../shlr/lz4/lz4.c"
 #include "nxo/nxo.h"
+#ifdef R_MESON_VERSION
+#include <lz4.h>
+#else
+#include "../../../shlr/lz4/lz4.c"
+#endif
 
 #define NSO_OFF(x) r_offsetof (NSOHeader, x)
 #define NSO_OFFSET_MODMEMOFF r_offsetof (NXOStart, mod_memoffset)

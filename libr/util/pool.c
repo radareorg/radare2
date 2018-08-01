@@ -104,12 +104,11 @@ R_API RPoolFactory *r_poolfactory_new(int limit) {
 			return NULL;
 		}
 		pf->limit = limit + 1;
-		pf->pools = malloc (size);
+		pf->pools = calloc (1, size);
 		if (!pf->pools) {
 			r_poolfactory_free (pf);
 			return NULL;
 		}
-		memset (pf->pools, 0, size);
 		return pf;
 	}
 	return NULL;

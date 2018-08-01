@@ -36,6 +36,7 @@ ec trap red
 ec swi red
 ec mov white
 ec creg rgb:6f0
+ec linehl rgb:004
 ec ai.read green
 ec ai.write blue
 ec ai.exec red
@@ -55,3 +56,7 @@ ec gui.dataoffset yellow
 ec gui.background black
 ec gui.alt_background white
 ec gui.border black
+
+ec func_var rgb:0cf
+ec func_var_type rgb:0c0
+ec func_var_addr rgb:366

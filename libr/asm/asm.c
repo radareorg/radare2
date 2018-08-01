@@ -301,8 +301,6 @@ R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
 
 // TODO: this can be optimized using r_str_hash()
 R_API int r_asm_use(RAsm *a, const char *name) {
-	const char *dirPrefix = r_sys_prefix (NULL);
-	char file[1024];
 	RAsmPlugin *h;
 	RListIter *iter;
 	if (!a || !name) {
@@ -311,13 +309,13 @@ R_API int r_asm_use(RAsm *a, const char *name) {
 	r_list_foreach (a->plugins, iter, h) {
 		if (!strcmp (h->name, name) && h->arch) {
 			if (!a->cur || (a->cur && strcmp (a->cur->arch, h->arch))) {
-				//const char *dop = r_config_get (core->config, "dir.opcodes");
-				// TODO: allow configurable path for sdb files
-				snprintf (file, sizeof (file), R_JOIN_3_PATHS ("%s", R2_SDB_OPCODES, "%s.sdb"),
-					dirPrefix, h->arch);
-				sdb_free (a->pair);
+				char *r2prefix = r_str_r2_prefix (R2_SDB_OPCODES);
+				char *file = r_str_newf ("%s/%s.sdb", r_str_get (r2prefix), h->arch);
 				r_asm_set_cpu (a, NULL);
+				sdb_free (a->pair);
 				a->pair = sdb_new (NULL, file, 0);
+				free (r2prefix);
+				free (file);
 			}
 			a->cur = h;
 			return true;
@@ -938,6 +936,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					ret = r_asm_pseudo_incbin (&op, ptr + 8);
 				} else {
 					eprintf ("Unknown directive (%s)\n", ptr);
+					free(lbuf);
 					return r_asm_code_free (acode);
 				}
 				if (!ret) {
@@ -945,6 +944,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				}
 				if (ret < 0) {
 					eprintf ("!!! Oops\n");
+					free(lbuf);
 					return r_asm_code_free (acode);
 				}
 			} else { /* Instruction */
@@ -970,16 +970,19 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 			if (stage == STAGES - 1) {
 				if (ret < 1) {
 					eprintf ("Cannot assemble '%s' at line %d\n", ptr_start, linenum);
+					free(lbuf);
 					return r_asm_code_free (acode);
 				}
 				acode->len = idx + ret;
 				char *newbuf = realloc (acode->buf, (idx + ret) * 2);
 				if (!newbuf) {
+					free(lbuf);
 					return r_asm_code_free (acode);
 				}
 				acode->buf = (ut8*)newbuf;
 				newbuf = realloc (acode->buf_hex, strlen (acode->buf_hex) + strlen (op.buf_hex) + r_buf_size (op.buf_inc) + 1);
 				if (!newbuf) {
+					free(lbuf);
 					return r_asm_code_free (acode);
 				}
 				acode->buf_hex = newbuf;

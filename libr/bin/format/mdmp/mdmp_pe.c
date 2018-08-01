@@ -91,16 +91,17 @@ RList *PE_(r_bin_mdmp_pe_get_imports)(struct PE_(r_bin_mdmp_pe_bin) *pe_bin) {
 	RBinReloc *rel;
 	RList *ret, *relocs;
 
-	if (!(imports = PE_(r_bin_pe_get_imports) (pe_bin->bin))) {
-		return NULL;
-	}
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
-	if (!(relocs = r_list_newf (free))) {
+	imports = PE_(r_bin_pe_get_imports) (pe_bin->bin);
+	ret = r_list_new ();
+	relocs = r_list_newf (free);
+
+	if (!imports || !ret || !relocs) {
+		free (imports);
 		free (ret);
+		free (relocs);
 		return NULL;
 	}
+
 	pe_bin->bin->relocs = relocs;
 	for (i = 0; !imports[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinImport))) {
@@ -109,7 +110,7 @@ RList *PE_(r_bin_mdmp_pe_get_imports)(struct PE_(r_bin_mdmp_pe_bin) *pe_bin) {
 		filter_import (imports[i].name);
 		ptr->name = strdup ((char*)imports[i].name);
 		ptr->bind = r_str_const ("NONE");
-		ptr->type = r_str_const ("FUNC");
+		ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR);
 		ptr->ordinal = imports[i].ordinal;
 		r_list_append (ret, ptr);
 
@@ -148,7 +149,7 @@ RList *PE_(r_bin_mdmp_pe_get_sections)(struct PE_(r_bin_mdmp_pe_bin) *pe_bin) {
 	if (!(ret = r_list_new ())) {
 		return NULL;
 	}
-	if (!(sections = PE_(r_bin_pe_get_sections) (pe_bin->bin))){
+	if (!pe_bin->bin || !(sections = pe_bin->bin->sections)){
 		r_list_free (ret);
 		return NULL;
 	}
@@ -200,7 +201,6 @@ RList *PE_(r_bin_mdmp_pe_get_sections)(struct PE_(r_bin_mdmp_pe_bin) *pe_bin) {
 		}
 		r_list_append (ret, ptr);
 	}
-	free (sections);
 	return ret;
 }
 
@@ -228,8 +228,8 @@ RList *PE_(r_bin_mdmp_pe_get_symbols)(struct PE_(r_bin_mdmp_pe_bin) *pe_bin) {
 			}
 			ptr->name = strdup ((char *)symbols[i].name);
 			ptr->forwarder = r_str_const ((char *)symbols[i].forwarder);
-			ptr->bind = r_str_const ("GLOBAL");
-			ptr->type = r_str_const ("FUNC");
+			ptr->bind = r_str_const (R_BIN_BIND_GLOBAL_STR);
+			ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR);
 			ptr->size = 0;
 			ptr->vaddr = offset + pe_bin->vaddr;
 			ptr->paddr = symbols[i].paddr + pe_bin->paddr;
@@ -251,7 +251,7 @@ RList *PE_(r_bin_mdmp_pe_get_symbols)(struct PE_(r_bin_mdmp_pe_bin) *pe_bin) {
 			}
 			ptr->name = r_str_newf ("imp.%s", imports[i].name);
 			ptr->bind = r_str_const ("NONE");
-			ptr->type = r_str_const ("FUNC");
+			ptr->type = r_str_const (R_BIN_TYPE_FUNC_STR);
 			ptr->size = 0;
 			ptr->vaddr = offset + pe_bin->vaddr;
 			ptr->paddr = imports[i].paddr + pe_bin->paddr;

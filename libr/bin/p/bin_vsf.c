@@ -65,7 +65,7 @@ static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, S
 			}
 		}
 		if (i >= MACHINES_MAX) {
-			eprintf("Unsupported machine: %s\n", machine);
+			eprintf ("Unsupported machine type\n");
 			free (res);
 			return NULL;
 		}

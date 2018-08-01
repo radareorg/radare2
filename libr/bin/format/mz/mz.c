@@ -36,7 +36,7 @@ int cmp_segs(const void *a, const void *b) {
 
 // This function reads from the file buffer,
 // thus using endian-agnostic functions
-void trv_segs (const void *seg, const void *segs) {
+static void trv_segs (const void *seg, const void *segs) {
 	const ut8 * const mseg = (const ut8 * const)seg;
 	ut16 ** const msegs = (ut16 **)segs;
 	if (mseg && msegs && *msegs) {
@@ -72,7 +72,7 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments(const struct r_bin_mz_obj_t *b
 #if 1
 	struct btree_node *tree;
 	struct r_bin_mz_segment_t *ret;
-	ut16 *segments, *curr_seg;
+	// ut16 *segments, 
 	int i, num_segs;
 	ut64 paddr;
 	const ut16 first_segment = 0;
@@ -86,21 +86,19 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments(const struct r_bin_mz_obj_t *b
 	for (i = 0; i < num_relocs; i++) {
 		paddr = r_bin_mz_seg_to_paddr (bin, relocs[i].segment) + relocs[i].offset;
 		if ((paddr + 2) < bin->dos_file_size) {
-			curr_seg = (ut16 *)(bin->b->buf + paddr);
+			int left;
+			ut16 *curr_seg = (ut16 *)r_buf_get_at (bin->b, paddr, &left);
 			/* Add segment only if it's located inside dos executable data */
-			if (r_read_le16 (curr_seg) <= last_parag) {
+			if (left >= 2 && r_read_le16 (curr_seg) <= last_parag) {
 				btree_add (&tree, curr_seg, cmp_segs);
 			}
 		}
 	}
 
 	/* Add segment address of first segment to make sure that it will be
-	added. If relocations empty or there isn't first segment in relocations.)
-	*/
+	added. If relocations empty or there isn't first segment in relocations.) */
 	btree_add (&tree, (void *)&first_segment, cmp_segs);
-	/* Add segment address of stack segment if it's resides inside dos
-	executable.
-	*/
+	/* Add segment address of stack segment if it's resides inside dos executable. */
 	if (r_bin_mz_seg_to_paddr (bin, stack_segment) < bin->dos_file_size) {
 		btree_add (&tree, (void *)&stack_segment, cmp_segs);
 	}
@@ -109,13 +107,13 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments(const struct r_bin_mz_obj_t *b
 		btree_cleartree (tree, NULL);
 		return NULL;
 	}
-	segments = calloc (1 + num_relocs, sizeof (*segments));
+	ut16 *segments = calloc (2 + num_relocs, sizeof (*segments));
 	if (!segments) {
 		eprintf ("Error: calloc (segments)\n");
 		btree_cleartree (tree, NULL);
 		return NULL;
 	}
-	curr_seg = segments;
+	ut16 *curr_seg = segments;
 	btree_traverse (tree, 0, &curr_seg, trv_segs);
 	num_segs = curr_seg - segments;
 	ret = calloc (num_segs + 1, sizeof (struct r_bin_mz_segment_t));
