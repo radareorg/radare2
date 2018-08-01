@@ -23,25 +23,25 @@ typedef struct r_vector_t {
 	size_t len;
 	size_t capacity;
 	size_t elem_size;
+	RVectorFree free;
+	void *free_user;
 } RVector;
 
-typedef struct r_pvector_t {
-	RVector v;
-	RPVectorFree free;
-} RPVector;
+// RPVector directly wraps RVector for type safety
+typedef struct r_pvector_t { RVector v; } RPVector;
 
 
 // RVector
 
-R_API void r_vector_init(RVector *vec, size_t elem_size);
+R_API void r_vector_init(RVector *vec, size_t elem_size, RVectorFree free, void *free_user);
 
-R_API RVector *r_vector_new(size_t elem_size);
+R_API RVector *r_vector_new(size_t elem_size, RVectorFree free, void *free_user);
 
-// clears the vector and calls elem_free on every element.
-R_API void r_vector_clear(RVector *vec, RVectorFree elem_free, void *user);
+// clears the vector and calls vec->free on every element if set.
+R_API void r_vector_clear(RVector *vec);
 
-// frees the vector and calls elem_free on every element.
-R_API void r_vector_free(RVector *vec, RVectorFree elem_free, void *user);
+// frees the vector and calls vec->free on every element if set.
+R_API void r_vector_free(RVector *vec);
 
 // the returned vector will have the same capacity as vec.
 R_API RVector *r_vector_clone(RVector *vec);
@@ -91,16 +91,14 @@ R_API void *r_vector_shrink(RVector *vec);
 
 // RPVector
 
-// initialize vec and set vec->free to free
 R_API void r_pvector_init(RPVector *vec, RPVectorFree free);
 
-// allocate a new RPVector and set vec->free to free
 R_API RPVector *r_pvector_new(RPVectorFree free);
 
-// clear the vector and call vec->free on every element.
+// clear the vector and call vec->v.free on every element.
 R_API void r_pvector_clear(RPVector *vec);
 
-// free the vector and call vec->free on every element.
+// free the vector and call vec->v.free on every element.
 R_API void r_pvector_free(RPVector *vec);
 
 static inline size_t r_pvector_len(const RPVector *vec)					{ return vec->v.len; }
