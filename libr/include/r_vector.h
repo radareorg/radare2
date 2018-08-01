@@ -121,7 +121,7 @@ R_API void *r_pvector_remove_at(RPVector *vec, size_t index);
 static inline void **r_pvector_insert(RPVector *vec, size_t index, void *x) { return (void **)r_vector_insert (&vec->v, index, &x); }
 
 // like r_vector_insert_range.
-static inline void **r_pvector_insert_range(RPVector *vec, size_t index, void **first, size_t count) { return r_vector_insert_range (&vec->v, index, first, count); }
+static inline void **r_pvector_insert_range(RPVector *vec, size_t index, void **first, size_t count) { return (void **)r_vector_insert_range (&vec->v, index, first, count); }
 
 // like r_vector_pop, but returns the pointer directly.
 R_API void *r_pvector_pop(RPVector *vec);
