@@ -17,7 +17,6 @@ int sdb_js0n(const ut8 *js, RangstrType len, RangstrType *out) {
 #pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #pragma GCC diagnostic ignored "-Wpragmas"
 #pragma GCC diagnostic ignored "-Winitializer-overrides"
-#pragma GCC diagnostic ignored "-Woverride-init"
 
 #define HAVE_RAWSTR 0
 #define PUSH(i) if(depth == 1) prev = *out++ = ((cur+i) - js)

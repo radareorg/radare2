@@ -253,6 +253,8 @@ def main():
             help='Adds support for Windows XP')
     parser.add_argument('--pull', action='store_true',
             help='git pull before building')
+    parser.add_argument('--nosudo', action='store_true',
+            help='Do not use sudo for install/symstall/uninstall')
     parser.add_argument('--uninstall', action='store_true',
             help='Uninstall')
     parser.add_argument('--symstall', action='store_true',
@@ -307,15 +309,18 @@ def main():
 
     PATH_FMT.update(R2_PATH)
 
+    sudo = 'sudo '
+    if args.nosudo:
+        sudo = ''
     # Build it!
     log.debug('Arguments: %s', args)
     build(args)
     if args.uninstall:
-        os.system('make uninstall PWD="$PWD/build" BTOP="$PWD/build/binr"')
+        os.system(sudo + 'make uninstall PWD="$PWD/build" BTOP="$PWD/build/binr"')
     if args.install:
         install(args)
     if args.symstall:
-        os.system('make symstall PWD="$PWD/build" BTOP="$PWD/build/binr"')
+        os.system(sudo + 'make symstall PWD="$PWD/build" BTOP="$PWD/build/binr"')
 
 if __name__ == '__main__':
     main()
