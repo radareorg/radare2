@@ -631,7 +631,8 @@ static bool try_get_delta_jmptbl_info (RAnal *anal, RAnalFunction *fcn, ut64 jmp
 			break;
 		}
 
-		if (tmp_aop.type != R_ANAL_OP_TYPE_CMP) {
+		ut32 type = tmp_aop.type & R_ANAL_OP_TYPE_MASK;
+		if (type != R_ANAL_OP_TYPE_CMP) {
 			continue;
 		}
 		// get the value of the cmp
@@ -716,10 +717,11 @@ static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAna
 	isValid = false;
 
 	for (i = 0; i < prev_bb->op_pos_size; i++) {
-		ut64 addr = prev_bb->addr + prev_bb->op_pos[i];
-		int len = r_anal_op (anal, &tmp_aop, addr, bb_buf + prev_bb->op_pos[i], prev_bb->size - prev_bb->op_pos[i], R_ANAL_OP_MASK_BASIC);
+		ut64 op_addr = prev_bb->addr + prev_bb->op_pos[i];
+		int len = r_anal_op (anal, &tmp_aop, op_addr, bb_buf + prev_bb->op_pos[i], prev_bb->size - prev_bb->op_pos[i], R_ANAL_OP_MASK_BASIC);
 
-		if (len < 1 || tmp_aop.type != R_ANAL_OP_TYPE_CMP) {
+		ut32 type = tmp_aop.type & R_ANAL_OP_TYPE_MASK;
+		if (len < 1 || type != R_ANAL_OP_TYPE_CMP) {
 			continue;
 		}
 		// get the value of the cmp
