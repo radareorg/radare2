@@ -1183,6 +1183,8 @@ repeat:
 			r_core_cmdf (core, "s 0x%"PFMT64x, refi->addr);
 			ret = 1;
 		}
+	} else if (ch != 'q' && ch != 'Q') {
+		goto repeat;
 	}
 	r_list_free (xrefs);
 #else
