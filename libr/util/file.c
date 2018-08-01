@@ -1099,6 +1099,7 @@ R_API RList* r_file_globsearch (const char *_globbed_path, int maxdepth) {
 
 		if (!path) {
 			r_list_free (files);
+			free (globbed_path);
 			return NULL;
 		}
 

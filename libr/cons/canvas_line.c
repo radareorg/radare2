@@ -47,7 +47,7 @@ static char* utf8_line_horiz (int dot_style) {
 	return RUNECODESTR_LINE_HORIZ;
 }
 
-static bool apply_line_style(RConsCanvas *c, int x, int y, int x2, int y2,
+static void apply_line_style(RConsCanvas *c, int x, int y, int x2, int y2,
 		RCanvasLineStyle *style, int isvert) {
 	RCons *cons = r_cons_singleton ();
 	switch (style->color) {
