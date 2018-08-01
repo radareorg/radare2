@@ -142,7 +142,12 @@ endif
 sdb_dep = dependency('sdb', required: false)
 if not sdb_dep.found() or not get_option('use_sys_sdb')
   message('Use bundled sdb')
+  is_sdb_subproject = true
   subdir('sdb')
+
+  # bundle headers under include/libr/
+  sdb_include_files = run_command(glob_cmd + ['sdb/src/*.h']).stdout().strip().split(';') + [sdb_version_path]
+  install_headers(sdb_include_files, subdir: 'libr/sdb')
 else
   message('Use system sdb')
 endif
