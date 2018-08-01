@@ -57,7 +57,7 @@ files = [
   'vmarks.c',
   'vmenus.c',
   'yank.c',
-  'p/core_anal.c',
+  'p/core_a2f.c',
   'p/core_java.c',
 ]
 
