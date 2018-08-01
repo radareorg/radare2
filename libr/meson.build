@@ -180,7 +180,7 @@ bp_plugins = [
 ]
 
 core_plugins = [
-  'anal',
+  'a2f',
   'java'
 ]
 
