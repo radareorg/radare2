@@ -1136,6 +1136,7 @@ repeat:
 	}
 	r_cons_flush ();
 	ch = r_cons_readchar ();
+	ch = r_cons_arrow_to_hjkl (ch);
 	if (ch == ':') {
 		r_core_visual_prompt_input (core);
 	} else if (ch == '?') {
@@ -1161,10 +1162,10 @@ repeat:
 			printMode = lastPrintMode;
 		}
 		goto repeat;
-	} else if (r_cons_arrow_to_hjkl (ch) == 'j') {
+	} else if (ch == 'j') {
 		skip++;
 		goto repeat;
-	} else if (r_cons_arrow_to_hjkl (ch) == 'k') {
+	} else if (ch == 'k') {
 		skip--;
 		if (skip < 0) {
 			skip = 0;
@@ -1182,6 +1183,8 @@ repeat:
 			r_core_cmdf (core, "s 0x%"PFMT64x, refi->addr);
 			ret = 1;
 		}
+	} else if (ch != 'q' && ch != 'Q') {
+		goto repeat;
 	}
 	r_list_free (xrefs);
 #else
