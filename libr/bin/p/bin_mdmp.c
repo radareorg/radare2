@@ -108,7 +108,8 @@ static RBinInfo *info(RBinFile *bf) {
 			ret->bits = 64;
 			break;
 		default:
-			strncpy (ret->machine, "Unknown", R_BIN_SIZEOF_STRINGS);
+			ret->machine = strdup ("Unknown");
+			break;
 		}
 
 		switch (obj->streams.system_info->product_type) {
