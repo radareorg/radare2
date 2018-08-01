@@ -47,7 +47,7 @@ static int b64_decode(const char in[4], ut8 out[3], int isz) {
 
 R_API int r_base64_decode(ut8 *bout, const char *bin, int len) {
 	int in, out, ret;
-	if (len <= 0) {
+	if (len < 0) {
 		len = strlen (bin);
 	}
 	for (in = out = 0; in + 3 < len; in += 4) {
