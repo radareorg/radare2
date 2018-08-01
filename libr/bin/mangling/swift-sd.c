@@ -418,7 +418,7 @@ R_API char *r_bin_demangle_swift(const char *s, int syscmd) {
 					break;
 				case 'F':
 					strcat (out, " ()");
-					p = resolve (types, q + 3, &attr); // type
+					p = resolve (types, (strlen (q) > 2)? q + 3: "", &attr); // type
 					break;
 				case 'G':
 					q += 2;
@@ -443,8 +443,9 @@ R_API char *r_bin_demangle_swift(const char *s, int syscmd) {
 				if (p) {
 					q = p;
 					q = getnum (p, &len);
-					if (attr && !strcmp (attr, "generic"))
+					if (attr && !strcmp (attr, "generic")) {
 						is_generic = 1;
+					}
 					//printf ("TYPE: %s LEN %d VALUE %s\n",
 					//	attr, len, getstring (q, len));
 					if (!len) {
@@ -457,7 +458,7 @@ R_API char *r_bin_demangle_swift(const char *s, int syscmd) {
 								}
 								break;
 							}
-							p = resolve (types, q + 1, &attr); // type
+							p = resolve (types, *q? q + 1: q, &attr); // type
 							//printf ("RETURN TYPE %s\n", attr);
 		//					printf ("RET %s\n", attr);
 							if (attr) {
