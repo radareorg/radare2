@@ -2860,7 +2860,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("graph.gv.current", "false", "Highlight the current node in graphviz graph.");
 	SETPREF ("graph.nodejmps", "true", "Enables shortcuts for every node.");
 	SETPREF ("graph.hints", "true", "Show true (t) and false (f) hints for conditional edges in graph");
-	SETCB ("graph.dotted", "true", &cb_dotted, "Dotted lines for conditional jumps in graph");
+	SETCB ("graph.dotted", "false", &cb_dotted, "Dotted lines for conditional jumps in graph");
 
 	/* hud */
 	SETPREF ("hud.path", "", "Set a custom path for the HUD file");
