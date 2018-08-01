@@ -1787,7 +1787,7 @@ static void ds_print_pre(RDisasmState *ds) {
 
 //XXX review this with asm.cmt.right
 static void ds_show_comments_right(RDisasmState *ds) {
-	int linelen, maxclen ;
+	int linelen;
 	RCore *core = ds->core;
 	RFlagItem *item;
 	/* show comment at right? */
@@ -1806,8 +1806,6 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		} else if (item && item->comment && *item->comment) {
 			ds->ocomment = item->comment;
 			ds->comment = strdup (item->comment);
-		} else {
-			return;
 		}
 	} else if (vartype) {
 		ds->comment = r_str_newf ("%s%s %s; %s", COLOR_ARG (ds, color_func_var_type), vartype, COLOR (ds, color_usrcmt), comment);
@@ -1816,14 +1814,14 @@ static void ds_show_comments_right(RDisasmState *ds) {
 	} else {
 		ds->comment = comment;
 	}
-	maxclen = strlen (ds->comment) + 5;
-	linelen = maxclen;
+	if (!ds->comment || !*ds->comment) {
+		return;
+	}
+	linelen = strlen (ds->comment) + 5;
 	if (ds->show_comment_right_default) {
-		if (ds->ocols + maxclen < core->cons->columns) {
-			if (ds->comment && *ds->comment && strlen (ds->comment) < maxclen) {
-				if (!strchr (ds->comment, '\n')) { // more than one line?
-					ds->show_comment_right = 1;
-				}
+		if (ds->ocols + linelen < core->cons->columns) {
+			if (!strchr (ds->comment, '\n')) { // more than one line?
+				ds->show_comment_right = 1;
 			}
 		}
 	}
