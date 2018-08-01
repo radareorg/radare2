@@ -1164,16 +1164,11 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 				" laddr=0x%08"PFMT64x,
 				at, paddr, baddr, laddr);
 			if (haddr == UT64_MAX) {
-				r_cons_printf (
-					" haddr=%"PFMT64d
-					" type=%s\n",
-					haddr, type);
+				r_cons_printf (" haddr=%"PFMT64d, haddr);
 			} else {
-				r_cons_printf (
-					" haddr=0x%08"PFMT64x
-					" type=%s\n",
-					haddr, type);
+				r_cons_printf (" haddr=0x%08"PFMT64x, haddr);
 			}
+			r_cons_printf (" type=%s\n", type);
 		}
 		i++;
 		last_processed = iter;
