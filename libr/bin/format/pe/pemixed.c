@@ -66,17 +66,18 @@ struct PE_(r_bin_pe_obj_t)* r_bin_pemixed_init_native(struct PE_(r_bin_pe_obj_t)
 	
 	//copy pe_bin->b and assign to sub_bin_native
 
-	if (!(tmp_buf = malloc (b_size))){
-		eprintf("wtf malloc\n");
-	};
+	// if (!(tmp_buf = malloc (b_size))){
+	// 	eprintf("wtf malloc\n");
+	// };
 
-	if (!(r_buf_read_at (pe_bin->b, 0, tmp_buf, b_size))){
-		free (sub_bin_native); 
-		return NULL;
-	}
+	// if (!(r_buf_read_at (pe_bin->b, 0, tmp_buf, b_size))){
+	// 	free (sub_bin_native); 
+	// 	return NULL;
+	// }
 
-	if (!(sub_bin_native->b = r_buf_new_with_bytes(tmp_buf, b_size))){
-		free (sub_bin_native); 
+	if (!(sub_bin_native->b = r_buf_new_with_bytes(pe_bin->b->buf, b_size))){
+		free (sub_bin_native);
+		eprintf("failed\n");
 		return NULL;
 	}
 
@@ -141,8 +142,10 @@ void* r_bin_pemixed_free(struct r_bin_pemixed_obj_t* bin){
 	//only one free is nessescary since they all point 
 	//to the same original pe struct
 	//possible memleak here
-	PE_(r_bin_pe_free)(bin->sub_bin_net); 
-	r_buf_free (bin->sub_bin_dos->b); //dos is the only one with its own buf
+	PE_(r_bin_pe_free)(bin->sub_bin_net);
+	if (bin->sub_bin_dos){
+		r_buf_free (bin->sub_bin_dos->b); //dos is the only one with its own buf
+	} 
 	free (bin->sub_bin_dos);
 	free (bin->sub_bin_native);
 

@@ -333,7 +333,7 @@ typedef struct r_bin_xtr_metadata_t {
 	char *libname;
 	char *machine;
 	char *type;
-	char xtr_type[10];
+	const char *xtr_type;
 } RBinXtrMetadata;
 
 typedef int (*FREE_XTR)(void *xtr_obj);

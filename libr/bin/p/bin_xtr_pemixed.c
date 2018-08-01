@@ -40,16 +40,14 @@ static bool check_bytes(const ut8 *bytes, ut64 sz){
 }
 
 static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
-	RList *res = NULL;
-
 	//extract dos componenent first
 	RBinXtrData *data = oneshot (bin, buf, size, SUB_BIN_DOS); 
 
 	if (!data) {
-		return res;
+		return NULL;
 	}
 	// XXX - how do we validate a valid narch?
-	res = r_list_newf (r_bin_xtrdata_free); 
+	RList * res = r_list_newf (r_bin_xtrdata_free); 
 	r_list_append (res, data); 
 	
 	if ((data = oneshot (bin, buf, size, SUB_BIN_NATIVE))){
@@ -70,17 +68,18 @@ static void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct Pe_32_r_bi
 	meta->machine = NULL;
 	meta->type = NULL;
 	meta->libname =NULL;
-	strcpy (meta->xtr_type, "net");
+	meta->xtr_type = "net";
+	//strcpy (meta->xtr_type, "net");
 }
 
 static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int sub_bin_type) {
 	struct r_bin_pemixed_obj_t* fb;
 	struct PE_(r_bin_pe_obj_t)* pe;
-	RBinXtrData *res = NULL;
 
 	if (!bin || !bin->cur) {
 		return NULL;
 	}
+
 	if (!bin->cur->xtr_obj){
 		bin->cur->xtr_obj = r_bin_pemixed_from_bytes_new(buf, size);
 	}
@@ -91,26 +90,26 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int sub_bin_t
 	pe = r_bin_pemixed_extract (fb, sub_bin_type);
 
 	if (!pe){
-		return res;
+		return NULL;
 	} 
 	
 	RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
-	fill_metadata_info_from_hdr (metadata, pe);
-		
-	res = r_bin_xtrdata_new (pe->b, 0, pe->size, 3, metadata);
-	return res; 
+	if (!metadata) {
+		return NULL;
+	}
+
+	fill_metadata_info_from_hdr (metadata, pe);	
+	return r_bin_xtrdata_new (pe->b, 0, pe->size, 3, metadata);
 }
 
 static int destroy(RBin *bin) {
 	return free_xtr (bin->cur->xtr_obj);
 }
 
-static int free_xtr (void *xtr_obj
-) {
+static int free_xtr (void *xtr_obj) {
 	r_bin_pemixed_free ((struct r_bin_pemixed_obj_t*) xtr_obj);
 	return true;
 }
-
 
 RBinXtrPlugin r_bin_xtr_plugin_xtr_pemixed = {
 	.name = "xtr.pemixed",
