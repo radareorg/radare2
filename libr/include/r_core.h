@@ -774,7 +774,7 @@ R_API bool r_core_autocomplete_remove(RCoreAutocomplete *parent, const char* cmd
 
 /* PLUGINS */
 extern RCorePlugin r_core_plugin_java;
-extern RCorePlugin r_core_plugin_anal;
+extern RCorePlugin r_core_plugin_a2f;
 
 #endif
 

@@ -390,7 +390,7 @@ static int r_cmd_anal_call(void *user, const char *input) {
 }
 
 // PLUGIN Definition Info
-RCorePlugin r_core_plugin_anal = {
+RCorePlugin r_core_plugin_a2f = {
 	.name = "a2f",
 	.desc = "The reworked analysis from scratch thing",
 	.license = "LGPL3",
@@ -400,7 +400,7 @@ RCorePlugin r_core_plugin_anal = {
 #ifndef CORELIB
 RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CORE,
-	.data = &r_core_plugin_anal,
+	.data = &r_core_plugin_a2f,
 	.version = R2_VERSION
 };
 #endif
