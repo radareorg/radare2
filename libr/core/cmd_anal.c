@@ -386,16 +386,16 @@ static const char *help_msg_afvs[] = {
 static const char *help_msg_ag[] = {
 	"Usage:", "ag<graphtype><format> [addr]", "",
 	"Graph commands:", "", "",
-	"agc", "[format] [@ fcn addr]", "Function callgraph",
-	"agf", "[format] [@ fcn addr]", "Basic blocks function graph",
-	"agx", "[format] [@ addr]", "Cross references graph",
-	"agr", "[format] [@ fcn addr]", "References graph",
 	"aga", "[format] [@ fcn addr]", "Data references graph",
-	"agd", "[format] [fcn addr]", "Diff graph",
-	"agi", "[format]", "Imports graph",
-	"agC", "[format]", "Global callgraph",
-	"agR", "[format]", "Global references graph",
 	"agA", "[format]", "Global data references graph",
+	"agc", "[format] [@ fcn addr]", "Function callgraph",
+	"agC", "[format]", "Global callgraph",
+	"agd", "[format] [fcn addr]", "Diff graph",
+	"agf", "[format] [@ fcn addr]", "Basic blocks function graph",
+	"agi", "[format]", "Imports graph",
+	"agr", "[format] [@ fcn addr]", "References graph",
+	"agR", "[format]", "Global references graph",
+	"agx", "[format] [@ addr]", "Cross references graph",
 	"agg", "[format]", "Custom graph",
 	"ag-", "", "Clear the custom graph",
 	"agn", "[?] title body", "Add a node to the custom graph",
@@ -403,14 +403,14 @@ static const char *help_msg_ag[] = {
 	"","","",
 	"Output formats:", "", "",
 	"<blank>", "", "Ascii art",
-	"v", "", "Interactive ascii art",
-	"t", "", "Tiny ascii art",
-	"d", "", "Graphviz dot",
-	"j", "", "json ('J' for formatted disassembly)",
-	"g", "", "Graph Modelling Language (gml)",
-	"k", "", "SDB key-value",
 	"*", "", "r2 commands",
-	"w", " [path]", "Web/image display or save to path (see graph.extension and graph.web)",
+	"d", "", "Graphviz dot",
+	"g", "", "Graph Modelling Language (gml)",
+	"j", "", "json ('J' for formatted disassembly)",
+	"k", "", "SDB key-value",
+	"t", "", "Tiny ascii art",
+	"v", "", "Interactive ascii art",
+	"w", " [path]", "Write to path or display graph image (see graph.gv.format and graph.web)",
 	NULL
 };
 
@@ -5762,7 +5762,7 @@ static char *getViewerPath() {
 
 static char* graph_cmd(RCore *core, char *r2_cmd, const char *save_path) {
 	char *cmd = NULL;
-	const char *ext = r_config_get (core->config, "graph.extension");
+	const char *ext = r_config_get (core->config, "graph.gv.format");
 	char *dotPath = r_file_path ("dot");
 	if (!r_file_exists (dotPath)) {
 		free (dotPath);
@@ -5777,7 +5777,7 @@ static char* graph_cmd(RCore *core, char *r2_cmd, const char *save_path) {
 				cmd = r_str_newf ("%s > a.dot;!%s -T%s -oa.%s a.dot;!%s a.%s", r2_cmd, dotPath, ext, ext, viewer, ext);
 				free (viewer);
 			} else {
-				cmd = "?e cannot find a valid picture viewer";
+				eprintf ("Cannot find a valid picture viewer");
 			}
 		}
 	} else {
@@ -5942,14 +5942,16 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 		}
 		break;
 	}
-	case 'd': // "aggd" - dot format
+	case 'd': { // "aggd" - dot format
+		const char *font = r_config_get (core->config, "graph.font");
 		r_cons_printf ("digraph code {\ngraph [bgcolor=white];\n"
 			"node [color=lightgray, style=filled shape=box "
-			"fontname=\"Courier\" fontsize=\"8\"];\n");
+			"fontname=\"%s\" fontsize=\"8\"];\n", font);
 		r_agraph_foreach (core->graph, agraph_print_node_dot, NULL);
 		r_agraph_foreach_edge (core->graph, agraph_print_edge_dot, NULL);
 		r_cons_printf ("}\n");
 		break;
+		}
 	case '*': // "agg*" -
 		r_agraph_foreach (core->graph, agraph_print_node, NULL);
 		r_agraph_foreach_edge (core->graph, agraph_print_edge, NULL);
@@ -5972,7 +5974,7 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 		} else {
 			char *cmd = graph_cmd (core, "aggd", input + 1);
 			if (cmd && *cmd) {
-				if (*(input + 1)) {
+				if (input[1]) {
 					r_cons_printf ("Saving to file %s ...\n", input + 1);
 					r_cons_flush ();
 				}
@@ -6372,10 +6374,10 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			r_core_cmd0 (core, "=H /graph/");
 		} else {
 			char *cmdargs = r_str_newf ("agfd @ 0x%"PFMT64x, core->offset);
-			char *cmd = graph_cmd (core, cmdargs, input + 2);
+			char *cmd = graph_cmd (core, cmdargs, input + 1);
 			if (cmd && *cmd) {
-				if (*(input + 1)) {
-					r_cons_printf ("Saving to file %s ...\n", input + 2);
+				if (input[1]) {
+					r_cons_printf ("Saving to file %s ...\n", input + 1);
 					r_cons_flush ();
 				}
 				r_core_cmd0 (core, cmd);
