@@ -249,6 +249,8 @@ def main():
             help='Set project installation prefix')
     parser.add_argument('--dir', default=BUILDDIR, required=False,
             help='Destination build directory (default: %(default)s)')
+    parser.add_argument('--alias', action='store_true',
+            help='Show the "m" alias shell command')
     parser.add_argument('--xp', action='store_true',
             help='Adds support for Windows XP')
     parser.add_argument('--pull', action='store_true',
@@ -266,6 +268,9 @@ def main():
             help='Install radare2 after building')
     parser.add_argument('--options', nargs='*', default=[])
     args = parser.parse_args()
+    if args.alias:
+        print("alias m=\"" + os.path.abspath(__file__) + "\"")
+        sys.exit(0);
     if args.asan:
         if os.uname().sysname == 'OpenBSD':
             log.error("Asan insupported under OpenBSD")
