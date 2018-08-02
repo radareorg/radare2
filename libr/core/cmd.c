@@ -1441,6 +1441,7 @@ static int cmd_env(void *data, const char *input) {
 	switch (*input) {
 	case '?':
 		r_core_cmd_help (core, help_msg_percent);
+		r_core_cmd_help (core, help_msg_env);
 		break;
 	default:
 		ret = r_core_cmdf (core, "env %s", input);
@@ -1607,7 +1608,8 @@ static int cmd_system(void *data, const char *input) {
 		if (input[1] == '!') { // !!! & !!!-
 			cmd_autocomplete (core, input + 2);
 		} else if (input[1] == '?') {
-			r_core_sysenv_help (core);
+			r_core_cmd_help (core, help_msg_exclamation);
+			r_core_cmd_help (core, help_msg_env);
 		} else {
 			if (r_sandbox_enable (0)) {
 				eprintf ("This command is disabled in sandbox mode\n");
@@ -1634,7 +1636,8 @@ static int cmd_system(void *data, const char *input) {
 		r_line_hist_list ();
 		break;
 	case '?': //!?
-		r_core_sysenv_help (core);
+		r_core_cmd_help (core, help_msg_exclamation);
+		r_core_cmd_help (core, help_msg_env);
 		break;
 	default:
 		n = atoi (input);
