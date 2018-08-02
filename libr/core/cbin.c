@@ -1040,8 +1040,11 @@ static int bin_source(RCore *r, int mode) {
 	ls_foreach (ls, iter, kv) {
 		char *v = kv->value;
 		RList *list = r_str_split_list (v, "|");
-		if (!strstr (r_list_get_bottom (list), "0x")){
-			r_list_append (final_list, r_list_get_bottom (list)); // Should check if already here and discard
+		srcline = r_list_get_bottom (list);
+		if (srcline) {
+			if (!strstr (srcline, "0x")){
+				r_list_append (final_list, srcline);
+			}
 		}
 	}
 	r_cons_printf ("[Source file]\n");
