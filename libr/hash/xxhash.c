@@ -47,7 +47,7 @@
 #define PRIME32_4    668265263U
 #define PRIME32_5    374761393U
 
-ut32 XXH32(const void *input, int len, ut32 seed) {
+ut32 XXH32(const void *input, size_t len, ut32 seed) {
 	const ut8 *p = (const ut8 *) input;
 	const ut8 *const bEnd = p + len;
 	ut32 h32;
