@@ -312,7 +312,7 @@ static void ds_print_as_string(RDisasmState *ds);
 static void ds_print_core_vmode(RDisasmState *ds, int pos);
 static void ds_print_dwarf(RDisasmState *ds);
 static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf);
-static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char **prefix_out);
+static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char **prefix_out, bool is_comment);
 static void ds_print_comments_right(RDisasmState *ds);
 static void ds_print_ptr(RDisasmState *ds, int len, int idx);
 static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refaddr);
@@ -472,7 +472,7 @@ static void ds_comment(RDisasmState *ds, bool align, const char *format, ...) {
 	} else {
 		char buffer[4096];
 		vsnprintf (buffer, sizeof(buffer), format, ap);
-		char *escstr = r_str_escape_latin1 (buffer, false, true);
+		char *escstr = r_str_escape_latin1 (buffer, false, true, false);
 		if (escstr) {
 			r_cons_printf ("%s", escstr);
 			free (escstr);
@@ -1695,7 +1695,7 @@ static void ds_show_functions(RDisasmState *ds) {
 			if (comment) {
 				char *comment_esc = NULL;
 				if (ds->use_json) {
-					comment = comment_esc = ds_esc_str (ds, comment, (int)strlen (comment), NULL);
+					comment = comment_esc = ds_esc_str (ds, comment, (int)strlen (comment), NULL, true);
 				}
 
 				if (comment) {
@@ -2635,7 +2635,7 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 						esc_bslash = false;
 						/* fallthrough */
 					default:
-						out = r_str_escape_latin1 (mi->str, false, esc_bslash);
+						out = r_str_escape_latin1 (mi->str, false, esc_bslash, false);
 					}
 					if (!out) {
 						break;
@@ -3351,14 +3351,14 @@ static void ds_print_asmop_payload(RDisasmState *ds, const ut8 *buf) {
 }
 
 /* Do not use this function for escaping JSON! */
-static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char **prefix_out) {
+static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char **prefix_out, bool is_comment) {
 	int str_len;
 	char *escstr = NULL;
 	const char *prefix = "";
 	bool esc_bslash = ds->core->print->esc_bslash;
 	switch (ds->strenc) {
 	case R_STRING_ENC_LATIN1:
-		escstr = r_str_escape_latin1 (str, ds->show_asciidot, esc_bslash);
+		escstr = r_str_escape_latin1 (str, ds->show_asciidot, esc_bslash, is_comment);
 		break;
 	case R_STRING_ENC_UTF8:
 		escstr = r_str_escape_utf8 (str, ds->show_asciidot, esc_bslash);
@@ -3395,7 +3395,7 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 				escstr = r_str_escape_utf32le (str, len, ds->show_asciidot, esc_bslash);
 				prefix = "U";
 			} else {
-				escstr = r_str_escape_latin1 (str, ds->show_asciidot, esc_bslash);
+				escstr = r_str_escape_latin1 (str, ds->show_asciidot, esc_bslash, is_comment);
 			}
 		} else {
 			RStrEnc enc = R_STRING_ENC_LATIN1;
@@ -3407,8 +3407,8 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 				}
 			}
 			escstr = (enc == R_STRING_ENC_UTF8 ?
-			          r_str_escape_utf8 (str, ds->show_asciidot, esc_bslash) :
-			          r_str_escape_latin1 (str, ds->show_asciidot, esc_bslash));
+				r_str_escape_utf8 (str, ds->show_asciidot, esc_bslash) :
+				r_str_escape_latin1 (str, ds->show_asciidot, esc_bslash, is_comment));
 		}
 	}
 	if (prefix_out) {
@@ -3422,7 +3422,7 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refadd
 		return;
 	}
 	const char *prefix;
-	char *escstr = ds_esc_str (ds, str, len, &prefix);
+	char *escstr = ds_esc_str (ds, str, len, &prefix, false);
 	if (escstr) {
 		bool inv = ds->show_color && !ds->show_emu_strinv;
 		ds_begin_comment (ds);
@@ -3870,7 +3870,7 @@ static int myregwrite(RAnalEsil *esil, const char *name, ut64 *val) {
 					len = R_DISASM_MAX_STR;
 				}
 #endif
-				char *escstr = ds_esc_str (ds, str, (int)len, &prefix);
+				char *escstr = ds_esc_str (ds, str, (int)len, &prefix, false);
 				const char *escquote = ds->use_json ? "\\\"" : "\"";
 				if (escstr) {
 					if (ds->show_color) {
@@ -4366,7 +4366,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 								char *c = comment + line_indexes[i];
 								char *escstr = NULL;
 								if (ds->use_json) {
-									c = escstr = ds_esc_str (ds, c, (int)strlen (c), NULL);
+									c = escstr = ds_esc_str (ds, c, (int)strlen (c), NULL, true);
 								}
 								ds_print_pre (ds);
 								r_cons_printf ("; %s", c);
@@ -4381,7 +4381,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 				} else {
 					char *escstr = NULL;
 					if (ds->use_json) {
-						comment = escstr = ds_esc_str (ds, comment, (int)strlen (comment), NULL);
+						comment = escstr = ds_esc_str (ds, comment, (int)strlen (comment), NULL, true);
 					}
 					if (comment) {
 						r_cons_printf ("; %s", comment);

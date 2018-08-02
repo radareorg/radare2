@@ -1201,7 +1201,7 @@ static void r_str_byte_escape(const char *p, char **dst, int dot_nl, bool defaul
 
 /* Internal function. dot_nl specifies wheter to convert \n into the
  * graphiz-compatible newline \l */
-static char *r_str_escape_(const char *buf, int dot_nl, bool ign_esc_seq, bool show_asciidot, bool esc_bslash) {
+static char *r_str_escape_(const char *buf, int dot_nl, bool parse_esc_seq, bool ign_esc_seq, bool show_asciidot, bool esc_bslash) {
 	char *new_buf, *q;
 	const char *p;
 
@@ -1219,7 +1219,8 @@ static char *r_str_escape_(const char *buf, int dot_nl, bool ign_esc_seq, bool s
 	while (*p) {
 		switch (*p) {
 		case 0x1b: // ESC
-			if (ign_esc_seq) {
+			if (parse_esc_seq) {
+				const char *start_seq = p;
 				p++;
 				/* Parse the ANSI code (only the graphic mode
 				 * set ones are supported) */
@@ -1231,6 +1232,10 @@ static char *r_str_escape_(const char *buf, int dot_nl, bool ign_esc_seq, bool s
 						if (*p == '\0') {
 							goto out;
 						}
+					}
+					if (!ign_esc_seq) {
+						memcpy (q, start_seq, p - start_seq + 1);
+						q += (p - start_seq + 1);
 					}
 				}
 				break;
@@ -1246,15 +1251,15 @@ out:
 }
 
 R_API char *r_str_escape(const char *buf) {
-	return r_str_escape_ (buf, false, true, false, true);
+	return r_str_escape_ (buf, false, true, true, false, true);
 }
 
 R_API char *r_str_escape_dot(const char *buf) {
-	return r_str_escape_ (buf, true, true, false, true);
+	return r_str_escape_ (buf, true, true, true, false, true);
 }
 
-R_API char *r_str_escape_latin1(const char *buf, bool show_asciidot, bool esc_bslash) {
-	return r_str_escape_ (buf, false, false, show_asciidot, esc_bslash);
+R_API char *r_str_escape_latin1(const char *buf, bool show_asciidot, bool esc_bslash, bool colors) {
+	return r_str_escape_ (buf, false, false, !colors, show_asciidot, esc_bslash);
 }
 
 static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool show_asciidot, bool esc_bslash) {

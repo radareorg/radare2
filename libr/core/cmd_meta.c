@@ -629,7 +629,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			case 0:  /* temporary legacy workaround */
 				esc_bslash = false;
 			default:
-				esc_str = r_str_escape_latin1 (mi.str, false, esc_bslash);
+				esc_str = r_str_escape_latin1 (mi.str, false, esc_bslash, false);
 			}
 			if (esc_str) {
 				r_cons_printf ("\"%s\"\n", esc_str);
