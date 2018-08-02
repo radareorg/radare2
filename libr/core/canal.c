@@ -2332,7 +2332,7 @@ static int fcn_list_json(RCore *core, RList *fcns, bool quiet) {
 			r_cons_printf (",");
 		}
 		if (quiet) {
-			r_cons_printf ("\"0x%08"PFMT64x"\"", fcn->addr);
+			r_cons_printf ("%d", fcn->addr);
 		} else {
 			fcn_print_json (core, fcn);
 		}
