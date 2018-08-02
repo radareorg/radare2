@@ -156,6 +156,10 @@ R_API ut8 r_hash_mod255(const ut8 *b, ut64 len) {
 	return c % 255;
 }
 
+R_API ut32 r_hash_xxhash(const ut8 *buf, ut64 len) {
+  return XXH32 (buf, len, 0);
+}
+
 R_API ut8 r_hash_deviation(const ut8 *b, ut64 len) {
 	int i, c;
 	for (c = i = 0, len--; i < len; i++) {

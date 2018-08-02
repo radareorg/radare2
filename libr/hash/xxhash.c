@@ -47,12 +47,6 @@
 #define PRIME32_4    668265263U
 #define PRIME32_5    374761393U
 
-R_API ut32 r_hash_xxhash(const ut8 *buf, ut64 len) {
-	void *s = XXH32_init (0);
-	XXH32_feed (s, buf, (int) len);
-	return XXH32_result (s);
-}
-
 ut32 XXH32(const void *input, int len, ut32 seed) {
 	const ut8 *p = (const ut8 *) input;
 	const ut8 *const bEnd = p + len;
