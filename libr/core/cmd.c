@@ -1440,8 +1440,7 @@ static int cmd_env(void *data, const char *input) {
 	int ret = true;
 	switch (*input) {
 	case '?':
-		r_core_cmd_help (core, help_msg_percent);
-		r_core_cmd_help (core, help_msg_env);
+		cmd_help_percent (core);
 		break;
 	default:
 		ret = r_core_cmdf (core, "env %s", input);
@@ -1608,8 +1607,7 @@ static int cmd_system(void *data, const char *input) {
 		if (input[1] == '!') { // !!! & !!!-
 			cmd_autocomplete (core, input + 2);
 		} else if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_exclamation);
-			r_core_cmd_help (core, help_msg_env);
+			cmd_help_exclamation (core);
 		} else {
 			if (r_sandbox_enable (0)) {
 				eprintf ("This command is disabled in sandbox mode\n");

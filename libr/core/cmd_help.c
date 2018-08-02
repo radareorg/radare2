@@ -28,6 +28,10 @@ static const char *help_msg_percent[] = {
 	NULL
 };
 
+// NOTE: probably not all environment vars takes sesnse
+// because they can be replaced by commands in the given
+// command.. we should only expose the most essential and
+// unidirectional ones.
 static const char *help_msg_env[] = {
 		"\nEnvironment:", "", "",
 		"R2_FILE", "", "file name",
@@ -48,10 +52,6 @@ static const char *help_msg_env[] = {
 		NULL
 };
 
-// NOTE: probably not all environment vars takes sesnse
-// because they can be replaced by commands in the given
-// command.. we should only expose the most essential and
-// unidirectional ones.
 static const char *help_msg_exclamation[] = {
 		"Usage:", "!<cmd>", "  Run given command as in system(3)",
 		"!", "", "list all historic commands",
@@ -228,6 +228,16 @@ static const char *help_msg_greater_sign[] = {
 	"[cmd] 2> /dev/null", "", "omit the STDERR output of 'cmd'",
 	NULL
 };
+
+static void cmd_help_exclamation(RCore *core) {
+	r_core_cmd_help (core, help_msg_exclamation);
+	r_core_cmd_help (core, help_msg_env);
+}
+
+static void cmd_help_percent(RCore *core) {
+	r_core_cmd_help (core, help_msg_percent);
+	r_core_cmd_help (core, help_msg_env);
+}
 
 static void cmd_help_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?, question);
@@ -672,8 +682,7 @@ static int cmd_help(void *data, const char *input) {
 		if (input[1]) {
 			if (!core->num->value) {
 				if (input[1] == '?') {
-					r_core_cmd_help (core, help_msg_exclamation);
-					r_core_cmd_help (core, help_msg_env);
+					cmd_help_exclamation (core);
 					return 0;
 				} else {
 					return core->num->value = r_core_cmd (core, input+1, 0);
@@ -699,8 +708,7 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case '%': // "?%"
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_percent);
-			r_core_cmd_help (core, help_msg_env);
+			cmd_help_percent (core);
 		}
 		break;
 	case '$': // "?$"
