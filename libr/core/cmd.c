@@ -1634,8 +1634,7 @@ static int cmd_system(void *data, const char *input) {
 		r_line_hist_list ();
 		break;
 	case '?': //!?
-		r_core_cmd_help (core, help_msg_exclamation);
-		r_core_cmd_help (core, help_msg_env);
+		cmd_help_exclamation (core);
 		break;
 	default:
 		n = atoi (input);
