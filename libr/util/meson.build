@@ -82,7 +82,7 @@ files = [
 
 r_util = library('r_util', files,
   include_directories: platform_inc,
-  dependencies: [ldl, mth, pth, utl, sdb_dep, zlib_dep],
+  dependencies: [ldl, mth, pth, utl, sdb_dep, zlib_dep, spp_dep],
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
