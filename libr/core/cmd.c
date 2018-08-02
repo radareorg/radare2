@@ -108,14 +108,6 @@ static const char *help_msg_dollar[] = {
 	NULL
 };
 
-static const char *help_msg_percent[] = {
-	"Usage:", "%[name[=value]]", "Set each NAME to VALUE in the environment",
-	"%", "", "list all environment variables",
-	"%", "SHELL", "prints SHELL value",
-	"%", "TMPDIR=/tmp", "sets TMPDIR value to \"/tmp\"",
-	NULL
-};
-
 static const char *help_msg_star[] = {
 	"Usage:", "*<addr>[=[0x]value]", "Pointer read/write data/values",
 	"*", "entry0=cc", "write trap in entrypoint",

@@ -20,6 +20,14 @@ static ut32 vernum(const char *s) {
 	return res;
 }
 
+static const char *help_msg_percent[] = {
+	"Usage:", "%[name[=value]]", "Set each NAME to VALUE in the environment",
+	"%", "", "list all environment variables",
+	"%", "SHELL", "prints SHELL value",
+	"%", "TMPDIR=/tmp", "sets TMPDIR value to \"/tmp\"",
+	NULL
+};
+
 static const char *help_msg_root[] = {
 	"%var", "=value", "alias for 'env' command",
 	"*", "[?] off[=[0x]value]", "pointer read/write data/values (see ?v, wx, wv)",
@@ -646,6 +654,11 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case '&': // "?&"
 		helpCmdTasks (core);
+		break;
+	case '%': // "?%"
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_percent);
+		}
 		break;
 	case '$': // "?$"
 		if (input[1] == '?') {
