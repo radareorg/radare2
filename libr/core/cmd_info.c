@@ -47,6 +47,7 @@ static const char *help_msg_i[] = {
 	"iS.", "", "Current section",
 	"iSS", " [entropy,sha1]", "Segments",
 	"iV", "", "Display file version info",
+	"iX", "", "Display source files used (via dwarf)",
 	"iz|izj", "", "Strings in data sections (in JSON/Base64)",
 	"izz", "", "Search for Strings in the whole binary",
 	"izzz", "", "Dump Strings from whole binary to r2 shell (for huge files)",
@@ -551,6 +552,7 @@ static int cmd_info(void *data, const char *input) {
 			RBININFO ("resources", R_CORE_BIN_ACC_RESOURCES, NULL, 0);
 			break;
 		case 'r': RBININFO ("relocs", R_CORE_BIN_ACC_RELOCS, NULL, 0); break;
+		case 'X': RBININFO ("source", R_CORE_BIN_ACC_SOURCE, NULL, 0); break;
 		case 'd': // "id"
 			if (input[1] == 'p') { // "idp"
 				SPDBOptions pdbopts;

@@ -1020,6 +1020,38 @@ static int bin_pdb(RCore *core, int mode) {
 	return r_core_pdb_info (core, core->bin->file, baddr, mode);
 }
 
+static int srclineCmp(const void *a, const void *b) {
+	const char *fa = a;
+	const char *fb = b;
+	if (fa && fb) {
+		return !strcmp (fa, fb);
+	}
+	return !strcmp (fa, fb);
+}
+
+static int bin_source(RCore *r, int mode) {
+	RList *final_list = r_list_new ();
+	RBinFile * binfile = r->bin->cur;
+	SdbListIter *iter;
+	RListIter *iter2;
+	char* srcline;
+	SdbKv *kv;
+	SdbList *ls = sdb_foreach_list (binfile->sdb_addrinfo, false);
+	ls_foreach (ls, iter, kv) {
+		char *v = kv->value;
+		RList *list = r_str_split_list (v, "|");
+		if (!strstr (r_list_get_bottom (list), "0x")){
+			r_list_append (final_list, r_list_get_bottom (list)); // Should check if already here and discard
+		}
+	}
+	r_cons_printf ("[Source file]\n");
+	RList *uniqlist = r_list_uniq (final_list, srclineCmp);
+	r_list_foreach (uniqlist, iter2, srcline) {
+		r_cons_printf ("%s\n", srcline);
+	}
+	return true;
+}
+
 static int bin_main(RCore *r, int mode, int va) {
 	RBinAddr *binmain = r_bin_get_sym (r->bin, R_BIN_SYM_MAIN);
 	ut64 addr;
@@ -3379,6 +3411,7 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 	if ((action & R_CORE_BIN_ACC_MAIN)) ret &= bin_main (core, mode, va);
 	if ((action & R_CORE_BIN_ACC_DWARF)) ret &= bin_dwarf (core, mode);
 	if ((action & R_CORE_BIN_ACC_PDB)) ret &= bin_pdb (core, mode);
+	if ((action & R_CORE_BIN_ACC_SOURCE)) ret &= bin_source (core, mode);
 	if ((action & R_CORE_BIN_ACC_ENTRIES)) ret &= bin_entry (core, mode, loadaddr, va, false);
 	if ((action & R_CORE_BIN_ACC_INITFINI)) ret &= bin_entry (core, mode, loadaddr, va, true);
 	if ((action & R_CORE_BIN_ACC_SECTIONS)) ret &= bin_sections (core, mode, loadaddr, va, at, name, chksum, false);
