@@ -108,14 +108,6 @@ static const char *help_msg_dollar[] = {
 	NULL
 };
 
-static const char *help_msg_percent[] = {
-	"Usage:", "%[name[=value]]", "Set each NAME to VALUE in the environment",
-	"%", "", "list all environment variables",
-	"%", "SHELL", "prints SHELL value",
-	"%", "TMPDIR=/tmp", "sets TMPDIR value to \"/tmp\"",
-	NULL
-};
-
 static const char *help_msg_star[] = {
 	"Usage:", "*<addr>[=[0x]value]", "Pointer read/write data/values",
 	"*", "entry0=cc", "write trap in entrypoint",
@@ -1448,7 +1440,7 @@ static int cmd_env(void *data, const char *input) {
 	int ret = true;
 	switch (*input) {
 	case '?':
-		r_core_cmd_help (core, help_msg_percent);
+		cmd_help_percent (core);
 		break;
 	default:
 		ret = r_core_cmdf (core, "env %s", input);
@@ -1615,7 +1607,7 @@ static int cmd_system(void *data, const char *input) {
 		if (input[1] == '!') { // !!! & !!!-
 			cmd_autocomplete (core, input + 2);
 		} else if (input[1] == '?') {
-			r_core_sysenv_help (core);
+			cmd_help_exclamation (core);
 		} else {
 			if (r_sandbox_enable (0)) {
 				eprintf ("This command is disabled in sandbox mode\n");
@@ -1642,7 +1634,7 @@ static int cmd_system(void *data, const char *input) {
 		r_line_hist_list ();
 		break;
 	case '?': //!?
-		r_core_sysenv_help (core);
+		cmd_help_exclamation (core);
 		break;
 	default:
 		n = atoi (input);

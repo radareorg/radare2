@@ -20,6 +20,55 @@ static ut32 vernum(const char *s) {
 	return res;
 }
 
+static const char *help_msg_percent[] = {
+	"Usage:", "%[name[=value]]", "Set each NAME to VALUE in the environment",
+	"%", "", "list all environment variables",
+	"%", "SHELL", "prints SHELL value",
+	"%", "TMPDIR=/tmp", "sets TMPDIR value to \"/tmp\"",
+	NULL
+};
+
+// NOTE: probably not all environment vars takes sesnse
+// because they can be replaced by commands in the given
+// command.. we should only expose the most essential and
+// unidirectional ones.
+static const char *help_msg_env[] = {
+		"\nEnvironment:", "", "",
+		"R2_FILE", "", "file name",
+		"R2_OFFSET", "", "10base offset 64bit value",
+		"R2_BYTES", "", "TODO: variable with bytes in curblock",
+		"R2_XOFFSET", "", "same as above, but in 16 base",
+		"R2_BSIZE", "", "block size",
+		"R2_ENDIAN", "", "'big' or 'little'",
+		"R2_IOVA", "", "is io.va true? virtual addressing (1,0)",
+		"R2_DEBUG", "", "debug mode enabled? (1,0)",
+		"R2_BLOCK", "", "TODO: dump current block to tmp file",
+		"R2_SIZE", "","file size",
+		"R2_ARCH", "", "value of asm.arch",
+		"R2_BITS", "", "arch reg size (8, 16, 32, 64)",
+		"RABIN2_LANG", "", "assume this lang to demangle",
+		"RABIN2_DEMANGLE", "", "demangle or not",
+		"RABIN2_PDBSERVER", "", "e pdb.server",
+		NULL
+};
+
+static const char *help_msg_exclamation[] = {
+		"Usage:", "!<cmd>", "  Run given command as in system(3)",
+		"!", "", "list all historic commands",
+		"!", "ls", "execute 'ls' in shell",
+		"!!", "", "save command history to hist file",
+		"!!", "ls~txt", "print output of 'ls' and grep for 'txt'",
+		"!!!", "cmd [args|$type]", "adds the autocomplete value",
+		"!!!-", "cmd [args]", "removes the autocomplete value",
+		".!", "rabin2 -rpsei ${FILE}", "run each output line as a r2 cmd",
+		"!", "echo $SIZE", "display file size",
+		"!-", "", "clear history in current session",
+		"!-*", "", "clear and save empty history log",
+		"!=!", "", "enable remotecmd mode",
+		"=!=", "", "disable remotecmd mode",
+		NULL
+	};
+
 static const char *help_msg_root[] = {
 	"%var", "=value", "alias for 'env' command",
 	"*", "[?] off[=[0x]value]", "pointer read/write data/values (see ?v, wx, wv)",
@@ -179,6 +228,16 @@ static const char *help_msg_greater_sign[] = {
 	"[cmd] 2> /dev/null", "", "omit the STDERR output of 'cmd'",
 	NULL
 };
+
+static void cmd_help_exclamation(RCore *core) {
+	r_core_cmd_help (core, help_msg_exclamation);
+	r_core_cmd_help (core, help_msg_env);
+}
+
+static void cmd_help_percent(RCore *core) {
+	r_core_cmd_help (core, help_msg_percent);
+	r_core_cmd_help (core, help_msg_env);
+}
 
 static void cmd_help_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?, question);
@@ -623,7 +682,7 @@ static int cmd_help(void *data, const char *input) {
 		if (input[1]) {
 			if (!core->num->value) {
 				if (input[1] == '?') {
-					r_core_sysenv_help (core);
+					cmd_help_exclamation (core);
 					return 0;
 				} else {
 					return core->num->value = r_core_cmd (core, input+1, 0);
@@ -646,6 +705,11 @@ static int cmd_help(void *data, const char *input) {
 		break;
 	case '&': // "?&"
 		helpCmdTasks (core);
+		break;
+	case '%': // "?%"
+		if (input[1] == '?') {
+			cmd_help_percent (core);
+		}
 		break;
 	case '$': // "?$"
 		if (input[1] == '?') {
