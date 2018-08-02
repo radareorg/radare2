@@ -308,12 +308,12 @@ static RList* sections(RBinFile *bf) {
 	return ret;
 }
 
-static RBinAddr* newEntry(ut64 haddr, ut64 hvaddr, ut64 paddr, int type, int bits) {
+static RBinAddr* newEntry(ut64 hpaddr, ut64 hvaddr, ut64 paddr, int type, int bits) {
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	if (ptr) {
 		ptr->paddr = paddr;
 		ptr->vaddr = paddr;
-		ptr->haddr = haddr;
+		ptr->hpaddr = hpaddr;
 		ptr->hvaddr = hvaddr;
 		ptr->bits = bits;
 		ptr->type = type;
@@ -390,7 +390,7 @@ static RList* entries(RBinFile *bf) {
 	}
 	ptr->paddr = Elf_(r_bin_elf_get_entry_offset) (obj);
 	ptr->vaddr = Elf_(r_bin_elf_p2v) (obj, ptr->paddr);
-	ptr->haddr = 0x18;
+	ptr->hpaddr = 0x18;
 
 	if (obj->ehdr.e_machine == EM_ARM) {
 		int bin_bits = Elf_(r_bin_elf_get_bits) (obj);
@@ -421,7 +421,7 @@ static RList* entries(RBinFile *bf) {
 				}
 				ptr->paddr = symbol[i].offset;
 				ptr->vaddr = Elf_(r_bin_elf_p2v) (obj, ptr->paddr);
-				ptr->haddr = UT64_MAX;
+				ptr->hpaddr = UT64_MAX;
 				ptr->type = R_BIN_ENTRY_TYPE_INIT;
 				r_list_append (ret, ptr);
 				break;

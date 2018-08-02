@@ -1120,7 +1120,7 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 
 	r_list_foreach (entries, iter, entry) {
 		ut64 paddr = entry->paddr;
-		ut64 haddr = UT64_MAX;
+		ut64 hpaddr = UT64_MAX;
 		ut64 hvaddr = UT64_MAX;
 		if (mode != R_CORE_BIN_SET) {
 			if (inifin) {
@@ -1139,8 +1139,8 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 				paddr = entry->vaddr - map->itv.addr + map->delta;
 			}
 		}
-		if (entry->haddr) {
-			haddr = entry->haddr;
+		if (entry->hpaddr) {
+			hpaddr = entry->hpaddr;
 		}
 		if (entry->hvaddr) {
 			hvaddr = entry->hvaddr;
@@ -1162,8 +1162,8 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 				snprintf (str, R_FLAG_NAME_SIZE, "entry%i", i);
 			}
 			r_flag_set (r->flags, str, at, 1);
-			if (is_initfini (entry) && haddr != UT64_MAX && hvaddr != UT64_MAX) {
-				ut64 elem_addr = rva (r->bin, haddr, hvaddr, va);
+			if (is_initfini (entry) && hpaddr != UT64_MAX && hvaddr != UT64_MAX) {
+				ut64 elem_addr = rva (r->bin, hpaddr, hvaddr, va);
 				r_meta_add (r->anal, R_META_TYPE_DATA, elem_addr,
 				            elem_addr + entry->bits / 8, NULL);
 			}
@@ -1178,9 +1178,9 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 			if (is_initfini (entry) && hvaddr != UT64_MAX) {
 				r_cons_printf ("\"hvaddr\":%" PFMT64u ",", hvaddr);
 			}
-			r_cons_printf ("\"haddr\":%" PFMT64u ","
+			r_cons_printf ("\"hpaddr\":%" PFMT64u ","
 				"\"type\":\"%s\"}",
-				haddr, type);
+				hpaddr, type);
 		} else if (IS_MODE_RAD (mode)) {
 			char *name = NULL;
 			if (entry->type == R_BIN_ENTRY_TYPE_INIT) {
@@ -1193,7 +1193,7 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 				name = r_str_newf ("entry%i", i);
 			}
 			r_cons_printf ("f %s 1 @ 0x%08"PFMT64x"\n", name, at);
-			r_cons_printf ("f %s_haddr 1 @ 0x%08"PFMT64x"\n", name, haddr);
+			r_cons_printf ("f %s_hpaddr 1 @ 0x%08"PFMT64x"\n", name, hpaddr);
 			r_cons_printf ("s %s\n", name);
 			free (name);
 		} else {
@@ -1206,10 +1206,10 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 			if (is_initfini (entry) && hvaddr != UT64_MAX) {
 				r_cons_printf (" hvaddr=0x%08"PFMT64x, hvaddr);
 			}
-			if (haddr == UT64_MAX) {
-				r_cons_printf (" haddr=%"PFMT64d, haddr);
+			if (hpaddr == UT64_MAX) {
+				r_cons_printf (" hpaddr=%"PFMT64d, hpaddr);
 			} else {
-				r_cons_printf (" haddr=0x%08"PFMT64x, haddr);
+				r_cons_printf (" hpaddr=0x%08"PFMT64x, hpaddr);
 			}
 			r_cons_printf (" type=%s\n", type);
 		}

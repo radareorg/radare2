@@ -158,12 +158,12 @@ static RList* sections(RBinFile *bf) {
 	return ret;
 }
 
-static RBinAddr* newEntry(ut64 haddr, ut64 paddr, int type, int bits) {
+static RBinAddr* newEntry(ut64 hpaddr, ut64 paddr, int type, int bits) {
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	if (ptr) {
 		ptr->paddr = paddr;
 		ptr->vaddr = paddr;
-		ptr->haddr = haddr;
+		ptr->hpaddr = hpaddr;
 		ptr->bits = bits;
 		ptr->type = type;
 		//realign due to thumb
@@ -229,7 +229,7 @@ static RList* entries(RBinFile *bf) {
 	if ((ptr = R_NEW0 (RBinAddr))) {
 		ptr->paddr = entry->offset + obj->boffset;
 		ptr->vaddr = entry->addr;
-		ptr->haddr = entry->haddr;
+		ptr->hpaddr = entry->haddr;
 		ptr->bits = bits;
 		//realign due to thumb
 		if (bits == 16) {
