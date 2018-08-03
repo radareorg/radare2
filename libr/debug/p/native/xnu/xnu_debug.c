@@ -1170,7 +1170,7 @@ static RList *xnu_dbg_modules(RDebug *dbg) {
 	ut64 info_array_address;
 	void *info_array = NULL;
 	//void *header_data = NULL;
-	char file_path[MAXPATHLEN];
+	char file_path[MAXPATHLEN] = {0};
 	count = TASK_DYLD_INFO_COUNT;
 	task_t task = pid_to_task (dbg->tid);
 	ut64 addr, file_path_address;
@@ -1232,8 +1232,9 @@ static RList *xnu_dbg_modules(RDebug *dbg) {
 			addr = info->image_load_address;
 			file_path_address = info->image_file_path;
 		}
+		memset (file_path, 0, MAXPATHLEN);
 		dbg->iob.read_at (dbg->iob.io, file_path_address,
-				(ut8*)file_path, MAXPATHLEN);
+				(ut8*)file_path, MAXPATHLEN - 1);
 		//eprintf ("--> %d 0x%08"PFMT64x" %s\n", i, addr, file_path);
 		size = mach0_size (dbg, addr);
 		mr = r_debug_map_new (file_path, addr, addr + size, 7, 0);

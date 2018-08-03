@@ -1,4 +1,4 @@
-/* radare - Copyright 2012-2016 - pancake */
+/* radare - Copyright 2012-2018 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
