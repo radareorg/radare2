@@ -46,7 +46,9 @@ R_API void r_vector_free(RVector *vec);
 // the returned vector will have the same capacity as vec.
 R_API RVector *r_vector_clone(RVector *vec);
 
-static inline bool r_vector_empty(RVector *vec)							{ return vec->len == 0; }
+static inline bool r_vector_empty(RVector *vec) {
+	return vec->len == 0;
+}
 
 // returns a pointer to the offset inside the array where the element of the index lies.
 R_API void *r_vector_index_ptr(RVector *vec, size_t index);
@@ -101,13 +103,21 @@ R_API void r_pvector_clear(RPVector *vec);
 // free the vector and call vec->v.free on every element.
 R_API void r_pvector_free(RPVector *vec);
 
-static inline size_t r_pvector_len(const RPVector *vec)					{ return vec->v.len; }
+static inline size_t r_pvector_len(const RPVector *vec) {
+	return vec->v.len;
+}
 
-static inline void *r_pvector_at(const RPVector *vec, size_t index)		{ return ((void **)vec->v.a)[index]; }
+static inline void *r_pvector_at(const RPVector *vec, size_t index) {
+	return ((void **)vec->v.a)[index];
+}
 
-static inline void r_pvector_set(RPVector *vec, size_t index, void *e)	{ ((void **)vec->v.a)[index] = e; }
+static inline void r_pvector_set(RPVector *vec, size_t index, void *e) {
+	((void **)vec->v.a)[index] = e;
+}
 
-static inline bool r_pvector_empty(RPVector *vec)						{ return r_pvector_len (vec) == 0; }
+static inline bool r_pvector_empty(RPVector *vec) {
+	return r_pvector_len (vec) == 0;
+}
 
 // returns the respective pointer inside the vector if x is found or NULL otherwise.
 R_API void **r_pvector_contains(RPVector *vec, void *x);
@@ -116,10 +126,13 @@ R_API void **r_pvector_contains(RPVector *vec, void *x);
 R_API void *r_pvector_remove_at(RPVector *vec, size_t index);
 
 // like r_vector_insert, but the pointer x is the actual data to be inserted.
-static inline void **r_pvector_insert(RPVector *vec, size_t index, void *x) { return (void **)r_vector_insert (&vec->v, index, &x); }
+static inline void **r_pvector_insert(RPVector *vec, size_t index, void *x) {
+	return (void **)r_vector_insert (&vec->v, index, &x); }
 
 // like r_vector_insert_range.
-static inline void **r_pvector_insert_range(RPVector *vec, size_t index, void **first, size_t count) { return (void **)r_vector_insert_range (&vec->v, index, first, count); }
+static inline void **r_pvector_insert_range(RPVector *vec, size_t index, void **first, size_t count) {
+	return (void **)r_vector_insert_range (&vec->v, index, first, count);
+}
 
 // like r_vector_pop, but returns the pointer directly.
 R_API void *r_pvector_pop(RPVector *vec);
@@ -128,17 +141,25 @@ R_API void *r_pvector_pop(RPVector *vec);
 R_API void *r_pvector_pop_front(RPVector *vec);
 
 // like r_vector_push, but the pointer x is the actual data to be inserted.
-static inline void **r_pvector_push(RPVector *vec, void *x) { return (void **)r_vector_push (&vec->v, &x); }
+static inline void **r_pvector_push(RPVector *vec, void *x) {
+	return (void **)r_vector_push (&vec->v, &x);
+}
 
 // like r_vector_push_front, but the pointer x is the actual data to be inserted.
-static inline void **r_pvector_push_front(RPVector *vec, void *x) { return (void **)r_vector_push_front (&vec->v, &x); }
+static inline void **r_pvector_push_front(RPVector *vec, void *x) {
+	return (void **)r_vector_push_front (&vec->v, &x);
+}
 
 // sort vec using quick sort.
 R_API void r_pvector_sort(RPVector *vec, RPVectorComparator cmp);
 
-static inline void **r_pvector_reserve(RPVector *vec, size_t capacity)	{ return (void **)r_vector_reserve (&vec->v, capacity); }
+static inline void **r_pvector_reserve(RPVector *vec, size_t capacity) {
+	return (void **)r_vector_reserve (&vec->v, capacity);
+}
 
-static inline void **r_pvector_shrink(RPVector *vec)					{ return (void **)r_vector_shrink (&vec->v); }
+static inline void **r_pvector_shrink(RPVector *vec) {
+	return (void **)r_vector_shrink (&vec->v);
+}
 
 /*
  * example:
