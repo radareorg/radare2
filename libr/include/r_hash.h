@@ -10,6 +10,10 @@ extern "C" {
 
 R_LIB_VERSION_HEADER (r_hash);
 
+#if HAVE_LIB_SSL
+#include <openssl/md5.h>
+typedef MD5_CTX R_MD5_CTX;
+#else
 #define MD5_CTX R_MD5_CTX
 
 /* hashing */
@@ -18,6 +22,7 @@ typedef struct {
 	ut32 count[2];
 	ut8 buffer[64];
 } R_MD5_CTX;
+#endif
 
 typedef struct {
 	ut32 H[5];

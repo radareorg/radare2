@@ -6,7 +6,6 @@ files = [
   'hamdist.c',
   'hash.c',
   'luhn.c',
-  'md5.c',
   'sha1.c',
   'sha2.c',
   'state.c'
@@ -23,7 +22,7 @@ endif
 if use_sys_openssl
   dependencies += [sys_openssl]
 else
-  files += ['md4.c']
+  files += ['md4.c', 'md5.c']
 endif
 
 r_hash = library('r_hash', files,
