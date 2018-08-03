@@ -3,7 +3,7 @@
 #include <r_hash.h>
 #include "r_util.h"
 
-#ifdef USE_LIB_XXHASH
+#if USE_LIB_XXHASH
 #include <xxhash.h>
 #else
 #include "xxhash.h"

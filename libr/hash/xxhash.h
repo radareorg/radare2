@@ -57,7 +57,6 @@ It depends on successfully passing SMHasher test set.
 10 is a perfect score.
 */
 
-#ifndef USE_SYS_XXHASH
 #pragma once
 
 #if defined (__cplusplus)
@@ -126,5 +125,4 @@ To free memory context, use XXH32_result().
 
 #if defined (__cplusplus)
 }
-#endif
 #endif
