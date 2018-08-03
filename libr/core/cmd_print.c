@@ -180,6 +180,22 @@ static const char *help_msg_p_minus[] = {
 	NULL
 };
 
+static const char *help_msg_pc[] = {
+  "Usage:", "pc", " # Print in code",
+  "pc",  "", "C",
+  "pc*", "", "print 'wx' r2 commands",
+  "pca", "", "GAS .byte blob",
+  "pcA", "", ".bytes with instructions in comments",
+  "pcd", "", "C dwords (8 byte)",
+  "pch", "", "C half-words (2 byte)",
+  "pcj", "", "json",
+  "pcJ", "", "javascript",
+  "pcp", "", "python",
+  "pcs", "", "string",
+  "pcS", "", "shellscript that reconstructs the bin",
+  "pcw", "", "C words (4 byte)",
+};
+
 static const char *help_msg_pd[] = {
 	"Usage:", "p[dD][ajbrfils] [sz] [arch] [bits]", " # Print Disassembly",
 	"NOTE: ", "len", "parameter can be negative",
@@ -407,6 +423,7 @@ static void cmd_print_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, p);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, p=, p_equal);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, p-, p_minus);
+	DEFINE_CMD_DESCRIPTOR (core, pc);
 	DEFINE_CMD_DESCRIPTOR (core, pd);
 	DEFINE_CMD_DESCRIPTOR_WITH_DETAIL2 (core, pf);
 	DEFINE_CMD_DESCRIPTOR (core, pi);
@@ -3560,19 +3577,7 @@ R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang) {
 	}
 	switch (lang) {
 	case '?':
-		r_cons_println ("Valid print code formats are: JSON, C, Python, Cstring (pcj, pc, pcp, pcs) \n"
-		"  pc     C\n"
-		"  pc*    print 'wx' r2 commands\n"
-		"  pch    C half-words (2 byte)\n"
-		"  pcw    C words (4 byte)\n"
-		"  pcd    C dwords (8 byte)\n"
-		"  pca    GAS .byte blob\n"
-		"  pcA    .bytes with instructions in comments\n"
-		"  pcs    string\n"
-		"  pcS    shellscript that reconstructs the bin\n"
-		"  pcj    json\n"
-		"  pcJ    javascript\n"
-		"  pcp    python");
+		r_core_cmd_help ((RCore *)p->user, help_msg_pc);
 		break;
 	case '*':
 		p->cb_printf ("wx ");
