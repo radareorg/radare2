@@ -52,6 +52,9 @@ IFAND HAVE_LIB_Z USE_ZIP {
 	LIBZIP = '' ; (( static linking to shlr/zip ))
 }
 
+HAVE_LIB_XXHASH = 0 ;
+USE_LIB_XXHASH = 0 ;
+
 ARG_WITHOUT WITH_GPL gpl do not build GPL code (grub, cxx, ... ) ;
 
 CHKDECL sys/personality.h ADDR_NO_RANDOMIZE
