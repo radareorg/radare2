@@ -27,39 +27,41 @@
 		
 		
 
-R_API void r_vector_init(RVector *vec, size_t elem_size) {
+R_API void r_vector_init(RVector *vec, size_t elem_size, RVectorFree free, void *free_user) {
 	vec->a = NULL;
 	vec->capacity = vec->len = 0;
 	vec->elem_size = elem_size;
+	vec->free = free;
+	vec->free_user = free_user;
 }
 
-R_API RVector *r_vector_new(size_t elem_size) {
+R_API RVector *r_vector_new(size_t elem_size, RVectorFree free, void *free_user) {
 	RVector *vec = R_NEW (RVector);
 	if (!vec) {
 		return NULL;
 	}
-	r_vector_init (vec, elem_size);
+	r_vector_init (vec, elem_size, free, free_user);
 	return vec;
 }
 
-static void vector_free_elems(RVector *vec, RVectorFree elem_free, void *user) {
-	if (elem_free) {
+static void vector_free_elems(RVector *vec) {
+	if (vec->free) {
 		while (vec->len > 0) {
-			elem_free (r_vector_index_ptr (vec, --vec->len), user);
+			vec->free (r_vector_index_ptr (vec, --vec->len), vec->free_user);
 		}
 	} else {
 		vec->len = 0;
 	}
 }
 
-R_API void r_vector_clear(RVector *vec, RVectorFree elem_free, void *user) {
-	vector_free_elems (vec, elem_free, user);
+R_API void r_vector_clear(RVector *vec) {
+	vector_free_elems (vec);
 	R_FREE (vec->a);
 	vec->capacity = 0;
 }
 
-R_API void r_vector_free(RVector *vec, RVectorFree elem_free, void *user) {
-	vector_free_elems (vec, elem_free, user);
+R_API void r_vector_free(RVector *vec) {
+	vector_free_elems (vec);
 	free (vec->a);
 	free (vec);
 }
@@ -68,6 +70,8 @@ static bool vector_clone(RVector *dst, RVector *src) {
 	dst->capacity = src->capacity;
 	dst->len = src->len;
 	dst->elem_size = src->elem_size;
+	dst->free = src->free;
+	dst->free_user = src->free_user;
 	if (!dst->len) {
 		dst->a = NULL;
 	} else {
@@ -196,8 +200,7 @@ static void pvector_free_elem(void *e, void *user) {
 
 
 R_API void r_pvector_init(RPVector *vec, RPVectorFree free) {
-	r_vector_init (&vec->v, sizeof (void *));
-	vec->free = free;
+	r_vector_init (&vec->v, sizeof (void *), free ? pvector_free_elem : NULL, free);
 }
 
 R_API RPVector *r_pvector_new(RPVectorFree free) {
@@ -210,11 +213,15 @@ R_API RPVector *r_pvector_new(RPVectorFree free) {
 }
 
 R_API void r_pvector_clear(RPVector *vec) {
-	r_vector_clear (&vec->v, vec->free ? pvector_free_elem : NULL, vec->free);
+	r_vector_clear (&vec->v);
 }
 
 R_API void r_pvector_free(RPVector *vec) {
-	r_vector_free (&vec->v, vec->free ? pvector_free_elem : NULL, vec->free);
+	if (!vec) {
+		return;
+	}
+	r_vector_clear (&vec->v);
+	free (vec);
 }
 
 R_API void **r_pvector_contains(RPVector *vec, void *x) {
