@@ -204,9 +204,24 @@ if sys_magic.found() and get_option('use_sys_magic')
   use_syslib_magic = true
 endif
 
+sys_xxhash = dependency('xxhash', required: false)
+use_sys_xxhash = false
+if not sys_xxhash.found()
+  sys_xxhash = cc.find_library('xxhash', required: false)
+endif
+
+if sys_xxhash.found() and get_option('use_sys_xxhash')
+  message('Using system xxhash library')
+  use_sys_xxhash = true
+else
+  message('Using bundled xxhash library')
+endif
+
 userconf = configuration_data()
 userconf.set('HAVE_LIB_MAGIC', sys_magic.found().to_int())
 userconf.set('USE_LIB_MAGIC', use_syslib_magic.to_int())
+userconf.set('HAVE_LIB_XXHASH', sys_xxhash.found().to_int())
+userconf.set('USE_LIB_XXHASH', use_sys_xxhash.to_int())
 userconf.set('DEBUGGER', 1)
 userconf.set('PREFIX', r2_prefix)
 userconf.set('LIBDIR', r2_libdir)

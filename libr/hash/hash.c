@@ -2,6 +2,13 @@
 
 #include <r_hash.h>
 #include "r_util.h"
+
+#ifdef USE_LIB_XXHASH
+#include <xxhash.h>
+#else
+#include "xxhash.h"
+#endif
+
 R_LIB_VERSION (r_hash);
 
 struct {

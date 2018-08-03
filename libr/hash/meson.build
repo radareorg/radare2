@@ -15,18 +15,9 @@ files = [
 
 dependencies = [mth, r_util_dep]
 
-if get_option('use_sys_xxhash')
-  xxhash_dep = dependency('xxhash', required: false)
-  if not xxhash_dep.found()
-    xxhash_dep = cc.find_library('xxhash', required: false)
-  endif
-  if not xxhash_dep.found()
-    error('Cannot find xxhash dependency')
-  endif
-  dependencies += [xxhash_dep]
-  message('Using system xxhash library')
+if use_sys_xxhash
+  dependencies += [sys_xxhash]
 else
-  message('Using bundled xxhash')
   files += ['xxhash.c']
 endif
 
