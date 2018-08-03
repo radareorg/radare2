@@ -10,12 +10,6 @@ extern "C" {
 
 R_LIB_VERSION_HEADER (r_hash);
 
-#ifdef USE_LIB_XXHASH
-#include <xxhash.h>
-#else
-#include "xxhash.h"
-#endif
-
 #define MD5_CTX R_MD5_CTX
 
 /* hashing */
