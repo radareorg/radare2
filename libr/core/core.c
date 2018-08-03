@@ -1290,6 +1290,19 @@ static bool find_autocomplete(RLine *line) {
 			//show all hints
 			arg[0] = 0;
 		}
+		if (r_config_get_i (core->config, "cfg.newtab")) {
+			RCmdDescriptor *desc = &core->root_cmd_descriptor;
+			for (i = 0; arg[i] && desc; i++) {
+				ut8 c = arg[i];
+				desc = c < R_ARRAY_SIZE (desc->sub) ? desc->sub[c] : NULL;
+			}
+			if (desc && desc->help_msg) {
+				r_core_cmd_help (core, desc->help_msg);
+				r_cons_flush ();
+				return true;
+			}
+			// fallback to command listing
+		}
 		int length = strlen (arg);
 		for (i = 0; j < (TMP_ARGV_SZ - 1) && i < parent->n_subcmds; i++) {
 			if (!strncmp (arg, parent->subcmds[i]->cmd, length)) {
@@ -1559,20 +1572,6 @@ static int autocomplete(RLine *line) {
 		} else if (line->file_prompt) {
 			autocomplete_file (line, line->buffer.data);
 		} else if (!find_autocomplete (line)) {
-			int i, cfg_newtab = r_config_get_i (core->config, "cfg.newtab");
-			if (cfg_newtab) {
-				RCmdDescriptor *desc = &core->root_cmd_descriptor;
-				for (i = 0; i < line->buffer.index && desc; i++) {
-					ut8 c = line->buffer.data[i];
-					desc = c < R_ARRAY_SIZE (desc->sub) ? desc->sub[c] : NULL;
-				}
-				if (desc && desc->help_msg) {
-					r_core_cmd_help (core, desc->help_msg);
-					r_cons_flush ();
-					return true;
-				}
-				// fallback to old command completion
-			}
 			autocomplete_default (line);
 		}
 	} else {
