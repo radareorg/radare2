@@ -1,15 +1,16 @@
 /* radare - LGPL - Copyright 2009-2017 pancake */
 
 #include <r_hash.h>
-#include "sha1.h"
-#include "sha2.h"
 
 #if HAVE_LIB_SSL
 #include <openssl/md4.h>
 #include <openssl/md5.h>
+#include <openssl/sha.h>
 #else
 #include "md4.h"
 #include "md5.h"
+#include "sha1.h"
+#include "sha2.h"
 #endif
 
 #define CHKFLAG(x) if (!flags || flags & x)
