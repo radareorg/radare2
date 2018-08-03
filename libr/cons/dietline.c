@@ -495,7 +495,7 @@ static void selection_widget_down () {
 	}
 }
 
-static void print_rline_task () {
+static void print_rline_task (void *core) {
 	r_cons_clear_line (0);
 	r_cons_printf ("%s%s%s", Color_RESET, I.prompt,  I.buffer.data); 
 	r_cons_flush ();
@@ -511,7 +511,7 @@ static void selection_widget_erase () {
 		RCons *cons = r_cons_singleton ();
 		if (cons->event_resize && cons->event_data) {
 			cons->event_resize (cons->event_data);
-			r_core_task_enqueue_oneshot (cons->event_data, print_rline_task, NULL);
+			cons->cb_task_oneshot (cons->user, print_rline_task, NULL);
 		}
 	}
 }

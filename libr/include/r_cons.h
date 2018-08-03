@@ -377,6 +377,7 @@ typedef int (*RConsClickCallback)(void *core, int x, int y);
 typedef void (*RConsBreakCallback)(void *core);
 typedef void *(*RConsSleepBeginCallback)(void *core);
 typedef void (*RConsSleepEndCallback)(void *core, void *user);
+typedef void (*RConsQueueTaskOneshot)(void *core, void *task, void *user);
 
 typedef struct r_cons_context_t {
 	RConsGrep grep;
@@ -420,6 +421,7 @@ typedef struct r_cons_t {
 	RConsSleepBeginCallback cb_sleep_begin;
 	RConsSleepEndCallback cb_sleep_end;
 	RConsClickCallback cb_click;
+	RConsQueueTaskOneshot cb_task_oneshot;
 
 	void *user; // Used by <RCore*>
 #if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
