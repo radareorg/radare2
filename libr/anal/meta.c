@@ -479,7 +479,7 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 			if (!d->subtype) {  /* temporary legacy workaround */
 				esc_bslash = false;
 			}
-			str = r_str_escape_latin1 (d->str, false, esc_bslash);
+			str = r_str_escape_latin1 (d->str, false, esc_bslash, false);
 		}
 	} else {
 		str = r_str_escape (d->str);

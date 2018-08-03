@@ -134,9 +134,8 @@ static void get_src_regname(RCore *core, ut64 addr, char *regname, int size) {
 		if ((anal->bits == 64) && (ri->size == 32)) {
 			const char *reg = r_reg_32_to_64 (anal->reg, op_esil);
 			if (reg) {
-				char *foo = strdup (reg);
 				free (op_esil);
-				op_esil = foo;
+				op_esil = strdup (reg);
 			}
 		}
 		strncpy (regname, op_esil, size - 1);
@@ -156,7 +155,7 @@ static ut64 get_addr(Sdb *trace, const char *regname, int idx) {
 static RList *parse_format(RCore *core, char *fmt) {
 	RList *ret = r_list_new();
 	Sdb *s = core->anal->sdb_fmts;
-	const char *spec = r_config_get (core->config, "anal.spec");
+	const char *spec = r_config_get (core->config, "anal.types.spec");
 	char arr[10] = {0};
 	char *ptr = strchr (fmt, '%');
 	fmt[strlen(fmt) - 1] = '\0';
@@ -188,6 +187,7 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const
 	RAnal *anal = core->anal;
 	RList *types = NULL;
 	int idx = sdb_num_get (trace, "idx", 0);
+	bool verbose = r_config_get_i (core->config, "anal.types.verbose");
 	bool stack_rev = false, in_stack = false, format = false;
 
 	if (!fcn_name || !cc) {
@@ -202,6 +202,9 @@ static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const
 	}
 	if (!strncmp (place, "stack", 5)) {
 		in_stack = true;
+	}
+	if (verbose && !strncmp (fcn_name, "sym.imp.", 8)) {
+		eprintf ("%s missing function definition\n", fcn_name + 8);
 	}
 	if (!max) {
 		if (!in_stack) {
