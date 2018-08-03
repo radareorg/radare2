@@ -7,12 +7,34 @@ extern "C" {
 #endif
 
 /*
-  RVector can contain arbitrarily sized elements.
-  RPVector uses RVector internally and always contains void *s.
-
-  Hint: remove/pop functions do not reduce the capacity.
-        Call r_(p)vector_shrink explicitly if desired.
-*/
+ * RVector can contain arbitrarily sized elements.
+ * RPVector uses RVector internally and always contains void *s
+ *
+ * Thus, for storing pointers it is highly encouraged to always use RPVector
+ * as it is specifically made for this purpose and is more consistent with RList,
+ * while RVector can be used as, for example, a flat array of a struct.
+ *
+ * Notable differences between RVector and RPVector:
+ * -------------------------------------------------
+ * When RVector expects an element to be inserted, for example in r_vector_push(..., void *x),
+ * this void * value is interpreted as a pointer to the actual data for the element.
+ * => If you use RVector as a dynamic replacement for (struct SomeStruct)[], you will
+ * pass a struct SomeStruct * to these functions.
+ *
+ * Because RPVector only handles pointers, the given void * is directly interpreted as the
+ * actual pointer to be inserted.
+ * => If you use RPVector as a dynamic replacement for (SomeType *)[], you will pass
+ * SomeType * directly to these functions.
+ *
+ * The same differentiation goes for the free functions:
+ * - The element parameter in RVectorFree is a pointer to the element inside the array.
+ * - The element parameter in RPVectorFree is the actual pointer stored in the array.
+ *
+ * General Hint:
+ * -------------
+ * remove/pop functions do not reduce the capacity.
+ * Call r_(p)vector_shrink explicitly if desired.
+ */
 
 typedef int (*RPVectorComparator)(const void *a, const void *b);
 typedef void (*RVectorFree)(void *e, void *user);
