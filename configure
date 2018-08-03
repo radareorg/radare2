@@ -116,7 +116,7 @@ done
 : ${INSTALL_PROGRAM_STRIP:=${INSTALL} -m 755 -s}
 : ${INSTALL_MAN:=${INSTALL} -m 444}
 : ${INSTALL_LIB:=${INSTALL} -m 755 -c}
- PKGNAME='radare2' ; VERSION='2.8.0-git' ; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
+ PKGNAME='radare2' ; VERSION='2.8.0-git' ; CONTACT_MAIL="https://github.com/radare/radare2/issues" ; CONTACT_NAME="radare2" ; CONTACT="radare2 <https://github.com/radare/radare2/issues>" ;
 }
 
 show_usage() {
@@ -185,7 +185,7 @@ printf "\nSome influential environment variables:
   CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have
               headers in a nonstandard directory <include dir>
   CPP         C preprocessor\n"
-printf "\nReport bugs to: pancake <pancake@nopcode.org>"
+printf "\nReport bugs to: radare2 <https://github.com/radare/radare2/issues>"
 echo ""
 exit 0
 }
