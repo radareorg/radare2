@@ -26,7 +26,7 @@
 #include <stdlib.h>
 #include "ansidecl.h"
 #include "sysdep.h"
-#include "dis-asm.h"
+#include "disas-asm.h"
 #include "libiberty.h"
 #include "elf/mips.h"
 #include "opintl.h"

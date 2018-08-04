@@ -24,7 +24,7 @@
 
 #include "ansidecl.h"
 #include "libiberty.h"
-#include "dis-asm.h"
+#include "disas-asm.h"
 //#include "opcode/arc.h"
 #include "elf-bfd.h"
 #include "arc.h"

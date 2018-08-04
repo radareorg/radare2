@@ -24,7 +24,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335 USA. */
 #include "ansidecl.h"
 #include "sysdep.h"
 #include "opcode/tricore.h"
-#include "dis-asm.h"
+#include "disas-asm.h"
 #ifndef _MSC_VER
 #include "libiberty.h"
 #else

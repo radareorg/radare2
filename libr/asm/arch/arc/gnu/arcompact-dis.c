@@ -25,7 +25,7 @@
 #include <ansidecl.h>
 #include <string.h>
 
-#include "dis-asm.h"
+#include "disas-asm.h"
 #include "arc.h"
 #include "arc-ext.h"
 #include "arc-dis.h"

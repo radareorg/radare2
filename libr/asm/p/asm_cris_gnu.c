@@ -18,7 +18,7 @@ http://developer.axis.com/old/documentation/hw/etraxfs/iop_howto/iop_howto.pdf
 #include <r_util.h>
 #include <r_asm.h>
 
-#include "dis-asm.h"
+#include "disas-asm.h"
 
 
 static unsigned long Offset = 0;
