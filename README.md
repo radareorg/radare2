@@ -116,7 +116,6 @@ In case of a polluted filesystem you can uninstall the current
 version or remove all previous installations:
 
 	$ make uninstall
-	$ make purge
 
 # Package manager
 
