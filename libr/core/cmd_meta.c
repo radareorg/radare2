@@ -28,6 +28,7 @@ static const char *help_msg_C[] = {
 	"Cz", "[@addr]", "add string (see Cs?)",
 	"Ch", "[-] [size] [@addr]", "hide data",
 	"Cd", "[-] [size] [repeat] [@addr]", "hexdump data array (Cd 4 10 == dword [10])",
+	"Cd.", " [@addr]", "show size of data at current address",
 	"Cf", "[?][-] [sz] [0|cnt][fmt] [a0 a1...] [@addr]", "format memory (see pf?)",
 	"CF", "[sz] [fcn-sign..] [@addr]", "function signature",
 	"Cm", "[-] [sz] [fmt..] [@addr]", "magic parse (see pm?)",
@@ -637,6 +638,8 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			} else {
 				r_cons_println ("<oom>");
 			}
+		} else if (type == 'd') {
+			r_cons_printf ("%"PFMT64u"\n", mi.size);
 		} else {
 			r_cons_println (mi.str);
 		}
