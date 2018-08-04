@@ -846,6 +846,11 @@ ST_DATA int tcc_ext;
 /* XXX: get rid of this ASAP */
 ST_DATA struct TCCState *tcc_state;
 
+static inline int tcc_nerr() {
+	return tcc_state->nb_errors;
+}
+
+
 #ifdef MEM_DEBUG
 ST_DATA int mem_cur_size;
 ST_DATA int mem_max_size;

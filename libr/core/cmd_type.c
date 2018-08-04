@@ -792,7 +792,7 @@ static int cmd_type(void *data, const char *input) {
 			// TODO #7967 help refactor: move to detail
 			r_core_cmd_help (core, help_msg_td);
 			r_cons_printf ("Note: The td command should be put between double quotes\n"
-				"Example: \" td struct foo {int bar;int cow};\""
+				"Example: \"td struct foo {int bar;int cow;};\""
 				"\nt");
 
 		} else if (input[1] == ' ') {
