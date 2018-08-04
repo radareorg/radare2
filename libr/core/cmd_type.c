@@ -583,22 +583,24 @@ static int cmd_type(void *data, const char *input) {
 		cmd_type_noreturn (core, input + 1);
 		break;
 	// t [typename] - show given type in C syntax
-	case 'u': // "tu"
+	case 'u': { // "tu"
 		switch (input[1]) {
 		case '?':
 			r_core_cmd_help (core, help_msg_tu);
 			break;
 		case '*':
-			showFormat (core, input + 2, 1);
+			if (input[2] == ' ') {
+				showFormat (core, r_str_trim_ro (input + 2), 1);
+			}
 			break;
 		case ' ':
-			showFormat (core, input + 2, 0);
+			showFormat (core, r_str_trim_ro (input + 1), 0);
 			break;
 		case 0:
 			sdb_foreach (TDB, stdprintifunion, core);
 			break;
 		}
-		break;
+	} break;
 	case 'k': // "tk"
 		res = (input[1] == ' ')
 			? sdb_querys (TDB, NULL, -1, input + 2)
@@ -652,16 +654,17 @@ static int cmd_type(void *data, const char *input) {
 		}
 		break;
 	case 's': { // "ts"
-		char *name = strchr (input, ' ');
 		switch (input[1]) {
 		case '?':
 			r_core_cmd_help (core, help_msg_ts);
 			break;
 		case '*':
-			showFormat (core, name + 1, 1);
+			if (input[2] == ' ') {
+				showFormat (core, r_str_trim_ro (input + 2), 1);
+			}
 			break;
 		case ' ':
-			showFormat (core, name + 1, 0);
+			showFormat (core, r_str_trim_ro (input + 1), 0);
 			break;
 		case 's':
 			if (input[2] == ' ') {
