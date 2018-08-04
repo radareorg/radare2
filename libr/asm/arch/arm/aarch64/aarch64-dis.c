@@ -19,7 +19,7 @@
    see <http://www.gnu.org/licenses/>.  */
 
 #include "sysdep.h"
-#include "dis-asm.h"
+#include "disas-asm.h"
 #include "libiberty.h"
 #include "opintl.h"
 #include "aarch64-dis.h"
