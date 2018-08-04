@@ -386,16 +386,16 @@ static const char *help_msg_afvs[] = {
 static const char *help_msg_ag[] = {
 	"Usage:", "ag<graphtype><format> [addr]", "",
 	"Graph commands:", "", "",
-	"aga", "[format] [@ fcn addr]", "Data references graph",
+	"aga", "[format]", "Data references graph",
 	"agA", "[format]", "Global data references graph",
-	"agc", "[format] [@ fcn addr]", "Function callgraph",
+	"agc", "[format]", "Function callgraph",
 	"agC", "[format]", "Global callgraph",
 	"agd", "[format] [fcn addr]", "Diff graph",
-	"agf", "[format] [@ fcn addr]", "Basic blocks function graph",
+	"agf", "[format]", "Basic blocks function graph",
 	"agi", "[format]", "Imports graph",
-	"agr", "[format] [@ fcn addr]", "References graph",
+	"agr", "[format]", "References graph",
 	"agR", "[format]", "Global references graph",
-	"agx", "[format] [@ addr]", "Cross references graph",
+	"agx", "[format]", "Cross references graph",
 	"agg", "[format]", "Custom graph",
 	"ag-", "", "Clear the custom graph",
 	"agn", "[?] title body", "Add a node to the custom graph",
@@ -5743,19 +5743,23 @@ static void agraph_print_node(RANode *n, void *user) {
 static char *getViewerPath() {
 	int i;
 	const char *viewers[] = {
+#if __WINDOWS__
+		"explorer",
+#else
 		"open",
 		"geeqie",
 		"gqview",
 		"eog",
 		"xdg-open",
+#endif
 		NULL
 	};
 	for (i = 0; viewers[i]; i++) {
-		char *dotPath = r_file_path (viewers[i]);
-		if (dotPath && strcmp (dotPath, viewers[i])) {
-			return dotPath;
+		char *viewerPath = r_file_path (viewers[i]);
+		if (viewerPath && strcmp (viewerPath, viewers[i])) {
+			return viewerPath;
 		}
-		free (dotPath);
+		free (viewerPath);
 	}
 	return NULL;
 }
