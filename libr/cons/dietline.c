@@ -452,8 +452,8 @@ static void draw_selection_widget() {
 	}
 	sel_widget->w = R_MIN (sel_widget->w, R_SELWIDGET_MAXW);
 
-	char *background_color = cons->color ? Color_BGBLACK : Color_INVERT; // XXX colors from palette
-	char *selected_color = cons->color ? Color_BGRED : Color_INVERT_RESET; // XXX colors from palette
+	char *background_color = cons->color ? cons->pal.widget_bg : Color_INVERT;
+	char *selected_color = cons->color ? cons->pal.widget_sel : Color_INVERT_RESET;
 	bool scrollbar = sel_widget->options_len > R_SELWIDGET_MAXH;
 	int scrollbar_y = 0, scrollbar_l = 0;
 	if (scrollbar) {
@@ -468,8 +468,10 @@ static void draw_selection_widget() {
 		r_cons_printf ("%s", sel_widget->selection == y + scroll ? selected_color : background_color);
 		r_cons_printf ("%-*.*s", sel_widget->w, sel_widget->w, option);
 		if (scrollbar) {
-			r_cons_printf ("%s", background_color);
+			r_cons_strcat (background_color);
 			r_cons_printf ("%s", R_BETWEEN (scrollbar_y, y, scrollbar_y + scrollbar_l) ? SELWIDGET_SCROLLCHAR : " ");
+		} else {
+			r_cons_memcat (" ", 1);
 		}
 	}
 
@@ -527,7 +529,7 @@ static void selection_widget_select() {
 }
 
 static void selection_widget_update() {
-	if (I.completion.argc == 0 || I.buffer.length == 0 || 
+	if (I.completion.argc == 0 ||
 		(I.completion.argc == 1 && I.buffer.length >= strlen (I.completion.argv[0]))) {
 		selection_widget_erase ();
 		return;
@@ -640,7 +642,7 @@ R_API void r_line_autocomplete() {
 		}
 	}
 
-	if (I.offset_prompt) {
+	if (I.offset_prompt || I.file_prompt) {
 		selection_widget_update ();
 		if (I.sel_widget) {
 			I.sel_widget->complete_common = false;

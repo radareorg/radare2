@@ -50,6 +50,8 @@ static struct {
 	{ "func_var", r_offsetof (RConsPrintablePalette, func_var), r_offsetof (RConsPalette, func_var) },
 	{ "func_var_type", r_offsetof (RConsPrintablePalette, func_var_type), r_offsetof (RConsPalette, func_var_type) },
 	{ "func_var_addr", r_offsetof (RConsPrintablePalette, func_var_addr), r_offsetof (RConsPalette, func_var_addr) },
+	{ "widget_bg", r_offsetof (RConsPrintablePalette, widget_bg), r_offsetof (RConsPalette, widget_bg) },
+	{ "widget_sel", r_offsetof (RConsPrintablePalette, widget_sel), r_offsetof (RConsPalette, widget_sel) },
 
 	{ "ai.read", r_offsetof (RConsPrintablePalette, ai_read), r_offsetof (RConsPalette, ai_read) },
 	{ "ai.write", r_offsetof (RConsPrintablePalette, ai_write), r_offsetof (RConsPalette, ai_write) },
@@ -172,6 +174,9 @@ R_API void r_cons_pal_init() {
 	cons->cpal.func_var           = (RColor) RColor_WHITE;
 	cons->cpal.func_var_type      = (RColor) RColor_BLUE;
 	cons->cpal.func_var_addr      = (RColor) RColor_CYAN;
+
+	cons->cpal.widget_bg          = (RColor) RCOLOR (ALPHA_BG, 0x30, 0x30, 0x30, 0x00, 0x00, 0x00);
+	cons->cpal.widget_sel         = (RColor) RColor_BGRED;
 
 	cons->cpal.graph_box          = (RColor) RColor_NULL;
 	cons->cpal.graph_box2         = (RColor) RColor_BLUE;

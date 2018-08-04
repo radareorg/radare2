@@ -1407,6 +1407,8 @@ static int autocomplete(RLine *line) {
 				ADDARG("func_var")
 				ADDARG("func_var_type")
 				ADDARG("func_var_addr")
+				ADDARG("widget_bg")
+				ADDARG("widget_sel")
 				ADDARG("ai.read")
 				ADDARG("ai.write")
 				ADDARG("ai.exec")
