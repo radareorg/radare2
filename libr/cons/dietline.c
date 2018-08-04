@@ -442,7 +442,7 @@ R_API int r_line_hist_chop(const char *file, int limit) {
 	return 0;
 }
 
-static void draw_selection_widget () {
+static void draw_selection_widget() {
 	RCons *cons = r_cons_singleton ();
 	RSelWidget *sel_widget = I.sel_widget;
 	int y, pos_y = cons->rows, pos_x = r_str_ansi_len (I.prompt);
@@ -452,15 +452,14 @@ static void draw_selection_widget () {
 	}
 	sel_widget->w = R_MIN (sel_widget->w, R_SELWIDGET_MAXW);
 
-	char *background_color = cons->color ? "\x1b[40m" : Color_INVERT; // XXX colors from palette
-	char *selected_color = cons->color ? "\x1b[41m" : Color_INVERT_RESET; // XXX colors from palette
+	char *background_color = cons->color ? Color_BGBLACK : Color_INVERT; // XXX colors from palette
+	char *selected_color = cons->color ? Color_BGRED : Color_INVERT_RESET; // XXX colors from palette
 	bool scrollbar = sel_widget->options_len > R_SELWIDGET_MAXH;
-	int scrollbar_y = scrollbar
-		? (R_SELWIDGET_MAXH * (sel_widget->selection - sel_widget->scroll)) / sel_widget->options_len
-		: 0;
-	int scrollbar_l = scrollbar
-		? (R_SELWIDGET_MAXH * R_SELWIDGET_MAXH) / sel_widget->options_len
-		: 0;
+	int scrollbar_y = 0, scrollbar_l = 0;
+	if (scrollbar) {
+		scrollbar_y = (R_SELWIDGET_MAXH * (sel_widget->selection - sel_widget->scroll)) / sel_widget->options_len;
+		scrollbar_l = (R_SELWIDGET_MAXH * R_SELWIDGET_MAXH) / sel_widget->options_len;
+	}
 
 	for (y = 0; y < R_MIN (sel_widget->h, R_SELWIDGET_MAXH); y++) {
 		r_cons_gotoxy (pos_x + 1, pos_y - y - 1);
@@ -470,16 +469,16 @@ static void draw_selection_widget () {
 		r_cons_printf ("%-*.*s", sel_widget->w, sel_widget->w, option);
 		if (scrollbar) {
 			r_cons_printf ("%s", background_color);
-			r_cons_printf ("%s", R_BETWEEN(scrollbar_y, y, scrollbar_y + scrollbar_l) ? "█" : " ");
+			r_cons_printf ("%s", R_BETWEEN (scrollbar_y, y, scrollbar_y + scrollbar_l) ? SELWIDGET_SCROLLCHAR : " ");
 		}
 	}
 
 	r_cons_gotoxy (pos_x + I.buffer.length, pos_y);
-	r_cons_printf ("%s", Color_RESET_BG);
-	r_cons_flush();
+	r_cons_memcat (Color_RESET_BG, 5);
+	r_cons_flush ();
 }
 
-static void selection_widget_up () {
+static void selection_widget_up() {
 	RSelWidget *sel_widget = I.sel_widget;
 	if (sel_widget && sel_widget->selection < sel_widget->options_len - 1) {
 		sel_widget->selection++;
@@ -487,7 +486,7 @@ static void selection_widget_up () {
 	}
 }
 
-static void selection_widget_down () {
+static void selection_widget_down() {
 	RSelWidget *sel_widget = I.sel_widget;
 	if (sel_widget && sel_widget->selection > 0) {
 		sel_widget->selection--;
@@ -495,13 +494,13 @@ static void selection_widget_down () {
 	}
 }
 
-static void print_rline_task (void *core) {
+static void print_rline_task(void *core) {
 	r_cons_clear_line (0);
 	r_cons_printf ("%s%s%s", Color_RESET, I.prompt,  I.buffer.data); 
 	r_cons_flush ();
 }
 
-static void selection_widget_erase () {
+static void selection_widget_erase() {
 	RSelWidget *sel_widget = I.sel_widget;
 	if (sel_widget) {
 		sel_widget->options_len = 0;
@@ -516,17 +515,18 @@ static void selection_widget_erase () {
 	}
 }
 
-static void selection_widget_select () {
+static void selection_widget_select() {
 	RSelWidget *sel_widget = I.sel_widget;
 	if (sel_widget && sel_widget->selection < sel_widget->options_len) {
-		strncpy (I.buffer.data, sel_widget->options[sel_widget->selection], R_LINE_BUFSIZE - 1);
-		I.buffer.length = strlen (I.buffer.data);
+		I.buffer.length = R_MIN (strlen (sel_widget->options[sel_widget->selection]), R_LINE_BUFSIZE - 1);
+		memcpy (I.buffer.data, sel_widget->options[sel_widget->selection], I.buffer.length);
+		I.buffer.data[I.buffer.length] = '\0';
 		I.buffer.index = I.buffer.length;
 		selection_widget_erase ();
 	}
 }
 
-static void selection_widget_update () {
+static void selection_widget_update() {
 	if (I.completion.argc == 0 || I.buffer.length == 0 || 
 		(I.completion.argc == 1 && I.buffer.length >= strlen (I.completion.argv[0]))) {
 		selection_widget_erase ();
@@ -1098,9 +1098,7 @@ _end:
 		fflush (stdout);
 	}
 
-	if (I.sel_widget) {
-		R_FREE (I.sel_widget);
-	}
+	R_FREE (I.sel_widget);
 
 	// should be here or not?
 	if (!memcmp (I.buffer.data, "!history", 8)) {
@@ -1727,9 +1725,7 @@ _end:
 		fflush (stdout);
 	}
 
-	if (I.sel_widget) {
-		R_FREE (I.sel_widget);
-	}
+	R_FREE (I.sel_widget);
 
 	// should be here or not?
 	if (!memcmp (I.buffer.data, "!history", 8)) {
