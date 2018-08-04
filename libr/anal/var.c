@@ -703,7 +703,7 @@ R_API void extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_s
 					r_anal_var_link (anal, op->addr, op->var);
 				}
 				r_anal_var_access (anal, fcn->addr, 'r', 1, delta, 0, op->addr);
-				r_meta_set_string (anal, R_META_TYPE_COMMENT, op->addr, vname);
+				r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, vname);
 				free (vname);
 			}
 			if (op->dst && opdreg && !strcmp (opdreg, regname)) {

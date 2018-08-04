@@ -368,7 +368,7 @@ static void set_offset_hint(RCore *core, RAnalOp op, const char *type, ut64 ladd
 			r_anal_hint_set_offset (core->anal, at, res);
 		}
 	} else if (cmt && r_anal_op_ismemref (op.type)) {
-			r_meta_set_string (core->anal, R_META_TYPE_COMMENT, at, cmt);
+			r_meta_set_string (core->anal, R_META_TYPE_VARTYPE, at, cmt);
 	}
 }
 
