@@ -112,10 +112,10 @@ static void add_tls_callbacks(RBinFile *bf, RList* list) {
 			break;
 		}
 		if ((ptr = R_NEW0 (RBinAddr))) {
-			ptr->paddr = paddr;
-			ptr->vaddr = vaddr;
-			ptr->haddr = haddr;
-			ptr->type  = R_BIN_ENTRY_TYPE_TLS;
+			ptr->paddr  = paddr;
+			ptr->vaddr  = vaddr;
+			ptr->hpaddr = haddr;
+			ptr->type   = R_BIN_ENTRY_TYPE_TLS;
 			r_list_append (list, ptr);
 		}
 		count++;
@@ -134,10 +134,10 @@ static RList* entries(RBinFile *bf) {
 		return ret;
 	}
 	if ((ptr = R_NEW0 (RBinAddr))) {
-		ptr->paddr = entry->paddr;
-		ptr->vaddr = entry->vaddr;
-		ptr->haddr = entry->haddr;
-		ptr->type  = R_BIN_ENTRY_TYPE_PROGRAM;
+		ptr->paddr  = entry->paddr;
+		ptr->vaddr  = entry->vaddr;
+		ptr->hpaddr = entry->haddr;
+		ptr->type   = R_BIN_ENTRY_TYPE_PROGRAM;
 		r_list_append (ret, ptr);
 	}
 	free (entry);

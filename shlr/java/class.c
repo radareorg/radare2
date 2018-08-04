@@ -2405,7 +2405,7 @@ R_API RList *r_bin_java_get_entrypoints(RBinJavaObj *bin) {
 			if (addr) {
 				addr->vaddr = addr->paddr = \
 					r_bin_java_get_method_code_offset (fm_type) + bin->loadaddr;
-				addr->haddr = fm_type->file_offset;
+				addr->hpaddr = fm_type->file_offset;
 				r_list_append (ret, addr);
 			}
 		}
