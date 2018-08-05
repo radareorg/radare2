@@ -1407,6 +1407,8 @@ static int autocomplete(RLine *line) {
 				ADDARG("func_var")
 				ADDARG("func_var_type")
 				ADDARG("func_var_addr")
+				ADDARG("widget_bg")
+				ADDARG("widget_sel")
 				ADDARG("ai.read")
 				ADDARG("ai.write")
 				ADDARG("ai.exec")
@@ -2236,6 +2238,7 @@ R_API void r_core_bind_cons(RCore *core) {
 	core->cons->cb_break = (RConsBreakCallback)r_core_break;
 	core->cons->cb_sleep_begin = (RConsSleepBeginCallback)r_core_sleep_begin;
 	core->cons->cb_sleep_end = (RConsSleepEndCallback)r_core_sleep_end;
+	core->cons->cb_task_oneshot = (RConsQueueTaskOneshot) r_core_task_enqueue_oneshot;
 	core->cons->user = (void*)core;
 }
 

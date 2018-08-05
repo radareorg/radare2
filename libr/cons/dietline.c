@@ -442,7 +442,113 @@ R_API int r_line_hist_chop(const char *file, int limit) {
 	return 0;
 }
 
+static void draw_selection_widget() {
+	RCons *cons = r_cons_singleton ();
+	RSelWidget *sel_widget = I.sel_widget;
+	int y, pos_y = cons->rows, pos_x = r_str_ansi_len (I.prompt);
+
+	for (y = 0; y < sel_widget->options_len; y++) {
+		sel_widget->w = R_MAX (sel_widget->w, strlen (sel_widget->options[y]));
+	}
+	sel_widget->w = R_MIN (sel_widget->w, R_SELWIDGET_MAXW);
+
+	char *background_color = cons->color ? cons->pal.widget_bg : Color_INVERT_RESET;
+	char *selected_color = cons->color ? cons->pal.widget_sel : Color_INVERT;
+	bool scrollbar = sel_widget->options_len > R_SELWIDGET_MAXH;
+	int scrollbar_y = 0, scrollbar_l = 0;
+	if (scrollbar) {
+		scrollbar_y = (R_SELWIDGET_MAXH * (sel_widget->selection - sel_widget->scroll)) / sel_widget->options_len;
+		scrollbar_l = (R_SELWIDGET_MAXH * R_SELWIDGET_MAXH) / sel_widget->options_len;
+	}
+
+	for (y = 0; y < R_MIN (sel_widget->h, R_SELWIDGET_MAXH); y++) {
+		r_cons_gotoxy (pos_x + 1, pos_y - y - 1);
+		int scroll = R_MAX (0, sel_widget->selection - sel_widget->scroll);
+		char *option = y < sel_widget->options_len ? sel_widget->options[y + scroll] : "";
+		r_cons_printf ("%s", sel_widget->selection == y + scroll ? selected_color : background_color);
+		r_cons_printf ("%-*.*s", sel_widget->w, sel_widget->w, option);
+		if (scrollbar && R_BETWEEN (scrollbar_y, y, scrollbar_y + scrollbar_l)) {
+			r_cons_memcat (Color_INVERT" "Color_INVERT_RESET, 10);
+		} else {
+			r_cons_memcat (" ", 1);
+		}
+	}
+
+	r_cons_gotoxy (pos_x + I.buffer.length, pos_y);
+	r_cons_memcat (Color_RESET_BG, 5);
+	r_cons_flush ();
+}
+
+static void selection_widget_up() {
+	RSelWidget *sel_widget = I.sel_widget;
+	if (sel_widget && sel_widget->selection < sel_widget->options_len - 1) {
+		sel_widget->selection++;
+		sel_widget->scroll = R_MIN (sel_widget->scroll + 1, R_SELWIDGET_MAXH - 1);
+	}
+}
+
+static void selection_widget_down() {
+	RSelWidget *sel_widget = I.sel_widget;
+	if (sel_widget && sel_widget->selection > 0) {
+		sel_widget->selection--;
+		sel_widget->scroll = R_MAX (sel_widget->scroll - 1, 0);
+	}
+}
+
+static void print_rline_task(void *core) {
+	r_cons_clear_line (0);
+	r_cons_printf ("%s%s%s", Color_RESET, I.prompt,  I.buffer.data); 
+	r_cons_flush ();
+}
+
+static void selection_widget_erase() {
+	RSelWidget *sel_widget = I.sel_widget;
+	if (sel_widget) {
+		sel_widget->options_len = 0;
+		sel_widget->selection = -1;
+		draw_selection_widget ();
+		R_FREE (I.sel_widget);
+		RCons *cons = r_cons_singleton ();
+		if (cons->event_resize && cons->event_data) {
+			cons->event_resize (cons->event_data);
+			cons->cb_task_oneshot (cons->user, print_rline_task, NULL);
+		}
+	}
+}
+
+static void selection_widget_select() {
+	RSelWidget *sel_widget = I.sel_widget;
+	if (sel_widget && sel_widget->selection < sel_widget->options_len) {
+		I.buffer.length = R_MIN (strlen (sel_widget->options[sel_widget->selection]), R_LINE_BUFSIZE - 1);
+		memcpy (I.buffer.data, sel_widget->options[sel_widget->selection], I.buffer.length);
+		I.buffer.data[I.buffer.length] = '\0';
+		I.buffer.index = I.buffer.length;
+		selection_widget_erase ();
+	}
+}
+
+static void selection_widget_update() {
+	if (I.completion.argc == 0 ||
+		(I.completion.argc == 1 && I.buffer.length >= strlen (I.completion.argv[0]))) {
+		selection_widget_erase ();
+		return;
+	}
+	if (!I.sel_widget) {
+		RSelWidget *sel_widget = R_NEW0 (RSelWidget);
+		I.sel_widget = sel_widget;
+	}
+	I.sel_widget->scroll = 0;
+	I.sel_widget->selection = 0;
+	I.sel_widget->options_len = I.completion.argc;
+	I.sel_widget->options = I.completion.argv;
+	I.sel_widget->h = R_MAX (I.sel_widget->h, I.completion.argc);
+	draw_selection_widget ();
+	r_cons_flush ();
+	return;
+}
+
 R_API void r_line_autocomplete() {
+
 	int argc = 0;
 	char *p;
 	const char **argv = NULL;
@@ -454,6 +560,11 @@ R_API void r_line_autocomplete() {
 		I.completion.run (&I);
 		opt = argc = I.completion.argc;
 		argv = I.completion.argv;
+	}
+
+	if (I.sel_widget && !I.sel_widget->complete_common) {
+		selection_widget_update ();
+		return;
 	}
 
 	p = (char *) r_sub_str_lchr (I.buffer.data, 0, I.buffer.index, ' ');
@@ -530,6 +641,14 @@ R_API void r_line_autocomplete() {
 		}
 	}
 
+	if (I.offset_prompt || I.file_prompt) {
+		selection_widget_update ();
+		if (I.sel_widget) {
+			I.sel_widget->complete_common = false;
+		}
+		return;
+	}
+
 	/* show options */
 	if (opt > 1 && I.echo) {
 		const int sep = 3;
@@ -575,6 +694,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 	char *tmp_ed_cmd, prev = 0;
 	HANDLE hClipBoard;
 	char *clipText;
+	int prev_buflen = 0;
 
 	I.buffer.index = I.buffer.length = 0;
 	I.buffer.data[0] = '\0';
@@ -597,7 +717,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 
 	if (I.echo) {
 		r_cons_clear_line (0);
-		printf ("\x1b[0K\r%s%s", I.prompt, I.buffer.data);
+		printf ("%s%s%s", Color_RESET, I.prompt, I.buffer.data);
 		fflush (stdout);
 	}
 	r_cons_break_push (NULL, NULL);
@@ -632,7 +752,10 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			I.buffer.index = I.buffer.index? I.buffer.index - 1: 0;
 			break;
 		case 38:	// up arrow
-			if (gcomp) {
+			if (I.sel_widget) {
+				selection_widget_up ();
+				draw_selection_widget ();
+			} else if (gcomp) {
 				gcomp_idx++;
 			} else if (r_line_hist_up () == -1) {
 				r_cons_break_pop ();
@@ -644,7 +767,10 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 					 I.buffer.index + 1: I.buffer.length;
 			break;
 		case 40:// down arrow
-			if (gcomp) {
+			if (I.sel_widget) {
+				selection_widget_up ();
+				draw_selection_widget ();
+			} else if (gcomp) {
 				if (gcomp_idx > 0) {
 					gcomp_idx--;
 				}
@@ -831,7 +957,10 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			paste ();
 			break;
 		case 14:// ^n
-			if (gcomp) {
+			if (I.sel_widget) {
+				selection_widget_down ();
+				draw_selection_widget ();
+			} else if (gcomp) {
 				if (gcomp_idx > 0) {
 					gcomp_idx--;
 				}
@@ -840,7 +969,10 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			}
 			break;
 		case 16:// ^p
-			if (gcomp) {
+			if (I.sel_widget) {
+				selection_widget_down ();
+				draw_selection_widget ();
+			} else if (gcomp) {
 				gcomp_idx++;
 			} else {
 				r_line_hist_up ();
@@ -874,10 +1006,17 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			break;
 		/* tab */
 		case 9:	// tab
+			if (I.sel_widget) {
+				I.sel_widget->complete_common = true;
+			}
 			r_line_autocomplete ();
 			break;
 		/* enter */
 		case 13:
+			if (I.sel_widget) {
+				selection_widget_select ();
+				break;
+			}
 			if (gcomp && I.buffer.length > 0) {
 				strncpy (I.buffer.data, gcomp_line, R_LINE_BUFSIZE - 1);
 				I.buffer.data[R_LINE_BUFSIZE - 1] = '\0';
@@ -905,6 +1044,10 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			I.buffer.index++;
 			break;
 		}
+		if (I.sel_widget && I.buffer.length != prev_buflen) {
+			prev_buflen = I.buffer.length;
+			r_line_autocomplete ();
+		}
 		prev = buf[0];
 		if (I.echo) {
 			if (gcomp) {
@@ -927,7 +1070,7 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 				int chars = R_MAX (1, strlen (I.buffer.data));	// wtf?
 				int len, cols = R_MAX (1, columns - r_str_ansi_len (I.prompt) - 2);
 				/* print line */
-				printf ("\r%s", I.prompt);
+				printf ("\r%s%s", Color_RESET, I.prompt);
 				fwrite (I.buffer.data, 1, R_MIN (cols, chars), stdout);
 				/* place cursor */
 				printf ("\r%s", I.prompt);
@@ -956,6 +1099,8 @@ _end:
 		fflush (stdout);
 	}
 
+	R_FREE (I.sel_widget);
+
 	// should be here or not?
 	if (!memcmp (I.buffer.data, "!history", 8)) {
 		r_line_hist_list ();
@@ -980,6 +1125,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 #endif
 	int ch, i = 0;	/* grep completion */
 	char *tmp_ed_cmd, prev = 0;
+	int prev_buflen = -1;
 
 	I.buffer.index = I.buffer.length = 0;
 	I.buffer.data[0] = '\0';
@@ -1002,7 +1148,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 
 	if (I.echo) {
 		r_cons_clear_line (0);
-		printf ("\x1b[0K\r%s%s", I.prompt, I.buffer.data);
+		printf ("%s%s%s", Color_RESET, I.prompt, I.buffer.data);
 		fflush (stdout);
 	}
 	r_cons_break_push (NULL, NULL);
@@ -1196,7 +1342,10 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			paste ();
 			break;
 		case 14:// ^n
-			if (gcomp) {
+			if (I.sel_widget) {
+				selection_widget_down ();
+				draw_selection_widget ();
+			} else if (gcomp) {
 				if (gcomp_idx > 0) {
 					gcomp_idx--;
 				}
@@ -1205,7 +1354,10 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			}
 			break;
 		case 16:// ^p
-			if (gcomp) {
+			if (I.sel_widget) {
+				selection_widget_up ();
+				draw_selection_widget ();
+			} else if (gcomp) {
 				gcomp_idx++;
 			} else {
 				r_line_hist_up ();
@@ -1278,7 +1430,10 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						break;
 					/* arrows */
 					case 'A':	// up arrow
-						if (gcomp) {
+						if (I.sel_widget) {
+							selection_widget_up ();
+							draw_selection_widget ();
+						} else if (gcomp) {
 							gcomp_idx++;
 						} else if (r_line_hist_up () == -1) {
 							r_cons_break_pop ();
@@ -1286,7 +1441,10 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						}
 						break;
 					case 'B':	// down arrow
-						if (gcomp) {
+						if (I.sel_widget) {
+							selection_widget_down ();
+							draw_selection_widget ();
+						} else if (gcomp) {
 							if (gcomp_idx > 0) {
 								gcomp_idx--;
 							}
@@ -1450,9 +1608,16 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				I.buffer.length++;
 				I.buffer.index++;
 			}
+			if (I.sel_widget) {
+				I.sel_widget->complete_common = true;
+			}
 			r_line_autocomplete ();
 			break;
-		case 13:
+		case 13: // enter
+			if (I.sel_widget) {
+				selection_widget_select ();
+				break;
+			}
 			if (gcomp && I.buffer.length > 0) {
 				strncpy (I.buffer.data, gcomp_line, R_LINE_BUFSIZE - 1);
 				I.buffer.data[R_LINE_BUFSIZE - 1] = '\0';
@@ -1506,6 +1671,10 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 #endif
 			break;
 		}
+		if (I.sel_widget && I.buffer.length != prev_buflen) {
+			prev_buflen = I.buffer.length;
+			r_line_autocomplete ();
+		}
 		prev = buf[0];
 		if (I.echo) {
 			if (gcomp) {
@@ -1528,7 +1697,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 				int chars = R_MAX (1, strlen (I.buffer.data));	// wtf?
 				int len, cols = R_MAX (1, columns - r_str_ansi_len (I.prompt) - 2);
 				/* print line */
-				printf ("\r%s", I.prompt);
+				printf ("\r%s%s", Color_RESET, I.prompt);
 				fwrite (I.buffer.data, 1, R_MIN (cols, chars), stdout);
 				/* place cursor */
 				printf ("\r%s", I.prompt);
@@ -1556,6 +1725,8 @@ _end:
 		printf ("\r%s%s\n", I.prompt, I.buffer.data);
 		fflush (stdout);
 	}
+
+	R_FREE (I.sel_widget);
 
 	// should be here or not?
 	if (!memcmp (I.buffer.data, "!history", 8)) {
