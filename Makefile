@@ -329,7 +329,13 @@ else
 endif
 
 purge: purge-doc purge-dev user-uninstall
-	for FILE in ${R2BINS} ; do rm -f "${DESTDIR}${BINDIR}/$$FILE" ; done
+ifneq ($(PREFIX),/usr)
+	PREFIX=/usr
+endif
+ifneq ($(PREFIX),/usr/local)
+	PREFIX=/usr/local
+endif
+    for FILE in ${R2BINS} ; do rm -f "${DESTDIR}${BINDIR}/$$FILE" ; done
 	rm -f "${DESTDIR}${BINDIR}/ragg2-cc"
 	rm -f "${DESTDIR}${BINDIR}/r2"
 	rm -f "${DESTDIR}${LIBDIR}/libr_"*
@@ -338,17 +344,8 @@ purge: purge-doc purge-dev user-uninstall
 	rm -rf "${DESTDIR}${INCLUDEDIR}/libr"
 	rm -rf "${DESTDIR}${DATADIR}/radare2"
 
-purge2:
-	$(MAKE) purge
-ifneq ($(PREFIX),/usr)
-	$(MAKE) purge PREFIX=/usr
-endif
-ifneq ($(PREFIX),/usr/local)
-	$(MAKE) purge PREFIX=/usr/local
-endif
-
-purge3: purge2
-	sys/purge.sh distro
+system-purge: purge
+	sys/purge.sh
 
 R2V=radare2-${VERSION}
 
@@ -473,5 +470,5 @@ include ${MKPLUGINS}
 
 .PHONY: all clean distclean mrproper install symstall uninstall deinstall strip
 .PHONY: libr binr install-man w32dist tests dist shot pkgcfg depgraph.png love
-.PHONY: purge purge2 purge3
+.PHONY: purge system-purge
 .PHONY: shlr/capstone

@@ -117,6 +117,10 @@ version or remove all previous installations:
 
 	$ make uninstall
 	$ make purge
+	
+To remove all stuff including libraries, use
+
+	$ make system-purge
 
 # Package manager
 
