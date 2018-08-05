@@ -62,7 +62,8 @@ typedef struct r_bp_item_t {
 	char *expr; /* to be used for named breakpoints (see r_debug_bp_update) */
 } RBreakpointItem;
 
-typedef int (*RBreakpointCallback)(void *bp, RBreakpointItem *b, bool set);
+struct r_bp_t;
+typedef int (*RBreakpointCallback)(struct r_bp_t *bp, RBreakpointItem *b, bool set);
 
 typedef struct r_bp_t {
 	void *user;

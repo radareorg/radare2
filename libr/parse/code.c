@@ -93,7 +93,10 @@ R_API char *r_parse_c_string(RAnal *anal, const char *code) {
 	if (!T) return NULL;
 	tcc_set_callback (T, &appendstring, &str);
 	sdb_foreach (anal->sdb_types, typeload, NULL);
-	tcc_compile_string (T, code);
+	if (tcc_compile_string (T, code) != 0) {
+		free (str);
+		str = NULL;
+	}
 	tcc_delete (T);
 	return str;
 }

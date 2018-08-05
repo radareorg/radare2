@@ -11,7 +11,7 @@
 #include <r_lib.h>
 #include <r_asm.h>
 
-#include "dis-asm.h"
+#include "disas-asm.h"
 #include "../arch/vax/vax.h"
 
 static unsigned long Offset = 0;

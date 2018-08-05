@@ -22,7 +22,7 @@
 
 #include "sysdep.h"
 
-#include "dis-asm.h"
+#include "disas-asm.h"
 #include "opcode-arm.h"
 // #include "opcode/arm.h"
 #include "opintl.h"

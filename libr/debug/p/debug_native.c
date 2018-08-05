@@ -1523,8 +1523,7 @@ static bool arm64_hwbp_del (RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
  * we only handle the case for hardware breakpoints here. otherwise,
  * we let the caller handle the work.
  */
-static int r_debug_native_bp (void *bp_, RBreakpointItem *b, bool set) {
-	RBreakpoint *bp = (RBreakpoint *)bp_;
+static int r_debug_native_bp (RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	RDebug *dbg = bp->user;
 	if (b && b->hw) {
 #if __i386__ || __x86_64__

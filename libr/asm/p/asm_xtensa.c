@@ -9,7 +9,7 @@
 #include <r_util.h>
 #include <r_asm.h>
 
-#include "dis-asm.h"
+#include "disas-asm.h"
 
 #define INSN_BUFFER_SIZE 4
 

@@ -23,7 +23,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "dis-asm.h"
+#include "disas-asm.h"
 #include "sysdep.h"
 #include "opcode/cris.h"
 #include "libiberty.h"

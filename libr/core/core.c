@@ -1823,7 +1823,21 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 }
 
 R_API char *r_core_anal_get_comments(RCore *core, ut64 addr) {
-	return core? r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr): NULL;
+	if (core) {
+		char *type = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, addr);
+		char *cmt = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+		if (type && cmt) {
+			char *ret = r_str_newf ("%s %s", type, cmt);
+			free (type);
+			free (cmt);
+			return ret;
+		} else if (type) {
+			return type;
+		} else if (cmt) {
+			return cmt;
+		}
+	}
+	return NULL;
 }
 
 R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, bool verbose) {
@@ -3002,7 +3016,7 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 	bool vinfun = r_config_get_i (core->config, "anal.vinfun");
 	bool vinfunr = r_config_get_i (core->config, "anal.vinfunrange");
 	ut8 buf[4096];
-	ut64 v64, value = 0;
+	ut64 v64, value = 0, size;
 	ut64 from = search_itv.addr, to = r_itv_end (search_itv);
 	ut32 v32;
 	ut16 v16;
@@ -3028,11 +3042,12 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 	r_cons_break_push (NULL, NULL);
 
 	while (from < to) {
+		size = R_MIN (to - from, sizeof (buf));
 		memset (buf, 0xff, sizeof (buf)); // probably unnecessary
 		if (r_cons_is_breaked ()) {
 			goto beach;
 		}
-		bool res = r_io_read_at (core->io, from, buf, sizeof (buf));
+		bool res = r_io_read_at_mapped (core->io, from, buf, size);
 		if (!res || !memcmp (buf, "\xff\xff\xff\xff", 4) || !memcmp (buf, "\x00\x00\x00\x00", 4)) {
 			if (!isValidAddress (core, from)) {
 				ut64 next = r_io_map_next_address (core->io, from);
@@ -3044,7 +3059,7 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 				continue;
 			}
 		}
-		for (i = 0; i < sizeof (buf) - vsize; i++) {
+		for (i = 0; i <= size - vsize; i++) {
 			void *v = (buf + i);
 			ut64 addr = from + i;
 			if (r_cons_is_breaked ()) {
@@ -3055,10 +3070,10 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 			}
 			match = false;
 			switch (vsize) {
-			case 1: value = *(ut8 *) (v); match = (buf[i] >= vmin && buf[i] <= vmax); break;
-			case 2: v16 = *((ut16 *) (v)); match = (v16 >= vmin && v16 <= vmax); value = v16; break;
-			case 4: v32 = *((ut32 *) (v)); match = (v32 >= vmin && v32 <= vmax); value = v32; break;
-			case 8: v64 = *((ut64 *) (v)); match = (v64 >= vmin && v64 <= vmax); value = v64; break;
+			case 1: value = *(ut8 *)v; match = (buf[i] >= vmin && buf[i] <= vmax); break;
+			case 2: v16 = *(uut16 *)v; match = (v16 >= vmin && v16 <= vmax); value = v16; break;
+			case 4: v32 = *(uut32 *)v; match = (v32 >= vmin && v32 <= vmax); value = v32; break;
+			case 8: v64 = *(uut64 *)v; match = (v64 >= vmin && v64 <= vmax); value = v64; break;
 			default: eprintf ("Unknown vsize %d\n", vsize); return -1;
 			}
 			if (match && !vinfun) {
@@ -3087,7 +3102,10 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 				}
 			}
 		}
-		from += sizeof (buf);
+		if (size == to-from) {
+			break;
+		}
+		from += size-vsize+1;
 	}
 beach:
 	r_cons_break_pop ();

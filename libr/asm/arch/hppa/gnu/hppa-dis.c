@@ -22,7 +22,7 @@
    MA 02110-1301, USA.  */
 
 #include "sysdep.h"
-#include "dis-asm.h"
+#include "disas-asm.h"
 #include "libhppa.h"
 #include "opcode/hppa.h"
 #include <string.h>
