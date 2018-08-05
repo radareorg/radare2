@@ -252,6 +252,7 @@ static const char *help_detail_pf[] = {
 	" ", "b", "byte (unsigned)",
 	" ", "B", "resolve enum bitfield (see t?)",
 	" ", "c", "char (signed byte)",
+	" ", "C", "byte in decimal",
 	" ", "d", "0xHEX value (4 bytes) (see 'i' and 'x')",
 	" ", "D", "disassemble one opcode",
 	" ", "e", "temporally swap endian",
@@ -816,24 +817,23 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 	char *input;
 	int mode = R_PRINT_MUSTSEE;
 	switch (_input[1]) {
-	case '*':
+	case '*': // "pf*"
 		_input++;
 		mode = R_PRINT_SEEFLAGS;
 		break;
-	case 'd':
+	case 'd': // "pfd"
 		_input++;
 		mode = R_PRINT_DOT;
 		break;
-	case 'j':
+	case 'j': // "pfj"
 		_input++;
 		mode = R_PRINT_JSON;
 		break;
-	case 'v':
+	case 'v': // "pfv"
 		_input++;
 		mode = R_PRINT_VALUE | R_PRINT_MUSTSEE;
 		break;
-	case 's':
-	{
+	case 's': { // "pfs"
 		const char *val = NULL;
 		_input += 2;
 		if (*_input == '.') {
@@ -858,7 +858,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		}
 	}
 		return;
-	case '?':
+	case '?': // "pf?"
 		_input += 2;
 		if (*_input) {
 			if (*_input == '?') {
@@ -1470,20 +1470,37 @@ static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 si
 	RFlagItem *flag;
 
 	switch (mode) {
-	case 'p':
+	case '0': // "pz0"
+		for (j = 0; j < size; j++) {
+			if (bufz[j] == 0) {
+				ret++;
+			}
+		}
+		break;
+	case 'e': // "pze"
+		ret = (ut8) (r_hash_entropy_fraction (bufz, size) * 255);
+		break;
+	case 'f': // "pzf"
+		r_list_foreach (core->flags->flags, iter, flag)
+		if (flag->offset <= addr && addr < flag->offset + flag->size) {
+			ret++;
+		}
+		break;
+	case 'F': // "pzF"
+		for (j = 0; j < size; j++) {
+			if (bufz[j] == 0xff) {
+				ret++;
+			}
+		}
+		break;
+	case 'p': // "pzp"
 		for (j = 0; j < size; j++) {
 			if (IS_PRINTABLE (bufz[j])) {
 				ret++;
 			}
 		}
 		break;
-	case 'f':
-		r_list_foreach (core->flags->flags, iter, flag)
-		if (flag->offset <= addr && addr < flag->offset + flag->size) {
-			ret++;
-		}
-		break;
-	case 's':
+	case 's': // "pzs"
 		j = r_flag_space_get (core->flags, "strings");
 		r_list_foreach (core->flags->flags, iter, flag) {
 			if (flag->space == j &&
@@ -1495,24 +1512,7 @@ static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 si
 			}
 		}
 		break;
-	case '0': // 0x00
-		for (j = 0; j < size; j++) {
-			if (bufz[j] == 0) {
-				ret++;
-			}
-		}
-		break;
-	case 'F': // 0xFF
-		for (j = 0; j < size; j++) {
-			if (bufz[j] == 0xff) {
-				ret++;
-			}
-		}
-		break;
-	case 'e': // entropy
-		ret = (ut8) (r_hash_entropy_fraction (bufz, size) * 255);
-		break;
-	case 'h': // head
+	case 'h': // "pzh" head
 	default:
 		ret = *bufz;
 	}
@@ -2184,19 +2184,19 @@ static void cmd_print_pv(RCore *core, const char *input, const ut8* block) {
 	int type = 'v';
 	bool fixed_size = true;
 	switch (input[0]) {
-	case '1':
+	case '1': // "pv1"
 		n = 1;
 		input++;
 		break;
-	case '2':
+	case '2': // "pv2"
 		n = 2;
 		input++;
 		break;
-	case '4':
+	case '4': // "pv4"
 		n = 4;
 		input++;
 		break;
-	case '8':
+	case '8': // "pv8"
 		n = 8;
 		input++;
 		break;
@@ -2215,7 +2215,7 @@ static void cmd_print_pv(RCore *core, const char *input, const ut8* block) {
 			break;
 		}
 	/* fallthrough */
-	case ' ':
+	case ' ': // "pv "
 		for (i = 0; stack[i]; i++) {
 			if (!strcmp (input + 1, stack[i])) {
 				if (type == 'z') {
@@ -2226,8 +2226,7 @@ static void cmd_print_pv(RCore *core, const char *input, const ut8* block) {
 			}
 		}
 		break;
-	case 'j':
-	{
+	case 'j': { // "pvj"
 		char *str = r_str_trim (r_core_cmd_str (core, "ps @ [$$]"));
 		char *p = str;
 		if (p) {
@@ -2245,9 +2244,9 @@ static void cmd_print_pv(RCore *core, const char *input, const ut8* block) {
 			str
 			);
 		free (str);
+		break;
 	}
-	break;
-	case '?':
+	case '?': // "pv?"
 		r_core_cmd_help (core, help_msg_pv);
 		break;
 	default:
