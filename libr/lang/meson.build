@@ -1,11 +1,13 @@
 files = [
   'lang.c',
-  'p/c.c',
+  # included in lang.c
+  #'p/c.c',
   #'p/cpipe.c',
-  'p/lib.c',
-  'p/pipe.c',
-  'p/rust.c',
-  'p/vala.c'
+  #'p/lib.c',
+  #'p/pipe.c',
+  #'p/rust.c',
+  #'p/vala.c'
+  #'p/zig.c',
 ]
 
 r_lang = library('r_lang', files,
