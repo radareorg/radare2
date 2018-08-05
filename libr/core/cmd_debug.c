@@ -3405,30 +3405,26 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			int sl = r_str_word_set0 (str);
 			addr = r_num_math (core->num, DB_ARG(0));
 			if (watch) {
-			                if (sl == 2) {
-                                           if (strcmp (DB_ARG(1), "r") == 0){
-                                             rw = R_BP_PROT_READ;
-                                           }
-                                           else{
-                                             if (strcmp (DB_ARG(1), "w") == 0){
-                                               rw = R_BP_PROT_WRITE;
-                                             }
-					     else{
-					       if (strcmp (DB_ARG(1), "rw") == 0){
-						 rw = R_BP_PROT_ACCESS;
-					       }
-					       else{
-						 eprintf ("Usage: dbw <addr> <rw> # Add watchpoint\n");
-						 free (str);
-						 break;
-					       }
-					     }
-					   }
-					} else {
-						eprintf ("Usage: dbw <addr> <rw> # Add watchpoint\n");
+				if (sl == 2) {
+					if (strcmp (DB_ARG(1), "r") == 0){
+						rw = R_BP_PROT_READ;
+					}
+					else if (strcmp (DB_ARG(1), "w") == 0){
+						rw = R_BP_PROT_WRITE;
+					}
+					else if (strcmp (DB_ARG(1), "rw") == 0){
+						rw = R_BP_PROT_ACCESS;
+					}
+					else{
+						eprintf ("Usage: dbw <addr> <r/w/rw> # Add watchpoint\n");
 						free (str);
 						break;
 					}
+				} else {
+					eprintf ("Usage: dbw <addr> <r/w/rw> # Add watchpoint\n");
+					free (str);
+					break;
+				}
 			}
 			if (validAddress (core, addr)) {
 				bpi = r_debug_bp_add (core->dbg, addr, hwbp, watch, rw, NULL, 0);
