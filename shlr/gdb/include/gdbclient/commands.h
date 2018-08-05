@@ -101,9 +101,14 @@ int test_command(libgdbr_t *g, const char *command);
  */
 int gdbr_set_bp(libgdbr_t *g, ut64 address, const char *conditions, int sizebp);
 int gdbr_set_hwbp(libgdbr_t *g, ut64 address, const char *conditions, int sizebp);
+int gdbr_set_hww(libgdbr_t *g, ut64 address, const char *conditions, int sizebp);
+int gdbr_set_hwr(libgdbr_t *g, ut64 address, const char *conditions, int sizebp);
+int gdbr_set_hwa(libgdbr_t *g, ut64 address, const char *conditions, int sizebp);
 int gdbr_remove_bp(libgdbr_t *g, ut64 address, int sizebp);
 int gdbr_remove_hwbp(libgdbr_t *g, ut64 address, int sizebp);
-
+int gdbr_remove_hww(libgdbr_t *g, ut64 address, int sizebp);
+int gdbr_remove_hwr(libgdbr_t *g, ut64 address, int sizebp);
+int gdbr_remove_hwa(libgdbr_t *g, ut64 address, int sizebp);
 /*!
  * File read from remote target (only one file open at a time for now)
  */
