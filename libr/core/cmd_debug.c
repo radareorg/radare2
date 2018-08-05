@@ -76,7 +76,7 @@ static const char *help_msg_db[] = {
 	"dbh-", " <name>", "Remove breakpoint plugin handler",
 	"dbt", "[?]", "Show backtrace. See dbt? for more details",
 	"dbx", " [expr]", "Set expression for bp in current offset",
-	"dbw", " <addr> <rw>", "Add watchpoint",
+	"dbw", " <addr> <r/w/rw>", "Add watchpoint",
 	"drx", " number addr len rwx", "Modify hardware breakpoint",
 	"drx-", "number", "Clear hardware breakpoint",
 	NULL
@@ -1445,7 +1445,7 @@ static void get_hash_debug_file(RCore *core, const char *path, char *hash, int h
 	RBinSection *s;
 	r_list_foreach (sects, iter, s) {
 		if (strstr (s->name, ".note.gnu.build-id")) {
-			if (r_buf_read_at (binfile->buf, s->vaddr + 16, (ut8*)buf, 20) == 20) {
+			if (r_buf_read_at (binfile->buf, s->vaddr + 16, buf, 20) == 20) {
 				break;
 			}
 			eprintf ("Cannot read from buffer\n");
@@ -3405,8 +3405,25 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			int sl = r_str_word_set0 (str);
 			addr = r_num_math (core->num, DB_ARG(0));
 			if (watch) {
-					if (sl == 2) {
-						rw = (strcmp (DB_ARG(1), "r") == 0 ? R_BP_PROT_READ : R_BP_PROT_WRITE);
+			                if (sl == 2) {
+                                           if (strcmp (DB_ARG(1), "r") == 0){
+                                             rw = R_BP_PROT_READ;
+                                           }
+                                           else{
+                                             if (strcmp (DB_ARG(1), "w") == 0){
+                                               rw = R_BP_PROT_WRITE;
+                                             }
+					     else{
+					       if (strcmp (DB_ARG(1), "rw") == 0){
+						 rw = R_BP_PROT_ACCESS;
+					       }
+					       else{
+						 eprintf ("Usage: dbw <addr> <rw> # Add watchpoint\n");
+						 free (str);
+						 break;
+					       }
+					     }
+					   }
 					} else {
 						eprintf ("Usage: dbw <addr> <rw> # Add watchpoint\n");
 						free (str);
