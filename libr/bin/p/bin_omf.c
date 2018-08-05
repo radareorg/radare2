@@ -10,7 +10,7 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 size, ut64 loadaddrn,
 	if (!buf || !size || size == UT64_MAX) {
 		return NULL;
 	}
-	return r_bin_internal_omf_load ((char *) buf, size);
+	return r_bin_internal_omf_load (buf, size);
 }
 
 static bool load(RBinFile *bf) {
@@ -48,7 +48,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 			return false;
 		}
 	}
-	return r_bin_checksum_omf_ok ((char *) buf, length);
+	return r_bin_checksum_omf_ok (buf, length);
 }
 
 static ut64 baddr(RBinFile *bf) {
