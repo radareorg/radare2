@@ -244,3 +244,10 @@ This is an unregistered copy.
 Place a cat on your keyboard while running r2, you'll not believe what will happen next
 This binary may contain traces of human
 Help subcommand will be eventually removed.
+Carpe noctum.
+Your mouse has moved. Radare2 NT must be restarted for the change to take effect. Reboot now? [ OK ]
+There is only one binary, and we are all just reversing pieces of it.
+Radare2 is like violence. If it doesn't solve your problem, you aren't using enough.
+Order pizza for $12.48? [Y/n]
+r2OS r2pad 0.1 SMP GENERIC r2_64 GNU/r2OS
+AHHHHH!!!! ASSEMBLY CODE!!!!!! HOLD ME I'M SCARED!!!!!!!!!!
