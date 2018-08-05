@@ -30,7 +30,7 @@ r_cons_dep = declare_dependency(link_with: r_cons,
 
 pkgconfig_mod.generate(
   libraries: [r_cons],
-  subdirs: 'libr',
+  subdirs: ['.', 'libr'],
   version: r2_version,
   name: 'r_cons',
   filebase: 'r_cons',

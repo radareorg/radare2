@@ -22,7 +22,7 @@ r_flag_dep = declare_dependency(link_with: r_flag,
 
 pkgconfig_mod.generate(
   libraries: [r_flag],
-  subdirs: 'libr',
+  subdirs: ['.', 'libr'],
   version: r2_version,
   name: 'r_flag',
   filebase: 'r_flag',

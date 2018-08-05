@@ -23,7 +23,7 @@ r_search_dep = declare_dependency(link_with: r_search,
 
 pkgconfig_mod.generate(
   libraries: [r_search],
-  subdirs: 'libr',
+  subdirs: ['.', 'libr'],
   version: r2_version,
   name: 'r_search',
   filebase: 'r_search',

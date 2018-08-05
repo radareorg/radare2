@@ -24,7 +24,7 @@ r_lang_dep = declare_dependency(link_with: r_lang,
 
 pkgconfig_mod.generate(
   libraries: [r_lang],
-  subdirs: 'libr',
+  subdirs: ['.', 'libr'],
   version: r2_version,
   name: 'r_lang',
   filebase: 'r_lang',

@@ -27,7 +27,7 @@ r_hash_dep = declare_dependency(link_with: r_hash,
 
 pkgconfig_mod.generate(
   libraries: [r_hash],
-  subdirs: 'libr',
+  subdirs: ['.', 'libr'],
   version: r2_version,
   name: 'r_hash',
   filebase: 'r_hash',

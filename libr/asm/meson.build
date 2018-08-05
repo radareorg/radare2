@@ -193,7 +193,7 @@ r_asm_dep = declare_dependency(link_with: r_asm,
 
 pkgconfig_mod.generate(
   libraries: [r_asm],
-  subdirs: 'libr',
+  subdirs: ['.', 'libr'],
   version: r2_version,
   name: 'r_asm',
   filebase: 'r_asm',

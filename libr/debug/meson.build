@@ -95,7 +95,7 @@ r_debug_dep = declare_dependency(link_with: r_debug,
 
 pkgconfig_mod.generate(
   libraries: [r_debug],
-  subdirs: 'libr',
+  subdirs: ['.', 'libr'],
   version: r2_version,
   name: 'r_debug',
   filebase: 'r_debug',

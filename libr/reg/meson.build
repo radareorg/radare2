@@ -20,7 +20,7 @@ r_reg_dep = declare_dependency(link_with: r_reg,
 
 pkgconfig_mod.generate(
   libraries: [r_reg],
-  subdirs: 'libr',
+  subdirs: ['.', 'libr'],
   version: r2_version,
   name: 'r_reg',
   filebase: 'r_reg',

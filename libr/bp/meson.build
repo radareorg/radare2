@@ -26,7 +26,7 @@ r_bp_dep = declare_dependency(link_with: r_bp,
 
 pkgconfig_mod.generate(
   libraries: [r_bp],
-  subdirs: 'libr',
+  subdirs: ['.', 'libr'],
   version: r2_version,
   name: 'r_bp',
   filebase: 'r_bp',

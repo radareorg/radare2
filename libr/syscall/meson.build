@@ -18,7 +18,7 @@ r_syscall_dep = declare_dependency(link_with: r_syscall,
                                    include_directories: [platform_inc])
 
 pkgconfig_mod.generate(libraries: [r_syscall],
-  subdirs: 'libr',
+  subdirs: ['.', 'libr'],
   version: r2_version,
   name: 'r_syscall',
   filebase: 'r_syscall',
