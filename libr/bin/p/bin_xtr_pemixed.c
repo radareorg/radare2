@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2018 - JohnPeng47 */
+
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
@@ -113,7 +115,7 @@ static int free_xtr (void *xtr_obj) {
 
 RBinXtrPlugin r_bin_xtr_plugin_xtr_pemixed = {
 	.name = "xtr.pemixed",
-	.desc = "managed/unmanaged code extractor",
+	.desc = "Extract sub-binaries in PE files",
 	.load = NULL, 		//not yet implemented
 	.extract = NULL, 	//not yet implemented
 	.extractall = NULL, //not yet implemented
