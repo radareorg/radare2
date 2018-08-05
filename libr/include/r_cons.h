@@ -807,7 +807,7 @@ R_API const char* r_cons_get_rune(const ut8 ch);
 #define R_SELWIDGET_MAXW 30
 
 typedef struct r_selection_widget_t {
-	char **options;
+	const char **options;
 	int options_len;
 	int selection;
 	int w, h;

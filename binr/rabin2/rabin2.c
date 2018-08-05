@@ -147,7 +147,7 @@ static bool isBinopHelp(const char *op) {
 static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 	ut64 bin_size = data ? data->size : 0;
 	ut8 *bytes;
-	char *xtr_type;
+	const char *xtr_type;
 	char *arch = "unknown";
 	int bits = 0;
 	char *libname = NULL;
