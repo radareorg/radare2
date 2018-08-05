@@ -493,7 +493,7 @@ typedef struct r_cons_t {
 
 #define R_CONS_KEY_ESC 0x1b
 
-#define ANSI_ESC_CLEAR_LINE "\r\x1b[0K\r"
+#define R_CONS_CLEAR_LINE "\x1b[2K\r"
 
 #define Color_BLINK        "\x1b[5m"
 #define Color_INVERT       "\x1b[7m"
@@ -805,8 +805,6 @@ R_API const char* r_cons_get_rune(const ut8 ch);
 
 #define R_SELWIDGET_MAXH 15
 #define R_SELWIDGET_MAXW 30
-
-#define SELWIDGET_SCROLLCHAR "█"
 
 typedef struct r_selection_widget_t {
 	char **options;

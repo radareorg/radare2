@@ -452,8 +452,8 @@ static void draw_selection_widget() {
 	}
 	sel_widget->w = R_MIN (sel_widget->w, R_SELWIDGET_MAXW);
 
-	char *background_color = cons->color ? cons->pal.widget_bg : Color_INVERT;
-	char *selected_color = cons->color ? cons->pal.widget_sel : Color_INVERT_RESET;
+	char *background_color = cons->color ? cons->pal.widget_bg : Color_INVERT_RESET;
+	char *selected_color = cons->color ? cons->pal.widget_sel : Color_INVERT;
 	bool scrollbar = sel_widget->options_len > R_SELWIDGET_MAXH;
 	int scrollbar_y = 0, scrollbar_l = 0;
 	if (scrollbar) {
@@ -467,9 +467,8 @@ static void draw_selection_widget() {
 		char *option = y < sel_widget->options_len ? sel_widget->options[y + scroll] : "";
 		r_cons_printf ("%s", sel_widget->selection == y + scroll ? selected_color : background_color);
 		r_cons_printf ("%-*.*s", sel_widget->w, sel_widget->w, option);
-		if (scrollbar) {
-			r_cons_strcat (background_color);
-			r_cons_printf ("%s", R_BETWEEN (scrollbar_y, y, scrollbar_y + scrollbar_l) ? SELWIDGET_SCROLLCHAR : " ");
+		if (scrollbar && R_BETWEEN (scrollbar_y, y, scrollbar_y + scrollbar_l)) {
+			r_cons_memcat (Color_INVERT" "Color_INVERT_RESET, 10);
 		} else {
 			r_cons_memcat (" ", 1);
 		}
@@ -508,7 +507,7 @@ static void selection_widget_erase() {
 		sel_widget->options_len = 0;
 		sel_widget->selection = -1;
 		draw_selection_widget ();
-		R_FREE(I.sel_widget);
+		R_FREE (I.sel_widget);
 		RCons *cons = r_cons_singleton ();
 		if (cons->event_resize && cons->event_data) {
 			cons->event_resize (cons->event_data);
