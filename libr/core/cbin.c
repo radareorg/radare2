@@ -2904,7 +2904,7 @@ static void bin_pe_versioninfo(RCore *r, int mode) {
 		} else {
 			r_cons_printf ("# VS_FIXEDFILEINFO\n\n");
 		}
-		char path_fixedfileinfo[256] = R_EMPTY;
+		char path_fixedfileinfo[256 + 16] = R_EMPTY;
 		snprintf (path_fixedfileinfo, sizeof (path_fixedfileinfo), "%s/fixed_file_info", path_version);
 		if (!(sdb = sdb_ns_path (r->sdb, path_fixedfileinfo, 0))) {
 			r_cons_printf ("}");
@@ -3103,7 +3103,7 @@ static void bin_elf_versioninfo(RCore *r, int mode) {
 
 	bool firstit_dowhile_verneed = true;
 	do {
-		char path_version[256] = R_EMPTY;
+		char path_version[256 + 19] = R_EMPTY;
 		snprintf (path, sizeof (path), format, "verneed", num_verneed++);
 		if (!(sdb = sdb_ns_path (r->sdb, path, 0))) {
 			break;
@@ -3129,7 +3129,7 @@ static void bin_elf_versioninfo(RCore *r, int mode) {
 		for (num_version = 0;; num_version++) {
 			snprintf (path_version, sizeof (path_version), "%s/version%d", path, num_version);
 			const char *filename = NULL;
-			char path_vernaux[256] = R_EMPTY;
+			char path_vernaux[256 + 38] = R_EMPTY;
 			int num_vernaux = 0;
 			if (!(sdb = sdb_ns_path (r->sdb, path_version, 0))) {
 				break;
