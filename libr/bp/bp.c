@@ -284,8 +284,8 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 				" %d %c%c%c %s %s %s cmd=\"%s\" cond=\"%s\" " \
 				"name=\"%s\" module=\"%s\"\n",
 				b->addr, b->addr + b->size, b->size,
-				(b->rwx & R_BP_PROT_READ) ? 'r' : '-',
-				(b->rwx & R_BP_PROT_WRITE) ? 'w' : '-',
+				((b->rwx & R_BP_PROT_READ) | (b->rwx & R_BP_PROT_ACCESS)) ? 'r' : '-',
+				((b->rwx & R_BP_PROT_WRITE)| (b->rwx & R_BP_PROT_ACCESS)) ? 'w' : '-',
 				(b->rwx & R_BP_PROT_EXEC) ? 'x' : '-',
 				b->hw ? "hw": "sw",
 				b->trace ? "trace" : "break",
