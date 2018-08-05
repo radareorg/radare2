@@ -47,7 +47,6 @@ fileslist=(
 ./sys/build.sh
 ./sys/cherrypull.sh
 ./sys/clang-analyzer.sh
-./sys/clean.sh
 ./sys/clone-r2-bindings.sh
 ./sys/dist-all.sh
 ./sys/dist-bin.sh
@@ -64,7 +63,6 @@ fileslist=(
 ./sys/farm/run.sh
 ./sys/farm.sh
 ./sys/find-regression.sh
-./sys/full-uninstall.sh
 ./sys/gtkaml.sh
 ./sys/gtk.sh
 ./sys/indent.sh

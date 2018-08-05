@@ -7,5 +7,5 @@ MAKE=make
 gmake --help >/dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
 
-${MAKE} purge
+${MAKE} purge2
 ${MAKE} deinstall
