@@ -39,14 +39,12 @@ R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v) {
 R_API const ut8 *r_uleb128_decode(const ut8 *data, int *datalen, ut64 *v) {
 	ut8 c = 0xff;
 	ut64 s = 0, sum = 0, l = 0;
-	if (data && *data) {
-		do {
-			c = *(data++) & 0xff;
-			sum |= ((ut32) (c&0x7f) << s);
-			s += 7;
-			l++;
-		} while (c & 0x80);
-	}
+	do {
+		c = *(data++) & 0xff;
+		sum |= ((ut32) (c&0x7f) << s);
+		s += 7;
+		l++;
+	} while (c & 0x80);
 	if (v) *v = sum;
 	if (datalen) *datalen = l;
 	return data;

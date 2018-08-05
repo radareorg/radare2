@@ -180,75 +180,73 @@ static void r_print_format_byte(const RPrint* p, int endian, int mode,
 	}
 }
 
+// Return number of consumed bytes
 static int r_print_format_uleb(const RPrint* p, int endian, int mode,
 		const char* setval, ut64 seeki, ut8* buf, int i, int size) {
 	int elem = -1;
-	int s = 0, sum = 0;
-	ut64 value = 0, offset = 0;
+	int s = 0, offset = 0;
+	ut64 value = 0;
 	if (size >= ARRAYINDEX_COEF) {
 		elem = size / ARRAYINDEX_COEF - 1;
 		size %= ARRAYINDEX_COEF;
 	}
-	// offset = seeki+((elem>=0)?16*elem:0);
 	if (MUSTSET) {
 		ut8 *tmp;
 		char *nbr;
 		do {
+			r_uleb128_decode (buf+i, &s, &value);
+			i += s;
 			offset += s;
-			r_uleb128_decode (buf+offset, &s, &value);
 		} while (elem--);
 		tmp = (ut8*) r_uleb128_encode (r_num_math (NULL, setval), &s);
 		nbr = r_hex_bin2strdup (tmp, s);
-		p->cb_printf ("\"wx %s\" @ 0x%08"PFMT64x"\n", nbr, seeki+offset);
+		p->cb_printf ("\"wx %s\" @ 0x%08"PFMT64x"\n", nbr, seeki+offset-s);
 		free (tmp);
 		free (nbr);
-		// sum = size of the converted number
 	} else if (MUSTSEE) {
 		if (!SEEVALUE) p->cb_printf ("0x%08"PFMT64x" = ", seeki);
 		if (size==-1) {
-			r_uleb128_decode (buf+i, &s, &value);
+			r_uleb128_decode (buf+i, &offset, &value);
 			p->cb_printf ("%"PFMT64d, value);
-			sum = s;
 		} else {
 			if (!SEEVALUE) p->cb_printf ("[ ");
 			while (size--) {
 				if (elem == -1 || elem == 0) {
 					r_uleb128_decode (buf+i, &s, &value);
-					sum += s;
+					i += s;
+					offset += s;
 					p->cb_printf ("%"PFMT64d, value);
 					if (elem == 0) elem = -2;
 				}
 				if (size != 0 && elem == -1)
 					p->cb_printf (", ");
 				if (elem > -1) elem--;
-				i+=s;
 			}
 			if (!SEEVALUE) p->cb_printf (" ]");
 		}
 	} else if (MUSTSEEJSON) {
 		if (size==-1) {
-			r_uleb128_decode (buf+i, &s, &value);
+			r_uleb128_decode (buf+i, &offset, &value);
 			p->cb_printf ("\"%"PFMT64d"\"", value);
-			sum = s;
 		} else {
 			p->cb_printf ("[ ");
 			while (size--) {
 				if (elem == -1 || elem == 0) {
 					r_uleb128_decode (buf+i, &s, &value);
-					sum += s;
+					i += s;
+					offset += s;
 					p->cb_printf ("\"%"PFMT64d"\"", value);
 					if (elem == 0) elem = -2;
 				}
 				if (size != 0 && elem == -1)
 					p->cb_printf (", ");
 				if (elem > -1) elem--;
-				i+=s;
 			}
 			p->cb_printf (" ]");
 		}
 		p->cb_printf ("}");
 	}
-	return sum;
+	return offset;
 }
 
 static void r_print_format_char(const RPrint* p, int endian, int mode,
