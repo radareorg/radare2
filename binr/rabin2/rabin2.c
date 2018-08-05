@@ -147,6 +147,7 @@ static bool isBinopHelp(const char *op) {
 static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 	ut64 bin_size = data ? data->size : 0;
 	ut8 *bytes;
+	char *xtr_type;
 	char *arch = "unknown";
 	int bits = 0;
 	char *libname = NULL;
@@ -161,8 +162,9 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 		arch = data->metadata->arch;
 		bits = data->metadata->bits;
 		libname = data->metadata->libname;
+		xtr_type = data->metadata->xtr_type;
 	}
-	if (bin_size == bf->size && bin_size) {
+	if (!strcmp (xtr_type, "fat") && bin_size == bf->size && bin_size) {
 		eprintf ("This is not a fat bin\n");
 		return false;
 	}
