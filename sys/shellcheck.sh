@@ -47,7 +47,6 @@ fileslist=(
 ./sys/build.sh
 ./sys/cherrypull.sh
 ./sys/clang-analyzer.sh
-./sys/clean.sh
 ./sys/clone-r2-bindings.sh
 ./sys/dist-all.sh
 ./sys/dist-bin.sh
@@ -64,7 +63,6 @@ fileslist=(
 ./sys/farm/run.sh
 ./sys/farm.sh
 ./sys/find-regression.sh
-./sys/full-uninstall.sh
 ./sys/gtkaml.sh
 ./sys/gtk.sh
 ./sys/indent.sh
@@ -88,6 +86,7 @@ fileslist=(
 ./sys/osx-pkg.sh
 ./sys/osx-pkg-uninstall.sh
 ./sys/osx-pkg-uninstall.tool
+./sys/purge.sh
 ./sys/python-bindist.sh
 ./sys/python-dist.sh
 ./sys/python-r2pipe.sh
@@ -97,7 +96,6 @@ fileslist=(
 ./sys/static.sh
 ./sys/sync.sh
 ./sys/tiny.sh
-./sys/uninstall.sh
 ./sys/update.sh
 ./sys/user.sh
 ./sys/vala.sh
