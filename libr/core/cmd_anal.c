@@ -657,41 +657,53 @@ static bool anal_is_bad_call(RCore *core, ut64 from, ut64 to, ut64 addr, ut8 *bu
 }
 #endif
 
+static bool type_cmd_afta (RCore *core, RAnalFunction *fcn) {
+	RListIter *it;
+	ut64 seek;
+	bool io_cache = r_config_get_i (core->config, "io.cache");
+	if (!io_cache) {
+		// XXX. we shouldnt need this, but it breaks 'r2 -c aaa -w ls'
+		r_config_set_i (core->config, "io.cache", true);
+	}
+	if (r_config_get_i (core->config, "cfg.debug")) {
+		eprintf ("TOFIX: afta can't run in debugger mode.\n");
+		return false;
+	}
+	seek = core->offset;
+	r_core_cmd0 (core, "aei");
+	r_core_cmd0 (core, "aeim");
+	r_reg_arena_push (core->anal->reg);
+	// Iterating Reverse so that we get function in top-bottom call order
+	r_list_foreach_prev (core->anal->fcns, it, fcn) {
+		int ret = r_core_seek (core, fcn->addr, true);
+		if (!ret) {
+			continue;
+		}
+		r_anal_esil_set_pc (core->anal->esil, fcn->addr);
+		r_core_anal_type_match (core, fcn);
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+	}
+	r_core_cmd0 (core, "aeim-");
+	r_core_cmd0 (core, "aei-");
+	r_core_seek (core, seek, true);
+	r_reg_arena_pop (core->anal->reg);
+	r_config_set_i (core->config, "io.cache", io_cache);
+	return true;
+}
+
 static void type_cmd(RCore *core, const char *input) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, -1);
 	if (!fcn && *input != '?' && *input != 'a') {
 		eprintf ("cant find function here\n");
 		return;
 	}
-	RListIter *it;
 	ut64 seek;
 	r_cons_break_push (NULL, NULL);
 	switch (*input) {
 	case 'a': // "afta"
-		if (r_config_get_i (core->config, "cfg.debug")) {
-			eprintf ("TOFIX: afta can't run in debugger mode.\n");
-			break;
-		}
-		seek = core->offset;
-		r_core_cmd0 (core, "aei");
-		r_core_cmd0 (core, "aeim");
-		r_reg_arena_push (core->anal->reg);
-		// Iterating Reverse so that we get function in top-bottom call order
-		r_list_foreach_prev (core->anal->fcns, it, fcn) {
-			int ret = r_core_seek (core, fcn->addr, true);
-			if (!ret) {
-				continue;
-			}
-			r_anal_esil_set_pc (core->anal->esil, fcn->addr);
-			r_core_anal_type_match (core, fcn);
-			if (r_cons_is_breaked ()) {
-				break;
-			}
-		}
-		r_core_cmd0 (core, "aeim-");
-		r_core_cmd0 (core, "aei-");
-		r_core_seek (core, seek, true);
-		r_reg_arena_pop (core->anal->reg);
+		type_cmd_afta (core, fcn);
 		break;
 	case 'm': // "aftm"
 		seek = core->offset;
