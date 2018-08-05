@@ -819,14 +819,17 @@ static int parse_dylib(struct MACH0_(obj_t)* bin, ut64 off) {
 	int lib, len;
 	ut8 sdl[sizeof (struct dylib_command)] = {0};
 
-	if (off > bin->size || off + sizeof (struct dylib_command) > bin->size)
+	if (off > bin->size || off + sizeof (struct dylib_command) > bin->size) {
 		return false;
+	}
 	lib = bin->nlibs - 1;
 
-	if (!(bin->libs = realloc (bin->libs, bin->nlibs * R_BIN_MACH0_STRING_LENGTH))) {
+	void *relibs = realloc (bin->libs, bin->nlibs * R_BIN_MACH0_STRING_LENGTH);
+	if (!relibs) {
 		perror ("realloc (libs)");
 		return false;
 	}
+	bin->libs = relibs;
 	len = r_buf_read_at (bin->b, off, sdl, sizeof (struct dylib_command));
 	if (len < 1) {
 		bprintf ("Error: read (dylib)\n");
@@ -840,10 +843,14 @@ static int parse_dylib(struct MACH0_(obj_t)* bin, ut64 off) {
 	dl.dylib.compatibility_version = r_read_ble32 (&sdl[20], bin->big_endian);
 
 	if (off + dl.dylib.name > bin->size ||\
-	  off + dl.dylib.name + R_BIN_MACH0_STRING_LENGTH > bin->size)
+	  off + dl.dylib.name + R_BIN_MACH0_STRING_LENGTH > bin->size) {
 		return false;
+	}
 
-	len = r_buf_read_at (bin->b, off+dl.dylib.name, (ut8*)bin->libs[lib], R_BIN_MACH0_STRING_LENGTH);
+	memset (bin->libs[lib], 0, R_BIN_MACH0_STRING_LENGTH);
+	len = r_buf_read_at (bin->b, off + dl.dylib.name,
+		(ut8*)bin->libs[lib], R_BIN_MACH0_STRING_LENGTH);
+	bin->libs[lib][R_BIN_MACH0_STRING_LENGTH - 1] = 0;
 	if (len < 1) {
 		bprintf ("Error: read (dylib str)");
 		return false;
@@ -2042,7 +2049,7 @@ struct lib_t* MACH0_(get_libs)(struct MACH0_(obj_t)* bin) {
 	for (i = 0; i < bin->nlibs; i++) {
 		sdb_set (bin->kv, sdb_fmt ("libs.%d.name", i), bin->libs[i], 0);
 		strncpy (libs[i].name, bin->libs[i], R_BIN_MACH0_STRING_LENGTH);
-		libs[i].name[R_BIN_MACH0_STRING_LENGTH-1] = '\0';
+		libs[i].name[R_BIN_MACH0_STRING_LENGTH - 1] = '\0';
 		libs[i].last = 0;
 	}
 	libs[i].last = 1;
