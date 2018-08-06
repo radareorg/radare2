@@ -37,7 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <r_types.h>
-#include <xxhash.h>
+#include "xxhash.h"
 
 #define XXH_rotl32(x, r) ((x << r) | (x >> (32 - r)))
 

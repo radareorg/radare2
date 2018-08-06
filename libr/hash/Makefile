@@ -2,7 +2,6 @@ include ../config.mk
 
 NAME=r_hash
 PCLIBS=@LIBXXHASH@
-CFLAGS+=-isystem .
 # HACK
 ifneq ($(OSTYPE),darwin)
 ifneq ($(OSTYPE),haiku)

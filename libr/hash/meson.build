@@ -25,6 +25,7 @@ r_hash = library('r_hash', files,
   include_directories: [platform_inc],
   dependencies: dependencies,
   install: true,
+  implicit_include_directories: false,
   soversion: r2_libversion
 )
 
