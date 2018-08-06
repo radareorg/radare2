@@ -660,10 +660,11 @@ static bool anal_is_bad_call(RCore *core, ut64 from, ut64 to, ut64 addr, ut8 *bu
 static bool type_cmd_afta (RCore *core, RAnalFunction *fcn) {
 	RListIter *it;
 	ut64 seek;
-	bool io_cache = r_config_get_i (core->config, "io.cache");
+	const char *io_cache_key = "io.pcache.write";
+	bool io_cache = r_config_get_i (core->config, io_cache_key);
 	if (!io_cache) {
 		// XXX. we shouldnt need this, but it breaks 'r2 -c aaa -w ls'
-		r_config_set_i (core->config, "io.cache", true);
+		r_config_set_i (core->config, io_cache_key, true);
 	}
 	if (r_config_get_i (core->config, "cfg.debug")) {
 		eprintf ("TOFIX: afta can't run in debugger mode.\n");
@@ -689,7 +690,7 @@ static bool type_cmd_afta (RCore *core, RAnalFunction *fcn) {
 	r_core_cmd0 (core, "aei-");
 	r_core_seek (core, seek, true);
 	r_reg_arena_pop (core->anal->reg);
-	r_config_set_i (core->config, "io.cache", io_cache);
+	r_config_set_i (core->config, io_cache_key, io_cache);
 	return true;
 }
 
