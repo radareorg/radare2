@@ -1225,7 +1225,7 @@ static bool find_autocomplete(RLine *line) {
 	}
 	char arg[256];
 	arg[0] = 0;
-	while (p && *p) {
+	while (*p) {
 		const char* e = r_str_trim_wp (p);
 		if (!e || (e - p) >= 256 || e == p) {
 			return false;
@@ -1233,7 +1233,7 @@ static bool find_autocomplete(RLine *line) {
 		memcpy (arg, p, e - p);
 		arg[e - p] = 0;
 		child = r_core_autocomplete_find (parent, arg, false);
-		if (child && *(p + child->length) == ' ') {
+		if (child && child->length < line->buffer.length && p[child->length] == ' ') {
 			// if is spaced then i can provide the
 			// next subtree as suggestion..
 			p = r_str_trim_ro (p + child->length);
@@ -1245,11 +1245,10 @@ static bool find_autocomplete(RLine *line) {
 			break;
 		}
 	}
-	int i, j;
-	j = 0;
+	int i;
 	/* if something went wrong this will prevent bad behavior */
-	tmp_argv[j] = NULL;
-	line->completion.argc = j;
+	tmp_argv[0] = NULL;
+	line->completion.argc = 0;
 	line->completion.argv = tmp_argv;
 	switch (parent->type) {
 	case R_CORE_AUTOCMPLT_FLAG:
@@ -1286,10 +1285,6 @@ static bool find_autocomplete(RLine *line) {
 		// handled before
 		break;
 	default:
-		if (p && !*p) {
-			//show all hints
-			arg[0] = 0;
-		}
 		if (r_config_get_i (core->config, "cfg.newtab")) {
 			RCmdDescriptor *desc = &core->root_cmd_descriptor;
 			for (i = 0; arg[i] && desc; i++) {
@@ -1303,7 +1298,7 @@ static bool find_autocomplete(RLine *line) {
 			}
 			// fallback to command listing
 		}
-		int length = strlen (arg);
+		int length = strlen (arg), j = 0;
 		for (i = 0; j < (TMP_ARGV_SZ - 1) && i < parent->n_subcmds; i++) {
 			if (!strncmp (arg, parent->subcmds[i]->cmd, length)) {
 				tmp_argv[j++] = parent->subcmds[i]->cmd;
@@ -1311,7 +1306,6 @@ static bool find_autocomplete(RLine *line) {
 		}
 		tmp_argv[j] = NULL;
 		line->completion.argc = j;
-		line->completion.argv = tmp_argv;
 		break;
 	}
 	return true;
