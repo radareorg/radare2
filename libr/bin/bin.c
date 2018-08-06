@@ -454,12 +454,6 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 		// change the name to something like
 		// <xtr_name>:<bin_type_name>
 		r_list_foreach (bin->binxtrs, it, xtr) {
-			if (xtr && !strcmp (xtr->name, "xtr.pemixed")) {
-				// XXX pemixed is always loaded because it uses
-				// XXX the same signature for fat and non-fat
-				// XXX so we need to make that action implicit
-				continue;
-			}
 			if (xtr && xtr->check_bytes (buf_bytes, sz)) {
 				if (xtr && (xtr->extract_from_bytes || xtr->extractall_from_bytes)) {
 					if (is_debugger && sz != file_sz) {

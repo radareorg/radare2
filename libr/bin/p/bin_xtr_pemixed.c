@@ -15,6 +15,11 @@ static int free_xtr (void *xtr_obj);
 //copied from bin_pe
 //another check is used later to check for .NET only code
 static bool check_bytes(const ut8 *bytes, ut64 sz) {
+	// XXX pemixed is always loaded because it uses
+	// XXX the same signature for fat and non-fat
+	// XXX so we need to make that action implicit
+	return false;
+#if 0
 	if (!bytes) {
 		return false;
 	}
@@ -38,6 +43,7 @@ static bool check_bytes(const ut8 *bytes, ut64 sz) {
 		}
 	}
 	return false;
+#endif
 }
 
 static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
