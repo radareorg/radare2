@@ -323,8 +323,6 @@ subdir('libr/fs')
 subdir('libr/debug')
 subdir('libr/core')
 
-subdir('shlr/sdb')
-
 subdir('libr/anal/d')
 subdir('libr/asm/d')
 subdir('libr/bin/d')
