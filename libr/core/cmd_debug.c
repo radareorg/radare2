@@ -96,6 +96,11 @@ static const char *help_msg_dbt[] = {
 	NULL
 };
 
+static const char *help_msg_dbw[] = {
+	"Usage: dbw", "<addr> <r/w/rw>"," # Add watchpoint",
+	NULL
+};
+
 static const char *help_msg_dc[] = {
 	"Usage: dc", "", "Execution continuation commands",
 	"dc", "", "Continue execution of all children",
@@ -3406,22 +3411,22 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			addr = r_num_math (core->num, DB_ARG(0));
 			if (watch) {
 				if (sl == 2) {
-					if (strcmp (DB_ARG(1), "r") == 0){
+					if (!strcmp (DB_ARG(1), "r")){
 						rw = R_BP_PROT_READ;
 					}
-					else if (strcmp (DB_ARG(1), "w") == 0){
+					else if (!strcmp (DB_ARG(1), "w")){
 						rw = R_BP_PROT_WRITE;
 					}
-					else if (strcmp (DB_ARG(1), "rw") == 0){
+					else if (!strcmp (DB_ARG(1), "rw")){
 						rw = R_BP_PROT_ACCESS;
 					}
 					else{
-						eprintf ("Usage: dbw <addr> <r/w/rw> # Add watchpoint\n");
+						r_core_cmd_help (core, help_msg_dbw);
 						free (str);
 						break;
 					}
 				} else {
-					eprintf ("Usage: dbw <addr> <r/w/rw> # Add watchpoint\n");
+					r_core_cmd_help (core, help_msg_dbw);
 					free (str);
 					break;
 				}
