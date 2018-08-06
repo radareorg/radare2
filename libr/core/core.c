@@ -1370,6 +1370,7 @@ static int autocomplete(RLine *line) {
 
 				tmp_argv_heap = false;
 				ADDARG("comment")
+				ADDARG("usrcmt")
 				ADDARG("args")
 				ADDARG("fname")
 				ADDARG("floc")
