@@ -838,7 +838,9 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			src = getarg (&gop, 1, 0, NULL, SRC_AR);
 			dst_r = getarg (&gop, 0, 0, NULL, DST_R_AR);
 			dst_w = getarg (&gop, 0, 1, NULL, DST_W_AR);
-			esilprintf (op, "0,cf,=,1,%s,-,1,<<,%s,&,?{,1,cf,=,},%s,%s,>>,%s,$z,zf,=,$p,pf,=,$s,sf,=", src, dst_r, src, dst_r, dst_w);
+			arg0 = "$z,zf,=,$p,pf,=,$s,sf,=";
+			esilprintf (op, "0,cf,=,1,%s,-,1,<<,%s,&,?{,1,cf,=,},%s,%s,>>,%s,%s", 
+					src, dst_r, src, dst_r, dst_w, arg0);
 		}
 		break;
 	case X86_INS_CBW:
@@ -848,11 +850,25 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		esilprintf (op, "ax,eax,=,15,eax,>>,?{,0xffff0000,eax,|=,}");
 		break;
 	case X86_INS_CDQ:
-		esilprintf (op, "eax,edx,=,31,edx,>>,?{,0xffffffff00000000,edx,|=,}");
+		esilprintf (op, "0,edx,=,31,eax,>>,?{,0xffffffff,edx,=,}");
 		break;
 	case X86_INS_CDQE:
 		esilprintf (op, "eax,rax,=,31,rax,>>,?{,0xffffffff00000000,rax,|=,}");
 		break;
+	case X86_INS_AAA:
+		esilprintf (op, "0,cf,=,0,af,=,9,al,>,?{,10,al,-=,1,ah,+=,1,cf,=,1,af,=,}");
+		break;
+	case X86_INS_AAD:
+		arg0 = "0,zf,=,0,sf,=,0,pf,=,10,ah,*,al,+,ax,=";
+		arg1 = "0,al,==,?{,1,zf,=,},2,al,%,0,==,?{,1,pf,=,},7,al,>>,?{,1,sf,=,}";
+		esilprintf (op, "%s,%s", arg0, arg1);
+		break;
+	case X86_INS_AAM:
+		arg0 = "0,zf,=,0,sf,=,0,pf,=,10,al,/,ah,=,10,al,%,al,=";
+		arg1 = "0,al,==,?{,1,zf,=,},2,al,%,0,==,?{,1,pf,=,},7,al,>>,?{,1,sf,=,}";
+		esilprintf (op, "%s,%s", arg0, arg1);
+		break;
+	// XXX: case X86_INS_AAS: too tough to implement. BCD is deprecated anyways
 	case X86_INS_CMP:
 	case X86_INS_CMPPD:
 	case X86_INS_CMPPS:
