@@ -443,6 +443,18 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 						ret_reg = r_anal_cc_ret (anal, cc);
 						resolved = false;
 					}
+					if (!strcmp (fcn_name, "__stack_chk_fail")) {
+						const char *query = sdb_fmt ("%d.addr", cur_idx - 1);
+						ut64 mov_addr = sdb_num_get (trace, query, 0);
+						RAnalOp *mop = r_core_anal_op (core, mov_addr, R_ANAL_OP_MASK_BASIC);
+						if (mop && mop->var) {
+							ut32 type = mop->type & R_ANAL_OP_TYPE_MASK;
+							if (type == R_ANAL_OP_TYPE_MOV) {
+								var_rename (anal, mop->var, "canary", addr);
+							}
+						}
+						r_anal_op_free (mop);
+					}
 					free (fcn_name);
 				}
 			} else if (!resolved && ret_type && ret_reg) {

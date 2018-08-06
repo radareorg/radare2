@@ -2271,58 +2271,6 @@ static int cb_dbgsnap(void *user, void *data) {
 	return true;
 }
 
-static char *getViewerPath() {
-	int i;
-	const char *viewers[] = {
-#if __WINDOWS__
-		"explorer",
-#else
-		"open",
-		"geeqie",
-		"gqview",
-		"eog",
-		"xdg-open",
-#endif
-		NULL
-	};
-	for (i = 0; viewers[i]; i++) {
-		char *viewerPath = r_file_path (viewers[i]);
-		if (viewerPath && strcmp (viewerPath, viewers[i])) {
-			return viewerPath;
-		}
-		free (viewerPath);
-	}
-	return NULL;
-}
-
-R_API char* r_core_graph_cmd(RCore *core, char *r2_cmd) {
-	char *cmd = NULL;
-	char *xdotPath = r_file_path ("xdot");
-	const char *ext = r_config_get (core->config, "graph.extension");
-	if (r_file_exists (xdotPath)) {
-		cmd = r_str_newf ("%s > a.dot;!xdot a.dot", r2_cmd);
-	} else {
-		char *dotPath = r_file_path ("dot");
-		if (r_file_exists (dotPath)) {
-			R_FREE (dotPath);
-			char *viewer = getViewerPath();
-			if (viewer) {
-				cmd = r_str_newf ("%s > a.dot;!dot -T%s -oa.%s a.dot;!%s a.%s", r2_cmd, ext, ext, viewer, ext);
-				free (viewer);
-			} else {
-				eprintf ("Cannot find a valid picture viewer");
-			}
-		} else {
-			cmd = r_str_new ("agf");
-		}
-		free (dotPath);
-	}
-	free (xdotPath);
-	return cmd;
-}
-
-
-
 #define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
 	int i;
@@ -2841,7 +2789,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* graph */
 	SETPREF ("graph.comments", "true", "Show disasm comments in graph");
 	SETPREF ("graph.cmtright", "false", "Show comments at right");
-	SETCB ("graph.extension", "gif", &cb_graphformat, "Graph extension when using 'w' format (png, jpg, pdf, ps, svg, json)");
+	SETCB ("graph.gv.format", "gif", &cb_graphformat, "Graph image extension when using 'w' format (png, jpg, pdf, ps, svg, json)");
 	SETPREF ("graph.refs", "false", "Graph references in callgraphs (.agc*;aggi)");
 	SETI ("graph.edges", 2, "0=no edges, 1=simple edges, 2=avoid collisions");
 	SETI ("graph.layout", 0, "Graph layout (0=vertical, 1=horizontal)");

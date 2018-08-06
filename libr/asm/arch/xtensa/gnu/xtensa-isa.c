@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "../../include/dis-asm.h"
+#include "../../include/disas-asm.h"
 #include "../../include/sysdep.h"
 //#include "bfd.h"
 //#include "libbfd.h"

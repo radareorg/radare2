@@ -63,6 +63,7 @@ static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MAC
 	meta->machine = MACH0_(get_cpusubtype_from_hdr) (hdr);
 	meta->type = MACH0_(get_filetype_from_hdr) (hdr);
 	meta->libname = NULL;
+	meta->xtr_type = "fat";
 }
 
 static RBinXtrData * extract(RBin* bin, int idx) {

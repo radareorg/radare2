@@ -24,11 +24,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <sysdep.h>
-#include <dis-asm.h>
+#include <disas-asm.h>
 #include <opcode/ppc.h>
 
 /* This file provides several disassembler functions, all of which use
-   the disassembler interface defined in dis-asm.h.  Several functions
+   the disassembler interface defined in disas-asm.h.  Several functions
    are provided because this file handles disassembly for the PowerPC
    in both big and little endian mode and also for the POWER (RS/6000)
    chip.  */

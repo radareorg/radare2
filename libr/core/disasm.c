@@ -472,7 +472,7 @@ static void ds_comment(RDisasmState *ds, bool align, const char *format, ...) {
 	} else {
 		char buffer[4096];
 		vsnprintf (buffer, sizeof(buffer), format, ap);
-		char *escstr = r_str_escape_latin1 (buffer, false, true, false);
+		char *escstr = r_str_escape_latin1 (buffer, false, true, true);
 		if (escstr) {
 			r_cons_printf ("%s", escstr);
 			free (escstr);

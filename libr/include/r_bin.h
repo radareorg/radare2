@@ -255,7 +255,8 @@ typedef struct r_bin_object_t {
 	void *bin_obj; // internal pointer used by formats
 } RBinObject;
 
-// XXX: this is a copy of RBinObject
+// XXX: RbinFile may hold more than one RBinObject
+/// XX curplugin == o->plugin
 typedef struct r_bin_file_t {
 	char *file;
 	int fd;
@@ -333,6 +334,7 @@ typedef struct r_bin_xtr_metadata_t {
 	char *libname;
 	char *machine;
 	char *type;
+	const char *xtr_type;
 } RBinXtrMetadata;
 
 typedef int (*FREE_XTR)(void *xtr_obj);
@@ -850,6 +852,7 @@ extern RBinPlugin r_bin_plugin_xbe;
 extern RBinPlugin r_bin_plugin_bflt;
 extern RBinXtrPlugin r_bin_xtr_plugin_xtr_fatmach0;
 extern RBinXtrPlugin r_bin_xtr_plugin_xtr_dyldcache;
+extern RBinXtrPlugin r_bin_xtr_plugin_xtr_pemixed; 
 extern RBinLdrPlugin r_bin_ldr_plugin_ldr_linux;
 extern RBinPlugin r_bin_plugin_zimg;
 extern RBinPlugin r_bin_plugin_omf;

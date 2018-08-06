@@ -56,10 +56,9 @@ char* hex_get_cntl_reg(int opreg){
 	}
 }
 
-char tmp[5] = { 0 };
-
 char* hex_get_sys_reg(int opreg)
 {
+	static char tmp[5];
 	switch (opreg) {
 		case HEX_REG_SGP0:
 			return "SGP0";

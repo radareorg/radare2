@@ -28,7 +28,7 @@
 
 #include "sysdep.h"
 #include "opcode/sparc.h"
-#include "dis-asm.h"
+#include "disas-asm.h"
 #ifndef _MSC_VER
 #include "libiberty.h"
 #else

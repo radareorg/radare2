@@ -60,7 +60,7 @@
 
 #include "ansidecl.h"
 #include "opcode/lanai.h"
-#include "dis-asm.h"
+#include "disas-asm.h"
 
 static  char *reg_names[] =
 { "r0", "r1", "pc", "ps", "sp", "fp", "r6", "r7",	
