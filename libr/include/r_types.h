@@ -4,6 +4,7 @@
 // defines like IS_DIGIT, etc'
 #include "r_util/r_str_util.h"
 #include "r_userconf.h"
+#include <stddef.h>
 
 // TODO: fix this to make it crosscompile-friendly: R_SYS_OSTYPE ?
 /* operating system */
@@ -330,7 +331,7 @@ static inline void *r_new_copy(int size, void *data) {
 #endif
 
 #undef r_offsetof
-#define r_offsetof(type, member) ((unsigned long) &((type*)0)->member)
+#define r_offsetof(type, member) offsetof(type, member)
 
 #define R_BETWEEN(x,y,z) (((y)>=(x)) && ((y)<=(z)))
 #define R_ROUND(x,y) ((x)%(y))?(x)+((y)-((x)%(y))):(x)
