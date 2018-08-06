@@ -42,6 +42,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->type = get_filetype (bf);
 	ret->has_pi = 0;
 	ret->has_canary = 0;
+	ret->has_retguard = -1;
 	if (R_SYS_BITS & R_SYS_BITS_64) {
 		ret->bits = 64;
 	} else {

@@ -194,6 +194,7 @@ static RBinInfo * info(RBinFile *bf) {
 	ret->big_endian = false;
 	ret->has_crypto = false;
 	ret->has_canary = false;
+	ret->has_retguard = -1;
 	ret->has_nx = false;
 	ret->has_pi = false;
 	ret->has_va = false;

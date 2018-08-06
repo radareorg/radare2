@@ -713,6 +713,9 @@ static int bin_info(RCore *r, int mode) {
 		pair_str ("bintype", info->rclass, mode, false);
 		pair_int ("bits", info->bits, mode, false);
 		pair_bool ("canary", info->has_canary, mode, false);
+		if (info->has_retguard != -1) {
+			pair_bool ("retguard", info->has_retguard, mode, false);
+		}
 		pair_str ("class", info->bclass, mode, false);
 		if (info->actual_checksum) {
 			/* computed checksum */
