@@ -142,20 +142,16 @@ static RList *symbols(RBinFile *bf) {
 	RList *ret = NULL;
 	const char *name;
 	SMD_Header *hdr;
-	int left, i;
+	int i;
 
 	if (!(ret = r_list_new ())) {
 		return NULL;
 	}
 	ret->free = free;
 	// TODO: store all this stuff in SDB
-#if 0
-	SMD_Header shdr = {0};
+	SMD_Header shdr = {{0}};
 	hdr = &shdr;
-	r_buf_read_at (bf->buf, 0x100, &shdr, sizeof (shdr));
-#else
-	hdr = (SMD_Header *) r_buf_get_at (bf->buf, 0x100, &left);
-#endif
+	int left = r_buf_read_at (bf->buf, 0x100, (ut8*)&shdr, sizeof (shdr));
 	if (left < sizeof (SMD_Header)) {
 		return NULL;
 	}
