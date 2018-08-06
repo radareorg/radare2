@@ -255,7 +255,8 @@ typedef struct r_bin_object_t {
 	void *bin_obj; // internal pointer used by formats
 } RBinObject;
 
-// XXX: this is a copy of RBinObject
+// XXX: RbinFile may hold more than one RBinObject
+/// XX curplugin == o->plugin
 typedef struct r_bin_file_t {
 	char *file;
 	int fd;

@@ -14,15 +14,14 @@ static int free_xtr (void *xtr_obj);
 
 //copied from bin_pe
 //another check is used later to check for .NET only code
-static bool check_bytes(const ut8 *bytes, ut64 sz){
-    unsigned int idx;
+static bool check_bytes(const ut8 *bytes, ut64 sz) {
 	if (!bytes) {
 		return false;
 	}
 	if (sz <= 0x3d) { //less than size of MS-DOS header which is 64bytes
 		return false;
 	}
-	idx = (bytes[0x3c] | (bytes[0x3d]<<8));
+	ut32 idx = (bytes[0x3c] | (bytes[0x3d]<<8));
 	if (sz > idx + 0x18 + 2) {
 		/* Here PE signature for usual PE files
 		 * and PL signature for Phar Lap TNT DOS extender 32bit executables
