@@ -3718,31 +3718,24 @@ static int cmd_print(void *data, const char *input) {
 			/* except disasm and memoryfmt (pd, pm) */
 			if (input[0] != 'd' && input[0] != 'D' && input[0] != 'm' &&
 				input[0] != 'a' && input[0] != 'f' && input[0] != 'i' && input[0] != 'I') {
-				int n = (st32) l; // r_num_math (core->num, input+1);
 				if (l < 0) {
-					off = core->offset + n;
-					len = l = -n;
+					off = core->offset + l;
+					len = l = -l;
 					tmpseek = core->offset;
-				} else if (l > 0) {
+				} else {
 					len = l;
-					if (l > tbs) {
-						if (input[0] == 'x' && input[1] == 'l') {
-							l *= core->print->cols;
-						}
-						if (!r_core_block_size (core, l)) {
-							eprintf ("This block size is too big. Did you mean 'p%c @ %s' instead?\n",
-								*input, input + 2);
+					if (l > core->blocksize) {
+						if (core->fixedblock) {
+							l = core->blocksize;
+						} else if (!r_core_block_size (core, l)) {
 							goto beach;
 						}
-						l = core->blocksize;
-					} else {
-						l = len;
 					}
 				}
+			} else {
+				len = l;
 			}
 		}
-	} else {
-		l = len;
 	}
 
 	if (len > core->blocksize) {
@@ -3777,16 +3770,17 @@ static int cmd_print(void *data, const char *input) {
 		// R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 		if (f) {
 			len = r_anal_fcn_size (f);
+			if (len > core->blocksize) {
+				len = core->blocksize;
+			}
 		} else {
 			eprintf ("p: Cannot find function at 0x%08"PFMT64x "\n", core->offset);
 			core->num->value = 0;
 			goto beach;
 		}
 	}
-	core->num->value = len;
-	if (len > core->blocksize) {
-		len = core->blocksize;
-	}
+	// TODO figure out why `f eax=33; f test=eax; pa call test` misassembles if len is 0
+	core->num->value = len ? len : core->blocksize;
 	if (off != UT64_MAX) {
 		r_core_seek (core, off, SEEK_SET);
 		r_core_block_read (core);
