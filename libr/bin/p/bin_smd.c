@@ -142,14 +142,23 @@ static RList *symbols(RBinFile *bf) {
 	RList *ret = NULL;
 	const char *name;
 	SMD_Header *hdr;
-	int i;
+	int left, i;
 
 	if (!(ret = r_list_new ())) {
 		return NULL;
 	}
 	ret->free = free;
 	// TODO: store all this stuff in SDB
-	hdr = (SMD_Header *) (bf->buf->buf + 0x100);
+#if 0
+	SMD_Header shdr = {0};
+	hdr = &shdr;
+	r_buf_read_at (bf->buf, 0x100, &shdr, sizeof (shdr));
+#else
+	hdr = (SMD_Header *) r_buf_get_at (bf->buf, 0x100, &left);
+#endif
+	if (left < sizeof (SMD_Header)) {
+		return NULL;
+	}
 	addsym (ret, "rom_start", r_read_be32 (&hdr->RomStart));
 	addsym (ret, "rom_end", r_read_be32 (&hdr->RomEnd));
 	addsym (ret, "ram_start", r_read_be32 (&hdr->RamStart));
@@ -160,8 +169,8 @@ static RList *symbols(RBinFile *bf) {
 	showstr ("ProductCode", hdr->ProductCode, 14);
 	eprintf ("Checksum: 0x%04x\n", (ut32) hdr->CheckSum);
 	showstr ("Peripherials", hdr->Peripherials, 16);
-	showstr ("SramCode", hdr->CountryCode, 12);
-	showstr ("ModemCode", hdr->CountryCode, 12);
+	showstr ("SramCode", hdr->SramCode, 12);
+	showstr ("ModemCode", hdr->ModemCode, 12);
 	showstr ("CountryCode", hdr->CountryCode, 16);
 	/* parse vtable */
 	for (i = 0; i < 64; i++) {
