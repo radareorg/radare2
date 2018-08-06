@@ -25,6 +25,7 @@ HAVE_FORK=1
 WITH_LIBR=0
 WITH_CAPSTONE=0
 USE_ZIP=0
+USE_XXHASH=0
 WITH_GPL=1
 WANT_OPENSSL=0
 USE_RPATH=0
@@ -170,6 +171,7 @@ Optional Features:
   --with-libr            build libr.a and libr.dylib
   --with-syscapstone     force to use system-wide capstone
   --with-syszip          force to use system's libzip and zlib
+  --with-sysxxhash       force to use system's xxhash
   --without-gpl          do not build GPL code (grub, cxx, ... )
   --with-openssl         build with openssl if possible
   --with-rpath           use rpath to build
@@ -230,9 +232,9 @@ echo "PKGNAME:   radare2"
 echo "VERSION:   2.8.0-git"
 echo "LANGS:     c"
 echo "REQUIRED:  libdl"
-echo "OPTIONAL:  libmagic libz libzip libssl"
+echo "OPTIONAL:  libmagic libz libzip libxxhash libssl"
 echo "PKG-CONFIG:  capstone openssl"
-echo "FLAGS:     --disable-debugger --with-sysmagic --disable-loadlibs --without-fork --with-libr --with-syscapstone --with-syszip --without-gpl --with-openssl --with-rpath --with-compiler=gcc --with-ostype=auto --with-libversion=xxx --without-jemalloc"
+echo "FLAGS:     --disable-debugger --with-sysmagic --disable-loadlibs --without-fork --with-libr --with-syscapstone --with-syszip --with-sysxxhash --without-gpl --with-openssl --with-rpath --with-compiler=gcc --with-ostype=auto --with-libversion=xxx --without-jemalloc"
 	exit 0
 	;;
 --cache-file)
@@ -285,6 +287,7 @@ echo "FLAGS:     --disable-debugger --with-sysmagic --disable-loadlibs --without
 "--with-libr") WITH_LIBR="1"; ;;
 "--with-syscapstone") WITH_CAPSTONE="1"; ;;
 "--with-syszip") USE_ZIP="1"; ;;
+"--with-sysxxhash") USE_XXHASH="1"; ;;
 "--without-gpl") WITH_GPL="0"; ;;
 "--with-openssl") WANT_OPENSSL="1"; ;;
 "--with-rpath") USE_RPATH="1"; ;;
@@ -309,7 +312,7 @@ parse_options "$1"
 shift
 done
 
-ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR DOCDIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_PROGRAM_STRIP INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS CPPFLAGS LDFLAGS HAVE_LANG_C DEBUGGER HAVE_LIB_DL DL_LIBS HAVE_PATCH PATCH HAVE_GIT GIT HAVE_LIB_MAGIC USE_MAGIC USE_LIB_MAGIC LIBMAGIC LOADLIBS HAVE_FORK WITH_LIBR WITH_CAPSTONE CAPSTONE_CFLAGS CAPSTONE_LDFLAGS HAVE_PKGCFG_CAPSTONE USE_CAPSTONE HAVE_LIB_Z HAVE_LIB_ZIP USE_ZIP USE_LIB_ZIP LIBZIP WITH_GPL HAVE_DECL_ADDR_NO_RANDOMIZE HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO HAVE_LIB_GMP HAVE_LIB_SSL SSL_CFLAGS SSL_LDFLAGS HAVE_PKGCFG_OPENSSL HAVE_OPENSSL WANT_OPENSSL USE_RPATH USERCC USEROSTYPE LIBVERSION HAVE_JEMALLOC"
+ENVWORDS="MANDIR INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR SYSCONFDIR DATADIR DOCDIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_PROGRAM_STRIP INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU PKGNAME VPATH VERSION CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS CPPFLAGS LDFLAGS HAVE_LANG_C DEBUGGER HAVE_LIB_DL DL_LIBS HAVE_PATCH PATCH HAVE_GIT GIT HAVE_LIB_MAGIC USE_MAGIC USE_LIB_MAGIC LIBMAGIC LOADLIBS HAVE_FORK WITH_LIBR WITH_CAPSTONE CAPSTONE_CFLAGS CAPSTONE_LDFLAGS HAVE_PKGCFG_CAPSTONE USE_CAPSTONE HAVE_LIB_Z HAVE_LIB_ZIP USE_ZIP USE_LIB_ZIP LIBZIP HAVE_LIB_XXHASH USE_XXHASH USE_LIB_XXHASH LIBXXHASH WITH_GPL HAVE_DECL_ADDR_NO_RANDOMIZE HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO HAVE_LIB_GMP HAVE_LIB_SSL SSL_CFLAGS SSL_LDFLAGS HAVE_PKGCFG_OPENSSL HAVE_OPENSSL WANT_OPENSSL USE_RPATH USERCC USEROSTYPE LIBVERSION HAVE_JEMALLOC"
 
 create_environ
 
@@ -461,6 +464,14 @@ LIBZIP=""; fi
 else
 USE_LIB_ZIP="0"
 LIBZIP=""; fi
+check_library HAVE_LIB_XXHASH xxhash 0
+if [ 11 = "$HAVE_LIB_XXHASH$USE_XXHASH" ]; then
+
+USE_LIB_XXHASH="1"
+LIBXXHASH="-lxxhash"
+else
+USE_LIB_XXHASH="0"
+LIBXXHASH=""; fi
 printf "checking declaration of ADDR_NO_RANDOMIZE in sys/personality.h... "
 echo "#include <sys/personality.h>" > test.c
 echo "int main(int ac, char **av){ void *a = ADDR_NO_RANDOMIZE; return 0; }" >> test.c
@@ -587,7 +598,7 @@ done
 do_remove
 echo
 echo "Final report:"
-for A in  PREFIX HAVE_LIB_GMP HAVE_OPENSSL USE_CAPSTONE HAVE_FORK VERSION USE_LIB_ZIP USE_LIB_MAGIC DEBUGGER CC USERCC HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO USEROSTYPE LIBVERSION BUILD HOST TARGET ; do # REPORT
+for A in  PREFIX HAVE_LIB_GMP HAVE_OPENSSL USE_CAPSTONE HAVE_FORK VERSION USE_LIB_ZIP USE_LIB_MAGIC USE_LIB_XXHASH DEBUGGER CC USERCC HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO USEROSTYPE LIBVERSION BUILD HOST TARGET ; do # REPORT
 eval VAL="\$${A}"
 [ -z "${VAL}" ] && VAL="(null)"
 echo " - ${A} = ${VAL}"
