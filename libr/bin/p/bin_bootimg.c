@@ -92,7 +92,10 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 la, Sdb *sdb
 		free (bio);
 		return NULL;
 	}
-	bootimg_header_load (&bio->bi, bf->buf, bio->kv);
+	if (!bootimg_header_load (&bio->bi, bf->buf, bio->kv)) {
+		free(bio);
+		return NULL;
+	}
 	sdb_ns_set (sdb, "info", bio->kv);
 	return bio;
 }
