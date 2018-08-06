@@ -1334,6 +1334,15 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		char *sp = strchr (mnem, ' ');
 		if (sp) {
 			*sp = 0;
+			if (op.prefix) {
+				char *arg = strdup (sp + 1);
+				char *sp = strchr (arg, ' ');
+				if (sp) {
+					*sp = 0;
+				}
+				free (mnem);
+				mnem = arg;
+			}
 		}
 		if (ret < 1 && fmt != 'd') {
 			eprintf ("Oops at 0x%08" PFMT64x " (", core->offset + idx);

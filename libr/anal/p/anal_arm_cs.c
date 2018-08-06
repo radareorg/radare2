@@ -970,6 +970,8 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_DMB:
 	case ARM64_INS_DSB:
 	case ARM64_INS_ISB:
+		op->family = R_ANAL_OP_FAMILY_THREAD;
+		// intentional fallthrough
 	case ARM64_INS_IC: // instruction cache invalidate
 	case ARM64_INS_DC: // data cache invalidate
 		op->type = R_ANAL_OP_TYPE_SYNC; // or cache
@@ -1944,6 +1946,11 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		r_strbuf_appendf (&op->esil, "%s,%d,+,[1],%s,=",
 			MEMBASE(1), MEMDISP(1), REG(0));
 		break;
+	case ARM_INS_LDREXB:
+	case ARM_INS_LDREXD:
+	case ARM_INS_LDREXH:
+		op->family = R_ANAL_OP_FAMILY_THREAD;
+		// intentional fallthrough
 	case ARM_INS_LDRHT:
 	case ARM_INS_LDRH:
 	case ARM_INS_LDRT:
@@ -1952,9 +1959,6 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 	case ARM_INS_LDRSBT:
 	case ARM_INS_LDRSH:
 	case ARM_INS_LDRSHT:
-	case ARM_INS_LDREXB:
-	case ARM_INS_LDREXD:
-	case ARM_INS_LDREXH:
 	case ARM_INS_LDR:
 		addr &= ~3LL;
 		if (MEMDISP(1) < 0) {
