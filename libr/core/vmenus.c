@@ -3282,10 +3282,14 @@ repeat:
 
 R_API void r_core_visual_colors(RCore *core) {
 	char *color = calloc (1, 64), cstr[32];
+	char preview_cmd[128] = "pd $r";
 	int ch, opt = 0, oopt = -1;
+	bool truecolor = r_cons_singleton ()->color == COLOR_MODE_16M;
+	char *rgb_xxx_fmt = truecolor ? "rgb:%2.2x%2.2x%2.2x ":"rgb:%x%x%x ";
 	const char *k;
 	RColor rcolor;
 
+	r_cons_show_cursor (false);
 	rcolor = r_cons_pal_get_i (opt);
 	for (;;) {
 		r_cons_clear ();
@@ -3295,38 +3299,53 @@ R_API void r_core_visual_colors(RCore *core) {
 			opt = 0;
 			k = r_cons_pal_get_name (opt);
 		}
-		if (r_cons_singleton ()->color < COLOR_MODE_16M) {
+		if (!truecolor) {
 			rcolor.r &= 0xf;
 			rcolor.g &= 0xf;
 			rcolor.b &= 0xf;
 			rcolor.r2 &= 0xf;
 			rcolor.g2 &= 0xf;
 			rcolor.b2 &= 0xf;
+		} else {
+			rcolor.r &= 0xff;
+			rcolor.g &= 0xff;
+			rcolor.b &= 0xff;
+			rcolor.r2 &= 0xff;
+			rcolor.g2 &= 0xff;
+			rcolor.b2 &= 0xff;
 		}
-		sprintf (color, "rgb:%x%x%x", rcolor.r, rcolor.g, rcolor.b);
+		sprintf (color, rgb_xxx_fmt, rcolor.r, rcolor.g, rcolor.b);
 		if (rcolor.r2 || rcolor.g2 || rcolor.b2) {
-			r_str_appendf (color, " rgb:%x%x%x", rcolor.r2, rcolor.g2, rcolor.b2);
+			color = r_str_appendf (color, rgb_xxx_fmt, rcolor.r2, rcolor.g2, rcolor.b2);
 			rcolor.a = ALPHA_FGBG;
 		} else {
 			rcolor.a = ALPHA_FG;
 		}
 		r_cons_rgb_str (cstr, sizeof (cstr), &rcolor);
-		eprintf ("%s\n", cstr);
 		char *esc = strchr (cstr + 1, '\x1b');
-		r_cons_printf ("# Colorscheme %s - Use '.' to randomize current color and ':' to randomize palette\n", r_core_get_theme());
-		r_cons_printf ("# Press 'rRgGbB' or 'eEfFvV' to change foreground/background color\n");
-		r_cons_printf ("# Selected element: %s  - Use 'jk' or arrow keys to change element\n", k);
-		r_cons_printf ("# ec %s %s   # %d (\\x1b%.*s)", k, color, atoi (cstr+7), esc ? esc - cstr - 1 : strlen (cstr + 1), cstr+1);
+		char *curtheme = r_core_get_theme ();
+
+		r_cons_printf ("# Use '.' to randomize current color and ':' to randomize palette\n");
+		r_cons_printf ("# Press '"Color_RED"rR"Color_GREEN"gG"Color_BLUE"bB"Color_RESET
+			"' or '"Color_BGRED"eE"Color_BGGREEN"fF"Color_BGBLUE"vV"Color_RESET
+			"' to change foreground/background color\n");
+		r_cons_printf ("# Export colorscheme with command 'ec* > filename'\n");
+		r_cons_printf ("# Preview command: '%s' - Press 'c' to change it\n", preview_cmd);
+		r_cons_printf ("# Selected colorscheme : %s  - Use 'hl' or left/right arrow keys to change colorscheme\n", curtheme ? curtheme : "default");
+		r_cons_printf ("# Selected element: %s  - Use 'jk' or up/down arrow keys to change element\n", k);
+		r_cons_printf ("# ec %s %s # %d (\\x1b%.*s)",
+			k, color, atoi (cstr+7), esc ? esc - cstr - 1 : strlen (cstr + 1), cstr+1);
 		if (esc) {
 			r_cons_printf (" (\\x1b%s)", esc + 1);
 		}
 		r_cons_newline ();
+
 		r_core_cmdf (core, "ec %s %s", k, color);
-		char * res = r_core_cmd_str (core, "pd $r");
+		char * res = r_core_cmd_str (core, preview_cmd);
 		int h, w = r_cons_get_size (&h);
-		char *body = r_str_ansi_crop (res, 0, 0, w, h - 4);
+		char *body = r_str_ansi_crop (res, 0, 0, w, h - 8);
 		if (body) {
-			r_cons_printf ("%s", body);
+			r_cons_printf ("\n%s", body);
 		}
 		r_cons_flush ();
 		ch = r_cons_readchar ();
@@ -3344,12 +3363,21 @@ R_API void r_core_visual_colors(RCore *core) {
 		case 'Q':
 		case 'q':
 			free (body);
+			free (color);
 			return;
 		case 'k':
 			opt--;
 			break;
 		case 'j':
 			opt++;
+			break;
+		case 'l':
+			r_core_cmd0 (core, "ecn");
+			oopt = -1;
+			break;
+		case 'h':
+			r_core_cmd0 (core, "ecp");
+			oopt = -1;
 			break;
 		case 'K':
 			opt = 0;
@@ -3365,6 +3393,11 @@ R_API void r_core_visual_colors(RCore *core) {
 			rcolor.g = r_num_rand (0xff);
 			rcolor.b = r_num_rand (0xff);
 			break;
+		case 'c':
+			r_line_set_prompt ("Preview command> ");
+			r_cons_show_cursor (true);
+			r_cons_fgets (preview_cmd, sizeof preview_cmd, 0, NULL);
+			r_cons_show_cursor (false);
 		}
 		if (opt != oopt) {
 			rcolor = r_cons_pal_get_i (opt);
