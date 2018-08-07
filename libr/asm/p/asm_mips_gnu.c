@@ -9,7 +9,7 @@
 #include <r_util.h>
 #include <r_asm.h>
 
-#include "dis-asm.h"
+#include "disas-asm.h"
 #include "opcode/mips.h"
 int mips_assemble(const char *str, ut64 pc, ut8 *out);
 

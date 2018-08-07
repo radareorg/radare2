@@ -4289,6 +4289,10 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 		ut64 temp = 1;
 		Register reg = X86R_UNDEFINED;
 		while (str[pos] != ']') {
+			if (pos > nextpos) {
+			//	eprintf ("Error parsing instruction\n");
+				break;
+			}
 			pos = nextpos;
 			if (!str[pos]) {
 				break;

@@ -140,7 +140,7 @@ static int all_matches(const char *s, RRegex *rx, RList **mla, int *lines, int l
 		char *clean = strdup (loff);
 		if (!clean) return 0;
 		int *cpos = NULL;
-		int ncpos = r_str_ansi_filter (clean, NULL, &cpos, 0);
+		int ncpos = r_str_ansi_filter (clean, NULL, &cpos, -1);
 		m.rm_eo = slen = strlen (clean);
 		r_list_purge (mla[l]);
 		while (!r_regex_exec (rx, clean, 1, &m, R_REGEX_STARTEND)) {
@@ -286,6 +286,7 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 				from = next_match (from, mla, lines_count);
 			}
 			break;
+		case 'N':
 		case 'p': 	/* previous match */
 			if (rx) {
 				from = prev_match(from, mla);

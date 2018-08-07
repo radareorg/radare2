@@ -752,7 +752,7 @@ static const char *radare_argv[] = {
 	"aga", "agc", "agd", "agl", "agfl",
 	"e", "et", "e-", "e*", "e!", "e?", "env ",
 	"i", "ii", "iI", "is", "iS", "iz",
-	"q", "q!",
+	"q", "q!", "q!!", "q!!!",
 	"f", "fl", "fr", "f-", "f*", "fs", "fS", "fr", "fo", "f?",
 	"m", "m*", "ml", "m-", "my", "mg", "md", "mp", "m?",
 	"o", "o+", "oc", "on", "op", "o-", "x", "wf", "wF", "wt", "wta", "wtf", "wp", "obf",
@@ -1225,7 +1225,7 @@ static bool find_autocomplete(RLine *line) {
 	}
 	char arg[256];
 	arg[0] = 0;
-	while (p && *p) {
+	while (*p) {
 		const char* e = r_str_trim_wp (p);
 		if (!e || (e - p) >= 256 || e == p) {
 			return false;
@@ -1233,7 +1233,7 @@ static bool find_autocomplete(RLine *line) {
 		memcpy (arg, p, e - p);
 		arg[e - p] = 0;
 		child = r_core_autocomplete_find (parent, arg, false);
-		if (child && *(p + child->length) == ' ') {
+		if (child && child->length < line->buffer.length && p[child->length] == ' ') {
 			// if is spaced then i can provide the
 			// next subtree as suggestion..
 			p = r_str_trim_ro (p + child->length);
@@ -1245,11 +1245,10 @@ static bool find_autocomplete(RLine *line) {
 			break;
 		}
 	}
-	int i, j;
-	j = 0;
+	int i;
 	/* if something went wrong this will prevent bad behavior */
-	tmp_argv[j] = NULL;
-	line->completion.argc = j;
+	tmp_argv[0] = NULL;
+	line->completion.argc = 0;
 	line->completion.argv = tmp_argv;
 	switch (parent->type) {
 	case R_CORE_AUTOCMPLT_FLAG:
@@ -1286,10 +1285,6 @@ static bool find_autocomplete(RLine *line) {
 		// handled before
 		break;
 	default:
-		if (p && !*p) {
-			//show all hints
-			arg[0] = 0;
-		}
 		if (r_config_get_i (core->config, "cfg.newtab")) {
 			RCmdDescriptor *desc = &core->root_cmd_descriptor;
 			for (i = 0; arg[i] && desc; i++) {
@@ -1303,7 +1298,7 @@ static bool find_autocomplete(RLine *line) {
 			}
 			// fallback to command listing
 		}
-		int length = strlen (arg);
+		int length = strlen (arg), j = 0;
 		for (i = 0; j < (TMP_ARGV_SZ - 1) && i < parent->n_subcmds; i++) {
 			if (!strncmp (arg, parent->subcmds[i]->cmd, length)) {
 				tmp_argv[j++] = parent->subcmds[i]->cmd;
@@ -1311,7 +1306,6 @@ static bool find_autocomplete(RLine *line) {
 		}
 		tmp_argv[j] = NULL;
 		line->completion.argc = j;
-		line->completion.argv = tmp_argv;
 		break;
 	}
 	return true;
@@ -1370,6 +1364,7 @@ static int autocomplete(RLine *line) {
 
 				tmp_argv_heap = false;
 				ADDARG("comment")
+				ADDARG("usrcmt")
 				ADDARG("args")
 				ADDARG("fname")
 				ADDARG("floc")
@@ -1407,6 +1402,8 @@ static int autocomplete(RLine *line) {
 				ADDARG("func_var")
 				ADDARG("func_var_type")
 				ADDARG("func_var_addr")
+				ADDARG("widget_bg")
+				ADDARG("widget_sel")
 				ADDARG("ai.read")
 				ADDARG("ai.write")
 				ADDARG("ai.exec")
@@ -1823,7 +1820,21 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 }
 
 R_API char *r_core_anal_get_comments(RCore *core, ut64 addr) {
-	return core? r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr): NULL;
+	if (core) {
+		char *type = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, addr);
+		char *cmt = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
+		if (type && cmt) {
+			char *ret = r_str_newf ("%s %s", type, cmt);
+			free (type);
+			free (cmt);
+			return ret;
+		} else if (type) {
+			return type;
+		} else if (cmt) {
+			return cmt;
+		}
+	}
+	return NULL;
 }
 
 R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, bool verbose) {
@@ -2222,6 +2233,7 @@ R_API void r_core_bind_cons(RCore *core) {
 	core->cons->cb_break = (RConsBreakCallback)r_core_break;
 	core->cons->cb_sleep_begin = (RConsSleepBeginCallback)r_core_sleep_begin;
 	core->cons->cb_sleep_end = (RConsSleepEndCallback)r_core_sleep_end;
+	core->cons->cb_task_oneshot = (RConsQueueTaskOneshot) r_core_task_enqueue_oneshot;
 	core->cons->user = (void*)core;
 }
 
@@ -3002,7 +3014,7 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 	bool vinfun = r_config_get_i (core->config, "anal.vinfun");
 	bool vinfunr = r_config_get_i (core->config, "anal.vinfunrange");
 	ut8 buf[4096];
-	ut64 v64, value = 0;
+	ut64 v64, value = 0, size;
 	ut64 from = search_itv.addr, to = r_itv_end (search_itv);
 	ut32 v32;
 	ut16 v16;
@@ -3028,11 +3040,12 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 	r_cons_break_push (NULL, NULL);
 
 	while (from < to) {
+		size = R_MIN (to - from, sizeof (buf));
 		memset (buf, 0xff, sizeof (buf)); // probably unnecessary
 		if (r_cons_is_breaked ()) {
 			goto beach;
 		}
-		bool res = r_io_read_at (core->io, from, buf, sizeof (buf));
+		bool res = r_io_read_at_mapped (core->io, from, buf, size);
 		if (!res || !memcmp (buf, "\xff\xff\xff\xff", 4) || !memcmp (buf, "\x00\x00\x00\x00", 4)) {
 			if (!isValidAddress (core, from)) {
 				ut64 next = r_io_map_next_address (core->io, from);
@@ -3044,7 +3057,7 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 				continue;
 			}
 		}
-		for (i = 0; i < sizeof (buf) - vsize; i++) {
+		for (i = 0; i <= size - vsize; i++) {
 			void *v = (buf + i);
 			ut64 addr = from + i;
 			if (r_cons_is_breaked ()) {
@@ -3055,10 +3068,10 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 			}
 			match = false;
 			switch (vsize) {
-			case 1: value = *(ut8 *) (v); match = (buf[i] >= vmin && buf[i] <= vmax); break;
-			case 2: v16 = *((ut16 *) (v)); match = (v16 >= vmin && v16 <= vmax); value = v16; break;
-			case 4: v32 = *((ut32 *) (v)); match = (v32 >= vmin && v32 <= vmax); value = v32; break;
-			case 8: v64 = *((ut64 *) (v)); match = (v64 >= vmin && v64 <= vmax); value = v64; break;
+			case 1: value = *(ut8 *)v; match = (buf[i] >= vmin && buf[i] <= vmax); break;
+			case 2: v16 = *(uut16 *)v; match = (v16 >= vmin && v16 <= vmax); value = v16; break;
+			case 4: v32 = *(uut32 *)v; match = (v32 >= vmin && v32 <= vmax); value = v32; break;
+			case 8: v64 = *(uut64 *)v; match = (v64 >= vmin && v64 <= vmax); value = v64; break;
 			default: eprintf ("Unknown vsize %d\n", vsize); return -1;
 			}
 			if (match && !vinfun) {
@@ -3087,7 +3100,10 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 				}
 			}
 		}
-		from += sizeof (buf);
+		if (size == to-from) {
+			break;
+		}
+		from += size-vsize+1;
 	}
 beach:
 	r_cons_break_pop ();

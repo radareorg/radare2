@@ -210,6 +210,8 @@ typedef struct r_cons_palette_t {
 	RColor func_var;
 	RColor func_var_type;
 	RColor func_var_addr;
+	RColor widget_bg;
+	RColor widget_sel;
 
 	/* Graph colors */
 	RColor graph_box;
@@ -278,6 +280,8 @@ typedef struct r_cons_printable_palette_t {
 	char *func_var;
 	char *func_var_type;
 	char *func_var_addr;
+	char *widget_bg;
+	char *widget_sel;
 
 	/* graph colors */
 	char *graph_box;
@@ -377,6 +381,7 @@ typedef int (*RConsClickCallback)(void *core, int x, int y);
 typedef void (*RConsBreakCallback)(void *core);
 typedef void *(*RConsSleepBeginCallback)(void *core);
 typedef void (*RConsSleepEndCallback)(void *core, void *user);
+typedef void (*RConsQueueTaskOneshot)(void *core, void *task, void *user);
 
 typedef struct r_cons_context_t {
 	RConsGrep grep;
@@ -420,6 +425,7 @@ typedef struct r_cons_t {
 	RConsSleepBeginCallback cb_sleep_begin;
 	RConsSleepEndCallback cb_sleep_end;
 	RConsClickCallback cb_click;
+	RConsQueueTaskOneshot cb_task_oneshot;
 
 	void *user; // Used by <RCore*>
 #if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
@@ -486,6 +492,8 @@ typedef struct r_cons_t {
 #define R_CONS_KEY_F12 0xfc
 
 #define R_CONS_KEY_ESC 0x1b
+
+#define R_CONS_CLEAR_LINE "\x1b[2K\r"
 
 #define Color_BLINK        "\x1b[5m"
 #define Color_INVERT       "\x1b[7m"
@@ -795,6 +803,18 @@ R_API const char* r_cons_get_rune(const ut8 ch);
 
 #define R_EDGES_X_INC 4
 
+#define R_SELWIDGET_MAXH 15
+#define R_SELWIDGET_MAXW 30
+
+typedef struct r_selection_widget_t {
+	char **options;
+	int options_len;
+	int selection;
+	int w, h;
+	int scroll;
+	bool complete_common;
+} RSelWidget;
+
 typedef struct r_line_hist_t {
 	char **data;
 	int size;
@@ -827,6 +847,7 @@ struct r_line_t {
 	RLineCompletion completion;
 	RLineBuffer buffer;
 	RLineHistory history;
+	RSelWidget *sel_widget;
 	/* callbacks */
 	RLineHistoryUpCb cb_history_up;
 	RLineHistoryDownCb cb_history_down;

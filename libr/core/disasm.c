@@ -472,7 +472,7 @@ static void ds_comment(RDisasmState *ds, bool align, const char *format, ...) {
 	} else {
 		char buffer[4096];
 		vsnprintf (buffer, sizeof(buffer), format, ap);
-		char *escstr = r_str_escape_latin1 (buffer, false, true, false);
+		char *escstr = r_str_escape_latin1 (buffer, false, true, true);
 		if (escstr) {
 			r_cons_printf ("%s", escstr);
 			free (escstr);
@@ -1801,18 +1801,18 @@ static void ds_show_comments_right(RDisasmState *ds) {
 	char *vartype = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, ds->at);
 	if (!comment) {
 		if (vartype) {
-			ds->comment = r_str_newf ("%s%s", COLOR_ARG (ds, color_func_var_type), vartype);
+			ds->comment = r_str_newf ("%s; %s", COLOR_ARG (ds, color_func_var_type), vartype);
 			free (vartype);
 		} else if (item && item->comment && *item->comment) {
 			ds->ocomment = item->comment;
 			ds->comment = strdup (item->comment);
 		}
 	} else if (vartype) {
-		ds->comment = r_str_newf ("%s%s %s; %s", COLOR_ARG (ds, color_func_var_type), vartype, COLOR (ds, color_usrcmt), comment);
+		ds->comment = r_str_newf ("%s; %s %s%s; %s", COLOR_ARG (ds, color_func_var_type), vartype, Color_RESET, COLOR (ds, color_usrcmt), comment);
 		free (vartype);
 		free (comment);
 	} else {
-		ds->comment = comment;
+		ds->comment = r_str_newf ("%s; %s", COLOR_ARG (ds, color_usrcmt), comment);
 	}
 	if (!ds->comment || !*ds->comment) {
 		return;
@@ -1846,7 +1846,6 @@ static void ds_show_comments_right(RDisasmState *ds) {
 			}
 			free (p);
 		} else {
-			ds->comment = r_str_prefix_all (ds->comment, "; ");
 			if (ds->show_comment_right) {
 				_ALIGN;
 			} else {
@@ -4349,10 +4348,6 @@ static void ds_print_comments_right(RDisasmState *ds) {
 				if (!desc) {
 					ds_align_comment (ds);
 				}
-				if (ds->show_color) {
-					// r_cons_strcat (ds->color_comment);
-					r_cons_strcat (ds->color_usrcmt);
-				}
 				if (strchr (comment, '\n')) {
 					comment = strdup (comment);
 					if (comment) {
@@ -4369,9 +4364,14 @@ static void ds_print_comments_right(RDisasmState *ds) {
 									c = escstr = ds_esc_str (ds, c, (int)strlen (c), NULL, true);
 								}
 								ds_print_pre (ds);
-								r_cons_printf ("; %s", c);
-								ds_newline (ds);
-								ds_begin_json_line (ds);
+								if (ds->show_color) {
+									r_cons_strcat (ds->color_usrcmt);
+								}
+								r_cons_printf (i == 0 ? "%s" : "; %s", c);
+								if (i < lines_count - 1) {
+									ds_newline (ds);
+									ds_begin_json_line (ds);
+								}
 								free (escstr);
 							}
 						}
@@ -4384,7 +4384,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 						comment = escstr = ds_esc_str (ds, comment, (int)strlen (comment), NULL, true);
 					}
 					if (comment) {
-						r_cons_printf ("; %s", comment);
+						r_cons_strcat (comment);
 					}
 					free (escstr);
 				}

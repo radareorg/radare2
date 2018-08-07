@@ -463,7 +463,6 @@ R_API ut8 *r_hash_do_sha1(RHash *ctx, const ut8 *input, int len);
 R_API ut8 *r_hash_do_sha256(RHash *ctx, const ut8 *input, int len);
 R_API ut8 *r_hash_do_sha384(RHash *ctx, const ut8 *input, int len);
 R_API ut8 *r_hash_do_sha512(RHash *ctx, const ut8 *input, int len);
-R_API ut8 *r_hash_do_xxhash(RHash *ctx, const ut8 *input, int len);
 
 R_API char *r_hash_to_string(RHash *ctx, const char *name, const ut8 *data, int len);
 

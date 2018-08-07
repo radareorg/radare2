@@ -548,6 +548,9 @@ R_API const char *r_anal_op_family_to_string(int n) {
 	case R_ANAL_OP_FAMILY_MMX: return "mmx";
 	case R_ANAL_OP_FAMILY_SSE: return "sse";
 	case R_ANAL_OP_FAMILY_PRIV: return "priv";
+	case R_ANAL_OP_FAMILY_THREAD: return "thrd";
+	case R_ANAL_OP_FAMILY_CRYPTO: return "crpt";
+	case R_ANAL_OP_FAMILY_IO: return "io";
 	case R_ANAL_OP_FAMILY_VIRT: return "virt";
 	default:
 		snprintf (num, sizeof (num), "%d", n);
@@ -564,6 +567,9 @@ R_API int r_anal_op_family_from_string(const char *f) {
 	if (!strcmp (f, "sse")) return R_ANAL_OP_FAMILY_SSE;
 	if (!strcmp (f, "priv")) return R_ANAL_OP_FAMILY_PRIV;
 	if (!strcmp (f, "virt")) return R_ANAL_OP_FAMILY_VIRT;
+	if (!strcmp (f, "crpt")) return R_ANAL_OP_FAMILY_CRYPTO;
+	if (!strcmp (f, "io")) return R_ANAL_OP_FAMILY_IO;
+	if (!strcmp (f, "thrd")) return R_ANAL_OP_FAMILY_THREAD;
 	return R_ANAL_OP_FAMILY_UNKNOWN;
 }
 

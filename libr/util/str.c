@@ -1259,7 +1259,7 @@ R_API char *r_str_escape_dot(const char *buf) {
 }
 
 R_API char *r_str_escape_latin1(const char *buf, bool show_asciidot, bool esc_bslash, bool colors) {
-	return r_str_escape_ (buf, false, false, !colors, show_asciidot, esc_bslash);
+	return r_str_escape_ (buf, false, colors, !colors, show_asciidot, esc_bslash);
 }
 
 static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool show_asciidot, bool esc_bslash) {

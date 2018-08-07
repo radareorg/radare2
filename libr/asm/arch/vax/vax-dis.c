@@ -26,7 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "vax.h"
-#include "dis-asm.h"
+#include "disas-asm.h"
 
 static char *reg_names[] =
 {

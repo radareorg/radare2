@@ -13,6 +13,9 @@ typedef struct boot_img_hdr BootImage;
 #define BOOT_ARGS_SIZE 512
 #define BOOT_EXTRA_ARGS_SIZE 1024
 
+#define ADD_REMAINDER(val, aln) ((val) + ((aln) != 0 ? ((val) % (aln)) : 0))
+#define ALIGN(val, aln) ((aln) != 0 ? (((val) / (aln)) * (aln)) : (val))
+
 R_PACKED (
 struct boot_img_hdr {
 	ut8 magic[BOOT_MAGIC_SIZE];
@@ -89,7 +92,10 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 la, Sdb *sdb
 		free (bio);
 		return NULL;
 	}
-	bootimg_header_load (&bio->bi, bf->buf, bio->kv);
+	if (!bootimg_header_load (&bio->bi, bf->buf, bio->kv)) {
+		free(bio);
+		return NULL;
+	}
 	sdb_ns_set (sdb, "info", bio->kv);
 	return bio;
 }
@@ -168,7 +174,6 @@ static RList *entries(RBinFile *bf) {
 }
 
 static RList *sections(RBinFile *bf) {
-	ut64 base;
 	BootImageObj *bio = bf->o->bin_obj;
 	if (!bio) {
 		return NULL;
@@ -197,25 +202,24 @@ static RList *sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	base = bi->page_size;
 	strncpy (ptr->name, "kernel", R_BIN_SIZEOF_STRINGS);
 	ptr->size = bi->kernel_size;
-	ptr->vsize = ptr->size + (ptr->size % bi->page_size);
-	ptr->paddr = base;
+	ptr->vsize = ADD_REMAINDER (ptr->size, bi->page_size);
+	ptr->paddr = bi->page_size;
 	ptr->vaddr = bi->kernel_addr;
 	ptr->srwx = R_BIN_SCN_READABLE; // r--
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
 	if (bi->ramdisk_size > 0) {
-		base = ((bi->kernel_size + 2 * bi->page_size - 1) / bi->page_size) * bi->page_size;
+		ut64 base = bi->kernel_size + 2 * bi->page_size - 1;
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
 		strncpy (ptr->name, "ramdisk", R_BIN_SIZEOF_STRINGS);
 		ptr->size = bi->ramdisk_size;
-		ptr->vsize = bi->ramdisk_size + (bi->ramdisk_size % bi->page_size);
-		ptr->paddr = base;
+		ptr->vsize = ADD_REMAINDER (bi->ramdisk_size, bi->page_size);
+		ptr->paddr = ALIGN (base, bi->page_size);
 		ptr->vaddr = bi->ramdisk_addr;
 		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE; // r-x
 		ptr->add = true;
@@ -223,14 +227,14 @@ static RList *sections(RBinFile *bf) {
 	}
 
 	if (bi->second_size > 0) {
-		base = ((bi->kernel_size + bi->ramdisk_size + 2 * bi->page_size - 1) / bi->page_size) * bi->page_size;
+		ut64 base = bi->kernel_size + bi->ramdisk_size + 2 * bi->page_size - 1;
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
 		strncpy (ptr->name, "second", R_BIN_SIZEOF_STRINGS);
 		ptr->size = bi->second_size;
-		ptr->vsize = bi->second_size + (bi->second_size % bi->page_size);
-		ptr->paddr = base;
+		ptr->vsize = ADD_REMAINDER (bi->second_size, bi->page_size);
+		ptr->paddr = ALIGN (base, bi->page_size);
 		ptr->vaddr = bi->second_addr;
 		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE; // r-x
 		ptr->add = true;

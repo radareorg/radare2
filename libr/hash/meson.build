@@ -10,13 +10,20 @@ files = [
   'md5.c',
   'sha1.c',
   'sha2.c',
-  'state.c',
-  'xxhash.c'
+  'state.c'
 ]
+
+dependencies = [mth, r_util_dep]
+
+if use_sys_xxhash
+  dependencies += [sys_xxhash]
+else
+  files += ['xxhash.c']
+endif
 
 r_hash = library('r_hash', files,
   include_directories: [platform_inc],
-  dependencies: [mth, r_util_dep],
+  dependencies: dependencies,
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
