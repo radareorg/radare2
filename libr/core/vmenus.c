@@ -3281,7 +3281,7 @@ repeat:
 }
 
 R_API void r_core_visual_colors(RCore *core) {
-	char color[32], cstr[32];
+	char *color = calloc (1, 64), cstr[32];
 	int ch, opt = 0, oopt = -1;
 	const char *k;
 	RColor rcolor;
@@ -3289,22 +3289,38 @@ R_API void r_core_visual_colors(RCore *core) {
 	rcolor = r_cons_pal_get_i (opt);
 	for (;;) {
 		r_cons_clear ();
+		r_cons_gotoxy (0, 0);
 		k = r_cons_pal_get_name (opt);
 		if (!k) {
 			opt = 0;
 			k = r_cons_pal_get_name (opt);
 		}
-		r_cons_gotoxy (0, 0);
-		r_cons_rgb_str (cstr, sizeof (cstr), &rcolor);
 		if (r_cons_singleton ()->color < COLOR_MODE_16M) {
 			rcolor.r &= 0xf;
 			rcolor.g &= 0xf;
 			rcolor.b &= 0xf;
+			rcolor.r2 &= 0xf;
+			rcolor.g2 &= 0xf;
+			rcolor.b2 &= 0xf;
 		}
 		sprintf (color, "rgb:%x%x%x", rcolor.r, rcolor.g, rcolor.b);
-		r_cons_printf ("# Colorscheme %d - Use '.' to randomize current color and ':' to randomize palette\n"
-			"# Press 'rRgGbB', 'jk' or 'q'\nec %s %s   # %d (\\x1b%s)\n",
-			opt, k, color, atoi (cstr+7), cstr+1);
+		if (rcolor.r2 || rcolor.g2 || rcolor.b2) {
+			r_str_appendf (color, " rgb:%x%x%x", rcolor.r2, rcolor.g2, rcolor.b2);
+			rcolor.a = ALPHA_FGBG;
+		} else {
+			rcolor.a = ALPHA_FG;
+		}
+		r_cons_rgb_str (cstr, sizeof (cstr), &rcolor);
+		eprintf ("%s\n", cstr);
+		char *esc = strchr (cstr + 1, '\x1b');
+		r_cons_printf ("# Colorscheme %s - Use '.' to randomize current color and ':' to randomize palette\n", r_core_get_theme());
+		r_cons_printf ("# Press 'rRgGbB' or 'eEfFvV' to change foreground/background color\n");
+		r_cons_printf ("# Selected element: %s  - Use 'jk' or arrow keys to change element\n", k);
+		r_cons_printf ("# ec %s %s   # %d (\\x1b%.*s)", k, color, atoi (cstr+7), esc ? esc - cstr - 1 : strlen (cstr + 1), cstr+1);
+		if (esc) {
+			r_cons_printf (" (\\x1b%s)", esc + 1);
+		}
+		r_cons_newline ();
 		r_core_cmdf (core, "ec %s %s", k, color);
 		char * res = r_core_cmd_str (core, "pd $r");
 		int h, w = r_cons_get_size (&h);
@@ -3322,6 +3338,9 @@ R_API void r_core_visual_colors(RCore *core) {
 		CASE_RGB ('R','r',rcolor.r);
 		CASE_RGB ('G','g',rcolor.g);
 		CASE_RGB ('B','b',rcolor.b);
+		CASE_RGB ('E','e',rcolor.r2);
+		CASE_RGB ('F','f',rcolor.g2);
+		CASE_RGB ('V','v',rcolor.b2);
 		case 'Q':
 		case 'q':
 			free (body);
