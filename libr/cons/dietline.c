@@ -464,7 +464,7 @@ static void selection_widget_draw() {
 	for (y = 0; y < R_MIN (sel_widget->h, R_SELWIDGET_MAXH); y++) {
 		r_cons_gotoxy (pos_x + 1, pos_y - y - 1);
 		int scroll = R_MAX (0, sel_widget->selection - sel_widget->scroll);
-		char *option = y < sel_widget->options_len ? sel_widget->options[y + scroll] : "";
+		const char *option = y < sel_widget->options_len ? sel_widget->options[y + scroll] : "";
 		r_cons_printf ("%s", sel_widget->selection == y + scroll ? selected_color : background_color);
 		r_cons_printf ("%-*.*s", sel_widget->w, sel_widget->w, option);
 		if (scrollbar && R_BETWEEN (scrollbar_y, y, scrollbar_y + scrollbar_l)) {
