@@ -26,7 +26,7 @@ static const char *help_msg_slash[] = {
 	"/d", " 101112", "search for a deltified sequence of bytes",
 	"/e", " /E.F/i", "match regular expression",
 	"/E", " esil-expr", "offset matching given esil expressions %%= here",
-	"/f", "", "search forwards, command modifier, followed by other command",
+	"/f", "", "search forwards, (command modifier)",
 	"/F", " file [off] [sz]", "search contents of file with offset and size",
 	// TODO: add subcommands to find paths between functions and filter only function names instead of offsets, etc
 	"/g", "[g] [from]", "find all graph paths A to B (/gg follow jumps, see search.count and anal.depth)",
@@ -1898,7 +1898,9 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 				" /Af?     - get this help\n"
 				" /Af??    - list all opcode families\n"
 				" /A ucall - find calls with unknown destination\n"
-				" /Af sse  - find SSE instructions\n");
+				" /Af sse  - find SSE instructions\n"
+				" /Aj swi  - search all syscalls, show results in JSON\n"
+				" /Afj fpu - search all fpu instructions, show in JSON\n");
 		}
 		return;
 	}

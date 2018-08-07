@@ -53,7 +53,7 @@ static const char *help_msg_at[] = {
 	"@(", "from to)", "temporary set from and to for commands supporting ranges",
 	"@a:", "arch[:bits]", "temporary set arch and bits",
 	"@b:", "bits", "temporary set asm.bits",
-	"@B:", "nth", "temporary seek to nth instruction of current bb (negative numbers too)",
+	"@B:", "nth", "temporary seek to nth instruction in current bb (negative numbers too)",
 	"@e:", "k=v,k=v", "temporary change eval vars",
 	"@f:", "file", "temporary replace block with file contents",
 	"@F:", "flagspace", "temporary change flag space",
@@ -145,10 +145,10 @@ static const char *help_msg_p[] = {
 };
 
 static const char *help_msg_p_equal[] = {
-	"Usage:", "p=[=bep?][qj] [nblocks] ([len]) ([offset]) ", "show entropy/printable chars/chars bars",
+	"Usage:", "p=[=bep?][qj] [N] ([len]) ([offset]) ", "show entropy/printable chars/chars bars",
 	"e ", "zoom.in", "specify range for zoom",
 	"p=", "", "print bytes of current block in bars",
-	"p==", "[..]", "same subcommands as p=, but using flame column graph instead of rows",
+	"p==", "[..]", "same subcommands as p=, using column bars instead of rows",
 	"p=", "b", "same as above",
 	"p=", "c", "print number of calls per block",
 	"p=", "d", "print min/max/number of unique bytes in block",
@@ -181,25 +181,25 @@ static const char *help_msg_p_minus[] = {
 };
 
 static const char *help_msg_pc[] = {
-  "Usage:", "pc", " # Print in code",
-  "pc",  "", "C",
-  "pc*", "", "print 'wx' r2 commands",
-  "pca", "", "GAS .byte blob",
-  "pcA", "", ".bytes with instructions in comments",
-  "pcd", "", "C dwords (8 byte)",
-  "pch", "", "C half-words (2 byte)",
-  "pcj", "", "json",
-  "pcJ", "", "javascript",
-  "pcp", "", "python",
-  "pcs", "", "string",
-  "pcS", "", "shellscript that reconstructs the bin",
-  "pcw", "", "C words (4 byte)",
+	"Usage:", "pc", " # Print in code",
+	"pc",  "", "C",
+	"pc*", "", "print 'wx' r2 commands",
+	"pca", "", "GAS .byte blob",
+	"pcA", "", ".bytes with instructions in comments",
+	"pcd", "", "C dwords (8 byte)",
+	"pch", "", "C half-words (2 byte)",
+	"pcj", "", "json",
+	"pcJ", "", "javascript",
+	"pcp", "", "python",
+	"pcs", "", "string",
+	"pcS", "", "shellscript that reconstructs the bin",
+	"pcw", "", "C words (4 byte)",
 };
 
 static const char *help_msg_pd[] = {
 	"Usage:", "p[dD][ajbrfils] [sz] [arch] [bits]", " # Print Disassembly",
 	"NOTE: ", "len", "parameter can be negative",
-	"NOTE: ", "", "Pressing ENTER on empty command will repeat last pd command and also seek to end of disassembled range.",
+	"NOTE: ", "", "Pressing ENTER on empty command will repeat last print command in next page",
 	"pd", " N", "disassemble N instructions",
 	"pd", " -N", "disassemble N instructions backward",
 	"pD", " N", "disassemble N bytes",
@@ -334,10 +334,10 @@ static const char *help_msg_ps[] = {
 
 static const char *help_msg_pt[] = {
 	"Usage: pt", "[dn]", "print timestamps",
-	"pt", "", "print UNIX time (32 bit `cfg.bigendian`)  Since January 1, 1970",
-	"ptd", "", "print DOS time (32 bit `cfg.bigendian`)   Since January 1, 1980",
-	"pth", "", "print HFS time (32 bit `cfg.bigendian`)   Since January 1, 1904",
-	"ptn", "", "print NTFS time (64 bit `cfg.bigendian`)  Since January 1, 1601",
+	"pt", "", "print UNIX time (32 bit `cfg.bigendian`) Since January 1, 1970",
+	"ptd", "", "print DOS time (32 bit `cfg.bigendian`) Since January 1, 1980",
+	"pth", "", "print HFS time (32 bit `cfg.bigendian`) Since January 1, 1904",
+	"ptn", "", "print NTFS time (64 bit `cfg.bigendian`) Since January 1, 1601",
 	NULL
 };
 
