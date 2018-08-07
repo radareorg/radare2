@@ -1046,6 +1046,9 @@ int main(int argc, char **argv, char **envp) {
 				while (optind < argc) {
 					pfile = argv[optind++];
 					fh = r_core_file_open (&r, pfile, perms, mapaddr);
+					if (fh && (perms & R_IO_WRITE)) {
+						r_config_set_i (r.config, "io.va", false);
+					}
 					if ((perms & R_IO_WRITE) && !fh) {
 						if (r_io_create (r.io, pfile, 0644, 0)) {
 							fh = r_core_file_open (&r, pfile, perms, mapaddr);
