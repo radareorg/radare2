@@ -38,8 +38,8 @@ if [ -f ~/.r2pm.cache ]; then
 fi
 if [ "${R2PMCACHE_LOADED}" != 1 ]; then
 	export LIBEXT="`r2 -H LIBEXT`"
-	export R2CONFIGHOME="`r2 -H RCONFIGHOME`"
-	export R2DATAHOME="`r2 -H RDATAHOME`"
+	export R2CONFIGHOME="`r2 -H R2_RCONFIGHOME`"
+	export R2DATAHOME="`r2 -H R2_RDATAHOME`"
 	PREFIX="`r2 -H PREFIX`"
 fi
 BINDIR="${PREFIX}/bin/"

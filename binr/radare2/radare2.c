@@ -189,9 +189,9 @@ static int main_help(int line) {
 		" LIBR_PLUGINS " R_JOIN_2_PATHS ("%s", R2_PLUGINS) "\n"
 		" USER_ZIGNS   " R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS) "\n"
 		"Environment:\n"
-		" RDATAHOME    %s\n" // TODO: rename to RHOME R2HOME?
+		" R2_RDATAHOME %s\n" // TODO: rename to RHOME R2HOME?
 		" RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
-		" MAGICPATH    " R_JOIN_2_PATHS ("%s", R2_SDB_MAGIC) "\n"
+		" R2_MAGICPATH " R_JOIN_2_PATHS ("%s", R2_SDB_MAGIC) "\n"
 		" R_DEBUG      if defined, show error messages and crash signal\n"
 		" VAPIDIR      path to extra vapi directory\n"
 		" R2_NOPLUGINS do not load r2 shared plugins\n"
@@ -220,14 +220,14 @@ static int main_print_var(const char *var_name) {
 		const char *value;
 	} r2_vars[] = {
 		{ "R2_PREFIX", R2_PREFIX },
-		{ "MAGICPATH", magicpath },
+		{ "R2_MAGICPATH", magicpath },
 		{ "PREFIX", R2_PREFIX },
 		{ "INCDIR", R2_INCDIR },
 		{ "LIBDIR", R2_LIBDIR },
 		{ "LIBEXT", R_LIB_EXT },
-		{ "RCONFIGHOME", confighome },
-		{ "RDATAHOME", datahome },
-		{ "RCACHEHOME", cachehome },
+		{ "R2_RCONFIGHOME", confighome },
+		{ "R2_RDATAHOME", datahome },
+		{ "R2_RCACHEHOME", cachehome },
 		{ "LIBR_PLUGINS", plugins },
 		{ "USER_PLUGINS", homeplugins },
 		{ "USER_ZIGNS", homezigns },
