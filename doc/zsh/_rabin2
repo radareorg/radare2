@@ -64,7 +64,7 @@ _rabin2() {
 
   case $state in
     arch)
-      local -a sub=(${(f)"$(r2_qc 'e asm.arch=?~[2,4-99]' | sed -E 's/ (.*)/[\1]/')"})
+      local -a sub=(${(f)"$(r2_qc 'e asm.arch=?')"})
       _values 'arch' $sub && ret=0
       ;;
     checksum)
