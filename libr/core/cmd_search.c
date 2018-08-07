@@ -1849,7 +1849,7 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 	ut64 at;
 	ut8 *buf;
 	RAnalOp aop;
-	int chk_family = 0;
+	bool chk_family = false;
 	int mode = 0;
 	int i, ret, bsize = R_MIN (64, core->blocksize);
 	int kwidx = core->search->n_kws;
@@ -1857,7 +1857,7 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 	bool firstItem = true;
 
 	if (*input == 'f') {
-		chk_family = 1;
+		chk_family = true;
 		input++;
 	}
 	switch (*input) {
@@ -1871,28 +1871,33 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 		input++;
 		break;
 	case 0:
-		r_cons_printf (
-			"Usage: /A[f][?jq] [op.type | op.family]\n"
-			" /A?      - list all opcode types\n"
-			" /Af?     - list all opcode families\n"
-			" /A ucall - find calls with unknown destination\n"
-			" /Af sse  - find SSE instructions\n");
-		return;
+	case 'f':
 	case '?':
-		for (i = 0; i < 64; i++) {
-			const char *str = chk_family
-				? r_anal_op_family_to_string (i)
-				: r_anal_optype_to_string (i);
-			if (chk_family && atoi (str)) {
-				break;
+		if (input[0] && input[1] == '?') {
+			for (i = 0; i < 64; i++) {
+				const char *str = chk_family
+					? r_anal_op_family_to_string (i)
+					: r_anal_optype_to_string (i);
+				if (chk_family && atoi (str)) {
+					break;
+				}
+				if (!str || !*str) {
+					break;
+				}
+				if (!strcmp (str, "undefined")) {
+					continue;
+				}
+				r_cons_println (str);
 			}
-			if (!str || !*str) {
-				break;
-			}
-			if (!strcmp (str, "undefined")) {
-				continue;
-			}
-			r_cons_println (str);
+		} else {
+			r_cons_printf (
+				"Usage: /A[f][?jq] [op.type | op.family]\n"
+				" /A?      - get this help\n"
+				" /A??     - list all opcode types\n"
+				" /Af?     - get this help\n"
+				" /Af??    - list all opcode families\n"
+				" /A ucall - find calls with unknown destination\n"
+				" /Af sse  - find SSE instructions\n");
 		}
 		return;
 	}
