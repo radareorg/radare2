@@ -62,7 +62,7 @@ static bool load_theme(RCore *core, const char *path) {
 	if (!r_file_exists (path)) {
 		return false;
 	}
-	core->cmdfilter = "e ";
+	core->cmdfilter = "e";
 	bool res = r_core_cmd_file (core, path);
 	if (res) {
 		r_cons_pal_update_event ();
