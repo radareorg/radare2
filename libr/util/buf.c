@@ -686,7 +686,7 @@ static int r_buf_fcpy_at (RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int 
 	return len;
 }
 
-R_API ut8 *r_buf_get_at (RBuffer *b, ut64 addr, int *left) {
+R_API ut8 *r_buf_get_at(RBuffer *b, ut64 addr, int *left) {
 	if (b->empty) {
 		return NULL;
 	}

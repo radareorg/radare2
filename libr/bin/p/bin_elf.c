@@ -1167,8 +1167,8 @@ static RList* fields(RBinFile *bf) {
 
 	} else {
 		#define ROW(nam,siz,val,fmt) \
-		r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt ("0x%08x", val), fmt));
-		if (left < 40) {
+			r_list_append (ret, r_bin_field_new (addr, addr, siz, nam, sdb_fmt ("0x%08x", val), fmt));
+		if (left < sizeof (Elf_(Ehdr))) {
 			return ret;
 		}
 		ut64 addr = 0;
