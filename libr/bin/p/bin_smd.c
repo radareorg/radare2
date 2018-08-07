@@ -275,8 +275,9 @@ static RList *sections(RBinFile *bf) {
 	strcpy (ptr->name, "text");
 	ptr->paddr = ptr->vaddr = 0x100 + sizeof (SMD_Header);
 	{
-		SMD_Header *hdr = (SMD_Header *) (bf->buf->buf + 0x100);
-		ut64 baddr = hdr->RomStart;
+		SMD_Header hdr = {{0}};
+		r_buf_read_at (bf->buf, 0x100, (ut8*)&hdr, sizeof (hdr));
+		ut64 baddr = hdr.RomStart;
 		ptr->vaddr += baddr;
 	}
 	ptr->size = ptr->vsize = bf->buf->length - ptr->paddr;
@@ -295,8 +296,9 @@ static RList *entries(RBinFile *bf) { // Should be 3 offsets pointed by NMI, RES
 	if (!(ptr = R_NEW0 (RBinAddr))) {
 		return ret;
 	}
-	SMD_Header *hdr = (SMD_Header *) (bf->buf->buf + 0x100);
-	ut64 baddr = hdr->RomStart;
+	SMD_Header hdr;
+	r_buf_read_at (bf->buf, 0, (ut8*)&hdr, sizeof (hdr));
+	ut64 baddr = hdr.RomStart;
 	ptr->paddr = ptr->vaddr = baddr + 0x100 + sizeof (SMD_Header); // vtable[1];
 	r_list_append (ret, ptr);
 	return ret;
