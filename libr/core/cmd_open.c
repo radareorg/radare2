@@ -530,8 +530,6 @@ static bool _map_set_flags (void *user, void *data, ut32 id) {
 }
 
 static void cmd_omfg (RCore *core, const char *input) {
-	SdbListIter *iter;
-	RIOMap *map;
 	input = r_str_trim_ro (input);
 	if (input) {
 		int flags = *input
@@ -554,7 +552,6 @@ static void cmd_omfg (RCore *core, const char *input) {
 }
 
 static void cmd_omf (RCore *core, const char *input) {
-	SdbListIter *iter;
 	RIOMap *map;
 	char *arg = strdup (r_str_trim_ro (input));
 	if (!arg) {
