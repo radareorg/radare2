@@ -513,12 +513,12 @@ endif
 
 # handle grub dependency
 grub_files = [
-  'grub/fs/affs.c',
+  #'grub/fs/affs.c',
   #'grub/fs/afs.c',
   #'grub/fs/afs_be.c',
   #'grub/fs/befs.c',
   #'grub/fs/befs_be.c',
-  'grub/fs/btrfs.c',
+  #'grub/fs/btrfs.c',
   'grub/fs/cpio.c',
   'grub/fs/ext2.c',
   'grub/fs/fat.c',
@@ -529,8 +529,8 @@ grub_files = [
   'grub/fs/iso9660.c',
   'grub/fs/jfs.c',
   'grub/fs/minix.c',
-  'grub/fs/minix2.c',
-  'grub/fs/nilfs2.c',
+  #'grub/fs/minix2.c',
+  #'grub/fs/nilfs2.c',
   'grub/fs/ntfs.c',
   'grub/fs/ntfscomp.c',
   'grub/fs/reiserfs.c',
