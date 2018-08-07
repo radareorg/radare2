@@ -1039,21 +1039,15 @@ static int has_retguard(RBinFile *bf) {
 	RList* sections_list = sections (bf);
 	RListIter *iter;
 	RBinSection *section;
-	if (sections_list) {
-		r_list_foreach (sections_list, iter, section) {
-			# define R_BIN_RANDOMDATA_RETGUARD_SZ 48
-			if (!strcmp(section->name, ".openbsd.randomdata")) {
-				// The retguard cookie adds 8 per return function inst.
-				if (section->size >= R_BIN_RANDOMDATA_RETGUARD_SZ) {
-					ret = 1;
-					break;
-				}
-				ret = 0;
-				break;
-			}
+	r_list_foreach (sections_list, iter, section) {
+		# define R_BIN_RANDOMDATA_RETGUARD_SZ 48
+		if (!strcmp (section->name, ".openbsd.randomdata")) {
+			// The retguard cookie adds 8 per return function inst.
+			ret = (section->size >= R_BIN_RANDOMDATA_RETGUARD_SZ);
+			break;
 		}
-		r_list_free (sections_list);
 	}
+	r_list_free (sections_list);
 	return ret;
 }
 
