@@ -139,6 +139,8 @@ endif
 
 
 # handle sdb dependency
+# NOTE: copying most of the stuff from sdb to here for the moment, since we
+# should use subpackages to handle this well
 sdb_files = [
   'sdb/src/array.c',
   'sdb/src/base64.c',
@@ -174,6 +176,32 @@ sdb_dep = declare_dependency(
   link_with: libr2sdb,
   include_directories: sdb_inc
 )
+
+sdb_platform_inc = []
+if host_machine.system() == 'windows'
+  sdb_platform_inc = include_directories('sdb/msvc')
+endif
+
+# Create sdb_version.h
+sdb_version = '1.2.0'
+run_command(py3_exe, '-c', 'with open("sdb/src/sdb_version.h", "w") as f: f.write("#define SDB_VERSION \"' + sdb_version + '\"")')
+
+sdb_exe = executable('sdb', 'sdb/src/main.c',
+  include_directories: [
+    sdb_platform_inc,
+    include_directories(['sdb/src'])
+  ],
+  link_with: [libr2sdb],
+  implicit_include_directories: false
+)
+
+sdb_gen_cmd = [
+  py3_exe,
+  '-c',
+  'from sys import argv; __import__("os").system("@0@ %s = <%s" % (argv[1], argv[2]))'.format(sdb_exe.full_path()),
+  '@OUTPUT@',
+  '@INPUT@'
+]
 
 
 # handle bochs dependency
