@@ -1485,13 +1485,20 @@ static void parse_class(RBinFile *binfile, RBinDexObj *bin, RBinDexClass *c,
 	    bin->header.data_offset < c->interfaces_offset &&
 	    c->interfaces_offset <
 		    bin->header.data_offset + bin->header.data_size) {
-		p = r_buf_get_at (binfile->buf, c->interfaces_offset, NULL);
+		int left;
+		p = r_buf_get_at (binfile->buf, c->interfaces_offset, &left);
+		if (left < 4) {
+			return;
+		}
 		int types_list_size = r_read_le32 (p);
 		if (types_list_size < 0 || types_list_size >= bin->header.types_size ) {
 			return;
 		}
 		for (z = 0; z < types_list_size; z++) {
-			int t = r_read_le16 (p + 4 + z * 2);
+			ut16 le16;
+			ut32 off = c->interfaces_offset + 4 + (z * 2);
+			r_buf_read_at (binfile->buf, off, (ut8*)&le16, sizeof (le16));
+			int t = r_read_le16 (&le16);
 			if (t > 0 && t < bin->header.types_size ) {
 				int tid = bin->types[t].descriptor_id;
 				if (dexdump) {
