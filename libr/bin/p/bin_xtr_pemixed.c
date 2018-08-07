@@ -69,12 +69,12 @@ static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
 }
 
 //implement this later
-static void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct Pe_32_r_bin_pemixed_obj_t* pe_bin){
+static void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, void *foo) {// struct Pe_32_r_bin_pemixed_obj_t* pe_bin){
 	meta->arch = NULL;
-	meta->bits = NULL;
+	meta->bits = 0;
 	meta->machine = NULL;
 	meta->type = NULL;
-	meta->libname =NULL;
+	meta->libname = NULL;
 	meta->xtr_type = "net";
 	//strcpy (meta->xtr_type, "net");
 }

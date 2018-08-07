@@ -18,7 +18,7 @@ struct r_bin_pemixed_obj_t {
 	struct r_buf_t* b;
 };
 
-static int r_bin_pemixed_init(struct r_bin_pemixed_obj_t* bin, struct PE_(r_bin_pe_obj_t)* pe_bin);
+// static int r_bin_pemixed_init(struct r_bin_pemixed_obj_t* bin, struct PE_(r_bin_pe_obj_t)* pe_bin);
 struct PE_(r_bin_pe_obj_t)* r_bin_pemixed_init_dos(struct PE_(r_bin_pe_obj_t)* pe_bin);
 struct PE_(r_bin_pe_obj_t)* r_bin_pemixed_init_native(struct PE_(r_bin_pe_obj_t)* pe_bin);
 struct PE_(r_bin_pe_obj_t)* r_bin_pemixed_extract(struct r_bin_pemixed_obj_t* bin, int sub_bin);
