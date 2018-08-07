@@ -118,7 +118,7 @@ R_API bool r_sandbox_enable (bool e) {
 	}
 	enabled = e;
 #if LIBC_HAVE_PLEDGE
-	if (enabled && pledge ("stdio rpath tty prot_exec", NULL) == -1) {
+	if (enabled && pledge ("stdio rpath tty prot_exec inet", NULL) == -1) {
 		eprintf ("sandbox: pledge call failed\n");
 		return false;
 	}
