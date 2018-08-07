@@ -1846,7 +1846,6 @@ static void ds_show_comments_right(RDisasmState *ds) {
 			}
 			free (p);
 		} else {
-			/*ds->comment = r_str_prefix_all (ds->comment, "; ");*/
 			if (ds->show_comment_right) {
 				_ALIGN;
 			} else {
