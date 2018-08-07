@@ -981,10 +981,16 @@ int set_bp(libgdbr_t *g, ut64 address, const char *conditions, enum Breakpoint t
 			"%s,%"PFMT64x ",%d", CMD_HBP, address, sizebp);
 		break;
 	case WRITE_WATCHPOINT:
+		ret = snprintf (tmp, sizeof (tmp) - 1,
+			"%s,%"PFMT64x ",%d", CMD_HWW, address, sizebp);
 		break;
 	case READ_WATCHPOINT:
+		ret = snprintf (tmp, sizeof (tmp) - 1,
+			"%s,%"PFMT64x ",%d", CMD_HWR, address, sizebp);
 		break;
 	case ACCESS_WATCHPOINT:
+		ret = snprintf (tmp, sizeof (tmp) - 1,
+			"%s,%"PFMT64x ",%d", CMD_HWA, address, sizebp);
 		break;
 	default:
 		break;
@@ -1012,6 +1018,18 @@ int gdbr_set_hwbp(libgdbr_t *g, ut64 address, const char *conditions, int sizebp
 	return set_bp (g, address, conditions, HARDWARE_BREAKPOINT, sizebp);
 }
 
+int gdbr_set_hww(libgdbr_t *g, ut64 address, const char *conditions, int sizebp) {
+	return set_bp (g, address, conditions, WRITE_WATCHPOINT, sizebp);
+}
+
+int gdbr_set_hwr(libgdbr_t *g, ut64 address, const char *conditions, int sizebp) {
+	return set_bp (g, address, conditions, READ_WATCHPOINT, sizebp);
+}
+
+int gdbr_set_hwa(libgdbr_t *g, ut64 address, const char *conditions, int sizebp) {
+	return set_bp (g, address, conditions, ACCESS_WATCHPOINT, sizebp);
+}
+
 int gdbr_remove_bp(libgdbr_t *g, ut64 address, int sizebp) {
 	return remove_bp (g, address, BREAKPOINT, sizebp);
 }
@@ -1019,6 +1037,19 @@ int gdbr_remove_bp(libgdbr_t *g, ut64 address, int sizebp) {
 int gdbr_remove_hwbp(libgdbr_t *g, ut64 address, int sizebp) {
 	return remove_bp (g, address, HARDWARE_BREAKPOINT, sizebp);
 }
+
+int gdbr_remove_hww(libgdbr_t *g, ut64 address, int sizebp) {
+	return remove_bp (g, address, WRITE_WATCHPOINT, sizebp);
+}
+
+int gdbr_remove_hwr(libgdbr_t *g, ut64 address, int sizebp) {
+	return remove_bp (g, address, READ_WATCHPOINT, sizebp);
+}
+
+int gdbr_remove_hwa(libgdbr_t *g, ut64 address, int sizebp) {
+	return remove_bp (g, address, ACCESS_WATCHPOINT, sizebp);
+}
+
 
 int remove_bp(libgdbr_t *g, ut64 address, enum Breakpoint type, int sizebp) {
 	char tmp[255] = {0};
@@ -1034,10 +1065,13 @@ int remove_bp(libgdbr_t *g, ut64 address, enum Breakpoint type, int sizebp) {
 		ret = snprintf (tmp, sizeof (tmp) - 1, "%s,%"PFMT64x ",%d", CMD_RHBP, address, sizebp);
 		break;
 	case WRITE_WATCHPOINT:
+		ret = snprintf (tmp, sizeof (tmp) - 1, "%s,%"PFMT64x ",%d", CMD_RHWW, address, sizebp);
 		break;
 	case READ_WATCHPOINT:
+		ret = snprintf (tmp, sizeof (tmp) - 1, "%s,%"PFMT64x ",%d", CMD_RHWR, address, sizebp);
 		break;
 	case ACCESS_WATCHPOINT:
+		ret = snprintf (tmp, sizeof (tmp) - 1, "%s,%"PFMT64x ",%d", CMD_RHWA, address, sizebp);
 		break;
 	default:
 		break;
