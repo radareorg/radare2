@@ -1034,6 +1034,23 @@ static bool has_canary(RBinFile *bf) {
 	return ret;
 }
 
+static int has_retguard(RBinFile *bf) {
+	int ret = -1;
+	RList* sections_list = sections (bf);
+	RListIter *iter;
+	RBinSection *section;
+	r_list_foreach (sections_list, iter, section) {
+		# define R_BIN_RANDOMDATA_RETGUARD_SZ 48
+		if (!strcmp (section->name, ".openbsd.randomdata")) {
+			// The retguard cookie adds 8 per return function inst.
+			ret = (section->size >= R_BIN_RANDOMDATA_RETGUARD_SZ);
+			break;
+		}
+	}
+	r_list_free (sections_list);
+	return ret;
+}
+
 static RBinInfo* info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
 	char *str;
@@ -1060,6 +1077,7 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->has_pi = (strstr (str, "DYN"))? 1: 0;
 	ret->has_lit = true;
 	ret->has_canary = has_canary (bf);
+	ret->has_retguard = has_retguard (bf);
 	if (!(str = Elf_(r_bin_elf_get_elf_class) (obj))) {
 		free (ret);
 		return NULL;

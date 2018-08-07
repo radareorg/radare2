@@ -203,6 +203,7 @@ typedef struct r_bin_info_t {
 	int has_va;
 	int has_pi; // pic/pie
 	int has_canary;
+	int has_retguard;
 	int has_crypto;
 	int has_nx;
 	int big_endian;
