@@ -185,9 +185,9 @@ static int main_help(int line) {
 		" file         ${filename}.r2\n"
 		"Plugins:\n"
 		" binrc        " R_JOIN_4_PATHS ("~", R2_HOME_BINRC, "bin-<format>",  "") " (elf, elf64, mach0, ..)\n"
-		" USER_PLUGINS " R_JOIN_2_PATHS ("~", R2_HOME_PLUGINS) "\n"
-		" LIBR_PLUGINS " R_JOIN_2_PATHS ("%s", R2_PLUGINS) "\n"
-		" USER_ZIGNS   " R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS) "\n"
+		" R2_USER_PLUGINS " R_JOIN_2_PATHS ("~", R2_HOME_PLUGINS) "\n"
+		" R2_LIBR_PLUGINS " R_JOIN_2_PATHS ("%s", R2_PLUGINS) "\n"
+		" R2_USER_ZIGNS " R_JOIN_2_PATHS ("~", R2_HOME_ZIGNS) "\n"
 		"Environment:\n"
 		" R2_RDATAHOME %s\n" // TODO: rename to RHOME R2HOME?
 		" RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
@@ -228,9 +228,9 @@ static int main_print_var(const char *var_name) {
 		{ "R2_RCONFIGHOME", confighome },
 		{ "R2_RDATAHOME", datahome },
 		{ "R2_RCACHEHOME", cachehome },
-		{ "LIBR_PLUGINS", plugins },
-		{ "USER_PLUGINS", homeplugins },
-		{ "USER_ZIGNS", homezigns },
+		{ "R2_LIBR_PLUGINS", plugins },
+		{ "R2_USER_PLUGINS", homeplugins },
+		{ "R2_USER_ZIGNS", homezigns },
 		{ NULL, NULL }
 	};
 	if (var_name) {

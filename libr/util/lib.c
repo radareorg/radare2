@@ -341,9 +341,9 @@ R_API int r_lib_opendir(RLib *lib, const char *path) {
 	struct dirent *de;
 	DIR *dh;
 #endif
-#ifdef LIBR_PLUGINS
+#ifdef R2_LIBR_PLUGINS
 	if (!path) {
-		path = LIBR_PLUGINS;
+		path = R2_LIBR_PLUGINS;
 	}
 #endif
 	if (!path) {
