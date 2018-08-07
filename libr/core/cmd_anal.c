@@ -1205,6 +1205,10 @@ static void cmd_anal_trampoline(RCore *core, const char *input) {
 	}
 }
 
+static const char *syscallNumber(int n) {
+	return sdb_fmt (n > 1000 ? "0x%x" : "%d", n);
+}
+
 R_API char *cmd_syscall_dostr(RCore *core, int n) {
 	char *res = NULL;
 	int i;
@@ -1218,10 +1222,11 @@ R_API char *cmd_syscall_dostr(RCore *core, int n) {
 	}
 	RSyscallItem *item = r_syscall_get (core->anal->syscall, n, -1);
 	if (!item) {
-		res = r_str_appendf (res, "%d = unknown ()", n);
+		res = r_str_appendf (res, "%s = unknown ()", syscallNumber (n));
 		return res;
 	}
-	res = r_str_appendf (res, "%d = %s (", item->num, item->name);
+
+	res = r_str_appendf (res, "%s = %s (", syscallNumber (item->num), item->name);
 	// TODO: move this to r_syscall
 	//TODO replace the hardcoded CC with the sdb ones
 	for (i = 0; i < item->args; i++) {
@@ -5086,13 +5091,14 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 			if (input[2] == ' ') {
 				if (!isalpha (input[3]) && (n = r_num_math (num, input + 3)) >= 0 ) {
 					si = r_syscall_get (core->anal->syscall, n, -1);
-					if (si)
-						r_cons_printf (".equ SYS_%s %d\n", si->name, n);
+					if (si) {
+						r_cons_printf (".equ SYS_%s %s\n", si->name, syscallNumber (n));
+					}
 					else eprintf ("Unknown syscall number\n");
 				} else {
 					n = r_syscall_get_num (core->anal->syscall, input + 3);
 					if (n != -1) {
-						r_cons_printf (".equ SYS_%s %d\n", input + 3, n);
+						r_cons_printf (".equ SYS_%s %s\n", input + 3, syscallNumber (n));
 					} else {
 						eprintf ("Unknown syscall name\n");
 					}
@@ -5100,8 +5106,8 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 			} else {
 				list = r_syscall_list (core->anal->syscall);
 				r_list_foreach (list, iter, si) {
-					r_cons_printf (".equ SYS_%s %d\n",
-						si->name, (ut32)si->num);
+					r_cons_printf (".equ SYS_%s %s\n",
+						si->name, syscallNumber (si->num));
 				}
 				r_list_free (list);
 			}
@@ -5109,13 +5115,14 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 			if (input[1] == ' ') {
 				if (!isalpha (input[2]) && (n = r_num_math (num, input + 2)) >= 0 ) {
 					si = r_syscall_get (core->anal->syscall, n, -1);
-					if (si)
-						r_cons_printf ("#define SYS_%s %d\n", si->name, n);
+					if (si) {
+						r_cons_printf ("#define SYS_%s %s\n", si->name, syscallNumber (n));
+					}
 					else eprintf ("Unknown syscall number\n");
 				} else {
 					n = r_syscall_get_num (core->anal->syscall, input + 2);
 					if (n != -1) {
-						r_cons_printf ("#define SYS_%s %d\n", input + 2, n);
+						r_cons_printf ("#define SYS_%s %s\n", input + 2, syscallNumber (n));
 					} else {
 						eprintf ("Unknown syscall name\n");
 					}
@@ -5124,7 +5131,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 				list = r_syscall_list (core->anal->syscall);
 				r_list_foreach (list, iter, si) {
 					r_cons_printf ("#define SYS_%s %d\n",
-						si->name, (ut32)si->num);
+						si->name, syscallNumber (si->num));
 				}
 				r_list_free (list);
 			}
@@ -5143,7 +5150,7 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 			} else {
 				n = r_syscall_get_num (core->anal->syscall, input + 2);
 				if (n != -1) {
-					r_cons_printf ("%d\n", n);
+					r_cons_printf ("%s\n", syscallNumber (n));
 				} else {
 					eprintf ("Unknown syscall name\n");
 				}
@@ -5151,8 +5158,8 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		} else {
 			list = r_syscall_list (core->anal->syscall);
 			r_list_foreach (list, iter, si) {
-				r_cons_printf ("%s = 0x%02x.%u\n",
-					si->name, (ut32)si->swi, (ut32)si->num);
+				r_cons_printf ("%s = 0x%02x.%s\n",
+					si->name, si->swi, syscallNumber (si->num));
 			}
 			r_list_free (list);
 		}
