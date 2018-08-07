@@ -3772,7 +3772,9 @@ static void ds_print_relocs(RDisasmState *ds) {
 		if (rel->import) {
 			r_cons_printf ("; RELOC %d %s", rel->type, rel->import->name);
 		} else if (rel->symbol) {
-			r_cons_printf ("; RELOC %d %s", rel->type, rel->symbol->name);
+			r_cons_printf ("; RELOC %d %s @ 0x%08" PFMT64x " + 0x%" PFMT64x,
+					rel->type, rel->symbol->name,
+					rel->symbol->vaddr, rel->addend);
 		} else {
 			r_cons_printf ("; RELOC %d ", rel->type);
 		}
