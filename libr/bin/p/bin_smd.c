@@ -138,36 +138,34 @@ static void showstr(const char *str, const ut8 *s, int len) {
 }
 
 static RList *symbols(RBinFile *bf) {
-	ut32 *vtable = (ut32 *) bf->buf->buf;
 	RList *ret = NULL;
-	const char *name;
-	SMD_Header *hdr;
+	const char *name = NULL;
 	int i;
 
-	if (!(ret = r_list_new ())) {
+	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
-	ret->free = free;
-	// TODO: store all this stuff in SDB
-	SMD_Header shdr = {{0}};
-	hdr = &shdr;
-	int left = r_buf_read_at (bf->buf, 0x100, (ut8*)&shdr, sizeof (shdr));
+	SMD_Header hdr;
+	int left = r_buf_read_at (bf->buf, 0x100, (ut8*)&hdr, sizeof (hdr));
 	if (left < sizeof (SMD_Header)) {
 		return NULL;
 	}
-	addsym (ret, "rom_start", r_read_be32 (&hdr->RomStart));
-	addsym (ret, "rom_end", r_read_be32 (&hdr->RomEnd));
-	addsym (ret, "ram_start", r_read_be32 (&hdr->RamStart));
-	addsym (ret, "ram_end", r_read_be32 (&hdr->RamEnd));
-	showstr ("Copyright", hdr->CopyRights, 32);
-	showstr ("DomesticName", hdr->DomesticName, 48);
-	showstr ("OverseasName", hdr->OverseasName, 48);
-	showstr ("ProductCode", hdr->ProductCode, 14);
-	eprintf ("Checksum: 0x%04x\n", (ut32) hdr->CheckSum);
-	showstr ("Peripherials", hdr->Peripherials, 16);
-	showstr ("SramCode", hdr->SramCode, 12);
-	showstr ("ModemCode", hdr->ModemCode, 12);
-	showstr ("CountryCode", hdr->CountryCode, 16);
+	// TODO: store all this stuff in SDB
+	addsym (ret, "rom_start", r_read_be32 (&hdr.RomStart));
+	addsym (ret, "rom_end", r_read_be32 (&hdr.RomEnd));
+	addsym (ret, "ram_start", r_read_be32 (&hdr.RamStart));
+	addsym (ret, "ram_end", r_read_be32 (&hdr.RamEnd));
+	showstr ("Copyright", hdr.CopyRights, 32);
+	showstr ("DomesticName", hdr.DomesticName, 48);
+	showstr ("OverseasName", hdr.OverseasName, 48);
+	showstr ("ProductCode", hdr.ProductCode, 14);
+	eprintf ("Checksum: 0x%04x\n", (ut32) hdr.CheckSum);
+	showstr ("Peripherials", hdr.Peripherials, 16);
+	showstr ("SramCode", hdr.SramCode, 12);
+	showstr ("ModemCode", hdr.ModemCode, 12);
+	showstr ("CountryCode", hdr.CountryCode, 16);
+	ut32 vtable[64];
+	r_buf_read_at (bf->buf, 0, (ut8*)&vtable, sizeof (ut32) * 64);
 	/* parse vtable */
 	for (i = 0; i < 64; i++) {
 		switch (i) {
