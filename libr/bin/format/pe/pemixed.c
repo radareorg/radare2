@@ -90,16 +90,16 @@ struct PE_(r_bin_pe_obj_t)* r_bin_pemixed_init_native(struct PE_(r_bin_pe_obj_t)
 		// can't call PE_(r_bin_pe_free) since this will free the underlying pe_bin
 		// object which we may need for later
 		// PE_(r_bin_pe_free) (sub_bin_native);
-		free (sub_bin_native);
 		r_buf_free (sub_bin_native->b);
+		free (sub_bin_native);
 		return NULL;
 	}
 
 	if (r_buf_write_at (sub_bin_native->b, dotnet_offset, zero_out, sizeof (PE_(image_data_directory))) < -1) {
 		eprintf ("Zeroing out dotnet offset failed\n");
+		r_buf_free (sub_bin_native->b);
 		free (sub_bin_native);
 		free (zero_out);
-		r_buf_free (sub_bin_native->b);
 		return NULL;
 	}
 
