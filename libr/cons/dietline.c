@@ -442,7 +442,7 @@ R_API int r_line_hist_chop(const char *file, int limit) {
 	return 0;
 }
 
-static void draw_selection_widget() {
+static void selection_widget_draw() {
 	RCons *cons = r_cons_singleton ();
 	RSelWidget *sel_widget = I.sel_widget;
 	int y, pos_y = cons->rows, pos_x = r_str_ansi_len (I.prompt);
@@ -479,19 +479,28 @@ static void draw_selection_widget() {
 	r_cons_flush ();
 }
 
-static void selection_widget_up() {
+static void selection_widget_up(int steps) {
 	RSelWidget *sel_widget = I.sel_widget;
-	if (sel_widget && sel_widget->selection < sel_widget->options_len - 1) {
-		sel_widget->selection++;
-		sel_widget->scroll = R_MIN (sel_widget->scroll + 1, R_SELWIDGET_MAXH - 1);
+	if (sel_widget) {
+		int height = R_MIN (sel_widget->h, R_SELWIDGET_MAXH - 1);
+		sel_widget->selection = R_MIN (sel_widget->selection + steps, sel_widget->options_len - 1);
+		if (steps == 1) {
+			sel_widget->scroll = R_MIN (sel_widget->scroll + 1, R_SELWIDGET_MAXH - 1);
+		} else if (sel_widget->selection + (height - sel_widget->scroll) > sel_widget->options_len - 1) {
+			sel_widget->scroll = height - (sel_widget->options_len - 1 - sel_widget->selection);
+		}
 	}
 }
 
-static void selection_widget_down() {
+static void selection_widget_down(int steps) {
 	RSelWidget *sel_widget = I.sel_widget;
-	if (sel_widget && sel_widget->selection > 0) {
-		sel_widget->selection--;
-		sel_widget->scroll = R_MAX (sel_widget->scroll - 1, 0);
+	if (sel_widget) {
+		sel_widget->selection = R_MAX (sel_widget->selection - steps, 0);
+		if (steps == 1) {
+			sel_widget->scroll = R_MAX (sel_widget->scroll - 1, 0);
+		} else if (sel_widget->selection - sel_widget->scroll <= 0) {
+			sel_widget->scroll = sel_widget->selection;
+		}
 	}
 }
 
@@ -506,7 +515,7 @@ static void selection_widget_erase() {
 	if (sel_widget) {
 		sel_widget->options_len = 0;
 		sel_widget->selection = -1;
-		draw_selection_widget ();
+		selection_widget_draw ();
 		R_FREE (I.sel_widget);
 		RCons *cons = r_cons_singleton ();
 		if (cons->event_resize && cons->event_data) {
@@ -542,7 +551,7 @@ static void selection_widget_update() {
 	I.sel_widget->options_len = I.completion.argc;
 	I.sel_widget->options = I.completion.argv;
 	I.sel_widget->h = R_MAX (I.sel_widget->h, I.completion.argc);
-	draw_selection_widget ();
+	selection_widget_draw ();
 	r_cons_flush ();
 	return;
 }
@@ -753,8 +762,8 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			break;
 		case 38:	// up arrow
 			if (I.sel_widget) {
-				selection_widget_up ();
-				draw_selection_widget ();
+				selection_widget_up (1);
+				selection_widget_draw ();
 			} else if (gcomp) {
 				gcomp_idx++;
 			} else if (r_line_hist_up () == -1) {
@@ -768,8 +777,8 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			break;
 		case 40:// down arrow
 			if (I.sel_widget) {
-				selection_widget_up ();
-				draw_selection_widget ();
+				selection_widget_up (1);
+				selection_widget_draw ();
 			} else if (gcomp) {
 				if (gcomp_idx > 0) {
 					gcomp_idx--;
@@ -958,8 +967,8 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			break;
 		case 14:// ^n
 			if (I.sel_widget) {
-				selection_widget_down ();
-				draw_selection_widget ();
+				selection_widget_down (1);
+				selection_widget_draw ();
 			} else if (gcomp) {
 				if (gcomp_idx > 0) {
 					gcomp_idx--;
@@ -970,8 +979,8 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 			break;
 		case 16:// ^p
 			if (I.sel_widget) {
-				selection_widget_down ();
-				draw_selection_widget ();
+				selection_widget_down (1);
+				selection_widget_draw ();
 			} else if (gcomp) {
 				gcomp_idx++;
 			} else {
@@ -1191,6 +1200,7 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			printf ("\r\x1b[2K\r");	// %*c\r", columns, ' ');
 		}
 #endif
+
 		switch (*buf) {
 		case 0:	// control-space
 			/* ignore atm */
@@ -1343,8 +1353,8 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			break;
 		case 14:// ^n
 			if (I.sel_widget) {
-				selection_widget_down ();
-				draw_selection_widget ();
+				selection_widget_down (1);
+				selection_widget_draw ();
 			} else if (gcomp) {
 				if (gcomp_idx > 0) {
 					gcomp_idx--;
@@ -1355,8 +1365,8 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			break;
 		case 16:// ^p
 			if (I.sel_widget) {
-				selection_widget_up ();
-				draw_selection_widget ();
+				selection_widget_up (1);
+				selection_widget_draw ();
 			} else if (gcomp) {
 				gcomp_idx++;
 			} else {
@@ -1428,11 +1438,25 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 							return NULL;
 						}
 						break;
+					case '5': // pag up
+						buf[1] = r_cons_readchar ();
+						if (I.sel_widget) {
+							selection_widget_up (R_MIN (I.sel_widget->h, R_SELWIDGET_MAXH));
+							selection_widget_draw ();
+						}
+						break;
+					case '6': // pag down
+						buf[1] = r_cons_readchar ();
+						if (I.sel_widget) {
+							selection_widget_down (R_MIN (I.sel_widget->h, R_SELWIDGET_MAXH));
+							selection_widget_draw ();
+						}
+						break;
 					/* arrows */
 					case 'A':	// up arrow
 						if (I.sel_widget) {
-							selection_widget_up ();
-							draw_selection_widget ();
+							selection_widget_up (1);
+							selection_widget_draw ();
 						} else if (gcomp) {
 							gcomp_idx++;
 						} else if (r_line_hist_up () == -1) {
@@ -1442,8 +1466,8 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 						break;
 					case 'B':	// down arrow
 						if (I.sel_widget) {
-							selection_widget_down ();
-							draw_selection_widget ();
+							selection_widget_down (1);
+							selection_widget_draw ();
 						} else if (gcomp) {
 							if (gcomp_idx > 0) {
 								gcomp_idx--;
@@ -1539,12 +1563,22 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 					case 0x37:	// HOME xrvt-unicode
 						r_cons_readchar ();
 					case 0x48:	// HOME
+						if (I.sel_widget) {
+							selection_widget_up (I.sel_widget->options_len - 1);
+							selection_widget_draw ();
+							break;
+						}
 						I.buffer.index = 0;
 						break;
 					case 0x34:	// END
 					case 0x38:	// END xrvt-unicode
 						r_cons_readchar ();
 					case 0x46:	// END
+						if (I.sel_widget) {
+							selection_widget_down (I.sel_widget->options_len - 1);
+							selection_widget_draw ();
+							break;
+						}
 						I.buffer.index = I.buffer.length;
 						break;
 					}
