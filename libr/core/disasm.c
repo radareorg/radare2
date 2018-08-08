@@ -1584,18 +1584,16 @@ static void ds_show_functions(RDisasmState *ds) {
 		char spaces[32];
 		RAnalVar *var;
 		RListIter *iter;
-		char *fname = fcn_name;
+		char *fname = NULL;
+		Sdb *TDB = core->anal->sdb_types;
 		RList *args = r_anal_var_list (core->anal, f, 'b');
 		RList *regs = r_anal_var_list (core->anal, f, 'r');
 		RList *sp_vars = r_anal_var_list (core->anal, f, 's');
 		r_list_sort (args, (RListComparator)var_comparator);
 		r_list_sort (regs, (RListComparator)var_comparator);
 		r_list_sort (sp_vars, (RListComparator)var_comparator);
-		if (fname) {
-			char *p = strchr(fname, '.');
-			if (p) {
-				fname = p + 1;
-			}
+		if (fcn_name) {
+			fname = r_type_func_guess (TDB, fcn_name);
 		}
 		if (call) {
 			ds_begin_json_line (ds);
@@ -1604,8 +1602,21 @@ static void ds_show_functions(RDisasmState *ds) {
 			r_cons_printf ("%s %s %s%s (",
 				COLOR_RESET (ds), COLOR (ds, color_fname),
 				fcn_name, COLOR_RESET (ds));
-			if (fname && !strcmp (fname, "main")) {
-				r_cons_printf ("int argc, char **argv, char **envp");
+			if (fname && r_type_func_exist (TDB, fname)) {
+				int i, argc = r_type_func_args_count (TDB, fname);
+				bool comma = true;
+				// This avoids false positives present in argument recovery
+				// and straight away print arguments fetched from types db
+				for (i = 0; i < argc; i++) {
+					const char *type = r_type_func_args_type (TDB, fname, i);
+					const char *name = r_type_func_args_name (TDB, fname, i);
+					if (i == argc - 1) {
+						comma = false;
+					}
+					int len = strlen(type);
+					r_cons_printf ("%s%s%s%s", type, type[len - 1] == '*' ? "" : " ",
+							name, comma?", ":"");
+				}
 				goto beach;
 			}
 			bool comma = true;
@@ -1644,6 +1655,7 @@ static void ds_show_functions(RDisasmState *ds) {
 				}
 			}
 beach:
+			free (fname);
 			r_cons_printf (");");
 			ds_newline (ds);
 		}

@@ -670,7 +670,9 @@ beach:
 R_API void extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count) {
 	const char *opsreg = NULL;
 	const char *opdreg = NULL;
-	int i;
+	Sdb *TDB = anal->sdb_types;
+	char *fname = fcn->name;
+	int i, argc = 0;
 
 	if (!anal || !op || !fcn) {
 		return;
@@ -685,6 +687,13 @@ R_API void extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_s
 	if (op->dst) {
 		opdreg = get_regname (anal, op->dst);
 	}
+	if (fname) {
+		char *tmp = strchr (fname, '.');
+		if (tmp) {
+			fname = tmp + 1;
+		}
+		argc = r_type_func_args_count (TDB, fname);
+	}
 	for (i = 0; i < max_count; i++) {
 		const char *regname = r_anal_cc_arg (anal, fcn->cc, i + 1);
 		// reg_set enusres we only extract first-read argument reg
@@ -692,35 +701,19 @@ R_API void extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_s
 			bool cond = (op->type  == R_ANAL_OP_TYPE_CMP) && opdreg &&
 				!strcmp (opdreg, regname);
 			if ((op->src[0] && opsreg && !strcmp (opsreg, regname)) || cond) {
-				const char *vname;
+				const char *vname = NULL;
 				const char *type = "int";
-				char *fname = fcn->name;
 				char *name = NULL;
 				int delta;
 				RRegItem *ri = r_reg_get (anal->reg, regname, -1);
 				if (ri) {
 					delta = ri->index;
 				}
-				if (fname) {
-					char *tmp = strchr (fname, '.');
-					if (tmp) {
-						fname = tmp + 1;
-					}
+				if ((i < argc) && fname) {
+					type = r_type_func_args_type (TDB, fname, i);
+					vname = r_type_func_args_name (TDB, fname, i);
 				}
-				if ((i < 3) && fname && !strcmp(fname, "main")) {
-					switch(i) {
-					case 0:
-						vname = "argc";
-						break;
-					case 1:
-						vname = "argv";
-						type = "char **";
-						break;
-					case 2:
-						vname = "envp";
-						type = "char **";
-					}
-				} else {
+				if (!vname) {
 					name = r_str_newf ("%s%d", "arg", i + 1);
 					vname = name;
 				}
