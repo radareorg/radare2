@@ -80,7 +80,7 @@ files = [
   'arch/arm/gnu/floatformat.c',
   'arch/arm/winedbg/be_arm.c',
   #'arch/avr/avr_disasm.c',
-  'arch/avr/disasm.c',
+  #'arch/avr/disasm.c',
   'arch/cr16/cr16_disas.c',
   'arch/cris/gnu/cris-dis.c',
   'arch/cris/gnu/cris-opc.c',

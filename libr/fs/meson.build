@@ -23,7 +23,7 @@ files = [
   'p/fs_ufs.c',
   'p/fs_ufs2.c',
   'p/fs_xfs.c',
-  'p/part_dos.c'
+  #'p/part_dos.c'
 ]
 
 r_fs = library('r_fs', files,
