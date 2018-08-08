@@ -670,11 +670,11 @@ Commands:
  cache                       cache contents of r2 -H to make r2pm r2-independent
 Environment:
  SUDO=sudo                    use this tool as sudo
- R2PM_PLUGDIR=~/.local/share/radare2/plugins   # default value, home-install for plugins
- R2PM_BINDIR=~/.local/share/radare2/prefix/bin # bindir in r2's PATH
- R2PM_PLUGDIR=/usr/lib/radare2/last/           # for system-wide plugin installs
- R2PM_DBDIR=~/.local/share/radare2/r2pm/db     # location of the db
- R2PM_GITDIR=~/.local/share/radare2/r2pm/git   # cloned git repositories
+ R2PM_PLUGDIR=${R2PM_PLUGDIR}
+ R2PM_BINDIR=${R2PM_BINDIR}
+ R2PM_PLUGDIR=${R2PM_PLUGDIR}
+ R2PM_DBDIR=${R2PM_DBDIR}
+ R2PM_GITDIR=${R2PM_GITDIR}
 HELP
 	;;
 esac
