@@ -670,7 +670,7 @@ beach:
 R_API void extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count) {
 	const char *opsreg = NULL;
 	const char *opdreg = NULL;
-	int i, delta = 0;
+	int i;
 
 	if (!anal || !op || !fcn) {
 		return;
@@ -685,26 +685,53 @@ R_API void extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_s
 	if (op->dst) {
 		opdreg = get_regname (anal, op->dst);
 	}
-	if (opsreg) {
-		RRegItem *ri = r_reg_get (anal->reg, opsreg, -1);
-		if (ri) {
-			delta = ri->index;
-		}
-	}
 	for (i = 0; i < max_count; i++) {
 		const char *regname = r_anal_cc_arg (anal, fcn->cc, i + 1);
 		// reg_set enusres we only extract first-read argument reg
 		if (!reg_set [i] && regname) {
-			if (op->src[0] && opsreg && !strcmp (opsreg, regname)) {
-				char *vname = r_str_newf ("%s%d", "arg", i + 1);
-				r_anal_var_add (anal, fcn->addr, 1, delta, 'r', NULL, anal->bits / 8,
+			bool cond = (op->type  == R_ANAL_OP_TYPE_CMP) && opdreg &&
+				!strcmp (opdreg, regname);
+			if ((op->src[0] && opsreg && !strcmp (opsreg, regname)) || cond) {
+				const char *vname;
+				const char *type = "int";
+				char *fname = fcn->name;
+				char *name = NULL;
+				int delta;
+				RRegItem *ri = r_reg_get (anal->reg, regname, -1);
+				if (ri) {
+					delta = ri->index;
+				}
+				if (fname) {
+					char *tmp = strchr (fname, '.');
+					if (tmp) {
+						fname = tmp + 1;
+					}
+				}
+				if ((i < 3) && fname && !strcmp(fname, "main")) {
+					switch(i) {
+					case 0:
+						vname = "argc";
+						break;
+					case 1:
+						vname = "argv";
+						type = "char **";
+						break;
+					case 2:
+						vname = "envp";
+						type = "char **";
+					}
+				} else {
+					name = r_str_newf ("%s%d", "arg", i + 1);
+					vname = name;
+				}
+				r_anal_var_add (anal, fcn->addr, 1, delta, R_ANAL_VAR_KIND_REG, type, anal->bits / 8,
 						1, vname);
-				if (op->var && op->var->kind != 'r') {
+				if (op->var && op->var->kind != R_ANAL_VAR_KIND_REG) {
 					r_anal_var_link (anal, op->addr, op->var);
 				}
-				r_anal_var_access (anal, fcn->addr, 'r', 1, delta, 0, op->addr);
+				r_anal_var_access (anal, fcn->addr, R_ANAL_VAR_KIND_REG, 1, delta, 0, op->addr);
 				r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, vname);
-				free (vname);
+				free (name);
 			}
 			if (op->dst && opdreg && !strcmp (opdreg, regname)) {
 				reg_set [i] = 1;

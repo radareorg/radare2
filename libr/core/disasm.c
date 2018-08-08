@@ -1584,12 +1584,19 @@ static void ds_show_functions(RDisasmState *ds) {
 		char spaces[32];
 		RAnalVar *var;
 		RListIter *iter;
+		char *fname = fcn_name;
 		RList *args = r_anal_var_list (core->anal, f, 'b');
 		RList *regs = r_anal_var_list (core->anal, f, 'r');
 		RList *sp_vars = r_anal_var_list (core->anal, f, 's');
 		r_list_sort (args, (RListComparator)var_comparator);
 		r_list_sort (regs, (RListComparator)var_comparator);
 		r_list_sort (sp_vars, (RListComparator)var_comparator);
+		if (fname) {
+			char *p = strchr(fname, '.');
+			if (p) {
+				fname = p + 1;
+			}
+		}
 		if (call) {
 			ds_begin_json_line (ds);
 			r_cons_print (COLOR (ds, color_fline));
@@ -1597,6 +1604,10 @@ static void ds_show_functions(RDisasmState *ds) {
 			r_cons_printf ("%s %s %s%s (",
 				COLOR_RESET (ds), COLOR (ds, color_fname),
 				fcn_name, COLOR_RESET (ds));
+			if (fname && !strcmp (fname, "main")) {
+				r_cons_printf ("int argc, char **argv, char **envp");
+				goto beach;
+			}
 			bool comma = true;
 			bool arg_bp = false;
 			int tmp_len;
@@ -1632,6 +1643,7 @@ static void ds_show_functions(RDisasmState *ds) {
 						var->name, iter->n ? ", " : "");
 				}
 			}
+beach:
 			r_cons_printf (");");
 			ds_newline (ds);
 		}
