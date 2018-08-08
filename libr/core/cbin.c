@@ -502,7 +502,7 @@ R_API void r_core_anal_type_init(RCore *core) {
 	const char *dir_prefix = r_config_get (core->config, "dir.prefix");
 	int bits = core->assembler->bits;
 	types = core->anal->sdb_types;
- 	// make sure they are empty this is initializing
+	// make sure they are empty this is initializing
 	sdb_reset (types);
 	anal_arch = r_config_get (core->config, "anal.arch");
 	os = r_config_get (core->config, "asm.os");
@@ -652,6 +652,8 @@ static int bin_info(RCore *r, int mode) {
 				r_config_set_i (r->config, "asm.pcalign", v);
 			}
 		}
+		r_core_anal_type_init (r);
+		r_core_anal_cc_init (r);
 	} else if (IS_MODE_SIMPLE (mode)) {
 		r_cons_printf ("arch %s\n", info->arch);
 		if (info->cpu && *info->cpu) {
@@ -830,8 +832,6 @@ static int bin_info(RCore *r, int mode) {
 			r_cons_printf ("}");
 		}
 	}
-	r_core_anal_type_init (r);
-	r_core_anal_cc_init (r);
 	const char *dir_prefix = r_config_get (r->config, "dir.prefix");
 	char *spath = sdb_fmt ("%s/"R2_SDB_FCNSIGN"/spec.sdb", dir_prefix);
 	if (r_file_exists (spath)) {
