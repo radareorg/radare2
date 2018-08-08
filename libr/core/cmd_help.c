@@ -425,7 +425,6 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'y': // "?y"
-		eprintf ("Deprecated: use yp");
 		break;
 	case 'F': // "?F"
 		r_cons_flush ();
