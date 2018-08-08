@@ -425,12 +425,7 @@ static int cmd_help(void *data, const char *input) {
 		}
 		break;
 	case 'y': // "?y"
-		for (input++; input[0]==' '; input++);
-		if (*input) {
-			r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, input, strlen (input)+1);
-		} else {
-			r_core_yank_cat (core, 0);
-		}
+		eprintf ("Deprecated: use yp");
 		break;
 	case 'F': // "?F"
 		r_cons_flush ();
