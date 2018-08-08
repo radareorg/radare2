@@ -114,6 +114,10 @@ static void list_themes_in_path(RList *list, const char *path) {
 	r_list_free (files);
 }
 
+R_API char *r_core_get_theme () {
+	return curtheme;
+}
+
 R_API RList *r_core_list_themes(RCore *core) {
 	RList *list = r_list_newf (free);
 	getNext = false;
