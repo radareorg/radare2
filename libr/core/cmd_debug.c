@@ -1421,7 +1421,7 @@ static int cmd_dbg_map_heap_glibc_64 (RCore *core, const char *input);
 
 static void get_hash_debug_file(RCore *core, const char *path, char *hash, int hash_len) {
 	RListIter *iter;
-	char buf[20] = R_EMPTY;
+	ut8 buf[20] = {0};
 	int offset, i, j = 0;
 	int bd = -1;
 	RBinFile *old_cur = r_bin_cur (core->bin);
@@ -1462,7 +1462,7 @@ static void get_hash_debug_file(RCore *core, const char *path, char *hash, int h
 			hash[i + 2 * j++] = (ut8) '/';
 		}
 		offset = j + 2 * i;
-		snprintf (hash + offset, hash_len - offset, "%02x", (ut8) buf[i]);
+		snprintf (hash + offset, hash_len - offset, "%02x", buf[i]);
 	}
 	offset = j + 2 * i;
 	snprintf (hash + offset, hash_len - offset - strlen (".debug"), ".debug");
