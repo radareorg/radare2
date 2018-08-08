@@ -91,6 +91,10 @@ typedef struct gen_vect {
 	};
 } SMD_Vectors;
 
+static ut64 baddr(RBinFile *bf) {
+	return 0;
+}
+
 static bool check_bytes(const ut8 *buf, ut64 length) {
 	if (length > 0x190 && !memcmp (buf + 0x100, "SEGA", 4)) {
 		return true;
@@ -313,6 +317,7 @@ RBinPlugin r_bin_plugin_smd = {
 	.license = "LGPL3",
 	.load_bytes = &load_bytes,
 	.check_bytes = &check_bytes,
+	.baddr = &baddr,
 	.entries = &entries,
 	.sections = &sections,
 	.symbols = &symbols,
