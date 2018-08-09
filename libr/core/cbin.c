@@ -1024,12 +1024,7 @@ static int bin_pdb(RCore *core, int mode) {
 }
 
 static int srclineCmp(const void *a, const void *b) {
-	const char *fa = a;
-	const char *fb = b;
-	if (fa && fb) {
-		return !strcmp (fa, fb);
-	}
-	return (fa && fb && !strcmp (fa, fb));
+	return r_str_cmp (a, b, -1);
 }
 
 static int bin_source(RCore *r, int mode) {
