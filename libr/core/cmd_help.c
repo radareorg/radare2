@@ -160,7 +160,6 @@ static const char *help_msg_question[] = {
 	"?x", "+num", "like ?v, but in hexpairs honoring cfg.bigendian",
 	"?x", "-hexst", "convert hexpair into raw string with newline",
 	"?X", " num|expr", "returns the hexadecimal value numeric expr",
-	"?y", " [str]", "show contents of yank buffer, or set with string",
 	NULL
 };
 
