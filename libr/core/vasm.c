@@ -78,11 +78,13 @@ R_API void r_core_visual_asm(RCore *core, ut64 off) {
 
 	if (cva.acode && cva.acode->len > 0) {
 		if (r_cons_yesno ('y', "Save changes? (Y/n)")) {
-			r_core_cmdf (core, "wx %s @ 0x%"PFMT64x,
-				cva.acode->buf_hex, off);
+			if (!r_io_write_at (core->io, off, cva.buf, sizeof (cva.buf))) {
+				eprintf ("ERROR: Cannot write in here, check map permissions or reopen the file with oo+\n");
+				r_cons_any_key (NULL);
+			}
+			// r_core_cmdf (core, "wx %s @ 0x%"PFMT64x, cva.acode->buf_hex, off);
 		}
-	}
-	if (!cva.acode || cva.acode->len == 0) {
+	} else if (!cva.acode || cva.acode->len == 0) {
 		eprintf ("ERROR: Cannot assemble those instructions\n");
 		r_cons_any_key (NULL);
 	}
