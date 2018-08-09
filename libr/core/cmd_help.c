@@ -423,8 +423,6 @@ static int cmd_help(void *data, const char *input) {
 			eprintf ("Usage: ?h [string-to-hash]\n");
 		}
 		break;
-	case 'y': // "?y"
-		break;
 	case 'F': // "?F"
 		r_cons_flush ();
 		break;
