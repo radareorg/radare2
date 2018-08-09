@@ -3682,11 +3682,11 @@ static int cmd_print(void *data, const char *input) {
 	int i, l, len, ret;
 	ut8* block;
 	ut32 tbs = core->blocksize;
-	ut64 n, off, from, to;
+	ut64 n, off, from, to, at, ate, piece;
 	ut64 tmpseek = UT64_MAX;
 	const int addrbytes = core->io->addrbytes;
 	i = l = len = ret = 0;
-	from = to = 0;
+	n = off = from = to = at = ate = piece = 0;
 
 	r_print_init_rowoffsets (core->print);
 	off = UT64_MAX;
@@ -3696,27 +3696,38 @@ static int cmd_print(void *data, const char *input) {
 		const char *p = off? strchr (input + idx, ' '): NULL;
 		if (p) {
 			l = (int) r_num_math (core->num, p + 1);
-			if (l >= 0) {
-				if ((int)core->blocksize < l) {
-					l = core->blocksize;
-				}
-			} else {
-				if ((int)core->blocksize < -len) {
-					l = -core->blocksize;
-				}
-				if (input[0] != 'd' && input[0] != 'D' && input[0] != 'm' &&
-					input[0] != 'a' && input[0] != 'f' && input[0] != 'i' && input[0] != 'I') {
-					// except disasm and memoryfmt (pd, pm)
+			/* except disasm and memoryfmt (pd, pm) */
+			if (input[0] != 'd' && input[0] != 'D' && input[0] != 'm' &&
+				input[0] != 'a' && input[0] != 'f' && input[0] != 'i' && input[0] != 'I') {
+				int n = (st32) l; // r_num_math (core->num, input+1);
+				if (l < 0) {
+					off = core->offset + n;
+					len = l = -n;
 					tmpseek = core->offset;
-					off = core->offset + l;
-					l = -l;
-					if (!r_core_block_size (core, l)) {
-						goto beach;
+				} else if (l > 0) {
+					len = l;
+					if (l > tbs) {
+						if (input[0] == 'x' && input[1] == 'l') {
+							l *= core->print->cols;
+						}
+						if (!r_core_block_size (core, l)) {
+							eprintf ("This block size is too big. Did you mean 'p%c @ %s' instead?\n",
+								*input, input + 2);
+							goto beach;
+						}
+						l = core->blocksize;
+					} else {
+						l = len;
 					}
 				}
 			}
-			len = l;
 		}
+	} else {
+		l = len;
+	}
+
+	if (len > core->blocksize) {
+		len = core->blocksize;
 	}
 
 	if (input[0] != 'd' && input[0] != 'm' && input[0] != 'a' && input[0] != 'f') {
@@ -3747,20 +3758,15 @@ static int cmd_print(void *data, const char *input) {
 		// R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 		if (f) {
 			len = r_anal_fcn_size (f);
-			if (len > core->blocksize) {
-				len = core->blocksize;
-			}
 		} else {
 			eprintf ("p: Cannot find function at 0x%08"PFMT64x "\n", core->offset);
 			core->num->value = 0;
 			goto beach;
 		}
 	}
-	if (len) {
-		core->num->value = len;
-	} else {
-		// TODO figure out why `f eax=33; f test=eax; pa call test` misassembles if len is 0
-		core->num->value = core->blocksize;
+	core->num->value = len;
+	if (len > core->blocksize) {
+		len = core->blocksize;
 	}
 	if (off != UT64_MAX) {
 		r_core_seek (core, off, SEEK_SET);
