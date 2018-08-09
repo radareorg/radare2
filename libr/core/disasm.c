@@ -3668,8 +3668,8 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				ds_comment (ds, true, "; -1");
 			} else if (((char)refaddr > 0) && refaddr >= '!' && refaddr <= '~') {
 				char ch = refaddr;
-				ds_begin_comment (ds);
 				if (ch != ds->chref) {
+					ds_begin_comment (ds);
 					ds_comment (ds, true, "; '%c'", ch);
 				}
 			} else if (refaddr > 10) {
