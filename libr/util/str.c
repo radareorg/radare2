@@ -740,35 +740,27 @@ R_API void r_str_ncpy(char *dst, const char *src, int n) {
 
 /* memccmp("foo.bar", "foo.cow, '.') == 0 */
 // Returns 1 if src and dst are equal up until the first instance of ch in src.
-R_API int r_str_ccmp(const char *dst, const char *src, int ch) {
+R_API bool r_str_ccmp(const char *dst, const char *src, int ch) {
 	int i;
 	for (i = 0; src[i] && src[i] != ch; i++) {
 		if (dst[i] != src[i]) {
-			return 1;
+			return true;
 		}
 	}
-	return 0;
+	return false;
 }
 
-// Compare two strings for the first len bytes. Returns true if they are equal.
-// NOTE: this is not useful as a comparitor, as it returns true or false.
+// like strncmp, but checking for null pointers
 R_API int r_str_cmp(const char *a, const char *b, int len) {
-	if (!a || !b) {
-		return false;
+	if ((a == b) || (!a && !b)) {
+		return 0;
 	}
-	if (a == b) {
-		return true;
-	}
+	if (!a && b) return -1;
+	if (a && !b) return 1;
 	if (len < 0) {
 		return strcmp (a, b);
 	}
-	for (;len--;) {
-		if (*a == '\0' || *b == '\0' || *a != *b) {
-			return false;
-		}
-		a++; b++;
-	}
-	return true;
+	return strncmp (a, b, len);
 }
 
 // Copies all characters from src to dst up until the character 'ch'.

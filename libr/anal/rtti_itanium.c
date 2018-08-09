@@ -82,11 +82,15 @@ static bool rtti_itanium_read_vmi_class_type_info (RVTableContext *context, ut64
 	if (!context->read_addr (context->anal, addr, &at)) {
 		return false;
 	}
-	if (at < 1) {
+	if (at < 1 || at > 0xfffff) {
+		eprintf ("Error reading vmi_base_count\n");
 		return false;
 	}
 	vmi_cti->vmi_base_count = at;
 	vmi_cti->vmi_bases = calloc (sizeof (base_class_type_info), vmi_cti->vmi_base_count);
+	if (!vmi_cti->vmi_bases) {
+		return false;
+	}
 	ut64 tmp_addr = addr + 0x4;
 
 	int i;
@@ -264,8 +268,7 @@ static bool rtti_itanium_print_class_type_info_recurse(RVTableContext *context, 
 		eprintf ("No RTTI found\n");
 		return false;
 	}
-
-	if (r_str_cmp (flag->name, vmi_class_type_info_name, r_str_len_utf8 (flag->name))) {
+	if (!r_str_cmp (flag->name, vmi_class_type_info_name, r_str_len_utf8 (flag->name))) {
 		vmi_class_type_info vmi_cti;
 		if (!rtti_itanium_read_vmi_class_type_info (context, colAddr, &vmi_cti)) {
 			eprintf ("Failed to parse Type Info at 0x%08"PFMT64x" (referenced from 0x%08"PFMT64x")\n", colAddr, colRefAddr);
@@ -278,7 +281,7 @@ static bool rtti_itanium_print_class_type_info_recurse(RVTableContext *context, 
 		}
 	}
 
-	if (r_str_cmp (flag->name, si_class_type_info_name, r_str_len_utf8 (flag->name))) {
+	if (!r_str_cmp (flag->name, si_class_type_info_name, r_str_len_utf8 (flag->name))) {
 		si_class_type_info si_cti;
 		if (!rtti_itanium_read_si_class_type_info (context, colAddr, &si_cti)) {
 			eprintf ("Failed to parse Type Info at 0x%08"PFMT64x" (referenced from 0x%08"PFMT64x")\n", colAddr, colRefAddr);
@@ -291,7 +294,7 @@ static bool rtti_itanium_print_class_type_info_recurse(RVTableContext *context, 
 		}
 	}
 
-	if (r_str_cmp (flag->name, class_type_info_name, r_str_len_utf8 (flag->name))) {
+	if (!r_str_cmp (flag->name, class_type_info_name, r_str_len_utf8 (flag->name))) {
 		class_type_info cti;
 		if (!rtti_itanium_read_class_type_info (context, colAddr, &cti)) {
 			eprintf ("Failed to parse Type Info at 0x%08"PFMT64x" (referenced from 0x%08"PFMT64x")\n", colAddr, colRefAddr);
