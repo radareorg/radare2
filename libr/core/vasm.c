@@ -82,5 +82,9 @@ R_API void r_core_visual_asm(RCore *core, ut64 off) {
 				cva.acode->buf_hex, off);
 		}
 	}
+	if (!cva.acode || cva.acode->len == 0) {
+		eprintf ("ERROR: Cannot assemble those instructions\n");
+		r_cons_any_key (NULL);
+	}
 	r_asm_code_free (cva.acode);
 }

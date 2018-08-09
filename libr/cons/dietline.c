@@ -1166,9 +1166,12 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			break;
 		}
 		I.buffer.data[I.buffer.length] = '\0';
-		if (cb && !cb (user, I.buffer.data)) {
-			I.buffer.data[0] = 0;
-			I.buffer.length = 0;
+		if (cb) {
+			int cbret = cb (user, I.buffer.data);
+			if (cbret == 0) {
+				I.buffer.data[0] = 0;
+				I.buffer.length = 0;
+			}
 		}
 #if USE_UTF8
 		utflen = r_line_readchar_utf8 ((ut8 *) buf, sizeof (buf));
@@ -1200,7 +1203,6 @@ R_API const char *r_line_readline_cb(RLineReadCallback cb, void *user) {
 			printf ("\r\x1b[2K\r");	// %*c\r", columns, ' ');
 		}
 #endif
-
 		switch (*buf) {
 		case 0:	// control-space
 			/* ignore atm */
