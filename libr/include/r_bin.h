@@ -645,7 +645,7 @@ R_API bool r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);
 R_API bool r_bin_ldr_add(RBin *bin, RBinLdrPlugin *foo);
 R_API void* r_bin_free(RBin *bin);
 R_API RList *r_bin_raw_strings(RBinFile *a, int min);
-R_API int r_bin_dump_strings(RBinFile *a, int min, int raw);
+R_API RList *r_bin_dump_strings(RBinFile *a, int min, int raw);
 //io-wrappers
 R_API int r_bin_read_at (RBin *bin, ut64 addr, ut8 *buf, int size);
 R_API int r_bin_write_at (RBin *bin, ut64 addr, const ut8 *buf, int size);
