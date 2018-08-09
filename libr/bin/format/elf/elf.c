@@ -901,7 +901,7 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 	if (!bin || !bin->dynstr) {
 		return NULL;
 	}
-	if (shdr->sh_link > bin->ehdr.e_shnum) {
+	if (shdr->sh_link >= bin->ehdr.e_shnum) {
 		return NULL;
 	}
 #ifdef R_BIN_ELF64
