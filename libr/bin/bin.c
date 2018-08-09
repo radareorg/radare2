@@ -116,7 +116,7 @@ R_API RList* r_bin_raw_strings(RBinFile *bf, int min) {
 	return r_bin_file_get_strings (bf, min, 0, 2);
 }
 
-R_API int r_bin_dump_strings(RBinFile *a, int min, int raw) {
+R_API RList* r_bin_dump_strings(RBinFile *a, int min, int raw) {
 	return r_bin_file_get_strings (a, min, 1, raw);
 }
 
