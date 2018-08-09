@@ -736,11 +736,17 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			}
 			{
 				src = getarg (&gop, 1, 0, NULL, SRC_AR);
+				// dst is name of register from instruction.
 				dst = getarg (&gop, 0, 0, NULL, DST_AR);
 				const char *dst64 = r_reg_32_to_64 (a->reg, dst);
-				esilprintf (op, "%s,%s,=", src, dst);
 				if (a->bits == 64 && dst64) {
-					r_strbuf_appendf (&op->esil, ",0xffffffff,%s,&=", dst64);
+					// Here it is still correct, because 'e** = X'
+					// turns into 'r** = X' (first one will keep higher bytes,
+					// second one will overwrite them with zeros).
+					esilprintf (op, "%s,%s,=", src, dst64);
+				}
+				else {
+					esilprintf (op, "%s,%s,=", src, dst);
 				}
 			}
 			break;
@@ -1264,14 +1270,18 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	case X86_INS_XOR:
 		{
 			src = getarg (&gop, 1, 0, NULL, SRC_AR);
-			dst = getarg (&gop, 0, 1, "^", DST_AR);
-			char *p;
-			esilprintf (op, "%s,%s,$z,zf,=,$p,pf,=,$s,sf,=,$0,cf,=,$0,of,=", src, dst);
-			if ((a->bits == 64) && (p = strchr (dst, (int)','))) {
-				*p = '\0';
-				if ((p = (char *)r_reg_32_to_64 (a->reg, dst))) {
-					r_strbuf_appendf (&op->esil, ",0xffffffff,%s,&=", p);
-				}
+			dst = getarg (&gop, 0, 1, "^", DST_AR);			// destination + operation (lol why)
+			char *ddst = dst;
+			char *dst_reg = strtok (ddst, ",");				// destination only
+			char *dst_reg64 = r_reg_32_to_64 (a->reg, dst_reg);		// 64-bit destination if exists
+			if (a->bits == 64 && dst_reg64) {
+				// (64-bit ^ 32-bit) & 0xFFFF FFFF -> 64-bit, it's alright, higher bytes will be eliminated
+				// (consider this is operation with 32-bit regs in 64-bit environment).
+				esilprintf (op, "%s,%s,^,0xffffffff,&,%s,=,$z,zf,=,$p,pf,=,$s,sf,=,$0,cf,=,$0,of,=",
+						src, dst_reg64, dst_reg64);
+			}
+			else {
+				esilprintf (op, "%s,%s,$z,zf,=,$p,pf,=,$s,sf,=,$0,cf,=,$0,of,=", src, dst);
 			}
 		}
 		break;
@@ -1375,16 +1385,18 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	case X86_INS_ANDNPD:
 	case X86_INS_ANDNPS:
 		src = getarg (&gop, 1, 0, NULL, SRC_AR);
-		dst = getarg (&gop, 0, 1, "&", DST_AR);
-		if (src && dst) {
-			char *p;
-			esilprintf (op, "%s,%s,$0,of,=,$0,cf,=,$z,zf,=,$s,sf,=,$o,pf,=", src, dst);
-			if ((a->bits == 64) && (p = strchr (dst, (int)','))) {
-				*p = '\0';
-				if ((p = (char *)r_reg_32_to_64 (a->reg, dst))) {
-					r_strbuf_appendf (&op->esil, ",0xffffffff,%s,&=", p);
-				}
-			}
+		dst = getarg (&gop, 0, 1, "&", DST_AR);			// destination + operation (lol why)
+		char *ddst = dst;
+		char *dst_reg = strtok (ddst, ",");				// destination only
+		char *dst_reg64 = r_reg_32_to_64 (a->reg, dst_reg);		// 64-bit destination if exists
+		if (a->bits == 64 && dst_reg64) {
+			// (64-bit & 32-bit) & 0xFFFF FFFF -> 64-bit, it's alright, higher bytes will be eliminated
+			// (consider this is operation with 32-bit regs in 64-bit environment).
+			esilprintf (op, "%s,%s,&,0xffffffff,&,%s,=,$z,zf,=,$p,pf,=,$s,sf,=,$0,cf,=,$0,of,=",
+					src, dst_reg64, dst_reg64);
+		}
+		else {
+			esilprintf (op, "%s,%s,$z,zf,=,$p,pf,=,$s,sf,=,$0,cf,=,$0,of,=", src, dst);
 		}
 		break;
 	case X86_INS_IDIV:
