@@ -113,16 +113,11 @@ R_API void r_bin_xtrdata_free(void /*RBinXtrData*/ *data_) {
 }
 
 R_API RList* r_bin_raw_strings(RBinFile *bf, int min) {
-	RList *l = NULL;
-	if (bf) {
-		l = r_bin_file_get_strings (bf, min, 0, 2);
-	}
-	return l;
+	return r_bin_file_get_strings (bf, min, 0, 2);
 }
 
 R_API int r_bin_dump_strings(RBinFile *a, int min, int raw) {
-	r_bin_file_get_strings (a, min, 1, raw);
-	return 0;
+	return r_bin_file_get_strings (a, min, 1, raw);
 }
 
 /* This is very slow if there are lot of symbols */

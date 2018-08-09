@@ -105,6 +105,11 @@ static RList* entries(RBinFile* bf) {
 	return ret;
 }
 
+static RList* strings(RBinFile* bf) {
+	// hardcode minstrlen = 20
+	return r_bin_file_get_strings (bf, 20, 0, 2);
+}
+
 RBinPlugin r_bin_plugin_psxexe = {
 	.name = "psxexe",
 	.desc = "Sony PlayStation 1 Executable",
@@ -114,6 +119,7 @@ RBinPlugin r_bin_plugin_psxexe = {
 	.info = &info,
 	.sections = &sections,
 	.entries = &entries,
+	.strings = &strings,
 };
 
 #ifndef CORELIB
