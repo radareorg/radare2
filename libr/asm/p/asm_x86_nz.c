@@ -1332,7 +1332,7 @@ static int opjc(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 static int oplea(RAsm *a, ut8 *data, const Opcode *op){
-	int l =0;
+	int l = 0;
 	int mod = 0;
 	st32 offset = 0;
 	int reg = 0;
@@ -4210,7 +4210,7 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 }
 
 static void parse_segment_offset(RAsm *a, const char *str, size_t *pos,
-								Operand *op, int reg_index) {
+		Operand *op, int reg_index) {
 	int nextpos = *pos;
 	char *c = strchr (str + nextpos, ':');
 	if (c) {
@@ -4272,15 +4272,17 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 			op->type |= OT_MEMORY | OT_TBYTE;
 			op->dest_size = OT_TBYTE;
 			explicit_size = true;
-		} else	// the current token doesn't denote a size
+		} else { // the current token doesn't denote a size
 			size_token = 0;
+		}
 	}
 
 	// Next token: register, immediate, or '['
 	if (str[pos] == '[') {
 		// Don't care about size, if none is given.
-		if (!op->type) op->type = OT_MEMORY;
-
+		if (!op->type) {
+			op->type = OT_MEMORY;
+		}
 		// At the moment, we only accept plain linear combinations:
 		// part := address | [factor *] register
 		// address := part {+ part}*
