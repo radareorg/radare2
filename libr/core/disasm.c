@@ -1584,12 +1584,17 @@ static void ds_show_functions(RDisasmState *ds) {
 		char spaces[32];
 		RAnalVar *var;
 		RListIter *iter;
+		char *fname = NULL;
+		Sdb *TDB = core->anal->sdb_types;
 		RList *args = r_anal_var_list (core->anal, f, 'b');
 		RList *regs = r_anal_var_list (core->anal, f, 'r');
 		RList *sp_vars = r_anal_var_list (core->anal, f, 's');
 		r_list_sort (args, (RListComparator)var_comparator);
 		r_list_sort (regs, (RListComparator)var_comparator);
 		r_list_sort (sp_vars, (RListComparator)var_comparator);
+		if (fcn_name) {
+			fname = r_type_func_guess (TDB, fcn_name);
+		}
 		if (call) {
 			ds_begin_json_line (ds);
 			r_cons_print (COLOR (ds, color_fline));
@@ -1597,6 +1602,23 @@ static void ds_show_functions(RDisasmState *ds) {
 			r_cons_printf ("%s %s %s%s (",
 				COLOR_RESET (ds), COLOR (ds, color_fname),
 				fcn_name, COLOR_RESET (ds));
+			if (fname && r_type_func_exist (TDB, fname)) {
+				int i, argc = r_type_func_args_count (TDB, fname);
+				bool comma = true;
+				// This avoids false positives present in argument recovery
+				// and straight away print arguments fetched from types db
+				for (i = 0; i < argc; i++) {
+					const char *type = r_type_func_args_type (TDB, fname, i);
+					const char *name = r_type_func_args_name (TDB, fname, i);
+					if (i == argc - 1) {
+						comma = false;
+					}
+					int len = strlen(type);
+					r_cons_printf ("%s%s%s%s", type, type[len - 1] == '*' ? "" : " ",
+							name, comma?", ":"");
+				}
+				goto beach;
+			}
 			bool comma = true;
 			bool arg_bp = false;
 			int tmp_len;
@@ -1632,13 +1654,18 @@ static void ds_show_functions(RDisasmState *ds) {
 						var->name, iter->n ? ", " : "");
 				}
 			}
+beach:
+			free (fname);
 			r_cons_printf (");");
 			ds_newline (ds);
 		}
 		r_list_join (args, sp_vars);
 		r_list_join (args, regs);
 		r_list_foreach (args, iter, var) {
-			if ((var->kind == 'r') && get_link_var (ds->core->anal, f->addr, var)) {
+			// Avoids printing register based var if it's counter part
+			// local var is present
+			if ((var->kind == 'r') && get_link_var (ds->core->anal, f->addr, var) &&
+					!strncmp (var->name, "arg_", 4)) {
 				continue;
 			}
 			ds_begin_json_line (ds);

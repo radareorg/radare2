@@ -157,6 +157,13 @@ func.malloc.args=1
 func.malloc.arg.0=size_t,size
 func.malloc.ret= void *
 
+main=func
+func.main.args=3
+func.main.arg.0=int,argc
+func.main.arg.1=char **,argv
+func.main.arg.2=char **,envp
+func.main.ret=int
+
 xmalloc=func
 func.xmalloc.args=1
 func.xmalloc.arg.0=size_t,size
