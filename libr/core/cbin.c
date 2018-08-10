@@ -22,40 +22,38 @@
 // dup from cmd_info
 #define PAIR_WIDTH 9
 
-static void pair(const char *key, const char *val_norm, const char *val_json, int mode, bool last) {
-	if (!val_norm || !*val_norm) {
+static void pair(const char *key, const char *val, int mode, bool last) {
+	if (!val || !*val) {
 		return;
-	}
-	if (!val_json || !*val_json) {
-		val_json = val_norm;
 	}
 	if (IS_MODE_JSON (mode)) {
 		const char *lst = last ? "" : ",";
-		r_cons_printf ("\"%s\":%s%s", key, val_json, lst);
+		r_cons_printf ("\"%s\":%s%s", key, val, lst);
 	} else {
 		char ws[16];
 		const int keyl = strlen (key);
 		const int wl = (keyl > PAIR_WIDTH) ? 0 : PAIR_WIDTH - keyl;
 		memset (ws, ' ', wl);
 		ws[wl] = 0;
-		r_cons_printf ("%s%s%s\n", key, ws, val_norm);
+		r_cons_printf ("%s%s%s\n", key, ws, val);
 	}
 }
 
 static void pair_bool(const char *key, bool val, int mode, bool last) {
-	pair (key, r_str_bool (val), NULL, mode, last);
+	pair (key, r_str_bool (val), mode, last);
 }
 
 static void pair_int(const char *key, int val, int mode, bool last) {
-	pair (key, sdb_fmt ("%d", val), NULL, mode, last);
+	pair (key, sdb_fmt ("%d", val), mode, last);
 }
 
 static void pair_ut64(const char *key, ut64 val, int mode, bool last) {
-	pair (key, sdb_fmt ("%"PFMT64d, val), NULL, mode, last);
+	pair (key, sdb_fmt ("%"PFMT64d, val), mode, last);
 }
 
 static void pair_ut64x(const char *key, ut64 val, int mode, bool last) {
-	pair (key, sdb_fmt ("0x%"PFMT64x, val), sdb_fmt ("%"PFMT64d, val), mode, last);
+	const char *str_val = IS_MODE_JSON (mode) ? sdb_fmt ("%"PFMT64d, val) : sdb_fmt ("0x%"PFMT64x, val);
+	pair (key, str_val, mode, last);
 }
 
 static void pair_str(const char *key, const char *val, int mode, int last) {
@@ -66,12 +64,12 @@ static void pair_str(const char *key, const char *val, int mode, int last) {
 		char *encval = r_str_utf16_encode (val, -1);
 		if (encval) {
 			char *qs = r_str_newf ("\"%s\"", encval);
-			pair (key, qs, NULL, mode, last);
+			pair (key, qs, mode, last);
 			free (encval);
 			free (qs);
 		}
 	} else {
-		pair (key, val, NULL, mode, last);
+		pair (key, val, mode, last);
 	}
 }
 
