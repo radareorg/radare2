@@ -160,7 +160,6 @@ static const char *help_msg_question[] = {
 	"?x", "+num", "like ?v, but in hexpairs honoring cfg.bigendian",
 	"?x", "-hexst", "convert hexpair into raw string with newline",
 	"?X", " num|expr", "returns the hexadecimal value numeric expr",
-	"?y", " [str]", "show contents of yank buffer, or set with string",
 	NULL
 };
 
@@ -422,14 +421,6 @@ static int cmd_help(void *data, const char *input) {
 			r_cons_printf ("0x%08x\n", (ut32)r_str_hash (input + 2));
 		} else {
 			eprintf ("Usage: ?h [string-to-hash]\n");
-		}
-		break;
-	case 'y': // "?y"
-		for (input++; input[0]==' '; input++);
-		if (*input) {
-			r_core_yank_set_str (core, R_CORE_FOREIGN_ADDR, input, strlen (input)+1);
-		} else {
-			r_core_yank_cat (core, 0);
 		}
 		break;
 	case 'F': // "?F"
