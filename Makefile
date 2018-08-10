@@ -168,18 +168,15 @@ ifneq ($(USE_ZIP),NO)
 	$(ZIP) -r "${ZIPNAME}" "radare2-${WINBITS}-${VERSION}"
 endif
 
-clean: rmd
+clean: 
+	rm -f `find . -type f -iname '*.d'`
 	rm -f libr/libr.a libr/libr.dylib libr/include/r_version.h
 	rm -rf libr/.libr
 	for DIR in shlr libr binr ; do $(MAKE) -C "$$DIR" clean ; done
-
-distclean mrproper:
 	-rm -f `find . -type f -name '*.d'`
 	rm -f `find . -type f -name '*.o'`
-	rm -f libr/libr.a
-	for DIR in libr binr shlr ; do ( cd "$$DIR" ; ${MAKE} mrproper) ; done
 	rm -f config-user.mk plugins.cfg libr/config.h
-	rm -f libr/include/r_userconf.h libr/include/r_version.h libr/config.mk
+	rm -f libr/include/r_userconf.h libr/config.mk
 	rm -f pkgcfg/*.pc
 
 pkgcfg:
@@ -231,10 +228,6 @@ install love: install-doc install-man install-www
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
 	$(SHELL) sys/ldconfig.sh
 	$(SHELL) ./configure-plugins --rm-static $(DESTDIR)$(LIBDIR)/radare2/last/
-
-# Remove make .d files. fixes build when .c files are removed
-rmd:
-	rm -f `find . -type f -iname '*.d'`
 
 install-www:
 	rm -rf "${DESTDIR}${WWWROOT}"
@@ -338,17 +331,8 @@ purge: purge-doc purge-dev user-uninstall
 	rm -rf "${DESTDIR}${INCLUDEDIR}/libr"
 	rm -rf "${DESTDIR}${DATADIR}/radare2"
 
-purge2:
-	$(MAKE) purge
-ifneq ($(PREFIX),/usr)
-	$(MAKE) purge PREFIX=/usr
-endif
-ifneq ($(PREFIX),/usr/local)
-	$(MAKE) purge PREFIX=/usr/local
-endif
-
-purge3: purge2
-	sys/purge.sh distro
+system-purge: purge
+	sys/purge.sh
 
 R2V=radare2-${VERSION}
 
@@ -471,7 +455,7 @@ shlr/capstone:
 
 include ${MKPLUGINS}
 
-.PHONY: all clean distclean mrproper install symstall uninstall deinstall strip
+.PHONY: all clean install symstall uninstall deinstall strip
 .PHONY: libr binr install-man w32dist tests dist shot pkgcfg depgraph.png love
-.PHONY: purge purge2 purge3
+.PHONY: purge system-purge
 .PHONY: shlr/capstone
