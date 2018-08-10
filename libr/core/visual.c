@@ -2497,7 +2497,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				visual_search (core);
 			} else {
 				if (autoblocksize) {
-					r_core_cmd0 (core, "?i highlight;e scr.highlight=`?y`");
+					r_core_cmd0 (core, "?i highlight;e scr.highlight=`yp`");
 				} else {
 					r_core_block_size (core, core->blocksize - cols);
 				}
