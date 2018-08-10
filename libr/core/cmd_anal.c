@@ -1713,6 +1713,29 @@ static int anal_fcn_list_bb(RCore *core, const char *input, bool one) {
 			if (b->fail != UT64_MAX) {
 				r_cons_printf ("\"fail\":%"PFMT64u",", b->fail);
 			}
+			if (b->switch_op) {
+				r_cons_print ("\"switch_op\":{");
+				r_cons_printf ("\"addr\":%"PFMT64u",", b->switch_op->addr);
+				r_cons_printf ("\"min_val\":%"PFMT64u",", b->switch_op->min_val);
+				r_cons_printf ("\"def_val\":%"PFMT64u",", b->switch_op->def_val);
+				r_cons_printf ("\"max_val\":%"PFMT64u",", b->switch_op->max_val);
+				r_cons_print ("\"cases\":[");
+				{
+					RListIter *case_op_iter;
+					RAnalCaseOp *case_op;
+					r_list_foreach (b->switch_op->cases, case_op_iter, case_op) {
+						r_cons_printf ("%s{", case_op_iter->p ? "," : "");
+						r_cons_printf ("\"addr\":%"PFMT64u",", case_op->addr);
+						r_cons_printf ("\"jump\":%"PFMT64u",", case_op->jump);
+						r_cons_printf ("\"value\":%"PFMT64u",", case_op->value);
+						r_cons_printf ("\"cond\":%"PFMT32u",", case_op->cond);
+						r_cons_printf ("\"bb_ref_to\":%"PFMT64u",", case_op->bb_ref_to);
+						r_cons_printf ("\"bb_ref_from\":%"PFMT64u"", case_op->bb_ref_from);
+						r_cons_print ("}");
+					}
+				}
+				r_cons_print ("]},");
+			}
 			r_cons_printf ("\"addr\":%" PFMT64u ",\"size\":%d,\"inputs\":%d,\"outputs\":%d,\"ninstr\":%d,\"traced\":%s}",
 				b->addr, b->size, inputs, outputs, b->ninstr, r_str_bool (b->traced));
 			}
