@@ -272,12 +272,11 @@ static void seek_to_register(RCore *core, const char *input, bool is_silent) {
 	}
 }
 
-static int cmd_seek_opcode_backward(RCore *core, int n) {
-	int val = 0;
+static int cmd_seek_opcode_backward(RCore *core, int numinstr) {
+	int i, val = 0;
 	// N previous instructions
 	ut64 addr = core->offset;
 	int ret = 0;
-	int numinstr = n * -1;
 	if (r_core_prevop_addr (core, core->offset, numinstr, &addr)) {
 		ret = core->offset - addr;
 	} else {
@@ -286,14 +285,24 @@ static int cmd_seek_opcode_backward(RCore *core, int n) {
 		// works as expected, because is the one used from visual
 		ret = r_core_asm_bwdis_len (core, &instr_len, &addr, numinstr);
 #endif
-		ut64 prev_addr = prevop_addr (core, core->offset);
-		if (prev_addr <= core->offset) {
-			RAsmOp op;
+		addr = core->offset;
+		const int mininstrsize = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
+		for (i = 0; i < numinstr; i++) {
+			ut64 prev_addr = prevop_addr (core, addr);
+			if (prev_addr == UT64_MAX) {
+				prev_addr = addr - mininstrsize;
+			}
+			if (prev_addr == UT64_MAX || prev_addr >= core->offset) {
+				break;
+			}
+			RAsmOp op = {0};
 			r_core_seek (core, prev_addr, 1);
-			r_asm_disassemble (core->assembler, &op,
-					core->block, 32);
+			r_asm_disassemble (core->assembler, &op, core->block, 32);
+			if (op.size < mininstrsize) {
+				op.size = mininstrsize;
+			}
 			val += op.size;
-			return val;
+			addr = prev_addr;
 		}
 	}
 	r_core_seek (core, addr, true);
@@ -331,7 +340,7 @@ static void cmd_seek_opcode(RCore *core, const char *input) {
 		n = 1;
 	}
 	int val = (n < 0)
-		? cmd_seek_opcode_backward (core, n)
+		? cmd_seek_opcode_backward (core, -n)
 		: cmd_seek_opcode_forward (core, n);
 	core->num->value = val;
 }
