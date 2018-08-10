@@ -662,13 +662,13 @@ static bool type_cmd_afta (RCore *core, RAnalFunction *fcn) {
 	ut64 seek;
 	const char *io_cache_key = "io.pcache.write";
 	bool io_cache = r_config_get_i (core->config, io_cache_key);
-	if (!io_cache) {
-		// XXX. we shouldnt need this, but it breaks 'r2 -c aaa -w ls'
-		r_config_set_i (core->config, io_cache_key, true);
-	}
 	if (r_config_get_i (core->config, "cfg.debug")) {
 		eprintf ("TOFIX: afta can't run in debugger mode.\n");
 		return false;
+	}
+	if (!io_cache) {
+		// XXX. we shouldnt need this, but it breaks 'r2 -c aaa -w ls'
+		r_config_set_i (core->config, io_cache_key, true);
 	}
 	seek = core->offset;
 	r_core_cmd0 (core, "aei");
