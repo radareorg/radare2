@@ -3243,8 +3243,19 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 	case '*': r_bp_list (core->dbg->bp, 1); break;
 	case '\0': r_bp_list (core->dbg->bp, 0); break;
 	case '-': // "db-"
-		if (input[2] == '*') r_bp_del_all (core->dbg->bp);
-		else r_bp_del (core->dbg->bp, r_num_math (core->num, input + 2));
+		if (input[2] == '*') {
+			r_bp_del_all (core->dbg->bp);
+		} else {
+			#define DB_ARG(x) r_str_word_get0(str, x)
+			char *str = strdup (r_str_trim_ro (input +2));
+			int i = 0;
+			int sl = r_str_word_set0 (str);
+			for ( ; i < sl; i++) {
+				const ut64 addr = r_num_math (core->num, DB_ARG (i));
+				r_bp_del (core->dbg->bp, addr);
+			}
+			free (str);
+		}
 		break;
 	case 'c': // "dbc"
 		if (input[2] == ' ') {
@@ -3295,7 +3306,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				eprintf ("Cannot strdup. Your heap is fucked up\n");
 			}
 		} else {
-			eprintf ("Use: dbc [addr] [command]\n");
+			eprintf ("Use: dbC [addr] [command]\n");
 		}
 		break;
 	case 's': // "dbs"
@@ -3370,93 +3381,67 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 		}
 		break;
 	case 'w': // "dbw"
-		if (input[2] == 'C') { // "dbwC"
-			if (input[3] == ' ') {
-				char *inp = strdup (input + 4);
-				if (inp) {
-					char *arg = strchr (inp, ' ');
-					if (arg) {
-						*arg++ = 0;
-						addr = r_num_math (core->num, inp);
-						bpi = r_bp_get_at (core->dbg->bp, addr);
-						if (bpi) {
-							free (bpi->cond);
-							bpi->cond = strdup (arg);
-						} else {
-							eprintf ("No breakpoint defined at 0x%08"PFMT64x"\n", addr);
-						}
-					} else {
-						eprintf ("1 Missing argument\n");
-					}
-					free (inp);
-				} else {
-					eprintf ("Cannot strdup. Your heap is fucked up\n");
-				}
-			} else {
-				eprintf ("Use: dbwC [addr] [command]\n");
-			}
-			break;
-		}
 		input++; // skip 'w'
 		watch = true;
 		// passthru
-	case ' ': // "db"
-		for (p = input + 2; *p == ' '; p++);
-		if (*p == '-') {
-			r_bp_del (core->dbg->bp, r_num_math (core->num, p + 1));
-		} else {
-			#define DB_ARG(x) r_str_word_get0(str, x)
-			char *str = strdup (p);
-			int sl = r_str_word_set0 (str);
-			addr = r_num_math (core->num, DB_ARG(0));
-			if (watch) {
-				if (sl == 2) {
-					if (!strcmp (DB_ARG(1), "r")){
-						rw = R_BP_PROT_READ;
-					}
-					else if (!strcmp (DB_ARG(1), "w")){
-						rw = R_BP_PROT_WRITE;
-					}
-					else if (!strcmp (DB_ARG(1), "rw")){
-						rw = R_BP_PROT_ACCESS;
-					}
-					else{
+	case ' ': ;// "db"
+		#define DB_ARG(x) r_str_word_get0(str, x)
+		char *str = strdup (r_str_trim_ro (input + 2));
+		int i = 0;
+		int sl = r_str_word_set0 (str);
+		// For dbw every second argument is 'rw', so we need to skip it.
+		for ( ; i < sl; i += 1 + (watch ? 1 : 0)) {
+			if (*DB_ARG(i) == '-') {
+				r_bp_del (core->dbg->bp, r_num_math (core->num, DB_ARG (i) + 1));
+			} else {
+				if (watch) {
+					if (sl % 2 == 0) {
+						if (!strcmp (DB_ARG (i + 1), "r")) {
+							rw = R_BP_PROT_READ;
+						} else if (!strcmp (DB_ARG (i + 1), "w")) {
+							rw = R_BP_PROT_WRITE;
+						} else if (!strcmp (DB_ARG (i + 1), "rw")) {
+							rw = R_BP_PROT_ACCESS;
+						} else {
+							r_core_cmd_help (core, help_msg_dbw);
+							free (str);
+							break;
+						}
+					} else {
 						r_core_cmd_help (core, help_msg_dbw);
 						free (str);
 						break;
 					}
-				} else {
-					r_core_cmd_help (core, help_msg_dbw);
-					free (str);
-					break;
 				}
-			}
-			if (validAddress (core, addr)) {
-				bpi = r_debug_bp_add (core->dbg, addr, hwbp, watch, rw, NULL, 0);
-				if (bpi) {
-					free (bpi->name);
-					if (!strcmp (input + 2, "$$")) {
-						RFlagItem *f = r_flag_get_i2 (core->flags, addr);
-						if (f) {
-							if (addr > f->offset) {
-								bpi->name = r_str_newf ("%s+0x%" PFMT64x, f->name, addr - f->offset);
+				addr = r_num_math (core->num, DB_ARG (i));
+				if (validAddress (core, addr)) {
+					bpi = r_debug_bp_add (core->dbg, addr, hwbp, watch, rw, NULL, 0);
+					if (bpi) {
+						free (bpi->name);
+						if (!strcmp (DB_ARG (i), "$$")) {
+							RFlagItem *f = r_flag_get_i2 (core->flags, addr);
+							if (f) {
+								if (addr > f->offset) {
+									bpi->name = r_str_newf ("%s+0x%" PFMT64x, f->name, addr - f->offset);
+								} else {
+									bpi->name = strdup (f->name);
+								}
 							} else {
-								bpi->name = strdup (f->name);
+								bpi->name = r_str_newf ("0x%08" PFMT64x, addr);
 							}
 						} else {
-							bpi->name = r_str_newf ("0x%08" PFMT64x, addr);
+							bpi->name = strdup (DB_ARG (i));
 						}
 					} else {
-						bpi->name = strdup (input + 2);
+						eprintf ("Cannot set breakpoint at '%s'\n", DB_ARG (i));
 					}
 				} else {
-					eprintf ("Cannot set breakpoint at '%s'\n", input + 2);
+					eprintf ("Cannot place a breakpoint on 0x%08"PFMT64x" unmapped memory."
+								"See e? dbg.bpinmaps\n", addr);
 				}
-			} else {
-				eprintf ("Cannot place a breakpoint on 0x%08"PFMT64x" unmapped memory. See e? dbg.bpinmaps\n", addr);
 			}
-			free (str);
 		}
+		free (str);
 		break;
 	case 'i':
 		core_cmd_dbi (core, input, addr);
