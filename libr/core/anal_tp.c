@@ -563,20 +563,30 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 			continue;
 		}
 		bool res = true;
+		char *type = NULL;
 		const char *query = sdb_fmt ("fcn.0x%08"PFMT64x".arg.%s", fcn->addr, i->name);
-		char *type = (char *) sdb_const_get (anal->sdb_fcns, query, NULL);
+		const char *qres = sdb_const_get (anal->sdb_fcns, query, NULL);
+		if (qres) {
+			type = strdup (qres);
+		}
 		if (lvar) {
+			// Propagate local var type = to => register-based var
 			var_retype (anal, rvar, NULL, lvar->type, fcn->addr, false, false);
+			// Propagate local var type <= from = register-based var
+			var_retype (anal, lvar, NULL, rvar->type, fcn->addr, false, false);
 			if (!strstr (lvar->type, "int")) {
 				res = false;
 			}
 		}
 		if (type && res) {
+			// Propgate type to local var and register based var passed
+			// from caller function
 			var_retype (anal, rvar, NULL, type, fcn->addr, false, false);
 			if (lvar) {
 				var_retype (anal, lvar, NULL, type, fcn->addr, false, false);
 			}
 		}
+		free (type);
 		r_anal_var_free (lvar);
 	}
 	// Type propgation from caller to callee function for stack based arguments
