@@ -10,6 +10,15 @@ extern "C" {
 
 R_LIB_VERSION_HEADER (r_hash);
 
+#if HAVE_LIB_SSL
+#include <openssl/sha.h>
+#include <openssl/md5.h>
+typedef MD5_CTX R_MD5_CTX;
+typedef SHA_CTX R_SHA_CTX;
+typedef SHA256_CTX R_SHA256_CTX;
+typedef SHA512_CTX R_SHA384_CTX;
+typedef SHA512_CTX R_SHA512_CTX;
+#else
 #define MD5_CTX R_MD5_CTX
 
 /* hashing */
@@ -25,6 +34,23 @@ typedef struct {
 	int lenW;
 	ut32 sizeHi, sizeLo;
 } R_SHA_CTX;
+
+#define SHA256_BLOCK_LENGTH 64
+typedef struct _SHA256_CTX {
+	ut32 state[8];
+	ut64 bitcount;
+	ut8 buffer[SHA256_BLOCK_LENGTH];
+} R_SHA256_CTX;
+
+#define SHA384_BLOCK_LENGTH 128
+#define SHA512_BLOCK_LENGTH 128
+typedef struct _SHA512_CTX {
+	ut64 state[8];
+	ut64 bitcount[2];
+	ut8 buffer[SHA512_BLOCK_LENGTH];
+} R_SHA512_CTX;
+typedef R_SHA512_CTX R_SHA384_CTX;
+#endif
 
 
 /*
@@ -134,22 +160,6 @@ enum CRC_PRESETS {
 
 	CRC_PRESET_SIZE
 };
-
-#define SHA256_BLOCK_LENGTH 64
-typedef struct _SHA256_CTX {
-	ut32 state[8];
-	ut64 bitcount;
-	ut8 buffer[SHA256_BLOCK_LENGTH];
-} R_SHA256_CTX;
-
-#define SHA384_BLOCK_LENGTH 128
-#define SHA512_BLOCK_LENGTH 128
-typedef struct _SHA512_CTX {
-	ut64 state[8];
-	ut64 bitcount[2];
-	ut8 buffer[SHA512_BLOCK_LENGTH];
-} R_SHA512_CTX;
-typedef R_SHA512_CTX R_SHA384_CTX;
 
 /* Fix names conflict with ruby bindings */
 #define RHash struct r_hash_t

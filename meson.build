@@ -197,6 +197,7 @@ config_h = configure_file(
   configuration: conf_data
 )
 
+# handle magic library
 sys_magic = cc.find_library('magic', required: false)
 use_syslib_magic = false
 
@@ -204,6 +205,7 @@ if sys_magic.found() and get_option('use_sys_magic')
   use_syslib_magic = true
 endif
 
+# handle xxhash library
 sys_xxhash = dependency('xxhash', required: false)
 use_sys_xxhash = false
 if not sys_xxhash.found()
@@ -215,6 +217,16 @@ if sys_xxhash.found() and get_option('use_sys_xxhash')
   use_sys_xxhash = true
 else
   message('Using bundled xxhash library')
+endif
+
+# handle openssl library
+sys_openssl = dependency('openssl', required: false)
+use_sys_openssl = false
+if sys_openssl.found() and get_option('use_sys_openssl')
+  message('Using system openssl library')
+  use_sys_openssl = true
+else
+  message('Using bundled openssl code')
 endif
 
 userconf = configuration_data()
@@ -237,7 +249,7 @@ userconf.set('HUD', r2_hud)
 userconf.set('PLUGINS', r2_plugins)
 userconf.set('EXTRAS', r2_extras)
 userconf.set('BINDINGS', r2_bindings)
-userconf.set('HAVE_OPENSSL', 0)
+userconf.set('HAVE_OPENSSL', use_sys_openssl.to_int())
 userconf.set('HAVE_FORK', 1)
 userconf.set('WITH_GPL', 1)
 if host_machine.system() == 'windows'
