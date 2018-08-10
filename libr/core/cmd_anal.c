@@ -480,7 +480,8 @@ static const char *help_msg_ao[] = {
 	"aoe", " N", "display esil form for N opcodes",
 	"aor", " N", "display reil form for N opcodes",
 	"aos", " N", "display size of N opcodes",
-	"aod", "[mnemonic]", "describe opcode for asm.arch",
+	"aom", " [id]", "list current or all mnemonics for current arch",
+	"aod", " [mnemonic]", "describe opcode for asm.arch",
 	"aoda", "", "show all mnemonic descriptions",
 	"ao", " 5", "display opcode analysis of 5 opcodes",
 	"ao*", "", "display opcode in r commands",
@@ -1326,7 +1327,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		// TODO: use more anal hints
 		hint = r_anal_hint_get (core->anal, addr);
 		r_asm_set_pc (core->assembler, addr);
-		ret = r_asm_disassemble (core->assembler, &asmop, buf + idx, len - idx);
+		(void)r_asm_disassemble (core->assembler, &asmop, buf + idx, len - idx);
 		ret = r_anal_op (core->anal, &op, core->offset + idx, buf + idx, len - idx, R_ANAL_OP_MASK_ESIL);
 		esilstr = R_STRBUF_SAFEGET (&op.esil);
 		opexstr = R_STRBUF_SAFEGET (&op.opex);
@@ -4631,6 +4632,48 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		if (obs != core->blocksize) {
 			r_core_block_size (core, obs);
 		}
+		}
+		break;
+	case 'm': // "aom"
+		if (input[1] == '?') {
+			r_cons_printf ("Usage: aom[ljd] [arg] .. list mnemonics for asm.arch\n");
+			r_cons_printf (". = current, l = list, d = describe, j=json)\n");
+		} else if (input[1] == 'd') {
+			const int id = (input[2]==' ')
+				?(int)r_num_math (core->num, input + 2): -1;
+			char *ops = r_asm_mnemonics (core->assembler, id, false);
+			if (ops) {
+				char *ptr = ops;
+				char *nl = strchr (ptr, '\n');
+				while (nl) {
+					*nl = 0;
+					char *desc = r_asm_describe (core->assembler, ptr);
+					if (desc) {
+						const char *pad = r_str_pad (' ', 16 - strlen (ptr));
+						r_cons_printf ("%s%s%s\n", ptr, pad, desc);
+						free (desc);
+					} else {
+						r_cons_printf ("%s\n", ptr);
+					}
+					ptr = nl + 1;
+					nl = strchr (ptr, '\n');
+				}
+				free (ops);
+			}
+		} else if (input[1] == 'l' || input[1] == '=' || input[1] == ' ' || input[1] == 'j') {
+			if (input[1] == ' ' && !IS_DIGIT (input[2])) {
+				r_cons_printf ("%d\n", r_asm_mnemonics_byname (core->assembler, input + 2));
+			} else {
+				const int id = (input[1] == ' ')
+					?(int)r_num_math (core->num, input + 2): -1;
+				char *ops = r_asm_mnemonics (core->assembler, id, input[1] == 'j');
+				if (ops) {
+					r_cons_println (ops);
+					free (ops);
+				}
+			}
+		} else {
+			r_core_cmd0 (core, "ao~mnemonic[1]");
 		}
 		break;
 	case 'd': // "aod"
