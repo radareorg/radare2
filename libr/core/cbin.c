@@ -51,6 +51,11 @@ static void pair_ut64(const char *key, ut64 val, int mode, bool last) {
 	pair (key, sdb_fmt ("%"PFMT64d, val), mode, last);
 }
 
+static void pair_ut64x(const char *key, ut64 val, int mode, bool last) {
+	const char *str_val = IS_MODE_JSON (mode) ? sdb_fmt ("%"PFMT64d, val) : sdb_fmt ("0x%"PFMT64x, val);
+	pair (key, str_val, mode, last);
+}
+
 static void pair_str(const char *key, const char *val, int mode, int last) {
 	if (IS_MODE_JSON (mode)) {
 		if (!val) {
@@ -709,6 +714,7 @@ static int bin_info(RCore *r, int mode) {
 		if (info->cpu && *info->cpu) {
 			pair_str ("cpu", info->cpu, mode, false);
 		}
+		pair_ut64x ("baddr", r_bin_get_baddr (r->bin), mode, false);
 		pair_ut64 ("binsz", r_bin_get_size (r->bin), mode, false);
 		pair_str ("bintype", info->rclass, mode, false);
 		pair_int ("bits", info->bits, mode, false);
