@@ -557,16 +557,19 @@ R_API void r_list_sort(RList *list, RListComparator cmp) {
 }
 
 R_API RList *r_list_uniq(const RList *list, RListComparator cmp) {
+	RListIter *iter, *iter2;
+	void *item, *item2;
 	if (!list || !cmp) {
 		return NULL;
 	}
 	RList *nl = r_list_newf (NULL);
-	RListIter *iter, *iter2;
-	void *item, *item2;
+	if (!nl) {
+		return NULL;
+	}
 	r_list_foreach (list, iter, item) {
 		bool found = false;
 		r_list_foreach (nl, iter2, item2) {
-			if (cmp (item, item2)) {
+			if (cmp (item, item2) == 0) {
 				found = true;
 				break;
 			}

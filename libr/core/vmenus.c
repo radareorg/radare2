@@ -1686,19 +1686,22 @@ R_API void r_core_visual_config(RCore *core) {
 			r_cons_printf ("[EvalSpace]\n\n");
 			hit = j = i = 0;
 			r_list_foreach (core->config->nodes, iter, bt) {
-				if (option==i) {
+				if (option == i) {
 					fs = bt->name;
 				}
-				if (old[0]=='\0') {
+				if (!old[0]) {
 					r_str_ccpy (old, bt->name, '.');
 					show = 1;
 				} else if (r_str_ccmp (old, bt->name, '.')) {
 					r_str_ccpy (old, bt->name, '.');
 					show = 1;
-				} else show = 0;
-
+				} else {
+					show = 0;
+				}
 				if (show) {
-					if (option == i) hit = 1;
+					if (option == i) {
+						hit = 1;
+					}
 					if ( (i >=option-delta) && ((i<option+delta)||((option<delta)&&(i<(delta<<1))))) {
 						r_cons_printf (" %c  %s\n", (option == i)?'>':' ', old);
 						j++;
@@ -1706,7 +1709,7 @@ R_API void r_core_visual_config(RCore *core) {
 					i++;
 				}
 			}
-			if (!hit && j>0) {
+			if (!hit && j > 0) {
 				option--;
 				continue;
 			}

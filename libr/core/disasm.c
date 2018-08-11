@@ -1911,9 +1911,9 @@ static int flagCmp(const void *a, const void *b) {
 	const RFlagItem *fa = a;
 	const RFlagItem *fb = b;
 	if (fa->realname && fb->realname) {
-		return !strcmp (fa->realname, fb->realname);
+		return strcmp (fa->realname, fb->realname);
 	}
-	return !strcmp (fa->name, fb->name);
+	return strcmp (fa->name, fb->name);
 }
 
 static void ds_show_flags(RDisasmState *ds) {

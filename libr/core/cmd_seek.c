@@ -118,6 +118,7 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 	}
 	return target - 4;
 }
+
 static void __init_seek_line(RCore *core) {
 	ut64 from, to;
 
