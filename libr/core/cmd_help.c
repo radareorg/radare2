@@ -142,7 +142,6 @@ static const char *help_msg_question[] = {
 	"?iy", " prompt", "yesno input prompt",
 	"?l", "[q] str", "returns the length of string ('q' for quiet, just set $?)",
 	"?o", " num", "get octal value",
-	"?O", " [id]", "List mnemonics for current asm.arch / asm.bits",
 	"?p", " vaddr", "get physical address for given virtual address",
 	"?P", " paddr", "get virtual address for given physical one",
 	"?q", " eip-0x804800", "compute expression like ? or ?v but in quiet mode",
@@ -450,47 +449,6 @@ static int cmd_help(void *data, const char *input) {
 	case 'o': // "?o"
 		n = r_num_math (core->num, input+1);
 		r_cons_printf ("0%"PFMT64o"\n", n);
-		break;
-	case 'O': // "?O"
-		if (input[1] == '?') {
-			r_cons_printf ("Usage: ?O[jd] [arg] .. list all mnemonics for asm.arch (d = describe, j=json)\n");
-		} else if (input[1] == 'd') {
-			const int id = (input[2]==' ')
-				?(int)r_num_math (core->num, input + 2): -1;
-			char *ops = r_asm_mnemonics (core->assembler, id, false);
-			if (ops) {
-				char *ptr = ops;
-				char *nl = strchr (ptr, '\n');
-				while (nl) {
-					*nl = 0;
-					char *desc = r_asm_describe (core->assembler, ptr);
-					if (desc) {
-						const char *pad = r_str_pad (' ', 16 - strlen (ptr));
-						r_cons_printf ("%s%s%s\n", ptr, pad, desc);
-						free (desc);
-					} else {
-						r_cons_printf ("%s\n", ptr);
-					}
-					ptr = nl + 1;
-					nl = strchr (ptr, '\n');
-				}
-				free (ops);
-			}
-		} else if (input[1] && !IS_DIGIT (input[2])) {
-			r_cons_printf ("%d\n", r_asm_mnemonics_byname (core->assembler, input + 2));
-		} else {
-			bool json = false;
-			if (input[1] == 'j') {
-				json = true;
-			}
-			const int id = (input[1] != '\0' && input[2] == ' ')
-				?(int)r_num_math (core->num, input + 2): -1;
-			char *ops = r_asm_mnemonics (core->assembler, id, json);
-			if (ops) {
-				r_cons_print (ops);
-				free (ops);
-			}
-		}
 		break;
 	case 'T': // "?T"
 		r_cons_printf("plug.init = %"PFMT64d"\n"

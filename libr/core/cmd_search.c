@@ -62,7 +62,7 @@ static const char *help_msg_slash[] = {
 };
 
 static const char *help_msg_slash_c[] = {
-	"Usage:", "/c [inst]", " Search for asm",
+	"Usage:", "/c [inst]", " Search for code",
 	"/c ", "instr", "search for instruction 'instr'",
 	"/ce ", "esil", "search for esil expressions matching substring",
 	"/ca ", "instr", "search for instruction 'instr' (in all offsets)",
@@ -73,6 +73,20 @@ static const char *help_msg_slash_c[] = {
 	"/cj ", "instr", "json output",
 	"/c/j ", "instr", "regex search with json output",
 	"/c* ", "instr", "r2 command output",
+	NULL
+};
+
+static const char *help_msg_slash_a[] = {
+	"Usage:", "/a[stf][?ljq] [instr | op.type | op.family]", "Search for assembly",
+	"/a ", "instr", "assemble given instruction and search the bytes",
+	"/at ", "type", "Search for instructions of given type",
+	"/af ", "family", "Search for instruction of specific family",
+	"/as ", "", "Search for syscalls (See /at swi and /af priv)",
+
+	"/al ", "", "Same as aoml, list all opcodes",
+	"/asl ", "", "Same as asl, list all syscalls",
+	"/atl ", "", "List all instruction types",
+	"/afl ", "", "List all instruction families",
 	NULL
 };
 
@@ -1850,59 +1864,63 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 	ut64 at;
 	ut8 *buf;
 	RAnalOp aop;
-	bool chk_family = false;
+	int type = 0;
 	int mode = 0;
 	int i, ret, bsize = R_MIN (64, core->blocksize);
 	int kwidx = core->search->n_kws;
 	int count = 0;
 	bool firstItem = true;
 
-	if (*input == 'f') {
-		chk_family = true;
+	while (*input && *input != ' ') {
+		switch (*input) {
+		case 'j':
+		case 'q':
+			mode = *input;
+			break;
+		case 'l':
+			switch (type) {
+			case 't':
+			case 'f':
+				for (i = 0; i < 64; i++) {
+					const char *str = type == 'f'
+						? r_anal_op_family_to_string (i)
+						: r_anal_optype_to_string (i);
+					if (!str || !*str) {
+						break;
+					}
+					if (!strcmp (str, "undefined")) {
+						continue;
+					}
+					r_cons_println (str);
+				}
+				break;
+			case 's':
+				r_core_cmd0 (core, "asl");
+				break;
+			case 0:
+				r_core_cmd0 (core, "aoml");
+				break;
+			default:
+				eprintf ("wat\n");
+				break;
+			}
+			return;
+		case 'f':
+		case 's':
+		case 't':
+		case ' ':
+			type = *input;
+			break;
+		case 0:
+		case '?':
+		default:
+			r_core_cmd_help (core, help_msg_slash_a);
+			return;
+		}
 		input++;
 	}
-	switch (*input) {
-	case 'j':
+	if (mode == 'j') {
 		r_cons_printf ("[");
-		mode = *input;
-		input++;
-		break;
-	case 'q':
-		mode = *input;
-		input++;
-		break;
-	case 0:
-	case 'f':
-	case '?':
-		if (input[0] && input[1] == '?') {
-			for (i = 0; i < 64; i++) {
-				const char *str = chk_family
-					? r_anal_op_family_to_string (i)
-					: r_anal_optype_to_string (i);
-				if (chk_family && atoi (str)) {
-					break;
-				}
-				if (!str || !*str) {
-					break;
-				}
-				if (!strcmp (str, "undefined")) {
-					continue;
-				}
-				r_cons_println (str);
-			}
-		} else {
-			r_cons_printf (
-				"Usage: /A[f][?jq] [op.type | op.family]\n"
-				" /A?      - get this help\n"
-				" /A??     - list all opcode types\n"
-				" /Af?     - get this help\n"
-				" /Af??    - list all opcode families\n"
-				" /A ucall - find calls with unknown destination\n"
-				" /Af sse  - find SSE instructions\n"
-				" /Aj swi  - search all syscalls, show results in JSON\n"
-				" /Afj fpu - search all fpu instructions, show in JSON\n");
-		}
-		return;
 	}
 	input = r_str_trim_ro (input);
 	buf = malloc (bsize);
@@ -1929,7 +1947,7 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i, R_ANAL_OP_MASK_BASIC);
 			if (ret) {
 				bool match = false;
-				if (chk_family) {
+				if (type == 'f') {
 					const char *fam = r_anal_op_family_to_string (aop.family);
 					if (fam) {
 						if (!*input || !strcmp (input, fam)) {
@@ -2785,24 +2803,25 @@ reread:
 			break;
 		}
 		break;
-	case 'A': // "/A"
-		do_anal_search (core, &param, input + 1);
-		dosearch = false;
-		break;
 	case 'a': // "/a"
-		if (input[param_offset - 1]) {
-			char *kwd = r_core_asm_search (core, input + param_offset);
-			if (!kwd) {
-				ret = false;
-				goto beach;
+		if (input[1] == ' ') {
+			if (input[param_offset - 1]) {
+				char *kwd = r_core_asm_search (core, input + param_offset);
+				if (!kwd) {
+					ret = false;
+					goto beach;
+				}
+				dosearch = true;
+				r_search_reset (core->search, R_SEARCH_KEYWORD);
+				r_search_set_distance (core->search, (int)
+						r_config_get_i (core->config, "search.distance"));
+				r_search_kw_add (core->search,
+						r_search_keyword_new_hexmask (kwd, NULL));
+				free (kwd);
 			}
-			dosearch = true;
-			r_search_reset (core->search, R_SEARCH_KEYWORD);
-			r_search_set_distance (core->search, (int)
-					r_config_get_i (core->config, "search.distance"));
-			r_search_kw_add (core->search,
-					r_search_keyword_new_hexmask (kwd, NULL));
-			free (kwd);
+		} else {
+			do_anal_search (core, &param, input + 1);
+			dosearch = false;
 		}
 		break;
 	case 'C': { // "/C"

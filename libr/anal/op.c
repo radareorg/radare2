@@ -540,7 +540,6 @@ R_API const char *r_anal_stackop_tostring(int s) {
 }
 
 R_API const char *r_anal_op_family_to_string(int n) {
-	static char num[32];
 	switch (n) {
 	case R_ANAL_OP_FAMILY_UNKNOWN: return "unk";
 	case R_ANAL_OP_FAMILY_CPU: return "cpu";
@@ -552,11 +551,8 @@ R_API const char *r_anal_op_family_to_string(int n) {
 	case R_ANAL_OP_FAMILY_CRYPTO: return "crpt";
 	case R_ANAL_OP_FAMILY_IO: return "io";
 	case R_ANAL_OP_FAMILY_VIRT: return "virt";
-	default:
-		snprintf (num, sizeof (num), "%d", n);
-		break;
 	}
-	return num;
+	return NULL;
 }
 
 R_API int r_anal_op_family_from_string(const char *f) {
