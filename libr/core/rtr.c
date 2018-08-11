@@ -1870,9 +1870,11 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 		if (r_cons_is_breaked ()) {
 			break;
 		}
+		void *bed = r_cons_sleep_begin ();
 		ch = r_socket_accept (s);
 		buf[0] = 0;
 		ret = r_socket_read (ch, buf, sizeof (buf) - 1);
+		r_cons_sleep_end (bed);
 		if (ret > 0) {
 			buf[ret] = 0;
 			for (i = 0; buf[i]; i++) {
@@ -1887,11 +1889,13 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 				break;
 			}
 			str = r_core_cmd_str (core, (const char *)buf);
+			bed = r_cons_sleep_begin ();
 			if (str && *str)  {
 				r_socket_write (ch, str, strlen (str));
 			} else {
 				r_socket_write (ch, "\n", 1);
 			}
+			r_cons_sleep_end (bed);
 			free (str);
 		}
 		r_socket_close (ch);
