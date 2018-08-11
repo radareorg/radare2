@@ -6082,6 +6082,11 @@ static void cmd_agraph_print(RCore *core, const char *input) {
 }
 
 static void cmd_anal_graph(RCore *core, const char *input) {
+	// Honor asm.graph=false in json as well
+	RConfigHold *hc = r_config_hold_new (core->config);
+	r_config_save_num (hc, "asm.offset", NULL);
+	const bool o_graph_offset = r_config_get_i (core->config, "graph.offset");
+
 	switch (input[0]) {
 	case 'f': // "agf"
 		switch (input[1]) {
@@ -6123,8 +6128,13 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			r_core_anal_graph (core, r_num_math (core->num, input + 2), R_CORE_ANAL_JSON);
 			break;
 		case 'J': // "agfJ"
+			if (!o_graph_offset) {
+					r_config_set_i (core->config, "asm.offset", false);
+			}
 			r_core_anal_graph (core, r_num_math (core->num, input + 2),
 				R_CORE_ANAL_JSON | R_CORE_ANAL_JSON_FORMAT_DISASM);
+			r_config_restore (hc);
+			r_config_hold_free (hc);
 			break;
 		case 'g':{ // "agfg"
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
