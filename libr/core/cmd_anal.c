@@ -6959,7 +6959,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 						r_list_free (list);
 					}
 				}
-				if (sdb_count (core->anal->sdb_zigns) > 0) {
+				if (!sdb_isempty (core->anal->sdb_zigns)) {
 					rowlog (core, "Check for zignature from zigns folder (z/)");
 					r_core_cmd0 (core, "z/");
 				}
