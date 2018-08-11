@@ -222,21 +222,28 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 	if (!params_off) {
 		return r_str_newf ("()%s", return_type);;
 	}
-	bufptr = bin->b->buf;
+	ut8 params_buf[sizeof (ut32)];
+	if (!r_buf_read_at (bin->b, params_off, params_buf, sizeof (params_buf))) {
+		return NULL;
+	}
 	// size of the list, in entries
-	list_size = r_read_le32 (bufptr + params_off);
+	list_size = r_read_le32 (params_buf);
 	if (list_size * sizeof (ut16) >= bin->size) {
 		return NULL;
 	}
 
 	for (i = 0; i < list_size; i++) {
 		int buff_len = 0;
-		if (params_off + 4 + (i * 2) >= bin->size) {
+		int off = params_off + 4 + (i * 2);
+		if (off >= bin->size) {
 			break;
 		}
-		type_idx = r_read_le16 (bufptr + params_off + 4 + (i * 2));
-		if (type_idx >=
-			    bin->header.types_size || type_idx >= bin->size) {
+		ut8 typeidx_buf[sizeof (ut16)];
+		if (!r_buf_read_at (bin->b, off, typeidx_buf, sizeof (typeidx_buf))) {
+			break;
+		}
+		type_idx = r_read_le16 (typeidx_buf);
+		if (type_idx >= bin->header.types_size || type_idx >= bin->size) {
 			break;
 		}
 		buff = getstr (bin, bin->types[type_idx].descriptor_id);
