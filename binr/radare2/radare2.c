@@ -690,11 +690,7 @@ int main(int argc, char **argv, char **envp) {
 		case 'V':
 			return verify_version (1);
 		case 'w':
-			if ((perms & R_IO_WRITE) == R_IO_WRITE) {
-				perms |= R_IO_CREAT;
-			} else {
-				perms |= R_IO_WRITE;
-			}
+			perms |= R_IO_WRITE;
 			break;
 		case 'x':
 			perms &= ~R_IO_EXEC;
@@ -1048,6 +1044,10 @@ int main(int argc, char **argv, char **envp) {
 				while (optind < argc) {
 					pfile = argv[optind++];
 					fh = r_core_file_open (&r, pfile, perms, mapaddr);
+					if (!fh && perms & R_IO_WRITE) {
+						perms |= R_IO_CREAT;
+						fh = r_core_file_open (&r, pfile, perms, mapaddr);
+					}
 					if (perms & R_IO_CREAT) {
 						if (fh) {
 							r_config_set_i (r.config, "io.va", false);
