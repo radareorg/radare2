@@ -1268,8 +1268,8 @@ R_API bool r_sign_save(RAnal *a, const char *file) {
 	if (!a || !file) {
 		return false;
 	}
-	
-	if (sdb_count (a->sdb_zigns) == 0) {
+
+	if (sdb_isempty (a->sdb_zigns)) {
 		eprintf ("WARNING: no zignatures to save\n");
 		return false;
 	}
