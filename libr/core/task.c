@@ -294,6 +294,7 @@ static void task_end(RCoreTask *t) {
 }
 
 static int task_run(RCoreTask *task) {
+	int res = 0;
 	RCore *core = task->core;
 
 	task_wakeup (task);
@@ -304,7 +305,6 @@ static int task_run(RCoreTask *task) {
 	}
 
 	char *res_str;
-	int res;
 	if (task == task->core->main_task) {
 		res = r_core_cmd (core, task->cmd, task->cmd_log);
 		res_str = NULL;
@@ -313,9 +313,7 @@ static int task_run(RCoreTask *task) {
 		res_str = r_core_cmd_str (core, task->cmd);
 	}
 
-	if (task->res) {
-		free (task->res);
-	}
+	free (task->res);
 	task->res = res_str;
 
 	if (task != core->main_task) {

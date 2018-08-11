@@ -17,7 +17,8 @@
 #define R_IO_RW		(R_IO_READ|R_IO_WRITE)
 #define R_IO_RWX	(R_IO_READ|R_IO_WRITE|R_IO_EXEC)
 #define R_IO_PRIV	16
-#define R_IO_SHAR	32	//wtf is this
+#define R_IO_SHAR	32
+#define R_IO_CREAT	64
 
 #define R_IO_SEEK_SET	0
 #define R_IO_SEEK_CUR	1
@@ -357,7 +358,6 @@ R_API int r_io_extend_at (RIO *io, ut64 addr, ut64 size);
 R_API bool r_io_set_write_mask (RIO *io, const ut8 *mask, int len);
 R_API int r_io_bind (RIO *io, RIOBind *bnd);
 R_API int r_io_shift (RIO *io, ut64 start, ut64 end, st64 move);
-R_API int r_io_create (RIO *io, const char *file, int mode, int type);
 R_API ut64 r_io_seek (RIO *io, ut64 offset, int whence);
 R_API int r_io_fini (RIO *io);
 R_API void r_io_free (RIO *io);

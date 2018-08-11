@@ -727,9 +727,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 	ut64 prev = r_sys_now ();
 	// bool suppress_warning = r_config_get_i (r->config, "file.nowarn");
 	const int openmany = r_config_get_i (r->config, "file.openmany");
-	const char *cp;
 	RCoreFile *fh = NULL;
-	RIODesc *fd;
 
 	if (!file || !*file) {
 		goto beach;
@@ -742,7 +740,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 		flags = R_IO_READ;
 	}
 	r->io->bits = r->assembler->bits; // TODO: we need an api for this
-	fd = r_io_open_nomap (r->io, file, flags, 0644);
+	RIODesc *fd = r_io_open_nomap (r->io, file, flags, 0644);
 	if (!fd && openmany > 2) {
 		// XXX - make this an actual option somewhere?
 		fh = r_core_file_open_many (r, file, flags, loadaddr);
@@ -751,10 +749,8 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 		}
 	}
 	if (!fd) {
-		if (flags & 2) {
-			if (!r_io_create (r->io, file, 0644, 0)) {
-				goto beach;
-			}
+		if (flags & R_IO_WRITE) {
+		//	flags |= R_IO_CREAT;
 			if (!(fd = r_io_open_nomap (r->io, file, flags, 0644))) {
 				goto beach;
 			}
@@ -777,11 +773,11 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 	fh->core = r;
 	fh->fd = fd->fd;
 
-	cp = r_config_get (r->config, "cmd.open");
-	if (cp && *cp) {
-		r_core_cmd (r, cp, 0);
-	}
 	{
+		const char *cp = r_config_get (r->config, "cmd.open");
+		if (cp && *cp) {
+			r_core_cmd (r, cp, 0);
+		}
 		char *absfile = r_file_abspath (file);
 		r_config_set (r->config, "file.path", absfile);
 		free (absfile);

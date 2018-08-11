@@ -254,11 +254,10 @@ R_API RIODesc *r_io_open_buffer(RIO *io, RBuffer *b, int flags, int mode) {
 }
 
 R_API RIODesc *r_io_open_nomap(RIO *io, const char *uri, int flags, int mode) {
-	RIODesc *desc;
-	if (!io) {
+	if (!io || !uri) {
 		return NULL;
 	}
-	desc = r_io_desc_open (io, uri, flags, mode);
+	RIODesc *desc = r_io_desc_open (io, uri, flags, mode);
 	if ((io->autofd || !io->desc) && desc) {
 		io->desc = desc;
 	}
@@ -268,11 +267,10 @@ R_API RIODesc *r_io_open_nomap(RIO *io, const char *uri, int flags, int mode) {
 
 /* opens a file and maps it to 0x0 */
 R_API RIODesc* r_io_open(RIO* io, const char* uri, int flags, int mode) {
-	RIODesc* desc;
 	if (!io || !io->maps) {
 		return NULL;
 	}
-	desc = r_io_open_nomap (io, uri, flags, mode);
+	RIODesc* desc = r_io_open_nomap (io, uri, flags, mode);
 	if (!desc) {
 		return NULL;
 	}
@@ -488,15 +486,15 @@ R_API bool r_io_read_at_mapped(RIO *io, ut64 addr, ut8 *buf, int len) {
 		return false;
 	}
 	if (io->buffer_enabled) {
-		return !!r_io_buffer_read(io, addr, buf, len);
+		return !!r_io_buffer_read (io, addr, buf, len);
 	}
 	if (io->ff) {
-		memset(buf, io->Oxff, len);
+		memset (buf, io->Oxff, len);
 	}
 	if (io->va) {
-		ret = on_map_skyline(io, addr, buf, len, R_IO_READ, fd_read_at_wrap, false);
+		ret = on_map_skyline (io, addr, buf, len, R_IO_READ, fd_read_at_wrap, false);
 	} else {
-		ret = r_io_pread_at(io, addr, buf, len) > 0;
+		ret = r_io_pread_at (io, addr, buf, len) > 0;
 	}
 	if (io->cached & R_IO_READ) {
 		(void)r_io_cache_read(io, addr, buf, len);
@@ -517,14 +515,14 @@ R_API int r_io_nread_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	}
 	if (io->va) {
 		if (io->ff) {
-			memset(buf, io->Oxff, len);
+			memset (buf, io->Oxff, len);
 		}
-		ret = on_map_skyline(io, addr, buf, len, R_IO_READ, fd_read_at_wrap, true);
+		ret = on_map_skyline (io, addr, buf, len, R_IO_READ, fd_read_at_wrap, true);
 	} else {
-		ret = r_io_pread_at(io, addr, buf, len);
+		ret = r_io_pread_at (io, addr, buf, len);
 	}
 	if (ret > 0 && io->cached & R_IO_READ) {
-		(void)r_io_cache_read(io, addr, buf, len);
+		(void)r_io_cache_read (io, addr, buf, len);
 	}
 	return ret;
 }
@@ -791,6 +789,8 @@ R_API int r_io_shift(RIO* io, ut64 start, ut64 end, st64 move) {
 	return true;
 }
 
+#if 0
+// we should move this into r_util/file instead
 R_API int r_io_create(RIO* io, const char* file, int mode, int type) {
 	if (io && io->desc && io->desc->plugin && io->desc->plugin->create) {
 		return io->desc->plugin->create (io, file, mode, type);
@@ -800,6 +800,7 @@ R_API int r_io_create(RIO* io, const char* file, int mode, int type) {
 	}
 	return r_sandbox_creat (file, mode);
 }
+#endif
 
 R_API ut64 r_io_seek(RIO* io, ut64 offset, int whence) {
 	if (!io) {
