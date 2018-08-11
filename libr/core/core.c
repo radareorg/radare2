@@ -2638,7 +2638,7 @@ reaccept:
 					if (r_core_file_open (core, (const char *)ptr, perm, 0)) {
 						int fd = r_io_fd_get_current (core->io);
 						r_core_bin_load (core, NULL, baddr);
-						r_io_map_add (core->io, fd, perm, 0, 0, r_io_fd_size (core->io, fd), true);
+						r_io_map_add (core->io, fd, perm, 0, 0, r_io_fd_size (core->io, fd));
 						if (core->file) {
 							pipefd = fd;
 						} else {
@@ -3045,7 +3045,7 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 		if (r_cons_is_breaked ()) {
 			goto beach;
 		}
-		bool res = r_io_read_at_mapped (core->io, from, buf, size);
+		bool res = r_io_read_at (core->io, from, buf, size);	//this was read_at_mapped, but read_at_mapped is a terrible idea form highlevel perspective
 		if (!res || !memcmp (buf, "\xff\xff\xff\xff", 4) || !memcmp (buf, "\x00\x00\x00\x00", 4)) {
 			if (!isValidAddress (core, from)) {
 				ut64 next = r_io_map_next_address (core->io, from);

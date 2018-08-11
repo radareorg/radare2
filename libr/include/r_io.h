@@ -75,13 +75,12 @@ typedef struct r_io_t {
 	int debug;
 //#warning remove debug from RIO
 	RIDPool *sec_ids;
-	RIDPool *map_ids;
-	SdbList *maps; //from tail backwards maps with higher priority are found
-	RPVector map_skyline; // map parts that are not covered by others
+	ROIDStorage *maps;
+	ROIDStorage *submaps;
 	SdbList *sections;
 	RIDStorage *files;
 	RCache *buffer;
-	RList *cache;	//sdblist?
+	RList *cache;
 	RBNode cacheTree;
 	ut8 *write_mask;
 	int write_mask_len;
@@ -172,10 +171,13 @@ typedef struct r_io_map_t {
 	char *name;
 } RIOMap;
 
-typedef struct r_io_map_skyline_t {
-	RIOMap *map;
-	RInterval itv;
-} RIOMapSkyline;
+//submap represent parts of maps, that don't overlap
+typedef struct r_io_submap_t {
+	ut32 sid;	//id of the submap
+	ut32 id;	//id of the map
+	ut64 from;	//itv-api can be used later
+	ut64 to;	//i don't like the itv api, and it's conceptually confusing
+} RIOSubMap;
 
 typedef struct r_io_section_t {
 	char *name;
@@ -298,7 +300,7 @@ typedef struct r_io_bind_t {
 } RIOBind;
 
 //map.c
-R_API RIOMap *r_io_map_new (RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size, bool do_skyline);
+R_API RIOMap *r_io_map_new (RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
 R_API ut64 r_io_map_next_address(RIO* io, ut64 addr);
 R_API void r_io_map_init (RIO *io);
 R_API bool r_io_map_remap (RIO *io, ut32 id, ut64 addr);
@@ -306,8 +308,7 @@ R_API bool r_io_map_remap_fd (RIO *io, int fd, ut64 addr);
 R_API bool r_io_map_exists (RIO *io, RIOMap *map);
 R_API bool r_io_map_exists_for_id (RIO *io, ut32 id);
 R_API RIOMap *r_io_map_resolve (RIO *io, ut32 id);
-R_API RIOMap *r_io_map_add (RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size, bool do_skyline);
-R_API RIOMap *r_io_map_get (RIO *io, ut64 addr);		//returns the map at vaddr with the highest priority
+R_API RIOMap *r_io_map_add (RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
 R_API RIOMap *r_io_map_get_paddr (RIO *io, ut64 paddr);		//returns the map at paddr with the highest priority
 R_API void r_io_map_reset(RIO* io);
 R_API bool r_io_map_del (RIO *io, ut32 id);
@@ -321,9 +322,18 @@ R_API bool r_io_map_is_in_range (RIOMap *map, ut64 from, ut64 to);
 R_API void r_io_map_set_name (RIOMap *map, const char *name);
 R_API void r_io_map_del_name (RIOMap *map);
 R_API RIOMap *r_io_map_add_next_available(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size, ut64 load_align);
-R_API void r_io_map_calculate_skyline(RIO *io);
 R_API RList* r_io_map_get_for_fd(RIO *io, int fd);
 R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize);
+
+//submap.c
+R_API void r_io_submap_init (RIO *io);
+R_API void r_io_submap_fini (RIO *io);
+R_API void r_io_submap_repress (RIO *io, RIOMap *map);
+R_API bool r_io_submap_cut_out (RIO *io, ut64 from, ut64 to);
+R_API void r_io_submap_sink_in (RIO *io, RIOMap *map);
+R_API ut32 r_io_map_get_next (RIO *io, ut64 addr);
+R_API RIOMap *r_io_map_get (RIO *io, ut64 addr);	//returns the map at vaddr with the highest priority
+R_API void r_io_submap_sink_in_all (RIO *io);
 
 //io.c
 R_API RIO *r_io_new (void);
@@ -338,12 +348,11 @@ R_API bool r_io_reopen (RIO *io, int fd, int flags, int mode);
 R_API int r_io_close_all (RIO *io);
 R_API int r_io_pread_at (RIO *io, ut64 paddr, ut8 *buf, int len);
 R_API int r_io_pwrite_at (RIO *io, ut64 paddr, const ut8 *buf, int len);
-R_API bool r_io_vread_at_mapped(RIO* io, ut64 vaddr, ut8* buf, int len);
+R_API bool r_io_vread_at (RIO* io, ut64 vaddr, ut8* buf, int len);
+R_API bool r_io_vwrite_at(RIO* io, ut64 vaddr, const ut8* buf, int len);
 R_API RIOAccessLog *r_io_al_vread_at (RIO *io, ut64 vaddr, ut8 *buf, int len);
 R_API RIOAccessLog *r_io_al_vwrite_at (RIO *io, ut64 vaddr, const ut8 *buf, int len);
 R_API bool r_io_read_at (RIO *io, ut64 addr, ut8 *buf, int len);
-R_API bool r_io_read_at_mapped(RIO *io, ut64 addr, ut8 *buf, int len);
-R_API int r_io_nread_at (RIO *io, ut64 addr, ut8 *buf, int len);
 R_API RIOAccessLog *r_io_al_read_at (RIO *io, ut64 addr, ut8 *buf, int len);
 R_API void r_io_alprint(RList *ls);
 R_API bool r_io_write_at (RIO *io, ut64 addr, const ut8 *buf, int len);
@@ -501,8 +510,8 @@ R_API bool r_io_use_fd (RIO *io, int fd);
 #define r_io_range_free(x)	free(x)
 
 /* io/ioutils.c */
-R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, bool do_skyline);
-R_API bool r_io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch, bool do_skyline);
+R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null);
+R_API bool r_io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch);
 R_API bool r_io_create_mem_for_section(RIO *io, RIOSection *sec);
 R_API bool r_io_is_valid_offset (RIO *io, ut64 offset, int hasperm);
 R_API bool r_io_addr_is_mapped(RIO *io, ut64 vaddr);

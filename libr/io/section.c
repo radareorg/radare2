@@ -400,16 +400,16 @@ static bool _section_apply_for_anal_patch(RIO *io, RIOSection *sec, bool patch) 
 			ut64 at = sec->vaddr + sec->size;
 			// TODO: harden this, handle mapslit
 			// craft the uri for the null-fd
-			if (r_io_create_mem_map (io, sec, at, true, false)) {
+			if (r_io_create_mem_map (io, sec, at, true)) {
 			// we need to create this map for transfering the flags, no real remapping here
-				if (r_io_create_file_map (io, sec, sec->size, patch, false)) {
+				if (r_io_create_file_map (io, sec, sec->size, patch)) {
 					return true;
 				}
 			}
 		}
 	} else {
 		// same as above
-		if (!sec->filemap && r_io_create_file_map (io, sec, sec->vsize, patch, false)) {
+		if (!sec->filemap && r_io_create_file_map (io, sec, sec->vsize, patch)) {
 			return true;
 		}
 	}
@@ -486,25 +486,23 @@ R_API bool r_io_section_apply(RIO *io, ut32 id, RIOSectionApplyMethod method) {
 }
 
 static bool _section_reapply_anal_or_patch(RIO *io, RIOSection *sec, RIOSectionApplyMethod method) {
-	SdbListIter *iter;
 	RIOMap *map;
 	RIODesc* desc;
 	if (!sec) {
 		return false;
 	}
 	if (sec->memmap) {
-		ls_foreach (io->maps, iter, map) {
-			if (map->id == sec->memmap) {
-				desc = r_io_desc_get (io, map->fd);
-				// we can't use r_io_desc_close here, bc it breaks the section-list
-				if (desc && desc->plugin && desc->plugin->close) {
-					desc->plugin->close (desc);
-					r_io_desc_del (io, map->fd);
-				}
-				sec->memmap = 0;
-				r_io_map_cleanup (io);
-				break;
+		map = r_io_map_resolve (io, sec->memmap);
+		if (map) {
+			desc = r_io_desc_get (io, map->fd);
+			// we can't use r_io_desc_close here, bc it breaks the section-list
+			// wtf
+			if (desc && desc->plugin && desc->plugin->close) {
+				desc->plugin->close (desc);
+				r_io_desc_del (io, map->fd);
 			}
+			sec->memmap = 0;
+			r_io_map_cleanup (io);
 		}
 	}
 	r_io_map_del (io, sec->filemap);
@@ -526,11 +524,7 @@ static bool _section_reapply_for_emul(RIO *io, RIOSection *sec) {
 			sec->filemap = 0;
 			return _section_apply (io, sec, R_IO_SECTION_APPLY_FOR_EMULATOR);
 		}
-		ls_foreach (io->maps, iter, map) {
-			if (map->id == sec->memmap) {
-				break;
-			}
-		}
+		map = r_io_map_resolve (io, sec->memmap);
 		if (!map) {
 			r_io_map_del (io, sec->filemap);
 			sec->filemap = sec->memmap = 0;
@@ -582,11 +576,7 @@ static bool _section_reapply_for_emul(RIO *io, RIOSection *sec) {
 	if (!sec->filemap) {
 		return _section_apply (io, sec, R_IO_SECTION_APPLY_FOR_EMULATOR);
 	}
-	ls_foreach (io->maps, iter, map) {
-		if (map->id == sec->memmap) {
-			break;
-		}
-	}
+	map = r_io_map_resolve (io, sec->memmap);
 	if (!map) {
 		return _section_apply (io, sec, R_IO_SECTION_APPLY_FOR_EMULATOR);
 	}
@@ -642,7 +632,6 @@ R_API bool r_io_section_apply_bin(RIO *io, ut32 bin_id, RIOSectionApplyMethod me
 			_section_apply (io, sec, method);
 		}
 	}
-	r_io_map_calculate_skyline (io);
 	return ret;
 }
 
@@ -655,7 +644,6 @@ R_API bool r_io_section_reapply(RIO *io, ut32 id, RIOSectionApplyMethod method) 
 		return false;
 	}
 	bool ret = _section_reapply (io, sec, method);
-	r_io_map_calculate_skyline (io);
 	return ret;
 }
 
@@ -672,6 +660,5 @@ R_API bool r_io_section_reapply_bin(RIO *io, ut32 binid, RIOSectionApplyMethod m
 			_section_reapply (io, sec, method);
 		}
 	}
-	r_io_map_calculate_skyline (io);
 	return ret;
 }

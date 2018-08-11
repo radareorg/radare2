@@ -49,7 +49,8 @@ static RIODesc *findReusableFile(RIO *io, const char *uri, int flags) {
 
 #endif
 
-R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, bool do_skyline) {
+R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null) {
+	RIOMap *map = NULL;
 	RIODesc *desc = NULL;
 	char *uri = NULL;
 	bool reused = false;
@@ -64,7 +65,7 @@ R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, boo
 		if (desc) {
 			RIOMap *map = r_io_map_get (io, at);
 			if (!map) {
-				r_io_map_new (io, desc->fd, desc->flags, 0LL, at, gap, false);
+				r_io_map_new (io, desc->fd, desc->flags, 0LL, at, gap);
 			}
 			reused = true;
 		}
@@ -78,11 +79,8 @@ R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, boo
 	if (!desc) {
 		return false;
 	}
-	if (do_skyline) {
-		r_io_map_calculate_skyline (io);
-	}
 	// this works, because new maps are allways born on the top
-	RIOMap *map = r_io_map_get (io, at);
+	map = r_io_map_get (io, at);
 	// check if the mapping failed
 	if (!map) {
 		if (!reused) {
@@ -96,7 +94,7 @@ R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, boo
 	return true;
 }
 
-R_API bool r_io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch, bool do_skyline) {
+R_API bool r_io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch) {
 	RIOMap *map = NULL;
 	int flags = 0;
 	RIODesc *desc;
@@ -114,7 +112,7 @@ R_API bool r_io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch,
 		//if the file was not opened with -w desc->flags won't have that bit active
 		flags = flags | desc->flags;
 	}
-	map = r_io_map_add (io, sec->fd, flags, sec->paddr, sec->vaddr, size, do_skyline);
+	map = r_io_map_add (io, sec->fd, flags, sec->paddr, sec->vaddr, size);
 	if (map) {
 		sec->filemap = map->id;
 		map->name = r_str_newf ("fmap.%s", sec->name);
@@ -130,7 +128,7 @@ R_API bool r_io_create_mem_for_section(RIO *io, RIOSection *sec) {
 	}
 	if (sec->vsize - sec->size > 0) {
 		ut64 at = sec->vaddr + sec->size;
-		if (!r_io_create_mem_map (io, sec, at, false, true)) {
+		if (!r_io_create_mem_map (io, sec, at, false)) {
 			return false;
 		}
 		RIOMap *map = r_io_map_get (io, at);
@@ -138,7 +136,7 @@ R_API bool r_io_create_mem_for_section(RIO *io, RIOSection *sec) {
 			
 	}
 	if (sec->size) {
-		if (!r_io_create_file_map (io, sec, sec->size, false, true)) {
+		if (!r_io_create_file_map (io, sec, sec->size, false)) {
 			return false;
 		}
 		RIOMap *map = r_io_map_get (io, sec->vaddr);

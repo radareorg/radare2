@@ -209,10 +209,19 @@ R_API bool r_io_desc_is_blockdevice(RIODesc *desc) {
 	return desc->plugin->is_blockdevice (desc);
 }
 
+static bool _map_flags_cb(void *user, void *data, ut32 id) {
+	RIODesc *desc = (RIODesc *)user;
+	RIOMap *map = (RIOMap *)data;
+
+	if(map->fd == desc->fd) {
+		map->flags &= (desc->flags | R_IO_EXEC);
+		return false;	//break
+	}
+	return true;
+}
+
 R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
-	RIODesc* desc, * descx;
-	SdbListIter* iter;
-	RIOMap* map;
+	RIODesc *desc, *descx;
 	if (!(desc = r_io_desc_get (io, fd)) || !(descx = r_io_desc_get (io, fdx))) {
 		return false;
 	}
@@ -228,13 +237,8 @@ R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
 		r_io_desc_cache_cleanup (descx);
 	}
 	if (io->maps) {
-		ls_foreach (io->maps, iter, map) {
-			if (map->fd == fdx) {
-				map->flags &= (desc->flags | R_IO_EXEC);
-			} else if (map->fd == fd) {
-				map->flags &= (descx->flags | R_IO_EXEC);
-			}
-		}
+		r_oids_foreach (io->maps, _map_flags_cb, desc);
+		r_oids_foreach (io->maps, _map_flags_cb, descx);
 	}
 	return true;
 }
