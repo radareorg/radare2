@@ -290,7 +290,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				if (desc) {
 					*filename = 0;
 					ut64 addr = r_num_math (core->num, arg);
-					r_bin_load_io (core->bin, desc->fd, addr, 0, 0);
+					r_bin_load_io (core->bin, desc->fd, addr, 0, 0, 0, NULL);
 					r_io_desc_close (desc);
 					r_core_cmd0 (core, ".is*");
 				} else {
@@ -301,7 +301,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				int fd = r_io_fd_get_current (core->io);
 				RIODesc *desc = r_io_desc_get (core->io, fd);
 				if (desc) {
-					r_bin_load_io (core->bin, desc->fd, addr, 0, 0);
+					r_bin_load_io (core->bin, desc->fd, addr, 0, 0, 0, NULL);
 					r_core_cmd0 (core, ".is*");
 				} else {
 					eprintf ("No file to load bin from?\n");
@@ -314,13 +314,12 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			RIODesc *desc;
 			RListIter *iter;
 			r_list_foreach (files, iter, desc) {
-				r_bin_load_io (core->bin, desc->fd, core->offset, 0, 0);
+				r_bin_load_io (core->bin, desc->fd, core->offset, 0, 0, 0, NULL);
 				r_core_cmd0 (core, ".is*");
 				break;
 			}
 			r_list_free (files);
 		}
-		//r_bin_load_io_at_offset_as (core->bin, core->file->desc,
 		break;
 	case 'b': // "obb"
 		{
