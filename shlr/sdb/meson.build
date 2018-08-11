@@ -23,7 +23,7 @@ files = [
   #'src/json/api.c',
   #'src/json/indent.c',
   'src/json/js0n.c',
-  #'src/json/path.c',
+  'src/json/path.c',
   #'src/json/rangstr.c',
   'src/lock.c',
   'src/ls.c',
