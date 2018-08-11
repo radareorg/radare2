@@ -690,7 +690,11 @@ int main(int argc, char **argv, char **envp) {
 		case 'V':
 			return verify_version (1);
 		case 'w':
-			perms |= R_IO_WRITE;
+			if ((perms & R_IO_WRITE) == R_IO_WRITE) {
+				perms |= R_IO_CREAT;
+			} else {
+				perms |= R_IO_WRITE;
+			}
 			break;
 		case 'x':
 			perms &= ~R_IO_EXEC;
@@ -942,8 +946,7 @@ int main(int argc, char **argv, char **envp) {
 						if (addr == UINT64_MAX) {
 							addr = r_config_get_i (r.config, "bin.baddr");
 						}
-						if (filepath && r_file_exists (filepath)
-						    && !r_file_is_directory (filepath)) {
+						if (r_file_exists (filepath) && !r_file_is_directory (filepath)) {
 							char *newpath = r_file_abspath (filepath);
 							if (newpath) {
 								if (iod) {
@@ -957,8 +960,7 @@ int main(int argc, char **argv, char **envp) {
 							}
 						} else if (is_valid_gdb_file (fh)) {
 							filepath = iod->name;
-							if (r_file_exists (filepath)
-							    && !r_file_is_directory (filepath)) {
+							if (r_file_exists (filepath) && !r_file_is_directory (filepath)) {
 								if (addr == UINT64_MAX) {
 									addr = r_debug_get_baddr (r.dbg, filepath);
 								}
@@ -1046,14 +1048,11 @@ int main(int argc, char **argv, char **envp) {
 				while (optind < argc) {
 					pfile = argv[optind++];
 					fh = r_core_file_open (&r, pfile, perms, mapaddr);
-					if (fh && (perms & R_IO_WRITE)) {
-						r_config_set_i (r.config, "io.va", false);
-					}
-					if ((perms & R_IO_WRITE) && !fh) {
-						if (r_io_create (r.io, pfile, 0644, 0)) {
-							fh = r_core_file_open (&r, pfile, perms, mapaddr);
+					if (perms & R_IO_CREAT) {
+						if (fh) {
+							r_config_set_i (r.config, "io.va", false);
 						} else {
-							eprintf ("r_io_create: Permission denied.\n");
+							 eprintf ("r_io_create: Permission denied.\n");
 						}
 					}
 					if (fh) {

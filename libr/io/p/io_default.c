@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2017 - pancake */
+/* radare - LGPL - Copyright 2008-2018 - pancake */
 
 #include <r_userconf.h>
 #include <r_io.h>
@@ -27,17 +27,20 @@ static int __io_posix_open(const char *file, int flags, int mode) {
 		return -1;
 	}
 #if __WINDOWS__
+	// probably unnecessary to have this ifdef nowadays windows is posix enough
 	if (flags & R_IO_WRITE) {
 		fd = r_sandbox_open (file, O_BINARY | O_RDWR, 0);
-		if (fd == -1) {
+		if (fd == -1 && flags & R_IO_CREAT) {
 			r_sandbox_creat (file, 0644);
-			fd = r_sandbox_open (file, O_BINARY | O_RDWR, 0);
+			fd = r_sandbox_open (file, O_BINARY | O_RDWR | O_CREAT, 0);
 		}
 	} else {
 		fd = r_sandbox_open (file, O_BINARY, 0);
 	}
 #else
-	fd = r_sandbox_open (file, (flags & R_IO_WRITE) ? (O_RDWR|O_CREAT) : O_RDONLY, mode);
+	const int posixFlags = (flags & R_IO_WRITE) ? (flags & R_IO_CREAT)
+			? (O_RDWR | O_CREAT) : O_RDWR : O_RDONLY;
+	fd = r_sandbox_open (file, posixFlags, mode);
 #endif
 	return fd;
 }
@@ -136,11 +139,9 @@ RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, in
 	mmo->mode = mode;
 	mmo->flags = flags;
 	mmo->io_backref = io;
-	if (flags & R_IO_WRITE) {
-		mmo->fd = r_sandbox_open (filename, O_CREAT|O_RDWR, mode);
-	} else {
-		mmo->fd = r_sandbox_open (filename, O_RDONLY, mode);
-	}
+	const int posixFlags = (flags & R_IO_WRITE) ? (flags & R_IO_CREAT)
+			? (O_RDWR | O_CREAT) : O_RDWR : O_RDONLY;
+	mmo->fd = r_sandbox_open (filename, posixFlags, mode);
 	if (mmo->fd == -1) {
 		free (mmo->filename);
 		free (mmo);
