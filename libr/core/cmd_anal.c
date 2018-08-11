@@ -3353,6 +3353,18 @@ repeat:
 			return_tail (1);
 		}
 	}
+	int dataAlign = r_anal_archinfo (esil->anal, R_ANAL_ARCHINFO_DATA_ALIGN);
+	if (dataAlign > 1) {
+		if (addr % dataAlign) {
+			if (esil->cmd && esil->cmd_trap) {
+				esil->cmd (esil, esil->cmd_trap, addr, R_ANAL_TRAP_UNALIGNED);
+			}
+			if (breakoninvalid) {
+				r_cons_printf ("[ESIL] Stopped execution in an unaligned instruction (see e??esil.breakoninvalid)\n");
+				return_tail (0);
+			}
+		}
+	}
 	(void)r_io_read_at (core->io, addr, code, sizeof (code));
 	// TODO: sometimes this is dupe
 	ret = r_anal_op (core->anal, &op, addr, code, sizeof (code), R_ANAL_OP_MASK_ESIL);
@@ -3360,12 +3372,12 @@ repeat:
 	// update the esil pointer because RAnal.op() can change it
 	esil = core->anal->esil;
 	if (op.size < 1 || ret < 0) {
+		if (esil->cmd && esil->cmd_trap) {
+			esil->cmd (esil, esil->cmd_trap, addr, R_ANAL_TRAP_INVALID);
+		}
 		if (breakoninvalid) {
 			r_cons_printf ("[ESIL] Stopped execution in an invalid instruction (see e??esil.breakoninvalid)\n");
 			return_tail (0);
-		}
-		if (esil->cmd && esil->cmd_todo) {
-			esil->cmd (esil, esil->cmd_todo, addr, 0);
 		}
 		op.size = 1; // avoid inverted stepping
 	}

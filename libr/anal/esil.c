@@ -1367,6 +1367,12 @@ R_API const char *r_anal_esil_trapstr(int type) {
 		return "unhandled";
 	case R_ANAL_TRAP_DIVBYZERO:
 		return "divbyzero";
+	case R_ANAL_TRAP_INVALID:
+		return "invalid";
+	case R_ANAL_TRAP_UNALIGNED:
+		return "unaligned";
+	case R_ANAL_TRAP_TODO:
+		return "todo";
 	default:
 		return "unknown";
 	}
@@ -2751,8 +2757,7 @@ static int esil_bigger_equal(RAnalEsil *esil) { // 'dst >= src' => 'src,dst,>='
 
 static int iscommand(RAnalEsil *esil, const char *word, RAnalEsilOp *op) {
 	char t[128];
-	char *h;
-	h = sdb_itoa (sdb_hash (word), t, 16);
+	char *h = sdb_itoa (sdb_hash (word), t, 16);
 	if (sdb_num_exists (esil->ops, h)) {
 		*op = (RAnalEsilOp)(size_t)sdb_num_get (esil->ops, h, 0);
 		return true;
