@@ -450,15 +450,18 @@ R_API RAnalMetaItem *r_meta_find_in(RAnal *a, ut64 at, int type, int where) {
 R_API const char *r_meta_type_to_string(int type) {
 	// XXX: use type as '%c'
 	switch (type) {
-	case R_META_TYPE_HIDE: return "Ch";
-	case R_META_TYPE_CODE: return "Cc";
 	case R_META_TYPE_DATA: return "Cd";
+	case R_META_TYPE_CODE: return "Cc";
 	case R_META_TYPE_STRING: return "Cs";
 	case R_META_TYPE_FORMAT: return "Cf";
 	case R_META_TYPE_MAGIC: return "Cm";
+	case R_META_TYPE_HIDE: return "Ch";
 	case R_META_TYPE_COMMENT: return "CCu";
+	case R_META_TYPE_RUN: return "Cr"; // not in C? help
+	case R_META_TYPE_HIGHLIGHT: return "CH"; // not in C?
+	case R_META_TYPE_VARTYPE: return "Ct";
 	}
-	return "(...)";
+	return "# unknown meta # ";
 }
 
 static bool isFirst = true;
