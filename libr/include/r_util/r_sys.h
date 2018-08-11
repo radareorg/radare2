@@ -80,6 +80,17 @@ R_API char *r_sys_cmd_strf(const char *cmd, ...);
 R_API void r_sys_backtrace(void);
 R_API bool r_sys_tts(const char *txt, bool bg);
 
+#if __i386__ || __x86_64__
+#define r_sys_breakpoint() __asm__ volatile("int3");
+#elif __arm64__ || __aarch64__
+#define r_sys_breakpoint() __asm__ volatile ("brk 0");
+#elif __arm__ || __thumb__
+#define r_sys_breakpoint() __volatile__ __asm__("bkpt $0");
+#else
+#warning r_sys_breakpoint not implemented for this platform
+#define r_sys_breakpoint() { void *a = NULL; *a = 0; }
+#endif
+
 /* syscmd */
 R_API char *r_syscmd_ls(const char *input);
 R_API char *r_syscmd_cat(const char *file);
