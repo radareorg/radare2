@@ -670,6 +670,9 @@ R_API bool r_cons_context_is_main() {
 }
 
 R_API void r_cons_context_break(RConsContext *context) {
+	if (!context) {
+		return;
+	}
 	context->breaked = true;
 	if (context->event_interrupt) {
 		context->event_interrupt (context->event_interrupt_data);
