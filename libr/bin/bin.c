@@ -32,7 +32,18 @@ static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS, NULL };
 static RBinXtrPlugin *bin_xtr_static_plugins[] = { R_BIN_XTR_STATIC_PLUGINS, NULL };
 static RBinLdrPlugin *bin_ldr_static_plugins[] = { R_BIN_LDR_STATIC_PLUGINS, NULL };
 
-static bool r_bin_load_io_at_offset_as(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name);
+// TODO: try to deprecate and just call the r_bin_load_io_at_offset_as_az
+R_API bool r_bin_load_io (RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name) {
+	// adding file_sz to help reduce the performance impact on the system
+	// in this case the number of bytes read will be limited to 2MB
+	// (MIN_LOAD_SIZE)
+	// if it fails, the whole file is loaded.
+	const ut64 MAX_LOAD_SIZE = 0;  // 0xfffff; //128 * (1 << 10 << 10);
+	int res = r_bin_load_io2 (bin, fd, baseaddr,
+		loadaddr, xtr_idx, offset, name, MAX_LOAD_SIZE);
+	return res? res: r_bin_load_io2 (bin, fd, baseaddr,
+			loadaddr, xtr_idx, offset, name, UT64_MAX);
+}
 
 static int getoffset(RBin *bin, int type, int idx) {
 	RBinFile *a = r_bin_cur (bin);
@@ -248,7 +259,7 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, 
 		return false;
 	}
 	//Use the current RIODesc otherwise r_io_map_select can swap them later on
-	return r_bin_load_io (bin, fd, baseaddr, loadaddr, xtr_idx);
+	return r_bin_load_io (bin, fd, baseaddr, loadaddr, xtr_idx, 0, NULL);
 }
 
 R_API int r_bin_load_as(RBin *bin, const char *file, ut64 baseaddr,
@@ -264,8 +275,7 @@ R_API int r_bin_load_as(RBin *bin, const char *file, ut64 baseaddr,
 	if (fd < 0) {
 		return false;
 	}
-	return r_bin_load_io_at_offset_as (bin, fd, baseaddr, loadaddr,
-						  xtr_idx, fileoffset, name);
+	return r_bin_load_io (bin, fd, baseaddr, loadaddr, xtr_idx, fileoffset, name);
 }
 
 R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
@@ -356,15 +366,13 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 
 	if (r_list_length (the_obj_list) == 1) {
 		RBinObject *old_o = (RBinObject *)r_list_get_n (the_obj_list, 0);
-		res = r_bin_load_io_at_offset_as (bin, fd, baseaddr,
-						old_o->loadaddr, 0, old_o->boffset, NULL);
+		res = r_bin_load_io (bin, fd, baseaddr, old_o->loadaddr, 0, old_o->boffset, NULL);
 	} else {
 		RListIter *iter = NULL;
 		RBinObject *old_o;
 		r_list_foreach (the_obj_list, iter, old_o) {
 			// XXX - naive. do we need a way to prevent multiple "anys" from being opened?
-			res = r_bin_load_io_at_offset_as (bin, fd, baseaddr,
-				old_o->loadaddr, 0, old_o->boffset, old_o->plugin->name);
+			res = r_bin_load_io (bin, fd, baseaddr, old_o->loadaddr, 0, old_o->boffset, old_o->plugin->name);
 		}
 	}
 	bf->o = r_list_get_n (bf->objs, 0);
@@ -375,12 +383,7 @@ error:
 	return res;
 }
 
-R_API int r_bin_load_io(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx) {
-	return r_bin_load_io_at_offset_as (bin, fd, baseaddr, loadaddr, xtr_idx, 0, NULL);
-}
-
-R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
-		ut64 loadaddr, int xtr_idx, ut64 offset, const char *name, ut64 sz) {
+R_API bool r_bin_load_io2(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name, ut64 sz) {
 	RIOBind *iob = &(bin->iob);
 	RIO *io = iob? iob->io: NULL;
 	RListIter *it;
@@ -422,7 +425,9 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 			//from the memory
 			if (tfd >= 0) {
 				buf_bytes = calloc (1, sz + 1);
-				iob->fd_read_at (io, tfd, 0, buf_bytes, sz);
+				if (buf_bytes) {
+					iob->fd_read_at (io, tfd, 0, buf_bytes, sz);
+				}
 				// iob->fd_close (io, tfd);
 			}
 		}
@@ -485,22 +490,6 @@ R_API int r_bin_load_io_at_offset_as_sz(RBin *bin, int fd, ut64 baseaddr,
 	return binfile? r_bin_file_set_cur_binfile (bin, binfile): false;
 }
 
-static bool r_bin_load_io_at_offset_as(RBin *bin, int fd, ut64 baseaddr,
-		ut64 loadaddr, int xtr_idx, ut64 offset, const char *name) {
-	// adding file_sz to help reduce the performance impact on the system
-	// in this case the number of bytes read will be limited to 2MB
-	// (MIN_LOAD_SIZE)
-	// if it fails, the whole file is loaded.
-	const ut64 MAX_LOAD_SIZE = 0;  // 0xfffff; //128 * (1 << 10 << 10);
-	int res = r_bin_load_io_at_offset_as_sz (bin, fd, baseaddr,
-		loadaddr, xtr_idx, offset, name, MAX_LOAD_SIZE);
-	if (!res) {
-		res = r_bin_load_io_at_offset_as_sz (bin, fd, baseaddr,
-			loadaddr, xtr_idx, offset, name, UT64_MAX);
-	}
-	return res;
-}
-
 R_API RBinPlugin *r_bin_get_binplugin_by_name(RBin *bin, const char *name) {
 	RBinPlugin *plugin;
 	RListIter *it;
@@ -545,6 +534,7 @@ R_API RBinXtrPlugin *r_bin_get_xtrplugin_by_name(RBin *bin, const char *name) {
 	return NULL;
 }
 
+// TODO: deprecate
 R_API RBinPlugin *r_bin_get_binplugin_any(RBin *bin) {
 	return r_bin_get_binplugin_by_name (bin, "any");
 }

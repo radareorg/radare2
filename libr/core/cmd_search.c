@@ -256,7 +256,7 @@ static void cmd_search_bin(RCore *core, RInterval itv) {
 			r_cons_printf ("0x%08"PFMT64x "  %s\n", from, plug->name);
 			// TODO: load the bin and calculate its size
 			if (plug->size) {
-				r_bin_load_io_at_offset_as_sz (core->bin, core->file->fd,
+				r_bin_load_io2 (core->bin, core->file->fd,
 					0, 0, 0, core->offset, plug->name, 4096);
 				size = plug->size (core->bin->cur);
 				if (size > 0) {
