@@ -131,6 +131,21 @@ SDB_API bool sdb_merge(Sdb* d, Sdb *s) {
 	return sdb_foreach (s, sdb_merge_cb, d);
 }
 
+SDB_API bool sdb_isempty(Sdb *s) {
+	if (s) {
+		if (s->db.fd != -1) {
+			sdb_dump_begin (s);
+			while (sdb_dump_hasnext (s)) {
+				return false;
+			}
+		}
+		if (s->ht && s->ht->count > 0) {
+			return false;
+		}
+	}
+	return true;
+}
+
 SDB_API int sdb_count(Sdb *s) {
 	int count = 0;
 	if (s) {
