@@ -298,6 +298,11 @@ static int task_run(RCoreTask *task) {
 
 	task_wakeup (task);
 
+	if (task->cons_context && task->cons_context->breaked) {
+		// breaked in R_CORE_TASK_STATE_BEFORE_START
+		goto stillbirth;
+	}
+
 	char *res_str;
 	int res;
 	if (task == task->core->main_task) {
@@ -317,6 +322,7 @@ static int task_run(RCoreTask *task) {
 		eprintf ("\nTask %d finished\n", task->id);
 	}
 
+stillbirth:
 	task_end (task);
 
 	if (task->cb) {
@@ -440,11 +446,24 @@ R_API void r_core_task_break(RCore *core, int id) {
 	tasks_lock_enter (core, &old_sigset);
 	RCoreTask *task = r_core_task_get (core, id);
 	if (!task || task->state == R_CORE_TASK_STATE_DONE) {
-		r_th_lock_leave (core->tasks_lock);
+		tasks_lock_leave (core, &old_sigset);
 		return;
 	}
 	if (task->cons_context) {
 		r_cons_context_break (task->cons_context);
+	}
+	tasks_lock_leave (core, &old_sigset);
+}
+
+R_API void r_core_task_break_all(RCore *core) {
+	TASK_SIGSET_T old_sigset;
+	tasks_lock_enter (core, &old_sigset);
+	RCoreTask *task;
+	RListIter *iter;
+	r_list_foreach (core->tasks, iter, task) {
+		if (task->state != R_CORE_TASK_STATE_DONE) {
+			r_cons_context_break (task->cons_context);
+		}
 	}
 	tasks_lock_leave (core, &old_sigset);
 }
