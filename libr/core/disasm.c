@@ -2474,7 +2474,7 @@ static void ds_print_offset(RDisasmState *ds) {
 					ds->show_offseg, seggrn, ds->show_offdec, delta, label);
 		}
 	}
-	if (ds->atabsoff > 0) {
+	if (ds->atabsoff > 0 && ds->show_offset) {
 		if (ds->_tabsoff != ds->atabsoff) {
 			char *b = ds->_tabsbuf;
 			// TODO optimize to avoid down resizing
