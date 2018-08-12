@@ -44,6 +44,9 @@ R_API const ut8 *r_cache_get(RCache *c, ut64 addr, int *len) {
 }
 
 R_API int r_cache_set(RCache *c, ut64 addr, const ut8 *buf, int len) {
+	if (!c) {
+		return 0;
+	}
 	if (!c->buf) {
 		c->buf = malloc (len);
 		if (!c->buf) {

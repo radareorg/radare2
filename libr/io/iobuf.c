@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2017 - pancake */
+/* radare - LGPL - Copyright 2013-2018 - pancake */
 
 #include "r_io.h"
 
@@ -34,10 +34,9 @@ R_API const ut8* r_io_buffer_get (RIO *io, ut64 addr, int *len) {
 }
 
 R_API int r_io_buffer_read (RIO *io, ut64 addr, ut8* buf, int len) {
-	const ut8 *ret;
 	int next, l = 0;
 	// align addr if out of buffer if its mapped on io //
-	ret = r_cache_get (io->buffer, addr, &l);
+	const ut8 *ret = r_cache_get (io->buffer, addr, &l);
 	if (!ret) {
 		if (l < 1) {
 			return 0; // no next block in buffer cache
@@ -57,7 +56,7 @@ R_API int r_io_buffer_read (RIO *io, ut64 addr, ut8* buf, int len) {
 			l = len;
 		}
 		memset (buf, 0xff, next);
-		memcpy (buf + next, ret, len - next);
+		memcpy (buf + next, ret, R_MIN (l, len - next));
 		return len;
 	}
 	if (l > len) {

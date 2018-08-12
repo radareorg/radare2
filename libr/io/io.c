@@ -373,7 +373,7 @@ R_API int r_io_close_all(RIO* io) { // what about undo?
 	r_io_desc_init (io);
 	r_io_map_init (io);
 	r_io_section_init (io);
-	r_io_cache_init (io);
+	r_io_cache_fini (io);
 	r_io_plugin_init (io);
 	return true;
 }
@@ -463,15 +463,16 @@ R_API bool r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		return false;
 	}
 	if (io->buffer_enabled) {
-		return !!r_io_buffer_read(io, addr, buf, len);
+		int res = r_io_buffer_read (io, addr, buf, len);
+		return res > 0? true: false;
 	}
 	if (io->va) {
-		ret = r_io_vread_at_mapped(io, addr, buf, len);
+		ret = r_io_vread_at_mapped (io, addr, buf, len);
 	} else {
-		ret = r_io_pread_at(io, addr, buf, len) > 0;
+		ret = r_io_pread_at (io, addr, buf, len) > 0;
 	}
 	if (io->cached & R_IO_READ) {
-		(void)r_io_cache_read(io, addr, buf, len);
+		(void)r_io_cache_read (io, addr, buf, len);
 	}
 	return ret;
 }
