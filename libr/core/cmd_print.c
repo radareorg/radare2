@@ -126,6 +126,7 @@ static const char *help_msg_p[] = {
 	"pc", "[?][p] [len]", "output C (or python) format",
 	"pC", "[d] [rows]", "print disassembly in columns (see hex.cols and pdi)",
 	"pd", "[?] [sz] [a] [b]", "disassemble N opcodes (pd) or N bytes (pD)",
+	"pd--", "[n]", "context disassembly of N instructions",
 	"pf", "[?][.nam] [fmt]", "print formatted data (pf.name, pf.name $<expr>)",
 	"ph", "[?][=|hash] ([len])", "calculate hash for a block",
 	"pj", "[?] [len]", "print as indented JSON",
@@ -4112,6 +4113,12 @@ static int cmd_print(void *data, const char *input) {
 		bool formatted_json = false;
 
 		if (input[1] && input[2]) {
+			// "pd--" // context disasm
+			if (!strncmp (input + 1, "--", 2)) {
+				r_core_cmdf (core, "pd %s", input + 2);
+				r_core_cmdf (core, "pd %s", input + 3);
+				goto beach;
+			}
 			char *p = strchr (input, ' ');
 			if (p) {
 				int len = (int) r_num_math (core->num, p);
