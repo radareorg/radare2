@@ -6140,9 +6140,7 @@ static void cmd_anal_graph(RCore *core, const char *input) {
 			r_core_anal_graph (core, r_num_math (core->num, input + 2), R_CORE_ANAL_JSON);
 			break;
 		case 'J': // "agfJ"
-			if (!o_graph_offset) {
-					r_config_set_i (core->config, "asm.offset", false);
-			}
+			r_config_set_i (core->config, "asm.offset", o_graph_offset);
 			r_core_anal_graph (core, r_num_math (core->num, input + 2),
 				R_CORE_ANAL_JSON | R_CORE_ANAL_JSON_FORMAT_DISASM);
 			r_config_restore (hc);
