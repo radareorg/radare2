@@ -1341,7 +1341,7 @@ static int oplea(RAsm *a, ut8 *data, const Opcode *op){
 	int reg = 0;
 	int rm = 0;
 	if (op->operands[0].type & OT_REGALL &&
-	    op->operands[1].type & OT_MEMORY) {
+	    op->operands[1].type & (OT_MEMORY | OT_CONSTANT)) {
 		if (a->bits == 64) {
 			data[l++] = 0x48;
 		}
