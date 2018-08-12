@@ -19,8 +19,6 @@ static const char *help_msg_slash[] = {
 	"/+", " /bin/sh", "construct the string with chunks",
 	"//", "", "repeat last search",
 	"/a", " jmp eax", "assemble opcode and search its bytes",
-	"/A", " jmp", "find analyzed instructions of this type (/A? for help)",
-	"/Af", " [family]", "find opcodes of given family",
 	"/b", "", "search backwards, command modifier, followed by other command",
 	"/B", "", "search recognized RBin headers",
 	"/c", " jmp [esp]", "search for asm code matching the given string",
