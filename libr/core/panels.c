@@ -309,33 +309,39 @@ static void layoutSubMenu(RPanels *panels, int w) {
 		}
 		currentMenu = panels->menuStack[i];
 		currentMenuIndex = panels->menuIndexStack[i];
-		title = calloc (1, 1024);
+		RStrBuf *tit = r_strbuf_new (NULL);
+		if (!tit) {
+			return;
+		}
 		for (j = 0; currentMenu[j]; j++) {
 			if (currentMenuIndex == j) {
-				strcat (title, "> ");
+				r_strbuf_append (tit, "> ");
 			} else {
-				strcat (title, "  ");
+				r_strbuf_append (tit, "  ");
 			}
-			strcat (title, currentMenu[j]);
-			strcat (title, "          \n");
+			r_strbuf_append (tit, currentMenu[j]);
+			r_strbuf_append (tit, "          \n");
 		}
-		panel = createMenuPanel (x, y, title);
+		panel = createMenuPanel (x, y, r_strbuf_drain (tit));
 		layoutMenu (&panel);
 		panels->menuPanel[i] = panel;
 		x += panel.w - 1;
 		y = panels->menuIndexStack[i] + 2;
 	}
-	title = calloc (1, 1024);
+	RStrBuf *tit = r_strbuf_new (NULL);
+	if (!tit) {
+		return;
+	}
 	for (i = 0; panels->currentMenu[i]; i++) {
 		if (panels->currentMenuIndex == i) {
-			strcat (title, "> ");
+			r_strbuf_append (tit, "> ");
 		} else {
-			strcat (title, "  ");
+			r_strbuf_append (tit, "  ");
 		}
-		strcat (title, panels->currentMenu[i]);
-		strcat (title, "          \n");
+		r_strbuf_append (tit, panels->currentMenu[i]);
+		r_strbuf_append (tit, "          \n");
 	}
-	panel = createMenuPanel (x, y, title);
+	panel = createMenuPanel (x, y, r_strbuf_drain (tit));
 	layoutMenu (&panel);
 	panels->menuPanel[panels->menuStackDepth] = panel;
 }
@@ -1161,12 +1167,12 @@ static bool init (RCore *core, RPanels *panels, int w, int h) {
 	panels->columnWidth = 80;
 	panels->layout = 0;
 	panels->menu_pos = -1;
-	panels->menuStack = malloc (sizeof (char **) * PANEL_MENU_LIMIT);
-	panels->menuIndexStack = malloc (sizeof (int) * PANEL_MENU_LIMIT);
+	panels->menuStack = calloc (sizeof (char **), PANEL_MENU_LIMIT);
+	panels->menuIndexStack = calloc (sizeof (int), PANEL_MENU_LIMIT);
 	panels->menuStackDepth = 0;
 	panels->currentMenu = NULL;
 	panels->currentMenuIndex = 0;
-	panels->menuPanel = malloc (sizeof (RPanel) * PANEL_MENU_LIMIT);
+	panels->menuPanel = calloc (sizeof (RPanel), PANEL_MENU_LIMIT);
 	panels->callgraph = 0;
 	panels->isResizing = false;
 	panels->can = createNewCanvas (core, w, h);
@@ -1713,13 +1719,12 @@ repeat:
 		r_core_visual_browse (core);
 		break;
 	case 'o':
-		if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
-			r_core_visual_showcursor (core, true);
-			r_core_visual_offset (core);
-			r_core_visual_showcursor (core, false);
-			panels->panel[panels->curnode].addr = core->offset;
-			panels->panel[panels->curnode].refresh = true;
-		}
+		//if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY))
+		r_core_visual_showcursor (core, true);
+		r_core_visual_offset (core);
+		r_core_visual_showcursor (core, false);
+		panels->panel[panels->curnode].addr = core->offset;
+		panels->panel[panels->curnode].refresh = true;
 		break;
 	case 's':
 		panelSingleStepIn (core);
