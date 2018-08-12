@@ -96,6 +96,21 @@ R_API void r_core_task_list(RCore *core, int mode) {
 	tasks_lock_leave (core, &old_sigset);
 }
 
+R_API int r_core_task_running_tasks_count(RCore *core) {
+	RListIter *iter;
+	RCoreTask *task;
+	int count = 0;
+	TASK_SIGSET_T old_sigset;
+	tasks_lock_enter (core, &old_sigset);
+	r_list_foreach (core->tasks, iter, task) {
+		if (task != core->main_task && task->state != R_CORE_TASK_STATE_DONE) {
+			count++;
+		}
+	}
+	tasks_lock_leave (core, &old_sigset);
+	return count;
+}
+
 static void task_join(RCoreTask *task) {
 	RThreadSemaphore *sem = task->running_sem;
 	if (!sem) {
