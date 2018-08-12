@@ -36,6 +36,33 @@ R_API const char* r_reg_32_to_64(RReg* reg, const char* rreg32) {
 	return NULL;
 }
 
+// Take the 64 bits name of a register, and return the 32 bit name of it.
+// If there is no equivalent 32 bit register return NULL.
+R_API const char* r_reg_64_to_32(RReg* reg, const char* rreg64) {
+	int i, j = -1;
+	RListIter* iter;
+	RRegItem* item;
+	for (i = 0; i < R_REG_TYPE_LAST; ++i) {
+		r_list_foreach (reg->regset[i].regs, iter, item) {
+			if (item->size == 64 && !r_str_casecmp (rreg64, item->name)) {
+				j = item->offset;
+				break;
+			}
+		}
+	}
+	if (j != -1) {
+		for (i = 0; i < R_REG_TYPE_LAST; ++i) {
+			r_list_foreach (reg->regset[i].regs, iter, item) {
+				if (item->offset == j && item->size == 32) {
+					return item->name;
+				}
+			}
+		}
+	}
+	return NULL;
+}
+
+
 R_API const char* r_reg_get_type(int idx) {
 	return (idx >= 0 && idx < R_REG_TYPE_LAST)? types[idx]: NULL;
 }
