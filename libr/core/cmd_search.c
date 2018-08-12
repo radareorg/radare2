@@ -6,6 +6,8 @@
 #include "r_types_base.h"
 #include "cmd_search_rop.c"
 
+#define USE_EMULATION 0
+
 static const char *help_msg_slash[] = {
 	"Usage:", "/[!bf] [arg]", "Search stuff (see 'e??search' for options)\n"
 	"|Use io.va for searching in non virtual addressing spaces",
@@ -1668,6 +1670,8 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 #define MAXINSTR 8
 #define SUMARRAY(arr, size, res) do (res) += (arr)[--(size)]; while ((size))
 
+#if USE_EMULATION
+// IMHO This code must be deleted
 static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 	int i, inslen, bsize = R_MIN (64, core->blocksize);
 	ut8 *arr;
@@ -1712,7 +1716,8 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 	int sysno = r_debug_reg_get (core->dbg, a0);
 	r_reg_set_value (core->dbg->reg, reg_a0, -2); // clearing register A0
 	return sysno;
-}	
+}
+#endif
 
 static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	RSearch *search = core->search;
@@ -1749,17 +1754,20 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 		return;
 	}
 	ut64 oldoff = core->offset;
+	int syscallNumber = 0;
 	r_cons_break_push (NULL, NULL);
+	const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
+	char *esp = r_str_newf ("%s,=", a0);
 	r_list_foreach (list, iter, map) {
 		ut64 from = map->itv.addr;
 		ut64 to = r_itv_end (map->itv);
 		if (from >= to) {
 			eprintf ("Error: from must be lower than to\n");
-			return;
+			goto beach;
 		}
 		if (to == UT64_MAX) {
 			eprintf ("Error: Invalid destination boundary\n");
-			return;
+			goto beach;
 		}
 		for (i = 0, at = from; at < to; at++, i++) {
 			if (r_cons_is_breaked ()) {
@@ -1774,23 +1782,33 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 			if (!i) {
 				r_io_read_at (core->io, at, buf, bsize);
 			}
-			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i, R_ANAL_OP_MASK_BASIC);
+			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i, R_ANAL_OP_MASK_ESIL);
 			curpos = idx++ % (MAXINSTR + 1);
 			previnstr[curpos] = ret; // This array holds prev n instr size + cur instr size
-			if ((aop.type == R_ANAL_OP_TYPE_SWI) && ret && (aop.val > 10)) {
+			if (aop.type == R_ANAL_OP_TYPE_MOV) {
+				const char *es = R_STRBUF_SAFEGET (&aop.esil);
+				if (strstr (es, esp)) {
+					syscallNumber = aop.val;
+				}
+			}
+			if ((aop.type == R_ANAL_OP_TYPE_SWI) && ret) { // && (aop.val > 10)) {
 				// This for calculating no of bytes to be subtracted , to get n instr above syscall
 				int nbytes = 0;
 				int nb_opcodes = MAXINSTR;
 				SUMARRAY (previnstr, nb_opcodes, nbytes);
 				curpc = at - (nbytes - previnstr[curpos]);
-				int off = emulateSyscallPrelude (core, at, curpc);
+#if USE_EMULATION
+				// int off = emulateSyscallPrelude (core, at, curpc);
+#else
+				int off = syscallNumber;
+#endif
 				RSyscallItem *item = r_syscall_get (core->anal->syscall, off, -1);
 				if (item) {
 					r_cons_printf ("0x%08"PFMT64x" %s\n", at, item->name);	
 				}
 				memset (previnstr, 0, sizeof (previnstr) * sizeof (*previnstr)); // clearing the buffer
 				if (searchflags) {
-					char *flag = r_str_newf ("%s%d_%d", searchprefix, kwidx, count);
+					char *flag = r_str_newf ("%s%d_%d.%s", searchprefix, kwidx, count, item? item->name: "syscall");
 					r_flag_set (core->flags, flag, at, ret);
 					free (flag);
 				}
@@ -1805,6 +1823,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 					r_anal_op_fini (&aop);
 					break;
 				}
+				syscallNumber = 0;
 			}
 			int inc = (core->search->align > 0)? core->search->align - 1: ret - 1;
 			if (inc < 0) {
@@ -1815,10 +1834,12 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 			r_anal_op_fini (&aop);
 		}
 	}
+beach:
 	r_core_seek (core, oldoff, 1);
 	r_anal_esil_free (esil);
 	r_cons_break_pop ();
 	free (buf);
+	free (esp);
 }
 
 static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct search_parameters *param) {
