@@ -2534,7 +2534,7 @@ static int cmd_search(void *data, const char *input) {
 	}
 
 	core->in_search = true;
-	r_flag_space_push (core->flags, "searches");
+	r_flag_space_push (core->flags, "search");
 	const ut64 search_from = r_config_get_i (core->config, "search.from"),
 			search_to = r_config_get_i (core->config, "search.to");
 	if (search_from > search_to && search_to) {
