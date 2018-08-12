@@ -2262,6 +2262,7 @@ static void anop64 (csh handle, RAnalOp *op, cs_insn *insn) {
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op->ptr = 0LL;
 		op->ptrsize = 8;
+		op->val = IMM64(1);
 		break;
 	case ARM64_INS_UXTB:
 		op->type = R_ANAL_OP_TYPE_MOV;
@@ -2915,7 +2916,7 @@ static char *get_reg_profile(RAnal *anal) {
 		"=SF	nf\n"
 		"=OF	vf\n"
 		"=CF	cf\n"
-		"=SN	x8\n"
+		"=SN	x16\n" // x8 on linux?
 
 		/* 8bit sub-registers */
 		"gpr	b0	.8	0	0\n"
