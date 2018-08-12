@@ -764,17 +764,18 @@ static void resizePanelLeft(RPanels *panels) {
 				continue;
 			}
 			RPanel *p = &panel[i];
-			tx0 = p->x + p->w - 1;
+			tx0 = p->x;
+			tx1 = p->x + p->w - 1;
 			ty0 = p->y;
 			ty1 = p->y + p->h - 1;
-			if (tx0 == cx0 && ty0 == cy0 && ty1 == cy1) {
+			if (tx1 == cx0 && ty0 == cy0 && ty1 == cy1) {
 				isResized = true;
 				p->w -= PANEL_CONFIG_RESIZE_W;
 				p->refresh = true;
 				break;
-			} else if (tx0 == cx0) {
+			} else if (tx1 == cx0) {
 				targets1[cur1++] = p;
-			} else if (tx0 == cx1) {
+			} else if (tx0 == cx0) {
 				targets2[cur2++] = p;
 			}
 		}
@@ -853,17 +854,18 @@ static void resizePanelRight(RPanels *panels) {
 				continue;
 			}
 			RPanel *p = &panel[i];
-			tx0 = p->x + p->w - 1;
+			tx0 = p->x;
+			tx1 = p->x + p->w - 1;
 			ty0 = p->y;
 			ty1 = p->y + p->h - 1;
-			if (tx0 == cx0 && ty0 == cy0 && ty1 == cy1) {
+			if (tx1 == cx0 && ty0 == cy0 && ty1 == cy1) {
 				isResized = true;
 				p->w += PANEL_CONFIG_RESIZE_W;
 				p->refresh = true;
 				break;
-			} else if (tx0 == cx0) {
+			} else if (tx1 == cx0) {
 				targets1[cur1++] = p;
-			} else if (tx0 == cx1) {
+			} else if (tx0 == cx0) {
 				targets2[cur2++] = p;
 			}
 		}
