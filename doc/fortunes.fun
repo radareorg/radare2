@@ -251,3 +251,4 @@ Radare2 is like violence. If it doesn't solve your problem, you aren't using eno
 Order pizza for $12.48? [Y/n]
 r2OS r2pad 0.1 SMP GENERIC r2_64 GNU/r2OS
 AHHHHH!!!! ASSEMBLY CODE!!!!!! HOLD ME I'M SCARED!!!!!!!!!!
+In radare we trust
