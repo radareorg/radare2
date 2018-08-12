@@ -5,6 +5,7 @@
 #include "r_list.h"
 #include "r_types_base.h"
 #include "cmd_search_rop.c"
+static int cmd_search(void *data, const char *input);
 
 #define USE_EMULATION 0
 
@@ -42,7 +43,7 @@ static const char *help_msg_slash[] = {
 	"/P", " patternsize", "search similar blocks",
 	"/r[erwx]", "[?] sym.printf", "analyze opcode reference an offset (/re for esil)",
 	"/R", " [grepopcode]", "search for matching ROP gadgets, semicolon-separated",
-	"/s", "", "search for all syscalls in a region (EXPERIMENTAL)",
+	// moved into /as "/s", "", "search for all syscalls in a region (EXPERIMENTAL)",
 	"/v", "[1248] value", "look for an `cfg.bigendian` 32bit value",
 	"/V", "[1248] min max", "look for an `cfg.bigendian` 32bit value in range",
 	"/w", " foo", "search for wide string 'f\\0o\\0o\\0'",
@@ -1880,7 +1881,7 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 	r_list_free (list);
 }	
 
-static void do_anal_search(RCore *core, struct search_parameters *param, const char *input) {
+static bool do_anal_search(RCore *core, struct search_parameters *param, const char *input) {
 	RSearch *search = core->search;
 	ut64 at;
 	ut8 *buf;
@@ -1925,7 +1926,7 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 				eprintf ("wat\n");
 				break;
 			}
-			return;
+			return false;
 		case 'f':
 		case 's':
 		case 't':
@@ -1936,9 +1937,13 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 		case '?':
 		default:
 			r_core_cmd_help (core, help_msg_slash_a);
-			return;
+			return false;
 		}
 		input++;
+	}
+	if (type == 's') {
+eprintf ("Shouldnt reach\n");
+		return true;
 	}
 	if (mode == 'j') {
 		r_cons_printf ("[");
@@ -1947,7 +1952,7 @@ static void do_anal_search(RCore *core, struct search_parameters *param, const c
 	buf = malloc (bsize);
 	if (!buf) {
 		eprintf ("Cannot allocate %d byte(s)\n", bsize);
-		return;
+		return false;
 	}
 	r_cons_break_push (NULL, NULL);
 	RIOMap* map;
@@ -2036,6 +2041,7 @@ done:
 	}
 	r_cons_break_pop ();
 	free (buf);
+	return false;
 }
 
 static void do_asm_search(RCore *core, struct search_parameters *param, const char *input, int mode) {
@@ -2840,9 +2846,15 @@ reread:
 						r_search_keyword_new_hexmask (kwd, NULL));
 				free (kwd);
 			}
-		} else {
-			do_anal_search (core, &param, input + 1);
+		} else if (input[1] == 's') {
+			if (input[2] == 'l') {
+				r_core_cmd0 (core, "asl");
+			} else {
+				do_syscall_search (core, &param);
+			}
 			dosearch = false;
+		} else {
+			dosearch = do_anal_search (core, &param, input + 1);
 		}
 		break;
 	case 'C': { // "/C"
@@ -2958,10 +2970,12 @@ reread:
 	case 'P': // "/P"
 		search_similar_pattern (core, atoi (input + 1));
 		break;
+#if 0
 	case 's': // "/s"
 		do_syscall_search (core, &param);
 		dosearch = false;
 		break;
+#endif
 	case 'V': // "/V"
 		{
 			if (input[2] == 'j') {
