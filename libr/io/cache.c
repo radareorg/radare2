@@ -34,6 +34,15 @@ R_API bool r_io_cache_at(RIO *io, ut64 addr) {
 
 R_API void r_io_cache_init(RIO *io) {
 	io->cache = r_list_newf ((RListFree)cache_item_free);
+	io->buffer = r_cache_new ();
+	io->cached = 0;
+}
+
+R_API void r_io_cache_fini (RIO *io) {
+	r_list_free (io->cache);
+	r_cache_free (io->buffer);
+	io->cache = NULL;
+	io->buffer = NULL;
 	io->cached = 0;
 }
 

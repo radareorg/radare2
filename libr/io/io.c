@@ -219,7 +219,9 @@ R_API RIO* r_io_init(RIO* io) {
 
 R_API RBuffer *r_io_read_buf(RIO *io, ut64 addr, int len) {
 	RBuffer *b = R_NEW0 (RBuffer);
-	if (!b) return NULL;
+	if (!b) {
+		return NULL;
+	}
 	b->buf = malloc (len);
 	if (!b->buf) {
 		free (b);
@@ -248,7 +250,7 @@ R_API RIODesc *r_io_open_buffer(RIO *io, RBuffer *b, int flags, int mode) {
 	char *uri = r_str_newf ("malloc://%d", bufSize);
 	RIODesc *desc = r_io_open_nomap (io, uri, flags, mode);
 	if (desc) {
-		r_io_desc_write (desc, r_buf_get_at(b, 0, NULL), bufSize);
+		r_io_desc_write (desc, r_buf_get_at (b, 0, NULL), bufSize);
 	}
 	return desc;
 }
@@ -369,11 +371,10 @@ R_API int r_io_close_all(RIO* io) { // what about undo?
 	r_io_map_fini (io);
 	r_io_section_fini (io);
 	ls_free (io->plugins);
-	r_list_free (io->cache);
 	r_io_desc_init (io);
 	r_io_map_init (io);
 	r_io_section_init (io);
-	r_io_cache_init (io);
+	r_io_cache_fini (io);
 	r_io_plugin_init (io);
 	return true;
 }
@@ -463,15 +464,16 @@ R_API bool r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		return false;
 	}
 	if (io->buffer_enabled) {
-		return !!r_io_buffer_read(io, addr, buf, len);
+		int res = r_io_buffer_read (io, addr, buf, len);
+		return res > 0? true: false;
 	}
 	if (io->va) {
-		ret = r_io_vread_at_mapped(io, addr, buf, len);
+		ret = r_io_vread_at_mapped (io, addr, buf, len);
 	} else {
-		ret = r_io_pread_at(io, addr, buf, len) > 0;
+		ret = r_io_pread_at (io, addr, buf, len) > 0;
 	}
 	if (io->cached & R_IO_READ) {
-		(void)r_io_cache_read(io, addr, buf, len);
+		(void)r_io_cache_read (io, addr, buf, len);
 	}
 	return ret;
 }
@@ -589,10 +591,7 @@ R_API bool r_io_write_at(RIO* io, ut64 addr, const ut8* buf, int len) {
 }
 
 R_API bool r_io_read(RIO* io, ut8* buf, int len) {
-	if (!io) {
-		return false;
-	}
-	if (r_io_read_at (io, io->off, buf, len)) {
+	if (io && r_io_read_at (io, io->off, buf, len)) {
 		io->off += len;
 		return true;
 	}
@@ -600,10 +599,7 @@ R_API bool r_io_read(RIO* io, ut8* buf, int len) {
 }
 
 R_API bool r_io_write(RIO* io, ut8* buf, int len) {
-	if (!io || !buf || len < 1) {
-		return false;
-	}
-	if (r_io_write_at (io, io->off, buf, len)) {
+	if (io && buf && len > 0 && r_io_write_at (io, io->off, buf, len)) {
 		io->off += len;
 		return true;
 	}
