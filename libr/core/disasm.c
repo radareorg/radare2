@@ -646,7 +646,7 @@ static RDisasmState * ds_init(RCore *core) {
 		emustack_min = addr;
 		emustack_max = addr + size;
 		ds->stackFd = r_io_fd_open (core->io, uri, R_IO_RW, 0);
-		RIOMap *map = r_io_map_add (core->io, ds->stackFd, R_IO_RW, 0LL, addr, size, true);
+		RIOMap *map = r_io_map_add (core->io, ds->stackFd, R_IO_RW, 0LL, addr, size);
 		if (!map) {
 			r_io_fd_close (core->io, ds->stackFd);
 			eprintf ("Cannot create map for tha stack, fd %d got closed again\n", ds->stackFd);

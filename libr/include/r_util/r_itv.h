@@ -26,6 +26,7 @@ static inline ut64 r_itv_size(RInterval itv) {
 	return itv.size;
 }
 
+//this is wrong, the end should be the last element IN the interval
 static inline ut64 r_itv_end(RInterval itv) {
 	return itv.addr + itv.size;
 }
