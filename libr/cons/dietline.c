@@ -725,8 +725,13 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 	r_cons_set_raw (1);
 
 	if (I.echo) {
-		r_cons_clear_line (0);
-		printf ("%s%s%s", Color_RESET, I.prompt, I.buffer.data);
+		if (I.ansicon) {
+			printf ("\r%s", R_CONS_CLEAR_LINE);
+			printf ("%s%s%s", Color_RESET, I.prompt, I.buffer.data);
+		} else {
+			r_cons_clear_line (0);
+			printf ("%s%s", I.prompt, I.buffer.data);
+		}
 		fflush (stdout);
 	}
 	r_cons_break_push (NULL, NULL);
@@ -743,17 +748,11 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 		}
 		buf[0] = ch;
 		if (I.echo) {
-			r_cons_clear_line (0);
-		}
-		columns = r_cons_get_size (NULL) - 2;
-		if (columns < 1) {
-			columns = 40;
-		}
-		if (I.echo) {
-			printf ("\r%*c\r", columns, ' ');
-		}
-		if (I.echo) {
-			printf ("\r\x1b[2K\r");	// %*c\r", columns, ' ');
+			if (I.ansicon) {
+				printf ("\r%s", R_CONS_CLEAR_LINE);
+			} else {
+				r_cons_clear_line (0);
+			}
 		}
 		/* process special at vch codes first*/
 		switch (vch) {
@@ -1079,7 +1078,11 @@ R_API const char *r_line_readline_cb_win(RLineReadCallback cb, void *user) {
 				int chars = R_MAX (1, strlen (I.buffer.data));	// wtf?
 				int len, cols = R_MAX (1, columns - r_str_ansi_len (I.prompt) - 2);
 				/* print line */
-				printf ("\r%s%s", Color_RESET, I.prompt);
+				if (I.ansicon) {
+					printf ("\r%s%s", Color_RESET, I.prompt);
+				} else {
+					printf ("\r%s", I.prompt);
+				}
 				fwrite (I.buffer.data, 1, R_MIN (cols, chars), stdout);
 				/* place cursor */
 				printf ("\r%s", I.prompt);
