@@ -869,6 +869,9 @@ struct r_line_t {
 	int file_hist_index;
 	RList *sdbshell_hist;
 	RListIter *sdbshell_hist_iter;
+#if __WINDOWS__ && !__CYGWIN__
+	bool ansicon;
+#endif
 }; /* RLine */
 
 #ifdef R_API
