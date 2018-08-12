@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2017 - pancake */
+/* radare - LGPL - Copyright 2013-2018 - pancake */
 
 // XXX: should use the same code as libr/io/cache.c
 // one malloc per write

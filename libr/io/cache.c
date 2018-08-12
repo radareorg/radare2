@@ -41,6 +41,8 @@ R_API void r_io_cache_init(RIO *io) {
 R_API void r_io_cache_fini (RIO *io) {
 	r_list_free (io->cache);
 	r_cache_free (io->buffer);
+	io->cache = NULL;
+	io->buffer = NULL;
 	io->cached = 0;
 }
 
