@@ -57,6 +57,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "fdv",  "1 = 2 / 3"},
 		{ 0, "fml",  "1 = 2 * 3"},
 		{ 2, "ldr",  "1 = 2"},
+		{ 2, "ldrh",  "1 = (word)2"},
 		{ 2, "ldrb",  "1 = (byte) 2"},
 		{ 2, "ldrsb",  "1 = (byte) 2"},
 		{ 2, "ldr.w",  "1 = 2"},
