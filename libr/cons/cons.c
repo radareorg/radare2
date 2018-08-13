@@ -42,7 +42,8 @@ static void cons_stack_free(void *ptr) {
 	RConsStack *s = (RConsStack *)ptr;
 	free (s->buf);
 	if (s->grep) {
-		free (s->grep->str);
+		R_FREE (s->grep->str);
+		I.context->grep.str = NULL;
 	}
 	free (s->grep);
 	free (s);
