@@ -704,7 +704,7 @@ R_API void extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_s
 				const char *vname = NULL;
 				const char *type = "int";
 				char *name = NULL;
-				int delta;
+				int delta = 0;
 				RRegItem *ri = r_reg_get (anal->reg, regname, -1);
 				if (ri) {
 					delta = ri->index;
