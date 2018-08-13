@@ -169,7 +169,6 @@ ifneq ($(USE_ZIP),NO)
 endif
 
 clean: 
-	rm -f `find . -type f -iname '*.d'`
 	rm -f libr/libr.a libr/libr.dylib libr/include/r_version.h
 	rm -rf libr/.libr
 	for DIR in shlr libr binr ; do $(MAKE) -C "$$DIR" clean ; done
@@ -178,6 +177,9 @@ clean:
 	rm -f config-user.mk plugins.cfg libr/config.h
 	rm -f libr/include/r_userconf.h libr/config.mk
 	rm -f pkgcfg/*.pc
+
+distclean mrproper: clean
+	rm -f `find . -type f -iname '*.d'`
 
 pkgcfg:
 	cd libr && ${MAKE} pkgcfg
