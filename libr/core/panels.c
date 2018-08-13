@@ -763,7 +763,7 @@ static void resizePanelLeft(RPanels *panels) {
 	RPanel **targets2 = malloc (sizeof (RPanel *) * panels->n_panels);
 	if (cx0 > 0) {
 		if (cx1 - PANEL_CONFIG_RESIZE_W <= 0) {
-			return;
+			goto beach;
 		}
 		for (i = 0; i < panels->n_panels; i++) {
 			if (i == panels->curnode) {
@@ -801,7 +801,7 @@ static void resizePanelLeft(RPanels *panels) {
 		curPanel->w += PANEL_CONFIG_RESIZE_W;
 	} else {
 		if (cx1 - PANEL_CONFIG_RESIZE_W <= cx0) {
-			return;
+			goto beach;
 		}
 		for (i = 0; i < panels->n_panels; i++) {
 			if (i == panels->curnode) {
@@ -838,22 +838,28 @@ static void resizePanelLeft(RPanels *panels) {
 		curPanel->refresh = true;
 		curPanel->w -= PANEL_CONFIG_RESIZE_W;
 	}
+beach:
+	free (targets1);
+	free (targets2);
 }
 
 static void resizePanelRight(RPanels *panels) {
 	RPanel *panel = panels->panel;
 	RPanel *curPanel = &panel[panels->curnode];
-	int i, cx0, cx1, cy0, cy1, tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0;
+	int i, tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0;
 	bool isResized = false;
-	cx0 = curPanel->x;
-	cx1 = curPanel->x + curPanel->w - 1;
-	cy0 = curPanel->y;
-	cy1 = curPanel->y + curPanel->h - 1;
+	int cx0 = curPanel->x;
+	int cx1 = curPanel->x + curPanel->w - 1;
+	int cy0 = curPanel->y;
+	int cy1 = curPanel->y + curPanel->h - 1;
 	RPanel **targets1 = malloc (sizeof (RPanel *) * panels->n_panels);
 	RPanel **targets2 = malloc (sizeof (RPanel *) * panels->n_panels);
+	if (!targets1 || !targets2) {
+		goto beach;
+	}
 	if (cx0 > 0) {
 		if (cx0 + PANEL_CONFIG_RESIZE_W >= cx1) {
-			return;
+			goto beach;
 		}
 		for (i = 0; i < panels->n_panels; i++) {
 			if (i == panels->curnode) {
@@ -891,7 +897,7 @@ static void resizePanelRight(RPanels *panels) {
 		curPanel->w -= PANEL_CONFIG_RESIZE_W;
 	} else {
 		if (cx1 + PANEL_CONFIG_RESIZE_W >= panels->can->w - 1) {
-			return;
+			goto beach;
 		}
 		for (i = 0; i < panels->n_panels; i++) {
 			if (i == panels->curnode) {
@@ -929,6 +935,9 @@ static void resizePanelRight(RPanels *panels) {
 		curPanel->refresh = true;
 		curPanel->w += PANEL_CONFIG_RESIZE_W;
 	}
+beach:
+	free (targets1);
+	free (targets2);
 }
 
 static void delPanel(RPanels *panels, int delPanelNum) {
