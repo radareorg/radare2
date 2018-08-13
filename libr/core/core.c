@@ -3058,7 +3058,7 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 				continue;
 			}
 		}
-		for (i = 0; i <= size - vsize; i++) {
+		for (i = 0; i <= (size - vsize); i++) {
 			void *v = (buf + i);
 			ut64 addr = from + i;
 			if (r_cons_is_breaked ()) {
@@ -3068,6 +3068,10 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 				continue;
 			}
 			match = false;
+			int left = size - i;
+			if (vsize > left) {
+				break;
+			}
 			switch (vsize) {
 			case 1: value = *(ut8 *)v; match = (buf[i] >= vmin && buf[i] <= vmax); break;
 			case 2: v16 = *(uut16 *)v; match = (v16 >= vmin && v16 <= vmax); value = v16; break;

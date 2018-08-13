@@ -148,7 +148,7 @@ static RList* sections(RBinFile *bf) {
 		if (!ptr->vaddr) {
 			// XXX(lowlyw) this is a valid macho, but rarely will anything
 			// be mapped at va = 0
-			eprintf ("mapping text to va = 0\n");
+			// eprintf ("mapping text to va = 0\n");
 			// ptr->vaddr = ptr->paddr;
 		}
 		ptr->srwx = sections[i].srwx;
