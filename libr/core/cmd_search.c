@@ -1757,6 +1757,13 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	r_cons_break_push (NULL, NULL);
 	const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
 	char *esp = r_str_newf ("%s,=", a0);
+	char *esp32 = NULL;
+	if (core->anal->bits == 64) {
+		const char *reg = r_reg_64_to_32 (core->anal->reg, a0);
+		if (reg) {
+			esp32 = r_str_newf ("%s,=", reg);
+		}
+	}
 	r_list_foreach (list, iter, map) {
 		ut64 from = map->itv.addr;
 		ut64 to = r_itv_end (map->itv);
@@ -1788,16 +1795,18 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 				const char *es = R_STRBUF_SAFEGET (&aop.esil);
 				if (strstr (es, esp)) {
 					syscallNumber = aop.val;
+				} else if (esp32 && strstr (es, esp32)){
+					syscallNumber = aop.val;
 				}
 			}
 			if ((aop.type == R_ANAL_OP_TYPE_SWI) && ret) { // && (aop.val > 10)) {
+#if USE_EMULATION
 				// This for calculating no of bytes to be subtracted , to get n instr above syscall
 				int nbytes = 0;
 				int nb_opcodes = MAXINSTR;
 				SUMARRAY (previnstr, nb_opcodes, nbytes);
 				curpc = at - (nbytes - previnstr[curpos]);
-#if USE_EMULATION
-				// int off = emulateSyscallPrelude (core, at, curpc);
+				int off = emulateSyscallPrelude (core, at, curpc);
 #else
 				int off = syscallNumber;
 #endif
@@ -1838,6 +1847,7 @@ beach:
 	r_anal_esil_free (esil);
 	r_cons_break_pop ();
 	free (buf);
+	free (esp32);
 	free (esp);
 }
 
