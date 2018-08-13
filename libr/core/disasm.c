@@ -1662,12 +1662,6 @@ beach:
 		r_list_join (args, sp_vars);
 		r_list_join (args, regs);
 		r_list_foreach (args, iter, var) {
-			// Avoids printing register based var if it's counter part
-			// local var is present
-			if ((var->kind == 'r') && get_link_var (ds->core->anal, f->addr, var) &&
-					!strncmp (var->name, "arg_", 4)) {
-				continue;
-			}
 			ds_begin_json_line (ds);
 			char *tmp;
 			int idx;

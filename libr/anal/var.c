@@ -670,12 +670,12 @@ beach:
 R_API void extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count) {
 	const char *opsreg = NULL;
 	const char *opdreg = NULL;
-	char *fname = fcn->name;
 	int i, argc = 0;
 
 	if (!anal || !op || !fcn) {
 		return;
 	}
+	char *fname = fcn->name;
 	Sdb *TDB = anal->sdb_types;
 	int max_count = r_anal_cc_max_arg (anal, fcn->cc);
 	if (!max_count || (*count >= max_count)) {
