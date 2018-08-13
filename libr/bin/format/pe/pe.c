@@ -726,11 +726,10 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)* bin);
 static int bin_pe_init_sections(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->num_sections = bin->nt_headers->file_header.NumberOfSections;
-	int sections_size;
 	if (bin->num_sections < 1) {
 		return true;
 	}
-	sections_size = sizeof (PE_(image_section_header)) * bin->num_sections;
+	int sections_size = sizeof (PE_(image_section_header)) * bin->num_sections;
 	if (sections_size > bin->size) {
 		sections_size = bin->size;
 		bin->num_sections = bin->size / sizeof (PE_(image_section_header));
@@ -3296,7 +3295,11 @@ void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_
 		}
 	}
 	//we need to create another section in order to load the entrypoint
-	sections = realloc (sections, (bin->num_sections + 2) * sizeof(struct r_bin_pe_section_t));
+	void *ss = realloc (sections, (bin->num_sections + 2) * sizeof(struct r_bin_pe_section_t));
+	if (!ss) {
+		goto out_function;
+	}
+	bin->sections = sections = ss;
 	i = bin->num_sections;
 	sections[i].last = 0;
 	strcpy ((char*) sections[i].name, "blob");
@@ -3498,9 +3501,7 @@ void* PE_(r_bin_pe_free)(struct PE_(r_bin_pe_obj_t)* bin) {
 	free (bin->resource_directory);
 	free (bin->delay_import_directory);
 	free (bin->tls_directory);
-	if (bin->sections) {
-		free (bin->sections);
-	}
+	free (bin->sections);
 	r_list_free (bin->resources);
 	r_pkcs7_free_cms (bin->cms);
 	r_buf_free (bin->b);
