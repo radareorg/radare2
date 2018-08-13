@@ -1794,9 +1794,13 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 			if (aop.type == R_ANAL_OP_TYPE_MOV) {
 				const char *es = R_STRBUF_SAFEGET (&aop.esil);
 				if (strstr (es, esp)) {
-					syscallNumber = aop.val;
+					if (aop.val != -1) {
+						syscallNumber = aop.val;
+					}
 				} else if (esp32 && strstr (es, esp32)){
-					syscallNumber = aop.val;
+					if (aop.val != -1) {
+						syscallNumber = aop.val;
+					}
 				}
 			}
 			if ((aop.type == R_ANAL_OP_TYPE_SWI) && ret) { // && (aop.val > 10)) {

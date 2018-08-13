@@ -2586,8 +2586,8 @@ jmp $$ + 4 + ( [delta] * 2 )
 				op->type = R_ANAL_OP_TYPE_UJMP;
 			}
 		}
-		if (ISIMM(1)) {
-			op->ptr = IMM(1);
+		if (ISIMM (1)) {
+			op->val = IMM(1);
 		}
 		break;
 	case ARM_INS_UDF:
