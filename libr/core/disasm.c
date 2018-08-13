@@ -940,7 +940,10 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	char *asm_str = colorize_asm_string (core, ds, print_color);
 	asm_str = ds_sub_jumps (ds, asm_str);
 	if (ds->immtrim) {
-		r_parse_immtrim (ds->opstr);
+		char *res = r_parse_immtrim (ds->opstr);
+		if (res) {
+			ds->opstr = res;
+		}
 		free (asm_str);
 		return;
 	}
