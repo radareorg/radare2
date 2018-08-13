@@ -2955,7 +2955,7 @@ repeat:
 
 		tgt_addr = op.jump != UT64_MAX ? op.jump : op.ptr;
 		if (op.var) {
-//			q = r_str_newf ("?i Rename variable %s to;afvn %s `?y`", op.var->name, op.var->name);
+//			q = r_str_newf ("?i Rename variable %s to;afvn %s `yp`", op.var->name, op.var->name);
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off, 0);
 			if (fcn) {
 				RAnalVar *bar = r_anal_var_get_byname (core->anal, fcn->addr, op.var->name);
@@ -2978,13 +2978,13 @@ repeat:
 			RAnalFunction *fcn = r_anal_get_fcn_at (core->anal, tgt_addr, R_ANAL_FCN_TYPE_NULL);
 			RFlagItem *f = r_flag_get_i (core->flags, tgt_addr);
 			if (fcn) {
-				q = r_str_newf ("?i Rename function %s to;afn `?y` 0x%"PFMT64x,
+				q = r_str_newf ("?i Rename function %s to;afn `yp` 0x%"PFMT64x,
 					fcn->name, tgt_addr);
 			} else if (f) {
-				q = r_str_newf ("?i Rename flag %s to;fr %s `?y`",
+				q = r_str_newf ("?i Rename flag %s to;fr %s `yp`",
 					f->name, f->name);
 			} else {
-				q = r_str_newf ("?i Create flag at 0x%"PFMT64x" named;f `?y` @ 0x%"PFMT64x,
+				q = r_str_newf ("?i Create flag at 0x%"PFMT64x" named;f `yp` @ 0x%"PFMT64x,
 					tgt_addr, tgt_addr);
 			}
 		}
@@ -3062,13 +3062,13 @@ repeat:
 		break;
 	case 'h': // "Vdh"
 		handleHints (core);
-		//r_core_cmdf (core, "?i highlight;e scr.highlight=`?y` @ 0x%08"PFMT64x, off);
+		//r_core_cmdf (core, "?i highlight;e scr.highlight=`yp` @ 0x%08"PFMT64x, off);
 		break;
 	case 'r': // "Vdr"
-		r_core_cmdf (core, "?i new function name;afn `?y` @ 0x%08"PFMT64x, off);
+		r_core_cmdf (core, "?i new function name;afn `yp` @ 0x%08"PFMT64x, off);
 		break;
 	case 'z': // "Vdz"
-		r_core_cmdf (core, "?i zone name;fz `?y` @ 0x%08"PFMT64x, off);
+		r_core_cmdf (core, "?i zone name;fz `yp` @ 0x%08"PFMT64x, off);
 		break;
 	case 'R': // "VdR"
 		eprintf ("Finding references to 0x%08"PFMT64x" ...\n", off);
