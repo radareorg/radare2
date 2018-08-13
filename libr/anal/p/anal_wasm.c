@@ -7,25 +7,16 @@
 #include "../../asm/arch/wasm/wasm.h"
 #include "../../bin/format/wasm/wasm.h"
 
-#define WASM_STACK_SIZE 128
+#define WASM_STACK_SIZE 256
 #define WASM_END_SIZE (1)
 
 static struct wasm_stack_t {
 	ut64 loop;
 	ut64 end;
+	int size;
 } wasm_stack [WASM_STACK_SIZE];
 int wasm_stack_ptr = 0;
 WasmOpCodes op_old = 0;
-
-static ut64 get_cf_offset(RAnal *anal, const ut8 *data) {
-	char flgname[64] = {0};
-	snprintf(flgname, sizeof (flgname), "sym.fnc.%d", data[1]);
-	RFlagItem *fi = anal->flb.get (anal->flb.f, flgname);
-	if (fi) {
-		return fi->offset;
-	}
-	return UT64_MAX;
-}
 
 static ut64 find_if_else(ut64 addr, const ut8 *data, int len, bool is_loop) {
 	WasmOp wop = {0};
@@ -93,6 +84,7 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			if (addr2 != UT64_MAX) {
 				wasm_stack[wasm_stack_ptr].loop = addr;
 				wasm_stack[wasm_stack_ptr].end = addr2;
+				wasm_stack[wasm_stack_ptr].size = wop.len;
 				wasm_stack_ptr++;
 				addr2 = UT64_MAX;
 			}
@@ -101,8 +93,9 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case WASM_OP_BLOCK:
 			addr2 = find_if_else (addr + op->size, data + op->size, len - op->size, true);
 			if (addr2 != UT64_MAX) {
-				wasm_stack[wasm_stack_ptr].loop = addr;
+				wasm_stack[wasm_stack_ptr].loop = UT64_MAX;
 				wasm_stack[wasm_stack_ptr].end = addr2;
+				wasm_stack[wasm_stack_ptr].size = wop.len;
 				wasm_stack_ptr++;
 				addr2 = UT64_MAX;
 			}
@@ -119,7 +112,7 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case WASM_OP_END:
 			if (addr != UT64_MAX) {
 				for (i = 0; i < wasm_stack_ptr; ++i) {
-					if (wasm_stack[i].end == addr) {
+					if (wasm_stack[i].end == addr && wasm_stack[i].loop != UT64_MAX) {
 						op->type = R_ANAL_OP_TYPE_CJMP;
 						op->jump = wasm_stack[i].loop;
 						op->fail = addr + op->size;
@@ -193,27 +186,22 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			}
 			break;
 		case WASM_OP_BR:
+			op->type = R_ANAL_OP_TYPE_JMP;
 			if (addr != UT64_MAX) {
-				int scope = data[1];
-				for (i = wasm_stack_ptr - 1; i > 0; --i) {
-					if (addr > wasm_stack[i].loop && addr < wasm_stack[i].end) {
-						if (scope > 1) {
-							scope--;
-						} else {
-							op->type = R_ANAL_OP_TYPE_JMP;
-							op->jump = wasm_stack[i].end + WASM_END_SIZE;
-							break;
-						}
-					}
+				ut32 pos = *(data  + 1);
+				ut64 jump = wasm_stack[(wasm_stack_ptr - 1) - pos].end;
+				if (jump != UT64_MAX) {
+					op->jump = jump + 1;
 				}
 			}
 			break;
 		case WASM_OP_BRIF:
-			//op->type = R_ANAL_OP_TYPE_CJMP;
-			//op->jump = get_cf_offset (anal, data);
-			//op->fail = addr + op->size;
-			if (op->jump != UT64_MAX) {
-				op->ptr = op->jump;
+			op->fail = addr + op->size;
+			op->type = R_ANAL_OP_TYPE_CJMP;
+			ut32 pos = *(data  + 1);
+			ut64 jump = wasm_stack[(wasm_stack_ptr - 1) - pos].end;
+			if (jump != UT64_MAX) {
+				op->jump = jump + 1;
 			}
 			break;
 		case WASM_OP_RETURN:
