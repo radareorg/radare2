@@ -492,10 +492,9 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 	return false;
 }
 
-R_API bool r_parse_immtrim (char *opstr) {
-	bool changed = false;
+R_API char *r_parse_immtrim (char *opstr) {
 	if (!opstr || !*opstr) {
-		return false;
+		return NULL;
 	}
 	char *n = strstr (opstr, "0x");
 	if (n) {
@@ -504,29 +503,23 @@ R_API bool r_parse_immtrim (char *opstr) {
 			p++;
 		}
 		memmove (n, p, strlen (p) + 1);
-		changed = true;
 	}
 	if (strstr (opstr, " - ]")) {
-		r_str_replace (opstr, " - ]", "]", 1);
-		changed = true;
+		opstr = r_str_replace (opstr, " - ]", "]", 1);
 	}
 	if (strstr (opstr, " + ]")) {
-		r_str_replace (opstr, " + ]", "]", 1);
-		changed = true;
+		opstr = r_str_replace (opstr, " + ]", "]", 1);
 	}
 	if (strstr (opstr, ", ]")) {
-		r_str_replace (opstr, ", ]", "]", 1);
-		changed = true;
+		opstr = r_str_replace (opstr, ", ]", "]", 1);
 	}
 	if (strstr (opstr, " - ")) {
-		r_str_replace (opstr, " - ", "-", 1);
-		changed = true;
+		opstr = r_str_replace (opstr, " - ", "-", 1);
 	}
 	if (strstr (opstr, " + ")) {
-		r_str_replace (opstr, " + ", "+", 1);
-		changed = true;
+		opstr = r_str_replace (opstr, " + ", "+", 1);
 	}
-	return changed;
+	return opstr;
 }
 
 R_API int r_parse_filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_endian) {

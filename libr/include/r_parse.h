@@ -62,7 +62,7 @@ R_API bool r_parse_varsub(RParse *p, RAnalFunction *f, ut64 addr, int oplen, cha
 R_API char *r_parse_c_string(RAnal *anal, const char *code);
 R_API char *r_parse_c_file(RAnal *anal, const char *path);
 R_API int r_parse_is_c_file (const char *file);
-R_API bool r_parse_immtrim (char *opstr);
+R_API char *r_parse_immtrim (char *opstr);
 
 /* plugin pointers */
 extern RParsePlugin r_parse_plugin_dummy;
