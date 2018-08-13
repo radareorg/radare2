@@ -4329,7 +4329,7 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 		case '/':
 			showcursor (core, true);
 			r_config_set_i (core->config, "scr.interactive", true);
-			r_core_cmd0 (core, "?i highlight;e scr.highlight=`?y`");
+			r_core_cmd0 (core, "?i highlight;e scr.highlight=`yp`");
 			r_config_set_i (core->config, "scr.interactive", false);
 			showcursor (core, false);
 			break;
