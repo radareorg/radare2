@@ -1587,7 +1587,7 @@ include_trynext:
 			int filepath_len;
 			char *e = file->filename + strlen (file->filename);
 			while (e > file->filename) {
-				if (*e == '/') {
+				if (*e == R_SYS_DIR[0]) {
 					break;
 				}
 				e--;
