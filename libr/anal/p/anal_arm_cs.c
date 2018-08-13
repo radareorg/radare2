@@ -1436,12 +1436,12 @@ static void arm32math(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 
 
 static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh *handle, cs_insn *insn, bool thumb) {
-
 	int i;
 	const char *postfix = NULL;
 	char str[32][32];
 	int msr_flags;
 	int pcdelta = (thumb ? 4 : 8);
+	ut32 mask = UT32_MAX;
 
 	opex (&op->opex, *handle, insn);
 
@@ -1960,23 +1960,34 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 	case ARM_INS_LDRSH:
 	case ARM_INS_LDRSHT:
 	case ARM_INS_LDR:
+		switch (insn->id) {
+		case ARM_INS_LDRHT:
+		case ARM_INS_LDRH:
+		case ARM_INS_LDRSH:
+		case ARM_INS_LDRSHT:
+			mask = UT16_MAX;
+			break;
+		default:
+			mask = UT32_MAX;
+			break;
+		}
 		addr &= ~3LL;
 		if (MEMDISP(1) < 0) {
 			const char *pc = "$$";
 			if (REGBASE(1) == ARM_REG_PC) {
 				op->refptr = 4;
 				op->ptr = addr + pcdelta + MEMDISP(1);
-				r_strbuf_appendf (&op->esil, "0x%"PFMT64x",2,2,%s,>>,<<,+,0xffffffff,&,[4],%s,=",
-					(ut64)MEMDISP(1), pc, REG(0));
+				r_strbuf_appendf (&op->esil, "0x%"PFMT64x",2,2,%s,>>,<<,+,0x%x,&,[4],%s,=",
+					(ut64)MEMDISP(1), pc, mask, REG(0));
 			} else {
 				int disp = MEMDISP(1);
 				// not refptr, because we cant grab the reg value statically op->refptr = 4;
 				if (disp < 0) {
-					r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,-,0xffffffff,&,[4],%s,=",
-							(ut64)-disp, MEMBASE(1), REG(0));
+					r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,-,0x%x,&,[4],%s,=",
+							(ut64)-disp, MEMBASE(1), mask, REG(0));
 				} else {
-					r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,+,0xffffffff,&,[4],%s,=",
-							(ut64)disp, MEMBASE(1), REG(0));
+					r_strbuf_appendf (&op->esil, "0x%"PFMT64x",%s,+,0x%x,&,[4],%s,=",
+							(ut64)disp, MEMBASE(1), mask, REG(0));
 				}
 			}
 		} else {
@@ -1985,37 +1996,37 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 				op->refptr = 4;
 				op->ptr = addr + pcdelta + MEMDISP(1);
 				if (ISMEM(1) && LSHIFT2(1)) {
-					r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%d,%s,<<,+,0xffffffff,&,[4],%s,=",
-						pcdelta, pc, LSHIFT2(1), MEMINDEX(1), REG(0));
+					r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%d,%s,<<,+,0x%x,&,[4],%s,=",
+						pcdelta, pc, LSHIFT2(1), MEMINDEX(1), mask, REG(0));
 				} else {
 					if (ISREG(1)) {
-						r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%s,+,0xffffffff,&,[4],%s,=",
-							pcdelta, pc, MEMINDEX(1), REG(0));
+						r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%s,+,0x%x,&,[4],%s,=",
+							pcdelta, pc, MEMINDEX(1), mask, REG(0));
 					} else {
-						r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%d,+,0xffffffff,&,[4],%s,=",
-							pcdelta, pc, MEMDISP(1), REG(0));
+						r_strbuf_appendf (&op->esil, "2,2,%d,%s,+,>>,<<,%d,+,0x%x,&,[4],%s,=",
+							pcdelta, pc, MEMDISP(1), mask, REG(0));
 					}
 				}
 			} else {
 				if (ISMEM(1) && LSHIFT2(1)) {
-					r_strbuf_appendf (&op->esil, "%s,%d,%s,<<,+,0xffffffff,&,[4],%s,=",
-						MEMBASE(1), LSHIFT2(1), MEMINDEX(1), REG(0));
+					r_strbuf_appendf (&op->esil, "%s,%d,%s,<<,+,0x%x,&,[4],%s,=",
+						MEMBASE(1), LSHIFT2(1), MEMINDEX(1), mask, REG(0));
 				} else {
 					if (ISREG(1)) {
-						r_strbuf_appendf (&op->esil, "%s,%s,+,0xffffffff,&,[4],%s,=",
-							MEMBASE(1), MEMINDEX(1), REG(0));
+						r_strbuf_appendf (&op->esil, "%s,%s,+,0x%x,&,[4],%s,=",
+							MEMBASE(1), MEMINDEX(1), mask, REG(0));
 					} else if (HASMEMINDEX(1)) {	// e.g. `ldr r2, [r3, r1]`
 						// TODO: handle shift of index register value
-						r_strbuf_appendf (&op->esil, "%s,%s,+,0xffffffff,&,[4],%s,=",
-							MEMINDEX(1), MEMBASE(1), REG(0));
+						r_strbuf_appendf (&op->esil, "%s,%s,+,0x%x,&,[4],%s,=",
+							MEMINDEX(1), MEMBASE(1), mask, REG(0));
 					} else {
 						int disp = MEMDISP(1);
 						if (disp < 0) {
-							r_strbuf_appendf (&op->esil, "%d,%s,-,0xffffffff,&,[4],%s,=",
-								-disp, MEMBASE(1), REG(0));
+							r_strbuf_appendf (&op->esil, "%d,%s,-,0x%x,&,[4],%s,=",
+								-disp, MEMBASE(1), mask, REG(0));
 						} else {
-							r_strbuf_appendf (&op->esil, "%d,%s,+,0xffffffff,&,[4],%s,=",
-								disp, MEMBASE(1), REG(0));
+							r_strbuf_appendf (&op->esil, "%d,%s,+,0x%x,&,[4],%s,=",
+								disp, MEMBASE(1), mask, REG(0));
 						}
 					}
 				}
