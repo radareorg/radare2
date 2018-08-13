@@ -150,6 +150,7 @@ static const char *help_msg_p_equal[] = {
 	"e ", "zoom.in", "specify range for zoom",
 	"p=", "", "print bytes of current block in bars",
 	"p==", "[..]", "same subcommands as p=, using column bars instead of rows",
+	"p=", "2", "short (signed int16) bars, good for waves",
 	"p=", "b", "same as above",
 	"p=", "c", "print number of calls per block",
 	"p=", "d", "print min/max/number of unique bytes in block",
@@ -362,7 +363,7 @@ static const char *help_msg_px[] = {
 	"pxA", "", "show op analysis color map",
 	"pxb", "", "dump bits in hexdump form",
 	"pxc", "", "show hexdump with comments",
-	"pxd", "[124]", "signed integer dump (1 byte, 2 and 4)",
+	"pxd", "[1248]", "signed integer dump (1 byte, 2 and 4)",
 	"pxe", "", "emoji hexdump! :)",
 	"pxf", "", "show hexdump of current function",
 	"pxh", "", "show hexadecimal half-words dump (16bit)",
@@ -2670,7 +2671,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 							break;
 						case 'z':
 							if ((IS_PRINTABLE (p[j]))) {
-								if (p[j + 1] == 0) {
+								if (j < blocksize && p[j + 1] == 0) {
 									k++;
 									j++;
 								}
@@ -2721,6 +2722,23 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		default:
 			r_print_columns (core->print, core->block, core->blocksize, 14);
 			break;
+		}
+		break;
+	case '2': // "p=2"
+		{
+			short *word = (short*) core->block;
+			int i, words = core->blocksize / 2;
+			int step = r_num_math (core->num, input + 2);
+			ut64 oldword = 0;
+			for (i = 0; i<words; i++) {
+				ut64 word64 = word[i] + ST16_MAX;
+				r_cons_printf ("0x%08"PFMT64x" %8d  ", core->offset + (i *2), word[i]);
+				r_print_progressbar (core->print, word64 * 100 / UT16_MAX, 60);
+				r_cons_printf (" %d", word64 - oldword);
+				oldword = word64;
+				r_cons_newline ();
+				i += step;
+			}
 		}
 		break;
 	case 'd': // "p=d"
@@ -5075,22 +5093,23 @@ static int cmd_print(void *data, const char *input) {
 				case '1':
 					// 1 byte signed words (byte)
 					r_print_hexdump (core->print, core->offset,
-						core->block, len, -1, 4, 1);
+							core->block, len, -1, 4, 1);
 					break;
 				case '2':
 					// 2 byte signed words (short)
 					r_print_hexdump (core->print, core->offset,
-						core->block, len, -10, 2, 1);
+							core->block, len, -10, 2, 1);
 					break;
 				case '8':
 					r_print_hexdump (core->print, core->offset,
-						core->block, len, -8, 4, 1);
+							core->block, len, -8, 4, 1);
 					break;
 				case '4':
 				default:
 					// 4 byte signed words
 					r_print_hexdump (core->print, core->offset,
 						core->block, len, 10, 4, 1);
+					break;
 				}
 			}
 			break;
