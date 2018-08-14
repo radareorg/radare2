@@ -4110,6 +4110,10 @@ static void mipsTweak(RDisasmState *ds) {
 	//}
 }
 
+static inline bool disasm_isThumb(RCore *core) {
+	return (!strcmp (core->anal->cur->arch, "arm") && core->anal->bits == 16);
+}
+
 // modifies anal register state
 static void ds_print_esil_anal(RDisasmState *ds) {
 	RCore *core = ds->core;
@@ -4166,7 +4170,17 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	}
 	switch (ds->analop.type) {
 	case R_ANAL_OP_TYPE_SWI: {
-		char *s = cmd_syscall_dostr (core, -1);
+		char *s;
+		if (disasm_isThumb (core)) {
+			RAnalOp aop = {0};
+			int bsize = 64;
+			ut8 buf[bsize];
+			r_io_read_at_mapped (core->io, at, buf, bsize);
+			r_anal_op (core->anal, &aop, core->offset, buf, bsize, R_ANAL_OP_MASK_ESIL);
+			s = cmd_syscall_dostr (core, aop.val);
+		} else {
+			s = cmd_syscall_dostr (core, -1);
+		}
 		if (s) {
 			ds_comment_esil (ds, true, true, "; %s", s);
 			free (s);

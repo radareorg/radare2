@@ -1209,6 +1209,10 @@ static const char *syscallNumber(int n) {
 	return sdb_fmt (n > 1000 ? "0x%x" : "%d", n);
 }
 
+static inline bool cmd_anal_isThumb(RCore *core) {
+	return (!strcmp (core->anal->cur->arch, "arm") && core->anal->bits == 16);
+}
+
 R_API char *cmd_syscall_dostr(RCore *core, int n) {
 	char *res = NULL;
 	int i;
@@ -5212,7 +5216,16 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		// JSON support
 		break;
 	case '\0':
-		cmd_syscall_do (core, -1); //n);
+		if (cmd_anal_isThumb (core)) {
+			RAnalOp aop = {0};
+			ut8 bsize = 64;
+			ut8 buf[bsize];
+			r_io_read_at_mapped (core->io, core->offset, buf, bsize);
+			r_anal_op (core->anal, &aop, core->offset, buf, bsize, R_ANAL_OP_MASK_ESIL);
+			cmd_syscall_do (core, aop.val);
+		} else {
+			cmd_syscall_do (core, -1);
+		}
 		break;
 	case ' ':
 		cmd_syscall_do (core, (int)r_num_get (core->num, input + 1));

@@ -3901,6 +3901,11 @@ static void getpcfromstack(RCore *core, RAnalEsil *esil) {
 	free (buf);
 }
 
+static inline bool canal_isThumb(RCore *core) {
+	const char *asmarch = r_config_get (core->config, "asm.arch");
+	return (!strcmp (asmarch, "arm") && core->anal->bits == 16);
+}
+
 R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	bool cfg_anal_strings = r_config_get_i (core->config, "anal.strings");
 	RAnalEsil *ESIL = core->anal->esil;
@@ -4036,9 +4041,15 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		}
 		switch (op.type) {
 		case R_ANAL_OP_TYPE_SWI:
-			if (!refptr && (in == -1 || op.val == in)) {
+
+			if (!refptr && (in == -1 || op.val == in || canal_isThumb (core))) {
 				r_flag_space_set (core->flags, "syscalls");
-				int snv = (int)r_reg_getv (core->anal->reg, sn);
+				int snv;
+				if (canal_isThumb (core)) {
+					snv = op.val;
+				} else {
+					snv = (int)r_reg_getv (core->anal->reg, sn);
+				}
 				if (snv > 0) {
 					RSyscallItem *si = r_syscall_get (core->anal->syscall, snv, in);
 					if (si) {
