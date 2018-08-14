@@ -5,6 +5,7 @@ sdb_files = [
   'ios-arm-64',
   'linux-x86-32',
   'linux-x86-64',
+  's110-arm-16',
   'linux-arm-32',
   'linux-arm-64',
   'linux-mips-32',
