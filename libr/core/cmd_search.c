@@ -629,29 +629,50 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		if (m) {
 			append_bound (list, core->io, search_itv, m->itv.addr, m->itv.size);
 		}
-	} else if (!strcmp (mode, "io.maps")) { // Non-overlapping RIOMap parts not overriden by others (skyline)
+	} else if (r_str_startswith (mode, "io.maps")) { // Non-overlapping RIOMap parts not overriden by others (skyline)
 		const RPVector *skyline = &core->io->map_skyline;
 		ut64 begin = UT64_MAX;
 		ut64 end = UT64_MAX;
 		size_t i;
+		int mask = 0;
+		bool readonly = false;
+
+		if (!strcmp (mode, "io.maps.exec")) {
+			mask |= R_IO_EXEC;
+		}
+		if (!strcmp (mode, "io.maps.write")) {
+			mask |= R_IO_WRITE;
+		}
+		if (!strcmp (mode, "io.maps.readonly")) {
+			readonly = true;
+		}
+
 		for (i = 0; i < r_pvector_len (skyline); i++) {
 			const RIOMapSkyline *part = r_pvector_at (skyline, i);
-			ut64 from = part->itv.addr;
-			ut64 to = part->itv.addr + part->itv.size;
-			// eprintf ("--------- %llx %llx    (%llx %llx)\n", from, to, begin, end);
-			if (begin== UT64_MAX) {
-				begin = from;
+			if (readonly) {
+				const int f = part->map->flags;
+				if (f & R_IO_EXEC || f & R_IO_WRITE) {
+					continue;
+				}
 			}
-			if (end == UT64_MAX) {
-				end = to;
-			} else {
-				if (end == from) {
+			if (!mask || (part->map->flags & mask)) {
+				ut64 from = part->itv.addr;
+				ut64 to = part->itv.addr + part->itv.size;
+				// eprintf ("--------- %llx %llx    (%llx %llx)\n", from, to, begin, end);
+				if (begin== UT64_MAX) {
+					begin = from;
+				}
+				if (end == UT64_MAX) {
 					end = to;
 				} else {
-			//		eprintf ("[%llx - %llx]\n", begin, end);
-					append_bound (list, NULL, search_itv, begin, end - begin);
-					begin = from;
-					end = to;
+					if (end == from) {
+						end = to;
+					} else {
+						// eprintf ("[%llx - %llx]\n", begin, end);
+						append_bound (list, NULL, search_itv, begin, end - begin);
+						begin = from;
+						end = to;
+					}
 				}
 			}
 		}
@@ -1731,7 +1752,6 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	const int mininstrsz = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
 	RAnalEsil *esil = core->anal->esil;
-	RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, NULL, "search");
 	int align = core->search->align;
 	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");
@@ -1764,7 +1784,8 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 			esp32 = r_str_newf ("%s,=", reg);
 		}
 	}
-	r_list_foreach (list, iter, map) {
+
+	r_list_foreach (param->boundaries, iter, map) {
 		ut64 from = map->itv.addr;
 		ut64 to = r_itv_end (map->itv);
 		if (from >= to) {
