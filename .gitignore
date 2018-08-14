@@ -56,6 +56,7 @@ libr/config.h
 libr/include/r_userconf.h
 libr/include/r_version.h
 libr/include/r_version.h.tmp
+shlr/capstone/
 shlr/java/out
 shlr/java/out.exe
 shlr/sdb/sdb
