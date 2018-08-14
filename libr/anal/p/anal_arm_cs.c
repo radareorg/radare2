@@ -2595,6 +2595,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		break;
 	case ARM_INS_SVC:
 		op->type = R_ANAL_OP_TYPE_SWI;
+		op->val = IMM64(0);
 		break;
 	case ARM_INS_AND:
 		op->type = R_ANAL_OP_TYPE_AND;
