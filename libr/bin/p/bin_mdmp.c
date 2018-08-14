@@ -277,12 +277,14 @@ static RList *sections(RBinFile *bf) {
 
 	// XXX: Never add here as they are covered above
 	r_list_foreach (obj->streams.modules, it, module) {
+		struct minidump_string ms;
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
-
-		str = (struct minidump_string *)(obj->b->buf + module->module_name_rva);
-		r_str_utf16_to_utf8 ((ut8 *)ptr->name, R_BIN_SIZEOF_STRINGS, (const ut8 *)&(str->buffer), str->length, obj->endian);
+		r_buf_read_at (obj->b, module->module_name_rva,
+			&ms, sizeof (ms));
+		r_str_utf16_to_utf8 ((ut8 *)ptr->name, R_BIN_SIZEOF_STRINGS,
+			(const ut8 *)&(ms.buffer), ms.length, obj->endian);
 		ptr->vaddr = module->base_of_image;
 		ptr->vsize = module->size_of_image;
 		ptr->paddr = r_bin_mdmp_get_paddr (obj, ptr->vaddr);
