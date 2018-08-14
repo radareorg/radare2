@@ -779,6 +779,7 @@ int main (int argc, char *argv[]) {
 beach:
 	r_asm_free (a);
 	r_lib_free (l);
+	free (r2arch);
 	if (fd != -1) {
 		close (fd);
 	}
