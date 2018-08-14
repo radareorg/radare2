@@ -910,6 +910,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	}
 	/* initialize */
 	core->parser->hint = ds->hint;
+	ds->hint = NULL;
 	core->parser->relsub = r_config_get_i (core->config, "asm.relsub");
 	core->parser->relsub_addr = 0;
 	if (ds->varsub && ds->opstr) {
@@ -5116,6 +5117,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 					}
 				}
 				core->parser->hint = ds->hint;
+				ds->hint = NULL;
 				r_parse_filter (core->parser, core->flags, ds->asmop.buf_asm, ds->str,
 						sizeof (ds->str), core->print->big_endian);
 				ds->opstr = strdup (ds->str);
