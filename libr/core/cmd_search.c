@@ -1720,7 +1720,10 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 
 static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	RSearch *search = core->search;
-	ut64 at, curpc;
+	ut64 at;
+#if USE_EMULATION
+	ut64 curpc;
+#endif
 	ut8 *buf;
 	int curpos, idx = 0, count = 0;
 	RAnalOp aop = {0};
@@ -1784,7 +1787,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 			}
 			if (align && (at % align)) {
 				continue;
-			}	
+			}
 			if (!i) {
 				r_io_read_at (core->io, at, buf, bsize);
 			}
@@ -1816,7 +1819,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 #endif
 				RSyscallItem *item = r_syscall_get (core->anal->syscall, off, -1);
 				if (item) {
-					r_cons_printf ("0x%08"PFMT64x" %s\n", at, item->name);	
+					r_cons_printf ("0x%08"PFMT64x" %s\n", at, item->name);
 				}
 				memset (previnstr, 0, sizeof (previnstr) * sizeof (*previnstr)); // clearing the buffer
 				if (searchflags) {
