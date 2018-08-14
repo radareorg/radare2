@@ -44,8 +44,8 @@ static void print_debug_map_line(RDebug *dbg, RDebugMap *map, ut64 addr, const c
 	} else {
 		char sizebuf[128];
 		const char *fmtstr = dbg->bits & R_SYS_BITS_64
-			? "0x%016"PFMT64x" # 0x%016"PFMT64x" %c %s %6s %c %s %s %s%s%s\n"
-			: "0x%08"PFMT64x" # 0x%08"PFMT64x" %c %s %6s %c %s %s %s%s%s\n";
+			? "0x%016"PFMT64x" - 0x%016"PFMT64x" %c %s %6s %c %s %s %s%s%s\n"
+			: "0x%08"PFMT64x" - 0x%08"PFMT64x" %c %s %6s %c %s %s %s%s%s\n";
 		const char *type = map->shared? "sys": "usr";
 		const char *flagname = dbg->corebind.getName
 			? dbg->corebind.getName (dbg->corebind.core, map->addr) : NULL;
@@ -84,14 +84,14 @@ R_API void r_debug_map_list(RDebug *dbg, ut64 addr, const char *input) {
 	}
 
 	switch (input[0]) {
-		case 'j': // "dmj" add JSON opening array brace
-			dbg->cb_printf ("[");
-			break;
-		case '*': // "dm*" dont print a header for r2 commands output
-			break;
-		default:
-			// TODO: Find a way to only print headers if output isn't being grepped
-			print_debug_map_line_header (dbg, input);
+	case 'j': // "dmj" add JSON opening array brace
+		dbg->cb_printf ("[");
+		break;
+	case '*': // "dm*" dont print a header for r2 commands output
+		break;
+	default:
+		// TODO: Find a way to only print headers if output isn't being grepped
+		print_debug_map_line_header (dbg, input);
 	}
 
 	for (i = 0; i < 2; i++) { // Iterate over dbg::maps and dbg::maps_user
