@@ -18,6 +18,17 @@ static struct wasm_stack_t {
 int wasm_stack_ptr = 0;
 WasmOpCodes op_old = 0;
 
+static ut64 get_cf_offset(RAnal *anal, const ut8 *data) {
+       char flgname[64] = {0};
+       snprintf(flgname, sizeof (flgname), "sym.fnc.%d", data[1]);
+       RFlagItem *fi = anal->flb.get (anal->flb.f, flgname);
+       if (fi) {
+               return fi->offset;
+       }
+       return UT64_MAX;
+}
+
+
 static ut64 find_if_else(ut64 addr, const ut8 *data, int len, bool is_loop) {
 	WasmOp wop = {0};
 	st32 count = 0;
@@ -55,6 +66,16 @@ static ut64 find_if_else(ut64 addr, const ut8 *data, int len, bool is_loop) {
 		len -= ret;
 	}
 	return UT64_MAX;
+}
+
+static void set_br_jump(RAnalOp *op, const ut8 *data) {
+	ut32 pos = wasm_stack_ptr - *(data  + 1);
+	if (pos < wasm_stack_ptr) {
+		ut64 jump = wasm_stack[pos].end;
+		if (jump != UT64_MAX) {
+			op->jump = jump + 1; // always pointing to an 'end'
+		}
+	}
 }
 
 static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
@@ -187,22 +208,12 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			break;
 		case WASM_OP_BR:
 			op->type = R_ANAL_OP_TYPE_JMP;
-			if (addr != UT64_MAX) {
-				ut32 pos = *(data  + 1);
-				ut64 jump = wasm_stack[(wasm_stack_ptr - 1) - pos].end;
-				if (jump != UT64_MAX) {
-					op->jump = jump + 1;
-				}
-			}
+			set_br_jump(op, data);
 			break;
 		case WASM_OP_BRIF:
 			op->fail = addr + op->size;
 			op->type = R_ANAL_OP_TYPE_CJMP;
-			ut32 pos = *(data  + 1);
-			ut64 jump = wasm_stack[(wasm_stack_ptr - 1) - pos].end;
-			if (jump != UT64_MAX) {
-				op->jump = jump + 1;
-			}
+			set_br_jump(op, data);
 			break;
 		case WASM_OP_RETURN:
 			op->type = R_ANAL_OP_TYPE_CRET;
