@@ -2968,7 +2968,7 @@ static void ds_print_indent(RDisasmState *ds) {
 static void ds_print_opstr(RDisasmState *ds) {
 	ds_print_indent (ds);
 	if (ds->use_json) {
-		char *escaped_str = r_str_escape (ds->opstr);
+		char *escaped_str = r_str_escape_latin1 (ds->opstr, false, true, true);
 		if (escaped_str) {
 			r_cons_strcat (escaped_str);
 		}
