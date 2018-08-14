@@ -1656,6 +1656,10 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 }
 #endif
 
+static inline bool cmd_search_isThumb(RCore *core) {
+	return (!strcmp (core->anal->cur->arch, "arm") && core->anal->bits == 16);
+}
+
 static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	RSearch *search = core->search;
 	ut64 at;
@@ -1676,6 +1680,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
+	int off;
 
 	if (!(esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
 		return;
@@ -1744,16 +1749,20 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 				}
 			}
 			if ((aop.type == R_ANAL_OP_TYPE_SWI) && ret) { // && (aop.val > 10)) {
+				if (cmd_search_isThumb (core)) {
+					off = aop.val;
+				} else {
 #if USE_EMULATION
-				// This for calculating no of bytes to be subtracted , to get n instr above syscall
-				int nbytes = 0;
-				int nb_opcodes = MAXINSTR;
-				SUMARRAY (previnstr, nb_opcodes, nbytes);
-				curpc = at - (nbytes - previnstr[curpos]);
-				int off = emulateSyscallPrelude (core, at, curpc);
+					// This for calculating no of bytes to be subtracted , to get n instr above syscall
+					int nbytes = 0;
+					int nb_opcodes = MAXINSTR;
+					SUMARRAY (previnstr, nb_opcodes, nbytes);
+					curpc = at - (nbytes - previnstr[curpos]);
+					off = emulateSyscallPrelude (core, at, curpc);
 #else
-				int off = syscallNumber;
+					off = syscallNumber;
 #endif
+				}
 				RSyscallItem *item = r_syscall_get (core->anal->syscall, off, -1);
 				if (item) {
 					r_cons_printf ("0x%08"PFMT64x" %s\n", at, item->name);
