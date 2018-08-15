@@ -143,6 +143,8 @@ static RPanel createMenuPanel(int x, int y, char *title);
 static bool checkFunc(RCore *core);
 static void cursorLeft(RCore *core);
 static void cursorRight(RCore *core);
+static void cursorDown(RCore *core);
+static void cursorUp(RCore *core);
 static void delPanel(RPanels *panels, int delPanelNum);
 static void delCurPanel(RPanels *panels);
 static void delInvalidPanels(RPanels *panels);
@@ -207,12 +209,10 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 		}
 		(void) r_cons_canvas_gotoxy (can, panel->x + 2, panel->y + 2);
 		char *cmdStr;
-		bool ce = core->print->cur_enabled;
 		if (!strcmp (panel->cmd, PANEL_CMD_DISASSEMBLY)) {
 			core->offset = panel->addr;
 			r_core_seek (core, panel->addr, 1);
 			r_core_block_read (core);
-			core->print->cur_enabled = false;
 			cmdStr = r_core_cmd_str (core, panel->cmd);
 		} else if (!strcmp (panel->cmd, PANEL_CMD_STACK)) {
 			const int delta = r_config_get_i (core->config, "stack.delta");
@@ -270,7 +270,6 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 		if (!panel->cmdStrCache) {
 			free (cmdStr);
 		}
-		core->print->cur_enabled = ce;
 	}
 	if (color) {
 		r_cons_canvas_box (can, panel->x, panel->y, panel->w, panel->h, core->cons->pal.graph_box2);
@@ -520,17 +519,125 @@ static void cursorRight(RCore *core) {
 	if (!strcmp (core->panels->panel[core->panels->curnode].cmd, PANEL_CMD_STACK) && core->print->cur >= 15) {
 		return;
 	}
-	core->print->cur++;
-	core->panels->panel[core->panels->curnode].addr++;
-	return;
+	if (!strcmp (core->panels->panel[core->panels->curnode].cmd, PANEL_CMD_REGISTERS)
+			|| !strcmp (core->panels->panel[core->panels->curnode].cmd, PANEL_CMD_STACK)) {
+		core->print->cur++;
+		core->panels->panel[core->panels->curnode].addr++;
+	} else {
+		core->print->cur++;
+		RPanel *curPanel = &core->panels->panel[core->panels->curnode];
+		int threshold = (curPanel->h - 4) / 2;
+		int row = r_print_row_at_off (core->print, core->print->cur);
+		if (row >= threshold) {
+			core->offset = core->panels->panel[core->panels->curnode].addr;
+			RAsmOp op;
+			ut32 next_roff = r_print_rowoff (core->print, row + 1);
+			int sz = r_asm_disassemble (core->assembler, &op,
+					core->block + next_roff, 32);
+			if (sz < 1) {
+				sz = 1;
+			}
+			r_core_seek_delta (core, sz);
+			core->panels->panel[core->panels->curnode].addr = core->offset;
+			r_core_block_read (core);
+			core->print->cur = R_MAX (core->print->cur - sz, 0);
+		}
+	}
 }
 
 static void cursorLeft(RCore *core) {
-	if (core->print->cur > 0) {
+	if (core->print->cur > 0 && (!strcmp (core->panels->panel[core->panels->curnode].cmd, PANEL_CMD_REGISTERS)
+				|| !strcmp (core->panels->panel[core->panels->curnode].cmd, PANEL_CMD_STACK))) {
 		core->print->cur--;
 		core->panels->panel[core->panels->curnode].addr--;
+	} else {
+		core->print->cur--;
+		int row = r_print_row_at_off (core->print, core->print->cur);
+		if (row < 0) {
+			int cols = core->print->cols;
+			ut64 prevoff = core->offset;
+			core->offset = core->panels->panel[core->panels->curnode].addr;
+			r_core_visual_disasm_up (core, &cols);
+			r_core_seek_delta (core, -cols);
+			core->panels->panel[core->panels->curnode].addr = core->offset;
+			core->print->cur = prevoff - core->offset - 1;
+		}
 	}
-	return;
+}
+
+static void cursorUp(RCore *core) {
+	RPrint *p = core->print;
+	ut32 roff;
+	int row;
+	if (p->row_offsets) {
+		row = r_print_row_at_off (p, p->cur);
+		roff = r_print_rowoff (p, row);
+		if (roff == UT32_MAX) {
+			p->cur--;
+			return;
+		}
+		if (row > 0) {
+			ut32 prev_roff;
+			int delta, prev_sz;
+			prev_roff = r_print_rowoff (p, row - 1);
+			delta = p->cur - roff;
+			prev_sz = roff - prev_roff;
+			int res = R_MIN (delta, prev_sz - 1);
+			ut64 cur = prev_roff + res;
+			if (cur == p->cur) {
+				if (p->cur > 0) {
+					p->cur--;
+				}
+			} else {
+				p->cur = prev_roff + delta;
+			}
+		} else {
+			int cols = core->print->cols;
+			ut64 prevoff = core->offset;
+			r_core_visual_disasm_up (core, &cols);
+			r_core_seek_delta (core, -cols);
+			core->panels->panel[core->panels->curnode].addr = core->offset;
+			core->print->cur = R_MIN (prevoff - core->offset - 1, core->print->cur);
+		}
+	} else {
+		p->cur -= p->cols;
+	}
+}
+
+static void cursorDown(RCore *core) {
+	RPanel *curPanel = &core->panels->panel[core->panels->curnode];
+	int threshold = (curPanel->h - 4) / 2;
+	RPrint *p = core->print;
+	ut32 roff, next_roff;
+	int row, sz, delta;
+	RAsmOp op;
+	if (p->row_offsets) {
+		row = r_print_row_at_off (p, p->cur);
+		roff = r_print_rowoff (p, row);
+		if (roff == -1) {
+			p->cur++;
+			return;
+		}
+		next_roff = r_print_rowoff (p, row + 1);
+		if (next_roff == -1) {
+			p->cur++;
+			return;
+		}
+		sz = r_asm_disassemble (core->assembler, &op,
+				core->block + next_roff, 32);
+		if (sz < 1) {
+			sz = 1;
+		}
+		delta = p->cur - roff;
+		p->cur = next_roff + R_MIN (delta, sz - 1);
+		row = r_print_row_at_off (p, p->cur);
+		if (row >= threshold) {
+			r_core_seek_delta (core, sz);
+			p->cur = R_MAX (p->cur - sz, 0);
+		}
+	} else {
+		p->cur += R_MAX (1, p->cols);
+	}
 }
 
 static void handleUpKey(RCore *core) {
@@ -557,11 +664,16 @@ static void handleUpKey(RCore *core) {
 	} else {
 		panels->panel[panels->curnode].refresh = true;
 		if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
-			int cols = core->print->cols;
 			core->offset = panels->panel[panels->curnode].addr;
-			r_core_visual_disasm_up (core, &cols);
-			r_core_seek_delta (core, -cols);
-			panels->panel[panels->curnode].addr = core->offset;
+			if (core->print->cur_enabled) {
+				cursorUp (core);
+				panels->panel[panels->curnode].addr = core->offset;
+			} else {
+				int cols = core->print->cols;
+				r_core_visual_disasm_up (core, &cols);
+				r_core_seek_delta (core, -cols);
+				panels->panel[panels->curnode].addr = core->offset;
+			}
 		} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
 			int width = r_config_get_i (core->config, "hex.cols");
 			if (width < 1) {
@@ -608,12 +720,18 @@ static void handleDownKey(RCore *core) {
 		panels->panel[panels->curnode].refresh = true;
 		if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
 			core->offset = panels->panel[panels->curnode].addr;
-			RAsmOp op;
-			int cols = core->print->cols;
-			r_core_visual_disasm_down (core, &op, &cols);
-			r_core_seek (core, core->offset + cols, 1);
-			r_core_block_read (core);
-			panels->panel[panels->curnode].addr = core->offset;
+			if (core->print->cur_enabled) {
+				cursorDown (core);
+				r_core_block_read (core);
+				panels->panel[panels->curnode].addr = core->offset;
+			} else {
+				RAsmOp op;
+				int cols = core->print->cols;
+				r_core_visual_disasm_down (core, &op, &cols);
+				r_core_seek (core, core->offset + cols, 1);
+				r_core_block_read (core);
+				panels->panel[panels->curnode].addr = core->offset;
+			}
 		} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
 			int width = r_config_get_i (core->config, "hex.cols");
 			if (width < 1) {
@@ -660,12 +778,12 @@ static void handleLeftKey(RCore *core) {
 			panels->panel[panels->curnode].sx -= r_config_get_i (core->config, "graph.scroll");
 			panels->panel[panels->curnode].refresh = true;
 		}
-	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS)
-			|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
-		if (core->print->cur_enabled) {
-			cursorLeft (core);
-			panels->panel[panels->curnode].refresh = true;
-		}
+	} else if (core->print->cur_enabled
+			&& (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS)
+				|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)
+				|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY))) {
+		cursorLeft (core);
+		panels->panel[panels->curnode].refresh = true;
 	} else {
 		if (panels->panel[panels->curnode].sx > 0) {
 			panels->panel[panels->curnode].sx--;
@@ -691,12 +809,12 @@ static void handleRightKey(RCore *core) {
 	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_GRAPH)) {
 		panels->panel[panels->curnode].sx += r_config_get_i (core->config, "graph.scroll");
 		panels->panel[panels->curnode].refresh = true;
-	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS)
-			|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
-		if (core->print->cur_enabled) {
-			cursorRight (core);
-			panels->panel[panels->curnode].refresh = true;
-		}
+	} else if (core->print->cur_enabled
+			&& (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS)
+				|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)
+				|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY))) {
+		cursorRight (core);
+		panels->panel[panels->curnode].refresh = true;
 	} else {
 		panels->panel[panels->curnode].sx++;
 		panels->panel[panels->curnode].refresh = true;
@@ -1929,8 +2047,9 @@ repeat:
 		setRefreshAll (panels);
 		break;
 	case 'c':
-		if ((!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)
-					|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS))) {
+		if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)
+					|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS)
+					|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
 			setCursor (core, !core->print->cur_enabled);
 			panels->panel[panels->curnode].refresh = true;
 		}
