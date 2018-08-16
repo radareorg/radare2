@@ -922,7 +922,12 @@ static int cmd_interpret(void *data, const char *input) {
 		if (filter) {
 			*filter = 0;
 		}
+
+		int tmp_html = r_cons_singleton ()->is_html;
+		r_cons_singleton ()->is_html = 0;
 		ptr = str = r_core_cmd_str (core, inp);
+		r_cons_singleton ()->is_html = tmp_html;
+
 		if (filter) {
 			*filter = '~';
 		}

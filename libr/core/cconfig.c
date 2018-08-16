@@ -2046,22 +2046,24 @@ static int cb_searchin(void *user, void *data) {
 	if (node->value[0] == '?') {
 		if (strlen (node->value) > 1 && node->value[1] == '?') {
 			r_cons_printf ("Valid values for search.in (depends on .from/.to and io.va):\n"
-			"raw               search in raw io (ignoring bounds)\n"
-			"block             search in the current block\n"
-			"io.map            search in current map\n"
-			"io.maps           search in all maps\n"
-			"io.section        search in current mapped section\n"
-			"io.sections       search in all mapped sections\n"
-			"io.sections.write search in all writable marked sections\n"
-			"io.sections.exec  search in all executable marked sections\n"
-			"dbg.stack         search in the stack\n"
-			"dbg.heap          search in the heap\n"
-			"dbg.map           search in current memory map\n"
-			"dbg.maps          search in all memory maps\n"
-			"dbg.maps.exec     search in all executable marked memory maps\n"
-			"dbg.maps.write    search in all writable marked memory maps\n"
-			"anal.fcn          search in the current function\n"
-			"anal.bb           search in the current basic-block\n");
+			"raw                search in raw io (ignoring bounds)\n"
+			"block              search in the current block\n"
+			"io.map             search in current map\n"
+			"io.maps            search in all maps\n"
+			"io.maps.[rwx]      search in all r-w-x io maps\n"
+			// "io.section        search in current mapped section\n"
+			// "io.sections       search in all mapped sections\n"
+			// "io.sections.[rwx] search in all r-w-x sections\n"
+			"bin.section        search in current mapped section\n"
+			"bin.sections       search in all mapped sections\n"
+			"bin.sections.[rwx] search in all r-w-x sections\n"
+			"dbg.stack          search in the stack\n"
+			"dbg.heap           search in the heap\n"
+			"dbg.map            search in current memory map\n"
+			"dbg.maps           search in all memory maps\n"
+			"dbg.maps.[rwx]     search in all executable marked memory maps\n"
+			"anal.fcn           search in the current function\n"
+			"anal.bb            search in the current basic-block\n");
 		} else {
 			print_node_options (node);
 		}
@@ -2320,11 +2322,13 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("anal.to", -1, (RConfigCallback)&cb_anal_from, "Upper limit on the address range for analysis");
 	n = NODECB ("anal.in", "io.maps", &cb_searchin);
 	SETDESC (n, "Specify search boundaries for analysis");
-	SETOPTIONS (n, "raw", "block", "io.map", "io.maps",
-			"io.sections", "io.sections.write", "io.sections.exec", "io.sections.readonly",
-			"dbg.stack", "dbg.heap", "dbg.map",
-			"dbg.maps", "dbg.maps.exec", "dbg.maps.write", "dbg.maps.readonly",
-			"anal.fcn", "anal.bb", NULL);
+	SETOPTIONS (n, "raw", "block",
+		"bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x",
+		"io.map", "io.maps", "io.maps.rwx", "io.maps.r", "io.maps.rw", "io.maps.rx", "io.maps.wx", "io.maps.x",
+		"dbg.stack", "dbg.heap",
+		"dbg.map", "dbg.maps", "dbg.maps.rwx", "dbg.maps.r", "dbg.maps.rw", "dbg.maps.rx", "dbg.maps.wx", "dbg.maps.x",
+		"anal.fcn", "anal.bb",
+	NULL);
 	SETI ("anal.timeout", 0, "Stop analyzing after a couple of seconds");
 
 	SETCB ("anal.armthumb", "false", &cb_analarmthumb, "aae computes arm/thumb changes (lot of false positives ahead)");
@@ -2903,11 +2907,13 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("search.from", -1, "Search start address");
 	n = NODECB ("search.in", "io.maps", &cb_searchin);
 	SETDESC (n, "Specify search boundaries");
-	SETOPTIONS (n, "raw", "block", "io.map", "io.maps",
-			"io.sections", "io.sections.write", "io.sections.exec", "io.sections.readonly",
-			"dbg.stack", "dbg.heap", "dbg.map",
-			"dbg.maps", "dbg.maps.exec", "dbg.maps.write", "dbg.maps.readonly",
-			"anal.fcn", "anal.bb", NULL);
+	SETOPTIONS (n, "raw", "block",
+		"bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x",
+		"io.map", "io.maps", "io.maps.rwx", "io.maps.r", "io.maps.rw", "io.maps.rx", "io.maps.wx", "io.maps.x",
+		"dbg.stack", "dbg.heap",
+		"dbg.map", "dbg.maps", "dbg.maps.rwx", "dbg.maps.r", "dbg.maps.rw", "dbg.maps.rx", "dbg.maps.wx", "dbg.maps.x",
+		"anal.fcn", "anal.bb",
+	NULL);
 	SETICB ("search.kwidx", 0, &cb_search_kwidx, "Store last search index count");
 	SETPREF ("search.prefix", "hit", "Prefix name in search hits label");
 	SETPREF ("search.show", "true", "Show search results");
@@ -2981,11 +2987,13 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("zoom.to", 0, "Zoom end address");
 	n = NODECB ("zoom.in", "io.map", &cb_searchin);
 	SETDESC (n, "Specify  boundaries for zoom");
-	SETOPTIONS (n, "raw", "block", "io.map", "io.maps",
-			"io.sections", "io.sections.write", "io.sections.exec", "io.sections.readonly",
-			"dbg.stack", "dbg.heap", "dbg.map",
-			"dbg.maps", "dbg.maps.exec", "dbg.maps.write", "dbg.maps.readonly",
-			"anal.fcn", "anal.bb", NULL);
+	SETOPTIONS (n, "raw", "block",
+		"bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x",
+		"io.map", "io.maps", "io.maps.rwx", "io.maps.r", "io.maps.rw", "io.maps.rx", "io.maps.wx", "io.maps.x",
+		"dbg.stack", "dbg.heap",
+		"dbg.map", "dbg.maps", "dbg.maps.rwx", "dbg.maps.r", "dbg.maps.rw", "dbg.maps.rx", "dbg.maps.wx", "dbg.maps.x",
+		"anal.fcn", "anal.bb",
+	NULL);
 	/* lines */
 	SETI ("lines.from", 0, "Start address for line seek");
 	SETCB ("lines.to", "$s", &cb_linesto, "End address for line seek");

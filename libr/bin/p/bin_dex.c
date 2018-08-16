@@ -200,7 +200,6 @@ static char *dex_type_descriptor(RBinDexObj *bin, int type_idx) {
 static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 	ut32 params_off, type_id, list_size;
 	char *r = NULL, *return_type = NULL, *signature = NULL, *buff = NULL;
-	ut8 *bufptr;
 	ut16 type_idx;
 	int pos = 0, i, size = 1;
 

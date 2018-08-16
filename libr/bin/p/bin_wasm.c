@@ -51,16 +51,29 @@ static RList *sections(RBinFile *bf);
 static RList *entries(RBinFile *bf) {
 	RBinWasmObj *bin = bf && bf->o ? bf->o->bin_obj : NULL;
 	// TODO
-	RList *ret;
+	RList *ret = NULL;
 	RBinAddr *ptr = NULL;
 	ut64 addr = 0x0;
 
 	if (!(ret = r_list_newf ((RListFree)free))) {
 		return NULL;
 	}
-	if (!(addr = (ut64) r_bin_wasm_get_entrypoint (bin))) {
-		r_list_free (ret);
-		return NULL;
+
+	addr = (ut64) r_bin_wasm_get_entrypoint (bin);
+	if (!addr) {
+		RList *codes = r_bin_wasm_get_codes (bin);
+		if (codes) {
+			RListIter *iter;
+			RBinWasmCodeEntry *func;
+			r_list_foreach (codes, iter, func) {
+				addr = func->code;
+				break;
+			}
+		}
+		if (!addr) {
+			r_list_free (ret);
+			return NULL;
+		}
 	}
 	if ((ptr = R_NEW0 (RBinAddr))) {
 		ptr->paddr = addr;

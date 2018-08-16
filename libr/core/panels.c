@@ -305,7 +305,6 @@ static void layoutSubMenu(RPanels *panels, int w) {
 	int y = 1;
 	const char **currentMenu;
 	int currentMenuIndex;
-	char *title;
 	for (i = 0; i < panels->menuStackDepth; i++) {
 		if (i == 0) {
 			continue;

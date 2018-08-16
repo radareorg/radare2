@@ -188,13 +188,6 @@ R_API bool r_anal_use(RAnal *anal, const char *name) {
 				if (change) {
 					r_anal_set_fcnsign (anal, NULL);
 				}
-	#if 1
-				/* invalidate esil state? really ? */
-				if (anal->esil) {
-					r_anal_esil_free (anal->esil);
-					anal->esil = NULL;
-				}
-	#endif
 				return true;
 			}
 		}
