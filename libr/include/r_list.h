@@ -60,7 +60,7 @@ typedef struct r_oflist_t {
 #define r_list_iterator(x) (x)? (x)->head: NULL
 // #define r_list_empty(x) (!x || (!(x->head) && !(x->tail)))
 #define r_list_empty(x) (!(x) || !(x)->length)
-#define r_list_head(x) x->head
+#define r_list_head(x) ((x)? (x)->head: NULL)
 #define r_list_tail(x) x->tail
 
 #define r_list_iter_get(x)\

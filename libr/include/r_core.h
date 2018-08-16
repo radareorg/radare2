@@ -161,6 +161,19 @@ typedef struct r_core_autocomplete_t {
 	struct r_core_autocomplete_t** subcmds;
 } RCoreAutocomplete;
 
+typedef struct r_core_visual_tab_t {
+	int printidx;
+	ut64 offset;
+	// TODO: cursor and such
+} RCoreVisualTab;
+// #define RCoreVisualTab Tab
+
+typedef struct r_core_visual_t {
+	RList *tabs;
+	int tab;
+} RCoreVisual;
+// #define RCoreVisual Visual
+
 typedef struct r_core_t {
 	RBin *bin;
 	RConfig *config;
@@ -216,7 +229,8 @@ typedef struct r_core_t {
 	int asmqjmps_size;
 	bool is_asmqjmps_letter;
 	bool keep_asmqjmps;
-	// visual
+	RCoreVisual visual;
+	// visual // TODO: move them into RCoreVisual
 	int http_up;
 	int gdbserver_up;
 	int printidx;

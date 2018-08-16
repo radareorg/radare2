@@ -1632,6 +1632,7 @@ R_API void r_core_visual_browse(RCore *core) {
 		" F  functions\n"
 		" h  history\n"
 		" i  imports\n"
+		" l  chat logs (previously VT)\n"
 		" m  maps\n"
 		" p  pids/threads\n"
 		" q  quit\n"
@@ -1668,6 +1669,15 @@ R_API void r_core_visual_browse(RCore *core) {
 			break;
 		case 'T':
 			r_core_cmd0 (core, "eco $(eco~...)");
+			break;
+		case 'l': // previously VT
+			if (r_sandbox_enable (0)) {
+				eprintf ("sandbox not enabled\n");
+			} else {
+				if (r_config_get_i (core->config, "scr.interactive")) {
+					r_core_cmd0 (core, "TT");
+				}
+			}
 			break;
 		case 'e':
 			r_core_visual_config (core);
@@ -1710,6 +1720,88 @@ R_API void r_core_visual_browse(RCore *core) {
 		case 'q':
 			return;
 		}
+	}
+}
+
+static void r_core_visual_tab_free (RCoreVisualTab *tab) {
+	free (tab);
+}
+
+static RCoreVisualTab *r_core_visual_tab_new(RCore *core) {
+	RCoreVisualTab *tab = R_NEW0 (RCoreVisualTab);
+	tab->offset = core->offset;
+	tab->printidx = core->printidx;
+	return tab;
+}
+
+static void r_core_visual_tab_update(RCore *core) {
+	// shuold be unnecessary if we change core -> core->visual
+	RListIter *iter = r_list_head (core->visual.tabs);
+	if (!iter) {
+		return;
+	}
+	RCoreVisualTab *tab = (RCoreVisualTab*)(iter->data);
+	if (tab) {
+		tab->offset = core->offset;
+		tab->printidx = core->printidx;
+	}
+}
+
+static void visual_newtab (RCore *core) {
+	if (!core->visual.tabs) {
+		core->visual.tabs = r_list_newf (free);
+		core->visual.tab = 0;
+	}
+	RCoreVisualTab *tab = r_core_visual_tab_new (core);
+	r_list_prepend (core->visual.tabs, tab);
+	core->visual.tab++;
+}
+
+static void visual_nexttab (RCore *core) {
+	RCoreVisualTab *tab = r_list_pop (core->visual.tabs);
+	if (tab) {
+		r_core_seek (core, tab->offset, 1);
+		core->printidx = tab->printidx;
+		r_list_prepend (core->visual.tabs, tab);
+		core->visual.tab++;
+		if (core->visual.tab > r_list_length (core->visual.tabs)) {
+			core->visual.tab = 1;
+		}
+	}
+}
+
+static void visual_prevtab (RCore *core) {
+	RCoreVisualTab *tab = r_list_pop_head (core->visual.tabs);
+	r_list_append (core->visual.tabs, tab);
+	tab = r_list_pop_head (core->visual.tabs);
+	if (tab) {
+		r_core_seek (core, tab->offset, 1);
+		core->printidx = tab->printidx;
+		r_list_prepend (core->visual.tabs, tab);
+		core->visual.tab--;
+		if (core->visual.tab < 1) {
+			core->visual.tab = r_list_length (core->visual.tabs);
+		}
+	}
+}
+
+static void visual_closetab (RCore *core) {
+	r_core_visual_tab_free (r_list_pop_head (core->visual.tabs));
+	const int tabsCount = r_list_length (core->visual.tabs);
+	if (tabsCount > 0) {
+		core->visual.tab--;
+		if (core->visual.tab < 1) {
+			core->visual.tab = 1;
+		}
+		visual_nexttab (core);
+		RCoreVisualTab *tab = r_list_head (core->visual.tabs)->data;
+		if (tab) {
+			r_core_seek (core, tab->offset, 1);
+			core->printidx = tab->printidx;
+		}
+	} else {
+		r_list_free (core->visual.tabs);
+		core->visual.tabs = NULL;
 	}
 }
 
@@ -1802,7 +1894,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		}
 		break;
 		case 9: // tab
-			if (splitView) {
+			if (core->visual.tabs) {
+				visual_nexttab (core);
+			} else if (splitView) {
 				core->print->cur = 0;
 				core->curtab = 0;
 				core->seltab++;
@@ -1824,10 +1918,13 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					if (f == t && f == 0) {
 						core->print->col = core->print->col == 1? 2: 1;
 					} else {
+#if 0
+// XXX WTF
 						ut64 delta = offset - f;
 						r_core_seek (core, t + delta, 1);
 						r_config_set_i (core->config, "diff.from", t);
 						r_config_set_i (core->config, "diff.to", f);
+#endif
 					}
 				}
 			}
@@ -2017,14 +2114,11 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		case ',':
 			visual_comma (core);
 			break;
+		case 't':
+			visual_newtab (core);
+			break;
 		case 'T':
-			if (r_sandbox_enable (0)) {
-				eprintf ("sandbox not enabled\n");
-			} else {
-				if (r_config_get_i (core->config, "scr.interactive")) {
-					r_core_cmd0 (core, "TT");
-				}
-			}
+			visual_closetab (core);
 			break;
 		case 'n':
 			r_core_seek_next (core, r_config_get (core->config, "scr.nkey"));
@@ -2700,13 +2794,17 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 		}
 		break;
-		case 'Z':
-			if (zoom && core->print->cur) {
-				ut64 from = r_config_get_i (core->config, "zoom.from");
-				ut64 to = r_config_get_i (core->config, "zoom.to");
-				r_core_seek (core, from + ((to - from) / core->blocksize) * core->print->cur, 1);
+		case 'Z': // shift-tab
+			if (core->visual.tabs) {
+				visual_prevtab (core);
+			} else {
+				if (zoom && core->print->cur) {
+					ut64 from = r_config_get_i (core->config, "zoom.from");
+					ut64 to = r_config_get_i (core->config, "zoom.to");
+					r_core_seek (core, from + ((to - from) / core->blocksize) * core->print->cur, 1);
+				}
+				zoom = !zoom;
 			}
-			zoom = !zoom;
 			break;
 		case '?':
 			if (visual_help () == '?') {
@@ -2891,6 +2989,21 @@ R_API void r_core_visual_title(RCore *core, int color) {
 				title = r_str_newf ("[0x%08"PFMT64x " %s%d %s]> %s %s\n",
 					core->offset, pcs, core->blocksize, filename, bar, pos);
 			}
+		}
+		const int tabsCount = r_list_length (core->visual.tabs);
+		if (tabsCount > 0) {
+			const int curTab = core->visual.tab;
+			r_cons_printf ("[");
+			int i;
+			for (i = 0; i< tabsCount; i++) {
+				if (i == curTab - 1) {
+					r_cons_printf ("%d", curTab);
+				} else {
+					r_cons_printf (".");
+				}
+			}
+			r_cons_printf ("]");
+			// r_cons_printf ("[tab:%d/%d]", core->visual.tab, tabsCount);
 		}
 		r_cons_print (title);
 		free (title);
@@ -3140,6 +3253,7 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	core->print->flags |= R_PRINT_FLAGS_ADDRMOD;
 	do {
 dodo:
+		r_core_visual_tab_update(core);
 		// update the cursor when it's not visible anymore
 		skip = fix_cursor (core);
 		const int ref = r_config_get_i (core->config, "dbg.slow");
