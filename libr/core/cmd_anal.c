@@ -7600,7 +7600,7 @@ static void cmd_anal_virtual_functions(RCore *core, const char* input) {
 
 static const char *help_msg_aC[] = {
 		"Usage:", "aC", "[TODO] [...]",
-		"aCl", "", "list all classes",
+		"aCl[lj]", "", "list all classes",
 		"aC", " [classname]", "add class",
 		"aCb", " [classname] [base classname] ([offset])", "add base class",
 		"aCm", " [classname] [method name] [offset] ([vtable index])", "add method",

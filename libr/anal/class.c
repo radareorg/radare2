@@ -87,26 +87,89 @@ R_API RAnalClass *r_anal_class_get(RAnal *anal, const char *name) {
 	return NULL;
 }
 
-R_API void r_anal_class_list(RAnal *anal, int mode) {
-	void **it;
-	r_pvector_foreach (&anal->classes, it) {
-		RAnalClass *cls = (RAnalClass *)*it;
-		r_cons_print (cls->name);
-		bool first = true;
+R_API void r_anal_class_print(RAnal *anal, RAnalClass *cls, int mode) {
+	bool json = mode == 'j';
+	bool lng = mode == 'l';
 
-		size_t j;
-		for (j = 0; j < cls->base_classes.len; j++) {
-			RAnalBaseClass *bcls = (RAnalBaseClass *)r_vector_index_ptr (&cls->base_classes, j);
-			if (first) {
+	if (json) {
+		r_cons_printf ("{\"name\":\"%s\",\"base\":[", cls->name);
+	} else {
+		r_cons_print (cls->name);
+	}
+
+	size_t i;
+	for (i = 0; i < cls->base_classes.len; i++) {
+		RAnalBaseClass *bcls = (RAnalBaseClass *)r_vector_index_ptr (&cls->base_classes, i);
+		if (i == 0) {
+			if (!json) {
 				r_cons_print (": ");
-				first = false;
+			}
+		} else {
+			if (json) {
+				r_cons_print (",");
 			} else {
 				r_cons_print (", ");
 			}
-			r_cons_print (bcls->cls->name);
 		}
 
+		if (json) {
+			r_cons_printf ("{\"name\":\"%s\",\"offset\":%llu}", bcls->cls->name, bcls->offset);
+		} else {
+			r_cons_print (bcls->cls->name);
+		}
+	}
+
+	if (json) {
+		r_cons_print ("],\"methods\":[");
+	} else {
 		r_cons_print ("\n");
+	}
+
+	if (json || lng) {
+		for (i = 0; i < r_pvector_len (&cls->methods); i++) {
+			RAnalMethod *meth = (RAnalMethod *)r_pvector_at (&cls->methods, i);
+			if (json) {
+				if (i > 0) {
+					r_cons_print (",");
+				}
+				r_cons_printf ("{\"name\":\"%s\",\"addr\":%lld,\"vtable_index\":%d}",
+						meth->name, meth->addr, meth->vtable_index);
+			} else { // lng
+				r_cons_printf ("  %s @ 0x%"PFMT64x, meth->name, meth->addr);
+				if (meth->vtable_index >= 0) {
+					r_cons_printf (" (vtable +%d)\n", meth->vtable_index);
+				} else {
+					r_cons_print ("\n");
+				}
+			}
+		}
+	}
+
+	if (json) {
+		r_cons_print ("]}");
+	}
+}
+
+R_API void r_anal_class_list(RAnal *anal, int mode) {
+	void **it;
+	bool json = mode == 'j';
+	if (json) {
+		r_cons_print ("[");
+	}
+	bool first = true;
+	r_pvector_foreach (&anal->classes, it) {
+		if (json) {
+			if (first) {
+				first = false;
+			} else {
+				r_cons_print (",");
+			}
+		}
+		RAnalClass *cls = (RAnalClass *)*it;
+		r_anal_class_print (anal, cls, mode);
+	}
+	if (json) {
+		r_cons_print ("]\n");
 	}
 }
 
