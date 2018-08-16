@@ -620,7 +620,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		r_list_free (list);
 		return NULL;
 	}
-	if (!core->io->va) {
+	if (!r_config_get_i (core->config, "cfg.debug") && !core->io->va) {
 		append_bound (list, core->io, search_itv, 0, r_io_size (core->io));
 	} else if (!strcmp (mode, "block")) {
 		append_bound (list, core->io, search_itv, core->offset, core->blocksize);
