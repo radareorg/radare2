@@ -61,6 +61,11 @@ static inline bool r_egg_Cfile_check_cEnv(struct cEnv_t *cEnv) {
 		|| !cEnv->SHDR || !cEnv->TRIPLET);
 }
 
+static inline bool isXNU(const char *os) {
+	return (!strcmp (os, "darwin") || !strcmp (os, "macos")
+		|| !strcmp (os, "tvos") || !strcmp (os, "watchos") || !strcmp (os, "ios"));
+}
+
 static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int bits) {
 	struct cEnv_t *cEnv = calloc (1, sizeof (struct cEnv_t));
 	bool use_clang;
@@ -92,7 +97,7 @@ static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int
 
 	cEnv->JMP = r_egg_Cfile_armOrMips (arch) ? "b" : "jmp";
 
-	if (!strcmp (os, "darwin")) {
+	if (isXNU(os)) {
 		cEnv->OBJCOPY = "gobjcopy";
 		cEnv->FMT = "mach0";
 		if (!strcmp (arch, "x86")) {
@@ -132,7 +137,7 @@ static struct cEnv_t* r_egg_Cfile_set_cEnv(const char *arch, const char *os, int
 	if (!strcmp (os, "windows")) {
 		cEnv->TEXT = ".text";
 		cEnv->FMT = "pe";
-	} else if (!strcmp (os, "darwin")) {
+	} else if (isXNU(os)) {
 		cEnv->TEXT = "0.__TEXT.__text";
 	} else {
 		cEnv->TEXT = ".text";
