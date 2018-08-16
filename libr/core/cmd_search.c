@@ -657,25 +657,28 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		}
 		if (end != UT64_MAX) {
 			append_bound (list, NULL, search_itv, begin, end - begin);
-			// eprintf ("-[%llx - %llx]\n", begin, end);
 		}
-	} else if (!strcmp (mode, "bin.sections")) {
+	} else if (r_str_startswith (mode, "bin.sections")) {
+		int len = strlen ("bin.sections.");
+		int mask = (mode[len - 1] == '.')? r_str_rwx (mode + len): 0;
 		RBinObject *obj = r_bin_cur_object (core->bin);
 		if (obj) {
-			RBinSection *sec;
+			RBinSection *s;
 			RListIter *iter;
-			r_list_foreach (obj->sections, iter, sec) {
-				if (core->io->va) {
-					append_bound (list, core->io, search_itv, sec->vaddr, sec->vsize);
-				} else {
-					append_bound (list, core->io, search_itv, sec->paddr, sec->size);
+			r_list_foreach (obj->sections, iter, s) {
+				if (!mask || (s->srwx & mask)) {
+					ut64 addr = core->io->va? s->vaddr: s->paddr;
+					ut64 size = core->io->va? s->vsize: s->size;
+					append_bound (list, core->io, search_itv, addr, size);
 				}
 			}
 		}
 	} else if (!strcmp (mode, "io.section")) {
 		RIOSection *s = r_io_section_vget (core->io, core->offset);
 		if (s) {
-			append_bound (list, core->io, search_itv, s->vaddr, s->vsize);
+			ut64 addr = core->io->va? s->vaddr: s->paddr;
+			ut64 size = core->io->va? s->vsize: s->size;
+			append_bound (list, core->io, search_itv, addr, size);
 		}
 	} else if (!strcmp (mode, "anal.fcn") || !strcmp (mode, "anal.bb")) {
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
@@ -712,12 +715,12 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 
 		if (!strcmp (mode, "io.sections.exec")) {
 			mask = R_IO_EXEC;
-		}
-		if (!strcmp (mode, "io.sections.write")) {
+		} else if (!strcmp (mode, "io.sections.write")) {
 			mask = R_IO_WRITE;
-		}
-		if (!strcmp (mode, "io.sections.readonly")) {
+		} else if (!strcmp (mode, "io.sections.readonly")) {
 			readonly = true;
+		} else if (r_str_startswith (mode, "io.sections.")) {
+			mask = r_str_rwx (mode + 12);
 		}
 
 		ut64 from = UT64_MAX;
@@ -800,6 +803,8 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					readonly = true;
 				} else if (!strcmp (mode, "dbg.maps.write")) {
 					mask = R_IO_WRITE;
+				} else if (r_str_startswith (mode, "dbg.maps.")) {
+					mask = r_str_rwx (mode + 9);
 				} else if (!strcmp (mode, "dbg.heap")) {
 					heap = true;
 				} else if (!strcmp (mode, "dbg.stack")) {
