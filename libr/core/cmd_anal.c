@@ -2421,7 +2421,13 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			eprintf ("Todo\n");
 			break;
 		case 'f': { // "afcf"
-			const char *fcn_name = r_str_trim (strdup (input + 3));
+			bool json = false;
+			if (input[3] == 'j') {
+				json = true;
+				r_cons_printf ("[");
+			}
+			char *p = strchr (input, ' ');
+			const char *fcn_name = p? r_str_trim (strdup (p)): NULL;
 			char *key = NULL;
 			RListIter *iter;
 			RAnalFuncArg *arg;
@@ -2439,11 +2445,21 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 					if (*fcn_type && (fcn_type[strlen (fcn_type) - 1] == '*')) {
 						sp = "";
 					}
-					r_cons_printf ("%s%s%s(", r_str_get (fcn_type), sp, r_str_get (key));
-					if (!nargs) {
-						r_cons_println ("void)");
-						break;
+					if (json) {
+						r_cons_printf ("{\"name\": \"%s\"",r_str_get (key));
+						r_cons_printf (",\"return\": \"%s\"",r_str_get (fcn_type));
+						r_cons_printf (",\"count\": %d", nargs);
+						if (nargs) {
+							r_cons_printf (",\"args\":[", nargs);
+						}
+					} else {
+						r_cons_printf ("%s%s%s(", r_str_get (fcn_type), sp, r_str_get (key));
+						if (!nargs) {
+							r_cons_println ("void)");
+							break;
+						}
 					}
+					bool first = true;
 					RList *list = r_core_get_func_args (core, fcn_name);
 					r_list_foreach (list, iter, arg) {
 						RListIter *nextele = r_list_iter_get_next (iter);
@@ -2452,10 +2468,26 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 						if (*type && (type[strlen (type) - 1] == '*')) {
 							sp1 = "";
 						}
-						r_cons_printf ("%s%s%s%s", type, sp1, arg->name, nextele?", ":")");
+						if (json) {
+							r_cons_printf ("%s{\"name\": \"%s\",\"type\":\"%s\"}",
+									first? "": ",", arg->name, type);
+							first = false;
+						} else {
+							r_cons_printf ("%s%s%s%s", type, sp1, arg->name, nextele?", ":")");
+						}
 					}
-					r_cons_println ("");
+					if (json) {
+						if (nargs) {
+							r_cons_printf ("]");
+						}
+						r_cons_printf ("}");
+					} else {
+						r_cons_println ("");
+					}
 				}
+			}
+			if (json) {
+				r_cons_printf ("]\n");
 			}
 			break;
 		}
