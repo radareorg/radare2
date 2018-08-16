@@ -171,7 +171,7 @@ R_API RAnal *r_anal_new() {
 	anal->sdb_cc = sdb_ns (anal->sdb, "cc", 1);
 	anal->sdb_zigns = sdb_ns (anal->sdb, "zigns", 1);
 	//anal->sdb_classes = sdb_ns (anal->sdb, "classes", 1);
-	r_vector_init (&anal->classes);
+	r_pvector_init (&anal->classes, (RListFree) r_anal_class_free);
 	anal->zign_path = strdup ("");
 	anal->cb_printf = (PrintfCallback) printf;
 	(void)r_anal_pin_init (anal);
@@ -227,7 +227,7 @@ R_API RAnal *r_anal_free(RAnal *a) {
 	r_rbtree_free (a->rb_hints_ranges, __anal_hint_range_tree_free);
 	ht_up_free (a->dict_refs);
 	ht_up_free (a->dict_xrefs);
-	r_vector_clear (&a->classes, (RListFree) r_anal_class_free);
+	r_pvector_clear (&a->classes);
 	a->sdb = NULL;
 	sdb_ns_free (a->sdb);
 	if (a->esil) {
@@ -489,7 +489,7 @@ R_API int r_anal_purge (RAnal *anal) {
 #if R_ANAL_CLASSES_SDB
 	sdb_reset (anal->sdb_classes);
 #else
-	r_vector_clear (&anal->classes, (RVectorFree)r_anal_class_free);
+	r_pvector_clear (&anal->classes);
 #endif
 	r_list_free (anal->fcns);
 	anal->fcns = r_anal_fcn_list_new ();

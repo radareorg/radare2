@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2018 - thestr4ng3r */
 
 #include <r_anal.h>
+#include <r_vector.h>
 
 R_API RAnalClass *r_anal_class_new(const char *name) {
 	RAnalClass *cls = R_NEW (RAnalClass);
@@ -10,8 +11,8 @@ R_API RAnalClass *r_anal_class_new(const char *name) {
 	cls->name = name ? strdup (name) : NULL;
 	cls->addr = UT64_MAX;
 	cls->vtable_addr = UT64_MAX;
-	r_vector_init (&cls->base_classes);
-	r_vector_init (&cls->methods);
+	r_vector_init (&cls->base_classes, sizeof (RAnalBaseClass), NULL, NULL);
+	r_pvector_init (&cls->methods, (RPVectorFree)r_anal_method_free);
 	return cls;
 }
 
@@ -20,8 +21,8 @@ R_API void r_anal_class_free(RAnalClass *cls) {
 		return;
 	}
 	free (cls->name);
-	r_vector_clear (&cls->base_classes, free);
-	r_vector_clear (&cls->methods, (RVectorFree)r_anal_method_free);
+	r_vector_clear (&cls->base_classes);
+	r_pvector_clear (&cls->methods);
 }
 
 R_API RAnalMethod *r_anal_method_new() {
@@ -40,41 +41,44 @@ R_API void r_anal_method_free(RAnalMethod *meth) {
 		return;
 	}
 	free (meth->name);
+	free (meth);
 }
-
 
 
 R_API void r_anal_class_add(RAnal *anal, RAnalClass *cls) {
-	if (r_vector_contains (&anal->classes, cls)) {
+	if (r_pvector_contains (&anal->classes, cls)) {
 		return;
 	}
-	r_vector_push (&anal->classes, cls);
-}
-
-static bool base_class_is_class(RAnalBaseClass *base, RAnalClass *cls) {
-	return base->cls == cls;
+	r_pvector_push (&anal->classes, cls);
 }
 
 R_API void r_anal_class_remove(RAnal *anal, RAnalClass *cls) {
-	int index = -1;
-	int i;
-	for (i = 0; i < anal->classes.len; i++) {
-		RAnalClass *c = (RAnalClass *) anal->classes.a[i];
+	ssize_t index = -1;
+	size_t i;
+	for (i = 0; i < r_pvector_len (&anal->classes); i++) {
+		RAnalClass *c = (RAnalClass *)r_pvector_at (&anal->classes, i);
 		if (c == cls) {
 			index = i;
 		}
-		r_vector_delete_where (&cls->base_classes,
-				(RVectorComparator) base_class_is_class,
-				cls, free);
+
+		size_t j;
+		for (j = 0; j < cls->base_classes.len; j++) {
+			RAnalBaseClass *base = (RAnalBaseClass *)r_vector_index_ptr (&cls->base_classes, j);
+			if (base->cls == cls) {
+				r_vector_remove_at (&cls->base_classes, j, NULL);
+				j++;
+			}
+		}
 	}
 	if (index >= 0) {
-		r_vector_delete_at (&anal->classes, index);
+		RAnalClass *c = (RAnalClass *)r_pvector_remove_at (&anal->classes, (size_t)index);
+		r_anal_class_free (c);
 	}
 }
 
 R_API RAnalClass *r_anal_class_get(RAnal *anal, const char *name) {
 	void **it;
-	r_vector_foreach (&anal->classes, it) {
+	r_pvector_foreach (&anal->classes, it) {
 		RAnalClass *cls = (RAnalClass *)*it;
 		if (strcmp (cls->name, name) == 0) {
 			return cls;
@@ -85,13 +89,14 @@ R_API RAnalClass *r_anal_class_get(RAnal *anal, const char *name) {
 
 R_API void r_anal_class_list(RAnal *anal, int mode) {
 	void **it;
-	r_vector_foreach (&anal->classes, it) {
+	r_pvector_foreach (&anal->classes, it) {
 		RAnalClass *cls = (RAnalClass *)*it;
 		r_cons_print (cls->name);
 		bool first = true;
-		void **it2;
-		r_vector_foreach (&cls->base_classes, it2) {
-			RAnalBaseClass *bcls = (RAnalBaseClass *)*it2;
+
+		size_t j;
+		for (j = 0; j < cls->base_classes.len; j++) {
+			RAnalBaseClass *bcls = (RAnalBaseClass *)r_vector_index_ptr (&cls->base_classes, j);
 			if (first) {
 				r_cons_print (": ");
 				first = false;
@@ -100,6 +105,7 @@ R_API void r_anal_class_list(RAnal *anal, int mode) {
 			}
 			r_cons_print (bcls->cls->name);
 		}
+
 		r_cons_print ("\n");
 	}
 }
