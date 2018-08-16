@@ -685,12 +685,18 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 				append_bound (list, core->io, search_itv, addr, size);
 			}
 		}
-	} else if (!strcmp (mode, "io.section")) {
-		RIOSection *s = r_io_section_vget (core->io, core->offset);
-		if (s) {
-			ut64 addr = core->io->va? s->vaddr: s->paddr;
-			ut64 size = core->io->va? s->vsize: s->size;
-			append_bound (list, core->io, search_itv, addr, size);
+	} else if (!strcmp (mode, "bin.section")) {
+		RBinObject *obj = r_bin_cur_object (core->bin);
+		if (obj) {
+			RBinSection *s;
+			RListIter *iter;
+			r_list_foreach (obj->sections, iter, s) {
+				ut64 addr = core->io->va? s->vaddr: s->paddr;
+				ut64 size = core->io->va? s->vsize: s->size;
+				if (R_BETWEEN (addr, core->offset, addr + size)) {
+					append_bound (list, core->io, search_itv, addr, size);
+				}
+			}
 		}
 	} else if (!strcmp (mode, "anal.fcn") || !strcmp (mode, "anal.bb")) {
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
@@ -718,56 +724,6 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 				"requires to seek into a valid function\n");
 			append_bound (list, core->io, search_itv, core->offset, 1);
 		}
-#if 0
-	} else if (!strncmp (mode, "io.sections", sizeof ("io.sections") - 1)) {
-		int mask = 0;
-		RIOMap *map;
-		SdbListIter *iter;
-		RIOSection *s;
-		bool readonly = false;
-
-		if (!strcmp (mode, "io.sections.exec")) {
-			mask = R_IO_EXEC;
-		} else if (!strcmp (mode, "io.sections.write")) {
-			mask = R_IO_WRITE;
-		} else if (!strcmp (mode, "io.sections.readonly")) {
-			readonly = true;
-		} else if (r_str_startswith (mode, "io.sections.")) {
-			mask = r_str_rwx (mode + 12);
-		}
-
-		ut64 from = UT64_MAX;
-		ut64 to = 0;
-		ls_foreach (core->io->sections, iter, s) {
-			if (readonly) {
-				const int f = s->flags;
-				if (f & R_IO_EXEC || f & R_IO_WRITE) {
-					continue;
-				}
-			}
-			if (!mask || (s->flags & mask)) {
-				map = R_NEW0 (RIOMap);
-				if (!map) {
-					eprintf ("RIOMap allocation failed\n");
-					break;
-				}
-				map->fd = s->fd;
-				map->itv.addr = s->vaddr;
-				map->itv.size = s->vsize;
-				if (map->itv.addr) {
-					from = R_MIN (from, map->itv.addr);
-					to = R_MAX (to - 1, r_itv_end (map->itv) - 1) + 1;
-				}
-				map->flags = s->flags;
-				map->delta = 0;
-				if (!(map->flags & protection)) {
-					R_FREE (map);
-					continue;
-				}
-				r_list_append (list, map);
-			}
-		}
-#endif
 	} else if (!strncmp (mode, "dbg.", 4)) {
 		if (core->io->debug) {
 			int mask = 0;
