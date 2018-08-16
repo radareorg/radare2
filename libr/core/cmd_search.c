@@ -592,6 +592,21 @@ static void append_bound(RList *list, RIO *io, RInterval search_itv, ut64 from, 
 	}
 }
 
+static bool maskMatches(int srwx, int mask, bool only) {
+	if (mask) {
+		if (only) {
+			if ((srwx & 7) != mask) {
+				return true;
+			}
+		} else {
+			if (!(srwx & mask)) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 // TODO(maskray) returns RList<RInterval>
 R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char *mode, const char *prefix) {
 	RList *list = r_list_newf (free); // XXX r_io_map_free);
@@ -661,16 +676,18 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 	} else if (r_str_startswith (mode, "bin.sections")) {
 		int len = strlen ("bin.sections.");
 		int mask = (mode[len - 1] == '.')? r_str_rwx (mode + len): 0;
+		bool only = (bool)(size_t)strstr (mode, ".only");
 		RBinObject *obj = r_bin_cur_object (core->bin);
 		if (obj) {
 			RBinSection *s;
 			RListIter *iter;
 			r_list_foreach (obj->sections, iter, s) {
-				if (!mask || (s->srwx & mask)) {
-					ut64 addr = core->io->va? s->vaddr: s->paddr;
-					ut64 size = core->io->va? s->vsize: s->size;
-					append_bound (list, core->io, search_itv, addr, size);
+				if (maskMatches (s->srwx, mask, only)) {
+					continue;
 				}
+				ut64 addr = core->io->va? s->vaddr: s->paddr;
+				ut64 size = core->io->va? s->vsize: s->size;
+				append_bound (list, core->io, search_itv, addr, size);
 			}
 		}
 	} else if (!strcmp (mode, "io.section")) {
@@ -706,6 +723,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 				"requires to seek into a valid function\n");
 			append_bound (list, core->io, search_itv, core->offset, 1);
 		}
+#if 0
 	} else if (!strncmp (mode, "io.sections", sizeof ("io.sections") - 1)) {
 		int mask = 0;
 		RIOMap *map;
@@ -754,6 +772,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 				r_list_append (list, map);
 			}
 		}
+#endif
 	} else if (!strncmp (mode, "dbg.", 4)) {
 		if (core->io->debug) {
 			int mask = 0;
@@ -791,20 +810,16 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					}
 				}
 			} else {
-				bool readonly = false;
+				bool only = false;
+				mask = 0;
 				if (!strcmp (mode, "dbg.program")) {
 					first = true;
 					mask = R_IO_EXEC;
 				} else if (!strcmp (mode, "dbg.maps")) {
 					all = true;
-				} else if (!strcmp (mode, "dbg.maps.exec")) {
-					mask = R_IO_EXEC;
-				} else if (!strcmp (mode, "dbg.maps.readonly")) {
-					readonly = true;
-				} else if (!strcmp (mode, "dbg.maps.write")) {
-					mask = R_IO_WRITE;
 				} else if (r_str_startswith (mode, "dbg.maps.")) {
 					mask = r_str_rwx (mode + 9);
+					only = (bool)(size_t)strstr (mode, ".only");
 				} else if (!strcmp (mode, "dbg.heap")) {
 					heap = true;
 				} else if (!strcmp (mode, "dbg.stack")) {
@@ -814,11 +829,8 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 				ut64 from = UT64_MAX;
 				ut64 to = 0;
 				r_list_foreach (core->dbg->maps, iter, map) {
-					if (readonly) {
-						const int f = map->perm;
-						if (f & R_IO_WRITE || f & R_IO_EXEC) {
-							continue;
-						}
+					if (!all && maskMatches (map->perm, mask, only)) {
+						continue;
 					}
 					add = (stack && strstr (map->name, "stack"))? 1: 0;
 					if (!add && (heap && (map->perm & R_IO_WRITE)) && strstr (map->name, "heap")) {
