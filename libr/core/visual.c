@@ -1793,7 +1793,7 @@ static void visual_closetab (RCore *core) {
 		if (core->visual.tab < 1) {
 			core->visual.tab = 1;
 		}
-	//	visual_nexttab (core);
+		visual_nexttab (core);
 		RCoreVisualTab *tab = r_list_head (core->visual.tabs)->data;
 		if (tab) {
 			r_core_seek (core, tab->offset, 1);
