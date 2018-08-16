@@ -59,9 +59,11 @@ static void http_logf(RCore *core, const char *fmt, ...) {
 		const char *http_log_file = r_config_get (core->config, "http.logfile");
 		if (http_log_file && *http_log_file) {
 			char * msg = calloc (4096, 1);
-			vsnprintf (msg, 4095, fmt, ap);
-			r_file_dump (http_log_file, (const ut8*)msg, -1, true);
-			free (msg);
+			if (msg) {
+				vsnprintf (msg, 4095, fmt, ap);
+				r_file_dump (http_log_file, (const ut8*)msg, -1, true);
+				free (msg);
+			}
 		} else {
 			vfprintf (stderr, fmt, ap);
 		}
@@ -505,6 +507,9 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	ut8 *newblk, *origblk = core->block;
 
 	newblk = malloc (core->blocksize);
+	if (!newblk) {
+		return 1;
+	}
 	memcpy (newblk, core->block, core->blocksize);
 
 	core->block = newblk;
@@ -546,7 +551,6 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		r_config_set (newcfg, "scr.html", r_config_get (newcfg, "scr.html"));
 		r_config_set_i (newcfg, "scr.color", r_config_get_i (newcfg, "scr.color"));
 		r_config_set (newcfg, "scr.interactive", r_config_get (newcfg, "scr.interactive"));
-
 
 		if (!rs) {
 			r_sys_usleep (100);
