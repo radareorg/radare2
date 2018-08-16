@@ -7602,6 +7602,7 @@ static const char *help_msg_aC[] = {
 		"Usage:", "aC", "[TODO] [...]",
 		"aCl", "", "list all classes",
 		"aC", " [classname]", "add class",
+		"aCb", " [classname] [base classname] ([offset])", "add base class",
 		"aC?", "", "show this help",
 		NULL
 };
@@ -7626,6 +7627,51 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 		RAnalClass *cls = r_anal_class_new (cstr);
 		free (cstr);
 		r_anal_class_add (core->anal, cls);
+		break;
+	}
+	case 'b': {
+		const char *str = r_str_trim_ro (input + 1);
+		if (!*str) {
+			break;
+		}
+		char *cstr = strdup (str);
+		if (!cstr) {
+			break;
+		}
+		char *end = strchr (cstr, ' ');
+		if (!end) {
+			eprintf ("No base class given.\n");
+			free (cstr);
+			break;
+		}
+		*end = '\0';
+		char *base_str = end + 1;
+		end = strchr (base_str, ' ');
+		ut64 offset = 0;
+		if (end) {
+			*end = '\0';
+			offset = r_num_get (core->num, end + 1);
+		}
+
+		RAnalClass *cls = r_anal_class_get (core->anal, cstr);
+		if (!cls) {
+			eprintf ("Class not found.\n");
+			free (cstr);
+			break;
+		}
+		RAnalClass *bcls = r_anal_class_get (core->anal, base_str);
+		if (!bcls) {
+			eprintf ("Base class not found.\n");
+			free (cstr);
+			break;
+		}
+
+		RAnalBaseClass base;
+		base.cls = bcls;
+		base.offset = offset;
+		r_vector_push (&cls->base_classes, &base);
+
+		free (cstr);
 		break;
 	}
 	default: // "aC?"
