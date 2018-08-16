@@ -7603,6 +7603,7 @@ static const char *help_msg_aC[] = {
 		"aCl", "", "list all classes",
 		"aC", " [classname]", "add class",
 		"aCb", " [classname] [base classname] ([offset])", "add base class",
+		"aCm", " [classname] [method name] [offset] ([vtable index])", "add method",
 		"aC?", "", "show this help",
 		NULL
 };
@@ -7629,7 +7630,7 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 		r_anal_class_add (core->anal, cls);
 		break;
 	}
-	case 'b': {
+	case 'b': { // "aCb"
 		const char *str = r_str_trim_ro (input + 1);
 		if (!*str) {
 			break;
@@ -7670,6 +7671,67 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 		base.cls = bcls;
 		base.offset = offset;
 		r_vector_push (&cls->base_classes, &base);
+
+		free (cstr);
+		break;
+	}
+	case 'm': { // "aCm"
+		const char *str = r_str_trim_ro (input + 1);
+		if (!*str) {
+			break;
+		}
+		char *cstr = strdup (str);
+		if (!cstr) {
+			break;
+		}
+		char *end = strchr (cstr, ' ');
+		if (!end) {
+			eprintf ("No method name given.\n");
+			free (cstr);
+			break;
+		}
+		*end = '\0';
+		char *name_str = end + 1;
+		end = strchr (name_str, ' ');
+		if (!end) {
+			eprintf ("No offset given.\n");
+			free (cstr);
+		}
+		*end = '\0';
+		char *addr_str = end + 1;
+		end = strchr (addr_str, ' ');
+		if (end) {
+			*end = '\0';
+		}
+		ut64 addr = r_num_get (core->num, addr_str);
+
+		int vtable_index = 0;
+		if (end) {
+			vtable_index = (int)r_num_get (core->num, end + 1);
+		}
+
+		RAnalClass *cls = r_anal_class_get (core->anal, cstr);
+		if (!cls) {
+			eprintf ("Class not found.\n");
+			free (cstr);
+			break;
+		}
+
+		RAnalMethod *meth = r_anal_method_new ();
+		if (!meth) {
+			free (cstr);
+			break;
+		}
+
+		meth->name = strdup (name_str);
+		if (!meth->name) {
+			free (meth);
+			free (cstr);
+			break;
+		}
+		meth->addr = addr;
+		meth->vtable_index = vtable_index;
+		r_pvector_push (&cls->methods, meth);
 
 		free (cstr);
 		break;
