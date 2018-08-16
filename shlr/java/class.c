@@ -6363,7 +6363,9 @@ R_API void r_bin_java_element_value_free(void /*RBinJavaElementValue*/ *e) {
 		case R_BIN_JAVA_EV_TAG_STRING:
 			// Delete the CP Type Object
 			obj = element_value->value.const_value.const_value_cp_obj;
-			((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->delete_obj (obj);
+			if (obj && obj->metas) {
+				((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->delete_obj (obj);
+			}
 			break;
 		case R_BIN_JAVA_EV_TAG_ENUM:
 			// Delete the CP Type Objects
@@ -6380,7 +6382,9 @@ R_API void r_bin_java_element_value_free(void /*RBinJavaElementValue*/ *e) {
 		case R_BIN_JAVA_EV_TAG_CLASS:
 			// Delete the CP Type Object
 			obj = element_value->value.class_value.class_info_cp_obj;
-			((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->delete_obj (obj);
+			if (obj && obj->metas) {
+				((RBinJavaCPTypeMetas *) obj->metas->type_info)->allocs->delete_obj (obj);
+			}
 			break;
 		case R_BIN_JAVA_EV_TAG_ARRAY:
 			// Delete the Element Value array List
