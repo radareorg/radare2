@@ -2254,6 +2254,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	c->cons->pager = NULL;
 	free (c->cmdqueue);
 	free (c->lastcmd);
+	r_list_free (c->visual.tabs);
 	r_io_free (c->io);
 	free (c->block);
 	r_core_autocomplete_free (c->autocomplete);

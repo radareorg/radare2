@@ -1353,7 +1353,11 @@ R_API bool r_debug_continue_back(RDebug *dbg) {
 	}
 
 	/* Get previous state */
-	before = r_list_head (dbg->sessions)->data; //XXX: currently use first session.
+	RListIter *iter = r_list_head (dbg->sessions);
+	before = iter? iter->data: NULL; //XXX: currently use first session.
+	if (!iter || !before) {
+		return false;
+	}
 
 	end_addr = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 	//eprintf ("before session (%d) 0x%08"PFMT64x"=> to 0x%08"PFMT64x"\n", before->key.id, before->key.addr, end_addr);
