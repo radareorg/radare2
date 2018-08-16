@@ -595,14 +595,9 @@ static void append_bound(RList *list, RIO *io, RInterval search_itv, ut64 from, 
 static bool maskMatches(int srwx, int mask, bool only) {
 	if (mask) {
 		if (only) {
-			if ((srwx & 7) != mask) {
-				return true;
-			}
-		} else {
-			if (!(srwx & mask)) {
-				return true;
-			}
+			return ((srwx & 7) != mask);
 		}
+		return !(srwx & mask);
 	}
 	return false;
 }
