@@ -172,10 +172,10 @@ static int cmd_plugins(void *data, const char *input) {
 		// return r_core_cmd0 (core, "Lc");
 		break;
 	case '-':
-		r_lib_close (core->lib, r_str_trim_ro (&input[1]));
+		r_lib_close (core->lib, r_str_trim_ro (input + 1));
 		break;
 	case ' ':
-		r_lib_open (core->lib, r_str_trim_ro (&input[1]));
+		r_lib_open (core->lib, r_str_trim_ro (input + 1));
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg_L);
