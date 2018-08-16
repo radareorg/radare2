@@ -391,6 +391,7 @@ static RList* entries(RBinFile *bf) {
 	ptr->paddr = Elf_(r_bin_elf_get_entry_offset) (obj);
 	ptr->vaddr = Elf_(r_bin_elf_p2v) (obj, ptr->paddr);
 	ptr->hpaddr = 0x18;  // e_entry offset in ELF header
+	ptr->hvaddr = obj->baddr + 0x18;
 
 	if (obj->ehdr.e_machine == EM_ARM) {
 		int bin_bits = Elf_(r_bin_elf_get_bits) (obj);
