@@ -115,7 +115,6 @@ static const char *help_msg_dc[] = {
 #endif
 	"dcf", "", "Continue until fork (TODO)",
 	"dck", " <signal> <pid>", "Continue sending signal to process",
-	"dco", " <num>", "Step over <num> instructions",
 	"dcp", "", "Continue until program code (mapped io section)",
 	"dcr", "", "Continue until ret (uses step over)",
 	"dcs", "[?] <num>", "Continue until syscall",
