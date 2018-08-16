@@ -145,6 +145,7 @@ static void cursorLeft(RCore *core);
 static void cursorRight(RCore *core);
 static void cursorDown(RCore *core);
 static void cursorUp(RCore *core);
+static int cursorThreshold(RPanel* panel);
 static void delPanel(RPanels *panels, int delPanelNum);
 static void delCurPanel(RPanels *panels);
 static void delInvalidPanels(RPanels *panels);
@@ -476,6 +477,7 @@ static void splitPanelHorizontal(RCore *core) {
 	const int curnode = panels->curnode;
 	const int oheight = panel[curnode].h;
 
+	panel[curnode].curpos = 0;
 	addPanelFrame (core, panels, panel[curnode].title, panel[curnode].cmd);
 
     changePanelNum (panels, panels->n_panels - 1, panels->curnode + 1);
@@ -526,7 +528,7 @@ static void cursorRight(RCore *core) {
 	} else {
 		core->print->cur++;
 		RPanel *curPanel = &core->panels->panel[core->panels->curnode];
-		int threshold = (curPanel->h - 4) / 2;
+		int threshold = cursorThreshold (curPanel);
 		int row = r_print_row_at_off (core->print, core->print->cur);
 		if (row >= threshold) {
 			core->offset = core->panels->panel[core->panels->curnode].addr;
@@ -546,10 +548,12 @@ static void cursorRight(RCore *core) {
 }
 
 static void cursorLeft(RCore *core) {
-	if (core->print->cur > 0 && (!strcmp (core->panels->panel[core->panels->curnode].cmd, PANEL_CMD_REGISTERS)
-				|| !strcmp (core->panels->panel[core->panels->curnode].cmd, PANEL_CMD_STACK))) {
-		core->print->cur--;
-		core->panels->panel[core->panels->curnode].addr--;
+	if (!strcmp (core->panels->panel[core->panels->curnode].cmd, PANEL_CMD_REGISTERS)
+			|| !strcmp (core->panels->panel[core->panels->curnode].cmd, PANEL_CMD_STACK)) {
+		if (core->print->cur > 0) {
+			core->print->cur--;
+			core->panels->panel[core->panels->curnode].addr--;
+		}
 	} else {
 		core->print->cur--;
 		int row = r_print_row_at_off (core->print, core->print->cur);
@@ -606,7 +610,7 @@ static void cursorUp(RCore *core) {
 
 static void cursorDown(RCore *core) {
 	RPanel *curPanel = &core->panels->panel[core->panels->curnode];
-	int threshold = (curPanel->h - 4) / 2;
+	int threshold = cursorThreshold (curPanel);
 	RPrint *p = core->print;
 	ut32 roff, next_roff;
 	int row, sz, delta;
@@ -638,6 +642,14 @@ static void cursorDown(RCore *core) {
 	} else {
 		p->cur += R_MAX (1, p->cols);
 	}
+}
+
+static int cursorThreshold(RPanel* panel) {
+	int threshold = (panel->h - 4) / 2;
+	if (threshold < 10) {
+		threshold = 1;
+	}
+	return threshold;
 }
 
 static void handleUpKey(RCore *core) {
@@ -849,7 +861,6 @@ static bool handleCursorMode(RCore *core, const int key) {
 			break;
 		case 'i':
 			if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
-				// insert mode
 				const char *prompt = "insert hex: ";
 				panelPrompt (prompt, buf, sizeof (buf));
 				r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, panels->panel[panels->curnode].addr);
@@ -862,7 +873,20 @@ static bool handleCursorMode(RCore *core, const int key) {
 					r_core_cmdf (core, "dr %s = %s", creg, buf);
 					panels->panel[panels->curnode].refresh = true;
 				}
+			} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
+				const char *prompt = "insert hex: ";
+				panelPrompt (prompt, buf, sizeof (buf));
+				r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, core->offset + core->print->cur);
+				panels->panel[panels->curnode].refresh = true;
 			}
+			break;
+		case '*':
+			if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
+				r_core_cmdf (core, "dr PC=0x%08"PFMT64x, core->offset + core->print->cur);
+				panels->panel[panels->curnode].addr = core->offset + core->print->cur;
+				panels->panel[panels->curnode].refresh = true;
+			}
+			break;
 		}
 	}
 	return true;
@@ -1398,14 +1422,8 @@ static void doPanelsRefreshOneShot(RCore *core) {
 
 static void panelSingleStepIn(RCore *core) {
 	if (r_config_get_i (core->config, "cfg.debug")) {
-		if (core->print->cur_enabled) {
-			// dcu 0xaddr
-			r_core_cmdf (core, "dcu 0x%08"PFMT64x, core->offset + core->print->cur);
-			core->print->cur_enabled = 0;
-		} else {
-			r_core_cmd (core, "ds", 0);
-			r_core_cmd (core, ".dr*", 0);
-		}
+		r_core_cmd (core, "ds", 0);
+		r_core_cmd (core, ".dr*", 0);
 	} else {
 		r_core_cmd (core, "aes", 0);
 		r_core_cmd (core, ".ar*", 0);
