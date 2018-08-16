@@ -324,17 +324,16 @@ R_API int r_core_search_preludes(RCore *core) {
 	int bits = r_config_get_i (core->config, "asm.bits");
 	ut64 from = UT64_MAX;
 	ut64 to = UT64_MAX;
-	int fc0, fc1;
-	int cfg_debug = r_config_get_i (core->config, "cfg.debug");
-	char *where = cfg_debug? "dbg.map": "io.sections.exec";
+	const char *where = r_config_get (core->config, "anal.in");
 
 	RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, where, "search");
 	RListIter *iter;
 	RIOMap *p;
 
-	fc0 = count_functions (core);
+	int fc0 = count_functions (core);
 	r_list_foreach (list, iter, p) {
-		eprintf ("\r[>] Scanning %s 0x%"PFMT64x " - 0x%"PFMT64x " ", r_str_rwx_i (p->flags), p->itv.addr, r_itv_end (p->itv));
+		eprintf ("\r[>] Scanning %s 0x%"PFMT64x " - 0x%"PFMT64x " ",
+			r_str_rwx_i (p->flags), p->itv.addr, r_itv_end (p->itv));
 		if (!(p->flags & R_IO_EXEC)) {
 			eprintf ("skip\n");
 			continue;
@@ -397,7 +396,7 @@ R_API int r_core_search_preludes(RCore *core) {
 		}
 		eprintf ("done\n");
 	}
-	fc1 = count_functions (core);
+	int fc1 = count_functions (core);
 	if (list) {
 		eprintf ("Analyzed %d functions based on preludes\n", fc1 - fc0);
 	} else {
@@ -567,7 +566,7 @@ static inline void print_search_progress(ut64 at, ut64 to, int n) {
 	}
 }
 
-static void append_bound(RList *list, RIO *io, RInterval search_itv, ut64 from, ut64 size) {
+static void append_bound(RList *list, RIO *io, RInterval search_itv, ut64 from, ut64 size, int perms) {
 	RIOMap *map = R_NEW0 (RIOMap);
 	if (!map) {
 		return;
@@ -575,6 +574,7 @@ static void append_bound(RList *list, RIO *io, RInterval search_itv, ut64 from, 
 	if (io && io->desc) {
 		map->fd = r_io_fd_get_current (io);
 	}
+	map->flags = perms;
 	RInterval itv = {from, size};
 	// TODO UT64_MAX is a valid address. search.from and search.to are not specified
 	if (search_itv.addr == UT64_MAX && !search_itv.size) {
@@ -597,7 +597,7 @@ static bool maskMatches(int srwx, int mask, bool only) {
 		if (only) {
 			return ((srwx & 7) != mask);
 		}
-		return !(srwx & mask);
+		return (srwx & mask) != mask;
 	}
 	return false;
 }
@@ -631,13 +631,13 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		return NULL;
 	}
 	if (!r_config_get_i (core->config, "cfg.debug") && !core->io->va) {
-		append_bound (list, core->io, search_itv, 0, r_io_size (core->io));
+		append_bound (list, core->io, search_itv, 0, r_io_size (core->io), 7);
 	} else if (!strcmp (mode, "block")) {
-		append_bound (list, core->io, search_itv, core->offset, core->blocksize);
+		append_bound (list, core->io, search_itv, core->offset, core->blocksize, 7);
 	} else if (!strcmp (mode, "io.map")) {
 		RIOMap *m = r_io_map_get (core->io, core->offset);
 		if (m) {
-			append_bound (list, core->io, search_itv, m->itv.addr, m->itv.size);
+			append_bound (list, core->io, search_itv, m->itv.addr, m->itv.size, m->flags);
 		}
 	} else if (!strcmp (mode, "io.maps")) { // Non-overlapping RIOMap parts not overriden by others (skyline)
 		const RPVector *skyline = &core->io->map_skyline;
@@ -646,8 +646,9 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		size_t i;
 		for (i = 0; i < r_pvector_len (skyline); i++) {
 			const RIOMapSkyline *part = r_pvector_at (skyline, i);
-			ut64 from = part->itv.addr;
-			ut64 to = part->itv.addr + part->itv.size;
+			int srwx = part->map->flags;
+			ut64 from = r_itv_begin (part->itv);
+			ut64 to = r_itv_end (part->itv);
 			// eprintf ("--------- %llx %llx    (%llx %llx)\n", from, to, begin, end);
 			if (begin== UT64_MAX) {
 				begin = from;
@@ -659,14 +660,64 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					end = to;
 				} else {
 			//		eprintf ("[%llx - %llx]\n", begin, end);
-					append_bound (list, NULL, search_itv, begin, end - begin);
+					append_bound (list, NULL, search_itv, begin, end - begin, srwx);
 					begin = from;
 					end = to;
 				}
 			}
 		}
 		if (end != UT64_MAX) {
-			append_bound (list, NULL, search_itv, begin, end - begin);
+			append_bound (list, NULL, search_itv, begin, end - begin, 7);
+		}
+	} else if (r_str_startswith (mode, "io.maps.")) {
+		int len = strlen ("io.maps.");
+		int mask = (mode[len - 1] == '.')? r_str_rwx (mode + len): 0;
+		bool only = (bool)(size_t)strstr (mode, ".only");
+
+		RBinObject *obj = r_bin_cur_object (core->bin);
+		if (obj) {
+			RBinSection *s;
+			RListIter *iter;
+			r_list_foreach (obj->sections, iter, s) {
+				if (maskMatches (s->srwx, mask, only)) {
+					continue;
+				}
+				ut64 addr = core->io->va? s->vaddr: s->paddr;
+				ut64 size = core->io->va? s->vsize: s->size;
+				append_bound (list, core->io, search_itv, addr, size, s->srwx);
+			}
+		}
+		const RPVector *skyline = &core->io->map_skyline;
+		ut64 begin = UT64_MAX;
+		ut64 end = UT64_MAX;
+		size_t i;
+		for (i = 0; i < r_pvector_len (skyline); i++) {
+			const RIOMapSkyline *part = r_pvector_at (skyline, i);
+			ut64 from = part->itv.addr;
+			ut64 to = part->itv.addr + part->itv.size;
+			int srwx = part->map->flags;
+			if (maskMatches (srwx, mask, only)) {
+				continue;
+			}
+			// eprintf ("--------- %llx %llx    (%llx %llx)\n", from, to, begin, end);
+			if (begin == UT64_MAX) {
+				begin = from;
+			}
+			if (end == UT64_MAX) {
+				end = to;
+			} else {
+				if (end == from) {
+					end = to;
+				} else {
+			//		eprintf ("[%llx - %llx]\n", begin, end);
+					append_bound (list, NULL, search_itv, begin, end - begin, srwx);
+					begin = from;
+					end = to;
+				}
+			}
+		}
+		if (end != UT64_MAX) {
+			append_bound (list, NULL, search_itv, begin, end - begin, 7);
 		}
 	} else if (r_str_startswith (mode, "bin.sections")) {
 		int len = strlen ("bin.sections.");
@@ -682,7 +733,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 				}
 				ut64 addr = core->io->va? s->vaddr: s->paddr;
 				ut64 size = core->io->va? s->vsize: s->size;
-				append_bound (list, core->io, search_itv, addr, size);
+				append_bound (list, core->io, search_itv, addr, size, s->srwx);
 			}
 		}
 	} else if (!strcmp (mode, "bin.section")) {
@@ -694,7 +745,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 				ut64 addr = core->io->va? s->vaddr: s->paddr;
 				ut64 size = core->io->va? s->vsize: s->size;
 				if (R_BETWEEN (addr, core->offset, addr + size)) {
-					append_bound (list, core->io, search_itv, addr, size);
+					append_bound (list, core->io, search_itv, addr, size, s->srwx);
 				}
 			}
 		}
@@ -718,11 +769,11 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					}
 				}
 			}
-			append_bound (list, core->io, search_itv, from, size);
+			append_bound (list, core->io, search_itv, from, size, 5);
 		} else {
 			eprintf ("WARNING: search.in = ( anal.bb | anal.fcn )"\
 				"requires to seek into a valid function\n");
-			append_bound (list, core->io, search_itv, core->offset, 1);
+			append_bound (list, core->io, search_itv, core->offset, 1, 5);
 		}
 	} else if (!strncmp (mode, "dbg.", 4)) {
 		if (core->io->debug) {
@@ -815,7 +866,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 		// if (!strcmp (mode, "raw")) {
 		/* obey temporary seek if defined '/x 8080 @ addr:len' */
 		if (core->tmpseek) {
-			append_bound (list, core->io, search_itv, core->offset, core->blocksize);
+			append_bound (list, core->io, search_itv, core->offset, core->blocksize, 5);
 		} else {
 			// TODO: repeat last search doesnt works for /a
 			ut64 from = r_config_get_i (core->config, bound_from);
@@ -832,7 +883,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 					}
 				}
 			}
-			append_bound (list, core->io, search_itv, from, to - from);
+			append_bound (list, core->io, search_itv, from, to - from, 5);
 		}
 	}
 	if (r_list_empty (list)) {
@@ -1146,55 +1197,6 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 	r_list_free (ropList);
 }
 
-#if 0
-R_API RList *r_core_get_boundaries_ok(RCore *core) {
-	const char *searchin;
-	ut8 prot;
-	ut64 from, to;
-	ut64 __from, __to;
-	RList *list;
-	if (!core) {
-		return NULL;
-	}
-	prot = r_config_get_i (core->config, "rop.nx")?
-	       R_IO_READ | R_IO_WRITE | R_IO_EXEC: R_IO_EXEC;
-	searchin = r_config_get (core->config, "search.in");
-
-	from = core->offset;
-	to = core->offset + core->blocksize;
-
-	__from = r_config_get_i (core->config, "search.from");
-	__to = r_config_get_i (core->config, "search.to");
-	if (__from != UT64_MAX) {
-		from = __from;
-	}
-	if (__to != UT64_MAX) {
-		to = __to;
-	}
-
-	if (!strncmp (searchin, "dbg.", 4)\
-	    || !strncmp (searchin, "io.sections", 11)\
-	    || prot & R_IO_EXEC) { /* always true */
-		list = r_core_get_boundaries_prot (core, prot, "", "search");
-	} else {
-		list = NULL;
-	}
-	if (!list) {
-		RIOMap *map = R_NEW0 (RIOMap);
-		if (!map) {
-			eprintf ("Cannot allocate map\n");
-			return NULL;
-		}
-		map->fd = core->io->desc->fd;
-		map->itv.addr = from;
-		map->itv.size = to - from;
-		list = r_list_newf (free);
-		r_list_append (list, map);
-	}
-	return list;
-}
-#endif
-
 static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const char *grep, int regexp) {
 	const ut8 crop = r_config_get_i (core->config, "rop.conditional");      // decide if cjmp, cret, and ccall should be used too for the gadget-search
 	const ut8 subchain = r_config_get_i (core->config, "rop.subchains");
@@ -1288,7 +1290,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	}
 
 	if (!strncmp (smode, "dbg.", 4)\
-	    || !strncmp (smode, "io.sections", 11)\
+	    || !strncmp (smode, "bin.sections", 12)\
 	    || prot & R_IO_EXEC) {
 		list = r_core_get_boundaries_prot (core, prot, NULL, "search");
 	} else {
@@ -1925,7 +1927,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 		input++;
 	}
 	if (type == 's') {
-eprintf ("Shouldnt reach\n");
+		eprintf ("Shouldnt reach\n");
 		return true;
 	}
 	if (mode == 'j') {
