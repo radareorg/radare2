@@ -2344,6 +2344,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.strings", "false", &cb_analstrings, "Identify and register strings during analysis (aar only)");
 	SETPREF ("anal.types.spec", "gcc",  "Set profile for specifying format chars used in type analysis");
 	SETPREF ("anal.types.verbose", "false", "Verbose output from type analysis");
+	SETPREF ("anal.types.constraint", "false", "Enable constraint types analysis for variables");
 	SETCB ("anal.vars", "true", &cb_analvars, "Analyze local variables and arguments");
 	SETPREF ("anal.vinfun", "true",  "Search values in functions (aav) (false by default to only find on non-code)");
 	SETPREF ("anal.vinfunrange", "false",  "Search values outside function ranges (requires anal.vinfun=false)\n");

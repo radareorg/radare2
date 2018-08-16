@@ -785,6 +785,7 @@ static RList *var_generate_list(RAnal *a, RAnalFunction *fcn, int kind, bool dyn
 					free (av);
 					continue;
 				}
+				av->addr = fcn->addr;
 				av->delta = delta;
 				av->kind = kind;
 				av->name = strdup (vt.name);
