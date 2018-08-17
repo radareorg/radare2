@@ -4127,8 +4127,11 @@ static int cmd_print(void *data, const char *input) {
 		if (input[1] && input[2]) {
 			// "pd--" // context disasm
 			if (!strncmp (input + 1, "--", 2)) {
-				r_core_cmdf (core, "pd %s", input + 2);
-				r_core_cmdf (core, "pd %s", input + 3);
+				char *fmt = r_str_newf ("d %s", input + 2);
+				cmd_print (core, fmt);
+				strcpy (fmt + 2, input + 3);
+				cmd_print (core, fmt);
+				ret = 0;
 				goto beach;
 			}
 			char *p = strchr (input, ' ');
