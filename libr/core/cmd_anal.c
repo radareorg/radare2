@@ -7612,6 +7612,7 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 	switch (input[0]) {
 	case 'l': // "aCl"
 		r_anal_class_list (core->anal, input[1]);
+		break;
 	case ' ': { // "aC"
 		const char *str = r_str_trim_ro (input + 1);
 		if (!*str) {

@@ -100,7 +100,7 @@ R_API void r_anal_class_print(RAnal *anal, RAnalClass *cls, int mode) {
 			r_cons_printf (",\"vtable_addr\":%lld", cls->vtable_addr);
 		}
 		if (r_pvector_len (&cls->methods) > 0) {
-			r_cons_print (",\"base\":[");
+			r_cons_print (",\"bases\":[");
 		}
 	} else {
 		r_cons_print (cls->name);
