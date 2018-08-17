@@ -92,7 +92,16 @@ R_API void r_anal_class_print(RAnal *anal, RAnalClass *cls, int mode) {
 	bool lng = mode == 'l';
 
 	if (json) {
-		r_cons_printf ("{\"name\":\"%s\",\"base\":[", cls->name);
+		r_cons_printf ("{\"name\":\"%s\"", cls->name);
+		if (cls->addr != UT64_MAX) {
+			r_cons_printf (",\"addr\":%lld", cls->addr);
+		}
+		if (cls->vtable_addr != UT64_MAX) {
+			r_cons_printf (",\"vtable_addr\":%lld", cls->vtable_addr);
+		}
+		if (r_pvector_len (&cls->methods) > 0) {
+			r_cons_print (",\"base\":[");
+		}
 	} else {
 		r_cons_print (cls->name);
 	}
@@ -120,7 +129,12 @@ R_API void r_anal_class_print(RAnal *anal, RAnalClass *cls, int mode) {
 	}
 
 	if (json) {
-		r_cons_print ("],\"methods\":[");
+		if (r_pvector_len (&cls->methods) > 0) {
+			r_cons_print ("]");
+		}
+		if (cls->base_classes.len > 0) {
+			r_cons_print (",\"methods\":[");
+		}
 	} else {
 		r_cons_print ("\n");
 	}
@@ -146,7 +160,10 @@ R_API void r_anal_class_print(RAnal *anal, RAnalClass *cls, int mode) {
 	}
 
 	if (json) {
-		r_cons_print ("]}");
+		if (cls->base_classes.len > 0) {
+			r_cons_print ("]");
+		}
+		r_cons_print ("}");
 	}
 }
 
