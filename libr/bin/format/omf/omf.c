@@ -758,6 +758,9 @@ ut64 r_bin_omf_get_paddr_sym(r_bin_omf_obj *obj, OMF_symbol *sym) {
 		return 0LL;
 	}
 	int sidx = sym->seg_idx - 1;
+	if (sidx >= obj->nb_section) {
+		return 0LL;
+	}
 	OMF_data *data = obj->sections[sidx]->data;
 	while (data) {
 		offset += data->size;
@@ -773,8 +776,11 @@ ut64 r_bin_omf_get_vaddr_sym(r_bin_omf_obj *obj, OMF_symbol *sym) {
 	if (!obj->sections) {
 		return 0LL;
 	}
-	if (sym->seg_idx - 1 > obj->nb_section) {
+	if (sym->seg_idx >= obj->nb_section) {
 		eprintf ("Invalid segment index for symbol %s\n", sym->name);
+		return 0;
+	}
+	if (sym->seg_idx == 0) {
 		return 0;
 	}
 	return obj->sections[sym->seg_idx - 1]->vaddr + sym->offset + OMF_BASE_ADDR;
