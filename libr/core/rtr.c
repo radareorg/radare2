@@ -1,4 +1,4 @@
-/* radare - Copyright 2009-2017 - pancake, nibble */
+/* radare - Copyright 2009-2018 - pancake, nibble */
 
 #include "r_core.h"
 #include "r_socket.h"
@@ -508,6 +508,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 
 	newblk = malloc (core->blocksize);
 	if (!newblk) {
+		r_socket_free (s);
 		return 1;
 	}
 	memcpy (newblk, core->block, core->blocksize);

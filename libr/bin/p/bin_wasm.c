@@ -72,6 +72,7 @@ static RList *entries(RBinFile *bf) {
 		}
 		if (!addr) {
 			r_list_free (ret);
+			r_list_free (codes);
 			return NULL;
 		}
 	}
