@@ -1750,7 +1750,11 @@ static void r_core_visual_tab_update(RCore *core) {
 static void visual_newtab (RCore *core) {
 	if (!core->visual.tabs) {
 		core->visual.tabs = r_list_newf (free);
+		if (!core->visual.tabs) {
+			return;
+		}
 		core->visual.tab = 0;
+		visual_newtab (core);
 	}
 	RCoreVisualTab *tab = r_core_visual_tab_new (core);
 	r_list_prepend (core->visual.tabs, tab);
