@@ -421,7 +421,7 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 		return;
 	}
 	ut8 opcode = *(p4++) & 0xff;
-	while (keep) {
+	while (keep && p4 < p4_end) {
 		switch (opcode) {
 		case 0x0: // DBG_END_SEQUENCE
 			keep = false;
@@ -605,7 +605,6 @@ static void dex_parse_debug_item(RBinFile *binfile, RBinDexObj *bin,
 	if (!binfile->sdb_addrinfo) {
 		binfile->sdb_addrinfo = sdb_new0 ();
 	}
-
 
 	RListIter *iter1;
 	struct dex_debug_position_t *pos;
