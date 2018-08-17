@@ -64,7 +64,14 @@ static inline int r_asm_pseudo_org(RAsm *a, char *input) {
 
 static inline int r_asm_pseudo_hex(RAsmOp *op, char *input) {
 	int len = r_hex_str2bin (input, op->buf);
-	strncpy (op->buf_hex, r_str_trim_head_tail (input), R_ASM_BUFSIZE-1);
+	// non null terminated string
+	strncpy (op->buf_hex, r_str_trim_head_tail (input), R_ASM_BUFSIZE - 1);
+	op->buf_hex[sizeof (op->buf_hex)] = 0;
+	if (len < 0) {
+		len = -len;
+		len--;
+		eprintf ("Buffer truncated at %d because of the RAsmOp abuse.\nInput: %s\n", len, input);
+	}
 	return len;
 }
 
@@ -891,9 +898,9 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					r_asm_set_cpu (a, ptr + 5);
 				else if (!strncmp (ptr, ".os ", 4))
 					r_syscall_setup (a->syscall, a->cur->arch, a->bits, asmcpu, ptr + 4);
-				else if (!strncmp (ptr, ".hex ", 5))
-					ret = r_asm_pseudo_hex (&op, ptr+5);
-				else if ((!strncmp (ptr, ".int16 ", 7)) || !strncmp (ptr, ".short ", 7))
+				else if (!strncmp (ptr, ".hex ", 5)) {
+					ret = r_asm_pseudo_hex (&op, ptr + 5);
+				} else if ((!strncmp (ptr, ".int16 ", 7)) || !strncmp (ptr, ".short ", 7))
 					ret = r_asm_pseudo_int16 (a, &op, ptr+7);
 				else if (!strncmp (ptr, ".int32 ", 7))
 					ret = r_asm_pseudo_int32 (a, &op, ptr+7);
@@ -943,8 +950,8 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					continue;
 				}
 				if (ret < 0) {
-					eprintf ("!!! Oops\n");
-					free(lbuf);
+					eprintf ("!!! Oops (%s)\n", ptr);
+					free (lbuf);
 					return r_asm_code_free (acode);
 				}
 			} else { /* Instruction */
