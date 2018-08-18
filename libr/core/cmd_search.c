@@ -1713,7 +1713,6 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
-	const char *arch = r_config_get (core->config, "asm.arch");
 	int off;
 
 	if (!(esil = r_anal_esil_new (stacksize, iotrap, addrsize))) {
