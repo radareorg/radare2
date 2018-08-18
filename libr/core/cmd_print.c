@@ -4128,9 +4128,11 @@ static int cmd_print(void *data, const char *input) {
 			// "pd--" // context disasm
 			if (!strncmp (input + 1, "--", 2)) {
 				char *fmt = r_str_newf ("d %s", input + 2);
-				cmd_print (core, fmt);
-				strcpy (fmt + 2, input + 3);
-				cmd_print (core, fmt);
+				if (fmt) {
+					cmd_print (core, fmt);
+					strcpy (fmt + 2, input + 3);
+					cmd_print (core, fmt);
+				}
 				ret = 0;
 				goto beach;
 			}
