@@ -1,6 +1,5 @@
 files = [
-  'syscall.c',
-  'ioports.c'
+  'syscall.c'
 ]
 
 r_syscall = library('r_syscall', files,
