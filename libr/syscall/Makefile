@@ -3,7 +3,7 @@ include ../config.mk
 NAME=r_syscall
 DEPS=r_util
 
-OBJS=syscall.o ioports.o
+OBJS=syscall.o
 CFLAGS+=-D__UNIX__ -Wall
 
 EXTRA_TARGETS+=do
