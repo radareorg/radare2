@@ -65,8 +65,7 @@ static inline int r_asm_pseudo_org(RAsm *a, char *input) {
 static inline int r_asm_pseudo_hex(RAsmOp *op, char *input) {
 	int len = r_hex_str2bin (input, op->buf);
 	// non null terminated string
-	strncpy (op->buf_hex, r_str_trim_head_tail (input), R_ASM_BUFSIZE - 1);
-	op->buf_hex[sizeof (op->buf_hex)] = 0;
+	r_str_ncpy (op->buf_hex, r_str_trim_head_tail (input), sizeof op->buf_hex);
 	if (len < 0) {
 		len = -len;
 		len--;
