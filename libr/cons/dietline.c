@@ -290,7 +290,7 @@ R_API int cmd_history_down(RLine *line) {
 		return false;
 	}
 	if (line->history.data && line->history.data[line->history.index]) {
-		strncpy (line->buffer.data, line->history.data[line->history.index], R_LINE_BUFSIZE - 1);
+		R_STR_CPY (line->buffer.data, line->history.data[line->history.index]);
 		line->buffer.index = line->buffer.length = strlen (line->buffer.data);
 	}
 	return true;

@@ -970,7 +970,7 @@ R_API int sdbshell_history_up(RLine *line) {
 		return false;
 	}
 	line->sdbshell_hist_iter = line->sdbshell_hist_iter->n;
-	strncpy (line->buffer.data, line->sdbshell_hist_iter->data, R_LINE_BUFSIZE - 1);
+	R_STR_CPY (line->buffer.data, line->sdbshell_hist_iter->data);
 	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
 	return true;
 }

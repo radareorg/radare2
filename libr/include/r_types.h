@@ -269,10 +269,16 @@ static inline void *r_new_copy(int size, void *data) {
 	}
 	return a;
 }
+// Return 0 for array type, build error for other types
+#ifdef __GNUC__
+#define R_SHOULD_BE_ARRAY(a) (sizeof(struct { int:(-!!(__builtin_types_compatible_p(typeof(a), typeof(&(a)[0])))); }))
+#else
+#define R_SHOULD_BE_ARRAY(a) 0
+#endif
 // TODO: Make R_NEW_COPY be 1 arg, not two
 #define R_NEW_COPY(x,y) x=(void*)malloc(sizeof(y));memcpy(x,y,sizeof(y))
 #define R_MEM_ALIGN(x) ((void *)(size_t)(((ut64)(size_t)x) & 0xfffffffffffff000LL))
-#define R_ARRAY_SIZE(x) (sizeof (x) / sizeof (x[0]))
+#define R_ARRAY_SIZE(x) (R_SHOULD_BE_ARRAY (x), sizeof (x) / sizeof (x[0]))
 #define R_PTR_MOVE(d,s) d=s;s=NULL;
 
 #define R_PTR_ALIGN(v,t) \
