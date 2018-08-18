@@ -1193,8 +1193,6 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	const ut8 crop = r_config_get_i (core->config, "rop.conditional");      // decide if cjmp, cret, and ccall should be used too for the gadget-search
 	const ut8 subchain = r_config_get_i (core->config, "rop.subchains");
 	const ut8 max_instr = r_config_get_i (core->config, "rop.len");
-	const ut8 prot = r_config_get_i (core->config, "rop.nx")? R_IO_READ | R_IO_WRITE | R_IO_EXEC: R_IO_EXEC;
-	const char *smode = r_config_get (core->config, "search.in");
 	const char *arch = r_config_get (core->config, "asm.arch");
 	ut64 from = search_itv.addr, to = r_itv_end (search_itv);
 	int max_count = r_config_get_i (core->config, "search.maxhits");
@@ -1279,31 +1277,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 			tok = strtok (NULL, ";");
 		}
 	}
-
-  #if 0
-	if (!strncmp (smode, "dbg.", 4)\
-	    || !strncmp (smode, "bin.sections", 12)\
-	    || prot & R_IO_EXEC) {
-		list = r_core_get_boundaries_prot (core, prot, NULL, "search");
-	} else {
-		list = NULL;
-	}
-
-	if (!list) {
-		map = R_NEW0 (RIOMap);
-		if (!map) {
-			eprintf ("Cannot allocate map\n");
-			result = false;
-			goto bad;
-		}
-		map->fd = r_io_fd_get_current (core->io);
-		map->itv.addr = from;
-		map->itv.size = to - from;
-		list = r_list_newf (free);
-		r_list_append (list, map);
-	}
-#endif
-  if (json) {
+	if (json) {
 		r_cons_printf ("[");
 	}
 	r_cons_break_push (NULL, NULL);
