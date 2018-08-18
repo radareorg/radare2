@@ -2348,7 +2348,7 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 	bool use_color = r_config_get_i (core->config, "scr.color");
 	int len = 0;
 	int i;
-	int l;
+	int l = 0;
 	RCoreAnalStatsItem total = {0};
 	for (i = 0; i < ((to-from)/piece); i++) {
 		ut64 at = from + (piece * i);
