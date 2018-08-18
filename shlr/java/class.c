@@ -8598,8 +8598,7 @@ R_API ConstJavaValue *U(r_bin_java_resolve_to_const_value)(RBinJavaObj * BIN_OBJ
 		result->value._str = R_NEW0 (struct  java_const_value_str_t);
 		result->value._str->len = length;
 		if (length > 0) {
-			result->value._str->str = malloc (length);
-			memcpy (result->value._str->str, string_str, length);
+			result->value._str->str = r_str_ndup (string_str, length);
 		} else {
 			result->value._str->str = strdup ("");
 		}

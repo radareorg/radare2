@@ -160,7 +160,7 @@ R_API void r_vector_pop(RVector *vec, void *into) {
 }
 
 R_API void r_vector_pop_front(RVector *vec, void *into) {
-	return r_vector_remove_at (vec, 0, into);
+	r_vector_remove_at (vec, 0, into);
 }
 
 R_API void *r_vector_push(RVector *vec, void *x) {

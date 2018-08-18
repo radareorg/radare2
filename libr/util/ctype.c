@@ -69,7 +69,7 @@ R_API char *r_type_enum_member(Sdb *TDB, const char *name, const char *member, u
 	if (member) {
 		q = sdb_fmt ("enum.%s.%s", name, member);
 	} else {
-		q = sdb_fmt ("enum.%s.0x%x", name, val);
+		q = sdb_fmt ("enum.%s.0x%"PFMT64x, name, val);
 	}
 	return sdb_get (TDB, q, 0);
 }

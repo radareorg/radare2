@@ -3624,10 +3624,10 @@ static void cmd_anal_info(RCore *core, const char *input) {
 static void initialize_stack (RCore *core, ut64 addr, ut64 size) {
 	const char *mode = r_config_get (core->config, "esil.fillstack");
 	if (mode && *mode && *mode != '0') {
-		const int bs = 4096 * 32;
+		const ut64 bs = 4096 * 32;
 		ut64 i;
 		for (i = 0; i < size; i += bs) {
-			int left = R_MIN (bs, size - i);
+			ut64 left = R_MIN (bs, size - i);
 		//	r_core_cmdf (core, "wx 10203040 @ 0x%llx", addr);
 			switch (*mode) {
 			case 'd': // "debrujn"
@@ -4943,7 +4943,7 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 			}
 		}
 	} else {
-		int sz = r_num_math (core->num, arg + 1);
+		ut64 sz = r_num_math (core->num, arg + 1);
 		r_core_cmdf (core, "abb 0x%08"PFMT64x" @ 0x%08"PFMT64x, sz, core->offset);
 	}
 ctrl_c:

@@ -3045,7 +3045,7 @@ static inline int *macro_twosharps(const int *macro_str)
 					}
 					tok_str_add2 (&macro_str1, tok, &tokc);
 					tcc_warning ("pasting \"%.*s\" and \"%s\" does not give a valid preprocessing token",
-						n, cstr.data, (char *) cstr.data + n);
+						n, (char *) cstr.data, (char *) cstr.data + n);
 				}
 				tcc_close ();
 				cstr_free (&cstr);
