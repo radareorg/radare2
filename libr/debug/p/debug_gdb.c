@@ -995,7 +995,7 @@ static int r_debug_gdb_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set
 		if (set)
 			gdbr_set_hww (desc, b->addr, "", 1);
 		else
-			gdbr_remove_hwbp (desc, b->addr, 1);
+			gdbr_remove_hww (desc, b->addr, 1);
 		break;
 	}
 	case R_BP_PROT_READ : {
