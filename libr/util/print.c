@@ -604,7 +604,9 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 			// TODO: some ascii can be bypassed here
 			p->cb_printf ("%%%02x", b);
 		} else {
-			if ((b == '\n' && !esc_nl) || IS_PRINTABLE (b)) {
+			if (b == '\\') {
+				p->cb_printf ("\\\\");
+			} else if ((b == '\n' && !esc_nl) || IS_PRINTABLE (b)) {
 				p->cb_printf ("%c", b);
 			} else {
 				p->cb_printf ("\\x%02x", b);
