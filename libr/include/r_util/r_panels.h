@@ -15,6 +15,10 @@ typedef struct r_panel_t {
 	int y;
 	int w;
 	int h;
+	int px;
+	int py;
+	int pw;
+	int ph;
 	int depth;
 	int sx; // scroll-x
 	int sy; // scroll-y

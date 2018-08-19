@@ -1008,6 +1008,7 @@ typedef struct r_panels_t {
 	int callgraph;
 	int curnode;
 	bool isResizing;
+	bool isZoom;
 	const char ***menuStack;
 	int *menuIndexStack;
 	int menuStackDepth;
