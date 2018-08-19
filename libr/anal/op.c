@@ -265,6 +265,7 @@ R_API bool r_anal_op_nonlinear(int t) {
 	case R_ANAL_OP_TYPE_ILL:
 	case R_ANAL_OP_TYPE_UNK:
 	case R_ANAL_OP_TYPE_SWI:
+	case R_ANAL_OP_TYPE_RET:
 		return true;
 	default:
 		return false;

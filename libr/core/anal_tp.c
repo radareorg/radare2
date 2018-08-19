@@ -155,8 +155,81 @@ static ut64 get_addr(Sdb *trace, const char *regname, int idx) {
 	return r_num_math (NULL, sdb_const_get (trace, query, 0));
 }
 
+static int cond_invert (int cond) {
+	int res = 0;
+	switch (cond) {
+	case R_ANAL_COND_LE:
+		res = R_ANAL_COND_GT;
+		break;
+	case R_ANAL_COND_LT:
+		res = R_ANAL_COND_GE;
+		break;
+	case R_ANAL_COND_GE:
+		res = R_ANAL_COND_LT;
+		break;
+	case R_ANAL_COND_GT:
+		res = R_ANAL_COND_LE;
+		break;
+	}
+	return res;
+}
+
+#define RKEY(a,k,d) sdb_fmt ("var.range.0x%"PFMT64x ".%c.%d", a, k, d)
+#define ADB a->sdb_fcns
+
+static void var_add_range (RAnal *a, RAnalVar *var, int cond, ut64 val) {
+	const char *key = RKEY (var->addr, var->kind, var->delta);
+	sdb_array_append_num (ADB, key, cond, 0);
+	sdb_array_append_num (ADB, key, val, 0);
+}
+
+R_API char *var_get_constraint (RAnal *a, RAnalVar *var) {
+	const char *key = RKEY (var->addr, var->kind, var->delta);
+	int i, n = sdb_array_length (ADB, key);
+	bool low = false, high = false;
+	RStrBuf *sb = r_strbuf_new ("");
+
+	if (n < 2) {
+		return NULL;
+	}
+	for (i = 0; i < n; i += 2) {
+		ut64 cond = sdb_array_get_num (ADB, key, i, 0);
+		ut64 val = sdb_array_get_num (ADB, key, i + 1, 0);
+		switch (cond) {
+		case R_ANAL_COND_LE:
+			if (high) {
+				r_strbuf_append (sb, " && ");
+			}
+			r_strbuf_append (sb, sdb_fmt ("<= 0x%"PFMT64x "", val));
+			low = true;
+			break;
+		case R_ANAL_COND_LT:
+			if (high) {
+				r_strbuf_append (sb, " && ");
+			}
+			r_strbuf_append (sb, sdb_fmt ("< 0x%"PFMT64x "", val));
+			low = true;
+			break;
+		case R_ANAL_COND_GE:
+			r_strbuf_append (sb, sdb_fmt (">= 0x%"PFMT64x "", val));
+			high = true;
+			break;
+		case R_ANAL_COND_GT:
+			r_strbuf_append (sb, sdb_fmt ("> 0x%"PFMT64x "", val));
+			high = true;
+			break;
+		}
+		if (low && high && i != n-2) {
+			r_strbuf_append (sb, " || ");
+			low = false;
+			high = false;
+		}
+	}
+	return r_strbuf_get (sb);
+}
+
 static RList *parse_format(RCore *core, char *fmt) {
-	RList *ret = r_list_new();
+	RList *ret = r_list_new ();
 	Sdb *s = core->anal->sdb_fmts;
 	const char *spec = r_config_get (core->config, "anal.types.spec");
 	char arr[10] = {0};
@@ -182,6 +255,7 @@ static RList *parse_format(RCore *core, char *fmt) {
 
 #define DEFAULT_MAX 3
 #define REG_SZ 10
+#define MAX_INSTR 5
 
 static void type_match(RCore *core, ut64 addr, char *fcn_name, ut64 baddr, const char* cc,
 		int prev_idx, bool userfnc, ut64 caddr) {
@@ -354,6 +428,7 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 	if (!core->anal->esil) {
 		return;
 	}
+	bool chk_constraint = r_config_get_i (core->config, "anal.types.constraint");
 	int ret, bsize = R_MAX (64, core->blocksize);
 	const int mininstrsz = r_anal_archinfo (anal, R_ANAL_ARCHINFO_MIN_OP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
@@ -512,6 +587,27 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 					if (prop && match && prev_var) {
 						var_retype (anal, var, NULL, prev_type, addr, false, false);
 					}
+				}
+				if (chk_constraint && var && (type == R_ANAL_OP_TYPE_CMP && aop.ptr != UT64_MAX)
+						&& next_op && next_op->type == R_ANAL_OP_TYPE_CJMP) {
+					bool jmp = false;
+					RAnalOp *jmp_op = {0};
+					ut64 jmp_addr = next_op->jump;
+					RAnalBlock *jmpbb = r_anal_fcn_bbget_in (fcn, jmp_addr);
+
+					// Check exit status of jmp branch
+					for (i = 0; i < MAX_INSTR ; i++) {
+						jmp_op = r_core_anal_op (core, jmp_addr, R_ANAL_OP_MASK_BASIC);
+						if ((jmp_op->type == R_ANAL_OP_TYPE_RET && r_anal_bb_is_in_offset (jmpbb, jmp_addr))
+								|| jmp_op->type == R_ANAL_OP_TYPE_CJMP) {
+							jmp = true;
+							break;
+						}
+						jmp_addr += jmp_op->size;
+						r_anal_op_free (jmp_op);
+					}
+					int cond = jmp? cond_invert (next_op->cond): next_op->cond;
+					var_add_range (anal, var, cond, aop.ptr);
 				}
 			}
 			prev_var = (var && aop.direction == R_ANAL_OP_DIR_READ)? true: false;

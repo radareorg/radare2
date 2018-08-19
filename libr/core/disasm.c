@@ -1404,10 +1404,22 @@ static ut32 tmp_get_realsize (RAnalFunction *f) {
 static void ds_show_functions_argvar(RDisasmState *ds, RAnalVar *var, const char *base, bool is_var, char sign) {
 	int delta = sign == '+' ? var->delta : -var->delta;
 	const char *pfx = is_var ? "var" : "arg";
-	r_cons_printf ("%s%s %s%s%s%s %s@ %s%c0x%x", COLOR_ARG (ds, color_func_var), pfx,
+	char *constr = NULL;
+	bool cond = false;
+	if (ds->core && ds->core->anal) {
+		constr = var_get_constraint (ds->core->anal, var);
+	}
+	if (constr && *constr) {
+		cond = true;
+	}
+	r_cons_printf ("%s%s %s%s%s%s %s%s%s%s@ %s%c0x%x", COLOR_ARG (ds, color_func_var), pfx,
 			COLOR_ARG (ds, color_func_var_type), var->type,
 			r_str_endswith (var->type, "*") ? "" : " ",
-			var->name, COLOR_ARG (ds, color_func_var_addr), base, sign, delta);
+			var->name, COLOR_ARG (ds, color_func_var_addr),
+			cond? " { ":"",
+			cond? constr: "",
+			cond? "} ":"",
+			base, sign, delta);
 }
 
 static void printVarSummary(RDisasmState *ds, RList *list) {
