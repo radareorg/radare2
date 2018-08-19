@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2014-2015 - fedor.sakharov */
+
 #include <stdio.h>
 #include <string.h>
 #include <r_types.h>
@@ -11,9 +13,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int ret = msp430_decode_command (buf, len, &cmd);
 	if (ret > 0) {
 		if (cmd.operands[0]) {
-			snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %s", cmd.instr, cmd.operands);
+			r_strbuf_set (&op->buf_asm, sdb_fmt ("%s %s", cmd.instr, cmd.operands));
 		} else {
-			snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s", cmd.instr);
+			r_strbuf_set (&op->buf_asm, sdb_fmt ("%s", cmd.instr));
 		}
 	}
 

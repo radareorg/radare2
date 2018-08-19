@@ -15,7 +15,7 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_asm);
 
-// XXX too big!
+// XXX deprecate!!! too big!
 // the 256th character is left for the null terminator
 #define R_ASM_BUFSIZE 255
 
@@ -66,21 +66,25 @@ enum {
 };
 
 typedef struct r_asm_op_t {
-	int size; // instruction size
-	int bitsize; // instruction size in bits (or 0 if fits in 8bit bytes)
+	int size; // instruction size (must be deprecated. just use buf.len
+	int bitsize; // instruction size in bits (or 0 if fits in 8bit bytes) // wtf why dupe this field? :D
 	int payload; // size of payload (opsize = (size-payload))
 	// But this is pretty slow..so maybe we should add some accessors
-	ut8  buf[R_ASM_BUFSIZE + 1];
-	char buf_asm[R_ASM_BUFSIZE + 1];
-	char buf_hex[R_ASM_BUFSIZE + 1];
-	RBuffer *buf_inc;
+	RStrBuf buf;
+	RStrBuf buf_asm;
+	RStrBuf buf_hex;
+	RBuffer *buf_inc; // must die
 } RAsmOp;
 
 typedef struct r_asm_code_t {
+#if 1
 	int len;
 	ut8 *buf;
 	char *buf_hex;
 	char *buf_asm;
+#else
+	RAsmOp op; // we have those fields already inside RAsmOp
+#endif
 	RList *equs; // TODO: must be a hash
 	ut64 code_offset;
 	ut64 data_offset;
@@ -120,7 +124,7 @@ typedef struct r_asm_t {
 	int seggrn;
 } RAsm;
 
-typedef int (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);
+typedef bool (*RAsmModifyCallback)(RAsm *a, ut8 *buf, int field, ut64 val);
 
 typedef struct r_asm_plugin_t {
 	const char *name;
@@ -146,9 +150,8 @@ typedef struct r_asm_plugin_t {
 #ifdef R_API
 /* asm.c */
 R_API RAsm *r_asm_new(void);
-#define r_asm_op_free free
 R_API RAsm *r_asm_free(RAsm *a);
-R_API int r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val);
+R_API bool r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val);
 R_API char *r_asm_mnemonics(RAsm *a, int id, bool json);
 R_API int r_asm_mnemonics_byname(RAsm *a, const char *name);
 R_API void r_asm_set_user_ptr(RAsm *a, void *user);
@@ -187,10 +190,25 @@ R_API void r_asm_equ_item_free(RAsmEqu *equ);
 R_API bool r_asm_code_set_equ (RAsmCode *code, const char *key, const char *value);
 R_API char *r_asm_code_equ_replace (RAsmCode *code, char *str);
 
+/* op.c */
+R_API RAsmOp *r_asm_op_new();
+R_API void r_asm_op_free(RAsmOp *op);
+R_API void r_asm_op_init(RAsmOp *op);
+R_API void r_asm_op_fini(RAsmOp *op);
+R_API char *r_asm_op_get_hex(RAsmOp *op);
+R_API char *r_asm_op_get_asm(RAsmOp *op);
+R_API int r_asm_op_get_size(RAsmOp *op);
+R_API void r_asm_op_set_asm(RAsmOp *op, const char *str);
+R_API void r_asm_op_set_hex(RAsmOp *op, const char *str);
+R_API void r_asm_op_set_hexbuf(RAsmOp *op, const ut8 *buf, int len);
+R_API void r_asm_op_set_buf(RAsmOp *op, const ut8 *str, int len);
+
+#if 0
 // accessors, to make bindings happy
 R_API char *r_asm_op_get_hex(RAsmOp *op);
 R_API char *r_asm_op_get_asm(RAsmOp *op);
 R_API int r_asm_op_get_size(RAsmOp *op);
+#endif
 
 /* plugin pointers */
 extern RAsmPlugin r_asm_plugin_bf;

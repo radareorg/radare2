@@ -152,12 +152,12 @@ R_API bool r_core_visual_esil(RCore *core) {
 		r_cons_printf ("r2's esil debugger:\n\n");
 		r_cons_printf ("pos: %d\n", x);
 		{
-			char *res = r_print_hexpair (core->print, asmop.buf_hex, -1);
+			char *res = r_print_hexpair (core->print, r_asm_op_get_hex (&asmop), -1);
 			r_cons_printf ("hex: %s\n"Color_RESET, res);
 			free (res);
 		}
 		{
-			char *op = colorize_asm_string (core, asmop.buf_asm, analopType, core->offset);
+			char *op = colorize_asm_string (core, r_asm_op_get_asm (&asmop), analopType, core->offset);
 			r_cons_printf (Color_RESET"asm: %s\n"Color_RESET, op);
 			free (op);
 		}
@@ -290,7 +290,7 @@ static bool edit_bits (RCore *core) {
 		analopType = analop.type & R_ANAL_OP_TYPE_MASK;
 		r_cons_printf ("r2's bit editor:\n\n");
 		{
-			char *res = r_print_hexpair (core->print, asmop.buf_hex, -1);
+			char *res = r_print_hexpair (core->print, r_asm_op_get_hex (&asmop), -1);
 			r_cons_printf ("hex: %s\n"Color_RESET, res);
 			free (res);
 		}
@@ -300,7 +300,7 @@ static bool edit_bits (RCore *core) {
 			r_cons_printf ("shift: >> %d << %d\n", word, (asmop.size * 8) - word - 1);
 		}
 		{
-			char *op = colorize_asm_string (core, asmop.buf_asm, analopType, core->offset);
+			char *op = colorize_asm_string (core, r_asm_op_get_asm (&asmop), analopType, core->offset);
 			r_cons_printf (Color_RESET"asm: %s\n"Color_RESET, op);
 			free (op);
 		}

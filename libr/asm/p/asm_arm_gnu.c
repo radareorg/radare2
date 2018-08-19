@@ -134,7 +134,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (a->bits < 64 && len < (a->bits / 8)) {
 		return -1;
 	}
-	buf_global = op->buf_asm;
+	buf_global = r_strbuf_get (&op->buf_asm);
 	Offset = a->pc;
 
 	/* prepare disassembler */
@@ -180,7 +180,7 @@ cpucode = 66471;
 	obj.bytes_per_chunk =
 		obj.bytes_per_line = (a->bits / 8);
 
-	op->buf_asm[0] = '\0';
+	r_strbuf_set (&op->buf_asm, "");
 	if (a->bits == 64) {
 		obj.disassembler_options = NULL;
 		memcpy (bytes, buf, 4);
@@ -193,11 +193,10 @@ cpucode = 66471;
 	}
 	opsize = op->size;
 	if (op->size == -1) {
-		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
+		r_strbuf_set (&op->buf_asm, "(data)");
 		op->size = 4;
-	}
-	if (strstr (op->buf_asm, "UNDEF")) {
-		strcpy (op->buf_asm, "undefined");
+	} else if (strstr (buf_global, "UNDEF")) {
+		r_strbuf_set (&op->buf_asm, "undefined");
 		op->size = 2;
 		opsize = 2;
 	}

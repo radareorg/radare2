@@ -26,7 +26,6 @@ static void snappendf(char** dst, size_t* size, const char* format, ...) {
 }
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	ut32 iw;
 	rsp_instruction r_instr;
 	int i;
 	char* buffer;
@@ -39,10 +38,10 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	op->size = 4;
 
-	iw = r_read_ble32 (buf, a->big_endian);
+	ut32 iw = r_read_ble32 (buf, a->big_endian);
 	r_instr = rsp_instruction_decode (a->pc, iw);
 
-	buffer = op->buf_asm;
+	buffer = r_strbuf_get (&op->buf_asm);
 	size = sizeof (op->buf_asm);
 
 	snappendf (&buffer, &size, r_instr.mnemonic);
