@@ -828,6 +828,7 @@ static void ds_free(RDisasmState *ds) {
 			r_io_fd_close (ds->core->io, ds->stackFd);
 		}
 	}
+	r_asm_op_fini (&ds->asmop);
 	r_anal_op_fini (&ds->analop);
 	r_anal_hint_free (ds->hint);
 	ds_print_esil_anal_fini (ds);
