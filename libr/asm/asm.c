@@ -577,7 +577,6 @@ R_API void r_asm_list_directives() {
 R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	int ret = 0;
 	char *b = strdup (buf);
-
 	if (!b) {
 		return 0;
 	}
@@ -608,7 +607,11 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	if (op && ret > 0) {
 		op->size = ret; // XXX shouldnt be necessary
 		r_asm_op_set_asm (op, b); // XXX ase should be updating this already, isnt?
-		// 
+		ut8 *ophex = (ut8*)r_strbuf_get (&op->buf_hex);
+		if (!*ophex) {
+			ut8 *opbuf = (ut8*)r_strbuf_get (&op->buf);
+			r_asm_op_set_buf (op, opbuf, ret);
+		}
 	}
 	free (b);
 	return ret;
@@ -1005,7 +1008,8 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					return r_asm_code_free (acode);
 				}
 				acode->buf_hex = newbuf;
-				memcpy (acode->buf + idx, r_strbuf_get (&op.buf), ret);
+				acode->buf = malloc (4095);
+				memcpy (acode->buf + idx, r_strbuf_get (&op.buf), r_strbuf_length (&op.buf)); // ret);
 				// XXX slow. use strbuf pls
 				strcat (acode->buf_hex, r_strbuf_get (&op.buf_hex));
 				if (r_buf_size (op.buf_inc) > 1) {

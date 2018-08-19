@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2017 - pancake */
+/* radare2 - LGPL - Copyright 2013-2018 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -72,7 +72,7 @@ fin:
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *str) {
-	ut8 *opbuf = r_strbuf_get (&op->buf);
+	ut8 *opbuf = (ut8*)r_strbuf_get (&op->buf);
 	int ret = mips_assemble (str, a->pc, opbuf);
 	if (a->big_endian) {
 		ut8 *buf = opbuf;

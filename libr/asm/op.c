@@ -47,7 +47,7 @@ R_API void r_asm_op_set_hex(RAsmOp *op, const char *str) {
 	r_strbuf_set (&op->buf_hex, str);
 }
 
-R_API void r_asm_op_set_hexbuf(RAsmOp *op, ut8 *buf, int len) {
+R_API void r_asm_op_set_hexbuf(RAsmOp *op, const ut8 *buf, int len) {
 	char *hex = malloc (len * 4);
 	if (hex) {
 		r_hex_bin2str (buf, len, hex);
@@ -58,6 +58,8 @@ R_API void r_asm_op_set_hexbuf(RAsmOp *op, ut8 *buf, int len) {
 }
 
 R_API void r_asm_op_set_buf(RAsmOp *op, const ut8 *buf, int len) {
-	r_strbuf_setbin (&op->buf, buf, len);
-	r_asm_op_set_hexbuf (op, buf, len);
+	if (op && buf && len >= 0) {
+		r_strbuf_setbin (&op->buf, buf, len);
+		r_asm_op_set_hexbuf (op, buf, len);
+	}
 }
