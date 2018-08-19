@@ -90,7 +90,8 @@ static const char *help_msg_om[] = {
 	"om=", "", "list all maps in ascii art",
 	"omj", "", "list all maps in json format",
 	"om", " [fd]", "list all defined IO maps for a specific fd",
-	"om", "-mapid", "remove the map with corresponding id",
+	"om-", "mapid", "remove the map with corresponding id",
+	"om-..", "", "hud view of all the maps to select the one to delete",
 	"om", " fd vaddr [size] [paddr] [rwx] [name]", "create new io map",
 	"omm"," [fd]", "create default map for given fd. (omm `oq`)",
 	"om.", "", "show map, that is mapped to current offset",
@@ -761,7 +762,9 @@ static void cmd_open_map(RCore *core, const char *input) {
 		}
 		break;
 	case '-': // "om-"
-		if (input[2] == '*') {
+		if (!strcmp (input + 2, "..")) {
+			r_core_cmd0 (core, "om-`om~...`~[0]");
+		} else if (input[2] == '*') {
 			r_io_map_reset (core->io);
 		} else {
 			r_io_map_del (core->io, r_num_math (core->num, input + 2));
