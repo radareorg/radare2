@@ -38,6 +38,9 @@ static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, S
 		return NULL;
 	}
 	RBuffer *tbuf = r_buf_new ();
+	if (!tbuf) {
+		return NULL;
+	}
 	r_buf_set_bytes (tbuf, buf, sz);
 	struct MACH0_(opts_t) opts;
 	MACH0_(opts_set_default) (&opts, bf);
