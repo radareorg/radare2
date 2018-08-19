@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2017 - pancake, nibble */
 
 #define R_BIN_ELF64 1
-#include "bin_elf.c"
+#include "bin_elf.inc"
 
 static bool check_bytes(const ut8 *buf, ut64 length) {
 	if (buf && length >= 5) {

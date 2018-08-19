@@ -1,13 +1,7 @@
 /* radare - LGPL - Copyright 2009-2015 - ret2libc, pancake */
 
-#include <stdio.h>
-#include <r_types.h>
-#include <r_util.h>
-#include <r_lib.h>
-#include <r_bin.h>
-
 #define R_BIN_CGC 1
-#include "bin_elf.c"
+#include "bin_elf.inc"
 
 extern struct r_bin_dbginfo_t r_bin_dbginfo_elf;
 extern struct r_bin_write_t r_bin_write_elf;
@@ -104,6 +98,7 @@ RBinPlugin r_bin_plugin_cgc = {
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
+	.load_buffer= load_buffer,
 	.destroy = &destroy,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
@@ -123,4 +118,7 @@ RBinPlugin r_bin_plugin_cgc = {
 	.create = &create,
 	.patch_relocs = &patch_relocs,
 	.write = &r_bin_write_elf,
+	.file_type = get_file_type,
+	.regstate = regstate,
+	.maps = maps,
 };
