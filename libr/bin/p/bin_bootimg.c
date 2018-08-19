@@ -14,7 +14,7 @@ typedef struct boot_img_hdr BootImage;
 #define BOOT_EXTRA_ARGS_SIZE 1024
 
 #define ADD_REMAINDER(val, aln) ((val) + ((aln) != 0 ? ((val) % (aln)) : 0))
-#define ALIGN(val, aln) ((aln) != 0 ? (((val) / (aln)) * (aln)) : (val))
+#define ROUND_DOWN(val, aln) ((aln) != 0 ? (((val) / (aln)) * (aln)) : (val))
 
 R_PACKED (
 struct boot_img_hdr {
@@ -219,7 +219,7 @@ static RList *sections(RBinFile *bf) {
 		strncpy (ptr->name, "ramdisk", R_BIN_SIZEOF_STRINGS);
 		ptr->size = bi->ramdisk_size;
 		ptr->vsize = ADD_REMAINDER (bi->ramdisk_size, bi->page_size);
-		ptr->paddr = ALIGN (base, bi->page_size);
+		ptr->paddr = ROUND_DOWN (base, bi->page_size);
 		ptr->vaddr = bi->ramdisk_addr;
 		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE; // r-x
 		ptr->add = true;
@@ -234,7 +234,7 @@ static RList *sections(RBinFile *bf) {
 		strncpy (ptr->name, "second", R_BIN_SIZEOF_STRINGS);
 		ptr->size = bi->second_size;
 		ptr->vsize = ADD_REMAINDER (bi->second_size, bi->page_size);
-		ptr->paddr = ALIGN (base, bi->page_size);
+		ptr->paddr = ROUND_DOWN (base, bi->page_size);
 		ptr->vaddr = bi->second_addr;
 		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE; // r-x
 		ptr->add = true;
