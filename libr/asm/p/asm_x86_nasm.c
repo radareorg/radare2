@@ -32,7 +32,9 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	close (ifd);
 
 	if ( !r_sys_cmdf ("nasm %s -o %s", ipath, opath)) {
-		len = read (ofd, op->buf, R_ASM_BUFSIZE);
+		char buf[512];
+		len = read (ofd, buf, sizeof (buf));
+		r_strbuf_setbin (&op->buf, buf, len);
 	} else {
 		eprintf ("Error running 'nasm'\n");
 		len = 0;

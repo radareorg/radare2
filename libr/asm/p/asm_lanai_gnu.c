@@ -1,20 +1,17 @@
-/* radare - LGPL - Copyright 2016 - pancake */
+/* radare - LGPL - Copyright 2016-2018 - pancake */
 
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
-
 #include <r_types.h>
 #include <r_lib.h>
 #include <r_util.h>
 #include <r_asm.h>
-
 #include "disas-asm.h"
-
 
 static unsigned long Offset = 0;
 static char *buf_global = NULL;
-static int buf_global_size = 0;
+static int buf_global_size = 64; // hardcoded sizeof (RStrBuf.buf);
 static unsigned char bytes[4];
 
 static int lanai_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
@@ -56,9 +53,8 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	}
 	memcpy (tmp, buf_global, glen);
 	memcpy (tmp+glen, format, flen);
-	tmp[flen+glen] = 0;
-// XXX: overflow here?
-
+	tmp[flen + glen] = 0;
+	// XXX: overflow here?
 	vsnprintf (buf_global, buf_global_size, tmp, ap);
 	free (tmp);
 	va_end (ap);
@@ -67,12 +63,10 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
-	op->buf_asm[0]='\0';
 	if (len < 4) {
 		return -1;
 	}
-	buf_global = op->buf_asm;
-	buf_global_size = sizeof (op->buf_asm);
+	buf_global = r_strbuf_get (&op->buf_asm);
 	Offset = a->pc;
 	memcpy (bytes, buf, 4); // TODO handle thumb
 
@@ -89,9 +83,8 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.stream = stdout;
 
 	op->size = print_insn_lanai ((bfd_vma)Offset, &disasm_obj);
-
 	if (op->size == -1) {
-		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
+		r_strbuf_set (&op->buf_asm, "(data)");
 	}
 	return op->size;
 }

@@ -94,7 +94,7 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
-	buf_global = op->buf_asm;
+	buf_global = r_strbuf_get (&op->buf_asm);
 	Offset = a->pc;
 	memcpy (bytes, buf, R_MIN (len, 8)); // TODO handle thumb
 
@@ -113,9 +113,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.mach = 2; // select CPU TYPE
 
 	op->size = print_insn_tricore ((bfd_vma)Offset, &disasm_obj);
-	if (op->size == -1)
-		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
-
+	if (op->size == -1) {
+		r_asm_op_set_asm (op, " (data)");
+	}
 	return op->size;
 }
 

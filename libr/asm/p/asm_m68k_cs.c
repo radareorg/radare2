@@ -49,7 +49,6 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		mode |= CS_MODE_M68K_060;
 	if (op) {
 		op->size = 4;
-		op->buf_asm[0] = 0;
 	}
 	if (cd == 0) {
 		ret = cs_open (CS_ARCH_M68K, mode, &cd);
@@ -81,32 +80,30 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		ret = -1;
 		goto beach;
 	}
+	const char *buf_asm = NULL;
 	if (a->features && *a->features) {
 		if (!check_features (a, insn)) {
 			if (op) {
-			op->size = insn->size;
-			strcpy (op->buf_asm, "illegal");
+				op->size = insn->size;
+				buf_asm = "illegal";
 			}
 		}
 	}
 	if (op && !op->size) {
 		op->size = insn->size;
-		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s%s%s",
-			insn->mnemonic,
-			insn->op_str[0]?" ":"",
-			insn->op_str);
+		buf_asm = sdb_fmt ("%s%s%s", insn->mnemonic, insn->op_str[0]?" ":"", insn->op_str);
 	}
-	if (op) {
-		char *p = r_str_replace (strdup (op->buf_asm),
-			"$", "0x", true);
+	if (op && buf_asm) {
+		char *p = r_str_replace (strdup (buf_asm), "$", "0x", true);
 		if (p) {
-			strncpy (op->buf_asm, p, R_ASM_BUFSIZE-1);
+			r_strbuf_set (&op->buf_asm, p);
 			free (p);
 		}
 	}
 	cs_free (insn, n);
 	beach:
 	//cs_close (&cd);
+#if 0
 	if (op) {
 		if (!strncmp (op->buf_asm, "dc.w", 4)) {
 			strcpy (op->buf_asm, "invalid");
@@ -114,6 +111,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		r_str_rmch (op->buf_asm, '#');
 		return op->size;
 	}
+#endif
 	return ret;
 }
 
@@ -147,6 +145,7 @@ RAsmPlugin r_asm_plugin_m68k_cs = {
 	.name = "m68k.cs (unsupported)",
 	.desc = "Capstone M68K disassembler (unsupported)",
 	.license = "BSD",
+	.author = "pancake",
 	.arch = "m68k",
 	.bits = 16 | 32,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,

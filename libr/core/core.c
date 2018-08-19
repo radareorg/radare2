@@ -2555,11 +2555,12 @@ R_API int r_core_seek_align(RCore *core, ut64 align, int times) {
 R_API char *r_core_op_str(RCore *core, ut64 addr) {
 	RAsmOp op;
 	ut8 buf[64];
-	int ret;
 	r_asm_set_pc (core->assembler, addr);
 	r_io_read_at (core->io, addr, buf, sizeof (buf));
-	ret = r_asm_disassemble (core->assembler, &op, buf, sizeof (buf));
-	return (ret > 0)? strdup (op.buf_asm): NULL;
+	int ret = r_asm_disassemble (core->assembler, &op, buf, sizeof (buf));
+	char *str = (ret > 0)? strdup (r_strbuf_get (&op.buf_asm)): NULL;
+	r_asm_op_fini (&op);
+	return str;
 }
 
 R_API RAnalOp *r_core_op_anal(RCore *core, ut64 addr) {

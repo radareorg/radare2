@@ -116,7 +116,7 @@ int _8051_disas (ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
 					val1 = buf[1];
 				}
 			} else {
-				strcpy (op->buf_asm, "truncated");
+				r_strbuf_set (&op->buf_asm, "truncated");
 				return -1;
 			}
 			break;
@@ -154,7 +154,7 @@ int _8051_disas (ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
 					val1 = buf[1];
 				}
 			} else {
-				strcpy (op->buf_asm, "truncated");
+				r_strbuf_set (&op->buf_asm, "truncated");
 				return -1;
 			}
 			break;
@@ -167,7 +167,7 @@ int _8051_disas (ut64 pc, RAsmOp *op, const ut8 *buf, ut64 len) {
 		if (disasm) {
 			disasm = _replace_register (disasm, arg1, val1);
 			disasm = _replace_register (disasm, arg2, val2);
-			r_str_ncpy (op->buf_asm, disasm, sizeof (op->buf_asm));
+			r_strbuf_set (&op->buf_asm, disasm);
 			free (disasm);
 		}
 		return oplen;
