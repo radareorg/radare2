@@ -965,7 +965,8 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 			goto ret;
 		} else {
 			opsz = asmop.size;
-			opst = asmop.buf_asm;
+			// opsz = r_strbuf_length (asmop.buf);
+			opst = r_asm_op_get_asm (&asmop);
 		}
 		if (!r_str_ncasecmp (opst, "invalid", strlen ("invalid")) ||
 		    !r_str_ncasecmp (opst, ".byte", strlen (".byte"))) {
@@ -1040,7 +1041,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 	RCoreAsmHit *hit = NULL;
 	RListIter *iter;
 	RList *ropList = NULL;
-	char *buf_asm;
+	char *buf_asm = NULL;
 	unsigned int size = 0;
 	RAnalOp analop = R_EMPTY;
 	RAsmOp asmop;
@@ -1082,7 +1083,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 			}
 			r_cons_printf ("{\"offset\":%"PFMT64d ",\"size\":%d,"
 				"\"opcode\":\"%s\",\"type\":\"%s\"}%s",
-				hit->addr, hit->len, asmop.buf_asm,
+				hit->addr, hit->len, r_strbuf_get (&asmop.buf_asm),
 				r_anal_optype_to_string (analop.type),
 				iter->n? ",": "");
 			free (buf);
@@ -1111,18 +1112,17 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 			size += hit->len;
 			const char *opstr = R_STRBUF_SAFEGET (&analop.esil);
 			if (analop.type != R_ANAL_OP_TYPE_RET) {
-				char *opstr_n = r_str_newf (" %s", opstr);
-				r_list_append (ropList, (void *) opstr_n);
+				r_list_append (ropList, r_str_newf (" %s", opstr));
 			}
 			if (esil) {
 				r_cons_printf ("%s\n", opstr);
 			} else if (colorize) {
-				buf_asm = r_print_colorize_opcode (core->print, asmop.buf_asm,
+				buf_asm = r_print_colorize_opcode (core->print, r_strbuf_get (&asmop.buf_asm),
 					core->cons->pal.reg, core->cons->pal.num, false, 0);
 				r_cons_printf (" %s%s;", buf_asm, Color_RESET);
 				free (buf_asm);
 			} else {
-				r_cons_printf (" %s;", asmop.buf_asm);
+				r_cons_printf (" %s;", r_strbuf_get (&asmop.buf_asm));
 			}
 			free (buf);
 		}
@@ -1143,6 +1143,9 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 				continue;
 			}
 			ut8 *buf = malloc (1 + hit->len);
+			if (!buf) {
+				break;
+			}
 			buf[hit->len] = 0;
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->assembler, hit->addr);
@@ -1154,7 +1157,7 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 				r_list_append (ropList, (void *) opstr_n);
 			}
 			if (colorize) {
-				buf_asm = r_print_colorize_opcode (core->print, asmop.buf_asm,
+				char *buf_asm = r_print_colorize_opcode (core->print, r_strbuf_get (&asmop.buf_asm),
 					core->cons->pal.reg, core->cons->pal.num, false, 0);
 				otype = r_print_color_op_type (core->print, analop.type);
 				if (comment) {
@@ -1168,10 +1171,10 @@ static void print_rop(RCore *core, RList *hitlist, char mode, bool *json_first) 
 			} else {
 				if (comment) {
 					r_cons_printf ("  0x%08"PFMT64x " %18s  %s ; %s\n",
-						hit->addr, asmop.buf_hex, asmop.buf_asm, comment);
+						hit->addr, asmop.buf_hex, r_strbuf_get (&asmop.buf_asm), comment);
 				} else {
 					r_cons_printf ("  0x%08"PFMT64x " %18s  %s\n",
-						hit->addr, asmop.buf_hex, asmop.buf_asm);
+						hit->addr, asmop.buf_hex, r_strbuf_get (&asmop.buf_asm));
 				}
 			}
 			free (buf);
@@ -1217,7 +1220,6 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 			gadgetSdb = sdb_ns (core->sdb, "gadget_sdb", true);
 		}
 	}
-
 	if (max_count == 0) {
 		max_count = -1;
 	}
@@ -1319,15 +1321,17 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 				}
 #endif
 				epair = R_NEW0 (struct endlist_pair);
-				// If this arch has branch delay slots, add the next instr as well
-				if (end_gadget.delay) {
-					epair->instr_offset = i + increment;
-					epair->delay_size = end_gadget.delay;
-				} else {
-					epair->instr_offset = (intptr_t) i;
-					epair->delay_size = end_gadget.delay;
+				if (epair) {
+					// If this arch has branch delay slots, add the next instr as well
+					if (end_gadget.delay) {
+						epair->instr_offset = i + increment;
+						epair->delay_size = end_gadget.delay;
+					} else {
+						epair->instr_offset = (intptr_t) i;
+						epair->delay_size = end_gadget.delay;
+					}
+					r_list_append (end_list, (void *) (intptr_t) epair);
 				}
-				r_list_append (end_list, (void *) (intptr_t) epair);
 			}
 			r_anal_op_fini (&end_gadget);
 			if (r_cons_is_breaked ()) {
@@ -1405,7 +1409,6 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 					if (align && (0 != ((from + i) % align))) {
 						continue;
 					}
-
 					if (gadgetSdb) {
 						RListIter *iter;
 
@@ -1800,7 +1803,7 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 	RAnalRef *ref;
 	RListIter *iter;
 	ut8 buf[12];
-	RAsmOp asmop;	
+	RAsmOp asmop;
 	RList *list = r_anal_xrefs_get (core->anal, addr);
 	if (list) {
 		r_list_foreach (list, iter, ref) {
@@ -1808,8 +1811,8 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 			r_asm_set_pc (core->assembler, ref->addr);
 			r_asm_disassemble (core->assembler, &asmop, buf, size);
 			fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
-			r_parse_filter (core->parser, core->flags,
-					asmop.buf_asm, str, sizeof (str), core->print->big_endian);
+			r_parse_filter (core->parser, core->flags, r_strbuf_get (&asmop.buf_asm),
+				str, sizeof (str), core->print->big_endian);
 			comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
 			char *buf_fcn = comment
 				? r_str_newf ("%s; %s", fcn ?  fcn->name : "(nofunc)", strtok (comment, "\n"))

@@ -111,120 +111,107 @@ static struct {
 
 int pic_pic18_disassemble(RAsm *a, RAsmOp *op, const ut8 *b, int l) {
 	int i;
-	if(l<2){//well noone loves reading bitstream of size zero or 1 !!
-		strncpy (op->buf_asm,"invalid", R_ASM_BUFSIZE);
+	if (l < 2) { //well noone loves reading bitstream of size zero or 1 !!
+		r_asm_op_set_asm (op, "invalid");
 		op->size = l;
 		return -1;
-
 	}
 	ut16 instr = *(ut16 *)b; //instruction
 	// if still redundan code is reported think of this of instr=0x2
+	const char *buf_asm = "invalid";
+	r_asm_op_set_asm (op, buf_asm);
+
 	for (i = 0;ops[i].opmin != (ops[i].opmin & instr) || ops[i].opmax != (ops[i].opmax | instr); i++);
-	if (ops[i].opmin == 0 && ops[i].opmax==0xffff) {
-		strncpy (op->buf_asm, ops[i].name, R_ASM_BUFSIZE);
+	if (ops[i].opmin == 0 && ops[i].opmax == 0xffff) {
+		r_asm_op_set_asm (op, ops[i].name);
 		op->size = 2;
 		return -1;
 	}
 	op->size = 2;
 	switch (ops[i].optype) {
 	case NO_ARG:
-		strncpy (op->buf_asm, ops[i].name, R_ASM_BUFSIZE);
-		return 2;
+		buf_asm = ops[i].name;
+		break;
 	case N_T:
 	case K_T:
-		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s 0x%x",
-				  ops[i].name, instr & 0xff);
+		buf_asm = sdb_fmt ("%s 0x%x", ops[i].name, instr & 0xff);
 		break;
 	case DAF_T:
-		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s 0x%x, %d, %d",
-				  ops[i].name, instr & 0xff, (instr >> 9) & 1, (instr >> 8) & 1);
+		buf_asm = sdb_fmt ("%s 0x%x, %d, %d", ops[i].name, instr & 0xff, (instr >> 9) & 1, (instr >> 8) & 1);
 		break;
 	case AF_T:
-		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s 0x%x, %d", ops[i].name,
-				  instr & 0xff, (instr >> 8) & 1);
+		buf_asm = sdb_fmt ("%s 0x%x, %d", ops[i].name, instr & 0xff, (instr >> 8) & 1);
 		break;
-
 	case BAF_T:
-		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s 0x%x, %d, %d", ops[i].name,
-				  instr & 0xff, (instr >> 9) & 0x7, (instr >> 8) & 0x1);
+		buf_asm = sdb_fmt ("%s 0x%x, %d, %d", ops[i].name, instr & 0xff, (instr >> 9) & 0x7, (instr >> 8) & 0x1);
 		break;
 	case NEX_T:
-		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s 0x%x",
-				  ops[i].name, instr & 0x7ff);
+		buf_asm = sdb_fmt ("%s 0x%x", ops[i].name, instr & 0x7ff);
 		break;
-	case CALL_T: {
+	case CALL_T:
 		if (l < 4) {
-			strcpy (op->buf_asm, "invalid");
 			return -1;
 		}
 		op->size = 4;
+		{
 		ut32 dword_instr = *(ut32 *)b;
 		//I dont even know how the bits are arranged but it works !!!
 		//`the wierdness of little endianess`
 		if (dword_instr >> 28 != 0xf) {
-			strcpy (op->buf_asm, "invalid");
 			return -1;
 		}
-		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s 0x%x, %d", ops[i].name,
-				  (dword_instr & 0xff) |
-				  (dword_instr >> 8 & 0xfff00),
-				  (dword_instr >> 8) & 0x1);
+		buf_asm = sdb_fmt ("%s 0x%x, %d", ops[i].name,
+			  (dword_instr & 0xff) | (dword_instr >> 8 & 0xfff00), (dword_instr >> 8) & 0x1);
+		}
 		break;
-	}
-	case GOTO_T: {
+	case GOTO_T:
 		if (l < 4) {
-			strcpy (op->buf_asm, "invalid");
 			return -1;
 		}
+		{
 		op->size = 4;
 		ut32 dword_instr = *(ut32 *)b;
 		if (dword_instr >> 28 != 0xf) {
-			strcpy (op->buf_asm, "invalid");
 			return -1;
 		}
-		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s 0x%x", ops[i].name,
-				  ((dword_instr & 0xff) | ((dword_instr &  0xfff0000) >>8) )*2);
+		buf_asm = sdb_fmt ("%s 0x%x", ops[i].name,
+			  ((dword_instr & 0xff) | ((dword_instr &  0xfff0000) >>8) )*2);
+		}
 		break;
-	}
-	case F32_T: {
+	case F32_T:
 		if (l < 4) {
-			strcpy (op->buf_asm, "invalid");
 			return -1;
 		}
 		op->size = 4;
+		{
 		ut32 dword_instr = *(ut32 *)b;
 		if (dword_instr >> 28 != 0xf) {
-			strcpy (op->buf_asm, "invalid");
 			return -1;
 		}
-		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s 0x%x, 0x%x", ops[i].name,
-				  dword_instr & 0xfff,
-				  (dword_instr >> 16) & 0xfff);
+		buf_asm = sdb_fmt ("%s 0x%x, 0x%x", ops[i].name,
+			  dword_instr & 0xfff, (dword_instr >> 16) & 0xfff);
+		}
 		break;
-	}
 	case SHK_T:
-		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s 0x%x",
-				  ops[i].name, instr & 0xf);
+		buf_asm = sdb_fmt ("%s 0x%x", ops[i].name, instr & 0xf);
 		break;
 	case S_T:
-		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %d",
-				  ops[i].name, instr & 0x1);
+		buf_asm = sdb_fmt ("%s %d", ops[i].name, instr & 0x1);
 		break;
 	case LFSR_T: {
 		op->size = 4;
 		ut32 dword_instr = *(ut32 *)b;
 		if (dword_instr >> 28 != 0xf) {
-			strcpy (op->buf_asm, "invalid");
 			return -1;
 		}
 		ut8 reg_n = (dword_instr >> 4) & 0x3;
-		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %s, %d", ops[i].name,
-				  fsr[reg_n], (dword_instr & 0xf) << 8 |
-							  ((dword_instr >> 16) & 0xff));
+		buf_asm = sdb_fmt ("%s %s, %d", ops[i].name, fsr[reg_n],
+			(dword_instr & 0xf) << 8 | ((dword_instr >> 16) & 0xff));
 		break;
 	}
 	default:
-		sprintf (op->buf_asm, "unknown args");
+		buf_asm = "unknown args";
 	};
+	r_asm_op_set_asm (op, buf_asm);
 	return op->size;
 }

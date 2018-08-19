@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2016 - pancake */
+/* radare - LGPL - Copyright 2012-2018 - pancake */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -67,7 +67,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (len < 2) {
 		return -1;
 	}
-	buf_global = op->buf_asm;
+	buf_global = r_strbuf_get (&op->buf_asm);
 	Offset = a->pc;
 	if (len > sizeof (bytes)) {
 		len = sizeof (bytes);
@@ -86,14 +86,14 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.fprintf_func = &buf_fprintf;
 	disasm_obj.stream = stdout;
 	disasm_obj.mach = 0;
-	op->buf_asm[0] = '\0';
+	r_strbuf_set (&op->buf_asm, "");
 	if (a->bits == 16) {
 		op->size = ARCompact_decodeInstr ((bfd_vma)Offset, &disasm_obj);
 	} else {
 		op->size = ARCTangent_decodeInstr ((bfd_vma)Offset, &disasm_obj);
 	}
 	if (op->size == -1) {
-		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
+		r_strbuf_set (&op->buf_asm, "(data)");
 	}
 	return op->size;
 }

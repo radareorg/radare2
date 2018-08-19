@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2017 - pancake */
+/* radare - LGPL - Copyright 2012-2018 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -13,13 +13,14 @@ static int do_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 }
 
 static int do_assemble(RAsm *a, RAsmOp *op, const char *buf) {
-	return op->size = z80asm (op->buf, buf);
+	return op->size = z80asm ((ut8*)r_strbuf_get (&op->buf), buf);
 }
 
 RAsmPlugin r_asm_plugin_z80 = {
 	.name = "z80",
 	.desc = "Zilog Z80",
 	.license = "GPL",
+	.author = "condret",
 	.arch = "z80",
 	.bits = 8,
 	.endian = R_SYS_ENDIAN_NONE,

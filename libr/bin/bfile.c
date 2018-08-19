@@ -789,10 +789,11 @@ R_API void r_bin_file_free(void /*RBinFile*/ *bf_) {
 	if (plugin && plugin->destroy) {
 		plugin->destroy (a);
 	}
+	r_buf_free (a->buf);
+	a->buf = NULL;
 	if (a->curxtr && a->curxtr->destroy && a->xtr_obj) {
 		a->curxtr->free_xtr ((void *)(a->xtr_obj));
 	}
-	r_buf_free (a->buf);
 	// TODO: unset related sdb namespaces
 	if (a && a->sdb_addrinfo) {
 		sdb_free (a->sdb_addrinfo);
@@ -802,6 +803,7 @@ R_API void r_bin_file_free(void /*RBinFile*/ *bf_) {
 	a->o = NULL;
 	r_list_free (a->objs);
 	r_list_free (a->xtr_data);
+	r_buf_free (a->buf);
 	if (a->id != -1) {
 		// TODO: use r_storage api
 		r_id_pool_kick_id (a->rbin->ids->pool, a->id);

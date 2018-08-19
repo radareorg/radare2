@@ -8,7 +8,7 @@ DEPS+=r_reg r_search r_syscall r_socket r_fs r_magic r_crypto
 PCCFLAGS=@SSL_CFLAGS@ @CAPSTONE_CFLAGS@
 PCLIBS=@SSL_LDFLAGS@ @CAPSTONE_LDFLAGS@
 
-OBJS=core.o cmd.o file.o cconfig.o visual.o cio.o yank.o libs.o graph.o
+OBJS=core.o cmd.o cfile.o cconfig.o visual.o cio.o yank.o libs.o graph.o
 OBJS+=fortune.o hack.o vasm.o patch.o cbin.o log.o rtr.o cmd_api.o
 OBJS+=carg.o canal.o project.o gdiff.o asm.o vmenus.o disasm.o plugin.o
 OBJS+=task.o panels.o pseudo.o vmarks.o anal_tp.o blaze.o cundo.o
