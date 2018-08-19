@@ -5,7 +5,7 @@ files = [
   'demangle.c',
   'dwarf.c',
   'filter.c',
-  'bfile.c',
+  'file.c',
   'obj.c',
   'open.c',
   'p/bin_any.c',
