@@ -63,6 +63,7 @@
 #define PANEL_CONFIG_PAGE        10
 #define PANEL_CONFIG_SIDEPANEL_W 60
 #define PANEL_CONFIG_RESIZE_W    4
+#define PANEL_CONFIG_RESIZE_H    2
 
 static const int layoutMaxCount = 2;
 
@@ -159,6 +160,8 @@ static void handleLeftKey(RCore *core);
 static void handleRightKey(RCore *core);
 static void resizePanelLeft(RPanels *panels);
 static void resizePanelRight(RPanels *panels);
+static void resizePanelUp(RPanels *panels);
+static void resizePanelDown(RPanels *panels);
 static void handleTabKey(RCore *core, bool shift);
 static bool init(RCore *core, RPanels *panels, int w, int h);
 static bool initPanels(RCore *core, RPanels *panels);
@@ -1081,6 +1084,199 @@ beach:
 	free (targets2);
 }
 
+static void resizePanelUp(RPanels *panels) {
+	RPanel *panel = panels->panel;
+	RPanel *curPanel = &panel[panels->curnode];
+	int i, tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0;
+	bool isResized = false;
+	int cx0 = curPanel->x;
+	int cx1 = curPanel->x + curPanel->w - 1;
+	int cy0 = curPanel->y;
+	int cy1 = curPanel->y + curPanel->h - 1;
+	RPanel **targets1 = malloc (sizeof (RPanel *) * panels->n_panels);
+	RPanel **targets2 = malloc (sizeof (RPanel *) * panels->n_panels);
+	if (!targets1 || !targets2) {
+		goto beach;
+	}
+	if (cy0 > 1) {
+		for (i = 0; i < panels->n_panels; i++) {
+			if (i == panels->curnode) {
+				continue;
+			}
+			RPanel *p = &panel[i];
+			tx0 = p->x;
+			tx1 = p->x + p->w - 1;
+			ty0 = p->y;
+			ty1 = p->y + p->h - 1;
+			if (tx0 == cx0 && tx1 == cx1 && ty1 == cy0) {
+				if (cy0 - PANEL_CONFIG_RESIZE_H <= ty0) {
+					goto beach;
+				}
+				isResized = true;
+				p->h -= PANEL_CONFIG_RESIZE_H;
+				p->refresh = true;
+				break;
+			} else if (ty1 == cy0) {
+				targets1[cur1++] = p;
+			} else if (ty0 == cy0) {
+				targets2[cur2++] = p;
+			}
+		}
+		if (!isResized) {
+			for (i = 0; i < cur1; i++) {
+				targets1[i]->h -= PANEL_CONFIG_RESIZE_H;
+				targets1[i]->refresh = true;
+			}
+			for (i = 0; i < cur2; i++) {
+				targets2[i]->y -= PANEL_CONFIG_RESIZE_H;
+				targets2[i]->h += PANEL_CONFIG_RESIZE_H;
+				targets2[i]->refresh = true;
+			}
+		}
+		curPanel->refresh = true;
+		curPanel->y -= PANEL_CONFIG_RESIZE_H;
+		curPanel->h += PANEL_CONFIG_RESIZE_H;
+	} else {
+		if (cy1 - PANEL_CONFIG_RESIZE_H <= 1) {
+			goto beach;
+		}
+		for (i = 0; i < panels->n_panels; i++) {
+			if (i == panels->curnode) {
+				continue;
+			}
+			RPanel *p = &panel[i];
+			tx0 = p->x;
+			tx1 = p->x + p->w - 1;
+			ty0 = p->y;
+			ty1 = p->y + p->h - 1;
+			if (tx0 == cx0 && tx1 == cx1 && ty0 == cy1) {
+				isResized = true;
+				p->y -= PANEL_CONFIG_RESIZE_H;
+				p->h += PANEL_CONFIG_RESIZE_H;
+				p->refresh = true;
+			} else if (ty0 == cy1) {
+				targets1[cur1++] = p;
+			} else if (ty1 == cy1) {
+				targets2[cur2++] = p;
+			}
+		}
+		if (!isResized) {
+			for (i = 0; i < cur1; i++) {
+				targets1[i]->y -= PANEL_CONFIG_RESIZE_H;
+				targets1[i]->h += PANEL_CONFIG_RESIZE_H;
+				targets1[i]->refresh = true;
+			}
+			for (i = 0; i < cur2; i++) {
+				targets2[i]->h -= PANEL_CONFIG_RESIZE_H;
+				targets2[i]->refresh = true;
+			}
+		}
+		curPanel->refresh = true;
+		curPanel->h -= PANEL_CONFIG_RESIZE_H;
+	}
+beach:
+	free (targets1);
+	free (targets2);
+}
+
+static void resizePanelDown(RPanels *panels) {
+	RPanel *panel = panels->panel;
+	RPanel *curPanel = &panel[panels->curnode];
+	int i, tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0;
+	bool isResized = false;
+	int cx0 = curPanel->x;
+	int cx1 = curPanel->x + curPanel->w - 1;
+	int cy0 = curPanel->y;
+	int cy1 = curPanel->y + curPanel->h - 1;
+	RPanel **targets1 = malloc (sizeof (RPanel *) * panels->n_panels);
+	RPanel **targets2 = malloc (sizeof (RPanel *) * panels->n_panels);
+	if (!targets1 || !targets2) {
+		goto beach;
+	}
+	if (cy0 > 1) {
+		if (cy0 + PANEL_CONFIG_RESIZE_H >= cy1) {
+			goto beach;
+		}
+		for (i = 0; i < panels->n_panels; i++) {
+			if (i == panels->curnode) {
+				continue;
+			}
+			RPanel *p = &panel[i];
+			tx0 = p->x;
+			tx1 = p->x + p->w - 1;
+			ty0 = p->y;
+			ty1 = p->y + p->h - 1;
+			if (tx0 == cx0 && tx1 == cx1 && ty1 == cy0) {
+				isResized = true;
+				p->h += PANEL_CONFIG_RESIZE_H;
+				p->refresh = true;
+				break;
+			} else if (ty1 == cy0) {
+				targets1[cur1++] = p;
+			} else if (ty0 == cy0) {
+				targets2[cur2++] = p;
+			}
+		}
+		if (!isResized) {
+			for (i = 0; i < cur1; i++) {
+				targets1[i]->h += PANEL_CONFIG_RESIZE_H;
+				targets1[i]->refresh = true;
+			}
+			for (i = 0; i < cur2; i++) {
+				targets2[i]->y += PANEL_CONFIG_RESIZE_H;
+				targets2[i]->h -= PANEL_CONFIG_RESIZE_H;
+				targets2[i]->refresh = true;
+			}
+		}
+		curPanel->refresh = true;
+		curPanel->y += PANEL_CONFIG_RESIZE_H;
+		curPanel->h -= PANEL_CONFIG_RESIZE_H;
+	} else {
+		if (cy1 + PANEL_CONFIG_RESIZE_H >= panels->can->h - 1) {
+			goto beach;
+		}
+		for (i = 0; i < panels->n_panels; i++) {
+			if (i == panels->curnode) {
+				continue;
+			}
+			RPanel *p = &panel[i];
+			tx0 = p->x;
+			tx1 = p->x + p->w - 1;
+			ty0 = p->y;
+			ty1 = p->y + p->h - 1;
+			if (tx0 == cx0 && tx1 == cx1 && ty0 == cy1) {
+				if (cy1 + PANEL_CONFIG_RESIZE_H >= ty1) {
+					goto beach;
+				}
+				isResized = true;
+				p->y += PANEL_CONFIG_RESIZE_H;
+				p->h -= PANEL_CONFIG_RESIZE_H;
+				p->refresh = true;
+			} else if (ty0 == cy1) {
+				targets1[cur1++] = p;
+			} else if (ty1 == cy1) {
+				targets2[cur2++] = p;
+			}
+		}
+		if (!isResized) {
+			for (i = 0; i < cur1; i++) {
+				targets1[i]->y += PANEL_CONFIG_RESIZE_H;
+				targets1[i]->h -= PANEL_CONFIG_RESIZE_H;
+				targets1[i]->refresh = true;
+			}
+			for (i = 0; i < cur2; i++) {
+				targets2[i]->h += PANEL_CONFIG_RESIZE_H;
+				targets2[i]->refresh = true;
+			}
+		}
+		curPanel->refresh = true;
+		curPanel->h += PANEL_CONFIG_RESIZE_H;
+	}
+beach:
+	free (targets1);
+	free (targets2);
+}
+
 static void delPanel(RPanels *panels, int delPanelNum) {
 	int i;
 	for (i = delPanelNum; i < (panels->n_panels - 1); i++) {
@@ -1105,6 +1301,11 @@ static void delInvalidPanels(RPanels *panels) {
 	for (i = 1; i < panels->n_panels; i++) {
 		RPanel *panel = &panels->panel[i];
 		if (panel->w < 2) {
+			delPanel (panels, i);
+			delInvalidPanels (panels);
+			break;
+		}
+		if (panel->h < 2) {
 			delPanel (panels, i);
 			delInvalidPanels (panels);
 			break;
@@ -2016,6 +2217,7 @@ repeat:
 			" -      - split the current panel horizontally\n"
 			" *      - show pseudo code/r2dec in the current panel\n"
 			" [1-9]  - follow jmp/call identified by shortcut (like ;[1])\n"
+			" <>     - scroll panels vertically by page\n"
 			" b      - browse symbols, flags, configurations, classes, ...\n"
 			" c      - toggle cursor\n"
 			" C      - toggle color\n"
@@ -2024,16 +2226,16 @@ repeat:
 			" e      - change title and command of current panel\n"
 			" g      - show graph in the current panel\n"
 			" hjkl   - move around (left-down-up-right)\n"
+			" JK     - resize panels vertically\n"
 			" HL     - resize panels horizontally\n"
-			" JK     - scroll panels vertically by page\n"
 			" i      - insert hex\n"
 			" m      - move to the menu\n"
 			" M      - open new custom frame\n"
 			" nN     - create new panel with given command\n"
-			" r      - toggle jmphints/leahints\n"
 			" o      - go/seek to given offset\n"
 			" pP     - seek to next or previous scr.nkey\n"
 			" q      - quit, back to visual mode\n"
+			" r      - toggle jmphints/leahints\n"
 			" sS     - step in / step over\n"
 			" uU     - undo / redo seek\n"
 			" V      - go to the graph mode\n"
@@ -2109,21 +2311,21 @@ repeat:
 	case 'D':
 		replaceCmd (panels, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY);
 		break;
-	case 'J':
-		for (i = 0; i < PANEL_CONFIG_PAGE; i++) {
-			handleDownKey (core);
-		}
-		break;
-	case 'K':
-		for (i = 0; i < PANEL_CONFIG_PAGE; i++) {
-			handleUpKey (core);
-		}
-		break;
 	case 'j':
 		handleDownKey (core);
 		break;
 	case 'k':
 		handleUpKey (core);
+		break;
+	case '<':
+		for (i = 0; i < PANEL_CONFIG_PAGE; i++) {
+			handleUpKey (core);
+		}
+		break;
+	case '>':
+		for (i = 0; i < PANEL_CONFIG_PAGE; i++) {
+			handleDownKey (core);
+		}
 		break;
 	case '_':
 		r_core_visual_hud (core);
@@ -2176,6 +2378,14 @@ repeat:
 	case 'L':
 		r_cons_switchbuf (false);
 		resizePanelRight (panels);
+		break;
+	case 'J':
+		r_cons_switchbuf (false);
+		resizePanelDown(panels);
+		break;
+	case 'K':
+		r_cons_switchbuf (false);
+		resizePanelUp (panels);
 		break;
 	case 'g':
 		if (checkFunc (core)) {
