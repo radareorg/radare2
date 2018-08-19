@@ -302,7 +302,15 @@ static bool GH(r_resolve_symbol)(RCore *core, GHT *symbol, const char *symname) 
 found:
 	vaddr = GH(get_vaddr_symbol) (core, path, symname);
 	if (libc_addr != GHT_MAX && vaddr && vaddr != GHT_MAX) {
+#if __GLIBC_MINOR__ > 25
+#if HEAP32
+		*symbol = libc_addr + vaddr + 0x1bb000;
+#else
 		*symbol = libc_addr + vaddr;
+#endif
+#else
+		*symbol = libc_addr + vaddr;
+#endif
 		free (path);
 		return true;
 	}
@@ -976,7 +984,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena, GHT *in
 #if __GLIBC_MINOR__ > 25
 	GHT tcache_fd = GHT_MAX, tcache_tmp = GHT_MAX;
 #if HEAP32
-	*initial_brk = ( (brk_start >> 12) << 12 ) + sizeof (GH(RHeapTcache)) + MALLOC_ALIGNMENT + 0x418;
+	*initial_brk = ( (brk_start >> 12) << 12 ) + sizeof (GH(RHeapTcache)) + MALLOC_ALIGNMENT + 0x8;
 #else
 	*initial_brk = ( (brk_start >> 12) << 12 ) + sizeof (GH(RHeapTcache)) + MALLOC_ALIGNMENT;
 #endif
