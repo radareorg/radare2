@@ -66,8 +66,7 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
-	op->buf_asm[0] = '\0';
-	buf_global = op->buf_asm;
+	buf_global = r_strbuf_get (&op->buf_asm);
 	offset = a->pc;
 	if (len > INSN_BUFFER_SIZE) {
 		len = INSN_BUFFER_SIZE;
@@ -89,7 +88,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 
 	op->size = print_insn_xtensa ((bfd_vma)offset, &disasm_obj);
 	if (op->size == -1) {
-		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
+		r_asm_op_set_asm (op, "(data)");
 	}
 	return op->size;
 }

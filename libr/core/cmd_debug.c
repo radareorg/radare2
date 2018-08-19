@@ -794,15 +794,16 @@ static int step_until_inst(RCore *core, const char *instr, bool regex) {
 		// TODO: speedup if instructions are in the same block as the previous
 		r_io_read_at (core->io, pc, buf, sizeof (buf));
 		ret = r_asm_disassemble (core->assembler, &asmop, buf, sizeof (buf));
-		eprintf ("0x%08"PFMT64x" %d %s\n", pc, ret, asmop.buf_asm);
+		eprintf ("0x%08"PFMT64x" %d %s\n", pc, ret, r_asm_op_get_asm (&asmop)); // asmop.buf_asm);
 		if (ret > 0) {
+			const char *buf_asm = r_asm_op_get_asm (&asmop);
 			if (regex) {
-				if (r_regex_match (instr, "e", asmop.buf_asm)) {
+				if (r_regex_match (instr, "e", buf_asm)) {
 					eprintf ("Stop.\n");
 					break;
 				}
 			} else {
-				if (strstr (asmop.buf_asm, instr)) {
+				if (strstr (buf_asm, instr)) {
 					eprintf ("Stop.\n");
 					break;
 				}

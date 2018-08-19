@@ -51,16 +51,20 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 			free (opath);
 			return -1;
 		}
-		len = read (ofd, op->buf, R_ASM_BUFSIZE);
-		begin = r_mem_mem (op->buf, len, (const ut8*)"BEGINMARK", 9);
-		end = r_mem_mem (op->buf, len, (const ut8*)"ENDMARK", 7);
+		ut8 opbuf[32];
+		len = read (ofd, opbuf, sizeof (opbuf));
+		begin = r_mem_mem (opbuf, len, (const ut8*)"BEGINMARK", 9);
+		end = r_mem_mem (opbuf, len, (const ut8*)"ENDMARK", 7);
 		if (!begin || !end) {
 			eprintf ("Cannot find water marks\n");
 			len = 0;
 		} else {
-			len = (int)(size_t)(end-begin-9);
-			if (len>0) memcpy (op->buf, begin+9, len);
-			else len = 0;
+			len = (int)(size_t)(end - begin - 9);
+			if (len>0) {
+				r_strbuf_setbin (&op->buf, begin + 9, len);
+			} else {
+				len = 0;
+			}
 		}
 	} else {
 		eprintf ("Error running: as %s -o %s", ipath, opath);

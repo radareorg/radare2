@@ -4541,7 +4541,7 @@ static int oprep(RAsm *a, ut8 *data, const Opcode *op) {
 }
 
 static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
-	ut8 *data = ao->buf;
+	ut8 *data = r_strbuf_get (&ao->buf);
 	char op[128];
 	LookupTable *lt_ptr;
 	int retval = -1;

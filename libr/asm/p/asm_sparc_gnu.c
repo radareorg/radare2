@@ -38,11 +38,11 @@ static void print_address(bfd_vma address, struct disassemble_info *info) {
 static int buf_fprintf(void *stream, const char *format, ...) {
 	va_list ap;
 	char tmp[1024];
-	if (!buf_global)
-		return 0;
 	va_start (ap, format);
-	vsnprintf (tmp, sizeof (tmp), format, ap);
-	strcat (buf_global, tmp);
+	if (buf_global) {
+		vsnprintf (tmp, sizeof (tmp), format, ap);
+		strcat (buf_global, tmp);
+	}
 	va_end (ap);
 	return 0;
 }
@@ -52,7 +52,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (len < 4) {
 		return -1;
 	}
-	buf_global = op->buf_asm;
+	buf_global = r_strbuf_get (&op->buf_asm);
 	Offset = a->pc;
 	// disasm inverted
 	r_mem_swapendian (bytes, buf, 4); // TODO handle thumb
@@ -71,15 +71,13 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			   ? bfd_mach_sparc_v9b
 			   : 0);
 
-	op->buf_asm[0] = '\0';
 	op->size = print_insn_sparc ((bfd_vma)Offset, &disasm_obj);
 
-	if (!strncmp (op->buf_asm, "unknown", 7)) {
-		strncpy (op->buf_asm, "invalid", R_ASM_BUFSIZE);
+	if (!strncmp (r_strbuf_get (&op->buf_asm), "unknown", 7)) {
+		r_asm_op_set_asm (op, "invalid");
 	}
-
 	if (op->size == -1) {
-		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
+		r_asm_op_set_asm (op, "(data)");
 	}
 	return op->size;
 }

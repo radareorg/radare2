@@ -19,8 +19,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 	int ret = v850_decode_command (buf, len, &cmd);
 	if (ret > 0) {
-		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %s",
-			  cmd.instr, cmd.operands);
+		r_asm_op_set_asm (op, sdb_fmt ("%s %s", cmd.instr, cmd.operands));
 	}
 	return op->size = ret;
 }

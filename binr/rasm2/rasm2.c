@@ -290,11 +290,12 @@ static int rasm_disasm(char *buf, ut64 offset, int len, int bits, int ascii, int
 			int dr = r_asm_disassemble (a, &op, data + ret, len - ret);
 			if (dr == -1 || op.size < 1) {
 				op.size = 1;
-				strcpy (op.buf_asm, "invalid");
-				sprintf (op.buf_hex, "%02x", data[ret]);
+				r_asm_op_set_asm (&op, "invalid");
+				r_strbuf_set (&op.buf_hex, sdb_fmt ("%02x", data[ret]));
 			}
 			printf ("0x%08" PFMT64x "  %2d %24s  %s\n",
-				a->pc, op.size, op.buf_hex, op.buf_asm);
+				a->pc, op.size, r_asm_op_get_hex (&op),
+				r_asm_op_get_asm (&op));
 			ret += op.size;
 			r_asm_set_pc (a, offset + ret);
 		}

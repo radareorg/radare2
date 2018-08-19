@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014 - pancake */
+/* radare2 - LGPL - Copyright 2014-2018 - pancake */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -32,27 +32,30 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 }
 
 static void print_address(bfd_vma address, struct disassemble_info *info) {
-	char tmp[32];
-	if (!buf_global)
-		return;
-	sprintf(tmp, "0x%08"PFMT64x"", (ut64)address);
-	strcat(buf_global, tmp);
+	if (buf_global) {
+		char tmp[32];
+		snprintf (tmp, sizeof (tmp), "0x%08"PFMT64x"", (ut64)address);
+		strcat (buf_global, tmp);
+	}
 }
 
 static int buf_fprintf(void *stream, const char *format, ...) {
 	int flen, glen;
 	va_list ap;
 	char *tmp;
-	if (!buf_global)
+	if (!buf_global) {
 		return 0;
+	}
 	va_start (ap, format);
 	flen = strlen (format);
 	glen = strlen (buf_global);
 	tmp = malloc (flen + glen + 2);
-	if (!tmp) return 0;
+	if (!tmp) {
+		return 0;
+	}
 	memcpy (tmp, buf_global, glen);
 	memcpy (tmp+glen, format, flen);
-	tmp[flen+glen] = 0;
+	tmp[flen + glen] = 0;
 	// XXX: overflow here?
 	vsprintf (buf_global, tmp, ap);
 	va_end (ap);
@@ -62,9 +65,10 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 
 static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
-	if (len<4)
+	if (len < 4) {
 		return -1;
-	buf_global = op->buf_asm;
+	}
+	buf_global = r_strbuf_get (&op->buf_asm);
 	Offset = a->pc;
 	memcpy (bytes, buf, 4); // TODO handle thumb
 
@@ -80,14 +84,14 @@ static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) 
 	disasm_obj.fprintf_func = &buf_fprintf;
 	disasm_obj.stream = stdout;
 
-	op->buf_asm[0]='\0';
-	if (disasm_obj.endian == BFD_ENDIAN_BIG)
+	if (disasm_obj.endian == BFD_ENDIAN_BIG) {
 		op->size = print_insn_big_nios2 ((bfd_vma)Offset, &disasm_obj);
-	else op->size = print_insn_little_nios2 ((bfd_vma)Offset, &disasm_obj);
-
-	if (op->size == -1)
-		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
-
+	} else {
+		op->size = print_insn_little_nios2 ((bfd_vma)Offset, &disasm_obj);
+	}
+	if (op->size == -1) {
+		r_asm_op_set_asm (op, "(data)");
+	}
 	return op->size;
 }
 

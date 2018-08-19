@@ -100,27 +100,29 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (a->features && *a->features) {
 		if (!check_features (a, insn)) {
 			op->size = insn->size;
-			strcpy (op->buf_asm, "illegal");
+			r_asm_op_set_asm (op, "illegal");
 		}
 	}
 	if (op->size == 0 && n > 0 && insn->size > 0) {
 		char *ptrstr;
 		op->size = insn->size;
-		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s%s%s",
+		char *buf_asm = sdb_fmt ("%s%s%s",
 				insn->mnemonic, insn->op_str[0]?" ":"",
 				insn->op_str);
-		ptrstr = strstr (op->buf_asm, "ptr ");
+		ptrstr = strstr (buf_asm, "ptr ");
 		if (ptrstr) {
 			memmove (ptrstr, ptrstr + 4, strlen (ptrstr + 4) + 1);
 		}
+		r_asm_op_set_asm (op, buf_asm);
 	} else {
 		decompile_vm (a, op, buf, len);
 	}
 	if (a->syntax == R_ASM_SYNTAX_JZ) {
-		if (!strncmp (op->buf_asm, "je ", 3)) {
-			memcpy (op->buf_asm, "jz", 2);
-		} else if (!strncmp (op->buf_asm, "jne ", 4)) {
-			memcpy (op->buf_asm, "jnz", 3);
+		char *buf_asm = r_strbuf_get (&op->buf_asm);
+		if (!strncmp (buf_asm, "je ", 3)) {
+			memcpy (buf_asm, "jz", 2);
+		} else if (!strncmp (buf_asm, "jne ", 4)) {
+			memcpy (buf_asm, "jnz", 3);
 		}
 	}
 #if 0

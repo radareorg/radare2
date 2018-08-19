@@ -50,8 +50,9 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	int flen, glen;
 	va_list ap;
 	char *tmp;
-	if (!buf_global)
+	if (!buf_global) {
 		return 0;
+	}
 	va_start (ap, format);
 	flen = strlen (format);
 	glen = strlen (buf_global);
@@ -69,10 +70,10 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
-	op->buf_asm[0]='\0';
-	if (len<4)
+	if (len < 4) {
 		return -1;
-	buf_global = op->buf_asm;
+	}
+	buf_global = r_strbuf_get (&op->buf_asm);
 	bytes = buf;
 	bytes_size = len;
 	Offset = a->pc;
@@ -87,11 +88,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.endian = BFD_ENDIAN_LITTLE;
 	disasm_obj.fprintf_func = &buf_fprintf;
 	disasm_obj.stream = stdout;
-
 	op->size = print_insn_vax ((bfd_vma)Offset, &disasm_obj);
 
-	if (op->size == -1)
-		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
+	if (op->size == -1) {
+		r_asm_op_set_asm (op, "(data)");
+	}
 	return op->size;
 }
 
