@@ -37,7 +37,7 @@ files = [
   'core.c',
   'cundo.c',
   'disasm.c',
-  'file.c',
+  'cfile.c',
   'fortune.c',
   'gdiff.c',
   'graph.c',
