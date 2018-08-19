@@ -1229,24 +1229,25 @@ static int init(struct MACH0_(obj_t)* bin) {
 	return true;
 }
 
-void* MACH0_(mach0_free)(struct MACH0_(obj_t)* bin) {
-	if (!bin) {
+void* MACH0_(mach0_free)(struct MACH0_(obj_t)* mo) {
+	if (!mo) {
 		return NULL;
 	}
-	free (bin->segs);
-	free (bin->sects);
-	free (bin->symtab);
-	free (bin->symstr);
-	free (bin->indirectsyms);
-	free (bin->imports_by_ord);
-	free (bin->dyld_info);
-	free (bin->toc);
-	free (bin->modtab);
-	free (bin->libs);
-	free (bin->func_start);
-	free (bin->signature);
-	r_buf_free (bin->b);
-	free (bin);
+	free (mo->segs);
+	free (mo->sects);
+	free (mo->symtab);
+	free (mo->symstr);
+	free (mo->indirectsyms);
+	free (mo->imports_by_ord);
+	free (mo->dyld_info);
+	free (mo->toc);
+	free (mo->modtab);
+	free (mo->libs);
+	free (mo->func_start);
+	free (mo->signature);
+	// this is freed in bfile.c:792
+	// r_buf_free (mo->b);
+	free (mo);
 	return NULL;
 }
 
