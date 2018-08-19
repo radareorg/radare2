@@ -2916,7 +2916,8 @@ loop:
 	esil->skip = 0;
 	esil->parse_goto = -1;
 	esil->parse_stop = 0;
-	r_anal_esil_stack_free (esil);
+// memleak or failing aetr test. wat du
+//	r_anal_esil_stack_free (esil);
 	esil->parse_goto_count = esil->anal? esil->anal->esil_goto_limit: R_ANAL_ESIL_GOTO_LIMIT;
 	str = ostr;
 repeat:
