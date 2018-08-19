@@ -97,8 +97,9 @@ R_API void r_anal_esil_trace (RAnalEsil *esil, RAnalOp *op) {
 	}
 	ocbs = esil->cb;
 	ocbs_set = true;
-	if (!DB) DB = sdb_new0 ();
-
+	if (!DB) {
+		DB = sdb_new0 ();
+	}
 	sdb_num_set (DB, "idx", esil->trace_idx, 0);
 	sdb_num_set (DB, KEY ("addr"), op->addr, 0);
 //	sdb_set (DB, KEY ("opcode"), op->mnemonic, 0);

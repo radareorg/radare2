@@ -1336,7 +1336,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		ret = r_anal_op (core->anal, &op, core->offset + idx, buf + idx, len - idx, R_ANAL_OP_MASK_ESIL);
 		esilstr = R_STRBUF_SAFEGET (&op.esil);
 		opexstr = R_STRBUF_SAFEGET (&op.opex);
-		char *mnem = strdup (asmop.buf_asm);
+		char *mnem = strdup (r_asm_op_get_asm (&asmop));
 		char *sp = strchr (mnem, ' ');
 		if (sp) {
 			*sp = 0;
@@ -1361,16 +1361,18 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		}
 		size = (hint && hint->size)? hint->size: op.size;
 		if (fmt == 'd') {
-			char *opname = strdup (asmop.buf_asm);
-			r_str_split (opname, ' ');
-			char *d = r_asm_describe (core->assembler, opname);
-			if (d && *d) {
-				r_cons_printf ("%s: %s\n", opname, d);
-				free (d);
-			} else {
-				eprintf ("Unknown opcode\n");
+			char *opname = strdup (r_asm_op_get_asm (&asmop));
+			if (opname) {
+				r_str_split (opname, ' ');
+				char *d = r_asm_describe (core->assembler, opname);
+				if (d && *d) {
+					r_cons_printf ("%s: %s\n", opname, d);
+					free (d);
+				} else {
+					eprintf ("Unknown opcode\n");
+				}
+				free (opname);
 			}
-			free (opname);
 		} else if (fmt == 'e') {
 			if (*esilstr) {
 				if (use_color) {
@@ -1404,7 +1406,7 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				// pc+33
 				r_parse_varsub (core->parser, NULL,
 					core->offset + idx,
-					asmop.size, asmop.buf_asm,
+					asmop.size, r_asm_op_get_asm (&asmop),
 					strsub, sizeof (strsub));
 				{
 					ut64 killme = UT64_MAX;
@@ -3434,7 +3436,6 @@ repeat:
 			core->dbg->reg = reg;
 		} else {
 			r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
-
 			if (core->anal->cur && core->anal->cur->esil_post_loop) {
 				core->anal->cur->esil_post_loop (esil, &op);
 			}
@@ -5431,14 +5432,15 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_asm_disassemble (core->assembler, &asmop, buf, size);
 					char str[512];
 					fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
+					r_str_ncpy (str, r_asm_op_get_asm (&asmop), sizeof (str) - 1);
 					if (asm_varsub) {
 						r_parse_varsub (core->parser, fcn, ref->addr, asmop.size,
-								asmop.buf_asm, asmop.buf_asm, sizeof (asmop.buf_asm));
+							str, str, sizeof (str));
 					}
 					r_parse_filter (core->parser, core->flags,
-							asmop.buf_asm, str, sizeof (str), core->print->big_endian);
-
-					r_cons_printf ("{\"from\":%" PFMT64u ",\"type\":\"%s\",\"opcode\":\"%s\"", ref->addr, r_anal_xrefs_type_tostring (ref->type), str);
+						str, str, sizeof (str), core->print->big_endian);
+					r_cons_printf ("{\"from\":%" PFMT64u ",\"type\":\"%s\",\"opcode\":\"%s\"",
+						ref->addr, r_anal_xrefs_type_tostring (ref->type), str);
 					if (fcn) {
 						r_cons_printf (",\"fcn_addr\":%"PFMT64u",\"fcn_name\":\"%s\"", fcn->addr, fcn->name);
 					}
@@ -5495,12 +5497,17 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_asm_disassemble (core->assembler, &asmop, buf, size);
 
 					fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
+					int ba_len = r_strbuf_length (&asmop.buf_asm) + 128;
+					char *ba = malloc (ba_len);
 					if (asm_varsub) {
+						strcpy (ba, r_strbuf_get (&asmop.buf_asm));
 						r_parse_varsub (core->parser, fcn, ref->addr, asmop.size,
-								asmop.buf_asm, asmop.buf_asm, sizeof (asmop.buf_asm));
+								ba, ba, sizeof (asmop.buf_asm));
 					}
 					r_parse_filter (core->parser, core->flags,
-							asmop.buf_asm, str, sizeof (str), core->print->big_endian);
+							ba, str, sizeof (str), core->print->big_endian);
+					r_asm_op_set_asm (&asmop, ba);
+					free (ba);
 					if (has_color) {
 						buf_asm = r_print_colorize_opcode (core->print, str,
 							core->cons->pal.reg, core->cons->pal.num, false, fcn ? fcn->addr : 0);
@@ -5577,7 +5584,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_asm_set_pc (core->assembler, ref->at);
 					r_asm_disassemble (core->assembler, &asmop, buf, 12);
 					r_parse_filter (core->parser, core->flags,
-							asmop.buf_asm, str, sizeof (str), core->print->big_endian);
+						r_asm_op_get_asm (&asmop),
+						str, sizeof (str), core->print->big_endian);
 					if (has_color) {
 						buf_asm = r_print_colorize_opcode (core->print, str,
 							core->cons->pal.reg, core->cons->pal.num, false, fcn ? fcn->addr : 0);

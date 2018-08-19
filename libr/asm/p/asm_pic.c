@@ -17,8 +17,7 @@ static int asm_pic_disassemble(RAsm *a, RAsmOp *op, const ut8 *b, int l) {
 	if (a->cpu && strcasecmp (a->cpu, "pic18") == 0) {
 		return pic_pic18_disassemble (a, op, b, l);
 	}
-
-	snprintf (op->buf_asm, R_ASM_BUFSIZE - 1, "Unknown asm.cpu");
+	r_asm_op_set_asm (op, "invalid asm.cpu");
 	return op->size = -1;
 }
 

@@ -73,16 +73,16 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
-	op->buf_asm[0]='\0';
-	if (len<4)
+	if (len < 4) {
 		return -1;
-	buf_global = op->buf_asm;
+	}
+	buf_global = r_strbuf_get (&op->buf_asm);
 	Offset = a->pc;
 	memcpy (bytes, buf, 4); // TODO handle thumb
 
 	/* prepare disassembler */
 	memset (&disasm_obj, '\0', sizeof (struct disassemble_info));
-	disasm_obj.disassembler_options=(a->bits==64)?"64":"";
+	disasm_obj.disassembler_options = (a->bits == 64)?"64":"";
 	disasm_obj.buffer = bytes;
 	disasm_obj.read_memory_func = &hppa_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
@@ -93,9 +93,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.stream = stdout;
 
 	op->size = print_insn_hppa ((bfd_vma)Offset, &disasm_obj);
-	if (op->size == -1)
-		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
-
+	if (op->size == -1) {
+		r_strbuf_set (&op->buf_asm, "(data)");
+	}
 	return op->size;
 }
 

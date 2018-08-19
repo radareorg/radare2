@@ -483,7 +483,7 @@ static RBinSymbol *convert_symbol(struct Elf_(r_bin_elf_obj_t) *bin,
 	if (!(ptr = R_NEW0 (RBinSymbol))) {
 		return NULL;
 	}
-	ptr->name = symbol->name[0] ? r_str_newf (namefmt, &symbol->name[0]) : strdup("");
+	ptr->name = symbol->name[0] ? r_str_newf (namefmt, &symbol->name[0]) : strdup ("");
 	ptr->forwarder = r_str_const ("NONE");
 	ptr->bind = r_str_const (symbol->bind);
 	ptr->type = r_str_const (symbol->type);
@@ -550,18 +550,15 @@ static RList* symbols(RBinFile *bf) {
 		if (!symbol[i].size) {
 			continue;
 		}
-
 		ptr = convert_symbol (bin, &symbol[i], "imp.%s");
 		if (!ptr) {
 			break;
 		}
-
 		// special case where there is not entry in the plt for the import
 		if (ptr->vaddr == UT32_MAX) {
 			ptr->paddr = 0;
 			ptr->vaddr = 0;
 		}
-
 		insert_symbol (bin, ptr, symbol[i].is_sht_null, ret);
 	}
 	return ret;

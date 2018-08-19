@@ -384,7 +384,6 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	//TODO
 	return -1;
 }
-
 #endif
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
@@ -392,13 +391,13 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	instr.value = buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3];
 	instr.addr = a->pc;
 	if (r_asm_lm32_decode (&instr)) {
-		strcpy (op->buf_asm, "invalid");
+		r_strbuf_set (&op->buf_asm, "invalid");
 		a->invhex = 1;
 		return -1;
 	}
 	//op->buf_asm is 256 chars long, which is more than sufficient
-	if (r_asm_lm32_stringify (&instr, op->buf_asm)) {
-		strcpy (op->buf_asm, "invalid");
+	if (r_asm_lm32_stringify (&instr, r_strbuf_get (&op->buf_asm))) {
+		r_strbuf_set (&op->buf_asm, "invalid");
 		a->invhex = 1;
 		return -1;
 	}
@@ -409,6 +408,7 @@ RAsmPlugin r_asm_plugin_lm32 = {
 	.name = "lm32",
 	.arch = "lm32",
 	.desc = "disassembly plugin for Lattice Micro 32 ISA",
+	.author = "Felix Held",
 	.license = "BSD",
 	.bits = 32,
 	.endian = R_SYS_ENDIAN_BIG,

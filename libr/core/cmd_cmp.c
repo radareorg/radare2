@@ -326,7 +326,7 @@ static void cmd_cmp_watcher(RCore *core, const char *input) {
 
 static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 	RAsmOp op, op2;
-	int i, j, iseq;
+	int i, j;
 	char colpad[80];
 	int hascolor = r_config_get_i (core->config, "scr.color");
 	int cols = r_config_get_i (core->config, "hex.cols") * 2;
@@ -350,10 +350,10 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 				buf + j, core->blocksize - j);
 
 			// show output
-			iseq = (!strcmp (op.buf_asm, op2.buf_asm));
-			memset (colpad, ' ', sizeof(colpad));
+			bool iseq = r_strbuf_equals (&op.buf_asm, &op2.buf_asm);
+			memset (colpad, ' ', sizeof (colpad));
 			{
-				int pos = strlen (op.buf_asm);
+				int pos = strlen (r_strbuf_get (&op.buf_asm));
 				pos = (pos > cols)? 0: cols - pos;
 				colpad[pos] = 0;
 			}
@@ -390,7 +390,7 @@ static int cmd_cmp_disasm(RCore *core, const char *input, int mode) {
 				buf + j, core->blocksize - j);
 
 			// show output
-			iseq = (!strcmp (op.buf_asm, op2.buf_asm));
+			bool iseq = r_strbuf_equals (&op.buf_asm, &op2.buf_asm); // (!strcmp (op.buf_asm, op2.buf_asm));
 			if (iseq) {
 				r_cons_printf (" 0x%08"PFMT64x "  %s\n",
 					core->offset + i, op.buf_asm);
