@@ -842,6 +842,9 @@ R_API void r_buf_fini(RBuffer *b) {
 		return;
 	}
 	if (b->parent) {
+		if (b->parent == b) {
+			return;
+		}
 		r_buf_free (b->parent);
 		b->parent = NULL;
 	}

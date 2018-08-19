@@ -850,11 +850,12 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 
 	// decode instruction here
 	r_asm_set_pc (core->assembler, addr);
+	r_asm_op_init (&asmop);
 	if (r_asm_disassemble (core->assembler, &asmop, ptr, len) > 0) {
 		op->mnemonic = strdup (r_strbuf_get (&asmop.buf_asm));
 	}
+	r_asm_op_fini (&asmop);
 	return op;
-
 err_op:
 	free (op);
 	return NULL;
