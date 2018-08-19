@@ -804,6 +804,7 @@ R_API void r_bin_file_free(void /*RBinFile*/ *bf_) {
 	a->o = NULL;
 	r_list_free (a->objs);
 	r_list_free (a->xtr_data);
+	r_buf_free (a->buf);
 	if (a->id != -1) {
 		// TODO: use r_storage api
 		r_id_pool_kick_id (a->rbin->ids->pool, a->id);
