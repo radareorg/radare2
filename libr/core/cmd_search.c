@@ -1782,7 +1782,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 				}
 			}
 			if ((aop.type == R_ANAL_OP_TYPE_SWI) && ret) { // && (aop.val > 10)) {
-				if (cmd_search_isThumb(core)) {
+				if (cmd_search_isThumb (core)) {
 					off = aop.val;
 				} else {
 #if USE_EMULATION

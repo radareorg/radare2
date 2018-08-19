@@ -1219,17 +1219,14 @@ R_API char *cmd_syscall_dostr(RCore *core, int n, ut64 addr) {
 	char str[64];
 	if (n == -1) {
 		if (addr && archIsThumb (core)) {
-			RAnalOp aop = {0};
-			ut8 buf[64];
-			r_io_read_at_mapped (core->io, addr, buf, sizeof(buf));
-			r_anal_op (core->anal, &aop, core->offset, buf, sizeof(buf), R_ANAL_OP_MASK_BASIC);
-			n = aop.val;
-			r_anal_op_fini (&aop);
+			RAnalOp *aop = r_core_anal_op (core, addr, R_ANAL_OP_MASK_BASIC);
+			n = aop->val;
+			r_anal_op_free (aop);
 		} else {
 			n = (int)r_debug_reg_get (core->dbg, "oeax");
 			if (!n || n == -1) {
 				const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
-				n = (int)r_debug_reg_get (core->dbg, a0);
+				n = (a0 == NULL)? -1: (int)r_debug_reg_get (core->dbg, a0);
 			}
 		}
 	}
@@ -6747,7 +6744,7 @@ static void cmd_anal_aad(RCore *core, const char *input) {
 }
 
 
-static bool archIsMipsOrThumb(RCore *core) {
+static bool archIsArmOrThumb(RCore *core) {
 	RAsm *as = core ? core->assembler : NULL;
 	if (as && as->cur && as->cur->arch) {
 		if (r_str_startswith (as->cur->arch, "mips")) {
@@ -6767,7 +6764,7 @@ const bool archIsMips (RCore *core) {
 }
 
 void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk, int count) {
-	bool isarm = archIsMipsOrThumb (core);
+	bool isarm = archIsArmOrThumb (core);
 	if (isarm) {
 		if (to & 1) {
 			// .dword 0x000080b9 in reality is 0x000080b8

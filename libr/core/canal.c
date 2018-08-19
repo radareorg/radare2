@@ -4040,7 +4040,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		}
 		if (op.type == R_ANAL_OP_TYPE_SWI) {
 			r_flag_space_set (core->flags, "syscalls");
-			int snv = canal_isThumb (core) ? op.val : (int)r_reg_getv (core->anal->reg, sn);
+			int snv = canal_isThumb (core)? op.val: (int)r_reg_getv (core->anal->reg, sn);
 			RSyscallItem *si = r_syscall_get (core->anal->syscall, snv, -1);
 			if (si) {
 			//	eprintf ("0x%08"PFMT64x" SYSCALL %-4d %s\n", cur, snv, si->name);
