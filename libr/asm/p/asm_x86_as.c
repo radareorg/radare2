@@ -11,18 +11,19 @@
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	char *ipath, *opath;
-	int ifd, ofd;
 	const char *syntaxstr = "";
 	char asm_buf[R_ASM_BUFSIZE];
 	int len = 0;
 
-	ifd = r_file_mkstemp ("r_as", &ipath);
-	if (ifd == -1)
+	int ifd = r_file_mkstemp ("r_as", &ipath);
+	if (ifd == -1) {
 		return -1;
+	}
 
-	ofd = r_file_mkstemp ("r_as", &opath);
+	int ofd = r_file_mkstemp ("r_as", &opath);
 	if (ofd == -1) {
 		free (ipath);
+		close (ifd);
 		return -1;
 	}
 
@@ -45,22 +46,27 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	if (!r_sys_cmdf ("as %s -o %s", ipath, opath)) {
 		const ut8 *begin, *end;
 		close (ofd);
-		ofd = open (opath, O_BINARY|O_RDONLY);
+// r_sys_cmdf ("cat %s", opath);
+		ofd = r_sandbox_open (opath, O_BINARY|O_RDONLY, 0644);
 		if (ofd < 0) {
 			free (ipath);
 			free (opath);
 			return -1;
 		}
-		len = read (ofd, op->buf, R_ASM_BUFSIZE);
-		begin = r_mem_mem (op->buf, len, (const ut8*)"BEGINMARK", 9);
-		end = r_mem_mem (op->buf, len, (const ut8*)"ENDMARK", 7);
+		ut8 opbuf[512] = {0};
+		len = read (ofd, opbuf, sizeof (opbuf));
+		begin = r_mem_mem (opbuf, len, (const ut8*)"BEGINMARK", 9);
+		end = r_mem_mem (opbuf, len, (const ut8*)"ENDMARK", 7);
 		if (!begin || !end) {
 			eprintf ("Cannot find water marks\n");
 			len = 0;
 		} else {
-			len = (int)(size_t)(end-begin-9);
-			if (len>0) memcpy (op->buf, begin+9, len);
-			else len = 0;
+			len = (int)(size_t)(end - begin - 9);
+			if (len > 0) {
+				r_asm_op_set_buf (op, begin + 9, len);
+			} else {
+				len = 0;
+			}
 		}
 	} else {
 		eprintf ("Error running: as %s -o %s", ipath, opath);

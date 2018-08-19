@@ -176,12 +176,11 @@ R_API void r_bin_info_free(RBinInfo *rb) {
 
 R_API RBinImport *r_bin_import_clone(RBinImport *o) {
 	RBinImport *res = r_mem_dup (o, sizeof (*o));
-	if (!res) {
-		return NULL;
+	if (res) {
+		res->name = R_STR_DUP (o->name);
+		res->classname = R_STR_DUP (o->classname);
+		res->descriptor = R_STR_DUP (o->descriptor);
 	}
-	res->name = R_STR_DUP (o->name);
-	res->classname = R_STR_DUP (o->classname);
-	res->descriptor = R_STR_DUP (o->descriptor);
 	return res;
 }
 

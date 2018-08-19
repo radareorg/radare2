@@ -96,7 +96,9 @@ static int openfile(const char *f, int x) {
 		}
 	}
 #if __UNIX__
-	if (x) fchmod (fd, 0755);
+	if (x) {
+		fchmod (fd, 0755);
+	}
 #endif
 #if _MSC_VER
 	_chsize (fd, 0);

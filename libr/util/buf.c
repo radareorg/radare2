@@ -837,11 +837,14 @@ R_API void r_buf_deinit(RBuffer *b) {
 	} else R_FREE (b->buf);
 }
 
-R_API void r_buf_free(RBuffer *b) {
+R_API void r_buf_fini(RBuffer *b) {
 	if (!b) {
 		return;
 	}
 	if (b->parent) {
+		if (b->parent == b) {
+			return;
+		}
 		r_buf_free (b->parent);
 		b->parent = NULL;
 	}
@@ -852,7 +855,11 @@ R_API void r_buf_free(RBuffer *b) {
 	if (!b->ro) {
 		r_buf_deinit (b);
 	}
-	R_FREE (b);
+}
+
+R_API void r_buf_free(RBuffer *b) {
+	r_buf_fini (b);
+	free (b);
 }
 
 R_API int r_buf_append_string (RBuffer *b, const char *str) {

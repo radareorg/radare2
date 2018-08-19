@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2015 - pancake, dark_k3y */
+/* radare - LGPL - Copyright 2010-2018 - pancake, dark_k3y */
 /* AVR assembler realization by Alexander Bolshev aka @dark_k3y, LGPL -- 2015,
    heavily based (and using!) on disassemble module */
 
@@ -14,11 +14,13 @@
 #include "../arch/avr/disasm.c"
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	int ret = op->size = avrdis (op->buf_asm, a->pc, buf, len);
-	if (op->buf_asm[0] == '.') {
-		op->buf_asm[0] = 0;
+	char buf_asm[32] = {0};
+	op->size = avrdis (buf_asm, a->pc, buf, len);
+	if (*buf_asm == '.') {
+		*buf_asm = 0;
 	}
-	return ret;
+	r_strbuf_set (&op->buf_asm, buf_asm);
+	return op->size;
 }
 
 extern instructionInfo instructionSet[AVR_TOTAL_INSTRUCTIONS];
@@ -76,8 +78,12 @@ static int parse_specialreg(const char *reg) {
 /* gets the number from string
    duplicate from asm_x86_nz.c -- may be create a generic function? */
 static int getnum(RAsm *a, const char *s) {
-	if (!s) return 0;
-	if (*s=='$') s++;
+	if (!s) {
+		return 0;
+	}
+	if (*s == '$') {
+		s++;
+	}
 	return r_num_math (a->num, s);
 }
 
@@ -115,9 +121,10 @@ static int search_instruction(RAsm *a, char instr[3][MAX_TOKEN_SIZE], int args) 
 					&& instructionSet[i].operandTypes[1] == OPERAND_LONG_ABSOLUTE_ADDRESS) {
 					// ineffective, but needed for lds/sts and other cases
 					if (strlen(instr[2]) > 0) {
-						op2 = getnum(a, instr[2]);
-						if (op2 > 127)
+						op2 = getnum (a, instr[2]);
+						if (op2 > 127) {
 							return i;
+						}
 					}
 				// handling st & std instruction with 2 args
 				} else if (instructionSet[i].mnemonic[0] == 's'
@@ -133,9 +140,10 @@ static int search_instruction(RAsm *a, char instr[3][MAX_TOKEN_SIZE], int args) 
 					&& instructionSet[i].operandTypes[0] == OPERAND_LONG_ABSOLUTE_ADDRESS) {
 					// same for 1st operand of sts
 					if (strlen(instr[1]) > 0) {
-						op1 = getnum(a, instr[1]);
-						if (op1 > 127)
+						op1 = getnum (a, instr[1]);
+						if (op1 > 127) {
 							return i;
+						}
 					}
 				} else {
 					return i; // it's not st/ld/lpm-like instruction with 2 args
@@ -404,7 +412,7 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 
 	// copying result to radare struct
 	if (len > 0) {
-		memcpy (ao->buf, &coded, len);
+		r_strbuf_setbin (&ao->buf, (const ut8*)&coded, len);
 	}
 	return len;
 }

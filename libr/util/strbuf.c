@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2014 - pancake */
+/* radare - LGPL - Copyright 2013-2018 - pancake */
 
 #include "r_types.h"
 #include "r_util.h"
@@ -12,23 +12,25 @@ R_API RStrBuf *r_strbuf_new(const char *str) {
 	return s;
 }
 
+R_API bool r_strbuf_equals(RStrBuf *sa, RStrBuf *sb) {
+	if (!sa || !sb || sa->len != sb->len) { // faster comparisons
+		return false;
+	}
+	return strcmp (r_strbuf_get (sa), r_strbuf_get (sb)) == 0;
+}
+
+R_API int r_strbuf_length(RStrBuf *sb) {
+	return sb? sb->len: 0;
+}
+
 R_API void r_strbuf_init(RStrBuf *sb) {
 	memset (sb, 0, sizeof (RStrBuf));
 }
 
-R_API bool r_strbuf_set(RStrBuf *sb, const char *s) {
-	int l;
-	if (!sb) {
-		return false;
-	}
-	if (!s) {
-		r_strbuf_init (sb);
-		return true;
-	}
-	l = strlen (s);
+R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, int l) {
 	if (l >= sizeof (sb->buf)) {
 		char *ptr = sb->ptr;
-		if (!ptr || l+1 > sb->ptrlen) {
+		if (!ptr || l + 1 > sb->ptrlen) {
 			ptr = malloc (l + 1);
 			if (!ptr) {
 				return false;
@@ -36,13 +38,26 @@ R_API bool r_strbuf_set(RStrBuf *sb, const char *s) {
 			sb->ptrlen = l + 1;
 			sb->ptr = ptr;
 		}
-		memcpy (ptr, s, l+1);
+		memcpy (ptr, s, l);
 	} else {
 		sb->ptr = NULL;
-		memcpy (sb->buf, s, l+1);
+		memcpy (sb->buf, s, l);
 	}
 	sb->len = l;
 	return true;
+}
+
+R_API bool r_strbuf_set(RStrBuf *sb, const char *s) {
+	if (!sb) {
+		return false;
+	}
+	if (!s) {
+		r_strbuf_init (sb);
+		return true;
+	}
+	bool res = r_strbuf_setbin (sb, (const ut8*)s, strlen (s) + 1);
+	sb->len --;
+	return res;
 }
 
 R_API bool r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
@@ -141,6 +156,16 @@ R_API char *r_strbuf_get(RStrBuf *sb) {
 	return sb? (sb->ptr? sb->ptr: sb->buf) : NULL;
 }
 
+R_API ut8 *r_strbuf_getbin(RStrBuf *sb, int *len) {
+	if (sb) {
+		if (len) {
+			*len = sb->len;
+		}
+		return (ut8*)(sb->ptr? sb->ptr: sb->buf);
+	}
+	return NULL;
+}
+
 R_API char *r_strbuf_drain(RStrBuf *sb) {
 	char *ret = NULL;
 	if (sb) {
@@ -156,6 +181,7 @@ R_API void r_strbuf_free(RStrBuf *sb) {
 }
 
 R_API void r_strbuf_fini(RStrBuf *sb) {
-	if (sb && sb->ptr)
+	if (sb && sb->ptr) {
 		R_FREE (sb->ptr);
+	}
 }

@@ -1,5 +1,6 @@
 files = [
   'asm.c',
+  'op.c',
   'code.c',
   'p/asm_6502.c',
   'p/asm_8051.c',

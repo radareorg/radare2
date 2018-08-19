@@ -154,14 +154,14 @@ const PicMidrangeOpInfo *pic_midrange_get_op_info (PicMidrangeOpcode opcode) {
 	return &pic_midrange_op_info[opcode];
 }
 
-int pic_midrange_disassemble (RAsm *a, RAsmOp *op, const ut8 *b, int l) {
+int pic_midrange_disassemble (RAsmOp *op, char *opbuf, const ut8 *b, int l) {
 	char fsr_op[6];
 	st16 branch;
 
 #define EMIT_INVALID                                                         \
 	{                                                                    \
 		op->size = 2;                                                \
-		strncpy (op->buf_asm, "invalid", sizeof (op->buf_asm) - 1);  \
+		strcpy (opbuf, "invalid"); \
 		return 1;                                                    \
 	}
 	if (!b || l < 2) {
@@ -183,73 +183,52 @@ int pic_midrange_disassemble (RAsm *a, RAsmOp *op, const ut8 *b, int l) {
 
 	op->size = 2;
 
+	const char *buf_asm = NULL;
 	switch (op_info->args) {
 	case PIC_MIDRANGE_OP_ARGS_NONE:
-		strncpy (op->buf_asm, op_info->mnemonic,
-			 sizeof (op->buf_asm) - 1);
+		buf_asm = op_info->mnemonic;
 		break;
 	case PIC_MIDRANGE_OP_ARGS_2F:
-		snprintf (op->buf_asm, sizeof (op->buf_asm), "%s 0x%x",
-			  op_info->mnemonic,
-			  instr & PIC_MIDRANGE_OP_ARGS_2F_MASK_F);
+		buf_asm = sdb_fmt ("%s 0x%x", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_2F_MASK_F);
 		break;
 	case PIC_MIDRANGE_OP_ARGS_7F:
-		snprintf (op->buf_asm, sizeof (op->buf_asm), "%s 0x%x",
-			  op_info->mnemonic,
-			  instr & PIC_MIDRANGE_OP_ARGS_7F_MASK_F);
+		buf_asm = sdb_fmt ("%s 0x%x", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_7F_MASK_F);
 		break;
 	case PIC_MIDRANGE_OP_ARGS_1D_7F:
-		snprintf (op->buf_asm, sizeof (op->buf_asm), "%s 0x%x, %c",
-			  op_info->mnemonic,
+		buf_asm = sdb_fmt ("%s 0x%x, %c", op_info->mnemonic,
 			  instr & PIC_MIDRANGE_OP_ARGS_1D_7F_MASK_F,
-			  (instr & PIC_MIDRANGE_OP_ARGS_1D_7F_MASK_D) >> 7 ?
-				  'f' :
-				  'w');
+			  (instr & PIC_MIDRANGE_OP_ARGS_1D_7F_MASK_D) >> 7 ?  'f' : 'w');
 		break;
 	case PIC_MIDRANGE_OP_ARGS_1N_6K:
 		if (opcode == PIC_MIDRANGE_OPCODE_ADDFSR) {
-			snprintf (
-				op->buf_asm, sizeof (op->buf_asm),
-				"%s FSR%d, 0x%x", op_info->mnemonic,
-				(instr & PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_N) >>
-					6,
-				instr & PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_K);
+			buf_asm = sdb_fmt ( "%s FSR%d, 0x%x", op_info->mnemonic,
+					(instr & PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_N) >>
+					6, instr & PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_K);
 		} else {
-			snprintf (
-				op->buf_asm, sizeof (op->buf_asm),
-				"%s 0x%x[FSR%d]", op_info->mnemonic,
+			buf_asm = sdb_fmt ("%s 0x%x[FSR%d]", op_info->mnemonic,
 				instr & PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_K,
-				(instr & PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_N) >>
-					6);
+				(instr & PIC_MIDRANGE_OP_ARGS_1N_6K_MASK_N) >> 6);
 		}
 		break;
 	case PIC_MIDRANGE_OP_ARGS_3B_7F:
-		snprintf (op->buf_asm, sizeof (op->buf_asm), "%s 0x%x, %d",
-			  op_info->mnemonic,
-			  instr & PIC_MIDRANGE_OP_ARGS_3B_7F_MASK_F,
+		buf_asm = sdb_fmt ("%s 0x%x, %d", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_3B_7F_MASK_F,
 			  (instr & PIC_MIDRANGE_OP_ARGS_3B_7F_MASK_B) >> 7);
 		break;
 	case PIC_MIDRANGE_OP_ARGS_4K:
-		snprintf (op->buf_asm, sizeof (op->buf_asm), "%s 0x%x",
-			  op_info->mnemonic,
-			  instr & PIC_MIDRANGE_OP_ARGS_4K_MASK_K);
+		buf_asm = sdb_fmt ("%s 0x%x", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_4K_MASK_K);
 		break;
 	case PIC_MIDRANGE_OP_ARGS_8K:
-		snprintf (op->buf_asm, sizeof (op->buf_asm), "%s 0x%x",
-			  op_info->mnemonic,
-			  instr & PIC_MIDRANGE_OP_ARGS_8K_MASK_K);
+		buf_asm = sdb_fmt ("%s 0x%x", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_8K_MASK_K);
 		break;
 	case PIC_MIDRANGE_OP_ARGS_9K:
 		branch = (instr & PIC_MIDRANGE_OP_ARGS_9K_MASK_K);
 		branch |= ((branch & 0x100) ? 0xfe00 : 0);
-		snprintf (op->buf_asm, sizeof (op->buf_asm), "%s %s0x%x",
+		buf_asm = sdb_fmt ("%s %s0x%x",
 			  op_info->mnemonic, branch < 0 ? "-" : "",
 			  branch < 0 ? -branch : branch);
 		break;
 	case PIC_MIDRANGE_OP_ARGS_11K:
-		snprintf (op->buf_asm, sizeof (op->buf_asm), "%s 0x%x",
-			  op_info->mnemonic,
-			  instr & PIC_MIDRANGE_OP_ARGS_11K_MASK_K);
+		buf_asm = sdb_fmt ("%s 0x%x", op_info->mnemonic, instr & PIC_MIDRANGE_OP_ARGS_11K_MASK_K);
 		break;
 	case PIC_MIDRANGE_OP_ARGS_1N_2M:
 		snprintf (
@@ -257,10 +236,11 @@ int pic_midrange_disassemble (RAsm *a, RAsmOp *op, const ut8 *b, int l) {
 			PicMidrangeFsrOps[instr &
 					  PIC_MIDRANGE_OP_ARGS_1N_2M_MASK_M],
 			(instr & PIC_MIDRANGE_OP_ARGS_1N_2M_MASK_N) >> 2);
-		snprintf (op->buf_asm, sizeof (op->buf_asm), "%s %s",
-			  op_info->mnemonic, fsr_op);
+		buf_asm = sdb_fmt ("%s %s", op_info->mnemonic, fsr_op);
 		break;
 	}
-
+	if (buf_asm) {
+		strcpy (opbuf, buf_asm);
+	}
 	return op->size;
 }

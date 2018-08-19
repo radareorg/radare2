@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014 - pancake */
+/* radare - LGPL - Copyright 2014-2018 - pancake */
 
 #if 0
 
@@ -75,11 +75,10 @@ int print_insn_crisv10_v32_with_register_prefix (bfd_vma vma, disassemble_info *
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
 	int mode = 2;
-
-	op->buf_asm[0]='\0';
-	if (len<4)
+	if (len < 4) {
 		return -1;
-	buf_global = op->buf_asm;
+	}
+	buf_global = r_strbuf_get (&op->buf_asm);
 	Offset = a->pc;
 	memcpy (bytes, buf, R_MIN (len, 8)); // TODO handle thumb
 
@@ -114,10 +113,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		op->size = print_insn_crisv10_v32_without_register_prefix (
 			(bfd_vma)Offset, &disasm_obj);
 	}
-
-	if (op->size == -1)
-		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
-
+	if (op->size == -1) {
+		r_strbuf_set (&op->buf_asm, "(data)");
+	}
 	return op->size;
 }
 
@@ -126,6 +124,7 @@ RAsmPlugin r_asm_plugin_cris_gnu = {
 	.arch = "cris",
 	.cpus = "v10,v32,v10+v32",
 	.license = "GPL3",
+	.author = "pancake",
 	.bits = 32,
 	.endian = R_SYS_ENDIAN_LITTLE,
 	.desc = "Axis Communications 32-bit embedded processor",
