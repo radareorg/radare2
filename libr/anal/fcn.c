@@ -329,6 +329,7 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	}
 	free (fcn->fingerprint);
 	r_anal_diff_free (fcn->diff);
+	r_list_free (fcn->fcn_locs);
 	free (fcn->args);
 	free (fcn);
 }
