@@ -1099,9 +1099,6 @@ static void resizePanelUp(RPanels *panels) {
 		goto beach;
 	}
 	if (cy0 > 1) {
-		if (cy0 - PANEL_CONFIG_RESIZE_H <= 1) {
-			goto beach;
-		}
 		for (i = 0; i < panels->n_panels; i++) {
 			if (i == panels->curnode) {
 				continue;
@@ -1112,6 +1109,9 @@ static void resizePanelUp(RPanels *panels) {
 			ty0 = p->y;
 			ty1 = p->y + p->h - 1;
 			if (tx0 == cx0 && tx1 == cx1 && ty1 == cy0) {
+				if (cy0 - PANEL_CONFIG_RESIZE_H <= ty0) {
+					goto beach;
+				}
 				isResized = true;
 				p->h -= PANEL_CONFIG_RESIZE_H;
 				p->refresh = true;
@@ -1245,6 +1245,9 @@ static void resizePanelDown(RPanels *panels) {
 			ty0 = p->y;
 			ty1 = p->y + p->h - 1;
 			if (tx0 == cx0 && tx1 == cx1 && ty0 == cy1) {
+				if (cy1 + PANEL_CONFIG_RESIZE_H >= ty1) {
+					goto beach;
+				}
 				isResized = true;
 				p->y += PANEL_CONFIG_RESIZE_H;
 				p->h -= PANEL_CONFIG_RESIZE_H;
@@ -1298,6 +1301,11 @@ static void delInvalidPanels(RPanels *panels) {
 	for (i = 1; i < panels->n_panels; i++) {
 		RPanel *panel = &panels->panel[i];
 		if (panel->w < 2) {
+			delPanel (panels, i);
+			delInvalidPanels (panels);
+			break;
+		}
+		if (panel->h < 2) {
 			delPanel (panels, i);
 			delInvalidPanels (panels);
 			break;
@@ -2209,6 +2217,7 @@ repeat:
 			" -      - split the current panel horizontally\n"
 			" *      - show pseudo code/r2dec in the current panel\n"
 			" [1-9]  - follow jmp/call identified by shortcut (like ;[1])\n"
+			" <>     - scroll panels vertically by page\n"
 			" b      - browse symbols, flags, configurations, classes, ...\n"
 			" c      - toggle cursor\n"
 			" C      - toggle color\n"
@@ -2217,16 +2226,16 @@ repeat:
 			" e      - change title and command of current panel\n"
 			" g      - show graph in the current panel\n"
 			" hjkl   - move around (left-down-up-right)\n"
+			" JK     - resize panels vertically\n"
 			" HL     - resize panels horizontally\n"
-			" JK     - scroll panels vertically by page\n"
 			" i      - insert hex\n"
 			" m      - move to the menu\n"
 			" M      - open new custom frame\n"
 			" nN     - create new panel with given command\n"
-			" r      - toggle jmphints/leahints\n"
 			" o      - go/seek to given offset\n"
 			" pP     - seek to next or previous scr.nkey\n"
 			" q      - quit, back to visual mode\n"
+			" r      - toggle jmphints/leahints\n"
 			" sS     - step in / step over\n"
 			" uU     - undo / redo seek\n"
 			" V      - go to the graph mode\n"
@@ -2302,21 +2311,21 @@ repeat:
 	case 'D':
 		replaceCmd (panels, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY);
 		break;
-	case 'J':
-		for (i = 0; i < PANEL_CONFIG_PAGE; i++) {
-			handleDownKey (core);
-		}
-		break;
-	case 'K':
-		for (i = 0; i < PANEL_CONFIG_PAGE; i++) {
-			handleUpKey (core);
-		}
-		break;
 	case 'j':
 		handleDownKey (core);
 		break;
 	case 'k':
 		handleUpKey (core);
+		break;
+	case '<':
+		for (i = 0; i < PANEL_CONFIG_PAGE; i++) {
+			handleUpKey (core);
+		}
+		break;
+	case '>':
+		for (i = 0; i < PANEL_CONFIG_PAGE; i++) {
+			handleDownKey (core);
+		}
 		break;
 	case '_':
 		r_core_visual_hud (core);
@@ -2370,10 +2379,12 @@ repeat:
 		r_cons_switchbuf (false);
 		resizePanelRight (panels);
 		break;
-	case 't':
+	case 'J':
+		r_cons_switchbuf (false);
 		resizePanelDown(panels);
 		break;
-	case 'T':
+	case 'K':
+		r_cons_switchbuf (false);
 		resizePanelUp (panels);
 		break;
 	case 'g':
