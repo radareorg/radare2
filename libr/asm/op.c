@@ -24,11 +24,11 @@ R_API void r_asm_op_fini(RAsmOp *op) {
 
 // accessors
 R_API char *r_asm_op_get_hex(RAsmOp *op) {
-	return strdup (r_strbuf_get (&op->buf_hex));
+	return r_strbuf_get (&op->buf_hex);
 }
 
 R_API char *r_asm_op_get_asm(RAsmOp *op) {
-	return strdup (r_strbuf_get (&op->buf_asm));
+	return r_strbuf_get (&op->buf_asm);
 }
 
 R_API int r_asm_op_get_size(RAsmOp *op) {
