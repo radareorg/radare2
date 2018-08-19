@@ -1001,7 +1001,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 				acode->buf = (ut8*)newbuf;
 
 				int newlen = strlen (acode->buf_hex) + r_strbuf_length (&op.buf_hex)
-					+ r_buf_size (op.buf_inc) + 1;
+					+ r_buf_size (op.buf_inc) + 128;
 				newbuf = realloc (acode->buf_hex, newlen);
 				if (!newbuf) {
 					free (lbuf);
