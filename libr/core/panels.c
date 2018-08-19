@@ -153,6 +153,7 @@ static void delInvalidPanels(RPanels *panels);
 static void dismantlePanel(RPanels *panels);
 static void doPanelsRefresh(RCore *core);
 static void doPanelsRefreshOneShot(RCore *core);
+static void handleZoomMode(RCore *core, const int key);
 static bool handleCursorMode(RCore *core, const int key);
 static void handleUpKey(RCore *core);
 static void handleDownKey(RCore *core);
@@ -177,6 +178,7 @@ static void replaceCmd(RPanels* panels, char *title, char *cmd);
 static void handleMenu(RCore *core, const int key, int *exit);
 static void onMenu(RCore *core, const char *menu, int *exit);
 static void changeMenu(RPanels *panels, const char **dstMenu);
+static void switchMode(RPanels *panels);
 static RConsCanvas *createNewCanvas(RCore *core, int w, int h);
 
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) {
@@ -832,6 +834,28 @@ static void handleRightKey(RCore *core) {
 	} else {
 		panels->panel[panels->curnode].sx++;
 		panels->panel[panels->curnode].refresh = true;
+	}
+}
+
+static void handleZoomMode(RCore *core, const int key) {
+	switch (key) {
+		case 'Q':
+		case 'q':
+		case 0x0d:
+			switchMode (core->panels);
+			break;
+		case 'h':
+			handleLeftKey (core);
+			break;
+		case 'j':
+			handleDownKey (core);
+			break;
+		case 'k':
+			handleUpKey (core);
+			break;
+		case 'l':
+			handleRightKey (core);
+			break;
 	}
 }
 
@@ -1579,25 +1603,30 @@ R_API void r_core_panels_refresh(RCore *core) {
 		strcpy (title, "> ");
 	}
 	const char *color = panels->curnode == panels->menu_pos ? core->cons->pal.graph_box : core->cons->pal.graph_box2;
-	for (i = 0; menus[i]; i++) {
-		if (panels->curnode == panels->menu_pos) {
-			if (panels->menuStackDepth > 0) {
-				if (i == panels->menuIndexStack[0]) {
-					snprintf (str, sizeof (title) - 1, "%s[%s]"Color_RESET, color, menus[i]);
+	if (panels->isZoom) {
+		snprintf (str, sizeof (title) - 1, "%s Zoom Mode: Press Enter or q to quit"Color_RESET, color);
+		strcat (title, str);
+	} else {
+		for (i = 0; menus[i]; i++) {
+			if (panels->curnode == panels->menu_pos) {
+				if (panels->menuStackDepth > 0) {
+					if (i == panels->menuIndexStack[0]) {
+						snprintf (str, sizeof (title) - 1, "%s[%s]"Color_RESET, color, menus[i]);
+					} else {
+						snprintf (str, sizeof (title) - 1, "%s %s "Color_RESET, color, menus[i]);
+					}
 				} else {
-					snprintf (str, sizeof (title) - 1, "%s %s "Color_RESET, color, menus[i]);
+					if (i == panels->currentMenuIndex) {
+						snprintf (str, sizeof (title) - 1, "%s[%s]"Color_RESET, color, menus[i]);
+					} else {
+						snprintf (str, sizeof (title) - 1, "%s %s "Color_RESET, color, menus[i]);
+					}
 				}
 			} else {
-				if (i == panels->currentMenuIndex) {
-					snprintf (str, sizeof (title) - 1, "%s[%s]"Color_RESET, color, menus[i]);
-				} else {
-					snprintf (str, sizeof (title) - 1, "%s %s "Color_RESET, color, menus[i]);
-				}
+				snprintf (str, sizeof (title) - 1, "%s %s "Color_RESET, color, menus[i]);
 			}
-		} else {
-			snprintf (str, sizeof (title) - 1, "%s %s "Color_RESET, color, menus[i]);
+			strcat (title, str);
 		}
-		strcat (title, str);
 	}
 	if (panels->curnode == panels->menu_pos) {
 		r_cons_canvas_write (can, Color_BLUE);
@@ -1704,6 +1733,7 @@ static bool init (RCore *core, RPanels *panels, int w, int h) {
 	panels->menuPanel = calloc (sizeof (RPanel), PANEL_MENU_LIMIT);
 	panels->callgraph = 0;
 	panels->isResizing = false;
+	panels->isZoom = false;
 	panels->can = createNewCanvas (core, w, h);
 	if (w < 140) {
 		panels->columnWidth = w / 3;
@@ -2061,6 +2091,28 @@ static void handleTabKey(RCore *core, bool shift) {
 	}
 }
 
+static void switchMode(RPanels *panels) {
+	panels->isZoom = !panels->isZoom;
+	RPanel *curPanel = &panels->panel[panels->curnode];
+	if (panels->isZoom) {
+		curPanel->px = curPanel->x;
+		curPanel->py = curPanel->y;
+		curPanel->pw = curPanel->w;
+		curPanel->ph = curPanel->h;
+		curPanel->x = 0;
+		curPanel->y = 1;
+		curPanel->w = panels->can->w;
+		curPanel->h = panels->can->h - 1;
+		curPanel->refresh = true;
+	} else {
+		curPanel->x = curPanel->px;
+		curPanel->y = curPanel->py;
+		curPanel->w = curPanel->pw;
+		curPanel->h = curPanel->ph;
+		setRefreshAll (panels);
+	}
+}
+
 R_API RPanels *r_core_panels_new(RCore *core) {
 	int w, h;
 	RPanels *panels = R_NEW0 (RPanels);
@@ -2140,6 +2192,11 @@ repeat:
 	}
 
 	if (handleCursorMode (core, key)) {
+		goto repeat;
+	}
+
+	if (panels->isZoom) {
+		handleZoomMode (core, key);
 		goto repeat;
 	}
 
@@ -2424,6 +2481,9 @@ repeat:
 		}
 		r_core_panels_layout (panels);
 		setRefreshAll (panels);
+		break;
+	case 0x0d:
+		switchMode (panels);
 		break;
 	case '|':
 		splitPanelVertical (core);
