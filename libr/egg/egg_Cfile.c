@@ -270,9 +270,6 @@ R_API char* r_egg_Cfile_parser(const char *file, const char *arch, const char *o
 	if (!r_egg_Cfile_parseCompiled (file)) {
 		goto fail;
 	}
-
-	free (output);
-
 	// Assemble
 	cmd = r_str_newf ("'%s' %s -o '%s.o' '%s.s'", cEnv->CC, cEnv->LDFLAGS, file, file);
 	eprintf ("%s\n", cmd);
@@ -306,8 +303,7 @@ R_API char* r_egg_Cfile_parser(const char *file, const char *arch, const char *o
 		goto fail;
 	}
 	if (r_file_size (fileExt) == 0) {
-		printf ("FALLBACK: Using objcopy instead of rabin2");
-
+		eprintf ("FALLBACK: Using objcopy instead of rabin2");
 		free (output);
 		output = r_sys_cmd_strf ("'%s' -j .text -O binary '%s.o' '%s.text'", 
 		  		cEnv->OBJCOPY, file, file);
