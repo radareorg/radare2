@@ -181,8 +181,7 @@ R_API int r_anal_esil_fire_interrupt(RAnalEsil *esil, int interrupt) {
 		return false;
 	}
 	icb = (RAnalEsilInterruptCB)sdb_ptr_get (esil->interrupts, i, 0);
-	if (icb) return icb (esil, interrupt);
-	return false;
+	return icb? icb (esil, interrupt): false;
 }
 
 R_API bool r_anal_esil_set_pc(RAnalEsil *esil, ut64 addr) {
@@ -2568,17 +2567,20 @@ static int esil_num(RAnalEsil *esil) {
 
 /* duplicate the last element in the stack */
 static int esil_dup(RAnalEsil *esil) {
-	if (!esil || !esil->stack || esil->stackptr < 1 || esil->stackptr > (esil->stacksize - 1))
+	if (!esil || !esil->stack || esil->stackptr < 1 || esil->stackptr > (esil->stacksize - 1)) {
 		return false;
+	}
 	return r_anal_esil_push (esil, esil->stack[esil->stackptr-1]);
 }
 
 static int esil_swap(RAnalEsil *esil) {
 	char *tmp;
-	if (!esil || !esil->stack || esil->stackptr < 2)
+	if (!esil || !esil->stack || esil->stackptr < 2) {
 		return false;
-	if (!esil->stack[esil->stackptr-1] || !esil->stack[esil->stackptr-2])
+	}
+	if (!esil->stack[esil->stackptr-1] || !esil->stack[esil->stackptr-2]) {
 		return false;
+	}
 	tmp = esil->stack[esil->stackptr-1];
 	esil->stack[esil->stackptr-1] = esil->stack[esil->stackptr-2];
 	esil->stack[esil->stackptr-2] = tmp;
@@ -2914,6 +2916,7 @@ loop:
 	esil->skip = 0;
 	esil->parse_goto = -1;
 	esil->parse_stop = 0;
+	r_anal_esil_stack_free (esil);
 	esil->parse_goto_count = esil->anal? esil->anal->esil_goto_limit: R_ANAL_ESIL_GOTO_LIMIT;
 	str = ostr;
 repeat:
@@ -2938,7 +2941,6 @@ repeat:
 			word[wordi] = 0;
 			dorunword = 2;
 		}
-
 		if (dorunword) {
 			if (*word) {
 				if (!runword (esil, word)) {
@@ -2947,9 +2949,9 @@ repeat:
 				word[wordi] = ',';
 				wordi = 0;
 				switch (evalWord (esil, ostr, &str)) {
-					case 0: goto loop;
-					case 1: return 0;
-					case 2: continue;
+				case 0: goto loop;
+				case 1: return 0;
+				case 2: continue;
 				}
 				if (dorunword == 1) {
 					return 0;
@@ -2960,7 +2962,9 @@ repeat:
 		word[wordi++] = *str;
 		//is *str is '\0' in the next iteration the condition will be true
 		//reading beyond the boundaries
-		if (*str) str++;
+		if (*str) {
+			str++;
+		}
 	}
 	word[wordi] = 0;
 	if (*word) {
