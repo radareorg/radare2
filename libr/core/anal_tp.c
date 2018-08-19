@@ -179,16 +179,15 @@ static int cond_invert (int cond) {
 
 static void var_add_range (RAnal *a, RAnalVar *var, int cond, ut64 val) {
 	const char *key = RKEY (var->addr, var->kind, var->delta);
-	sdb_array_append_num(ADB, key, cond, 0);
-	sdb_array_append_num(ADB, key, val, 0);
+	sdb_array_append_num (ADB, key, cond, 0);
+	sdb_array_append_num (ADB, key, val, 0);
 }
 
 R_API char *var_get_constraint (RAnal *a, RAnalVar *var) {
-	char res[256] = {0};
 	const char *key = RKEY (var->addr, var->kind, var->delta);
-	int i, n = sdb_array_length(ADB, key);
-	int len = sizeof (res) - 1;
+	int i, n = sdb_array_length (ADB, key);
 	bool low = false, high = false;
+	RStrBuf *sb = r_strbuf_new ("");
 
 	if (n < 2) {
 		return NULL;
@@ -199,38 +198,38 @@ R_API char *var_get_constraint (RAnal *a, RAnalVar *var) {
 		switch (cond) {
 		case R_ANAL_COND_LE:
 			if (high) {
-				strncat (res, " && ", len);
+				r_strbuf_append (sb, " && ");
 			}
-			strncat (res, sdb_fmt ("<= 0x%"PFMT64x "", val), len);
+			r_strbuf_append (sb, sdb_fmt ("<= 0x%"PFMT64x "", val));
 			low = true;
 			break;
 		case R_ANAL_COND_LT:
 			if (high) {
-				strncat (res, " && ", len);
+				r_strbuf_append (sb, " && ");
 			}
-			strncat (res, sdb_fmt ("< 0x%"PFMT64x "", val), len);
+			r_strbuf_append (sb, sdb_fmt ("< 0x%"PFMT64x "", val));
 			low = true;
 			break;
 		case R_ANAL_COND_GE:
-			strncat (res, sdb_fmt (">= 0x%"PFMT64x "", val), len);
+			r_strbuf_append (sb, sdb_fmt (">= 0x%"PFMT64x "", val));
 			high = true;
 			break;
 		case R_ANAL_COND_GT:
-			strncat (res, sdb_fmt ("> 0x%"PFMT64x "", val), len);
+			r_strbuf_append (sb, sdb_fmt ("> 0x%"PFMT64x "", val));
 			high = true;
 			break;
 		}
 		if (low && high && i != n-2) {
-			strncat (res, " || ", len);
+			r_strbuf_append (sb, " || ");
 			low = false;
 			high = false;
 		}
 	}
-	return strdup (res);
+	return r_strbuf_get (sb);
 }
 
 static RList *parse_format(RCore *core, char *fmt) {
-	RList *ret = r_list_new();
+	RList *ret = r_list_new ();
 	Sdb *s = core->anal->sdb_fmts;
 	const char *spec = r_config_get (core->config, "anal.types.spec");
 	char arr[10] = {0};
