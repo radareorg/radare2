@@ -7602,6 +7602,7 @@ static const char *help_msg_aC[] = {
 		"Usage:", "aC", "[TODO] [...]",
 		"aCl[lj]", "", "list all classes",
 		"aC", " [classname]", "add class",
+		"aCv", " [classname] [addr]", "set vtable address for class",
 		"aCb", " [classname] [base classname] ([offset])", "add base class",
 		"aCm", " [classname] [method name] [offset] ([vtable index])", "add method",
 		"aC?", "", "show this help",
@@ -7629,6 +7630,31 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 		RAnalClass *cls = r_anal_class_new (cstr);
 		free (cstr);
 		r_anal_class_add (core->anal, cls);
+		break;
+	}
+	case 'v': {
+		const char *str = r_str_trim_ro (input + 1);
+		if (!*str) {
+			break;
+		}
+		char *cstr = strdup (str);
+		if (!cstr) {
+			break;
+		}
+		char *end = strchr (cstr, ' ');
+		ut64 addr = UT64_MAX;
+		if (end) {
+			*end = '\0';
+			addr = r_num_get (core->num, end + 1);
+		}
+		RAnalClass *cls = r_anal_class_get (core->anal, cstr);
+		if (!cls) {
+			eprintf ("Class not found.\n");
+			free (cstr);
+			break;
+		}
+		cls->vtable_addr = addr;
+		free (cstr);
 		break;
 	}
 	case 'b': { // "aCb"
