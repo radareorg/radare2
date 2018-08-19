@@ -2350,7 +2350,7 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 	int i;
 	RCoreAnalStatsItem total = {0};
 	for (i = 0; i < ((to-from)/piece); i++) {
-		int l = 0;
+		bool insert_separator = false;
 		ut64 at = from + (piece * i);
 		ut64 ate = at + piece;
 		ut64 p = (at - from) / piece;
@@ -2363,14 +2363,13 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 					|| (as->block[p].symbols)
 					|| (as->block[p].rwx)
 					|| (as->block[p].strings)) {
-					r_cons_printf ("\"offset\":%"PFMT64d ",", at), l++;
-					r_cons_printf ("\"size\":%"PFMT64d ",", piece), l++;
+					r_cons_printf ("\"offset\":%"PFMT64d ",", at);
+					r_cons_printf ("\"size\":%"PFMT64d ",", piece);
 				}
-				l = 0;
 #define PRINT_VALUE(name, cond, v) { \
 				if (cond) { \
-					r_cons_printf ("%s\"" name "\":%d", l? ",": "", (v)); \
-					l++; \
+					r_cons_printf ("%s\"" name "\":%d", insert_separator? ",": "", (v)); \
+					insert_separator = true; \
 				}}
 #define PRINT_VALUE2(name, v) PRINT_VALUE(name, v, v)
 				PRINT_VALUE2 ("flags", as->block[p].flags);
