@@ -260,7 +260,7 @@ SDB_API int sdb_array_add_sorted(Sdb *s, const char *key, const char *val, ut32 
 			if (astrcmp (vals[i], str_p) < 0) {
 				break;
 			}
-			sdb_const_anext (str_p, &str_p);
+			str_p = sdb_const_anext (str_p);
 			if (!str_p) {
 				str_p = str_e;
 			}
@@ -301,7 +301,7 @@ SDB_API int sdb_array_add_sorted_num(Sdb *s, const char *key, ut64 val,
 		if (val <= sdb_atoi (n)) {
 			break;
 		}
-		sdb_const_anext (n, &n);
+		n = sdb_const_anext (n);
 	}
 	return sdb_array_insert_num (s, key, n? i: -1, val, cas);
 }
@@ -501,20 +501,20 @@ SDB_API bool sdb_array_contains(Sdb *s, const char *key, const char *val, ut32 *
 	if (!s || !key || !val) {
 		return false;
 	}
-	const char *list = sdb_const_get (s, key, cas);
-	const char *next, *ptr = list;
-	const int vlen = strlen (val);
-	if (list && *list) {
-		do {
-			const char *str = sdb_const_anext (ptr, &next);
-			int len = next? (int)(size_t)(next - str) - 1 : (int)strlen (str);
-			if (len == vlen) {
-				if (!memcmp (str, val, len)) {
-					return true;
-				}
+	const char *next, *ptr = sdb_const_get (s, key, cas);
+	if (ptr && *ptr) {
+		size_t vlen = strlen (val);
+		while (1) {
+			next = strchr (ptr, SDB_RS);
+			size_t len = next ? next - ptr : strlen (ptr);
+			if (len == vlen && !memcmp (ptr, val, len)) {
+				return true;
 			}
-			ptr = next;
-		} while (next);
+			if (!next) {
+				break;
+			}
+			ptr = next + 1;
+		}
 	}
 	return false;
 }

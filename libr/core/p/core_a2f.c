@@ -21,8 +21,8 @@ static ut64 getCrossingBlock(Sdb *db, const char *key, ut64 start, ut64 end) {
 	}
 	ptr = s;
 	do {
-		const char *str = sdb_const_anext (ptr, &next);
-		block_start = sdb_atoi (str);
+		next = sdb_const_anext (ptr);
+		block_start = sdb_atoi (ptr);
 
 		if (start == block_start) { // case 5
 			return start;
