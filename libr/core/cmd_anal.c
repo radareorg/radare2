@@ -3434,7 +3434,6 @@ repeat:
 			core->dbg->reg = reg;
 		} else {
 			r_anal_esil_parse (esil, R_STRBUF_SAFEGET (&op.esil));
-
 			if (core->anal->cur && core->anal->cur->esil_post_loop) {
 				core->anal->cur->esil_post_loop (esil, &op);
 			}

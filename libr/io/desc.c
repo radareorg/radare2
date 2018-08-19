@@ -47,6 +47,7 @@ R_API void r_io_desc_free(RIODesc* desc) {
 		free (desc->uri);
 		free (desc->referer);
 		free (desc->name);
+		r_io_desc_cache_fini (desc);
 		if (desc->io && desc->io->files) {
 			r_id_storage_delete (desc->io->files, desc->fd);
 		}
