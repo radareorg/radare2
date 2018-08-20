@@ -841,11 +841,13 @@ static void handleRightKey(RCore *core) {
 }
 
 static void handleZoomMode(RCore *core, const int key) {
+	RPanels *panels = core->panels;
+	RPanel *panel = panels->panel;
 	switch (key) {
 		case 'Q':
 		case 'q':
 		case 0x0d:
-			switchMode (core->panels);
+			switchMode (panels);
 			break;
 		case 'h':
 			handleLeftKey (core);
@@ -858,6 +860,22 @@ static void handleZoomMode(RCore *core, const int key) {
 			break;
 		case 'l':
 			handleRightKey (core);
+			break;
+		case 9:
+			restorePanelPos (&panel[panels->curnode]);
+			handleTabKey (core, false);
+			panels->curnode = R_MAX (panels->curnode, 0);
+			savePanelPos (&panel[panels->curnode]);
+			maximizePanelSize (panels);
+			break;
+		case 'Z':
+			restorePanelPos (&panel[panels->curnode]);
+			handleTabKey (core, true);
+			if (panels->curnode == panels->menu_pos) {
+				panels->curnode = panels->n_panels - 1;
+			}
+			savePanelPos (&panel[panels->curnode]);
+			maximizePanelSize (panels);
 			break;
 	}
 }
