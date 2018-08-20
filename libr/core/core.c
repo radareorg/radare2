@@ -472,11 +472,16 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				if (q) {
 					if (r_str_replace_char (o, ']', 0)>0) {
 						n = r_num_math (core->num, o);
+						if (core->num->nc.errors) {
+							return 0;
+						}
 						r_num_calc_index (core->num, q);
 					}
 				}
 				free (o);
 			}
+		} else {
+			return 0;
 		}
 		// pop state
 		if (ok) *ok = 1;
