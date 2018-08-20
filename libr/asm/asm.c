@@ -713,7 +713,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 		return r_asm_code_free (acode);
 	}
 	*acode->buf_hex = 0;
-	if (!(acode->buf = malloc (64))) {
+	if (!(acode->buf = calloc (1, 64))) {
 		return r_asm_code_free (acode);
 	}
 	lbuf = strdup (buf);
@@ -1009,6 +1009,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 		}
 	}
 	free (lbuf);
+	r_hex_str2bin (acode->buf_hex, acode->buf);
 	return acode;
 }
 

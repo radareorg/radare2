@@ -1405,21 +1405,23 @@ static int cmd_write(void *data, const char *input) {
 		case 'o': // "wao"
 			if (input[2] == ' ') {
 				char *op = r_str_trim (strdup (input + 3));
-				r_core_hack (core, op);
-				free (op);
+				if (op) {
+					r_core_hack (core, op);
+					free (op);
+				}
 			} else {
 				r_core_hack_help (core);
 			}
 			break;
 		case ' ':
 		case '*': {
-			const char *file = input[1]=='*'? input+2: input+1;
+			const char *file = input[1]=='*'? input + 2: input + 1;
 			RAsmCode *acode;
 			r_asm_set_pc (core->assembler, core->offset);
 			acode = r_asm_massemble (core->assembler, file);
 			if (acode) {
-				if (input[1]=='*') {
-					cmd_write_hexpair(core, acode->buf_hex);
+				if (input[1] == '*') {
+					cmd_write_hexpair (core, acode->buf_hex);
 				} else {
 					if (!r_core_write_at (core, core->offset, acode->buf, acode->len)) {
 						cmd_write_fail ();
