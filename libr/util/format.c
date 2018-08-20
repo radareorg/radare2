@@ -1908,7 +1908,7 @@ R_API int r_print_format(RPrint *p, ut64 seek, const ut8* b, const int len,
 			if (mode & R_PRINT_SEEFLAGS && isptr != NULLPTR) {
 				char *newname = NULL;
 				if (!fieldname) {
-					newname = fieldname = r_str_newf ("pf.%d", seeki);
+					newname = fieldname = r_str_newf ("pf.%"PFMT64u, seeki);
 				}
 				if (mode & R_PRINT_UNIONMODE) {
 					p->cb_printf ("f %s=0x%08"PFMT64x"\n", formatname, seeki);

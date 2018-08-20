@@ -804,7 +804,7 @@ static int mcopy(RMagic *ms, union VALUETYPE *p, int type, int indir, const ut8 
 
 			/* check for pointer overflow */
 			if (src < s) {
-				file_magerror(ms, "invalid offset %zu in mcopy()",
+				file_magerror(ms, "invalid offset %u in mcopy()",
 				    offset);
 				return -1;
 			}
