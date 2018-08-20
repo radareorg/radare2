@@ -10,15 +10,16 @@ typedef enum {
 	PANEL_TYPE_MENU = 1
 } PanelType;
 
-typedef struct r_panel_t {
+typedef struct r_panel_pos_t {
 	int x;
 	int y;
 	int w;
 	int h;
-	int px;
-	int py;
-	int pw;
-	int ph;
+} RPanelPos;
+
+typedef struct r_panel_t {
+	RPanelPos pos;
+	RPanelPos prevPos;
 	int depth;
 	int sx; // scroll-x
 	int sy; // scroll-y

@@ -174,11 +174,14 @@ static void panelSingleStepIn(RCore *core);
 static void panelSingleStepOver(RCore *core);
 static void setRefreshAll(RPanels *panels);
 static void setCursor(RCore *core, bool cur);
+static void savePanelPos(RPanel* panel);
+static void restorePanelPos(RPanel* panel);
 static void replaceCmd(RPanels* panels, char *title, char *cmd);
 static void handleMenu(RCore *core, const int key, int *exit);
 static void onMenu(RCore *core, const char *menu, int *exit);
 static void changeMenu(RPanels *panels, const char **dstMenu);
 static void switchMode(RPanels *panels);
+static void maximizePanelSize(RPanels *panels);
 static RConsCanvas *createNewCanvas(RCore *core, int w, int h);
 
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) {
@@ -191,11 +194,11 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 	int delta_x, delta_y, graph_pad = 0;
 	delta_x = panel->sx;
 	delta_y = panel->sy;
-	r_cons_canvas_fill (can, panel->x, panel->y, panel->w, panel->h, ' ');
+	r_cons_canvas_fill (can, panel->pos.x, panel->pos.y, panel->pos.w, panel->pos.h, ' ');
 	if (panel->type == PANEL_TYPE_MENU) {
-		(void) r_cons_canvas_gotoxy (can, panel->x + 2, panel->y + 2);
+		(void) r_cons_canvas_gotoxy (can, panel->pos.x + 2, panel->pos.y + 2);
 		text = r_str_ansi_crop (panel->title,
-				delta_x, delta_y, panel->w + 5, panel->h - delta_y);
+				delta_x, delta_y, panel->pos.w + 5, panel->pos.h - delta_y);
 		if (text) {
 			r_cons_canvas_write (can, text);
 			free (text);
@@ -210,10 +213,10 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 			snprintf (title, sizeof (title) - 1,
 				"   %s   ", panel->title);
 		}
-		if (r_cons_canvas_gotoxy (can, panel->x + 1, panel->y + 1)) {
+		if (r_cons_canvas_gotoxy (can, panel->pos.x + 1, panel->pos.y + 1)) {
 			r_cons_canvas_write (can, title); // delta_x
 		}
-		(void) r_cons_canvas_gotoxy (can, panel->x + 2, panel->y + 2);
+		(void) r_cons_canvas_gotoxy (can, panel->pos.x + 2, panel->pos.y + 2);
 		char *cmdStr;
 		if (!strcmp (panel->cmd, PANEL_CMD_DISASSEMBLY)) {
 			core->offset = panel->addr;
@@ -257,7 +260,7 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 			}
 			white[idx] = 0;
 			text = r_str_ansi_crop (cmdStr,
-					0, delta_y + graph_pad, panel->w + delta_x - 3, panel->h - 2 + delta_y);
+					0, delta_y + graph_pad, panel->pos.w + delta_x - 3, panel->pos.h - 2 + delta_y);
 			char *newText = r_str_prefix_all (text, white);
 			if (newText) {
 				free (text);
@@ -265,7 +268,7 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 			}
 		} else {
 			text = r_str_ansi_crop (cmdStr,
-					delta_x, delta_y + graph_pad, panel->w + delta_x - 3, panel->h - 2 + delta_y);
+					delta_x, delta_y + graph_pad, panel->pos.w + delta_x - 3, panel->pos.h - 2 + delta_y);
 		}
 		if (text) {
 			r_cons_canvas_write (can, text);
@@ -278,9 +281,9 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 		}
 	}
 	if (color) {
-		r_cons_canvas_box (can, panel->x, panel->y, panel->w, panel->h, core->cons->pal.graph_box2);
+		r_cons_canvas_box (can, panel->pos.x, panel->pos.y, panel->pos.w, panel->pos.h, core->cons->pal.graph_box2);
 	} else {
-		r_cons_canvas_box (can, panel->x, panel->y, panel->w, panel->h, core->cons->pal.graph_box);
+		r_cons_canvas_box (can, panel->pos.x, panel->pos.y, panel->pos.w, panel->pos.h, core->cons->pal.graph_box);
 	}
 }
 
@@ -292,15 +295,15 @@ static void panelAllClear(RPanels *panels) {
 	RPanel *panel = NULL;
 	for (i = 0; i < panels->n_panels; i++) {
 		panel = &panels->panel[i];
-		r_cons_canvas_fill (panels->can, panel->x, panel->y, panel->w, panel->h, ' ');
+		r_cons_canvas_fill (panels->can, panel->pos.x, panel->pos.y, panel->pos.w, panel->pos.h, ' ');
 	}
 	r_cons_canvas_print (panels->can);
 	r_cons_flush ();
 }
 
 static void layoutMenu(RPanel *panel) {
-	panel->w = r_str_bounds (panel->title, &panel->h);
-	panel->h += 4;
+	panel->pos.w = r_str_bounds (panel->title, &panel->pos.h);
+	panel->pos.h += 4;
 }
 
 static void layoutSubMenu(RPanels *panels, int w) {
@@ -332,7 +335,7 @@ static void layoutSubMenu(RPanels *panels, int w) {
 		panel = createMenuPanel (x, y, r_strbuf_drain (tit));
 		layoutMenu (&panel);
 		panels->menuPanel[i] = panel;
-		x += panel.w - 1;
+		x += panel.pos.w - 1;
 		y = panels->menuIndexStack[i] + 2;
 	}
 	RStrBuf *tit = r_strbuf_new (NULL);
@@ -372,28 +375,28 @@ static void layoutDefault(RPanels *panels) {
 	int i;
 	int colpos = w - panels->columnWidth;
 	RPanel *panel = panels->panel;
-	panel[0].x = 0;
-	panel[0].y = 1;
+	panel[0].pos.x = 0;
+	panel[0].pos.y = 1;
 	if (panels->n_panels > 1) {
-		panel[0].w = colpos + 1;
+		panel[0].pos.w = colpos + 1;
 	} else {
-		panel[0].w = w;
+		panel[0].pos.w = w;
 	}
-	panel[0].h = h - 1;
+	panel[0].pos.h = h - 1;
 	for (i = 1; i < panels->n_panels; i++) {
-		panel[i].x = colpos;
-		panel[i].y = 2 + (ph * (i - 1));
-		panel[i].w = w - colpos;
-		if (panel[i].w < 0) {
-			panel[i].w = 0;
+		panel[i].pos.x = colpos;
+		panel[i].pos.y = 2 + (ph * (i - 1));
+		panel[i].pos.w = w - colpos;
+		if (panel[i].pos.w < 0) {
+			panel[i].pos.w = 0;
 		}
 		if ((i + 1) == panels->n_panels) {
-			panel[i].h = h - panel[i].y;
+			panel[i].pos.h = h - panel[i].pos.y;
 		} else {
-			panel[i].h = ph;
+			panel[i].pos.h = ph;
 		}
-		panel[i].y--;
-		panel[i].h++;
+		panel[i].pos.y--;
+		panel[i].pos.h++;
 	}
 }
 
@@ -406,25 +409,25 @@ static void layoutBalance(RPanels *panels) {
 	int pw = w / 2;
 	RPanel *panel = panels->panel;
 	for (i = 0; i < leftCol; i++) {
-		panel[i].x = 0;
-		panel[i].y = 1 + i * (h / leftCol - 1);
-		panel[i].w = pw + 2;
-		panel[i].h = h / leftCol;
+		panel[i].pos.x = 0;
+		panel[i].pos.y = 1 + i * (h / leftCol - 1);
+		panel[i].pos.w = pw + 2;
+		panel[i].pos.h = h / leftCol;
 		if (i == leftCol - 1) {
-			panel[i].h = h - panel[i].y;
+			panel[i].pos.h = h - panel[i].pos.y;
 		} else {
-			panel[i].h = h / leftCol;
+			panel[i].pos.h = h / leftCol;
 		}
 	}
 	for (i = 0; i < rightCol; i++) {
 		ii = i + leftCol;
-		panel[ii].x = pw + 1;
-		panel[ii].y = 1 + i * (h / rightCol - 1);
-		panel[ii].w = pw - 1;
+		panel[ii].pos.x = pw + 1;
+		panel[ii].pos.y = 1 + i * (h / rightCol - 1);
+		panel[ii].pos.w = pw - 1;
 		if (i == rightCol - 1) {
-			panel[ii].h = h - panel[ii].y;
+			panel[ii].pos.h = h - panel[ii].pos.y;
 		} else {
-			panel[ii].h = h / rightCol;
+			panel[ii].pos.h = h / rightCol;
 		}
 	}
 }
@@ -439,20 +442,20 @@ static void layoutSidePanel(RCore *core, const char *title, const char *cmd) {
 
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p = &panel[i];
-		if (p->x == 0) {
-			if (p->w >= PANEL_CONFIG_SIDEPANEL_W) {
-				p->x += PANEL_CONFIG_SIDEPANEL_W - 1;
-				p->w -= PANEL_CONFIG_SIDEPANEL_W - 1;
+		if (p->pos.x == 0) {
+			if (p->pos.w >= PANEL_CONFIG_SIDEPANEL_W) {
+				p->pos.x += PANEL_CONFIG_SIDEPANEL_W - 1;
+				p->pos.w -= PANEL_CONFIG_SIDEPANEL_W - 1;
 			}
 		}
 	}
 
 	addPanelFrame (core, panels, title, cmd);
 	changePanelNum (panels, panels->n_panels - 1, 0);
-	panel[0].x = 0;
-	panel[0].y = 1;
-	panel[0].w = PANEL_CONFIG_SIDEPANEL_W;
-	panel[0].h = h - 1;
+	panel[0].pos.x = 0;
+	panel[0].pos.y = 1;
+	panel[0].pos.w = PANEL_CONFIG_SIDEPANEL_W;
+	panel[0].pos.h = h - 1;
 	panels->curnode = 0;
 	setRefreshAll (panels);
 }
@@ -461,17 +464,17 @@ static void splitPanelVertical(RCore *core) {
 	RPanels *panels = core->panels;
 	RPanel *panel = panels->panel;
 	const int curnode = panels->curnode;
-	const int owidth = panel[curnode].w;
+	const int owidth = panel[curnode].pos.w;
 
 	addPanelFrame (core, panels, panel[curnode].title, panel[curnode].cmd);
 
 	changePanelNum (panels, panels->n_panels - 1, panels->curnode + 1);
 
-	panel[curnode].w = owidth / 2 + 1;
-	panel[curnode + 1].x = panel[curnode].x + panel[curnode].w - 1;
-	panel[curnode + 1].y = panel[curnode].y;
-	panel[curnode + 1].w = owidth - panel[curnode].w + 1;
-	panel[curnode + 1].h = panel[curnode].h;
+	panel[curnode].pos.w = owidth / 2 + 1;
+	panel[curnode + 1].pos.x = panel[curnode].pos.x + panel[curnode].pos.w - 1;
+	panel[curnode + 1].pos.y = panel[curnode].pos.y;
+	panel[curnode + 1].pos.w = owidth - panel[curnode].pos.w + 1;
+	panel[curnode + 1].pos.h = panel[curnode].pos.h;
 	setRefreshAll (panels);
 }
 
@@ -479,18 +482,18 @@ static void splitPanelHorizontal(RCore *core) {
 	RPanels *panels = core->panels;
 	RPanel *panel = panels->panel;
 	const int curnode = panels->curnode;
-	const int oheight = panel[curnode].h;
+	const int oheight = panel[curnode].pos.h;
 
 	panel[curnode].curpos = 0;
 	addPanelFrame (core, panels, panel[curnode].title, panel[curnode].cmd);
 
     changePanelNum (panels, panels->n_panels - 1, panels->curnode + 1);
 
-	panel[curnode].h = oheight / 2 + 1;
-	panel[curnode + 1].x = panel[curnode].x;
-	panel[curnode + 1].y = panel[curnode].y + panel[curnode].h - 1;
-	panel[curnode + 1].w = panel[curnode].w;
-	panel[curnode + 1].h = oheight - panel[curnode].h + 1;
+	panel[curnode].pos.h = oheight / 2 + 1;
+	panel[curnode + 1].pos.x = panel[curnode].pos.x;
+	panel[curnode + 1].pos.y = panel[curnode].pos.y + panel[curnode].pos.h - 1;
+	panel[curnode + 1].pos.w = panel[curnode].pos.w;
+	panel[curnode + 1].pos.h = oheight - panel[curnode].pos.h + 1;
 	setRefreshAll (panels);
 }
 
@@ -649,7 +652,7 @@ static void cursorDown(RCore *core) {
 }
 
 static int cursorThreshold(RPanel* panel) {
-	int threshold = (panel->h - 4) / 2;
+	int threshold = (panel->pos.h - 4) / 2;
 	if (threshold < 10) {
 		threshold = 1;
 	}
@@ -923,10 +926,10 @@ static void resizePanelLeft(RPanels *panels) {
 	RPanel *curPanel = &panel[panels->curnode];
 	int i, cx0, cx1, cy0, cy1, tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0;
 	bool isResized = false;
-	cx0 = curPanel->x;
-	cx1 = curPanel->x + curPanel->w - 1;
-	cy0 = curPanel->y;
-	cy1 = curPanel->y + curPanel->h - 1;
+	cx0 = curPanel->pos.x;
+	cx1 = curPanel->pos.x + curPanel->pos.w - 1;
+	cy0 = curPanel->pos.y;
+	cy1 = curPanel->pos.y + curPanel->pos.h - 1;
 	RPanel **targets1 = malloc (sizeof (RPanel *) * panels->n_panels);
 	RPanel **targets2 = malloc (sizeof (RPanel *) * panels->n_panels);
 	if (cx0 > 0) {
@@ -938,13 +941,13 @@ static void resizePanelLeft(RPanels *panels) {
 				continue;
 			}
 			RPanel *p = &panel[i];
-			tx0 = p->x;
-			tx1 = p->x + p->w - 1;
-			ty0 = p->y;
-			ty1 = p->y + p->h - 1;
+			tx0 = p->pos.x;
+			tx1 = p->pos.x + p->pos.w - 1;
+			ty0 = p->pos.y;
+			ty1 = p->pos.y + p->pos.h - 1;
 			if (tx1 == cx0 && ty0 == cy0 && ty1 == cy1) {
 				isResized = true;
-				p->w -= PANEL_CONFIG_RESIZE_W;
+				p->pos.w -= PANEL_CONFIG_RESIZE_W;
 				p->refresh = true;
 				break;
 			} else if (tx1 == cx0) {
@@ -955,18 +958,18 @@ static void resizePanelLeft(RPanels *panels) {
 		}
 		if (!isResized) {
 			for (i = 0; i < cur1; i++) {
-				targets1[i]->w -= PANEL_CONFIG_RESIZE_W;
+				targets1[i]->pos.w -= PANEL_CONFIG_RESIZE_W;
 				targets1[i]->refresh = true;
 			}
 			for (i = 0; i < cur2; i++) {
-				targets2[i]->x -= PANEL_CONFIG_RESIZE_W;
-				targets2[i]->w += PANEL_CONFIG_RESIZE_W;
+				targets2[i]->pos.x -= PANEL_CONFIG_RESIZE_W;
+				targets2[i]->pos.w += PANEL_CONFIG_RESIZE_W;
 				targets2[i]->refresh = true;
 			}
 		}
 		curPanel->refresh = true;
-		curPanel->x -= PANEL_CONFIG_RESIZE_W;
-		curPanel->w += PANEL_CONFIG_RESIZE_W;
+		curPanel->pos.x -= PANEL_CONFIG_RESIZE_W;
+		curPanel->pos.w += PANEL_CONFIG_RESIZE_W;
 	} else {
 		if (cx1 - PANEL_CONFIG_RESIZE_W <= cx0) {
 			goto beach;
@@ -976,14 +979,14 @@ static void resizePanelLeft(RPanels *panels) {
 				continue;
 			}
 			RPanel *p = &panel[i];
-			tx0 = p->x;
-			tx1 = p->x + p->w - 1;
-			ty0 = p->y;
-			ty1 = p->y + p->h - 1;
+			tx0 = p->pos.x;
+			tx1 = p->pos.x + p->pos.w - 1;
+			ty0 = p->pos.y;
+			ty1 = p->pos.y + p->pos.h - 1;
 			if (tx0 == cx1 && ty0 == cy0 && ty1 == cy1) {
 				isResized = true;
-				p->x -= PANEL_CONFIG_RESIZE_W;
-				p->w += PANEL_CONFIG_RESIZE_W;
+				p->pos.x -= PANEL_CONFIG_RESIZE_W;
+				p->pos.w += PANEL_CONFIG_RESIZE_W;
 				p->refresh = true;
 				break;
 			} else if (tx0 == cx1) {
@@ -994,17 +997,17 @@ static void resizePanelLeft(RPanels *panels) {
 		}
 		if (!isResized) {
 			for (i = 0; i < cur1; i++) {
-				targets1[i]->x -= PANEL_CONFIG_RESIZE_W;
-				targets1[i]->w += PANEL_CONFIG_RESIZE_W;
+				targets1[i]->pos.x -= PANEL_CONFIG_RESIZE_W;
+				targets1[i]->pos.w += PANEL_CONFIG_RESIZE_W;
 				targets1[i]->refresh = true;
 			}
 			for (i = 0; i < cur2; i++) {
-				targets2[i]->w -= PANEL_CONFIG_RESIZE_W;
+				targets2[i]->pos.w -= PANEL_CONFIG_RESIZE_W;
 				targets2[i]->refresh = true;
 			}
 		}
 		curPanel->refresh = true;
-		curPanel->w -= PANEL_CONFIG_RESIZE_W;
+		curPanel->pos.w -= PANEL_CONFIG_RESIZE_W;
 	}
 beach:
 	free (targets1);
@@ -1016,10 +1019,10 @@ static void resizePanelRight(RPanels *panels) {
 	RPanel *curPanel = &panel[panels->curnode];
 	int i, tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0;
 	bool isResized = false;
-	int cx0 = curPanel->x;
-	int cx1 = curPanel->x + curPanel->w - 1;
-	int cy0 = curPanel->y;
-	int cy1 = curPanel->y + curPanel->h - 1;
+	int cx0 = curPanel->pos.x;
+	int cx1 = curPanel->pos.x + curPanel->pos.w - 1;
+	int cy0 = curPanel->pos.y;
+	int cy1 = curPanel->pos.y + curPanel->pos.h - 1;
 	RPanel **targets1 = malloc (sizeof (RPanel *) * panels->n_panels);
 	RPanel **targets2 = malloc (sizeof (RPanel *) * panels->n_panels);
 	if (!targets1 || !targets2) {
@@ -1034,13 +1037,13 @@ static void resizePanelRight(RPanels *panels) {
 				continue;
 			}
 			RPanel *p = &panel[i];
-			tx0 = p->x;
-			tx1 = p->x + p->w - 1;
-			ty0 = p->y;
-			ty1 = p->y + p->h - 1;
+			tx0 = p->pos.x;
+			tx1 = p->pos.x + p->pos.w - 1;
+			ty0 = p->pos.y;
+			ty1 = p->pos.y + p->pos.h - 1;
 			if (tx1 == cx0 && ty0 == cy0 && ty1 == cy1) {
 				isResized = true;
-				p->w += PANEL_CONFIG_RESIZE_W;
+				p->pos.w += PANEL_CONFIG_RESIZE_W;
 				p->refresh = true;
 				break;
 			} else if (tx1 == cx0) {
@@ -1051,18 +1054,18 @@ static void resizePanelRight(RPanels *panels) {
 		}
 		if (!isResized) {
 			for (i = 0; i < cur1; i++) {
-				targets1[i]->w += PANEL_CONFIG_RESIZE_W;
+				targets1[i]->pos.w += PANEL_CONFIG_RESIZE_W;
 				targets1[i]->refresh = true;
 			}
 			for (i = 0; i < cur2; i++) {
-				targets2[i]->x += PANEL_CONFIG_RESIZE_W;
-				targets2[i]->w -= PANEL_CONFIG_RESIZE_W;
+				targets2[i]->pos.x += PANEL_CONFIG_RESIZE_W;
+				targets2[i]->pos.w -= PANEL_CONFIG_RESIZE_W;
 				targets2[i]->refresh = true;
 			}
 		}
 		curPanel->refresh = true;
-		curPanel->x += PANEL_CONFIG_RESIZE_W;
-		curPanel->w -= PANEL_CONFIG_RESIZE_W;
+		curPanel->pos.x += PANEL_CONFIG_RESIZE_W;
+		curPanel->pos.w -= PANEL_CONFIG_RESIZE_W;
 	} else {
 		if (cx1 + PANEL_CONFIG_RESIZE_W >= panels->can->w - 1) {
 			goto beach;
@@ -1072,15 +1075,15 @@ static void resizePanelRight(RPanels *panels) {
 				continue;
 			}
 			RPanel *p = &panel[i];
-			tx0 = p->x;
-			tx1 = p->x + p->w - 1;
-			ty0 = p->y;
-			ty1 = p->y + p->h - 1;
+			tx0 = p->pos.x;
+			tx1 = p->pos.x + p->pos.w - 1;
+			ty0 = p->pos.y;
+			ty1 = p->pos.y + p->pos.h - 1;
 			if (tx0 == cx1 && ty0 == cy0 && ty1 == cy1) {
 				if (cx1 + PANEL_CONFIG_RESIZE_W < tx1) {
 					isResized = true;
-					p->x += PANEL_CONFIG_RESIZE_W;
-					p->w -= PANEL_CONFIG_RESIZE_W;
+					p->pos.x += PANEL_CONFIG_RESIZE_W;
+					p->pos.w -= PANEL_CONFIG_RESIZE_W;
 					p->refresh = true;
 				}
 			} else if (tx0 == cx1) {
@@ -1091,17 +1094,17 @@ static void resizePanelRight(RPanels *panels) {
 		}
 		if (!isResized) {
 			for (i = 0; i < cur1; i++) {
-				targets1[i]->x += PANEL_CONFIG_RESIZE_W;
-				targets1[i]->w -= PANEL_CONFIG_RESIZE_W;
+				targets1[i]->pos.x += PANEL_CONFIG_RESIZE_W;
+				targets1[i]->pos.w -= PANEL_CONFIG_RESIZE_W;
 				targets1[i]->refresh = true;
 			}
 			for (i = 0; i < cur2; i++) {
-				targets2[i]->w += PANEL_CONFIG_RESIZE_W;
+				targets2[i]->pos.w += PANEL_CONFIG_RESIZE_W;
 				targets2[i]->refresh = true;
 			}
 		}
 		curPanel->refresh = true;
-		curPanel->w += PANEL_CONFIG_RESIZE_W;
+		curPanel->pos.w += PANEL_CONFIG_RESIZE_W;
 	}
 beach:
 	free (targets1);
@@ -1113,10 +1116,10 @@ static void resizePanelUp(RPanels *panels) {
 	RPanel *curPanel = &panel[panels->curnode];
 	int i, tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0;
 	bool isResized = false;
-	int cx0 = curPanel->x;
-	int cx1 = curPanel->x + curPanel->w - 1;
-	int cy0 = curPanel->y;
-	int cy1 = curPanel->y + curPanel->h - 1;
+	int cx0 = curPanel->pos.x;
+	int cx1 = curPanel->pos.x + curPanel->pos.w - 1;
+	int cy0 = curPanel->pos.y;
+	int cy1 = curPanel->pos.y + curPanel->pos.h - 1;
 	RPanel **targets1 = malloc (sizeof (RPanel *) * panels->n_panels);
 	RPanel **targets2 = malloc (sizeof (RPanel *) * panels->n_panels);
 	if (!targets1 || !targets2) {
@@ -1128,16 +1131,16 @@ static void resizePanelUp(RPanels *panels) {
 				continue;
 			}
 			RPanel *p = &panel[i];
-			tx0 = p->x;
-			tx1 = p->x + p->w - 1;
-			ty0 = p->y;
-			ty1 = p->y + p->h - 1;
+			tx0 = p->pos.x;
+			tx1 = p->pos.x + p->pos.w - 1;
+			ty0 = p->pos.y;
+			ty1 = p->pos.y + p->pos.h - 1;
 			if (tx0 == cx0 && tx1 == cx1 && ty1 == cy0) {
 				if (cy0 - PANEL_CONFIG_RESIZE_H <= ty0) {
 					goto beach;
 				}
 				isResized = true;
-				p->h -= PANEL_CONFIG_RESIZE_H;
+				p->pos.h -= PANEL_CONFIG_RESIZE_H;
 				p->refresh = true;
 				break;
 			} else if (ty1 == cy0) {
@@ -1148,18 +1151,18 @@ static void resizePanelUp(RPanels *panels) {
 		}
 		if (!isResized) {
 			for (i = 0; i < cur1; i++) {
-				targets1[i]->h -= PANEL_CONFIG_RESIZE_H;
+				targets1[i]->pos.h -= PANEL_CONFIG_RESIZE_H;
 				targets1[i]->refresh = true;
 			}
 			for (i = 0; i < cur2; i++) {
-				targets2[i]->y -= PANEL_CONFIG_RESIZE_H;
-				targets2[i]->h += PANEL_CONFIG_RESIZE_H;
+				targets2[i]->pos.y -= PANEL_CONFIG_RESIZE_H;
+				targets2[i]->pos.h += PANEL_CONFIG_RESIZE_H;
 				targets2[i]->refresh = true;
 			}
 		}
 		curPanel->refresh = true;
-		curPanel->y -= PANEL_CONFIG_RESIZE_H;
-		curPanel->h += PANEL_CONFIG_RESIZE_H;
+		curPanel->pos.y -= PANEL_CONFIG_RESIZE_H;
+		curPanel->pos.h += PANEL_CONFIG_RESIZE_H;
 	} else {
 		if (cy1 - PANEL_CONFIG_RESIZE_H <= 1) {
 			goto beach;
@@ -1169,14 +1172,14 @@ static void resizePanelUp(RPanels *panels) {
 				continue;
 			}
 			RPanel *p = &panel[i];
-			tx0 = p->x;
-			tx1 = p->x + p->w - 1;
-			ty0 = p->y;
-			ty1 = p->y + p->h - 1;
+			tx0 = p->pos.x;
+			tx1 = p->pos.x + p->pos.w - 1;
+			ty0 = p->pos.y;
+			ty1 = p->pos.y + p->pos.h - 1;
 			if (tx0 == cx0 && tx1 == cx1 && ty0 == cy1) {
 				isResized = true;
-				p->y -= PANEL_CONFIG_RESIZE_H;
-				p->h += PANEL_CONFIG_RESIZE_H;
+				p->pos.y -= PANEL_CONFIG_RESIZE_H;
+				p->pos.h += PANEL_CONFIG_RESIZE_H;
 				p->refresh = true;
 			} else if (ty0 == cy1) {
 				targets1[cur1++] = p;
@@ -1186,17 +1189,17 @@ static void resizePanelUp(RPanels *panels) {
 		}
 		if (!isResized) {
 			for (i = 0; i < cur1; i++) {
-				targets1[i]->y -= PANEL_CONFIG_RESIZE_H;
-				targets1[i]->h += PANEL_CONFIG_RESIZE_H;
+				targets1[i]->pos.y -= PANEL_CONFIG_RESIZE_H;
+				targets1[i]->pos.h += PANEL_CONFIG_RESIZE_H;
 				targets1[i]->refresh = true;
 			}
 			for (i = 0; i < cur2; i++) {
-				targets2[i]->h -= PANEL_CONFIG_RESIZE_H;
+				targets2[i]->pos.h -= PANEL_CONFIG_RESIZE_H;
 				targets2[i]->refresh = true;
 			}
 		}
 		curPanel->refresh = true;
-		curPanel->h -= PANEL_CONFIG_RESIZE_H;
+		curPanel->pos.h -= PANEL_CONFIG_RESIZE_H;
 	}
 beach:
 	free (targets1);
@@ -1208,10 +1211,10 @@ static void resizePanelDown(RPanels *panels) {
 	RPanel *curPanel = &panel[panels->curnode];
 	int i, tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0;
 	bool isResized = false;
-	int cx0 = curPanel->x;
-	int cx1 = curPanel->x + curPanel->w - 1;
-	int cy0 = curPanel->y;
-	int cy1 = curPanel->y + curPanel->h - 1;
+	int cx0 = curPanel->pos.x;
+	int cx1 = curPanel->pos.x + curPanel->pos.w - 1;
+	int cy0 = curPanel->pos.y;
+	int cy1 = curPanel->pos.y + curPanel->pos.h - 1;
 	RPanel **targets1 = malloc (sizeof (RPanel *) * panels->n_panels);
 	RPanel **targets2 = malloc (sizeof (RPanel *) * panels->n_panels);
 	if (!targets1 || !targets2) {
@@ -1226,13 +1229,13 @@ static void resizePanelDown(RPanels *panels) {
 				continue;
 			}
 			RPanel *p = &panel[i];
-			tx0 = p->x;
-			tx1 = p->x + p->w - 1;
-			ty0 = p->y;
-			ty1 = p->y + p->h - 1;
+			tx0 = p->pos.x;
+			tx1 = p->pos.x + p->pos.w - 1;
+			ty0 = p->pos.y;
+			ty1 = p->pos.y + p->pos.h - 1;
 			if (tx0 == cx0 && tx1 == cx1 && ty1 == cy0) {
 				isResized = true;
-				p->h += PANEL_CONFIG_RESIZE_H;
+				p->pos.h += PANEL_CONFIG_RESIZE_H;
 				p->refresh = true;
 				break;
 			} else if (ty1 == cy0) {
@@ -1243,18 +1246,18 @@ static void resizePanelDown(RPanels *panels) {
 		}
 		if (!isResized) {
 			for (i = 0; i < cur1; i++) {
-				targets1[i]->h += PANEL_CONFIG_RESIZE_H;
+				targets1[i]->pos.h += PANEL_CONFIG_RESIZE_H;
 				targets1[i]->refresh = true;
 			}
 			for (i = 0; i < cur2; i++) {
-				targets2[i]->y += PANEL_CONFIG_RESIZE_H;
-				targets2[i]->h -= PANEL_CONFIG_RESIZE_H;
+				targets2[i]->pos.y += PANEL_CONFIG_RESIZE_H;
+				targets2[i]->pos.h -= PANEL_CONFIG_RESIZE_H;
 				targets2[i]->refresh = true;
 			}
 		}
 		curPanel->refresh = true;
-		curPanel->y += PANEL_CONFIG_RESIZE_H;
-		curPanel->h -= PANEL_CONFIG_RESIZE_H;
+		curPanel->pos.y += PANEL_CONFIG_RESIZE_H;
+		curPanel->pos.h -= PANEL_CONFIG_RESIZE_H;
 	} else {
 		if (cy1 + PANEL_CONFIG_RESIZE_H >= panels->can->h - 1) {
 			goto beach;
@@ -1264,17 +1267,17 @@ static void resizePanelDown(RPanels *panels) {
 				continue;
 			}
 			RPanel *p = &panel[i];
-			tx0 = p->x;
-			tx1 = p->x + p->w - 1;
-			ty0 = p->y;
-			ty1 = p->y + p->h - 1;
+			tx0 = p->pos.x;
+			tx1 = p->pos.x + p->pos.w - 1;
+			ty0 = p->pos.y;
+			ty1 = p->pos.y + p->pos.h - 1;
 			if (tx0 == cx0 && tx1 == cx1 && ty0 == cy1) {
 				if (cy1 + PANEL_CONFIG_RESIZE_H >= ty1) {
 					goto beach;
 				}
 				isResized = true;
-				p->y += PANEL_CONFIG_RESIZE_H;
-				p->h -= PANEL_CONFIG_RESIZE_H;
+				p->pos.y += PANEL_CONFIG_RESIZE_H;
+				p->pos.h -= PANEL_CONFIG_RESIZE_H;
 				p->refresh = true;
 			} else if (ty0 == cy1) {
 				targets1[cur1++] = p;
@@ -1284,17 +1287,17 @@ static void resizePanelDown(RPanels *panels) {
 		}
 		if (!isResized) {
 			for (i = 0; i < cur1; i++) {
-				targets1[i]->y += PANEL_CONFIG_RESIZE_H;
-				targets1[i]->h -= PANEL_CONFIG_RESIZE_H;
+				targets1[i]->pos.y += PANEL_CONFIG_RESIZE_H;
+				targets1[i]->pos.h -= PANEL_CONFIG_RESIZE_H;
 				targets1[i]->refresh = true;
 			}
 			for (i = 0; i < cur2; i++) {
-				targets2[i]->h += PANEL_CONFIG_RESIZE_H;
+				targets2[i]->pos.h += PANEL_CONFIG_RESIZE_H;
 				targets2[i]->refresh = true;
 			}
 		}
 		curPanel->refresh = true;
-		curPanel->h += PANEL_CONFIG_RESIZE_H;
+		curPanel->pos.h += PANEL_CONFIG_RESIZE_H;
 	}
 beach:
 	free (targets1);
@@ -1324,12 +1327,12 @@ static void delInvalidPanels(RPanels *panels) {
 	int i;
 	for (i = 1; i < panels->n_panels; i++) {
 		RPanel *panel = &panels->panel[i];
-		if (panel->w < 2) {
+		if (panel->pos.w < 2) {
 			delPanel (panels, i);
 			delInvalidPanels (panels);
 			break;
 		}
-		if (panel->h < 2) {
+		if (panel->pos.h < 2) {
 			delPanel (panels, i);
 			delInvalidPanels (panels);
 			break;
@@ -1348,103 +1351,103 @@ static void dismantlePanel(RPanels *panels) {
 	memset (up, -1, sizeof (up));
 	memset (down, -1, sizeof (down));
 	int i, ox, oy, ow, oh;
-	ox = panels->panel[panels->curnode].x;
-	oy = panels->panel[panels->curnode].y;
-	ow = panels->panel[panels->curnode].w;
-	oh = panels->panel[panels->curnode].h;
+	ox = panels->panel[panels->curnode].pos.x;
+	oy = panels->panel[panels->curnode].pos.y;
+	ow = panels->panel[panels->curnode].pos.w;
+	oh = panels->panel[panels->curnode].pos.h;
 	for (i = 0; i < panels->n_panels; i++) {
 		tmpPanel = &panels->panel[i];
-		if (tmpPanel->x + tmpPanel->w - 1 == ox) {
+		if (tmpPanel->pos.x + tmpPanel->pos.w - 1 == ox) {
 			left[i] = 1;
-			if (oy == tmpPanel->y) {
+			if (oy == tmpPanel->pos.y) {
 				leftUpValid = true;
-				if (oh == tmpPanel->h) {
+				if (oh == tmpPanel->pos.h) {
 					justLeftPanel = tmpPanel;
 					break;
 				}
 			}
-			if (oy + oh == tmpPanel->y + tmpPanel->h) {
+			if (oy + oh == tmpPanel->pos.y + tmpPanel->pos.h) {
 				leftDownValid = true;
 			}
 		}
-		if (tmpPanel->x == ox + ow - 1) {
+		if (tmpPanel->pos.x == ox + ow - 1) {
 			right[i] = 1;
-			if (oy == tmpPanel->y) {
+			if (oy == tmpPanel->pos.y) {
 				rightUpValid = true;
-				if (oh == tmpPanel->h) {
+				if (oh == tmpPanel->pos.h) {
 					rightDownValid = true;
 					justRightPanel = tmpPanel;
 				}
 			}
-			if (oy + oh == tmpPanel->y + tmpPanel->h) {
+			if (oy + oh == tmpPanel->pos.y + tmpPanel->pos.h) {
 				rightDownValid = true;
 			}
 		}
-		if (tmpPanel->y + tmpPanel->h - 1 == oy) {
+		if (tmpPanel->pos.y + tmpPanel->pos.h - 1 == oy) {
 			up[i] = 1;
-			if (ox == tmpPanel->x) {
+			if (ox == tmpPanel->pos.x) {
 				upLeftValid = true;
-				if (ow == tmpPanel->w) {
+				if (ow == tmpPanel->pos.w) {
 					upRightValid = true;
 					justUpPanel = tmpPanel;
 				}
 			}
-			if (ox + ow == tmpPanel->x + tmpPanel->w) {
+			if (ox + ow == tmpPanel->pos.x + tmpPanel->pos.w) {
 				upRightValid = true;
 			}
 		}
-		if (tmpPanel->y == oy + oh - 1) {
+		if (tmpPanel->pos.y == oy + oh - 1) {
 			down[i] = 1;
-			if (ox == tmpPanel->x) {
+			if (ox == tmpPanel->pos.x) {
 				downLeftValid = true;
-				if (ow == tmpPanel->w) {
+				if (ow == tmpPanel->pos.w) {
 					downRightValid = true;
 					justDownPanel = tmpPanel;
 				}
 			}
-			if (ox + ow == tmpPanel->x + tmpPanel->w) {
+			if (ox + ow == tmpPanel->pos.x + tmpPanel->pos.w) {
 				downRightValid = true;
 			}
 		}
 	}
 	if (justLeftPanel) {
-		justLeftPanel->w += ox + ow - (justLeftPanel->x + justLeftPanel->w);
+		justLeftPanel->pos.w += ox + ow - (justLeftPanel->pos.x + justLeftPanel->pos.w);
 	} else if (justRightPanel) {
-		justRightPanel->w = justRightPanel->x + justRightPanel->w - ox;
-		justRightPanel->x = ox;
+		justRightPanel->pos.w = justRightPanel->pos.x + justRightPanel->pos.w - ox;
+		justRightPanel->pos.x = ox;
 	} else if (justUpPanel) {
-		justUpPanel->h += oy + oh - (justUpPanel->y + justUpPanel->h);
+		justUpPanel->pos.h += oy + oh - (justUpPanel->pos.y + justUpPanel->pos.h);
 	} else if (justDownPanel) {
-		justDownPanel->h = oh + justDownPanel->y + justDownPanel->h - (oy + oh);
-		justDownPanel->y = oy;
+		justDownPanel->pos.h = oh + justDownPanel->pos.y + justDownPanel->pos.h - (oy + oh);
+		justDownPanel->pos.y = oy;
 	} else if (leftUpValid && leftDownValid) {
 		for (i = 0; i < panels->n_panels; i++) {
 			if (left[i] != -1) {
 				tmpPanel = &panels->panel[i];
-				tmpPanel->w += ox + ow - (tmpPanel->x + tmpPanel->w);
+				tmpPanel->pos.w += ox + ow - (tmpPanel->pos.x + tmpPanel->pos.w);
 			}
 		}
 	} else if (rightUpValid && rightDownValid) {
 		for (i = 0; i < panels->n_panels; i++) {
 			if (right[i] != -1) {
 				tmpPanel = &panels->panel[i];
-				tmpPanel->w = tmpPanel->x + tmpPanel->w - ox;
-				tmpPanel->x = ox;
+				tmpPanel->pos.w = tmpPanel->pos.x + tmpPanel->pos.w - ox;
+				tmpPanel->pos.x = ox;
 			}
 		}
 	} else if (upLeftValid && upRightValid) {
 		for (i = 0; i < panels->n_panels; i++) {
 			if (up[i] != -1) {
 				tmpPanel = &panels->panel[i];
-				tmpPanel->h += oy + oh - (tmpPanel->y + tmpPanel->h);
+				tmpPanel->pos.h += oy + oh - (tmpPanel->pos.y + tmpPanel->pos.h);
 			}
 		}
 	} else if (downLeftValid && downRightValid) {
 		for (i = 0; i < panels->n_panels; i++) {
 			if (down[i] != -1) {
 				tmpPanel = &panels->panel[i];
-				tmpPanel->h = oh + tmpPanel->y + tmpPanel->h - (oy + oh);
-				tmpPanel->y = oy;
+				tmpPanel->pos.h = oh + tmpPanel->pos.y + tmpPanel->pos.h - (oy + oh);
+				tmpPanel->pos.y = oy;
 			}
 		}
 	}
@@ -1518,8 +1521,8 @@ static void addPanelFrame(RCore *core, RPanels* panels, const char *title, const
 
 static RPanel createMenuPanel(int x, int y, char *title) {
 	RPanel panel = {0};
-	panel.x = x;
-	panel.y = y;
+	panel.pos.x = x;
+	panel.pos.y = y;
 	panel.title = title;
 	panel.refresh = true;
 	panel.type = PANEL_TYPE_MENU;
@@ -1597,7 +1600,7 @@ R_API void r_core_panels_refresh(RCore *core) {
 		}
 	}
 	(void) r_cons_canvas_gotoxy (can, -can->sx, -can->sy);
-	r_cons_canvas_fill (can, -can->sx, -can->sy, panel->w, 1, ' ');
+	r_cons_canvas_fill (can, -can->sx, -can->sy, panel->pos.w, 1, ' ');
 	title[0] = 0;
 	if (panels->curnode == panels->menu_pos) {
 		strcpy (title, "> ");
@@ -2091,24 +2094,37 @@ static void handleTabKey(RCore *core, bool shift) {
 	}
 }
 
+static void savePanelPos(RPanel* panel) {
+	panel->prevPos.x = panel->pos.x;
+	panel->prevPos.y = panel->pos.y;
+	panel->prevPos.w = panel->pos.w;
+	panel->prevPos.h = panel->pos.h;
+}
+
+static void restorePanelPos(RPanel* panel) {
+	panel->pos.x = panel->prevPos.x;
+	panel->pos.y = panel->prevPos.y;
+	panel->pos.w = panel->prevPos.w;
+	panel->pos.h = panel->prevPos.h;
+}
+
+static void maximizePanelSize(RPanels *panels) {
+	RPanel *panel = &panels->panel[panels->curnode];
+	panel->pos.x = 0;
+	panel->pos.y = 1;
+	panel->pos.w = panels->can->w;
+	panel->pos.h = panels->can->h - 1;
+	panel->refresh = true;
+}
+
 static void switchMode(RPanels *panels) {
 	panels->isZoom = !panels->isZoom;
 	RPanel *curPanel = &panels->panel[panels->curnode];
 	if (panels->isZoom) {
-		curPanel->px = curPanel->x;
-		curPanel->py = curPanel->y;
-		curPanel->pw = curPanel->w;
-		curPanel->ph = curPanel->h;
-		curPanel->x = 0;
-		curPanel->y = 1;
-		curPanel->w = panels->can->w;
-		curPanel->h = panels->can->h - 1;
-		curPanel->refresh = true;
+		savePanelPos (curPanel);
+		maximizePanelSize (panels);
 	} else {
-		curPanel->x = curPanel->px;
-		curPanel->y = curPanel->py;
-		curPanel->w = curPanel->pw;
-		curPanel->h = curPanel->ph;
+		restorePanelPos (curPanel);
 		setRefreshAll (panels);
 	}
 }
