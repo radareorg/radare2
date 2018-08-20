@@ -5370,7 +5370,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			}
 			free (escaped_str);
 		}
-		r_cons_printf (",\"bytes\":\"%s\"", asmop.buf_hex);
+		r_cons_printf (",\"bytes\":\"%s\"", r_asm_op_get_hex (&asmop));
 		r_cons_printf (",\"family\":\"%s\"",
 				r_anal_op_family_to_string (ds->analop.family));
 		r_cons_printf (",\"type\":\"%s\"", r_anal_optype_to_string (ds->analop.type));
@@ -5962,7 +5962,7 @@ toro:
 			r_cons_println ("invalid"); // ???");
 		} else {
 			if (show_bytes) {
-				r_cons_printf ("%20s  ", asmop.buf_hex);
+				r_cons_printf ("%20s  ", r_asm_op_get_hex (&asmop));
 			}
 			ret = asmop.size;
 			if (!asm_immtrim && (decode || esil)) {
@@ -5991,7 +5991,7 @@ toro:
 				char opstr[128] = {
 					0
 				};
-				char *asm_str = (char *)&asmop.buf_asm;
+				char *asm_str = r_asm_op_get_asm (&asmop);
 				if (asm_ucase) {
 					r_str_case (asm_str, 1);
 				}
