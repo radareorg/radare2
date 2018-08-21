@@ -79,7 +79,7 @@ R_API void r_th_break(RThread *th) {
 }
 
 R_API bool r_th_kill(RThread *th, bool force) {
-	if (!th) {
+	if (!th || !th->tid) {
 		return false;
 	}
 	th->breaked = true;
