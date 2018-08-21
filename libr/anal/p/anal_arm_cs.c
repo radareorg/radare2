@@ -2036,7 +2036,11 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 			}
 		}
 		if (REGBASE(0) == ARM_REG_PC) {
-		}
+            op->type = R_ANAL_OP_TYPE_UJMP;
+            if (insn->detail->arm.cc != ARM_CC_AL) {
+                op->type = R_ANAL_OP_TYPE_MCJMP;
+            }
+        }
 		break;
 	case ARM_INS_MRS:
 		op->family = R_ANAL_OP_FAMILY_PRIV;
