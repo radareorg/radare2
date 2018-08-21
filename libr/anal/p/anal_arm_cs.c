@@ -1467,7 +1467,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	case ARM_INS_SADD8:
 	case ARM_INS_ADD:
 		op->type = R_ANAL_OP_TYPE_ADD;
-		if (REGID(1) == ARM_REG_PC && insn->detail->arm.cc != ARM_CC_AL) {
+		if (REGID(0) == ARM_REG_PC && insn->detail->arm.cc != ARM_CC_AL) {
 			//op->type = R_ANAL_OP_TYPE_RCJMP;
 			op->type = R_ANAL_OP_TYPE_UCJMP;
 		}
@@ -2567,17 +2567,18 @@ jmp $$ + 4 + ( [delta] * 2 )
 		break;
 	case ARM_INS_ADD:
 		op->type = R_ANAL_OP_TYPE_ADD;
-		if (REGID(1) == ARM_REG_PC) {
-			op->ptr = (addr & ~3LL) + (thumb? 4: 8) + MEMDISP(1);
-			if (insn->detail->arm.cc != ARM_CC_AL) {
+		if (REGID(0) == ARM_REG_PC) {
+			op->type = R_ANAL_OP_TYPE_UJMP;
+			if (REGID(1) == ARM_REG_PC && insn->detail->arm.cc != ARM_CC_AL) {
 				//op->type = R_ANAL_OP_TYPE_RCJMP;
 				op->type = R_ANAL_OP_TYPE_UCJMP;
 				op->fail = addr+op->size;
 				op->jump = ((addr & ~3LL) + (thumb? 4: 8) + MEMDISP(1)) & UT64_MAX;
+				op->ptr = (addr & ~3LL) + (thumb? 4: 8) + MEMDISP(1);
+				op->refptr = 4;
 				op->reg = r_str_get (cs_reg_name (handle, INSOP (2).reg));
 				break;
 			}
-			op->refptr = 4;
 		}
 		break;
 	case ARM_INS_VMOV:
@@ -2681,7 +2682,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->stackop = R_ANAL_STACK_GET;
 			op->stackptr = 0;
 			op->ptr = -MEMDISP(1);
-		} else if (REGBASE(1) == ARM_REG_PC) {
+		} else if (REGID(0) == ARM_REG_PC && REGBASE(1) == ARM_REG_PC) {
 			op->ptr = (addr & ~3LL) + (thumb? 4: 8) + MEMDISP(1);
 			if (insn->detail->arm.cc != ARM_CC_AL) {
 				//op->type = R_ANAL_OP_TYPE_MCJMP;
