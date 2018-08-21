@@ -1267,6 +1267,7 @@ repeat:
 		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_MCJMP:
 		case R_ANAL_OP_TYPE_RCJMP:
+		case R_ANAL_OP_TYPE_UCJMP:
 			if (anal->opt.cjmpref) {
 				(void) r_anal_xrefs_set (anal, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
 			}
