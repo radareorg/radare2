@@ -552,6 +552,7 @@ static const char *help_msg_av[] = {
 	"av*", "", "like av, but as r2 commands",
 	"avr", "[j@addr]", "try to parse RTTI at vtable addr (see anal.cpp.abi)",
 	"avra", "[j]", "search for vtables and try to parse RTTI at each of them",
+	"avrD", " [classname]", "demangle a class name from RTTI",
 	NULL
 };
 
@@ -7184,6 +7185,20 @@ static void cmd_anal_rtti(RCore *core, const char *input) {
 	case 'a': // "avra"
 		r_anal_rtti_print_all (core->anal, input[1]);
 		break;
+	case 'D': { // "avrD"
+		char *dup = strdup (input + 1);
+		if (!dup) {
+			break;
+		}
+		char *name = r_str_trim (dup);
+		char *demangled = r_anal_rtti_demangle_class_name (core->anal, dup);
+		free (name);
+		if (demangled) {
+			r_cons_println (demangled);
+			free (demangled);
+		}
+		break;
+	}
 	default :
 		r_core_cmd_help (core, help_msg_av);
 		break;
