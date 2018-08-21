@@ -465,7 +465,7 @@ static int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, int dep
 			default_case, default_case);
 
 	}
-	return 1;
+	return ret;
 }
 
 static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, int ret0) {
