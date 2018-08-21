@@ -65,8 +65,9 @@ R_API void r_core_task_print (RCore *core, RCoreTask *task, int mode) {
 		if (task == core->main_task) {
 			info = "-- MAIN TASK --";
 		}
-		r_cons_printf ("%2d  %12s  %s\n",
+		r_cons_printf ("%3d %3s %12s  %s\n",
 					   task->id,
+					   task->transient ? "(t)" : "",
 					   r_core_task_status (task),
 					   info ? info : "");
 		break;
