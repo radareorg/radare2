@@ -142,6 +142,7 @@ static void panelAllClear(RPanels *panels);
 static void addPanelFrame(RCore* core, RPanels* panels, const char *title, const char *cmd);
 static RPanel createMenuPanel(int x, int y, char *title);
 static bool checkFunc(RCore *core);
+static void activateCursor(RCore *core);
 static void cursorLeft(RCore *core);
 static void cursorRight(RCore *core);
 static void cursorDown(RCore *core);
@@ -182,6 +183,7 @@ static void onMenu(RCore *core, const char *menu, int *exit);
 static void changeMenu(RPanels *panels, const char **dstMenu);
 static void switchMode(RPanels *panels);
 static void maximizePanelSize(RPanels *panels);
+static void insertValue(RCore *core);
 static RConsCanvas *createNewCanvas(RCore *core, int w, int h);
 
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) {
@@ -554,6 +556,16 @@ static void cursorRight(RCore *core) {
 	}
 }
 
+static void activateCursor(RCore *core) {
+	RPanels *panels = core->panels;
+	if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)
+			|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS)
+			|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
+		setCursor (core, !core->print->cur_enabled);
+		panels->panel[panels->curnode].refresh = true;
+	}
+}
+
 static void cursorLeft(RCore *core) {
 	if (!strcmp (core->panels->panel[core->panels->curnode].cmd, PANEL_CMD_REGISTERS)
 			|| !strcmp (core->panels->panel[core->panels->curnode].cmd, PANEL_CMD_STACK)) {
@@ -861,6 +873,9 @@ static void handleZoomMode(RCore *core, const int key) {
 		case 'l':
 			handleRightKey (core);
 			break;
+		case 'c':
+			activateCursor (core);
+			break;
 		case 9:
 			restorePanelPos (&panel[panels->curnode]);
 			handleTabKey (core, false);
@@ -907,25 +922,7 @@ static bool handleCursorMode(RCore *core, const int key) {
 			panels->panel[panels->curnode].refresh = true;
 			break;
 		case 'i':
-			if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
-				const char *prompt = "insert hex: ";
-				panelPrompt (prompt, buf, sizeof (buf));
-				r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, panels->panel[panels->curnode].addr);
-				panels->panel[panels->curnode].refresh = true;
-			} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS)) {
-				creg = core->dbg->creg;
-				if (creg) {
-					const char *prompt = "new-reg-value> ";
-					panelPrompt (prompt, buf, sizeof (buf));
-					r_core_cmdf (core, "dr %s = %s", creg, buf);
-					panels->panel[panels->curnode].refresh = true;
-				}
-			} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
-				const char *prompt = "insert hex: ";
-				panelPrompt (prompt, buf, sizeof (buf));
-				r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, core->offset + core->print->cur);
-				panels->panel[panels->curnode].refresh = true;
-			}
+			insertValue (core);
 			break;
 		case '*':
 			if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
@@ -2147,8 +2144,32 @@ static void switchMode(RPanels *panels) {
 	}
 }
 
-R_API RPanels *r_core_panels_new(RCore *core) {
-	int w, h;
+static void insertValue(RCore *core) {
+	RPanels *panels = core->panels;
+	RPanel *panel = panels->panel;
+	char buf[128];
+	if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
+		const char *prompt = "insert hex: ";
+		panelPrompt (prompt, buf, sizeof (buf));
+		r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, panels->panel[panels->curnode].addr);
+		panels->panel[panels->curnode].refresh = true;
+	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS)) {
+		const char *creg = core->dbg->creg;
+		if (creg) {
+			const char *prompt = "new-reg-value> ";
+			panelPrompt (prompt, buf, sizeof (buf));
+			r_core_cmdf (core, "dr %s = %s", creg, buf);
+			panels->panel[panels->curnode].refresh = true;
+		}
+	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
+		const char *prompt = "insert hex: ";
+		panelPrompt (prompt, buf, sizeof (buf));
+		r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, core->offset + core->print->cur);
+		panels->panel[panels->curnode].refresh = true;
+	}
+}
+
+R_API RPanels *r_core_panels_new(RCore *core) { int w, h;
 	RPanels *panels = R_NEW0 (RPanels);
 
 	if (!panels) {
@@ -2366,12 +2387,7 @@ repeat:
 		setRefreshAll (panels);
 		break;
 	case 'c':
-		if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)
-					|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_REGISTERS)
-					|| !strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
-			setCursor (core, !core->print->cur_enabled);
-			panels->panel[panels->curnode].refresh = true;
-		}
+		activateCursor (core);
 		break;
 	case 'C':
 		can->color = !can->color;
