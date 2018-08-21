@@ -357,6 +357,51 @@ static void rtti_msvc_print_base_class_descriptor_json(rtti_base_class_descripto
 				   bcd->where.mdisp, bcd->where.pdisp, bcd->where.vdisp, bcd->attributes);
 }
 
+
+/**
+ * Demangle a class name as found in MSVC RTTI type descriptors.
+ *
+ * Examples:
+ * .?AVClassA@@
+ * => ClassA
+ * .?AVClassInInnerNamespace@InnerNamespace@OuterNamespace@@
+ * => OuterNamespace::InnerNamespace::AVClassInInnerNamespace
+ */
+R_API char *r_anal_rtti_msvc_demangle_class_name(const char *name) {
+	if (!name) {
+		return NULL;
+	}
+	size_t original_len = strlen (name);
+	if (original_len < 7
+		|| strncmp (name, ".?AV", 4) != 0
+		|| strncmp (name + original_len - 2, "@@", 2) != 0) {
+		return NULL;
+	}
+	char *ret = malloc ((original_len - 6) * 2 + 1);
+	if (!ret) {
+		return NULL;
+	}
+	char *c = ret;
+	const char *oc = name + original_len - 3;
+	size_t part_len = 0;
+	while (oc >= name + 4) {
+		if (*oc == '@') {
+			memcpy (c, oc + 1, part_len);
+			c += part_len;
+			*c++ = ':';
+			*c++ = ':';
+			part_len = 0;
+			oc--;
+		} else {
+			part_len++;
+			oc--;
+		}
+	}
+	memcpy (c, oc + 1, part_len);
+	c[part_len] = '\0';
+	return ret;
+}
+
 R_API void r_anal_rtti_msvc_print_complete_object_locator(RVTableContext *context, ut64 addr, int mode) {
 	rtti_complete_object_locator col;
 	if (!rtti_msvc_read_complete_object_locator (context, addr, &col)) {
