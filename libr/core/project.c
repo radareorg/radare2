@@ -358,13 +358,13 @@ typedef struct {
 	char *rcPath;
 } ProjectState;
 
-static int projectLoadBackground(RThread *th) {
+static RThreadFunctionRet projectLoadBackground(RThread *th) {
 	ProjectState *ps = th->user;
 	r_core_project_load (ps->core, ps->prjName, ps->rcPath);
 	free (ps->prjName);
 	free (ps->rcPath);
 	free (ps);
-	return 0;
+	return R_TH_STOP;
 }
 
 R_API RThread *r_core_project_load_bg(RCore *core, const char *prjName, const char *rcPath) {

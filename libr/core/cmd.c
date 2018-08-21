@@ -1325,10 +1325,12 @@ static void task_test(RCore *core, int usecs) {
 static int cmd_thread(void *data, const char *input) {
 	RCore *core = (RCore*) data;
 	switch (input[0]) {
-	case '\0':
-	case 'j':
+	case '\0': // "&"
+	case 'j': // "&j"
 		r_core_task_list (core, *input);
 		break;
+#if 0
+	// Test command
 	case 't': { // "&t"
 		int usecs = 0;
 		if (input[1] == ' ') {
@@ -1337,7 +1339,8 @@ static int cmd_thread(void *data, const char *input) {
 		task_test (core, usecs);
 		break;
 	}
-	case 'b': {
+#endif
+	case 'b': { // "&b"
 		if (r_sandbox_enable (0)) {
 			eprintf ("This command is disabled in sandbox mode\n");
 			return 0;
@@ -1381,7 +1384,7 @@ static int cmd_thread(void *data, const char *input) {
 		}
 		break;
 	}
-	case '-':
+	case '-': // "&-"
 		if (r_sandbox_enable (0)) {
 			eprintf ("This command is disabled in sandbox mode\n");
 			return 0;
@@ -1392,19 +1395,21 @@ static int cmd_thread(void *data, const char *input) {
 			r_core_task_del (core, r_num_math (core->num, input + 1));
 		}
 		break;
-	case '?':
+	case '?': // "&?"
+	default:
 		helpCmdTasks (core);
 		break;
-	case ' ':
+	case ' ': // "&"
+	case 't': { // "&t"
 		if (r_sandbox_enable (0)) {
 			eprintf ("This command is disabled in sandbox mode\n");
 			return 0;
 		}
-		r_core_task_enqueue (core, r_core_task_new (core, true, input + 1, NULL, core));
+		RCoreTask *task = r_core_task_new (core, true, input + 1, NULL, core);
+		task->transient = input[0] == 't';
+		r_core_task_enqueue (core, task);
 		break;
-	default:
-		eprintf ("&?\n");
-		break;
+	}
 	}
 	return 0;
 }

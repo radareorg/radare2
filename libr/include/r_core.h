@@ -743,6 +743,7 @@ typedef enum {
 typedef struct r_core_task_t {
 	int id;
 	RTaskState state;
+	bool transient; // delete when finished
 	RThreadSemaphore *running_sem;
 	void *user;
 	RCore *core;

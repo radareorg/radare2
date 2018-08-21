@@ -53,7 +53,7 @@ R_API void r_core_task_print (RCore *core, RCoreTask *task, int mode) {
 				r_cons_print ("done");
 				break;
 		}
-		r_cons_print ("\",\"cmd\":");
+		r_cons_printf ("\",\"transient\":%s,\"cmd\":", task->transient ? "true" : "false");
 		if (task->cmd) {
 			r_cons_printf ("\"%s\"}", task->cmd);
 		} else {
@@ -179,6 +179,7 @@ R_API RCoreTask *r_core_task_new(RCore *core, bool create_cons, const char *cmd,
 
 	task->id = core->task_id_next++;
 	task->state = R_CORE_TASK_STATE_BEFORE_START;
+	task->transient = false;
 	task->core = core;
 	task->user = user;
 	task->cb = cb;
@@ -308,8 +309,7 @@ static void task_end(RCoreTask *t) {
 	r_core_task_schedule (t, R_CORE_TASK_STATE_DONE);
 }
 
-static int task_run(RCoreTask *task) {
-	int res = 0;
+static RThreadFunctionRet task_run(RCoreTask *task) {
 	RCore *core = task->core;
 
 	task_wakeup (task);
@@ -321,10 +321,9 @@ static int task_run(RCoreTask *task) {
 
 	char *res_str;
 	if (task == task->core->main_task) {
-		res = r_core_cmd (core, task->cmd, task->cmd_log);
+		r_core_cmd (core, task->cmd, task->cmd_log);
 		res_str = NULL;
 	} else {
-		res = 0;
 		res_str = r_core_cmd_str (core, task->cmd);
 	}
 
@@ -335,7 +334,10 @@ static int task_run(RCoreTask *task) {
 		eprintf ("\nTask %d finished\n", task->id);
 	}
 
+	TASK_SIGSET_T old_sigset;
 stillbirth:
+	tasks_lock_enter (core, &old_sigset);
+
 	task_end (task);
 
 	if (task->cb) {
@@ -346,16 +348,30 @@ stillbirth:
 		r_th_sem_post (task->running_sem);
 	}
 
-	return res;
-}
-
-static int task_run_thread(RThread *th) {
-	RCoreTask *task = (RCoreTask *)th->user;
-	int ret = task_run (task);
 	if (task->cons_context && task->cons_context->break_stack) {
 		r_cons_context_break_pop (task->cons_context, false);
 	}
+
+	int ret = R_TH_STOP;
+	if (task->transient) {
+		RCoreTask *ltask;
+		RListIter *iter;
+		r_list_foreach (core->tasks, iter, ltask) {
+			if (ltask == task) {
+				r_list_delete (core->tasks, iter);
+				ret = R_TH_FREED;
+				break;
+			}
+		}
+	}
+
+	tasks_lock_leave (core, &old_sigset);
 	return ret;
+}
+
+static RThreadFunctionRet task_run_thread(RThread *th) {
+	RCoreTask *task = (RCoreTask *)th->user;
+	return task_run (task);
 }
 
 R_API void r_core_task_enqueue(RCore *core, RCoreTask *task) {
@@ -489,11 +505,14 @@ R_API int r_core_task_del (RCore *core, int id) {
 	tasks_lock_enter (core, &old_sigset);
 	r_list_foreach (core->tasks, iter, task) {
 		if (task->id == id) {
-			if (task == core->main_task
-				|| task->state != R_CORE_TASK_STATE_DONE) {
+			if (task == core->main_task) {
 				break;
 			}
-			r_list_delete (core->tasks, iter);
+			if (task->state == R_CORE_TASK_STATE_DONE) {
+				r_list_delete (core->tasks, iter);
+			} else {
+				task->transient = true;
+			}
 			ret = true;
 			break;
 		}

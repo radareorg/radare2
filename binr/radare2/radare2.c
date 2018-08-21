@@ -40,7 +40,7 @@ static char* get_file_in_cur_dir(const char *filepath) {
 
 static RThread *thread = NULL;
 
-static int loading_thread(RThread *th) {
+static RThreadFunctionRet loading_thread(RThread *th) {
 	const char *tok = "\\|/-";
 	int i = 0;
 	if (th) {
@@ -50,7 +50,7 @@ static int loading_thread(RThread *th) {
 			i++;
 		}
 	}
-	return 0;
+	return R_TH_STOP;
 }
 
 static void loading_start() {
@@ -259,7 +259,7 @@ static int main_print_var(const char *var_name) {
 // Load the binary information from rabin2
 // TODO: use thread to load this, split contents line, per line and use global lock
 #if USE_THREADS
-static int rabin_delegate(RThread *th) {
+static RThreadFunctionRet rabin_delegate(RThread *th) {
 	RIODesc *d = r_io_desc_get (r.io, r.file->fd);
 	if (rabin_cmd && r_file_exists (d->name)) {
 		char *nptr, *ptr, *cmd = r_sys_cmd_str (rabin_cmd, NULL, NULL);
@@ -289,7 +289,7 @@ static int rabin_delegate(RThread *th) {
 	if (th) {
 		eprintf ("rabin2: done\n");
 	}
-	return 0;
+	return R_TH_STOP;
 }
 #endif
 
