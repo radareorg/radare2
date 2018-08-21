@@ -85,7 +85,6 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 		bb->addr = addr;
 	}
 	len -= 16; // XXX: hack to avoid segfault by x86im
-	printf("r_anal_bb\n");
 	while (idx < len) {
 		// TODO: too slow object construction
 		if (!(op = r_anal_op_new ())) {
@@ -120,7 +119,6 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 				// TODO: get values from anal backend
 				bb->cond->type = R_ANAL_COND_EQ;
 			} else VERBOSE_ANAL eprintf ("Unknown conditional for block 0x%"PFMT64x"\n", bb->addr);
-			printf("CJMP block %p\n", bb->addr);
 			bb->conditional = 1;
 			bb->fail = op->fail;
 			bb->jump = op->jump;
