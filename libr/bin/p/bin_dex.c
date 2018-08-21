@@ -1233,7 +1233,7 @@ static const ut8 *parse_dex_class_method(RBinFile *binfile, RBinDexObj *bin,
 						catchAll = false;
 					}
 
-					for (m = 0; m < size; m++) {
+					for (m = 0; m < size && p3 < p3_end; m++) {
 						p3 = r_uleb128 (p3, p3_end - p3, &handler_type);
 						p3 = r_uleb128 (p3, p3_end - p3, &handler_addr);
 
