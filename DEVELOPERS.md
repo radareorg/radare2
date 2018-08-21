@@ -188,6 +188,8 @@ r_core_wrap.cxx:32103:61: error: assigning to 'RDebugReasonType' from incompatib
   the algorithm, only external-copy-pasted-not-going-to-be-maintained code
   can be accepted in this way (gnu code, external disassemblers, etc..)
 
+* See sys/indent.sh for indenting your code automatically
+
 * See doc/vim for vimrc
 
 * See doc/clang-format for work-in-progress support for automated indentation
