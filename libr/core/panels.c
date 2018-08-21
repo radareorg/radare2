@@ -876,9 +876,6 @@ static void handleZoomMode(RCore *core, const int key) {
 		case 'c':
 			activateCursor (core);
 			break;
-		case 'i':
-			insertValue (core);
-			break;
 		case 9:
 			restorePanelPos (&panel[panels->curnode]);
 			handleTabKey (core, false);
