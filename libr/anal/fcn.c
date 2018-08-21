@@ -1280,7 +1280,7 @@ repeat:
 					ut64 table_size, default_case;
 					table_size = cmpval + 1;
 					default_case = op.fail; // is this really default case?
-					if (table_size != UT64_MAX && default_case != UT64_MAX && (op.reg || op.ireg)) {
+					if (cmpval != UT64_MAX && default_case != UT64_MAX && (op.reg || op.ireg)) {
 						if (op.ireg) {
 							ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, op.ptr, anal->bits >> 3, table_size, default_case, ret);
 						} else { // op.reg
