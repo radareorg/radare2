@@ -313,9 +313,12 @@ static int sdbforcb_json (void *p, const char *k, const char *v) {
 	char *sizecmd = r_str_newf ("type.%s.size", k);
 	char *size_s = sdb_querys (sdb, NULL, -1, sizecmd);
 	char *formatcmd = r_str_newf ("type.%s", k);
+	char *format_s = r_str_trim (sdb_querys (sdb, NULL, -1, formatcmd));
 	r_cons_printf ("{\"type\":\"%s\",\"size\":%d,\"format\":\"%s\"}", k,
 			size_s ? atoi (size_s) : -1,
-			r_str_trim (sdb_querys (sdb, NULL, -1, formatcmd)));
+			format_s);
+	free (size_s);
+	free (format_s);
 	free (sizecmd);
 	free (formatcmd);
 	return 1;
@@ -607,6 +610,7 @@ static int cmd_type(void *data, const char *input) {
 			: sdb_querys (TDB, NULL, -1, "*");
 		if (res) {
 			r_cons_print (res);
+			free (res);
 		}
 		break;
 	case 'c': // "tc"
