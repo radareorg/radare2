@@ -2682,9 +2682,10 @@ jmp $$ + 4 + ( [delta] * 2 )
 			op->stackop = R_ANAL_STACK_GET;
 			op->stackptr = 0;
 			op->ptr = -MEMDISP(1);
-		} else if (REGID(0) == ARM_REG_PC && REGBASE(1) == ARM_REG_PC) {
+		} else if (REGBASE(1) == ARM_REG_PC) {
 			op->ptr = (addr & ~3LL) + (thumb? 4: 8) + MEMDISP(1);
-			if (insn->detail->arm.cc != ARM_CC_AL) {
+			op->refptr = 4;
+			if (REGID(0) == ARM_REG_PC && insn->detail->arm.cc != ARM_CC_AL) {
 				//op->type = R_ANAL_OP_TYPE_MCJMP;
 				op->type = R_ANAL_OP_TYPE_UCJMP;
 				op->fail = addr+op->size;
@@ -2692,7 +2693,6 @@ jmp $$ + 4 + ( [delta] * 2 )
 				op->ireg = r_str_get (cs_reg_name(handle, INSOP (1).mem.index));
 				break;
 			}
-			op->refptr = 4;
 		}
 		break;
 	case ARM_INS_BLX:
