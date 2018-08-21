@@ -417,6 +417,57 @@ static void queue_case(RAnal *anal, ut64 switch_addr, ut64 case_addr, ut64 id, u
 		switch_addr, id, case_addr);
 }
 
+// TODO: find a better function name
+static int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 jmptbl_loc, ut64 sz, ut64 jmptbl_size, ut64 default_case, int ret0) {
+	/*
+	 * Example about arm jump table
+	 *
+	 * 0x000105b4      060050e3       cmp r0, 3
+	 * 0x000105b8      00f18f90       addls pc, pc, r0, lsl 2
+	 * 0x000105bc      0d0000ea       b loc.000105f8
+	 * 0x000105c0      050000ea       b 0x105dc
+	 * 0x000105c4      050000ea       b 0x105e0
+	 * 0x000105c8      060000ea       b 0x105e8
+	 * ; CODE XREF from loc._a_7 (+0x10)
+	 * 0x000105dc      b6ffffea       b sym.input_1
+	 * ; CODE XREF from loc._a_7 (+0x14)
+	 * 0x000105e0      b9ffffea       b sym.input_2
+	 * ; CODE XREF from loc._a_7 (+0x28)
+	 * 0x000105e4      ccffffea       b sym.input_7
+	 * ; CODE XREF from loc._a_7 (+0x18)
+	 * 0x000105e8      bbffffea       b sym.input_3
+	 */
+
+	ut64 offs, jmpptr;
+	int ret = ret0;
+
+	if (jmptbl_size == 0) {
+		jmptbl_size = JMPTBLSZ;
+	}
+
+	for (offs = 0; offs + sz - 1 < jmptbl_size * sz; offs += sz) {
+		jmpptr = jmptbl_loc + offs;
+		queue_case (anal, ip, jmpptr, offs/sz, jmptbl_loc + offs);
+		recurseAt (jmpptr);
+	}
+
+	if (offs > 0) {
+		// eprintf("\n\nSwitch statement at 0x%llx:\n", ip);
+		anal->cmdtail = r_str_appendf (anal->cmdtail,
+			"CCu switch table (%d cases) at 0x%"PFMT64x " @ 0x%"PFMT64x "\n",
+			offs/sz, jmptbl_loc, ip);
+		anal->cmdtail = r_str_appendf (anal->cmdtail,
+			"f switch.0x%08"PFMT64x" 1 @ 0x%08"PFMT64x"\n",
+			ip, ip);
+
+		anal->cmdtail = r_str_appendf (anal->cmdtail,
+			"f case.default.0x%"PFMT64x " 1 @ 0x%08"PFMT64x "\n",
+			default_case, default_case);
+
+	}
+	return 1;
+}
+
 static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut64 ip, ut64 jmptbl_loc, ut64 jmptbl_off, ut64 sz, ut64 jmptbl_size, ut64 default_case, int ret0) {
 	int ret = ret0;
 	// jmptbl_size can not always be determined
@@ -837,6 +888,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	int overlapped = 0;
 	RAnalOp op = {0};
 	int oplen, idx = 0;
+	ut64 cmpval = UT64_MAX;
 	bool varset = false;
 	struct {
 		int cnt;
@@ -1209,13 +1261,41 @@ repeat:
 			gotoBeachRet ();
 #endif
 			break;
+		case R_ANAL_OP_TYPE_CMP:
+			cmpval = op.ptr;
+			break;
 		case R_ANAL_OP_TYPE_CJMP:
+		case R_ANAL_OP_TYPE_MCJMP:
+		case R_ANAL_OP_TYPE_RCJMP:
 			if (anal->opt.cjmpref) {
 				(void) r_anal_xrefs_set (anal, op.addr, op.jump, R_ANAL_REF_TYPE_CODE);
 			}
 			if (!overlapped) {
 				bb->jump = op.jump;
 				bb->fail = op.fail;
+			}
+
+			if (anal->opt.jmptbl) {
+				if (op.ptr != UT64_MAX) {
+					ut64 table_size, default_case;
+					table_size = cmpval + 1;
+					default_case = op.fail; // is this really default case?
+					if (table_size != UT64_MAX && default_case != UT64_MAX && (op.reg || op.ireg)) {
+						if (op.ireg) {
+							ret = try_walkthrough_jmptbl (anal, fcn, depth, op.addr, op.ptr, op.ptr, anal->bits >> 3, table_size, default_case, ret);
+						} else { // op.reg
+							ret = walkthrough_arm_jmptbl_style (anal, fcn, depth, op.addr, op.ptr, anal->bits >> 3, table_size, default_case, ret);
+						}
+						// check if op.jump and op.fail contain jump table location
+						// clear jump address, because it's jump table location
+						if (op.jump == op.ptr) {
+							op.jump = UT64_MAX;
+						} else if (op.fail == op.ptr) {
+							op.fail = UT64_MAX;
+						}
+						cmpval = UT64_MAX;
+					}
+				}
 			}
 			if (continue_after_jump) {
 				recurseAt (op.jump);
