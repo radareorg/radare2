@@ -882,7 +882,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 	if (launch == '-') {
 		if (httpthread) {
 			eprintf ("Press ^C to stop the webserver\n");
-			r_th_free (httpthread);
+			r_th_kill_free (httpthread);
 			httpthread = NULL;
 		} else {
 			eprintf ("No webserver running\n");

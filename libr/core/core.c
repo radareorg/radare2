@@ -2328,7 +2328,7 @@ R_API void r_core_prompt_loop(RCore *r) {
 /*			if (lock) r_th_lock_leave (lock);
 		if (rabin_th && !r_th_wait_async (rabin_th)) {
 			eprintf ("rabin thread end \n");
-			r_th_free (rabin_th);
+			r_th_kill_free (rabin_th);
 			r_th_lock_free (lock);
 			lock = NULL;
 			rabin_th = NULL;

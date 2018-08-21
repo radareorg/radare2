@@ -182,12 +182,20 @@ R_API void *r_th_free(struct r_th_t *th) {
 	if (!th) {
 		return NULL;
 	}
-	r_th_kill (th, true);
 #if __WINDOWS__ && !defined(__CYGWIN__)
 	CloseHandle (th->tid);
 #endif
 	r_th_lock_free (th->lock);
 	free (th);
+	return NULL;
+}
+
+R_API void *r_th_kill_free(struct r_th_t *th) {
+	if (!th) {
+		return NULL;
+	}
+	r_th_kill (th, true);
+	r_th_free (th);
 	return NULL;
 }
 
