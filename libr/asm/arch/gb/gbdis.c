@@ -28,27 +28,25 @@ static int gbDisass(RAsmOp *op, const ut8 *buf, int len){
 	if (len < foo) {
 		return 0;
 	}
-	const char *buf_asm = NULL;
+	const char *buf_asm = "invalid";
 	switch (gb_op[buf[0]].type) {
 	case GB_8BIT:
 		buf_asm = sdb_fmt ("%s", gb_op[buf[0]].name);
 		break;
 	case GB_16BIT:
-		buf_asm = sdb_fmt ("%s %s", cb_ops[buf[1]>>3], cb_regs[buf[1]&7]);
+		buf_asm = sdb_fmt ("%s %s", cb_ops[buf[1] >> 3], cb_regs[buf[1] & 7]);
 		break;
-	case GB_8BIT+ARG_8:
+	case GB_8BIT + ARG_8:
 		buf_asm = sdb_fmt (gb_op[buf[0]].name, buf[1]);
 		break;
-	case GB_8BIT+ARG_16:
-		buf_asm = sdb_fmt (gb_op[buf[0]].name, buf[1]+0x100*buf[2]);
+	case GB_8BIT + ARG_16:
+		buf_asm = sdb_fmt (gb_op[buf[0]].name, buf[1] + 0x100 * buf[2]);
 		break;
-	case GB_8BIT+ARG_8+GB_IO:
-		buf_asm = sdb_fmt (gb_op[buf[0]].name, 0xff00+buf[1]);
+	case GB_8BIT + ARG_8 + GB_IO:
+		buf_asm = sdb_fmt (gb_op[buf[0]].name, 0xff00 + buf[1]);
 		break;
 	}
-	if (buf_asm) {
-		r_strbuf_set (&op->buf_asm, buf_asm);
-	}
+	r_strbuf_set (&op->buf_asm, buf_asm);
 	return foo;
 }
 #endif

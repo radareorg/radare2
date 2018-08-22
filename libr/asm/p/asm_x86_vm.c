@@ -109,9 +109,7 @@ void decompile_vm(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		buf_asm ="vmsdte";
 		op->size = 5;
 	}
-	if (buf_asm) {
-		r_asm_op_set_asm (op, buf_asm);
-	}
+	r_asm_op_set_asm (op, buf_asm);
 }
 
 #undef VPCEXT2

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2018 - condret */
+/* radare - LGPL - Copyright 2012-2018 - condret, pancake */
 
 #include <r_util.h>
 #include <r_types.h>
@@ -23,11 +23,12 @@ static bool gb_parse_cb1 (ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
 		return false;
 	}
 	buf[0] = base;
-	i = strlen (buf_asm + minlen - 1);
-	r_str_replace_in (buf_asm + minlen - 1, (ut32)i, "[ ", "[", true);
-	r_str_replace_in (buf_asm + minlen - 1, (ut32)i, " ]", "]", true);
+	char *ptr_asm = buf_asm + minlen - 1;
+	i = strlen (ptr_asm);
+	r_str_replace_in (ptr_asm, (ut32)i, "[ ", "[", true);
+	r_str_replace_in (ptr_asm, (ut32)i, " ]", "]", true);
 	r_str_do_until_token (str_op, buf_asm, ' ');
-	i = gb_reg_idx (buf_asm[minlen-1]);
+	i = gb_reg_idx (buf_asm[minlen - 1]);
 	if (i != (-1)) {
 		buf[0] |= (ut8)i;
 		return true;
@@ -73,7 +74,7 @@ static bool gb_parse_cb2 (ut8 *buf, const int minlen, char *buf_asm, ut8 base) {
 		buf[0] |= (ut8)i;
 		return true;
 	}
-	if (strlen (&q[1]) < 4) {
+	if (strlen (q + 1) < 4) {
 		return false;
 	}
 	if (!strncmp (q + 1, "[hl]", 4)) {
@@ -90,12 +91,13 @@ static int gb_parse_arith1 (ut8 *buf, const int minlen, char *buf_asm, ut8 base,
 		return 0;
 	}
 	buf[0] = base;
-	i = strlen (&buf_asm[minlen - 1]);
-	r_str_replace_in (&buf_asm[minlen - 1], (ut32)i, "[ ", "[", true);
-	r_str_replace_in (&buf_asm[minlen - 1], (ut32)i, " ]", "]", true);
+	const char *ptr_asm = buf_asm + minlen - 1;
+	i = strlen (ptr_asm);
+	r_str_replace_in (ptr_asm, (ut32)i, "[ ", "[", true);
+	r_str_replace_in (ptr_asm, (ut32)i, " ]", "]", true);
 	r_str_do_until_token (str_op, buf_asm, ' ');
 	i = gb_reg_idx (buf_asm[minlen - 1]);
-	if (i != (-1)) {
+	if (i != -1) {
 		buf[0] |= (ut8)i;
 	} else if (!strncmp (buf_asm + minlen - 1, "[hl]", 4)) {
 		buf[0] |= 6;
@@ -282,16 +284,16 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 			&& buf_asm[6] == ','
 			&& buf_asm[7] != '\0') {
 			opbuf[0] = 0xe8;
-			num = r_num_get (NULL, &buf_asm[7]);
+			num = r_num_get (NULL, buf_asm + 7);
 			opbuf[1] = (ut8)(num & 0xff);
 			len = 2;
 		} else if (!strcmp (buf_asm, "hl,bc")) {
 			opbuf[0] = 0x09;
-		} else if (!strcmp (&buf_asm[4], "hl,de")) {
+		} else if (!strcmp (buf_asm + 4, "hl,de")) {
 			opbuf[0] = 0x19;
-		} else if (!strcmp (&buf_asm[4], "hl,hl")) {
+		} else if (!strcmp (buf_asm + 4, "hl,hl")) {
 			opbuf[0] = 0x29;
-		} else if (!strcmp (&buf_asm[4], "hl,sp")) {
+		} else if (!strcmp (buf_asm + 4, "hl,sp")) {
 			opbuf[0] = 0x39;
 		} else {
 			len = gb_parse_arith1 (opbuf, 5, buf_asm, 0x80, 0xc6);
@@ -341,7 +343,7 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 				return op->size = 0;
 			}
 		} else {
-			str_op(&buf_asm[4]);
+			str_op (&buf_asm[4]);
 			if (buf_asm[4] != 'n') {
 				return op->size = 0;
 			}
@@ -367,23 +369,27 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 	case 0x6c64: //ld
 		if (!gb_parse_ld1 (opbuf, 6, buf_asm)) {
 			len++;
-			if (!gb_parse_ld2 (opbuf, buf_asm))
+			if (!gb_parse_ld2 (opbuf, buf_asm)) {
 				len = 0;
+			}
 		}
 		break;
-	case 0x727374:			//rst
-		if (strlen (buf_asm) < 5)
+	case 0x727374: //rst
+		if (strlen (buf_asm) < 5) {
 			return op->size = 0;
+		}
 		num = r_num_get (NULL, &buf_asm[4]);
-		if ((num & 7) || ((num/8) > 7))
+		if ((num & 7) || ((num/8) > 7)) {
 			return op->size = 0;
+		}
 		opbuf[0] = (ut8)((num & 0xff) + 0xc7);
 		break;
-	case 0x70757368:		//push
-		if (strlen (buf_asm) < 7)
+	case 0x70757368: //push
+		if (strlen (buf_asm) < 7) {
 			return op->size = 0;
-		str_op (&buf_asm[5]);
-		str_op (&buf_asm[6]);
+		}
+		str_op (buf_asm + 5);
+		str_op (buf_asm + 6);
 		if (buf_asm[5] == 'b' && buf_asm[6] == 'c') {
 			opbuf[0] = 0xc5;
 		} else if (buf_asm[5] == 'd' && buf_asm[6] == 'e') {
@@ -392,7 +398,9 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 			opbuf[0] = 0xe5;
 		} else if (buf_asm[5] == 'a' && buf_asm[6] == 'f') {
 			opbuf[0] = 0xf5;
-		} else len = 0;
+		} else {
+			len = 0;
+		}
 		break;
 	case 0x706f70:			//pop	
 		if (strlen (buf_asm) < 6)
@@ -433,21 +441,28 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 				str_op (p-2);
 				str_op (p-1);
 				if (*(p-2) == 'n') {
-					if (*(p-1) == 'z')
+					if (*(p-1) == 'z') {
 						opbuf[0] = 0xc2;
-					else if (*(p-1) == 'c')
+					} else if (*(p-1) == 'c') {
 						opbuf[0] = 0xd2;
-					else	return op->size = 0;
+					} else {
+						return op->size = 0;
+					}
 				} else if (*(p-2) == ' ') {
-					if (*(p-1) == 'z')
+					if (*(p-1) == 'z') {
 						opbuf[0] = 0xca;
-					else if (*(p-1) == 'c')
+					} else if (*(p-1) == 'c') {
 						opbuf[0] = 0xda;
-					else	return op->size = 0;
-				} else	return op->size = 0;
-				r_str_replace_in (p, strlen(p), ", ", ",", true);
-				if (p[1] == '\0')
+					} else {
+						return op->size = 0;
+					}
+				} else {
 					return op->size = 0;
+				}
+				r_str_replace_in (p, strlen(p), ", ", ",", true);
+				if (!p[0] || !p[1]) {
+					return op->size = 0;
+				}
 				num = r_num_get (NULL, p + 1);
 				opbuf[1] = (ut8)(num & 0xff);
 				opbuf[2] = (ut8)((num & 0xff00) >> 8);
@@ -455,7 +470,7 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 			}
 		}
 		break;
-	case 0x6a72:			//jr
+	case 0x6a72: // jr
 		if (strlen (buf_asm) < 4)
 			return op->size = 0;
 		{
@@ -520,10 +535,13 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 					else if (*(p-1) == 'c')
 						opbuf[0] = 0xdc;
 					else	return op->size = 0;
-				} else	return op->size = 0;
-				r_str_replace_in (p, strlen(p), ", ", ",", true);
-				if (p[1] == '\0')
+				} else {
 					return op->size = 0;
+				}
+				r_str_replace_in (p, strlen(p), ", ", ",", true);
+				if (!*p || !p[1]) {
+					return op->size = 0;
+				}
 				num = r_num_get (NULL, p + 1);
 				opbuf[1] = (ut8)(num & 0xff);
 				opbuf[2] = (ut8)((num & 0xff00) >> 8);
@@ -533,71 +551,47 @@ static int gbAsm(RAsm *a, RAsmOp *op, const char *buf) {
 		break;
 	case 0x726c63:
 		opbuf[0] = 0xcb;
-		len = 2;
-		if (!gb_parse_cb1 (&opbuf[1], 5, buf_asm, 0x00))
-			len = 0;
+		len = gb_parse_cb1 (opbuf + 1, 5, buf_asm, 0x00)? 2: 0;
 		break;
 	case 0x727263:
 		opbuf[0] = 0xcb;
-		len = 2;
-		if (!gb_parse_cb1 (&opbuf[1], 5, buf_asm, 0x08))
-			len = 0;
+		len = gb_parse_cb1 (opbuf + 1, 5, buf_asm, 0x08)? 2: 0;
 		break;
 	case 0x726c:
 		opbuf[0] = 0xcb;
-		len = 2;
-		if (!gb_parse_cb1 (&opbuf[1], 4, buf_asm, 0x10))
-			len = 0;
+		len = gb_parse_cb1 (opbuf + 1, 4, buf_asm, 0x10)? 2: 0;
 		break;
 	case 0x7272:
 		opbuf[0] = 0xcb;
-		len = 2;
-		if (!gb_parse_cb1 (&opbuf[1], 4, buf_asm, 0x18)) {
-			len = 0;
-		}
+		len = gb_parse_cb1 (opbuf + 1, 4, buf_asm, 0x18)? 2: 0;
 		break;
 	case 0x736c61:
 		opbuf[0] = 0xcb;
-		len = 2;
-		if (!gb_parse_cb1 (&opbuf[1], 5, buf_asm, 0x20))
-			len = 0;
+		len = gb_parse_cb1 (opbuf + 1, 5, buf_asm, 0x20)? 2: 0;
 		break;
 	case 0x737261:
 		opbuf[0] = 0xcb;
-		len = 2;
-		if (!gb_parse_cb1 (&opbuf[1], 5, buf_asm, 0x28))
-			len = 0;
+		len = gb_parse_cb1 (opbuf + 1, 5, buf_asm, 0x28)? 2: 0;
 		break;
 	case 0x73776170:
 		opbuf[0] = 0xcb;
-		len = 2;
-		if (!gb_parse_cb1 (&opbuf[1], 6, buf_asm, 0x30))
-			len = 0;
+		len = gb_parse_cb1 (opbuf + 1, 6, buf_asm, 0x30)? 2: 0;
 		break;
 	case 0x73726c:
 		opbuf[0] = 0xcb;
-		len = 2;
-		if (!gb_parse_cb1 (&opbuf[1], 5, buf_asm, 0x38))
-			len = 0;
+		len = gb_parse_cb1 (opbuf + 1, 6, buf_asm, 0x38)? 2: 0;
 		break;
 	case 0x626974:
 		opbuf[0] = 0xcb;
-		len = 2;
-		if (!gb_parse_cb2 (&opbuf[1], 6, buf_asm, 0x40))
-			len = 0;
+		len = gb_parse_cb2 (opbuf + 1, 6, buf_asm, 0x40)? 2: 0;
 		break;
 	case 0x726573:
 		opbuf[0] = 0xcb;
-		len = 2;
-		if (!gb_parse_cb2 (&opbuf[1], 6, buf_asm, 0x80))
-			len = 0;
+		len = gb_parse_cb2 (opbuf + 1, 6, buf_asm, 0x80)? 2: 0;
 		break;
 	case 0x736574:
 		opbuf[0] = 0xcb;
-		len = 2;
-		if (!gb_parse_cb2 (&opbuf[1], 6, buf_asm, 0xc0)) {
-			len = 0;
-		}
+		len = gb_parse_cb2 (opbuf + 1, 6, buf_asm, 0xc0)? 2: 0;
 		break;
 	default:
 		len = 0;

@@ -850,7 +850,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 							off += (acode->code_align - (off % acode->code_align));
 						}
 						char food[64];
-						snprintf (food, sizeof (food), "0x%"PFMT64x"", off);
+						snprintf (food, sizeof (food), "0x%"PFMT64x, off);
 						ht_insert (a->flags, ptr_start, food);
 						// TODO: warning when redefined
 						r_asm_code_set_equ (acode, ptr_start, food);

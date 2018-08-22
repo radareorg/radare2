@@ -203,13 +203,6 @@ R_API void r_asm_op_set_hex(RAsmOp *op, const char *str);
 R_API void r_asm_op_set_hexbuf(RAsmOp *op, const ut8 *buf, int len);
 R_API void r_asm_op_set_buf(RAsmOp *op, const ut8 *str, int len);
 
-#if 0
-// accessors, to make bindings happy
-R_API char *r_asm_op_get_hex(RAsmOp *op);
-R_API char *r_asm_op_get_asm(RAsmOp *op);
-R_API int r_asm_op_get_size(RAsmOp *op);
-#endif
-
 /* plugin pointers */
 extern RAsmPlugin r_asm_plugin_bf;
 extern RAsmPlugin r_asm_plugin_java;
