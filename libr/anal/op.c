@@ -101,6 +101,32 @@ static RAnalVar *get_used_var(RAnal *anal, RAnalOp *op) {
 	return res;
 }
 
+static int defaultCycles(RAnalOp *op) {
+	switch (op->type) {
+	case R_ANAL_OP_TYPE_PUSH:
+	case R_ANAL_OP_TYPE_POP:
+	case R_ANAL_OP_TYPE_STORE:
+	case R_ANAL_OP_TYPE_LOAD:
+		return 2;
+	case R_ANAL_OP_TYPE_LEA:
+	case R_ANAL_OP_TYPE_MOV:
+	case R_ANAL_OP_TYPE_NOP:
+		return 1;
+	case R_ANAL_OP_TYPE_TRAP:
+	case R_ANAL_OP_TYPE_SWI:
+		return 4;
+	case R_ANAL_OP_TYPE_SYNC:
+		return 4;
+	case R_ANAL_OP_TYPE_RET:
+	case R_ANAL_OP_TYPE_JMP:
+	case R_ANAL_OP_TYPE_RJMP:
+	case R_ANAL_OP_TYPE_CALL:
+		return 4;
+	default:
+		return 1;
+	}
+}
+
 R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len, int mask) {
 	//len will end up in memcmp so check for negative
 	if (!anal || len < 0) {
@@ -147,6 +173,9 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 		return R_MIN (2, len); // HACK
 	}
 	op->type = R_ANAL_OP_TYPE_MOV;
+	if (op->cycles == 0) {
+		op->cycles = defaultCycles (op);
+	}
 	return R_MIN (2, len); // HACK
 }
 
