@@ -2558,7 +2558,7 @@ R_API int r_core_seek_align(RCore *core, ut64 align, int times) {
 }
 
 R_API char *r_core_op_str(RCore *core, ut64 addr) {
-	RAsmOp op;
+	RAsmOp op = {0};
 	ut8 buf[64];
 	int ret;
 	r_asm_set_pc (core->assembler, addr);
