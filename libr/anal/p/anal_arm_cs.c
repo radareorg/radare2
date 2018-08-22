@@ -2107,6 +2107,8 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		break;
 	case ARM_INS_BFI:
 	{
+		if (OPCOUNT() < 3 || ! ISIMM (3))
+			break;
 		ut64 mask = bitmask_by_width[IMM (3) - 1];
 		ut64 shift = IMM (2);
 		ut64 notmask = ~(mask << shift);
@@ -2117,6 +2119,8 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 	}
 	case ARM_INS_BFC:
 	{
+		if (OPCOUNT() < 2 || ! ISIMM (2))
+			break;
 		ut64 mask = bitmask_by_width[IMM (2) - 1];
 		ut64 shift = IMM (1);
 		ut64 notmask = ~(mask << shift);
