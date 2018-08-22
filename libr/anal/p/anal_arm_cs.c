@@ -985,12 +985,12 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		break;
 	case ARM64_INS_ADD:
 	case ARM64_INS_ADC: // Add with carry.
-		op->cycles = 1;
+		op->cycles = 2;
 		op->type = R_ANAL_OP_TYPE_ADD;
 		OPCALL("+");
 		break;
 	case ARM64_INS_SUB:
-		op->cycles = 1;
+		op->cycles = 2;
 		op->type = R_ANAL_OP_TYPE_SUB;
 		OPCALL("-");
 		break;
@@ -2470,6 +2470,7 @@ static void anop32(RAnal *a, csh handle, RAnalOp *op, cs_insn *insn, bool thumb,
 		op->type = R_ANAL_OP_TYPE_NOP;
 		return;
 	}
+	op->cycles = 1;
 	/* grab family */
 	if (cs_insn_group (handle, insn, ARM_GRP_CRYPTO)) {
 		op->family = R_ANAL_OP_FAMILY_CRYPTO;
@@ -2503,6 +2504,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_TBH: // half word table
 	case ARM_INS_TBB: // byte table
 		op->type = R_ANAL_OP_TYPE_UJMP;
+		op->cycles = 2;
 		// TABLE JUMP  used for switch statements
 		break;
 	case ARM_INS_PLD:
@@ -2522,6 +2524,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = addr + insn->size;
 		int distance = r_str_nlen (insn->mnemonic, 5);
+		op->cycles = 2;
 		op->fail = lookahead (handle, addr + insn->size, buf + insn->size, len - insn->size, distance);
 		break;
 	}
@@ -2537,6 +2540,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_LDMIB:
 	case ARM_INS_LDM:
 		op->type = R_ANAL_OP_TYPE_POP;
+		op->cycles = 2;
 		for (i = 0; i < insn->detail->arm.op_count; i++) {
 			if (insn->detail->arm.operands[i].type == ARM_OP_REG &&
 					insn->detail->arm.operands[i].reg == ARM_REG_PC) {
@@ -2576,6 +2580,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		break;
 	case ARM_INS_TRAP:
 		op->type = R_ANAL_OP_TYPE_TRAP;
+		op->cycles = 2;
 		break;
 	case ARM_INS_MOV:
 	case ARM_INS_MOVT:
@@ -2639,6 +2644,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_STRH:
 	case ARM_INS_STRHT:
 	case ARM_INS_STRT:
+		op->cycles = 4;
 		op->type = R_ANAL_OP_TYPE_STORE;
 		if (REGBASE(1) == ARM_REG_FP) {
 			op->stackop = R_ANAL_STACK_SET;
@@ -2661,6 +2667,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_LDRSH:
 	case ARM_INS_LDRSHT:
 	case ARM_INS_LDRT:
+		op->cycles = 4;
 // 0x000082a8    28301be5     ldr r3, [fp, -0x28]
 		if (REGID(0) == ARM_REG_PC) {
 			op->type = R_ANAL_OP_TYPE_UJMP;
@@ -2677,6 +2684,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		}
 		break;
 	case ARM_INS_BLX:
+		op->cycles = 4;
 		if (ISREG(0)) {
 			op->type = R_ANAL_OP_TYPE_RCALL;
 		} else {
@@ -2689,7 +2697,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		}
 		break;
 	case ARM_INS_BL:
-		if (ISREG(0)) {
+		if (ISREG (0)) {
 			op->type = R_ANAL_OP_TYPE_RCALL;
 		} else {
 			op->type = R_ANAL_OP_TYPE_CALL;
@@ -2699,6 +2707,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		break;
 	case ARM_INS_CBZ:
 	case ARM_INS_CBNZ:
+		op->cycles = 4;
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->jump = IMM(1) & UT32_MAX;
 		op->fail = addr + op->size;
@@ -2708,6 +2717,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		}
 		break;
 	case ARM_INS_B:
+		op->cycles = 4;
 		if (insn->detail->arm.cc == ARM_CC_INVALID) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 			op->fail = addr+op->size;
@@ -2723,7 +2733,8 @@ jmp $$ + 4 + ( [delta] * 2 )
 	case ARM_INS_BX:
 	case ARM_INS_BXJ:
 		// BX LR == RET
-		if (ISREG(0)) {
+		op->cycles = 4;
+		if (ISREG (0)) {
 			switch (REGID(0)) {
 			case ARM_REG_LR:
 				op->type = R_ANAL_OP_TYPE_RET;
@@ -2743,6 +2754,7 @@ jmp $$ + 4 + ( [delta] * 2 )
 		}
 		break;
 	case ARM_INS_ADR:
+		op->cycles = 2;
 		op->type = R_ANAL_OP_TYPE_LEA;
 		// Set the pointer address and align it
 		op->ptr = IMM(1) + addr + 4 - (addr%4);
