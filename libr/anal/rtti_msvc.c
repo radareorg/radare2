@@ -391,11 +391,10 @@ R_API char *r_anal_rtti_msvc_demangle_class_name(const char *name) {
 			*c++ = ':';
 			*c++ = ':';
 			part_len = 0;
-			oc--;
 		} else {
 			part_len++;
-			oc--;
 		}
+		oc--;
 	}
 	memcpy (c, oc + 1, part_len);
 	c[part_len] = '\0';
