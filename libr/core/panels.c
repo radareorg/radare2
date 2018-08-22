@@ -896,9 +896,7 @@ static void handleZoomMode(RCore *core, const int key) {
 }
 
 static bool handleCursorMode(RCore *core, const int key) {
-	const char *creg;
 	const RPanels *panels = core->panels;
-	char buf[128];
 	if (!core->print->cur_enabled) {
 		return false;
 	}
@@ -2146,7 +2144,6 @@ static void switchMode(RPanels *panels) {
 
 static void insertValue(RCore *core) {
 	RPanels *panels = core->panels;
-	RPanel *panel = panels->panel;
 	char buf[128];
 	if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_STACK)) {
 		const char *prompt = "insert hex: ";
