@@ -1370,12 +1370,14 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_BFI: // bfi w8, w8, 2, 1
 	case ARM64_INS_BFXIL:
 	{
-		ut64 mask = bitmask_by_width[IMM64 (3) - 1];
-		ut64 shift = IMM64 (2);
-		ut64 notmask = ~(mask << shift);
-		// notmask,dst,&,lsb,mask,src,&,<<,|,dst,=
-		r_strbuf_setf (&op->esil, "%"PFMT64u",%s,&,%"PFMT64u",%"PFMT64u",%s,&,<<,|,%s,=",
-			notmask, REG64 (0), shift, mask, REG64 (1), REG64 (0));
+		if (OPCOUNT64() >= 3 && ISIMM64 (3) && IMM64 (3) > 0) {
+			ut64 mask = bitmask_by_width[IMM64 (3) - 1];
+			ut64 shift = IMM64 (2);
+			ut64 notmask = ~(mask << shift);
+			// notmask,dst,&,lsb,mask,src,&,<<,|,dst,=
+			r_strbuf_setf (&op->esil, "%"PFMT64u",%s,&,%"PFMT64u",%"PFMT64u",%s,&,<<,|,%s,=",
+				notmask, REG64 (0), shift, mask, REG64 (1), REG64 (0));
+		}
 		break;
 	}
 	case ARM64_INS_NEG:
@@ -2107,26 +2109,26 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		break;
 	case ARM_INS_BFI:
 	{
-		if (OPCOUNT() < 3 || ! ISIMM (3))
-			break;
-		ut64 mask = bitmask_by_width[IMM (3) - 1];
-		ut64 shift = IMM (2);
-		ut64 notmask = ~(mask << shift);
-		// notmask,dst,&,lsb,mask,src,&,<<,|,dst,=
-		r_strbuf_setf (&op->esil, "%"PFMT64u",%s,&,%"PFMT64u",%"PFMT64u",%s,&,<<,|,0xffffffff,&,%s,=",
-			notmask, REG (0), shift, mask, REG (1), REG (0));
+		if (OPCOUNT() >= 3 && ISIMM (3) && IMM (3) > 0 && IMM (3) < 64) {
+			ut64 mask = bitmask_by_width[IMM (3) - 1];
+			ut64 shift = IMM (2);
+			ut64 notmask = ~(mask << shift);
+			// notmask,dst,&,lsb,mask,src,&,<<,|,dst,=
+			r_strbuf_setf (&op->esil, "%"PFMT64u",%s,&,%"PFMT64u",%"PFMT64u",%s,&,<<,|,0xffffffff,&,%s,=",
+				notmask, REG (0), shift, mask, REG (1), REG (0));
+		}
 		break;
 	}
 	case ARM_INS_BFC:
 	{
-		if (OPCOUNT() < 2 || ! ISIMM (2))
-			break;
-		ut64 mask = bitmask_by_width[IMM (2) - 1];
-		ut64 shift = IMM (1);
-		ut64 notmask = ~(mask << shift);
-		// notmask,dst,&,dst,=
-		r_strbuf_setf (&op->esil, "%"PFMT64u",%s,&,0xffffffff,&,%s,=",
-			notmask, REG (0), REG (0));
+		if (OPCOUNT() >= 2 && ISIMM (2) && IMM (2) > 0 && IMM (2) < 64) {
+			ut64 mask = bitmask_by_width[IMM (2) - 1];
+			ut64 shift = IMM (1);
+			ut64 notmask = ~(mask << shift);
+			// notmask,dst,&,dst,=
+			r_strbuf_setf (&op->esil, "%"PFMT64u",%s,&,0xffffffff,&,%s,=",
+				notmask, REG (0), REG (0));
+		}
 		break;
 	}
 	case ARM_INS_REV:
