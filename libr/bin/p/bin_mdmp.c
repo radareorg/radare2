@@ -280,6 +280,9 @@ static RList *sections(RBinFile *bf) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
+		if (module->module_name_rva > obj->b->length) {
+			continue;
+		}
 
 		str = (struct minidump_string *)(obj->b->buf + module->module_name_rva);
 		r_str_utf16_to_utf8 ((ut8 *)ptr->name, R_BIN_SIZEOF_STRINGS, (const ut8 *)&(str->buffer), str->length, obj->endian);
