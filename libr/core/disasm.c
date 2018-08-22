@@ -4605,7 +4605,7 @@ toro:
 	ds_print_esil_anal_init (ds);
 	inc = 0;
 	if (!ds->l) {
-		len = ds->l = core->blocksize;
+		ds->l = core->blocksize;
 	}
 
 	r_cons_break_push (NULL, NULL);
