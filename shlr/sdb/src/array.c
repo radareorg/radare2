@@ -210,15 +210,9 @@ SDB_API int sdb_array_set_num(Sdb *s, const char *key, int idx, ut64 val,
 }
 
 SDB_API int sdb_array_add_num(Sdb *s, const char *key, ut64 val, ut32 cas) {
-	char valstr10[SDB_NUM_BUFSZ], valstr16[SDB_NUM_BUFSZ];
-	char *v10 = sdb_itoa (val, valstr10, 10);
-	char *v16 = sdb_itoa (val, valstr16, 16);
-	// TODO: optimize
-	// TODO: check cas vs mycas
-	if (sdb_array_contains (s, key, v10, NULL)) {
-		return 0;
-	}
-	return sdb_array_add (s, key, v16, cas); // TODO: v10 or v16
+	char buf[SDB_NUM_BUFSZ];
+	char *v = sdb_itoa (val, buf, SDB_NUM_BASE);
+	return sdb_array_add (s, key, v, cas);
 }
 
 // XXX: index should be supressed here? if its a set we shouldnt change the index
@@ -226,7 +220,7 @@ SDB_API int sdb_array_add(Sdb *s, const char *key, const char *val, ut32 cas) {
 	if (sdb_array_contains (s, key, val, NULL)) {
 		return 0;
 	}
-	return sdb_array_set (s, key, -1, val, cas);
+	return sdb_array_insert (s, key, -1, val, cas);
 }
 
 SDB_API int sdb_array_add_sorted(Sdb *s, const char *key, const char *val, ut32 cas) {

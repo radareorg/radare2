@@ -381,7 +381,8 @@ static int meta_add(RAnal *a, int type, int subtype, ut64 from, ut64 to, const c
 		int idx = sdb_array_indexof (DB, key, value, 0);
 		sdb_array_delete (DB, key, idx, 0);
 	}
-	snprintf (val, sizeof (val)-1, "%c", type);
+	val[0] = type;
+	val[1] = '\0';
 	sdb_array_add (DB, key, val, 0);
 	meta_inrange_add (a, from, to - from);
 	return true;
