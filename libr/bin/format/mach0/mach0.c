@@ -2431,17 +2431,21 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 	printf ("0x00000010  nCmds       %d\n", mh->ncmds);
 	printf ("0x00000014  sizeOfCmds  %d\n", mh->sizeofcmds);
 	printf ("0x00000018  Flags       0x%x\n", mh->flags);
+	bool is64 = mh->cputype >> 16;
 
 	ut64 addr = 0x20 - 4;
 	ut32 word = 0;
 	ut8 wordbuf[sizeof (word)];
 #define READWORD() \
-		addr += 4; \
 		if (!r_buf_read_at (buf, addr, (ut8*)wordbuf, 4)) { \
 			eprintf ("Invalid address in buffer."); \
 			break; \
 		} \
+		addr += 4; \
 		word = r_read_le32 (wordbuf);
+	if (is64) {
+		addr += 4;
+	}
 	for (n = 0; n < mh->ncmds; n++) {
 		printf ("\n# Load Command %d\n", n);
 		READWORD();
