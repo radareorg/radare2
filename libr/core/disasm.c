@@ -2724,8 +2724,11 @@ static int ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx) {
 					}
 					ds->oplen = mi->size - delta;
 					core->print->flags &= ~R_PRINT_FLAGS_HEADER;
-					if (!ds_print_data_type (ds, buf + idx, ds->hint? ds->hint->immbase: 0, mi->size)) {
-						r_cons_printf ("hex length=%" PFMT64d " delta=%d\n", mi->size , delta);
+					// TODO do not pass a copy in parameter buf that is possibly to small for this
+					// print operation
+					int size = R_MIN(mi->size, len - idx);
+					if (!ds_print_data_type (ds, buf + idx, ds->hint? ds->hint->immbase: 0, size)) {
+						r_cons_printf ("hex length=%" PFMT64d " delta=%d\n", size , delta);
 						r_print_hexdump (core->print, ds->at, buf+idx, hexlen-delta, 16, 1, 1);
 					}
 					core->inc = 16; // ds->oplen; //
