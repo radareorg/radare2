@@ -93,6 +93,18 @@ static const char **attr_at(RConsCanvas *c, int loc) {
 	return NULL;
 }
 
+static void sort_attrs(RConsCanvas *c) {
+	int i, j;
+	RConsCanvasAttr value;
+	for (i = 1; i < c->attrslen; i++) {
+		value = c->attrs[i];
+		for (j = i - 1; j >= 0 && c->attrs[j].loc > value.loc; j--) {
+			c->attrs[j + 1] = c->attrs[j];
+		}
+		c->attrs[j + 1] = value;
+	}
+}
+
 static void stamp_attr(RConsCanvas *c, int loc, int length) {
 	if (!c->color) {
 		return;
@@ -114,12 +126,10 @@ static void stamp_attr(RConsCanvas *c, int loc, int length) {
 		}
 		*s = c->attr;
 	} else {
-		for (i = c->attrslen; i > 0 && loc < c->attrs[i].loc; i--) {
-			c->attrs[i] = c->attrs[i - 1];
-		}
-		c->attrs[i].loc = loc;
-		c->attrs[i].a = c->attr;
+		c->attrs[c->attrslen].loc = loc;
+		c->attrs[c->attrslen].a = c->attr;
 		c->attrslen++;
+		sort_attrs (c);
 	}
 
 	for (i = 1; i < length; i++) {
