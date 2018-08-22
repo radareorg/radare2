@@ -589,7 +589,7 @@ R_API int r_asm_assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		Ase ase = NULL;
 		if (!a->cur->assemble) {
 			/* find callback if no assembler support in current plugin */
-			ase = findAssembler (a, ".ks");
+			ase = findAssembler (a, ".as");
 			if (!ase) {
 				ase = findAssembler (a, ".nz");
 				if (!ase) {
