@@ -27,16 +27,18 @@ Keys:
 #include <r_print.h>
 
 #define META_RANGE_BASE(x) ((x)>>12)
-#define META_RANGE_SIZE 0xfff
 #undef DB
 #define DB a->sdb_meta
 
 static char *meta_inrange_get (RAnal *a, ut64 addr, int size) {
+	if (size <= 0) {
+		return NULL;
+	}
 	ut64 base = META_RANGE_BASE (addr);
-	ut64 base2 = META_RANGE_BASE (addr + size) + 1;
+	ut64 base2 = META_RANGE_BASE (addr + size - 1);
 	char *res = NULL;
 	// return string array of all the offsets where there are stuff
-	for (; base < base2; base += META_RANGE_SIZE) {
+	for (; base <= base2; base++) {
 		const char *key = sdb_fmt ("range.0x%"PFMT64x, base);
 		// char *r = sdb_array_get (DB, key, 0, 0);
 		char *r = sdb_get (DB, key, 0);
@@ -52,13 +54,15 @@ static char *meta_inrange_get (RAnal *a, ut64 addr, int size) {
 }
 
 static bool meta_inrange_add (RAnal *a, ut64 addr, int size) {
+	if (size <= 0) {
+		return false;
+	}
 	bool set = false;
-	char key[64];
 	ut64 base, base2;
 	base = META_RANGE_BASE (addr);
-	base2 = META_RANGE_BASE (addr + size) + 1;
-	for (; base < base2; base += META_RANGE_SIZE) {
-		snprintf (key, sizeof (key)-1, "range.0x%"PFMT64x, base);
+	base2 = META_RANGE_BASE (addr + size - 1);
+	for (; base <= base2; base++) {
+		const char *key = sdb_fmt ("range.0x%"PFMT64x, base);
 		if (sdb_array_add_num (DB, key, addr, 0)) {
 			set = true;
 		}
@@ -67,18 +71,18 @@ static bool meta_inrange_add (RAnal *a, ut64 addr, int size) {
 }
 
 static bool meta_inrange_del (RAnal *a, ut64 addr, int size) {
+	if (size <= 0) {
+		return false;
+	}
 	bool set = false;
-	char key[64];
 	ut64 base = META_RANGE_BASE (addr);
-	ut64 base2 = META_RANGE_BASE (addr + size) + 1;
-// TODO: optimize this thing?
-	for (; base < base2; base += META_RANGE_SIZE) {
-		snprintf (key, sizeof (key)-1, "range.0x%"PFMT64x, base);
+	ut64 base2 = META_RANGE_BASE (addr + size - 1);
+	for (; base <= base2; base++) {
+		const char *key = sdb_fmt ("range.0x%"PFMT64x, base);
 		if (sdb_array_remove_num (DB, key, addr, 0)) {
 			set = true;
 		}
 	}
-	//sdb_array_del (DB);
 	return set;
 }
 
