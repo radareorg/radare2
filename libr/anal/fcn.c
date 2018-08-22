@@ -329,6 +329,7 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	}
 	free (fcn->fingerprint);
 	r_anal_diff_free (fcn->diff);
+	r_list_free (fcn->fcn_locs);
 	free (fcn->args);
 	free (fcn);
 }
@@ -557,6 +558,7 @@ static bool is_delta_pointer_table (RAnal *anal, RAnalFunction *fcn, ut64 addr, 
 		if (aop->type == R_ANAL_OP_TYPE_ADD) {
 			add_aop = *aop;
 		}
+		r_anal_op_fini (aop);
 		i += len - 1;
 	}
 	if (!isValid) {
