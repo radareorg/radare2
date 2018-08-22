@@ -1500,7 +1500,7 @@ R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len) {
 		return -1;
 	}
 	memcpy (tmp, str, len + 1);
-	cps = calloc (len, sizeof (int));
+	cps = calloc (len + 1, sizeof (int));
 	if (!cps) {
 		free (tmp);
 		return -1;

@@ -148,9 +148,11 @@ static int all_matches(const char *s, RRegex *rx, RList **mla, int *lines, int l
 				break;
 			}
 			RRegexMatch *ms = R_NEW0 (RRegexMatch);
-			ms->rm_so = cpos[m.rm_so];
-			ms->rm_eo = cpos[m.rm_eo];
-			r_list_append (mla[l], ms);
+			if (ms && cpos) {
+				ms->rm_so = cpos[m.rm_so];
+				ms->rm_eo = cpos[m.rm_eo];
+				r_list_append (mla[l], ms);
+			}
 			m.rm_so = m.rm_eo;
 			m.rm_eo = slen;
 			f = true;
