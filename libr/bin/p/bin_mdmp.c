@@ -241,7 +241,7 @@ static RList *sections(RBinFile *bf) {
 			return ret;
 		}
 
-		strncpy(ptr->name, "Memory_Section", 14);
+		strcpy (ptr->name, "Memory_Section");
 		ptr->paddr = (memory->memory).rva;
 		ptr->size = (memory->memory).data_size;
 		ptr->vaddr = memory->start_of_memory_range;
@@ -260,7 +260,7 @@ static RList *sections(RBinFile *bf) {
 			return ret;
 		}
 
-		strncpy(ptr->name, "Memory_Section", 14);
+		strcpy (ptr->name, "Memory_Section");
 		ptr->paddr = index;
 		ptr->size = memory64->data_size;
 		ptr->vaddr = memory64->start_of_memory_range;
