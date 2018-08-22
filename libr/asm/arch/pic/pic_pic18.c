@@ -109,11 +109,11 @@ static struct {
 	{0x0, 0xffff, "invalid", NO_ARG},
 };
 
-int pic_pic18_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int l) {
+int pic_pic18_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int blen) {
 	int i;
-	if (l < 2) { //well noone loves reading bitstream of size zero or 1 !!
+	if (blen < 2) { //well noone loves reading bitstream of size zero or 1 !!
 		strcpy (opbuf, "invalid");
-		op->size = l;
+		op->size = blen;
 		return -1;
 	}
 	ut16 instr = *(ut16 *)b; //instruction
@@ -149,7 +149,7 @@ int pic_pic18_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int l) {
 		buf_asm = sdb_fmt ("%s 0x%x", ops[i].name, instr & 0x7ff);
 		break;
 	case CALL_T:
-		if (l < 4) {
+		if (blen < 4) {
 			return -1;
 		}
 		op->size = 4;
@@ -165,7 +165,7 @@ int pic_pic18_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int l) {
 		}
 		break;
 	case GOTO_T:
-		if (l < 4) {
+		if (blen < 4) {
 			return -1;
 		}
 		{
@@ -179,7 +179,7 @@ int pic_pic18_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int l) {
 		}
 		break;
 	case F32_T:
-		if (l < 4) {
+		if (blen < 4) {
 			return -1;
 		}
 		op->size = 4;

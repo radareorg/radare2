@@ -97,7 +97,7 @@ RAsmPlugin r_asm_plugin_chip8 = {
 #ifndef CORELIB
 RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_chip8
+	.data = &r_asm_plugin_chip8,
 	.version = R2_VERSION
 };
 #endif

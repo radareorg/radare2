@@ -75,7 +75,7 @@ static st32 get_ws_val(const ut8 *buf, int len) {
 	int i, ret = 0;
 	const ut8 *tok = get_ws_next_token (buf, len);
 	sig = (*tok == '\t');
-	len -= (tok - buf) - 1;
+	len -= (tok - buf) + 1;
 	for (i = 0; i < 30; i++) { // XXX : conceptually wrong
 		tok++;
 		tok = get_ws_next_token (tok, len);
@@ -324,7 +324,7 @@ WS_API int wsdis(RAsmOp *op, const ut8 *buf, int len) {
 			}
 			ptr++;
 			if (-1 == test_ws_token_exist (ptr, 10, len - (ptr - buf))) {
-				buf_asm = NULL;
+				r_strbuf_set (&op->buf_asm, "invalid");
 				return op->size = 0;
 			}
 			if (buf_asm) {

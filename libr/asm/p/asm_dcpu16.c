@@ -22,7 +22,9 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
-	return dcpu16_assemble ((ut8*)r_strbuf_get (&op->buf), buf);
+	int len = dcpu16_assemble ((ut8*)r_strbuf_get (&op->buf), buf);
+	op->buf.len = len;
+	return len;
 }
 
 RAsmPlugin r_asm_plugin_dcpu16 = {

@@ -181,7 +181,7 @@ R_API void r_strbuf_free(RStrBuf *sb) {
 }
 
 R_API void r_strbuf_fini(RStrBuf *sb) {
-	if (sb && sb->ptr) {
+	if (sb) {
 		R_FREE (sb->ptr);
 	}
 }
