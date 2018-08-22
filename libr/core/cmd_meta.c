@@ -825,8 +825,8 @@ void r_comment_vars(RCore *core, const char *input) {
 		name++;
 	}
 	switch (input[1]) {
-	case '*':
-	case '\0': {
+	case '*': // "Cv*"
+	case '\0': { // "Cv"
 		RList *var_list;
 		RListIter *iter;
 		var_list = r_anal_var_list (core->anal, fcn, input[0]);
@@ -844,7 +844,7 @@ void r_comment_vars(RCore *core, const char *input) {
 		}
 		}
 		break;
-	case ' ': {
+	case ' ': { // "Cv "
 		// TODO check that idx exist
 		char *comment = strstr (name, " ");
 		if (comment) { // new comment given
@@ -888,7 +888,7 @@ void r_comment_vars(RCore *core, const char *input) {
 		free (heap_comment);
 		}
 		break;
-	case '-':
+	case '-': // "Cv-"
 		var = r_anal_var_get_byname (core->anal, fcn->addr, name);
 		if (var) {
 			idx = var->delta;
@@ -908,7 +908,7 @@ void r_comment_vars(RCore *core, const char *input) {
 		}
 		r_meta_var_comment_del (core->anal, input[0], idx, fcn->addr);
 		break;
-	case '!': {
+	case '!': { // "Cv!"
 		char *comment;
 		var = r_anal_var_get_byname (core->anal, fcn->addr, name);
 		if (!var) {
@@ -936,12 +936,12 @@ static int cmd_meta(void *data, const char *input) {
 	int i;
 
 	switch (*input) {
-	case 'v': // Cr
+	case 'v': // "Cv"
 		r_comment_vars (core, input + 1);
 		break;
-	case '\0':
-	case 'j':
-	case '*':
+	case '\0': // "C"
+	case 'j': // "Cj"
+	case '*': // "C*"
 		r_meta_list (core->anal, R_META_TYPE_ANY, *input);
 		break;
 	case 'L': // "CL"
@@ -950,23 +950,23 @@ static int cmd_meta(void *data, const char *input) {
 	case 'C': // "CC"
 		cmd_meta_comment (core, input);
 		break;
-	case 'r': /* Cr run command*/
-	case 'h': /* Ch comment */
-	case 's': /* Cs string */
-	case 'z': /* Cz zero-terminated string */
-	case 'd': /* "Cd" data */
-	case 'm': /* Cm magic */
-	case 'f': /* Cf formatted */
-	case 't': /* Ct type analysis commnets */
+	case 'r': // "Cr" run command
+	case 'h': // "Ch" comment
+	case 's': // "Cs" string
+	case 'z': // "Cz" zero-terminated string
+	case 'd': // "Cd" data
+	case 'm': // "Cm" magic
+	case 'f': // "Cf" formatted
+	case 't': // "Ct" type analysis commnets
 		cmd_meta_others (core, input);
 		break;
-	case '-':
+	case '-': // "C-"
 		if (input[1] != '*') {
 			i = input[1] ? r_num_math (core->num, input + (input[1] == ' ' ? 2 : 1)) : 1;
 			r_meta_del (core->anal, R_META_TYPE_ANY, core->offset, i);
 		} else r_meta_cleanup (core->anal, 0LL, UT64_MAX);
 		break;
-	case '?':
+	case '?': // "C?"
 		r_core_cmd_help (core, help_msg_C);
 		break;
 	case 'F': // "CF"
@@ -982,20 +982,20 @@ static int cmd_meta(void *data, const char *input) {
 		ms = &core->anal->meta_spaces;
 		/** copypasta from `fs`.. this must be refactorized to be shared */
 		switch (input[1]) {
-		case '?':
+		case '?': // "CS?"
 			r_core_cmd_help (core, help_msg_CS);
 			break;
-		case '+':
+		case '+': // "CS+"
 			r_space_push (ms, input + 2);
 			break;
-		case 'r':
+		case 'r': // "CSr"
 			if (input[2] == ' ') {
 				r_space_rename (ms, NULL, input+2);
 			} else {
 				eprintf ("Usage: CSr [newname]\n");
 			}
 			break;
-		case '-':
+		case '-': // "CS-"
 			if (input[2]) {
 				if (input[2]=='*') {
 					r_space_unset (ms, NULL);
@@ -1006,12 +1006,12 @@ static int cmd_meta(void *data, const char *input) {
 				r_space_pop (ms);
 			}
 			break;
-		case 'j':
-		case '\0':
-		case '*':
+		case 'j': // "CSj"
+		case '\0': // "CS"
+		case '*': // "CS*"
 			r_space_list (ms, input[1]);
 			break;
-		case ' ':
+		case ' ': // "CS "
 			r_space_set (ms, input + 2);
 			break;
 #if 0
