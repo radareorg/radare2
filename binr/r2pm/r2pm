@@ -243,7 +243,7 @@ R2PM_List() {
 R2PM_Search() {
 
 	#helper for pretty printing tabbed lists
-	if ! type "column" > /dev/null; then
+	if ! command -vp column > /dev/null; then
 		cols() { cat ; }
 	else
 		cols() { column -s $'\t' -t; }
@@ -335,7 +335,7 @@ R2PM_SVN() {
 }
 
 R2PM_FAIL() {
-	echo "\033[31mERROR: \033[32m$@\033[0m"
+	printf "\033[31mERROR: \033[32m$@\033[0m\n"
 	exit 1
 }
 
