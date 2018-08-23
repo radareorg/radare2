@@ -5904,31 +5904,27 @@ static char *getViewerPath() {
 }
 
 static char* graph_cmd(RCore *core, char *r2_cmd, const char *save_path) {
-	const char *quotes = "";
+	const char *dot = "dot";
 	char *cmd = NULL;
 	const char *ext = r_config_get (core->config, "graph.gv.format");
-	char *dotPath = r_file_path ("dot");
-	if (!strcmp (dotPath, "dot")) {
+	char *dotPath = r_file_path (dot);
+	if (!strcmp (dotPath, dot)) {
 		free (dotPath);
-		dotPath = r_file_path ("xdot");
-		if (!strcmp (dotPath, "xdot")) {
+		dot = "xdot";
+		dotPath = r_file_path (dot);
+		if (!strcmp (dotPath, dot)) {
 			free (dotPath);
 			return r_str_new ("agf");
 		}
 	}
-#if __WINDOWS__
-	if (dotPath[0] == '\"') {
-		quotes = "\"";
-	}
-#endif
 	if (save_path && *save_path) {
-		cmd = r_str_newf ("%s > a.dot;!%s%s -T%s -o%s a.dot%s;",
-			r2_cmd, quotes, dotPath, ext, save_path, quotes);
+		cmd = r_str_newf ("%s > a.dot;!%s -T%s -o%s a.dot;",
+			r2_cmd, dot, ext, save_path);
 	} else {
 		char *viewer = getViewerPath();
 		if (viewer) {
-			cmd = r_str_newf ("%s > a.dot;!%s%s -T%s -oa.%s a.dot%s;!%s a.%s",
-				r2_cmd, quotes, dotPath, ext, ext, quotes, viewer, ext);
+			cmd = r_str_newf ("%s > a.dot;!%s -T%s -oa.%s a.dot;!%s a.%s",
+				r2_cmd, dot, ext, ext, viewer, ext);
 			free (viewer);
 		} else {
 			eprintf ("Cannot find a valid picture viewer\n");
