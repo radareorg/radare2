@@ -137,11 +137,11 @@ static inline int r_asm_pseudo_byte(RAsmOp *op, char *input) {
 static inline int r_asm_pseudo_fill(RAsmOp *op, char *input) {
 	int i, repeat = 0, size=0, value=0;
 	sscanf (input, "%d,%d,%d", &repeat, &size, &value); // use r_num?
-	size *= repeat;
+	size *= (sizeof (value) * repeat);
 	if (size > 0) {
 		ut8 *buf = malloc (size);
-		for (i = 0; i < size; i++) {
-			buf[i] = value;
+		for (i = 0; i < size; i+= sizeof(value)) {
+			memcpy (&buf[i], &value, sizeof(value));
 		}
 		r_asm_op_set_buf (op, buf, size);
 		free (buf);
