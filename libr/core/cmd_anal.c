@@ -1210,15 +1210,25 @@ static const char *syscallNumber(int n) {
 	return sdb_fmt (n > 1000 ? "0x%x" : "%d", n);
 }
 
-R_API char *cmd_syscall_dostr(RCore *core, int n) {
+const bool archIsThumb(RCore *core) {
+	return (!strcmp (core->anal->cur->arch, "arm") && core->anal->bits == 16);
+}
+
+R_API char *cmd_syscall_dostr(RCore *core, int n, ut64 addr) {
 	char *res = NULL;
 	int i;
 	char str[64];
 	if (n == -1) {
-		n = (int)r_debug_reg_get (core->dbg, "oeax");
-		if (!n || n == -1) {
-			const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
-			n = (int)r_debug_reg_get (core->dbg, a0);
+		if (addr && archIsThumb (core)) {
+			RAnalOp *aop = r_core_anal_op (core, addr, R_ANAL_OP_MASK_BASIC);
+			n = aop->val;
+			r_anal_op_free (aop);
+		} else {
+			n = (int)r_debug_reg_get (core->dbg, "oeax");
+			if (!n || n == -1) {
+				const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
+				n = (a0 == NULL)? -1: (int)r_debug_reg_get (core->dbg, a0);
+			}
 		}
 	}
 	RSyscallItem *item = r_syscall_get (core->anal->syscall, n, -1);
@@ -1281,8 +1291,8 @@ R_API char *cmd_syscall_dostr(RCore *core, int n) {
 	return res;
 }
 
-static void cmd_syscall_do(RCore *core, int n) {
-	char *msg = cmd_syscall_dostr (core, n);
+static void cmd_syscall_do(RCore *core, int n, ut64 addr) {
+	char *msg = cmd_syscall_dostr (core, n, addr);
 	if (msg) {
 		r_cons_println (msg);
 		free (msg);
@@ -5211,10 +5221,10 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		// JSON support
 		break;
 	case '\0':
-		cmd_syscall_do (core, -1); //n);
+		cmd_syscall_do (core, -1, core->offset);
 		break;
 	case ' ':
-		cmd_syscall_do (core, (int)r_num_get (core->num, input + 1));
+		cmd_syscall_do (core, (int)r_num_get (core->num, input + 1), -1);
 		break;
 	case 'k': // "ask"
 		if (input[1] == ' ') {

@@ -730,7 +730,8 @@ R_API int offset_history_up(RLine *line);
 R_API int offset_history_down(RLine *line);
 
 // TODO : move into debug or syscall++
-R_API char *cmd_syscall_dostr(RCore *core, int num);
+R_API char *cmd_syscall_dostr(RCore *core, int num, ut64 addr);
+
 /* tasks */
 
 typedef void (*RCoreTaskCallback)(void *user, char *out);

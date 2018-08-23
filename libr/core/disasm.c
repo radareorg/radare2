@@ -4184,7 +4184,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	}
 	switch (ds->analop.type) {
 	case R_ANAL_OP_TYPE_SWI: {
-		char *s = cmd_syscall_dostr (core, -1);
+		char *s = cmd_syscall_dostr(core, -1, at);
 		if (s) {
 			ds_comment_esil (ds, true, true, "; %s", s);
 			free (s);
