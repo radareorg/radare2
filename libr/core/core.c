@@ -281,7 +281,7 @@ R_API RCore *r_core_cast(void *p) {
 
 static void core_post_write_callback(void *user, ut64 maddr, ut8 *bytes, int cnt) {
 	RCore *core = (RCore *)user;
-	RIOSection *sec;
+	RBinSection *sec;
 	ut64 vaddr;
 
 	if (!r_config_get_i (core->config, "asm.cmt.patch")) {
@@ -301,7 +301,7 @@ static void core_post_write_callback(void *user, ut64 maddr, ut8 *bytes, int cnt
 		return;
 	}
 
-	if ((sec = r_io_section_get (core->io, maddr))) {
+	if ((sec = r_bin_get_section_at (r_bin_cur_object (core->bin), maddr, false))) {
 		vaddr = maddr + sec->vaddr - sec->paddr;
 	} else {
 		vaddr = maddr;
@@ -419,7 +419,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	RAnalFunction *fcn;
 	char *ptr, *bptr, *out = NULL;
 	RFlagItem *flag;
-	RIOSection *s;
+	RBinSection *s;
 	RAnalOp op;
 	ut64 ret = 0;
 
@@ -589,7 +589,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'M': {
 				ut64 lower = UT64_MAX;
 				SdbListIter *iter;
-				RIOSection *s;
+				RBinSection *s;
 				ls_foreach (core->io->sections, iter, s) {
 					if (!s->vaddr && s->paddr) {
 						continue;
@@ -631,7 +631,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'w':
 			return r_config_get_i (core->config, "asm.bits") / 8;
 		case 'S':
-			if ((s = r_io_section_vget (core->io, core->offset))) {
+			if ((s = r_bin_get_section_at (r_bin_cur_object (core->bin), core->offset, true))) {
 				return (str[2] == 'S'? s->size: s->vaddr);
 			}
 			return 0LL;
@@ -652,8 +652,8 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case '$': return str[2] == '$' ? core->prompt_offset : core->offset;
 		case 'o':
 			{
-				RIOSection *s;
-				s = r_io_section_vget (core->io, core->offset);
+				RBinSection *s;
+				s = r_bin_get_section_at (r_bin_cur_object (core->bin), core->offset, true);
 				return s ? core->offset - s->vaddr + s->paddr : core->offset;
 			}
 			break;
@@ -1723,7 +1723,7 @@ R_API char *r_core_anal_hasrefs(RCore *core, ut64 value, bool verbose) {
 static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 	RStrBuf *s = r_strbuf_new (NULL);
 	ut64 type;
-	RIOSection *sect;
+	RBinSection *sect;
 	char *mapname = NULL;
 	RAnalFunction *fcn;
 	RFlagItem *fi = r_flag_get_i (core->flags, value);
@@ -1735,7 +1735,7 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 			mapname = strdup (map->name);
 		}
 	}
-	sect = value? r_io_section_vget (core->io, value): NULL;
+	sect = value? r_bin_get_section_at (r_bin_cur_object (core->bin), value, true): NULL;
 	if(! ((type&R_ANAL_ADDR_TYPE_HEAP)||(type&R_ANAL_ADDR_TYPE_STACK)) ) {
 		// Do not repeat "stack" or "heap" words unnecessarily.
 		if (sect && sect->name[0]) {
@@ -2378,7 +2378,7 @@ static int prompt_flag (RCore *r, char *s, size_t maxlen) {
 }
 
 static void prompt_sec(RCore *r, char *s, size_t maxlen) {
-	const RIOSection *sec = r_io_section_vget (r->io, r->offset);
+	const RBinSection *sec = r_bin_get_section_at (r_bin_cur_object (r->bin), r->offset, true);
 	if (!sec) {
 		return;
 	}
