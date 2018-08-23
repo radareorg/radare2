@@ -1140,12 +1140,6 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 				}
 			}
 		}
-		if (is_initfini (entry) && r->io->va && entry->paddr == entry->vaddr) {
-			RIOMap *map = r_io_map_get (r->io, entry->vaddr);
-			if (map) {
-				paddr = entry->vaddr - map->itv.addr + map->delta;
-			}
-		}
 		if (entry->hpaddr) {
 			hpaddr = entry->hpaddr;
 			if (entry->hvaddr) {
