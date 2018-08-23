@@ -1286,7 +1286,7 @@ int main(int argc, char **argv, char **envp) {
 		}
 	}
 	{
-		const char *global_rc = r_str_r2_prefix (R2_GLOBAL_RC);
+		char *global_rc = r_str_r2_prefix (R2_GLOBAL_RC);
 		if (r_file_exists (global_rc)) {
 			(void)r_core_run_script (&r, global_rc);
 		}

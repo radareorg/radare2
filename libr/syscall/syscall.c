@@ -183,7 +183,7 @@ static int getswi(RSyscall *s, int swi) {
 }
 
 R_API int r_syscall_get_swi(RSyscall *s) {
-	return (int)sdb_array_get_num (s->db, "_", 0, NULL);
+	return (int)sdb_num_get (s->db, "_", NULL);
 }
 
 R_API RSyscallItem *r_syscall_get(RSyscall *s, int num, int swi) {
