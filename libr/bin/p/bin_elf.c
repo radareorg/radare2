@@ -308,11 +308,18 @@ static RList* sections(RBinFile *bf) {
 	return ret;
 }
 
-static RBinAddr* newEntry(ut64 hpaddr, ut64 hvaddr, ut64 paddr, int type, int bits) {
-	RBinAddr *ptr = R_NEW0 (RBinAddr);
+static RBinAddr* newEntry(RBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, int type, int bits) {
+	struct Elf_(r_bin_elf_obj_t)* obj;
+	RBinAddr *ptr;
+
+	if (!bf || !bf->o || !bf->o->bin_obj) {
+		return NULL;
+	}
+	obj = bf->o->bin_obj;
+	ptr = R_NEW0 (RBinAddr);
 	if (ptr) {
-		ptr->paddr = paddr;
-		ptr->vaddr = paddr;
+		ptr->paddr = Elf_(r_bin_elf_v2p) (obj, vaddr);
+		ptr->vaddr = vaddr;
 		ptr->hpaddr = hpaddr;
 		ptr->hvaddr = hvaddr;
 		ptr->bits = bits;
@@ -350,7 +357,7 @@ static void process_constructors (RBinFile *bf, RList *ret, int bits) {
 				for (i = 0; (i + 3) < sec->size; i += 4) {
 					ut32 addr32 = r_read_le32 (buf + i);
 					if (addr32) {
-						RBinAddr *ba = newEntry (sec->paddr + i, sec->vaddr + i,
+						RBinAddr *ba = newEntry (bf, sec->paddr + i, sec->vaddr + i,
 						                         (ut64)addr32, type, bits);
 						r_list_append (ret, ba);
 					}
@@ -359,7 +366,7 @@ static void process_constructors (RBinFile *bf, RList *ret, int bits) {
 				for (i = 0; (i + 7) < sec->size; i += 8) {
 					ut64 addr64 = r_read_le64 (buf + i);
 					if (addr64) {
-						RBinAddr *ba = newEntry (sec->paddr + i, sec->vaddr + i,
+						RBinAddr *ba = newEntry (bf, sec->paddr + i, sec->vaddr + i,
 						                         addr64, type, bits);
 						r_list_append (ret, ba);
 					}
