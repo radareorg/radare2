@@ -242,17 +242,22 @@ R_API char *r_file_path(const char *bin) {
 				*ptr = '\0';
 				file = r_str_newf (R_JOIN_2_PATHS ("%s", "%s%s"), str, bin, extension);
 				if (r_file_exists (file)) {
+					if (strchr (file, ' ')) {
+						char *tmp = file;
+						file = r_str_newf ("\"%s\"", file);
+						free (tmp);
+					}
 					free (path);
 					free (path_env);
 					return file;
 				}
 				str = ptr + 1;
+				free (file);
 			}
 		} while (ptr);
 	}
 	free (path_env);
 	free (path);
-	free (file);
 	return strdup (bin);
 }
 
