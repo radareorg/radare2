@@ -813,6 +813,7 @@ int main(int argc, char **argv, char **envp) {
 	}
 	ret = run_commands (NULL, prefiles, false);
 	r_list_free (prefiles);
+	prefiles = NULL;
 
 #if 0
 	// if "- -i" is used we will open malloc:// instead
@@ -1327,6 +1328,7 @@ int main(int argc, char **argv, char **envp) {
 	r_list_free (cmds);
 	r_list_free (evals);
 	r_list_free (files);
+	cmds = evals = files = NULL;
 	if (ret) {
 		ret = 0;
 		goto beach;
