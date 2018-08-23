@@ -1656,6 +1656,9 @@ R_API void r_core_visual_browse(RCore *core) {
 			r_core_visual_anal (core);
 			// r_core_cmd0 (core, "s $(afl~...)");
 			break;
+		case 'e':
+			r_core_visual_config (core);
+			break;
 		case 'c':
 			r_core_visual_classes (core);
 			break;

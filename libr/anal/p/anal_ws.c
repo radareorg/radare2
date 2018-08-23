@@ -116,6 +116,7 @@ static int ws_anal(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			break;
 		}
 	}
+	free (aop);
 	return op->size;
 }
 
