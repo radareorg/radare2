@@ -1147,6 +1147,27 @@ static void autocomplete_flagspaces(RLine* line, const char* msg) {
 	line->completion.argv = tmp_argv;
 }
 
+static void autocomplete_functions (RLine* line, const char* str) {
+	RCore *core = line->user;
+	if (!core || !str) {
+		return;
+	}
+	RListIter *iter;
+	RAnalFunction *fcn;
+	char *name;
+	int n, i = 0;
+	n = strlen (str);
+	r_list_foreach (core->anal->fcns, iter, fcn) {
+		name = r_core_anal_fcn_name (core, fcn);
+		if (!strncmp (name, str, n)) {
+			tmp_argv[i++] = name;
+		}
+	}
+	tmp_argv[i] = NULL;
+	line->completion.argc = i;
+	line->completion.argv = tmp_argv;
+}
+
 static void autocomplete_macro(RLine* line, const char* str) {
 	RCore *core = line->user;
 	if (!core || !str) {
@@ -1261,6 +1282,9 @@ static bool find_autocomplete(RLine *line) {
 		break;
 	case R_CORE_AUTOCMPLT_FLSP:
 		autocomplete_flagspaces (line, p);
+		break;
+	case R_CORE_AUTOCMPLT_FCN:
+		autocomplete_functions (line, p);
 		break;
 	case R_CORE_AUTOCMPLT_ZIGN:
 		autocomplete_zignatures (line, p);
@@ -1941,7 +1965,6 @@ static void init_autocomplete (RCore* core) {
 	r_core_autocomplete_add (core->autocomplete, "/r", R_CORE_AUTOCMPLT_FLAG, true);
 	r_core_autocomplete_add (core->autocomplete, "/re", R_CORE_AUTOCMPLT_FLAG, true);
 	r_core_autocomplete_add (core->autocomplete, "aav", R_CORE_AUTOCMPLT_FLAG, true);
-	r_core_autocomplete_add (core->autocomplete, "afi", R_CORE_AUTOCMPLT_FLAG, true);
 	r_core_autocomplete_add (core->autocomplete, "aep", R_CORE_AUTOCMPLT_FLAG, true);
 	r_core_autocomplete_add (core->autocomplete, "aef", R_CORE_AUTOCMPLT_FLAG, true);
 	r_core_autocomplete_add (core->autocomplete, "afb", R_CORE_AUTOCMPLT_FLAG, true);
@@ -1954,6 +1977,8 @@ static void init_autocomplete (RCore* core) {
 	r_core_autocomplete_add (core->autocomplete, "aecu", R_CORE_AUTOCMPLT_FLAG, true);
 	r_core_autocomplete_add (core->autocomplete, "aesu", R_CORE_AUTOCMPLT_FLAG, true);
 	r_core_autocomplete_add (core->autocomplete, "aeim", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "afi", R_CORE_AUTOCMPLT_FCN, true);
+	r_core_autocomplete_add (core->autocomplete, "afcf", R_CORE_AUTOCMPLT_FCN, true);
 	/* evars */
 	r_core_autocomplete_add (core->autocomplete, "e", R_CORE_AUTOCMPLT_EVAL, true);
 	r_core_autocomplete_add (core->autocomplete, "et", R_CORE_AUTOCMPLT_EVAL, true);

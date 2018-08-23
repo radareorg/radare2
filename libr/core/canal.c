@@ -2086,7 +2086,7 @@ static int fcnlist_gather_metadata(RAnal *anal, RList *fcns) {
 	return 0;
 }
 
-static char *get_fcn_name(RCore *core, RAnalFunction *fcn) {
+R_API char *r_core_anal_fcn_name(RCore *core, RAnalFunction *fcn) {
 	bool demangle;
 	const char *lang;
 	demangle = r_config_get_i (core->config, "bin.demangle");
@@ -2105,7 +2105,7 @@ static char *get_fcn_name(RCore *core, RAnalFunction *fcn) {
 
 #define FCN_LIST_VERBOSE_ENTRY "%s0x%0*"PFMT64x" %4d %5d %5d %5d %4d 0x%0*"PFMT64x" %5d 0x%0*"PFMT64x" %5d %4d %6d %4d %5d %s%s\n"
 static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
-	char *name = get_fcn_name(core, fcn);
+	char *name = r_core_anal_fcn_name (core, fcn);
 	int ebbs = 0;
 	int addrwidth = 8;
 	const char *color = "";
@@ -2179,7 +2179,7 @@ static int fcn_print_default(RCore *core, RAnalFunction *fcn, bool quiet) {
 	if (quiet) {
 		r_cons_printf ("0x%08"PFMT64x" ", fcn->addr);
 	} else {
-		char *msg, *name = get_fcn_name (core, fcn);
+		char *msg, *name = r_core_anal_fcn_name (core, fcn);
 		int realsize = r_anal_fcn_realsize (fcn);
 		int size = r_anal_fcn_size (fcn);
 		if (realsize == size) {
@@ -2213,7 +2213,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 	RList *refs, *xrefs;
 	bool first = true;
 	int ebbs = 0;
-	char *name = get_fcn_name (core, fcn);
+	char *name = r_core_anal_fcn_name (core, fcn);
 	r_cons_printf ("{\"offset\":%"PFMT64d",\"name\":\"%s\",\"size\":%d",
 			fcn->addr, name, r_anal_fcn_size (fcn));
 	r_cons_printf (",\"realsz\":%d", r_anal_fcn_realsize (fcn));
@@ -2347,7 +2347,7 @@ static int fcn_list_verbose_json(RCore *core, RList *fcns) {
 
 static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	const char *defaultCC = r_anal_cc_default (core->anal);
-	char *name = get_fcn_name (core, fcn);
+	char *name = r_core_anal_fcn_name (core, fcn);
 	r_cons_printf ("\"f %s %d 0x%08"PFMT64x"\"\n", name, r_anal_fcn_size (fcn), fcn->addr);
 	r_cons_printf ("\"af+ 0x%08"PFMT64x" %s %c %c\"\n",
 			fcn->addr, name, //r_anal_fcn_size (fcn), name,
@@ -2402,7 +2402,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 	RAnalRef *refi;
 	RList *refs, *xrefs;
 	int ebbs = 0;
-	char *name = get_fcn_name (core, fcn);
+	char *name = r_core_anal_fcn_name (core, fcn);
 	r_cons_printf ("#\noffset: 0x%08"PFMT64x"\nname: %s\nsize: %"PFMT64d,
 			fcn->addr, name, (ut64)r_anal_fcn_size (fcn));
 	r_cons_printf ("\nrealsz: %d", r_anal_fcn_realsize (fcn));

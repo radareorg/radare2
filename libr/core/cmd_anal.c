@@ -4749,25 +4749,25 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		}
 		break;
 	case 'd': // "aod"
-                if (input[1] == 'a') { // "aoda"
-                        // list sdb database
-                        sdb_foreach (core->assembler->pair, listOpDescriptions, core);
-                } else if (input[1] == 0) {
-                        int cur = R_MAX (core->print->cur, 0);
-                        // XXX: we need cmd_xxx.h (cmd_anal.h)
-                        core_anal_bytes (core, core->block + cur, core->blocksize, 1, 'd');
-                } else if (input[1] == ' ') {
-                        char *d = r_asm_describe (core->assembler, input + 2);
-                        if (d && *d) {
-                                r_cons_println (d);
-                                free (d);
-                        } else {
-                                eprintf ("Unknown mnemonic\n");
-                        }
-                } else {
-                        eprintf ("Use: aod[?a] ([opcode])    describe current, [given] or all mnemonics\n");
-                }
-                break;
+		if (input[1] == 'a') { // "aoda"
+			// list sdb database
+			sdb_foreach (core->assembler->pair, listOpDescriptions, core);
+		} else if (input[1] == 0) {
+			int cur = R_MAX (core->print->cur, 0);
+			// XXX: we need cmd_xxx.h (cmd_anal.h)
+			core_anal_bytes (core, core->block + cur, core->blocksize, 1, 'd');
+		} else if (input[1] == ' ') {
+			char *d = r_asm_describe (core->assembler, input + 2);
+			if (d && *d) {
+				r_cons_println (d);
+				free (d);
+			} else {
+				eprintf ("Unknown mnemonic\n");
+			}
+		} else {
+			eprintf ("Use: aod[?a] ([opcode])    describe current, [given] or all mnemonics\n");
+		}
+		break;
 	case '*':
 		r_core_anal_hint_list (core->anal, input[0]);
 		break;
