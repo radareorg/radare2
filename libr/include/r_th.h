@@ -27,7 +27,8 @@
 #error Threading library only supported for pthread and w32
 #endif
 
-#define R_TH_FUNCTION(x) int (*x)(struct r_th_t *)
+typedef enum { R_TH_FREED = -1, R_TH_STOP = 0, R_TH_REPEAT = 1 } RThreadFunctionRet;
+#define R_TH_FUNCTION(x) RThreadFunctionRet (*x)(struct r_th_t *)
 
 #ifdef __cplusplus
 extern "C" {
@@ -73,6 +74,7 @@ R_API int r_th_wait(RThread *th);
 R_API int r_th_wait_async(RThread *th);
 R_API void r_th_break(RThread *th);
 R_API void *r_th_free(RThread *th);
+R_API void *r_th_kill_free(RThread *th);
 R_API bool r_th_kill(RThread *th, bool force);
 R_API bool r_th_pause(RThread *th, bool enable);
 R_API bool r_th_try_pause(RThread *th);

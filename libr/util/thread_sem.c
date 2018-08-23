@@ -66,6 +66,7 @@ R_API void r_th_sem_free(RThreadSemaphore *sem) {
 		sem_close (sem->sem);
 #  else
 		sem_destroy (sem->sem);
+		free (sem->sem);
 #  endif
 	}
 #elif __WINDOWS__ && !defined(__CYGWIN__)

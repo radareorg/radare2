@@ -14,11 +14,12 @@
 static const char *help_msg_amper[] = {
 	"Usage:", "&[-|<cmd>]", "Manage tasks (WARNING: Experimental. Use with caution!)",
 	"&", " <cmd>", "run <cmd> in a new background task",
+	"&t", " <cmd>", "run <cmd> in a new transient background task (auto-delete when it is finished)",
 	"&", "", "list all tasks",
 	"&j", "", "list all tasks (in JSON)",
 	"&=", " 3", "show output of task 3",
 	"&b", " 3", "break task 3",
-	"&-", " 1", "delete task #1",
+	"&-", " 1", "delete task #1 or schedule for deletion when it is finished",
 	"&", "-*", "delete all done tasks",
 	"&?", "", "show this help",
 	"&&", " 3", "wait until task 3 is finished",

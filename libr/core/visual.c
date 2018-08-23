@@ -107,12 +107,12 @@ static ut64 splitPtr = UT64_MAX;
 #define USE_THREADS 1
 
 #if USE_THREADS
-static int visual_repeat_thread_anykey(RThread *th) {
+static RThreadFunctionRet visual_repeat_thread_anykey(RThread *th) {
 	RCore *core = th->user;
 	r_cons_any_key (NULL);
 	eprintf ("^C  \n");
 	core->cons->context->breaked = true;
-	return 0;
+	return R_TH_STOP;
 }
 
 static int visual_repeat_thread(RThread *th) {

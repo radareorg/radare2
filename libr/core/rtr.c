@@ -852,7 +852,7 @@ the_end:
 	return ret;
 }
 
-static int r_core_rtr_http_thread (RThread *th) {
+static RThreadFunctionRet r_core_rtr_http_thread (RThread *th) {
 	if (!th) {
 		return false;
 	}
@@ -867,10 +867,10 @@ static int r_core_rtr_http_thread (RThread *th) {
 		int p = r_config_get_i (ht->core->config, "http.port");
 		r_config_set_i (ht->core->config, "http.port",  p + 1);
 		if (p >= r_config_get_i (ht->core->config, "http.maxport")) {
-			return false;
+			return R_TH_STOP;
 		}
 	}
-	return ret;
+	return ret ? R_TH_REPEAT : R_TH_STOP;
 }
 
 R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path) {
@@ -882,7 +882,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 	if (launch == '-') {
 		if (httpthread) {
 			eprintf ("Press ^C to stop the webserver\n");
-			r_th_free (httpthread);
+			r_th_kill_free (httpthread);
 			httpthread = NULL;
 		} else {
 			eprintf ("No webserver running\n");
@@ -1692,7 +1692,7 @@ static bool r_core_rtr_rap_run(RCore *core, const char *input) {
 	// r_core_cmdf (core, "o rap://%s", input);
 }
 
-static int r_core_rtr_rap_thread (RThread *th) {
+static RThreadFunctionRet r_core_rtr_rap_thread (RThread *th) {
 	if (!th) {
 		return false;
 	}
@@ -1700,7 +1700,7 @@ static int r_core_rtr_rap_thread (RThread *th) {
 	if (!rt || !rt->core) {
 		return false;
 	}
-	return r_core_rtr_rap_run (rt->core, rt->input);
+	return r_core_rtr_rap_run (rt->core, rt->input) ? R_TH_REPEAT : R_TH_STOP;
 }
 
 R_API void r_core_rtr_cmd(RCore *core, const char *input) {

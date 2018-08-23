@@ -2086,7 +2086,7 @@ R_API bool r_core_init(RCore *core) {
 	core->rtr_n = 0;
 	core->blocksize_max = R_CORE_BLOCKSIZE_MAX;
 	core->task_id_next = 0;
-	core->tasks = r_list_newf ((RListFree)r_core_task_free);
+	core->tasks = r_list_newf ((RListFree)r_core_task_decref);
 	core->tasks_queue = r_list_new ();
 	core->oneshot_queue = r_list_newf (free);
 	core->oneshots_enqueued = 0;
@@ -2270,7 +2270,7 @@ R_API RCore *r_core_fini(RCore *c) {
 		return NULL;
 	}
 	r_core_task_break_all (c);
-	r_core_task_join (c, NULL, NULL);
+	r_core_task_join (c, NULL, -1);
 	r_core_wait (c);
 	/* TODO: it leaks as shit */
 	//update_sdb (c);
@@ -2351,7 +2351,7 @@ R_API void r_core_prompt_loop(RCore *r) {
 /*			if (lock) r_th_lock_leave (lock);
 		if (rabin_th && !r_th_wait_async (rabin_th)) {
 			eprintf ("rabin thread end \n");
-			r_th_free (rabin_th);
+			r_th_kill_free (rabin_th);
 			r_th_lock_free (lock);
 			lock = NULL;
 			rabin_th = NULL;

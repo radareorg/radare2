@@ -40,7 +40,7 @@ static char* get_file_in_cur_dir(const char *filepath) {
 
 static RThread *thread = NULL;
 
-static int loading_thread(RThread *th) {
+static RThreadFunctionRet loading_thread(RThread *th) {
 	const char *tok = "\\|/-";
 	int i = 0;
 	if (th) {
@@ -50,7 +50,7 @@ static int loading_thread(RThread *th) {
 			i++;
 		}
 	}
-	return 0;
+	return R_TH_STOP;
 }
 
 static void loading_start() {
@@ -59,8 +59,7 @@ static void loading_start() {
 }
 
 static void loading_stop() {
-	r_th_kill (thread, true);
-	r_th_free (thread);
+	r_th_kill_free (thread);
 	thread = NULL;
 }
 
@@ -260,7 +259,7 @@ static int main_print_var(const char *var_name) {
 // Load the binary information from rabin2
 // TODO: use thread to load this, split contents line, per line and use global lock
 #if USE_THREADS
-static int rabin_delegate(RThread *th) {
+static RThreadFunctionRet rabin_delegate(RThread *th) {
 	RIODesc *d = r_io_desc_get (r.io, r.file->fd);
 	if (rabin_cmd && r_file_exists (d->name)) {
 		char *nptr, *ptr, *cmd = r_sys_cmd_str (rabin_cmd, NULL, NULL);
@@ -290,7 +289,7 @@ static int rabin_delegate(RThread *th) {
 	if (th) {
 		eprintf ("rabin2: done\n");
 	}
-	return 0;
+	return R_TH_STOP;
 }
 #endif
 
@@ -1383,7 +1382,7 @@ int main(int argc, char **argv, char **envp) {
 				if (lock) r_th_lock_leave (lock);
 				if (rabin_th && !r_th_wait_async (rabin_th)) {
 					// eprintf ("rabin thread end \n");
-					r_th_free (rabin_th);
+					r_th_kill_free (rabin_th);
 					r_th_lock_free (lock);
 					lock = NULL;
 					rabin_th = NULL;
@@ -1404,7 +1403,7 @@ int main(int argc, char **argv, char **envp) {
 				if (r_core_task_running_tasks_count (&r) > 0) {
 					if (r_cons_yesno ('y', "There are running background tasks. Do you want to kill them? (Y/n)")) {
 						r_core_task_break_all (&r);
-						r_core_task_join (&r, r.main_task, NULL);
+						r_core_task_join (&r, r.main_task, -1);
 					} else {
 						continue;
 					}
