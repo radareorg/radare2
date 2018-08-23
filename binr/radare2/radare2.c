@@ -1403,7 +1403,7 @@ int main(int argc, char **argv, char **envp) {
 				if (r_core_task_running_tasks_count (&r) > 0) {
 					if (r_cons_yesno ('y', "There are running background tasks. Do you want to kill them? (Y/n)")) {
 						r_core_task_break_all (&r);
-						r_core_task_join (&r, r.main_task, NULL);
+						r_core_task_join (&r, r.main_task, -1);
 					} else {
 						continue;
 					}

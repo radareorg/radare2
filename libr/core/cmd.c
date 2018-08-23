@@ -1357,27 +1357,19 @@ static int cmd_thread(void *data, const char *input) {
 			return 0;
 		}
 		int tid = r_num_math (core->num, input + 1);
-		if (tid) {
-			RCoreTask *task = r_core_task_get (core, tid);
-			if (task && task != core->main_task) {
-				r_core_task_join (core, core->current_task, task);
-			} else {
-				eprintf ("Cannot find task\n");
-			}
-		} else {
-			r_core_task_join (core, core->current_task, NULL);
-		}
+		r_core_task_join (core, core->current_task, tid ? tid : -1);
 		break;
 	}
 	case '=': { // "&="
 		// r_core_task_list (core, '=');
 		int tid = r_num_math (core->num, input + 1);
 		if (tid) {
-			RCoreTask *task = r_core_task_get (core, tid);
+			RCoreTask *task = r_core_task_get_incref (core, tid);
 			if (task) {
 				if (task->res) {
 					r_cons_println (task->res);
 				}
+				r_core_task_decref (task);
 			} else {
 				eprintf ("Cannot find task\n");
 			}

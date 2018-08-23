@@ -117,16 +117,20 @@ static void task_join(RCoreTask *task) {
 	if (!sem) {
 		return;
 	}
+
 	r_th_sem_wait (sem);
 	r_th_sem_post (sem);
 }
 
-R_API void r_core_task_join(RCore *core, RCoreTask *current, RCoreTask *task) {
-	RListIter *iter;
-	if (current && task == current) {
+R_API void r_core_task_join(RCore *core, RCoreTask *current, int id) {
+	if (current && id == current->id) {
 		return;
 	}
-	if (task) {
+	if (id >= 0) {
+		RCoreTask *task = r_core_task_get_incref (core, id);
+		if (!task) {
+			return;
+		}
 		if (current) {
 			r_core_task_sleep_begin (current);
 		}
@@ -134,8 +138,22 @@ R_API void r_core_task_join(RCore *core, RCoreTask *current, RCoreTask *task) {
 		if (current) {
 			r_core_task_sleep_end (current);
 		}
+		r_core_task_decref (task);
 	} else {
-		r_list_foreach_prev (core->tasks, iter, task) {
+		TASK_SIGSET_T old_sigset;
+		tasks_lock_enter (core, &old_sigset);
+		RList *tasks = r_list_clone (core->tasks);
+		RListIter *iter;
+		RCoreTask *task;
+		r_list_foreach (tasks, iter, task) {
+			if (current == task) {
+				continue;
+			}
+			r_core_task_incref (task);
+		}
+		tasks_lock_leave (core, &old_sigset);
+
+		r_list_foreach (tasks, iter, task) {
 			if (current == task) {
 				continue;
 			}
@@ -146,8 +164,24 @@ R_API void r_core_task_join(RCore *core, RCoreTask *current, RCoreTask *task) {
 			if (current) {
 				r_core_task_sleep_end (current);
 			}
+			r_core_task_decref (task);
 		}
+		r_list_free (tasks);
 	}
+}
+
+static void task_free (RCoreTask *task) {
+	if (!task) {
+		return;
+	}
+	free (task->cmd);
+	free (task->res);
+	r_th_free (task->thread);
+	r_th_sem_free (task->running_sem);
+	r_th_cond_free (task->dispatch_cond);
+	r_th_lock_free (task->dispatch_lock);
+	r_cons_context_free (task->cons_context);
+	free (task);
 }
 
 R_API RCoreTask *r_core_task_new(RCore *core, bool create_cons, const char *cmd, RCoreTaskCallback cb, void *user) {
@@ -180,6 +214,7 @@ R_API RCoreTask *r_core_task_new(RCore *core, bool create_cons, const char *cmd,
 
 	task->id = core->task_id_next++;
 	task->state = R_CORE_TASK_STATE_BEFORE_START;
+	task->refcount = 1;
 	task->transient = false;
 	task->core = core;
 	task->user = user;
@@ -188,22 +223,25 @@ R_API RCoreTask *r_core_task_new(RCore *core, bool create_cons, const char *cmd,
 	return task;
 
 hell:
-	r_core_task_free (task);
+	task_free (task);
 	return NULL;
 }
 
-R_API void r_core_task_free (RCoreTask *task) {
+R_API void r_core_task_incref (RCoreTask *task) {
 	if (!task) {
 		return;
 	}
-	free (task->cmd);
-	free (task->res);
-	r_th_free (task->thread);
-	r_th_sem_free (task->running_sem);
-	r_th_cond_free (task->dispatch_cond);
-	r_th_lock_free (task->dispatch_lock);
-	r_cons_context_free (task->cons_context);
-	free (task);
+	task->refcount++;
+}
+
+R_API void r_core_task_decref (RCoreTask *task) {
+	if (!task) {
+		return;
+	}
+	task->refcount--;
+	if (task->refcount <= 0) {
+		task_free (task);
+	}
 }
 
 R_API void r_core_task_schedule(RCoreTask *current, RTaskState next_state) {
@@ -471,10 +509,32 @@ R_API RCoreTask *r_core_task_self (RCore *core) {
 	return core->current_task ? core->current_task : core->main_task;
 }
 
+static RCoreTask *task_get (RCore *core, int id) {
+	RCoreTask *task;
+	RListIter *iter;
+	r_list_foreach (core->tasks, iter, task) {
+			if (task->id == id) {
+				return task;
+			}
+		}
+	return NULL;
+}
+
+R_API RCoreTask *r_core_task_get_incref(RCore *core, int id) {
+	TASK_SIGSET_T old_sigset;
+	tasks_lock_enter (core, &old_sigset);
+	RCoreTask *task = task_get (core, id);
+	if (task) {
+		r_core_task_incref (task);
+	}
+	tasks_lock_leave (core, &old_sigset);
+	return task;
+}
+
 R_API void r_core_task_break(RCore *core, int id) {
 	TASK_SIGSET_T old_sigset;
 	tasks_lock_enter (core, &old_sigset);
-	RCoreTask *task = r_core_task_get (core, id);
+	RCoreTask *task = task_get (core, id);
 	if (!task || task->state == R_CORE_TASK_STATE_DONE) {
 		tasks_lock_leave (core, &old_sigset);
 		return;
@@ -530,15 +590,4 @@ R_API void r_core_task_del_all_done (RCore *core) {
 			r_list_delete (core->tasks, iter);
 		}
 	}
-}
-
-R_API RCoreTask *r_core_task_get (RCore *core, int id) {
-	RCoreTask *task;
-	RListIter *iter;
-	r_list_foreach (core->tasks, iter, task) {
-		if (task->id == id) {
-			return task;
-		}
-	}
-	return NULL;
 }
