@@ -1127,6 +1127,7 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 					"d}",
 					t->count, t->times);
 			}
+			r_cons_printf (",\"colorize\":%d", bbi->colorize);
 			r_cons_printf (",\"ops\":");
 			if (buf) {
 				r_io_read_at (core->io, bbi->addr, buf, bbi->size);

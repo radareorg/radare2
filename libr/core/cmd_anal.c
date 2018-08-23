@@ -2625,6 +2625,21 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case '+': // "afb+"
 			anal_fcn_add_bb (core, input + 3);
 			break;
+		case 'H': // "afbH"
+			{
+				const char *ptr = input + 3;
+				ut64 addr = r_num_math (core->num, ptr);
+				if (ptr) {
+					RAnalOp *op = r_core_op_anal (core, addr);
+					if (op) {
+						r_anal_colorize_bb (core->anal, addr);
+						r_anal_op_free (op);
+					} else {
+						eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", addr);
+					}
+				}
+			}
+            break;
 		default:
 		case '?':
 			r_core_cmd_help (core, help_msg_afb);
