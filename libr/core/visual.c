@@ -55,12 +55,11 @@ static const char *help_msg_visual[] = {
 	"/*+-[]", "change block size, [] = resize hex.cols",
 	"</>", "seek aligned to block size (seek cursor in cursor mode)",
 	"a/A", "(a)ssemble code, visual (A)ssembler",
-	"b", "browse symbols, flags, configurations, classes, ...",
+	"b", "browse evals, symbols, flags, configurations, classes, ...",
 	"B", "toggle breakpoint",
 	"c/C", "toggle (c)ursor and (C)olors",
 	"d[f?]", "define function, data, code, ..",
 	"D", "enter visual diff mode (set diff.from/to)",
-	"e", "edit eval configuration variables",
 	"f/F", "set/unset or browse flags. f- to unset, F to browse, ..",
 	"gG", "go seek to begin and end of file (0-$s)",
 	"hjkl", "move around (or HJKL) (left-down-up-right)",
@@ -1678,9 +1677,6 @@ R_API void r_core_visual_browse(RCore *core) {
 					r_core_cmd0 (core, "TT");
 				}
 			}
-			break;
-		case 'e':
-			r_core_visual_config (core);
 			break;
 		case 'p':
 			r_core_cmd0 (core, "dpt=$(dpt~[1-])");
