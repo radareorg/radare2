@@ -1755,7 +1755,7 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 			r_io_read_at (core->io, value, buf, sizeof (buf));
 			r_asm_set_pc (core->assembler, value);
 			r_asm_disassemble (core->assembler, &op, buf, sizeof (buf));
-			r_strbuf_appendf (s, " '%s'", op.buf_asm.ptr? op.buf_asm.ptr : op.buf_asm.buf);
+			r_strbuf_appendf (s, " '%s'", r_asm_op_get_asm (&op));
 			/* get library name */
 			{ // NOTE: dup for mapname?
 				RDebugMap *map;
