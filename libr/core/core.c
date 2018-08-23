@@ -1154,11 +1154,9 @@ static void autocomplete_functions (RLine* line, const char* str) {
 	}
 	RListIter *iter;
 	RAnalFunction *fcn;
-	char *name;
-	int n, i = 0;
-	n = strlen (str);
+	int n = strlen (str), i = 0;
 	r_list_foreach (core->anal->fcns, iter, fcn) {
-		name = r_core_anal_fcn_name (core, fcn);
+		const char *name = r_core_anal_fcn_name (core, fcn);
 		if (!strncmp (name, str, n)) {
 			tmp_argv[i++] = name;
 		}
