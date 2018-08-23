@@ -247,12 +247,12 @@ R_API char *r_file_path(const char *bin) {
 					return file;
 				}
 				str = ptr + 1;
+				free (file);
 			}
 		} while (ptr);
 	}
 	free (path_env);
 	free (path);
-	free (file);
 	return strdup (bin);
 }
 
