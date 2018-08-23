@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -32,7 +32,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	close (ifd);
 
 	if (!r_sys_cmdf ("nasm %s -o %s", ipath, opath)) {
-		char buf[512]; // TODO: remove limits
+		ut8 buf[512]; // TODO: remove limits
 		len = read (ofd, buf, sizeof (buf));
 		r_asm_op_set_buf (op, buf, len);
 	} else {

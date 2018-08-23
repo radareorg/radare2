@@ -780,6 +780,7 @@ int main(int argc, char **argv, char **envp) {
 	if (debug == 1) {
 		if (optind >= argc && !haveRarunProfile) {
 			eprintf ("Missing argument for -d\n");
+			LISTS_FREE ();
 			return 1;
 		}
 		const char *src = haveRarunProfile? pfile: argv[optind];
@@ -812,6 +813,7 @@ int main(int argc, char **argv, char **envp) {
 	}
 	ret = run_commands (NULL, prefiles, false);
 	r_list_free (prefiles);
+	prefiles = NULL;
 
 #if 0
 	// if "- -i" is used we will open malloc:// instead
@@ -829,6 +831,7 @@ int main(int argc, char **argv, char **envp) {
 		const char *uri = argv[optind];
 		if (optind >= argc) {
 			eprintf ("Missing URI for -C\n");
+			LISTS_FREE ();
 			return 1;
 		}
 		if (!strncmp (uri, "http://", 7)) {
@@ -836,6 +839,7 @@ int main(int argc, char **argv, char **envp) {
 		} else {
 			r_core_cmdf (&r, "=+http://%s/cmd/", argv[optind]);
 		}
+		LISTS_FREE ();
 		return 0;
 	}
 
@@ -877,10 +881,12 @@ int main(int argc, char **argv, char **envp) {
 	if (pfile && r_file_is_directory (pfile)) {
 		if (debug) {
 			eprintf ("Error: Cannot debug directories, yet.\n");
+			LISTS_FREE ();
 			return 1;
 		}
 		if (chdir (argv[optind])) {
 			eprintf ("[d] Cannot open directory\n");
+			LISTS_FREE ();
 			return 1;
 		}
 	} else if (argv[optind] && !strcmp (argv[optind], "=")) {
@@ -896,6 +902,7 @@ int main(int argc, char **argv, char **envp) {
 				r_cons_flush ();
 				free (buf);
 				eprintf ("[=] Cannot open '%s'\n", path);
+				LISTS_FREE ();
 				return 1;
 			}
 			r_io_write_at (r.io, 0, buf, sz);
@@ -919,6 +926,7 @@ int main(int argc, char **argv, char **envp) {
 			perms = R_IO_READ | R_IO_WRITE | R_IO_EXEC;
 			if (optind >= argc) {
 				eprintf ("No program given to -d\n");
+				LISTS_FREE ();
 				return 1;
 			}
 			if (debug == 2) {
@@ -1320,6 +1328,7 @@ int main(int argc, char **argv, char **envp) {
 	r_list_free (cmds);
 	r_list_free (evals);
 	r_list_free (files);
+	cmds = evals = files = NULL;
 	if (ret) {
 		ret = 0;
 		goto beach;
@@ -1422,7 +1431,9 @@ int main(int argc, char **argv, char **envp) {
 							} else {
 								r_debug_detach (r.dbg, r.dbg->pid);
 							}
-						} else continue;
+						} else {
+							continue;
+						}
 					}
 				}
 
@@ -1473,6 +1484,7 @@ beach:
 	free (file);
 	r_str_const_free (NULL);
 	r_cons_free ();
+	LISTS_FREE ();
 	return ret;
 }
 #endif // EMSCRIPTEN
