@@ -1221,28 +1221,24 @@ static const char *syscallNumber(int n) {
 	return sdb_fmt (n > 1000 ? "0x%x" : "%d", n);
 }
 
-const bool archIsThumb(RCore *core) {
-	return (!strcmp (core->anal->cur->arch, "arm") && core->anal->bits == 16);
-}
-
 R_API char *cmd_syscall_dostr(RCore *core, int n, ut64 addr) {
 	char *res = NULL;
 	int i;
 	char str[64];
+	int defVector = r_syscall_get_swi (core->anal->syscall);
+	if (defVector > 0) {
+		n = -1;
+	}
 	if (n == -1) {
-		if (addr && archIsThumb (core)) {
-			RAnalOp *aop = r_core_anal_op (core, addr, R_ANAL_OP_MASK_BASIC);
-			n = aop->val;
-			r_anal_op_free (aop);
-		} else {
-			n = (int)r_debug_reg_get (core->dbg, "oeax");
-			if (!n || n == -1) {
-				const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
-				n = (a0 == NULL)? -1: (int)r_debug_reg_get (core->dbg, a0);
-			}
+		n = (int)r_debug_reg_get (core->dbg, "oeax");
+		if (!n || n == -1) {
+			const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
+			n = (a0 == NULL)? -1: (int)r_debug_reg_get (core->dbg, a0);
 		}
 	}
-	RSyscallItem *item = r_syscall_get (core->anal->syscall, n, -1);
+	RSyscallItem *item = (defVector > 0)
+		? r_syscall_get (core->anal->syscall, n, -1)
+		: r_syscall_get (core->anal->syscall, 0, n);
 	if (!item) {
 		res = r_str_appendf (res, "%s = unknown ()", syscallNumber (n));
 		return res;
