@@ -4140,6 +4140,9 @@ R_API int r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int 
 				g->layout = r_config_get_i (core->config, "graph.layout");
 				g->need_reload_nodes = true;
 			}
+			// TODO: toggle shortcut hotkeys
+			r_core_cmd0 (core, "e!asm.jmphints");
+			r_core_cmd0 (core, "e!asm.leahints");
 			break;
 		case '$':
 			r_core_cmd (core, "sr PC", 0);
