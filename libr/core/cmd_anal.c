@@ -5565,14 +5565,14 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_asm_set_pc (core->assembler, ref->at);
 					r_asm_disassemble (core->assembler, &asmop, buf, 12);
 					r_cons_printf ("{\"from\":%" PFMT64u ",\"to\":%" PFMT64u ",\"type\":\"%s\",\"opcode\":\"%s\"}%s",
-						ref->at, ref->addr, r_anal_xrefs_type_tostring (ref->type), asmop.buf_asm, iter->n? ",": "");
+						ref->at, ref->addr, r_anal_xrefs_type_tostring (ref->type), r_asm_op_get_asm (&asmop), iter->n? ",": "");
 				}
 				r_cons_print ("]\n");
 			} else if (input[1] == '*') { // axf*
 				// TODO: implement multi-line comments
 				r_list_foreach (list, iter, ref) {
 					r_cons_printf ("CCa 0x%" PFMT64x " \"XREF from 0x%" PFMT64x "\n",
-						ref->at, ref->type, asmop.buf_asm, iter->n? ",": "");
+						ref->at, ref->type, r_asm_op_get_asm (&asmop), iter->n? ",": "");
 				}
 			} else { // axf
 				char str[512];
