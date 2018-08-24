@@ -45,6 +45,13 @@ static void rtti_type_descriptor_fini(rtti_type_descriptor *td) {
 	td->name = NULL;
 }
 
+static inline ut64 rtti_msvc_addr(RVTableContext *context, ut64 col_addr, ut64 col_base, ut32 addr) {
+	if (context->word_size != 8) {
+		return addr;
+	}
+	return addr + (col_addr - col_base);
+}
+
 static bool rtti_msvc_read_complete_object_locator(RVTableContext *context, ut64 addr, rtti_complete_object_locator *col) {
 	if (addr == UT64_MAX) {
 		return false;
@@ -479,10 +486,7 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 	}
 
 	// type descriptor
-	ut64 typeDescriptorAddr = col.type_descriptor_addr;
-	if (context->word_size == 8) {
-		typeDescriptorAddr += colAddr - col.object_base;
-	}
+	ut64 typeDescriptorAddr = rtti_msvc_addr (context, colAddr, col.object_base, col.type_descriptor_addr);
 	rtti_type_descriptor td = { 0 };
 	if (!rtti_msvc_read_type_descriptor (context, typeDescriptorAddr, &td)) {
 		if (!strict) {
@@ -492,10 +496,7 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 	}
 
 	// class hierarchy descriptor
-	ut64 classHierarchyDescriptorAddr = col.class_descriptor_addr;
-	if (context->word_size == 8) {
-		classHierarchyDescriptorAddr += colAddr - col.object_base;
-	}
+	ut64 classHierarchyDescriptorAddr = rtti_msvc_addr (context, colAddr, col.object_base, col.class_descriptor_addr);
 	rtti_class_hierarchy_descriptor chd;
 	if (!rtti_msvc_read_class_hierarchy_descriptor (context, classHierarchyDescriptorAddr, &chd)) {
 		if (!strict) {
@@ -558,11 +559,7 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 			rtti_msvc_print_base_class_descriptor (bcd, "\t\t");
 		}
 
-		ut64 baseTypeDescriptorAddr = bcd->type_descriptor_addr;
-		if (context->word_size == 8) {
-			baseTypeDescriptorAddr += colAddr - col.object_base;
-		}
-
+		ut64 baseTypeDescriptorAddr = rtti_msvc_addr (context, colAddr, col.object_base, bcd->type_descriptor_addr);
 		rtti_type_descriptor btd = { 0 };
 		if (rtti_msvc_read_type_descriptor (context, baseTypeDescriptorAddr, &btd)) {
 			if (use_json) {
@@ -697,10 +694,7 @@ RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAn
 	}
 
 
-	ut64 td_addr = col->col.type_descriptor_addr;
-	if (context->vt_context->word_size == 8) {
-		td_addr += addr - col->col.object_base;
-	}
+	ut64 td_addr = rtti_msvc_addr (context->vt_context, col->addr, col->col.object_base, col->col.type_descriptor_addr);
 	col->td = recovery_anal_type_descriptor (context, td_addr);
 	if (!col->td->valid) {
 		col->valid = false;
@@ -709,10 +703,7 @@ RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAn
 	col->td->col = col;
 
 
-	ut64 chd_addr = col->col.class_descriptor_addr;
-	if (context->vt_context->word_size == 8) {
-		chd_addr += addr - col->col.object_base;
-	}
+	ut64 chd_addr = rtti_msvc_addr (context->vt_context, col->addr, col->col.object_base, col->col.class_descriptor_addr);
 	col->valid &= rtti_msvc_read_class_hierarchy_descriptor (context->vt_context, chd_addr, &col->chd);
 	if (!col->valid) {
 		return col;
@@ -737,11 +728,8 @@ RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAn
 	RListIter *bcdIter;
 	rtti_base_class_descriptor *bcd;
 	r_list_foreach (col->bcd, bcdIter, bcd) {
-		ut64 baseTypeDescriptorAddr = bcd->type_descriptor_addr;
-		if (context->vt_context->word_size == 8) {
-			baseTypeDescriptorAddr += col->addr - col->col.object_base;
-		}
-		RecoveryTypeDescriptor *td = recovery_anal_type_descriptor (context, baseTypeDescriptorAddr);
+		ut64 base_td_addr = rtti_msvc_addr (context->vt_context, col->addr, col->col.object_base, bcd->type_descriptor_addr);
+		RecoveryTypeDescriptor *td = recovery_anal_type_descriptor (context, base_td_addr);
 		if (td == col->td) {
 			continue;
 		}
