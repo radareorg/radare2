@@ -127,6 +127,7 @@ static int vtable_is_addr_vtable_start(RVTableContext *context, ut64 curAddress)
 	// total xref's to curAddress
 	RList *xrefs = r_anal_xrefs_get (context->anal, curAddress);
 	if (r_list_empty (xrefs)) {
+		r_list_free (xrefs);
 		return false;
 	}
 	r_list_foreach (xrefs, xrefIter, xref) {
@@ -140,6 +141,7 @@ static int vtable_is_addr_vtable_start(RVTableContext *context, ut64 curAddress)
 
 			if (analop.type == R_ANAL_OP_TYPE_MOV
 				|| analop.type == R_ANAL_OP_TYPE_LEA) {
+				r_list_free (xrefs);
 				return true;
 			}
 
