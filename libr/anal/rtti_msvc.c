@@ -742,6 +742,9 @@ RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAn
 			baseTypeDescriptorAddr += col->addr - col->col.object_base;
 		}
 		RecoveryTypeDescriptor *td = recovery_anal_type_descriptor (context, baseTypeDescriptorAddr);
+		if (td == col->td) {
+			continue;
+		}
 		if (!td->valid) {
 			eprintf("Warning: type descriptor of base is invalid.\n");
 			continue;
@@ -807,7 +810,7 @@ RAnalClass *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context, Recove
 
 	char *name = r_anal_rtti_msvc_demangle_class_name (td->td.name);
 	if (!name) {
-		eprintf("Failed to demangle a class name.\n");
+		eprintf("Failed to demangle a class name: \"%s\"\n", td->td.name);
 		name = strdup (td->td.name);
 		if (!name) {
 			return NULL;
