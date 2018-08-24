@@ -246,7 +246,7 @@ static const char *help_msg_afb[] = {
 	"afbj", " [addr]", "show basic blocks information in json",
 	"afbe", " bbfrom bbto", "add basic-block edge for switch-cases",
 	"afB", " [bits]", "define asm.bits for the given function",
-	"afh", " [addr] [color(ut32)]", "set a color for the bb at a given address",
+	"afbh", " [addr] [color(ut32)]", "set a color for the bb at a given address",
 	NULL
 };
 
