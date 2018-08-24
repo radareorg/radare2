@@ -2643,7 +2643,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 				}
 			}
 			}
-            break;
+			break;
 		default:
 		case '?':
 			r_core_cmd_help (core, help_msg_afb);
