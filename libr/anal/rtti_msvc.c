@@ -374,7 +374,7 @@ R_API char *r_anal_rtti_msvc_demangle_class_name(const char *name) {
 	}
 	size_t original_len = strlen (name);
 	if (original_len < 7
-		|| strncmp (name, ".?AV", 4) != 0
+		|| (strncmp (name, ".?AV", 4) != 0 && strncmp (name, ".?AU", 4) != 0)
 		|| strncmp (name + original_len - 2, "@@", 2) != 0) {
 		return NULL;
 	}
