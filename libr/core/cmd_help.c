@@ -193,6 +193,7 @@ static const char *help_msg_question_v[] = {
 	"$l", "", "opcode length",
 	"$m", "", "opcode memory reference (e.g. mov eax,[0x10] => 0x10)",
 	"$M", "", "map address (lowest map address)",
+	"$MM", "", "map size (lowest map address)",
 	"$o", "", "here (current disk io offset)",
 	"$p", "", "getpid()",
 	"$P", "", "pid of children (only in debug)",
@@ -667,7 +668,7 @@ static int cmd_help(void *data, const char *input) {
 			int i = 0;
 			const char *vars[] = {
 				"$$", "$$$", "$?", "$b", "$B", "$F", "$Fj", "$Ff", "$FB", "$Fb", "$Fs", "$FE", "$FS",
-				"$FI", "$c", "$r", "$D", "$DD", "$e", "$f", "$j", "$Ja", "$l", "$m", "$M", "$o",
+				"$FI", "$c", "$r", "$D", "$DD", "$e", "$f", "$j", "$Ja", "$l", "$m", "$M", "$MM", "$o",
 				"$p", "$P", "$s", "$S", "$SS", "$v", "$w", NULL
 			};
 			while (vars[i]) {
