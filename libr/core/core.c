@@ -588,21 +588,24 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		case 'B':
 		case 'M': {
 				ut64 lower = UT64_MAX;
-				SdbListIter *iter;
-				RBinSection *s;
-				ls_foreach (core->io->sections, iter, s) {
-					if (!s->vaddr && s->paddr) {
-						continue;
-					}
-					if (s->vaddr < lower) lower = s->vaddr;
+				ut64 size = 0LL;
+				RIOMap *map = r_io_map_get (core->io, core->offset);
+				if (map) {
+					lower = r_itv_begin (map->itv);
+					size = r_itv_size (map->itv);
 				}
+
 				if (str[1] == 'B') {
 					/* clear lower bits of the lowest map address to define the base address */
 					const int clear_bits = 16;
 					lower >>= clear_bits;
 					lower <<= clear_bits;
 				}
-				return (lower == UT64_MAX)? 0LL: lower;
+				if (str[2] == 'M') {
+					return size;
+				} else {
+					return (lower == UT64_MAX)? 0LL: lower;
+				}
 			}
 			break;
 		case 'v': return op.val; // immediate value
