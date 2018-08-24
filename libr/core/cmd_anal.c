@@ -3711,10 +3711,11 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	}
 
 	if (!*input) {
-		RFlagItem *fi = r_flag_get (core->flags, "aeim.fd");
+		char *fi = sdb_get(core->sdb, "aeim.fd", 0);
 		if (fi) {
 			// Close the fd associated with the aeim stack
-			(void)r_io_fd_close (core->io, fi->offset);
+			ut64 fd = sdb_atoi (fi);
+			(void)r_io_fd_close (core->io, fd);
 		}
 	}
 	addr = r_config_get_i (core->config, "esil.stack.addr");
@@ -3753,7 +3754,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 		}
 		r_flag_unset_name (core->flags, name);
 		r_flag_unset_name (core->flags, "aeim.stack");
-		r_flag_unset_name (core->flags, "aeim.fd");
+		sdb_unset(core->sdb, "aeim.fd", 0);
 		// eprintf ("Deinitialized %s\n", name);
 		return;
 	}
@@ -3769,8 +3770,10 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	}
 	r_io_map_set_name (stack_map, name);
 	// r_flag_set (core->flags, name, addr, size);	//why is this here?
-	r_flag_set (core->flags, "aeim.stack", addr, size);
-	r_flag_set (core->flags, "aeim.fd", esil->stack_fd, 1);
+	char val[128], *v;
+	v = sdb_itoa (esil->stack_fd, val, 10);
+	sdb_set(core->sdb, "aeim.fd", v, 0);
+
 	r_config_set_i (core->config, "io.va", true);
 	if (patt && *patt) {
 		switch (*patt) {
