@@ -613,6 +613,30 @@ typedef struct analyzed_complete_object_locator_t {
 	RPVector base_td; // <analyzed_type_descriptor_t>
 } analyzed_complete_object_locator;
 
+analyzed_complete_object_locator *analyzed_complete_object_locator_new() {
+	analyzed_complete_object_locator *col = R_NEW (analyzed_complete_object_locator);
+	if (!col) {
+		return NULL;
+	}
+	col->addr = 0;
+	col->valid = false;
+	col->td = NULL;
+	memset (&col->chd, 0, sizeof (col->chd));
+	col->bcd = NULL;
+	r_pvector_init (&col->base_td, NULL);
+	return col;
+}
+
+void analyzed_complete_object_locator_free(analyzed_complete_object_locator *col) {
+	if (!col) {
+		return;
+	}
+	r_list_free (col->bcd);
+	r_pvector_clear (&col->base_td);
+	free (col);
+}
+
+
 typedef struct analyzed_type_descriptor_t {
 	ut64 addr;
 	bool valid;
@@ -620,17 +644,32 @@ typedef struct analyzed_type_descriptor_t {
 	analyzed_complete_object_locator *col;
 } analyzed_type_descriptor;
 
-typedef struct analyzed_class_hierarchy_descriptor_t {
-	ut64 addr;
-	bool valid;
-	rtti_class_hierarchy_descriptor data;
-} analyzed_class_hierarchy_descriptor;
+analyzed_type_descriptor *analyzed_type_descriptor_new() {
+	analyzed_type_descriptor *td = R_NEW (analyzed_type_descriptor);
+	if (!td) {
+		return NULL;
+	}
+
+	td->addr = 0;
+	td->valid = false;
+	memset (&td->td, 0, sizeof (td->td));
+	td->col = NULL;
+	return td;
+}
+
+void analyzed_type_descriptor_free(analyzed_type_descriptor *td) {
+	if (!td) {
+		return;
+	}
+	rtti_type_descriptor_fini (&td->td);
+	free (td);
+}
+
 
 typedef struct rtti_msvc_anal_context_t {
 	RVTableContext *vt_context;
-	RVector complete_object_locators; // <analyzed_complete_object_locator> TODO: use some more efficient map
-	RVector type_descriptors; // <analyzed_typed_descriptor> TODO: use some more efficient map
-	//RVector class_hierarchy_descriptors; // <analyzed_class_hierarchy_descriptor> TODO: use some more efficient map
+	RPVector complete_object_locators; // <analyzed_complete_object_locator> TODO: use some more efficient map
+	RPVector type_descriptors; // <analyzed_typed_descriptor> TODO: use some more efficient map
 } RRTTIMSVCAnalContext;
 
 
@@ -638,14 +677,19 @@ analyzed_type_descriptor *anal_type_descriptor(RRTTIMSVCAnalContext *context, ut
 
 analyzed_complete_object_locator *anal_complete_object_locator(RRTTIMSVCAnalContext *context, ut64 addr) {
 	analyzed_complete_object_locator *col;
-	r_vector_foreach (&context->complete_object_locators, col) {
+	void **it;
+	r_pvector_foreach (&context->complete_object_locators, it) {
+		col = *it;
 		if (col->addr == addr) {
 			return col;
 		}
 	}
 
-	col = r_vector_push (&context->complete_object_locators, NULL);
-	//r_vector_init (&col->bcd, sizeof (rtti_base_class_descriptor), NULL, NULL);
+	col = analyzed_complete_object_locator_new ();
+	if (!col) {
+		return NULL;
+	}
+	r_pvector_push (&context->complete_object_locators, col);
 	col->addr = addr;
 	col->valid = rtti_msvc_read_complete_object_locator (context->vt_context, addr, &col->col);
 	if (!col->valid) {
@@ -689,7 +733,7 @@ analyzed_complete_object_locator *anal_complete_object_locator(RRTTIMSVCAnalCont
 	}
 
 
-	r_pvector_init (&col->base_td, NULL);
+	r_pvector_reserve (&col->base_td, (size_t)col->bcd->length);
 	RListIter *bcdIter;
 	rtti_base_class_descriptor *bcd;
 	r_list_foreach (col->bcd, bcdIter, bcd) {
@@ -710,34 +754,40 @@ analyzed_complete_object_locator *anal_complete_object_locator(RRTTIMSVCAnalCont
 
 analyzed_type_descriptor *anal_type_descriptor(RRTTIMSVCAnalContext *context, ut64 addr) {
 	analyzed_type_descriptor *td;
-	r_vector_foreach (&context->type_descriptors, td) {
+	void **it;
+	r_pvector_foreach (&context->type_descriptors, it) {
+		td = *it;
 		if (td->addr == addr) {
 			return td;
 		}
 	}
 
-	td = r_vector_push (&context->type_descriptors, NULL);
+	td = analyzed_type_descriptor_new ();
+	if (!td) {
+		return NULL;
+	}
+	r_pvector_push (&context->type_descriptors, td);
 	td->addr = addr;
 	td->valid = rtti_msvc_read_type_descriptor (context->vt_context, addr, &td->td);
-	if (td->valid) {
-		ut64 colRefAddr = td->td.vtable_addr - context->vt_context->word_size;
-		ut64 colAddr;
-		if (!context->vt_context->read_addr (context->vt_context->anal, colRefAddr, &colAddr)) {
-			td->valid = false;
-			return td;
-		}
-		td->col = anal_complete_object_locator (context, colAddr);
-		if (!td->col->valid) {
-			printf("fuck %s\n", td->td.name);
-			td->valid = false;
-		}
-	} else {
-		td->col = NULL;
+	if (!td->valid) {
+		return td;
+	}
+
+	ut64 colRefAddr = td->td.vtable_addr - context->vt_context->word_size;
+	ut64 colAddr;
+	if (!context->vt_context->read_addr (context->vt_context->anal, colRefAddr, &colAddr)) {
+		eprintf ("Warning: invalidating td because of failure to get col address.\n");
+		td->valid = false;
+		return td;
+	}
+	td->col = anal_complete_object_locator (context, colAddr);
+	if (!td->col->valid) {
+		eprintf ("Warning: invalidating td because of invalid col.\n");
+		td->valid = false;
 	}
 
 	return td;
 }
-
 
 
 
@@ -796,9 +846,9 @@ RAnalClass *anal_apply_type_descriptor(RRTTIMSVCAnalContext *context, analyzed_t
 
 R_API void r_anal_rtti_msvc_recover_all(RVTableContext *vt_context, RList *vtables) {
 	RRTTIMSVCAnalContext context;
-	r_vector_init (&context.complete_object_locators, sizeof (analyzed_complete_object_locator), NULL, NULL);
-	r_vector_init (&context.type_descriptors, sizeof (analyzed_type_descriptor), NULL, NULL);
 	context.vt_context = vt_context;
+	r_pvector_init (&context.complete_object_locators, (RPVectorFree)analyzed_complete_object_locator_free);
+	r_pvector_init (&context.type_descriptors, (RPVectorFree)analyzed_type_descriptor_free);
 
 	RListIter *vtableIter;
 	RVTableInfo *table;
@@ -814,12 +864,16 @@ R_API void r_anal_rtti_msvc_recover_all(RVTableContext *vt_context, RList *vtabl
 		anal_complete_object_locator (&context, colAddr);
 	}
 
-	analyzed_type_descriptor *td;
-	r_vector_foreach (&context.type_descriptors, td) {
+	void **it;
+	r_pvector_foreach (&context.type_descriptors, it) {
+		analyzed_type_descriptor *td = *it;
 		if (!td->valid) {
 			continue;
 		}
 		anal_apply_type_descriptor (&context, td);
 	}
+
+	r_pvector_clear (&context.complete_object_locators);
+	r_pvector_clear (&context.type_descriptors);
 }
 

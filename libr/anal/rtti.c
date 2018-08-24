@@ -139,6 +139,7 @@ R_API void r_anal_rtti_recover_all(RAnal *anal) {
 			// TODO: recovery for itanium
 		}
 	}
+	r_list_free (vtables);
 	r_cons_break_pop ();
 }
 
