@@ -246,7 +246,7 @@ static const char *help_msg_afb[] = {
 	"afbj", " [addr]", "show basic blocks information in json",
 	"afbe", " bbfrom bbto", "add basic-block edge for switch-cases",
 	"afB", " [bits]", "define asm.bits for the given function",
-	"afbh", " [addr] [color(ut32)]", "set a color for the bb at a given address",
+	"afbc", " [addr] [color(ut32)]", "set a color for the bb at a given address",
 	NULL
 };
 
@@ -2626,7 +2626,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		case '+': // "afb+"
 			anal_fcn_add_bb (core, input + 3);
 			break;
-		case 'h': // "afbh"
+		case 'c': // "afbc"
 			{
 			const char *ptr = input + 3;
 			ut64 addr = r_num_math (core->num, ptr);
