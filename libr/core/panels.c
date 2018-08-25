@@ -191,9 +191,7 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 		return;
 	}
 
-	int rightEdge = can->w;
-	int bottomEdge = can->h;
-	if (rightEdge <= panel->pos.x || bottomEdge <= panel->pos.y) {
+	if (can->w <= panel->pos.x || can->h <= panel->pos.y) {
 		return;
 	}
 	int w = R_MIN (can->w - panel->pos.x, panel->pos.w);
