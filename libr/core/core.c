@@ -1162,6 +1162,8 @@ static void autocomplete_functions (RLine* line, const char* str) {
 		const char *name = r_core_anal_fcn_name (core, fcn);
 		if (!strncmp (name, str, n)) {
 			tmp_argv[i++] = name;
+		} else {
+			free (name);
 		}
 	}
 	tmp_argv[i] = NULL;
