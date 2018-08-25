@@ -527,6 +527,11 @@ R_API char *r_type_func_guess(Sdb *TDB, char *func_name) {
 	if ((result = type_func_try_guess (TDB, str))) {
 		return result;
 	}
+
+	if (*str == '_' && (result = type_func_try_guess (TDB, str + 1))) {
+		return result;
+	}
+
 	str = strdup (str);
 	// some names are in format module.dll_function_number, try to remove those
 	// also try module.dll_function and function_number
