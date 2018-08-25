@@ -174,30 +174,6 @@ static bool onIterMap(SdbListIter *iter, RIO *io, ut64 vaddr, ut8 *buf,
 	return ret;
 }
 
-// Precondition: len >= 0
-// Non-stop IO supporting address space wraparound
-// Returns true iff all reads/writes on overlapped maps are complete.
-static bool onIterMap_wrap(SdbListIter *iter, RIO *io, ut64 vaddr, ut8 *buf,
-		int len, int match_flg, cbOnIterMap op, void *user) {
-#if 1
-	return on_map_skyline (io, vaddr, buf, len, match_flg, op, false);
-#else
-	if (!len) {
-		return true;
-	}
-	bool ret = true;
-	// vaddr + len > 2**64
-	if (vaddr > UT64_MAX - len + 1) {
-		ret = onIterMap (iter, io, 0, buf - vaddr, len + vaddr, match_flg, op, user);
-		len = -vaddr;
-	}
-	if (ret) {
-		ret = onIterMap (iter, io, vaddr, buf, len, match_flg, op, user);
-	}
-	return ret;
-#endif
-}
-
 R_API RIO* r_io_new() {
 	return r_io_init (R_NEW0 (RIO));
 }
@@ -407,7 +383,7 @@ R_API bool r_io_vread_at_mapped(RIO* io, ut64 vaddr, ut8* buf, int len) {
 	if (!io->maps) {
 		return false;
 	}
-	return onIterMap_wrap (io->maps->tail, io, vaddr, buf, len, R_IO_READ, fd_read_at_wrap, NULL);
+	return on_map_skyline (io, vaddr, buf, len, R_IO_READ, fd_read_at_wrap, false);
 }
 
 static bool r_io_vwrite_at(RIO* io, ut64 vaddr, const ut8* buf, int len) {
@@ -417,7 +393,7 @@ static bool r_io_vwrite_at(RIO* io, ut64 vaddr, const ut8* buf, int len) {
 	if (!io->maps) {
 		return false;
 	}
-	return onIterMap_wrap (io->maps->tail, io, vaddr, (ut8*)buf, len, R_IO_WRITE, fd_write_at_wrap, NULL);
+	return on_map_skyline (io, vaddr, (ut8*)buf, len, R_IO_WRITE, fd_write_at_wrap, false);
 }
 
 R_API RIOAccessLog *r_io_al_vread_at(RIO* io, ut64 vaddr, ut8* buf, int len) {
@@ -782,19 +758,6 @@ R_API int r_io_shift(RIO* io, ut64 start, ut64 end, st64 move) {
 	io->off = r_io_desc_seek (io->desc, saved_off, R_IO_SEEK_SET);
 	return true;
 }
-
-#if 0
-// we should move this into r_util/file instead
-R_API int r_io_create(RIO* io, const char* file, int mode, int type) {
-	if (io && io->desc && io->desc->plugin && io->desc->plugin->create) {
-		return io->desc->plugin->create (io, file, mode, type);
-	}
-	if (type == 'd' || type == 1) {
-		return r_sys_mkdir (file);
-	}
-	return r_sandbox_creat (file, mode);
-}
-#endif
 
 R_API ut64 r_io_seek(RIO* io, ut64 offset, int whence) {
 	if (!io) {
