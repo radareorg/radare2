@@ -836,6 +836,7 @@ typedef struct r_anal_bb_t {
 	int returnbb;
 	int conditional;
 	int traced;
+	ut32 colorize;
 	char *label;
 	ut8 *fingerprint;
 	RAnalDiff *diff;
@@ -1701,6 +1702,8 @@ R_API void r_anal_rtti_itanium_print_at_vtable(RVTableContext *context, ut64 add
 R_API char *r_anal_rtti_demangle_class_name(RAnal *anal, const char *name);
 R_API void r_anal_rtti_print_at_vtable(RAnal *anal, ut64 addr, int mode);
 R_API void r_anal_rtti_print_all(RAnal *anal, int mode);
+
+R_API void r_anal_colorize_bb(RAnal *anal, ut64 addr, ut32 color);
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;

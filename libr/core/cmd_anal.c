@@ -246,6 +246,7 @@ static const char *help_msg_afb[] = {
 	"afbj", " [addr]", "show basic blocks information in json",
 	"afbe", " bbfrom bbto", "add basic-block edge for switch-cases",
 	"afB", " [bits]", "define asm.bits for the given function",
+	"afbc", " [addr] [color(ut32)]", "set a color for the bb at a given address",
 	NULL
 };
 
@@ -2624,6 +2625,25 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			break;
 		case '+': // "afb+"
 			anal_fcn_add_bb (core, input + 3);
+			break;
+		case 'c': // "afbc"
+			{
+			const char *ptr = input + 3;
+			ut64 addr = r_num_math (core->num, ptr);
+			ut32 color;
+			ptr = strchr (ptr, ' ');
+			if (ptr) {
+				ptr = strchr (ptr + 1, ' ');
+				color = r_num_math (core->num, ptr + 1);
+				RAnalOp *op = r_core_op_anal (core, addr);
+				if (op) {
+					r_anal_colorize_bb (core->anal, addr, color);
+					r_anal_op_free (op);
+				} else {
+					eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", addr);
+				}
+			}
+			}
 			break;
 		default:
 		case '?':

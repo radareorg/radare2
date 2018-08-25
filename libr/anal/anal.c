@@ -346,6 +346,16 @@ R_API void r_anal_trace_bb(RAnal *anal, ut64 addr) {
 	}
 }
 
+R_API void r_anal_colorize_bb(RAnal *anal, ut64 addr, ut32 color) {
+	RAnalBlock *bbi;
+	RAnalFunction *fcni;
+	RListIter *iter2;
+	bbi = r_anal_bb_from_offset (anal, addr);
+	if (bbi) {
+		bbi->colorize = color;
+	}
+}
+
 R_API RList* r_anal_get_fcns (RAnal *anal) {
 	// avoid received to free this thing
 	anal->fcns->free = NULL;
