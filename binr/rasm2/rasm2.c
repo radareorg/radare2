@@ -197,7 +197,9 @@ static int rasm_show_help(int v) {
 			"             [-f file] [-F fil:ter] [-i skip] [-l len] 'code'|hex|-\n");
 	}
 	if (v != 1) {
-		printf (" -a [arch]    Set architecture to assemble/disassemble (see -L)\n"
+		printf (
+			" -@ [offset]  Set start address for code (default 0)\n"
+			" -a [arch]    Set architecture to assemble/disassemble (see -L)\n"
 			" -A           Show Analysis information from given hexpairs\n"
 			" -b [bits]    Set cpu register size (8, 16, 32, 64) (RASM2_BITS)\n"
 			" -B           Binary input/output (-l is mandatory for binary input)\n"
@@ -214,8 +216,7 @@ static int rasm_show_help(int v) {
 			" -k [kernel]  Select operating system (linux, windows, darwin, ..)\n"
 			" -l [len]     Input/Output length\n"
 			" -L           List Asm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)\n"
-			" -o [offset]  Set start address for code (default 0)\n"
-			" -O [file]    Output file name (rasm2 -Bf a.asm -O a)\n"
+			" -o [file]    Output file name (rasm2 -Bf a.asm -o a)\n"
 			" -p           Run SPP over input for assembly\n"
 			" -q           quiet mode\n"
 			" -r           output in radare commands\n"
@@ -483,8 +484,11 @@ int main (int argc, char *argv[]) {
 		bits = r_num_math (NULL, r2bits);
 		free (r2bits);
 	}
-	while ((c = getopt (argc, argv, "a:Ab:Bc:CdDeEf:F:hi:jk:l:Lo:O:pqrs:vw")) != -1) {
+	while ((c = getopt (argc, argv, "@:a:Ab:Bc:CdDeEf:F:hi:jk:l:Lo:pqrs:vw")) != -1) {
 		switch (c) {
+		case '@':
+			offset = r_num_math (NULL, optarg);
+			break;
 		case 'a':
 			arch = optarg;
 			break;
@@ -540,9 +544,6 @@ int main (int argc, char *argv[]) {
 			ret = 1;
 			goto beach;
 		case 'o':
-			offset = r_num_math (NULL, optarg);
-			break;
-		case 'O':
 			fd = open (optarg, O_TRUNC | O_RDWR | O_CREAT, 0644);
 			if (fd != -1) dup2 (fd, 1);
 			break;

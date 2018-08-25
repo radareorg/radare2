@@ -10,8 +10,8 @@
 .Op Fl b Ar bits
 .Op Fl c Ar cpu
 .Op Fl F Ar in:out
-.Op Fl o Ar offset
-.Op Fl O Ar ofile
+.Op Fl @ Ar offset
+.Op Fl o Ar ofile
 .Op Fl s Ar syntax
 .Op Fl i Ar int
 .Op Fl l Ar int
@@ -20,6 +20,8 @@
 This tool uses r_asm to assemble and disassemble files or hexpair strings. It supports a large list of architectures which can be listed using the \-L flag.
 .Pp
 .Bl -tag -width Fl
+.It Fl @ Ar offset
+Offset of the opcode to assemble (default is 0)
 .It Fl a Ar arch
 Set architecture plugin
 .It Fl A
@@ -54,9 +56,7 @@ Input/Output length
 Ignore/skip N bytes from the beginning of the input buffer
 .It Fl L
 List supported asm plugins
-.It Fl o Ar offset
-Offset of the opcode to assemble (default is 0)
-.It Fl O Ar ofile
+.It Fl o Ar ofile
 output to file, for example 'rasm2 \-BF a a.asm'
 .It Fl r
 Show output in r2 script

@@ -8,6 +8,7 @@ r2_qc() {
 
 _rasm2() {
   local -a options=(
+  '-@+[Set start address for code (default 0)]:offset'
   '-a+[Set architecture to assemble/disassemble (see -L)]: :->arch'
   '-A[Show Analysis information from given hexpairs]'
   '-b+[Set cpu register size (8, 16, 32, 64) (RASM2_BITS)]:bits:(8 16 32 64)'
@@ -24,8 +25,7 @@ _rasm2() {
   '-k+[Select operating system (linux, windows, darwin, ..)]: :->asm.os'
   '-l+[Input/Output length]:len'
   '-L[List Asm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)]'
-  '-o+[Set start address for code (default 0)]:offset'
-  '-O+[Output file name (rasm2 -Bf a.asm -O a)]: :_files'
+  '-o+[Output file name (rasm2 -Bf a.asm -o a)]: :_files'
   '-p[Run SPP over input for assembly]'
   '(-j -r)-r[output in radare commands]'
   '-s+[Select syntax (intel, att)]: :->syntax'
