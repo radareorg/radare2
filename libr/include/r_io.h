@@ -213,23 +213,6 @@ typedef struct r_io_desc_cache_t {
 	ut8 cdata[R_IO_DESC_CACHE_SIZE];
 } RIODescCache;
 
-typedef struct r_io_access_log_element_t {
-	ut64 vaddr;
-	ut64 paddr;
-	int buf_idx;
-	int expect_len;
-	int len;
-	int fd;
-	int mapid;
-	int flags;
-} RIOAccessLogElement;
-
-typedef struct r_io_access_log_t {
-	bool allocation_failed;
-	ut8 *buf;
-	RList *log;
-} RIOAccessLog;
-
 struct r_io_bind_t;
 
 typedef bool (*RIODescUse) (RIO *io, int fd);
@@ -239,7 +222,6 @@ typedef RIODesc *(*RIOOpen) (RIO *io, const char *uri, int flags, int mode);
 typedef RIODesc *(*RIOOpenAt) (RIO *io, const  char *uri, int flags, int mode, ut64 at);
 typedef bool (*RIOClose) (RIO *io, int fd);
 typedef bool (*RIOReadAt) (RIO *io, ut64 addr, ut8 *buf, int len);
-typedef RIOAccessLog *(*RIOAlReadAt) (RIO *io, ut64 addr, ut8 *buf, int len);
 typedef bool (*RIOWriteAt) (RIO *io, ut64 addr, const ut8 *buf, int len);
 typedef char *(*RIOSystem) (RIO *io, const char* cmd);
 typedef int (*RIOFdOpen) (RIO *io, const char *uri, int flags, int mode);
@@ -254,9 +236,6 @@ typedef bool (*RIOFdIsDbg) (RIO *io, int fd);
 typedef const char *(*RIOFdGetName) (RIO *io, int fd);
 typedef RList *(*RIOFdGetMap) (RIO *io, int fd);
 typedef bool (*RIOFdRemap) (RIO *io, int fd, ut64 addr);
-typedef void (*RIOAlSort) (RIOAccessLog *log);
-typedef void (*RIOAlFree) (RIOAccessLog *log);
-typedef ut8 *(*RIOAlGetFbufByflags) (RIOAccessLog *log, int flags, ut64 *addr, int *len);
 typedef bool (*RIOIsValidOff) (RIO *io, ut64 addr, int hasperm);
 typedef bool (*RIOAddrIsMapped) (RIO *io, ut64 addr);
 typedef SdbList *(*RIOSectionVgetSecsAt) (RIO *io, ut64 vaddr);
@@ -273,7 +252,6 @@ typedef struct r_io_bind_t {
 	RIOOpenAt open_at;
 	RIOClose close;
 	RIOReadAt read_at;
-	RIOAlReadAt al_read_at;	//needed for esil
 	RIOWriteAt write_at;
 	RIOSystem system;
 	RIOFdOpen fd_open;
@@ -288,9 +266,6 @@ typedef struct r_io_bind_t {
 	RIOFdGetName fd_get_name;
 	RIOFdGetMap fd_get_map;
 	RIOFdRemap fd_remap;
-	RIOAlSort al_sort;	//needed for esil
-	RIOAlFree al_free;	//needed for esil
-	RIOAlGetFbufByflags al_buf_byflags;	//needed for esil
 	RIOIsValidOff is_valid_offset;
 	RIOAddrIsMapped addr_is_mapped;
 	RIOSectionVgetSecsAt sections_vget;
@@ -340,12 +315,9 @@ R_API int r_io_close_all (RIO *io);
 R_API int r_io_pread_at (RIO *io, ut64 paddr, ut8 *buf, int len);
 R_API int r_io_pwrite_at (RIO *io, ut64 paddr, const ut8 *buf, int len);
 R_API bool r_io_vread_at_mapped(RIO* io, ut64 vaddr, ut8* buf, int len);
-R_API RIOAccessLog *r_io_al_vread_at (RIO *io, ut64 vaddr, ut8 *buf, int len);
-R_API RIOAccessLog *r_io_al_vwrite_at (RIO *io, ut64 vaddr, const ut8 *buf, int len);
 R_API bool r_io_read_at (RIO *io, ut64 addr, ut8 *buf, int len);
 R_API bool r_io_read_at_mapped(RIO *io, ut64 addr, ut8 *buf, int len);
 R_API int r_io_nread_at (RIO *io, ut64 addr, ut8 *buf, int len);
-R_API RIOAccessLog *r_io_al_read_at (RIO *io, ut64 addr, ut8 *buf, int len);
 R_API void r_io_alprint(RList *ls);
 R_API bool r_io_write_at (RIO *io, ut64 addr, const ut8 *buf, int len);
 R_API bool r_io_read (RIO *io, ut8 *buf, int len);
@@ -509,12 +481,6 @@ R_API bool r_io_is_valid_offset (RIO *io, ut64 offset, int hasperm);
 R_API bool r_io_addr_is_mapped(RIO *io, ut64 vaddr);
 R_API bool r_io_read_i (RIO* io, ut64 addr, ut64 *val, int size, bool endian);
 R_API bool r_io_write_i (RIO* io, ut64 addr, ut64 *val, int size, bool endian);
-R_API RIOAccessLog *r_io_accesslog_new (void);
-R_API void r_io_accesslog_free (RIOAccessLog *log);
-R_API void r_io_accesslog_sort (RIOAccessLog *log);
-R_API void r_io_accesslog_sqash_ignore_gaps (RIOAccessLog *log);
-R_API void r_io_accesslog_sqash_byflags (RIOAccessLog *log, int flags);
-R_API ut8 *r_io_accesslog_getf_buf_byflags (RIOAccessLog *log, int flags, ut64 *addr, int *len);
 
 extern RIOPlugin r_io_plugin_procpid;
 extern RIOPlugin r_io_plugin_malloc;
