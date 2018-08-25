@@ -535,7 +535,7 @@ R_API char *r_type_func_guess(Sdb *TDB, char *func_name) {
 		// interpret the name
 		const char *dll = "dll";
 		char *dll_ptr = first - strlen (dll);
-		if (dll_ptr >= str && strncmp (dll_ptr, dll, strlen (dll))) {
+		if (dll_ptr < str || strncmp (dll_ptr, dll, strlen (dll))) {
 			goto out;
 		}
 
