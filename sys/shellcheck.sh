@@ -21,7 +21,7 @@ SHCHK="shellcheck --format=${FMT}"
 
 if ! [ -f "./sys/scripts.list" ] ;then
 	echo "Find all shellscripts, caching in sys/scripts.list"
-	find .  -not -iwholename '*.git*' -print0  | xargs -0 file | grep "POSIX shell script" | cut -d: -f1  > sys/scripts.list
+	find . \! -path '/.git' -print0  | xargs -0 file | grep "POSIX shell script" | cut -d: -f1  > sys/scripts.list
 fi
 
 checkshellscript "./sys/scripts.list" "$SHCHK"
