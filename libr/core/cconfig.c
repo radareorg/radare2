@@ -1492,26 +1492,6 @@ static int cb_search_kwidx(void *user, void *data) {
 	return true;
 }
 
-static int cb_iobuffer(void *user, void *data) {
-	RCore *core = (RCore *) user;
-	RConfigNode *node = (RConfigNode *) data;
-	if (node->i_value) {
-		ut64 from, to;
-		from = r_config_get_i (core->config, "io.buffer.from");
-		to = r_config_get_i (core->config, "io.buffer.to");
-		if (from>=to) {
-			eprintf ("ERROR: io.buffer.from >= io.buffer.to"
-					" (0x%"PFMT64x" >= 0x%"PFMT64x")\n", from, to);
-		} else {
-			r_io_buffer_load (core->io, from, (int)(to-from));
-		}
-	} else {
-		r_io_buffer_close (core->io);
-	}
-	r_core_block_read (core);
-	return true;
-}
-
 static int cb_io_cache_mode(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -2929,9 +2909,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("rop.comments", "false", "Display comments in rop search output");
 
 	/* io */
-	SETCB ("io.buffer", "false", &cb_iobuffer, "Load and use buffer cache if enabled");
-	SETI ("io.buffer.from", 0, "Lower address of buffered cache");
-	SETI ("io.buffer.to", 0, "Higher address of buffered cache");
 	SETCB ("io.cache", "false", &cb_io_cache, "Change both of io.cache.{read,write}");
 	SETCB ("io.cache.auto", "false", &cb_io_cache_mode, "Automatic cache all reads in the IO backend");
 	SETCB ("io.cache.read", "false", &cb_io_cache_read, "Enable read cache for vaddr (or paddr when io.va=0)");
