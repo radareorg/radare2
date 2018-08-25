@@ -883,7 +883,9 @@ static int opdec(RAsm *a, ut8 *data, const Opcode *op) {
 			data[l++] = 0x19 << 3 | op->operands[0].reg;
 		}
 	} else {
-		if (op->operands[0].type & OT_MEMORY) {
+		if (op->operands[0].type & OT_WORD) {
+			data[l++] = 0x48 | op->operands[0].reg;
+		} else if (op->operands[0].type & OT_MEMORY) {
 			data[l++] = 0xff;
 			data[l++] = 0x1 << 3 | op->operands[0].regs[0];
 		} else {
