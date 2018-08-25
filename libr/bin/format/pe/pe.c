@@ -631,6 +631,14 @@ typedef struct {
 	ut8 numaux;
 } SymbolRecord;
 
+static void copy_symbol_name(char *dst, const char *src, size_t len) {
+	if (src && *src == '_') {
+		src++;
+	}
+
+	strncpy (dst, src, len);
+}
+
 static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_export_t* exports, int sz) {
 	ut64 sym_tbl_off, num = 0;
 	const int srsz = COFF_SYMBOL_SIZE; // symbol record size
@@ -695,14 +703,14 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 					memcpy (shortname, &sr->shortname, 8);
 					shortname[8] = 0;
 					if (*shortname) {
-						strncpy ((char*) exp[symctr].name, shortname, PE_NAME_LENGTH - 1);
+						copy_symbol_name ((char*) exp[symctr].name, shortname, PE_NAME_LENGTH - 1);
 					} else {
 						char* longname, name[128];
 						ut32* idx = (ut32*) (buf + i + 4);
 						if (r_buf_read_at (bin->b, sym_tbl_off + *idx + shsz, (ut8*) name, 128)) { // == 128) {
 							longname = name;
 							name[sizeof(name) - 1] = 0;
-							strncpy ((char*) exp[symctr].name, longname, PE_NAME_LENGTH - 1);
+							copy_symbol_name ((char*) exp[symctr].name, longname, PE_NAME_LENGTH - 1);
 						} else {
 							sprintf ((char*) exp[symctr].name, "unk_%d", symctr);
 						}
