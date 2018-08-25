@@ -2633,6 +2633,7 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			ut32 color;
 			ptr = strchr (ptr, ' ');
 			if (ptr) {
+				ptr = strchr (ptr + 1, ' ');
 				color = r_num_math (core->num, ptr + 1);
 				RAnalOp *op = r_core_op_anal (core, addr);
 				if (op) {
