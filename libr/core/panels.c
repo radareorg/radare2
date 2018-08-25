@@ -190,17 +190,26 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 	if (!can || !panel|| !panel->refresh) {
 		return;
 	}
+
+	int rightEdge = can->w;
+	int bottomEdge = can->h;
+	if (rightEdge <= panel->pos.x || bottomEdge <= panel->pos.y) {
+		return;
+	}
+	int w = R_MIN (can->w - panel->pos.x, panel->pos.w);
+	int h = R_MIN (can->h - panel->pos.y, panel->pos.h);
+
 	panel->refresh = false;
 	char *text;
 	char title[128];
 	int delta_x, delta_y, graph_pad = 0;
 	delta_x = panel->sx;
 	delta_y = panel->sy;
-	r_cons_canvas_fill (can, panel->pos.x, panel->pos.y, panel->pos.w, panel->pos.h, ' ');
+	r_cons_canvas_fill (can, panel->pos.x, panel->pos.y, w, h, ' ');
 	if (panel->type == PANEL_TYPE_MENU) {
 		(void) r_cons_canvas_gotoxy (can, panel->pos.x + 2, panel->pos.y + 2);
 		text = r_str_ansi_crop (panel->title,
-				delta_x, delta_y, panel->pos.w + 5, panel->pos.h - delta_y);
+				delta_x, delta_y, w + 5, h - delta_y);
 		if (text) {
 			r_cons_canvas_write (can, text);
 			free (text);
@@ -216,7 +225,7 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 				"   %s   ", panel->title);
 		}
 		if (r_cons_canvas_gotoxy (can, panel->pos.x + 1, panel->pos.y + 1)) {
-			r_cons_canvas_write (can, title); // delta_x
+			r_cons_canvas_write (can, title);
 		}
 		(void) r_cons_canvas_gotoxy (can, panel->pos.x + 2, panel->pos.y + 2);
 		char *cmdStr;
@@ -262,7 +271,7 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 			}
 			white[idx] = 0;
 			text = r_str_ansi_crop (cmdStr,
-					0, delta_y + graph_pad, panel->pos.w + delta_x - 3, panel->pos.h - 2 + delta_y);
+					0, delta_y + graph_pad, w + delta_x - 3, h - 2 + delta_y);
 			char *newText = r_str_prefix_all (text, white);
 			if (newText) {
 				free (text);
@@ -270,7 +279,7 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 			}
 		} else {
 			text = r_str_ansi_crop (cmdStr,
-					delta_x, delta_y + graph_pad, panel->pos.w + delta_x - 3, panel->pos.h - 2 + delta_y);
+					delta_x, delta_y + graph_pad, w + delta_x - 3, h - 2 + delta_y);
 		}
 		if (text) {
 			r_cons_canvas_write (can, text);
@@ -283,9 +292,9 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 		}
 	}
 	if (color) {
-		r_cons_canvas_box (can, panel->pos.x, panel->pos.y, panel->pos.w, panel->pos.h, core->cons->pal.graph_box2);
+		r_cons_canvas_box (can, panel->pos.x, panel->pos.y, w, h, core->cons->pal.graph_box2);
 	} else {
-		r_cons_canvas_box (can, panel->pos.x, panel->pos.y, panel->pos.w, panel->pos.h, core->cons->pal.graph_box);
+		r_cons_canvas_box (can, panel->pos.x, panel->pos.y, w, h, core->cons->pal.graph_box);
 	}
 }
 
