@@ -3,10 +3,10 @@
 static inline void _heap_down(RBinHeap *h, size_t i, void *x) {
 	size_t j;
 	for (; j = i * 2 + 1, j < h->a.v.len; i = j) {
-		if (j + 1 < h->a.v.len && h->cmp (r_pvector_at (&h->a, j+1), r_pvector_at (&h->a, j))) {
+		if (j + 1 < h->a.v.len && h->cmp (r_pvector_at (&h->a, j+1), r_pvector_at (&h->a, j)) < 0) {
 			j++;
 		}
-		if (!(h->cmp (r_pvector_at (&h->a, j+1), x))) {
+		if (h->cmp (r_pvector_at (&h->a, j), x) >= 0) {
 			break;
 		}
 		r_pvector_set (&h->a, i, r_pvector_at (&h->a, j));
@@ -16,7 +16,7 @@ static inline void _heap_down(RBinHeap *h, size_t i, void *x) {
 
 static inline void _heap_up(RBinHeap *h, size_t i, void *x) {
 	size_t j;
-	for (; i && (j = (i-1) >> 1, h->cmp (x, r_pvector_at (&h->a, j))); i = j) {
+	for (; i && (j = (i-1) >> 1, h->cmp (x, r_pvector_at (&h->a, j)) < 0); i = j) {
 		r_pvector_set (&h->a, i, r_pvector_at (&h->a, j));
 	}
 	r_pvector_set (&h->a, i, x);

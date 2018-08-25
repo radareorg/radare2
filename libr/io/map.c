@@ -76,7 +76,9 @@ R_API void r_io_map_calculate_skyline(RIO *io) {
 	}
 
 	int i = 0;
-	ls_foreach (io->maps, iter, map) {
+	// Last map has highest priority (it shadows previous maps),
+	// we assign 0 to its event id.
+	ls_foreach_prev (io->maps, iter, map) {
 		if (!(ev = R_NEW (struct map_event_t))) {
 			goto out;
 		}
@@ -97,6 +99,8 @@ R_API void r_io_map_calculate_skyline(RIO *io) {
 	}
 	r_pvector_sort (&events, _cmp_map_event);
 
+	// A min heap whose elements represents active events.
+	// The element with the smallest id is at the top.
 	r_binheap_init (&heap, _cmp_map_event_by_id);
 	ut64 last;
 	RIOMap *last_map = NULL;

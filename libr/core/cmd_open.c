@@ -633,6 +633,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 			id = r_num_math (core->num, input + 3);		//mapid
 			if (r_io_map_exists_for_id (core->io, id)) {
 				r_io_map_priorize (core->io, id);
+				r_core_block_read (core);
 			} else {
 				eprintf ("Cannot find any map with mapid %d\n", id);
 			}
