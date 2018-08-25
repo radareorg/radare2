@@ -404,7 +404,6 @@ R_API bool r_io_vread_at_mapped(RIO* io, ut64 vaddr, ut8* buf, int len) {
 	if (io->ff) {
 		memset (buf, io->Oxff, len);
 	}
-	r_io_map_cleanup (io);
 	if (!io->maps) {
 		return false;
 	}
@@ -415,7 +414,6 @@ static bool r_io_vwrite_at(RIO* io, ut64 vaddr, const ut8* buf, int len) {
 	if (!io || !buf || (len < 1)) {
 		return false;
 	}
-	r_io_map_cleanup (io);
 	if (!io->maps) {
 		return false;
 	}
