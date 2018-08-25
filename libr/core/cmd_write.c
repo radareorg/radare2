@@ -1108,17 +1108,19 @@ static int cmd_write(void *data, const char *input) {
 				r_io_cache_commit (core->io, core->offset, core->offset+1);
 			}
 			break;
-		case '-': // "wc-"
+		case '-': { // "wc-"
 			if (input[2]=='*') { // "wc-*"
 				r_io_cache_reset (core->io, true);
-			} else if (input[2]==' ') { // "wc- "
+				break;
+			}
+			ut64 from, to;
+			if (input[2]==' ') { // "wc- "
 				char *p = strchr (input+3, ' ');
-				ut64 to, from;
 				if (p) {
 					*p = 0;
 					from = r_num_math (core->num, input+3);
-					to = r_num_math (core->num, input+3);
-					if (to<from) {
+					to = r_num_math (core->num, p+1);
+					if (to < from) {
 						eprintf ("Invalid range (from>to)\n");
 						return 0;
 					}
@@ -1126,15 +1128,16 @@ static int cmd_write(void *data, const char *input) {
 					from = r_num_math (core->num, input+3);
 					to = from + core->blocksize;
 				}
-				r_io_cache_invalidate (core->io, from, to);
 			} else {
 				eprintf ("Invalidate write cache at 0x%08"PFMT64x"\n", core->offset);
-				r_io_cache_invalidate (core->io, core->offset, core->offset+core->blocksize);
+				from = core->offset;
+				to = core->offset + core->blocksize;
 			}
-			/* See 'r' above. */
-			memset (core->block, 0xff, core->blocksize);
+			eprintf("invalidated %d cache(s)\n",
+				r_io_cache_invalidate (core->io, from, to));
 			r_core_block_read (core);
 			break;
+		}
 		case 'i': // "wci"
 			r_io_cache_commit (core->io, 0, UT64_MAX);
 			r_core_block_read (core);
