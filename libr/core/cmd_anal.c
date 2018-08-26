@@ -342,7 +342,7 @@ static const char *help_msg_afv[] = {
 	"afvW", " [varname]", "list addresses where vars are accessed (WRITE)",
 	"afva", "", "analyze function arguments/locals",
 	"afvd", " name", "output r2 command for displaying the value of args/locals in the debugger",
-	"afvn", " [old_name] [new_name]", "rename argument/local",
+	"afvn", " [new_name] ([old_name])", "rename argument/local",
 	"afvt", " [name] [new_type]", "change type for given argument/local",
 	"afv-", "([name])", "remove all or given var",
 	NULL
@@ -971,18 +971,27 @@ static int var_cmd(RCore *core, const char *str) {
 		return true;
 	case 'n':
 		if (str[1]) { // "afvn"
-			char *old_name = r_str_trim_head (strchr (ostr, ' '));
-			if (!old_name) {
-				free (ostr);
-				return false;
-			}
-			char *new_name = strchr (old_name, ' ');
+			RAnalOp *op = r_core_anal_op (core, core->offset, R_ANAL_OP_MASK_BASIC);
+			char *new_name = r_str_trim_head (strchr (ostr, ' '));
 			if (!new_name) {
+				r_anal_op_free (op);
 				free (ostr);
 				return false;
 			}
-			*new_name++ = 0;
-			r_str_trim (new_name);
+			char *old_name = strchr (new_name, ' ');
+			if (!old_name) {
+				if (op && op->var) {
+					old_name = op->var->name;
+				} else {
+					eprintf ("Cannot find var @ 0x%08"PFMT64x"\n", core->offset);
+					r_anal_op_free (op);
+					free (ostr);
+					return false;
+				}
+			} else {
+				*old_name++ = 0;
+				r_str_trim (old_name);
+			}
 			v1 = r_anal_var_get_byname (core->anal, fcn->addr, old_name);
 			if (v1) {
 				r_anal_var_rename (core->anal, fcn->addr, R_ANAL_VAR_SCOPE_LOCAL,
@@ -991,6 +1000,7 @@ static int var_cmd(RCore *core, const char *str) {
 			} else {
 				eprintf ("Cant find var by name\n");
 			}
+			r_anal_op_free (op);
 			free (ostr);
 		} else {
 			RListIter *iter;
