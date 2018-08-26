@@ -1,0 +1,38 @@
+diff --git a/arch/X86/X86IntelInstPrinter.c b/arch/X86/X86IntelInstPrinter.c
+index 607bca3..b0c458a 100644
+--- a/arch/X86/X86IntelInstPrinter.c
++++ b/arch/X86/X86IntelInstPrinter.c
+@@ -742,7 +742,14 @@ void X86_Intel_printInst(MCInst *MI, SStream *O, void *Info)
+ 
+ 	// perhaps this instruction does not need printer
+ 	if (MI->assembly[0]) {
++#ifdef __GNUC__
++# pragma GCC diagnostic push
++# pragma GCC diagnostic ignored "-Wsizeof-pointer-memaccess"
++#endif
+ 		strncpy(O->buffer, MI->assembly, sizeof(MI->assembly));
++#ifdef __GNUC__
++# pragma GCC diagnostic pop
++#endif
+ 		return;
+ 	}
+ 
+diff --git a/arch/X86/X86ATTInstPrinter.c b/arch/X86/X86ATTInstPrinter.c
+index 252b828..ca845df 100644
+--- a/arch/X86/X86ATTInstPrinter.c
++++ b/arch/X86/X86ATTInstPrinter.c
+@@ -881,7 +885,14 @@ void X86_ATT_printInst(MCInst *MI, SStream *OS, void *info)
+ 
+ 	// perhaps this instruction does not need printer
+ 	if (MI->assembly[0]) {
++#ifdef __GNUC__
++# pragma GCC diagnostic push
++# pragma GCC diagnostic ignored "-Wsizeof-pointer-memaccess"
++#endif
+ 		strncpy(OS->buffer, MI->assembly, sizeof(MI->assembly));
++#ifdef __GNUC__
++# pragma GCC diagnostic pop
++#endif
+ 		return;
+ 	}
+ 
