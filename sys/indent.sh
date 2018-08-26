@@ -80,11 +80,11 @@ indentFile() {
 	echo "Indenting ${IFILE} ..." >&2
 	(
 	if [ "${UNCRUST}" = 1 ]; then
-		cp -f doc/clang-format ${CWD}/.clang-format
+		cp -f .clang-format ${CWD}/.clang-format
 		cd "$CWD"
 		r2pm -r uncrustify -c ${CWD}/doc/uncrustify.cfg -f "${IFILE}" -o .tmp-format || exit 1
 	else
-		cp -f doc/clang-format ${CWD}/.clang-format
+		cp -f .clang-format ${CWD}/.clang-format
 		cd "$CWD"
 		clang-format "${IFILE}"  > .tmp-format
 	fi
@@ -152,7 +152,7 @@ indentFile() {
 
 while : ; do
 	[ "$PWD" = / ] && break
-		if [ -f doc/clang-format ]; then
+		if [ -f .clang-format ]; then
 			ROOTDIR=$PWD
 			while : ; do
 				[ -z "${IFILE}" ] && break

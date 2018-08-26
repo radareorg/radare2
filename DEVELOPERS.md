@@ -196,7 +196,7 @@ r_core_wrap.cxx:32103:61: error: assigning to 'RDebugReasonType' from incompatib
 
 * See doc/vim for vimrc
 
-* See doc/clang-format for work-in-progress support for automated indentation
+* See .clang-format for work-in-progress support for automated indentation
 
 * Use the r2 types instead of the ones in stdint, which are known to cause some
   portability issues. So, instead of uint8_t, use ut8, etc..
