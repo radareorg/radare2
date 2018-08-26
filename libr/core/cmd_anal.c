@@ -7100,6 +7100,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_core_cmd0 (core, "afr");
 			r_config_set_i (core->config, "anal.hasnext", hasnext);
 		}
+		r_list_free (list);
 		r_core_seek (core, cur, 1);
 		break;
 	}
