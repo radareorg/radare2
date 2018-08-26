@@ -21,8 +21,62 @@
 #define GHT_MAX UT64_MAX
 #endif
 
+static void GH(update_arena_with_tc)(GH(RHeap_MallocState_tcache) *cmain_arena, MallocState *main_arena) {
+	int i = 0;
+	main_arena->mutex = cmain_arena->mutex;
+	main_arena->flags = cmain_arena->flags;
+	for (i = 0; i <= BINMAPSIZE; i++ ) {
+		main_arena->binmap[i] = cmain_arena->binmap[i];
+	}
+	main_arena->have_fast_chunks = cmain_arena->have_fast_chunks;
+	main_arena->attached_threads = cmain_arena->attached_threads;
+	for (i = 0; i <= NFASTBINS; i++) {
+		main_arena->GH(fastbinsY)[i] = cmain_arena->fastbinsY[i];
+	}
+	main_arena->GH(top) = cmain_arena->top;
+	main_arena->GH(last_remainder) = cmain_arena->last_remainder;
+	for (i = 0; i <= NBINS * 2 - 2; i++) {
+		main_arena->GH(bins)[i] = cmain_arena->bins[i];
+	}
+	main_arena->GH(next) = cmain_arena->next;
+	main_arena->GH(next_free) = cmain_arena->next_free;
+	main_arena->GH(system_mem) = cmain_arena->system_mem;
+	main_arena->GH(max_system_mem) = cmain_arena->max_system_mem;
+}
+
+static void GH(update_arena_without_tc)(GH(RHeap_MallocState) *cmain_arena, MallocState *main_arena) {
+	int i = 0;
+	main_arena->mutex = cmain_arena->mutex;
+	main_arena->flags = cmain_arena->flags;
+	for (i = 0; i <= BINMAPSIZE; i++ ) {
+		main_arena->binmap[i] = cmain_arena->binmap[i];
+	}
+	for (i = 0; i <= NFASTBINS; i++) {
+		main_arena->GH(fastbinsY)[i] = cmain_arena->fastbinsY[i];
+	}
+	main_arena->GH(top) = cmain_arena->top;
+	main_arena->GH(last_remainder) = cmain_arena->last_remainder;
+	for (i = 0; i <= NBINS * 2 - 2; i++) {
+		main_arena->GH(bins)[i] = cmain_arena->bins[i];
+	}
+	main_arena->GH(next) = cmain_arena->next;
+	main_arena->GH(next_free) = cmain_arena->next_free;
+	main_arena->GH(system_mem) = cmain_arena->system_mem;
+	main_arena->GH(max_system_mem) = cmain_arena->max_system_mem;
+}
+
 static void GH(update_main_arena)(RCore *core, GHT m_arena, MallocState *main_arena) {
-	(void)r_io_read_at (core->io, m_arena, (ut8 *)main_arena, sizeof (MallocState));
+	const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
+	if (tcache) {
+		GH(RHeap_MallocState_tcache) *cmain_arena = R_NEW0 (GH(RHeap_MallocState_tcache));
+		(void)r_io_read_at (core->io, m_arena, (ut8 *)cmain_arena, sizeof (GH(RHeap_MallocState_tcache)));
+		GH(update_arena_with_tc)(cmain_arena,main_arena);
+	}
+	else {
+		GH(RHeap_MallocState) *cmain_arena = R_NEW0 (GH(RHeap_MallocState));
+		(void)r_io_read_at (core->io, m_arena, (ut8 *)cmain_arena, sizeof (GH(RHeap_MallocState)));
+		GH(update_arena_without_tc)(cmain_arena,main_arena);
+	}
 }
 
 static void GH(update_global_max_fast)(RCore *core, GHT g_max_fast, GHT *global_max_fast) {
@@ -43,38 +97,38 @@ static void GH(get_brks)(RCore *core, GHT *brk_start, GHT *brk_end) {
 }
 
 static void GH(print_main_arena)(RCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, int format) {
-	int i, j, k, start; 
+	int i, j, k, start;
+	GHT align = 12 * SZ + sizeof (int) * 2;
+	const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
 
-#if __GLIBC_MINOR__ > 25
-	GHT offset = 16;
-#else
-	GHT offset = 12 * SZ + sizeof (int) * 2;
-#endif
+	if (tcache) {
+		align = 16;
+	}
 
 	GHT apart[NSMALLBINS + 1] = { 0LL };
 	if (format == '*') {
 		for (i = 0; i < NBINS * 2 - 2; i += 2) {
-			GHT addr = m_arena + offset + SZ * i - SZ * 2;
-			GHT bina = main_arena->bins[i];
+			GHT addr = m_arena + align + SZ * i - SZ * 2;
+			GHT bina = main_arena->GH(bins)[i];
 			r_cons_printf ("f chunk.%d.bin = 0x%"PFMT64x"\n", i, (ut64)addr);
 			r_cons_printf ("f chunk.%d.fd = 0x%"PFMT64x"\n", i, (ut64)bina);
-			bina = main_arena->bins[i + 1];
+			bina = main_arena->GH(bins)[i + 1];
 			r_cons_printf ("f chunk.%d.bk = 0x%"PFMT64x"\n", i, (ut64)bina);
 		}
 		for (i = 0; i < BINMAPSIZE; i++) {
 			r_cons_printf ("f binmap.%d = 0x%"PFMT64x, i, (ut64) main_arena->binmap[i]);
 		}
 		{	/* maybe use SDB instead of flags for this? */
-			char *units = r_num_units (NULL, main_arena->max_system_mem);
+			char *units = r_num_units (NULL, main_arena->GH(max_system_mem));
 			r_cons_printf ("f heap.maxmem = %s\n", units);
 			free (units);
-			units = r_num_units (NULL, main_arena->system_mem);
+			units = r_num_units (NULL, main_arena->GH(system_mem));
 			r_cons_printf ("f heap.sysmem = %s\n", units);
 			free (units);
-			units = r_num_units (NULL, main_arena->next_free);
+			units = r_num_units (NULL, main_arena->GH(next_free));
 			r_cons_printf ("f heap.nextfree = %s\n", units);
 			free (units);
-			units = r_num_units (NULL, main_arena->next);
+			units = r_num_units (NULL, main_arena->GH(next));
 			r_cons_printf ("f heap.next= %s\n", units);
 			free (units);
 		}
@@ -98,15 +152,15 @@ static void GH(print_main_arena)(RCore *core, GHT m_arena, MallocState *main_are
 		}
 		PRINT_GA (" chunksize:");
 		PRINTF_BA (" == %04d ", k);
-		PRINTF_GA ("0x%"PFMT64x, (ut64)main_arena->fastbinsY[i]);
+		PRINTF_GA ("0x%"PFMT64x, (ut64)main_arena->GH(fastbinsY)[i]);
 		PRINT_GA (",\n");
 	}
 	PRINT_GA ("}\n");
 	PRINT_GA ("  top = ");
-	PRINTF_BA ("0x%"PFMT64x, (ut64)main_arena->top);
+	PRINTF_BA ("0x%"PFMT64x, (ut64)main_arena->GH(top));
 	PRINT_GA (",\n");
 	PRINT_GA ("  last_remainder = ");
-	PRINTF_BA ("0x%"PFMT64x, (ut64)main_arena->last_remainder);
+	PRINTF_BA ("0x%"PFMT64x, (ut64)main_arena->GH(last_remainder));
 	PRINT_GA (",\n");
 	PRINT_GA ("  bins {\n");
 
@@ -157,12 +211,12 @@ static void GH(print_main_arena)(RCore *core, GHT m_arena, MallocState *main_are
 				PRINT_BA (" remaining ");
 			}
 		}
-		GHT bin = m_arena + offset + SZ * i - SZ * 2;
+		GHT bin = m_arena + align + SZ * i - SZ * 2;
 		PRINTF_GA ("0x%"PFMT64x"->fd = ", (ut64)bin);
-		PRINTF_BA ("0x%"PFMT64x, (ut64)main_arena->bins[i]);
+		PRINTF_BA ("0x%"PFMT64x, (ut64)main_arena->GH(bins)[i]);
 		PRINT_GA (", ");
 		PRINTF_GA ("0x%"PFMT64x"->bk = ", (ut64)bin);
-		PRINTF_BA ("0x%"PFMT64x, (ut64) main_arena->bins[i + 1] );
+		PRINTF_BA ("0x%"PFMT64x, (ut64) main_arena->GH(bins)[i + 1] );
 		PRINT_GA (", ");
 		r_cons_newline ();
 	}
@@ -178,16 +232,16 @@ static void GH(print_main_arena)(RCore *core, GHT m_arena, MallocState *main_are
 	}
 	PRINT_GA ("}\n");
 	PRINT_GA ("  next = ");
-	PRINTF_BA ("0x%"PFMT64x, (ut64) main_arena->next);
+	PRINTF_BA ("0x%"PFMT64x, (ut64) main_arena->GH(next));
 	PRINT_GA (",\n");
 	PRINT_GA ("  next_free = ");
-	PRINTF_BA ("0x%"PFMT64x, (ut64) main_arena->next_free);
+	PRINTF_BA ("0x%"PFMT64x, (ut64) main_arena->GH(next_free));
 	PRINT_GA (",\n");
 	PRINT_GA ("  system_mem = ");
-	PRINTF_BA ("0x%"PFMT64x, (ut64) main_arena->system_mem);
+	PRINTF_BA ("0x%"PFMT64x, (ut64) main_arena->GH(system_mem));
 	PRINT_GA (",\n");
 	PRINT_GA ("  max_system_mem = ");
-	PRINTF_BA ("0x%"PFMT64x, (ut64) main_arena->max_system_mem);
+	PRINTF_BA ("0x%"PFMT64x, (ut64) main_arena->GH(max_system_mem));
 	PRINT_GA (",\n");
 	PRINT_GA ("}\n\n");
 }
@@ -302,15 +356,14 @@ static bool GH(r_resolve_symbol)(RCore *core, GHT *symbol, const char *symname) 
 found:
 	vaddr = GH(get_vaddr_symbol) (core, path, symname);
 	if (libc_addr != GHT_MAX && vaddr && vaddr != GHT_MAX) {
-#if __GLIBC_MINOR__ > 25
-#if HEAP32
-		*symbol = libc_addr + vaddr + 0x1bb000;
-#else
-		*symbol = libc_addr + vaddr;
-#endif
-#else
-		*symbol = libc_addr + vaddr;
-#endif
+		const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
+		const int offset = r_config_get_i (core->config, "dbg.glibc.ma_offset");
+		if (tcache) {
+			*symbol = libc_addr + vaddr + offset;
+		}
+		else {
+			*symbol = libc_addr + vaddr;
+		}
 		free (path);
 		return true;
 	}
@@ -425,7 +478,7 @@ static int GH(print_double_linked_list_bin_simple)(RCore *core, GHT bin, MallocS
 	while (cnk->fd != bin) {
 		PRINTF_BA ("->fd = 0x%"PFMT64x, (ut64)cnk->fd);
 		next = cnk->fd;
-		if (next < brk_start || next > main_arena->top) {
+		if (next < brk_start || next > main_arena->GH(top)) {
 			PRINT_RA ("Double linked list corrupted\n");
 			free (cnk);
 			return -1;
@@ -447,7 +500,7 @@ static int GH(print_double_linked_list_bin_simple)(RCore *core, GHT bin, MallocS
 	while (cnk->bk != bin) {
 		PRINTF_BA ("->bk = 0x%"PFMT64x, (ut64) cnk->bk);
 		next = cnk->bk;
-		if (next < brk_start || next > main_arena->top) {
+		if (next < brk_start || next > main_arena->GH(top)) {
 			PRINT_RA ("Double linked list corrupted.\n");
 			free (cnk);
 			return -1;
@@ -483,7 +536,7 @@ static int GH(print_double_linked_list_bin_graph)(RCore *core, GHT bin, MallocSt
 
 	while (cnk->bk != bin) {
 		next = cnk->bk;
-		if (next < brk_start || next > main_arena->top) {
+		if (next < brk_start || next > main_arena->GH(top)) {
 			PRINT_RA ("Double linked list corrupted\n");
 			free (cnk);
 			free (g);
@@ -518,7 +571,7 @@ static int GH(print_double_linked_list_bin)(RCore *core, MallocState *main_arena
 	if (num_bin > 126) {
 		return -1;
 	}
-	GHT bin = main_arena->bins[num_bin];
+	GHT bin = main_arena->GH(bins)[num_bin];
 
 	if (!bin) {
 		return -1;
@@ -602,7 +655,7 @@ static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena
                 return -1;
 	}
 	GHT next = GHT_MAX, brk_start = GHT_MAX, brk_end = GHT_MAX;
-	GHT bin = main_arena->fastbinsY[bin_num];
+	GHT bin = main_arena->GH(fastbinsY)[bin_num];
 	if (!bin) {
 		return -1;
 	}
@@ -624,12 +677,12 @@ static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena
 	PRINTF_GA ("  fastbin %d @ ", bin_num + 1);
 	PRINTF_GA ("0x%"PFMT64x" {\n   ", (ut64)bin);
 
-	GHT size = main_arena->top - brk_start;
+	GHT size = main_arena->GH(top) - brk_start;
 
 	GHT next_root = next, next_tmp = next, double_free = GHT_MAX;
-	while (next && next >= brk_start && next < main_arena->top) {
+	while (next && next >= brk_start && next < main_arena->GH(top)) {
 		PRINTF_BA ("0x%"PFMT64x, (ut64)next);
-		while (double_free == GHT_MAX && next_tmp && next_tmp >= brk_start && next_tmp <= main_arena->top) {
+		while (double_free == GHT_MAX && next_tmp && next_tmp >= brk_start && next_tmp <= main_arena->GH(top)) {
 			r_io_read_at (core->io, next_tmp, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
 			next_tmp = cnk->fd;
 			if (cnk->prev_size > size || ((cnk->size >> 3) << 3) > size) {
@@ -661,7 +714,7 @@ static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena
 		}
 	}
 
-	if (next && (next < brk_start || next >= main_arena->top)) {
+	if (next && (next < brk_start || next >= main_arena->GH(top))) {
 		PRINTF_RA ("0x%"PFMT64x, (ut64)next);
 		PRINT_RA (" Linked list corrupted\n");
 		PRINT_GA ("\n  }\n");
@@ -676,13 +729,11 @@ static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena
 
 void GH(print_heap_fastbin)(RCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, const char *input) {
 	int i;
-	GHT num_bin = GHT_MAX;
-
-#if __GLIBC_MINOR__ > 25
-	GHT offset = 16;
-#else
-	GHT offset = sizeof (int) * 2;
-#endif
+	GHT num_bin = GHT_MAX, offset = sizeof (int) * 2;
+	const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
+	if (tcache) {
+		offset = 16;
+	}
 
 	switch (input[0]) {
 	case '\0': // dmhf
@@ -761,22 +812,22 @@ static void GH(print_mmap_graph)(RCore *core, MallocState *malloc_state, GHT m_s
 	bool first_node = true;
 
 	r_agraph_set_title (g, "Mmmaped Heap");
-	top_title = r_str_newf ("Top chunk @ 0x%"PFMT64x"\n", (ut64)malloc_state->top);
+	top_title = r_str_newf ("Top chunk @ 0x%"PFMT64x"\n", (ut64)malloc_state->GH(top));
 
 	GHT start_mmap = m_state + sizeof (MallocState); //0x8b0;
-	r_io_read_at (core->io, malloc_state->top, (ut8*)cnk, sizeof (GH(RHeapChunk)));
-	GHT end_mmap = malloc_state->top;
+	r_io_read_at (core->io, malloc_state->GH(top), (ut8*)cnk, sizeof (GH(RHeapChunk)));
+	GHT end_mmap = malloc_state->GH(top);
 
 	top_data = r_str_newf ("[mmap_start:0x%"PFMT64x", mmap_end:0x%"PFMT64x"]\n",
 		(ut64)start_mmap, (ut64)end_mmap + ((cnk->size >> 3) << 3));
 	next_chunk_ref = start_mmap, prev_chunk_ref = next_chunk_ref;
 	top_size = (cnk->size >> 3) << 3;
 
-	while (next_chunk_ref != malloc_state->top && next_chunk_ref != end_mmap) {
+	while (next_chunk_ref != malloc_state->GH(top) && next_chunk_ref != end_mmap) {
 		r_io_read_at (core->io, next_chunk_ref, (ut8 *)prev_c, sizeof (GH(RHeapChunk)));
 	       	node_title = r_str_newf ("  Malloc chunk @ 0x%"PFMT64x" ", (ut64)prev_chunk_ref);
 		size_tmp = (prev_c->size >> 3) << 3;
-		if (size_tmp < min_size || size_tmp > top_size  || next_chunk_ref + size_tmp > malloc_state->top) {
+		if (size_tmp < min_size || size_tmp > top_size  || next_chunk_ref + size_tmp > malloc_state->GH(top)) {
 			node_data = r_str_newf ("[corrupted] size: 0x%"PFMT64x"\n fd: 0x%"PFMT64x", bk: 0x%"PFMT64x
 				"\nHeap graph could not be recovered\n", (ut64)prev_c->size, (ut64)prev_c->fd, (ut64)prev_c->bk) ;
 			r_agraph_add_node (g, node_title, node_data);
@@ -863,10 +914,18 @@ static void GH(print_heap_graph)(RCore *core, MallocState *main_arena, GHT *init
 	bool first_node = true;
 
 	r_agraph_set_title (g, "Heap Layout");
-	top_title = r_str_newf ("Top chunk @ 0x%"PFMT64x"\n", (ut64)main_arena->top);
+	top_title = r_str_newf ("Top chunk @ 0x%"PFMT64x"\n", (ut64)main_arena->GH(top));
 
 	GH (get_brks)(core, &brk_start, &brk_end);
-	*initial_brk = (brk_start >> 12) << 12;
+	const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
+	const int offset = r_config_get_i (core->config, "dbg.glibc.fc_offset");
+	if (tcache) {
+		*initial_brk = ( (brk_start >> 12) << 12 ) + offset;
+	}
+	else {
+		*initial_brk = (brk_start >> 12) << 12;
+	}
+
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX || *initial_brk == GHT_MAX) {
 		eprintf ("No Heap section\n");
 		r_cons_canvas_free (can);
@@ -881,13 +940,13 @@ static void GH(print_heap_graph)(RCore *core, MallocState *main_arena, GHT *init
 
 	top_data = r_str_newf ("[brk_start:0x%"PFMT64x", brk_end:0x%"PFMT64x"]\n", (ut64)brk_start, (ut64)brk_end);
 	next_chunk_ref = *initial_brk, prev_chunk_ref = next_chunk_ref;
-	top_size = main_arena->top - brk_start;
+	top_size = main_arena->GH(top) - brk_start;
 
-	while (next_chunk_ref != main_arena->top && next_chunk_ref != brk_end) {
+	while (next_chunk_ref != main_arena->GH(top) && next_chunk_ref != brk_end) {
 		r_io_read_at (core->io, next_chunk_ref, (ut8 *)prev_c, sizeof (GH(RHeapChunk)));
 	       	node_title = r_str_newf ("  Malloc chunk @ 0x%"PFMT64x" ", (ut64)prev_chunk_ref);
 		size_tmp = (prev_c->size >> 3) << 3;
-		if (top_size < min_size || size_tmp > top_size  || next_chunk_ref + size_tmp > main_arena->top) {
+		if (top_size < min_size || size_tmp > top_size  || next_chunk_ref + size_tmp > main_arena->GH(top)) {
 			node_data = r_str_newf ("[corrupted] size: 0x%"PFMT64x"\n fd: 0x%"PFMT64x", bk: 0x%"PFMT64x
 				"\nHeap graph could not be recovered\n", (ut64)prev_c->size, (ut64)prev_c->fd, (ut64)prev_c->bk) ;
 			r_agraph_add_node (g, node_title, node_data);
@@ -927,42 +986,44 @@ static void GH(print_heap_graph)(RCore *core, MallocState *main_arena, GHT *init
 	free (top_title);
 }
 
-
-#if __GLIBC_MINOR__ > 25
 static void GH(print_tcache_instance)(RCore *core, MallocState *main_arena, GHT *initial_brk) {
-        if (!core || !core->dbg || !core->dbg->maps) {
-                return;
-        }
-
+	if (!core || !core->dbg || !core->dbg->maps) {
+		return;
+	}
+	const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
+	if (!tcache) {
+		return;
+	}
+	GHT align = 16;
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, tcache_fd = GHT_MAX;
 	GH(get_brks) (core, &brk_start, &brk_end);
 	GHT tcache_tmp = GHT_MAX;
 
-	*initial_brk = ( (brk_start >> 12) << 12 ) + sizeof(GH(RHeapTcache)) + MALLOC_ALIGNMENT;
+	*initial_brk = ( (brk_start >> 12) << 12 ) + sizeof(GH(RHeapTcache)) + align;
 
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX || *initial_brk == GHT_MAX) {
 		eprintf ("No heap section\n");
 		return;
 	}
 
-	GH(RHeapTcache) *tcache = R_NEW0 (GH(RHeapTcache));
+	GH(RHeapTcache) *tcache_heap = R_NEW0 (GH(RHeapTcache));
 
-	(void)r_io_read_at (core->io, brk_start + MALLOC_ALIGNMENT, (ut8 *)tcache, sizeof ( GH(RHeapTcache) ));
+	(void)r_io_read_at (core->io, brk_start + align, (ut8 *)tcache_heap, sizeof (GH(RHeapTcache)));
 
 	PRINT_GA("Thread cache @\n");
 	for (int i = 0; i < TCACHE_MAX_BINS; i++) {
-		if (tcache->counts[i] > 0) {
+		if (tcache_heap->counts[i] > 0) {
 			PRINT_GA("bin :");
 			PRINTF_BA("%2d",i);
 			PRINT_GA(", items :");
-			PRINTF_BA("%2d",tcache->counts[i]);
+			PRINTF_BA("%2d",tcache_heap->counts[i]);
 			PRINT_GA(", fd :");
-			PRINTF_BA("0x%"PFMT64x,(ut64)tcache->entries[i]-MALLOC_ALIGNMENT);
-			if (tcache->counts[i] > 1) {
-				tcache_fd = (ut64)tcache->entries[i];
-				for(int n=1; n < tcache->counts[i]; n++) {
-					(void)r_io_read_at (core->io, tcache_fd, &tcache_tmp, sizeof ( GHT ) );
-					PRINTF_BA("->0x%"PFMT64x, tcache_tmp - MALLOC_ALIGNMENT);
+			PRINTF_BA("0x%"PFMT64x, (ut64)tcache_heap->entries[i] - align);
+			if (tcache_heap->counts[i] > 1) {
+				tcache_fd = (ut64)tcache_heap->entries[i];
+				for(int n=1; n < tcache_heap->counts[i]; n++) {
+					(void)r_io_read_at (core->io, tcache_fd, &tcache_tmp, sizeof (GHT));
+					PRINTF_BA("->0x%"PFMT64x, tcache_tmp - align);
 					tcache_fd = tcache_tmp;
 				}
 			}
@@ -970,27 +1031,24 @@ static void GH(print_tcache_instance)(RCore *core, MallocState *main_arena, GHT 
 		}
 	}
 }
-#endif
 
 static void GH(print_heap_segment)(RCore *core, MallocState *main_arena, GHT *initial_brk, GHT global_max_fast) {
 	if (!core || !core->dbg || !core->dbg->maps) {
 		return;
 	}
 
-	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, size_tmp, top_size = GHT_MAX, min_size = SZ * 4; 
-
+	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, size_tmp, top_size = GHT_MAX, min_size = SZ * 4;
+	GHT tcache_fd = GHT_MAX, tcache_tmp = GHT_MAX, align = 12 * SZ + sizeof (int) * 2;
 	GH(get_brks) (core, &brk_start, &brk_end);
-
-#if __GLIBC_MINOR__ > 25
-	GHT tcache_fd = GHT_MAX, tcache_tmp = GHT_MAX;
-#if HEAP32
-	*initial_brk = ( (brk_start >> 12) << 12 ) + sizeof (GH(RHeapTcache)) + MALLOC_ALIGNMENT + 0x8;
-#else
-	*initial_brk = ( (brk_start >> 12) << 12 ) + sizeof (GH(RHeapTcache)) + MALLOC_ALIGNMENT;
-#endif
-#else
-	*initial_brk = (brk_start >> 12) << 12;
-#endif
+	const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
+	const int offset = r_config_get_i (core->config, "dbg.glibc.fc_offset");
+	if (tcache) {
+		align = 16;
+		*initial_brk = ( (brk_start >> 12) << 12 ) + offset;
+	}
+	else {
+		*initial_brk = (brk_start >> 12) << 12;
+	}
 
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX || *initial_brk == GHT_MAX) {
 		eprintf ("No heap section\n");
@@ -998,7 +1056,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena, GHT *in
 	}
 
 	GHT next_chunk = *initial_brk, prev_chunk = next_chunk;
-	top_size = main_arena->top - brk_start;
+	top_size = main_arena->GH(top) - brk_start;
 	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
 	GH(RHeapChunk) *cnk_next = R_NEW0 (GH(RHeapChunk));
 	if (!cnk || !cnk_next) {
@@ -1008,8 +1066,8 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena, GHT *in
 	(void)r_io_read_at (core->io, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
 	size_tmp = (cnk->size >> 3) << 3;
 
-	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->top) {
-		if (size_tmp < min_size || size_tmp > top_size || next_chunk + size_tmp > main_arena->top) {
+	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->GH(top)) {
+		if (size_tmp < min_size || size_tmp > top_size || next_chunk + size_tmp > main_arena->GH(top)) {
 			PRINT_YA ("\n  Malloc chunk @ ");
 			PRINTF_BA ("0x%"PFMT64x" ", (ut64)next_chunk);
 			PRINT_RA ("[corrupted]\n");
@@ -1029,13 +1087,13 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena, GHT *in
 		bool is_free = false, double_free = false;
 		if (fastbin) {
 			int i = (size_tmp / (SZ * 2)) - 2;
-			GHT idx = (GHT)main_arena->fastbinsY[i];
+			GHT idx = (GHT)main_arena->GH(fastbinsY)[i];
 			(void)r_io_read_at (core->io, idx, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
 			GHT next = cnk->fd;
 			if (prev_chunk == idx && idx && !next) {
 				is_free = true;
 			}
-			while (next && next >= brk_start && next < main_arena->top) {
+			while (next && next >= brk_start && next < main_arena->GH(top)) {
 				if (prev_chunk == idx || prev_chunk == next || idx == next) {
 					is_free = true;
 					if (idx == next) {
@@ -1045,7 +1103,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena, GHT *in
 					(void)r_io_read_at (core->io, next, (ut8 *)cnk_next, sizeof (GH(RHeapChunk)));
 					GHT next_node = cnk_next->fd;
 					// avoid triple while?
-					while (next_node && next_node >= brk_start && next_node < main_arena->top) {
+					while (next_node && next_node >= brk_start && next_node < main_arena->GH(top)) {
 						if (prev_chunk == next_node) {
 							double_free = true;
 							break;
@@ -1066,29 +1124,30 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena, GHT *in
 			}
 		}
 
-#if __GLIBC_MINOR__ > 25
-		GH(RHeapTcache) *tcache = R_NEW0 (GH(RHeapTcache));
-		(void)r_io_read_at (core->io, brk_start + MALLOC_ALIGNMENT, (ut8 *)tcache, sizeof ( GH(RHeapTcache) ));
-		for (int i=0; i < TCACHE_MAX_BINS; i++){
-			if( tcache->counts[i] > 0 ) {
-				if ( (ut64)tcache->entries[i] - SZ * 2 == (ut64)prev_chunk ){
-					is_free = true;
-					break;
-				}
-				if( tcache->counts[i] > 1 ) {
-					tcache_fd = (ut64)tcache->entries[i];
-					for (int n = 1; n < tcache->counts[i]; n++) {
-						(void)r_io_read_at (core->io, tcache_fd, (ut8*)&tcache_tmp, sizeof ( GHT ) );
-						if ( (ut64)tcache_tmp - SZ * 2 == (ut64)prev_chunk ) {
-							is_free = true;
-							break;
+		if (tcache) {
+			GH(RHeapTcache) *tcache_heap = R_NEW0 (GH(RHeapTcache));
+			(void)r_io_read_at (core->io, brk_start + align, (ut8 *)tcache_heap, sizeof (GH(RHeapTcache)));
+			for (int i=0; i < TCACHE_MAX_BINS; i++) {
+				if (tcache_heap->counts[i] > 0) {
+					if ((ut64)tcache_heap->entries[i] - SZ * 2 == (ut64)prev_chunk) {
+						is_free = true;
+						break;
+					}
+					if (tcache_heap->counts[i] > 1) {
+						tcache_fd = (ut64)tcache_heap->entries[i];
+						for (int n = 1; n < tcache_heap->counts[i]; n++) {
+							(void)r_io_read_at (core->io, tcache_fd, (ut8*)&tcache_tmp, sizeof (GHT));
+							if ((ut64)tcache_tmp - SZ * 2 == (ut64)prev_chunk) {
+								is_free = true;
+								break;
+							}
+							tcache_fd = (ut64)tcache_tmp;
 						}
-						tcache_fd = (ut64)tcache_tmp;
 					}
 				}
 			}
 		}
-#endif
+
 		next_chunk += size_tmp;
 		prev_chunk = next_chunk;
 		r_io_read_at (core->io, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
@@ -1104,21 +1163,21 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena, GHT *in
 			if (!(cnk->size & 1)) {
 				PRINT_GA ("[free]");
 			} else {
-#if __GLIBC_MINOR__ > 25
-				if (is_free) {
-					PRINT_GA ("[free]");
+				if (tcache) {
+					if (is_free) {
+						PRINT_GA ("[free]");
+					} else {
+						PRINT_GA ("[allocated]");
+					}
 				} else {
 					PRINT_GA ("[allocated]");
 				}
-#else
-				PRINT_GA ("[allocated]");
-#endif
 			}
 		}
 	}
 
 	PRINT_YA ("\n  Top chunk @ ");
-	PRINTF_BA ("0x%"PFMT64x, (ut64)main_arena->top);
+	PRINTF_BA ("0x%"PFMT64x, (ut64)main_arena->GH(top));
 	PRINT_GA (" - [brk_start: ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)brk_start);
 	PRINT_GA (", brk_end: ");
@@ -1143,7 +1202,14 @@ static void GH(print_heap_segment_json)(RCore *core, MallocState *main_arena, GH
 	}
 
 	GH(get_brks) (core, &brk_start, &brk_end);
-	*initial_brk = (brk_start >> 12) << 12;
+	const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
+	const int offset = r_config_get_i (core->config, "dbg.glibc.fc_offset");
+	if (tcache) {
+		*initial_brk = ( (brk_start >> 12) << 12 ) + offset;
+	}
+	else {
+		*initial_brk = (brk_start >> 12) << 12;
+	}
 
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX || *initial_brk == GHT_MAX) {
 		eprintf ("No heap section\n");
@@ -1152,14 +1218,14 @@ static void GH(print_heap_segment_json)(RCore *core, MallocState *main_arena, GH
 	}
 
 	GHT next_chunk = *initial_brk, prev_chunk = next_chunk;
-	top_size = main_arena->top - brk_start;
+	top_size = main_arena->GH(top) - brk_start;
 
 	r_cons_printf ("{\"chunks\":[");
 	const char *comma = "";
-	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->top) {
+	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->GH(top)) {
 		(void)r_io_read_at (core->io, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
 		size_tmp = (cnk->size >> 3) << 3;
-		if (size_tmp < min_size || size_tmp > top_size || next_chunk + size_tmp > main_arena->top) {
+		if (size_tmp < min_size || size_tmp > top_size || next_chunk + size_tmp > main_arena->GH(top)) {
 			const char *status = "corrupted";
 			r_cons_printf ("%s{\"addr\":%"PFMT64d",\"size\":%"PFMT64d",\"status\":\"%s\",\"fd\":"PFMT64d",\"bk\":"PFMT64d"}",
 					comma, (ut64)next_chunk, (ut64)cnk->size, status, (ut64)cnk->fd, (ut64)cnk->bk);
@@ -1170,9 +1236,9 @@ static void GH(print_heap_segment_json)(RCore *core, MallocState *main_arena, GH
 		GHT double_free = GHT_MAX;
 		if (size_tmp >= SZ * 4 && size_tmp <= global_max_fast) {
 			int i = (size_tmp / (SZ * 2)) - 2;
-			GHT next = (GHT)main_arena->fastbinsY[i];
+			GHT next = (GHT)main_arena->GH(fastbinsY)[i];
 			double_free = next;
-			while (next && next >= brk_start && next < main_arena->top) {
+			while (next && next >= brk_start && next < main_arena->GH(top)) {
 				if (prev_chunk == next) {
 					is_free = true;
 				}
@@ -1200,7 +1266,7 @@ static void GH(print_heap_segment_json)(RCore *core, MallocState *main_arena, GH
 		r_io_read_at (core->io, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
 	}
 	r_cons_printf ("],");
-	r_cons_printf ("\"top\":%"PFMT64d",", (ut64)main_arena->top);
+	r_cons_printf ("\"top\":%"PFMT64d",", (ut64)main_arena->GH(top));
 	r_cons_printf ("\"brk\":%"PFMT64d",", (ut64)brk_start);
 	r_cons_printf ("\"end\":%"PFMT64d",", (ut64)brk_end);
 	r_cons_printf ("\"hdr\":16");
@@ -1216,7 +1282,14 @@ static void GH(print_heap_segment_r2)(RCore *core, MallocState *main_arena, GHT 
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX, size_tmp, top_size = GHT_MAX, min_size = SZ * 4;
 
 	GH(get_brks) (core, &brk_start, &brk_end);
-	*initial_brk = (brk_start >> 12) << 12;
+	const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
+	const int offset = r_config_get_i (core->config, "dbg.glibc.fc_offset");
+	if (tcache) {
+		*initial_brk = ( (brk_start >> 12) << 12 ) + offset;
+	}
+	else {
+		*initial_brk = (brk_start >> 12) << 12;
+	}
 
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX || *initial_brk == GHT_MAX) {
 		eprintf ("No heap section\n");
@@ -1228,13 +1301,13 @@ static void GH(print_heap_segment_r2)(RCore *core, MallocState *main_arena, GHT 
 		return;
 	}
 	GHT next_chunk = *initial_brk, prev_chunk = next_chunk;
-	top_size = main_arena->top - brk_start;
+	top_size = main_arena->GH(top) - brk_start;
 
 	r_cons_printf ("fs+heap.allocated\n");
-	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->top) {
+	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->GH(top)) {
 		(void)r_io_read_at (core->io, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
 		size_tmp = (cnk->size >> 3) << 3;
-		if (size_tmp < min_size || size_tmp > top_size || next_chunk + size_tmp > main_arena->top) {
+		if (size_tmp < min_size || size_tmp > top_size || next_chunk + size_tmp > main_arena->GH(top)) {
 			r_cons_printf ("fs heap.corrupted\n");
 			char *name = r_str_newf ("chunk.corrupted.%06x", ((prev_chunk>>4) & 0xffff));
 			r_cons_printf ("f %s %d 0x%"PFMT64x"\n", name, (int)cnk->size, prev_chunk);
@@ -1245,9 +1318,9 @@ static void GH(print_heap_segment_r2)(RCore *core, MallocState *main_arena, GHT 
 		GHT double_free = GHT_MAX;
 		if (size_tmp >= SZ * 4 && size_tmp <= global_max_fast) {
 			int i = (size_tmp / (SZ * 2)) - 2;
-			GHT next = (GHT)main_arena->fastbinsY[i];
+			GHT next = (GHT)main_arena->GH(fastbinsY)[i];
 			double_free = next;
-			while (next && next >= brk_start && next < main_arena->top) {
+			while (next && next >= brk_start && next < main_arena->GH(top)) {
 				if (prev_chunk == next) {
 					is_free = true;
 				}
@@ -1276,7 +1349,7 @@ static void GH(print_heap_segment_r2)(RCore *core, MallocState *main_arena, GHT 
 		r_io_read_at (core->io, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
 	}
 	r_cons_printf ("fs-\n");
-	r_cons_printf ("f heap.top = 0x%08"PFMT64x"\n", (ut64)main_arena->top);
+	r_cons_printf ("f heap.top = 0x%08"PFMT64x"\n", (ut64)main_arena->GH(top));
 	r_cons_printf ("f heap.brk = 0x%08"PFMT64x"\n", (ut64)brk_start);
 	r_cons_printf ("f heap.end = 0x%08"PFMT64x"\n", (ut64)brk_end);
 	r_cons_printf ("f heap.hdr = 16\n");
@@ -1293,22 +1366,33 @@ static void GH(print_heap_mmaped)(RCore *core, GHT malloc_state, GHT global_max_
 	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
 	MallocState *ms = R_NEW0 (MallocState);
 
+	const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
+	if (tcache) {
+		GH(RHeap_MallocState_tcache) *ma = R_NEW0 (GH(RHeap_MallocState_tcache));
+		mmap_start = ((malloc_state >> 16) << 16) + sizeof (GH(RHeapInfo)) + sizeof(GH(RHeap_MallocState_tcache));
+		r_io_read_at (core->io, malloc_state, (ut8*)ma, sizeof (GH(RHeap_MallocState_tcache)));
+		GH(update_arena_with_tc)(ma,ms);
+	}
+	else {
+		GH(RHeap_MallocState) *ma = R_NEW0 (GH(RHeap_MallocState));
+		mmap_start = ((malloc_state >> 16) << 16) + sizeof (GH(RHeapInfo)) + sizeof(GH(RHeap_MallocState));
+		r_io_read_at (core->io, malloc_state, (ut8*)ma, sizeof (GH(RHeap_MallocState)));
+		GH(update_arena_without_tc)(ma,ms);
+	}
+
 	if (!cnk || !ms) {
 		free (cnk);
 		free (ms);
 		return;
 	}
 
-	mmap_start = ((malloc_state >> 16) << 16) + sizeof (GH(RHeapInfo)) + sizeof(MallocState); //0x460;
-	r_io_read_at (core->io, malloc_state, (ut8*)ms, sizeof (MallocState));
-	mmap_end = ms->top;
+	mmap_end = ms->GH(top);
 
 	GHT next_chunk = mmap_start, prev_chunk = next_chunk;
-	(void)r_io_read_at (core->io, malloc_state, (ut8*)ms, sizeof (MallocState));
-	(void)r_io_read_at (core->io, ms->top, (ut8*)cnk, sizeof (GH(RHeapChunk)));
+	(void)r_io_read_at (core->io, ms->GH(top), (ut8*)cnk, sizeof (GH(RHeapChunk)));
 	top_size = (cnk->size >> 3) << 3;
 
-	while (next_chunk && next_chunk >= mmap_start && next_chunk < ms->top) {
+	while (next_chunk && next_chunk >= mmap_start && next_chunk < ms->GH(top)) {
 		r_io_read_at (core->io, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
 		size_tmp = (cnk->size >> 3) << 3;
 		if (top_size < min_size || size_tmp > top_size) {
@@ -1326,9 +1410,9 @@ static void GH(print_heap_mmaped)(RCore *core, GHT malloc_state, GHT global_max_
 		GHT double_free = GHT_MAX;
 		if (size_tmp >= SZ * 4 && size_tmp <= global_max_fast) {
 			int i = (size_tmp / (SZ * 2)) - 2;
-			GHT next = ms->fastbinsY[i];
+			GHT next = ms->GH(fastbinsY)[i];
 			double_free = next;
-			while (next && next >= mmap_start && next < ms->top) {
+			while (next && next >= mmap_start && next < ms->GH(top)) {
 				if (prev_chunk == next) {
 					 is_free = true;
 				}
@@ -1364,11 +1448,11 @@ static void GH(print_heap_mmaped)(RCore *core, GHT malloc_state, GHT global_max_
 	}
 
 	PRINT_YA ("\n  Top chunk @ ");
-	PRINTF_BA ("0x%"PFMT64x, (ut64)ms->top);
+	PRINTF_BA ("0x%"PFMT64x, (ut64)ms->GH(top));
 	PRINT_GA (" - [mmap_start: ");
 	PRINTF_BA ("0x%"PFMT64x, (ut64)mmap_start);
 	PRINT_GA (", mmap_end: ");
-	r_io_read_at (core->io, ms->top, (ut8*)cnk, sizeof(GH(RHeapChunk)));
+	r_io_read_at (core->io, ms->GH(top), (ut8*)cnk, sizeof(GH(RHeapChunk)));
 	PRINTF_BA ("0x%"PFMT64x, (ut64) mmap_end + ((cnk->size >> 3) << 3));
 	PRINT_GA ("]\n");
 	// r_cons_println (); gives me a compile error
@@ -1384,12 +1468,12 @@ void GH(print_malloc_states)( RCore *core, GHT m_arena, MallocState *main_arena)
 	}
 	PRINT_YA ("main_arena @ ");
 	PRINTF_BA ("0x%"PFMT64x"\n", (ut64)m_arena);
-	if (main_arena->next != m_arena) {
-		ta->next = main_arena->next;
-		while (ta->next != GHT_MAX && ta->next != m_arena) {
+	if (main_arena->GH(next) != m_arena) {
+		ta->GH(next) = main_arena->GH(next);
+		while (ta->GH(next) != GHT_MAX && ta->GH(next) != m_arena) {
 			PRINT_YA ("thread arena @ ");
-			PRINTF_BA ("0x%"PFMT64x"\n", (ut64)ta->next);
-			r_io_read_at (core->io, ta->next, (ut8 *)ta, sizeof (MallocState));
+			PRINTF_BA ("0x%"PFMT64x"\n", (ut64)ta->GH(next));
+			r_io_read_at (core->io, ta->GH(next), (ut8 *)ta, sizeof (MallocState));
 		}
 	}
 	free(ta);
@@ -1421,9 +1505,21 @@ void GH(print_malloc_info)(RCore *core, GHT m_state) {
 		MallocState *ms = R_NEW0 (MallocState);
 
 		while (heap_info->prev != 0x0 && heap_info->prev != GHT_MAX) {
-			r_io_read_at (core->io, h_info, (ut8*)ms, sizeof (MallocState));
-			if ((ms->top >> 16) << 16 != h_info) {
-				h_info = (ms->top >> 16) << 16;
+
+			const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
+			if (tcache) {
+				GH(RHeap_MallocState_tcache) *ma = R_NEW0 (GH(RHeap_MallocState_tcache));
+				r_io_read_at (core->io, malloc_state, (ut8*)ma, sizeof (GH(RHeap_MallocState_tcache)));
+				GH(update_arena_with_tc)(ma,ms);
+			}
+			else {
+				GH(RHeap_MallocState) *ma = R_NEW0 (GH(RHeap_MallocState));
+				r_io_read_at (core->io, malloc_state, (ut8*)ma, sizeof (GH(RHeap_MallocState)));
+				GH(update_arena_without_tc)(ma,ms);
+			}
+
+			if ((ms->GH(top) >> 16) << 16 != h_info) {
+				h_info = (ms->GH(top) >> 16) << 16;
 				r_io_read_at (core->io, h_info, (ut8*)heap_info, sizeof (GH(RHeapInfo)));
 				GH(print_inst_minfo) (heap_info, h_info);
 			}
@@ -1449,9 +1545,7 @@ static const char* GH(help_msg)[] = {
 	"dmhi", " @[malloc_state]", "Display heap_info structure/structures for a given arena",
 	"dmhm", "", "List all elements of struct malloc_state of main thread (main_arena)",
 	"dmhm", " [malloc_state]", "List all malloc_state instance of a particular arena",
-#if __GLIBC_MINOR__ > 25
 	"dmht", "", "Display all parsed thead cache bins of main_arena's tcache instance",
-#endif
 	"dmh?", "", "Show map heap help",
 	NULL
 };
@@ -1588,14 +1682,11 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 			GH(print_heap_segment_json) (core, main_arena, &initial_brk, global_max_fast);
 		}
 		break;
-
-#if __GLIBC_MINOR__ > 25
 	case 't':
 		if (GH(r_resolve_main_arena) (core, &m_arena, main_arena) && GH(r_resolve_global_max_fast) (core, &g_max_fast, &global_max_fast)) {
 			GH(print_tcache_instance) (core, main_arena, &initial_brk);
 		}
 		break;
-#endif
 	case '?':
 		r_core_cmd_help (core, GH(help_msg));
 		break;
