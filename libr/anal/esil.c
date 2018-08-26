@@ -742,6 +742,7 @@ static int esil_eq(RAnalEsil *esil) {
 			ret = r_anal_esil_reg_write (esil, newreg, num2);
 		}
 		free (newreg);
+		free (src2);
 	}
 
 	if (src && dst && r_anal_esil_reg_read_nocallback (esil, dst, &num, NULL)) {
@@ -1777,18 +1778,20 @@ static int esil_poke_n(RAnalEsil *esil, int bits) {
 		return 0;
 	}
 	//eprintf ("GONA POKE %d src:%s dst:%s\n", bits, src, dst);
+	char *src2 = NULL;
 	if (src && r_anal_esil_get_parm (esil, src, &num)) {
 		if (dst && r_anal_esil_get_parm (esil, dst, &addr)) {
 			if (bits == 128) {
-				char *src2 = r_anal_esil_pop (esil);
+				src2 = r_anal_esil_pop (esil);
 				if (src2 && r_anal_esil_get_parm (esil, src2, &num2)) {
 					r_write_ble (b, num, esil->anal->big_endian, 64);
 					ret = r_anal_esil_mem_write (esil, addr, b, bytes);
 					r_write_ble (b, num2, esil->anal->big_endian, 64);
 					ret = r_anal_esil_mem_write (esil, addr + 8, b, bytes);
-					return ret;
+					goto out;
 				}
-				return -1;
+				ret = -1;
+				goto out;
 			}
 			int type = r_anal_esil_get_parm_type (esil, src);
 			if (type != R_ANAL_ESIL_PARM_INTERNAL) {
@@ -1808,6 +1811,8 @@ static int esil_poke_n(RAnalEsil *esil, int bits) {
 			ret = r_anal_esil_mem_write (esil, addr, b, bytes);
 		}
 	}
+out:
+	free (src2);
 	free (src);
 	free (dst);
 	return ret;
