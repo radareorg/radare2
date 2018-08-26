@@ -1677,9 +1677,10 @@ typedef struct vtable_method_info_t {
 	ut64 vtable_offset;  // offset inside the vtable
 } RVTableMethodInfo;
 
-R_API void r_anal_vtable_info_fini(RVTableInfo *vtable);
+R_API void r_anal_vtable_info_free(RVTableInfo *vtable);
 R_API ut64 r_anal_vtable_info_get_size(RVTableContext *context, RVTableInfo *vtable);
 R_API bool r_anal_vtable_begin(RAnal *anal, RVTableContext *context);
+R_API RVTableInfo *r_anal_vtable_parse_at(RVTableContext *context, ut64 addr);
 R_API RList *r_anal_vtable_search(RVTableContext *context);
 R_API RList *r_anal_vtable_get_methods(RVTableContext *context, RVTableInfo *table);
 R_API void r_anal_list_vtables(RAnal *anal, int rad);
