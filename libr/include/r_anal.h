@@ -1104,7 +1104,7 @@ typedef struct r_anal_esil_t {
 
 #undef ESIL
 
-typedef int (*RAnalEsilOp)(RAnalEsil *esil);
+typedef int (*RAnalEsilOp)(RAnalEsil *esil, const char *word);
 
 typedef int (*RAnalCmdExt)(/* Rcore */RAnal *anal, const char* input);
 typedef int (*RAnalAnalyzeFunctions)(RAnal *a, ut64 at, ut64 from, int reftype, int depth);
