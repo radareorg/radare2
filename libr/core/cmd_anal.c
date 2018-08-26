@@ -7137,6 +7137,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				r_core_seek (core, map->itv.addr, 1);
 				r_core_anal_esil (core, "$SS", NULL);
 			}
+			r_list_free (list);
 			r_core_seek (core, at, 1);
 		}
 		break;
