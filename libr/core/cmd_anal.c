@@ -341,7 +341,7 @@ static const char *help_msg_afv[] = {
 	"afvW", " [varname]", "list addresses where vars are accessed (WRITE)",
 	"afva", "", "analyze function arguments/locals",
 	"afvd", " name", "output r2 command for displaying the value of args/locals in the debugger",
-	"afvn", " [new_name] [old_name]", "rename argument/local",
+	"afvn", " [new_name] ([old_name])", "rename argument/local",
 	"afvt", " [name] [new_type]", "change type for given argument/local",
 	"afv-", "([name])", "remove all or given var",
 	NULL
@@ -982,6 +982,7 @@ static int var_cmd(RCore *core, const char *str) {
 				if (op && op->var) {
 					old_name = op->var->name;
 				} else {
+					eprintf ("Cannot find var @ 0x%08"PFMT64x"\n", core->offset);
 					r_anal_op_free (op);
 					free (ostr);
 					return false;
