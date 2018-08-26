@@ -161,7 +161,7 @@ else
   r2_libdir = join_paths(r2_prefix, get_option('libdir'))
   r2_incdir = join_paths(r2_prefix, get_option('includedir'), 'libr')
   r2_datdir = join_paths(r2_prefix, get_option('datadir'))
-  r2_wwwroot = join_paths(r2_datdir, 'radare2', r2_version, 'www')
+  r2_wwwroot = join_paths(get_option('datadir'), 'radare2', r2_version, 'www')
   r2_sdb = join_paths(get_option('datadir'), 'radare2', r2_version)
   r2_zigns = join_paths(get_option('datadir'), 'radare2', r2_version, 'zigns')
   r2_themes = join_paths(get_option('datadir'), 'radare2', r2_version, 'cons')

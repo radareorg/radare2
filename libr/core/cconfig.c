@@ -970,7 +970,13 @@ static int cb_dirsrc(void *user, void *data) {
 }
 
 static int cb_cfgsanbox(void *user, void *data) {
+	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode*) data;
+	if (node->i_value) {
+		const char *root = r_config_get (core->config, "http.root");
+		const char *homeroot = r_config_get (core->config, "http.homeroot");
+		r_sandbox_set_wwwpath (root, homeroot);
+	}
 	int ret = r_sandbox_enable (node->i_value);
 	if (node->i_value != ret) {
 		eprintf ("Cannot disable sandbox\n");
@@ -2620,10 +2626,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("dir.depth", 10,  "Maximum depth when searching recursively for files");
 	SETCB ("dir.dbgsnap", ".", &cb_dbgsnap, "Path to session dump files");
 	{
-		char *path = r_str_newf (R_JOIN_2_PATHS ("%s", R2_SDB_MAGIC), r_config_get (core->config, "dir.prefix"));
+		char *path = r_str_r2_prefix (R2_SDB_MAGIC);
 		SETPREF ("dir.magic", path, "Path to r_magic files");
 		free (path);
-		path = r_str_newf (R_JOIN_2_PATHS ("%s", R2_PLUGINS), r_config_get (core->config, "dir.prefix"));
+		path = r_str_r2_prefix (R2_PLUGINS);
 		SETPREF ("dir.plugins", path, "Path to plugin files to be loaded at startup");
 		free (path);
 	}
@@ -2771,7 +2777,11 @@ R_API int r_core_config_init(RCore *core) {
 #if __ANDROID__
 	SETPREF ("http.root", "/data/data/org.radare.radare2installer/www", "http root directory");
 #else
-	SETPREF ("http.root", R2_WWWROOT, "http root directory");
+	{
+		char *wwwroot = r_str_r2_prefix (R2_WWWROOT);
+		SETPREF ("http.root", wwwroot, "http root directory");
+		free (wwwroot);
+	}
 #endif
 	SETPREF ("http.port", "9090", "HTTP server port");
 	SETPREF ("http.maxport", "9999", "Last HTTP server port");
