@@ -36,7 +36,9 @@ use the same coding style as the rest of the code base.
 
 Please use ```./sys/clang-format-diff.py``` before submitting a PR, to be sure
 to follow the coding style. If you find a bug in this script, please create an
-issue on GitHub.
+issue on GitHub. You can also install the pre-commit hook
+```./sys/pre-commit-indent``` by copying it in ```.git/hooks/pre-commit```, so
+it will check the coding style of the modified lines before committing them.
 
 You may find some additional notes on this topic in doc/vim.
 
