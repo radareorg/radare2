@@ -1407,14 +1407,17 @@ static ut32 tmp_get_realsize (RAnalFunction *f) {
 
 static void ds_show_functions_argvar(RDisasmState *ds, RAnalVar *var, const char *base, bool is_var, char sign) {
 	int delta = sign == '+' ? var->delta : -var->delta;
-	const char *pfx = is_var ? "var" : "arg";
-	char *constr = NULL;
+	const char *pfx = is_var ? "var" : "arg", *constr = NULL;
+	RStrBuf *constr_buf = NULL;
 	bool cond = false;
 	if (ds->core && ds->core->anal) {
-		constr = var_get_constraint (ds->core->anal, var);
-	}
-	if (constr && *constr) {
-		cond = true;
+		constr_buf = var_get_constraint (ds->core->anal, var);
+		if (constr_buf) {
+			constr = r_strbuf_get (constr_buf);
+			if (constr[0]) {
+				cond = true;
+			}
+		}
 	}
 	r_cons_printf ("%s%s %s%s%s%s %s%s%s%s@ %s%c0x%x", COLOR_ARG (ds, color_func_var), pfx,
 			COLOR_ARG (ds, color_func_var_type), var->type,
@@ -1424,6 +1427,7 @@ static void ds_show_functions_argvar(RDisasmState *ds, RAnalVar *var, const char
 			cond? constr: "",
 			cond? "} ":"",
 			base, sign, delta);
+	r_strbuf_free (constr_buf);
 }
 
 static void printVarSummary(RDisasmState *ds, RList *list) {

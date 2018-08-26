@@ -510,7 +510,7 @@ R_API RList* r_core_anal_cycles (RCore *core, int ccl);
 
 /*tp.c*/
 R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn);
-R_API char *var_get_constraint (RAnal *a, RAnalVar *var);
+R_API RStrBuf *var_get_constraint (RAnal *a, RAnalVar *var);
 
 /* asm.c */
 typedef struct r_core_asm_hit {
