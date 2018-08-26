@@ -1715,25 +1715,15 @@ R_API int r_anal_fcn_del_locs(RAnal *anal, ut64 addr) {
 }
 
 R_API int r_anal_fcn_del(RAnal *a, ut64 addr) {
-	if (addr == UT64_MAX) {
-		r_list_free (a->fcns);
-		a->fcn_tree = NULL;
-		if (!(a->fcns = r_anal_fcn_list_new ())) {
-			return false;
-		}
-	} else {
-		RAnalFunction *fcni;
-		RListIter *iter, *iter_tmp;
-		r_list_foreach_safe (a->fcns, iter, iter_tmp, fcni) {
-			if (r_anal_fcn_in (fcni, addr)) {
-				if (a->cb.on_fcn_delete) {
-					a->cb.on_fcn_delete (a, a->user, fcni);
-				}
-				r_anal_fcn_tree_delete (&a->fcn_tree, fcni);
-				r_list_delete (a->fcns, iter);
-			} else if (fcni->addr == addr) {
-				r_list_delete (a->fcns, iter);
+	RAnalFunction *fcni;
+	RListIter *iter, *iter_tmp;
+	r_list_foreach_safe (a->fcns, iter, iter_tmp, fcni) {
+		if (r_anal_fcn_in (fcni, addr) || fcni->addr == addr) {
+			if (a->cb.on_fcn_delete) {
+				a->cb.on_fcn_delete (a, a->user, fcni);
 			}
+			r_anal_fcn_tree_delete (&a->fcn_tree, fcni);
+			r_list_delete (a->fcns, iter);
 		}
 	}
 	return true;
