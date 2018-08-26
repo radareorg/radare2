@@ -8,12 +8,12 @@
 # To enable this hook, rename this file to "pre-commit".
 
 tmpfile=$(mktemp)
-./sys/indent-diff.sh -c > ${tmpfile}
+git diff --cached | ./sys/clang-format-diff.py -p1 > ${tmpfile}
 
 sz=$(wc -c "${tmpfile}" | cut -d" " -f1)
 if [ "${sz}" != "0" ] ; then
 	echo "Please follow the coding style!"
-	echo "Run \`./sys/indent-diff.sh -c -i\` to apply the changes below"
+	echo "Run \`git diff --cached | ./sys/clang-format-diff.py -p1 -i\` to apply the changes listed below"
 	echo
 	cat ${tmpfile}
 	rm ${tmpfile}

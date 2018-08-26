@@ -34,8 +34,8 @@ static int findMinMax(RList *maps, ut64 *min, ut64 *max, int skip, int width);
 In order to contribute with patches or plugins we encourage you to
 use the same coding style as the rest of the code base.
 
-Please use ```./sys/indent-diff.sh``` before submitting a PR, to be sure to
-follow the coding style. If you find a bug in this script, please create an
+Please use ```./sys/clang-format-diff.py``` before submitting a PR, to be sure
+to follow the coding style. If you find a bug in this script, please create an
 issue on GitHub.
 
 You may find some additional notes on this topic in doc/vim.

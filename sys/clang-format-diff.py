@@ -44,7 +44,8 @@ def main():
   parser = argparse.ArgumentParser(description=
                                    'Reformat changed lines in diff. Without -i '
                                    'option just output the diff that would be '
-                                   'introduced.')
+                                   'introduced. Use something like: '
+                                   'git diff master..my-branch | ./sys/clang-format-diff.py -p1 -i')
   parser.add_argument('-i', action='store_true', default=False,
                       help='apply edits to files instead of displaying a diff')
   parser.add_argument('-p', metavar='NUM', default=0,
