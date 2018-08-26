@@ -25,13 +25,21 @@ VTABLE_READ_ADDR_FUNC (vtable_read_addr_be64, r_read_be64, 8)
 
 
 
-R_API void r_anal_vtable_info_fini(RVTableInfo *vtable) {
+static void vtable_info_fini(RVTableInfo *vtable) {
 	RListIter* iter;
 	RVTableMethodInfo *method;
 	r_list_foreach (vtable->methods, iter, method) {
 		free (method);
 	}
 	r_list_free (vtable->methods);
+}
+
+R_API void r_anal_vtable_info_free(RVTableInfo *vtable) {
+	if (!vtable) {
+		return;
+	}
+	vtable_info_fini (vtable);
+	free (vtable);
 }
 
 R_API ut64 r_anal_vtable_info_get_size(RVTableContext *context, RVTableInfo *vtable) {
@@ -152,13 +160,36 @@ static int vtable_is_addr_vtable_start(RVTableContext *context, ut64 curAddress)
 	return false;
 }
 
+R_API RVTableInfo *r_anal_vtable_parse_at(RVTableContext *context, ut64 addr) {
+	RVTableInfo *vtable = calloc (1, sizeof(RVTableInfo));
+	if (!vtable) {
+		return NULL;
+	}
+	vtable->saddr = addr;
+	int noOfMethods = 0;
+	while (vtable_is_value_in_text_section (context, addr)) {
+		noOfMethods++;
+		addr += context->word_size;
+
+		// a ref means the vtable has ended
+		RList *ll = r_anal_xrefs_get (context->anal, addr);
+		if (!r_list_empty (ll)) {
+			r_list_free (ll);
+			break;
+		}
+		r_list_free (ll);
+	}
+	vtable->method_count = noOfMethods;
+	return vtable;
+}
+
 R_API RList *r_anal_vtable_search(RVTableContext *context) {
 	RAnal *anal = context->anal;
 	if (!anal) {
 		return NULL;
 	}
 
-	RList *vtables = r_list_newf ((RListFree)free);
+	RList *vtables = r_list_newf ((RListFree)r_anal_vtable_info_free);
 	if (!vtables) {
 		return NULL;
 	}
@@ -193,23 +224,11 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 			}
 
 			if (vtable_is_addr_vtable_start (context, startAddress)) {
-				RVTableInfo *vtable = calloc (1, sizeof(RVTableInfo));
-				vtable->saddr = startAddress;
-				int noOfMethods = 0;
-				while (vtable_is_value_in_text_section (context, startAddress)) {
-					noOfMethods++;
-					startAddress += context->word_size;
-
-					// a ref means the vtable has ended
-					RList *ll = r_anal_xrefs_get (context->anal, startAddress);
-					if (!r_list_empty (ll)) {
-						r_list_free (ll);
-						break;
-					}
-					r_list_free (ll);
+				RVTableInfo *vtable = r_anal_vtable_parse_at (context, startAddress);
+				if (vtable) {
+					r_list_append (vtables, vtable);
+					startAddress += vtable->method_count * context->word_size;
 				}
-				vtable->method_count = noOfMethods;
-				r_list_append (vtables, vtable);
 				continue;
 			}
 			startAddress += 1;
@@ -297,9 +316,6 @@ R_API void r_anal_list_vtables(RAnal *anal, int rad) {
 			}
 			r_cons_newline ();
 		}
-	}
-	r_list_foreach (vtables, vtableIter, table) {
-			r_anal_vtable_info_fini (table);
 	}
 	r_list_free (vtables);
 }
