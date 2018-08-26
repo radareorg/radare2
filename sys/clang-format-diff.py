@@ -32,6 +32,7 @@ import difflib
 import re
 import subprocess
 import sys
+import tempfile
 import os
 try:
   from StringIO import StringIO
@@ -98,11 +99,7 @@ def main():
 
   # Reformat files containing changes in place.
   for filename, lines in lines_by_file.items():
-    if args.i and args.verbose:
-      print('Formatting {}'.format(filename))
     command = [args.binary, filename]
-    if args.i:
-      command.append('-i')
     if args.sort_includes:
       command.append('-sort-includes')
     if lines:
@@ -120,28 +117,34 @@ def main():
     if p.returncode != 0:
       sys.exit(p.returncode)
 
-    if not args.i:
-      with open(filename) as f:
-        code = f.readlines()
-      formatted_code = StringIO(stdout).readlines()
-      modified_lines = dict()
-      if lines:
-          for x in lines:
-              for i in range(x[0], x[1] + 1):
-                  modified_lines[i] = True
+    with open(filename) as f:
+      code = f.readlines()
+    formatted_code = StringIO(stdout).readlines()
+    modified_lines = dict()
+    if lines:
+        for x in lines:
+            for i in range(x[0], x[1] + 1):
+                modified_lines[i] = True
 
-      for i, l in enumerate(formatted_code):
-          if lines and i + 1 not in modified_lines:
-              continue
+    # handle functions definitions/declarations: do not use space before (
+    for i, l in enumerate(formatted_code):
+        if lines and i + 1 not in modified_lines:
+            continue
 
-          if l.startswith('R_API ') or l.startswith('static '):
-              formatted_code[i] = l.replace(' (', '(')
+        if l.startswith('R_API ') or l.startswith('static '):
+            formatted_code[i] = l.replace(' (', '(')
 
-      diff = difflib.unified_diff(code, formatted_code,
-                                  filename, filename,
-                                  '(before formatting)', '(after formatting)')
-      diff_string = ''.join(diff)
-      if len(diff_string) > 0:
+    diff = difflib.unified_diff(code, formatted_code,
+                                filename, filename,
+                                '(before formatting)', '(after formatting)')
+    diff_string = ''.join(diff)
+    if len(diff_string) > 0:
+      if args.i:
+        f = tempfile.NamedTemporaryFile(delete=False)
+        f.write(diff_string)
+        f.close()
+        os.system('git apply -p0 < %s' % (f.name))
+      else:
         sys.stdout.write(diff_string)
 
 if __name__ == '__main__':
