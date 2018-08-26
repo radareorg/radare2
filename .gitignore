@@ -114,3 +114,5 @@ cmake-build-*
 /*.snap
 # doxygen autogen
 doc/doxygen/html
+# Python
+__pycache__
