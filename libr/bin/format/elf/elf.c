@@ -3298,14 +3298,14 @@ ut64 Elf_(r_bin_elf_p2v) (ELFOBJ *bin, ut64 paddr) {
 	int i;
 
 	if (!bin) {
-		return 0;
+		return UT64_MAX;
 	}
 
 	if (!bin->phdr) {
 		if (bin->ehdr.e_type == ET_REL) {
 			return bin->baddr + paddr;
 		}
-		return paddr;
+		return UT64_MAX;
 	}
 	for (i = 0; i < bin->ehdr.e_phnum; ++i) {
 		Elf_(Phdr) *p = &bin->phdr[i];
@@ -3313,14 +3313,11 @@ ut64 Elf_(r_bin_elf_p2v) (ELFOBJ *bin, ut64 paddr) {
 			break;
 		}
 		if (p->p_type == PT_LOAD && is_in_pphdr (p, paddr)) {
-			if (!p->p_vaddr && !p->p_offset) {
-				continue;
-			}
 			return p->p_vaddr + paddr - p->p_offset;
 		}
 	}
 
-	return paddr;
+	return UT64_MAX;
 }
 
 /* converts a virtual address to the relative physical address, looking
@@ -3328,13 +3325,13 @@ ut64 Elf_(r_bin_elf_p2v) (ELFOBJ *bin, ut64 paddr) {
 ut64 Elf_(r_bin_elf_v2p) (ELFOBJ *bin, ut64 vaddr) {
 	int i;
 	if (!bin) {
-		return 0;
+		return UT64_MAX;
 	}
 	if (!bin->phdr) {
 		if (bin->ehdr.e_type == ET_REL) {
 			return vaddr - bin->baddr;
 		}
-		return vaddr;
+		return UT64_MAX;
 	}
 	for (i = 0; i < bin->ehdr.e_phnum; ++i) {
 		Elf_(Phdr) *p = &bin->phdr[i];
@@ -3342,13 +3339,10 @@ ut64 Elf_(r_bin_elf_v2p) (ELFOBJ *bin, ut64 vaddr) {
 			break;
 		}
 		if (p->p_type == PT_LOAD && is_in_vphdr (p, vaddr)) {
-			if (!p->p_offset && !p->p_vaddr) {
-				continue;
-			}
 			return p->p_offset + vaddr - p->p_vaddr;
 		}
 	}
-	return vaddr;
+	return UT64_MAX;
 }
 
 static bool get_nt_file_maps (ELFOBJ *bin, RList *core_maps) {
