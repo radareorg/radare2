@@ -2384,6 +2384,18 @@ R_API int r_core_config_init(RCore *core) {
 #else
 	SETCB("dbg.malloc", "jemalloc", &cb_malloc, "Choose malloc structure parser");
 #endif
+#if __GLIBC_MINOR__ > 25
+	SETPREF ("dbg.glibc.tcache", "true", "Set glib tcache parsing");
+#else
+	SETPREF ("dbg.glibc.tcache", "false", "Set glib tcache parsing");
+#endif
+#if R_SYS_BITS == R_SYS_BITS_64
+	SETI ("dbg.glibc.ma_offset", 0x000000, "Main_arena offset from his symbol");
+	SETI ("dbg.glibc.fc_offset", 0x00250, "First chunk offset from brk_start");
+#else
+	SETI ("dbg.glibc.ma_offset", 0x1bb000, "Main_arena offset from his symbol");
+	SETI ("dbg.glibc.fc_offset", 0x18, "First chunk offset from brk_start");
+#endif
 
 	SETPREF ("esil.prestep", "true", "Step before esil evaluation in `de` commands");
 	SETPREF ("esil.fillstack", "", "Initialize ESIL stack with (random, debrujn, sequence, zeros, ...)");

@@ -1151,6 +1151,13 @@ int main(int argc, char **argv, char **envp) {
 					RBinObject *obj = r_bin_get_object (r.bin);
 					if (obj && obj->info) {
 						eprintf ("asm.bits %d\n", obj->info->bits);
+#if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__ && __x86_64__
+						ut64 bitness = r_config_get_i (r.config, "asm.bits");
+						if (bitness == 32) {
+							eprintf ("glibc.fc_offset = 0x00158\n");
+							r_config_set_i (r.config, "dbg.glibc.fc_offset", 0x00158);
+						}
+#endif
 					}
 				}
 			}
