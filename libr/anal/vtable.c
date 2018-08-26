@@ -25,25 +25,17 @@ VTABLE_READ_ADDR_FUNC (vtable_read_addr_be64, r_read_be64, 8)
 
 
 
-static void vtable_info_fini(RVTableInfo *vtable) {
-	RListIter* iter;
-	RVTableMethodInfo *method;
-	r_list_foreach (vtable->methods, iter, method) {
-		free (method);
-	}
-	r_list_free (vtable->methods);
-}
 
 R_API void r_anal_vtable_info_free(RVTableInfo *vtable) {
 	if (!vtable) {
 		return;
 	}
-	vtable_info_fini (vtable);
+	r_vector_clear (&vtable->methods);
 	free (vtable);
 }
 
 R_API ut64 r_anal_vtable_info_get_size(RVTableContext *context, RVTableInfo *vtable) {
-	return (ut64)vtable->method_count * context->word_size;
+	return (ut64)vtable->methods.len * context->word_size;
 }
 
 
@@ -70,34 +62,6 @@ R_API bool r_anal_vtable_begin(RAnal *anal, RVTableContext *context) {
 	return true;
 }
 
-R_API RList *r_anal_vtable_get_methods(RVTableContext *context, RVTableInfo *table) {
-	RAnal *anal = context->anal;
-	RList* vtableMethods = r_list_new ();
-	if (!table || !anal || !vtableMethods) {
-		r_list_free (vtableMethods);
-		return NULL;
-	}
-
-	int curMethod = 0;
-	int totalMethods = table->method_count;
-	ut64 startAddress = table->saddr;
-	while (curMethod < totalMethods) {
-		ut64 curAddressValue;
-		RVTableMethodInfo *methodInfo;
-		if (context->read_addr (context->anal, startAddress, &curAddressValue)
-			&& (methodInfo = (RVTableMethodInfo *)malloc (sizeof (RVTableMethodInfo)))) {
-			methodInfo->addr = curAddressValue;
-			methodInfo->vtable_offset = startAddress - table->saddr;
-			r_list_append (vtableMethods, methodInfo);
-		}
-		startAddress += context->word_size;
-		curMethod++;
-	}
-
-	table->methods = vtableMethods;
-	return vtableMethods;
-}
-
 static bool vtable_addr_in_text_section(RVTableContext *context, ut64 curAddress) {
 	//section of the curAddress
 	RBinSection* value = context->anal->binb.get_vsect_at (context->anal->binb.bin, curAddress);
@@ -105,14 +69,18 @@ static bool vtable_addr_in_text_section(RVTableContext *context, ut64 curAddress
 	return value && !strcmp (value->name, ".text");
 }
 
-static bool vtable_is_value_in_text_section(RVTableContext *context, ut64 curAddress) {
+static bool vtable_is_value_in_text_section(RVTableContext *context, ut64 curAddress, ut64 *value) {
 	//value at the current address
 	ut64 curAddressValue;
 	if (!context->read_addr (context->anal, curAddress, &curAddressValue)) {
 		return false;
 	}
 	//if the value is in text section
-	return vtable_addr_in_text_section (context, curAddressValue);
+	bool ret = vtable_addr_in_text_section (context, curAddressValue);
+	if (value) {
+		*value = curAddressValue;
+	}
+	return ret;
 }
 
 static bool vtable_section_can_contain_vtables(RVTableContext *context, RBinSection *section) {
@@ -129,7 +97,7 @@ static int vtable_is_addr_vtable_start(RVTableContext *context, ut64 curAddress)
 	if (!curAddress || curAddress == UT64_MAX) {
 		return false;
 	}
-	if (!vtable_is_value_in_text_section (context, curAddress)) {
+	if (!vtable_is_value_in_text_section (context, curAddress, NULL)) {
 		return false;
 	}
 	// total xref's to curAddress
@@ -166,9 +134,15 @@ R_API RVTableInfo *r_anal_vtable_parse_at(RVTableContext *context, ut64 addr) {
 		return NULL;
 	}
 	vtable->saddr = addr;
-	int noOfMethods = 0;
-	while (vtable_is_value_in_text_section (context, addr)) {
-		noOfMethods++;
+	r_vector_init (&vtable->methods, sizeof (RVTableMethodInfo), NULL, NULL);
+
+	RVTableMethodInfo meth;
+	while (vtable_is_value_in_text_section (context, addr, &meth.addr)) {
+		meth.vtable_offset = addr - vtable->saddr;
+		if (!r_vector_push (&vtable->methods, &meth)) {
+			break;
+		}
+
 		addr += context->word_size;
 
 		// a ref means the vtable has ended
@@ -179,7 +153,6 @@ R_API RVTableInfo *r_anal_vtable_parse_at(RVTableContext *context, ut64 addr) {
 		}
 		r_list_free (ll);
 	}
-	vtable->method_count = noOfMethods;
 	return vtable;
 }
 
@@ -225,11 +198,14 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 
 			if (vtable_is_addr_vtable_start (context, startAddress)) {
 				RVTableInfo *vtable = r_anal_vtable_parse_at (context, startAddress);
-				if (vtable) {
+				if (vtable && vtable->methods.len > 0) {
 					r_list_append (vtables, vtable);
-					startAddress += vtable->method_count * context->word_size;
+					ut64 size = r_anal_vtable_info_get_size (context, vtable);
+					if (size > 0) {
+						startAddress += size;
+						continue;
+					}
 				}
-				continue;
 			}
 			startAddress += 1;
 		}
@@ -250,9 +226,7 @@ R_API void r_anal_list_vtables(RAnal *anal, int rad) {
 	RVTableContext context;
 	r_anal_vtable_begin (anal, &context);
 
-	RList *vtableMethods;
 	const char *noMethodName = "No Name found";
-	RListIter* vtableMethodNameIter;
 	RVTableMethodInfo *curMethod;
 	RListIter* vtableIter;
 	RVTableInfo* table;
@@ -271,8 +245,7 @@ R_API void r_anal_list_vtables(RAnal *anal, int rad) {
 			}
 			bool isFirstMethod = true;
 			r_cons_printf ("{\"offset\":%"PFMT64d",\"methods\":[", table->saddr);
-			vtableMethods = r_anal_vtable_get_methods (&context, table);
-			r_list_foreach (vtableMethods, vtableMethodNameIter, curMethod) {
+			r_vector_foreach (&table->methods, curMethod) {
 				if(!isFirstMethod)
 					r_cons_print (",");
 				RAnalFunction *fcn = r_anal_get_fcn_in (anal, curMethod->addr, 0);
@@ -291,8 +264,7 @@ R_API void r_anal_list_vtables(RAnal *anal, int rad) {
 						   table->saddr,
 						   r_anal_vtable_info_get_size (&context, table),
 						   table->saddr);
-			vtableMethods = r_anal_vtable_get_methods (&context, table);
-			r_list_foreach (vtableMethods, vtableMethodNameIter, curMethod) {
+			r_vector_foreach (&table->methods, curMethod) {
 				r_cons_printf ("Cd %d @ 0x%08"PFMT64x"\n", context.word_size, table->saddr + curMethod->vtable_offset);
 				RAnalFunction *fcn = r_anal_get_fcn_in (anal, curMethod->addr, 0);
 				const char *const name = fcn ? fcn->name : NULL;
@@ -306,9 +278,8 @@ R_API void r_anal_list_vtables(RAnal *anal, int rad) {
 	} else {
 		r_list_foreach (vtables, vtableIter, table) {
 			ut64 vtableStartAddress = table->saddr;
-			vtableMethods = r_anal_vtable_get_methods (&context, table);
 			r_cons_printf ("\nVtable Found at 0x%08"PFMT64x"\n", vtableStartAddress);
-			r_list_foreach (vtableMethods, vtableMethodNameIter, curMethod) {
+			r_vector_foreach (&table->methods, curMethod) {
 				RAnalFunction *fcn = r_anal_get_fcn_in (anal, curMethod->addr, 0);
 				const char* const name = fcn ? fcn->name : NULL;
 				r_cons_printf ("0x%08"PFMT64x" : %s\n", vtableStartAddress, name ? name : noMethodName);
