@@ -23,6 +23,7 @@ R_API void r_anal_class_free(RAnalClass *cls) {
 	free (cls->name);
 	r_vector_clear (&cls->base_classes);
 	r_pvector_clear (&cls->methods);
+	free (cls);
 }
 
 R_API RAnalMethod *r_anal_method_new() {
