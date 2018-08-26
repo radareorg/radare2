@@ -21,7 +21,7 @@ try to keep the codebase consistent and clean.
 * Fork the repository on GitHub.
 * Create a topic branch from master. Please avoid working directly on the ```master``` branch.
 * Make commits of logical units.
-* Check for unnecessary whitespace with ```git diff --check``` and be sure to follow the CODINGSTYLE (more on this in the next section).
+* Check for coding style issues with ```./sys/indent-diff.sh -i master..mybranch``` and be sure to follow the CODINGSTYLE (more on this in [DEVELOPERS.md](https://github.com/radare/radare2/blob/master/DEVELOPERS.md)).
 * Submit the Pull Request(PR) on Github.
 * When relevant, write a test for
   [radare2-regressions](https://github.com/radare/radare2-regressions) and

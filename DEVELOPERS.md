@@ -34,6 +34,10 @@ static int findMinMax(RList *maps, ut64 *min, ut64 *max, int skip, int width);
 In order to contribute with patches or plugins we encourage you to
 use the same coding style as the rest of the code base.
 
+Please use ```./sys/indent-diff.sh``` before submitting a PR, to be sure to
+follow the coding style. If you find a bug in this script, please create an
+issue on GitHub.
+
 You may find some additional notes on this topic in doc/vim.
 
 * Tabs are used for indentation. In a switch statement, the
@@ -49,7 +53,7 @@ default:
 }
 ```
 
-* Lines should be at most 78 chars. A tab is considered as 4 chars.
+* Lines should be at most 78 chars. A tab is considered as 8 chars.
 
 * Braces open on the same line as the for/while/if/else/function/etc. Closing
   braces are put on a line of their own, except in the else of an if statement
