@@ -576,15 +576,13 @@ typedef struct r_anal_switch_obj_t {
 	RList *cases;
 } RAnalSwitchOp;
 
-#define RANAL void*
-//struct r_anal_t*
-#define RANAL_BLOCK void*
-//struct r_anal_bb_t*
+struct r_anal_t;
+struct r_anal_bb_t;
 typedef struct r_anal_callbacks_t {
-	int (*on_fcn_new) (RANAL, void *user, RAnalFunction *fcn);
-	int (*on_fcn_delete) (RANAL , void *user, RAnalFunction *fcn);
-	int (*on_fcn_rename) (RANAL, void *user, RAnalFunction *fcn, const char *oldname);
-	int (*on_fcn_bb_new) (RANAL, void *user, RAnalFunction *fcn, RANAL_BLOCK bb);
+	int (*on_fcn_new) (struct r_anal_t *, void *user, RAnalFunction *fcn);
+	int (*on_fcn_delete) (struct r_anal_t *, void *user, RAnalFunction *fcn);
+	int (*on_fcn_rename) (struct r_anal_t *, void *user, RAnalFunction *fcn, const char *oldname);
+	int (*on_fcn_bb_new) (struct r_anal_t *, void *user, RAnalFunction *fcn, struct r_anal_bb_t *bb);
 } RAnalCallbacks;
 
 #define R_ANAL_ESIL_GOTO_LIMIT 4096
