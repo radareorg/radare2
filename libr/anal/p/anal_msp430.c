@@ -42,7 +42,13 @@ static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		case MSP430_BIT: 
 		case MSP430_BIC:
 		case MSP430_BIS:
-		case MSP430_MOV: op->type = R_ANAL_OP_TYPE_MOV; break;
+		case MSP430_MOV: 
+			op->type = R_ANAL_OP_TYPE_MOV;
+			if ((cmd.instr)[0] == 'b' && (cmd.instr)[1] == 'r') {
+				// Emulated branch instruction, moves source operand to PC register.
+				op->type = R_ANAL_OP_TYPE_UJMP;
+			}
+			break;
 		case MSP430_DADD:
 		case MSP430_ADDC:
 		case MSP430_ADD: op->type = R_ANAL_OP_TYPE_ADD; break;
