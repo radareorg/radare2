@@ -1,9 +1,11 @@
 #!/bin/sh
 
 show_help() {
-    echo "Usage: ${0} [-i] [-h] <git-like-diff>"
-    echo " -i    indent in place (modify files)"
-    echo " -h    print this help message"
+    echo "Usage: ${0} [-h] [-i] [-c] [-d <git-like-diff>]"
+    echo " -i                             indent in place (modify files)"
+    echo " -c, --cached                   check cached diff"
+    echo " -d, --diff <git-like-diff>     check specified diff"
+    echo " -h                             print this help message"
     echo
     echo "Examples:"
     echo "$ ${0} master..my-branch > my-branch.patch"
@@ -17,11 +19,19 @@ script_dir=`dirname $P`
 
 diff=
 inplace=
+cached=
 
 while :; do
     case $1 in
 	-i)
 	    inplace=1
+	    ;;
+	-c|--cached)
+	    cached=--cached
+	    ;;
+	-d|--diff)
+	    diff=$2
+	    shift
 	    ;;
 	-h)
 	    show_help
@@ -36,11 +46,6 @@ while :; do
 	    exit 1
 	    ;;
 	*)
-	    if [ -z "${1}" ] ; then
-		show_help
-		exit 1
-	    fi
-	    diff=$1
 	    break
 	    ;;
     esac
@@ -48,12 +53,15 @@ while :; do
     shift
 done
 
+if [ -z "${diff}" ] & [ -z "${cached}" ] ; then
+    show_help
+    exit 1
+fi
+
 tmpfile=$(mktemp)
 tmpfile_src=$(mktemp)
 
-git diff -U0 --no-color ${diff} | ${script_dir}/clang-format-diff.py -p1 > ${tmpfile_src}
-# function declarations/definitions do not have space before '('
-awk '{if (/^[+]static/ || /^[+]R_API/) { gsub(/ \(/,"("); }; print;}' < ${tmpfile_src} > ${tmpfile}
+git diff -U0 --no-color ${cached} ${diff} | ${script_dir}/clang-format-diff.py -p1 > ${tmpfile}
 
 if [ "${inplace}" == "1" ] ; then
     git apply -p0 < ${tmpfile}

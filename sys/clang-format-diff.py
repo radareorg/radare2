@@ -9,6 +9,11 @@
 #
 #===------------------------------------------------------------------------===#
 
+#
+# Slightly modified to handle the definition of functions, which do not
+# require a space before the parenthesis
+#
+
 r"""
 ClangFormat Diff Reformatter
 ============================
@@ -88,8 +93,8 @@ def main():
       if line_count == 0:
         continue
       end_line = start_line + line_count - 1
-      lines_by_file.setdefault(filename, []).extend(
-          ['-lines', str(start_line) + ':' + str(end_line)])
+      lines_by_file.setdefault(filename, []).append(
+          [start_line, end_line])
 
   # Reformat files containing changes in place.
   for filename, lines in lines_by_file.items():
@@ -100,7 +105,10 @@ def main():
       command.append('-i')
     if args.sort_includes:
       command.append('-sort-includes')
-    command.extend(lines)
+    if lines:
+        s = [('-lines', str(x[0]) + ':' + str(x[1])) for x in lines]
+        s = reduce(lambda x, y: x + y, s)
+        command.extend(s)
     if args.style:
       command.extend(['-style', args.style])
     p = subprocess.Popen(command,
@@ -116,6 +124,19 @@ def main():
       with open(filename) as f:
         code = f.readlines()
       formatted_code = StringIO(stdout).readlines()
+      modified_lines = dict()
+      if lines:
+          for x in lines:
+              for i in range(x[0], x[1] + 1):
+                  modified_lines[i] = True
+
+      for i, l in enumerate(formatted_code):
+          if lines and i + 1 not in modified_lines:
+              continue
+
+          if l.startswith('R_API ') or l.startswith('static '):
+              formatted_code[i] = l.replace(' (', '(')
+
       diff = difflib.unified_diff(code, formatted_code,
                                   filename, filename,
                                   '(before formatting)', '(after formatting)')
