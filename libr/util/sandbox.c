@@ -13,15 +13,16 @@
 
 static bool enabled = false;
 static bool disabled = false;
+static const char *wwwroot = NULL;
+static const char *homewwwroot = NULL;
 
 static bool inHomeWww(const char *path) {
 	bool ret = false;
-	char *homeWww = r_str_home (R2_HOME_WWWROOT R_SYS_DIR);
-	if (homeWww) {
-		if (!strncmp (path, homeWww, strlen (homeWww))) {
-			ret = true;
-		}
-		free (homeWww);
+	if (!homewwwroot) {
+		homewwwroot = r_str_home (R2_HOME_WWWROOT R_SYS_DIR);
+	}
+	if (homewwwroot && !strncmp (path, homewwwroot, strlen (homewwwroot))) {
+		ret = true;
 	}
 	return ret;
 }
@@ -52,10 +53,13 @@ R_API bool r_sandbox_check_path (const char *path) {
 		return true;
 	}
 	// Accessing stuff inside the webroot is ok even if we need .. or leading / for that
-	root_len = strlen (R2_WWWROOT);
-	if (R2_WWWROOT[0] && !strncmp (path, R2_WWWROOT, root_len) && (
-			R2_WWWROOT[root_len-1] == '/' || path[root_len] == '/' || path[root_len] == '\0')) {
-		path += strlen (R2_WWWROOT);
+	if (!wwwroot) {
+		wwwroot = r_str_r2_prefix (R2_WWWROOT);
+	}
+	root_len = strlen (wwwroot);
+	if (wwwroot && !strncmp (path, wwwroot, root_len) && (
+			wwwroot[root_len-1] == '/' || path[root_len] == '/' || path[root_len] == '\0')) {
+		path += strlen (wwwroot);
 		while (*path == '/') {
 			path++;
 		}
@@ -351,4 +355,19 @@ R_API bool r_sys_stop () {
 #else
 	return false;
 #endif
+}
+
+R_API void r_sandbox_set_wwwpath (const char *root, const char *homeroot) {
+	if (root) {
+		if (wwwroot) {
+			free (wwwroot);
+		}
+		wwwroot = strdup (root);
+	}
+	if (homeroot) {
+		if (homewwwroot) {
+			free (homewwwroot);
+		}
+		homewwwroot = r_str_newf ("%s"R_SYS_DIR, homeroot);
+	}
 }
