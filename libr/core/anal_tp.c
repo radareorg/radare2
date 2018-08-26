@@ -183,7 +183,7 @@ static void var_add_range (RAnal *a, RAnalVar *var, int cond, ut64 val) {
 	sdb_array_append_num (ADB, key, val, 0);
 }
 
-R_API char *var_get_constraint (RAnal *a, RAnalVar *var) {
+R_API RStrBuf *var_get_constraint (RAnal *a, RAnalVar *var) {
 	const char *key = RKEY (var->addr, var->kind, var->delta);
 	int i, n = sdb_array_length (ADB, key);
 	bool low = false, high = false;
@@ -225,7 +225,7 @@ R_API char *var_get_constraint (RAnal *a, RAnalVar *var) {
 			high = false;
 		}
 	}
-	return r_strbuf_get (sb);
+	return sb;
 }
 
 static RList *parse_format(RCore *core, char *fmt) {
