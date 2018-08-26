@@ -101,7 +101,7 @@ static st64 on_map_skyline(RIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg
 		// The map satisfies the permission requirement or p_cache is enabled
 		if (((part->map->flags & match_flg) == match_flg || io->p_cache)) {
 			st64 result = op (io, part->map->fd, part->map->delta + addr - part->map->itv.addr,
-					buf + addr - vaddr, len1, part->map, NULL);
+					buf + (addr - vaddr), len1, part->map, NULL);
 			if (prefix_mode) {
 				if (result < 0) {
 					return result;
