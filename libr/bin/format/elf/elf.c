@@ -3205,7 +3205,7 @@ void* Elf_(r_bin_elf_free)(ELFOBJ* bin) {
 	}
 	if (bin->symbols_by_ord) {
 		for (i = 0; i<bin->symbols_by_ord_size; i++) {
-			free (bin->symbols_by_ord[i]);
+			r_bin_symbol_free (bin->symbols_by_ord[i]);
 		}
 		free (bin->symbols_by_ord);
 	}
