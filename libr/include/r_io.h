@@ -72,7 +72,6 @@ typedef struct r_io_t {
 	int cached;
 	bool cachemode; // write in cache all the read operations (EXPERIMENTAL)
 	int p_cache;
-	int buffer_enabled;
 	int debug;
 //#warning remove debug from RIO
 	RIDPool *sec_ids;
