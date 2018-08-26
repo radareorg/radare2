@@ -2569,7 +2569,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			nblocks = r_num_math (core->num, spc + 1);
 			if (nblocks < 1) {
 				nblocks = core->blocksize;
-				return;
+				goto beach;
 			}
 			spc = strchr (spc + 1, ' ');
 			if (spc) {
@@ -2597,13 +2597,13 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		}
 		if (totalsize == UT64_MAX) {
 			eprintf ("Cannot determine file size\n");
-			return;
+			goto beach;
 		}
 	}
 	blocksize = (blocksize > 0)? (totalsize / blocksize): (core->blocksize);
 	if (blocksize < 1) {
 		eprintf ("Invalid block size: %d\n", (int)blocksize);
-		return;
+		goto beach;
 	}
 	if (list) {
 		RListIter *iter1 = list->head;
@@ -2622,7 +2622,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		blocksize = totalsize / nblocks;
 		 if (blocksize < 1) {
 			eprintf ("Invalid block size: %d\n", (int)blocksize);
-			return;
+			goto beach;
 		}
 	}
 	switch (mode) {
@@ -2941,8 +2941,8 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		}
 	}
 beach:
+	r_list_free (list);
 	free (ptr);
-	return;
 }
 
 static int bbcmp(RAnalBlock *a, RAnalBlock *b) {
@@ -5687,6 +5687,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 			core->io->va = oldva;
 			R_FREE (oldmode);
+			r_list_free (list);
 		}
 		break;
 	default:
