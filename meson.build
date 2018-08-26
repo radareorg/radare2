@@ -253,8 +253,10 @@ userconf.set('HAVE_OPENSSL', use_sys_openssl.to_int())
 userconf.set('HAVE_FORK', 1)
 userconf.set('WITH_GPL', 1)
 if host_machine.system() == 'windows'
+  userconf.set('DATADIR_R2', r2_datdir)
   userconf.set('HAVE_JEMALLOC', 0)
 else
+  userconf.set('DATADIR_R2', join_paths(get_option('datadir'), 'radare2'))
   userconf.set('HAVE_JEMALLOC', 1)
 endif
 if cc.has_header_symbol('sys/personality.h', 'ADDR_NO_RANDOMIZE')
