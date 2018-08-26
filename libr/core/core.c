@@ -512,7 +512,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 		switch (str[1]) {
 		case '.': // can use pc, sp, a0, a1, ...
 			return r_debug_reg_get (core->dbg, str + 2);
-		case 'k':
+		case 'k': // $k{kv}
 			if (str[2] != '{') {
 				eprintf ("Expected '{' after 'k'.\n");
 				break;
@@ -538,7 +538,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			free (out);
 			return ret;
 			break;
-		case '{':
+		case '{': // ${ev} eval var
 			bptr = strdup (str + 2);
 			ptr = strchr (bptr, '}');
 			if (ptr) {
@@ -549,8 +549,9 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			}
 			free (bptr);
 			break;
-		case 'c': return r_cons_get_size (NULL);
-		case 'r': 
+		case 'c': // $c console width
+			return r_cons_get_size (NULL);
+		case 'r': // $r
 			if (str[2] == '{') {
 				bptr = strdup (str + 3);
 				ptr = strchr (bptr, '}');
@@ -571,12 +572,16 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				return rows;
 			}
 			break;
-		case 'e': return r_anal_op_is_eob (&op);
-		case 'j': return op.jump;
-		case 'p': return r_sys_getpid ();
-		case 'P': return (core->dbg->pid > 0)? core->dbg->pid: 0;
-		case 'f':
-			if (str[2] == 'l') { // "$fl" = "`fl`"
+		case 'e': // $e
+			return r_anal_op_is_eob (&op);
+		case 'j': // $j jump address
+			return op.jump;
+		case 'p': // $p
+			return r_sys_getpid ();
+		case 'P': // $P
+			return core->dbg->pid > 0 ? core->dbg->pid : 0;
+		case 'f': // $f jump fail address
+			if (str[2] == 'l') { // $fl flag length
 				RFlagItem *fi = r_flag_get_i (core->flags, core->offset);
 				if (fi) {
 					return fi->size;
@@ -584,9 +589,10 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				return 0;
 			}
 			return op.fail;
-		case 'm': return op.ptr; // memref
-		case 'B':
-		case 'M': {
+		case 'm': // $m memref
+			return op.ptr;
+		case 'B': // $B base address
+		case 'M': { // $M map address
 				ut64 lower = UT64_MAX;
 				ut64 size = 0LL;
 				RIOMap *map = r_io_map_get (core->io, core->offset);
@@ -608,12 +614,14 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				}
 			}
 			break;
-		case 'v': return op.val; // immediate value
-		case 'l': return op.size;
-		case 'b': return core->blocksize;
-		case 's':
-			// flag size $s{}
-			if (str[2] == '{') {
+		case 'v': // $v immediate value
+			return op.val;
+		case 'l': // $l opcode length
+			return op.size;
+		case 'b': // $b
+			return core->blocksize;
+		case 's': // $s file size
+			if (str[2] == '{') { // $s{flag} flag size
 				bptr = strdup (str + 3);
 				ptr = strchr (bptr, '}');
 				if (!ptr) {
@@ -631,14 +639,14 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				return r_io_fd_size (core->io, core->file->fd);
 			}
 			return 0LL;
-		case 'w':
+		case 'w': // $w word size
 			return r_config_get_i (core->config, "asm.bits") / 8;
-		case 'S':
+		case 'S': // $S section offset
 			if ((s = r_bin_get_section_at (r_bin_cur_object (core->bin), core->offset, true))) {
 				return (str[2] == 'S'? s->size: s->vaddr);
 			}
 			return 0LL;
-		case 'D':
+		case 'D': // $D
 			if (IS_DIGIT (str[2])) {
 				return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_DATA);
 			} else {
@@ -651,19 +659,23 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				}
 			}
 			return 0LL; // maybe // return UT64_MAX;
-		case '?': return core->num->value;
-		case '$': return str[2] == '$' ? core->prompt_offset : core->offset;
-		case 'o':
-			{
-				RBinSection *s;
-				s = r_bin_get_section_at (r_bin_cur_object (core->bin), core->offset, true);
-				return s ? core->offset - s->vaddr + s->paddr : core->offset;
-			}
+		case '?': // $?
+			return core->num->value;
+		case '$': // $$ offset
+			return str[2] == '$' ? core->prompt_offset : core->offset;
+		case 'o': { // $o
+			RBinSection *s;
+			s = r_bin_get_section_at (r_bin_cur_object (core->bin), core->offset, true);
+			return s ? core->offset - s->vaddr + s->paddr : core->offset;
 			break;
-		case 'C': return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_CALL);
-		case 'J': return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_CODE);
-		case 'X': return getref (core, atoi (str + 2), 'x', R_ANAL_REF_TYPE_CALL);
-		case 'F': // "$F"
+		}
+		case 'C': // $C nth call
+			return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_CALL);
+		case 'J': // $J nth jump
+			return getref (core, atoi (str + 2), 'r', R_ANAL_REF_TYPE_CODE);
+		case 'X': // $X nth xref
+			return getref (core, atoi (str + 2), 'x', R_ANAL_REF_TYPE_CALL);
+		case 'F': // $F function size
 			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
 				switch (str[2]) {
