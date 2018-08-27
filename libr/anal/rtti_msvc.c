@@ -15,6 +15,7 @@ typedef struct rtti_complete_object_locator_t {
 	ut32 object_base;           // only for 64bit, see rtti_msvc_read_complete_object_locator()
 } rtti_complete_object_locator;
 
+
 typedef struct rtti_class_hierarchy_descriptor_t {
 	ut32 signature;
 	ut32 attributes;            // bit 0 set = multiple inheritance, bit 1 set = virtual inheritance
@@ -596,3 +597,229 @@ static bool rtti_msvc_print_complete_object_locator_recurse(RVTableContext *cont
 R_API bool r_anal_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr, int mode, bool strict) {
 	return rtti_msvc_print_complete_object_locator_recurse (context, addr, mode, strict);
 }
+
+
+
+
+
+
+typedef struct analyzed_complete_object_locator_t {
+	ut64 addr;
+	bool valid;
+	rtti_complete_object_locator col;
+	struct analyzed_type_descriptor_t *td;
+	rtti_class_hierarchy_descriptor chd;
+	RList *bcd; // <rtti_base_class_descriptor>
+	RPVector base_td; // <analyzed_type_descriptor_t>
+} analyzed_complete_object_locator;
+
+typedef struct analyzed_type_descriptor_t {
+	ut64 addr;
+	bool valid;
+	rtti_type_descriptor td;
+	analyzed_complete_object_locator *col;
+} analyzed_type_descriptor;
+
+typedef struct analyzed_class_hierarchy_descriptor_t {
+	ut64 addr;
+	bool valid;
+	rtti_class_hierarchy_descriptor data;
+} analyzed_class_hierarchy_descriptor;
+
+typedef struct rtti_msvc_anal_context_t {
+	RVTableContext *vt_context;
+	RVector complete_object_locators; // <analyzed_complete_object_locator> TODO: use some more efficient map
+	RVector type_descriptors; // <analyzed_typed_descriptor> TODO: use some more efficient map
+	//RVector class_hierarchy_descriptors; // <analyzed_class_hierarchy_descriptor> TODO: use some more efficient map
+} RRTTIMSVCAnalContext;
+
+
+analyzed_type_descriptor *anal_type_descriptor(RRTTIMSVCAnalContext *context, ut64 addr);
+
+analyzed_complete_object_locator *anal_complete_object_locator(RRTTIMSVCAnalContext *context, ut64 addr) {
+	analyzed_complete_object_locator *col;
+	r_vector_foreach (&context->complete_object_locators, col) {
+		if (col->addr == addr) {
+			return col;
+		}
+	}
+
+	col = r_vector_push (&context->complete_object_locators, NULL);
+	//r_vector_init (&col->bcd, sizeof (rtti_base_class_descriptor), NULL, NULL);
+	col->addr = addr;
+	col->valid = rtti_msvc_read_complete_object_locator (context->vt_context, addr, &col->col);
+	if (!col->valid) {
+		return col;
+	}
+
+
+	ut64 td_addr = col->col.type_descriptor_addr;
+	if (context->vt_context->word_size == 8) {
+		td_addr += addr - col->col.object_base;
+	}
+	col->td = anal_type_descriptor (context, td_addr);
+	if (!col->td->valid) {
+		col->valid = false;
+		return col;
+	}
+	col->td->col = col;
+
+
+	ut64 chd_addr = col->col.class_descriptor_addr;
+	if (context->vt_context->word_size == 8) {
+		chd_addr += addr - col->col.object_base;
+	}
+	col->valid &= rtti_msvc_read_class_hierarchy_descriptor (context->vt_context, chd_addr, &col->chd);
+	if (!col->valid) {
+		return col;
+	}
+
+
+	ut64 base = col->chd.base_class_array_addr;
+	ut32 baseClassArrayOffset = 0;
+	if (context->vt_context->word_size == 8) {
+		base = col->addr - col->col.object_base;
+		baseClassArrayOffset = col->chd.base_class_array_addr;
+	}
+
+	col->bcd = rtti_msvc_read_base_class_array (context->vt_context, col->chd.num_base_classes, base, baseClassArrayOffset);
+	if (!col->bcd) {
+		col->valid = false;
+		return col;
+	}
+
+
+	r_pvector_init (&col->base_td, NULL);
+	RListIter *bcdIter;
+	rtti_base_class_descriptor *bcd;
+	r_list_foreach (col->bcd, bcdIter, bcd) {
+		ut64 baseTypeDescriptorAddr = bcd->type_descriptor_addr;
+		if (context->vt_context->word_size == 8) {
+			baseTypeDescriptorAddr += col->addr - col->col.object_base;
+		}
+		analyzed_type_descriptor *td = anal_type_descriptor (context, baseTypeDescriptorAddr);
+		if (!td->valid) {
+			eprintf("Warning: type descriptor of base is invalid.\n");
+			continue;
+		}
+		r_pvector_push (&col->base_td, td);
+	}
+
+	return col;
+}
+
+analyzed_type_descriptor *anal_type_descriptor(RRTTIMSVCAnalContext *context, ut64 addr) {
+	analyzed_type_descriptor *td;
+	r_vector_foreach (&context->type_descriptors, td) {
+		if (td->addr == addr) {
+			return td;
+		}
+	}
+
+	td = r_vector_push (&context->type_descriptors, NULL);
+	td->addr = addr;
+	td->valid = rtti_msvc_read_type_descriptor (context->vt_context, addr, &td->td);
+	if (td->valid) {
+		ut64 colRefAddr = td->td.vtable_addr - context->vt_context->word_size;
+		ut64 colAddr;
+		if (!context->vt_context->read_addr (context->vt_context->anal, colRefAddr, &colAddr)) {
+			td->valid = false;
+			return td;
+		}
+		td->col = anal_complete_object_locator (context, colAddr);
+		if (!td->col->valid) {
+			printf("fuck %s\n", td->td.name);
+			td->valid = false;
+		}
+	} else {
+		td->col = NULL;
+	}
+
+	return td;
+}
+
+
+
+
+RAnalClass *anal_apply_type_descriptor(RRTTIMSVCAnalContext *context, analyzed_type_descriptor *td) {
+	if (!td->valid) {
+		return NULL;
+	}
+
+	RAnal *anal = context->vt_context->anal;
+	void **it;
+	r_pvector_foreach (&anal->classes, it) {
+		RAnalClass *existing = *((RAnalClass **)it);
+		if (existing->addr == td->addr) {
+			return existing;
+		}
+	}
+
+	char *name = r_anal_rtti_msvc_demangle_class_name (td->td.name);
+	if (!name) {
+		eprintf("Failed to demangle a class name.\n");
+		name = strdup (td->td.name);
+		if (!name) {
+			return NULL;
+		}
+	}
+	RAnalClass *cls = r_anal_class_new (name);
+	free (name);
+	r_anal_class_add (anal, cls);
+	cls->addr = td->addr;
+	cls->vtable_addr = td->td.vtable_addr;
+
+	// TODO: add vtable entries as methods
+
+	if (!td->col || !td->col->valid) {
+		return cls;
+	}
+
+	r_pvector_foreach (&td->col->base_td, it) {
+		analyzed_type_descriptor *base_td = (analyzed_type_descriptor *)*it;
+		RAnalClass *base_cls = anal_apply_type_descriptor (context, base_td);
+		if (!base_cls) {
+			eprintf ("Failed to convert base td to a class\n");
+			continue;
+		}
+
+		RAnalBaseClass *base_cls_info = r_vector_push (&cls->base_classes, NULL);
+		base_cls_info->offset = 0; // TODO: we do have this info \o/
+		base_cls_info->cls = base_cls;
+	}
+
+	return cls;
+}
+
+
+
+
+R_API void r_anal_rtti_msvc_recover_all(RVTableContext *vt_context, RList *vtables) {
+	RRTTIMSVCAnalContext context;
+	r_vector_init (&context.complete_object_locators, sizeof (analyzed_complete_object_locator), NULL, NULL);
+	r_vector_init (&context.type_descriptors, sizeof (analyzed_type_descriptor), NULL, NULL);
+	context.vt_context = vt_context;
+
+	RListIter *vtableIter;
+	RVTableInfo *table;
+	r_list_foreach (vtables, vtableIter, table) {
+		/* TODO if (r_cons_is_breaked ()) {
+			break;
+		}*/
+		ut64 colRefAddr = table->saddr - vt_context->word_size;
+		ut64 colAddr;
+		if (!vt_context->read_addr (vt_context->anal, colRefAddr, &colAddr)) {
+			continue;
+		}
+		anal_complete_object_locator (&context, colAddr);
+	}
+
+	analyzed_type_descriptor *td;
+	r_vector_foreach (&context.type_descriptors, td) {
+		if (!td->valid) {
+			continue;
+		}
+		anal_apply_type_descriptor (&context, td);
+	}
+}
+

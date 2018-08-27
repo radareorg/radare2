@@ -125,3 +125,20 @@ R_API void r_anal_rtti_print_all(RAnal *anal, int mode) {
 		rtti_itanium_print_all (&context, mode);
 	}
 }
+
+R_API void r_anal_rtti_recover_all(RAnal *anal) {
+	RVTableContext context;
+	r_anal_vtable_begin (anal, &context);
+
+	r_cons_break_push (NULL, NULL);
+	RList *vtables = r_anal_vtable_search (&context);
+	if (vtables) {
+		if (context.abi == R_ANAL_CPP_ABI_MSVC) {
+			r_anal_rtti_msvc_recover_all (&context, vtables);
+		} else {
+			// TODO: recovery for itanium
+		}
+	}
+	r_cons_break_pop ();
+}
+
