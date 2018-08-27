@@ -1188,7 +1188,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 	while (!feof (fd)) {
 		size_t line_len;
 		bool map_is_shared = false;
-		ut64 map_start, map_end, offset;
+		ut64 map_start, map_end;
 
 		if (!fgets (line, sizeof (line), fd)) {
 			break;
