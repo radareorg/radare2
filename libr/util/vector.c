@@ -108,7 +108,9 @@ R_API void r_vector_assign(RVector *vec, void *p, void *elem) {
 
 R_API void *r_vector_assign_at(RVector *vec, size_t index, void *elem) {
 	void *p = r_vector_index_ptr (vec, index);
-	r_vector_assign (vec, p, elem);
+	if (elem) {
+		r_vector_assign (vec, p, elem);
+	}
 	return p;
 }
 
