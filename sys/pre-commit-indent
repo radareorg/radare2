@@ -8,23 +8,25 @@
 # To enable this hook, rename this file to "pre-commit".
 
 tmpfile=$(mktemp)
+unstaged_diff=$(mktemp)
+git diff > ${unstaged_diff}
+git checkout -- .
 git diff --cached | ./sys/clang-format-diff.py -p1 > ${tmpfile}
+
+restore_exit() {
+    git apply < ${unstaged_diff}
+    rm ${tmpfile}
+    rm ${unstaged_diff}
+    exit $1
+}
 
 sz=$(wc -c "${tmpfile}" | cut -d" " -f1)
 if [ "${sz}" != "0" ] ; then
 	echo "Please follow the coding style!"
-	echo "Run \`git diff --cached | ./sys/clang-format-diff.py -p1 -i\` to apply the changes listed below"
+	echo "Run \`git diff --cached | ./sys/clang-format-diff.py -p1 -i\` to apply the changes listed below and remember to add them to git."
 	echo
 	cat ${tmpfile}
-	rm ${tmpfile}
-	exit 1
+	restore_exit 1
 fi
 
-dirtyfiles=$(git status --porcelain 2>/dev/null| grep "^[M]M" | wc -l)
-if [ "${dirtyfiles}" != 0 ] ; then
-	echo "Please add dirty files to git or stash -k them"
-	exit 1
-fi
-
-rm ${tmpfile}
-exit 0
+restore_exit 0
