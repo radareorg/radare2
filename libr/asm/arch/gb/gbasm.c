@@ -91,7 +91,7 @@ static int gb_parse_arith1 (ut8 *buf, const int minlen, char *buf_asm, ut8 base,
 		return 0;
 	}
 	buf[0] = base;
-	const char *ptr_asm = buf_asm + minlen - 1;
+	char *ptr_asm = buf_asm + minlen - 1;
 	i = strlen (ptr_asm);
 	r_str_replace_in (ptr_asm, (ut32)i, "[ ", "[", true);
 	r_str_replace_in (ptr_asm, (ut32)i, " ]", "]", true);

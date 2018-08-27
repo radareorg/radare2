@@ -110,7 +110,6 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			r_asm_op_set_asm (op, "invalid");
 			bufasm = r_asm_op_get_asm (op);
 		}
-		r_str_rmch (buf_asm, '#');
 		return op->size;
 	}
 	return ret;
