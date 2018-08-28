@@ -13,9 +13,9 @@ typedef struct {
 	ut64 offset;
 } RIOSparse;
 
-#define RIOSPARSE_FD(x) (((RIOSparse*)x->data)->fd)
-#define RIOSPARSE_BUF(x) (((RIOSparse*)x->data)->buf)
-#define RIOSPARSE_OFF(x) (((RIOSparse*)x->data)->offset)
+#define RIOSPARSE_FD(x) (((RIOSparse*)(x)->data)->fd)
+#define RIOSPARSE_BUF(x) (((RIOSparse*)(x)->data)->buf)
+#define RIOSPARSE_OFF(x) (((RIOSparse*)(x)->data)->offset)
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	ut64 o;

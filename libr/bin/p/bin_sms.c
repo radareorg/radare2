@@ -11,8 +11,8 @@ typedef struct gen_hdr {
 	ut8 RegionRomSize; //Low 4 bits RomSize, Top 4 bits Region
 } SMS_Header;
 
-#define CMP8(o,x) strncmp((const char*)bs+o,x,8)
-#define CMP4(o,x) strncmp((const char*)bs+o,x,4)
+#define CMP8(o,x) strncmp((const char*)bs+(o),x,8)
+#define CMP4(o,x) strncmp((const char*)bs+(o),x,4)
 static bool check_bytes(const ut8 *bs, ut64 length) {
 	if (length > 0x2000 && !CMP8(0x1ff0, "TMR SEGA")) {
 		return true;

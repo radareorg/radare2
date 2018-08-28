@@ -655,7 +655,7 @@ RList *linux_thread_list(int pid, RList *list) {
 	eprintf ("cwd = 0x%04x  ; control   ", (fpregs).cwd);\
 	eprintf ("swd = 0x%04x  ; status\n", (fpregs).swd);\
 	eprintf ("ftw = 0x%04x              ", (fpregs).ftw);\
-	eprintf ("fop = 0x%04x\n", fpregs.fop);\
+	eprintf ("fop = 0x%04x\n", (fpregs).fop);\
 	eprintf ("rip = 0x%016"PFMT64x"  ", (ut64)(fpregs).rip);\
 	eprintf ("rdp = 0x%016"PFMT64x"\n", (ut64)(fpregs).rdp);\
 	eprintf ("mxcsr = 0x%08x        ", (fpregs).mxcsr);\

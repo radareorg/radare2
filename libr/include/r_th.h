@@ -28,7 +28,7 @@
 #endif
 
 typedef enum { R_TH_FREED = -1, R_TH_STOP = 0, R_TH_REPEAT = 1 } RThreadFunctionRet;
-#define R_TH_FUNCTION(x) RThreadFunctionRet (*x)(struct r_th_t *)
+#define R_TH_FUNCTION(x) RThreadFunctionRet (*(x))(struct r_th_t *)
 
 #ifdef __cplusplus
 extern "C" {

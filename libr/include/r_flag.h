@@ -86,7 +86,7 @@ typedef struct r_flag_bind_t {
 	RFlagSetSpace set_fs;
 } RFlagBind;
 
-#define r_flag_bind_init(x) memset(&x,0,sizeof(x))
+#define r_flag_bind_init(x) memset(&(x),0,sizeof(x))
 R_API int r_flag_bind(RFlag *io, RFlagBind *bnd);
 
 #ifdef R_API

@@ -9,7 +9,7 @@ static bool xnu_x86_hwstep_enable64(RDebug *dbg, bool enable) {
 	ret = xnu_thread_get_gpr (dbg, th);
 	if (!ret) {
 		eprintf ("error to get gpr registers in trace bit intel\n");
-		return false;
+		return else;
 	}
 	state = (R_REG_T *)&th->gpr;
 	if (state->tsh.flavor == x86_THREAD_STATE32) {

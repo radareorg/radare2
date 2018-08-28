@@ -261,34 +261,34 @@ struct elf_segment_map
 /* .tbss is special.  It doesn't contribute memory space to normal
    segments and it doesn't take file space in normal segments.  */
 #define ELF_SECTION_SIZE(sec_hdr, segment)			\
-   (((sec_hdr->sh_flags & SHF_TLS) == 0				\
-     || sec_hdr->sh_type != SHT_NOBITS				\
-     || segment->p_type == PT_TLS) ? sec_hdr->sh_size : 0)
+   ((((sec_hdr)->sh_flags & SHF_TLS) == 0				\
+     || (sec_hdr)->sh_type != SHT_NOBITS				\
+     || (segment)->p_type == PT_TLS) ? (sec_hdr)->sh_size : 0)
 
 /* Decide if the given sec_hdr is in the given segment.  PT_TLS segment
    contains only SHF_TLS sections.  Only PT_LOAD and PT_TLS segments
    can contain SHF_TLS sections.  */
 #define ELF_IS_SECTION_IN_SEGMENT(sec_hdr, segment)			\
-  (((((sec_hdr->sh_flags & SHF_TLS) != 0)				\
-     && (segment->p_type == PT_TLS					\
-	 || segment->p_type == PT_LOAD))				\
-    || ((sec_hdr->sh_flags & SHF_TLS) == 0				\
-	&& segment->p_type != PT_TLS))					\
+  ((((((sec_hdr)->sh_flags & SHF_TLS) != 0)				\
+     && ((segment)->p_type == PT_TLS					\
+	 || (segment)->p_type == PT_LOAD))				\
+    || (((sec_hdr)->sh_flags & SHF_TLS) == 0				\
+	&& (segment)->p_type != PT_TLS))					\
    /* Any section besides one of type SHT_NOBITS must have a file	\
       offset within the segment.  */					\
-   && (sec_hdr->sh_type == SHT_NOBITS					\
-       || ((bfd_vma) sec_hdr->sh_offset >= segment->p_offset		\
-	   && (sec_hdr->sh_offset + ELF_SECTION_SIZE(sec_hdr, segment)	\
-	       <= segment->p_offset + segment->p_filesz)))		\
+   && ((sec_hdr)->sh_type == SHT_NOBITS					\
+       || ((bfd_vma) (sec_hdr)->sh_offset >= (segment)->p_offset		\
+	   && ((sec_hdr)->sh_offset + ELF_SECTION_SIZE(sec_hdr, segment)	\
+	       <= (segment)->p_offset + (segment)->p_filesz)))		\
    /* SHF_ALLOC sections must have VMAs within the segment.  */		\
-   && ((sec_hdr->sh_flags & SHF_ALLOC) == 0				\
-       || (sec_hdr->sh_addr >= segment->p_vaddr				\
-	   && (sec_hdr->sh_addr + ELF_SECTION_SIZE(sec_hdr, segment)	\
-	       <= segment->p_vaddr + segment->p_memsz))))
+   && (((sec_hdr)->sh_flags & SHF_ALLOC) == 0				\
+       || ((sec_hdr)->sh_addr >= (segment)->p_vaddr				\
+	   && ((sec_hdr)->sh_addr + ELF_SECTION_SIZE(sec_hdr, segment)	\
+	       <= (segment)->p_vaddr + (segment)->p_memsz))))
 
 /* Decide if the given sec_hdr is in the given segment in file.  */
 #define ELF_IS_SECTION_IN_SEGMENT_FILE(sec_hdr, segment)	\
-  (sec_hdr->sh_size > 0						\
+  ((sec_hdr)->sh_size > 0						\
    && ELF_IS_SECTION_IN_SEGMENT (sec_hdr, segment))
 
 /* Decide if the given sec_hdr is in the given segment in memory.  */

@@ -34,7 +34,7 @@ extern "C" {
 #endif
 R_LIB_VERSION_HEADER(r_core);
 
-#define R_CORE_CMD_EXIT -2
+#define R_CORE_CMD_EXIT (-2)
 #define R_CORE_BLOCKSIZE 0x100
 #define R_CORE_BLOCKSIZE_MAX 0x3200000 /* 32MB */
 
@@ -53,7 +53,7 @@ R_LIB_VERSION_HEADER(r_core);
 #define R_GRAPH_FORMAT_CMD          5
 
 ///
-#define R_CONS_COLOR_DEF(x, def) ((core->cons && core->cons->pal.x)? core->cons->pal.x: def)
+#define R_CONS_COLOR_DEF(x, def) ((core->cons && core->cons->pal.x)? core->cons->pal.x: (def))
 #define R_CONS_COLOR(x) R_CONS_COLOR_DEF (x, "")
 
 /* rtr */
@@ -424,7 +424,7 @@ R_API bool r_core_project_load(RCore *core, const char *prjfile, const char *rcf
 R_API RThread *r_core_project_load_bg(RCore *core, const char *prjfile, const char *rcfile);
 R_API void r_core_project_execute_cmds(RCore *core, const char *prjfile);
 
-#define R_CORE_FOREIGN_ADDR -1
+#define R_CORE_FOREIGN_ADDR (-1)
 R_API int r_core_yank(RCore *core, ut64 addr, int len);
 R_API int r_core_yank_string(RCore *core, ut64 addr, int maxlen);
 R_API int r_core_yank_paste(RCore *core, ut64 addr, int len);

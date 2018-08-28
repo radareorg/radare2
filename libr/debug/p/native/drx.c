@@ -49,7 +49,7 @@
 
 /* unused */
 #define I386_DR_VACANT(control, i)\
-	((control & (3 << (DR_ENABLE_SIZE * (i)))) == 0)
+	(((control) & (3 << (DR_ENABLE_SIZE * (i)))) == 0)
 /* local/global */
 #define I386_DR_LOCAL_ENABLE(control, i)\
 	control |= (1 << (DR_LOCAL_ENABLE_SHIFT + DR_ENABLE_SIZE * (i)))
@@ -57,7 +57,7 @@
 	control |= (1 << (DR_GLOBAL_ENABLE_SHIFT + DR_ENABLE_SIZE * (i)))
 
 #define I386_DR_IS_LOCAL_ENABLED(control, i)\
-	(control & (1 << (DR_LOCAL_ENABLE_SHIFT + DR_ENABLE_SIZE * (i))))
+	((control) & (1 << (DR_LOCAL_ENABLE_SHIFT + DR_ENABLE_SIZE * (i))))
 /* enable/disable */
 #define I386_DR_IS_ENABLED(control, i)\
 	control & (3 << (DR_ENABLE_SIZE * (i)))
@@ -69,11 +69,11 @@
 
 #define I386_DR_SET_RW_LEN(control, i, rwlen)					\
 	do {									\
-		control &= ~(0x0f << (DR_CONTROL_SHIFT + DR_CONTROL_SIZE * (i)));\
-		control |= ((rwlen) << (DR_CONTROL_SHIFT + DR_CONTROL_SIZE * (i)));\
+		(control) &= ~(0x0f << (DR_CONTROL_SHIFT + DR_CONTROL_SIZE * (i)));\
+		(control) |= ((rwlen) << (DR_CONTROL_SHIFT + DR_CONTROL_SIZE * (i)));\
 	} while (0)
 #define I386_DR_GET_RW_LEN(control, i)\
-	((control >> (DR_CONTROL_SHIFT + DR_CONTROL_SIZE * (i))) & 0x0f)
+	(((control) >> (DR_CONTROL_SHIFT + DR_CONTROL_SIZE * (i))) & 0x0f)
 
 /* ----------------------------- */
 

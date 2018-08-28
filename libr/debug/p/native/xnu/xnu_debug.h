@@ -250,7 +250,7 @@ static int coredump_nflavors = 1;
 
 #define MAX_TSTATE_FLAVORS 10
 #define DEFAULT_COREFILE_DEST "core.%u"
-#define R_DEBUG_REASON_MACH_RCV_INTERRUPTED -2
+#define R_DEBUG_REASON_MACH_RCV_INTERRUPTED (-2)
 
 typedef struct {
 	vm_offset_t header;

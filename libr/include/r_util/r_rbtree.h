@@ -78,16 +78,16 @@ R_API void r_rbtree_iter_prev(RBIter *it);
 
 // Iterate all elements of the forward iterator
 #define r_rbtree_iter_while(it, data, struc, rb) \
-	for (; (it).len && (data = container_of ((it).path[(it).len-1], struc, rb)); r_rbtree_iter_next (&(it)))
+	for (; (it).len && ((data) = container_of ((it).path[(it).len-1], struc, rb)); r_rbtree_iter_next (&(it)))
 
 // Iterate all elements of the backward iterator
 #define r_rbtree_iter_while_prev(it, data, struc, rb) \
-	for (; (it).len && (data = container_of ((it).path[(it).len-1], struc, rb)); r_rbtree_iter_prev (&(it)))
+	for (; (it).len && ((data) = container_of ((it).path[(it).len-1], struc, rb)); r_rbtree_iter_prev (&(it)))
 
 #define r_rbtree_foreach(root, it, data, struc, rb) \
-	for ((it) = r_rbtree_first (root); (it).len && (data = container_of ((it).path[(it).len-1], struc, rb)); r_rbtree_iter_next (&(it)))
+	for ((it) = r_rbtree_first (root); (it).len && ((data) = container_of ((it).path[(it).len-1], struc, rb)); r_rbtree_iter_next (&(it)))
 
 #define r_rbtree_foreach_prev(root, it, data, struc, rb) \
-	for ((it) = r_rbtree_last (root); (it).len && (data = container_of ((it).path[(it).len-1], struc, rb)); r_rbtree_iter_prev (&(it)))
+	for ((it) = r_rbtree_last (root); (it).len && ((data) = container_of ((it).path[(it).len-1], struc, rb)); r_rbtree_iter_prev (&(it)))
 
 #endif

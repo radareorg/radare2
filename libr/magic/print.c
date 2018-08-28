@@ -44,7 +44,7 @@
 #endif
 #include <time.h>
 
-#define SZOF(a)	(sizeof(a) / sizeof(a[0]))
+#define SZOF(a)	(sizeof(a) / sizeof((a)[0]))
 
 #ifndef COMPILE_ONLY
 void file_mdump(struct r_magic *m) {
@@ -57,7 +57,7 @@ void file_mdump(struct r_magic *m) {
 	if (m->flag & INDIR) {
 		(void) eprintf ("(%s,",
 			       /* Note: type is unsigned */
-			       (m->in_type < file_nnames) ? 
+			       (m->in_type < file_oomem) ? 
 					magic_file_names[m->in_type] : "*bad*");
 		if (m->in_op & FILE_OPINVERSE)
 			(void) fputc('~', stderr);
@@ -68,7 +68,7 @@ void file_mdump(struct r_magic *m) {
 	}
 	(void) eprintf (" %s%s", (m->flag & UNSIGNED) ? "u" : "",
 		       /* Note: type is unsigned */
-		       (m->type < file_nnames) ? magic_file_names[m->type] : "*bad*");
+		       (m->type < file_oomem) ? magic_file_names[m->type] : "*bad*");
 	if (m->mask_op & FILE_OPINVERSE)
 		(void) fputc('~', stderr);
 

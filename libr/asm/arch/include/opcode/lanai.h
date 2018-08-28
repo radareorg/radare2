@@ -365,8 +365,8 @@ Literals:([])*+- ,
 
 /* Sign-extend a value which is N bits long.  */
 #define SEX(value, bits)                                        \
-        ((((int)(value)) << ((8 * sizeof (int)) - bits) )       \
-                         >> ((8 * sizeof (int)) - bits) )
+        ((((int)(value)) << ((8 * sizeof (int)) - (bits)) )       \
+                         >> ((8 * sizeof (int)) - (bits)) )
 
 
 /* Macros used to extract instruction fields.  Not all fields have

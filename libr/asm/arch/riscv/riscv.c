@@ -30,7 +30,7 @@
 #include "riscv-opc.h"
 #include "riscv.h"
 
-#define ARRAY_SIZE(a) (sizeof(a) / sizeof(*a))
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof(*(a)))
 
 // TODO : an conf to chose between abi or numeric
 static const char * const *riscv_gpr_names = riscv_gpr_names_abi;

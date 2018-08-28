@@ -316,8 +316,8 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 		return nc->curr_tok = RNCNUMBER;
 
 #define isvalidchar(x) \
-	(isalnum(x) || x==':' || x=='$' || x=='.' || x=='_' || x=='?' || x=='\\' \
-	|| x==' ' || x=='[' || x==']' || x=='}' || x=='{' || (x>='0'&&x<='9'))
+	(isalnum(x) || (x)==':' || (x)=='$' || (x)=='.' || (x)=='_' || (x)=='?' || (x)=='\\' \
+	|| (x)==' ' || (x)=='[' || (x)==']' || (x)=='}' || (x)=='{' || ((x)>='0'&&(x)<='9'))
 
 	default:
 		{

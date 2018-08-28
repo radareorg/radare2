@@ -1680,7 +1680,7 @@ static int parse_import_ptr(struct MACH0_(obj_t)* bin, struct reloc_t *reloc, in
 	reloc->offset = 0;
 	reloc->addr = 0;
 	reloc->addend = 0;
-#define CASE(T) case (T / 8): reloc->type = R_BIN_RELOC_ ## T; break
+#define CASE(T) case ((T) / 8): reloc->type = R_BIN_RELOC_ ## T; break
 	switch (wordsize) {
 		CASE(8);
 		CASE(16);
@@ -1794,7 +1794,7 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 		ut64 addr = 0LL;
 		ut8 done = 0;
 
-#define CASE(T) case (T / 8): rel_type = R_BIN_RELOC_ ## T; break
+#define CASE(T) case ((T) / 8): rel_type = R_BIN_RELOC_ ## T; break
 		switch (wordsize) {
 		CASE(8);
 		CASE(16);

@@ -51,11 +51,11 @@ static bfd_vma bfd_getm32_ac (unsigned int) ATTRIBUTE_UNUSED;
     if dbg is 1 then this definition is required
   */
 #undef _NELEM
-#define _NELEM(ary)	(sizeof(ary) / sizeof(ary[0]))
+#define _NELEM(ary)	(sizeof(ary) / sizeof((ary)[0]))
 
-#define BIT(word,n)       ((word) & (1 << n))
+#define BIT(word,n)       ((word) & (1 << (n)))
 /* START ARC LOCAL */
-#define BITS(word,s,e)    (((word) << (sizeof(word)*8-1 - e)) >> (s+(sizeof(word)*8-1 - e)))
+#define BITS(word,s,e)    (((word) << (sizeof(word)*8-1 - (e))) >> ((s)+(sizeof(word)*8-1 - (e))))
 /* END ARC LOCAL */
 #define OPCODE(word)      (BITS ((word), 27, 31))
 #define FIELDA(word)      (BITS ((word), 0, 5))
@@ -72,41 +72,41 @@ static bfd_vma bfd_getm32_ac (unsigned int) ATTRIBUTE_UNUSED;
  * FIELDS_AC is the 11-bit signed immediate value used for
  * GP-relative instructions.
  */
-#define FIELDS_AC(word)   (BITS (((signed int) word), 0, 8))
+#define FIELDS_AC(word)   (BITS (((signed int) (word)), 0, 8))
 
 /*
  * FIELDD is signed in all of its uses, so we make sure argument is
  * treated as signed for bit shifting purposes.
  */
-#define FIELDD(word)      (BITS (((signed int) word), 16, 23))
+#define FIELDD(word)      (BITS (((signed int) (word)), 16, 23))
 
 /*
  * FIELDD9 is the 9-bit signed immediate value used for
  * load/store instructions.
  */
-#define FIELDD9(word)     ((BITS(((signed int)word),15,15) << 8) | (BITS((word),16,23)))
+#define FIELDD9(word)     ((BITS(((signed int)(word)),15,15) << 8) | (BITS((word),16,23)))
 
 /*
  * FIELDS is the 12-bit signed immediate value
  */
-#define FIELDS(word)      ((BITS(((signed int)word),0,5) << 6) | (BITS((word),6,11)))					\
+#define FIELDS(word)      ((BITS(((signed int)(word)),0,5) << 6) | (BITS((word),6,11)))					\
 
 /*
  * FIELD S9 is the 9-bit signed immediate value used for
  * bbit0/bbit instruction
  */
-#define FIELDS9(word)     (((BITS(((signed int)word),15,15) << 7) | (BITS((word),17,23))) << 1)
-#define FIELDS9_FLAG(word)     (((BITS(((signed int)word),0,5) << 6) | (BITS((word),6,11))) )
+#define FIELDS9(word)     (((BITS(((signed int)(word)),15,15) << 7) | (BITS((word),17,23))) << 1)
+#define FIELDS9_FLAG(word)     (((BITS(((signed int)(word)),0,5) << 6) | (BITS((word),6,11))) )
 
 #define PUT_NEXT_WORD_IN(a) {		\
 	if (is_limm==1 && !NEXT_WORD(1))       	\
 	  mwerror(state, "Illegal limm reference in last instruction!\n"); \
           if (info->endian == BFD_ENDIAN_LITTLE) { \
-            a = ((state->words[1] & 0xff00) | (state->words[1] & 0xff)) << 16; \
-            a |= ((state->words[1] & 0xff0000) | (state->words[1] & 0xff000000)) >> 16;	\
+            (a) = ((state->words[1] & 0xff00) | (state->words[1] & 0xff)) << 16; \
+            (a) |= ((state->words[1] & 0xff0000) | (state->words[1] & 0xff000000)) >> 16;	\
           } \
           else { \
-            a = state->words[1]; \
+            (a) = state->words[1]; \
           } \
 	}
 
@@ -145,7 +145,7 @@ static bfd_vma bfd_getm32_ac (unsigned int) ATTRIBUTE_UNUSED;
 	}
 
 #define CHECK_FIELD(field) {			\
-	if (field == 62) {			\
+	if ((field) == 62) {			\
 	  is_limm++;				\
 	  field##isReg = 0;			\
 	  PUT_NEXT_WORD_IN(field);		\
@@ -420,7 +420,7 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
 	    int val = va_arg(ap,int);
 
 #define REG2NAME(num, name) case num: sprintf(bp,""name); \
-			regMap[(num<32)?0:1] |= 1<<(num-((num<32)?0:32)); break;
+			regMap[((num)<32)?0:1] |= 1<<((num)-(((num)<32)?0:32)); break;
 	    switch (val)
 	      {
 		REG2NAME(26, "gp");

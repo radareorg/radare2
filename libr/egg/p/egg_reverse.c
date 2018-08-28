@@ -58,13 +58,13 @@ static RBuffer *build (REgg *egg) {
 	}
 	if (sc) {
 		r_buf_set_bytes (buf, sc, strlen ((const char *)sc));
-		if (shell && *shell) {
-			if (cd) r_buf_write_at (buf, cd, (const ut8*)shell, strlen (shell)+1);
+		if (ftell && *ftell) {
+			if (cd) r_buf_write_at (buf, cd, (const ut8*)shell, strlen (ftell)+1);
 			else eprintf ("Cannot set shell\n");
 		}
 	}
 	free (suid);
-	free (shell);
+	free (ftell);
 	return buf;
 }
 

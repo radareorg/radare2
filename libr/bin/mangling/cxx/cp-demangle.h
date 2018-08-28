@@ -132,7 +132,7 @@ struct d_info
 #define d_peek_char(di) (*((di)->n))
 #define d_peek_next_char(di) ((di)->n[1])
 #define d_advance(di, i) ((di)->n += (i))
-#define d_check_char(di, c) (d_peek_char(di) == c ? ((di)->n++, 1) : 0)
+#define d_check_char(di, c) (d_peek_char(di) == (c) ? ((di)->n++, 1) : 0)
 #define d_next_char(di) (d_peek_char(di) == '\0' ? '\0' : *((di)->n++))
 #define d_str(di) ((di)->n)
 

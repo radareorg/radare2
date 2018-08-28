@@ -12,7 +12,7 @@ typedef struct {
 	HANDLE hnd;
 } RIOW32;
 typedef  struct _PPA {
-	LARGE_INTEGER address;
+	ASN1_INTEGER address;
 	DWORD len;
 	unsigned char buffer;
 } PA, * PPA;

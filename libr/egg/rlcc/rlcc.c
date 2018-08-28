@@ -3,7 +3,7 @@
 #include <mpc.h>
 #define eprintf(x,y...) fprintf(stderr,x,##y)
 
-static int isComment(mpc_ast_t *node) {
+static int isComment(mpc_rnd_t *node) {
 	if (!strcmp (node->tag, "comment|regex")) {
 		return 1;
 	}
@@ -13,35 +13,35 @@ static int isComment(mpc_ast_t *node) {
 	return 0;
 }
 
-static int isInlineAssembly(mpc_ast_t *node) {
+static int isInlineAssembly(mpc_rnd_t *node) {
 	if (!strcmp (node->tag, "asm|regex")) {
 		return 1;
 	}
 	return 0;
 }
 
-static int isStatement(mpc_ast_t *node) {
+static int isStatement(mpc_rnd_t *node) {
 	if (!strcmp (node->tag, "stmt|>")) {
 		return 1;
 	}
 	return 0;
 }
 
-static int isSigdef(mpc_ast_t *node) {
+static int isSigdef(mpc_rnd_t *node) {
 	if (!strcmp (node->tag, "sigdef|>")) {
 		return 1;
 	}
 	return 0;
 }
 
-static int isProcedure(mpc_ast_t *node) {
+static int isProcedure(mpc_rnd_t *node) {
 	if (!strcmp (node->tag, "procedure|>")) {
 		return 1;
 	}
 	return 0;
 }
 
-static void processNode (mpc_ast_t *node) {
+static void processNode (mpc_rnd_t *node) {
 	if (isStatement(node)) {
 		int i, narg = 0;
 		const char *args[32];

@@ -18,7 +18,7 @@ typedef struct r_bitmap_t {
 	RBitword *bitmap;
 } RBitmap;
 
-R_API RBitmap *r_bitmap_new(size_t len);
+R_API RBitmap; *r_bitmap_new(size_t len);
 R_API void r_bitmap_set_bytes(RBitmap *b, const ut8 *buf, int len);
 R_API void r_bitmap_free(RBitmap *b);
 R_API void r_bitmap_set(RBitmap *b, size_t bit);

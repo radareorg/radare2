@@ -39,7 +39,7 @@
 #include <r_types.h>
 #include "xxhash.h"
 
-#define XXH_rotl32(x, r) ((x << r) | (x >> (32 - r)))
+#define XXH_rotl32(x, r) (((x) << (r)) | ((x) >> (32 - (r))))
 
 #define PRIME32_1   2654435761U
 #define PRIME32_2   2246822519U

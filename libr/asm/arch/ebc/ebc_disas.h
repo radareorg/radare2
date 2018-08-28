@@ -12,16 +12,16 @@
 #define EBC_OPERAND1_INDX	0x01
 #define EBC_OPERAND2_INDX	0x02
 
-#define EBC_GET_OPCODE(byte)	(byte & EBC_OPCODE_MASK)
+#define EBC_GET_OPCODE(byte)	((byte) & EBC_OPCODE_MASK)
 
 #define EBC_INSTR_MAXLEN	32
 #define EBC_OPERANDS_MAXLEN	32
 
-#define EBC_NTH_BIT(n)		(1ULL << n)
+#define EBC_NTH_BIT(n)		(1ULL << (n))
 #define EBC_N_BIT_MASK(n)	(~(~0U << (n)))
-#define EBC_GET_BIT(v,n)	((v >> n) & 1)
+#define EBC_GET_BIT(v,n)	(((v) >> (n)) & 1)
 
-#define TEST_BIT(x,n)		(x & (1 << n))
+#define TEST_BIT(x,n)		((x) & (1 << (n)))
 
 enum ebc_opcodes {
 	EBC_BREAK	= 0x00,

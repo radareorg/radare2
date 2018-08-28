@@ -27,12 +27,12 @@ typedef struct r_mem_pool_t {
 	int poolcount;
 } RMemoryPool;
 
-R_API ut64 r_mem_get_num(const ut8 *b, int size);
+R_API ut64;;;;; r_mem_get_num(const ut8 *b, int size);
 
 /* MEMORY POOL */
-R_API RMemoryPool* r_mem_pool_deinit(RMemoryPool *pool);
-R_API RMemoryPool *r_mem_pool_new(int nodesize, int poolsize, int poolcount);
-R_API RMemoryPool *r_mem_pool_free(RMemoryPool *pool);
+R_API RMemoryPool;;;;;* r_mem_pool_deinit(RMemoryPool *pool);
+R_API RMemoryPool;;;;; *r_mem_pool_new(int nodesize, int poolsize, int poolcount);
+R_API RMemoryPool;;;;; *r_mem_pool_free(RMemoryPool *pool);
 R_API void* r_mem_pool_alloc(RMemoryPool *pool);
 R_API void *r_mem_dup(void *s, int l);
 R_API void *r_mem_alloc(int sz);

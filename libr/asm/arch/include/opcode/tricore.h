@@ -154,7 +154,7 @@ extern unsigned long tricore_mask_ssr;
 extern unsigned long tricore_mask_ssro;
 extern unsigned long tricore_opmask[];
 
-extern void tricore_init_arch_vars PARAMS ((unsigned long));
+extern void tricore_init_arch_vars; PARAMS ((unsigned long));
 
 /* This structure describes TriCore opcodes.  */
 

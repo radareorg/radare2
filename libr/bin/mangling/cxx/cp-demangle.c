@@ -1643,7 +1643,7 @@ d_identifier (struct d_info *di, int len)
 
    This list is sorted for binary search.  */
 
-#define NL(s) s, (sizeof s) - 1
+#define NL(s) s, (sizeof (s)) - 1
 
 CP_STATIC_IF_GLIBCPP_V3
 const struct demangle_operator_info cplus_demangle_operators[] =

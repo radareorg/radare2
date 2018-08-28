@@ -423,7 +423,7 @@ static const ut32 colormap[256] = {
 static void cmd_print_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, &, amper);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, @, at);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, @@, at_at);
+	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, @@, stat);
 	DEFINE_CMD_DESCRIPTOR (core, p);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, p=, p_equal);
 	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, p-, p_minus);
@@ -1094,7 +1094,7 @@ stage_left:
 /* In this function, most of the buffers have 4 times
  * the required length. This is because we supports colours,
  * that are 4 chars long. */
-#define append(x, y) { strcat (x, y); x += strlen (y); }
+#define append(x, y) { strcat (x, y); (x) += strlen (y); }
 static void annotated_hexdump(RCore *core, const char *str, int len) {
 	const int usecolor = r_config_get_i (core->config, "scr.color");
 	int nb_cols = r_config_get_i (core->config, "hex.cols");

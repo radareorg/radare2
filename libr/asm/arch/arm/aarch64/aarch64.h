@@ -24,7 +24,7 @@
 
 //#include "bfd.h"
 //#include "bfd_stdint.h"
-#include <sysdep.h>
+#include "sysdep.h"
 #include <assert.h>
 #include <stdlib.h>
 

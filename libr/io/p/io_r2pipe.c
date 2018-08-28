@@ -8,7 +8,7 @@
 #include <sys/types.h>
 
 /* --------------------------------------------------------- */
-#define R2P(x) ((R2Pipe*)x->data)
+#define R2P(x) ((R2Pipe*)(x)->data)
 
 // TODO: add r2p_assert
 

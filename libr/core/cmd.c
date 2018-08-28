@@ -33,7 +33,7 @@
 		if (d) { \
 			d->cmd = #cmd_; \
 			d->help_msg = help_msg_##cmd_; \
-			r_list_append (core->cmd_descriptors, d); \
+			r_list_append ((core)->cmd_descriptors, d); \
 		} \
 	}
 
@@ -44,7 +44,7 @@
 			d->cmd = #cmd_; \
 			d->help_msg = help_msg_##cmd_; \
 			d->help_detail = help_detail_##cmd_; \
-			r_list_append (core->cmd_descriptors, d); \
+			r_list_append ((core)->cmd_descriptors, d); \
 		} \
 	}
 
@@ -56,7 +56,7 @@
 			d->help_msg = help_msg_##cmd_; \
 			d->help_detail = help_detail_##cmd_; \
 			d->help_detail2 = help_detail2_##cmd_; \
-			r_list_append (core->cmd_descriptors, d); \
+			r_list_append ((core)->cmd_descriptors, d); \
 		} \
 	}
 
@@ -66,7 +66,7 @@
 		if (d) { \
 			d->cmd = #cmd_; \
 			d->help_msg = help_msg_##named_cmd; \
-			r_list_append (core->cmd_descriptors, d); \
+			r_list_append ((core)->cmd_descriptors, d); \
 		} \
 	}
 

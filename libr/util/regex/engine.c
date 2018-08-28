@@ -78,10 +78,10 @@ struct match {
 	char *coldp;		/* can be no match starting before here */
 	char **lastpos;		/* [nplus+1] */
 	STATEVARS;
-	states st;		/* current states */
-	states fresh;		/* states for a fresh start */
-	states tmp;		/* temporary */
-	states empty;		/* empty set of states */
+	static st;		/* current states */
+	static fresh;		/* states for a fresh start */
+	static tmp;		/* temporary */
+	static empty;		/* empty set of states */
 };
 
 static int matcher(struct re_guts *, char *, size_t, RRegexMatch[], int);
@@ -89,7 +89,7 @@ static char *dissect(struct match *, char *, char *, sopno, sopno);
 static char *backref(struct match *, char *, char *, sopno, sopno, sopno, int);
 static char *fast(struct match *, char *, char *, sopno, sopno);
 static char *slow(struct match *, char *, char *, sopno, sopno);
-static states step(struct re_guts *, sopno, sopno, states, int, states);
+static static step(struct re_guts *, sopno, sopno, states, int, states);
 #define MAX_RECURSION	100
 #define	BOL	(OUT+1)
 #define	EOL	(BOL+1)

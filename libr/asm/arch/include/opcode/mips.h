@@ -617,30 +617,30 @@ static const unsigned int mips_isa_table[] =
    test, or zero if no CPU specific ISA test is desired.  */
 
 #define OPCODE_IS_MEMBER(insn, isa, cpu)				\
-    (((isa & INSN_ISA_MASK) != 0                                        \
+    ((((isa) & INSN_ISA_MASK) != 0                                        \
       && ((insn)->membership & INSN_ISA_MASK) != 0                      \
-      && ((mips_isa_table [(isa & INSN_ISA_MASK) - 1] >>                \
+      && ((mips_isa_table [((isa) & INSN_ISA_MASK) - 1] >>                \
            (((insn)->membership & INSN_ISA_MASK) - 1)) & 1) != 0)       \
-     || ((isa & ~INSN_ISA_MASK)                                         \
+     || (((isa) & ~INSN_ISA_MASK)                                         \
           & ((insn)->membership & ~INSN_ISA_MASK)) != 0                 \
-     || (cpu == CPU_R4650 && ((insn)->membership & INSN_4650) != 0)	\
-     || (cpu == CPU_RM7000 && ((insn)->membership & INSN_4650) != 0)	\
-     || (cpu == CPU_RM9000 && ((insn)->membership & INSN_4650) != 0)	\
-     || (cpu == CPU_R4010 && ((insn)->membership & INSN_4010) != 0)	\
-     || (cpu == CPU_VR4100 && ((insn)->membership & INSN_4100) != 0)	\
-     || (cpu == CPU_R3900 && ((insn)->membership & INSN_3900) != 0)	\
-     || ((cpu == CPU_R10000 || cpu == CPU_R12000)			\
+     || ((cpu) == CPU_R4650 && ((insn)->membership & INSN_4650) != 0)	\
+     || ((cpu) == CPU_RM7000 && ((insn)->membership & INSN_4650) != 0)	\
+     || ((cpu) == CPU_RM9000 && ((insn)->membership & INSN_4650) != 0)	\
+     || ((cpu) == CPU_R4010 && ((insn)->membership & INSN_4010) != 0)	\
+     || ((cpu) == CPU_VR4100 && ((insn)->membership & INSN_4100) != 0)	\
+     || ((cpu) == CPU_R3900 && ((insn)->membership & INSN_3900) != 0)	\
+     || (((cpu) == CPU_R10000 || (cpu) == CPU_R12000)			\
 	 && ((insn)->membership & INSN_10000) != 0)			\
-     || (cpu == CPU_SB1 && ((insn)->membership & INSN_SB1) != 0)	\
-     || (cpu == CPU_R4111 && ((insn)->membership & INSN_4111) != 0)	\
-     || (cpu == CPU_VR4120 && ((insn)->membership & INSN_4120) != 0)	\
-     || (cpu == CPU_VR5400 && ((insn)->membership & INSN_5400) != 0)	\
-     || (cpu == CPU_VR5500 && ((insn)->membership & INSN_5500) != 0)	\
-     || (cpu == CPU_LOONGSON_2E                                         \
+     || ((cpu) == CPU_SB1 && ((insn)->membership & INSN_SB1) != 0)	\
+     || ((cpu) == CPU_R4111 && ((insn)->membership & INSN_4111) != 0)	\
+     || ((cpu) == CPU_VR4120 && ((insn)->membership & INSN_4120) != 0)	\
+     || ((cpu) == CPU_VR5400 && ((insn)->membership & INSN_5400) != 0)	\
+     || ((cpu) == CPU_VR5500 && ((insn)->membership & INSN_5500) != 0)	\
+     || ((cpu) == CPU_LOONGSON_2E                                         \
          && ((insn)->membership & INSN_LOONGSON_2E) != 0)               \
-     || (cpu == CPU_LOONGSON_2F                                         \
+     || ((cpu) == CPU_LOONGSON_2F                                         \
          && ((insn)->membership & INSN_LOONGSON_2F) != 0)               \
-     || (cpu == CPU_OCTEON						\
+     || ((cpu) == CPU_OCTEON						\
 	 && ((insn)->membership & INSN_OCTEON) != 0)			\
      || 0)	/* Please keep this term for easier source merging.  */
 

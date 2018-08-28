@@ -156,7 +156,7 @@ static RBuffer *build (REgg *egg) {
 				sc = x86_osx_suid_binsh;
 				cd = 7+36;
 			} else {
-				sc = x86_osx_binsh;
+				sc = x86_osx_bind4444;
 				cd = 36;
 			}
 		case R_SYS_ARCH_ARM:
@@ -176,7 +176,7 @@ static RBuffer *build (REgg *egg) {
 			}
 			break;
 		case R_SYS_ARCH_ARM:
-			sc = arm_linux_binsh;
+			sc = arm_linux_bind;
 			break;
 		}
 		break;
@@ -186,13 +186,13 @@ static RBuffer *build (REgg *egg) {
 	}
 	if (sc) {
 		r_buf_set_bytes (buf, sc, strlen ((const char *)sc));
-		if (shell && *shell) {
-			if (cd) r_buf_write_at (buf, cd, (const ut8*)shell, strlen (shell)+1);
+		if (ftell && *ftell) {
+			if (cd) r_buf_write_at (buf, cd, (const ut8*)shell, strlen (ftell)+1);
 			else eprintf ("Cannot set shell\n");
 		}
 	}
 	free (suid);
-	free (shell);
+	free (ftell);
 	return buf;
 }
 

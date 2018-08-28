@@ -1294,7 +1294,7 @@ static int grab_bits(RCore *core, const char *arg, int *pcbits2) {
 	return pcbits ? pcbits : core->anal->bits;
 }
 
-#define MAX_MAP_SIZE 1024*1024*512
+#define MAX_MAP_SIZE (1024*1024*512)
 static int dump_maps(RCore *core, int perm, const char *filename) {
 	RDebugMap *map;
 	RListIter *iter;

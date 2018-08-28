@@ -68,12 +68,12 @@ typedef struct r_anal_range_t {
 	int bits;
 } RAnalRange;
 
-#define R_ANAL_UNMASK_TYPE(x) (x&R_ANAL_VAR_TYPE_SIZE_MASK)
-#define R_ANAL_UNMASK_SIGN(x) (((x& R_ANAL_VAR_TYPE_SIGN_MASK)>> R_ANAL_VAR_TYPE_SIGN_SHIFT)==R_ANAL_VAR_TYPE_UNSIGNED)?0:1
+#define R_ANAL_UNMASK_TYPE(x) ((x)&R_ANAL_VAR_TYPE_SIZE_MASK)
+#define R_ANAL_UNMASK_SIGN(x) ((((x)& R_ANAL_VAR_TYPE_SIGN_MASK)>> R_ANAL_VAR_TYPE_SIGN_SHIFT)==R_ANAL_VAR_TYPE_UNSIGNED)?0:1
 
 #define R_ANAL_GET_OFFSET(x,y,z) \
-	(x && x->binb.bin && x->binb.get_offset)? \
-		x->binb.get_offset (x->binb.bin, y, z): -1
+	(((x) && (x)->binb.bin && (x)->binb.get_offset)? \
+		(x)->binb.get_offset ((x)->binb.bin, y, z): -1)
 enum {
 	R_ANAL_DATA_TYPE_NULL = 0,
 	R_ANAL_DATA_TYPE_UNKNOWN = 1,
@@ -109,12 +109,12 @@ enum {
 /* copypaste from r_asm.h */
 
 #define R_ANAL_GET_OFFSET(x,y,z) \
-        (x && x->binb.bin && x->binb.get_offset)? \
-                x->binb.get_offset (x->binb.bin, y, z): -1
+        (((x) && (x)->binb.bin && (x)->binb.get_offset)? \
+                (x)->binb.get_offset ((x)->binb.bin, y, z): -1)
 
 #define R_ANAL_GET_NAME(x,y,z) \
-        (x && x->binb.bin && x->binb.get_name)? \
-                x->binb.get_name (x->binb.bin, y, z): NULL
+        ((x) && (x)->binb.bin && (x)->binb.get_name)? \
+                (x)->binb.get_name ((x)->binb.bin, y, z): NULL
 
 /* type = (R_ANAL_VAR_TYPE_BYTE & R_ANAL_VAR_TYPE_SIZE_MASK) |
  *			( RANAL_VAR_TYPE_SIGNED & RANAL_VAR_TYPE_SIGN_MASK) |
@@ -816,7 +816,7 @@ typedef struct r_anal_op_t {
 	RAnalHint hint;
 } RAnalOp;
 
-#define R_ANAL_COND_SINGLE(x) (!x->arg[1] || x->arg[0]==x->arg[1])
+#define R_ANAL_COND_SINGLE(x) (!(x)->arg[1] || (x)->arg[0]==(x)->arg[1])
 
 typedef struct r_anal_cond_t {
 	int type; // filled by CJMP opcode

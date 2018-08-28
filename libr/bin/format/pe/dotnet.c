@@ -413,7 +413,7 @@ void dotnet_parse_tilde_2(
   table_offset += sizeof(uint32_t) * valid_rows;
 
 #define DOTNET_STRING_INDEX(Name) \
-  index_sizes.string == 2 ? Name.Name_Short : Name.Name_Long
+  index_sizes.string == 2 ? (Name).Name_Short : (Name).Name_Long
 
   string_offset = pe->data + metadata_root + streams->string->Offset;
 

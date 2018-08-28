@@ -24,7 +24,7 @@
 
 //this define is used as a way to acknowledge when updateAddr should take len
 //as real len of the buffer
-#define THRESHOLD -4444
+#define THRESHOLD (-4444)
 
 //TODO REWRITE THIS IS BECOMING A NIGHTMARE
 
@@ -1173,7 +1173,7 @@ static void r_print_format_register (const RPrint* p, int mode,
 }
 
 static void r_print_format_num_specifier (const RPrint *p, ut64 addr, int bytes, int sign) {
-#define EXT(T) (sign ? (signed T)(addr) : (unsigned T)(addr) )
+#define EXT(T) (sign ? (signed (T))(addr) : (unsigned (T))(addr) )
 	const char *fs64 = sign ? "%"PFMT64d : "%"PFMT64u;
 	const char *fs = sign ? "%d" : "%u";
 	if (bytes == 1) {

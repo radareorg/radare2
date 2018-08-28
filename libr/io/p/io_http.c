@@ -12,9 +12,9 @@ typedef struct {
 	ut32 size;
 } RIOMalloc;
 
-#define RIOHTTP_FD(x) (((RIOMalloc*)x->data)->fd)
-#define RIOHTTP_SZ(x) (((RIOMalloc*)x->data)->size)
-#define RIOHTTP_BUF(x) (((RIOMalloc*)x->data)->buf)
+#define RIOHTTP_FD(x) (((RIOMalloc*)(x)->data)->fd)
+#define RIOHTTP_SZ(x) (((RIOMalloc*)(x)->data)->size)
+#define RIOHTTP_BUF(x) (((RIOMalloc*)(x)->data)->buf)
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	if (!fd || !fd->data) {

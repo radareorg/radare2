@@ -194,7 +194,7 @@ static inline void **r_pvector_shrink(RPVector *vec) {
  * }
  */
 #define r_pvector_foreach(vec, it) \
-	for (it = (void **)(vec)->v.a; it != (void **)(vec)->v.a + (vec)->v.len; it++)
+	for ((it) = (void **)(vec)->v.a; (it) != (void **)(vec)->v.a + (vec)->v.len; (it)++)
 
 /*
  * example:
@@ -208,10 +208,10 @@ static inline void **r_pvector_shrink(RPVector *vec) {
 #define r_pvector_lower_bound(vec, x, i, cmp) \
 	do { \
 		int h = (vec)->v.len, m; \
-		for (i = 0; i < h; ) { \
-			m = i + ((h - i) >> 1); \
+		for ((i) = 0; (i) < h; ) { \
+			m = (i) + ((h - (i)) >> 1); \
 			if ((cmp (x, ((void **)(vec)->v.a)[m])) > 0) { \
-				i = m + 1; \
+				(i) = m + 1; \
 			} else { \
 				h = m; \
 			} \
@@ -222,10 +222,10 @@ static inline void **r_pvector_shrink(RPVector *vec) {
 #define r_pvector_upper_bound(vec, x, i, cmp) \
 	do { \
 		int h = (vec)->v.len, m; \
-		for (i = 0; i < h; ) { \
-			m = i + ((h - i) >> 1); \
+		for ((i) = 0; (i) < h; ) { \
+			m = (i) + ((h - (i)) >> 1); \
 			if (!((cmp (x, ((void **)(vec)->v.a)[m])) < 0)) { \
-				i = m + 1; \
+				(i) = m + 1; \
 			} else { \
 				h = m; \
 			} \

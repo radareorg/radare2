@@ -63,8 +63,8 @@ static st64 on_map_skyline(RIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg
 	ut64 addr = vaddr;
 	size_t i;
 	bool ret = true, wrap = !prefix_mode && vaddr + len < vaddr;
-#define CMP(addr, part) (addr < r_itv_end (((RIOMapSkyline *)part)->itv) - 1 ? -1 : \
-			addr > r_itv_end (((RIOMapSkyline *)part)->itv) - 1 ? 1 : 0)
+#define CMP(addr, part) ((addr) < r_itv_end (((RIOMapSkyline *)(part))->itv) - 1 ? -1 : \
+			(addr) > r_itv_end (((RIOMapSkyline *)(part))->itv) - 1 ? 1 : 0)
 	// Let i be the first skyline part whose right endpoint > addr
 	if (!len) {
 		i = r_pvector_len (skyline);

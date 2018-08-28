@@ -47,7 +47,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335 USA. */
 #define MAX_OPS 5
 #define MATCHES_ISA(isa) \
 	  (((isa) == TRICORE_GENERIC) \
-	   || ((isa & bfd_mach_rider_mask) & current_isa))
+	   || (((isa) & bfd_mach_rider_mask) & current_isa))
 
 /* Some handy shortcuts.  */
 

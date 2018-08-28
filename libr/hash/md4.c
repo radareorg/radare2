@@ -39,9 +39,9 @@ static inline ut32 lshift(ut32 x, int s) {
 	return ((x << s) & UT32_MAX) | (x >> (32 - s));
 }
 
-#define ROUND1(a, b, c, d, k, s) (*a) = lshift ((*a) + F (*b, *c, *d) + X[k], s)
-#define ROUND2(a, b, c, d, k, s) (*a) = lshift ((*a) + G (*b, *c, *d) + X[k] + (ut32) 0x5A827999, s)
-#define ROUND3(a, b, c, d, k, s) (*a) = lshift ((*a) + H (*b, *c, *d) + X[k] + (ut32) 0x6ED9EBA1, s)
+#define ROUND1(a, b, c, d, k, s) (*(a)) = lshift ((*(a)) + F (*(b), *(c), *(d)) + X[k], s)
+#define ROUND2(a, b, c, d, k, s) (*(a)) = lshift ((*(a)) + G (*(b), *(c), *(d)) + X[k] + (ut32) 0x5A827999, s)
+#define ROUND3(a, b, c, d, k, s) (*(a)) = lshift ((*(a)) + H (*(b), *(c), *(d)) + X[k] + (ut32) 0x6ED9EBA1, s)
 
 /* this applies md4 to 64 byte chunks */
 static void mdfour64(ut32 *M, ut32 *A, ut32 *B, ut32 *C, ut32 *D) {

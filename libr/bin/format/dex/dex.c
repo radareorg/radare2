@@ -256,7 +256,7 @@ int dex_uleb128_len(const ut8 *ptr, int size) {
 	return i;
 }
 
-#define SIG_EXTEND(X,Y) X = (X << Y) >> Y
+#define SIG_EXTEND(X,Y) X = ((X) << (Y)) >> Y
 int dex_read_sleb128(const char *ptr, int size) {
 	int cur, result;
 	ut8 len = dex_uleb128_len ((const ut8*)ptr, size);

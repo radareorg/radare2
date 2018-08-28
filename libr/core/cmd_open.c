@@ -189,7 +189,7 @@ static void cmd_open_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, oob);
 	DEFINE_CMD_DESCRIPTOR (core, ood);
 	DEFINE_CMD_DESCRIPTOR (core, oon);
-	DEFINE_CMD_DESCRIPTOR (core, oonn);
+	DEFINE_CMD_DESCRIPTOR (core, open);
 }
 
 // very similiar to section list, must reuse more code

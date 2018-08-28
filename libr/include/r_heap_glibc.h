@@ -28,11 +28,11 @@ R_LIB_VERSION_HEADER(r_heap_glibc);
 #define NFASTBINS 10
 #define BINMAPSHIFT 5
 #define SZ core->dbg->bits
-#define FASTBIN_IDX_TO_SIZE(i) ((SZ * 4) + (SZ * 2) * (i - 1))
+#define FASTBIN_IDX_TO_SIZE(i) ((SZ * 4) + (SZ * 2) * ((i) - 1))
 #define BITSPERMAP (1U << BINMAPSHIFT)
 #define BINMAPSIZE (NBINS / BITSPERMAP)
 #define MAX(a,b) (((a)>(b))?(a):(b))
-#define NPAD -6
+#define NPAD (-6)
 #define TCACHE_MAX_BINS 64
 #define TCACHE_FILL_COUNT 7
 

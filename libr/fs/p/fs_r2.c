@@ -234,6 +234,6 @@ RFSPlugin r_fs_plugin_r2 = {
 RLibStruct radare_plugin = {
         .type = R_LIB_TYPE_FS,
         .data = &r_fs_plugin_r2,
-        .versr2n = R2_VERSION
+        .version = R2_VERSION
 };
 #endif

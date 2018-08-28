@@ -233,8 +233,8 @@ typedef struct {
 
 #define LIST_END			{ 0 }
 
-#define INSN_MASK(af, an, av)		{ .f = af, .n = an, .v = av }
-#define INSN_FLAG(af, av)		{ .f = af, .v = TMS320_FLAG_##av }
+#define INSN_MASK(af, an, av)		{ .f = (af), .n = (an), .v = (av) }
+#define INSN_FLAG(af, av)		{ .f = (af), .v = TMS320_FLAG_##av }
 #define INSN_SYNTAX(...)		(char *)#__VA_ARGS__
 
 extern int tms320_dasm(tms320_dasm_t *, const ut8 *, int);

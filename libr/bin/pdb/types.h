@@ -15,7 +15,7 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 #define READ_PAGES(start_indx, end_indx) { \
-	for (i = start_indx; i < end_indx; i++) { \
+	for (i = start_indx; i < (end_indx); i++) { \
 		fseek(stream_file->fp, stream_file->pages[i] * stream_file->page_size, SEEK_SET); \
 		fread(tmp, stream_file->page_size, 1, stream_file->fp); \
 		tmp += stream_file->page_size; \

@@ -49,7 +49,7 @@ struct r_bin_bflt_obj {
 };
 
 #define BFLT_HDR_SIZE		sizeof (struct bflt_hdr)
-#define VALID_GOT_ENTRY(x)	(x != 0xFFFFFFFF)
+#define VALID_GOT_ENTRY(x)	((x) != 0xFFFFFFFF)
 
 RBinAddr *r_bflt_get_entry(struct r_bin_bflt_obj *bin);
 struct r_bin_bflt_obj *r_bin_bflt_new_buf(struct r_buf_t *buf);

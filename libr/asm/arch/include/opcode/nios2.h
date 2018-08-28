@@ -403,7 +403,7 @@ struct nios2_reg
 #define OP_MATCH_OPX		OP_OPX
 
 /* OPX instruction values.  */
-#define OPX_MATCH(code) ((code << IW_OPX_LSB) | OP_OPX)
+#define OPX_MATCH(code) (((code) << IW_OPX_LSB) | OP_OPX)
 
 #define OP_MATCH_ADD		OPX_MATCH (OPX_ADD)
 #define OP_MATCH_AND		OPX_MATCH (OPX_AND)
