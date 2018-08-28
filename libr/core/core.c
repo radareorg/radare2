@@ -107,6 +107,15 @@ static void r_core_debug_breakpoint_hit(RCore *core, RBreakpointItem *bpi) {
 	}
 }
 
+static void r_core_debug_syscall_hit(RCore *core) {
+	const char *cmdhit = r_config_get (core->config, "cmd.onsyscall");
+
+	if (cmdhit && cmdhit[0] != 0) {
+		r_core_cmd0 (core, cmdhit);
+		r_cons_flush();
+	}
+}
+
 /* returns the address of a jmp/call given a shortcut by the user or UT64_MAX
  * if there's no valid shortcut. When is_asmqjmps_letter is true, the string
  * should be of the form XYZWu, where XYZW are uppercase letters and u is a
@@ -256,6 +265,7 @@ static ut64 numget(RCore *core, const char *k) {
 R_API int r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->core = core;
 	bnd->bphit = (RCoreDebugBpHit)r_core_debug_breakpoint_hit;
+	bnd->syshit = (RCoreDebugSyscallHit)r_core_debug_syscall_hit;
 	bnd->cmd = (RCoreCmd)r_core_cmd0;
 	bnd->cmdf = (RCoreCmdF)r_core_cmdf;
 	bnd->cmdstr = (RCoreCmdStr)r_core_cmd_str;

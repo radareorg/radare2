@@ -2693,6 +2693,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cmd.xterm", "xterm -bg black -fg gray -e", "xterm command to spawn with V@");
 	SETICB ("cmd.depth", 10, &cb_cmddepth, "Maximum command depth");
 	SETPREF ("cmd.bp", "", "Run when a breakpoint is hit");
+	SETPREF ("cmd.onsyscall", "", "Run when a syscall is hit");
 	SETICB ("cmd.hitinfo", 1, &cb_debug_hitinfo, "Show info when a tracepoint/breakpoint is hit");
 	SETPREF ("cmd.times", "", "Run when a command is repeated (number prefix)");
 	SETPREF ("cmd.stack", "", "Command to display the stack in visual debug mode");

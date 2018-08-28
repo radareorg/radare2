@@ -1489,6 +1489,11 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 			return -1;
 		}
 		reg = show_syscall (dbg, "SN");
+
+		if (dbg->corebind.core && dbg->corebind.syshit) {
+			dbg->corebind.syshit (dbg->corebind.core);
+		}
+
 		if (n_sc == -1) {
 			continue;
 		}
