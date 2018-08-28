@@ -21,7 +21,7 @@ static int cmpaddr(const void *_a, const void *_b) {
 	return a->addr - b->addr;
 }
 
-int main (int argc, char **argv) {
+int main(int argc, char **argv) {
 	r_anal_esil_set_pc (core->anal->esil, fcn ? fcn->addr : core->offset);
 	switch (*input) {
 	case 'a': // "afta"
