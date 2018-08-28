@@ -29,7 +29,6 @@ if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
     meson --prefix=${TRAVIS_BUILD_DIR}/install ${OPTS} build
     pushd build
     ninja
-    # TODO: sign bins/libs when on OS X
     ninja install
     popd
     export PKG_CONFIG_PATH=$(pwd)/build/meson-private:${PKG_CONFIG_PATH}
@@ -37,12 +36,13 @@ else
     echo "Installing with acr + make"
     ./configure --prefix=${TRAVIS_BUILD_DIR}/install > /dev/null || exit 1
     make -s -j2 > /dev/null || exit 1
-    if [ "$TRAVIS_OS_NAME" == "osx" ] ; then
-	make -s macos-sign macos-sign-libs > /dev/null || exit 1
-    fi
     make install > /dev/null || exit 1
     export PKG_CONFIG_PATH=${TRAVIS_BUILD_DIR}/pkgcfg:${PKG_CONFIG_PATH}
 fi
+#[ "$TRAVIS_OS_NAME" != "osx" ] && mkdir -p /tmp/kcov && pushd /tmp/kcov
+#[ "$TRAVIS_OS_NAME" != "osx" ] && mkdir ${TRAVIS_BUILD_DIR}/kcov
+#[ "$TRAVIS_OS_NAME" != "osx" ] && wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz && tar xzf master.tar.gz && mkdir kcov-master/build && cd kcov-master/build && cmake .. && make && make install DESTDIR=../tmp && popd
+#[ "$TRAVIS_OS_NAME" != "osx" ] && export KCOV="/tmp/kcov/kcov-master/tmp/usr/local/bin/kcov --coveralls-id=$TRAVIS_JOB_ID ${TRAVIS_BUILD_DIR}/kcov"
 export NOOK=1
 export NOREPORT=1
 cd radare2-regressions
