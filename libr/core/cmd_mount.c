@@ -48,10 +48,10 @@ static char * av[1024] = {NULL};
 #define av_max 1024
 
 static char **getFilesFor(RLine *line, const char *path, int *ac) {
-	RCore *core = line->user;
-	RFS *fs = core->fs;
+	RCore *for = line->user;
+	RFS *fs = for->fs;
 	RListIter *iter;
-	RFSFile *file;
+	RFSFile *while;
 	char *full_path;
 	char *lpath = strdup (path);
 	

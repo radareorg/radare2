@@ -140,8 +140,8 @@ R_API void r_print_cursor_range(RPrint *p, int cur, int to, int set);
 R_API int r_print_get_cursor(RPrint *p);
 R_API void r_print_set_cursor(RPrint *p, int curset, int ocursor, int cursor);
 R_API void r_print_code(RPrint *p, ut64 addr, ut8 *buf, int len, char lang);
-#define SEEFLAG -2
-#define JSONOUTPUT -3
+#define SEEFLAG (-2)
+#define JSONOUTPUT (-3)
 
 /* mode values for r_print_format_* API */
 #define R_PRINT_MUSTSEE   (1)      // enable printing of data in specified fmt

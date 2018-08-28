@@ -91,8 +91,8 @@ name (unsigned long rtype)					\
 #else /* Default to generating enum.  */
 
 #define START_RELOC_NUMBERS(name)   enum name {
-#define RELOC_NUMBER(name, number)  name = number,
-#define FAKE_RELOC(name, number)    name = number,
+#define RELOC_NUMBER(name, number)  name = (number),
+#define FAKE_RELOC(name, number)    name = (number),
 #define EMPTY_RELOC(name)           name,
 #define END_RELOC_NUMBERS(name)     name };
 

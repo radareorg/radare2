@@ -474,7 +474,7 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 #define memcat(x, y)\
 	{ \
 		memcpy (x, y, strlen (y));\
-		x += strlen (y);\
+		(x) += strlen (y);\
 	}
 	for (s = str, i = 0; s[0]; i++) {
 		int d_inc = 2;
@@ -1104,8 +1104,8 @@ static const char* getchardiff(char *fmt, ut8 a, ut8 b) {
 	return fmt;
 }
 
-#define BD(a, b) getbytediff (fmt, a[i + j], b[i + j])
-#define CD(a, b) getchardiff (fmt, a[i + j], b[i + j])
+#define BD(a, b) getbytediff (fmt, (a)[i + j], (b)[i + j])
+#define CD(a, b) getchardiff (fmt, (a)[i + j], (b)[i + j])
 
 static ut8* M(const ut8 *b, int len) {
 	ut8 *r = malloc (len + 16);

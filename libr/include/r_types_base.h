@@ -59,8 +59,8 @@ typedef struct _utX{
 
 #include <stdbool.h>
 
-#define R_ERROR -2
-#define R_FAIL -1
+#define R_ERROR (-2)
+#define R_FAIL (-1)
 #define R_FALSE 0
 #define R_TRUE 1
 #define R_TRUFAE 2
@@ -100,9 +100,9 @@ typedef struct _utX{
 #define UT8_MAX  0xFFU
 #define UT8_MIN  0x00U
 
-#define UT64_ALIGN(x) (x + (x - (x % sizeof (ut64))))
-#define UT32_ALIGN(x) (x + (x - (x % sizeof (ut32))))
-#define UT16_ALIGN(x) (x + (x - (x % sizeof (ut16))))
+#define UT64_ALIGN(x) ((x) + ((x) - ((x) % sizeof (ut64))))
+#define UT32_ALIGN(x) ((x) + ((x) - ((x) % sizeof (ut32))))
+#define UT16_ALIGN(x) ((x) + ((x) - ((x) % sizeof (ut16))))
 
 #define UT32_LO(x) ((ut32)((x)&UT32_MAX))
 #define UT32_HI(x) ((ut32)(((ut64)(x))>>32)&UT32_MAX)
@@ -141,7 +141,7 @@ typedef struct _utX{
 #define B0001 1
 #define B0000 0
 #undef B
-#define B4(a,b,c,d) ((a<<12)|(b<<8)|(c<<4)|(d))
+#define B4(a,b,c,d) (((a)<<12)|((b)<<8)|((c)<<4)|(d))
 
 /* portable non-c99 inf/nan types */
 #if !defined(INFINITY)

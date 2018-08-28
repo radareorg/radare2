@@ -2,7 +2,7 @@
 
 #include "io_r2k_linux.h"
 
-#define fset(num, shift) (((num & (((ut64) 1) << shift)) == 0) ? 0 : 1)
+#define fset(num, shift) ((((num) & (((ut64) 1) << (shift))) == 0) ? 0 : 1)
 
 #if __i386__ || __x86_64__
 static void x86_ctrl_reg_pretty_print (RIO *io, struct r2k_control_reg ctrl) {

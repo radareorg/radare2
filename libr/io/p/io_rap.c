@@ -7,9 +7,9 @@
 #include <sys/types.h>
 
 // TODO: implement the rap API in r_socket ?
-#define RIORAP_FD(x) ((x->data)?(((RIORap*)(x->data))->client):NULL)
-#define RIORAP_IS_LISTEN(x) (((RIORap*)(x->data))->listener)
-#define RIORAP_IS_VALID(x) ((x) && (x->data) && (x->plugin == &r_io_plugin_rap))
+#define RIORAP_FD(x) (((x)->data)?(((RIORap*)((x)->data))->client):NULL)
+#define RIORAP_IS_LISTEN(x) (((RIORap*)((x)->data))->listener)
+#define RIORAP_IS_VALID(x) ((x) && ((x)->data) && ((x)->plugin == &r_io_plugin_rap))
 
 static int rap__write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	RSocket *s = RIORAP_FD (fd);

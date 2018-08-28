@@ -219,9 +219,9 @@ typedef void (*PrintfCallback)(const char *str, ...);
 
 /* compile-time introspection helpers */
 #define CTO(y,z) ((size_t) &((y*)0)->z)
-#define CTA(x,y,z) (x+CTO(y,z))
+#define CTA(x,y,z) ((x)+CTO(y,z))
 #define CTI(x,y,z) (*((size_t*)(CTA(x,y,z))))
-#define CTS(x,y,z,t,v) {t* _=(t*)CTA(x,y,z);*_=v;}
+#define CTS(x,y,z,t,v) {(t)* _=(t*)CTA(x,y,z);*_=v;}
 
 #ifdef R_IPI
 #undef R_IPI
@@ -255,7 +255,7 @@ R_API const char *x##_version(void)
 R_API const char *x##_version () { return "" R2_GITTAP; }
 
 #define BITS2BYTES(x) (((x)/8)+(((x)%8)?1:0))
-#define ZERO_FILL(x) memset (&x, 0, sizeof (x))
+#define ZERO_FILL(x) memset (&(x), 0, sizeof (x))
 #define R_NEWS0(x,y) (x*)calloc(y,sizeof(x))
 #define R_NEWS(x,y) (x*)malloc(sizeof(x)*(y))
 #define R_NEW0(x) (x*)calloc(1,sizeof(x))
@@ -271,19 +271,19 @@ static inline void *r_new_copy(int size, void *data) {
 }
 // TODO: Make R_NEW_COPY be 1 arg, not two
 #define R_NEW_COPY(x,y) x=(void*)malloc(sizeof(y));memcpy(x,y,sizeof(y))
-#define R_MEM_ALIGN(x) ((void *)(size_t)(((ut64)(size_t)x) & 0xfffffffffffff000LL))
-#define R_ARRAY_SIZE(x) (sizeof (x) / sizeof (x[0]))
-#define R_PTR_MOVE(d,s) d=s;s=NULL;
+#define R_MEM_ALIGN(x) ((void *)(size_t)(((ut64)(size_t)(x)) & 0xfffffffffffff000LL))
+#define R_ARRAY_SIZE(x) (sizeof (x) / sizeof ((x)[0]))
+#define R_PTR_MOVE(d,s) d=s;(s)=NULL;
 
 #define R_PTR_ALIGN(v,t) \
 	((char *)(((size_t)(v) ) \
-	& ~(t - 1)))
+	& ~((t) - 1)))
 #define R_PTR_ALIGN_NEXT(v,t) \
-	((char *)(((size_t)(v) + (t - 1)) \
-	& ~(t - 1)))
+	((char *)(((size_t)(v) + ((t) - 1)) \
+	& ~((t) - 1)))
 
-#define R_BIT_SET(x,y) (((ut8*)x)[y>>4] |= (1<<(y&0xf)))
-#define R_BIT_UNSET(x,y) (((ut8*)x)[y>>4] &= ~(1<<(y&0xf)))
+#define R_BIT_SET(x,y) (((ut8*)(x))[(y)>>4] |= (1<<((y)&0xf)))
+#define R_BIT_UNSET(x,y) (((ut8*)(x))[(y)>>4] &= ~(1<<((y)&0xf)))
 #define R_BIT_TOGGLE(x, y) ( R_BIT_CHK (x, y) ? \
 		R_BIT_UNSET (x, y): R_BIT_SET (x, y))
 
@@ -334,7 +334,7 @@ static inline void *r_new_copy(int size, void *data) {
 #define r_offsetof(type, member) offsetof(type, member)
 
 #define R_BETWEEN(x,y,z) (((y)>=(x)) && ((y)<=(z)))
-#define R_ROUND(x,y) ((x)%(y))?(x)+((y)-((x)%(y))):(x)
+#define R_ROUND(x,y) (((x)%(y))?(x)+((y)-((x)%(y))):(x))
 #define R_DIM(x,y,z) (((x)<(y))?(y):((x)>(z))?(z):(x))
 #ifndef R_MAX_DEFINED
 #define R_MAX(x,y) (((x)>(y))?(x):(y))
@@ -345,9 +345,9 @@ static inline void *r_new_copy(int size, void *data) {
 #define R_MIN_DEFINED
 #endif
 #define R_ABS(x) (((x)<0)?-(x):(x))
-#define R_BTW(x,y,z) (((x)>=(y))&&((y)<=(z)))?y:x
+#define R_BTW(x,y,z) (((x)>=(y))&&((y)<=(z)))?(y):x
 
-#define R_FREE(x) { free((void *)x); x = NULL; }
+#define R_FREE(x) { free((void *)(x)); (x) = NULL; }
 
 #if __WINDOWS__
 #define HAVE_REGEXP 0

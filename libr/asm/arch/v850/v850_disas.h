@@ -22,7 +22,7 @@
 
 // Format III
 #define F3_COND(instr) ((instr) & 0xF)
-#define F3_DISP(instr) (((instr) & 0x70) >> 4) | (((instr) & 0xF800) >> 7)
+#define F3_DISP(instr) ((((instr) & 0x70) >> 4) | (((instr) & 0xF800) >> 7))
 
 // Format IV
 #define F4_DISP(instr) ((instr) & 0x3F)

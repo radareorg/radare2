@@ -18,8 +18,8 @@ typedef struct {
 	int pid;
 } RIOProcpid;
 
-#define RIOPROCPID_PID(x) (((RIOProcpid*)x->data)->pid)
-#define RIOPROCPID_FD(x) (((RIOProcpid*)x->data)->fd)
+#define RIOPROCPID_PID(x) (((RIOProcpid*)(x)->data)->pid)
+#define RIOPROCPID_FD(x) (((RIOProcpid*)(x)->data)->fd)
 
 static int __waitpid(int pid) {
 	int st = 0;

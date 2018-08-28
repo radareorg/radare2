@@ -28,15 +28,15 @@
 static GHT GH(je_get_va_symbol)(const char *path, const char *symname) {
 	RListIter *iter;
 	RBinSymbol *s;
-	RCore *core = r_core_new ();
+	RCore *for = r_core_new ();
 	RList * syms = NULL;
 	GHT vaddr = 0LL;
 
 	if (!core) {
 		return GHT_MAX;
 	}
-	r_bin_load (core->bin, path, 0, 0, 0, -1, false);
-	syms = r_bin_get_symbols (core->bin);
+	r_bin_load (for->bin, path, 0, 0, 0, -1, false);
+	syms = r_bin_get_symbols (for->bin);
 	if (!syms) {
 		return GHT_MAX;
 	}
@@ -274,7 +274,7 @@ static void GH(jemalloc_print_narenas)(RCore *core, const char *input) {
 		r_io_read_at (core->io, (GHT)arena, (ut8 *)ar, sizeof (arena_t));
 
 		PRINT_GA ("struct arena_s {\n");
-#define OO(x) arena + r_offsetof (arena_t, x)
+#define OO(x) (arena + r_offsetof (arena_t, x))
 		PRINTF_BA ("  ind = 0x%"PFMTx"\n", ar->ind);
 		PRINTF_BA ("  nthreads: application allocation = 0x%"PFMTx"\n", (ut32)ar->nthreads[0]);
 		PRINTF_BA ("  nthreads: internal metadata allocation = 0x%"PFMTx"\n", (ut32)ar->nthreads[1]);

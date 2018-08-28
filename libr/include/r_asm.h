@@ -40,12 +40,12 @@ R_LIB_VERSION_HEADER(r_asm);
 #define R_ASM_ARCH_HPPA R_SYS_ARCH_HPPA
 
 #define R_ASM_GET_OFFSET(x,y,z) \
-	(x && x->binb.bin && x->binb.get_offset)? \
-		x->binb.get_offset (x->binb.bin, y, z): -1
+	(((x) && (x)->binb.bin && (x)->binb.get_offset)? \
+		(x)->binb.get_offset ((x)->binb.bin, y, z): -1)
 
 #define R_ASM_GET_NAME(x,y,z) \
-	(x && x->binb.bin && x->binb.get_name)? \
-		x->binb.get_name (x->binb.bin, y, z): NULL
+	((x) && (x)->binb.bin && (x)->binb.get_name)? \
+		(x)->binb.get_name ((x)->binb.bin, y, z): NULL
 
 enum {
 	R_ASM_SYNTAX_NONE = 0,

@@ -14,9 +14,9 @@ struct btree_node {
 	struct btree_node *right;
 };
 
-#define BTREE_CMP(x) int (* x )(const void *, const void *)
-#define BTREE_DEL(x) int (* x )(void *)
-#define BTREE_TRV(x) void (* x )(const void *, const void *)
+#define BTREE_CMP(x) int (* (x) )(const void *, const void *)
+#define BTREE_DEL(x) int (* (x) )(void *)
+#define BTREE_TRV(x) void (* (x) )(const void *, const void *)
 
 #ifdef R_API
 R_API void btree_init(struct btree_node **T);

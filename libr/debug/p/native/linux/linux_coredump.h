@@ -56,7 +56,7 @@
 
 #define R_DEBUG_REG_T	struct user_regs_struct
 
-#define SIZE_NT_FILE_DESCSZ	sizeof(unsigned long) * 3   /* start_address * end_address * offset_address */
+#define SIZE_NT_FILE_DESCSZ	(sizeof(unsigned long) * 3)   /* start_address * end_address * offset_address */
 /* 
 NT_FILE layout:
 	[number of mappings]
@@ -138,7 +138,7 @@ typedef struct linux_map_entry {
 	struct linux_map_entry *n;
 } linux_map_entry_t;
 
-#define ADD_MAP_NODE(p)	{ if (me_head) { p->n = NULL; me_tail->n = p; me_tail = p; } else { me_head = p; me_tail = p; } }
+#define ADD_MAP_NODE(p)	{ if (me_head) { (p)->n = NULL; me_tail->n = p; me_tail = p; } else { me_head = p; me_tail = p; } }
 
 typedef struct auxv_buff {
         void *data;

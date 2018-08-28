@@ -3,13 +3,13 @@
 
 #include "asn1.h"
 
-R_API bool r_x509_parse_validity (RX509Validity *validity, RASN1Object *object);
+R_API bool; r_x509_parse_validity (RX509Validity *validity, RASN1Object *object);
 R_API void r_x509_free_validity (RX509Validity* validity);
 
-R_API bool r_x509_parse_algorithmidentifier (RX509AlgorithmIdentifier *ai, RASN1Object * object);
+R_API bool; r_x509_parse_algorithmidentifier (RX509AlgorithmIdentifier *ai, RASN1Object * object);
 R_API void r_x509_free_algorithmidentifier (RX509AlgorithmIdentifier * ai);
 
-R_API bool r_x509_parse_subjectpublickeyinfo (RX509SubjectPublicKeyInfo * spki, RASN1Object *object);
+R_API bool; r_x509_parse_subjectpublickeyinfo (RX509SubjectPublicKeyInfo * spki, RASN1Object *object);
 R_API void r_x509_free_subjectpublickeyinfo (RX509SubjectPublicKeyInfo * spki);
 
 R_API bool r_x509_parse_name (RX509Name *name, RASN1Object * object);

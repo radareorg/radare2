@@ -56,20 +56,20 @@ static char *entry_mask_bit[] =
 
 /* Get a 1 byte signed integer.  */
 #define NEXTBYTE(p)  \
-  (p += 1, FETCH_DATA (info, p), \
-  COERCE_SIGNED_CHAR(p[-1]))
+  ((p) += 1, FETCH_DATA (info, p), \
+  COERCE_SIGNED_CHAR((p)[-1]))
 
 /* Get a 2 byte signed integer.  */
 #define COERCE16(x) ((int) (((x) ^ 0x8000) - 0x8000))
 #define NEXTWORD(p)  \
-  (p += 2, FETCH_DATA (info, p), \
-   COERCE16 ((p[-1] << 8) + p[-2]))
+  ((p) += 2, FETCH_DATA (info, p), \
+   COERCE16 (((p)[-1] << 8) + (p)[-2]))
 
 /* Get a 4 byte signed integer.  */
 #define COERCE32(x) ((int) (((x) ^ 0x80000000) - 0x80000000))
 #define NEXTLONG(p)  \
-  (p += 4, FETCH_DATA (info, p), \
-   (COERCE32 ((((((p[-1] << 8) + p[-2]) << 8) + p[-3]) << 8) + p[-4])))
+  ((p) += 4, FETCH_DATA (info, p), \
+   (COERCE32 (((((((p)[-1] << 8) + (p)[-2]) << 8) + (p)[-3]) << 8) + (p)[-4])))
 
 /* Maximum length of an instruction.  */
 #define MAXLEN 25
@@ -87,7 +87,7 @@ struct private
    to ADDR (exclusive) are valid.  Returns 1 for success, longjmps
    on error.  */
 #define FETCH_DATA(info, addr) \
-  ((addr) <= ((struct private *)(info->private_data))->max_fetched \
+  ((addr) <= ((struct private *)((info)->private_data))->max_fetched \
    ? 1 : fetch_data ((info), (addr)))
 
 static int

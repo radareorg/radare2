@@ -240,9 +240,9 @@ static void cmd_help_percent(RCore *core) {
 }
 
 static void cmd_help_init(RCore *core) {
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?, question);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?v, question_v);
-	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?V, question_V);
+	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?, question: );
+	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?v, question_v: );
+	DEFINE_CMD_DESCRIPTOR_SPECIAL (core, ?V, question_V: );
 }
 
 static const char* findBreakChar(const char *s) {
@@ -648,7 +648,7 @@ static int cmd_help(void *data, const char *input) {
 			if (input[2] == '@') {
 				r_core_cmd_help (core, help_msg_at_at_at);
 			} else {
-				r_core_cmd_help (core, help_msg_at_at);
+				r_core_cmd_help (core, help_msg_root);
 			}
 		} else {
 			r_core_cmd_help (core, help_msg_at);

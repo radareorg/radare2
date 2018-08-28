@@ -44,19 +44,19 @@ typedef struct r_oflist_t {
 //#define R_LIST_NEW(x,y) x=r_list_new();x->free=(RListFree)y
 #define r_list_foreach(list, it, pos)\
 	if (list)\
-		for (it = list->head; it && (pos = it->data, 1); it = it->n)
+		for ((it) = (list)->head; (it) && ((pos) = (it)->data, 1); (it) = (it)->n)
 #define r_list_foreach_iter(list, it)\
 	if (list)\
-		for (it = list->head; it; it = it->n)
+		for ((it) = (list)->head; it; (it) = (it)->n)
 /* Safe when calling r_list_delete() while iterating over the list. */
 #define r_list_foreach_safe(list, it, tmp, pos)\
 	if (list)\
-		for (it = list->head; it && (pos = it->data, tmp = it->n, 1); it = tmp)
+		for ((it) = (list)->head; (it) && ((pos) = (it)->data, (tmp) = (it)->n, 1); (it) = (tmp))
 #define r_list_foreach_prev(list, it, pos)\
 	if (list)\
-		for (it = list->tail; it && (pos = it->data, 1); it = it->p)
+		for ((it) = (list)->tail; (it) && ((pos) = (it)->data, 1); (it) = (it)->p)
 #define r_list_foreach_prev_safe(list, it, tmp, pos) \
-	for (it = list->tail; it && (pos = it->data, tmp = it->p, 1); it = tmp)
+	for ((it) = (list)->tail; (it) && ((pos) = (it)->data, (tmp) = (it)->p, 1); (it) = (tmp))
 #ifndef _R_LIST_C_
 #define r_list_push(x, y) r_list_append (x, y)
 #define r_list_iterator(x) (x)? (x)->head: NULL
@@ -67,8 +67,8 @@ typedef struct r_oflist_t {
 
 #define r_list_iter_get(x)\
 	x->data;\
-	x = x->n
-#define r_list_iter_next(x) (x? 1: 0)
+	(x) = (x)->n
+#define r_list_iter_next(x) ((x)? 1: 0)
 
 #define r_list_iter_cur(x) x->p
 #define r_list_iter_free(x) x
@@ -120,17 +120,17 @@ R_API RListIter *r_list_find(const RList *list, const void *p, RListComparator c
 #define r_oflist_append(x, y) r_oflist_deserialize (x), r_list_append (x, y)
 #define r_oflist_prepend(x, y) r_oflist_deserialize (x), r_list_prepend (x, y)
 #define r_oflist_delete(x, y) r_oflist_deserialize (x), r_list_delete (x, y)
-#define r_oflist_array(x) x->array? x->array: (x->array = r_oflist_serialize (x)), x->array
+#define r_oflist_array(x) x->array? (x)->array: ((x)->array = r_oflist_serialize (x)), (x)->array
 #define r_oflist_deserialize(x)\
-	free (x->array - 1), x->array = 0
+	free ((x)->array - 1), (x)->array = 0
 #define r_oflist_serialize(x)\
 	x->array = r_flist_new (r_list_length (x)), { \
 		int idx = 0;\
 		void *ptr;\
 		RListIter *iter;\
-		r_list_foreach (x, iter, ptr) r_flist_set (x->array, idx++, ptr);\
+		r_list_foreach (x, iter, ptr) r_flist_set ((x)->array, idx++, ptr);\
 	}\
-	x->array;
+	(x)->array;
 #endif
 
 #ifdef __cplusplus

@@ -360,7 +360,7 @@ R_API int r_io_shift (RIO *io, ut64 start, ut64 end, st64 move);
 R_API ut64 r_io_seek (RIO *io, ut64 offset, int whence);
 R_API int r_io_fini (RIO *io);
 R_API void r_io_free (RIO *io);
-#define r_io_bind_init(x) memset(&x,0,sizeof(x))
+#define r_io_bind_init(x) memset(&(x),0,sizeof(x))
 
 R_API bool r_io_plugin_init(RIO *io);
 R_API int r_io_plugin_open(RIO *io, int fd, RIOPlugin *plugin);

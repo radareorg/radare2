@@ -550,7 +550,7 @@ typedef struct {
 	const char *file[128];
 	//RBinDwarfInfoHeader
 } RBinDwarfInfoHeader;
-#define R_BIN_DWARF_INFO_HEADER_FILE_LENGTH(x) (sizeof (x->file)/sizeof(*(x->file)))
+#define R_BIN_DWARF_INFO_HEADER_FILE_LENGTH(x) (sizeof ((x)->file)/sizeof(*((x)->file)))
 
 typedef struct {
 	ut64 address;
@@ -724,7 +724,7 @@ typedef struct {
 	size_t file_names_count;
 } RBinDwarfLNPHeader;
 
-#define r_bin_dwarf_line_new(o,a,f,l) o->address=a, o->file = strdup (f?f:""), o->line = l, o->column =0,o
+#define r_bin_dwarf_line_new(o,a,f,l) o->address=(a), (o)->file = strdup ((f)?(f):""), (o)->line = (l), (o)->column =0,o
 
 R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 		const ut8 *obuf, size_t len,

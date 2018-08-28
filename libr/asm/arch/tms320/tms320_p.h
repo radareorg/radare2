@@ -10,7 +10,7 @@
 #endif
 
 #ifndef get_bits
-# define get_bits(av, af, an)	(((av) >> (af)) & ((2 << (an - 1)) - 1))
+# define get_bits(av, af, an)	(((av) >> (af)) & ((2 << ((an) - 1)) - 1))
 #endif
 
 static inline ut16 le16(ut16 v)

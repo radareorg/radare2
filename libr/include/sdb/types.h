@@ -81,7 +81,7 @@
 #define R_NEW0(x) (x*)calloc(1, sizeof(x))
 #endif
 #ifndef R_FREE
-#define R_FREE(x) { free (x); x = NULL; }
+#define R_FREE(x) { free (x); (x) = NULL; }
 #endif
 #define UT32_MAX ((ut32)0xffffffff)
 #define UT64_MAX ((ut64)(0xffffffffffffffffLL))

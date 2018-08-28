@@ -468,7 +468,7 @@ struct stab_info
   struct bfd_section *stabstr;
 };
 
-#define COFF_SWAP_TABLE (void *) &bfd_coff_std_swap_table
+#define COFF_SWAP_TABLE ((void *) &bfd_coff_std_swap_table)
 
 /* User program access to BFD facilities.  */
 
@@ -543,7 +543,7 @@ extern void warn_deprecated (const char *, const char *, int, const char *);
 
 #define bfd_get_symbol_leading_char(abfd) ((abfd)->xvec->symbol_leading_char)
 
-#define bfd_set_cacheable(abfd,bool) (((abfd)->cacheable = bool), TRUE)
+#define bfd_set_cacheable(abfd,bool) (((abfd)->cacheable = (bool)), TRUE)
 
 extern bfd_boolean bfd_cache_close
   (bfd *abfd);
@@ -1612,7 +1612,7 @@ extern const struct bfd_symbol * const bfd_ind_symbol;
      0,   0,   0,    0,                                                \
                                                                        \
   /* output_offset, output_section,              alignment_power,  */  \
-     0,             (struct bfd_section *) &SEC, 0,                    \
+     0,             (struct bfd_section *) &(SEC), 0,                    \
                                                                        \
   /* relocation, orelocation, reloc_count, filepos, rel_filepos,   */  \
      NULL,       NULL,        0,           0,       0,                 \
@@ -1627,10 +1627,10 @@ extern const struct bfd_symbol * const bfd_ind_symbol;
      0,            NULL,        NULL,              NULL,               \
                                                                        \
   /* symbol,                                                       */  \
-     (struct bfd_symbol *) SYM,                                        \
+     (struct bfd_symbol *) (SYM),                                        \
                                                                        \
   /* symbol_ptr_ptr,                                               */  \
-     (struct bfd_symbol **) SYM_PTR,                                   \
+     (struct bfd_symbol **) (SYM_PTR),                                   \
                                                                        \
   /* map_head, map_tail                                            */  \
      { NULL }, { NULL }                                                \
@@ -2234,7 +2234,7 @@ struct reloc_howto_struct
 };
 
 #define HOWTO(C, R, S, B, P, BI, O, SF, NAME, INPLACE, MASKSRC, MASKDST, PC) \
-  { (unsigned) C, R, S, B, P, BI, O, SF, NAME, INPLACE, MASKSRC, MASKDST, PC }
+  { (unsigned) (C), R, S, B, P, BI, O, SF, NAME, INPLACE, MASKSRC, MASKDST, PC }
 #define NEWHOWTO(FUNCTION, NAME, SIZE, REL, IN) \
   HOWTO (0, 0, SIZE, 0, REL, 0, complain_overflow_dont, FUNCTION, \
          NAME, FALSE, 0, 0, IN)
@@ -2245,15 +2245,15 @@ struct reloc_howto_struct
 
 #define HOWTO_PREPARE(relocation, symbol)               \
   {                                                     \
-    if (symbol != NULL)                                 \
+    if ((symbol) != NULL)                                 \
       {                                                 \
-        if (bfd_is_com_section (symbol->section))       \
+        if (bfd_is_com_section ((symbol)->section))       \
           {                                             \
-            relocation = 0;                             \
+            (relocation) = 0;                             \
           }                                             \
         else                                            \
           {                                             \
-            relocation = symbol->value;                 \
+            (relocation) = (symbol)->value;                 \
           }                                             \
       }                                                 \
   }
@@ -4761,7 +4761,7 @@ bfd_boolean generic_core_file_matches_executable_p
 
 /* Extracted from targets.c.  */
 #define BFD_SEND(bfd, message, arglist) \
-  ((*((bfd)->xvec->message)) arglist)
+  ((*((bfd)->xvec->message)) (arglist))
 
 #ifdef DEBUG_BFD_SEND
 #undef BFD_SEND
@@ -4771,7 +4771,7 @@ bfd_boolean generic_core_file_matches_executable_p
     (bfd_assert (__FILE__,__LINE__), NULL))
 #endif
 #define BFD_SEND_FMT(bfd, message, arglist) \
-  (((bfd)->xvec->message[(int) ((bfd)->format)]) arglist)
+  (((bfd)->xvec->message[(int) ((bfd)->format)]) (arglist))
 
 #ifdef DEBUG_BFD_SEND
 #undef BFD_SEND_FMT

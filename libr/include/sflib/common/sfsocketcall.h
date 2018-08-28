@@ -51,7 +51,7 @@ type name(void) \
 type name(type0 arg0) \
 { \
         unsigned long arr[1];                \
-        arr[0] = (long)arg0;                 \
+        arr[0] = (long)(arg0);                 \
         return socketcall(SYS_##name, arr);  \
 }
 
@@ -59,8 +59,8 @@ type name(type0 arg0) \
 type name(type0 arg0, type1 arg1) \
 { \
         unsigned long arr[2];                \
-        arr[0] = (long)arg0;                 \
-        arr[1] = (long)arg1;                 \
+        arr[0] = (long)(arg0);                 \
+        arr[1] = (long)(arg1);                 \
         return socketcall(SYS_##name, arr);  \
 }
 
@@ -68,9 +68,9 @@ type name(type0 arg0, type1 arg1) \
 type name(type0 arg0, type1 arg1, type2 arg2) \
 { \
         unsigned long arr[3];                \
-        arr[0] = (long)arg0;                 \
-        arr[1] = (long)arg1;                 \
-        arr[2] = (long)arg2;                 \
+        arr[0] = (long)(arg0);                 \
+        arr[1] = (long)(arg1);                 \
+        arr[2] = (long)(arg2);                 \
         return socketcall(SYS_##name, arr);  \
 }
 
@@ -78,10 +78,10 @@ type name(type0 arg0, type1 arg1, type2 arg2) \
 type name(type0 arg0, type1 arg1, type2 arg2, type3 arg3) \
 { \
         unsigned long arr[4];                \
-        arr[0] = (long)arg0;                 \
-        arr[1] = (long)arg1;                 \
-        arr[2] = (long)arg2;                 \
-        arr[3] = (long)arg3;                 \
+        arr[0] = (long)(arg0);                 \
+        arr[1] = (long)(arg1);                 \
+        arr[2] = (long)(arg2);                 \
+        arr[3] = (long)(arg3);                 \
         return socketcall(SYS_##name, arr);  \
 }
 
@@ -89,11 +89,11 @@ type name(type0 arg0, type1 arg1, type2 arg2, type3 arg3) \
 type name(type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4) \
 { \
         unsigned long arr[5];                \
-        arr[0] = (long)arg0;                 \
-        arr[1] = (long)arg1;                 \
-        arr[2] = (long)arg2;                 \
-        arr[3] = (long)arg3;                 \
-        arr[4] = (long)arg4;                 \
+        arr[0] = (long)(arg0);                 \
+        arr[1] = (long)(arg1);                 \
+        arr[2] = (long)(arg2);                 \
+        arr[3] = (long)(arg3);                 \
+        arr[4] = (long)(arg4);                 \
         return socketcall(SYS_##name, arr);  \
 }
 
@@ -101,12 +101,12 @@ type name(type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4) \
 type name(type0 arg0, type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5) \
 { \
         unsigned long arr[6];                \
-        arr[0] = (long)arg0;                 \
-        arr[1] = (long)arg1;                 \
-        arr[2] = (long)arg2;                 \
-        arr[3] = (long)arg3;                 \
-        arr[4] = (long)arg4;                 \
-        arr[5] = (long)arg5;                 \
+        arr[0] = (long)(arg0);                 \
+        arr[1] = (long)(arg1);                 \
+        arr[2] = (long)(arg2);                 \
+        arr[3] = (long)(arg3);                 \
+        arr[4] = (long)(arg4);                 \
+        arr[5] = (long)(arg5);                 \
         return socketcall(SYS_##name, arr);  \
 }
 

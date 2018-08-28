@@ -69,7 +69,7 @@ typedef struct xtensa_slot_internal_struct
   int position;
   xtensa_get_slot_fn get_fn;
   xtensa_set_slot_fn set_fn;
-  xtensa_get_field_fn *get_field_fns;	/* Array[field_id].  */
+  xtensa_get_slot_fn *get_field_fns;	/* Array[field_id].  */
   xtensa_set_field_fn *set_field_fns;	/* Array[field_id].  */
   xtensa_opcode_decode_fn opcode_decode_fn;
   const char *nop_name;

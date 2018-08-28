@@ -473,7 +473,7 @@ typedef struct r_bin_class_t {
 #define REBASE_PADDR(o, l, type_t)\
 	do { \
 		RListIter *_it;\
-		type_t *_el;\
+		(type_t) *_el;\
 		r_list_foreach ((l), _it, _el) { \
 			_el->paddr += (o)->loadaddr;\
 		}\

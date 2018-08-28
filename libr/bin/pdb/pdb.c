@@ -262,7 +262,7 @@ static void free_info_stream(void *stream) {
 
 ///////////////////////////////////////////////////////////////////////////////
 #define ADD_INDX_TO_LIST(list, index, stream_size, stream_type, free_func, parse_func) {\
-		if (index != -1) {							\
+		if ((index) != -1) {							\
 			SStreamParseFunc *stream_parse_func = R_NEW0 (SStreamParseFunc);\
 			if (!stream_parse_func) { return; }				\
 			stream_parse_func->indx = (index);				\

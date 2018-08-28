@@ -2072,51 +2072,51 @@ extern bfd_boolean _sh_elf_set_mach_from_flags
     {									\
       /* It seems this can happen with erroneous or unsupported		\
 	 input (mixing a.out and elf in an archive, for example.)  */	\
-      if (!sym_hashes)						\
+      if (!(sym_hashes))						\
 	return FALSE;							\
 									\
-      h = sym_hashes[r_symndx - symtab_hdr->sh_info];			\
+      (h) = (sym_hashes)[(r_symndx) - (symtab_hdr)->sh_info];			\
 									\
-      while (h->root.type == bfd_link_hash_indirect			\
-	     || h->root.type == bfd_link_hash_warning)			\
-	h = (struct elf_link_hash_entry *) h->root.u.i.link;		\
+      while ((h)->root.type == bfd_link_hash_indirect			\
+	     || (h)->root.type == bfd_link_hash_warning)			\
+	(h) = (struct elf_link_hash_entry *) (h)->root.u.i.link;		\
 									\
-      warned = FALSE;							\
-      unresolved_reloc = FALSE;						\
-      relocation = 0;							\
-      if (h->root.type == bfd_link_hash_defined				\
-	  || h->root.type == bfd_link_hash_defweak)			\
+      (warned) = FALSE;							\
+      (unresolved_reloc) = FALSE;						\
+      (relocation) = 0;							\
+      if ((h)->root.type == bfd_link_hash_defined				\
+	  || (h)->root.type == bfd_link_hash_defweak)			\
 	{								\
-	  sec = h->root.u.def.section;					\
-	  if (!sec						\
-	      || !sec->output_section)				\
+	  (sec) = (h)->root.u.def.section;					\
+	  if (!(sec)						\
+	      || !(sec)->output_section)				\
 	    /* Set a flag that will be cleared later if we find a	\
 	       relocation value for this symbol.  output_section	\
 	       is typically NULL for symbols satisfied by a shared	\
 	       library.  */						\
-	    unresolved_reloc = TRUE;					\
+	    (unresolved_reloc) = TRUE;					\
 	  else								\
-	    relocation = (h->root.u.def.value				\
-			  + sec->output_section->vma			\
-			  + sec->output_offset);			\
+	    (relocation) = ((h)->root.u.def.value				\
+			  + (sec)->output_section->vma			\
+			  + (sec)->output_offset);			\
 	}								\
-      else if (h->root.type == bfd_link_hash_undefweak)			\
+      else if ((h)->root.type == bfd_link_hash_undefweak)			\
 	;								\
-      else if (info->unresolved_syms_in_objects == RM_IGNORE		\
-	       && ELF_ST_VISIBILITY (h->other) == STV_DEFAULT)		\
+      else if ((info)->unresolved_syms_in_objects == RM_IGNORE		\
+	       && ELF_ST_VISIBILITY ((h)->other) == STV_DEFAULT)		\
 	;								\
-      else if (!info->relocatable)					\
+      else if (!(info)->relocatable)					\
 	{								\
 	  bfd_boolean err;						\
-	  err = (info->unresolved_syms_in_objects == RM_GENERATE_ERROR	\
-		 || ELF_ST_VISIBILITY (h->other) != STV_DEFAULT);	\
-	  if (!info->callbacks->undefined_symbol (info,			\
-						  h->root.root.string,	\
+	  err = ((info)->unresolved_syms_in_objects == RM_GENERATE_ERROR	\
+		 || ELF_ST_VISIBILITY ((h)->other) != STV_DEFAULT);	\
+	  if (!(info)->callbacks->undefined_symbol (info,			\
+						  (h)->root.root.string,	\
 						  input_bfd,		\
 						  input_section,	\
-						  rel->r_offset, err))	\
+						  (rel)->r_offset, err))	\
 	    return FALSE;						\
-	  warned = TRUE;						\
+	  (warned) = TRUE;						\
 	}								\
     }									\
   while (0)

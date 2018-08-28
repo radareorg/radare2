@@ -21,7 +21,7 @@
 #define STANDARD_OPERAND_COUNT_DWARF3 12
 #define R_BIN_DWARF_INFO 1
 
-#define READ(x,y) ((x + sizeof (y) < buf_end)? *((y*)x): 0); x += sizeof (y)
+#define READ(x,y) (((x) + sizeof (y) < buf_end)? *((y*)(x)): 0); (x) += sizeof (y)
 
 static const char *dwarf_tag_name_encodings[] = {
 	[DW_TAG_array_type] = "DW_TAG_array_type",
@@ -735,7 +735,7 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 }
 
 #define READ_BUF(x,y) if (idx+sizeof(y)>=len) { return false;} \
-	x=*(y*)buf; idx+=sizeof(y);buf+=sizeof(y)
+	(x)=*(y*)buf; idx+=sizeof(y);buf+=sizeof(y)
 
 R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len, FILE *f) {
 	ut32 length, offset;

@@ -2,7 +2,7 @@
 #define R_NUM_H
 
 #define R_NUMCALC_STRSZ 1024
-#define r_num_abs(x) x>0?x:-x
+#define r_num_abs(x) (x>0?(x):-x)
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,11 +52,11 @@ typedef const char *(*RNumCallback2)(struct r_num_t *self, ut64, int *ok);
 void r_srand(int seed);
 int r_rand(int mod);
 
-R_API RNum *r_num_new(RNumCallback cb, RNumCallback2 cb2, void *ptr);
+R_API RNum; *r_num_new(RNumCallback cb, RNumCallback2 cb2, void *ptr);
 R_API void r_num_free(RNum *num);
 R_API char *r_num_units(char *buf, ut64 num);
 R_API int r_num_conditional(RNum *num, const char *str);
-R_API ut64 r_num_calc(RNum *num, const char *str, const char **err);
+R_API ut64; r_num_calc(RNum *num, const char *str, const char **err);
 R_API const char *r_num_calc_index(RNum *num, const char *p);
 R_API ut64 r_num_chs(int cylinder, int head, int sector, int sectorsize);
 R_API int r_num_is_valid_input(RNum *num, const char *input_value);

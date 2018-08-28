@@ -49,7 +49,7 @@ static void _mixed_free_kv(HtKv *kv) {
 	free (kv);
 }
 
-#define R_MIXED_KEY(m,x,y,z) r_mixed_key(m, r_offsetof(x,z), sizeof(y->z))
+#define R_MIXED_KEY(m,x,y,z) r_mixed_key(m, r_offsetof(x,z), sizeof((y)->z))
 R_API int r_mixed_key(RMixed *m, int key, int size) {
 	if (size > 0 && r_mixed_key_check (m, key, size)) {
 		if (m->keys[key]) {

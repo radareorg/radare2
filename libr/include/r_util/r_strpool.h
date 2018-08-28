@@ -13,7 +13,7 @@ typedef struct {
 	int size;
 } RStrpool;
 
-R_API RStrpool* r_strpool_new(int sz);
+R_API RStrpool;* r_strpool_new(int sz);
 R_API char *r_strpool_alloc(RStrpool *p, int l);
 R_API int r_strpool_memcat(RStrpool *p, const char *s, int len);
 R_API int r_strpool_ansi_chop(RStrpool *p, int n);

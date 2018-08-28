@@ -82,7 +82,7 @@ typedef int xtensa_funcUnit;
 
 /* Define a unique value for undefined items.  */
 
-#define XTENSA_UNDEFINED -1
+#define XTENSA_UNDEFINED (-1)
 
 
 /* Overview of using this interface to decode/encode instructions:

@@ -355,12 +355,12 @@ SDB_API char *sdb_array_compact(char *p);
 SDB_API char *sdb_aslice(char *out, int from, int to);
 #define sdb_aforeach(x,y) \
 	{ char *next; \
-	if (y) for (x=y;;) { \
-		x = sdb_anext (x, &next);
+	if (y) for ((x)=y;;) { \
+		(x) = sdb_anext (x, &next);
 #define sdb_aforeach_next(x) \
 	if (!next) break; \
 	*(next-1) = ','; \
-	x = next; } }
+	(x) = next; } }
 
 #ifdef __cplusplus
 }

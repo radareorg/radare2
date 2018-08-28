@@ -1734,8 +1734,8 @@ static int parse_reg_name(RRegItem *reg, csh *handle, cs_insn *insn, int reg_num
 	ZERO_FILL (regs[1]);\
 	(op)->src[0]->reg = &regs[1];\
 	(op)->dst->reg = &regs[0];\
-	parse_reg_name (op->src[0]->reg, &gop.handle, insn, 1);\
-	parse_reg_name (op->dst->reg, &gop.handle, insn, 0);
+	parse_reg_name ((op)->src[0]->reg, &gop.handle, insn, 1);\
+	parse_reg_name ((op)->dst->reg, &gop.handle, insn, 0);
 
 static void op_fillval (RAnal *a, RAnalOp *op, csh *handle, cs_insn *insn){
 	struct Getarg gop = {

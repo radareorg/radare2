@@ -72,8 +72,8 @@ static sparc_opcode_hash *opcode_hash_table[HASH_SIZE];
 
 /* Sign-extend a value which is N bits long.  */
 #define	SEX(value, bits) \
-	((((int)(value)) << ((8 * sizeof (int)) - bits))	\
-			 >> ((8 * sizeof (int)) - bits) )
+	((((int)(value)) << ((8 * sizeof (int)) - (bits)))	\
+			 >> ((8 * sizeof (int)) - (bits)) )
 
 static  char *reg_names[] =
 { "g0", "g1", "g2", "g3", "g4", "g5", "g6", "g7",

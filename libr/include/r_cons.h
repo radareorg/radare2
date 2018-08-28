@@ -28,7 +28,7 @@ extern "C" {
 /* constants */
 #define CONS_MAX_USER 102400
 #define CONS_BUFSZ 0x4f00
-#define STR_IS_NULL(x) (!x || !x[0])
+#define STR_IS_NULL(x) (!(x) || !(x)[0])
 
 /* palette */
 #define CONS_PALETTE_SIZE 22
@@ -900,7 +900,7 @@ R_API int r_line_set_hist_callback(RLine *line, RLineHistoryUpCb cb_up, RLineHis
 R_API int cmd_history_up(RLine *line);
 R_API int cmd_history_down(RLine *line);
 
-#define R_CONS_INVERT(x,y) (y? (x?Color_INVERT: Color_INVERT_RESET): (x?"[":"]"))
+#define R_CONS_INVERT(x,y) ((y)? ((x)?Color_INVERT: Color_INVERT_RESET): ((x)?"[":"]"))
 
 #endif
 

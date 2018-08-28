@@ -4079,7 +4079,7 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 	esil = r_anal_esil_new (stacksize, iotrap, addrsize);
 	r_anal_esil_setup (esil, core->anal, romem, stats1, noNULL); // setup io
-#	define hasNext(x) (x&1) ? (addr<addr_end) : (ops<ops_end)
+#	define hasNext(x) ((x)&1) ? (addr<addr_end) : (ops<ops_end)
 
 	mymemxsr = r_list_new ();
 	mymemxsw = r_list_new ();

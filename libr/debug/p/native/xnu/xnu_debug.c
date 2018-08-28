@@ -543,7 +543,7 @@ static vm_prot_t unix_prot_to_darwin(int prot) {
 int xnu_map_protect (RDebug *dbg, ut64 addr, int size, int perms) {
 	int ret;
 	task_t task = pid_to_task (dbg->tid);
-#define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
+#define xwr2rwx(x) ((((x)&1)<<2) | ((x)&2) | (((x)&4)>>2))
 	int xnu_perms = xwr2rwx (perms);
 	ret = mach_vm_protect (task, (vm_address_t)addr, (vm_size_t)size, (boolean_t)0, xnu_perms); //VM_PROT_COPY | perms);
 	if (ret != KERN_SUCCESS) {
@@ -630,11 +630,11 @@ int xnu_get_vmmap_entries_for_pid (pid_t pid) {
 	return n;
 }
 
-#define xwr2rwx(x) ((x&1)<<2) | (x&2) | ((x&4)>>2)
+#define xwr2rwx(x) ((((x)&1)<<2) | ((x)&2) | (((x)&4)>>2))
 #define COMMAND_SIZE(segment_count,segment_command_sz,\
 	thread_count,tstate_size)\
-	segment_count * segment_command_sz + thread_count * \
-	sizeof (struct thread_command) + tstate_size * thread_count
+	segment_count * (segment_command_sz) + (thread_count) * \
+	sizeof (struct thread_command) + (tstate_size) * thread_count
 
 static void get_mach_header_sizes(size_t *mach_header_sz, 
 									size_t *segment_command_sz) {

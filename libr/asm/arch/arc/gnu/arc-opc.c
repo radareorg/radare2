@@ -1788,7 +1788,7 @@ insert_ld_syntax (arc_insn insn,long *ex ATTRIBUTE_UNUSED,
     && ls_operand[LS_BASE]   == (B) \
     && ls_operand[LS_OFFSET] == (O)))
 
-#define X(x,b,m) ((unsigned)((x)&(((1<<m)-1)<<b))>>b)
+#define X(x,b,m) ((unsigned)((x)&(((1<<(m))-1)<<(b)))>>(b))
   int test = insn & I (-1);
 
   /* do syntax check for ARCompact 'ld' insn */

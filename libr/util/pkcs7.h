@@ -2,19 +2,19 @@
 #define R_PKCS7_INTERNAL_H
 
 
-R_API bool r_pkcs7_parse_certificaterevocationlists (RPKCS7CertificateRevocationLists *crls, RASN1Object *object);
+R_API bool; r_pkcs7_parse_certificaterevocationlists (RPKCS7CertificateRevocationLists *crls, RASN1Object *object);
 R_API void r_pkcs7_free_certificaterevocationlists (RPKCS7CertificateRevocationLists *crls);
 
-R_API bool r_pkcs7_parse_extendedcertificatesandcertificates (RPKCS7ExtendedCertificatesAndCertificates *ecac, RASN1Object *object);
+R_API bool; r_pkcs7_parse_extendedcertificatesandcertificates (RPKCS7ExtendedCertificatesAndCertificates *ecac, RASN1Object *object);
 R_API void r_pkcs7_free_extendedcertificatesandcertificates (RPKCS7ExtendedCertificatesAndCertificates *ecac);
 
-R_API bool r_pkcs7_parse_digestalgorithmidentifier (RPKCS7DigestAlgorithmIdentifiers *dai, RASN1Object *object);
+R_API bool; r_pkcs7_parse_digestalgorithmidentifier (RPKCS7DigestAlgorithmIdentifiers *dai, RASN1Object *object);
 R_API void r_pkcs7_free_digestalgorithmidentifier (RPKCS7DigestAlgorithmIdentifiers *dai);
 
-R_API bool r_pkcs7_parse_contentinfo (RPKCS7ContentInfo* ci, RASN1Object *object);
+R_API bool; r_pkcs7_parse_contentinfo (RPKCS7ContentInfo* ci, RASN1Object *object);
 R_API void r_pkcs7_free_contentinfo (RPKCS7ContentInfo* ci);
 
-R_API bool r_pkcs7_parse_issuerandserialnumber (RPKCS7IssuerAndSerialNumber* iasu, RASN1Object *object);
+R_API bool; r_pkcs7_parse_issuerandserialnumber (RPKCS7IssuerAndSerialNumber* iasu, RASN1Object *object);
 R_API void r_pkcs7_free_issuerandserialnumber (RPKCS7IssuerAndSerialNumber* iasu);
 
 R_API RPKCS7Attribute* r_pkcs7_parse_attribute (RASN1Object *object);

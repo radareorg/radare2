@@ -12,7 +12,7 @@ R_API int r_hex_bin2str(const ut8 *in, int len, char *out);
 R_API char *r_hex_bin2strdup(const ut8 *in, int len);
 R_API int r_hex_to_byte(ut8 *val, ut8 c);
 R_API int r_hex_str_is_valid(const char *s);
-R_API st64 r_hex_bin_truncate(ut64 in, int n);
+R_API st64; r_hex_bin_truncate(ut64 in, int n);
 R_API char *r_hex_from_c(const char *code);
 R_API char *r_hex_from_py(const char *code);
 R_API char *r_hex_from_code(const char *code);
