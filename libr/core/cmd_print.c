@@ -5115,6 +5115,7 @@ static int cmd_print(void *data, const char *input) {
 							core->block, len, -8, 4, 1);
 					break;
 				case '4':
+				case ' ':
 				case 0:
 					// 4 byte signed words
 					r_print_hexdump (core->print, core->offset,
