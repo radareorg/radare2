@@ -112,15 +112,17 @@ R_API int r_core_bin_set_env(RCore *r, RBinFile *binfile) {
 		ut64 baseaddr = r_bin_get_baddr (r->bin);
 		r_config_set_i (r->config, "bin.baddr", baseaddr);
 		sdb_num_add (r->sdb, "orig_baddr", baseaddr, 0);
-		r_config_set (r->config, "asm.arch", arch);
 		r_config_set_i (r->config, "asm.bits", bits);
-		r_config_set (r->config, "anal.arch", arch);
 		if (info->cpu && *info->cpu) {
 			r_config_set (r->config, "anal.cpu", info->cpu);
-		} else {
+		} else if (arch) {
 			r_config_set (r->config, "anal.cpu", arch);
 		}
-		r_asm_use (r->assembler, arch);
+		if (arch) {
+			r_config_set (r->config, "asm.arch", arch);
+			r_config_set (r->config, "anal.arch", arch);
+			r_asm_use (r->assembler, arch);
+		}
 		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET, va, NULL, NULL);
 		r_core_bin_set_cur (r, binfile);
 		return true;
@@ -3451,7 +3453,7 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 	return ret;
 }
 
-R_API int r_core_bin_set_arch_bits(RCore *r, const char *name, const char * arch, ut16 bits) {
+R_API int r_core_bin_set_arch_bits(RCore *r, const char *name, const char *arch, ut16 bits) {
 	int fd = r_io_fd_get_current (r->io);
 	RIODesc *desc = r_io_desc_get (r->io, fd);
 	RBinFile *curfile, *binfile = NULL;
@@ -3462,7 +3464,7 @@ R_API int r_core_bin_set_arch_bits(RCore *r, const char *name, const char * arch
 		name = desc->name;
 	}
 	/* Check if the arch name is a valid name */
-	if (!r_asm_is_valid (r->assembler, arch)) {
+	if (!arch || !r_asm_is_valid (r->assembler, arch)) {
 		return false;
 	}
 	/* Find a file with the requested name/arch/bits */
