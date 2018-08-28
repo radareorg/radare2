@@ -146,6 +146,15 @@ static const char *help_msg_p[] = {
 	NULL
 };
 
+static const char *help_msg_pxd[] = {
+	"Usage:", "pxd[1248] ([len])", "show decimal byte/short/word/dword dumps",
+	"pxd", "", "show decimal hexdumps",
+	"pxd2", "", "show shorts hexdump",
+	"pxd4", "", "show dword hexdump (int)",
+	"pxd8", "", "show qword hexdump (int)",
+	NULL
+};
+
 static const char *help_msg_p_equal[] = {
 	"Usage:", "p=[=bep?][qj] [N] ([len]) ([offset]) ", "show entropy/printable chars/chars bars",
 	"e ", "zoom.in", "specify range for zoom",
@@ -5087,7 +5096,9 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 'd': // "pxd"
-			if (l != 0) {
+			if (input[2] == '?') {
+				r_core_cmd_help (core, help_msg_pxd);
+			} else if (l != 0) {
 				switch (input[2]) {
 				case '1':
 					// 1 byte signed words (byte)
@@ -5104,10 +5115,13 @@ static int cmd_print(void *data, const char *input) {
 							core->block, len, -8, 4, 1);
 					break;
 				case '4':
-				default:
+				case 0:
 					// 4 byte signed words
 					r_print_hexdump (core->print, core->offset,
 						core->block, len, 10, 4, 1);
+					break;
+				default:
+					r_core_cmd_help (core, help_msg_pxd);
 					break;
 				}
 			}
