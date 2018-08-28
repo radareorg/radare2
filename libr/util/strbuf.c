@@ -13,21 +13,30 @@ R_API RStrBuf *r_strbuf_new(const char *str) {
 }
 
 R_API bool r_strbuf_equals(RStrBuf *sa, RStrBuf *sb) {
-	if (!sa || !sb || sa->len != sb->len) { // faster comparisons
+	r_return_val_if_fail (sa, false);
+	r_return_val_if_fail (sb, false);
+
+	if (sa->len != sb->len) { // faster comparisons
 		return false;
 	}
 	return strcmp (r_strbuf_get (sa), r_strbuf_get (sb)) == 0;
 }
 
 R_API int r_strbuf_length(RStrBuf *sb) {
-	return sb? sb->len: 0;
+	r_return_val_if_fail (sb, 0);
+	return sb->len;
 }
 
 R_API void r_strbuf_init(RStrBuf *sb) {
+	r_return_if_fail (sb);
 	memset (sb, 0, sizeof (RStrBuf));
 }
 
 R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, int l) {
+	r_return_val_if_fail (sb, false);
+	r_return_val_if_fail (s, false);
+	r_return_val_if_fail (l >= 0, false);
+
 	if (l >= sizeof (sb->buf)) {
 		char *ptr = sb->ptr;
 		if (!ptr || l + 1 > sb->ptrlen) {
@@ -48,9 +57,8 @@ R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, int l) {
 }
 
 R_API bool r_strbuf_set(RStrBuf *sb, const char *s) {
-	if (!sb) {
-		return false;
-	}
+	r_return_val_if_fail (sb, false);
+
 	if (!s) {
 		r_strbuf_init (sb);
 		return true;
@@ -66,8 +74,9 @@ R_API bool r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
 	char string[1024];
 	va_list ap, ap2;
 
-	if (!sb || !fmt)
-		return false;
+	r_return_val_if_fail (sb, false);
+	r_return_val_if_fail (fmt, false);
+
 	va_start (ap, fmt);
 	va_copy (ap2, ap);
 	rc = vsnprintf (string, sizeof (string), fmt, ap);
@@ -90,13 +99,18 @@ done:
 }
 
 R_API int r_strbuf_append(RStrBuf *sb, const char *s) {
+	r_return_val_if_fail (sb, -1);
+	r_return_val_if_fail (s, -1);
+
 	int l = strlen (s);
 	return r_strbuf_append_n (sb, s, l);
 }
 
 R_API int r_strbuf_append_n(RStrBuf *sb, const char *s, int l) {
-	if (l < 1) {
-		return false;
+	r_return_val_if_fail (l >= 0, false);
+
+	if (l == 0) {
+		return true;
 	}
 	if ((sb->len + l + 1) <= sizeof (sb->buf)) {
 		memcpy (sb->buf + sb->len, s, l + 1);
@@ -153,25 +167,22 @@ R_API int r_strbuf_appendf(RStrBuf *sb, const char *fmt, ...) {
 }
 
 R_API char *r_strbuf_get(RStrBuf *sb) {
-	return sb? (sb->ptr? sb->ptr: sb->buf) : NULL;
+	r_return_val_if_fail (sb, NULL);
+	return sb->ptr? sb->ptr: sb->buf;
 }
 
 R_API ut8 *r_strbuf_getbin(RStrBuf *sb, int *len) {
-	if (sb) {
-		if (len) {
-			*len = sb->len;
-		}
-		return (ut8*)(sb->ptr? sb->ptr: sb->buf);
+	r_return_val_if_fail (sb, NULL);
+	if (len) {
+		*len = sb->len;
 	}
-	return NULL;
+	return (ut8*)(sb->ptr? sb->ptr: sb->buf);
 }
 
 R_API char *r_strbuf_drain(RStrBuf *sb) {
-	char *ret = NULL;
-	if (sb) {
-		ret = sb->ptr? sb->ptr: strdup (sb->buf);
-		free (sb);
-	}
+	r_return_val_if_fail (sb, NULL);
+	char *ret = sb->ptr? sb->ptr: strdup (sb->buf);
+	free (sb);
 	return ret;
 }
 
