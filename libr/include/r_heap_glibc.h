@@ -128,16 +128,6 @@ typedef struct r_malloc_state_64 {
 	ut64 max_system_mem;                    /* maximum system memory */
 } RHeap_MallocState_64;
 
-typedef struct r_tcache_perthread_struct_32 {
-	ut8 counts[TCACHE_MAX_BINS];
-	unsigned int *entries[TCACHE_MAX_BINS];
-} RHeapTcache_32;
-
-typedef struct r_tcache_perthread_struct_64 {
-	ut8 counts[TCACHE_MAX_BINS];
-	unsigned int *entries[TCACHE_MAX_BINS];
-} RHeapTcache_64;
-
 typedef struct r_malloc_state_tcache_32 {
 	int mutex;                              /* serialized access */
 	int flags;                              /* flags */
