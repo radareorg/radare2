@@ -11,17 +11,6 @@ IndentWidth: 8
 UseTab: Always
 ColumnLimit: 0
 BreakBeforeBraces: Attach
-BraceWrapping:
-  AfterClass: false
-  AfterControlStatement: false
-  AfterEnum: false
-  AfterFunction: false
-  AfterNamespace: false
-  AfterStruct: false
-  AfterUnion: false
-  BeforeCatch: false
-  BeforeElse: false
-  IndentBraces: false
 BreakBeforeTernaryOperators: false
 AllowShortIfStatementsOnASingleLine: true
 AllowShortCaseLabelsOnASingleLine: true

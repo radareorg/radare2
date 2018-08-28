@@ -16,6 +16,7 @@ if [ -z "${IFILE}" ]; then
 	echo " -a    indent all whitelisted files"
 	echo " -i    indent in place (modify file)"
 	echo " -u    unified diff of the file"
+	echo " -c    use clang-format"
 	exit 1
 fi
 
@@ -49,6 +50,12 @@ fi
 if [ "${IFILE}" = "-u" ]; then
 	shift
 	UNIFIED=1
+	IFILE="$1"
+fi
+
+if [ "${IFILE}" = "-c" ]; then
+	shift
+	UNCRUST=0
 	IFILE="$1"
 fi
 
@@ -147,7 +154,6 @@ indentFile() {
 	fi
 	rm -f .tmp-format2
 	)
-	rm -f ${CWD}/.clang-format
 }
 
 while : ; do
