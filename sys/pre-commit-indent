@@ -26,6 +26,8 @@ if [ "${sz}" != "0" ] ; then
 	echo "Run \`git diff --cached | ./sys/clang-format-diff.py -p1 -i\` to apply the changes listed below and remember to add them to git."
 	echo
 	cat ${tmpfile}
+	echo
+	echo "If you think the current style is ok, just run `git commit --no-verify` to bypass this check."
 	restore_exit 1
 fi
 
