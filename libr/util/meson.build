@@ -1,5 +1,6 @@
 
 files = [
+  'assert.c',
   'ascii_table.c',
   'base85.c',
   'base91.c',
