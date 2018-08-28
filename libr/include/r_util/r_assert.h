@@ -11,7 +11,7 @@ R_API void r_log_critical(const char *file, int line, const char *func);
 #define R_STRFUNC     ((const char*) (__func__))
 #elif defined (__GNUC__) || (defined(_MSC_VER) && (_MSC_VER > 1300))
 #define R_STRFUNC     ((const char*) (__FUNCTION__))
-#elsR
+#else
 #define R_STRFUNC     ((const char*) ("???"))
 #endif
 
