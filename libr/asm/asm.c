@@ -320,7 +320,10 @@ R_API int r_asm_use(RAsm *a, const char *name) {
 	RListIter *iter;
 
 	r_return_val_if_fail (a, false);
-	r_return_val_if_fail (name, false);
+
+	if (!name) {
+		return false;
+	}
 
 	r_list_foreach (a->plugins, iter, h) {
 		if (!strcmp (h->name, name) && h->arch) {
@@ -1042,8 +1045,9 @@ R_API bool r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val) {
 
 R_API int r_asm_get_offset(RAsm *a, int type, int idx) { // link to rbin
 	r_return_val_if_fail (a, -1);
+	r_return_val_if_fail (a->binb.bin, -1);
 
-	if (a && a->binb.bin && a->binb.get_offset) {
+	if (a->binb.get_offset) {
 		return a->binb.get_offset (a->binb.bin, type, idx);
 	}
 	return -1;

@@ -155,7 +155,9 @@ R_API int r_bin_load_languages(RBinFile *binfile) {
 }
 
 R_API void r_bin_info_free(RBinInfo *rb) {
-	r_return_if_fail (rb);
+	if (!rb) {
+		return;
+	}
 	free (rb->intrp);
 	free (rb->file);
 	free (rb->type);

@@ -2105,6 +2105,10 @@ R_API int r_anal_fcn_count(RAnal *anal, ut64 from, ut64 to) {
 R_API RAnalBlock *r_anal_fcn_bbget_in(RAnalFunction *fcn, ut64 addr) {
 	r_return_val_if_fail (fcn, NULL);
 
+	if (addr == UT64_MAX) {
+		return NULL;
+	}
+
 	RListIter *iter;
 	RAnalBlock *bb;
 	r_list_foreach (fcn->bbs, iter, bb) {
@@ -2117,6 +2121,10 @@ R_API RAnalBlock *r_anal_fcn_bbget_in(RAnalFunction *fcn, ut64 addr) {
 
 R_API RAnalBlock *r_anal_fcn_bbget_at(RAnalFunction *fcn, ut64 addr) {
 	r_return_val_if_fail (fcn, NULL);
+
+	if (addr == UT64_MAX) {
+		return NULL;
+	}
 
 #if USE_SDB_CACHE
 	return sdb_ptr_get (HB, sdb_fmt (SDB_KEY_BB, fcn->addr, addr), NULL);
