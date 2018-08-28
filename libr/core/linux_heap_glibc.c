@@ -397,18 +397,13 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena, MallocState *mai
 	if (!core || !core->dbg || !core->dbg->maps) {
 		return false;
 	}
-	if (*m_arena == GHT_MAX) {
-		if (GH(r_resolve_symbol) (core, m_arena, "main_arena")) {
-			if (main_arena) {
-				GH(update_main_arena) (core, *m_arena, main_arena);
-				return true;
-			}
+	if (GH(r_resolve_symbol) (core, m_arena, "main_arena")) {
+		if (main_arena) {
+			GH(update_main_arena) (core, *m_arena, main_arena);
+			return true;
 		}
-		return false;
-	} else {
-		GH(update_main_arena) (core, *m_arena, main_arena);
 	}
-	return true;
+	return false;
 }
 
 void GH(print_heap_chunk)(RCore *core) {
