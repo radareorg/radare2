@@ -9,8 +9,8 @@
 #include <termios.h>
 #include <errno.h>
 
-#define   RD_EOF   -1
-#define   RD_EIO   -2
+#define   RD_EOF   (-1)
+#define   RD_EIO   (-2)
 
 /* select utf8 terminal detection method */
 #define UTF8_DETECT_ENV 1

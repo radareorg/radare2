@@ -26,9 +26,9 @@
 #include "elf-bfd.h"
 
 #define ERR_OK   0
-#define ERR_UND -1
-#define ERR_UNP -3
-#define ERR_NYI -5
+#define ERR_UND (-1)
+#define ERR_UNP (-3)
+#define ERR_NYI (-5)
 
 #define INSNLEN 4
 

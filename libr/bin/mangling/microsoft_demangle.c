@@ -482,9 +482,9 @@ get_namespace_and_name_err:
 
 #define DEF_STATE_ACTION(action) static void tc_state_##action(SStateInfo *state, STypeCodeStr *type_code_str)
 #define GO_TO_NEXT_STATE(state, new_state) { \
-	state->amount_of_read_chars++; \
-	state->buff_for_parsing++; \
-	state->state = eTCStateEnd; \
+	(state)->amount_of_read_chars++; \
+	(state)->buff_for_parsing++; \
+	(state)->state = eTCStateEnd; \
 }
 #define ONE_LETTER_ACTIION(action, type) \
 	static void tc_state_##action(SStateInfo *state, STypeCodeStr *type_code_str) \
@@ -1180,7 +1180,7 @@ static EDemanglerErr parse_microsoft_mangled_name(char *sym, char **demangled_na
 #define SET_ACCESS_MODIFIER(letter, flag_set, modifier_str) { \
 	case letter: \
 		access_modifier = modifier_str; \
-		flag_set = 1; \
+		(flag_set) = 1; \
 		break; \
 }
 	/* Functions */

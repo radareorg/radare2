@@ -11,13 +11,13 @@
 
 #define LOAD_BSS_MALLOC 0
 
-#define IS_MODE_SET(mode) (mode & R_CORE_BIN_SET)
-#define IS_MODE_SIMPLE(mode) (mode & R_CORE_BIN_SIMPLE)
-#define IS_MODE_SIMPLEST(mode) (mode & R_CORE_BIN_SIMPLEST)
-#define IS_MODE_JSON(mode) (mode & R_CORE_BIN_JSON)
-#define IS_MODE_RAD(mode) (mode & R_CORE_BIN_RADARE)
-#define IS_MODE_NORMAL(mode) (!mode)
-#define IS_MODE_CLASSDUMP(mode) (mode & R_CORE_BIN_CLASSDUMP)
+#define IS_MODE_SET(mode) ((mode) & R_CORE_BIN_SET)
+#define IS_MODE_SIMPLE(mode) ((mode) & R_CORE_BIN_SIMPLE)
+#define IS_MODE_SIMPLEST(mode) ((mode) & R_CORE_BIN_SIMPLEST)
+#define IS_MODE_JSON(mode) ((mode) & R_CORE_BIN_JSON)
+#define IS_MODE_RAD(mode) ((mode) & R_CORE_BIN_RADARE)
+#define IS_MODE_NORMAL(mode) (!(mode))
+#define IS_MODE_CLASSDUMP(mode) ((mode) & R_CORE_BIN_CLASSDUMP)
 
 // dup from cmd_info
 #define PAIR_WIDTH 9
@@ -1246,7 +1246,7 @@ static const char *bin_reloc_type_name(RBinReloc *reloc) {
 }
 
 static ut8 bin_reloc_size(RBinReloc *reloc) {
-#define CASE(T) case R_BIN_RELOC_ ## T: return T / 8
+#define CASE(T) case R_BIN_RELOC_ ## T: return (T) / 8
 	switch (reloc->type) {
 		CASE(8);
 		CASE(16);

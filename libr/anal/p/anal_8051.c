@@ -231,9 +231,9 @@ static RI8051Reg registers[] = {
 #define ev_imm1 buf[1]
 #define ev_imm2 buf[2]
 #define ev_imm16 op->val
-#define ev_ri 1 & buf[0]
-#define ev_rix 1 & buf[0]
-#define ev_rn 7 & buf[0]
+#define ev_ri (1 & buf[0])
+#define ev_rix (1 & buf[0])
+#define ev_rn (7 & buf[0])
 #define ev_sp2 0
 #define ev_sp1 0
 

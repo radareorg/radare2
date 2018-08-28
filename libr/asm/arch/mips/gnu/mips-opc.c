@@ -65,15 +65,15 @@
 
 #define WR_HI	INSN_WRITE_HI
 #define RD_HI	INSN_READ_HI
-#define MOD_HI  WR_HI|RD_HI
+#define MOD_HI  (WR_HI|RD_HI)
 
 #define WR_LO	INSN_WRITE_LO
 #define RD_LO	INSN_READ_LO
-#define MOD_LO  WR_LO|RD_LO
+#define MOD_LO  (WR_LO|RD_LO)
 
-#define WR_HILO WR_HI|WR_LO
-#define RD_HILO RD_HI|RD_LO
-#define MOD_HILO WR_HILO|RD_HILO
+#define WR_HILO (WR_HI|WR_LO)
+#define RD_HILO (RD_HI|RD_LO)
+#define MOD_HILO (WR_HILO|RD_HILO)
 
 #define IS_M    INSN_MULT
 
@@ -155,7 +155,7 @@
 
 #define WR_a	WR_HILO	/* Write dsp accumulators (reuse WR_HILO)  */
 #define RD_a	RD_HILO	/* Read dsp accumulators (reuse RD_HILO)  */
-#define MOD_a	WR_a|RD_a
+#define MOD_a	(WR_a|RD_a)
 #define DSP_VOLA	INSN_TRAP
 #define D32	INSN_DSP
 #define D33	INSN_DSPR2

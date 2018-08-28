@@ -9,7 +9,7 @@ typedef struct {
 	libgdbr_t desc;
 } RIOGdb;
 
-#define UNKNOWN -1
+#define UNKNOWN (-1)
 #define UNSUPPORTED 0
 #define SUPPORTED 1
 

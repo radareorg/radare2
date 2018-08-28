@@ -18,8 +18,8 @@
 // TODO scale and disp
 
 #define SET_VAL(op,i) \
-	if (i<OPCOUNT() && OPERAND(i).type == MIPS_OP_IMM) {\
-		op->val = OPERAND(i).imm;\
+	if ((i)<OPCOUNT() && OPERAND(i).type == MIPS_OP_IMM) {\
+		(op)->val = OPERAND(i).imm;\
 	}
 
 #define CREATE_SRC_DST_3(op) \
@@ -587,7 +587,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	return 0;
 }
 
-#define ZERO_FILL(x) memset (&x, 0, sizeof (x))
+#define ZERO_FILL(x) memset (&(x), 0, sizeof (x))
 
 static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
 	if (!reg) {

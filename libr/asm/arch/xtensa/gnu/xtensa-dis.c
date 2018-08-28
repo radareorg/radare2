@@ -37,7 +37,7 @@ __declspec(dllimport)
 extern xtensa_isa xtensa_default_isa;
 
 #ifndef MAX
-#define MAX(a,b) (a > b ? a : b)
+#define MAX(a,b) (((a)) > ((b)) ? ((a)) : ((b)))
 #endif
 
 #if 1

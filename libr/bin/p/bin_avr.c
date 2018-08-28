@@ -4,16 +4,16 @@
 
 #define CHECK4INSTR(b, instr, size) \
 	if (!instr (b) ||\
-		!instr (b + size) ||\
-		!instr (b + size * 2) ||\
-		!instr (b + size * 3)) {\
+		!instr ((b) + (size)) ||\
+		!instr ((b) + (size) * 2) ||\
+		!instr ((b) + (size) * 3)) {\
 		return false;\
 	}
 
 #define CHECK3INSTR(b, instr, size) \
-	if (!instr (b + size) ||\
-		!instr (b + size * 2) ||\
-		!instr (b + size * 3)) {\
+	if (!instr ((b) + (size)) ||\
+		!instr ((b) + (size) * 2) ||\
+		!instr ((b) + (size) * 3)) {\
 		return false;\
 	}
 

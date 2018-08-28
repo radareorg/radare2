@@ -3,7 +3,7 @@
 
 #include "cr16_disas.h"
 
-#define GET_BIT(x, n) 	((x >> n) & 1)
+#define GET_BIT(x, n) 	((((x)) >> ((n))) & 1)
 
 static const char *cr16_regs_names[] = {
 	[CR16_R0]	= "r0",

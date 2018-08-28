@@ -19,7 +19,7 @@ typedef struct {
 	ut8 *buf;
 	ut32 size;
 } RIOShm;
-#define RIOSHM_FD(x) (((RIOShm*)x)->fd)
+#define RIOSHM_FD(x) (((RIOShm*)(x))->fd)
 
 #define SHMATSZ 0x9000; // 32*1024*1024; /* 32MB : XXX not used correctly? */
 

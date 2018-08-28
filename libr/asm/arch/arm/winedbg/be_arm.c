@@ -11,8 +11,8 @@
 
 #define ROR32(n, r) (((n) >> (r)) | ((n) << (32 - (r))))
 
-#define get_cond(ins)           tbl_cond[(ins >> 28) & 0x0f]
-#define get_nibble(ins, num)    ((ins >> (num * 4)) & 0x0f)
+#define get_cond(ins)           tbl_cond[(((ins)) >> 28) & 0x0f]
+#define get_nibble(ins, num)    ((((ins)) >> (((num)) * 4)) & 0x0f)
 
 static char const tbl_regs[][4] = {
 	"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "r9", "r10",

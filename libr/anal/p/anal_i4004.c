@@ -7,7 +7,7 @@
 #include <r_asm.h>
 #include <r_anal.h>
 
-#define	AVR_SOFTCAST(x,y)	(x+(y*0x100))
+#define	AVR_SOFTCAST(x,y)	((x)+((y)*0x100))
 
 static int set_reg_profile(RAnal *anal) {
 	const char *p =

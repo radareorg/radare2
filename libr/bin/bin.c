@@ -13,7 +13,7 @@ R_LIB_VERSION (r_bin);
 #define RBINLISTFREE(x)\
 	if (x) { \
 		r_list_free (x);\
-		x = NULL;\
+		(x) = NULL;\
 	}
 
 #define ARCHS_KEY "archs"
