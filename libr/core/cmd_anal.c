@@ -1221,18 +1221,24 @@ static const char *syscallNumber(int n) {
 	return sdb_fmt (n > 1000 ? "0x%x" : "%d", n);
 }
 
-R_API char *cmd_syscall_dostr(RCore *core, int n) {
+R_API char *cmd_syscall_dostr(RCore *core, int n, ut64 addr) {
 	char *res = NULL;
 	int i;
 	char str[64];
+	int defVector = r_syscall_get_swi (core->anal->syscall);
+	if (defVector > 0) {
+		n = -1;
+	}
 	if (n == -1) {
 		n = (int)r_debug_reg_get (core->dbg, "oeax");
 		if (!n || n == -1) {
 			const char *a0 = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
-			n = (int)r_debug_reg_get (core->dbg, a0);
+			n = (a0 == NULL)? -1: (int)r_debug_reg_get (core->dbg, a0);
 		}
 	}
-	RSyscallItem *item = r_syscall_get (core->anal->syscall, n, -1);
+	RSyscallItem *item = (defVector > 0)
+		? r_syscall_get (core->anal->syscall, n, -1)
+		: r_syscall_get (core->anal->syscall, 0, n);
 	if (!item) {
 		res = r_str_appendf (res, "%s = unknown ()", syscallNumber (n));
 		return res;
@@ -1292,8 +1298,8 @@ R_API char *cmd_syscall_dostr(RCore *core, int n) {
 	return res;
 }
 
-static void cmd_syscall_do(RCore *core, int n) {
-	char *msg = cmd_syscall_dostr (core, n);
+static void cmd_syscall_do(RCore *core, int n, ut64 addr) {
+	char *msg = cmd_syscall_dostr (core, n, addr);
 	if (msg) {
 		r_cons_println (msg);
 		free (msg);
@@ -2180,8 +2186,8 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 		break;
 	case '-': // "af-"
 		if (!input[2] || !strcmp (input + 2, "*")) {
-			r_anal_fcn_del_locs (core->anal, UT64_MAX);
-			r_anal_fcn_del (core->anal, UT64_MAX);
+			r_list_purge (core->anal->fcns);
+			core->anal->fcn_tree = NULL;
 		} else {
 			ut64 addr = input[2]
 				? r_num_math (core->num, input + 2)
@@ -5244,10 +5250,10 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		// JSON support
 		break;
 	case '\0':
-		cmd_syscall_do (core, -1); //n);
+		cmd_syscall_do (core, -1, core->offset);
 		break;
 	case ' ':
-		cmd_syscall_do (core, (int)r_num_get (core->num, input + 1));
+		cmd_syscall_do (core, (int)r_num_get (core->num, input + 1), -1);
 		break;
 	case 'k': // "ask"
 		if (input[1] == ' ') {
@@ -7137,6 +7143,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				r_core_seek (core, map->itv.addr, 1);
 				r_core_anal_esil (core, "$SS", NULL);
 			}
+			r_list_free (list);
 			r_core_seek (core, at, 1);
 		}
 		break;

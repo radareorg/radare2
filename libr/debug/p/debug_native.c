@@ -1188,7 +1188,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 	while (!feof (fd)) {
 		size_t line_len;
 		bool map_is_shared = false;
-		ut64 map_start, map_end, offset;
+		ut64 map_start, map_end;
 
 		if (!fgets (line, sizeof (line), fd)) {
 			break;
@@ -1221,6 +1221,7 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 			name[0] = '\0';
 		}
 #else
+		ut64 offset = 0;;
 		// 7fc8124c4000-7fc81278d000 r--p 00000000 fc:00 17043921 /usr/lib/locale/locale-archive
 		i = sscanf (line, "%s %s %08"PFMT64x" %*s %*s %[^\n]", &region[2], perms, &offset, name);
 		if (i == 3) {

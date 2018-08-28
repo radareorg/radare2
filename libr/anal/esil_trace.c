@@ -116,6 +116,7 @@ R_API void r_anal_esil_trace (RAnalEsil *esil, RAnalOp *op) {
 	esil->cb.hook_mem_write = trace_hook_mem_write;
 	/* evaluate esil expression */
 	r_anal_esil_parse (esil, expr);
+	r_anal_esil_stack_free (esil);
 	/* restore hooks */
 	esil->cb = ocbs;
 	ocbs_set = false;

@@ -437,10 +437,6 @@ R_API bool r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	if (!io || !buf || len < 1) {
 		return false;
 	}
-	if (io->buffer_enabled) {
-		int res = r_io_buffer_read (io, addr, buf, len);
-		return res > 0? true: false;
-	}
 	if (io->va) {
 		ret = r_io_vread_at_mapped (io, addr, buf, len);
 	} else {
@@ -460,9 +456,6 @@ R_API bool r_io_read_at_mapped(RIO *io, ut64 addr, ut8 *buf, int len) {
 	bool ret;
 	if (!io || !buf) {
 		return false;
-	}
-	if (io->buffer_enabled) {
-		return !!r_io_buffer_read (io, addr, buf, len);
 	}
 	if (io->ff) {
 		memset (buf, io->Oxff, len);
@@ -485,9 +478,6 @@ R_API int r_io_nread_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	int ret;
 	if (!io || !buf) {
 		return -1;
-	}
-	if (io->buffer_enabled) {
-		return r_io_buffer_read(io, addr, buf, len);
 	}
 	if (io->va) {
 		if (io->ff) {

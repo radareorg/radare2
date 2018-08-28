@@ -511,8 +511,7 @@ R_API char *r_type_func_guess(Sdb *TDB, char *func_name) {
 	}
 
 	if (slen > 4) { // were name-matching so ignore autonamed
-		if ((str[0] == 'f' && str[1] == 'c' && str[2] == 'n' && str[3] == '.') ||
-		    (str[0] == 'l' && str[1] == 'o' && str[2] == 'c' && str[3] == '.')) {
+		if (!strncmp (str, "fcn.", 4) || !strncmp (str, "loc.", 4)) {
 			return NULL;
 		}
 	}
@@ -528,10 +527,23 @@ R_API char *r_type_func_guess(Sdb *TDB, char *func_name) {
 	if ((result = type_func_try_guess (TDB, str))) {
 		return result;
 	}
+
+	if (*str == '_' && (result = type_func_try_guess (TDB, str + 1))) {
+		return result;
+	}
+
 	str = strdup (str);
 	// some names are in format module.dll_function_number, try to remove those
 	// also try module.dll_function and function_number
 	if ((first = strchr (str, '_'))) {
+		// check if the prefix is actually "dll_" otherwise don't try to
+		// interpret the name
+		const char *dll = "dll";
+		char *dll_ptr = first - strlen (dll);
+		if (dll_ptr < str || strncmp (dll_ptr, dll, strlen (dll))) {
+			goto out;
+		}
+
 		last = (char *)r_str_lchr (first, '_');
 		if (!last) {
 			goto out;

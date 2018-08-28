@@ -1744,17 +1744,20 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 				}
 			}
 			if ((aop.type == R_ANAL_OP_TYPE_SWI) && ret) { // && (aop.val > 10)) {
+				int scVector = -1; // int 0x80, svc 0x70, ...
+				int scNumber = 0; // r0/eax/...
 #if USE_EMULATION
 				// This for calculating no of bytes to be subtracted , to get n instr above syscall
 				int nbytes = 0;
 				int nb_opcodes = MAXINSTR;
 				SUMARRAY (previnstr, nb_opcodes, nbytes);
 				curpc = at - (nbytes - previnstr[curpos]);
-				int off = emulateSyscallPrelude (core, at, curpc);
+				scNumber = emulateSyscallPrelude (core, at, curpc);
 #else
-				int off = syscallNumber;
+				scNumber = syscallNumber;
 #endif
-				RSyscallItem *item = r_syscall_get (core->anal->syscall, off, -1);
+				scVector = (aop.val > 0)? aop.val: -1; // int 0x80 (aop.val = 0x80)
+				RSyscallItem *item = r_syscall_get (core->anal->syscall, scNumber, scVector);
 				if (item) {
 					r_cons_printf ("0x%08"PFMT64x" %s\n", at, item->name);
 				}
