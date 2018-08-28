@@ -254,9 +254,10 @@ R_API int r_anal_fcn_resize(const RAnal *anal, RAnalFunction *fcn, int newsize) 
 	ut64 eof; /* end of function */
 	RAnalBlock *bb;
 	RListIter *iter, *iter2;
-	if (!fcn || newsize < 1) {
-		return false;
-	}
+
+	r_return_val_if_fail (fcn, false);
+	r_return_val_if_fail (newsize >= 0, false);
+
 	r_anal_fcn_set_size (anal, fcn, newsize);
 	eof = fcn->addr + r_anal_fcn_size (fcn);
 	r_list_foreach_safe (fcn->bbs, iter, iter2, bb) {
@@ -574,7 +575,10 @@ static bool isInvalidMemory(const ut8 *buf, int len) {
 }
 
 static bool isSymbolNextInstruction(RAnal *anal, RAnalOp *op) {
-	if (!anal || !op || !anal->flb.get_at) {
+	r_return_val_if_fail (anal, false);
+	r_return_val_if_fail (op, false);
+
+	if (!anal->flb.get_at) {
  		return false;
 	}
 	RFlagItem *fi = anal->flb.get_at (anal->flb.f, op->addr + op->size, false);
@@ -726,6 +730,7 @@ static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAna
 	RListIter *iter;
 	RAnalBlock *tmp_bb, *prev_bb;
 	prev_bb = 0;
+
 	if (!fcn->bbs) {
 		return false;
 	}
@@ -2098,9 +2103,8 @@ R_API int r_anal_fcn_count(RAnal *anal, ut64 from, ut64 to) {
 /* return the basic block in fcn found at the given address.
  * NULL is returned if such basic block doesn't exist. */
 R_API RAnalBlock *r_anal_fcn_bbget_in(RAnalFunction *fcn, ut64 addr) {
-	if (!fcn || addr == UT64_MAX) {
-		return NULL;
-	}
+	r_return_val_if_fail (fcn, NULL);
+
 	RListIter *iter;
 	RAnalBlock *bb;
 	r_list_foreach (fcn->bbs, iter, bb) {
@@ -2112,9 +2116,8 @@ R_API RAnalBlock *r_anal_fcn_bbget_in(RAnalFunction *fcn, ut64 addr) {
 }
 
 R_API RAnalBlock *r_anal_fcn_bbget_at(RAnalFunction *fcn, ut64 addr) {
-	if (!fcn || addr == UT64_MAX) {
-		return NULL;
-	}
+	r_return_val_if_fail (fcn, NULL);
+
 #if USE_SDB_CACHE
 	return sdb_ptr_get (HB, sdb_fmt (SDB_KEY_BB, fcn->addr, addr), NULL);
 #else
@@ -2143,12 +2146,9 @@ R_API bool r_anal_fcn_bbadd(RAnalFunction *fcn, RAnalBlock *bb) {
  * if fcn is in ana RAnal's fcn_tree, the anal MUST be passed,
  * otherwise it can be NULL */
 R_API void r_anal_fcn_set_size(const RAnal *anal, RAnalFunction *fcn, ut32 size) {
-	if (!fcn) {
-		return;
-	}
+	r_return_if_fail (fcn);
 
 	fcn->_size = size;
-
 	if (anal) {
 		_fcn_tree_update_size (anal->fcn_tree, fcn);
 	}
@@ -2157,7 +2157,8 @@ R_API void r_anal_fcn_set_size(const RAnal *anal, RAnalFunction *fcn, ut32 size)
 /* returns the size of the function.
  * IMPORTANT: this will change, one day, because it doesn't have much sense */
 R_API ut32 r_anal_fcn_size(const RAnalFunction *fcn) {
-	return fcn? fcn->_size: 0;
+	r_return_val_if_fail (fcn, 0);
+	return fcn->_size;
 }
 
 /* return the "real" size of the function, that is the sum of the size of the
@@ -2201,9 +2202,9 @@ R_API ut32 r_anal_fcn_cost(RAnal *anal, RAnalFunction *fcn) {
 	RListIter *iter;
 	RAnalBlock *bb;
 	ut32 totalCycles = 0;
-	if (!fcn) {
-		return 0;
-	}
+
+	r_return_val_if_fail (fcn, 0);
+
 	r_list_foreach (fcn->bbs, iter, bb) {
 		RAnalOp op;
 		ut64 at, end = bb->addr + bb->size;
