@@ -427,6 +427,13 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 
 		for (i = 0; i < memory_list->number_of_memory_ranges; i++) {
 			memories = (struct minidump_memory_descriptor *)(&(memory_list->memory_ranges));
+			ut64 start_offset = entry->location.rva
+			                + r_offsetof (struct minidump_memory_list, memory_ranges);
+			ut64 needed_space = (i + 1) * sizeof (memories[0]);
+			if (start_offset + needed_space > obj->b->length
+			    || start_offset + needed_space < start_offset) {
+				break;
+			}
 			r_list_append (obj->streams.memories, &(memories[i]));
 		}
 		break;
