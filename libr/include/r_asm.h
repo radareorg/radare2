@@ -202,6 +202,7 @@ R_API void r_asm_op_set_asm(RAsmOp *op, const char *str);
 R_API void r_asm_op_set_hex(RAsmOp *op, const char *str);
 R_API void r_asm_op_set_hexbuf(RAsmOp *op, const ut8 *buf, int len);
 R_API void r_asm_op_set_buf(RAsmOp *op, const ut8 *str, int len);
+R_API ut8 *r_asm_op_get_buf(RAsmOp *op);
 
 /* plugin pointers */
 extern RAsmPlugin r_asm_plugin_bf;
