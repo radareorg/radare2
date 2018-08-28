@@ -44,6 +44,26 @@ R_API void r_log(RLogLevel level, const char *fmt, ...);
 
 #else // R_DISABLE_CHECKS
 
+/**
+ * r_return_if_fail:
+ * @expr: the expression to check
+ *
+ * Verifies that the expression @expr, usually representing a precondition,
+ * evaluates to `true`. If the function returns a value, use
+ * r_return_val_if_fail() instead.
+ *
+ * If @expr evaluates to %FALSE, the current function should be considered to
+ * have undefined behaviour (a programmer error). The only correct solution
+ * to such an error is to change the module that is calling the current
+ * function, so that it avoids this incorrect call.
+ *
+ * To make this undefined behaviour visible, if @expr evaluates to %FALSE,
+ * the result is usually that a critical message is logged and the current
+ * function returns.
+ *
+ * If `G_DISABLE_CHECKS` is defined then the check is not performed.  You
+ * should therefore not depend on any side effects of @expr.
+ */
 #define r_return_if_fail(expr)						\
 	do {								\
 		if (!(expr)) {						\
