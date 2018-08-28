@@ -258,6 +258,11 @@ R_API int r_anal_fcn_resize(const RAnal *anal, RAnalFunction *fcn, int newsize) 
 	r_return_val_if_fail (fcn, false);
 	r_return_val_if_fail (newsize >= 0, false);
 
+	if (newsize == 0) {
+		// XXX: find out why this is necessary
+		return false;
+	}
+
 	r_anal_fcn_set_size (anal, fcn, newsize);
 	eof = fcn->addr + r_anal_fcn_size (fcn);
 	r_list_foreach_safe (fcn->bbs, iter, iter2, bb) {
