@@ -26,8 +26,9 @@ static int r_asm_pseudo_align(RAsmCode *acode, RAsmOp *op, char *input) {
 
 static int r_asm_pseudo_string(RAsmOp *op, char *input, int zero) {
 	r_return_val_if_fail (input, 0);
+	r_return_val_if_fail (input[0], 0);
+
 	int len = strlen (input) - 1;
-	r_return_val_if_fail (len > 0, 0);
 
 	// TODO: if not starting with '"'.. give up
 	if (input[len] == '"') {

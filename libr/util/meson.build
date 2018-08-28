@@ -1,7 +1,7 @@
 
 files = [
-  'assert.c',
   'ascii_table.c',
+  'assert.c',
   'base85.c',
   'base91.c',
   'bdiff.c',

@@ -2,24 +2,30 @@
 
 #define S_SIZE 200
 
-R_API void r_log_warn(const char *file, int line, const char *func, const char *warnexpr) {
-	char s[S_SIZE];
-
-	s[0] = '\0';
-	if (warnexpr) {
-		snprintf (s, S_SIZE, "(%s:%d):%s%s runtime check failed: (%s)\n",
-			  file, line, func, func[0] ? ":" : "", warnexpr);
-	} else {
-		snprintf (s, S_SIZE, "(%s:%d):%s%s code should not be reached\n",
-			  file, line, func, func[0] ? ":" : "");
+R_API void r_log(RLogLevel level, const char *fmt, ...) {
+	switch (level) {
+	case R_LOG_DEBUG:
+		eprintf ("DEBUG: ");
+		break;
+	case R_LOG_INFO:
+		eprintf ("INFO: ");
+		break;
+	case R_LOG_WARNING:
+		eprintf ("WARNING: ");
+		break;
+	case R_LOG_ERROR:
+		eprintf ("ERROR: ");
+		break;
+	case R_LOG_CRITICAL:
+		eprintf ("CRITICAL: ");
+		break;
+	default:
+		eprintf ("UNKNOWN RLOGLEVEL: ");
+		break;
 	}
-	eprintf ("WARNING: %s", s);
-}
 
-R_API void r_log_return_warn(const char *func, const char *expr) {
-	eprintf ("WARNING: %s: assertion '%s' failed\n", func, expr);
-}
-
-R_API void r_log_critical(const char *file, int line, const char *func) {
-	eprintf ("CRITICAL: file %s: line %d (%s): should not be reached\n", file, line, func);
+	va_list args;
+	va_start (args, fmt);
+	vfprintf (stderr, fmt, args);
+	va_end (args);
 }
