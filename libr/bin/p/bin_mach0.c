@@ -178,7 +178,7 @@ static RBinAddr* newEntry(ut64 hpaddr, ut64 paddr, int type, int bits) {
 	return ptr;
 }
 
-static void process_constructors (RBinFile *bf, RList *ret, int bits) {
+static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 	RList *secs = sections (bf);
 	RListIter *iter;
 	RBinSection *sec;
@@ -195,7 +195,11 @@ static void process_constructors (RBinFile *bf, RList *ret, int bits) {
 			if (!buf) {
 				continue;
 			}
-			(void)r_buf_read_at (bf->buf, sec->paddr, buf, sec->size);
+			int read = r_buf_read_at (bf->buf, sec->paddr, buf, sec->size);
+			if (read < sec->size) {
+				eprintf ("process_constructors: cannot process section %s\n", sec->name);
+				continue;
+			}
 			if (bits == 32) {
 				for (i = 0; i < sec->size; i += 4) {
 					ut32 addr32 = r_read_le32 (buf + i);
