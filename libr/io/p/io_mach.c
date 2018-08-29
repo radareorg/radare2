@@ -375,7 +375,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	}
 	if (!task) {
 		if (pid > 0 && !strncmp (file, "smach://", 8)) {
-			kill (pid, 9);
+			kill (pid, SIGKILL);
 			eprintf ("Child killed\n");
 		}
 #if 0
@@ -384,7 +384,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		 * what was this intended to check anyway ? */
 		if (pid > 0 && io->referer && !strncmp (io->referer, "dbg://", 6)) {
 			eprintf ("Child killed\n");
-			kill (pid, 9);
+			kill (pid, SIGKILL);
 		}
 #endif
 		switch (errno) {

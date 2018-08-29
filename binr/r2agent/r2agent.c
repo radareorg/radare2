@@ -108,7 +108,7 @@ int main(int argc, char **argv) {
 				// TODO: show page here?
 				int pid = atoi (rs->path + 11);
 				if (pid > 0) {
-					kill (pid, 9);
+					kill (pid, SIGKILL);
 				}
 			} else if (!strncmp (rs->path, "/file/open/", 11)) {
 				int pid;

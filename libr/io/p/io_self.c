@@ -200,7 +200,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			return NULL;
 		}
 		/* do nothing here */
-		kill (getpid (), 9);
+		kill (getpid (), SIGKILL);
 #endif
 	} else if (!strncmp (cmd, "call ", 5)) {
 		size_t cbptr = 0;

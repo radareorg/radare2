@@ -71,7 +71,7 @@ error:
 R_API int r_socket_proc_close(struct r_socket_proc_t *sp) {
 #if __UNIX__
 	/* this is wrong */
-	kill (sp->pid, 9);
+	kill (sp->pid, SIGKILL);
 	waitpid (sp->pid, NULL, 0); //WNOHANG);
 	close (sp->fd0[0]);
 	close (sp->fd0[1]);
