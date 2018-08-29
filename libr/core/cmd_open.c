@@ -33,7 +33,7 @@ static const char *help_msg_o[] = {
 	"oo","+","reopen current file in read-write",
 	"ood","[r] [args]","reopen in debugger mode (with args)",
 	"oo[bnm]"," [...]","see oo? for help",
-	"op"," [fd]", "prioritize given fd (see also ob)",
+	"op"," [fd]", "select the given fd as current file (see also ob)",
 	"ox", " fd fdx", "exchange the descs of fd and fdx and keep the mapping",
 	NULL
 };
