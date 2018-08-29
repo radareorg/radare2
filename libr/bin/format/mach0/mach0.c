@@ -1497,7 +1497,8 @@ static int inSymtab(SdbHash *hash, struct symbol_t *symbols, const char *name, u
 struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 	const char *symstr;
 	struct symbol_t *symbols;
-	int from, to, i, j, s, stridx, symbols_size, symbols_count;
+	int j, s, stridx, symbols_size, symbols_count;
+	ut32 to, from, i;
 	SdbHash *hash;
 	//ut64 text_base = get_text_base (bin);
 
@@ -1609,7 +1610,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 			}
 		}
 	}
-	to = R_MIN (bin->nsymtab, bin->dysymtab.iundefsym + bin->dysymtab.nundefsym);
+	to = R_MIN ((ut32)bin->nsymtab, bin->dysymtab.iundefsym + bin->dysymtab.nundefsym);
 	for (i = bin->dysymtab.iundefsym; i < to; i++) {
 		if (j > symbols_count) {
 			bprintf ("mach0-get-symbols: error\n");
