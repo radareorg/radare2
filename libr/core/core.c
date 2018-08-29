@@ -1272,8 +1272,10 @@ static bool find_e_opts(RLine *line) {
 	RRegex *rx = r_regex_new (pattern, "e");
 	size_t nmatch = 2;
 	RRegexMatch *pmatch = R_NEWS0 (RRegexMatch, nmatch);
+	bool ret = false;
+
 	if (r_regex_exec (rx, line->buffer.data, nmatch, pmatch, 1)) {
-		return false;
+		goto out;
 	}
 	int i;
 	char *str = NULL;
@@ -1296,7 +1298,12 @@ static bool find_e_opts(RLine *line) {
 	line->completion.argc = i;
 	line->completion.argv = tmp_argv;
 	line->completion.opt = true;
-	return true;
+	ret = true;
+
+ out:
+	r_regex_free (rx);
+	free (pmatch);
+	return ret;
 }
 
 static bool find_autocomplete(RLine *line) {
