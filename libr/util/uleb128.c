@@ -19,9 +19,9 @@ R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v) {
 	data_end = data + datalen;
 	if (data && datalen > 0) {
 		if (*data) {
-			for (s = 0; data < data_end && s <= sizeof (sum); s += 7) {
+			for (s = 0; data < data_end; s += 7) {
 				c = *(data++) & 0xff;
-				sum |= ((ut64) (c & 0x7f) << s);
+				sum |= ((ut32) (c & 0x7f) << s);
 				if (!(c & 0x80)) break;
 			}
 		} else {
@@ -100,13 +100,13 @@ R_API st64 r_sleb128(const ut8 **data, const ut8 *end) {
 	int offset = 0;
 	ut8 value;
  	do {
-		ut64 chunk;
+		st64 chunk;
 		value = *p;
 		chunk = value & 0x7f;
 		result |= (chunk << offset);
 		offset += 7;
 	}
-	while ((*p++ & 0x80) && (offset <= sizeof (result)));
+	while (*p++ & 0x80);
 
 	if ((value & 0x40) != 0) {
 		result |= G_GINT64_CONSTANT (-1) << offset;
