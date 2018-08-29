@@ -93,6 +93,10 @@ static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, S
 			}
 #undef CMP_MODULE
 			offset += module.length;
+			if (module.length == 0) {
+				eprintf ("Malformed VSF module with length 0\n");
+				break;
+			}
 		}
 	}
 	if (res) {
