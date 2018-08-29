@@ -270,6 +270,9 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, int sel) {
 			snprintf (buf_, BUF_SZ, "%s,%s=[%d]", out, setarg, op.size==10?8:op.size);
 			strncpy (out, buf_, BUF_SZ);
 		} else if (set == 0) {
+			if (!*out) {
+				strcpy (out, "0");
+			}
 			snprintf (buf_, BUF_SZ, "%s,[%d]", out, op.size==10? 8: op.size);
 			strncpy (out, buf_, BUF_SZ);
 		}
