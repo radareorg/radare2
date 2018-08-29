@@ -1847,17 +1847,10 @@ R_API char *r_bin_java_get_item_name_from_cp_item_list(RList *cp_list, RBinJavaC
 	case R_BIN_JAVA_CP_FIELDREF:
 	case R_BIN_JAVA_CP_INTERFACEMETHOD_REF:
 	case R_BIN_JAVA_CP_METHODREF:
-	{
-		RBinJavaCPTypeObj *rec_obj;
-		rec_obj = r_bin_java_get_item_from_cp_item_list (
+		obj = r_bin_java_get_item_from_cp_item_list (
 			cp_list, obj->info.cp_method.name_and_type_idx);
-		if (rec_obj == obj) {
-			eprintf ("Infinite recursion detected in r_bin_java_get_item_name_from_cp_item_list\n");
-			return NULL;
-		}
 		return r_bin_java_get_item_name_from_cp_item_list (
 			cp_list, obj, depth - 1);
-	}
 	default:
 		return NULL;
 	case 0:
