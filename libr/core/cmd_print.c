@@ -1035,7 +1035,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 				char *delim = strchr (name, '.');
 				if (delim) {
 					int len = delim - name;
-					char *name_c = r_str_ndup (name, len);
+					char *name_c = name;
 					if (name_c) {
 						name = r_str_ndup (name, len);
 					}
