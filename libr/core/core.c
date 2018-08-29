@@ -1263,6 +1263,42 @@ static void autocomplete_theme(RLine* line, const char* str) {
 	line->completion.argv = tmp_argv;
 }
 
+static bool find_e_opts (RLine *line) {
+	RCore *core = line->user;
+	if (!core) {
+		return false;
+	}
+	const char *pattern = "e (.*)=";
+	RRegex *rx = r_regex_new (pattern, "e");
+	size_t nmatch = 2;
+	RRegexMatch pmatch[nmatch];
+	if (r_regex_exec (rx, line->buffer.data, nmatch, pmatch, 1)) {
+		return false;
+	}
+	int i;
+	char *str = NULL;
+	for (i = pmatch[1].rm_so; i < pmatch[1].rm_eo; i++) {
+		str = r_str_appendch (str, line->buffer.data[i]);
+	}
+	RConfigNode *node = r_config_node_get (core->config, str);
+	RListIter *iter;
+	char *option;
+	char *p = (char *) r_sub_str_lchr (line->buffer.data, 0, line->buffer.index, '=');
+	p++;
+	i = 0;
+	int n = strlen (p);
+	r_list_foreach (node->options, iter, option) {
+		if (!strncmp (option, p, n)) {
+			tmp_argv[i++] = option;
+		}
+	}
+	tmp_argv[i] = NULL;
+	line->completion.argc = i;
+	line->completion.argv = tmp_argv;
+	line->completion.opt = true;
+	return true;
+}
+
 static bool find_autocomplete(RLine *line) {
 	RCore *core = line->user;
 	if (!core) {
@@ -1618,6 +1654,8 @@ static int autocomplete(RLine *line) {
 			} else {
 				autocompleteFilename (line, NULL, 1);
 			}
+		} else if (find_e_opts (line)) {
+			return true;
 		} else if (line->offset_prompt) {
 			autocomplete_flags (line, line->buffer.data);
 		} else if (line->file_prompt) {
