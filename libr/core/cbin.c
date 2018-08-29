@@ -1113,6 +1113,10 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 	int i = 0;
 	ut64 baddr = r_bin_get_baddr (r->bin);
 
+	if (!entries) {
+		return false;
+	}
+
 	if (IS_MODE_RAD (mode)) {
 		r_cons_printf ("fs symbols\n");
 	} else if (IS_MODE_JSON (mode)) {
