@@ -358,6 +358,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 	struct minidump_thread_ex *ex_threads;
 	struct minidump_thread_info *thread_infos;
 	struct minidump_unloaded_module *unloaded_modules;
+	int left;
 
 	/* We could confirm data sizes but a malcious MDMP will always get around
 	** this! But we can ensure that the data is not outside of the file */
@@ -368,7 +369,10 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 
 	switch (entry->stream_type) {
 	case THREAD_LIST_STREAM:
-		thread_list = (struct minidump_thread_list *)(obj->b->buf + entry->location.rva);
+		thread_list = (struct minidump_thread_list *)r_buf_get_at (obj->b, entry->location.rva, &left);
+		if (!thread_list || left < sizeof (struct minidump_thread_list)) {
+			break;
+		}
 
 		sdb_set (obj->kv, "mdmp_thread.format", "ddddq?? "
 			"ThreadId SuspendCount PriorityClass Priority "
@@ -389,7 +393,10 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		}
 		break;
 	case MODULE_LIST_STREAM:
-		module_list = (struct minidump_module_list *)(obj->b->buf + entry->location.rva);
+		module_list = (struct minidump_module_list *)r_buf_get_at (obj->b, entry->location.rva, &left);
+		if (!module_list || left < sizeof (struct minidump_module_list)) {
+			break;
+		}
 
 		sdb_set (obj->kv, "mdmp_module.format", "qddtd???qq "
 			"BaseOfImage SizeOfImage CheckSum "
@@ -413,7 +420,10 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		}
 		break;
 	case MEMORY_LIST_STREAM:
-		memory_list = (struct minidump_memory_list *)(obj->b->buf + entry->location.rva);
+		memory_list = (struct minidump_memory_list *)r_buf_get_at (obj->b, entry->location.rva, &left);
+		if (!memory_list || left < sizeof (struct minidump_memory_list)) {
+			break;
+		}
 
 		sdb_num_set (obj->kv, "mdmp_memory_list.offset",
 			entry->location.rva, 0);
@@ -439,7 +449,10 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		break;
 	case EXCEPTION_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		obj->streams.exception = (struct minidump_exception_stream *)(obj->b->buf + entry->location.rva);
+		obj->streams.exception = (struct minidump_exception_stream *)r_buf_get_at (obj->b, entry->location.rva, &left);
+		if (!obj->streams.exception || left < sizeof (struct minidump_exception_stream)) {
+			break;
+		}
 
 		sdb_set (obj->kv, "mdmp_exception.format", "[4]E[4]Eqqdd[15]q "
 			"(mdmp_exception_code)ExceptionCode "
@@ -456,7 +469,10 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 
 		break;
 	case SYSTEM_INFO_STREAM:
-		obj->streams.system_info = (struct minidump_system_info *)(obj->b->buf + entry->location.rva);
+		obj->streams.system_info = (struct minidump_system_info *)r_buf_get_at (obj->b, entry->location.rva, &left);
+		if (!obj->streams.system_info || left < sizeof (struct minidump_system_info)) {
+			break;
+		}
 
 		sdb_num_set (obj->kv, "mdmp_system_info.offset",
 			entry->location.rva, 0);
@@ -471,7 +487,10 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		break;
 	case THREAD_EX_LIST_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		thread_ex_list = (struct minidump_thread_ex_list *)(obj->b->buf + entry->location.rva);
+		thread_ex_list = (struct minidump_thread_ex_list *)r_buf_get_at (obj->b, entry->location.rva, &left);
+		if (!thread_ex_list || left < sizeof (struct minidump_thread_ex_list)) {
+			break;
+		}
 
 		sdb_set (obj->kv, "mdmp_thread_ex.format", "ddddq??? "
 			"ThreadId SuspendCount PriorityClass Priority "
@@ -492,7 +511,10 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		}
 		break;
 	case MEMORY_64_LIST_STREAM:
-		memory64_list = (struct minidump_memory64_list *)(obj->b->buf + entry->location.rva);
+		memory64_list = (struct minidump_memory64_list *)r_buf_get_at (obj->b, entry->location.rva, &left);
+		if (!memory64_list || left < sizeof (struct minidump_memory64_list)) {
+			break;
+		}
 
 		sdb_num_set (obj->kv, "mdmp_memory64_list.offset",
 			entry->location.rva, 0);
@@ -511,7 +533,10 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		break;
 	case COMMENT_STREAM_A:
 		/* TODO: Not yet fully parsed or utilised */
-		obj->streams.comments_a = obj->b->buf + entry->location.rva;
+		obj->streams.comments_a = r_buf_get_at (obj->b, entry->location.rva, NULL);
+		if (!obj->streams.comments_a) {
+			break;
+		}
 
 		sdb_num_set (obj->kv, "mdmp_comment_stream_a.offset",
 			entry->location.rva, 0);
@@ -521,7 +546,10 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		break;
 	case COMMENT_STREAM_W:
 		/* TODO: Not yet fully parsed or utilised */
-		obj->streams.comments_w = obj->b->buf + entry->location.rva;
+		obj->streams.comments_w = r_buf_get_at (obj->b, entry->location.rva, NULL);
+		if (!obj->streams.comments_w) {
+			break;
+		}
 
 		sdb_num_set (obj->kv, "mdmp_comment_stream_w.offset",
 			entry->location.rva, 0);
@@ -531,7 +559,10 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		break;
 	case HANDLE_DATA_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		obj->streams.handle_data = (struct minidump_handle_data_stream *)(obj->b->buf + entry->location.rva);
+		obj->streams.handle_data = (struct minidump_handle_data_stream *)r_buf_get_at (obj->b, entry->location.rva, &left);
+		if (!obj->streams.handle_data || left < sizeof (struct minidump_handle_data_stream)) {
+			break;
+		}
 
 		sdb_num_set (obj->kv, "mdmp_handle_data_stream.offset",
 				entry->location.rva, 0);
@@ -541,7 +572,10 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		break;
 	case FUNCTION_TABLE_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		obj->streams.function_table = (struct minidump_function_table_stream *)(obj->b->buf + entry->location.rva);
+		obj->streams.function_table = (struct minidump_function_table_stream *)r_buf_get_at (obj->b, entry->location.rva, &left);
+		if (!obj->streams.function_table || left < sizeof (struct minidump_function_table_stream)) {
+			break;
+		}
 
 		sdb_num_set (obj->kv, "mdmp_function_table_stream.offset",
 			entry->location.rva, 0);
@@ -552,7 +586,10 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		break;
 	case UNLOADED_MODULE_LIST_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		unloaded_module_list = (struct minidump_unloaded_module_list *)(obj->b->buf + entry->location.rva);
+		unloaded_module_list = (struct minidump_unloaded_module_list *)r_buf_get_at (obj->b, entry->location.rva, &left);
+		if (!unloaded_module_list || left < sizeof (struct minidump_unloaded_module_list)) {
+			break;
+		}
 
 		sdb_set (obj->kv, "mdmp_unloaded_module.format", "qddtd "
 			"BaseOfImage SizeOfImage CheckSum TimeDateStamp "
@@ -569,7 +606,10 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		break;
 	case MISC_INFO_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		obj->streams.misc_info.misc_info_1 = (struct minidump_misc_info *)(obj->b->buf + entry->location.rva);
+		obj->streams.misc_info.misc_info_1 = (struct minidump_misc_info *)r_buf_get_at (obj->b, entry->location.rva, &left);
+		if (!obj->streams.misc_info.misc_info_1 || left < sizeof (struct minidump_misc_info)) {
+			break;
+		}
 
 		/* TODO: Handle different sizes */
 		sdb_num_set (obj->kv, "mdmp_misc_info.offset",
@@ -583,7 +623,10 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 
 		break;
 	case MEMORY_INFO_LIST_STREAM:
-		memory_info_list = (struct minidump_memory_info_list *)(obj->b->buf + entry->location.rva);
+		memory_info_list = (struct minidump_memory_info_list *)r_buf_get_at (obj->b, entry->location.rva, &left);
+		if (!memory_info_list || left < sizeof (struct minidump_memory_info_list)) {
+			break;
+		}
 
 		sdb_set (obj->kv, "mdmp_memory_info.format",
 			"qq[4]Edq[4]E[4]E[4]Ed BaseAddress AllocationBase "
@@ -605,7 +648,10 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		break;
 	case THREAD_INFO_LIST_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		thread_info_list = (struct minidump_thread_info_list *)(obj->b->buf + entry->location.rva);
+		thread_info_list = (struct minidump_thread_info_list *)r_buf_get_at (obj->b, entry->location.rva, &left);
+		if (!thread_info_list || left < sizeof (struct minidump_thread_info_list)) {
+			break;
+		}
 
 		sdb_set (obj->kv, "mdmp_thread_info.format", "ddddttttqq "
 			"ThreadId DumpFlags DumpError ExitStatus CreateTime "
@@ -623,7 +669,10 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		break;
 	case HANDLE_OPERATION_LIST_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		handle_operation_list = (struct minidump_handle_operation_list *)(obj->b->buf + entry->location.rva);
+		handle_operation_list = (struct minidump_handle_operation_list *)r_buf_get_at (obj->b, entry->location.rva, &left);
+		if (!handle_operation_list || left < sizeof (struct minidump_handle_operation_list)) {
+			break;
+		}
 
 		sdb_num_set (obj->kv, "mdmp_handle_operation_list.offset",
 			entry->location.rva, 0);
