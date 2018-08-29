@@ -2219,6 +2219,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 	r_cons_printf ("{\"offset\":%"PFMT64d",\"name\":\"%s\",\"size\":%d",
 			fcn->addr, name, r_anal_fcn_size (fcn));
 	r_cons_printf (",\"realsz\":%d", r_anal_fcn_realsize (fcn));
+	r_cons_printf (",\"stackframe\":%d", fcn->maxstack);
 	r_cons_printf (",\"cc\":%d", r_anal_fcn_cc (fcn));
 	r_cons_printf (",\"cost\":%d", r_anal_fcn_cost (core->anal, fcn));
 	r_cons_printf (",\"nbbs\":%d", r_list_length (fcn->bbs));

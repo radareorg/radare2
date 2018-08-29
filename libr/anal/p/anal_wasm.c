@@ -93,8 +93,12 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->id = wop.op;
 
-	if (!strncmp(wop.txt, "invalid", 7)) {
+	if (!strncmp (wop.txt, "invalid", 7)) {
 		op->type = R_ANAL_OP_TYPE_ILL;
+		return -1;
+	} 
+	if (wasm_stack_ptr >= WASM_STACK_SIZE) {
+		op->type = R_ANAL_OP_TYPE_NULL;
 		return -1;
 	} else {
 		switch (wop.op) {
