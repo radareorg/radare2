@@ -1263,7 +1263,7 @@ static void autocomplete_theme(RLine* line, const char* str) {
 	line->completion.argv = tmp_argv;
 }
 
-static bool find_e_opts (RLine *line) {
+static bool find_e_opts(RLine *line) {
 	RCore *core = line->user;
 	if (!core) {
 		return false;
@@ -1271,7 +1271,7 @@ static bool find_e_opts (RLine *line) {
 	const char *pattern = "e (.*)=";
 	RRegex *rx = r_regex_new (pattern, "e");
 	size_t nmatch = 2;
-	RRegexMatch pmatch[nmatch];
+	RRegexMatch *pmatch = R_NEWS0 (RRegexMatch, nmatch);
 	if (r_regex_exec (rx, line->buffer.data, nmatch, pmatch, 1)) {
 		return false;
 	}
