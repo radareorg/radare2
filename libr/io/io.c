@@ -275,8 +275,7 @@ R_API RIODesc* r_io_open_at(RIO* io, const char* uri, int flags, int mode, ut64 
 		// someone pls take a look at this confusing stuff
 		size = UT64_MAX - at + 1;
 	}
-	// skyline not updated
-	r_io_map_new (io, desc->fd, desc->flags, 0LL, at, size, false);
+	r_io_map_new (io, desc->fd, desc->flags, 0LL, at, size, true);
 	return desc;
 }
 
