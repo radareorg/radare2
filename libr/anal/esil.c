@@ -1902,7 +1902,7 @@ static int esil_peek_n(RAnalEsil *esil, int bits) {
 	int ret = 0, bytes = bits / 8;
 	char *dst = r_anal_esil_pop (esil);
 	if (!dst) {
-		eprintf ("ESIL-ERROR: Cannot peek memory without specifying an address\n");
+		eprintf ("ESIL-ERROR at 0x%08"PFMT64x": Cannot peek memory without specifying an address\n", esil->address);
 		return 0;
 	}
 	//eprintf ("GONA PEEK %d dst:%s\n", bits, dst);
