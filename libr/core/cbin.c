@@ -117,7 +117,7 @@ R_API int r_core_bin_set_env(RCore *r, RBinFile *binfile) {
 		r_config_set (r->config, "anal.arch", arch);
 		if (info->cpu && *info->cpu) {
 			r_config_set (r->config, "anal.cpu", info->cpu);
-		} else if (arch) {
+		} else {
 			r_config_set (r->config, "anal.cpu", arch);
 		}
 		r_asm_use (r->assembler, arch);
