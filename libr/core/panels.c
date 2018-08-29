@@ -1999,6 +1999,8 @@ static void onMenu(RCore *core, const char *menu, int *exit) {
 		layoutSidePanel (core, PANEL_TITLE_MODULES, PANEL_CMD_MODULES);
 	} else if (!strcmp (menu, "Backtrace")) {
 		layoutSidePanel (core, PANEL_TITLE_BACKTRACE, PANEL_CMD_BACKTRACE);
+	} else if (!strcmp (menu, "Locals")) {
+		layoutSidePanel (core, PANEL_TITLE_LOCALS, PANEL_CMD_LOCALS);
 	} else if (!strcmp (menu, "Step")) {
 		r_core_cmd (core, "ds", 0);
 		r_cons_flush ();
