@@ -3150,22 +3150,27 @@ static void ds_print_fcn_name(RDisasmState *ds) {
 	}
 }
 
-static void ds_print_shortcut(RDisasmState *ds, ut64 addr, int pos) {
+static int ds_print_shortcut(RDisasmState *ds, ut64 addr, int pos) {
 	char *shortcut = r_core_add_asmqjmp (ds->core, addr);
+	int slen = shortcut? strlen (shortcut): 0;
 	if (!pos && !shortcut) {
 		r_cons_printf ("   ");
-		return;
+		return 0;
 	}
 	if (pos) {
 		ds_align_comment (ds);
 	}
-	char *ch = pos?  ";": "";
+	const char *ch = pos? ";": "";
 	if (ds->show_color) {
 		r_cons_strcat (ds->pal_comment);
+	}
+	if (*ch) {
+		slen++;
 	}
 	if (shortcut) {
 		if (ds->core->is_asmqjmps_letter) {
 			r_cons_printf ("%s[g%s]", ch, shortcut);
+			slen++;
 		} else {
 			r_cons_printf ("%s[%s]", ch, shortcut);
 		}
@@ -3180,6 +3185,8 @@ static void ds_print_shortcut(RDisasmState *ds, ut64 addr, int pos) {
 			r_cons_strcat (Color_RESET_NOBG);
 		}
 	}
+	slen++;
+	return slen;
 }
 
 static bool ds_print_core_vmode_jump_hit(RDisasmState *ds, int pos) {
@@ -3213,6 +3220,7 @@ static void getPtr(RDisasmState *ds, ut64 addr, int pos) {
 static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 	RCore *core = ds->core;
 	bool gotShortcut = false;
+	int i, slen = 0;
 
 	if (!core->vmode) {
 		return;
@@ -3232,7 +3240,7 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 	case R_ANAL_OP_TYPE_LOAD:
 		if (ds->show_leahints) {
 			if (ds->analop.ptr != UT64_MAX && ds->analop.ptr > 256) {
-				ds_print_shortcut (ds, ds->analop.ptr, pos);
+				slen = ds_print_shortcut (ds, ds->analop.ptr, pos);
 				gotShortcut = true;
 			}
 		}
@@ -3255,9 +3263,9 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 #endif
 		if (ds->show_jmphints) {
 			if (ds->analop.jump != UT64_MAX) {
-				ds_print_shortcut (ds, ds->analop.jump, pos);
+				slen = ds_print_shortcut (ds, ds->analop.jump, pos);
 			} else {
-				ds_print_shortcut (ds, ds->analop.ptr, pos);
+				slen = ds_print_shortcut (ds, ds->analop.ptr, pos);
 			}
 			gotShortcut = true;
 		}
@@ -3269,7 +3277,7 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 	case R_ANAL_OP_TYPE_CALL:
 	case R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_CALL:
 		if (ds->show_jmphints) {
-			ds_print_shortcut (ds, ds->analop.jump, pos);
+			slen = ds_print_shortcut (ds, ds->analop.jump, pos);
 			gotShortcut = true;
 		}
 		break;
@@ -3280,8 +3288,15 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 		break;
 	}
 	if (!gotShortcut) {
-		r_cons_strcat ("   ");
+		for (i = 4 - slen; i > 0; i--) {
+			r_cons_strcat (" ");
+		}
+	} else {
+		for (i = 3 - slen; i > 0; i--) {
+			r_cons_strcat (" ");
+		}
 	}
+	r_cons_strcat ("  ");
 }
 
 // align for comment
