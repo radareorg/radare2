@@ -362,7 +362,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 
 	/* We could confirm data sizes but a malcious MDMP will always get around
 	** this! But we can ensure that the data is not outside of the file */
-	if (entry->location.rva + entry->location.data_size > obj->b->length) {
+	if ((ut64)entry->location.rva + entry->location.data_size > obj->b->length) {
 		eprintf ("[ERROR] Size Mismatch - Stream data is larger than file size!\n");
 		return false;
 	}
