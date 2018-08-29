@@ -51,6 +51,7 @@ static const char *help_msg_at[] = {
 	"@", " 0x1024", "temporary seek to this address (sym.main+3)",
 	"@", " [addr]!blocksize", "temporary set a new blocksize",
 	"@..", "addr", "temporary partial address seek (see s..)",
+	"@!", "blocksize", "temporary change the block size (p8@3!3)",
 	"@(", "from to)", "temporary set from and to for commands supporting ranges",
 	"@a:", "arch[:bits]", "temporary set arch and bits",
 	"@b:", "bits", "temporary set asm.bits",
