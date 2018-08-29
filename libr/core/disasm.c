@@ -3280,8 +3280,9 @@ static void ds_print_core_vmode(RDisasmState *ds, int pos) {
 		break;
 	}
 	if (!gotShortcut) {
-		r_cons_strcat ("   ");
+		r_cons_strcat ("    ");
 	}
+	r_cons_strcat ("  ");
 }
 
 // align for comment
