@@ -102,7 +102,7 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		case WASM_OP_LOOP:
 			//op->type = R_ANAL_OP_TYPE_CJMP;
 			addr2 = find_if_else (addr + op->size, data + op->size, len - op->size, true);
-			if (addr2 != UT64_MAX) {
+			if (addr2 != UT64_MAX && wasm_stack_ptr < WASM_STACK_SIZE) {
 				wasm_stack[wasm_stack_ptr].loop = addr;
 				wasm_stack[wasm_stack_ptr].end = addr2;
 				wasm_stack[wasm_stack_ptr].size = wop.len;
@@ -113,7 +113,7 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 			break;
 		case WASM_OP_BLOCK:
 			addr2 = find_if_else (addr + op->size, data + op->size, len - op->size, true);
-			if (addr2 != UT64_MAX) {
+			if (addr2 != UT64_MAX && wasm_stack_ptr < WASM_STACK_SIZE) {
 				wasm_stack[wasm_stack_ptr].loop = UT64_MAX;
 				wasm_stack[wasm_stack_ptr].end = addr2;
 				wasm_stack[wasm_stack_ptr].size = wop.len;
