@@ -834,6 +834,7 @@ typedef struct r_line_t RLine; // forward declaration
 typedef int (*RLineCallback)(RLine *line);
 
 typedef struct r_line_comp_t {
+	bool opt;
 	int argc;
 	const char **argv;
 	RLineCallback run;

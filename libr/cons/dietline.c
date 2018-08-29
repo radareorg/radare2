@@ -557,26 +557,30 @@ static void selection_widget_update() {
 }
 
 R_API void r_line_autocomplete() {
-
-	int argc = 0;
 	char *p;
 	const char **argv = NULL;
-	int i, j, opt = 0, plen, len = 0;
+	int argc = 0, i, j, plen, len = 0;
+	bool opt;
 	int cols = (int)(r_cons_get_size (NULL) * 0.82);
 
 	/* prepare argc and argv */
 	if (I.completion.run) {
+		I.completion.opt = false;
 		I.completion.run (&I);
-		opt = argc = I.completion.argc;
+		argc = I.completion.argc;
 		argv = I.completion.argv;
+		opt = I.completion.opt;
 	}
-
 	if (I.sel_widget && !I.sel_widget->complete_common) {
 		selection_widget_update ();
 		return;
 	}
 
-	p = (char *) r_sub_str_lchr (I.buffer.data, 0, I.buffer.index, ' ');
+	if (opt) {
+		p = (char *) r_sub_str_lchr (I.buffer.data, 0, I.buffer.index, '=');
+	} else {
+		p = (char *) r_sub_str_lchr (I.buffer.data, 0, I.buffer.index, ' ');
+	}
 	if (!p) {
 		p = (char *) r_sub_str_lchr (I.buffer.data, 0, I.buffer.index, '@');	// HACK FOR r2
 	}
@@ -659,7 +663,7 @@ R_API void r_line_autocomplete() {
 	}
 
 	/* show options */
-	if (opt > 1 && I.echo) {
+	if (argc > 1 && I.echo) {
 		const int sep = 3;
 		int slen, col = 10;
 		printf ("%s%s\n", I.prompt, I.buffer.data);

@@ -1540,7 +1540,7 @@ static void addPanelFrame(RCore *core, RPanels* panels, const char *title, const
 }
 
 static RPanel createMenuPanel(int x, int y, char *title) {
-	RPanel panel = {0};
+	RPanel panel = {{0}};
 	panel.pos.x = x;
 	panel.pos.y = y;
 	panel.title = title;

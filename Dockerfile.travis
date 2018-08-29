@@ -7,6 +7,7 @@ WORKDIR /src
 RUN dnf install -y \
 	gcc \
 	gcc-c++ \
+	glibc.i686 \
 	clang \
 	llvm \
 	make \
