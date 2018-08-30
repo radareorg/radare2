@@ -1664,7 +1664,9 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 			char *dname = r_bin_demangle (r->bin->cur, NULL, symname, addr);
 			if (dname) {
 				free (symname);
-				symname = r_str_newf ("sym.imp.%s", dname);
+				if (dname && *dname) {
+					symname = r_str_newf ("sym.imp.%s", dname);
+				}
 				free (dname);
 			}
 		}
@@ -2007,11 +2009,16 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 		} else if (IS_MODE_RAD (mode)) {
 			RBinFile *binfile;
 			RBinPlugin *plugin;
-			char *name = strdup (sn.demname? sn.demname: symbol->name);
+			char *name = strdup (sn.demname? sn.demname: sn.nameflag);
 			r_name_filter (name, -1);
+			if (!*name || !strcmp (name, "imp.")) {
+				free (name);
+				continue;
+			}
 			if (!strncmp (name, "imp.", 4)) {
-				if (lastfs != 'i')
+				if (lastfs != 'i') {
 					r_cons_printf ("fs imports\n");
+				}
 				lastfs = 'i';
 			} else {
 				if (lastfs != 's') {
@@ -2022,10 +2029,10 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 			}
 			if (r->bin->prefix) {
 				if (symbol->dup_count) {
-					r_cons_printf ("f %s.sym.%s_%d %u 0x%08"PFMT64x"\n",
+					r_cons_printf ("f %s.%s_%d %u 0x%08"PFMT64x"\n",
 						r->bin->prefix, name, symbol->dup_count, symbol->size, addr);
 				} else {
-					r_cons_printf ("f %s.sym.%s %u 0x%08"PFMT64x"\n",
+					r_cons_printf ("f %s.%s %u 0x%08"PFMT64x"\n",
 						r->bin->prefix, name, symbol->size, addr);
 				}
 			} else {
