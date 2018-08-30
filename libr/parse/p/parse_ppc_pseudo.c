@@ -1527,7 +1527,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							//MASK(MB, ME)
 							ut32 MB = PPC_UT32(argv[4]);
 							ut32 ME = PPC_UT32(argv[5]);
-							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x"", mask32 (MB, ME));
+							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT32x"", mask32 (MB, ME));
 						} else if (letter == 5 && !strncmp (argv[0], "rlwimi", 6)) {
 							// { "rlwimi", "A = (rol32(B, C) & D) | (A & E)", 5}, //32
 							// second mask (inverted)
@@ -1536,14 +1536,14 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							ut32 MB = PPC_UT32(argv[4]);
 							ut32 ME = PPC_UT32(argv[5]);
 							ut32 inverted = ~mask32 (MB, ME);
-							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x"", inverted);
+							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT32x"", inverted);
 						} else if (letter == 4 && !strncmp (argv[0], "rlwnm", 5)) {
 							// { "rlwnm", "A = rol32(B, C) & D", 5}, //32
 							w = ppc_mask;
 							//MASK(MB, ME)
 							ut32 MB = PPC_UT32(argv[4]);
 							ut32 ME = PPC_UT32(argv[5]);
-							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT64x"", mask32 (MB, ME));
+							snprintf (ppc_mask, sizeof (ppc_mask), "0x%"PFMT32x"", mask32 (MB, ME));
 						} else if (letter == 1 && i >= 36 && i <= 43) {
 							int to = atoi (w);
 							switch(to) {
