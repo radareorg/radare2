@@ -2737,7 +2737,7 @@ reaccept:
 					if (r_core_file_open (core, (const char *)ptr, perm, 0)) {
 						int fd = r_io_fd_get_current (core->io);
 						r_core_bin_load (core, NULL, baddr);
-						r_io_map_add (core->io, fd, perm, 0, 0, r_io_fd_size (core->io, fd), true);
+						r_io_map_add (core->io, fd, perm, 0, 0, r_io_fd_size (core->io, fd));
 						if (core->file) {
 							pipefd = fd;
 						} else {

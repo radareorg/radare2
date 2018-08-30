@@ -563,7 +563,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 
 	if (plugin && plugin->name) {
 		if (!strncmp (plugin->name, "any", 3)) {
-			r_io_map_new (r->io, desc->fd, desc->flags, 0, laddr, r_io_desc_size (desc), true);
+			r_io_map_new (r->io, desc->fd, desc->flags, 0, laddr, r_io_desc_size (desc));
 			// set use of raw strings
 			//r_config_set (r->config, "bin.rawstr", "true");
 			// r_config_set_i (r->config, "io.va", false);
@@ -575,7 +575,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 
 			//workaround to map correctly malloc:// and raw binaries
 			if (r_io_desc_is_dbg (desc) || (obj && (!obj->sections || !va))) {
-				r_io_map_new (r->io, desc->fd, desc->flags, 0, laddr, r_io_desc_size (desc), true);
+				r_io_map_new (r->io, desc->fd, desc->flags, 0, laddr, r_io_desc_size (desc));
 			}
 
 			RBinInfo *info = obj? obj->info: NULL;
@@ -589,7 +589,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			}
 		}
 	} else {
-		r_io_map_new (r->io, desc->fd, desc->flags, 0, laddr, r_io_desc_size (desc), true);
+		r_io_map_new (r->io, desc->fd, desc->flags, 0, laddr, r_io_desc_size (desc));
 		if (binfile) {
 			r_core_bin_set_arch_bits (r, binfile->file,
 					r_config_get (r->config, "asm.arch"),

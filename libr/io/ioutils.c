@@ -49,7 +49,7 @@ static RIODesc *findReusableFile(RIO *io, const char *uri, int flags) {
 
 #endif
 
-R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, bool do_skyline) {
+static bool create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, bool do_skyline) {
 	RIODesc *desc = NULL;
 	char *uri = NULL;
 	bool reused = false;
@@ -64,7 +64,7 @@ R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, boo
 		if (desc) {
 			RIOMap *map = r_io_map_get (io, at);
 			if (!map) {
-				r_io_map_new (io, desc->fd, desc->flags, 0LL, at, gap, false);
+				r_io_map_new_batch (io, desc->fd, desc->flags, 0LL, at, gap);
 			}
 			reused = true;
 		}
@@ -96,7 +96,21 @@ R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, boo
 	return true;
 }
 
-R_API bool r_io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch, bool do_skyline) {
+R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null) {
+	return create_mem_map (io, sec, at, null, true);
+}
+
+/**
+ *
+ * WARNING: Use this function cautiously, when the performance overhead caused
+ *          by the update of the internal IO state can be reduced by manually
+ *          handling it with `r_io_map_calculate_skyline`.
+ */
+R_API bool r_io_create_mem_map_batch(RIO *io, RIOSection *sec, ut64 at, bool null) {
+	return create_mem_map (io, sec, at, null, false);
+}
+
+static bool create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch, bool do_skyline) {
 	RIOMap *map = NULL;
 	int flags = 0;
 	RIODesc *desc;
@@ -114,7 +128,11 @@ R_API bool r_io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch,
 		//if the file was not opened with -w desc->flags won't have that bit active
 		flags = flags | desc->flags;
 	}
-	map = r_io_map_add (io, sec->fd, flags, sec->paddr, sec->vaddr, size, do_skyline);
+	if (do_skyline) {
+		map = r_io_map_add (io, sec->fd, flags, sec->paddr, sec->vaddr, size);
+	} else {
+		map = r_io_map_add_batch (io, sec->fd, flags, sec->paddr, sec->vaddr, size);
+	}
 	if (map) {
 		sec->filemap = map->id;
 		map->name = r_str_newf ("fmap.%s", sec->name);
@@ -123,6 +141,19 @@ R_API bool r_io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch,
 	return false;
 }
 
+R_API bool r_io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch) {
+	return create_file_map (io, sec, size, patch, true);
+}
+
+/**
+ *
+ * WARNING: Use this function cautiously, when the performance overhead caused
+ *          by the update of the internal IO state can be reduced by manually
+ *          handling it with `r_io_map_calculate_skyline`.
+ */
+R_API bool r_io_create_file_map_batch(RIO *io, RIOSection *sec, ut64 size, bool patch) {
+	return create_file_map (io, sec, size, patch, false);
+}
 
 R_API bool r_io_create_mem_for_section(RIO *io, RIOSection *sec) {
 	if (!io || !sec) {
@@ -130,15 +161,14 @@ R_API bool r_io_create_mem_for_section(RIO *io, RIOSection *sec) {
 	}
 	if (sec->vsize - sec->size > 0) {
 		ut64 at = sec->vaddr + sec->size;
-		if (!r_io_create_mem_map (io, sec, at, false, true)) {
+		if (!r_io_create_mem_map (io, sec, at, false)) {
 			return false;
 		}
 		RIOMap *map = r_io_map_get (io, at);
 		r_io_map_set_name (map, sdb_fmt ("mem.%s", sec->name));
-			
 	}
 	if (sec->size) {
-		if (!r_io_create_file_map (io, sec, sec->size, false, true)) {
+		if (!r_io_create_file_map (io, sec, sec->size, false)) {
 			return false;
 		}
 		RIOMap *map = r_io_map_get (io, sec->vaddr);
