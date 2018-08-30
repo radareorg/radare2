@@ -35,11 +35,20 @@ FROM debian:9
 LABEL r2docker latest
 
 # Radare version
-ENV R2_VERSION master
+ARG R2_VERSION=master
 # R2pipe python version
-ENV R2_PIPE_PY_VERSION 0.8.9
+ARG R2_PIPE_PY_VERSION=0.8.9
 # R2pipe node version
-ENV R2_PIPE_NPM_VERSION 2.3.2
+ARG R2_PIPE_NPM_VERSION=2.3.2
+
+ENV R2_VERSION ${R2_VERSION}
+ENV R2_PIPE_PY_VERSION ${R2_PIPE_PY_VERSION}
+ENV R2_PIPE_NPM_VERSION ${R2_PIPE_NPM_VERSION}
+
+RUN echo -e "Building versions:\n\
+  R2_VERSION=$R2_VERSION\n\
+  R2_PIPE_PY_VERSION=${R2_PIPE_PY_VERSION}\n\
+  R2_PIPE_NPM_VERSION=${R2_PIPE_NPM_VERSION}"
 
 # Build radare2 in a volume to minimize space used by build
 VOLUME ["/mnt"]
