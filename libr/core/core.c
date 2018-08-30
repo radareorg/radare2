@@ -1270,10 +1270,12 @@ static bool find_e_opts(RLine *line) {
 	}
 	const char *pattern = "e (.*)=";
 	RRegex *rx = r_regex_new (pattern, "e");
-	size_t nmatch = 2;
-	RRegexMatch *pmatch = R_NEWS0 (RRegexMatch, nmatch);
+	const size_t nmatch = 2;
+	RRegexMatch pmatch[2];
+	bool ret = false;
+
 	if (r_regex_exec (rx, line->buffer.data, nmatch, pmatch, 1)) {
-		return false;
+		goto out;
 	}
 	int i;
 	char *str = NULL;
@@ -1299,7 +1301,11 @@ static bool find_e_opts(RLine *line) {
 	line->completion.argc = i;
 	line->completion.argv = tmp_argv;
 	line->completion.opt = true;
-	return true;
+	ret = true;
+
+ out:
+	r_regex_free (rx);
+	return ret;
 }
 
 static bool find_autocomplete(RLine *line) {
