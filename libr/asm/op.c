@@ -32,7 +32,7 @@ R_API char *r_asm_op_get_asm(RAsmOp *op) {
 }
 
 R_API ut8 *r_asm_op_get_buf(RAsmOp *op) {
-	return r_strbuf_get (&op->buf);
+	return (ut8*)r_strbuf_get (&op->buf);
 }
 
 R_API int r_asm_op_get_size(RAsmOp *op) {
