@@ -1032,6 +1032,17 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			/* Load format from name into fmt to get the size */
 			/* This make sure the whole structure will be printed */
 			const char *fmt = NULL;
+			if (strchr (name, '.')) {
+				char *delim = strchr (name, '.');
+				if (delim) {
+					int len = delim - name;
+					char *name_c = r_str_ndup(name, len);
+					if (name_c) {
+						strncpy (name, name_c, len);
+					}
+					free (name_c);
+				}
+			}
 			fmt = sdb_get (core->print->formats, name, NULL);
 			if (fmt) {
 				int size = r_print_format_struct_size (fmt, core->print, mode, 0) + 10;
