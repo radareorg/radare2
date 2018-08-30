@@ -225,7 +225,7 @@ R_API int r_regex_comp(RRegex *preg, const char *pattern, int cflags) {
 #	define	GOODFLAGS(f)	((f)&~R_REGEX_DUMP)
 #endif
 	cflags = GOODFLAGS (cflags);
-	if ((cflags & R_REGEX_EXTENDED) && (cflags & R_REGEX_NOSPEC)) {
+	if (!preg || ((cflags & R_REGEX_EXTENDED) && (cflags & R_REGEX_NOSPEC))) {
 		return R_REGEX_INVARG;
 	}
 	if (cflags & R_REGEX_PEND) {
