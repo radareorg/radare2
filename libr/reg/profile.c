@@ -73,7 +73,11 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 		r_reg_item_free (item);
 		return "Invalid size";
 	}
-	item->offset = parse_size (tok[3], &end);
+	if (!strcmp (tok[3], "?")) {
+		item->offset = -1;
+	} else {
+		item->offset = parse_size (tok[3], &end);
+	}
 	if (*end != '\0') {
 		r_reg_item_free (item);
 		return "Invalid offset";
