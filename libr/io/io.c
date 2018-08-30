@@ -294,12 +294,12 @@ R_API RIODesc *r_io_open_at(RIO *io, const char *uri, int flags, int mode, ut64 
 
 /**
  * It creates a new RIODesc from the specified uri, without updating the
- * internal state of IO. You should call `r_io_map_calculate_skyline` to ensure
+ * internal state of IO. You should call `r_io_update` to ensure
  * updates done with this function are correctly handled by IO.
  *
  * WARNING: Use this function cautiously, when the performance overhead caused
  *          by the update of the internal IO state can be reduced by manually
- *          handling it with `r_io_map_calculate_skyline`.
+ *          handling it with `r_io_update`.
  */
 R_API RIODesc *r_io_open_at_batch(RIO *io, const char *uri, int flags, int mode, ut64 at) {
 	return open_at (io, uri, flags, mode, at, false);

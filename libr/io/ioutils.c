@@ -79,7 +79,7 @@ static bool create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, bool do
 		return false;
 	}
 	if (do_skyline) {
-		r_io_map_calculate_skyline (io);
+		r_io_update (io);
 	}
 	// this works, because new maps are allways born on the top
 	RIOMap *map = r_io_map_get (io, at);
@@ -104,7 +104,7 @@ R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null) {
  *
  * WARNING: Use this function cautiously, when the performance overhead caused
  *          by the update of the internal IO state can be reduced by manually
- *          handling it with `r_io_map_calculate_skyline`.
+ *          handling it with `r_io_update`.
  */
 R_API bool r_io_create_mem_map_batch(RIO *io, RIOSection *sec, ut64 at, bool null) {
 	return create_mem_map (io, sec, at, null, false);
@@ -149,7 +149,7 @@ R_API bool r_io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch)
  *
  * WARNING: Use this function cautiously, when the performance overhead caused
  *          by the update of the internal IO state can be reduced by manually
- *          handling it with `r_io_map_calculate_skyline`.
+ *          handling it with `r_io_update`.
  */
 R_API bool r_io_create_file_map_batch(RIO *io, RIOSection *sec, ut64 size, bool patch) {
 	return create_file_map (io, sec, size, patch, false);

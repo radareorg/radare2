@@ -60,8 +60,16 @@ static bool _map_skyline_push(RPVector *map_skyline, ut64 from, ut64 to, RIOMap 
 	return true;
 }
 
-// Store map parts that are not covered by others into io->map_skyline
-R_API void r_io_map_calculate_skyline(RIO *io) {
+/**
+ * Update the internal state of IO. It store map parts that are not "shadowed"
+ * by others, so that only the visible map parts can be accessed.
+ *
+ * NOTE: you shouldn't need this function in the general case, because the state
+ *       should always be consistent unless you use `_batch` functions. If you
+ *       do use `_batch` functions, be sure to call `r_io_update` when you are
+ *       done, to ensure IO state consistency.
+ */
+R_API void r_io_update(RIO *io) {
 	SdbListIter *iter;
 	RIOMap *map;
 	RPVector events;
@@ -168,7 +176,7 @@ static RIOMap* map_new(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut64 s
 	// new map lives on the top, being top the list's tail
 	ls_append (io->maps, map);
 	if (do_skyline) {
-		r_io_map_calculate_skyline (io);
+		r_io_update (io);
 	}
 	return map;
 }
@@ -184,12 +192,12 @@ R_API RIOMap *r_io_map_new(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut
 
 /**
  * It creates a new RIOMap from the specified file descriptor, without updating
- * the internal state of IO. You should call `r_io_map_calculate_skyline` to
+ * the internal state of IO. You should call `r_io_update` to
  * ensure updates done with this function are correctly handled by IO.
  *
  * WARNING: Use this function cautiously, when the performance overhead caused
  *          by the update of the internal IO state can be reduced by manually
- *          handling it with `r_io_map_calculate_skyline`.
+ *          handling it with `r_io_update`.
  */
 R_API RIOMap *r_io_map_new_batch(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size) {
 	return map_new (io, fd, flags, delta, addr, size, false);
@@ -205,7 +213,7 @@ R_API bool r_io_map_remap (RIO *io, ut32 id, ut64 addr) {
 			r_io_map_new (io, map->fd, map->flags, map->delta - addr, 0, size + addr);
 			return true;
 		}
-		r_io_map_calculate_skyline (io);
+		r_io_update (io);
 		return true;
 	}
 	return false;
@@ -297,7 +305,7 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut
  *
  * WARNING: Use this function cautiously, when the performance overhead caused
  *          by the update of the internal IO state can be reduced by manually
- *          handling it with `r_io_map_calculate_skyline`.
+ *          handling it with `r_io_update`.
  */
 R_API RIOMap *r_io_map_add_batch(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size) {
 	return map_add (io, fd, flags, delta, addr, size, false);
@@ -335,7 +343,7 @@ R_API RIOMap* r_io_map_get(RIO* io, ut64 addr) {
 R_API void r_io_map_reset(RIO* io) {
 	r_io_map_fini (io);
 	r_io_map_init (io);
-	r_io_map_calculate_skyline (io);
+	r_io_update (io);
 }
 
 R_API bool r_io_map_del(RIO* io, ut32 id) {
@@ -346,7 +354,7 @@ R_API bool r_io_map_del(RIO* io, ut32 id) {
 			if (map->id == id) {
 				ls_delete (io->maps, iter);
 				r_id_pool_kick_id (io->map_ids, id);
-				r_io_map_calculate_skyline (io);
+				r_io_update (io);
 				return true;
 			}
 		}
@@ -373,7 +381,7 @@ R_API bool r_io_map_del_for_fd(RIO* io, int fd) {
 		}
 	}
 	if (ret) {
-		r_io_map_calculate_skyline (io);
+		r_io_update (io);
 	}
 	return ret;
 }
@@ -389,7 +397,7 @@ R_API bool r_io_map_priorize(RIO* io, ut32 id) {
 			if (map->id == id) {
 				ls_split_iter (io->maps, iter);
 				ls_append (io->maps, map);
-				r_io_map_calculate_skyline (io);
+				r_io_update (io);
 				return true;
 			}
 		}
@@ -406,7 +414,7 @@ R_API bool r_io_map_depriorize(RIO* io, ut32 id) {
 			if (map->id == id) {
 				ls_split_iter (io->maps, iter);
 				ls_prepend (io->maps, map);
-				r_io_map_calculate_skyline (io);
+				r_io_update (io);
 				return true;
 			}
 		}
@@ -437,7 +445,7 @@ R_API bool r_io_map_priorize_for_fd(RIO* io, int fd) {
 	ls_join (io->maps, list);
 	ls_free (list);
 	io->maps->free = _map_free;
-	r_io_map_calculate_skyline (io);
+	r_io_update (io);
 	return true;
 }
 
@@ -468,7 +476,7 @@ R_API void r_io_map_cleanup(RIO* io) {
 		}
 	}
 	if (del) {
-		r_io_map_calculate_skyline (io);
+		r_io_update (io);
 	}
 }
 
@@ -566,6 +574,6 @@ R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
 		return true;
 	}
 	map->itv.size = newsize;
-	r_io_map_calculate_skyline (io);
+	r_io_update (io);
 	return true;
 }
