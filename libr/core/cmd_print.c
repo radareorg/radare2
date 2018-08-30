@@ -1029,6 +1029,14 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 				return;
 			}
 
+			char *delim = strchr (name, '.');
+			if (delim) {
+				int len = delim - name;
+				if (len > 0) {
+					name[len] = '\0';
+ 				}
+ 			}
+
 			/* Load format from name into fmt to get the size */
 			/* This make sure the whole structure will be printed */
 			const char *fmt = NULL;
