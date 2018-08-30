@@ -560,7 +560,7 @@ R_API void r_line_autocomplete() {
 	char *p;
 	const char **argv = NULL;
 	int argc = 0, i, j, plen, len = 0;
-	bool opt;
+	bool opt = false;
 	int cols = (int)(r_cons_get_size (NULL) * 0.82);
 
 	/* prepare argc and argv */

@@ -1281,6 +1281,9 @@ static bool find_e_opts(RLine *line) {
 		str = r_str_appendch (str, line->buffer.data[i]);
 	}
 	RConfigNode *node = r_config_node_get (core->config, str);
+	if (!node) {
+		return false;
+	}
 	RListIter *iter;
 	char *option;
 	char *p = (char *) r_sub_str_lchr (line->buffer.data, 0, line->buffer.index, '=');
