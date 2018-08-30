@@ -3154,7 +3154,7 @@ static int ds_print_shortcut(RDisasmState *ds, ut64 addr, int pos) {
 	char *shortcut = r_core_add_asmqjmp (ds->core, addr);
 	int slen = shortcut? strlen (shortcut): 0;
 	if (!pos && !shortcut) {
-		r_cons_printf ("   ");
+		r_cons_printf (" ");
 		return 0;
 	}
 	if (pos) {
