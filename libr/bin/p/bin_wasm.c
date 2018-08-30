@@ -282,7 +282,7 @@ static ut64 size(RBinFile *bf) {
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
 static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
 	RBuffer *buf = r_buf_new ();
-#define B(x, y) r_buf_append_bytes (buf, (const ut8 *) x, y)
+#define B(x, y) r_buf_append_bytes (buf, (const ut8 *) (x), y)
 #define D(x) r_buf_append_ut32 (buf, x)
 	B ("\x00" "asm", 4);
 	B ("\x01\x00\x00\x00", 4);

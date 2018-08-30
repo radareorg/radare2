@@ -46,16 +46,16 @@ static const char *mousemodes[] = {
 
 #define NORMALIZE_MOV(x) ((x) < 0 ? -1 : ((x) > 0 ? 1 : 0))
 
-#define hash_set(sdb, k, v) (sdb_num_set (sdb, sdb_fmt ("%"PFMT64u, (ut64) (size_t) k), (ut64) (size_t) v, 0))
-#define hash_get(sdb, k) (sdb_num_get (sdb, sdb_fmt ("%"PFMT64u, (ut64) (size_t) k), NULL))
+#define hash_set(sdb, k, v) (sdb_num_set (sdb, sdb_fmt ("%"PFMT64u, (ut64) (size_t) (k)), (ut64) (size_t) (v), 0))
+#define hash_get(sdb, k) (sdb_num_get (sdb, sdb_fmt ("%"PFMT64u, (ut64) (size_t) (k)), NULL))
 #define hash_get_rnode(sdb, k) ((RGraphNode *) (size_t) hash_get (sdb, k))
 #define hash_get_rlist(sdb, k) ((RList *) (size_t) hash_get (sdb, k))
 #define hash_get_int(sdb, k) ((int) hash_get (sdb, k))
 /* dont use macros for this */
-#define get_anode(gn) (gn? (RANode *) gn->data: NULL)
+#define get_anode(gn) ((gn)? (RANode *) (gn)->data: NULL)
 
 #define graph_foreach_anode(list, it, pos, anode)\
-	if (list) for (it = list->head; it && (pos = it->data) && (pos) && (anode = (RANode *) pos->data); it = it->n)
+	if (list) for ((it) = (list)->head; (it) && ((pos) = (it)->data) && (pos) && ((anode) = (RANode *) (pos)->data); (it) = (it)->n)
 
 struct len_pos_t {
 	int len;

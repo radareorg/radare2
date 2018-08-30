@@ -13,7 +13,7 @@
 #include "sha2.h"
 #endif
 
-#define CHKFLAG(x) if (!flags || flags & x)
+#define CHKFLAG(x) if (!flags || flags & (x))
 
 R_API RHash *r_hash_new(bool rst, ut64 flags) {
 	RHash *ctx = R_NEW0 (RHash);

@@ -152,7 +152,7 @@ static char *swift_demangle_cmd(const char *s) {
 }
 
 R_API char *r_bin_demangle_swift(const char *s, int syscmd) {
-#define STRCAT_BOUNDS(x) if ((x + 2 + strlen (out)) > sizeof (out)) break;
+#define STRCAT_BOUNDS(x) if (((x) + 2 + strlen (out)) > sizeof (out)) break;
 	char out[1024];
 	int i, len, is_generic = 0;
 	int is_first = 1;

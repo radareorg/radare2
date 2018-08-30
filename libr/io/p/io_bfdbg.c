@@ -17,9 +17,9 @@ typedef struct {
 	BfvmCPU *bfvm;
 } RIOBfdbg;
 
-#define RIOBFDBG_FD(x) (((RIOBfdbg*)x->data)->fd)
-#define RIOBFDBG_SZ(x) (((RIOBfdbg*)x->data)->size)
-#define RIOBFDBG_BUF(x) (((RIOBfdbg*)x->data)->buf)
+#define RIOBFDBG_FD(x) (((RIOBfdbg*)(x)->data)->fd)
+#define RIOBFDBG_SZ(x) (((RIOBfdbg*)(x)->data)->size)
+#define RIOBFDBG_BUF(x) (((RIOBfdbg*)(x)->data)->buf)
 
 static inline int is_in_screen(ut64 off, BfvmCPU *c) {
 	return (off >= c->screen && off < c->screen+c->screen_size);

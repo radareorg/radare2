@@ -11,9 +11,9 @@
 #define R_MIDFLAGS_REALIGN 2
 #define R_MIDFLAGS_SYMALIGN 3
 
-#define COLOR(ds, field) (ds->show_color ? ds->field : "")
-#define COLOR_ARG(ds, field) (ds->show_color && ds->show_color_args ? ds->field : "")
-#define COLOR_CONST(ds, color) (ds->show_color ? Color_ ## color : "")
+#define COLOR(ds, field) ((ds)->show_color ? (ds)->field : "")
+#define COLOR_ARG(ds, field) ((ds)->show_color && (ds)->show_color_args ? (ds)->field : "")
+#define COLOR_CONST(ds, color) ((ds)->show_color ? Color_ ## color : "")
 #define COLOR_RESET(ds) COLOR_CONST(ds, RESET)
 
 // ugly globals but meh

@@ -70,9 +70,9 @@ typedef enum
   CLASS_A4_LR
 } a4_decoding_class;
 
-#define BIT(word,n)	((word) & (1 << n))
+#define BIT(word,n)	((word) & (1 << (n)))
 /* START ARC LOCAL */
-#define BITS(word,s,e)  (((word) << (sizeof(word)*8-1 - e)) >> (s + (sizeof(word)*8-1 - e)))
+#define BITS(word,s,e)  (((word) << (sizeof(word)*8-1 - (e))) >> ((s) + (sizeof(word)*8-1 - (e))))
 /* END ARC LOCAL */
 #define OPCODE(word)	(BITS ((word), 27, 31))
 #define FIELDA(word)	(BITS ((word), 21, 26))
@@ -81,14 +81,14 @@ typedef enum
 
 /* FIELD D is signed in all of its uses, so we make sure argument is
    treated as signed for bit shifting purposes:  */
-#define FIELDD(word)	(BITS (((signed int)word), 0, 8))
+#define FIELDD(word)	(BITS (((signed int)(word)), 0, 8))
 
 #define PUT_NEXT_WORD_IN(a)						\
   do									\
     {									\
       if (is_limm == 1 && !NEXT_WORD (1))				\
 	mwerror (state, _("Illegal limm reference in last instruction!\n")); \
-      a = state->words[1];						\
+      (a) = state->words[1];						\
     }									\
   while (0)
 
@@ -115,18 +115,18 @@ typedef enum
 #define CHECK_FIELD(field)			\
   do						\
     {						\
-      if (field == 62)				\
+      if ((field) == 62)				\
 	{					\
 	  is_limm++;				\
 	  field##isReg = 0;			\
 	  PUT_NEXT_WORD_IN (field);		\
 	}					\
-      else if (field > 60)			\
+      else if ((field) > 60)			\
 	{					\
 	  field##isReg = 0;			\
 	  is_shimm++;				\
-	  flag = (field == 61);			\
-	  field = FIELDD (state->words[0]);	\
+	  flag = ((field) == 61);			\
+	  (field) = FIELDD (state->words[0]);	\
 	}					\
     }						\
   while (0)
@@ -334,7 +334,7 @@ arc_sprintf (struct arcDisState *state, char *buf, const char *format, ...)
 	      int val = va_arg (ap, int);
 
 #define REG2NAME(num, name) case num: sprintf (bp, ""name); \
-  regMap[(num < 32) ? 0 : 1] |= 1 << (num - ((num < 32) ? 0 : 32)); break;
+  regMap[((num) < 32) ? 0 : 1] |= 1 << ((num) - (((num) < 32) ? 0 : 32)); break;
 	      switch (val)
 		{
 		  REG2NAME (26, "gp");

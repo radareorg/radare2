@@ -7,7 +7,7 @@
 #include <r_bin.h>
 #include "nxo/nxo.h"
 
-#define NRO_OFF(x) sizeof (NXOStart) + r_offsetof (NROHeader, x)
+#define NRO_OFF(x) (sizeof (NXOStart) + r_offsetof (NROHeader, x))
 #define NRO_OFFSET_MODMEMOFF r_offsetof (NXOStart, mod_memoffset)
 
 // starting at 0x10 (16th byte)

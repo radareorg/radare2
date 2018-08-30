@@ -37,7 +37,7 @@
 #define IS_RTE(x)	x == 0x002b
 
 #define IS_STCSR1(x)	(((x) & 0xF0CF) == 0x0002)	//mask stc Rn,{SR,gbr,VBR,SSR}
-#define IS_BSRF(x)	(x & 0xf0ff) == 0x0003
+#define IS_BSRF(x)	((x) & 0xf0ff) == 0x0003
 #define IS_BRAF(x)	(((x) & 0xf0ff) == 0x0023)
 #define IS_MOVB_REG_TO_R0REL(x)	(((x) & 0xF00F) == 0x0004)
 #define IS_MOVW_REG_TO_R0REL(x)	(((x) & 0xF00F) == 0x0005)
@@ -173,8 +173,8 @@
 #define GET_BTF_OFFSET(x)	((x) & 0x00ff)
 
 /* Compute reg nr for BRAF,BSR,BSRF,JMP,JSR */
-#define GET_TARGET_REG(x)	((x >> 8) & 0x0f)
-#define GET_SOURCE_REG(x)	((x >> 4) & 0x0f)
+#define GET_TARGET_REG(x)	(((x) >> 8) & 0x0f)
+#define GET_SOURCE_REG(x)	(((x) >> 4) & 0x0f)
 
 /* index of PC reg in regs[] array*/
 #define PC_IDX 16

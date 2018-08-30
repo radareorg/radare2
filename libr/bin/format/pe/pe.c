@@ -1384,7 +1384,7 @@ static void free_StringFileInfo(StringFileInfo* stringFileInfo) {
 	}
 }
 
-#define align32(x) x = ((x & 0x3) == 0)? x: (x & ~0x3) + 0x4;
+#define align32(x) x = (((x) & 0x3) == 0)? (x): ((x) & ~0x3) + 0x4;
 
 static void free_VS_VERSIONINFO(PE_VS_VERSIONINFO* vs_VersionInfo) {
 	if (vs_VersionInfo) {
@@ -3427,7 +3427,7 @@ char* PE_(r_bin_pe_get_subsystem)(struct PE_(r_bin_pe_obj_t)* bin) {
 	return subsystem? strdup (subsystem): NULL;
 }
 
-#define HASCHR(x) bin->nt_headers->file_header.Characteristics & x
+#define HASCHR(x) (bin->nt_headers->file_header.Characteristics & (x))
 
 int PE_(r_bin_pe_is_dll)(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!bin || !bin->nt_headers) {

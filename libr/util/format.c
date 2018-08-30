@@ -24,7 +24,7 @@
 
 //this define is used as a way to acknowledge when updateAddr should take len
 //as real len of the buffer
-#define THRESHOLD -4444
+#define THRESHOLD (-4444)
 
 //TODO REWRITE THIS IS BECOMING A NIGHTMARE
 

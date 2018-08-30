@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define UPDATE_TIME(a) r->times->file_open_time = r_sys_now () - a
+#define UPDATE_TIME(a) (r->times->file_open_time = r_sys_now () - (a))
 
 static int r_core_file_do_load_for_debug(RCore *r, ut64 loadaddr, const char *filenameuri);
 static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr);

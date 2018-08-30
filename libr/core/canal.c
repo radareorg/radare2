@@ -10,10 +10,10 @@
 
 #define SLOW_IO 0
 
-#define HINTCMD_ADDR(hint,x,y) if(hint->x) \
-	r_cons_printf (y" @ 0x%"PFMT64x"\n", hint->x, hint->addr)
-#define HINTCMD(hint,x,y,json) if(hint->x) \
-	r_cons_printf (y"", hint->x)
+#define HINTCMD_ADDR(hint,x,y) if((hint)->x) \
+	r_cons_printf (y" @ 0x%"PFMT64x"\n", (hint)->x, (hint)->addr)
+#define HINTCMD(hint,x,y,json) if((hint)->x) \
+	r_cons_printf (y"", (hint)->x)
 
 typedef struct {
 	RAnal *a;
@@ -3933,7 +3933,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		eprintf ("  aae $SS str.Hello @ $S   - find references for str.Hellow\n");
 		return;
 	}
-#define CHECKREF(x) ((refptr && x == refptr) || !refptr)
+#define CHECKREF(x) ((refptr && (x) == refptr) || !refptr)
 	if (target) {
 		const char *expr = r_str_trim_ro (target);
 		if (*expr) {

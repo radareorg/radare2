@@ -3355,8 +3355,8 @@ R_API void r_core_visual_colors(RCore *core) {
 		ch = r_cons_arrow_to_hjkl (ch);
 		switch (ch) {
 #define CASE_RGB(x,X,y) \
-	case x:if (y > 0x00) { y--; } break;\
-	case X:if (y < 0xff) { y++; } break;
+	case x:if ((y) > 0x00) { (y)--; } break;\
+	case X:if ((y) < 0xff) { (y)++; } break;
 		CASE_RGB ('R','r',rcolor.r);
 		CASE_RGB ('G','g',rcolor.g);
 		CASE_RGB ('B','b',rcolor.b);

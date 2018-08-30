@@ -5,9 +5,9 @@
 #include <r_socket.h>
 
 #define R2P_MAGIC 0x329193
-#define R2P_PID(x) (((R2Pipe*)x->data)->pid)
-#define R2P_INPUT(x) (((R2Pipe*)x->data)->input[0])
-#define R2P_OUTPUT(x) (((R2Pipe*)x->data)->output[1])
+#define R2P_PID(x) (((R2Pipe*)(x)->data)->pid)
+#define R2P_INPUT(x) (((R2Pipe*)(x)->data)->input[0])
+#define R2P_OUTPUT(x) (((R2Pipe*)(x)->data)->output[1])
 
 #if !__WINDOWS__
 static void env(const char *s, int f) {

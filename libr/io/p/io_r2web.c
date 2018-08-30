@@ -11,8 +11,8 @@ typedef struct {
 	char *url;
 } RIOR2Web;
 
-#define rFD(x) (((RIOR2Web*)x->data)->fd)
-#define rURL(x) (((RIOR2Web*)x->data)->url)
+#define rFD(x) (((RIOR2Web*)(x)->data)->fd)
+#define rURL(x) (((RIOR2Web*)(x)->data)->url)
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	int code, rlen;

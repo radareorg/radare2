@@ -20,9 +20,9 @@ typedef struct {
 	int fd;
 	int opid;
 } RIOPtrace;
-#define RIOPTRACE_OPID(x) (((RIOPtrace*)x->data)->opid)
-#define RIOPTRACE_PID(x) (((RIOPtrace*)x->data)->pid)
-#define RIOPTRACE_FD(x) (((RIOPtrace*)x->data)->fd)
+#define RIOPTRACE_OPID(x) (((RIOPtrace*)(x)->data)->opid)
+#define RIOPTRACE_PID(x) (((RIOPtrace*)(x)->data)->pid)
+#define RIOPTRACE_FD(x) (((RIOPtrace*)(x)->data)->fd)
 static void open_pidmem (RIOPtrace *iop);
 
 #undef R_IO_NFDS

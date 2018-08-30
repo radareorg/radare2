@@ -153,7 +153,7 @@ static void emit_string(REgg *egg, const char *dstvar, const char *str, int j) {
 	memset (s + len, 0, 4);
 
 	/* XXX: Hack: Adjust offset in R_BP correctly for 64b addresses */
-#define BPOFF R_SZ-4
+#define BPOFF (R_SZ-4)
 #define M32(x) (unsigned int)((x) & 0xffffffff)
 	/* XXX: Assumes sizeof(ut32) == 4 */
 	for (i=4; i<=oj; i+=4) {

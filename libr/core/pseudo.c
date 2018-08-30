@@ -5,8 +5,8 @@
 #define TYPE_STR 1
 #define TYPE_SYM 2
 #define IS_ALPHA(x) (IS_UPPER(x) || IS_LOWER(x))
-#define IS_STRING(x,y) ((x)+3<end && *x == 's' && *((x)+1) == 't' && *((x)+2) == 'r' && *((x)+3) == '.')
-#define IS_SYMBOL(x,y) ((x)+3<end && *x == 's' && *((x)+1) == 'y' && *((x)+2) == 'm' && *((x)+3) == '.')
+#define IS_STRING(x,y) ((x)+3<end && *(x) == 's' && *((x)+1) == 't' && *((x)+2) == 'r' && *((x)+3) == '.')
+#define IS_SYMBOL(x,y) ((x)+3<end && *(x) == 's' && *((x)+1) == 'y' && *((x)+2) == 'm' && *((x)+3) == '.')
 
 typedef struct _find_ctx {
 	char *comment;
@@ -224,7 +224,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 #define K_MARK(x) sdb_fmt("mark.%"PFMT64x,x)
 #define K_ELSE(x) sdb_fmt("else.%"PFMT64x,x)
 #define K_INDENT(x) sdb_fmt("loc.%"PFMT64x,x)
-#define SET_INDENT(x) { x = x>0?x:1; memset (indentstr, ' ', x*I_TAB); indentstr [(x*I_TAB)-2] = 0; }
+#define SET_INDENT(x) { (x) = (x)>0?(x):1; memset (indentstr, ' ', (x)*I_TAB); indentstr [((x)*I_TAB)-2] = 0; }
 		if (!bb) {
 			break;
 		}
