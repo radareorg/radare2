@@ -1270,8 +1270,8 @@ static bool find_e_opts(RLine *line) {
 	}
 	const char *pattern = "e (.*)=";
 	RRegex *rx = r_regex_new (pattern, "e");
-	size_t nmatch = 2;
-	RRegexMatch *pmatch = R_NEWS0 (RRegexMatch, nmatch);
+	const size_t nmatch = 2;
+	RRegexMatch pmatch[2];
 	bool ret = false;
 
 	if (r_regex_exec (rx, line->buffer.data, nmatch, pmatch, 1)) {
@@ -1302,7 +1302,6 @@ static bool find_e_opts(RLine *line) {
 
  out:
 	r_regex_free (rx);
-	free (pmatch);
 	return ret;
 }
 
