@@ -603,6 +603,7 @@ R_API bool r_anal_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr, 
 typedef struct recovery_complete_object_locator_t {
 	ut64 addr;
 	bool valid;
+	RVTableInfo *vtable;
 	rtti_complete_object_locator col;
 	struct recovery_type_descriptor_t *td;
 	rtti_class_hierarchy_descriptor chd;
@@ -617,6 +618,7 @@ RecoveryCompleteObjectLocator *recovery_complete_object_locator_new() {
 	}
 	col->addr = 0;
 	col->valid = false;
+	col->vtable = NULL;
 	col->td = NULL;
 	memset (&col->chd, 0, sizeof (col->chd));
 	col->bcd = NULL;
@@ -639,7 +641,6 @@ typedef struct recovery_type_descriptor_t {
 	bool valid;
 	rtti_type_descriptor td;
 	RecoveryCompleteObjectLocator *col;
-	RVTableInfo *vtable;
 } RecoveryTypeDescriptor;
 
 RecoveryTypeDescriptor *recovery_type_descriptor_new() {
@@ -652,7 +653,7 @@ RecoveryTypeDescriptor *recovery_type_descriptor_new() {
 	td->valid = false;
 	memset (&td->td, 0, sizeof (td->td));
 	td->col = NULL;
-	td->vtable = NULL;
+	//td->vtable = NULL;
 	return td;
 }
 
@@ -673,7 +674,7 @@ typedef struct rtti_msvc_anal_context_t {
 } RRTTIMSVCAnalContext;
 
 
-RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *context, ut64 addr, RVTableInfo *vtable);
+RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *context, ut64 addr, RecoveryCompleteObjectLocator *col);
 
 RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAnalContext *context, ut64 addr, RVTableInfo *vtable) {
 	RecoveryCompleteObjectLocator *col;
@@ -695,10 +696,11 @@ RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAn
 	if (!col->valid) {
 		return col;
 	}
+	col->vtable = vtable;
 
 
 	ut64 td_addr = rtti_msvc_addr (context->vt_context, col->addr, col->col.object_base, col->col.type_descriptor_addr);
-	col->td = recovery_anal_type_descriptor (context, td_addr, vtable);
+	col->td = recovery_anal_type_descriptor (context, td_addr, col);
 	if (!col->td->valid) {
 		col->valid = false;
 		return col;
@@ -746,12 +748,15 @@ RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAn
 	return col;
 }
 
-RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *context, ut64 addr, RVTableInfo *vtable) {
+RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *context, ut64 addr, RecoveryCompleteObjectLocator *col) {
 	RecoveryTypeDescriptor *td;
 	void **it;
 	r_pvector_foreach (&context->type_descriptors, it) {
 		td = *it;
 		if (td->addr == addr) {
+			if (col != NULL) {
+				td->col = col;
+			}
 			return td;
 		}
 	}
@@ -767,7 +772,9 @@ RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *cont
 		return td;
 	}
 
-	ut64 vtable_addr = td->td.vtable_addr; // TODO: this is probably broken for 64bit, should use rtti_msvc_addr
+	td->col = col;
+
+	/*ut64 vtable_addr = td->td.vtable_addr; // TODO: this is probably broken for 64bit, should use rtti_msvc_addr
 	ut64 colRefAddr = vtable_addr - context->vt_context->word_size;
 	ut64 colAddr;
 	if (!context->vt_context->read_addr (context->vt_context->anal, colRefAddr, &colAddr)) {
@@ -787,7 +794,7 @@ RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *cont
 		if (td->vtable) {
 			r_pvector_push (&context->vtables, td->vtable);
 		}
-	}
+	}*/
 
 	return td;
 }
@@ -820,11 +827,15 @@ RAnalClass *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context, Recove
 	free (name);
 	r_anal_class_add (anal, cls);
 	cls->addr = td->addr;
-	cls->vtable_addr = td->td.vtable_addr;
 
-	if (td->vtable) {
+	if (!td->col || !td->col->valid) {
+		return cls;
+	}
+
+	if (td->col->vtable) {
+		cls->vtable_addr = td->col->vtable->saddr;
 		RVTableMethodInfo *vmeth;
-		r_vector_foreach (&td->vtable->methods, vmeth) {
+		r_vector_foreach (&td->col->vtable->methods, vmeth) {
 			RAnalMethod *meth = r_anal_method_new ();
 			if (!meth) {
 				continue;
@@ -834,10 +845,8 @@ RAnalClass *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context, Recove
 			meth->name = r_str_newf ("virtual_%d", meth->vtable_index);
 			r_pvector_push (&cls->methods, meth);
 		}
-	}
-
-	if (!td->col || !td->col->valid) {
-		return cls;
+	} else {
+		cls->vtable_addr = UT64_MAX;
 	}
 
 	r_pvector_foreach (&td->col->base_td, it) {
