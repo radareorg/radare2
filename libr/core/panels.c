@@ -1843,28 +1843,44 @@ static void onMenu(RCore *core, const char *menu, int *exit) {
 	if (!strcmp (menu, "File")) {
 		changeMenu (panels, menus_File);
 		return;
-	} else if (!strcmp (menu, "Edit")) {
+	}
+	if (!strcmp (menu, "Edit")) {
 		changeMenu (panels, menus_Edit);
 		return;
-	} else if (!strcmp (menu, "View")) {
+	}
+	if (!strcmp (menu, "View")) {
 		changeMenu (panels, menus_View);
 		return;
-	} else if (!strcmp (menu, "Tools")) {
+	}
+	if (!strcmp (menu, "Tools")) {
 		changeMenu (panels, menus_Tools);
 		return;
-	} else if (!strcmp (menu, "Search")) {
+	}
+	if (!strcmp (menu, "Search")) {
 		changeMenu (panels, menus_Search);
 		return;
-	} else if (!strcmp (menu, "Debug")) {
+	}
+	if (!strcmp (menu, "Debug")) {
 		changeMenu (panels, menus_Debug);
 		return;
-	} else if (!strcmp (menu, "Analyze")) {
+	}
+	if (!strcmp (menu, "Analyze")) {
 		changeMenu (panels, menus_Analyze);
 		return;
-	} else if (!strcmp (menu, "Help")) {
+	}
+	if (!strcmp (menu, "Help")) {
 		changeMenu (panels, menus_Help);
 		return;
-	} else if (!strcmp (menu, "New")) {
+	}
+	if (!strcmp (menu, "ReOpen")) {
+		panels->menuStack[panels->menuStackDepth] = panels->currentMenu;
+		panels->menuIndexStack[panels->menuStackDepth] = panels->currentMenuIndex;
+		panels->menuStackDepth++;
+		panels->currentMenu = menus_ReOpen;
+		panels->currentMenuIndex = 0;
+		return;
+	}
+	if (!strcmp (menu, "New")) {
 		addPanelFrame (core, panels, PANEL_TITLE_NEWFILES, "o");
 	} else if (!strcmp (menu, "Open")) {
 		r_cons_enable_mouse (false);
@@ -2012,13 +2028,6 @@ static void onMenu(RCore *core, const char *menu, int *exit) {
 	} else if (!strcmp (menu, "Step")) {
 		r_core_cmd (core, "ds", 0);
 		r_cons_flush ();
-	} else if (!strcmp (menu, "ReOpen")) {
-		panels->menuStack[panels->menuStackDepth] = panels->currentMenu;
-		panels->menuIndexStack[panels->menuStackDepth] = panels->currentMenuIndex;
-		panels->menuStackDepth++;
-		panels->currentMenu = menus_ReOpen;
-		panels->currentMenuIndex = 0;
-		return;
 	} else if (!strcmp (menu, "In RW")) {
 		r_core_cmd (core, "oo+", 0);
 		r_cons_flush ();
