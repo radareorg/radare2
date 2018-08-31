@@ -9,6 +9,7 @@ files = [
 
 r_reg = library('r_reg', files,
   include_directories: [platform_inc],
+  c_args: library_cflags,
   dependencies: [r_util_dep],
   install: true,
   implicit_include_directories: false,

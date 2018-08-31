@@ -19,7 +19,7 @@ files = [
 
 r_parse = library('r_parse', files,
   include_directories: platform_inc,
-  c_args: ['-DCORELIB=1'],
+  c_args: library_cflags,
   dependencies: [
     r_util_dep,
     r_flag_dep,

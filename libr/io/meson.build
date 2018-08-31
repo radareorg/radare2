@@ -67,7 +67,7 @@ r_io = library('r_io', files,
     zip_dep,
     ar_dep
   ],
-  c_args: ['-DCORELIB=1'],
+  c_args: library_cflags,
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion

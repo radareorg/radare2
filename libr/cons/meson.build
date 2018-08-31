@@ -19,6 +19,7 @@ files = [
 
 r_cons = library('r_cons', files,
   include_directories: [platform_inc],
+  c_args: library_cflags,
   dependencies: [r_util_dep, sdb_dep],
   install: true,
   implicit_include_directories: false,

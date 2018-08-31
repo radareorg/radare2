@@ -119,7 +119,7 @@ r_bin_inc = [platform_inc, include_directories('mangling', 'format')]
 
 r_bin = library('r_bin', files,
   include_directories: r_bin_inc,
-  c_args: ['-DCORELIB=1', '-DR_API_BIN_ONLY=1'],
+  c_args: ['-DR_API_BIN_ONLY=1'] + library_cflags,
   dependencies: [
     r_util_dep,
     r_io_dep,

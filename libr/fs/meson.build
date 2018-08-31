@@ -28,7 +28,7 @@ files = [
 
 r_fs = library('r_fs', files,
   include_directories: platform_inc,
-  c_args: ['-DCORELIB=1'],
+  c_args: library_cflags,
   dependencies: [
     r_util_dep,
     grub_dep

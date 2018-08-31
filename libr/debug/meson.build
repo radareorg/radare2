@@ -64,7 +64,7 @@ r_debug_inc = [
 
 r_debug = library('r_debug', files,
   include_directories: r_debug_inc,
-  c_args: ['-DCORELIB=1'],
+  c_args: library_cflags,
   dependencies: [
     r_util_dep,
     r_hash_dep,
