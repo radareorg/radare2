@@ -12,17 +12,8 @@ checkshellscript() {
 		
 }
 
-FMT=gcc
-#if [ -n "${SHELLCHECK_XML}" ]; then
-#	FMT=checkstyle
-#fi
+echo "Find all shellscripts, caching $SCRIPTS"
+SCRIPTS=$(find . \! -path '/.git' -print0  | xargs -0 file | grep "POSIX shell script" | cut -d: -f1)
 
-SHCHK="shellcheck --format=${FMT}"
-
-if ! [ -f "./sys/scripts.list" ] ;then
-	echo "Find all shellscripts, caching in sys/scripts.list"
-	find . \! -path '/.git' -print0  | xargs -0 file | grep "POSIX shell script" | cut -d: -f1  > sys/scripts.list
-fi
-
-checkshellscript "./sys/scripts.list" "$SHCHK"
-#checkshellscript "./sys/scripts.list" "checkbashisms"
+checkshellscript "./sys/scripts.list" "shellcheck --format=gcc"
+checkshellscript "./sys/scripts.list" "checkbashisms"
