@@ -60,6 +60,7 @@
 #define PANEL_CMD_CLIPBOARD      "yx"
 #define PANEL_CMD_FCNINFO        "afi"
 
+#define PANEL_CONFIG_MENU_MAX    64
 #define PANEL_CONFIG_PAGE        10
 #define PANEL_CONFIG_SIDEPANEL_W 60
 #define PANEL_CONFIG_RESIZE_W    4
@@ -166,6 +167,7 @@ static void resizePanelUp(RPanels *panels);
 static void resizePanelDown(RPanels *panels);
 static void handleTabKey(RCore *core, bool shift);
 static bool init(RCore *core, RPanels *panels, int w, int h);
+static bool initPanelsMenu(RPanels *panels);
 static bool initPanels(RCore *core, RPanels *panels);
 static void freePanel(RPanel *panel);
 static void panelBreakpoint(RCore *core);
@@ -1549,6 +1551,9 @@ static RPanel createMenuPanel(int x, int y, char *title) {
 	return panel;
 }
 
+static bool initPanelsMenu(RPanels *panels) {
+}
+
 static bool initPanels(RCore *core, RPanels *panels) {
 	panels->panel = calloc (sizeof (RPanel), PANEL_NUM_LIMIT);
 	if (!panels->panel) {
@@ -2213,6 +2218,9 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 			r_core_panels_free (panels);
 			return false;
 		}
+	}
+
+	if (!initPanelsMenu (panels)) {
 	}
 
 	if (!initPanels (core, panels)) {
