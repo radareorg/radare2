@@ -102,10 +102,8 @@ endif
 
 visibility_cflags = []
 if get_option('default_library') == 'shared'
-  if host_machine.system() == 'windows' and cc.get_id() != 'msvc'
-    visibility_cflags += [ '-fvisibility=hidden' ]
-  else
-    visibility_cflags += [ '-fvisibility=hidden' ]
+  if host_machine.system() != 'windows' or cc.get_id() != 'msvc'
+    add_global_arguments('-fvisibility=hidden', language: 'c')
   endif
 endif
 
