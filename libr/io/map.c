@@ -145,7 +145,7 @@ out:
 	free (deleted);
 }
 
-R_API RIOMap* r_io_map_new(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut64 size, bool do_skyline) {
+RIOMap* io_map_new(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut64 size, bool do_skyline) {
 	if (!size || !io || !io->maps || !io->map_ids) {
 		return NULL;
 	}
@@ -158,7 +158,7 @@ R_API RIOMap* r_io_map_new(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut
 	map->delta = delta;
 	if ((UT64_MAX - size + 1) < addr) {
 		/// XXX: this is leaking a map!!!
-		r_io_map_new (io, fd, flags, delta - addr, 0LL, size + addr, do_skyline);
+		io_map_new (io, fd, flags, delta - addr, 0LL, size + addr, do_skyline);
 		size = -(st64)addr;
 	}
 	// RIOMap describes an interval of addresses (map->from; map->to)
@@ -173,6 +173,10 @@ R_API RIOMap* r_io_map_new(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut
 	return map;
 }
 
+R_API RIOMap *r_io_map_new (RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size) {
+	return io_map_new (io, fd, flags, delta, addr, size, true);
+}
+
 R_API bool r_io_map_remap (RIO *io, ut32 id, ut64 addr) {
 	RIOMap *map = r_io_map_resolve (io, id);
 	if (map) {
@@ -180,7 +184,7 @@ R_API bool r_io_map_remap (RIO *io, ut32 id, ut64 addr) {
 		map->itv.addr = addr;
 		if (UT64_MAX - size + 1 < addr) {
 			map->itv.size = -addr;
-			r_io_map_new (io, map->fd, map->flags, map->delta - addr, 0, size + addr, true);
+			r_io_map_new (io, map->fd, map->flags, map->delta - addr, 0, size + addr);
 			return true;
 		}
 		r_io_map_calculate_skyline (io);
@@ -261,7 +265,7 @@ R_API RIOMap* r_io_map_add(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut
 	RIODesc* desc = r_io_desc_get (io, fd);
 	if (desc) {
 		//a map cannot have higher permissions than the desc belonging to it
-		return r_io_map_new (io, fd, (flags & desc->flags) | (flags & R_IO_EXEC),
+		return io_map_new (io, fd, (flags & desc->flags) | (flags & R_IO_EXEC),
 				delta, addr, size, do_skyline);
 	}
 	return NULL;
@@ -483,7 +487,7 @@ R_API RIOMap* r_io_map_add_next_available(RIO* io, int fd, int flags, ut64 delta
 		}
 		break;
 	}
-	return r_io_map_new (io, fd, flags, delta, next_addr, size, true);
+	return r_io_map_new (io, fd, flags, delta, next_addr, size);
 }
 
 R_API ut64 r_io_map_next_address(RIO* io, ut64 addr) {
@@ -527,7 +531,7 @@ R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
 	ut64 addr = map->itv.addr;
 	if (UT64_MAX - newsize + 1 < addr) {
 		map->itv.size = -addr;
-		r_io_map_new (io, map->fd, map->flags, map->delta - addr, 0, newsize + addr, true);
+		r_io_map_new (io, map->fd, map->flags, map->delta - addr, 0, newsize + addr);
 		return true;
 	}
 	map->itv.size = newsize;

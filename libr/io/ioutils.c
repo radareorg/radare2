@@ -3,6 +3,7 @@
 #include <r_io.h>
 #include <r_util.h>
 #include <r_types.h>
+#include "io_private.h"
 
 // TODO: we may probably take care of this when the binfiles have an associated list of fds
 #define REUSE_NULL_MAPS 1
@@ -64,7 +65,7 @@ R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, boo
 		if (desc) {
 			RIOMap *map = r_io_map_get (io, at);
 			if (!map) {
-				r_io_map_new (io, desc->fd, desc->flags, 0LL, at, gap, false);
+				io_map_new (io, desc->fd, desc->flags, 0LL, at, gap, false);
 			}
 			reused = true;
 		}
