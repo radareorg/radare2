@@ -11,9 +11,9 @@ IndentWidth: 8
 UseTab: Always
 ColumnLimit: 0
 BreakBeforeBraces: Attach
-BreakBeforeTernaryOperators: false
-AllowShortIfStatementsOnASingleLine: true
+BreakBeforeTernaryOperators: true
+AllowShortIfStatementsOnASingleLine: false
 AllowShortCaseLabelsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: Inline
-AllowShortLoopsOnASingleLine: true
+AllowShortLoopsOnASingleLine: false
 ForEachMacros: ['r_list_foreach', 'ls_foreach', 'fcn_tree_foreach_intersect', 'r_skiplist_foreach', 'graph_foreach_anode']
