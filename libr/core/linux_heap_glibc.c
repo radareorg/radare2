@@ -1006,7 +1006,8 @@ static void GH(print_tcache_instance)(RCore *core, MallocState *main_arena, GHT 
 	(void)r_io_read_at (core->io, brk_start + align, (ut8 *)tcache_heap, sizeof (GH(RHeapTcache)));
 
 	PRINT_GA("Thread cache @\n");
-	for (int i = 0; i < TCACHE_MAX_BINS; i++) {
+	int i;
+	for (i = 0; i < TCACHE_MAX_BINS; i++) {
 		if (tcache_heap->counts[i] > 0) {
 			PRINT_GA("bin :");
 			PRINTF_BA("%2d",i);
@@ -1016,7 +1017,8 @@ static void GH(print_tcache_instance)(RCore *core, MallocState *main_arena, GHT 
 			PRINTF_BA("0x%"PFMT64x, (ut64)tcache_heap->entries[i] - align);
 			if (tcache_heap->counts[i] > 1) {
 				tcache_fd = (ut64)tcache_heap->entries[i];
-				for(int n=1; n < tcache_heap->counts[i]; n++) {
+				int n;
+				for(n=1; n < tcache_heap->counts[i]; n++) {
 					(void)r_io_read_at (core->io, tcache_fd, &tcache_tmp, sizeof (GHT));
 					PRINTF_BA("->0x%"PFMT64x, tcache_tmp - align);
 					tcache_fd = tcache_tmp;
@@ -1122,7 +1124,8 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena, GHT *in
 		if (tcache) {
 			GH(RHeapTcache) *tcache_heap = R_NEW0 (GH(RHeapTcache));
 			(void)r_io_read_at (core->io, brk_start + align, (ut8 *)tcache_heap, sizeof (GH(RHeapTcache)));
-			for (int i=0; i < TCACHE_MAX_BINS; i++) {
+			int i;
+			for (i=0; i < TCACHE_MAX_BINS; i++) {
 				if (tcache_heap->counts[i] > 0) {
 					if ((ut64)tcache_heap->entries[i] - SZ * 2 == (ut64)prev_chunk) {
 						is_free = true;
@@ -1130,7 +1133,8 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena, GHT *in
 					}
 					if (tcache_heap->counts[i] > 1) {
 						tcache_fd = (ut64)tcache_heap->entries[i];
-						for (int n = 1; n < tcache_heap->counts[i]; n++) {
+						int n;
+						for (n = 1; n < tcache_heap->counts[i]; n++) {
 							(void)r_io_read_at (core->io, tcache_fd, (ut8*)&tcache_tmp, sizeof (GHT));
 							if ((ut64)tcache_tmp - SZ * 2 == (ut64)prev_chunk) {
 								is_free = true;
