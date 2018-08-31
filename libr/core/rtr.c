@@ -158,8 +158,9 @@ static void rtr_textlog_chat (RCore *core, TextLog T) {
 		} else if (*buf=='/') {
 			eprintf ("Unknown command: %s\n", buf);
 		} else {
-			snprintf (msg, sizeof (msg) - 1, "T [%s] %s", me, buf);
-			free (rtrcmd (T, msg));
+			char *cmd = r_str_newf ("T [%s] %s", me, buf);
+			free (rtrcmd (T, cmd));
+			free (cmd);
 		}
 	}
 beach:

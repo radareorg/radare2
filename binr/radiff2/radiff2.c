@@ -675,7 +675,6 @@ int main(int argc, char **argv) {
 	const char *columnSort = NULL;
 	const char *addr = NULL;
 	RCore *c = NULL, *c2 = NULL;
-	RCons *cons = NULL;
 	RDiff *d;
 	ut8 *bufa = NULL, *bufb = NULL;
 	int o, sza, szb, /*diffmode = 0,*/ delta = 0;
@@ -909,7 +908,8 @@ int main(int argc, char **argv) {
 		break;
 	}
 
-	cons = r_cons_new ();
+	// initialize RCons
+	(void)r_cons_new ();
 
 	switch (mode) {
 	case MODE_COLS:
