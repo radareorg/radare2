@@ -89,7 +89,7 @@ indentFile() {
 	if [ "${UNCRUST}" = 1 ]; then
 		cp -f .clang-format ${CWD}/.clang-format
 		cd "$CWD"
-		r2pm -r uncrustify -c ${CWD}/doc/uncrustify.cfg -f "${IFILE}" -o .tmp-format || exit 1
+		r2pm -r uncrustify -c ${CWD}/doc/uncrustify.cfg -f "${IFILE}" -o .tmp-format
 	else
 		cp -f .clang-format ${CWD}/.clang-format
 		cd "$CWD"
