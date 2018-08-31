@@ -1842,21 +1842,45 @@ static void onMenu(RCore *core, const char *menu, int *exit) {
 	RPanels *panels = core->panels;
 	if (!strcmp (menu, "File")) {
 		changeMenu (panels, menus_File);
-	} else if (!strcmp (menu, "Edit")) {
+		return;
+	}
+	if (!strcmp (menu, "Edit")) {
 		changeMenu (panels, menus_Edit);
-	} else if (!strcmp (menu, "View")) {
+		return;
+	}
+	if (!strcmp (menu, "View")) {
 		changeMenu (panels, menus_View);
-	} else if (!strcmp (menu, "Tools")) {
+		return;
+	}
+	if (!strcmp (menu, "Tools")) {
 		changeMenu (panels, menus_Tools);
-	} else if (!strcmp (menu, "Search")) {
+		return;
+	}
+	if (!strcmp (menu, "Search")) {
 		changeMenu (panels, menus_Search);
-	} else if (!strcmp (menu, "Debug")) {
+		return;
+	}
+	if (!strcmp (menu, "Debug")) {
 		changeMenu (panels, menus_Debug);
-	} else if (!strcmp (menu, "Analyze")) {
+		return;
+	}
+	if (!strcmp (menu, "Analyze")) {
 		changeMenu (panels, menus_Analyze);
-	} else if (!strcmp (menu, "Help")) {
+		return;
+	}
+	if (!strcmp (menu, "Help")) {
 		changeMenu (panels, menus_Help);
-	} else if (!strcmp (menu, "New")) {
+		return;
+	}
+	if (!strcmp (menu, "ReOpen")) {
+		panels->menuStack[panels->menuStackDepth] = panels->currentMenu;
+		panels->menuIndexStack[panels->menuStackDepth] = panels->currentMenuIndex;
+		panels->menuStackDepth++;
+		panels->currentMenu = menus_ReOpen;
+		panels->currentMenuIndex = 0;
+		return;
+	}
+	if (!strcmp (menu, "New")) {
 		addPanelFrame (core, panels, PANEL_TITLE_NEWFILES, "o");
 	} else if (!strcmp (menu, "Open")) {
 		r_cons_enable_mouse (false);
@@ -2004,12 +2028,6 @@ static void onMenu(RCore *core, const char *menu, int *exit) {
 	} else if (!strcmp (menu, "Step")) {
 		r_core_cmd (core, "ds", 0);
 		r_cons_flush ();
-	} else if (!strcmp (menu, "ReOpen")) {
-		panels->menuStack[panels->menuStackDepth] = panels->currentMenu;
-		panels->menuIndexStack[panels->menuStackDepth] = panels->currentMenuIndex;
-		panels->menuStackDepth++;
-		panels->currentMenu = menus_ReOpen;
-		panels->currentMenuIndex = 0;
 	} else if (!strcmp (menu, "In RW")) {
 		r_core_cmd (core, "oo+", 0);
 		r_cons_flush ();
