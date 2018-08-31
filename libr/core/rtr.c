@@ -16,7 +16,6 @@ SECURITY IMPLICATIONS
 - follow symlinks
 #endif
 
-#define USE_THREADS 1
 #define rtr_n core->rtr_n
 #define rtr_host core->rtr_host
 
