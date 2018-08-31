@@ -1842,20 +1842,28 @@ static void onMenu(RCore *core, const char *menu, int *exit) {
 	RPanels *panels = core->panels;
 	if (!strcmp (menu, "File")) {
 		changeMenu (panels, menus_File);
+		return;
 	} else if (!strcmp (menu, "Edit")) {
 		changeMenu (panels, menus_Edit);
+		return;
 	} else if (!strcmp (menu, "View")) {
 		changeMenu (panels, menus_View);
+		return;
 	} else if (!strcmp (menu, "Tools")) {
 		changeMenu (panels, menus_Tools);
+		return;
 	} else if (!strcmp (menu, "Search")) {
 		changeMenu (panels, menus_Search);
+		return;
 	} else if (!strcmp (menu, "Debug")) {
 		changeMenu (panels, menus_Debug);
+		return;
 	} else if (!strcmp (menu, "Analyze")) {
 		changeMenu (panels, menus_Analyze);
+		return;
 	} else if (!strcmp (menu, "Help")) {
 		changeMenu (panels, menus_Help);
+		return;
 	} else if (!strcmp (menu, "New")) {
 		addPanelFrame (core, panels, PANEL_TITLE_NEWFILES, "o");
 	} else if (!strcmp (menu, "Open")) {
@@ -2010,6 +2018,7 @@ static void onMenu(RCore *core, const char *menu, int *exit) {
 		panels->menuStackDepth++;
 		panels->currentMenu = menus_ReOpen;
 		panels->currentMenuIndex = 0;
+		return;
 	} else if (!strcmp (menu, "In RW")) {
 		r_core_cmd (core, "oo+", 0);
 		r_cons_flush ();
