@@ -293,7 +293,10 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		free (argv);
 #if (!defined(__WINDOWS__)) || defined(__CYGWIN__)
 	} else if (!strncmp (cmd, "alarm ", 6)) {
-		signal (SIGALRM, got_alarm);
+		sigset_t mask;
+		sigemptyset (&mask);
+		sigaddset (&mask, SIGALRM);
+		r_sys_sigaction (SIGALRM, got_alarm, &mask, 0);
 		// TODO: use setitimer
 		alarm (atoi (cmd + 6));
 #else

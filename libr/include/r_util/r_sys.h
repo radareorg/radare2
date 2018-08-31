@@ -38,6 +38,7 @@ R_API void r_sys_perror_str(const char *fun);
 #define r_sys_mkdir_failed() (GetLastError () != ERROR_ALREADY_EXISTS)
 #else
 #define r_sys_mkdir_failed() (errno != EEXIST)
+R_API int r_sys_sigaction(int sig, void(*handler) (int), sigset_t *mask, int flags);
 #endif
 R_API const char *r_sys_prefix(const char *pfx);
 R_API bool r_sys_mkdir(const char *dir);

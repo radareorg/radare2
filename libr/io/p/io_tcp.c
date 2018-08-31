@@ -74,10 +74,14 @@ static inline int getmalfd (RIOMalloc *mal) {
 }
 
 static ut8 *tcpme (const char *pathname, int *code, int *len) {
+#if __UNIX__
+	sigset_t mask;
+	sigemptyset (&mask);
+#endif
 	pathname += 6;
 	*code = 404;
 #if __UNIX__
-	signal (SIGINT, 0);
+	r_sys_sigaction (SIGINT, SIG_DFL, &mask, 0);
 #endif
 	if (*pathname == ':') {
 		/* listen and wait for connection */

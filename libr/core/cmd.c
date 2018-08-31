@@ -1738,6 +1738,9 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 #if __UNIX__ || __CYGWIN__
 	int stdout_fd, fds[2];
 	int child;
+
+	sigset_t mask;
+	sigemptyset (&mask);
 #endif
 	int si, olen, ret = -1, pipecolor = -1;
 	char *str, *out = NULL;
@@ -1768,7 +1771,7 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 	radare_cmd = (char*)r_str_trim_head (radare_cmd);
 	shell_cmd = (char*)r_str_trim_head (shell_cmd);
 
-	signal (SIGPIPE, SIG_IGN);
+	r_sys_sigaction (SIGPIPE, SIG_IGN, &mask, 0);
 	stdout_fd = dup (1);
 	if (stdout_fd != -1) {
 		pipe (fds);

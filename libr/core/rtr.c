@@ -401,7 +401,10 @@ static void activateDieTime (RCore *core) {
 	int dt = r_config_get_i (core->config, "http.dietime");
 	if (dt > 0) {
 #if __UNIX__
-		signal (SIGALRM, dietime);
+		sigset_t mask;
+		sigemptyset (&mask);
+		sigaddset (&mask, SIGALRM);
+		r_sys_sigaction (SIGALRM, dietime, &mask, 0);
 		alarm (dt);
 #else
 		eprintf ("http.dietime only works on *nix systems\n");

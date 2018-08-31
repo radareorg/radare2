@@ -37,8 +37,10 @@ static void sigusr2(int s) {
 static void _libwrap_init() __attribute__ ((constructor));
 static void _libwrap_init() {
 	char *web;
-	signal (SIGUSR1, sigusr1);
-	signal (SIGUSR2, sigusr2);
+	sigset_t mask;
+	sigemptyset (&mask);
+	r_sys_sigaction (SIGUSR1, sigusr1, &mask, 0);
+	r_sys_sigaction (SIGUSR2, sigusr2, &mask, 0);
 	printf ("libr2 initialized. send SIGUSR1 to %d in order to reach the r2 prompt\n", getpid ());
 	printf ("kill -USR1 %d\n", getpid ());
 	fflush (stdout);

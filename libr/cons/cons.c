@@ -230,7 +230,10 @@ R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void 
 	if (r_stack_is_empty (context->break_stack)) {
 #if __UNIX__ || __CYGWIN__
 		if (sig && r_cons_context_is_main ()) {
-			signal (SIGINT, break_signal);
+			sigset_t mask;
+			sigemptyset (&mask);
+			sigaddset (&mask, SIGINT);
+			r_sys_sigaction (SIGINT, break_signal, &mask, 0);
 		}
 #endif
 		context->breaked = false;
@@ -259,7 +262,9 @@ R_API void r_cons_context_break_pop(RConsContext *context, bool sig) {
 		//there is not more elements in the stack
 #if __UNIX__ || __CYGWIN__
 		if (sig && r_cons_context_is_main ()) {
-			signal (SIGINT, SIG_IGN);
+			sigset_t mask;
+			sigemptyset (&mask);
+			r_sys_sigaction (SIGINT, SIG_IGN, &mask, 0);
 		}
 #endif
 		context->breaked = false;
@@ -301,10 +306,14 @@ R_API void r_cons_break_timeout(int timeout) {
 }
 
 R_API void r_cons_break_end() {
+#if __UNIX__ || __CYGWIN__
+	sigset_t mask;
+	sigemptyset (&mask);
+#endif
 	I.context->breaked = false;
 	I.timeout = 0;
 #if __UNIX__ || __CYGWIN__
-	signal (SIGINT, SIG_IGN);
+	r_sys_sigaction (SIGINT, SIG_IGN, &mask, 0);
 #endif
 	if (!r_stack_is_empty (I.context->break_stack)) {
 		//free all the stack
@@ -368,6 +377,11 @@ R_API bool r_cons_enable_mouse(const bool enable) {
 }
 
 R_API RCons *r_cons_new() {
+#if __UNIX__ || __CYGWIN__
+	sigset_t mask;
+	sigemptyset (&mask);
+#endif
+
 	I.refcnt++;
 	if (I.refcnt != 1) {
 		return &I;
@@ -414,7 +428,7 @@ R_API RCons *r_cons_new() {
 	I.term_raw.c_cflag &= ~(CSIZE|PARENB);
 	I.term_raw.c_cflag |= CS8;
 	I.term_raw.c_cc[VMIN] = 1; // Solaris stuff hehe
-	signal (SIGWINCH, resize);
+	r_sys_sigaction (SIGWINCH, resize, &mask, 0);
 #elif __WINDOWS__
 	h = GetStdHandle (STD_INPUT_HANDLE);
 	GetConsoleMode (h, &I.term_buf);

@@ -148,6 +148,9 @@ static int r_socket_unix_connect(RSocket *s, const char *file) {
 }
 
 R_API int r_socket_unix_listen (RSocket *s, const char *file) {
+	sigset_t mask;
+	sigemptyset (&mask);
+
 	struct sockaddr_un unix_name;
 	int sock = socket (PF_UNIX, SOCK_STREAM, 0);
 	if (sock < 0) {
@@ -164,7 +167,7 @@ R_API int r_socket_unix_listen (RSocket *s, const char *file) {
 		close (sock);
 		return false;
 	}
-	signal (SIGPIPE, SIG_IGN);
+	r_sys_sigaction (SIGPIPE, SIG_IGN, &mask, 0);
 
 	/* change permissions */
 	if (chmod (unix_name.sun_path, 0777) != 0) {
@@ -181,14 +184,19 @@ R_API int r_socket_unix_listen (RSocket *s, const char *file) {
 #endif
 
 R_API RSocket *r_socket_new (int is_ssl) {
+#if __UNIX__
+	sigset_t mask;
+	sigemptyset (&mask);
+#endif
+
 	RSocket *s = R_NEW0 (RSocket);
 	if (!s) {
 		return NULL;
 	}
 	s->is_ssl = is_ssl;
 	s->port = 0;
-#if __UNIX_
-	signal (SIGPIPE, SIG_IGN);
+#if __UNIX__
+	r_sys_sigaction (SIGPIPE, SIG_IGN, &mask, 0);
 #endif
 	s->local = 0;
 #ifdef _MSC_VER
@@ -329,10 +337,12 @@ R_API bool r_socket_connect (RSocket *s, const char *host, const char *port, int
 	int ret;
 	struct addrinfo hints = {0};
 	struct addrinfo *res, *rp;
+	sigset_t mask;
+	sigemptyset (&mask);
 	if (!proto) {
 		proto = R_SOCKET_PROTO_TCP;
 	}
-	signal (SIGPIPE, SIG_IGN);
+	r_sys_sigaction (SIGPIPE, SIG_IGN, &mask, 0);
 	if (proto == R_SOCKET_PROTO_UNIX) {
 		if (!r_socket_unix_connect (s, host)) {
 			return false;
@@ -494,6 +504,8 @@ R_API bool r_socket_listen (RSocket *s, const char *port, const char *certfile) 
 	int optval = 1;
 	int ret;
 	struct linger linger = { 0 };
+	sigset_t mask;
+	sigemptyset (&mask);
 #endif
 	if (r_sandbox_enable (0)) {
 		return false;
@@ -545,7 +557,7 @@ R_API bool r_socket_listen (RSocket *s, const char *port, const char *certfile) 
 		return false;
 	}
 #if __UNIX__ || defined(__CYGWIN__)
-	signal (SIGPIPE, SIG_IGN);
+	r_sys_sigaction (SIGPIPE, SIG_IGN, &mask, 0);
 #endif
 	if (listen (s->fd, 32) < 0) {
 #ifdef _MSC_VER
@@ -750,7 +762,9 @@ R_API char *r_socket_to_string(RSocket *s) {
 R_API int r_socket_write(RSocket *s, void *buf, int len) {
 	int ret, delta = 0;
 #if __UNIX__ || defined(__CYGWIN__)
-	signal (SIGPIPE, SIG_IGN);
+	sigset_t mask;
+	sigemptyset (&mask);
+	r_sys_sigaction (SIGPIPE, SIG_IGN, &mask, 0);
 #endif
 	for (;;) {
 		int b = 1500; //65536; // Use MTU 1500?

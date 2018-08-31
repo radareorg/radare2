@@ -364,7 +364,7 @@ static int checkcmd(const char *c) {
 
 R_API int r_sys_crash_handler(const char *cmd) {
 #if __UNIX__
-	struct sigaction sigact;
+	sigset_t mask;
 	if (!checkcmd (cmd)) {
 		return false;
 	}
@@ -376,25 +376,33 @@ R_API int r_sys_crash_handler(const char *cmd) {
 
 	free (crash_handler_cmd);
 	crash_handler_cmd = strdup (cmd);
-	sigact.sa_handler = signal_handler;
-	sigemptyset (&sigact.sa_mask);
-	sigact.sa_flags = 0;
-	sigaddset (&sigact.sa_mask, SIGINT);
-	sigaddset (&sigact.sa_mask, SIGSEGV);
-	sigaddset (&sigact.sa_mask, SIGBUS);
-	sigaddset (&sigact.sa_mask, SIGQUIT);
-	sigaddset (&sigact.sa_mask, SIGHUP);
+	sigemptyset (&mask);
+	sigaddset (&mask, SIGINT);
+	sigaddset (&mask, SIGSEGV);
+	sigaddset (&mask, SIGBUS);
+	sigaddset (&mask, SIGQUIT);
+	sigaddset (&mask, SIGHUP);
 
-	sigaction (SIGINT, &sigact, (struct sigaction *)NULL);
-	sigaction (SIGSEGV, &sigact, (struct sigaction *)NULL);
-	sigaction (SIGBUS, &sigact, (struct sigaction *)NULL);
-	sigaction (SIGQUIT, &sigact, (struct sigaction *)NULL);
-	sigaction (SIGHUP, &sigact, (struct sigaction *)NULL);
+	r_sys_sigaction (SIGINT, signal_handler, &mask, 0);
+	r_sys_sigaction (SIGSEGV, signal_handler, &mask, 0);
+	r_sys_sigaction (SIGBUS, signal_handler, &mask, 0);
+	r_sys_sigaction (SIGQUIT, signal_handler, &mask, 0);
+	r_sys_sigaction (SIGHUP, signal_handler, &mask, 0);
 	return true;
 #else
 	return false;
 #endif
 }
+
+#if __UNIX__
+R_API int r_sys_sigaction(int sig, void(*handler) (int), sigset_t *mask, int flags) {
+	struct sigaction sigact;
+	sigact.sa_handler = handler;
+	sigact.sa_mask = *mask;
+	sigact.sa_flags = flags;
+	return sigaction (sig, &sigact, NULL);
+}
+#endif
 
 R_API char *r_sys_getenv(const char *key) {
 #if __WINDOWS__ && !__CYGWIN__
@@ -505,6 +513,10 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 		close (sh_err[1]);
 		exit (r_sandbox_system (cmd, 0));
 	default:
+	{
+		sigset_t mask;
+		sigemptyset (&mask);
+
 		outputptr = strdup ("");
 		if (!outputptr) {
 			return false;
@@ -525,7 +537,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 			close (sh_in[1]);
 		}
 		// we should handle broken pipes somehow better
-		signal (SIGPIPE, SIG_IGN);
+		r_sys_sigaction (SIGPIPE, SIG_IGN, &mask, 0);
 		for (;;) {
 			fd_set rfds, wfds;
 			int nfd;
@@ -599,6 +611,7 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, char **output, 
 			free (outputptr);
 		}
 		return ret;
+	}
 	}
 	return false;
 }

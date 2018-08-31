@@ -9,11 +9,15 @@ static void fwd(int sig) {
 }
 
 static void rarun2_tty() {
+	sigset_t mask;
+	sigemptyset (&mask);
+	sigaddset (&mask, SIGINT);
+
 	/* TODO: Implement in native code */
 	r_sys_cmd ("tty");
 	close(1);
 	dup2(2, 1);
-	signal (SIGINT, fwd);
+	r_sys_sigaction (SIGINT, fwd, &mask, 0);
 	for (;;) {
 		sleep (1);
 	}
