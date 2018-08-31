@@ -260,7 +260,7 @@ R_API RIOMap* r_io_map_resolve(RIO* io, ut32 id) {
 	return NULL;
 }
 
-R_API RIOMap* r_io_map_add(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut64 size, bool do_skyline) {
+RIOMap* io_map_add(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut64 size, bool do_skyline) {
 	//check if desc exists
 	RIODesc* desc = r_io_desc_get (io, fd);
 	if (desc) {
@@ -269,6 +269,10 @@ R_API RIOMap* r_io_map_add(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut
 				delta, addr, size, do_skyline);
 	}
 	return NULL;
+}
+
+R_API RIOMap *r_io_map_add(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size) {
+	return io_map_add (io, fd, flags, delta, addr, size, true);
 }
 
 R_API RIOMap* r_io_map_get_paddr(RIO* io, ut64 paddr) {
@@ -481,7 +485,6 @@ R_API RIOMap* r_io_map_add_next_available(RIO* io, int fd, int flags, ut64 delta
 
 		if (map->fd == fd && ((map->itv.addr <= next_addr && next_addr < to) ||
 						r_itv_contain (map->itv, end_addr))) {
-			//return r_io_map_add(io, fd, flags, delta, map->to, size);
 			next_addr = to + (load_align - (to % load_align)) % load_align;
 			return r_io_map_add_next_available (io, fd, flags, delta, next_addr, size, load_align);
 		}

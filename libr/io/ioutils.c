@@ -115,7 +115,7 @@ R_API bool r_io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch,
 		//if the file was not opened with -w desc->flags won't have that bit active
 		flags = flags | desc->flags;
 	}
-	map = r_io_map_add (io, sec->fd, flags, sec->paddr, sec->vaddr, size, do_skyline);
+	map = io_map_add (io, sec->fd, flags, sec->paddr, sec->vaddr, size, do_skyline);
 	if (map) {
 		sec->filemap = map->id;
 		map->name = r_str_newf ("fmap.%s", sec->name);
