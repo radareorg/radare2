@@ -100,6 +100,7 @@ typedef struct {
 	bool show_lines_bb;
 	bool show_lines_ret;
 	bool show_lines_call;
+	bool show_lines_fcn;
 	int linesright;
 	int tracespace;
 	int cyclespace;
@@ -140,7 +141,6 @@ typedef struct {
 	bool show_leahints;
 	bool show_slow;
 	int cmtcol;
-	bool show_lines_fcn;
 	bool show_calls;
 	bool show_cmtflgrefs;
 	bool show_cycles;
@@ -1566,15 +1566,6 @@ static void ds_show_functions(RDisasmState *ds) {
 		default:
 			fcntype = "loc"; break;
 		}
-#if SLOW_BUT_OK
-		int corner = (f->size <= ds->analop.size) ? RDWN_CORNER : LINE_VERT;
-		corner = LINE_VERT; // 99% of cases
-		RFlagItem *item = r_flag_get_i (core->flags, f->addr);
-		corner = item ? LINE_VERT : RDWN_CORNER;
-		if (item) {
-			corner = 0;
-		}
-#endif
 		//ds_set_pre (ds, core->cons->vline[CORNER_TL]);
 		if (ds->show_lines_fcn) {
 			ds->pre = DS_PRE_FCN_HEAD;
@@ -1979,7 +1970,8 @@ static void ds_show_flags(RDisasmState *ds) {
 			ds_print_offset (ds);
 			r_cons_printf (" ");
 		} else {
-			ds_pre_xrefs (ds, false);
+			bool no_fcn_lines = (f && f->addr == flag->offset);
+			ds_pre_xrefs (ds, no_fcn_lines);
 		}
 
 		if (ds->show_color) {
