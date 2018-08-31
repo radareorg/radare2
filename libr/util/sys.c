@@ -366,22 +366,17 @@ R_API int r_sys_crash_handler(const char *cmd) {
 	sigact.sa_handler = signal_handler;
 	sigemptyset (&sigact.sa_mask);
 	sigact.sa_flags = 0;
-	sigaction (SIGINT, &sigact, (struct sigaction *)NULL);
-
+	sigaddset (&sigact.sa_mask, SIGINT);
 	sigaddset (&sigact.sa_mask, SIGSEGV);
-	sigaction (SIGSEGV, &sigact, (struct sigaction *)NULL);
-
 	sigaddset (&sigact.sa_mask, SIGBUS);
-	sigaction (SIGBUS, &sigact, (struct sigaction *)NULL);
-
 	sigaddset (&sigact.sa_mask, SIGQUIT);
-	sigaction (SIGQUIT, &sigact, (struct sigaction *)NULL);
-
 	sigaddset (&sigact.sa_mask, SIGHUP);
-	sigaction (SIGHUP, &sigact, (struct sigaction *)NULL);
 
-	sigaddset (&sigact.sa_mask, SIGKILL);
-	sigaction (SIGKILL, &sigact, (struct sigaction *)NULL);
+	sigaction (SIGINT, &sigact, (struct sigaction *)NULL);
+	sigaction (SIGSEGV, &sigact, (struct sigaction *)NULL);
+	sigaction (SIGBUS, &sigact, (struct sigaction *)NULL);
+	sigaction (SIGQUIT, &sigact, (struct sigaction *)NULL);
+	sigaction (SIGHUP, &sigact, (struct sigaction *)NULL);
 	return true;
 #else
 	return false;
