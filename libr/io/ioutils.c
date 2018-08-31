@@ -80,7 +80,7 @@ R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, boo
 		return false;
 	}
 	if (do_skyline) {
-		r_io_map_calculate_skyline (io);
+		io_map_calculate_skyline (io);
 	}
 	// this works, because new maps are allways born on the top
 	RIOMap *map = r_io_map_get (io, at);
