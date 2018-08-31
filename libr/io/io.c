@@ -252,12 +252,12 @@ R_API RIODesc* r_io_open(RIO* io, const char* uri, int flags, int mode) {
 	if (!desc) {
 		return NULL;
 	}
-	r_io_map_new (io, desc->fd, desc->flags, 0LL, 0LL, r_io_desc_size (desc), true);
+	r_io_map_new (io, desc->fd, desc->flags, 0LL, 0LL, r_io_desc_size (desc));
 	return desc;
 }
 
 /* opens a file and maps it to an offset specified by the "at"-parameter */
-R_API RIODesc* r_io_open_at(RIO* io, const char* uri, int flags, int mode, ut64 at) {
+static RIODesc* open_at(RIO* io, const char* uri, int flags, int mode, ut64 at, bool do_skyline) {
 	RIODesc* desc;
 	ut64 size;
 	if (!io || !io->maps) {
@@ -271,13 +271,38 @@ R_API RIODesc* r_io_open_at(RIO* io, const char* uri, int flags, int mode, ut64 
 	// second map
 	if (size && ((UT64_MAX - size + 1) < at)) {
 		// split map into 2 maps if only 1 big map results into interger overflow
-		r_io_map_new (io, desc->fd, desc->flags, UT64_MAX - at + 1, 0LL, size - (UT64_MAX - at) - 1, false);
+		r_io_map_new_batch (io, desc->fd, desc->flags, UT64_MAX - at + 1, 0LL, size - (UT64_MAX - at) - 1);
 		// someone pls take a look at this confusing stuff
 		size = UT64_MAX - at + 1;
 	}
-	// skyline not updated
-	r_io_map_new (io, desc->fd, desc->flags, 0LL, at, size, false);
+	if (do_skyline) {
+		r_io_map_new (io, desc->fd, desc->flags, 0LL, at, size);
+	} else {
+		r_io_map_new_batch (io, desc->fd, desc->flags, 0LL, at, size);
+	}
 	return desc;
+}
+
+/**
+ * It creates a new RIODesc from the specified uri and it ensures the internal
+ * state is updated and consistent. Use this function unless there are very good
+ * reasons to prefer its _batch version (r_io_open_at_batch)
+ */
+R_API RIODesc *r_io_open_at(RIO *io, const char *uri, int flags, int mode, ut64 at) {
+	return open_at (io, uri, flags, mode, at, true);
+}
+
+/**
+ * It creates a new RIODesc from the specified uri, without updating the
+ * internal state of IO. You should call `r_io_update` to ensure
+ * updates done with this function are correctly handled by IO.
+ *
+ * WARNING: Use this function cautiously, when the performance overhead caused
+ *          by the update of the internal IO state can be reduced by manually
+ *          handling it with `r_io_update`.
+ */
+R_API RIODesc *r_io_open_at_batch(RIO *io, const char *uri, int flags, int mode, ut64 at) {
+	return open_at (io, uri, flags, mode, at, false);
 }
 
 /* opens many files, without mapping them. This should be discussed */
