@@ -1006,7 +1006,8 @@ static void GH(print_tcache_instance)(RCore *core, MallocState *main_arena, GHT 
 	(void)r_io_read_at (core->io, brk_start + align, (ut8 *)tcache_heap, sizeof (GH(RHeapTcache)));
 
 	PRINT_GA("Thread cache @\n");
-	for (int i = 0; i < TCACHE_MAX_BINS; i++) {
+	int i;
+	for (i = 0; i < TCACHE_MAX_BINS; i++) {
 		if (tcache_heap->counts[i] > 0) {
 			PRINT_GA("bin :");
 			PRINTF_BA("%2d",i);
@@ -1122,7 +1123,8 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena, GHT *in
 		if (tcache) {
 			GH(RHeapTcache) *tcache_heap = R_NEW0 (GH(RHeapTcache));
 			(void)r_io_read_at (core->io, brk_start + align, (ut8 *)tcache_heap, sizeof (GH(RHeapTcache)));
-			for (int i=0; i < TCACHE_MAX_BINS; i++) {
+			int i;
+			for (0; i < TCACHE_MAX_BINS; i++) {
 				if (tcache_heap->counts[i] > 0) {
 					if ((ut64)tcache_heap->entries[i] - SZ * 2 == (ut64)prev_chunk) {
 						is_free = true;
@@ -1130,7 +1132,8 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena, GHT *in
 					}
 					if (tcache_heap->counts[i] > 1) {
 						tcache_fd = (ut64)tcache_heap->entries[i];
-						for (int n = 1; n < tcache_heap->counts[i]; n++) {
+						int n;
+						for (n = 1; n < tcache_heap->counts[i]; n++) {
 							(void)r_io_read_at (core->io, tcache_fd, (ut8*)&tcache_tmp, sizeof (GHT));
 							if ((ut64)tcache_tmp - SZ * 2 == (ut64)prev_chunk) {
 								is_free = true;
@@ -1457,6 +1460,7 @@ static void GH(print_heap_mmaped)(RCore *core, GHT malloc_state, GHT global_max_
 }
 
 void GH(print_malloc_states)( RCore *core, GHT m_arena, MallocState *main_arena) {
+	const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
 	MallocState *ta = R_NEW0 (MallocState);
 	if (!ta) {
 		return;
@@ -1468,7 +1472,20 @@ void GH(print_malloc_states)( RCore *core, GHT m_arena, MallocState *main_arena)
 		while (ta->GH(next) != GHT_MAX && ta->GH(next) != m_arena) {
 			PRINT_YA ("thread arena @ ");
 			PRINTF_BA ("0x%"PFMT64x"\n", (ut64)ta->GH(next));
-			r_io_read_at (core->io, ta->GH(next), (ut8 *)ta, sizeof (MallocState));
+			if (tcache) {
+		                GH(RHeap_MallocState_tcache) *t_arena = R_NEW0 (GH(RHeap_MallocState_tcache));
+				r_io_read_at (core->io, ta->GH(next), (ut8 *)t_arena, sizeof (GH(RHeap_MallocState_tcache)));
+	        	        GH(update_arena_with_tc)(t_arena, ta);
+				r_io_read_at (core->io, ta->GH(next), (ut8 *)ta, sizeof (GH(RHeap_MallocState_tcache)));
+		                free(t_arena);
+			}
+			else {
+		                GH(RHeap_MallocState) *t_arena = R_NEW0 (GH(RHeap_MallocState));
+				r_io_read_at (core->io, ta->GH(next), (ut8 *)t_arena, sizeof (GH(RHeap_MallocState)));
+	        	        GH(update_arena_with)(t_arena, ta);
+				r_io_read_at (core->io, ta->GH(next), (ut8 *)ta, sizeof (GH(RHeap_MallocState)));
+		                free(t_arena);
+			}
 		}
 	}
 	free(ta);
