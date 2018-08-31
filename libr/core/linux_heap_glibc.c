@@ -1019,7 +1019,7 @@ static void GH(print_tcache_instance)(RCore *core, MallocState *main_arena, GHT 
 				tcache_fd = (ut64)tcache_heap->entries[i];
 				int n;
 				for(n=1; n < tcache_heap->counts[i]; n++) {
-					(void)r_io_read_at (core->io, tcache_fd, &tcache_tmp, sizeof (GHT));
+					(void)r_io_read_at (core->io, tcache_fd, (ut8 *)&tcache_tmp, sizeof (GHT));
 					PRINTF_BA("->0x%"PFMT64x, tcache_tmp - align);
 					tcache_fd = tcache_tmp;
 				}
