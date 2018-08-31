@@ -61,7 +61,7 @@ static bool _map_skyline_push(RPVector *map_skyline, ut64 from, ut64 to, RIOMap 
 }
 
 // Store map parts that are not covered by others into io->map_skyline
-R_API void r_io_map_calculate_skyline(RIO *io) {
+void io_map_calculate_skyline(RIO *io) {
 	SdbListIter *iter;
 	RIOMap *map;
 	RPVector events;
@@ -168,7 +168,7 @@ RIOMap* io_map_new(RIO* io, int fd, int flags, ut64 delta, ut64 addr, ut64 size,
 	// new map lives on the top, being top the list's tail
 	ls_append (io->maps, map);
 	if (do_skyline) {
-		r_io_map_calculate_skyline (io);
+		io_map_calculate_skyline (io);
 	}
 	return map;
 }
@@ -187,7 +187,7 @@ R_API bool r_io_map_remap (RIO *io, ut32 id, ut64 addr) {
 			r_io_map_new (io, map->fd, map->flags, map->delta - addr, 0, size + addr);
 			return true;
 		}
-		r_io_map_calculate_skyline (io);
+		io_map_calculate_skyline (io);
 		return true;
 	}
 	return false;
@@ -307,7 +307,7 @@ R_API RIOMap* r_io_map_get(RIO* io, ut64 addr) {
 R_API void r_io_map_reset(RIO* io) {
 	r_io_map_fini (io);
 	r_io_map_init (io);
-	r_io_map_calculate_skyline (io);
+	io_map_calculate_skyline (io);
 }
 
 R_API bool r_io_map_del(RIO* io, ut32 id) {
@@ -318,7 +318,7 @@ R_API bool r_io_map_del(RIO* io, ut32 id) {
 			if (map->id == id) {
 				ls_delete (io->maps, iter);
 				r_id_pool_kick_id (io->map_ids, id);
-				r_io_map_calculate_skyline (io);
+				io_map_calculate_skyline (io);
 				return true;
 			}
 		}
@@ -345,7 +345,7 @@ R_API bool r_io_map_del_for_fd(RIO* io, int fd) {
 		}
 	}
 	if (ret) {
-		r_io_map_calculate_skyline (io);
+		io_map_calculate_skyline (io);
 	}
 	return ret;
 }
@@ -361,7 +361,7 @@ R_API bool r_io_map_priorize(RIO* io, ut32 id) {
 			if (map->id == id) {
 				ls_split_iter (io->maps, iter);
 				ls_append (io->maps, map);
-				r_io_map_calculate_skyline (io);
+				io_map_calculate_skyline (io);
 				return true;
 			}
 		}
@@ -378,7 +378,7 @@ R_API bool r_io_map_depriorize(RIO* io, ut32 id) {
 			if (map->id == id) {
 				ls_split_iter (io->maps, iter);
 				ls_prepend (io->maps, map);
-				r_io_map_calculate_skyline (io);
+				io_map_calculate_skyline (io);
 				return true;
 			}
 		}
@@ -409,7 +409,7 @@ R_API bool r_io_map_priorize_for_fd(RIO* io, int fd) {
 	ls_join (io->maps, list);
 	ls_free (list);
 	io->maps->free = _map_free;
-	r_io_map_calculate_skyline (io);
+	io_map_calculate_skyline (io);
 	return true;
 }
 
@@ -440,7 +440,7 @@ R_API void r_io_map_cleanup(RIO* io) {
 		}
 	}
 	if (del) {
-		r_io_map_calculate_skyline (io);
+		io_map_calculate_skyline (io);
 	}
 }
 
@@ -538,6 +538,6 @@ R_API bool r_io_map_resize(RIO *io, ut32 id, ut64 newsize) {
 		return true;
 	}
 	map->itv.size = newsize;
-	r_io_map_calculate_skyline (io);
+	io_map_calculate_skyline (io);
 	return true;
 }

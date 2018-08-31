@@ -6,6 +6,7 @@
 #include <r_types.h>
 #include <stdio.h>
 #include <string.h>
+#include "io_private.h"
 
 static void section_free(void *p) {
 	RIOSection *s = (RIOSection *) p;
@@ -642,7 +643,7 @@ R_API bool r_io_section_apply_bin(RIO *io, ut32 bin_id, RIOSectionApplyMethod me
 			_section_apply (io, sec, method);
 		}
 	}
-	r_io_map_calculate_skyline (io);
+	io_map_calculate_skyline (io);
 	return ret;
 }
 
@@ -655,7 +656,7 @@ R_API bool r_io_section_reapply(RIO *io, ut32 id, RIOSectionApplyMethod method) 
 		return false;
 	}
 	bool ret = _section_reapply (io, sec, method);
-	r_io_map_calculate_skyline (io);
+	io_map_calculate_skyline (io);
 	return ret;
 }
 
@@ -672,6 +673,6 @@ R_API bool r_io_section_reapply_bin(RIO *io, ut32 binid, RIOSectionApplyMethod m
 			_section_reapply (io, sec, method);
 		}
 	}
-	r_io_map_calculate_skyline (io);
+	io_map_calculate_skyline (io);
 	return ret;
 }
