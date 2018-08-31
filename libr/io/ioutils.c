@@ -50,7 +50,7 @@ static RIODesc *findReusableFile(RIO *io, const char *uri, int flags) {
 
 #endif
 
-R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, bool do_skyline) {
+bool io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, bool do_skyline) {
 	RIODesc *desc = NULL;
 	char *uri = NULL;
 	bool reused = false;
@@ -97,7 +97,7 @@ R_API bool r_io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, boo
 	return true;
 }
 
-R_API bool r_io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch, bool do_skyline) {
+bool io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch, bool do_skyline) {
 	RIOMap *map = NULL;
 	int flags = 0;
 	RIODesc *desc;
@@ -131,15 +131,14 @@ R_API bool r_io_create_mem_for_section(RIO *io, RIOSection *sec) {
 	}
 	if (sec->vsize - sec->size > 0) {
 		ut64 at = sec->vaddr + sec->size;
-		if (!r_io_create_mem_map (io, sec, at, false, true)) {
+		if (!io_create_mem_map (io, sec, at, false, true)) {
 			return false;
 		}
 		RIOMap *map = r_io_map_get (io, at);
 		r_io_map_set_name (map, sdb_fmt ("mem.%s", sec->name));
-			
 	}
 	if (sec->size) {
-		if (!r_io_create_file_map (io, sec, sec->size, false, true)) {
+		if (!io_create_file_map (io, sec, sec->size, false, true)) {
 			return false;
 		}
 		RIOMap *map = r_io_map_get (io, sec->vaddr);
