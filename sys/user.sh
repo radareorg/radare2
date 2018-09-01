@@ -5,7 +5,7 @@ gmake --help >/dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
 
 # find root
-cd "$(dirname "$PWD/$0")" ; cd ..
+cd "$(dirname "$0")" ; cd ..
 
 # update
 if [ "$1" != "--without-pull" ]; then
