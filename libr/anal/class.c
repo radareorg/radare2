@@ -132,7 +132,7 @@ R_API void r_anal_class_print(RAnal *anal, RAnalClass *cls, int mode) {
 		fname = flagname (cls->name);
 		if (fname) {
 			if (cls->vtable_addr != UT64_MAX) {
-				r_cons_printf("f class.vtable.%s @ 0x%"PFMT64x"\n", fname, cls->addr);
+				r_cons_printf("f class.vtable.%s @ 0x%"PFMT64x"\n", fname, cls->vtable_addr);
 			}
 			if (cls->addr != UT64_MAX) {
 				r_cons_printf("f class.%s @ 0x%"PFMT64x"\n", fname, cls->addr);
@@ -192,6 +192,9 @@ R_API void r_anal_class_print(RAnal *anal, RAnalClass *cls, int mode) {
 				if (fname && mfname && meth->addr != UT64_MAX) {
 					r_cons_printf ("f method.%s.%s @ 0x%"PFMT64x"\n", fname, mfname, meth->addr);
 				}
+				if (meth->vtable_index >= 0 && cls->vtable_addr != UT64_MAX) {
+					r_cons_printf ("Cd %d @ 0x%"PFMT64x"\n", anal->bits / 8, cls->vtable_addr + meth->vtable_index);
+				}
 				free (mfname);
 			} else { // lng
 				r_cons_printf ("  %s @ 0x%"PFMT64x, meth->name, meth->addr);
@@ -234,6 +237,17 @@ R_API void r_anal_class_list(RAnal *anal, int mode) {
 	if (json) {
 		r_cons_print ("]\n");
 	}
+}
+
+R_API RAnalMethod *r_anal_class_get_method(RAnalClass *cls, const char *name) {
+	void **it;
+	r_pvector_foreach (&cls->methods, it) {
+		RAnalMethod *meth = *it;
+		if (strcmp (meth->name, name) == 0) {
+			return meth;
+		}
+	}
+	return NULL;
 }
 
 #if R_ANAL_CLASSES_SDB

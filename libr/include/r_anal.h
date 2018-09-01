@@ -1795,6 +1795,8 @@ R_API void r_anal_class_remove(RAnal *anal, RAnalClass *cls);
 R_API RAnalClass *r_anal_class_get(RAnal *anal, const char *name);
 R_API void r_anal_class_list(RAnal *anal, int mode);
 
+R_API RAnalMethod *r_anal_class_get_method(RAnalClass *cls, const char *name);
+
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
 extern RAnalPlugin r_anal_plugin_6502;
