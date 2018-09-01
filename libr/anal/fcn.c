@@ -1627,7 +1627,7 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		r_list_foreach (fcn->bbs, iter, bb) {
 			if (endaddr == bb->addr) {
 				endaddr += bb->size;
-			} else if (endaddr < bb->addr && bb->addr - endaddr < anal->opt.bbs_alignment && !(bb->addr & (anal->opt.bbs_alignment - 1))) {
+			} else if (endaddr < bb->addr && bb->addr - endaddr < anal->opt.bbs_alignment) {
 				endaddr = bb->addr + bb->size;
 			} else {
 				break;
