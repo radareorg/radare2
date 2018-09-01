@@ -1074,6 +1074,9 @@ static int var_cmd(RCore *core, const char *str) {
 	case '*':
 	case 'j':
 		r_anal_var_list_show (core->anal, fcn, type, str[1]);
+		if (str[1] == 'j') {
+			r_cons_print ("\n");
+		}
 		break;
 	case '.':
 		r_anal_var_list_show (core->anal, fcn, core->offset, 0);
