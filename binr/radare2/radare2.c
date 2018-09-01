@@ -1180,10 +1180,12 @@ int main(int argc, char **argv, char **envp) {
 			} else {
 				eprintf ("Missing file to open\n");
 			}
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 		if (!r.file) { // no given file
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 		if (r.bin->cur && r.bin->cur->o && r.bin->cur->o->info && r.bin->cur->o->info->rclass && !strcmp ("fs", r.bin->cur->o->info->rclass)) {
 			const char *fstype = r.bin->cur->o->info->bclass;
