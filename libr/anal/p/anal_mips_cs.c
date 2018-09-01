@@ -587,8 +587,6 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 	return 0;
 }
 
-#define ZERO_FILL(x) memset (&(x), 0, sizeof (x))
-
 static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
 	if (!reg) {
 		return -1;
