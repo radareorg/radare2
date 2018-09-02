@@ -79,7 +79,7 @@ static const char *menus[] = {
 static const int menuNum = ((int)sizeof (menus) / (int)sizeof (const char*)) - 1;
 
 static const char *menus_File[] = {
-	"New", "Open", "ReOpen", "Close", "Sections", "Strings", "Symbols", "Imports", "Info", "Database",  "Quit",
+	"New", "Open", "ReOpen", "Close", "Sections", "Strings", "Symbols", "Imports", "Info", "Database", "Save Layout", "Load Layout", "Quit",
 	NULL
 };
 
@@ -167,7 +167,8 @@ static void resizePanelDown(RPanels *panels);
 static void handleTabKey(RCore *core, bool shift);
 static bool init(RCore *core, RPanels *panels, int w, int h);
 static bool initPanels(RCore *core, RPanels *panels);
-static void freePanel(RPanel *panel);
+static void freeSinglePanel(RPanel *panel);
+static void freeAllPanels(RPanels *panels);
 static void panelBreakpoint(RCore *core);
 static void panelContinue(RCore *core);
 static void panelPrompt(const char *prompt, char *buf, int len);
@@ -177,6 +178,8 @@ static void setRefreshAll(RPanels *panels);
 static void setCursor(RCore *core, bool cur);
 static void savePanelPos(RPanel* panel);
 static void restorePanelPos(RPanel* panel);
+static void savePanelsLayout(RPanels* panels);
+static void loadPanelsLayout(RPanels* panels);
 static void replaceCmd(RPanels* panels, char *title, char *cmd);
 static void handleMenu(RCore *core, const int key, int *exit);
 static void onMenu(RCore *core, const char *menu, int *exit);
@@ -184,6 +187,7 @@ static void changeMenu(RPanels *panels, const char **dstMenu);
 static void switchMode(RPanels *panels);
 static void maximizePanelSize(RPanels *panels);
 static void insertValue(RCore *core);
+static char* strInRange(const char* str, int from, int to);
 static RConsCanvas *createNewCanvas(RCore *core, int w, int h);
 
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) {
@@ -1474,7 +1478,7 @@ static void dismantlePanel(RPanels *panels) {
 }
 
 static void replaceCmd(RPanels* panels, char *title, char *cmd) {
-	freePanel (&panels->panel[panels->curnode]);
+	freeSinglePanel (&panels->panel[panels->curnode]);
 	panels->panel[panels->curnode].title = strdup (title);
 	panels->panel[panels->curnode].cmd = r_str_newf (cmd);
 	panels->panel[panels->curnode].cmdStrCache = NULL;
@@ -1557,7 +1561,6 @@ static bool initPanels(RCore *core, RPanels *panels) {
 	panels->n_panels = 0;
 	addPanelFrame (core, panels, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY);
 	addPanelFrame (core, panels, PANEL_TITLE_SYMBOLS, PANEL_CMD_SYMBOLS);
-	//addPanelFrame (core, panels, PANEL_TITLE_STACK, PANEL_CMD_STACK);
 	addPanelFrame (core, panels, PANEL_TITLE_STACKREFS, PANEL_CMD_STACKREFS);
 	addPanelFrame (core, panels, PANEL_TITLE_REGISTERS, PANEL_CMD_REGISTERS);
 	addPanelFrame (core, panels, PANEL_TITLE_REGISTERREFS, PANEL_CMD_REGISTERREFS);
@@ -1565,10 +1568,18 @@ static bool initPanels(RCore *core, RPanels *panels) {
 	return true;
 }
 
-static void freePanel(RPanel *panel) {
+static void freeSinglePanel(RPanel *panel) {
 	free (panel->title);
 	free (panel->cmd);
 	free (panel->cmdStrCache);
+}
+
+static void freeAllPanels(RPanels *panels) {
+	int i;
+	for (i = 0; i < panels->n_panels; i++) {
+		freeSinglePanel (&panels->panel[i]);
+	}
+	free (panels->panel);
 }
 
 // damn singletons.. there should be only one screen and therefor
@@ -1904,6 +1915,10 @@ static void onMenu(RCore *core, const char *menu, int *exit) {
 		layoutSidePanel (core, PANEL_TITLE_INFO, PANEL_CMD_INFO);
 	} else if (!strcmp (menu, "Database")) {
 		layoutSidePanel (core, PANEL_TITLE_DATABASE, PANEL_CMD_DATABASE);
+	} else if (!strcmp (menu, "Save Layout")) {
+		savePanelsLayout (panels);
+	} else if (!strcmp (menu, "Load Layout")) {
+		loadPanelsLayout (panels);
 	} else if (!strcmp (menu, "About")) {
 		char *s = r_core_cmd_str (core, "?V");
 		r_cons_message (s);
@@ -2148,6 +2163,78 @@ static void restorePanelPos(RPanel* panel) {
 	panel->pos.h = panel->prevPos.h;
 }
 
+static void savePanelsLayout(RPanels* panels) {
+	const char *configPath = r_str_home (".r2panels");
+	int i;
+	if (!configPath){
+		return;
+	}
+	FILE *panelsConfig = fopen (configPath, "w");
+	if (!panelsConfig) {
+		return;
+	}
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *panel = &panels->panel[i];
+		fprintf (panelsConfig, "%s %s %d %d %d %d",
+				panel->title, panel->cmd, panel->pos.x, panel->pos.y, panel->pos.w, panel->pos.h);
+		fputs ("\n", panelsConfig);
+	}
+	fclose(panelsConfig);
+}
+
+static void loadPanelsLayout(RPanels* panels) {
+	const char *configPath = r_str_home (".r2panels");
+	int i;
+	if (!configPath){
+		return;
+	}
+	panelAllClear (panels);
+	FILE *panelsConfig = fopen (configPath, "r");
+	//const char *pattern = "(.*|\$)\s+(.*|\$)\s+(.*|\$)\s+(.*|\$)\s+(.*|\$)\s+(.*|\$)";
+	const char *pattern = "(.*|\$)\s+(.*|\$)\s+(.*|\$)\s+(.*|\$)";
+	//const char *pattern = "(.*|\$)\s+(.*|\$)\s+(.*|\$)";
+	RRegex *rx = r_regex_new (pattern, "e");
+	const size_t nmatch = 5;
+	RRegexMatch pmatch[nmatch];
+	panels->n_panels = 0;
+	const int max = 256;
+	char l[max];
+FILE *logFile;
+logFile = fopen("hoge.log","a+");
+	while (fgets (l, max, panelsConfig)) {
+fprintf(logFile,"outside %d\n", panels->n_panels);
+		if (r_regex_exec (rx, l, nmatch, pmatch, 1)) {
+			continue;
+		}
+		//RPanel *panel = &panels->panel[panels->n_panels];
+		//panel->title = strInRange (l, pmatch[1].rm_so, pmatch[1].rm_eo);
+		//panel->cmd = strInRange (l, pmatch[2].rm_so, pmatch[2].rm_eo);
+		//panel->pos.x = strInRange (l, pmatch[3].rm_so, pmatch[3].rm_eo);
+		//panel->pos.y = strInRange (l, pmatch[4].rm_so, pmatch[4].rm_eo);
+		//panel->pos.w = strInRange (l, pmatch[5].rm_so, pmatch[5].rm_eo);
+		//panel->pos.h = strInRange (l, pmatch[6].rm_so, pmatch[6].rm_eo);
+		//panels->n_panels++;
+//fprintf(logFile,"%s\n", strInRange (l, pmatch[1].rm_so, pmatch[1].rm_eo));
+fprintf(logFile,"inside %d\n", panels->n_panels);
+//fprintf(logFile,"%s\n", strInRange (l, pmatch[2].rm_so, pmatch[2].rm_eo));
+//fprintf(logFile,"%d\n", strInRange (l, pmatch[3].rm_so, pmatch[3].rm_eo));
+//fprintf(logFile,"%d\n", strInRange (l, pmatch[4].rm_so, pmatch[4].rm_eo));
+//fprintf(logFile,"%d\n", strInRange (l, pmatch[5].rm_so, pmatch[5].rm_eo));
+//fprintf(logFile,"%d\n", strInRange (l, pmatch[6].rm_so, pmatch[6].rm_eo));
+	}
+fclose(logFile);
+	fclose(panelsConfig);
+}
+
+static char* strInRange(const char* str, int from, int to) {
+	int i;
+	char *ret;
+	for (i = from; i < to; i++) {
+		ret = r_str_appendch (ret, str[i]);
+	}
+	return ret;
+}
+
 static void maximizePanelSize(RPanels *panels) {
 	RPanel *panel = &panels->panel[panels->curnode];
 	panel->pos.x = 0;
@@ -2208,13 +2295,9 @@ R_API RPanels *r_core_panels_new(RCore *core) { int w, h;
 }
 
 R_API void r_core_panels_free(RPanels *panels) {
-	int i;
 	r_cons_switchbuf (true);
 	if (panels) {
-		for (i = 0; i < panels->n_panels; i++) {
-			freePanel (&panels->panel[i]);
-		}
-		free (panels->panel);
+		freeAllPanels (panels);
 		if (panels->can) {
 			r_cons_canvas_free (panels->can);
 		}
