@@ -730,11 +730,17 @@ static int cmd_help(void *data, const char *input) {
 	case 'x': // "?x"
 		for (input++; input[0] == ' '; input++);
 		if (*input == '-') {
-			ut8 *out = malloc (strlen (input)+1);
-			int len = r_hex_str2bin (input+1, out);
-			out[len] = 0;
-			r_cons_println ((const char*)out);
-			free (out);
+			ut8 *out = malloc (strlen (input) + 1);
+			if (out) {
+				int len = r_hex_str2bin (input + 1, out);
+				if (len >= 0) {
+					out[len] = 0;
+					r_cons_println ((const char*)out);
+				} else {
+					eprintf ("Error parsing the hexpair string\n");
+				}
+				free (out);
+			}
 		} else if (*input == '+') {
 			ut64 n = r_num_math (core->num, input);
 			int bits = r_num_to_bits (NULL, n) / 8;

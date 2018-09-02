@@ -786,9 +786,11 @@ int main(int argc, char **argv) {
 			}
 			break;
 		case 'h':
-			  r_core_fini (&core);
-			  return rabin_show_help (1);
-		default: action |= R_BIN_REQ_HELP;
+			r_core_fini (&core);
+			return rabin_show_help (1);
+		default:
+			action |= R_BIN_REQ_HELP;
+			break;
 		}
 	}
 
