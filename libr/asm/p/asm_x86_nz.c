@@ -886,7 +886,9 @@ static int opdec(RAsm *a, ut8 *data, const Opcode *op) {
 		data[l++] = 0x48;
 		data[l++] = 0xff;
 	} else if (size & OT_DWORD) {
-		data[l++] = 0xff;
+		if (a->bits > 32 || op->operands[0].type & OT_MEMORY) {
+			data[l++] = 0xff;
+		}
 	} else if (size & OT_WORD) {
 		data[l++] = 0x66;
 		data[l++] = 0xff;
@@ -896,6 +898,8 @@ static int opdec(RAsm *a, ut8 *data, const Opcode *op) {
 
 	if (op->operands[0].type & OT_MEMORY) {
 		data[l++] = 0x08 | op->operands[0].regs[0];
+	} else if (a->bits == 32 && size & OT_DWORD) {
+		data[l++] = 0x48 | op->operands[0].reg;
 	} else {
 		data[l++] = 0xc8 | op->operands[0].reg;
 	}
@@ -1182,7 +1186,9 @@ static int opinc(RAsm *a, ut8 *data, const Opcode *op) {
 		data[l++] = 0x48;
 		data[l++] = 0xff;
 	} else if (size & OT_DWORD) {
-		data[l++] = 0xff;
+		if (a->bits > 32 || op->operands[0].type & OT_MEMORY) {
+			data[l++] = 0xff;
+		}
 	} else if (size & OT_WORD) {
 		data[l++] = 0x66;
 		data[l++] = 0xff;
@@ -1192,6 +1198,8 @@ static int opinc(RAsm *a, ut8 *data, const Opcode *op) {
 
 	if (op->operands[0].type & OT_MEMORY) {
 		data[l++] = op->operands[0].regs[0];
+	} else if (a->bits == 32 && size & OT_DWORD) {
+		data[l++] = 0x40 | op->operands[0].reg;
 	} else {
 		data[l++] = 0xc0 | op->operands[0].reg;
 	}
