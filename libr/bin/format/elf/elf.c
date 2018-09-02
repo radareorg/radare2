@@ -896,7 +896,8 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 	Sdb *sdb_vernaux = NULL;
 	Sdb *sdb_version = NULL;
 	Sdb *sdb = NULL;
-	int i, cnt;
+	ut64 i;
+	int cnt;
 
 	if (!bin || !bin->dynstr) {
 		return NULL;
