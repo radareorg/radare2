@@ -774,29 +774,112 @@ RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *cont
 
 	td->col = col;
 
-	/*ut64 vtable_addr = td->td.vtable_addr; // TODO: this is probably broken for 64bit, should use rtti_msvc_addr
-	ut64 colRefAddr = vtable_addr - context->vt_context->word_size;
-	ut64 colAddr;
-	if (!context->vt_context->read_addr (context->vt_context->anal, colRefAddr, &colAddr)) {
-		eprintf ("Warning: invalidating td because of failure to get col address.\n");
-		td->valid = false;
-		return td;
-	}
-	td->col = recovery_anal_complete_object_locator (context, colAddr, NULL);
-	if (!td->col->valid) {
-		eprintf ("Warning: invalidating td because of invalid col.\n");
-		td->valid = false;
-	}
-
-	td->vtable = vtable;
-	if (!td->vtable) {
-		td->vtable = r_anal_vtable_parse_at (context->vt_context, td->td.vtable_addr);
-		if (td->vtable) {
-			r_pvector_push (&context->vtables, td->vtable);
-		}
-	}*/
-
 	return td;
+}
+
+
+char *unique_class_name(RAnal *anal, const char *original_name) {
+	if (!r_anal_class_get (anal, original_name)) {
+		return strdup (original_name);
+	}
+
+	char *name = NULL;
+	eprintf ("Warning: class name %s already taken!\n", original_name);
+	int i = 1;
+
+	do {
+		free (name);
+		name = r_str_newf ("%s.%d", original_name, i++);
+		if (!name) {
+			return NULL;
+		}
+	} while (r_anal_class_get (anal, name));
+
+	return name;
+}
+
+
+RAnalClass *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *context, RecoveryCompleteObjectLocator *col) {
+	if (!col->valid) {
+		return NULL;
+	}
+
+	if (!col->td) {
+		eprintf ("Warning: no td for col at 0x%"PFMT64x"\n", col->addr);
+		return NULL;
+	}
+
+	RAnal *anal = context->vt_context->anal;
+	void **it;
+	r_pvector_foreach (&anal->classes, it) {
+		RAnalClass *existing = *((RAnalClass **)it);
+		if (existing->addr == col->addr) {
+			return existing;
+		}
+	}
+
+	char *name = r_anal_rtti_msvc_demangle_class_name (col->td->td.name);
+	if (!name) {
+		eprintf ("Failed to demangle a class name: \"%s\"\n", col->td->td.name);
+		name = strdup (col->td->td.name);
+		if (!name) {
+			return NULL;
+		}
+	}
+
+	char *tmp = name;
+	name = unique_class_name (anal, name);
+	free (tmp);
+	if (!name) {
+		return NULL;
+	}
+
+	RAnalClass *cls = r_anal_class_new (name);
+	free (name);
+	r_anal_class_add (anal, cls);
+	cls->addr = col->addr;
+
+	if (col->vtable) {
+		cls->vtable_addr = col->vtable->saddr;
+		RVTableMethodInfo *vmeth;
+		r_vector_foreach (&col->vtable->methods, vmeth) {
+			RAnalMethod *meth = r_anal_method_new ();
+			if (!meth) {
+				continue;
+			}
+			meth->addr = vmeth->addr;
+			meth->vtable_index = (int) vmeth->vtable_offset;
+			meth->name = r_str_newf ("virtual_%d", meth->vtable_index);
+			r_pvector_push (&cls->methods, meth);
+		}
+	} else {
+		cls->vtable_addr = UT64_MAX;
+	}
+
+
+	r_pvector_foreach (&col->base_td, it) {
+		RecoveryTypeDescriptor *base_td = (RecoveryTypeDescriptor *)*it;
+		if (!base_td->valid) {
+			eprintf ("Warning Base td is invalid!\n");
+			continue;
+		}
+		if (!base_td->col) {
+			eprintf ("Warning: Base td %s has no col.\n", base_td->td.name);
+			continue;
+		}
+
+		RAnalClass *base_cls = recovery_apply_complete_object_locator (context, base_td->col);
+		if (!base_cls) {
+			eprintf ("Failed to convert base td->col to a class\n");
+			continue;
+		}
+
+		RAnalBaseClass *base_cls_info = r_vector_push (&cls->base_classes, NULL);
+		base_cls_info->offset = 0; // TODO: we do have this info \o/
+		base_cls_info->cls = base_cls;
+	}
+
+	return cls;
 }
 
 
@@ -890,6 +973,7 @@ R_API void r_anal_rtti_msvc_recover_all(RVTableContext *vt_context, RList *vtabl
 	}
 
 	void **it;
+#if USE_TD_RECOVERY
 	r_pvector_foreach (&context.type_descriptors, it) {
 		RecoveryTypeDescriptor *td = *it;
 		if (!td->valid) {
@@ -897,6 +981,15 @@ R_API void r_anal_rtti_msvc_recover_all(RVTableContext *vt_context, RList *vtabl
 		}
 		recovery_apply_type_descriptor (&context, td);
 	}
+#else
+	r_pvector_foreach (&context.complete_object_locators, it) {
+		RecoveryCompleteObjectLocator *col = *it;
+		if (!col->valid) {
+			continue;
+		}
+		recovery_apply_complete_object_locator (&context, col);
+	}
+#endif
 
 	r_pvector_clear (&context.complete_object_locators);
 	r_pvector_clear (&context.type_descriptors);
