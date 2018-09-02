@@ -2220,21 +2220,16 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 			fcn->addr, name, r_anal_fcn_size (fcn));
 	r_cons_printf (",\"realsz\":%d", r_anal_fcn_realsize (fcn));
 	r_cons_printf (",\"stackframe\":%d", fcn->maxstack);
-	r_cons_printf (",\"cc\":%d", r_anal_fcn_cc (fcn));
+	r_cons_printf (",\"calltype\":\"%s\"", fcn->cc);
 	r_cons_printf (",\"cost\":%d", r_anal_fcn_cost (core->anal, fcn));
+	r_cons_printf (",\"cc\":%d", r_anal_fcn_cc (fcn));
+	r_cons_printf (",\"bits\":%d", fcn->bits);
+	r_cons_printf (",\"type\":\"%s\"", r_anal_fcn_type_tostring (fcn->type));
 	r_cons_printf (",\"nbbs\":%d", r_list_length (fcn->bbs));
 	r_cons_printf (",\"edges\":%d", r_anal_fcn_count_edges (fcn, &ebbs));
 	r_cons_printf (",\"ebbs\":%d", ebbs);
-	r_cons_printf (",\"calltype\":\"%s\"", fcn->cc);
-	r_cons_printf (",\"type\":\"%s\"", r_anal_fcn_type_tostring (fcn->type));
 	r_cons_printf (",\"minbound\":\"%d\"", fcn->meta.min);
 	r_cons_printf (",\"maxbound\":\"%d\"", fcn->meta.max);
-	r_cons_printf (",\"range\":\"%d\"", r_anal_fcn_size(fcn));
-	if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM) {
-		r_cons_printf (",\"diff\":\"%s\"",
-				fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH?"MATCH":
-				fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?"UNMATCH":"NEW");
-	}
 	int outdegree = 0;
 	refs = r_anal_fcn_get_refs (core->anal, fcn);
 	if (!r_list_empty (refs)) {
@@ -2297,7 +2292,26 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 	}
 	r_list_free (xrefs);
 
+	r_cons_printf (",\"indegree\":%d", indegree);
+	r_cons_printf (",\"outdegree\":%d", outdegree);
+
 	if (fcn->type == R_ANAL_FCN_TYPE_FCN || fcn->type == R_ANAL_FCN_TYPE_SYM) {
+		r_cons_printf (",\"nlocals\":%d",
+				r_anal_var_count (core->anal, fcn, 'b', 0) +
+				r_anal_var_count (core->anal, fcn, 'r', 0) +
+				r_anal_var_count (core->anal, fcn, 's', 0));
+		r_cons_printf (",\"nargs\":%d",
+				r_anal_var_count (core->anal, fcn, 'b', 1) +
+				r_anal_var_count (core->anal, fcn, 'r', 1) +
+				r_anal_var_count (core->anal, fcn, 's', 1));
+
+		r_cons_print (",\"bpvars\":");
+		r_anal_var_list_show (core->anal, fcn, 'b', 'j');
+		r_cons_print (",\"spvars\":");
+		r_anal_var_list_show (core->anal, fcn, 's', 'j');
+		r_cons_print (",\"regvars\":");
+		r_anal_var_list_show (core->anal, fcn, 'r', 'j');
+
 		r_cons_printf (",\"difftype\":\"%s\"",
 				fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH?"match":
 				fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?"unmatch":"new");
@@ -2308,16 +2322,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn) {
 			r_cons_printf (",\"diffname\":\"%s\"", fcn->diff->name);
 		}
 	}
-	r_cons_printf (",\"indegree\":%d", indegree);
-	r_cons_printf (",\"outdegree\":%d", outdegree);
-	r_cons_printf (",\"nargs\":%d",
-		r_anal_var_count (core->anal, fcn, 'b', 1) +
-		r_anal_var_count (core->anal, fcn, 'r', 1) +
-		r_anal_var_count (core->anal, fcn, 's', 1));
-	r_cons_printf (",\"nlocals\":%d",
-		r_anal_var_count (core->anal, fcn, 'b', 0) +
-		r_anal_var_count (core->anal, fcn, 'r', 0) +
-		r_anal_var_count (core->anal, fcn, 's', 0));
+
 	r_cons_printf ("}");
 	free (name);
 	return 0;
