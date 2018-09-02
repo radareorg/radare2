@@ -2275,15 +2275,8 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				str = r_str_newf ("%s.%s", type, section->name);
 
 			}
-			r_flag_set (r->flags, str, addr, section->size);
-			R_FREE (str);
-
-			if (r->bin->prefix) {
-				str = r_str_newf ("%s.%s_end.%s", r->bin->prefix, type, section->name);
-			} else {
-				str = r_str_newf ("%s_end.%s", type, section->name);
-			}
-			r_flag_set (r->flags, str, addr + section->vsize, 0);
+			ut64 size = r->io->va? section->vsize: section->size;
+			r_flag_set (r->flags, str, addr, size);
 			R_FREE (str);
 
 			if (section->arch || section->bits) {
@@ -2403,20 +2396,18 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 					PFMT64x"\n", arch, bits, addr);
 			}
 			if (r->bin->prefix) {
+				ut64 size = r->io->va? section->vsize: section->size;
 				r_cons_printf ("f %s.%s.%s %"PFMT64d" 0x%08"PFMT64x"\n",
-						r->bin->prefix, type, section->name, section->size, addr);
-				r_cons_printf ("f %s.%s_end.%s 1 0x%08"PFMT64x"\n",
-						r->bin->prefix, type, section->name, addr + section->vsize);
+						r->bin->prefix, type, section->name, size, addr);
 				r_cons_printf ("CC %s %i va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
 						"rwx=%s %s.%s @ 0x%08"PFMT64x"\n",
 						type, i, addr, section->paddr, section->size, section->vsize,
 						perms, r->bin->prefix, section->name, addr);
 
 			} else {
+				ut64 size = r->io->va? section->vsize: section->size;
 				r_cons_printf ("f %s.%s %"PFMT64d" 0x%08"PFMT64x"\n",
-						type, section->name, section->size, addr);
-				r_cons_printf ("f %s_end.%s 1 0x%08"PFMT64x"\n",
-						type, section->name, addr + section->vsize);
+						type, section->name, size, addr);
 				r_cons_printf ("CC %s %i va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
 						"rwx=%s %s @ 0x%08"PFMT64x"\n",
 						type, i, addr, section->paddr, section->size, section->vsize,
