@@ -4718,8 +4718,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else 
-	if ((m = opmask (ao->op, "str", B_BIT | T_BIT | D_BIT | H_BIT))) {
+	} else if ((m = opmask (ao->op, "str", B_BIT | T_BIT | D_BIT | H_BIT))) {
 		ut64 argt = thumb_selector (ao->a);
 		ut32 strsel = m & (B_BIT | H_BIT | D_BIT);
 		switch (argt) {
@@ -6067,6 +6066,11 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			case TYPE_MEM:
 				if (!strncmp (ops[i].name, "strex", 5)) {
 					rex = 1;
+				}
+				if (!strcmp (ops[i].name, "str") || !strcmp (ops[i].name, "ldr")) {
+					if (!ao->a[2]) {
+						ao->a[2] = "0";
+					}
 				}
 				getrange (ao->a[0]);
 				getrange (ao->a[1]);
