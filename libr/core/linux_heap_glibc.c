@@ -1368,7 +1368,7 @@ static void GH(print_heap_mmaped)(RCore *core, GHT malloc_state, GHT global_max_
 	const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
 	if (tcache) {
 		GH(RHeap_MallocState_tcache) *ma = R_NEW0 (GH(RHeap_MallocState_tcache));
-		mmap_start = ((malloc_state >> 16) << 16) + sizeof (GH(RHeapInfo)) + sizeof(GH(RHeap_MallocState_tcache));
+		mmap_start = ((malloc_state >> 16) << 16) + sizeof (GH(RHeapInfo)) + sizeof(GH(RHeap_MallocState_tcache)) + 0x8;
 		r_io_read_at (core->io, malloc_state, (ut8*)ma, sizeof (GH(RHeap_MallocState_tcache)));
 		GH(update_arena_with_tc)(ma,ms);
 	}
