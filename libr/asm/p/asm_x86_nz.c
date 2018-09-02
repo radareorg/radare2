@@ -308,7 +308,15 @@ static int process_group_2(RAsm *a, ut8 *data, const Opcode *op) {
 			data[l++] = 0xc1;
 		}
 	} else if (op->operands[0].type & OT_BYTE) {
-		if (op->operands[1].type & (OT_GPREG | OT_WORD)) {
+		Operand *o = &op->operands[0];
+		if (o->regs[0] != -1 && o->regs[1] != -1) {
+			data[l++] = 0xc0;
+			data[l++] = 0x44;
+			data[l++] = o->regs[0]| (o->regs[1]<<3);
+			data[l++] = (ut8)((o->offset*o->offset_sign) & 0xff);
+			data[l++] = immediate;
+			return l;
+		} else if (op->operands[1].type & (OT_GPREG | OT_WORD)) {
 			data[l++] = 0xd2;
 		} else if (immediate == 1) {
 			data[l++] = 0xd0;
