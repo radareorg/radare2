@@ -4400,6 +4400,14 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 	} else if (last_type == TT_WORD) {   // register
 		nextpos = pos;
 		RFlagItem *flag;
+
+		if (isrepop) {
+			op->is_good_flag = false;
+			strncpy (op->rep_op, str, MAX_REPOP_LENGTH - 1);
+			op->rep_op[MAX_REPOP_LENGTH - 1] = '\0';
+			return nextpos;
+		}
+
 		op->reg = parseReg (a, str, &nextpos, &op->type);
 
 		op->extended = false;
@@ -4414,10 +4422,6 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 		if (op->reg == X86R_UNDEFINED) {
 			op->is_good_flag = false;
 			if (a->num && a->num->value == 0) {
-				if (isrepop) {
-					strncpy (op->rep_op, str, MAX_REPOP_LENGTH - 1);
-					op->rep_op[MAX_REPOP_LENGTH - 1] = '\0';
-				}
 				return nextpos;
 			}
 			op->type = OT_CONSTANT;
