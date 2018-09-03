@@ -198,7 +198,7 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 
 			if (vtable_is_addr_vtable_start (context, startAddress)) {
 				RVTableInfo *vtable = r_anal_vtable_parse_at (context, startAddress);
-				if (vtable && vtable->methods.len > 0) {
+				if (vtable) {
 					r_list_append (vtables, vtable);
 					ut64 size = r_anal_vtable_info_get_size (context, vtable);
 					if (size > 0) {
