@@ -1112,7 +1112,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena, GHT *in
 	size_tmp = (cnk->size >> 3) << 3;
 
 	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->GH(top)) {
-		if (size_tmp < min_size || size_tmp > top_size || next_chunk + size_tmp > main_arena->GH(top)) {
+		if (size_tmp < min_size || next_chunk + size_tmp > main_arena->GH(top)) {
 			PRINT_YA ("\n  Malloc chunk @ ");
 			PRINTF_BA ("0x%"PFMT64x" ", (ut64)next_chunk);
 			PRINT_RA ("[corrupted]\n");
@@ -1272,7 +1272,7 @@ static void GH(print_heap_segment_json)(RCore *core, MallocState *main_arena, GH
 	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->GH(top)) {
 		(void)r_io_read_at (core->io, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
 		size_tmp = (cnk->size >> 3) << 3;
-		if (size_tmp < min_size || size_tmp > top_size || next_chunk + size_tmp > main_arena->GH(top)) {
+		if (size_tmp < min_size || next_chunk + size_tmp > main_arena->GH(top)) {
 			const char *status = "corrupted";
 			r_cons_printf ("%s{\"addr\":%"PFMT64d",\"size\":%"PFMT64d",\"status\":\"%s\",\"fd\":"PFMT64d",\"bk\":"PFMT64d"}",
 					comma, (ut64)next_chunk, (ut64)cnk->size, status, (ut64)cnk->fd, (ut64)cnk->bk);
@@ -1354,7 +1354,7 @@ static void GH(print_heap_segment_r2)(RCore *core, MallocState *main_arena, GHT 
 	while (next_chunk && next_chunk >= brk_start && next_chunk < main_arena->GH(top)) {
 		(void)r_io_read_at (core->io, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
 		size_tmp = (cnk->size >> 3) << 3;
-		if (size_tmp < min_size || size_tmp > top_size || next_chunk + size_tmp > main_arena->GH(top)) {
+		if (size_tmp < min_size || next_chunk + size_tmp > main_arena->GH(top)) {
 			r_cons_printf ("fs heap.corrupted\n");
 			char *name = r_str_newf ("chunk.corrupted.%06x", ((prev_chunk>>4) & 0xffff));
 			r_cons_printf ("f %s %d 0x%"PFMT64x"\n", name, (int)cnk->size, prev_chunk);
@@ -1414,17 +1414,32 @@ static void GH(print_heap_mmaped)(RCore *core, GHT malloc_state, GHT global_max_
 	MallocState *ms = R_NEW0 (MallocState);
 
 	const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
+	const int offset = r_config_get_i (core->config, "dbg.glibc.fc_offset");
 	if (tcache) {
 		GH(RHeap_MallocState_tcache) *ma = R_NEW0 (GH(RHeap_MallocState_tcache));
-		mmap_start = ((malloc_state >> 16) << 16) + sizeof (GH(RHeapInfo)) + sizeof(GH(RHeap_MallocState_tcache)) + 0x8;
+		if (!ma) {
+			free (ma);
+			free (cnk);
+			free (ms);
+			return;
+		}
+		mmap_start = ((malloc_state >> 16) << 16) + sizeof (GH(RHeapInfo)) + sizeof(GH(RHeap_MallocState_tcache)) + 0x8 + offset;
 		r_io_read_at (core->io, malloc_state, (ut8*)ma, sizeof (GH(RHeap_MallocState_tcache)));
 		GH(update_arena_with_tc)(ma,ms);
+		free(ma);
 	}
 	else {
 		GH(RHeap_MallocState) *ma = R_NEW0 (GH(RHeap_MallocState));
+		if (!ma) {
+			free (ma);
+			free (cnk);
+			free (ms);
+			return;
+		}
 		mmap_start = ((malloc_state >> 16) << 16) + sizeof (GH(RHeapInfo)) + sizeof(GH(RHeap_MallocState));
 		r_io_read_at (core->io, malloc_state, (ut8*)ma, sizeof (GH(RHeap_MallocState)));
 		GH(update_arena_without_tc)(ma,ms);
+		free(ma);
 	}
 
 	if (!cnk || !ms) {
@@ -1442,7 +1457,7 @@ static void GH(print_heap_mmaped)(RCore *core, GHT malloc_state, GHT global_max_
 	while (next_chunk && next_chunk >= mmap_start && next_chunk < ms->GH(top)) {
 		r_io_read_at (core->io, next_chunk, (ut8 *)cnk, sizeof (GH(RHeapChunk)));
 		size_tmp = (cnk->size >> 3) << 3;
-		if (top_size < min_size || size_tmp > top_size) {
+		if (top_size < min_size) {
 			PRINT_YA ("\n  Malloc chunk @ ");
 			PRINTF_BA ("0x%"PFMT64x" ", (ut64)next_chunk);
 			PRINT_RA ("[corrupted]\n");
