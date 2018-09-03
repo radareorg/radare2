@@ -1299,6 +1299,8 @@ int main(int argc, char **argv, char **envp) {
 				}
 			}
 		}
+	} else {
+		r_core_block_read (&r);
 	}
 	{
 		char *global_rc = r_str_r2_prefix (R2_GLOBAL_RC);
