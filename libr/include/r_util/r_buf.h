@@ -74,7 +74,7 @@ R_API int r_buf_fread_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n
 R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len);
 R_API int r_buf_fwrite_at(RBuffer *b, ut64 addr, ut8 *buf, const char *fmt, int n);
 R_API void r_buf_free(RBuffer *b);
-R_API void r_buf_fini(RBuffer *b);
+R_API bool r_buf_fini(RBuffer *b);
 R_API char *r_buf_free_to_string(RBuffer *b);
 R_API const ut8 *r_buf_buffer(RBuffer *b);
 R_API ut64 r_buf_size(RBuffer *b);
