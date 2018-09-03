@@ -23,7 +23,7 @@ files = [
 r_crypto = library('r_crypto', files,
   include_directories: [platform_inc],
   dependencies: [r_util_dep],
-  c_args: ['-DCORELIB=1'],
+  c_args: library_cflags,
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion

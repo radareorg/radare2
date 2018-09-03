@@ -64,7 +64,7 @@ r_debug_inc = [
 
 r_debug = library('r_debug', files,
   include_directories: r_debug_inc,
-  c_args: ['-DCORELIB=1'],
+  c_args: library_cflags,
   dependencies: [
     r_util_dep,
     r_hash_dep,
@@ -78,11 +78,11 @@ r_debug = library('r_debug', files,
     r_cons_dep,
     r_lang_dep,
     r_egg_dep,
-    r_socket_dep,
     windbg_dep,
     qnx_dep,
     gdb_dep,
     bochs_dep,
+    r_socket_dep,
     sdb_dep
   ],
   install: true,

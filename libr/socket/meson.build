@@ -18,7 +18,7 @@ endif
 r_socket = library('r_socket', files,
   include_directories: [platform_inc],
   dependencies: dependencies,
-  c_args: ['-DCORELIB=1'],
+  c_args: library_cflags,
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion

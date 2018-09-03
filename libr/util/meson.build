@@ -85,8 +85,10 @@ if host_machine.system().startswith('freebsd')
   # backtrace_symbols_fd requires -lexecinfo
   r_util_deps += [cc.find_library('execinfo')]
 endif
+
 r_util = library('r_util', files,
   include_directories: platform_inc,
+  c_args: library_cflags,
   dependencies: r_util_deps,
   install: true,
   implicit_include_directories: false,

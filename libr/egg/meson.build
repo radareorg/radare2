@@ -16,7 +16,7 @@ files = [
 
 r_egg = library('r_egg', files,
   include_directories: [platform_inc],
-  c_args: ['-DCORELIB=1'],
+  c_args: library_cflags,
   dependencies: [
     r_util_dep,
     r_asm_dep,

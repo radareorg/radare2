@@ -25,6 +25,7 @@ endif
 
 r_hash = library('r_hash', files,
   include_directories: [platform_inc],
+  c_args: library_cflags,
   dependencies: dependencies,
   install: true,
   implicit_include_directories: false,

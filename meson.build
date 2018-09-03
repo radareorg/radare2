@@ -100,6 +100,14 @@ if get_option('static_runtime')
   endif
 endif
 
+if get_option('default_library') == 'shared'
+  if host_machine.system() != 'windows' or cc.get_id() != 'msvc'
+    add_global_arguments('-fvisibility=hidden', language: 'c')
+  endif
+endif
+
+library_cflags = ['-DCORELIB=1']
+
 if host_machine.system() == 'windows'
   r2_prefix = '.'
   r2_libdir = 'lib'
