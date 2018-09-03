@@ -930,8 +930,13 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	case X86_INS_PUSH:
 		{
 			dst = getarg (&gop, 0, 0, NULL, DST_AR);
-			esilprintf (op, "%s,%d,%s,-=,%s,=[%d]",
-				dst?dst:"eax", rs, sp, sp, rs);
+			if (strcmp (dst, sp)) {
+				esilprintf (op, "%d,%s,-=,%s,%s,=[%d]",
+					rs, sp, dst?dst:"eax", sp, rs);
+			} else {
+				esilprintf (op, "%s,%s,&,%d,%s,-=,1,PICK,%s,=[%d]",
+					sp, sp, rs, sp, sp, rs);
+			}
 		}
 		break;
 	case X86_INS_PUSHF:
