@@ -578,11 +578,12 @@ static int GH(print_double_linked_list_bin)(RCore *core, MallocState *main_arena
 		return -1;
 	}
 
-#if __GLIBC_MINOR__ > 25
-	bin = m_arena + offset + SZ * num_bin * 2 + 10 * SZ;
-#else
-	bin = m_arena + offset + SZ * num_bin * 2 - SZ * 2;
-#endif
+	const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
+	if (tcache) {
+		bin = m_arena + offset + SZ * num_bin * 2 + 10 * SZ;
+	} else {
+		bin = m_arena + offset + SZ * num_bin * 2 - SZ * 2;
+	}
 
 	switch (num_bin) {
 	case 0:
@@ -609,11 +610,12 @@ static void GH(print_heap_bin)(RCore *core, GHT m_arena, MallocState *main_arena
 	int i, j = 2;
 	GHT num_bin = GHT_MAX;
 
-#if __GLIBC_MINOR__ > 25
-	GHT offset = 16;
-#else
-	GHT offset = 12 * SZ + sizeof (int) * 2;
-#endif
+	const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
+	if (tcache) {
+		GHT offset = 16;
+	} else {
+		GHT offset = 12 * SZ + sizeof (int) * 2;
+	}
 
 	switch (input[0]) {
 	case '\0': // dmhb
