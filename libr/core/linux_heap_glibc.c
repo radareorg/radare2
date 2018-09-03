@@ -609,12 +609,13 @@ static int GH(print_double_linked_list_bin)(RCore *core, MallocState *main_arena
 static void GH(print_heap_bin)(RCore *core, GHT m_arena, MallocState *main_arena, const char *input) {
 	int i, j = 2;
 	GHT num_bin = GHT_MAX;
+	GHT offset;
 
 	const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
 	if (tcache) {
-		GHT offset = 16;
+		offset = 16;
 	} else {
-		GHT offset = 12 * SZ + sizeof (int) * 2;
+		offset = 12 * SZ + sizeof (int) * 2;
 	}
 
 	switch (input[0]) {
