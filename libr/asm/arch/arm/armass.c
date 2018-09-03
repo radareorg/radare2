@@ -4574,8 +4574,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "stc", L_BIT | TWO_BIT))) {
+	} else if ((m = opmask (ao->op, "stc", L_BIT | TWO_BIT))) {
 		ut64 argt = thumb_selector (ao->a);
 		switch (argt) {
 		case THUMB_COPROC_COREG_BRACKREGBRACK: {
@@ -4673,8 +4672,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "stm", FD_BIT | DB_BIT | IA_BIT | EA_BIT))) {
+	} else if ((m = opmask (ao->op, "stm", FD_BIT | DB_BIT | IA_BIT | EA_BIT))) {
 		ut64 argt = thumb_selector (ao->a);
 		bool wb = false;
 		switch (argt) {
