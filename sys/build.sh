@@ -5,7 +5,17 @@ if [ -z "${MAKE}" ]; then
 	gmake --help >/dev/null 2>&1
 	[ $? = 0 ] && MAKE=gmake
 fi
+
 [ -z "${MAKE_JOBS}" ] && MAKE_JOBS=12
+
+echo ""
+echo "Number of parallel compilation jobs is $MAKE_JOBS"
+echo "To change this (for example when compiling on a Raspberry Pi 
+echo "with almost no memory), you can set the value MAKE_JOBS :"
+echo "'MAKE_JOBS=1 sys/install.sh' or 'MAKE_JOBS=1 sys/user.sh' instead of "
+echo "calling the installation script directly."
+echo ""
+
 [ -z "${CERTID}" ] && CERTID=org.radare.radare2
 
 # find root
