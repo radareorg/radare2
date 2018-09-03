@@ -5478,7 +5478,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							str, str, sizeof (str));
 					}
 					r_parse_filter (core->parser, core->flags,
-						str, str, sizeof (str), core->print->big_endian);
+						r_asm_op_get_asm (&asmop), str, sizeof (str), core->print->big_endian);
 					r_cons_printf ("{\"from\":%" PFMT64u ",\"type\":\"%s\",\"opcode\":\"%s\"",
 						ref->addr, r_anal_xrefs_type_tostring (ref->type), str);
 					if (fcn) {
