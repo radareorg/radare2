@@ -179,7 +179,7 @@ static void setCursor(RCore *core, bool cur);
 static void savePanelPos(RPanel* panel);
 static void restorePanelPos(RPanel* panel);
 static void savePanelsLayout(RPanels* panels);
-static void loadPanelsLayout(RPanels* panels);
+static void loadPanelsLayout(RCore *core);
 static void replaceCmd(RPanels* panels, char *title, char *cmd);
 static void handleMenu(RCore *core, const int key, int *exit);
 static void onMenu(RCore *core, const char *menu, int *exit);
@@ -1918,7 +1918,7 @@ static void onMenu(RCore *core, const char *menu, int *exit) {
 	} else if (!strcmp (menu, "Save Layout")) {
 		savePanelsLayout (panels);
 	} else if (!strcmp (menu, "Load Layout")) {
-		loadPanelsLayout (panels);
+		loadPanelsLayout (core);
 	} else if (!strcmp (menu, "About")) {
 		char *s = r_core_cmd_str (core, "?V");
 		r_cons_message (s);
@@ -2175,55 +2175,50 @@ static void savePanelsLayout(RPanels* panels) {
 	}
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *panel = &panels->panel[i];
-		fprintf (panelsConfig, "%s %s %d %d %d %d",
-				panel->title, panel->cmd, panel->pos.x, panel->pos.y, panel->pos.w, panel->pos.h);
-		fputs ("\n", panelsConfig);
+		RJSVar* obj = r_json_object_new ();
+		(void)r_json_object_add (obj, "Title", r_json_string_new (panel->title));
+		(void)r_json_object_add (obj, "Cmd", r_json_string_new (panel->cmd));
+		(void)r_json_object_add (obj, "x", r_json_number_new (panel->pos.x));
+		(void)r_json_object_add (obj, "y", r_json_number_new (panel->pos.y));
+		(void)r_json_object_add (obj, "w", r_json_number_new (panel->pos.w));
+		(void)r_json_object_add (obj, "h", r_json_number_new (panel->pos.h));
+		char* c = r_json_stringify (obj, true);
+		fprintf (panelsConfig ,"%s\n", c);
 	}
-	fclose(panelsConfig);
+	fclose (panelsConfig);
 }
 
-static void loadPanelsLayout(RPanels* panels) {
+static void loadPanelsLayout(RCore* core) {
+	RPanels *panels = core->panels;
 	const char *configPath = r_str_home (".r2panels");
 	int i;
 	if (!configPath){
 		return;
 	}
 	panelAllClear (panels);
-	FILE *panelsConfig = fopen (configPath, "r");
-	//const char *pattern = "(.*|\$)\s+(.*|\$)\s+(.*|\$)\s+(.*|\$)\s+(.*|\$)\s+(.*|\$)";
-	const char *pattern = "(.*|\$)\s+(.*|\$)\s+(.*|\$)\s+(.*|\$)";
-	//const char *pattern = "(.*|\$)\s+(.*|\$)\s+(.*|\$)";
-	RRegex *rx = r_regex_new (pattern, "e");
-	const size_t nmatch = 5;
-	RRegexMatch pmatch[nmatch];
 	panels->n_panels = 0;
-	const int max = 256;
+	panels->curnode = 0;
+	FILE *panelsConfig = fopen (configPath, "r");
+	int max = 256;
 	char l[max];
-FILE *logFile;
-logFile = fopen("hoge.log","a+");
+	char *title, *cmd, *x, *y, *w, *h;
 	while (fgets (l, max, panelsConfig)) {
-fprintf(logFile,"outside %d\n", panels->n_panels);
-		if (r_regex_exec (rx, l, nmatch, pmatch, 1)) {
-			continue;
-		}
-		//RPanel *panel = &panels->panel[panels->n_panels];
-		//panel->title = strInRange (l, pmatch[1].rm_so, pmatch[1].rm_eo);
-		//panel->cmd = strInRange (l, pmatch[2].rm_so, pmatch[2].rm_eo);
-		//panel->pos.x = strInRange (l, pmatch[3].rm_so, pmatch[3].rm_eo);
-		//panel->pos.y = strInRange (l, pmatch[4].rm_so, pmatch[4].rm_eo);
-		//panel->pos.w = strInRange (l, pmatch[5].rm_so, pmatch[5].rm_eo);
-		//panel->pos.h = strInRange (l, pmatch[6].rm_so, pmatch[6].rm_eo);
-		//panels->n_panels++;
-//fprintf(logFile,"%s\n", strInRange (l, pmatch[1].rm_so, pmatch[1].rm_eo));
-fprintf(logFile,"inside %d\n", panels->n_panels);
-//fprintf(logFile,"%s\n", strInRange (l, pmatch[2].rm_so, pmatch[2].rm_eo));
-//fprintf(logFile,"%d\n", strInRange (l, pmatch[3].rm_so, pmatch[3].rm_eo));
-//fprintf(logFile,"%d\n", strInRange (l, pmatch[4].rm_so, pmatch[4].rm_eo));
-//fprintf(logFile,"%d\n", strInRange (l, pmatch[5].rm_so, pmatch[5].rm_eo));
-//fprintf(logFile,"%d\n", strInRange (l, pmatch[6].rm_so, pmatch[6].rm_eo));
+		title = sdb_json_get_str (l, "Title");
+		cmd = sdb_json_get_str (l, "Cmd");
+		x = sdb_json_get_str (l, "x");
+		y = sdb_json_get_str (l, "y");
+		w = sdb_json_get_str (l, "w");
+		h = sdb_json_get_str (l, "h");
+		panels->panel[panels->n_panels].title = title;
+		panels->panel[panels->n_panels].cmd = cmd;
+		panels->panel[panels->n_panels].pos.x = atoi (x);
+		panels->panel[panels->n_panels].pos.y = atoi (y);
+		panels->panel[panels->n_panels].pos.w = atoi (w);
+		panels->panel[panels->n_panels].pos.h = atoi (h);
+		panels->panel[panels->n_panels].addr  = core->offset;
+		panels->n_panels++;
 	}
-fclose(logFile);
-	fclose(panelsConfig);
+	fclose (panelsConfig);
 }
 
 static char* strInRange(const char* str, int from, int to) {
