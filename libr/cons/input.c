@@ -453,6 +453,11 @@ R_API void r_cons_switchbuf(bool active) {
 	bufactive = active;
 }
 
+#if !(__WINDOWS__ && !__CYGWIN__)
+extern volatile sig_atomic_t sigwinchFlag;
+extern void resizeWin(void);
+#endif
+
 R_API int r_cons_readchar() {
 	void *bed;
 	char buf[2];
@@ -484,7 +489,25 @@ R_API int r_cons_readchar() {
 #else
 	r_cons_set_raw (1);
 	bed = r_cons_sleep_begin ();
-	ssize_t ret = read (0, buf, 1);
+
+	// Blocks until either stdin has something to read or a signal happens.
+	// This serves to check if the terminal window was resized. It avoids the race
+	// condition that could happen if we did not use pselect or select in case SIGWINCH
+	// was handled immediately before the blocking call (select or read). The race is
+	// prevented from happening by having SIGWINCH blocked process-wide except for in
+	// pselect (that is what pselect is for).
+	fd_set readfds;
+	sigset_t sigmask;
+	FD_ZERO (&readfds);
+	FD_SET (STDIN_FILENO, &readfds);
+	r_signal_sigmask (0, NULL, &sigmask);
+	sigdelset (&sigmask, SIGWINCH);
+	pselect (STDIN_FILENO + 1, &readfds, NULL, NULL, NULL, &sigmask);
+	if (sigwinchFlag != 0) {
+		resizeWin ();
+	}
+
+	ssize_t ret = read (STDIN_FILENO, buf, 1);
 	r_cons_sleep_end (bed);
 	if (ret != 1) {
 		return -1;
