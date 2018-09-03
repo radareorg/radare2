@@ -2786,7 +2786,7 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* graph */
 	SETPREF ("graph.comments", "true", "Show disasm comments in graph");
-	SETPREF ("graph.cmtright", "false", "Show comments at right");
+	SETPREF ("graph.cmtright", "true", "Show comments at right");
 	SETCB ("graph.gv.format", "gif", &cb_graphformat, "Graph image extension when using 'w' format (png, jpg, pdf, ps, svg, json)");
 	SETPREF ("graph.refs", "false", "Graph references in callgraphs (.agc*;aggi)");
 	SETI ("graph.edges", 2, "0=no edges, 1=simple edges, 2=avoid collisions");
