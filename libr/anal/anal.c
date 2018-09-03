@@ -9,6 +9,7 @@
 R_LIB_VERSION(r_anal);
 
 static RAnalPlugin *anal_static_plugins[] = {
+
 	R_ANAL_STATIC_PLUGINS
 };
 
