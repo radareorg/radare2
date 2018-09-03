@@ -118,6 +118,7 @@ static int vtable_is_addr_vtable_start(RVTableContext *context, ut64 curAddress)
 			if (analop.type == R_ANAL_OP_TYPE_MOV
 				|| analop.type == R_ANAL_OP_TYPE_LEA) {
 				r_list_free (xrefs);
+				r_anal_op_fini (&analop);
 				return true;
 			}
 
