@@ -336,7 +336,12 @@ static BOOL __w32_control(DWORD type) {
 	return false;
 }
 #elif __UNIX__ || __CYGWIN__
+volatile sig_atomic_t sigwinchFlag;
 static void resize(int sig) {
+	sigwinchFlag = 1;
+}
+
+void resizeWin(void) {
 	if (I.event_resize) {
 		I.event_resize (I.event_data);
 	}

@@ -485,6 +485,13 @@ int main(int argc, char **argv, char **envp) {
 
 	bool noStderr = false;
 
+#ifdef __UNIX
+	sigset_t sigBlockMask;
+	sigemptyset (&sigBlockMask);
+	sigaddset (&sigBlockMask, SIGWINCH);
+	r_signal_sigmask (SIG_BLOCK, &sigBlockMask, NULL);
+#endif
+
 	r_sys_set_environ (envp);
 
 	if ((tmp = r_sys_getenv ("R_DEBUG"))) {
