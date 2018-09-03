@@ -4338,36 +4338,35 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 	} else if (!(name = r_type_func_guess (TDB, fcn->name))) {
 		return;
 	}
-	if (ds->show_color) {
-		r_cons_strcat (ds->pal_comment);
-	}
-	ds_align_comment (ds);
+	ds_begin_comment (ds);
 	const char *fcn_type = r_type_func_ret (TDB, name);
-	if (fcn_type && *fcn_type) {
-		r_cons_printf (
-			"; %s%s%s(", fcn_type,
-			fcn_type[strlen (fcn_type) - 1] == '*' ? "" : " ",
-			name);
+	if (!fcn_type || !*fcn_type) {
+		return;
 	}
+	char *cmt = r_str_newf ("; %s%s%s(", fcn_type,
+		fcn_type[strlen (fcn_type) - 1] == '*' ? "" : " ",
+		name);
 	int i, arg_max = r_type_func_args_count (TDB, name);
 	if (!arg_max) {
-		r_cons_printf ("void)");
+		cmt = r_str_append (cmt, "void)");
 	} else {
 		for (i = 0; i < arg_max; i++) {
 			char *type = r_type_func_args_type (TDB, name, i);
 			char *tname = r_type_func_args_name (TDB, name, i);
 			if (type && *type) {
-				r_cons_printf ("%s%s%s%s%s", i == 0 ? "": " ", type,
+				cmt = r_str_appendf (cmt, "%s%s%s%s%s", i == 0 ? "": " ", type,
 						type[strlen (type) -1] == '*' ? "": " ",
 						tname, i == arg_max - 1 ? ")": ",");
 			} else if (tname && !strcmp (tname, "...")) {
-				r_cons_printf ("%s%s%s", i == 0 ? "": " ",
+				cmt = r_str_appendf (cmt, "%s%s%s", i == 0 ? "": " ",
 						tname, i == arg_max - 1 ? ")": ",");
 			}
 			free (type);
 		}
 	}
+	ds_comment (ds, true, cmt);
 	ds_print_color_reset (ds);
+	free (cmt);
 	free (name);
 }
 
@@ -4813,6 +4812,9 @@ toro:
 			ds_print_color_reset (ds);
 			if (ds->show_emu) {
 				ds_print_esil_anal (ds);
+			}
+			if (ds->analop.type == R_ANAL_OP_TYPE_CALL && ds->show_calls) {
+				ds_print_calls_hints (ds);
 			}
 		}
 
