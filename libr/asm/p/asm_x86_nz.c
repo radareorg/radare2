@@ -1671,6 +1671,10 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 				op->operands[0].type & OT_QWORD) {
 				data[l++] = 0x48 | rex;
 			}
+			if (op->operands[1].type & OT_DWORD &&
+				op->operands[0].type & OT_DWORD) {
+				data[l++] = 0x40 | rex;
+			}
 		} else if (op->operands[0].extended && op->operands[1].extended) {
 			data[l++] = 0x45;
 		}
