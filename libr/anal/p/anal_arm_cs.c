@@ -2030,9 +2030,17 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 						if (disp < 0) {
 							r_strbuf_appendf (&op->esil, "%d,%s,-,0xffffffff,&,[4],0x%x,&,%s,=",
 								-disp, MEMBASE(1), mask, REG(0));
+							if (insn->detail->arm.writeback) {
+								r_strbuf_appendf (&op->esil, ",%d,%s,+,%s,=",
+									-disp, MEMBASE(1), MEMBASE(1));
+							}
 						} else {
 							r_strbuf_appendf (&op->esil, "%d,%s,+,0xffffffff,&,[4],0x%x,&,%s,=",
 								disp, MEMBASE(1), mask, REG(0));
+							if (insn->detail->arm.writeback) {
+								r_strbuf_appendf (&op->esil, ",%d,%s,+,%s,=",
+									disp, MEMBASE(1), MEMBASE(1));
+							}
 						}
 					}
 				}
