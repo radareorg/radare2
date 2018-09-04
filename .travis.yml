@@ -24,7 +24,7 @@ matrix:
     - if: head_branch =~ ^asan-* OR tag =~ ^release-* OR type = push
       os: linux
       env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" LDFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0
-    - if: type = push
+    - if: type = push OR head_branch =~ ^coverage-*
       os: linux
       env: CFLAGS="-O0 -ggdb" COMPILER_NAME=gcc CXX=g++ CC=gcc COVERAGE=1 INSTALL_SYSTEM=meson
     - os: osx
