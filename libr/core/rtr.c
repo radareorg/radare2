@@ -1889,6 +1889,7 @@ R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *po
 typedef struct rtr_cmds_context_t {
 	uv_tcp_t server;
 	RPVector clients;
+	void *bed;
 } rtr_cmds_context;
 
 typedef struct rtr_cmds_client_context_t {
@@ -2029,6 +2030,11 @@ static void rtr_cmds_break(uv_async_t *async) {
 }
 
 R_API int r_core_rtr_cmds (RCore *core, const char *port) {
+	if (!port || port[0] == '?') {
+		r_cons_printf ("Usage: .:[tcp-port]    run r2 commands for clients\n");
+		return 0;
+	}
+	
 	uv_loop_t *loop = R_NEW (uv_loop_t);
 	if (!loop) {
 		return 0;
@@ -2043,7 +2049,9 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 	uv_tcp_init (loop, &context.server);
 
 	struct sockaddr_in addr;
-	uv_ip4_addr ("0.0.0.0", 1337, &addr);
+	bool local = (bool) r_config_get_i(core->config, "tcp.islocal");
+	int porti = r_socket_port_by_name (port);
+	uv_ip4_addr (local ? "127.0.0.1" : "0.0.0.0", porti, &addr);
 
 	uv_tcp_bind (&context.server, (const struct sockaddr *) &addr, 0);
 	int r = uv_listen ((uv_stream_t *)&context.server, 32, rtr_cmds_new_connection);
@@ -2056,79 +2064,14 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 	uv_async_init (loop, &stop_async, rtr_cmds_stop);
 
 	r_cons_break_push ((RConsBreak) rtr_cmds_break, &stop_async);
+	context.bed = r_cons_sleep_begin ();
 	uv_run (loop, UV_RUN_DEFAULT);
+	r_cons_sleep_end (context.bed);
 	r_cons_break_pop ();
 
 beach:
 	uv_loop_close (loop);
 	free (loop);
 	r_pvector_clear (&context.clients);
-	return 0;
-}
-
-
-R_API int _r_core_rtr_cmds (RCore *core, const char *port) {
-	unsigned char buf[4097];
-	RSocket *ch = NULL;
-	RSocket *s;
-	int i, ret;
-	char *str;
-
-	if (!port || port[0] == '?') {
-		r_cons_printf ("Usage: .:[tcp-port]    run r2 commands for clients\n");
-		return false;
-	}
-
-	s = r_socket_new (0);
-	s->local = r_config_get_i(core->config, "tcp.islocal");
-
-	if (!r_socket_listen (s, port, NULL)) {
-		eprintf ("Error listening on port %s\n", port);
-		r_socket_free (s);
-		return false;
-	}
-
-	eprintf ("Listening for commands on port %s\n", port);
-	listenport = port;
-	r_cons_break_push ((RConsBreak)r_core_rtr_http_stop, core);
-	for (;;) {
-		if (r_cons_is_breaked ()) {
-			break;
-		}
-		void *bed = r_cons_sleep_begin ();
-		ch = r_socket_accept (s);
-		buf[0] = 0;
-		ret = r_socket_read (ch, buf, sizeof (buf) - 1);
-		r_cons_sleep_end (bed);
-		if (ret > 0) {
-			buf[ret] = 0;
-			for (i = 0; buf[i]; i++) {
-				if (buf[i] == '\n') {
-					buf[i] = buf[i + 1]? ';': '\0';
-				}
-			}
-			if ((!r_config_get_i (core->config, "scr.prompt") &&
-			     !strcmp ((char *)buf, "q!")) ||
-			    !strcmp ((char *)buf, ".--")) {
-				r_socket_close (ch);
-				break;
-			}
-			str = r_core_cmd_str (core, (const char *)buf);
-			bed = r_cons_sleep_begin ();
-			if (str && *str)  {
-				r_socket_write (ch, str, strlen (str));
-			} else {
-				r_socket_write (ch, "\n", 1);
-			}
-			r_cons_sleep_end (bed);
-			free (str);
-		}
-		r_socket_close (ch);
-		r_socket_free (ch);
-		ch = NULL;
-	}
-	r_cons_break_pop ();
-	r_socket_free (s);
-	r_socket_free (ch);
 	return 0;
 }
