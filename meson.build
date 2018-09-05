@@ -237,12 +237,14 @@ else
   message('Using bundled openssl code')
 endif
 
+has_debugger = not (host_machine.system() == 'linux' and host_machine.cpu_family() == 's390x')
+
 userconf = configuration_data()
 userconf.set('HAVE_LIB_MAGIC', sys_magic.found().to_int())
 userconf.set('USE_LIB_MAGIC', use_syslib_magic.to_int())
 userconf.set('HAVE_LIB_XXHASH', sys_xxhash.found().to_int())
 userconf.set('USE_LIB_XXHASH', use_sys_xxhash.to_int())
-userconf.set('DEBUGGER', 1)
+userconf.set('DEBUGGER', has_debugger.to_int())
 userconf.set('PREFIX', r2_prefix)
 userconf.set('LIBDIR', r2_libdir)
 userconf.set('INCLUDEDIR', r2_incdir)
