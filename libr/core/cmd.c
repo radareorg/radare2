@@ -694,7 +694,12 @@ static int cmd_yank(void *data, const char *input) {
 	return true;
 }
 
-R_API int r_core_run_script (RCore *core, const char *file) {
+static int lang_run_file(RCore *core, RLang *lang, const char *file) {
+	r_core_sysenv_begin (core, NULL);
+	return r_lang_run_file (core->lang, file);
+}
+
+R_API int r_core_run_script(RCore *core, const char *file) {
 	int ret = false;
 	RListIter *iter;
 	RLangPlugin *p;
@@ -724,10 +729,9 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 		ret = out? true: false;
 	} else {
 		p = r_lang_get_by_extension (core->lang, file);
-		r_core_sysenv_begin (core, NULL);
 		if (p) {
 			r_lang_use (core->lang, p->name);
-			ret = r_lang_run_file (core->lang, file);
+			ret = lang_run_file (core, core->lang, file);
 		} else {
 #if __WINDOWS__
 #define cmdstr(x) r_str_newf (x" %s", file);
@@ -741,7 +745,7 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 				if (!strcmp (ext, "js")) {
 					char *cmd = cmdstr ("node");
 					r_lang_use (core->lang, "pipe");
-					r_lang_run_file (core->lang, cmd);
+					lang_run_file (core, core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "exe")) {
@@ -751,59 +755,59 @@ R_API int r_core_run_script (RCore *core, const char *file) {
 					char *cmd = cmdstr ("wine");
 #endif
 					r_lang_use (core->lang, "pipe");
-					r_lang_run_file (core->lang, cmd);
+					lang_run_file (core, core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "zig")) {
 					char *cmd = cmdstr ("zig run");
 					r_lang_use (core->lang, "pipe");
-					r_lang_run_file (core->lang, cmd);
+					lang_run_file (core, core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "d")) {
 					char *cmd = cmdstr ("dmd -run");
 					r_lang_use (core->lang, "pipe");
-					r_lang_run_file (core->lang, cmd);
+					lang_run_file (core, core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "lsp")) {
 					char *cmd = cmdstr ("newlisp -n");
 					r_lang_use (core->lang, "pipe");
-					r_lang_run_file (core->lang, cmd);
+					lang_run_file (core, core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "go")) {
 					char *cmd = cmdstr ("go run");
 					r_lang_use (core->lang, "pipe");
-					r_lang_run_file (core->lang, cmd);
+					lang_run_file (core, core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "es6")) {
 					char *cmd = cmdstr ("babel-node");
 					r_lang_use (core->lang, "pipe");
-					r_lang_run_file (core->lang, cmd);
+					lang_run_file (core, core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "rb")) {
 					char *cmd = cmdstr ("ruby");
 					r_lang_use (core->lang, "pipe");
-					r_lang_run_file (core->lang, cmd);
+					lang_run_file (core, core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "vala")) {
 					r_lang_use (core->lang, "vala");
-					r_lang_run_file (core->lang, file);
+					lang_run_file (core, core->lang, file);
 					ret = 1;
 				} else if (!strcmp (ext, "pl")) {
 					char *cmd = cmdstr ("perl");
 					r_lang_use (core->lang, "pipe");
-					r_lang_run_file (core->lang, cmd);
+					lang_run_file (core, core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				} else if (!strcmp (ext, "py")) {
 					char *cmd = cmdstr ("python");
 					r_lang_use (core->lang, "pipe");
-					r_lang_run_file (core->lang, cmd);
+					lang_run_file (core, core->lang, cmd);
 					free (cmd);
 					ret = 1;
 				}
