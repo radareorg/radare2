@@ -1883,7 +1883,141 @@ R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *po
 	return rbuf;
 }
 
+
+#include <uv.h>
+
+typedef struct rtr_cmds_client_context_t {
+	RCore *core;
+	char buf[4096];
+	size_t len;
+	uv_tcp_t *client;
+} rtr_cmds_client_context;
+
+static void rtr_cmds_alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
+	rtr_cmds_client_context *context = handle->data;
+	buf->base = context->buf + context->len;
+	buf->len = sizeof (context->buf) - context->len - 1;
+}
+
+static void rtr_cmds_write(uv_write_t *req, int status) {
+	rtr_cmds_client_context *context = req->data;
+
+	if (status) {
+		eprintf ("Write error: %s\n", uv_strerror (status));
+	}
+
+	uv_close ((uv_handle_t *)context->client, NULL);
+	free (req);
+	free (context);
+}
+
+static void rtr_cmds_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
+	rtr_cmds_client_context *context = client->data;
+
+	if (nread < 0) {
+		if (nread != UV_EOF) {
+			eprintf ("Failed to read: %s\n", uv_err_name ((int) nread));
+		} else {
+			printf("eof\n");
+		}
+		free (context);
+		uv_close ((uv_handle_t *) client, NULL);
+		return;
+	} else if (nread == 0) {
+		return;
+	}
+
+	buf->base[nread] = '\0';
+	char *end = strchr (buf->base, '\n');
+	if (!end) {
+		return;
+	}
+	*end = '\0';
+
+	char *str = r_core_cmd_str (context->core, (const char *)context->buf);
+	if (!str || !*str) {
+		free (str);
+		str = strdup ("\n");
+	}
+
+	if (!str || (!r_config_get_i (context->core->config, "scr.prompt") &&
+				 !strcmp ((char *)buf, "q!")) ||
+				 !strcmp ((char *)buf, ".--")) {
+		uv_close ((uv_handle_t *)client, NULL);
+		free (context);
+		return;
+	}
+
+	uv_write_t *req = R_NEW (uv_write_t);
+	req->data = context;
+	uv_buf_t wrbuf = uv_buf_init (str, (unsigned int) strlen (str));
+	uv_write (req, client, &wrbuf, 1, rtr_cmds_write);
+	uv_read_stop (client);
+}
+
+static void rtr_cmds_new_connection(uv_stream_t *server, int status) {
+	if (status < 0) {
+		eprintf ("New connection error: %s\n", uv_strerror (status));
+		return;
+	}
+
+	uv_tcp_t *client = R_NEW (uv_tcp_t);
+	if (!client) {
+		return;
+	}
+
+	uv_tcp_init (server->loop, client);
+	if (uv_accept (server, (uv_stream_t *)client) == 0) {
+
+		rtr_cmds_client_context *client_context = R_NEW (rtr_cmds_client_context);
+		if (!client_context) {
+			uv_close ((uv_handle_t *)client, NULL);
+			return;
+		}
+
+		client_context->core = server->data;
+		client_context->len = 0;
+		client_context->buf[0] = '\0';
+		client_context->client = client;
+		client->data = client_context;
+
+		uv_read_start ((uv_stream_t *)client, rtr_cmds_alloc_buffer, rtr_cmds_read);
+	} else {
+		uv_close ((uv_handle_t *)client, NULL);
+	}
+}
+
 R_API int r_core_rtr_cmds (RCore *core, const char *port) {
+	uv_loop_t *loop = R_NEW (uv_loop_t);
+	if (!loop) {
+		return 0;
+	}
+	uv_loop_init (loop);
+
+	uv_tcp_t server;
+	server.data = core;
+	uv_tcp_init (loop, &server);
+
+	struct sockaddr_in addr;
+	uv_ip4_addr ("0.0.0.0", 1337, &addr);
+
+	uv_tcp_bind (&server, (const struct sockaddr *) &addr, 0);
+	int r = uv_listen ((uv_stream_t *)&server, 32, rtr_cmds_new_connection);
+	if (r) {
+		eprintf ("Failed to listen: %s\n", uv_strerror (r));
+		goto beach;
+	}
+
+	uv_run (loop, UV_RUN_DEFAULT);
+
+beach:
+	uv_loop_close (loop);
+	free (loop);
+	return 0;
+}
+
+
+R_API int _r_core_rtr_cmds (RCore *core, const char *port) {
 	unsigned char buf[4097];
 	RSocket *ch = NULL;
 	RSocket *s;
