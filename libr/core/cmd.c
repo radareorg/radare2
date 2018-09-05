@@ -208,7 +208,7 @@ static const char *help_msg_k[] = {
 	"ko", " [file.sdb] [ns]", "open file into namespace",
 	"kd", " [file.sdb] [ns]", "dump namespace to disk",
 	"ks", " [ns]", "enter the sdb query shell",
-	"k", " anal/meta/*", "ist kv from anal > meta namespaces",
+	"k", " anal/meta/*", "list kv from anal > meta namespaces",
 	"k", " anal/**", "list namespaces under anal",
 	"k", " anal/meta/meta.0x80404", "get value for meta.0x80404 key",
 	//"kl", " ha.sdb", "load keyvalue from ha.sdb",
