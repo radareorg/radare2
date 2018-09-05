@@ -308,7 +308,7 @@ static int process_group_2(RAsm *a, ut8 *data, const Opcode *op) {
 			data[l++] = 0xc1;
 		}
 	} else if (op->operands[0].type & OT_BYTE) {
-		Operand *o = &op->operands[0];
+		const Operand *o = &op->operands[0];
 		if (o->regs[0] != -1 && o->regs[1] != -1) {
 			data[l++] = 0xc0;
 			data[l++] = 0x44;

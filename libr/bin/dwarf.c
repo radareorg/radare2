@@ -196,6 +196,19 @@ static int add_sdb_include_dir(Sdb *s, const char *incl, int idx) {
 	return sdb_array_set (s, "includedirs", idx, incl, 0);
 }
 
+static void r_bin_dwarf_header_fini(RBinDwarfLNPHeader *hdr) {
+	if (hdr) {
+		size_t i;
+
+		for (i = 0; i < hdr->file_names_count; i ++) {
+			free (hdr->file_names[i].name);
+		}
+
+		free (hdr->std_opcode_lengths);
+		free (hdr->file_names);
+	}
+}
+
 static const ut8 *r_bin_dwarf_parse_lnp_header (
 		RBinFile *bf, const ut8 *buf, const ut8 *buf_end,
 		RBinDwarfLNPHeader *hdr, FILE *f, int mode) {
@@ -728,6 +741,8 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 		if (!r_bin_dwarf_parse_opcodes (a, buf, tmplen, &hdr, &regs, f, mode)) {
 			break;
 		}
+
+		r_bin_dwarf_header_fini (&hdr);
 		buf = buf_tmp + tmplen;
 		len = (int)(buf_end - buf);
 	}
