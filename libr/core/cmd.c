@@ -2031,6 +2031,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 	bool cmd_tmpseek = false;
 
 	if (!cmd) {
+		r_list_free (tmpenvs);
 		return 0;
 	}
 	cmd = r_str_trim_head_tail (cmd);
@@ -2051,6 +2052,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 	switch (*cmd) {
 	case '.':
 		if (cmd[1] == '"') { /* interpret */
+			r_list_free (tmpenvs);
 			return r_cmd_call (core->rcmd, cmd);
 		}
 		break;
@@ -2066,6 +2068,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 				p = cmd[0] ? find_eoq (cmd + 1) : NULL;
 				if (!p || !*p) {
 					eprintf ("Missing \" in (%s).", cmd);
+					r_list_free (tmpenvs);
 					return false;
 				}
 				*p++ = 0;
@@ -2160,15 +2163,18 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 				cmd = p + 1;
 			}
 		}
+		r_list_free (tmpenvs);
 		return true;
 	case '(':
 		if (cmd[1] != '*' && !strstr (cmd, ")()")) {
+			r_list_free (tmpenvs);
 			return r_cmd_call (core->rcmd, cmd);
 		}
 		break;
 	case '?':
 		if (cmd[1] == '>') {
 			r_core_cmd_help (core, help_msg_greater_sign);
+			r_list_free (tmpenvs);
 			return true;
 		}
 	}
@@ -2191,11 +2197,13 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 			int ret ;
 			*ptr = '\0';
 			if (r_core_cmd_subst (core, cmd) == -1) {
+				r_list_free (tmpenvs);
 				return -1;
 			}
 			cmd = ptr + 1;
 			ret = r_core_cmd_subst (core, cmd);
 			*ptr = ';';
+			r_list_free (tmpenvs);
 			return ret;
 			//r_cons_flush ();
 		}
@@ -2225,6 +2233,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 					eprintf (" pd|    - disable scr.html and scr.color\n");
 					eprintf (" pd|H   - enable scr.html, respect scr.color\n");
 					eprintf (" pi 1|T - use scr.tts to speak out the stdout\n");
+					r_list_free (tmpenvs);
 					return ret;
 				} else if (!strncmp (ptr + 1, "H", 1)) { // "|H"
 					scr_html = r_config_get_i (core->config, "scr.html");
@@ -2247,6 +2256,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 						free (res);
 					}
 					core->num->value = value;
+					r_list_free (tmpenvs);
 					return 0;
 				} else { // "|"
 					scr_html = r_config_get_i (core->config, "scr.html");
@@ -2274,6 +2284,7 @@ escape_pipe:
 			if (scr_color != -1) {
 				r_config_set_i (core->config, "scr.color", scr_color);
 			}
+			r_list_free (tmpenvs);
 			return ret;
 		}
 		for (cmd = ptr + 2; cmd && *cmd == ' '; cmd++);
@@ -2305,6 +2316,7 @@ escape_pipe:
 			if (scr_color != -1) {
 				r_config_set_i (core->config, "scr.color", scr_color);
 			}
+			r_list_free (tmpenvs);
 			return 0;
 		}
 	}
@@ -2366,6 +2378,7 @@ escape_pipe:
 			}
 		} else {
 			eprintf ("Cannot slurp with << in non-interactive mode\n");
+			r_list_free (tmpenvs);
 			return 0;
 		}
 	}
@@ -2384,6 +2397,7 @@ next:
 		}
 		if (ptr[0] && ptr[1] == '?') {
 			r_core_cmd_help (core, help_msg_greater_sign);
+			r_list_free (tmpenvs);
 			return true;
 		}
 		int fdn = 1;
@@ -2452,6 +2466,7 @@ next:
 			r_config_set_i (core->config, "scr.color", scr_color);
 		}
 		core->cons->use_tts = false;
+		r_list_free (tmpenvs);
 		return ret;
 	}
 escape_redir:
@@ -2513,6 +2528,7 @@ next2:
 				r_config_set_i (core->config, "scr.html", scr_html);
 			}
 			free (str);
+			r_list_free (tmpenvs);
 			return ret;
 		}
 	}
@@ -2522,6 +2538,7 @@ escape_backtick:
 
 	if (r_str_endswith (cmd, "~?") && cmd[2] == '\0') {
 		r_cons_grep_help ();
+		r_list_free (tmpenvs);
 		return true;
 	}
 	if (*cmd != '.') {

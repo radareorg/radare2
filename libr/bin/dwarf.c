@@ -319,10 +319,10 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 			if (buf>=buf_end) { buf = NULL; goto beach; }
 
 			if (i) {
-				char *include_dir = NULL, *comp_dir = NULL;
+				char *include_dir = NULL, *comp_dir = NULL, *pinclude_dir = NULL;
 				char *allocated_id = NULL;
 				if (id_idx > 0) {
-					include_dir = sdb_array_get (s, "includedirs", id_idx - 1, 0);
+					include_dir = pinclude_dir = sdb_array_get (s, "includedirs", id_idx - 1, 0);
 					if (include_dir && include_dir[0] != '/') {
 						comp_dir = sdb_get (bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
 						if (comp_dir) {
@@ -334,7 +334,7 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 						}
 					}
 				} else {
-					include_dir = sdb_get (bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
+					include_dir = pinclude_dir = sdb_get (bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
 					if (!include_dir)
 						include_dir = "./";
 				}
@@ -351,6 +351,8 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 					hdr->file_names[count].mod_time = mod_time;
 					hdr->file_names[count].file_len = file_len;
 				}
+				free (comp_dir);
+				free (pinclude_dir);
 			}
 			count++;
 			if (f && i) {
@@ -730,15 +732,18 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 		buf_tmp = buf;
 		buf = r_bin_dwarf_parse_lnp_header (a->cur, buf, buf_end, &hdr, f, mode);
 		if (!buf) {
+			r_bin_dwarf_header_fini (&hdr);
 			return false;
 		}
 		r_bin_dwarf_set_regs_default (&hdr, &regs);
 		tmplen = (int)(buf_end - buf);
 		tmplen = R_MIN (tmplen, 4 + hdr.unit_length.part1);
 		if (tmplen < 1) {
+			r_bin_dwarf_header_fini (&hdr);
 			break;
 		}
 		if (!r_bin_dwarf_parse_opcodes (a, buf, tmplen, &hdr, &regs, f, mode)) {
+			r_bin_dwarf_header_fini (&hdr);
 			break;
 		}
 
