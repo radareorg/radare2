@@ -1936,7 +1936,8 @@ static void rtr_cmds_write(uv_write_t *req, int status) {
 }
 
 static void rtr_cmds_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
-	rtr_cmds_client_context *context = client->data;
+	rtr_cmds_context *context = client->loop->data;
+	rtr_cmds_client_context *client_context = client->data;
 
 	if (nread < 0) {
 		if (nread != UV_EOF) {
@@ -1955,13 +1956,16 @@ static void rtr_cmds_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *bu
 	}
 	*end = '\0';
 
-	context->res = r_core_cmd_str (context->core, (const char *)context->buf);
-	if (!context->res || !*context->res) {
-		free (context->res);
-		context->res = strdup ("\n");
+	r_cons_sleep_end (context->bed);
+	client_context->res = r_core_cmd_str (client_context->core, (const char *)client_context->buf);
+	context->bed = r_cons_sleep_begin ();
+
+	if (!client_context->res || !*client_context->res) {
+		free (client_context->res);
+		client_context->res = strdup ("\n");
 	}
 
-	if (!context->res || (!r_config_get_i (context->core->config, "scr.prompt") &&
+	if (!client_context->res || (!r_config_get_i (client_context->core->config, "scr.prompt") &&
 				 !strcmp ((char *)buf, "q!")) ||
 				 !strcmp ((char *)buf, ".--")) {
 		rtr_cmds_client_close ((uv_tcp_t *) client, true);
@@ -1969,8 +1973,8 @@ static void rtr_cmds_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *bu
 	}
 
 	uv_write_t *req = R_NEW (uv_write_t);
-	req->data = context;
-	uv_buf_t wrbuf = uv_buf_init (context->res, (unsigned int) strlen (context->res));
+	req->data = client_context;
+	uv_buf_t wrbuf = uv_buf_init (client_context->res, (unsigned int) strlen (client_context->res));
 	uv_write (req, client, &wrbuf, 1, rtr_cmds_write);
 	uv_read_stop (client);
 }
@@ -2029,12 +2033,12 @@ static void rtr_cmds_break(uv_async_t *async) {
 	uv_async_send (async);
 }
 
-R_API int r_core_rtr_cmds (RCore *core, const char *port) {
+R_API int r_core_rtr_cmds(RCore *core, const char *port) {
 	if (!port || port[0] == '?') {
 		r_cons_printf ("Usage: .:[tcp-port]    run r2 commands for clients\n");
 		return 0;
 	}
-	
+
 	uv_loop_t *loop = R_NEW (uv_loop_t);
 	if (!loop) {
 		return 0;
