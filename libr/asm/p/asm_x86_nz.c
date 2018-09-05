@@ -4168,7 +4168,9 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 		for (i = 0; regsext[i]; i++) {
 			if (!r_str_ncasecmp (regsext[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_DWORD;
-				a->bits = 32;
+				if (a->bits < 32) {
+					a->bits = 32;
+				}
 				return i + 9;
 			}
 		}
