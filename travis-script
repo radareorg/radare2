@@ -48,7 +48,7 @@ cd radare2-regressions
 git remote -v
 git branch
 git rev-parse HEAD
-VERBOSE=1 make -k all
+VERBOSE=1 make -k all || exit 1
 
 if [ "${COVERAGE}" == "1" ] ; then
     cd ../build
