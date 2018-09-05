@@ -931,11 +931,11 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		{
 			dst = getarg (&gop, 0, 0, NULL, DST_AR);
 			if (!strcmp (dst, sp)) {
-				esilprintf (op, "%s,%s,&,%d,%s,-=,1,PICK,%s,=[%d]",
-					sp, sp, rs, sp, sp, rs);				
+				esilprintf (op, "%s,%s,&,%d,%s,-=,1,PICK,%s,=[%d],POP",
+					sp, sp, rs, sp, sp, rs);
 			} else {
-				esilprintf (op, "%d,%s,-=,%s,%s,=[%d]",
-					rs, sp, dst?dst:"eax", sp, rs);				
+				esilprintf (op, "%s,%d,%s,-=,%s,=[%d]",
+					dst ? dst : "eax", rs, sp, sp, rs);
 			}
 		}
 		break;
