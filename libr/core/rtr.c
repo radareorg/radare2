@@ -1894,21 +1894,26 @@ typedef struct rtr_cmds_context_t {
 typedef struct rtr_cmds_client_context_t {
 	RCore *core;
 	char buf[4096];
+	char *res;
 	size_t len;
 	uv_tcp_t *client;
 } rtr_cmds_client_context;
 
-static void rtr_cmds_client_close(uv_tcp_t *client) {
-	rtr_cmds_context *context = client->loop->data;
-	size_t i;
-	for (i=0; i<r_pvector_len (&context->clients); i++) {
-		if (r_pvector_at (&context->clients, i) == client) {
-			r_pvector_remove_at (&context->clients, i);
-			break;
+static void rtr_cmds_client_close(uv_tcp_t *client, bool remove) {
+	uv_loop_t *loop = client->loop;
+	rtr_cmds_context *context = loop->data;
+	if (remove) {
+		size_t i;
+		for (i=0; i<r_pvector_len (&context->clients); i++) {
+			if (r_pvector_at (&context->clients, i) == client) {
+				r_pvector_remove_at (&context->clients, i);
+				break;
+			}
 		}
 	}
 	rtr_cmds_client_context *client_context = client->data;
-	uv_close ((uv_handle_t *) client, NULL);
+	uv_close ((uv_handle_t *) client, (uv_close_cb) free);
+	free (client_context->res);
 	free (client_context);
 }
 
@@ -1926,7 +1931,7 @@ static void rtr_cmds_write(uv_write_t *req, int status) {
 	}
 
 	free (req);
-	rtr_cmds_client_close (context->client);
+	rtr_cmds_client_close (context->client, true);
 }
 
 static void rtr_cmds_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
@@ -1935,10 +1940,8 @@ static void rtr_cmds_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *bu
 	if (nread < 0) {
 		if (nread != UV_EOF) {
 			eprintf ("Failed to read: %s\n", uv_err_name ((int) nread));
-		} else {
-			printf("eof\n");
 		}
-		rtr_cmds_client_close ((uv_tcp_t *) client);
+		rtr_cmds_client_close ((uv_tcp_t *) client, true);
 		return;
 	} else if (nread == 0) {
 		return;
@@ -1951,22 +1954,22 @@ static void rtr_cmds_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *bu
 	}
 	*end = '\0';
 
-	char *str = r_core_cmd_str (context->core, (const char *)context->buf);
-	if (!str || !*str) {
-		free (str);
-		str = strdup ("\n");
+	context->res = r_core_cmd_str (context->core, (const char *)context->buf);
+	if (!context->res || !*context->res) {
+		free (context->res);
+		context->res = strdup ("\n");
 	}
 
-	if (!str || (!r_config_get_i (context->core->config, "scr.prompt") &&
+	if (!context->res || (!r_config_get_i (context->core->config, "scr.prompt") &&
 				 !strcmp ((char *)buf, "q!")) ||
 				 !strcmp ((char *)buf, ".--")) {
-		rtr_cmds_client_close ((uv_tcp_t *) client);
+		rtr_cmds_client_close ((uv_tcp_t *) client, true);
 		return;
 	}
 
 	uv_write_t *req = R_NEW (uv_write_t);
 	req->data = context;
-	uv_buf_t wrbuf = uv_buf_init (str, (unsigned int) strlen (str));
+	uv_buf_t wrbuf = uv_buf_init (context->res, (unsigned int) strlen (context->res));
 	uv_write (req, client, &wrbuf, 1, rtr_cmds_write);
 	uv_read_stop (client);
 }
@@ -1995,6 +1998,7 @@ static void rtr_cmds_new_connection(uv_stream_t *server, int status) {
 		client_context->core = server->data;
 		client_context->len = 0;
 		client_context->buf[0] = '\0';
+		client_context->res = NULL;
 		client_context->client = client;
 		client->data = client_context;
 
@@ -2015,8 +2019,8 @@ static void rtr_cmds_stop(uv_async_t *handle) {
 
 	void **it;
 	r_pvector_foreach (&context->clients, it) {
-		uv_handle_t *client = *it;
-		uv_close (client, NULL);
+		uv_tcp_t *client = *it;
+		rtr_cmds_client_close (client, false);
 	}
 }
 
