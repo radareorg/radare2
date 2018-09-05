@@ -17,7 +17,7 @@ int ARCompact_decodeInstr (bfd_vma address, disassemble_info * info);
 
 /* ugly globals */
 static ut32 Offset = 0;
-static char *buf_global = NULL;
+static RStrBuf *buf_global = NULL;
 static int buf_len = 0;
 static ut8 bytes[32] = {0};
 
@@ -45,7 +45,7 @@ static void print_address(bfd_vma address, struct disassemble_info *info) {
 	char tmp[64];
 	if (buf_global) {
 		sprintf (tmp, "0x%08"PFMT64x"", (ut64)address);
-		strcat (buf_global, tmp);
+		r_strbuf_append (buf_global, tmp);
 	}
 }
 
@@ -57,7 +57,7 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	}
 	va_start (ap, format);
 	vsnprintf (tmp, sizeof (tmp), format, ap);
-	strcat (buf_global, tmp);
+	r_strbuf_append (buf_global, tmp);
 	va_end (ap);
 	return 0;
 }
@@ -67,7 +67,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (len < 2) {
 		return -1;
 	}
-	buf_global = r_strbuf_get (&op->buf_asm);
+	buf_global = &op->buf_asm;
 	Offset = a->pc;
 	if (len > sizeof (bytes)) {
 		len = sizeof (bytes);
