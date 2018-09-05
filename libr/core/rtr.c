@@ -1886,12 +1886,31 @@ R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *po
 
 #include <uv.h>
 
+typedef struct rtr_cmds_context_t {
+	uv_tcp_t server;
+	RPVector clients;
+} rtr_cmds_context;
+
 typedef struct rtr_cmds_client_context_t {
 	RCore *core;
 	char buf[4096];
 	size_t len;
 	uv_tcp_t *client;
 } rtr_cmds_client_context;
+
+static void rtr_cmds_client_close(uv_tcp_t *client) {
+	rtr_cmds_context *context = client->loop->data;
+	size_t i;
+	for (i=0; i<r_pvector_len (&context->clients); i++) {
+		if (r_pvector_at (&context->clients, i) == client) {
+			r_pvector_remove_at (&context->clients, i);
+			break;
+		}
+	}
+	rtr_cmds_client_context *client_context = client->data;
+	uv_close ((uv_handle_t *) client, NULL);
+	free (client_context);
+}
 
 static void rtr_cmds_alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
 	rtr_cmds_client_context *context = handle->data;
@@ -1906,9 +1925,8 @@ static void rtr_cmds_write(uv_write_t *req, int status) {
 		eprintf ("Write error: %s\n", uv_strerror (status));
 	}
 
-	uv_close ((uv_handle_t *)context->client, NULL);
 	free (req);
-	free (context);
+	rtr_cmds_client_close (context->client);
 }
 
 static void rtr_cmds_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
@@ -1920,8 +1938,7 @@ static void rtr_cmds_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *bu
 		} else {
 			printf("eof\n");
 		}
-		free (context);
-		uv_close ((uv_handle_t *) client, NULL);
+		rtr_cmds_client_close ((uv_tcp_t *) client);
 		return;
 	} else if (nread == 0) {
 		return;
@@ -1943,8 +1960,7 @@ static void rtr_cmds_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *bu
 	if (!str || (!r_config_get_i (context->core->config, "scr.prompt") &&
 				 !strcmp ((char *)buf, "q!")) ||
 				 !strcmp ((char *)buf, ".--")) {
-		uv_close ((uv_handle_t *)client, NULL);
-		free (context);
+		rtr_cmds_client_close ((uv_tcp_t *) client);
 		return;
 	}
 
@@ -1961,6 +1977,8 @@ static void rtr_cmds_new_connection(uv_stream_t *server, int status) {
 		return;
 	}
 
+	rtr_cmds_context *context = server->loop->data;
+
 	uv_tcp_t *client = R_NEW (uv_tcp_t);
 	if (!client) {
 		return;
@@ -1968,7 +1986,6 @@ static void rtr_cmds_new_connection(uv_stream_t *server, int status) {
 
 	uv_tcp_init (server->loop, client);
 	if (uv_accept (server, (uv_stream_t *)client) == 0) {
-
 		rtr_cmds_client_context *client_context = R_NEW (rtr_cmds_client_context);
 		if (!client_context) {
 			uv_close ((uv_handle_t *)client, NULL);
@@ -1982,9 +1999,29 @@ static void rtr_cmds_new_connection(uv_stream_t *server, int status) {
 		client->data = client_context;
 
 		uv_read_start ((uv_stream_t *)client, rtr_cmds_alloc_buffer, rtr_cmds_read);
+
+		r_pvector_push (&context->clients, client);
 	} else {
 		uv_close ((uv_handle_t *)client, NULL);
 	}
+}
+
+static void rtr_cmds_stop(uv_async_t *handle) {
+	uv_close ((uv_handle_t *) handle, NULL);
+
+	rtr_cmds_context *context = handle->loop->data;
+
+	uv_close ((uv_handle_t *) &context->server, NULL);
+
+	void **it;
+	r_pvector_foreach (&context->clients, it) {
+		uv_handle_t *client = *it;
+		uv_close (client, NULL);
+	}
+}
+
+static void rtr_cmds_break(uv_async_t *async) {
+	uv_async_send (async);
 }
 
 R_API int r_core_rtr_cmds (RCore *core, const char *port) {
@@ -1994,25 +2031,34 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 	}
 	uv_loop_init (loop);
 
-	uv_tcp_t server;
-	server.data = core;
-	uv_tcp_init (loop, &server);
+	rtr_cmds_context context;
+	r_pvector_init (&context.clients, NULL);
+	loop->data = &context;
+
+	context.server.data = core;
+	uv_tcp_init (loop, &context.server);
 
 	struct sockaddr_in addr;
 	uv_ip4_addr ("0.0.0.0", 1337, &addr);
 
-	uv_tcp_bind (&server, (const struct sockaddr *) &addr, 0);
-	int r = uv_listen ((uv_stream_t *)&server, 32, rtr_cmds_new_connection);
+	uv_tcp_bind (&context.server, (const struct sockaddr *) &addr, 0);
+	int r = uv_listen ((uv_stream_t *)&context.server, 32, rtr_cmds_new_connection);
 	if (r) {
 		eprintf ("Failed to listen: %s\n", uv_strerror (r));
 		goto beach;
 	}
 
+	uv_async_t stop_async;
+	uv_async_init (loop, &stop_async, rtr_cmds_stop);
+
+	r_cons_break_push ((RConsBreak) rtr_cmds_break, &stop_async);
 	uv_run (loop, UV_RUN_DEFAULT);
+	r_cons_break_pop ();
 
 beach:
 	uv_loop_close (loop);
 	free (loop);
+	r_pvector_clear (&context.clients);
 	return 0;
 }
 
