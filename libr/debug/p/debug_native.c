@@ -505,9 +505,11 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 				return R_DEBUG_REASON_ERROR;
 			}
 			reason = dbg->reason.type;
+#ifdef WIFCONTINUED
 		} else if (WIFCONTINUED (status)) {
 			eprintf ("child continued...\n");
 			reason = R_DEBUG_REASON_NONE;
+#endif
 		} else if (status == 1) {
 			/* XXX(jjd): does this actually happen? */
 			eprintf ("EEK DEAD DEBUGEE!\n");
