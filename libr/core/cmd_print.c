@@ -371,10 +371,10 @@ static const char *help_msg_px[] = {
 	"px/", "", "same as x/ in gdb (help x)",
 	"px0", "", "8bit hexpair list of bytes until zero byte",
 	"pxa", "", "show annotated hexdump",
-	"pxA", "", "show op analysis color map",
+	"pxA", "[?]", "show op analysis color map",
 	"pxb", "", "dump bits in hexdump form",
 	"pxc", "", "show hexdump with comments",
-	"pxd", "[1248]", "signed integer dump (1 byte, 2 and 4)",
+	"pxd", "[?1248]", "signed integer dump (1 byte, 2 and 4)",
 	"pxe", "", "emoji hexdump! :)",
 	"pxf", "", "show hexdump of current function",
 	"pxh", "", "show hexadecimal half-words dump (16bit)",
@@ -408,6 +408,26 @@ const char *help_msg_pz[] = {
 	"pze", "", "calculate entropy and expand to 0-255 range",
 	"pzh", "", "head (first byte value); This is the default mode",
 	// "WARNING: On big files, use 'zoom.byte=h' or restrict ranges\n");
+	NULL
+};
+
+const char *help_msg_pxA[] = {
+	"Usage: pxA [len]", "", "show op analysis color map",
+	"$$", "", "int/swi/trap/new\n", 
+	"+-*/", "", "math ops\n", 
+	"->", "", "push\n", 
+	"..", "", "nop\n", 
+	"<-", "", "pop\n", 
+	"<<>>", "", "shift ops\n", 
+	"==", "", "cmp/test\n", 
+	"XX", "", "invalid\n", 
+	"_C", "", "call\n", 
+	"_J", "", "jump\n", 
+	"_R", "", "ret\n", 
+	"cJ", "", "conditional jump\n", 
+	"io", "", "in/out ops\n", 
+	"mv", "", "move,lea,li\n", 
+	"|&^", "", "bin ops\n", 
 	NULL
 };
 
@@ -5006,22 +5026,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'A': // "pxA"
 			if (input[2] == '?') {
-				eprintf ("Usage: pxA [len]   # f.ex: pxA 4K\n"
-					" mv    move,lea,li\n"
-					" ->    push\n"
-					" <-    pop\n"
-					" io    in/out ops\n"
-					" $$    int/swi/trap/new\n"
-					" ..    nop\n"
-					" +-*/  math ops\n"
-					" |&^   bin ops\n"
-					" <<>>  shift ops\n"
-					" _J    jump\n"
-					" cJ    conditional jump\n"
-					" _C    call\n"
-					" _R    ret\n"
-					" ==    cmp/test\n"
-					" XX    invalid\n");
+			r_core_cmd_help (core, help_msg_pxA);
 			} else if (l) {
 				cmd_print_pxA (core, len, input + 1);
 			}
@@ -5089,23 +5094,21 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 't': // "pxt"
-			if (input[2] == '?') {
-				r_cons_printf ("Usage: pxt[.*] - print delta pointer table\n");
-			} else {
-				ut64 origin = core->offset;
-				const char *arg = strchr (input, ' ');
-				if (arg) {
-					origin = r_num_math (core->num, arg + 1);
-				}
-				// _pointer_table does r_core_cmd with @, so it modifies core->block
-				// and this results in an UAF access when iterating over the jmptable
-				// so we do a new allocation to avoid that issue
-				ut8 *block = calloc (len, 1);
-				if (block) {
-					memcpy (block, core->block, len);
-					_pointer_table (core, origin, core->offset, block, len, 4, input[2]);
-					free (block);
-				}
+			{
+			ut64 origin = core->offset;
+			const char *arg = strchr (input, ' ');
+			if (arg) {
+				origin = r_num_math (core->num, arg + 1);
+			}
+			// _pointer_table does r_core_cmd with @, so it modifies core->block
+			// and this results in an UAF access when iterating over the jmptable
+			// so we do a new allocation to avoid that issue
+			ut8 *block = calloc (len, 1);
+			if (block) {
+				memcpy (block, core->block, len);
+				_pointer_table (core, origin, core->offset, block, len, 4, input[2]);
+				free (block);
+			}
 			}
 			break;
 		case 'd': // "pxd"
