@@ -3088,7 +3088,6 @@ static void visual_refresh(RCore *core) {
 				}
 				r_core_cmd0 (core, vi);
 				r_cons_column (nw);
-				r_cons_flush ();
 				if (!strncmp (vi, "p=", 2) && core->print->cur_enabled) {
 					oseek = core->offset;
 					core->print->cur_enabled = false;
