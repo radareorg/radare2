@@ -10,6 +10,7 @@ RUN dnf install -y \
 	glibc.i686 \
 	clang \
 	llvm \
+	lcov \
 	make \
 	patch \
 	findutils \
