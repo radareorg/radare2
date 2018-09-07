@@ -12,7 +12,7 @@ P=`readlink $0`
 cd `dirname $P`/..
 
 if [ -z "${IFILE}" ]; then
-	echo "Usage: r2-indent [-i|-u] [file] [...]"
+	echo "Usage: r2-indent [-a|-i|-u|-c] [file] [...]"
 	echo " -a    indent all whitelisted files"
 	echo " -i    indent in place (modify file)"
 	echo " -u    unified diff of the file"
