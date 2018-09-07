@@ -51,7 +51,7 @@ static const char *help_msg_ec[] = {
 };
 
 static const char *help_msg_eco[] = {
-	"Usage: eco [theme]", "", "load theme (cf. Path and dir.prefix)",
+	"Usage: eco[jc] [theme]", "", "load theme (cf. Path and dir.prefix)",
 	"eco", "", "list available themes",
 	"ecoj", "", "list available themes in JSON",
 	"ecoc", "", "display current theme name",
