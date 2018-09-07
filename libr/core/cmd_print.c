@@ -10,14 +10,20 @@
 
 #define R_CORE_MAX_DISASM (1024 * 1024 * 8)
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
+static const char *help_msg_p6[] = {
+	"Usage: p6[de]", "[len]", "base64 decoding/encoding",
+	"p6d", "[len]", "decode base64",
+	"p6e", "[len]", "encode base64",
+	NULL
+};
 
 static const char* help_msg_pr[] = {
 	"Usage: pr[glx]", "[size]", "print N raw bytes",
-	" prc", "", "print bytes as colors in palette",
-	" prl", "", "print raw with lines offsets",
-	" prx", "", "printable chars with real offset (hyew)",
-	" prg", "[?]", "print raw GUNZIPped block",
-	" prz", "", "print raw zero terminated string",
+	"prc", "", "print bytes as colors in palette",
+	"prl", "", "print raw with lines offsets",
+	"prx", "", "printable chars with real offset (hyew)",
+	"prg", "[?]", "print raw GUNZIPped block",
+	"prz", "", "print raw zero terminated string",
 	NULL
 };
 
@@ -5501,27 +5507,20 @@ static int cmd_print(void *data, const char *input) {
 			memset (buf, 0, malen);
 			switch (input[1]) {
 			case 'd': // "p6d"
-				if (input[2] == '?') {
-					r_cons_printf ("|Usage: p6d [len]    base 64 decode\n");
-				} else if (r_base64_decode (buf, (const char *) block, len)) {
+				if (r_base64_decode (buf, (const char *) block, len)) {
 					r_cons_println ((const char *) buf);
 				} else {
 					eprintf ("r_base64_decode: invalid stream\n");
 				}
 				break;
 			case 'e': // "p6e"
-				if (input[2] == '?') {
-					r_cons_printf ("|Usage: p6e [len]    base 64 encode\n");
-					break;
-				} else {
 					len = len > core->blocksize? core->blocksize: len;
 					r_base64_encode ((char *) buf, block, len);
 					r_cons_println ((const char *) buf);
-				}
 				break;
 			case '?':
 			default:
-				r_cons_printf ("|Usage: p6[ed] [len]    base 64 encode/decode\n");
+				r_core_cmd_help(core, help_msg_p6);
 				break;
 			}
 			free (buf);
