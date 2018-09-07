@@ -1873,13 +1873,17 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 		if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("fs exports\n");
 		} else if (IS_MODE_NORMAL (mode)) {
-			r_cons_printf (printHere ? "" : "[Exports]\n");
+			r_cons_printf (printHere ? "" : "[Exports]\n"
+			                                "Num Paddr      Vaddr      Bind"
+																			"     Type Size Name\n");
 		}
 	} else if (!at && !exponly) {
 		if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("fs symbols\n");
 		} else if (IS_MODE_NORMAL (mode)) {
-			r_cons_printf (printHere ? "" : "[Symbols]\n");
+			r_cons_printf (printHere ? "" : "[Symbols]\n"
+			                                "Num Paddr      Vaddr      Bind"
+																			"     Type Size Name\n");
 		}
 	}
 
