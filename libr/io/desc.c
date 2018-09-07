@@ -121,6 +121,32 @@ R_API RIODesc *r_io_desc_open(RIO *io, const char *uri, int flags, int mode) {
 	return desc;
 }
 
+R_API RIODesc *r_io_desc_open_plugin(RIO *io, RIOPlugin *plugin, const char *uri, int flags, int mode) {
+	if (!io || !io->files || !uri) {
+		return NULL;
+	}
+	if (!plugin || !plugin->open || !plugin->check || !plugin->check (io, uri, false)) {
+		return NULL;
+	}
+	RIODesc *desc = plugin->open (io, uri, flags, mode);
+	if (!desc) {
+		return NULL;
+	}
+	// for none static callbacks, those that cannot use r_io_desc_new
+	if (!desc->plugin) {
+		desc->plugin = plugin;
+	}
+	if (!desc->uri) {
+		desc->uri = strdup (uri);
+	}
+	if (!desc->name) {
+		desc->name = strdup (uri);
+	}
+	r_io_desc_add (io, desc);
+	return desc;
+}
+
+
 R_API bool r_io_desc_close(RIODesc *desc) {
 	RIO *io;
 	if (!desc || !desc->io || !desc->plugin) {

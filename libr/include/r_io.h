@@ -374,6 +374,7 @@ R_API int r_io_wundo_set(RIO *io, int n, int set);
 R_API bool r_io_desc_init (RIO *io);
 R_API RIODesc *r_io_desc_new (RIO *io, RIOPlugin *plugin, const char *uri, int flags, int mode, void *data);
 R_API RIODesc *r_io_desc_open (RIO *io, const char *uri, int flags, int mode);
+R_API RIODesc *r_io_desc_open_plugin (RIO *io, RIOPlugin *plugin, const char *uri, int flags, int mode);
 R_API bool r_io_desc_close (RIODesc *desc);
 R_API int r_io_desc_read (RIODesc *desc, ut8 *buf, int count);
 R_API int r_io_desc_write (RIODesc *desc, const ut8 *buf, int count);
