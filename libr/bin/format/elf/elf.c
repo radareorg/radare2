@@ -44,6 +44,7 @@ enum {
 	X86_64,
 	ARM,
 	AARCH64,
+	RCE,
 	ARCH_LEN
 };
 
@@ -56,6 +57,7 @@ static reginfo_t reginf[ARCH_LEN] = {
 					{160, 0x5c},
 					{216, 0x84},
 					{72, 0x5c},
+					{272, 0x84},
 					{272, 0x84}
 				};
 
@@ -1920,6 +1922,8 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 		return strdup ("elbrus");
 	case EM_TRICORE:
 		return strdup ("tricore");
+	case EM_RCE:
+		return strdup ("mcore");
 	case EM_ARM:
 	case EM_AARCH64:
 		return strdup ("arm");

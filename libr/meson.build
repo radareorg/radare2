@@ -19,6 +19,7 @@ anal_plugins = [
   'java',
   'm68k_cs',
   'malbolge',
+  'mcore',
   'mips_cs',
   'mips_gnu',
   'msp430',
