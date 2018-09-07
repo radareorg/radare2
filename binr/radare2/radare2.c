@@ -390,6 +390,25 @@ static bool mustSaveHistory(RConfig *c) {
 	return true;
 }
 
+// Try to set the correct scr.color for the current terminal.
+static void set_color_default(void) {
+	char *tmp;
+	if ((tmp = r_sys_getenv ("COLORTERM")) && (r_str_endswith (tmp, "truecolor") || r_str_endswith (tmp, "24bit"))) {
+		r_config_set_i (r.config, "scr.color", COLOR_MODE_16M);
+		free (tmp);
+	} else if ((tmp = r_sys_getenv ("TERM"))) {
+		if (r_str_endswith (tmp, "truecolor") || r_str_endswith (tmp, "24bit")) {
+			r_config_set_i (r.config, "scr.color", COLOR_MODE_16M);
+		} else if (r_str_endswith (tmp, "256color")) {
+			r_config_set_i (r.config, "scr.color", COLOR_MODE_256);
+		} else if (!strcmp (tmp, "dumb")) {
+			// Dumb terminals don't get color by default.
+			r_config_set_i (r.config, "scr.color", COLOR_MODE_DISABLED);
+		}
+		free (tmp);
+	}
+}
+
 #if EMSCRIPTEN
 #include <emscripten.h>
 static RCore *core = NULL;
@@ -526,6 +545,8 @@ int main(int argc, char **argv, char **envp) {
 		LISTS_FREE ();
 		return 0;
 	}
+
+	set_color_default ();
 
 	while ((c = getopt (argc, argv, "=02AMCwxfF:H:hm:e:nk:NdqQs:p:b:B:a:Lui:I:l:P:R:r:c:D:vVSzuX"
 #if USE_THREADS
