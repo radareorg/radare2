@@ -10,6 +10,22 @@
 
 #define R_CORE_MAX_DISASM (1024 * 1024 * 8)
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
+
+static const char *help_msg_pa[] = {
+	"Usage: pa[edD]", "[asm|hex]", "print (dis)assembled",
+	"pae", "", "print assembled ESIL from hexpairs",
+	"pad", "", "print disassembled from hexpairs",
+	"paD", "", "print assembled from hexparis",
+	NULL
+};
+
+static const char *help_msg_pdf[] = {
+	"Usage: pdf[bf]", "", "disassemble function",
+	"pdf", "", "disassemble function",
+	"pdfs", "", "disassemble function summary",
+	NULL
+};
+
 static const char *help_msg_p6[] = {
 	"Usage: p6[de]", "[len]", "base64 decoding/encoding",
 	"p6d", "[len]", "decode base64",
@@ -3980,8 +3996,7 @@ static int cmd_print(void *data, const char *input) {
 				}
 			}
 		} else if (input[1] == '?') {
-			r_cons_printf ("|Usage: pa[edD] [asm|hex]  assemble (pa), disasm (pa[dD]),"
-				" esil (pae) from hexpairs\n");
+			r_core_cmd_help(core, help_msg_pa);
 		} else {
 			RAsmCode *acode;
 			int i;
@@ -4313,7 +4328,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'f': // "pdf"
 			processed_cmd = true;
 			if (input[2] == '?') {
-				r_cons_printf ("Usage: pdf[sj]  - disassemble function (summary+cjmp), json)\n");
+				r_core_cmd_help(core, help_msg_pdf);
 			} else if (input[2] == 's') { // "pdfs"
 				ut64 oseek = core->offset;
 				int oblock = core->blocksize;
