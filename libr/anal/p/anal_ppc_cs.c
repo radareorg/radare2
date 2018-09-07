@@ -28,94 +28,36 @@ struct Getarg {
 #endif
 
 static ut64 mask64(ut64 mb, ut64 me) {
-	int i;
-	ut64 mask = 0;
-	if (mb > 63 || me > 63) {
-		return mask;
-	}
-	if (mb < (me + 1)) {
-		for (i = mb; i <= me; i++) {
-			mask = mask | (ut64) (1LL << (63 - i));
-		}
-	} else if (mb == (me + 1)) {
-		mask = 0xffffffffffffffffull;
-	} else if (mb > (me + 1)) {
-		ut64 lo = mask64 (0, me);
-		ut64 hi = mask64 (mb, 63);
-		mask = lo | hi;
-	}
-	return mask;
+	ut64 maskmb = UT64_MAX >> mb;
+	ut64 maskme = UT64_MAX << (63 - me);
+	return (mb <= me) ? maskmb & maskme : maskmb | maskme;
+}
+
+static ut32 mask32(ut32 mb, ut32 me) {
+	ut32 maskmb = UT32_MAX >> mb;
+	ut32 maskme = UT32_MAX << (31 - me);
+	return (mb <= me) ? maskmb & maskme : maskmb | maskme;
 }
 
 static const char* cmask64(const char *mb_c, const char *me_c) {
 	static char cmask[32];
 	ut64 mb = 0;
 	ut64 me = 0;
-	if (mb_c) {
-		mb = strtol (mb_c, NULL, 16);
-	}
-	if (me_c) {
-		me = strtol (me_c, NULL, 16);
-	}
+	if (mb_c) mb = strtol (mb_c, NULL, 16);
+	if (me_c) me = strtol (me_c, NULL, 16);
 	snprintf (cmask, sizeof (cmask), "0x%"PFMT64x"", mask64 (mb, me));
 	return cmask;
 }
 
-static ut32 mask32(ut32 mb, ut32 me) {
-	int i;
-	ut32 mask = 0;
-	if (mb > 31 || me > 31) {
-		return mask;
-	}
-
-	if (mb < (me + 1)) {
-		for (i = mb; i <= me; i++) {
-			mask = mask | (ut32) (1LL << (31 - i));
-		}
-	} else if (mb == (me + 1)) {
-		mask = 0xffffffffu;
-	} else if (mb > (me + 1)) {
-		ut32 lo = mask32 (0, me);
-		ut32 hi = mask32 (mb, 31);
-		mask = lo | hi;
-	}
-	return mask;
-}
-
 static const char* cmask32(const char *mb_c, const char *me_c) {
-	static char cmask[32];
-	ut32 mb = 32;
-	ut32 me = 32;
-	if (mb_c) mb += strtol (mb_c, NULL, 16);
-	if (me_c) me += strtol (me_c, NULL, 16);
-	snprintf (cmask, sizeof (cmask), "0x%"PFMT32x"", mask32 (mb, me));
-	return cmask;
-}
-
-#if 0
-
-static const char* inv_mask64(const char *mb_c, const char *sh) {
-	static char cmask[32];
-	ut64 mb = 0;
-	ut64 me = 0;
-	if (mb_c) mb = atol (mb_c);
-	if (sh) {
-		me = atol (sh);
-	}
-	snprintf (cmask, sizeof (cmask), "0x%"PFMT64x"", mask64 (mb, ~me));
-	return cmask;
-}
-
-static const char* inv_mask32(const char *mb_c, const char *sh) {
 	static char cmask[32];
 	ut32 mb = 0;
 	ut32 me = 0;
-	if (mb_c) mb = atol (mb_c);
-	if (sh) me = atol (sh);
-	snprintf (cmask, sizeof (cmask), "0x%"PFMT32x"", mask32 (mb, ~me));
+	if (mb_c) mb = strtol (mb_c, NULL, 16);
+	if (me_c) me = strtol (me_c, NULL, 16);
+	snprintf (cmask, sizeof (cmask), "0x%"PFMT32x"", mask32 (mb, me));
 	return cmask;
 }
-#endif
 
 static char *getarg2(struct Getarg *gop, int n, const char *setstr) {
 	cs_insn *insn = gop->insn;
@@ -540,8 +482,6 @@ static int analop_vle(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 	}
 	return -1;
 }
-
-#define ZERO_FILL(x) memset (&(x), 0, sizeof (x))
 
 static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
 	if (!reg) {

@@ -896,7 +896,8 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 	Sdb *sdb_vernaux = NULL;
 	Sdb *sdb_version = NULL;
 	Sdb *sdb = NULL;
-	int i, cnt;
+	ut64 i;
+	int cnt;
 
 	if (!bin || !bin->dynstr) {
 		return NULL;
@@ -941,7 +942,7 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz)
 		goto beach;
 	}
 	i = r_buf_read_at (bin->b, shdr->sh_offset, need, shdr->sh_size);
-	if (i < 0) {
+	if (i < 1) {
 		goto beach;
 	}
 	//XXX we should use DT_VERNEEDNUM instead of sh_info

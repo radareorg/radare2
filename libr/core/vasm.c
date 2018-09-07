@@ -78,7 +78,7 @@ R_API void r_core_visual_asm(RCore *core, ut64 off) {
 
 	if (cva.acode && cva.acode->len > 0) {
 		if (r_cons_yesno ('y', "Save changes? (Y/n)")) {
-			if (!r_io_write_at (core->io, off, cva.buf, sizeof (cva.buf))) {
+			if (!r_io_write_at (core->io, off, cva.acode->buf, cva.acode->len)) {
 				eprintf ("ERROR: Cannot write in here, check map permissions or reopen the file with oo+\n");
 				r_cons_any_key (NULL);
 			}

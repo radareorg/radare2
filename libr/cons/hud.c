@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2017 - pancake */
+/* radare - LGPL - Copyright 2008-2018 - pancake */
 
 #include <r_cons.h>
 #include <ctype.h>
@@ -23,6 +23,8 @@ R_API char *r_cons_hud_string(const char *s) {
 	if (!o) {
 		return NULL;
 	}
+	r_str_replace_ch (o, '\r', 0, true);
+	r_str_replace_ch (o, '\t', 0, true);
 	RList *fl = r_list_new ();
 	int i;
 	if (!fl) {
@@ -95,13 +97,10 @@ static bool strmatch(char *entry, char *filter, char *mask, const int mask_size)
 
 // Display a list of entries in the hud, filtered and emphasized based
 // on the user input.
+#define buf_size 512
 R_API char *r_cons_hud(RList *list, const char *prompt) {
-	const int buf_size = 128;
 	int ch, nch, first_line, current_entry_n, j, i = 0;
 	char *p, *x;
-#ifdef _MSC_VER
-#define buf_size 128
-#endif
 	char user_input[buf_size], mask[buf_size];
 	int last_color_change, top_entry_n = 0;
 	char *selected_entry = NULL;

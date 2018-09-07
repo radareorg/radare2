@@ -123,11 +123,10 @@ static void do_hash_print(RHash *ctx, ut64 hash, int dlen, int rad, int ule) {
 }
 
 static int do_hash_internal(RHash *ctx, ut64 hash, const ut8 *buf, int len, int rad, int print, int le) {
-	int dlen;
 	if (len < 0) {
 		return 0;
 	}
-	dlen = r_hash_calculate (ctx, hash, buf, len);
+	int dlen = r_hash_calculate (ctx, hash, buf, len);
 	if (!print) {
 		return 1;
 	}
@@ -248,8 +247,9 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 					if (to > fsize) {
 						to = fsize;
 					}
-					do_hash_internal (ctx, hashbit, buf, nsize, rad, 1, ule);
+					do_hash_internal (ctx, hashbit, buf, nsize, rad, 0, ule);
 				}
+				do_hash_internal (ctx, hashbit, NULL, 0, rad, 1, ule);
 				from = ofrom;
 				to = oto;
 			}
@@ -675,12 +675,14 @@ int main(int argc, char **argv) {
 				return rt;
 			}
 		} else {
+			RIODesc *desc = NULL;
 			if (!strcmp (argv[i], "-")) {
 				int sz = 0;
 				ut8 *buf = (ut8 *) r_stdin_slurp (&sz);
 				char *uri = r_str_newf ("malloc://%d", sz);
 				if (sz > 0) {
-					if (!r_io_open_nomap (io, uri, R_IO_READ, 0)) {
+					desc = r_io_open_nomap (io, uri, R_IO_READ, 0);
+					if (!desc) {
 						eprintf ("rahash2: Cannot open malloc://1024\n");
 						return 1;
 					}
@@ -692,12 +694,15 @@ int main(int argc, char **argv) {
 					eprintf ("rahash2: Cannot hash directories\n");
 					return 1;
 				}
-				if (!r_io_open_nomap (io, argv[i], R_IO_READ, 0)) {
+				desc = r_io_open_nomap (io, argv[i], R_IO_READ, 0);
+				if (!desc) {
 					eprintf ("rahash2: Cannot open '%s'\n", argv[i]);
 					return 1;
 				}
 			}
 			ret |= do_hash (argv[i], algo, io, bsize, rad, ule, compareBin);
+			to = 0;
+			r_io_desc_close (desc);
 		}
 	}
 	free (hashstr);

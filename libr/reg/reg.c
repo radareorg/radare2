@@ -62,7 +62,6 @@ R_API const char* r_reg_64_to_32(RReg* reg, const char* rreg64) {
 	return NULL;
 }
 
-
 R_API const char* r_reg_get_type(int idx) {
 	return (idx >= 0 && idx < R_REG_TYPE_LAST)? types[idx]: NULL;
 }

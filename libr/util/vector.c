@@ -134,7 +134,9 @@ R_API void *r_vector_insert(RVector *vec, size_t index, void *x) {
 		memmove ((char *)p + vec->elem_size, p, vec->elem_size * (vec->len - index));
 	}
 	vec->len++;
-	r_vector_assign (vec, p, x);
+	if (x) {
+		r_vector_assign (vec, p, x);
+	}
 	return p;
 }
 
@@ -148,7 +150,9 @@ R_API void *r_vector_insert_range(RVector *vec, size_t index, void *first, size_
 		memmove ((char *)p + sz, p, vec->elem_size * (vec->len - index));
 	}
 	vec->len += count;
-	memcpy (p, first, sz);
+	if (first) {
+		memcpy (p, first, sz);
+	}
 	return p;
 }
 
@@ -167,7 +171,11 @@ R_API void *r_vector_push(RVector *vec, void *x) {
 	if (vec->len >= vec->capacity) {
 		RESIZE_OR_RETURN_NULL (NEXT_VECTOR_CAPACITY);
 	}
-	return r_vector_assign_at (vec, vec->len++, x);
+	void *p = r_vector_index_ptr (vec, vec->len++);
+	if (x) {
+		r_vector_assign (vec, p, x);
+	}
+	return p;
 }
 
 R_API void *r_vector_push_front(RVector *vec, void *x) {

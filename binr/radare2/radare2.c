@@ -485,6 +485,13 @@ int main(int argc, char **argv, char **envp) {
 
 	bool noStderr = false;
 
+#ifdef __UNIX
+	sigset_t sigBlockMask;
+	sigemptyset (&sigBlockMask);
+	sigaddset (&sigBlockMask, SIGWINCH);
+	r_signal_sigmask (SIG_BLOCK, &sigBlockMask, NULL);
+#endif
+
 	r_sys_set_environ (envp);
 
 	if ((tmp = r_sys_getenv ("R_DEBUG"))) {
@@ -1086,8 +1093,7 @@ int main(int argc, char **argv, char **envp) {
 								(void)r_core_bin_load (&r, filepath, baddr);
 							}
 						} else {
-							r_io_map_new (r.io, iod->fd, perms, 0LL, mapaddr, r_io_desc_size (iod), true);
-							// r_io_map_new (r.io, iod->fd, iod->flags, 0LL, 0LL, r_io_desc_size (iod));
+							r_io_map_new (r.io, iod->fd, perms, 0LL, mapaddr, r_io_desc_size (iod));
 							if (run_anal < 0) {
 								// PoC -- must move -rk functionalitiy into rcore
 								// this may be used with caution (r2 -nn $FILE)
@@ -1115,7 +1121,7 @@ int main(int argc, char **argv, char **envp) {
 						iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
 						if (iod) {
 							perms = iod->flags;
-							r_io_map_new (r.io, iod->fd, perms, 0LL, 0LL, r_io_desc_size (iod), true);
+							r_io_map_new (r.io, iod->fd, perms, 0LL, 0LL, r_io_desc_size (iod));
 						}
 					}
 				}
@@ -1180,10 +1186,12 @@ int main(int argc, char **argv, char **envp) {
 			} else {
 				eprintf ("Missing file to open\n");
 			}
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 		if (!r.file) { // no given file
-			return 1;
+			ret = 1;
+			goto beach;
 		}
 		if (r.bin->cur && r.bin->cur->o && r.bin->cur->o->info && r.bin->cur->o->info->rclass && !strcmp ("fs", r.bin->cur->o->info->rclass)) {
 			const char *fstype = r.bin->cur->o->info->bclass;
@@ -1291,6 +1299,8 @@ int main(int argc, char **argv, char **envp) {
 				}
 			}
 		}
+	} else {
+		r_core_block_read (&r);
 	}
 	{
 		char *global_rc = r_str_r2_prefix (R2_GLOBAL_RC);

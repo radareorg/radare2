@@ -1029,6 +1029,14 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 				return;
 			}
 
+			char *delim = strchr (name, '.');
+			if (delim) {
+				int len = delim - name;
+				if (len > 0) {
+					name[len] = '\0';
+ 				}
+ 			}
+
 			/* Load format from name into fmt to get the size */
 			/* This make sure the whole structure will be printed */
 			const char *fmt = NULL;
@@ -4268,8 +4276,10 @@ static int cmd_print(void *data, const char *input) {
 				RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset,
 					R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 				if (f) {
+					ut32 rs = r_anal_fcn_realsize (f);
+					ut32 fs = r_anal_fcn_size (f);
 					r_core_seek (core, oseek, SEEK_SET);
-					r_core_block_size (core, r_anal_fcn_size (f));
+					r_core_block_size (core, R_MAX (rs, fs));
 					disasm_strings (core, input, f);
 					r_core_block_size (core, oblock);
 					r_core_seek (core, oseek, SEEK_SET);
@@ -4364,6 +4374,8 @@ static int cmd_print(void *data, const char *input) {
 					} else {
 						ut64 at = f->addr;
 						ut64 sz = f->_size > 0 ? f->_size : r_anal_fcn_realsize (f);
+						ut32 rs = r_anal_fcn_realsize (f);
+						sz = R_MAX (sz, rs);
 						ut8 *buf = calloc (sz, 1);
 						(void)r_io_read_at (core->io, at, buf, sz);
 						core->num->value = r_core_print_disasm (core->print, core, at, buf, sz, sz, 0, 1, 0, f);

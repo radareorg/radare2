@@ -16,16 +16,18 @@ if use_syslib_magic
 else
   message('Use bundled magic library')
   r_magic = library('r_magic', files,
-                    include_directories: platform_inc,
-                    c_args: ['-DCORELIB=1'],
-                    dependencies: [r_util_dep],
-                    install: true,
-                    implicit_include_directories: false,
-                    soversion: r2_libversion
-                   )
+    include_directories: platform_inc,
+    c_args: library_cflags,
+    dependencies: [r_util_dep],
+    install: true,
+    implicit_include_directories: false,
+    soversion: r2_libversion
+  )
 
-  r_magic_dep = declare_dependency(link_with: r_magic,
-                                   include_directories: platform_inc)
+  r_magic_dep = declare_dependency(
+    link_with: r_magic,
+    include_directories: platform_inc
+  )
 
   pkgconfig_mod.generate(
     libraries: [r_magic],

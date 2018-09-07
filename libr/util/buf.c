@@ -837,29 +837,32 @@ R_API void r_buf_deinit(RBuffer *b) {
 	} else R_FREE (b->buf);
 }
 
-R_API void r_buf_fini(RBuffer *b) {
+R_API bool r_buf_fini(RBuffer *b) {
 	if (!b) {
-		return;
+		return false;
 	}
 	if (b->parent) {
 		if (b->parent == b) {
-			return;
+			return false;
 		}
 		r_buf_free (b->parent);
 		b->parent = NULL;
 	}
 	if (b->refctr > 0) {
 		b->refctr--;
-		return;
+		return false;
 	}
 	if (!b->ro) {
 		r_buf_deinit (b);
 	}
+	// true -> can bee free()d
+	return true;
 }
 
 R_API void r_buf_free(RBuffer *b) {
-	r_buf_fini (b);
-	free (b);
+	if (r_buf_fini (b)) {
+		free (b);
+	}
 }
 
 R_API int r_buf_append_string (RBuffer *b, const char *str) {

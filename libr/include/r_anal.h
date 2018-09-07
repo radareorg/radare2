@@ -576,15 +576,13 @@ typedef struct r_anal_switch_obj_t {
 	RList *cases;
 } RAnalSwitchOp;
 
-#define RANAL void*
-//struct r_anal_t*
-#define RANAL_BLOCK void*
-//struct r_anal_bb_t*
+struct r_anal_t;
+struct r_anal_bb_t;
 typedef struct r_anal_callbacks_t {
-	int (*on_fcn_new) (RANAL, void *user, RAnalFunction *fcn);
-	int (*on_fcn_delete) (RANAL , void *user, RAnalFunction *fcn);
-	int (*on_fcn_rename) (RANAL, void *user, RAnalFunction *fcn, const char *oldname);
-	int (*on_fcn_bb_new) (RANAL, void *user, RAnalFunction *fcn, RANAL_BLOCK bb);
+	int (*on_fcn_new) (struct r_anal_t *, void *user, RAnalFunction *fcn);
+	int (*on_fcn_delete) (struct r_anal_t *, void *user, RAnalFunction *fcn);
+	int (*on_fcn_rename) (struct r_anal_t *, void *user, RAnalFunction *fcn, const char *oldname);
+	int (*on_fcn_bb_new) (struct r_anal_t *, void *user, RAnalFunction *fcn, struct r_anal_bb_t *bb);
 } RAnalCallbacks;
 
 #define R_ANAL_ESIL_GOTO_LIMIT 4096
@@ -1670,8 +1668,7 @@ typedef struct {
 
 typedef struct vtable_info_t {
 	ut64 saddr; //starting address
-	int method_count;
-	RList* methods;
+	RVector methods;
 } RVTableInfo;
 
 typedef struct vtable_method_info_t {
@@ -1679,11 +1676,11 @@ typedef struct vtable_method_info_t {
 	ut64 vtable_offset;  // offset inside the vtable
 } RVTableMethodInfo;
 
-R_API void r_anal_vtable_info_fini(RVTableInfo *vtable);
+R_API void r_anal_vtable_info_free(RVTableInfo *vtable);
 R_API ut64 r_anal_vtable_info_get_size(RVTableContext *context, RVTableInfo *vtable);
 R_API bool r_anal_vtable_begin(RAnal *anal, RVTableContext *context);
+R_API RVTableInfo *r_anal_vtable_parse_at(RVTableContext *context, ut64 addr);
 R_API RList *r_anal_vtable_search(RVTableContext *context);
-R_API RList *r_anal_vtable_get_methods(RVTableContext *context, RVTableInfo *table);
 R_API void r_anal_list_vtables(RAnal *anal, int rad);
 
 /* rtti */

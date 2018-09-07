@@ -4574,8 +4574,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "stc", L_BIT | TWO_BIT))) {
+	} else if ((m = opmask (ao->op, "stc", L_BIT | TWO_BIT))) {
 		ut64 argt = thumb_selector (ao->a);
 		switch (argt) {
 		case THUMB_COPROC_COREG_BRACKREGBRACK: {
@@ -4673,8 +4672,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else
-	if ((m = opmask (ao->op, "stm", FD_BIT | DB_BIT | IA_BIT | EA_BIT))) {
+	} else if ((m = opmask (ao->op, "stm", FD_BIT | DB_BIT | IA_BIT | EA_BIT))) {
 		ut64 argt = thumb_selector (ao->a);
 		bool wb = false;
 		switch (argt) {
@@ -4720,8 +4718,7 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 		default:
 			return -1;
 		}
-	} else 
-	if ((m = opmask (ao->op, "str", B_BIT | T_BIT | D_BIT | H_BIT))) {
+	} else if ((m = opmask (ao->op, "str", B_BIT | T_BIT | D_BIT | H_BIT))) {
 		ut64 argt = thumb_selector (ao->a);
 		ut32 strsel = m & (B_BIT | H_BIT | D_BIT);
 		switch (argt) {
@@ -6069,6 +6066,11 @@ static int arm_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 			case TYPE_MEM:
 				if (!strncmp (ops[i].name, "strex", 5)) {
 					rex = 1;
+				}
+				if (!strcmp (ops[i].name, "str") || !strcmp (ops[i].name, "ldr")) {
+					if (!ao->a[2]) {
+						ao->a[2] = "0";
+					}
 				}
 				getrange (ao->a[0]);
 				getrange (ao->a[1]);

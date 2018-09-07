@@ -2030,9 +2030,17 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 						if (disp < 0) {
 							r_strbuf_appendf (&op->esil, "%d,%s,-,0xffffffff,&,[4],0x%x,&,%s,=",
 								-disp, MEMBASE(1), mask, REG(0));
+							if (insn->detail->arm.writeback) {
+								r_strbuf_appendf (&op->esil, ",%d,%s,+,%s,=",
+									-disp, MEMBASE(1), MEMBASE(1));
+							}
 						} else {
 							r_strbuf_appendf (&op->esil, "%d,%s,+,0xffffffff,&,[4],0x%x,&,%s,=",
 								disp, MEMBASE(1), mask, REG(0));
+							if (insn->detail->arm.writeback) {
+								r_strbuf_appendf (&op->esil, ",%d,%s,+,%s,=",
+									disp, MEMBASE(1), MEMBASE(1));
+							}
 						}
 					}
 				}
@@ -2789,8 +2797,6 @@ jmp $$ + 4 + ( [delta] * 2 )
 		break;
 	}
 }
-
-#define ZERO_FILL(x) memset (&(x), 0, sizeof (x))
 
 static int parse_reg_name(RRegItem *reg, csh handle, cs_insn *insn, int reg_num) {
 	if (!reg) {

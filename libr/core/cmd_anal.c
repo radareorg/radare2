@@ -1074,6 +1074,9 @@ static int var_cmd(RCore *core, const char *str) {
 	case '*':
 	case 'j':
 		r_anal_var_list_show (core->anal, fcn, type, str[1]);
+		if (str[1] == 'j') {
+			r_cons_print ("\n");
+		}
 		break;
 	case '.':
 		r_anal_var_list_show (core->anal, fcn, core->offset, 0);
@@ -3460,7 +3463,21 @@ repeat:
 		r_anal_op_hint (&op, hint);
 		r_anal_hint_free (hint);
 	}
-	r_reg_setv (core->anal->reg, name, addr + op.size);
+	if (r_config_get_i (core->config, "cfg.r2wars")) {
+		// this is x86 and r2wars specific, shouldnt hurt outside x86
+		ut64 vECX = r_reg_getv (core->anal->reg, "ecx");
+		if (op.prefix  & R_ANAL_OP_PREFIX_REP && vECX > 1) {
+			char *tmp = strstr (op.esil.ptr, ",ecx,?{,5,GOTO,}");
+			if (tmp) {
+				tmp[0] = 0;
+			}
+			op.esil.len -= 16;
+		} else {
+			r_reg_setv (core->anal->reg, name, addr + op.size);
+		}
+	} else {
+		r_reg_setv (core->anal->reg, name, addr + op.size);
+	}
 	if (ret) {
 		r_anal_esil_set_pc (esil, addr);
 		if (core->dbg->trace->enabled) {
@@ -3798,7 +3815,7 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	snprintf (uri, sizeof (uri), "malloc://%d", (int)size);
 	esil->stack_fd = r_io_fd_open (core->io, uri, R_IO_RW, 0);
 	if (!(stack_map = r_io_map_add (core->io, esil->stack_fd,
-			R_IO_RW, 0LL, addr, size, true))) {
+			R_IO_RW, 0LL, addr, size))) {
 		r_io_fd_close (core->io, esil->stack_fd);
 		eprintf ("Cannot create map for tha stack, fd %d got closed again\n", esil->stack_fd);
 		esil->stack_fd = 0;
@@ -4096,6 +4113,14 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 			eprintf ("Invalid 0x%08"PFMT64x" instruction %02x %02x\n",
 				addr + ptr, buf[ptr], buf[ptr + 1]);
 			break;
+		}
+		if (r_config_get_i (core->config, "cfg.r2wars")) {
+			if (aop.prefix  & R_ANAL_OP_PREFIX_REP) {
+				char * tmp = strstr (esilstr, ",ecx,?{,5,GOTO,}");
+				if (tmp) {
+					tmp[0] = 0;
+				}
+			}
 		}
 		r_anal_esil_parse (esil, esilstr);
 		r_anal_esil_stack_free (esil);
@@ -5475,7 +5500,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							str, str, sizeof (str));
 					}
 					r_parse_filter (core->parser, core->flags,
-						str, str, sizeof (str), core->print->big_endian);
+						r_asm_op_get_asm (&asmop), str, sizeof (str), core->print->big_endian);
 					r_cons_printf ("{\"from\":%" PFMT64u ",\"type\":\"%s\",\"opcode\":\"%s\"",
 						ref->addr, r_anal_xrefs_type_tostring (ref->type), str);
 					if (fcn) {

@@ -47,7 +47,7 @@ static void r_core_free_autocomplete(RCore *core) {
 	r_line_free_autocomplete (core->cons->line);
 }
 
-static int on_fcn_new(void *_anal, void* _user, RAnalFunction *fcn) {
+static int on_fcn_new(RAnal *_anal, void* _user, RAnalFunction *fcn) {
 	RCore *core = (RCore*)_user;
 	const char *cmd = r_config_get (core->config, "cmd.fcn.new");
 	if (cmd && *cmd) {
@@ -60,7 +60,7 @@ static int on_fcn_new(void *_anal, void* _user, RAnalFunction *fcn) {
 	return 0;
 }
 
-static int on_fcn_delete (void *_anal, void* _user, RAnalFunction *fcn) {
+static int on_fcn_delete (RAnal *_anal, void* _user, RAnalFunction *fcn) {
 	RCore *core = (RCore*)_user;
 	const char *cmd = r_config_get (core->config, "cmd.fcn.delete");
 	if (cmd && *cmd) {
@@ -73,7 +73,7 @@ static int on_fcn_delete (void *_anal, void* _user, RAnalFunction *fcn) {
 	return 0;
 }
 
-static int on_fcn_rename(void *_anal, void* _user, RAnalFunction *fcn, const char *oname) {
+static int on_fcn_rename(RAnal *_anal, void* _user, RAnalFunction *fcn, const char *oname) {
 	RCore *core = (RCore*)_user;
 	const char *cmd = r_config_get (core->config, "cmd.fcn.rename");
 	if (cmd && *cmd) {
@@ -2743,7 +2743,7 @@ reaccept:
 					if (r_core_file_open (core, (const char *)ptr, perm, 0)) {
 						int fd = r_io_fd_get_current (core->io);
 						r_core_bin_load (core, NULL, baddr);
-						r_io_map_add (core->io, fd, perm, 0, 0, r_io_fd_size (core->io, fd), true);
+						r_io_map_add (core->io, fd, perm, 0, 0, r_io_fd_size (core->io, fd));
 						if (core->file) {
 							pipefd = fd;
 						} else {

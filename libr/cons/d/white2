@@ -45,6 +45,6 @@ ec swi rgb:d66
 ec trap rgb:d66                 
 ec usrcmt rgb:007D96 0 bold           # user comment
 
-ec func_var rgb:400080      #var name in function
-ec func_var_type rgb:305F65 0 italic     #function variable
+ec func_var rgb:400080      # var name in function
+ec func_var_type rgb:305F65 0 italic     # function variable
 ec func_var_addr magenta

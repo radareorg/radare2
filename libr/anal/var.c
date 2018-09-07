@@ -959,7 +959,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 		}
 	}
 	if (mode == 'j') {
-		anal->cb_printf ("]\n");
+		anal->cb_printf ("]");
 	}
 	r_list_free (list);
 }

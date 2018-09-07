@@ -118,7 +118,7 @@ r_anal_inc = [
 
 r_anal = library('r_anal', files,
   include_directories: r_anal_inc,
-  c_args: ['-DCORELIB=1'],
+  c_args: library_cflags,
   dependencies: [
     r_util_dep,
     r_reg_dep,

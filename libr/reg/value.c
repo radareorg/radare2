@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
@@ -59,14 +59,11 @@ R_API ut64 r_reg_get_value_big(RReg *reg, RRegItem *item, utX *val) {
 }
 
 R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
-	RRegSet *regset;
-	int off;
-	ut64 ret = 0LL;
-	if (!reg || !item) {
+	if (!reg || !item || item->offset == -1) {
 		return 0LL;
 	}
-	off = BITS2BYTES (item->offset);
-	regset = &reg->regset[item->arena];
+	int off = BITS2BYTES (item->offset);
+	RRegSet *regset = &reg->regset[item->arena];
 	switch (item->size) {
 	case 1:
 		{
@@ -74,54 +71,52 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 		if (offset + item->size >= regset->arena->size) {
 			break;
 		}
-		ret = (regset->arena->bytes[offset] &
+		return (regset->arena->bytes[offset] &
 		       (1 << (item->offset % 8))) ? 1 : 0;
 		}
 		break;
 	case 4:
 		if (regset->arena->size - off - 1 >= 0) {
-			ret = (r_read_at_ble8 (regset->arena->bytes, off)) & 0xF;
+			return (r_read_at_ble8 (regset->arena->bytes, off)) & 0xF;
 		}
 		break;
 	case 8:
 		if (regset->arena->size - off - 1 >= 0) {
-			ret = r_read_at_ble8 (regset->arena->bytes, off);
+			return r_read_at_ble8 (regset->arena->bytes, off);
 		}
 		break;
 	case 16:
 		if (regset->arena->size - off - 2 >= 0) {
-			ret = r_read_ble16 (regset->arena->bytes + off, reg->big_endian);
+			return r_read_ble16 (regset->arena->bytes + off, reg->big_endian);
 		}
 		break;
 	case 27:
 		if (off + 3 < regset->arena->size) {
-			ret = r_read_me27 (regset->arena->bytes + off, 0);
+			return r_read_me27 (regset->arena->bytes + off, 0);
 		}
 		break;
 	case 32:
 		if (off + 4 <= regset->arena->size) {
-			ret = r_read_ble32 (regset->arena->bytes + off, reg->big_endian);
-		} else {
-			eprintf ("r_reg_get_value: 32bit oob read %d\n", off);
+			return r_read_ble32 (regset->arena->bytes + off, reg->big_endian);
 		}
+		eprintf ("r_reg_get_value: 32bit oob read %d\n", off);
 		break;
 	case 64:
 		if (regset->arena->bytes && (off + 8 <= regset->arena->size)) {
-			ret = r_read_ble64 (regset->arena->bytes + off, reg->big_endian);
-		} else {
-			eprintf ("r_reg_get_value: null or oob arena for current regset\n");
+			return r_read_ble64 (regset->arena->bytes + off, reg->big_endian);
 		}
+		eprintf ("r_reg_get_value: null or oob arena for current regset\n");
 		break;
 	case 80: // long double
 	case 96: // long floating value
 		// FIXME: It is a precision loss, please implement me properly!
-		ret = (ut64)r_reg_get_longdouble (reg, item);
+		return (ut64)r_reg_get_longdouble (reg, item);
 		break;
 	default:
 		eprintf ("r_reg_get_value: Bit size %d not supported\n", item->size);
 		break;
 	}
-	return ret;
+	return 0LL;
 }
 
 R_API ut64 r_reg_get_value_by_role(RReg *reg, RRegisterId role) {

@@ -172,7 +172,7 @@ r_asm_inc = [
 
 r_asm = library('r_asm', files,
   include_directories: r_asm_inc,
-  c_args: ['-DCORELIB=1'],
+  c_args: library_cflags,
   dependencies: [
     r_util_dep,
     r_syscall_dep,

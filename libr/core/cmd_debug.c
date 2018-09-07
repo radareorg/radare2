@@ -4795,7 +4795,7 @@ static int cmd_debug(void *data, const char *input) {
 					r_cons_printf ("%s at 0x%08"PFMT64x"\n", r, core->dbg->stopaddr);
 				}
 				break;
-			case '?': // "dij"
+			case '?': // "di?"
 			default:
 				r_core_cmd_help (core, help_msg_di);
 			}

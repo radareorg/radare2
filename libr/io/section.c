@@ -6,6 +6,7 @@
 #include <r_types.h>
 #include <stdio.h>
 #include <string.h>
+#include "io_private.h"
 
 static void section_free(void *p) {
 	RIOSection *s = (RIOSection *) p;
@@ -400,16 +401,16 @@ static bool _section_apply_for_anal_patch(RIO *io, RIOSection *sec, bool patch) 
 			ut64 at = sec->vaddr + sec->size;
 			// TODO: harden this, handle mapslit
 			// craft the uri for the null-fd
-			if (r_io_create_mem_map (io, sec, at, true, false)) {
+			if (io_create_mem_map (io, sec, at, true, false)) {
 			// we need to create this map for transfering the flags, no real remapping here
-				if (r_io_create_file_map (io, sec, sec->size, patch, false)) {
+				if (io_create_file_map (io, sec, sec->size, patch, false)) {
 					return true;
 				}
 			}
 		}
 	} else {
 		// same as above
-		if (!sec->filemap && r_io_create_file_map (io, sec, sec->vsize, patch, false)) {
+		if (!sec->filemap && io_create_file_map (io, sec, sec->vsize, patch, false)) {
 			return true;
 		}
 	}
@@ -642,7 +643,7 @@ R_API bool r_io_section_apply_bin(RIO *io, ut32 bin_id, RIOSectionApplyMethod me
 			_section_apply (io, sec, method);
 		}
 	}
-	r_io_map_calculate_skyline (io);
+	io_map_calculate_skyline (io);
 	return ret;
 }
 
@@ -655,7 +656,7 @@ R_API bool r_io_section_reapply(RIO *io, ut32 id, RIOSectionApplyMethod method) 
 		return false;
 	}
 	bool ret = _section_reapply (io, sec, method);
-	r_io_map_calculate_skyline (io);
+	io_map_calculate_skyline (io);
 	return ret;
 }
 
@@ -672,6 +673,6 @@ R_API bool r_io_section_reapply_bin(RIO *io, ut32 binid, RIOSectionApplyMethod m
 			_section_reapply (io, sec, method);
 		}
 	}
-	r_io_map_calculate_skyline (io);
+	io_map_calculate_skyline (io);
 	return ret;
 }

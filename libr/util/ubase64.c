@@ -25,7 +25,7 @@ static void b64_encode(const ut8 in[3], char out[4], int len) {
 	out[3] = (len > 2? cb64[in[2] & 0x3f]: '=');
 }
 
-static int b64_decode(const char in[4], ut8 out[3], int isz) {
+static int b64_decode(const char in[4], ut8 out[3]) {
 	int len = 3;
 	ut8 i, v[4] = { 0 };
 	for (i = 0; i < 4; i++) {
@@ -51,7 +51,7 @@ R_API int r_base64_decode(ut8 *bout, const char *bin, int len) {
 		len = strlen (bin);
 	}
 	for (in = out = 0; in + 3 < len; in += 4) {
-		ret = b64_decode (bin + in, bout + out, len - in - 1);
+		ret = b64_decode (bin + in, bout + out);
 		if (ret < 1) {
 			return -1;
 		}

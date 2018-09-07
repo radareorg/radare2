@@ -112,6 +112,19 @@ R_API void *r_vector_reserve(RVector *vec, size_t capacity);
 // shrink capacity to len.
 R_API void *r_vector_shrink(RVector *vec);
 
+/*
+ * example:
+ *
+ * RVector *v = ...; // <contains MyStruct>
+ * MyStruct *it;
+ * r_vector_foreach (v, it) {
+ *     // Do something with it
+ * }
+ */
+#define r_vector_foreach(vec, it) \
+	if ((vec) && (vec)->a) \
+		for (it = (void *)(vec)->a; (char *)it != (char *)(vec)->a + ((vec)->len * (vec)->elem_size); it = (void *)((char *)it + (vec)->elem_size))
+
 
 // RPVector
 
