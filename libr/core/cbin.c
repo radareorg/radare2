@@ -2186,7 +2186,9 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	} else if (IS_MODE_RAD (mode) && !at) {
 		r_cons_printf ("fs %ss\n", type);
 	} else if (IS_MODE_NORMAL (mode) && !at && !printHere) {
-		r_cons_printf ("[%s]\n", print_segments ? "Segments" : "Sections");
+		r_cons_printf ("[%s]\n"
+                   "Nm Paddr       Size Vaddr      Memsz Perms Name\n",
+                   print_segments ? "Segments" : "Sections");
 	} else if (IS_MODE_NORMAL (mode) && printHere) {
 		r_cons_printf ("Current section\n");
 	} else if (IS_MODE_SET (mode)) {
