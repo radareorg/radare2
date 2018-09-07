@@ -11,6 +11,24 @@
 #define R_CORE_MAX_DISASM (1024 * 1024 * 8)
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
+static const char* help_msg_pr[] = {
+	"Usage: pr[glx]", "[size]", "print N raw bytes",
+	" prc", "", "print bytes as colors in palette",
+	" prl", "", "print raw with lines offsets",
+	" prx", "", "printable chars with real offset (hyew)",
+	" prg", "[?]", "print raw GUNZIPped block",
+	" prz", "", "print raw zero terminated string",
+	NULL
+};
+
+static const char *help_msg_prg[] = {
+	"Usage: prg[io]", "", "print raw GUNZIPped block",
+	"prg", "", "print gunzipped data of current block",
+	"prgi", "", "show consumed bytes when inflating",
+	"prgo", "", "show output bytes after inflating",
+	NULL
+};
+
 static const char *help_msg_amper[] = {
 	"Usage:", "&[-|<cmd>]", "Manage tasks (WARNING: Experimental. Use with caution!)",
 	"&", " <cmd>", "run <cmd> in a new background task",
@@ -4878,20 +4896,12 @@ static int cmd_print(void *data, const char *input) {
 			cmd_prc (core, block, len);
 			break;
 		case '?':
-			r_cons_printf ("|Usage: pr[glx] [size]\n"
-				"| prc: print bytes as colors in palette\n"
-				"| prl: print raw with lines offsets\n"
-				"| prx: printable chars with real offset (hyew)\n"
-				"| prg[?]: print raw GUNZIPped block\n"
-				"| prz: print raw zero terminated string\n");
+			r_core_cmd_help (core, help_msg_pr);
 			break;
 		case 'g': // "prg" // gunzip
 			switch (input[2]) {
 			case '?':
-				r_cons_printf ("|Usage: prg[io]\n"
-					"| prg: print gunzipped data of current block\n"
-					"| prgi: show consumed bytes when inflating\n"
-					"| prgo: show output bytes after inflating\n");
+				r_core_cmd_help (core, help_msg_prg);
 				break;
 			case 'i': // "prgi"
 			{
