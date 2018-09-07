@@ -1671,6 +1671,10 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 				op->operands[0].type & OT_QWORD) {
 				data[l++] = 0x48 | rex;
 			}
+			if (op->operands[1].type & OT_DWORD &&
+				op->operands[0].type & OT_DWORD) {
+				data[l++] = 0x40 | rex;
+			}
 		} else if (op->operands[0].extended && op->operands[1].extended) {
 			data[l++] = 0x45;
 		}
@@ -4164,7 +4168,9 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 		for (i = 0; regsext[i]; i++) {
 			if (!r_str_ncasecmp (regsext[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_DWORD;
-				a->bits = 32;
+				if (a->bits < 32) {
+					a->bits = 32;
+				}
 				return i + 9;
 			}
 		}
