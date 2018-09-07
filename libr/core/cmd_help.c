@@ -229,6 +229,13 @@ static const char *help_msg_greater_sign[] = {
 	NULL
 };
 
+static const char *help_msg_intro[] = {
+	"Usage: [.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...", "", "",
+	"Append '?' to any char command to get detailed help", "", "",
+	"Prefix with number to repeat command N times (f.ex: 3x)", "", "",
+	NULL
+};
+
 static void cmd_help_exclamation(RCore *core) {
 	r_core_cmd_help (core, help_msg_exclamation);
 	r_core_cmd_help (core, help_msg_env);
@@ -996,9 +1003,7 @@ static int cmd_help(void *data, const char *input) {
 	case '\0': // "?"
 	default:
 		// TODO #7967 help refactor
-		r_cons_printf ("Usage: [.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...\n"
-				"Append '?' to any char command to get detailed help\n"
-				"Prefix with number to repeat command N times (f.ex: 3x)\n");
+		r_core_cmd_help (core, help_msg_intro);
 		r_core_cmd_help (core, help_msg_root);
 		break;
 	}

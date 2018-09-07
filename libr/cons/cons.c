@@ -1476,6 +1476,7 @@ R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 			*pal_help_color = use_color ? cons->pal.help : "",
 			*pal_reset = use_color ? cons->pal.reset : "";
 	int i, max_length = 0;
+	const char *usage_str = "Usage:";
 
 	for (i = 0; help[i]; i += 3) {
 		int len0 = strlen (help[i]);
@@ -1486,19 +1487,23 @@ R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 	}
 
 	for (i = 0; help[i]; i += 3) {
-		if (i) {
+		if (strncmp (help[i], usage_str, strlen (usage_str)) == 0) {
+			// Lines matching Usage: should always be the first in inline doc
+			r_cons_printf ("%s%s %s  %s%s\n", pal_args_color,
+							help[i], help[i + 1], help[i + 2], pal_reset);
+			continue;
+		}
+		if (strcmp (help[i + 1], "") == 0 && strcmp (help[i + 2], "") == 0) {
+			// no need to indent the sections lines
+			r_cons_printf ("%s%s%s\n", pal_help_color, help[i], pal_reset);
+		} else {
+			// these are the normal lines
 			int padding = max_length - (strlen (help[i]) + strlen (help[i + 1]));
 			r_cons_printf ("| %s%s%s%*s  %s%s%s\n",
 					help[i],
 					pal_args_color, help[i + 1],
 					padding, "",
 					pal_help_color, help[i + 2], pal_reset);
-		} else {
-			// no need to indent the first line
-			r_cons_printf ("|%s%s %s%s%s\n",
-					pal_help_color,
-					help[i], help[i + 1], help[i + 2],
-					pal_reset);
 		}
 	}
 }
