@@ -1487,13 +1487,13 @@ R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 	}
 
 	for (i = 0; help[i]; i += 3) {
-		if (strncmp(help[i], usage_str, sizeof(usage_str) - 2) == 0) {
+		if (strncmp (help[i], usage_str, strlen (usage_str)) == 0) {
 			// Lines matching Usage: should always be the first in inline doc
 			r_cons_printf ("%s%s %s  %s%s\n", pal_args_color,
 							help[i], help[i + 1], help[i + 2], pal_reset);
 			continue;
 		}
-		if ( strcmp(help[i + 1], "") == 0 && strcmp(help[i + 2], "") == 0 ) {
+		if (strcmp (help[i + 1], "") == 0 && strcmp (help[i + 2], "") == 0) {
 			// no need to indent the sections lines
 			r_cons_printf ("%s%s%s\n", pal_help_color, help[i], pal_reset);
 		}
