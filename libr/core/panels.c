@@ -1747,7 +1747,12 @@ static void panelSingleStepOver(RCore *core) {
 }
 
 static void panelBreakpoint(RCore *core) {
-	r_core_cmd (core, "dbs $$", 0);
+	RPanels *panels = core->panels;
+	RPanel *curPanel = &panels->panel[panels->curnode];
+	if (!strcmp (curPanel->cmd, PANEL_CMD_DISASSEMBLY)) {
+		r_core_cmd (core, "dbs $$", 0);
+		curPanel->refresh = true;
+	}
 }
 
 static void panelContinue(RCore *core) {
