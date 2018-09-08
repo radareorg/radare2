@@ -361,7 +361,7 @@ static int cmd_eval(void *data, const char *input) {
 				RListIter *th_iter;
 				const char *th;
 				r_list_foreach (themes_list, th_iter, th) {
-					if (strcmp (curtheme, th) == 0) {
+					if (!strcmp (curtheme, th)) {
 						eprintf ("-> %s\n", th);
 					} else {
 						eprintf ("   %s\n", th);
