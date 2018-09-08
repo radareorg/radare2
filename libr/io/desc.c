@@ -236,6 +236,25 @@ R_API bool r_io_desc_is_blockdevice(RIODesc *desc) {
 	return desc->plugin->is_blockdevice (desc);
 }
 
+R_API bool r_io_desc_is_chardevice(RIODesc *desc) {
+	if (!desc || !desc->plugin || !desc->plugin->is_chardevice) {
+		return false;
+	}
+	return desc->plugin->is_chardevice (desc);
+}
+
+
+static bool _map_flags_cb(void *user, void *data, ut32 id) {
+	RIODesc *desc = (RIODesc *)user;
+	RIOMap *map = (RIOMap *)data;
+
+	if(map->fd == desc->fd) {
+		map->flags &= (desc->flags | R_IO_EXEC);
+		return false;	//break
+	}
+	return true;
+}
+
 R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
 	RIODesc* desc, * descx;
 	SdbListIter* iter;

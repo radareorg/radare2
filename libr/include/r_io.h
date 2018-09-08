@@ -153,6 +153,7 @@ typedef struct r_io_plugin_t {
 	int (*write)(RIO *io, RIODesc *fd, const ut8 *buf, int count);
 	int (*close)(RIODesc *desc);
 	bool (*is_blockdevice)(RIODesc *desc);
+	bool (*is_chardevice)(RIODesc *desc);
 	int (*getpid)(RIODesc *desc);
 	int (*gettid)(RIODesc *desc);
 	bool (*getbase)(RIODesc *desc, ut64 *base);
@@ -415,6 +416,7 @@ R_API ut64 r_io_desc_seek (RIODesc *desc, ut64 offset, int whence);
 R_API bool r_io_desc_resize (RIODesc *desc, ut64 newsize);
 R_API ut64 r_io_desc_size (RIODesc *desc);
 R_API bool r_io_desc_is_blockdevice (RIODesc *desc);
+R_API bool r_io_desc_is_chardevice (RIODesc *desc);
 R_API bool r_io_desc_exchange (RIO *io, int fd, int fdx);	//this should get 2 descs
 R_API bool r_io_desc_is_dbg (RIODesc *desc);
 R_API int r_io_desc_get_pid (RIODesc *desc);
@@ -487,6 +489,7 @@ R_API ut64 r_io_fd_seek (RIO *io, int fd, ut64 addr, int whence);
 R_API ut64 r_io_fd_size (RIO *io, int fd);
 R_API bool r_io_fd_resize (RIO *io, int fd, ut64 newsize);
 R_API bool r_io_fd_is_blockdevice (RIO *io, int fd);
+R_API bool r_io_fd_is_chardevice (RIO *io, int fd);
 R_API int r_io_fd_read_at (RIO *io, int fd, ut64 addr, ut8 *buf, int len);
 R_API int r_io_fd_write_at (RIO *io, int fd, ut64 addr, const ut8 *buf, int len);
 R_API bool r_io_fd_is_dbg (RIO *io, int fd);
