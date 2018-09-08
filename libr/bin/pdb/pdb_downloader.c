@@ -101,10 +101,12 @@ static int download(struct SPDBDownloader *pd) {
 		extractor_cmd = r_str_newf (format, cabextractor, abspath_to_dir, abspath_to_archive);
 		R_FREE (abspath_to_dir);
 #endif
+		eprintf ("Attempting to download compressed pdb in %s\n",abspath_to_archive);
 		if ((cmd_ret = r_sys_cmd (curl_cmd) != 0)) {
 			eprintf("curl exited with error %d\n", cmd_ret);
 			res = 0;
 		}
+		eprintf ("Attempting to decompress pdb\n");
 		if (opt->extract > 0) {
 			if (res && ((cmd_ret = r_sys_cmd (extractor_cmd)) != 0)) {
 				eprintf ("cab extractor exited with error %d\n", cmd_ret);
@@ -134,6 +136,7 @@ static int download(struct SPDBDownloader *pd) {
 		                       opt->guid,
 		                       archive_name_escaped,
 		                       abspath_to_archive);
+		eprintf ("Attempting to download uncompressed pdb in %s\n",abspath_to_archive);
 		if ((cmd_ret = r_sys_cmd (curl_cmd) != 0)) {
 			eprintf("curl exited with error %d\n", cmd_ret);
 			res = 0;
