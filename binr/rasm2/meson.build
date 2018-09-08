@@ -5,6 +5,7 @@ executable('rasm2', 'rasm2.c',
     r_asm_dep,
     r_anal_dep,
     r_syscall_dep,
+    r_hash_dep,
     sdb_dep
   ],
   install: true,
