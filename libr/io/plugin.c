@@ -146,14 +146,14 @@ R_API int r_io_plugin_write(RIODesc *desc, const ut8 *buf, int len) {
 }
 
 R_API int r_io_plugin_read_at(RIODesc *desc, ut64 addr, ut8 *buf, int len) {
-	if (r_io_desc_seek (desc, addr, R_IO_SEEK_SET)  == addr) {
+	if (r_io_desc_is_chardevice (desc) || (r_io_desc_seek (desc, addr, R_IO_SEEK_SET) == addr)) {
 		return r_io_plugin_read (desc, buf, len);
 	}
 	return 0;
 }
 
 R_API int r_io_plugin_write_at(RIODesc *desc, ut64 addr, const ut8 *buf, int len) {
-	if (r_io_desc_seek (desc, addr, R_IO_SEEK_SET)  == addr) {
+	if (r_io_desc_is_chardevice (desc) || r_io_desc_seek (desc, addr, R_IO_SEEK_SET)  == addr) {
 		return r_io_plugin_write (desc, buf, len);
 	}
 	return 0;
