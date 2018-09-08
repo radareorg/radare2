@@ -2192,10 +2192,12 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		r_cons_printf ("fs %ss\n", type);
 	} else if (IS_MODE_NORMAL (mode) && !at && !printHere) {
 		r_cons_printf ("[%s]\n"
-                   "Nm Paddr       Size Vaddr      Memsz Perms Name\n",
-                   print_segments ? "Segments" : "Sections");
+                   "Nm Paddr       Size Vaddr      Memsz Perms%s Name\n",
+                   print_segments ? "Segments" : "Sections",
+								   chksum ? chksum : "");
 	} else if (IS_MODE_NORMAL (mode) && printHere) {
-		r_cons_printf ("Current section\n");
+		r_cons_printf ("Current section\n"
+                   "Nm Paddr       Size Vaddr      Memsz Perms Name\n");
 	} else if (IS_MODE_SET (mode)) {
 		fd = r_core_file_cur_fd (r);
 		r_flag_space_set (r->flags, print_segments ? "segments" : "sections");
