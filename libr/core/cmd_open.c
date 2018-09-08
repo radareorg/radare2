@@ -994,6 +994,7 @@ static int cmd_open(void *data, const char *input) {
 	int nowarn = r_config_get_i (core->config, "file.nowarn");
 	int argc, fd = -1;
 	RCoreFile *file;
+	RIODesc *desc;
 	bool silence = false;
 	bool write = false;
 	const char *ptr = NULL;
@@ -1111,10 +1112,8 @@ static int cmd_open(void *data, const char *input) {
 			addr = r_num_math (core->num, argv[1]);
 			perms = r_str_rwx (argv[2]);
 		}
-		if ((file = r_core_file_open (core, ptr, perms, addr))) {
-			fd = file->fd;
-			r_io_map_add (core->io, fd, perms, 0LL, addr,
-					r_io_fd_size (core->io, fd));
+		if ((desc = r_io_open_at (core->io, ptr, perms, 0644, addr))) {
+			fd = desc->fd;
 		}
 		r_str_argv_free (argv);
 		if (!silence) {
