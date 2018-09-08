@@ -35,7 +35,7 @@ RAsmPlugin r_asm_plugin_mcore = {
 	.arch = "mcore",
 	.cpus = "mcore,c-sky",
 	.bits = 32,
-	.endian = R_SYS_ENDIAN_LITTLE,
+	.endian = R_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
 };
 

@@ -1,4 +1,4 @@
-OBJ_MCORE=anal_mcore.o
+OBJ_MCORE=anal_mcore.o ../../asm/arch/mcore/mcore.o
 
 STATIC_OBJ+=${OBJ_MCORE}
 

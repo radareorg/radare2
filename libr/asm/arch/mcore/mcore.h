@@ -20,7 +20,8 @@
 #define TYPE_IMM  2 // Immediate
 #define TYPE_MEM  3 // Memory
 #define TYPE_JMP  4 // Jump
-#define TYPE_CTRL 5 // Control Registers
+#define TYPE_JMPI 5 // Indirect Jump
+#define TYPE_CTRL 6 // Control Registers
 
 typedef struct {
 	const ut8* end;

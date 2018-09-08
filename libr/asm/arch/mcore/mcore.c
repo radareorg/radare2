@@ -80,7 +80,7 @@ typedef struct mcore_ops {
 	const char* name;
 	ut16 cpu;
 	ut16 mask;
-	ut16 type;
+	ut64 type;
 	ut16 n_args;
 	mcore_mask_t args[ARGS_SIZE];
 } mcore_ops_t;
@@ -88,7 +88,7 @@ typedef struct mcore_ops {
 ut16 load_shift[4] = { 2, 0, 1, 0 };
 
 mcore_ops_t mcore_instructions[] = {
-	{ "bkpt"    , MCORE_CPU_DFLT, 0b0000000000000000, R_ANAL_OP_TYPE_UNK  , 0, {{0},{0},{0},{0},{0}} },
+	{ "bkpt"    , MCORE_CPU_DFLT, 0b0000000000000000, R_ANAL_OP_TYPE_ILL  , 0, {{0},{0},{0},{0},{0}} },
 	{ "sync"    , MCORE_CPU_DFLT, 0b0000000000000001, R_ANAL_OP_TYPE_SYNC , 0, {{0},{0},{0},{0},{0}} },
 	{ "rte"     , MCORE_CPU_DFLT, 0b0000000000000010, R_ANAL_OP_TYPE_RET  , 0, {{0},{0},{0},{0},{0}} },
 	{ "rfi"     , MCORE_CPU_DFLT, 0b0000000000000011, R_ANAL_OP_TYPE_RET  , 0, {{0},{0},{0},{0},{0}} },
@@ -172,7 +172,7 @@ mcore_ops_t mcore_instructions[] = {
 	// 0b00000101ssssrrrr, subu
 	{ "subu"    , MCORE_CPU_DFLT, 0b0000010111111111, R_ANAL_OP_TYPE_NULL , 2, {{ 0b1111, 0, TYPE_REG },{ 0b011110000, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b00000110ssssrrrr, addc
-	{ "subu"    , MCORE_CPU_DFLT, 0b0000011011111111, R_ANAL_OP_TYPE_NULL , 2, {{ 0b1111, 0, TYPE_REG },{ 0b011110000, 4, TYPE_REG },{0},{0},{0}} },
+	{ "addc"    , MCORE_CPU_DFLT, 0b0000011011111111, R_ANAL_OP_TYPE_NULL , 2, {{ 0b1111, 0, TYPE_REG },{ 0b011110000, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b00000111ssssrrrr, subc
 	{ "subc"    , MCORE_CPU_DFLT, 0b0000011111111111, R_ANAL_OP_TYPE_NULL , 2, {{ 0b1111, 0, TYPE_REG },{ 0b011110000, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b0000100sssssrrrr, cprgr cp
@@ -222,11 +222,11 @@ mcore_ops_t mcore_instructions[] = {
 	// 0b00011111ssssrrrr, andn
 	{ "andn"    , MCORE_CPU_DFLT, 0b0001111111111111, R_ANAL_OP_TYPE_NULL , 2, {{ 0b1111, 0, TYPE_REG },{ 0b011110000, 4, TYPE_REG },{0},{0},{0}} },
 	// 0b0010000iiiiirrrr, addi
-	{ "addi"    , MCORE_CPU_DFLT, 0b0010000111111111, R_ANAL_OP_TYPE_NULL , 2, {{ 0b1111, 0, TYPE_REG },{ 0b111110000, 4, TYPE_IMM },{0},{0},{0}} },
+	{ "addi"    , MCORE_CPU_DFLT, 0b0010000111111111, R_ANAL_OP_TYPE_NULL , 3, {{ 0b1111, 0, TYPE_REG },{ 0b1111, 0, TYPE_REG },{ 0b111110000, 4, TYPE_IMM },{0},{0}} },
 	// 0b0010001iiiiirrrr, cmplti
-	// 0b0010001iiiiirrrr, subi
 	{ "cmplti"  , MCORE_CPU_DFLT, 0b0010001111111111, R_ANAL_OP_TYPE_NULL , 2, {{ 0b1111, 0, TYPE_REG },{ 0b111110000, 4, TYPE_IMM },{0},{0},{0}} },
-//	{ "subi"    , MCORE_CPU_DFLT, 0b0010001111111111, R_ANAL_OP_TYPE_NULL , 1, {{ 0b1111, 0, TYPE_REG },{ 0b11111, 4, TYPE_IMM },{0},{0},{0}} },
+	// 0b0010010iiiiirrrr, subi
+	{ "subi"    , MCORE_CPU_DFLT, 0b0010010111111111, R_ANAL_OP_TYPE_NULL , 2, {{ 0b1111, 0, TYPE_REG },{ 0b111110000, 4, TYPE_IMM },{0},{0},{0}} },
 	// 0b0010011sssssrrrr, cpwgr cp
 	{ "cpwgr"   , MCORE_CPU_DFLT, 0b0010011111111111, R_ANAL_OP_TYPE_NULL , 2, {{ 0b1111, 0, TYPE_REG },{ 0b111110000, 4, TYPE_CTRL},{0},{0},{0}} },
 	// 0b0010100iiiiirrrr, rsubi
@@ -327,11 +327,11 @@ mcore_ops_t mcore_instructions[] = {
 	// 0b01101111sssssrrr, cpwcr cp
 	{ "cpwcr"   , MCORE_CPU_DFLT, 0b0110111111111111, R_ANAL_OP_TYPE_NULL , 2, {{ 0b111, 0, TYPE_REG },{ 0b011111000, 4, TYPE_IMM },{0},{0},{0}} },
 	// 0b01110000dddddddd, jmpi
-	{ "jmpi"    , MCORE_CPU_DFLT, 0b0111000011111111, R_ANAL_OP_TYPE_UJMP , 2, {{ 0b11111111, 0, TYPE_JMP },{0},{0},{0},{0}} },
+	{ "jmpi"    , MCORE_CPU_DFLT, 0b0111000011111111, R_ANAL_OP_TYPE_JMP  , 2, {{ 0b11111111, 0, TYPE_JMP },{0},{0},{0},{0}} },
 	// 0b0111zzzzdddddddd, lrw
 	{ "lrw"     , MCORE_CPU_DFLT, 0b0111111111111111, R_ANAL_OP_TYPE_LOAD , 2, {{ 0b11111111, 0, TYPE_MEM },{ 0b111100000000, 8, TYPE_REG },{0},{0},{0}} },
 	// 0b01111111dddddddd, jsri
-	{ "jsri"    , MCORE_CPU_DFLT, 0b0111111111111111, R_ANAL_OP_TYPE_NULL , 1, {{ 0b11111111, 0, TYPE_JMP },{0},{0},{0},{0}} },
+	{ "jsri"    , MCORE_CPU_DFLT, 0b0111111111111111, R_ANAL_OP_TYPE_CALL , 1, {{ 0b11111111, 0, TYPE_JMPI},{0},{0},{0},{0}} },
 	// 0b1000zzzziiiirrrr, ld.w
 	{ "ld.w"    , MCORE_CPU_DFLT, 0b1000111111111111, R_ANAL_OP_TYPE_LOAD , 4, {{ 0b1111, 0, TYPE_NONE},{ 0b11110000, 4, TYPE_NONE},{ 0b111100000000, 8, TYPE_NONE},{ 0b110000000000000, 13, TYPE_NONE},{0}} },
 	// 0b1001zzzziiiirrrr, st.w
@@ -364,8 +364,8 @@ mcore_t *find_instruction(const ut8* buffer) {
 	}
 	memset (op, 0, sizeof (mcore_t));
 	ut32 count = sizeof (mcore_instructions) / sizeof (mcore_ops_t);
-	ut16 data = buffer[0] << 8;
-	data |= buffer[1];
+	ut16 data = buffer[1] << 8;
+	data |= buffer[0];
 	op->bytes = data;
 	op->size = MCORE_INSTR_ALIGN;
 	if (data == 0) {
@@ -434,22 +434,29 @@ void print_loop(char* str, int size, ut64 addr, mcore_t* instr) {
 	add = snprintf (str, bufsize, "%s", instr->name);
 	for (i = 0; add > 0 && i < instr->n_args && add < bufsize; ++i) {
 		if (instr->args[i].type == TYPE_REG) {
-			add += snprintf (str + add, bufsize - add, " r%u", instr->args[i].value);
+			add += snprintf (str + add, bufsize - add, " r%u,", instr->args[i].value);
 		} else if (instr->args[i].type == TYPE_IMM) {
-			add += snprintf (str + add, bufsize - add, " 0x%x", instr->args[i].value);
+			add += snprintf (str + add, bufsize - add, " 0x%x,", instr->args[i].value);
 		} else if (instr->args[i].type == TYPE_MEM) {
-			add += snprintf (str + add, bufsize - add, " 0x%x(r%d)", instr->args[i + 1].value, instr->args[i].value);
+			add += snprintf (str + add, bufsize - add, " 0x%x(r%d),", instr->args[i + 1].value, instr->args[i].value);
 			i++;
+		} else if (instr->args[i].type == TYPE_JMPI) {
+			ut64 jump = addr + ((instr->args[i].value << 2) & 0xfffffffc);
+			add += snprintf (str + add, bufsize - add, " [0x%" PFMT64x"],", jump);
 		} else if (instr->args[i].type == TYPE_JMP) {
-			ut64 jump = addr + instr->args[i].value;
-			add += snprintf (str + add, bufsize - add, " 0x%" PFMT64x, jump);
+			ut64 jump = addr + instr->args[i].value + 1;
+			add += snprintf (str + add, bufsize - add, " 0x%" PFMT64x ",", jump);
 		} else if (instr->args[i].type == TYPE_CTRL) {
 			ut32 pos = instr->args[i].value;
 			if (pos >= 32) {
 				pos = 32;
 			}
-			add += snprintf (str + add, bufsize - add, " %s", mcore_ctrl_registers[pos]);
+			add += snprintf (str + add, bufsize - add, " %s,", mcore_ctrl_registers[pos]);
 		}
+	}
+	if (instr->n_args) {
+		// removing a comma
+		*(str + add - 1) = 0;
 	}
 }
 
