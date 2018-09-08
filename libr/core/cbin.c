@@ -2197,8 +2197,8 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		r_flag_space_set (r->flags, print_segments ? "segments" : "sections");
 	}
 	if (IS_MODE_NORMAL (mode)) {
-		r_cons_printf ("Nm Paddr       Size Vaddr      Memsz Perms %s Name\n",
-                   chksum ? "Checksum         " : "");
+		r_cons_printf ("Nm Paddr       Size Vaddr      Memsz Perms %sName\n",
+                   chksum ? "Checksum          " : "");
 	}
 	r_list_foreach (sections, iter, section) {
 		char perms[] = "----";
