@@ -181,8 +181,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 	}
 	if (IS_MODE_NORMAL (mode)) {
 		r_cons_printf ("[Strings]\n");
-		r_cons_printf ("Num Vaddr      Paddr      Len Size "
-                   "Section  Type  String\n");
+		r_cons_printf ("Num Vaddr      Paddr      Len Size Section  Type  String\n");
 	}
 	RBinString b64 = {0};
 	r_list_foreach (list, iter, string) {
@@ -1658,7 +1657,7 @@ static int bin_imports(RCore *r, int mode, int va, const char *name) {
 		r_cons_println ("fs imports");
 	} else if (IS_MODE_NORMAL (mode)) {
 		r_cons_println ("[Imports]");
-		r_cons_println (" Num Vaddr       Bind      Type Name");
+		r_cons_println ("Num  Vaddr       Bind      Type Name");
 	}
 	r_list_foreach (imports, iter, import) {
 		if (name && strcmp (import->name, name)) {
@@ -1873,18 +1872,17 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 		if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("fs exports\n");
 		} else if (IS_MODE_NORMAL (mode)) {
-			r_cons_printf (printHere ? "" : "[Exports]\n"
-			                                "Num Paddr      Vaddr      Bind"
-																			"     Type Size Name\n");
+			r_cons_printf (printHere ? "" : "[Exports]\n");
 		}
 	} else if (!at && !exponly) {
 		if (IS_MODE_RAD (mode)) {
 			r_cons_printf ("fs symbols\n");
 		} else if (IS_MODE_NORMAL (mode)) {
-			r_cons_printf (printHere ? "" : "[Symbols]\n"
-			                                "Num Paddr      Vaddr      Bind"
-																			"     Type Size Name\n");
+			r_cons_printf (printHere ? "" : "[Symbols]\n");
 		}
+	}
+	if (IS_MODE_NORMAL (mode)) {
+		r_cons_printf ("Num Paddr      Vaddr      Bind     Type Size Name\n");
 	}
 
 	r_list_foreach (symbols, iter, symbol) {
@@ -2191,16 +2189,16 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	} else if (IS_MODE_RAD (mode) && !at) {
 		r_cons_printf ("fs %ss\n", type);
 	} else if (IS_MODE_NORMAL (mode) && !at && !printHere) {
-		r_cons_printf ("[%s]\n"
-                   "Nm Paddr       Size Vaddr      Memsz Perms%s Name\n",
-                   print_segments ? "Segments" : "Sections",
-                   chksum ? chksum : "");
+		r_cons_printf ("[%s]\n", print_segments ? "Segments" : "Sections");
 	} else if (IS_MODE_NORMAL (mode) && printHere) {
-		r_cons_printf ("Current section\n"
-                   "Nm Paddr       Size Vaddr      Memsz Perms Name\n");
+		r_cons_printf ("Current section\n");
 	} else if (IS_MODE_SET (mode)) {
 		fd = r_core_file_cur_fd (r);
 		r_flag_space_set (r->flags, print_segments ? "segments" : "sections");
+	}
+	if (IS_MODE_NORMAL (mode)) {
+		r_cons_printf ("Nm Paddr       Size Vaddr      Memsz Perms %s Name\n",
+                   chksum ? "Checksum         " : "");
 	}
 	r_list_foreach (sections, iter, section) {
 		char perms[] = "----";
