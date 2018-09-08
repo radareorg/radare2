@@ -49,13 +49,17 @@ R_API int r_search_rsa_update(RSearch* s, ut64 from, const ut8 *buf, int len) {
 	unsigned int i, k, index;
 	const ut8 versionmarker[] = {0x02, 0x01, 0x00, 0x02};
 
+	if (len < sizeof (versionmarker)) {
+		return -1;
+	}
+
 	for (i = 0; i < len - sizeof (versionmarker); i++) {
 		if (memcmp (&buf[i], versionmarker, sizeof (versionmarker)))
-			continue;   
+			continue;
 
 		index = 0;
 		for (k=i; k != 0 && k > i - 20; k--) {
-			if (buf[k] == '0'){ // The sequence identifier is '0'
+			if (buf[k] == '0') { // The sequence identifier is '0'
 				index = k;
 				break;
 			}
