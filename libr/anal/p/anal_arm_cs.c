@@ -1215,7 +1215,7 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 		int size = REGSIZE64(0);
 		// Pre-index case
 		if (ISPREINDEX64()) {
-			// "stp x2, x3, [x8, 0x20]
+			// "stp x2, x3, [x8, 0x20]!
 			// "32,x8,+=,x2,x8,=[8],x3,x8,8,+,=[8]",
 			r_strbuf_setf(&op->esil,
 					"%"PFMT64d",%s,%c=,%s,%s,=[%d],%s,%s,%d,+,=[%d]",
