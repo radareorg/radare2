@@ -2194,7 +2194,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		r_cons_printf ("[%s]\n"
                    "Nm Paddr       Size Vaddr      Memsz Perms%s Name\n",
                    print_segments ? "Segments" : "Sections",
-								   chksum ? chksum : "");
+                   chksum ? chksum : "");
 	} else if (IS_MODE_NORMAL (mode) && printHere) {
 		r_cons_printf ("Current section\n"
                    "Nm Paddr       Size Vaddr      Memsz Perms Name\n");
