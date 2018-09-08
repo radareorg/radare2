@@ -50,6 +50,7 @@ files = [
   'p/anal_java.c',
   'p/anal_m68k_cs.c',
   'p/anal_malbolge.c',
+  'p/anal_mcore.c',
   'p/anal_mips_cs.c',
   'p/anal_mips_gnu.c',
   'p/anal_msp430.c',
