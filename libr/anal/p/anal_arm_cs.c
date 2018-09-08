@@ -52,6 +52,8 @@
 #define SHIFTVALUE(x) insn->detail->arm.operands[x].shift.value
 
 #define ISWRITEBACK64() (insn->detail->arm64.writeback == true)
+#define ISPREINDEX32() ((OPCOUNT64() == 2) && (ISMEM64(1)) && (ISWRITEBACK64()))
+#define ISPOSTINDEX32() ((OPCOUNT64() == 3) && (ISIMM64(2)) && (ISWRITEBACK64()))
 #define ISPREINDEX64() ((OPCOUNT64() == 3) && (ISMEM64(2)) && (ISWRITEBACK64()))
 #define ISPOSTINDEX64() ((OPCOUNT64() == 4) && (ISIMM64(3)) && (ISWRITEBACK64()))
 
@@ -1173,17 +1175,32 @@ static int analop64_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int l
 	case ARM64_INS_STR: // str x6, [x6,0xf90]
 		{
 		int size = REGSIZE64(0);
+		int disp = MEMDISP64(1);
+		char sign = disp>=0?'+':'-';
+		ut64 abs = disp>=0? MEMDISP64(1): -MEMDISP64(1);
 		if (insn->id == ARM64_INS_STRB) {
 		    size = 1;
 		} else if (insn->id == ARM64_INS_STRH) {
 		    size = 2;
 		}
-		if ((int)MEMDISP64(1) < 0) {
-			r_strbuf_setf (&op->esil, "%s,0x%"PFMT64x",%s,-,=[%d]",
-				REG64(0), (ut64)-(int)MEMDISP64(1), MEMBASE64(1), size);
+		if (ISPREINDEX32()) {
+			// "str x2, [x8, 0x20]!
+			// "32,x8,+=,x2,x8,=[8]",
+			r_strbuf_setf (&op->esil, "%"PFMT64d",%s,%c=,%s,0x%"PFMT64x",%s,%c,=[%d]",
+					abs, MEMBASE64(1), sign,
+					REG64(0), abs, MEMBASE64(1), sign, size);
+		} else if (ISPOSTINDEX32()) {
+			int val = IMM64(2);
+			sign = val>=0?'+':'-';
+			abs = val>=0? val: -val;
+			// "str x2, [x8], 0x20
+			// "x2,x8,=[8],32,x8,+=",
+			r_strbuf_setf (&op->esil, "%s,0x%"PFMT64x",%s,%c,=[%d],%"PFMT64d",%s,%c=",
+					REG64(0), abs, MEMBASE64(1), sign, size,
+					abs, MEMBASE64(1), sign);
 		} else {
-			r_strbuf_setf (&op->esil, "%s,0x%"PFMT64x",%s,+,=[%d]",
-				REG64(0), MEMDISP64(1), MEMBASE64(1), size);
+			r_strbuf_setf (&op->esil, "%s,0x%"PFMT64x",%s,%c,=[%d]",
+					REG64(0), abs, MEMBASE64(1), sign, size);
 		}
 		break;
 		}
