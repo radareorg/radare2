@@ -568,6 +568,13 @@ static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalState *state) {
 	return state->anal_ret_val;
 }
 
+static int functionCmp(const void *a, const void *b) {
+	const RAnalFunction *fa = (const RAnalFunction *)a;
+	const RAnalFunction *fb = (const RAnalFunction *)b;
+
+	return strcmp (fa->name, fb->name);
+}
+
 static int java_analyze_fns_from_buffer( RAnal *anal, ut64 start, ut64 end, int reftype, int depth) {
 	int result = R_ANAL_RET_ERROR;
 	ut64 addr = start;
@@ -619,6 +626,7 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 	RBinJavaField *method = NULL;
 	RListIter *methods_iter, *bin_obs_iter;
 	RList * bin_objs_list = get_java_bin_obj_list (anal);
+	RList * anal_fcns = NULL;
 
 	ut8 analyze_all = 0;
 	//RAnalRef *ref = NULL;
@@ -658,6 +666,8 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 			}
 		} // End of methods loop
 	}// end of bin_objs list loop
+	anal_fcns = r_list_clone (anal->fcns);
+	anal->fcns = r_list_uniq (anal_fcns, functionCmp);
 	return result;
 }
 
