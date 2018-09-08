@@ -352,7 +352,7 @@ static int cmd_eval(void *data, const char *input) {
 					eprintf ("Something went wrong\n");
 				}
 			} else if (input[2] == 'c') {
-				eprintf("%s\n", r_core_get_theme());
+				eprintf("%s\n", r_core_get_theme ());
 			} else if (input[2] == '?') {
 				r_core_cmd_help (core, help_msg_eco);
 				break;
@@ -362,7 +362,7 @@ static int cmd_eval(void *data, const char *input) {
 				const char *th;
 				r_list_foreach (themes_list, th_iter, th) {
 					if (strcmp (curtheme, th) == 0) {
-					  eprintf ("-> %s\n", th);
+						eprintf ("-> %s\n", th);
 					} else {
 						eprintf ("   %s\n", th);
 					}
