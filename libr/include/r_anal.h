@@ -401,8 +401,8 @@ typedef enum {
 	R_ANAL_OP_TYPE_IRJMP = R_ANAL_OP_TYPE_IND | R_ANAL_OP_TYPE_REG | R_ANAL_OP_TYPE_UJMP,
 	R_ANAL_OP_TYPE_CJMP  = R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_JMP,  /* conditional jump */
 	R_ANAL_OP_TYPE_RCJMP = R_ANAL_OP_TYPE_REG | R_ANAL_OP_TYPE_CJMP,  /* conditional jump register */
-	R_ANAL_OP_TYPE_MJMP  = R_ANAL_OP_TYPE_MEM | R_ANAL_OP_TYPE_JMP,  /* conditional jump */
-	R_ANAL_OP_TYPE_MCJMP  = R_ANAL_OP_TYPE_MEM | R_ANAL_OP_TYPE_CJMP,  /* conditional jump */
+	R_ANAL_OP_TYPE_MJMP  = R_ANAL_OP_TYPE_MEM | R_ANAL_OP_TYPE_JMP,   /* memory jump */
+	R_ANAL_OP_TYPE_MCJMP = R_ANAL_OP_TYPE_MEM | R_ANAL_OP_TYPE_CJMP,  /* memory conditional jump */
 	R_ANAL_OP_TYPE_UCJMP = R_ANAL_OP_TYPE_COND | R_ANAL_OP_TYPE_UJMP, /* conditional unknown jump */
 	R_ANAL_OP_TYPE_CALL  = 3,  /* call to subroutine (branch+link) */
 	R_ANAL_OP_TYPE_UCALL = 4, /* unknown call (register or so) */
@@ -1704,57 +1704,58 @@ R_API void r_anal_colorize_bb(RAnal *anal, ut64 addr, ut32 color);
 
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_null;
-extern RAnalPlugin r_anal_plugin_xap;
+extern RAnalPlugin r_anal_plugin_6502;
+extern RAnalPlugin r_anal_plugin_8051;
+extern RAnalPlugin r_anal_plugin_arc;
+extern RAnalPlugin r_anal_plugin_arm_cs;
+extern RAnalPlugin r_anal_plugin_arm_gnu;
+extern RAnalPlugin r_anal_plugin_avr;
+extern RAnalPlugin r_anal_plugin_bf;
+extern RAnalPlugin r_anal_plugin_chip8;
+extern RAnalPlugin r_anal_plugin_cr16;
+extern RAnalPlugin r_anal_plugin_cris;
+extern RAnalPlugin r_anal_plugin_dalvik;
+extern RAnalPlugin r_anal_plugin_ebc;
+extern RAnalPlugin r_anal_plugin_gb;
+extern RAnalPlugin r_anal_plugin_h8300;
+extern RAnalPlugin r_anal_plugin_hexagon;
+extern RAnalPlugin r_anal_plugin_i4004;
+extern RAnalPlugin r_anal_plugin_i8080;
+extern RAnalPlugin r_anal_plugin_java;
+extern RAnalPlugin r_anal_plugin_m68k_cs;
+extern RAnalPlugin r_anal_plugin_malbolge;
+extern RAnalPlugin r_anal_plugin_mcore;
+extern RAnalPlugin r_anal_plugin_mips_cs;
+extern RAnalPlugin r_anal_plugin_mips_gnu;
+extern RAnalPlugin r_anal_plugin_msp430;
+extern RAnalPlugin r_anal_plugin_nios2;
+extern RAnalPlugin r_anal_plugin_pic;
+extern RAnalPlugin r_anal_plugin_ppc_cs;
+extern RAnalPlugin r_anal_plugin_ppc_gnu;
+extern RAnalPlugin r_anal_plugin_propeller;
+extern RAnalPlugin r_anal_plugin_riscv;
+extern RAnalPlugin r_anal_plugin_rsp;
+extern RAnalPlugin r_anal_plugin_sh;
+extern RAnalPlugin r_anal_plugin_snes;
+extern RAnalPlugin r_anal_plugin_sparc_cs;
+extern RAnalPlugin r_anal_plugin_sparc_gnu;
+extern RAnalPlugin r_anal_plugin_sysz;
 extern RAnalPlugin r_anal_plugin_tms320;
 extern RAnalPlugin r_anal_plugin_tms320c64x;
-extern RAnalPlugin r_anal_plugin_avr;
-extern RAnalPlugin r_anal_plugin_arm_gnu;
-extern RAnalPlugin r_anal_plugin_arm_cs;
+extern RAnalPlugin r_anal_plugin_v810;
+extern RAnalPlugin r_anal_plugin_v850;
+extern RAnalPlugin r_anal_plugin_vax;
+extern RAnalPlugin r_anal_plugin_wasm;
+extern RAnalPlugin r_anal_plugin_ws;
 extern RAnalPlugin r_anal_plugin_x86;
 extern RAnalPlugin r_anal_plugin_x86_cs;
 extern RAnalPlugin r_anal_plugin_x86_im;
-extern RAnalPlugin r_anal_plugin_x86_udis;
 extern RAnalPlugin r_anal_plugin_x86_simple;
-extern RAnalPlugin r_anal_plugin_ppc_gnu;
-extern RAnalPlugin r_anal_plugin_ppc_cs;
-extern RAnalPlugin r_anal_plugin_java;
-extern RAnalPlugin r_anal_plugin_mips_gnu;
-extern RAnalPlugin r_anal_plugin_mips_cs;
-extern RAnalPlugin r_anal_plugin_dalvik;
-extern RAnalPlugin r_anal_plugin_sh;
-extern RAnalPlugin r_anal_plugin_sparc_gnu;
-extern RAnalPlugin r_anal_plugin_bf;
-extern RAnalPlugin r_anal_plugin_m68k_cs;
-extern RAnalPlugin r_anal_plugin_z80;
-extern RAnalPlugin r_anal_plugin_i8080;
-extern RAnalPlugin r_anal_plugin_8051;
-extern RAnalPlugin r_anal_plugin_arc;
-extern RAnalPlugin r_anal_plugin_ebc;
-extern RAnalPlugin r_anal_plugin_gb;
-extern RAnalPlugin r_anal_plugin_nios2;
-extern RAnalPlugin r_anal_plugin_malbolge;
-extern RAnalPlugin r_anal_plugin_hexagon;
-extern RAnalPlugin r_anal_plugin_wasm;
-extern RAnalPlugin r_anal_plugin_ws;
-extern RAnalPlugin r_anal_plugin_h8300;
-extern RAnalPlugin r_anal_plugin_cr16;
-extern RAnalPlugin r_anal_plugin_v850;
-extern RAnalPlugin r_anal_plugin_sysz;
-extern RAnalPlugin r_anal_plugin_sparc_cs;
+extern RAnalPlugin r_anal_plugin_x86_udis;
+extern RAnalPlugin r_anal_plugin_xap;
 extern RAnalPlugin r_anal_plugin_xcore_cs;
-extern RAnalPlugin r_anal_plugin_propeller;
-extern RAnalPlugin r_anal_plugin_msp430;
-extern RAnalPlugin r_anal_plugin_chip8;
-extern RAnalPlugin r_anal_plugin_cris;
-extern RAnalPlugin r_anal_plugin_v810;
-extern RAnalPlugin r_anal_plugin_6502;
-extern RAnalPlugin r_anal_plugin_snes;
-extern RAnalPlugin r_anal_plugin_riscv;
-extern RAnalPlugin r_anal_plugin_vax;
-extern RAnalPlugin r_anal_plugin_i4004;
 extern RAnalPlugin r_anal_plugin_xtensa;
-extern RAnalPlugin r_anal_plugin_pic;
-extern RAnalPlugin r_anal_plugin_rsp;
+extern RAnalPlugin r_anal_plugin_z80;
 #ifdef __cplusplus
 }
 #endif
