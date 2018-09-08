@@ -572,6 +572,11 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
 		} else if (binfile) {
 			obj = r_bin_get_object (r->bin);
+			va = obj->info ? obj->info->has_va : va;
+
+			if (!va) {
+				r_config_set_i (r->config, "io.va", 0);
+			}
 
 			//workaround to map correctly malloc:// and raw binaries
 			if (r_io_desc_is_dbg (desc) || (obj && (!obj->sections || !va))) {
@@ -620,13 +625,6 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			r_core_file_loadlib (r, lib, libaddr);
 			libaddr += 0x2000000;
 		}
-	}
-	obj = r_bin_cur_object (r->bin);
-	if (obj && plugin && strcmp (plugin->name, "any")) {
-		va = obj->info ? obj->info->has_va : va;
-	}
-	if (!va) {
-		r_config_set_i (r->config, "io.va", 0);
 	}
 
 	//If type == R_BIN_TYPE_CORE, we need to create all the maps
