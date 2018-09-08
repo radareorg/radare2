@@ -89,6 +89,7 @@ static const char *help_msg_root[] = {
 	"g","[?] [arg]", "generate shellcodes with r_egg",
 	"i","[?] [file]", "get info about opened file from r_bin",
 	"k","[?] [sdb-query]", "run sdb-query. see k? for help, 'k *', 'k **' ...",
+	"l"," [filepattern]", "list files and directories",
 	"L","[?] [-] [plugin]", "list, unload load r2 plugins",
 	"m","[?]", "mountpoints commands",
 	"o","[?] [file] ([offset])", "open file at optional address",
