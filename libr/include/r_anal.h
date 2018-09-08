@@ -1047,7 +1047,7 @@ typedef bool (*RAnalEsilInterruptCB)(ESIL *esil, ut32 interrupt, void *user);
 
 typedef struct r_anal_esil_interrupt_handler_t {
 	const ut32 num;
-	void *(*init)();
+	void *(*init)(ESIL *esil);
 	RAnalEsilInterruptCB cb;
 	void (*fini)(void *user);
 } RAnalEsilInterruptHandler;

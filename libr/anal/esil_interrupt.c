@@ -32,7 +32,7 @@ R_API RAnalEsilInterrupt *r_anal_esil_interupt_new(RAnalEsil *esil, ut32 src_id,
 
 	intr->handler = ih;
 	if (ih->init && ih->fini) {
-		intr->user = ih->init();
+		intr->user = ih->init(esil);
 	}
 	r_anal_esil_claim_source (esil, src_id);
 	return intr;
