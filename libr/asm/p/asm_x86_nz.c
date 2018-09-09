@@ -4311,6 +4311,7 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 
 		ut64 temp = 1;
 		Register reg = X86R_UNDEFINED;
+		bool first_reg = true;
 		while (str[pos] != ']') {
 			if (pos > nextpos) {
 			//	eprintf ("Error parsing instruction\n");
@@ -4354,9 +4355,14 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 				nextpos = pos;
 				reg = parseReg (a, str, &nextpos, &reg_type);
 
-				op->extended = op->extended ? true : false;
-				if (reg > 8) {
-					op->extended = true;
+				if (first_reg) {
+					op->extended = false;
+					if (reg > 8) {
+						op->extended = true;
+						op->reg = reg - 9;
+					}
+					first_reg = false;
+				} else if (reg > 8) {
 					op->reg = reg - 9;
 				}
 				if (reg_type & OT_REGTYPE & OT_SEGMENTREG) {
