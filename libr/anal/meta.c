@@ -640,6 +640,14 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 					}
 				}
 				break;
+			case 't': /* vartype */
+				if (rad) {
+					a->cb_printf ("%s %s @ 0x%08"PFMT64x"\n",
+						r_meta_type_to_string (d->type), pstr, d->from);
+				} else {
+					a->cb_printf ("0x%08"PFMT64x" %s\n", d->from, pstr);
+				}
+				break;
 			default:
 				if (rad) {
 					a->cb_printf ("%s %d 0x%08"PFMT64x" # %s\n",
