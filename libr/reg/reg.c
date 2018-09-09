@@ -166,6 +166,9 @@ R_API void r_reg_free_internal(RReg *reg, bool init) {
 		}
 	}
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		if (!reg->regset[i].pool) {
+			continue;
+		}
 		if (init) {
 			r_list_free (reg->regset[i].regs);
 			reg->regset[i].regs = r_list_newf ((RListFree)r_reg_item_free);
@@ -183,6 +186,7 @@ R_API void r_reg_free_internal(RReg *reg, bool init) {
 	}
 	if (!init) {
 		r_list_free (reg->allregs);
+		reg->allregs = NULL;
 	}
 	reg->size = 0;
 }

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake, defragger */
+/* radare - LGPL - Copyright 2009-2018 - pancake, defragger */
 
 #include <r_asm.h>
 #include <r_debug.h>
