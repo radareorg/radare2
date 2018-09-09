@@ -911,8 +911,10 @@ static int opdec(RAsm *a, ut8 *data, const Opcode *op) {
 		if (use_rex) {
 			data[l++] = rex;
 		}
-		data[l++] = opcode;
-		if (a->bits == 32 && size & OT_DWORD) {
+		if (a->bits > 32 || size & OT_BYTE) {
+			data[l++] = opcode;
+		}
+		if (a->bits == 32 && size & (OT_DWORD | OT_WORD)) {
 			data[l++] = 0x48 | op->operands[0].reg;
 		} else {
 			data[l++] = 0xc8 | op->operands[0].reg;
@@ -1320,8 +1322,10 @@ static int opinc(RAsm *a, ut8 *data, const Opcode *op) {
 		if (use_rex) {
 			data[l++] = rex;
 		}
-		data[l++] = opcode;
-		if (a->bits == 32 && size & OT_DWORD) {
+		if (a->bits > 32 || size & OT_BYTE) {
+			data[l++] = opcode;
+		}
+		if (a->bits == 32 && size & (OT_DWORD | OT_WORD)) {
 			data[l++] = 0x40 | op->operands[0].reg;
 		} else {
 			data[l++] = 0xc0 | op->operands[0].reg;
