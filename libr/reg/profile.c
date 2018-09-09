@@ -57,8 +57,9 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 		return "Invalid register type";
 	}
 	if (r_reg_get (reg, tok[1], R_REG_TYPE_ALL)) {
-		eprintf ("%s\n", tok[1]);
-		return "Duplicate register definition";
+		eprintf ("Ignoring duplicated register definition '%s'\n", tok[1]);
+		return NULL;
+		//return "Duplicate register definition";
 	}
 
 	RRegItem *item = R_NEW0 (RRegItem);
