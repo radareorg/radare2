@@ -426,6 +426,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 				strcat (text, " ");
 				strcat (text, nc);
 				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, text);
+				free (comment);
 				free (text);
 			} else {
 				r_sys_perror ("malloc");
@@ -551,6 +552,7 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 				strcat (text, " ");
 				strcat (text, nc);
 				r_meta_set_string (core->anal, R_META_TYPE_VARTYPE, addr, text);
+				free (comment);
 				free (text);
 			} else {
 				r_sys_perror ("malloc");
