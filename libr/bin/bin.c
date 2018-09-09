@@ -616,7 +616,6 @@ R_API void *r_bin_free(RBin *bin) {
 	r_list_free (bin->binldrs);
 	sdb_free (bin->sdb);
 	r_id_storage_free (bin->ids);
-	memset (bin, 0, sizeof (RBin));
 	free (bin);
 	return NULL;
 }

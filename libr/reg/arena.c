@@ -102,6 +102,7 @@ R_API bool r_reg_set_bytes(RReg* reg, int type, const ut8* buf, const int len) {
 	maxsz = R_MAX (arena->size, len);
 	minsz = R_MIN (arena->size, len);
 	if ((arena->size != len) || (!arena->bytes)) {
+		free (arena->bytes);
 		arena->bytes = calloc (1, maxsz);
 		if (!arena->bytes) {
 			arena->size = 0;
@@ -147,13 +148,13 @@ R_API int r_reg_fit_arena(RReg* reg) {
 			arena->size = 0;
 		} else {
 			ut8* buf = realloc (arena->bytes, newsize);
-			if (!buf) {
-				arena->bytes = NULL;
-				arena->size = 0;
-			} else {
+			if (buf) {
 				arena->size = newsize;
 				arena->bytes = buf;
 				memset (arena->bytes, 0, arena->size);
+			} else {
+				arena->bytes = NULL;
+				arena->size = 0;
 			}
 		}
 	}

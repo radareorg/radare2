@@ -154,7 +154,8 @@ R_API const char* r_reg_get_role(int role) {
 }
 
 R_API void r_reg_free_internal(RReg* reg, bool init) {
-	int i;
+	ut32 i;
+
 
 	R_FREE (reg->reg_profile_str);
 	R_FREE (reg->reg_profile_cmt);
@@ -169,10 +170,23 @@ R_API void r_reg_free_internal(RReg* reg, bool init) {
 		if (init) {
 			r_list_free (reg->regset[i].regs);
 			reg->regset[i].regs = r_list_newf ((RListFree) r_reg_item_free);
+			//r_list_free (reg->regset[i].pool);
+			//reg->regset[i].pool = r_list_newf ((RListFree) r_reg_arena_free);
+			//reg->regset[i].pool = NULL;
 		} else {
 			r_list_free (reg->regset[i].regs);
 			reg->regset[i].regs = NULL;
+			// Ensure arena is freed and its registered in the pool
+			if (!r_list_delete_data (reg->regset[i].pool, reg->regset[i].arena)) {
+				r_reg_arena_free (reg->regset[i].arena);
+			}
+			reg->regset[i].arena = NULL;
+			r_list_free (reg->regset[i].pool);
+			reg->regset[i].pool = NULL;
 		}
+	}
+	if (!init) {
+		r_list_free (reg->allregs);
 	}
 	reg->size = 0;
 }
@@ -220,17 +234,9 @@ R_API RRegItem* r_reg_index_get(RReg* reg, int idx) {
 }
 
 R_API void r_reg_free(RReg* reg) {
-	int i;
-
 	if (!reg) {
 		return;
 	}
-
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		r_list_free (reg->regset[i].pool);
-		reg->regset[i].pool = NULL;
-	}
-	r_list_free (reg->allregs);
 	r_reg_free_internal (reg, false);
 	free (reg);
 }

@@ -652,11 +652,14 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			} else {
 				eprintf ("Setting up coredump: Registers have been set\n");
 				const char *regname = r_reg_get_name (r->anal->reg, R_REG_NAME_SP);
-				RRegItem *reg = r_reg_get (r->anal->reg, regname, -1);
-				sp_addr = r_reg_get_value (r->anal->reg, reg);
-				stack_map = r_io_map_get (r->io, sp_addr);
+				if (regname) {
+					RRegItem *reg = r_reg_get (r->anal->reg, regname, -1);
+					if (reg) {
+						sp_addr = r_reg_get_value (r->anal->reg, reg);
+						stack_map = r_io_map_get (r->io, sp_addr);
+					}
+				}
 			}
-			free (binfile->o->regstate);
                 }
 
 		RBinObject *o = binfile->o;
