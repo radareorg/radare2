@@ -502,9 +502,11 @@ R_API int r_cons_readchar() {
 	FD_SET (STDIN_FILENO, &readfds);
 	r_signal_sigmask (0, NULL, &sigmask);
 	sigdelset (&sigmask, SIGWINCH);
-	pselect (STDIN_FILENO + 1, &readfds, NULL, NULL, NULL, &sigmask);
-	if (sigwinchFlag != 0) {
-		resizeWin ();
+	while (pselect (STDIN_FILENO + 1, &readfds, NULL, NULL, NULL, &sigmask) == -1) {
+		if (sigwinchFlag) {
+			sigwinchFlag = 0;
+			resizeWin ();
+		}
 	}
 
 	ssize_t ret = read (STDIN_FILENO, buf, 1);
