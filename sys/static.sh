@@ -31,7 +31,7 @@ if [ 1 = "${DOCFG}" ]; then
 	cp -f plugins.static.cfg plugins.cfg
 #-D__ANDROID__=1"
 	./configure-plugins || exit 1
-	./configure --prefix="$PREFIX" --with-libr --disable-loadlibs || exit 1
+	./configure --prefix="$PREFIX" --with-libr --without-libuv --disable-loadlibs || exit 1
 fi
 ${MAKE} -j 8 || exit 1
 BINS="rarun2 rasm2 radare2 ragg2 rabin2 rax2 rahash2 rafind2 r2agent radiff2"
