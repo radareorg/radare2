@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2016-2017 - n4x0r, soez, pancake */
+/* radare2 - LGPL - Copyright 2016-2018 - n4x0r, soez, pancake */
 
 #ifndef INCLUDE_HEAP_GLIBC_C
 #define INCLUDE_HEAP_GLIBC_C
@@ -22,20 +22,20 @@
 #endif
 
 static void GH(update_arena_with_tc)(GH(RHeap_MallocState_tcache) *cmain_arena, MallocState *main_arena) {
-	int i = 0;
+		int i = 0;
 	main_arena->mutex = cmain_arena->mutex;
 	main_arena->flags = cmain_arena->flags;
-	for (i = 0; i <= BINMAPSIZE; i++ ) {
+	for (i = 0; i < BINMAPSIZE; i++) {
 		main_arena->binmap[i] = cmain_arena->binmap[i];
 	}
 	main_arena->have_fast_chunks = cmain_arena->have_fast_chunks;
 	main_arena->attached_threads = cmain_arena->attached_threads;
-	for (i = 0; i <= NFASTBINS; i++) {
+	for (i = 0; i < NFASTBINS; i++) {
 		main_arena->GH(fastbinsY)[i] = cmain_arena->fastbinsY[i];
 	}
 	main_arena->GH(top) = cmain_arena->top;
 	main_arena->GH(last_remainder) = cmain_arena->last_remainder;
-	for (i = 0; i <= NBINS * 2 - 2; i++) {
+	for (i = 0; i < NBINS * 2 - 2; i++) {
 		main_arena->GH(bins)[i] = cmain_arena->bins[i];
 	}
 	main_arena->GH(next) = cmain_arena->next;
@@ -48,16 +48,16 @@ static void GH(update_arena_without_tc)(GH(RHeap_MallocState) *cmain_arena, Mall
 	int i = 0;
 	main_arena->mutex = cmain_arena->mutex;
 	main_arena->flags = cmain_arena->flags;
-	for (i = 0; i <= BINMAPSIZE; i++ ) {
+	for (i = 0; i < BINMAPSIZE; i++ ) {
 		main_arena->binmap[i] = cmain_arena->binmap[i];
 	}
 	main_arena->attached_threads = 1;
-	for (i = 0; i <= NFASTBINS; i++) {
+	for (i = 0; i < NFASTBINS; i++) {
 		main_arena->GH(fastbinsY)[i] = cmain_arena->fastbinsY[i];
 	}
 	main_arena->GH(top) = cmain_arena->top;
 	main_arena->GH(last_remainder) = cmain_arena->last_remainder;
-	for (i = 0; i <= NBINS * 2 - 2; i++) {
+	for (i = 0; i < NBINS * 2 - 2; i++) {
 		main_arena->GH(bins)[i] = cmain_arena->bins[i];
 	}
 	main_arena->GH(next) = cmain_arena->next;
@@ -159,7 +159,7 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 	PRINT_GA ("  fastbinsY = {\n");
 
 	for (i = 0, j = 1, k = SZ * 4; i < NFASTBINS; i++, j++, k += SZ * 2) {
-		if (FASTBIN_IDX_TO_SIZE(j) <= global_max_fast) {
+		if (FASTBIN_IDX_TO_SIZE (j) <= global_max_fast) {
 			PRINTF_YA (" Fastbin %02d\n", j);
 		} else {
 			PRINTF_RA (" Fastbin %02d\n", j);
@@ -266,7 +266,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	}
 
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX;
-	GHT libc_addr_sta = GHT_MAX, libc_addr_end;
+	GHT libc_addr_sta = GHT_MAX, libc_addr_end = 0;
 	GHT addr_srch = GHT_MAX, heap_sz = GHT_MAX;
 
 	if (!r_config_get_i (core->config, "cfg.debug")) {
@@ -309,7 +309,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	if (!ta) {
 		return false;
 	}
-	while ( addr_srch < libc_addr_end ) {
+	while (addr_srch < libc_addr_end) {
 		GH (update_main_arena) (core, addr_srch, ta);
 		if ( ta->GH(top) > brk_start && ta->GH(top) < brk_end &&
 			ta->GH(system_mem) == heap_sz) {

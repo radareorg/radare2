@@ -1948,7 +1948,7 @@ static void ds_show_flags(RDisasmState *ds) {
 	}
 	RCore *core = ds->core;
 	char addr[64];
-	ut64 switch_addr;
+	ut64 switch_addr = UT64_MAX;
 	int case_start = -1, case_prev = 0, case_current = 0;
 	f = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
 	const RList *flaglist = r_flag_get_list (core->flags, ds->at);

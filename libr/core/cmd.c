@@ -1454,7 +1454,8 @@ static struct autocomplete_flag_map_t {
 	{ "$macro", NULL, R_CORE_AUTOCMPLT_MACR },
 	{ "$file", "hints file paths", R_CORE_AUTOCMPLT_FILE },
 	{ "$thme", "shows known themes hints", R_CORE_AUTOCMPLT_THME },
-	{ "$optn", "allows the selection for multiple options", R_CORE_AUTOCMPLT_OPTN }
+	{ "$optn", "allows the selection for multiple options", R_CORE_AUTOCMPLT_OPTN },
+	{ NULL, NULL, 0 }
 };
 
 static inline void print_dict(RCoreAutocomplete* a, int sub) {

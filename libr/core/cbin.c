@@ -1891,7 +1891,7 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 	r_list_foreach (symbols, iter, symbol) {
 		ut64 addr = symbol->paddr == UT64_MAX ? symbol->vaddr : rva (r->bin, symbol->paddr, symbol->vaddr, va);
 		int len = symbol->size ? symbol->size : 32;
-		SymName sn;
+		SymName sn = {0};
 
 		if (exponly && !isAnExport (symbol)) {
 			continue;
