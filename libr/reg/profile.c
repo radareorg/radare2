@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
@@ -32,14 +32,13 @@ static ut64 parse_size(char *s, char **end) {
 }
 
 static const char *parse_def(RReg *reg, char **tok, const int n) {
-	RRegItem *item;
-	char *end, *p;
+	char *end;
 	int type, type2;
 
 	if (n != 5 && n != 6) {
 		return "Invalid syntax: Wrong number of columns";
 	}
-	p = strchr (tok[0], '@');
+	char *p = strchr (tok[0], '@');
 	if (p) {
 		char *tok0 = strdup (tok[0]);
 		char *at = tok0 + (p - tok[0]);
@@ -58,10 +57,11 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 		return "Invalid register type";
 	}
 	if (r_reg_get (reg, tok[1], R_REG_TYPE_ALL)) {
+		eprintf ("%s\n", tok[1]);
 		return "Duplicate register definition";
 	}
 
-	item = R_NEW0 (RRegItem);
+	RRegItem *item = R_NEW0 (RRegItem);
 	if (!item) {
 		return "Unable to allocate memory";
 	}
@@ -98,6 +98,9 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	}
 
 	item->arena = type2;
+	if (!reg->regset[type2].regs) {
+		reg->regset[type2].regs = r_list_newf ((RListFree)r_reg_item_free);
+	}
 	r_list_append (reg->regset[type2].regs, item);
 
 	// Update the overall profile size
@@ -264,7 +267,7 @@ static int gdb_to_r2_profile(char *gdb) {
 		}
 		ptr++;
 	}
-	while (1) {
+	for (;;) {
 		// Skip whitespace at beginning of line and empty lines
 		while (isspace (*ptr)) {
 			ptr++;
@@ -361,13 +364,14 @@ static int gdb_to_r2_profile(char *gdb) {
 }
 
 R_API int r_reg_parse_gdb_profile(const char *profile_file) {
-	int ret;
-	char *base, *file, *str;
+	char *base, *file, *str = NULL;
 	if (!(str = r_file_slurp (profile_file, NULL))) {
 		if ((base = r_sys_getenv (R_LIB_ENV))) {
 			if ((file = r_str_append (base, profile_file))) {
 				str = r_file_slurp (file, NULL);
 				free (file);
+			} else {
+				free (base);
 			}
 		}
 	}
@@ -375,7 +379,7 @@ R_API int r_reg_parse_gdb_profile(const char *profile_file) {
 		eprintf ("r_reg_parse_gdb_profile: Cannot find '%s'\n", profile_file);
 		return false;
 	}
-	ret = gdb_to_r2_profile (str);
+	int ret = gdb_to_r2_profile (str);
 	free (str);
 	return ret;
 }

@@ -102,16 +102,15 @@ R_API ut64 r_reg_get_value(RReg *reg, RRegItem *item) {
 		eprintf ("r_reg_get_value: 32bit oob read %d\n", off);
 		break;
 	case 64:
-		if (regset->arena->bytes && (off + 8 <= regset->arena->size)) {
+		if (regset->arena && regset->arena->bytes && (off + 8 <= regset->arena->size)) {
 			return r_read_ble64 (regset->arena->bytes + off, reg->big_endian);
 		}
-		eprintf ("r_reg_get_value: null or oob arena for current regset\n");
+		//eprintf ("r_reg_get_value: null or oob arena for current regset\n");
 		break;
 	case 80: // long double
 	case 96: // long floating value
 		// FIXME: It is a precision loss, please implement me properly!
 		return (ut64)r_reg_get_longdouble (reg, item);
-		break;
 	default:
 		eprintf ("r_reg_get_value: Bit size %d not supported\n", item->size);
 		break;

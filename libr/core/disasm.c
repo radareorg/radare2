@@ -4736,9 +4736,11 @@ toro:
 	} else {
 		/* highlight eip */
 		const char *pc = core->anal->reg->name[R_REG_NAME_PC];
-		RFlagItem *item = r_flag_get (core->flags, pc);
-		if (item) {
-			ds->dest = item->offset;
+		if (pc) {
+			RFlagItem *item = r_flag_get (core->flags, pc);
+			if (item) {
+				ds->dest = item->offset;
+			}
 		}
 	}
 
