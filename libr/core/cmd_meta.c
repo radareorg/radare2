@@ -519,7 +519,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	return true;
 }
 
-static int cmd_meta_type_comment(RCore *core, const char *input) {
+static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 	ut64 addr = core->offset;
 	switch (input[1]) {
 	case '?':
@@ -994,7 +994,7 @@ static int cmd_meta(void *data, const char *input) {
 		cmd_meta_comment (core, input);
 		break;
 	case 't': // "Ct" type analysis commnets
-		cmd_meta_type_comment (core, input);
+		cmd_meta_vartype_comment (core, input);
 		break;
 	case 'r': // "Cr" run command
 	case 'h': // "Ch" comment
