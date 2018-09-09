@@ -489,6 +489,10 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 			}
 			str = r_str_escape_latin1 (d->str, false, esc_bslash, false);
 		}
+	} else if (d->type == 't') {
+		str = (char *) malloc(strlen(d->str) + 1);
+		strcpy(str, d->str);
+		r_str_sanitize(str);
 	} else {
 		str = r_str_escape (d->str);
 	}
@@ -502,6 +506,8 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 		} else if (d->type == 'f') {
 			pstr = str;
 		} else if (d->type == 's') {
+			pstr = str;
+		} else if (d->type == 't') {
 			pstr = str;
 		} else if (d->type != 'C') {
 			r_name_filter (str, 0);
@@ -643,9 +649,9 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 			case 't': /* vartype */
 				if (rad) {
 					a->cb_printf ("%s %s @ 0x%08"PFMT64x"\n",
-						r_meta_type_to_string (d->type), pstr, d->from);
+						r_meta_type_to_string (d->type), str, d->from);
 				} else {
-					a->cb_printf ("0x%08"PFMT64x" %s\n", d->from, pstr);
+					a->cb_printf ("0x%08"PFMT64x" %s\n", d->from, str);
 				}
 				break;
 			default:
