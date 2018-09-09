@@ -522,13 +522,13 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 	ut64 addr = core->offset;
 	switch (input[1]) {
-	case '?':
+	case '?': // "Ct?"
 		r_cons_println ("See C?");
 		break;
 	case 0: // "Ct"
 		r_meta_list (core->anal, R_META_TYPE_VARTYPE, 0);
 		break;
-	case ' ':
+	case ' ': // "Ct <vartype comment> @ addr"
 		{
 		const char* newcomment = r_str_trim_ro (input + 2);
 		char *text, *comment = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, addr);
@@ -549,6 +549,17 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 			r_meta_set_string (core->anal, R_META_TYPE_VARTYPE, addr, nc);
 		}
 		free (nc);
+		}
+		break;
+	case '.': // "Ct. @ addr"
+		{
+		ut64 at = input[2]? r_num_math (core->num, input + 2): addr;
+		char *comment = r_meta_get_string (
+				core->anal, R_META_TYPE_VARTYPE, at);
+		if (comment) {
+			r_cons_println (comment);
+			free (comment);
+		}
 		}
 		break;
 	case '-': // "Ct-"
