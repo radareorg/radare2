@@ -18,11 +18,12 @@ static const char *help_msg_C[] = {
 	"CL", "[-][*] [file:line] [addr]", "show or add 'code line' information (bininfo)",
 	"CS", "[-][space]", "manage meta-spaces to filter comments, etc..",
 	"CC", "[?] [-] [comment-text] [@addr]", "add/remove comment",
-	"Ct", "[?] [-] [comment-text] [@addr]", "add/remove type analysis comment",
 	"CC.", "[addr]", "show comment in current address",
 	"CC!", " [@addr]", "edit comment with $EDITOR",
 	"CCa", "[-at]|[at] [text] [@addr]", "add/remove comment at given address",
 	"CCu", " [comment-text] [@addr]", "add unique comment",
+	"Ct", "[?] [-] [comment-text] [@addr]", "add/remove type analysis comment",
+	"Ct.", "[@addr]", "show comment at current or specified address",
 	"Cv", "[bsr][?]", "add comments to args",
 	"Cs", "[?] [-] [size] [@addr]", "add string",
 	"Cz", "[@addr]", "add string (see Cs?)",
@@ -48,6 +49,15 @@ static const char *help_msg_CC[] = {
 	"CC-", " @ cmt_addr", "remove comment at given address",
 	"CCu", " good boy @ addr", "add good boy comment at given address",
 	"CCu", " base64:AA== @ addr", "add comment in base64",
+	NULL
+};
+
+static const char *help_msg_Ct[] = {
+	"Usage: Ct", "[.|-] [@ addr]", " # Manage comments for variable types",
+	"Ct", "", "list all variable type comments",
+	"Ct", " comment-text [@ addr]", "place comment at current or specified address",
+	"Ct.", " [@ addr]", "show comment at current or specified address",
+	"Ct-", " [@ addr]", "remove comment at current or specified address",
 	NULL
 };
 
@@ -523,7 +533,7 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 	ut64 addr = core->offset;
 	switch (input[1]) {
 	case '?': // "Ct?"
-		r_cons_println ("See C?");
+		r_core_cmd_help (core, help_msg_Ct);
 		break;
 	case 0: // "Ct"
 		r_meta_list (core->anal, R_META_TYPE_VARTYPE, 0);
@@ -566,7 +576,7 @@ static int cmd_meta_vartype_comment(RCore *core, const char *input) {
 		r_meta_del (core->anal, R_META_TYPE_VARTYPE, core->offset, 1);
 		break;
 	default:
-		r_cons_println("Usage: See C?");
+		r_core_cmd_help (core, help_msg_Ct);
 		break;
 	}
 
