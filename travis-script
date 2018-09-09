@@ -54,5 +54,5 @@ if [ "${COVERAGE}" == "1" ] ; then
     cd ../build
     curl -s https://codecov.io/bash > ./codecov.sh
     chmod +x ./codecov.sh
-    ./codecov.sh -v 2>/dev/null
+    ./codecov.sh -K -v 2>/dev/null
 fi
