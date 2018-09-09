@@ -1515,7 +1515,7 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 
 			bool rip_rel = op->operands[0].regs[0] == X86R_RIP;
 
-                        //rex prefix
+			//rex prefix
 			int rex = 1 << 6;
 			bool use_rex = false;
 			if (dest_bits == 64) {			//W field
@@ -4353,7 +4353,8 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 				// Reset nextpos: parseReg wants to parse from the beginning
 				nextpos = pos;
 				reg = parseReg (a, str, &nextpos, &reg_type);
-				op->extended = false;
+
+				op->extended = op->extended ? true : false;
 				if (reg > 8) {
 					op->extended = true;
 					op->reg = reg - 9;
