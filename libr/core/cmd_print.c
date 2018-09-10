@@ -5832,7 +5832,7 @@ R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int se
 				if (offdec) {
 					snprintf (space, sizeof (space), "%"PFMT64d, off);
 					white = r_str_pad (' ', 10 - strlen (space));
-					r_cons_printf ("%s%s%s%s", k, white, space, off, reset);
+					r_cons_printf ("%s%s%s%s", k, white, space, reset);
 				} else {
 					r_cons_printf ("%s0x%08"PFMT64x "%s", k, off, reset);
 				}
