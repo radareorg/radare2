@@ -35,7 +35,8 @@ int main(int argc, char **argv) {
 		r_anal_esil_set_pc (core->anal->esil, fcn ? fcn->addr : core->offset);
 		r_core_anal_type_match (core, fcn);
 		r_core_seek (core, seek, true);
-	} break;
+		break;
+	}
 	case '?':
 	default:
 		r_core_cmd_help (core, help_msg_aft);
