@@ -9,22 +9,17 @@ static mcore_handle handle = {0};
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	mcore_t* instr = NULL;
 	char tmp[256];
-	if (mcore_init (&handle, buf, len)) {
+	if (!op || mcore_init (&handle, buf, len)) {
 		return -1;
 	}
-
-	if (op) {
-		memset (op, 0, sizeof (RAsmOp));
-		op->size = 2;
-		if ((instr = mcore_next (&handle))) {
-			mcore_snprint (tmp, 256, a->pc, instr);
-			mcore_free (instr);
-			r_asm_op_set_asm (op, tmp);
-		} else {
-			r_asm_op_set_asm (op, "invalid");
-		}
+	op->size = 2;
+	if ((instr = mcore_next (&handle))) {
+		mcore_snprint (tmp, sizeof (tmp), a->pc, instr);
+		mcore_free (instr);
+		r_asm_op_set_asm (op, tmp);
+	} else {
+		r_asm_op_set_asm (op, "invalid");
 	}
-
 	return op->size;
 }
 

@@ -87,7 +87,8 @@ typedef struct mcore_ops {
 
 ut16 load_shift[4] = { 2, 0, 1, 0 };
 
-mcore_ops_t mcore_instructions[] = {
+#define MCORE_INSTRS 265
+mcore_ops_t mcore_instructions[MCORE_INSTRS] = {
 	{ "bkpt"    , MCORE_CPU_DFLT, 0b0000000000000000, R_ANAL_OP_TYPE_ILL  , 0, {{0},{0},{0},{0},{0}} },
 	{ "sync"    , MCORE_CPU_DFLT, 0b0000000000000001, R_ANAL_OP_TYPE_SYNC , 0, {{0},{0},{0},{0},{0}} },
 	{ "rte"     , MCORE_CPU_DFLT, 0b0000000000000010, R_ANAL_OP_TYPE_RET  , 0, {{0},{0},{0},{0},{0}} },
@@ -354,8 +355,7 @@ mcore_ops_t mcore_instructions[] = {
 	{ "bsr"     , MCORE_CPU_DFLT, 0b1111111111111111, R_ANAL_OP_TYPE_CALL , 1, {{ 0b11111111111, 0, TYPE_JMP},{0},{0},{0},{0}} },
 };
 
-
-mcore_t *find_instruction(const ut8* buffer) {
+static mcore_t *find_instruction(const ut8* buffer) {
 	ut32 i = 0;
 	mcore_ops_t *op_ptr = NULL;
 	mcore_t *op = NULL;
@@ -385,9 +385,14 @@ mcore_t *find_instruction(const ut8* buffer) {
 		}
 	}
 
-	if (!strncmp(op_ptr->name, "lrw", 3) && (data & 0b111100000000) == 0b111100000000) {
+	if (!strncmp (op_ptr->name, "lrw", 3) && (data & 0b111100000000) == 0b111100000000) {
 		// is jump
-		op_ptr = &mcore_instructions[i + 1];
+		if (i > 0 && i< MCORE_INSTRS) {
+			op_ptr = &mcore_instructions[i + 1];
+		}
+	}
+	if (!op_ptr) {
+		return NULL;
 	}
 
 	op->type = op_ptr->type;
@@ -399,7 +404,6 @@ mcore_t *find_instruction(const ut8* buffer) {
 	}
 	return op;
 }
-
 
 int mcore_init(mcore_handle* handle, const ut8* buffer, const ut32 size) {
 	if (!handle || !buffer || size < 2) {
@@ -430,15 +434,16 @@ void mcore_free(mcore_t* instr) {
 
 void print_loop(char* str, int size, ut64 addr, mcore_t* instr) {
 	ut32 i;
-	int bufsize = size, add = 0;
-	add = snprintf (str, bufsize, "%s", instr->name);
+	int bufsize = size;
+	int add = snprintf (str, bufsize, "%s", instr->name);
 	for (i = 0; add > 0 && i < instr->n_args && add < bufsize; ++i) {
 		if (instr->args[i].type == TYPE_REG) {
 			add += snprintf (str + add, bufsize - add, " r%u,", instr->args[i].value);
 		} else if (instr->args[i].type == TYPE_IMM) {
 			add += snprintf (str + add, bufsize - add, " 0x%x,", instr->args[i].value);
 		} else if (instr->args[i].type == TYPE_MEM) {
-			add += snprintf (str + add, bufsize - add, " 0x%x(r%d),", instr->args[i + 1].value, instr->args[i].value);
+			add += snprintf (str + add, bufsize - add, " 0x%x(r%d),",
+				instr->args[i + 1].value, instr->args[i].value);
 			i++;
 		} else if (instr->args[i].type == TYPE_JMPI) {
 			ut64 jump = addr + ((instr->args[i].value << 2) & 0xfffffffc);
@@ -461,21 +466,19 @@ void print_loop(char* str, int size, ut64 addr, mcore_t* instr) {
 }
 
 void mcore_snprint(char* str, int size, ut64 addr, mcore_t* instr) {
+	ut32 imm;
 	if (!instr || !str) {
 		return;
 	}
-
-	switch(instr->type) {
-		case R_ANAL_OP_TYPE_LOAD:
-		case R_ANAL_OP_TYPE_STORE:
-			{
-				uint32_t imm = instr->args[1].value << load_shift[instr->args[3].value];
-				snprintf (str, size, "%s r%u, (r%u, 0x%x)", instr->name, instr->args[2].value, instr->args[0].value, imm);
-			}
-			break;
-		default:
-			print_loop (str, size, addr, instr);
-			break;
+	switch (instr->type) {
+	case R_ANAL_OP_TYPE_LOAD:
+	case R_ANAL_OP_TYPE_STORE:
+		imm = instr->args[1].value << load_shift[instr->args[3].value];
+		snprintf (str, size, "%s r%u, (r%u, 0x%x)",
+			instr->name, instr->args[2].value, instr->args[0].value, imm);
+		break;
+	default:
+		print_loop (str, size, addr, instr);
+		break;
 	}
-
 }

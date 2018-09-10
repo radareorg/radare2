@@ -668,6 +668,7 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 	}// end of bin_objs list loop
 	anal_fcns = r_list_clone (anal->fcns);
 	anal->fcns = r_list_uniq (anal_fcns, functionCmp);
+	r_list_free (anal_fcns);
 	return result;
 }
 

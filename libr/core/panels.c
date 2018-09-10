@@ -2195,14 +2195,12 @@ static void restorePanelPos(RPanel* panel) {
 
 static char *getPanelsConfigPath() {
 	char *configPath = r_str_newf (R_JOIN_2_PATHS (R2_HOME_DATADIR, ".r2panels"));
-	if (!configPath){
+	if (!configPath) {
 		return NULL;
 	}
-	configPath = r_str_home (configPath);
-	if (!configPath){
-		return NULL;
-	}
-	return configPath;
+	char *newPath = r_str_home (configPath);
+	R_FREE (configPath);
+	return newPath;
 }
 
 static void savePanelsLayout(RPanels* panels) {
@@ -2246,14 +2244,12 @@ static void loadPanelsLayout(RCore* core) {
 	int i, s;
 	char *configPath = getPanelsConfigPath ();
 	char *panelsConfig = r_file_slurp (configPath, &s);
-	free (configPath);
 	if (!configPath || !panelsConfig) {
+		free (configPath);
+		free (panelsConfig);
 		return;
 	}
 	int count = r_str_split (panelsConfig, '\n');
-	if (!panelsConfig) {
-		return;
-	}
 	RPanels *panels = core->panels;
 	panelAllClear (panels);
 	panels->n_panels = 0;

@@ -392,11 +392,16 @@ static bool mustSaveHistory(RConfig *c) {
 
 // Try to set the correct scr.color for the current terminal.
 static void set_color_default(void) {
-	char *tmp;
-	if ((tmp = r_sys_getenv ("COLORTERM")) && (r_str_endswith (tmp, "truecolor") || r_str_endswith (tmp, "24bit"))) {
-		r_config_set_i (r.config, "scr.color", COLOR_MODE_16M);
-		free (tmp);
-	} else if ((tmp = r_sys_getenv ("TERM"))) {
+	char *tmp = r_sys_getenv ("COLORTERM");
+	if (tmp) {
+		if ((r_str_endswith (tmp, "truecolor") || r_str_endswith (tmp, "24bit"))) {
+			r_config_set_i (r.config, "scr.color", COLOR_MODE_16M);
+		}
+	} else {
+		tmp = r_sys_getenv ("TERM");
+		if (!tmp) {
+			return;
+		}
 		if (r_str_endswith (tmp, "truecolor") || r_str_endswith (tmp, "24bit")) {
 			r_config_set_i (r.config, "scr.color", COLOR_MODE_16M);
 		} else if (r_str_endswith (tmp, "256color")) {
@@ -405,8 +410,8 @@ static void set_color_default(void) {
 			// Dumb terminals don't get color by default.
 			r_config_set_i (r.config, "scr.color", COLOR_MODE_DISABLED);
 		}
-		free (tmp);
 	}
+	free (tmp);
 }
 
 #if EMSCRIPTEN
