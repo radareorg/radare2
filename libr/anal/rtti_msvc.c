@@ -778,7 +778,7 @@ RecoveryTypeDescriptor *recovery_anal_type_descriptor(RRTTIMSVCAnalContext *cont
 }
 
 
-char *unique_class_name(RAnal *anal, const char *original_name) {
+static char *unique_class_name(RAnal *anal, const char *original_name) {
 	if (!r_anal_class_get (anal, original_name)) {
 		return strdup (original_name);
 	}
@@ -798,8 +798,66 @@ char *unique_class_name(RAnal *anal, const char *original_name) {
 	return name;
 }
 
+static void recovery_apply_vtable(RAnalClass *cls, RVTableInfo *vtable) {
+	if (!vtable) {
+		cls->vtable_addr = UT64_MAX;
+		return;
+	}
 
-RAnalClass *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *context, RecoveryCompleteObjectLocator *col) {
+	cls->vtable_addr = vtable->saddr;
+	RVTableMethodInfo *vmeth;
+	r_vector_foreach (&vtable->methods, vmeth) {
+		RAnalMethod *meth = r_anal_method_new ();
+		if (!meth) {
+			continue;
+		}
+		meth->addr = vmeth->addr;
+		meth->vtable_index = (int) vmeth->vtable_offset;
+		meth->name = r_str_newf ("virtual_%d", meth->vtable_index);
+		r_pvector_push (&cls->methods, meth);
+	}
+}
+
+static RAnalClass *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *context, RecoveryCompleteObjectLocator *col);
+
+static void recovery_apply_bases(RRTTIMSVCAnalContext *context, RAnalClass *cls, RPVector *base_tds) {
+	void **it;
+	r_pvector_foreach (base_tds, it) {
+		RecoveryTypeDescriptor *base_td = (RecoveryTypeDescriptor *)*it;
+		if (!base_td->valid) {
+			eprintf ("Warning Base td is invalid!\n");
+			continue;
+		}
+
+		if (!base_td->col) {
+			eprintf ("Warning: Base td %s has no col.\n", base_td->td.name);
+			continue;
+		}
+
+		RAnalClass *base_cls = recovery_apply_complete_object_locator (context, base_td->col);
+		if (!base_cls) {
+			eprintf ("Failed to convert base td->col to a class\n");
+			continue;
+		}
+
+		RAnalBaseClass *base_cls_info = r_vector_push (&cls->base_classes, NULL);
+		base_cls_info->offset = 0; // TODO: we do have this info \o/
+		base_cls_info->cls = base_cls;
+	}
+}
+
+
+static RAnalClass *recovery_recover_class(RRTTIMSVCAnalContext *context, RecoveryTypeDescriptor *td, RecoveryCompleteObjectLocator *col) {
+	if (!td->valid) {
+		return NULL;
+	}
+	if (!col->valid) {
+		col = NULL;
+	}
+}
+
+
+static RAnalClass *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *context, RecoveryCompleteObjectLocator *col) {
 	if (!col->valid) {
 		return NULL;
 	}
@@ -839,45 +897,8 @@ RAnalClass *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *context
 	r_anal_class_add (anal, cls);
 	cls->addr = col->addr;
 
-	if (col->vtable) {
-		cls->vtable_addr = col->vtable->saddr;
-		RVTableMethodInfo *vmeth;
-		r_vector_foreach (&col->vtable->methods, vmeth) {
-			RAnalMethod *meth = r_anal_method_new ();
-			if (!meth) {
-				continue;
-			}
-			meth->addr = vmeth->addr;
-			meth->vtable_index = (int) vmeth->vtable_offset;
-			meth->name = r_str_newf ("virtual_%d", meth->vtable_index);
-			r_pvector_push (&cls->methods, meth);
-		}
-	} else {
-		cls->vtable_addr = UT64_MAX;
-	}
-
-
-	r_pvector_foreach (&col->base_td, it) {
-		RecoveryTypeDescriptor *base_td = (RecoveryTypeDescriptor *)*it;
-		if (!base_td->valid) {
-			eprintf ("Warning Base td is invalid!\n");
-			continue;
-		}
-		if (!base_td->col) {
-			eprintf ("Warning: Base td %s has no col.\n", base_td->td.name);
-			continue;
-		}
-
-		RAnalClass *base_cls = recovery_apply_complete_object_locator (context, base_td->col);
-		if (!base_cls) {
-			eprintf ("Failed to convert base td->col to a class\n");
-			continue;
-		}
-
-		RAnalBaseClass *base_cls_info = r_vector_push (&cls->base_classes, NULL);
-		base_cls_info->offset = 0; // TODO: we do have this info \o/
-		base_cls_info->cls = base_cls;
-	}
+	recovery_apply_vtable (cls, col->vtable);
+	recovery_apply_bases (context, cls, &col->base_td);
 
 	return cls;
 }
@@ -915,35 +936,8 @@ RAnalClass *recovery_apply_type_descriptor(RRTTIMSVCAnalContext *context, Recove
 		return cls;
 	}
 
-	if (td->col->vtable) {
-		cls->vtable_addr = td->col->vtable->saddr;
-		RVTableMethodInfo *vmeth;
-		r_vector_foreach (&td->col->vtable->methods, vmeth) {
-			RAnalMethod *meth = r_anal_method_new ();
-			if (!meth) {
-				continue;
-			}
-			meth->addr = vmeth->addr;
-			meth->vtable_index = (int) vmeth->vtable_offset;
-			meth->name = r_str_newf ("virtual_%d", meth->vtable_index);
-			r_pvector_push (&cls->methods, meth);
-		}
-	} else {
-		cls->vtable_addr = UT64_MAX;
-	}
-
-	r_pvector_foreach (&td->col->base_td, it) {
-		RecoveryTypeDescriptor *base_td = (RecoveryTypeDescriptor *)*it;
-		RAnalClass *base_cls = recovery_apply_type_descriptor (context, base_td);
-		if (!base_cls) {
-			eprintf ("Failed to convert base td to a class\n");
-			continue;
-		}
-
-		RAnalBaseClass *base_cls_info = r_vector_push (&cls->base_classes, NULL);
-		base_cls_info->offset = 0; // TODO: we do have this info \o/
-		base_cls_info->cls = base_cls;
-	}
+	recovery_apply_vtable (cls, td->col->vtable);
+	recovery_apply_bases (context, cls, &td->col->base_td);
 
 	return cls;
 }
