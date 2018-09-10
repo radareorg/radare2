@@ -724,6 +724,7 @@ static int bin_info(RCore *r, int mode) {
 		if (info->has_retguard != -1) {
 			pair_bool ("retguard", info->has_retguard, mode, false);
 		}
+		pair_bool ("sanitiz", info->has_sanitizers, mode, false);
 		pair_str ("class", info->bclass, mode, false);
 		if (info->actual_checksum) {
 			/* computed checksum */

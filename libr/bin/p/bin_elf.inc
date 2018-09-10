@@ -1055,6 +1055,21 @@ static int has_retguard(RBinFile *bf) {
 	return ret;
 }
 
+static bool has_sanitizers(RBinFile *bf) {
+	bool ret = false;
+	RList* imports_list = imports (bf);
+	RListIter *iter;
+	RBinImport *import;
+	r_list_foreach (imports_list, iter, import) {
+		if (strstr (import->name, "__sanitizer")) {
+			ret = true;
+			break;
+		}
+	}
+	r_list_free (imports_list);
+	return ret;
+}
+
 static RBinInfo* info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
 	char *str;
@@ -1082,6 +1097,7 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->has_lit = true;
 	ret->has_canary = has_canary (bf);
 	ret->has_retguard = has_retguard (bf);
+	ret->has_sanitizers = has_sanitizers (bf);
 	if (!(str = Elf_(r_bin_elf_get_elf_class) (obj))) {
 		free (ret);
 		return NULL;
