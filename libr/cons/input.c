@@ -253,11 +253,6 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 	if (color) printf (Color_RESET);
 	ret = strlen (buf);
 beach:
-#if __UNIX__
-	if (errno == EINTR) {
-		ret = 0;
-	}
-#endif
 	//r_cons_enable_mouse (mouse);
 	return ret;
 }
