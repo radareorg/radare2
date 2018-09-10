@@ -195,7 +195,7 @@ int r_bin_pdb_download(RCore *core, int isradjson, int *actions_done, SPDBOption
 		return 1;
 	}
 
-	opt.dbg_file = info->debug_file_name;
+	opt.dbg_file = (char*) r_file_basename (info->debug_file_name);
 	opt.guid = info->guid;
 	opt.symbol_server = options->symbol_server;
 	opt.user_agent = options->user_agent;

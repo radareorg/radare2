@@ -599,9 +599,9 @@ static int cmd_info(void *data, const char *input) {
 							break;
 						}
 						// Check raw path for debug filename
-						file_found = r_file_exists (info->debug_file_name);
+						file_found = r_file_exists (r_file_basename (info->debug_file_name));
 						if (file_found) {
-							filename = strdup (info->debug_file_name);
+							filename = strdup (r_file_basename (info->debug_file_name));
 						} else {
 							// Check debug filename basename in current directory
 							char* basename = (char*) r_file_basename (info->debug_file_name);
@@ -620,8 +620,8 @@ static int cmd_info(void *data, const char *input) {
 						if (!file_found) {
 							const char* symstore_path = r_config_get (core->config, "pdb.symstore");
 							char* pdb_path = r_str_newf ("%s" R_SYS_DIR "%s" R_SYS_DIR "%s" R_SYS_DIR "%s",
-										     symstore_path, info->debug_file_name,
-										     info->guid, info->debug_file_name);
+										     symstore_path, r_file_basename (info->debug_file_name),
+										     info->guid, r_file_basename (info->debug_file_name));
 							file_found = r_file_exists (pdb_path);
 							if (file_found) {
 								filename = pdb_path;
@@ -632,7 +632,7 @@ static int cmd_info(void *data, const char *input) {
 					}
 
 					if (!file_found) {
-						eprintf ("File '%s' not found in file directory or symbol store", info->debug_file_name);
+						eprintf ("File '%s' not found in file directory or symbol store", r_file_basename (info->debug_file_name));
 						free (filename);
 						break;
 					}
