@@ -40,6 +40,7 @@ func.__libc_start_main.arg.3=func,init
 func.__libc_start_main.arg.4=func,fini
 func.__libc_start_main.arg.5=func,rtld_fini
 func.__libc_start_main.arg.6=void *,stack_end
+func.__libc_start_main.noreturn=true
 func.__libc_start_main.ret=int
 
 __uClibc_main=func
