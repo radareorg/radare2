@@ -503,6 +503,11 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 			pstr = str;
 		} else if (d->type == 's') {
 			pstr = str;
+		} else if (d->type == 't') {
+			// Sanitize (don't escape) Ct comments so we can see "char *", etc.
+			str = strdup (d->str);
+			r_str_sanitize(str);
+			pstr = str;
 		} else if (d->type != 'C') {
 			r_name_filter (str, 0);
 			pstr = str;
@@ -638,6 +643,14 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 					} else {
 						a->cb_printf ("%d %s\n", (int)d->size, pstr);
 					}
+				}
+				break;
+			case 't': /* vartype */
+				if (rad) {
+					a->cb_printf ("%s %s @ 0x%08"PFMT64x"\n",
+						r_meta_type_to_string (d->type), pstr, d->from);
+				} else {
+					a->cb_printf ("0x%08"PFMT64x" %s\n", d->from, pstr);
 				}
 				break;
 			default:
