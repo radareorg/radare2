@@ -999,15 +999,18 @@ R_API void r_agraph_foreach_edge(RAGraph *g, RAEdgeCallback cb, void *user);
 R_API void r_agraph_set_curnode(RAGraph *g, RANode *node);
 #endif
 
-typedef int (*RPanelsMenuCallback)(void *user);
+typedef int (*RPanelsMenuCallback)(void *menu);
 typedef struct r_panels_menu_item {
+	int x, y, n_sub, selectedIndex;
 	const char *name;
-	struct r_panels_menu_item *sub;
+	struct r_panels_menu_item **sub;
 	RPanelsMenuCallback cb;
 } RPanelsMenuItem;
 
 typedef struct r_panels_menu_t {
-	RPanelsMenuItem *menu;
+	RPanelsMenuItem *root;
+	RPanelsMenuItem **history;
+	int depth;
 } RPanelsMenu;
 
 typedef struct r_panels_t {
@@ -1027,7 +1030,7 @@ typedef struct r_panels_t {
 	const char **currentMenu;
 	int currentMenuIndex;
 	RPanel *menuPanel;
-	RPanelsMenu panelsMenu;
+	RPanelsMenu *panelsMenu;
 } RPanels;
 
 #ifdef __cplusplus

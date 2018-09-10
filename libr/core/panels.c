@@ -77,7 +77,7 @@ static const char *menus[] = {
 	"File", "Edit", "View", "Tools", "Search", "Debug", "Analyze", "Help",
 	NULL
 };
-static const int menuNum = ((int)sizeof (menus) / (int)sizeof (const char*)) - 1;
+static const int menuNum = ((int)sizeof (menus) / (int)sizeof (const char *)) - 1;
 
 static const char *menus_File[] = {
 	"New", "Open", "ReOpen", "Close", "Sections", "Strings", "Symbols", "Imports", "Info", "Database",  "Quit",
@@ -166,6 +166,8 @@ static void resizePanelRight(RPanels *panels);
 static void resizePanelUp(RPanels *panels);
 static void resizePanelDown(RPanels *panels);
 static void handleTabKey(RCore *core, bool shift);
+static int openMenu (void *menu);
+static RPanelsMenuItem *createMenu (RPanelsMenuItem *parent, const char *name, RPanelsMenuCallback cb);
 static bool init(RCore *core, RPanels *panels, int w, int h);
 static bool initPanelsMenu(RPanels *panels);
 static bool initPanels(RCore *core, RPanels *panels);
@@ -797,21 +799,10 @@ static void handleLeftKey(RCore *core) {
 	RPanels *panels = core->panels;
 	r_cons_switchbuf (false);
 	if (panels->curnode == panels->menu_pos) {
-		if (!panels->menuStackDepth) {
-			if (panels->currentMenuIndex) {
-				panels->currentMenuIndex--;
-			} else  {
-				panels->currentMenuIndex = menuNum - 1;
-			}
-		} else if (panels->menuStackDepth > 0) {
-			panels->menuStackDepth = 0;
-			panels->currentMenu = panels->menuStack[0];
-			if (panels->menuIndexStack[0]) {
-				panels->currentMenuIndex = panels->menuIndexStack[0] - 1;
-			} else {
-				panels->currentMenuIndex = menuNum - 1;
-			}
-			setRefreshAll (panels);
+		if (panels->panelsMenu->root->selectedIndex > 0) {
+			panels->panelsMenu->root->selectedIndex--;
+		} else {
+			panels->panelsMenu->root->selectedIndex = panels->panelsMenu->root->n_sub - 1;
 		}
 	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_GRAPH)) {
 		if (panels->panel[panels->curnode].sx > 0) {
@@ -836,16 +827,8 @@ static void handleRightKey(RCore *core) {
 	RPanels *panels = core->panels;
 	r_cons_switchbuf (false);
 	if (panels->curnode ==  panels->menu_pos) {
-		if (!panels->menuStackDepth) {
-			panels->currentMenuIndex++;
-			panels->currentMenuIndex %= menuNum;
-		} else if (panels->menuStackDepth > 0) {
-			panels->menuStackDepth = 0;
-			panels->currentMenu = panels->menuStack[0];
-			panels->currentMenuIndex = panels->menuIndexStack[0] + 1;
-			panels->currentMenuIndex %= menuNum;
-			setRefreshAll (panels);
-		}
+		panels->panelsMenu->root->selectedIndex++;
+		panels->panelsMenu->root->selectedIndex %= panels->panelsMenu->root->n_sub;
 	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_GRAPH)) {
 		panels->panel[panels->curnode].sx += r_config_get_i (core->config, "graph.scroll");
 		panels->panel[panels->curnode].refresh = true;
@@ -1576,7 +1559,45 @@ static RPanel createMenuPanel(int x, int y, char *title) {
 	return panel;
 }
 
+static int openMenu (void *menu) {
+	return 0;
+}
+
+static RPanelsMenuItem *createMenu (RPanelsMenuItem *parent, const char *name, RPanelsMenuCallback cb) {
+	RPanelsMenuItem *item = R_NEW0 (RPanelsMenuItem);
+	item->n_sub = 0;
+	item->selectedIndex = 0;
+	item->name = name ? strdup (name) : NULL;
+	item->sub = NULL;
+	item->cb = cb;
+	if (parent) {
+		parent->n_sub++;
+		parent->sub = realloc (parent->sub, sizeof (RPanelsMenuItem *) * parent->n_sub);
+		parent->sub[parent->n_sub - 1] = item;
+	}
+	return item;
+}
+
 static bool initPanelsMenu(RPanels *panels) {
+	RPanelsMenu *panelsMenu = R_NEW0 (RPanelsMenu);
+	RPanelsMenuItem *root = createMenu (NULL, NULL, NULL);
+	RPanelsMenuItem *fileMenu = createMenu (root, "File", openMenu);
+	RPanelsMenuItem *editMenu = createMenu (root, "Edit", openMenu);
+	RPanelsMenuItem *viewMenu = createMenu (root, "View", openMenu);
+	RPanelsMenuItem *toolsMenu = createMenu (root, "Tools", openMenu);
+	RPanelsMenuItem *searchMenu = createMenu (root, "Search", openMenu);
+	RPanelsMenuItem *debugMenu = createMenu (root, "Debug", openMenu);
+	RPanelsMenuItem *analyzeMenu = createMenu (root, "Analyze", openMenu);
+	RPanelsMenuItem *helpMenu = createMenu (root, "Help", openMenu);
+	RPanelsMenuItem *newMenu = createMenu (fileMenu, "New", openMenu);
+
+	root->selectedIndex = 0;
+	panelsMenu->root = root;
+	panelsMenu->history = calloc (8, sizeof (RPanelsMenuItem *));
+	panelsMenu->history[0] = root;
+	panelsMenu->depth = 1;
+	panels->panelsMenu = panelsMenu;
+	return true;
 }
 
 static bool initPanels(RCore *core, RPanels *panels) {
@@ -1601,11 +1622,6 @@ static void freePanel(RPanel *panel) {
 	free (panel->cmdStrCache);
 }
 
-// damn singletons.. there should be only one screen and therefor
-// only one visual instance of the graph view. refactoring this
-// into a struct makes the code to reference pointers unnecesarily
-// we can look for a non-global solution here in the future if
-// necessary
 R_API void r_core_panels_refresh(RCore *core) {
 	RPanels *panels = core->panels;
 	if (!panels) {
@@ -1660,23 +1676,17 @@ R_API void r_core_panels_refresh(RCore *core) {
 		snprintf (str, sizeof (title) - 1, "%s Zoom Mode: Press Enter or q to quit"Color_RESET, color);
 		strcat (title, str);
 	} else {
-		for (i = 0; menus[i]; i++) {
+		RPanelsMenuItem *parent = panels->panelsMenu->root;
+		for (i = 0; i < parent->n_sub; i++) {
+			RPanelsMenuItem *item = parent->sub[i];
 			if (panels->curnode == panels->menu_pos) {
-				if (panels->menuStackDepth > 0) {
-					if (i == panels->menuIndexStack[0]) {
-						snprintf (str, sizeof (title) - 1, "%s[%s]"Color_RESET, color, menus[i]);
-					} else {
-						snprintf (str, sizeof (title) - 1, "%s %s "Color_RESET, color, menus[i]);
-					}
+				if (i == parent->selectedIndex) {
+					snprintf (str, sizeof (title) - 1, "%s[%s]"Color_RESET, color, item->name);
 				} else {
-					if (i == panels->currentMenuIndex) {
-						snprintf (str, sizeof (title) - 1, "%s[%s]"Color_RESET, color, menus[i]);
-					} else {
-						snprintf (str, sizeof (title) - 1, "%s %s "Color_RESET, color, menus[i]);
-					}
+					snprintf (str, sizeof (title) - 1, "%s %s "Color_RESET, color, item->name);
 				}
 			} else {
-				snprintf (str, sizeof (title) - 1, "%s %s "Color_RESET, color, menus[i]);
+				snprintf (str, sizeof (title) - 1, "%s %s "Color_RESET, color, item->name);
 			}
 			strcat (title, str);
 		}
@@ -1783,7 +1793,6 @@ static bool init (RCore *core, RPanels *panels, int w, int h) {
 	panels->menuStackDepth = 0;
 	panels->currentMenu = NULL;
 	panels->currentMenuIndex = 0;
-	panels->menuPanel = calloc (sizeof (RPanel), PANEL_MENU_LIMIT);
 	panels->callgraph = 0;
 	panels->isResizing = false;
 	panels->isZoom = false;
@@ -2264,6 +2273,7 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 	}
 
 	if (!initPanelsMenu (panels)) {
+		return false;
 	}
 
 	if (!initPanels (core, panels)) {
