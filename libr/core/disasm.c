@@ -841,6 +841,7 @@ static void ds_free(RDisasmState *ds) {
 	free (ds->opstr);
 	free (ds->osl);
 	free (ds->sl);
+	free (ds->hint);
 	free (ds->_tabsbuf);
 	R_FREE (ds);
 }
