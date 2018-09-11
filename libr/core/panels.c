@@ -761,8 +761,17 @@ static void handleDownKey(RCore *core) {
 	r_cons_switchbuf (false);
 	if (panels->curnode == panels->menu_pos) {
 		RPanelsMenu *menu = panels->panelsMenu;
-		RPanelsMenuItem *parent = menu->history[menu->depth - 1];
-		parent->sub[parent->selectedIndex]->cb(core);
+		if (menu->depth == 1) {
+			RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+			parent->sub[parent->selectedIndex]->cb(core);
+		} else {
+			RPanelsMenuItem *parent = menu->history[menu->depth - 2];
+			RPanelsMenuItem *child = menu->history[menu->depth - 1];
+			child->selectedIndex = R_MIN (child->n_sub - 1, child->selectedIndex + 1);
+			positionMenu (menu, parent, child);
+			child->p->refresh = true;
+			panelPrint (core, core->panels->can, child->p, 1);
+		}
 	} else {
 		panels->panel[panels->curnode].refresh = true;
 		if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
@@ -1574,6 +1583,7 @@ static int openMenu (void *user) {
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	positionMenu (menu, parent, child);
+	menu->history[menu->depth++] = child;
 	child->p->refresh = true;
 	panelPrint (core, can, child->p, 1);
 	return 0;
@@ -1598,15 +1608,16 @@ static void positionMenu(RPanelsMenu *menu, RPanelsMenuItem *parent, RPanelsMenu
 	if (!buf) {
 		return;
 	}
-	child->p->pos.x = menu->depth == 1 ? child->selfIndex * 6 : parent->p->pos.x + parent->p->pos.w - 1;
-	child->p->pos.y = menu->depth == 1 ? 1 : parent->selectedIndex + 2;
-	for (j = 0; j < child->n_sub; j++) {
-		if (j == child->selectedIndex) {
+	child->p->pos.x = menu->depth < 3 ? child->selfIndex * 6 : parent->p->pos.x + parent->p->pos.w - 1;
+	child->p->pos.y = menu->depth < 3 ? 1 : parent->selectedIndex + 2;
+	int i;
+	for (i = 0; i < child->n_sub; i++) {
+		if (i == child->selectedIndex) {
 			r_strbuf_append (buf, "> ");
 		} else {
 			r_strbuf_append (buf, "  ");
 		}
-		r_strbuf_append (buf, child->sub[j]->name);
+		r_strbuf_append (buf, child->sub[i]->name);
 		r_strbuf_append (buf, "          \n");
 	}
 	child->p->title = r_strbuf_drain (buf);
