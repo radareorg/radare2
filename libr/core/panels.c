@@ -171,6 +171,8 @@ static RPanelsMenuItem *createMenu (RPanelsMenuItem *parent, const char *name, R
 static bool init(RCore *core, RPanels *panels, int w, int h);
 static bool initPanelsMenu(RPanels *panels);
 static bool initPanels(RCore *core, RPanels *panels);
+static void positionMenu(RPanelsMenuItem *parent);
+static void positionMenuRec(RPanelsMenuItem *parent, int x);
 static void freePanel(RPanel *panel);
 static void panelBreakpoint(RCore *core);
 static void panelContinue(RCore *core);
@@ -1571,6 +1573,7 @@ static RPanelsMenuItem *createMenu (RPanelsMenuItem *parent, const char *name, R
 	item->sub = NULL;
 	item->cb = cb;
 	if (parent) {
+		item->p = R_NEW0 (RPanel);
 		parent->n_sub++;
 		parent->sub = realloc (parent->sub, sizeof (RPanelsMenuItem *) * parent->n_sub);
 		parent->sub[parent->n_sub - 1] = item;
@@ -1578,18 +1581,78 @@ static RPanelsMenuItem *createMenu (RPanelsMenuItem *parent, const char *name, R
 	return item;
 }
 
+static void positionMenu(RPanelsMenuItem *parent) {
+	if (!parent->sub) {
+		return;
+	}
+	int i, j;
+	for (i = 0; i < parent->n_sub; i++) {
+		RStrBuf *buf = r_strbuf_new (NULL);
+		if (!buf) {
+			return;
+		}
+		RPanelsMenuItem *child = parent->sub[i];
+		child->p->pos.x = i * 6;
+		child->p->pos.y = 1;
+		for (j = 0; j < child->n_sub; j++) {
+			if (j == child->selectedIndex) {
+				r_strbuf_append (buf, "> ");
+			} else {
+				r_strbuf_append (buf, "  ");
+			}
+			r_strbuf_append (buf, child->sub[j]->name);
+			r_strbuf_append (buf, "          \n");
+		}
+		child->p->title = r_strbuf_drain (buf);
+		child->p->pos.w = r_str_bounds (child->p->title, &child->p->pos.h);
+		child->p->pos.h += 4;
+		positionMenuRec (child, child->p->pos.w - 1);
+	}
+}
+
+static void positionMenuRec(RPanelsMenuItem *parent, int x) {
+	if (!parent->sub) {
+		return;
+	}
+	int i, j;
+	RStrBuf *buf = r_strbuf_new (NULL);
+	if (!buf) {
+		return;
+	}
+	for (i = 0; i < parent->n_sub; i++) {
+		RPanelsMenuItem *child = parent->sub[i];
+		child->p->pos.x = x;
+		child->p->pos.y = i + 2;
+		for (j = 0; j < child->n_sub; j++) {
+			if (j == child->selectedIndex) {
+				r_strbuf_append (buf, "> ");
+			} else {
+				r_strbuf_append (buf, "  ");
+			}
+			r_strbuf_append (buf, child->sub[j]->name);
+			r_strbuf_append (buf, "          \n");
+		}
+		child->p->title = r_strbuf_drain (buf);
+		child->p->pos.w = r_str_bounds (child->p->title, &child->p->pos.h);
+		child->p->pos.h += 4;
+		positionMenuRec (child, child->p->pos.w - 1);
+	}
+}
+
 static bool initPanelsMenu(RPanels *panels) {
 	RPanelsMenu *panelsMenu = R_NEW0 (RPanelsMenu);
 	RPanelsMenuItem *root = createMenu (NULL, NULL, NULL);
-	RPanelsMenuItem *fileMenu = createMenu (root, "File", openMenu);
-	RPanelsMenuItem *editMenu = createMenu (root, "Edit", openMenu);
-	RPanelsMenuItem *viewMenu = createMenu (root, "View", openMenu);
-	RPanelsMenuItem *toolsMenu = createMenu (root, "Tools", openMenu);
-	RPanelsMenuItem *searchMenu = createMenu (root, "Search", openMenu);
-	RPanelsMenuItem *debugMenu = createMenu (root, "Debug", openMenu);
-	RPanelsMenuItem *analyzeMenu = createMenu (root, "Analyze", openMenu);
-	RPanelsMenuItem *helpMenu = createMenu (root, "Help", openMenu);
-	RPanelsMenuItem *newMenu = createMenu (fileMenu, "New", openMenu);
+	RPanelsMenuItem *file = createMenu (root, "File", openMenu);
+	RPanelsMenuItem *edit = createMenu (root, "Edit", openMenu);
+	RPanelsMenuItem *view = createMenu (root, "View", openMenu);
+	RPanelsMenuItem *tools = createMenu (root, "Tools", openMenu);
+	RPanelsMenuItem *search = createMenu (root, "Search", openMenu);
+	RPanelsMenuItem *debug = createMenu (root, "Debug", openMenu);
+	RPanelsMenuItem *analyze = createMenu (root, "Analyze", openMenu);
+	RPanelsMenuItem *help = createMenu (root, "Help", openMenu);
+	RPanelsMenuItem *new = createMenu (file, "New", openMenu);
+
+	positionMenu (root);
 
 	root->selectedIndex = 0;
 	panelsMenu->root = root;
@@ -1597,6 +1660,7 @@ static bool initPanelsMenu(RPanels *panels) {
 	panelsMenu->history[0] = root;
 	panelsMenu->depth = 1;
 	panels->panelsMenu = panelsMenu;
+
 	return true;
 }
 

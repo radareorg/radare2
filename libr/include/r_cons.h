@@ -1001,10 +1001,11 @@ R_API void r_agraph_set_curnode(RAGraph *g, RANode *node);
 
 typedef int (*RPanelsMenuCallback)(void *menu);
 typedef struct r_panels_menu_item {
-	int x, y, n_sub, selectedIndex;
+	int n_sub, selectedIndex;
 	const char *name;
 	struct r_panels_menu_item **sub;
 	RPanelsMenuCallback cb;
+	RPanel *p;
 } RPanelsMenuItem;
 
 typedef struct r_panels_menu_t {
