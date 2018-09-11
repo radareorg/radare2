@@ -999,9 +999,9 @@ R_API void r_agraph_foreach_edge(RAGraph *g, RAEdgeCallback cb, void *user);
 R_API void r_agraph_set_curnode(RAGraph *g, RANode *node);
 #endif
 
-typedef int (*RPanelsMenuCallback)(void *menu);
+typedef int (*RPanelsMenuCallback)(void *user);
 typedef struct r_panels_menu_item {
-	int n_sub, selectedIndex;
+	int n_sub, selectedIndex, selfIndex;
 	const char *name;
 	struct r_panels_menu_item **sub;
 	RPanelsMenuCallback cb;

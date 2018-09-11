@@ -166,12 +166,12 @@ static void resizePanelRight(RPanels *panels);
 static void resizePanelUp(RPanels *panels);
 static void resizePanelDown(RPanels *panels);
 static void handleTabKey(RCore *core, bool shift);
-static int openMenu (void *menu);
+static int openMenu (void *user);
 static RPanelsMenuItem *createMenu (RPanelsMenuItem *parent, const char *name, RPanelsMenuCallback cb);
 static bool init(RCore *core, RPanels *panels, int w, int h);
 static bool initPanelsMenu(RPanels *panels);
 static bool initPanels(RCore *core, RPanels *panels);
-static void positionMenu(RPanelsMenuItem *parent);
+static void positionMenu(RPanelsMenu *menu, RPanelsMenuItem *parent, RPanelsMenuItem *child);
 static void positionMenuRec(RPanelsMenuItem *parent, int x);
 static void freePanel(RPanel *panel);
 static void panelBreakpoint(RCore *core);
@@ -752,14 +752,9 @@ static void handleDownKey(RCore *core) {
 	RPanels *panels = core->panels;
 	r_cons_switchbuf (false);
 	if (panels->curnode == panels->menu_pos) {
-		if (!panels->menuStackDepth) {
-			int exit = 0;
-			onMenu (core, panels->currentMenu[panels->currentMenuIndex], &exit);
-		} else {
-			if (panels->currentMenu[panels->currentMenuIndex + 1]) {
-				panels->currentMenuIndex++;
-			}
-		}
+		RPanelsMenu *menu = panels->panelsMenu;
+		RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+		parent->sub[parent->selectedIndex]->cb(core);
 	} else {
 		panels->panel[panels->curnode].refresh = true;
 		if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
@@ -1561,11 +1556,22 @@ static RPanel createMenuPanel(int x, int y, char *title) {
 	return panel;
 }
 
-static int openMenu (void *menu) {
+static int openMenu (void *user) {
+	RCore* core = (RCore *)user; 
+	RConsCanvas *can = core->panels->can;
+	if (!can) {
+		return 1;
+	}
+	RPanelsMenu *menu = core->panels->panelsMenu;
+	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
+	positionMenu (menu, parent, child);
+	child->p->refresh = true;
+	panelPrint (core, can, child->p, 1);
 	return 0;
 }
 
-static RPanelsMenuItem *createMenu (RPanelsMenuItem *parent, const char *name, RPanelsMenuCallback cb) {
+static RPanelsMenuItem *createMenu(RPanelsMenuItem *parent, const char *name, RPanelsMenuCallback cb) {
 	RPanelsMenuItem *item = R_NEW0 (RPanelsMenuItem);
 	item->n_sub = 0;
 	item->selectedIndex = 0;
@@ -1574,6 +1580,7 @@ static RPanelsMenuItem *createMenu (RPanelsMenuItem *parent, const char *name, R
 	item->cb = cb;
 	if (parent) {
 		item->p = R_NEW0 (RPanel);
+		item->selfIndex = parent->n_sub;
 		parent->n_sub++;
 		parent->sub = realloc (parent->sub, sizeof (RPanelsMenuItem *) * parent->n_sub);
 		parent->sub[parent->n_sub - 1] = item;
@@ -1581,62 +1588,28 @@ static RPanelsMenuItem *createMenu (RPanelsMenuItem *parent, const char *name, R
 	return item;
 }
 
-static void positionMenu(RPanelsMenuItem *parent) {
-	if (!parent->sub) {
-		return;
-	}
-	int i, j;
-	for (i = 0; i < parent->n_sub; i++) {
-		RStrBuf *buf = r_strbuf_new (NULL);
-		if (!buf) {
-			return;
-		}
-		RPanelsMenuItem *child = parent->sub[i];
-		child->p->pos.x = i * 6;
-		child->p->pos.y = 1;
-		for (j = 0; j < child->n_sub; j++) {
-			if (j == child->selectedIndex) {
-				r_strbuf_append (buf, "> ");
-			} else {
-				r_strbuf_append (buf, "  ");
-			}
-			r_strbuf_append (buf, child->sub[j]->name);
-			r_strbuf_append (buf, "          \n");
-		}
-		child->p->title = r_strbuf_drain (buf);
-		child->p->pos.w = r_str_bounds (child->p->title, &child->p->pos.h);
-		child->p->pos.h += 4;
-		positionMenuRec (child, child->p->pos.w - 1);
-	}
-}
-
-static void positionMenuRec(RPanelsMenuItem *parent, int x) {
-	if (!parent->sub) {
-		return;
-	}
-	int i, j;
+static void positionMenu(RPanelsMenu *menu, RPanelsMenuItem *parent, RPanelsMenuItem *child) {
 	RStrBuf *buf = r_strbuf_new (NULL);
 	if (!buf) {
 		return;
 	}
-	for (i = 0; i < parent->n_sub; i++) {
-		RPanelsMenuItem *child = parent->sub[i];
-		child->p->pos.x = x;
-		child->p->pos.y = i + 2;
-		for (j = 0; j < child->n_sub; j++) {
-			if (j == child->selectedIndex) {
-				r_strbuf_append (buf, "> ");
-			} else {
-				r_strbuf_append (buf, "  ");
-			}
-			r_strbuf_append (buf, child->sub[j]->name);
-			r_strbuf_append (buf, "          \n");
+	int i, j;
+	child->p->pos.x = menu->depth == 1 ? child->selfIndex * 6 : parent->p->pos.x + parent->p->pos.w - 1;
+	child->p->pos.y = menu->depth == 1 ? 1 : parent->selectedIndex + 2;
+	for (j = 0; j < child->n_sub; j++) {
+		if (j == child->selectedIndex) {
+			r_strbuf_append (buf, "> ");
+		} else {
+			r_strbuf_append (buf, "  ");
 		}
-		child->p->title = r_strbuf_drain (buf);
-		child->p->pos.w = r_str_bounds (child->p->title, &child->p->pos.h);
-		child->p->pos.h += 4;
-		positionMenuRec (child, child->p->pos.w - 1);
+		r_strbuf_append (buf, child->sub[j]->name);
+		r_strbuf_append (buf, "          \n");
 	}
+	child->p->title = r_strbuf_drain (buf);
+	child->p->pos.w = r_str_bounds (child->p->title, &child->p->pos.h);
+	child->p->pos.h += 4;
+	child->p->refresh = false;
+	child->p->type = PANEL_TYPE_MENU;
 }
 
 static bool initPanelsMenu(RPanels *panels) {
@@ -1650,9 +1623,8 @@ static bool initPanelsMenu(RPanels *panels) {
 	RPanelsMenuItem *debug = createMenu (root, "Debug", openMenu);
 	RPanelsMenuItem *analyze = createMenu (root, "Analyze", openMenu);
 	RPanelsMenuItem *help = createMenu (root, "Help", openMenu);
-	RPanelsMenuItem *new = createMenu (file, "New", openMenu);
 
-	positionMenu (root);
+	RPanelsMenuItem *new = createMenu (file, "New", openMenu);
 
 	root->selectedIndex = 0;
 	panelsMenu->root = root;
@@ -1699,11 +1671,6 @@ R_API void r_core_panels_refresh(RCore *core) {
 	if (!can) {
 		return;
 	}
-	if (panels->curnode > panels->menu_pos) {
-		panels->menuStackDepth = 0;
-		panels->currentMenu = NULL;
-		panels->currentMenuIndex = 0;
-	}
 	char title[1024];
 	char str[1024];
 	int i, h, w = r_cons_get_size (&h);
@@ -1722,12 +1689,6 @@ R_API void r_core_panels_refresh(RCore *core) {
 	}
 	if (panels->curnode > panels->menu_pos) {
 		panelPrint (core, can, &panel[panels->curnode], 1);
-	}
-	if (panels->curnode == panels->menu_pos && panels->menuStackDepth > 0) {
-		layoutSubMenu (panels, w);
-		for (i = 0; i <= panels->menuStackDepth; i++) {
-			panelPrint (core, can, &panels->menuPanel[i], 1);
-		}
 	}
 	(void) r_cons_canvas_gotoxy (can, -can->sx, -can->sy);
 	r_cons_canvas_fill (can, -can->sx, -can->sy, panel->pos.w, 1, ' ');
