@@ -2711,6 +2711,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cmd.fcn.rename", "", "Run when a function is renamed");
 	SETPREF ("cmd.visual", "", "Replace current print mode");
 	SETPREF ("cmd.vprompt", "", "Visual prompt commands");
+	SETPREF ("cmd.atstart", "", "Run before initial prompt, for use only in radare2rc");
 
 	SETCB ("cmd.esil.mdev", "", &cb_cmd_esil_mdev, "Command to run when memory device address is accessed");
 	SETCB ("cmd.esil.intr", "", &cb_cmd_esil_intr, "Command to run when an esil interrupt happens");
