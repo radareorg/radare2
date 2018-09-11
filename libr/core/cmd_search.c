@@ -183,10 +183,14 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 		maxlen = minlen;
 	}
 
+	r_cons_break_push (NULL, NULL);
 	for (j = minlen; j <= maxlen; j++) {
 		ut32 len = j;
 		eprintf ("Searching %s for %d byte length.\n", hashname, j);
 		r_list_foreach (param->boundaries, iter, map) {
+			if (r_cons_is_breaked ()) {
+				break;
+			}
 			ut64 from = map->itv.addr, to = r_itv_end (map->itv);
 			st64 bufsz;
 			bufsz = to - from;
@@ -204,6 +208,9 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 			eprintf ("Carving %d blocks...\n", blocks);
 			(void) r_io_read_at (core->io, from, buf, bufsz);
 			for (i = 0; (from + i + len) < to; i++) {
+				if (r_cons_is_breaked ()) {
+					break;
+				}
 				char *s = r_hash_to_string (NULL, hashname, buf + i, len);
 				if (!(i % 5)) {
 					eprintf ("%d\r", i);
@@ -226,6 +233,7 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 			free (buf);
 		}
 	}
+	r_cons_break_pop ();
 	eprintf ("No hashes found\n");
 	return 0;
 hell:
