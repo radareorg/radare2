@@ -83,32 +83,38 @@ static const char *menus_File[] = {
 	"New", "Open", "ReOpen", "Close", "Sections", "Strings", "Symbols", "Imports", "Info", "Database",  "Quit",
 	NULL
 };
+static const int fileNum = ((int)sizeof (menus_File) / (int)sizeof (const char *)) - 1;
 
 static const char *menus_ReOpen[] = {
 	"In RW", "In Debugger",
 	NULL
 };
+static const int reopenNum = ((int)sizeof (menus_ReOpen) / (int)sizeof (const char *)) - 1;
 
 static const char *menus_Edit[] = {
 	"Copy", "Paste", "Clipboard", "Write String", "Write Hex", "Write Value", "Assemble", "Fill", "io.cache",
 	NULL
 };
+static const int editNum = ((int)sizeof (menus_Edit) / (int)sizeof (const char *)) - 1;
 
 static const char *menus_View[] = {
 	"Hexdump", "Disassembly", "Graph", "FcnInfo", "Functions", "Comments", "Entropy", "Colors",
 	"Stack", "StackRefs", "Pseudo",
 	NULL
 };
+static const int viewNum = ((int)sizeof (menus_View) / (int)sizeof (const char *)) - 1;
 
 static const char *menus_Tools[] = {
 	"Assembler", "Calculator", "R2 Shell", "System Shell",
 	NULL
 };
+static const int toolsNum = ((int)sizeof (menus_Tools) / (int)sizeof (const char *)) - 1;
 
 static const char *menus_Search[] = {
 	"String", "ROP", "Code", "Hexpairs",
 	NULL
 };
+static const int searchNum = ((int)sizeof (menus_Search) / (int)sizeof (const char *)) - 1;
 
 static const char *menus_Debug[] = {
 	"Registers", "RegisterRefs", "DRX", "Breakpoints",
@@ -119,16 +125,19 @@ static const char *menus_Debug[] = {
 	"Reload",
 	NULL
 };
+static const int debugNum = ((int)sizeof (menus_Debug) / (int)sizeof (const char *)) - 1;
 
 static const char *menus_Analyze[] = {
 	"Function", "Symbols", "Program", "BasicBlocks", "Calls", "References",
 	NULL
 };
+static const int analyzeNum = ((int)sizeof (menus_Analyze) / (int)sizeof (const char *)) - 1;
 
 static const char *menus_Help[] = {
 	"Fortune", "Commands", "2048", "License", ".", "About",
 	NULL
 };
+static const int helpNum = ((int)sizeof (menus_Help) / (int)sizeof (const char *)) - 1;
 
 static void layoutMenu(RPanel *panel);
 static void layoutSubMenu(RPanels *panels, int w);
@@ -167,12 +176,11 @@ static void resizePanelUp(RPanels *panels);
 static void resizePanelDown(RPanels *panels);
 static void handleTabKey(RCore *core, bool shift);
 static int openMenu (void *user);
-static RPanelsMenuItem *createMenu (RPanelsMenuItem *parent, const char *name, RPanelsMenuCallback cb);
+static void addMenu (RPanelsMenuItem *parent, const char *name, RPanelsMenuCallback cb);
 static bool init(RCore *core, RPanels *panels, int w, int h);
 static bool initPanelsMenu(RPanels *panels);
 static bool initPanels(RCore *core, RPanels *panels);
 static void positionMenu(RPanelsMenu *menu, RPanelsMenuItem *parent, RPanelsMenuItem *child);
-static void positionMenuRec(RPanelsMenuItem *parent, int x);
 static void freePanel(RPanel *panel);
 static void panelBreakpoint(RCore *core);
 static void panelContinue(RCore *core);
@@ -1571,21 +1579,18 @@ static int openMenu (void *user) {
 	return 0;
 }
 
-static RPanelsMenuItem *createMenu(RPanelsMenuItem *parent, const char *name, RPanelsMenuCallback cb) {
+static void addMenu(RPanelsMenuItem *parent, const char *name, RPanelsMenuCallback cb) {
 	RPanelsMenuItem *item = R_NEW0 (RPanelsMenuItem);
 	item->n_sub = 0;
 	item->selectedIndex = 0;
 	item->name = name ? strdup (name) : NULL;
 	item->sub = NULL;
 	item->cb = cb;
-	if (parent) {
-		item->p = R_NEW0 (RPanel);
-		item->selfIndex = parent->n_sub;
-		parent->n_sub++;
-		parent->sub = realloc (parent->sub, sizeof (RPanelsMenuItem *) * parent->n_sub);
-		parent->sub[parent->n_sub - 1] = item;
-	}
-	return item;
+	item->p = R_NEW0 (RPanel);
+	item->selfIndex = parent->n_sub;
+	parent->n_sub++;
+	parent->sub = realloc (parent->sub, sizeof (RPanelsMenuItem *) * parent->n_sub);
+	parent->sub[parent->n_sub - 1] = item;
 }
 
 static void positionMenu(RPanelsMenu *menu, RPanelsMenuItem *parent, RPanelsMenuItem *child) {
@@ -1593,7 +1598,6 @@ static void positionMenu(RPanelsMenu *menu, RPanelsMenuItem *parent, RPanelsMenu
 	if (!buf) {
 		return;
 	}
-	int i, j;
 	child->p->pos.x = menu->depth == 1 ? child->selfIndex * 6 : parent->p->pos.x + parent->p->pos.w - 1;
 	child->p->pos.y = menu->depth == 1 ? 1 : parent->selectedIndex + 2;
 	for (j = 0; j < child->n_sub; j++) {
@@ -1614,18 +1618,43 @@ static void positionMenu(RPanelsMenu *menu, RPanelsMenuItem *parent, RPanelsMenu
 
 static bool initPanelsMenu(RPanels *panels) {
 	RPanelsMenu *panelsMenu = R_NEW0 (RPanelsMenu);
-	RPanelsMenuItem *root = createMenu (NULL, NULL, NULL);
-	RPanelsMenuItem *file = createMenu (root, "File", openMenu);
-	RPanelsMenuItem *edit = createMenu (root, "Edit", openMenu);
-	RPanelsMenuItem *view = createMenu (root, "View", openMenu);
-	RPanelsMenuItem *tools = createMenu (root, "Tools", openMenu);
-	RPanelsMenuItem *search = createMenu (root, "Search", openMenu);
-	RPanelsMenuItem *debug = createMenu (root, "Debug", openMenu);
-	RPanelsMenuItem *analyze = createMenu (root, "Analyze", openMenu);
-	RPanelsMenuItem *help = createMenu (root, "Help", openMenu);
+	RPanelsMenuItem *root = R_NEW0 (RPanelsMenuItem);
+	root->n_sub = 0;
+	root->selectedIndex = 0;
+	root->name = NULL;
+	root->sub = NULL;
+	int i;
+	for (i = 0; i < menuNum; i++) {
+		addMenu (root, menus[i], openMenu);
+	}
+	for (i = 0; i < fileNum; i++) {
+		addMenu (root->sub[0], menus_File[i], openMenu);
+	}
+	for (i = 0; i < editNum; i++) {
+		addMenu (root->sub[1], menus_Edit[i], openMenu);
+	}
+	for (i = 0; i < viewNum; i++) {
+		addMenu (root->sub[2], menus_View[i], openMenu);
+	}
+	for (i = 0; i < toolsNum; i++) {
+		addMenu (root->sub[3], menus_Tools[i], openMenu);
+	}
+	for (i = 0; i < searchNum; i++) {
+		addMenu (root->sub[4], menus_Search[i], openMenu);
+	}
+	for (i = 0; i < debugNum; i++) {
+		addMenu (root->sub[5], menus_Debug[i], openMenu);
+	}
+	for (i = 0; i < analyzeNum; i++) {
+		addMenu (root->sub[6], menus_Analyze[i], openMenu);
+	}
+	for (i = 0; i < helpNum; i++) {
+		addMenu (root->sub[7], menus_Help[i], openMenu);
+	}
 
-	RPanelsMenuItem *new = createMenu (file, "New", openMenu);
-
+	for (i = 0; i < reopenNum; i++) {
+		addMenu (root->sub[0]->sub[2], menus_ReOpen[i], openMenu);
+	}
 	root->selectedIndex = 0;
 	panelsMenu->root = root;
 	panelsMenu->history = calloc (8, sizeof (RPanelsMenuItem *));
