@@ -769,7 +769,7 @@ R_API int r_num_str_split(char *str) {
 
 R_API RList *r_num_str_split_list(char *str) {
 	int i, count = r_num_str_split (str);
-	RList *list = r_list_newf (free);
+	RList *list = r_list_new ();
 	for (i = 0; i < count; i++) {
 		r_list_append (list, str);
 		str += strlen (str) + 1;
