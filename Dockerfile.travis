@@ -22,9 +22,11 @@ RUN apt-get install -y \
     liblz4-1 \
     gnupg2 \
     python-pip \
-    meson \
-    ninja-build \
+    python3-pip \
     liblzma5
+
+RUN pip3 install meson
+RUN pip3 install ninja
 
 RUN rm -rf /src/.nvm && git clone https://github.com/creationix/nvm.git /src/.nvm && (cd /src/.nvm && git checkout `git describe --abbrev=0 --tags`) && . /src/.nvm/nvm.sh && nvm install 8.11.3
 
