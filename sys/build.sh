@@ -1,5 +1,45 @@
 #!/bin/sh
 
+# Get OS and platform to decide if we need to limit memory usage during the build
+GetPlatform() {
+   platform=$(uname -a)
+	case "$platform" in
+		"Linux raspberrypi"*) limit_jobs=1;MAX_MEM_PER_JOB=300000;;
+		"Linux"*) limit_jobs=1;MAX_MEM_PER_JOB=200000;;
+		*) limit_jobs=0
+	esac
+}
+
+BuildJobsThrottler(){
+	echo Building on Linux : computing number of allowed parallel jobs.
+	echo Maximum allowed RAM memory per job is $MAX_MEM_PER_JOB kB.
+
+	# Get number of CPUs on this target
+	cpu_n=`getconf _NPROCESSORS_ONLN`
+	printf "Number of CPUs is $cpu_n and "
+
+	# Get remaining RAM that could be used for this build
+	free_RAM=`cat /proc/meminfo | grep MemAvailable | sed 's/[^0-9]//g'`
+
+	# Assuming we may have many 300MB compilation jobs running in parallel
+	mem_allowed_jobs=$(expr $free_RAM / $MAX_MEM_PER_JOB)
+	echo "current free RAM allows us to run $mem_allowed_jobs jobs in parallel." 
+
+	# Set number of build jobs to be run in parallel as the minimum between $mem_allowed_jobs and $cpu_n
+	MAKE_JOBS=$(($mem_allowed_jobs<$cpu_n?$mem_allowed_jobs:$cpu_n))
+	echo "So, the build will run on $MAKE_JOBS job(s)."
+}
+
+# Identify current platform
+GetPlatform
+
+# Run build job limiter if platform requires it 
+if [ $limit_jobs -eq 1 ] ;
+then
+	BuildJobsThrottler
+fi;
+
+
 if [ -z "${MAKE}" ]; then
 	MAKE=make
 	gmake --help >/dev/null 2>&1
