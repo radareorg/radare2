@@ -304,6 +304,14 @@ static bool GH(r_resolve_symbol)(RCore *core, GHT *symbol, const char *symname) 
 		eprintf ("Warning: Can't find glibc mapped in memory (see dm)\n");
 		return false;
 	}
+
+	const char *debug_file = r_config_get (core->config, "dbg.libc.dbglib");
+
+	if (r_file_exists (debug_file)) {
+		path = strdup (debug_file);
+		goto found;
+	}
+
 	is_debug_file[0] = str_start_with (libc_ver_end, "/usr/lib/");
 	is_debug_file[1] = str_start_with (libc_ver_end, "/usr/lib32/");
 	is_debug_file[2] = str_start_with (libc_ver_end, "/usr/lib64/");
