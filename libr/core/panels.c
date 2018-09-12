@@ -812,10 +812,17 @@ static void handleLeftKey(RCore *core) {
 	RPanels *panels = core->panels;
 	r_cons_switchbuf (false);
 	if (panels->curnode == panels->menu_pos) {
-		if (panels->panelsMenu->root->selectedIndex > 0) {
-			panels->panelsMenu->root->selectedIndex--;
-		} else {
-			panels->panelsMenu->root->selectedIndex = panels->panelsMenu->root->n_sub - 1;
+		RPanelsMenu *menu = panels->panelsMenu;
+		if (menu->depth <= 2) {
+			if (menu->depth == 2) {
+				menu->depth = 1;
+				setRefreshAll (panels);
+			}
+			if (menu->root->selectedIndex > 0) {
+				menu->root->selectedIndex--;
+			} else {
+				menu->root->selectedIndex = menu->root->n_sub - 1;
+			}
 		}
 	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_GRAPH)) {
 		if (panels->panel[panels->curnode].sx > 0) {
@@ -840,8 +847,22 @@ static void handleRightKey(RCore *core) {
 	RPanels *panels = core->panels;
 	r_cons_switchbuf (false);
 	if (panels->curnode ==  panels->menu_pos) {
-		panels->panelsMenu->root->selectedIndex++;
-		panels->panelsMenu->root->selectedIndex %= panels->panelsMenu->root->n_sub;
+		RPanelsMenu *menu = panels->panelsMenu;
+		if (menu->depth == 1) {
+			menu->root->selectedIndex++;
+			menu->root->selectedIndex %= menu->root->n_sub;
+			return;
+		}
+		RPanelsMenuItem *parent = menu->history[menu->depth - 2];
+		RPanelsMenuItem *child = menu->history[menu->depth - 1];
+		if (child->sub[child->selectedIndex]->sub) {
+			child->sub[child->selectedIndex]->cb (core);
+		} else {
+			menu->root->selectedIndex++;
+			menu->root->selectedIndex %= menu->root->n_sub;
+			menu->depth = 1;
+			setRefreshAll (panels);
+		}
 	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_GRAPH)) {
 		panels->panel[panels->curnode].sx += r_config_get_i (core->config, "graph.scroll");
 		panels->panel[panels->curnode].refresh = true;
@@ -1607,8 +1628,8 @@ static void positionMenu(RPanelsMenu *menu, RPanelsMenuItem *parent, RPanelsMenu
 	if (!buf) {
 		return;
 	}
-	child->p->pos.x = menu->depth < 3 ? child->selfIndex * 6 : parent->p->pos.x + parent->p->pos.w - 1;
-	child->p->pos.y = menu->depth < 3 ? 1 : parent->selectedIndex + 2;
+	child->p->pos.x = menu->depth <= 2 ? child->selfIndex * 6 : parent->p->pos.x + parent->p->pos.w - 1;
+	child->p->pos.y = menu->depth <= 2 ? 1 : parent->selectedIndex + 2;
 	int i;
 	for (i = 0; i < child->n_sub; i++) {
 		if (i == child->selectedIndex) {
