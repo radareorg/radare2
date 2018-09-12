@@ -886,12 +886,7 @@ int main(int argc, char **argv, char **envp) {
 	}
 
 	if (run_rc) {
-		const char *atstart;
 		radare2_rc (&r);
-		atstart = r_config_get (r.config, "cmd.atstart");
-		if (atstart && *atstart) {
-			r_list_prepend (cmds, (char *)atstart);
-		}
 	}
 
 	if (r_config_get_i (r.config, "zign.autoload")) {

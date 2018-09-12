@@ -2702,6 +2702,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cmd.gprompt", "", "Graph visual prompt commands");
 	SETPREF ("cmd.hit", "", "Run when a search hit is found");
 	SETPREF ("cmd.open", "", "Run when file is opened");
+	SETPREF ("cmd.load", "", "Run when binary is loaded");
 	SETCB ("cmd.pdc", "", &cb_cmdpdc, "Select pseudo-decompiler command to run after pdc");
 	SETCB ("cmd.log", "", &cb_cmdlog, "Every time a new T log is added run this command");
 	SETPREF ("cmd.prompt", "", "Prompt commands");
@@ -2711,7 +2712,6 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cmd.fcn.rename", "", "Run when a function is renamed");
 	SETPREF ("cmd.visual", "", "Replace current print mode");
 	SETPREF ("cmd.vprompt", "", "Visual prompt commands");
-	SETPREF ("cmd.atstart", "", "Run before initial prompt, for use only in radare2rc");
 
 	SETCB ("cmd.esil.mdev", "", &cb_cmd_esil_mdev, "Command to run when memory device address is accessed");
 	SETCB ("cmd.esil.intr", "", &cb_cmd_esil_intr, "Command to run when an esil interrupt happens");
