@@ -104,7 +104,7 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 
 static char *signature (RBinFile *bf, bool json) {
 	if (!bf || !bf->o || !bf->o->bin_obj) {
-		return c;
+		return NULL;
 	}
 	struct PE_ (r_bin_pe_obj_t) * bin = bf->o->bin_obj;
 	if (json) {
