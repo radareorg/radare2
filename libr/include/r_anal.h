@@ -1702,7 +1702,7 @@ typedef struct {
 
 typedef struct vtable_info_t {
 	ut64 saddr; //starting address
-	RVector methods;
+	RVec methods;
 } RVTableInfo;
 
 typedef struct vtable_method_info_t {

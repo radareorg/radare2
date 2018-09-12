@@ -640,12 +640,12 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 			append_bound (list, core->io, search_itv, m->itv.addr, m->itv.size, m->flags);
 		}
 	} else if (!strcmp (mode, "io.maps")) { // Non-overlapping RIOMap parts not overriden by others (skyline)
-		const RPVector *skyline = &core->io->map_skyline;
+		const RPVec *skyline = &core->io->map_skyline;
 		ut64 begin = UT64_MAX;
 		ut64 end = UT64_MAX;
 		size_t i;
-		for (i = 0; i < r_pvector_len (skyline); i++) {
-			const RIOMapSkyline *part = r_pvector_at (skyline, i);
+		for (i = 0; i < r_pvec_len (skyline); i++) {
+			const RIOMapSkyline *part = r_pvec_at (skyline, i);
 			int srwx = part->map->flags;
 			ut64 from = r_itv_begin (part->itv);
 			ut64 to = r_itv_end (part->itv);
@@ -687,12 +687,12 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, int protection, const char 
 				append_bound (list, core->io, search_itv, addr, size, s->srwx);
 			}
 		}
-		const RPVector *skyline = &core->io->map_skyline;
+		const RPVec *skyline = &core->io->map_skyline;
 		ut64 begin = UT64_MAX;
 		ut64 end = UT64_MAX;
 		size_t i;
-		for (i = 0; i < r_pvector_len (skyline); i++) {
-			const RIOMapSkyline *part = r_pvector_at (skyline, i);
+		for (i = 0; i < r_pvec_len (skyline); i++) {
+			const RIOMapSkyline *part = r_pvec_at (skyline, i);
 			ut64 from = part->itv.addr;
 			ut64 to = part->itv.addr + part->itv.size;
 			int srwx = part->map->flags;

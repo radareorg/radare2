@@ -30,7 +30,7 @@ R_API void r_anal_vtable_info_free(RVTableInfo *vtable) {
 	if (!vtable) {
 		return;
 	}
-	r_vector_clear (&vtable->methods);
+	r_vec_clear (&vtable->methods);
 	free (vtable);
 }
 
@@ -135,12 +135,12 @@ R_API RVTableInfo *r_anal_vtable_parse_at(RVTableContext *context, ut64 addr) {
 		return NULL;
 	}
 	vtable->saddr = addr;
-	r_vector_init (&vtable->methods, sizeof (RVTableMethodInfo), NULL, NULL);
+	r_vec_init (&vtable->methods, sizeof (RVTableMethodInfo), NULL, NULL);
 
 	RVTableMethodInfo meth;
 	while (vtable_is_value_in_text_section (context, addr, &meth.addr)) {
 		meth.vtable_offset = addr - vtable->saddr;
-		if (!r_vector_push (&vtable->methods, &meth)) {
+		if (!r_vec_push (&vtable->methods, &meth)) {
 			break;
 		}
 
@@ -246,8 +246,8 @@ R_API void r_anal_list_vtables(RAnal *anal, int rad) {
 			}
 			bool isFirstMethod = true;
 			r_cons_printf ("{\"offset\":%"PFMT64d",\"methods\":[", table->saddr);
-			r_vector_foreach (&table->methods, curMethod) {
-				if (!isFirstMethod) {
+			r_vec_foreach (&table->methods, curMethod) {
+				if(!isFirstMethod) {
 					r_cons_print (",");
 				}
 				RAnalFunction *fcn = r_anal_get_fcn_in (anal, curMethod->addr, 0);
@@ -266,7 +266,7 @@ R_API void r_anal_list_vtables(RAnal *anal, int rad) {
 						   table->saddr,
 						   r_anal_vtable_info_get_size (&context, table),
 						   table->saddr);
-			r_vector_foreach (&table->methods, curMethod) {
+			r_vec_foreach (&table->methods, curMethod) {
 				r_cons_printf ("Cd %d @ 0x%08"PFMT64x"\n", context.word_size, table->saddr + curMethod->vtable_offset);
 				RAnalFunction *fcn = r_anal_get_fcn_in (anal, curMethod->addr, 0);
 				const char *const name = fcn ? fcn->name : NULL;
@@ -281,7 +281,7 @@ R_API void r_anal_list_vtables(RAnal *anal, int rad) {
 		r_list_foreach (vtables, vtableIter, table) {
 			ut64 vtableStartAddress = table->saddr;
 			r_cons_printf ("\nVtable Found at 0x%08"PFMT64x"\n", vtableStartAddress);
-			r_vector_foreach (&table->methods, curMethod) {
+			r_vec_foreach (&table->methods, curMethod) {
 				RAnalFunction *fcn = r_anal_get_fcn_in (anal, curMethod->addr, 0);
 				const char* const name = fcn ? fcn->name : NULL;
 				r_cons_printf ("0x%08"PFMT64x" : %s\n", vtableStartAddress, name ? name : noMethodName);

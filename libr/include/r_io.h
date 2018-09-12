@@ -9,7 +9,7 @@
 #include <r_util/r_buf.h>
 #include "r_socket.h"
 #include "r_util.h"
-#include "r_vector.h"
+#include "r_vec.h"
 
 #define R_IO_READ	4
 #define R_IO_WRITE	2
@@ -77,7 +77,7 @@ typedef struct r_io_t {
 	RIDPool *sec_ids;
 	RIDPool *map_ids;
 	SdbList *maps; //from tail backwards maps with higher priority are found
-	RPVector map_skyline; // map parts that are not covered by others
+	RPVec map_skyline; // map parts that are not covered by others
 	SdbList *sections;
 	RIDStorage *files;
 	RCache *buffer;
