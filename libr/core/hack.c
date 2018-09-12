@@ -149,20 +149,23 @@ R_API bool r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
 		eprintf ("TODO: use jnz or jz\n");
 		return false;
 	} else if (!strcmp (op, "ret1")) {
-		if (bits == 16)
+		if (bits == 16) {
 			r_core_cmd0 (core, "wx 01207047 @@ $$+1\n"); // mov r0, 1; bx lr
-		else
+		} else {
 			r_core_cmd0 (core, "wx 0100b0e31eff2fe1 @@ $$+1\n"); // movs r0, 1; bx lr
+		}
 	} else if (!strcmp (op, "ret0")) {
-		if (bits == 16)
+		if (bits == 16) {
 			r_core_cmd0 (core, "wx 00207047 @@ $$+1\n"); // mov r0, 0; bx lr
-		else
+		} else {
 			r_core_cmd0 (core, "wx 0000a0e31eff2fe1 @@ $$+1\n"); // movs r0, 0; bx lr
+		}
 	} else if (!strcmp (op, "retn")) {
-		if (bits == 16)
+		if (bits == 16) {
 			r_core_cmd0 (core, "wx ff207047 @@ $$+1\n"); // mov r0, -1; bx lr
-		else
+		} else {
 			r_core_cmd0 (core, "wx ff00a0e31eff2fe1 @@ $$+1\n"); // movs r0, -1; bx lr
+		}
 	} else {
 		eprintf ("Invalid operation\n");
 		return false;
@@ -174,13 +177,16 @@ R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 	const ut8 *b = core->block;
 	int i, size = analop->size;
 	if (!strcmp (op, "nop")) {
-		if (size * 2 + 1 < size) return false;
+		if (size * 2 + 1 < size) {
+			return false;
+		}
 		char *str = malloc (size * 2 + 1);
 		if (!str) {
 			return false;
 		}
-		for (i = 0; i < size; i++)
+		for (i = 0; i < size; i++) {
 			memcpy (str + (i * 2), "90", 2);
+		}
 		str[size*2] = '\0';
 		r_core_cmdf (core, "wx %s\n", str);
 		free (str);

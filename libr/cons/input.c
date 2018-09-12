@@ -232,8 +232,9 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 	if (color) {
 		const char *p = cons->pal.input;
 		int len = p? strlen (p): 0;
-		if (len>0)
+		if (len > 0) {
 			fwrite (p, len, 1, stdout);
+		}
 		fflush (stdout);
 	}
 	if (!fgets (buf, len, cons->fdin)) {
@@ -250,7 +251,9 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 		RETURN (-2);
 	}
 	buf[strlen (buf)-1] = '\0';
-	if (color) printf (Color_RESET);
+	if (color) {
+		printf (Color_RESET);
+	}
 	ret = strlen (buf);
 beach:
 #if __UNIX__

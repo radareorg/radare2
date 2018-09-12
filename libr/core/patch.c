@@ -9,12 +9,16 @@ R_API int r_core_patch_line (RCore *core, char *str) {
 		return 0;
 	}
 	*p = 0;
-	for (++p; *p == ' '; p++); // XXX: skipsspaces here
+	for (++p; *p == ' '; p++) {
+		; // XXX: skipsspaces here
+	}
 
 	switch (*p) {
 	case '"':
 		  q = strchr (p + 1,'"');
-		  if (q) *q = 0;
+		  if (q) {
+			  *q = 0;
+		  }
 		  r_core_cmdf (core, "s %s", str);
 		  r_core_cmdf (core, "\"w %s\"", p+1);
 		  break;
@@ -26,7 +30,9 @@ R_API int r_core_patch_line (RCore *core, char *str) {
 		q = strchr (p + 1,' ');
 		if (q) {
 			*q = 0;
-			for (++q; *q == ' '; q++); // XXX: skipsspaces here
+			for (++q; *q == ' '; q++) {
+				; // XXX: skipsspaces here
+			}
 		} else {
 			return 0;
 		}
@@ -60,8 +66,9 @@ static int __core_patch_bracket(RCore *core, const char *str, ut64 *noff) {
 			p++;
 			continue;
 		}
-		if (*str == '}')
+		if (*str == '}') {
 			break;
+		}
 		if ((q = strstr (str, "${"))) {
 			char *end = strchr (q+2,'}');
 			if (end) {

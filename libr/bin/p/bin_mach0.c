@@ -500,16 +500,19 @@ static RBinInfo* info(RBinFile *bf) {
 	char *str;
 	RBinInfo *ret;
 
-	if (!bf || !bf->o)
+	if (!bf || !bf->o) {
 		return NULL;
+	}
 
 	ret = R_NEW0 (RBinInfo);
-	if (!ret)
+	if (!ret) {
 		return NULL;
+	}
 
 	bin = bf->o->bin_obj;
-	if (bf->file)
+	if (bf->file) {
 		ret->file = strdup (bf->file);
+	}
 	if ((str = MACH0_(get_class) (bf->o->bin_obj))) {
 		ret->bclass = str;
 	}
@@ -543,8 +546,9 @@ static RBinInfo* info(RBinFile *bf) {
 static bool check_bytes(const ut8 *buf, ut64 length) {
 	if (buf && length >= 4) {
 		if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
-			!memcmp (buf, "\xfe\xed\xfa\xce", 4))
+			!memcmp (buf, "\xfe\xed\xfa\xce", 4)) {
 			return true;
+		}
 	}
 	return false;
 }

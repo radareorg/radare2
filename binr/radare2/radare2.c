@@ -1427,12 +1427,16 @@ int main(int argc, char **argv, char **envp) {
 					r.num->value = 0;
 					break;
 				}
-				if (lock) r_th_lock_enter (lock);
+				if (lock) {
+					r_th_lock_enter (lock);
+				}
 				/* -1 means invalid command, -2 means quit prompt loop */
 				if ((ret = r_core_prompt_exec (&r)) == -2) {
 					break;
 				}
-				if (lock) r_th_lock_leave (lock);
+				if (lock) {
+					r_th_lock_leave (lock);
+				}
 				if (rabin_th && !r_th_wait_async (rabin_th)) {
 					// eprintf ("rabin thread end \n");
 					r_th_kill_free (rabin_th);

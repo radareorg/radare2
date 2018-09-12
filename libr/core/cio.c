@@ -76,8 +76,9 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 		return false;
 	}
 	/* some io backends seems to be buggy in those cases */
-	if (bs > 4096)
+	if (bs > 4096) {
 		bs = 4096;
+	}
 	buf = malloc (bs);
 	if (!buf) {
 		eprintf ("Cannot alloc %d byte(s)\n", bs);
@@ -122,8 +123,9 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 			// r_hex_str2bin() is guaranteed to output maximum half the
 			// input size, or 1 byte if there is just a single nibble.
 			str = (char *)malloc (strlen (arg) / 2 + 1);
-			if (!str)
+			if (!str) {
 				goto beach;
+			}
 			len = r_hex_str2bin (arg, (ut8 *)str);
 			// Output is invalid if there was just a single nibble,
 			// but in that case, len is negative (-1).
@@ -138,10 +140,13 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 				goto beach;
 			}
 			str = r_mem_dup (core->yank_buf->buf, len);
-			if (!str)
+			if (!str) {
 				goto beach;
+			}
 		}
-	} else len = 0;
+	} else {
+		len = 0;
+	}
 
 	// execute the operand
 	if (op=='e') {
@@ -243,7 +248,10 @@ R_API int r_core_write_op(RCore *core, const char *arg, char op) {
 			case 'o': buf[i] |= str[j]; break;
 			case 'A': buf[i] &= str[j]; break;
 			}
-			j++; if (j>=len) j=0; /* cyclic key */
+			j++;
+			if (j >= len) {
+				j = 0; /* cyclic key */
+			}
 		}
 	}
 

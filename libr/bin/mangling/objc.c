@@ -11,10 +11,13 @@ R_API bool r_bin_lang_objc(RBinFile *binfile) {
 	const char *ft;
 	char *dsym;
 
-	if (!info) return false;
-	ft = info->rclass;
-	if (!ft || (!strstr (ft, "mach") && !strstr (ft, "elf")))
+	if (!info) {
 		return false;
+	}
+	ft = info->rclass;
+	if (!ft || (!strstr (ft, "mach") && !strstr (ft, "elf"))) {
+		return false;
+	}
 	r_list_foreach (o->symbols, iter, sym) {
 		if (!hasobjc && !strncmp (sym->name, "_OBJC_", 6)) {
 			hasobjc = true;
@@ -26,8 +29,9 @@ R_API bool r_bin_lang_objc(RBinFile *binfile) {
 			free (dsym);
 		}
 	}
-	if (hasobjc)
+	if (hasobjc) {
 		info->lang = "objc";
+	}
 	// create class members and set method names
 	// iterate on symbols to conscruct class/methods
 	return hasobjc;

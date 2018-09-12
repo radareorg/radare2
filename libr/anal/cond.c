@@ -29,14 +29,18 @@ R_API RAnalCond *r_anal_cond_new() {
 }
 
 R_API void r_anal_cond_fini (RAnalCond *c) {
-	if (!c) return;
+	if (!c) {
+		return;
+	}
 	r_anal_value_free (c->arg[0]);
 	r_anal_value_free (c->arg[1]);
 	c->arg[0] = c->arg[1] = NULL;
 }
 
 R_API void r_anal_cond_free (RAnalCond *c) {
-	if (!c) return;
+	if (!c) {
+		return;
+	}
 	r_anal_cond_fini (c);
 	free (c);
 }
@@ -44,7 +48,9 @@ R_API void r_anal_cond_free (RAnalCond *c) {
 // XXX?
 R_API RAnalCond *r_anal_cond_clone(RAnalCond *cond) {
 	RAnalCond *c = R_NEW (RAnalCond);
-	if (!c) return NULL;
+	if (!c) {
+		return NULL;
+	}
 	memcpy (c, cond, sizeof (RAnalCond));
 	return c;
 }
@@ -53,10 +59,11 @@ static inline const char *condstring(RAnalCond *cond) {
 	const char *condstr_single[] = { "!", "", "0<", "0<=", "0>", "0>=" };
 	const char *condstr[] = { "==", "!=", ">=", ">", "<=", "<" };
 	if (cond) {
-		if (cond->arg[1])
+		if (cond->arg[1]) {
 			return condstr[cond->type % 6];
-		else
+		} else {
 			return condstr_single[cond->type % 6];
+		}
 	}
 	return "";
 }
@@ -91,21 +98,24 @@ R_API int r_anal_cond_eval(RAnal *anal, RAnalCond *cond) {
 R_API char *r_anal_cond_to_string(RAnalCond *cond) {
 	char *val0, *val1, *out = NULL;
 	const char *cnd;
-	if (!cond)
+	if (!cond) {
 		return NULL;
+	}
 	cnd = condstring (cond);
 	val0 = r_anal_value_to_string (cond->arg[0]);
 	val1 = r_anal_value_to_string (cond->arg[1]);
 	if (val0) {
 		if (R_ANAL_COND_SINGLE (cond)) {
 			int val0len = strlen (val0) + 10;
-			if ((out = malloc (val0len)))
+			if ((out = malloc (val0len))) {
 				snprintf (out, val0len, "%s%s", cnd, val0);
+			}
 		} else {
 			if (val1) {
 				int val0len = strlen (val0) + strlen (val1) + 10;
-				if ((out = malloc (val0len)))
+				if ((out = malloc (val0len))) {
 					snprintf (out, val0len, "%s %s %s", val0, cnd, val1);
+				}
 			}
 		}
 	}
@@ -116,8 +126,9 @@ R_API char *r_anal_cond_to_string(RAnalCond *cond) {
 
 R_API RAnalCond *r_anal_cond_new_from_op(RAnalOp *op) {
 	RAnalCond *cond;
-	if (!(cond = r_anal_cond_new ()))
+	if (!(cond = r_anal_cond_new ())) {
 		return NULL;
+	}
 	//v->reg[0] = op->src[0];
 	//v->reg[1] = op->src[1];
 	cond->arg[0] = op->src[0];

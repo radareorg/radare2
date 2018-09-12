@@ -494,7 +494,9 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			return 0;
 		}
 		// pop state
-		if (ok) *ok = 1;
+		if (ok) {
+			*ok = 1;
+		}
 		ut8 buf[sizeof (ut64)] = R_EMPTY;
 		(void)r_io_read_at (core->io, n, buf, R_MIN (sizeof (buf), refsz));
 		switch (refsz) {
@@ -709,7 +711,9 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			// NOTE: functions override flags
 			RAnalFunction *fcn = r_anal_fcn_find_name (core->anal, str);
 			if (fcn) {
-				if (ok) *ok = true;
+				if (ok) {
+					*ok = true;
+				}
 				return fcn->addr;
 			}
 #if 0
@@ -722,7 +726,9 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 #endif
 			if ((flag = r_flag_get (core->flags, str))) {
 				ret = flag->offset;
-				if (ok) *ok = true;
+				if (ok) {
+					*ok = true;
+				}
 				return ret;
 			}
 
@@ -734,14 +740,18 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 					const char *alias = r_reg_get_name (core->dbg->reg, role);
 					r = r_reg_get (core->dbg->reg, alias, -1);
 					if (r) {
-						if (ok) *ok = true;
+						if (ok) {
+							*ok = true;
+						}
 						ret = r_reg_get_value (core->dbg->reg, r);
 						return ret;
 					}
 				}
 			}
 			else {
-				if (ok) *ok = true;
+				if (ok) {
+					*ok = true;
+				}
 				ret = r_reg_get_value (core->dbg->reg, r);
 				return ret;
 			}
@@ -1557,7 +1567,9 @@ static int autocomplete(RLine *line) {
 					}
 				}
 			}
-			if (j > 0) tmp_argv_heap = true;
+			if (j > 0) {
+				tmp_argv_heap = true;
+			}
 			tmp_argv[j] = NULL;
 			line->completion.argc = j;
 			line->completion.argv = tmp_argv;
@@ -1604,7 +1616,9 @@ static int autocomplete(RLine *line) {
 					}
 				}
 			}
-			if (i > 0) tmp_argv_heap = true;
+			if (i > 0) {
+				tmp_argv_heap = true;
+			}
 			tmp_argv[i] = NULL;
 			ls_free (l);
 			line->completion.argc = i;
@@ -1623,7 +1637,9 @@ static int autocomplete(RLine *line) {
 					}
 				}
 			}
-			if (i > 0) tmp_argv_heap = true;
+			if (i > 0) {
+				tmp_argv_heap = true;
+			}
 			tmp_argv[i] = NULL;
 			ls_free (l);
 			line->completion.argc = i;
@@ -1648,7 +1664,9 @@ static int autocomplete(RLine *line) {
 					}
 				}
 			}
-			if (i > 0) tmp_argv_heap = true;
+			if (i > 0) {
+				tmp_argv_heap = true;
+			}
 			tmp_argv[i] = NULL;
 			ls_free (l);
 			line->completion.argc = i;
@@ -1820,29 +1838,41 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 			R_FREE (mapname);
 		}
 	}
-	if (fi) r_strbuf_appendf (s, " %s", fi->name);
-	if (fcn) r_strbuf_appendf (s, " %s", fcn->name);
+	if (fi) {
+		r_strbuf_appendf (s, " %s", fi->name);
+	}
+	if (fcn) {
+		r_strbuf_appendf (s, " %s", fcn->name);
+	}
 	if (type) {
 		const char *c = r_core_anal_optype_colorfor (core, value, true);
 		const char *cend = (c && *c) ? Color_RESET: "";
-		if (!c) c = "";
+		if (!c) {
+			c = "";
+		}
 		if (type & R_ANAL_ADDR_TYPE_HEAP) {
 			r_strbuf_appendf (s, " %sheap%s", c, cend);
 		} else if (type & R_ANAL_ADDR_TYPE_STACK) {
 			r_strbuf_appendf (s, " %sstack%s", c, cend);
 		}
-		if (type & R_ANAL_ADDR_TYPE_PROGRAM)
+		if (type & R_ANAL_ADDR_TYPE_PROGRAM) {
 			r_strbuf_appendf (s, " %sprogram%s", c, cend);
-		if (type & R_ANAL_ADDR_TYPE_LIBRARY)
+		}
+		if (type & R_ANAL_ADDR_TYPE_LIBRARY) {
 			r_strbuf_appendf (s, " %slibrary%s", c, cend);
-		if (type & R_ANAL_ADDR_TYPE_ASCII)
+		}
+		if (type & R_ANAL_ADDR_TYPE_ASCII) {
 			r_strbuf_appendf (s, " %sascii%s", c, cend);
-		if (type & R_ANAL_ADDR_TYPE_SEQUENCE)
+		}
+		if (type & R_ANAL_ADDR_TYPE_SEQUENCE) {
 			r_strbuf_appendf (s, " %ssequence%s", c, cend);
-		if (type & R_ANAL_ADDR_TYPE_READ)
+		}
+		if (type & R_ANAL_ADDR_TYPE_READ) {
 			r_strbuf_appendf (s, " %sR%s", c, cend);
-		if (type & R_ANAL_ADDR_TYPE_WRITE)
+		}
+		if (type & R_ANAL_ADDR_TYPE_WRITE) {
 			r_strbuf_appendf (s, " %sW%s", c, cend);
+		}
 		if (type & R_ANAL_ADDR_TYPE_EXEC) {
 			RAsmOp op;
 			ut8 buf[32];
@@ -2437,7 +2467,9 @@ R_API void r_core_prompt_loop(RCore *r) {
 static int prompt_flag (RCore *r, char *s, size_t maxlen) {
 	const char DOTS[] = "...";
 	const RFlagItem *f = r_flag_get_at (r->flags, r->offset, false);
-	if (!f) return false;
+	if (!f) {
+		return false;
+	}
 
 	if (f->offset < r->offset) {
 		snprintf (s, maxlen, "%s + %" PFMT64u, f->name, r->offset - f->offset);
@@ -2487,8 +2519,9 @@ static void set_prompt (RCore *r) {
 	const char *END = "";
 	const char *remote = "";
 
-	if (cmdprompt && *cmdprompt)
+	if (cmdprompt && *cmdprompt) {
 		r_core_cmd (r, cmdprompt, 0);
+	}
 
 	if (r_config_get_i (r->config, "scr.prompt.file")) {
 		free (filename);

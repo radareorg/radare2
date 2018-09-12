@@ -432,8 +432,9 @@ char* r_x509_validity_dump (RX509Validity* validity, char* buffer, ut32 length, 
 	if (!validity || !buffer || !length) {
 		return NULL;
 	}
-	if (!pad)
+	if (!pad) {
 		pad = "";
+	}
 	const char* b = validity->notBefore ? validity->notBefore->string : "Missing";
 	const char* a = validity->notAfter ? validity->notAfter->string : "Missing";
 	p = snprintf (buffer, length, "%sNot Before: %s\n%sNot After: %s\n", pad, b, pad, a);
@@ -507,7 +508,9 @@ char* r_x509_extensions_dump (RX509Extensions* exts, char* buffer, ut32 length, 
 	for (i = 0, p = 0, r = 0; i < exts->length; ++i) {
 		//RASN1String *s;
 		RX509Extension *e = exts->extensions[i];
-		if (!e) continue;
+		if (!e) {
+			continue;
+		}
 		//TODO handle extensions..
 		//s = r_asn1_stringify_bytes (e->extnValue->sector, e->extnValue->length);
 		if (len < p) {
@@ -538,7 +541,9 @@ char* r_x509_tbscertificate_dump (RX509TBSCertificate* tbsc, char* buffer, ut32 
 		pad = "";
 	}
 	pad2 = r_str_newf ("%s  ", pad);
-	if (!pad2) return NULL;
+	if (!pad2) {
+		return NULL;
+	}
 	r = snprintf (buffer, length, "%sVersion: v%u\n"
 				"%sSerial Number:\n%s  %s\n"
 				"%sSignature Algorithm:\n%s  %s\n"
@@ -711,7 +716,9 @@ char* r_x509_crl_dump (RX509CertificateRevocationList *crl, char* buffer, ut32 l
 		pad = "";
 	}
 	pad3 = r_str_newf ("%s    ", pad);
-	if (!pad3) return NULL;
+	if (!pad3) {
+		return NULL;
+	}
 	pad2 = pad3 + 2;
 	algo = crl->signature.algorithm;
 	last = crl->lastUpdate;

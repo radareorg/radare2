@@ -29,7 +29,9 @@ static int assemble(RParse *p, char *data, char *str) {
 	if (ptr) {
 		*ptr = '\0';
 		sprintf (data, "mov %s, %s", str, ptr+1);
-	} else strcpy (data, str);
+	} else {
+		strcpy (data, str);
+	}
 	return true;
 }
 

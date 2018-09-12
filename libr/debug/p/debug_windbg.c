@@ -134,8 +134,12 @@ static int r_debug_windbg_detach(RDebug *dbg, int pid) {
 }
 
 static char *r_debug_windbg_reg_profile(RDebug *dbg) {
-	if (!dbg) return NULL;
-	if (dbg->arch && strcmp (dbg->arch, "x86")) return NULL;
+	if (!dbg) {
+		return NULL;
+	}
+	if (dbg->arch && strcmp (dbg->arch, "x86")) {
+		return NULL;
+	}
 	if (dbg->bits == R_SYS_BITS_32) {
 #include "native/reg/windows-x86.h"
 	} else if (dbg->bits == R_SYS_BITS_64) {
@@ -146,7 +150,9 @@ static char *r_debug_windbg_reg_profile(RDebug *dbg) {
 
 static int r_debug_windbg_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	int *tag;
-	if (!b) return false;
+	if (!b) {
+		return false;
+	}
 	// Use a 32 bit word here to keep this compatible with 32 bit hosts
 	tag = (int *)&b->data;
 	return windbg_bkpt (wctx, b->addr, set, b->hw, tag);

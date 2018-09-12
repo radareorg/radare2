@@ -79,8 +79,9 @@ R_API char *r_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr)
 			y = R_MIN(y, FLDSIZE_Y - 1);
 
 			/* augment the field */
-			if (field[x][y] < len - 2)
+			if (field[x][y] < len - 2) {
 				field[x][y]++;
+			}
 			input = input >> 2;
 		}
 	}
@@ -99,24 +100,27 @@ R_API char *r_print_randomart(const ut8 *dgst_raw, ut32 dgst_raw_len, ut64 addr)
 	p = strchr(retval, '\0');
 
 	/* output upper border */
-	for (i = p - retval - 1; i < FLDSIZE_X; i++)
+	for (i = p - retval - 1; i < FLDSIZE_X; i++) {
 		*p++ = '-';
+	}
 	*p++ = '+';
 	*p++ = '\n';
 
 	/* output content */
 	for (y = 0; y < FLDSIZE_Y; y++) {
 		*p++ = '|';
-		for (x = 0; x < FLDSIZE_X; x++)
-			*p++ = augmentation_string[R_MIN(field[x][y], len)];
+		for (x = 0; x < FLDSIZE_X; x++) {
+			*p++ = augmentation_string[R_MIN (field[x][y], len)];
+		}
 		*p++ = '|';
 		*p++ = '\n';
 	}
 
 	/* output lower border */
 	*p++ = '+';
-	for (i = 0; i < FLDSIZE_X; i++)
+	for (i = 0; i < FLDSIZE_X; i++) {
 		*p++ = '-';
+	}
 	*p++ = '+';
 	*p++ = 0;
 

@@ -1148,8 +1148,9 @@ R_API RCoreFile *r_core_file_find_by_name(RCore *core, const char *name) {
 	RCoreFile *cf = NULL;
 	RIODesc *desc;
 
-	if (!core)
+	if (!core) {
 		return NULL;
+	}
 
 	r_list_foreach (core->files, iter, cf) {
 		desc = r_io_desc_get (core->io, cf->fd);

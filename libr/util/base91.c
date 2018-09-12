@@ -15,8 +15,9 @@ static const char b91[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
 int get_char_index(const char c) {
 	int i;
 	for (i = 0; i < 91; i++ ) {
-		if (b91[i] == c)
+		if (b91[i] == c) {
 			return i;
+		}
 	}
 	return -1;
 }
@@ -27,12 +28,14 @@ R_API int r_base91_decode(ut8* bout, const char *bin, int len) {
 	int b = 0;
 	int n = 0;
 	int c;
-	if (len < 0)
+	if (len < 0) {
 		len = strlen (bin);
+	}
 	for (in = out = 0; in < len; in++) {
 		c = get_char_index(bin[in]);
-		if (c == -1)
+		if (c == -1) {
 			continue;
+		}
 		if (v < 0) {
 			v = c;
 		} else {
@@ -47,8 +50,9 @@ R_API int r_base91_decode(ut8* bout, const char *bin, int len) {
 				bout[out++] = b & 255;
 				b >>= 8;
 				n -= 8;
-				if (n <= 7)
+				if (n <= 7) {
 					break;
+				}
 			}
 			v = -1;
 		}
@@ -64,8 +68,9 @@ R_API int r_base91_encode(char *bout, const ut8 *bin, int len) {
 	int v = 0;
 	int b = 0;
 	int n = 0;
-	if (len < 0)
+	if (len < 0) {
 		len = strlen ((const char *)bin);
+	}
 	for (in = out = 0; in < len; in++) {
 		b |= (bin[in] << n);
 		n += 8;

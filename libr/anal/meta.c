@@ -226,7 +226,9 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size) {
 						"meta.%c.0x%"PFMT64x,
 						type, sdb_atoi (s));
 					sdb_unset (DB, key, 0);
-					if (!next) break;
+					if (!next) {
+						break;
+					}
 				}
 				free (dtr);
 			}
@@ -298,7 +300,9 @@ R_API void r_meta_item_free(void *_item) {
 
 R_API RAnalMetaItem *r_meta_item_new(int type) {
 	RAnalMetaItem *mi = R_NEW0 (RAnalMetaItem);
-	if (mi) mi->type = type;
+	if (mi) {
+		mi->type = type;
+	}
 	return mi;
 }
 
@@ -558,7 +562,9 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 				{
 				const char *type = r_meta_type_to_string (d->type);
 				char *s = sdb_encode ((const ut8*)pstr, -1);
-				if (!s) s = strdup (pstr);
+				if (!s) {
+					s = strdup (pstr);
+				}
 				if (rad) {
 					if (!strcmp (type, "CCu")) {
 						a->cb_printf ("%s base64:%s @ 0x%08"PFMT64x"\n",
@@ -668,8 +674,9 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 			}
 			break;
 		}
-		if (str)
+		if (str) {
 			free (str);
+		}
 	}
 }
 
@@ -764,8 +771,9 @@ static int meta_unset_cb(void *user, const char *k, const char *v) {
 	RAnalMetaUserItem *ui = user;
 	RAnal *a = ui->anal;
 	RAnalMetaItem it = {0};
-	if (!strstr(k, ".0x"))
+	if (!strstr (k, ".0x")) {
 		return 1;
+	}
 	meta_deserialize (&it, k, v);
 	if (it.space != -1) {
 		it.space = -1;
@@ -789,8 +797,9 @@ static int meta_count_cb(void *user, const char *k, const char *v) {
 	RAnalMetaUserItem *ui = user;
 	myMetaUser *mu = ui->user;
 	RAnalMetaItem it = {0};
-	if (!strstr(k, ".0x"))
+	if (!strstr (k, ".0x")) {
 		return 1;
+	}
 	meta_deserialize (&it, k, v);
 	if (mu) {
 		if (it.space == mu->ctx) {

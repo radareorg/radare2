@@ -329,8 +329,16 @@ TODO:
 			case '*': free (rtrcmd (T, "b+16")); break;
 			case '-': free (rtrcmd (T, "b-1")); break;
 			case '/': free (rtrcmd (T, "b-16")); break;
-			case 'p': cmdidx++; if (!cmds[cmdidx]) cmdidx = 0; break;
-			case 'P': cmdidx--; if (cmdidx<0) cmdidx = 2; break;
+			case 'p': cmdidx++;
+				if (!cmds[cmdidx]) {
+					cmdidx = 0;
+				}
+				break;
+			case 'P': cmdidx--;
+				if (cmdidx < 0) {
+					cmdidx = 2;
+				}
+				break;
 			case 'q': return false;
 			}
 		}
@@ -368,7 +376,9 @@ static char *rtr_dir_files (const char *path) {
 	RList *files = r_sys_dir (path);
 	eprintf ("Listing directory %s\n", path);
 	r_list_foreach (files, iter, file) {
-		if (file[0] == '.') continue;
+		if (file[0] == '.') {
+			continue;
+		}
 		ptr = r_str_appendf (ptr, "<a href=\"%s%s\">%s</a><br />\n",
 			path, file, file);
 	}
@@ -1374,8 +1384,9 @@ R_API void r_core_rtr_pushout(RCore *core, const char *input) {
 R_API void r_core_rtr_list(RCore *core) {
 	int i;
 	for (i = 0; i < RTR_MAX_HOSTS; i++) {
-		if (!rtr_host[i].fd)
+		if (!rtr_host[i].fd) {
 			continue;
+		}
 		r_cons_printf ("%i - ", rtr_host[i].fd->fd);
 		switch (rtr_host[i].proto) {
 		case RTR_PROT_HTTP: r_cons_printf ( "http://"); break;
@@ -1413,8 +1424,9 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		proto = RTR_PROT_RAP;
 		host = input;
 	}
-	while (*host && IS_WHITECHAR (*host))
+	while (*host && IS_WHITECHAR (*host)) {
 		host++;
+	}
 
 	if (!(ptr = strchr (host, ':'))) {
 		ptr = host;
@@ -1466,8 +1478,12 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 				for (;;) {
 					r_line_set_prompt (prompt);
 					res = r_line_readline ();
-					if (!res || !*res) break;
-					if (*res == 'q') break;
+					if (!res || !*res) {
+						break;
+					}
+					if (*res == 'q') {
+						break;
+					}
 					if (!strcmp (res, "!sh")) {
 						for (;;) {
 							r_line_set_prompt (prompt2);
@@ -1481,7 +1497,9 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 							if (str) {
 								str[len] = 0;
 								res = strstr (str, "\n\n");
-								if (res) res = strstr (res+1, "\n\n");
+								if (res) {
+									res = strstr (res + 1, "\n\n");
+								}
 								res = res? res + 2: str;
 								const char *tail = (res[strlen (res) - 1] == '\n')? "": "\n";
 								printf ("%s%s", res, tail);
@@ -1501,15 +1519,25 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 						rtr_textlog_chat (core, T);
 					} else {
 						ptr = r_str_uri_encode (res);
-						if (ptr) res = ptr;
+						if (ptr) {
+							res = ptr;
+						}
 						char *uri = r_str_newf ("http://%s:%s/%s%s", host, port, file, res);
-						if (ptr == res) free (ptr);
+						if (ptr == res) {
+							free (ptr);
+						}
 						str = r_socket_http_get (uri, NULL, &len);
 						if (str && len > 0) {
 							str[len] = 0;
 							res = strstr (str, "\n\n");
-							if (res) res = strstr (res+1, "\n\n");
-							if (res) res += 2; else res = str;
+							if (res) {
+								res = strstr (res + 1, "\n\n");
+							}
+							if (res) {
+								res += 2;
+							} else {
+								res = str;
+							}
 							printf ("%s%s", res, (*res && res[strlen (res)-1] == '\n') ? "" : "\n");
 							r_line_hist_add (str);
 						}
@@ -1523,10 +1551,14 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 				if (str) {
 					str[len] = 0;
 					res = strstr (str, "\n\n");
-					if (res) res = strstr (res + 1, "\n\n");
+					if (res) {
+						res = strstr (res + 1, "\n\n");
+					}
 					printf ("%s", res? res + 2: str);
 					free (str);
-				} else eprintf ("HTTP connection has failed\n");
+				} else {
+					eprintf ("HTTP connection has failed\n");
+				}
 				free (http_uri);
 			}
 			r_socket_free (fd);
@@ -1602,15 +1634,17 @@ R_API void r_core_rtr_remove(RCore *core, const char *input) {
 
 	if (IS_DIGIT(input[0])) {
 		fd = r_num_math (core->num, input);
-		for (i = 0; i < RTR_MAX_HOSTS; i++)
+		for (i = 0; i < RTR_MAX_HOSTS; i++) {
 			if (rtr_host[i].fd && rtr_host[i].fd->fd == fd) {
 				r_socket_free (rtr_host[i].fd);
 				rtr_host[i].fd = NULL;
 				if (rtr_n == i) {
-					for (rtr_n = 0; !rtr_host[rtr_n].fd \
-						&& rtr_n < RTR_MAX_HOSTS - 1; rtr_n++);
+					for (rtr_n = 0; !rtr_host[rtr_n].fd && rtr_n < RTR_MAX_HOSTS - 1; rtr_n++) {
+						;
+					}
 				}
 				break;
+			}
 		}
 	} else {
 		for (i = 0; i < RTR_MAX_HOSTS; i++) {
@@ -1631,9 +1665,9 @@ R_API void r_core_rtr_session(RCore *core, const char *input) {
 	prompt[0] = 0;
 	if (IS_DIGIT (input[0])) {
 		fd = r_num_math (core->num, input);
-		for (rtr_n = 0; rtr_host[rtr_n].fd \
-			&& rtr_host[rtr_n].fd->fd != fd \
-			&& rtr_n < RTR_MAX_HOSTS - 1; rtr_n++);
+		for (rtr_n = 0; rtr_host[rtr_n].fd && rtr_host[rtr_n].fd->fd != fd && rtr_n < RTR_MAX_HOSTS - 1; rtr_n++) {
+			;
+		}
 	}
 
 	while (!r_cons_is_breaked ()) {
@@ -1836,7 +1870,9 @@ R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *po
 		//r_socket_write (s, "px\n", 3);
 		for (;;) {
 			int ret = r_socket_read (s, buf, sizeof (buf));
-			if (ret < 1) break;
+			if (ret < 1) {
+				break;
+			}
 			buf[ret] = 0;
 			rbuf = r_str_append (rbuf, (const char *)buf);
 		}

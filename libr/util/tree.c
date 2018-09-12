@@ -8,22 +8,27 @@ static void tree_dfs_node (RTreeNode *r, RTreeVisitor *vis) {
 	RTreeNode *n;
 
 	s = r_stack_new (16);
-	if (!s) return;
+	if (!s) {
+		return;
+	}
 	r_stack_push (s, r);
 	while (!r_stack_is_empty (s)) {
 		RTreeNode *el = (RTreeNode *)r_stack_pop (s);
 
-		if (vis->pre_visit)
+		if (vis->pre_visit) {
 			vis->pre_visit (el, vis);
+		}
 
 		r_list_foreach_prev (el->children, it, n) {
-			if (vis->discover_child)
+			if (vis->discover_child) {
 				vis->discover_child (n, vis);
+			}
 			r_stack_push (s, n);
 		}
 
-		if (vis->post_visit)
+		if (vis->post_visit) {
 			vis->post_visit (el, vis);
+		}
 	}
 
 	r_stack_free (s);
@@ -31,8 +36,9 @@ static void tree_dfs_node (RTreeNode *r, RTreeVisitor *vis) {
 
 static void r_tree_node_free (RTreeNode *n) {
 	r_list_free (n->children);
-	if (n->free)
+	if (n->free) {
 		n->free (n->data);
+	}
 	free (n);
 }
 
@@ -52,7 +58,9 @@ static void update_depth (RTreeNode *n, RTreeVisitor *vis) {
 
 static RTreeNode *node_new (RTree *t, void *data) {
 	RTreeNode *n = R_NEW0 (RTreeNode);
-	if (!n) return NULL;
+	if (!n) {
+		return NULL;
+	}
 	n->children = r_list_new ();
 	n->data = data;
 	n->tree = t;
@@ -64,16 +72,18 @@ R_API RTree *r_tree_new (void) {
 }
 
 R_API void r_tree_free (RTree* t) {
-	if (!t)
+	if (!t) {
 		return;
+	}
 
 	free_all_children (t);
 	free (t);
 }
 
 R_API void r_tree_reset (RTree *t) {
-	if (!t)
+	if (!t) {
 		return;
+	}
 
 	free_all_children (t);
 	t->root = NULL;
@@ -89,8 +99,9 @@ R_API RTreeNode *r_tree_add_node (RTree *t, RTreeNode *node, void *child_data) {
 	RTreeVisitor vis = { 0 };
 
 	/* a NULL node is allowed only the first time, to set the root */
-	if (!t || (node && node->tree != t) || (t->root && !node))
+	if (!t || (node && node->tree != t) || (t->root && !node)) {
 		return NULL;
+	}
 
 	child = node_new (t, child_data);
 	if (!node && !t->root) {
@@ -109,8 +120,9 @@ R_API RTreeNode *r_tree_add_node (RTree *t, RTreeNode *node, void *child_data) {
 }
 
 R_API void r_tree_dfs (RTree *t, RTreeVisitor *vis) {
-	if (!t || !t->root)
+	if (!t || !t->root) {
 		return;
+	}
 
 	tree_dfs_node (t->root, vis);
 }
@@ -118,11 +130,14 @@ R_API void r_tree_dfs (RTree *t, RTreeVisitor *vis) {
 R_API void r_tree_bfs (RTree *t, RTreeVisitor *vis) {
 	RQueue *q;
 
-	if (!t || !t->root)
+	if (!t || !t->root) {
 		return;
+	}
 
 	q = r_queue_new (16);
-	if (!q) return;
+	if (!q) {
+		return;
+	}
 	r_queue_enqueue (q, t->root);
 	while (!r_queue_is_empty (q)) {
 		 RTreeNode *el = (RTreeNode *)r_queue_dequeue (q);
@@ -133,17 +148,20 @@ R_API void r_tree_bfs (RTree *t, RTreeVisitor *vis) {
 		 RTreeNode *n;
 		 RListIter *it;
 
-		 if (vis->pre_visit)
+		 if (vis->pre_visit) {
 			 vis->pre_visit (el, vis);
+		 }
 
 		 r_list_foreach (el->children, it, n) {
-			 if (vis->discover_child)
+			 if (vis->discover_child) {
 				 vis->discover_child (n, vis);
+			 }
 			 r_queue_enqueue (q, n);
 		 }
 
-		 if (vis->post_visit)
+		 if (vis->post_visit) {
 			 vis->post_visit (el, vis);
+		 }
 	}
 
 	r_queue_free (q);

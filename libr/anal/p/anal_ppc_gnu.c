@@ -34,7 +34,9 @@ static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 			// bctr
 		} else {
 			op->jump = (aa)?(baddr):(addr+baddr);
-			if (lk) op->fail = addr+4;
+			if (lk) {
+				op->fail = addr + 4;
+			}
 		}
 		op->eob = 1;
 		break;

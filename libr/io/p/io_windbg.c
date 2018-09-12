@@ -83,8 +83,9 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 
 	if (windbg_get_target (fd->data)) {
 		ut64 va;
-		if (!windbg_va_to_pa (fd->data, io->off, &va))
+		if (!windbg_va_to_pa (fd->data, io->off, &va)) {
 			return -1;
+		}
 		return windbg_read_at_phys (fd->data, buf, va, count);
 	}
 

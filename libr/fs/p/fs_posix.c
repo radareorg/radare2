@@ -11,7 +11,9 @@
 static RFSFile* fs_posix_open(RFSRoot *root, const char *path) {
 	FILE *fd;
 	RFSFile *file = r_fs_file_new (root, path);
-	if (!file) return NULL;
+	if (!file) {
+		return NULL;
+	}
 	file->ptr = NULL;
 	file->p = root->p;
 	fd = r_sandbox_fopen (path, "r");

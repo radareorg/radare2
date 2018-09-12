@@ -156,7 +156,9 @@ struct r_bin_mz_reloc_t *r_bin_mz_get_relocs(const struct r_bin_mz_obj_t *bin) {
 			r_bin_mz_seg_to_paddr (bin, rel_entry[i].segment) +
 			rel_entry[i].offset;
 		/* Add only relocations which resides inside dos executable */
-		if (relocs[j].paddr < bin->dos_file_size) j++;
+		if (relocs[j].paddr < bin->dos_file_size) {
+			j++;
+		}
 	}
 	relocs[j].last = 1;
 

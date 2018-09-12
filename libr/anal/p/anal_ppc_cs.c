@@ -43,8 +43,12 @@ static const char* cmask64(const char *mb_c, const char *me_c) {
 	static char cmask[32];
 	ut64 mb = 0;
 	ut64 me = 0;
-	if (mb_c) mb = strtol (mb_c, NULL, 16);
-	if (me_c) me = strtol (me_c, NULL, 16);
+	if (mb_c) {
+		mb = strtol (mb_c, NULL, 16);
+	}
+	if (me_c) {
+		me = strtol (me_c, NULL, 16);
+	}
 	snprintf (cmask, sizeof (cmask), "0x%"PFMT64x"", mask64 (mb, me));
 	return cmask;
 }
@@ -53,8 +57,12 @@ static const char* cmask32(const char *mb_c, const char *me_c) {
 	static char cmask[32];
 	ut32 mb = 0;
 	ut32 me = 0;
-	if (mb_c) mb = strtol (mb_c, NULL, 16);
-	if (me_c) me = strtol (me_c, NULL, 16);
+	if (mb_c) {
+		mb = strtol (mb_c, NULL, 16);
+	}
+	if (me_c) {
+		me = strtol (me_c, NULL, 16);
+	}
 	snprintf (cmask, sizeof (cmask), "0x%"PFMT32x"", mask32 (mb, me));
 	return cmask;
 }
@@ -595,8 +603,11 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case PPC_INS_CMPWI:
 			op->type = R_ANAL_OP_TYPE_CMP;
 			op->sign = true;
-			if (ARG (2)[0] == '\0') esilprintf (op, "%s,%s,-,0xff,&,cr0,=", ARG (1), ARG (0));
-			else esilprintf (op, "%s,%s,-,0xff,&,%s,=", ARG (2), ARG (1), ARG (0));
+			if (ARG (2)[0] == '\0') {
+				esilprintf (op, "%s,%s,-,0xff,&,cr0,=", ARG (1), ARG (0));
+			} else {
+				esilprintf (op, "%s,%s,-,0xff,&,%s,=", ARG (2), ARG (1), ARG (0));
+			}
 			break;
 		case PPC_INS_MFLR:
 			op->type = R_ANAL_OP_TYPE_MOV;
@@ -630,13 +641,19 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		case PPC_INS_EXTSB:
 			op->sign = true;
 			op->type = R_ANAL_OP_TYPE_MOV;
-			if (a->bits == 64) esilprintf (op, "%s,0x80,&,?{,0xFFFFFFFFFFFFFF00,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
-			else esilprintf (op, "%s,0x80,&,?{,0xFFFFFF00,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
+			if (a->bits == 64) {
+				esilprintf (op, "%s,0x80,&,?{,0xFFFFFFFFFFFFFF00,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
+			} else {
+				esilprintf (op, "%s,0x80,&,?{,0xFFFFFF00,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
+			}
 			break;
 		case PPC_INS_EXTSH:
 			op->sign = true;
-			if (a->bits == 64) esilprintf (op, "%s,0x8000,&,?{,0xFFFFFFFFFFFF0000,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
-			else esilprintf (op, "%s,0x8000,&,?{,0xFFFF0000,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
+			if (a->bits == 64) {
+				esilprintf (op, "%s,0x8000,&,?{,0xFFFFFFFFFFFF0000,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
+			} else {
+				esilprintf (op, "%s,0x8000,&,?{,0xFFFF0000,%s,|,%s,=,}", ARG (1), ARG (1), ARG (0));
+			}
 			break;
 		case PPC_INS_EXTSW:
 			op->sign = true;

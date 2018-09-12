@@ -637,8 +637,9 @@ RList *linux_thread_list(int pid, RList *list) {
 				int tgid = atoi (ptr + 5);
 
 				/* if it is not in our thread group, we don't want it */
-				if (tgid != pid)
+				if (tgid != pid) {
 					continue;
+				}
 
 				if (procfs_pid_slurp (i, "comm", buf, sizeof(buf)) == -1) {
 					/* fall back to auto-id */
@@ -780,7 +781,9 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 	{
 		int i;
 		for (i = 0; i < 8; i++) { //DR0-DR7
-			if (i == 4 || i == 5) continue;
+			if (i == 4 || i == 5) {
+				continue;
+			}
 			long ret = ptrace (PTRACE_PEEKUSER, pid,
 					r_offsetof (struct user, u_debugreg[i]), 0);
 			if ((i+1) * sizeof (ret) > size) {
@@ -811,9 +814,15 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 #if __x86_64__
 #if !__ANDROID__
 			ret1 = ptrace (PTRACE_GETFPREGS, pid, NULL, &fpregs);
-			if (showfpu) print_fpu ((void *)&fpregs, 0);
-			if (ret1 != 0) return false;
-			if (sizeof(fpregs) < size) size = sizeof(fpregs);
+			if (showfpu) {
+				print_fpu ((void *)&fpregs, 0);
+			}
+			if (ret1 != 0) {
+				return false;
+			}
+			if (sizeof (fpregs) < size) {
+				size = sizeof (fpregs);
+			}
 			memcpy (buf, &fpregs, size);
 			return sizeof(fpregs);
 #else
@@ -883,8 +892,12 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 			 * to 'wait'. and the process is not yet available to accept
 			 * more ptrace queries.
 			 */
-			if (ret != 0) return false;
-			if (sizeof (regs) < size) size = sizeof(regs);
+			if (ret != 0) {
+				return false;
+			}
+			if (sizeof (regs) < size) {
+				size = sizeof (regs);
+			}
 			memcpy (buf, &regs, size);
 			return sizeof (regs);
 		}
@@ -900,7 +913,9 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 		int i;
 		long *val = (long*)buf;
 		for (i = 0; i < 8; i++) { // DR0-DR7
-			if (i == 4 || i == 5) continue;
+			if (i == 4 || i == 5) {
+				continue;
+			}
 			if (ptrace (PTRACE_POKEUSER, dbg->pid, r_offsetof (
 					struct user, u_debugreg[i]), val[i])) {
 				eprintf ("ptrace error for dr %d\n", i);
@@ -956,7 +971,9 @@ RList *linux_desc_list (int pid) {
 	}
 	ret->free = (RListFree)r_debug_desc_free;
 	while ((de = (struct dirent *)readdir(dd))) {
-		if (de->d_name[0] == '.') continue;
+		if (de->d_name[0] == '.') {
+			continue;
+		}
 		len = strlen (path);
 		len2 = strlen (de->d_name);
 		if (len + len2 + 1 >= sizeof(file)) {
@@ -979,12 +996,18 @@ RList *linux_desc_list (int pid) {
 				st.st_mode & S_IFCHR  ? 'C':'-';
 		}
 		if (lstat(path, &st) != -1) {
-			if (st.st_mode & S_IRUSR) perm |= R_IO_READ;
-			if (st.st_mode & S_IWUSR) perm |= R_IO_WRITE;
+			if (st.st_mode & S_IRUSR) {
+				perm |= R_IO_READ;
+			}
+			if (st.st_mode & S_IWUSR) {
+				perm |= R_IO_WRITE;
+			}
 		}
 		//TODO: Offset
 		desc = r_debug_desc_new (atoi (de->d_name), buf, perm, type, 0);
-		if (!desc) break;
+		if (!desc) {
+			break;
+		}
 		r_list_append (ret, desc);
 	}
 	closedir (dd);
