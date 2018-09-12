@@ -347,7 +347,7 @@ R_API int r_str_split(char *str, char ch) {
 	int i;
 	char *p;
 
-	r_return_val_if_fail (str && str[0], 0);
+	r_return_val_if_fail (!R_STR_ISEMPTY (str), 0);
 
 	/* TODO: sync with r1 code */
 	for (i = 1, p = str; *p; p++) {
@@ -421,7 +421,7 @@ R_API int r_str_word_set0_stack(char *str) {
 	RStack *s;
 	void *pop;
 
-	r_return_val_if_fail (str && str[0], 0);
+	r_return_val_if_fail (!R_STR_ISEMPTY (str), 0);
 
 	for (i = 0; str[i] && str[i+1]; i++) {
 		if (i > 0 && str[i - 1] == ' ' && str[i] == ' ') {

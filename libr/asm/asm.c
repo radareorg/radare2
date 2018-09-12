@@ -25,8 +25,7 @@ static int r_asm_pseudo_align(RAsmCode *acode, RAsmOp *op, char *input) {
 }
 
 static int r_asm_pseudo_string(RAsmOp *op, char *input, int zero) {
-	r_return_val_if_fail (input, 0);
-	r_return_val_if_fail (input[0], 0);
+	r_return_val_if_fail (!R_STR_ISEMPTY (input), 0);
 
 	int len = strlen (input) - 1;
 
@@ -286,8 +285,7 @@ R_API int r_asm_is_valid(RAsm *a, const char *name) {
 	RAsmPlugin *h;
 	RListIter *iter;
 
-	r_return_val_if_fail (name, false);
-	r_return_val_if_fail (name[0], false);
+	r_return_val_if_fail (!R_STR_ISEMPTY (name), false);
 
 	r_list_foreach (a->plugins, iter, h) {
 		if (!strcmp (h->name, name)) {

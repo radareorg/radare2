@@ -26,10 +26,7 @@ static inline void r_str_rmch(char *s, char ch) {
 	}
 }
 
-static inline bool r_str_isempty(char *s) {
-	return !s || !*s;
-}
-
+#define R_STR_ISEMPTY(x) (!(x) || !*(x))
 #define R_STR_DUP(x) ((x) ? strdup ((x)) : NULL)
 #define r_str_array(x,y) ((y>=0 && y<(sizeof(x)/sizeof(*x)))?x[y]:"")
 R_API const char *r_str_pad(const char ch, int len);
