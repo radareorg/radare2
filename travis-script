@@ -29,10 +29,10 @@ if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
         OPTS="${OPTS} -Db_coverage=true"
     fi
 
-    meson --prefix=${TRAVIS_BUILD_DIR}/install ${OPTS} build
+    meson --prefix=${TRAVIS_BUILD_DIR}/install ${OPTS} build || exit 1
     pushd build
-    ninja
-    ninja install
+    ninja || exit 1
+    ninja install || exit 1
     popd
     export PKG_CONFIG_PATH=$(pwd)/build/meson-private:${PKG_CONFIG_PATH}
 else
