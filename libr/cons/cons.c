@@ -1498,10 +1498,15 @@ R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 				help[i], help[i + 1], help[i + 2], pal_reset);
 			continue;
 		}
-		// these are the normal lines
-		int padding = max_length - (strlen (help[i]) + strlen (help[i + 1]));
-		r_cons_printf ("| %s%s%s%*s  %s%s%s\n",
-			help[i], pal_args_color, help[i + 1],
-			padding, "", pal_help_color, help[i + 2], pal_reset);
+		if (!strcmp (help[i + 1], "") && !strcmp (help[i + 2], "")) {
+			// no need to indent the sections lines
+			r_cons_printf ("%s%s%s\n", pal_help_color, help[i], pal_reset);
+		} else {
+			// these are the normal lines
+			int padding = max_length - (strlen (help[i]) + strlen (help[i + 1]));
+			r_cons_printf ("| %s%s%s%*s  %s%s%s\n",
+				help[i], pal_args_color, help[i + 1],
+				padding, "", pal_help_color, help[i + 2], pal_reset);
+		}
 	}
 }
