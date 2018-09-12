@@ -697,21 +697,20 @@ static void handleUpKey(RCore *core) {
 
 	r_cons_switchbuf (false);
 	if (panels->curnode == panels->menu_pos) {
-		if (panels->menuStackDepth == 0) {
+		RPanelsMenu *menu = panels->panelsMenu;
+		if (menu->depth < 2) {
 			return;
-		} else if (panels->menuStackDepth == 1) {
-			if (!panels->currentMenuIndex) {
-				panels->menuStackDepth = 0;
-				panels->currentMenuIndex = panels->menuIndexStack[0];
-				panels->currentMenu = panels->menuStack[0];
-				setRefreshAll (panels);
-			} else {
-				panels->currentMenuIndex--;
-			}
-		} else {
-			if (panels->currentMenuIndex) {
-				panels->currentMenuIndex--;
-			}
+		}
+		RPanelsMenuItem *parent = menu->history[menu->depth - 2];
+		RPanelsMenuItem *child = menu->history[menu->depth - 1];
+		if (child->selectedIndex > 0) {
+			child->selectedIndex--;
+			positionMenu (menu, parent, child);
+			child->p->refresh = true;
+			panelPrint (core, core->panels->can, child->p, 1);
+		} else if (menu->depth == 2) {
+			menu->depth--;
+			setRefreshAll (panels);
 		}
 	} else {
 		panels->panel[panels->curnode].refresh = true;
