@@ -5,7 +5,7 @@
 #include <string.h>
 #include "./x509.h"
 
-bool r_x509_parse_validity (RX509Validity *validity, RASN1Object *object) {
+static bool r_x509_parse_validity(RX509Validity *validity, RASN1Object *object) {
 	RASN1Object *o;
 	if (!validity || !object || object->list.length != 2) {
 		return false;
@@ -33,7 +33,7 @@ bool r_x509_parse_validity (RX509Validity *validity, RASN1Object *object) {
 	return true;
 }
 
-bool r_x509_parse_algorithmidentifier (RX509AlgorithmIdentifier *ai, RASN1Object * object) {
+bool r_x509_parse_algorithmidentifier(RX509AlgorithmIdentifier *ai, RASN1Object * object) {
 	if (!ai || !object || object->list.length < 1 || !object->list.objects) {
 		return false;
 	}
@@ -45,7 +45,7 @@ bool r_x509_parse_algorithmidentifier (RX509AlgorithmIdentifier *ai, RASN1Object
 	return true;
 }
 
-bool r_x509_parse_subjectpublickeyinfo (RX509SubjectPublicKeyInfo * spki, RASN1Object *object) {
+bool r_x509_parse_subjectpublickeyinfo(RX509SubjectPublicKeyInfo * spki, RASN1Object *object) {
 	RASN1Object *o;
 	if (!spki || !object || object->list.length != 2) {
 		return false;
@@ -303,7 +303,7 @@ void r_x509_free_algorithmidentifier (RX509AlgorithmIdentifier * ai) {
 	}
 }
 
-void r_x509_free_validity (RX509Validity * validity) {
+static void r_x509_free_validity (RX509Validity * validity) {
 	if (validity) {
 		// not freeing validity since it's not allocated dinamically
 		r_asn1_free_string (validity->notAfter);

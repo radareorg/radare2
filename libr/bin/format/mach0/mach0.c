@@ -746,8 +746,36 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 				parseCodeDirectory (bin->b, data + idx.offset, link.datasize);
 			}
 			break;
-		case 0x10000:
-			// TODO
+		case 0x10000: // ASN1/DER certificate
+			{
+				ut8 header[8] = {0};
+				r_buf_read_at (bin->b, data + idx.offset, header, sizeof (header));
+				ut32 length = R_MIN (UT16_MAX, r_read_ble32 (header + 4, 1));
+				ut8 *p = calloc (length, 1);
+				if (p) {
+					r_buf_read_at (bin->b, data + idx.offset + 0, p, length);
+					ut32 *words = (ut32*)p;
+					eprintf ("Magic: %x\n", words[0]);
+					words += 2;
+					eprintf ("wtf DUMP @%d!%d\n",
+						(int)data + idx.offset + 8, (int)length);
+					eprintf ("openssl pkcs7 -print_certs -text -inform der -in DUMP\n",
+						(int)data + idx.offset + 8, (int)length);
+					eprintf ("openssl asn1parse -offset %d -length %d -inform der -in /bin/ls\n",
+						(int)data + idx.offset + 8, (int)length);
+					eprintf ("pFp@%d!%d\n",
+						(int)data + idx.offset + 8, (int)length);
+#if 0
+					int fd = open ("DUMP", O_RDWR|O_CREAT, 0644);
+					if (fd != -1) {
+						eprintf ("See DUMP file.\n");
+						write (fd, words, length);
+						close (fd);
+					}
+#endif
+					free (p);
+				}
+			}
 			break;
 		case CSSLOT_REQUIREMENTS:
 #if 0

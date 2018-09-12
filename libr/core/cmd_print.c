@@ -36,7 +36,8 @@ static const char *help_msg_p6[] = {
 static const char *help_msg_pF[] = {
 	"Usage: pF[apd]", "[len]", "parse ASN1, PKCS, X509, DER",
 	"pFa", "[len]", "decode ASN1 from current block",
-	"pFp", "[len]", "Same with PKCS7",
+	"pFo", "[len]", "decode ASN1 OID",
+	"pFp", "[len]", "decode PKCS7",
 	"pFx", "[len]", "Same with X509",
 	NULL
 };
@@ -178,6 +179,7 @@ static const char *help_msg_p[] = {
 	"pd", "[?] [sz] [a] [b]", "disassemble N opcodes (pd) or N bytes (pD)",
 	"pd--", "[n]", "context disassembly of N instructions",
 	"pf", "[?][.nam] [fmt]", "print formatted data (pf.name, pf.name $<expr>)",
+	"pF", "[?][apx]", "print asn1, pkcs7 or x509",
 	"ph", "[?][=|hash] ([len])", "calculate hash for a block",
 	"pj", "[?] [len]", "print as indented JSON",
 	"p", "[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pdi)",
@@ -897,10 +899,23 @@ static void print_format_help_help_help_help(RCore *core) {
 
 static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, int size) {
 	switch (*input) {
-	case '?':
+	case '?': // "pF?"
 		r_core_cmd_help (core, help_msg_pF);
 		break;
-	case 'p':
+	case 'o': // "pFo" asn1 oid
+		{
+			RASN1Object *asn1 = r_asn1_create_object (data, size);
+			if (asn1) {
+				RASN1String *str1 = r_asn1_stringify_oid (data, size);
+				if (str1) {
+					r_cons_printf ("%s\n", str1->string);
+					r_asn1_free_string (str1);
+				}
+				r_asn1_free_object (asn1);
+			}
+		}
+		break;
+	case 'p': // "pFp"
 		{
 			RCMS *cms = r_pkcs7_parse_cms (data, size);
 			if (cms) {

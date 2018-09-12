@@ -1,9 +1,6 @@
 #ifndef R_X509_INTERNAL_H
 #define R_X509_INTERNAL_H
 
-R_API bool r_x509_parse_validity (RX509Validity *validity, RASN1Object *object);
-R_API void r_x509_free_validity (RX509Validity* validity);
-
 R_API bool r_x509_parse_algorithmidentifier (RX509AlgorithmIdentifier *ai, RASN1Object * object);
 R_API void r_x509_free_algorithmidentifier (RX509AlgorithmIdentifier * ai);
 
