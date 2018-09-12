@@ -1,8 +1,6 @@
 #ifndef R_X509_INTERNAL_H
 #define R_X509_INTERNAL_H
 
-#include "asn1.h"
-
 R_API bool r_x509_parse_validity (RX509Validity *validity, RASN1Object *object);
 R_API void r_x509_free_validity (RX509Validity* validity);
 
