@@ -925,6 +925,8 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 					free (foo);
 				}
 				r_pkcs7_free_cms (cms);
+			} else {
+				eprintf ("Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
 			}
 		}
 		break;

@@ -40,16 +40,17 @@ static RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 			//indefinite
 			const ut8 *from = buffer + 2;
 			const ut8 *end = from + (length - 2);
-			do {
-				byte = *from;
+			byte = *from;
+			while (from < end && length64 <= length && byte < 0x10) {
 				length64 <<= 8;
 				length64 |= byte;
 				from++;
-			} while (from < end && length64 <= length && byte & 0x80);
+				byte = *from;
+			};
 			if (length64 > length) {
 				goto out_error;
 			}
-			object->sector = from;
+			object->sector = from - 1;
 		}
 		object->length = (ut32) length64;
 	} else {
@@ -86,6 +87,7 @@ static ut32 r_asn1_count_objects (const ut8 *buffer, ut32 length) {
 	while (next >= buffer && next < end) {
 		object = asn1_parse_header (next, end - next);
 		if (!object || next == object->sector) {
+			ut32 position = next - buffer;
 			R_FREE (object);
 			break;
 		}
