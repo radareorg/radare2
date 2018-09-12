@@ -2306,7 +2306,6 @@ static ut64 var_variables_show(RCore* core, int idx, int *vindex, int show) {
 }
 
 static int level = 0;
-static ut64 addr = 0;
 static st64 delta = 0;
 static int option = 0;
 static int variable_option = 0;
@@ -2425,13 +2424,13 @@ R_API void r_core_visual_anal(RCore *core) {
 
 	RConsEvent olde = core->cons->event_resize;
 	void *olde_user = core->cons->event_data;
+	ut64 addr = core->offset;
 
 	core->cons->event_resize = NULL; // avoid running old event with new data
 	core->cons->event_data = core;
 	core->cons->event_resize = (RConsEvent) r_core_visual_anal_refresh_oneshot;
 
 	level = 0;
-	addr = core->offset;
 
 	int asmbytes = r_config_get_i (core->config, "asm.bytes");
 	r_config_set_i (core->config, "asm.bytes", 0);
