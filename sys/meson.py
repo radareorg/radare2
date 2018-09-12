@@ -188,6 +188,7 @@ def win_dist_libr2(**path_fmt):
     copy(r'{BUILDDIR}\r_userconf.h', r'{DIST}\{R2_INCDIR}')
     copy(r'{ROOT}\libr\include\sdb\*.h', r'{DIST}\{R2_INCDIR}\sdb')
     copy(r'{ROOT}\libr\include\r_util\*.h', r'{DIST}\{R2_INCDIR}\r_util')
+    copytree(r'{ROOT}\libr\include\msvc', r'{DIST}\{R2_INCDIR}\msvc')
     makedirs(r'{DIST}\{R2_FORTUNES}')
     copy(r'{ROOT}\doc\fortunes.*', r'{DIST}\{R2_FORTUNES}')
     copytree(r'{ROOT}\libr\bin\d', r'{DIST}\{R2_SDB}\format',
