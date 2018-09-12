@@ -15,7 +15,7 @@ R_API void r_anal_esil_interrupts_init(RAnalEsil *esil) {
 	if (!esil) {
 		return;
 	}
-	esil->interrupts = dict_new (sizeof(ut32), _interrupt_free_cb);
+	esil->interrupts = dict_new (sizeof(ut32), NULL);
 }
 
 R_API RAnalEsilInterrupt *r_anal_esil_interupt_new(RAnalEsil *esil, ut32 src_id,  RAnalEsilInterruptHandler *ih) {
@@ -34,13 +34,19 @@ R_API RAnalEsilInterrupt *r_anal_esil_interupt_new(RAnalEsil *esil, ut32 src_id,
 	if (ih->init && ih->fini) {
 		intr->user = ih->init(esil);
 	}
+	intr->src_id = src_id;
 	r_anal_esil_claim_source (esil, src_id);
 	return intr;
 }
 
 R_API void r_anal_esil_interrupt_free(RAnalEsil *esil, RAnalEsilInterrupt *intr) {
-	if (intr && intr->user) {
-		intr->handler->fini(intr->user);	//fini must exist when user is !NULL
+	if (intr && esil) {
+		dict_del (esil->interrupts, intr->handler->num);
+	}
+	if (intr) {
+		if (intr->user) {
+			intr->handler->fini(intr->user);	//fini must exist when user is !NULL
+		}
 		r_anal_esil_release_source (esil, intr->src_id);
 	}
 	free(intr);
@@ -91,13 +97,21 @@ R_API bool r_anal_esil_load_interrupts (RAnalEsil *esil, RAnalEsilInterruptHandl
 	if (!esil || !esil->interrupts || !handlers) {
 		return false;
 	}
-	while (intr = r_anal_esil_interupt_new(esil, src_id, handlers[i])) {
-		if (!r_anal_esil_set_interrupt(esil, intr)) {
-			r_anal_esil_interrupt_free(esil, intr);
+
+	while (handlers[i]) {
+		intr = (RAnalEsilInterrupt *)dict_getu(esil->interrupts, handlers[i]->num);
+		if (intr) {
+			//first free, then load the new handler or stuff might break in the handlers
+			r_anal_esil_interrupt_free (esil, intr);
+		}
+		if (intr = r_anal_esil_interupt_new (esil, src_id, handlers[i])) {
+			r_anal_esil_set_interrupt (esil, intr);
+		} else {
 			return false;
 		}
 		i++;
 	}
+
 	return true;
 }
 
@@ -119,6 +133,7 @@ R_API bool r_anal_esil_load_interrupts_from_lib(RAnalEsil *esil, const char *pat
 
 R_API void r_anal_esil_interrupts_fini (RAnalEsil *esil) {
 	if (esil && esil->interrupts) {
+		esil->interrupts->f = _interrupt_free_cb;
 		dict_free (esil->interrupts);
 		esil->interrupts = NULL;
 	}

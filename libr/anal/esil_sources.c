@@ -69,7 +69,7 @@ R_API void r_anal_esil_release_source(RAnalEsil *esil, ut32 src_id) {
 		r_lib_dl_close (src->content);
 		free (src);
 	} else {
-		src->claimed;
+		src->claimed--;
 	}
 }
 
