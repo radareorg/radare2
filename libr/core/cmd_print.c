@@ -1972,7 +1972,7 @@ line = NULL;
 	if (!strncmp (input, "dsb", 3)) {
 		RAnalBlock *bb = r_anal_bb_from_offset (core->anal, core->offset);
 		if (bb) {
-			line = s = r_core_cmd_strf (core, "pD %"PFMT64d" @ 0x%08"PFMT64x, bb->size, bb->addr);
+			line = s = r_core_cmd_strf (core, "pD %i @ 0x%08"PFMT64x, bb->size, bb->addr);
 		}
 	} else if (!strncmp (input, "dsf", 3) || !strncmp (input, "dsr", 3)) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
