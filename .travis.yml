@@ -17,7 +17,7 @@ matrix:
     - os: linux
       env: COMPILER_NAME=clang CXX=clang++ CC=clang
     - os: linux
-      env: COMPILER_NAME=gcc CXX=g++ CC=gcc COVERAGE=1 INSTALL_SYSTEM=meson
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson COVERAGE=1
     - if: head_branch =~ ^fedora-* OR tag =~ ^release-* OR tag =~ ^fedora-*
       os: linux
       env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_SYS_CAPSTONE=true R2_SYS_MAGIC=true R2_SYS_ZIP=true R2_SYS_LZ4=true R2_SYS_ZLIB=true
