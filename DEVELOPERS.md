@@ -90,14 +90,21 @@ if (a == b) {
   example of a good name could be "out_buffer:" if the goto frees "buffer".
   Avoid using GW-BASIC names like "err1:" and "err2:".
 
-* Use early returns instead of if-else when you need to filter out some bad
-  value at the start of a function.
+* Use `r_return_*` functions to check preconditions that are caused by
+  programmers errors. Please note the difference between conditions that should
+  never happen, and that are handled through `r_return_*` functions, and
+  conditions that can happen at runtime (e.g. malloc returns NULL, input coming
+  from user, etc.), and should be handled in the usual way through if-else.
 
 ```c
 int check(RCore *c, int a, int b) {
-	if (!c) return false;
-	if (a < 0 || b < 1) return false;
+	r_return_val_if_fail (c, false);
+	r_return_val_if_fail (a >= 0, b >= 1, false);
 
+	if (a == 0) {
+		/* do something */
+		...
+	}
 	... /* do something else */
 }
 ```
