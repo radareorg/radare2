@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <stddef.h>
+#include <math.h> // required for signbit
 #include "r_cons.h"
 #include "r_core.h"
 #include "r_util.h"
