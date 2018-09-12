@@ -406,12 +406,12 @@ static int rabin_do_operation(const char *op) {
 		break;
 	case 'C':
 		{
-		RBinFile *cur   = r_bin_cur (bin);
+		RBinFile *cur = r_bin_cur (bin);
 		RBinPlugin *plg = r_bin_file_cur_plugin (cur);
 		if (!plg) {
-			//are we in xtr?
+			// are we in xtr?
 			if (cur->xtr_data) {
-				//load the first one
+				// load the first one
 				RBinXtrData *xtr_data = r_list_get_n (cur->xtr_data, 0);
 				if (!r_bin_file_object_new_from_xtr_data (bin, cur,
 						  UT64_MAX, r_bin_get_laddr (bin), xtr_data)) {
@@ -424,10 +424,12 @@ static int rabin_do_operation(const char *op) {
 			}
 		}
 		if (plg->signature) {
-			const char *sign = plg->signature (cur, rad == R_CORE_BIN_JSON);
-			r_cons_println (sign);
-			r_cons_flush ();
-			free ((char*) sign);
+			char *sign = plg->signature (cur, rad == R_CORE_BIN_JSON);
+			if (sign) {
+				r_cons_println (sign);
+				r_cons_flush ();
+				free (sign);
+			}
 		}
 		}
 		break;
@@ -737,6 +739,7 @@ int main(int argc, char **argv) {
 		case 'O':
 			op = optarg;
 			set_action (R_BIN_REQ_OPERATION);
+			r_sys_setenv ("RABIN2_CODESIGN_VERBOSE", "1");
 			if (isBinopHelp (op)) {
 				printf ("Usage: iO [expression]:\n"
 					" e/0x8048000       change entrypoint\n"

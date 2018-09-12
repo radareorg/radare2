@@ -247,6 +247,7 @@ static const char *help_msg_pc[] = {
 	"pcs", "", "string",
 	"pcS", "", "shellscript that reconstructs the bin",
 	"pcw", "", "C words (4 byte)",
+	NULL
 };
 
 static const char *help_msg_pd[] = {
