@@ -123,6 +123,7 @@ r_bin = library('r_bin', files,
   dependencies: [
     r_util_dep,
     r_io_dep,
+    r_hash_dep,
     r_magic_dep,
     r_socket_dep,
     sdb_dep,
