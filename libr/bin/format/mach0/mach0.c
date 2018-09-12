@@ -13,7 +13,7 @@ typedef struct _ulebr {
 } ulebr;
 
 // OMG; THIS SHOULD BE KILLED; this var exposes the local native endian, which is completely unnecessary
-static bool little_;
+static bool little_ = false;
 
 static ut64 read_uleb128(ulebr *r, ut8 *end) {
 	ut64 result = 0;
