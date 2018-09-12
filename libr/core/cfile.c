@@ -505,6 +505,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	RBinPlugin *plugin = NULL;
 	RBinObject *obj = NULL;
 	int is_io_load;
+	const char *cmd_load;
 	if (!cf) {
 		return false;
 	}
@@ -559,6 +560,10 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	plugin = r_bin_file_cur_plugin (binfile);
 	if (plugin && plugin->name) {
 		load_scripts_for (r, plugin->name);
+	}
+	cmd_load = r_config_get (r->config, "cmd.load");
+	if (cmd_load && *cmd_load) {
+		r_core_cmd (r, cmd_load, 0);
 	}
 
 	if (plugin && plugin->name) {
