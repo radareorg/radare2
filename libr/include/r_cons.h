@@ -1012,6 +1012,8 @@ typedef struct r_panels_menu_t {
 	RPanelsMenuItem *root;
 	RPanelsMenuItem **history;
 	int depth;
+	int n_refresh;
+	RPanel **refreshPanels;
 } RPanelsMenu;
 
 typedef struct r_panels_t {

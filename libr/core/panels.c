@@ -823,6 +823,7 @@ static void handleLeftKey(RCore *core) {
 			} else {
 				menu->root->selectedIndex = menu->root->n_sub - 1;
 			}
+			menu->root->sub[menu->root->selectedIndex]->cb (core);
 		}
 	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_GRAPH)) {
 		if (panels->panel[panels->curnode].sx > 0) {
@@ -853,7 +854,6 @@ static void handleRightKey(RCore *core) {
 			menu->root->selectedIndex %= menu->root->n_sub;
 			return;
 		}
-		RPanelsMenuItem *parent = menu->history[menu->depth - 2];
 		RPanelsMenuItem *child = menu->history[menu->depth - 1];
 		if (child->sub[child->selectedIndex]->sub) {
 			child->sub[child->selectedIndex]->cb (core);
@@ -862,6 +862,7 @@ static void handleRightKey(RCore *core) {
 			menu->root->selectedIndex %= menu->root->n_sub;
 			menu->depth = 1;
 			setRefreshAll (panels);
+			menu->root->sub[menu->root->selectedIndex]->cb (core);
 		}
 	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_GRAPH)) {
 		panels->panel[panels->curnode].sx += r_config_get_i (core->config, "graph.scroll");
@@ -1605,7 +1606,7 @@ static int openMenu (void *user) {
 	positionMenu (menu, parent, child);
 	menu->history[menu->depth++] = child;
 	child->p->refresh = true;
-	panelPrint (core, can, child->p, 1);
+	menu->refreshPanels[menu->n_refresh++] = child->p;
 	return 0;
 }
 
@@ -1691,8 +1692,9 @@ static bool initPanelsMenu(RPanels *panels) {
 	panelsMenu->history = calloc (8, sizeof (RPanelsMenuItem *));
 	panelsMenu->history[0] = root;
 	panelsMenu->depth = 1;
+	panelsMenu->n_refresh = 0;
+	panelsMenu->refreshPanels = calloc (8, sizeof (RPanel *));
 	panels->panelsMenu = panelsMenu;
-
 	return true;
 }
 
@@ -1750,6 +1752,10 @@ R_API void r_core_panels_refresh(RCore *core) {
 	if (panels->curnode > panels->menu_pos) {
 		panelPrint (core, can, &panel[panels->curnode], 1);
 	}
+	for (i = 0; i < panels->panelsMenu->n_refresh; i++) {
+		panelPrint (core, can, panels->panelsMenu->refreshPanels[i], 1);
+	}
+	panels->panelsMenu->n_refresh = 0;
 	(void) r_cons_canvas_gotoxy (can, -can->sx, -can->sy);
 	r_cons_canvas_fill (can, -can->sx, -can->sy, panel->pos.w, 1, ' ');
 	title[0] = 0;
