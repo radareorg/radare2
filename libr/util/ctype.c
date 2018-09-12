@@ -31,11 +31,14 @@ R_API int r_type_kind(Sdb *TDB, const char *name) {
 	}
 	if (!strcmp (type, "enum")) {
 		return R_TYPE_ENUM;
-	} else if (!strcmp (type, "struct")){
+	}
+	if (!strcmp (type, "struct")) {
 		return R_TYPE_STRUCT;
-	} else if (!strcmp (type, "union")){
+	}
+	if (!strcmp (type, "union")) {
 		return R_TYPE_UNION;
-	} else if (!strcmp (type, "type")){
+	}
+	if (!strcmp (type, "type")) {
 		return R_TYPE_BASIC;
 	}
 	return -1;

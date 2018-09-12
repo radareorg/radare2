@@ -207,48 +207,35 @@ bool r_x509_parse_tbscertificate (RX509TBSCertificate *tbsc, RASN1Object * objec
 }
 
 RX509Certificate * r_x509_parse_certificate (RASN1Object *object) {
-	RX509Certificate *certificate;
-	RASN1Object *tmp;
 	if (!object) {
 		return NULL;
 	}
-	certificate = (RX509Certificate*) malloc (sizeof (RX509Certificate));
-	if (!certificate) {
-		r_asn1_free_object (object);
-		return NULL;
+	RX509Certificate *cert = R_NEW0 (RX509Certificate);
+	if (!cert) {
+		goto fail;
 	}
-	memset (certificate, 0, sizeof (RX509Certificate));
-
 	if (object->klass != CLASS_UNIVERSAL || object->form != FORM_CONSTRUCTED || object->list.length != 3) {
-		// Malformed certificate
-		// It needs to have tbsCertificate, algorithmIdentifier and a signature
-		r_asn1_free_object (object);
-		free (certificate);
-		return NULL;
+		R_FREE (cert);
+		goto fail;
 	}
-	tmp = object->list.objects[2];
+	RASN1Object *tmp = object->list.objects[2];
 	if (!tmp) {
-		r_asn1_free_object (object);
-		free (certificate);
-		return NULL;
+		R_FREE (cert);
+		goto fail;
 	}
 	if (tmp->klass != CLASS_UNIVERSAL || tmp->form != FORM_PRIMITIVE || tmp->tag != TAG_BITSTRING) {
-		r_asn1_free_object (object);
-		free (certificate);
-		return NULL;
+		R_FREE (cert);
+		goto fail;
 	}
+	cert->signature = r_asn1_create_binary (object->list.objects[2]->sector, object->list.objects[2]->length);
+	r_x509_parse_tbscertificate (&cert->tbsCertificate, object->list.objects[0]);
 
-	certificate->signature = r_asn1_create_binary (object->list.objects[2]->sector, object->list.objects[2]->length);
-
-	r_x509_parse_tbscertificate (&certificate->tbsCertificate, object->list.objects[0]);
-
-	if (!r_x509_parse_algorithmidentifier (&certificate->algorithmIdentifier, object->list.objects[1])) {
-		r_asn1_free_object (object);
-		free (certificate);
-		return NULL;
+	if (!r_x509_parse_algorithmidentifier (&cert->algorithmIdentifier, object->list.objects[1])) {
+		R_FREE (cert);
 	}
+fail:
 	r_asn1_free_object (object);
-	return certificate;
+	return cert;
 }
 
 RX509Certificate * r_x509_parse_certificate2 (const ut8 *buffer, ut32 length) {
@@ -309,21 +296,19 @@ RX509CertificateRevocationList* r_x509_parse_crl (RASN1Object *object) {
 }
 
 void r_x509_free_algorithmidentifier (RX509AlgorithmIdentifier * ai) {
-	if (!ai) {
-		return;
+	if (ai) {
+		// no need to free ai, since this functions is used internally
+		r_asn1_free_string (ai->algorithm);
+		r_asn1_free_string (ai->parameters);
 	}
-	r_asn1_free_string (ai->algorithm);
-	r_asn1_free_string (ai->parameters);
-	//no need to free ai, since this functions is used internally
 }
 
 void r_x509_free_validity (RX509Validity * validity) {
-	if (!validity) {
-		return;
+	if (validity) {
+		// not freeing validity since it's not allocated dinamically
+		r_asn1_free_string (validity->notAfter);
+		r_asn1_free_string (validity->notBefore);
 	}
-	r_asn1_free_string (validity->notAfter);
-	r_asn1_free_string (validity->notBefore);
-	// not freeing validity since it's not allocated dinamically
 }
 
 void r_x509_free_name (RX509Name * name) {
@@ -428,15 +413,15 @@ void r_x509_free_crl (RX509CertificateRevocationList *crl) {
 }
 
 char* r_x509_validity_dump (RX509Validity* validity, char* buffer, ut32 length, const char* pad) {
-	int p;
 	if (!validity || !buffer || !length) {
 		return NULL;
 	}
-	if (!pad)
+	if (!pad) {
 		pad = "";
+	}
 	const char* b = validity->notBefore ? validity->notBefore->string : "Missing";
 	const char* a = validity->notAfter ? validity->notAfter->string : "Missing";
-	p = snprintf (buffer, length, "%sNot Before: %s\n%sNot After: %s\n", pad, b, pad, a);
+	int p = snprintf (buffer, length, "%sNot Before: %s\n%sNot After: %s\n", pad, b, pad, a);
 	return p < 0 ? NULL : buffer + (ut32) p;
 }
 

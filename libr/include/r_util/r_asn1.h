@@ -71,7 +71,7 @@ typedef struct r_asn1_list_t {
 
 typedef struct r_asn1_bin_t {
 	ut32 length;
-	const ut8 *binary;
+	ut8 *binary;
 } RASN1Binary;
 
 typedef struct r_asn1_object_t {

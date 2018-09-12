@@ -6,14 +6,13 @@
 #include <string.h>
 
 static RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
-	RASN1Object *object;
 	ut8 head, length8, byte;
 	ut64 length64;
 	if (!buffer || length < 2) {
 		return NULL;
 	}
 
-	object = R_NEW0 (RASN1Object);
+	RASN1Object *object = R_NEW0 (RASN1Object);
 	if (!object) {
 		return NULL;
 	}
@@ -132,16 +131,14 @@ R_API RASN1Object *r_asn1_create_object (const ut8 *buffer, ut32 length) {
 }
 
 R_API RASN1Binary *r_asn1_create_binary (const ut8 *buffer, ut32 length) {
-	RASN1Binary* bin = NULL;
-	ut8* buf = NULL;
 	if (!buffer || !length) {
 		return NULL;
 	}
-	buf = (ut8*) calloc (sizeof (*buf), length);
+	ut8* buf = (ut8*) calloc (sizeof (*buf), length);
 	if (!buf) {
 		return NULL;
 	}
-	bin = R_NEW0 (RASN1Binary);
+	RASN1Binary* bin = R_NEW0 (RASN1Binary);
 	if (!bin) {
 		free (buf);
 		return NULL;
@@ -172,7 +169,7 @@ R_API void r_asn1_free_object (RASN1Object *object) {
 
 R_API void r_asn1_free_binary (RASN1Binary* bin) {
 	if (bin) {
-		free ((char*) bin->binary);
+		free (bin->binary);
 		free (bin);
 	}
 }

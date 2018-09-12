@@ -33,6 +33,14 @@ static const char *help_msg_p6[] = {
 	NULL
 };
 
+static const char *help_msg_pF[] = {
+	"Usage: pF[apd]", "[len]", "parse ASN1, PKCS, X509, DER",
+	"pFa", "[len]", "decode ASN1 from current block",
+	"pFp", "[len]", "Same with PKCS7",
+	"pFx", "[len]", "Same with X509",
+	NULL
+};
+
 static const char* help_msg_pr[] = {
 	"Usage: pr[glx]", "[size]", "print N raw bytes",
 	"prc", "", "print bytes as colors in palette",
@@ -885,6 +893,30 @@ static void print_format_help_help_help_help(RCore *core) {
 		NULL
 	};
 	r_core_cmd_help (core, help_msg);
+}
+
+static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, int size) {
+	switch (*input) {
+	case '?':
+		r_core_cmd_help (core, help_msg_pF);
+		break;
+	case 'p':
+		{
+			RCMS *cms = r_pkcs7_parse_cms (data, size);
+			if (cms) {
+				char* foo = r_pkcs7_cms_dump (cms);
+				if (foo) {
+					r_cons_printf ("%s\n", foo);
+					free (foo);
+				}
+				r_pkcs7_free_cms (cms);
+			}
+		}
+		break;
+	default:
+		eprintf ("Not yet implemented\n");
+		break;
+	}
 }
 
 static void cmd_print_format(RCore *core, const char *_input, const ut8* block, int len) {
@@ -5561,6 +5593,9 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'f': // "pf"
 		cmd_print_format (core, input, block, len);
+		break;
+	case 'F': // "pF"
+		cmd_print_fromage (core, input + 1, block, len);
 		break;
 	case 'k': // "pk"
 		if (input[1] == '?') {

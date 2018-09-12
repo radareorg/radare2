@@ -103,28 +103,22 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 }
 
 static char *signature (RBinFile *bf, bool json) {
-	char* c = NULL;
-	struct PE_ (r_bin_pe_obj_t) * bin;
 	if (!bf || !bf->o || !bf->o->bin_obj) {
-		return c;
+		return NULL;
 	}
-	bin = bf->o->bin_obj;
+	struct PE_ (r_bin_pe_obj_t) * bin = bf->o->bin_obj;
 	if (json) {
 		RJSVar *json = r_pkcs7_cms_json (bin->cms);
-		c = r_json_stringify (json, false);
+		char *c = r_json_stringify (json, false);
 		r_json_var_free (json);
-	} else {
-		c = r_pkcs7_cms_dump (bin->cms);
+		return c;
 	}
-	return c;
+	return r_pkcs7_cms_dump (bin->cms);
 }
 
 static RList *fields(RBinFile *bf) {
-	RList *ret = NULL;
-	const ut8 *buf = NULL;
-
-	buf = bf ? r_buf_buffer (bf->buf) : NULL;
-	ret  = r_list_new ();
+	const ut8 *buf = bf ? r_buf_buffer (bf->buf) : NULL;
+	RList *ret  = r_list_new ();
 
 	if (!buf || !ret) {
 		return NULL;
