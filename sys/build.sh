@@ -32,6 +32,9 @@ BuildJobsThrottler(){
 
 	# Set number of build jobs to be run in parallel as the minimum between $MEM_ALLOWED_JOBS and $CPU_N
 	MAKE_JOBS=$((MEM_ALLOWED_JOBS<CPU_N?MEM_ALLOWED_JOBS:CPU_N))
+	if [ ${MAKE_JOBS} -lt 1 ]; then
+		MAKE_JOBS=8
+	fi
 	echo "So, the build will run on $MAKE_JOBS job(s)."
 }
 
