@@ -1023,16 +1023,9 @@ typedef struct r_panels_t {
 	int columnWidth;
 	int layout;
 	int menu_pos;
-	int callgraph;
 	int curnode;
 	bool isResizing;
 	bool isZoom;
-	const char ***menuStack;
-	int *menuIndexStack;
-	int menuStackDepth;
-	const char **currentMenu;
-	int currentMenuIndex;
-	RPanel *menuPanel;
 	RPanelsMenu *panelsMenu;
 	Sdb *db;
 } RPanels;

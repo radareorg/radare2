@@ -9,29 +9,11 @@
 
 #define PANEL_TITLE_SYMBOLS      "Symbols"
 #define PANEL_TITLE_STACK        "Stack"
-#define PANEL_TITLE_LOCALS       "Locals"
 #define PANEL_TITLE_STACKREFS    "StackRefs"
 #define PANEL_TITLE_REGISTERS    "Registers"
 #define PANEL_TITLE_REGISTERREFS "RegisterRefs"
 #define PANEL_TITLE_DISASSEMBLY  "Disassembly"
 #define PANEL_TITLE_PSEUDO       "Pseudo"
-#define PANEL_TITLE_NEWFILES     "New files"
-#define PANEL_TITLE_INFO         "Info"
-#define PANEL_TITLE_DATABASE     "Database"
-#define PANEL_TITLE_HEXDUMP      "Hexdump"
-#define PANEL_TITLE_FUNCTIONS    "Functions"
-#define PANEL_TITLE_COMMENTS     "Comments"
-#define PANEL_TITLE_ENTROPY      "Entropy"
-#define PANEL_TITLE_DRX          "DRX"
-#define PANEL_TITLE_SECTIONS     "Sections"
-#define PANEL_TITLE_STRINGS      "Strings"
-#define PANEL_TITLE_MAPS         "Maps"
-#define PANEL_TITLE_MODULES      "Modules"
-#define PANEL_TITLE_BACKTRACE    "Backtrace"
-#define PANEL_TITLE_BREAKPOINTS  "Breakpoints"
-#define PANEL_TITLE_IMPORTS      "Imports"
-#define PANEL_TITLE_CLIPBOARD    "Clipboard"
-#define PANEL_TITLE_FCNINFO      "FcnInfo"
 #define PANEL_TITLE_GRAPH        "Graph"
 
 #define PANEL_CMD_SYMBOLS        "isq"
@@ -43,22 +25,6 @@
 #define PANEL_CMD_DISASSEMBLY    "pd $r"
 #define PANEL_CMD_PSEUDO         "pdc"
 #define PANEL_CMD_GRAPH          "agf"
-#define PANEL_CMD_INFO           "i"
-#define PANEL_CMD_DATABASE       "k ***"
-#define PANEL_CMD_HEXDUMP        "px 512"
-#define PANEL_CMD_FUNCTIONS      "afl"
-#define PANEL_CMD_COMMENTS       "CC"
-#define PANEL_CMD_ENTROPY        "p=e"
-#define PANEL_CMD_DRX            "drx"
-#define PANEL_CMD_SECTIONS       "iSq"
-#define PANEL_CMD_STRINGS        "izq"
-#define PANEL_CMD_MAPS           "dm"
-#define PANEL_CMD_MODULES        "dmm"
-#define PANEL_CMD_BACKTRACE      "dbt"
-#define PANEL_CMD_BREAKPOINTS    "db"
-#define PANEL_CMD_IMPORTS        "iiq"
-#define PANEL_CMD_CLIPBOARD      "yx"
-#define PANEL_CMD_FCNINFO        "afi"
 
 #define PANEL_CONFIG_MENU_MAX    64
 #define PANEL_CONFIG_PAGE        10
@@ -136,18 +102,15 @@ static const char *menus_Help[] = {
 };
 static const int helpNum = ((int)sizeof (menus_Help) / (int)sizeof (const char *)) - 1;
 
-static void layoutMenu(RPanel *panel);
-static void layoutSubMenu(RPanels *panels, int w);
 static void layoutDefault(RPanels *panels);
 static void layoutBalance(RPanels *panels);
-static void layoutSidePanel(void *user);
+static int layoutSidePanel(void *user);
 static void changePanelNum(RPanels *panels, int now, int after);
 static void splitPanelVertical(RCore *core);
 static void splitPanelHorizontal(RCore *core);
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color);
 static void panelAllClear(RPanels *panels);
 static void addPanelFrame(RCore* core, RPanels* panels, const char *title, const char *cmd);
-static RPanel createMenuPanel(int x, int y, char *title);
 static bool checkFunc(RCore *core);
 static void activateCursor(RCore *core);
 static void cursorLeft(RCore *core);
@@ -172,11 +135,11 @@ static void resizePanelRight(RPanels *panels);
 static void resizePanelUp(RPanels *panels);
 static void resizePanelDown(RPanels *panels);
 static void handleTabKey(RCore *core, bool shift);
-static int openMenuCb (void *user);
-static int openFileCb (void *user);
+static int openMenuCb(void *user);
+static int openFileCb(void *user);
 static int rwCb(void *user);
 static int debuggerCb(void *user);
-static int closeFileCb (void *user);
+static int closeFileCb(void *user);
 static int copyCb(void *user);
 static int pasteCb(void *user);
 static int writeStrCb(void *user);
@@ -208,7 +171,7 @@ static int gameCb(void *user);
 static int licenseCb(void *user);
 static int aboutCb(void *user);
 static int quitCb(void *user);
-static void addMenu (RPanelsMenuItem *parent, const char *name, RPanelsMenuCallback cb);
+static void addMenu(RPanelsMenuItem *parent, const char *name, RPanelsMenuCallback cb);
 static int file_history_up(RLine *line);
 static int file_history_down(RLine *line);
 static bool init(RCore *core, RPanels *panels, int w, int h);
@@ -230,8 +193,6 @@ static void savePanelPos(RPanel* panel);
 static void restorePanelPos(RPanel* panel);
 static void replaceCmd(RPanels* panels, char *title, char *cmd);
 static void handleMenu(RCore *core, const int key, int *exit);
-static void onMenu(RCore *core, const char *menu, int *exit);
-static void changeMenu(RPanels *panels, const char **dstMenu);
 static void switchMode(RPanels *panels);
 static void maximizePanelSize(RPanels *panels);
 static void insertValue(RCore *core);
@@ -361,61 +322,6 @@ static void panelAllClear(RPanels *panels) {
 	r_cons_flush ();
 }
 
-static void layoutMenu(RPanel *panel) {
-	panel->pos.w = r_str_bounds (panel->title, &panel->pos.h);
-	panel->pos.h += 4;
-}
-
-static void layoutSubMenu(RPanels *panels, int w) {
-	int i, j;
-	RPanel panel;
-	int x = panels->menuIndexStack[0] * 6;
-	int y = 1;
-	const char **currentMenu;
-	int currentMenuIndex;
-	for (i = 0; i < panels->menuStackDepth; i++) {
-		if (i == 0) {
-			continue;
-		}
-		currentMenu = panels->menuStack[i];
-		currentMenuIndex = panels->menuIndexStack[i];
-		RStrBuf *tit = r_strbuf_new (NULL);
-		if (!tit) {
-			return;
-		}
-		for (j = 0; currentMenu[j]; j++) {
-			if (currentMenuIndex == j) {
-				r_strbuf_append (tit, "> ");
-			} else {
-				r_strbuf_append (tit, "  ");
-			}
-			r_strbuf_append (tit, currentMenu[j]);
-			r_strbuf_append (tit, "          \n");
-		}
-		panel = createMenuPanel (x, y, r_strbuf_drain (tit));
-		layoutMenu (&panel);
-		panels->menuPanel[i] = panel;
-		x += panel.pos.w - 1;
-		y = panels->menuIndexStack[i] + 2;
-	}
-	RStrBuf *tit = r_strbuf_new (NULL);
-	if (!tit) {
-		return;
-	}
-	for (i = 0; panels->currentMenu[i]; i++) {
-		if (panels->currentMenuIndex == i) {
-			r_strbuf_append (tit, "> ");
-		} else {
-			r_strbuf_append (tit, "  ");
-		}
-		r_strbuf_append (tit, panels->currentMenu[i]);
-		r_strbuf_append (tit, "          \n");
-	}
-	panel = createMenuPanel (x, y, r_strbuf_drain (tit));
-	layoutMenu (&panel);
-	panels->menuPanel[panels->menuStackDepth] = panel;
-}
-
 R_API void r_core_panels_layout (RPanels *panels) {
 	panels->can->sx = 0;
 	panels->can->sy = 0;
@@ -492,7 +398,7 @@ static void layoutBalance(RPanels *panels) {
 	}
 }
 
-static void layoutSidePanel(void *user) {
+static int layoutSidePanel(void *user) {
 	RCore *core = (RCore *)user;
 	RPanels *panels = core->panels;
 	RPanel *panel = panels->panel;
@@ -501,7 +407,7 @@ static void layoutSidePanel(void *user) {
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	const char *cmd = sdb_get (panels->db, child->name, 0);
 	if (!cmd) {
-		return;
+		return 0;
 	}
 	int i, h;
 	(void)r_cons_get_size (&h);
@@ -522,6 +428,7 @@ static void layoutSidePanel(void *user) {
 	panel[0].pos.h = h - 1;
 	panels->curnode = 0;
 	setRefreshAll (panels);
+	return 0;
 }
 
 static void splitPanelVertical(RCore *core) {
@@ -849,16 +756,16 @@ static void handleLeftKey(RCore *core) {
 	if (panels->curnode == panels->menu_pos) {
 		RPanelsMenu *menu = panels->panelsMenu;
 		if (menu->depth <= 2) {
-			if (menu->depth == 2) {
-				menu->depth = 1;
-				setRefreshAll (panels);
-			}
 			if (menu->root->selectedIndex > 0) {
 				menu->root->selectedIndex--;
 			} else {
 				menu->root->selectedIndex = menu->root->n_sub - 1;
 			}
-			menu->root->sub[menu->root->selectedIndex]->cb (core);
+			if (menu->depth == 2) {
+				menu->depth = 1;
+				setRefreshAll (panels);
+				menu->root->sub[menu->root->selectedIndex]->cb (core);
+			}
 		}
 	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_GRAPH)) {
 		if (panels->panel[panels->curnode].sx > 0) {
@@ -1619,16 +1526,6 @@ static void addPanelFrame(RCore *core, RPanels* panels, const char *title, const
 	panels->n_panels++;
 }
 
-static RPanel createMenuPanel(int x, int y, char *title) {
-	RPanel panel = {{0}};
-	panel.pos.x = x;
-	panel.pos.y = y;
-	panel.title = title;
-	panel.refresh = true;
-	panel.type = PANEL_TYPE_MENU;
-	return panel;
-}
-
 static int openFileCb(void *user) {
 	RCore *core = (RCore *)user;
 	r_cons_enable_mouse (false);
@@ -1956,7 +1853,7 @@ static void addMenu(RPanelsMenuItem *parent, const char *name, RPanelsMenuCallba
 static RStrBuf *drawMenu(RPanelsMenuItem *item) {
 	RStrBuf *buf = r_strbuf_new (NULL);
 	if (!buf) {
-		return;
+		return NULL;
 	}
 	int i;
 	for (i = 0; i < item->n_sub; i++) {
@@ -1974,7 +1871,11 @@ static RStrBuf *drawMenu(RPanelsMenuItem *item) {
 static void positionNewMenu(RPanelsMenu *menu, RPanelsMenuItem *parent, RPanelsMenuItem *child) {
 	child->p->pos.x = menu->depth <= 2 ? child->selfIndex * 6 : parent->p->pos.x + parent->p->pos.w - 1;
 	child->p->pos.y = menu->depth <= 2 ? 1 : parent->selectedIndex + 2;
-	child->p->title = r_strbuf_drain (drawMenu (child));
+	RStrBuf *buf = drawMenu (child);
+	if (!buf) {
+		return;
+	}
+	child->p->title = r_strbuf_drain (buf);
 	child->p->pos.w = r_str_bounds (child->p->title, &child->p->pos.h);
 	child->p->pos.h += 4;
 	child->p->type = PANEL_TYPE_MENU;
@@ -1983,7 +1884,11 @@ static void positionNewMenu(RPanelsMenu *menu, RPanelsMenuItem *parent, RPanelsM
 }
 
 static void moveMenuCursor(RPanelsMenu *menu, RPanelsMenuItem *parent) {
-	parent->p->title = r_strbuf_drain (drawMenu (parent));
+	RStrBuf *buf = drawMenu (parent);
+	if (!buf) {
+		return;
+	}
+	parent->p->title = r_strbuf_drain (buf);
 	parent->p->pos.w = r_str_bounds (parent->p->title, &parent->p->pos.h);
 	parent->p->pos.h += 4;
 	parent->p->type = PANEL_TYPE_MENU;
@@ -2044,7 +1949,6 @@ static bool initPanelsMenu(RPanels *panels) {
 		}
 	}
 	for (i = 0; i < toolsNum; i++) {
-		addMenu (root->sub[3], menus_Tools[i], openMenuCb);
 		if (!strcmp (menus_Tools[i], "Calculator")) {
 			addMenu (root->sub[3], menus_Tools[i], calculatorCb);
 		} else if (!strcmp (menus_Tools[i], "R2 Shell")) {
@@ -2333,12 +2237,6 @@ static bool init (RCore *core, RPanels *panels, int w, int h) {
 	panels->columnWidth = 80;
 	panels->layout = 0;
 	panels->menu_pos = -1;
-	panels->menuStack = calloc (sizeof (char **), PANEL_MENU_LIMIT);
-	panels->menuIndexStack = calloc (sizeof (int), PANEL_MENU_LIMIT);
-	panels->menuStackDepth = 0;
-	panels->currentMenu = NULL;
-	panels->currentMenuIndex = 0;
-	panels->callgraph = 0;
 	panels->isResizing = false;
 	panels->isZoom = false;
 	panels->can = createNewCanvas (core, w, h);
@@ -2406,19 +2304,11 @@ static void handleMenu(RCore *core, const int key, int *exit) {
 			break;
 		case 'q':
 		case -1:
-			if (panels->menuStackDepth == 0) {
-				*exit = 1;
-				return;
-			}
-			panels->menuStackDepth--;
-			panels->currentMenu = panels->menuStack[panels->menuStackDepth];
-			panels->currentMenuIndex = panels->menuIndexStack[panels->menuStackDepth];
-			setRefreshAll (core->panels);
-			break;
+			*exit = 1;
+			return;
 		case ' ':
 		case '\r':
 		case '\n':
-			//onMenu (core, panels->currentMenu[panels->currentMenuIndex], exit);
 			child->cb (core);
 			break;
 		case 9:
@@ -2427,276 +2317,6 @@ static void handleMenu(RCore *core, const int key, int *exit) {
 		case 'Z':
 			handleTabKey (core, true);
 	}
-}
-
-static void onMenu(RCore *core, const char *menu, int *exit) {
-	RPanels *panels = core->panels;
-	if (!strcmp (menu, "File")) {
-		changeMenu (panels, menus_File);
-		return;
-	}
-	if (!strcmp (menu, "Edit")) {
-		changeMenu (panels, menus_Edit);
-		return;
-	}
-	if (!strcmp (menu, "View")) {
-		changeMenu (panels, menus_View);
-		return;
-	}
-	if (!strcmp (menu, "Tools")) {
-		changeMenu (panels, menus_Tools);
-		return;
-	}
-	if (!strcmp (menu, "Search")) {
-		changeMenu (panels, menus_Search);
-		return;
-	}
-	if (!strcmp (menu, "Debug")) {
-		changeMenu (panels, menus_Debug);
-		return;
-	}
-	if (!strcmp (menu, "Analyze")) {
-		changeMenu (panels, menus_Analyze);
-		return;
-	}
-	if (!strcmp (menu, "Help")) {
-		changeMenu (panels, menus_Help);
-		return;
-	}
-	if (!strcmp (menu, "ReOpen")) {
-		panels->menuStack[panels->menuStackDepth] = panels->currentMenu;
-		panels->menuIndexStack[panels->menuStackDepth] = panels->currentMenuIndex;
-		panels->menuStackDepth++;
-		panels->currentMenu = menus_ReOpen;
-		panels->currentMenuIndex = 0;
-		return;
-	}
-	if (!strcmp (menu, "New")) {
-		addPanelFrame (core, panels, PANEL_TITLE_NEWFILES, "o");
-	} else if (!strcmp (menu, "Open")) {
-		r_cons_enable_mouse (false);
-		core->cons->line->file_prompt = true;
-		r_line_set_hist_callback (core->cons->line, &file_history_up, &file_history_down);
-		char *res = r_cons_input ("open file: ");
-		if (res) {
-			if (*res) {
-				r_core_cmdf (core, "o %s", res);
-			}
-			free (res);
-		}
-		core->cons->line->file_prompt = false;
-		r_line_set_hist_callback (core->cons->line, &cmd_history_up, &cmd_history_down);
-		r_cons_enable_mouse (true);
-	} else if (!strcmp (menu, "RegisterRefs")) {
-		//layoutSidePanel (core, PANEL_TITLE_REGISTERREFS, PANEL_CMD_REGISTERREFS);
-	} else if (!strcmp (menu, "Registers")) {
-		//layoutSidePanel (core, PANEL_TITLE_REGISTERS, PANEL_CMD_REGISTERS);
-	} else if (!strcmp (menu, "Info")) {
-		//layoutSidePanel (core, PANEL_TITLE_INFO, PANEL_CMD_INFO);
-	} else if (!strcmp (menu, "Database")) {
-		//layoutSidePanel (core, PANEL_TITLE_DATABASE, PANEL_CMD_DATABASE);
-	} else if (!strcmp (menu, "About")) {
-		char *s = r_core_cmd_str (core, "?V");
-		r_cons_message (s);
-		free (s);
-	} else if (!strcmp (menu, "Hexdump")) {
-		//layoutSidePanel (core, PANEL_TITLE_HEXDUMP, PANEL_CMD_HEXDUMP);
-	} else if (!strcmp (menu, "Disassembly")) {
-		//layoutSidePanel (core, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY);
-	} else if (!strcmp (menu, "Functions")) {
-		//layoutSidePanel (core, PANEL_TITLE_FUNCTIONS, PANEL_CMD_FUNCTIONS);
-	} else if (!strcmp (menu, "Comments")) {
-		//layoutSidePanel (core, PANEL_TITLE_COMMENTS, PANEL_CMD_COMMENTS);
-	} else if (!strcmp (menu, "Entropy")) {
-		//layoutSidePanel (core, PANEL_TITLE_ENTROPY, PANEL_CMD_ENTROPY);
-	} else if (!strcmp (menu, "Pseudo")) {
-		//layoutSidePanel (core, PANEL_TITLE_PSEUDO, PANEL_CMD_PSEUDO);
-	} else if (!strcmp (menu, "Symbols")) {
-		r_core_cmdf (core, "aa");
-	} else if (!strcmp (menu, "BasicBlocks")) {
-		r_core_cmdf (core, "aab");
-	} else if (!strcmp (menu, "Function")) {
-		r_core_cmdf (core, "af");
-	} else if (!strcmp (menu, "DRX")) {
-		//layoutSidePanel (core, PANEL_TITLE_DRX, PANEL_CMD_DRX);
-	} else if (!strcmp (menu, "Program")) {
-		r_core_cmdf (core, "aaa");
-	} else if (!strcmp (menu, "Calls")) {
-		r_core_cmdf (core, "aac");
-	} else if (!strcmp (menu, "ROP")) {
-		r_cons_enable_mouse (false);
-		char *res = r_cons_input ("rop grep: ");
-		if (res) {
-			r_core_cmdf (core, "\"/R %s\"", res);
-			free (res);
-		}
-		r_cons_enable_mouse (true);
-	} else if (!strcmp (menu, "String")) {
-		r_cons_enable_mouse (false);
-		char *res = r_cons_input ("search string: ");
-		if (res) {
-			r_core_cmdf (core, "\"/ %s\"", res);
-			free (res);
-		}
-		r_cons_enable_mouse (true);
-	} else if (!strcmp (menu, "Hexpairs")) {
-		r_cons_enable_mouse (false);
-		char *res = r_cons_input ("search hexpairs: ");
-		if (res) {
-			r_core_cmdf (core, "\"/x %s\"", res);
-			free (res);
-		}
-		r_cons_enable_mouse (true);
-	} else if (!strcmp (menu, "Code")) {
-		r_cons_enable_mouse (false);
-		char *res = r_cons_input ("search code: ");
-		if (res) {
-			r_core_cmdf (core, "\"/c %s\"", res);
-			free (res);
-		}
-		r_cons_enable_mouse (true);
-	} else if (!strcmp (menu, "Copy")) {
-		r_cons_enable_mouse (false);
-		char *res = r_cons_input ("How many bytes? ");
-		if (res) {
-			r_core_cmdf (core, "\"y %s\"", res);
-			free (res);
-		}
-		r_cons_enable_mouse (true);
-	} else if (!strcmp (menu, "Write String")) {
-		r_cons_enable_mouse (false);
-		char *res = r_cons_input ("insert string: ");
-		if (res) {
-			r_core_cmdf (core, "\"w %s\"", res);
-			free (res);
-		}
-		r_cons_enable_mouse (true);
-	} else if (!strcmp (menu, "Write Value")) {
-		r_cons_enable_mouse (false);
-		char *res = r_cons_input ("insert number: ");
-		if (res) {
-			r_core_cmdf (core, "\"wv %s\"", res);
-			free (res);
-		}
-		r_cons_enable_mouse (true);
-	} else if (!strcmp (menu, "Write Hex")) {
-		r_cons_enable_mouse (false);
-		char *res = r_cons_input ("insert hexpairs: ");
-		if (res) {
-			r_core_cmdf (core, "\"wx %s\"", res);
-			free (res);
-		}
-		r_cons_enable_mouse (true);
-	} else if (!strcmp (menu, "Calculator")) {
-		r_cons_enable_mouse (false);
-		for (;;) {
-			char *s = r_cons_input ("> ");
-			if (!s || !*s) {
-				free (s);
-				break;
-			}
-			r_core_cmdf (core, "? %s", s);
-			r_cons_flush ();
-			free (s);
-		}
-		r_cons_enable_mouse (true);
-	} else if (!strcmp (menu, "Assemble")) {
-		r_core_visual_asm (core, core->offset);
-	} else if (!strcmp (menu, "Sections")) {
-		//layoutSidePanel (core, PANEL_TITLE_SECTIONS, PANEL_CMD_SECTIONS);
-	} else if (!strcmp (menu, "Close")) {
-		r_core_cmd0 (core, "o-*");
-	} else if (!strcmp (menu, "Strings")) {
-		//layoutSidePanel (core, PANEL_TITLE_STRINGS, PANEL_CMD_STRINGS);
-	} else if (!strcmp (menu, "Maps")) {
-		//layoutSidePanel (core, PANEL_TITLE_MAPS, PANEL_CMD_MAPS);
-	} else if (!strcmp (menu, "Modules")) {
-		//layoutSidePanel (core, PANEL_TITLE_MODULES, PANEL_CMD_MODULES);
-	} else if (!strcmp (menu, "Backtrace")) {
-		//layoutSidePanel (core, PANEL_TITLE_BACKTRACE, PANEL_CMD_BACKTRACE);
-	} else if (!strcmp (menu, "Locals")) {
-		//layoutSidePanel (core, PANEL_TITLE_LOCALS, PANEL_CMD_LOCALS);
-	} else if (!strcmp (menu, "Step")) {
-		r_core_cmd (core, "ds", 0);
-		r_cons_flush ();
-	} else if (!strcmp (menu, "In RW")) {
-		r_core_cmd (core, "oo+", 0);
-		r_cons_flush ();
-	} else if (!strcmp (menu, "In Debugger")) {
-		r_core_cmd (core, "oo", 0);
-		r_cons_flush ();
-	} else if (!strcmp (menu, "Reload")) {
-		r_core_cmd (core, "ood", 0);
-		r_cons_flush ();
-	} else if (!strcmp (menu, "Step Over")) {
-		r_core_cmd (core, "dso", 0);
-		r_cons_flush ();
-	} else if (!strcmp (menu, "StackRefs")) {
-		//layoutSidePanel (core, PANEL_TITLE_STACKREFS, PANEL_CMD_STACKREFS);
-	} else if (!strcmp (menu, "Stack")) {
-		//layoutSidePanel (core, PANEL_TITLE_STACK, PANEL_CMD_STACK);
-	} else if (!strcmp (menu, "Continue")) {
-		r_core_cmd (core, "dc", 0);
-		r_cons_flush ();
-	} else if (!strcmp (menu, "Breakpoints")) {
-		//layoutSidePanel (core, PANEL_TITLE_BREAKPOINTS, PANEL_CMD_BREAKPOINTS);
-	} else if (!strcmp (menu, "Symbols")) {
-		//layoutSidePanel (core, PANEL_TITLE_SYMBOLS, PANEL_CMD_SYMBOLS);
-	} else if (!strcmp (menu, "Imports")) {
-		//layoutSidePanel (core, PANEL_TITLE_IMPORTS, PANEL_CMD_IMPORTS);
-	} else if (!strcmp (menu, "Paste")) {
-		r_core_cmd0 (core, "yy");
-	} else if (!strcmp (menu, "Clipboard")) {
-		//layoutSidePanel (core, PANEL_TITLE_CLIPBOARD, PANEL_CMD_CLIPBOARD);
-	} else if (!strcmp (menu, "io.cache")) {
-		r_core_cmd0 (core, "e!io.cache");
-	} else if (!strcmp (menu, "Fill")) {
-		r_cons_enable_mouse (false);
-		char *s = r_cons_input ("Fill with: ");
-		r_core_cmdf (core, "wow %s", s);
-		free (s);
-		r_cons_enable_mouse (true);
-	} else if (!strcmp (menu, "References")) {
-		r_core_cmdf (core, "aar");
-	} else if (!strcmp (menu, "FcnInfo")) {
-		//layoutSidePanel (core, PANEL_TITLE_FCNINFO, PANEL_CMD_FCNINFO);
-	} else if (!strcmp (menu, "Graph")) {
-		r_core_visual_graph (core, NULL, NULL, true);
-		// addPanelFrame ("Graph", "agf");
-	} else if (!strcmp (menu, "System Shell")) {
-		r_cons_set_raw (0);
-		r_cons_flush ();
-		r_sys_cmd ("$SHELL");
-	} else if (!strcmp (menu, "R2 Shell")) {
-		core->vmode = false;
-		r_core_visual_prompt_input (core);
-		core->vmode = true;
-	} else if (!strcmp (menu, "2048")) {
-		r_cons_2048 (panels->can->color);
-	} else if (!strcmp (menu, "License")) {
-		r_cons_message ("Copyright 2006-2016 - pancake - LGPL");
-	} else if (!strcmp (menu, "Fortune")) {
-		char *s = r_core_cmd_str (core, "fo");
-		r_cons_message (s);
-		free (s);
-	} else if (!strcmp (menu, "Commands")) {
-		r_core_cmd0 (core, "?;?@?;?$?;???");
-		r_cons_any_key (NULL);
-	} else if (!strcmp (menu, "Colors")) {
-		r_core_cmd0 (core, "e!scr.color");
-	} else if (!strcmp (menu, "Quit")) {
-		*exit = 1;
-		return;
-	}
-	doPanelsRefresh (core);
-}
-
-static void changeMenu(RPanels *panels, const char **dstMenu) {
-	panels->menuStack[panels->menuStackDepth] = panels->currentMenu;
-	panels->menuIndexStack[panels->menuStackDepth] = panels->currentMenuIndex;
-	panels->menuStackDepth++;
-	panels->currentMenu = dstMenu;
-	panels->currentMenuIndex = 0;
 }
 
 static void handleTabKey(RCore *core, bool shift) {
@@ -2717,12 +2337,7 @@ static void handleTabKey(RCore *core, bool shift) {
 			panels->curnode = panels->n_panels - 1;
 		}
 	}
-	if (panels->curnode == panels->menu_pos) {
-		panels->currentMenu = menus;
-		panels->currentMenuIndex = 0;
-	} else {
-		panels->panel[panels->curnode].refresh = true;
-	}
+	panels->panel[panels->curnode].refresh = true;
 }
 
 static void savePanelPos(RPanel* panel) {
@@ -2806,9 +2421,8 @@ R_API void r_core_panels_free(RPanels *panels) {
 			freePanel (&panels->panel[i]);
 		}
 		free (panels->panel);
-		if (panels->can) {
-			r_cons_canvas_free (panels->can);
-		}
+		r_cons_canvas_free (panels->can);
+		sdb_free (panels->db);
 		free (panels);
 	}
 }
@@ -3094,8 +2708,6 @@ repeat:
 	break;
 	case 'm':
 		panels->curnode = panels->menu_pos;
-		panels->currentMenu = menus;
-		panels->currentMenuIndex = 0;
 		break;
 	case 'H':
 		r_cons_switchbuf (false);
