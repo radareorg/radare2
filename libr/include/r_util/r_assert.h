@@ -22,19 +22,37 @@
 #define r_warn_if_fail(expr)					\
 	do {								\
 		if (!(expr)) {						\
-			r_log (R_LOG_WARNING, "WARNING (%s:%d):%s%s runtime check failed: (%s)\n", \
+			_H_LOG_ (R_LOG_WARNING, "WARNING (%s:%d):%s%s runtime check failed: (%s)\n", \
 			       __FILE__, __LINE__, R_FUNCTION, , R_FUNCTION[0] ? ":" : "", #expr); \
 		}							\
 	} while (0)
 
-#ifdef R_DISABLE_CHECKS
+/*
+ * R_CHECKS_LEVEL determines the behaviour of the r_return_* set of functions.
+ *
+ * 0: completely disable every function and make them like no-operation
+ * 1: silently enable checks. Check expressions and do return, but do not log anything
+ * 2: enable checks and logging (DEFAULT)
+ * 3: transform them into real assertion
+ */
+#ifndef R_CHECKS_LEVEL
+#define R_CHECKS_LEVEL 2
+#endif
+
+#if R_CHECKS_LEVEL == 0
 
 #define r_return_if_fail(expr)
 #define r_return_val_if_fail(expr, val)
-#define r_return_if_reached() return
-#define r_return_val_if_reached(val) return (val)
+#define r_return_if_reached()
+#define r_return_val_if_reached(val)
 
-#else // R_DISABLE_CHECKS
+#elif R_CHECKS_LEVEL == 1 || R_CHECKS_LEVEL == 2 // R_CHECKS_LEVEL
+
+#if R_CHECKS_LEVEL == 1
+#define _H_LOG_(loglevel, fmt, ...)
+#else
+#define _H_LOG_(loglevel, fmt, ...) r_log (loglevel, fmt, __VA_ARGS__)
+#endif
 
 /**
  * r_return_if_fail:
@@ -53,13 +71,11 @@
  * the result is usually that a critical message is logged and the current
  * function returns.
  *
- * If `R_DISABLE_CHECKS` is defined then the check is not performed.  You
- * should therefore not depend on any side effects of @expr.
  */
 #define r_return_if_fail(expr)						\
 	do {								\
 		if (!(expr)) {						\
-			r_log (R_LOG_WARNING, "%s: assertion '%s' failed\n", R_FUNCTION, #expr); \
+			_H_LOG_ (R_LOG_WARNING, "%s: assertion '%s' failed\n", R_FUNCTION, #expr); \
 			return;						\
 		}							\
 	} while (0)
@@ -67,23 +83,32 @@
 #define r_return_val_if_fail(expr, val)				\
 	do {							\
 		if (!(expr)) {					\
-			r_log (R_LOG_WARNING, "%s: assertion '%s' failed\n", R_FUNCTION, #expr); \
+			_H_LOG_ (R_LOG_WARNING, "%s: assertion '%s' failed\n", R_FUNCTION, #expr); \
 			return (val);				\
 		}						\
 	} while (0)
 
 #define r_return_if_reached()						\
 	do {								\
-		r_log (R_LOG_CRITICAL, "file %s: line %d (%s): should not be reached\n", __FILE__, __LINE, R_FUNCTION); \
+		_H_LOG_ (R_LOG_CRITICAL, "file %s: line %d (%s): should not be reached\n", __FILE__, __LINE, R_FUNCTION); \
 		return;							\
 	} while (0)
 
 #define r_return_val_if_reached(val)					\
 	do {								\
-		r_log (R_LOG_CRITICAL, "file %s: line %d (%s): should not be reached\n", __FILE__, __LINE, R_FUNCTION); \
+		_H_LOG_ (R_LOG_CRITICAL, "file %s: line %d (%s): should not be reached\n", __FILE__, __LINE, R_FUNCTION); \
 		return (val);						\
 	} while (0)
 
-#endif // R_DISABLE_CHECKS
+#else // R_CHECKS_LEVEL
+
+#include <assert.h>
+
+#define r_return_if_fail(expr) assert (expr)
+#define r_return_val_if_fail(expr, val) assert (expr)
+#define r_return_if_reached() assert (false)
+#define r_return_val_if_reached(val) assert (false)
+
+#endif // R_CHECKS_LEVEL
 
 #endif
