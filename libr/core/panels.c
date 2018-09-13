@@ -2456,10 +2456,14 @@ repeat:
 		break;
 	case '.':
 		if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
-			if (r_config_get_i (core->config, "cfg.debug")) {
-				r_core_cmd0 (core, "sr PC");
+			ut64 addr = r_debug_reg_get (core->dbg, "PC");
+			if (addr && addr != UT64_MAX) {
+				r_core_seek (core, addr, 1);
 			} else {
-				r_core_cmd0 (core, "s entry0; px");
+				addr = r_num_get (core->num, "entry0");
+				if (addr && addr != UT64_MAX) {
+					r_core_seek (core, addr, 1);
+				}
 			}
 			panels->panel[panels->curnode].addr = core->offset;
 			panels->panel[panels->curnode].refresh = true;
