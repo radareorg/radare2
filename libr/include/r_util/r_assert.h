@@ -7,11 +7,12 @@ R_API void r_assert_log(RLogLevel level, const char *fmt, ...);
 
 #if defined (__GNUC__) && defined (__cplusplus)
 #define R_FUNCTION     ((const char*) (__PRETTY_FUNCTION__))
-#elif defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+#elif defined(__STDC__) && defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 #define R_FUNCTION     ((const char*) (__func__))
 #elif defined (__GNUC__) || (defined(_MSC_VER) && (_MSC_VER > 1300))
 #define R_FUNCTION     ((const char*) (__FUNCTION__))
 #else
+#warning Do not know how to get function name in this setup
 #define R_FUNCTION     ((const char*) ("???"))
 #endif
 
@@ -43,10 +44,10 @@ R_API void r_assert_log(RLogLevel level, const char *fmt, ...);
 
 #if R_CHECKS_LEVEL == 0
 
-#define r_return_if_fail(expr)
-#define r_return_val_if_fail(expr, val)
-#define r_return_if_reached()
-#define r_return_val_if_reached(val)
+#define r_return_if_fail(expr) do { ; } while(0)
+#define r_return_val_if_fail(expr, val) do { ; } while(0)
+#define r_return_if_reached() do { ; } while(0)
+#define r_return_val_if_reached(val) do { ; } while(0)
 
 #elif R_CHECKS_LEVEL == 1 || R_CHECKS_LEVEL == 2 // R_CHECKS_LEVEL
 
@@ -106,10 +107,10 @@ R_API void r_assert_log(RLogLevel level, const char *fmt, ...);
 
 #include <assert.h>
 
-#define r_return_if_fail(expr) assert (expr)
-#define r_return_val_if_fail(expr, val) assert (expr)
-#define r_return_if_reached() assert (false)
-#define r_return_val_if_reached(val) assert (false)
+#define r_return_if_fail(expr) do { assert (expr); } while(0)
+#define r_return_val_if_fail(expr, val) do { assert (expr); } while(0)
+#define r_return_if_reached() do { assert (false); } while(0)
+#define r_return_val_if_reached(val) do { assert (false); } while(0)
 
 #endif // R_CHECKS_LEVEL
 

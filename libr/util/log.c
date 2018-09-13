@@ -3,26 +3,15 @@
 #include <r_util.h>
 
 R_API void r_vlog(RLogLevel level, const char *fmt, va_list ap) {
-	const char *hdr = "";
+	static const char *headers[R_LOG_MAX_VALUE] = {
+		[R_LOG_DEBUG] = "DEBUG: ",
+		[R_LOG_INFO] = "INFO: ",
+		[R_LOG_WARNING] = "WARNING: ",
+		[R_LOG_ERROR] = "ERROR: ",
+		[R_LOG_CRITICAL] = "CRITICAL: ",
+	};
 
-	switch (level) {
-	case R_LOG_DEBUG:
-		hdr = "DEBUG: ";
-		break;
-	case R_LOG_INFO:
-		hdr = "INFO: ";
-		break;
-	case R_LOG_WARNING:
-		hdr = "WARNING: ";
-		break;
-	case R_LOG_ERROR:
-		hdr = "ERROR: ";
-		break;
-	case R_LOG_CRITICAL:
-		hdr = "CRITICAL: ";
-		break;
-	}
-
+	const char *hdr = level < R_LOG_MAX_VALUE ? headers[level] : "";
 	eprintf (hdr);
 	vfprintf (stderr, fmt, ap);
 }

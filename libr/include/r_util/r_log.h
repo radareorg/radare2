@@ -12,7 +12,8 @@ typedef enum r_log_level {
 	R_LOG_INFO,
 	R_LOG_WARNING,
 	R_LOG_ERROR,
-	R_LOG_CRITICAL
+	R_LOG_CRITICAL,
+	R_LOG_MAX_VALUE
 } RLogLevel;
 
 R_API void r_vlog(RLogLevel level, const char *fmt, va_list ap);
