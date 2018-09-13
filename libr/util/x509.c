@@ -422,7 +422,7 @@ void r_x509_validity_dump (RX509Validity* validity, const char* pad) {
 	}
 	const char* b = validity->notBefore ? validity->notBefore->string : "Missing";
 	const char* a = validity->notAfter ? validity->notAfter->string : "Missing";
-	r_cons_printf ("%sNot Before: %s\n%sNot After: %s\n", pad, b, pad, a);
+	eprintf ("%sNot Before: %s\n%sNot After: %s\n", pad, b, pad, a);
 }
 
 void r_x509_name_dump (RX509Name* name, const char* pad) {
@@ -437,7 +437,7 @@ void r_x509_name_dump (RX509Name* name, const char* pad) {
 		if (!name->oids[i] || !name->names[i]) {
 			continue;
 		}
-		r_cons_printf ("%s%s: %s\n", pad, name->oids[i]->string, name->names[i]->string);
+		eprintf ("%s%s: %s\n", pad, name->oids[i]->string, name->names[i]->string);
 	}
 }
 
@@ -457,7 +457,7 @@ void r_x509_subjectpublickeyinfo_dump (RX509SubjectPublicKeyInfo* spki, const ch
 	//	RASN1String* e = r_asn1_stringify_bytes (spki->subjectPublicKeyExponent->sector, spki->subjectPublicKeyExponent->length);
 	//	r = snprintf (buffer, length, "%sAlgorithm: %s\n%sModule: %s\n%sExponent: %u bytes\n%s\n", pad, a, pad, m->string,
 	//				pad, spki->subjectPublicKeyExponent->length - 1, e->string);
-	r_cons_printf ("%sAlgorithm: %s\n%sModule: %s\n%sExponent: %u bytes\n", pad, a, pad, m ? m->string : "Missing",
+	eprintf ("%sAlgorithm: %s\n%sModule: %s\n%sExponent: %u bytes\n", pad, a, pad, m ? m->string : "Missing",
 				pad, spki->subjectPublicKeyExponent ? spki->subjectPublicKeyExponent->length - 1 : 0);
 	r_asn1_free_string (m);
 	//	r_asn1_free_string (e);
@@ -479,7 +479,7 @@ void r_x509_extensions_dump (RX509Extensions* exts, const char* pad) {
 		}
 		//TODO handle extensions..
 		//s = r_asn1_stringify_bytes (e->extnValue->sector, e->extnValue->length);
-		r_cons_printf ("%s%s: %s\n%s%u bytes\n", pad,
+		eprintf ("%s%s: %s\n%s%u bytes\n", pad,
 					e->extnID ? e->extnID->string : "Missing",
 					e->critical ? "critical" : "",
 					pad, e->extnValue ? e->extnValue->length : 0);
@@ -498,7 +498,7 @@ void r_x509_tbscertificate_dump (RX509TBSCertificate* tbsc, const char* pad) {
 	}
 	pad2 = r_str_newf ("%s  ", pad);
 	if (!pad2) return;
-	r_cons_printf ("%sVersion: v%u\n"
+	eprintf ("%sVersion: v%u\n"
 				"%sSerial Number:\n%s  %s\n"
 				"%sSignature Algorithm:\n%s  %s\n"
 				"%sIssuer:\n",
@@ -508,31 +508,31 @@ void r_x509_tbscertificate_dump (RX509TBSCertificate* tbsc, const char* pad) {
 				pad);
 	r_x509_name_dump (&tbsc->issuer, pad2);
 
-	r_cons_printf ("%sValidity:\n", pad);
+	eprintf ("%sValidity:\n", pad);
 	r_x509_validity_dump (&tbsc->validity, pad2);
 
-	r_cons_printf ("%sSubject:\n", pad);
+	eprintf ("%sSubject:\n", pad);
 	r_x509_name_dump (&tbsc->subject, pad2);
 
-	r_cons_printf ("%sSubject Public Key Info:\n", pad);
+	eprintf ("%sSubject Public Key Info:\n", pad);
 	r_x509_subjectpublickeyinfo_dump (&tbsc->subjectPublicKeyInfo, pad2);
 
 	if (tbsc->issuerUniqueID) {
 		iid = r_asn1_stringify_integer (tbsc->issuerUniqueID->binary, tbsc->issuerUniqueID->length);
 		if (iid) {
-			r_cons_printf ("%sIssuer Unique ID:\n%s  %s", pad, pad, iid->string);
+			eprintf ("%sIssuer Unique ID:\n%s  %s", pad, pad, iid->string);
 			r_asn1_free_string (iid);
 		}
 	}
 	if (tbsc->subjectUniqueID) {
 		sid = r_asn1_stringify_integer (tbsc->subjectUniqueID->binary, tbsc->subjectUniqueID->length);
 		if (sid) {
-			r_cons_printf ("%sSubject Unique ID:\n%s  %s", pad, pad, sid->string);
+			eprintf ("%sSubject Unique ID:\n%s  %s", pad, pad, sid->string);
 			r_asn1_free_string (sid);
 		}
 	}
 
-	r_cons_printf ("%sExtensions:\n", pad);
+	eprintf ("%sExtensions:\n", pad);
 	r_x509_extensions_dump (&tbsc->extensions, pad2);
 	free (pad2);
 }
@@ -551,15 +551,15 @@ void r_x509_certificate_dump (RX509Certificate* certificate, const char* pad) {
 	if (!pad2) {
 		return;
 	}
-	r_cons_printf ("%sTBSCertificate:\n", pad);
+	eprintf ("%sTBSCertificate:\n", pad);
 	r_x509_tbscertificate_dump (&certificate->tbsCertificate, pad2);
 
 	algo = certificate->algorithmIdentifier.algorithm;
 	//	signature = r_asn1_stringify_bytes (certificate->signature->binary, certificate->signature->length);
-	//	r_cons_printf ("%sAlgorithm:\n%s%s\n%sSignature: %u bytes\n%s\n",
+	//	eprintf ("%sAlgorithm:\n%s%s\n%sSignature: %u bytes\n%s\n",
 	//				pad, pad2, algo ? algo->string : "",
 	//				pad, certificate->signature->length, signature ? signature->string : "");
-	r_cons_printf ("%sAlgorithm:\n%s%s\n%sSignature: %u bytes\n",
+	eprintf ("%sAlgorithm:\n%s%s\n%sSignature: %u bytes\n",
 				pad, pad2, algo ? algo->string : "", pad, certificate->signature->length);
 	free (pad2);
 	//	r_asn1_free_string (signature);
@@ -578,7 +578,7 @@ void r_x509_crlentry_dump (RX509CRLEntry *crle, const char* pad) {
 		id = r_asn1_stringify_integer (crle->userCertificate->binary, crle->userCertificate->length);
 	}
 
-	r_cons_printf ("%sUser Certificate:\n%s  %s\n"
+	eprintf ("%sUser Certificate:\n%s  %s\n"
 				"%sRevocation Date:\n%s  %s\n",
 				pad, pad, id ? id->string : "Missing",
 				pad, pad, utc ? utc->string : "Missing");
@@ -602,11 +602,11 @@ void r_x509_crl_dump (RX509CertificateRevocationList *crl, const char* pad) {
 	algo = crl->signature.algorithm;
 	last = crl->lastUpdate;
 	next = crl->nextUpdate;
-	r_cons_printf ("%sCRL:\n%sSignature:\n%s%s\n%sIssuer\n", pad, pad2, pad3,
+	eprintf ("%sCRL:\n%sSignature:\n%s%s\n%sIssuer\n", pad, pad2, pad3,
 			algo ? algo->string : "", pad2);
 	r_x509_name_dump (&crl->issuer, pad3);
 
-	r_cons_printf ("%sLast Update: %s\n%sNext Update: %s\n%sRevoked Certificates:\n",
+	eprintf ("%sLast Update: %s\n%sNext Update: %s\n%sRevoked Certificates:\n",
 				pad2, last ? last->string : "Missing",
 				pad2, next ? next->string : "Missing", pad2);
 

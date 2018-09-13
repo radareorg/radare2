@@ -397,9 +397,9 @@ void r_pkcs7_signerinfos_dump (RX509CertificateRevocationList *crl, const char* 
 	algo = crl->signature.algorithm;
 	last = crl->lastUpdate;
 	next = crl->nextUpdate;
-	r_cons_printf ("%sCRL:\n%sSignature:\n%s%s\n%sIssuer\n", pad, pad2, pad3, algo ? algo->string : "", pad2);
+	eprintf ("%sCRL:\n%sSignature:\n%s%s\n%sIssuer\n", pad, pad2, pad3, algo ? algo->string : "", pad2);
 	r_x509_name_dump (&crl->issuer, pad3);
-	r_cons_printf ("%sLast Update: %s\n%sNext Update: %s\n%sRevoked Certificates:\n",
+	eprintf ("%sLast Update: %s\n%sNext Update: %s\n%sRevoked Certificates:\n",
 				pad2, last ? last->string : "Missing",
 				pad2, next ? next->string : "Missing", pad2);
 	for (i = 0; i < crl->length; ++i) {
@@ -426,41 +426,41 @@ static void r_x509_signedinfo_dump (RPKCS7SignerInfo *si, const char* pad) {
 	pad2 = pad3 + 2;
 
 
-	r_cons_printf ("%sSignerInfo:\n%sVersion: v%u\n%sIssuer\n", pad, pad2, si->version + 1, pad2);
+	eprintf ("%sSignerInfo:\n%sVersion: v%u\n%sIssuer\n", pad, pad2, si->version + 1, pad2);
 	r_x509_name_dump (&si->issuerAndSerialNumber.issuer, pad3);
 	if ((o = si->issuerAndSerialNumber.serialNumber)) {
 		s = r_asn1_stringify_integer (o->binary, o->length);
 	}
-	r_cons_printf ("%sSerial Number:\n%s%s\n", pad2, pad3, s ? s->string : "Missing");
+	eprintf ("%sSerial Number:\n%s%s\n", pad2, pad3, s ? s->string : "Missing");
 	r_asn1_free_string (s);
 
 	s = si->digestAlgorithm.algorithm;
-	r_cons_printf ("%sDigest Algorithm:\n%s%s\n%sAuthenticated Attributes:\n",
+	eprintf ("%sDigest Algorithm:\n%s%s\n%sAuthenticated Attributes:\n",
 				pad2, pad3, s ? s->string : "Missing", pad2);
 
 	for (i = 0; i < si->authenticatedAttributes.length; ++i) {
 		RPKCS7Attribute* attr = si->authenticatedAttributes.elements[i];
 		if (!attr) continue;
-		r_cons_printf ("%s%s: %u bytes\n", pad3, attr->oid ? attr->oid->string : "Missing",
+		eprintf ("%s%s: %u bytes\n", pad3, attr->oid ? attr->oid->string : "Missing",
 					attr->data ? attr->data->length : 0);
 	}
 	s = si->digestEncryptionAlgorithm.algorithm;
-	r_cons_printf ("%sDigest Encryption Algorithm\n%s%s\n", pad2, pad3, s ? s->string : "Missing");
+	eprintf ("%sDigest Encryption Algorithm\n%s%s\n", pad2, pad3, s ? s->string : "Missing");
 
 
 //	if ((o = si->encryptedDigest)) s = r_asn1_stringify_bytes (o->binary, o->length);
 //	else s = NULL;
-//	r_cons_printf ("%sEncrypted Digest: %u bytes\n%s\n", pad2, o ? o->length : 0, s ? s->string : "Missing");
+//	eprintf ("%sEncrypted Digest: %u bytes\n%s\n", pad2, o ? o->length : 0, s ? s->string : "Missing");
 //	r_asn1_free_string (s);
-	r_cons_printf ("%sEncrypted Digest: %u bytes\n", pad2, o ? o->length : 0);
-	r_cons_printf ("%sUnauthenticated Attributes:\n", pad2);
+	eprintf ("%sEncrypted Digest: %u bytes\n", pad2, o ? o->length : 0);
+	eprintf ("%sUnauthenticated Attributes:\n", pad2);
 	for (i = 0; i < si->unauthenticatedAttributes.length; ++i) {
 		RPKCS7Attribute* attr = si->unauthenticatedAttributes.elements[i];
 		if (!attr) {
 			continue;
 		}
 		o = attr->data;
-		r_cons_printf ("%s%s: %u bytes\n", pad3, attr->oid ? attr->oid->string : "Missing",
+		eprintf ("%s%s: %u bytes\n", pad3, attr->oid ? attr->oid->string : "Missing",
 					o ? o->length : 0);
 	}
 	free (pad3);
@@ -473,19 +473,19 @@ void r_pkcs7_cms_dump (RCMS* container) {
 		return;
 	}
 	sd = &container->signedData;
-	r_cons_printf ("signedData\n  Version: v%u\n  Digest Algorithms:\n", sd->version);
+	eprintf ("signedData\n  Version: v%u\n  Digest Algorithms:\n", sd->version);
 
 	if (container->signedData.digestAlgorithms.elements) {
 		eprintf("aaa\n");
 		for (i = 0; i < container->signedData.digestAlgorithms.length; ++i) {
 			if (container->signedData.digestAlgorithms.elements[i]) {
 				RASN1String *s = container->signedData.digestAlgorithms.elements[i]->algorithm;
-				r_cons_printf ("    %s\n", s ? s->string : "Missing");
+				eprintf ("    %s\n", s ? s->string : "Missing");
 			}
 		}
 	}
 
-	r_cons_printf ("  Certificates: %u\n", container->signedData.certificates.length);
+	eprintf ("  Certificates: %u\n", container->signedData.certificates.length);
 
 	for (i = 0; i < container->signedData.certificates.length; ++i) {
 		r_x509_certificate_dump (container->signedData.certificates.elements[i], "    ");
@@ -495,7 +495,7 @@ void r_pkcs7_cms_dump (RCMS* container) {
 		r_x509_crl_dump (container->signedData.crls.elements[i], "    ");
 	}
 
-	r_cons_printf ("  SignerInfos:\n");
+	eprintf ("  SignerInfos:\n");
 	if (container->signedData.signerinfos.elements) {
 		for (i = 0; i < container->signedData.signerinfos.length; ++i) {
 			r_x509_signedinfo_dump (container->signedData.signerinfos.elements[i], "    ");

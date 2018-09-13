@@ -214,7 +214,7 @@ R_API void r_asn1_print_object (RASN1Object *object, ut32 depth) {
 			break;
 		case TAG_OCTETSTRING:
 			name = "OCTET_STRING";
-			if (r_str_is_printable_limited (object->sector, object->length)) {
+			if (r_str_is_printable_limited ((const char *)object->sector, object->length)) {
 				asn1str = r_asn1_stringify_string (object->sector, object->length);
 			} else if (!object->list.objects) {
 				r_asn1_print_hex (object, temp_name, 20);
@@ -324,7 +324,7 @@ R_API void r_asn1_print_object (RASN1Object *object, ut32 depth) {
 	if (asn1str) {
 		string = asn1str->string;
 	}
-	r_cons_printf ("%4u:%2d: %s %-20s: %s\n", object->length, depth, object->form ? "cons" : "prim", name, string);
+	eprintf ("%4u:%2d: %s %-20s: %s\n", object->length, depth, object->form ? "cons" : "prim", name, string);
 	r_asn1_free_string (asn1str);
 	if (object->list.objects) {
 		for (i = 0; i < object->list.length; ++i) {
