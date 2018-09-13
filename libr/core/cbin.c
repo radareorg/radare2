@@ -1887,7 +1887,7 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 	}
 
 	r_list_foreach (symbols, iter, symbol) {
-		ut64 addr = rva (r->bin, symbol->paddr, symbol->vaddr, va);
+		ut64 addr = symbol->paddr == UT64_MAX ? symbol->vaddr : rva (r->bin, symbol->paddr, symbol->vaddr, va);
 		int len = symbol->size ? symbol->size : 32;
 		SymName sn;
 
@@ -2076,11 +2076,14 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 			const char *type = symbol->type? symbol->type: "NONE";
 			const char *name = r_str_get (sn.demname? sn.demname: symbol->name);
 			// const char *fwd = r_str_get (symbol->forwarder);
-			r_cons_printf ("%03u 0x%08"PFMT64x" 0x%08"PFMT64x" "
-				"%6s %6s %4d%s%s\n",
-				symbol->ordinal,
-				symbol->paddr, addr, bind, type,
-				symbol->size, *name? " ": "", name);
+			r_cons_printf ("%03u", symbol->ordinal);
+			if (symbol->paddr == UT64_MAX) {
+				r_cons_printf (" ----------");
+			} else {
+				r_cons_printf (" 0x%08"PFMT64x, symbol->paddr);
+			}
+			r_cons_printf (" 0x%08"PFMT64x" %6s %6s %4d%s%s\n",
+			               addr, bind, type, symbol->size, *name? " ": "", name);
 		}
 		snFini (&sn);
 		i++;

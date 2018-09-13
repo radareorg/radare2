@@ -39,6 +39,7 @@ typedef struct r_bin_elf_symbol_t {
 	int last;
 	bool in_shdr;
 	bool is_sht_null;
+	bool is_value;
 } RBinElfSymbol;
 
 typedef struct r_bin_elf_reloc_t {

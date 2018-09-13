@@ -483,9 +483,15 @@ arm_symbol:
 static RBinSymbol *convert_symbol(struct Elf_(r_bin_elf_obj_t) *bin,
 				  struct r_bin_elf_symbol_t *symbol,
 				  const char *namefmt) {
-	ut64 paddr = symbol->offset;
-	ut64 vaddr = Elf_(r_bin_elf_p2v) (bin, paddr);
+	ut64 paddr, vaddr;
 	RBinSymbol *ptr = NULL;
+	if (symbol->is_value) {
+		paddr = UT64_MAX;
+		vaddr = symbol->offset;
+	} else {
+		paddr = symbol->offset;
+		vaddr = Elf_(r_bin_elf_p2v) (bin, paddr);
+	}
 
 	if (!(ptr = R_NEW0 (RBinSymbol))) {
 		return NULL;

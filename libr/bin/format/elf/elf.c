@@ -3081,6 +3081,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 			}
 			for (k = 1, ret_ctr = 0; k < nsym; k++) {
 				bool is_sht_null = false;
+				bool is_value = false;
 				if (type == R_BIN_ELF_IMPORTS && sym[k].st_shndx == STN_UNDEF) {
 					if (sym[k].st_value) {
 						toffset = sym[k].st_value;
@@ -3101,6 +3102,10 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 					}
 				} else {
 					ret[ret_ctr].offset = Elf_(r_bin_elf_v2p) (bin, toffset);
+					if (ret[ret_ctr].offset == UT64_MAX) {
+						ret[ret_ctr].offset = toffset;
+						is_value = true;
+					}
 				}
 				ret[ret_ctr].size = tsize;
 				if (sym[k].st_name + 2 > strtab_section->sh_size) {
@@ -3122,6 +3127,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				ret[ret_ctr].name[ELF_STRING_LENGTH - 2] = '\0';
 				fill_symbol_bind_and_type (&ret[ret_ctr], &sym[k]);
 				ret[ret_ctr].is_sht_null = is_sht_null;
+				ret[ret_ctr].is_value = is_value;
 				ret[ret_ctr].last = 0;
 				ret_ctr++;
 			}
