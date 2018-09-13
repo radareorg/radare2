@@ -474,7 +474,9 @@ void r_x509_extensions_dump (RX509Extensions* exts, const char* pad) {
 	for (i = 0; i < exts->length; ++i) {
 		//RASN1String *s;
 		RX509Extension *e = exts->extensions[i];
-		if (!e) continue;
+		if (!e) {
+			continue;
+		}
 		//TODO handle extensions..
 		//s = r_asn1_stringify_bytes (e->extnValue->sector, e->extnValue->length);
 		r_cons_printf ("%s%s: %s\n%s%u bytes\n", pad,

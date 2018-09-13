@@ -197,7 +197,9 @@ R_API ut64 r_str_bits_from_string(const char *buf, const char *bitz) {
 	/* return the numberic value associated to a string (rflags) */
 	for (; *buf; buf++) {
 		char *ch = strchr (bitz, toupper ((const unsigned char)*buf));
-		if (!ch) ch = strchr (bitz, tolower ((const unsigned char)*buf));
+		if (!ch) {
+			ch = strchr (bitz, tolower ((const unsigned char)*buf));
+		}
 		if (ch) {
 			int bit = (int)(size_t)(ch - bitz);
 			out |= (ut64)(1LL << bit);
@@ -567,10 +569,16 @@ R_API int r_str_word_count(const char *string) {
 	const char *text, *tmp;
 	int word;
 
-	for (text = tmp = string; *text && IS_SEPARATOR (*text); text++);
+	for (text = tmp = string; *text && IS_SEPARATOR (*text); text++) {
+		;
+	}
 	for (word = 0; *text; word++) {
-		for (;*text && !IS_SEPARATOR (*text); text++);
-		for (tmp = text; *text && IS_SEPARATOR (*text); text++);
+		for (; *text && !IS_SEPARATOR (*text); text++) {
+			;
+		}
+		for (tmp = text; *text && IS_SEPARATOR (*text); text++) {
+			;
+		}
 	}
 	return word;
 }
@@ -611,7 +619,9 @@ R_API const char *r_sub_str_lchr(const char *str, int start, int end, char chr) 
 
 /* find the first char chr in the substring str[start:end] with end not included */
 R_API const char *r_sub_str_rchr(const char *str, int start, int end, char chr) {
-	while (str[start] != chr && start < end) start++;
+	while (str[start] != chr && start < end) {
+		start++;
+	}
 	return str[start] == chr ? &str[start] : NULL;
 }
 
@@ -755,8 +765,12 @@ R_API int r_str_cmp(const char *a, const char *b, int len) {
 	if ((a == b) || (!a && !b)) {
 		return 0;
 	}
-	if (!a && b) return -1;
-	if (a && !b) return 1;
+	if (!a && b) {
+		return -1;
+	}
+	if (a && !b) {
+		return 1;
+	}
 	if (len < 0) {
 		return strcmp (a, b);
 	}
@@ -776,7 +790,9 @@ R_API int r_str_ccpy(char *dst, char *src, int ch) {
 R_API char *r_str_word_get_first(const char *text) {
 	char *ret;
 	int len = 0;
-	for (;*text && IS_SEPARATOR (*text); text++);
+	for (; *text && IS_SEPARATOR (*text); text++) {
+		;
+	}
 	/* strdup */
 	len = strlen (text);
 	ret = (char *)malloc (len + 1);
@@ -1353,7 +1369,9 @@ R_API int r_str_ansi_len(const char *str) {
 	while (str[i]) {
 		ch = str[i];
 		if (ch == 0x1b && str[i + 1] == '[') {
-			for (++i; str[i] && str[i] != 'J' && str[i] != 'm' && str[i] != 'H'; i++);
+			for (++i; str[i] && str[i] != 'J' && str[i] != 'm' && str[i] != 'H'; i++) {
+				;
+			}
 		} else {
 			len++;
 #if 0
@@ -1480,7 +1498,9 @@ R_API const char *r_str_ansi_chrn(const char *str, int n) {
 	int len, i, li;
 	for (li = i = len = 0; str[i] && (n!=len); i++) {
 		if (str[i] == 0x1b && str[i + 1] == '[') {
-			for (++i; str[i] && str[i] != 'J' && str[i] != 'm' && str[i] != 'H'; i++);
+			for (++i; str[i] && str[i] != 'J' && str[i] != 'm' && str[i] != 'H'; i++) {
+				;
+			}
 		} else {
 			if ((str[i] & 0xc0) != 0x80) {
 				len++;
@@ -1524,8 +1544,9 @@ R_API int r_str_ansi_filter(char *str, char **out, int **cposs, int len) {
 
 	for (i = j = 0; i < len; i++) {
 		if ((i + 1) < len && tmp[i] == 0x1b && tmp[i + 1] == '[') {
-			for (i += 2; i < len && str[i] != 'J'
-				     && str[i] != 'm' && str[i] != 'H'; i++);
+			for (i += 2; i < len && str[i] != 'J' && str[i] != 'm' && str[i] != 'H'; i++) {
+				;
+			}
 		} else {
 			str[j] = tmp[i];
 			cps[j] = i;
@@ -2027,7 +2048,9 @@ R_API void r_str_range_foreach(const char *r, RStrRangeCallback cb, void *u) {
 			} else {
 				fprintf (stderr, "Invalid range\n");
 			}
-			for (r++; *r && *r!=','&& *r!='-'; r++);
+			for (r++; *r && *r != ',' && *r != '-'; r++) {
+				;
+			}
 			p = r;
 		}
 	}
@@ -2066,7 +2089,9 @@ R_API bool r_str_range_in(const char *r, ut64 addr) {
 			} else {
 				fprintf (stderr, "Invalid range\n");
 			}
-			for (r++; *r && *r!=','&& *r!='-'; r++);
+			for (r++; *r && *r != ',' && *r != '-'; r++) {
+				;
+			}
 			p = r;
 		}
 	}
@@ -2291,7 +2316,9 @@ R_API int r_print_format_length(const char *fmt) {
 	/* get times */
 	times = atoi (arg);
 	if (times > 0) {
-		while ((*arg>='0'&&*arg<='9')) arg++;
+		while ((*arg >= '0' && *arg <= '9')) {
+			arg++;
+		}
 	}
 	bracket = strchr (arg,'{');
 	if (bracket) {

@@ -13,7 +13,9 @@
 
 static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	op->size = 1;
-	if (len<1) return -1;
+	if (len < 1) {
+		return -1;
+	}
 	op->type = R_ANAL_OP_TYPE_UNK;
 	switch (buf[0]) {
 	case 0xd0:

@@ -74,8 +74,9 @@ static RBinInfo* info(RBinFile *bf) {
 		eprintf ("Truncated Header\n");
 		return NULL;
 	}
-	if (!(ret = R_NEW0 (RBinInfo)))
+	if (!(ret = R_NEW0 (RBinInfo))) {
 		return NULL;
+	}
 	ret->lang = NULL;
 	ret->file = strdup (bf->file);
 	ret->type = strdup ("pebble");
@@ -102,35 +103,41 @@ static RList* sections(RBinFile *bf) {
 		eprintf ("Truncated Header\n");
 		return NULL;
 	}
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 	ret->free = free;
 	// TODO: load all relocs
-	if (!(ptr = R_NEW0 (RBinSection)))
+	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
+	}
 	strcpy (ptr->name, "relocs");
 	ptr->vsize = ptr->size = pai.num_reloc_entries * sizeof (ut32);
 	ptr->vaddr = ptr->paddr = pai.reloc_list_start;
 	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE;
 	ptr->add = true;
 	r_list_append (ret, ptr);
-	if (ptr->vaddr<textsize)
+	if (ptr->vaddr < textsize) {
 		textsize = ptr->vaddr;
+	}
 
 	// imho this must be a symbol
-	if (!(ptr = R_NEW0 (RBinSection)))
+	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
+	}
 	strcpy (ptr->name, "symtab");
 	ptr->vsize = ptr->size = 0;
 	ptr->vaddr = ptr->paddr = pai.sym_table_addr;
 	ptr->srwx = R_BIN_SCN_READABLE;
 	ptr->add = true;
 	r_list_append (ret, ptr);
-	if (ptr->vaddr<textsize)
+	if (ptr->vaddr < textsize) {
 		textsize = ptr->vaddr;
+	}
 
-	if (!(ptr = R_NEW0 (RBinSection)))
+	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
+	}
 	strcpy (ptr->name, "text");
 	ptr->vaddr = ptr->paddr = 0x80;
 	ptr->vsize = ptr->size = textsize - ptr->paddr;
@@ -139,8 +146,9 @@ static RList* sections(RBinFile *bf) {
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
-	if (!(ptr = R_NEW0 (RBinSection)))
+	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
+	}
 	strcpy (ptr->name, "header");
 	ptr->vsize = ptr->size = sizeof (PebbleAppInfo);
 	ptr->vaddr = ptr->paddr = 0;
@@ -173,11 +181,13 @@ static RList* entries(RBinFile *bf) {
 		eprintf ("Truncated Header\n");
 		return NULL;
 	}
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 	ret->free = free;
-	if (!(ptr = R_NEW0 (RBinAddr)))
+	if (!(ptr = R_NEW0 (RBinAddr))) {
 		return ret;
+	}
 	ptr->paddr = pai.offset;
 	ptr->vaddr = pai.offset;
 	r_list_append (ret, ptr);

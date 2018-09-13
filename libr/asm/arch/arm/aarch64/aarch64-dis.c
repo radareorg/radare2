@@ -87,8 +87,9 @@ parse_aarch64_dis_options (const char *options)
 {
   const char *option_end;
 
-  if (!options)
-    return;
+  if (!options) {
+	  return;
+  }
 
   while (*options != '\0')
     {
@@ -101,8 +102,9 @@ parse_aarch64_dis_options (const char *options)
 
       /* We know that *options is neither NUL or a comma.  */
       option_end = options + 1;
-      while (*option_end != ',' && *option_end != '\0')
-	option_end++;
+      while (*option_end != ',' && *option_end != '\0') {
+	      option_end++;
+      }
 
       parse_aarch64_dis_option (options, option_end - options);
 
@@ -212,10 +214,11 @@ get_expected_qualifier (const aarch64_inst *inst, int i)
   /* Should not be called if the qualifier is known.  */
   assert (inst->operands[i].qualifier == AARCH64_OPND_QLF_NIL);
   if (aarch64_find_best_match (inst, inst->opcode->qualifiers_list,
-			       i, qualifiers))
-    return qualifiers[i];
-  else
-    return AARCH64_OPND_QLF_NIL;
+	      i, qualifiers)) {
+	  return qualifiers[i];
+  } else {
+	  return AARCH64_OPND_QLF_NIL;
+  }
 }
 
 /* Operand extractors.  */
@@ -284,10 +287,12 @@ aarch64_ext_reglane (const aarch64_operand *self, aarch64_opnd_info *info,
 	     1000	D  */
 	  int pos = -1;
 	  aarch64_insn value = extract_field (FLD_imm5, code, 0);
-	  while (++pos <= 3 && (value & 0x1) == 0)
-	    value >>= 1;
-	  if (pos > 3)
-	    return 0;
+	  while (++pos <= 3 && (value & 0x1) == 0) {
+		  value >>= 1;
+	  }
+	  if (pos > 3) {
+		  return 0;
+	  }
 	  info->qualifier = get_sreg_qualifier_from_value (pos);
 	  info->reglane.index = (unsigned) (value >> 1);
 	}
@@ -368,8 +373,9 @@ aarch64_ext_ldst_reglist (const aarch64_operand *self ATTRIBUTE_UNUSED,
   info->reglist.first_regno = extract_field (FLD_Rt, code, 0);
   /* opcode */
   value = extract_field (FLD_opcode, code, 0);
-  if (expected_num != data[value].num_elements || data[value].is_reserved)
-    return 0;
+  if (expected_num != data[value].num_elements || data[value].is_reserved) {
+	  return 0;
+  }
   info->reglist.num_regs = data[value].num_regs;
 
   return 1;
@@ -395,8 +401,9 @@ aarch64_ext_ldst_reglist_r (const aarch64_operand *self ATTRIBUTE_UNUSED,
   assert (info->reglist.num_regs >= 1 && info->reglist.num_regs <= 4);
 
   /* Except when it is LD1R.  */
-  if (info->reglist.num_regs == 1 && value == (aarch64_insn) 1)
-    info->reglist.num_regs = 2;
+  if (info->reglist.num_regs == 1 && value == (aarch64_insn)1) {
+	  info->reglist.num_regs = 2;
+  }
 
   return 1;
 }
@@ -443,9 +450,10 @@ aarch64_ext_ldst_elemlist (const aarch64_operand *self ATTRIBUTE_UNUSED,
 	  info->qualifier = AARCH64_OPND_QLF_S_D;
 	  /* Index encoded in "Q".  */
 	  info->reglist.index = QSsize >> 3;
-	  if (extract_field (FLD_S, code, 0))
-	    /* UND */
-	    return 0;
+	  if (extract_field (FLD_S, code, 0)) {
+		  /* UND */
+		  return 0;
+	  }
 	}
       break;
     default:
@@ -476,13 +484,15 @@ aarch64_ext_advsimd_imm_shift (const aarch64_operand *self ATTRIBUTE_UNUSED,
   enum aarch64_insn_class iclass = inst->opcode->iclass;
 
   immh = extract_field (FLD_immh, code, 0);
-  if (immh == 0)
-    return 0;
+  if (immh == 0) {
+	  return 0;
+  }
   imm = extract_fields (code, 0, 2, FLD_immh, FLD_immb);
   pos = 4;
   /* Get highest set bit in immh.  */
-  while (--pos >= 0 && (immh & 0x8) == 0)
-    immh <<= 1;
+  while (--pos >= 0 && (immh & 0x8) == 0) {
+	  immh <<= 1;
+  }
 
   assert ((iclass == asimdshf || iclass == asisdshf)
 	  && (info->type == AARCH64_OPND_IMM_VLSR
@@ -503,27 +513,28 @@ aarch64_ext_advsimd_imm_shift (const aarch64_operand *self ATTRIBUTE_UNUSED,
 	 1xxx	1	2D  */
       info->qualifier =
 	get_vreg_qualifier_from_value ((pos << 1) | (int) Q);
-    }
-  else
-    info->qualifier = get_sreg_qualifier_from_value (pos);
+  } else {
+	  info->qualifier = get_sreg_qualifier_from_value (pos);
+  }
 
-  if (info->type == AARCH64_OPND_IMM_VLSR)
-    /* immh	<shift>
+  if (info->type == AARCH64_OPND_IMM_VLSR) {
+	  /* immh	<shift>
        0000	SEE AdvSIMD modified immediate
        0001	(16-UInt(immh:immb))
        001x	(32-UInt(immh:immb))
        01xx	(64-UInt(immh:immb))
        1xxx	(128-UInt(immh:immb))  */
-    info->imm.value = (16 << pos) - imm;
-  else
-    /* immh:immb
+	  info->imm.value = (16 << pos) - imm;
+  } else {
+	  /* immh:immb
        immh	<shift>
        0000	SEE AdvSIMD modified immediate
        0001	(UInt(immh:immb)-8)
        001x	(UInt(immh:immb)-16)
        01xx	(UInt(immh:immb)-32)
        1xxx	(UInt(immh:immb)-64)  */
-    info->imm.value = imm - (8 << pos);
+	  info->imm.value = imm - (8 << pos);
+  }
 
   return 1;
 }
@@ -559,23 +570,28 @@ aarch64_ext_imm (const aarch64_operand *self, aarch64_opnd_info *info,
   /* Maximum of two fields to extract.  */
   assert (self->fields[2] == FLD_NIL);
 
-  if (self->fields[1] == FLD_NIL)
-    imm = extract_field (self->fields[0], code, 0);
-  else
-    /* e.g. TBZ b5:b40.  */
-    imm = extract_fields (code, 0, 2, self->fields[0], self->fields[1]);
+  if (self->fields[1] == FLD_NIL) {
+	  imm = extract_field (self->fields[0], code, 0);
+  } else {
+	  /* e.g. TBZ b5:b40.  */
+	  imm = extract_fields (code, 0, 2, self->fields[0], self->fields[1]);
+  }
 
-  if (info->type == AARCH64_OPND_FPIMM)
-    info->imm.is_fp = 1;
+  if (info->type == AARCH64_OPND_FPIMM) {
+	  info->imm.is_fp = 1;
+  }
 
-  if (operand_need_sign_extension (self))
-    imm = sign_extend (imm, get_operand_fields_width (self) - 1);
+  if (operand_need_sign_extension (self)) {
+	  imm = sign_extend (imm, get_operand_fields_width (self) - 1);
+  }
 
-  if (operand_need_shift_by_two (self))
-    imm <<= 2;
+  if (operand_need_shift_by_two (self)) {
+	  imm <<= 2;
+  }
 
-  if (info->type == AARCH64_OPND_ADDR_ADRP)
-    imm <<= 12;
+  if (info->type == AARCH64_OPND_ADDR_ADRP) {
+	  imm <<= 12;
+  }
 
   info->imm.value = imm;
   return 1;
@@ -607,8 +623,9 @@ aarch64_ext_advsimd_imm_modified (const aarch64_operand *self ATTRIBUTE_UNUSED,
 
   assert (info->idx == 1);
 
-  if (info->type == AARCH64_OPND_SIMD_FPIMM)
-    info->imm.is_fp = 1;
+  if (info->type == AARCH64_OPND_SIMD_FPIMM) {
+	  info->imm.is_fp = 1;
+  }
 
   /* a:b:c:d:e:f:g:h */
   imm = extract_fields (code, 0, 2, FLD_abc, FLD_defgh);
@@ -621,9 +638,11 @@ aarch64_ext_advsimd_imm_modified (const aarch64_operand *self ATTRIBUTE_UNUSED,
 	 encoded in "a:b:c:d:e:f:g:h".	*/
       int i;
       unsigned abcdefgh = imm;
-      for (imm = 0ull, i = 0; i < 8; i++)
-	if (((abcdefgh >> i) & 0x1) != 0)
-	  imm |= 0xffull << (8 * i);
+      for (imm = 0ull, i = 0; i < 8; i++) {
+	      if (((abcdefgh >> i) & 0x1) != 0) {
+		      imm |= 0xffull << (8 * i);
+	      }
+      }
     }
   info->imm.value = imm;
 
@@ -684,8 +703,9 @@ aarch64_ext_aimm (const aarch64_operand *self ATTRIBUTE_UNUSED,
   info->shifter.kind = AARCH64_MOD_LSL;
   /* shift */
   value = extract_field (FLD_shift, code, 0);
-  if (value >= 2)
-    return 0;
+  if (value >= 2) {
+	  return 0;
+  }
   info->shifter.amount = value ? 12 : 0;
   /* imm12 (unsigned) */
   info->imm.value = extract_field (FLD_imm12, code, 0);
@@ -716,8 +736,9 @@ aarch64_ext_limm (const aarch64_operand *self ATTRIBUTE_UNUSED,
   R = (value >> 6) & 0x3f;
   N = (value >> 12) & 0x1;
 
-  if (sf == 0 && N == 1)
-    return 0;
+  if (sf == 0 && N == 1) {
+	  return 0;
+  }
 
   /* The immediate value is S+1 bits to 1, left rotated by SIMDsize - R
      (in other words, right rotated by R), then replicated.  */
@@ -739,17 +760,18 @@ aarch64_ext_limm (const aarch64_operand *self ATTRIBUTE_UNUSED,
       R &= simd_size - 1;
     }
   /* NOTE: if S = simd_size - 1 we get 0xf..f which is rejected.  */
-  if (S == simd_size - 1)
-    return 0;
-  /* S+1 consecutive bits to 1.  */
-  /* NOTE: S can't be 63 due to detection above.  */
-  imm = (1ull << (S + 1)) - 1;
-  /* Rotate to the left by simd_size - R.  */
-  if (R != 0)
-    imm = ((imm << (simd_size - R)) & mask) | (imm >> R);
-  /* Replicate the value according to SIMD size.  */
-  switch (simd_size)
-    {
+    if (S == simd_size - 1) {
+	    return 0;
+    }
+    /* S+1 consecutive bits to 1.  */
+    /* NOTE: S can't be 63 due to detection above.  */
+    imm = (1ull << (S + 1)) - 1;
+    /* Rotate to the left by simd_size - R.  */
+    if (R != 0) {
+	    imm = ((imm << (simd_size - R)) & mask) | (imm >> R);
+    }
+    /* Replicate the value according to SIMD size.  */
+    switch (simd_size) {
     case  2: imm = (imm <<  2) | imm;
     case  4: imm = (imm <<  4) | imm;
     case  8: imm = (imm <<  8) | imm;
@@ -797,8 +819,9 @@ aarch64_ext_ft (const aarch64_operand *self ATTRIBUTE_UNUSED,
     {
       /* opc1:size */
       value = extract_fields (code, 0, 2, FLD_opc1, FLD_ldst_size);
-      if (value > 0x4)
-	return 0;
+      if (value > 0x4) {
+	      return 0;
+      }
       info->qualifier = get_sreg_qualifier_from_value (value);
     }
 
@@ -836,8 +859,9 @@ aarch64_ext_addr_regoff (const aarch64_operand *self ATTRIBUTE_UNUSED,
     aarch64_get_operand_modifier_from_value (value, TRUE /* extend_p */);
   /* Fix-up the shifter kind; although the table-driven approach is
      efficient, it is slightly inflexible, thus needing this fix-up.  */
-  if (info->shifter.kind == AARCH64_MOD_UXTX)
-    info->shifter.kind = AARCH64_MOD_LSL;
+  if (info->shifter.kind == AARCH64_MOD_UXTX) {
+	  info->shifter.kind = AARCH64_MOD_LSL;
+  }
   /* S */
   S = extract_field (FLD_S, code, 0);
   if (S == 0)
@@ -874,23 +898,21 @@ aarch64_ext_addr_simm (const aarch64_operand *self, aarch64_opnd_info *info,
   /* simm (imm9 or imm7)  */
   imm = extract_field (self->fields[0], code, 0);
   info->addr.offset.imm = sign_extend (imm, aarch64_fields[self->fields[0]].width - 1);
-  if (self->fields[0] == FLD_imm7)
-    /* scaled immediate in ld/st pair instructions.  */
-    info->addr.offset.imm *= aarch64_get_qualifier_esize (info->qualifier);
+  if (self->fields[0] == FLD_imm7) {
+	  /* scaled immediate in ld/st pair instructions.  */
+	  info->addr.offset.imm *= aarch64_get_qualifier_esize (info->qualifier);
+  }
   /* qualifier */
-  if (inst->opcode->iclass == ldst_unscaled
-      || inst->opcode->iclass == ldstnapair_offs
-      || inst->opcode->iclass == ldstpair_off
-      || inst->opcode->iclass == ldst_unpriv)
-    info->addr.writeback = 0;
-  else
-    {
-      /* pre/post- index */
-      info->addr.writeback = 1;
-      if (extract_field (self->fields[1], code, 0) == 1)
-	info->addr.preind = 1;
-      else
-	info->addr.postind = 1;
+  if (inst->opcode->iclass == ldst_unscaled || inst->opcode->iclass == ldstnapair_offs || inst->opcode->iclass == ldstpair_off || inst->opcode->iclass == ldst_unpriv) {
+	  info->addr.writeback = 0;
+  } else {
+	  /* pre/post- index */
+	  info->addr.writeback = 1;
+	  if (extract_field (self->fields[1], code, 0) == 1) {
+		  info->addr.preind = 1;
+	  } else {
+		  info->addr.postind = 1;
+	  }
     }
 
   return 1;
@@ -929,18 +951,17 @@ aarch64_ext_simd_addr_post (const aarch64_operand *self ATTRIBUTE_UNUSED,
   info->addr.offset.regno = extract_field (FLD_Rm, code, 0);
   if (info->addr.offset.regno == 31)
     {
-      if (inst->opcode->operands[0] == AARCH64_OPND_LVt_AL)
-	/* Special handling of loading single structure to all lane.  */
-	info->addr.offset.imm = (is_ld1r ? 1
-				 : inst->operands[0].reglist.num_regs)
-	  * aarch64_get_qualifier_esize (inst->operands[0].qualifier);
-      else
-	info->addr.offset.imm = inst->operands[0].reglist.num_regs
-	  * aarch64_get_qualifier_esize (inst->operands[0].qualifier)
-	  * aarch64_get_qualifier_nelem (inst->operands[0].qualifier);
-    }
-  else
-    info->addr.offset.is_reg = 1;
+	  if (inst->opcode->operands[0] == AARCH64_OPND_LVt_AL) {
+		  /* Special handling of loading single structure to all lane.  */
+		  info->addr.offset.imm = (is_ld1r ? 1
+						   : inst->operands[0].reglist.num_regs) *
+					  aarch64_get_qualifier_esize (inst->operands[0].qualifier);
+	  } else {
+		  info->addr.offset.imm = inst->operands[0].reglist.num_regs * aarch64_get_qualifier_esize (inst->operands[0].qualifier) * aarch64_get_qualifier_nelem (inst->operands[0].qualifier);
+	  }
+  } else {
+	  info->addr.offset.is_reg = 1;
+  }
   info->addr.writeback = 1;
 
   return 1;
@@ -981,9 +1002,11 @@ aarch64_ext_pstatefield (const aarch64_operand *self ATTRIBUTE_UNUSED,
   int i;
   /* op1:op2 */
   info->pstatefield = extract_fields (code, 0, 2, FLD_op1, FLD_op2);
-  for (i = 0; aarch64_pstatefields[i].name != NULL; ++i)
-    if (aarch64_pstatefields[i].value == (aarch64_insn)info->pstatefield)
-      return 1;
+  for (i = 0; aarch64_pstatefields[i].name != NULL; ++i) {
+	  if (aarch64_pstatefields[i].value == (aarch64_insn)info->pstatefield) {
+		  return 1;
+	  }
+  }
   /* Reserved value in <pstatefield>.  */
   return 0;
 }
@@ -1012,18 +1035,18 @@ aarch64_ext_sysins_op (const aarch64_operand *self ATTRIBUTE_UNUSED,
     default: assert (0); return 0;
     }
 
-  for (i = 0; sysins_ops[i].template != NULL; ++i)
-    if (sysins_ops[i].value == value)
-      {
-	info->sysins_op = sysins_ops + i;
-	DEBUG_TRACE ("%s found value: %x, has_xt: %d, i: %d.",
-		     info->sysins_op->template,
-		     (unsigned)info->sysins_op->value,
-		     info->sysins_op->has_xt, i);
-	return 1;
-      }
+    for (i = 0; sysins_ops[i].template != NULL; ++i) {
+	    if (sysins_ops[i].value == value) {
+		    info->sysins_op = sysins_ops + i;
+		    DEBUG_TRACE ("%s found value: %x, has_xt: %d, i: %d.",
+			    info->sysins_op->template,
+			    (unsigned)info->sysins_op->value,
+			    info->sysins_op->has_xt, i);
+		    return 1;
+	    }
+    }
 
-  return 0;
+    return 0;
 }
 
 /* Decode the memory barrier option operand for e.g. DMB <option>|#<imm>.  */
@@ -1077,10 +1100,9 @@ aarch64_ext_reg_extended (const aarch64_operand *self ATTRIBUTE_UNUSED,
   /* Assume inst->operands[0].qualifier has been resolved.  */
   assert (inst->operands[0].qualifier != AARCH64_OPND_QLF_NIL);
   info->qualifier = AARCH64_OPND_QLF_W;
-  if (inst->operands[0].qualifier == AARCH64_OPND_QLF_X
-      && (info->shifter.kind == AARCH64_MOD_UXTX
-	  || info->shifter.kind == AARCH64_MOD_SXTX))
-    info->qualifier = AARCH64_OPND_QLF_X;
+  if (inst->operands[0].qualifier == AARCH64_OPND_QLF_X && (info->shifter.kind == AARCH64_MOD_UXTX || info->shifter.kind == AARCH64_MOD_SXTX)) {
+	  info->qualifier = AARCH64_OPND_QLF_X;
+  }
 
   return 1;
 }
@@ -1101,11 +1123,11 @@ aarch64_ext_reg_shifted (const aarch64_operand *self ATTRIBUTE_UNUSED,
   value = extract_field (FLD_shift, code, 0);
   info->shifter.kind =
     aarch64_get_operand_modifier_from_value (value, FALSE /* extend_p */);
-  if (info->shifter.kind == AARCH64_MOD_ROR
-      && inst->opcode->iclass != log_shift)
-    /* ROR is not available for the shifted register operand in arithmetic
+  if (info->shifter.kind == AARCH64_MOD_ROR && inst->opcode->iclass != log_shift) {
+	  /* ROR is not available for the shifted register operand in arithmetic
        instructions.  */
-    return 0;
+	  return 0;
+  }
   /* imm6 */
   info->shifter.amount = extract_field (FLD_imm6, code,  0);
 
@@ -1146,11 +1168,13 @@ get_qualifier_from_partial_encoding (aarch64_insn value,
   for (i = 0; i < AARCH64_MAX_QLF_SEQ_NUM; ++i)
     {
       aarch64_insn standard_value;
-      if (candidates[i] == AARCH64_OPND_QLF_NIL)
-	break;
+      if (candidates[i] == AARCH64_OPND_QLF_NIL) {
+	      break;
+      }
       standard_value = aarch64_get_qualifier_standard_value (candidates[i]);
-      if ((standard_value & mask) == (value & mask))
-	return candidates[i];
+      if ((standard_value & mask) == (value & mask)) {
+	      return candidates[i];
+      }
     }
   return AARCH64_OPND_QLF_NIL;
 }
@@ -1165,9 +1189,11 @@ get_operand_possible_qualifiers (int idx,
 				 enum aarch64_opnd_qualifier *qualifiers)
 {
   int i;
-  for (i = 0; i < AARCH64_MAX_QLF_SEQ_NUM; ++i)
-    if ((qualifiers[i] = list[i][idx]) == AARCH64_OPND_QLF_NIL)
-      break;
+  for (i = 0; i < AARCH64_MAX_QLF_SEQ_NUM; ++i) {
+	  if ((qualifiers[i] = list[i][idx]) == AARCH64_OPND_QLF_NIL) {
+		  break;
+	  }
+  }
 }
 
 /* Decode the size Q field for e.g. SHADD.
@@ -1185,13 +1211,11 @@ decode_sizeq (aarch64_inst *inst)
   enum aarch64_field_kind fld_sz;
   enum aarch64_opnd_qualifier candidates[AARCH64_MAX_QLF_SEQ_NUM];
 
-  if (inst->opcode->iclass == asisdlse
-     || inst->opcode->iclass == asisdlsep
-     || inst->opcode->iclass == asisdlso
-     || inst->opcode->iclass == asisdlsop)
-    fld_sz = FLD_vldst_size;
-  else
-    fld_sz = FLD_size;
+  if (inst->opcode->iclass == asisdlse || inst->opcode->iclass == asisdlsep || inst->opcode->iclass == asisdlso || inst->opcode->iclass == asisdlsop) {
+	  fld_sz = FLD_vldst_size;
+  } else {
+	  fld_sz = FLD_size;
+  }
 
   code = inst->value;
   value = extract_fields (code, inst->opcode->mask, 2, fld_sz, FLD_Q);
@@ -1230,8 +1254,9 @@ decode_sizeq (aarch64_inst *inst)
 
   qualifier = get_qualifier_from_partial_encoding (value, candidates, mask);
 
-  if (qualifier == AARCH64_OPND_QLF_NIL)
-    return 0;
+  if (qualifier == AARCH64_OPND_QLF_NIL) {
+	  return 0;
+  }
 
   inst->operands[idx].qualifier = qualifier;
   return 1;
@@ -1279,8 +1304,9 @@ decode_asisd_fcvtxn (aarch64_inst *inst)
 {
   aarch64_field field = {0, 0};
   gen_sub_field (FLD_size, 0, 1, &field);
-  if (!extract_field_2 (&field, inst->value, 0))
-    return 0;
+  if (!extract_field_2 (&field, inst->value, 0)) {
+	  return 0;
+  }
   inst->operands[0].qualifier = AARCH64_OPND_QLF_S_S;
   return 1;
 }
@@ -1352,25 +1378,24 @@ do_special_decoding (aarch64_inst *inst)
       idx = select_operand_for_sf_field_coding (inst->opcode);
       value = extract_field (FLD_sf, inst->value, 0);
       inst->operands[idx].qualifier = get_greg_qualifier_from_value (value);
-      if ((inst->opcode->flags & F_N)
-	  && extract_field (FLD_N, inst->value, 0) != value)
-	return 0;
+      if ((inst->opcode->flags & F_N) && extract_field (FLD_N, inst->value, 0) != value) {
+	      return 0;
+      }
     }
   /* size:Q fields.  */
-  if (inst->opcode->flags & F_SIZEQ)
-    return decode_sizeq (inst);
+    if (inst->opcode->flags & F_SIZEQ) {
+	    return decode_sizeq (inst);
+    }
 
-  if (inst->opcode->flags & F_FPTYPE)
-    {
-      idx = select_operand_for_fptype_field_coding (inst->opcode);
-      value = extract_field (FLD_type, inst->value, 0);
-      switch (value)
-	{
-	case 0: inst->operands[idx].qualifier = AARCH64_OPND_QLF_S_S; break;
-	case 1: inst->operands[idx].qualifier = AARCH64_OPND_QLF_S_D; break;
-	case 3: inst->operands[idx].qualifier = AARCH64_OPND_QLF_S_H; break;
-	default: return 0;
-	}
+    if (inst->opcode->flags & F_FPTYPE) {
+	    idx = select_operand_for_fptype_field_coding (inst->opcode);
+	    value = extract_field (FLD_type, inst->value, 0);
+	    switch (value) {
+	    case 0: inst->operands[idx].qualifier = AARCH64_OPND_QLF_S_S; break;
+	    case 1: inst->operands[idx].qualifier = AARCH64_OPND_QLF_S_D; break;
+	    case 3: inst->operands[idx].qualifier = AARCH64_OPND_QLF_S_H; break;
+	    default: return 0;
+	    }
     }
 
   if (inst->opcode->flags & F_SSIZE)
@@ -1384,14 +1409,12 @@ do_special_decoding (aarch64_inst *inst)
       mask = extract_field (FLD_size, ~inst->opcode->mask, 0);
       /* For most related instruciton, the 'size' field is fully available for
 	 operand encoding.  */
-      if (mask == 0x3)
-	inst->operands[idx].qualifier = get_sreg_qualifier_from_value (value);
-      else
-	{
-	  get_operand_possible_qualifiers (idx, inst->opcode->qualifiers_list,
-					   candidates);
-	  inst->operands[idx].qualifier
-	    = get_qualifier_from_partial_encoding (value, candidates, mask);
+      if (mask == 0x3) {
+	      inst->operands[idx].qualifier = get_sreg_qualifier_from_value (value);
+      } else {
+	      get_operand_possible_qualifiers (idx, inst->opcode->qualifiers_list,
+		      candidates);
+	      inst->operands[idx].qualifier = get_qualifier_from_partial_encoding (value, candidates, mask);
 	}
     }
 
@@ -1413,10 +1436,12 @@ do_special_decoding (aarch64_inst *inst)
 	 1000		0	reserved
 	 1000		1	2d  */
       val = extract_field (FLD_imm5, inst->value, 0);
-      while ((val & 0x1) == 0 && ++num <= 3)
-	val >>= 1;
-      if (num > 3)
-	return 0;
+      while ((val & 0x1) == 0 && ++num <= 3) {
+	      val >>= 1;
+      }
+      if (num > 3) {
+	      return 0;
+      }
       Q = (unsigned) extract_field (FLD_Q, inst->value, inst->opcode->mask);
       inst->operands[0].qualifier =
 	get_vreg_qualifier_from_value ((num << 1) | Q);
@@ -1452,10 +1477,11 @@ do_special_decoding (aarch64_inst *inst)
     }
 
   /* Miscellaneous decoding; done as the last step.  */
-  if (inst->opcode->flags & F_MISC)
-    return do_misc_decoding (inst);
+    if (inst->opcode->flags & F_MISC) {
+	    return do_misc_decoding (inst);
+    }
 
-  return 1;
+    return 1;
 }
 
 /* Converters converting a real opcode instruction to its alias form.  */
@@ -1652,8 +1678,9 @@ convert_movewide_to_mov (aarch64_inst *inst)
 {
   uint64_t value = inst->operands[1].imm.value;
   /* MOVZ/MOVN #0 have a shift amount other than LSL #0.  */
-  if (value == 0 && inst->operands[1].shifter.amount != 0)
-    return 0;
+  if (value == 0 && inst->operands[1].shifter.amount != 0) {
+	  return 0;
+  }
   inst->operands[1].type = AARCH64_OPND_IMM_MOV;
   inst->operands[1].shifter.kind = AARCH64_MOD_NONE;
   value <<= inst->operands[1].shifter.amount;
@@ -1664,8 +1691,9 @@ convert_movewide_to_mov (aarch64_inst *inst)
       int is32 = inst->operands[0].qualifier == AARCH64_OPND_QLF_W;
       value = ~value;
       /* A MOVN has an immediate that could be encoded by MOVZ.  */
-      if (aarch64_wide_constant_p (value, is32, NULL) == TRUE)
-	return 0;
+      if (aarch64_wide_constant_p (value, is32, NULL) == TRUE) {
+	      return 0;
+      }
     }
   inst->operands[1].imm.value = value;
   inst->operands[1].shifter.amount = 0;
@@ -1696,10 +1724,9 @@ convert_movebitmask_to_mov (aarch64_inst *inst)
   value = inst->operands[1].imm.value;
   /* ORR has an immediate that could be generated by a MOVZ or MOVN
      instruction.  */
-  if (inst->operands[0].reg.regno != 0x1f
-      && (aarch64_wide_constant_p (value, is32, NULL) == TRUE
-	  || aarch64_wide_constant_p (~value, is32, NULL) == TRUE))
-    return 0;
+  if (inst->operands[0].reg.regno != 0x1f && (aarch64_wide_constant_p (value, is32, NULL) == TRUE || aarch64_wide_constant_p (~value, is32, NULL) == TRUE)) {
+	  return 0;
+  }
 
   inst->operands[2].type = AARCH64_OPND_NIL;
   return 1;
@@ -1817,8 +1844,9 @@ determine_disassembling_preference (struct aarch64_inst *inst)
   opcode = inst->opcode;
 
   /* This opcode does not have an alias, so use itself.  */
-  if (opcode_has_alias (opcode) == FALSE)
-    return;
+  if (opcode_has_alias (opcode) == FALSE) {
+	  return;
+  }
 
   alias = aarch64_find_alias_opcode (opcode);
   assert (alias);
@@ -1928,10 +1956,11 @@ aarch64_opcode_decode (const aarch64_opcode *opcode, const aarch64_insn code,
   /* Assign operand codes and indexes.  */
   for (i = 0; i < AARCH64_MAX_OPND_NUM; ++i)
     {
-      if (opcode->operands[i] == AARCH64_OPND_NIL)
-	break;
-      inst->operands[i].type = opcode->operands[i];
-      inst->operands[i].idx = i;
+	  if (opcode->operands[i] == AARCH64_OPND_NIL) {
+		  break;
+	  }
+	  inst->operands[i].type = opcode->operands[i];
+	  inst->operands[i].idx = i;
     }
 
   /* Call the opcode decoder indicated by flags.  */
@@ -1947,8 +1976,9 @@ aarch64_opcode_decode (const aarch64_opcode *opcode, const aarch64_insn code,
       const aarch64_operand *opnd;
       enum aarch64_opnd type;
       type = opcode->operands[i];
-      if (type == AARCH64_OPND_NIL)
-	break;
+      if (type == AARCH64_OPND_NIL) {
+	      break;
+      }
       opnd = &aarch64_operands[type];
       if (operand_has_extractor (opnd)
 	  && (! aarch64_extract_operand (opnd, &inst->operands[i], code, inst)))
@@ -1966,8 +1996,9 @@ aarch64_opcode_decode (const aarch64_opcode *opcode, const aarch64_insn code,
 	 instruction.  Before the return, check if the instruction has any
 	 alias and should be disassembled in the form of its alias instead.
 	 If the answer is yes, *INST will be updated.  */
-      if (!noaliases_p)
-	determine_disassembling_preference (inst);
+      if (!noaliases_p) {
+	      determine_disassembling_preference (inst);
+      }
       DEBUG_TRACE ("SUCCESS");
       return 1;
     }
@@ -1996,8 +2027,9 @@ user_friendly_fixup (aarch64_inst *inst)
 	 the register, which may be written and should be disassembled as Wn if
 	 uimm is less than 32. Limited to a branch offset range of +/- 32KiB.
 	 */
-      if (inst->operands[1].imm.value < 32)
-	inst->operands[0].qualifier = AARCH64_OPND_QLF_W;
+      if (inst->operands[1].imm.value < 32) {
+	      inst->operands[0].qualifier = AARCH64_OPND_QLF_W;
+      }
       break;
     default: break;
     }
@@ -2034,8 +2066,9 @@ disas_aarch64_insn (uint64_t pc ATTRIBUTE_UNUSED, uint32_t insn,
     {
       /* But only one opcode can be decoded successfully for, as the
 	 decoding routine will check the constraint carefully.  */
-      if (aarch64_opcode_decode (opcode, insn, inst, no_aliases) == 1)
-	return ERR_OK;
+      if (aarch64_opcode_decode (opcode, insn, inst, no_aliases) == 1) {
+	      return ERR_OK;
+      }
       opcode = aarch64_find_next_opcode (opcode);
     }
 
@@ -2057,24 +2090,26 @@ print_operands (bfd_vma pc, const aarch64_opcode *opcode,
 	 operand.
 	 The two operand code should be the same in all cases, apart from
 	 when the operand can be optional.  */
-      if (opcode->operands[i] == AARCH64_OPND_NIL
-	  || opnds[i].type == AARCH64_OPND_NIL)
-	break;
+      if (opcode->operands[i] == AARCH64_OPND_NIL || opnds[i].type == AARCH64_OPND_NIL) {
+	      break;
+      }
 
       /* Generate the operand string in STR.  */
       aarch64_print_operand (str, SIZE, pc, opcode, opnds, i, &pcrel_p,
 			     &info->target);
 
       /* Print the delimiter (taking account of omitted operand(s)).  */
-      if (str[0] != '\0')
-	(*info->fprintf_func) (info->stream, "%s",
-			       num_printed++ == 0 ? " " : ", ");
+      if (str[0] != '\0') {
+	      (*info->fprintf_func) (info->stream, "%s",
+		      num_printed++ == 0 ? " " : ", ");
+      }
 
       /* Print the operand.  */
-      if (pcrel_p)
-	(*info->print_address_func) (info->target, info);
-      else
-	(*info->fprintf_func) (info->stream, "%s", str);
+      if (pcrel_p) {
+	      (*info->print_address_func) (info->target, info);
+      } else {
+	      (*info->fprintf_func) (info->stream, "%s", str);
+      }
     }
 }
 
@@ -2098,9 +2133,9 @@ print_mnemonic_name (const aarch64_inst *inst, struct disassemble_info *info)
       strncpy (name, inst->opcode->name, len);
       name [len] = '\0';
       (*info->fprintf_func) (info->stream, "%s.%s", name, inst->cond->names[0]);
-    }
-  else
-    (*info->fprintf_func) (info->stream, "%s", inst->opcode->name);
+  } else {
+	  (*info->fprintf_func) (info->stream, "%s", inst->opcode->name);
+  }
 }
 
 /* Print the instruction according to *INST.  */
@@ -2139,13 +2174,14 @@ print_insn_aarch64_word (bfd_vma pc,
   info->target = 0;
   info->target2 = 0;
 
-  if (info->flags & INSN_HAS_RELOC)
-    /* If the instruction has a reloc associated with it, then
+  if (info->flags & INSN_HAS_RELOC) {
+	  /* If the instruction has a reloc associated with it, then
        the offset field in the instruction will actually be the
        addend for the reloc.  (If we are using REL type relocs).
        In such cases, we can ignore the pc when computing
        addresses, since the addend is not currently pc-relative.  */
-    pc = 0;
+	  pc = 0;
+  }
 
   ret = disas_aarch64_insn (pc, word, &inst);
 
@@ -2185,8 +2221,9 @@ aarch64_symbol_is_valid (asymbol * sym,
 {
   const char * name;
 
-  if (!sym)
-    return FALSE;
+  if (!sym) {
+	  return FALSE;
+  }
 
   name = bfd_asymbol_name (sym);
 
@@ -2292,21 +2329,24 @@ print_insn_aarch64 (bfd_vma pc,
       bfd_vma addr;
       int n;
 
-      if (pc <= last_mapping_addr)
-	last_mapping_sym = -1;
+      if (pc <= last_mapping_addr) {
+	      last_mapping_sym = -1;
+      }
 
       /* Start scanning at the start of the function, or wherever
 	 we finished last time.  */
       n = info->symtab_pos + 1;
-      if (n < last_mapping_sym)
-	n = last_mapping_sym;
+      if (n < last_mapping_sym) {
+	      n = last_mapping_sym;
+      }
 
       /* Scan up to the location being disassembled.  */
       for (; n < info->symtab_size; n++)
 	{
 	  addr = bfd_asymbol_value (info->symtab[n]);
-	  if (addr > pc)
-	    break;
+	  if (addr > pc) {
+		  break;
+	  }
 	  if ((!info->section
 	       || info->section == info->symtab[n]->section)
 	      && get_sym_code_type (info, n, &type))
@@ -2319,8 +2359,9 @@ print_insn_aarch64 (bfd_vma pc,
       if (!found)
 	{
 	  n = info->symtab_pos;
-	  if (n < last_mapping_sym)
-	    n = last_mapping_sym;
+	  if (n < last_mapping_sym) {
+		  n = last_mapping_sym;
+	  }
 
 	  /* No mapping symbol found at this address.  Look backwards
 	     for a preceding one.  */
@@ -2350,16 +2391,18 @@ print_insn_aarch64 (bfd_vma pc,
 	      addr = bfd_asymbol_value (info->symtab[n]);
 	      if (addr > pc)
 		{
-		  if (addr - pc < size)
-		    size = addr - pc;
-		  break;
+		      if (addr - pc < size) {
+			      size = addr - pc;
+		      }
+		      break;
 		}
 	    }
 	  /* If the next symbol is after three bytes, we need to
 	     print only part of the data, so that we can use either
 	     .byte or .short.  */
-	  if (size == 3)
-	    size = (pc & 1) ? 1 : 2;
+	    if (size == 3) {
+		    size = (pc & 1) ? 1 : 2;
+	    }
 	}
     }
 

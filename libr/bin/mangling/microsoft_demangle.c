@@ -299,7 +299,9 @@ int get_namespace_and_name(	char *buf, STypeCodeStr *type_code_str,
 		{
 			int i = 0;
 			str_info = (SStrInfo *) malloc (sizeof(SStrInfo));
-			if (!str_info) break;
+			if (!str_info) {
+				break;
+			}
 			i = get_template (buf + 1, str_info);
 			if (!i) {
 				R_FREE (str_info);
@@ -664,8 +666,9 @@ char* get_num(SStateInfo *state)
 			state->amount_of_read_chars++;
 		}
 
-		if (*state->buff_for_parsing != '@')
+		if (*state->buff_for_parsing != '@') {
 			return ptr;
+		}
 
 		ptr = (char *)malloc (16);
 		sprintf (ptr, "%u", ret);
@@ -1350,8 +1353,9 @@ static EDemanglerErr parse_microsoft_mangled_name(char *sym, char **demangled_na
 		}
 	}
 
-	while (*curr_pos == '@')
+	while (*curr_pos == '@') {
 		curr_pos++;
+	}
 
 	if (*curr_pos != 'Z') {
 		err = eDemanglerErrUncorrectMangledSymbol;

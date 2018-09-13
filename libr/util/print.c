@@ -1433,14 +1433,22 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 		if (next < arr[i]) {
 			//if (arr[i]>0 && i>0) p->cb_printf ("  ");
 			if (arr[i] > INC) {
-				for (j = 0; j < next + base; j += INC) p->cb_printf (i? " ": "'");
+				for (j = 0; j < next + base; j += INC) {
+					p->cb_printf (i ? " " : "'");
+				}
 			}
-			for (j = next + INC; j + base < arr[i]; j += INC) p->cb_printf ("_");
+			for (j = next + INC; j + base < arr[i]; j += INC) {
+				p->cb_printf ("_");
+			}
 		} else {
 			if (i == 0) {
-				for (j = INC; j < arr[i] + base; j += INC) p->cb_printf ("'");
+				for (j = INC; j < arr[i] + base; j += INC) {
+					p->cb_printf ("'");
+				}
 			} else {
-				for (j = INC; j < arr[i] + base; j += INC) p->cb_printf (" ");
+				for (j = INC; j < arr[i] + base; j += INC) {
+					p->cb_printf (" ");
+				}
 			}
 		}
 		//for (j=1;j<arr[i]; j+=INC) p->cb_printf (under);
@@ -1636,7 +1644,9 @@ static bool issymbol(char c) {
 static bool check_arg_name (RPrint *print, char *p, ut64 func_addr) {
 	if (func_addr && print->exists_var) {
 		int z;
-		for (z = 0; p[z] && (IS_ALPHA (p[z]) || IS_DIGIT (p[z]) || p[z] == '_'); z++);
+		for (z = 0; p[z] && (IS_ALPHA (p[z]) || IS_DIGIT (p[z]) || p[z] == '_'); z++) {
+			;
+		}
 		char tmp = p[z];
 		p[z] = '\0';
 		bool ret = print->exists_var (print, func_addr, p);

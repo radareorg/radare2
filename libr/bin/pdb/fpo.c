@@ -103,7 +103,9 @@ void parse_fpo_new_stream(void *stream, R_STREAM_FILE *stream_file)
 
 	stream_file_get_size (stream_file, &data_size);
 	data = (char *) malloc (data_size);
-	if (!data) return;
+	if (!data) {
+		return;
+	}
 	stream_file_get_data (stream_file, data);
 
 	fpo_stream = (SFPONewStream *) stream;

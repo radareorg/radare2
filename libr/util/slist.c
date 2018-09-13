@@ -5,7 +5,9 @@
 
 R_API RSList *r_slist_new() {
 	RSList *s = R_NEW0 (RSList);
-	if (!s) return NULL;
+	if (!s) {
+		return NULL;
+	}
 	s->list = r_list_new ();
 	if (!s->list) {
 		r_slist_free (s);
@@ -22,10 +24,12 @@ R_API void r_slist_free(RSList *s) {
 }
 
 R_API int r_slist_get_slot(RSList *s, ut64 addr) {
-	if (s->min == 0 && s->min == s->max)
+	if (s->min == 0 && s->min == s->max) {
 		return -1;
-	if (addr < s->min || addr > s->max)
+	}
+	if (addr < s->min || addr > s->max) {
 		return -1;
+	}
 	return (addr - s->min) / s->mod;
 }
 
@@ -38,7 +42,9 @@ R_API RSList *r_slist_add(RSList *s, void *data, ut64 from, ut64 to) {
 	ut64 at = from;
 	int slot, lastslot;
 	RSListItem *item = get_new_item ();
-	if (!item) return NULL;
+	if (!item) {
+		return NULL;
+	}
 	//RSListItem **items;
 	// append to list
 	item->from = from;
@@ -112,10 +118,12 @@ R_API void r_slist_optimize(RSList *s) {
 			max = ptr->to;
 			begin = 0;
 		} else {
-			if (ptr->from < min)
+			if (ptr->from < min) {
 				min = ptr->from;
-			if (ptr->to > max)
+			}
+			if (ptr->to > max) {
 				max = ptr->to;
+			}
 		}
 	}
 

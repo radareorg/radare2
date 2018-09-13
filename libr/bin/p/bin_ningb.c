@@ -45,7 +45,9 @@ static RBinAddr* binsym(RBinFile *bf, int type) {
 	if (type == R_BIN_SYM_MAIN && bf && bf->buf) {
 		ut8 init_jmp[4];
 		RBinAddr *ret = R_NEW0 (RBinAddr);
-		if (!ret) return NULL;
+		if (!ret) {
+			return NULL;
+		}
 		r_buf_read_at (bf->buf, 0x100, init_jmp, 4);
 		if (init_jmp[1] == 0xc3) {
 			ret->paddr = ret->vaddr = init_jmp[3]*0x100 + init_jmp[2];
@@ -61,11 +63,13 @@ static RList* entries(RBinFile *bf) {
 	RBinAddr *ptr = NULL;
 
 	if (bf && bf->buf != NULL) {
-		if (!ret)
+		if (!ret) {
 			return NULL;
+		}
 		ret->free = free;
-		if (!(ptr = R_NEW0 (RBinAddr)))
+		if (!(ptr = R_NEW0 (RBinAddr))) {
 			return ret;
+		}
 		ptr->paddr = ptr->vaddr = ptr->hpaddr = 0x100;
 		r_list_append (ret, ptr);
 	}
@@ -77,12 +81,14 @@ static RList* sections(RBinFile *bf){
 	int i;
 	RList *ret;
 
-	if (!bf)
+	if (!bf) {
 		return NULL;
+	}
 
 	ret = r_list_new();
-	if (!ret )
+	if (!ret) {
 		return NULL;
+	}
 
 	r_buf_read_at (bf->buf, 0x148, &bank, 1);
 	bank = gb_get_rombanks(bank);
@@ -133,8 +139,9 @@ static RList* symbols(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSymbol *ptr[13];
 	int i;
-	if (!(ret = r_list_new()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 	ret->free = free;
 
 	for (i = 0; i < 8; i++) {
@@ -149,8 +156,9 @@ static RList* symbols(RBinFile *bf) {
 		r_list_append (ret, ptr[i]);
 	}
 
-	if (!(ptr[8] = R_NEW0 (RBinSymbol)))
+	if (!(ptr[8] = R_NEW0 (RBinSymbol))) {
 		return ret;
+	}
 
 	ptr[8]->name = strdup ("Interrupt_Vblank");
 	ptr[8]->paddr = ptr[8]->vaddr = 64;
@@ -158,8 +166,9 @@ static RList* symbols(RBinFile *bf) {
 	ptr[8]->ordinal = 8;
 	r_list_append (ret, ptr[8]);
 
-	if (!(ptr[9] = R_NEW0 (RBinSymbol)))
+	if (!(ptr[9] = R_NEW0 (RBinSymbol))) {
 		return ret;
+	}
 
 	ptr[9]->name = strdup ("Interrupt_LCDC-Status");
 	ptr[9]->paddr = ptr[9]->vaddr = 72;
@@ -167,8 +176,9 @@ static RList* symbols(RBinFile *bf) {
 	ptr[9]->ordinal = 9;
 	r_list_append (ret, ptr[9]);
 
-	if (!(ptr[10] = R_NEW0 (RBinSymbol)))
+	if (!(ptr[10] = R_NEW0 (RBinSymbol))) {
 		return ret;
+	}
 
 	ptr[10]->name = strdup ("Interrupt_Timer-Overflow");
 	ptr[10]->paddr = ptr[10]->vaddr = 80;
@@ -176,8 +186,9 @@ static RList* symbols(RBinFile *bf) {
 	ptr[10]->ordinal = 10;
 	r_list_append (ret, ptr[10]);
 
-	if (!(ptr[11] = R_NEW0 (RBinSymbol)))
+	if (!(ptr[11] = R_NEW0 (RBinSymbol))) {
 		return ret;
+	}
 
 	ptr[11]->name = strdup ("Interrupt_Serial-Transfere");
 	ptr[11]->paddr = ptr[11]->vaddr = 88;
@@ -185,8 +196,9 @@ static RList* symbols(RBinFile *bf) {
 	ptr[11]->ordinal = 11;
 	r_list_append (ret, ptr[11]);
 
-	if (!(ptr[12] = R_NEW0 (RBinSymbol)))
+	if (!(ptr[12] = R_NEW0 (RBinSymbol))) {
 		return ret;
+	}
 
 	ptr[12]->name = strdup ("Interrupt_Joypad");
 	ptr[12]->paddr = ptr[12]->vaddr = 96;
@@ -224,8 +236,9 @@ static RBinInfo* info(RBinFile *bf) {
 RList *mem (RBinFile *bf) {
 	RList *ret;
 	RBinMem *m, *n;
-	if (!(ret = r_list_new()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 	ret->free = free;
 	if (!(m = R_NEW0 (RBinMem))) {
 		r_list_free (ret);
@@ -237,39 +250,44 @@ RList *mem (RBinFile *bf) {
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
 
-	if (!(m = R_NEW0 (RBinMem)))
+	if (!(m = R_NEW0 (RBinMem))) {
 		return ret;
+	}
 	m->name = strdup ("ioports");
 	m->addr = 0xff00LL;
 	m->size = 0x4c;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
 
-	if (!(m = R_NEW0 (RBinMem)))
+	if (!(m = R_NEW0 (RBinMem))) {
 		return ret;
+	}
 	m->name = strdup ("oam");
 	m->addr = 0xfe00LL;
 	m->size = 0xa0;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
 
-	if (!(m = R_NEW0 (RBinMem)))
+	if (!(m = R_NEW0 (RBinMem))) {
 		return ret;
+	}
 	m->name = strdup ("videoram");
 	m->addr = 0x8000LL;
 	m->size = 0x2000;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
 
-	if (!(m = R_NEW0 (RBinMem)))
+	if (!(m = R_NEW0 (RBinMem))) {
 		return ret;
+	}
 	m->name = strdup ("iram");
 	m->addr = 0xc000LL;
 	m->size = 0x2000;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
-	if (!(m->mirrors = r_list_new()))
+	if (!(m->mirrors = r_list_new ())) {
 		return ret;
+	}
 	if (!(n = R_NEW0 (RBinMem))) {
 		r_list_free (m->mirrors);
 		m->mirrors = NULL;

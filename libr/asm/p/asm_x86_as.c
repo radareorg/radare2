@@ -27,11 +27,13 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		return -1;
 	}
 
-	if (a->syntax == R_ASM_SYNTAX_INTEL)
+	if (a->syntax == R_ASM_SYNTAX_INTEL) {
 		syntaxstr = ".intel_syntax noprefix\n";
+	}
 
-	if (a->syntax == R_ASM_SYNTAX_ATT)
+	if (a->syntax == R_ASM_SYNTAX_ATT) {
 		syntaxstr = ".att_syntax\n";
+	}
 
 	len = snprintf (asm_buf, sizeof (asm_buf),
 			"%s.code%i\n" //.org 0x%"PFMT64x"\n"

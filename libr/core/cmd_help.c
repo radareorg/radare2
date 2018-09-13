@@ -166,6 +166,7 @@ static const char *help_msg_question[] = {
 
 static const char *help_msg_question_v[] = {
 	"Usage: ?v [$.]","","",
+	"flag", "", "offset of flag",
 	"$$", "", "here (current virtual seek)",
 	"$$$", "", "current non-temporary virtual seek",
 	"$?", "", "last comparison value",
@@ -209,6 +210,7 @@ static const char *help_msg_question_v[] = {
 	"$r{reg}", "", "get value of named register",
 	"$k{kv}", "", "get value of an sdb query value",
 	"$s{flag}", "", "get size of flag",
+	"$e{flag}", "", "end of flag (flag->offset + flag->size)",
 	"RNum", "", "$variables usable in math expressions",
 	NULL
 };

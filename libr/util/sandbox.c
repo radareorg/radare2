@@ -66,7 +66,9 @@ R_API bool r_sandbox_check_path (const char *path) {
 		return false;
 	}
 	// Properly check for directrory traversal using "..". First, does it start with a .. part?
-        if (path[0]=='.' && path[1]=='.' && (path[2]=='\0' || path[2]=='/')) return 0;
+	if (path[0] == '.' && path[1] == '.' && (path[2] == '\0' || path[2] == '/')) {
+		return 0;
+	}
 
 	// Or does it have .. in some other position?
 	for (p = strstr (path, "/.."); p; p = strstr(p, "/..")) {
@@ -292,8 +294,12 @@ R_API FILE *r_sandbox_fopen (const char *path, const char *mode) {
 R_API int r_sandbox_chdir (const char *path) {
 	if (enabled) {
 		// TODO: check path
-		if (strstr (path, "../")) return -1;
-		if (*path == '/') return -1;
+		if (strstr (path, "../")) {
+			return -1;
+		}
+		if (*path == '/') {
+			return -1;
+		}
 		return -1;
 	}
 	return chdir (path);
@@ -301,7 +307,9 @@ R_API int r_sandbox_chdir (const char *path) {
 
 R_API int r_sandbox_kill(int pid, int sig) {
 	// XXX: fine-tune. maybe we want to enable kill for child?
-	if (enabled) return -1;
+	if (enabled) {
+		return -1;
+	}
 #if __UNIX__
 	return kill (pid, sig);
 #endif
@@ -332,8 +340,9 @@ R_API HANDLE r_sandbox_opendir (const char *path, WIN32_FIND_DATAW *entry) {
 }
 #else
 R_API DIR* r_sandbox_opendir (const char *path) {
-	if (!path)
+	if (!path) {
 		return NULL;
+	}
 	if (r_sandbox_enable (0)) {
 		if (path && !r_sandbox_check_path (path)) {
 			return NULL;

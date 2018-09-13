@@ -191,8 +191,9 @@ static const char *dwarf_langs[] = {
 };
 
 static int add_sdb_include_dir(Sdb *s, const char *incl, int idx) {
-	if (!s || !incl)
+	if (!s || !incl) {
 		return false;
+	}
 	return sdb_array_set (s, "includedirs", idx, incl, 0);
 }
 
@@ -217,7 +218,9 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 	size_t count;
 	const ut8 *tmp_buf = NULL;
 
-	if (!hdr || !bf || !buf) return NULL;
+	if (!hdr || !bf || !buf) {
+		return NULL;
+	}
 
 	hdr->unit_length.part1 = READ (buf, ut32);
 	if (hdr->unit_length.part1 == DWARF_INIT_LEN_64) {
@@ -262,7 +265,9 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 		hdr->std_opcode_lengths = calloc(sizeof(ut8), hdr->opcode_base);
 
 		for (i = 1; i <= hdr->opcode_base - 1; i++) {
-			if (buf+2>buf_end) break;
+			if (buf + 2 > buf_end) {
+				break;
+			}
 			hdr->std_opcode_lengths[i] = READ (buf, ut8);
 			if (f) {
 				fprintf (f, " op %d %d\n", i, hdr->std_opcode_lengths[i]);
@@ -335,8 +340,9 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 					}
 				} else {
 					include_dir = pinclude_dir = sdb_get (bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
-					if (!include_dir)
+					if (!include_dir) {
 						include_dir = "./";
+					}
 				}
 
 				namelen = len + (include_dir?strlen (include_dir):0) + 8;
@@ -386,8 +392,9 @@ static inline void add_sdb_addrline(Sdb *s, ut64 addr, const char *file, ut64 li
 	char offset[64];
 	char *offset_ptr;
 
-	if (!s || !file)
+	if (!s || !file) {
 		return;
+	}
 	p = r_str_rchr (file, NULL, '/');
 	if (p) {
 		p++;
@@ -435,7 +442,9 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 	ut32 addr_size = o && o->info && o->info->bits ? o->info->bits / 8 : 4;
 	const char *filename;
 
-	if (!binfile || !obuf || !hdr || !regs) return NULL;
+	if (!binfile || !obuf || !hdr || !regs) {
+		return NULL;
+	}
 
 	buf = r_leb128 (buf, &op_len);
 	buf_end = buf+len;
@@ -484,8 +493,9 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 
 		buf += (strlen (filename) + 1);
 		ut64 dir_idx;
-		if (buf+1 < buf_end)
+		if (buf + 1 < buf_end) {
 			buf = r_uleb128 (buf, ST32_MAX, &dir_idx);
+		}
 		break;
 	case DW_LNE_set_discriminator:
 		buf = r_uleb128 (buf, ST32_MAX, &addr);
@@ -774,8 +784,9 @@ R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len, FILE *f) {
 		printf("length 0x%x\n", length);
 	}
 
-	if (idx+12>=len)
+	if (idx + 12 >= len) {
 		return false;
+	}
 
 	READ_BUF (version, ut16);
 	if (f) {
@@ -815,7 +826,9 @@ R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len, FILE *f) {
 		}
 		READ_BUF (adr, ut64);
 		READ_BUF (length, ut64);
-		if (f) printf("length 0x%"PFMT64x" address 0x%"PFMT64x"\n", length, adr);
+		if (f) {
+			printf ("length 0x%" PFMT64x " address 0x%" PFMT64x "\n", length, adr);
+		}
 	}
 
 	return 0;
@@ -1010,7 +1023,9 @@ static void dump_r_bin_dwarf_debug_abbrev(FILE *f, RBinDwarfDebugAbbrev *da) {
 
 R_API void r_bin_dwarf_free_debug_abbrev(RBinDwarfDebugAbbrev *da) {
 	size_t i;
-	if (!da) return;
+	if (!da) {
+		return;
+	}
 	for (i = 0; i < da->length; i++) {
 		R_FREE (da->decls[i].specs);
 	}
@@ -1412,8 +1427,9 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 		goto out;
 	}
 	while (buf < buf_end) {
-		if (inf->length >= inf->capacity)
+		if (inf->length >= inf->capacity) {
 			break;
+		}
 
 		if (r_bin_dwarf_init_comp_unit (&inf->comp_units[curr_unit]) < 0) {
 			ret = false;
@@ -1707,7 +1723,9 @@ R_API RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev(RBin *a, int mode) {
 	RBinSection *section = getsection (a, "debug_abbrev");
 	RBinDwarfDebugAbbrev *da = NULL;
 	RBinFile *binfile = a ? a->cur: NULL;
-	if (!section || !binfile) return NULL;
+	if (!section || !binfile) {
+		return NULL;
+	}
 	if (section->size > binfile->size) {
 		return NULL;
 	}

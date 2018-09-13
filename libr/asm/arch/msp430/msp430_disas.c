@@ -77,8 +77,11 @@ static void remove_first_operand(struct msp430_cmd *cmd)
 
 static void remove_second_operand(struct msp430_cmd *cmd)
 {
-	if (strchr(cmd->operands, ','))
-		*strchr(cmd->operands, ',') = '\0';
+	if (strchr (cmd->operands, ',')) {
+		{
+			*strchr (cmd->operands, ',') = '\0';
+		}
+	}
 }
 
 /* TODO: This is ugly as hell */

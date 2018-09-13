@@ -8,7 +8,9 @@
 
 R_API RDebugTrace *r_debug_trace_new () {
 	RDebugTrace *t = R_NEW0 (RDebugTrace);
-	if (!t) return NULL;
+	if (!t) {
+		return NULL;
+	}
 	t->tag = 1; // UT32_MAX;
 	t->addresses = NULL;
 	t->enabled = false;
@@ -27,7 +29,9 @@ R_API RDebugTrace *r_debug_trace_new () {
 }
 
 R_API void r_debug_trace_free (RDebugTrace *trace) {
-	if (!trace) return;
+	if (!trace) {
+		return;
+	}
 	r_list_purge (trace->traces);
 	free (trace->traces);
 	sdb_free (trace->db);
@@ -120,8 +124,9 @@ static int r_debug_trace_is_traceable(RDebug *dbg, ut64 addr) {
 	if (dbg->trace->addresses) {
 		char addr_str[32];
 		snprintf (addr_str, sizeof (addr_str), "0x%08"PFMT64x, addr);
-		if (!strstr (dbg->trace->addresses, addr_str))
+		if (!strstr (dbg->trace->addresses, addr_str)) {
 			return false;
+		}
 	}
 	return true;
 }
@@ -129,13 +134,16 @@ static int r_debug_trace_is_traceable(RDebug *dbg, ut64 addr) {
 R_API RDebugTracepoint *r_debug_trace_add (RDebug *dbg, ut64 addr, int size) {
 	RDebugTracepoint *tp;
 	int tag = dbg->trace->tag;
-	if (!r_debug_trace_is_traceable (dbg, addr))
+	if (!r_debug_trace_is_traceable (dbg, addr)) {
 		return NULL;
+	}
 	r_anal_trace_bb (dbg->anal, addr);
 	tp = r_debug_trace_get (dbg, addr);
 	if (!tp) {
 		tp = R_NEW0 (RDebugTracepoint);
-		if (!tp) return NULL;
+		if (!tp) {
+			return NULL;
+		}
 		tp->stamp = r_sys_now ();
 		tp->addr = addr;
 		tp->tags = tag;

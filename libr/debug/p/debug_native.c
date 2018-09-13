@@ -1123,7 +1123,9 @@ static int r_debug_native_map_dealloc (RDebug *dbg, ut64 addr, int size) {
 
 #if !__WINDOWS__ && !__APPLE__
 static void _map_free(RDebugMap *map) {
-	if (!map) return;
+	if (!map) {
+		return;
+	}
 	free (map->name);
 	free (map->file);
 	free (map);
@@ -1331,7 +1333,9 @@ static RList *r_debug_native_modules_get (RDebug *dbg) {
 
 static bool r_debug_native_kill (RDebug *dbg, int pid, int tid, int sig) {
 	bool ret = false;
-	if (pid == 0) pid = dbg->pid;
+	if (pid == 0) {
+		pid = dbg->pid;
+	}
 #if __WINDOWS__ && !__CYGWIN__
 	if (sig==0)
 		ret = true;

@@ -57,7 +57,9 @@ static int des_encrypt (struct des_state *st, const ut8 *input, ut8 *output) {
 }
 
 static int des_decrypt (struct des_state *st, const ut8 *input, ut8 *output) {
-	if (!st || !input || !output) return false;
+	if (!st || !input || !output) {
+		return false;
+	}
 	st->buflo = be32 (input + 0);
 	st->bufhi = be32 (input + 4);
 	//first permutation

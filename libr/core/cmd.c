@@ -284,10 +284,11 @@ static void recursive_help_go(RCore *core, int detail, RCmdDescriptor *desc) {
 			r_core_cmd_help (core, desc->help_detail2);
 		}
 	}
-	for (i = 32; i < R_ARRAY_SIZE (desc->sub); i++)
+	for (i = 32; i < R_ARRAY_SIZE (desc->sub); i++) {
 		if (desc->sub[i]) {
 			recursive_help_go (core, detail, desc->sub[i]);
 		}
+	}
 }
 
 static void recursive_help(RCore *core, int detail, const char *cmd_prefix) {
@@ -414,36 +415,37 @@ static int cmd_uname(void *data, const char *input) {
 }
 
 static int cmd_alias(void *data, const char *input) {
-	int i;
-	char *def, *q, *desc, *buf;
 	RCore *core = (RCore *)data;
 	if (*input == '?') {
 		r_core_cmd_help (core, help_msg_dollar);
 		return 0;
 	}
-	i = strlen (input);
-	buf = malloc (i + 2);
+	int i = strlen (input);
+	char *buf = malloc (i + 2);
 	if (!buf) {
 		return 0;
 	}
 	*buf = '$'; // prefix aliases with a dash
 	memcpy (buf + 1, input, i + 1);
-	q = strchr (buf, ' ');
-	def = strchr (buf, '=');
-	desc = strchr (buf, '?');
+	char *q = strchr (buf, ' ');
+	char *def = strchr (buf, '=');
+	char *desc = strchr (buf, '?');
 
 	/* create alias */
 	if ((def && q && (def < q)) || (def && !q)) {
 		*def++ = 0;
 		size_t len = strlen (def);
 		/* Remove quotes */
-		if ((def[0] == '\'') && (def[len - 1] == '\'')) {
+		if (len > 0 && (def[0] == '\'') && (def[len - 1] == '\'')) {
 			def[len - 1] = 0x00;
 			def++;
 		}
-		if (!q || (q && q>def)) {
-			if (*def) r_cmd_alias_set (core->rcmd, buf, def, 0);
-			else r_cmd_alias_del (core->rcmd, buf);
+		if (!q || (q && q > def)) {
+			if (*def) {
+				r_cmd_alias_set (core->rcmd, buf, def, 0);
+			} else {
+				r_cmd_alias_del (core->rcmd, buf);
+			}
 		}
 	/* Show command for alias */
 	} else if (desc && !q) {
@@ -487,7 +489,7 @@ static int cmd_alias(void *data, const char *input) {
 					r_core_cmd0 (core, out);
 					free (out);
 				} else {
-					eprintf ("cannot malloc\n");
+					eprintf ("Cannot malloc\n");
 				}
 			} else {
 				r_core_cmd0 (core, v);
@@ -586,10 +588,8 @@ static int cmd_rap(void *data, const char *input) {
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_equalh);
 		} else {
-			while (input[1] == ' ') {
-				input++;
-			}
-			r_core_rtr_http (core, getArg (input[1], 'H'), 'H', input + 1);
+			const char *arg = r_str_trim_ro (input + 1);
+			r_core_rtr_http (core, getArg (input[1], 'H'), 'H', arg);
 		}
 		break;
 	case '?': // "=?"
@@ -821,7 +821,7 @@ R_API int r_core_run_script(RCore *core, const char *file) {
 	return ret;
 }
 
-static int cmd_ls(void *data, const char *input) {
+static int cmd_ls(void *data, const char *input) { // "ls"
 	RCore *core = (RCore *)data;
 	if (*input) {
 		const char *path = r_str_trim_ro (input + 1);
@@ -1022,12 +1022,16 @@ static int cmd_kuery(void *data, const char *input) {
 			// TODO: slash split here? or inside sdb_ns ?
 			for (n = o = p; n; o = n) {
 				n = strchr (o, '/'); // SDB_NS_SEPARATOR NAMESPACE
-				if (n) *n++ = 0;
+				if (n) {
+					*n++ = 0;
+				}
 				s = sdb_ns (s, o, 1);
 			}
 			free (p);
 		}
-		if (!s) s = core->sdb;
+		if (!s) {
+			s = core->sdb;
+		}
 		RLine *line = core->cons->line;
 		if (!line->sdbshell_hist) {
 			line->sdbshell_hist = r_list_newf (free);
@@ -1080,9 +1084,15 @@ static int cmd_kuery(void *data, const char *input) {
 						} else {
 							eprintf ("Cannot open sdb '%s'\n", fn);
 						}
-					} else eprintf ("Cannot find sdb '%s'\n", ns);
-				} else eprintf ("Cannot open file\n");
-			} else eprintf ("Missing sdb namespace\n");
+					} else {
+						eprintf ("Cannot find sdb '%s'\n", ns);
+					}
+				} else {
+					eprintf ("Cannot open file\n");
+				}
+			} else {
+				eprintf ("Missing sdb namespace\n");
+			}
 			free (fn);
 		} else {
 			eprintf ("Usage: ko [file] [namespace]\n");
@@ -1102,8 +1112,12 @@ static int cmd_kuery(void *data, const char *input) {
 				if (db) {
 					sdb_file (db, fn);
 					sdb_sync (db);
-				} else eprintf ("Cannot find sdb '%s'\n", ns);
-			} else eprintf ("Missing sdb namespace\n");
+				} else {
+					eprintf ("Cannot find sdb '%s'\n", ns);
+				}
+			} else {
+				eprintf ("Missing sdb namespace\n");
+			}
 			free (fn);
 		} else {
 			eprintf ("Usage: kd [file] [namespace]\n");
@@ -1143,8 +1157,11 @@ static int cmd_bsize(void *data, const char *input) {
 	switch (input[0]) {
 	case 'm': // "bm"
 		n = r_num_math (core->num, input + 1);
-		if (n > 1) core->blocksize_max = n;
-		else r_cons_printf ("0x%x\n", (ut32)core->blocksize_max);
+		if (n > 1) {
+			core->blocksize_max = n;
+		} else {
+			r_cons_printf ("0x%x\n", (ut32)core->blocksize_max);
+		}
 		break;
 	case '+': // "b+"
 		n = r_num_math (core->num, input + 1);
@@ -1643,7 +1660,9 @@ static int cmd_system(void *data, const char *input) {
 		n = atoi (input);
 		if (*input == '0' || n > 0) {
 			const char *cmd = r_line_hist_get (n);
-			if (cmd) r_core_cmd0 (core, cmd);
+			if (cmd) {
+				r_core_cmd0 (core, cmd);
+			}
 			//else eprintf ("Error setting up system environment\n");
 		} else {
 			char *cmd = r_core_sysenv_begin (core, input);
@@ -1651,7 +1670,9 @@ static int cmd_system(void *data, const char *input) {
 				ret = r_sys_cmd (cmd);
 				r_core_sysenv_end (core, input);
 				free (cmd);
-			} else eprintf ("Error setting up system environment\n");
+			} else {
+				eprintf ("Error setting up system environment\n");
+			}
 		}
 		break;
 	}
@@ -1958,7 +1979,9 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		core->print->cur_enabled = ocur_enabled;
 	}
 	if (colon && colon[1]) {
-		for (++colon; *colon == ';'; colon++);
+		for (++colon; *colon == ';'; colon++) {
+			;
+		}
 		r_core_cmd_subst (core, colon);
 	} else {
 		if (!*icmd) {
@@ -2291,7 +2314,9 @@ escape_pipe:
 			r_list_free (tmpenvs);
 			return ret;
 		}
-		for (cmd = ptr + 2; cmd && *cmd == ' '; cmd++);
+		for (cmd = ptr + 2; cmd && *cmd == ' '; cmd++) {
+			;
+		}
 		ptr = strchr (cmd, '&');
 	}
 
@@ -2820,7 +2845,9 @@ next_arroba:
 		if (ptr[1] == '@') {
 			if (ptr[2] == '@') {
 				char *rule = ptr + 3;
-				while (*rule && *rule == ' ') rule++;
+				while (*rule && *rule == ' ') {
+					rule++;
+				}
 				ret = r_core_cmd_foreach3 (core, cmd, rule);
 			} else {
 				ret = r_core_cmd_foreach (core, cmd, ptr + 2);
@@ -2948,7 +2975,9 @@ static int foreach_comment(void *user, const char *k, const char *v) {
 	const char *cmd = ui->user;
 	if (!strncmp (k, "meta.C.", 7)) {
 		char *cmt = (char *)sdb_decode (v, 0);
-		if (!cmt) cmt = strdup ("");
+		if (!cmt) {
+			cmt = strdup ("");
+		}
 		//eprintf ("--> %s = %s\n", k + 7, cmt);
 		r_core_cmdf (core, "s %s", k + 7);
 		r_core_cmd0 (core, cmd);
@@ -3001,8 +3030,9 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			int origpid = dbg->pid;
 			RDebugPid *p;
 			list = dbg->h->threads (dbg, dbg->pid);
-			if (!list)
+			if (!list) {
 				return false;
+			}
 			r_list_foreach (list, iter, p) {
 				r_core_cmdf (core, "dp %d", p->pid);
 				r_cons_printf ("PID %d\n", p->pid);
@@ -3168,7 +3198,9 @@ static void foreachOffset (RCore *core, const char *_cmd, const char *each) {
 		// space separated numbers
 		while (each && *each) {
 			// find spaces
-			while (*each== ' ') each++;
+			while (*each == ' ') {
+				each++;
+			}
 			str = strchr (each, ' ');
 			if (str) {
 				*str = '\0';
@@ -3200,7 +3232,9 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	RFlagItem *flag;
 	ut64 oseek, addr;
 
-	for (; *cmd == ' '; cmd++);
+	for (; *cmd == ' '; cmd++) {
+		;
+	}
 
 	oseek = core->offset;
 	ostr = str = strdup (each);
@@ -3395,7 +3429,9 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		if (out) {
 			each = out;
 			do {
-				while (*each == ' ') each++;
+				while (*each == ' ') {
+					each++;
+				}
 				if (!*each) {
 					break;
 				}
@@ -3463,12 +3499,18 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		break;
 	default:
 		core->rcmd->macro.counter = 0;
-		for (; *each == ' '; each++);
+		for (; *each == ' '; each++) {
+			;
+		}
 		i = 0;
 		while (str[i]) {
 			j = i;
-			for (; str[j] && str[j] == ' '; j++); // skip spaces
-			for (i = j; str[i] && str[i] != ' '; i++); // find EOS
+			for (; str[j] && str[j] == ' '; j++) {
+				; // skip spaces
+			}
+			for (i = j; str[i] && str[i] != ' '; i++) {
+				; // find EOS
+			}
 			ch = str[i];
 			str[i] = '\0';
 			word = strdup (str + j);
@@ -3761,7 +3803,9 @@ R_API char *r_core_disassemble_bytes(RCore *core, ut64 addr, int b) {
 
 R_API int r_core_cmd_buffer(void *user, const char *buf) {
 	char *ptr, *optr, *str = strdup (buf);
-	if (!str) return false;
+	if (!str) {
+		return false;
+	}
 	optr = str;
 	ptr = strchr (str, '\n');
 	while (ptr) {

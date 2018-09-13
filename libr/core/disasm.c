@@ -2261,7 +2261,9 @@ static void ds_print_lines_right(RDisasmState *ds){
 
 static void printCol(RDisasmState *ds, char *sect, int cols, const char *color) {
 	int pre, post;
-	if (cols < 8) cols = 8;
+	if (cols < 8) {
+		cols = 8;
+	}
 	int outsz = cols + 32;
 	char *out = malloc (outsz);
 	if (!out) {
@@ -2902,7 +2904,9 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 		str = flagstr;
 		if (ds->nb > 0) {
 			k = ds->nb - strlen (flagstr) - 1;
-			if (k < 0 || k > sizeof(pad)) k = 0;
+			if (k < 0 || k > sizeof (pad)) {
+				k = 0;
+			}
 			for (j = 0; j < k; j++) {
 				pad[j] = ' ';
 			}
@@ -4470,15 +4474,23 @@ static char *_find_next_number(char *op) {
 	if (p) {
 		while (*p) {
 			// look for start of next separator or ANSI sequence
-			while (*p && !IS_SEPARATOR (*p) && *p != 0x1b) p++;
+			while (*p && !IS_SEPARATOR (*p) && *p != 0x1b) {
+				p++;
+			}
 			if (*p == 0x1b) {
 				// skip to end of ANSI sequence (lower or uppercase char)
-				while (*p && !(*p >= 'A' && *p <= 'Z') && !(*p >= 'a' && *p <= 'z')) p++;
-				if (*p) p++;
+				while (*p && !(*p >= 'A' && *p <= 'Z') && !(*p >= 'a' && *p <= 'z')) {
+					p++;
+				}
+				if (*p) {
+					p++;
+				}
 			}
 			if (IS_SEPARATOR (*p)) {
 				// skip to end of separator
-				while (*p && IS_SEPARATOR (*p)) p++;
+				while (*p && IS_SEPARATOR (*p)) {
+					p++;
+				}
 			}
 			if (IS_DIGIT (*p)) {
 				// we found the start of the next number

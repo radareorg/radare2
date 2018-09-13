@@ -52,7 +52,9 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							strcpy (newstr+k, w);
 							k += strlen(w)-1;
 						}
-					} else newstr[k] = ops[i].str[j];
+					} else {
+						newstr[k] = ops[i].str[j];
+					}
 				}
 				newstr[k]='\0';
 			}

@@ -66,8 +66,9 @@ R_API bool r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
 	char string[1024];
 	va_list ap, ap2;
 
-	if (!sb || !fmt)
+	if (!sb || !fmt) {
 		return false;
+	}
 	va_start (ap, fmt);
 	va_copy (ap2, ap);
 	rc = vsnprintf (string, sizeof (string), fmt, ap);
@@ -116,7 +117,9 @@ R_API int r_strbuf_append_n(RStrBuf *sb, const char *s, int l) {
 			allocated = false;
 		}
 		if (allocated) {
-			if (!p) return false;
+			if (!p) {
+				return false;
+			}
 			sb->ptr = p;
 			sb->ptrlen = newlen;
 		}
