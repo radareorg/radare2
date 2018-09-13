@@ -226,8 +226,9 @@ R_API void r_bin_string_free(void *_str) {
 // XXX - this is a rather hacky way to do things, there may need to be a better
 // way.
 R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr) {
-	r_return_val_if_fail (bin, false);
-
+	if (!bin) {
+		return false;
+	}
 	// ALIAS?	return r_bin_load_as (bin, file, baseaddr, loadaddr,
 	// xtr_idx, fd, rawstr, 0, file);
 	RIOBind *iob = &(bin->iob);
@@ -263,10 +264,10 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, 
 R_API int r_bin_load_as(RBin *bin, const char *file, ut64 baseaddr,
 			 ut64 loadaddr, int xtr_idx, int fd, int rawstr,
 			 int fileoffset, const char *name) {
-	r_return_val_if_fail (bin, false);
-	r_return_val_if_fail (bin->iob.io, false);
-
 	RIOBind *iob = &(bin->iob);
+	if (!iob || !iob->io) {
+		return false;
+	}
 	if (fd < 0) {
 		fd = iob->fd_open (iob->io, file, R_IO_READ, 0644);
 	}
@@ -284,9 +285,10 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 	ut8 *buf_bytes = NULL;
 	ut64 sz = UT64_MAX;
 
-	r_return_val_if_fail (iob, false);
-	r_return_val_if_fail (iob->io, false);
-
+	if (!iob || !iob->io) {
+		res = false;
+		goto error;
+	}
 	const char *name = iob->fd_get_name (iob->io, fd);
 	bf = r_bin_file_find_by_name (bin, name);
 	if (!bf) {
@@ -381,11 +383,6 @@ error:
 }
 
 R_API bool r_bin_load_io2(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name, ut64 sz) {
-	r_return_val_if_fail (bin, false);
-	r_return_val_if_fail (bin->iob.io, false);
-	r_return_val_if_fail (fd >= 0, false);
-	r_return_val_if_fail ((st64)sz >= 0, false);
-
 	RIOBind *iob = &(bin->iob);
 	RIO *io = iob? iob->io: NULL;
 	RListIter *it;
@@ -395,6 +392,9 @@ R_API bool r_bin_load_io2(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int x
 	RBinFile *binfile = NULL;
 	int tfd = -1;
 
+	if (!io || (fd < 0) || (st64)sz < 0) {
+		return false;
+	}
 	bool is_debugger = iob->fd_is_dbg (io, fd);
 	const char *fname = iob->fd_get_name (io, fd);
 	if (loadaddr == UT64_MAX) {
@@ -505,10 +505,9 @@ R_API RBinPlugin *r_bin_get_binplugin_by_name(RBin *bin, const char *name) {
 R_API RBinPlugin *r_bin_get_binplugin_by_bytes(RBin *bin, const ut8 *bytes, ut64 sz) {
 	RBinPlugin *plugin;
 	RListIter *it;
-
-	r_return_val_if_fail (bin, NULL);
-	r_return_val_if_fail (bytes, NULL);
-
+	if (!bin || !bytes) {
+		return NULL;
+	}
 	r_list_foreach (bin->plugins, it, plugin) {
 		if (plugin->check_bytes && plugin->check_bytes (bytes, sz)) {
 			return plugin;
@@ -520,13 +519,9 @@ R_API RBinPlugin *r_bin_get_binplugin_by_bytes(RBin *bin, const ut8 *bytes, ut64
 R_API RBinXtrPlugin *r_bin_get_xtrplugin_by_name(RBin *bin, const char *name) {
 	RBinXtrPlugin *xtr;
 	RListIter *it;
-
-	r_return_val_if_fail (bin, NULL);
-
-	if (!name) {
+	if (!bin || !name) {
 		return NULL;
 	}
-
 	// TODO: use a hashtable here
 	r_list_foreach (bin->binxtrs, it, xtr) {
 		if (!strcmp (xtr->name, name)) {

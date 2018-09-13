@@ -25,10 +25,10 @@ static int r_asm_pseudo_align(RAsmCode *acode, RAsmOp *op, char *input) {
 }
 
 static int r_asm_pseudo_string(RAsmOp *op, char *input, int zero) {
-	r_return_val_if_fail (!R_STR_ISEMPTY (input), 0);
-
 	int len = strlen (input) - 1;
-
+	if (len < 1) {
+		return 0;
+	}
 	// TODO: if not starting with '"'.. give up
 	if (input[len] == '"') {
 		input[len] = 0;
@@ -284,9 +284,9 @@ R_API int r_asm_del(RAsm *a, const char *name) {
 R_API int r_asm_is_valid(RAsm *a, const char *name) {
 	RAsmPlugin *h;
 	RListIter *iter;
-
-	r_return_val_if_fail (!R_STR_ISEMPTY (name), false);
-
+	if (!name || !*name) {
+		return false;
+	}
 	r_list_foreach (a->plugins, iter, h) {
 		if (!strcmp (h->name, name)) {
 			return true;
@@ -316,13 +316,9 @@ R_API bool r_asm_use_assembler(RAsm *a, const char *name) {
 R_API int r_asm_use(RAsm *a, const char *name) {
 	RAsmPlugin *h;
 	RListIter *iter;
-
-	r_return_val_if_fail (a, false);
-
-	if (!name) {
+	if (!a || !name) {
 		return false;
 	}
-
 	r_list_foreach (a->plugins, iter, h) {
 		if (!strcmp (h->name, name) && h->arch) {
 			if (!a->cur || (a->cur && strcmp (a->cur->arch, h->arch))) {
@@ -344,25 +340,21 @@ R_API int r_asm_use(RAsm *a, const char *name) {
 }
 
 R_API int r_asm_set_subarch(RAsm *a, const char *name) {
-	r_return_val_if_fail (a, false);
-	r_return_val_if_fail (a->cur, false);
-
-	if (a->cur->set_subarch) {
+	if (a->cur && a->cur->set_subarch) {
 		return a->cur->set_subarch(a, name);
 	}
 	return false;
 }
 
 static int has_bits(RAsmPlugin *h, int bits) {
-	r_return_val_if_fail (h, false);
-	r_return_val_if_fail (h->bits, false);
-	return bits & h->bits;
+	return (h && h->bits && (bits & h->bits));
 }
 
 R_API void r_asm_set_cpu(RAsm *a, const char *cpu) {
-	r_return_if_fail (a);
-	free (a->cpu);
-	a->cpu = cpu ? strdup (cpu): NULL;
+	if (a) {
+		free (a->cpu);
+		a->cpu = cpu? strdup (cpu): NULL;
+	}
 }
 
 R_API int r_asm_set_bits(RAsm *a, int bits) {
@@ -374,9 +366,9 @@ R_API int r_asm_set_bits(RAsm *a, int bits) {
 }
 
 R_API bool r_asm_set_big_endian(RAsm *a, bool b) {
-	r_return_val_if_fail (a, false);
-	r_return_val_if_fail (a->cur, false);
-
+	if (!a || !a->cur) {
+		return false;
+	}
 	a->big_endian = false; //little endian by default
 	switch (a->cur->endian) {
 	case R_SYS_ENDIAN_NONE:
@@ -422,11 +414,10 @@ static bool isInvalid (RAsmOp *op) {
 }
 
 R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	r_return_val_if_fail (a, -1);
-	r_return_val_if_fail (buf, -1);
-	r_return_val_if_fail (op, -1);
-
 	int ret;
+	if (!a || !buf || !op) {
+		return -1;
+	}
 	ret = op->payload = 0;
 	op->size = 4;
 	op->bitsize = 0;
@@ -1042,20 +1033,14 @@ R_API bool r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val) {
 }
 
 R_API int r_asm_get_offset(RAsm *a, int type, int idx) { // link to rbin
-	r_return_val_if_fail (a, -1);
-	r_return_val_if_fail (a->binb.bin, -1);
-
-	if (a->binb.get_offset) {
+	if (a && a->binb.bin && a->binb.get_offset) {
 		return a->binb.get_offset (a->binb.bin, type, idx);
 	}
 	return -1;
 }
 
 R_API char *r_asm_describe(RAsm *a, const char* str) {
-	r_return_val_if_fail (a, NULL);
-	r_return_val_if_fail (a->pair, NULL);
-
-	return sdb_get (a->pair, str, 0);
+	return (a && a->pair)? sdb_get (a->pair, str, 0): NULL;
 }
 
 R_API RList* r_asm_get_plugins(RAsm *a) {

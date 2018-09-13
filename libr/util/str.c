@@ -346,9 +346,9 @@ R_API int r_str_delta(char *p, char a, char b) {
 R_API int r_str_split(char *str, char ch) {
 	int i;
 	char *p;
-
-	r_return_val_if_fail (!R_STR_ISEMPTY (str), 0);
-
+	if (!str || !*str) {
+		return 0;
+	}
 	/* TODO: sync with r1 code */
 	for (i = 1, p = str; *p; p++) {
 		if (*p == ch) {
@@ -366,13 +366,9 @@ R_API int r_str_split(char *str, char ch) {
 R_API int r_str_word_set0(char *str) {
 	int i, quote = 0;
 	char *p;
-
-	r_return_val_if_fail (str, 0);
-
-	if (!str[0]) {
+	if (!str || !*str) {
 		return 0;
 	}
-
 	for (i = 0; str[i] && str[i + 1]; i++) {
 		if (i > 0 && str[i-1] == ' ' && str[i] == ' ') {
 			int len = strlen (str + i);
@@ -420,9 +416,9 @@ R_API int r_str_word_set0_stack(char *str) {
 	char *p, *q;
 	RStack *s;
 	void *pop;
-
-	r_return_val_if_fail (!R_STR_ISEMPTY (str), 0);
-
+	if (!str || !*str) {
+		return 0;
+	}
 	for (i = 0; str[i] && str[i+1]; i++) {
 		if (i > 0 && str[i - 1] == ' ' && str[i] == ' ') {
 			memmove (str + i, str + i + 1, strlen (str + i));
@@ -545,10 +541,9 @@ R_API char *r_str_word_get0set(char *stra, int stralen, int idx, const char *new
 R_API const char *r_str_word_get0(const char *str, int idx) {
 	int i;
 	const char *ptr = str;
-
-	r_return_val_if_fail (str, nullstr);
-	r_return_val_if_fail (idx >= 0, nullstr);
-
+	if (!ptr || idx < 0 /* prevent crashes with negative index */) {
+		return (char *)nullstr;
+	}
 	for (i = 0; i != idx; i++) {
 		ptr += strlen (ptr) + 1;
 	}
@@ -595,12 +590,12 @@ R_API char *r_str_ichr(char *str, char chr) {
 // Returns a pointer to the last instance of the character chr in the input
 // string.
 R_API const char *r_str_lchr(const char *str, char chr) {
-	r_return_val_if_fail (str, NULL);
-
-	int len = strlen (str);
-	for (; len >= 0; len--) {
-		if (str[len] == chr) {
-			return str + len;
+	if (str) {
+		int len = strlen (str);
+		for (; len >= 0; len--) {
+			if (str[len] == chr) {
+				return str + len;
+			}
 		}
 	}
 	return NULL;
@@ -636,8 +631,9 @@ R_API const char *r_str_rstr(const char *base, const char *p) {
 }
 
 R_API const char *r_str_rchr(const char *base, const char *p, int ch) {
-	r_return_val_if_fail (base, NULL);
-
+	if (!base) {
+		return NULL;
+	}
 	if (!p) {
 		p = base + strlen (base);
 	}
@@ -671,9 +667,9 @@ R_API char *r_str_new(const char *str) {
 // If the input str is longer than len, it will be truncated.
 R_API char *r_str_newlen(const char *str, int len) {
 	char *buf;
-
-	r_return_val_if_fail (len > 0, NULL);
-
+	if (len < 1) {
+		return NULL;
+	}
 	buf = malloc (len + 1);
 	if (!buf) {
 		return NULL;
