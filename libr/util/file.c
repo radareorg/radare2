@@ -84,7 +84,9 @@ R_API char *r_file_dirname (const char *path) {
 		*ptr = 0;
 	} else {
 		ptr = (char*)r_str_rchr (newpath, NULL, '\\');
-		if (ptr) *ptr = 0;
+		if (ptr) {
+			*ptr = 0;
+		}
 	}
 	return newpath;
 }
@@ -186,8 +188,9 @@ R_API char *r_file_abspath(const char *file) {
 		ret = r_str_home (file + 2);
 	} else {
 #if __UNIX__ || __CYGWIN__
-		if (cwd && *file != '/')
-			ret = r_str_newf ("%s"R_SYS_DIR"%s", cwd, file);
+		if (cwd && *file != '/') {
+			ret = r_str_newf ("%s" R_SYS_DIR "%s", cwd, file);
+		}
 #elif __WINDOWS__ && !__CYGWIN__
 		// Network path
 		if (!strncmp (file, "\\\\", 2)) {
@@ -476,11 +479,12 @@ R_API char *r_file_slurp_random_line_count(const char *file, int *line) {
 				}
 			}
 			ptr = str + i;
-			for (i = 0; ptr[i]; i++)
+			for (i = 0; ptr[i]; i++) {
 				if (ptr[i] == '\n') {
 					ptr[i] = '\0';
 					break;
 				}
+			}
 			ptr = strdup (ptr);
 		}
 		free (str);

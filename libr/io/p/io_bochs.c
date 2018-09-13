@@ -77,9 +77,10 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	memset (buf, 0xff, count);
 	ut64 addr = io->off;
-	if (!desc || !desc->data) 
+	if (!desc || !desc->data) {
 		return -1;
-        lprintf ("io_read ofs= %016"PFMT64x" count= %x\n", io->off, count);
+	}
+	lprintf ("io_read ofs= %016"PFMT64x" count= %x\n", io->off, count);
 	bochs_read (desc,addr,count,buf);
 	return count;
 }

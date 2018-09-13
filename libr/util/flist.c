@@ -58,7 +58,9 @@ R_API void r_flist_delete(void **it, int idx) {
 	r_flist_rewind (it);
 	free (it[idx]);
 	it[idx] = NULL;
-	for (it += idx; *it; it++) *it = *(it+1);
+	for (it += idx; *it; it++) {
+		*it = *(it + 1);
+	}
 }
 
 #define r_flist_foreach(it, pos) \

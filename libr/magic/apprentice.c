@@ -153,7 +153,9 @@ static int get_type(const char *l, const char **t) {
 
 	for (p = type_tbl; p->len; p++) {
 		if (strncmp (l, p->name, p->len) == 0) {
-			if (t) *t = l + p->len;
+			if (t) {
+				*t = l + p->len;
+			}
 			break;
 		}
 	}
@@ -186,7 +188,9 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, struct mlist *ml
 	int rv = -1;
 	int mapped;
 
-	if (!ms) return -1;
+	if (!ms) {
+		return -1;
+	}
 	ms->haderr = 0;
 	if (magicsize != FILE_MAGICSIZE) {
 		file_error(ms, 0, "magic element size %lu != %lu",
@@ -198,8 +202,9 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, struct mlist *ml
 	ms->file = fn; // fix use of ms->file before being initialized
 	if (action == FILE_COMPILE) {
 		rv = apprentice_load (ms, &magic, &nmagic, fn, action);
-		if (rv != 0)
+		if (rv != 0) {
 			return -1;
+		}
 		rv = apprentice_compile (ms, &magic, &nmagic, fn);
 		free (magic);
 		return rv;
@@ -209,8 +214,9 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, struct mlist *ml
 		//if (ms->flags & R_MAGIC_CHECK)
 		//	file_magwarn(ms, "using regular magic file `%s'", fn);
 		rv = apprentice_load (ms, &magic, &nmagic, fn, action);
-		if (rv != 0)
+		if (rv != 0) {
 			return -1;
+		}
 	}
 
 	mapped = rv;
@@ -238,8 +244,8 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, struct mlist *ml
 }
 
 void file_delmagic(struct r_magic *p, int type, size_t entries) {
-	if (p)
-	switch (type) {
+	if (p) {
+		switch (type) {
 #ifdef QUICK
 	case 2:
 		p--;
@@ -256,6 +262,7 @@ void file_delmagic(struct r_magic *p, int type, size_t entries) {
 	default:
 		abort ();
 	}
+	}
 }
 
 /* const char *fn: list of magic files and directories */
@@ -266,8 +273,12 @@ struct mlist * file_apprentice(RMagic *ms, const char *fn, int action) {
 
 	init_file_tables ();
 
-	if (!fn) fn = getenv ("MAGIC");
-	if (!fn) fn = MAGICFILE;
+	if (!fn) {
+		fn = getenv ("MAGIC");
+	}
+	if (!fn) {
+		fn = MAGICFILE;
+	}
 
 	if (!(mfn = strdup (fn))) {
 		file_oomem (ms, strlen (fn));
@@ -284,8 +295,12 @@ struct mlist * file_apprentice(RMagic *ms, const char *fn, int action) {
 
 	while (fn) {
 		p = strchr (fn, PATHSEP);
-		if (p) *p++ = '\0';
-		if (*fn == '\0') break;
+		if (p) {
+			*p++ = '\0';
+		}
+		if (*fn == '\0') {
+			break;
+		}
 		file_err = apprentice_1 (ms, fn, action, mlist);
 		errs = R_MAX (errs, file_err);
 		fn = p;
@@ -401,8 +416,12 @@ static int apprentice_sort(const void *a, const void *b) {
 	const struct r_magic_entry *mb = b;
 	size_t sa = apprentice_r_magic_strength (ma->mp);
 	size_t sb = apprentice_r_magic_strength (mb->mp);
-	if (sa == sb) return 0;
-	if (sa > sb) return -1;
+	if (sa == sb) {
+		return 0;
+	}
+	if (sa > sb) {
+		return -1;
+	}
 	return 1;
 }
 
@@ -449,8 +468,9 @@ static void set_test_type(struct r_magic *mstart, struct r_magic *m) {
 	case FILE_REGEX:
 	case FILE_SEARCH:
 		/* binary test if pattern is not text */
-		if (file_looks_utf8 ((const ut8 *)m->value.s, m->vallen, NULL, NULL) == 0)
+		if (file_looks_utf8 ((const ut8 *)m->value.s, m->vallen, NULL, NULL) == 0) {
 			mstart->flag |= BINTEST;
+		}
 		break;
 	case FILE_DEFAULT:
 		/* can't deduce anything; we shouldn't see this at the
@@ -471,33 +491,39 @@ static void load_1(RMagic *ms, int action, const char *file, int *errs, struct r
 	size_t lineno = 0;
 	FILE *f = r_sandbox_fopen (ms->file = file, "r");
 	if (!f) {
-		if (errno != ENOENT)
+		if (errno != ENOENT) {
 			file_error (ms, errno, "cannot read magic file `%s'", file);
+		}
 		(*errs)++;
 	} else {
 		/* read and parse this file */
 		for (ms->line = 1; fgets (line, sizeof (line), f) != NULL; ms->line++) {
 			size_t len = strlen (line);
-			if (len == 0) /* null line, garbage, etc */
+			if (len == 0) { /* null line, garbage, etc */
 				continue;
+			}
 			if (line[len - 1] == '\n') {
 				lineno++;
 				line[len - 1] = '\0'; /* delete newline */
 			}
-			if (line[0] == '\0')	/* empty, do not parse */
+			if (line[0] == '\0') { /* empty, do not parse */
 				continue;
-			if (line[0] == '#')	/* comment, do not parse */
+			}
+			if (line[0] == '#') { /* comment, do not parse */
 				continue;
+			}
 			if (len > mime_marker_len &&
 			    memcmp (line, mime_marker, mime_marker_len) == 0) {
 				/* MIME type */
 				if (parse_mime (ms, marray, marraycount,
-					       line + mime_marker_len) != 0)
+					    line + mime_marker_len) != 0) {
 					(*errs)++;
+				}
 				continue;
 			}
-			if (parse (ms, marray, marraycount, line, lineno, action) != 0)
+			if (parse (ms, marray, marraycount, line, lineno, action) != 0) {
 				(*errs)++;
+			}
 		}
 		fclose (f);
 	}
@@ -534,8 +560,9 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 	marraycount = 0;
 
 	/* print silly verbose header for USG compat. */
-	if (action == FILE_CHECK)
+	if (action == FILE_CHECK) {
 		eprintf ("%s\n", usg_hdr);
+	}
 
 	/* load directory or file */
 	if (stat (fn, &st) == 0 && S_ISDIR (st.st_mode)) {
@@ -568,10 +595,13 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 		dir = opendir (fn);
 		if (dir) {
 			while ((d = readdir (dir))) {
-				if (*d->d_name=='.') continue;
+				if (*d->d_name == '.') {
+					continue;
+				}
 				snprintf (subfn, sizeof (subfn), "%s/%s", fn, d->d_name);
-				if (stat (subfn, &st) == 0 && S_ISREG (st.st_mode))
+				if (stat (subfn, &st) == 0 && S_ISREG (st.st_mode)) {
 					load_1 (ms, action, subfn, &errs, &marray, &marraycount);
+				}
 				//else perror (subfn);
 			}
 			closedir (dir);
@@ -579,9 +609,12 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 			errs++;
 		}
 #endif
-	} else load_1 (ms, action, fn, &errs, &marray, &marraycount);
-	if (errs)
+	} else {
+		load_1 (ms, action, fn, &errs, &marray, &marraycount);
+	}
+	if (errs) {
 		goto out;
+	}
 
 	/* Set types of tests */
 	for (i = 0; i < marraycount; ) {
@@ -624,9 +657,11 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 	for (i = 0; i < marraycount; i++) {
 		if (marray[i].mp->cont_level == 0 &&
 		    marray[i].mp->type == FILE_DEFAULT) {
-			while (++i < marraycount)
-				if (marray[i].mp->cont_level == 0)
+			while (++i < marraycount) {
+				if (marray[i].mp->cont_level == 0) {
 					break;
+				}
+			}
 			if (i != marraycount) {
 				ms->line = marray[i].mp->lineno; /* XXX - Ugh! */
 				file_magwarn (ms, "level 0 \"default\" did not sort last");
@@ -635,8 +670,9 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 		}
 	}
 
-	for (i = 0; i < marraycount; i++)
+	for (i = 0; i < marraycount; i++) {
 		mentrycount += marray[i].cont_count;
+	}
 
 	if (!(*magicp = malloc (1 + (sizeof (**magicp) * mentrycount)))) {
 		file_oomem (ms, sizeof (**magicp) * mentrycount);
@@ -651,8 +687,9 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 		mentrycount += marray[i].cont_count;
 	}
 out:
-	for (i = 0; i < marraycount; i++)
-		free(marray[i].mp);
+	for (i = 0; i < marraycount; i++) {
+		free (marray[i].mp);
+	}
 	free (marray);
 	if (errs) {
 		*magicp = NULL;
@@ -722,9 +759,10 @@ ut64 file_signextend(RMagic *ms, struct r_magic *m, ut64 v) {
 		case FILE_DEFAULT:
 			break;
 		default:
-			if (ms->flags & R_MAGIC_CHECK)
-			    file_magwarn(ms, "cannot happen: m->type=%d\n",
-				    m->type);
+			if (ms->flags & R_MAGIC_CHECK) {
+				file_magwarn (ms, "cannot happen: m->type=%d\n",
+					m->type);
+			}
 			return ~0U;
 		}
 	}
@@ -732,8 +770,9 @@ ut64 file_signextend(RMagic *ms, struct r_magic *m, ut64 v) {
 }
 
 static int string_modifier_check(RMagic *ms, struct r_magic *m) {
-	if ((ms->flags & R_MAGIC_CHECK) == 0)
+	if ((ms->flags & R_MAGIC_CHECK) == 0) {
 		return 0;
+	}
 
 	switch (m->type) {
 	case FILE_BESTRING16:
@@ -812,7 +851,9 @@ static int get_cond(const char *l, const char **t) {
 	for (p = cond_tbl; p->len; p++) {
 		if (strncmp (l, p->name, p->len) == 0 &&
 				isspace ((ut8)l[p->len])) {
-			if (t) *t = l + p->len;
+			if (t) {
+				*t = l + p->len;
+			}
 			break;
 		}
 	}
@@ -826,24 +867,27 @@ static int check_cond(RMagic *ms, int cond, ut32 cont_level) {
 	switch (cond) {
 	case COND_IF:
 		if (last_cond != COND_NONE && last_cond != COND_ELIF) {
-			if (ms->flags & R_MAGIC_CHECK)
-				file_magwarn(ms, "syntax error: `if'");
+			if (ms->flags & R_MAGIC_CHECK) {
+				file_magwarn (ms, "syntax error: `if'");
+			}
 			return -1;
 		}
 		last_cond = COND_IF;
 		break;
 	case COND_ELIF:
 		if (last_cond != COND_IF && last_cond != COND_ELIF) {
-			if (ms->flags & R_MAGIC_CHECK)
-				file_magwarn(ms, "syntax error: `elif'");
+			if (ms->flags & R_MAGIC_CHECK) {
+				file_magwarn (ms, "syntax error: `elif'");
+			}
 			return -1;
 		}
 		last_cond = COND_ELIF;
 		break;
 	case COND_ELSE:
 		if (last_cond != COND_IF && last_cond != COND_ELIF) {
-			if (ms->flags & R_MAGIC_CHECK)
-				file_magwarn(ms, "syntax error: `else'");
+			if (ms->flags & R_MAGIC_CHECK) {
+				file_magwarn (ms, "syntax error: `else'");
+			}
 			return -1;
 		}
 		last_cond = COND_NONE;
@@ -870,10 +914,14 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 	int op;
 	ut32 cont_level = 0;
 
-	for (; *l == '>'; l++, cont_level++);
-	if (cont_level == 0 || cont_level > last_cont_level)
-		if (file_check_mem (ms, cont_level) == -1)
+	for (; *l == '>'; l++, cont_level++) {
+		;
+	}
+	if (cont_level == 0 || cont_level > last_cont_level) {
+		if (file_check_mem (ms, cont_level) == -1) {
 			return -1;
+		}
+	}
 	last_cont_level = cont_level;
 #define ALLOC_CHUNK	(size_t)10
 #define ALLOC_INCR	(size_t)200
@@ -917,8 +965,9 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 			}
 			me->mp = m;
 			me->max_count = ALLOC_CHUNK;
-		} else
+		} else {
 			m = me->mp;
+		}
 		(void)memset(m, 0, sizeof (*m));
 		m->cont_level = 0;
 		me->cont_count = 1;
@@ -932,8 +981,9 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 	if (*l == '(') {
 		++l;		/* step over */
 		m->flag |= INDIR;
-		if (m->flag & OFFADD)
+		if (m->flag & OFFADD) {
 			m->flag = (m->flag & ~OFFADD) | INDIROFFADD;
+		}
 
 		if (*l == '&') {  /* m->cont_level == 0 checked below */
 			++l;            /* step over */
@@ -941,15 +991,18 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 		}
 	}
 	/* Indirect offsets are not valid at level 0. */
-	if (m->cont_level == 0 && (m->flag & (OFFADD | INDIROFFADD)))
-		if (ms->flags & R_MAGIC_CHECK)
-			file_magwarn(ms, "relative offset at level 0");
+	if (m->cont_level == 0 && (m->flag & (OFFADD | INDIROFFADD))) {
+		if (ms->flags & R_MAGIC_CHECK) {
+			file_magwarn (ms, "relative offset at level 0");
+		}
+	}
 
 	/* get offset, then skip over it */
 	m->offset = (ut32)strtoul(l, &t, 0);
-        if ((l == t) && (ms->flags & R_MAGIC_CHECK))
-		file_magwarn(ms, "offset `%s' invalid", l);
-        l = t;
+	if ((l == t) && (ms->flags & R_MAGIC_CHECK)) {
+		file_magwarn (ms, "offset `%s' invalid", l);
+	}
+	l = t;
 
 	if (m->flag & INDIR) {
 		m->in_type = FILE_LONG;
@@ -994,10 +1047,11 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 				m->in_type = FILE_BEDOUBLE;
 				break;
 			default:
-				if (ms->flags & R_MAGIC_CHECK)
-					file_magwarn(ms,
-					    "indirect offset type `%c' invalid",
-					    *l);
+				if (ms->flags & R_MAGIC_CHECK) {
+					file_magwarn (ms,
+						"indirect offset type `%c' invalid",
+						*l);
+				}
 				break;
 			}
 			l++;
@@ -1018,23 +1072,28 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 		}
 		if (isdigit((ut8)*l) || *l == '-') {
 			m->in_offset = (int32_t)strtol(l, &t, 0);
-			if (l == t)
-				if (ms->flags & R_MAGIC_CHECK)
-					file_magwarn(ms,
-					    "in_offset `%s' invalid", l);
+			if (l == t) {
+				if (ms->flags & R_MAGIC_CHECK) {
+					file_magwarn (ms,
+						"in_offset `%s' invalid", l);
+				}
+			}
 			l = t;
 		}
 		if (*l++ != ')' ||
-		    ((m->in_op & FILE_OPINDIRECT) && *l++ != ')'))
-			if (ms->flags & R_MAGIC_CHECK)
-				file_magwarn(ms,
-				    "missing ')' in indirect offset");
+			((m->in_op & FILE_OPINDIRECT) && *l++ != ')')) {
+			if (ms->flags & R_MAGIC_CHECK) {
+				file_magwarn (ms,
+					"missing ')' in indirect offset");
+			}
+		}
 	}
 	EATAB;
 
 	m->cond = get_cond(l, &l);
-	if (check_cond(ms, m->cond, cont_level) == -1)
+	if (check_cond (ms, m->cond, cont_level) == -1) {
 		return -1;
+	}
 	EATAB;
 
 	if (*l == 'u') {
@@ -1044,8 +1103,9 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 
 	m->type = get_type(l, &l);
 	if (m->type == FILE_INVALID) {
-		if (ms->flags & R_MAGIC_CHECK)
-			file_magwarn(ms, "type `%s' invalid", l);
+		if (ms->flags & R_MAGIC_CHECK) {
+			file_magwarn (ms, "type `%s' invalid", l);
+		}
 		return -1;
 	}
 
@@ -1054,10 +1114,11 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 
 	m->mask_op = 0;
 	if (*l == '~') {
-		if (!MAGIC_IS_STRING (m->type))
+		if (!MAGIC_IS_STRING (m->type)) {
 			m->mask_op |= FILE_OPINVERSE;
-		else if (ms->flags & R_MAGIC_CHECK)
+		} else if (ms->flags & R_MAGIC_CHECK) {
 			file_magwarn (ms, "'~' invalid for string types");
+		}
 		++l;
 	}
 	m->str_range = 0;
@@ -1082,14 +1143,16 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 				case '6':  case '7':  case '8':
 				case '9':
 					if (have_range &&
-					    (ms->flags & R_MAGIC_CHECK))
-						file_magwarn(ms,
-						    "multiple ranges");
+						(ms->flags & R_MAGIC_CHECK)) {
+						file_magwarn (ms,
+							"multiple ranges");
+					}
 					have_range = 1;
 					m->str_range = strtoul(l, &t, 0);
-					if (m->str_range == 0)
-						file_magwarn(ms,
-						    "zero range");
+					if (m->str_range == 0) {
+						file_magwarn (ms,
+							"zero range");
+					}
 					l = t - 1;
 					break;
 				case CHAR_COMPACT_BLANK:
@@ -1109,21 +1172,25 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 					m->str_flags |= REGEX_OFFSET_START;
 					break;
 				default:
-					if (ms->flags & R_MAGIC_CHECK)
-						file_magwarn(ms,
-						"string extension `%c' invalid",
-						*l);
+					if (ms->flags & R_MAGIC_CHECK) {
+						file_magwarn (ms,
+							"string extension `%c' invalid",
+							*l);
+					}
 					return -1;
 				}
 				/* allow multiple '/' for readability */
-				if (l[1] == '/' && !isspace ((ut8)l[2]))
+				if (l[1] == '/' && !isspace ((ut8)l[2])) {
 					l++;
+				}
 			}
-			if (string_modifier_check(ms, m) == -1)
+			if (string_modifier_check (ms, m) == -1) {
 				return -1;
+			}
 		} else {
-			if (ms->flags & R_MAGIC_CHECK)
-				file_magwarn(ms, "invalid string op: %c", *t);
+			if (ms->flags & R_MAGIC_CHECK) {
+				file_magwarn (ms, "invalid string op: %c", *t);
+			}
 			return -1;
 		}
 	}
@@ -1163,8 +1230,9 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 	/*
 	 * Grab the value part, except for an 'x' reln.
 	 */
-	if (m->reln != 'x' && getvalue (ms, m, &l, action))
+	if (m->reln != 'x' && getvalue (ms, m, &l, action)) {
 		return -1;
+	}
 
 	/*
 	 * TODO finish this macro and start using it!
@@ -1184,26 +1252,32 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 		++l;
 		m->flag |= NOSPACE;
 	}
-	for (i = 0; (m->desc[i++] = *l++) != '\0' && i < sizeof (m->desc); )
+	for (i = 0; (m->desc[i++] = *l++) != '\0' && i < sizeof (m->desc);) {
 		continue;
+	}
 	if (i == sizeof (m->desc)) {
 		m->desc[sizeof (m->desc) - 1] = '\0';
-		if (ms->flags & R_MAGIC_CHECK)
-			file_magwarn(ms, "description `%s' truncated", m->desc);
+		if (ms->flags & R_MAGIC_CHECK) {
+			file_magwarn (ms, "description `%s' truncated", m->desc);
+		}
 	}
 
         /*
 	 * We only do this check while compiling, or if any of the magic
 	 * files were not compiled.
          */
-        if (ms->flags & R_MAGIC_CHECK)
-		if (check_format (ms, m) == -1)
+	if (ms->flags & R_MAGIC_CHECK) {
+		if (check_format (ms, m) == -1) {
 			return -1;
-	if (action == FILE_CHECK)
+		}
+	}
+	if (action == FILE_CHECK) {
 		file_mdump (m);
+	}
 	m->mimetype[0] = '\0';		/* initialise MIME type to none */
-	if (m->cont_level == 0)
-		++(*nmentryp);		/* make room for next */
+	if (m->cont_level == 0) {
+		++(*nmentryp); /* make room for next */
+	}
 	return 0;
 }
 
@@ -1233,16 +1307,19 @@ static int parse_mime(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp
 
 	EATAB;
 	for (i = 0;
-	     *l && ((isascii((ut8)*l) && isalnum((ut8)*l))
-	     || strchr("-+/.", *l)) && i < sizeof (m->mimetype);
-	     m->mimetype[i++] = *l++)
+		*l && ((isascii ((ut8)*l) && isalnum ((ut8)*l)) || strchr ("-+/.", *l)) && i < sizeof (m->mimetype);
+		m->mimetype[i++] = *l++) {
 		continue;
+	}
 	if (i == sizeof (m->mimetype)) {
 		m->desc[sizeof (m->mimetype) - 1] = '\0';
-		if (ms->flags & R_MAGIC_CHECK)
-			file_magwarn(ms, "MIME type `%s' truncated %zu",
-			    m->mimetype, i);
-	} else m->mimetype[i] = '\0';
+		if (ms->flags & R_MAGIC_CHECK) {
+			file_magwarn (ms, "MIME type `%s' truncated %zu",
+				m->mimetype, i);
+		}
+	} else {
+		m->mimetype[i] = '\0';
+	}
 
 	return (i>0)? 0: -1;
 }
@@ -1259,17 +1336,28 @@ static int check_format_type(const char *ptr, int type) {
 		quad = 1;
 		/*FALLTHROUGH*/
 	case FILE_FMT_NUM:
-		if (*ptr == '-')
+		if (*ptr == '-') {
 			ptr++;
-		if (*ptr == '.')
+		}
+		if (*ptr == '.') {
 			ptr++;
-		while (isdigit((ut8)*ptr)) ptr++;
-		if (*ptr == '.')
+		}
+		while (isdigit ((ut8)*ptr)) {
 			ptr++;
-		while (isdigit((ut8)*ptr)) ptr++;
+		}
+		if (*ptr == '.') {
+			ptr++;
+		}
+		while (isdigit ((ut8)*ptr)) {
+			ptr++;
+		}
 		if (quad) {
-			if (*ptr++ != 'l') return -1;
-			if (*ptr++ != 'l') return -1;
+			if (*ptr++ != 'l') {
+				return -1;
+			}
+			if (*ptr++ != 'l') {
+				return -1;
+			}
 		}
 		switch (*ptr++) {
 		case 'l':
@@ -1313,14 +1401,21 @@ static int check_format_type(const char *ptr, int type) {
 		}
 	case FILE_FMT_FLOAT:
 	case FILE_FMT_DOUBLE:
-		if (*ptr == '-')
+		if (*ptr == '-') {
 			ptr++;
-		if (*ptr == '.')
+		}
+		if (*ptr == '.') {
 			ptr++;
-		while (isdigit ((ut8)*ptr)) ptr++;
-		if (*ptr == '.')
+		}
+		while (isdigit ((ut8)*ptr)) {
 			ptr++;
-		while (isdigit ((ut8)*ptr)) ptr++;
+		}
+		if (*ptr == '.') {
+			ptr++;
+		}
+		while (isdigit ((ut8)*ptr)) {
+			ptr++;
+		}
 
 		switch (*ptr++) {
 		case 'e':
@@ -1335,18 +1430,22 @@ static int check_format_type(const char *ptr, int type) {
 			return -1;
 		}
 	case FILE_FMT_STR:
-		if (*ptr == '-')
+		if (*ptr == '-') {
 			ptr++;
-		while (isdigit ((ut8 )*ptr))
+		}
+		while (isdigit ((ut8)*ptr)) {
 			ptr++;
+		}
 		if (*ptr == '.') {
 			ptr++;
-			while (isdigit ((ut8 )*ptr))
+			while (isdigit ((ut8)*ptr)) {
 				ptr++;
+			}
 		}
 
-		if (*ptr++=='s')
+		if (*ptr++ == 's') {
 			return 0;
+		}
 		return -1;
 	default:
 		/* internal error */
@@ -1363,9 +1462,11 @@ static int check_format_type(const char *ptr, int type) {
 static int check_format(RMagic *ms, struct r_magic *m) {
 	char *ptr;
 
-	for (ptr = m->desc; *ptr; ptr++)
-		if (*ptr == '%')
+	for (ptr = m->desc; *ptr; ptr++) {
+		if (*ptr == '%') {
 			break;
+		}
+	}
 	if (*ptr == '\0') {
 		/* No format string; ok */
 		return 1;
@@ -1428,14 +1529,16 @@ static int getvalue(RMagic *ms, struct r_magic *m, const char **p, int action) {
 	case FILE_SEARCH:
 		*p = getstr(ms, *p, m->value.s, sizeof (m->value.s), &slen, action);
 		if (!*p) {
-			if (ms->flags & R_MAGIC_CHECK)
-				file_magwarn(ms, "cannot get string from `%s'",
-				    m->value.s);
+			if (ms->flags & R_MAGIC_CHECK) {
+				file_magwarn (ms, "cannot get string from `%s'",
+					m->value.s);
+			}
 			return -1;
 		}
 		m->vallen = slen;
-		if (m->type == FILE_PSTRING)
+		if (m->type == FILE_PSTRING) {
 			m->vallen++;
+		}
 		return 0;
 	case FILE_FLOAT:
 	case FILE_BEFLOAT:
@@ -1484,8 +1587,9 @@ static const char * getstr(RMagic *ms, const char *s, char *p, int plen, int *sl
 	int c, val;
 
 	while ((c = *s++) != '\0') {
-		if (isspace ((ut8) c))
+		if (isspace ((ut8)c)) {
 			break;
+		}
 		if (p >= pmax) {
 			file_error(ms, 0, "string too long: `%s'", origs);
 			return NULL;
@@ -1493,8 +1597,9 @@ static const char * getstr(RMagic *ms, const char *s, char *p, int plen, int *sl
 		if (c == '\\') {
 			switch ((c = *s++)) {
 			case '\0':
-				if (action == FILE_COMPILE)
-					file_magwarn(ms, "incomplete escape");
+				if (action == FILE_COMPILE) {
+					file_magwarn (ms, "incomplete escape");
+				}
 				goto out;
 			case '\t':
 				if (action == FILE_COMPILE) {
@@ -1505,12 +1610,13 @@ static const char * getstr(RMagic *ms, const char *s, char *p, int plen, int *sl
 				/*FALLTHROUGH*/
 			default:
 				if (action == FILE_COMPILE) {
-					if (isprint((ut8)c))
-					    file_magwarn(ms,
-						"no need to escape `%c'", c);
-					else
-					    file_magwarn(ms,
-						"unknown escape sequence: \\%03o", c);
+					if (isprint ((ut8)c)) {
+						file_magwarn (ms,
+							"no need to escape `%c'", c);
+					} else {
+						file_magwarn (ms,
+							"unknown escape sequence: \\%03o", c);
+					}
 				}
 				/*FALLTHROUGH*/
 			/* space, perhaps force people to use \040? */
@@ -1556,10 +1662,14 @@ static const char * getstr(RMagic *ms, const char *s, char *p, int plen, int *sl
 				if (c >= '0' && c <= '7') {
 					val = (val << 3) | (c - '0');
 					c = *s++;  /* try for 3 */
-					if (c >= '0' && c <= '7')
+					if (c >= '0' && c <= '7') {
 						val = (val << 3) | (c-'0');
-					else --s;
-				} else --s;
+					} else {
+						--s;
+					}
+				} else {
+					--s;
+				}
 				*p++ = (char)val;
 				break;
 
@@ -1570,14 +1680,20 @@ static const char * getstr(RMagic *ms, const char *s, char *p, int plen, int *sl
 				if (c >= 0) {
 					val = c;
 					c = hextoint(*s++);
-					if (c >= 0)
+					if (c >= 0) {
 						val = (val << 4) + c;
-					else --s;
-				} else --s;
+					} else {
+						--s;
+					}
+				} else {
+					--s;
+				}
 				*p++ = (char)val;
 				break;
 			}
-		} else *p++ = (char)c;
+		} else {
+			*p++ = (char)c;
+		}
 	}
 out:
 	*p = '\0';
@@ -1588,14 +1704,18 @@ out:
 
 /* Single hex char to int; -1 if not a hex char. */
 static int hextoint(int c) {
-	if (!isascii ((ut8) c))
+	if (!isascii ((ut8)c)) {
 		return -1;
-	if (isdigit ((ut8) c))
+	}
+	if (isdigit ((ut8)c)) {
 		return c - '0';
-	if ((c >= 'a') && (c <= 'f'))
+	}
+	if ((c >= 'a') && (c <= 'f')) {
 		return c + 10 - 'a';
-	if (( c>= 'A') && (c <= 'F'))
+	}
+	if ((c >= 'A') && (c <= 'F')) {
 		return c + 10 - 'A';
+	}
 	return -1;
 }
 
@@ -1607,15 +1727,17 @@ void file_showstr(FILE *fp, const char *s, size_t len) {
 	for (;;) {
 		char c = *s++;
 		if (len == ~0U) {
-			if (c == '\0')
+			if (c == '\0') {
 				break;
+			}
 		} else {
-			if (len-- == 0)
+			if (len-- == 0) {
 				break;
+			}
 		}
-		if (c >= 040 && c <= 0176)	/* TODO isprint && !iscntrl */
+		if (c >= 040 && c <= 0176) { /* TODO isprint && !iscntrl */
 			fputc (c, fp);
-		else {
+		} else {
 			fputc ('\\', fp);
 			switch (c) {
 			case '\a': fputc('a', fp); break;
@@ -1637,8 +1759,9 @@ void file_showstr(FILE *fp, const char *s, size_t len) {
 static void eatsize(const char **p) {
 	const char *l = *p;
 
-	if (LOWCASE (*l) == 'u')
+	if (LOWCASE (*l) == 'u') {
 		l++;
+	}
 
 	switch (LOWCASE (*l)) {
 	case 'l':    /* long */
@@ -1668,11 +1791,13 @@ static int apprentice_map(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, co
 	void *mm = NULL;
 
 	dbname = mkdbname (fn, 0);
-	if (!dbname)
+	if (!dbname) {
 		goto error2;
+	}
 
-	if ((fd = r_sandbox_open (dbname, O_RDONLY|O_BINARY, 0)) == -1)
+	if ((fd = r_sandbox_open (dbname, O_RDONLY | O_BINARY, 0)) == -1) {
 		goto error2;
+	}
 
 	if (fstat(fd, &st) == -1) {
 		file_error (ms, errno, "cannot stat `%s'", dbname);
@@ -1713,7 +1838,9 @@ static int apprentice_map(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, co
 			goto error1;
 		}
 		needsbyteswap = 1;
-	} else needsbyteswap = 0;
+	} else {
+		needsbyteswap = 0;
+	}
 
 	version = needsbyteswap? swap4(ptr[1]): ptr[1];
 	if (version != VERSIONNO) {
@@ -1723,17 +1850,20 @@ static int apprentice_map(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, co
 		goto error1;
 	}
 	*nmagicp = (ut32)(st.st_size / sizeof (struct r_magic));
-	if (*nmagicp > 0)
+	if (*nmagicp > 0) {
 		(*nmagicp)--;
+	}
 	(*magicp)++;
-	if (needsbyteswap)
+	if (needsbyteswap) {
 		byteswap (*magicp, *nmagicp);
+	}
 	free (dbname);
 	return RET;
 
 error1:
-	if (fd != -1)
+	if (fd != -1) {
 		(void)close (fd);
+	}
 	if (mm) {
 #ifdef QUICK
 		(void)munmap((void *)mm, (size_t)st.st_size);
@@ -1763,8 +1893,9 @@ static int apprentice_compile(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp
 
 	dbname = mkdbname(fn, 1);
 
-	if (!dbname) 
+	if (!dbname) {
 		goto out;
+	}
 
 	if ((fd = r_sandbox_open(dbname, O_WRONLY|O_CREAT|O_TRUNC|O_BINARY, 0644)) == -1) {
 		file_error(ms, errno, "cannot open `%s'", dbname);
@@ -1805,8 +1936,9 @@ static char *mkdbname(const char *fn, int strip) {
 	int fnlen, extlen;
 	if (strip) {
 		const char *p;
-		if ((p = strrchr(fn, '/')) != NULL)
+		if ((p = strrchr (fn, '/')) != NULL) {
 			fn = ++p;
+		}
 	}
 	fnlen = strlen (fn);
 	extlen = strlen (ext);
@@ -1827,8 +1959,9 @@ static char *mkdbname(const char *fn, int strip) {
  */
 static void byteswap(struct r_magic *magic, ut32 nmagic) {
 	ut32 i;
-	for (i = 0; i < nmagic; i++)
+	for (i = 0; i < nmagic; i++) {
 		bs1 (&magic[i]);
+	}
 }
 
 /*

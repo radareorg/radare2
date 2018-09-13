@@ -329,10 +329,11 @@ arcExtMap_instName (int opcode, int insn, int *flags)
 	  c = (insn & 0x00e0) >> 5;
 	  i = (insn & 0x001f);
 
-	  if (i)
-	    minor = i;
-	  else
-	    minor = (c == 0x07) ? b : c;
+	  if (i) {
+		  minor = i;
+	  } else {
+		  minor = (c == 0x07) ? b : c;
+	  }
 	}
       /* 32-bit instructions.  */
       else
@@ -370,15 +371,16 @@ arcExtMap_instName (int opcode, int insn, int *flags)
 	    }
 	  else
 	    {
-	      if (A != 0x3f)
-		minor = A;
-	      else
-		minor = B;
+		    if (A != 0x3f) {
+			    minor = A;
+		    } else {
+			    minor = B;
+		    }
 	    }
 	}
-    }
-  else /* ARCTangent extension instructions.  */
-    minor = insn;
+  } else { /* ARCTangent extension instructions.  */
+	  minor = insn;
+  }
 
   temp = arc_extension_map.instructions[INST_HASH (opcode, minor)];
   while (temp)
@@ -399,9 +401,10 @@ arcExtMap_instName (int opcode, int insn, int *flags)
 const char *
 arcExtMap_coreRegName (int regnum)
 {
-  if (regnum < FIRST_EXTENSION_CORE_REGISTER || regnum > LAST_EXTENSION_CORE_REGISTER)
-    return NULL;
-  return arc_extension_map.coreRegisters[regnum - FIRST_EXTENSION_CORE_REGISTER].name;
+	if (regnum < FIRST_EXTENSION_CORE_REGISTER || regnum > LAST_EXTENSION_CORE_REGISTER) {
+		return NULL;
+	}
+	return arc_extension_map.coreRegisters[regnum - FIRST_EXTENSION_CORE_REGISTER].name;
 }
 
 
@@ -409,9 +412,10 @@ arcExtMap_coreRegName (int regnum)
 enum ExtReadWrite
 arcExtMap_coreReadWrite (int regnum)
 {
-  if (regnum < FIRST_EXTENSION_CORE_REGISTER || regnum > LAST_EXTENSION_CORE_REGISTER)
-    return REG_INVALID;
-  return arc_extension_map.coreRegisters[regnum - FIRST_EXTENSION_CORE_REGISTER].rw;
+	if (regnum < FIRST_EXTENSION_CORE_REGISTER || regnum > LAST_EXTENSION_CORE_REGISTER) {
+		return REG_INVALID;
+	}
+	return arc_extension_map.coreRegisters[regnum - FIRST_EXTENSION_CORE_REGISTER].rw;
 }
 
 
@@ -419,9 +423,10 @@ arcExtMap_coreReadWrite (int regnum)
 const char *
 arcExtMap_condCodeName (int code)
 {
-  if (code < FIRST_EXTENSION_CONDITION_CODE || code > LAST_EXTENSION_CONDITION_CODE)
-    return NULL;
-  return arc_extension_map.condCodes[code - FIRST_EXTENSION_CONDITION_CODE];
+	if (code < FIRST_EXTENSION_CONDITION_CODE || code > LAST_EXTENSION_CONDITION_CODE) {
+		return NULL;
+	}
+	return arc_extension_map.condCodes[code - FIRST_EXTENSION_CONDITION_CODE];
 }
 
 
@@ -434,8 +439,9 @@ arcExtMap_auxRegName (long address)
 
   for (r = arc_extension_map.auxRegisters; r; r = r->next)
     {
-      if (r->address == address)
-        return (const char *)r->name;
+	  if (r->address == address) {
+		  return (const char *)r->name;
+	  }
     }
   return NULL;
 }
@@ -491,21 +497,25 @@ void dump_ARC_extmap (void)
     {
         struct ExtInstruction *insn;
 
-        for (insn = arc_extension_map.instructions[i]; insn != NULL; insn = insn->next)
-            printf("INST: %d %d %x %s\n", insn->major, insn->minor, insn->flags, insn->name);
+	for (insn = arc_extension_map.instructions[i]; insn != NULL; insn = insn->next) {
+		printf ("INST: %d %d %x %s\n", insn->major, insn->minor, insn->flags, insn->name);
+	}
     }
 
     for (i = 0; i < NUM_EXT_CORE; i++)
     {
         struct ExtCoreRegister reg = arc_extension_map.coreRegisters[i];
 
-        if (reg.name)
-            printf("CORE: %s %d %s\n", reg.name, reg.number, ExtReadWrite_image(reg.rw));
+	if (reg.name) {
+		printf ("CORE: %s %d %s\n", reg.name, reg.number, ExtReadWrite_image (reg.rw));
+	}
     }
 
-    for (i = 0; i < NUM_EXT_COND; i++)
-        if (arc_extension_map.condCodes[i])
-            printf("COND: %s\n", arc_extension_map.condCodes[i]);
+    for (i = 0; i < NUM_EXT_COND; i++) {
+	    if (arc_extension_map.condCodes[i]) {
+		    printf ("COND: %s\n", arc_extension_map.condCodes[i]);
+	    }
+    }
 }
 
 /******************************************************************************/

@@ -879,7 +879,9 @@ int main(int argc, char **argv) {
 			*p2++ = 0;
 			data = malloc (strlen (p2)+1);
 			datalen = r_hex_str2bin (p2, data);
-			if (datalen < 0) datalen = -datalen;
+			if (datalen < 0) {
+				datalen = -datalen;
+			}
 		} else {
 			data = NULL;
 			datalen = 0;

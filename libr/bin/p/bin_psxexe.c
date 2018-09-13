@@ -83,8 +83,9 @@ static RList* entries(RBinFile* bf) {
 	RBinAddr* addr = NULL;
 	psxexe_header psxheader;
 
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 
 	if (!(addr = R_NEW0 (RBinAddr))) {
 		r_list_free (ret);

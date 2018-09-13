@@ -59,10 +59,12 @@ static int debug_os_read_at(int pid, ut32 *buf, int sz, ut64 addr) {
 	ut32 words = sz / sizeof (ut32);
 	ut32 last = sz % sizeof (ut32);
 	ut32 x, lr, *at = (ut32*)(size_t)addr;
-	if (sz<1 || addr==UT64_MAX)
+	if (sz < 1 || addr == UT64_MAX) {
 		return -1;
-	for (x=0; x<words; x++)
-		buf[x] = (ut32)debug_read_raw (pid, (void*)(at++));
+	}
+	for (x = 0; x < words; x++) {
+		buf[x] = (ut32)debug_read_raw (pid, (void *)(at++));
+	}
 	if (last) {
 		lr = (ut32)debug_read_raw (pid, at);
 		memcpy (buf+x, &lr, last) ;
@@ -75,8 +77,9 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 	int ret, fd;
 #endif
 	ut64 addr = io->off;
-	if (!desc || !desc->data)
+	if (!desc || !desc->data) {
 		return -1;
+	}
 	memset (buf, '\xff', len); // TODO: only memset the non-readed bytes
 	/* reopen procpidmem if necessary */
 #if USE_PROC_PID_MEM
@@ -173,9 +176,9 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	if (__plugin_open (io, file,0)) {
 		int pid = atoi (file+9);
 		ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
-		if (file[0] == 'p')  //ptrace
+		if (file[0] == 'p') { //ptrace
 			ret = 0;
-		else if (ret == -1) {
+		} else if (ret == -1) {
 #ifdef __ANDROID__
 			eprintf ("ptrace_attach: Operation not permitted\n");
 #else
@@ -192,7 +195,9 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 #endif
 		} else if (__waitpid (pid)) {
 			ret = pid;
-		} else eprintf ("Error in waitpid\n");
+		} else {
+			eprintf ("Error in waitpid\n");
+		}
 		if (ret != -1) {
 			RIOPtrace *riop = R_NEW0 (RIOPtrace);
 			if (!riop) {

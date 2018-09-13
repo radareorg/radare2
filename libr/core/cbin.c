@@ -2018,8 +2018,9 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 			char *name = strdup (sn.demname? sn.demname: symbol->name);
 			r_name_filter (name, -1);
 			if (!strncmp (name, "imp.", 4)) {
-				if (lastfs != 'i')
+				if (lastfs != 'i') {
 					r_cons_printf ("fs imports\n");
+				}
 				lastfs = 'i';
 			} else {
 				if (lastfs != 's') {
@@ -2155,7 +2156,9 @@ static char *build_hash_string(int mode, const char *chksum, ut8 *data, ut32 dat
 		ret = r_str_append (ret, aux);
 		free (chkstr);
 		free (aux);
-		if (*ptr && *ptr == ',') ptr++;
+		if (*ptr && *ptr == ',') {
+			ptr++;
+		}
 	} while (*ptr);
 
 	return ret;
@@ -2228,10 +2231,18 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			continue;
 		}
 
-		if (section->srwx & R_BIN_SCN_SHAREABLE) perms[0] = 's';
-		if (section->srwx & R_BIN_SCN_READABLE) perms[1] = 'r';
-		if (section->srwx & R_BIN_SCN_WRITABLE) perms[2] = 'w';
-		if (section->srwx & R_BIN_SCN_EXECUTABLE) perms[3] = 'x';
+		if (section->srwx & R_BIN_SCN_SHAREABLE) {
+			perms[0] = 's';
+		}
+		if (section->srwx & R_BIN_SCN_READABLE) {
+			perms[1] = 'r';
+		}
+		if (section->srwx & R_BIN_SCN_WRITABLE) {
+			perms[2] = 'w';
+		}
+		if (section->srwx & R_BIN_SCN_EXECUTABLE) {
+			perms[3] = 'x';
+		}
 
 		if (IS_MODE_SET (mode)) {
 #if LOAD_BSS_MALLOC
@@ -2378,8 +2389,12 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				const char *arch = section->arch;
 				int bits = section->bits;
 				if (info) {
-					if (!arch) arch = info->arch;
-					if (!bits) bits = info->bits;
+					if (!arch) {
+						arch = info->arch;
+					}
+					if (!bits) {
+						bits = info->bits;
+					}
 				}
 				if (!arch) {
 					arch = r_config_get (r->config, "asm.arch");
@@ -2872,7 +2887,9 @@ static void bin_mem_print(RList *mems, int perms, int depth, int mode) {
 
 static int bin_mem(RCore *r, int mode) {
 	RList *mem = NULL;
-	if (!r)	return false;
+	if (!r) {
+		return false;
+	}
 	if (!IS_MODE_JSON (mode)) {
 		if (!(IS_MODE_RAD (mode) || IS_MODE_SET (mode))) {
 			r_cons_println ("[Memory]\n");
@@ -3408,30 +3425,74 @@ R_API int r_core_bin_info(RCore *core, int action, int mode, int va, RCoreBinFil
 		r_core_cmd0 (core, "aar");
 	}
 #endif
-	if ((action & R_CORE_BIN_ACC_STRINGS)) ret &= bin_strings (core, mode, va);
-	if ((action & R_CORE_BIN_ACC_RAW_STRINGS)) ret &= bin_raw_strings (core, mode, va);
-	if ((action & R_CORE_BIN_ACC_INFO)) ret &= bin_info (core, mode);
-	if ((action & R_CORE_BIN_ACC_MAIN)) ret &= bin_main (core, mode, va);
-	if ((action & R_CORE_BIN_ACC_DWARF)) ret &= bin_dwarf (core, mode);
-	if ((action & R_CORE_BIN_ACC_PDB)) ret &= bin_pdb (core, mode);
-	if ((action & R_CORE_BIN_ACC_SOURCE)) ret &= bin_source (core, mode);
-	if ((action & R_CORE_BIN_ACC_ENTRIES)) ret &= bin_entry (core, mode, loadaddr, va, false);
-	if ((action & R_CORE_BIN_ACC_INITFINI)) ret &= bin_entry (core, mode, loadaddr, va, true);
-	if ((action & R_CORE_BIN_ACC_SECTIONS)) ret &= bin_sections (core, mode, loadaddr, va, at, name, chksum, false);
-	if ((action & R_CORE_BIN_ACC_SEGMENTS)) ret &= bin_sections (core, mode, loadaddr, va, at, name, chksum, true);
-	if (r_config_get_i (core->config, "bin.relocs")) {
-		if ((action & R_CORE_BIN_ACC_RELOCS)) ret &= bin_relocs (core, mode, va);
+	if ((action & R_CORE_BIN_ACC_STRINGS)) {
+		ret &= bin_strings (core, mode, va);
 	}
- 	if ((action & R_CORE_BIN_ACC_IMPORTS)) ret &= bin_imports (core, mode, va, name); // 6s
-	if ((action & R_CORE_BIN_ACC_EXPORTS)) ret &= bin_exports (core, mode, loadaddr, va, at, name, chksum);
-	if ((action & R_CORE_BIN_ACC_SYMBOLS)) ret &= bin_symbols (core, mode, loadaddr, va, at, name, chksum); // 6s
-	if ((action & R_CORE_BIN_ACC_LIBS)) ret &= bin_libs (core, mode);
-	if ((action & R_CORE_BIN_ACC_CLASSES)) ret &= bin_classes (core, mode); // 3s
-	if ((action & R_CORE_BIN_ACC_SIZE)) ret &= bin_size (core, mode);
-	if ((action & R_CORE_BIN_ACC_MEM)) ret &= bin_mem (core, mode);
-	if ((action & R_CORE_BIN_ACC_VERSIONINFO)) ret &= bin_versioninfo (core, mode);
-	if ((action & R_CORE_BIN_ACC_RESOURCES)) ret &= bin_resources (core, mode);
-	if ((action & R_CORE_BIN_ACC_SIGNATURE)) ret &= bin_signature (core, mode);
+	if ((action & R_CORE_BIN_ACC_RAW_STRINGS)) {
+		ret &= bin_raw_strings (core, mode, va);
+	}
+	if ((action & R_CORE_BIN_ACC_INFO)) {
+		ret &= bin_info (core, mode);
+	}
+	if ((action & R_CORE_BIN_ACC_MAIN)) {
+		ret &= bin_main (core, mode, va);
+	}
+	if ((action & R_CORE_BIN_ACC_DWARF)) {
+		ret &= bin_dwarf (core, mode);
+	}
+	if ((action & R_CORE_BIN_ACC_PDB)) {
+		ret &= bin_pdb (core, mode);
+	}
+	if ((action & R_CORE_BIN_ACC_SOURCE)) {
+		ret &= bin_source (core, mode);
+	}
+	if ((action & R_CORE_BIN_ACC_ENTRIES)) {
+		ret &= bin_entry (core, mode, loadaddr, va, false);
+	}
+	if ((action & R_CORE_BIN_ACC_INITFINI)) {
+		ret &= bin_entry (core, mode, loadaddr, va, true);
+	}
+	if ((action & R_CORE_BIN_ACC_SECTIONS)) {
+		ret &= bin_sections (core, mode, loadaddr, va, at, name, chksum, false);
+	}
+	if ((action & R_CORE_BIN_ACC_SEGMENTS)) {
+		ret &= bin_sections (core, mode, loadaddr, va, at, name, chksum, true);
+	}
+	if (r_config_get_i (core->config, "bin.relocs")) {
+		if ((action & R_CORE_BIN_ACC_RELOCS)) {
+			ret &= bin_relocs (core, mode, va);
+		}
+	}
+	if ((action & R_CORE_BIN_ACC_IMPORTS)) {
+		ret &= bin_imports (core, mode, va, name); // 6s
+	}
+	if ((action & R_CORE_BIN_ACC_EXPORTS)) {
+		ret &= bin_exports (core, mode, loadaddr, va, at, name, chksum);
+	}
+	if ((action & R_CORE_BIN_ACC_SYMBOLS)) {
+		ret &= bin_symbols (core, mode, loadaddr, va, at, name, chksum); // 6s
+	}
+	if ((action & R_CORE_BIN_ACC_LIBS)) {
+		ret &= bin_libs (core, mode);
+	}
+	if ((action & R_CORE_BIN_ACC_CLASSES)) {
+		ret &= bin_classes (core, mode); // 3s
+	}
+	if ((action & R_CORE_BIN_ACC_SIZE)) {
+		ret &= bin_size (core, mode);
+	}
+	if ((action & R_CORE_BIN_ACC_MEM)) {
+		ret &= bin_mem (core, mode);
+	}
+	if ((action & R_CORE_BIN_ACC_VERSIONINFO)) {
+		ret &= bin_versioninfo (core, mode);
+	}
+	if ((action & R_CORE_BIN_ACC_RESOURCES)) {
+		ret &= bin_resources (core, mode);
+	}
+	if ((action & R_CORE_BIN_ACC_SIGNATURE)) {
+		ret &= bin_signature (core, mode);
+	}
 	if ((action & R_CORE_BIN_ACC_FIELDS)) {
 		if (IS_MODE_SIMPLE (mode)) {
 			if ((action & R_CORE_BIN_ACC_HEADER) || action & R_CORE_BIN_ACC_FIELDS) {

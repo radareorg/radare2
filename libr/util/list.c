@@ -300,7 +300,7 @@ R_API int r_list_del_n(RList *list, int n) {
 	if (!list) {
 		return false;
 	}
-	for (it = list->head, i = 0; it && it->data; it = it->n, i++)
+	for (it = list->head, i = 0; it && it->data; it = it->n, i++) {
 		if (i == n) {
 			if (!it->p && !it->n) {
 				list->head = list->tail = NULL;
@@ -318,6 +318,7 @@ R_API int r_list_del_n(RList *list, int n) {
 			list->length--;
 			return true;
 		}
+	}
 	return false;
 }
 
@@ -371,7 +372,9 @@ R_API RList *r_list_clone(RList *list) {
 R_API RListIter *r_list_add_sorted(RList *list, void *data, RListComparator cmp) {
 	RListIter *it, *item = NULL;
 	if (list && data && cmp) {
-		for (it = list->head; it && it->data && cmp (data, it->data) > 0; it = it->n) ;
+		for (it = list->head; it && it->data && cmp (data, it->data) > 0; it = it->n) {
+			;
+		}
 		if (it) {
 			item = R_NEW0 (RListIter);
 			if (!item) {

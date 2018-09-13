@@ -2071,8 +2071,9 @@ static void anop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len, csh 
 				}
 				break;
 			case X86_OP_IMM:
-				if (INSOP(1).imm > 10)
-					op->ptr = INSOP(1).imm;
+				if (INSOP (1).imm > 10) {
+					op->ptr = INSOP (1).imm;
+				}
 				break;
 			default:
 				break;
@@ -2746,8 +2747,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 //#if X86_GRP_PRIVILEGE>0
 	if (insn) {
 #if HAVE_CSGRP_PRIVILEGE
-		if (cs_insn_group (handle, insn, X86_GRP_PRIVILEGE))
+		if (cs_insn_group (handle, insn, X86_GRP_PRIVILEGE)) {
 			op->family = R_ANAL_OP_FAMILY_PRIV;
+		}
 #endif
 #if !USE_ITER_API
 		cs_free (insn, n);

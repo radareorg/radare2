@@ -738,10 +738,12 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 	ut16 b = *(ut16 *)buf;
 	switch (b >> 9) {
 	case 0x76: //call
-		if (len < 4)
+		if (len < 4) {
 			goto beach;
-		if (*(ut32 *)buf >> 28 != 0xf)
+		}
+		if (*(ut32 *)buf >> 28 != 0xf) {
 			goto beach;
+		}
 		op->size = 4;
 		op->type = R_ANAL_OP_TYPE_CALL;
 		return op->size;
@@ -764,10 +766,12 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 		r_strbuf_setf (&op->esil, ",");
 		return op->size;
 	case 0xc: //movff
-		if (len < 4)
+		if (len < 4) {
 			goto beach;
-		if (*(ut32 *)buf >> 28 != 0xf)
+		}
+		if (*(ut32 *)buf >> 28 != 0xf) {
 			goto beach;
+		}
 		op->size = 4;
 		op->type = R_ANAL_OP_TYPE_MOV;
 		return op->size;
@@ -808,10 +812,12 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 		pic18_cond_branch (op, addr, buf, "c");
 		return op->size;
 	case 0xef: //goto
-		if (len < 4)
+		if (len < 4) {
 			goto beach;
-		if (*(ut32 *)buf >> 28 != 0xf)
+		}
+		if (*(ut32 *)buf >> 28 != 0xf) {
 			goto beach;
+		}
 		op->size = 4;
 		op->cycles = 2;
 		ut32 dword_instr = *(ut32 *)buf;
@@ -865,10 +871,12 @@ static int anal_pic_pic18_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf
 
 	switch (b >> 6) { //LFSR
 	case 0x3b8:       //lfsr
-		if (len < 4)
+		if (len < 4) {
 			goto beach;
-		if (*(ut32 *)buf >> 28 != 0xf)
+		}
+		if (*(ut32 *)buf >> 28 != 0xf) {
 			goto beach;
+		}
 		op->size = 4;
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		return op->size;

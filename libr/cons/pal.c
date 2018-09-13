@@ -365,8 +365,11 @@ static void r_cons_pal_show_gs() {
 		rcolor.g = i;
 		rcolor.b = i;
 
-		if (i < 0x76) strcpy (fg, Color_WHITE);
-		else strcpy (fg, Color_BLACK);
+		if (i < 0x76) {
+			strcpy (fg, Color_WHITE);
+		} else {
+			strcpy (fg, Color_BLACK);
+		}
 		r_cons_rgb_str (bg, sizeof (bg), &rcolor);
 		r_cons_printf ("%s%s rgb:%02x%02x%02x "Color_RESET,
 			fg, bg, i, i, i);

@@ -41,8 +41,9 @@ static void stream_file_read_pages(R_STREAM_FILE *stream_file, int start_indx, i
 	for (i = start_indx; i < end_indx; i++) {
 //		tmp = stream_file->pages[i];
 		page_offset = stream_file->pages[i] * stream_file->page_size;
-		if (page_offset<1)
+		if (page_offset < 1) {
 			return;
+		}
 		stream_file->buf->cur = page_offset;
 		r_buf_read_at (stream_file->buf, page_offset,
 			(ut8*)res, stream_file->page_size);
@@ -75,8 +76,9 @@ void stream_file_read(R_STREAM_FILE *stream_file, int size, char *res)
 		GET_PAGE(pn_end, off_end, stream_file->pos + size, stream_file->page_size);
 		(void)off_end; // hack to remove unused warning
 		pdata = (char *) calloc(stream_file->page_size * (pn_end + 1 - pn_start), 1);
-		if (!pdata)
+		if (!pdata) {
 			return;
+		}
 		tmp = pdata;
 		stream_file_read_pages(stream_file, pn_start, pn_end + 1, tmp);
 		stream_file->pos += size;
@@ -102,8 +104,12 @@ void stream_file_seek(R_STREAM_FILE *stream_file, int offset, int whence)
 		break;
 	}
 
-	if (stream_file->pos < 0) stream_file->pos = 0;
-	if (stream_file->pos > stream_file->end) stream_file->pos = stream_file->end;
+	if (stream_file->pos < 0) {
+		stream_file->pos = 0;
+	}
+	if (stream_file->pos > stream_file->end) {
+		stream_file->pos = stream_file->end;
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////

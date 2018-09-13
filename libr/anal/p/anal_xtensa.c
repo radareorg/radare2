@@ -282,10 +282,11 @@ static void xtensa_imp_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) 
 		op->type = R_ANAL_OP_TYPE_NULL;
 		break;
 	case 0xe:
-		if (((buf[0] >> 4) & 0xf) <= 1)
+		if (((buf[0] >> 4) & 0xf) <= 1) {
 			op->type = R_ANAL_OP_TYPE_RET;
-		else
+		} else {
 			xtensa_unk_op (anal, op, addr, buf);
+		}
 		break;
 	default:
 		xtensa_unk_op (anal, op, addr, buf);
@@ -495,10 +496,11 @@ static void xtensa_lsci_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf)
 	ut8 r = buf[1] >> 4;
 	op->family = R_ANAL_OP_FAMILY_FPU;
 	if ((r & 3) == 0) {
-		if (r & 4)
+		if (r & 4) {
 			xtensa_store_op (anal, op, addr, buf);
-		else
+		} else {
 			xtensa_load_op (anal, op, addr, buf);
+		}
 	} else {
 		xtensa_unk_op (anal, op, addr, buf);
 	}
@@ -1904,14 +1906,16 @@ static void analop_esil (xtensa_isa isa, xtensa_opcode opcode, xtensa_format for
 }
 
 static int xtensa_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf_original, int len_original) {
-	if (!op)
+	if (!op) {
 		return 1;
+	}
 	memset (op, 0, sizeof (RAnalOp));
 	r_strbuf_init (&op->esil);
 
 	op->size = xtensa_length (buf_original);
-	if (op->size > len_original)
+	if (op->size > len_original) {
 		return 1;
+	}
 
 	xtensa_op0_fns[(buf_original[0] & 0xf)] (anal, op, addr, buf_original);
 

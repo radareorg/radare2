@@ -32,8 +32,9 @@ R_API RRegItem *r_reg_cond_get(RReg *reg, const char *name) {
 	RRegItem *r;
 	if (name) {
 		r_list_foreach (reg->regset[i].regs, iter, r) {
-			if (r->flags && !strcmp (name, r->flags))
+			if (r->flags && !strcmp (name, r->flags)) {
 				return r;
+			}
 		}
 	}
 	return NULL;
@@ -47,25 +48,52 @@ R_API const char *r_reg_cond_to_string(int n) {
 	const char *cs[] = {
 		"eq", "ne", "cf", "neg", "of", "hi", "he",
 		"lo", "loe", "ge", "gt", "lt", "le"};
-	if (n < 0 || (n > (sizeof (cs) / sizeof (*cs)) - 1))
+	if (n < 0 || (n > (sizeof (cs) / sizeof (*cs)) - 1)) {
 		return NULL;
+	}
 	return cs[n];
 }
 
 R_API int r_reg_cond_from_string(const char *str) {
-	if (!strcmp (str, "eq")) return R_REG_COND_EQ;
-	if (!strcmp (str, "ne")) return R_REG_COND_NE;
-	if (!strcmp (str, "cf")) return R_REG_COND_CF;
-	if (!strcmp (str, "neg")) return R_REG_COND_NEG;
-	if (!strcmp (str, "of")) return R_REG_COND_OF;
-	if (!strcmp (str, "hi")) return R_REG_COND_HI;
-	if (!strcmp (str, "he")) return R_REG_COND_HE;
-	if (!strcmp (str, "lo")) return R_REG_COND_LO;
-	if (!strcmp (str, "loe")) return R_REG_COND_LOE;
-	if (!strcmp (str, "ge")) return R_REG_COND_GE;
-	if (!strcmp (str, "gt")) return R_REG_COND_GT;
-	if (!strcmp (str, "lt")) return R_REG_COND_LT;
-	if (!strcmp (str, "le")) return R_REG_COND_LE;
+	if (!strcmp (str, "eq")) {
+		return R_REG_COND_EQ;
+	}
+	if (!strcmp (str, "ne")) {
+		return R_REG_COND_NE;
+	}
+	if (!strcmp (str, "cf")) {
+		return R_REG_COND_CF;
+	}
+	if (!strcmp (str, "neg")) {
+		return R_REG_COND_NEG;
+	}
+	if (!strcmp (str, "of")) {
+		return R_REG_COND_OF;
+	}
+	if (!strcmp (str, "hi")) {
+		return R_REG_COND_HI;
+	}
+	if (!strcmp (str, "he")) {
+		return R_REG_COND_HE;
+	}
+	if (!strcmp (str, "lo")) {
+		return R_REG_COND_LO;
+	}
+	if (!strcmp (str, "loe")) {
+		return R_REG_COND_LOE;
+	}
+	if (!strcmp (str, "ge")) {
+		return R_REG_COND_GE;
+	}
+	if (!strcmp (str, "gt")) {
+		return R_REG_COND_GT;
+	}
+	if (!strcmp (str, "lt")) {
+		return R_REG_COND_LT;
+	}
+	if (!strcmp (str, "le")) {
+		return R_REG_COND_LE;
+	}
 	eprintf ("| Usage: drc [condition]\n"
 		"| eq    equal\n"
 		"| ne    not equal\n"
@@ -115,8 +143,12 @@ R_API int r_reg_cond(RReg *r, int type) {
 }
 
 R_API RRegFlags *r_reg_cond_retrieve(RReg *r, RRegFlags *f) {
-	if (!f) f = R_NEW0 (RRegFlags);
-	if (!f) return NULL;
+	if (!f) {
+		f = R_NEW0 (RRegFlags);
+	}
+	if (!f) {
+		return NULL;
+	}
 	f->s = r_reg_cond_get_value (r, "sign");     // sign, negate flag, less than zero
 	f->z = r_reg_cond_get_value (r, "zero");     // zero flag
 	f->c = r_reg_cond_get_value (r, "carry");    // carry flag

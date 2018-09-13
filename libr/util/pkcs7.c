@@ -389,7 +389,9 @@ char* r_pkcs7_signerinfos_dump (RX509CertificateRevocationList *crl, char* buffe
 		pad = "";
 	}
 	pad3 = r_str_newf ("%s    ", pad);
-	if (!pad3) return NULL;
+	if (!pad3) {
+		return NULL;
+	}
 
 	pad2 = pad3 + 2;
 	algo = crl->signature.algorithm;
@@ -485,7 +487,9 @@ static char* r_x509_signedinfo_dump (RPKCS7SignerInfo *si, char* buffer, ut32 le
 	}
 	for (i = 0; i < si->authenticatedAttributes.length; ++i) {
 		RPKCS7Attribute* attr = si->authenticatedAttributes.elements[i];
-		if (!attr) continue;
+		if (!attr) {
+			continue;
+		}
 		r = snprintf (buffer + p, length - p, "%s%s: %u bytes\n",
 					pad3, attr->oid ? attr->oid->string : "Missing", attr->data ? attr->data->length : 0);
 		p += (ut32) r;

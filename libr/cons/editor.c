@@ -21,7 +21,9 @@ static void setnewline(int old) {
 
 static void saveline(int n, const char *str) {
 	char *out;
-	if (!str) return;
+	if (!str) {
+		return;
+	}
 	out = r_str_word_get0set (lines, bytes, _n, str, &bytes);
 	free (lines);
 	lines = out;
@@ -29,7 +31,9 @@ static void saveline(int n, const char *str) {
 
 static int up(void *n) {
 	int old = _n;
-	if (_n > 0) _n--;
+	if (_n > 0) {
+		_n--;
+	}
 	setnewline (old);
 	return -1;
 }

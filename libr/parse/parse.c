@@ -125,13 +125,17 @@ static char *findNextNumber(char *op) {
 			if (p[0] && p[1] == ';') {
 				// "\x1b[%d;2;%d;%d;%dm", fgbg, r, g, b
 				// "\x1b[%d;5;%dm", fgbg, rgb (r, g, b)
-				for (; p[0] && p[1] && p[0] != 0x1b && p[1] != '\\'; p++);
+				for (; p[0] && p[1] && p[0] != 0x1b && p[1] != '\\'; p++) {
+					;
+				}
 				if (p[0] && p[1] == '\\') {
 					p++;
 				}
 			} else {
 				// "\x1b[%dm", 30 + k
-				for (; *p && *p != 'J' && *p != 'm' && *p != 'H'; p++);
+				for (; *p && *p != 'J' && *p != 'm' && *p != 'H'; p++) {
+					;
+				}
 				if (*p) {
 					p++;
 					if (!*p) {
@@ -156,7 +160,9 @@ static char *findNextNumber(char *op) {
 				}
 				if (!IS_DIGIT (*p)) {
 					char *t = p;
-					for (; *t && *t != ']'; t++);
+					for (; *t && *t != ']'; t++) {
+						;
+					}
 					if (*t == ']') {
 						continue;
 					}
@@ -183,8 +189,12 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 	bool x86 = false;
 	bool computed = false;
 	if (p && p->cur && p->cur->name) {
-		if (strstr (p->cur->name, "x86")) x86 = true;
-		if (strstr (p->cur->name, "m68k")) x86 = true;
+		if (strstr (p->cur->name, "x86")) {
+			x86 = true;
+		}
+		if (strstr (p->cur->name, "m68k")) {
+			x86 = true;
+		}
 	}
 	if (!data || !p) {
 		return 0;
@@ -218,7 +228,9 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 		//		eprintf ("(%s) (%c)\n", optr, *ptr2);
 			}
 		} else {
-			for (ptr2 = ptr; *ptr2 && (*ptr2 != ']' && (*ptr2 != '\x1b') && !IS_SEPARATOR (*ptr2)); ptr2++);
+			for (ptr2 = ptr; *ptr2 && (*ptr2 != ']' && (*ptr2 != '\x1b') && !IS_SEPARATOR (*ptr2)); ptr2++) {
+				;
+			}
 		}
 		off = r_num_math (NULL, ptr);
 		if (off >= p->minval) {
@@ -269,7 +281,9 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 					if (computed && ptr != ptr2 && *ptr) {
 						if (*ptr2 == ']') {
 							ptr2++;
-							for (ptr--; ptr > data && *ptr != '['; ptr--);
+							for (ptr--; ptr > data && *ptr != '['; ptr--) {
+								;
+							}
 							if (ptr == data) {
 								ptr = ptr_backup;
 							}
@@ -297,7 +311,9 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 						}
 						while (*ptr_right) {
 							if (*ptr_right == 0x1b) {
-								while (*ptr_right && *ptr_right != 'm') ptr_right++;
+								while (*ptr_right && *ptr_right != 'm') {
+									ptr_right++;
+								}
 								if (*ptr_right) {
 									ptr_right++;
 								}
@@ -316,7 +332,9 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 								if (ptr_left < str) {
 									break;
 								}
-								for (; ptr_esc >= str && *ptr_esc != 0x1b; ptr_esc--);
+								for (; ptr_esc >= str && *ptr_esc != 0x1b; ptr_esc--) {
+									;
+								}
 								if (ptr_esc < str) {
 									ptr_esc = ptr_end - flag_len + 1;
 								}

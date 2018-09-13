@@ -64,10 +64,14 @@ int file_vprintf(RMagic *ms, const char *fmt, va_list ap) {
 	va_copy (ap2, ap);
 	len = vsnprintf (cbuf, sizeof (cbuf), fmt, ap2);
 	va_end (ap2);
-	if (len < 0) goto out;
+	if (len < 0) {
+		goto out;
+	}
 	cbuf[len] = 0;
 	buf = strdup (cbuf);
-	if (!buf) return -1;
+	if (!buf) {
+		return -1;
+	}
 
 	buflen = len;
 	if (ms->o.buf != NULL) {
@@ -83,8 +87,9 @@ int file_vprintf(RMagic *ms, const char *fmt, va_list ap) {
 		memcpy (newstr, ms->o.buf, obuflen);
 		memcpy (newstr+obuflen, buf, buflen);
 		free (buf);
-		if (len < 0)
+		if (len < 0) {
 			goto out;
+		}
 		free (ms->o.buf);
 		buf = newstr;
 	}
@@ -101,8 +106,9 @@ out:
 /*VARARGS*/
 static void file_error_core(RMagic *ms, int error, const char *f, va_list va, ut32 lineno) {
 	/* Only the first error is ok */
-	if (!ms || ms->haderr)
+	if (!ms || ms->haderr) {
 		return;
+	}
 	if (lineno != 0) {
 		free(ms->o.buf);
 		ms->o.buf = NULL;
@@ -110,8 +116,9 @@ static void file_error_core(RMagic *ms, int error, const char *f, va_list va, ut
 	}
 	// OPENBSDBUG
         file_vprintf (ms, f, va);
-	if (error > 0)
-		(void)file_printf (ms, " (%s)", strerror(error));
+	if (error > 0) {
+		(void)file_printf (ms, " (%s)", strerror (error));
+	}
 	ms->haderr++;
 	ms->error = error;
 }
@@ -149,19 +156,21 @@ void file_badread(RMagic *ms) {
 
 int file_buffer(RMagic *ms, int fd, const char *inname, const void *buf, size_t nb) {
 	int mime, m = 0;
-	if (!ms)
+	if (!ms) {
 		return -1;
+	}
 	mime = ms->flags & R_MAGIC_MIME;
 	if (nb == 0) {
 		if ((!mime || (mime & R_MAGIC_MIME_TYPE)) &&
-		    file_printf(ms, mime ? "application/x-empty" : "empty") == -1)
+			file_printf (ms, mime ? "application/x-empty" : "empty") == -1) {
 			return -1;
+		}
 		return 1;
 	} else if (nb == 1) {
 		if ((!mime || (mime & R_MAGIC_MIME_TYPE)) &&
-		    file_printf(ms, mime ? "application/octet-stream" :
-		    "very short file (no magic)") == -1)
+			file_printf (ms, mime ? "application/octet-stream" : "very short file (no magic)") == -1) {
 			return -1;
+		}
 		return 1;
 	}
 
@@ -196,8 +205,9 @@ int file_buffer(RMagic *ms, int fd, const char *inname, const void *buf, size_t 
 }
 
 int file_reset(RMagic *ms) {
-	if (!ms)
+	if (!ms) {
 		return 0;
+	}
 	free (ms->o.buf);
 	ms->o.buf = NULL;
 	ms->haderr = 0;
@@ -221,11 +231,13 @@ const char *file_getbuffer(RMagic *ms) {
 	char *pbuf, *op, *np;
 	size_t psize, len;
 
-	if (ms->haderr)
+	if (ms->haderr) {
 		return NULL;
+	}
 
-	if (ms->flags & R_MAGIC_RAW)
+	if (ms->flags & R_MAGIC_RAW) {
 		return ms->o.buf;
+	}
 
 	if (!ms->o.buf) {
 		eprintf ("ms->o.buf = NULL\n");
@@ -273,15 +285,17 @@ const char *file_getbuffer(RMagic *ms) {
 				op += bytesconsumed;
 				np += bytesconsumed;
 			} else {
-				while (bytesconsumed-- > 0)
-					OCTALIFY(np, op);
+				while (bytesconsumed-- > 0) {
+					OCTALIFY (np, op);
+				}
 			}
 		}
 		*np = '\0';
 
 		/* Parsing succeeded as a multi-byte sequence */
-		if (mb_conv != 0)
+		if (mb_conv != 0) {
 			return ms->o.pbuf;
+		}
 	}
 #endif
 	for (np = ms->o.pbuf, op = ms->o.buf; *op; op++) {

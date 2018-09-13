@@ -3,7 +3,9 @@
 #include <r_bin.h>
 
 static void hashify(char *s, ut64 vaddr) {
-	if (!s) return;
+	if (!s) {
+		return;
+	}
 	while (*s) {
 		if (!IS_PRINTABLE (*s)) {
 			if (vaddr && vaddr != UT64_MAX) {
@@ -24,7 +26,9 @@ R_API void r_bin_filter_name(Sdb *db, ut64 vaddr, char *name, int maxlen) {
 	const char *uname;
 	ut32 vhash, hash;
 	int count;
-	if (!db || !name) return;
+	if (!db || !name) {
+		return;
+	}
 	uname = sdb_fmt ("%" PFMT64x ".%s", vaddr, name);
 	vhash = sdb_hash (uname); // vaddr hash - unique
 	hash = sdb_hash (name);   // name hash - if dupped and not in unique hash must insert
@@ -39,7 +43,9 @@ R_API void r_bin_filter_name(Sdb *db, ut64 vaddr, char *name, int maxlen) {
 	}
 	if (count > 1) {
 		int namelen = strlen (name);
-		if (namelen > maxlen) name[maxlen] = 0;
+		if (namelen > maxlen) {
+			name[maxlen] = 0;
+		}
 		strcat (name, sdb_fmt ("_%d", count - 1));
 		// two symbols at different addresses and same name wtf
 		//	eprintf ("Symbol '%s' dupped!\n", sym->name);
@@ -116,7 +122,9 @@ R_API void r_bin_filter_classes(RList *list) {
 	RBinClass *cls;
 	RBinSymbol *sym;
 	r_list_foreach (list, iter, cls) {
-		if (!cls->name) continue;
+		if (!cls->name) {
+			continue;
+		}
 		namepad_len = strlen (cls->name) + 32;
 		namepad = calloc (1, namepad_len + 1);
 		if (namepad) {
@@ -125,10 +133,13 @@ R_API void r_bin_filter_classes(RList *list) {
 			free (cls->name);
 			cls->name = namepad;
 			r_list_foreach (cls->methods, iter2, sym) {
-				if (sym->name)
+				if (sym->name) {
 					r_bin_filter_sym (db, sym->vaddr, sym);
+				}
 			}
-		} else eprintf ("Cannot alloc %d byte(s)\n", namepad_len);
+		} else {
+			eprintf ("Cannot alloc %d byte(s)\n", namepad_len);
+		}
 	}
 	sdb_free (db);
 }

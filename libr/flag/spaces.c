@@ -149,7 +149,9 @@ R_API int r_flag_space_list(RFlag *f, int mode) {
 					(allSelected || i == f->space_idx)? "true":"false");
 		} else if (mode=='*') {
 			f->cb_printf ("fs %s\n", f->spaces[i]);
-			if (i==f->space_idx) defspace = f->spaces[i];
+			if (i == f->space_idx) {
+				defspace = f->spaces[i];
+			}
 		} else {
 			#define INDENT 5
 			char num0[64], num1[64], spaces[32];
@@ -188,8 +190,12 @@ R_API int r_flag_space_rename (RFlag *f, const char *oname, const char *nname) {
 	if (!nname) {
 		return false;
 	}
-	while (*oname==' ') oname++;
-	while (*nname==' ') nname++;
+	while (*oname == ' ') {
+		oname++;
+	}
+	while (*nname == ' ') {
+		nname++;
+	}
 	for (i = 0; i < R_FLAG_SPACES_MAX; i++) {
 		if (f->spaces[i]  && !strcmp (oname, f->spaces[i])) {
 			free (f->spaces[i]);

@@ -43,8 +43,9 @@ static void print_address(bfd_vma address, struct disassemble_info *info) {
 static int buf_fprintf(void *stream, const char *format, ...) {
 	va_list ap;
 	char *tmp;
-	if (!buf_global || !format)
+	if (!buf_global || !format) {
 		return false;
+	}
 	va_start (ap, format);
  	tmp = malloc (strlen (format)+strlen (buf_global)+2);
 	if (!tmp) {

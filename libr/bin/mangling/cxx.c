@@ -3,10 +3,12 @@
 #include <r_bin.h>
 
 static bool is_cxx_symbol (const char *name) {
-	if (!strncmp (name, "_Z", 2)) 
+	if (!strncmp (name, "_Z", 2)) {
 		return true;
-	if (!strncmp (name, "__Z", 3))
+	}
+	if (!strncmp (name, "__Z", 3)) {
 		return true;
+	}
 	return false;
 }
 
@@ -18,8 +20,9 @@ R_API bool r_bin_lang_cxx(RBinFile *binfile) {
 	bool hascxx = false;
 	const char *lib;
 
-	if (!info)
+	if (!info) {
 		return false;
+	}
 	r_list_foreach (o->libs, iter, lib) {
 		if (strstr (lib, "stdc++")) {
 			hascxx = true;
@@ -34,7 +37,8 @@ R_API bool r_bin_lang_cxx(RBinFile *binfile) {
 			}
 		}
 	}
-	if (hascxx)
+	if (hascxx) {
 		info->lang = "cxx";
+	}
 	return hascxx;
 }

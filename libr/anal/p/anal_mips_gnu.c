@@ -15,7 +15,9 @@ static const char* mips_reg_decode(unsigned reg_num) {
 		"s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7",
 		"t8", "t9", "k0", "k1", "gp", "sp", "fp", "ra"
 	};
-	if (reg_num < 32) return REGISTERS[reg_num];
+	if (reg_num < 32) {
+		return REGISTERS[reg_num];
+	}
 	return NULL;
 }
 
@@ -24,8 +26,9 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 	// WIP char buf[10]; int reg; int family;
 	int optype, oplen = (anal->bits==16)?2:4;
 
-	if (!op)
+	if (!op) {
 		return oplen;
+	}
 
 	memset (op, 0, sizeof (RAnalOp));
 	op->type = R_ANAL_OP_TYPE_UNK;
@@ -242,8 +245,9 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		int rs = ((b[0]&3)<<3)+(b[1]>>5);
 		int rt = b[1]&31;
 		int imm = (b[2]<<8)+b[3];
-		if (((optype >> 2) ^ 0x3) && (imm & 0x8000))
+		if (((optype >> 2) ^ 0x3) && (imm & 0x8000)) {
 			imm = 0 - (0x10000 - imm);
+		}
 		switch (optype) {
 		case 1: // if (rt) { /* bgez */ } else { /* bltz */ }
 		case 4: // beq

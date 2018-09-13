@@ -71,7 +71,9 @@ static bool rot_use(const char *algo) {
 
 static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	ut8 *obuf = calloc (1, len);
-	if (!obuf) return false;
+	if (!obuf) {
+		return false;
+	}
 	if (flag == 0) {
 		rot_crypt (rot_key, buf, obuf, len);
 	} else if (flag == 1) {

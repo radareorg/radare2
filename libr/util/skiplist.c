@@ -85,7 +85,9 @@ static bool delete_element(RSkipList* list, void* data, bool by_data) {
 	// update forward links for all `update` points,
 	// by removing the element from the list in each level
 	for (i = 0; i <= list->list_level; i++) {
-		if (update[i]->forward[i] != x) break;
+		if (update[i]->forward[i] != x) {
+			break;
+		}
 		update[i]->forward[i] = x->forward[i];
 	}
 	r_skiplist_node_free (list, x);
@@ -165,7 +167,9 @@ R_API RSkipListNode* r_skiplist_insert(RSkipList* list, void* data) {
 	}
 
 	// randomly choose the number of levels the new node will be put in
-	for (x_level = 0; rand() < RAND_MAX/2 && x_level < SKIPLIST_MAX_DEPTH; x_level++);
+	for (x_level = 0; rand () < RAND_MAX / 2 && x_level < SKIPLIST_MAX_DEPTH; x_level++) {
+		;
+	}
 
 	// update the `update` array with default values when the current node
 	// has a level greater than the current one

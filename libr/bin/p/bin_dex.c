@@ -1859,7 +1859,9 @@ static int getoffset(RBinFile *bf, int type, int idx) {
 		break;
 	case 's': // strings
 		if (dex->header.strings_size > idx) {
-			if (dex->strings) return dex->strings[idx];
+			if (dex->strings) {
+				return dex->strings[idx];
+			}
 		}
 		break;
 	case 't': // type

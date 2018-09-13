@@ -34,7 +34,9 @@ struct rc2_state {
 static bool rc2_expandKey(struct rc2_state *state, const ut8 *key, int key_len) {
 	int i;
 
-	if (key_len < 1 || key_len > 128) return false;
+	if (key_len < 1 || key_len > 128) {
+		return false;
+	}
 	memcpy(state->ekey, key, key_len);
 
 	// first loop
@@ -184,7 +186,9 @@ static void rc2_crypt(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf, in
 	}
 
 	if (idx % 8) {
-		while(idx % 8) data_block[idx++] = 0;
+		while (idx % 8) {
+			data_block[idx++] = 0;
+		}
 		rc2_crypt8(state, (const ut8 *) data_block, (ut8 *) crypted_block);
 		strncpy(ptr, crypted_block, 8);
 	}
@@ -211,7 +215,9 @@ static bool rc2_use(const char *algo) {
 
 static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	ut8 *obuf = calloc (1, len);
-	if (!obuf) return false;
+	if (!obuf) {
+		return false;
+	}
 	if (flag == 0) {
 		rc2_crypt (&state, buf, obuf, len);
 	} else if (flag == 1) {

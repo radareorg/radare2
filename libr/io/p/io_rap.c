@@ -97,7 +97,9 @@ static int rap__close(RIODesc *fd) {
 			free (fd->data);
 			fd->data = NULL;
 		}
-	} else eprintf ("rap__close: fdesc is not a r_io_rap plugin\n");
+	} else {
+		eprintf ("rap__close: fdesc is not a r_io_rap plugin\n");
+	}
 	return ret;
 }
 
@@ -334,7 +336,9 @@ static char *rap__system(RIO *io, RIODesc *fd, const char *command) {
 		int ir, tr = 0;
 		do {
 			ir = r_socket_read_block (s, (ut8*)ptr + tr, i - tr);
-			if (ir < 1) break;
+			if (ir < 1) {
+				break;
+			}
 			tr += ir;
 		} while (tr < i);
 		// TODO: use io->cb_printf() with support for \x00

@@ -177,7 +177,9 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	const int blocks = len / BLOCK_SIZE;
 
 	ut8 *obuf = calloc (1, len);
-	if (!obuf) return false;
+	if (!obuf) {
+		return false;
+	}
 
 	int i;
 	if (flag) {
