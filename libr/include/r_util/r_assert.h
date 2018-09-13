@@ -3,6 +3,8 @@
 
 #include "r_log.h"
 
+R_API void r_assert_log(RLogLevel level, const char *fmt, ...);
+
 #if defined (__GNUC__) && defined (__cplusplus)
 #define R_FUNCTION     ((const char*) (__PRETTY_FUNCTION__))
 #elif defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
@@ -15,15 +17,15 @@
 
 #define r_warn_if_reached()						\
 	do {								\
-		r_log (R_LOG_WARNING, "(%s:%d):%s%s code should not be reached\n", \
-		       __FILE__, __LINE__, R_FUNCTION, R_FUNCTION[0] ? ":" : "");	\
+		r_assert_log (R_LOG_WARNING, "(%s:%d):%s%s code should not be reached\n", \
+			__FILE__, __LINE__, R_FUNCTION, R_FUNCTION[0] ? ":" : ""); \
 	} while (0)
 
 #define r_warn_if_fail(expr)					\
 	do {								\
 		if (!(expr)) {						\
-			_H_LOG_ (R_LOG_WARNING, "WARNING (%s:%d):%s%s runtime check failed: (%s)\n", \
-			       __FILE__, __LINE__, R_FUNCTION, , R_FUNCTION[0] ? ":" : "", #expr); \
+			r_assert_log (R_LOG_WARNING, "WARNING (%s:%d):%s%s runtime check failed: (%s)\n", \
+				__FILE__, __LINE__, R_FUNCTION, , R_FUNCTION[0] ? ":" : "", #expr); \
 		}							\
 	} while (0)
 
@@ -51,7 +53,7 @@
 #if R_CHECKS_LEVEL == 1
 #define _H_LOG_(loglevel, fmt, ...)
 #else
-#define _H_LOG_(loglevel, fmt, ...) r_log (loglevel, fmt, __VA_ARGS__)
+#define _H_LOG_(loglevel, fmt, ...) r_assert_log (loglevel, fmt, __VA_ARGS__)
 #endif
 
 /**

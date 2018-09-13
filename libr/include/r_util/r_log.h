@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include <stdarg.h>
+
 typedef enum r_log_level {
 	R_LOG_DEBUG = 0,
 	R_LOG_INFO,
@@ -13,6 +15,7 @@ typedef enum r_log_level {
 	R_LOG_CRITICAL
 } RLogLevel;
 
+R_API void r_vlog(RLogLevel level, const char *fmt, va_list ap);
 R_API void r_log(RLogLevel level, const char *fmt, ...);
 
 #ifdef __cplusplus

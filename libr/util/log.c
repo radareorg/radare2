@@ -2,8 +2,7 @@
 
 #include <r_util.h>
 
-R_API void r_log(RLogLevel level, const char *fmt, ...) {
-	va_list args;
+R_API void r_vlog(RLogLevel level, const char *fmt, va_list ap) {
 	const char *hdr = "";
 
 	switch (level) {
@@ -25,7 +24,12 @@ R_API void r_log(RLogLevel level, const char *fmt, ...) {
 	}
 
 	eprintf (hdr);
+	vfprintf (stderr, fmt, ap);
+}
+
+R_API void r_log(RLogLevel level, const char *fmt, ...) {
+	va_list args;
 	va_start (args, fmt);
-	vfprintf (stderr, fmt, args);
+	r_vlog (level, fmt, args);
 	va_end (args);
 }
