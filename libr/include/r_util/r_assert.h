@@ -75,7 +75,7 @@
 #define r_return_if_fail(expr)						\
 	do {								\
 		if (!(expr)) {						\
-			_H_LOG_ (R_LOG_WARNING, "%s: assertion '%s' failed\n", R_FUNCTION, #expr); \
+			_H_LOG_ (R_LOG_WARNING, "%s: assertion '%s' failed (line %d)\n", R_FUNCTION, #expr, __LINE__); \
 			return;						\
 		}							\
 	} while (0)
@@ -83,7 +83,7 @@
 #define r_return_val_if_fail(expr, val)				\
 	do {							\
 		if (!(expr)) {					\
-			_H_LOG_ (R_LOG_WARNING, "%s: assertion '%s' failed\n", R_FUNCTION, #expr); \
+			_H_LOG_ (R_LOG_WARNING, "%s: assertion '%s' failed (line %d)\n", R_FUNCTION, #expr, __LINE__); \
 			return (val);				\
 		}						\
 	} while (0)
