@@ -1021,13 +1021,17 @@ static int esil_ifset(RAnalEsil *esil) {
 
 static int esil_if(RAnalEsil *esil) {
 	ut64 num = 0LL;
+	if (esil->skip) {
+		esil->skip++;
+		return true;
+	}
 	char *src = r_anal_esil_pop (esil);
 	if (src) {
 		// TODO: check return value
 		(void)r_anal_esil_get_parm (esil, src, &num);
 		// condition not matching, skipping until }
 		if (!num) {
-			esil->skip = true;
+			esil->skip++;
 		}
 		free (src);
 		return true;
@@ -2814,13 +2818,19 @@ static int runword(RAnalEsil *esil, const char *word) {
 
 	//eprintf ("WORD (%d) (%s)\n", esil->skip, word);
 	if (!strcmp (word, "}{")) {
-		esil->skip = esil->skip? 0: 1;
+		if (esil->skip == 1) {
+			esil->skip = 0;
+		} else if (esil->skip == 0) {	//this isn't perfect, but should work for valid esil
+			esil->skip = 1;
+		}
 		return 1;
 	} else if (!strcmp (word, "}")) {
-		esil->skip = 0;
+		if (esil->skip) {
+			esil->skip--;
+		}
 		return 1;
 	}
-	if (esil->skip) {
+	if (esil->skip && strcmp(word, "?{")) {
 		return 1;
 	}
 

@@ -1087,7 +1087,7 @@ typedef struct r_anal_esil_t {
 	ut64 addrmask;
 	int stacksize;
 	int stackptr;
-	int skip;
+	ut32 skip;
 	int nowrite;
 	int iotrap;
 	int exectrap;
@@ -1127,7 +1127,7 @@ typedef struct r_anal_esil_t {
 	char *mdev_range; // string containing the r_str_range to match for read/write accesses
 	bool (*cmd)(ESIL *esil, const char *name, ut64 a0, ut64 a1);
 	void *user;
-	int stack_fd;
+	int stack_fd;	// ahem, let's not do this
 	RList *sessions; // <RAnalEsilSession*>
 } RAnalEsil;
 
