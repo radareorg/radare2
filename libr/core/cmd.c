@@ -821,7 +821,7 @@ R_API int r_core_run_script(RCore *core, const char *file) {
 	return ret;
 }
 
-static int cmd_ls(void *data, const char *input) {
+static int cmd_ls(void *data, const char *input) { // "ls"
 	RCore *core = (RCore *)data;
 	if (*input) {
 		const char *path = r_str_trim_ro (input + 1);
