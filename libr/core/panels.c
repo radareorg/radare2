@@ -175,8 +175,16 @@ static void resizePanelRight(RPanels *panels);
 static void resizePanelUp(RPanels *panels);
 static void resizePanelDown(RPanels *panels);
 static void handleTabKey(RCore *core, bool shift);
-static int openMenu (void *user);
+static int openMenuCb (void *user);
+static int openFileCb (void *user);
+static int rwCb(void *user);
+static int debuggerCb(void *user);
+static int closeFileCb (void *user);
+static int symbolsCb (void *user);
+static int quitCb(void *user);
 static void addMenu (RPanelsMenuItem *parent, const char *name, RPanelsMenuCallback cb);
+static int file_history_up(RLine *line);
+static int file_history_down(RLine *line);
 static bool init(RCore *core, RPanels *panels, int w, int h);
 static void initSdb(RPanels *panels);
 static bool initPanelsMenu(RPanels *panels);
@@ -1599,7 +1607,53 @@ static RPanel createMenuPanel(int x, int y, char *title) {
 	return panel;
 }
 
-static int openMenu (void *user) {
+static int openFileCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_cons_enable_mouse (false);
+	core->cons->line->file_prompt = true;
+	r_line_set_hist_callback (core->cons->line, &file_history_up, &file_history_down);
+	char *res = r_cons_input ("open file: ");
+	if (res) {
+		if (*res) {
+			r_core_cmdf (core, "o %s", res);
+		}
+		free (res);
+	}
+	core->cons->line->file_prompt = false;
+	r_line_set_hist_callback (core->cons->line, &cmd_history_up, &cmd_history_down);
+	r_cons_enable_mouse (true);
+	return 0;
+}
+
+static int rwCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmd (core, "oo+", 0);
+	return 0;
+}
+
+static int debuggerCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmd (core, "oo", 0);
+	return 0;
+}
+
+static int closeFileCb (void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmd0 (core, "o-*");
+	return 0;
+}
+
+static int symbolsCb (void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmdf (core, "aa");
+	return 0;
+}
+
+static int quitCb(void *user) {
+	return 0;
+}
+
+static int openMenuCb (void *user) {
 	RCore* core = (RCore *)user; 
 	RPanelsMenu *menu = core->panels->panelsMenu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
@@ -1658,35 +1712,48 @@ static bool initPanelsMenu(RPanels *panels) {
 	root->sub = NULL;
 	int i;
 	for (i = 0; i < menuNum; i++) {
-		addMenu (root, menus[i], openMenu);
+		addMenu (root, menus[i], openMenuCb);
 	}
 	for (i = 0; i < fileNum; i++) {
-		addMenu (root->sub[0], menus_File[i], openMenu);
+		if (!strcmp (menus_File[i], "Open")) {
+			addMenu (root->sub[0], menus_File[i], openFileCb);
+		} else if (!strcmp (menus_File[i], "ReOpen")) {
+			addMenu (root->sub[0], menus_File[i], openMenuCb);
+		} else if (!strcmp (menus_File[i], "Close")) {
+			addMenu (root->sub[0], menus_File[i], symbolsCb);
+		} else if (!strcmp (menus_File[i], "Quit")) {
+			addMenu (root->sub[0], menus_File[i], quitCb);
+		} else {
+			addMenu (root->sub[0], menus_File[i], layoutSidePanel);
+		}
 	}
 	for (i = 0; i < editNum; i++) {
-		addMenu (root->sub[1], menus_Edit[i], openMenu);
+		addMenu (root->sub[1], menus_Edit[i], openMenuCb);
 	}
 	for (i = 0; i < viewNum; i++) {
-		addMenu (root->sub[2], menus_View[i], openMenu);
+		addMenu (root->sub[2], menus_View[i], openMenuCb);
 	}
 	for (i = 0; i < toolsNum; i++) {
-		addMenu (root->sub[3], menus_Tools[i], openMenu);
+		addMenu (root->sub[3], menus_Tools[i], openMenuCb);
 	}
 	for (i = 0; i < searchNum; i++) {
-		addMenu (root->sub[4], menus_Search[i], openMenu);
+		addMenu (root->sub[4], menus_Search[i], openMenuCb);
 	}
 	for (i = 0; i < debugNum; i++) {
-		addMenu (root->sub[5], menus_Debug[i], openMenu);
+		addMenu (root->sub[5], menus_Debug[i], openMenuCb);
 	}
 	for (i = 0; i < analyzeNum; i++) {
-		addMenu (root->sub[6], menus_Analyze[i], openMenu);
+		addMenu (root->sub[6], menus_Analyze[i], openMenuCb);
 	}
 	for (i = 0; i < helpNum; i++) {
-		addMenu (root->sub[7], menus_Help[i], openMenu);
+		addMenu (root->sub[7], menus_Help[i], openMenuCb);
 	}
-
 	for (i = 0; i < reopenNum; i++) {
-		addMenu (root->sub[0]->sub[2], menus_ReOpen[i], openMenu);
+		if (!strcmp (menus_ReOpen[i], "In RW")) {
+			addMenu (root->sub[0]->sub[2], menus_ReOpen[i], rwCb);
+		} else if (!strcmp (menus_ReOpen[i], "In Debugger")) {
+			addMenu (root->sub[0]->sub[2], menus_ReOpen[i], debuggerCb);
+		}
 	}
 	root->selectedIndex = 0;
 	panelsMenu->root = root;
@@ -1900,6 +1967,7 @@ static void initSdb(RPanels *panels) {
 	sdb_set (panels->db, "Imports", "iiq", 0);
 	sdb_set (panels->db, "Clipboard", "yx", 0);
 	sdb_set (panels->db, "FcnInfo", "afi", 0);
+	sdb_set (panels->db, "New", "o", 0);
 }
 
 static bool init (RCore *core, RPanels *panels, int w, int h) {
@@ -1926,7 +1994,7 @@ static bool init (RCore *core, RPanels *panels, int w, int h) {
 	return true;
 }
 
-R_API int file_history_up(RLine *line) {
+static int file_history_up(RLine *line) {
 	RCore *core = line->user;
 	RList *files = r_id_storage_list (core->io->files);
 	int num_files = r_list_length (files);
@@ -1941,7 +2009,7 @@ R_API int file_history_up(RLine *line) {
 	return true;
 }
 
-R_API int file_history_down(RLine *line) {
+static int file_history_down(RLine *line) {
 	RCore *core = line->user;
 	RList *files = r_id_storage_list (core->io->files);
 	int num_files = r_list_length (files);
@@ -1963,6 +2031,9 @@ R_API int file_history_down(RLine *line) {
 
 static void handleMenu(RCore *core, const int key, int *exit) {
 	RPanels *panels = core->panels;
+	RPanelsMenu *menu = panels->panelsMenu;
+	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
 	switch (key) {
 		case 'h':
 			handleLeftKey (core);
@@ -1990,7 +2061,8 @@ static void handleMenu(RCore *core, const int key, int *exit) {
 		case ' ':
 		case '\r':
 		case '\n':
-			onMenu (core, panels->currentMenu[panels->currentMenuIndex], exit);
+			//onMenu (core, panels->currentMenu[panels->currentMenuIndex], exit);
+			child->cb (core);
 			break;
 		case 9:
 			handleTabKey (core, false);
