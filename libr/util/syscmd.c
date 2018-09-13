@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2017 - pancake */
+/* radare - LGPL - Copyright 2013-2018 - pancake */
 
 #include <r_core.h>
 #include <errno.h>
@@ -75,7 +75,6 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 	if (printfmt == 'q') {
 		res = r_str_appendf (res, "%s\n", nn);
 	} else if (printfmt == 'e') {
-		ut32 ifmt = sb.st_mode & S_IFMT;
 		const char *eDIR = "📁";
 		const char *eLNK = "📎";
 		const char *eIMG = "🌅";
@@ -86,10 +85,12 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 		const char *icon = eANY;
 		if (isdir) {
 			icon = eDIR;
-		} else if (ifmt == S_IFLNK) {
+#if __UNIX__
+		} else if ((sb.st_mode & S_IFMT) == S_IFLNK) {
 			icon = eLNK;
 		} else if (sb.st_mode & S_ISUID) {
 			icon = eUID;
+#endif
 		} else if (r_str_casestr (nn, ".jpg") || r_str_casestr (nn, ".png") || r_str_casestr (nn, ".gif")) {
 			icon = eIMG;
 		} else if (*nn == '.') {
