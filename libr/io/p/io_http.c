@@ -80,7 +80,9 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		out = r_socket_http_get (pathname, &code, &rlen);
 		if (out && rlen>0) {
 			RIOMalloc *mal = R_NEW0 (RIOMalloc);
-			if (!mal) return NULL;
+			if (!mal) {
+				return NULL;
+			}
 			mal->size = rlen;
 			mal->buf = malloc (mal->size+1);
 			if (!mal->buf) {

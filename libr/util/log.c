@@ -11,7 +11,9 @@ R_API void r_log_file(const char *str) {
 	if (fd) {
 		fputs (str, fd);
 		fclose (fd);
-	} else eprintf ("ERR: Cannot open %s\n", logfile);
+	} else {
+		eprintf ("ERR: Cannot open %s\n", logfile);
+	}
 }
 
 R_API void r_log_msg(const char *str) {

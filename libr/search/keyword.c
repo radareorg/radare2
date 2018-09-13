@@ -5,18 +5,22 @@
 static int ignoreMask(const ut8 *bm, int len) {
 	int i;
 	for (i=0; i<len; i++) {
-		if (bm[i] != 0xff)
+		if (bm[i] != 0xff) {
 			return 0;
+		}
 	}
 	return 1;
 }
 
 R_API RSearchKeyword* r_search_keyword_new(const ut8 *kwbuf, int kwlen, const ut8 *bmbuf, int bmlen, const char *data) {
 	RSearchKeyword *kw;
-	if (kwlen < 1 || bmlen < 0)
+	if (kwlen < 1 || bmlen < 0) {
 		return NULL;
+	}
 	kw = R_NEW0 (RSearchKeyword);
-	if (!kw) return NULL;
+	if (!kw) {
+		return NULL;
+	}
 	kw->type = R_SEARCH_KEYWORD_TYPE_BINARY;
 	kw->data = (void *) data;
 	kw->keyword_length = kwlen;
@@ -57,7 +61,9 @@ R_API RSearchKeyword* r_search_keyword_new_str(const char *kwbuf, const char *bm
 
 	if (bmstr) {
 		bmbuf = malloc (strlen (bmstr)+1);
-		if (!bmbuf) return NULL;
+		if (!bmbuf) {
+			return NULL;
+		}
 		bmlen = r_hex_str2bin (bmstr, bmbuf);
 		if (bmlen < 1) {
 			free (bmbuf);
@@ -83,7 +89,9 @@ R_API RSearchKeyword* r_search_keyword_new_wide(const char *kwbuf, const char *b
 
 	if (bmstr) {
 		bmbuf = malloc (strlen (bmstr)+1);
-		if (!bmbuf) return NULL;
+		if (!bmbuf) {
+			return NULL;
+		}
 		bmlen = r_hex_str2bin (bmstr, bmbuf);
 		if (bmlen < 1) {
 			free(bmbuf);
@@ -94,10 +102,11 @@ R_API RSearchKeyword* r_search_keyword_new_wide(const char *kwbuf, const char *b
 	len = strlen(kwbuf);
 	str = malloc((len+1)*2);
 	for (p2=kwbuf, p=str; *p2; p+=2, p2++) {
-		if (ignore_case)
+		if (ignore_case) {
 			p[0] = tolower((const unsigned char)*p2);
-		else
+		} else {
 			p[0] = *p2;
+		}
 		p[1] = 0;
 	}
 
@@ -115,12 +124,14 @@ R_API RSearchKeyword* r_search_keyword_new_hex(const char *kwstr, const char *bm
 	ut8 *kwbuf, *bmbuf;
 	int kwlen, bmlen = 0;
 
-	if (!kwstr)
+	if (!kwstr) {
 		return NULL;
+	}
 
 	kwbuf = malloc (strlen (kwstr)+1);
-	if (!kwbuf)
+	if (!kwbuf) {
 		return NULL;
+	}
 
 	kwlen = r_hex_str2bin (kwstr, kwbuf);
 	if (kwlen < 1) {
@@ -159,10 +170,12 @@ R_API RSearchKeyword* r_search_keyword_new_hexmask(const char *kwstr, const char
 		bm = malloc (len + 4);
 		if (kw != NULL && bm != NULL) {
 			len = r_hex_str2binmask (kwstr, (ut8*)kw, (ut8*)bm);
-			if (len<0)
-				len = -len -1;
-			if (len>0)
+			if (len < 0) {
+				len = -len - 1;
+			}
+			if (len > 0) {
 				ks = r_search_keyword_new (kw, len, bm, len, data);
+			}
 		}
 		free (kw);
 		free (bm);
@@ -175,28 +188,34 @@ R_API RSearchKeyword *r_search_keyword_new_regexp (const char *str, const char *
 	RSearchKeyword *kw;
 	int i = 0, start, length;
 
-	while (isspace((const unsigned char)str[i]))
+	while (isspace ((const unsigned char)str[i])) {
 		i++;
+	}
 
-	if (str[i++] != '/')
+	if (str[i++] != '/') {
 		return NULL;
+	}
 
 	/* Find the fist non backslash-escaped slash */
 	for (start = i; str[i]; i++) {
-		if (str[i] == '/' && str[i-1] != '\\')
+		if (str[i] == '/' && str[i - 1] != '\\') {
 			break;
+		}
 	}
 
-	if (str[i++] != '/')
+	if (str[i++] != '/') {
 		return NULL;
+	}
 
 	length = i - start - 1;
-	if ((length > 128) || (length < 1))
+	if ((length > 128) || (length < 1)) {
 		return NULL;
+	}
 
 	kw = R_NEW0(RSearchKeyword);
-	if (!kw)
+	if (!kw) {
 		return NULL;
+	}
 
 	kw->bin_keyword = malloc (length+1);
 	if (!kw->bin_keyword) {

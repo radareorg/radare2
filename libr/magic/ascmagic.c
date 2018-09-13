@@ -98,13 +98,16 @@ return 0;
 	 * Undo the NUL-termination kindly provided by process()
 	 * but leave at least one byte to look at
 	 */
-	while (nbytes > 1 && buf[nbytes - 1] == '\0')
+	while (nbytes > 1 && buf[nbytes - 1] == '\0') {
 		nbytes--;
+	}
 
-	if (!(nbuf = calloc(1, (nbytes + 1) * sizeof(nbuf[0]))))
+	if (!(nbuf = calloc (1, (nbytes + 1) * sizeof (nbuf[0])))) {
 		goto done;
-	if (!(ubuf = calloc(1, (nbytes + 1) * sizeof(ubuf[0]))))
+	}
+	if (!(ubuf = calloc (1, (nbytes + 1) * sizeof (ubuf[0])))) {
 		goto done;
+	}
 
 	/*
 	 * Then try to determine whether it's any character code we can
@@ -125,10 +128,11 @@ return 0;
 		code_mime = "utf-8";
 		type = "text";
 	} else if ((i = looks_ucs16(buf, nbytes, ubuf, &ulen)) != 0) {
-		if (i == 1)
+		if (i == 1) {
 			code = "Little-endian UTF-16 Unicode";
-		else
+		} else {
 			code = "Big-endian UTF-16 Unicode";
+		}
 
 		type = "character data";
 		code_mime = "utf-16";    /* is this defined? */
@@ -177,31 +181,37 @@ return 0;
 		file_oomem(ms, mlen);
 		goto done;
 	}
-	if (!(utf8_end = encode_utf8(utf8_buf, mlen, ubuf, ulen)))
+	if (!(utf8_end = encode_utf8 (utf8_buf, mlen, ubuf, ulen))) {
 		goto done;
+	}
 	if (file_softmagic(ms, utf8_buf, utf8_end - utf8_buf, TEXTTEST) != 0) {
 		rv = 1;
 		goto done;
 	}
 
 	/* look for tokens from names.h - this is expensive! */
-	if ((ms->flags & R_MAGIC_NO_CHECK_TOKENS) != 0)
+	if ((ms->flags & R_MAGIC_NO_CHECK_TOKENS) != 0) {
 		goto subtype_identified;
+	}
 
 	i = 0;
 	while (i < ulen) {
 		size_t end;
 
 		/* skip past any leading space */
-		while (i < ulen && ISSPC(ubuf[i]))
+		while (i < ulen && ISSPC (ubuf[i])) {
 			i++;
-		if (i >= ulen)
+		}
+		if (i >= ulen) {
 			break;
+		}
 
 		/* find the next whitespace */
-		for (end = i + 1; end < nbytes; end++)
-			if (ISSPC(ubuf[end]))
+		for (end = i + 1; end < nbytes; end++) {
+			if (ISSPC (ubuf[end])) {
 				break;
+			}
+		}
 
 		/* compare the word thus isolated against the token list */
 		for (p = names; p < names + NNAMES; p++) {
@@ -221,82 +231,101 @@ subtype_identified:
 	/* Now try to discover other details about the file. */
 	for (i = 0; i < ulen; i++) {
 		if (ubuf[i] == '\n') {
-			if (seen_cr)
+			if (seen_cr) {
 				n_crlf++;
-			else
+			} else {
 				n_lf++;
+			}
 			last_line_end = i;
-		} else if (seen_cr)
+		} else if (seen_cr) {
 			n_cr++;
+		}
 
 		seen_cr = (ubuf[i] == '\r');
-		if (seen_cr)
+		if (seen_cr) {
 			last_line_end = i;
+		}
 
 		if (ubuf[i] == 0x85) { /* X3.64/ECMA-43 "next line" character */
 			n_nel++;
 			last_line_end = i;
 		}
 		/* If this line is _longer_ than MAXLINELEN, remember it. */
-		if (i > last_line_end + MAXLINELEN)
+		if (i > last_line_end + MAXLINELEN) {
 			has_long_lines = 1;
+		}
 
-		if (ubuf[i] == '\033')
+		if (ubuf[i] == '\033') {
 			has_escapes = 1;
-		if (ubuf[i] == '\b')
+		}
+		if (ubuf[i] == '\b') {
 			has_backspace = 1;
+		}
 	}
 
 	/* Beware, if the data has been truncated, the final CR could have
 	   been followed by a LF.  If we have HOWMANY bytes, it indicates
 	   that the data might have been truncated, probably even before
 	   this function was called. */
-	if (seen_cr && nbytes < HOWMANY)
+	if (seen_cr && nbytes < HOWMANY) {
 		n_cr++;
+	}
 
 	if (mime) {
 		if (mime & R_MAGIC_MIME_TYPE) {
 			if (subtype_mime) {
-				if (file_printf(ms, subtype_mime) == -1)
+				if (file_printf (ms, subtype_mime) == -1) {
 					goto done;
+				}
 			} else {
-				if (file_printf(ms, "text/plain") == -1)
+				if (file_printf (ms, "text/plain") == -1) {
 					goto done;
+				}
 			}
 		}
 
 		if ((mime == 0 || mime == R_MAGIC_MIME) && code_mime) {
 			if ((mime & R_MAGIC_MIME_TYPE) &&
-			    file_printf(ms, " charset=") == -1)
+				file_printf (ms, " charset=") == -1) {
 				goto done;
-			if (file_printf(ms, code_mime) == -1)
+			}
+			if (file_printf (ms, code_mime) == -1) {
 				goto done;
+			}
 		}
 
-		if (mime == R_MAGIC_MIME_ENCODING)
-		    if (file_printf(ms, "binary") == -1){
-                rv = 1;
-                goto done;
-            }
+		if (mime == R_MAGIC_MIME_ENCODING) {
+			if (file_printf (ms, "binary") == -1) {
+				rv = 1;
+				goto done;
+			}
+		}
 	} else {
-		if (file_printf(ms, code) == -1)
+		if (file_printf (ms, code) == -1) {
 			goto done;
+		}
 
 		if (subtype) {
-			if (file_printf(ms, " ") == -1)
+			if (file_printf (ms, " ") == -1) {
 				goto done;
-			if (file_printf(ms, subtype) == -1)
+			}
+			if (file_printf (ms, subtype) == -1) {
 				goto done;
+			}
 		}
 
-		if (file_printf(ms, " ") == -1)
+		if (file_printf (ms, " ") == -1) {
 			goto done;
-		if (file_printf(ms, type) == -1)
+		}
+		if (file_printf (ms, type) == -1) {
 			goto done;
+		}
 
-		if (has_long_lines)
-			if (file_printf(ms, ", with very long lines") == -1)
+		if (has_long_lines) {
+			if (file_printf (ms, ", with very long lines") == -1) {
 				goto done;
+			}
+		}
 
 		/*
 		 * Only report line terminators if we find one other than LF,
@@ -304,49 +333,67 @@ subtype_identified:
 		 */
 		if ((n_crlf == 0 && n_cr == 0 && n_nel == 0 && n_lf == 0) ||
 		    (n_crlf != 0 || n_cr != 0 || n_nel != 0)) {
-			if (file_printf(ms, ", with") == -1)
+			if (file_printf (ms, ", with") == -1) {
 				goto done;
-
-			if (n_crlf == 0 && n_cr == 0 && n_nel == 0 && n_lf == 0)			{
-				if (file_printf(ms, " no") == -1)
-					goto done;
-			} else {
-				if (n_crlf) {
-					if (file_printf(ms, " CRLF") == -1)
-						goto done;
-					if (n_cr || n_lf || n_nel)
-						if (file_printf(ms, ",") == -1)
-							goto done;
-				}
-				if (n_cr) {
-					if (file_printf(ms, " CR") == -1)
-						goto done;
-					if (n_lf || n_nel)
-						if (file_printf(ms, ",") == -1)
-							goto done;
-				}
-				if (n_lf) {
-					if (file_printf(ms, " LF") == -1)
-						goto done;
-					if (n_nel)
-						if (file_printf(ms, ",") == -1)
-							goto done;
-				}
-				if (n_nel)
-					if (file_printf(ms, " NEL") == -1)
-						goto done;
 			}
 
-			if (file_printf(ms, " line terminators") == -1)
+			if (n_crlf == 0 && n_cr == 0 && n_nel == 0 && n_lf == 0)			{
+				if (file_printf (ms, " no") == -1) {
+					goto done;
+				}
+			} else {
+				if (n_crlf) {
+					if (file_printf (ms, " CRLF") == -1) {
+						goto done;
+					}
+					if (n_cr || n_lf || n_nel) {
+						if (file_printf (ms, ",") == -1) {
+							goto done;
+						}
+					}
+				}
+				if (n_cr) {
+					if (file_printf (ms, " CR") == -1) {
+						goto done;
+					}
+					if (n_lf || n_nel) {
+						if (file_printf (ms, ",") == -1) {
+							goto done;
+						}
+					}
+				}
+				if (n_lf) {
+					if (file_printf (ms, " LF") == -1) {
+						goto done;
+					}
+					if (n_nel) {
+						if (file_printf (ms, ",") == -1) {
+							goto done;
+						}
+					}
+				}
+				if (n_nel) {
+					if (file_printf (ms, " NEL") == -1) {
+						goto done;
+					}
+				}
+			}
+
+			if (file_printf (ms, " line terminators") == -1) {
 				goto done;
+			}
 		}
 
-		if (has_escapes)
-			if (file_printf(ms, ", with escape sequences") == -1)
+		if (has_escapes) {
+			if (file_printf (ms, ", with escape sequences") == -1) {
 				goto done;
-		if (has_backspace)
-			if (file_printf(ms, ", with overstriking") == -1)
+			}
+		}
+		if (has_backspace) {
+			if (file_printf (ms, ", with overstriking") == -1) {
 				goto done;
+			}
+		}
 	}
 	rv = 1;
 done:
@@ -359,8 +406,9 @@ done:
 static int ascmatch(const ut8 *s, const unichar *us, size_t ulen) {
 	size_t i;
 	for (i = 0; i < ulen; i++) {
-		if (s[i] != us[i])
+		if (s[i] != us[i]) {
 			return 0;
+		}
 	}
 	return s[i]? 0: 1;
 }
@@ -449,8 +497,9 @@ static int looks_ascii(const ut8 *buf, size_t nbytes, unichar *ubuf, size_t *ule
 	*ulen = 0;
 	for (i = 0; i < nbytes; i++) {
 		int t = text_chars[buf[i]];
-		if (t != T)
+		if (t != T) {
 			return 0;
+		}
 		ubuf[(*ulen)++] = buf[i];
 	}
 	return 1;
@@ -462,8 +511,9 @@ static int looks_latin1(const ut8 *buf, size_t nbytes, unichar *ubuf, size_t *ul
 
 	for (i = 0; i < nbytes; i++) {
 		int t = text_chars[buf[i]];
-		if (t != T && t != I)
+		if (t != T && t != I) {
 			return 0;
+		}
 		ubuf[(*ulen)++] = buf[i];
 	}
 	return 1;
@@ -474,8 +524,9 @@ static int looks_extended(const ut8 *buf, size_t nbytes, unichar *ubuf, size_t *
 	*ulen = 0;
 	for (i = 0; i < nbytes; i++) {
 		int t = text_chars[buf[i]];
-		if (t != T && t != I && t != X)
+		if (t != T && t != I && t != X) {
 			return 0;
+		}
 		ubuf[(*ulen)++] = buf[i];
 	}
 	return 1;
@@ -493,46 +544,53 @@ encode_utf8(ut8 *buf, size_t len, unichar *ubuf, size_t ulen)
 
 	for (i = 0; i < ulen; i++) {
 		if (ubuf[i] <= 0x7f) {
-			if (end - buf < 1)
+			if (end - buf < 1) {
 				return NULL;
+			}
 			*buf++ = (ut8)ubuf[i];
 		} else if (ubuf[i] <= 0x7ff) {
-			if (end - buf < 2)
+			if (end - buf < 2) {
 				return NULL;
+			}
 			*buf++ = (ut8)((ubuf[i] >> 6) + 0xc0);
 			*buf++ = (ut8)((ubuf[i] & 0x3f) + 0x80);
 		} else if (ubuf[i] <= 0xffff) {
-			if (end - buf < 3)
+			if (end - buf < 3) {
 				return NULL;
+			}
 			*buf++ = (ut8)((ubuf[i] >> 12) + 0xe0);
 			*buf++ = (ut8)(((ubuf[i] >> 6) & 0x3f) + 0x80);
 			*buf++ = (ut8)((ubuf[i] & 0x3f) + 0x80);
 		} else if (ubuf[i] <= 0x1fffff) {
-			if (end - buf < 4)
+			if (end - buf < 4) {
 				return NULL;
+			}
 			*buf++ = (ut8)((ubuf[i] >> 18) + 0xf0);
 			*buf++ = (ut8)(((ubuf[i] >> 12) & 0x3f) + 0x80);
 			*buf++ = (ut8)(((ubuf[i] >>  6) & 0x3f) + 0x80);
 			*buf++ = (ut8)((ubuf[i] & 0x3f) + 0x80);
 		} else if (ubuf[i] <= 0x3ffffff) {
-			if (end - buf < 5)
+			if (end - buf < 5) {
 				return NULL;
+			}
 			*buf++ = (ut8)((ubuf[i] >> 24) + 0xf8);
 			*buf++ = (ut8)(((ubuf[i] >> 18) & 0x3f) + 0x80);
 			*buf++ = (ut8)(((ubuf[i] >> 12) & 0x3f) + 0x80);
 			*buf++ = (ut8)(((ubuf[i] >>  6) & 0x3f) + 0x80);
 			*buf++ = (ut8)((ubuf[i] & 0x3f) + 0x80);
 		} else if (ubuf[i] <= 0x7fffffff) {
-			if (end - buf < 6)
+			if (end - buf < 6) {
 				return NULL;
+			}
 			*buf++ = (ut8)((ubuf[i] >> 30) + 0xfc);
 			*buf++ = (ut8)(((ubuf[i] >> 24) & 0x3f) + 0x80);
 			*buf++ = (ut8)(((ubuf[i] >> 18) & 0x3f) + 0x80);
 			*buf++ = (ut8)(((ubuf[i] >> 12) & 0x3f) + 0x80);
 			*buf++ = (ut8)(((ubuf[i] >>  6) & 0x3f) + 0x80);
 			*buf++ = (ut8)((ubuf[i] & 0x3f) + 0x80);
-		} else /* Invalid character */
+		} else { /* Invalid character */
 			return NULL;
+		}
 	}
 
 	return buf;
@@ -555,8 +613,9 @@ int file_looks_utf8(const ut8 *buf, size_t nbytes, unichar *ubuf, size_t *ulen) 
 	unichar c;
 	int gotone = 0, ctrl = 0;
 
-	if (ubuf)
+	if (ubuf) {
 		*ulen = 0;
+	}
 
 	for (i = 0; i < nbytes; i++) {
 		if ((buf[i] & 0x80) == 0) {	   /* 0xxxxxxx is plain ASCII */
@@ -565,11 +624,13 @@ int file_looks_utf8(const ut8 *buf, size_t nbytes, unichar *ubuf, size_t *ulen) 
 			 * still reject it if it uses weird control characters.
 			 */
 
-			if (text_chars[buf[i]] != T)
+			if (text_chars[buf[i]] != T) {
 				ctrl = 1;
+			}
 
-			if (ubuf)
+			if (ubuf) {
 				ubuf[(*ulen)++] = buf[i];
+			}
 		} else if ((buf[i] & 0x40) == 0) { /* 10xxxxxx never 1st byte */
 			return -1;
 		} else {			   /* 11xxxxxx begins UTF-8 */
@@ -590,22 +651,26 @@ int file_looks_utf8(const ut8 *buf, size_t nbytes, unichar *ubuf, size_t *ulen) 
 			} else if ((buf[i] & 0x02) == 0) {	/* 1111110x */
 				c = buf[i] & 0x01;
 				following = 5;
-			} else
+			} else {
 				return -1;
+			}
 
 			for (n = 0; n < following; n++) {
 				i++;
-				if (i >= nbytes)
+				if (i >= nbytes) {
 					goto done;
+				}
 
-				if ((buf[i] & 0x80) == 0 || (buf[i] & 0x40))
+				if ((buf[i] & 0x80) == 0 || (buf[i] & 0x40)) {
 					return -1;
+				}
 
 				c = (c << 6) + (buf[i] & 0x3f);
 			}
 
-			if (ubuf)
+			if (ubuf) {
 				ubuf[(*ulen)++] = c;
+			}
 			gotone = 1;
 		}
 	}
@@ -619,8 +684,9 @@ done:
  * rest of the text.
  */
 static int looks_utf8_with_BOM(const ut8 *buf, size_t nbytes, unichar *ubuf, size_t *ulen) {
-	if (nbytes > 3 && buf[0] == 0xef && buf[1] == 0xbb && buf[2] == 0xbf)
-		return file_looks_utf8(buf + 3, nbytes - 3, ubuf, ulen);
+	if (nbytes > 3 && buf[0] == 0xef && buf[1] == 0xbb && buf[2] == 0xbf) {
+		return file_looks_utf8 (buf + 3, nbytes - 3, ubuf, ulen);
+	}
 	return -1;
 }
 
@@ -628,28 +694,35 @@ static int looks_ucs16(const ut8 *buf, size_t nbytes, unichar *ubuf, size_t *ule
 	int bigend;
 	size_t i;
 
-	if (nbytes < 2)
+	if (nbytes < 2) {
 		return 0;
+	}
 
-	if (buf[0] == 0xff && buf[1] == 0xfe)
+	if (buf[0] == 0xff && buf[1] == 0xfe) {
 		bigend = 0;
-	else if (buf[0] == 0xfe && buf[1] == 0xff)
+	} else if (buf[0] == 0xfe && buf[1] == 0xff) {
 		bigend = 1;
-	else return 0;
+	} else {
+		return 0;
+	}
 
 	*ulen = 0;
 
 	for (i = 2; i + 1 < nbytes; i += 2) {
 		/* XXX fix to properly handle chars > 65536 */
 
-		if (bigend)
+		if (bigend) {
 			ubuf[(*ulen)++] = buf[i + 1] + 256 * buf[i];
-		else ubuf[(*ulen)++] = buf[i] + 256 * buf[i + 1];
+		} else {
+			ubuf[(*ulen)++] = buf[i] + 256 * buf[i + 1];
+		}
 
-		if (ubuf[*ulen - 1] == 0xfffe)
+		if (ubuf[*ulen - 1] == 0xfffe) {
 			return 0;
-		if (ubuf[*ulen - 1] < 128 && text_chars[(size_t)ubuf[*ulen - 1]] != T)
+		}
+		if (ubuf[*ulen - 1] < 128 && text_chars[(size_t)ubuf[*ulen - 1]] != T) {
 			return 0;
+		}
 	}
 	return 1 + bigend;
 }
@@ -740,7 +813,8 @@ static ut8 ebcdic_1047_to_8859[] = {
  */
 static void from_ebcdic(const ut8 *buf, size_t nbytes, ut8 *out) {
 	size_t i;
-	for (i = 0; i < nbytes; i++)
+	for (i = 0; i < nbytes; i++) {
 		out[i] = ebcdic_to_ascii[buf[i]];
+	}
 }
 #endif

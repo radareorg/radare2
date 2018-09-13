@@ -529,7 +529,9 @@ static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		/* XXX: clean this dirty code */
 		do {
 			ret = wait (&status);
-			if (ret == -1) return -1;
+			if (ret == -1) {
+				return -1;
+			}
 			if (ret != child_pid) {
 				eprintf ("Wait event received by "
 					"different pid %d\n", ret);

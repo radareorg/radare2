@@ -494,12 +494,13 @@ static int sdbforcb (void *p, const char *k, const char *v) {
 					vt->curfmt = strdup (v);
 					pre = ">";
 				}
-				if (use_color && *pre=='>')
+				if (use_color && *pre == '>') {
 					r_cons_printf ("%s %s %s  %s\n", color_sel,
 						Color_RESET, pre, k+strlen (s), v);
-				else
+				} else {
 					r_cons_printf (" %s %s  %s\n",
-						pre, k+strlen (s), v);
+						pre, k + strlen (s), v);
+				}
 				vt->t_ctr ++;
 			}
 			free (s);
@@ -871,7 +872,9 @@ static bool r_core_visual_config_hud(RCore *core) {
 	RListIter *iter;
 	RConfigNode *bt;
 	RList *list = r_list_new ();
-	if (!list) return false;
+	if (!list) {
+		return false;
+	}
 	char *res;
 	list->free = free;
 	r_list_foreach (core->config->nodes, iter, bt) {
@@ -882,15 +885,18 @@ static bool r_core_visual_config_hud(RCore *core) {
 		const char *oldvalue = NULL;
 		char cmd[512];
 		char *p = strchr (res, ' ');
-		if (p) *p = 0;
+		if (p) {
+			*p = 0;
+		}
 		oldvalue = r_config_get (core->config, res);
 		r_cons_show_cursor (true);
 		r_cons_set_raw (0);
 		cmd[0] = '\0';
 		eprintf ("set new value for %s (old=%s)\n", res, oldvalue);
 		r_line_set_prompt (":> ");
-		if (r_cons_fgets (cmd, sizeof (cmd) - 1, 0, NULL) < 0)
-			cmd[0]='\0';
+		if (r_cons_fgets (cmd, sizeof (cmd) - 1, 0, NULL) < 0) {
+			cmd[0] = '\0';
+		}
 		r_config_set (core->config, res, cmd);
 		r_cons_set_raw (1);
 		r_cons_show_cursor (false);
@@ -1246,7 +1252,9 @@ R_API int r_core_visual_trackflags(RCore *core) {
 				case 3: strcpy (cmd, "f="); break;
 				default: format = 0; continue;
 				}
-				if (*cmd) r_core_cmd (core, cmd, 0);
+				if (*cmd) {
+					r_core_cmd (core, cmd, 0);
+				}
 			} else {
 				r_cons_printf ("(no flags)\n");
 			}
@@ -1303,8 +1311,16 @@ R_API int r_core_visual_trackflags(RCore *core) {
 		case 'o': r_flag_sort (core->flags, 0); break;
 		case 'n': r_flag_sort (core->flags, 1); break;
 		case 'j': option++; break;
-		case 'k': if (--option<0) option = 0; break;
-		case 'K': option-=10; if (option<0) option = 0; break;
+		case 'k':
+			if (--option < 0) {
+				option = 0;
+			}
+			break;
+		case 'K': option-=10;
+			if (option < 0) {
+				option = 0;
+			}
+			break;
 		case 'h':
 		case 'b': // back
 		case 'Q':
@@ -1366,9 +1382,11 @@ R_API int r_core_visual_trackflags(RCore *core) {
 			r_core_block_size (core, core->blocksize-16);
 			break;
 		case '+':
-			if (menu==1)
+			if (menu == 1) {
 				r_core_cmdf (core, "f %s=%s+1", fs2, fs2);
-			else r_core_block_size (core, core->blocksize+1);
+			} else {
+				r_core_block_size (core, core->blocksize + 1);
+			}
 			break;
 		case '-':
 			if (menu == 1) {
@@ -1411,8 +1429,12 @@ R_API int r_core_visual_trackflags(RCore *core) {
 				r_cons_show_cursor (false);
 			}
 			break;
-		case 'P': if (--format<0) format = MAX_FORMAT; break;
-// = (format<=0)? MAX_FORMAT: format-1; break;
+		case 'P':
+			if (--format < 0) {
+				format = MAX_FORMAT;
+			}
+			break;
+			// = (format<=0)? MAX_FORMAT: format-1; break;
 		case 'p': format++; break;
 		case 'l':
 		case ' ':
@@ -1739,10 +1761,11 @@ R_API void r_core_visual_config(RCore *core) {
 				option = i-1;
 				continue;
 			}
-			if (fs2 != NULL)
+			if (fs2 != NULL) {
 				// TODO: Break long lines.
 				r_cons_printf ("\n Selected: %s (%s)\n\n",
-						fs2, desc);
+					fs2, desc);
+			}
 		}
 
 		if (fs && !strncmp (fs, "asm.", 4)) {
@@ -1750,8 +1773,9 @@ R_API void r_core_visual_config(RCore *core) {
 		}
 		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
-		if (ch==4 || ch==-1)
+		if (ch == 4 || ch == -1) {
 			return;
+		}
 		ch = r_cons_arrow_to_hjkl (ch); // get ESC+char, return 'hjkl' char
 
 		switch (ch) {
@@ -1860,9 +1884,11 @@ R_API void r_core_visual_mounts(RCore *core) {
 			if (list) {
 				r_list_foreach (list, iter, part) {
 					if ((option-delta <= i) && (i <= option+delta)) {
-						if (option == i)
+						if (option == i) {
 							r_cons_printf (" > ");
-						else r_cons_printf ("   ");
+						} else {
+							r_cons_printf ("   ");
+						}
 						r_cons_printf ("%d %02x 0x%010"PFMT64x" 0x%010"PFMT64x"\n",
 								part->number, part->type,
 								part->start, part->start+part->length);
@@ -1871,12 +1897,16 @@ R_API void r_core_visual_mounts(RCore *core) {
 				}
 				r_list_free (list);
 				list = NULL;
-			} else r_cons_printf ("Cannot read partition\n");
+			} else {
+				r_cons_printf ("Cannot read partition\n");
+			}
 		} else if (mode == 1) {
 			r_cons_printf ("Types:\n\n");
 			for (i=0;;i++) {
 				n = r_fs_partition_type_get (i);
-				if (!n) break;
+				if (!n) {
+					break;
+				}
 				r_cons_printf ("%s%s\n", (i==partition)?" > ":"   ", n);
 			}
 		} else if (mode == 3) {
@@ -1905,8 +1935,12 @@ R_API void r_core_visual_mounts(RCore *core) {
 					r_cons_printf ("\n");
 					r_list_free (list);
 					list = NULL;
-				} else r_cons_printf ("Cannot open '%s' directory\n", root);
-			} else r_cons_printf ("Root undefined\n");
+				} else {
+					r_cons_printf ("Cannot open '%s' directory\n", root);
+				}
+			} else {
+				r_cons_printf ("Root undefined\n");
+			}
 		}
 		if (mode==2) {
 			r_str_trim_path (path);
@@ -1914,8 +1948,9 @@ R_API void r_core_visual_mounts(RCore *core) {
 			strncat (path, "/", sizeof (path)-strlen (path)-1);
 			list = r_fs_dir (core->fs, path);
 			file = r_list_get_n (list, dir);
-			if (file && file->type != 'd')
-				r_core_cmdf (core, "px @ 0x%"PFMT64x"!64", file->off);
+			if (file && file->type != 'd') {
+				r_core_cmdf (core, "px @ 0x%" PFMT64x "!64", file->off);
+			}
 			r_list_free (list);
 			list = NULL;
 			*str='\0';
@@ -1984,8 +2019,9 @@ R_API void r_core_visual_mounts(RCore *core) {
 						if (file->type == 'd') {
 							strncat (path, file->name, sizeof (path)-strlen (path)-1);
 							r_str_trim_path (path);
-							if (root && strncmp (root, path, strlen (root)-1))
-								strncpy (path, root, sizeof (path)-1);
+							if (root && strncmp (root, path, strlen (root) - 1)) {
+								strncpy (path, root, sizeof (path) - 1);
+							}
 						} else {
 							r_core_cmdf (core, "s 0x%"PFMT64x, file->off);
 							r_fs_umount (core->fs, root);
@@ -2010,32 +2046,39 @@ R_API void r_core_visual_mounts(RCore *core) {
 				break;
 			case 'k':
 				if (mode == 0 || mode == 3) {
-					if (option > 0)
+					if (option > 0) {
 						option--;
+					}
 				} else if (mode == 1) {
-					if (partition > 0)
+					if (partition > 0) {
 						partition--;
+					}
 				} else {
-					if (dir>0)
+					if (dir > 0) {
 						dir--;
+					}
 				}
 				break;
 			case 'j':
 				if (mode == 0) {
 					n = r_fs_partition_type_get (partition);
 					list = r_fs_partitions (core->fs, n, 0);
-					if (option < r_list_length (list)-1)
+					if (option < r_list_length (list) - 1) {
 						option++;
+					}
 				} else if (mode == 1) {
-					if (partition < r_fs_partition_get_size ()-1)
+					if (partition < r_fs_partition_get_size () - 1) {
 						partition++;
+					}
 				} else if (mode == 3) {
-					if (option < r_list_length (core->fs->roots)-1)
+					if (option < r_list_length (core->fs->roots) - 1) {
 						option++;
+					}
 				} else {
 					list = r_fs_dir (core->fs, path);
-					if (dir < r_list_length (list)-1)
+					if (dir < r_list_length (list) - 1) {
 						dir++;
+					}
 				}
 				break;
 			case 't':
@@ -2078,8 +2121,9 @@ R_API void r_core_visual_mounts(RCore *core) {
 					if (file && root) {
 						strncat (path, file->name, sizeof (path)-strlen (path)-1);
 						r_str_trim_path (path);
-						if (strncmp (root, path, strlen (root)-1))
-							strncpy (path, root, sizeof (path)-1);
+						if (strncmp (root, path, strlen (root) - 1)) {
+							strncpy (path, root, sizeof (path) - 1);
+						}
 						file = r_fs_open (core->fs, path);
 						if (file) {
 							r_fs_read (core->fs, file, 0, file->size);
@@ -2092,8 +2136,12 @@ R_API void r_core_visual_mounts(RCore *core) {
 							r_file_dump (buf, file->data, file->size, 0);
 							r_fs_close (core->fs, file);
 							r_cons_printf ("Done\n");
-						} else r_cons_printf ("Cannot dump file\n");
-					} else r_cons_printf ("Cannot dump file\n");
+						} else {
+							r_cons_printf ("Cannot dump file\n");
+						}
+					} else {
+						r_cons_printf ("Cannot dump file\n");
+					}
 					r_cons_flush ();
 					r_cons_any_key (NULL);
 					*str='\0';
@@ -2582,7 +2630,9 @@ R_API void r_core_visual_anal(RCore *core) {
 					break;
 				default:
 					option++;
-					if (option >= nfcns) --option;
+					if (option >= nfcns) {
+						--option;
+					}
 					break;
 				}
 			}
@@ -2718,27 +2768,32 @@ R_API void r_core_seek_previous (RCore *core, const char *type) {
 	if (strstr (type, "fun")) {
 		RAnalFunction *fcni;
 		r_list_foreach (core->anal->fcns, iter, fcni) {
-			if (fcni->addr > next && fcni->addr < core->offset)
+			if (fcni->addr > next && fcni->addr < core->offset) {
 				next = fcni->addr;
+			}
 		}
 	} else
 	if (strstr (type, "hit")) {
 		RFlagItem *flag;
 		const char *pfx = r_config_get (core->config, "search.prefix");
 		r_list_foreach (core->flags->flags, iter, flag) {
-			if (!strncmp (flag->name, pfx, strlen (pfx)))
-				if (flag->offset > next && flag->offset< core->offset)
+			if (!strncmp (flag->name, pfx, strlen (pfx))) {
+				if (flag->offset > next && flag->offset < core->offset) {
 					next = flag->offset;
+				}
+			}
 		}
 	} else { // flags
 		RFlagItem *flag;
 		r_list_foreach (core->flags->flags, iter, flag) {
-			if (flag->offset > next && flag->offset < core->offset)
+			if (flag->offset > next && flag->offset < core->offset) {
 				next = flag->offset;
+			}
 		}
 	}
-	if (next!=0)
+	if (next != 0) {
 		r_core_seek (core, next, 1);
+	}
 }
 
 //define the data at offset according to the type (byte, word...) n times
@@ -2923,15 +2978,18 @@ repeat:
 					RFlagItem *item = r_flag_get_i (core->flags, op->jump);
 					if (item) {
 						const char *ptr = r_str_lchr (item->name, '.');
-						if (ptr)
-							man = strdup (ptr+1);
+						if (ptr) {
+							man = strdup (ptr + 1);
+						}
 					}
 				}
 				r_anal_op_free (op);
 			}
 			if (man) {
 				char *p = strstr (man, "INODE");
-				if (p) *p = 0;
+				if (p) {
+					*p = 0;
+				}
 				r_cons_clear ();
 				r_cons_flush ();
 				r_sys_cmdf ("man %s", man);
@@ -3080,7 +3138,9 @@ repeat:
 		do {
 			n = r_str_nlen_w ((const char *)p + ntotal,
 					plen - ntotal) + 1;
-			if (n < 2) break;
+			if (n < 2) {
+				break;
+			}
 			name = malloc (n + 10);
 			strcpy (name, "str.");
 			for (i = 0, j = 0; i < n; i++, j++) {

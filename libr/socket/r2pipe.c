@@ -18,7 +18,9 @@ static void env(const char *s, int f) {
 #endif
 
 R_API int r2p_close(R2Pipe *r2p) {
-	if (!r2p) return 0;
+	if (!r2p) {
+		return 0;
+	}
 #if __WINDOWS__ && !defined(__CYGWIN__)
 	if (r2p->pipe) {
 		CloseHandle (r2p->pipe);
@@ -231,10 +233,14 @@ R_API int r2p_write(R2Pipe *r2p, const char *str) {
 R_API char *r2p_read(R2Pipe *r2p) {
 	int bufsz = 0;
 	char *buf = NULL;
-	if (!r2p) return NULL;
+	if (!r2p) {
+		return NULL;
+	}
 	bufsz = 4096;
 	buf = calloc (1, bufsz);
-	if (!buf) return NULL;
+	if (!buf) {
+		return NULL;
+	}
 #if __WINDOWS__ && !defined(__CYGWIN__)
 	BOOL bSuccess = FALSE;
 	DWORD dwRead = 0;

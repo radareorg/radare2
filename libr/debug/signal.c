@@ -69,10 +69,12 @@ static int siglistcb (void *p, const char *k, const char *v) {
 		opt = sdb_num_get (DB, key, 0);
 		if (opt) {
 			r_cons_printf ("%s %s", k, v);
-			if (opt & R_DBG_SIGNAL_CONT)
+			if (opt & R_DBG_SIGNAL_CONT) {
 				r_cons_strcat (" cont");
-			if (opt & R_DBG_SIGNAL_SKIP)
+			}
+			if (opt & R_DBG_SIGNAL_SKIP) {
 				r_cons_strcat (" skip");
+			}
 			r_cons_newline ();
 		} else {
 			if (mode == 0) {
@@ -147,8 +149,9 @@ R_API int r_debug_signal_set(RDebug *dbg, int num, ut64 addr) {
 
 /* TODO rename to _kill_ -> _signal_ */
 R_API RList *r_debug_kill_list(RDebug *dbg) {
-	if (dbg->h->kill_list)
+	if (dbg->h->kill_list) {
 		return dbg->h->kill_list (dbg);
+	}
 	return NULL;
 }
 

@@ -139,14 +139,18 @@ void parse_dbi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream_file)
 
 	size = dbi_stream->dbi_header.module_size;
 	dbiexhdr_data = (char *) malloc(size);
-	if (!dbiexhdr_data) return;
+	if (!dbiexhdr_data) {
+		return;
+	}
 	stream_file_read (stream_file, size, dbiexhdr_data);
 
 	dbi_stream->dbiexhdrs = r_list_new();
 	p_tmp = dbiexhdr_data;
 	while (i < size) {
 		dbi_ex_header = (SDBIExHeader *) malloc (sizeof(SDBIExHeader));
-		if (!dbi_ex_header) break;
+		if (!dbi_ex_header) {
+			break;
+		}
 		// TODO: rewrite for signature where can to do chech CAN_READ true?
 		sz = parse_dbi_ex_header (p_tmp, size, dbi_ex_header);
 		if ((sz % _ALIGN)) {

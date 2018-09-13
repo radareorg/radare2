@@ -224,8 +224,9 @@ R_API int r_asm_filter_input(RAsm *a, const char *f) {
 }
 
 R_API int r_asm_filter_output(RAsm *a, const char *f) {
-	if (!a->ofilter)
+	if (!a->ofilter) {
 		a->ofilter = r_parse_new ();
+	}
 	if (!r_parse_use (a->ofilter, f)) {
 		r_parse_free (a->ofilter);
 		a->ofilter = NULL;
@@ -528,7 +529,9 @@ static char *replace_directives_for(char *str, char *token) {
 	char *q = str;
 	bool changes = false;
 	for (;;) {
-		if (q) p = strstr (q, token);
+		if (q) {
+			p = strstr (q, token);
+		}
 		if (p) {
 			char *nl = strchr (p, '\n');
 			if (nl) {
@@ -542,7 +545,9 @@ static char *replace_directives_for(char *str, char *token) {
 			q = nl;
 			changes = true;
 		} else {
-			if (q) r_strbuf_append (sb, q);
+			if (q) {
+				r_strbuf_append (sb, q);
+			}
 			break;
 		}
 	}
@@ -809,10 +814,16 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 			// XXX TODO remove arch-specific hacks
 			if (!strncmp (a->cur->arch, "avr", 3)) {
 				for (ptr_start = buf_token; *ptr_start &&
-					isavrseparator (*ptr_start); ptr_start++);
+							    isavrseparator (*ptr_start);
+					ptr_start++) {
+					;
+				}
 			} else {
 				for (ptr_start = buf_token; *ptr_start &&
-					IS_SEPARATOR (*ptr_start); ptr_start++);
+							    IS_SEPARATOR (*ptr_start);
+					ptr_start++) {
+					;
+				}
 			}
 			if (!strncmp (ptr_start, "/*", 2)) {
 				if (!strstr (ptr_start + 2, "*/")) {
@@ -895,42 +906,44 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 					r_asm_use (a, "arm");
 					r_asm_set_bits (a, 16);
 					ret = 0;
-				} else if (!strncmp (ptr, ".arch ", 6))
+				} else if (!strncmp (ptr, ".arch ", 6)) {
 					ret = r_asm_pseudo_arch (a, ptr+6);
-				else if (!strncmp (ptr, ".bits ", 6))
+				} else if (!strncmp (ptr, ".bits ", 6)) {
 					ret = r_asm_pseudo_bits (a, ptr+6);
-				else if (!strncmp (ptr, ".fill ", 6))
+				} else if (!strncmp (ptr, ".fill ", 6)) {
 					ret = r_asm_pseudo_fill (&op, ptr+6);
-				else if (!strncmp (ptr, ".kernel ", 8))
+				} else if (!strncmp (ptr, ".kernel ", 8)) {
 					r_syscall_setup (a->syscall, a->cur->arch, a->bits, asmcpu, ptr + 8);
-				else if (!strncmp (ptr, ".cpu ", 5))
+				} else if (!strncmp (ptr, ".cpu ", 5)) {
 					r_asm_set_cpu (a, ptr + 5);
-				else if (!strncmp (ptr, ".os ", 4))
+				} else if (!strncmp (ptr, ".os ", 4)) {
 					r_syscall_setup (a->syscall, a->cur->arch, a->bits, asmcpu, ptr + 4);
-				else if (!strncmp (ptr, ".hex ", 5)) {
+				} else if (!strncmp (ptr, ".hex ", 5)) {
 					ret = r_asm_pseudo_hex (&op, ptr + 5);
-				} else if ((!strncmp (ptr, ".int16 ", 7)) || !strncmp (ptr, ".short ", 7))
+				} else if ((!strncmp (ptr, ".int16 ", 7)) || !strncmp (ptr, ".short ", 7)) {
 					ret = r_asm_pseudo_int16 (a, &op, ptr+7);
-				else if (!strncmp (ptr, ".int32 ", 7))
+				} else if (!strncmp (ptr, ".int32 ", 7)) {
 					ret = r_asm_pseudo_int32 (a, &op, ptr+7);
-				else if (!strncmp (ptr, ".int64 ", 7))
+				} else if (!strncmp (ptr, ".int64 ", 7)) {
 					ret = r_asm_pseudo_int64 (a, &op, ptr+7);
-				else if (!strncmp (ptr, ".size", 5))
+				} else if (!strncmp (ptr, ".size", 5)) {
 					ret = true; // do nothing, ignored
-				else if (!strncmp (ptr, ".section", 8))
+				} else if (!strncmp (ptr, ".section", 8)) {
 					ret = true; // do nothing, ignored
-				else if ((!strncmp (ptr, ".byte ", 6)) || (!strncmp (ptr, ".int8 ", 6)))
+				} else if ((!strncmp (ptr, ".byte ", 6)) || (!strncmp (ptr, ".int8 ", 6))) {
 					ret = r_asm_pseudo_byte (&op, ptr+6);
-				else if (!strncmp (ptr, ".glob", 5)) { // .global .globl
-				//	eprintf (".global directive not yet implemented\n");
+				} else if (!strncmp (ptr, ".glob", 5)) { // .global .globl
+									 //	eprintf (".global directive not yet implemented\n");
 					ret = 0;
 					continue;
 				} else if (!strncmp (ptr, ".equ ", 5)) {
 					ptr2 = strchr (ptr + 5, ',');
-					if (!ptr2)
+					if (!ptr2) {
 						ptr2 = strchr (ptr + 5, '=');
-					if (!ptr2)
+					}
+					if (!ptr2) {
 						ptr2 = strchr (ptr + 5, ' ');
+					}
 					if (ptr2) {
 						*ptr2 = '\0';
 						r_asm_code_set_equ (acode, ptr + 5, ptr2 + 1);

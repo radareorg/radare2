@@ -238,8 +238,10 @@ R_API int r_anal_op_execute(RAnal *anal, RAnalOp *op) {
 			if (div == 0) {
 				eprintf ("r_anal_op_execute: division by zero\n");
 				eprintf ("TODO: throw RAnalException\n");
-			} else r_anal_value_set_ut64 (anal, op->dst,
-				r_anal_value_to_ut64 (anal, op->src[0])/div);
+			} else {
+				r_anal_value_set_ut64 (anal, op->dst,
+					r_anal_value_to_ut64 (anal, op->src[0]) / div);
+			}
 			}
 			break;
 		case R_ANAL_OP_TYPE_MUL:
@@ -392,9 +394,15 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	char *r0 = r_anal_value_to_string (op->dst);
 	char *a0 = r_anal_value_to_string (op->src[0]);
 	char *a1 = r_anal_value_to_string (op->src[1]);
-	if (!r0) r0 = strdup ("?");
-	if (!a0) a0 = strdup ("?");
-	if (!a1) a1 = strdup ("?");
+	if (!r0) {
+		r0 = strdup ("?");
+	}
+	if (!a0) {
+		a0 = strdup ("?");
+	}
+	if (!a1) {
+		a1 = strdup ("?");
+	}
 
 	switch (op->type) {
 	case R_ANAL_OP_TYPE_MOV:
@@ -443,12 +451,18 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 		f = r_anal_get_fcn_in (anal, op->jump, R_ANAL_FCN_TYPE_NULL);
 		if ((bb = r_anal_bb_from_offset (anal, op->addr))) {
 			cstr = r_anal_cond_to_string (bb->cond);
-			if (f) snprintf (ret, sizeof (ret), "if (%s) %s()", cstr, f->name);
-			else snprintf (ret, sizeof (ret), "if (%s) 0x%"PFMT64x"()", cstr, op->jump);
+			if (f) {
+				snprintf (ret, sizeof (ret), "if (%s) %s()", cstr, f->name);
+			} else {
+				snprintf (ret, sizeof (ret), "if (%s) 0x%" PFMT64x "()", cstr, op->jump);
+			}
 			free (cstr);
 		} else {
-			if (f) snprintf (ret, sizeof (ret), "if (unk) %s()", f->name);
-			else snprintf (ret, sizeof (ret), "if (unk) 0x%"PFMT64x"()", op->jump);
+			if (f) {
+				snprintf (ret, sizeof (ret), "if (unk) %s()", f->name);
+			} else {
+				snprintf (ret, sizeof (ret), "if (unk) 0x%" PFMT64x "()", op->jump);
+			}
 		}
 		break;
 	case R_ANAL_OP_TYPE_ADD:
@@ -475,22 +489,30 @@ R_API char *r_anal_op_to_string(RAnal *anal, RAnalOp *op) {
 	case R_ANAL_OP_TYPE_DIV:
 		if (!a1 || !strcmp (a0, a1)) {
 			snprintf (ret, sizeof (ret), "%s /= %s", r0, a0);
-		} else snprintf (ret, sizeof (ret), "%s = %s / %s", r0, a0, a1);
+		} else {
+			snprintf (ret, sizeof (ret), "%s = %s / %s", r0, a0, a1);
+		}
 		break;
 	case R_ANAL_OP_TYPE_AND:
 		if (!a1 || !strcmp (a0, a1)) {
 			snprintf (ret, sizeof (ret), "%s &= %s", r0, a0);
-		} else snprintf (ret, sizeof (ret), "%s = %s & %s", r0, a0, a1);
+		} else {
+			snprintf (ret, sizeof (ret), "%s = %s & %s", r0, a0, a1);
+		}
 		break;
 	case R_ANAL_OP_TYPE_OR:
 		if (!a1 || !strcmp (a0, a1)) {
 			snprintf (ret, sizeof (ret), "%s |= %s", r0, a0);
-		} else snprintf (ret, sizeof (ret), "%s = %s | %s", r0, a0, a1);
+		} else {
+			snprintf (ret, sizeof (ret), "%s = %s | %s", r0, a0, a1);
+		}
 		break;
 	case R_ANAL_OP_TYPE_XOR:
 		if (!a1 || !strcmp (a0, a1)) {
 			snprintf (ret, sizeof (ret), "%s ^= %s", r0, a0);
-		} else snprintf (ret, sizeof (ret), "%s = %s ^ %s", r0, a0, a1);
+		} else {
+			snprintf (ret, sizeof (ret), "%s = %s ^ %s", r0, a0, a1);
+		}
 		break;
 	case R_ANAL_OP_TYPE_LEA:
 		snprintf (ret, sizeof (ret), "%s -> %s", r0, a0);
@@ -587,15 +609,33 @@ R_API const char *r_anal_op_family_to_string(int n) {
 
 R_API int r_anal_op_family_from_string(const char *f) {
 	// TODO: use array of strings or so ..
-	if (!strcmp (f, "cpu")) return R_ANAL_OP_FAMILY_CPU;
-	if (!strcmp (f, "fpu")) return R_ANAL_OP_FAMILY_FPU;
-	if (!strcmp (f, "mmx")) return R_ANAL_OP_FAMILY_MMX;
-	if (!strcmp (f, "sse")) return R_ANAL_OP_FAMILY_SSE;
-	if (!strcmp (f, "priv")) return R_ANAL_OP_FAMILY_PRIV;
-	if (!strcmp (f, "virt")) return R_ANAL_OP_FAMILY_VIRT;
-	if (!strcmp (f, "crpt")) return R_ANAL_OP_FAMILY_CRYPTO;
-	if (!strcmp (f, "io")) return R_ANAL_OP_FAMILY_IO;
-	if (!strcmp (f, "thrd")) return R_ANAL_OP_FAMILY_THREAD;
+	if (!strcmp (f, "cpu")) {
+		return R_ANAL_OP_FAMILY_CPU;
+	}
+	if (!strcmp (f, "fpu")) {
+		return R_ANAL_OP_FAMILY_FPU;
+	}
+	if (!strcmp (f, "mmx")) {
+		return R_ANAL_OP_FAMILY_MMX;
+	}
+	if (!strcmp (f, "sse")) {
+		return R_ANAL_OP_FAMILY_SSE;
+	}
+	if (!strcmp (f, "priv")) {
+		return R_ANAL_OP_FAMILY_PRIV;
+	}
+	if (!strcmp (f, "virt")) {
+		return R_ANAL_OP_FAMILY_VIRT;
+	}
+	if (!strcmp (f, "crpt")) {
+		return R_ANAL_OP_FAMILY_CRYPTO;
+	}
+	if (!strcmp (f, "io")) {
+		return R_ANAL_OP_FAMILY_IO;
+	}
+	if (!strcmp (f, "thrd")) {
+		return R_ANAL_OP_FAMILY_THREAD;
+	}
 	return R_ANAL_OP_FAMILY_UNKNOWN;
 }
 

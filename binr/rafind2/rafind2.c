@@ -83,7 +83,9 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 
 static int show_help(char *argv0, int line) {
 	printf ("Usage: %s [-mXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|S] str] [-x hex] file|dir ..\n", argv0);
-	if (line) return 0;
+	if (line) {
+		return 0;
+	}
 	printf (
 	" -a [align] only accept aligned hits\n"
 	" -b [size]  set block size\n"
@@ -136,7 +138,9 @@ static int rafind_open_file(char *file) {
 
 	r_cons_new ();
 	rs = r_search_new (mode);
-	if (!rs) return 1;
+	if (!rs) {
+		return 1;
+	}
 	buf = calloc (1, bsize);
 	if (!buf) {
 		eprintf ("Cannot allocate %"PFMT64d" bytes\n", bsize);

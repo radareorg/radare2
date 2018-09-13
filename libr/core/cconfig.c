@@ -136,15 +136,31 @@ static void rasm2_list(RCore *core, const char *arch, int fmt) {
 			bits[0] = 0;
 			/* The underscore makes it easier to distinguish the
 			 * columns */
-			if (h->bits&8) strcat (bits, "_8");
-			if (h->bits&16) strcat (bits, "_16");
-			if (h->bits&32) strcat (bits, "_32");
-			if (h->bits&64) strcat (bits, "_64");
-			if (!*bits) strcat (bits, "_0");
+			if (h->bits & 8) {
+				strcat (bits, "_8");
+			}
+			if (h->bits & 16) {
+				strcat (bits, "_16");
+			}
+			if (h->bits & 32) {
+				strcat (bits, "_32");
+			}
+			if (h->bits & 64) {
+				strcat (bits, "_64");
+			}
+			if (!*bits) {
+				strcat (bits, "_0");
+			}
 			feat = "__";
-			if (h->assemble && h->disassemble)  feat = "ad";
-			if (h->assemble && !h->disassemble) feat = "a_";
-			if (!h->assemble && h->disassemble) feat = "_d";
+			if (h->assemble && h->disassemble) {
+				feat = "ad";
+			}
+			if (h->assemble && !h->disassemble) {
+				feat = "a_";
+			}
+			if (!h->assemble && h->disassemble) {
+				feat = "_d";
+			}
 			feat2 = has_esil (core, h->name);
 			if (fmt == 'q') {
 				r_cons_println (h->name);
@@ -1998,7 +2014,9 @@ static int cb_binmaxstr(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (core->bin) {
 		int v = node->i_value;
-		if (v<1) v = 4; // HACK
+		if (v < 1) {
+			v = 4; // HACK
+		}
 		core->bin->maxstrlen = v;
 	// TODO: Do not refresh if nothing changed (minstrlen ?)
 		r_core_bin_refresh_strings (core);
@@ -2012,7 +2030,9 @@ static int cb_binminstr(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (core->bin) {
 		int v = node->i_value;
-		if (v<1) v = 4; // HACK
+		if (v < 1) {
+			v = 4; // HACK
+		}
 		core->bin->minstrlen = v;
 	// TODO: Do not refresh if nothing changed (minstrlen ?)
 		r_core_bin_refresh_strings (core);

@@ -304,8 +304,9 @@ static void anal_call(RAnalOp *op, const ut32 insn, const ut64 addr) {
 
 static void anal_jmpl(RAnal const * const anal, RAnalOp *op, const ut32 insn, const ut64 addr) {
 	st64 disp = 0;
-	if (X_LDST_I(insn))
-		disp = get_immed_sgnext(insn, 12);
+	if (X_LDST_I (insn)) {
+		disp = get_immed_sgnext (insn, 12);
+	}
 
 	if (X_RD(insn) == GPR_O7) {
 		op->type = R_ANAL_OP_TYPE_UCALL;

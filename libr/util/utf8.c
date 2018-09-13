@@ -491,16 +491,24 @@ R_API int r_utf8_decode (const ut8 *ptr, int ptrlen, RRune *ch) {
 		return 0;
 	}
 	if (ptrlen > 0 && ptr[0] < 0x80) {
-		if (ch) *ch = (ut32)ptr[0];
+		if (ch) {
+			*ch = (ut32)ptr[0];
+		}
 		return 1;
 	} else if (ptrlen>1 && (ptr[0]&0xe0) == 0xc0 && (ptr[1]&0xc0) == 0x80) {
-		if (ch) *ch = (ptr[0] & 0x1f) << 6 | (ptr[1] & 0x3f);
+		if (ch) {
+			*ch = (ptr[0] & 0x1f) << 6 | (ptr[1] & 0x3f);
+		}
 		return 2;
 	} else if (ptrlen>2 && (ptr[0]&0xf0) == 0xe0 && (ptr[1]&0xc0) == 0x80 && (ptr[2]&0xc0) == 0x80) {
-		if (ch) *ch = (ptr[0] & 0xf) << 12 | (ptr[1] & 0x3f) << 6 | (ptr[2] & 0x3f);
+		if (ch) {
+			*ch = (ptr[0] & 0xf) << 12 | (ptr[1] & 0x3f) << 6 | (ptr[2] & 0x3f);
+		}
 		return 3;
 	} else if (ptrlen>3 && (ptr[0]&0xf8) == 0xf0 && (ptr[1]&0xc0) == 0x80 && (ptr[2]&0xc0) == 0x80 && (ptr[3]&0xc0) == 0x80) {
-		if (ch) *ch = (ptr[0] & 7) << 18 | (ptr[1] & 0x3f) << 12 | (ptr[2] & 0x3f) << 6 | (ptr[3] & 0x3f);
+		if (ch) {
+			*ch = (ptr[0] & 7) << 18 | (ptr[1] & 0x3f) << 12 | (ptr[2] & 0x3f) << 6 | (ptr[3] & 0x3f);
+		}
 		return 4;
 	}
 	return 0;
@@ -537,10 +545,13 @@ R_API int r_utf8_encode (ut8 *ptr, const RRune ch) {
 R_API int r_utf8_encode_str (const RRune *str, ut8 *dst, const int dst_length) {
 	int i, pos = 0;
 
-	if (!str || !dst) return -1;
+	if (!str || !dst) {
+		return -1;
+	}
 
-	for (i = 0; i < sizeof (str) - 1 && str[i] && pos < dst_length - 1; i++)
+	for (i = 0; i < sizeof (str) - 1 && str[i] && pos < dst_length - 1; i++) {
 		pos += r_utf8_encode (&dst[pos], str[i]);
+	}
 
 	dst[pos++] = '\0';
 	return pos;

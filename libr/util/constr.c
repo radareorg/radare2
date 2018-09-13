@@ -18,16 +18,18 @@ R_API void r_constr_free (RConstr *c) {
 R_API const char *r_constr_get (RConstr *c, const char *str) {
 	char *e = c->b+c->i, *p = c->b;
 	for (p = c->b; p<e; p += strlen (p)+1) {
-		if (!strcmp (p, str))
+		if (!strcmp (p, str)) {
 			return p;
+		}
 	}
 	return NULL;
 }
 
 R_API const char *r_constr_append (RConstr *c, const char *str) {
 	int i = c->i, l = strlen (str)+1;
-	if ((c->b + i+l) >= (c->b + c->l))
+	if ((c->b + i + l) >= (c->b + c->l)) {
 		return NULL;
+	}
 	memcpy (c->b + i, str, l);
 	c->i += l;
 	return c->b+i;

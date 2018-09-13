@@ -274,8 +274,9 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 	const char *pcname = r_reg_get_name (dbg->anal->reg, R_REG_NAME_PC);
 	RRegItem *reg = r_reg_get (dbg->anal->reg, pcname, 0);
 	if (reg) {
-		if (dbg->anal->bits != reg->size)
+		if (dbg->anal->bits != reg->size) {
 			bits = reg->size;
+		}
 	}
 	free (r_reg_get_bytes (dbg->reg, type, &buflen));
 	// some implementations of the gdb protocol are acting weird.
@@ -296,7 +297,9 @@ static int r_debug_gdb_reg_write(RDebug *dbg, int type, const ut8 *buf, int size
 	RRegItem* current = NULL;
 	for (;;) {
 		current = r_reg_next_diff (dbg->reg, type, reg_buf, buflen, current, bits);
-		if (!current) break;
+		if (!current) {
+			break;
+		}
 		ut64 val = r_reg_get_value (dbg->reg, current);
 		int bytes = bits / 8;
 		gdbr_write_reg (desc, current->name, (char*)&val, bytes);
@@ -980,36 +983,38 @@ static int r_debug_gdb_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set
         // TODO handle conditions
 	switch (b->rwx){
 	case R_BP_PROT_EXEC : {
-		if (set)
+		if (set) {
 			ret = b->hw?
 					gdbr_set_hwbp (desc, b->addr, "", bpsize):
 					gdbr_set_bp (desc, b->addr, "", bpsize);
-		else
-			ret = b->hw?
-					gdbr_remove_hwbp (desc, b->addr, bpsize):
-					gdbr_remove_bp (desc, b->addr, bpsize);
+		} else {
+			ret = b->hw ? gdbr_remove_hwbp (desc, b->addr, bpsize) : gdbr_remove_bp (desc, b->addr, bpsize);
+		}
 		break;
 	}
 	// TODO handle size (area of watch in upper layer and then bpsize. For the moment watches are set on exact on byte
 	case R_BP_PROT_WRITE : {
-		if (set)
+		if (set) {
 			gdbr_set_hww (desc, b->addr, "", 1);
-		else
+		} else {
 			gdbr_remove_hww (desc, b->addr, 1);
+		}
 		break;
 	}
 	case R_BP_PROT_READ : {
-		if (set)
+		if (set) {
 			gdbr_set_hwr (desc, b->addr, "", 1);
-		else
+		} else {
 			gdbr_remove_hwr (desc, b->addr, 1);
+		}
 		break;
 	}
 	case R_BP_PROT_ACCESS : {
-		if (set)
+		if (set) {
 			gdbr_set_hwa (desc, b->addr, "", 1);
-		else
+		} else {
 			gdbr_remove_hwa (desc, b->addr, 1);
+		}
 		break;
 	}
 	}

@@ -39,10 +39,12 @@ static int aes_key_test(const unsigned char *buf) {
 
 R_API int r_search_aes_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 	int i, last = len-31;
-	if (last>0)
-	for (i=0; i<last; i++) {
-		if (aes_key_test (buf+i))
-			return i;
+	if (last > 0) {
+		for (i = 0; i < last; i++) {
+			if (aes_key_test (buf + i)) {
+				return i;
+			}
+		}
 	}
 	return -1;
 }

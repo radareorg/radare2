@@ -181,21 +181,29 @@ static int parse (RParse *p, const char *data, char *str) {
 			ptr = end;
 		}
 		*ptr = '\0';
-		if (ptr != end) for (++ptr; *ptr == ' '; ptr++);
+		if (ptr != end) {
+			for (++ptr; *ptr == ' '; ptr++) {
+				;
+			}
+		}
 		r_str_ncpy (w0, buf, sizeof (w0));
 		r_str_ncpy (w1, ptr, sizeof (w1));
 		optr = ptr;
 		ptr = strchr (ptr, ',');
 		if (ptr) {
 			*ptr = '\0';
-			for (++ptr; *ptr == ' '; ptr++);
+			for (++ptr; *ptr == ' '; ptr++) {
+				;
+			}
 			r_str_ncpy (w1, optr, sizeof (w1));
 			r_str_ncpy (w2, ptr, sizeof (w2));
 			optr = ptr;
 			ptr = strchr (ptr, ',');
 			if (ptr) {
 				*ptr = '\0';
-				for (++ptr; *ptr == ' '; ptr++);
+				for (++ptr; *ptr == ' '; ptr++) {
+					;
+				}
 				r_str_ncpy (w2, optr, sizeof (w2));
 				r_str_ncpy (w3, ptr, sizeof (w3));
 			}

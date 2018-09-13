@@ -479,7 +479,9 @@ static RList* symbols(RBinFile *bf) {
 	};
 	static const int SYMBOLS_MAX = sizeof(_symbols) / sizeof(_symbols[0]);
 	struct r_bin_vsf_obj* vsf_obj = (struct r_bin_vsf_obj*) bf->o->bin_obj;
-	if (!vsf_obj) return NULL;
+	if (!vsf_obj) {
+		return NULL;
+	}
 	const int m_idx = vsf_obj->machine_idx;
 	int offset = _machines[m_idx].offset_mem;
 	RList *ret = NULL;
@@ -492,7 +494,9 @@ static RList* symbols(RBinFile *bf) {
 	int i;
 	for (i = 0; i < SYMBOLS_MAX; i++)
 	{
-		if (!(ptr = R_NEW0 (RBinSymbol))) return ret;
+		if (!(ptr = R_NEW0 (RBinSymbol))) {
+			return ret;
+		}
 		if (!ptr->name) {
 			ptr->name = calloc(1, R_BIN_SIZEOF_STRINGS);
 		}
@@ -515,7 +519,9 @@ static int destroy(RBinFile *bf) {
 
 static RList* entries(RBinFile *bf) {
 	struct r_bin_vsf_obj* vsf_obj = (struct r_bin_vsf_obj*) bf->o->bin_obj;
-	if (!vsf_obj) return NULL;
+	if (!vsf_obj) {
+		return NULL;
+	}
 	const int m_idx = vsf_obj->machine_idx;
 
 	RList *ret;

@@ -19,8 +19,9 @@ R_API bool r_bin_lang_msvc(RBinFile *binfile) {
 				break;
 			}
 		}
-		if (hascxx)
+		if (hascxx) {
 			info->lang = "msvc";
+		}
 	}
 	return hascxx;
 }

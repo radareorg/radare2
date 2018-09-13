@@ -38,8 +38,11 @@ int c55x_plus_disassemble(tms320_dasm_t *dasm, const ut8 *buf, int len) {
 	// opcode length
 	dasm->length = next_ins_pos;
 	ins_decoded_len = strlen(ins_decoded);
-	for (i = 0; i < ins_decoded_len; i++)
-		ins_decoded[i] = tolower((unsigned char)ins_decoded[i]);
+	for (i = 0; i < ins_decoded_len; i++) {
+		{
+			ins_decoded[i] = tolower ((unsigned char)ins_decoded[i]);
+		}
+	}
 	snprintf (dasm->syntax, sizeof(dasm->syntax), "%s", ins_decoded);
 	free (ins_decoded);
 	

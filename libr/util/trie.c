@@ -2,9 +2,15 @@
 #include "r_util/r_trie.h"
 
 static int c2_idx(char c) {
-	if (c <= 'Z' && c >= 'A') return c-'A';
-	if (c <= 'z' && c >= 'a') return c-'a'+26;
-	if (c <= '9' && c >= '0') return c-'0'+26*2;
+	if (c <= 'Z' && c >= 'A') {
+		return c - 'A';
+	}
+	if (c <= 'z' && c >= 'a') {
+		return c - 'a' + 26;
+	}
+	if (c <= '9' && c >= '0') {
+		return c - '0' + 26 * 2;
+	}
 	return 26*2 + 10;
 }
 

@@ -84,7 +84,9 @@ static RBuffer *build (REgg *egg) {
 		}
 		break;
 	case R_EGG_OS_LINUX:
-		if (suid) eprintf ("no suid for this platform\n");
+		if (suid) {
+			eprintf ("no suid for this platform\n");
+		}
 		suid = 0;
 		switch (egg->arch) {
 		case R_SYS_ARCH_X86:
@@ -121,8 +123,11 @@ static RBuffer *build (REgg *egg) {
 	if (sc) {
 		r_buf_set_bytes (buf, sc, strlen ((const char *)sc));
 		if (shell && *shell) {
-			if (cd) r_buf_write_at (buf, cd, (const ut8*)shell, strlen (shell)+1);
-			else eprintf ("Cannot set shell\n");
+			if (cd) {
+				r_buf_write_at (buf, cd, (const ut8 *)shell, strlen (shell) + 1);
+			} else {
+				eprintf ("Cannot set shell\n");
+			}
 		}
 	}
 	free (suid);

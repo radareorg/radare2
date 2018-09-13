@@ -323,8 +323,11 @@ static ut32 arm_disasm_blocktrans(struct winedbg_arm_insn *arminsn, ut32 inst) {
 			get_cond (inst), tbl_regs[get_nibble (inst, 4)], writeback ? "!" : "");
 	for (i=0;i<=15;i++) {
 		if ((inst>>i) & 1) {
-			if (i == last) arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s", tbl_regs[i]);
-			else arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s, ", tbl_regs[i]);
+			if (i == last) {
+				arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s", tbl_regs[i]);
+			} else {
+				arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s, ", tbl_regs[i]);
+			}
 		}
 	}
 	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "}%s", psr ? "^" : "");
@@ -378,12 +381,13 @@ static ut32 arm_disasm_coprocdatatrans(struct winedbg_arm_insn *arminsn, ut32 in
 	}
 
 	arminsn->str_asm = r_str_appendf (arminsn->str_asm, "%s%s%s", load ? "ldc" : "stc", translen ? "l" : "", get_cond (inst));
-	if (indexing)
+	if (indexing) {
 		arminsn->str_asm = r_str_appendf (arminsn->str_asm, " %u, cr%u, [%s, #%d]%s", CPnum, CRd, tbl_regs[get_nibble (inst, 4)],
-				offset, writeback?"!":"");
-	else
+			offset, writeback ? "!" : "");
+	} else {
 		arminsn->str_asm = r_str_appendf (arminsn->str_asm, " %u, cr%u, [%s], #%d", CPnum, CRd, tbl_regs[get_nibble (inst, 4)],
-				offset);
+			offset);
+	}
 	return 0;
 }
 

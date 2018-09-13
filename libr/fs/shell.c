@@ -157,8 +157,9 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 			}
 		} else if (!memcmp (buf, "cat ", 4)) {
 			input = buf + 3;
-			while (input[0] == ' ')
+			while (input[0] == ' ') {
 				input++;
+			}
 			if (input[0] == '/') {
 				if (root) {
 					strncpy (str, root, sizeof (str) - 1);
@@ -187,8 +188,9 @@ R_API int r_fs_shell_prompt(RFSShell* shell, RFS* fs, const char* root) {
 		} else if (!memcmp (buf, "get ", 4)) {
 			char* s = 0;
 			input = buf + 3;
-			while (input[0] == ' ')
+			while (input[0] == ' ') {
 				input++;
+			}
 			if (input[0] == '/') {
 				if (root) {
 					s = malloc (strlen (root) + strlen (input) + 2);

@@ -242,7 +242,9 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 						snprintf (content, sizeof (content),
 							fmt2, "", item->name, "", strvalue, "");
 						len = colwidth - strlen (content);
-						if (len < 0) len = 0;
+						if (len < 0) {
+							len = 0;
+						}
 						memset (whites, ' ', sizeof (whites));
 						whites[len] = 0;
 						dbg->cb_printf (fmt2, a, item->name, b, strvalue,
@@ -314,9 +316,13 @@ R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, int *err, utX *val
 	ut64 ret = 0LL;
 	int role = r_reg_get_name_idx (name);
 	const char *pname = name;
-	if (err) *err = 0;
+	if (err) {
+		*err = 0;
+	}
 	if (!dbg || !dbg->reg) {
-		if (err) *err = 1;
+		if (err) {
+			*err = 1;
+		}
 		return UT64_MAX;
 	}
 	if (role != -1) {

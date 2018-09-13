@@ -49,10 +49,13 @@ R_API char *r_bin_demangle_java(const char *str) {
 	char *ret;
 
 	ptr = strchr (str, '(');
-	if (!ptr)
+	if (!ptr) {
 		return NULL;
+	}
 	buf = r_buf_new ();
-	if (!buf) return NULL;
+	if (!buf) {
+		return NULL;
+	}
 	r_buf_append_bytes (buf, (const ut8*)str, (int)(size_t)(ptr-str));
 	r_buf_append_bytes (buf, (const ut8*)" (", 2);
 	while (*str) {
@@ -89,8 +92,9 @@ R_API char *r_bin_demangle_java(const char *str) {
 				r_buf_append_bytes (buf, (const ut8*)")", 1);
 				break;
 			} else {
-				if (n++>0)
-					r_buf_append_bytes (buf, (const ut8*)", ", 2);
+				if (n++ > 0) {
+					r_buf_append_bytes (buf, (const ut8 *)", ", 2);
+				}
 				r_buf_append_bytes (buf, (const ut8*)w, wlen);
 			}
 			if (is_array) {
@@ -99,7 +103,9 @@ R_API char *r_bin_demangle_java(const char *str) {
 			}
 		}
 		w = NULL;
-		if (!str) break;
+		if (!str) {
+			break;
+		}
 		str++;
 	}
 	ret = r_buf_to_string (buf);
@@ -112,7 +118,9 @@ R_API char *r_bin_demangle_msvc(const char *str) {
 	SDemangler *mangler = 0;
 
 	create_demangler (&mangler);
-	if (!mangler) return NULL;
+	if (!mangler) {
+		return NULL;
+	}
 	if (init_demangler (mangler, (char *)str) == eDemanglerErrOK) {
 		mangler->demangle (mangler, &out/*demangled_name*/);
 	}
@@ -226,12 +234,17 @@ R_API char *r_bin_demangle_objc(RBinFile *binfile, const char *sym) {
 		} else {
 			name = NULL;
 		}
-		if (binfile) r_bin_class_add_field (binfile, clas, name);
+		if (binfile) {
+			r_bin_class_add_field (binfile, clas, name);
+		}
 	}
 	/* methods */
 	if (sym && sym[0] && sym[1] == '[') { // apple style
-		if (sym[0] == '+') type = "static";
-		else if (sym[0] == '-') type = "public";
+		if (sym[0] == '+') {
+			type = "static";
+		} else if (sym[0] == '-') {
+			type = "public";
+		}
 		if (type) {
 			clas = strdup (sym + 2);
 			name = strchr (clas, ' ');
@@ -443,8 +456,9 @@ R_API int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym) {
 	}
 	if (def && *def) {
 		type = r_bin_demangle_type (def);
-		if (type != R_BIN_NM_NONE)
+		if (type != R_BIN_NM_NONE) {
 			return type;
+		}
 	}
 	plugin = r_bin_file_cur_plugin (binfile);
 	if (plugin && plugin->demangle_type) {

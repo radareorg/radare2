@@ -828,8 +828,9 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 	ut8 thc[sizeof (struct thread_command)] = {0};
 	ut8 tmp[4];
 
-	if (off > bin->size || off + sizeof (struct thread_command) > bin->size)
+	if (off > bin->size || off + sizeof (struct thread_command) > bin->size) {
 		return false;
+	}
 
 	len = r_buf_read_at (bin->b, off, thc, 8);
 	if (len < 1) {
@@ -841,12 +842,14 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 		goto wrong_read;
 	}
 	flavor = r_read_ble32 (tmp, bin->big_endian);
-	if (len == -1)
+	if (len == -1) {
 		goto wrong_read;
+	}
 
-	if (off + sizeof (struct thread_command) + sizeof (flavor) > bin->size || \
-	  off + sizeof (struct thread_command) + sizeof (flavor) + sizeof (ut32) > bin->size)
+	if (off + sizeof (struct thread_command) + sizeof (flavor) > bin->size ||
+		off + sizeof (struct thread_command) + sizeof (flavor) + sizeof (ut32) > bin->size) {
 		return false;
+	}
 
 	// TODO: use count for checks
 	if (r_buf_read_at (bin->b, off + sizeof (struct thread_command) + sizeof (flavor), tmp, 4) < 4) {
@@ -855,16 +858,18 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 	count = r_read_ble32 (tmp, bin->big_endian);
 	ptr_thread = off + sizeof (struct thread_command) + sizeof (flavor) + sizeof (count);
 
-	if (ptr_thread > bin->size)
+	if (ptr_thread > bin->size) {
 		return false;
+	}
 
 	switch (bin->hdr.cputype) {
 	case CPU_TYPE_I386:
 	case CPU_TYPE_X86_64:
 		switch (flavor) {
 		case X86_THREAD_STATE32:
-			if (ptr_thread + sizeof (struct x86_thread_state32) > bin->size)
+			if (ptr_thread + sizeof (struct x86_thread_state32) > bin->size) {
 				return false;
+			}
 			if ((len = r_buf_fread_at (bin->b, ptr_thread,
 				(ut8*)&bin->thread_state.x86_32, "16i", 1)) == -1) {
 				bprintf ("Error: read (thread state x86_32)\n");
@@ -876,8 +881,9 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 			arw_sz = sizeof (struct x86_thread_state32);
 			break;
 		case X86_THREAD_STATE64:
-			if (ptr_thread + sizeof (struct x86_thread_state64) > bin->size)
+			if (ptr_thread + sizeof (struct x86_thread_state64) > bin->size) {
 				return false;
+			}
 			if ((len = r_buf_fread_at (bin->b, ptr_thread,
 				(ut8*)&bin->thread_state.x86_64, "32l", 1)) == -1) {
 				bprintf ("Error: read (thread state x86_64)\n");
@@ -894,8 +900,9 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 	case CPU_TYPE_POWERPC:
 	case CPU_TYPE_POWERPC64:
 		if (flavor == X86_THREAD_STATE32) {
-			if (ptr_thread + sizeof (struct ppc_thread_state32) > bin->size)
+			if (ptr_thread + sizeof (struct ppc_thread_state32) > bin->size) {
 				return false;
+			}
 			if ((len = r_buf_fread_at (bin->b, ptr_thread,
 				(ut8*)&bin->thread_state.ppc_32, bin->big_endian?"40I":"40i", 1)) == -1) {
 				bprintf ("Error: read (thread state ppc_32)\n");
@@ -906,8 +913,9 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 			arw_ptr = (ut8 *)&bin->thread_state.ppc_32;
 			arw_sz = sizeof (struct ppc_thread_state32);
 		} else if (flavor == X86_THREAD_STATE64) {
-			if (ptr_thread + sizeof (struct ppc_thread_state64) > bin->size)
+			if (ptr_thread + sizeof (struct ppc_thread_state64) > bin->size) {
 				return false;
+			}
 			if ((len = r_buf_fread_at (bin->b, ptr_thread,
 				(ut8*)&bin->thread_state.ppc_64, bin->big_endian?"34LI3LI":"34li3li", 1)) == -1) {
 				bprintf ("Error: read (thread state ppc_64)\n");
@@ -920,8 +928,9 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 		}
 		break;
 	case CPU_TYPE_ARM:
-		if (ptr_thread + sizeof (struct arm_thread_state32) > bin->size)
+		if (ptr_thread + sizeof (struct arm_thread_state32) > bin->size) {
 			return false;
+		}
 		if ((len = r_buf_fread_at (bin->b, ptr_thread,
 				(ut8*)&bin->thread_state.arm_32, bin->big_endian?"17I":"17i", 1)) == -1) {
 			bprintf ("Error: read (thread state arm)\n");
@@ -1531,9 +1540,15 @@ struct MACH0_(obj_t)* MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *optio
 // perm: r = 4, w = 2, x = 1
 static int prot2perm (int x) {
 	int r = 0;
-	if (x&1) r |= 4;
-	if (x&2) r |= 2;
-	if (x&4) r |= 1;
+	if (x & 1) {
+		r |= 4;
+	}
+	if (x & 2) {
+		r |= 2;
+	}
+	if (x & 4) {
+		r |= 1;
+	}
 	return r;
 }
 
@@ -2080,21 +2095,24 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 					/* empty loop */
 				}
 				sym_ord = -1;
-				if (bin->symtab && bin->dysymtab.nundefsym < 0xffff)
-				for (j = 0; j < bin->dysymtab.nundefsym; j++) {
-					int stridx = 0;
-					int iundefsym = bin->dysymtab.iundefsym;
-					if (iundefsym>=0 && iundefsym < bin->nsymtab) {
-						int sidx = iundefsym +j;
-						if (sidx<0 || sidx>= bin->nsymtab)
-							continue;
-						stridx = bin->symtab[sidx].n_strx;
-						if (stridx < 0 || stridx >= bin->symstrlen)
-							continue;
-					}
-					if (!strcmp ((char *)bin->symstr + stridx, sym_name)) {
-						sym_ord = j;
-						break;
+				if (bin->symtab && bin->dysymtab.nundefsym < 0xffff) {
+					for (j = 0; j < bin->dysymtab.nundefsym; j++) {
+						int stridx = 0;
+						int iundefsym = bin->dysymtab.iundefsym;
+						if (iundefsym >= 0 && iundefsym < bin->nsymtab) {
+							int sidx = iundefsym + j;
+							if (sidx < 0 || sidx >= bin->nsymtab) {
+								continue;
+							}
+							stridx = bin->symtab[sidx].n_strx;
+							if (stridx < 0 || stridx >= bin->symstrlen) {
+								continue;
+							}
+						}
+						if (!strcmp ((char *)bin->symstr + stridx, sym_name)) {
+							sym_ord = j;
+							break;
+						}
 					}
 				}
 				break;
@@ -2326,12 +2344,13 @@ const char* MACH0_(get_intrp)(struct MACH0_(obj_t)* bin) {
 }
 
 const char* MACH0_(get_os)(struct MACH0_(obj_t)* bin) {
-	if (bin)
-	switch (bin->os) {
-	case 1: return "macos";
-	case 2: return "ios";
-	case 3: return "watchos";
-	case 4: return "tvos";
+	if (bin) {
+		switch (bin->os) {
+		case 1: return "macos";
+		case 2: return "ios";
+		case 3: return "watchos";
+		case 4: return "tvos";
+		}
 	}
 	return "darwin";
 }

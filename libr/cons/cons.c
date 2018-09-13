@@ -221,7 +221,9 @@ R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void 
 
 	//if we don't have any element in the stack start the signal
 	RConsBreakStack *b = R_NEW0 (RConsBreakStack);
-	if (!b) return;
+	if (!b) {
+		return;
+	}
 	if (r_stack_is_empty (context->break_stack)) {
 #if __UNIX__ || __CYGWIN__
 		if (sig && r_cons_context_is_main ()) {
@@ -1019,10 +1021,13 @@ R_API int r_cons_get_cursor(int *rows) {
 			if (ch2 == '\\') {
 				i++;
 			} else if (ch2 == ']') {
-				if (!strncmp (str + 2 + 5, "rgb:", 4))
+				if (!strncmp (str + 2 + 5, "rgb:", 4)) {
 					i += 18;
+				}
 			} else if (ch2 == '[') {
-				for (++i; str[i] && str[i] != 'J' && str[i] != 'm' && str[i] != 'H'; i++);
+				for (++i; str[i] && str[i] != 'J' && str[i] != 'm' && str[i] != 'H'; i++) {
+					;
+				}
 			}
 		} else if (I.context->buffer[i] == '\n') {
 			row++;

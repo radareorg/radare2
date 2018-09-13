@@ -2001,7 +2001,9 @@ static int opmov(RAsm *a, ut8 *data, const Opcode *op) {
 		}
 
 		if (op->operands[1].type & OT_REGTYPE & OT_SEGMENTREG) {
-			if (op->operands[1].scale[0] == 0) return -1;
+			if (op->operands[1].scale[0] == 0) {
+				return -1;
+			}
 			data[l++] = SEG_REG_PREFIXES[op->operands[1].regs[0]];
 			data[l++] = 0x8b;
 			data[l++] = op->operands[0].reg << 3 | 0x5;
@@ -4343,18 +4345,20 @@ static Register parseReg(RAsm *a, const char *str, size_t *pos, ut32 *type) {
 
 	// General purpose registers
 	if (length == 3 && token[0] == 'e') {
-		for (i = 0; regs[i]; i++)
+		for (i = 0; regs[i]; i++) {
 			if (!r_str_ncasecmp (regs[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_DWORD;
 				return i;
 			}
+		}
 	}
 	if (length == 2 && (token[1] == 'l' || token[1] == 'h')) {
-		for (i = 0; regs8[i]; i++)
+		for (i = 0; regs8[i]; i++) {
 			if (!r_str_ncasecmp (regs8[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_BYTE;
 				return i;
 			}
+		}
 	}
 	if (length == 2) {
 		for (i = 0; regs16[i]; i++) {
@@ -4488,9 +4492,9 @@ static int parseOperand(RAsm *a, const char *str, Operand *op, bool isrepop) {
 		last_type = getToken (str, &pos, &nextpos);
 
 		// Token may indicate size: then skip
-		if (!r_str_ncasecmp (str + pos, "ptr", 3))
+		if (!r_str_ncasecmp (str + pos, "ptr", 3)) {
 			continue;
-		else if (!r_str_ncasecmp (str + pos, "byte", 4)) {
+		} else if (!r_str_ncasecmp (str + pos, "byte", 4)) {
 			op->type |= OT_MEMORY | OT_BYTE;
 			op->dest_size = OT_BYTE;
 			explicit_size = true;
@@ -4736,8 +4740,12 @@ static int parseOpcode(RAsm *a, const char *op, Opcode *out) {
 }
 
 static ut64 getnum(RAsm *a, const char *s) {
-	if (!s) return 0;
-	if (*s == '$') s++;
+	if (!s) {
+		return 0;
+	}
+	if (*s == '$') {
+		s++;
+	}
 	return r_num_math (a->num, s);
 }
 
