@@ -509,8 +509,9 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, int rad, bool show_full) {
 			pstr = str;
 		} else if (d->type == 't') {
 			// Sanitize (don't escape) Ct comments so we can see "char *", etc.
+			free (str);
 			str = strdup (d->str);
-			r_str_sanitize(str);
+			r_str_sanitize (str);
 			pstr = str;
 		} else if (d->type != 'C') {
 			r_name_filter (str, 0);

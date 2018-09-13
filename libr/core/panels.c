@@ -2273,6 +2273,7 @@ static void loadPanelsLayout(RCore* core) {
 		p += strlen (p) + 1;
 	}
 	free (panelsConfig);
+	free (configPath);
 }
 
 static void maximizePanelSize(RPanels *panels) {

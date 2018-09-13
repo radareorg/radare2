@@ -191,7 +191,7 @@ Usage example:
 rep cmpsb
 ---------
 
-	cx,!,?{,BREAK,},esi,[1],edi,[1],==,?{,BREAK,},esi,++,edi,++,cx,--,LOOP
+	cx,!,?{,BREAK,},esi,[1],edi,[1],^,!,?{,BREAK,},esi,++,edi,++,cx,--,LOOP
 
 
 Unimplemented/unhandled instructions

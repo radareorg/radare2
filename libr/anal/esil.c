@@ -978,7 +978,6 @@ static int esil_interrupt(RAnalEsil *esil) {
 	return false;
 }
 
-// Pushes result onto stack. Pushes op1 == op2 onto stack, not the difference.
 // This function also sets internal vars which is used in flag calculations.
 static int esil_cmp(RAnalEsil *esil) {
 	ut64 num, num2;
@@ -998,7 +997,6 @@ static int esil_cmp(RAnalEsil *esil) {
 				// default size is set to 64 as internally operands are ut64
 				esil->lastsz = 64;
 			}
-			r_anal_esil_pushnum (esil, num == num2);
 		}
 	}
 	free (dst);
@@ -3234,6 +3232,7 @@ R_API int r_anal_esil_setup(RAnalEsil *esil, RAnal *anal, int romem, int stats, 
 	esil->cb.mem_read = internal_esil_mem_read;
 
 	if (nonull) {
+		// this is very questionable, most platforms allow accessing NULL
 		// never writes zero to PC, BP, SP, why? because writing
 		// zeros to these registers is equivalent to acessing NULL
 		// pointer somehow

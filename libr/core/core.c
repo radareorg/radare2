@@ -438,7 +438,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	}
 	switch (*str) {
 	case '.':
-		if (core->num->nc.curr_tok=='+') {
+		if (core->num->nc.curr_tok == '+') {
 			ut64 off = core->num->nc.number_value.n;
 			if (!off) {
 				off = core->offset;
@@ -559,6 +559,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				free (bptr);
 				return ret;
 			}
+			// take flag here
 			free (bptr);
 			break;
 		case 'c': // $c console width
@@ -585,6 +586,19 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			}
 			break;
 		case 'e': // $e
+			if (str[2] == '{') { // $e{flag} flag off + size
+				char *flagName = strdup (str + 3);
+				int flagLength = strlen (flagName);
+				if (flagLength > 0) {
+					flagName[flagLength - 1] = 0;
+				}
+				RFlagItem *flag = r_flag_get (core->flags, flagName);
+				free (flagName);
+				if (flag) {
+					return flag->offset + flag->size;
+				}
+				return UT64_MAX;
+			}
 			return r_anal_op_is_eob (&op);
 		case 'j': // $j jump address
 			return op.jump;
@@ -621,9 +635,8 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 				}
 				if (str[2] == 'M') {
 					return size;
-				} else {
-					return (lower == UT64_MAX)? 0LL: lower;
 				}
+				return (lower == UT64_MAX)? 0LL: lower;
 			}
 			break;
 		case 'v': // $v immediate value
@@ -747,8 +760,7 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 						return ret;
 					}
 				}
-			}
-			else {
+			} else {
 				if (ok) {
 					*ok = true;
 				}
