@@ -398,6 +398,8 @@ static RList* imports(RBinFile *bf) {
 		return ret;
 	}
 	bin->has_canary = false;
+	bin->has_retguard = -1;
+	bin->has_sanitizers = false;
 	for (i = 0; !imports[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinImport))) {
 			break;
@@ -426,6 +428,10 @@ static RList* imports(RBinFile *bf) {
 		}
 		if (!strcmp (name, "__stack_chk_fail") ) {
 			bin->has_canary = true;
+		}
+		if (!strcmp (name, "__asan_init") ||
+                   !strcmp (name, "__tsan_init")) {
+			bin->has_sanitizers = true;
 		}
 		r_list_append (ret, ptr);
 	}
@@ -518,6 +524,8 @@ static RBinInfo* info(RBinFile *bf) {
 	}
 	if (bin) {
 		ret->has_canary = bin->has_canary;
+		ret->has_retguard = -1;
+		ret->has_sanitizers = bin->has_sanitizers;
 		ret->dbg_info = bin->dbg_info;
 		ret->lang = bin->lang;
 	}
