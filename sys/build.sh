@@ -1,44 +1,45 @@
 #!/bin/sh
 
-# Get OS and platform to decide if we need to limit memory usage during the build
 GetPlatform() {
-   platform=$(uname -a)
-	case "$platform" in
-		"Linux raspberrypi"*) limit_jobs=1;MAX_MEM_PER_JOB=300000;;
-		"Linux"*) limit_jobs=1;MAX_MEM_PER_JOB=200000;;
-		*) limit_jobs=0
+	# Get OS and platform to decide if we need to limit memory usage
+	# during the build
+	PLATFORM=$(uname -a)
+	case "$PLATFORM" in
+	"Linux raspberrypi"*) MAX_MEM_PER_JOB=300000;;
+	"Linux"*) MAX_MEM_PER_JOB=150000;;
+	*) MAX_MEM_PER_JOB=200000 # If platform is not Linux (fallback value)
 	esac
 }
 
 BuildJobsThrottler(){
-	echo Building on Linux : computing number of allowed parallel jobs.
-	echo Maximum allowed RAM memory per job is $MAX_MEM_PER_JOB kB.
+	echo "Building on Linux : computing number of allowed parallel jobs."
+	echo "Maximum allowed RAM memory per job is $MAX_MEM_PER_JOB kB."
 
 	# Get number of CPUs on this target
-	cpu_n=`getconf _NPROCESSORS_ONLN`
-	printf "Number of CPUs is $cpu_n and "
+	# getconf does not exit on Darwin. Use sysctl on Darwin machines.
+	CPU_N=$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu) 
+	printf "Number of CPUs is %s and "  "$CPU_N"
 
 	# Get remaining RAM that could be used for this build
-	free_RAM=`cat /proc/meminfo | grep MemAvailable | sed 's/[^0-9]//g'`
+	FREE_RAM=$(grep MemAvailable /proc/meminfo | sed 's/[^0-9]//g')
 
+	DEFAULT_MAX_MEM_PER_JOB=200000
+	[ -z "${MAX_MEM_PER_JOB}" ] && MAX_MEM_PER_JOB="$DEFAULT_MAX_MEM_PER_JOB" # Defensive, prevent devision by 0
+	
 	# Assuming we may have many 300MB compilation jobs running in parallel
-	mem_allowed_jobs=$(expr $free_RAM / $MAX_MEM_PER_JOB)
-	echo "current free RAM allows us to run $mem_allowed_jobs jobs in parallel." 
+	MEM_ALLOWED_JOBS=$((FREE_RAM / MAX_MEM_PER_JOB))
+	echo "current free RAM allows us to run $MEM_ALLOWED_JOBS jobs in parallel." 
 
-	# Set number of build jobs to be run in parallel as the minimum between $mem_allowed_jobs and $cpu_n
-	MAKE_JOBS=$(($mem_allowed_jobs<$cpu_n?$mem_allowed_jobs:$cpu_n))
+	# Set number of build jobs to be run in parallel as the minimum between $MEM_ALLOWED_JOBS and $CPU_N
+	MAKE_JOBS=$((MEM_ALLOWED_JOBS<CPU_N?MEM_ALLOWED_JOBS:CPU_N))
 	echo "So, the build will run on $MAKE_JOBS job(s)."
 }
 
 # Identify current platform
 GetPlatform
 
-# Run build job limiter if platform requires it 
-if [ $limit_jobs -eq 1 ] ;
-then
-	BuildJobsThrottler
-fi;
-
+# Define number of parallel jobs as function of resources and platform 
+BuildJobsThrottler
 
 if [ -z "${MAKE}" ]; then
 	MAKE=make
