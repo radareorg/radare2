@@ -2820,6 +2820,8 @@ static int runword(RAnalEsil *esil, const char *word) {
 	if (!strcmp (word, "}{")) {
 		if (esil->skip == 1) {
 			esil->skip = 0;
+		} else if (esil->skip == 0) {	//this isn't perfect, but should work for valid esil
+			esil->skip = 1;
 		}
 		return 1;
 	} else if (!strcmp (word, "}")) {
