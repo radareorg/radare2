@@ -1449,6 +1449,22 @@ R_API int r_str_is_printable(const char *str) {
 	return 1;
 }
 
+R_API int r_str_is_printable_limited(const char *str, int size) {
+	while (size > 0 && *str) {
+		int ulen = r_utf8_decode ((const ut8*)str, strlen (str), NULL);
+		if (ulen > 1) {
+			str += ulen;
+			continue;
+		}
+		if (!IS_PRINTABLE (*str)) {
+			return 0;
+		}
+		str++;
+		size--;
+	}
+	return 1;
+}
+
 R_API bool r_str_is_printable_incl_newlines(const char *str) {
 	while (*str) {
 		int ulen = r_utf8_decode ((const ut8*)str, strlen (str), NULL);
