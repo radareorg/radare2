@@ -189,7 +189,9 @@ static bool init(RCore *core, RPanels *panels, int w, int h);
 static void initSdb(RPanels *panels);
 static bool initPanelsMenu(RPanels *panels);
 static bool initPanels(RCore *core, RPanels *panels);
-static void positionMenu(RPanelsMenu *menu, RPanelsMenuItem *parent, RPanelsMenuItem *child);
+static RStrBuf *drawMenu(RPanelsMenuItem *item);
+static void positionNewMenu(RPanelsMenu *menu, RPanelsMenuItem *parent, RPanelsMenuItem *child);
+static void moveMenuCursor(RPanelsMenu *menu, RPanelsMenuItem *parent);
 static void freePanel(RPanel *panel);
 static void panelBreakpoint(RCore *core);
 static void panelContinue(RCore *core);
@@ -714,13 +716,10 @@ static void handleUpKey(RCore *core) {
 		if (menu->depth < 2) {
 			return;
 		}
-		RPanelsMenuItem *parent = menu->history[menu->depth - 2];
-		RPanelsMenuItem *child = menu->history[menu->depth - 1];
-		if (child->selectedIndex > 0) {
-			child->selectedIndex--;
-			positionMenu (menu, parent, child);
-			child->p->refresh = true;
-			panelPrint (core, core->panels->can, child->p, 1);
+		RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+		if (parent->selectedIndex > 0) {
+			parent->selectedIndex--;
+			moveMenuCursor (menu, parent);
 		} else if (menu->depth == 2) {
 			menu->depth--;
 			setRefreshAll (panels);
@@ -777,12 +776,9 @@ static void handleDownKey(RCore *core) {
 			RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 			parent->sub[parent->selectedIndex]->cb(core);
 		} else {
-			RPanelsMenuItem *parent = menu->history[menu->depth - 2];
-			RPanelsMenuItem *child = menu->history[menu->depth - 1];
-			child->selectedIndex = R_MIN (child->n_sub - 1, child->selectedIndex + 1);
-			positionMenu (menu, parent, child);
-			child->p->refresh = true;
-			panelPrint (core, core->panels->can, child->p, 1);
+			RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+			parent->selectedIndex = R_MIN (parent->n_sub - 1, parent->selectedIndex + 1);
+			moveMenuCursor (menu, parent);
 		}
 	} else {
 		panels->panel[panels->curnode].refresh = true;
@@ -1658,10 +1654,8 @@ static int openMenuCb (void *user) {
 	RPanelsMenu *menu = core->panels->panelsMenu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
-	positionMenu (menu, parent, child);
+	positionNewMenu (menu, parent, child);
 	menu->history[menu->depth++] = child;
-	child->p->refresh = true;
-	menu->refreshPanels[menu->n_refresh++] = child->p;
 	return 0;
 }
 
@@ -1679,28 +1673,42 @@ static void addMenu(RPanelsMenuItem *parent, const char *name, RPanelsMenuCallba
 	parent->sub[parent->n_sub - 1] = item;
 }
 
-static void positionMenu(RPanelsMenu *menu, RPanelsMenuItem *parent, RPanelsMenuItem *child) {
+static RStrBuf *drawMenu(RPanelsMenuItem *item) {
 	RStrBuf *buf = r_strbuf_new (NULL);
 	if (!buf) {
 		return;
 	}
-	child->p->pos.x = menu->depth <= 2 ? child->selfIndex * 6 : parent->p->pos.x + parent->p->pos.w - 1;
-	child->p->pos.y = menu->depth <= 2 ? 1 : parent->selectedIndex + 2;
 	int i;
-	for (i = 0; i < child->n_sub; i++) {
-		if (i == child->selectedIndex) {
+	for (i = 0; i < item->n_sub; i++) {
+		if (i == item->selectedIndex) {
 			r_strbuf_append (buf, "> ");
 		} else {
 			r_strbuf_append (buf, "  ");
 		}
-		r_strbuf_append (buf, child->sub[i]->name);
+		r_strbuf_append (buf, item->sub[i]->name);
 		r_strbuf_append (buf, "          \n");
 	}
-	child->p->title = r_strbuf_drain (buf);
+	return buf;
+}
+
+static void positionNewMenu(RPanelsMenu *menu, RPanelsMenuItem *parent, RPanelsMenuItem *child) {
+	child->p->pos.x = menu->depth <= 2 ? child->selfIndex * 6 : parent->p->pos.x + parent->p->pos.w - 1;
+	child->p->pos.y = menu->depth <= 2 ? 1 : parent->selectedIndex + 2;
+	child->p->title = r_strbuf_drain (drawMenu (child));
 	child->p->pos.w = r_str_bounds (child->p->title, &child->p->pos.h);
 	child->p->pos.h += 4;
-	child->p->refresh = false;
 	child->p->type = PANEL_TYPE_MENU;
+	child->p->refresh = true;
+	menu->refreshPanels[menu->n_refresh++] = child->p;
+}
+
+static void moveMenuCursor(RPanelsMenu *menu, RPanelsMenuItem *parent) {
+	parent->p->title = r_strbuf_drain (drawMenu (parent));
+	parent->p->pos.w = r_str_bounds (parent->p->title, &parent->p->pos.h);
+	parent->p->pos.h += 4;
+	parent->p->type = PANEL_TYPE_MENU;
+	parent->p->refresh = true;
+	menu->refreshPanels[menu->n_refresh++] = parent->p;
 }
 
 static bool initPanelsMenu(RPanels *panels) {
