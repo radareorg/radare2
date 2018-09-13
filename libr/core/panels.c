@@ -105,7 +105,7 @@ static const char *menus_View[] = {
 static const int viewNum = ((int)sizeof (menus_View) / (int)sizeof (const char *)) - 1;
 
 static const char *menus_Tools[] = {
-	"Assembler", "Calculator", "R2 Shell", "System Shell",
+	"Calculator", "R2 Shell", "System Shell",
 	NULL
 };
 static const int toolsNum = ((int)sizeof (menus_Tools) / (int)sizeof (const char *)) - 1;
@@ -118,11 +118,8 @@ static const int searchNum = ((int)sizeof (menus_Search) / (int)sizeof (const ch
 
 static const char *menus_Debug[] = {
 	"Registers", "RegisterRefs", "DRX", "Breakpoints",
-	"Watchpoints", "Maps", "Modules",
-	"Backtrace", "Locals",
-	"Continue", "Cont until.",
-	"Step", "Step Over",
-	"Reload",
+	"Maps", "Modules", "Backtrace", "Locals", "Continue",
+	"Step", "Step Over", "Reload",
 	NULL
 };
 static const int debugNum = ((int)sizeof (menus_Debug) / (int)sizeof (const char *)) - 1;
@@ -134,7 +131,7 @@ static const char *menus_Analyze[] = {
 static const int analyzeNum = ((int)sizeof (menus_Analyze) / (int)sizeof (const char *)) - 1;
 
 static const char *menus_Help[] = {
-	"Fortune", "Commands", "2048", "License", ".", "About",
+	"Fortune", "Commands", "2048", "License", "About",
 	NULL
 };
 static const int helpNum = ((int)sizeof (menus_Help) / (int)sizeof (const char *)) - 1;
@@ -180,7 +177,36 @@ static int openFileCb (void *user);
 static int rwCb(void *user);
 static int debuggerCb(void *user);
 static int closeFileCb (void *user);
-static int symbolsCb (void *user);
+static int copyCb(void *user);
+static int pasteCb(void *user);
+static int writeStrCb(void *user);
+static int writeHexCb(void *user);
+static int assembleCb(void *user);
+static int fillCb(void *user);
+static int iocacheCb(void *user);
+static int colorsCb(void *user);
+static int calculatorCb(void *user);
+static int r2shellCb(void *user);
+static int systemShellCb(void *user);
+static int stringCb(void *user);
+static int ropCb(void *user);
+static int codeCb(void *user);
+static int hexpairsCb(void *user);
+static int continueCb(void *user);
+static int stepCb(void *user);
+static int stepoverCb(void *user);
+static int reloadCb(void *user);
+static int functionCb(void *user);
+static int symbolsCb(void *user);
+static int programCb(void *user);
+static int basicblocksCb(void *user);
+static int callsCb(void *user);
+static int referencesCb(void *user);
+static int fortuneCb(void *user);
+static int commandsCb(void *user);
+static int gameCb(void *user);
+static int licenseCb(void *user);
+static int aboutCb(void *user);
 static int quitCb(void *user);
 static void addMenu (RPanelsMenuItem *parent, const char *name, RPanelsMenuCallback cb);
 static int file_history_up(RLine *line);
@@ -1639,9 +1665,263 @@ static int closeFileCb (void *user) {
 	return 0;
 }
 
-static int symbolsCb (void *user) {
+static int copyCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_cons_enable_mouse (false);
+	char *res = r_cons_input ("How many bytes? ");
+	if (res) {
+		r_core_cmdf (core, "\"y %s\"", res);
+		free (res);
+	}
+	r_cons_enable_mouse (true);
+	return 0;
+}
+
+static int pasteCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmd0 (core, "yy");
+	return 0;
+}
+
+static int writeStrCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_cons_enable_mouse (false);
+	char *res = r_cons_input ("insert string: ");
+	if (res) {
+		r_core_cmdf (core, "\"w %s\"", res);
+		free (res);
+	}
+	r_cons_enable_mouse (true);
+	return 0;
+}
+
+static int writeHexCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_cons_enable_mouse (false);
+	char *res = r_cons_input ("insert hexpairs: ");
+	if (res) {
+		r_core_cmdf (core, "\"wx %s\"", res);
+		free (res);
+	}
+	r_cons_enable_mouse (true);
+	return 0;
+}
+
+static int assembleCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_visual_asm (core, core->offset);
+	return 0;
+}
+
+static int fillCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_cons_enable_mouse (false);
+	char *s = r_cons_input ("Fill with: ");
+	r_core_cmdf (core, "wow %s", s);
+	free (s);
+	r_cons_enable_mouse (true);
+	return 0;
+}
+
+static int iocacheCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmd0 (core, "e!io.cache");
+	return 0;
+}
+
+static int colorsCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmd0 (core, "e!scr.color");
+	return 0;
+}
+
+static int calculatorCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_cons_enable_mouse (false);
+	for (;;) {
+		char *s = r_cons_input ("> ");
+		if (!s || !*s) {
+			free (s);
+			break;
+		}
+		r_core_cmdf (core, "? %s", s);
+		r_cons_flush ();
+		free (s);
+	}
+	r_cons_enable_mouse (true);
+	return 0;
+}
+
+static int r2shellCb(void *user) {
+	RCore *core = (RCore *)user;
+	core->vmode = false;
+	r_core_visual_prompt_input (core);
+	core->vmode = true;
+	return 0;
+}
+
+static int systemShellCb(void *user) {
+	r_cons_set_raw (0);
+	r_cons_flush ();
+	r_sys_cmd ("$SHELL");
+	return 0;
+}
+
+static int stringCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_cons_enable_mouse (false);
+	char *res = r_cons_input ("search string: ");
+	if (res) {
+		r_core_cmdf (core, "\"/ %s\"", res);
+		free (res);
+	}
+	r_cons_enable_mouse (true);
+	return 0;
+}
+
+static int ropCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_cons_enable_mouse (false);
+	char *res = r_cons_input ("rop grep: ");
+	if (res) {
+		r_core_cmdf (core, "\"/R %s\"", res);
+		free (res);
+	}
+	r_cons_enable_mouse (true);
+	return 0;
+}
+
+static int codeCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_cons_enable_mouse (false);
+	char *res = r_cons_input ("search code: ");
+	if (res) {
+		r_core_cmdf (core, "\"/c %s\"", res);
+		free (res);
+	}
+	r_cons_enable_mouse (true);
+	return 0;
+}
+
+static int hexpairsCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_cons_enable_mouse (false);
+	char *res = r_cons_input ("search hexpairs: ");
+	if (res) {
+		r_core_cmdf (core, "\"/x %s\"", res);
+		free (res);
+	}
+	r_cons_enable_mouse (true);
+	return 0;
+}
+
+static int continueCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmd (core, "dc", 0);
+	r_cons_flush ();
+	return 0;
+}
+
+static int stepCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmd (core, "ds", 0);
+	r_cons_flush ();
+	return 0;
+}
+
+static int stepoverCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmd (core, "dso", 0);
+	r_cons_flush ();
+	return 0;
+}
+
+static int reloadCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmd (core, "ood", 0);
+	r_cons_flush ();
+	return 0;
+}
+
+static int functionCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmdf (core, "af");
+	return 0;
+}
+
+static int symbolsCb(void *user) {
 	RCore *core = (RCore *)user;
 	r_core_cmdf (core, "aa");
+	return 0;
+}
+
+static int programCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmdf (core, "aaa");
+	return 0;
+}
+
+static int basicblocksCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmdf (core, "aab");
+	return 0;
+}
+
+static int callsCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmdf (core, "aac");
+	return 0;
+}
+
+static int referencesCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmdf (core, "aar");
+	return 0;
+}
+
+static int fortuneCb(void *user) {
+	RCore *core = (RCore *)user;
+	char *s = r_core_cmd_str (core, "fo");
+	r_cons_message (s);
+	free (s);
+	return 0;
+}
+
+static int commandsCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_core_cmd0 (core, "?;?@?;?$?;???");
+	r_cons_any_key (NULL);
+	return 0;
+}
+
+static int gameCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_cons_2048 (core->panels->can->color);
+	return 0;
+}
+
+static int licenseCb(void *user) {
+	r_cons_message ("Copyright 2006-2016 - pancake - LGPL");
+	return 0;
+}
+
+static int aboutCb(void *user) {
+	RCore *core = (RCore *)user;
+	char *s = r_core_cmd_str (core, "?V");
+	r_cons_message (s);
+	free (s);
+	return 0;
+}
+
+static int writeValueCb(void *user) {
+	RCore *core = (RCore *)user;
+	r_cons_enable_mouse (false);
+	char *res = r_cons_input ("insert number: ");
+	if (res) {
+		r_core_cmdf (core, "\"wv %s\"", res);
+		free (res);
+	}
+	r_cons_enable_mouse (true);
 	return 0;
 }
 
@@ -1728,7 +2008,7 @@ static bool initPanelsMenu(RPanels *panels) {
 		} else if (!strcmp (menus_File[i], "ReOpen")) {
 			addMenu (root->sub[0], menus_File[i], openMenuCb);
 		} else if (!strcmp (menus_File[i], "Close")) {
-			addMenu (root->sub[0], menus_File[i], symbolsCb);
+			addMenu (root->sub[0], menus_File[i], closeFileCb);
 		} else if (!strcmp (menus_File[i], "Quit")) {
 			addMenu (root->sub[0], menus_File[i], quitCb);
 		} else {
@@ -1736,25 +2016,94 @@ static bool initPanelsMenu(RPanels *panels) {
 		}
 	}
 	for (i = 0; i < editNum; i++) {
-		addMenu (root->sub[1], menus_Edit[i], openMenuCb);
+		if (!strcmp (menus_Edit[i], "Copy")) {
+			addMenu (root->sub[1], menus_Edit[i], copyCb);
+		} else if (!strcmp (menus_Edit[i], "Paste")) {
+			addMenu (root->sub[1], menus_Edit[i], pasteCb);
+		} else if (!strcmp (menus_Edit[i], "Write String")) {
+			addMenu (root->sub[1], menus_Edit[i], writeStrCb);
+		} else if (!strcmp (menus_Edit[i], "Write Hex")) {
+			addMenu (root->sub[1], menus_Edit[i], writeHexCb);
+		} else if (!strcmp (menus_Edit[i], "Write Value")) {
+			addMenu (root->sub[1], menus_Edit[i], writeValueCb);
+		} else if (!strcmp (menus_Edit[i], "Assemble")) {
+			addMenu (root->sub[1], menus_Edit[i], assembleCb);
+		} else if (!strcmp (menus_Edit[i], "Fill")) {
+			addMenu (root->sub[1], menus_Edit[i], fillCb);
+		} else if (!strcmp (menus_Edit[i], "io.cache")) {
+			addMenu (root->sub[1], menus_Edit[i], iocacheCb);
+		} else {
+			addMenu (root->sub[1], menus_Edit[i], layoutSidePanel);
+		}
 	}
 	for (i = 0; i < viewNum; i++) {
-		addMenu (root->sub[2], menus_View[i], openMenuCb);
+		if (!strcmp (menus_View[i], "Colors")) {
+			addMenu (root->sub[2], menus_View[i], colorsCb);
+		} else {
+			addMenu (root->sub[2], menus_View[i], layoutSidePanel);
+		}
 	}
 	for (i = 0; i < toolsNum; i++) {
 		addMenu (root->sub[3], menus_Tools[i], openMenuCb);
+		if (!strcmp (menus_Tools[i], "Calculator")) {
+			addMenu (root->sub[3], menus_Tools[i], calculatorCb);
+		} else if (!strcmp (menus_Tools[i], "R2 Shell")) {
+			addMenu (root->sub[3], menus_Tools[i], r2shellCb);
+		} else if (!strcmp (menus_Tools[i], "System Shell")) {
+			addMenu (root->sub[3], menus_Tools[i], systemShellCb);
+		}
 	}
 	for (i = 0; i < searchNum; i++) {
-		addMenu (root->sub[4], menus_Search[i], openMenuCb);
+		if (!strcmp (menus_Search[i], "String")) {
+			addMenu (root->sub[4], menus_Search[i], stringCb);
+		} else if (!strcmp (menus_Search[i], "ROP")) {
+			addMenu (root->sub[4], menus_Search[i], ropCb);
+		} else if (!strcmp (menus_Search[i], "Code")) {
+			addMenu (root->sub[4], menus_Search[i], codeCb);
+		} else if (!strcmp (menus_Search[i], "Hexpairs")) {
+			addMenu (root->sub[4], menus_Search[i], hexpairsCb);
+		}
 	}
 	for (i = 0; i < debugNum; i++) {
-		addMenu (root->sub[5], menus_Debug[i], openMenuCb);
+		if (!strcmp (menus_Debug[i], "Continue")) {
+			addMenu (root->sub[5], menus_Debug[i], continueCb);
+		} else if (!strcmp (menus_Debug[i], "Step")) {
+			addMenu (root->sub[5], menus_Debug[i], stepCb);
+		} else if (!strcmp (menus_Debug[i], "Step Over")) {
+			addMenu (root->sub[5], menus_Debug[i], stepoverCb);
+		} else if (!strcmp (menus_Debug[i], "Reload")) {
+			addMenu (root->sub[5], menus_Debug[i], reloadCb);
+		} else {
+			addMenu (root->sub[5], menus_Debug[i], layoutSidePanel);
+		}
 	}
 	for (i = 0; i < analyzeNum; i++) {
-		addMenu (root->sub[6], menus_Analyze[i], openMenuCb);
+		if (!strcmp (menus_Analyze[i], "Function")) {
+			addMenu (root->sub[6], menus_Analyze[i], functionCb);
+		} else if (!strcmp (menus_Analyze[i], "Symbols")) {
+			addMenu (root->sub[6], menus_Analyze[i], symbolsCb);
+		} else if (!strcmp (menus_Analyze[i], "Program")) {
+			addMenu (root->sub[6], menus_Analyze[i], programCb);
+		} else if (!strcmp (menus_Analyze[i], "BasicBlocks")) {
+			addMenu (root->sub[6], menus_Analyze[i], basicblocksCb);
+		} else if (!strcmp (menus_Analyze[i], "Calls")) {
+			addMenu (root->sub[6], menus_Analyze[i], callsCb);
+		} else if (!strcmp (menus_Analyze[i], "References")) {
+			addMenu (root->sub[6], menus_Analyze[i], referencesCb);
+		}
 	}
 	for (i = 0; i < helpNum; i++) {
-		addMenu (root->sub[7], menus_Help[i], openMenuCb);
+		if (!strcmp (menus_Help[i], "Fortune")) {
+			addMenu (root->sub[7], menus_Help[i], fortuneCb);
+		} else if (!strcmp (menus_Help[i], "Commands")) {
+			addMenu (root->sub[7], menus_Help[i], commandsCb);
+		} else if (!strcmp (menus_Help[i], "2048")) {
+			addMenu (root->sub[7], menus_Help[i], gameCb);
+		} else if (!strcmp (menus_Help[i], "License")) {
+			addMenu (root->sub[7], menus_Help[i], licenseCb);
+		} else if (!strcmp (menus_Help[i], "About")) {
+			addMenu (root->sub[7], menus_Help[i], aboutCb);
+		}
 	}
 	for (i = 0; i < reopenNum; i++) {
 		if (!strcmp (menus_ReOpen[i], "In RW")) {
