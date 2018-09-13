@@ -2088,7 +2088,7 @@ static bool fcnNeedsPrefix(const char *name) {
 
 /* TODO: move into r_anal_fcn_rename(); */
 static bool setFunctionName(RCore *core, ut64 off, const char *_name, bool prefix) {
-	char *name, *oname, *nname = NULL;
+	char *name, *nname = NULL;
 	RAnalFunction *fcn;
 	if (!core || !_name) {
 		return false;
@@ -2105,6 +2105,7 @@ static bool setFunctionName(RCore *core, ut64 off, const char *_name, bool prefi
 	fcn = r_anal_get_fcn_in (core->anal, off,
 				R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_LOC);
 	if (!fcn) {
+		free (name);
 		return false;
 	}
 	if (prefix && fcnNeedsPrefix (name)) {
@@ -2112,7 +2113,7 @@ static bool setFunctionName(RCore *core, ut64 off, const char *_name, bool prefi
 	} else {
 		nname = strdup (name);
 	}
-	oname = fcn->name;
+	char *oname = fcn->name;
 	r_flag_rename (core->flags, r_flag_get (core->flags, fcn->name), nname);
 	fcn->name = strdup (nname);
 	if (core->anal->cb.on_fcn_rename) {
