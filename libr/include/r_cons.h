@@ -1034,6 +1034,7 @@ typedef struct r_panels_t {
 	int currentMenuIndex;
 	RPanel *menuPanel;
 	RPanelsMenu *panelsMenu;
+	Sdb *db;
 } RPanels;
 
 #ifdef __cplusplus

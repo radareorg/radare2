@@ -143,7 +143,7 @@ static void layoutMenu(RPanel *panel);
 static void layoutSubMenu(RPanels *panels, int w);
 static void layoutDefault(RPanels *panels);
 static void layoutBalance(RPanels *panels);
-static void layoutSidePanel(RCore *core, const char *title, const char *cmd);
+static void layoutSidePanel(void *user);
 static void changePanelNum(RPanels *panels, int now, int after);
 static void splitPanelVertical(RCore *core);
 static void splitPanelHorizontal(RCore *core);
@@ -178,6 +178,7 @@ static void handleTabKey(RCore *core, bool shift);
 static int openMenu (void *user);
 static void addMenu (RPanelsMenuItem *parent, const char *name, RPanelsMenuCallback cb);
 static bool init(RCore *core, RPanels *panels, int w, int h);
+static void initSdb(RPanels *panels);
 static bool initPanelsMenu(RPanels *panels);
 static bool initPanels(RCore *core, RPanels *panels);
 static void positionMenu(RPanelsMenu *menu, RPanelsMenuItem *parent, RPanelsMenuItem *child);
@@ -455,14 +456,19 @@ static void layoutBalance(RPanels *panels) {
 	}
 }
 
-static void layoutSidePanel(RCore *core, const char *title, const char *cmd) {
+static void layoutSidePanel(void *user) {
+	RCore *core = (RCore *)user;
 	RPanels *panels = core->panels;
 	RPanel *panel = panels->panel;
-	int h;
-	r_cons_get_size (&h);
-	int i;
+	RPanelsMenu *menu = core->panels->panelsMenu;
+	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
+	const char *cmd = sdb_get (panels->db, child->name, 0);
+	if (!cmd) {
+		return;
+	}
+	int i, h;
 	(void)r_cons_get_size (&h);
-
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *p = &panel[i];
 		if (p->pos.x == 0) {
@@ -472,8 +478,7 @@ static void layoutSidePanel(RCore *core, const char *title, const char *cmd) {
 			}
 		}
 	}
-
-	addPanelFrame (core, panels, title, cmd);
+	addPanelFrame (core, panels, child->name, cmd);
 	changePanelNum (panels, panels->n_panels - 1, 0);
 	panel[0].pos.x = 0;
 	panel[0].pos.y = 1;
@@ -1596,10 +1601,6 @@ static RPanel createMenuPanel(int x, int y, char *title) {
 
 static int openMenu (void *user) {
 	RCore* core = (RCore *)user; 
-	RConsCanvas *can = core->panels->can;
-	if (!can) {
-		return 1;
-	}
 	RPanelsMenu *menu = core->panels->panelsMenu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
@@ -1873,6 +1874,34 @@ static void panelPrompt(const char *prompt, char *buf, int len) {
 	r_cons_fgets (buf, len, 0, NULL);
 }
 
+static void initSdb(RPanels *panels) {
+	sdb_set (panels->db, "Symbols", "isq", 0);
+	sdb_set (panels->db, "Stack"  , "px 256@r:SP", 0);
+	sdb_set (panels->db, "Locals", "afvd", 0);
+	sdb_set (panels->db, "StackRefs", "pxr 256@r:SP", 0);
+	sdb_set (panels->db, "Registers", "dr=", 0);
+	sdb_set (panels->db, "RegisterRefs", "drr", 0);
+	sdb_set (panels->db, "Disassembly", "pd $r", 0);
+	sdb_set (panels->db, "Pseudo", "pdc", 0);
+	sdb_set (panels->db, "Graph", "agf", 0);
+	sdb_set (panels->db, "Info", "i", 0);
+	sdb_set (panels->db, "Database", "k ***", 0);
+	sdb_set (panels->db, "Hexdump", "px 512", 0);
+	sdb_set (panels->db, "Functions", "afl", 0);
+	sdb_set (panels->db, "Comments", "CC", 0);
+	sdb_set (panels->db, "Entropy", "p=e", 0);
+	sdb_set (panels->db, "DRX", "drx", 0);
+	sdb_set (panels->db, "Sections", "iSq", 0);
+	sdb_set (panels->db, "Strings", "izq", 0);
+	sdb_set (panels->db, "Maps", "dm", 0);
+	sdb_set (panels->db, "Modules", "dmm", 0);
+	sdb_set (panels->db, "Backtrace", "dbt", 0);
+	sdb_set (panels->db, "Breakpoints", "db", 0);
+	sdb_set (panels->db, "Imports", "iiq", 0);
+	sdb_set (panels->db, "Clipboard", "yx", 0);
+	sdb_set (panels->db, "FcnInfo", "afi", 0);
+}
+
 static bool init (RCore *core, RPanels *panels, int w, int h) {
 	panels->panel = NULL;
 	panels->n_panels = 0;
@@ -1888,6 +1917,9 @@ static bool init (RCore *core, RPanels *panels, int w, int h) {
 	panels->isResizing = false;
 	panels->isZoom = false;
 	panels->can = createNewCanvas (core, w, h);
+	panels->db = sdb_new0 ();
+	initSdb (panels);
+
 	if (w < 140) {
 		panels->columnWidth = w / 3;
 	}
@@ -2027,29 +2059,29 @@ static void onMenu(RCore *core, const char *menu, int *exit) {
 		r_line_set_hist_callback (core->cons->line, &cmd_history_up, &cmd_history_down);
 		r_cons_enable_mouse (true);
 	} else if (!strcmp (menu, "RegisterRefs")) {
-		layoutSidePanel (core, PANEL_TITLE_REGISTERREFS, PANEL_CMD_REGISTERREFS);
+		//layoutSidePanel (core, PANEL_TITLE_REGISTERREFS, PANEL_CMD_REGISTERREFS);
 	} else if (!strcmp (menu, "Registers")) {
-		layoutSidePanel (core, PANEL_TITLE_REGISTERS, PANEL_CMD_REGISTERS);
+		//layoutSidePanel (core, PANEL_TITLE_REGISTERS, PANEL_CMD_REGISTERS);
 	} else if (!strcmp (menu, "Info")) {
-		layoutSidePanel (core, PANEL_TITLE_INFO, PANEL_CMD_INFO);
+		//layoutSidePanel (core, PANEL_TITLE_INFO, PANEL_CMD_INFO);
 	} else if (!strcmp (menu, "Database")) {
-		layoutSidePanel (core, PANEL_TITLE_DATABASE, PANEL_CMD_DATABASE);
+		//layoutSidePanel (core, PANEL_TITLE_DATABASE, PANEL_CMD_DATABASE);
 	} else if (!strcmp (menu, "About")) {
 		char *s = r_core_cmd_str (core, "?V");
 		r_cons_message (s);
 		free (s);
 	} else if (!strcmp (menu, "Hexdump")) {
-		layoutSidePanel (core, PANEL_TITLE_HEXDUMP, PANEL_CMD_HEXDUMP);
+		//layoutSidePanel (core, PANEL_TITLE_HEXDUMP, PANEL_CMD_HEXDUMP);
 	} else if (!strcmp (menu, "Disassembly")) {
-		layoutSidePanel (core, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY);
+		//layoutSidePanel (core, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY);
 	} else if (!strcmp (menu, "Functions")) {
-		layoutSidePanel (core, PANEL_TITLE_FUNCTIONS, PANEL_CMD_FUNCTIONS);
+		//layoutSidePanel (core, PANEL_TITLE_FUNCTIONS, PANEL_CMD_FUNCTIONS);
 	} else if (!strcmp (menu, "Comments")) {
-		layoutSidePanel (core, PANEL_TITLE_COMMENTS, PANEL_CMD_COMMENTS);
+		//layoutSidePanel (core, PANEL_TITLE_COMMENTS, PANEL_CMD_COMMENTS);
 	} else if (!strcmp (menu, "Entropy")) {
-		layoutSidePanel (core, PANEL_TITLE_ENTROPY, PANEL_CMD_ENTROPY);
+		//layoutSidePanel (core, PANEL_TITLE_ENTROPY, PANEL_CMD_ENTROPY);
 	} else if (!strcmp (menu, "Pseudo")) {
-		layoutSidePanel (core, PANEL_TITLE_PSEUDO, PANEL_CMD_PSEUDO);
+		//layoutSidePanel (core, PANEL_TITLE_PSEUDO, PANEL_CMD_PSEUDO);
 	} else if (!strcmp (menu, "Symbols")) {
 		r_core_cmdf (core, "aa");
 	} else if (!strcmp (menu, "BasicBlocks")) {
@@ -2057,7 +2089,7 @@ static void onMenu(RCore *core, const char *menu, int *exit) {
 	} else if (!strcmp (menu, "Function")) {
 		r_core_cmdf (core, "af");
 	} else if (!strcmp (menu, "DRX")) {
-		layoutSidePanel (core, PANEL_TITLE_DRX, PANEL_CMD_DRX);
+		//layoutSidePanel (core, PANEL_TITLE_DRX, PANEL_CMD_DRX);
 	} else if (!strcmp (menu, "Program")) {
 		r_core_cmdf (core, "aaa");
 	} else if (!strcmp (menu, "Calls")) {
@@ -2142,19 +2174,19 @@ static void onMenu(RCore *core, const char *menu, int *exit) {
 	} else if (!strcmp (menu, "Assemble")) {
 		r_core_visual_asm (core, core->offset);
 	} else if (!strcmp (menu, "Sections")) {
-		layoutSidePanel (core, PANEL_TITLE_SECTIONS, PANEL_CMD_SECTIONS);
+		//layoutSidePanel (core, PANEL_TITLE_SECTIONS, PANEL_CMD_SECTIONS);
 	} else if (!strcmp (menu, "Close")) {
 		r_core_cmd0 (core, "o-*");
 	} else if (!strcmp (menu, "Strings")) {
-		layoutSidePanel (core, PANEL_TITLE_STRINGS, PANEL_CMD_STRINGS);
+		//layoutSidePanel (core, PANEL_TITLE_STRINGS, PANEL_CMD_STRINGS);
 	} else if (!strcmp (menu, "Maps")) {
-		layoutSidePanel (core, PANEL_TITLE_MAPS, PANEL_CMD_MAPS);
+		//layoutSidePanel (core, PANEL_TITLE_MAPS, PANEL_CMD_MAPS);
 	} else if (!strcmp (menu, "Modules")) {
-		layoutSidePanel (core, PANEL_TITLE_MODULES, PANEL_CMD_MODULES);
+		//layoutSidePanel (core, PANEL_TITLE_MODULES, PANEL_CMD_MODULES);
 	} else if (!strcmp (menu, "Backtrace")) {
-		layoutSidePanel (core, PANEL_TITLE_BACKTRACE, PANEL_CMD_BACKTRACE);
+		//layoutSidePanel (core, PANEL_TITLE_BACKTRACE, PANEL_CMD_BACKTRACE);
 	} else if (!strcmp (menu, "Locals")) {
-		layoutSidePanel (core, PANEL_TITLE_LOCALS, PANEL_CMD_LOCALS);
+		//layoutSidePanel (core, PANEL_TITLE_LOCALS, PANEL_CMD_LOCALS);
 	} else if (!strcmp (menu, "Step")) {
 		r_core_cmd (core, "ds", 0);
 		r_cons_flush ();
@@ -2171,22 +2203,22 @@ static void onMenu(RCore *core, const char *menu, int *exit) {
 		r_core_cmd (core, "dso", 0);
 		r_cons_flush ();
 	} else if (!strcmp (menu, "StackRefs")) {
-		layoutSidePanel (core, PANEL_TITLE_STACKREFS, PANEL_CMD_STACKREFS);
+		//layoutSidePanel (core, PANEL_TITLE_STACKREFS, PANEL_CMD_STACKREFS);
 	} else if (!strcmp (menu, "Stack")) {
-		layoutSidePanel (core, PANEL_TITLE_STACK, PANEL_CMD_STACK);
+		//layoutSidePanel (core, PANEL_TITLE_STACK, PANEL_CMD_STACK);
 	} else if (!strcmp (menu, "Continue")) {
 		r_core_cmd (core, "dc", 0);
 		r_cons_flush ();
 	} else if (!strcmp (menu, "Breakpoints")) {
-		layoutSidePanel (core, PANEL_TITLE_BREAKPOINTS, PANEL_CMD_BREAKPOINTS);
+		//layoutSidePanel (core, PANEL_TITLE_BREAKPOINTS, PANEL_CMD_BREAKPOINTS);
 	} else if (!strcmp (menu, "Symbols")) {
-		layoutSidePanel (core, PANEL_TITLE_SYMBOLS, PANEL_CMD_SYMBOLS);
+		//layoutSidePanel (core, PANEL_TITLE_SYMBOLS, PANEL_CMD_SYMBOLS);
 	} else if (!strcmp (menu, "Imports")) {
-		layoutSidePanel (core, PANEL_TITLE_IMPORTS, PANEL_CMD_IMPORTS);
+		//layoutSidePanel (core, PANEL_TITLE_IMPORTS, PANEL_CMD_IMPORTS);
 	} else if (!strcmp (menu, "Paste")) {
 		r_core_cmd0 (core, "yy");
 	} else if (!strcmp (menu, "Clipboard")) {
-		layoutSidePanel (core, PANEL_TITLE_CLIPBOARD, PANEL_CMD_CLIPBOARD);
+		//layoutSidePanel (core, PANEL_TITLE_CLIPBOARD, PANEL_CMD_CLIPBOARD);
 	} else if (!strcmp (menu, "io.cache")) {
 		r_core_cmd0 (core, "e!io.cache");
 	} else if (!strcmp (menu, "Fill")) {
@@ -2198,7 +2230,7 @@ static void onMenu(RCore *core, const char *menu, int *exit) {
 	} else if (!strcmp (menu, "References")) {
 		r_core_cmdf (core, "aar");
 	} else if (!strcmp (menu, "FcnInfo")) {
-		layoutSidePanel (core, PANEL_TITLE_FCNINFO, PANEL_CMD_FCNINFO);
+		//layoutSidePanel (core, PANEL_TITLE_FCNINFO, PANEL_CMD_FCNINFO);
 	} else if (!strcmp (menu, "Graph")) {
 		r_core_visual_graph (core, NULL, NULL, true);
 		// addPanelFrame ("Graph", "agf");
