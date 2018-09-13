@@ -6,7 +6,26 @@
 #include <stdio.h>
 #include <string.h>
 
-static RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
+static ut32 asn1_ber_indefinite (const ut8 *buffer, ut32 length) {
+	if (!length || !buffer) {
+		return 0;
+	}
+	const ut8* next = buffer + 2;
+	const ut8* end = buffer + (length - 3);
+	while (next < end) {
+		if (!next[0] && !next[1]) {
+			break;
+		}
+		if (next[0] == 0x80 && (next[-1] & ASN1_FORM) == FORM_CONSTRUCTED) {
+			next --;
+			next += asn1_ber_indefinite (next, end - next);
+		}
+		next ++;
+	}
+	return (next - buffer) + 2;
+}
+
+RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 	ut8 head, length8, byte;
 	ut64 length64;
 	if (!buffer || length < 2) {
@@ -21,10 +40,12 @@ static RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 	object->klass = head & ASN1_CLASS;
 	object->form = head & ASN1_FORM;
 	object->tag = head & ASN1_TAG;
+	object->undefined = 0;
 	length8 = buffer[1];
 	if (length8 & ASN1_LENLONG) {
 		length64 = 0;
 		length8 &= ASN1_LENSHORT;
+		object->sector = buffer + 2;
 		if (length8 && length8 < length - 2) {
 			ut8 i8;
 			// can overflow.
@@ -36,10 +57,9 @@ static RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 					goto out_error;
 				}
 			}
-			object->sector = buffer + 2 + length8;
-		} else if (!(length8 & ASN1_LENSHORT)) {
-			length64 = length - 2;
-			object->sector = buffer + 2;
+			object->sector += length8;
+		} else {
+			length64 = asn1_ber_indefinite (object->sector, length - 2);
 		}
 		object->length = (ut32) length64;
 	} else {
@@ -70,7 +90,6 @@ static ut32 r_asn1_count_objects (const ut8 *buffer, ut32 length) {
 	if (!buffer || !length) {
 		return 0;
 	}
-	ut32 eoc_cnt = 0;
 	counter = 0;
 	object = NULL;
 	next = buffer;
@@ -83,14 +102,6 @@ static ut32 r_asn1_count_objects (const ut8 *buffer, ut32 length) {
 		}
 		next = object->sector + object->length;
 		counter++;
-		if (object->klass == CLASS_UNIVERSAL && object->tag == TAG_EOC) {
-			if (eoc_cnt > 5) {
-				break;
-			}
-			eoc_cnt++;
-		} else {
-			eoc_cnt = 0;
-		}
 		R_FREE (object);
 	}
 	R_FREE (object);
@@ -167,17 +178,17 @@ R_API void r_asn1_print_hex (RASN1Object *object, char* buffer, ut32 size) {
 	}
 }
 
-R_API void r_asn1_print_object (RASN1Object *object) {
+R_API void r_asn1_print_object (RASN1Object *object, ut32 depth) {
 	ut32 i;
 	if (!object) {
 		return;
 	}
 	//this shall not be freed. it's a pointer into the buffer.
 	RASN1String* asn1str = NULL;
-	static char temp[256] = {0};
+	static char temp_name[256] = {0};
 	const char* name = "";
 	const char* string = "";
-	memset (temp, 0, sizeof (temp));
+	memset (temp_name, 0, sizeof (temp_name));
 
 	switch (object->klass) {
 	case CLASS_UNIVERSAL: // universal
@@ -193,24 +204,21 @@ R_API void r_asn1_print_object (RASN1Object *object) {
 			break;
 		case TAG_INTEGER:
 			name = "INTEGER";
-			r_asn1_print_hex (object, temp, 20);
-			string = temp;
+			r_asn1_print_hex (object, temp_name, 20);
+			string = temp_name;
 			break;
 		case TAG_BITSTRING:
 			name = "BIT_STRING";
-			r_asn1_print_hex (object, temp, 20);
-			string = temp;
+			r_asn1_print_hex (object, temp_name, 20);
+			string = temp_name;
 			break;
 		case TAG_OCTETSTRING:
 			name = "OCTET_STRING";
 			if (r_str_is_printable_limited (object->sector, object->length)) {
 				asn1str = r_asn1_stringify_string (object->sector, object->length);
 			} else if (!object->list.objects) {
-				r_asn1_print_hex (object, temp, 20);
-				string = temp;
-			} else {
-				snprintf (temp, sizeof (temp), "[contains %u object%s]", object->list.length, object->list.length > 1 ? "s" : "");
-				string = temp;
+				r_asn1_print_hex (object, temp_name, 20);
+				string = temp_name;
 			}
 			break;
 		case TAG_NULL:
@@ -228,8 +236,8 @@ R_API void r_asn1_print_object (RASN1Object *object) {
 			break;
 		case TAG_REAL:
 			name = "REAL";
-			r_asn1_print_hex (object, temp, 20);
-			string = temp;
+			r_asn1_print_hex (object, temp_name, 20);
+			string = temp_name;
 			break;
 		case TAG_ENUMERATED:
 			name = "ENUMERATED";
@@ -243,13 +251,9 @@ R_API void r_asn1_print_object (RASN1Object *object) {
 			break;
 		case TAG_SEQUENCE:
 			name = "SEQUENCE";
-			snprintf (temp, sizeof (temp), "[contains %u object%s]", object->list.length, object->list.length > 1 ? "s" : "");
-			string = temp;
 			break;
 		case TAG_SET:
 			name = "SET";
-			snprintf (temp, sizeof (temp), "[contains %u object%s]", object->list.length, object->list.length > 1 ? "s" : "");
-			string = temp;
 			break;
 		case TAG_NUMERICSTRING:
 			name = "NumericString";
@@ -299,32 +303,32 @@ R_API void r_asn1_print_object (RASN1Object *object) {
 			asn1str = r_asn1_stringify_string (object->sector, object->length);
 			break;
 		default:
-			snprintf (temp, sizeof (temp), "Universal_%u", object->tag);
-			name = temp;
+			snprintf (temp_name, sizeof (temp_name), "Universal_%u", object->tag);
+			name = temp_name;
 			break;
 		}
 		break;
 	case CLASS_APPLICATION:
-		snprintf (temp, sizeof (temp), "Application_%u", object->tag);
-		name = temp;
+		snprintf (temp_name, sizeof (temp_name), "Application_%u", object->tag);
+		name = temp_name;
 		break;
 	case CLASS_CONTEXT:
-		snprintf (temp, sizeof (temp), "Context [%u]", object->tag); // Context
-		name = temp;
+		snprintf (temp_name, sizeof (temp_name), "Context [%u]", object->tag); // Context
+		name = temp_name;
 		break;
 	case CLASS_PRIVATE:
-		snprintf (temp, sizeof (temp), "Private_%u", object->tag);
-		name = temp;
+		snprintf (temp_name, sizeof (temp_name), "Private_%u", object->tag);
+		name = temp_name;
 		break;
 	}
 	if (asn1str) {
 		string = asn1str->string;
 	}
-	r_cons_printf ("%4u: %s %-20s: %s\n", object->length, object->form ? "cons" : "prim", name, string);
+	r_cons_printf ("%4u:%2d: %s %-20s: %s\n", object->length, depth, object->form ? "cons" : "prim", name, string);
 	r_asn1_free_string (asn1str);
 	if (object->list.objects) {
 		for (i = 0; i < object->list.length; ++i) {
-			r_asn1_print_object (object->list.objects[i]);
+			r_asn1_print_object (object->list.objects[i], depth + 1);
 		}
 	}
 }
