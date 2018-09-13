@@ -391,10 +391,6 @@ static mcore_t *find_instruction(const ut8* buffer) {
 			op_ptr = &mcore_instructions[i + 1];
 		}
 	}
-	if (!op_ptr) {
-		return NULL;
-	}
-
 	op->type = op_ptr->type;
 	op->name = op_ptr->name;
 	op->n_args = op_ptr->n_args;

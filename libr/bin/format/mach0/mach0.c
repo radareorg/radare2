@@ -747,7 +747,7 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 			}
 			break;
 		case 0x10000: // ASN1/DER certificate
-			{
+			if (isVerbose) {
 				ut8 header[8] = {0};
 				r_buf_read_at (bin->b, data + idx.offset, header, sizeof (header));
 				ut32 length = R_MIN (UT16_MAX, r_read_ble32 (header + 4, 1));
@@ -759,8 +759,7 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 					words += 2;
 					eprintf ("wtf DUMP @%d!%d\n",
 						(int)data + idx.offset + 8, (int)length);
-					eprintf ("openssl pkcs7 -print_certs -text -inform der -in DUMP\n",
-						(int)data + idx.offset + 8, (int)length);
+					eprintf ("openssl pkcs7 -print_certs -text -inform der -in DUMP\n");
 					eprintf ("openssl asn1parse -offset %d -length %d -inform der -in /bin/ls\n",
 						(int)data + idx.offset + 8, (int)length);
 					eprintf ("pFp@%d!%d\n",
