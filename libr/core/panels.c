@@ -2243,9 +2243,14 @@ static void savePanelsLayout(RPanels* panels) {
 static void loadPanelsLayout(RCore* core) {
 	int i, s;
 	char *configPath = getPanelsConfigPath ();
+	if (!configPath) {
+		return;
+	}
+
 	char *panelsConfig = r_file_slurp (configPath, &s);
-	if (!configPath || !panelsConfig) {
-		free (configPath);
+	free (configPath);
+
+	if (!panelsConfig) {
 		free (panelsConfig);
 		return;
 	}
