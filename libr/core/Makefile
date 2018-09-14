@@ -26,6 +26,11 @@ ifeq ($(USE_LIB_MAGIC),1)
 LDFLAGS+=${LIBMAGIC}
 endif
 
+ifeq ($(HAVE_LIBUV),1)
+CFLAGS+=${LIBUV_CFLAGS}
+LDFLAGS+=${LIBUV_LDFLAGS}
+endif
+
 first:: all
 
 include ${STATIC_CORE_PLUGINS}
