@@ -60,6 +60,7 @@ typedef struct r_bp_item_t {
 	char *data;
 	char *cond; /* used for conditional breakpoints */
 	char *expr; /* to be used for named breakpoints (see r_debug_bp_update) */
+	void *user; /* user defined data associated with the breakpoint */
 } RBreakpointItem;
 
 struct r_bp_t;
