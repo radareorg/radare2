@@ -18,6 +18,7 @@
 | **AppVeyor**  | [![Build Status](https://ci.appveyor.com/api/projects/status/v9bxvsb1p6c3cmf9/branch/master?svg=true)](https://ci.appveyor.com/project/radare/radare2-shvdd)|
 | **Coverity** 	| [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) |
 | **Infrastructure** |  [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) |
+| **Codecov** | [![codecov](https://codecov.io/gh/radare/radare2/branch/master/graph/badge.svg)](https://codecov.io/gh/radare/radare2)
 <a href="https://repology.org/metapackage/radare2">
 <img src="https://repology.org/badge/vertical-allrepos/radare2.svg" alt="Packaging status" align="right" width="150px" height="700px">
 </a>
