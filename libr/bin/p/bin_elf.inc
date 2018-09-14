@@ -1070,6 +1070,21 @@ static bool has_sanitizers(RBinFile *bf) {
 	return ret;
 }
 
+static bool is_golang(RBinFile *binfile) {
+	bool ret = false;
+	RList* section_list = sections (binfile);
+	RListIter *iter;
+	RBinSection *section;
+	r_list_foreach (section_list, iter, section) {
+		if (section->name && (strstr (section->name, "note.go.buildid") || strstr (section->name, ".gopclntab"))) {
+			ret = true;
+			break;
+		}
+	}
+	r_list_free (section_list);
+	return ret;
+}
+
 static RBinInfo* info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
 	char *str;
@@ -1141,16 +1156,8 @@ static RBinInfo* info(RBinFile *bf) {
 	if (Elf_(r_bin_elf_get_static) (obj)) {
 		ret->dbg_info |= R_BIN_DBG_STATIC;
 	}
-	RBinElfSymbol *symbol;
-	if (!(symbol = Elf_(r_bin_elf_get_symbols) (obj))) {
-		return ret;
-	}
-	int i;
-	for (i = 0; !symbol[i].last; i++) {
-		if (!strncmp (symbol[i].name, "type.", 5)) {
-			ret->lang = "go";
-			break;
-		}
+	if (is_golang(bf)) {
+		ret->lang = "go";
 	}
 	return ret;
 }
