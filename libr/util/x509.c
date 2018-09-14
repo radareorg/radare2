@@ -265,7 +265,7 @@ RX509CRLEntry *r_x509_parse_crlentry (RASN1Object *object) {
 	return entry;
 }
 
-RX509CertificateRevocationList* r_x509_parse_crl (RASN1Object *object) {
+R_API RX509CertificateRevocationList* r_x509_parse_crl (RASN1Object *object) {
 	RX509CertificateRevocationList *crl;
 	RASN1Object **elems;
 	if (!object || object->list.length < 4) {
@@ -386,7 +386,7 @@ void r_x509_free_certificate (RX509Certificate * certificate) {
 	}
 }
 
-void r_x509_free_crlentry (RX509CRLEntry *entry) {
+static void r_x509_free_crlentry (RX509CRLEntry *entry) {
 	if (entry) {
 		r_asn1_free_binary (entry->userCertificate);
 		r_asn1_free_string (entry->revocationDate);
@@ -413,7 +413,7 @@ void r_x509_free_crl (RX509CertificateRevocationList *crl) {
 	}
 }
 
-void r_x509_validity_dump (RX509Validity* validity, const char* pad) {
+static void r_x509_validity_dump (RX509Validity* validity, const char* pad, RStrBuf *sb) {
 	if (!validity) {
 		return;
 	}
@@ -422,10 +422,10 @@ void r_x509_validity_dump (RX509Validity* validity, const char* pad) {
 	}
 	const char* b = validity->notBefore ? validity->notBefore->string : "Missing";
 	const char* a = validity->notAfter ? validity->notAfter->string : "Missing";
-	eprintf ("%sNot Before: %s\n%sNot After: %s\n", pad, b, pad, a);
+	r_strbuf_appendf (sb, "%sNot Before: %s\n%sNot After: %s\n", pad, b, pad, a);
 }
 
-void r_x509_name_dump (RX509Name* name, const char* pad) {
+void r_x509_name_dump (RX509Name* name, const char* pad, RStrBuf *sb) {
 	ut32 i;
 	if (!name) {
 		return;
@@ -437,11 +437,11 @@ void r_x509_name_dump (RX509Name* name, const char* pad) {
 		if (!name->oids[i] || !name->names[i]) {
 			continue;
 		}
-		eprintf ("%s%s: %s\n", pad, name->oids[i]->string, name->names[i]->string);
+		r_strbuf_appendf (sb, "%s%s: %s\n", pad, name->oids[i]->string, name->names[i]->string);
 	}
 }
 
-void r_x509_subjectpublickeyinfo_dump (RX509SubjectPublicKeyInfo* spki, const char* pad) {
+static void r_x509_subjectpublickeyinfo_dump (RX509SubjectPublicKeyInfo* spki, const char* pad, RStrBuf *sb) {
 	const char *a;
 	if (!spki) {
 		return;
@@ -457,13 +457,13 @@ void r_x509_subjectpublickeyinfo_dump (RX509SubjectPublicKeyInfo* spki, const ch
 	//	RASN1String* e = r_asn1_stringify_bytes (spki->subjectPublicKeyExponent->sector, spki->subjectPublicKeyExponent->length);
 	//	r = snprintf (buffer, length, "%sAlgorithm: %s\n%sModule: %s\n%sExponent: %u bytes\n%s\n", pad, a, pad, m->string,
 	//				pad, spki->subjectPublicKeyExponent->length - 1, e->string);
-	eprintf ("%sAlgorithm: %s\n%sModule: %s\n%sExponent: %u bytes\n", pad, a, pad, m ? m->string : "Missing",
+	r_strbuf_appendf (sb, "%sAlgorithm: %s\n%sModule: %s\n%sExponent: %u bytes\n", pad, a, pad, m ? m->string : "Missing",
 				pad, spki->subjectPublicKeyExponent ? spki->subjectPublicKeyExponent->length - 1 : 0);
 	r_asn1_free_string (m);
 	//	r_asn1_free_string (e);
 }
 
-void r_x509_extensions_dump (RX509Extensions* exts, const char* pad) {
+static void r_x509_extensions_dump (RX509Extensions* exts, const char* pad, RStrBuf *sb) {
 	ut32 i;
 	if (!exts) {
 		return;
@@ -472,76 +472,75 @@ void r_x509_extensions_dump (RX509Extensions* exts, const char* pad) {
 		pad = "";
 	}
 	for (i = 0; i < exts->length; ++i) {
-		//RASN1String *s;
 		RX509Extension *e = exts->extensions[i];
 		if (!e) {
 			continue;
 		}
 		//TODO handle extensions..
 		//s = r_asn1_stringify_bytes (e->extnValue->sector, e->extnValue->length);
-		eprintf ("%s%s: %s\n%s%u bytes\n", pad,
-					e->extnID ? e->extnID->string : "Missing",
-					e->critical ? "critical" : "",
-					pad, e->extnValue ? e->extnValue->length : 0);
+		r_strbuf_appendf (sb, "%s%s: %s\n%s%u bytes\n", pad,
+			e->extnID ? e->extnID->string : "Missing",
+			e->critical ? "critical" : "",
+			pad, e->extnValue ? e->extnValue->length : 0);
 		//r_asn1_free_string (s);
 	}
 }
 
-void r_x509_tbscertificate_dump (RX509TBSCertificate* tbsc, const char* pad) {
+static void r_x509_tbscertificate_dump (RX509TBSCertificate* tbsc, const char* pad, RStrBuf *sb) {
 	RASN1String *sid = NULL, *iid = NULL;
-	char *pad2;
 	if (!tbsc) {
 		return;
 	}
 	if (!pad) {
 		pad = "";
 	}
-	pad2 = r_str_newf ("%s  ", pad);
-	if (!pad2) return;
-	eprintf ("%sVersion: v%u\n"
-				"%sSerial Number:\n%s  %s\n"
-				"%sSignature Algorithm:\n%s  %s\n"
-				"%sIssuer:\n",
-				pad, tbsc->version + 1,
-				pad, pad, tbsc->serialNumber ? tbsc->serialNumber->string : "Missing",
-				pad, pad, tbsc->signature.algorithm ? tbsc->signature.algorithm->string : "Missing",
-				pad);
-	r_x509_name_dump (&tbsc->issuer, pad2);
+	char *pad2 = r_str_newf ("%s  ", pad);
+	if (!pad2) {
+		return;
+	}
+	r_strbuf_appendf (sb, "%sVersion: v%u\n"
+		"%sSerial Number:\n%s  %s\n"
+		"%sSignature Algorithm:\n%s  %s\n"
+		"%sIssuer:\n",
+		pad, tbsc->version + 1,
+		pad, pad, tbsc->serialNumber ? tbsc->serialNumber->string : "Missing",
+		pad, pad, tbsc->signature.algorithm ? tbsc->signature.algorithm->string : "Missing",
+		pad);
+	r_x509_name_dump (&tbsc->issuer, pad2, sb);
 
-	eprintf ("%sValidity:\n", pad);
-	r_x509_validity_dump (&tbsc->validity, pad2);
+	r_strbuf_appendf (sb, "%sValidity:\n", pad);
+	r_x509_validity_dump (&tbsc->validity, pad2, sb);
 
-	eprintf ("%sSubject:\n", pad);
-	r_x509_name_dump (&tbsc->subject, pad2);
+	r_strbuf_appendf (sb, "%sSubject:\n", pad);
+	r_x509_name_dump (&tbsc->subject, pad2, sb);
 
-	eprintf ("%sSubject Public Key Info:\n", pad);
-	r_x509_subjectpublickeyinfo_dump (&tbsc->subjectPublicKeyInfo, pad2);
+	r_strbuf_appendf (sb, "%sSubject Public Key Info:\n", pad);
+	r_x509_subjectpublickeyinfo_dump (&tbsc->subjectPublicKeyInfo, pad2, sb);
 
 	if (tbsc->issuerUniqueID) {
 		iid = r_asn1_stringify_integer (tbsc->issuerUniqueID->binary, tbsc->issuerUniqueID->length);
 		if (iid) {
-			eprintf ("%sIssuer Unique ID:\n%s  %s", pad, pad, iid->string);
+			r_strbuf_appendf (sb, "%sIssuer Unique ID:\n%s  %s", pad, pad, iid->string);
 			r_asn1_free_string (iid);
 		}
 	}
 	if (tbsc->subjectUniqueID) {
 		sid = r_asn1_stringify_integer (tbsc->subjectUniqueID->binary, tbsc->subjectUniqueID->length);
 		if (sid) {
-			eprintf ("%sSubject Unique ID:\n%s  %s", pad, pad, sid->string);
+			r_strbuf_appendf (sb, "%sSubject Unique ID:\n%s  %s", pad, pad, sid->string);
 			r_asn1_free_string (sid);
 		}
 	}
 
-	eprintf ("%sExtensions:\n", pad);
-	r_x509_extensions_dump (&tbsc->extensions, pad2);
+	r_strbuf_appendf (sb, "%sExtensions:\n", pad);
+	r_x509_extensions_dump (&tbsc->extensions, pad2, sb);
 	free (pad2);
 }
 
-void r_x509_certificate_dump (RX509Certificate* certificate, const char* pad) {
-	//	RASN1String *signature,
+void r_x509_certificate_dump (RX509Certificate* cert, const char* pad, RStrBuf *sb) {
 	RASN1String *algo = NULL;
 	char *pad2;
-	if (!certificate) {
+	if (!cert) {
 		return;
 	}
 	if (!pad) {
@@ -551,21 +550,21 @@ void r_x509_certificate_dump (RX509Certificate* certificate, const char* pad) {
 	if (!pad2) {
 		return;
 	}
-	eprintf ("%sTBSCertificate:\n", pad);
-	r_x509_tbscertificate_dump (&certificate->tbsCertificate, pad2);
+	r_strbuf_appendf (sb, "%sTBSCertificate:\n", pad);
+	r_x509_tbscertificate_dump (&cert->tbsCertificate, pad2, sb);
 
-	algo = certificate->algorithmIdentifier.algorithm;
+	algo = cert->algorithmIdentifier.algorithm;
 	//	signature = r_asn1_stringify_bytes (certificate->signature->binary, certificate->signature->length);
 	//	eprintf ("%sAlgorithm:\n%s%s\n%sSignature: %u bytes\n%s\n",
 	//				pad, pad2, algo ? algo->string : "",
 	//				pad, certificate->signature->length, signature ? signature->string : "");
-	eprintf ("%sAlgorithm:\n%s%s\n%sSignature: %u bytes\n",
-				pad, pad2, algo ? algo->string : "", pad, certificate->signature->length);
+	r_strbuf_appendf (sb, "%sAlgorithm:\n%s%s\n%sSignature: %u bytes\n",
+		pad, pad2, algo ? algo->string : "", pad, cert->signature->length);
 	free (pad2);
 	//	r_asn1_free_string (signature);
 }
 
-void r_x509_crlentry_dump (RX509CRLEntry *crle, const char* pad) {
+void r_x509_crlentry_dump (RX509CRLEntry *crle, const char* pad, RStrBuf *sb) {
 	RASN1String *id = NULL, *utc = NULL;
 	if (!crle) {
 		return;
@@ -577,44 +576,46 @@ void r_x509_crlentry_dump (RX509CRLEntry *crle, const char* pad) {
 	if (crle->userCertificate) {
 		id = r_asn1_stringify_integer (crle->userCertificate->binary, crle->userCertificate->length);
 	}
-
-	eprintf ("%sUser Certificate:\n%s  %s\n"
-				"%sRevocation Date:\n%s  %s\n",
-				pad, pad, id ? id->string : "Missing",
-				pad, pad, utc ? utc->string : "Missing");
-
+	r_strbuf_appendf (sb, "%sUser Certificate:\n%s  %s\n"
+		"%sRevocation Date:\n%s  %s\n",
+		pad, pad, id ? id->string : "Missing",
+		pad, pad, utc ? utc->string : "Missing");
 	r_asn1_free_string (id);
 }
 
-void r_x509_crl_dump (RX509CertificateRevocationList *crl, const char* pad) {
+R_API char *r_x509_crl_to_string(RX509CertificateRevocationList *crl, const char* pad) {
 	RASN1String *algo = NULL, *last = NULL, *next = NULL;
 	ut32 i;
 	char *pad2, *pad3;
 	if (!crl) {
-		return;
+		return NULL;
 	}
 	if (!pad) {
 		pad = "";
 	}
 	pad3 = r_str_newf ("%s    ", pad);
-	if (!pad3) return;
+	if (!pad3) {
+		return NULL;
+	}
 	pad2 = pad3 + 2;
 	algo = crl->signature.algorithm;
 	last = crl->lastUpdate;
 	next = crl->nextUpdate;
-	eprintf ("%sCRL:\n%sSignature:\n%s%s\n%sIssuer\n", pad, pad2, pad3,
+	RStrBuf *sb = r_strbuf_new ("");
+	r_strbuf_appendf (sb, "%sCRL:\n%sSignature:\n%s%s\n%sIssuer\n", pad, pad2, pad3,
 			algo ? algo->string : "", pad2);
-	r_x509_name_dump (&crl->issuer, pad3);
+	r_x509_name_dump (&crl->issuer, pad3, sb);
 
-	eprintf ("%sLast Update: %s\n%sNext Update: %s\n%sRevoked Certificates:\n",
+	r_strbuf_appendf (sb, "%sLast Update: %s\n%sNext Update: %s\n%sRevoked Certificates:\n",
 				pad2, last ? last->string : "Missing",
 				pad2, next ? next->string : "Missing", pad2);
 
-	for (i = 0; i < crl->length; ++i) {
-		r_x509_crlentry_dump (crl->revokedCertificates[i], pad3);
+	for (i = 0; i < crl->length; i++) {
+		r_x509_crlentry_dump (crl->revokedCertificates[i], pad3, sb);
 	}
 
 	free (pad3);
+	return r_strbuf_drain (sb);
 }
 
 RJSVar *r_x509_validity_json (RX509Validity* validity) {
@@ -743,7 +744,7 @@ RJSVar *r_x509_crlentry_json (RX509CRLEntry *crle) {
 	return obj;
 }
 
-RJSVar *r_x509_crl_json (RX509CertificateRevocationList *crl) {
+R_API RJSVar *r_x509_crl_json (RX509CertificateRevocationList *crl) {
 	ut32 i;
 	RJSVar* obj = r_json_object_new ();
 	RJSVar* array = NULL;

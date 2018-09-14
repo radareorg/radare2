@@ -178,17 +178,22 @@ R_API void r_asn1_print_hex (RASN1Object *object, char* buffer, ut32 size) {
 	}
 }
 
-R_API void r_asn1_print_object (RASN1Object *object, ut32 depth) {
+// R_API void r_asn1_print_object (RASN1Object *object, ut32 depth) {
+R_API char *r_asn1_to_string (RASN1Object *object, ut32 depth, RStrBuf *sb) {
 	ut32 i;
+	bool root = false;
 	if (!object) {
-		return;
+		return NULL;
+	}
+	if (!sb) {
+		sb = r_strbuf_new ("");
+		root = true;
 	}
 	//this shall not be freed. it's a pointer into the buffer.
 	RASN1String* asn1str = NULL;
 	static char temp_name[256] = {0};
 	const char* name = "";
 	const char* string = "";
-	memset (temp_name, 0, sizeof (temp_name));
 
 	switch (object->klass) {
 	case CLASS_UNIVERSAL: // universal
@@ -204,12 +209,12 @@ R_API void r_asn1_print_object (RASN1Object *object, ut32 depth) {
 			break;
 		case TAG_INTEGER:
 			name = "INTEGER";
-			r_asn1_print_hex (object, temp_name, 20);
+			r_asn1_print_hex (object, temp_name, sizeof (temp_name));
 			string = temp_name;
 			break;
 		case TAG_BITSTRING:
 			name = "BIT_STRING";
-			r_asn1_print_hex (object, temp_name, 20);
+			r_asn1_print_hex (object, temp_name, sizeof (temp_name));
 			string = temp_name;
 			break;
 		case TAG_OCTETSTRING:
@@ -217,7 +222,7 @@ R_API void r_asn1_print_object (RASN1Object *object, ut32 depth) {
 			if (r_str_is_printable_limited ((const char *)object->sector, object->length)) {
 				asn1str = r_asn1_stringify_string (object->sector, object->length);
 			} else if (!object->list.objects) {
-				r_asn1_print_hex (object, temp_name, 20);
+				r_asn1_print_hex (object, temp_name, sizeof (temp_name));
 				string = temp_name;
 			}
 			break;
@@ -236,7 +241,7 @@ R_API void r_asn1_print_object (RASN1Object *object, ut32 depth) {
 			break;
 		case TAG_REAL:
 			name = "REAL";
-			r_asn1_print_hex (object, temp_name, 20);
+			r_asn1_print_hex (object, temp_name, sizeof (temp_name));
 			string = temp_name;
 			break;
 		case TAG_ENUMERATED:
@@ -324,13 +329,14 @@ R_API void r_asn1_print_object (RASN1Object *object, ut32 depth) {
 	if (asn1str) {
 		string = asn1str->string;
 	}
-	eprintf ("%4u:%2d: %s %-20s: %s\n", object->length, depth, object->form ? "cons" : "prim", name, string);
+	r_strbuf_appendf (sb, "%4u:%2d: %s %-20s: %s\n", object->length, depth, object->form ? "cons" : "prim", name, string);
 	r_asn1_free_string (asn1str);
 	if (object->list.objects) {
 		for (i = 0; i < object->list.length; ++i) {
-			r_asn1_print_object (object->list.objects[i], depth + 1);
+			r_asn1_to_string (object->list.objects[i], depth + 1, sb);
 		}
 	}
+	return root? r_strbuf_drain (sb): NULL;
 }
 
 R_API void r_asn1_free_object (RASN1Object *object) {

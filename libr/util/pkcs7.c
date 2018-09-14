@@ -3,10 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <r_util.h>
-#include <r_cons.h>
 #include "./x509.h"
 
 extern RJSVar *r_x509_name_json (RX509Name* name);
+extern void r_x509_free_crl (RX509CertificateRevocationList *crl);
+extern void r_x509_crlentry_dump (RX509CRLEntry *crle, const char* pad, RStrBuf *sb);
 static bool r_pkcs7_parse_attributes (RPKCS7Attributes* attribute, RASN1Object *object);
 
 static bool r_pkcs7_parse_contentinfo (RPKCS7ContentInfo* ci, RASN1Object *object) {
@@ -380,7 +381,9 @@ static bool r_pkcs7_parse_attributes (RPKCS7Attributes* attributes, RASN1Object 
 	return true;
 }
 
-void r_pkcs7_signerinfos_dump (RX509CertificateRevocationList *crl, const char* pad) {
+#if 0
+// XXX: unused
+static void r_pkcs7_signerinfos_dump (RX509CertificateRevocationList *crl, const char* pad, RStrBuf *sb) {
 	RASN1String *algo = NULL, *last = NULL, *next = NULL;
 	ut32 i;
 	char *pad2, *pad3;
@@ -397,18 +400,19 @@ void r_pkcs7_signerinfos_dump (RX509CertificateRevocationList *crl, const char* 
 	algo = crl->signature.algorithm;
 	last = crl->lastUpdate;
 	next = crl->nextUpdate;
-	eprintf ("%sCRL:\n%sSignature:\n%s%s\n%sIssuer\n", pad, pad2, pad3, algo ? algo->string : "", pad2);
-	r_x509_name_dump (&crl->issuer, pad3);
-	eprintf ("%sLast Update: %s\n%sNext Update: %s\n%sRevoked Certificates:\n",
+	r_strbuf_appendf (sb, "%sCRL:\n%sSignature:\n%s%s\n%sIssuer\n", pad, pad2, pad3, algo ? algo->string : "", pad2);
+	r_x509_name_dump (&crl->issuer, pad3, sb);
+	r_strbuf_appendf (sb, "%sLast Update: %s\n%sNext Update: %s\n%sRevoked Certificates:\n",
 				pad2, last ? last->string : "Missing",
 				pad2, next ? next->string : "Missing", pad2);
 	for (i = 0; i < crl->length; ++i) {
-		r_x509_crlentry_dump (crl->revokedCertificates[i], pad3);
+		r_x509_crlentry_dump (crl->revokedCertificates[i], pad3, sb);
 	}
 	free (pad3);
 }
+#endif
 
-static void r_x509_signedinfo_dump (RPKCS7SignerInfo *si, const char* pad) {
+static void r_x509_signedinfo_dump (RPKCS7SignerInfo *si, const char* pad, RStrBuf *sb) {
 	RASN1String *s = NULL;
 	RASN1Binary *o = NULL;
 	ut32 i;
@@ -425,35 +429,36 @@ static void r_x509_signedinfo_dump (RPKCS7SignerInfo *si, const char* pad) {
 	}
 	pad2 = pad3 + 2;
 
-
-	eprintf ("%sSignerInfo:\n%sVersion: v%u\n%sIssuer\n", pad, pad2, si->version + 1, pad2);
-	r_x509_name_dump (&si->issuerAndSerialNumber.issuer, pad3);
+	r_strbuf_appendf (sb, "%sSignerInfo:\n%sVersion: v%u\n%sIssuer\n", pad, pad2, si->version + 1, pad2);
+	r_x509_name_dump (&si->issuerAndSerialNumber.issuer, pad3, sb);
 	if ((o = si->issuerAndSerialNumber.serialNumber)) {
 		s = r_asn1_stringify_integer (o->binary, o->length);
 	}
-	eprintf ("%sSerial Number:\n%s%s\n", pad2, pad3, s ? s->string : "Missing");
+	r_strbuf_appendf (sb, "%sSerial Number:\n%s%s\n", pad2, pad3, s ? s->string : "Missing");
 	r_asn1_free_string (s);
 
 	s = si->digestAlgorithm.algorithm;
-	eprintf ("%sDigest Algorithm:\n%s%s\n%sAuthenticated Attributes:\n",
-				pad2, pad3, s ? s->string : "Missing", pad2);
+	r_strbuf_appendf (sb, "%sDigest Algorithm:\n%s%s\n%sAuthenticated Attributes:\n",
+		pad2, pad3, s ? s->string : "Missing", pad2);
 
 	for (i = 0; i < si->authenticatedAttributes.length; ++i) {
 		RPKCS7Attribute* attr = si->authenticatedAttributes.elements[i];
-		if (!attr) continue;
-		eprintf ("%s%s: %u bytes\n", pad3, attr->oid ? attr->oid->string : "Missing",
+		if (!attr) {
+			continue;
+		}
+		r_strbuf_appendf (sb, "%s%s: %u bytes\n", pad3, attr->oid ? attr->oid->string : "Missing",
 					attr->data ? attr->data->length : 0);
 	}
 	s = si->digestEncryptionAlgorithm.algorithm;
-	eprintf ("%sDigest Encryption Algorithm\n%s%s\n", pad2, pad3, s ? s->string : "Missing");
+	r_strbuf_appendf (sb, "%sDigest Encryption Algorithm\n%s%s\n", pad2, pad3, s ? s->string : "Missing");
 
 
 //	if ((o = si->encryptedDigest)) s = r_asn1_stringify_bytes (o->binary, o->length);
 //	else s = NULL;
 //	eprintf ("%sEncrypted Digest: %u bytes\n%s\n", pad2, o ? o->length : 0, s ? s->string : "Missing");
 //	r_asn1_free_string (s);
-	eprintf ("%sEncrypted Digest: %u bytes\n", pad2, o ? o->length : 0);
-	eprintf ("%sUnauthenticated Attributes:\n", pad2);
+	r_strbuf_appendf (sb, "%sEncrypted Digest: %u bytes\n", pad2, o ? o->length : 0);
+	r_strbuf_appendf (sb, "%sUnauthenticated Attributes:\n", pad2);
 	for (i = 0; i < si->unauthenticatedAttributes.length; ++i) {
 		RPKCS7Attribute* attr = si->unauthenticatedAttributes.elements[i];
 		if (!attr) {
@@ -466,41 +471,45 @@ static void r_x509_signedinfo_dump (RPKCS7SignerInfo *si, const char* pad) {
 	free (pad3);
 }
 
-void r_pkcs7_cms_dump (RCMS* container) {
-	RPKCS7SignedData *sd;
+R_API char *r_pkcs7_cms_to_string (RCMS* container) {
 	ut32 i;
 	if (!container) {
-		return;
+		return NULL;
 	}
-	sd = &container->signedData;
-	eprintf ("signedData\n  Version: v%u\n  Digest Algorithms:\n", sd->version);
+	RPKCS7SignedData *sd = &container->signedData;
+	RStrBuf *sb = r_strbuf_new ("");
+	r_strbuf_appendf (sb, "signedData\n  Version: v%u\n  Digest Algorithms:\n", sd->version);
 
 	if (container->signedData.digestAlgorithms.elements) {
-		eprintf("aaa\n");
 		for (i = 0; i < container->signedData.digestAlgorithms.length; ++i) {
 			if (container->signedData.digestAlgorithms.elements[i]) {
 				RASN1String *s = container->signedData.digestAlgorithms.elements[i]->algorithm;
-				eprintf ("    %s\n", s ? s->string : "Missing");
+				r_strbuf_appendf (sb, "    %s\n", s ? s->string : "Missing");
 			}
 		}
 	}
 
-	eprintf ("  Certificates: %u\n", container->signedData.certificates.length);
+	r_strbuf_appendf (sb, "  Certificates: %u\n", container->signedData.certificates.length);
 
 	for (i = 0; i < container->signedData.certificates.length; ++i) {
-		r_x509_certificate_dump (container->signedData.certificates.elements[i], "    ");
+		r_x509_certificate_dump (container->signedData.certificates.elements[i], "    ", sb);
 	}
 
 	for (i = 0; i < container->signedData.crls.length; ++i) {
-		r_x509_crl_dump (container->signedData.crls.elements[i], "    ");
-	}
-
-	eprintf ("  SignerInfos:\n");
-	if (container->signedData.signerinfos.elements) {
-		for (i = 0; i < container->signedData.signerinfos.length; ++i) {
-			r_x509_signedinfo_dump (container->signedData.signerinfos.elements[i], "    ");
+		char *res = r_x509_crl_to_string (container->signedData.crls.elements[i], "    ");
+		if (res) {
+			r_strbuf_append (sb, res);
+			free (res);
 		}
 	}
+
+	r_strbuf_appendf (sb, "  SignerInfos:\n");
+	if (container->signedData.signerinfos.elements) {
+		for (i = 0; i < container->signedData.signerinfos.length; ++i) {
+			r_x509_signedinfo_dump (container->signedData.signerinfos.elements[i], "    ", sb);
+		}
+	}
+	return r_strbuf_drain (sb);
 }
 
 RJSVar *r_x509_signedinfo_json (RPKCS7SignerInfo* si) {
