@@ -90,6 +90,7 @@
 #endif
 
 #ifdef _MSC_VER
+  #define restrict
   #define strcasecmp stricmp
   #define strncasecmp strnicmp
   #define __WINDOWS__ 1
@@ -208,7 +209,7 @@ extern "C" {
 #endif
 #endif
 
-typedef void (*PrintfCallback)(const char *str, ...);
+typedef int (*PrintfCallback)(const char *restrict str, ...);
 
 // TODO NOT USED. DEPREACATE
 #if R_RTDEBUG
