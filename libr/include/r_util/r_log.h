@@ -16,8 +16,12 @@ typedef enum r_log_level {
 	R_LOG_MAX_VALUE
 } RLogLevel;
 
-R_API void r_vlog(RLogLevel level, const char *fmt, va_list ap);
-R_API void r_log(RLogLevel level, const char *fmt, ...);
+R_API void r_log_file(const char *str);
+R_API void r_log_msg(const char *str);
+R_API void r_log_error(const char *str);
+R_API void r_log_progress(const char *str, int percent);
+R_API void r_vlogf(RLogLevel level, const char *fmt, va_list ap);
+R_API void r_logf(RLogLevel level, const char *fmt, ...);
 
 #ifdef __cplusplus
 }

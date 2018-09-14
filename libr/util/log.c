@@ -30,7 +30,7 @@ R_API void r_log_progress(const char *str, int percent) {
 	printf ("%d%%: %s\n", percent, str);
 }
 
-R_API void r_vlog(RLogLevel level, const char *fmt, va_list ap) {
+R_API void r_vlogf(RLogLevel level, const char *fmt, va_list ap) {
 	static const char *headers[R_LOG_MAX_VALUE] = {
 		[R_LOG_DEBUG] = "DEBUG: ",
 		[R_LOG_INFO] = "INFO: ",
@@ -39,14 +39,14 @@ R_API void r_vlog(RLogLevel level, const char *fmt, va_list ap) {
 		[R_LOG_CRITICAL] = "CRITICAL: ",
 	};
 
-	const char *hdr = level < R_LOG_MAX_VALUE ? headers[level] : "";
+	const char *hdr = R_BETWEEN (0, level, R_LOG_MAX_VALUE - 1) ? headers[level] : "";
 	eprintf (hdr);
 	vfprintf (stderr, fmt, ap);
 }
 
-R_API void r_log(RLogLevel level, const char *fmt, ...) {
+R_API void r_logf(RLogLevel level, const char *fmt, ...) {
 	va_list args;
 	va_start (args, fmt);
-	r_vlog (level, fmt, args);
+	r_vlogf (level, fmt, args);
 	va_end (args);
 }

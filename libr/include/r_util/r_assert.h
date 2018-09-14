@@ -6,28 +6,28 @@
 R_API void r_assert_log(RLogLevel level, const char *fmt, ...);
 
 #if defined (__GNUC__) && defined (__cplusplus)
-#define R_FUNCTION     ((const char*) (__PRETTY_FUNCTION__))
+#define R_FUNCTION ((const char*) (__PRETTY_FUNCTION__))
 #elif defined(__STDC__) && defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
-#define R_FUNCTION     ((const char*) (__func__))
+#define R_FUNCTION ((const char*) (__func__))
 #elif defined (__GNUC__) || (defined(_MSC_VER) && (_MSC_VER > 1300))
-#define R_FUNCTION     ((const char*) (__FUNCTION__))
+#define R_FUNCTION ((const char*) (__FUNCTION__))
 #else
 #warning Do not know how to get function name in this setup
-#define R_FUNCTION     ((const char*) ("???"))
+#define R_FUNCTION ((const char*) ("???"))
 #endif
 
-#define r_warn_if_reached()						\
-	do {								\
+#define r_warn_if_reached() \
+	do { \
 		r_assert_log (R_LOG_WARNING, "(%s:%d):%s%s code should not be reached\n", \
 			__FILE__, __LINE__, R_FUNCTION, R_FUNCTION[0] ? ":" : ""); \
 	} while (0)
 
-#define r_warn_if_fail(expr)					\
-	do {								\
-		if (!(expr)) {						\
+#define r_warn_if_fail(expr) \
+	do { \
+		if (!(expr)) { \
 			r_assert_log (R_LOG_WARNING, "WARNING (%s:%d):%s%s runtime check failed: (%s)\n", \
-				__FILE__, __LINE__, R_FUNCTION, , R_FUNCTION[0] ? ":" : "", #expr); \
-		}							\
+				__FILE__, __LINE__, R_FUNCTION, R_FUNCTION[0] ? ":" : "", #expr); \
+		} \
 	} while (0)
 
 /*
@@ -75,32 +75,32 @@ R_API void r_assert_log(RLogLevel level, const char *fmt, ...);
  * function returns.
  *
  */
-#define r_return_if_fail(expr)						\
-	do {								\
-		if (!(expr)) {						\
+#define r_return_if_fail(expr) \
+	do { \
+		if (!(expr)) { \
 			H_LOG_ (R_LOG_WARNING, "%s: assertion '%s' failed (line %d)\n", R_FUNCTION, #expr, __LINE__); \
-			return;						\
-		}							\
+			return; \
+		} \
 	} while (0)
 
-#define r_return_val_if_fail(expr, val)				\
-	do {							\
-		if (!(expr)) {					\
+#define r_return_val_if_fail(expr, val) \
+	do { \
+		if (!(expr)) { \
 			H_LOG_ (R_LOG_WARNING, "%s: assertion '%s' failed (line %d)\n", R_FUNCTION, #expr, __LINE__); \
-			return (val);				\
-		}						\
+			return (val); \
+		} \
 	} while (0)
 
-#define r_return_if_reached()						\
-	do {								\
-		H_LOG_ (R_LOG_CRITICAL, "file %s: line %d (%s): should not be reached\n", __FILE__, __LINE, R_FUNCTION); \
-		return;							\
+#define r_return_if_reached() \
+	do { \
+		H_LOG_ (R_LOG_CRITICAL, "file %s: line %d (%s): should not be reached\n", __FILE__, __LINE__, R_FUNCTION); \
+		return; \
 	} while (0)
 
-#define r_return_val_if_reached(val)					\
-	do {								\
-		H_LOG_ (R_LOG_CRITICAL, "file %s: line %d (%s): should not be reached\n", __FILE__, __LINE, R_FUNCTION); \
-		return (val);						\
+#define r_return_val_if_reached(val) \
+	do { \
+		H_LOG_ (R_LOG_CRITICAL, "file %s: line %d (%s): should not be reached\n", __FILE__, __LINE__, R_FUNCTION); \
+		return (val); \
 	} while (0)
 
 #else // R_CHECKS_LEVEL
