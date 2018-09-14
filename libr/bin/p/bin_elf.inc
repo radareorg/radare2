@@ -490,7 +490,7 @@ static RBinSymbol *convert_symbol(struct Elf_(r_bin_elf_obj_t) *bin,
 		vaddr = symbol->offset;
 	} else {
 		paddr = symbol->offset;
-		vaddr = Elf_(r_bin_elf_p2v) (bin, paddr);
+		vaddr = Elf_(r_bin_elf_p2v_new) (bin, paddr);
 	}
 
 	if (!(ptr = R_NEW0 (RBinSymbol))) {

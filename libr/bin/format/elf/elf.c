@@ -3101,7 +3101,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 						ret[ret_ctr].offset = sym[k].st_value + bin->shdr[sym[k].st_shndx].sh_offset;
 					}
 				} else {
-					ret[ret_ctr].offset = Elf_(r_bin_elf_v2p) (bin, toffset);
+					ret[ret_ctr].offset = Elf_(r_bin_elf_v2p_new) (bin, toffset);
 					if (ret[ret_ctr].offset == UT64_MAX) {
 						ret[ret_ctr].offset = toffset;
 						is_value = true;
@@ -3298,9 +3298,66 @@ static int is_in_vphdr (Elf_(Phdr) *p, ut64 addr) {
 }
 
 
+/* Deprecated temporarily. Use r_bin_elf_p2v_new in new code for now. */
+ut64 Elf_(r_bin_elf_p2v) (ELFOBJ *bin, ut64 paddr) {
+	int i;
+
+	if (!bin) {
+		return 0;
+	}
+
+	if (!bin->phdr) {
+		if (bin->ehdr.e_type == ET_REL) {
+			return bin->baddr + paddr;
+		}
+		return paddr;
+	}
+	for (i = 0; i < bin->ehdr.e_phnum; ++i) {
+		Elf_(Phdr) *p = &bin->phdr[i];
+		if (!p) {
+			break;
+		}
+		if (p->p_type == PT_LOAD && is_in_pphdr (p, paddr)) {
+			if (!p->p_vaddr && !p->p_offset) {
+				continue;
+			}
+			return p->p_vaddr + paddr - p->p_offset;
+		}
+	}
+
+	return paddr;
+}
+
+/* Deprecated temporarily. Use r_bin_elf_v2p_new in new code for now. */
+ut64 Elf_(r_bin_elf_v2p) (ELFOBJ *bin, ut64 vaddr) {
+	int i;
+	if (!bin) {
+		return 0;
+	}
+	if (!bin->phdr) {
+		if (bin->ehdr.e_type == ET_REL) {
+			return vaddr - bin->baddr;
+		}
+		return vaddr;
+	}
+	for (i = 0; i < bin->ehdr.e_phnum; ++i) {
+		Elf_(Phdr) *p = &bin->phdr[i];
+		if (!p) {
+			break;
+		}
+		if (p->p_type == PT_LOAD && is_in_vphdr (p, vaddr)) {
+			if (!p->p_offset && !p->p_vaddr) {
+				continue;
+			}
+			return p->p_offset + vaddr - p->p_vaddr;
+		}
+	}
+	return vaddr;
+}
+
 /* converts a physical address to the virtual address, looking
  * at the program headers in the binary bin */
-ut64 Elf_(r_bin_elf_p2v) (ELFOBJ *bin, ut64 paddr) {
+ut64 Elf_(r_bin_elf_p2v_new) (ELFOBJ *bin, ut64 paddr) {
 	int i;
 
 	if (!bin) {
@@ -3328,7 +3385,7 @@ ut64 Elf_(r_bin_elf_p2v) (ELFOBJ *bin, ut64 paddr) {
 
 /* converts a virtual address to the relative physical address, looking
  * at the program headers in the binary bin */
-ut64 Elf_(r_bin_elf_v2p) (ELFOBJ *bin, ut64 vaddr) {
+ut64 Elf_(r_bin_elf_v2p_new) (ELFOBJ *bin, ut64 vaddr) {
 	int i;
 	if (!bin) {
 		return UT64_MAX;
