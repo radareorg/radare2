@@ -1910,7 +1910,7 @@ static void rtr_cmds_client_close(uv_tcp_t *client, bool remove) {
 	rtr_cmds_context *context = loop->data;
 	if (remove) {
 		size_t i;
-		for (i=0; i<r_pvector_len (&context->clients); i++) {
+		for (i = 0; i < r_pvector_len (&context->clients); i++) {
 			if (r_pvector_at (&context->clients, i) == client) {
 				r_pvector_remove_at (&context->clients, i);
 				break;
