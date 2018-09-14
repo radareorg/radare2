@@ -52,9 +52,9 @@ R_API void r_assert_log(RLogLevel level, const char *fmt, ...);
 #elif R_CHECKS_LEVEL == 1 || R_CHECKS_LEVEL == 2 // R_CHECKS_LEVEL
 
 #if R_CHECKS_LEVEL == 1
-#define _H_LOG_(loglevel, fmt, ...)
+#define H_LOG_(loglevel, fmt, ...)
 #else
-#define _H_LOG_(loglevel, fmt, ...) r_assert_log (loglevel, fmt, __VA_ARGS__)
+#define H_LOG_(loglevel, fmt, ...) r_assert_log (loglevel, fmt, __VA_ARGS__)
 #endif
 
 /**
@@ -78,7 +78,7 @@ R_API void r_assert_log(RLogLevel level, const char *fmt, ...);
 #define r_return_if_fail(expr)						\
 	do {								\
 		if (!(expr)) {						\
-			_H_LOG_ (R_LOG_WARNING, "%s: assertion '%s' failed (line %d)\n", R_FUNCTION, #expr, __LINE__); \
+			H_LOG_ (R_LOG_WARNING, "%s: assertion '%s' failed (line %d)\n", R_FUNCTION, #expr, __LINE__); \
 			return;						\
 		}							\
 	} while (0)
@@ -86,20 +86,20 @@ R_API void r_assert_log(RLogLevel level, const char *fmt, ...);
 #define r_return_val_if_fail(expr, val)				\
 	do {							\
 		if (!(expr)) {					\
-			_H_LOG_ (R_LOG_WARNING, "%s: assertion '%s' failed (line %d)\n", R_FUNCTION, #expr, __LINE__); \
+			H_LOG_ (R_LOG_WARNING, "%s: assertion '%s' failed (line %d)\n", R_FUNCTION, #expr, __LINE__); \
 			return (val);				\
 		}						\
 	} while (0)
 
 #define r_return_if_reached()						\
 	do {								\
-		_H_LOG_ (R_LOG_CRITICAL, "file %s: line %d (%s): should not be reached\n", __FILE__, __LINE, R_FUNCTION); \
+		H_LOG_ (R_LOG_CRITICAL, "file %s: line %d (%s): should not be reached\n", __FILE__, __LINE, R_FUNCTION); \
 		return;							\
 	} while (0)
 
 #define r_return_val_if_reached(val)					\
 	do {								\
-		_H_LOG_ (R_LOG_CRITICAL, "file %s: line %d (%s): should not be reached\n", __FILE__, __LINE, R_FUNCTION); \
+		H_LOG_ (R_LOG_CRITICAL, "file %s: line %d (%s): should not be reached\n", __FILE__, __LINE, R_FUNCTION); \
 		return (val);						\
 	} while (0)
 
