@@ -531,7 +531,9 @@ if [ $? = 0 ]; then
 echo yes; HAVE_PKGCFG_LIBUV=1;
 LIBUV_LDFLAGS=$tmp; fi; fi
 if [ ! "$LIBUV_LDFLAGS" = "" ]; then
-HAVE_LIBUV="1"; fi
+HAVE_LIBUV="1"
+else
+HAVE_LIBUV="0"; fi
 if [ "$WANT_LIBUV" = "0" ]; then
 HAVE_LIBUV="0"; fi
 if [ "$USEROSTYPE" = "auto" ]; then
