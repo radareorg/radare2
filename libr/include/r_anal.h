@@ -1028,6 +1028,34 @@ typedef struct r_anal_reil {
 #define ESIL_STACK_NAME "esil.ram"
 #define ESIL struct r_anal_esil_t
 
+typedef struct r_anal_esil_source_t {
+	ut32 id;
+	ut32 claimed;
+	void *content;
+} RAnalEsilSource;
+
+R_API void r_anal_esil_sources_init(ESIL *esil);
+R_API ut32 r_anal_esil_load_source(ESIL *esil, const char *path);
+R_API void *r_anal_esil_get_source(ESIL *esil, ut32 src_id);
+R_API bool r_anal_esil_claim_source(ESIL *esil, ut32 src_id);
+R_API void r_anal_esil_release_source(ESIL *esil, ut32 src_id);
+R_API void r_anal_esil_sources_fini(ESIL *esil);
+
+typedef bool (*RAnalEsilInterruptCB)(ESIL *esil, ut32 interrupt, void *user);
+
+typedef struct r_anal_esil_interrupt_handler_t {
+	const ut32 num;
+	void *(*init)(ESIL *esil);
+	RAnalEsilInterruptCB cb;
+	void (*fini)(void *user);
+} RAnalEsilInterruptHandler;
+
+typedef struct r_anal_esil_interrupt_t {
+	RAnalEsilInterruptHandler *handler;
+	void *user;
+	ut32 src_id;
+} RAnalEsilInterrupt;
+
 typedef struct r_anal_esil_session_t {
 	ut64 key;
 	ut64 addr;
@@ -1059,7 +1087,7 @@ typedef struct r_anal_esil_t {
 	ut64 addrmask;
 	int stacksize;
 	int stackptr;
-	int skip;
+	ut32 skip;
 	int nowrite;
 	int iotrap;
 	int exectrap;
@@ -1083,7 +1111,8 @@ typedef struct r_anal_esil_t {
 	ut8 lastsz;	//in bits //used for signature-flag
 	/* native ops and custom ops */
 	Sdb *ops;
-	Sdb *interrupts;
+	RIDStorage *sources;
+	SdbMini *interrupts;
 	/* deep esil parsing fills this */
 	Sdb *stats;
 	Sdb *db_trace;
@@ -1098,7 +1127,7 @@ typedef struct r_anal_esil_t {
 	char *mdev_range; // string containing the r_str_range to match for read/write accesses
 	bool (*cmd)(ESIL *esil, const char *name, ut64 a0, ut64 a1);
 	void *user;
-	int stack_fd;
+	int stack_fd;	// ahem, let's not do this
 	RList *sessions; // <RAnalEsilSession*>
 } RAnalEsil;
 
@@ -1131,7 +1160,6 @@ typedef bool (*RAnalIsValidOffsetCB)(RAnal *anal, ut64 offset, int hasperm);
 
 typedef int (*RAnalEsilCB)(RAnalEsil *esil);
 typedef int (*RAnalEsilLoopCB)(RAnalEsil *esil, RAnalOp *op);
-typedef int (*RAnalEsilInterruptCB)(RAnalEsil *esil, int interrupt);
 typedef int (*RAnalEsilTrapCB)(RAnalEsil *esil, int trap_type, int trap_code);
 
 typedef struct r_anal_plugin_t {
@@ -1214,7 +1242,6 @@ typedef struct r_anal_plugin_t {
 
 	RAnalEsilCB esil_init; // initialize esil-related stuff
 	RAnalEsilLoopCB esil_post_loop;	//cycle-counting, firing interrupts, ...
-	RAnalEsilInterruptCB esil_intr; // interrupts
 	RAnalEsilTrapCB esil_trap; // traps / exceptions
 	RAnalEsilCB esil_fini; // deinitialize
 } RAnalPlugin;
@@ -1323,8 +1350,15 @@ R_API void r_anal_esil_stack_free (RAnalEsil *esil);
 R_API int r_anal_esil_get_parm_type (RAnalEsil *esil, const char *str);
 R_API int r_anal_esil_get_parm (RAnalEsil *esil, const char *str, ut64 *num);
 R_API int r_anal_esil_condition (RAnalEsil *esil, const char *str);
-R_API int r_anal_esil_set_interrupt (RAnalEsil *esil, int interrupt, RAnalEsilInterruptCB interruptcb);
-R_API int r_anal_esil_fire_interrupt (RAnalEsil *esil, int interrupt);
+
+// esil_interrupt.c
+R_API void r_anal_esil_interrupts_init (RAnalEsil *esil);
+R_API RAnalEsilInterrupt *r_anal_esil_interupt_new (RAnalEsil *esil, ut32 src_id,  RAnalEsilInterruptHandler *ih);
+R_API void r_anal_esil_interrupt_free (RAnalEsil *esil, RAnalEsilInterrupt *intr);
+R_API bool r_anal_esil_set_interrupt (RAnalEsil *esil, RAnalEsilInterrupt *intr);
+R_API int r_anal_esil_fire_interrupt (RAnalEsil *esil, ut32 intr_num);
+R_API bool r_anal_esil_load_interrupts (RAnalEsil *esil, RAnalEsilInterruptHandler **handlers, ut32 src_id);
+R_API bool r_anal_esil_load_interrupts_from_lib (RAnalEsil *esil, const char *path);
 
 R_API void r_anal_esil_mem_ro(RAnalEsil *esil, int mem_readonly);
 R_API void r_anal_esil_stats(RAnalEsil *esil, int enable);

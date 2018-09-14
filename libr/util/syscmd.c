@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2017 - pancake */
+/* radare - LGPL - Copyright 2013-2018 - pancake */
 
 #include <r_core.h>
 #include <errno.h>
@@ -74,6 +74,29 @@ static char *showfile(char *res, const int nth, const char *fpath, const char *n
 #endif
 	if (printfmt == 'q') {
 		res = r_str_appendf (res, "%s\n", nn);
+	} else if (printfmt == 'e') {
+		const char *eDIR = "📁";
+		const char *eLNK = "📎";
+		const char *eIMG = "🌅";
+		const char *eUID = "🔼";
+		const char *eHID = "👀";
+		const char *eANY = "  ";
+		// --
+		const char *icon = eANY;
+		if (isdir) {
+			icon = eDIR;
+#if __UNIX__
+		} else if ((sb.st_mode & S_IFMT) == S_IFLNK) {
+			icon = eLNK;
+		} else if (sb.st_mode & S_ISUID) {
+			icon = eUID;
+#endif
+		} else if (r_str_casestr (nn, ".jpg") || r_str_casestr (nn, ".png") || r_str_casestr (nn, ".gif")) {
+			icon = eIMG;
+		} else if (*nn == '.') {
+			icon = eHID;
+		}
+		res = r_str_appendf (res, "%s %s\n", icon, nn);
 	} else if (printfmt == FMT_RAW) {
 		res = r_str_appendf (res, "%c%s%s%s  1 %4d:%-4d  %-10d  %s\n",
 			isdir?'d': fch,
@@ -125,21 +148,18 @@ R_API char *r_syscmd_ls(const char *input) {
 	}
 	if (*input) {
 		if ((!strncmp (input, "-h", 2))) {
-			eprintf ("Usage: ls ([-l,-j,-q]) ([path]) # long, json, quiet\n");
+			eprintf ("Usage: ls ([-e,-l,-j,-q]) ([path]) # long, json, quiet\n");
+		} else if ((!strncmp (input, "-e", 2))) {
+			printfmt = 'e';
+			path = r_str_trim_ro (path + 1);
 		} else if ((!strncmp (input, "-q", 2))) {
 			printfmt = 'q';
-			path ++;
-			while (*path == ' ') {
-				path++;
-			}
+			path = r_str_trim_ro (path + 1);
 		} else if ((!strncmp (input, "-l", 2)) || (!strncmp (input, "-j", 2))) {
 			// mode = 'l';
 			if (input[2]) {
 				printfmt = (input[2] == 'j') ? FMT_JSON : FMT_RAW;
-				path = input + 2;
-				while (*path == ' ') {
-					path++;
-				}
+				path = r_str_trim_ro (input + 2);
 				if (!*path) {
 					path = ".";
 				}

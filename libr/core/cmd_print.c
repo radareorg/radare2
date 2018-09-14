@@ -902,16 +902,35 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 	case '?': // "pF?"
 		r_core_cmd_help (core, help_msg_pF);
 		break;
-	case 'o': // "pFo" asn1 oid
+	case 'a':
 		{
 			RASN1Object *asn1 = r_asn1_create_object (data, size);
 			if (asn1) {
-				RASN1String *str1 = r_asn1_stringify_oid (data, size);
-				if (str1) {
-					r_cons_printf ("%s\n", str1->string);
-					r_asn1_free_string (str1);
-				}
+				char *res = r_asn1_to_string (asn1, 0, NULL);
 				r_asn1_free_object (asn1);
+				if (res) {
+					r_cons_printf ("%s\n", res);
+					free (res);
+				}
+			} else {
+				eprintf ("Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
+			}
+		}
+		break;
+	case 'x': // "pFx" x509
+		{
+			RX509Certificate* x509 = r_x509_parse_certificate (r_asn1_create_object (data, size));
+			if (x509) {
+				RStrBuf *sb = r_strbuf_new ("");
+				r_x509_certificate_dump (x509, NULL, sb);
+				char *res = r_strbuf_drain (sb);
+				if (res) {
+					r_cons_printf ("%s\n", res);
+					free (res);
+				}
+				r_x509_free_certificate (x509);
+			} else {
+				eprintf ("Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
 			}
 		}
 		break;
@@ -919,12 +938,14 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 		{
 			RCMS *cms = r_pkcs7_parse_cms (data, size);
 			if (cms) {
-				char* foo = r_pkcs7_cms_dump (cms);
-				if (foo) {
-					r_cons_printf ("%s\n", foo);
-					free (foo);
+				char *res = r_pkcs7_cms_to_string (cms);
+				if (res) {
+					r_cons_printf ("%s\n", res);
+					free (res);
 				}
 				r_pkcs7_free_cms (cms);
+			} else {
+				eprintf ("Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
 			}
 		}
 		break;

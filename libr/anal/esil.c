@@ -98,7 +98,8 @@ R_API RAnalEsil *r_anal_esil_new(int stacksize, int iotrap, unsigned int addrsiz
 	esil->parse_goto_count = R_ANAL_ESIL_GOTO_LIMIT;
 	esil->ops = sdb_new0 ();
 	esil->iotrap = iotrap;
-	esil->interrupts = sdb_new0 ();
+	r_anal_esil_sources_init (esil);
+	r_anal_esil_interrupts_init (esil);
 	esil->sessions = r_list_newf (r_anal_esil_session_free);
 	esil->addrmask = genmask (addrsize - 1);
 	return esil;
@@ -113,21 +114,6 @@ R_API int r_anal_esil_set_op(RAnalEsil *esil, const char *op, RAnalEsilOp code) 
 	sdb_num_set (esil->ops, h, (ut64)(size_t)code, 0);
 	if (!sdb_num_exists (esil->ops, h)) {
 		eprintf ("can't set esil-op %s\n", op);
-		return false;
-	}
-	return true;
-}
-
-R_API int r_anal_esil_set_interrupt(RAnalEsil *esil, int interrupt, RAnalEsilInterruptCB interruptcb) {
-	char t[128];
-	char *i;
-	if (!esil || !esil->interrupts) {
-		return false;
-	}
-	i = sdb_itoa ((ut64)interrupt, t, 16);
-	sdb_num_set (esil->interrupts, i, (ut64)(size_t)interruptcb, 0);
-	if (!sdb_num_exists (esil->interrupts, i)) {
-		eprintf ("can't set interrupt-handler for interrupt %d\n", interrupt);
 		return false;
 	}
 	return true;
@@ -158,36 +144,6 @@ R_API int r_anal_esil_fire_trap(RAnalEsil *esil, int trap_type, int trap_code) {
 	return false;
 }
 
-R_API int r_anal_esil_fire_interrupt(RAnalEsil *esil, int interrupt) {
-	char t[128];
-	char *i;
-	RAnalEsilInterruptCB icb;
-	if (!esil) {
-		return false;
-	}
-	if (esil->cmd && esil->cmd (esil, esil->cmd_intr, interrupt, 0)) {
-		return true;
-	}
-	if (esil->anal) {
-		RAnalPlugin *ap = esil->anal->cur;
-		if (ap && ap->esil_intr) {
-			if (ap->esil_intr (esil, interrupt)) {
-				return true;
-			}
-		}
-	}
-	if (!esil->interrupts) {
-		return false;
-	}
-	i = sdb_itoa ((ut64)interrupt, t, 16);
-	if (!sdb_num_exists (esil->interrupts, i)) {
-		//eprintf ("0x%08"PFMT64x" Invalid interrupt/syscall 0x%08x\n", esil->address, interrupt);
-		return false;
-	}
-	icb = (RAnalEsilInterruptCB)sdb_ptr_get (esil->interrupts, i, 0);
-	return icb? icb (esil, interrupt): false;
-}
-
 R_API bool r_anal_esil_set_pc(RAnalEsil *esil, ut64 addr) {
 	if (esil) {
 		esil->address = addr;
@@ -205,8 +161,8 @@ R_API void r_anal_esil_free(RAnalEsil *esil) {
 	}
 	sdb_free (esil->ops);
 	esil->ops = NULL;
-	sdb_free (esil->interrupts);
-	esil->interrupts = NULL;
+	r_anal_esil_interrupts_fini (esil);
+	r_anal_esil_sources_fini (esil);
 	sdb_free (esil->stats);
 	esil->stats = NULL;
 	sdb_free (esil->db_trace);
@@ -973,7 +929,7 @@ static int esil_bits(RAnalEsil *esil) {
 static int esil_interrupt(RAnalEsil *esil) {
 	ut64 interrupt;
 	if (popRN (esil, &interrupt)) {
-		return r_anal_esil_fire_interrupt (esil, (int)interrupt);
+		return r_anal_esil_fire_interrupt (esil, (ut32)interrupt);
 	}
 	return false;
 }
@@ -1065,13 +1021,17 @@ static int esil_ifset(RAnalEsil *esil) {
 
 static int esil_if(RAnalEsil *esil) {
 	ut64 num = 0LL;
+	if (esil->skip) {
+		esil->skip++;
+		return true;
+	}
 	char *src = r_anal_esil_pop (esil);
 	if (src) {
 		// TODO: check return value
 		(void)r_anal_esil_get_parm (esil, src, &num);
 		// condition not matching, skipping until }
 		if (!num) {
-			esil->skip = true;
+			esil->skip++;
 		}
 		free (src);
 		return true;
@@ -2858,13 +2818,19 @@ static int runword(RAnalEsil *esil, const char *word) {
 
 	//eprintf ("WORD (%d) (%s)\n", esil->skip, word);
 	if (!strcmp (word, "}{")) {
-		esil->skip = esil->skip? 0: 1;
+		if (esil->skip == 1) {
+			esil->skip = 0;
+		} else if (esil->skip == 0) {	//this isn't perfect, but should work for valid esil
+			esil->skip = 1;
+		}
 		return 1;
 	} else if (!strcmp (word, "}")) {
-		esil->skip = 0;
+		if (esil->skip) {
+			esil->skip--;
+		}
 		return 1;
 	}
-	if (esil->skip) {
+	if (esil->skip && strcmp(word, "?{")) {
 		return 1;
 	}
 

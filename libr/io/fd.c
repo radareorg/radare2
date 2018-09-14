@@ -48,6 +48,10 @@ R_API bool r_io_fd_is_blockdevice(RIO *io, int fd) {
 	return r_io_desc_is_blockdevice (r_io_desc_get (io, fd));
 }
 
+R_API bool r_io_fd_is_chardevice(RIO *io, int fd) {
+	return r_io_desc_is_chardevice (r_io_desc_get (io, fd));
+}
+
 //returns length of read bytes
 R_API int r_io_fd_read_at(RIO *io, int fd, ut64 addr, ut8 *buf, int len) {
 	RIODesc *desc;

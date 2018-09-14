@@ -113,7 +113,7 @@ static char *signature (RBinFile *bf, bool json) {
 		r_json_var_free (json);
 		return c;
 	}
-	return r_pkcs7_cms_dump (bin->cms);
+	return r_pkcs7_cms_to_string (bin->cms);
 }
 
 static RList *fields(RBinFile *bf) {

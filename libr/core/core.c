@@ -2399,7 +2399,6 @@ R_API RCore *r_core_fini(RCore *c) {
 	free (c->cmdqueue);
 	free (c->lastcmd);
 	r_list_free (c->visual.tabs);
-	r_io_free (c->io);
 	free (c->block);
 	r_core_autocomplete_free (c->autocomplete);
 
@@ -2424,6 +2423,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	c->bin = r_bin_free (c->bin); // XXX segfaults rabin2 -c
 	c->lang = r_lang_free (c->lang); // XXX segfaults
 	c->dbg = r_debug_free (c->dbg);
+	r_io_free (c->io);
 	r_config_free (c->config);
 	/* after r_config_free, the value of I.teefile is trashed */
 	/* rconfig doesnt knows how to deinitialize vars, so we

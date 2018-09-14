@@ -11,6 +11,8 @@ files = [
   'esil2reil.c',
   'esil_stats.c',
   'esil_trace.c',
+  'esil_interrupt.c',
+  'esil_sources.c',
   'fcn.c',
   'flirt.c',
   'hint.c',

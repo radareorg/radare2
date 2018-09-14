@@ -6,6 +6,8 @@
 #include "./x509.h"
 
 extern RJSVar *r_x509_name_json (RX509Name* name);
+extern void r_x509_free_crl (RX509CertificateRevocationList *crl);
+extern void r_x509_crlentry_dump (RX509CRLEntry *crle, const char* pad, RStrBuf *sb);
 static bool r_pkcs7_parse_attributes (RPKCS7Attributes* attribute, RASN1Object *object);
 
 static bool r_pkcs7_parse_contentinfo (RPKCS7ContentInfo* ci, RASN1Object *object) {
@@ -270,16 +272,18 @@ static bool r_pkcs7_parse_signeddata (RPKCS7SignedData *sd, RASN1Object *object)
 	memset (sd, 0, sizeof (RPKCS7SignedData));
 	RASN1Object **elems = object->list.objects;
 	//Following RFC
-	sd->version = (ut32) elems[0]->sector[0]; 
+	sd->version = (ut32) elems[0]->sector[0];
 	r_pkcs7_parse_digestalgorithmidentifier (&sd->digestAlgorithms, elems[1]);
 	r_pkcs7_parse_contentinfo (&sd->contentInfo, elems[2]);
 	//Optional
-	if (shift < object->list.length && elems[shift] && elems[shift]->klass == CLASS_CONTEXT && elems[shift]->tag == 0) {
+	if (object->list.length > 3 && shift < object->list.length && elems[shift] &&
+		elems[shift]->klass == CLASS_CONTEXT && elems[shift]->tag == 0) {
 		r_pkcs7_parse_extendedcertificatesandcertificates (&sd->certificates, elems[shift]);
 		shift++;
 	}
 	//Optional
-	if (shift < object->list.length && elems[shift] && elems[shift]->klass == CLASS_CONTEXT && elems[shift]->tag == 1) {
+	if (object->list.length > 3 && shift < object->list.length && elems[shift] &&
+		elems[shift]->klass == CLASS_CONTEXT && elems[shift]->tag == 1) {
 		r_pkcs7_parse_certificaterevocationlists (&sd->crls, elems[shift]);
 		shift++;
 	}
@@ -311,9 +315,9 @@ R_API RCMS *r_pkcs7_parse_cms (const ut8 *buffer, ut32 length) {
 		return NULL;
 	}
 	object = r_asn1_create_object (buffer, length);
-	if (!object || object->list.length != 2 || !object->list.objects ||
+	if (!object || object->list.length < 2 || !object->list.objects ||
 		!object->list.objects[0] || !object->list.objects[1] ||
-		object->list.objects[1]->list.length != 1) {
+		object->list.objects[1]->list.length < 1) {
 		r_asn1_free_object (object);
 		free (container);
 		return NULL;
@@ -377,252 +381,135 @@ static bool r_pkcs7_parse_attributes (RPKCS7Attributes* attributes, RASN1Object 
 	return true;
 }
 
-char* r_pkcs7_signerinfos_dump (RX509CertificateRevocationList *crl, char* buffer, ut32 length, const char* pad) {
+#if 0
+// XXX: unused
+static void r_pkcs7_signerinfos_dump (RX509CertificateRevocationList *crl, const char* pad, RStrBuf *sb) {
 	RASN1String *algo = NULL, *last = NULL, *next = NULL;
-	ut32 i, p;
-	int r;
-	char *tmp, *pad2, *pad3;
-	if (!crl || !buffer || !length) {
-		return NULL;
+	ut32 i;
+	char *pad2, *pad3;
+	if (!crl) {
+		return;
 	}
 	if (!pad) {
 		pad = "";
 	}
 	pad3 = r_str_newf ("%s    ", pad);
-	if (!pad3) {
-		return NULL;
-	}
+	if (!pad3) return;
 
 	pad2 = pad3 + 2;
 	algo = crl->signature.algorithm;
 	last = crl->lastUpdate;
 	next = crl->nextUpdate;
-	r = snprintf (buffer, length, "%sCRL:\n%sSignature:\n%s%s\n%sIssuer\n",
-				pad, pad2, pad3, algo ? algo->string : "", pad2);
-	p = (ut32) r;
-	if (r < 0 || !(tmp = r_x509_name_dump (&crl->issuer, buffer + p, length - p, pad3))) {
-		free (pad3);
-		return NULL;
-	}
-	p = tmp - buffer;
-	if (length <= p) {
-		free (pad3);
-		return NULL;
-	}
-	r = snprintf (buffer + p, length - p, "%sLast Update: %s\n%sNext Update: %s\n%sRevoked Certificates:\n",
+	r_strbuf_appendf (sb, "%sCRL:\n%sSignature:\n%s%s\n%sIssuer\n", pad, pad2, pad3, algo ? algo->string : "", pad2);
+	r_x509_name_dump (&crl->issuer, pad3, sb);
+	r_strbuf_appendf (sb, "%sLast Update: %s\n%sNext Update: %s\n%sRevoked Certificates:\n",
 				pad2, last ? last->string : "Missing",
 				pad2, next ? next->string : "Missing", pad2);
-	p += (ut32) r;
-	if (r < 0) {
-		free (pad3);
-		return NULL;
-	}
 	for (i = 0; i < crl->length; ++i) {
-		if (length <= p || !(tmp = r_x509_crlentry_dump (crl->revokedCertificates[i], buffer + p, length - p, pad3))) {
-			free (pad3);
-			return NULL;
-		}
-		p = tmp - buffer;
+		r_x509_crlentry_dump (crl->revokedCertificates[i], pad3, sb);
 	}
-
 	free (pad3);
-	return buffer + p;
 }
+#endif
 
-static char* r_x509_signedinfo_dump (RPKCS7SignerInfo *si, char* buffer, ut32 length, const char* pad) {
+static void r_x509_signedinfo_dump (RPKCS7SignerInfo *si, const char* pad, RStrBuf *sb) {
 	RASN1String *s = NULL;
 	RASN1Binary *o = NULL;
-	ut32 i, p;
-	int r;
-	char *tmp, *pad2, *pad3;
-	if (!si || !buffer || !length) {
-		return NULL;
+	ut32 i;
+	char *pad2, *pad3;
+	if (!si) {
+		return;
 	}
 	if (!pad) {
 		pad = "";
 	}
 	pad3 = r_str_newf ("%s    ", pad);
 	if (!pad3) {
-		return NULL;
+		return;
 	}
 	pad2 = pad3 + 2;
 
-
-	r = snprintf (buffer, length, "%sSignerInfo:\n%sVersion: v%u\n%sIssuer\n", pad, pad2, si->version + 1, pad2);
-	p = (ut32) r;
-	if (r < 0) {
-		free (pad3);
-		return NULL;
-	}
-
-	if (length <= p || !(tmp = r_x509_name_dump (&si->issuerAndSerialNumber.issuer, buffer + p, length - p, pad3))) {
-		free (pad3);
-		return NULL;
-	}
-	p = tmp - buffer;
+	r_strbuf_appendf (sb, "%sSignerInfo:\n%sVersion: v%u\n%sIssuer\n", pad, pad2, si->version + 1, pad2);
+	r_x509_name_dump (&si->issuerAndSerialNumber.issuer, pad3, sb);
 	if ((o = si->issuerAndSerialNumber.serialNumber)) {
 		s = r_asn1_stringify_integer (o->binary, o->length);
-	} else {
-		s = NULL;
 	}
-	if (length <= p) {
-		free (pad3);
-		r_asn1_free_string (s);
-		return NULL;
-	}
-	r = snprintf (buffer + p, length - p, "%sSerial Number:\n%s%s\n", pad2, pad3, s ? s->string : "Missing");
-	p += (ut32) r;
+	r_strbuf_appendf (sb, "%sSerial Number:\n%s%s\n", pad2, pad3, s ? s->string : "Missing");
 	r_asn1_free_string (s);
-	if (r < 0 || length <= p) {
-		free (pad3);
-		return NULL;
-	}
+
 	s = si->digestAlgorithm.algorithm;
-	r = snprintf (buffer + p, length - p, "%sDigest Algorithm:\n%s%s\n%sAuthenticated Attributes:\n",
-				pad2, pad3, s ? s->string : "Missing", pad2);
-	p += (ut32) r;
-	if (r < 0 || length <= p) {
-		free (pad3);
-		return NULL;
-	}
+	r_strbuf_appendf (sb, "%sDigest Algorithm:\n%s%s\n%sAuthenticated Attributes:\n",
+		pad2, pad3, s ? s->string : "Missing", pad2);
+
 	for (i = 0; i < si->authenticatedAttributes.length; ++i) {
 		RPKCS7Attribute* attr = si->authenticatedAttributes.elements[i];
 		if (!attr) {
 			continue;
 		}
-		r = snprintf (buffer + p, length - p, "%s%s: %u bytes\n",
-					pad3, attr->oid ? attr->oid->string : "Missing", attr->data ? attr->data->length : 0);
-		p += (ut32) r;
-		if (r < 0 || length <= p) {
-			free (pad3);
-			return NULL;
-		}
+		r_strbuf_appendf (sb, "%s%s: %u bytes\n", pad3, attr->oid ? attr->oid->string : "Missing",
+					attr->data ? attr->data->length : 0);
 	}
 	s = si->digestEncryptionAlgorithm.algorithm;
-	if (length <= p) {
-		free (pad3);
-		return NULL;
-	}
-	r = snprintf (buffer + p, length - p, "%sDigest Encryption Algorithm\n%s%s\n",
-				pad2, pad3, s ? s->string : "Missing");
-	p += (ut32) r;
-	if (r < 0 || length <= p) {
-		free (pad3);
-		return NULL;
-	}
+	r_strbuf_appendf (sb, "%sDigest Encryption Algorithm\n%s%s\n", pad2, pad3, s ? s->string : "Missing");
+
 
 //	if ((o = si->encryptedDigest)) s = r_asn1_stringify_bytes (o->binary, o->length);
 //	else s = NULL;
-//	r = snprintf (buffer + p, length - p, "%sEncrypted Digest: %u bytes\n%s\n", pad2, o ? o->length : 0, s ? s->string : "Missing");
-//	p += (ut32) r;
+//	eprintf ("%sEncrypted Digest: %u bytes\n%s\n", pad2, o ? o->length : 0, s ? s->string : "Missing");
 //	r_asn1_free_string (s);
-	r = snprintf (buffer + p, length - p, "%sEncrypted Digest: %u bytes\n", pad2, o ? o->length : 0);
-	if (r < 0 || length <= p) {
-		free (pad3);
-		return NULL;
-	}
-	r = snprintf (buffer + p, length - p, "%sUnauthenticated Attributes:\n", pad2);
-	p += (ut32) r;
-	if (r < 0 || length <= p) {
-		free (pad3);
-		return NULL;
-	}
+	r_strbuf_appendf (sb, "%sEncrypted Digest: %u bytes\n", pad2, o ? o->length : 0);
+	r_strbuf_appendf (sb, "%sUnauthenticated Attributes:\n", pad2);
 	for (i = 0; i < si->unauthenticatedAttributes.length; ++i) {
 		RPKCS7Attribute* attr = si->unauthenticatedAttributes.elements[i];
 		if (!attr) {
 			continue;
 		}
 		o = attr->data;
-		r = snprintf (buffer + p, length - p, "%s%s: %u bytes\n",
-					pad3, attr->oid ? attr->oid->string : "Missing", o ? o->length : 0);
-		p += (ut32) r;
-		if (r < 0 || length <= p) {
-			free (pad3);
-			return NULL;
-		}
+		eprintf ("%s%s: %u bytes\n", pad3, attr->oid ? attr->oid->string : "Missing",
+					o ? o->length : 0);
 	}
 	free (pad3);
-	return buffer + p;
 }
 
-char *r_pkcs7_cms_dump (RCMS* container) {
-	RPKCS7SignedData *sd;
-	ut32 i, length, p = 0;
-	int r;
-	char *buffer = NULL, *tmp = NULL;
+R_API char *r_pkcs7_cms_to_string (RCMS* container) {
+	ut32 i;
 	if (!container) {
 		return NULL;
 	}
-	sd = &container->signedData;
-	length = 2048 + (container->signedData.certificates.length * 1024);
-	if(!length) {
-		return NULL;
-	}
-	buffer = (char*) calloc (1, length);
-	if (!buffer) {
-		return NULL;
-	}
-	r = snprintf (buffer, length, "signedData\n  Version: %u\n  Digest Algorithms:\n", sd->version);
-	p += (ut32) r;
-	if (r < 0 || length <= p) {
-		free (buffer);
-		return NULL;
-	}
+	RPKCS7SignedData *sd = &container->signedData;
+	RStrBuf *sb = r_strbuf_new ("");
+	r_strbuf_appendf (sb, "signedData\n  Version: v%u\n  Digest Algorithms:\n", sd->version);
+
 	if (container->signedData.digestAlgorithms.elements) {
 		for (i = 0; i < container->signedData.digestAlgorithms.length; ++i) {
 			if (container->signedData.digestAlgorithms.elements[i]) {
 				RASN1String *s = container->signedData.digestAlgorithms.elements[i]->algorithm;
-				r = snprintf (buffer + p, length - p, "    %s\n", s ? s->string : "Missing");
-				p += (ut32) r;
-				if (r < 0 || length <= p) {
-					free (buffer);
-					return NULL;
-				}
+				r_strbuf_appendf (sb, "    %s\n", s ? s->string : "Missing");
 			}
 		}
 	}
-	r = snprintf (buffer + p, length - p, "  Certificates: %u\n", container->signedData.certificates.length);
-	p += (ut32) r;
-	if (r < 0 || length <= p) {
-		free (buffer);
-		return NULL;
-	}
+
+	r_strbuf_appendf (sb, "  Certificates: %u\n", container->signedData.certificates.length);
+
 	for (i = 0; i < container->signedData.certificates.length; ++i) {
-		if (length <= p || !(tmp = r_x509_certificate_dump (container->signedData.certificates.elements[i], buffer + p, length - p, "    "))) {
-			free (buffer);
-			return NULL;
-		}
-		p = tmp - buffer;
+		r_x509_certificate_dump (container->signedData.certificates.elements[i], "    ", sb);
 	}
 
 	for (i = 0; i < container->signedData.crls.length; ++i) {
-		if (length <= p || !(tmp = r_x509_crl_dump (container->signedData.crls.elements[i], buffer + p, length - p, "    "))) {
-			free (buffer);
-			return NULL;
+		char *res = r_x509_crl_to_string (container->signedData.crls.elements[i], "    ");
+		if (res) {
+			r_strbuf_append (sb, res);
+			free (res);
 		}
-		p = tmp - buffer;
 	}
-	p = tmp - buffer;
-	if (length <= p) {
-		free (buffer);
-		return NULL;
-	}	
-	r = snprintf (buffer + p, length - p, "  SignerInfos:\n");
-	p += (ut32) r;
-	if (r < 0 || length <= p) {
-		free (buffer);
-		return NULL;
-	}
+
+	r_strbuf_appendf (sb, "  SignerInfos:\n");
 	if (container->signedData.signerinfos.elements) {
 		for (i = 0; i < container->signedData.signerinfos.length; ++i) {
-			if (length <= p || !(tmp = r_x509_signedinfo_dump (container->signedData.signerinfos.elements[i], buffer + p, length - p, "    "))) {
-				free (buffer);
-				return NULL;
-			}
-			p = tmp - buffer;
+			r_x509_signedinfo_dump (container->signedData.signerinfos.elements[i], "    ", sb);
 		}
 	}
-	return buffer;
+	return r_strbuf_drain (sb);
 }
 
 RJSVar *r_x509_signedinfo_json (RPKCS7SignerInfo* si) {
