@@ -5,6 +5,10 @@
 #include "gdb/include/libgdbr.h"
 #include "gdb/include/gdbserver/core.h"
 
+#if HAVE_LIBUV
+#include <uv.h>
+#endif
+
 #if 0
 SECURITY IMPLICATIONS
 =====================
@@ -1884,7 +1888,8 @@ R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *po
 }
 
 
-#include <uv.h>
+
+#if HAVE_LIBUV
 
 typedef struct rtr_cmds_context_t {
 	uv_tcp_t server;
@@ -2079,3 +2084,73 @@ beach:
 	r_pvector_clear (&context.clients);
 	return 0;
 }
+
+#else
+
+R_API int r_core_rtr_cmds (RCore *core, const char *port) {
+	unsigned char buf[4097];
+	RSocket *ch = NULL;
+	RSocket *s;
+	int i, ret;
+	char *str;
+
+	if (!port || port[0] == '?') {
+		r_cons_printf ("Usage: .:[tcp-port]    run r2 commands for clients\n");
+		return false;
+	}
+
+	s = r_socket_new (0);
+	s->local = r_config_get_i(core->config, "tcp.islocal");
+
+	if (!r_socket_listen (s, port, NULL)) {
+		eprintf ("Error listening on port %s\n", port);
+		r_socket_free (s);
+		return false;
+	}
+
+	eprintf ("Listening for commands on port %s\n", port);
+	listenport = port;
+	r_cons_break_push ((RConsBreak)r_core_rtr_http_stop, core);
+	for (;;) {
+		if (r_cons_is_breaked ()) {
+			break;
+		}
+		void *bed = r_cons_sleep_begin ();
+		ch = r_socket_accept (s);
+		buf[0] = 0;
+		ret = r_socket_read (ch, buf, sizeof (buf) - 1);
+		r_cons_sleep_end (bed);
+		if (ret > 0) {
+			buf[ret] = 0;
+			for (i = 0; buf[i]; i++) {
+				if (buf[i] == '\n') {
+					buf[i] = buf[i + 1]? ';': '\0';
+				}
+			}
+			if ((!r_config_get_i (core->config, "scr.prompt") &&
+			     !strcmp ((char *)buf, "q!")) ||
+			    !strcmp ((char *)buf, ".--")) {
+				r_socket_close (ch);
+				break;
+			}
+			str = r_core_cmd_str (core, (const char *)buf);
+			bed = r_cons_sleep_begin ();
+			if (str && *str)  {
+				r_socket_write (ch, str, strlen (str));
+			} else {
+				r_socket_write (ch, "\n", 1);
+			}
+			r_cons_sleep_end (bed);
+			free (str);
+		}
+		r_socket_close (ch);
+		r_socket_free (ch);
+		ch = NULL;
+	}
+	r_cons_break_pop ();
+	r_socket_free (s);
+	r_socket_free (ch);
+	return 0;
+}
+
+#endif

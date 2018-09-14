@@ -86,6 +86,7 @@
 #define USE_LIB_XXHASH @USE_LIB_XXHASH@
 #ifndef HAVE_LIB_SSL
 #define HAVE_LIB_SSL @HAVE_OPENSSL@
+#define HAVE_LIBUV @HAVE_LIBUV@
 #endif
 
 #define HAVE_FORK @HAVE_FORK@

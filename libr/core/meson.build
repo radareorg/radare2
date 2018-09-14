@@ -67,40 +67,44 @@ if host_machine.system() != 'windows'
 endif
 r_core_inc = [platform_inc, include_directories(r_core_inc)]
 
-libuv_dep = dependency('libuv')
+
+r_core_deps = [
+  r_util_dep,
+  r_reg_dep,
+  r_syscall_dep,
+  r_search_dep,
+  r_cons_dep,
+  r_anal_dep,
+  r_socket_dep,
+  r_io_dep,
+  r_fs_dep,
+  r_lang_dep,
+  r_magic_dep,
+  r_hash_dep,
+  r_flag_dep,
+  r_parse_dep,
+  r_egg_dep,
+  r_debug_dep,
+  r_crypto_dep,
+  r_config_dep,
+  r_bin_dep,
+  r_asm_dep,
+  r_bp_dep,
+  platform_deps,
+  sdb_dep,
+  spp_dep,
+  gdb_dep,
+  java_dep
+]
+
+if use_libuv
+  r_core_deps += libuv_dep
+endif
 
 r_core = library('r_core', files,
   include_directories: r_core_inc,
   c_args: library_cflags,
-  dependencies: [
-    r_util_dep,
-    r_reg_dep,
-    r_syscall_dep,
-    r_search_dep,
-    r_cons_dep,
-    r_anal_dep,
-    r_socket_dep,
-    r_io_dep,
-    r_fs_dep,
-    r_lang_dep,
-    r_magic_dep,
-    r_hash_dep,
-    r_flag_dep,
-    r_parse_dep,
-    r_egg_dep,
-    r_debug_dep,
-    r_crypto_dep,
-    r_config_dep,
-    r_bin_dep,
-    r_asm_dep,
-    r_bp_dep,
-    platform_deps,
-    sdb_dep,
-    spp_dep,
-    gdb_dep,
-    java_dep,
-    libuv_dep
-  ],
+  dependencies: r_core_deps,
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
