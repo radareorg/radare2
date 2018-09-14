@@ -40,7 +40,7 @@ R_API void r_vlogf(RLogLevel level, const char *fmt, va_list ap) {
 	};
 
 	const char *hdr = R_BETWEEN (0, level, R_LOG_MAX_VALUE - 1) ? headers[level] : "";
-	eprintf (hdr);
+	eprintf ("%s", hdr);
 	vfprintf (stderr, fmt, ap);
 }
 
