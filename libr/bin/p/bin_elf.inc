@@ -1061,7 +1061,8 @@ static bool has_sanitizers(RBinFile *bf) {
 	RListIter *iter;
 	RBinImport *import;
 	r_list_foreach (imports_list, iter, import) {
-		if (strstr (import->name, "__sanitizer")) {
+		if (strstr (import->name, "__sanitizer") ||
+		    strstr (import->name, "__ubsan")) {
 			ret = true;
 			break;
 		}
