@@ -2,6 +2,8 @@
 
 #include <r_util.h>
 
+#define LOG_BUF_SZ 128
+
 static const char *logfile = "radare.log";
 
 R_API void r_log_file(const char *str) {
@@ -40,10 +42,19 @@ R_API void r_vlogf(RLogLevel level, const char *fmt, va_list ap) {
 	};
 
 	const char *hdr = R_BETWEEN (0, level, R_LOG_MAX_VALUE - 1) ? headers[level] : "";
-	eprintf ("%s", hdr);
-	vfprintf (stderr, fmt, ap);
+	size_t len = strlen (hdr);
+	char buf[LOG_BUF_SZ];
+
+	snprintf (buf, LOG_BUF_SZ, "%s", hdr);
+	if (len < LOG_BUF_SZ) {
+		vsnprintf (buf + len, LOG_BUF_SZ - len, fmt, ap);
+	}
+	eprintf ("%s", buf);
 }
 
+/*
+ * Prints a formatted string on the selected log support (only stderr for now)
+ */
 R_API void r_logf(RLogLevel level, const char *fmt, ...) {
 	va_list args;
 	va_start (args, fmt);
