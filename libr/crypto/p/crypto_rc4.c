@@ -33,8 +33,9 @@ static bool rc4_init(struct rc4_state *const state, const ut8 *key, int keylen) 
 	}
 	state->key_size = keylen;
 	/* Initialize state with identity permutation */
-	for (i = 0; i < 256; i++)
-		state->perm[i] = (ut8)i; 
+	for (i = 0; i < 256; i++) {
+		state->perm[i] = (ut8)i;
+	}
 	state->index1 = 0;
 	state->index2 = 0;
   

@@ -46,7 +46,7 @@ static const char *menus[] = {
 static const int menuNum = ((int)sizeof (menus) / (int)sizeof (const char *)) - 1;
 
 static const char *menus_File[] = {
-	"New", "Open", "ReOpen", "Close", "Sections", "Strings", "Symbols", "Imports", "Info", "Database",  "Quit",
+	"New", "Open", "ReOpen", "Close", "Sections", "Strings", "Symbols", "Imports", "Info", "Database", "Save Layout", "Load Layout", "Quit",
 	NULL
 };
 static const int fileNum = ((int)sizeof (menus_File) / (int)sizeof (const char *)) - 1;
@@ -174,6 +174,7 @@ static int quitCb(void *user);
 static void addMenu(RPanelsMenuItem *parent, const char *name, RPanelsMenuCallback cb);
 static int file_history_up(RLine *line);
 static int file_history_down(RLine *line);
+static char *getPanelsConfigPath();
 static bool init(RCore *core, RPanels *panels, int w, int h);
 static void initSdb(RPanels *panels);
 static bool initPanelsMenu(RPanels *panels);
@@ -181,7 +182,8 @@ static bool initPanels(RCore *core, RPanels *panels);
 static RStrBuf *drawMenu(RPanelsMenuItem *item);
 static void positionNewMenu(RPanelsMenu *menu, RPanelsMenuItem *parent, RPanelsMenuItem *child);
 static void moveMenuCursor(RPanelsMenu *menu, RPanelsMenuItem *parent);
-static void freePanel(RPanel *panel);
+static void freeSinglePanel(RPanel *panel);
+static void freeAllPanels(RPanels *panels);
 static void panelBreakpoint(RCore *core);
 static void panelContinue(RCore *core);
 static void panelPrompt(const char *prompt, char *buf, int len);
@@ -191,6 +193,8 @@ static void setRefreshAll(RPanels *panels);
 static void setCursor(RCore *core, bool cur);
 static void savePanelPos(RPanel* panel);
 static void restorePanelPos(RPanel* panel);
+static void savePanelsLayout(RPanels* panels);
+static void loadPanelsLayout(RCore *core);
 static void replaceCmd(RPanels* panels, char *title, char *cmd);
 static void handleMenu(RCore *core, const int key, int *exit);
 static void switchMode(RPanels *panels);
@@ -1461,7 +1465,7 @@ static void dismantlePanel(RPanels *panels) {
 }
 
 static void replaceCmd(RPanels* panels, char *title, char *cmd) {
-	freePanel (&panels->panel[panels->curnode]);
+	freeSinglePanel (&panels->panel[panels->curnode]);
 	panels->panel[panels->curnode].title = strdup (title);
 	panels->panel[panels->curnode].cmd = r_str_newf (cmd);
 	panels->panel[panels->curnode].cmdStrCache = NULL;
@@ -2035,7 +2039,6 @@ static bool initPanels(RCore *core, RPanels *panels) {
 	panels->n_panels = 0;
 	addPanelFrame (core, panels, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY);
 	addPanelFrame (core, panels, PANEL_TITLE_SYMBOLS, PANEL_CMD_SYMBOLS);
-	//addPanelFrame (core, panels, PANEL_TITLE_STACK, PANEL_CMD_STACK);
 	addPanelFrame (core, panels, PANEL_TITLE_STACKREFS, PANEL_CMD_STACKREFS);
 	addPanelFrame (core, panels, PANEL_TITLE_REGISTERS, PANEL_CMD_REGISTERS);
 	addPanelFrame (core, panels, PANEL_TITLE_REGISTERREFS, PANEL_CMD_REGISTERREFS);
@@ -2043,10 +2046,18 @@ static bool initPanels(RCore *core, RPanels *panels) {
 	return true;
 }
 
-static void freePanel(RPanel *panel) {
+static void freeSinglePanel(RPanel *panel) {
 	free (panel->title);
 	free (panel->cmd);
 	free (panel->cmdStrCache);
+}
+
+static void freeAllPanels(RPanels *panels) {
+	int i;
+	for (i = 0; i < panels->n_panels; i++) {
+		freeSinglePanel (&panels->panel[i]);
+	}
+	free (panels->panel);
 }
 
 R_API void r_core_panels_refresh(RCore *core) {
@@ -2171,7 +2182,12 @@ static void panelSingleStepOver(RCore *core) {
 }
 
 static void panelBreakpoint(RCore *core) {
-	r_core_cmd (core, "dbs $$", 0);
+	RPanels *panels = core->panels;
+	RPanel *curPanel = &panels->panel[panels->curnode];
+	if (!strcmp (curPanel->cmd, PANEL_CMD_DISASSEMBLY)) {
+		r_core_cmd (core, "dbs $$", 0);
+		curPanel->refresh = true;
+	}
 }
 
 static void panelContinue(RCore *core) {
@@ -2354,6 +2370,89 @@ static void restorePanelPos(RPanel* panel) {
 	panel->pos.h = panel->prevPos.h;
 }
 
+static char *getPanelsConfigPath() {
+	char *configPath = r_str_newf (R_JOIN_2_PATHS (R2_HOME_DATADIR, ".r2panels"));
+	if (!configPath) {
+		return NULL;
+	}
+	char *newPath = r_str_home (configPath);
+	R_FREE (configPath);
+	return newPath;
+}
+
+static void savePanelsLayout(RPanels* panels) {
+	char *configPath = getPanelsConfigPath ();
+	FILE *panelsConfig = r_sandbox_fopen (configPath, "w");
+	free (configPath);
+	if (!configPath || !panelsConfig) {
+		return;
+	}
+	int i;
+	for (i = 0; i < panels->n_panels; i++) {
+		RPanel *panel = &panels->panel[i];
+		RJSVar* obj = r_json_object_new ();
+		RJSVar* title = r_json_string_new (panel->title);
+		RJSVar* cmd = r_json_string_new (panel->cmd);
+		RJSVar* x = r_json_number_new (panel->pos.x);
+		RJSVar* y = r_json_number_new (panel->pos.y);
+		RJSVar* w = r_json_number_new (panel->pos.w);
+		RJSVar* h = r_json_number_new (panel->pos.h);
+		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "Title", title), title);
+		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "Cmd", cmd), cmd);
+		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "x", x), x);
+		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "y", y), y);
+		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "w", w), w);
+		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "h", h), h);
+		char* c = r_json_stringify (obj, true);
+		fprintf (panelsConfig ,"%s\n", c);
+		r_json_var_free (obj);
+		r_json_var_free (title);
+		r_json_var_free (cmd);
+		r_json_var_free (x);
+		r_json_var_free (y);
+		r_json_var_free (w);
+		r_json_var_free (h);
+		free (c);
+	}
+	fclose (panelsConfig);
+}
+
+static void loadPanelsLayout(RCore* core) {
+	int i, s;
+	char *configPath = getPanelsConfigPath ();
+	char *panelsConfig = r_file_slurp (configPath, &s);
+	if (!configPath || !panelsConfig) {
+		free (configPath);
+		free (panelsConfig);
+		return;
+	}
+	int count = r_str_split (panelsConfig, '\n');
+	RPanels *panels = core->panels;
+	panelAllClear (panels);
+	panels->n_panels = 0;
+	panels->curnode = 0;
+	char *title, *cmd, *x, *y, *w, *h, *p = panelsConfig;
+	for (i = 1; i < count; i++) {
+		title = sdb_json_get_str (p, "Title");
+		cmd = sdb_json_get_str (p, "Cmd");
+		x = sdb_json_get_str (p, "x");
+		y = sdb_json_get_str (p, "y");
+		w = sdb_json_get_str (p, "w");
+		h = sdb_json_get_str (p, "h");
+		panels->panel[panels->n_panels].title = title;
+		panels->panel[panels->n_panels].cmd = cmd;
+		panels->panel[panels->n_panels].pos.x = atoi (x);
+		panels->panel[panels->n_panels].pos.y = atoi (y);
+		panels->panel[panels->n_panels].pos.w = atoi (w);
+		panels->panel[panels->n_panels].pos.h = atoi (h);
+		panels->panel[panels->n_panels].addr  = core->offset;
+		panels->n_panels++;
+		p += strlen (p) + 1;
+	}
+	free (panelsConfig);
+	free (configPath);
+}
+
 static void maximizePanelSize(RPanels *panels) {
 	RPanel *panel = &panels->panel[panels->curnode];
 	panel->pos.x = 0;
@@ -2414,13 +2513,9 @@ R_API RPanels *r_core_panels_new(RCore *core) { int w, h;
 }
 
 R_API void r_core_panels_free(RPanels *panels) {
-	int i;
 	r_cons_switchbuf (true);
 	if (panels) {
-		for (i = 0; i < panels->n_panels; i++) {
-			freePanel (&panels->panel[i]);
-		}
-		free (panels->panel);
+		freeAllPanels (panels);
 		r_cons_canvas_free (panels->can);
 		sdb_free (panels->db);
 		free (panels);
@@ -2541,10 +2636,14 @@ repeat:
 		break;
 	case '.':
 		if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
-			if (r_config_get_i (core->config, "cfg.debug")) {
-				r_core_cmd0 (core, "sr PC");
+			ut64 addr = r_debug_reg_get (core->dbg, "PC");
+			if (addr && addr != UT64_MAX) {
+				r_core_seek (core, addr, 1);
 			} else {
-				r_core_cmd0 (core, "s entry0; px");
+				addr = r_num_get (core->num, "entry0");
+				if (addr && addr != UT64_MAX) {
+					r_core_seek (core, addr, 1);
+				}
 			}
 			panels->panel[panels->curnode].addr = core->offset;
 			panels->panel[panels->curnode].refresh = true;

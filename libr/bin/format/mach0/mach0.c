@@ -4,6 +4,7 @@
 #include <r_types.h>
 #include <r_util.h>
 #include "mach0.h"
+#include <r_hash.h>
 
 #define bprintf if (bin->verbose) eprintf
 
@@ -12,7 +13,7 @@ typedef struct _ulebr {
 } ulebr;
 
 // OMG; THIS SHOULD BE KILLED; this var exposes the local native endian, which is completely unnecessary
-static bool little_;
+static bool little_ = false;
 
 static ut64 read_uleb128(ulebr *r, ut8 *end) {
 	ut64 result = 0;
@@ -536,6 +537,127 @@ static int parse_dysymtab(struct MACH0_(obj_t)* bin, ut64 off) {
 	return true;
 }
 
+static char *readString (ut8 *p, int off, int len) {
+	if (off < 0 || off >= len) {
+		return NULL;
+	}
+	return r_str_ndup ((const char *)p + off, len - off);
+}
+
+static void parseCodeDirectory (RBuffer *b, int offset, int datasize) {
+	typedef struct __CodeDirectory {
+		uint32_t magic;					/* magic number (CSMAGIC_CODEDIRECTORY) */
+		uint32_t length;				/* total length of CodeDirectory blob */
+		uint32_t version;				/* compatibility version */
+		uint32_t flags;					/* setup and mode flags */
+		uint32_t hashOffset;			/* offset of hash slot element at index zero */
+		uint32_t identOffset;			/* offset of identifier string */
+		uint32_t nSpecialSlots;			/* number of special hash slots */
+		uint32_t nCodeSlots;			/* number of ordinary (code) hash slots */
+		uint32_t codeLimit;				/* limit to main image signature range */
+		uint8_t hashSize;				/* size of each hash in bytes */
+		uint8_t hashType;				/* type of hash (cdHashType* constants) */
+		uint8_t platform;					/* unused (must be zero) */
+		uint8_t	pageSize;				/* log2(page size in bytes); 0 => infinite */
+		uint32_t spare2;				/* unused (must be zero) */
+		/* followed by dynamic content as located by offset fields above */
+		uint32_t scatterOffset;
+		uint32_t teamIDOffset;
+		uint32_t spare3;
+		ut64 codeLimit64;
+		ut64 execSegBase;
+		ut64 execSegLimit;
+		ut64 execSegFlags;
+	} CS_CodeDirectory;
+	ut64 off = offset;
+	int psize = datasize;
+	ut8 *p = calloc (1, psize);
+	if (!p) {
+		return;
+	}
+	eprintf ("Offset: 0x%08"PFMT64x"\n", off);
+	r_buf_read_at (b, off, p, datasize);
+	CS_CodeDirectory cscd = {0};
+	#define READFIELD(x) cscd.x = r_read_ble32 (p + r_offsetof (CS_CodeDirectory, x), 1)
+	#define READFIELD8(x) cscd.x = p[r_offsetof (CS_CodeDirectory, x)]
+	READFIELD (length);
+	READFIELD (version);
+	READFIELD (flags);
+	READFIELD (hashOffset);
+	READFIELD (identOffset);
+	READFIELD (nSpecialSlots);
+	READFIELD (nCodeSlots);
+	READFIELD (hashSize);
+	READFIELD (teamIDOffset);
+	READFIELD8 (hashType);
+	READFIELD (pageSize);
+	READFIELD (codeLimit);
+	eprintf ("Version: %x\n", cscd.version);
+	eprintf ("Flags: %x\n", cscd.flags);
+	eprintf ("Length: %d\n", cscd.length);
+	eprintf ("PageSize: %d\n", cscd.pageSize);
+	eprintf ("hashOffset: %d\n", cscd.hashOffset);
+	eprintf ("codeLimit: %d\n", cscd.codeLimit);
+	eprintf ("hashSize: %d\n", cscd.hashSize);
+	eprintf ("hashType: %d\n", cscd.hashType);
+	char *identity = readString (p, cscd.identOffset, psize);
+	eprintf ("Identity: %s\n", identity);
+	char *teamId = readString (p, cscd.teamIDOffset, psize);
+	eprintf ("TeamID: %s\n", teamId);
+	eprintf ("CodeSlots: %d\n", cscd.nCodeSlots);
+	free (identity);
+	free (teamId);
+	
+	int hashSize = 20; // SHA1 is default
+	int algoType = R_HASH_SHA1;
+	switch (cscd.hashType) {
+	case 0: // SHA1 == 20 bytes
+	case 1: // SHA1 == 20 bytes
+		hashSize = 20;
+		algoType = R_HASH_SHA1;
+		break;
+	case 2: // SHA256 == 32 bytes
+		hashSize = 32;
+		algoType = R_HASH_SHA256;
+		break;
+	}
+	ut8 *hash = p + cscd.hashOffset;
+	int j = 0;
+	int k = 0;
+	RHash *ctx = r_hash_new (true, algoType);
+	for (j = 0; j < cscd.nCodeSlots; j++) {
+		int fof = 4096 * j;
+		int idx = j * hashSize;
+		eprintf ("0x%08"PFMT64x"  ", off + cscd.hashOffset + idx);
+		for (k = 0; k < hashSize; k++) {
+			eprintf ("%02x", hash[idx + k]);
+		}
+		ut8 fofbuf[4096];
+		int fofsz = R_MIN (sizeof (fofbuf), cscd.codeLimit - fof);
+		r_buf_read_at (b, fof, fofbuf, sizeof (fofbuf));
+		r_hash_do_begin (ctx, algoType);
+		if (algoType == R_HASH_SHA1) {
+			r_hash_do_sha1 (ctx, fofbuf, fofsz);
+		} else {
+			r_hash_do_sha256 (ctx, fofbuf, fofsz);
+		}
+		r_hash_do_end (ctx, algoType);
+		if (memcmp (hash + idx, ctx->digest, hashSize)) {
+			eprintf ("  wx ");
+			int i;
+			for (i = 0; i < hashSize;i++) {
+				eprintf ("%02x", ctx->digest[i]);
+			}
+		} else {
+			eprintf ("  OK");
+		}
+		eprintf ("\n");
+	}
+	r_hash_free (ctx);
+	free (p);
+}
+
+// parse the Load Command
 static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 	int i,len;
 	ut32 data;
@@ -566,7 +688,18 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 	super.blob.magic = r_read_ble32 (bin->b->buf + data, little_);
 	super.blob.length = r_read_ble32 (bin->b->buf + data + 4, little_);
 	super.count = r_read_ble32 (bin->b->buf + data + 8, little_);
-	for (i = 0; i < super.count; ++i) {
+	char *verbose = r_sys_getenv ("RABIN2_CODESIGN_VERBOSE");
+	bool isVerbose = false;
+	if (verbose) {
+		isVerbose = *verbose;
+		free (verbose);
+	}
+	// to dump all certificates
+	// [0x00053f75]> b 5K;/x 30800609;wtf @@ hit*
+	// then do this:
+	// $ openssl asn1parse -inform der -in a|less
+	// $ openssl pkcs7 -inform DER -print_certs -text -in a
+	for (i = 0; i < super.count; i++) {
 		if ((ut8 *)(bin->b->buf + data + i) > (ut8 *)(bin->b->buf + bin->size)) {
 			bin->signature = (ut8 *)strdup ("Malformed entitlement");
 			break;
@@ -578,7 +711,9 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 		}
 		idx.type = r_read_ble32 (&bi.type, little_);
 		idx.offset = r_read_ble32 (&bi.offset, little_);
-		if (idx.type == CSSLOT_ENTITLEMENTS) {
+		switch (idx.type) {
+		case CSSLOT_ENTITLEMENTS:
+			if (true || isVerbose) {
 			ut64 off = data + idx.offset;
 			if (off > bin->size || off + sizeof (struct blob_t) > bin->size) {
 				bin->signature = (ut8 *)strdup ("Malformed entitlement");
@@ -590,19 +725,92 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 			len = entitlements.length - sizeof (struct blob_t);
 			if (len <= bin->size && len > 1) {
 				bin->signature = calloc (1, len + 1);
-				if (bin->signature) {
-					ut8 *src = bin->b->buf + off + sizeof (struct blob_t);
-					if (off + sizeof (struct blob_t) + len < bin->b->length) {
-						memcpy (bin->signature, src, len);
-						bin->signature[len] = '\0';
-						return true;
-					}
-					bin->signature = (ut8 *)strdup ("Malformed entitlement");
+				if (!bin->signature) {
+					return false;
+				}
+				ut8 *src = bin->b->buf + off + sizeof (struct blob_t);
+				if (off + sizeof (struct blob_t) + len < bin->b->length) {
+					memcpy (bin->signature, src, len);
+					bin->signature[len] = '\0';
 					return true;
 				}
+				bin->signature = (ut8 *)strdup ("Malformed entitlement");
+				return true;
 			} else {
 				bin->signature = (ut8 *)strdup ("Malformed entitlement");
 			}
+			}
+			break;
+		case CSSLOT_CODEDIRECTORY:
+			if (isVerbose) {
+				parseCodeDirectory (bin->b, data + idx.offset, link.datasize);
+			}
+			break;
+		case 0x10000: // ASN1/DER certificate
+			if (isVerbose) {
+				ut8 header[8] = {0};
+				r_buf_read_at (bin->b, data + idx.offset, header, sizeof (header));
+				ut32 length = R_MIN (UT16_MAX, r_read_ble32 (header + 4, 1));
+				ut8 *p = calloc (length, 1);
+				if (p) {
+					r_buf_read_at (bin->b, data + idx.offset + 0, p, length);
+					ut32 *words = (ut32*)p;
+					eprintf ("Magic: %x\n", words[0]);
+					words += 2;
+					eprintf ("wtf DUMP @%d!%d\n",
+						(int)data + idx.offset + 8, (int)length);
+					eprintf ("openssl pkcs7 -print_certs -text -inform der -in DUMP\n");
+					eprintf ("openssl asn1parse -offset %d -length %d -inform der -in /bin/ls\n",
+						(int)data + idx.offset + 8, (int)length);
+					eprintf ("pFp@%d!%d\n",
+						(int)data + idx.offset + 8, (int)length);
+#if 0
+					int fd = open ("DUMP", O_RDWR|O_CREAT, 0644);
+					if (fd != -1) {
+						eprintf ("See DUMP file.\n");
+						write (fd, words, length);
+						close (fd);
+					}
+#endif
+					free (p);
+				}
+			}
+			break;
+		case CSSLOT_REQUIREMENTS:
+#if 0
+			// eprintf ("[TODO] CSSLOT_REQUIREMENTS\n");
+			{
+				ut8 p[5000];
+				r_buf_read_at (bin->b, data + idx.offset + 0, p, sizeof (p));
+				ut32 count = r_read_ble32 (p, 1);
+				int i = 0;
+				ut32 *words = (ut32*)p;
+// $ openssl asn1parse -inform der -in x
+				int fd = open ("DUMP", O_RDWR|O_CREAT, 0644);
+				if (fd != -1) {
+					write (fd, words, sizeof(p));
+					close (fd);
+				}
+#if 0
+				for (i = 0; i < count; i++) {
+					int n = i * 3;
+					eprintf ("Type (0x%08x) Offset (0x%08x) Expression (0x%08x)\n",
+						words[n], words[n+1], words[n+2]);
+				}
+#endif
+			}
+#endif
+			break;
+#if 0
+		case CSSLOT_INFOSLOT: // 1;
+		case CSSLOT_RESOURCEDIR: // 3;
+		case CSSLOT_APPLICATION: // 4;
+			// TODO
+			break;
+#endif
+		default:
+			eprintf ("Unknown Code signature slot %d\n", idx.type);
+			break;
 		}
 	}
 	if (!bin->signature) {
@@ -619,8 +827,9 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 	ut8 thc[sizeof (struct thread_command)] = {0};
 	ut8 tmp[4];
 
-	if (off > bin->size || off + sizeof (struct thread_command) > bin->size)
+	if (off > bin->size || off + sizeof (struct thread_command) > bin->size) {
 		return false;
+	}
 
 	len = r_buf_read_at (bin->b, off, thc, 8);
 	if (len < 1) {
@@ -632,12 +841,14 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 		goto wrong_read;
 	}
 	flavor = r_read_ble32 (tmp, bin->big_endian);
-	if (len == -1)
+	if (len == -1) {
 		goto wrong_read;
+	}
 
-	if (off + sizeof (struct thread_command) + sizeof (flavor) > bin->size || \
-	  off + sizeof (struct thread_command) + sizeof (flavor) + sizeof (ut32) > bin->size)
+	if (off + sizeof (struct thread_command) + sizeof (flavor) > bin->size ||
+		off + sizeof (struct thread_command) + sizeof (flavor) + sizeof (ut32) > bin->size) {
 		return false;
+	}
 
 	// TODO: use count for checks
 	if (r_buf_read_at (bin->b, off + sizeof (struct thread_command) + sizeof (flavor), tmp, 4) < 4) {
@@ -646,16 +857,18 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 	count = r_read_ble32 (tmp, bin->big_endian);
 	ptr_thread = off + sizeof (struct thread_command) + sizeof (flavor) + sizeof (count);
 
-	if (ptr_thread > bin->size)
+	if (ptr_thread > bin->size) {
 		return false;
+	}
 
 	switch (bin->hdr.cputype) {
 	case CPU_TYPE_I386:
 	case CPU_TYPE_X86_64:
 		switch (flavor) {
 		case X86_THREAD_STATE32:
-			if (ptr_thread + sizeof (struct x86_thread_state32) > bin->size)
+			if (ptr_thread + sizeof (struct x86_thread_state32) > bin->size) {
 				return false;
+			}
 			if ((len = r_buf_fread_at (bin->b, ptr_thread,
 				(ut8*)&bin->thread_state.x86_32, "16i", 1)) == -1) {
 				bprintf ("Error: read (thread state x86_32)\n");
@@ -667,8 +880,9 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 			arw_sz = sizeof (struct x86_thread_state32);
 			break;
 		case X86_THREAD_STATE64:
-			if (ptr_thread + sizeof (struct x86_thread_state64) > bin->size)
+			if (ptr_thread + sizeof (struct x86_thread_state64) > bin->size) {
 				return false;
+			}
 			if ((len = r_buf_fread_at (bin->b, ptr_thread,
 				(ut8*)&bin->thread_state.x86_64, "32l", 1)) == -1) {
 				bprintf ("Error: read (thread state x86_64)\n");
@@ -685,8 +899,9 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 	case CPU_TYPE_POWERPC:
 	case CPU_TYPE_POWERPC64:
 		if (flavor == X86_THREAD_STATE32) {
-			if (ptr_thread + sizeof (struct ppc_thread_state32) > bin->size)
+			if (ptr_thread + sizeof (struct ppc_thread_state32) > bin->size) {
 				return false;
+			}
 			if ((len = r_buf_fread_at (bin->b, ptr_thread,
 				(ut8*)&bin->thread_state.ppc_32, bin->big_endian?"40I":"40i", 1)) == -1) {
 				bprintf ("Error: read (thread state ppc_32)\n");
@@ -697,8 +912,9 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 			arw_ptr = (ut8 *)&bin->thread_state.ppc_32;
 			arw_sz = sizeof (struct ppc_thread_state32);
 		} else if (flavor == X86_THREAD_STATE64) {
-			if (ptr_thread + sizeof (struct ppc_thread_state64) > bin->size)
+			if (ptr_thread + sizeof (struct ppc_thread_state64) > bin->size) {
 				return false;
+			}
 			if ((len = r_buf_fread_at (bin->b, ptr_thread,
 				(ut8*)&bin->thread_state.ppc_64, bin->big_endian?"34LI3LI":"34li3li", 1)) == -1) {
 				bprintf ("Error: read (thread state ppc_64)\n");
@@ -711,8 +927,9 @@ static int parse_thread(struct MACH0_(obj_t)* bin, struct load_command *lc, ut64
 		}
 		break;
 	case CPU_TYPE_ARM:
-		if (ptr_thread + sizeof (struct arm_thread_state32) > bin->size)
+		if (ptr_thread + sizeof (struct arm_thread_state32) > bin->size) {
 			return false;
+		}
 		if ((len = r_buf_fread_at (bin->b, ptr_thread,
 				(ut8*)&bin->thread_state.arm_32, bin->big_endian?"17I":"17i", 1)) == -1) {
 			bprintf ("Error: read (thread state arm)\n");
@@ -1322,9 +1539,15 @@ struct MACH0_(obj_t)* MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *optio
 // perm: r = 4, w = 2, x = 1
 static int prot2perm (int x) {
 	int r = 0;
-	if (x&1) r |= 4;
-	if (x&2) r |= 2;
-	if (x&4) r |= 1;
+	if (x & 1) {
+		r |= 4;
+	}
+	if (x & 2) {
+		r |= 2;
+	}
+	if (x & 4) {
+		r |= 1;
+	}
 	return r;
 }
 
@@ -1871,21 +2094,24 @@ struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin) {
 					/* empty loop */
 				}
 				sym_ord = -1;
-				if (bin->symtab && bin->dysymtab.nundefsym < 0xffff)
-				for (j = 0; j < bin->dysymtab.nundefsym; j++) {
-					int stridx = 0;
-					int iundefsym = bin->dysymtab.iundefsym;
-					if (iundefsym>=0 && iundefsym < bin->nsymtab) {
-						int sidx = iundefsym +j;
-						if (sidx<0 || sidx>= bin->nsymtab)
-							continue;
-						stridx = bin->symtab[sidx].n_strx;
-						if (stridx < 0 || stridx >= bin->symstrlen)
-							continue;
-					}
-					if (!strcmp ((char *)bin->symstr + stridx, sym_name)) {
-						sym_ord = j;
-						break;
+				if (bin->symtab && bin->dysymtab.nundefsym < 0xffff) {
+					for (j = 0; j < bin->dysymtab.nundefsym; j++) {
+						int stridx = 0;
+						int iundefsym = bin->dysymtab.iundefsym;
+						if (iundefsym >= 0 && iundefsym < bin->nsymtab) {
+							int sidx = iundefsym + j;
+							if (sidx < 0 || sidx >= bin->nsymtab) {
+								continue;
+							}
+							stridx = bin->symtab[sidx].n_strx;
+							if (stridx < 0 || stridx >= bin->symstrlen) {
+								continue;
+							}
+						}
+						if (!strcmp ((char *)bin->symstr + stridx, sym_name)) {
+							sym_ord = j;
+							break;
+						}
 					}
 				}
 				break;
@@ -2117,12 +2343,13 @@ const char* MACH0_(get_intrp)(struct MACH0_(obj_t)* bin) {
 }
 
 const char* MACH0_(get_os)(struct MACH0_(obj_t)* bin) {
-	if (bin)
-	switch (bin->os) {
-	case 1: return "macos";
-	case 2: return "ios";
-	case 3: return "watchos";
-	case 4: return "tvos";
+	if (bin) {
+		switch (bin->os) {
+		case 1: return "macos";
+		case 2: return "ios";
+		case 3: return "watchos";
+		case 4: return "tvos";
+		}
 	}
 	return "darwin";
 }
@@ -2480,9 +2707,9 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 			break;
 		case LC_CODE_SIGNATURE:
 			{
-			ut32 *words = (ut32*)r_buf_get_at (buf, addr + 4, NULL);
-			printf ("0x%08"PFMT64x"  dataoff      0x%08x\n", addr + 4, words[0]);
-			printf ("0x%08"PFMT64x"  datasize     %d\n", addr + 8, words[1]);
+			ut32 *words = (ut32*)r_buf_get_at (buf, addr, NULL);
+			printf ("0x%08"PFMT64x"  dataoff      0x%08x\n", addr, words[0]);
+			printf ("0x%08"PFMT64x"  datasize     %d\n", addr + 4, words[1]);
 			printf ("# wtf mach0.sign %d @ 0x%x\n", words[1], words[0]);
 			}
 			break;

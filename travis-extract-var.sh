@@ -10,7 +10,7 @@ print_var()
 }
 
 env -0 | while IFS='=' read -r -d '' n v; do
-    if [[ "${n}" =~ ^TRAVIS_* || "${n}" =~ ^R2* || "${n}" =~ SAN_* ]]; then
+    if [[ "${n}" =~ ^TRAVIS* || "${n}" =~ ^R2* || "${n}" =~ SAN_* || "%{n}" =~ CODECOV_* || "%{n}" =~ VCS_* || "%{n}" =~ CI_* ]]; then
         print_var "${n}" "${v}"
     fi
 done
@@ -21,6 +21,9 @@ print_var CXX "${CXX}"
 print_var CFLAGS "${CFLAGS}"
 print_var LDFLAGS "${LDFLAGS}"
 print_var CXXFLAGS "${CXXFLAGS}"
+print_var TRAVIS "${TRAVIS}"
 print_var INSTALL_SYSTEM "${INSTALL_SYSTEM}"
 print_var MESON_OPTIONS "${MESON_OPTIONS}"
 print_var COVERAGE "${COVERAGE}"
+print_var SHIPPABLE "${SHIPPABLE}"
+print_var CI "${CI}"

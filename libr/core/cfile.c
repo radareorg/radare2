@@ -505,6 +505,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	RBinPlugin *plugin = NULL;
 	RBinObject *obj = NULL;
 	int is_io_load;
+	const char *cmd_load;
 	if (!cf) {
 		return false;
 	}
@@ -560,6 +561,10 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	if (plugin && plugin->name) {
 		load_scripts_for (r, plugin->name);
 	}
+	cmd_load = r_config_get (r->config, "cmd.load");
+	if (cmd_load && *cmd_load) {
+		r_core_cmd (r, cmd_load, 0);
+	}
 
 	if (plugin && plugin->name) {
 		if (!strncmp (plugin->name, "any", 3)) {
@@ -572,20 +577,24 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			r->bin->maxstrbuf = r_config_get_i (r->config, "bin.maxstrbuf");
 		} else if (binfile) {
 			obj = r_bin_get_object (r->bin);
+			if (obj) {
+				va = obj->info ? obj->info->has_va : va;
+				if (!va) {
+					r_config_set_i (r->config, "io.va", 0);
+				}
+				//workaround to map correctly malloc:// and raw binaries
+				if (r_io_desc_is_dbg (desc) || (!obj->sections || !va)) {
+					r_io_map_new (r->io, desc->fd, desc->flags, 0, laddr, r_io_desc_size (desc));
+				}
 
-			//workaround to map correctly malloc:// and raw binaries
-			if (r_io_desc_is_dbg (desc) || (obj && (!obj->sections || !va))) {
-				r_io_map_new (r->io, desc->fd, desc->flags, 0, laddr, r_io_desc_size (desc));
-			}
-
-			RBinInfo *info = obj? obj->info: NULL;
-			if (info) {
-				r_core_bin_set_arch_bits (r, binfile->file,
-						info->arch, info->bits);
-			} else {
-				r_core_bin_set_arch_bits (r, binfile->file,
+				RBinInfo *info = obj->info;
+				if (info) {
+					r_core_bin_set_arch_bits (r, binfile->file, info->arch, info->bits);
+				} else {
+					r_core_bin_set_arch_bits (r, binfile->file,
 						r_config_get (r->config, "asm.arch"),
 						r_config_get_i (r->config, "asm.bits"));
+				}
 			}
 		}
 	} else {
@@ -620,13 +629,6 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			r_core_file_loadlib (r, lib, libaddr);
 			libaddr += 0x2000000;
 		}
-	}
-	obj = r_bin_cur_object (r->bin);
-	if (obj && plugin && strcmp (plugin->name, "any")) {
-		va = obj->info ? obj->info->has_va : va;
-	}
-	if (!va) {
-		r_config_set_i (r->config, "io.va", 0);
 	}
 
 	//If type == R_BIN_TYPE_CORE, we need to create all the maps
@@ -1150,8 +1152,9 @@ R_API RCoreFile *r_core_file_find_by_name(RCore *core, const char *name) {
 	RCoreFile *cf = NULL;
 	RIODesc *desc;
 
-	if (!core)
+	if (!core) {
 		return NULL;
+	}
 
 	r_list_foreach (core->files, iter, cf) {
 		desc = r_io_desc_get (core->io, cf->fd);

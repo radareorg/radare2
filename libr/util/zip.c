@@ -48,11 +48,13 @@ R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *srcConsumed, int *dstLen) 
 
 	do {
 		if (stream.avail_out == 0) {
-			if (! (dst = realloc (dst, stream.total_out + srcLen*2)))
+			if (!(dst = realloc (dst, stream.total_out + srcLen * 2))) {
 				goto err_exit;
+			}
 			out_size += srcLen*2;
-			if (out_size > MAXOUT)
+			if (out_size > MAXOUT) {
 				goto err_exit;
+			}
 			stream.next_out  = dst + stream.total_out;
 			stream.avail_out = srcLen * 2;
 		}

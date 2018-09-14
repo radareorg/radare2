@@ -57,13 +57,19 @@ static void emit_set_string(REgg *egg, const char *dstvar, const char *str, int 
 }
 
 static void emit_call(REgg *egg, const char *str, int atr) {
-	if (atr) r_egg_printf (egg, "call ([%s])\n", str);
-	else r_egg_printf (egg, "call (%s)\n", str);
+	if (atr) {
+		r_egg_printf (egg, "call ([%s])\n", str);
+	} else {
+		r_egg_printf (egg, "call (%s)\n", str);
+	}
 }
 
 static void emit_jmp(REgg *egg, const char *str, int atr) {
-	if (atr) r_egg_printf (egg, "goto ([%s])\n", str);
-	else r_egg_printf (egg, "goto (%s)\n", str);
+	if (atr) {
+		r_egg_printf (egg, "goto ([%s])\n", str);
+	} else {
+		r_egg_printf (egg, "goto (%s)\n", str);
+	}
 }
 
 static void emit_arg (REgg *egg, int xs, int num, const char *str) {
@@ -131,7 +137,9 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 		}
 	}
 
-	if (*arg=='=') arg++; /* for <=, >=, ... */
+	if (*arg == '=') {
+		arg++; /* for <=, >=, ... */
+	}
 	p = r_egg_mkvar (egg, str, arg, 0);
 	r_egg_printf (egg, "%s (%s) => (%s)\n", op, p, dst);
 	free (p);
@@ -154,17 +162,23 @@ static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, con
 	case '/': op = "div"; break;
 	default:  op = "mov"; break;
 	}
-	if (!eq) eq = R_AX;
-	if (!p) p = R_AX;
+	if (!eq) {
+		eq = R_AX;
+	}
+	if (!p) {
+		p = R_AX;
+	}
 #if 0
 	// TODO:
 	eprintf ("TYPE = %c\n", type);
 	eprintf ("  %s%c %c%s, %s\n", op, vs, type, eq, p);
 	eprintf ("  %s %s, [%s]\n", op, p, eq);
 #endif
-	if (type == '*')
+	if (type == '*') {
 		r_egg_printf (egg, "%s (%s, [%s])\n", op, p, eq);
-	else r_egg_printf (egg, "%s (%s, %s)\n", op, p, eq);
+	} else {
+		r_egg_printf (egg, "%s (%s, %s)\n", op, p, eq);
+	}
 }
 
 static const char* emit_regs(REgg *egg, int idx) {

@@ -288,7 +288,9 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 	}
 
 	if (mmo && mmo->buf) {
-		if (!(mmo->flags & R_IO_WRITE)) return -1;
+		if (!(mmo->flags & R_IO_WRITE)) {
+			return -1;
+		}
 		if ( (count + addr > mmo->buf->length) || mmo->buf->empty) {
 			ut64 sz = count + addr;
 			r_file_truncate (mmo->filename, sz);

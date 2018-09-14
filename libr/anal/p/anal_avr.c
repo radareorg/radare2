@@ -199,8 +199,9 @@ static CPU_CONST *const_by_name(CPU_MODEL *cpu, int type, char *c) {
 			}
 		}
 	}
-	if (cpu->inherit_cpu_p)
+	if (cpu->inherit_cpu_p) {
 		return const_by_name (cpu->inherit_cpu_p, type, c);
+	}
 	eprintf ("ERROR: CONSTANT key[%s] NOT FOUND.\n", c);
 	return NULL;
 }
@@ -226,8 +227,9 @@ static CPU_CONST *const_by_value(CPU_MODEL *cpu, int type, ut32 v) {
 			}
 		}
 	}
-	if (cpu->inherit_cpu_p)
+	if (cpu->inherit_cpu_p) {
 		return const_by_value (cpu->inherit_cpu_p, type, v);
+	}
 	return NULL;
 }
 
@@ -365,10 +367,11 @@ static void __generic_sub_update_flags(RAnalOp *op, char t_d, ut64 v_d, char t_r
 		"|,vf,=,",
 		d, rk, d, rk);
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
-	if (carry)
+	if (carry) {
 		ESIL_A ("0,RPICK,!,zf,&,zf,=,");		// Z
-	else
-		ESIL_A ("0,RPICK,!,zf,=,");			// Z
+	} else {
+		ESIL_A ("0,RPICK,!,zf,=,"); // Z
+	}
 	ESIL_A ("%s,0x80,&,!,"   "%s,0x80,&,!,!,"      "&,"	// C
 		"%s,0x80,&,!,!," "0,RPICK,0x80,&,!,!," "&,"
 		"%s,0x80,&,!,"   "0,RPICK,0x80,&,!,!," "&,"
@@ -681,7 +684,7 @@ INST_HANDLER (dec) {	// DEC Rd
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 	ESIL_A ("-1,r%d,+,", d);				// --Rd
 								// FLAGS:
-	ESIL_A ("0,RPICK,0x7f,==,vf,=,");			// V
+	ESIL_A ("0,RPICK,0x7f,==,$z,vf,=,");			// V
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,=,");				// Z
 	ESIL_A ("vf,nf,^,sf,=,");				// S
@@ -848,7 +851,7 @@ INST_HANDLER (inc) {	// INC Rd
 	int d = ((buf[0] >> 4) & 0xf) | ((buf[1] & 0x1) << 4);
 	ESIL_A ("1,r%d,+,", d);					// ++Rd
 								// FLAGS:
-	ESIL_A ("0,RPICK,0x80,==,vf,=,");			// V
+	ESIL_A ("0,RPICK,0x80,==,$z,vf,=,");			// V
 	ESIL_A ("0,RPICK,0x80,&,!,!,nf,=,");			// N
 	ESIL_A ("0,RPICK,!,zf,=,");				// Z
 	ESIL_A ("vf,nf,^,sf,=,");				// S
@@ -2131,12 +2134,15 @@ RAMPX, RAMPY, RAMPZ, RAMPD and EIND:
 }
 
 static int archinfo(RAnal *anal, int q) {
-	if (q == R_ANAL_ARCHINFO_ALIGN)
+	if (q == R_ANAL_ARCHINFO_ALIGN) {
 		return 2;
-	if (q == R_ANAL_ARCHINFO_MAX_OP_SIZE)
+	}
+	if (q == R_ANAL_ARCHINFO_MAX_OP_SIZE) {
 		return 4;
-	if (q == R_ANAL_ARCHINFO_MIN_OP_SIZE)
+	}
+	if (q == R_ANAL_ARCHINFO_MIN_OP_SIZE) {
 		return 2;
+	}
 	return 2; // XXX
 }
 

@@ -478,8 +478,9 @@ static void expand_1st_key(ut32 *dstkey, const ut32 *srckey) {
 	dstkey[2] = 0;
 	dstkey[3] = 0;
 
-	for (i = 0; i < 96; ++i)
-		dstkey[i / 24] |= BIT(srckey[bits[i] / 32], bits[i] % 32) << (i % 24);
+	for (i = 0; i < 96; ++i) {
+		dstkey[i / 24] |= BIT (srckey[bits[i] / 32], bits[i] % 32) << (i % 24);
+	}
 }
 
 // srckey is the 64-bit master key (2x32 bits) XORed with the subkey

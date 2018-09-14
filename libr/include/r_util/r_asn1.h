@@ -71,13 +71,14 @@ typedef struct r_asn1_list_t {
 
 typedef struct r_asn1_bin_t {
 	ut32 length;
-	const ut8 *binary;
+	ut8 *binary;
 } RASN1Binary;
 
 typedef struct r_asn1_object_t {
 	ut8 klass; /* class type */
 	ut8 form; /* defines if contains data or objects */
 	ut8 tag; /* tag type */
+	ut8 undefined; /* set to != 0 if len is undefined */
 	const ut8 *sector; /* Sector containg data */
 	ut32 length; /* Sector Length */
 	ASN1List list; /* List of objects contained in the sector */
@@ -93,10 +94,9 @@ R_API RASN1String *r_asn1_stringify_string (const ut8 *buffer, ut32 length);
 R_API RASN1String *r_asn1_stringify_bytes (const ut8 *buffer, ut32 length);
 R_API RASN1String *r_asn1_stringify_boolean (const ut8 *buffer, ut32 length);
 R_API RASN1String *r_asn1_stringify_oid (const ut8* buffer, ut32 length);
-R_API RASN1String *r_asn1_stringify_tag (RASN1Object *object);
-R_API RASN1String *r_asn1_stringify_object (RASN1Object *object);
 
 R_API void r_asn1_free_object (RASN1Object *object);
+R_API void r_asn1_print_object (RASN1Object *object, ut32 depth);
 R_API void r_asn1_free_string (RASN1String *string);
 R_API void r_asn1_free_binary (RASN1Binary *string);
 

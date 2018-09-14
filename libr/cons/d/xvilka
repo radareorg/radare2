@@ -12,7 +12,7 @@ ec usrcmt rgb:ff0 rgb:06f
 ec push rgb:0c0
 ec pop rgb:0c0
 ec cmp rgb:060
-ec nop rgb:333
+ec nop rgb:777
 ec b0x00 rgb:444
 ec b0x7f rgb:555
 ec b0xff rgb:666

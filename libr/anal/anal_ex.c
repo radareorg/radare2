@@ -331,19 +331,25 @@ R_API ut64 r_anal_ex_map_anal_ex_to_anal_bb_type (ut64 ranal2_op_type) {
 		R_ANAL_OP_TYPE_COND : 0;
 	ut64 code_op_val = ranal2_op_type & (R_ANAL_EX_CODE_OP | 0x1FF);
 
-	if (conditional)
+	if (conditional) {
 		bb_type |= R_ANAL_BB_TYPE_COND;
-	if (ranal2_op_type & R_ANAL_EX_LOAD_OP)
+	}
+	if (ranal2_op_type & R_ANAL_EX_LOAD_OP) {
 		bb_type |= R_ANAL_BB_TYPE_LD;
-	if (ranal2_op_type & R_ANAL_EX_BIN_OP)
+	}
+	if (ranal2_op_type & R_ANAL_EX_BIN_OP) {
 		bb_type |= R_ANAL_BB_TYPE_BINOP;
-	if (ranal2_op_type & R_ANAL_EX_LOAD_OP)
+	}
+	if (ranal2_op_type & R_ANAL_EX_LOAD_OP) {
 		bb_type |= R_ANAL_BB_TYPE_LD;
-	if (ranal2_op_type & R_ANAL_EX_STORE_OP)
+	}
+	if (ranal2_op_type & R_ANAL_EX_STORE_OP) {
 		bb_type |= R_ANAL_BB_TYPE_ST;
+	}
 	/* mark bb with a comparison */
-	if (ranal2_op_type & R_ANAL_EX_BINOP_CMP)
+	if (ranal2_op_type & R_ANAL_EX_BINOP_CMP) {
 		bb_type |= R_ANAL_BB_TYPE_CMP;
+	}
 
 	/* change in control flow here */
 	if (code_op_val & R_ANAL_EX_CODEOP_JMP) {
@@ -362,11 +368,13 @@ R_API ut64 r_anal_ex_map_anal_ex_to_anal_bb_type (ut64 ranal2_op_type) {
 		bb_type |= R_ANAL_BB_TYPE_TAIL;
 	}
 
-	if ( ranal2_op_type  & R_ANAL_EX_UNK_OP && code_op_val & R_ANAL_EX_CODEOP_JMP)
+	if (ranal2_op_type & R_ANAL_EX_UNK_OP && code_op_val & R_ANAL_EX_CODEOP_JMP) {
 		bb_type |= R_ANAL_BB_TYPE_FOOT;
+	}
 
-	if ( conditional && code_op_val & R_ANAL_EX_CODEOP_JMP)
+	if (conditional && code_op_val & R_ANAL_EX_CODEOP_JMP) {
 		bb_type |= R_ANAL_BB_TYPE_BODY;
+	}
 
 	return bb_type;
 }
@@ -414,9 +422,15 @@ ut64 extract_load_store_op(ut64 ranal2_op_type) {
 
 
 ut64 extract_unknown_op(ut64 ranal2_op_type) {
-	if ( (ranal2_op_type & R_ANAL_EX_CODEOP_JMP) == R_ANAL_EX_CODEOP_JMP )  return R_ANAL_OP_TYPE_UJMP;
-	if ( (ranal2_op_type & R_ANAL_EX_CODEOP_CALL) == R_ANAL_EX_CODEOP_CALL) return R_ANAL_OP_TYPE_UCALL;
-	if ( (ranal2_op_type & R_ANAL_EX_LDST_OP_PUSH) == R_ANAL_EX_LDST_OP_PUSH) return R_ANAL_OP_TYPE_UPUSH;
+	if ((ranal2_op_type & R_ANAL_EX_CODEOP_JMP) == R_ANAL_EX_CODEOP_JMP) {
+		return R_ANAL_OP_TYPE_UJMP;
+	}
+	if ((ranal2_op_type & R_ANAL_EX_CODEOP_CALL) == R_ANAL_EX_CODEOP_CALL) {
+		return R_ANAL_OP_TYPE_UCALL;
+	}
+	if ((ranal2_op_type & R_ANAL_EX_LDST_OP_PUSH) == R_ANAL_EX_LDST_OP_PUSH) {
+		return R_ANAL_OP_TYPE_UPUSH;
+	}
 	return R_ANAL_OP_TYPE_UNK;
 }
 

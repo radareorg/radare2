@@ -657,9 +657,10 @@ extract_bat (unsigned long insn,
 	     ppc_cpu_t dialect ATTRIBUTE_UNUSED,
 	     int *invalid)
 {
-  if (((insn >> 21) & 0x1f) != ((insn >> 16) & 0x1f))
-    *invalid = 1;
-  return 0;
+	if (((insn >> 21) & 0x1f) != ((insn >> 16) & 0x1f)) {
+		*invalid = 1;
+	}
+	return 0;
 }
 
 /* The BB field in an XL form instruction when it must be the same as
@@ -682,9 +683,10 @@ extract_bba (unsigned long insn,
 	     ppc_cpu_t dialect ATTRIBUTE_UNUSED,
 	     int *invalid)
 {
-  if (((insn >> 16) & 0x1f) != ((insn >> 11) & 0x1f))
-    *invalid = 1;
-  return 0;
+	if (((insn >> 16) & 0x1f) != ((insn >> 11) & 0x1f)) {
+		*invalid = 1;
+	}
+	return 0;
 }
 
 /* The BD field in a B form instruction when the - modifier is used.
@@ -712,15 +714,17 @@ insert_bdm (unsigned long insn,
 {
   if ((dialect & PPC_OPCODE_POWER4) == 0)
     {
-      if ((value & 0x8000) != 0)
-	insn |= 1 << 21;
+	  if ((value & 0x8000) != 0) {
+		  insn |= 1 << 21;
+	  }
     }
   else
     {
-      if ((insn & (0x14 << 21)) == (0x04 << 21))
-	insn |= 0x02 << 21;
-      else if ((insn & (0x14 << 21)) == (0x10 << 21))
-	insn |= 0x08 << 21;
+	    if ((insn & (0x14 << 21)) == (0x04 << 21)) {
+		    insn |= 0x02 << 21;
+	    } else if ((insn & (0x14 << 21)) == (0x10 << 21)) {
+		    insn |= 0x08 << 21;
+	    }
     }
   return insn | (value & 0xfffc);
 }
@@ -732,14 +736,15 @@ extract_bdm (unsigned long insn,
 {
   if ((dialect & PPC_OPCODE_POWER4) == 0)
     {
-      if (((insn & (1 << 21)) == 0) != ((insn & (1 << 15)) == 0))
-	*invalid = 1;
+	  if (((insn & (1 << 21)) == 0) != ((insn & (1 << 15)) == 0)) {
+		  *invalid = 1;
+	  }
     }
   else
     {
-      if ((insn & (0x17 << 21)) != (0x06 << 21)
-	  && (insn & (0x1d << 21)) != (0x18 << 21))
-	*invalid = 1;
+	    if ((insn & (0x17 << 21)) != (0x06 << 21) && (insn & (0x1d << 21)) != (0x18 << 21)) {
+		    *invalid = 1;
+	    }
     }
 
   return ((insn & 0xfffc) ^ 0x8000) - 0x8000;
@@ -757,15 +762,17 @@ insert_bdp (unsigned long insn,
 {
   if ((dialect & PPC_OPCODE_POWER4) == 0)
     {
-      if ((value & 0x8000) == 0)
-	insn |= 1 << 21;
+	  if ((value & 0x8000) == 0) {
+		  insn |= 1 << 21;
+	  }
     }
   else
     {
-      if ((insn & (0x14 << 21)) == (0x04 << 21))
-	insn |= 0x03 << 21;
-      else if ((insn & (0x14 << 21)) == (0x10 << 21))
-	insn |= 0x09 << 21;
+	    if ((insn & (0x14 << 21)) == (0x04 << 21)) {
+		    insn |= 0x03 << 21;
+	    } else if ((insn & (0x14 << 21)) == (0x10 << 21)) {
+		    insn |= 0x09 << 21;
+	    }
     }
   return insn | (value & 0xfffc);
 }
@@ -777,14 +784,15 @@ extract_bdp (unsigned long insn,
 {
   if ((dialect & PPC_OPCODE_POWER4) == 0)
     {
-      if (((insn & (1 << 21)) == 0) == ((insn & (1 << 15)) == 0))
-	*invalid = 1;
+	  if (((insn & (1 << 21)) == 0) == ((insn & (1 << 15)) == 0)) {
+		  *invalid = 1;
+	  }
     }
   else
     {
-      if ((insn & (0x17 << 21)) != (0x07 << 21)
-	  && (insn & (0x1d << 21)) != (0x19 << 21))
-	*invalid = 1;
+	    if ((insn & (0x17 << 21)) != (0x07 << 21) && (insn & (0x1d << 21)) != (0x19 << 21)) {
+		    *invalid = 1;
+	    }
     }
 
   return ((insn & 0xfffc) ^ 0x8000) - 0x8000;
@@ -823,10 +831,9 @@ valid_bo (long value, ppc_cpu_t dialect, int extract)
 	  break;
 	}
       /* When disassembling with -Many, accept power4 encodings too.  */
-      if (valid
-	  || (dialect & PPC_OPCODE_ANY) == 0
-	  || !extract)
-	return valid;
+	if (valid || (dialect & PPC_OPCODE_ANY) == 0 || !extract) {
+		return valid;
+	}
     }
 
   /* Certain encodings have bits that are required to be zero.
@@ -841,12 +848,13 @@ valid_bo (long value, ppc_cpu_t dialect, int extract)
 	 1a01t
 	 1z1zz
   */
-  if ((value & 0x14) == 0)
-    return (value & 0x1) == 0;
-  else if ((value & 0x14) == 0x14)
-    return value == 0x14;
-  else
-    return 1;
+    if ((value & 0x14) == 0) {
+	    return (value & 0x1) == 0;
+    } else if ((value & 0x14) == 0x14) {
+	    return value == 0x14;
+    } else {
+	    return 1;
+    }
 }
 
 /* The BO field in a B form instruction.  Warn about attempts to set
@@ -858,9 +866,10 @@ insert_bo (unsigned long insn,
 	   ppc_cpu_t dialect,
 	   const char **errmsg)
 {
-  if (!valid_bo (value, dialect, 0))
-    *errmsg = _("invalid conditional option");
-  return insn | ((value & 0x1f) << 21);
+	if (!valid_bo (value, dialect, 0)) {
+		*errmsg = _ ("invalid conditional option");
+	}
+	return insn | ((value & 0x1f) << 21);
 }
 
 static long
@@ -871,8 +880,9 @@ extract_bo (unsigned long insn,
   long value;
 
   value = (insn >> 21) & 0x1f;
-  if (!valid_bo (value, dialect, 1))
-    *invalid = 1;
+  if (!valid_bo (value, dialect, 1)) {
+	  *invalid = 1;
+  }
   return value;
 }
 
@@ -886,12 +896,13 @@ insert_boe (unsigned long insn,
 	    ppc_cpu_t dialect,
 	    const char **errmsg)
 {
-  if (!valid_bo (value, dialect, 0))
-    *errmsg = _("invalid conditional option");
-  else if ((value & 1) != 0)
-    *errmsg = _("attempt to set y bit when using + or - modifier");
+	if (!valid_bo (value, dialect, 0)) {
+		*errmsg = _ ("invalid conditional option");
+	} else if ((value & 1) != 0) {
+		*errmsg = _ ("attempt to set y bit when using + or - modifier");
+	}
 
-  return insn | ((value & 0x1f) << 21);
+	return insn | ((value & 0x1f) << 21);
 }
 
 static long
@@ -902,8 +913,9 @@ extract_boe (unsigned long insn,
   long value;
 
   value = (insn >> 21) & 0x1f;
-  if (!valid_bo (value, dialect, 1))
-    *invalid = 1;
+  if (!valid_bo (value, dialect, 1)) {
+	  *invalid = 1;
+  }
   return value & 0x1e;
 }
 
@@ -924,31 +936,27 @@ insert_fxm (unsigned long insn,
 	  *errmsg = _("invalid mask field");
 	  value = 0;
 	}
-    }
+  }
 
   /* If the optional field on mfcr is missing that means we want to use
      the old form of the instruction that moves the whole cr.  In that
      case we'll have VALUE zero.  There doesn't seem to be a way to
      distinguish this from the case where someone writes mfcr %r3,0.  */
-  else if (value == 0)
-    ;
+  else if (value == 0) {
+	  ;
 
-  /* If only one bit of the FXM field is set, we can use the new form
+	  /* If only one bit of the FXM field is set, we can use the new form
      of the instruction, which is faster.  Unlike the Power4 branch hint
      encoding, this is not backward compatible.  Do not generate the
      new form unless -mpower4 has been given, or -many and the two
      operand form of mfcr was used.  */
-  else if ((value & -value) == value
-	   && ((dialect & PPC_OPCODE_POWER4) != 0
-	       || ((dialect & PPC_OPCODE_ANY) != 0
-		   && (insn & (0x3ff << 1)) == 19 << 1)))
-    insn |= 1 << 20;
+  } else if ((value & -value) == value && ((dialect & PPC_OPCODE_POWER4) != 0 || ((dialect & PPC_OPCODE_ANY) != 0 && (insn & (0x3ff << 1)) == 19 << 1))) {
+	  insn |= 1 << 20;
 
-  /* Any other value on mfcr is an error.  */
-  else if ((insn & (0x3ff << 1)) == 19 << 1)
-    {
-      *errmsg = _("ignoring invalid mfcr mask");
-      value = 0;
+	  /* Any other value on mfcr is an error.  */
+  } else if ((insn & (0x3ff << 1)) == 19 << 1) {
+	  *errmsg = _ ("ignoring invalid mfcr mask");
+	  value = 0;
     }
 
   return insn | ((value & 0xff) << 12);
@@ -965,15 +973,17 @@ extract_fxm (unsigned long insn,
   if ((insn & (1 << 20)) != 0)
     {
       /* Exactly one bit of MASK should be set.  */
-      if (mask == 0 || (mask & -mask) != mask)
-	*invalid = 1;
+      if (mask == 0 || (mask & -mask) != mask) {
+	      *invalid = 1;
+      }
     }
 
   /* Check that non-power4 form of mfcr has a zero MASK.  */
   else if ((insn & (0x3ff << 1)) == 19 << 1)
     {
-      if (mask != 0)
-	*invalid = 1;
+	    if (mask != 0) {
+		    *invalid = 1;
+	    }
     }
 
   return mask;
@@ -1003,10 +1013,11 @@ insert_mbe (unsigned long insn,
 
   mb = 0;
   me = 32;
-  if ((uval & 1) != 0)
-    last = 1;
-  else
-    last = 0;
+  if ((uval & 1) != 0) {
+	  last = 1;
+  } else {
+	  last = 0;
+  }
   count = 0;
 
   /* mb: location of last 0->1 transition */
@@ -1028,13 +1039,15 @@ insert_mbe (unsigned long insn,
 	  last = 0;
 	}
     }
-  if (me == 0)
-    me = 32;
+    if (me == 0) {
+	    me = 32;
+    }
 
-  if (count != 2 && (count != 0 || ! last))
-    *errmsg = _("illegal bitmask");
+    if (count != 2 && (count != 0 || !last)) {
+	    *errmsg = _ ("illegal bitmask");
+    }
 
-  return insn | (mb << 6) | ((me - 1) << 1);
+    return insn | (mb << 6) | ((me - 1) << 1);
 }
 
 static long
@@ -1053,16 +1066,17 @@ extract_mbe (unsigned long insn,
   if (mb < me + 1)
     {
       ret = 0;
-      for (i = mb; i <= me; i++)
-	ret |= 1L << (31 - i);
-    }
-  else if (mb == me + 1)
-    ret = ~0;
-  else /* (mb > me + 1) */
-    {
-      ret = ~0;
-      for (i = me + 1; i < mb; i++)
-	ret &= ~(1L << (31 - i));
+      for (i = mb; i <= me; i++) {
+	      ret |= 1L << (31 - i);
+      }
+  } else if (mb == me + 1) {
+	  ret = ~0;
+  } else /* (mb > me + 1) */
+  {
+	  ret = ~0;
+	  for (i = me + 1; i < mb; i++) {
+		  ret &= ~(1L << (31 - i));
+	  }
     }
   return ret;
 }
@@ -1098,8 +1112,9 @@ extract_nb (unsigned long insn,
   long ret;
 
   ret = (insn >> 11) & 0x1f;
-  if (ret == 0)
-    ret = 32;
+  if (ret == 0) {
+	  ret = 32;
+  }
   return ret;
 }
 
@@ -1136,10 +1151,10 @@ insert_ral (unsigned long insn,
 	    ppc_cpu_t dialect ATTRIBUTE_UNUSED,
 	    const char **errmsg)
 {
-  if (value == 0
-      || (unsigned long) value == ((insn >> 21) & 0x1f))
-    *errmsg = "invalid register operand when updating";
-  return insn | ((value & 0x1f) << 16);
+	if (value == 0 || (unsigned long)value == ((insn >> 21) & 0x1f)) {
+		*errmsg = "invalid register operand when updating";
+	}
+	return insn | ((value & 0x1f) << 16);
 }
 
 /* The RA field in an lmw instruction, which has special value
@@ -1151,9 +1166,10 @@ insert_ram (unsigned long insn,
 	    ppc_cpu_t dialect ATTRIBUTE_UNUSED,
 	    const char **errmsg)
 {
-  if ((unsigned long) value >= ((insn >> 21) & 0x1f))
-    *errmsg = _("index register in load range");
-  return insn | ((value & 0x1f) << 16);
+	if ((unsigned long)value >= ((insn >> 21) & 0x1f)) {
+		*errmsg = _ ("index register in load range");
+	}
+	return insn | ((value & 0x1f) << 16);
 }
 
 /* The RA field in the DQ form lq instruction, which has special
@@ -1167,8 +1183,9 @@ insert_raq (unsigned long insn,
 {
   long rtvalue = (insn & RT_MASK) >> 21;
 
-  if (value == rtvalue)
-    *errmsg = _("source and target register operands must be different");
+  if (value == rtvalue) {
+	  *errmsg = _ ("source and target register operands must be different");
+  }
   return insn | ((value & 0x1f) << 16);
 }
 
@@ -1182,9 +1199,10 @@ insert_ras (unsigned long insn,
 	    ppc_cpu_t dialect ATTRIBUTE_UNUSED,
 	    const char **errmsg)
 {
-  if (value == 0)
-    *errmsg = _("invalid register operand when updating");
-  return insn | ((value & 0x1f) << 16);
+	if (value == 0) {
+		*errmsg = _ ("invalid register operand when updating");
+	}
+	return insn | ((value & 0x1f) << 16);
 }
 
 /* The RB field in an X form instruction when it must be the same as
@@ -1207,9 +1225,10 @@ extract_rbs (unsigned long insn,
 	     ppc_cpu_t dialect ATTRIBUTE_UNUSED,
 	     int *invalid)
 {
-  if (((insn >> 21) & 0x1f) != ((insn >> 11) & 0x1f))
-    *invalid = 1;
-  return 0;
+	if (((insn >> 21) & 0x1f) != ((insn >> 11) & 0x1f)) {
+		*invalid = 1;
+	}
+	return 0;
 }
 
 /* The SH field in an MD form instruction.  This is split.  */
@@ -1259,17 +1278,17 @@ insert_sprg (unsigned long insn,
 	     ppc_cpu_t dialect,
 	     const char **errmsg)
 {
-  if (value > 7
-      || (value > 3
-	  && (dialect & (PPC_OPCODE_BOOKE | PPC_OPCODE_405)) == 0))
-    *errmsg = _("invalid sprg number");
+	if (value > 7 || (value > 3 && (dialect & (PPC_OPCODE_BOOKE | PPC_OPCODE_405)) == 0)) {
+		*errmsg = _ ("invalid sprg number");
+	}
 
-  /* If this is mfsprg4..7 then use spr 260..263 which can be read in
+	/* If this is mfsprg4..7 then use spr 260..263 which can be read in
      user mode.  Anything else must use spr 272..279.  */
-  if (value <= 3 || (insn & 0x100) != 0)
-    value |= 0x10;
+	if (value <= 3 || (insn & 0x100) != 0) {
+		value |= 0x10;
+	}
 
-  return insn | ((value & 0x17) << 16);
+	return insn | ((value & 0x17) << 16);
 }
 
 static long
@@ -1281,11 +1300,9 @@ extract_sprg (unsigned long insn,
 
   /* mfsprg can use 260..263 and 272..279.  mtsprg only uses spr 272..279
      If not BOOKE or 405, then both use only 272..275.  */
-  if ((val - 0x10 > 3 && (dialect & (PPC_OPCODE_BOOKE | PPC_OPCODE_405)) == 0)
-      || (val - 0x10 > 7 && (insn & 0x100) != 0)
-      || val <= 3
-      || (val & 8) != 0)
-    *invalid = 1;
+  if ((val - 0x10 > 3 && (dialect & (PPC_OPCODE_BOOKE | PPC_OPCODE_405)) == 0) || (val - 0x10 > 7 && (insn & 0x100) != 0) || val <= 3 || (val & 8) != 0) {
+	  *invalid = 1;
+  }
   return val & 7;
 }
 
@@ -1305,9 +1322,10 @@ insert_tbr (unsigned long insn,
 	    ppc_cpu_t dialect ATTRIBUTE_UNUSED,
 	    const char **errmsg ATTRIBUTE_UNUSED)
 {
-  if (value == 0)
-    value = TB;
-  return insn | ((value & 0x1f) << 16) | ((value & 0x3e0) << 6);
+	if (value == 0) {
+		value = TB;
+	}
+	return insn | ((value & 0x1f) << 16) | ((value & 0x3e0) << 6);
 }
 
 static long
@@ -1318,8 +1336,9 @@ extract_tbr (unsigned long insn,
   long ret;
 
   ret = ((insn >> 16) & 0x1f) | ((insn >> 6) & 0x3e0);
-  if (ret == TB)
-    ret = 0;
+  if (ret == TB) {
+	  ret = 0;
+  }
   return ret;
 }
 
@@ -1400,10 +1419,10 @@ extract_xb6s (unsigned long insn,
 	     ppc_cpu_t dialect ATTRIBUTE_UNUSED,
 	     int *invalid)
 {
-  if ((((insn >> 16) & 0x1f) != ((insn >> 11) & 0x1f))
-      || (((insn >> 2) & 0x1) != ((insn >> 1) & 0x1)))
-    *invalid = 1;
-  return 0;
+	if ((((insn >> 16) & 0x1f) != ((insn >> 11) & 0x1f)) || (((insn >> 2) & 0x1) != ((insn >> 1) & 0x1))) {
+		*invalid = 1;
+	}
+	return 0;
 }
 
 /* Macros used to form opcodes.  */

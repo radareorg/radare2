@@ -83,37 +83,26 @@ get_data_pattern (const aarch64_opnd_qualifier_seq_t qualifiers)
     {
       /* e.g. v.4s, v.4s, v.4s
 	   or v.4h, v.4h, v.h[3].  */
-      if (qualifiers[0] == qualifiers[1]
-	  && vector_qualifier_p (qualifiers[2]) == TRUE
-	  && (aarch64_get_qualifier_esize (qualifiers[0])
-	      == aarch64_get_qualifier_esize (qualifiers[1]))
-	  && (aarch64_get_qualifier_esize (qualifiers[0])
-	      == aarch64_get_qualifier_esize (qualifiers[2])))
-	return DP_VECTOR_3SAME;
+      if (qualifiers[0] == qualifiers[1] && vector_qualifier_p (qualifiers[2]) == TRUE && (aarch64_get_qualifier_esize (qualifiers[0]) == aarch64_get_qualifier_esize (qualifiers[1])) && (aarch64_get_qualifier_esize (qualifiers[0]) == aarch64_get_qualifier_esize (qualifiers[2]))) {
+	      return DP_VECTOR_3SAME;
+      }
       /* e.g. v.8h, v.8b, v.8b.
            or v.4s, v.4h, v.h[2].
 	   or v.8h, v.16b.  */
-      if (vector_qualifier_p (qualifiers[1]) == TRUE
-	  && aarch64_get_qualifier_esize (qualifiers[0]) != 0
-	  && (aarch64_get_qualifier_esize (qualifiers[0])
-	      == aarch64_get_qualifier_esize (qualifiers[1]) << 1))
-	return DP_VECTOR_LONG;
+      if (vector_qualifier_p (qualifiers[1]) == TRUE && aarch64_get_qualifier_esize (qualifiers[0]) != 0 && (aarch64_get_qualifier_esize (qualifiers[0]) == aarch64_get_qualifier_esize (qualifiers[1]) << 1)) {
+	      return DP_VECTOR_LONG;
+      }
       /* e.g. v.8h, v.8h, v.8b.  */
-      if (qualifiers[0] == qualifiers[1]
-	  && vector_qualifier_p (qualifiers[2]) == TRUE
-	  && aarch64_get_qualifier_esize (qualifiers[0]) != 0
-	  && (aarch64_get_qualifier_esize (qualifiers[0])
-	      == aarch64_get_qualifier_esize (qualifiers[2]) << 1)
-	  && (aarch64_get_qualifier_esize (qualifiers[0])
-	      == aarch64_get_qualifier_esize (qualifiers[1])))
-	return DP_VECTOR_WIDE;
+      if (qualifiers[0] == qualifiers[1] && vector_qualifier_p (qualifiers[2]) == TRUE && aarch64_get_qualifier_esize (qualifiers[0]) != 0 && (aarch64_get_qualifier_esize (qualifiers[0]) == aarch64_get_qualifier_esize (qualifiers[2]) << 1) && (aarch64_get_qualifier_esize (qualifiers[0]) == aarch64_get_qualifier_esize (qualifiers[1]))) {
+	      return DP_VECTOR_WIDE;
+      }
     }
   else if (fp_qualifier_p (qualifiers[0]) == TRUE)
     {
       /* e.g. SADDLV <V><d>, <Vn>.<T>.  */
-      if (vector_qualifier_p (qualifiers[1]) == TRUE
-	  && qualifiers[2] == AARCH64_OPND_QLF_NIL)
-	return DP_VECTOR_ACROSS_LANES;
+      if (vector_qualifier_p (qualifiers[1]) == TRUE && qualifiers[2] == AARCH64_OPND_QLF_NIL) {
+	      return DP_VECTOR_ACROSS_LANES;
+      }
     }
 
   return DP_UNKNOWN;
@@ -294,10 +283,11 @@ enum aarch64_modifier_kind
 aarch64_get_operand_modifier_from_value (aarch64_insn value,
 					 bfd_boolean extend_p)
 {
-  if (extend_p == TRUE)
-    return AARCH64_MOD_UXTB + value;
-  else
-    return AARCH64_MOD_LSL - value;
+	if (extend_p == TRUE) {
+		return AARCH64_MOD_UXTB + value;
+	} else {
+		return AARCH64_MOD_LSL - value;
+	}
 }
 
 bfd_boolean
@@ -397,8 +387,9 @@ value_fit_signed_field_p (int64_t value, unsigned width)
   if (width < sizeof (value) * 8)
     {
       int64_t lim = (int64_t)1 << (width - 1);
-      if (value >= -lim && value < lim)
-	return 1;
+      if (value >= -lim && value < lim) {
+	      return 1;
+      }
     }
   return 0;
 }
@@ -411,8 +402,9 @@ value_fit_unsigned_field_p (int64_t value, unsigned width)
   if (width < sizeof (value) * 8)
     {
       int64_t lim = (int64_t)1 << width;
-      if (value >= 0 && value < lim)
-	return 1;
+      if (value >= 0 && value < lim) {
+	      return 1;
+      }
     }
   return 0;
 }
@@ -448,23 +440,25 @@ operand_also_qualified_p (const struct aarch64_opnd_info *operand,
   switch (operand->qualifier)
     {
     case AARCH64_OPND_QLF_W:
-      if (target == AARCH64_OPND_QLF_WSP && aarch64_stack_pointer_p (operand))
-	return 1;
-      break;
+	    if (target == AARCH64_OPND_QLF_WSP && aarch64_stack_pointer_p (operand)) {
+		    return 1;
+	    }
+	    break;
     case AARCH64_OPND_QLF_X:
-      if (target == AARCH64_OPND_QLF_SP && aarch64_stack_pointer_p (operand))
-	return 1;
-      break;
+	    if (target == AARCH64_OPND_QLF_SP && aarch64_stack_pointer_p (operand)) {
+		    return 1;
+	    }
+	    break;
     case AARCH64_OPND_QLF_WSP:
-      if (target == AARCH64_OPND_QLF_W
-	  && operand_maybe_stack_pointer (aarch64_operands + operand->type))
-	return 1;
-      break;
+	    if (target == AARCH64_OPND_QLF_W && operand_maybe_stack_pointer (aarch64_operands + operand->type)) {
+		    return 1;
+	    }
+	    break;
     case AARCH64_OPND_QLF_SP:
-      if (target == AARCH64_OPND_QLF_X
-	  && operand_maybe_stack_pointer (aarch64_operands + operand->type))
-	return 1;
-      break;
+	    if (target == AARCH64_OPND_QLF_X && operand_maybe_stack_pointer (aarch64_operands + operand->type)) {
+		    return 1;
+	    }
+	    break;
     default:
       break;
     }
@@ -510,11 +504,12 @@ aarch64_get_expected_qualifier (const aarch64_opnd_qualifier_seq_t *qseq_list,
     {
       if (qseq_list[i][known_idx] == known_qlf)
 	{
-	  if (saved_i != -1)
-	    /* More than one sequences are found to have KNOWN_QLF at
+	      if (saved_i != -1) {
+		      /* More than one sequences are found to have KNOWN_QLF at
 	       KNOWN_IDX.  */
-	    return AARCH64_OPND_NIL;
-	  saved_i = i;
+		      return AARCH64_OPND_NIL;
+	      }
+	      saved_i = i;
 	}
     }
 
@@ -696,8 +691,9 @@ aarch64_num_of_operands (const aarch64_opcode *opcode)
 {
   int i = 0;
   const enum aarch64_opnd *opnds = opcode->operands;
-  while (opnds[i++] != AARCH64_OPND_NIL)
-    ;
+  while (opnds[i++] != AARCH64_OPND_NIL) {
+	  ;
+  }
   --i;
   assert (i >= 0 && i <= AARCH64_MAX_OPND_NUM);
   return i;
@@ -741,19 +737,19 @@ aarch64_find_best_match (const aarch64_inst *inst,
       return 1;
     }
 
-  if (stop_at < 0 || stop_at >= num_opnds)
-    stop_at = num_opnds - 1;
+    if (stop_at < 0 || stop_at >= num_opnds) {
+	    stop_at = num_opnds - 1;
+    }
 
-  /* For each pattern.  */
-  for (i = 0; i < AARCH64_MAX_QLF_SEQ_NUM; ++i, ++qualifiers_list)
-    {
-      int j;
-      qualifiers = *qualifiers_list;
+    /* For each pattern.  */
+    for (i = 0; i < AARCH64_MAX_QLF_SEQ_NUM; ++i, ++qualifiers_list) {
+	    int j;
+	    qualifiers = *qualifiers_list;
 
-      /* Start as positive.  */
-      found = 1;
+	    /* Start as positive.  */
+	    found = 1;
 
-      DEBUG_TRACE ("%d", i);
+	    DEBUG_TRACE ("%d", i);
 #ifdef DEBUG_AARCH64
       if (debug_dump)
 	dump_match_qualifiers (inst->operands, qualifiers);
@@ -764,8 +760,9 @@ aarch64_find_best_match (const aarch64_inst *inst,
       if (empty_qualifier_sequence_p (qualifiers) == TRUE)
 	{
 	  DEBUG_TRACE_IF (i == 0, "SUCCEED: empty qualifier list");
-	  if (i)
-	    found = 0;
+	  if (i) {
+		  found = 0;
+	  }
 	  break;
 	}
 
@@ -786,21 +783,21 @@ aarch64_find_best_match (const aarch64_inst *inst,
 	      /* Unless the target qualifier can also qualify the operand
 		 (which has already had a non-nil qualifier), non-equal
 		 qualifiers are generally un-matched.  */
-	      if (operand_also_qualified_p (inst->operands + j, *qualifiers))
-		continue;
-	      else
-		{
-		  found = 0;
-		  break;
+	      if (operand_also_qualified_p (inst->operands + j, *qualifiers)) {
+		      continue;
+	      } else {
+		      found = 0;
+		      break;
 		}
+	    } else {
+		    continue; /* Equal qualifiers are certainly matched.  */
 	    }
-	  else
-	    continue;	/* Equal qualifiers are certainly matched.  */
 	}
 
       /* Qualifiers established.  */
-      if (found == 1)
-	break;
+	if (found == 1) {
+		break;
+	}
     }
 
   if (found == 1)
@@ -815,10 +812,12 @@ aarch64_find_best_match (const aarch64_inst *inst,
 	dump_qualifier_sequence (qualifiers);
 #endif
 
-      for (j = 0; j <= stop_at; ++j, ++qualifiers)
-	ret[j] = *qualifiers;
-      for (; j < AARCH64_MAX_OPND_NUM; ++j)
-	ret[j] = AARCH64_OPND_QLF_NIL;
+      for (j = 0; j <= stop_at; ++j, ++qualifiers) {
+	      ret[j] = *qualifiers;
+      }
+      for (; j < AARCH64_MAX_OPND_NUM; ++j) {
+	      ret[j] = AARCH64_OPND_QLF_NIL;
+      }
 
       DEBUG_TRACE ("SUCCESS");
       return 1;
@@ -850,20 +849,21 @@ match_operands_qualifier (aarch64_inst *inst, bfd_boolean update_p)
     }
 
   /* Update the qualifiers.  */
-  if (update_p == TRUE)
-    for (i = 0; i < AARCH64_MAX_OPND_NUM; ++i)
-      {
-	if (inst->opcode->operands[i] == AARCH64_OPND_NIL)
-	  break;
-	DEBUG_TRACE_IF (inst->operands[i].qualifier != qualifiers[i],
-			"update %s with %s for operand %d",
-			aarch64_get_qualifier_name (inst->operands[i].qualifier),
-			aarch64_get_qualifier_name (qualifiers[i]), i);
-	inst->operands[i].qualifier = qualifiers[i];
-      }
+    if (update_p == TRUE) {
+	    for (i = 0; i < AARCH64_MAX_OPND_NUM; ++i) {
+		    if (inst->opcode->operands[i] == AARCH64_OPND_NIL) {
+			    break;
+		    }
+		    DEBUG_TRACE_IF (inst->operands[i].qualifier != qualifiers[i],
+			    "update %s with %s for operand %d",
+			    aarch64_get_qualifier_name (inst->operands[i].qualifier),
+			    aarch64_get_qualifier_name (qualifiers[i]), i);
+		    inst->operands[i].qualifier = qualifiers[i];
+	    }
+    }
 
-  DEBUG_TRACE ("matching SUCCESS");
-  return 1;
+    DEBUG_TRACE ("matching SUCCESS");
+    return 1;
 }
 
 /* Return TRUE if VALUE is a wide constant that can be moved into a general
@@ -886,22 +886,24 @@ aarch64_wide_constant_p (int64_t value, int is32, unsigned int *shift_amount)
 	 32-bit constant expressions like ~0x80000000 are
 	 permitted.  */
       uint64_t ext = value;
-      if (ext >> 32 != 0 && ext >> 32 != (uint64_t) 0xffffffff)
-	/* Immediate out of range.  */
-	return FALSE;
+      if (ext >> 32 != 0 && ext >> 32 != (uint64_t)0xffffffff) {
+	      /* Immediate out of range.  */
+	      return FALSE;
+      }
       value &= (int64_t) 0xffffffff;
     }
 
   /* first, try movz then movn */
   amount = -1;
-  if ((value & ((int64_t) 0xffff << 0)) == value)
-    amount = 0;
-  else if ((value & ((int64_t) 0xffff << 16)) == value)
-    amount = 16;
-  else if (!is32 && (value & ((int64_t) 0xffff << 32)) == value)
-    amount = 32;
-  else if (!is32 && (value & ((int64_t) 0xffff << 48)) == value)
-    amount = 48;
+  if ((value & ((int64_t)0xffff << 0)) == value) {
+	  amount = 0;
+  } else if ((value & ((int64_t)0xffff << 16)) == value) {
+	  amount = 16;
+  } else if (!is32 && (value & ((int64_t)0xffff << 32)) == value) {
+	  amount = 32;
+  } else if (!is32 && (value & ((int64_t)0xffff << 48)) == value) {
+	  amount = 48;
+  }
 
   if (amount == -1)
     {
@@ -909,12 +911,13 @@ aarch64_wide_constant_p (int64_t value, int is32, unsigned int *shift_amount)
       return FALSE;
     }
 
-  if (shift_amount != NULL)
-    *shift_amount = amount;
+    if (shift_amount != NULL) {
+	    *shift_amount = amount;
+    }
 
-  DEBUG_TRACE ("exit TRUE with amount %d", amount);
+    DEBUG_TRACE ("exit TRUE with amount %d", amount);
 
-  return TRUE;
+    return TRUE;
 }
 
 /* Build the accepted values for immediate logical SIMD instructions.
@@ -952,10 +955,12 @@ simd_imm_encoding_cmp(const void *i1, const void *i2)
   const simd_imm_encoding *imm1 = (const simd_imm_encoding *)i1;
   const simd_imm_encoding *imm2 = (const simd_imm_encoding *)i2;
 
-  if (imm1->imm < imm2->imm)
-    return -1;
-  if (imm1->imm > imm2->imm)
-    return +1;
+  if (imm1->imm < imm2->imm) {
+	  return -1;
+  }
+  if (imm1->imm > imm2->imm) {
+	  return +1;
+  }
   return 0;
 }
 
@@ -1004,30 +1009,30 @@ build_immediate_table (void)
 	     5     ((1 << 0) - 1) << 6 = 000000  */
 	  s_mask = ((1u << (5 - log_e)) - 1) << (log_e + 1);
 	}
-      for (s = 0; s < e - 1; s++)
-	for (r = 0; r < e; r++)
-	  {
-	    /* s+1 consecutive bits to 1 (s < 63) */
-	    imm = (1ull << (s + 1)) - 1;
-	    /* rotate right by r */
-	    if (r != 0)
-	      imm = (imm >> r) | ((imm << (e - r)) & mask);
-	    /* replicate the constant depending on SIMD size */
-	    switch (log_e)
-	      {
-	      case 1: imm = (imm <<  2) | imm;
-	      case 2: imm = (imm <<  4) | imm;
-	      case 3: imm = (imm <<  8) | imm;
-	      case 4: imm = (imm << 16) | imm;
-	      case 5: imm = (imm << 32) | imm;
-	      case 6: break;
-	      default: abort ();
-	      }
-	    simd_immediates[nb_imms].imm = imm;
-	    simd_immediates[nb_imms].encoding =
-	      encode_immediate_bitfield(is64, s | s_mask, r);
-	    nb_imms++;
-	  }
+	for (s = 0; s < e - 1; s++) {
+		for (r = 0; r < e; r++) {
+			/* s+1 consecutive bits to 1 (s < 63) */
+			imm = (1ull << (s + 1)) - 1;
+			/* rotate right by r */
+			if (r != 0) {
+				imm = (imm >> r) | ((imm << (e - r)) & mask);
+			}
+			/* replicate the constant depending on SIMD size */
+			switch (log_e) {
+			case 1: imm = (imm << 2) | imm;
+			case 2: imm = (imm << 4) | imm;
+			case 3: imm = (imm << 8) | imm;
+			case 4: imm = (imm << 16) | imm;
+			case 5: imm = (imm << 32) | imm;
+			case 6: break;
+			default: abort ();
+			}
+			simd_immediates[nb_imms].imm = imm;
+			simd_immediates[nb_imms].encoding =
+				encode_immediate_bitfield (is64, s | s_mask, r);
+			nb_imms++;
+		}
+	}
     }
   assert (nb_imms == TOTAL_IMM_NB);
   qsort(simd_immediates, nb_imms,
@@ -1062,8 +1067,9 @@ aarch64_logical_immediate_p (uint64_t value, int is32, aarch64_insn *encoding)
     {
       /* Allow all zeros or all ones in top 32-bits, so that
 	 constant expressions like ~1 are permitted.  */
-      if (value >> 32 != 0 && value >> 32 != 0xffffffff)
-	return 0xffffffff;
+      if (value >> 32 != 0 && value >> 32 != 0xffffffff) {
+	      return 0xffffffff;
+      }
       /* Replicate the 32 lower bits to the 32 upper bits.  */
       value &= 0xffffffff;
       value |= value << 32;
@@ -1078,10 +1084,11 @@ aarch64_logical_immediate_p (uint64_t value, int is32, aarch64_insn *encoding)
       DEBUG_TRACE ("exit with FALSE");
       return FALSE;
     }
-  if (encoding != NULL)
-    *encoding = imm_encoding->encoding;
-  DEBUG_TRACE ("exit with TRUE");
-  return TRUE;
+    if (encoding != NULL) {
+	    *encoding = imm_encoding->encoding;
+    }
+    DEBUG_TRACE ("exit with TRUE");
+    return TRUE;
 }
 
 /* If 64-bit immediate IMM is in the format of
@@ -1098,10 +1105,11 @@ aarch64_shrink_expanded_imm8 (uint64_t imm)
   for (i = 0; i < 8; i++)
     {
       byte = (imm >> (8 * i)) & 0xff;
-      if (byte == 0xff)
-	ret |= 1 << i;
-      else if (byte != 0x00)
-	return -1;
+      if (byte == 0xff) {
+	      ret |= 1 << i;
+      } else if (byte != 0x00) {
+	      return -1;
+      }
     }
   return ret;
 }
@@ -1113,11 +1121,12 @@ set_error (aarch64_operand_error *mismatch_detail,
 	   enum aarch64_operand_error_kind kind, int idx,
 	   const char* error)
 {
-  if (!mismatch_detail)
-    return;
-  mismatch_detail->kind = kind;
-  mismatch_detail->index = idx;
-  mismatch_detail->error = error;
+	if (!mismatch_detail) {
+		return;
+	}
+	mismatch_detail->kind = kind;
+	mismatch_detail->index = idx;
+	mismatch_detail->error = error;
 }
 
 static inline void
@@ -1125,90 +1134,99 @@ set_out_of_range_error (aarch64_operand_error *mismatch_detail,
 			int idx, int lower_bound, int upper_bound,
 			const char* error)
 {
-  if (!mismatch_detail)
-    return;
-  set_error (mismatch_detail, AARCH64_OPDE_OUT_OF_RANGE, idx, error);
-  mismatch_detail->data[0] = lower_bound;
-  mismatch_detail->data[1] = upper_bound;
+	if (!mismatch_detail) {
+		return;
+	}
+	set_error (mismatch_detail, AARCH64_OPDE_OUT_OF_RANGE, idx, error);
+	mismatch_detail->data[0] = lower_bound;
+	mismatch_detail->data[1] = upper_bound;
 }
 
 static inline void
 set_imm_out_of_range_error (aarch64_operand_error *mismatch_detail,
 			    int idx, int lower_bound, int upper_bound)
 {
-  if (!mismatch_detail)
-    return;
-  set_out_of_range_error (mismatch_detail, idx, lower_bound, upper_bound,
-			  _("immediate value"));
+	if (!mismatch_detail) {
+		return;
+	}
+	set_out_of_range_error (mismatch_detail, idx, lower_bound, upper_bound,
+		_ ("immediate value"));
 }
 
 static inline void
 set_offset_out_of_range_error (aarch64_operand_error *mismatch_detail,
 			       int idx, int lower_bound, int upper_bound)
 {
-  if (!mismatch_detail)
-    return;
-  set_out_of_range_error (mismatch_detail, idx, lower_bound, upper_bound,
-			  _("immediate offset"));
+	if (!mismatch_detail) {
+		return;
+	}
+	set_out_of_range_error (mismatch_detail, idx, lower_bound, upper_bound,
+		_ ("immediate offset"));
 }
 
 static inline void
 set_regno_out_of_range_error (aarch64_operand_error *mismatch_detail,
 			      int idx, int lower_bound, int upper_bound)
 {
-  if (!mismatch_detail)
-    return;
-  set_out_of_range_error (mismatch_detail, idx, lower_bound, upper_bound,
-			  _("register number"));
+	if (!mismatch_detail) {
+		return;
+	}
+	set_out_of_range_error (mismatch_detail, idx, lower_bound, upper_bound,
+		_ ("register number"));
 }
 
 static inline void
 set_elem_idx_out_of_range_error (aarch64_operand_error *mismatch_detail,
 				 int idx, int lower_bound, int upper_bound)
 {
-  if (!mismatch_detail)
-    return;
-  set_out_of_range_error (mismatch_detail, idx, lower_bound, upper_bound,
-			  _("register element index"));
+	if (!mismatch_detail) {
+		return;
+	}
+	set_out_of_range_error (mismatch_detail, idx, lower_bound, upper_bound,
+		_ ("register element index"));
 }
 
 static inline void
 set_sft_amount_out_of_range_error (aarch64_operand_error *mismatch_detail,
 				   int idx, int lower_bound, int upper_bound)
 {
-  if (!mismatch_detail)
-    return;
-  set_out_of_range_error (mismatch_detail, idx, lower_bound, upper_bound,
-			  _("shift amount"));
+	if (!mismatch_detail) {
+		return;
+	}
+	set_out_of_range_error (mismatch_detail, idx, lower_bound, upper_bound,
+		_ ("shift amount"));
 }
 
 static inline void
 set_unaligned_error (aarch64_operand_error *mismatch_detail, int idx,
 		     int alignment)
 {
-  if (!mismatch_detail)
-    return;
-  set_error (mismatch_detail, AARCH64_OPDE_UNALIGNED, idx, NULL);
-  mismatch_detail->data[0] = alignment;
+	if (!mismatch_detail) {
+		return;
+	}
+	set_error (mismatch_detail, AARCH64_OPDE_UNALIGNED, idx, NULL);
+	mismatch_detail->data[0] = alignment;
 }
 
 static inline void
 set_reg_list_error (aarch64_operand_error *mismatch_detail, int idx,
 		    int expected_num)
 {
-  if (!mismatch_detail)
-    return;
-  set_error (mismatch_detail, AARCH64_OPDE_REG_LIST, idx, NULL);
-  mismatch_detail->data[0] = expected_num;
+	if (!mismatch_detail) {
+		return;
+	}
+	set_error (mismatch_detail, AARCH64_OPDE_REG_LIST, idx, NULL);
+	mismatch_detail->data[0] = expected_num;
 }
 
 static inline void
 set_other_error (aarch64_operand_error *mismatch_detail, int idx,
 		 const char* error)
 {
-  if (!mismatch_detail)
-    return;
-  set_error (mismatch_detail, AARCH64_OPDE_OTHER_ERROR, idx, error);
+	if (!mismatch_detail) {
+		return;
+	}
+	set_error (mismatch_detail, AARCH64_OPDE_OTHER_ERROR, idx, error);
 }
 
 /* General constraint checking based on operand code.
@@ -1340,10 +1358,9 @@ operand_general_constraint_met_p (const aarch64_opnd_info *opnds, int idx,
 	  /* Unscaled signed 9 bits immediate offset, which has to be negative
 	     or unaligned.  */
 	  size = aarch64_get_qualifier_esize (qualifier);
-	  if ((value_in_range_p (opnd->addr.offset.imm, 0, 255)
-	       && !value_aligned_p (opnd->addr.offset.imm, size))
-	      || value_in_range_p (opnd->addr.offset.imm, -256, -1))
-	    return 1;
+	  if ((value_in_range_p (opnd->addr.offset.imm, 0, 255) && !value_aligned_p (opnd->addr.offset.imm, size)) || value_in_range_p (opnd->addr.offset.imm, -256, -1)) {
+		  return 1;
+	  }
 	  set_other_error (mismatch_detail, idx,
 			   _("negative or unaligned offset expected"));
 	  return 0;
@@ -1353,13 +1370,12 @@ operand_general_constraint_met_p (const aarch64_opnd_info *opnds, int idx,
 	  assert (idx == 1);
 	  if (opnd->addr.offset.is_reg)
 	    {
-	      if (value_in_range_p (opnd->addr.offset.regno, 0, 30))
-		return 1;
-	      else
-		{
-		  set_other_error (mismatch_detail, idx,
-				   _("invalid register offset"));
-		  return 0;
+		  if (value_in_range_p (opnd->addr.offset.regno, 0, 30)) {
+			  return 1;
+		  } else {
+			  set_other_error (mismatch_detail, idx,
+				  _ ("invalid register offset"));
+			  return 0;
 		}
 	    }
 	  else
@@ -1369,14 +1385,12 @@ operand_general_constraint_met_p (const aarch64_opnd_info *opnds, int idx,
 	      /* The opcode dependent area stores the number of elements in
 		 each structure to be loaded/stored.  */
 	      int is_ld1r = get_opcode_dependent_value (opcode) == 1;
-	      if (opcode->operands[0] == AARCH64_OPND_LVt_AL)
-		/* Special handling of loading single structure to all lane.  */
-		num_bytes = (is_ld1r ? 1 : prev->reglist.num_regs)
-		  * aarch64_get_qualifier_esize (prev->qualifier);
-	      else
-		num_bytes = prev->reglist.num_regs
-		  * aarch64_get_qualifier_esize (prev->qualifier)
-		  * aarch64_get_qualifier_nelem (prev->qualifier);
+	      if (opcode->operands[0] == AARCH64_OPND_LVt_AL) {
+		      /* Special handling of loading single structure to all lane.  */
+		      num_bytes = (is_ld1r ? 1 : prev->reglist.num_regs) * aarch64_get_qualifier_esize (prev->qualifier);
+	      } else {
+		      num_bytes = prev->reglist.num_regs * aarch64_get_qualifier_esize (prev->qualifier) * aarch64_get_qualifier_nelem (prev->qualifier);
+	      }
 	      if ((int) num_bytes != opnd->addr.offset.imm)
 		{
 		  set_other_error (mismatch_detail, idx,
@@ -1636,8 +1650,9 @@ operand_general_constraint_met_p (const aarch64_opnd_info *opnds, int idx,
 	    {
 	      int is32 = opnds[0].qualifier == AARCH64_OPND_QLF_W;
 	      uint64_t uimm = opnd->imm.value;
-	      if (opcode->op == OP_BIC)
-		uimm = ~uimm;
+	      if (opcode->op == OP_BIC) {
+		      uimm = ~uimm;
+	      }
 	      if (aarch64_logical_immediate_p (uimm, is32, NULL) == FALSE)
 		{
 		  set_other_error (mismatch_detail, idx,
@@ -2002,8 +2017,9 @@ aarch64_match_operands_constraint (aarch64_inst *inst,
   for (i = 0; i < AARCH64_MAX_OPND_NUM; ++i)
     {
       enum aarch64_opnd type = inst->opcode->operands[i];
-      if (type == AARCH64_OPND_NIL)
-	break;
+      if (type == AARCH64_OPND_NIL) {
+	      break;
+      }
       if (inst->operands[i].skip)
 	{
 	  DEBUG_TRACE ("skip the incomplete operand %d", i);
@@ -2043,8 +2059,9 @@ aarch64_replace_opcode (aarch64_inst *inst, const aarch64_opcode *opcode)
   for (i = 0; i < AARCH64_MAX_OPND_NUM; ++i)
     {
       inst->operands[i].type = opcode->operands[i];
-      if (opcode->operands[i] == AARCH64_OPND_NIL)
-	break;
+      if (opcode->operands[i] == AARCH64_OPND_NIL) {
+	      break;
+      }
     }
 
   DEBUG_TRACE ("replace %s with %s", old->name, opcode->name);
@@ -2056,11 +2073,13 @@ int
 aarch64_operand_index (const enum aarch64_opnd *operands, enum aarch64_opnd operand)
 {
   int i;
-  for (i = 0; i < AARCH64_MAX_OPND_NUM; ++i)
-    if (operands[i] == operand)
-      return i;
-    else if (operands[i] == AARCH64_OPND_NIL)
-      break;
+  for (i = 0; i < AARCH64_MAX_OPND_NUM; ++i) {
+	  if (operands[i] == operand) {
+		  return i;
+	  } else if (operands[i] == AARCH64_OPND_NIL) {
+		  break;
+	  }
+  }
   return -1;
 }
 
@@ -2177,43 +2196,42 @@ print_register_list (char *buf, size_t size, const aarch64_opnd_info *opnd)
   assert (num_regs >= 1 && num_regs <= 4);
 
   /* Prepare the index if any.  */
-  if (opnd->reglist.has_index)
-    snprintf (tb, 8, "[%d]", opnd->reglist.index);
-  else
-    tb[0] = '\0';
+  if (opnd->reglist.has_index) {
+	  snprintf (tb, 8, "[%d]", opnd->reglist.index);
+  } else {
+	  tb[0] = '\0';
+  }
 
   /* The hyphenated form is preferred for disassembly if there are
      more than two registers in the list, and the register numbers
      are monotonically increasing in increments of one.  */
-  if (num_regs > 2 && last_reg > first_reg)
-    snprintf (buf, size, "{v%d.%s-v%d.%s}%s", first_reg, qlf_name,
-	      last_reg, qlf_name, tb);
-  else
-    {
-      const int reg0 = first_reg;
-      const int reg1 = (first_reg + 1) & 0x1f;
-      const int reg2 = (first_reg + 2) & 0x1f;
-      const int reg3 = (first_reg + 3) & 0x1f;
+  if (num_regs > 2 && last_reg > first_reg) {
+	  snprintf (buf, size, "{v%d.%s-v%d.%s}%s", first_reg, qlf_name,
+		  last_reg, qlf_name, tb);
+  } else {
+	  const int reg0 = first_reg;
+	  const int reg1 = (first_reg + 1) & 0x1f;
+	  const int reg2 = (first_reg + 2) & 0x1f;
+	  const int reg3 = (first_reg + 3) & 0x1f;
 
-      switch (num_regs)
-	{
-	case 1:
-	  snprintf (buf, size, "{v%d.%s}%s", reg0, qlf_name, tb);
-	  break;
-	case 2:
-	  snprintf (buf, size, "{v%d.%s, v%d.%s}%s", reg0, qlf_name,
-		    reg1, qlf_name, tb);
-	  break;
-	case 3:
-	  snprintf (buf, size, "{v%d.%s, v%d.%s, v%d.%s}%s", reg0, qlf_name,
-		    reg1, qlf_name, reg2, qlf_name, tb);
-	  break;
-	case 4:
-	  snprintf (buf, size, "{v%d.%s, v%d.%s, v%d.%s, v%d.%s}%s",
-		    reg0, qlf_name, reg1, qlf_name, reg2, qlf_name,
-		    reg3, qlf_name, tb);
-	  break;
-	}
+	  switch (num_regs) {
+	  case 1:
+		  snprintf (buf, size, "{v%d.%s}%s", reg0, qlf_name, tb);
+		  break;
+	  case 2:
+		  snprintf (buf, size, "{v%d.%s, v%d.%s}%s", reg0, qlf_name,
+			  reg1, qlf_name, tb);
+		  break;
+	  case 3:
+		  snprintf (buf, size, "{v%d.%s, v%d.%s, v%d.%s}%s", reg0, qlf_name,
+			  reg1, qlf_name, reg2, qlf_name, tb);
+		  break;
+	  case 4:
+		  snprintf (buf, size, "{v%d.%s, v%d.%s, v%d.%s, v%d.%s}%s",
+			  reg0, qlf_name, reg1, qlf_name, reg2, qlf_name,
+			  reg3, qlf_name, tb);
+		  break;
+	  }
     }
 }
 
@@ -2248,20 +2266,22 @@ print_register_offset_address (char *buf, size_t size,
       print_amount_p = FALSE;
       /* Likewise, no need to print the shift operator LSL in such a
 	 situation.  */
-      if (lsl_p)
-	print_extend_p = FALSE;
+      if (lsl_p) {
+	      print_extend_p = FALSE;
+      }
     }
 
   /* Prepare for the extend/shift.  */
   if (print_extend_p)
     {
-      if (print_amount_p)
-	snprintf (tb, tblen, ",%s %d", shift_name, opnd->shifter.amount); // #
-      else
-	snprintf (tb, tblen, ",%s", shift_name);
-    }
-  else
-    tb[0] = '\0';
+	  if (print_amount_p) {
+		  snprintf (tb, tblen, ",%s %d", shift_name, opnd->shifter.amount); // #
+	  } else {
+		  snprintf (tb, tblen, ",%s", shift_name);
+	  }
+  } else {
+	  tb[0] = '\0';
+  }
 
   snprintf (buf, size, "[%s,%c%d%s]",
 	    get_64bit_int_reg_name (opnd->addr.base_regno, 1),
@@ -2293,8 +2313,9 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
   uint64_t addr;
 
   buf[0] = '\0';
-  if (pcrel_p)
-    *pcrel_p = 0;
+  if (pcrel_p) {
+	  *pcrel_p = 0;
+  }
 
   switch (opnd->type)
     {
@@ -2309,12 +2330,13 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
       /* The optional-ness of <Xt> in e.g. IC <ic_op>{, <Xt>} is determined by
 	 the <ic_op>, therefore we use opnd->present to override the
 	 generic optional-ness information.  */
-      if (opnd->type == AARCH64_OPND_Rt_SYS && !opnd->present)
-	break;
+      if (opnd->type == AARCH64_OPND_Rt_SYS && !opnd->present) {
+	      break;
+      }
       /* Omit the operand, e.g. RET.  */
-      if (optional_operand_p (opcode, idx)
-	  && opnd->reg.regno == get_optional_operand_default_value (opcode))
-	break;
+      if (optional_operand_p (opcode, idx) && opnd->reg.regno == get_optional_operand_default_value (opcode)) {
+	      break;
+      }
       assert (opnd->qualifier == AARCH64_OPND_QLF_W
 	      || opnd->qualifier == AARCH64_OPND_QLF_X);
       snprintf (buf, size, "%s",
@@ -2352,28 +2374,30 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
 	      break;
 	    }
 	}
-      if (opnd->shifter.amount)
-	snprintf (buf, size, "%s, %s %d", // #%d
-		  get_int_reg_name (opnd->reg.regno, opnd->qualifier, 0),
-		  aarch64_operand_modifiers[kind].name,
-		  opnd->shifter.amount);
-      else
-	snprintf (buf, size, "%s, %s",
-		  get_int_reg_name (opnd->reg.regno, opnd->qualifier, 0),
-		  aarch64_operand_modifiers[kind].name);
-      break;
+	if (opnd->shifter.amount) {
+		snprintf (buf, size, "%s, %s %d", // #%d
+			get_int_reg_name (opnd->reg.regno, opnd->qualifier, 0),
+			aarch64_operand_modifiers[kind].name,
+			opnd->shifter.amount);
+	} else {
+		snprintf (buf, size, "%s, %s",
+			get_int_reg_name (opnd->reg.regno, opnd->qualifier, 0),
+			aarch64_operand_modifiers[kind].name);
+	}
+	break;
 
     case AARCH64_OPND_Rm_SFT:
       assert (opnd->qualifier == AARCH64_OPND_QLF_W
 	      || opnd->qualifier == AARCH64_OPND_QLF_X);
-      if (opnd->shifter.amount == 0 && opnd->shifter.kind == AARCH64_MOD_LSL)
-	snprintf (buf, size, "%s",
-		  get_int_reg_name (opnd->reg.regno, opnd->qualifier, 0));
-      else
-	snprintf (buf, size, "%s, %s %d", // #%d
-		  get_int_reg_name (opnd->reg.regno, opnd->qualifier, 0),
-		  aarch64_operand_modifiers[opnd->shifter.kind].name,
-		  opnd->shifter.amount);
+      if (opnd->shifter.amount == 0 && opnd->shifter.kind == AARCH64_MOD_LSL) {
+	      snprintf (buf, size, "%s",
+		      get_int_reg_name (opnd->reg.regno, opnd->qualifier, 0));
+      } else {
+	      snprintf (buf, size, "%s, %s %d", // #%d
+		      get_int_reg_name (opnd->reg.regno, opnd->qualifier, 0),
+		      aarch64_operand_modifiers[opnd->shifter.kind].name,
+		      opnd->shifter.amount);
+      }
       break;
 
     case AARCH64_OPND_Fd:
@@ -2463,23 +2487,24 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
     case AARCH64_OPND_LIMM:
     case AARCH64_OPND_AIMM:
     case AARCH64_OPND_HALF:
-      if (opnd->shifter.amount)
-	snprintf (buf, size, "0x%" PRIx64 ", lsl %d", opnd->imm.value, // #
-		  opnd->shifter.amount);
-      else
-	snprintf (buf, size, "0x%" PRIx64, opnd->imm.value);
-      break;
+	    if (opnd->shifter.amount) {
+		    snprintf (buf, size, "0x%" PRIx64 ", lsl %d", opnd->imm.value, // #
+			    opnd->shifter.amount);
+	    } else {
+		    snprintf (buf, size, "0x%" PRIx64, opnd->imm.value);
+	    }
+	    break;
 
     case AARCH64_OPND_SIMD_IMM:
     case AARCH64_OPND_SIMD_IMM_SFT:
-      if ((! opnd->shifter.amount && opnd->shifter.kind == AARCH64_MOD_LSL)
-	  || opnd->shifter.kind == AARCH64_MOD_NONE)
-	snprintf (buf, size, "0x%" PRIx64, opnd->imm.value);
-      else
-	snprintf (buf, size, "0x%" PRIx64 ", %s %d", opnd->imm.value, // #
-		  aarch64_operand_modifiers[opnd->shifter.kind].name,
-		  opnd->shifter.amount);
-      break;
+	    if ((!opnd->shifter.amount && opnd->shifter.kind == AARCH64_MOD_LSL) || opnd->shifter.kind == AARCH64_MOD_NONE) {
+		    snprintf (buf, size, "0x%" PRIx64, opnd->imm.value);
+	    } else {
+		    snprintf (buf, size, "0x%" PRIx64 ", %s %d", opnd->imm.value, // #
+			    aarch64_operand_modifiers[opnd->shifter.kind].name,
+			    opnd->shifter.amount);
+	    }
+	    break;
 
     case AARCH64_OPND_FPIMM:
     case AARCH64_OPND_SIMD_FPIMM:
@@ -2508,13 +2533,13 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
     case AARCH64_OPND_EXCEPTION:
     case AARCH64_OPND_UIMM4:
     case AARCH64_OPND_UIMM7:
-      if (optional_operand_p (opcode, idx) == TRUE
-	  && (opnd->imm.value ==
-	      (int64_t) get_optional_operand_default_value (opcode)))
-	/* Omit the operand, e.g. DCPS1.  */
-	break;
-      snprintf (buf, size, "0x%x", (unsigned int)opnd->imm.value);
-      break;
+	    if (optional_operand_p (opcode, idx) == TRUE && (opnd->imm.value ==
+								    (int64_t)get_optional_operand_default_value (opcode))) {
+		    /* Omit the operand, e.g. DCPS1.  */
+		    break;
+	    }
+	    snprintf (buf, size, "0x%x", (unsigned int)opnd->imm.value);
+	    break;
 
     case AARCH64_OPND_COND:
       snprintf (buf, size, "%s", opnd->cond->names[0]);
@@ -2523,10 +2548,12 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
     case AARCH64_OPND_ADDR_ADRP:
       addr = ((pc + AARCH64_PCREL_OFFSET) & ~(uint64_t)0xfff)
 	+ opnd->imm.value;
-      if (pcrel_p)
-	*pcrel_p = 1;
-      if (address)
-	*address = addr;
+      if (pcrel_p) {
+	      *pcrel_p = 1;
+      }
+      if (address) {
+	      *address = addr;
+      }
       /* This is not necessary during the disassembling, as print_address_func
 	 in the disassemble_info will take care of the printing.  But some
 	 other callers may be still interested in getting the string in *STR,
@@ -2539,10 +2566,12 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
     case AARCH64_OPND_ADDR_PCREL21:
     case AARCH64_OPND_ADDR_PCREL26:
       addr = pc + AARCH64_PCREL_OFFSET + opnd->imm.value;
-      if (pcrel_p)
-	*pcrel_p = 1;
-      if (address)
-	*address = addr;
+      if (pcrel_p) {
+	      *pcrel_p = 1;
+      }
+      if (address) {
+	      *address = addr;
+      }
       /* This is not necessary during the disassembling, as print_address_func
 	 in the disassemble_info will take care of the printing.  But some
 	 other callers may be still interested in getting the string in *STR,
@@ -2556,13 +2585,14 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
       name = get_64bit_int_reg_name (opnd->addr.base_regno, 1);
       if (opnd->type == AARCH64_OPND_SIMD_ADDR_POST)
 	{
-	  if (opnd->addr.offset.is_reg)
-	    snprintf (buf, size, "[%s], x%d", name, opnd->addr.offset.regno);
-	  else
-	    snprintf (buf, size, "[%s], %d", name, opnd->addr.offset.imm); // #
-	}
-      else
-	snprintf (buf, size, "[%s]", name);
+	      if (opnd->addr.offset.is_reg) {
+		      snprintf (buf, size, "[%s], x%d", name, opnd->addr.offset.regno);
+	      } else {
+		      snprintf (buf, size, "[%s], %d", name, opnd->addr.offset.imm); // #
+	      }
+      } else {
+	      snprintf (buf, size, "[%s]", name);
+      }
       break;
 
     case AARCH64_OPND_ADDR_REGOFF:
@@ -2575,51 +2605,57 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
       name = get_64bit_int_reg_name (opnd->addr.base_regno, 1);
       if (opnd->addr.writeback)
 	{
-	  if (opnd->addr.preind)
-	    snprintf (buf, size, "[%s, %d]!", name, opnd->addr.offset.imm); // #
-	  else
-	    snprintf (buf, size, "[%s], %d", name, opnd->addr.offset.imm); // #
+	      if (opnd->addr.preind) {
+		      snprintf (buf, size, "[%s, %d]!", name, opnd->addr.offset.imm); // #
+	      } else {
+		      snprintf (buf, size, "[%s], %d", name, opnd->addr.offset.imm); // #
+	      }
 	}
       else
 	{
-	  if (opnd->addr.offset.imm)
-	    snprintf (buf, size, "[%s, %d]", name, opnd->addr.offset.imm); // #
-	  else
-	    snprintf (buf, size, "[%s]", name);
+		if (opnd->addr.offset.imm) {
+			snprintf (buf, size, "[%s, %d]", name, opnd->addr.offset.imm); // #
+		} else {
+			snprintf (buf, size, "[%s]", name);
+		}
 	}
       break;
 
     case AARCH64_OPND_ADDR_UIMM12:
       name = get_64bit_int_reg_name (opnd->addr.base_regno, 1);
-      if (opnd->addr.offset.imm)
-	snprintf (buf, size, "[%s, %d]", name, opnd->addr.offset.imm); // #
-      else
-	snprintf (buf, size, "[%s]", name);
+      if (opnd->addr.offset.imm) {
+	      snprintf (buf, size, "[%s, %d]", name, opnd->addr.offset.imm); // #
+      } else {
+	      snprintf (buf, size, "[%s]", name);
+      }
       break;
 
     case AARCH64_OPND_SYSREG:
-      for (i = 0; aarch64_sys_regs[i].name; ++i)
-	if (aarch64_sys_regs[i].value == opnd->sysreg)
-	  break;
-      if (aarch64_sys_regs[i].name)
-	snprintf (buf, size, "%s", aarch64_sys_regs[i].name);
-      else
-	{
-	  /* Implementation defined system register.  */
-	  unsigned int value = opnd->sysreg;
-	  snprintf (buf, size, "s%u_%u_c%u_c%u_%u", (value >> 14) & 0x3,
-		    (value >> 11) & 0x7, (value >> 7) & 0xf, (value >> 3) & 0xf,
-		    value & 0x7);
+	    for (i = 0; aarch64_sys_regs[i].name; ++i) {
+		    if (aarch64_sys_regs[i].value == opnd->sysreg) {
+			    break;
+		    }
+	    }
+	    if (aarch64_sys_regs[i].name) {
+		    snprintf (buf, size, "%s", aarch64_sys_regs[i].name);
+	    } else {
+		    /* Implementation defined system register.  */
+		    unsigned int value = opnd->sysreg;
+		    snprintf (buf, size, "s%u_%u_c%u_c%u_%u", (value >> 14) & 0x3,
+			    (value >> 11) & 0x7, (value >> 7) & 0xf, (value >> 3) & 0xf,
+			    value & 0x7);
 	}
       break;
 
     case AARCH64_OPND_PSTATEFIELD:
-      for (i = 0; aarch64_pstatefields[i].name; ++i)
-	if (aarch64_pstatefields[i].value == opnd->pstatefield)
-	  break;
-      assert (aarch64_pstatefields[i].name);
-      snprintf (buf, size, "%s", aarch64_pstatefields[i].name);
-      break;
+	    for (i = 0; aarch64_pstatefields[i].name; ++i) {
+		    if (aarch64_pstatefields[i].value == opnd->pstatefield) {
+			    break;
+		    }
+	    }
+	    assert (aarch64_pstatefields[i].name);
+	    snprintf (buf, size, "%s", aarch64_pstatefields[i].name);
+	    break;
 
     case AARCH64_OPND_SYSREG_AT:
     case AARCH64_OPND_SYSREG_DC:
@@ -2634,18 +2670,18 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
 
     case AARCH64_OPND_BARRIER_ISB:
       /* Operand can be omitted, e.g. in DCPS1.  */
-      if (! optional_operand_p (opcode, idx)
-	  || (opnd->barrier->value
-	      != get_optional_operand_default_value (opcode)))
-	snprintf (buf, size, "0x%x", opnd->barrier->value);
+      if (!optional_operand_p (opcode, idx) || (opnd->barrier->value != get_optional_operand_default_value (opcode))) {
+	      snprintf (buf, size, "0x%x", opnd->barrier->value);
+      }
       break;
 
     case AARCH64_OPND_PRFOP:
-      if (opnd->prfop->name != NULL)
-	snprintf (buf, size, "%s", opnd->prfop->name);
-      else
-	snprintf (buf, size, "0x%02x", opnd->prfop->value);
-      break;
+	    if (opnd->prfop->name != NULL) {
+		    snprintf (buf, size, "%s", opnd->prfop->name);
+	    } else {
+		    snprintf (buf, size, "0x%02x", opnd->prfop->value);
+	    }
+	    break;
 
     default:
       assert (0);

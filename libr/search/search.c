@@ -17,7 +17,9 @@ typedef struct {
 
 R_API RSearch *r_search_new(int mode) {
 	RSearch *s = R_NEW0 (RSearch);
-	if (!s) return NULL;
+	if (!s) {
+		return NULL;
+	}
 	if (!r_search_set_mode (s, mode)) {
 		free (s);
 		eprintf ("Cannot init search for mode %d\n", mode);
@@ -60,8 +62,9 @@ R_API RSearch *r_search_free(RSearch *s) {
 }
 
 R_API int r_search_set_string_limits(RSearch *s, ut32 min, ut32 max) {
-	if (max < min)
+	if (max < min) {
 		return false;
+	}
 	s->string_min = min;
 	s->string_max = max;
 	return true;
@@ -336,7 +339,9 @@ static bool brute_force_match(RSearch *s, RSearchKeyword *kw, const ut8 *buf, in
 				a = tolower (a);
 				b = tolower (b);
 			}
-			if ((a & kw->bin_binmask[k]) != (b & kw->bin_binmask[k])) break;
+			if ((a & kw->bin_binmask[k]) != (b & kw->bin_binmask[k])) {
+				break;
+			}
 		}
 	} else if (kw->icase) {
 		while (j < kw->keyword_length &&

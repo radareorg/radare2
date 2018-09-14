@@ -2261,7 +2261,9 @@ static void ds_print_lines_right(RDisasmState *ds){
 
 static void printCol(RDisasmState *ds, char *sect, int cols, const char *color) {
 	int pre, post;
-	if (cols < 8) cols = 8;
+	if (cols < 8) {
+		cols = 8;
+	}
 	int outsz = cols + 32;
 	char *out = malloc (outsz);
 	if (!out) {
@@ -2902,7 +2904,9 @@ static void ds_print_show_bytes(RDisasmState *ds) {
 		str = flagstr;
 		if (ds->nb > 0) {
 			k = ds->nb - strlen (flagstr) - 1;
-			if (k < 0 || k > sizeof(pad)) k = 0;
+			if (k < 0 || k > sizeof (pad)) {
+				k = 0;
+			}
 			for (j = 0; j < k; j++) {
 				pad[j] = ' ';
 			}
@@ -3025,6 +3029,7 @@ static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f) {
 	if (!label) {
 		return false;
 	}
+	ds_beginline (ds);
 	if (ds->show_color) {
 		r_cons_strcat (ds->color_label);
 		r_cons_printf (" .%s:\n", label);
@@ -4469,15 +4474,23 @@ static char *_find_next_number(char *op) {
 	if (p) {
 		while (*p) {
 			// look for start of next separator or ANSI sequence
-			while (*p && !IS_SEPARATOR (*p) && *p != 0x1b) p++;
+			while (*p && !IS_SEPARATOR (*p) && *p != 0x1b) {
+				p++;
+			}
 			if (*p == 0x1b) {
 				// skip to end of ANSI sequence (lower or uppercase char)
-				while (*p && !(*p >= 'A' && *p <= 'Z') && !(*p >= 'a' && *p <= 'z')) p++;
-				if (*p) p++;
+				while (*p && !(*p >= 'A' && *p <= 'Z') && !(*p >= 'a' && *p <= 'z')) {
+					p++;
+				}
+				if (*p) {
+					p++;
+				}
 			}
 			if (IS_SEPARATOR (*p)) {
 				// skip to end of separator
-				while (*p && IS_SEPARATOR (*p)) p++;
+				while (*p && IS_SEPARATOR (*p)) {
+					p++;
+				}
 			}
 			if (IS_DIGIT (*p)) {
 				// we found the start of the next number
@@ -4819,16 +4832,14 @@ toro:
 		}
 
 		ds_begin_json_line (ds);
-		ds_setup_print_pre (ds, false, false);
-		ds_print_lines_left (ds);
 		// f = r_anal_get_fcn_in (core->anal, ds->addr, 0);
 		f = fcnIn (ds, ds->addr, 0);
 		if (ds_print_labels (ds, f)) {
 			ds_show_functions (ds);
 			ds_show_xrefs (ds);
-			ds_setup_print_pre (ds, false, false);
-			ds_print_lines_left (ds);
 		}
+		ds_setup_print_pre (ds, false, false);
+		ds_print_lines_left (ds);
 		core->print->resetbg = (ds->asm_highlight == UT64_MAX);
 		ds_start_line_highlight (ds);
 		ds_print_offset (ds);
@@ -5587,219 +5598,6 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 	}
 	ds_free (ds);
 	return count;
-}
-
-R_API int r_core_print_fcn_disasm(RPrint *p, RCore *core, ut64 addr, int l, int invbreak, int cbytes) {
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
-	ut32 cur_buf_sz = 0;
-	ut8 *buf = NULL;
-	ut32 len = 0;
-	int ret, idx = 0, i;
-	RListIter *bb_iter;
-	RAnalBlock *bb = NULL;
-	RDisasmState *ds;
-	RList *bb_list = NULL;
-
-	if (!fcn) {
-		return -1;
-	}
-
-	cur_buf_sz = r_anal_fcn_size (fcn) + 1;
-	buf = malloc (cur_buf_sz);
-	if (!buf) {
-		return -1;
-	}
-	len = r_anal_fcn_size (fcn);
-	bb_list = r_list_new();
-	if (!bb_list) {
-		free (buf);
-		return -1;
-	}
-	//r_cons_printf ("len =%d l=%d ib=%d limit=%d\n", len, l, invbreak, p->limit);
-	// TODO: import values from debugger is possible
-	// TODO: allow to get those register snapshots from traces
-	// TODO: per-function register state trace
-	idx = 0;
-	memset (buf, 0, cur_buf_sz);
-
-	// XXX - is there a better way to reset a the analysis counter so that
-	// when code is disassembled, it can actually find the correct offsets
-	if (core->anal->cur && core->anal->cur->reset_counter) {
-		core->anal->cur->reset_counter (core->anal, addr);
-	}
-
-	// TODO: All those ds must be print flags
-	ds = ds_init (core);
-	ds->cbytes = cbytes;
-	ds->print = p;
-	ds->l = l;
-	ds->buf = buf;
-	ds->len = r_anal_fcn_size (fcn);
-	ds->addr = fcn->addr;
-	ds->fcn = fcn;
-	ds->stackptr = core->anal->stackptr;
-
-	r_list_foreach (fcn->bbs, bb_iter, bb) {
-		r_list_add_sorted (bb_list, bb, cmpaddr);
-	}
-	// Premptively read the bb data locs for ref lines
-	r_list_foreach (bb_list, bb_iter, bb) {
-		if (idx >= cur_buf_sz) {
-			break;
-		}
-		r_io_read_at (core->io, bb->addr, buf+idx, bb->size);
-		//ret = r_asm_disassemble (core->assembler, &ds->asmop, buf+idx, bb->size);
-		//if (ret > 0) eprintf ("%s\n",ds->asmop.buf_asm);
-		idx += bb->size;
-	}
-	ds_reflines_fcn_init (ds, fcn, buf);
-	core->inc = 0;
-	core->cons->vline = r_config_get_i (core->config, "scr.utf8") ? (r_config_get_i (core->config, "scr.utf8.curvy") ? r_vline_uc : r_vline_u) : r_vline_a;
-	i = idx = 0;
-	r_cons_break_push (NULL, NULL);
-	ds_print_esil_anal_init (ds);
-
-	if (core->io && core->io->debug) {
-		r_debug_map_sync (core->dbg);
-	}
-	r_list_foreach (bb_list, bb_iter, bb) {
-		ut32 bb_size_consumed = 0;
-		// internal loop to consume bb that contain case-like operations
-		ds->at = bb->addr;
-		ds->vat = r_core_pava (core, ds->at);
-		ds->addr = bb->addr;
-		len = bb->size;
-
-		if (len > cur_buf_sz) {
-			free (buf);
-			buf = malloc (cur_buf_sz);
-			ds->buf = buf;
-			if (buf) {
-				cur_buf_sz = len;
-			} else {
-				cur_buf_sz = 0;
-			}
-		}
-		do {
-			ds->printed_str_addr = UT64_MAX;
-			ds->printed_flag_addr = UT64_MAX;
-			// XXX - why is it necessary to set this everytime?
-			r_asm_set_pc (core->assembler, ds->at);
-			if (ds->lines >= ds->l) {
-				break;
-			}
-			if (r_cons_is_breaked ()) {
-				break;
-			}
-
-			ds_update_ref_lines (ds);
-			/* show type links */
-			r_core_cmdf (core, "tf 0x%08"PFMT64x, ds->at);
-
-			ds_show_comments_right (ds);
-			ret = ds_disassemble (ds, buf + idx, len - bb_size_consumed);
-			ds_atabs_option (ds);
-			// TODO: store previous oplen in core->dec
-			if (!core->inc) {
-				core->inc = ds->oplen;
-			}
-			r_anal_op_fini (&ds->analop);
-			if (!ds->lastfail) {
-				r_anal_op (core->anal, &ds->analop,
-					ds->at+bb_size_consumed, buf+idx,
-					len-bb_size_consumed, R_ANAL_OP_MASK_ALL);
-			}
-			if (ret < 1) {
-				r_strbuf_init (&ds->analop.esil);
-				ds->analop.type = R_ANAL_OP_TYPE_ILL;
-			}
-			ds_instruction_mov_lea (ds, idx);
-			ds_control_flow_comments (ds);
-			ds_adistrick_comments (ds);
-			/* XXX: This is really cpu consuming.. need to be fixed */
-			ds_show_functions (ds);
-			if (ds_print_labels (ds, fcn)) {
-				ds_show_functions (ds);
-			}
-			ds_show_xrefs (ds);
-			ds_show_flags (ds);
-			ds_setup_print_pre (ds, false, false);
-			ds_print_lines_left (ds);
-			ds_print_offset (ds);
-			ds_print_op_size (ds);
-			ds_print_trace (ds);
-			ds_print_cycles (ds);
-			ds_print_family (ds);
-			ds_print_stackptr (ds);
-			ret = ds_print_meta_infos (ds, buf, len, idx);
-			if (ds->mi_found) {
-				ds->mi_found = false;
-				continue;
-			}
-			/* show cursor */
-			ds_print_show_cursor (ds);
-			ds_print_show_bytes (ds);
-			ds_print_lines_right (ds);
-			ds_build_op_str (ds, true);
-			ds_print_opstr (ds);
-			ds_print_sysregs (ds);
-			ds_print_fcn_name (ds);
-			ds_print_import_name (ds);
-			ds_print_color_reset (ds);
-			ds_print_dwarf (ds);
-			ret = ds_print_middle (ds, ret);
-			ds_print_asmop_payload (ds, buf + idx);
-			if (core->assembler->syntax != R_ASM_SYNTAX_INTEL) {
-				RAsmOp ao; /* disassemble for the vm .. */
-				int os = core->assembler->syntax;
-				r_asm_set_syntax (core->assembler,
-					R_ASM_SYNTAX_INTEL);
-				r_asm_disassemble (core->assembler, &ao,
-					buf+idx, len-bb_size_consumed);
-				r_asm_set_syntax (core->assembler, os);
-			}
-			if (ds->shortcut_pos > 0) {
-				ds_print_core_vmode (ds, ds->shortcut_pos);
-			}
-			//ds_print_cc_update (ds);
-			/*if (ds->analop.refptr) {
-				handle_print_refptr (core, ds);
-			} else {
-				handle_print_ptr (core, ds, len, idx);
-			}*/
-			ds_print_ptr (ds, len, idx);
-			ds_cdiv_optimization (ds);
-			ds_print_comments_right (ds);
-			ds_show_refs (ds);
-			ds_print_esil_anal (ds);
-			if (!(ds->show_comments && ds->show_comment_right && ds->comment)) {
-				ds_newline (ds);
-			}
-			if (ds->line) {
-				R_FREE (ds->line);
-				R_FREE (ds->refline);
-				R_FREE (ds->refline2);
-			}
-			ds_print_bbline (ds, false);
-
-			bb_size_consumed += ds->oplen;
-			ds->index += ds->oplen;
-			idx += ds->oplen;
-			ds->at += ds->oplen;
-			ds->addr += ds->oplen;
-			ds->lines++;
-
-			R_FREE (ds->opstr);
-		} while (bb_size_consumed < len);
-		i++;
-	}
-	free (buf);
-	r_cons_break_pop ();
-	ds_print_esil_anal_fini (ds);
-
-	ds_free (ds);
-	r_list_free (bb_list);
-	return idx;
 }
 
 static inline bool pdi_check_end(int nb_opcodes, int nb_bytes, int i, int j) {

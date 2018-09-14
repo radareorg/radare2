@@ -505,9 +505,11 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 				return R_DEBUG_REASON_ERROR;
 			}
 			reason = dbg->reason.type;
+#ifdef WIFCONTINUED
 		} else if (WIFCONTINUED (status)) {
 			eprintf ("child continued...\n");
 			reason = R_DEBUG_REASON_NONE;
+#endif
 		} else if (status == 1) {
 			/* XXX(jjd): does this actually happen? */
 			eprintf ("EEK DEAD DEBUGEE!\n");
@@ -1121,7 +1123,9 @@ static int r_debug_native_map_dealloc (RDebug *dbg, ut64 addr, int size) {
 
 #if !__WINDOWS__ && !__APPLE__
 static void _map_free(RDebugMap *map) {
-	if (!map) return;
+	if (!map) {
+		return;
+	}
 	free (map->name);
 	free (map->file);
 	free (map);
@@ -1329,7 +1333,9 @@ static RList *r_debug_native_modules_get (RDebug *dbg) {
 
 static bool r_debug_native_kill (RDebug *dbg, int pid, int tid, int sig) {
 	bool ret = false;
-	if (pid == 0) pid = dbg->pid;
+	if (pid == 0) {
+		pid = dbg->pid;
+	}
 #if __WINDOWS__ && !__CYGWIN__
 	if (sig==0)
 		ret = true;

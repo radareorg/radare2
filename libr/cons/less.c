@@ -30,7 +30,9 @@ static void color_line(const char *line, RStrpool *p, RList *ml){
 		if (m_addr) {
 			/* in case there's a CSI in the middle of this match*/
 			m_len = r_str_ansi_filter (m_addr, NULL, NULL, m_len);
-			if (m_len<0) m_len = 0;
+			if (m_len < 0) {
+				m_len = 0;
+			}
 			r_strpool_memcat (p, m_addr, m_len);
 			r_strpool_memcat (p, inv[1], linv[1]);
 			offset = m->rm_eo;
@@ -138,7 +140,9 @@ static int all_matches(const char *s, RRegex *rx, RList **mla, int *lines, int l
 		m.rm_so = 0;
 		const char *loff = s + lines[l]; /* current line offset */
 		char *clean = strdup (loff);
-		if (!clean) return 0;
+		if (!clean) {
+			return 0;
+		}
 		int *cpos = NULL;
 		int ncpos = r_str_ansi_filter (clean, NULL, &cpos, -1);
 		m.rm_eo = slen = strlen (clean);
@@ -261,7 +265,11 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 		case '\n':
 		case 'j': from++; break;
 		case 'J': from+=h; break;
-		case 'k': if (from>0) from--; break;
+		case 'k':
+			if (from > 0) {
+				from--;
+			}
+			break;
 		case 'K': from = (from>=h)? from-h: 0;
 			break;
 		case '/': 	/* search */
@@ -271,16 +279,21 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 			from = R_MIN(lines_count - 1, from);
 			/* repeat last search if empty string is provided */
 			if (sreg[0]) { /* prepare for a new search */
-				if (rx) r_regex_free(rx);
+				if (rx) {
+					r_regex_free (rx);
+				}
 				rx = r_regex_new(sreg, "");
 			} else { /* we got an empty string */
 				from = next_match(from, mla, lines_count);
 				break;
 			}
-			if (!rx) break;
+			if (!rx) {
+				break;
+			}
 			/* find all occurences */
-			if (all_matches (p, rx, mla, lines, lines_count))
-				from = next_match(from, mla, lines_count);
+			if (all_matches (p, rx, mla, lines, lines_count)) {
+				from = next_match (from, mla, lines_count);
+			}
 			break;
 		case 'n': 	/* next match */
 			/* search already performed */

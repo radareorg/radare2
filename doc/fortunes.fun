@@ -7,7 +7,7 @@ I'm in your source securing your bits.
 radare2 contributes to the One Byte Per Child foundation.
 3nl4r9e y0\/r r4d4r3
 I did it for the pwnz.
-If you send the program you are debugging to 15 friends before 143 minutes and then step three times on the same opcode you will get the name of the person who loves you.
+If you send the program you are debugging to 15 friends in 143 minutes and then step three times on the same opcode you will get the name of the person who loves you.
 To remove this message, put `dbxenv suppress_startup_message 7.5' in your .dbxrc
 Heisenbug: A bug that disappears or alters its behavior when one attempts to probe or isolate it.
 radare2 is for lulzhats
@@ -15,12 +15,12 @@ Microloft Visual Radare.NET 2008. Now OOXML Powered!
 A C program is like a fast dance on a newly waxed dance floor by people carrying razors - Waldi Ravens
 radare2 is like windows 7 but even better.
 We are surrounded by the enemy. - Excellent, we can attack in any direction!
-radare2 build farm beats the facebook one.
+radare2-built farm beats the facebook one.
 Thank you for using radare2. Have a nice night!
 Your r2 was built 20h ago. TOO OLD!
-Use radare2! lemons included!
+Use radare2! Lemons included!
 rax2 -s 20e296b20ae296b220e296b20a
-Connection lost with the license server, your r2 session will terminate soon.
+Connection lost with the license server, your r2 session will terminate in 30 minutes.
 This is amazing ...
 I love gradients.
 Wait a moment ...
@@ -31,9 +31,9 @@ Default scripting languages are NodeJS and Python.
 Press any key to continue ...
 Ilo ni li pona li pali e lipu. mi wile e ni: sina kama jo e musi
 radare2 for FideOS, now with extra potato
-Your project name should contain an uppercase letter, 8 vowels, some numbers, and the first 5 numbers of your private bitcoin key.
+Your project name should contain an uppercase letter, 8 vowels, some numbers, and the first 5 characters of your private bitcoin key.
 This computer has gone to sleep.
-Did you ever ordered a pizza using radare2?
+Have you ever ordered a pizza using radare2?
 I thought we were friends. :_
 Welcome back, lazy human!
 Yo dawg!
@@ -64,21 +64,21 @@ In soviet Afghanistan, you debug radare2!
 Wow, my cat knows radare2 hotkeys better than me!
 Documentation is for weak people.
 PEBCAK ERROR: Documentation not found.
-License server overloaded (ETOOMANYCASH)
+License server overloaded (ETOOMUCHCASH)
 Error: cannot yank negative sleep
 If you're not satisfied by our product, we'll be happy to refund you.
 Already up-to-date.
 How about a nice game of chess?
 THE ONLY WINNING MOVE IS NOT TO PLAY.
 SHALL WE PLAY A GAME?
-Sudo make me a pancake.
+sudo make me a pancake
 I nodejs so hard my exams. What a nodejs!
 Now featuring NoSQL!
 One does not simply write documentation.
 We are bleeding edge here. Can't you feel the razors?
 There's a branch for that.
 Everything up-to-date.
-Sharing your latest session in Facebook ...
+Sharing your latest session to Facebook ...
 This should be documented, since it's not that obvious.
 It's working! Look at the door!
 This is an unacceptable milion year dungeon.

@@ -1098,7 +1098,9 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 		r_cons_printf (",\"stack\":%d", fcn->maxstack);
 		r_cons_printf (",\"type\":\"%s\"", r_anal_fcn_type_tostring (fcn->type));
 		//r_cons_printf (",\"cc\":%d", fcn->call); // TODO: calling convention
-		if (fcn->dsc) r_cons_printf (",\"signature\":\"%s\"", fcn->dsc);
+		if (fcn->dsc) {
+			r_cons_printf (",\"signature\":\"%s\"", fcn->dsc);
+		}
 		r_cons_printf (",\"blocks\":[");
 	}
 	r_list_foreach (fcn->bbs, iter, bbi) {
@@ -1304,7 +1306,9 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 						"_0x%08"PFMT64x"\">\n%s</p>\n",
 						top, left, bbi->addr, str);
 					left = left? 0: 600;
-					if (!left) top += 250;
+					if (!left) {
+						top += 250;
+					}
 				} else if (!is_json && !is_keva) {
 					bool current = r_anal_bb_is_in_offset (bbi, core->offset);
 					const char *label_color = bbi->traced
@@ -1560,8 +1564,9 @@ R_API int r_core_anal_fcn_clean(RCore *core, ut64 addr) {
 	if (!addr) {
 		r_list_purge (core->anal->fcns);
 		core->anal->fcn_tree = NULL;
-		if (!(core->anal->fcns = r_anal_fcn_list_new ()))
+		if (!(core->anal->fcns = r_anal_fcn_list_new ())) {
 			return false;
+		}
 	} else {
 		r_list_foreach_safe (core->anal->fcns, iter, iter_tmp, fcni) {
 			if (r_anal_fcn_in (fcni, addr)) {

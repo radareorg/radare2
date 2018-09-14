@@ -12,17 +12,33 @@
 #include <v850_disas.h>
 
 static void update_flags(RAnalOp *op, int flags) {
-	if (flags & V850_FLAG_CY) r_strbuf_append (&op->esil, ",$c31,cy,=");
-	if (flags & V850_FLAG_OV) r_strbuf_append (&op->esil, ",$o,ov,=");
-	if (flags & V850_FLAG_S) r_strbuf_append (&op->esil, ",$s,s,=");
-	if (flags & V850_FLAG_Z) r_strbuf_append (&op->esil, ",$z,z,=");
+	if (flags & V850_FLAG_CY) {
+		r_strbuf_append (&op->esil, ",$c31,cy,=");
+	}
+	if (flags & V850_FLAG_OV) {
+		r_strbuf_append (&op->esil, ",$o,ov,=");
+	}
+	if (flags & V850_FLAG_S) {
+		r_strbuf_append (&op->esil, ",$s,s,=");
+	}
+	if (flags & V850_FLAG_Z) {
+		r_strbuf_append (&op->esil, ",$z,z,=");
+	}
 }
 
 static void clear_flags(RAnalOp *op, int flags) {
-	if (flags & V850_FLAG_CY) r_strbuf_append (&op->esil, ",0,cy,=");
-	if (flags & V850_FLAG_OV) r_strbuf_append (&op->esil, ",0,ov,=");
-	if (flags & V850_FLAG_S) r_strbuf_append (&op->esil, ",0,s,=");
-	if (flags & V850_FLAG_Z) r_strbuf_append (&op->esil, ",0,z,=");
+	if (flags & V850_FLAG_CY) {
+		r_strbuf_append (&op->esil, ",0,cy,=");
+	}
+	if (flags & V850_FLAG_OV) {
+		r_strbuf_append (&op->esil, ",0,ov,=");
+	}
+	if (flags & V850_FLAG_S) {
+		r_strbuf_append (&op->esil, ",0,s,=");
+	}
+	if (flags & V850_FLAG_Z) {
+		r_strbuf_append (&op->esil, ",0,z,=");
+	}
 }
 
 static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {

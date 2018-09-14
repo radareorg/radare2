@@ -117,7 +117,9 @@ static int set_name(RFlagItem *item, const char *name) {
 R_API RFlag * r_flag_new() {
 	int i;
 	RFlag *f = R_NEW0 (RFlag);
-	if (!f) return NULL;
+	if (!f) {
+		return NULL;
+	}
 	f->num = r_num_new (&num_callback, &str_callback, f);
 	if (!f->num) {
 		r_flag_free (f);
@@ -263,9 +265,11 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 			} else {
 				f->cb_printf ("\"offset\":%"PFMT64d, flag->offset);
 			}
-			if (flag->comment)
+			if (flag->comment) {
 				f->cb_printf (",\"comment\":\"}");
-			else f->cb_printf ("}");
+			} else {
+				f->cb_printf ("}");
+			}
 			first = 0;
 		}
 		f->cb_printf ("]\n");
@@ -284,15 +288,17 @@ R_API void r_flag_list(RFlag *f, int rad, const char *pfx) {
 				const char *flagspace;
 				fs = flag->space;
 				flagspace = r_flag_space_get_i (f, fs);
-				if (!flagspace || !*flagspace)
+				if (!flagspace || !*flagspace) {
 					flagspace = "*";
+				}
 				f->cb_printf ("fs %s\n", flagspace);
 			}
 			if (flag->alias) {
 				f->cb_printf ("fa %s %s\n", flag->name, flag->alias);
-				if (flag->comment && *flag->comment)
+				if (flag->comment && *flag->comment) {
 					f->cb_printf ("\"fC %s %s\"\n",
 						flag->name, flag->comment);
+				}
 			} else {
 				f->cb_printf ("f %s %"PFMT64d" 0x%08"PFMT64x"%s%s %s\n",
 					flag->name, flag->size, flag->offset,
@@ -420,7 +426,9 @@ R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off) {
 			break;
 		}
 		oitem = item;
-		if (strlen (item->name) < 5 || item->name[3]!='.') continue;
+		if (strlen (item->name) < 5 || item->name[3] != '.') {
+			continue;
+		}
 		oitem = item;
 	}
 	return evalFlag (f, oitem);
@@ -736,8 +744,12 @@ int main () {
 #endif
 
 R_API const char *r_flag_color(RFlag *f, RFlagItem *it, const char *color) {
-	if (!f || !it) return NULL;
-	if (!color) return it->color;
+	if (!f || !it) {
+		return NULL;
+	}
+	if (!color) {
+		return it->color;
+	}
 	free (it->color);
 	it->color = *color ? strdup (color) : NULL;
 	return it->color;
@@ -759,8 +771,9 @@ R_API int r_flag_count(RFlag *f, const char *glob) {
 	RFlagItem *flag;
 	RListIter *iter;
 	r_list_foreach (f->flags, iter, flag) {
-		if (r_str_glob (flag->name, glob))
-			count ++;
+		if (r_str_glob (flag->name, glob)) {
+			count++;
+		}
 	}
 	return count;
 }

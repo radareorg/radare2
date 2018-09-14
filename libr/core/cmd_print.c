@@ -11,6 +11,55 @@
 #define R_CORE_MAX_DISASM (1024 * 1024 * 8)
 #define PF_USAGE_STR "pf[.k[.f[=v]]|[v]]|[n]|[0|cnt][fmt] [a0 a1 ...]"
 
+static const char *help_msg_pa[] = {
+	"Usage: pa[edD]", "[asm|hex]", "print (dis)assembled",
+	"pae", "", "print assembled ESIL from hexpairs",
+	"pad", "", "print disassembled from hexpairs",
+	"paD", "", "print assembled from hexparis",
+	NULL
+};
+
+static const char *help_msg_pdf[] = {
+	"Usage: pdf[bf]", "", "disassemble function",
+	"pdf", "", "disassemble function",
+	"pdfs", "", "disassemble function summary",
+	NULL
+};
+
+static const char *help_msg_p6[] = {
+	"Usage: p6[de]", "[len]", "base64 decoding/encoding",
+	"p6d", "[len]", "decode base64",
+	"p6e", "[len]", "encode base64",
+	NULL
+};
+
+static const char *help_msg_pF[] = {
+	"Usage: pF[apd]", "[len]", "parse ASN1, PKCS, X509, DER",
+	"pFa", "[len]", "decode ASN1 from current block",
+	"pFo", "[len]", "decode ASN1 OID",
+	"pFp", "[len]", "decode PKCS7",
+	"pFx", "[len]", "Same with X509",
+	NULL
+};
+
+static const char* help_msg_pr[] = {
+	"Usage: pr[glx]", "[size]", "print N raw bytes",
+	"prc", "", "print bytes as colors in palette",
+	"prl", "", "print raw with lines offsets",
+	"prx", "", "printable chars with real offset (hyew)",
+	"prg", "[?]", "print raw GUNZIPped block",
+	"prz", "", "print raw zero terminated string",
+	NULL
+};
+
+static const char *help_msg_prg[] = {
+	"Usage: prg[io]", "", "print raw GUNZIPped block",
+	"prg", "", "print gunzipped data of current block",
+	"prgi", "", "show consumed bytes when inflating",
+	"prgo", "", "show output bytes after inflating",
+	NULL
+};
+
 static const char *help_msg_amper[] = {
 	"Usage:", "&[-|<cmd>]", "Manage tasks (WARNING: Experimental. Use with caution!)",
 	"&", " <cmd>", "run <cmd> in a new background task",
@@ -130,6 +179,7 @@ static const char *help_msg_p[] = {
 	"pd", "[?] [sz] [a] [b]", "disassemble N opcodes (pd) or N bytes (pD)",
 	"pd--", "[n]", "context disassembly of N instructions",
 	"pf", "[?][.nam] [fmt]", "print formatted data (pf.name, pf.name $<expr>)",
+	"pF", "[?][apx]", "print asn1, pkcs7 or x509",
 	"ph", "[?][=|hash] ([len])", "calculate hash for a block",
 	"pj", "[?] [len]", "print as indented JSON",
 	"p", "[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pdi)",
@@ -207,6 +257,7 @@ static const char *help_msg_pc[] = {
 	"pcs", "", "string",
 	"pcS", "", "shellscript that reconstructs the bin",
 	"pcw", "", "C words (4 byte)",
+	NULL
 };
 
 static const char *help_msg_pd[] = {
@@ -371,10 +422,10 @@ static const char *help_msg_px[] = {
 	"px/", "", "same as x/ in gdb (help x)",
 	"px0", "", "8bit hexpair list of bytes until zero byte",
 	"pxa", "", "show annotated hexdump",
-	"pxA", "", "show op analysis color map",
+	"pxA", "[?]", "show op analysis color map",
 	"pxb", "", "dump bits in hexdump form",
 	"pxc", "", "show hexdump with comments",
-	"pxd", "[1248]", "signed integer dump (1 byte, 2 and 4)",
+	"pxd", "[?1248]", "signed integer dump (1 byte, 2 and 4)",
 	"pxe", "", "emoji hexdump! :)",
 	"pxf", "", "show hexdump of current function",
 	"pxh", "", "show hexadecimal half-words dump (16bit)",
@@ -408,6 +459,26 @@ const char *help_msg_pz[] = {
 	"pze", "", "calculate entropy and expand to 0-255 range",
 	"pzh", "", "head (first byte value); This is the default mode",
 	// "WARNING: On big files, use 'zoom.byte=h' or restrict ranges\n");
+	NULL
+};
+
+const char *help_msg_pxA[] = {
+	"Usage: pxA [len]", "", "show op analysis color map",
+	"$$", "", "int/swi/trap/new\n", 
+	"+-*/", "", "math ops\n", 
+	"->", "", "push\n", 
+	"..", "", "nop\n", 
+	"<-", "", "pop\n", 
+	"<<>>", "", "shift ops\n", 
+	"==", "", "cmp/test\n", 
+	"XX", "", "invalid\n", 
+	"_C", "", "call\n", 
+	"_J", "", "jump\n", 
+	"_R", "", "ret\n", 
+	"cJ", "", "conditional jump\n", 
+	"io", "", "in/out ops\n", 
+	"mv", "", "move,lea,li\n", 
+	"|&^", "", "bin ops\n", 
 	NULL
 };
 
@@ -824,6 +895,50 @@ static void print_format_help_help_help_help(RCore *core) {
 		NULL
 	};
 	r_core_cmd_help (core, help_msg);
+}
+
+static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, int size) {
+	switch (*input) {
+	case '?': // "pF?"
+		r_core_cmd_help (core, help_msg_pF);
+		break;
+	case 'a':
+		{
+			RASN1Object *asn1 = r_asn1_create_object (data, size);
+			if (asn1) {
+				r_asn1_print_object (asn1, 0);
+				r_asn1_free_object (asn1);
+			} else {
+				eprintf ("Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
+			}
+		}
+		break;
+	case 'x': // "pFx" x509
+		{
+			RX509Certificate* x509 = r_x509_parse_certificate (r_asn1_create_object (data, size));
+			if (x509) {
+				r_x509_certificate_dump (x509, NULL);
+				r_x509_free_certificate (x509);
+			} else {
+				eprintf ("Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
+			}
+		}
+		break;
+	case 'p': // "pFp"
+		{
+			RCMS *cms = r_pkcs7_parse_cms (data, size);
+			if (cms) {
+				r_pkcs7_cms_dump (cms);
+				r_pkcs7_free_cms (cms);
+			} else {
+				eprintf ("Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
+			}
+		}
+		break;
+	default:
+		eprintf ("Not yet implemented\n");
+		break;
+	}
 }
 
 static void cmd_print_format(RCore *core, const char *_input, const ut8* block, int len) {
@@ -1879,7 +1994,7 @@ line = NULL;
 	if (!strncmp (input, "dsb", 3)) {
 		RAnalBlock *bb = r_anal_bb_from_offset (core->anal, core->offset);
 		if (bb) {
-			line = s = r_core_cmd_strf (core, "pD %"PFMT64d" @ 0x%08"PFMT64x, bb->size, bb->addr);
+			line = s = r_core_cmd_strf (core, "pD %i @ 0x%08"PFMT64x, bb->size, bb->addr);
 		}
 	} else if (!strncmp (input, "dsf", 3) || !strncmp (input, "dsr", 3)) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
@@ -3936,8 +4051,7 @@ static int cmd_print(void *data, const char *input) {
 				}
 			}
 		} else if (input[1] == '?') {
-			r_cons_printf ("|Usage: pa[edD] [asm|hex]  assemble (pa), disasm (pa[dD]),"
-				" esil (pae) from hexpairs\n");
+			r_core_cmd_help(core, help_msg_pa);
 		} else {
 			RAsmCode *acode;
 			int i;
@@ -4269,7 +4383,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'f': // "pdf"
 			processed_cmd = true;
 			if (input[2] == '?') {
-				r_cons_printf ("Usage: pdf[sj]  - disassemble function (summary+cjmp), json)\n");
+				r_core_cmd_help(core, help_msg_pdf);
 			} else if (input[2] == 's') { // "pdfs"
 				ut64 oseek = core->offset;
 				int oblock = core->blocksize;
@@ -4858,20 +4972,12 @@ static int cmd_print(void *data, const char *input) {
 			cmd_prc (core, block, len);
 			break;
 		case '?':
-			r_cons_printf ("|Usage: pr[glx] [size]\n"
-				"| prc: print bytes as colors in palette\n"
-				"| prl: print raw with lines offsets\n"
-				"| prx: printable chars with real offset (hyew)\n"
-				"| prg[?]: print raw GUNZIPped block\n"
-				"| prz: print raw zero terminated string\n");
+			r_core_cmd_help (core, help_msg_pr);
 			break;
 		case 'g': // "prg" // gunzip
 			switch (input[2]) {
 			case '?':
-				r_cons_printf ("|Usage: prg[io]\n"
-					"| prg: print gunzipped data of current block\n"
-					"| prgi: show consumed bytes when inflating\n"
-					"| prgo: show output bytes after inflating\n");
+				r_core_cmd_help (core, help_msg_prg);
 				break;
 			case 'i': // "prgi"
 			{
@@ -5006,22 +5112,7 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'A': // "pxA"
 			if (input[2] == '?') {
-				eprintf ("Usage: pxA [len]   # f.ex: pxA 4K\n"
-					" mv    move,lea,li\n"
-					" ->    push\n"
-					" <-    pop\n"
-					" io    in/out ops\n"
-					" $$    int/swi/trap/new\n"
-					" ..    nop\n"
-					" +-*/  math ops\n"
-					" |&^   bin ops\n"
-					" <<>>  shift ops\n"
-					" _J    jump\n"
-					" cJ    conditional jump\n"
-					" _C    call\n"
-					" _R    ret\n"
-					" ==    cmp/test\n"
-					" XX    invalid\n");
+			r_core_cmd_help (core, help_msg_pxA);
 			} else if (l) {
 				cmd_print_pxA (core, len, input + 1);
 			}
@@ -5089,23 +5180,21 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 't': // "pxt"
-			if (input[2] == '?') {
-				r_cons_printf ("Usage: pxt[.*] - print delta pointer table\n");
-			} else {
-				ut64 origin = core->offset;
-				const char *arg = strchr (input, ' ');
-				if (arg) {
-					origin = r_num_math (core->num, arg + 1);
-				}
-				// _pointer_table does r_core_cmd with @, so it modifies core->block
-				// and this results in an UAF access when iterating over the jmptable
-				// so we do a new allocation to avoid that issue
-				ut8 *block = calloc (len, 1);
-				if (block) {
-					memcpy (block, core->block, len);
-					_pointer_table (core, origin, core->offset, block, len, 4, input[2]);
-					free (block);
-				}
+			{
+			ut64 origin = core->offset;
+			const char *arg = strchr (input, ' ');
+			if (arg) {
+				origin = r_num_math (core->num, arg + 1);
+			}
+			// _pointer_table does r_core_cmd with @, so it modifies core->block
+			// and this results in an UAF access when iterating over the jmptable
+			// so we do a new allocation to avoid that issue
+			ut8 *block = calloc (len, 1);
+			if (block) {
+				memcpy (block, core->block, len);
+				_pointer_table (core, origin, core->offset, block, len, 4, input[2]);
+				free (block);
+			}
 			}
 			break;
 		case 'd': // "pxd"
@@ -5488,27 +5577,20 @@ static int cmd_print(void *data, const char *input) {
 			memset (buf, 0, malen);
 			switch (input[1]) {
 			case 'd': // "p6d"
-				if (input[2] == '?') {
-					r_cons_printf ("|Usage: p6d [len]    base 64 decode\n");
-				} else if (r_base64_decode (buf, (const char *) block, len)) {
+				if (r_base64_decode (buf, (const char *) block, len)) {
 					r_cons_println ((const char *) buf);
 				} else {
 					eprintf ("r_base64_decode: invalid stream\n");
 				}
 				break;
 			case 'e': // "p6e"
-				if (input[2] == '?') {
-					r_cons_printf ("|Usage: p6e [len]    base 64 encode\n");
-					break;
-				} else {
 					len = len > core->blocksize? core->blocksize: len;
 					r_base64_encode ((char *) buf, block, len);
 					r_cons_println ((const char *) buf);
-				}
 				break;
 			case '?':
 			default:
-				r_cons_printf ("|Usage: p6[ed] [len]    base 64 encode/decode\n");
+				r_core_cmd_help(core, help_msg_p6);
 				break;
 			}
 			free (buf);
@@ -5533,6 +5615,9 @@ static int cmd_print(void *data, const char *input) {
 		break;
 	case 'f': // "pf"
 		cmd_print_format (core, input, block, len);
+		break;
+	case 'F': // "pF"
+		cmd_print_fromage (core, input + 1, block, len);
 		break;
 	case 'k': // "pk"
 		if (input[1] == '?') {
@@ -5805,7 +5890,7 @@ R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int se
 				if (offdec) {
 					snprintf (space, sizeof (space), "%"PFMT64d, off);
 					white = r_str_pad (' ', 10 - strlen (space));
-					r_cons_printf ("%s%s%s%s", k, white, space, off, reset);
+					r_cons_printf ("%s%s%s%s", k, white, space, reset);
 				} else {
 					r_cons_printf ("%s0x%08"PFMT64x "%s", k, off, reset);
 				}

@@ -29,8 +29,9 @@ int run_f_list(tms320_dasm_t * dasm) {
 	ut32 temp;
 	insn_flag_t * flag;
 
-	if (!dasm->insn->f_list)
+	if (!dasm->insn->f_list) {
 		return 1;
+	}
 
 	for (flag = dasm->insn->f_list; !f_list_last(flag); flag++) {
 		switch (flag->v) {
@@ -276,13 +277,15 @@ int run_m_list(tms320_dasm_t * dasm)
 {
 	insn_mask_t * mask;
 
-	if (!dasm->insn->m_list)
+	if (!dasm->insn->m_list) {
 		return 1;
+	}
 
 	for (mask = dasm->insn->m_list; !m_list_last(mask); mask++) {
 		/* match bits in range [f, f + n] with mask's value */
-		if (get_bits(dasm->opcode64, mask->f, mask->n) != mask->v)
+		if (get_bits (dasm->opcode64, mask->f, mask->n) != mask->v) {
 			return 0;
+		}
 	}
 
 	return 1;
@@ -294,8 +297,9 @@ int vreplace(char * string, const char * token, const char * fmt, va_list args)
 	char * pos;
 
 	pos = strstr(string, token);
-	if (!pos)
+	if (!pos) {
 		return 0;
+	}
 
 	vsnprintf(data, sizeof(data), fmt, args);
 
@@ -566,20 +570,24 @@ const char * get_mmm_str(ut8 key, char * str)
 void decode_bits(tms320_dasm_t * dasm)
 {
 	// rounding
-	if (field_valid(dasm, R))
-		substitute(dasm->syntax, "[r]", "%s", field_value(dasm, R) ? "r" : "");
+	if (field_valid (dasm, R)) {
+		substitute (dasm->syntax, "[r]", "%s", field_value (dasm, R) ? "r" : "");
+	}
 
 	// unsigned
-	if (field_valid(dasm, u))
-		substitute(dasm->syntax, "[u]", "%s", field_value(dasm, u) ? "u" : "");
+	if (field_valid (dasm, u)) {
+		substitute (dasm->syntax, "[u]", "%s", field_value (dasm, u) ? "u" : "");
+	}
 
 	// 40 keyword
-	if (field_valid(dasm, g))
-		substitute(dasm->syntax, "[40]", "%s", field_value(dasm, g) ? "40" : "");
+	if (field_valid (dasm, g)) {
+		substitute (dasm->syntax, "[40]", "%s", field_value (dasm, g) ? "40" : "");
+	}
 
 	// T3 update
-	if (field_valid(dasm, U))
-		substitute(dasm->syntax, "[T3 = ]", "%s", field_value(dasm, U) ? "t3=" : "");
+	if (field_valid (dasm, U)) {
+		substitute (dasm->syntax, "[T3 = ]", "%s", field_value (dasm, U) ? "t3=" : "");
+	}
 }
 
 void decode_braces(tms320_dasm_t * dasm)
@@ -639,96 +647,120 @@ void decode_constants(tms320_dasm_t * dasm)
 {
 	// signed constant
 
-	if (field_valid(dasm, K8))
-		substitute(dasm->syntax, "K8", "0x%02X", field_value(dasm, K8));
-	if (field_valid(dasm, K16))
-		substitute(dasm->syntax, "K16", "0x%04X", be16(field_value(dasm, K16)));
+	if (field_valid (dasm, K8)) {
+		substitute (dasm->syntax, "K8", "0x%02X", field_value (dasm, K8));
+	}
+	if (field_valid (dasm, K16)) {
+		substitute (dasm->syntax, "K16", "0x%04X", be16 (field_value (dasm, K16)));
+	}
 
 	// unsigned constant
 
-	if (field_valid(dasm, k4))
-		substitute(dasm->syntax, "K4", "0x%01X", field_value(dasm, k4));
-	if (field_valid(dasm, k5))
-		substitute(dasm->syntax, "k5", "0x%02X", field_value(dasm, k5));
-	if (field_valid(dasm, k8))
-		substitute(dasm->syntax, "k8", "0x%02X", field_value(dasm, k8));
+	if (field_valid (dasm, k4)) {
+		substitute (dasm->syntax, "K4", "0x%01X", field_value (dasm, k4));
+	}
+	if (field_valid (dasm, k5)) {
+		substitute (dasm->syntax, "k5", "0x%02X", field_value (dasm, k5));
+	}
+	if (field_valid (dasm, k8)) {
+		substitute (dasm->syntax, "k8", "0x%02X", field_value (dasm, k8));
+	}
 
-	if (field_valid(dasm, k12))
-		substitute(dasm->syntax, "k12", "0x%03X", be16(field_value(dasm, k12)));
-	if (field_valid(dasm, k16))
-		substitute(dasm->syntax, "k16", "0x%04X", be16(field_value(dasm, k16)));
+	if (field_valid (dasm, k12)) {
+		substitute (dasm->syntax, "k12", "0x%03X", be16 (field_value (dasm, k12)));
+	}
+	if (field_valid (dasm, k16)) {
+		substitute (dasm->syntax, "k16", "0x%04X", be16 (field_value (dasm, k16)));
+	}
 
-	if (field_valid(dasm, k4) && field_valid(dasm, k3))
-		substitute(dasm->syntax, "k7", "0x%02X", (field_value(dasm, k3) << 4) | field_value(dasm, k4));
-	if (field_valid(dasm, k4) && field_valid(dasm, k5))
-		substitute(dasm->syntax, "k9", "0x%03X", (field_value(dasm, k5) << 4) | field_value(dasm, k4));
-	if (field_valid(dasm, k4) && field_valid(dasm, k8))
-		substitute(dasm->syntax, "k12", "0x%03X", (field_value(dasm, k8) << 4) | field_value(dasm, k4));
+	if (field_valid (dasm, k4) && field_valid (dasm, k3)) {
+		substitute (dasm->syntax, "k7", "0x%02X", (field_value (dasm, k3) << 4) | field_value (dasm, k4));
+	}
+	if (field_valid (dasm, k4) && field_valid (dasm, k5)) {
+		substitute (dasm->syntax, "k9", "0x%03X", (field_value (dasm, k5) << 4) | field_value (dasm, k4));
+	}
+	if (field_valid (dasm, k4) && field_valid (dasm, k8)) {
+		substitute (dasm->syntax, "k12", "0x%03X", (field_value (dasm, k8) << 4) | field_value (dasm, k4));
+	}
 
 	// dasm address label
 
-	if (field_valid(dasm, D16))
-		substitute(dasm->syntax, "D16", "0x%04X", be16(field_value(dasm, D16)));
+	if (field_valid (dasm, D16)) {
+		substitute (dasm->syntax, "D16", "0x%04X", be16 (field_value (dasm, D16)));
+	}
 
 	// immediate shift value
 
-	if (field_valid(dasm, SHFT))
-		substitute(dasm->syntax, "#SHFT", "0x%01X", field_value(dasm, SHFT));
-	if (field_valid(dasm, SHIFTW))
-		substitute(dasm->syntax, "#SHIFTW", "0x%02X", field_value(dasm, SHIFTW));
+	if (field_valid (dasm, SHFT)) {
+		substitute (dasm->syntax, "#SHFT", "0x%01X", field_value (dasm, SHFT));
+	}
+	if (field_valid (dasm, SHIFTW)) {
+		substitute (dasm->syntax, "#SHIFTW", "0x%02X", field_value (dasm, SHIFTW));
+	}
 }
 
 void decode_addresses(tms320_dasm_t * dasm)
 {
 	// program address label
 
-	if (field_valid(dasm, L7))
-		substitute(dasm->syntax, "L7", "0x%02X", field_value(dasm, L7));
-	if (field_valid(dasm, L8))
-		substitute(dasm->syntax, "L8", "0x%02X", field_value(dasm, L8));
-	if (field_valid(dasm, L16))
-		substitute(dasm->syntax, "L16", "0x%04X", be16(field_value(dasm, L16)));
+	if (field_valid (dasm, L7)) {
+		substitute (dasm->syntax, "L7", "0x%02X", field_value (dasm, L7));
+	}
+	if (field_valid (dasm, L8)) {
+		substitute (dasm->syntax, "L8", "0x%02X", field_value (dasm, L8));
+	}
+	if (field_valid (dasm, L16)) {
+		substitute (dasm->syntax, "L16", "0x%04X", be16 (field_value (dasm, L16)));
+	}
 
 	// program address label
 
-	if (field_valid(dasm, l1) && field_valid(dasm, l3))
-		substitute(dasm->syntax, "l4", "0x%01X", (field_value(dasm, l3) << 1) | field_value(dasm, l1));
+	if (field_valid (dasm, l1) && field_valid (dasm, l3)) {
+		substitute (dasm->syntax, "l4", "0x%01X", (field_value (dasm, l3) << 1) | field_value (dasm, l1));
+	}
 
 	// program memory address
 
-	if (field_valid(dasm, l7))
-		substitute(dasm->syntax, "pmad", "0x%02X", field_value(dasm, l7));
-	if (field_valid(dasm, l16))
-		substitute(dasm->syntax, "pmad", "0x%04X", be16(field_value(dasm, l16)));
+	if (field_valid (dasm, l7)) {
+		substitute (dasm->syntax, "pmad", "0x%02X", field_value (dasm, l7));
+	}
+	if (field_valid (dasm, l16)) {
+		substitute (dasm->syntax, "pmad", "0x%04X", be16 (field_value (dasm, l16)));
+	}
 
 	// program or dasm address label
 
-	if (field_valid(dasm, P8))
-		substitute(dasm->syntax, "P8", "0x%02X", field_value(dasm, P8));
-	if (field_valid(dasm, P24))
-		substitute(dasm->syntax, "P24", "0x%06X", be24(field_value(dasm, P24)));
+	if (field_valid (dasm, P8)) {
+		substitute (dasm->syntax, "P8", "0x%02X", field_value (dasm, P8));
+	}
+	if (field_valid (dasm, P24)) {
+		substitute (dasm->syntax, "P24", "0x%06X", be24 (field_value (dasm, P24)));
+	}
 }
 
 void decode_swap(tms320_dasm_t * dasm)
 {
 	char tmp[64];
 
-	if (field_valid(dasm, k6))
-		substitute(dasm->syntax, "SWAP ( )", get_swap_str(field_value(dasm, k6), tmp));
+	if (field_valid (dasm, k6)) {
+		substitute (dasm->syntax, "SWAP ( )", get_swap_str (field_value (dasm, k6), tmp));
+	}
 }
 
 void decode_relop(tms320_dasm_t * dasm)
 {
-	if (field_valid(dasm, cc))
-		substitute(dasm->syntax, "RELOP", get_relop_str(field_value(dasm, cc), NULL));
+	if (field_valid (dasm, cc)) {
+		substitute (dasm->syntax, "RELOP", get_relop_str (field_value (dasm, cc), NULL));
+	}
 }
 
 void decode_cond(tms320_dasm_t * dasm)
 {
 	char tmp[64];
 
-	if (field_valid(dasm, CCCCCCC))
-		substitute(dasm->syntax, "cond", "%s", get_cond_str(field_value(dasm, CCCCCCC), tmp));
+	if (field_valid (dasm, CCCCCCC)) {
+		substitute (dasm->syntax, "cond", "%s", get_cond_str (field_value (dasm, CCCCCCC), tmp));
+	}
 
 	substitute(dasm->syntax, "[label, ]", "");
 }
@@ -739,16 +771,19 @@ void decode_registers(tms320_dasm_t * dasm)
 
 	// transition register
 
-	if (field_valid(dasm, r))
-		substitute(dasm->syntax, "TRNx", "trn%d", field_value(dasm, r));
+	if (field_valid (dasm, r)) {
+		substitute (dasm->syntax, "TRNx", "trn%d", field_value (dasm, r));
+	}
 
 	// source and destination temporary registers
 
-	if (field_valid(dasm, ss))
-		substitute(dasm->syntax, "Tx", "t%d", field_value(dasm, ss));
+	if (field_valid (dasm, ss)) {
+		substitute (dasm->syntax, "Tx", "t%d", field_value (dasm, ss));
+	}
 
-	if (field_valid(dasm, dd))
-		substitute(dasm->syntax, "Tx", "t%d", field_value(dasm, dd));
+	if (field_valid (dasm, dd)) {
+		substitute (dasm->syntax, "Tx", "t%d", field_value (dasm, dd));
+	}
 
 	// shifted in/out bit values
 
@@ -759,8 +794,9 @@ void decode_registers(tms320_dasm_t * dasm)
 
 	// source and destination of CRC instruction
 
-	if (field_valid(dasm, t))
-		substitute(dasm->syntax, "TCx", "%s", get_t_str(field_value(dasm, t), NULL));
+	if (field_valid (dasm, t)) {
+		substitute (dasm->syntax, "TCx", "%s", get_t_str (field_value (dasm, t), NULL));
+	}
 
 	if (field_valid(dasm, tt)) {
 		substitute(dasm->syntax, "TCx", "%s", get_t_str(field_value(dasm, tt) >> 0, NULL));
@@ -782,10 +818,11 @@ void decode_registers(tms320_dasm_t * dasm)
 	// source or destination accumulator, auxiliary or temporary register
 
 	if (field_valid(dasm, FSSS) && field_valid(dasm, FDDD)) {
-		if (field_value(dasm, FSSS) == field_value(dasm, FDDD))
-			substitute(dasm->syntax, "[src,] dst", "dst");
-		else
-			substitute(dasm->syntax, "[src,] dst", "src, dst");
+		if (field_value (dasm, FSSS) == field_value (dasm, FDDD)) {
+			substitute (dasm->syntax, "[src,] dst", "dst");
+		} else {
+			substitute (dasm->syntax, "[src,] dst", "src, dst");
+		}
 	}
 
 	if (field_valid(dasm, FSSS) && field_valid(dasm, FDDD)) {
@@ -823,12 +860,13 @@ void decode_registers(tms320_dasm_t * dasm)
 		substitute(dasm->syntax, "dst", "%s", get_freg_str(field_value(dasm, FDDD), NULL));
 	}
 
-	if (field_valid(dasm, XACS))
-		substitute(dasm->syntax, "XACsrc", "%s", get_xreg_str(field_value(dasm, XACS), NULL));
+	if (field_valid (dasm, XACS)) {
+		substitute (dasm->syntax, "XACsrc", "%s", get_xreg_str (field_value (dasm, XACS), NULL));
+	}
 
-	if (field_valid(dasm, XACD))
-		substitute(dasm->syntax, "XACdst", "%s", get_xreg_str(field_value(dasm, XACD), NULL));
-
+	if (field_valid (dasm, XACD)) {
+		substitute (dasm->syntax, "XACdst", "%s", get_xreg_str (field_value (dasm, XACD), NULL));
+	}
 
 	// source and destination accumulator registers
 
@@ -877,8 +915,9 @@ void decode_addressing_modes(tms320_dasm_t * dasm)
 {
 	// Cmem
 
-	if (field_valid(dasm, mm))
-		substitute(dasm->syntax, "Cmem", "%s", get_cmem_str(field_value(dasm, mm), NULL));
+	if (field_valid (dasm, mm)) {
+		substitute (dasm->syntax, "Cmem", "%s", get_cmem_str (field_value (dasm, mm), NULL));
+	}
 
 	// Xmem and Ymem
 
@@ -952,10 +991,12 @@ static insn_item_t * finalize(tms320_dasm_t * dasm)
 
 	// add some qualifiers
 
-	if (field_value(dasm, q_lr))
-		replace(dasm->syntax, " ", ".lr ");
-	if (field_value(dasm, q_cr))
-		replace(dasm->syntax, " ", ".cr ");
+	if (field_value (dasm, q_lr)) {
+		replace (dasm->syntax, " ", ".lr ");
+	}
+	if (field_value (dasm, q_cr)) {
+		replace (dasm->syntax, " ", ".cr ");
+	}
 
 	return dasm->insn;
 }
@@ -992,14 +1033,16 @@ insn_item_t * decode_insn_head(tms320_dasm_t * dasm)
 	if (dasm->insn->i_list) {
 		dasm->insn = dasm->insn->i_list;
 		while (!i_list_last(dasm->insn)) {
-			if (run_m_list(dasm) && run_f_list(dasm))
+			if (run_m_list (dasm) && run_f_list (dasm)) {
 				break;
+			}
 			dasm->insn++;
 		}
 	}
 
-	if (!i_list_last(dasm->insn))
-		return decode_insn(dasm);
+	if (!i_list_last (dasm->insn)) {
+		return decode_insn (dasm);
+	}
 
 	return NULL;
 }
@@ -1058,10 +1101,12 @@ static int full_insn_size(tms320_dasm_t * dasm)
 {
 	int qualifier_size = 0;
 
-	if (field_value(dasm, q_cr))
+	if (field_value (dasm, q_cr)) {
 		qualifier_size = 1;
-	if (field_value(dasm, q_lr))
+	}
+	if (field_value (dasm, q_lr)) {
 		qualifier_size = 1;
+	}
 
 	return dasm->length + qualifier_size;
 }
@@ -1076,18 +1121,21 @@ int tms320_dasm(tms320_dasm_t * dasm, const ut8 * stream, int len)
 
 	if (tms320_f_get_cpu(dasm) != TMS320_F_CPU_C55X_PLUS) {
 		if (lookup_insn_head(dasm) && decode_insn_head(dasm)) {
-			if (dasm->length > len)
+			if (dasm->length > len) {
 				dasm->status |= TMS320_S_INVAL;
+			}
 		}
 	} else {
 		c55x_plus_disassemble(dasm, stream, len);
 	}
 
-	if (strstr(dasm->syntax, "invalid"))
+	if (strstr (dasm->syntax, "invalid")) {
 		dasm->status |= TMS320_S_INVAL;
+	}
 
-	if (dasm->status & TMS320_S_INVAL)
-		strcpy(dasm->syntax, "invalid"), dasm->length = 1;
+	if (dasm->status & TMS320_S_INVAL) {
+		strcpy (dasm->syntax, "invalid"), dasm->length = 1;
+	}
 
 	return full_insn_size(dasm);
 }

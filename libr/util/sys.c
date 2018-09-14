@@ -1,5 +1,9 @@
 /* radare - LGPL - Copyright 2009-2018 - pancake */
 
+#if __linux__
+#include <time.h>
+#endif
+
 #include <r_userconf.h>
 #include <stdlib.h>
 #include <string.h>
@@ -245,7 +249,12 @@ R_API void r_sys_backtrace(void) {
 }
 
 R_API int r_sys_sleep(int secs) {
-#if __UNIX__
+#if __linux__
+	struct timespec rqtp;
+	rqtp.tv_sec = secs;
+	rqtp.tv_nsec = 0;
+	return clock_nanosleep (CLOCK_MONOTONIC, 0, &rqtp, NULL);
+#elif __UNIX__
 	return sleep (secs);
 #else
 	Sleep (secs * 1000); // W32
@@ -254,8 +263,12 @@ R_API int r_sys_sleep(int secs) {
 }
 
 R_API int r_sys_usleep(int usecs) {
-#if __UNIX__ || __CYGWIN__ && !defined(MINGW32)
-	// unix api uses microseconds
+#if __linux__
+	struct timespec rqtp;
+	rqtp.tv_sec = usecs / 1000000;
+	rqtp.tv_nsec = (usecs - (rqtp.tv_sec * 1000000)) * 1000;
+	return clock_nanosleep (CLOCK_MONOTONIC, 0, &rqtp, NULL);
+#elif __UNIX__ || __CYGWIN__ && !defined(MINGW32)
 	return usleep (usecs);
 #else
 	// w32 api uses milliseconds

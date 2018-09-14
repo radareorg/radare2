@@ -49,7 +49,9 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	const int blocks = size / BLOCK_SIZE;
 
 	ut8 *const obuf = calloc (1, size);
-	if (!obuf) return false;
+	if (!obuf) {
+		return false;
+	}
 
 	ut8 *const ibuf = calloc (1, size);
 	if (!ibuf) {

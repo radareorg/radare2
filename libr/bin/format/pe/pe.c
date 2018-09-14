@@ -2772,7 +2772,7 @@ static void get_nb10(ut8* dbg_data, int dbg_data_len, SCV_NB10_HEADER* res) {
 static int get_debug_info(struct PE_(r_bin_pe_obj_t)* bin, PE_(image_debug_directory_entry)* dbg_dir_entry, ut8* dbg_data, int dbg_data_len, SDebugInfo* res) {
 	#define SIZEOF_FILE_NAME 255
 	int i = 0;
-	const char* basename;
+	const char* dbgname;
 	if (!dbg_data) {
 		return 0;
 	}
@@ -2799,9 +2799,9 @@ static int get_debug_info(struct PE_(r_bin_pe_obj_t)* bin, PE_(image_debug_direc
 				rsds_hdr.guid.data4[6],
 				rsds_hdr.guid.data4[7],
 				rsds_hdr.age);
-			basename = r_file_basename ((char*) rsds_hdr.file_name);
+			dbgname = (char*) rsds_hdr.file_name;
 			strncpy (res->file_name, (const char*)
-				basename, sizeof (res->file_name));
+				dbgname, sizeof (res->file_name));
 			res->file_name[sizeof (res->file_name) - 1] = 0;
 			rsds_hdr.free ((struct SCV_RSDS_HEADER*) &rsds_hdr);
 		} else if (strncmp ((const char*) dbg_data, "NB10", 4) == 0) {

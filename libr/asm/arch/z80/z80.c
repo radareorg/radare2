@@ -28,8 +28,9 @@ static ut8 z80_op_24_branch_index_res (ut8 hex) {
 static int z80OpLength (const ut8 *buf, int len) {
 	z80_opcode *op;
 	int type = 0, ret = 0;
-	if (len < 1)
+	if (len < 1) {
 		return 0;
+	}
 	op = z80_op;
 	if (op[buf[0]].type & Z80_OP_UNK) {
 		if (len < 2) {

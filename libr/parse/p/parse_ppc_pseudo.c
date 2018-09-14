@@ -122,9 +122,13 @@ static int can_replace(const char *str, int idx, int max_operands) {
 static const char* getspr(const char *reg) {
 	static char cspr[16];
 	ut32 spr = 0;
-	if (!reg) return NULL;
+	if (!reg) {
+		return NULL;
+	}
 	spr = strtol(reg, NULL, 16);
-	if(spr > 9999) return NULL; //just to avoid overflows..
+	if (spr > 9999) {
+		return NULL; //just to avoid overflows..
+	}
 
 	switch (spr) {
 		case SPR_MQ:

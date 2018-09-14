@@ -43,8 +43,9 @@ R_API int r_stack_push(RStack *s, void *el) {
 		/* reallocate the stack */
 		s->n_elems *= 2;
 		s->elems = realloc (s->elems, s->n_elems * sizeof (void *));
-		if (!s->elems)
+		if (!s->elems) {
 			return false;
+		}
 	}
 
 	s->top++;

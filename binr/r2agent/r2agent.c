@@ -102,7 +102,9 @@ int main(int argc, char **argv) {
 		const char *result = page_index;
 
 		rs = r_socket_http_accept (s, 0, timeout);
-		if (!rs) continue;
+		if (!rs) {
+			continue;
+		}
 		if (!strcmp (rs->method, "GET")) {
 			if (!strncmp (rs->path, "/proc/kill/", 11)) {
 				// TODO: show page here?

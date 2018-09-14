@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <stddef.h>
+#include <math.h> // required for signbit
 #include "r_cons.h"
 #include "r_core.h"
 #include "r_util.h"
@@ -89,6 +90,7 @@ static const char *help_msg_root[] = {
 	"g","[?] [arg]", "generate shellcodes with r_egg",
 	"i","[?] [file]", "get info about opened file from r_bin",
 	"k","[?] [sdb-query]", "run sdb-query. see k? for help, 'k *', 'k **' ...",
+	"l"," [filepattern]", "list files and directories",
 	"L","[?] [-] [plugin]", "list, unload load r2 plugins",
 	"m","[?]", "mountpoints commands",
 	"o","[?] [file] ([offset])", "open file at optional address",
@@ -164,6 +166,7 @@ static const char *help_msg_question[] = {
 
 static const char *help_msg_question_v[] = {
 	"Usage: ?v [$.]","","",
+	"flag", "", "offset of flag",
 	"$$", "", "here (current virtual seek)",
 	"$$$", "", "current non-temporary virtual seek",
 	"$?", "", "last comparison value",
@@ -207,6 +210,7 @@ static const char *help_msg_question_v[] = {
 	"$r{reg}", "", "get value of named register",
 	"$k{kv}", "", "get value of an sdb query value",
 	"$s{flag}", "", "get size of flag",
+	"$e{flag}", "", "end of flag (flag->offset + flag->size)",
 	"RNum", "", "$variables usable in math expressions",
 	NULL
 };
@@ -226,6 +230,13 @@ static const char *help_msg_greater_sign[] = {
 	"[cmd] H> [file]", "", "redirect html output of 'cmd' to 'file'",
 	"[cmd] 2> [file]", "", "redirect STDERR of 'cmd' to 'file'",
 	"[cmd] 2> /dev/null", "", "omit the STDERR output of 'cmd'",
+	NULL
+};
+
+static const char *help_msg_intro[] = {
+	"Usage: [.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...", "", "",
+	"Append '?' to any char command to get detailed help", "", "",
+	"Prefix with number to repeat command N times (f.ex: 3x)", "", "",
 	NULL
 };
 
@@ -996,9 +1007,7 @@ static int cmd_help(void *data, const char *input) {
 	case '\0': // "?"
 	default:
 		// TODO #7967 help refactor
-		r_cons_printf ("Usage: [.][times][cmd][~grep][@[@iter]addr!size][|>pipe] ; ...\n"
-				"Append '?' to any char command to get detailed help\n"
-				"Prefix with number to repeat command N times (f.ex: 3x)\n");
+		r_core_cmd_help (core, help_msg_intro);
 		r_core_cmd_help (core, help_msg_root);
 		break;
 	}

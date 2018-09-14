@@ -1022,18 +1022,18 @@ static RList* patch_relocs(RBin *b) {
 
 static bool has_canary(RBinFile *bf) {
 	bool ret = false;
-	RList* imports_list = imports (bf);
+	RList* symbols_list = symbols (bf);
 	RListIter *iter;
-	RBinImport *import;
-	if (imports_list) {
-		r_list_foreach (imports_list, iter, import) {
-			if (!strcmp (import->name, "__stack_chk_fail") || !strcmp (import->name, "__stack_smash_handler")) {
+	RBinSymbol *symbol;
+	if (symbols_list) {
+		r_list_foreach (symbols_list, iter, symbol) {
+			if (!strcmp (symbol->name, "__stack_chk_fail") || !strcmp (symbol->name, "__stack_smash_handler")) {
 				ret = true;
 				break;
 			}
 		}
-		imports_list->free = r_bin_import_free;
-		r_list_free (imports_list);
+		symbols_list->free = r_bin_symbol_free;
+		r_list_free (symbols_list);
 	}
 	return ret;
 }
@@ -1052,6 +1052,21 @@ static int has_retguard(RBinFile *bf) {
 		}
 	}
 	r_list_free (sections_list);
+	return ret;
+}
+
+static bool has_sanitizers(RBinFile *bf) {
+	bool ret = false;
+	RList* imports_list = imports (bf);
+	RListIter *iter;
+	RBinImport *import;
+	r_list_foreach (imports_list, iter, import) {
+		if (strstr (import->name, "__sanitizer")) {
+			ret = true;
+			break;
+		}
+	}
+	r_list_free (imports_list);
 	return ret;
 }
 
@@ -1082,6 +1097,7 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->has_lit = true;
 	ret->has_canary = has_canary (bf);
 	ret->has_retguard = has_retguard (bf);
+	ret->has_sanitizers = has_sanitizers (bf);
 	if (!(str = Elf_(r_bin_elf_get_elf_class) (obj))) {
 		free (ret);
 		return NULL;

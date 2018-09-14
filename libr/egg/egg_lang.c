@@ -37,7 +37,9 @@ static inline int is_op(char x) {
 }
 
 static inline int get_op(char **pos){
-	while (**pos && !(is_op (**pos) && !is_var (*pos))) (*pos)++;
+	while (**pos && !(is_op (**pos) && !is_var (*pos))) {
+		(*pos)++;
+	}
 	return (**pos)? ((is_op (**pos)) + 1): 0;
 }
 
@@ -223,7 +225,9 @@ static const char *find_alias(REgg *egg, const char *str) {
 		return strdup (str);
 	}
 	// strings could not means aliases
-	while (*p && !is_space (*p)) p++;
+	while (*p && !is_space (*p)) {
+		p++;
+	}
 	*p = '\x00';
 	for (i = 0; i < egg->lang.nalias; i++) {
 		if (!strcmp (str, egg->lang.aliases[i].name)) {
@@ -243,7 +247,9 @@ static void rcc_internal_mathop(REgg *egg, const char *ptr, char *ep, char op) {
 		*q = '\x00';
 	}
 	REggEmit *e = egg->remit;
-	while (*p && is_space (*p)) p++;
+	while (*p && is_space (*p)) {
+		p++;
+	}
 	if (is_var (p)) {
 		p = r_egg_mkvar (egg, buf, p, 0);
 		if (egg->lang.varxs == '*') {
@@ -281,7 +287,9 @@ static void rcc_mathop(REgg *egg, char **pos, int level) {
 	int op_ret = level;
 	char op, *next_pos;
 
-	while (**pos && is_space (**pos)) (*pos)++;
+	while (**pos && is_space (**pos)) {
+		(*pos)++;
+	}
 	next_pos = *pos + 1;
 
 	do {
@@ -664,7 +672,9 @@ static void rcc_fun(REgg *egg, const char *str) {
 			} else if (strstr (ptr, "alias")) {
 				egg->lang.mode = ALIAS;
 				ptr2 = egg->lang.dstvar = strdup (skipspaces (str));
-				while (*ptr2 && !is_space (*ptr2)) ptr2++;
+				while (*ptr2 && !is_space (*ptr2)) {
+					ptr2++;
+				}
 				*ptr2 = '\x00';
 				// for aliases must be valid and accurate strings
 			} else if (strstr (ptr, "data")) {
@@ -1397,7 +1407,9 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 			if (egg->lang.elem_n) {
 				ptr = egg->lang.elem;
 				egg->lang.elem[egg->lang.elem_n] = '\0';
-				while (is_space (*ptr)) ptr++;
+				while (is_space (*ptr)) {
+					ptr++;
+				}
 				rcc_fun (egg, ptr);
 			}
 			egg->lang.elem_n = 0;
