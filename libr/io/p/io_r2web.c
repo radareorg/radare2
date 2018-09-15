@@ -153,7 +153,7 @@ RIOPlugin r_io_plugin_r2web = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_r2web,
 	.version = R2_VERSION

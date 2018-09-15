@@ -984,7 +984,7 @@ static RDebugMap* linux_map_alloc (RDebug *dbg, ut64 addr, int size) {
 	if (!r_egg_compile (dbg->egg)) {
 		eprintf ("Cannot compile.\n");
 		goto err_linux_map_alloc;
-	}	
+	}
 	if (!r_egg_assemble_asm (dbg->egg, asm_list)) {
 		eprintf ("r_egg_assemble: invalid assembly\n");
 		goto err_linux_map_alloc;
@@ -1025,7 +1025,7 @@ static int linux_map_dealloc (RDebug *dbg, ut64 addr, int size) {
 	if (!r_egg_compile (dbg->egg)) {
 		eprintf ("Cannot compile.\n");
 		goto err_linux_map_dealloc;
-	}	
+	}
 	if (!r_egg_assemble_asm (dbg->egg, asm_list)) {
 		eprintf ("r_egg_assemble: invalid assembly\n");
 		goto err_linux_map_dealloc;
@@ -1088,7 +1088,7 @@ static RDebugMap* r_debug_native_map_alloc (RDebug *dbg, ut64 addr, int size) {
 	map = r_debug_map_get (dbg, (ut64)(size_t)base);
 	return map;
 #elif __linux__
-	return linux_map_alloc (dbg, addr, size);	
+	return linux_map_alloc (dbg, addr, size);
 #else
 	// malloc not implemented for this platform
 	return NULL;
@@ -1980,7 +1980,7 @@ RDebugPlugin r_debug_plugin_native = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_native,
 	.version = R2_VERSION

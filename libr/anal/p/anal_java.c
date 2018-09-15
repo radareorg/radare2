@@ -47,7 +47,7 @@ typedef struct r_anal_ex_java_lin_sweep {
 ut64 METHOD_START = 0;
 
 // XXX - TODO add code in the java_op that is aware of when it is in a
-// switch statement, like in the shlr/java/code.c so that this does not 
+// switch statement, like in the shlr/java/code.c so that this does not
 // report bad blocks.  currently is should be easy to ignore these blocks,
 // in output for the pdj
 
@@ -578,7 +578,7 @@ static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalState *state) {
 	java_new_method (fcn->addr);
 	state->current_fcn = fcn;
 	// Not a resource leak.  Basic blocks should be stored in the state->fcn
-	// TODO: ? RList *bbs = 
+	// TODO: ? RList *bbs =
 	r_anal_ex_perform_analysis (anal, state, fcn->addr);
 	return state->anal_ret_val;
 }
@@ -766,7 +766,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		java_switch_op (anal, op, addr, data, len);
 		// IN_SWITCH_OP = 1;
 	}
-	/* TODO: 
+	/* TODO:
 	// not sure how to handle the states for IN_SWITCH_OP, SWITCH_OP_CASES,
 	// and NUM_CASES_SEEN, because these are dependent on whether or not we
 	// are in a switch, and given the non-reentrant state of opcode analysis
@@ -819,7 +819,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 static RAnalOp * java_op_from_buffer(RAnal *anal, RAnalState *state, ut64 addr) {
 
 	RAnalOp *op = r_anal_op_new ();
-	//  get opcode size 
+	//  get opcode size
 	if (!op) return 0;
 	memset (op, '\0', sizeof (RAnalOp));
 	java_op (anal, op, addr, state->buffer, state->len - (addr - state->start) );
@@ -965,7 +965,7 @@ RAnalPlugin r_anal_plugin_java_ls = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	//.data = &r_anal_plugin_java
 	.data = &r_anal_plugin_java_ls,

@@ -181,7 +181,7 @@ RAnalPlugin r_anal_plugin_riscv = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_riscv,
 	.version = R2_VERSION

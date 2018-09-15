@@ -222,7 +222,7 @@ RDebugPlugin r_debug_plugin_bf = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_bf,
 	.version = R2_VERSION

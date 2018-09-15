@@ -17,7 +17,7 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int size = dalvik_opcodes[i].len;
 	char str[1024], *strasm;
 	ut64 offset;
-	const char *flag_str; 
+	const char *flag_str;
 	a->dataalign = 2;
 
 	const char *buf_asm = NULL;
@@ -552,7 +552,7 @@ RAsmPlugin r_asm_plugin_dalvik = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_dalvik,
 	.version = R2_VERSION

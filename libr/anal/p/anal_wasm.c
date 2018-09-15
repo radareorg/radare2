@@ -96,7 +96,7 @@ static int wasm_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 	if (!strncmp (wop.txt, "invalid", 7)) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		return -1;
-	} 
+	}
 	if (wasm_stack_ptr >= WASM_STACK_SIZE) {
 		op->type = R_ANAL_OP_TYPE_NULL;
 		return -1;
@@ -259,7 +259,7 @@ RAnalPlugin r_anal_plugin_wasm = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_wasm,
 	.version = R2_VERSION

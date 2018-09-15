@@ -63,7 +63,7 @@ static bool rc2_expandKey(struct rc2_state *state, const ut8 *key, int key_len) 
 
 static void rc2_crypt8(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf) {
 	int i;
-	ut16 x76, x54, x32, x10; 	
+	ut16 x76, x54, x32, x10;
 
 	x76 = (inbuf[7] << 8) | inbuf[6];
 	x54 = (inbuf[5] << 8) | inbuf[4];
@@ -82,12 +82,12 @@ static void rc2_crypt8(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf) {
 
 		x76 += ((x10 & ~x54) + (x32 & x54)) + state->ekey[4 * i + 3];
 		x76 = (x76 << 5) + (x76 >> 11 & 31);
-	
+
 		if (i == 4 || i == 10) {
 			x10 += state->ekey[x76 & 63];
 			x32 += state->ekey[x10 & 63];
 			x54 += state->ekey[x32 & 63];
-			x76 += state->ekey[x54 & 63]; 
+			x76 += state->ekey[x54 & 63];
 		}
 	}
 
@@ -104,7 +104,7 @@ static void rc2_crypt8(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf) {
 
 static void rc2_dcrypt8(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf) {
 	int i;
-	ut16 x76, x54, x32, x10; 	
+	ut16 x76, x54, x32, x10;
 
 	x76 = (inbuf[7] << 8) | inbuf[6];
 	x54 = (inbuf[5] << 8) | inbuf[4];
@@ -126,10 +126,10 @@ static void rc2_dcrypt8(struct rc2_state *state, const ut8 *inbuf, ut8 *outbuf) 
 
 		x10 &= 65535;
 		x10 = (x10 << 15) | (x10 >> 1);
-		x10 -= ((x32 & ~x76) | (x54 & x76)) + state->ekey[4 * i + 0];		
+		x10 -= ((x32 & ~x76) | (x54 & x76)) + state->ekey[4 * i + 0];
 
 		if (i == 5 || i == 11) {
-			x76 -= state->ekey[x54 & 63]; 
+			x76 -= state->ekey[x54 & 63];
 			x54 -= state->ekey[x32 & 63];
 			x32 -= state->ekey[x10 & 63];
 			x10 -= state->ekey[x76 & 63];
@@ -242,7 +242,7 @@ RCryptoPlugin r_crypto_plugin_rc2 = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = { 
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_rc2,
 	.version = R2_VERSION

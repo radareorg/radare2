@@ -369,7 +369,7 @@ char * r_io_zip_get_by_file_idx(const char * archivename, const char *idx, ut32 
 }
 
 static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
-	RIODesc *res = NULL;	
+	RIODesc *res = NULL;
 	char *pikaboo, *tmp;
 	RIOZipFileObj *zfo = NULL;
 	char *zip_uri = NULL, *zip_filename = NULL, *filename_in_zipfile = NULL;
@@ -662,7 +662,7 @@ RIOPlugin r_io_plugin_zip = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_zip,
 	.version = R2_VERSION
