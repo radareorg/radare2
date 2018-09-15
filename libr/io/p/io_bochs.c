@@ -6,10 +6,10 @@
 #include <libbochs.h>
 
 typedef struct {
-	libbochs_t desc;    
+	libbochs_t desc;
 } RIOBochs;
 
-static libbochs_t *desc = NULL; 
+static libbochs_t *desc = NULL;
 static RIODesc *riobochs = NULL;
 extern RIOPlugin r_io_plugin_bochs; // forward declaration
 
@@ -90,7 +90,7 @@ static int __close(RIODesc *fd) {
 	bochs_close (desc);
 	return true;
 }
-	
+
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
         lprintf ("system command (%s)\n", cmd);
         if (!strcmp (cmd, "help")) {
@@ -103,7 +103,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	} else if (!strncmp (cmd, "dobreak", 7)) {
 		bochs_cmd_stop (desc);
 		io->cb_printf ("%s\n", desc->data);
-	}         
+	}
         return NULL;
 }
 
@@ -122,7 +122,7 @@ RIOPlugin r_io_plugin_bochs = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_bochs,
 	.version = R2_VERSION

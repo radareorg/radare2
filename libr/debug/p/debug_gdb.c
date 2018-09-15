@@ -1108,7 +1108,7 @@ RDebugPlugin r_debug_plugin_gdb = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_gdb,
 	.version = R2_VERSION

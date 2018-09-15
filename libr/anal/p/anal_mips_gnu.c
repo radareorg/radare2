@@ -274,7 +274,7 @@ static int mips_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		// The cases vary, so for now leave the smarts in a human generated macro to decide
 		// but the macro needs the opcode values as input
 		//
-		// TODO: this is a stop-gap. Really we need some smarts in here to tie this into the 
+		// TODO: this is a stop-gap. Really we need some smarts in here to tie this into the
 		// flags directly, as suggested here: https://github.com/radare/radare2/issues/949#issuecomment-43654922
 		case 15: // lui
 			op->dst = r_anal_value_new ();
@@ -541,7 +541,7 @@ RAnalPlugin r_anal_plugin_mips_gnu = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
         .type = R_LIB_TYPE_ANAL,
         .data = &r_anal_plugin_mips_gnu
 };

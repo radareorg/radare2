@@ -57,7 +57,7 @@ static bool rc6_init(struct rc6_state *const state, const ut8 *key, int keylen, 
 		k = (k + 1) % t;
 		j = (j + 1) % c;
 	}
-	
+
 	state->key_size = keylen/8;
 #ifdef _MSC_VER
 	free (L);
@@ -191,7 +191,7 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 			rc6_encrypt (&st, buf + BLOCK_SIZE * i, obuf + BLOCK_SIZE * i);
 		}
 	}
-	
+
 	r_crypto_append (cry, obuf, len);
 	free (obuf);
 	return true;
@@ -211,7 +211,7 @@ RCryptoPlugin r_crypto_plugin_rc6 = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = { 
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_rc6,
 	.version = R2_VERSION

@@ -35,11 +35,11 @@ RAsmPlugin r_asm_plugin_dcpu16 = {
 	.desc = "Mojang's DCPU-16",
 	.license = "PD",
 	.disassemble = &disassemble,
-	.assemble = &assemble 
+	.assemble = &assemble
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_dcpu16,
 	.version = R2_VERSION

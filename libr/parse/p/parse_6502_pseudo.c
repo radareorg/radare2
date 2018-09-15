@@ -189,7 +189,8 @@ RParsePlugin r_parse_plugin_6502_pseudo = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {.type = R_LIB_TYPE_PARSE,
+R_API RLibStruct radare_plugin = {
+	.type = R_LIB_TYPE_PARSE,
 	.data = &r_parse_plugin_6502_pseudo,
 	.version = R2_VERSION};
 #endif

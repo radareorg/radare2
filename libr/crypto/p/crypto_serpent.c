@@ -69,7 +69,7 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 			serpent_decrypt (&st, ibuf + delta, tmp + delta);
 		}
 	}
-	
+
 	// Construct ut32 blocks from byte stream
 	int k;
 	for (j = 0; j < size/4; j++) {
@@ -91,7 +91,7 @@ static bool final(RCrypto *cry, const ut8 *buf, int len) {
 	return update (cry, buf, len);
 }
 
-RCryptoPlugin r_crypto_plugin_serpent = { 
+RCryptoPlugin r_crypto_plugin_serpent = {
 	.name = "serpent-ecb",
 	.set_key = serpent_set_key,
 	.get_key_size = serpent_get_key_size,
@@ -101,7 +101,7 @@ RCryptoPlugin r_crypto_plugin_serpent = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = { 
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_serpent,
 	.version = R2_VERSION

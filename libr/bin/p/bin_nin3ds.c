@@ -154,7 +154,7 @@ RBinPlugin r_bin_plugin_nin3ds = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_nin3ds,
 	.version = R2_VERSION

@@ -187,7 +187,7 @@ RBinPlugin r_bin_plugin_te = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_te,
 	.version = R2_VERSION

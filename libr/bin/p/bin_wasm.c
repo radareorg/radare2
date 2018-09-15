@@ -310,7 +310,7 @@ RBinPlugin r_bin_plugin_wasm = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_wasm,
 	.version = R2_VERSION

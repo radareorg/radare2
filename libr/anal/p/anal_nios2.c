@@ -100,7 +100,7 @@ RAnalPlugin r_anal_plugin_nios2 = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_nios2,
 	.version = R2_VERSION

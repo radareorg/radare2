@@ -48,15 +48,15 @@ static bool check_bytes(const ut8 *bytes, ut64 sz) {
 
 static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
 	//extract dos componenent first
-	RBinXtrData *data = oneshot (bin, buf, size, SUB_BIN_DOS); 
+	RBinXtrData *data = oneshot (bin, buf, size, SUB_BIN_DOS);
 
 	if (!data) {
 		return NULL;
 	}
 	// XXX - how do we validate a valid narch?
-	RList * res = r_list_newf (r_bin_xtrdata_free); 
-	r_list_append (res, data); 
-	
+	RList * res = r_list_newf (r_bin_xtrdata_free);
+	r_list_append (res, data);
+
 	if ((data = oneshot (bin, buf, size, SUB_BIN_NATIVE))){
 		r_list_append (res, data);
 	}
@@ -90,7 +90,7 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int sub_bin_t
 	if (!bin->cur->xtr_obj){
 		bin->cur->xtr_obj = r_bin_pemixed_from_bytes_new(buf, size);
 	}
-	
+
 	fb = bin->cur->xtr_obj;
 
 	//this function is prolly not nessescary
@@ -98,14 +98,14 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int sub_bin_t
 
 	if (!pe){
 		return NULL;
-	} 
-	
+	}
+
 	RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
 	if (!metadata) {
 		return NULL;
 	}
 
-	fill_metadata_info_from_hdr (metadata, pe);	
+	fill_metadata_info_from_hdr (metadata, pe);
 	return r_bin_xtrdata_new (pe->b, 0, pe->size, 3, metadata);
 }
 
@@ -132,7 +132,7 @@ RBinXtrPlugin r_bin_xtr_plugin_xtr_pemixed = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN_XTR,
 	.data = &r_bin_xtr_plugin_pemixed,
 	.version = R2_VERSION

@@ -511,7 +511,7 @@ RParsePlugin r_parse_plugin_x86_pseudo = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_PARSE,
 	.data = &r_parse_plugin_x86_pseudo,
 	.version = R2_VERSION
