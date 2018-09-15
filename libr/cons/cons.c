@@ -19,6 +19,11 @@ static RConsContext r_cons_context_default = {{{{0}}}};
 static RCons r_cons_instance = {0};
 #define I r_cons_instance
 
+// TODO: move into instance? + avoid unnecessary copies
+static char *lastOutput = NULL;
+static int lastLength = 0;
+static bool lastMode = false;
+
 //this structure goes into cons_stack when r_cons_push/pop
 typedef struct {
 	char *buf;
@@ -687,21 +692,42 @@ R_API void r_cons_context_break(RConsContext *context) {
 	}
 }
 
+R_API void r_cons_last() {
+	// r_cons_memcat (lastOutput, lastLength);
+	lastMode = true;
+	r_cons_print (lastOutput);
+}
+
 R_API void r_cons_flush() {
 	const char *tee = I.teefile;
-	if (I.noflush) {
+	if (I.noflush || I.context->buffer_len < 1) {
 		return;
 	}
 	if (I.null) {
 		r_cons_reset ();
 		return;
 	}
+	if (!I.filter && I.context->grep.nstrings < 1 && \
+		!I.context->grep.tokens_used && !I.context->grep.less && \
+		!I.context->grep.json && !I.is_html) {
+		if (!lastMode) {
+			// snapshot of the output
+			free (lastOutput);
+			lastOutput = calloc (I.context->buffer_len + 1, 1);
+			if (lastOutput) {
+				lastLength = I.context->buffer_len;
+				memcpy (lastOutput, I.context->buffer, I.context->buffer_len);
+			}
+		}
+		lastMode = false;
+	}
 	r_cons_filter ();
+
 	if (I.is_interactive && I.fdout == 1) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
 		if (I.pager && *I.pager && I.context->buffer_len > 0
 				&& r_str_char_count (I.context->buffer, '\n') >= I.rows) {
-			I.context->buffer[I.context->buffer_len-1] = 0;
+			I.context->buffer[I.context->buffer_len - 1] = 0;
 			r_sys_cmd_str_full (I.pager, I.context->buffer, NULL, NULL, NULL);
 			r_cons_reset ();
 
@@ -741,6 +767,7 @@ R_API void r_cons_flush() {
 		}
 	}
 	r_cons_highlight (I.highlight);
+
 	// is_html must be a filter, not a write endpoint
 	if (I.is_interactive && !r_sandbox_enable (false)) {
 		if (I.linesleep > 0 && I.linesleep < 1000) {
