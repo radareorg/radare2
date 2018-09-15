@@ -72,7 +72,6 @@ static RList *entries(RBinFile *bf) {
 		}
 		if (!addr) {
 			r_list_free (ret);
-			r_list_free (codes);
 			return NULL;
 		}
 	}
@@ -270,10 +269,7 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 static ut64 size(RBinFile *bf) {
-	if (!bf->o->info) {
-		bf->o->info = info (bf);
-	}
-	if (!bf->o->info) {
+	if (!bf || !bf->buf) {
 		return 0;
 	}
 	return bf->buf->length;
