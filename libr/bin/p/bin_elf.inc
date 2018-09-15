@@ -1077,7 +1077,10 @@ static bool is_golang(RBinFile *binfile) {
 	RListIter *iter;
 	RBinSection *section;
 	r_list_foreach (section_list, iter, section) {
-		if (section->name && (strstr (section->name, "note.go.buildid") || strstr (section->name, ".gopclntab"))) {
+		if (section->name &&
+		   (strstr (section->name, "note.go.buildid") ||
+		    strstr (section->name, ".gopclntab") ||
+		    strstr (section->name, ".go_export"))) {
 			ret = true;
 			break;
 		}
@@ -1157,7 +1160,7 @@ static RBinInfo* info(RBinFile *bf) {
 	if (Elf_(r_bin_elf_get_static) (obj)) {
 		ret->dbg_info |= R_BIN_DBG_STATIC;
 	}
-	if (is_golang(bf)) {
+	if (is_golang (bf)) {
 		ret->lang = "go";
 	}
 	return ret;
