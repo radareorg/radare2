@@ -19,11 +19,6 @@ static RConsContext r_cons_context_default = {{{{0}}}};
 static RCons r_cons_instance = {0};
 #define I r_cons_instance
 
-// TODO: move into instance? + avoid unnecessary copies
-static char *lastOutput = NULL;
-static int lastLength = 0;
-static bool lastMode = false;
-
 //this structure goes into cons_stack when r_cons_push/pop
 typedef struct {
 	char *buf;
@@ -692,13 +687,15 @@ R_API void r_cons_context_break(RConsContext *context) {
 	}
 }
 
-R_API void r_cons_last() {
-	// r_cons_memcat (lastOutput, lastLength);
-	lastMode = true;
-	r_cons_print (lastOutput);
+#define CTX(x) I.context->x
+
+R_API void r_cons_last(void) {
+	CTX(lastMode) = true;
+	r_cons_memcat (CTX(lastOutput), CTX(lastLength));
+	//r_cons_print (lastOutput);
 }
 
-R_API void r_cons_flush() {
+R_API void r_cons_flush(void) {
 	const char *tee = I.teefile;
 	if (I.noflush || I.context->buffer_len < 1) {
 		return;
@@ -710,16 +707,16 @@ R_API void r_cons_flush() {
 	if (!I.filter && I.context->grep.nstrings < 1 && \
 		!I.context->grep.tokens_used && !I.context->grep.less && \
 		!I.context->grep.json && !I.is_html) {
-		if (!lastMode) {
+		if (!CTX(lastMode)) {
 			// snapshot of the output
-			free (lastOutput);
-			lastOutput = calloc (I.context->buffer_len + 1, 1);
-			if (lastOutput) {
-				lastLength = I.context->buffer_len;
-				memcpy (lastOutput, I.context->buffer, I.context->buffer_len);
+			free (CTX(lastOutput));
+			CTX(lastOutput) = calloc (CTX(buffer_len) + 1, 1);
+			if (CTX(lastOutput)) {
+				CTX(lastLength) = CTX(buffer_len);
+				memcpy (CTX(lastOutput), CTX(buffer), CTX(buffer_len));
 			}
 		}
-		lastMode = false;
+		CTX(lastMode) = false;
 	}
 	r_cons_filter ();
 
