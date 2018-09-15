@@ -174,7 +174,7 @@ void SHA512_Transform(R_SHA512_CTX *, const ut64 *);
 
 /*** SHA-XYZ INITIAL HASH VALUES AND CONSTANTS ************************/
 /* Hash constant words K for SHA-256: */
-const static ut32 K256[64] = {
+static const ut32 K256[64] = {
 	0x428a2f98UL, 0x71374491UL, 0xb5c0fbcfUL, 0xe9b5dba5UL,
 	0x3956c25bUL, 0x59f111f1UL, 0x923f82a4UL, 0xab1c5ed5UL,
 	0xd807aa98UL, 0x12835b01UL, 0x243185beUL, 0x550c7dc3UL,
@@ -194,7 +194,7 @@ const static ut32 K256[64] = {
 };
 
 /* Initial hash value H for SHA-256: */
-const static ut32 sha256_initial_hash_value[8] = {
+static const ut32 sha256_initial_hash_value[8] = {
 	0x6a09e667UL,
 	0xbb67ae85UL,
 	0x3c6ef372UL,
@@ -206,7 +206,7 @@ const static ut32 sha256_initial_hash_value[8] = {
 };
 
 /* Hash constant words K for SHA-384 and SHA-512: */
-const static ut64 K512[80] = {
+static const ut64 K512[80] = {
 	0x428a2f98d728ae22ULL, 0x7137449123ef65cdULL,
 	0xb5c0fbcfec4d3b2fULL, 0xe9b5dba58189dbbcULL,
 	0x3956c25bf348b538ULL, 0x59f111f1b605d019ULL,
@@ -250,7 +250,7 @@ const static ut64 K512[80] = {
 };
 
 /* Initial hash value H for SHA-384 */
-const static ut64 sha384_initial_hash_value[8] = {
+static const ut64 sha384_initial_hash_value[8] = {
 	0xcbbb9d5dc1059ed8ULL,
 	0x629a292a367cd507ULL,
 	0x9159015a3070dd17ULL,
@@ -262,7 +262,7 @@ const static ut64 sha384_initial_hash_value[8] = {
 };
 
 /* Initial hash value H for SHA-512 */
-const static ut64 sha512_initial_hash_value[8] = {
+static const ut64 sha512_initial_hash_value[8] = {
 	0x6a09e667f3bcc908ULL,
 	0xbb67ae8584caa73bULL,
 	0x3c6ef372fe94f82bULL,

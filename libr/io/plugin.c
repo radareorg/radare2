@@ -4,7 +4,7 @@
 #include "config.h"
 #include <stdio.h>
 
-volatile static RIOPlugin *DEFAULT = NULL;
+static volatile RIOPlugin *DEFAULT = NULL;
 
 static RIOPlugin *io_static_plugins[] = {
 	R_IO_STATIC_PLUGINS
