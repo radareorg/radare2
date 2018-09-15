@@ -468,13 +468,15 @@ arm_symbol:
 		ptr->bits = bin_bits;
 		if (bin_bits != 64) {
 			ptr->bits = 32;
-			if (ptr->vaddr & 1) {
-				ptr->vaddr--;
-				ptr->bits = 16;
-			}
-			if (ptr->paddr & 1) {
-				ptr->paddr--;
-				ptr->bits = 16;
+			if (ptr->paddr != UT64_MAX) {
+				if (ptr->vaddr & 1) {
+					ptr->vaddr--;
+					ptr->bits = 16;
+				}
+				if (ptr->paddr & 1) {
+					ptr->paddr--;
+					ptr->bits = 16;
+				}
 			}
 		}
 	}

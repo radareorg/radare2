@@ -2783,6 +2783,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		sym[i].st_shndx = READ16 (s, j);
 #endif
 		bool is_sht_null = false;
+		bool is_value = false;
 		// zero symbol is always empty
 		// Examine entry and maybe store
 		if (type == R_BIN_ELF_IMPORTS && sym[i].st_shndx == SHT_NULL) {
@@ -2805,7 +2806,11 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		    !strcmp (type2str (&sym[i]), R_BIN_TYPE_UNKNOWN_STR)) {
 			goto done;
 		}
-		tmp_offset = Elf_(r_bin_elf_v2p) (bin, toffset);
+		tmp_offset = Elf_(r_bin_elf_v2p_new) (bin, toffset);
+		if (tmp_offset == UT64_MAX) {
+			tmp_offset = toffset;
+			is_value = true;
+		}
 		if (tmp_offset > bin->size) {
 			goto done;
 		}
@@ -2833,6 +2838,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		ret[ret_ctr].name[ELF_STRING_LENGTH - 2] = '\0';
 		fill_symbol_bind_and_type (&ret[ret_ctr], &sym[i]);
 		ret[ret_ctr].is_sht_null = is_sht_null;
+		ret[ret_ctr].is_value = is_value;
 		ret[ret_ctr].last = 0;
 		ret_ctr++;
 	}
