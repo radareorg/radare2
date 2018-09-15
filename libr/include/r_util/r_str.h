@@ -26,6 +26,7 @@ static inline void r_str_rmch(char *s, char ch) {
 	}
 }
 
+#define R_STR_CPY(dest, src) (R_SHOULD_BE_ARRAY (dest), r_str_ncpy (dest, src, sizeof (dest)))
 #define R_STR_DUP(x) ((x) ? strdup ((x)) : NULL)
 #define r_str_array(x,y) ((y>=0 && y<(sizeof(x)/sizeof(*x)))?x[y]:"")
 R_API const char *r_str_pad(const char ch, int len);
