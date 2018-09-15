@@ -770,6 +770,15 @@ static void handleLeftKey(RCore *core) {
 				setRefreshAll (panels);
 				menu->root->sub[menu->root->selectedIndex]->cb (core);
 			}
+		} else {
+			menu->depth--;
+			int i;
+			for (i = 1; i < menu->depth; i++) {
+				menu->history[i]->p->refresh = true;
+				menu->refreshPanels[i - 1] = menu->history[i]->p;
+			}
+			menu->n_refresh = menu->depth - 1;
+			setRefreshAll (panels);
 		}
 	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_GRAPH)) {
 		if (panels->panel[panels->curnode].sx > 0) {
