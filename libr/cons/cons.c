@@ -928,7 +928,7 @@ club:
 	va_end (ap3);
 }
 
-R_API int r_cons_printf(const char *restrict format, ...) {
+R_API int r_cons_printf(const char *format, ...) {
 	va_list ap;
 	if (!format || !*format) {
 		return -1;

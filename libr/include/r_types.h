@@ -209,7 +209,7 @@ extern "C" {
 #endif
 #endif
 
-typedef int (*PrintfCallback)(const char *restrict str, ...);
+typedef int (*PrintfCallback)(const char *str, ...);
 
 // TODO NOT USED. DEPREACATE
 #if R_RTDEBUG

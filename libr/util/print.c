@@ -9,10 +9,10 @@
 
 #define IS_ALPHA(C) (((C) >= 'a' && (C) <= 'z') || ((C) >= 'A' && (C) <= 'Z'))
 
-static int nullprinter(const char *restrict a, ...) {
+static int nullprinter(const char *a, ...) {
 	return 0;
 }
-static int libc_printf(const char * restrict format, ...) {
+static int libc_printf(const char *format, ...) {
 	va_list ap;
 	va_start (ap, format);
 	vprintf (format, ap);
