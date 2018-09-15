@@ -2636,7 +2636,7 @@ repeat_arroba:
 			if (ptr[2] == '.') { // "@.."
 				if (ptr[3] == '.') { // "@..."
 					ut64 addr = r_num_tail (core->num, core->offset, ptr + 4);
-					r_core_block_size (core, R_ABS (addr - core->offset));
+					r_core_block_size (core, R_ABS ((st64)addr - (st64)core->offset));
 					goto fuji;
 				} else {
 					addr = r_num_tail (core->num, core->offset, ptr + 3);
