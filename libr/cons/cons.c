@@ -12,6 +12,7 @@
 #endif
 
 #define COUNT_LINES 1
+#define CTX(x) I.context->x
 
 R_LIB_VERSION (r_cons);
 
@@ -688,15 +689,12 @@ R_API void r_cons_context_break(RConsContext *context) {
 	}
 }
 
-#define CTX(x) I.context->x
-
 R_API void r_cons_last(void) {
 	if (!CTX (lastEnabled)) {
 		return;
 	}
 	CTX (lastMode) = true;
 	r_cons_memcat (CTX (lastOutput), CTX (lastLength));
-	//r_cons_print (lastOutput);
 }
 
 static bool lastMatters() {
@@ -724,8 +722,9 @@ R_API void r_cons_flush(void) {
 				CTX (lastLength) = CTX (buffer_len);
 				memcpy (CTX (lastOutput), CTX (buffer), CTX (buffer_len));
 			}
+		} else {
+			CTX (lastMode) = false;
 		}
-		CTX (lastMode) = false;
 	}
 	r_cons_filter ();
 
