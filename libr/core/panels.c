@@ -64,7 +64,7 @@ static const char *menus_Edit[] = {
 static const int editNum = ((int)sizeof (menus_Edit) / (int)sizeof (const char *)) - 1;
 
 static const char *menus_View[] = {
-	"Hexdump", "Disassembly", "Graph", "FcnInfo", "Functions", "Comments", "Entropy", "Colors",
+	"Hexdump", "Disassembly", "Graph", "FcnInfo", "Functions", "Breakpoints", "Comments", "Entropy", "Colors",
 	"Stack", "StackRefs", "Pseudo",
 	NULL
 };
@@ -83,7 +83,7 @@ static const char *menus_Search[] = {
 static const int searchNum = ((int)sizeof (menus_Search) / (int)sizeof (const char *)) - 1;
 
 static const char *menus_Debug[] = {
-	"Registers", "RegisterRefs", "DRX", "Breakpoints",
+	"Registers", "RegisterRefs", "DRX", "Breakpoints", "Watchpoints",
 	"Maps", "Modules", "Backtrace", "Locals", "Continue",
 	"Step", "Step Over", "Reload",
 	NULL
@@ -165,6 +165,8 @@ static int symbolsCb(void *user);
 static int programCb(void *user);
 static int basicblocksCb(void *user);
 static int callsCb(void *user);
+static int breakpointsCb(void *user);
+static int watchpointsCb(void *user);
 static int referencesCb(void *user);
 static int fortuneCb(void *user);
 static int commandsCb(void *user);
@@ -1790,6 +1792,31 @@ static int callsCb(void *user) {
 	return 0;
 }
 
+static int breakpointsCb(void *user) {
+	RCore *core = (RCore *)user;
+	RPanels *panels = core->panels;
+	char buf[128];
+	const char *prompt = "addr: ";
+	panelPrompt (prompt, buf, sizeof (buf));
+	ut64 addr = r_num_math (core->num, buf);
+	r_core_cmdf (core, "dbs 0x%08"PFMT64x, addr);
+	setRefreshAll (panels);
+	return 0;
+}
+
+static int watchpointsCb(void *user) {
+	RCore *core = (RCore *)user;
+	RPanels *panels = core->panels;
+	char addrBuf[128], rw[128];
+	const char *addrPrompt = "addr: ", *rwPrompt = "<r/w/rw>: ";
+	panelPrompt (addrPrompt, addrBuf, sizeof (addrBuf));
+	panelPrompt (rwPrompt, rw, sizeof (rw));
+	ut64 addr = r_num_math (core->num, addrBuf);
+	r_core_cmdf (core, "dbw 0x%08"PFMT64x" %s", addr, rw);
+	setRefreshAll (panels);
+	return 0;
+}
+
 static int referencesCb(void *user) {
 	RCore *core = (RCore *)user;
 	r_core_cmdf (core, "aar");
@@ -2005,7 +2032,11 @@ static bool initPanelsMenu(RPanels *panels) {
 		}
 	}
 	for (i = 0; i < debugNum; i++) {
-		if (!strcmp (menus_Debug[i], "Continue")) {
+		if (!strcmp (menus_Debug[i], "Breakpoints")) {
+			addMenu (root->sub[5], menus_Debug[i], breakpointsCb);
+		} else if (!strcmp (menus_Debug[i], "Watchpoints")) {
+			addMenu (root->sub[5], menus_Debug[i], watchpointsCb);
+		} else if (!strcmp (menus_Debug[i], "Continue")) {
 			addMenu (root->sub[5], menus_Debug[i], continueCb);
 		} else if (!strcmp (menus_Debug[i], "Step")) {
 			addMenu (root->sub[5], menus_Debug[i], stepCb);
