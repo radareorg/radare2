@@ -493,7 +493,7 @@ static int try_walkthrough_jmptbl(RAnal *anal, RAnalFunction *fcn, int depth, ut
 			jmpptr = r_read_le32 (jmptbl + offs);
 			break;
 		case 8:
-			jmpptr = r_read_le32 (jmptbl + offs);
+			jmpptr = r_read_le64 (jmptbl + offs);
 			break; // XXX
 		default:
 			jmpptr = r_read_le64 (jmptbl + offs);
@@ -625,7 +625,7 @@ static bool is_delta_pointer_table (RAnal *anal, RAnalFunction *fcn, ut64 addr, 
 		// eprintf ("JMPTBL ADDR %llx\n", mov_aop.ptr);
 		*jmptbl_addr += mov_aop.ptr;
 	}
-#if 0 
+#if 0
 	// required for the last jmptbl.. but seems to work without it and breaks other tests
 	if (mov_aop.type && mov_aop.ptr) {
 		*jmptbl_addr += mov_aop.ptr;
