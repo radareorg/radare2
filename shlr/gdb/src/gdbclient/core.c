@@ -1186,7 +1186,7 @@ void gdbr_invalidate_reg_cache() {
 	reg_cache.valid = false;
 }
 
-int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, void (*cb_printf) (const char *fmt, ...)) {
+int gdbr_send_qRcmd(libgdbr_t *g, const char *cmd, PrintfCallback cb_printf) {
 	if (!g || !cmd) {
 		return -1;
 	}

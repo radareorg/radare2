@@ -552,7 +552,7 @@ R_API void r_cons_reset_colors() {
 }
 
 R_API void r_cons_clear() {
-	r_cons_strcat (Color_RESET"\x1b[2J");
+	r_cons_strcat (Color_RESET R_CONS_CLEAR_SCREEN);
 	I.lines = 0;
 }
 
@@ -740,7 +740,7 @@ R_API void r_cons_flush(void) {
 				pageable = true;
 				free (str);
 			} else {
-				r_sys_cmd_str_full (I.pager, I.context->buffer, NULL, NULL, NULL);
+				r_sys_cmd_str_full (I.pager, CTX (buffer), NULL, NULL, NULL);
 				r_cons_reset ();
 			}
 		} else if (I.context->buffer_len > CONS_MAX_USER) {
