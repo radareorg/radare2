@@ -1186,8 +1186,8 @@ int main(int argc, char **argv, char **envp) {
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__ && __x86_64__
 						ut64 bitness = r_config_get_i (r.config, "asm.bits");
 						if (bitness == 32) {
-							eprintf ("glibc.fc_offset = 0x00158\n");
-							r_config_set_i (r.config, "dbg.glibc.fc_offset", 0x00158);
+							eprintf ("glibc.fc_offset = 0x00148\n");
+							r_config_set_i (r.config, "dbg.glibc.fc_offset", 0x00148);
 						}
 #endif
 					}
