@@ -1077,10 +1077,9 @@ static bool is_golang(RBinFile *binfile) {
 	RListIter *iter;
 	RBinSection *section;
 	r_list_foreach (section_list, iter, section) {
-		if (section->name &&
-		   (strstr (section->name, "note.go.buildid") ||
+		if (strstr (section->name, "note.go.buildid") ||
 		    strstr (section->name, ".gopclntab") ||
-		    strstr (section->name, ".go_export"))) {
+		    strstr (section->name, ".go_export")) {
 			ret = true;
 			break;
 		}

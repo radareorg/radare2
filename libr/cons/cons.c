@@ -449,6 +449,8 @@ R_API RCons *r_cons_free() {
 	}
 	R_FREE (I.break_word);
 	cons_context_deinit (I.context);
+	R_FREE (I.context->lastOutput);
+	I.context->lastLength = 0;
 	return NULL;
 }
 
@@ -713,29 +715,25 @@ R_API void r_cons_flush(void) {
 		r_cons_reset ();
 		return;
 	}
- 	if (lastMatters ()) {
-		if (!CTX (lastMode)) {
-			// snapshot of the output
+	if (lastMatters () && !CTX (lastMode)) {
+		// snapshot of the output
+		if (CTX (buffer_len) > CTX (lastLength)) {
 			free (CTX (lastOutput));
-			CTX (lastOutput) = calloc (CTX (buffer_len) + 1, 1);
-			if (CTX (lastOutput)) {
-				CTX (lastLength) = CTX (buffer_len);
-				memcpy (CTX (lastOutput), CTX (buffer), CTX (buffer_len));
-			}
-		} else {
-			CTX (lastMode) = false;
+			CTX (lastOutput) = malloc (CTX (buffer_len) + 1);
 		}
+		CTX (lastLength) = CTX (buffer_len);
+		memcpy (CTX (lastOutput), CTX (buffer), CTX (buffer_len));
+	} else {
+		CTX (lastMode) = false;
 	}
 	r_cons_filter ();
 
 	if (I.is_interactive && I.fdout == 1) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
-		if (I.pager && *I.pager && I.context->buffer_len > 0
-				&& r_str_char_count (I.context->buffer, '\n') >= I.rows) {
+		if (I.pager && *I.pager && I.context->buffer_len > 0 && r_str_char_count (I.context->buffer, '\n') >= I.rows) {
 			I.context->buffer[I.context->buffer_len - 1] = 0;
 			r_sys_cmd_str_full (I.pager, I.context->buffer, NULL, NULL, NULL);
 			r_cons_reset ();
-
 		} else if (I.context->buffer_len > CONS_MAX_USER) {
 #if COUNT_LINES
 			int i, lines = 0;
