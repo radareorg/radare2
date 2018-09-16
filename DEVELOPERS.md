@@ -31,6 +31,8 @@ static int findMinMax(RList *maps, ut64 *min, ut64 *max, int skip, int width);
 
 ## Code style
 
+### C
+
 In order to contribute with patches or plugins we encourage you to
 use the same coding style as the rest of the code base.
 
@@ -199,6 +201,14 @@ r_core_wrap.cxx:32103:61: error: assigning to 'RDebugReasonType' from incompatib
 
 * Never ever use %lld or %llx. This is not portable. Always use the PFMT64x
   macros. Those are similar to the ones in GLIB.
+  
+### Shell Scripts
+
+* Use `#!/bin/sh`
+
+* Do not use bashisms `[[`, `$'...'` etc.
+
+* Use our [shellcheck.sh](https://github.com/radare/radare2/blob/master/sys/shellcheck.sh) script to check for problems and for bashisms
 
 # Manage Endianness
 
@@ -458,6 +468,6 @@ I can get patches in unidiff format like this:
    - `make`
    - `make dist`
 
-  - Update the i[paths on the website](https://github.com/radareorg/radareorg/blob/master/source/download_paths.rst)
+  - Update the [paths on the website](https://github.com/radareorg/radareorg/blob/master/source/download_paths.rst)
 
 --pancake
