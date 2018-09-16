@@ -702,7 +702,7 @@ R_API void extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_s
 				!strcmp (opdreg, regname);
 			if ((op->src[0] && opsreg && !strcmp (opsreg, regname)) || cond) {
 				const char *vname = NULL;
-				const char *type = NULL;
+				char *type = NULL;
 				char *name = NULL;
 				int delta = 0;
 				RRegItem *ri = r_reg_get (anal->reg, regname, -1);
@@ -717,8 +717,8 @@ R_API void extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_s
 					name = r_str_newf ("%s%d", "arg", i + 1);
 					vname = name;
 				}
-				r_anal_var_add (anal, fcn->addr, 1, delta, R_ANAL_VAR_KIND_REG, type, anal->bits / 8,
-						1, vname);
+				r_anal_var_add (anal, fcn->addr, 1, delta, R_ANAL_VAR_KIND_REG,
+						type ? type : "int", anal->bits / 8, 1, vname);
 				if (op->var && op->var->kind != R_ANAL_VAR_KIND_REG) {
 					r_anal_var_link (anal, op->addr, op->var);
 				}
