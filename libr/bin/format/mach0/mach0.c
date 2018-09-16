@@ -100,13 +100,13 @@ static int init_hdr(struct MACH0_(obj_t)* bin) {
 		bin->big_endian = false;
 	} else if (r_read_be32 (magicbytes) == 0xfeedface) {
 		bin->big_endian = true;
-	} else if (r_read_le32(magicbytes) == FAT_MAGIC) {
+	} else if (r_read_le32 (magicbytes) == FAT_MAGIC) {
 		bin->big_endian = false;
-	} else if (r_read_be32(magicbytes) == FAT_MAGIC) {
+	} else if (r_read_be32 (magicbytes) == FAT_MAGIC) {
 		bin->big_endian = true;
-	} else if (r_read_le32(magicbytes) == 0xfeedfacf) {
+	} else if (r_read_le32 (magicbytes) == 0xfeedfacf) {
 		bin->big_endian = false;
-	} else if (r_read_be32(magicbytes) == 0xfeedfacf) {
+	} else if (r_read_be32 (magicbytes) == 0xfeedfacf) {
 		bin->big_endian = true;
 	} else {
 		return false; // object files are magic == 0, but body is different :?
@@ -610,21 +610,45 @@ static void parseCodeDirectory (RBuffer *b, int offset, int datasize) {
 	
 	int hashSize = 20; // SHA1 is default
 	int algoType = R_HASH_SHA1;
+	const char *hashName = "sha1";
 	switch (cscd.hashType) {
 	case 0: // SHA1 == 20 bytes
 	case 1: // SHA1 == 20 bytes
 		hashSize = 20;
+		hashName = "sha1";
 		algoType = R_HASH_SHA1;
 		break;
 	case 2: // SHA256 == 32 bytes
 		hashSize = 32;
 		algoType = R_HASH_SHA256;
+		hashName = "sha256";
 		break;
 	}
+	// computed cdhash
+	RHash *ctx = r_hash_new (true, algoType);
+	int fofsz = cscd.length;
+	ut8 *fofbuf = malloc (fofsz);
+	if (fofbuf) {
+		int i;
+		r_buf_read_at (b, off, fofbuf, fofsz);
+		r_hash_do_begin (ctx, algoType);
+		if (algoType == R_HASH_SHA1) {
+			r_hash_do_sha1 (ctx, fofbuf, fofsz);
+		} else {
+			r_hash_do_sha256 (ctx, fofbuf, fofsz);
+		}
+		r_hash_do_end (ctx, algoType);
+		eprintf ("ph %s @ 0x%"PFMT64x"!%d\n", hashName, off, fofsz);
+		eprintf ("ComputedCDHash: ");
+		for (i = 0; i < hashSize;i++) {
+			eprintf ("%02x", ctx->digest[i]);
+		}
+		eprintf ("\n");
+	}
+	// show and check the rest of hashes
 	ut8 *hash = p + cscd.hashOffset;
 	int j = 0;
 	int k = 0;
-	RHash *ctx = r_hash_new (true, algoType);
 	for (j = 0; j < cscd.nCodeSlots; j++) {
 		int fof = 4096 * j;
 		int idx = j * hashSize;
