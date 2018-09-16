@@ -203,7 +203,9 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							strcpy (newstr+k, w);
 							k += strlen(w)-1;
 						}
-					} else newstr[k] = ops[i].str[j];
+					} else {
+						newstr[k] = ops[i].str[j];
+					}
 				}
 				newstr[k]='\0';
 			}
@@ -240,8 +242,9 @@ static int parse(RParse *p, const char *data, char *str) {
 	}
 
 	// malloc can be slow here :?
-	if (!(buf = malloc (len+1)))
+	if (!(buf = malloc (len + 1))) {
 		return false;
+	}
 	memcpy (buf, data, len+1);
 
 	r_str_trim (buf);
@@ -253,11 +256,14 @@ static int parse(RParse *p, const char *data, char *str) {
 		w3[0]='\0';
 		w4[0]='\0';
 		ptr = strchr (buf, ' ');
-		if (!ptr)
+		if (!ptr) {
 			ptr = strchr (buf, '\t');
+		}
 		if (ptr) {
 			*ptr = '\0';
-			for (++ptr; *ptr==' '; ptr++);
+			for (++ptr; *ptr == ' '; ptr++) {
+				;
+			}
 			strncpy (w0, buf, sizeof (w0) - 1);
 			w0[sizeof(w0)-1] = '\0';
 			strncpy (w1, ptr, sizeof (w1) - 1);
@@ -265,11 +271,15 @@ static int parse(RParse *p, const char *data, char *str) {
 
 			optr=ptr;
 			ptr2 = strchr (ptr, '}');
-			if (ptr2) ptr = ptr2+1;
+			if (ptr2) {
+				ptr = ptr2 + 1;
+			}
 			ptr = strchr (ptr, ',');
 			if (ptr) {
 				*ptr = '\0';
-				for (++ptr; *ptr==' '; ptr++);
+				for (++ptr; *ptr == ' '; ptr++) {
+					;
+				}
 				strncpy (w1, optr, sizeof (w1) - 1);
 				w1[sizeof(w1)-1] = '\0';
 				strncpy (w2, ptr, sizeof (w2) - 1);
@@ -278,7 +288,9 @@ static int parse(RParse *p, const char *data, char *str) {
 				ptr = strchr (ptr, ',');
 				if (ptr) {
 					*ptr = '\0';
-					for (++ptr; *ptr==' '; ptr++);
+					for (++ptr; *ptr == ' '; ptr++) {
+						;
+					}
 					strncpy (w2, optr, sizeof (w2) - 1);
 					w2[sizeof(w2)-1] = '\0';
 					strncpy (w3, ptr, sizeof (w3) - 1);
@@ -288,7 +300,9 @@ static int parse(RParse *p, const char *data, char *str) {
 					ptr = strchr (ptr, ',');
 					if (ptr) {
 						*ptr = '\0';
-						for (++ptr; *ptr==' '; ptr++);
+						for (++ptr; *ptr == ' '; ptr++) {
+							;
+						}
 						strncpy (w3, optr, sizeof (w3) - 1);
 						w3[sizeof(w3)-1] = '\0';
 						strncpy (w4, ptr, sizeof (w4) - 1);
@@ -301,8 +315,9 @@ static int parse(RParse *p, const char *data, char *str) {
 			const char *wa[] = { w0, w1, w2, w3, w4 };
 			int nw = 0;
 			for (i=0; i<4; i++) {
-				if (wa[i][0] != '\0')
-				nw++;
+				if (wa[i][0] != '\0') {
+					nw++;
+				}
 			}
 			replace (nw, wa, str);
 {
@@ -346,7 +361,7 @@ RParsePlugin r_parse_plugin_dalvik_pseudo = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_PARSE,
 	.data = &r_parse_plugin_dalvik_pseudo,
 	.version = R2_VERSION

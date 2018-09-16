@@ -122,9 +122,13 @@ static int can_replace(const char *str, int idx, int max_operands) {
 static const char* getspr(const char *reg) {
 	static char cspr[16];
 	ut32 spr = 0;
-	if (!reg) return NULL;
+	if (!reg) {
+		return NULL;
+	}
 	spr = strtol(reg, NULL, 16);
-	if(spr > 9999) return NULL; //just to avoid overflows..
+	if (spr > 9999) {
+		return NULL; //just to avoid overflows..
+	}
 
 	switch (spr) {
 		case SPR_MQ:
@@ -1745,7 +1749,7 @@ RParsePlugin r_parse_plugin_ppc_pseudo = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_PARSE,
 	.data = &r_parse_plugin_ppc_pseudo,
 	.version = R2_VERSION

@@ -46,10 +46,10 @@ typedef struct r_print_t {
 	char datefmt[32];
 	int datezone;
 	int (*write)(const unsigned char *buf, int len);
-	void (*cb_printf)(const char *str, ...);
+	PrintfCallback cb_printf;
 	char *(*cb_color)(int idx, int last, bool bg);
 	int (*disasm)(void *p, ut64 addr);
-	void (*oprintf)(const char *str, ...);
+	PrintfCallback oprintf;
 	int interrupt;
 	int big_endian;
 	int width;

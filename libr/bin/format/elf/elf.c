@@ -44,6 +44,7 @@ enum {
 	X86_64,
 	ARM,
 	AARCH64,
+	RCE,
 	ARCH_LEN
 };
 
@@ -56,6 +57,7 @@ static reginfo_t reginf[ARCH_LEN] = {
 					{160, 0x5c},
 					{216, 0x84},
 					{72, 0x5c},
+					{272, 0x84},
 					{272, 0x84}
 				};
 
@@ -352,9 +354,10 @@ static int init_strtab(ELFOBJ *bin) {
 	}
 	if (bin->ehdr.e_shstrndx != SHN_UNDEF &&
 		(bin->ehdr.e_shstrndx >= bin->ehdr.e_shnum ||
-		(bin->ehdr.e_shstrndx >= SHN_LORESERVE &&
-		bin->ehdr.e_shstrndx < SHN_HIRESERVE)))
+			(bin->ehdr.e_shstrndx >= SHN_LORESERVE &&
+				bin->ehdr.e_shstrndx < SHN_HIRESERVE))) {
 		return false;
+	}
 
 	/* sh_size must be lower than UT32_MAX and not equal to zero, to avoid bugs on malloc() */
 	if (bin->shdr[bin->ehdr.e_shstrndx].sh_size > UT32_MAX) {
@@ -1168,8 +1171,9 @@ static int elf_init(ELFOBJ *bin) {
 			bprintf ("Warning: Cannot initialize dynamic strings\n");
 		}
 		bin->baddr = Elf_(r_bin_elf_get_baddr) (bin);
-		if (!init_dynamic_section (bin) && !Elf_(r_bin_elf_get_static)(bin))
+		if (!init_dynamic_section (bin) && !Elf_ (r_bin_elf_get_static) (bin)) {
 			bprintf ("Warning: Cannot initialize dynamic section\n");
+		}
 	}
 
 	bin->imports_by_ord_size = 0;
@@ -1185,7 +1189,9 @@ static int elf_init(ELFOBJ *bin) {
 
 ut64 Elf_(r_bin_elf_get_section_offset)(ELFOBJ *bin, const char *section_name) {
 	RBinElfSection *section = get_section_by_name (bin, section_name);
-	if (!section) return UT64_MAX;
+	if (!section) {
+		return UT64_MAX;
+	}
 	return section->offset;
 }
 
@@ -1828,7 +1834,9 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 	/* find sym.main if possible */
 	{
 		ut64 m = getmainsymbol (bin);
-		if (m != UT64_MAX) return m;
+		if (m != UT64_MAX) {
+			return m;
+		}
 	}
 	return UT64_MAX;
 }
@@ -1920,6 +1928,8 @@ char* Elf_(r_bin_elf_get_arch)(ELFOBJ *bin) {
 		return strdup ("elbrus");
 	case EM_TRICORE:
 		return strdup ("tricore");
+	case EM_RCE:
+		return strdup ("mcore");
 	case EM_ARM:
 	case EM_AARCH64:
 		return strdup ("arm");
@@ -2200,9 +2210,15 @@ char* Elf_(r_bin_elf_get_osabi_name)(ELFOBJ *bin) {
 		}
 	}
 	/* Hack to identify OS */
-	if (needle (bin, "freebsd")) return strdup ("freebsd");
-	if (noodle (bin, "BEOS:APP_VERSION")) return strdup ("beos");
-	if (needle (bin, "GNU")) return strdup ("linux");
+	if (needle (bin, "freebsd")) {
+		return strdup ("freebsd");
+	}
+	if (noodle (bin, "BEOS:APP_VERSION")) {
+		return strdup ("beos");
+	}
+	if (needle (bin, "GNU")) {
+		return strdup ("linux");
+	}
 	return strdup ("linux");
 }
 
@@ -2466,7 +2482,7 @@ RBinElfLib* Elf_(r_bin_elf_get_libs)(ELFOBJ *bin) {
 	if (!bin || !bin->phdr || !bin->dyn_buf || !bin->strtab || *(bin->strtab+1) == '0') {
 		return NULL;
 	}
-	for (j = 0, k = 0; j < bin->dyn_entries; j++)
+	for (j = 0, k = 0; j < bin->dyn_entries; j++) {
 		if (bin->dyn_buf[j].d_tag == DT_NEEDED) {
 			RBinElfLib *r = realloc (ret, (k + 1) * sizeof (RBinElfLib));
 			if (!r) {
@@ -2486,6 +2502,7 @@ RBinElfLib* Elf_(r_bin_elf_get_libs)(ELFOBJ *bin) {
 				k++;
 			}
 		}
+	}
 	RBinElfLib *r = realloc (ret, (k + 1) * sizeof (RBinElfLib));
 	if (!r) {
 		perror ("realloc (libs)");
@@ -3079,8 +3096,9 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 					continue;
 				}
 				if (bin->ehdr.e_type == ET_REL) {
-					if (sym[k].st_shndx < bin->ehdr.e_shnum)
+					if (sym[k].st_shndx < bin->ehdr.e_shnum) {
 						ret[ret_ctr].offset = sym[k].st_value + bin->shdr[sym[k].st_shndx].sh_offset;
+					}
 				} else {
 					ret[ret_ctr].offset = Elf_(r_bin_elf_v2p) (bin, toffset);
 				}
@@ -3279,7 +3297,9 @@ static int is_in_vphdr (Elf_(Phdr) *p, ut64 addr) {
 ut64 Elf_(r_bin_elf_p2v) (ELFOBJ *bin, ut64 paddr) {
 	int i;
 
-	if (!bin) return 0;
+	if (!bin) {
+		return 0;
+	}
 
 	if (!bin->phdr) {
 		if (bin->ehdr.e_type == ET_REL) {

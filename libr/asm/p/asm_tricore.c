@@ -53,7 +53,9 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	flen = strlen (format);
 	glen = strlen (buf_global);
 	tmp = malloc (flen + glen + 2);
-	if (!tmp) return 0;
+	if (!tmp) {
+		return 0;
+	}
 
 	if (strchr (buf_global, '%')) {
 		char *buf_local = strdup (buf_global);
@@ -130,7 +132,7 @@ RAsmPlugin r_asm_plugin_tricore = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_tricore,
 	.version = R2_VERSION

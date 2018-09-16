@@ -105,8 +105,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	}
 
 	mode = CS_MODE_LITTLE_ENDIAN;
-	if (!strcmp (a->cpu, "v9"))
+	if (!strcmp (a->cpu, "v9")) {
 		mode |= CS_MODE_V9;
+	}
 	if (mode != omode) {
 		cs_close (&handle);
 		handle = 0;
@@ -211,17 +212,21 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			switch (INSOP(0).type) {
 			case SPARC_OP_REG:
 				op->type = R_ANAL_OP_TYPE_CJMP;
-				if (INSCC != SPARC_CC_ICC_N) // never
-					op->jump = INSOP(1).imm;
-				if (INSCC != SPARC_CC_ICC_A) // always
-					op->fail = addr+4;
+				if (INSCC != SPARC_CC_ICC_N) { // never
+					op->jump = INSOP (1).imm;
+				}
+				if (INSCC != SPARC_CC_ICC_A) { // always
+					op->fail = addr + 4;
+				}
 				break;
 			case SPARC_OP_IMM:
 				op->type = R_ANAL_OP_TYPE_CJMP;
-				if (INSCC != SPARC_CC_ICC_N) // never
-					op->jump = INSOP(0).imm;
-				if (INSCC != SPARC_CC_ICC_A) // always
-					op->fail = addr+4;
+				if (INSCC != SPARC_CC_ICC_N) { // never
+					op->jump = INSOP (0).imm;
+				}
+				if (INSCC != SPARC_CC_ICC_A) { // always
+					op->fail = addr + 4;
+				}
 				break;
 			default:
 				// MEM?
@@ -380,7 +385,7 @@ RAnalPlugin r_anal_plugin_sparc_cs = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_sparc_cs,
 	.version = R2_VERSION

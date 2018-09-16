@@ -354,7 +354,9 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		{
 			st32 val = 0;
 			size_t n = read_i32_leb128 (buf + 1, buf + buf_len, &val);
-			if (!(n > 0 && n < buf_len)) goto err;
+			if (!(n > 0 && n < buf_len)) {
+				goto err;
+			}
 			switch (0x80 - val) {
 			case R_BIN_WASM_VALUETYPE_EMPTY:
 				snprintf (op->txt, R_ASM_BUFSIZE, "%s", opdef->txt);
@@ -384,7 +386,9 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		{
 			ut32 val = 0;
 			size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &val);
-			if (!(n > 0 && n < buf_len)) goto err;
+			if (!(n > 0 && n < buf_len)) {
+				goto err;
+			}
 			snprintf (op->txt, R_ASM_BUFSIZE, "%s %d", opdef->txt, val);
 			op->len += n;
 		}
@@ -439,10 +443,14 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		{
 			ut32 val = 0, reserved = 0;
 			size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &val);
-			if (!(n > 0 && n < buf_len)) goto err;
+			if (!(n > 0 && n < buf_len)) {
+				goto err;
+			}
 			op->len += n;
 			n = read_u32_leb128 (buf + op->len, buf + buf_len, &reserved);
-			if (!(n == 1 && op->len + n <= buf_len)) goto err;
+			if (!(n == 1 && op->len + n <= buf_len)) {
+				goto err;
+			}
 			reserved &= 0x1;
 			snprintf (op->txt, R_ASM_BUFSIZE, "%s %d %d", opdef->txt, val, reserved);
 			op->len += n;
@@ -456,7 +464,9 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		{
 			ut32 val = 0;
 			size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &val);
-			if (!(n > 0 && n < buf_len)) goto err;
+			if (!(n > 0 && n < buf_len)) {
+				goto err;
+			}
 			snprintf (op->txt, R_ASM_BUFSIZE, "%s %d", opdef->txt, val);
 			op->len += n;
 		}
@@ -487,10 +497,14 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		{
 			ut32 flag = 0, offset = 0;
 			size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &flag);
-			if (!(n > 0 && n < buf_len)) goto err;
+			if (!(n > 0 && n < buf_len)) {
+				goto err;
+			}
 			op->len += n;
 			n = read_u32_leb128 (buf + op->len, buf + buf_len, &offset);
-			if (!(n > 0 && op->len + n <= buf_len)) goto err;
+			if (!(n > 0 && op->len + n <= buf_len)) {
+				goto err;
+			}
 			snprintf (op->txt, R_ASM_BUFSIZE, "%s %d %d", opdef->txt, flag, offset);
 			op->len += n;
 		}
@@ -500,7 +514,9 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		{
 			ut32 reserved = 0;
 			size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &reserved);
-			if (!(n == 1 && n < buf_len)) goto err;
+			if (!(n == 1 && n < buf_len)) {
+				goto err;
+			}
 			reserved &= 0x1;
 			snprintf (op->txt, R_ASM_BUFSIZE, "%s %d", opdef->txt, reserved);
 			op->len += n;
@@ -511,7 +527,9 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		{
 			st32 val = 0;
 			size_t n = read_i32_leb128 (buf + 1, buf + buf_len, &val);
-			if (!(n > 0 && n < buf_len)) goto err;
+			if (!(n > 0 && n < buf_len)) {
+				goto err;
+			}
 			snprintf (op->txt, R_ASM_BUFSIZE, "%s %" PFMT32d, opdef->txt, val);
 			op->len += n;
 		}
@@ -520,7 +538,9 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		{
 			st64 val = 0;
 			size_t n = read_i64_leb128 (buf + 1, buf + buf_len, &val);
-			if (!(n > 0 && n < buf_len)) goto err;
+			if (!(n > 0 && n < buf_len)) {
+				goto err;
+			}
 			snprintf (op->txt, R_ASM_BUFSIZE, "%s %" PFMT64d, opdef->txt, val);
 			op->len += n;
 		}
@@ -529,7 +549,9 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		{
 			ut32 val = 0;
 			size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &val);
-			if (!(n > 0 && n < buf_len)) goto err;
+			if (!(n > 0 && n < buf_len)) {
+				goto err;
+			}
 			long double d =  (long double)val;
 			snprintf (op->txt, R_ASM_BUFSIZE, "%s %" LDBLFMT, opdef->txt, d);
 			op->len += n;
@@ -539,7 +561,9 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 		{
 			ut64 val = 0;
 			size_t n = read_u64_leb128 (buf + 1, buf + buf_len, &val);
-			if (!(n > 0 && n < buf_len)) goto err;
+			if (!(n > 0 && n < buf_len)) {
+				goto err;
+			}
 			long double d =  (long double)val;
 			snprintf (op->txt, R_ASM_BUFSIZE, "%s %" LDBLFMT, opdef->txt, d);
 			op->len += n;

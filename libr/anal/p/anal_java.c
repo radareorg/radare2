@@ -47,7 +47,7 @@ typedef struct r_anal_ex_java_lin_sweep {
 ut64 METHOD_START = 0;
 
 // XXX - TODO add code in the java_op that is aware of when it is in a
-// switch statement, like in the shlr/java/code.c so that this does not 
+// switch statement, like in the shlr/java/code.c so that this does not
 // report bad blocks.  currently is should be easy to ignore these blocks,
 // in output for the pdj
 
@@ -147,8 +147,9 @@ static int java_recursive_descent(RAnal *anal, RAnalState *state, ut64 addr) {
 	RAnalBlock *bb;
 	RAnalBlock *current_head;
 
-	if (!anal || !state || !state->current_bb || state->current_bb_head)
+	if (!anal || !state || !state->current_bb || state->current_bb_head) {
 		return 0;
+	}
 
 	bb = state->current_bb;
 	current_head = state->current_bb_head;
@@ -171,7 +172,9 @@ static int java_recursive_descent(RAnal *anal, RAnalState *state, ut64 addr) {
 	// if (bb->type2 & R_ANAL_EX_OBJ_OP)   handle_bb_obj_op (anal, state);
 	// if (bb->type2 & R_ANAL_EX_STACK_OP) handle_bb_stack_op (anal, state);
 	// if (bb->type2 & R_ANAL_EX_BIN_OP)   handle_bb_bin_op (anal, state);
-	if (bb->type2 & R_ANAL_EX_CODE_OP)  handle_bb_cf_recursive_descent (anal, state);
+	if (bb->type2 & R_ANAL_EX_CODE_OP) {
+		handle_bb_cf_recursive_descent (anal, state);
+	}
 	// if (bb->type2 & R_ANAL_EX_DATA_OP)  handle_bb_data_op (anal, state);
 	return 0;
 }
@@ -196,7 +199,9 @@ static int java_linear_sweep(RAnal *anal, RAnalState *state, ut64 addr) {
 	// if (bb->type2 & R_ANAL_EX_OBJ_OP)   handle_bb_obj_op (anal, state);
 	// if (bb->type2 & R_ANAL_EX_STACK_OP) handle_bb_stack_op (anal, state);
 	// if (bb->type2 & R_ANAL_EX_BIN_OP)   handle_bb_bin_op (anal, state);
-	if (bb->type2 & R_ANAL_EX_CODE_OP)  handle_bb_cf_linear_sweep (anal, state);
+	if (bb->type2 & R_ANAL_EX_CODE_OP) {
+		handle_bb_cf_linear_sweep (anal, state);
+	}
 	// if (bb->type2 & R_ANAL_EX_DATA_OP)  handle_bb_data_op (anal, state);
 	return 0;
 }
@@ -234,14 +239,17 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 				// visited some other time
 				if (!r_anal_state_search_bb (state, bb->jump)) {
 					jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->jump );
-					if (jmp_list)
-						bb->jumpbb = (RAnalBlock *) r_list_get_n (jmp_list, 0);
-					if (bb->jumpbb)
+					if (jmp_list) {
+						bb->jumpbb = (RAnalBlock *)r_list_get_n (jmp_list, 0);
+					}
+					if (bb->jumpbb) {
 						bb->jump = bb->jumpbb->addr;
+					}
 				} else {
 					bb->jumpbb = r_anal_state_search_bb (state, bb->jump);
-					if (bb->jumpbb)
+					if (bb->jumpbb) {
 						bb->jump = bb->jumpbb->addr;
+					}
 				}
 
 				if (state->done == 1) {
@@ -259,8 +267,9 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 				// visited some other time
 				if (!r_anal_state_search_bb (state, bb->jump)) {
 					jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->jump );
-					if (jmp_list)
-						bb->jumpbb = (RAnalBlock *) r_list_get_n (jmp_list, 0);
+					if (jmp_list) {
+						bb->jumpbb = (RAnalBlock *)r_list_get_n (jmp_list, 0);
+					}
 					if (bb->jumpbb) {
 						bb->jump = bb->jumpbb->addr;
 					}
@@ -277,8 +286,9 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 
 				if (!r_anal_state_search_bb (state, bb->fail)) {
 					jmp_list = r_anal_ex_perform_analysis ( anal, state, bb->fail );
-					if (jmp_list)
-						bb->failbb = (RAnalBlock *) r_list_get_n (jmp_list, 0);
+					if (jmp_list) {
+						bb->failbb = (RAnalBlock *)r_list_get_n (jmp_list, 0);
+					}
 					if (bb->failbb) {
 						bb->fail = bb->failbb->addr;
 					}
@@ -297,7 +307,9 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 				}
 
 				result = R_ANAL_RET_END;
-				if (encountered_stop) state->done = 1;
+				if (encountered_stop) {
+					state->done = 1;
+				}
 			}
 			break;
 
@@ -313,8 +325,9 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 					if (caseop) {
 						if (r_anal_state_addr_is_valid (state, caseop->jump) ) {
 							jmp_list = r_anal_ex_perform_analysis ( anal, state, caseop->jump );
-							if (jmp_list)
-								caseop->jumpbb = (RAnalBlock *) r_list_get_n (jmp_list, 0);
+							if (jmp_list) {
+								caseop->jumpbb = (RAnalBlock *)r_list_get_n (jmp_list, 0);
+							}
 							if (state->done == 1) {
 								IFDBG eprintf (" Looks like this jmp (bb @ 0x%04"PFMT64x") found a return.\n", addr);
 								state->done = 0;
@@ -324,7 +337,9 @@ static int handle_bb_cf_recursive_descent (RAnal *anal, RAnalState *state) {
 					}
 				}
 				r_list_free (jmp_list);
-				if (encountered_stop) state->done = 1;
+				if (encountered_stop) {
+					state->done = 1;
+				}
 			}
 
 			result = R_ANAL_RET_END;
@@ -563,9 +578,16 @@ static int analyze_method(RAnal *anal, RAnalFunction *fcn, RAnalState *state) {
 	java_new_method (fcn->addr);
 	state->current_fcn = fcn;
 	// Not a resource leak.  Basic blocks should be stored in the state->fcn
-	// TODO: ? RList *bbs = 
+	// TODO: ? RList *bbs =
 	r_anal_ex_perform_analysis (anal, state, fcn->addr);
 	return state->anal_ret_val;
+}
+
+static int functionCmp(const void *a, const void *b) {
+	const RAnalFunction *fa = (const RAnalFunction *)a;
+	const RAnalFunction *fb = (const RAnalFunction *)b;
+
+	return strcmp (fa->name, fb->name);
 }
 
 static int java_analyze_fns_from_buffer( RAnal *anal, ut64 start, ut64 end, int reftype, int depth) {
@@ -580,7 +602,9 @@ static int java_analyze_fns_from_buffer( RAnal *anal, ut64 start, ut64 end, int 
 		//analyze_all = 1;
 		buf_len = anal->iob.desc_size (anal->iob.io->desc);
 
-		if (buf_len == UT64_MAX) buf_len = 1024;
+		if (buf_len == UT64_MAX) {
+			buf_len = 1024;
+		}
 
 		end = start + buf_len;
 	}
@@ -607,7 +631,9 @@ static int java_analyze_fns_from_buffer( RAnal *anal, ut64 start, ut64 end, int 
 		r_anal_fcn_tree_insert (&anal->fcn_tree, fcn);
 		r_list_append (anal->fcns, fcn);
 		offset += r_anal_fcn_size (fcn);
-		if (!analyze_all) break;
+		if (!analyze_all) {
+			break;
+		}
 	}
 	free (buffer);
 	return result;
@@ -619,6 +645,7 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 	RBinJavaField *method = NULL;
 	RListIter *methods_iter, *bin_obs_iter;
 	RList * bin_objs_list = get_java_bin_obj_list (anal);
+	RList * anal_fcns = NULL;
 
 	ut8 analyze_all = 0;
 	//RAnalRef *ref = NULL;
@@ -658,6 +685,9 @@ static int java_analyze_fns( RAnal *anal, ut64 start, ut64 end, int reftype, int
 			}
 		} // End of methods loop
 	}// end of bin_objs list loop
+	anal_fcns = r_list_clone (anal->fcns);
+	anal->fcns = r_list_uniq (anal_fcns, functionCmp);
+	r_list_free (anal_fcns);
 	return result;
 }
 
@@ -736,7 +766,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 		java_switch_op (anal, op, addr, data, len);
 		// IN_SWITCH_OP = 1;
 	}
-	/* TODO: 
+	/* TODO:
 	// not sure how to handle the states for IN_SWITCH_OP, SWITCH_OP_CASES,
 	// and NUM_CASES_SEEN, because these are dependent on whether or not we
 	// are in a switch, and given the non-reentrant state of opcode analysis
@@ -789,7 +819,7 @@ static int java_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len
 static RAnalOp * java_op_from_buffer(RAnal *anal, RAnalState *state, ut64 addr) {
 
 	RAnalOp *op = r_anal_op_new ();
-	//  get opcode size 
+	//  get opcode size
 	if (!op) return 0;
 	memset (op, '\0', sizeof (RAnalOp));
 	java_op (anal, op, addr, state->buffer, state->len - (addr - state->start) );
@@ -856,7 +886,9 @@ static void java_update_anal_types (RAnal *anal, RBinJavaObj *bin_obj) {
 		if (the_list) {
 			r_list_foreach (the_list, iter, str) {
 				IFDBG eprintf ("Adding type: %s to known types.\n", str);
-				if (str) sdb_set (D, str, "type", 0);
+				if (str) {
+					sdb_set (D, str, "type", 0);
+				}
 			}
 		}
 		r_list_free (the_list);
@@ -933,7 +965,7 @@ RAnalPlugin r_anal_plugin_java_ls = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	//.data = &r_anal_plugin_java
 	.data = &r_anal_plugin_java_ls,

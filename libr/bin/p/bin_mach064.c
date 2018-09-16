@@ -6,10 +6,12 @@
 #include "objc/mach064_classes.h"
 
 static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (buf && length > 4)
+	if (buf && length > 4) {
 		if (!memcmp (buf, "\xfe\xed\xfa\xcf", 4) ||
-			!memcmp (buf, "\xcf\xfa\xed\xfe", 4))
+			!memcmp (buf, "\xcf\xfa\xed\xfe", 4)) {
 			return true;
+		}
+	}
 	return false;
 }
 
@@ -263,8 +265,9 @@ static RBinAddr* binsym(RBinFile *bf, int sym) {
 	switch (sym) {
 	case R_BIN_SYM_MAIN:
 		addr = MACH0_(get_main) (bf->o->bin_obj);
-		if (!addr || !(ret = R_NEW0 (RBinAddr)))
+		if (!addr || !(ret = R_NEW0 (RBinAddr))) {
 			return NULL;
+		}
 		ret->paddr = ret->vaddr = addr;
 		break;
 	}
@@ -299,7 +302,7 @@ RBinPlugin r_bin_plugin_mach064 = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_mach064,
 	.version = R2_VERSION

@@ -38,20 +38,23 @@ int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 
 	if (match(str, "B ")) {
 		op->type = R_ANAL_OP_TYPE_JMP;
-		if (match(str, "B AC"))
+		if (match (str, "B AC")) {
 			op->type = R_ANAL_OP_TYPE_UJMP;
+		}
 	} else if (match(str, "BCC ") || match(str, "BCCU ")) {
 		op->type = R_ANAL_OP_TYPE_CJMP;
 	} else if (match(str, "CALL ")) {
 		op->type = R_ANAL_OP_TYPE_CALL;
-		if (match(str, "CALL AC"))
+		if (match (str, "CALL AC")) {
 			op->type = R_ANAL_OP_TYPE_UCALL;
+		}
 	} else if (match(str, "CALLCC ")) {
 		op->type = R_ANAL_OP_TYPE_CCALL;
 	} else if (match(str, "RET")) {
 		op->type = R_ANAL_OP_TYPE_RET;
-		if (match(str, "RETCC"))
+		if (match (str, "RETCC")) {
 			op->type = R_ANAL_OP_TYPE_CRET;
+		}
 	} else if (match(str, "MOV ")) {
 		op->type = R_ANAL_OP_TYPE_MOV;
 	} else if (match(str, "PSHBOTH ")) {
@@ -117,7 +120,7 @@ RAnalPlugin r_anal_plugin_tms320 = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_tms320,
 	.version = R2_VERSION

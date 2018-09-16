@@ -304,6 +304,14 @@ static bool GH(r_resolve_symbol)(RCore *core, GHT *symbol, const char *symname) 
 		eprintf ("Warning: Can't find glibc mapped in memory (see dm)\n");
 		return false;
 	}
+
+	const char *debug_file = r_config_get (core->config, "dbg.libc.dbglib");
+
+	if (r_file_exists (debug_file)) {
+		path = strdup (debug_file);
+		goto found;
+	}
+
 	is_debug_file[0] = str_start_with (libc_ver_end, "/usr/lib/");
 	is_debug_file[1] = str_start_with (libc_ver_end, "/usr/lib32/");
 	is_debug_file[2] = str_start_with (libc_ver_end, "/usr/lib64/");
@@ -650,22 +658,45 @@ static void GH(print_heap_bin)(RCore *core, GHT m_arena, MallocState *main_arena
 
 static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena, GHT m_arena, GHT offset, GHT bin_num) {
 	if (!core || !core->dbg || !core->dbg->maps) {
-                return -1;
+		return -1;
 	}
 	GHT next = GHT_MAX, brk_start = GHT_MAX, brk_end = GHT_MAX;
+
+	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
+	if (!cnk) {
+		return 0;
+	}
+
+	const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
+	if (tcache) {
+		GH(RHeap_MallocState_tcache) *t_arena = R_NEW0 (GH(RHeap_MallocState_tcache));
+		if (!t_arena) {
+			free (cnk);
+			return 0;
+		}
+		r_io_read_at (core->io, m_arena, (ut8 *)t_arena, sizeof (GH(RHeap_MallocState_tcache)));
+		GH(update_arena_with_tc)(t_arena, main_arena);
+		free (t_arena);
+	} else {
+		GH(RHeap_MallocState) *t_arena = R_NEW0 (GH(RHeap_MallocState));
+		if (!t_arena) {
+			free (cnk);
+			return 0;
+		}
+		r_io_read_at (core->io, m_arena, (ut8 *)t_arena, sizeof (GH(RHeap_MallocState)));
+		GH(update_arena_without_tc)(t_arena, main_arena);
+		free (t_arena);
+	}
+
 	GHT bin = main_arena->GH(fastbinsY)[bin_num];
 	if (!bin) {
 		return -1;
 	}
-	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
 
-	if (!cnk) {
-		return 0;
-	}
 	bin = m_arena + offset + SZ * bin_num;
 	r_io_read_at (core->io, bin, (ut8 *)&next, SZ);
 
-        GH(get_brks)(core, &brk_start, &brk_end);
+	GH(get_brks)(core, &brk_start, &brk_end);
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX) {
 		eprintf ("No Heap section\n");
 		free (cnk);
@@ -735,6 +766,9 @@ void GH(print_heap_fastbin)(RCore *core, GHT m_arena, MallocState *main_arena, G
 
 	switch (input[0]) {
 	case '\0': // dmhf
+		if (core->offset != core->prompt_offset) {
+			m_arena = core->offset;
+		}
 		PRINT_YA ("fastbinY {\n");
 		for (i = 1; i <= NFASTBINS; i++) {
 			if (FASTBIN_IDX_TO_SIZE(i) <= global_max_fast) {
@@ -742,7 +776,7 @@ void GH(print_heap_fastbin)(RCore *core, GHT m_arena, MallocState *main_arena, G
 			} else {
 				PRINTF_RA (" Fastbin %02d\n", i);
 			}
-			if (!GH(print_single_linked_list_bin) (core, main_arena, m_arena, offset, i - 1)) {
+			if (GH(print_single_linked_list_bin) (core, main_arena, m_arena, offset, i - 1)) {
 				PRINT_GA ("  Empty bin");
 				PRINT_BA ("  0x0\n");
 			}
@@ -755,7 +789,7 @@ void GH(print_heap_fastbin)(RCore *core, GHT m_arena, MallocState *main_arena, G
 			eprintf ("Error: 0 < bin <= %d\n", NFASTBINS);
 			break;
 		}
-		if (!GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, num_bin)) {
+		if (GH(print_single_linked_list_bin)(core, main_arena, m_arena, offset, num_bin)) {
 			PRINT_GA (" Empty bin");
 			PRINT_BA (" 0x0\n");
 		}
@@ -1029,7 +1063,7 @@ static void GH(print_tcache_instance)(RCore *core, GHT m_arena, MallocState *mai
 					tcache_fd = tcache_tmp;
 				}
 			}
-			PRINT_BA("\n");
+			PRINT_BA ("\n");
 		}
 	}
 
@@ -1058,7 +1092,7 @@ static void GH(print_tcache_instance)(RCore *core, GHT m_arena, MallocState *mai
 			free (t_arena);
 
 			if (ta->attached_threads) {
-				PRINT_BA("\n");
+				PRINT_BA ("\n");
 				(void)r_io_read_at (core->io, mmap_start + align, (ut8 *)tcache_heap, sizeof (GH(RHeapTcache)));
 				int i;
 				for (i = 0; i < TCACHE_MAX_BINS; i++) {
@@ -1444,7 +1478,7 @@ static void GH(print_heap_mmaped)(RCore *core, GHT malloc_state, GHT global_max_
 		mmap_start = ((malloc_state >> 16) << 16) + sizeof (GH(RHeapInfo)) + sizeof(GH(RHeap_MallocState_tcache)) + 0x8 + offset;
 		r_io_read_at (core->io, malloc_state, (ut8*)ma, sizeof (GH(RHeap_MallocState_tcache)));
 		GH(update_arena_with_tc)(ma,ms);
-		free(ma);
+		free (ma);
 	}
 	else {
 		GH(RHeap_MallocState) *ma = R_NEW0 (GH(RHeap_MallocState));
@@ -1563,9 +1597,9 @@ void GH(print_malloc_states)( RCore *core, GHT m_arena, MallocState *main_arena)
 				r_io_read_at (core->io, ta->GH(next), (ut8 *)t_arena, sizeof (GH(RHeap_MallocState_tcache)));
 				GH(update_arena_with_tc)(t_arena, ta);
 				if (ta->attached_threads) {
-					PRINT_BA("\n");
+					PRINT_BA ("\n");
 				} else {
-					PRINT_GA(" free\n");
+					PRINT_GA (" free\n");
 				}
 				r_io_read_at (core->io, ta->GH(next), (ut8 *)ta, sizeof (GH(RHeap_MallocState_tcache)));
 				free(t_arena);
@@ -1579,9 +1613,9 @@ void GH(print_malloc_states)( RCore *core, GHT m_arena, MallocState *main_arena)
 				r_io_read_at (core->io, ta->GH(next), (ut8 *)t_arena, sizeof (GH(RHeap_MallocState)));
 				GH(update_arena_without_tc)(t_arena, ta);
 				if (ta->attached_threads) {
-					PRINT_BA("\n");
+					PRINT_BA ("\n");
 				} else {
-					PRINT_GA(" free\n");
+					PRINT_GA (" free\n");
 				}
 				r_io_read_at (core->io, ta->GH(next), (ut8 *)ta, sizeof (GH(RHeap_MallocState)));
 				free(t_arena);
@@ -1745,7 +1779,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 		break;
 	case 'c': // "dmhc"
 		if (GH(r_resolve_main_arena)(core, &m_arena, main_arena)) {
-            		GH(print_heap_chunk) (core);
+			GH(print_heap_chunk) (core);
 		}
 		break;
 	case 'f': // "dmhf"
@@ -1758,9 +1792,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 				char *m_state_str, *bin, *dup = strdup (input+1);
 				bin = strtok (dup, ":");
 				m_state_str = strtok (NULL, ":");
-				GHT m_state = strstr (m_state_str, "0x")
-					? (GHT)strtol (m_state_str, NULL, 0)
-					: (GHT)strtol (m_state_str, NULL, 16);
+				GHT m_state = r_num_get (NULL, m_state_str);
 				MallocState *malloc_state = R_NEW0 (MallocState);
 				r_io_read_at (core->io, m_state, (ut8*)malloc_state, sizeof (MallocState));
 				GH(print_heap_fastbin) (core, m_state, malloc_state, global_max_fast, bin);

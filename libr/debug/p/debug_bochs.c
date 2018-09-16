@@ -110,7 +110,9 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 				}
 				pos+= 8;
 
-			} else i++;
+			} else {
+				i++;
+			}
 		}
 
 		bochs_send_cmd (desc, "info cpu", true);
@@ -123,8 +125,10 @@ static int r_debug_bochs_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
 		} else if (strstr (desc->data,"PC_64")) {
 			bAjusta = false;
 			//eprintf("[modo PC_64]\n");
-		} else eprintf ("[unknown mode]\n%s\n",desc->data);
-		  /*
+		} else {
+			eprintf ("[unknown mode]\n%s\n", desc->data);
+		}
+		/*
 		   es:0x0000, dh=0x00009300, dl=0x0000ffff, valid=7
 		   Data segment, base=0x00000000, limit=0x0000ffff, Read/Write, Accessed
 		   cs:0xf000, dh=0xff0093ff, dl=0x0000ffff, valid=7
@@ -205,7 +209,9 @@ static RList *r_debug_bochs_map_get(RDebug* dbg) { //TODO
 	//eprintf("bochs_map_getdebug:\n");
 	RDebugMap *mr;
 	RList *list = r_list_newf ((RListFree)map_free);
-	if (!list) return NULL;
+	if (!list) {
+		return NULL;
+	}
 	mr = R_NEW0 (RDebugMap);
 	if (!mr) {
 		r_list_free (list);
@@ -535,7 +541,7 @@ RDebugPlugin r_debug_plugin_bochs = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_bochs,
 	.version = R2_VERSION

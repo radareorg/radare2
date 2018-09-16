@@ -29,8 +29,9 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 
 static void print_address(bfd_vma address, struct disassemble_info *info) {
 	char tmp[32];
-	if (!buf_global)
+	if (!buf_global) {
 		return;
+	}
 	sprintf (tmp, "0x%08"PFMT64x"", (ut64)address);
 	strcat (buf_global, tmp);
 }
@@ -93,7 +94,7 @@ RAsmPlugin r_asm_plugin_sparc_gnu = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_sparc_gnu,
 	.version = R2_VERSION

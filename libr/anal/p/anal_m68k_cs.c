@@ -145,22 +145,30 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 // XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	op->delay = 0;
 	// replace this with the asm.features?
-	if (a->cpu && strstr (a->cpu, "68000"))
+	if (a->cpu && strstr (a->cpu, "68000")) {
 		mode |= CS_MODE_M68K_000;
-	if (a->cpu && strstr (a->cpu, "68010"))
+	}
+	if (a->cpu && strstr (a->cpu, "68010")) {
 		mode |= CS_MODE_M68K_010;
-	if (a->cpu && strstr (a->cpu, "68020"))
+	}
+	if (a->cpu && strstr (a->cpu, "68020")) {
 		mode |= CS_MODE_M68K_020;
-	if (a->cpu && strstr (a->cpu, "68030"))
+	}
+	if (a->cpu && strstr (a->cpu, "68030")) {
 		mode |= CS_MODE_M68K_030;
-	if (a->cpu && strstr (a->cpu, "68040"))
+	}
+	if (a->cpu && strstr (a->cpu, "68040")) {
 		mode |= CS_MODE_M68K_040;
-	if (a->cpu && strstr (a->cpu, "68060"))
+	}
+	if (a->cpu && strstr (a->cpu, "68060")) {
 		mode |= CS_MODE_M68K_060;
+	}
 	op->size = 4;
 	if (handle == 0) {
 		ret = cs_open (CS_ARCH_M68K, mode, &handle);
-		if (ret != CS_ERR_OK) goto fin;
+		if (ret != CS_ERR_OK) {
+			goto fin;
+		}
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	}
 	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
@@ -743,7 +751,7 @@ RAnalPlugin r_anal_plugin_m68k_cs = {
 #endif
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_m68k_cs,
 	.version = R2_VERSION

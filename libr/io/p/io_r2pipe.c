@@ -17,8 +17,9 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	char *bufn, bufnum[4096];
 	int i, rv, rescount = -1;
 	char *res, *r;
-	if (!fd || !fd->data)
+	if (!fd || !fd->data) {
 		return -1;
+	}
 	bufn = bufnum;
 	*bufn = 0;
 	for (i=0; i<count; i++) {
@@ -116,8 +117,9 @@ beach:
 }
 
 static int __close(RIODesc *fd) {
-	if (!fd || !fd->data)
+	if (!fd || !fd->data) {
 		return -1;
+	}
 	r2p_free (fd->data);
 	fd->data = NULL;
 	return 0;
@@ -184,7 +186,7 @@ RIOPlugin r_io_plugin_r2pipe = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_r2pipe,
 	.version = R2_VERSION

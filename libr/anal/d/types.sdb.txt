@@ -2725,3 +2725,11 @@ func.munmap.args=2
 func.munmap.arg.0=void*,addr
 func.munmap.arg.1=size_t,length
 func.munmap.ret=int
+
+ptrace=func
+func.ptrace.args=4
+func.ptrace.arg.0=__ptrace_request,request
+func.ptrace.arg.1=pid_t,pid
+func.ptrace.arg.2=void*,addr
+func.ptrace.arg.3=void*,data
+func.ptrace.ret=long

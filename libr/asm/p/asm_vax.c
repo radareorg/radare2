@@ -41,7 +41,9 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 
 static void print_address(bfd_vma address, struct disassemble_info *info) {
 	char tmp[32];
-	if (!buf_global) return;
+	if (!buf_global) {
+		return;
+	}
 	sprintf (tmp, "0x%08"PFMT64x, (ut64)address);
 	strcat (buf_global, tmp);
 }
@@ -57,7 +59,9 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 	flen = strlen (format);
 	glen = strlen (buf_global);
 	tmp = malloc (flen + glen + 2);
-	if (!tmp) return 0;
+	if (!tmp) {
+		return 0;
+	}
 	memcpy (tmp, buf_global, glen);
 	memcpy (tmp+glen, format, flen);
 	tmp[flen+glen] = 0;
@@ -107,7 +111,7 @@ RAsmPlugin r_asm_plugin_vax = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_vax,
 	.version = R2_VERSION

@@ -27,11 +27,13 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		return -1;
 	}
 
-	if (a->syntax == R_ASM_SYNTAX_INTEL)
+	if (a->syntax == R_ASM_SYNTAX_INTEL) {
 		syntaxstr = ".intel_syntax noprefix\n";
+	}
 
-	if (a->syntax == R_ASM_SYNTAX_ATT)
+	if (a->syntax == R_ASM_SYNTAX_ATT) {
 		syntaxstr = ".att_syntax\n";
+	}
 
 	len = snprintf (asm_buf, sizeof (asm_buf),
 			"%s.code%i\n" //.org 0x%"PFMT64x"\n"
@@ -96,7 +98,7 @@ RAsmPlugin r_asm_plugin_x86_as = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_x86_as,
 	.version = R2_VERSION

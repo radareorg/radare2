@@ -26,6 +26,7 @@ static inline void r_str_rmch(char *s, char ch) {
 	}
 }
 
+#define R_STR_ISEMPTY(x) (!(x) || !*(x))
 #define R_STR_DUP(x) ((x) ? strdup ((x)) : NULL)
 #define r_str_array(x,y) ((y>=0 && y<(sizeof(x)/sizeof(*x)))?x[y]:"")
 R_API const char *r_str_pad(const char ch, int len);
@@ -68,6 +69,7 @@ R_API char *r_str_new(const char *str);
 R_API int r_snprintf (char *string, int len, const char *fmt, ...);
 R_API bool r_str_is_ascii(const char *str);
 R_API int r_str_is_printable(const char *str);
+R_API int r_str_is_printable_limited(const char *str, int size);
 R_API bool r_str_is_printable_incl_newlines(const char *str);
 R_API char *r_str_appendlen(char *ptr, const char *string, int slen);
 R_API char *r_str_newf(const char *fmt, ...);

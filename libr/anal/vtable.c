@@ -247,8 +247,9 @@ R_API void r_anal_list_vtables(RAnal *anal, int rad) {
 			bool isFirstMethod = true;
 			r_cons_printf ("{\"offset\":%"PFMT64d",\"methods\":[", table->saddr);
 			r_vector_foreach (&table->methods, curMethod) {
-				if(!isFirstMethod)
+				if (!isFirstMethod) {
 					r_cons_print (",");
+				}
 				RAnalFunction *fcn = r_anal_get_fcn_in (anal, curMethod->addr, 0);
 				const char* const name = fcn ? fcn->name : NULL;
 				r_cons_printf ("{\"offset\":%"PFMT64d",\"name\":\"%s\"}",

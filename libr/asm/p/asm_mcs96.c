@@ -7,11 +7,21 @@
 #include "../arch/mcs96/mcs96.h"
 
 static int mcs96_len (const ut8 buf) {
-	if (mcs96_op[buf].type & MCS96_6B) return 6;
-	if (mcs96_op[buf].type & MCS96_5B) return 5;
-	if (mcs96_op[buf].type & MCS96_4B) return 4;
-	if (mcs96_op[buf].type & MCS96_3B) return 3;
-	if (mcs96_op[buf].type & MCS96_2B) return 2;
+	if (mcs96_op[buf].type & MCS96_6B) {
+		return 6;
+	}
+	if (mcs96_op[buf].type & MCS96_5B) {
+		return 5;
+	}
+	if (mcs96_op[buf].type & MCS96_4B) {
+		return 4;
+	}
+	if (mcs96_op[buf].type & MCS96_3B) {
+		return 3;
+	}
+	if (mcs96_op[buf].type & MCS96_2B) {
+		return 2;
+	}
 	return 1;
 }
 
@@ -35,7 +45,7 @@ RAsmPlugin r_asm_plugin_mcs96 = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_mcs96,
 	.version = R2_VERSION

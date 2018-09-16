@@ -47,7 +47,9 @@ R_API int r_print_date_hfs(RPrint *p, const ut8 *buf, int len) {
 					p->cb_printf ("%s\n", s);
 					ret = sizeof (time_t);
 				}
-			} else p->cb_printf ("Invalid time\n");
+			} else {
+				p->cb_printf ("Invalid time\n");
+			}
 		}
 	}
 	return ret;
@@ -71,7 +73,9 @@ R_API int r_print_date_unix(RPrint *p, const ut8 *buf, int len) {
 					p->cb_printf ("%s\n", s);
 					ret = sizeof (time_t);
 				}
-			} else p->cb_printf ("Invalid time\n");
+			} else {
+				p->cb_printf ("Invalid time\n");
+			}
 		}
 	}
 	return ret;

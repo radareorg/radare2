@@ -80,8 +80,9 @@ static ut8 gprobe_checksum_i2c (const ut8 *p, unsigned int size, ut8 initial) {
 	ut8 res = initial;
 	unsigned int k;
 
-	for (k = 0; k < size; ++k)
+	for (k = 0; k < size; ++k) {
 		res ^= p[k];
+	}
 
 	return res;
 }
@@ -1229,7 +1230,7 @@ RIOPlugin r_io_plugin_gprobe = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_gprobe,
 	.version = R2_VERSION};

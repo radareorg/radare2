@@ -29,7 +29,7 @@ PROGDIR="$(dirname "$0")"
 PROGDIR="$(cd "$PROGDIR" && pwd)"
 
 ANDROID_KITKAT=19
-ANDROID_LOLIPOP=21
+ANDROID_LOLIPOP=28
 
 # shellcheck disable=SC2019
 # shellcheck disable=SC2018
@@ -93,7 +93,7 @@ if [ -z "${NDK_BINS}" ]; then
 	exit 1
 fi
 CFLAGS="${CFLAGS} --sysroot=${PLATFORM_ROOT}"
-CFLAGS="${CFLAGS} -I${PLATFORM_PATH}/include"
+CFLAGS="${CFLAGS} -I${PLATFORM_PATH}/include -I${PROGDIR}/sysroot/usr/include -I${PROGDIR}/sysroot/usr/include/${NDKPFX}"
 CFLAGS="${CFLAGS} -fPIC -fPIE"
 
 case "${ARCH}" in

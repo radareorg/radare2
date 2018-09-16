@@ -394,6 +394,11 @@ typedef struct r_cons_context_t {
 	RStack *break_stack;
 	RConsEvent event_interrupt;
 	void *event_interrupt_data;
+
+	char *lastOutput;
+	int lastLength;
+	bool lastMode;
+	bool lastEnabled;
 } RConsContext;
 
 typedef struct r_cons_t {
@@ -465,6 +470,7 @@ typedef struct r_cons_t {
 	bool use_tts;
 	bool filter;
 	char* (*rgbstr)(char *str, size_t sz, ut64 addr);
+	// TODO: move into instance? + avoid unnecessary copies
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */
@@ -711,7 +717,7 @@ R_API void r_cons_set_interactive(bool b);
 R_API void r_cons_set_last_interactive(void);
 
 /* output */
-R_API void r_cons_printf(const char *format, ...);
+R_API int r_cons_printf(const char *format, ...);
 R_API void r_cons_printf_list(const char *format, va_list ap);
 R_API void r_cons_strcat(const char *str);
 #define r_cons_print(x) r_cons_strcat (x)
@@ -721,6 +727,7 @@ R_API int r_cons_memcat(const char *str, int len);
 R_API void r_cons_newline(void);
 R_API void r_cons_filter(void);
 R_API void r_cons_flush(void);
+R_API void r_cons_last(void);
 R_API int r_cons_less_str(const char *str, const char *exitkeys);
 R_API void r_cons_less(void);
 R_API void r_cons_2048(bool color);
@@ -999,6 +1006,23 @@ R_API void r_agraph_foreach_edge(RAGraph *g, RAEdgeCallback cb, void *user);
 R_API void r_agraph_set_curnode(RAGraph *g, RANode *node);
 #endif
 
+typedef int (*RPanelsMenuCallback)(void *user);
+typedef struct r_panels_menu_item {
+	int n_sub, selectedIndex, selfIndex;
+	const char *name;
+	struct r_panels_menu_item **sub;
+	RPanelsMenuCallback cb;
+	RPanel *p;
+} RPanelsMenuItem;
+
+typedef struct r_panels_menu_t {
+	RPanelsMenuItem *root;
+	RPanelsMenuItem **history;
+	int depth;
+	int n_refresh;
+	RPanel **refreshPanels;
+} RPanelsMenu;
+
 typedef struct r_panels_t {
 	RConsCanvas *can;
 	RPanel *panel;
@@ -1006,16 +1030,11 @@ typedef struct r_panels_t {
 	int columnWidth;
 	int layout;
 	int menu_pos;
-	int callgraph;
 	int curnode;
 	bool isResizing;
 	bool isZoom;
-	const char ***menuStack;
-	int *menuIndexStack;
-	int menuStackDepth;
-	const char **currentMenu;
-	int currentMenuIndex;
-	RPanel *menuPanel;
+	RPanelsMenu *panelsMenu;
+	Sdb *db;
 } RPanels;
 
 #ifdef __cplusplus

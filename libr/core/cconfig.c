@@ -136,15 +136,31 @@ static void rasm2_list(RCore *core, const char *arch, int fmt) {
 			bits[0] = 0;
 			/* The underscore makes it easier to distinguish the
 			 * columns */
-			if (h->bits&8) strcat (bits, "_8");
-			if (h->bits&16) strcat (bits, "_16");
-			if (h->bits&32) strcat (bits, "_32");
-			if (h->bits&64) strcat (bits, "_64");
-			if (!*bits) strcat (bits, "_0");
+			if (h->bits & 8) {
+				strcat (bits, "_8");
+			}
+			if (h->bits & 16) {
+				strcat (bits, "_16");
+			}
+			if (h->bits & 32) {
+				strcat (bits, "_32");
+			}
+			if (h->bits & 64) {
+				strcat (bits, "_64");
+			}
+			if (!*bits) {
+				strcat (bits, "_0");
+			}
 			feat = "__";
-			if (h->assemble && h->disassemble)  feat = "ad";
-			if (h->assemble && !h->disassemble) feat = "a_";
-			if (!h->assemble && h->disassemble) feat = "_d";
+			if (h->assemble && h->disassemble) {
+				feat = "ad";
+			}
+			if (h->assemble && !h->disassemble) {
+				feat = "a_";
+			}
+			if (!h->assemble && h->disassemble) {
+				feat = "_d";
+			}
 			feat2 = has_esil (core, h->name);
 			if (fmt == 'q') {
 				r_cons_println (h->name);
@@ -327,6 +343,12 @@ static int cb_asmvarsubmin(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->parser->minval = node->i_value;
+	return true;
+}
+
+static int cb_scrlast(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *) data;
+	r_cons_singleton ()->context->lastEnabled = node->i_value;
 	return true;
 }
 
@@ -1998,7 +2020,9 @@ static int cb_binmaxstr(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (core->bin) {
 		int v = node->i_value;
-		if (v<1) v = 4; // HACK
+		if (v < 1) {
+			v = 4; // HACK
+		}
 		core->bin->maxstrlen = v;
 	// TODO: Do not refresh if nothing changed (minstrlen ?)
 		r_core_bin_refresh_strings (core);
@@ -2012,7 +2036,9 @@ static int cb_binminstr(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	if (core->bin) {
 		int v = node->i_value;
-		if (v<1) v = 4; // HACK
+		if (v < 1) {
+			v = 4; // HACK
+		}
 		core->bin->minstrlen = v;
 	// TODO: Do not refresh if nothing changed (minstrlen ?)
 		r_core_bin_refresh_strings (core);
@@ -2376,6 +2402,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("dbg.glibc.ma_offset", 0x1bb000, "Main_arena offset from his symbol");
 	SETI ("dbg.glibc.fc_offset", 0x158, "First chunk offset from brk_start");
 #endif
+	SETPREF ("dbg.libc.dbglib", "", "Set libc debug library file");
 
 	SETPREF ("esil.prestep", "true", "Step before esil evaluation in `de` commands");
 	SETPREF ("esil.fillstack", "", "Initialize ESIL stack with (random, debrujn, sequence, zeros, ...)");
@@ -2458,6 +2485,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.noisy", "true", "Show comments considered noisy but possibly useful");
 	SETPREF ("asm.offset", "true", "Show offsets at disassembly");
 	SETCB ("scr.rainbow", "false", &cb_scrrainbow, "Shows rainbow colors depending of address");
+	SETCB ("scr.last", "true", &cb_scrlast, "Cache last output after flush to make _ command work (disable for performance)");
 	SETPREF ("asm.reloff", "false", "Show relative offsets instead of absolute address in disasm");
 	SETPREF ("asm.reloff.flags", "false", "Show relative offsets to flags (not only functions)");
 	SETPREF ("asm.section", "false", "Show section name before offset");
@@ -2702,6 +2730,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cmd.gprompt", "", "Graph visual prompt commands");
 	SETPREF ("cmd.hit", "", "Run when a search hit is found");
 	SETPREF ("cmd.open", "", "Run when file is opened");
+	SETPREF ("cmd.load", "", "Run when binary is loaded");
 	SETCB ("cmd.pdc", "", &cb_cmdpdc, "Select pseudo-decompiler command to run after pdc");
 	SETCB ("cmd.log", "", &cb_cmdlog, "Every time a new T log is added run this command");
 	SETPREF ("cmd.prompt", "", "Prompt commands");

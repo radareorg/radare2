@@ -73,8 +73,9 @@ static int update_self_regions(RIO *io, int pid) {
 	char region[100], region2[100], perms[5];
 	snprintf (path, sizeof (path) - 1, "/proc/%d/maps", pid);
 	FILE *fd = fopen (path, "r");
-	if (!fd)
+	if (!fd) {
 		return false;
+	}
 
 	while (!feof (fd)) {
 		line[0]='\0';
@@ -129,8 +130,9 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	int ret, pid = getpid ();
-	if (r_sandbox_enable (0))
+	if (r_sandbox_enable (0)) {
 		return NULL;
+	}
 	io->va = true; // nop
 	ret = update_self_regions (io, pid);
 	if (ret) {
@@ -361,7 +363,7 @@ RIOPlugin r_io_plugin_self = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_mach,
 	.version = R2_VERSION
@@ -515,7 +517,7 @@ RIOPlugin r_io_plugin_self = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_mach,
 	.version = R2_VERSION

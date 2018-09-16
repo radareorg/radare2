@@ -424,8 +424,9 @@ out:
 }
 
 R_API bool r_diff_buffers_distance_original(RDiff *diff, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
-	if (!a || !b)
+	if (!a || !b) {
 		return false;
+	}
 
 	const bool verbose = diff ? diff->verbose : false;
 	const ut32 length = R_MAX (la, lb);

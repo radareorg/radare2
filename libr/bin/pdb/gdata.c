@@ -31,10 +31,13 @@ void parse_gdata_stream(void *stream, R_STREAM_FILE *stream_file) {
 	data_stream->globals_list = r_list_new();
 	while (1) {
 		stream_file_read(stream_file, 2, (char *)&len);
-		if (len == 0)
+		if (len == 0) {
 			break;
+		}
 		data = (char *) malloc(len);
-		if (!data) return;
+		if (!data) {
+			return;
+		}
 		stream_file_read(stream_file, len, data);
 
 		leaf_type = *(unsigned short *) (data);
@@ -73,8 +76,9 @@ void free_gdata_stream(void *stream)
 	it = r_list_iterator(data_stream->globals_list);
 	while (r_list_iter_next(it)) {
 		global = (SGlobal *) r_list_iter_get(it);
-		if (global->name.name)
-			free(global->name.name);
+		if (global->name.name) {
+			free (global->name.name);
+		}
 		free(global);
 	}
 	r_list_free(data_stream->globals_list);

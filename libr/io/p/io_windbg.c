@@ -83,8 +83,9 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 
 	if (windbg_get_target (fd->data)) {
 		ut64 va;
-		if (!windbg_va_to_pa (fd->data, io->off, &va))
+		if (!windbg_va_to_pa (fd->data, io->off, &va)) {
 			return -1;
+		}
 		return windbg_read_at_phys (fd->data, buf, va, count);
 	}
 
@@ -110,7 +111,7 @@ RIOPlugin r_io_plugin_windbg = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_windbg,
 	.version = R2_VERSION

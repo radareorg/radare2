@@ -16,7 +16,7 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
     endif
 
     # NOTE: when you update CS_TIP or CS_BRA, also update them in shlr/Makefile
-    CS_TIP = '782ea67e17a391ca0d3faafdc365b335a1a8930a'
+    CS_TIP = 'e2c1cd46c06744beaceff42dd882de3a90f0a37c'
     CS_BRA = 'master'
 
     capstone_git_user = 'aquynh'
@@ -36,8 +36,6 @@ if not capstone_dep.found() or not get_option('use_sys_capstone')
 
     patches_files = [
       'capstone-calloc.patch',
-      'fix-m68k-oob.patch',
-      'fix-underflow-tms.patch',
       'fix-x86-16.patch',
       'sparc-crash.patch',
       'sstream-null.patch'

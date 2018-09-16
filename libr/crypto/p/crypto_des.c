@@ -39,7 +39,7 @@ static int des_encrypt (struct des_state *st, const ut8 *input, ut8 *output) {
 	}
 	st->buflo = be32 (input + 0);
 	st->bufhi = be32 (input + 4);
- 
+
 	//first permutation
 	r_des_permute_block0 (&st->buflo, &st->bufhi);
 
@@ -48,7 +48,7 @@ static int des_encrypt (struct des_state *st, const ut8 *input, ut8 *output) {
 	}
  	//last permutation
 	r_des_permute_block1 (&st->bufhi, &st->buflo);
- 
+
 	//result
 	wbe32 (output + 0, st->bufhi);
 	wbe32 (output + 4, st->buflo);
@@ -57,7 +57,9 @@ static int des_encrypt (struct des_state *st, const ut8 *input, ut8 *output) {
 }
 
 static int des_decrypt (struct des_state *st, const ut8 *input, ut8 *output) {
-	if (!st || !input || !output) return false;
+	if (!st || !input || !output) {
+		return false;
+	}
 	st->buflo = be32 (input + 0);
 	st->bufhi = be32 (input + 4);
 	//first permutation
@@ -168,7 +170,7 @@ RCryptoPlugin r_crypto_plugin_des = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_des,
 	.version = R2_VERSION

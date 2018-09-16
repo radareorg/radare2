@@ -232,8 +232,9 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 	if (color) {
 		const char *p = cons->pal.input;
 		int len = p? strlen (p): 0;
-		if (len>0)
+		if (len > 0) {
 			fwrite (p, len, 1, stdout);
+		}
 		fflush (stdout);
 	}
 	if (!fgets (buf, len, cons->fdin)) {
@@ -250,14 +251,11 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 		RETURN (-2);
 	}
 	buf[strlen (buf)-1] = '\0';
-	if (color) printf (Color_RESET);
+	if (color) {
+		printf (Color_RESET);
+	}
 	ret = strlen (buf);
 beach:
-#if __UNIX__
-	if (errno == EINTR) {
-		ret = 0;
-	}
-#endif
 	//r_cons_enable_mouse (mouse);
 	return ret;
 }
@@ -502,9 +500,11 @@ R_API int r_cons_readchar() {
 	FD_SET (STDIN_FILENO, &readfds);
 	r_signal_sigmask (0, NULL, &sigmask);
 	sigdelset (&sigmask, SIGWINCH);
-	pselect (STDIN_FILENO + 1, &readfds, NULL, NULL, NULL, &sigmask);
-	if (sigwinchFlag != 0) {
-		resizeWin ();
+	while (pselect (STDIN_FILENO + 1, &readfds, NULL, NULL, NULL, &sigmask) == -1) {
+		if (sigwinchFlag) {
+			sigwinchFlag = 0;
+			resizeWin ();
+		}
 	}
 
 	ssize_t ret = read (STDIN_FILENO, buf, 1);

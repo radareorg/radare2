@@ -247,9 +247,10 @@ static void setASLR(RRunProfile *r, int enabled) {
 		setRVA ("0\n");
 #else
 #if HAVE_DECL_ADDR_NO_RANDOMIZE
-		if (personality (ADDR_NO_RANDOMIZE) == -1)
+		if (personality (ADDR_NO_RANDOMIZE) == -1) {
 #endif
 			setRVA ("0\n");
+		}
 #endif
 	}
 #elif __APPLE__
@@ -451,17 +452,27 @@ R_API bool r_run_parseline(RRunProfile *p, char *b) {
 	if (!e) {
 		return 0;
 	}
-	if (!strcmp (b, "program")) p->_args[0] = p->_program = strdup (e);
-	else if (!strcmp (b, "system")) p->_system = strdup (e);
-	else if (!strcmp (b, "runlib")) p->_runlib = strdup (e);
-	else if (!strcmp (b, "runlib.fcn")) p->_runlib_fcn = strdup (e);
-	else if (!strcmp (b, "aslr")) p->_aslr = parseBool (e);
-	else if (!strcmp (b, "pid")) p->_pid = atoi (e);
-	else if (!strcmp (b, "pidfile")) p->_pidfile = strdup (e);
-	else if (!strcmp (b, "connect")) p->_connect = strdup (e);
-	else if (!strcmp (b, "listen")) p->_listen = strdup (e);
-	else if (!strcmp (b, "pty")) p->_pty = parseBool (e);
-	else if (!strcmp (b, "stdio")) {
+	if (!strcmp (b, "program")) {
+		p->_args[0] = p->_program = strdup (e);
+	} else if (!strcmp (b, "system")) {
+		p->_system = strdup (e);
+	} else if (!strcmp (b, "runlib")) {
+		p->_runlib = strdup (e);
+	} else if (!strcmp (b, "runlib.fcn")) {
+		p->_runlib_fcn = strdup (e);
+	} else if (!strcmp (b, "aslr")) {
+		p->_aslr = parseBool (e);
+	} else if (!strcmp (b, "pid")) {
+		p->_pid = atoi (e);
+	} else if (!strcmp (b, "pidfile")) {
+		p->_pidfile = strdup (e);
+	} else if (!strcmp (b, "connect")) {
+		p->_connect = strdup (e);
+	} else if (!strcmp (b, "listen")) {
+		p->_listen = strdup (e);
+	} else if (!strcmp (b, "pty")) {
+		p->_pty = parseBool (e);
+	} else if (!strcmp (b, "stdio")) {
 		if (e[0] == '!') {
 			p->_stdio = strdup (e);
 		} else {
@@ -469,32 +480,55 @@ R_API bool r_run_parseline(RRunProfile *p, char *b) {
 			p->_stderr = strdup (e);
 			p->_stdin = strdup (e);
 		}
-	}
-	else if (!strcmp (b, "stdout")) p->_stdout = strdup (e);
-	else if (!strcmp (b, "stdin")) p->_stdin = strdup (e);
-	else if (!strcmp (b, "stderr")) p->_stderr = strdup (e);
-	else if (!strcmp (b, "input")) p->_input = strdup (e);
-	else if (!strcmp (b, "chdir")) p->_chgdir = strdup (e);
-	else if (!strcmp (b, "core")) p->_docore = parseBool (e);
-	else if (!strcmp (b, "fork")) p->_dofork = parseBool (e);
-	else if (!strcmp (b, "sleep")) p->_r2sleep = atoi (e);
-	else if (!strcmp (b, "maxstack")) p->_maxstack = atoi (e);
-	else if (!strcmp (b, "maxproc")) p->_maxproc = atoi (e);
-	else if (!strcmp (b, "maxfd")) p->_maxfd = atoi (e);
-	else if (!strcmp (b, "bits")) p->_bits = atoi (e);
-	else if (!strcmp (b, "chroot")) p->_chroot = strdup (e);
-	else if (!strcmp (b, "libpath")) p->_libpath = strdup (e);
-	else if (!strcmp (b, "preload")) p->_preload = strdup (e);
-	else if (!strcmp (b, "r2preload")) p->_r2preload = parseBool (e);
-	else if (!strcmp (b, "r2preweb")) r_sys_setenv ("RARUN2_WEB", "yes");
-	else if (!strcmp (b, "setuid")) p->_setuid = strdup (e);
-	else if (!strcmp (b, "seteuid")) p->_seteuid = strdup (e);
-	else if (!strcmp (b, "setgid")) p->_setgid = strdup (e);
-	else if (!strcmp (b, "setegid")) p->_setegid = strdup (e);
-	else if (!strcmp (b, "nice")) p->_nice = atoi (e);
-	else if (!strcmp (b, "timeout")) p->_timeout = atoi (e);
-	else if (!strcmp (b, "timeoutsig")) p->_timeout_sig = r_signal_from_string (e);
-	else if (!memcmp (b, "arg", 3)) {
+	} else if (!strcmp (b, "stdout")) {
+		p->_stdout = strdup (e);
+	} else if (!strcmp (b, "stdin")) {
+		p->_stdin = strdup (e);
+	} else if (!strcmp (b, "stderr")) {
+		p->_stderr = strdup (e);
+	} else if (!strcmp (b, "input")) {
+		p->_input = strdup (e);
+	} else if (!strcmp (b, "chdir")) {
+		p->_chgdir = strdup (e);
+	} else if (!strcmp (b, "core")) {
+		p->_docore = parseBool (e);
+	} else if (!strcmp (b, "fork")) {
+		p->_dofork = parseBool (e);
+	} else if (!strcmp (b, "sleep")) {
+		p->_r2sleep = atoi (e);
+	} else if (!strcmp (b, "maxstack")) {
+		p->_maxstack = atoi (e);
+	} else if (!strcmp (b, "maxproc")) {
+		p->_maxproc = atoi (e);
+	} else if (!strcmp (b, "maxfd")) {
+		p->_maxfd = atoi (e);
+	} else if (!strcmp (b, "bits")) {
+		p->_bits = atoi (e);
+	} else if (!strcmp (b, "chroot")) {
+		p->_chroot = strdup (e);
+	} else if (!strcmp (b, "libpath")) {
+		p->_libpath = strdup (e);
+	} else if (!strcmp (b, "preload")) {
+		p->_preload = strdup (e);
+	} else if (!strcmp (b, "r2preload")) {
+		p->_r2preload = parseBool (e);
+	} else if (!strcmp (b, "r2preweb")) {
+		r_sys_setenv ("RARUN2_WEB", "yes");
+	} else if (!strcmp (b, "setuid")) {
+		p->_setuid = strdup (e);
+	} else if (!strcmp (b, "seteuid")) {
+		p->_seteuid = strdup (e);
+	} else if (!strcmp (b, "setgid")) {
+		p->_setgid = strdup (e);
+	} else if (!strcmp (b, "setegid")) {
+		p->_setegid = strdup (e);
+	} else if (!strcmp (b, "nice")) {
+		p->_nice = atoi (e);
+	} else if (!strcmp (b, "timeout")) {
+		p->_timeout = atoi (e);
+	} else if (!strcmp (b, "timeoutsig")) {
+		p->_timeout_sig = r_signal_from_string (e);
+	} else if (!memcmp (b, "arg", 3)) {
 		int n = atoi (b + 3);
 		if (n >= 0 && n < R_RUN_PROFILE_NARGS) {
 			p->_args[n] = getstr (e);
@@ -522,8 +556,12 @@ R_API bool r_run_parseline(RRunProfile *p, char *b) {
 			if (p) {
 				*p++ = 0;
 				len = strlen(p);
-				if (p[len-1] == '\n') p[len-1] = 0;
-				if (p[len-2] == '\r') p[len-2] = 0;
+				if (p[len - 1] == '\n') {
+					p[len - 1] = 0;
+				}
+				if (p[len - 2] == '\r') {
+					p[len - 2] = 0;
+				}
 				r_sys_setenv (buf, p);
 			}
 		}
@@ -734,18 +772,22 @@ R_API int r_run_config_env(RRunProfile *p) {
 	if (handle_redirection (p->_stderr, false, false, true) != 0) {
 		return 1;
 	}
-	if (p->_aslr != -1)
+	if (p->_aslr != -1) {
 		setASLR (p, p->_aslr);
+	}
 #if __UNIX__
 	set_limit (p->_docore, RLIMIT_CORE, RLIM_INFINITY);
-	if (p->_maxfd)
+	if (p->_maxfd) {
 		set_limit (p->_maxfd, RLIMIT_NOFILE, p->_maxfd);
+	}
 #ifdef RLIMIT_NPROC
-	if (p->_maxproc)
+	if (p->_maxproc) {
 		set_limit (p->_maxproc, RLIMIT_NPROC, p->_maxproc);
+	}
 #endif
-	if (p->_maxstack)
+	if (p->_maxstack) {
 		set_limit (p->_maxstack, RLIMIT_STACK, p->_maxstack);
+	}
 #else
 	if (p->_docore || p->_maxfd || p->_maxproc || p->_maxstack)
 		eprintf ("Warning: setrlimits not supported for this platform\n");
@@ -1033,12 +1075,17 @@ R_API int r_run_start(RRunProfile *p) {
 		}
 #if __UNIX__
 		// XXX HACK close all non-tty fds
-		{ int i; for (i=3; i<10; i++) close (i); }
+		{ int i;
+			for (i = 3; i < 10; i++) {
+				close (i);
+			}
+		}
 		// TODO: use posix_spawn
 		if (p->_setgid) {
 			int ret = setgid (atoi (p->_setgid));
-			if (ret < 0)
+			if (ret < 0) {
 				return 1;
+			}
 		}
 		if (p->_pid) {
 			eprintf ("PID: %d\n", getpid ());

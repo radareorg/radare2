@@ -141,9 +141,12 @@ static int decode_jmp(const ut8 *bytes, ebc_command_t *cmd) {
 		ret = 10;
 		snprintf(cmd->operands, EBC_OPERANDS_MAXLEN, "0x%lx", immed);
 	} else {
-		if ((bytes[1] & 0x7) != 0)
-			snprintf(op1, sizeof (op1), "%sr%u ",
-					TEST_BIT(bytes[1], 3) ? "@" : "", bytes[1] & 0x7);
+		if ((bytes[1] & 0x7) != 0) {
+			{
+				snprintf (op1, sizeof (op1), "%sr%u ",
+					TEST_BIT (bytes[1], 3) ? "@" : "", bytes[1] & 0x7);
+			}
+		}
 		if (TEST_BIT (bytes[0], 7)) {
 			if (TEST_BIT(bytes[1], 3)) {
 				decode_index32(bytes + 2, &idx32);
@@ -978,7 +981,10 @@ static decode decodes[EBC_COMMAND_NUM] = {
 };
 
 int ebc_decode_command(const ut8 *instr, ebc_command_t *cmd) {
-	if ((instr[0] & EBC_OPCODE_MASK) > 0x39)
-		return -1;
+	if ((instr[0] & EBC_OPCODE_MASK) > 0x39) {
+		{
+			return -1;
+		}
+	}
 	return decodes[instr[0] & EBC_OPCODE_MASK](instr, cmd);
 }

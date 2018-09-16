@@ -18,11 +18,12 @@ static const char *help_msg_C[] = {
 	"CL", "[-][*] [file:line] [addr]", "show or add 'code line' information (bininfo)",
 	"CS", "[-][space]", "manage meta-spaces to filter comments, etc..",
 	"CC", "[?] [-] [comment-text] [@addr]", "add/remove comment",
-	"Ct", "[?] [-] [comment-text] [@addr]", "add/remove type analysis comment",
 	"CC.", "[addr]", "show comment in current address",
 	"CC!", " [@addr]", "edit comment with $EDITOR",
 	"CCa", "[-at]|[at] [text] [@addr]", "add/remove comment at given address",
 	"CCu", " [comment-text] [@addr]", "add unique comment",
+	"Ct", "[?] [-] [comment-text] [@addr]", "add/remove type analysis comment",
+	"Ct.", "[@addr]", "show comment at current or specified address",
 	"Cv", "[bsr][?]", "add comments to args",
 	"Cs", "[?] [-] [size] [@addr]", "add string",
 	"Cz", "[@addr]", "add string (see Cs?)",
@@ -48,6 +49,15 @@ static const char *help_msg_CC[] = {
 	"CC-", " @ cmt_addr", "remove comment at given address",
 	"CCu", " good boy @ addr", "add good boy comment at given address",
 	"CCu", " base64:AA== @ addr", "add comment in base64",
+	NULL
+};
+
+static const char *help_msg_Ct[] = {
+	"Usage: Ct", "[.|-] [@ addr]", " # Manage comments for variable types",
+	"Ct", "", "list all variable type comments",
+	"Ct", " comment-text [@ addr]", "place comment at current or specified address",
+	"Ct.", " [@ addr]", "show comment at current or specified address",
+	"Ct-", " [@ addr]", "remove comment at current or specified address",
 	NULL
 };
 
@@ -416,6 +426,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 				strcat (text, " ");
 				strcat (text, nc);
 				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, text);
+				free (comment);
 				free (text);
 			} else {
 				r_sys_perror ("malloc");
@@ -514,6 +525,61 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		free (s);
 		return true;
 		}
+	}
+
+	return true;
+}
+
+static int cmd_meta_vartype_comment(RCore *core, const char *input) {
+	ut64 addr = core->offset;
+	switch (input[1]) {
+	case '?': // "Ct?"
+		r_core_cmd_help (core, help_msg_Ct);
+		break;
+	case 0: // "Ct"
+		r_meta_list (core->anal, R_META_TYPE_VARTYPE, 0);
+		break;
+	case ' ': // "Ct <vartype comment> @ addr"
+		{
+		const char* newcomment = r_str_trim_ro (input + 2);
+		char *text, *comment = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, addr);
+		char *nc = strdup (newcomment);
+		r_str_unescape (nc);
+		if (comment) {
+			text = malloc (strlen (comment)+ strlen (newcomment)+2);
+			if (text) {
+				strcpy (text, comment);
+				strcat (text, " ");
+				strcat (text, nc);
+				r_meta_set_string (core->anal, R_META_TYPE_VARTYPE, addr, text);
+				free (comment);
+				free (text);
+			} else {
+				r_sys_perror ("malloc");
+			}
+		} else {
+			r_meta_set_string (core->anal, R_META_TYPE_VARTYPE, addr, nc);
+		}
+		free (nc);
+		}
+		break;
+	case '.': // "Ct. @ addr"
+		{
+		ut64 at = input[2]? r_num_math (core->num, input + 2): addr;
+		char *comment = r_meta_get_string (
+				core->anal, R_META_TYPE_VARTYPE, at);
+		if (comment) {
+			r_cons_println (comment);
+			free (comment);
+		}
+		}
+		break;
+	case '-': // "Ct-"
+		r_meta_del (core->anal, R_META_TYPE_VARTYPE, core->offset, 1);
+		break;
+	default:
+		r_core_cmd_help (core, help_msg_Ct);
+		break;
 	}
 
 	return true;
@@ -950,6 +1016,9 @@ static int cmd_meta(void *data, const char *input) {
 	case 'C': // "CC"
 		cmd_meta_comment (core, input);
 		break;
+	case 't': // "Ct" type analysis commnets
+		cmd_meta_vartype_comment (core, input);
+		break;
 	case 'r': // "Cr" run command
 	case 'h': // "Ch" comment
 	case 's': // "Cs" string
@@ -957,7 +1026,6 @@ static int cmd_meta(void *data, const char *input) {
 	case 'd': // "Cd" data
 	case 'm': // "Cm" magic
 	case 'f': // "Cf" formatted
-	case 't': // "Ct" type analysis commnets
 		cmd_meta_others (core, input);
 		break;
 	case '-': // "C-"

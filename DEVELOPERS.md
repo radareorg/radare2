@@ -31,6 +31,8 @@ static int findMinMax(RList *maps, ut64 *min, ut64 *max, int skip, int width);
 
 ## Code style
 
+### C
+
 In order to contribute with patches or plugins we encourage you to
 use the same coding style as the rest of the code base.
 
@@ -96,14 +98,21 @@ if (a == b) {
   example of a good name could be "out_buffer:" if the goto frees "buffer".
   Avoid using GW-BASIC names like "err1:" and "err2:".
 
-* Use early returns instead of if-else when you need to filter out some bad
-  value at the start of a function.
+* Use `r_return_*` functions to check preconditions that are caused by
+  programmers errors. Please note the difference between conditions that should
+  never happen, and that are handled through `r_return_*` functions, and
+  conditions that can happen at runtime (e.g. malloc returns NULL, input coming
+  from user, etc.), and should be handled in the usual way through if-else.
 
 ```c
 int check(RCore *c, int a, int b) {
-	if (!c) return false;
-	if (a < 0 || b < 1) return false;
+	r_return_val_if_fail (c, false);
+	r_return_val_if_fail (a >= 0, b >= 1, false);
 
+	if (a == 0) {
+		/* do something */
+		...
+	}
 	... /* do something else */
 }
 ```
@@ -205,6 +214,14 @@ r_core_wrap.cxx:32103:61: error: assigning to 'RDebugReasonType' from incompatib
 
 * Never ever use %lld or %llx. This is not portable. Always use the PFMT64x
   macros. Those are similar to the ones in GLIB.
+  
+### Shell Scripts
+
+* Use `#!/bin/sh`
+
+* Do not use bashisms `[[`, `$'...'` etc.
+
+* Use our [shellcheck.sh](https://github.com/radare/radare2/blob/master/sys/shellcheck.sh) script to check for problems and for bashisms
 
 # Manage Endianness
 
@@ -464,6 +481,6 @@ I can get patches in unidiff format like this:
    - `make`
    - `make dist`
 
-  - Update the i[paths on the website](https://github.com/radareorg/radareorg/blob/master/source/download_paths.rst)
+  - Update the [paths on the website](https://github.com/radareorg/radareorg/blob/master/source/download_paths.rst)
 
 --pancake

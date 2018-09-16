@@ -12,6 +12,7 @@
 #endif
 
 #define COUNT_LINES 1
+#define CTX(x) I.context->x
 
 R_LIB_VERSION (r_cons);
 
@@ -102,6 +103,7 @@ static void cons_context_init(RConsContext *context) {
 	context->breaked = false;
 	context->buffer = NULL;
 	context->buffer_sz = 0;
+	context->lastEnabled = true;
 	context->buffer_len = 0;
 	context->cons_stack = r_stack_newf (6, cons_stack_free);
 	context->break_stack = r_stack_newf (6, break_stack_free);
@@ -221,7 +223,9 @@ R_API void r_cons_context_break_push(RConsContext *context, RConsBreak cb, void 
 
 	//if we don't have any element in the stack start the signal
 	RConsBreakStack *b = R_NEW0 (RConsBreakStack);
-	if (!b) return;
+	if (!b) {
+		return;
+	}
 	if (r_stack_is_empty (context->break_stack)) {
 #if __UNIX__ || __CYGWIN__
 		if (sig && r_cons_context_is_main ()) {
@@ -445,6 +449,8 @@ R_API RCons *r_cons_free() {
 	}
 	R_FREE (I.break_word);
 	cons_context_deinit (I.context);
+	R_FREE (I.context->lastOutput);
+	I.context->lastLength = 0;
 	return NULL;
 }
 
@@ -685,7 +691,22 @@ R_API void r_cons_context_break(RConsContext *context) {
 	}
 }
 
-R_API void r_cons_flush() {
+R_API void r_cons_last(void) {
+	if (!CTX (lastEnabled)) {
+		return;
+	}
+	CTX (lastMode) = true;
+	r_cons_memcat (CTX (lastOutput), CTX (lastLength));
+}
+
+static bool lastMatters() {
+	return (I.context->buffer_len > 0) \
+		&& (CTX (lastEnabled) && !I.filter && I.context->grep.nstrings < 1 && \
+		!I.context->grep.tokens_used && !I.context->grep.less && \
+		!I.context->grep.json && !I.is_html);
+}
+
+R_API void r_cons_flush(void) {
 	const char *tee = I.teefile;
 	if (I.noflush) {
 		return;
@@ -694,15 +715,25 @@ R_API void r_cons_flush() {
 		r_cons_reset ();
 		return;
 	}
+	if (lastMatters () && !CTX (lastMode)) {
+		// snapshot of the output
+		if (CTX (buffer_len) > CTX (lastLength)) {
+			free (CTX (lastOutput));
+			CTX (lastOutput) = malloc (CTX (buffer_len) + 1);
+		}
+		CTX (lastLength) = CTX (buffer_len);
+		memcpy (CTX (lastOutput), CTX (buffer), CTX (buffer_len));
+	} else {
+		CTX (lastMode) = false;
+	}
 	r_cons_filter ();
+
 	if (I.is_interactive && I.fdout == 1) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
-		if (I.pager && *I.pager && I.context->buffer_len > 0
-				&& r_str_char_count (I.context->buffer, '\n') >= I.rows) {
-			I.context->buffer[I.context->buffer_len-1] = 0;
+		if (I.pager && *I.pager && I.context->buffer_len > 0 && r_str_char_count (I.context->buffer, '\n') >= I.rows) {
+			I.context->buffer[I.context->buffer_len - 1] = 0;
 			r_sys_cmd_str_full (I.pager, I.context->buffer, NULL, NULL, NULL);
 			r_cons_reset ();
-
 		} else if (I.context->buffer_len > CONS_MAX_USER) {
 #if COUNT_LINES
 			int i, lines = 0;
@@ -739,6 +770,7 @@ R_API void r_cons_flush() {
 		}
 	}
 	r_cons_highlight (I.highlight);
+
 	// is_html must be a filter, not a write endpoint
 	if (I.is_interactive && !r_sandbox_enable (false)) {
 		if (I.linesleep > 0 && I.linesleep < 1000) {
@@ -926,14 +958,16 @@ club:
 	va_end (ap3);
 }
 
-R_API void r_cons_printf(const char *format, ...) {
+R_API int r_cons_printf(const char *format, ...) {
 	va_list ap;
 	if (!format || !*format) {
-		return;
+		return -1;
 	}
 	va_start (ap, format);
 	r_cons_printf_list (format, ap);
 	va_end (ap);
+
+	return 0;
 }
 
 R_API int r_cons_get_column() {
@@ -1019,10 +1053,13 @@ R_API int r_cons_get_cursor(int *rows) {
 			if (ch2 == '\\') {
 				i++;
 			} else if (ch2 == ']') {
-				if (!strncmp (str + 2 + 5, "rgb:", 4))
+				if (!strncmp (str + 2 + 5, "rgb:", 4)) {
 					i += 18;
+				}
 			} else if (ch2 == '[') {
-				for (++i; str[i] && str[i] != 'J' && str[i] != 'm' && str[i] != 'H'; i++);
+				for (++i; str[i] && str[i] != 'J' && str[i] != 'm' && str[i] != 'H'; i++) {
+					;
+				}
 			}
 		} else if (I.context->buffer[i] == '\n') {
 			row++;
@@ -1487,23 +1524,21 @@ R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 	}
 
 	for (i = 0; help[i]; i += 3) {
-		if (strncmp (help[i], usage_str, strlen (usage_str)) == 0) {
+		if (!strncmp (help[i], usage_str, strlen (usage_str))) {
 			// Lines matching Usage: should always be the first in inline doc
 			r_cons_printf ("%s%s %s  %s%s\n", pal_args_color,
-							help[i], help[i + 1], help[i + 2], pal_reset);
+				help[i], help[i + 1], help[i + 2], pal_reset);
 			continue;
 		}
-		if (strcmp (help[i + 1], "") == 0 && strcmp (help[i + 2], "") == 0) {
+		if (!help[i + 1][0] && !help[i + 2][0]) {
 			// no need to indent the sections lines
 			r_cons_printf ("%s%s%s\n", pal_help_color, help[i], pal_reset);
 		} else {
 			// these are the normal lines
-			int padding = max_length - (strlen (help[i]) + strlen (help[i + 1]));
+			int padding = R_MAX(0, max_length - (strlen (help[i]) + strlen (help[i + 1])));
 			r_cons_printf ("| %s%s%s%*s  %s%s%s\n",
-					help[i],
-					pal_args_color, help[i + 1],
-					padding, "",
-					pal_help_color, help[i + 2], pal_reset);
+				help[i], pal_args_color, help[i + 1],
+				padding, "", pal_help_color, help[i + 2], pal_reset);
 		}
 	}
 }

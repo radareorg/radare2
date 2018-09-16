@@ -238,6 +238,7 @@ else
 endif
 
 userconf = configuration_data()
+userconf.set('R_CHECKS_LEVEL', get_option('checks_level'))
 userconf.set('HAVE_LIB_MAGIC', sys_magic.found().to_int())
 userconf.set('USE_LIB_MAGIC', use_syslib_magic.to_int())
 userconf.set('HAVE_LIB_XXHASH', sys_xxhash.found().to_int())

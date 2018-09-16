@@ -33,6 +33,15 @@ static const char *help_msg_p6[] = {
 	NULL
 };
 
+static const char *help_msg_pF[] = {
+	"Usage: pF[apd]", "[len]", "parse ASN1, PKCS, X509, DER",
+	"pFa", "[len]", "decode ASN1 from current block",
+	"pFo", "[len]", "decode ASN1 OID",
+	"pFp", "[len]", "decode PKCS7",
+	"pFx", "[len]", "Same with X509",
+	NULL
+};
+
 static const char* help_msg_pr[] = {
 	"Usage: pr[glx]", "[size]", "print N raw bytes",
 	"prc", "", "print bytes as colors in palette",
@@ -170,6 +179,7 @@ static const char *help_msg_p[] = {
 	"pd", "[?] [sz] [a] [b]", "disassemble N opcodes (pd) or N bytes (pD)",
 	"pd--", "[n]", "context disassembly of N instructions",
 	"pf", "[?][.nam] [fmt]", "print formatted data (pf.name, pf.name $<expr>)",
+	"pF", "[?][apx]", "print asn1, pkcs7 or x509",
 	"ph", "[?][=|hash] ([len])", "calculate hash for a block",
 	"pj", "[?] [len]", "print as indented JSON",
 	"p", "[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pdi)",
@@ -247,6 +257,7 @@ static const char *help_msg_pc[] = {
 	"pcs", "", "string",
 	"pcS", "", "shellscript that reconstructs the bin",
 	"pcw", "", "C words (4 byte)",
+	NULL
 };
 
 static const char *help_msg_pd[] = {
@@ -884,6 +895,64 @@ static void print_format_help_help_help_help(RCore *core) {
 		NULL
 	};
 	r_core_cmd_help (core, help_msg);
+}
+
+static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, int size) {
+	switch (*input) {
+	case '?': // "pF?"
+		r_core_cmd_help (core, help_msg_pF);
+		break;
+	case 'a':
+		{
+			RASN1Object *asn1 = r_asn1_create_object (data, size);
+			if (asn1) {
+				char *res = r_asn1_to_string (asn1, 0, NULL);
+				r_asn1_free_object (asn1);
+				if (res) {
+					r_cons_printf ("%s\n", res);
+					free (res);
+				}
+			} else {
+				eprintf ("Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
+			}
+		}
+		break;
+	case 'x': // "pFx" x509
+		{
+			RX509Certificate* x509 = r_x509_parse_certificate (r_asn1_create_object (data, size));
+			if (x509) {
+				RStrBuf *sb = r_strbuf_new ("");
+				r_x509_certificate_dump (x509, NULL, sb);
+				char *res = r_strbuf_drain (sb);
+				if (res) {
+					r_cons_printf ("%s\n", res);
+					free (res);
+				}
+				r_x509_free_certificate (x509);
+			} else {
+				eprintf ("Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
+			}
+		}
+		break;
+	case 'p': // "pFp"
+		{
+			RCMS *cms = r_pkcs7_parse_cms (data, size);
+			if (cms) {
+				char *res = r_pkcs7_cms_to_string (cms);
+				if (res) {
+					r_cons_printf ("%s\n", res);
+					free (res);
+				}
+				r_pkcs7_free_cms (cms);
+			} else {
+				eprintf ("Malformed object: did you supply enough data?\ntry to change the block size (see b?)\n");
+			}
+		}
+		break;
+	default:
+		eprintf ("Not yet implemented\n");
+		break;
+	}
 }
 
 static void cmd_print_format(RCore *core, const char *_input, const ut8* block, int len) {
@@ -1939,7 +2008,7 @@ line = NULL;
 	if (!strncmp (input, "dsb", 3)) {
 		RAnalBlock *bb = r_anal_bb_from_offset (core->anal, core->offset);
 		if (bb) {
-			line = s = r_core_cmd_strf (core, "pD %"PFMT64d" @ 0x%08"PFMT64x, bb->size, bb->addr);
+			line = s = r_core_cmd_strf (core, "pD %i @ 0x%08"PFMT64x, bb->size, bb->addr);
 		}
 	} else if (!strncmp (input, "dsf", 3) || !strncmp (input, "dsr", 3)) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
@@ -5561,6 +5630,9 @@ static int cmd_print(void *data, const char *input) {
 	case 'f': // "pf"
 		cmd_print_format (core, input, block, len);
 		break;
+	case 'F': // "pF"
+		cmd_print_fromage (core, input + 1, block, len);
+		break;
 	case 'k': // "pk"
 		if (input[1] == '?') {
 			r_cons_printf ("|Usage: pk [len]       print key in randomart\n");
@@ -5832,7 +5904,7 @@ R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int se
 				if (offdec) {
 					snprintf (space, sizeof (space), "%"PFMT64d, off);
 					white = r_str_pad (' ', 10 - strlen (space));
-					r_cons_printf ("%s%s%s%s", k, white, space, off, reset);
+					r_cons_printf ("%s%s%s%s", k, white, space, reset);
 				} else {
 					r_cons_printf ("%s0x%08"PFMT64x "%s", k, off, reset);
 				}

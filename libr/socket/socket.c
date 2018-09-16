@@ -182,7 +182,9 @@ R_API int r_socket_unix_listen (RSocket *s, const char *file) {
 
 R_API RSocket *r_socket_new (int is_ssl) {
 	RSocket *s = R_NEW0 (RSocket);
-	if (!s) return NULL;
+	if (!s) {
+		return NULL;
+	}
 	s->is_ssl = is_ssl;
 	s->port = 0;
 #if __UNIX_
@@ -434,7 +436,9 @@ R_API int r_socket_close_fd (RSocket *s) {
 /* shutdown the socket and close the file descriptor */
 R_API int r_socket_close (RSocket *s) {
 	int ret = false;
-	if (!s) return false;
+	if (!s) {
+		return false;
+	}
 	if (s->fd != -1) {
 #if __UNIX__ || defined(__CYGWIN__)
 		shutdown (s->fd, SHUT_RDWR);
@@ -465,10 +469,12 @@ R_API int r_socket_free (RSocket *s) {
 	int res = r_socket_close (s);
 #if HAVE_LIB_SSL
 	if (s->is_ssl) {
-		if (s->sfd)
+		if (s->sfd) {
 			SSL_free (s->sfd);
-		if (s->ctx)
+		}
+		if (s->ctx) {
 			SSL_CTX_free (s->ctx);
+		}
 	}
 #endif
 	free (s);
@@ -477,8 +483,9 @@ R_API int r_socket_free (RSocket *s) {
 
 R_API int r_socket_port_by_name(const char *name) {
 	struct servent *p = getservbyname (name, "tcp");
-	if (p && p->s_port)
+	if (p && p->s_port) {
 		return ntohs (p->s_port);
+	}
 	return r_num_get (NULL, name);
 }
 
@@ -498,8 +505,9 @@ R_API bool r_socket_listen (RSocket *s, const char *port, const char *certfile) 
 		return false;
 	}
 #endif
-	if ((s->fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP))<0)
+	if ((s->fd = socket (AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0) {
 		return false;
+	}
 #if __UNIX__ || defined(__CYGWIN__)
 	linger.l_onoff = 1;
 	linger.l_linger = 1;
@@ -510,12 +518,14 @@ R_API bool r_socket_listen (RSocket *s, const char *port, const char *certfile) 
 	{ // fix close after write bug //
 	int x = 1500; // FORCE MTU
 	ret = setsockopt (s->fd, SOL_SOCKET, SO_SNDBUF, (void*)&x, sizeof (int));
-	if (ret < 0)
+	if (ret < 0) {
 		return false;
 	}
+	}
 	ret = setsockopt (s->fd, SOL_SOCKET, SO_REUSEADDR, (void*)&optval, sizeof optval);
-	if (ret < 0)
+	if (ret < 0) {
 		return false;
+	}
 #endif
 	memset (&s->sa, 0, sizeof (s->sa));
 	s->sa.sin_family = AF_INET;
@@ -638,16 +648,20 @@ R_API int r_socket_block_time (RSocket *s, int block, int sec) {
 #if __UNIX__ || defined(__CYGWIN__)
 	int ret, flags;
 #endif
-	if (!s) return false;
+	if (!s) {
+		return false;
+	}
 #if __UNIX__ || defined(__CYGWIN__)
 	flags = fcntl (s->fd, F_GETFL, 0);
-	if (flags < 0)
+	if (flags < 0) {
 		return false;
+	}
 	ret = fcntl (s->fd, F_SETFL, block?
 			(flags & ~O_NONBLOCK):
 			(flags | O_NONBLOCK));
-	if (ret < 0)
+	if (ret < 0) {
 		return false;
+	}
 #elif __WINDOWS__ && !defined(__CYGWIN__) //&& !defined(__MINGW64__)
 	// HACK: nonblocking io on w32 behaves strange
 	return true;
@@ -658,16 +672,18 @@ R_API int r_socket_block_time (RSocket *s, int block, int sec) {
 		tv.tv_sec = sec;
 		tv.tv_usec = 0;
 		if (setsockopt (s->fd, SOL_SOCKET, SO_RCVTIMEO,
-				(char *)&tv, sizeof (tv)) < 0)
+			    (char *)&tv, sizeof (tv)) < 0) {
 			return false;
+		}
 	}
 	return true;
 }
 
 R_API int r_socket_flush(RSocket *s) {
 #if HAVE_LIB_SSL
-	if (s->is_ssl && s->bio)
-		return BIO_flush(s->bio);
+	if (s->is_ssl && s->bio) {
+		return BIO_flush (s->bio);
+	}
 #endif
 	return true;
 }
@@ -717,10 +733,13 @@ R_API char *r_socket_to_string(RSocket *s) {
 	if (!getpeername (s->fd, &sa, &sl)) {
 		struct sockaddr_in *sain = (struct sockaddr_in*) &sa;
 		ut8 *a = (ut8*) &(sain->sin_addr);
-		if ((str = malloc (32)))
+		if ((str = malloc (32))) {
 			sprintf (str, "%d.%d.%d.%d:%d",
-				a[0],a[1],a[2],a[3], ntohs (sain->sin_port));
-	} else eprintf ("getperrname: failed\n"); //r_sys_perror ("getpeername");
+				a[0], a[1], a[2], a[3], ntohs (sain->sin_port));
+		}
+	} else {
+		eprintf ("getperrname: failed\n"); //r_sys_perror ("getpeername");
+	}
 	return str;
 #else
 	return NULL;
@@ -740,10 +759,11 @@ R_API int r_socket_write(RSocket *s, void *buf, int len) {
 		}
 #if HAVE_LIB_SSL
 		if (s->is_ssl) {
-			if (s->bio)
+			if (s->bio) {
 				ret = BIO_write (s->bio, buf+delta, b);
-			else
-				ret = SSL_write (s->sfd, buf+delta, b);
+			} else {
+				ret = SSL_write (s->sfd, buf + delta, b);
+			}
 		} else
 #endif
 		{

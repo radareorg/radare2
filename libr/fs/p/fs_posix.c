@@ -11,7 +11,9 @@
 static RFSFile* fs_posix_open(RFSRoot *root, const char *path) {
 	FILE *fd;
 	RFSFile *file = r_fs_file_new (root, path);
-	if (!file) return NULL;
+	if (!file) {
+		return NULL;
+	}
 	file->ptr = NULL;
 	file->p = root->p;
 	fd = r_sandbox_fopen (path, "r");
@@ -49,7 +51,7 @@ static RList *fs_posix_dir(RFSRoot *root, const char *path, int view /*ignored*/
 #else
 	struct dirent *de;
 	DIR *dir;
-#endif	
+#endif
 	list = r_list_new ();
 	if (!list) {
 		return NULL;
@@ -139,7 +141,7 @@ RFSPlugin r_fs_plugin_posix = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
         .type = R_LIB_TYPE_FS,
         .data = &r_fs_plugin_posix,
         .version = R2_VERSION

@@ -35,18 +35,24 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	}
 
 	// replace this with the asm.features?
-	if (a->cpu && strstr (a->cpu, "68000"))
+	if (a->cpu && strstr (a->cpu, "68000")) {
 		mode |= CS_MODE_M68K_000;
-	if (a->cpu && strstr (a->cpu, "68010"))
+	}
+	if (a->cpu && strstr (a->cpu, "68010")) {
 		mode |= CS_MODE_M68K_010;
-	if (a->cpu && strstr (a->cpu, "68020"))
+	}
+	if (a->cpu && strstr (a->cpu, "68020")) {
 		mode |= CS_MODE_M68K_020;
-	if (a->cpu && strstr (a->cpu, "68030"))
+	}
+	if (a->cpu && strstr (a->cpu, "68030")) {
 		mode |= CS_MODE_M68K_030;
-	if (a->cpu && strstr (a->cpu, "68040"))
+	}
+	if (a->cpu && strstr (a->cpu, "68040")) {
 		mode |= CS_MODE_M68K_040;
-	if (a->cpu && strstr (a->cpu, "68060"))
+	}
+	if (a->cpu && strstr (a->cpu, "68060")) {
 		mode |= CS_MODE_M68K_060;
+	}
 	if (op) {
 		op->size = 4;
 	}
@@ -133,7 +139,7 @@ static bool check_features(RAsm *a, cs_insn *insn) {
 }
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_m68k_cs,
 	.version = R2_VERSION
@@ -152,7 +158,7 @@ RAsmPlugin r_asm_plugin_m68k_cs = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_m68k_cs,
 	.version = R2_VERSION

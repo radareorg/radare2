@@ -48,6 +48,10 @@ else
 	[ -n "${NOSUDO}" ] && SUDO="echo NOTE: sudo not found. Please run as root: "
 fi
 
+if [ "${USE_SU}" = 1 ]; then
+	SUDO="/bin/su -m root -c"
+fi
+
 if [ "${M32}" = 1 ]; then
 	./sys/build-m32.sh $* && ${SUDO} ${MAKE} ${INSTALL_TARGET}
 elif [ "${HARDEN}" = 1 ]; then

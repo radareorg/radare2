@@ -375,7 +375,9 @@ R_API ut64 r_num_math(RNum *num, const char *str) {
 #if R_NUM_USE_CALC
 	ut64 ret;
 	const char *err = NULL;
-	if (!str) return 0LL;
+	if (!str) {
+		return 0LL;
+	}
 	//if (!str || !*str) return 0LL;
 	if (num) {
 		num->dbz = 0;
@@ -458,11 +460,17 @@ R_API double r_num_get_float(RNum *num, const char *str) {
 R_API int r_num_to_bits (char *out, ut64 num) {
 	int size = 64, i;
 
-	if (num>>32) size = 64;
-	else if (num&0xff000000) size = 32;
-	else if (num&0xff0000) size = 24;
-	else if (num&0xff00) size = 16;
-	else if (num&0xff) size = 8;
+	if (num >> 32) {
+		size = 64;
+	} else if (num & 0xff000000) {
+		size = 32;
+	} else if (num & 0xff0000) {
+		size = 24;
+	} else if (num & 0xff00) {
+		size = 16;
+	} else if (num & 0xff) {
+		size = 8;
+	}
 	if (out) {
 		int pos = 0;
 		int realsize = 0;
@@ -477,8 +485,9 @@ R_API int r_num_to_bits (char *out, ut64 num) {
 				realsize = size-i;
 			}
 		}
-		if (realsize==0)
-		out[realsize++] = '0';
+		if (realsize == 0) {
+			out[realsize++] = '0';
+		}
 		out[realsize] = '\0'; //Maybe not nesesary?
 
 	}
@@ -504,7 +513,9 @@ R_API int r_num_to_trits (char *out, ut64 num) {
 }
 
 R_API ut64 r_num_chs (int cylinder, int head, int sector, int sectorsize) {
-	if (sectorsize<1) sectorsize = 512;
+	if (sectorsize < 1) {
+		sectorsize = 512;
+	}
 	return (ut64)cylinder * (ut64)head * (ut64)sector * (ut64)sectorsize;
 }
 
@@ -515,17 +526,23 @@ R_API int r_num_conditional(RNum *num, const char *str) {
 	p = s;
 	do {
 		t = strchr (p, ',');
-		if (t) *t = 0;
+		if (t) {
+			*t = 0;
+		}
 		lgt = strchr (p, '<');
 		if (lgt) {
 			*lgt = 0;
 			a = r_num_math (num, p);
 			if (lgt[1]=='=') {
 				b = r_num_math (num, lgt+2);
-				if (a>b) goto fail;
+				if (a > b) {
+					goto fail;
+				}
 			} else {
 				b = r_num_math (num, lgt+1);
-				if (a>=b) goto fail;
+				if (a >= b) {
+					goto fail;
+				}
 			}
 		} else {
 			lgt = strchr (p, '>');
@@ -534,10 +551,14 @@ R_API int r_num_conditional(RNum *num, const char *str) {
 				a = r_num_math (num, p);
 				if (lgt[1]=='=') {
 					b = r_num_math (num, lgt+2);
-					if (a<b) goto fail;
+					if (a < b) {
+						goto fail;
+					}
 				} else {
 					b = r_num_math (num, lgt+1);
-					if (a<=b) goto fail;
+					if (a <= b) {
+						goto fail;
+					}
 				}
 			} else {
 				lgt = strchr (p, '=');
@@ -547,14 +568,20 @@ R_API int r_num_conditional(RNum *num, const char *str) {
 						r_str_replace_char (p, '!', ' ');
 						r_str_replace_char (p, '=', '-');
 						n = r_num_math (num, p);
-						if (!n) goto fail;
+						if (!n) {
+							goto fail;
+						}
 					}
 				}
 				lgt = strstr (p, "==");
-				if (lgt) *lgt = ' ';
+				if (lgt) {
+					*lgt = ' ';
+				}
 				r_str_replace_char (p, '=', '-');
 				n = r_num_math (num, p);
-				if (n) goto fail;
+				if (n) {
+					goto fail;
+				}
 			}
 		}
 		p = t+1;
@@ -608,8 +635,9 @@ R_API char* r_num_as_string(RNum *___, ut64 n, bool printable_only) {
 		} else if (!printable_only && (off = escape_char (str + stri, ch)) != 0) {
 			stri += off;
 		} else {
-			if (ch)
+			if (ch) {
 				return NULL;
+			}
 		}
 		ret |= (num & 0xff);
 		num >>= 8;
@@ -769,7 +797,7 @@ R_API int r_num_str_split(char *str) {
 
 R_API RList *r_num_str_split_list(char *str) {
 	int i, count = r_num_str_split (str);
-	RList *list = r_list_newf (free);
+	RList *list = r_list_new ();
 	for (i = 0; i < count; i++) {
 		r_list_append (list, str);
 		str += strlen (str) + 1;

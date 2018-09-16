@@ -16,9 +16,10 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	}
 
 	ifd = r_file_mkstemp ("r_nasm", &ipath);
-	if (ifd == -1)
+	if (ifd == -1) {
 		return -1;
-		
+	}
+
 	ofd = r_file_mkstemp ("r_nasm", &opath);
 	if (ofd == -1) {
 		free (ipath);
@@ -62,7 +63,7 @@ RAsmPlugin r_asm_plugin_x86_nasm = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_x86_nasm,
 	.version = R2_VERSION

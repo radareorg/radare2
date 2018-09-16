@@ -157,7 +157,9 @@ R_API RLangPlugin *r_lang_get_by_extension (RLang *lang, const char *ext) {
 	RListIter *iter;
 	RLangPlugin *h;
 	const char *p = r_str_lchr (ext, '.');
-	if (p) ext = p + 1;
+	if (p) {
+		ext = p + 1;
+	}
 	r_list_foreach (lang->langs, iter, h) {
 		if (!r_str_casecmp (h->ext, ext)) {
 			return h;
@@ -301,14 +303,18 @@ R_API int r_lang_prompt(RLang *lang) {
 				"  . file   - interpret file\n"
 				"  q        - quit prompt\n");
 			eprintf ("%s example:\n", lang->cur->name);
-			if (lang->cur->help)
+			if (lang->cur->help) {
 				eprintf ("%s", *lang->cur->help);
-			if (!r_list_empty (lang->defs))
+			}
+			if (!r_list_empty (lang->defs)) {
 				eprintf ("variables:\n");
+			}
 			r_list_foreach (lang->defs, iter, def) {
 				eprintf ("  %s %s\n", def->type, def->name);
 			}
-		} else r_lang_run (lang, buf, strlen (buf));
+		} else {
+			r_lang_run (lang, buf, strlen (buf));
+		}
 	}
 	// XXX: leaking history
 	r_line_set_prompt (prompt);

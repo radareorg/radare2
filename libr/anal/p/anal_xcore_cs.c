@@ -56,8 +56,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	cs_insn *insn;
 	int mode, n, ret;
 	mode = CS_MODE_BIG_ENDIAN;
-	if (!strcmp (a->cpu, "v9"))
+	if (!strcmp (a->cpu, "v9")) {
 		mode |= CS_MODE_V9;
+	}
 	if (mode != omode) {
 		if (handle) {
 			cs_close (&handle);
@@ -135,7 +136,7 @@ RAnalPlugin r_anal_plugin_xcore_cs = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_xcore_cs,
 	.version = R2_VERSION

@@ -111,7 +111,9 @@ static RList* entries(RBinFile *bf) {
 
 static void addsym(RList *ret, const char *name, ut64 addr) {
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
-	if (!ptr) return;
+	if (!ptr) {
+		return;
+	}
 	ptr->name = strdup (name? name: "");
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->size = 0;
@@ -167,7 +169,7 @@ RBinPlugin r_bin_plugin_avr = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_avr,
 	.version = R2_VERSION

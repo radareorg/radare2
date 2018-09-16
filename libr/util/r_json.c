@@ -254,14 +254,18 @@ R_API char* r_json_var_string (RJSVar* var, bool expanded) {
 			}
 			for (i = 0; i < var->array.l; i++) {
 				t[i] = r_json_var_string (var->array.a[i], expanded);
-				if (!t[i]) continue;
+				if (!t[i]) {
+					continue;
+				}
 				len += strlen (t[i]) + 1;
 			}
 			c = (char*) calloc (len, 1);
 			p = c + 1;
 			e = p + len;
 			for (i = 0; i < var->array.l; i++) {
-				if (!t[i]) continue;
+				if (!t[i]) {
+					continue;
+				}
 				if (c) {
 					p += snprintf (p, e - p, "%s,", t[i]);
 				}
@@ -269,8 +273,9 @@ R_API char* r_json_var_string (RJSVar* var, bool expanded) {
 			}
 			if (c) {
 				c[0] = '[';
-				if (p == c + 1)
+				if (p == c + 1) {
 					p++;
+				}
 				c[len - (e - p)] = ']';
 				c[len - 1] = 0;
 			}
@@ -292,7 +297,9 @@ R_API char* r_json_var_string (RJSVar* var, bool expanded) {
 			len = 3;
 			for (i = 0; i < var->object.l; i++) {
 				t[i] = r_json_var_string (var->object.a[i], expanded);
-				if (!t[i]) continue;
+				if (!t[i]) {
+					continue;
+				}
 				fflush (stdout);
 				len += strlen (t[i]) + strlen (var->object.n[i]) + 4;
 			}
@@ -300,7 +307,9 @@ R_API char* r_json_var_string (RJSVar* var, bool expanded) {
 			p = c + 1;
 			e = p + len;
 			for (i = 0; i < var->object.l; i++) {
-				if (!t[i]) continue;
+				if (!t[i]) {
+					continue;
+				}
 				if (c) {
 					p += snprintf (p, e - p, "\"%s\":%s,", var->object.n[i], t[i]);
 				}
@@ -308,8 +317,9 @@ R_API char* r_json_var_string (RJSVar* var, bool expanded) {
 			}
 			if (c) {
 				c[0] = '{';
-				if (p == c + 1)
+				if (p == c + 1) {
 					p++;
+				}
 				c[len - (e - p)] = '}';
 				c[len - 1] = 0;
 			}

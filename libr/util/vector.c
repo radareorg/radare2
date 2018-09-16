@@ -262,17 +262,20 @@ R_API void *r_pvector_pop_front(RPVector *vec) {
 
 // CLRS Quicksort. It is slow, but simple.
 static void quick_sort(void **a, size_t n, RPVectorComparator cmp) {
-	if (n <= 1) return;
+	if (n <= 1) {
+		return;
+	}
 	int i = rand() % n, j = 0;
 	void *t, *pivot = a[i];
 	a[i] = a[n - 1];
-	for (i = 0; i < n - 1; i++)
+	for (i = 0; i < n - 1; i++) {
 		if (cmp (a[i], pivot) < 0) {
 			t = a[i];
 			a[i] = a[j];
 			a[j] = t;
 			j++;
 		}
+	}
 	a[n - 1] = a[j];
 	a[j] = pivot;
 	quick_sort (a, j, cmp);

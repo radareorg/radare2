@@ -2,7 +2,7 @@
 set -x
 
 export PATH=${TRAVIS_BUILD_DIR}/install/bin:${PATH}
-export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/install/lib:${TRAVIS_BUILD_DIR}/install/lib64:${LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/install/lib/$(uname -m)-linux-gnu:${TRAVIS_BUILD_DIR}/install/lib:${TRAVIS_BUILD_DIR}/install/lib64:${LD_LIBRARY_PATH}
 git clone --depth 1 --branch "${R2R_BRANCH}" "${R2R_REPO}" || true # If cloning fails that's not an error: we simply fallback to master.
 ls radare2-regressions >/dev/null 2>&1 || git clone --depth 1 --branch "${R2R_DEFAULT_BRANCH}" "${R2R_DEFAULT_REPO}"
 
@@ -29,10 +29,10 @@ if [ "${INSTALL_SYSTEM}" == "meson" ] ; then
         OPTS="${OPTS} -Db_coverage=true"
     fi
 
-    meson --prefix=${TRAVIS_BUILD_DIR}/install ${OPTS} build
+    meson --prefix=${TRAVIS_BUILD_DIR}/install ${OPTS} build || exit 1
     pushd build
-    ninja
-    ninja install
+    ninja || exit 1
+    ninja install || exit 1
     popd
     export PKG_CONFIG_PATH=$(pwd)/build/meson-private:${PKG_CONFIG_PATH}
 else
@@ -54,5 +54,5 @@ if [ "${COVERAGE}" == "1" ] ; then
     cd ../build
     curl -s https://codecov.io/bash > ./codecov.sh
     chmod +x ./codecov.sh
-    ./codecov.sh -v 2>/dev/null
+    ./codecov.sh -K -v 2>/dev/null
 fi

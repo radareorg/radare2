@@ -2088,7 +2088,7 @@ static bool fcnNeedsPrefix(const char *name) {
 
 /* TODO: move into r_anal_fcn_rename(); */
 static bool setFunctionName(RCore *core, ut64 off, const char *_name, bool prefix) {
-	char *name, *oname, *nname = NULL;
+	char *name, *nname = NULL;
 	RAnalFunction *fcn;
 	if (!core || !_name) {
 		return false;
@@ -2105,6 +2105,7 @@ static bool setFunctionName(RCore *core, ut64 off, const char *_name, bool prefi
 	fcn = r_anal_get_fcn_in (core->anal, off,
 				R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM | R_ANAL_FCN_TYPE_LOC);
 	if (!fcn) {
+		free (name);
 		return false;
 	}
 	if (prefix && fcnNeedsPrefix (name)) {
@@ -2112,7 +2113,7 @@ static bool setFunctionName(RCore *core, ut64 off, const char *_name, bool prefi
 	} else {
 		nname = strdup (name);
 	}
-	oname = fcn->name;
+	char *oname = fcn->name;
 	r_flag_rename (core->flags, r_flag_get (core->flags, fcn->name), nname);
 	fcn->name = strdup (nname);
 	if (core->anal->cb.on_fcn_rename) {
@@ -6876,7 +6877,6 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	ut64 o_align = geti ("search.align");
 	bool asterisk = strchr (input, '*');;
 	bool is_debug = r_config_get_i (core->config, "cfg.debug");
-
 	// pre
 	int archAlign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
 	seti ("search.align", archAlign);
@@ -6887,6 +6887,8 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	}
 
 	// body
+	rowlog (core, "Analyze value pointers (aav)");
+	rowlog_done (core);
 	r_cons_break_push (NULL, NULL);
 	if (is_debug) {
 		RList *list = r_core_get_boundaries_prot (core, 0, "dbg.map", "anal");
@@ -6896,7 +6898,8 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			eprintf ("aav: from 0x%"PFMT64x" to 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
+			rowlog (core, sdb_fmt ("from 0x%"PFMT64x" to 0x%"PFMT64x" (aav)", map->itv.addr, r_itv_end (map->itv)));
+			rowlog_done (core);
 			(void)r_core_search_value_in_range (core, map->itv,
 				map->itv.addr, r_itv_end (map->itv), vsize, asterisk, _CbInRangeAav);
 		}
@@ -6915,7 +6918,8 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			//TODO: Reduce multiple hits for same addr
 			from = r_itv_begin (map2->itv);
 			to = r_itv_end (map2->itv);
-			eprintf ("Value from 0x%08"PFMT64x " to 0x%08" PFMT64x "\n", from, to);
+			rowlog (core, sdb_fmt ("Value from 0x%08"PFMT64x " to 0x%08" PFMT64x " (aav)", from, to));
+			rowlog_done (core);
 			r_list_foreach (list, iter, map) {
 				ut64 begin = map->itv.addr;
 				ut64 end = r_itv_end (map->itv);
@@ -6923,10 +6927,12 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 					break;
 				}
 				if (end - begin > UT32_MAX) {
-					eprintf ("Skipping huge range\n");
+					rowlog (core, "Skipping huge range");
+					rowlog_done (core);
 					continue;
 				}
-				eprintf ("aav: 0x%08"PFMT64x"-0x%08"PFMT64x" in 0x%"PFMT64x"-0x%"PFMT64x"\n", from, to, begin, end);
+				rowlog (core, sdb_fmt ("0x%08"PFMT64x"-0x%08"PFMT64x" in 0x%"PFMT64x"-0x%"PFMT64x" (aav)", from, to, begin, end));
+				rowlog_done (core);
 				(void)r_core_search_value_in_range (core, map->itv, from, to, vsize, asterisk, _CbInRangeAav);
 				}
 		}
@@ -7037,7 +7043,6 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				}
 				int c = r_config_get_i (core->config, "anal.calls");
 				if (should_aav (core)) {
-					rowlog (core, "\nAnalyze value pointers (aav)");
 					r_core_cmd0 (core, "aav");
 					if (r_cons_is_breaked ()) {
 						goto jacuzzi;
@@ -7067,11 +7072,11 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				}
 				run_pending_anal (core);
 				r_config_set_i (core->config, "anal.calls", c);
-				rowlog (core, "Constructing a function name for fcn.* and sym.func.* functions (aan)");
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
 				if (r_config_get_i (core->config, "anal.autoname")) {
+					rowlog (core, "Constructing a function name for fcn.* and sym.func.* functions (aan)");
 					r_core_anal_autoname_all_fcns (core);
 					rowlog_done (core);
 				}
@@ -7095,6 +7100,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				if (!sdb_isempty (core->anal->sdb_zigns)) {
 					rowlog (core, "Check for zignature from zigns folder (z/)");
 					r_core_cmd0 (core, "z/");
+					rowlog_done (core);
 				}
 				rowlog (core, "Type matching analysis for all functions (afta)");
 				r_core_cmd0 (core, "afta");

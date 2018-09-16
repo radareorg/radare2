@@ -192,19 +192,21 @@ static int parse(RParse *p, const char *data, char *str) {
 		}
 		if (ptr) {
 			*ptr = '\0';
-			for (++ptr; *ptr==' '; ptr++);
+			for (++ptr; *ptr == ' '; ptr++) {
+				;
+			}
 			strncpy (w0, buf, sizeof (w0) - 1);
 			strncpy (w1, ptr, sizeof (w1) - 1);
 
 			optr = ptr;
-			if (*ptr == '(') { 
-				ptr = strchr (ptr+1, ')'); 
+			if (*ptr == '(') {
+				ptr = strchr (ptr+1, ')');
 			}
 			if (ptr && *ptr == '[') {
-				ptr = strchr (ptr+1, ']'); 
+				ptr = strchr (ptr+1, ']');
 			}
-			if (ptr && *ptr == '{') { 
-				ptr = strchr (ptr+1, '}'); 
+			if (ptr && *ptr == '{') {
+				ptr = strchr (ptr+1, '}');
 			}
 			if (!ptr) {
 				eprintf ("Unbalanced bracket\n");
@@ -214,14 +216,18 @@ static int parse(RParse *p, const char *data, char *str) {
 			ptr = strchr (ptr, ',');
 			if (ptr) {
 				*ptr = '\0';
-				for (++ptr; *ptr==' '; ptr++);
+				for (++ptr; *ptr == ' '; ptr++) {
+					;
+				}
 				strncpy (w1, optr, sizeof (w1) - 1);
 				strncpy (w2, ptr, sizeof (w2) - 1);
 				optr = ptr;
 				ptr = strchr (ptr, ',');
 				if (ptr) {
 					*ptr = '\0';
-					for (++ptr; *ptr==' '; ptr++);
+					for (++ptr; *ptr == ' '; ptr++) {
+						;
+					}
 					strncpy (w2, optr, sizeof (w2) - 1);
 					strncpy (w3, ptr, sizeof (w3) - 1);
 				}
@@ -408,7 +414,7 @@ RParsePlugin r_parse_plugin_arm_pseudo = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_PARSE,
 	.data = &r_parse_plugin_arm_pseudo,
 	.version = R2_VERSION

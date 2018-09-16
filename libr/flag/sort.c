@@ -13,8 +13,11 @@ static int ncmp(const void *a, const void *b) {
 static int cmp(const void *a, const void *b) {
 	RFlagItem *fa = (RFlagItem *)a;
 	RFlagItem *fb = (RFlagItem *)b;
-	if (fa->offset > fb->offset) return 1;
-	else if (fa->offset < fb->offset) return -1;
+	if (fa->offset > fb->offset) {
+		return 1;
+	} else if (fa->offset < fb->offset) {
+		return -1;
+	}
 	return 0;
 }
 

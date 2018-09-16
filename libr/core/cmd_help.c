@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <stddef.h>
+#include <math.h> // required for signbit
 #include "r_cons.h"
 #include "r_core.h"
 #include "r_util.h"
@@ -74,6 +75,7 @@ static const char *help_msg_root[] = {
 	"*", "[?] off[=[0x]value]", "pointer read/write data/values (see ?v, wx, wv)",
 	"(macro arg0 arg1)",  "", "manage scripting macros",
 	".", "[?] [-|(m)|f|!sh|cmd]", "Define macro or load r2, cparse or rlang file",
+	"_", "[?]", "Print last output",
 	"=","[?] [cmd]", "send/listen for remote commands (rap://, http://, <fd>)",
 	"<","[...]", "push escaped string into the RCons.readChar buffer",
 	"/","[?]", "search for bytes, regexps, patterns, ..",
@@ -89,6 +91,7 @@ static const char *help_msg_root[] = {
 	"g","[?] [arg]", "generate shellcodes with r_egg",
 	"i","[?] [file]", "get info about opened file from r_bin",
 	"k","[?] [sdb-query]", "run sdb-query. see k? for help, 'k *', 'k **' ...",
+	"l"," [filepattern]", "list files and directories",
 	"L","[?] [-] [plugin]", "list, unload load r2 plugins",
 	"m","[?]", "mountpoints commands",
 	"o","[?] [file] ([offset])", "open file at optional address",
@@ -164,6 +167,7 @@ static const char *help_msg_question[] = {
 
 static const char *help_msg_question_v[] = {
 	"Usage: ?v [$.]","","",
+	"flag", "", "offset of flag",
 	"$$", "", "here (current virtual seek)",
 	"$$$", "", "current non-temporary virtual seek",
 	"$?", "", "last comparison value",
@@ -207,6 +211,7 @@ static const char *help_msg_question_v[] = {
 	"$r{reg}", "", "get value of named register",
 	"$k{kv}", "", "get value of an sdb query value",
 	"$s{flag}", "", "get size of flag",
+	"$e{flag}", "", "end of flag (flag->offset + flag->size)",
 	"RNum", "", "$variables usable in math expressions",
 	NULL
 };

@@ -392,11 +392,16 @@ static bool mustSaveHistory(RConfig *c) {
 
 // Try to set the correct scr.color for the current terminal.
 static void set_color_default(void) {
-	char *tmp;
-	if ((tmp = r_sys_getenv ("COLORTERM")) && (r_str_endswith (tmp, "truecolor") || r_str_endswith (tmp, "24bit"))) {
-		r_config_set_i (r.config, "scr.color", COLOR_MODE_16M);
-		free (tmp);
-	} else if ((tmp = r_sys_getenv ("TERM"))) {
+	char *tmp = r_sys_getenv ("COLORTERM");
+	if (tmp) {
+		if ((r_str_endswith (tmp, "truecolor") || r_str_endswith (tmp, "24bit"))) {
+			r_config_set_i (r.config, "scr.color", COLOR_MODE_16M);
+		}
+	} else {
+		tmp = r_sys_getenv ("TERM");
+		if (!tmp) {
+			return;
+		}
 		if (r_str_endswith (tmp, "truecolor") || r_str_endswith (tmp, "24bit")) {
 			r_config_set_i (r.config, "scr.color", COLOR_MODE_16M);
 		} else if (r_str_endswith (tmp, "256color")) {
@@ -405,8 +410,8 @@ static void set_color_default(void) {
 			// Dumb terminals don't get color by default.
 			r_config_set_i (r.config, "scr.color", COLOR_MODE_DISABLED);
 		}
-		free (tmp);
 	}
+	free (tmp);
 }
 
 #if EMSCRIPTEN
@@ -1422,12 +1427,16 @@ int main(int argc, char **argv, char **envp) {
 					r.num->value = 0;
 					break;
 				}
-				if (lock) r_th_lock_enter (lock);
+				if (lock) {
+					r_th_lock_enter (lock);
+				}
 				/* -1 means invalid command, -2 means quit prompt loop */
 				if ((ret = r_core_prompt_exec (&r)) == -2) {
 					break;
 				}
-				if (lock) r_th_lock_leave (lock);
+				if (lock) {
+					r_th_lock_leave (lock);
+				}
 				if (rabin_th && !r_th_wait_async (rabin_th)) {
 					// eprintf ("rabin thread end \n");
 					r_th_kill_free (rabin_th);

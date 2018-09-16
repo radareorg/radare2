@@ -40,8 +40,9 @@ R_API int r_anal_fcn_label_set (RAnal *anal, RAnalFunction *fcn, const char *nam
 }
 
 R_API int r_anal_fcn_label_del (RAnal *anal, RAnalFunction *fcn, const char *name, ut64 addr) {
-	if (!anal || !fcn || !name)
+	if (!anal || !fcn || !name) {
 		return false;
+	}
 	sdb_array_remove (DB, LABELS, ADDRLABEL (addr, name), 0);
 	sdb_unset (DB, LABEL (name), 0);
 	sdb_unset (DB, ADDR (addr), 0);
@@ -61,8 +62,9 @@ R_API int r_anal_fcn_labels(RAnal *anal, RAnalFunction *fcn, int rad) {
 				char *name;
 			} loc;
 			token = strchr (cur, '/');
-			if (!token)
+			if (!token) {
 				break;
+			}
 			*token = ',';
 			sdb_fmt_tobin (cur, "qz", &loc);
 			switch (rad) {

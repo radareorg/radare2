@@ -83,8 +83,9 @@ static RList* entries(RBinFile* bf) {
 	RBinAddr* addr = NULL;
 	psxexe_header psxheader;
 
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 
 	if (!(addr = R_NEW0 (RBinAddr))) {
 		r_list_free (ret);
@@ -123,7 +124,7 @@ RBinPlugin r_bin_plugin_psxexe = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_psxexe,
 	.version = R2_VERSION

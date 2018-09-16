@@ -57,9 +57,10 @@ struct r_bin_fatmach0_arch_t *r_bin_fatmach0_extract(struct r_bin_fatmach0_obj_t
 	if (!bin || (idx < 0) || (idx > bin->nfat_arch)) {
 		return NULL;
 	}
-	if (bin->archs[idx].offset > bin->size || \
-	  bin->archs[idx].offset + bin->archs[idx].size > bin->size)
+	if (bin->archs[idx].offset > bin->size ||
+		bin->archs[idx].offset + bin->archs[idx].size > bin->size) {
 		return NULL;
+	}
 
 	if (narch) {
 		*narch = bin->nfat_arch;

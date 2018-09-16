@@ -38,7 +38,7 @@ RAsmPlugin r_asm_plugin_malbolge = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_malbolge,
 	.version = R2_VERSION

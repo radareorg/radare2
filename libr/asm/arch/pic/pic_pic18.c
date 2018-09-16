@@ -121,7 +121,9 @@ int pic_pic18_disassemble(RAsmOp *op, char *opbuf, const ut8 *b, int blen) {
 	const char *buf_asm = "invalid";
 	strcpy (opbuf, buf_asm);
 
-	for (i = 0;ops[i].opmin != (ops[i].opmin & instr) || ops[i].opmax != (ops[i].opmax | instr); i++);
+	for (i = 0; ops[i].opmin != (ops[i].opmin & instr) || ops[i].opmax != (ops[i].opmax | instr); i++) {
+		;
+	}
 	if (ops[i].opmin == 0 && ops[i].opmax == 0xffff) {
 		strcpy (opbuf, ops[i].name);
 		op->size = 2;

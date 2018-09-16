@@ -282,10 +282,11 @@ static void xtensa_imp_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf) 
 		op->type = R_ANAL_OP_TYPE_NULL;
 		break;
 	case 0xe:
-		if (((buf[0] >> 4) & 0xf) <= 1)
+		if (((buf[0] >> 4) & 0xf) <= 1) {
 			op->type = R_ANAL_OP_TYPE_RET;
-		else
+		} else {
 			xtensa_unk_op (anal, op, addr, buf);
+		}
 		break;
 	default:
 		xtensa_unk_op (anal, op, addr, buf);
@@ -495,10 +496,11 @@ static void xtensa_lsci_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf)
 	ut8 r = buf[1] >> 4;
 	op->family = R_ANAL_OP_FAMILY_FPU;
 	if ((r & 3) == 0) {
-		if (r & 4)
+		if (r & 4) {
 			xtensa_store_op (anal, op, addr, buf);
-		else
+		} else {
 			xtensa_load_op (anal, op, addr, buf);
+		}
 	} else {
 		xtensa_unk_op (anal, op, addr, buf);
 	}
@@ -681,7 +683,7 @@ static void esil_sign_extend(RStrBuf *esil, ut8 bit) {
 		"0x%x"	CM
 		"&"	CM
 		"0"	CM
-		"==,!"	CM
+		"==,$z,!"	CM
 		"?{"	CM
 			"0x%x"	CM
 			"|"	CM
@@ -964,10 +966,10 @@ static void esil_move_conditional(xtensa_isa isa, xtensa_opcode opcode, xtensa_f
 
 	switch (opcode) {
 	case 91:	/* moveqz */
-		compare_op = "==";
+		compare_op = "==,$z";
 		break;
 	case 92:	/* movnez */
-		compare_op = "==,!";
+		compare_op = "==,$z,!";
 		break;
 	case 93:	/* movltz */
 		compare_op = "<";
@@ -1086,10 +1088,10 @@ static void esil_branch_compare_imm(xtensa_isa isa, xtensa_opcode opcode,
 	// TODO: unsigned comparisons
 	switch (opcode) {
 	case 52:	/* beqi */
-		compare_op = "==";
+		compare_op = "==,$z";
 		break;
 	case 53:	/* bnei */
-		compare_op = "==,!";
+		compare_op = "==,$z,!";
 		break;
 	case 58:	/* bgeui */
 	case 54:	/* bgei */
@@ -1149,10 +1151,10 @@ static void esil_branch_compare(xtensa_isa isa, xtensa_opcode opcode,
 
 	switch (opcode) {
 	case 60:	/* beq */
-		compare_op = "==";
+		compare_op = "==,$z";
 		break;
 	case 61:	/* bne */
-		compare_op = "==,!";
+		compare_op = "==,$z,!";
 		break;
 	case 62:	/* bge */
 	case 64:	/* bgeu */
@@ -1210,11 +1212,11 @@ static void esil_branch_compare_single(xtensa_isa isa, xtensa_opcode opcode,
 	switch (opcode) {
 	case 72:	/* beqz */
 	case 28:	/* beqz.n */
-		compare_op = "==";
+		compare_op = "==,$z";
 		break;
 	case 73:	/* bnez */
 	case 29:	/* bnez.n */
-		compare_op = "==,!";
+		compare_op = "==,$z,!";
 		break;
 	case 74:	/* bgez */
 		compare_op = ">=";
@@ -1272,11 +1274,11 @@ static void esil_branch_check_mask(xtensa_isa isa, xtensa_opcode opcode,
 	switch (opcode) {
 	case 69:	/* bnall */
 	case 66:	/* bany */
-		compare_op = "==,!";
+		compare_op = "==,$z,!";
 		break;
 	case 68:	/* ball */
 	case 67:	/* bnone */
-		compare_op = "==";
+		compare_op = "==,$z";
 		break;
 	}
 
@@ -1393,7 +1395,7 @@ static void esil_branch_check_bit_imm(xtensa_isa isa, xtensa_opcode opcode, xten
 	xtensa_regfile src_rf = xtensa_operand_regfile (isa, opcode, 0);
 
 	bit_clear = opcode == 56;
-	cmp_op = bit_clear ? "==" : "==,!";
+	cmp_op = bit_clear ? "==,$z" : "==,$z,!";
 	mask = 1 << imm_bit;
 
 	sign_extend (&imm_offset, 7);
@@ -1453,7 +1455,7 @@ static void esil_branch_check_bit(xtensa_isa isa, xtensa_opcode opcode, xtensa_f
 
 	// bbc
 	bit_clear = opcode == 70;
-	cmp_op = bit_clear ? "==" : "==,!";
+	cmp_op = bit_clear ? "==,$z" : "==,$z,!";
 
 	sign_extend (&imm_offset, 7);
 	imm_offset += 4 - 3;
@@ -1904,14 +1906,16 @@ static void analop_esil (xtensa_isa isa, xtensa_opcode opcode, xtensa_format for
 }
 
 static int xtensa_op (RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf_original, int len_original) {
-	if (!op)
+	if (!op) {
 		return 1;
+	}
 	memset (op, 0, sizeof (RAnalOp));
 	r_strbuf_init (&op->esil);
 
 	op->size = xtensa_length (buf_original);
-	if (op->size > len_original)
+	if (op->size > len_original) {
 		return 1;
+	}
 
 	xtensa_op0_fns[(buf_original[0] & 0xf)] (anal, op, addr, buf_original);
 
@@ -2027,7 +2031,7 @@ RAnalPlugin r_anal_plugin_xtensa = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_xtensa,
 	.version = R2_VERSION

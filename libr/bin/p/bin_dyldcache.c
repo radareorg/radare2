@@ -176,9 +176,15 @@ static struct MACH0_(obj_t) *bin_to_mach0(RBinFile *bf, RDyldBinImage *bin) {
 
 static int prot2perm(int x) {
 	int r = 0;
-	if (x&1) r |= 4;
-	if (x&2) r |= 2;
-	if (x&4) r |= 1;
+	if (x & 1) {
+		r |= 4;
+	}
+	if (x & 2) {
+		r |= 2;
+	}
+	if (x & 4) {
+		r |= 1;
+	}
 	return r;
 }
 
@@ -1309,7 +1315,7 @@ RBinPlugin r_bin_plugin_dyldcache = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_dyldcache,
 	.version = R2_VERSION
