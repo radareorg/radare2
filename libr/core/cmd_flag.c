@@ -972,12 +972,13 @@ rep:
 		}
 		break;
 	case '?':
+	default:
 		if (input[1]) {
 			core->num->value = r_flag_get (core->flags, input + 1)? 1: 0;
 		} else {
-		r_core_cmd_help (core, help_msg_f);
-		break;
-	}
+			r_core_cmd_help (core, help_msg_f);
+			break;
+		}
 	}
 	free (str);
 	return 0;
