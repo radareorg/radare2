@@ -205,16 +205,23 @@ R_API const ut8 *r_buf_buffer (RBuffer *b) {
 	return (b && !b->sparse)? b->buf: NULL;
 }
 
+static ut64 remainingBytes(ut64 limit, ut64 length, ut64 offset) {
+	if (offset >= length ) {
+		return 0;
+	}
+	return R_MIN (limit, length - offset);
+}
+
 R_API ut64 r_buf_size (RBuffer *b) {
 	if (!b) {
 		return 0LL;
 	}
 	if (b->iob) {
 		RIOBind *iob = b->iob;
-		return R_MIN (b->limit, R_MAX (0, iob->fd_size (iob->io, b->fd) - b->offset));
+		return remainingBytes (b->limit, iob->fd_size (iob->io, b->fd), b->offset);
 	}
 	if (b->fd != -1) {
-		return R_MIN (b->limit, R_MAX (0, b->length - b->offset));
+		return remainingBytes (b->limit, b->length, b->offset);
 	}
 	if (b->sparse) {
 		ut64 max = 0LL;
@@ -223,7 +230,7 @@ R_API ut64 r_buf_size (RBuffer *b) {
 		}
 		return 0LL;
 	}
-	return b->empty? 0: R_MIN (b->limit, R_MAX (0, b->length - b->offset));
+	return b->empty? 0: remainingBytes (b->limit, b->length, b->offset);
 }
 
 // rename to new?
