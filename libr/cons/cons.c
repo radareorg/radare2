@@ -691,17 +691,17 @@ R_API void r_cons_context_break(RConsContext *context) {
 #define CTX(x) I.context->x
 
 R_API void r_cons_last(void) {
-	if (!CTX(lastEnabled)) {
+	if (!CTX (lastEnabled)) {
 		return;
 	}
-	CTX(lastMode) = true;
-	r_cons_memcat (CTX(lastOutput), CTX(lastLength));
+	CTX (lastMode) = true;
+	r_cons_memcat (CTX (lastOutput), CTX (lastLength));
 	//r_cons_print (lastOutput);
 }
 
 static bool lastMatters() {
 	return (I.context->buffer_len > 0) \
-		&& (CTX(lastEnabled) && !I.filter && I.context->grep.nstrings < 1 && \
+		&& (CTX (lastEnabled) && !I.filter && I.context->grep.nstrings < 1 && \
 		!I.context->grep.tokens_used && !I.context->grep.less && \
 		!I.context->grep.json && !I.is_html);
 }
@@ -716,16 +716,16 @@ R_API void r_cons_flush(void) {
 		return;
 	}
  	if (lastMatters ()) {
-		if (!CTX(lastMode)) {
+		if (!CTX (lastMode)) {
 			// snapshot of the output
-			free (CTX(lastOutput));
-			CTX(lastOutput) = calloc (CTX(buffer_len) + 1, 1);
-			if (CTX(lastOutput)) {
-				CTX(lastLength) = CTX(buffer_len);
-				memcpy (CTX(lastOutput), CTX(buffer), CTX(buffer_len));
+			free (CTX (lastOutput));
+			CTX (lastOutput) = calloc (CTX (buffer_len) + 1, 1);
+			if (CTX (lastOutput)) {
+				CTX (lastLength) = CTX (buffer_len);
+				memcpy (CTX (lastOutput), CTX (buffer), CTX (buffer_len));
 			}
 		}
-		CTX(lastMode) = false;
+		CTX (lastMode) = false;
 	}
 	r_cons_filter ();
 
