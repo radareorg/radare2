@@ -45,9 +45,9 @@ R_API void r_vlogf(RLogLevel level, const char *fmt, va_list ap) {
 	size_t len = strlen (hdr);
 	char buf[LOG_BUF_SZ];
 
-	snprintf (buf, LOG_BUF_SZ, "%s", hdr);
-	if (len < LOG_BUF_SZ) {
-		vsnprintf (buf + len, LOG_BUF_SZ - len, fmt, ap);
+	snprintf (buf, sizeof (buf), "%s", hdr);
+	if (len < sizeof (buf)) {
+		vsnprintf (buf + len, sizeof (buf) - len, fmt, ap);
 	}
 	eprintf ("%s", buf);
 }
