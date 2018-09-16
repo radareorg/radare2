@@ -12,6 +12,7 @@
 #endif
 
 #define COUNT_LINES 1
+#define CTX(x) I.context->x
 
 R_LIB_VERSION (r_cons);
 
@@ -102,6 +103,7 @@ static void cons_context_init(RConsContext *context) {
 	context->breaked = false;
 	context->buffer = NULL;
 	context->buffer_sz = 0;
+	context->lastEnabled = true;
 	context->buffer_len = 0;
 	context->cons_stack = r_stack_newf (6, cons_stack_free);
 	context->break_stack = r_stack_newf (6, break_stack_free);
@@ -447,6 +449,8 @@ R_API RCons *r_cons_free() {
 	}
 	R_FREE (I.break_word);
 	cons_context_deinit (I.context);
+	R_FREE (I.context->lastOutput);
+	I.context->lastLength = 0;
 	return NULL;
 }
 
@@ -687,7 +691,22 @@ R_API void r_cons_context_break(RConsContext *context) {
 	}
 }
 
-R_API void r_cons_flush() {
+R_API void r_cons_last(void) {
+	if (!CTX (lastEnabled)) {
+		return;
+	}
+	CTX (lastMode) = true;
+	r_cons_memcat (CTX (lastOutput), CTX (lastLength));
+}
+
+static bool lastMatters() {
+	return (I.context->buffer_len > 0) \
+		&& (CTX (lastEnabled) && !I.filter && I.context->grep.nstrings < 1 && \
+		!I.context->grep.tokens_used && !I.context->grep.less && \
+		!I.context->grep.json && !I.is_html);
+}
+
+R_API void r_cons_flush(void) {
 	const char *tee = I.teefile;
 	if (I.noflush) {
 		return;
@@ -696,15 +715,25 @@ R_API void r_cons_flush() {
 		r_cons_reset ();
 		return;
 	}
+	if (lastMatters () && !CTX (lastMode)) {
+		// snapshot of the output
+		if (CTX (buffer_len) > CTX (lastLength)) {
+			free (CTX (lastOutput));
+			CTX (lastOutput) = malloc (CTX (buffer_len) + 1);
+		}
+		CTX (lastLength) = CTX (buffer_len);
+		memcpy (CTX (lastOutput), CTX (buffer), CTX (buffer_len));
+	} else {
+		CTX (lastMode) = false;
+	}
 	r_cons_filter ();
+
 	if (I.is_interactive && I.fdout == 1) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
-		if (I.pager && *I.pager && I.context->buffer_len > 0
-				&& r_str_char_count (I.context->buffer, '\n') >= I.rows) {
-			I.context->buffer[I.context->buffer_len-1] = 0;
+		if (I.pager && *I.pager && I.context->buffer_len > 0 && r_str_char_count (I.context->buffer, '\n') >= I.rows) {
+			I.context->buffer[I.context->buffer_len - 1] = 0;
 			r_sys_cmd_str_full (I.pager, I.context->buffer, NULL, NULL, NULL);
 			r_cons_reset ();
-
 		} else if (I.context->buffer_len > CONS_MAX_USER) {
 #if COUNT_LINES
 			int i, lines = 0;
@@ -741,6 +770,7 @@ R_API void r_cons_flush() {
 		}
 	}
 	r_cons_highlight (I.highlight);
+
 	// is_html must be a filter, not a write endpoint
 	if (I.is_interactive && !r_sandbox_enable (false)) {
 		if (I.linesleep > 0 && I.linesleep < 1000) {

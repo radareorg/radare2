@@ -394,6 +394,11 @@ typedef struct r_cons_context_t {
 	RStack *break_stack;
 	RConsEvent event_interrupt;
 	void *event_interrupt_data;
+
+	char *lastOutput;
+	int lastLength;
+	bool lastMode;
+	bool lastEnabled;
 } RConsContext;
 
 typedef struct r_cons_t {
@@ -465,6 +470,7 @@ typedef struct r_cons_t {
 	bool use_tts;
 	bool filter;
 	char* (*rgbstr)(char *str, size_t sz, ut64 addr);
+	// TODO: move into instance? + avoid unnecessary copies
 } RCons;
 
 // XXX THIS MUST BE A SINGLETON AND WRAPPED INTO RCons */
@@ -721,6 +727,7 @@ R_API int r_cons_memcat(const char *str, int len);
 R_API void r_cons_newline(void);
 R_API void r_cons_filter(void);
 R_API void r_cons_flush(void);
+R_API void r_cons_last(void);
 R_API int r_cons_less_str(const char *str, const char *exitkeys);
 R_API void r_cons_less(void);
 R_API void r_cons_2048(bool color);
