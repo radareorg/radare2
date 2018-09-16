@@ -1353,7 +1353,7 @@ R_API int r_anal_esil_condition (RAnalEsil *esil, const char *str);
 
 // esil_interrupt.c
 R_API void r_anal_esil_interrupts_init (RAnalEsil *esil);
-R_API RAnalEsilInterrupt *r_anal_esil_interupt_new (RAnalEsil *esil, ut32 src_id,  RAnalEsilInterruptHandler *ih);
+R_API RAnalEsilInterrupt *r_anal_esil_interrupt_new (RAnalEsil *esil, ut32 src_id,  RAnalEsilInterruptHandler *ih);
 R_API void r_anal_esil_interrupt_free (RAnalEsil *esil, RAnalEsilInterrupt *intr);
 R_API bool r_anal_esil_set_interrupt (RAnalEsil *esil, RAnalEsilInterrupt *intr);
 R_API int r_anal_esil_fire_interrupt (RAnalEsil *esil, ut32 intr_num);
