@@ -627,10 +627,12 @@ static void parseCodeDirectory (RBuffer *b, int offset, int datasize) {
 	// computed cdhash
 	RHash *ctx = r_hash_new (true, algoType);
 	int fofsz = cscd.length;
-	ut8 *fofbuf = malloc (fofsz);
+	ut8 *fofbuf = calloc (fofsz, 1);
 	if (fofbuf) {
 		int i;
-		r_buf_read_at (b, off, fofbuf, fofsz);
+		if (r_buf_read_at (b, off, fofbuf, fofsz) != fofsz) {
+			eprintf ("Invalid cdhash offset/length values\n");
+		}
 		r_hash_do_begin (ctx, algoType);
 		if (algoType == R_HASH_SHA1) {
 			r_hash_do_sha1 (ctx, fofbuf, fofsz);
@@ -644,6 +646,7 @@ static void parseCodeDirectory (RBuffer *b, int offset, int datasize) {
 			eprintf ("%02x", ctx->digest[i]);
 		}
 		eprintf ("\n");
+		free (fofbuf);
 	}
 	// show and check the rest of hashes
 	ut8 *hash = p + cscd.hashOffset;
