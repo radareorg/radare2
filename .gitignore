@@ -118,3 +118,5 @@ cmake-build-*
 doc/doxygen/html
 # Python
 __pycache__
+# Dynamic docker building folder to minimize docker context
+.docker_alpine
