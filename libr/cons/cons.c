@@ -707,6 +707,7 @@ static bool lastMatters() {
 }
 
 R_API void r_cons_flush(void) {
+	static int depth = 0;
 	const char *tee = I.teefile;
 	if (I.noflush) {
 		return;
@@ -728,12 +729,20 @@ R_API void r_cons_flush(void) {
 	}
 	r_cons_filter ();
 
-	if (I.is_interactive && I.fdout == 1) {
+	if (I.is_interactive && I.fdout == 1 && depth == 0) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
 		if (I.pager && *I.pager && I.context->buffer_len > 0 && r_str_char_count (I.context->buffer, '\n') >= I.rows) {
 			I.context->buffer[I.context->buffer_len - 1] = 0;
-			r_sys_cmd_str_full (I.pager, I.context->buffer, NULL, NULL, NULL);
-			r_cons_reset ();
+			if (*I.pager == '.') {
+				char *str = r_str_ndup (CTX (buffer), CTX (buffer_len));
+				depth++;
+				r_cons_less_str (str, NULL);
+				depth--;
+				free (str);
+			} else {
+				r_sys_cmd_str_full (I.pager, I.context->buffer, NULL, NULL, NULL);
+				r_cons_reset ();
+			}
 		} else if (I.context->buffer_len > CONS_MAX_USER) {
 #if COUNT_LINES
 			int i, lines = 0;

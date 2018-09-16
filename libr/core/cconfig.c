@@ -2895,7 +2895,7 @@ R_API int r_core_config_init(RCore *core) {
 	n = NODECB ("scr.nkey", "flag", &cb_scrnkey);
 	SETDESC (n, "Select visual seek mode (affects n/N visual commands)");
 	SETOPTIONS (n, "fun", "hit", "flag", NULL);
-	SETCB ("scr.pager", "", &cb_pager, "Select pager program (when output overflows the window)");
+	SETCB ("scr.pager", "", &cb_pager, "System program to use when output overflows the window (use . for internal less)");
 	SETPREF ("scr.randpal", "false", "Random color palete or just get the next one from 'eco'");
 	SETCB ("scr.color.grep", "false", &cb_scr_color_grep, "Enable colors when using ~grep");
 	SETPREF ("scr.pipecolor", "false", "Enable colors when using pipes");
