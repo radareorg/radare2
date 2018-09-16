@@ -1636,7 +1636,7 @@ R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name) {
 	char *impname = r_str_newf ("imp.%s", name);
 	RBinSymbol *s = get_symbol (bin, symbols, impname, 0LL);
 	// maybe ut64_MAX to indicate import not found?
-	ut64 addr = s? (va? r_bin_get_vaddr (bin, s->paddr, s->vaddr): s->paddr): 0LL;
+	ut64 addr = s? (va? (s->paddr != UT64_MAX? r_bin_get_vaddr (bin, s->paddr, s->vaddr): s->vaddr): s->paddr): 0LL;
 	free (impname);
 	return addr;
 }
