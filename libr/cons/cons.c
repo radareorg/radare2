@@ -928,14 +928,16 @@ club:
 	va_end (ap3);
 }
 
-R_API void r_cons_printf(const char *format, ...) {
+R_API int r_cons_printf(const char *format, ...) {
 	va_list ap;
 	if (!format || !*format) {
-		return;
+		return -1;
 	}
 	va_start (ap, format);
 	r_cons_printf_list (format, ap);
 	va_end (ap);
+
+	return 0;
 }
 
 R_API int r_cons_get_column() {

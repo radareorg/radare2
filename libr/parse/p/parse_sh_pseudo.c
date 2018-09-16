@@ -224,7 +224,7 @@ static int parse(RParse *p, const char *data, char *str) {
 					strncpy (w2, optr, WSZ - 1);
 					strncpy (w3, ptr, WSZ - 1);
 					optr = ptr;
-					// bonus	
+					// bonus
 					par = strchr (ptr, '(');
 					if (par && strchr (ptr, ',') > par) {
 						ptr = strchr (ptr, ')');
@@ -269,7 +269,7 @@ RParsePlugin r_parse_plugin_sh_pseudo = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_PARSE,
 	.data = &r_parse_plugin_sh_pseudo,
 	.version = R2_VERSION

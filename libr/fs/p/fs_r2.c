@@ -231,7 +231,7 @@ RFSPlugin r_fs_plugin_r2 = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
         .type = R_LIB_TYPE_FS,
         .data = &r_fs_plugin_r2,
         .versr2n = R2_VERSION

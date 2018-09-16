@@ -72,7 +72,7 @@ RCryptoPlugin r_crypto_plugin_ror = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_ror,
 	.version = R2_VERSION

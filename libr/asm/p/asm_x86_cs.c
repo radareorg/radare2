@@ -36,7 +36,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int mode, ret;
 	ut64 off = a->pc;
 
-	mode =  (a->bits == 64)? CS_MODE_64: 
+	mode =  (a->bits == 64)? CS_MODE_64:
 		(a->bits == 32)? CS_MODE_32:
 		(a->bits == 16)? CS_MODE_16: 0;
 	if (cd && mode != omode) {
@@ -199,7 +199,7 @@ static int check_features(RAsm *a, cs_insn *insn) {
 }
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_x86_cs,
 	.version = R2_VERSION

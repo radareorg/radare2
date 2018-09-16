@@ -9,12 +9,16 @@
 
 #define IS_ALPHA(C) (((C) >= 'a' && (C) <= 'z') || ((C) >= 'A' && (C) <= 'Z'))
 
-static void nullprinter(const char *a, ...) { }
-static void libc_printf(const char *format, ...) {
+static int nullprinter(const char *a, ...) {
+	return 0;
+}
+static int libc_printf(const char *format, ...) {
 	va_list ap;
 	va_start (ap, format);
 	vprintf (format, ap);
 	va_end (ap);
+
+	return 0;
 }
 
 static RPrintIsInterruptedCallback is_interrupted_cb = NULL;

@@ -97,7 +97,7 @@ REggPlugin r_egg_plugin_xor = {
 
 #if 0
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_EGG,
 	.data = &r_egg_plugin_xor,
 	.version = R2_VERSION

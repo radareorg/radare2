@@ -10,10 +10,9 @@
 
 R_LIB_VERSION (r_hash);
 
-struct {
+static const struct {
 	const char *name; ut64 bit;
-}
-static const hash_name_bytes[] = {
+} hash_name_bytes[] = {
 	{ "all", UT64_MAX },
 	{ "xor", R_HASH_XOR },
 	{ "xorpair", R_HASH_XORPAIR },

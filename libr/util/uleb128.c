@@ -109,9 +109,6 @@ R_API const ut8 *r_leb128(const ut8 *data, st64 *v) {
 }
 
 
-//API borrowed from frida
-#define G_GINT64_CONSTANT(val) (val##L)
-
 R_API st64 r_sleb128(const ut8 **data, const ut8 *end) {
 	const ut8 *p = *data;
 	st64 result = 0;
@@ -127,7 +124,7 @@ R_API st64 r_sleb128(const ut8 **data, const ut8 *end) {
 	while (*p++ & 0x80);
 
 	if ((value & 0x40) != 0) {
-		result |= G_GINT64_CONSTANT (-1) << offset;
+		result |= ~0UL << offset;
 	}
  	*data = p;
 	return result;

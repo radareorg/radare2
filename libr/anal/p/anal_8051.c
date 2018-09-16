@@ -88,8 +88,8 @@ static void map_cpu_memory (RAnal *anal, int entry, ut32 addr, ut32 size, bool f
 		}
 	} else {
 		// allocate memory for address space
-		char *mstr = r_str_newf ("malloc://%d", size);		
-		desc = anal->iob.open_at (anal->iob.io, mstr, R_IO_READ | R_IO_WRITE, 0, addr);		
+		char *mstr = r_str_newf ("malloc://%d", size);
+		desc = anal->iob.open_at (anal->iob.io, mstr, R_IO_READ | R_IO_WRITE, 0, addr);
 		r_str_free (mstr);
 		// set 8051 address space as name of mapped memory
 		if (desc && anal->iob.fd_get_name (anal->iob.io, desc->fd)) {
@@ -468,7 +468,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 		call;
 		break;
 	case 0x01: case 0x21: case 0x41: case 0x61:
-	case 0x81: case 0xA1: case 0xC1: case 0xE1: /* ajmp addr11 */	
+	case 0x81: case 0xA1: case 0xC1: case 0xE1: /* ajmp addr11 */
 	case 0x02: /* ljmp addr16 */
 	case 0x80: /* sjmp offset */
 		jmp;
@@ -633,7 +633,7 @@ static void analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf) {
 	case 0xC5: /* xch a, direct */
 		xr (a); e ("0,+,"); xr (dir1); xw (a); xw (dir1); e (flag_p);
 		break;
-	case 0xC6: case 0xC7: /* xch a, @Ri */ 
+	case 0xC6: case 0xC7: /* xch a, @Ri */
 		xr (a); e ("0,+,"); xr (ri); xw (a); xw (ri); e (flag_p);
 		break;
 	case 0xC8: case 0xC9: case 0xCA: case 0xCB:
@@ -1058,7 +1058,7 @@ RAnalPlugin r_anal_plugin_8051 = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_8051,
 	.version = R2_VERSION

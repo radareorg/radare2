@@ -115,7 +115,7 @@ RIOPlugin r_io_plugin_sparse = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_sparse,
 	.version = R2_VERSION

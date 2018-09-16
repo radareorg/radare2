@@ -38,7 +38,7 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			delta |= buf[3]<<8;
 			delta |= buf[4]<<16;
 			delta |= buf[5]<<24;
-			op->jump = addr + delta; 
+			op->jump = addr + delta;
 		} else {
 			op->jump = UT64_MAX;
 		}
@@ -286,7 +286,7 @@ RAnalPlugin r_anal_plugin_cris = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_cris,
 	.version = R2_VERSION

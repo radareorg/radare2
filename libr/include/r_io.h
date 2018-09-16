@@ -90,7 +90,7 @@ typedef struct r_io_t {
 	char *runprofile;
 	char *args;
 	void *user;
-	void (*cb_printf)(const char *str, ...);
+	PrintfCallback cb_printf;
 	int (*cb_core_cmd)(void *user, const char *str);
 	char* (*cb_core_cmdstr)(void *user, const char *str);
 	void (*cb_core_post_write)(void *user, ut64 maddr, ut8 *orig_bytes, int orig_len);

@@ -77,7 +77,7 @@ static bool final (RCrypto *cry, const ut8 *buf, int len) {
 	return update (cry, buf, len);
 }
 
-RCryptoPlugin r_crypto_plugin_aes = { 
+RCryptoPlugin r_crypto_plugin_aes = {
 	.name = "aes-ecb",
 	.set_key = aes_set_key,
 	.get_key_size = aes_get_key_size,
@@ -87,7 +87,7 @@ RCryptoPlugin r_crypto_plugin_aes = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = { 
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_aes,
 	.version = R2_VERSION

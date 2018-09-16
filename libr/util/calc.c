@@ -230,7 +230,7 @@ static int cin_get(RNum *num, RNumCalc *nc, char *c) {
 
 static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
 	double d;
-	char str[R_NUMCALC_STRSZ]; // TODO: move into the heap?
+	char str[R_NUMCALC_STRSZ + 1]; // TODO: move into the heap?
 	int i = 0;
 	char c;
 	str[0] = 0;

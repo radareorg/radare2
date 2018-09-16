@@ -986,7 +986,7 @@ static int first_nibble_is_c(RAnal* anal, RAnalOp* op, ut16 code) {
 		op->type = R_ANAL_OP_TYPE_STORE;
 		op->src[0] = anal_fill_ai_rg (anal, 0);
 		r_strbuf_setf (&op->esil, "r0,gbr,0x%x,+,=[1]", code & 0xFF);
-	} else if (IS_MOVW_R0_GBRREF (code)) {	
+	} else if (IS_MOVW_R0_GBRREF (code)) {
 		op->type = R_ANAL_OP_TYPE_STORE;
 		op->src[0] = anal_fill_ai_rg (anal, 0);
 		r_strbuf_setf (&op->esil, "r0,gbr,0x%x,+,=[2]", (code & 0xFF) * 2);
@@ -998,7 +998,7 @@ static int first_nibble_is_c(RAnal* anal, RAnalOp* op, ut16 code) {
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		op->dst = anal_fill_ai_rg (anal, 0);
 		r_strbuf_setf (&op->esil, "gbr,0x%x,+,[1],DUP,0x80,&,?{,0xFFFFFF00,|,},r0,=", (code & 0xFF));
-	} else if (IS_MOVW_GBRREF_R0 (code)) {	
+	} else if (IS_MOVW_GBRREF_R0 (code)) {
 		op->type = R_ANAL_OP_TYPE_LOAD;
 		op->dst = anal_fill_ai_rg (anal, 0);
 		r_strbuf_setf (&op->esil, "gbr,0x%x,+,[2],DUP,0x8000,&,?{,0xFFFF0000,|,},r0,=", (code & 0xFF)*2);
@@ -1133,7 +1133,7 @@ RAnalPlugin r_anal_plugin_sh = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_sh,
 	.version = R2_VERSION

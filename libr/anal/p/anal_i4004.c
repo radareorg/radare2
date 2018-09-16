@@ -132,7 +132,7 @@ static int i4004_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 			snprintf (basm, basz, "fim r%d, 0x%02x", (low & 0xe), buf[1]);
 		}
 		break;
-	case 3: 
+	case 3:
 		op->type = R_ANAL_OP_TYPE_MOV;
 		snprintf (basm, basz, "fin r%d", (low & 0xe));
 		break;
@@ -205,7 +205,7 @@ RAnalPlugin r_anal_plugin_i4004 = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_i4004,
 	.version = R2_VERSION

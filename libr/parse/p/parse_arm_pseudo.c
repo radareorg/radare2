@@ -199,14 +199,14 @@ static int parse(RParse *p, const char *data, char *str) {
 			strncpy (w1, ptr, sizeof (w1) - 1);
 
 			optr = ptr;
-			if (*ptr == '(') { 
-				ptr = strchr (ptr+1, ')'); 
+			if (*ptr == '(') {
+				ptr = strchr (ptr+1, ')');
 			}
 			if (ptr && *ptr == '[') {
-				ptr = strchr (ptr+1, ']'); 
+				ptr = strchr (ptr+1, ']');
 			}
-			if (ptr && *ptr == '{') { 
-				ptr = strchr (ptr+1, '}'); 
+			if (ptr && *ptr == '{') {
+				ptr = strchr (ptr+1, '}');
 			}
 			if (!ptr) {
 				eprintf ("Unbalanced bracket\n");
@@ -414,7 +414,7 @@ RParsePlugin r_parse_plugin_arm_pseudo = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_PARSE,
 	.data = &r_parse_plugin_arm_pseudo,
 	.version = R2_VERSION
