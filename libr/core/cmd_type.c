@@ -361,6 +361,43 @@ static void typesList(RCore *core, int mode) {
 	}
 }
 
+static void enumList(RCore *core, int mode) {
+	switch (mode) {
+	case 1:
+	case '*':
+		sdb_foreach (core->anal->sdb_types, typelist_cb, core);
+		break;
+	case 'j':
+	default:
+		{
+		SdbList *ls = sdb_foreach_list (core->anal->sdb_types, true);
+		SdbList *filtls = ls_new ();
+		SdbListIter *it;
+		SdbKv *kv;
+		ls_foreach (ls, it, kv) {
+			if (!strcmp (kv->value,"enum")) {
+				ls_append (filtls, kv);
+			}
+		}
+		if (mode == 'j') {
+			r_cons_print ("[");
+			ls_foreach (filtls, it, kv) {
+				r_cons_printf ("\"%s\"", kv->key);
+				if (it->n) { r_cons_print (","); }
+			}
+			r_cons_println ("]");
+		} else {
+			ls_foreach (filtls, it, kv) {
+				sdbforcb_default ((void *)core->anal->sdb_types, kv->key, kv->value);
+			}
+		}
+		ls_free (ls);
+		ls_free (filtls);
+		}
+		break;
+	}
+}
+
 static void set_offset_hint(RCore *core, RAnalOp op, const char *type, ut64 laddr, ut64 at, int offimm) {
 	char *res = r_type_get_struct_memb (core->anal->sdb_types, type, offimm);
 	const char *cmt = ((offimm == 0) && res)? res: type;
@@ -687,7 +724,6 @@ static int cmd_type(void *data, const char *input) {
 		Sdb *TDB = core->anal->sdb_types;
 		char *name = temp ? strdup (temp + 1): NULL;
 		char *member_name = name ? strchr (name, ' '): NULL;
-
 		if (member_name) {
 			*member_name++ = 0;
 		}
@@ -714,21 +750,11 @@ static int cmd_type(void *data, const char *input) {
 				}
 			}
 		} break;
+		case 'j' : {
+			enumList(core,'j');
+		} break;
 		case '\0' : {
-			char *name = NULL;
-			SdbKv *kv;
-			SdbListIter *iter;
-			SdbList *l = sdb_foreach_list (TDB, true);
-			ls_foreach (l, iter, kv) {
-				if (!strcmp (kv->value, "enum")) {
-					if (!name || strcmp (kv->value, name)) {
-						free (name);
-						name = strdup (kv->key);
-						r_cons_println (name);
-					}
-				}
-			}
-			ls_free (l);
+			enumList(core,'\0');
 		} break;
 		}
 		free (name);
