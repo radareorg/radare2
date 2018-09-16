@@ -456,7 +456,7 @@ R_API int r_type_func_args_count(Sdb *TDB, const char *func_name) {
 	return sdb_num_get (TDB, query, 0);
 }
 
-R_API char *r_type_func_args_type(Sdb *TDB, const char *func_name, int i) {
+R_API R_OWN char *r_type_func_args_type(Sdb *TDB, R_NONNULL const char *func_name, int i) {
 	const char *query = sdb_fmt ("func.%s.arg.%d", func_name, i);
 	char *ret = sdb_get (TDB, query, 0);
 	if (ret) {
@@ -470,7 +470,7 @@ R_API char *r_type_func_args_type(Sdb *TDB, const char *func_name, int i) {
 	return NULL;
 }
 
-R_API char *r_type_func_args_name(Sdb *TDB, const char *func_name, int i) {
+R_API const char *r_type_func_args_name(Sdb *TDB, R_NONNULL const char *func_name, int i) {
 	const char *query = sdb_fmt ("func.%s.arg.%d", func_name, i);
 	const char *get = sdb_const_get (TDB, query, 0);
 	if (get) {
@@ -482,7 +482,7 @@ R_API char *r_type_func_args_name(Sdb *TDB, const char *func_name, int i) {
 
 #define MIN_MATCH_LEN 4
 
-static char *type_func_try_guess(Sdb *TDB, char *name) {
+static R_OWN char *type_func_try_guess(Sdb *TDB, R_NONNULL char *name) {
 	const char *res;
 	if (r_str_nlen (name, MIN_MATCH_LEN) < MIN_MATCH_LEN) {
 		return NULL;

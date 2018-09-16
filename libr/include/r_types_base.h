@@ -59,13 +59,11 @@ typedef struct _utX{
 
 #include <stdbool.h>
 
-#define R_ERROR -2
 #define R_FAIL -1
-#define R_FALSE 0
-#define R_TRUE 1
-#define R_TRUFAE 2
+// must be deprecated
 #define R_NOTNULL (void*)(size_t)1
 #define R_EMPTY { 0 }
+#define R_EMPTY2 {{ 0 }}
 
 /* limits */
 #undef UT64_MAX
