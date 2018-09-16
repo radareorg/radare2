@@ -398,6 +398,7 @@ typedef struct r_cons_context_t {
 	char *lastOutput;
 	int lastLength;
 	bool lastMode;
+	bool lastEnabled;
 } RConsContext;
 
 typedef struct r_cons_t {

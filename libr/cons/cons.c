@@ -102,6 +102,7 @@ static void cons_context_init(RConsContext *context) {
 	context->breaked = false;
 	context->buffer = NULL;
 	context->buffer_sz = 0;
+	context->lastEnabled = true;
 	context->buffer_len = 0;
 	context->cons_stack = r_stack_newf (6, cons_stack_free);
 	context->break_stack = r_stack_newf (6, break_stack_free);
@@ -690,23 +691,31 @@ R_API void r_cons_context_break(RConsContext *context) {
 #define CTX(x) I.context->x
 
 R_API void r_cons_last(void) {
+	if (!CTX(lastEnabled)) {
+		return;
+	}
 	CTX(lastMode) = true;
 	r_cons_memcat (CTX(lastOutput), CTX(lastLength));
 	//r_cons_print (lastOutput);
 }
 
+static bool lastMatters() {
+	return (I.context->buffer_len > 0) \
+		&& (CTX(lastEnabled) && !I.filter && I.context->grep.nstrings < 1 && \
+		!I.context->grep.tokens_used && !I.context->grep.less && \
+		!I.context->grep.json && !I.is_html);
+}
+
 R_API void r_cons_flush(void) {
 	const char *tee = I.teefile;
-	if (I.noflush || I.context->buffer_len < 1) {
+	if (I.noflush) {
 		return;
 	}
 	if (I.null) {
 		r_cons_reset ();
 		return;
 	}
-	if (!I.filter && I.context->grep.nstrings < 1 && \
-		!I.context->grep.tokens_used && !I.context->grep.less && \
-		!I.context->grep.json && !I.is_html) {
+ 	if (lastMatters ()) {
 		if (!CTX(lastMode)) {
 			// snapshot of the output
 			free (CTX(lastOutput));
