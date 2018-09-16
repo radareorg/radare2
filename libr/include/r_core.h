@@ -215,6 +215,7 @@ typedef struct r_core_t {
 	RCoreLog *log;
 	RAGraph *graph;
 	RPanels* panels;
+	char *panels_tmpcfg;
 	char *cmdqueue;
 	char *lastcmd;
 	char *cmdlog;

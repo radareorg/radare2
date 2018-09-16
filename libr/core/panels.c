@@ -140,6 +140,7 @@ static int openFileCb(void *user);
 static int rwCb(void *user);
 static int debuggerCb(void *user);
 static int closeFileCb(void *user);
+static int saveLayoutCb(void *user);
 static int copyCb(void *user);
 static int pasteCb(void *user);
 static int writeStrCb(void *user);
@@ -172,6 +173,7 @@ static int licenseCb(void *user);
 static int aboutCb(void *user);
 static int quitCb(void *user);
 static void addMenu(RPanelsMenuItem *parent, const char *name, RPanelsMenuCallback cb);
+static void removeMenu(RPanels *panels);
 static int file_history_up(RLine *line);
 static int file_history_down(RLine *line);
 static char *getPanelsConfigPath();
@@ -193,8 +195,8 @@ static void setRefreshAll(RPanels *panels);
 static void setCursor(RCore *core, bool cur);
 static void savePanelPos(RPanel* panel);
 static void restorePanelPos(RPanel* panel);
-static void savePanelsLayout(RPanels* panels);
-static void loadPanelsLayout(RCore *core);
+static void savePanelsLayout(RCore* core, bool temp);
+static int loadPanelsLayout(RCore *core, bool temp);
 static void replaceCmd(RPanels* panels, char *title, char *cmd);
 static void handleMenu(RCore *core, const int key, int *exit);
 static void switchMode(RPanels *panels);
@@ -771,14 +773,7 @@ static void handleLeftKey(RCore *core) {
 				menu->root->sub[menu->root->selectedIndex]->cb (core);
 			}
 		} else {
-			menu->depth--;
-			int i;
-			for (i = 1; i < menu->depth; i++) {
-				menu->history[i]->p->refresh = true;
-				menu->refreshPanels[i - 1] = menu->history[i]->p;
-			}
-			menu->n_refresh = menu->depth - 1;
-			setRefreshAll (panels);
+			removeMenu (panels);
 		}
 	} else if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_GRAPH)) {
 		if (panels->panel[panels->curnode].sx > 0) {
@@ -1569,9 +1564,21 @@ static int debuggerCb(void *user) {
 	return 0;
 }
 
-static int closeFileCb (void *user) {
+static int closeFileCb(void *user) {
 	RCore *core = (RCore *)user;
 	r_core_cmd0 (core, "o-*");
+	return 0;
+}
+
+static int saveLayoutCb(void *user) {
+	RCore *core = (RCore *)user;
+	savePanelsLayout (core, false);
+	return 0;
+}
+
+static int loadLayoutCb(void *user) {
+	RCore *core = (RCore *)user;
+	loadPanelsLayout (core, false);
 	return 0;
 }
 
@@ -1863,6 +1870,18 @@ static void addMenu(RPanelsMenuItem *parent, const char *name, RPanelsMenuCallba
 	parent->sub[parent->n_sub - 1] = item;
 }
 
+static void removeMenu(RPanels *panels) {
+	RPanelsMenu *menu = panels->panelsMenu;
+	int i;
+	menu->depth--;
+	for (i = 1; i < menu->depth; i++) {
+		menu->history[i]->p->refresh = true;
+		menu->refreshPanels[i - 1] = menu->history[i]->p;
+	}
+	menu->n_refresh = menu->depth - 1;
+	setRefreshAll (panels);
+}
+
 static RStrBuf *drawMenu(RPanelsMenuItem *item) {
 	RStrBuf *buf = r_strbuf_new (NULL);
 	if (!buf) {
@@ -1927,6 +1946,10 @@ static bool initPanelsMenu(RPanels *panels) {
 			addMenu (root->sub[0], menus_File[i], openMenuCb);
 		} else if (!strcmp (menus_File[i], "Close")) {
 			addMenu (root->sub[0], menus_File[i], closeFileCb);
+		} else if (!strcmp (menus_File[i], "Save Layout")) {
+			addMenu (root->sub[0], menus_File[i], saveLayoutCb);
+		} else if (!strcmp (menus_File[i], "Load Layout")) {
+			addMenu (root->sub[0], menus_File[i], loadLayoutCb);
 		} else if (!strcmp (menus_File[i], "Quit")) {
 			addMenu (root->sub[0], menus_File[i], quitCb);
 		} else {
@@ -2329,7 +2352,11 @@ static void handleMenu(RCore *core, const int key, int *exit) {
 			break;
 		case 'q':
 		case -1:
-			*exit = 1;
+			if (panels->panelsMenu->depth > 1) {
+				removeMenu (panels);
+			} else {
+				*exit = 1;
+			}
 			return;
 		case ' ':
 		case '\r':
@@ -2362,7 +2389,9 @@ static void handleTabKey(RCore *core, bool shift) {
 			panels->curnode = panels->n_panels - 1;
 		}
 	}
-	panels->panel[panels->curnode].refresh = true;
+	if (panels->curnode != panels->menu_pos) {
+		panels->panel[panels->curnode].refresh = true;
+	}
 }
 
 static void savePanelPos(RPanel* panel) {
@@ -2389,14 +2418,11 @@ static char *getPanelsConfigPath() {
 	return newPath;
 }
 
-static void savePanelsLayout(RPanels* panels) {
-	char *configPath = getPanelsConfigPath ();
-	FILE *panelsConfig = r_sandbox_fopen (configPath, "w");
-	free (configPath);
-	if (!configPath || !panelsConfig) {
-		return;
-	}
-	int i;
+static void savePanelsLayout(RCore* core, bool temp) {
+	RPanels *panels = core->panels;
+	char buf[1024];
+	char *tmp = buf;
+	int i, sz = sizeof (buf);
 	for (i = 0; i < panels->n_panels; i++) {
 		RPanel *panel = &panels->panel[i];
 		RJSVar* obj = r_json_object_new ();
@@ -2413,7 +2439,9 @@ static void savePanelsLayout(RPanels* panels) {
 		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "w", w), w);
 		R_JSON_FREE_ON_FAIL (r_json_object_add (obj, "h", h), h);
 		char* c = r_json_stringify (obj, true);
-		fprintf (panelsConfig ,"%s\n", c);
+		snprintf (tmp, sz, "%s\n", c);
+		tmp += strlen (c) + 1;
+		sz -= strlen (c) + 1;
 		r_json_var_free (obj);
 		r_json_var_free (title);
 		r_json_var_free (cmd);
@@ -2423,22 +2451,33 @@ static void savePanelsLayout(RPanels* panels) {
 		r_json_var_free (h);
 		free (c);
 	}
-	fclose (panelsConfig);
+	if (!temp) {
+		char *configPath = getPanelsConfigPath ();
+		FILE *panelsConfig = r_sandbox_fopen (configPath, "w");
+		free (configPath);
+		if (!panelsConfig) {
+			return;
+		}
+		fprintf (panelsConfig, "%s", buf);
+		fclose (panelsConfig);
+	} else {
+		core->panels_tmpcfg = strdup (buf);
+	}
 }
 
-static void loadPanelsLayout(RCore* core) {
+static int loadPanelsLayout(RCore* core, bool temp) {
 	int i, s;
-	char *configPath = getPanelsConfigPath ();
-	if (!configPath) {
-		return;
-	}
-
-	char *panelsConfig = r_file_slurp (configPath, &s);
-	free (configPath);
-
-	if (!panelsConfig) {
-		free (panelsConfig);
-		return;
+	char *panelsConfig;
+	if (!temp) {
+		char *configPath = getPanelsConfigPath ();
+		panelsConfig = r_file_slurp (configPath, &s);
+		free (configPath);
+		if (!panelsConfig) {
+			free (panelsConfig);
+			return 0;
+		}
+	} else {
+		panelsConfig = core->panels_tmpcfg;
 	}
 	int count = r_str_split (panelsConfig, '\n');
 	RPanels *panels = core->panels;
@@ -2464,7 +2503,8 @@ static void loadPanelsLayout(RCore* core) {
 		p += strlen (p) + 1;
 	}
 	free (panelsConfig);
-	free (configPath);
+	setRefreshAll (core->panels);
+	return 1;
 }
 
 static void maximizePanelSize(RPanels *panels) {
@@ -2546,6 +2586,7 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 			return false;
 		}
 	}
+	core->panels = panels;
 
 	if (!initPanelsMenu (panels)) {
 		return false;
@@ -2564,7 +2605,11 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 	bool originVmode = core->vmode;
 	core->vmode = true;
 
-	r_core_panels_layout (panels);
+	if (core->panels_tmpcfg) {
+		loadPanelsLayout (core, true);
+	} else if (!loadPanelsLayout (core, false)) {
+		r_core_panels_layout (panels);
+	}
 repeat:
 	core->panels = panels;
 	core->cons->event_resize = NULL; // avoid running old event with new data
@@ -2993,6 +3038,7 @@ repeat:
 	}
 	goto repeat;
 exit:
+	savePanelsLayout (core, true);
 	core->cons->event_resize = NULL;
 	core->cons->event_data = NULL;
 	core->print->cur = originCursor;
