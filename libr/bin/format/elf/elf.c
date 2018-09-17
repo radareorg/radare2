@@ -3317,9 +3317,6 @@ ut64 Elf_(r_bin_elf_p2v) (ELFOBJ *bin, ut64 paddr) {
 	}
 	for (i = 0; i < bin->ehdr.e_phnum; ++i) {
 		Elf_(Phdr) *p = &bin->phdr[i];
-		if (!p) {
-			break;
-		}
 		if (p->p_type == PT_LOAD && is_in_pphdr (p, paddr)) {
 			if (!p->p_vaddr && !p->p_offset) {
 				continue;
@@ -3344,9 +3341,6 @@ ut64 Elf_(r_bin_elf_v2p) (ELFOBJ *bin, ut64 vaddr) {
 	}
 	for (i = 0; i < bin->ehdr.e_phnum; ++i) {
 		Elf_(Phdr) *p = &bin->phdr[i];
-		if (!p) {
-			break;
-		}
 		if (p->p_type == PT_LOAD && is_in_vphdr (p, vaddr)) {
 			if (!p->p_offset && !p->p_vaddr) {
 				continue;
@@ -3371,9 +3365,6 @@ ut64 Elf_(r_bin_elf_p2v_new) (ELFOBJ *bin, ut64 paddr) {
 	}
 	for (i = 0; i < bin->ehdr.e_phnum; ++i) {
 		Elf_(Phdr) *p = &bin->phdr[i];
-		if (!p) {
-			break;
-		}
 		if (p->p_type == PT_LOAD && is_in_pphdr (p, paddr)) {
 			return p->p_vaddr + paddr - p->p_offset;
 		}
@@ -3396,9 +3387,6 @@ ut64 Elf_(r_bin_elf_v2p_new) (ELFOBJ *bin, ut64 vaddr) {
 	}
 	for (i = 0; i < bin->ehdr.e_phnum; ++i) {
 		Elf_(Phdr) *p = &bin->phdr[i];
-		if (!p) {
-			break;
-		}
 		if (p->p_type == PT_LOAD && is_in_vphdr (p, vaddr)) {
 			return p->p_offset + vaddr - p->p_vaddr;
 		}
