@@ -190,6 +190,72 @@ static const char *dwarf_langs[] = {
 	[DW_LANG_Fortran08] = "Fortran08"
 };
 
+typedef struct {
+	const ut8 *buf;
+	st64 len;
+	bool big_endian;
+	size_t address_size;
+} data_xtor;
+
+void data_xtor_init(data_xtor *e, const ut8 *buf, st64 len, bool big_endian) {
+	e->buf = buf;
+	e->len = len;
+	e->big_endian = big_endian;
+}
+
+ut8 data_xtor_u8(data_xtor *e, st64 *off) {
+	ut8 ret = 0;
+	if (*off < e->len) {
+		ret = e->buf[*off];
+		*off += 1;
+	}
+	return ret;
+}
+
+ut16 data_xtor_u16(data_xtor *e, st64 *off) {
+	ut16 ret = 0;
+	if (*off + 2 <= e->len) {
+		ret = *(uut16*)(e->buf + *off);
+		if (R_SYS_ENDIAN != (int)e->big_endian)
+			ret = r_swap_ut16 (ret);
+		*off += 2;
+	}
+	return ret;
+}
+
+ut32 data_xtor_u32(data_xtor *e, st64 *off) {
+	ut32 ret = 0;
+	if (*off + 4 <= e->len) {
+		ret = *(uut32*)(e->buf + *off);
+		if (R_SYS_ENDIAN != (int)e->big_endian)
+			ret = r_swap_ut32 (ret);
+		*off += 4;
+	}
+	return ret;
+}
+
+ut64 data_xtor_u64(data_xtor *e, st64 *off) {
+	ut64 ret = 0;
+	if (*off + 8 <= e->len) {
+		ret = *(uut64*)(e->buf + *off);
+		if (R_SYS_ENDIAN != (int)e->big_endian)
+			ret = r_swap_ut64 (ret);
+		*off += 8;
+	}
+	return ret;
+}
+
+ut64 data_xtor_unsigned(data_xtor *e, st64 *off, ut8 byte_size) {
+	switch (byte_size) {
+	case 1: return data_xtor_u8 (e, off);
+	case 2: return data_xtor_u16 (e, off);
+	case 4: return data_xtor_u32 (e, off);
+	case 8: return data_xtor_u64 (e, off);
+	}
+	// FIXME unreachable
+	return 0;
+}
+
 static int add_sdb_include_dir(Sdb *s, const char *incl, int idx) {
 	if (!s || !incl) {
 		return false;
@@ -763,71 +829,52 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 	return true;
 }
 
-#define READ_BUF(x,y) if (idx+sizeof(y)>=len) { return false;} \
-	(x)=*(y*)buf; idx+=sizeof(y);buf+=sizeof(y)
-
 R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len, FILE *f) {
-	ut32 length, offset;
-	ut16 version;
-	ut32 debug_info_offset;
-	ut8 address_size, segment_size;
 	const ut8 *buf = obuf;
 	int idx = 0;
 
-	if (!buf || len< 4) {
+	if (!buf || len < 4) {
 		return false;
 	}
 
-	READ_BUF (length, ut32);
+	// FIXME endian
+	data_xtor ex;
+	data_xtor_init (&ex, obuf, len, false);
+	st64 off = 0;
+
+	ut32 length = data_xtor_u32 (&ex, &off);
+	ut16 version = data_xtor_u16 (&ex, &off);
+	ut32 cu_offset = data_xtor_u32 (&ex, &off);
+	ut8 addr_size = data_xtor_u8 (&ex, &off);
+	ut8 seg_size = data_xtor_u8 (&ex, &off);
 	if (f) {
-		printf("parse_aranges\n");
-		printf("length 0x%x\n", length);
+		fprintf (f, "parse_aranges\n");
+		fprintf (f, "length 0x%x\n", length);
+		fprintf (f, "Version %d\n", version);
+		fprintf (f, "Debug info offset %u\n", cu_offset);
+		fprintf (f, "address size %d\n", (int)addr_size);
+		fprintf (f, "segment size %d\n", (int)seg_size);
 	}
 
-	if (idx + 12 >= len) {
-		return false;
-	}
-
-	READ_BUF (version, ut16);
-	if (f) {
-		printf("Version %d\n", version);
-	}
-
-	READ_BUF (debug_info_offset, ut32);
-	if (f) {
-		fprintf (f, "Debug info offset %d\n", debug_info_offset);
-	}
-
-	READ_BUF (address_size, ut8);
-	if (f) {
-		fprintf (f, "address size %d\n", (int)address_size);
-	}
-
-	READ_BUF (segment_size, ut8);
-	if (f) {
-		fprintf (f, "segment size %d\n", (int)segment_size);
-	}
-
-	offset = segment_size + address_size * 2;
-
+	ut32 offset = seg_size + addr_size * 2;
 	if (offset) {
 		ut64 n = (((ut64) (size_t)buf / offset) + 1) * offset - ((ut64)(size_t)buf);
-		if (idx+n>=len) {
+		if (off + n >= len) {
 			return false;
 		}
 		buf += n;
-		idx += n;
+		off += n;
 	}
 
-	while ((buf - obuf) < len) {
-		ut64 adr, length;
-		if ((idx+8)>=len) {
+	while (off < len) {
+		st64 old = off;
+		ut64 address = data_xtor_unsigned (&ex, &off, addr_size);
+		ut64 length = data_xtor_unsigned (&ex, &off, addr_size);
+		if (off - old != addr_size * 2) {
 			break;
 		}
-		READ_BUF (adr, ut64);
-		READ_BUF (length, ut64);
 		if (f) {
-			printf ("length 0x%" PFMT64x " address 0x%" PFMT64x "\n", length, adr);
+			printf ("length 0x%" PFMT64x " address 0x%" PFMT64x "\n", length, address);
 		}
 	}
 
