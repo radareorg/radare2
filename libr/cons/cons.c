@@ -1502,7 +1502,7 @@ R_API const char* r_cons_get_rune(const ut8 ch) {
 	return NULL;
 }
 
-R_API void r_cons_breakword(const char *s) {
+R_API void r_cons_breakword(R_NULLABLE const char *s) {
 	free (I.break_word);
 	if (s) {
 		I.break_word = strdup (s);
@@ -1545,7 +1545,8 @@ R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 			r_cons_printf ("%s%s%s\n", pal_help_color, help[i], pal_reset);
 		} else {
 			// these are the normal lines
-			int padding = R_MAX(0, max_length - (strlen (help[i]) + strlen (help[i + 1])));
+			int str_length = strlen (help[i]) + strlen (help[i + 1]);
+			int padding = (str_length < max_length)? (max_length - str_length): 0;
 			r_cons_printf ("| %s%s%s%*s  %s%s%s\n",
 				help[i], pal_args_color, help[i + 1],
 				padding, "", pal_help_color, help[i + 2], pal_reset);
