@@ -2397,10 +2397,10 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 #if __x86_64__
 	SETI ("dbg.glibc.ma_offset", 0x000000, "Main_arena offset from his symbol");
-	SETI ("dbg.glibc.fc_offset", 0x00250, "First chunk offset from brk_start");
+	SETI ("dbg.glibc.fc_offset", 0x00240, "First chunk offset from brk_start");
 #else
 	SETI ("dbg.glibc.ma_offset", 0x1bb000, "Main_arena offset from his symbol");
-	SETI ("dbg.glibc.fc_offset", 0x158, "First chunk offset from brk_start");
+	SETI ("dbg.glibc.fc_offset", 0x148, "First chunk offset from brk_start");
 #endif
 	SETPREF ("dbg.libc.dbglib", "", "Set libc debug library file");
 
