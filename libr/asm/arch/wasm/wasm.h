@@ -198,7 +198,7 @@ typedef enum {
 typedef struct {
 	WasmOpCodes op;
 	int len;
-	char txt[R_ASM_BUFSIZE];
+	char txt[RStrBuf];
 } WasmOp;
 
 typedef struct {

@@ -80,11 +80,11 @@ print_insn_hexagon = hexagon_get_disassembler_from_mach(0,0);
 	op->size = print_insn_hexagon ((bfd_vma)Offset, &disasm_obj);
 
 	if (!strncmp (op->buf_asm, "unknown", 7)) {
-		strncpy (op->buf_asm, "invalid", R_ASM_BUFSIZE);
+		strncpy (op->buf_asm, "invalid", RStrBuf);
 	}
 
 	if (op->size == -1) {
-		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
+		strncpy (op->buf_asm, " (data)", RStrBuf);
 	}
 	return op->size;
 }

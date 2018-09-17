@@ -8,7 +8,7 @@
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	char *ipath, *opath;
 	int ifd, ofd;
-	char asm_buf[R_ASM_BUFSIZE];
+	char asm_buf[RStrBuf];
 	int len = 0;
 	if (a->syntax != R_ASM_SYNTAX_INTEL) {
 		eprintf ("asm.x86.nasm does not support non-intel syntax\n");

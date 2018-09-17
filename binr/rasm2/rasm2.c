@@ -439,7 +439,7 @@ int main (int argc, char *argv[]) {
 	const char *path;
 	const char *env_arch = r_sys_getenv ("RASM2_ARCH");
 	const char *env_bits = r_sys_getenv ("RASM2_BITS");
-	unsigned char buf[R_ASM_BUFSIZE];
+	unsigned char buf[RStrBuf];
 	char *arch = NULL, *file = NULL, *filters = NULL, *kernel = NULL, *cpu = NULL, *tmp;
 	bool isbig = false;
 	bool rad = false;
@@ -681,7 +681,7 @@ int main (int argc, char *argv[]) {
 		int length = 0;
 		if (!strcmp (file, "-")) {
 			ret = read (0, buf, sizeof (buf) - 1);
-			if (ret == R_ASM_BUFSIZE) {
+			if (ret == RStrBuf) {
 				eprintf ("rasm2: Cannot slurp all stdin data\n");
 			}
 			if (ret >= 0) { // only for text

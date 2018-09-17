@@ -10,7 +10,7 @@
 // XXX: TODO Implement
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	int len = 0;
-	char cmd[R_ASM_BUFSIZE];
+	char cmd[RStrBuf];
 	ut8 *out;
 	snprintf (cmd, sizeof (cmd),
 		"gas /dev/stdin -o /dev/stdout <<__\n"
@@ -18,7 +18,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 		a->bits, a->pc, buf);
 	out = (ut8 *)r_sys_cmd_str (cmd, "", &len);
 	if (out) {
-		memcpy (op->buf, out, len<=R_ASM_BUFSIZE?len:R_ASM_BUFSIZE);
+		memcpy (op->buf, out, len<=RStrBuf?len:RStrBuf);
 		free (out);
 	}
 	op->size = len;

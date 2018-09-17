@@ -19,7 +19,7 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	const char *bitconfig = "";
 	char *ipath, *opath;
 	char *as = NULL;
-	char asm_buf[R_ASM_BUFSIZE];
+	char asm_buf[RStrBuf];
 	int len = 0;
 
 	int ifd = r_file_mkstemp ("r_as", &ipath);

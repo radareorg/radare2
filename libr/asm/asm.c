@@ -708,7 +708,7 @@ static char* dup_val(void *v) {
 R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 	int labels = 0, num, stage, ret, idx, ctr, i, j, linenum = 0;
 	char *lbuf = NULL, *ptr2, *ptr = NULL, *ptr_start = NULL;
-	char *tokens[R_ASM_BUFSIZE], buf_token[R_ASM_BUFSIZE];
+	char *tokens[RStrBuf], buf_token[RStrBuf];
 	const char *asmcpu = NULL;
 	RAsmCode *acode = NULL;
 	RAsmOp op = {0};
@@ -778,7 +778,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 	}
 	/* Tokenize */
 	for (tokens[0] = lbuf, ctr = 0;
-			ctr < R_ASM_BUFSIZE - 1 &&
+			ctr < RStrBuf - 1 &&
 			((ptr = strchr (tokens[ctr], ';')) ||
 			(ptr = strchr (tokens[ctr], '\n')) ||
 			(ptr = strchr (tokens[ctr], '\r')));
@@ -804,7 +804,7 @@ R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
 		r_asm_set_pc (a, pc);
 		for (idx = ret = i = j = 0, off = a->pc, acode->buf_hex[0] = '\0';
 				i <= ctr; i++, idx += ret) {
-			strncpy (buf_token, tokens[i], R_ASM_BUFSIZE - 1);
+			strncpy (buf_token, tokens[i], RStrBuf - 1);
 			if (inComment) {
 				if (!strncmp (ptr_start, "*/", 2)) {
 					inComment = false;
