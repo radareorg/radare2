@@ -338,11 +338,6 @@ static RAnalFunction *fcnIn(RDisasmState *ds, ut64 at, int type) {
 	return r_anal_get_fcn_in (ds->core->anal, at, type);
 }
 
-static int cmpaddr(const void *_a, const void *_b) {
-	const RAnalBlock *a = _a, *b = _b;
-	return (a->addr > b->addr);
-}
-
 static void get_bits_comment(RCore *core, RAnalFunction *f, char *cmt, int cmt_size) {
 	if (core && f && cmt && cmt_size > 0 && f->bits && f->bits != core->assembler->bits) {
 		const char *asm_arch = r_config_get (core->config, "asm.arch");
@@ -2155,8 +2150,6 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 				r_asm_op_set_asm (&ds->asmop, sdb_fmt (".hex %s", r_asm_op_get_hex (&ds->asmop)));
 				break;
 			}
-			// strcpy (ds->asmop.buf_hex, "0102030405060708");
-			//return i;
 			ds->oplen = sz; //ds->asmop.size;
 			return i;
 		}
@@ -4357,7 +4350,7 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 	} else {
 		for (i = 0; i < arg_max; i++) {
 			char *type = r_type_func_args_type (TDB, name, i);
-			char *tname = r_type_func_args_name (TDB, name, i);
+			const char *tname = r_type_func_args_name (TDB, name, i);
 			if (type && *type) {
 				cmt = r_str_appendf (cmt, "%s%s%s%s%s", i == 0 ? "": " ", type,
 						type[strlen (type) -1] == '*' ? "": " ",
