@@ -737,8 +737,9 @@ R_API void r_cons_flush(void) {
 				char *str = r_str_ndup (CTX (buffer), CTX (buffer_len));
 				CTX (pageable) = false;
 				r_cons_less_str (str, NULL);
-				CTX (pageable) = true;
+				r_cons_reset ();
 				free (str);
+				return;
 			} else {
 				r_sys_cmd_str_full (I.pager, CTX (buffer), NULL, NULL, NULL);
 				r_cons_reset ();
