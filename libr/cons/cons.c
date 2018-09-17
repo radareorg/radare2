@@ -109,6 +109,7 @@ static void cons_context_init(RConsContext *context) {
 	context->break_stack = r_stack_newf (6, break_stack_free);
 	context->event_interrupt = NULL;
 	context->event_interrupt_data = NULL;
+	context->pageable = true;
 }
 
 static void cons_context_deinit(RConsContext *context) {
@@ -575,6 +576,7 @@ R_API void r_cons_reset() {
 	I.lines = 0;
 	I.lastline = I.context->buffer;
 	cons_grep_reset (&I.context->grep);
+	CTX (pageable) = true;
 }
 
 R_API const char *r_cons_get_buffer() {
@@ -715,7 +717,6 @@ R_API void r_cons_flush(void) {
 		r_cons_reset ();
 		return;
 	}
-	CTX (pageable) = true;
 	if (lastMatters () && !CTX (lastMode)) {
 		// snapshot of the output
 		if (CTX (buffer_len) > CTX (lastLength)) {
@@ -736,7 +737,6 @@ R_API void r_cons_flush(void) {
 				char *str = r_str_ndup (CTX (buffer), CTX (buffer_len));
 				CTX (pageable) = false;
 				r_cons_less_str (str, NULL);
-				CTX (pageable) = true;
 				free (str);
 			} else {
 				r_sys_cmd_str_full (I.pager, CTX (buffer), NULL, NULL, NULL);
