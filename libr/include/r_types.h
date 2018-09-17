@@ -14,17 +14,17 @@
 #undef __WINDOWS__
 
 #define R_IN /* do not use, implicit */
-#define R_OWN /*own*/
-#define R_OUT /*out*/
-#define R_INOUT /*inout*/
-#define R_NULL /*null*/
-#define R_IFNULL(x) /*ifnull*/
+#define R_OWN /* pointer ownership is transferred */
+#define R_OUT /* parameter is written, not read */
+#define R_INOUT /* parameter is read and written */
+#define R_NULLABLE /* pointer can be null */
+#define R_IFNULL(x) /* default value for the pointer when null */
 #ifdef __GNUC__
 #define R_NONNULL __attribute__((__nonnull__))
 #define R_UNUSED __attribute__((__unused__))
 #else
-#define R_NONNULL /*nonnull*/
-#define R_UNUSED /*unused*/
+#define R_NONNULL /* nonnull */
+#define R_UNUSED /* unused */
 #endif
 
 #ifdef R_NEW
