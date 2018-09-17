@@ -199,7 +199,11 @@ bool xnu_step(RDebug *dbg) {
 
 int xnu_attach(RDebug *dbg, int pid) {
 #if XNU_USE_PTRACE
+#if PT_ATTACHEXC
+	if (ptrace (PT_ATTACHEXC, pid, 0, 0) == -1) {
+#else
 	if (ptrace (PT_ATTACH, pid, 0, 0) == -1) {
+#endif
 		perror ("ptrace (PT_ATTACH)");
 		return -1;
 	}
