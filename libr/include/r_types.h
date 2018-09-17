@@ -13,6 +13,20 @@
 #undef __UNIX__
 #undef __WINDOWS__
 
+#define R_IN /* do not use, implicit */
+#define R_OWN /* pointer ownership is transferred */
+#define R_OUT /* parameter is written, not read */
+#define R_INOUT /* parameter is read and written */
+#define R_NULLABLE /* pointer can be null */
+#define R_IFNULL(x) /* default value for the pointer when null */
+#ifdef __GNUC__
+#define R_NONNULL __attribute__((__nonnull__))
+#define R_UNUSED __attribute__((__unused__))
+#else
+#define R_NONNULL /* nonnull */
+#define R_UNUSED /* unused */
+#endif
+
 #ifdef R_NEW
 #undef R_NEW
 #endif
@@ -199,14 +213,6 @@ extern "C" {
 
 #ifndef __packed
 #define __packed __attribute__((__packed__))
-#endif
-
-#ifndef UNUSED
-#ifdef __GNUC__
-#define UNUSED __attribute__((__unused__))
-#else
-#define UNUSED
-#endif
 #endif
 
 typedef int (*PrintfCallback)(const char *str, ...);
