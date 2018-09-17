@@ -1010,7 +1010,7 @@ R_API void r_agraph_set_curnode(RAGraph *g, RANode *node);
 
 typedef int (*RPanelsMenuCallback)(void *user);
 typedef struct r_panels_menu_item {
-	int n_sub, selectedIndex, selfIndex;
+	int n_sub, selectedIndex;
 	const char *name;
 	struct r_panels_menu_item **sub;
 	RPanelsMenuCallback cb;

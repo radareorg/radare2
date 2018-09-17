@@ -57,6 +57,12 @@ static const char *menus_ReOpen[] = {
 };
 static const int reopenNum = ((int)sizeof (menus_ReOpen) / (int)sizeof (const char *)) - 1;
 
+static const char *menus_loadLayout[] = {
+	"Saved", "Default",
+	NULL
+};
+static const int loadLayoutNum = ((int)sizeof (menus_loadLayout) / (int)sizeof (const char *)) - 1;
+
 static const char *menus_Edit[] = {
 	"Copy", "Paste", "Clipboard", "Write String", "Write Hex", "Write Value", "Assemble", "Fill", "io.cache",
 	NULL
@@ -139,6 +145,8 @@ static int openMenuCb(void *user);
 static int openFileCb(void *user);
 static int rwCb(void *user);
 static int debuggerCb(void *user);
+static int loadLayoutSavedCb(void *user);
+static int loadLayoutDefaultCb(void *user);
 static int closeFileCb(void *user);
 static int saveLayoutCb(void *user);
 static int copyCb(void *user);
@@ -184,7 +192,6 @@ static void initSdb(RPanels *panels);
 static bool initPanelsMenu(RPanels *panels);
 static bool initPanels(RCore *core, RPanels *panels);
 static RStrBuf *drawMenu(RPanelsMenuItem *item);
-static void positionNewMenu(RPanelsMenu *menu, RPanelsMenuItem *parent, RPanelsMenuItem *child);
 static void moveMenuCursor(RPanelsMenu *menu, RPanelsMenuItem *parent);
 static void freeSinglePanel(RPanel *panel);
 static void freeAllPanels(RPanels *panels);
@@ -198,7 +205,7 @@ static void setCursor(RCore *core, bool cur);
 static void savePanelPos(RPanel* panel);
 static void restorePanelPos(RPanel* panel);
 static void savePanelsLayout(RCore* core, bool temp);
-static int loadPanelsLayout(RCore *core, bool temp);
+static int loadSavedPanelsLayout(RCore *core, bool temp);
 static void replaceCmd(RPanels* panels, char *title, char *cmd);
 static void handleMenu(RCore *core, const int key, int *exit);
 static void switchMode(RPanels *panels);
@@ -1566,6 +1573,23 @@ static int debuggerCb(void *user) {
 	return 0;
 }
 
+static int loadLayoutSavedCb(void *user) {
+	RCore *core = (RCore *)user;
+	loadSavedPanelsLayout (core, false);
+	core->panels->curnode = 0;
+	core->panels->panelsMenu->depth = 1;
+	return 0;
+}
+
+static int loadLayoutDefaultCb(void *user) {
+	RCore *core = (RCore *)user;
+	initPanels (core, core->panels);
+	r_core_panels_layout (core->panels);
+	setRefreshAll (core->panels);
+	core->panels->panelsMenu->depth = 1;
+	return 0;
+}
+
 static int closeFileCb(void *user) {
 	RCore *core = (RCore *)user;
 	r_core_cmd0 (core, "o-*");
@@ -1575,12 +1599,6 @@ static int closeFileCb(void *user) {
 static int saveLayoutCb(void *user) {
 	RCore *core = (RCore *)user;
 	savePanelsLayout (core, false);
-	return 0;
-}
-
-static int loadLayoutCb(void *user) {
-	RCore *core = (RCore *)user;
-	loadPanelsLayout (core, false);
 	return 0;
 }
 
@@ -1874,11 +1892,29 @@ static int quitCb(void *user) {
 }
 
 static int openMenuCb (void *user) {
-	RCore* core = (RCore *)user; 
+	RCore* core = (RCore *)user;
 	RPanelsMenu *menu = core->panels->panelsMenu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
-	positionNewMenu (menu, parent, child);
+	if (menu->depth < 2) {
+		child->p->pos.x = menu->root->selectedIndex * 6;
+		child->p->pos.y = 1;
+	} else {
+		RPanelsMenuItem *p = menu->history[menu->depth - 2];
+		RPanelsMenuItem *parent2 = p->sub[p->selectedIndex];
+		child->p->pos.x = parent2->p->pos.x + parent2->p->pos.w - 1;
+		child->p->pos.y = parent2->p->pos.y + 2;
+	}
+	RStrBuf *buf = drawMenu (child);
+	if (!buf) {
+		return 0;
+	}
+	child->p->title = r_strbuf_drain (buf);
+	child->p->pos.w = r_str_bounds (child->p->title, &child->p->pos.h);
+	child->p->pos.h += 4;
+	child->p->type = PANEL_TYPE_MENU;
+	child->p->refresh = true;
+	menu->refreshPanels[menu->n_refresh++] = child->p;
 	menu->history[menu->depth++] = child;
 	return 0;
 }
@@ -1891,7 +1927,6 @@ static void addMenu(RPanelsMenuItem *parent, const char *name, RPanelsMenuCallba
 	item->sub = NULL;
 	item->cb = cb;
 	item->p = R_NEW0 (RPanel);
-	item->selfIndex = parent->n_sub;
 	parent->n_sub++;
 	parent->sub = realloc (parent->sub, sizeof (RPanelsMenuItem *) * parent->n_sub);
 	parent->sub[parent->n_sub - 1] = item;
@@ -1925,21 +1960,6 @@ static RStrBuf *drawMenu(RPanelsMenuItem *item) {
 		r_strbuf_append (buf, "          \n");
 	}
 	return buf;
-}
-
-static void positionNewMenu(RPanelsMenu *menu, RPanelsMenuItem *parent, RPanelsMenuItem *child) {
-	child->p->pos.x = menu->depth <= 2 ? child->selfIndex * 6 : parent->p->pos.x + parent->p->pos.w - 1;
-	child->p->pos.y = menu->depth <= 2 ? 1 : parent->selectedIndex + 2;
-	RStrBuf *buf = drawMenu (child);
-	if (!buf) {
-		return;
-	}
-	child->p->title = r_strbuf_drain (buf);
-	child->p->pos.w = r_str_bounds (child->p->title, &child->p->pos.h);
-	child->p->pos.h += 4;
-	child->p->type = PANEL_TYPE_MENU;
-	child->p->refresh = true;
-	menu->refreshPanels[menu->n_refresh++] = child->p;
 }
 
 static void moveMenuCursor(RPanelsMenu *menu, RPanelsMenuItem *parent) {
@@ -1976,7 +1996,7 @@ static bool initPanelsMenu(RPanels *panels) {
 		} else if (!strcmp (menus_File[i], "Save Layout")) {
 			addMenu (root->sub[0], menus_File[i], saveLayoutCb);
 		} else if (!strcmp (menus_File[i], "Load Layout")) {
-			addMenu (root->sub[0], menus_File[i], loadLayoutCb);
+			addMenu (root->sub[0], menus_File[i], openMenuCb);
 		} else if (!strcmp (menus_File[i], "Quit")) {
 			addMenu (root->sub[0], menus_File[i], quitCb);
 		} else {
@@ -2081,6 +2101,13 @@ static bool initPanelsMenu(RPanels *panels) {
 			addMenu (root->sub[0]->sub[2], menus_ReOpen[i], rwCb);
 		} else if (!strcmp (menus_ReOpen[i], "In Debugger")) {
 			addMenu (root->sub[0]->sub[2], menus_ReOpen[i], debuggerCb);
+		}
+	}
+	for (i = 0; i < loadLayoutNum; i++) {
+		if (!strcmp (menus_loadLayout[i], "Saved")) {
+			addMenu (root->sub[0]->sub[11], menus_loadLayout[i], loadLayoutSavedCb);
+		} else if (!strcmp (menus_loadLayout[i], "Default")) {
+			addMenu (root->sub[0]->sub[11], menus_loadLayout[i], loadLayoutDefaultCb);
 		}
 	}
 	root->selectedIndex = 0;
@@ -2496,7 +2523,7 @@ static void savePanelsLayout(RCore* core, bool temp) {
 	}
 }
 
-static int loadPanelsLayout(RCore* core, bool temp) {
+static int loadSavedPanelsLayout(RCore* core, bool temp) {
 	int i, s;
 	char *panelsConfig;
 	if (!temp) {
@@ -2637,8 +2664,8 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 	core->vmode = true;
 
 	if (core->panels_tmpcfg) {
-		loadPanelsLayout (core, true);
-	} else if (!loadPanelsLayout (core, false)) {
+		loadSavedPanelsLayout (core, true);
+	} else if (!loadSavedPanelsLayout (core, false)) {
 		r_core_panels_layout (panels);
 	}
 repeat:
