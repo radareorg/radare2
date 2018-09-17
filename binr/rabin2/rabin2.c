@@ -550,6 +550,7 @@ int main(int argc, char **argv) {
 	const char *chksum = NULL;
 	const char *op = NULL;
 	const char *path = NULL;
+	RCoreFile *fh = NULL;
 	RCoreBinFilter filter;
 	int xtr_idx = 0; // load all files if extraction is necessary.
 	int rawstr = 0;
@@ -977,10 +978,11 @@ int main(int argc, char **argv) {
 	}
 
 	if (file && *file) {
-		if (r_core_file_open (&core, file, R_IO_READ, 0)) {
+		if ((fh = r_core_file_open (&core, file, R_IO_READ, 0))) {
 			fd = r_io_fd_get_current (core.io);
 			if (fd == -1) {
 				eprintf ("r_core: Cannot open file '%s'\n", file);
+				r_core_file_free (fh);
 				r_core_fini (&core);
 				return 1;
 			}
@@ -995,6 +997,7 @@ int main(int argc, char **argv) {
 	RBinOptions *bo = r_bin_options_new (0LL, baddr, rawstr);
 	if (!bo) {
 		eprintf ("Could not create RBinOptions\n");
+		r_core_file_free (fh);
 		r_core_fini (&core);
 		return 1;
 	}
@@ -1009,6 +1012,7 @@ int main(int argc, char **argv) {
 		if (!bin->cur || !bin->cur->xtr_data) {
 			eprintf ("r_bin: Cannot open file\n");
 			r_bin_options_free (bo);
+			r_core_file_free (fh);
 			r_core_fini (&core);
 			return 1;
 		}
@@ -1039,6 +1043,7 @@ int main(int argc, char **argv) {
 			}
 		}
 		r_bin_options_free (bo);
+		r_core_file_free (fh);
 		r_core_fini (&core);
 		return 0;
 	}
@@ -1085,6 +1090,7 @@ int main(int argc, char **argv) {
 		pdbopts.symbol_store_path = (char*) r_config_get (core.config, "pdb.symstore");
 		int r = r_bin_pdb_download (&core, isradjson, &actions_done, &pdbopts);
 		r_bin_options_free (bo);
+		r_core_file_free (fh);
 		r_core_fini (&core);
 		return r;
 	}
@@ -1136,6 +1142,7 @@ int main(int argc, char **argv) {
 	}
 	r_cons_flush ();
 	r_bin_options_free (bo);
+	r_core_file_free (fh);
 	r_core_fini (&core);
 	free (stdin_buf);
 
