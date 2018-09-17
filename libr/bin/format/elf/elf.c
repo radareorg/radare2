@@ -3308,10 +3308,7 @@ static int is_in_vphdr (Elf_(Phdr) *p, ut64 addr) {
 ut64 Elf_(r_bin_elf_p2v) (ELFOBJ *bin, ut64 paddr) {
 	int i;
 
-	if (!bin) {
-		return 0;
-	}
-
+	r_return_val_if_fail (bin, 0);
 	if (!bin->phdr) {
 		if (bin->ehdr.e_type == ET_REL) {
 			return bin->baddr + paddr;
@@ -3337,9 +3334,8 @@ ut64 Elf_(r_bin_elf_p2v) (ELFOBJ *bin, ut64 paddr) {
 /* Deprecated temporarily. Use r_bin_elf_v2p_new in new code for now. */
 ut64 Elf_(r_bin_elf_v2p) (ELFOBJ *bin, ut64 vaddr) {
 	int i;
-	if (!bin) {
-		return 0;
-	}
+
+	r_return_val_if_fail (bin, 0);
 	if (!bin->phdr) {
 		if (bin->ehdr.e_type == ET_REL) {
 			return vaddr - bin->baddr;
@@ -3366,10 +3362,7 @@ ut64 Elf_(r_bin_elf_v2p) (ELFOBJ *bin, ut64 vaddr) {
 ut64 Elf_(r_bin_elf_p2v_new) (ELFOBJ *bin, ut64 paddr) {
 	int i;
 
-	if (!bin) {
-		return UT64_MAX;
-	}
-
+	r_return_val_if_fail (bin, UT64_MAX);
 	if (!bin->phdr) {
 		if (bin->ehdr.e_type == ET_REL) {
 			return bin->baddr + paddr;
@@ -3393,9 +3386,8 @@ ut64 Elf_(r_bin_elf_p2v_new) (ELFOBJ *bin, ut64 paddr) {
  * at the program headers in the binary bin */
 ut64 Elf_(r_bin_elf_v2p_new) (ELFOBJ *bin, ut64 vaddr) {
 	int i;
-	if (!bin) {
-		return UT64_MAX;
-	}
+
+	r_return_val_if_fail (bin, UT64_MAX);
 	if (!bin->phdr) {
 		if (bin->ehdr.e_type == ET_REL) {
 			return vaddr - bin->baddr;
