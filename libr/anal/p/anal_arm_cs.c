@@ -1598,7 +1598,7 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		break;
 	case ARM_INS_BL:
 	case ARM_INS_BLX:
-		r_strbuf_appendf (&op->esil, "4,pc,+,lr,=,4,lr,-=,%s,pc,=", ARG(0));
+		r_strbuf_appendf (&op->esil, "pc,lr,=,%s,pc,=", ARG(0));
 		break;
 	case ARM_INS_MOVT:
 		r_strbuf_appendf (&op->esil, "16,%s,<<,%s,|=", ARG(1), REG(0));
