@@ -707,7 +707,6 @@ static bool lastMatters() {
 }
 
 R_API void r_cons_flush(void) {
-	static bool pageable = true;
 	const char *tee = I.teefile;
 	if (I.noflush) {
 		return;
@@ -716,6 +715,7 @@ R_API void r_cons_flush(void) {
 		r_cons_reset ();
 		return;
 	}
+	CTX (pageable) = true;
 	if (lastMatters () && !CTX (lastMode)) {
 		// snapshot of the output
 		if (CTX (buffer_len) > CTX (lastLength)) {
@@ -728,16 +728,15 @@ R_API void r_cons_flush(void) {
 		CTX (lastMode) = false;
 	}
 	r_cons_filter ();
-
 	if (I.is_interactive && I.fdout == 1) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
-		if (pageable && I.pager && *I.pager && I.context->buffer_len > 0 && r_str_char_count (I.context->buffer, '\n') >= I.rows) {
+		if (CTX (pageable) && I.pager && *I.pager && I.context->buffer_len > 0 && r_str_char_count (I.context->buffer, '\n') >= I.rows) {
 			I.context->buffer[I.context->buffer_len - 1] = 0;
 			if (*I.pager == '.') {
 				char *str = r_str_ndup (CTX (buffer), CTX (buffer_len));
-				pageable = false;
+				CTX (pageable) = false;
 				r_cons_less_str (str, NULL);
-				pageable = true;
+				CTX (pageable) = true;
 				free (str);
 			} else {
 				r_sys_cmd_str_full (I.pager, CTX (buffer), NULL, NULL, NULL);

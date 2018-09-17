@@ -399,6 +399,7 @@ typedef struct r_cons_context_t {
 	int lastLength;
 	bool lastMode;
 	bool lastEnabled;
+	bool pageable;
 } RConsContext;
 
 typedef struct r_cons_t {
