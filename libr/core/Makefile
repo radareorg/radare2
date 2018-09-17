@@ -5,8 +5,6 @@ NAME=r_core
 DEPS=r_config r_cons r_io r_util r_flag r_asm
 DEPS+=r_debug r_hash r_bin r_lang r_io r_anal r_parse r_bp r_egg
 DEPS+=r_reg r_search r_syscall r_socket r_fs r_magic r_crypto
-PCCFLAGS=@SSL_CFLAGS@ @CAPSTONE_CFLAGS@
-PCLIBS=@SSL_LDFLAGS@ @CAPSTONE_LDFLAGS@
 
 OBJS=core.o cmd.o cfile.o cconfig.o visual.o cio.o yank.o libs.o graph.o
 OBJS+=fortune.o hack.o vasm.o patch.o cbin.o log.o rtr.o cmd_api.o
@@ -24,6 +22,11 @@ endif
 ifeq ($(USE_LIB_MAGIC),1)
 #LDFLAGS+=-lmagic
 LDFLAGS+=${LIBMAGIC}
+endif
+
+ifeq ($(HAVE_LIBUV),1)
+CFLAGS+=${LIBUV_CFLAGS}
+LDFLAGS+=${LIBUV_LDFLAGS}
 endif
 
 first:: all

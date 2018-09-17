@@ -222,6 +222,7 @@ R_API int r_cons_fgets(char *buf, int len, int argc, const char **argv) {
 	r_cons_enable_mouse (false);
 	r_cons_flush ();
 #endif
+	errno = 0;
 	if (cons->user_fgets) {
 		RETURN (cons->user_fgets (buf, len));
 	}
