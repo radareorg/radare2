@@ -1647,7 +1647,8 @@ static int cb_pager(void *user, void *data) {
 		return false;
 	}
 	/* Let cons know we have a new pager. */
-	core->cons->pager = node->value;
+	free (core->cons->pager);
+	core->cons->pager = strdup (node->value);
 	return true;
 }
 
