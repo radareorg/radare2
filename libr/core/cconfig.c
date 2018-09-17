@@ -1642,9 +1642,13 @@ static int cb_scr_color_grep(void *user, void *data) {
 static int cb_pager(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-
+	if (!strcmp (node->value, "?")) {
+		eprintf ("Usage: scr.pager must be '..' for internal less, or the path to a program in $PATH");
+		return false;
+	}
 	/* Let cons know we have a new pager. */
-	core->cons->pager = node->value;
+	free (core->cons->pager);
+	core->cons->pager = strdup (node->value);
 	return true;
 }
 
@@ -2895,7 +2899,7 @@ R_API int r_core_config_init(RCore *core) {
 	n = NODECB ("scr.nkey", "flag", &cb_scrnkey);
 	SETDESC (n, "Select visual seek mode (affects n/N visual commands)");
 	SETOPTIONS (n, "fun", "hit", "flag", NULL);
-	SETCB ("scr.pager", "", &cb_pager, "Select pager program (when output overflows the window)");
+	SETCB ("scr.pager", "", &cb_pager, "System program (or '..') to use when output exceeds screen boundaries");
 	SETPREF ("scr.randpal", "false", "Random color palete or just get the next one from 'eco'");
 	SETCB ("scr.color.grep", "false", &cb_scr_color_grep, "Enable colors when using ~grep");
 	SETPREF ("scr.pipecolor", "false", "Enable colors when using pipes");

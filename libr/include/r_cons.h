@@ -399,6 +399,7 @@ typedef struct r_cons_context_t {
 	int lastLength;
 	bool lastMode;
 	bool lastEnabled;
+	bool pageable;
 } RConsContext;
 
 typedef struct r_cons_t {
@@ -500,6 +501,7 @@ typedef struct r_cons_t {
 #define R_CONS_KEY_ESC 0x1b
 
 #define R_CONS_CLEAR_LINE "\x1b[2K\r"
+#define R_CONS_CLEAR_SCREEN "\x1b[2J\r"
 
 #define Color_BLINK        "\x1b[5m"
 #define Color_INVERT       "\x1b[7m"

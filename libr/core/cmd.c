@@ -1608,6 +1608,7 @@ static int cmd_last(void *data, const char *input) {
 	default:
 		eprintf ("Usage: _  print last output\n");
 	}
+	return 0;
 }
 
 static int cmd_system(void *data, const char *input) {
