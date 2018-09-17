@@ -1,6 +1,6 @@
 #!/bin/sh
 # ASAN="address leak memory undefined"
-ASAN=${ASAN:="address"}
+ASAN=${ASAN:="address undefined"}
 
 printf "\033[32m"
 echo "========================================================================="
