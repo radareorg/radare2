@@ -243,15 +243,18 @@ static bool validate_mach_message (RDebug *dbg, exc_msg *msg) {
 	return false;
 #else
 	/*check if the message is for us*/
-	if (msg->hdr.msgh_local_port != ex.exception_port)
+	if (msg->hdr.msgh_local_port != ex.exception_port) {
 		return false;
+	}
 	/*gdb from apple check this so why not us*/
-	if (!(msg->hdr.msgh_bits & MACH_MSGH_BITS_COMPLEX))
+	if (!(msg->hdr.msgh_bits & MACH_MSGH_BITS_COMPLEX)) {
 		return false;
+	}
 	/*mach exception we are interested*/
 	//XXX for i386 this id seems to be different
-	if (msg->hdr.msgh_id > 2405 || msg->hdr.msgh_id < 2401)
+	if (msg->hdr.msgh_id > 2405 || msg->hdr.msgh_id < 2401) {
 		return false;
+	}
 	/* check descriptors.  */
 	if (msg->hdr.msgh_size <
 	    sizeof (mach_msg_header_t) + sizeof (mach_msg_body_t) +
@@ -295,6 +298,7 @@ static bool handle_dead_notify (RDebug *dbg, exc_msg *msg) {
 	}
 	return false;
 }
+
 static int handle_exception_message (RDebug *dbg, exc_msg *msg, int *ret_code) {
 	int ret = R_DEBUG_REASON_UNKNOWN;
 	kern_return_t kr;

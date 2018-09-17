@@ -40,18 +40,18 @@ R_API void r_core_task_print (RCore *core, RCoreTask *task, int mode) {
 	case 'j':
 		r_cons_printf ("{\"id\":%d,\"state\":\"", task->id);
 		switch (task->state) {
-			case R_CORE_TASK_STATE_BEFORE_START:
-				r_cons_print ("before_start");
-				break;
-			case R_CORE_TASK_STATE_RUNNING:
-				r_cons_print ("running");
-				break;
-			case R_CORE_TASK_STATE_SLEEPING:
-				r_cons_print ("sleeping");
-				break;
-			case R_CORE_TASK_STATE_DONE:
-				r_cons_print ("done");
-				break;
+		case R_CORE_TASK_STATE_BEFORE_START:
+			r_cons_print ("before_start");
+			break;
+		case R_CORE_TASK_STATE_RUNNING:
+			r_cons_print ("running");
+			break;
+		case R_CORE_TASK_STATE_SLEEPING:
+			r_cons_print ("sleeping");
+			break;
+		case R_CORE_TASK_STATE_DONE:
+			r_cons_print ("done");
+			break;
 		}
 		r_cons_printf ("\",\"transient\":%s,\"cmd\":", task->transient ? "true" : "false");
 		if (task->cmd) {
@@ -513,10 +513,10 @@ static RCoreTask *task_get (RCore *core, int id) {
 	RCoreTask *task;
 	RListIter *iter;
 	r_list_foreach (core->tasks, iter, task) {
-			if (task->id == id) {
-				return task;
-			}
+		if (task->id == id) {
+			return task;
 		}
+	}
 	return NULL;
 }
 
