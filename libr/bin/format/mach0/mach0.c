@@ -1736,12 +1736,16 @@ static ut64 get_text_base(struct MACH0_(obj_t)* bin) {
 static int inSymtab(SdbHash *hash, struct symbol_t *symbols, const char *name, ut64 addr) {
 	bool found;
 	const char *key = sdb_fmt ("%s.%"PFMT64x, name, addr);
-	(void)sdb_ht_find (hash, key, &found);
+	(void)ht_find (hash, key, &found);
 	if (found) {
 		return true;
 	}
-	sdb_ht_insert (hash, key, "1");
+	ht_insert (hash, key, "1");
 	return false;
+}
+
+static void kv_free_key(HtKv *kv) {
+	free (kv->key);
 }
 
 struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
@@ -1770,7 +1774,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 	if (!(symbols = calloc (1, symbols_size))) {
 		return NULL;
 	}
-	hash = sdb_ht_new ();
+	hash = ht_new (NULL, (HtKvFreeFunc)kv_free_key, NULL);
 	j = 0; // symbol_idx
 	for (s = 0; s < 2; s++) {
 		switch (s) {
@@ -1805,7 +1809,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 		if (to > 0x500000) {
 			bprintf ("WARNING: corrupted mach0 header: symbol table is too big %d\n", to);
 			free (symbols);
-			sdb_ht_free (hash);
+			ht_free (hash);
 			return NULL;
 		}
 		if (symbols_count >= maxsymbols) {
@@ -1910,7 +1914,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 		}
 	}
 #endif
-	sdb_ht_free (hash);
+	ht_free (hash);
 	symbols[j].last = 1;
 	return symbols;
 }
