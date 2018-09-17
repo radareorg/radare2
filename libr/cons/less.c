@@ -262,7 +262,7 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 			break;
 		case ' ': from += h; break;
 		case 'g': from = 0; break;
-		case 'G': from = lines_count-1-h; break;
+		case 'G': from = lines_count-h; break;
 		case -1: // EOF
 		case 'q': ui = 0; break;
 		case '\r':
