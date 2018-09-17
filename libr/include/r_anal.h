@@ -1359,6 +1359,7 @@ R_API bool r_anal_esil_set_interrupt (RAnalEsil *esil, RAnalEsilInterrupt *intr)
 R_API int r_anal_esil_fire_interrupt (RAnalEsil *esil, ut32 intr_num);
 R_API bool r_anal_esil_load_interrupts (RAnalEsil *esil, RAnalEsilInterruptHandler **handlers, ut32 src_id);
 R_API bool r_anal_esil_load_interrupts_from_lib (RAnalEsil *esil, const char *path);
+R_API void r_anal_esil_interrupts_fini (RAnalEsil *esil);
 
 R_API void r_anal_esil_mem_ro(RAnalEsil *esil, int mem_readonly);
 R_API void r_anal_esil_stats(RAnalEsil *esil, int enable);

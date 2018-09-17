@@ -132,7 +132,7 @@ R_API bool r_anal_esil_load_interrupts_from_lib(RAnalEsil *esil, const char *pat
 	return r_anal_esil_load_interrupts (esil, handlers, src_id);
 }
 
-R_API void r_anal_esil_interrupts_fini (RAnalEsil *esil) {
+R_API void r_anal_esil_interrupts_fini(RAnalEsil *esil) {
 	if (esil && esil->interrupts) {
 		esil->interrupts->f = _interrupt_free_cb;
 		dict_free (esil->interrupts);
