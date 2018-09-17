@@ -732,7 +732,7 @@ R_API void r_cons_flush(void) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
 		if (CTX (pageable) && I.pager && *I.pager && I.context->buffer_len > 0 && r_str_char_count (I.context->buffer, '\n') >= I.rows) {
 			I.context->buffer[I.context->buffer_len - 1] = 0;
-			if (*I.pager == '.') {
+			if (!strcmp (I.pager, "..")) {
 				char *str = r_str_ndup (CTX (buffer), CTX (buffer_len));
 				CTX (pageable) = false;
 				r_cons_less_str (str, NULL);
