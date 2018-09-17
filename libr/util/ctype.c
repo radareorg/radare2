@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2013-2018 - pancake, oddcoder, sivaramaaa */
 
-#include "r_util.h"
+#include <r_util.h>
 
 R_API int r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 	const char *kind;
@@ -499,14 +499,13 @@ static R_OWN char *type_func_try_guess(Sdb *TDB, R_NONNULL char *name) {
 // TODO:
 // - symbol names are long and noisy, some of them might not be matched due
 //   to additional information added around name
-R_API char *r_type_func_guess(Sdb *TDB, char *func_name) {
+R_API R_OWN char *r_type_func_guess(Sdb *TDB, R_NONNULL char *func_name) {
 	int offset = 0;
 	char *str = func_name;
 	char *result = NULL;
 	char *first, *last;
-	if (!func_name) {
-		return NULL;
-	}
+	r_return_val_if_fail (TDB, false);
+	r_return_val_if_fail (func_name, false);
 
 	size_t slen = strlen (str);
 	if (slen < MIN_MATCH_LEN) {
