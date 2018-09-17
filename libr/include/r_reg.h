@@ -48,7 +48,7 @@ typedef enum {
 	R_REG_NAME_A8,
 	R_REG_NAME_A9,
 	/* retval */
-	R_REG_NAME_R0, // arguments
+	R_REG_NAME_R0, // return registers
 	R_REG_NAME_R1,
 	R_REG_NAME_R2,
 	R_REG_NAME_R3,
