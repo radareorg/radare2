@@ -700,7 +700,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		break;
 	default:
 		eprintf ("[WARN] Invalid or unsupported enumeration encountered %i\n", entry->stream_type);
-		return false;
+		break;
 	}
 	return true;
 }
@@ -721,7 +721,9 @@ static bool r_bin_mdmp_init_directory(struct r_bin_mdmp_obj *obj) {
 		ut32 delta = i * sizeof (struct minidump_directory);
 		int r = r_buf_read_at (obj->b, rvadir + delta, (ut8*) &entry, sizeof (struct minidump_directory));
 		if (r) {
-			r_bin_mdmp_init_directory_entry (obj, &entry);
+			if (!r_bin_mdmp_init_directory_entry (obj, &entry)) {
+				return false;
+			}
 		}
 	}
 
