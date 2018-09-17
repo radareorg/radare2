@@ -2,6 +2,7 @@
 
 #include "r_util.h"
 #include "r_core.h"
+#include "r_anal.h"
 
 static const char *help_msg_a[] = {
 	"Usage:", "a", "[abdefFghoprxstc] [...]",
@@ -101,6 +102,9 @@ static const char *help_msg_ae[] = {
 	"aeip", "", "initialize ESIL program counter to curseek",
 	"aek", " [query]", "perform sdb query on ESIL.info",
 	"aek-", "", "resets the ESIL.info sdb instance",
+	"aeli", "", "list loaded ESIL interrupts",
+	"aeli", " [file]", "load ESIL interrupts from shared object",
+	"aelir" " [interrupt number]", "remove ESIL interrupt and free it if needed",
 	"aep", "[?] [addr]", "manage esil pin hooks",
 	"aepc", " [addr]", "change esil PC to this address",
 	"aer", " [..]", "handle ESIL registers like 'ar' or 'dr' does",
@@ -4220,6 +4224,8 @@ static bool cmd_aea(RCore* core, int mode, ut64 addr, int length) {
 	return true;
 }
 
+
+
 static void cmd_aespc(RCore *core, ut64 addr, int off) {
 	RAnalEsil *esil = core->anal->esil;
 	int i, j = 0;
@@ -4274,6 +4280,13 @@ static void cmd_aespc(RCore *core, ut64 addr, int off) {
 	r_reg_set_value (core->dbg->reg, r, curpc);
 	r_core_esil_step (core, curpc + instr_size, NULL, NULL);
 	r_core_seek (core, oldoff, 1);
+}
+
+static const char _handler_no_name[] = "<no name>";
+static int _aeli_iter(dictkv* kv, void* ud) {
+	RAnalEsilInterrupt* interrupt = kv->u;
+	r_cons_printf ("%3x: %s\n", kv->k, interrupt->handler->name ? interrupt->handler->name : _handler_no_name);
+	return 0;
 }
 
 static void cmd_anal_esil(RCore *core, const char *input) {
@@ -4560,6 +4573,31 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 				sdb_reset (esil->stats);
 			}
 			break;
+		}
+		break;
+	case 'l': // ael commands
+		switch (input[1]) {
+		case 'i': // aeli interrupts
+			switch (input[2]) {
+			case ' ': // "aeli" with arguments
+				if (!r_anal_esil_load_interrupts_from_lib (esil, input + 3)) {
+					eprintf ("Failed to load interrupts from '%s'.", input + 3);
+				}
+				break;
+			case 0: // "aeli" with no args
+				if (esil && esil->interrupts) {
+					dict_foreach (esil->interrupts, _aeli_iter, NULL);
+				}
+				break;
+			case 'r': // "aelir"
+				if (esil && esil->interrupts) {
+					RAnalEsilInterrupt* interrupt = dict_getu (esil->interrupts, r_num_math (core->num, input + 3));
+					r_anal_esil_interrupt_free (esil, interrupt);
+				}
+				break;
+
+				// TODO: display help?
+			}
 		}
 		break;
 	case 'f': // "aef"
