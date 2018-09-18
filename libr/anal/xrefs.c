@@ -215,7 +215,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 	RList *list = r_anal_ref_list_new();
 	listxrefs (anal->dict_refs, UT64_MAX, list);
 	if (rad == 'j') {
-		anal->cb_printf ("{");
+		anal->cb_printf ("[");
 	}
 	r_list_foreach (list, iter, ref) {
 		int t = ref->type ? ref->type: ' ';
@@ -251,7 +251,16 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 				} else {
 					anal->cb_printf (",");
 				}
-				anal->cb_printf ("\"%"PFMT64d"\":%"PFMT64d, ref->at, ref->addr);
+
+				char *name = anal->coreb.getNameDelta (anal->coreb.core, ref->at);
+				r_str_replace_char (name, ' ', 0);
+				anal->cb_printf ("{\"name\":\"%s\",", name? name: "");
+				free (name);
+				anal->cb_printf ("\"at\":%"PFMT64d",\"type\":\"%s\",\"address\":%"PFMT64d, ref->at, r_anal_xrefs_type_tostring (t), ref->addr);
+				name = anal->coreb.getNameDelta (anal->coreb.core, ref->addr);
+				r_str_replace_char (name, ' ', 0);
+				anal->cb_printf (",\"xref\":\"%s\"}", (name && *name) ? name : "");
+				free (name);
 			}
 			break;
 		default:
@@ -259,7 +268,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 		}
 	}
 	if (rad == 'j') {
-		anal->cb_printf ("}\n");
+		anal->cb_printf ("]\n");
 	}
 	r_list_free (list);
 }

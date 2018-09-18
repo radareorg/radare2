@@ -20,7 +20,7 @@ R_API bool r_x509_parse_tbscertificate(RX509TBSCertificate *tbsc, RASN1Object * 
 R_API void r_x509_free_tbscertificate(RX509TBSCertificate * tbsc);
 
 R_API RX509CRLEntry *r_x509_parse_crlentry(RASN1Object *object);
-void r_x509_name_dump(RX509Name* name, const char* pad, RStrBuf *sb);
+R_API void r_x509_name_dump(RX509Name* name, const char* pad, RStrBuf *sb);
 
 #endif /* R_X509_INTERNAL_H */
 
