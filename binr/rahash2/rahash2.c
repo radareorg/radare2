@@ -14,7 +14,8 @@ static ut64 from = 0LL;
 static ut64 to = 0LL;
 static int incremental = 1;
 static int iterations = 0;
-static int quiet = 0;
+static bool quiet = false;
+static bool linebreak = true;
 static RHashSeed s = {
 	0
 }, *_s = NULL;
@@ -23,9 +24,9 @@ void compare_hashes(const RHash *ctx, const ut8 *compare, int length, int *ret) 
 	if (compare) {
 		// algobit has only 1 bit set
 		if (!memcmp (ctx->digest, compare, length)) {
-			printf ("rahash2: Computed hash matches the expected one.\n");
+			printf ("\nrahash2: Computed hash matches the expected one.\n");
 		} else {
-			eprintf ("rahash2: Computed hash doesn't match the expected one.\n");
+			eprintf ("\nrahash2: Computed hash doesn't match the expected one.\n");
 			*ret = 1;
 		}
 	}
@@ -81,7 +82,7 @@ static void do_hash_hexprint(const ut8 *c, int len, int ule, int rad) {
 			printf ("%02x", c[i]);
 		}
 	}
-	if (rad != 'j') {
+	if (rad != 'j' && linebreak) {
 		printf ("\n");
 	}
 }
@@ -105,6 +106,7 @@ static void do_hash_print(RHash *ctx, ut64 hash, int dlen, int rad, int ule) {
 	case 1:
 		printf ("e file.%s=", hname);
 		do_hash_hexprint (c, dlen, ule, rad);
+		printf("\n");
 		break;
 	case 'n':
 		do_hash_hexprint (c, dlen, ule, 'j');
@@ -116,17 +118,21 @@ static void do_hash_print(RHash *ctx, ut64 hash, int dlen, int rad, int ule) {
 		break;
 	default:
 		o = r_print_randomart (c, dlen, from);
-		printf ("%s\n%s\n", hname, o);
+		printf ("%s\n%s", hname, o);
+		if (linebreak) {
+			printf ("\n");
+		}
 		free (o);
 		break;
 	}
 }
 
 static int do_hash_internal(RHash *ctx, ut64 hash, const ut8 *buf, int len, int rad, int print, int le) {
+	int dlen;
 	if (len < 0) {
 		return 0;
 	}
-	int dlen = r_hash_calculate (ctx, hash, buf, len);
+	dlen = r_hash_calculate (ctx, hash, buf, len);
 	if (!print) {
 		return 1;
 	}
@@ -214,10 +220,11 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 					printf ("%s: ", file);
 				}
 				do_hash_print (ctx, i, dlen, quiet? 'n': rad, ule);
-				if (quiet == 1) {
-					printf (" %s\n", file);
-				} else {
-					if (quiet && !rad) {
+				if (quiet == true) {
+					printf (" %s", file);
+				} 
+				if (linebreak) {
+					if (quiet == true || (quiet && !rad)) {
 						printf ("\n");
 					}
 				}
@@ -247,9 +254,8 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 					if (to > fsize) {
 						to = fsize;
 					}
-					do_hash_internal (ctx, hashbit, buf, nsize, rad, 0, ule);
+					do_hash_internal (ctx, hashbit, buf, nsize, rad, 1, ule);
 				}
-				do_hash_internal (ctx, hashbit, NULL, 0, rad, 1, ule);
 				from = ofrom;
 				to = oto;
 			}
@@ -266,7 +272,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 }
 
 static int do_help(int line) {
-	printf ("Usage: rahash2 [-rBhLkv] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...\n");
+	printf ("Usage: rahash2 [-rBhLlknv] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...\n");
 	if (line) {
 		return 0;
 	}
@@ -286,6 +292,8 @@ static int do_help(int line) {
 		" -k          show hash using the openssh's randomkey algorithm\n"
 		" -q          run in quiet mode (-qq to show only the hash)\n"
 		" -L          list all available algorithms (see -a)\n"
+		" -l          do not output the trailing newline\n"
+		" -n          amount of blocks to hash\n"
 		" -r          output radare commands\n"
 		" -s string   hash this string instead of files\n"
 		" -t to       stop hashing at given address\n"
@@ -356,6 +364,9 @@ static int encrypt_or_decrypt(const char *algo, int direction, const char *hashs
 				ut8 *result = r_crypto_get_output (cry, &result_size);
 				if (result) {
 					write (1, result, result_size);
+					if (linebreak) {
+						write (1,  "\n", 1);
+					}
 					free (result);
 				}
 			} else {
@@ -438,7 +449,7 @@ int main(int argc, char **argv) {
 	RHash *ctx;
 	RIO *io;
 
-	while ((c = getopt (argc, argv, "p:jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:")) != -1) {
+	while ((c = getopt (argc, argv, "p:jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLlqc:")) != -1) {
 		switch (c) {
 		case 'q': quiet++; break;
 		case 'i':
@@ -455,6 +466,7 @@ int main(int argc, char **argv) {
 		case 'D': decrypt = optarg; break;
 		case 'E': encrypt = optarg; break;
 		case 'L': algolist (); return 0;
+		case 'l': linebreak = false; break;
 		case 'e': ule = 1; break;
 		case 'r': rad = 1; break;
 		case 'k': rad = 2; break;
@@ -675,14 +687,12 @@ int main(int argc, char **argv) {
 				return rt;
 			}
 		} else {
-			RIODesc *desc = NULL;
 			if (!strcmp (argv[i], "-")) {
 				int sz = 0;
 				ut8 *buf = (ut8 *) r_stdin_slurp (&sz);
 				char *uri = r_str_newf ("malloc://%d", sz);
 				if (sz > 0) {
-					desc = r_io_open_nomap (io, uri, R_IO_READ, 0);
-					if (!desc) {
+					if (!r_io_open_nomap (io, uri, R_IO_READ, 0)) {
 						eprintf ("rahash2: Cannot open malloc://1024\n");
 						return 1;
 					}
@@ -694,15 +704,12 @@ int main(int argc, char **argv) {
 					eprintf ("rahash2: Cannot hash directories\n");
 					return 1;
 				}
-				desc = r_io_open_nomap (io, argv[i], R_IO_READ, 0);
-				if (!desc) {
+				if (!r_io_open_nomap (io, argv[i], R_IO_READ, 0)) {
 					eprintf ("rahash2: Cannot open '%s'\n", argv[i]);
 					return 1;
 				}
 			}
 			ret |= do_hash (argv[i], algo, io, bsize, rad, ule, compareBin);
-			to = 0;
-			r_io_desc_close (desc);
 		}
 	}
 	free (hashstr);
