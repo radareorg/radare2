@@ -1731,6 +1731,11 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 		*/
 		if (*addr > text && *addr < (text_end)) {
 			return Elf_(r_bin_elf_v2p) (bin, *addr);
+		} else {
+			ut32 paddr = Elf_(r_bin_elf_v2p) (bin, *addr);
+			if (paddr > text && paddr < (text_end)) {
+				return paddr;
+			}
 		}
 	}
 
@@ -3097,7 +3102,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 					tsize = 16;
 				} else if (type == R_BIN_ELF_SYMBOLS) {
 					tsize = sym[k].st_size;
-					toffset = (ut64)sym[k].st_value; 
+					toffset = (ut64)sym[k].st_value;
 					is_sht_null = sym[k].st_shndx == SHT_NULL;
 				} else {
 					continue;
