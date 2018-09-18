@@ -2266,10 +2266,10 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 		Pe_image_resource_directory_entry entry;
 		off = rsrc_base + offDir + sizeof(*dir) + index * sizeof(entry);
 		char *key = sdb_fmt ("0x%08"PFMT64x, off);
-		if (sdb_ht_find (dirs, key, NULL)) {
+		if (ht_find (dirs, key, NULL)) {
 			break;
 		}
-		sdb_ht_insert (dirs, key, "1");
+		ht_insert (dirs, key, "1");
 		if (off > bin->size || off + sizeof (entry) > bin->size) {
 			break;
 		}
@@ -2388,6 +2388,9 @@ static void _store_resource_sdb(struct PE_(r_bin_pe_obj_t) *bin) {
 	sdb_ns_set (bin->kv, "pe_resource", sdb);
 }
 
+static void kv_free_key(HtKv *kv) {
+	free (kv->key);
+}
 
 R_API void PE_(bin_pe_parse_resource)(struct PE_(r_bin_pe_obj_t) *bin) {
 	int index = 0;
@@ -2395,25 +2398,25 @@ R_API void PE_(bin_pe_parse_resource)(struct PE_(r_bin_pe_obj_t) *bin) {
 	Pe_image_resource_directory *rs_directory = bin->resource_directory;
 	ut32 curRes = 0;
 	int totalRes = 0;
-	SdbHash *dirs = sdb_ht_new (); //to avoid infinite loops
+	SdbHash *dirs = ht_new (NULL, (HtKvFreeFunc)kv_free_key, NULL);
 	if (!dirs) {
 		return;
 	}
 	if (!rs_directory) {
-		sdb_ht_free (dirs);
+		ht_free (dirs);
 		return;
 	}
 	curRes = rs_directory->NumberOfNamedEntries;
 	totalRes = curRes + rs_directory->NumberOfIdEntries;
 	if (totalRes > R_PE_MAX_RESOURCES) {
 		eprintf ("Error parsing resource directory\n");
-		sdb_ht_free (dirs);
+		ht_free (dirs);
 		return;
 	}
 	for (index = 0; index < totalRes; index++) {
 		Pe_image_resource_directory_entry typeEntry;
 		off = rsrc_base + sizeof (*rs_directory) + index * sizeof (typeEntry);
-		sdb_ht_insert (dirs, sdb_fmt ("0x%08"PFMT64x, off), "1");
+		ht_insert (dirs, sdb_fmt ("0x%08"PFMT64x, off), "1");
 		if (off > bin->size || off + sizeof(typeEntry) > bin->size) {
 			break;
 		}
@@ -2431,7 +2434,7 @@ R_API void PE_(bin_pe_parse_resource)(struct PE_(r_bin_pe_obj_t) *bin) {
 			_parse_resource_directory (bin, &identEntry, typeEntry.u2.s.OffsetToDirectory, typeEntry.u1.Id, 0, dirs);
 		}
 	}
-	sdb_ht_free (dirs);
+	ht_free (dirs);
 	_store_resource_sdb (bin);
 }
 
@@ -3017,7 +3020,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t)* bin) {
 		bprintf ("import directory offset bigger than file\n");
 		goto out_error;
 	}
-	lib_map = sdb_ht_new ();
+	lib_map = ht_new (NULL, (HtKvFreeFunc)kv_free_key, NULL);
 	off = bin->import_directory_offset;
 	if (off < bin->size && off > 0) {
 		void* last = NULL;
@@ -3042,8 +3045,8 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t)* bin) {
 			}
 			libs[index].name[len - 1] = '\0';
 			r_str_case (libs[index].name, 0);
-			if (!sdb_ht_find (lib_map, libs[index].name, NULL)) {
-				sdb_ht_insert (lib_map, libs[index].name, "a");
+			if (!ht_find (lib_map, libs[index].name, NULL)) {
+				ht_insert (lib_map, libs[index].name, "a");
 				libs[index++].last = 0;
 				if (index >= max_libs) {
 					libs = realloc (libs, (max_libs * 2) * sizeof (struct r_bin_pe_lib_t));
@@ -3076,13 +3079,13 @@ next:
 			}
 			libs[index].name[len - 1] = '\0';
 			r_str_case (libs[index].name, 0);
-			if (!sdb_ht_find (lib_map, libs[index].name, NULL)) {
-				sdb_ht_insert (lib_map, libs[index].name, "a");
+			if (!ht_find (lib_map, libs[index].name, NULL)) {
+				ht_insert (lib_map, libs[index].name, "a");
 				libs[index++].last = 0;
 				if (index >= max_libs) {
 					libs = realloc (libs, (max_libs * 2) * sizeof (struct r_bin_pe_lib_t));
 					if (!libs) {
-						sdb_ht_free (lib_map);
+						ht_free (lib_map);
 						r_sys_perror ("realloc (libs)");
 						return NULL;
 					}
@@ -3095,11 +3098,11 @@ next:
 			}
 		}
 	}
-	sdb_ht_free (lib_map);
+	ht_free (lib_map);
 	libs[index].last = 1;
 	return libs;
 out_error:
-	sdb_ht_free (lib_map);
+	ht_free (lib_map);
 	free (libs);
 	return NULL;
 }
