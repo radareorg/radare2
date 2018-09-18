@@ -2823,6 +2823,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("graph.cmtright", "false", "Show comments at right");
 	SETCB ("graph.gv.format", "gif", &cb_graphformat, "Graph image extension when using 'w' format (png, jpg, pdf, ps, svg, json)");
 	SETPREF ("graph.refs", "false", "Graph references in callgraphs (.agc*;aggi)");
+	SETPREF ("graph.json.usenames", "true", "Use names instead of addresses in Global Call Graph (agCj)");
 	SETI ("graph.edges", 2, "0=no edges, 1=simple edges, 2=avoid collisions");
 	SETI ("graph.layout", 0, "Graph layout (0=vertical, 1=horizontal)");
 	SETI ("graph.linemode", 1, "Graph edges (0=diagonal, 1=square)");

@@ -1806,7 +1806,7 @@ R_API void r_core_anal_callgraph(RCore *core, ut64 addr, int fmt) {
 	int first, first2, showhdr = 0;
 	RListIter *iter, *iter2;
 	const int hideempty = 1;
-	const int usenames = 1;
+	int usenames = r_config_get_i (core->config, "graph.json.usenames");;
 	RAnalFunction *fcni;
 	RAnalRef *fcnr;
 
