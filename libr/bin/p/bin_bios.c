@@ -25,7 +25,7 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sd
 	if (!check_bytes (buf, sz)) {
 		return NULL;
 	}
-	return R_NOTNULL;
+	return (void *)1;
 }
 
 static bool load(RBinFile *bf) {
