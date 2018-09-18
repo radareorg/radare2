@@ -17,7 +17,7 @@ R_LIB_VERSION_HEADER(r_asm);
 
 // XXX deprecate!!! too big!
 // the 256th character is left for the null terminator
-#define R_ASM_BUFSIZE 255
+#define RStrBuf 255
 
 /* backward compatibility */
 #define R_ASM_ARCH_NONE R_SYS_ARCH_NONE

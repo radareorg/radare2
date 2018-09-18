@@ -187,7 +187,7 @@ static WasmOpDef opcodes[256] = {
 int wasm_asm(const char *str, unsigned char *buf, int buf_len) {
 	// TODO: add immediates assembly
 	int i = 0, len = -1;
-	char tmp[R_ASM_BUFSIZE];
+	char tmp[RStrBuf];
 	while (str[i] != ' ' && i < buf_len) {
 		tmp[i] = str[i];
 		i++;
@@ -345,7 +345,7 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 	case WASM_OP_F64REINTERPRETI64:
 	case WASM_OP_END:
 		{
-			snprintf (op->txt, R_ASM_BUFSIZE, "%s", opdef->txt);
+			snprintf (op->txt, RStrBuf, "%s", opdef->txt);
 		}
 		break;
 	case WASM_OP_BLOCK:
@@ -359,22 +359,22 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 			}
 			switch (0x80 - val) {
 			case R_BIN_WASM_VALUETYPE_EMPTY:
-				snprintf (op->txt, R_ASM_BUFSIZE, "%s", opdef->txt);
+				snprintf (op->txt, RStrBuf, "%s", opdef->txt);
 				break;
 			case R_BIN_WASM_VALUETYPE_i32:
-				snprintf (op->txt, R_ASM_BUFSIZE, "%s (result i32)", opdef->txt);
+				snprintf (op->txt, RStrBuf, "%s (result i32)", opdef->txt);
 				break;
 			case R_BIN_WASM_VALUETYPE_i64:
-				snprintf (op->txt, R_ASM_BUFSIZE, "%s (result i64)", opdef->txt);
+				snprintf (op->txt, RStrBuf, "%s (result i64)", opdef->txt);
 				break;
 			case R_BIN_WASM_VALUETYPE_f32:
-				snprintf (op->txt, R_ASM_BUFSIZE, "%s (result f32)", opdef->txt);
+				snprintf (op->txt, RStrBuf, "%s (result f32)", opdef->txt);
 				break;
 			case R_BIN_WASM_VALUETYPE_f64:
-				snprintf (op->txt, R_ASM_BUFSIZE, "%s (result f64)", opdef->txt);
+				snprintf (op->txt, RStrBuf, "%s (result f64)", opdef->txt);
 				break;
 			default:
-				snprintf (op->txt, R_ASM_BUFSIZE, "%s (result ?)", opdef->txt);
+				snprintf (op->txt, RStrBuf, "%s (result ?)", opdef->txt);
 				break;
 			}
 			op->len += n;
@@ -389,7 +389,7 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 			if (!(n > 0 && n < buf_len)) {
 				goto err;
 			}
-			snprintf (op->txt, R_ASM_BUFSIZE, "%s %d", opdef->txt, val);
+			snprintf (op->txt, RStrBuf, "%s %d", opdef->txt, val);
 			op->len += n;
 		}
 		break;
@@ -420,12 +420,12 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 				goto beach;
 			}
 			op->len += n;
-			snprintf (op->txt, R_ASM_BUFSIZE, "%s %d ", opdef->txt, count);
+			snprintf (op->txt, RStrBuf, "%s %d ", opdef->txt, count);
 			char *txt = op->txt;
 			int txtLen = strlen (op->txt);
-			int txtLeft = R_ASM_BUFSIZE - txtLen;
+			int txtLeft = RStrBuf - txtLen;
 			txt += txtLen;
-			for (i = 0; i < count && txtLen + 10 < R_ASM_BUFSIZE; i++) {
+			for (i = 0; i < count && txtLen + 10 < RStrBuf; i++) {
 				snprintf (txt, txtLeft, "%d ", table[i]);
 				txtLen = strlen (txt);
 				txt += txtLen;
@@ -452,7 +452,7 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 				goto err;
 			}
 			reserved &= 0x1;
-			snprintf (op->txt, R_ASM_BUFSIZE, "%s %d %d", opdef->txt, val, reserved);
+			snprintf (op->txt, RStrBuf, "%s %d %d", opdef->txt, val, reserved);
 			op->len += n;
 		}
 		break;
@@ -467,7 +467,7 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 			if (!(n > 0 && n < buf_len)) {
 				goto err;
 			}
-			snprintf (op->txt, R_ASM_BUFSIZE, "%s %d", opdef->txt, val);
+			snprintf (op->txt, RStrBuf, "%s %d", opdef->txt, val);
 			op->len += n;
 		}
 		break;
@@ -505,7 +505,7 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 			if (!(n > 0 && op->len + n <= buf_len)) {
 				goto err;
 			}
-			snprintf (op->txt, R_ASM_BUFSIZE, "%s %d %d", opdef->txt, flag, offset);
+			snprintf (op->txt, RStrBuf, "%s %d %d", opdef->txt, flag, offset);
 			op->len += n;
 		}
 		break;
@@ -518,7 +518,7 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 				goto err;
 			}
 			reserved &= 0x1;
-			snprintf (op->txt, R_ASM_BUFSIZE, "%s %d", opdef->txt, reserved);
+			snprintf (op->txt, RStrBuf, "%s %d", opdef->txt, reserved);
 			op->len += n;
 		}
 		break;
@@ -530,7 +530,7 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 			if (!(n > 0 && n < buf_len)) {
 				goto err;
 			}
-			snprintf (op->txt, R_ASM_BUFSIZE, "%s %" PFMT32d, opdef->txt, val);
+			snprintf (op->txt, RStrBuf, "%s %" PFMT32d, opdef->txt, val);
 			op->len += n;
 		}
 		break;
@@ -541,7 +541,7 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 			if (!(n > 0 && n < buf_len)) {
 				goto err;
 			}
-			snprintf (op->txt, R_ASM_BUFSIZE, "%s %" PFMT64d, opdef->txt, val);
+			snprintf (op->txt, RStrBuf, "%s %" PFMT64d, opdef->txt, val);
 			op->len += n;
 		}
 		break;
@@ -553,7 +553,7 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 				goto err;
 			}
 			long double d =  (long double)val;
-			snprintf (op->txt, R_ASM_BUFSIZE, "%s %" LDBLFMT, opdef->txt, d);
+			snprintf (op->txt, RStrBuf, "%s %" LDBLFMT, opdef->txt, d);
 			op->len += n;
 		}
 		break;
@@ -565,7 +565,7 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 				goto err;
 			}
 			long double d =  (long double)val;
-			snprintf (op->txt, R_ASM_BUFSIZE, "%s %" LDBLFMT, opdef->txt, d);
+			snprintf (op->txt, RStrBuf, "%s %" LDBLFMT, opdef->txt, d);
 			op->len += n;
 		}
 		break;
@@ -577,6 +577,6 @@ int wasm_dis(WasmOp *op, const unsigned char *buf, int buf_len) {
 
 err:
 	op->len = 1;
-	snprintf (op->txt, R_ASM_BUFSIZE, "invalid");
+	snprintf (op->txt, RStrBuf, "invalid");
 	return op->len;
 }
