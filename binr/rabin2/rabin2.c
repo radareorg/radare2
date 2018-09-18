@@ -408,7 +408,7 @@ static int rabin_do_operation(const char *op) {
 		{
 		RBinFile *cur = r_bin_cur (bin);
 		RBinPlugin *plg = r_bin_file_cur_plugin (cur);
-		if (!plg) {
+		if (!plg && cur) {
 			// are we in xtr?
 			if (cur->xtr_data) {
 				// load the first one
@@ -423,7 +423,7 @@ static int rabin_do_operation(const char *op) {
 				break;
 			}
 		}
-		if (plg->signature) {
+		if (plg && plg->signature) {
 			char *sign = plg->signature (cur, rad == R_CORE_BIN_JSON);
 			if (sign) {
 				r_cons_println (sign);

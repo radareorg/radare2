@@ -104,7 +104,7 @@ static const char *help_msg_ae[] = {
 	"aek-", "", "resets the ESIL.info sdb instance",
 	"aeli", "", "list loaded ESIL interrupts",
 	"aeli", " [file]", "load ESIL interrupts from shared object",
-	"aelir" " [interrupt number]", "remove ESIL interrupt and free it if needed",
+	"aelir", " [interrupt number]", "remove ESIL interrupt and free it if needed",
 	"aep", "[?] [addr]", "manage esil pin hooks",
 	"aepc", " [addr]", "change esil PC to this address",
 	"aer", " [..]", "handle ESIL registers like 'ar' or 'dr' does",
