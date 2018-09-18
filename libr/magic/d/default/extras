@@ -1,0 +1,79 @@
+#
+# Additional forensics magic file, suggested by #10554
+# This database is sourced from https://en.wikipedia.org/wiki/List_of_file_signatures
+#
+# Rules in making this database:
+# 1. based on file(1) magic for OpenBSD objects (NetBSD may have different ones)
+# 2. potential false-positive data is ruled out, means offset 0x0 less that 4bytes are out
+# 3. unknown endians are formed as hex strings
+# 4. tested fails, unsures, lack of reference ones are ruled out
+# 5. tested one were recorded, arch for tests: MIPS, Intel, ARM, OS: Linux,FreeBSD, OSX
+# 6. endianness were splitted - due to confirmed difference possibility on related systems
+#
+# This is DB in stage1 - planned to be added/corrected by stages upon having free time to do so.
+# blaim - unixfreaxjp for incorrect approach -Tue Sep 18 05:58:29 JST 2018
+#
+
+0	string	\x42\x41\x43\x4B\x4D\x49\x4B\x45\x44\x49\x53\x4B	AmiBack backup file
+0	string 	\x05\x07\x00\x00\x42\x4F\x42\x4F			AppleWorks document 
+0	string 	\x78\x01\x73\x0D\x62\x62\x60				Apple Disk Image file
+0	string 	\x41\x54\x26\x54\x46\x4F\x52\x4D			DjVu document
+0	string	\x27\x05\x19\x56					Universal Boot Loader file
+0	string	\x65\x87\x78\x56					PhotoCap Object Templates
+0	string	\x55\x55\xaa\xaa					PhotoCap Vector
+0	belong 	0xa1b2c3d4	Libpcap File Format, big endian
+0	lelong 	0xa1b2c3d4	Libpcap File Format, little endian
+0	belong 	0x0a0d0d0a	PCAPNG  File Format, big endian
+0	lelong 	0x0a0d0d0a	PCAPNG  File Format, little endian
+0	belong	0xedabeedb	RedHat RPM package
+0	lelong	0xedabeedb	RedHat RPM package
+0	belong	0x53503031	Amazon Kindle Update Package
+0	lelong	0x53503031	Amazon Kindle Update Package
+0	belong	0xbebafeca	Palm Desktop Calendar Archive 
+0	lelong	0xbebafeca	Palm Desktop Calendar Archive 
+0	belong	0x00014244	Palm Desktop To Do Archive 
+0	lelong	0x00014244	Palm Desktop To Do Archive 
+0	belong	0x00014454	Palm Desktop Calendar Archive 
+0	lelong	0x00014454	Palm Desktop Calendar Archive 
+4	belong	0x667479703367	3GPP and 3GPP2 multimedia file 
+4	lelong	0x667479703367	3GPP and 3GPP2 multimedia file 
+0	belong	0x802A5FD7	Kodak Cineon image
+0	lelong	0x802A5FD7	Kodak Cineon image
+0	belong	0x524E4301	Rob Northen Compression file version 1
+0	lelong	0x524E4301	Rob Northen Compression file version 1
+0	belong	0x524E4302	Rob Northen Compression file version 2
+0	lelong	0x524E4302	Rob Northen Compression file version 2
+0	belong	0x53445058	SMPTE DPX image
+0	lelong	0x58504453	SMPTE DPX image
+0	belong	0x425047FB	Better Portable Graphics 
+0	lelong	0x425047FB	Better Portable Graphics 
+0	belong	0x762F3101	OpenEXR image
+0	lelong	0x762F3101	OpenEXR image
+0	belong	0x25215053	PostScript document file 
+0	lelong	0x25215053	PostScript document file 
+0	belong	0x43723234	Google Chrome extension app
+0	lelong	0x43723234	Google Chrome extension app
+0	belong	0x45520200	Roxio Toast disc image file
+0	lelong	0x45520200	Roxio Toast disc image file
+0	belong	0x8B455202	Roxio Toast disc image file
+0	lelong	0x8B455202	Roxio Toast disc image file
+0	belong	0x4E45531A	Nintendo Entertainment System ROM file
+0	lelong	0x4E45531A	Nintendo Entertainment System ROM file
+0	belong	0x746F7833	Open source portable voxel file
+0	lelong	0x746F7833	Open source portable voxel file
+0	belong	0x4D4C5649	Magic Lantern Video file
+0	lelong	0x4D4C5649	Magic Lantern Video file
+0	belong	0x1F8B0800	Minecraft Level Data File (NBT)
+0	lelong	0x1F8B0800	Minecraft Level Data File (NBT)
+0	belong	0x62767832	LZFSE - Lempel-Ziv style data compression file
+0	lelong	0x62767832	LZFSE - Lempel-Ziv style data compression file
+0	belong	0x4F626A01	Apache Avro binary file 
+0	lelong	0x4F626A01	Apache Avro binary file 
+0	belong	0x50415231	Apache Parquet columnar file
+0	lelong	0x50415231	Apache Parquet columnar file
+0	belong	0x1B4C7561	LUA byte code
+0	lelong	0x1B4C7561	LUA byte code
+0	belong	0x454D5832	Emulator Emaxsynth samples
+0	lelong	0x454D5832	Emulator Emaxsynth samples
+0	belong	0x454D5533	Emulator III synth samples
+0	lelong	0x454D5533	Emulator III synth samples
