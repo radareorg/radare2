@@ -2393,7 +2393,6 @@ static void r_core_visual_anal_refresh_column (RCore *core, int colpos) {
 }
 
 static ut64 r_core_visual_anal_refresh (RCore *core) {
-	eprintf("r_core_visual_anal_refresh\n");
 	if (!core) {
 		return 0LL;
 	}
