@@ -32,6 +32,8 @@
 #define PANEL_CONFIG_RESIZE_W    4
 #define PANEL_CONFIG_RESIZE_H    4
 
+#define MENU_NUM(x) ((int)sizeof (x) / (int)sizeof (const char *)) - 1
+
 static const int layoutMaxCount = 2;
 
 enum {
@@ -43,50 +45,42 @@ static const char *menus[] = {
 	"File", "Edit", "View", "Tools", "Search", "Debug", "Analyze", "Help",
 	NULL
 };
-static const int menuNum = ((int)sizeof (menus) / (int)sizeof (const char *)) - 1;
 
 static const char *menus_File[] = {
 	"New", "Open", "ReOpen", "Close", "Sections", "Strings", "Symbols", "Imports", "Info", "Database", "Save Layout", "Load Layout", "Quit",
 	NULL
 };
-static const int fileNum = ((int)sizeof (menus_File) / (int)sizeof (const char *)) - 1;
 
 static const char *menus_ReOpen[] = {
 	"In RW", "In Debugger",
 	NULL
 };
-static const int reopenNum = ((int)sizeof (menus_ReOpen) / (int)sizeof (const char *)) - 1;
 
 static const char *menus_loadLayout[] = {
 	"Saved", "Default",
 	NULL
 };
-static const int loadLayoutNum = ((int)sizeof (menus_loadLayout) / (int)sizeof (const char *)) - 1;
 
 static const char *menus_Edit[] = {
 	"Copy", "Paste", "Clipboard", "Write String", "Write Hex", "Write Value", "Assemble", "Fill", "io.cache",
 	NULL
 };
-static const int editNum = ((int)sizeof (menus_Edit) / (int)sizeof (const char *)) - 1;
 
 static const char *menus_View[] = {
 	"Hexdump", "Disassembly", "Graph", "FcnInfo", "Functions", "Breakpoints", "Comments", "Entropy", "Colors",
 	"Stack", "StackRefs", "Pseudo",
 	NULL
 };
-static const int viewNum = ((int)sizeof (menus_View) / (int)sizeof (const char *)) - 1;
 
 static const char *menus_Tools[] = {
 	"Calculator", "R2 Shell", "System Shell",
 	NULL
 };
-static const int toolsNum = ((int)sizeof (menus_Tools) / (int)sizeof (const char *)) - 1;
 
 static const char *menus_Search[] = {
 	"String", "ROP", "Code", "Hexpairs",
 	NULL
 };
-static const int searchNum = ((int)sizeof (menus_Search) / (int)sizeof (const char *)) - 1;
 
 static const char *menus_Debug[] = {
 	"Registers", "RegisterRefs", "DRX", "Breakpoints", "Watchpoints",
@@ -94,19 +88,16 @@ static const char *menus_Debug[] = {
 	"Step", "Step Over", "Reload",
 	NULL
 };
-static const int debugNum = ((int)sizeof (menus_Debug) / (int)sizeof (const char *)) - 1;
 
 static const char *menus_Analyze[] = {
 	"Function", "Symbols", "Program", "BasicBlocks", "Calls", "References",
 	NULL
 };
-static const int analyzeNum = ((int)sizeof (menus_Analyze) / (int)sizeof (const char *)) - 1;
 
 static const char *menus_Help[] = {
 	"Fortune", "Commands", "2048", "License", "About",
 	NULL
 };
-static const int helpNum = ((int)sizeof (menus_Help) / (int)sizeof (const char *)) - 1;
 
 static void layoutDefault(RPanels *panels);
 static void layoutBalance(RPanels *panels);
@@ -1983,10 +1974,10 @@ static bool initPanelsMenu(RPanels *panels) {
 	root->name = NULL;
 	root->sub = NULL;
 	int i;
-	for (i = 0; i < menuNum; i++) {
+	for (i = 0; i < MENU_NUM (menus); i++) {
 		addMenu (root, menus[i], openMenuCb);
 	}
-	for (i = 0; i < fileNum; i++) {
+	for (i = 0; i < MENU_NUM (menus_File); i++) {
 		if (!strcmp (menus_File[i], "Open")) {
 			addMenu (root->sub[0], menus_File[i], openFileCb);
 		} else if (!strcmp (menus_File[i], "ReOpen")) {
@@ -2003,7 +1994,7 @@ static bool initPanelsMenu(RPanels *panels) {
 			addMenu (root->sub[0], menus_File[i], layoutSidePanel);
 		}
 	}
-	for (i = 0; i < editNum; i++) {
+	for (i = 0; i < MENU_NUM (menus_Edit); i++) {
 		if (!strcmp (menus_Edit[i], "Copy")) {
 			addMenu (root->sub[1], menus_Edit[i], copyCb);
 		} else if (!strcmp (menus_Edit[i], "Paste")) {
@@ -2024,14 +2015,14 @@ static bool initPanelsMenu(RPanels *panels) {
 			addMenu (root->sub[1], menus_Edit[i], layoutSidePanel);
 		}
 	}
-	for (i = 0; i < viewNum; i++) {
+	for (i = 0; i < MENU_NUM (menus_View); i++) {
 		if (!strcmp (menus_View[i], "Colors")) {
 			addMenu (root->sub[2], menus_View[i], colorsCb);
 		} else {
 			addMenu (root->sub[2], menus_View[i], layoutSidePanel);
 		}
 	}
-	for (i = 0; i < toolsNum; i++) {
+	for (i = 0; i < MENU_NUM (menus_Tools); i++) {
 		if (!strcmp (menus_Tools[i], "Calculator")) {
 			addMenu (root->sub[3], menus_Tools[i], calculatorCb);
 		} else if (!strcmp (menus_Tools[i], "R2 Shell")) {
@@ -2040,7 +2031,7 @@ static bool initPanelsMenu(RPanels *panels) {
 			addMenu (root->sub[3], menus_Tools[i], systemShellCb);
 		}
 	}
-	for (i = 0; i < searchNum; i++) {
+	for (i = 0; i < MENU_NUM (menus_Search); i++) {
 		if (!strcmp (menus_Search[i], "String")) {
 			addMenu (root->sub[4], menus_Search[i], stringCb);
 		} else if (!strcmp (menus_Search[i], "ROP")) {
@@ -2051,7 +2042,7 @@ static bool initPanelsMenu(RPanels *panels) {
 			addMenu (root->sub[4], menus_Search[i], hexpairsCb);
 		}
 	}
-	for (i = 0; i < debugNum; i++) {
+	for (i = 0; i < MENU_NUM (menus_Debug); i++) {
 		if (!strcmp (menus_Debug[i], "Breakpoints")) {
 			addMenu (root->sub[5], menus_Debug[i], breakpointsCb);
 		} else if (!strcmp (menus_Debug[i], "Watchpoints")) {
@@ -2068,7 +2059,7 @@ static bool initPanelsMenu(RPanels *panels) {
 			addMenu (root->sub[5], menus_Debug[i], layoutSidePanel);
 		}
 	}
-	for (i = 0; i < analyzeNum; i++) {
+	for (i = 0; i < MENU_NUM (menus_Analyze); i++) {
 		if (!strcmp (menus_Analyze[i], "Function")) {
 			addMenu (root->sub[6], menus_Analyze[i], functionCb);
 		} else if (!strcmp (menus_Analyze[i], "Symbols")) {
@@ -2083,7 +2074,7 @@ static bool initPanelsMenu(RPanels *panels) {
 			addMenu (root->sub[6], menus_Analyze[i], referencesCb);
 		}
 	}
-	for (i = 0; i < helpNum; i++) {
+	for (i = 0; i < MENU_NUM (menus_Help); i++) {
 		if (!strcmp (menus_Help[i], "Fortune")) {
 			addMenu (root->sub[7], menus_Help[i], fortuneCb);
 		} else if (!strcmp (menus_Help[i], "Commands")) {
@@ -2096,14 +2087,14 @@ static bool initPanelsMenu(RPanels *panels) {
 			addMenu (root->sub[7], menus_Help[i], aboutCb);
 		}
 	}
-	for (i = 0; i < reopenNum; i++) {
+	for (i = 0; i < MENU_NUM (menus_ReOpen); i++) {
 		if (!strcmp (menus_ReOpen[i], "In RW")) {
 			addMenu (root->sub[0]->sub[2], menus_ReOpen[i], rwCb);
 		} else if (!strcmp (menus_ReOpen[i], "In Debugger")) {
 			addMenu (root->sub[0]->sub[2], menus_ReOpen[i], debuggerCb);
 		}
 	}
-	for (i = 0; i < loadLayoutNum; i++) {
+	for (i = 0; i < MENU_NUM (menus_loadLayout); i++) {
 		if (!strcmp (menus_loadLayout[i], "Saved")) {
 			addMenu (root->sub[0]->sub[11], menus_loadLayout[i], loadLayoutSavedCb);
 		} else if (!strcmp (menus_loadLayout[i], "Default")) {
