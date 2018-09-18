@@ -44,7 +44,8 @@ ut32 r_bin_mdmp_get_srwx(struct r_bin_mdmp_obj *obj, ut64 vaddr) {
 	struct minidump_memory_info *mem_info;
 
 	if (!(mem_info = r_bin_mdmp_get_mem_info(obj, vaddr))) {
-		return 0;
+		/* if there is no mem info in the dump, assume default permission */
+		return R_BIN_SCN_READABLE;
 	}
 
 	/* FIXME: Have I got these mappings right, I am not sure I have!!! */
