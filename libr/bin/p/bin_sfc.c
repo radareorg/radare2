@@ -32,7 +32,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 }
 
 static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	return check_bytes (buf, sz) ? R_NOTNULL : NULL;
+	return check_bytes (buf, sz) ? (void *)1 : NULL;
 }
 
 static RBinInfo* info(RBinFile *bf) {
