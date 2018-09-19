@@ -2627,6 +2627,7 @@ R_API void r_core_panels_free(RPanels *panels) {
 
 R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 	int i, okey, key, wheel;
+	RPanels *prev;
 
 	if (!panels) {
 		panels = r_core_panels_new (core);
@@ -2635,6 +2636,7 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 			return false;
 		}
 	}
+	prev = core->panels;
 	core->panels = panels;
 
 	if (!initPanelsMenu (panels)) {
@@ -2948,10 +2950,16 @@ repeat:
 			r_core_cmd0 (core, "agv $$");
 		} else {
 			if (checkFunc (core)) {
+				r_cons_canvas_free (can);
+				panels->can = NULL;
+
 				int ocolor = r_config_get_i (core->config, "scr.color");
 				r_core_visual_graph (core, NULL, NULL, true);
 				r_config_set_i (core->config, "scr.color", ocolor);
-				core->panels->can = createNewCanvas (core, core->panels->can->w, core->panels->can->h);
+
+				int h, w = r_cons_get_size(&h);
+				panels->can = createNewCanvas (core, w, h);
+
 				setRefreshAll (panels);
 			}
 		}
@@ -2981,8 +2989,13 @@ repeat:
 		break;
 	case '*':
 		if (checkFunc (core)) {
+			r_cons_canvas_free (can);
+			panels->can = NULL;
+
 			replaceCmd (panels, PANEL_TITLE_PSEUDO, PANEL_CMD_PSEUDO);
-			core->panels->can = createNewCanvas (core, core->panels->can->w, core->panels->can->h);
+
+			int h, w = r_cons_get_size(&h);
+			panels->can = createNewCanvas (core, w, h);
 		}
 		break;
 	case R_CONS_KEY_F1:
@@ -3096,6 +3109,6 @@ exit:
 	core->vmode = originVmode;
 
 	r_core_panels_free (panels);
-	core->panels = NULL;
+	core->panels = prev;
 	return true;
 }
