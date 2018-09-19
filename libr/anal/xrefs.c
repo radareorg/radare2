@@ -226,12 +226,12 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 		case '\0':
 			{
 				char *name = anal->coreb.getNameDelta (anal->coreb.core, ref->at);
-				r_str_replace_char (name, ' ', 0);
+				r_str_replace_ch (name, ' ', 0, true);
 				anal->cb_printf ("%40s", r_str_get2 (name));
 				free (name);
 				anal->cb_printf (" 0x%"PFMT64x" -> %9s -> 0x%"PFMT64x, ref->at, r_anal_xrefs_type_tostring (t), ref->addr);
 				name = anal->coreb.getNameDelta (anal->coreb.core, ref->addr);
-				r_str_replace_char (name, ' ', 0);
+				r_str_replace_ch (name, ' ', 0, true);
 				anal->cb_printf (" %s\n", r_str_get2 (name));
 				free (name);
 			}
@@ -248,14 +248,13 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 				}
 
 				char *name = anal->coreb.getNameDelta (anal->coreb.core, ref->at);
-				r_str_replace_char (name, ' ', 0);
+				r_str_replace_ch (name, ' ', 0, true);
 				anal->cb_printf ("{\"name\":\"%s\",", r_str_get2 (name));
 				free (name);
 				anal->cb_printf ("\"from\":%"PFMT64d",\"type\":\"%s\",\"addr\":%"PFMT64d, ref->at, r_anal_xrefs_type_tostring (t), ref->addr);
 				name = anal->coreb.getNameDelta (anal->coreb.core, ref->addr);
-				r_str_replace_char (name, ' ', 0);
+				r_str_replace_ch (name, ' ', 0, true);
 				anal->cb_printf (",\"xref\":\"%s\"}", r_str_get2 (name));
-				r_str_get
 				free (name);
 			}
 			break;
