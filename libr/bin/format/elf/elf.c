@@ -1723,19 +1723,14 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 		}
 	}
 	if (!memcmp (buf, "\x00\xb0\xa0\xe3\x00\xe0\xa0\xe3", 8)) {
-		// endian stuff here
-		ut32 *addr = (ut32*)(buf+0x34);
+		ut32 vaddr = r_read_le32 (&buf[0x34]);
+		ut32 paddr = Elf_(r_bin_elf_v2p) (bin, vaddr);
 		/*
 		   0x00012000    00b0a0e3     mov fp, 0
 		   0x00012004    00e0a0e3     mov lr, 0
 		*/
-		if (*addr > text && *addr < (text_end)) {
-			return Elf_(r_bin_elf_v2p) (bin, *addr);
-		} else {
-			ut32 paddr = Elf_(r_bin_elf_v2p) (bin, *addr);
-			if (paddr > text && paddr < (text_end)) {
-				return paddr;
-			}
+		if (paddr >= text && paddr < text_end) {
+			return paddr;
 		}
 	}
 
