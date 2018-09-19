@@ -231,7 +231,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 					anal->cb_printf ("%40s", name);
 					free (name);
 				} else {
-					anal->cb_printf ("%40s", "(null)");
+					anal->cb_printf ("%40s", "noname");
 				}
 				anal->cb_printf (" 0x%"PFMT64x" -> %9s -> 0x%"PFMT64x, ref->at, r_anal_xrefs_type_tostring (t), ref->addr);
 				name = anal->coreb.getNameDelta (anal->coreb.core, ref->addr);
