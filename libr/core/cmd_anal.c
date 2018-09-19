@@ -6900,6 +6900,27 @@ void _CbInRangeAav(RCore *core, ut64 from, ut64 to, int vsize, bool asterisk, in
 			char *name = r_str_newf ("aav.0x%08"PFMT64x, to);
 			r_flag_set (core->flags, name, to, vsize);
 			free (name);
+		} else {
+			bool has_dot = false;
+			const char *flag_name = NULL;
+			const RList *flags = r_flag_get_list (core->flags, to);
+			RListIter *iter;
+			RFlagItem *f;
+			r_list_foreach (flags, iter, f) {
+				if (!f->name) {
+					continue;
+				}
+				if (strchr (f->name, '.')) {
+					has_dot = true;
+					break;
+				}
+				flag_name = f->name;
+			}
+			if (flag_name && !has_dot) {
+				char *name = r_str_newf ("aav.%s", flag_name);
+				r_flag_set (core->flags, name, to, vsize);
+				free (name);
+			}
 		}
 #else
 		r_core_cmdf (core, "ax 0x%"PFMT64x " 0x%"PFMT64x, to, from);
