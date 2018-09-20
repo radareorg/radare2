@@ -502,6 +502,10 @@ R_API int r_cons_readchar() {
 	r_signal_sigmask (0, NULL, &sigmask);
 	sigdelset (&sigmask, SIGWINCH);
 	while (pselect (STDIN_FILENO + 1, &readfds, NULL, NULL, NULL, &sigmask) == -1) {
+		if (errno == EBADF) {
+			eprintf ("r_cons_readchar(): EBADF\n");
+			return -1;
+		}
 		if (sigwinchFlag) {
 			sigwinchFlag = 0;
 			resizeWin ();
