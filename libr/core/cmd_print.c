@@ -4791,7 +4791,7 @@ static int cmd_print(void *data, const char *input) {
 				}
 			}
 			break;
-		case 'z': // psz
+		case 'z': // "psz"
 			if (l > 0) {
 				char *s = malloc (core->blocksize + 1);
 				int i, j;
