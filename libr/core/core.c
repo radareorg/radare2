@@ -2396,7 +2396,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	R_FREE (c->cmdlog);
 	r_th_lock_free (c->lock);
 	R_FREE (c->lastsearch);
-	c->cons->pager = NULL;
+	free (c->cons->pager);
 	free (c->panels_tmpcfg);
 	free (c->cmdqueue);
 	free (c->lastcmd);
