@@ -1123,6 +1123,33 @@ static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, int opts) {
 			if (bbi->fail != -1) {
 				r_cons_printf (",\"fail\":%"PFMT64d, bbi->fail);
 			}
+			if (bbi->switch_op) {
+				RAnalSwitchOp *op = bbi->switch_op;
+				r_cons_printf (
+						",\"switchop\":{\"offset\":%"PFMT64u
+						",\"defval\":%"PFMT64u
+						",\"maxval\":%"PFMT64u
+						",\"minval\":%"PFMT64u
+						",\"cases\":[",
+						op->addr, op->def_val, op->max_val, op->min_val);
+
+				RAnalCaseOp *case_op;
+				RListIter *case_iter;
+				bool first_case = true;
+				r_list_foreach (op->cases, case_iter, case_op) {
+					if (!first_case) {
+						r_cons_print (",");
+					} else {
+						first_case = false;
+					}
+					r_cons_printf (
+							"{\"offset\":%"PFMT64u
+							",\"value\":%"PFMT64u
+							",\"jump\":%"PFMT64u"}",
+							case_op->addr, case_op->value, case_op->jump);
+				}
+				r_cons_print ("]}");
+			}
 			if (t) {
 				r_cons_printf (
 					",\"trace\":{\"count\":%d,\"times\":%"
