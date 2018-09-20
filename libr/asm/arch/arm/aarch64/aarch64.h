@@ -493,7 +493,7 @@ struct aarch64_opcode
   aarch64_opnd_qualifier_seq_t qualifiers_list[AARCH64_MAX_QLF_SEQ_NUM];
 
   /* Flags providing information about this instruction */
-  uint32_t flags;
+  uint64_t flags;
 };
 
 typedef struct aarch64_opcode aarch64_opcode;

@@ -348,7 +348,8 @@ static int arm_op32(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 
 static ut64 getaddr(ut64 addr, const ut8 *d) {
 	if (d[2] >> 7) {
-		st32 n = (d[0] + (d[1] << 8) + (d[2] << 16) + (0xff << 24));
+		/// st32 n = (d[0] + (d[1] << 8) + (d[2] << 16) + (0xff << 24));
+		st32 n = (d[0] + (d[1] << 8) + (d[2] << 16) + ((ut64)(0xff) << 24)); // * 16777216));
 		n = -n;
 		return addr - (n * 4);
 	}
