@@ -254,24 +254,21 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 				} else {
 					anal->cb_printf (",");
 				}
-
+				anal->cb_printf ("{");
 				char *name = anal->coreb.getNameDelta (anal->coreb.core, ref->at);
 				if (name) {
 					r_str_replace_ch (name, ' ', 0, true);
-					anal->cb_printf ("{\"name\":\"%s\",", name);
+					anal->cb_printf ("\"name\":\"%s\",", name);
 					free (name);
-				} else {
-					anal->cb_printf ("{\"name\":\"\",");
 				}
 				anal->cb_printf ("\"from\":%"PFMT64d",\"type\":\"%s\",\"addr\":%"PFMT64d, ref->at, r_anal_xrefs_type_tostring (t), ref->addr);
 				name = anal->coreb.getNameDelta (anal->coreb.core, ref->addr);
 				if (name) {
 					r_str_replace_ch (name, ' ', 0, true);
-					anal->cb_printf (",\"xref\":\"%s\"}", name);
+					anal->cb_printf (",\"refname\":\"%s\"", name);
 					free (name);
-				} else {
-					anal->cb_printf (",\"xref\":\"\"}");
 				}
+				anal->cb_printf ("}");
 			}
 			break;
 		default:
