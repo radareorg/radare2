@@ -652,6 +652,7 @@ static void parseCodeDirectory (RBuffer *b, int offset, int datasize) {
 	ut8 *hash = p + cscd.hashOffset;
 	int j = 0;
 	int k = 0;
+	eprintf ("Hashed region: 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", 0, cscd.codeLimit);
 	for (j = 0; j < cscd.nCodeSlots; j++) {
 		int fof = 4096 * j;
 		int idx = j * hashSize;

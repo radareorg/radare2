@@ -100,6 +100,7 @@ R_API void r_asn1_free_object (RASN1Object *object);
 R_API char *r_asn1_to_string (RASN1Object *object, ut32 depth, RStrBuf *sb);
 R_API void r_asn1_free_string (RASN1String *string);
 R_API void r_asn1_free_binary (RASN1Binary *string);
+R_API void asn1_setformat (int fmt);
 
 #ifdef __cplusplus
 }

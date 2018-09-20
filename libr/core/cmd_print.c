@@ -36,6 +36,7 @@ static const char *help_msg_p6[] = {
 static const char *help_msg_pF[] = {
 	"Usage: pF[apd]", "[len]", "parse ASN1, PKCS, X509, DER",
 	"pFa", "[len]", "decode ASN1 from current block",
+	"pFaq", "[len]", "decode ASN1 from current block (quiet output)",
 	"pFo", "[len]", "decode ASN1 OID",
 	"pFp", "[len]", "decode PKCS7",
 	"pFx", "[len]", "Same with X509",
@@ -904,6 +905,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 		break;
 	case 'a':
 		{
+			asn1_setformat (input[1] != 'q');
 			RASN1Object *asn1 = r_asn1_create_object (data, size);
 			if (asn1) {
 				char *res = r_asn1_to_string (asn1, 0, NULL);
