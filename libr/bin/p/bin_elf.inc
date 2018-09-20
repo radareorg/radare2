@@ -188,7 +188,7 @@ static RList* sections(RBinFile *bf) {
 				break;
 			}
 			strncpy (ptr->name, (char*)section[i].name, R_BIN_SIZEOF_STRINGS);
-			if (strstr (ptr->name, "data") && !strstr (ptr->name, "rel")) {
+			if (strstr (ptr->name, "data") && !strstr (ptr->name, "rel") && !strstr (ptr->name, "pydata")) {
 				ptr->is_data = true;
 			}
 			ptr->size = section[i].type != SHT_NOBITS ? section[i].size : 0;
