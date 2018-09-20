@@ -3,7 +3,7 @@ return strdup (
 "=SP	rsp\n"
 "=BP	rbp\n"
 "=SN	rax\n"
-"=RV	rax\n"
+"=R0	rax\n"
 "=A0	rdi\n"
 "=A1	rsi\n"
 "=A2	rdx\n"
