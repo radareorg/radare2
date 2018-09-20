@@ -2477,14 +2477,15 @@ static ut8 *v_writebuf(RCore *core, RList *nums, int len, char ch, int bsize) {
 // maybe useful as in util/big.c .?
 static void incBuffer (ut8 *buf, int bufsz) {
 	int i = 0;
-	do {
+	while (i < bufsz) {
 		buf[i] ++;
 		if (!buf[i]) {
 			i++;
 			continue;
 		}
 		break;
-	} while (1);
+	}
+	// may overflow/hang/end/stop/whatever here
 }
 
 static void search_collisions (RCore *core, const char *hashName, const ut8 *hashValue, int hashLength) {
