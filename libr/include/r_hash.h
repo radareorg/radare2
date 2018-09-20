@@ -171,8 +171,8 @@ struct r_hash_t {
 	R_SHA384_CTX sha384;
 	R_SHA512_CTX sha512;
 	bool rst;
-	ut8 digest[128];
 	double entropy;
+	ut8 R_ALIGNED(8) digest[128];
 };
 
 typedef struct r_hash_seed_t {
