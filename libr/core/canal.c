@@ -429,13 +429,13 @@ R_API void r_core_anal_autoname_all_golang_fcns(RCore *core) {
 		}
 	}
 	if (!gopclntab) {
-		r_cons_print ("[x] Could not find .gopclntab section\n");
+		eprint ("[x] Could not find .gopclntab section");
 		return;
 	}
 	int ptr_size = core->anal->bits / 8;
-	ut64 offset = gopclntab + 2*ptr_size;
-	ut64 size_offset = gopclntab + 3*ptr_size ;
-	unsigned char temp_size[4] = {0};
+	ut64 offset = gopclntab + 2 * ptr_size;
+	ut64 size_offset = gopclntab + 3 * ptr_size ;
+	ut8 temp_size[4] = {0};
 	if (!r_io_nread_at (core->io, size_offset, temp_size, 4)) {
 		return;
 	}
@@ -443,9 +443,9 @@ R_API void r_core_anal_autoname_all_golang_fcns(RCore *core) {
 	int num_syms = 0;
 	r_cons_print ("[x] Reading .gopclntab...\n");
 	while (offset < gopclntab + size) {
-		unsigned char temp_delta[4] = {0};
-		unsigned char temp_func_addr[4] = {0};
-		unsigned char temp_func_name[4] = {0};
+		ut8 temp_delta[4] = {0};
+		ut8 temp_func_addr[4] = {0};
+		ut8 temp_func_name[4] = {0};
 		if (!r_io_nread_at (core->io, offset + ptr_size, temp_delta, 4)) {
 			break;
 		}
@@ -458,14 +458,14 @@ R_API void r_core_anal_autoname_all_golang_fcns(RCore *core) {
 		ut32 func_addr = r_read_le32 (temp_func_addr);
 		ut32 func_name_offset = r_read_le32 (temp_func_name);
 		ut8 func_name[64] = {0};
-		r_io_read_at (core->io, gopclntab + func_name_offset, func_name, 64);
+		r_io_read_at (core->io, gopclntab + func_name_offset, func_name, 63);
 		if (func_name[0] == 0xff) {
 			break;
 		}
 		r_name_filter ((char *)func_name, 0);
 		r_cons_printf ("[x] Found symbol %s at 0x%x\n", func_name, func_addr);
 		r_flag_set (core->flags, sdb_fmt ("sym.go.%s", func_name), func_addr, 1);
-		offset += 2*ptr_size;
+		offset += 2 * ptr_size;
 		num_syms++;
 	}
 	if (num_syms) {
