@@ -46,6 +46,7 @@ static const char *help_msg_aa[] = {
 	"aaf", " ", "analyze all functions (e anal.hasnext=1;afr @@c:isq)",
 	"aai", "[j]", "show info of all analysis parameters",
 	"aan", "", "autoname functions that either start with fcn.* or sym.func.*",
+	"aang", "", "find function and symbol names from golang binaries",
 	"aap", "", "find and analyze function preludes",
 	"aar", "[?] [len]", "analyze len bytes of instructions for references",
 	"aas", " [len]", "analyze symbols (af @@= `isq~[0]`)",
@@ -7032,8 +7033,14 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		r_core_cmd0 (core, "af @@ entry*");
 		break;
 	case 'n': // "aan"
-		r_core_anal_autoname_all_fcns (core);
-		break; //aan
+		switch (input[1]) {
+		case 'g': // "aang"
+			r_core_anal_autoname_all_golang_fcns (core);
+			break;
+		default: // "aan"
+			r_core_anal_autoname_all_fcns (core);
+		}
+		break;
 	case 'p': // "aap"
 		if (*input == '?') {
 			// TODO: accept parameters for ranges
