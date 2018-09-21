@@ -113,6 +113,7 @@ R_API void r_anal_plugin_free (RAnalPlugin *p) {
 	if (p && p->fini) {
 		p->fini (NULL);
 	}
+	R_FREE (p);
 }
 
 R_API RAnal *r_anal_free(RAnal *a) {

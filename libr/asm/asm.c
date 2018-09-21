@@ -180,6 +180,7 @@ static void plugin_free(RAsmPlugin *p) {
 	if (p && p->fini) {
 		p->fini (NULL);
 	}
+	R_FREE (p);
 }
 
 R_API RAsm *r_asm_new() {
