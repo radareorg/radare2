@@ -410,9 +410,51 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	if (!core || !core->dbg || !core->dbg->maps) {
 		return false;
 	}
-	if (GH(r_resolve_symbol) (core, m_arena, "main_arena")) {
-		return true;
+	RListIter *iter;
+	RDebugMap *map;
+
+	GHT brk_start = GHT_MAX, brk_end = GHT_MAX;
+	GHT libc_addr_sta = GHT_MAX, libc_addr_end;
+	GHT addr_srch = GHT_MAX, heap_sz = GHT_MAX;
+
+	r_debug_map_sync (core->dbg);
+	r_list_foreach (core->dbg->maps, iter, map) {
+		if (strstr (map->name, "/libc-") && map->perm == 6) {
+			libc_addr_sta = map->addr;
+			libc_addr_end = map->addr_end;
+			break;
+		}
 	}
+
+	if (libc_addr_sta == GHT_MAX || libc_addr_end == GHT_MAX) {
+		eprintf ("Warning: Can't find glibc mapped in memory (see dm)\n");
+		return false;
+	}
+
+	GH(get_brks) (core, &brk_start, &brk_end);
+	if (brk_start == GHT_MAX || brk_end == GHT_MAX) {
+		eprintf ("No Heap section\n");
+		return -1;
+	}
+
+	addr_srch = libc_addr_sta;
+	heap_sz = brk_end - brk_start;
+	MallocState *ta = R_NEW0 (MallocState);
+	if (!ta) {
+		return false;
+	}
+	while ( addr_srch < libc_addr_end ) {
+		GH (update_main_arena) (core, addr_srch, ta);
+		if ( ta->GH(top) > brk_start && ta->GH(top) < brk_end &&
+			ta->GH(system_mem) == heap_sz) {
+
+			*m_arena = addr_srch;
+			free (ta);
+			return true;
+		}
+		addr_srch += sizeof (GHT);
+	}
+	free (ta);
 	return false;
 }
 
