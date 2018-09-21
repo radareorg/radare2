@@ -237,6 +237,23 @@ else
   message('Using bundled openssl code')
 endif
 
+# handle libuv library
+if get_option('use_libuv')
+  libuv_dep = dependency('libuv', required: false)
+  use_libuv = libuv_dep.found()
+  if not libuv_dep.found()
+    warning('use_libuv option was set to true, but libuv was not found.')
+  endif
+else
+  use_libuv = false
+endif
+
+if use_libuv
+  message('Using libuv')
+else
+  message('Not using libuv, thus using fallback server implementations')
+endif
+
 userconf = configuration_data()
 userconf.set('R_CHECKS_LEVEL', get_option('checks_level'))
 userconf.set('HAVE_LIB_MAGIC', sys_magic.found().to_int())
@@ -259,6 +276,7 @@ userconf.set('PLUGINS', r2_plugins)
 userconf.set('EXTRAS', r2_extras)
 userconf.set('BINDINGS', r2_bindings)
 userconf.set('HAVE_OPENSSL', use_sys_openssl.to_int())
+userconf.set('HAVE_LIBUV', use_libuv.to_int())
 userconf.set('HAVE_FORK', 1)
 userconf.set('WITH_GPL', 1)
 if host_machine.system() == 'windows'

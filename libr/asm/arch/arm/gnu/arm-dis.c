@@ -6767,10 +6767,11 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
       size = 4;
 
       status = info->read_memory_func (pc, (bfd_byte *) b, 4, info);
+#define N(x) (((unsigned long long )(b[x])) & 0xff)
       if (little_code) {
-	      given = (b[0]) | (b[1] << 8) | (b[2] << 16) | (b[3] << 24);
+	      given = N(0) | N(1) <<8 | N(2) << 16 | N(3) << 24;
       } else {
-	      given = (b[3]) | (b[2] << 8) | (b[1] << 16) | (b[0] << 24);
+	      given = N(3) | N(2) <<8 | N(1) << 16 | N(0) << 24;
       }
     }
   else

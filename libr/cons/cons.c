@@ -44,7 +44,7 @@ static void cons_stack_free(void *ptr) {
 	free (s->buf);
 	if (s->grep) {
 		R_FREE (s->grep->str);
-		I.context->grep.str = NULL;
+		CTX(grep.str) = NULL;
 	}
 	free (s->grep);
 	free (s);
@@ -56,10 +56,10 @@ static RConsStack *cons_stack_dump(bool recreate) {
 		return NULL;
 	}
 
-	if (I.context->buffer) {
-		data->buf = I.context->buffer;
-		data->buf_len = I.context->buffer_len;
-		data->buf_size = I.context->buffer_sz;
+	if (CTX (buffer)) {
+		data->buf = CTX (buffer);
+		data->buf_len = CTX (buffer_len);
+		data->buf_size = CTX (buffer_sz);
 	}
 
 	data->grep = R_NEW0 (RConsGrep);
@@ -109,6 +109,7 @@ static void cons_context_init(RConsContext *context) {
 	context->break_stack = r_stack_newf (6, break_stack_free);
 	context->event_interrupt = NULL;
 	context->event_interrupt_data = NULL;
+	context->pageable = true;
 }
 
 static void cons_context_deinit(RConsContext *context) {
@@ -552,7 +553,7 @@ R_API void r_cons_reset_colors() {
 }
 
 R_API void r_cons_clear() {
-	r_cons_strcat (Color_RESET"\x1b[2J");
+	r_cons_strcat (Color_RESET R_CONS_CLEAR_SCREEN);
 	I.lines = 0;
 }
 
@@ -575,6 +576,7 @@ R_API void r_cons_reset() {
 	I.lines = 0;
 	I.lastline = I.context->buffer;
 	cons_grep_reset (&I.context->grep);
+	CTX (pageable) = true;
 }
 
 R_API const char *r_cons_get_buffer() {
@@ -727,13 +729,21 @@ R_API void r_cons_flush(void) {
 		CTX (lastMode) = false;
 	}
 	r_cons_filter ();
-
 	if (I.is_interactive && I.fdout == 1) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
-		if (I.pager && *I.pager && I.context->buffer_len > 0 && r_str_char_count (I.context->buffer, '\n') >= I.rows) {
+		if (CTX (pageable) && CTX (buffer) && I.pager && *I.pager && CTX (buffer_len) > 0 && r_str_char_count (CTX (buffer), '\n') >= I.rows) {
 			I.context->buffer[I.context->buffer_len - 1] = 0;
-			r_sys_cmd_str_full (I.pager, I.context->buffer, NULL, NULL, NULL);
-			r_cons_reset ();
+			if (!strcmp (I.pager, "..")) {
+				char *str = r_str_ndup (CTX (buffer), CTX (buffer_len));
+				CTX (pageable) = false;
+				r_cons_less_str (str, NULL);
+				r_cons_reset ();
+				free (str);
+				return;
+			} else {
+				r_sys_cmd_str_full (I.pager, CTX (buffer), NULL, NULL, NULL);
+				r_cons_reset ();
+			}
 		} else if (I.context->buffer_len > CONS_MAX_USER) {
 #if COUNT_LINES
 			int i, lines = 0;
@@ -1492,7 +1502,7 @@ R_API const char* r_cons_get_rune(const ut8 ch) {
 	return NULL;
 }
 
-R_API void r_cons_breakword(const char *s) {
+R_API void r_cons_breakword(R_NULLABLE const char *s) {
 	free (I.break_word);
 	if (s) {
 		I.break_word = strdup (s);
@@ -1535,7 +1545,8 @@ R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 			r_cons_printf ("%s%s%s\n", pal_help_color, help[i], pal_reset);
 		} else {
 			// these are the normal lines
-			int padding = R_MAX(0, max_length - (strlen (help[i]) + strlen (help[i + 1])));
+			int str_length = strlen (help[i]) + strlen (help[i + 1]);
+			int padding = (str_length < max_length)? (max_length - str_length): 0;
 			r_cons_printf ("| %s%s%s%*s  %s%s%s\n",
 				help[i], pal_args_color, help[i + 1],
 				padding, "", pal_help_color, help[i + 2], pal_reset);

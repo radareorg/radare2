@@ -1723,14 +1723,14 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 		}
 	}
 	if (!memcmp (buf, "\x00\xb0\xa0\xe3\x00\xe0\xa0\xe3", 8)) {
-		// endian stuff here
-		ut32 *addr = (ut32*)(buf+0x34);
+		ut32 vaddr = r_read_le32 (&buf[0x34]);
+		ut32 paddr = Elf_(r_bin_elf_v2p) (bin, vaddr);
 		/*
 		   0x00012000    00b0a0e3     mov fp, 0
 		   0x00012004    00e0a0e3     mov lr, 0
 		*/
-		if (*addr > text && *addr < (text_end)) {
-			return Elf_(r_bin_elf_v2p) (bin, *addr);
+		if (paddr >= text && paddr < text_end) {
+			return paddr;
 		}
 	}
 
@@ -2783,6 +2783,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		sym[i].st_shndx = READ16 (s, j);
 #endif
 		bool is_sht_null = false;
+		bool is_value = false;
 		// zero symbol is always empty
 		// Examine entry and maybe store
 		if (type == R_BIN_ELF_IMPORTS && sym[i].st_shndx == SHT_NULL) {
@@ -2805,7 +2806,11 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		    !strcmp (type2str (&sym[i]), R_BIN_TYPE_UNKNOWN_STR)) {
 			goto done;
 		}
-		tmp_offset = Elf_(r_bin_elf_v2p) (bin, toffset);
+		tmp_offset = Elf_(r_bin_elf_v2p_new) (bin, toffset);
+		if (tmp_offset == UT64_MAX) {
+			tmp_offset = toffset;
+			is_value = true;
+		}
 		if (tmp_offset > bin->size) {
 			goto done;
 		}
@@ -2833,6 +2838,7 @@ static RBinElfSymbol* get_symbols_from_phdr(ELFOBJ *bin, int type) {
 		ret[ret_ctr].name[ELF_STRING_LENGTH - 2] = '\0';
 		fill_symbol_bind_and_type (&ret[ret_ctr], &sym[i]);
 		ret[ret_ctr].is_sht_null = is_sht_null;
+		ret[ret_ctr].is_value = is_value;
 		ret[ret_ctr].last = 0;
 		ret_ctr++;
 	}
@@ -3081,6 +3087,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 			}
 			for (k = 1, ret_ctr = 0; k < nsym; k++) {
 				bool is_sht_null = false;
+				bool is_value = false;
 				if (type == R_BIN_ELF_IMPORTS && sym[k].st_shndx == STN_UNDEF) {
 					if (sym[k].st_value) {
 						toffset = sym[k].st_value;
@@ -3090,7 +3097,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 					tsize = 16;
 				} else if (type == R_BIN_ELF_SYMBOLS) {
 					tsize = sym[k].st_size;
-					toffset = (ut64)sym[k].st_value; 
+					toffset = (ut64)sym[k].st_value;
 					is_sht_null = sym[k].st_shndx == SHT_NULL;
 				} else {
 					continue;
@@ -3100,7 +3107,11 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 						ret[ret_ctr].offset = sym[k].st_value + bin->shdr[sym[k].st_shndx].sh_offset;
 					}
 				} else {
-					ret[ret_ctr].offset = Elf_(r_bin_elf_v2p) (bin, toffset);
+					ret[ret_ctr].offset = Elf_(r_bin_elf_v2p_new) (bin, toffset);
+					if (ret[ret_ctr].offset == UT64_MAX) {
+						ret[ret_ctr].offset = toffset;
+						is_value = true;
+					}
 				}
 				ret[ret_ctr].size = tsize;
 				if (sym[k].st_name + 2 > strtab_section->sh_size) {
@@ -3122,6 +3133,7 @@ static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type
 				ret[ret_ctr].name[ELF_STRING_LENGTH - 2] = '\0';
 				fill_symbol_bind_and_type (&ret[ret_ctr], &sym[k]);
 				ret[ret_ctr].is_sht_null = is_sht_null;
+				ret[ret_ctr].is_value = is_value;
 				ret[ret_ctr].last = 0;
 				ret_ctr++;
 			}
@@ -3292,15 +3304,11 @@ static int is_in_vphdr (Elf_(Phdr) *p, ut64 addr) {
 }
 
 
-/* converts a physical address to the virtual address, looking
- * at the program headers in the binary bin */
+/* Deprecated temporarily. Use r_bin_elf_p2v_new in new code for now. */
 ut64 Elf_(r_bin_elf_p2v) (ELFOBJ *bin, ut64 paddr) {
 	int i;
 
-	if (!bin) {
-		return 0;
-	}
-
+	r_return_val_if_fail (bin, 0);
 	if (!bin->phdr) {
 		if (bin->ehdr.e_type == ET_REL) {
 			return bin->baddr + paddr;
@@ -3309,9 +3317,6 @@ ut64 Elf_(r_bin_elf_p2v) (ELFOBJ *bin, ut64 paddr) {
 	}
 	for (i = 0; i < bin->ehdr.e_phnum; ++i) {
 		Elf_(Phdr) *p = &bin->phdr[i];
-		if (!p) {
-			break;
-		}
 		if (p->p_type == PT_LOAD && is_in_pphdr (p, paddr)) {
 			if (!p->p_vaddr && !p->p_offset) {
 				continue;
@@ -3323,13 +3328,11 @@ ut64 Elf_(r_bin_elf_p2v) (ELFOBJ *bin, ut64 paddr) {
 	return paddr;
 }
 
-/* converts a virtual address to the relative physical address, looking
- * at the program headers in the binary bin */
+/* Deprecated temporarily. Use r_bin_elf_v2p_new in new code for now. */
 ut64 Elf_(r_bin_elf_v2p) (ELFOBJ *bin, ut64 vaddr) {
 	int i;
-	if (!bin) {
-		return 0;
-	}
+
+	r_return_val_if_fail (bin, 0);
 	if (!bin->phdr) {
 		if (bin->ehdr.e_type == ET_REL) {
 			return vaddr - bin->baddr;
@@ -3338,9 +3341,6 @@ ut64 Elf_(r_bin_elf_v2p) (ELFOBJ *bin, ut64 vaddr) {
 	}
 	for (i = 0; i < bin->ehdr.e_phnum; ++i) {
 		Elf_(Phdr) *p = &bin->phdr[i];
-		if (!p) {
-			break;
-		}
 		if (p->p_type == PT_LOAD && is_in_vphdr (p, vaddr)) {
 			if (!p->p_offset && !p->p_vaddr) {
 				continue;
@@ -3349,6 +3349,49 @@ ut64 Elf_(r_bin_elf_v2p) (ELFOBJ *bin, ut64 vaddr) {
 		}
 	}
 	return vaddr;
+}
+
+/* converts a physical address to the virtual address, looking
+ * at the program headers in the binary bin */
+ut64 Elf_(r_bin_elf_p2v_new) (ELFOBJ *bin, ut64 paddr) {
+	int i;
+
+	r_return_val_if_fail (bin, UT64_MAX);
+	if (!bin->phdr) {
+		if (bin->ehdr.e_type == ET_REL) {
+			return bin->baddr + paddr;
+		}
+		return UT64_MAX;
+	}
+	for (i = 0; i < bin->ehdr.e_phnum; ++i) {
+		Elf_(Phdr) *p = &bin->phdr[i];
+		if (p->p_type == PT_LOAD && is_in_pphdr (p, paddr)) {
+			return p->p_vaddr + paddr - p->p_offset;
+		}
+	}
+
+	return UT64_MAX;
+}
+
+/* converts a virtual address to the relative physical address, looking
+ * at the program headers in the binary bin */
+ut64 Elf_(r_bin_elf_v2p_new) (ELFOBJ *bin, ut64 vaddr) {
+	int i;
+
+	r_return_val_if_fail (bin, UT64_MAX);
+	if (!bin->phdr) {
+		if (bin->ehdr.e_type == ET_REL) {
+			return vaddr - bin->baddr;
+		}
+		return UT64_MAX;
+	}
+	for (i = 0; i < bin->ehdr.e_phnum; ++i) {
+		Elf_(Phdr) *p = &bin->phdr[i];
+		if (p->p_type == PT_LOAD && is_in_vphdr (p, vaddr)) {
+			return p->p_offset + vaddr - p->p_vaddr;
+		}
+	}
+	return UT64_MAX;
 }
 
 static bool get_nt_file_maps (ELFOBJ *bin, RList *core_maps) {

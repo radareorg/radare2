@@ -1045,6 +1045,7 @@ typedef bool (*RAnalEsilInterruptCB)(ESIL *esil, ut32 interrupt, void *user);
 
 typedef struct r_anal_esil_interrupt_handler_t {
 	const ut32 num;
+	const char* name;
 	void *(*init)(ESIL *esil);
 	RAnalEsilInterruptCB cb;
 	void (*fini)(void *user);
@@ -1353,12 +1354,13 @@ R_API int r_anal_esil_condition (RAnalEsil *esil, const char *str);
 
 // esil_interrupt.c
 R_API void r_anal_esil_interrupts_init (RAnalEsil *esil);
-R_API RAnalEsilInterrupt *r_anal_esil_interupt_new (RAnalEsil *esil, ut32 src_id,  RAnalEsilInterruptHandler *ih);
+R_API RAnalEsilInterrupt *r_anal_esil_interrupt_new (RAnalEsil *esil, ut32 src_id,  RAnalEsilInterruptHandler *ih);
 R_API void r_anal_esil_interrupt_free (RAnalEsil *esil, RAnalEsilInterrupt *intr);
 R_API bool r_anal_esil_set_interrupt (RAnalEsil *esil, RAnalEsilInterrupt *intr);
 R_API int r_anal_esil_fire_interrupt (RAnalEsil *esil, ut32 intr_num);
 R_API bool r_anal_esil_load_interrupts (RAnalEsil *esil, RAnalEsilInterruptHandler **handlers, ut32 src_id);
 R_API bool r_anal_esil_load_interrupts_from_lib (RAnalEsil *esil, const char *path);
+R_API void r_anal_esil_interrupts_fini (RAnalEsil *esil);
 
 R_API void r_anal_esil_mem_ro(RAnalEsil *esil, int mem_readonly);
 R_API void r_anal_esil_stats(RAnalEsil *esil, int enable);

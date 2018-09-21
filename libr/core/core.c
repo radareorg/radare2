@@ -2396,12 +2396,12 @@ R_API RCore *r_core_fini(RCore *c) {
 	R_FREE (c->cmdlog);
 	r_th_lock_free (c->lock);
 	R_FREE (c->lastsearch);
-	c->cons->pager = NULL;
-	free (c->panels_tmpcfg);
-	free (c->cmdqueue);
-	free (c->lastcmd);
+	R_FREE (c->cons->pager);
+	R_FREE (c->panels_tmpcfg);
+	R_FREE (c->cmdqueue);
+	R_FREE (c->lastcmd);
 	r_list_free (c->visual.tabs);
-	free (c->block);
+	R_FREE (c->block);
 	r_core_autocomplete_free (c->autocomplete);
 
 	r_list_free (c->undos);
@@ -2443,7 +2443,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	sdb_free (c->sdb);
 	r_core_log_free (c->log);
 	r_parse_free (c->parser);
-	free (c->times);
+	R_FREE (c->times);
 	return NULL;
 }
 

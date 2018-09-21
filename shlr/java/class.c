@@ -2225,6 +2225,7 @@ R_API ut64 r_bin_java_parse_fields(RBinJavaObj *bin, const ut64 offset, const ut
 				}
 			} else {
 				IFDBG eprintf("Failed to read Field %d\n", i);
+				break;
 			}
 		}
 	}

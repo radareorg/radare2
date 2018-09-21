@@ -215,30 +215,33 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 	RList *list = r_anal_ref_list_new();
 	listxrefs (anal->dict_refs, UT64_MAX, list);
 	if (rad == 'j') {
-		anal->cb_printf ("{");
+		anal->cb_printf ("[");
 	}
 	r_list_foreach (list, iter, ref) {
 		int t = ref->type ? ref->type: ' ';
 		switch (rad) {
 		case '*':
-			anal->cb_printf ("ax%c 0x%"PFMT64x" 0x%"PFMT64x"\n",
-				t, ref->addr, ref->at);
+			anal->cb_printf ("ax%c 0x%"PFMT64x" 0x%"PFMT64x"\n", t, ref->addr, ref->at);
 			break;
 		case '\0':
 			{
 				char *name = anal->coreb.getNameDelta (anal->coreb.core, ref->at);
-				r_str_replace_char (name, ' ', 0);
-				anal->cb_printf ("%40s", name? name: "");
-				free (name);
+				if (name) {
+					r_str_replace_ch (name, ' ', 0, true);
+					anal->cb_printf ("%40s", name);
+					free (name);
+				} else {
+					anal->cb_printf ("%40s", "?");
+				}
 				anal->cb_printf (" 0x%"PFMT64x" -> %9s -> 0x%"PFMT64x, ref->at, r_anal_xrefs_type_tostring (t), ref->addr);
 				name = anal->coreb.getNameDelta (anal->coreb.core, ref->addr);
-				r_str_replace_char (name, ' ', 0);
-				if (name && *name) {
+				if (name) {
+					r_str_replace_ch (name, ' ', 0, true);
 					anal->cb_printf (" %s\n", name);
+					free (name);
 				} else {
 					anal->cb_printf ("\n");
 				}
-				free (name);
 			}
 			break;
 		case 'q':
@@ -251,7 +254,21 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 				} else {
 					anal->cb_printf (",");
 				}
-				anal->cb_printf ("\"%"PFMT64d"\":%"PFMT64d, ref->at, ref->addr);
+				anal->cb_printf ("{");
+				char *name = anal->coreb.getNameDelta (anal->coreb.core, ref->at);
+				if (name) {
+					r_str_replace_ch (name, ' ', 0, true);
+					anal->cb_printf ("\"name\":\"%s\",", name);
+					free (name);
+				}
+				anal->cb_printf ("\"from\":%"PFMT64d",\"type\":\"%s\",\"addr\":%"PFMT64d, ref->at, r_anal_xrefs_type_tostring (t), ref->addr);
+				name = anal->coreb.getNameDelta (anal->coreb.core, ref->addr);
+				if (name) {
+					r_str_replace_ch (name, ' ', 0, true);
+					anal->cb_printf (",\"refname\":\"%s\"", name);
+					free (name);
+				}
+				anal->cb_printf ("}");
 			}
 			break;
 		default:
@@ -259,7 +276,7 @@ R_API void r_anal_xrefs_list(RAnal *anal, int rad) {
 		}
 	}
 	if (rad == 'j') {
-		anal->cb_printf ("}\n");
+		anal->cb_printf ("]\n");
 	}
 	r_list_free (list);
 }

@@ -60,9 +60,13 @@ static void printpage (const char *line, int *index, RList **mla, int from, int 
 		color_line (line + index[i], p, mla[i]);
 		r_strpool_ansi_chop (p, w);
 		r_cons_reset_colors ();
-		r_cons_println (p->str);
+		if (i + 1 == to) {
+			r_cons_print (p->str);
+		} else {
+			r_cons_println (p->str);
+		}
 	}
-	r_strpool_free(p);
+	r_strpool_free (p);
 	r_cons_flush ();
 }
 
@@ -219,7 +223,7 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 	w = h = 0;
 	while (ui) {
 		w = r_cons_get_size (&h);
-		to = R_MIN (lines_count, from + h - 1);
+		to = R_MIN (lines_count, from + h);
 		if (from + 3 > lines_count) {
 			from = lines_count - 3;
 		}
@@ -258,7 +262,7 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 			break;
 		case ' ': from += h; break;
 		case 'g': from = 0; break;
-		case 'G': from = lines_count-1-h; break;
+		case 'G': from = lines_count-h; break;
 		case -1: // EOF
 		case 'q': ui = 0; break;
 		case '\r':

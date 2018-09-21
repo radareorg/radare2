@@ -36,6 +36,16 @@ R_LIB_VERSION_HEADER(r_heap_glibc);
 #define TCACHE_MAX_BINS 64
 #define TCACHE_FILL_COUNT 7
 
+#define MMAP_ALIGN_32 0x14
+#define MMAP_ALIGN_64 0x18
+#define MMAP_OFFSET 0x8
+
+#define HDR_SZ_32 0x8
+#define HDR_SZ_64 0x10
+#define TC_HDR_SZ 0x10
+#define TC_SZ_32 0x0
+#define TC_SZ_64 0x10
+
 #define largebin_index_32(size)				       \
 (((((ut32)(size)) >>  6) <= 38)?  56 + (((ut32)(size)) >>  6): \
  ((((ut32)(size)) >>  9) <= 20)?  91 + (((ut32)(size)) >>  9): \
@@ -130,12 +140,12 @@ typedef struct r_malloc_state_64 {
 
 typedef struct r_tcache_perthread_struct_32 {
 	ut8 counts[TCACHE_MAX_BINS];
-	unsigned int *entries[TCACHE_MAX_BINS];
+	ut32 entries[TCACHE_MAX_BINS];
 } RHeapTcache_32;
 
 typedef struct r_tcache_perthread_struct_64 {
 	ut8 counts[TCACHE_MAX_BINS];
-	unsigned int *entries[TCACHE_MAX_BINS];
+	ut64 entries[TCACHE_MAX_BINS];
 } RHeapTcache_64;
 
 typedef struct r_malloc_state_tcache_32 {

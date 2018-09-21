@@ -36,6 +36,7 @@ static const char *help_msg_p6[] = {
 static const char *help_msg_pF[] = {
 	"Usage: pF[apd]", "[len]", "parse ASN1, PKCS, X509, DER",
 	"pFa", "[len]", "decode ASN1 from current block",
+	"pFaq", "[len]", "decode ASN1 from current block (quiet output)",
 	"pFo", "[len]", "decode ASN1 OID",
 	"pFp", "[len]", "decode PKCS7",
 	"pFx", "[len]", "Same with X509",
@@ -762,7 +763,7 @@ static void cmd_pCx(RCore *core, const char *input, const char *xcmd) {
 	}
 	for (i = 0; i < columns; i++) {
 		(void) r_cons_canvas_gotoxy (c, i * (w / columns), 0);
-		char *cmd = r_str_newf ("%s %d @ %"PFMT64d, xcmd, bsize, tsek);
+		char *cmd = r_str_newf ("%s %d @ %"PFMT64u, xcmd, bsize, tsek);
 		char *dis = r_core_cmd_str (core, cmd);
 		r_cons_canvas_write (c, dis);
 		free (cmd);
@@ -904,6 +905,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 		break;
 	case 'a':
 		{
+			asn1_setformat (input[1] != 'q');
 			RASN1Object *asn1 = r_asn1_create_object (data, size);
 			if (asn1) {
 				char *res = r_asn1_to_string (asn1, 0, NULL);
@@ -2389,7 +2391,7 @@ static void cmd_print_pv(RCore *core, const char *input, const ut8* block) {
 		// r_num_get is gonna use a dangling pointer since the internal
 		// token that RNum holds ([$$]) has been already freed by r_core_cmd_str
 		// r_num_math reload a new token so the dangling pointer is gone
-		r_cons_printf ("{\"value\":%"PFMT64d ",\"string\":\"%s\"}\n",
+		r_cons_printf ("{\"value\":%"PFMT64u ",\"string\":\"%s\"}\n",
 			r_num_math (core->num, "[$$]"),
 			str
 			);
@@ -2479,8 +2481,8 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 	switch (mode) {
 		case 'j': // "p-j"
 			r_cons_printf (
-					"{\"from\":%"PFMT64d ","
-					"\"to\":%"PFMT64d ","
+					"{\"from\":%"PFMT64u ","
+					"\"to\":%"PFMT64u ","
 					"\"blocksize\":%d,"
 					"\"blocks\":[", from, to, piece);
 			break;
@@ -2511,8 +2513,8 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 					|| (as->block[p].symbols)
 					|| (as->block[p].rwx)
 					|| (as->block[p].strings)) {
-					r_cons_printf ("\"offset\":%"PFMT64d ",", at);
-					r_cons_printf ("\"size\":%"PFMT64d ",", piece);
+					r_cons_printf ("\"offset\":%"PFMT64u ",", at);
+					r_cons_printf ("\"size\":%"PFMT64u ",", piece);
 				}
 #define PRINT_VALUE(name, cond, v) { \
 				if (cond) { \
@@ -2700,7 +2702,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	ut8 *ptr = NULL;
 	// p=e [nblocks] [totalsize] [skip]
 	int nblocks = -1;
-	int totalsize = -1;
+	ut64 totalsize = UT64_MAX;
 	int skipblocks = -1;
 	RIOMap* map;
 	RListIter *iter;
@@ -2739,7 +2741,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		if (core->file && core->io) {
 			totalsize = r_io_fd_size (core->io, core->file->fd);
 			if ((st64) totalsize < 1) {
-				totalsize = -1;
+				totalsize = UT64_MAX;
 			}
 		}
 		if (totalsize == UT64_MAX) {
@@ -3054,14 +3056,14 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		int i;
 		switch (submode) {
 		case 'j':
-			r_cons_printf ("{\"blocksize\":%d,\"address\":%"PFMT64d ",\"size\":%"PFMT64d ",\"entropy\":[",
+			r_cons_printf ("{\"blocksize\":%d,\"address\":%"PFMT64u ",\"size\":%"PFMT64u ",\"entropy\":[",
 				blocksize, from, totalsize);
 			for (i = 0; i < nblocks; i++) {
 				ut8 ep = ptr[i];
 				ut64 off = blocksize * i;
 				const char *comma = (i + 1 < (nblocks))? ",": "";
 				off += from;
-				r_cons_printf ("{\"addr\":%"PFMT64d ",\"value\":%d}%s",
+				r_cons_printf ("{\"addr\":%"PFMT64u ",\"value\":%d}%s",
 					off, ep, comma);
 
 			}
@@ -3972,7 +3974,7 @@ static int cmd_print(void *data, const char *input) {
 					eprintf ("Cannot allocate %d\n", (int)(core->offset));
 				}
 			} else {
-				r_core_cmdf (core, "pj %"PFMT64d" @ 0", core->offset);
+				r_core_cmdf (core, "pj %"PFMT64u" @ 0", core->offset);
 			}
 		} else {
 			if (core->blocksize < 4 || !memcmp (core->block, "\xff\xff\xff\xff", 4)) {
@@ -4293,7 +4295,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 
 		if (core->blocksize_max < use_blocksize && (int) use_blocksize < -core->blocksize_max) {
-			eprintf ("This block size is too big (%"PFMT64d "<%"PFMT64d "). Did you mean 'p%c @ 0x%08"PFMT64x "' instead?\n",
+			eprintf ("This block size is too big (%"PFMT64u "<%"PFMT64u "). Did you mean 'p%c @ 0x%08"PFMT64x "' instead?\n",
 				(ut64) core->blocksize_max, (ut64) use_blocksize, input[0], (ut64) use_blocksize);
 			goto beach;
 		} else if (core->blocksize_max < use_blocksize && (int) use_blocksize > -(int)core->blocksize_max) {
@@ -4319,7 +4321,7 @@ static int cmd_print(void *data, const char *input) {
 		{
 			int len = 0;
 			ut64 at = findClassBounds (core, r_str_trim_ro (input + 2), &len);
-			return r_core_cmdf (core, "pD %d @ %"PFMT64d, len, at);
+			return r_core_cmdf (core, "pD %d @ %"PFMT64u, len, at);
 		}
 		case 'i': // "pdi" // "pDi"
 			processed_cmd = true;
@@ -4430,7 +4432,7 @@ static int cmd_print(void *data, const char *input) {
 					r_cons_printf ("{");
 					r_cons_printf ("\"name\":\"%s\"", f->name);
 					r_cons_printf (",\"size\":%d", fcn_size);
-					r_cons_printf (",\"addr\":%"PFMT64d, f->addr);
+					r_cons_printf (",\"addr\":%"PFMT64u, f->addr);
 					r_cons_printf (",\"ops\":[");
 					// instructions are all outputted as a json list
 					cont_size = f->_size > 0 ? f->_size : r_anal_fcn_realsize (f);
@@ -4700,7 +4702,7 @@ static int cmd_print(void *data, const char *input) {
 				r_cons_printf ("{\"string\":");
 				str = r_str_utf16_encode ((const char *) core->block, len);
 				r_cons_printf ("\"%s\"", str);
-				r_cons_printf (",\"offset\":%"PFMT64d, core->offset);
+				r_cons_printf (",\"offset\":%"PFMT64u, core->offset);
 				r_cons_printf (",\"section\":\"%s\"", vaddr == UT64_MAX? "unknown": section->name);
 				r_cons_printf (",\"length\":%d", len);
 				switch (get_string_type (core->block, len)) {
@@ -4791,7 +4793,7 @@ static int cmd_print(void *data, const char *input) {
 				}
 			}
 			break;
-		case 'z': // psz
+		case 'z': // "psz"
 			if (l > 0) {
 				char *s = malloc (core->blocksize + 1);
 				int i, j;
@@ -5312,8 +5314,8 @@ static int cmd_print(void *data, const char *input) {
 						if (base == 32) {
 							val &= UT32_MAX;
 						}
-						r_cons_printf ("%s{\"addr\":%"PFMT64d ",\"value\":%"\
-							PFMT64d, comma, addr, val);
+						r_cons_printf ("%s{\"addr\":%"PFMT64u ",\"value\":%"\
+							PFMT64u, comma, addr, val);
 						comma = ",";
 						// XXX: this only works in little endian
 						withref = 0;
@@ -5902,7 +5904,7 @@ R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int se
 				}
 			} else {
 				if (offdec) {
-					snprintf (space, sizeof (space), "%"PFMT64d, off);
+					snprintf (space, sizeof (space), "%"PFMT64u, off);
 					white = r_str_pad (' ', 10 - strlen (space));
 					r_cons_printf ("%s%s%s%s", k, white, space, reset);
 				} else {
@@ -5935,7 +5937,7 @@ R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int se
 				}
 			} else {
 				if (offdec) {
-					snprintf (space, sizeof (space), "%"PFMT64d, off);
+					snprintf (space, sizeof (space), "%"PFMT64u, off);
 					white = r_str_pad (' ', 10 - strlen (space));
 					r_cons_printf ("%s%s", white, space);
 				} else {

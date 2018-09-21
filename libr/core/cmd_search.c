@@ -94,6 +94,8 @@ static const char *help_msg_slash_a[] = {
 static const char *help_msg_slash_C[] = {
 	"Usage: /C", "", "Search for crypto materials",
 	"/Ca", "", "Search for AES keys",
+	"/Cc", "[algo] [digest]", "Find collisions (bruteforce block length values until given checksum is found)",
+	"/Cd", "", "Search for ASN1/DER certificates",
 	"/Cr", "", "Search for private RSA keys",
 	NULL
 };
@@ -2472,6 +2474,84 @@ static ut8 *v_writebuf(RCore *core, RList *nums, int len, char ch, int bsize) {
 	return buf;
 }
 
+// maybe useful as in util/big.c .?
+static void incBuffer (ut8 *buf, int bufsz) {
+	int i = 0;
+	while (i < bufsz) {
+		buf[i] ++;
+		if (!buf[i]) {
+			i++;
+			continue;
+		}
+		break;
+	}
+	// may overflow/hang/end/stop/whatever here
+}
+
+static void search_collisions (RCore *core, const char *hashName, const ut8 *hashValue, int hashLength) {
+	ut8 R_ALIGNED(8) cmphash[128];
+	int i, algoType = R_HASH_CRC32;
+	int bufsz = core->blocksize;
+	ut8 *buf = calloc (1, bufsz);
+	if (!buf) {
+		return;
+	}
+	memcpy (buf, core->block, bufsz);
+	if (hashLength > sizeof (cmphash)) {
+		eprintf ("Hashlength mismatch %d %d\n", hashLength, (int)sizeof (cmphash));
+		return;
+	}
+	memcpy (cmphash, hashValue, hashLength);
+
+	ut64 hashBits = r_hash_name_to_bits (hashName);
+	int hashSize = r_hash_size (hashBits);
+	if (hashLength != hashSize) {
+		eprintf ("Invalid hash size %d vs %d\n", hashLength, hashSize);
+		return;
+	}
+
+	RHash *ctx = r_hash_new (true, algoType);
+	if (!ctx) {
+		return;
+	}
+	r_cons_break_push (NULL, NULL);
+	ut64 prev = r_sys_now ();
+	ut64 inc = 0;
+	int amount = 0;
+	int mount = 0;
+	while (!r_cons_is_breaked ()) {
+		ut64 now = r_sys_now ();
+		if (now < (prev + 1000000)) {
+			amount++;
+		} else {
+			mount += amount;
+			mount /= 2;
+			amount = 0;
+			prev = now;
+		}
+		incBuffer (buf, bufsz);
+
+		r_hash_do_begin (ctx, hashBits);
+		(void)r_hash_calculate (ctx, hashBits, buf, bufsz);
+		r_hash_do_end (ctx, hashBits);
+
+		eprintf ("0x%08" PFMT64x " ", inc);
+		for (i = 0; i < hashLength; i++) {
+			eprintf ("%02x", ctx->digest[i]);
+		}
+		eprintf (" (%d h/s)  \r", mount);
+		if (!memcmp (hashValue, ctx->digest, hashLength)) {
+			eprintf ("\nCOLLISION!\n");
+			r_print_hexdump (core->print, core->offset, buf, bufsz, 0, 16, 0);
+			r_cons_flush ();
+		}
+		inc++;
+	}
+	r_cons_break_pop ();
+	free (buf);
+	r_hash_free (ctx);
+}
+
 static int cmd_search(void *data, const char *input) {
 	bool dosearch = false;
 	int ret = true;
@@ -2811,6 +2891,59 @@ reread:
 		dosearch = true;
 		param.crypto_search = true;
 		switch (input[1]) {
+		case 'c': // "Cc"
+			{
+				ret = false;
+				const char *arg = r_str_trim_ro (input + 2);
+				if (!arg) {
+					eprintf ("Usage: /Cc [hashname] [hexpairhashvalue]\n");
+					goto beach;
+				}
+				char *s = strdup (arg);
+				char *sp = strchr (s, ' ');
+				if (sp) {
+					*sp = 0;
+					sp++;
+					char *hashName = s;
+					ut8 *hashValue = (ut8*)strdup (sp);
+					if (hashValue) {
+						int hashLength = r_hex_str2bin (sp, hashValue);
+						if (hashLength > 0) {
+							search_collisions (core, hashName, hashValue, hashLength);
+						} else {
+							eprintf ("Invalid expected hash hexpairs.\n");
+						}
+					} else {
+						eprintf ("Cannot allocate memory.\n");
+					}
+					free (hashValue);
+					ret = true;
+					goto beach;
+				} else {
+					eprintf ("Usage: /Cc [hashname] [hexpairhashvalue]\n");
+					goto beach;
+				}
+				free (s);
+				goto beach;
+			}
+			break;
+		case 'd': // "Cd"
+			{
+				char *p = strdup ("30800609");
+				param.crypto_search = false;
+				r_search_reset (core->search, R_SEARCH_KEYWORD);
+				r_search_set_distance (core->search, 0);
+				RSearchKeyword *kw = r_search_keyword_new_hex (p, NULL, NULL);
+				if (kw) {
+					r_search_kw_add (core->search, kw);
+					r_search_begin (core->search);
+					dosearch = true;
+				} else {
+					eprintf ("no keyword\n");
+				}
+				free (p);
+			}
+			break;
 		case 'a':
 			param.aes_search = true;
 			break;

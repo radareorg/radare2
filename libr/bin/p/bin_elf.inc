@@ -188,7 +188,7 @@ static RList* sections(RBinFile *bf) {
 				break;
 			}
 			strncpy (ptr->name, (char*)section[i].name, R_BIN_SIZEOF_STRINGS);
-			if (strstr (ptr->name, "data") && !strstr (ptr->name, "rel")) {
+			if (strstr (ptr->name, "data") && !strstr (ptr->name, "rel") && !strstr (ptr->name, "pydata")) {
 				ptr->is_data = true;
 			}
 			ptr->size = section[i].type != SHT_NOBITS ? section[i].size : 0;
@@ -468,13 +468,15 @@ arm_symbol:
 		ptr->bits = bin_bits;
 		if (bin_bits != 64) {
 			ptr->bits = 32;
-			if (ptr->vaddr & 1) {
-				ptr->vaddr--;
-				ptr->bits = 16;
-			}
-			if (ptr->paddr & 1) {
-				ptr->paddr--;
-				ptr->bits = 16;
+			if (ptr->paddr != UT64_MAX) {
+				if (ptr->vaddr & 1) {
+					ptr->vaddr--;
+					ptr->bits = 16;
+				}
+				if (ptr->paddr & 1) {
+					ptr->paddr--;
+					ptr->bits = 16;
+				}
 			}
 		}
 	}
@@ -483,9 +485,15 @@ arm_symbol:
 static RBinSymbol *convert_symbol(struct Elf_(r_bin_elf_obj_t) *bin,
 				  struct r_bin_elf_symbol_t *symbol,
 				  const char *namefmt) {
-	ut64 paddr = symbol->offset;
-	ut64 vaddr = Elf_(r_bin_elf_p2v) (bin, paddr);
+	ut64 paddr, vaddr;
 	RBinSymbol *ptr = NULL;
+	if (symbol->is_value) {
+		paddr = UT64_MAX;
+		vaddr = symbol->offset;
+	} else {
+		paddr = symbol->offset;
+		vaddr = Elf_(r_bin_elf_p2v_new) (bin, paddr);
+	}
 
 	if (!(ptr = R_NEW0 (RBinSymbol))) {
 		return NULL;

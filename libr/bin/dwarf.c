@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2017 - pancake, Fedor Sakharov */
+/* radare - LGPL - Copyright 2012-2018 - pancake, Fedor Sakharov */
 
 #define D0 if(1)
 #define D1 if(1)
@@ -22,6 +22,10 @@
 #define R_BIN_DWARF_INFO 1
 
 #define READ(x,y) (((x) + sizeof (y) < buf_end)? *((y*)(x)): 0); (x) += sizeof (y)
+#define READ8(x) (((x) + sizeof (ut8) < buf_end)? ((ut8*)x)[0]: 0); (x) += sizeof (ut8)
+#define READ16(x) (((x) + sizeof (ut16) < buf_end)? r_read_ble16(x,0): 0); (x) += sizeof (ut16)
+#define READ32(x) (((x) + sizeof (ut32) < buf_end)? r_read_ble32(x,0): 0); (x) += sizeof (ut32)
+#define READ64(x) (((x) + sizeof (ut64) < buf_end)? r_read_ble64(x,0): 0); (x) += sizeof (ut64)
 
 static const char *dwarf_tag_name_encodings[] = {
 	[DW_TAG_array_type] = "DW_TAG_array_type",
@@ -222,32 +226,32 @@ static const ut8 *r_bin_dwarf_parse_lnp_header (
 		return NULL;
 	}
 
-	hdr->unit_length.part1 = READ (buf, ut32);
+	hdr->unit_length.part1 = READ32 (buf);
 	if (hdr->unit_length.part1 == DWARF_INIT_LEN_64) {
-		hdr->unit_length.part2 = READ (buf, ut32);
+		hdr->unit_length.part2 = READ32 (buf); // XX should be 64?
 	}
 
 	s = sdb_new (NULL, NULL, 0);
 
-	hdr->version = READ (buf, ut16);
+	hdr->version = READ16 (buf);
 
 	if (hdr->unit_length.part1 == DWARF_INIT_LEN_64) {
-		hdr->header_length = READ (buf, ut64);
+		hdr->header_length = READ64 (buf);
 	} else {
-		hdr->header_length = READ (buf, ut32);
+		hdr->header_length = READ32 (buf);
 	}
 
 	if (buf_end-buf < 8) {
 		sdb_free (s);
 		return NULL;
 	}
-	hdr->min_inst_len = READ (buf, ut8);
+	hdr->min_inst_len = READ8 (buf);
 	//hdr->max_ops_per_inst = READ (buf, ut8);
 	hdr->file_names = NULL;
-	hdr->default_is_stmt = READ (buf, ut8);
+	hdr->default_is_stmt = READ8 (buf);
 	hdr->line_base = READ (buf, char);
-	hdr->line_range = READ (buf, ut8);
-	hdr->opcode_base = READ (buf, ut8);
+	hdr->line_range = READ8 (buf);
+	hdr->opcode_base = READ8 (buf);
 
 	if (f) {
 		fprintf (f, "DWARF LINE HEADER\n");
@@ -472,13 +476,11 @@ static const ut8* r_bin_dwarf_parse_ext_opcode(const RBin *a, const ut8 *obuf,
 		break;
 	case DW_LNE_set_address:
 		if (addr_size == 8) {
-			addr = READ (buf, ut64);
+			addr = READ64 (buf);
 		} else {
-			addr = READ (buf, ut32);
+			addr = READ32 (buf);
 		}
-
 		regs->address = addr;
-
 		if (f) {
 			fprintf (f, "set Address to 0x%"PFMT64x"\n", addr);
 		}
@@ -646,7 +648,7 @@ static const ut8* r_bin_dwarf_parse_std_opcode(
 		}
 		break;
 	case DW_LNS_fixed_advance_pc:
-		operand = READ (buf, ut16);
+		operand = READ16 (buf);
 		regs->address += operand;
 		if (f) {
 			fprintf (f,"Fixed advance pc to %"PFMT64d"\n", regs->address);
@@ -766,6 +768,13 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 #define READ_BUF(x,y) if (idx+sizeof(y)>=len) { return false;} \
 	(x)=*(y*)buf; idx+=sizeof(y);buf+=sizeof(y)
 
+#define READ_BUF64(x) if (idx+sizeof(ut64)>=len) { return false;} \
+	(x)=r_read_ble64(buf, 0); idx+=sizeof(ut64);buf+=sizeof(ut64)
+#define READ_BUF32(x) if (idx+sizeof(ut32)>=len) { return false;} \
+	(x)=r_read_ble32(buf, 0); idx+=sizeof(ut32);buf+=sizeof(ut32)
+#define READ_BUF16(x) if (idx+sizeof(ut16)>=len) { return false;} \
+	(x)=r_read_ble16(buf, 0); idx+=sizeof(ut16);buf+=sizeof(ut16)
+
 R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len, FILE *f) {
 	ut32 length, offset;
 	ut16 version;
@@ -778,7 +787,7 @@ R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len, FILE *f) {
 		return false;
 	}
 
-	READ_BUF (length, ut32);
+	READ_BUF32 (length);
 	if (f) {
 		printf("parse_aranges\n");
 		printf("length 0x%x\n", length);
@@ -788,12 +797,12 @@ R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len, FILE *f) {
 		return false;
 	}
 
-	READ_BUF (version, ut16);
+	READ_BUF16 (version);
 	if (f) {
 		printf("Version %d\n", version);
 	}
 
-	READ_BUF (debug_info_offset, ut32);
+	READ_BUF32 (debug_info_offset);
 	if (f) {
 		fprintf (f, "Debug info offset %d\n", debug_info_offset);
 	}
@@ -824,8 +833,8 @@ R_API int r_bin_dwarf_parse_aranges_raw(const ut8 *obuf, int len, FILE *f) {
 		if ((idx+8)>=len) {
 			break;
 		}
-		READ_BUF (adr, ut64);
-		READ_BUF (length, ut64);
+		READ_BUF64 (adr);
+		READ_BUF64 (length);
 		if (f) {
 			printf ("length 0x%" PFMT64x " address 0x%" PFMT64x "\n", length, adr);
 		}
@@ -1219,16 +1228,16 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 	case DW_FORM_addr:
 		switch (hdr->pointer_size) {
 		case 1:
-			value->encoding.address = READ (buf, ut8);
+			value->encoding.address = READ8 (buf);
 			break;
 		case 2:
-			value->encoding.address = READ (buf, ut16);
+			value->encoding.address = READ16 (buf);
 			break;
 		case 4:
-			value->encoding.address = READ (buf, ut32);
+			value->encoding.address = READ32 (buf);
 			break;
 		case 8:
-			value->encoding.address = READ (buf, ut64);
+			value->encoding.address = READ64 (buf);
 			break;
 		default:
 			eprintf ("DWARF: Unexpected pointer size: %u\n", (unsigned)hdr->pointer_size);
@@ -1236,7 +1245,7 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		}
 		break;
 	case DW_FORM_block2:
-		value->encoding.block.length = READ (buf, ut16);
+		value->encoding.block.length = READ16 (buf);
 		if (value->encoding.block.length > 0) {
 			value->encoding.block.data = calloc (sizeof(ut8), value->encoding.block.length);
 			for (j = 0; j < value->encoding.block.length; j++) {
@@ -1245,7 +1254,7 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		}
 		break;
 	case DW_FORM_block4:
-		value->encoding.block.length = READ (buf, ut32);
+		value->encoding.block.length = READ32 (buf);
 		if (value->encoding.block.length > 0) {
 			ut8 *data = calloc (sizeof (ut8), value->encoding.block.length);
 			if (data) {
@@ -1259,13 +1268,13 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 #if 0
 // This causes segfaults to happen
 	case DW_FORM_data2:
-		value->encoding.data = READ (buf, ut16);
+		value->encoding.data = READ16 (buf);
 		break;
 	case DW_FORM_data4:
-		value->encoding.data = READ (buf, ut32);
+		value->encoding.data = READ32 (buf);
 		break;
 	case DW_FORM_data8:
-		value->encoding.data = READ (buf, ut64);
+		value->encoding.data = READ64 (buf);
 		break;
 #endif
 	case DW_FORM_string:
@@ -1300,7 +1309,7 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		buf = r_leb128 (buf, &value->encoding.sdata);
 		break;
 	case DW_FORM_strp:
-		value->encoding.str_struct.offset = READ (buf, ut32);
+		value->encoding.str_struct.offset = READ32 (buf);
 		if (debug_str && value->encoding.str_struct.offset < debug_str_len) {
 			value->encoding.str_struct.string = strdup (
 				(const char *)(debug_str +
@@ -1319,22 +1328,22 @@ static const ut8 *r_bin_dwarf_parse_attr_value(const ut8 *obuf, int obuf_len,
 		}
 		break;
 	case DW_FORM_ref_addr:
-		value->encoding.reference = READ (buf, ut64); // addr size of machine
+		value->encoding.reference = READ64 (buf); // addr size of machine
 		break;
 	case DW_FORM_ref1:
-		value->encoding.reference = READ (buf, ut8);
+		value->encoding.reference = READ8 (buf);
 		break;
 	case DW_FORM_ref2:
-		value->encoding.reference = READ (buf, ut16);
+		value->encoding.reference = READ16 (buf);
 		break;
 	case DW_FORM_ref4:
-		value->encoding.reference = READ (buf, ut32);
+		value->encoding.reference = READ32 (buf);
 		break;
 	case DW_FORM_ref8:
-		value->encoding.reference = READ (buf, ut64);
+		value->encoding.reference = READ64 (buf);
 		break;
 	case DW_FORM_data1:
-		value->encoding.data = READ (buf, ut8);
+		value->encoding.data = READ8 (buf);
 		break;
 	default:
 		eprintf ("Unknown DW_FORM 0x%02"PFMT64x"\n", spec->attr_form);
@@ -1440,8 +1449,8 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 		inf->comp_units[curr_unit].offset = buf - obuf;
 		inf->comp_units[curr_unit].hdr.pointer_size = 0;
 		inf->comp_units[curr_unit].hdr.abbrev_offset = 0;
-		inf->comp_units[curr_unit].hdr.length = READ (buf, ut32);
-		inf->comp_units[curr_unit].hdr.version = READ (buf, ut16);
+		inf->comp_units[curr_unit].hdr.length = READ32 (buf);
+		inf->comp_units[curr_unit].hdr.version = READ16 (buf);
 
 		if (inf->comp_units[curr_unit].hdr.version != 2) {
 //			eprintf ("DWARF: version %d is not yet supported.\n",
@@ -1454,7 +1463,7 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 			goto out_debug_info;
 		}
 
-		inf->comp_units[curr_unit].hdr.abbrev_offset = READ (buf, ut32);
+		inf->comp_units[curr_unit].hdr.abbrev_offset = READ32 (buf);
 		inf->comp_units[curr_unit].hdr.pointer_size = READ (buf, ut8);
 		inf->length++;
 

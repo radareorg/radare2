@@ -884,6 +884,10 @@ int main(int argc, char **argv, char **envp) {
 		r_config_set (r.config, "bin.rawstr", "true");
 		break;
 	}
+	if (zflag > 3) {
+		eprintf ("Sleeping now...\n");
+		r_sys_sleep (zflag);
+	}
 
 	if (run_rc) {
 		radare2_rc (&r);
@@ -926,11 +930,20 @@ int main(int argc, char **argv, char **envp) {
 		int sz;
 		/* stdin/batch mode */
 		ut8 *buf = (ut8 *)r_stdin_slurp (&sz);
-		close (0);
+		eprintf ("^D\n");
+#if __UNIX__
+		// TODO: keep flags :?
+		freopen ("/dev/tty", "rb", stdin);
+		freopen ("/dev/tty","w",stdout);
+		freopen ("/dev/tty","w",stderr);
+#else
+		eprintf ("Cannot reopen stdin without UNIX\n");
+		return 1;
+#endif
 		if (buf && sz > 0) {
-			char path[128];
-			snprintf (path, sizeof (path) - 1, "malloc://%d", sz);
+			char *path = r_str_newf ("malloc://%d", sz);
 			fh = r_core_file_open (&r, path, perms, mapaddr);
+			free (path);
 			if (!fh) {
 				r_cons_flush ();
 				free (buf);
@@ -938,7 +951,9 @@ int main(int argc, char **argv, char **envp) {
 				LISTS_FREE ();
 				return 1;
 			}
-			r_io_write_at (r.io, 0, buf, sz);
+			r_io_map_new (r.io, fh->fd, 7, 0LL, mapaddr,
+					r_io_fd_size (r.io, fh->fd));
+			r_io_write_at (r.io, mapaddr, buf, sz);
 			r_core_block_read (&r);
 			free (buf);
 			// TODO: load rbin thing
@@ -1186,8 +1201,8 @@ int main(int argc, char **argv, char **envp) {
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__ && __x86_64__
 						ut64 bitness = r_config_get_i (r.config, "asm.bits");
 						if (bitness == 32) {
-							eprintf ("glibc.fc_offset = 0x00158\n");
-							r_config_set_i (r.config, "dbg.glibc.fc_offset", 0x00158);
+							eprintf ("glibc.fc_offset = 0x00148\n");
+							r_config_set_i (r.config, "dbg.glibc.fc_offset", 0x00148);
 						}
 #endif
 					}

@@ -68,11 +68,9 @@ R_API bool r_anal_var_display(RAnal *anal, int delta, char kind, const char *typ
 	return true;
 }
 
-R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, const char *type, int size,
-		bool isarg, const char *name) {
-	if (!a) {
-		return false;
-	}
+R_API bool r_anal_var_add(RAnal *a, ut64 addr, int scope, int delta, char kind, R_IFNULL("int") const char *type, int size, bool isarg, R_NONNULL const char *name) {
+	r_return_val_if_fail (a, false);
+	r_return_val_if_fail (name, false);
 	if (!kind) {
 		kind = R_ANAL_VAR_KIND_BPV;
 	}
@@ -702,7 +700,7 @@ R_API void extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_s
 				!strcmp (opdreg, regname);
 			if ((op->src[0] && opsreg && !strcmp (opsreg, regname)) || cond) {
 				const char *vname = NULL;
-				const char *type = "int";
+				char *type = NULL;
 				char *name = NULL;
 				int delta = 0;
 				RRegItem *ri = r_reg_get (anal->reg, regname, -1);
@@ -717,14 +715,15 @@ R_API void extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_s
 					name = r_str_newf ("%s%d", "arg", i + 1);
 					vname = name;
 				}
-				r_anal_var_add (anal, fcn->addr, 1, delta, R_ANAL_VAR_KIND_REG, type, anal->bits / 8,
-						1, vname);
+				r_anal_var_add (anal, fcn->addr, 1, delta, R_ANAL_VAR_KIND_REG, type,
+						anal->bits / 8, 1, vname);
 				if (op->var && op->var->kind != R_ANAL_VAR_KIND_REG) {
 					r_anal_var_link (anal, op->addr, op->var);
 				}
 				r_anal_var_access (anal, fcn->addr, R_ANAL_VAR_KIND_REG, 1, delta, 0, op->addr);
 				r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, vname);
 				free (name);
+				free (type);
 			}
 			if (op->dst && opdreg && !strcmp (opdreg, regname)) {
 				reg_set [i] = 1;

@@ -1642,9 +1642,13 @@ static int cb_scr_color_grep(void *user, void *data) {
 static int cb_pager(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
-
+	if (!strcmp (node->value, "?")) {
+		eprintf ("Usage: scr.pager must be '..' for internal less, or the path to a program in $PATH");
+		return false;
+	}
 	/* Let cons know we have a new pager. */
-	core->cons->pager = node->value;
+	free (core->cons->pager);
+	core->cons->pager = strdup (node->value);
 	return true;
 }
 
@@ -2397,10 +2401,10 @@ R_API int r_core_config_init(RCore *core) {
 #endif
 #if __x86_64__
 	SETI ("dbg.glibc.ma_offset", 0x000000, "Main_arena offset from his symbol");
-	SETI ("dbg.glibc.fc_offset", 0x00250, "First chunk offset from brk_start");
+	SETI ("dbg.glibc.fc_offset", 0x00240, "First chunk offset from brk_start");
 #else
 	SETI ("dbg.glibc.ma_offset", 0x1bb000, "Main_arena offset from his symbol");
-	SETI ("dbg.glibc.fc_offset", 0x158, "First chunk offset from brk_start");
+	SETI ("dbg.glibc.fc_offset", 0x148, "First chunk offset from brk_start");
 #endif
 	SETPREF ("dbg.libc.dbglib", "", "Set libc debug library file");
 
@@ -2819,6 +2823,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("graph.cmtright", "false", "Show comments at right");
 	SETCB ("graph.gv.format", "gif", &cb_graphformat, "Graph image extension when using 'w' format (png, jpg, pdf, ps, svg, json)");
 	SETPREF ("graph.refs", "false", "Graph references in callgraphs (.agc*;aggi)");
+	SETPREF ("graph.json.usenames", "true", "Use names instead of addresses in Global Call Graph (agCj)");
 	SETI ("graph.edges", 2, "0=no edges, 1=simple edges, 2=avoid collisions");
 	SETI ("graph.layout", 0, "Graph layout (0=vertical, 1=horizontal)");
 	SETI ("graph.linemode", 1, "Graph edges (0=diagonal, 1=square)");
@@ -2895,7 +2900,7 @@ R_API int r_core_config_init(RCore *core) {
 	n = NODECB ("scr.nkey", "flag", &cb_scrnkey);
 	SETDESC (n, "Select visual seek mode (affects n/N visual commands)");
 	SETOPTIONS (n, "fun", "hit", "flag", NULL);
-	SETCB ("scr.pager", "", &cb_pager, "Select pager program (when output overflows the window)");
+	SETCB ("scr.pager", "", &cb_pager, "System program (or '..') to use when output exceeds screen boundaries");
 	SETPREF ("scr.randpal", "false", "Random color palete or just get the next one from 'eco'");
 	SETCB ("scr.color.grep", "false", &cb_scr_color_grep, "Enable colors when using ~grep");
 	SETPREF ("scr.pipecolor", "false", "Enable colors when using pipes");

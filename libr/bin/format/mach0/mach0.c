@@ -652,6 +652,7 @@ static void parseCodeDirectory (RBuffer *b, int offset, int datasize) {
 	ut8 *hash = p + cscd.hashOffset;
 	int j = 0;
 	int k = 0;
+	eprintf ("Hashed region: 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", 0, cscd.codeLimit);
 	for (j = 0; j < cscd.nCodeSlots; j++) {
 		int fof = 4096 * j;
 		int idx = j * hashSize;
@@ -753,16 +754,15 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 			if (len <= bin->size && len > 1) {
 				bin->signature = calloc (1, len + 1);
 				if (!bin->signature) {
-					return false;
+					break;
 				}
 				ut8 *src = bin->b->buf + off + sizeof (struct blob_t);
 				if (off + sizeof (struct blob_t) + len < bin->b->length) {
 					memcpy (bin->signature, src, len);
 					bin->signature[len] = '\0';
-					return true;
+				} else {
+					bin->signature = (ut8 *)strdup ("Malformed entitlement");
 				}
-				bin->signature = (ut8 *)strdup ("Malformed entitlement");
-				return true;
 			} else {
 				bin->signature = (ut8 *)strdup ("Malformed entitlement");
 			}
@@ -2722,15 +2722,15 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 			break;
 		case LC_UUID:
 			printf ("0x%08"PFMT64x"  uuid         %s\n",
-				addr + 20, r_buf_get_at (buf, addr + 32, NULL));
+				addr + 20, r_buf_get_at (buf, addr + 28, NULL));
 			break;
 		case LC_LOAD_DYLIB:
-			printf ("0x%08"PFMT64x"  uuid         %s\n",
-				addr + 20, r_buf_get_at (buf, addr + 20, NULL));
+			printf ("0x%08"PFMT64x"  load_dyilb   %s\n",
+				addr + 16, r_buf_get_at (buf, addr + 16, NULL));
 			break;
 		case LC_RPATH:
-			printf ("0x%08"PFMT64x"  uuid         %s\n",
-				addr + 8, r_buf_get_at (buf, addr + 8, NULL));
+			printf ("0x%08"PFMT64x"  rpath        %s\n",
+				addr + 4, r_buf_get_at (buf, addr + 4, NULL));
 			break;
 		case LC_CODE_SIGNATURE:
 			{

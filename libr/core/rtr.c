@@ -5,6 +5,10 @@
 #include "gdb/include/libgdbr.h"
 #include "gdb/include/gdbserver/core.h"
 
+#if HAVE_LIBUV
+#include <uv.h>
+#endif
+
 #if 0
 SECURITY IMPLICATIONS
 =====================
@@ -1883,6 +1887,206 @@ R_API char *r_core_rtr_cmds_query (RCore *core, const char *host, const char *po
 	return rbuf;
 }
 
+
+
+#if HAVE_LIBUV
+
+typedef struct rtr_cmds_context_t {
+	uv_tcp_t server;
+	RPVector clients;
+	void *bed;
+} rtr_cmds_context;
+
+typedef struct rtr_cmds_client_context_t {
+	RCore *core;
+	char buf[4096];
+	char *res;
+	size_t len;
+	uv_tcp_t *client;
+} rtr_cmds_client_context;
+
+static void rtr_cmds_client_close(uv_tcp_t *client, bool remove) {
+	uv_loop_t *loop = client->loop;
+	rtr_cmds_context *context = loop->data;
+	if (remove) {
+		size_t i;
+		for (i = 0; i < r_pvector_len (&context->clients); i++) {
+			if (r_pvector_at (&context->clients, i) == client) {
+				r_pvector_remove_at (&context->clients, i);
+				break;
+			}
+		}
+	}
+	rtr_cmds_client_context *client_context = client->data;
+	uv_close ((uv_handle_t *) client, (uv_close_cb) free);
+	free (client_context->res);
+	free (client_context);
+}
+
+static void rtr_cmds_alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
+	rtr_cmds_client_context *context = handle->data;
+	buf->base = context->buf + context->len;
+	buf->len = sizeof (context->buf) - context->len - 1;
+}
+
+static void rtr_cmds_write(uv_write_t *req, int status) {
+	rtr_cmds_client_context *context = req->data;
+
+	if (status) {
+		eprintf ("Write error: %s\n", uv_strerror (status));
+	}
+
+	free (req);
+	rtr_cmds_client_close (context->client, true);
+}
+
+static void rtr_cmds_read(uv_stream_t *client, ssize_t nread, const uv_buf_t *buf) {
+	rtr_cmds_context *context = client->loop->data;
+	rtr_cmds_client_context *client_context = client->data;
+
+	if (nread < 0) {
+		if (nread != UV_EOF) {
+			eprintf ("Failed to read: %s\n", uv_err_name ((int) nread));
+		}
+		rtr_cmds_client_close ((uv_tcp_t *) client, true);
+		return;
+	} else if (nread == 0) {
+		return;
+	}
+
+	buf->base[nread] = '\0';
+	char *end = strchr (buf->base, '\n');
+	if (!end) {
+		return;
+	}
+	*end = '\0';
+
+	r_cons_sleep_end (context->bed);
+	client_context->res = r_core_cmd_str (client_context->core, (const char *)client_context->buf);
+	context->bed = r_cons_sleep_begin ();
+
+	if (!client_context->res || !*client_context->res) {
+		free (client_context->res);
+		client_context->res = strdup ("\n");
+	}
+
+	if (!client_context->res || (!r_config_get_i (client_context->core->config, "scr.prompt") &&
+				 !strcmp ((char *)buf, "q!")) ||
+				 !strcmp ((char *)buf, ".--")) {
+		rtr_cmds_client_close ((uv_tcp_t *) client, true);
+		return;
+	}
+
+	uv_write_t *req = R_NEW (uv_write_t);
+	req->data = client_context;
+	uv_buf_t wrbuf = uv_buf_init (client_context->res, (unsigned int) strlen (client_context->res));
+	uv_write (req, client, &wrbuf, 1, rtr_cmds_write);
+	uv_read_stop (client);
+}
+
+static void rtr_cmds_new_connection(uv_stream_t *server, int status) {
+	if (status < 0) {
+		eprintf ("New connection error: %s\n", uv_strerror (status));
+		return;
+	}
+
+	rtr_cmds_context *context = server->loop->data;
+
+	uv_tcp_t *client = R_NEW (uv_tcp_t);
+	if (!client) {
+		return;
+	}
+
+	uv_tcp_init (server->loop, client);
+	if (uv_accept (server, (uv_stream_t *)client) == 0) {
+		rtr_cmds_client_context *client_context = R_NEW (rtr_cmds_client_context);
+		if (!client_context) {
+			uv_close ((uv_handle_t *)client, NULL);
+			return;
+		}
+
+		client_context->core = server->data;
+		client_context->len = 0;
+		client_context->buf[0] = '\0';
+		client_context->res = NULL;
+		client_context->client = client;
+		client->data = client_context;
+
+		uv_read_start ((uv_stream_t *)client, rtr_cmds_alloc_buffer, rtr_cmds_read);
+
+		r_pvector_push (&context->clients, client);
+	} else {
+		uv_close ((uv_handle_t *)client, NULL);
+	}
+}
+
+static void rtr_cmds_stop(uv_async_t *handle) {
+	uv_close ((uv_handle_t *) handle, NULL);
+
+	rtr_cmds_context *context = handle->loop->data;
+
+	uv_close ((uv_handle_t *) &context->server, NULL);
+
+	void **it;
+	r_pvector_foreach (&context->clients, it) {
+		uv_tcp_t *client = *it;
+		rtr_cmds_client_close (client, false);
+	}
+}
+
+static void rtr_cmds_break(uv_async_t *async) {
+	uv_async_send (async);
+}
+
+R_API int r_core_rtr_cmds(RCore *core, const char *port) {
+	if (!port || port[0] == '?') {
+		r_cons_printf ("Usage: .:[tcp-port]    run r2 commands for clients\n");
+		return 0;
+	}
+
+	uv_loop_t *loop = R_NEW (uv_loop_t);
+	if (!loop) {
+		return 0;
+	}
+	uv_loop_init (loop);
+
+	rtr_cmds_context context;
+	r_pvector_init (&context.clients, NULL);
+	loop->data = &context;
+
+	context.server.data = core;
+	uv_tcp_init (loop, &context.server);
+
+	struct sockaddr_in addr;
+	bool local = (bool) r_config_get_i(core->config, "tcp.islocal");
+	int porti = r_socket_port_by_name (port);
+	uv_ip4_addr (local ? "127.0.0.1" : "0.0.0.0", porti, &addr);
+
+	uv_tcp_bind (&context.server, (const struct sockaddr *) &addr, 0);
+	int r = uv_listen ((uv_stream_t *)&context.server, 32, rtr_cmds_new_connection);
+	if (r) {
+		eprintf ("Failed to listen: %s\n", uv_strerror (r));
+		goto beach;
+	}
+
+	uv_async_t stop_async;
+	uv_async_init (loop, &stop_async, rtr_cmds_stop);
+
+	r_cons_break_push ((RConsBreak) rtr_cmds_break, &stop_async);
+	context.bed = r_cons_sleep_begin ();
+	uv_run (loop, UV_RUN_DEFAULT);
+	r_cons_sleep_end (context.bed);
+	r_cons_break_pop ();
+
+beach:
+	uv_loop_close (loop);
+	free (loop);
+	r_pvector_clear (&context.clients);
+	return 0;
+}
+
+#else
+
 R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 	unsigned char buf[4097];
 	RSocket *ch = NULL;
@@ -1948,3 +2152,5 @@ R_API int r_core_rtr_cmds (RCore *core, const char *port) {
 	r_socket_free (ch);
 	return 0;
 }
+
+#endif

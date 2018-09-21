@@ -510,7 +510,7 @@ void SHA256_Update(R_SHA256_CTX *context, const ut8 *data, size_t len) {
 	usedspace = freespace = 0;
 }
 
-void SHA256_Final(ut8 digest[], R_SHA256_CTX *context) {
+void SHA256_Final(ut8 *digest, R_SHA256_CTX *context) {
 	ut32 *d = (ut32 *) digest;
 	unsigned int usedspace;
 
@@ -592,7 +592,6 @@ char *SHA256_End(R_SHA256_CTX *context, char buffer[]) {
 
 	if (buffer) {
 		SHA256_Final (digest, context);
-
 		for (i = 0; i < SHA256_DIGEST_LENGTH; i++) {
 			*buffer++ = sha2_hex_digits[(*d & 0xf0) >> 4];
 			*buffer++ = sha2_hex_digits[*d & 0x0f];

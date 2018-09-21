@@ -217,6 +217,9 @@ static void trace_me () {
 	if (ptrace (PT_TRACE_ME, 0, 0, 0) != 0) {
 		r_sys_perror ("ptrace-traceme");
 	}
+#if __APPLE__
+	ptrace (PT_SIGEXC, getpid(), NULL, 0);
+#endif
 #else
 	if (ptrace (PTRACE_TRACEME, 0, NULL, NULL) != 0) {
 		r_sys_perror ("ptrace-traceme");

@@ -114,12 +114,12 @@ typedef struct disassemble_info
   unsigned long flags;
   /* Set if the disassembler has determined that there are one or more
      relocations associated with the instruction being disassembled.  */
-#define INSN_HAS_RELOC	 (1 << 31)
+#define INSN_HAS_RELOC	 (1LL << 31)
   /* Set if the user has requested the disassembly of data as well as code.  */
-#define DISASSEMBLE_DATA (1 << 30)
+#define DISASSEMBLE_DATA (1LL << 30)
   /* Set if the user has specifically set the machine type encoded in the
      mach field of this structure.  */
-#define USER_SPECIFIED_MACHINE_TYPE (1 << 29)
+#define USER_SPECIFIED_MACHINE_TYPE (1LL << 29)
 
   /* Use internally by the target specific disassembly code.  */
   void *private_data;

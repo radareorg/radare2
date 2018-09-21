@@ -558,7 +558,9 @@ static int cmd_eval(void *data, const char *input) {
 			eprintf ("Usage: er [key]\n");
 		}
 		break;
-	case ' ': r_config_eval (core->config, input+1); break;
+	case ' ':
+		r_config_eval (core->config, input + 1);
+		break;
 	}
 	return 0;
 }

@@ -6,6 +6,12 @@
 #include <stdio.h>
 #include <string.h>
 
+static int ASN1_STD_FORMAT  = 1;
+
+R_API void asn1_setformat (int fmt) {
+	ASN1_STD_FORMAT = fmt;
+}
+
 static ut32 asn1_ber_indefinite (const ut8 *buffer, ut32 length) {
 	if (!length || !buffer) {
 		return 0;
@@ -25,7 +31,7 @@ static ut32 asn1_ber_indefinite (const ut8 *buffer, ut32 length) {
 	return (next - buffer) + 2;
 }
 
-RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
+static RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 	ut8 head, length8, byte;
 	ut64 length64;
 	if (!buffer || length < 2) {
@@ -178,6 +184,25 @@ R_API void r_asn1_print_hex (RASN1Object *object, char* buffer, ut32 size) {
 	}
 }
 
+#if !ASN1_STD_FORMAT
+static void simplePrinter(RStrBuf *sb, RASN1Object *object, int depth, const char *k, const char *v) {
+	const char *pad = r_str_pad (' ', (depth * 2)-2);
+	if (object->form && !*v) {
+		return;
+	}
+	switch (object->tag) {
+	case TAG_NULL:
+	case TAG_EOC:
+		break;
+	default:
+		if (*r_str_trim_ro (v)) {
+			r_strbuf_appendf (sb, "%s%s\n", pad, v);
+		}
+		break;
+	}
+}
+#endif
+
 // R_API void r_asn1_print_object (RASN1Object *object, ut32 depth) {
 R_API char *r_asn1_to_string (RASN1Object *object, ut32 depth, RStrBuf *sb) {
 	ut32 i;
@@ -191,7 +216,7 @@ R_API char *r_asn1_to_string (RASN1Object *object, ut32 depth, RStrBuf *sb) {
 	}
 	//this shall not be freed. it's a pointer into the buffer.
 	RASN1String* asn1str = NULL;
-	static char temp_name[256] = {0};
+	static char temp_name[4096] = {0};
 	const char* name = "";
 	const char* string = "";
 
@@ -329,11 +354,23 @@ R_API char *r_asn1_to_string (RASN1Object *object, ut32 depth, RStrBuf *sb) {
 	if (asn1str) {
 		string = asn1str->string;
 	}
-	r_strbuf_appendf (sb, "%4u:%2d: %s %-20s: %s\n", object->length, depth, object->form ? "cons" : "prim", name, string);
-	r_asn1_free_string (asn1str);
-	if (object->list.objects) {
-		for (i = 0; i < object->list.length; ++i) {
-			r_asn1_to_string (object->list.objects[i], depth + 1, sb);
+	if (ASN1_STD_FORMAT) {
+		r_strbuf_appendf (sb, "%4u:%2d: %s %-20s: %s\n", object->length,
+			depth, object->form ? "cons" : "prim", name, string);
+		r_asn1_free_string (asn1str);
+		if (object->list.objects) {
+			for (i = 0; i < object->list.length; ++i) {
+				r_asn1_to_string (object->list.objects[i], depth + 1, sb);
+			}
+		}
+	} else {
+		simplePrinter (sb, object, depth, name, string);
+		r_asn1_free_string (asn1str);
+		if (object->list.objects) {
+			for (i = 0; i < object->list.length; ++i) {
+				RASN1Object *obj = object->list.objects[i];
+				r_asn1_to_string (obj, depth + 1, sb);
+			}
 		}
 	}
 	return root? r_strbuf_drain (sb): NULL;

@@ -18,7 +18,7 @@ R_API void r_anal_esil_interrupts_init(RAnalEsil *esil) {
 	esil->interrupts = dict_new (sizeof(ut32), NULL);
 }
 
-R_API RAnalEsilInterrupt *r_anal_esil_interupt_new(RAnalEsil *esil, ut32 src_id,  RAnalEsilInterruptHandler *ih) {
+R_API RAnalEsilInterrupt *r_anal_esil_interrupt_new(RAnalEsil *esil, ut32 src_id,  RAnalEsilInterruptHandler *ih) {
 	RAnalEsilInterrupt *intr;
 
 	if (!esil || !ih || !ih->cb) {
@@ -104,7 +104,8 @@ R_API bool r_anal_esil_load_interrupts (RAnalEsil *esil, RAnalEsilInterruptHandl
 			//first free, then load the new handler or stuff might break in the handlers
 			r_anal_esil_interrupt_free (esil, intr);
 		}
-		if (intr = r_anal_esil_interupt_new (esil, src_id, handlers[i])) {
+		intr = r_anal_esil_interrupt_new (esil, src_id, handlers[i]);
+		if (intr) {
 			r_anal_esil_set_interrupt (esil, intr);
 		} else {
 			return false;
@@ -116,7 +117,7 @@ R_API bool r_anal_esil_load_interrupts (RAnalEsil *esil, RAnalEsilInterruptHandl
 }
 
 R_API bool r_anal_esil_load_interrupts_from_lib(RAnalEsil *esil, const char *path) {
-	RAnalEsilInterruptHandler *handlers;
+	RAnalEsilInterruptHandler **handlers;
 	ut32 src_id = r_anal_esil_load_source (esil, path);
 
 	if (!src_id) {
@@ -131,7 +132,7 @@ R_API bool r_anal_esil_load_interrupts_from_lib(RAnalEsil *esil, const char *pat
 	return r_anal_esil_load_interrupts (esil, handlers, src_id);
 }
 
-R_API void r_anal_esil_interrupts_fini (RAnalEsil *esil) {
+R_API void r_anal_esil_interrupts_fini(RAnalEsil *esil) {
 	if (esil && esil->interrupts) {
 		esil->interrupts->f = _interrupt_free_cb;
 		dict_free (esil->interrupts);
