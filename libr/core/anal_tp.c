@@ -93,31 +93,34 @@ static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, char *type
 		// except for "void *", since "void *" => "char *" is possible
 		return;
 	}
-	char ntype[256];
-	int len = sizeof (ntype) - 1;
+	RStrBuf *sb = r_strbuf_new ("");
 	if (pfx) {
 		if (is_default && strncmp (var->type, "signed", 6)) {
-			snprintf (ntype, len, "%s %s", type, tmp);
+			r_strbuf_setf (sb, "%s %s", type, tmp);
 		} else {
 			return;
 		}
 	} else {
-		strncpy (ntype, trim, len);
+		r_strbuf_set (sb, trim);
 	}
-	if (!strncmp (ntype, "const ", 6)) {
+	if (!strncmp (r_strbuf_get (sb), "const ", 6)) {
 		// Droping const from type
 		//TODO: Infering const type
-		snprintf (ntype, len, "%s", type + 6);
+		r_strbuf_setf (sb, "%s", type + 6);
 	}
 	if (is_ptr) {
 		//type *ptr => type *
-		strncat (ntype, " *", len);
+		r_strbuf_append (sb, " *");
 	}
-	if (ref && r_str_endswith (ntype, "*")) {
-		// char * => char **
-		strncat (ntype, "*", len);
+	if (ref) {
+		if (r_str_endswith (r_strbuf_get (sb), "*")) { // type * => type **
+			r_strbuf_append (sb, "*");
+		} else {   //  type => type *
+			r_strbuf_append (sb, " *");
+		}
 	}
-	r_anal_var_retype (anal, addr, 1, var->delta, var->kind, ntype, var->size, var->isarg, var->name);
+	r_anal_var_retype (anal, addr, 1, var->delta, var->kind, r_strbuf_get (sb), var->size, var->isarg, var->name);
+	r_strbuf_free (sb);
 }
 
 static void get_src_regname(RCore *core, ut64 addr, char *regname, int size) {
@@ -556,6 +559,17 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 					}
 					if (strstr (ret_reg, foo) || (tmp && strstr (ret_reg, tmp + 1))) {
 						resolved = true;
+					} else if (type == R_ANAL_OP_TYPE_MOV &&
+							(next_op && next_op->type == R_ANAL_OP_TYPE_MOV)){
+						// Progate return type passed using pointer
+						// int *ret; *ret = strlen(s);
+						// TODO: memref check , dest and next src match
+						char nsrc[REG_SZ] = {0};
+						get_src_regname (core, next_op->addr, nsrc, sizeof (nsrc));
+						if (ret_reg && *nsrc && strstr (ret_reg, nsrc) && var &&
+								aop.direction == R_ANAL_OP_DIR_READ) {
+							var_retype (anal, var, NULL, ret_type, addr, true, false);
+						}
 					}
 					free (foo);
 				}
@@ -632,6 +646,10 @@ R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
 					} else if (r_flag_exist_at (core->flags, "str", 3, aop.ptr)) {
 						str_flag = true;
 					}
+				}
+				// mov dword [local_4h], str.hello;
+				if (var && str_flag) {
+					var_retype (anal, var, NULL, "const char *", addr, false, false);
 				}
 				const char *query = sdb_fmt ("%d.reg.write", cur_idx);
 				prev_dest = sdb_const_get (trace, query, 0);
