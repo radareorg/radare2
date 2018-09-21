@@ -428,7 +428,6 @@ grub_minix_find_file (struct grub_minix_data *data, const char *path)
 
   grub_error (GRUB_ERR_FILE_NOT_FOUND, "file not found");
   free (fpath);
-  free (filename);
   return grub_errno;
 }
 
