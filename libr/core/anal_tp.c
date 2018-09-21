@@ -93,34 +93,34 @@ static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, char *type
 		// except for "void *", since "void *" => "char *" is possible
 		return;
 	}
-	char ntype[256];
-	int len = sizeof (ntype) - 1;
+	RStrBuf *sb = r_strbuf_new ("");
 	if (pfx) {
 		if (is_default && strncmp (var->type, "signed", 6)) {
-			snprintf (ntype, len, "%s %s", type, tmp);
+			r_strbuf_setf (sb, "%s %s", type, tmp);
 		} else {
 			return;
 		}
 	} else {
-		strncpy (ntype, trim, len);
+		r_strbuf_set (sb, trim);
 	}
-	if (!strncmp (ntype, "const ", 6)) {
+	if (!strncmp (r_strbuf_get (sb), "const ", 6)) {
 		// Droping const from type
 		//TODO: Infering const type
-		snprintf (ntype, len, "%s", type + 6);
+		r_strbuf_setf (sb, "%s", type + 6);
 	}
 	if (is_ptr) {
 		//type *ptr => type *
-		strncat (ntype, " *", len);
+		r_strbuf_append (sb, " *");
 	}
 	if (ref) {
-		if (r_str_endswith (ntype, "*")) { // type * => type **
-			strncat (ntype, "*", len);
+		if (r_str_endswith (r_strbuf_get (sb), "*")) { // type * => type **
+			r_strbuf_append (sb, "*");
 		} else {   //  type => type *
-			strncat (ntype, " *", len);
+			r_strbuf_append (sb, " *");
 		}
 	}
-	r_anal_var_retype (anal, addr, 1, var->delta, var->kind, ntype, var->size, var->isarg, var->name);
+	r_anal_var_retype (anal, addr, 1, var->delta, var->kind, r_strbuf_get (sb), var->size, var->isarg, var->name);
+	r_strbuf_free (sb);
 }
 
 static void get_src_regname(RCore *core, ut64 addr, char *regname, int size) {
