@@ -2659,13 +2659,15 @@ static int cmd_anal_fcn(RCore *core, const char *input) {
 			ptr = strchr (ptr, ' ');
 			if (ptr) {
 				ptr = strchr (ptr + 1, ' ');
-				color = r_num_math (core->num, ptr + 1);
-				RAnalOp *op = r_core_op_anal (core, addr);
-				if (op) {
-					r_anal_colorize_bb (core->anal, addr, color);
-					r_anal_op_free (op);
-				} else {
-					eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", addr);
+				if (ptr) {
+					color = r_num_math (core->num, ptr + 1);
+					RAnalOp *op = r_core_op_anal (core, addr);
+					if (op) {
+						r_anal_colorize_bb (core->anal, addr, color);
+						r_anal_op_free (op);
+					} else {
+						eprintf ("Cannot analyze opcode at 0x%08" PFMT64x "\n", addr);
+					}
 				}
 			}
 			}
@@ -4305,7 +4307,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 
 	const char *until_expr = NULL;
-	RAnalOp *op;
+	RAnalOp *op = NULL;
 
 	switch (input[0]) {
 	case 'p': // "aep"
@@ -4467,6 +4469,7 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 			}
 			if (op) {
 				r_anal_op_free (op);
+				op = NULL;
 			}
 		} else if (input[1] == 'c') { // "aecc"
 			const char *pc = r_reg_get_name (core->anal->reg, R_REG_NAME_PC);
