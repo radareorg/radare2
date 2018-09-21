@@ -7,17 +7,19 @@
 #
 # To enable this hook, move it to ".git/hooks/pre-commit".
 
-tmpfile=$(mktemp)
-unstaged_diff=$(mktemp)
-git diff > ${unstaged_diff}
+tmpfile="$(mktemp)"
+unstaged_diff="$(mktemp)"
+git diff > "${unstaged_diff}"
 git checkout -- .
-git diff --cached | ./sys/clang-format-diff.py -p1 > ${tmpfile}
+git diff --cached | ./sys/clang-format-diff.py -p1 > "${tmpfile}"
+
+trap restore_exit 1 2 3 6 15
 
 restore_exit() {
-    git apply < ${unstaged_diff}
-    rm ${tmpfile}
-    rm ${unstaged_diff}
-    exit $1
+	git apply < "${unstaged_diff}"
+	rm "${tmpfile}"
+	rm "${unstaged_diff}"
+	exit $1
 }
 
 sz=$(wc -c "${tmpfile}" | cut -d" " -f1)
@@ -25,7 +27,7 @@ if [ "${sz}" != "0" ] ; then
 	echo "Please follow the coding style!"
 	echo "Run \`git diff --cached | ./sys/clang-format-diff.py -p1 -i\` to apply the changes listed below and remember to add them to git."
 	echo
-	cat ${tmpfile}
+	cat "${tmpfile}"
 	echo
 	echo "If you think the current style is ok, just run `git commit --no-verify` to bypass this check."
 	restore_exit 1
