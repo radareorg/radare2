@@ -35,13 +35,18 @@ R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, int l) {
 			if (!ptr) {
 				return false;
 			}
+			if (sb->ptr) {
+				R_FREE (sb->ptr);
+			}
 			sb->ptrlen = l + 1;
 			sb->ptr = ptr;
 		}
 		memcpy (ptr, s, l);
+		*(ptr + l) = 0;
 	} else {
 		sb->ptr = NULL;
 		memcpy (sb->buf, s, l);
+		sb->buf[l] = 0;
 	}
 	sb->len = l;
 	return true;
@@ -55,9 +60,7 @@ R_API bool r_strbuf_set(RStrBuf *sb, const char *s) {
 		r_strbuf_init (sb);
 		return true;
 	}
-	bool res = r_strbuf_setbin (sb, (const ut8*)s, strlen (s) + 1);
-	sb->len --;
-	return res;
+	return r_strbuf_setbin (sb, (const ut8*)s, strlen (s));
 }
 
 R_API bool r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
@@ -81,8 +84,10 @@ R_API bool r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
 		vsnprintf (p, rc + 1, fmt, ap2);
 		ret = r_strbuf_set (sb, p);
 		free (p);
-	} else {
+	} else if (rc >= 0) {
 		ret = r_strbuf_set (sb, string);
+	} else {
+		ret = false;
 	}
 done:
 	va_end (ap2);
@@ -100,7 +105,8 @@ R_API int r_strbuf_append_n(RStrBuf *sb, const char *s, int l) {
 		return false;
 	}
 	if ((sb->len + l + 1) <= sizeof (sb->buf)) {
-		memcpy (sb->buf + sb->len, s, l + 1);
+		memcpy (sb->buf + sb->len, s, l);
+		sb->buf[sb->len + l] = 0;
 		R_FREE (sb->ptr);
 	} else {
 		int newlen = sb->len + l + 128;
@@ -123,7 +129,8 @@ R_API int r_strbuf_append_n(RStrBuf *sb, const char *s, int l) {
 			sb->ptr = p;
 			sb->ptrlen = newlen;
 		}
-		memcpy (p + sb->len, s, l + 1);
+		memcpy (p + sb->len, s, l);
+		*(p + sb->len + l) = 0;
 	}
 	sb->len += l;
 	return true;
@@ -135,21 +142,22 @@ R_API int r_strbuf_appendf(RStrBuf *sb, const char *fmt, ...) {
 	va_list ap;
 
 	va_start (ap, fmt);
-	ret = vsnprintf (string, sizeof (string) - 1, fmt, ap);
+	ret = vsnprintf (string, sizeof (string), fmt, ap);
 	if (ret >= sizeof (string)) {
-		char *p = malloc (ret + 2);
+		char *p = malloc (ret + 1);
 		if (!p) {
 			va_end (ap);
 			return false;
 		}
 		*p = 0;
 		va_start (ap, fmt);
-		(void)vsnprintf (p, ret, fmt, ap);
+		vsnprintf (p, ret + 1, fmt, ap);
 		ret = r_strbuf_append (sb, p);
 		free (p);
-	} else {
-		string[ret] = 0;
+	} else if (ret >= 0) {
 		ret = r_strbuf_append (sb, string);
+	} else {
+		ret = false;
 	}
 	va_end (ap);
 	return ret;
