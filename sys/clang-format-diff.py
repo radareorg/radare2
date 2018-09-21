@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 #
 #===- clang-format-diff.py - ClangFormat Diff Reformatter ----*- python -*--===#
 #
@@ -34,6 +34,7 @@ import subprocess
 import sys
 import tempfile
 import os
+from functools import reduce
 try:
   from StringIO import StringIO
 except ImportError:
