@@ -2627,7 +2627,6 @@ R_API void r_core_panels_free(RPanels *panels) {
 
 R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 	int i, okey, key, wheel;
-	RPanels *prev;
 
 	if (!panels) {
 		panels = r_core_panels_new (core);
@@ -2636,7 +2635,7 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 			return false;
 		}
 	}
-	prev = core->panels;
+	RPanels *prev = core->panels;
 	core->panels = panels;
 
 	if (!initPanelsMenu (panels)) {
@@ -2957,7 +2956,7 @@ repeat:
 				r_core_visual_graph (core, NULL, NULL, true);
 				r_config_set_i (core->config, "scr.color", ocolor);
 
-				int h, w = r_cons_get_size(&h);
+				int h, w = r_cons_get_size (&h);
 				panels->can = createNewCanvas (core, w, h);
 
 				setRefreshAll (panels);
