@@ -3420,7 +3420,7 @@ repeat:
 		*prev_addr = addr;
 	}
 	if (esil->exectrap) {
-		if (!r_io_is_valid_offset (core->io, addr, R_IO_EXEC)) {
+		if (!r_io_is_valid_offset (core->io, addr, R_PERM_X)) {
 			esil->trap = R_ANAL_TRAP_EXEC_ERR;
 			esil->trap_code = addr;
 			eprintf ("[ESIL] Trap, trying to execute on non-executable memory\n");
@@ -3821,9 +3821,8 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	}
 
 	snprintf (uri, sizeof (uri), "malloc://%d", (int)size);
-	esil->stack_fd = r_io_fd_open (core->io, uri, R_IO_RW, 0);
-	if (!(stack_map = r_io_map_add (core->io, esil->stack_fd,
-			R_IO_RW, 0LL, addr, size))) {
+	esil->stack_fd = r_io_fd_open (core->io, uri, R_PERM_RW, 0);
+	if (!(stack_map = r_io_map_add (core->io, esil->stack_fd, R_PERM_RW, 0LL, addr, size))) {
 		r_io_fd_close (core->io, esil->stack_fd);
 		eprintf ("Cannot create map for tha stack, fd %d got closed again\n", esil->stack_fd);
 		esil->stack_fd = 0;
@@ -4928,7 +4927,7 @@ static void cmd_anal_aftertraps(RCore *core, const char *input) {
 	if (!len) {
 		// ignore search.in to avoid problems. analysis != search
 		RIOSection *sec = r_io_section_vget (core->io, addr);
-		if (sec && sec->flags & 1) {
+		if (sec && (sec->perm & R_PERM_X)) {
 			// search in current section
 			if (sec->size > binfile->size) {
 				addr = sec->vaddr;
@@ -5011,7 +5010,7 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 #if 0
 	ls_foreach (core->io->sections, iter, s) {
 		/* is executable */
-		if (!(s->flags & R_IO_EXEC)) {
+		if (!(s->flags & R_PERM_X)) {
 			continue;
 		}
 		min = s->vaddr;
@@ -5031,7 +5030,7 @@ static void cmd_anal_blocks(RCore *core, const char *input) {
 	}
 #endif
 	if (!arg) {
-		RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, NULL, "anal");
+		RList *list = r_core_get_boundaries_prot (core, R_PERM_X, NULL, "anal");
 		RListIter *iter;
 		RIOMap* map;
 		r_list_foreach (list, iter, map) {
@@ -5158,7 +5157,7 @@ static void cmd_anal_calls(RCore *core, const char *input, bool only_print_flag)
 			m->itv.size = len;
 			r_list_append (ranges, m);
 		} else {
-			ranges = r_core_get_boundaries_prot (core, R_IO_EXEC, NULL, "anal");
+			ranges = r_core_get_boundaries_prot (core, R_PERM_X, NULL, "anal");
 		}
 	}
 	r_cons_break_push (NULL, NULL);
@@ -6686,7 +6685,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 				to = map->addr_end;
 			}
 		} else {
-			RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, NULL, "anal");
+			RList *list = r_core_get_boundaries_prot (core, R_PERM_X, NULL, "anal");
 			RListIter *iter;
 			RIOMap* map;
 			r_list_foreach (list, iter, map) {
@@ -6747,9 +6746,11 @@ static void rowlog_done(RCore *core) {
 	int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 	bool verbose = r_config_get_i (core->config, "scr.prompt");
 	if (verbose) {
-		if (use_color)
+		if (use_color) {
 			eprintf ("\r"Color_GREEN"[x]"Color_RESET" %s\n", oldstr);
-		else eprintf ("\r[x] %s\n", oldstr);
+		} else {
+			eprintf ("\r[x] %s\n", oldstr);
+		}
 	}
 }
 
@@ -6761,7 +6762,7 @@ static int compute_coverage(RCore *core) {
 	int cov = 0;
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		ls_foreach (core->io->sections, iter2, sec) {
-			if (sec->flags & 1) {
+			if (sec->perm & R_PERM_X) {
 				ut64 section_end = sec->vaddr + sec->vsize;
 				ut64 s = r_anal_fcn_realsize (fcn);
 				if (fcn->addr >= sec->vaddr && (fcn->addr + s) < section_end) {
@@ -6778,7 +6779,7 @@ static int compute_code (RCore* core) {
 	SdbListIter *iter;
 	RIOSection *sec;
 	ls_foreach (core->io->sections, iter, sec) {
-		if (sec->flags & 1) {
+		if (sec->perm & R_PERM_X) {
 			code += sec->vsize;
 		}
 	}
@@ -7187,7 +7188,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		bool hasnext = r_config_get_i (core->config, "anal.hasnext");
 		RListIter *iter;
 		RIOMap* map;
-		RList *list = r_core_get_boundaries_prot (core, R_IO_EXEC, NULL, "anal");
+		RList *list = r_core_get_boundaries_prot (core, R_PERM_X, NULL, "anal");
 		r_list_foreach (list, iter, map) {
 			r_core_seek (core, map->itv.addr, 1);
 			r_config_set_i (core->config, "anal.hasnext", 1);

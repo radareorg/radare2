@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2017 - pancake */
+/* radare - LGPL - Copyright 2013-2018 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -11,14 +11,14 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 		/* hacky check to avoid detecting multidex bins as bios */
 		/* need better fix for this */
 		if (!memcmp (buf, "dex", 3)) {
-			return 0;
+			return false;
 		}
 		/* Check if this a 'jmp' opcode */
 		if ((buf[ep] == 0xea) || (buf[ep] == 0xe9)) {
-			return 1;
+			return true;
 		}
 	}
-	return 0;
+	return false;
 }
 
 static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
@@ -84,8 +84,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->vsize = ptr->size = 0x10000;
 	ptr->paddr = bf->buf->length - ptr->size;
 	ptr->vaddr = 0xf0000;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE |
-	            R_BIN_SCN_EXECUTABLE;
+	ptr->perm = R_PERM_RWX;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 	return ret;

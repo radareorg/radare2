@@ -10,7 +10,7 @@
 
 typedef struct {
 	const char *uri;
-	int flags;
+	int perm;
 	RIODesc *desc;
 } FindFile;
 
@@ -19,17 +19,17 @@ typedef struct {
 static bool findFile(void *user, void *data, ut32 id) {
 	FindFile *res = (FindFile*)user;
 	RIODesc *desc = (RIODesc*)data;
-	if (desc->flags && res->flags && !strcmp (desc->uri, res->uri)) {
+	if (desc->perm && res->perm && !strcmp (desc->uri, res->uri)) {
 		res->desc = desc;
 		return false;
 	}
 	return true;
 }
 
-static RIODesc *findReusableFile(RIO *io, const char *uri, int flags) {
+static RIODesc *findReusableFile(RIO *io, const char *uri, int perm) {
 	FindFile arg = {
 		.uri = uri,
-		.flags = flags,
+		.perm = perm,
 		.desc = NULL,
 	};
 	r_id_storage_foreach (io->files, findFile, &arg);
@@ -38,7 +38,7 @@ static RIODesc *findReusableFile(RIO *io, const char *uri, int flags) {
 
 #else
 
-static RIODesc *findReusableFile(RIO *io, const char *uri, int flags) {
+static RIODesc *findReusableFile(RIO *io, const char *uri, int perm) {
 	return NULL;
 }
 
@@ -55,11 +55,11 @@ bool io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, bool do_sky
 	ut64 gap = sec->vsize - sec->size;
 	if (null) {
 		uri = r_str_newf ("null://%"PFMT64u, gap);
-		desc = findReusableFile (io, uri, sec->flags);
+		desc = findReusableFile (io, uri, sec->perm);
 		if (desc) {
 			RIOMap *map = r_io_map_get (io, at);
 			if (!map) {
-				io_map_new (io, desc->fd, desc->flags, 0LL, at, gap, false);
+				io_map_new (io, desc->fd, desc->perm, 0LL, at, gap, false);
 			}
 			reused = true;
 		}
@@ -67,7 +67,7 @@ bool io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, bool do_sky
 		uri = r_str_newf ("malloc://%"PFMT64u, gap);
 	}
 	if (!desc) {
-		desc = r_io_open_at (io, uri, sec->flags, 664, at);
+		desc = r_io_open_at (io, uri, sec->perm, 0664, at);
 	}
 	free (uri);
 	if (!desc) {
@@ -93,7 +93,7 @@ bool io_create_mem_map(RIO *io, RIOSection *sec, ut64 at, bool null, bool do_sky
 
 bool io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch, bool do_skyline) {
 	RIOMap *map = NULL;
-	int flags = 0;
+	int perm = 0;
 	RIODesc *desc;
 	if (!io || !sec) {
 		return false;
@@ -102,14 +102,14 @@ bool io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch, bool do
 	if (!desc) {
 		return false;
 	}
-	flags = sec->flags;
+	perm = sec->perm;
 	//create file map for patching
 	if (patch) {
 		//add -w to the map for patching if needed
-		//if the file was not opened with -w desc->flags won't have that bit active
-		flags = flags | desc->flags;
+		//if the file was not opened with -w desc->perm won't have that bit active
+		perm = perm | desc->perm;
 	}
-	map = io_map_add (io, sec->fd, flags, sec->paddr, sec->vaddr, size, do_skyline);
+	map = io_map_add (io, sec->fd, perm, sec->paddr, sec->vaddr, size, do_skyline);
 	if (map) {
 		sec->filemap = map->id;
 		map->name = r_str_newf ("fmap.%s", sec->name);
@@ -162,7 +162,7 @@ R_API bool r_io_is_valid_offset(RIO* io, ut64 offset, int hasperm) {
 	}
 	if (io->va) {
 		if ((map = r_io_map_get (io, offset))) {
-			return ((map->flags & hasperm) == hasperm);
+			return ((map->perm & hasperm) == hasperm);
 		}
 		return false;
 	}
@@ -172,7 +172,7 @@ R_API bool r_io_is_valid_offset(RIO* io, ut64 offset, int hasperm) {
 	if (r_io_desc_size (io->desc) <= offset) {
 		return false;
 	}
-	return ((io->desc->flags & hasperm) == hasperm);
+	return ((io->desc->perm & hasperm) == hasperm);
 }
 
 // this is wrong, there is more than big and little endian

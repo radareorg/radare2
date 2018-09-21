@@ -997,10 +997,10 @@ RList *linux_desc_list (int pid) {
 		}
 		if (lstat(path, &st) != -1) {
 			if (st.st_mode & S_IRUSR) {
-				perm |= R_IO_READ;
+				perm |= R_PERM_R;
 			}
 			if (st.st_mode & S_IWUSR) {
-				perm |= R_IO_WRITE;
+				perm |= R_PERM_W;
 			}
 		}
 		//TODO: Offset

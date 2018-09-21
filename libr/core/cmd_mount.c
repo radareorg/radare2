@@ -264,7 +264,7 @@ static int cmd_mount(void *data, const char *_input) {
 		if (file) {
 			r_fs_read (core->fs, file, 0, file->size);
 			char *uri = r_str_newf ("malloc://%d", file->size);
-			RIODesc *fd = r_io_open (core->io, uri, R_IO_READ | R_IO_WRITE, 0);
+			RIODesc *fd = r_io_open (core->io, uri, R_PERM_RW, 0);
 			if (fd) {
 				r_io_desc_write (fd, file->data, file->size);
 			}

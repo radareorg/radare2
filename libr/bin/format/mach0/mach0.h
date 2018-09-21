@@ -31,7 +31,7 @@ struct section_t {
 	ut64 vsize;
 	ut32 align;
 	ut32 flags;
-	int srwx;
+	int perm;
 	char name[R_BIN_MACH0_STRING_LENGTH];
 	int last;
 };

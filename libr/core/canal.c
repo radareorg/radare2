@@ -98,8 +98,8 @@ static bool iscodesection(RCore *core, ut64 addr) {
 		return true;
 	}
 	return false;
-	// BSS return (s && s->flags & R_IO_WRITE)? 0: 1;
-	// Cstring return (s && s->flags & R_IO_EXEC)? 1: 0;
+	// BSS return (s && s->flags & R_PERM_W)? 0: 1;
+	// Cstring return (s && s->flags & R_PERM_X)? 1: 0;
 }
 #endif
 
@@ -227,13 +227,13 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 						types |= R_ANAL_ADDR_TYPE_LIBRARY;
 					}
 				}
-				if (map->perm & R_IO_EXEC) {
+				if (map->perm & R_PERM_X) {
 					types |= R_ANAL_ADDR_TYPE_EXEC;
 				}
-				if (map->perm & R_IO_READ) {
+				if (map->perm & R_PERM_R) {
 					types |= R_ANAL_ADDR_TYPE_READ;
 				}
-				if (map->perm & R_IO_WRITE) {
+				if (map->perm & R_PERM_W) {
 					types |= R_ANAL_ADDR_TYPE_WRITE;
 				}
 				// find function
@@ -247,7 +247,7 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 			}
 		}
 	} else {
-		int _rwx = -1;
+		int _perm = -1;
 		RIOSection *ios;
 		SdbListIter *iter;
 		if (core->io) {
@@ -255,7 +255,7 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 			ls_foreach (core->io->sections, iter, ios) {
 				if (addr >= ios->vaddr && addr < (ios->vaddr + ios->vsize)) {
 					// sections overlap, so we want to get the one with lower perms
-					_rwx = (_rwx != -1) ? R_MIN (_rwx, ios->flags) : ios->flags;
+					_perm = (_perm != -1) ? R_MIN (_perm, ios->perm) : ios->perm;
 					// TODO: we should identify which maps come from the program or other
 					//types |= R_ANAL_ADDR_TYPE_PROGRAM;
 					// find function those sections should be created by hand or esil init
@@ -268,14 +268,14 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 				}
 			}
 		}
-		if (_rwx != -1) {
-			if (_rwx & R_IO_EXEC) {
+		if (_perm != -1) {
+			if (_perm & R_PERM_X) {
 				types |= R_ANAL_ADDR_TYPE_EXEC;
 			}
-			if (_rwx & R_IO_READ) {
+			if (_perm & R_PERM_R) {
 				types |= R_ANAL_ADDR_TYPE_READ;
 			}
-			if (_rwx & R_IO_WRITE) {
+			if (_perm & R_PERM_W) {
 				types |= R_ANAL_ADDR_TYPE_WRITE;
 			}
 		}
@@ -527,7 +527,7 @@ static int r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int refd
 	}
 	r_io_read_at (core->io, ref->addr, buf, bufsz);
 
-	if (sec->flags & R_IO_EXEC &&
+	if (sec->perm & R_PERM_X &&
 	    r_anal_check_fcn (core->anal, buf, bufsz, ref->addr, sec->vaddr,
 			      sec->vaddr + sec->vsize)) {
 		if (core->anal->limit) {
@@ -794,7 +794,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 				ut64 addr = fcn->addr + r_anal_fcn_size (fcn);
 				RIOSection *sect = r_io_section_vget (core->io, addr);
 				// only get next if found on an executable section
-				if (!sect || (sect && sect->flags & 1)) {
+				if (!sect || (sect && sect->perm & R_PERM_X)) {
 					for (i = 0; i < nexti; i++) {
 						if (next[i] == addr) {
 							break;
@@ -860,7 +860,7 @@ error:
 		if (fcn && has_next) {
 			ut64 newaddr = fcn->addr + r_anal_fcn_size (fcn);
 			RIOSection *sect = r_io_section_vget (core->io, newaddr);
-			if (!sect || (sect && (sect->flags & 1))) {
+			if (!sect || (sect && (sect->perm & R_PERM_X))) {
 				next = next_append (next, &nexti, newaddr);
 				for (i = 0; i < nexti; i++) {
 					if (!next[i]) {
@@ -3195,7 +3195,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 	at = from;
 	while (at < to && !r_cons_is_breaked ()) {
 		int i = 0, ret = bsz;
-		if (!r_io_is_valid_offset (core->io, at, R_IO_EXEC)) {
+		if (!r_io_is_valid_offset (core->io, at, R_PERM_X)) {
 			break;
 		}
 		(void)r_io_read_at (core->io, at, buf, bsz);
@@ -3441,8 +3441,8 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 	for (at = from; at < to; at += step) {
 		RIOSection *sec = r_io_section_get (core->io, at);
 		piece = (at - from) / step;
-		as->block[piece].rwx = sec ? sec->flags :
-				(core->io->desc ? core->io->desc->flags: 0);
+		as->block[piece].perm = sec ? sec->perm:
+				(core->io->desc ? core->io->desc->perm: 0);
 	}
 	// iter all flags
 	r_list_foreach (core->flags->flags, iter, f) {

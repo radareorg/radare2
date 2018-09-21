@@ -43,7 +43,7 @@ R_API RDebugSession *r_debug_session_add(RDebug *dbg, RListIter **tail) {
 	RListIter *iter;
 	RDebugMap *map;
 	ut64 addr;
-	int i, perms = R_IO_RW;
+	int i, perms = R_PERM_RW;
 
 	addr = r_debug_reg_get (dbg, dbg->reg->name[R_REG_NAME_PC]);
 	/* Session has already existed at this addr? */

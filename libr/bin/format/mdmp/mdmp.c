@@ -40,27 +40,27 @@ struct minidump_memory_info *r_bin_mdmp_get_mem_info(struct r_bin_mdmp_obj *obj,
 	return NULL;
 }
 
-ut32 r_bin_mdmp_get_srwx(struct r_bin_mdmp_obj *obj, ut64 vaddr) {
+ut32 r_bin_mdmp_get_perm(struct r_bin_mdmp_obj *obj, ut64 vaddr) {
 	struct minidump_memory_info *mem_info;
 
 	if (!(mem_info = r_bin_mdmp_get_mem_info(obj, vaddr))) {
 		/* if there is no mem info in the dump, assume default permission */
-		return R_BIN_SCN_READABLE;
+		return R_PERM_R;
 	}
 
 	/* FIXME: Have I got these mappings right, I am not sure I have!!! */
 
 	switch (mem_info->protect) {
 	case MINIDUMP_PAGE_READONLY:
-		return R_BIN_SCN_READABLE;
+		return R_PERM_R;
 	case MINIDUMP_PAGE_READWRITE:
-		return R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE;
+		return R_PERM_RW;
 	case MINIDUMP_PAGE_EXECUTE:
-		return R_BIN_SCN_EXECUTABLE;
+		return R_PERM_X;
 	case MINIDUMP_PAGE_EXECUTE_READ:
-		return R_BIN_SCN_EXECUTABLE | R_BIN_SCN_READABLE;
+		return R_PERM_RX;
 	case MINIDUMP_PAGE_EXECUTE_READWRITE:
-		return R_BIN_SCN_EXECUTABLE | R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE;
+		return R_PERM_RWX;
 	case MINIDUMP_PAGE_NOACCESS:
 	case MINIDUMP_PAGE_WRITECOPY:
 	case MINIDUMP_PAGE_EXECUTE_WRITECOPY:

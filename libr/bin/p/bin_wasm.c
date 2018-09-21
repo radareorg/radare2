@@ -114,7 +114,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->paddr = sec->offset;
 		ptr->add = true;
 		// TODO permissions
-		ptr->srwx = 0;
+		ptr->perm = 0;
 		r_list_append (ret, ptr);
 	}
 	return ret;

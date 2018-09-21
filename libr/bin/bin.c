@@ -245,7 +245,7 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, 
 		iob = &bin->iob;
 	}
 	if (!iob->desc_get (iob->io, fd)) {
-		fd = iob->fd_open (iob->io, file, R_IO_READ, 0644);
+		fd = iob->fd_open (iob->io, file, R_PERM_R, 0644);
 	}
 	bin->rawstr = rawstr;
 	// Use the current RIODesc otherwise r_io_map_select can swap them later on
@@ -269,7 +269,7 @@ R_API int r_bin_load_as(RBin *bin, const char *file, ut64 baseaddr,
 		return false;
 	}
 	if (fd < 0) {
-		fd = iob->fd_open (iob->io, file, R_IO_READ, 0644);
+		fd = iob->fd_open (iob->io, file, R_PERM_R, 0644);
 	}
 	if (fd < 0) {
 		return false;
@@ -320,7 +320,7 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 		// load the bin-properly.  Many of the plugins require all
 		// content and are not
 		// stream based loaders
-		int tfd = iob->fd_open (iob->io, name, R_IO_READ, 0);
+		int tfd = iob->fd_open (iob->io, name, R_PERM_R, 0);
 		if (tfd < 0) {
 			res = false;
 			goto error;
@@ -403,7 +403,7 @@ R_API bool r_bin_load_io2(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int x
 	file_sz = iob->fd_size (io, fd);
 	// file_sz = UT64_MAX happens when attaching to frida:// and other non-debugger io plugins which results in double opening
 	if (is_debugger && file_sz == UT64_MAX) {
-		tfd = iob->fd_open (io, fname, R_IO_READ, 0644);
+		tfd = iob->fd_open (io, fname, R_PERM_R, 0644);
 		if (tfd >= 1) {
 			file_sz = iob->fd_size (io, tfd);
 		}
@@ -458,7 +458,7 @@ R_API bool r_bin_load_io2(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int x
 					if (is_debugger && sz != file_sz) {
 						R_FREE (buf_bytes);
 						if (tfd < 0) {
-							tfd = iob->fd_open (io, fname, R_IO_READ, 0);
+							tfd = iob->fd_open (io, fname, R_PERM_R, 0);
 						}
 						sz = iob->fd_size (io, tfd);
 						if (sz != UT64_MAX) {
@@ -1540,7 +1540,7 @@ R_API ut64 r_bin_get_vaddr(RBin *bin, ut64 paddr, ut64 vaddr) {
 		if (bin->cur->o->info->bits == 16) {
 			RBinSection *s = r_bin_get_section_at (bin->cur->o, paddr, false);
 			// autodetect thumb
-			if (s && s->srwx & 1 && strstr (s->name, "text")) {
+			if (s && (s->perm & R_PERM_X) && strstr (s->name, "text")) {
 				if (!strcmp (bin->cur->o->info->arch, "arm") && (vaddr & 1)) {
 					vaddr = (vaddr >> 1) << 1;
 				}

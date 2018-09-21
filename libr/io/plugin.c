@@ -126,7 +126,7 @@ R_API int r_io_plugin_list_json(RIO *io) {
 }
 
 R_API int r_io_plugin_read(RIODesc *desc, ut8 *buf, int len) {
-	if (!buf || !desc || !desc->plugin || len < 1 || !(desc->flags & R_IO_READ)) {
+	if (!buf || !desc || !desc->plugin || len < 1 || !(desc->perm & R_PERM_R)) {
 		return 0;
 	}
 	if (!desc->plugin->read) {
@@ -136,7 +136,7 @@ R_API int r_io_plugin_read(RIODesc *desc, ut8 *buf, int len) {
 }
 
 R_API int r_io_plugin_write(RIODesc *desc, const ut8 *buf, int len) {
-	if (!buf || !desc || !desc->plugin || len < 1 || !(desc->flags & R_IO_WRITE)) {
+	if (!buf || !desc || !desc->plugin || len < 1 || !(desc->perm & R_PERM_W)) {
 		return 0;
 	}
 	if (!desc->plugin->write) {

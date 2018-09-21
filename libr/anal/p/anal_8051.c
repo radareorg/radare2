@@ -89,7 +89,7 @@ static void map_cpu_memory (RAnal *anal, int entry, ut32 addr, ut32 size, bool f
 	} else {
 		// allocate memory for address space
 		char *mstr = r_str_newf ("malloc://%d", size);
-		desc = anal->iob.open_at (anal->iob.io, mstr, R_IO_READ | R_IO_WRITE, 0, addr);
+		desc = anal->iob.open_at (anal->iob.io, mstr, R_PERM_RW, 0, addr);
 		r_str_free (mstr);
 		// set 8051 address space as name of mapped memory
 		if (desc && anal->iob.fd_get_name (anal->iob.io, desc->fd)) {

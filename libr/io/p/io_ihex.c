@@ -49,7 +49,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	RBufferSparse *rbs;
 	RListIter *iter;
 
-	if (!fd || !fd->data || (fd->flags & R_IO_WRITE) == 0 || count <= 0) {
+	if (!fd || !fd->data || (fd->perm & R_PERM_W) == 0 || count <= 0) {
 		return -1;
 	}
 	rih = fd->data;

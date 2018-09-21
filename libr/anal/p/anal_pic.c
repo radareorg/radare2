@@ -640,14 +640,13 @@ static RIODesc *cpu_memory_map (RIOBind *iob, RIODesc *desc, ut32 addr,
 	if (desc && iob->fd_get_name (iob->io, desc->fd)) {
 		iob->fd_remap (iob->io, desc->fd, addr);
 	} else {
-		desc = iob->open_at (iob->io, mstr, R_IO_READ | R_IO_WRITE, 0, addr);
+		desc = iob->open_at (iob->io, mstr, R_PERM_RW, 0, addr);
 	}
 	free (mstr);
 	return desc;
 }
 
-static bool pic_midrange_reg_write (RReg *reg, const char *regname,
-				    ut32 num) {
+static bool pic_midrange_reg_write (RReg *reg, const char *regname, ut32 num) {
 	if (reg) {
 		RRegItem *item = r_reg_get (reg, regname, R_REG_TYPE_GPR);
 		if (item) {

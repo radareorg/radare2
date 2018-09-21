@@ -11,15 +11,6 @@
 #include "r_util.h"
 #include "r_vector.h"
 
-#define R_IO_READ	4
-#define R_IO_WRITE	2
-#define R_IO_EXEC	1
-#define R_IO_RW		(R_IO_READ|R_IO_WRITE)
-#define R_IO_RWX	(R_IO_READ|R_IO_WRITE|R_IO_EXEC)
-#define R_IO_PRIV	16
-#define R_IO_SHAR	32
-#define R_IO_CREAT	64
-
 #define R_IO_SEEK_SET	0
 #define R_IO_SEEK_CUR	1
 #define R_IO_SEEK_END	2
@@ -98,7 +89,7 @@ typedef struct r_io_t {
 
 typedef struct r_io_desc_t {
 	int fd;
-	int flags;
+	int perm;
 	int obsz;	//optimal blocksize// do we really need this here?
 	char *uri;
 	char *name;
@@ -166,7 +157,7 @@ typedef struct r_io_plugin_t {
 
 typedef struct r_io_map_t {
 	int fd;
-	int flags;
+	int perm;
 	ut32 id;
 	RInterval itv;
 	ut64 delta; //this delta means paddr when talking about section
@@ -178,13 +169,14 @@ typedef struct r_io_map_skyline_t {
 	RInterval itv;
 } RIOMapSkyline;
 
+// XXX must be deprecated maps should be enough
 typedef struct r_io_section_t {
 	char *name;
 	ut64 paddr;
 	ut64 size;
 	ut64 vaddr;
 	ut64 vsize;
-	int flags;
+	int perm;
 	ut32 id;
 	ut32 bin_id;
 	int arch;

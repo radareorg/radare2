@@ -87,9 +87,9 @@ static void list_section_visual(RIO *io, ut64 seek, ut64 len, int use_color, int
 			r_num_units (buf, s->size);
 			if (use_color) {
 				color_end = Color_RESET;
-				if (s->flags & 1) { // exec bit
+				if (s->perm & R_PERM_X) { // exec bit
 					color = Color_GREEN;
-				} else if (s->flags & 2) { // write bit
+				} else if (s->perm & R_PERM_W) { // write bit
 					color = Color_RED;
 				} else {
 					color = "";
@@ -118,11 +118,11 @@ static void list_section_visual(RIO *io, ut64 seek, ut64 len, int use_color, int
 			if (io->va) {
 				io->cb_printf ("| %s0x%08"PFMT64x"%s %5s %s  %04s\n",
 						color, s->vaddr + s->vsize, color_end, buf,
-						r_str_rwx_i (s->flags), s->name);
+						r_str_rwx_i (s->perm), s->name);
 			} else {
 				io->cb_printf ("| %s0x%08"PFMT64x"%s %5s %s  %04s\n",
 						color, s->paddr+s->size, color_end, buf,
-						r_str_rwx_i (s->flags), s->name);
+						r_str_rwx_i (s->perm), s->name);
 			}
 
 			i++;
@@ -148,7 +148,7 @@ static void __section_list (RIO *io, ut64 offset, RPrint *print, int rad) {
 			print->cb_printf ("f section.%s %"PFMT64d" 0x%"PFMT64x"\n", n, s->size, s->vaddr);
 			print->cb_printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"
 				PFMT64x" 0x%08"PFMT64x" %s %s\n", s->paddr,
-				s->vaddr, s->size, s->vsize, n, r_str_rwx_i (s->flags));
+				s->vaddr, s->size, s->vsize, n, r_str_rwx_i (s->perm));
 			free (n);
 		}
 	} else {
@@ -169,7 +169,7 @@ static void __section_list (RIO *io, ut64 offset, RPrint *print, int rad) {
 			}
 			print->cb_printf ("pa=0x%08"PFMT64x" %s va=0x%08"PFMT64x
 				" sz=0x%04"PFMT64x" vsz=0x%04"PFMT64x" %s", s->paddr,
-				r_str_rwx_i (s->flags), s->vaddr, s->size, s->vsize, s->name);
+				r_str_rwx_i (s->perm), s->vaddr, s->size, s->vsize, s->name);
 			if (s->arch && s->bits) {
 				print->cb_printf ("  ; %s %d", r_sys_arch_str (s->arch),
 					s->bits);

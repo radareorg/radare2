@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2017 - pancake */
+/* radare - LGPL - Copyright 2015-2018 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -171,7 +171,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->vsize = art.image_size; // TODO: align?
 	ptr->paddr = 0;
 	ptr->vaddr = art.image_base;
-	ptr->srwx = R_BIN_SCN_READABLE; // r--
+	ptr->perm = R_PERM_R; // r--
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -183,7 +183,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->vsize = art.bitmap_size;
 	ptr->paddr = art.bitmap_offset;
 	ptr->vaddr = art.image_base + art.bitmap_offset;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE; // r-x
+	ptr->perm = R_PERM_RX; // r-x
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -195,7 +195,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = art.oat_file_begin;
 	ptr->size = art.oat_file_end - art.oat_file_begin;
 	ptr->vsize = ptr->size;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE; // r-x
+	ptr->perm = R_PERM_RX; // r-x
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -207,7 +207,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = art.oat_data_begin;
 	ptr->size = art.oat_data_end - art.oat_data_begin;
 	ptr->vsize = ptr->size;
-	ptr->srwx = R_BIN_SCN_READABLE; // r--
+	ptr->perm = R_PERM_R; // r--
 	ptr->add = true;
 	r_list_append (ret, ptr);
 

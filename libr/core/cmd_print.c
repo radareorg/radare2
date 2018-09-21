@@ -2511,7 +2511,7 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 					|| (as->block[p].functions)
 					|| (as->block[p].comments)
 					|| (as->block[p].symbols)
-					|| (as->block[p].rwx)
+					|| (as->block[p].perm)
 					|| (as->block[p].strings)) {
 					r_cons_printf ("\"offset\":%"PFMT64u ",", at);
 					r_cons_printf ("\"size\":%"PFMT64u ",", piece);
@@ -2528,7 +2528,7 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 				PRINT_VALUE2 ("comments", as->block[p].comments);
 				PRINT_VALUE2 ("symbols", as->block[p].symbols);
 				PRINT_VALUE2 ("strings", as->block[p].strings);
-				PRINT_VALUE ("rwx", as->block[p].rwx, r_str_rwx_i (as->block[p].rwx));
+				PRINT_VALUE ("perm", as->block[p].perm, r_str_rwx_i (as->block[p].perm));
 #undef PRINT_VALUE
 #undef PRINT_VALUE2
 				r_cons_strcat ("}");
@@ -2560,7 +2560,7 @@ static int cmd_print_blocks(RCore *core, const char *input) {
 					RIOSection *s = r_io_section_vget (core->io, at);
 					if (use_color) {
 						if (s) {
-							if (s->flags & 1) {
+							if (s->perm & R_PERM_X) {
 								r_cons_print (Color_BGBLUE);
 							} else {
 								r_cons_print (Color_BGGREEN);

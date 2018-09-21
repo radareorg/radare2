@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017 - pancake */
+/* radare2 - LGPL - Copyright 2017-2018 - pancake */
 
 // TODO: Support NRR and MODF
 #include <r_types.h>
@@ -119,7 +119,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->vsize = 0x80;
 	ptr->paddr = 0;
 	ptr->vaddr = 0;
-	ptr->srwx = R_BIN_SCN_READABLE;
+	ptr->perm = R_PERM_R;
 	ptr->add = false;
 	r_list_append (ret, ptr);
 
@@ -136,7 +136,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->vsize = mod0sz;
 		ptr->paddr = mod0;
 		ptr->vaddr = mod0 + ba;
-		ptr->srwx = R_BIN_SCN_READABLE; // rw-
+		ptr->perm = R_PERM_R; // rw-
 		ptr->add = false;
 		r_list_append (ret, ptr);
 	} else {
@@ -154,7 +154,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->vsize = sig0sz;
 		ptr->paddr = sig0;
 		ptr->vaddr = sig0 + ba;
-		ptr->srwx = R_BIN_SCN_READABLE; // r--
+		ptr->perm = R_PERM_R; // r--
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	} else {
@@ -170,7 +170,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize;
 	ptr->paddr = readLE32 (b, NRO_OFF (text_memoffset));
 	ptr->vaddr = ptr->paddr + ba;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE; // r-x
+	ptr->perm = R_PERM_RX; // r-x
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -183,7 +183,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize;
 	ptr->paddr = readLE32 (b, NRO_OFF (ro_memoffset));
 	ptr->vaddr = ptr->paddr + ba;
-	ptr->srwx = R_BIN_SCN_READABLE; // r-x
+	ptr->perm = R_PERM_R; // r-x
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -196,7 +196,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize;
 	ptr->paddr = readLE32 (b, NRO_OFF (data_memoffset));
 	ptr->vaddr = ptr->paddr + ba;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE; // rw-
+	ptr->perm = R_PERM_RW;
 	ptr->add = true;
 	eprintf ("Base Address 0x%08"PFMT64x "\n", ba);
 	eprintf ("BSS Size 0x%08"PFMT64x "\n", (ut64)

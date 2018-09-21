@@ -190,7 +190,7 @@ void drx_enable(drxt *r, int n, int enabled) {
 bool drx_add(RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
 	if (bp->nhwbps < 4) {
 		r_debug_reg_sync (dbg, R_REG_TYPE_DRX, false);
-		r_debug_drx_set (dbg, bp->nhwbps, b->addr, b->size, b->rwx, 0);
+		r_debug_drx_set (dbg, bp->nhwbps, b->addr, b->size, b->perm, 0);
 		r_debug_reg_sync (dbg, R_REG_TYPE_DRX, true);
 		bp->nhwbps++;
 		return true;

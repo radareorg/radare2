@@ -104,8 +104,7 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 				return NULL;
 			}
 			RDebugMap *map;
-			if (!(map = r_debug_map_new ("", baddr, baddr,
-						     R_IO_READ | R_IO_EXEC, 0))) {
+			if (!(map = r_debug_map_new ("", baddr, baddr, R_PERM_RX, 0))) {
 				r_list_free (retlist);
 				return NULL;
 			}
@@ -196,9 +195,9 @@ static RList *r_debug_gdb_map_get(RDebug* dbg) { //TODO
 		perm = 0;
 		for (i = 0; perms[i] && i < 5; i++) {
 			switch (perms[i]) {
-			case 'r': perm |= R_IO_READ; break;
-			case 'w': perm |= R_IO_WRITE; break;
-			case 'x': perm |= R_IO_EXEC; break;
+			case 'r': perm |= R_PERM_R; break;
+			case 'w': perm |= R_PERM_W; break;
+			case 'x': perm |= R_PERM_X; break;
 			case 'p': map_is_shared = false; break;
 			case 's': map_is_shared = true; break;
 			}
@@ -981,7 +980,7 @@ static int r_debug_gdb_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set
 	}
 	bpsize = b->size;
         // TODO handle conditions
-	switch (b->rwx){
+	switch (b->perm) {
 	case R_BP_PROT_EXEC : {
 		if (set) {
 			ret = b->hw?
@@ -993,7 +992,7 @@ static int r_debug_gdb_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set
 		break;
 	}
 	// TODO handle size (area of watch in upper layer and then bpsize. For the moment watches are set on exact on byte
-	case R_BP_PROT_WRITE : {
+	case R_PERM_W: {
 		if (set) {
 			gdbr_set_hww (desc, b->addr, "", 1);
 		} else {
@@ -1001,7 +1000,7 @@ static int r_debug_gdb_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set
 		}
 		break;
 	}
-	case R_BP_PROT_READ : {
+	case R_PERM_R: {
 		if (set) {
 			gdbr_set_hwr (desc, b->addr, "", 1);
 		} else {
@@ -1009,7 +1008,7 @@ static int r_debug_gdb_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set
 		}
 		break;
 	}
-	case R_BP_PROT_ACCESS : {
+	case R_PERM_ACCESS: {
 		if (set) {
 			gdbr_set_hwa (desc, b->addr, "", 1);
 		} else {

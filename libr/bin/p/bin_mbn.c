@@ -132,7 +132,7 @@ static RList* sections(RBinFile *bf) {
 	ptr->vsize = sb.psize;
 	ptr->paddr = sb.paddr + 40;
 	ptr->vaddr = sb.vaddr;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE; // r-x
+	ptr->perm = R_PERM_RX; // r-x
 	ptr->add = true;
 	ptr->has_strings = true;
 	r_list_append (ret, ptr);
@@ -145,7 +145,7 @@ static RList* sections(RBinFile *bf) {
 	ptr->vsize = sb.sign_sz;
 	ptr->paddr = sb.sign_va - sb.vaddr;
 	ptr->vaddr = sb.sign_va;
-	ptr->srwx = R_BIN_SCN_READABLE; // r--
+	ptr->perm = R_PERM_R; // r--
 	ptr->has_strings = true;
 	ptr->add = true;
 	r_list_append (ret, ptr);
@@ -159,7 +159,7 @@ static RList* sections(RBinFile *bf) {
 		ptr->vsize = sb.cert_sz;
 		ptr->paddr = sb.cert_va - sb.vaddr;
 		ptr->vaddr = sb.cert_va;
-		ptr->srwx = R_BIN_SCN_READABLE; // r--
+		ptr->perm = R_PERM_R; // r--
 		ptr->has_strings = true;
 		ptr->add = true;
 		r_list_append (ret, ptr);

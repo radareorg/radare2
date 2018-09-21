@@ -130,7 +130,7 @@ static int rafind_open_file(char *file) {
 	}
 
 	io = r_io_new ();
-	fd = r_io_open_nomap (io, file, R_IO_READ, 0);
+	fd = r_io_open_nomap (io, file, R_PERM_R, 0);
 	if (!fd) {
 		eprintf ("Cannot open file '%s'\n", file);
 		return 1;

@@ -1529,9 +1529,9 @@ static int cb_io_cache_read(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->i_value) {
-		core->io->cached |= R_IO_READ;
+		core->io->cached |= R_PERM_R;
 	} else {
-		core->io->cached &= ~R_IO_READ;
+		core->io->cached &= ~R_PERM_R;
 	}
 	return true;
 }
@@ -1540,9 +1540,9 @@ static int cb_io_cache_write(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->i_value) {
-		core->io->cached |= R_IO_WRITE;
+		core->io->cached |= R_PERM_W;
 	} else {
-		core->io->cached &= ~R_IO_WRITE;
+		core->io->cached &= ~R_PERM_W;
 	}
 	return true;
 }

@@ -22,7 +22,7 @@ static const char *help_msg_d[] = {
 	"dbt", "[?]", "Display backtrace based on dbg.btdepth and dbg.btalgo",
 	"dc", "[?]", "Continue execution",
 	"dd", "[?]", "File descriptors (!fd in r1)",
-	"de", "[-sc] [rwx] [rm] [e]", "Debug with ESIL (see de?)",
+	"de", "[-sc] [perm] [rm] [e]", "Debug with ESIL (see de?)",
 	"dg", " <file>", "Generate a core-file (WIP)",
 	"dH", " [handler]", "Transplant process to a new handler",
 	"di", "[?]", "Show debugger backend information (See dh)",
@@ -77,7 +77,7 @@ static const char *help_msg_db[] = {
 	"dbt", "[?]", "Show backtrace. See dbt? for more details",
 	"dbx", " [expr]", "Set expression for bp in current offset",
 	"dbw", " <addr> <r/w/rw>", "Add watchpoint",
-	"drx", " number addr len rwx", "Modify hardware breakpoint",
+	"drx", " number addr len perm", "Modify hardware breakpoint",
 	"drx-", "number", "Clear hardware breakpoint",
 	NULL
 };
@@ -157,10 +157,10 @@ static const char *help_msg_dd[] = {
 };
 
 static const char *help_msg_de[] = {
-	"Usage:", "de", "[-sc] [rwx] [rm] [expr]",
+	"Usage:", "de", "[-sc] [perm] [rm] [expr]",
 	"de", "", "List esil watchpoints",
 	"de-*", "", "Delete all esil watchpoints",
-	"de", " [rwx] [rm] [addr|reg|from..to]", "Stop on condition",
+	"de", " [perm] [rm] [addr|reg|from..to]", "Stop on condition",
 	"dec", "", "Continue execution until matching expression",
 	"des", "[?] [N]", "Step-in N instructions with esildebug",
 	"desu", " [addr]", "Esildebug until specific address",
@@ -220,7 +220,7 @@ static const char *help_msg_dm[] = {
 	"dmj", "", "List memmaps in JSON format",
 	"dml", " <file>", "Load contents of file into the current map region (see Sl)",
 	"dmm", "[?][j*]", "List modules (libraries, binaries loaded in memory)",
-	"dmp", "[?] <address> <size> <perms>", "Change page at <address> with <size>, protection <perms> (rwx)",
+	"dmp", "[?] <address> <size> <perms>", "Change page at <address> with <size>, protection <perms> (perm)",
 	"dms", "[?] <id> <mapaddr>", "Take memory snapshot",
 	"dms-", " <id> <mapaddr>", "Restore memory snapshot",
 	"dmS", " [addr|libname] [sectname]", "List sections of target lib",
@@ -338,7 +338,7 @@ static const char *help_msg_dr[] = {
 	"drt", "[?]", "Show all register types",
 	"drw"," <hexnum>", "Set contents of the register arena",
 	"drx", "[?]", "Show all debug registers",
-	"drx", " idx addr len rwx", "Modify hardware breakpoint",
+	"drx", " idx addr len perm", "Modify hardware breakpoint",
 	"drx-", "number", "Clear hardware breakpoint",
 	".dr", "*", "Include common register values in flags",
 	".dr", "-", "Unflag all registers",
@@ -1260,7 +1260,7 @@ static int cmd_debug_map_snapshot(RCore *core, const char *input) {
 		r_debug_snap_all (core->dbg, 0);
 		break;
 	case 'w':
-		r_debug_snap_all (core->dbg, R_IO_RW);
+		r_debug_snap_all (core->dbg, R_PERM_RW);
 		break;
 	case 0:
 	case 'j':
@@ -1612,7 +1612,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 	case 'd': // "dmd"
 		switch (input[1]) {
 		case 'a': return dump_maps (core, 0, NULL);
-		case 'w': return dump_maps (core, R_IO_RW, NULL);
+		case 'w': return dump_maps (core, R_PERM_RW, NULL);
 		case ' ': return dump_maps (core, -1, input + 2);
 		case 0: return dump_maps (core, -1, NULL);
 		case '?':
@@ -2335,7 +2335,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 			break;
 		case ' ': {
 				  char *s = strdup (str+2);
-				  char sl, n, rwx;
+				  char sl, n, perm;
 				  int len;
 				  ut64 off;
 
@@ -2345,18 +2345,18 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 					  n = (char)r_num_math (core->num, arg(0));
 					  off = r_num_math (core->num, arg(1));
 					  len = (int)r_num_math (core->num, arg(2));
-					  rwx = (char)r_str_rwx (arg (3));
+					  perm = (char)r_str_rwx (arg (3));
 					  if (len == -1) {
 						  r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, false);
 						  r_debug_drx_set (core->dbg, n, 0, 0, 0, 0);
 						  r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, true);
 					  } else {
 						  r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, false);
-						  r_debug_drx_set (core->dbg, n, off, len, rwx, 0);
+						  r_debug_drx_set (core->dbg, n, off, len, perm, 0);
 						  r_debug_reg_sync (core->dbg, R_REG_TYPE_DRX, true);
 					  }
 				  } else {
-					eprintf ("|usage: drx n [address] [length] [rwx]\n");
+					eprintf ("|usage: drx n [address] [length] [perm]\n");
 				  }
 				  free (s);
 			  } break;
@@ -3027,7 +3027,7 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 			bpi = r_bp_get_at (core->dbg->bp, core->offset);
 			if (bpi) {
 				r_cons_printf ("breakpoint %s %s %s\n",
-						r_str_rwx_i (bpi->rwx),
+						r_str_rwx_i (bpi->perm),
 						bpi->enabled ?  "enabled" : "disabled",
 						bpi->name ? bpi->name : "");
 			}
@@ -3672,26 +3672,26 @@ static void r_core_debug_esil (RCore *core, const char *input) {
 			char *line = strdup (input + 1);
 			char *p, *q;
 			int done = 0;
-			int rwx = 0, dev = 0;
+			int perm = 0, dev = 0;
 			p = strchr (line, ' ');
 			if (p) {
 				*p++ = 0;
-				if (strchr (line, 'r')) rwx |= R_IO_READ;
-				if (strchr (line, 'w')) rwx |= R_IO_WRITE;
-				if (strchr (line, 'x')) rwx |= R_IO_EXEC;
+				if (strchr (line, 'r')) perm |= R_PERM_R;
+				if (strchr (line, 'w')) perm |= R_PERM_W;
+				if (strchr (line, 'x')) perm |= R_PERM_X;
 				q = strchr (p, ' ');
 				if (q) {
 					*q++ = 0;
 					dev = p[0];
 					if (q) {
-						r_debug_esil_watch (core->dbg, rwx, dev, q);
+						r_debug_esil_watch (core->dbg, perm, dev, q);
 						done = 1;
 					}
 				}
 			}
 			if (!done) {
 				const char *help_de_msg[] = {
-					"Usage:", "de", " [rwx] [reg|mem] [expr]",
+					"Usage:", "de", " [perm] [reg|mem] [expr]",
 					NULL
 				};
 				r_core_cmd_help (core, help_de_msg);
