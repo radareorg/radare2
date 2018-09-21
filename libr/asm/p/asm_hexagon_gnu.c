@@ -58,7 +58,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (len < 4) {
 		return -1;
 	}
-	buf_global = op->buf_asm;
+	buf_global = &op->buf_asm;
 	Offset = a->pc;
 	// disasm inverted
 	r_mem_swapendian (bytes, buf, 4); // TODO handle thumb
