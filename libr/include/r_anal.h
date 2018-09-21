@@ -871,9 +871,9 @@ typedef enum {
 } RAnalRefType;
 
 typedef struct r_anal_ref_t {
-	RAnalRefType type;
 	ut64 addr;
 	ut64 at;
+	RAnalRefType type;
 } RAnalRef;
 
 /* represents a reference line from one address (from) to another (to) */
@@ -1452,9 +1452,7 @@ R_API bool r_anal_fcn_bbadd(RAnalFunction *fcn, RAnalBlock *bb);
 R_API int r_anal_fcn_resize (const RAnal *anal, RAnalFunction *fcn, int newsize);
 
 typedef bool (* RAnalRefCmp)(RAnalRef *ref, void *data);
-R_API RAnalRef *r_anal_ref_new(void);
 R_API RList *r_anal_ref_list_new(void);
-R_API void r_anal_ref_free(void *ref);
 R_API int r_anal_xrefs_count(RAnal *anal);
 R_API const char *r_anal_xrefs_type_tostring(RAnalRefType type);
 R_API RAnalRefType r_anal_xrefs_type(char ch);
