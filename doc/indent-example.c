@@ -14,14 +14,15 @@ static const char *help_msg_aa[] = {
 	"Usage:", "aa[0*?]", " # see also 'af' and 'afna'",
 	"aa", " ", "alias for 'af@@ sym.*;af@entry0;afva'", //;.afna @@ fcn.*'",
 	"aa*", "", "analyze all flags starting with sym. (af @@ sym.*)",
-	NULL};
+	NULL,
+};
 
 static int cmpaddr(const void *_a, const void *_b) {
 	const RAnalFunction *a = _a, *b = _b;
 	return a->addr - b->addr;
 }
 
-int main(int argc, char **argv) {
+int main (int argc, char **argv) {
 	r_anal_esil_set_pc (core->anal->esil, fcn ? fcn->addr : core->offset);
 	switch (*input) {
 	case 'a': // "afta"

@@ -13,10 +13,8 @@ git diff > "${unstaged_diff}"
 git checkout -- .
 git diff --cached | ./sys/clang-format-diff.py -p1 > "${tmpfile}"
 
-trap restore_exit 1 2 3 6 15
-
 restore_exit() {
-	git apply < "${unstaged_diff}"
+	git apply < "${unstaged_diff}" 2>/dev/null
 	rm "${tmpfile}"
 	rm "${unstaged_diff}"
 	exit $1
@@ -29,7 +27,7 @@ if [ "${sz}" != "0" ] ; then
 	echo
 	cat "${tmpfile}"
 	echo
-	echo "If you think the current style is ok, just run `git commit --no-verify` to bypass this check."
+	echo "If you think the current style is ok, just run \`git commit --no-verify\` to bypass this check."
 	restore_exit 1
 fi
 
