@@ -16,7 +16,7 @@ hexagon_get_disassembler_from_mach(
   unsigned long big_p
 );
 static unsigned long Offset = 0;
-static char *buf_global = NULL;
+static RStrBuf *buf_global = NULL;
 static unsigned char bytes[4];
 
 static int hexagon_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
@@ -37,7 +37,7 @@ static void print_address(bfd_vma address, struct disassemble_info *info) {
 	if (!buf_global)
 		return;
 	sprintf (tmp, "0x%08"PFMT64x"", (ut64)address);
-	strcat (buf_global, tmp);
+	r_strbuf_append (buf_global, tmp);
 }
 
 static int buf_fprintf(void *stream, const char *format, ...) {
@@ -47,7 +47,7 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 		return 0;
 	va_start (ap, format);
 	vsnprintf (tmp, sizeof (tmp), format, ap);
-	strcat (buf_global, tmp);
+	r_strbuf_append (buf_global, tmp);
 	va_end (ap);
 	return 0;
 }
