@@ -452,6 +452,7 @@ R_API RCons *r_cons_free() {
 	cons_context_deinit (I.context);
 	R_FREE (I.context->lastOutput);
 	I.context->lastLength = 0;
+	R_FREE (I.pager);
 	return NULL;
 }
 
