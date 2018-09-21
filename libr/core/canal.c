@@ -3113,12 +3113,13 @@ static void found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, in
 				r_flag_space_push (core->flags, "strings");
 				(void)r_flag_set (core->flags, str_flagname, xref_to, 1);
 				r_flag_space_pop (core->flags);
+				free (str_flagname);
+				if (len > 0) {
+					r_meta_add (core->anal, R_META_TYPE_STRING, xref_to,
+							xref_to + len, (const char *)str_string);
+				}
+				free (str_string);
 			}
-			if (len > 0) {
-				r_meta_add (core->anal, R_META_TYPE_STRING, xref_to,
-						xref_to + len, (const char *)str_string);
-			}
-			free (str_string);
 		}
 		// Add to SDB
 		if (xref_to) {
@@ -3158,9 +3159,7 @@ static void found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, in
 R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 	int cfg_debug = r_config_get_i (core->config, "cfg.debug");
 	bool cfg_anal_strings = r_config_get_i (core->config, "anal.strings");
-	ut8 *buf;
 	ut64 at;
-	ut8 *block;
 	int count = 0;
 	const int bsz = core->blocksize;
 	RAnalOp op = { 0 };
@@ -3178,12 +3177,12 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 		eprintf ("Error: block size too small\n");
 		return -1;
 	}
-	buf = malloc (bsz);
+	ut8 *buf = malloc (bsz);
 	if (!buf) {
 		eprintf ("Error: cannot allocate a block\n");
 		return -1;
 	}
-	block = malloc (bsz);
+	ut8 *block = malloc (bsz);
 	if (!block) {
 		eprintf ("Error: cannot allocate a temp block\n");
 		free (buf);
@@ -3229,11 +3228,11 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			switch (op.type) {
 			case R_ANAL_OP_TYPE_JMP:
 			case R_ANAL_OP_TYPE_CJMP:
-				found_xref(core, op.addr, op.jump, R_ANAL_REF_TYPE_CODE, count, rad, cfg_debug, cfg_anal_strings);
+				found_xref (core, op.addr, op.jump, R_ANAL_REF_TYPE_CODE, count, rad, cfg_debug, cfg_anal_strings);
 				break;
 			case R_ANAL_OP_TYPE_CALL:
 			case R_ANAL_OP_TYPE_CCALL:
-				found_xref(core, op.addr, op.jump, R_ANAL_REF_TYPE_CALL, count, rad, cfg_debug, cfg_anal_strings);
+				found_xref (core, op.addr, op.jump, R_ANAL_REF_TYPE_CALL, count, rad, cfg_debug, cfg_anal_strings);
 				break;
 			case R_ANAL_OP_TYPE_UJMP:
 			case R_ANAL_OP_TYPE_IJMP:
@@ -3241,23 +3240,23 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			case R_ANAL_OP_TYPE_IRJMP:
 			case R_ANAL_OP_TYPE_MJMP:
 			case R_ANAL_OP_TYPE_UCJMP:
-				found_xref(core, op.addr, op.ptr, R_ANAL_REF_TYPE_CODE, count, rad, cfg_debug, cfg_anal_strings);
+				found_xref (core, op.addr, op.ptr, R_ANAL_REF_TYPE_CODE, count, rad, cfg_debug, cfg_anal_strings);
 				break;
 			case R_ANAL_OP_TYPE_UCALL:
 			case R_ANAL_OP_TYPE_ICALL:
 			case R_ANAL_OP_TYPE_RCALL:
 			case R_ANAL_OP_TYPE_IRCALL:
 			case R_ANAL_OP_TYPE_UCCALL:
-				found_xref(core, op.addr, op.ptr, R_ANAL_REF_TYPE_CALL, count, rad, cfg_debug, cfg_anal_strings);
+				found_xref (core, op.addr, op.ptr, R_ANAL_REF_TYPE_CALL, count, rad, cfg_debug, cfg_anal_strings);
 				break;
 			default:
 				break;
 			}
-
 			count++;
 			at += ret;
 			r_anal_op_fini (&op);
 		}
+		r_anal_op_fini (&op);
 	}
 	r_cons_break_pop ();
 	free (buf);
