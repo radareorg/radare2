@@ -1,6 +1,6 @@
 #!/bin/sh
 # ASAN="address leak memory undefined"
-ASAN=${ASAN:="address undefined"}
+ASAN=${ASAN:="address undefined signed-integer-overflow"}
 
 printf "\033[32m"
 echo "========================================================================="
