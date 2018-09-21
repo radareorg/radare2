@@ -3003,6 +3003,8 @@ reread:
 				r_cons_printf ("[");
 			}
 			r_core_magic_reset (core);
+			int maxHits = r_config_get_i (core->config, "search.maxhits");
+			int hits = 0;
 			r_list_foreach (param.boundaries, iter, map) {
 				if (!json) {
 					eprintf ("-- %llx %llx\n", map->itv.addr, r_itv_end (map->itv));
@@ -3012,9 +3014,12 @@ reread:
 					if (r_cons_is_breaked ()) {
 						break;
 					}
-					ret = r_core_magic_at (core, file, addr, 99, false, json);
+					ret = r_core_magic_at (core, file, addr, 99, false, json, &hits);
 					if (ret == -1) {
 						// something went terribly wrong.
+						break;
+					}
+					if (maxHits && hits >= maxHits) {
 						break;
 					}
 					addr += ret - 1;
