@@ -47,7 +47,7 @@ typedef struct r_bp_item_t {
 	int size; /* size of breakpoint area */
 	int recoil; /* recoil */
 	bool swstep; 	/* is this breakpoint from a swstep? */
-	int rwx;
+	int perm;
 	int hw;
 	int trace;
 	int internal; /* used for internal purposes */
@@ -85,6 +85,7 @@ typedef struct r_bp_t {
 	st64 delta;
 } RBreakpoint;
 
+// DEPRECATED: USE R_PERM
 enum {
 	R_BP_PROT_EXEC = 1,
 	R_BP_PROT_WRITE = 2,
@@ -114,7 +115,7 @@ R_API int r_bp_use(RBreakpoint *bp, const char *name, int bits);
 R_API int r_bp_plugin_del(RBreakpoint *bp, const char *name);
 R_API void r_bp_plugin_list(RBreakpoint *bp);
 
-R_API int r_bp_in(RBreakpoint *bp, ut64 addr, int rwx);
+R_API int r_bp_in(RBreakpoint *bp, ut64 addr, int perm);
 // deprecate?
 R_API int r_bp_list(RBreakpoint *bp, int rad);
 R_API int r_bp_size(RBreakpoint *bp);
@@ -133,14 +134,14 @@ R_API int r_bp_get_index_at (RBreakpoint *bp, ut64 addr);
 R_API RBreakpointItem *r_bp_item_new (RBreakpoint *bp);
 
 R_API RBreakpointItem *r_bp_get_at (RBreakpoint *bp, ut64 addr);
-R_API RBreakpointItem *r_bp_get_in (RBreakpoint *bp, ut64 addr, int rwx);
+R_API RBreakpointItem *r_bp_get_in (RBreakpoint *bp, ut64 addr, int perm);
 
 R_API int r_bp_add_cond(RBreakpoint *bp, const char *cond);
 R_API int r_bp_del_cond(RBreakpoint *bp, int idx);
-R_API int r_bp_add_fault(RBreakpoint *bp, ut64 addr, int size, int rwx);
+R_API int r_bp_add_fault(RBreakpoint *bp, ut64 addr, int size, int perm);
 
-R_API RBreakpointItem *r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int rwx);
-R_API RBreakpointItem *r_bp_add_hw(RBreakpoint *bp, ut64 addr, int size, int rwx);
+R_API RBreakpointItem *r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int perm);
+R_API RBreakpointItem *r_bp_add_hw(RBreakpoint *bp, ut64 addr, int size, int perm);
 R_API void r_bp_restore_one(RBreakpoint *bp, RBreakpointItem *b, bool set);
 R_API int r_bp_restore(RBreakpoint *bp, bool set);
 R_API bool r_bp_restore_except(RBreakpoint *bp, bool set, ut64 addr);

@@ -45,11 +45,11 @@ static int perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const ch
 	if (filename && *filename) {
 		ut64 load_align = r_config_get_i (core->config, "file.loadalign");
 		RIOMap *map = NULL;
-		yankdesc = r_io_open_nomap (core->io, filename, R_IO_READ, 0644);
+		yankdesc = r_io_open_nomap (core->io, filename, R_PERM_R, 0644);
 		// map the file in for IO operations.
 		if (yankdesc && load_align) {
 			yank_file_sz = r_io_size (core->io);
-			map = r_io_map_add_next_available (core->io, yankdesc->fd, R_IO_READ, 0, 0, yank_file_sz, load_align);
+			map = r_io_map_add_next_available (core->io, yankdesc->fd, R_PERM_R, 0, 0, yank_file_sz, load_align);
 			loadaddr = map? map->itv.addr: -1;
 			if (yankdesc && map && loadaddr != -1) {
 				// ***NOTE*** this is important, we need to

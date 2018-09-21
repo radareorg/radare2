@@ -97,8 +97,7 @@ static RList* sections(RBinFile *bf) {
 	ut64 textsize = UT64_MAX;
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
-	PebbleAppInfo pai;
-	memset (&pai, 0, sizeof (pai));
+	PebbleAppInfo pai = {{0}};
 	if (!r_buf_read_at (bf->buf, 0, (ut8*)&pai, sizeof(pai))) {
 		eprintf ("Truncated Header\n");
 		return NULL;
@@ -114,7 +113,7 @@ static RList* sections(RBinFile *bf) {
 	strcpy (ptr->name, "relocs");
 	ptr->vsize = ptr->size = pai.num_reloc_entries * sizeof (ut32);
 	ptr->vaddr = ptr->paddr = pai.reloc_list_start;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE;
+	ptr->perm = R_PERM_RW;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 	if (ptr->vaddr < textsize) {
@@ -128,7 +127,7 @@ static RList* sections(RBinFile *bf) {
 	strcpy (ptr->name, "symtab");
 	ptr->vsize = ptr->size = 0;
 	ptr->vaddr = ptr->paddr = pai.sym_table_addr;
-	ptr->srwx = R_BIN_SCN_READABLE;
+	ptr->perm = R_PERM_R;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 	if (ptr->vaddr < textsize) {
@@ -141,8 +140,7 @@ static RList* sections(RBinFile *bf) {
 	strcpy (ptr->name, "text");
 	ptr->vaddr = ptr->paddr = 0x80;
 	ptr->vsize = ptr->size = textsize - ptr->paddr;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE |
-		R_BIN_SCN_EXECUTABLE;
+	ptr->perm = R_PERM_RWX;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -152,7 +150,7 @@ static RList* sections(RBinFile *bf) {
 	strcpy (ptr->name, "header");
 	ptr->vsize = ptr->size = sizeof (PebbleAppInfo);
 	ptr->vaddr = ptr->paddr = 0;
-	ptr->srwx = R_BIN_SCN_READABLE;
+	ptr->perm = R_PERM_R;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 

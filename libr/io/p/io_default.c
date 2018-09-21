@@ -8,7 +8,7 @@
 typedef struct r_io_mmo_t {
 	char * filename;
 	int mode;
-	int flags;
+	int perm;
 	int fd;
 	int opened;
 	bool nocache;
@@ -18,7 +18,7 @@ typedef struct r_io_mmo_t {
 	int rawio;
 } RIOMMapFileObj;
 
-static int __io_posix_open(const char *file, int flags, int mode) {
+static int __io_posix_open(const char *file, int perm, int mode) {
 	int fd;
 	if (r_str_startswith (file, "file://")) {
 		file += strlen ("file://");
@@ -28,9 +28,9 @@ static int __io_posix_open(const char *file, int flags, int mode) {
 	}
 #if __WINDOWS__
 	// probably unnecessary to have this ifdef nowadays windows is posix enough
-	if (flags & R_IO_WRITE) {
+	if (perm & R_PERM_W) {
 		fd = r_sandbox_open (file, O_BINARY | O_RDWR, 0);
-		if (fd == -1 && flags & R_IO_CREAT) {
+		if (fd == -1 && perm & R_PERM_CREAT) {
 			r_sandbox_creat (file, 0644);
 			fd = r_sandbox_open (file, O_BINARY | O_RDWR | O_CREAT, 0);
 		}
@@ -38,7 +38,7 @@ static int __io_posix_open(const char *file, int flags, int mode) {
 		fd = r_sandbox_open (file, O_BINARY, 0);
 	}
 #else
-	const int posixFlags = (flags & R_IO_WRITE) ? (flags & R_IO_CREAT)
+	const int posixFlags = (perm & R_PERM_W) ? (perm & R_PERM_CREAT)
 			? (O_RDWR | O_CREAT) : O_RDWR : O_RDONLY;
 	fd = r_sandbox_open (file, posixFlags, mode);
 #endif
@@ -90,7 +90,7 @@ static int r_io_def_mmap_refresh_def_mmap_buf(RIOMMapFileObj *mmo) {
 		mmo->rawio = 1;
 	}
 	if (mmo->rawio) {
-		mmo->fd = __io_posix_open (mmo->filename, mmo->flags, mmo->mode);
+		mmo->fd = __io_posix_open (mmo->filename, mmo->perm, mmo->mode);
 		if (mmo->nocache) {
 #ifdef F_NOCACHE
 			fcntl (mmo->fd, F_NOCACHE, 1);
@@ -98,13 +98,13 @@ static int r_io_def_mmap_refresh_def_mmap_buf(RIOMMapFileObj *mmo) {
 		}
 		return (mmo->fd != -1);
 	}
-	mmo->buf = r_buf_mmap (mmo->filename, mmo->flags);
+	mmo->buf = r_buf_mmap (mmo->filename, mmo->perm);
 	if (mmo->buf) {
 		r_io_def_mmap_seek (io, mmo, cur, SEEK_SET);
 		return true;
 	} else {
 		mmo->rawio = 1;
-		mmo->fd = __io_posix_open (mmo->filename, mmo->flags, mmo->mode);
+		mmo->fd = __io_posix_open (mmo->filename, mmo->perm, mmo->mode);
 		if (mmo->nocache) {
 #ifdef F_NOCACHE
 			fcntl (mmo->fd, F_NOCACHE, 1);
@@ -123,7 +123,7 @@ static void r_io_def_mmap_free (RIOMMapFileObj *mmo) {
 	free (mmo);
 }
 
-RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, int mode, int flags) {
+RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, int mode, int perm) {
 	if (!io) {
 		return NULL;
 	}
@@ -137,9 +137,9 @@ RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, in
 	}
 	mmo->filename = strdup (filename);
 	mmo->mode = mode;
-	mmo->flags = flags;
+	mmo->perm = perm;
 	mmo->io_backref = io;
-	const int posixFlags = (flags & R_IO_WRITE) ? (flags & R_IO_CREAT)
+	const int posixFlags = (perm & R_PERM_W) ? (perm & R_PERM_CREAT)
 			? (O_RDWR | O_CREAT) : O_RDWR : O_RDONLY;
 	mmo->fd = r_sandbox_open (filename, posixFlags, mode);
 	if (mmo->fd == -1) {
@@ -288,7 +288,7 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 	}
 
 	if (mmo && mmo->buf) {
-		if (!(mmo->flags & R_IO_WRITE)) {
+		if (!(mmo->perm & R_PERM_W)) {
 			return -1;
 		}
 		if ( (count + addr > mmo->buf->length) || mmo->buf->empty) {
@@ -312,12 +312,12 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 	return len;
 }
 
-static RIODesc *r_io_def_mmap_open(RIO *io, const char *file, int flags, int mode) {
-	RIOMMapFileObj *mmo = r_io_def_mmap_create_new_file (io, file, mode, flags);
+static RIODesc *r_io_def_mmap_open(RIO *io, const char *file, int perm, int mode) {
+	RIOMMapFileObj *mmo = r_io_def_mmap_create_new_file (io, file, mode, perm);
 	if (!mmo) {
 		return NULL;
 	}
-	return r_io_desc_new (io, &r_io_plugin_default, mmo->filename, flags, mode, mmo);
+	return r_io_desc_new (io, &r_io_plugin_default, mmo->filename, perm, mode, mmo);
 }
 
 
@@ -343,17 +343,17 @@ static bool __plugin_open_default(RIO *io, const char *file, bool many) {
 }
 
 // default open should permit opening
-static RIODesc *__open_default(RIO *io, const char *file, int flags, int mode) {
+static RIODesc *__open_default(RIO *io, const char *file, int perm, int mode) {
 	if (r_str_startswith (file, "file://")) {
 		file += strlen ("file://");
 	}
 	if (!r_io_def_mmap_check_default (file)) {
 		return NULL;
 	}
-	RIODesc *iod = r_io_def_mmap_open (io, file, flags, mode);
+	RIODesc *iod = r_io_def_mmap_open (io, file, perm, mode);
 	return iod;
 // NTOE: uncomment this line to support loading files in ro as fallback is rw fails
-//	return iod? iod: r_io_def_mmap_open (io, file, R_IO_READ, mode);
+//	return iod? iod: r_io_def_mmap_open (io, file, R_PERM_R, mode);
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
@@ -377,7 +377,7 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 size) {
 		return false;
 	}
 	RIOMMapFileObj *mmo = fd->data;
-	if (!(mmo->flags & R_IO_WRITE)) {
+	if (!(mmo->perm & R_PERM_W)) {
 		return false;
 	}
 	return r_io_def_mmap_truncate (mmo, size);

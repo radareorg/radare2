@@ -149,7 +149,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		}
 		pidpath = r_sys_pid_to_path (dbg->pid);
 		ret = r_io_desc_new (io, &r_io_plugin_w32dbg,
-				file, rw | R_IO_EXEC, mode, dbg);
+				file, rw | R_PERM_X, mode, dbg);
 		ret->name = pidpath;
 		return ret;
 	}

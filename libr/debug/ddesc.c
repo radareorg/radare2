@@ -82,8 +82,8 @@ R_API int r_debug_desc_list(RDebug *dbg, int rad) {
 			list = dbg->h->desc.list (dbg->pid);
 			r_list_foreach (list, iter, p) {
 				dbg->cb_printf ("%i 0x%"PFMT64x" %c%c%c %s\n", p->fd, p->off,
-						(p->perm & R_IO_READ)?'r':'-',
-						(p->perm & R_IO_WRITE)?'w':'-',
+						(p->perm & R_PERM_R)?'r':'-',
+						(p->perm & R_PERM_W)?'w':'-',
 						p->type, p->path);
 			}
 			r_list_purge (list);

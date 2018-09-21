@@ -154,7 +154,7 @@ static RList* sections(RBinFile *bf) {
 			// eprintf ("mapping text to va = 0\n");
 			// ptr->vaddr = ptr->paddr;
 		}
-		ptr->srwx = sections[i].srwx;
+		ptr->perm = sections[i].perm;
 		r_list_append (ret, ptr);
 	}
 	free (sections);

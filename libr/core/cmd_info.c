@@ -174,7 +174,7 @@ static void r_core_file_info(RCore *core, int mode) {
 			free (escapedFile);
 		}
 		if (dbg) {
-			dbg = R_IO_WRITE | R_IO_EXEC;
+			dbg = R_PERM_WX;
 		}
 		if (desc) {
 			ut64 fsz = r_io_desc_size (desc);
@@ -187,10 +187,8 @@ static void r_core_file_info(RCore *core, int mode) {
 					free (humansz);
 				}
 			}
-			r_cons_printf (",\"iorw\":%s", r_str_bool ( io_cache ||\
-					desc->flags & R_IO_WRITE ));
-			r_cons_printf (",\"mode\":\"%s\"", r_str_rwx_i (
-					desc->flags & 7 ));
+			r_cons_printf (",\"iorw\":%s", r_str_bool ( io_cache || desc->perm & R_PERM_W));
+			r_cons_printf (",\"mode\":\"%s\"", r_str_rwx_i (desc->perm & R_PERM_RWX));
 			r_cons_printf (",\"obsz\":%"PFMT64d, (ut64) core->io->desc->obsz);
 			if (desc->referer && *desc->referer) {
 				r_cons_printf (",\"referer\":\"%s\"", desc->referer);
@@ -211,7 +209,7 @@ static void r_core_file_info(RCore *core, int mode) {
 	} else if (desc && mode != R_CORE_BIN_SIMPLE) {
 		//r_cons_printf ("# Core file info\n");
 		if (dbg) {
-			dbg = R_IO_WRITE | R_IO_EXEC;
+			dbg = R_PERM_WX;
 		}
 		if (desc) {
 			pair ("blksz", sdb_fmt ("0x%"PFMT64x, (ut64) core->io->desc->obsz));
@@ -227,8 +225,8 @@ static void r_core_file_info(RCore *core, int mode) {
 			pair ("format", plugin->name);
 		}
 		if (desc) {
-			pair ("iorw", r_str_bool (io_cache || desc->flags & R_IO_WRITE ));
-			pair ("mode", r_str_rwx_i (desc->flags & 7));
+			pair ("iorw", r_str_bool (io_cache || desc->perm & R_PERM_W));
+			pair ("mode", r_str_rwx_i (desc->perm & R_PERM_RWX));
 		}
 		if (binfile && binfile->curxtr) {
 			pair ("packet", binfile->curxtr->name);
@@ -261,7 +259,7 @@ static int bin_is_executable(RBinObject *obj){
 			return true;
 		}
 		r_list_foreach (obj->sections, it, sec){
-			if (R_BIN_SCN_EXECUTABLE & sec->srwx) {
+			if (sec->perm & R_PERM_X) {
 				return true;
 			}
 		}

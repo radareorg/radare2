@@ -114,7 +114,7 @@ static RList* sections(RBinFile *bf){
 	rombank[0]->size = 0x4000;
 	rombank[0]->vsize = 0x4000;
 	rombank[0]->vaddr = 0;
-	rombank[0]->srwx = r_str_rwx ("rx");
+	rombank[0]->perm = r_str_rwx ("rx");
 	rombank[0]->add = true;
 
 	r_list_append (ret, rombank[0]);
@@ -125,7 +125,7 @@ static RList* sections(RBinFile *bf){
 		rombank[i]->paddr = i*0x4000;
 		rombank[i]->vaddr = i*0x10000-0xc000;			//spaaaaaaaaaaaaaaaace!!!
 		rombank[i]->size = rombank[i]->vsize = 0x4000;
-		rombank[i]->srwx = r_str_rwx ("rx");
+		rombank[i]->perm = r_str_rwx ("rx");
 		rombank[i]->add = true;
 		r_list_append (ret,rombank[i]);
 	}

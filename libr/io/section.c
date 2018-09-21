@@ -52,7 +52,7 @@ R_API int r_io_section_exists_for_id(RIO *io, ut32 id) {
 }
 
 R_API RIOSection *r_io_section_add(RIO *io, ut64 paddr, ut64 vaddr, ut64 size,
-				    ut64 vsize, int flags, const char *name,
+				    ut64 vsize, int perm, const char *name,
 				    ut32 bin_id, int fd) {
 	if (!io || !io->sections || !io->sec_ids || !r_io_desc_get (io, fd) ||
 		UT64_ADD_OVFCHK (size, paddr) || UT64_ADD_OVFCHK (size, vaddr) || !vsize) {
@@ -64,7 +64,7 @@ R_API RIOSection *r_io_section_add(RIO *io, ut64 paddr, ut64 vaddr, ut64 size,
 		sec->vaddr = vaddr;
 		sec->size = size;
 		sec->vsize = vsize;
-		sec->flags = flags;
+		sec->perm = perm;
 		sec->bin_id = bin_id;
 		sec->fd = fd;
 		if (!name) {
@@ -402,7 +402,7 @@ static bool _section_apply_for_anal_patch(RIO *io, RIOSection *sec, bool patch) 
 			// TODO: harden this, handle mapslit
 			// craft the uri for the null-fd
 			if (io_create_mem_map (io, sec, at, true, false)) {
-			// we need to create this map for transfering the flags, no real remapping here
+			// we need to create this map for transfering the perm, no real remapping here
 				if (io_create_file_map (io, sec, sec->size, patch, false)) {
 					return true;
 				}
@@ -424,7 +424,7 @@ static bool _section_apply_for_emul(RIO *io, RIOSection *sec) {
 	size_t size;
 	ut8 *buf = NULL;
 	// if the section doesn't allow writing, we don't need to initialize writeable memory
-	if (!(sec->flags & R_IO_WRITE)) {
+	if (!(sec->perm & R_PERM_W)) {
 		return _section_apply_for_anal_patch (io, sec, R_IO_SECTION_APPLY_FOR_ANALYSIS);
 	}
 	if (sec->memmap) {
@@ -444,7 +444,7 @@ static bool _section_apply_for_emul(RIO *io, RIOSection *sec) {
 	// craft the uri for the opening the malloc-fd
 	uri = r_str_newf ("malloc://%"PFMT64u "", sec->vsize);
 	// open the malloc-fd and map it to vaddr
-	desc = r_io_open_at (io, uri, sec->flags, 664, sec->vaddr);
+	desc = r_io_open_at (io, uri, sec->perm, 664, sec->vaddr);
 	if (!desc) {
 		free (buf);
 		return false;
@@ -456,8 +456,8 @@ static bool _section_apply_for_emul(RIO *io, RIOSection *sec) {
 	// get the malloc-map
 	if ((map = r_io_map_get (io, sec->vaddr))) {
 		map->name = r_str_newf ("mmap.%s", sec->name);
-		// set the flags correctly
-		map->flags = sec->flags;
+		// set the perm correctly
+		map->perm = sec->perm;
 		// restore old RIODesc
 		io->desc = oldesc;
 		// let the section refere to the map
@@ -552,7 +552,7 @@ static bool _section_reapply_for_emul(RIO *io, RIOSection *sec) {
 			size = (size_t) (sec->vsize - sec->size);
 		}
 		uri = r_str_newf ("malloc://%"PFMT64u, sec->vsize);
-		r_io_open_at (io, uri, sec->flags | R_IO_WRITE, 664, sec->vaddr);
+		r_io_open_at (io, uri, sec->perm | R_PERM_W, 664, sec->vaddr);
 		map = r_io_map_get (io, sec->vaddr);
 		if (map) {
 			(void)r_io_use_fd (io, map->fd);
@@ -607,12 +607,12 @@ static bool _section_reapply_for_emul(RIO *io, RIOSection *sec) {
 		size = (size_t) sec->vsize;
 	}
 	uri = r_str_newf ("malloc://%"PFMT64u, sec->vsize);
-	r_io_open_at (io, uri, sec->flags | R_IO_WRITE, 664, sec->vaddr);
+	r_io_open_at (io, uri, sec->perm | R_PERM_W, 664, sec->vaddr);
 	map = r_io_map_get (io, sec->vaddr);
 	r_io_use_fd (io, map->fd);
 	r_io_pwrite_at (io, 0LL, buf, (int) size);
 	free (buf);
-	map->flags = sec->flags;
+	map->perm = sec->perm;
 	io->desc = desc;
 	return true;
 }

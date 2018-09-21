@@ -481,7 +481,7 @@ static int is_executable(RBinObject *obj) {
 			return true;
 		}
 		r_list_foreach (obj->sections, it, sec) {
-			if (R_BIN_SCN_EXECUTABLE & sec->srwx) {
+			if (sec->perm & R_PERM_X) {
 				return true;
 			}
 		}
@@ -1393,7 +1393,7 @@ static void add_metadata(RCore *r, RBinReloc *reloc, ut64 addr, int mode) {
 	}
 
 	section = r_io_section_vget (r->io, addr);
-	if (!section || section->flags & R_IO_EXEC) {
+	if (!section || section->perm & R_PERM_X) {
 		return;
 	}
 
@@ -2223,7 +2223,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 		int va_sect = va;
 		ut64 addr;
 
-		if (va && !(section->srwx & R_BIN_SCN_READABLE)) {
+		if (va && !(section->perm & R_PERM_R)) {
 			va_sect = VA_NOREBASE;
 		}
 		addr = rva (r->bin, section->paddr, section->vaddr, va_sect);
@@ -2246,16 +2246,16 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			continue;
 		}
 
-		if (section->srwx & R_BIN_SCN_SHAREABLE) {
+		if (section->perm & R_PERM_SHAR) {
 			perms[0] = 's';
 		}
-		if (section->srwx & R_BIN_SCN_READABLE) {
+		if (section->perm & R_PERM_R) {
 			perms[1] = 'r';
 		}
-		if (section->srwx & R_BIN_SCN_WRITABLE) {
+		if (section->perm & R_PERM_W) {
 			perms[2] = 'w';
 		}
-		if (section->srwx & R_BIN_SCN_EXECUTABLE) {
+		if (section->perm & R_PERM_X) {
 			perms[3] = 'x';
 		}
 
@@ -2317,10 +2317,10 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			}
 			if (section->add) {
 				str = r_str_newf ("%"PFMT64x".%"PFMT64x".%"PFMT64x".%"PFMT64x".%"PFMT32u".%s.%"PFMT32u".%d",
-					section->paddr, addr, section->size, section->vsize, section->srwx, section->name, r->bin->cur->id, fd);
+					section->paddr, addr, section->size, section->vsize, section->perm, section->name, r->bin->cur->id, fd);
 				if (!ht_find (dup_chk_ht, str, NULL) && r_io_section_add (r->io, section->paddr, addr,
 						section->size, section->vsize,
-						section->srwx, section->name,
+						section->perm, section->name,
 						r->bin->cur->id, fd)) {
 					ht_insert (dup_chk_ht, str, NULL);
 				}
@@ -2363,7 +2363,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			r_cons_printf ("%s{\"name\":\"%s\","
 				"\"size\":%"PFMT64d","
 				"\"vsize\":%"PFMT64d","
-				"\"flags\":\"%s\","
+				"\"perm\":\"%s\","
 				"%s"
 				"\"paddr\":%"PFMT64d","
 				"\"vaddr\":%"PFMT64d"}",
@@ -2386,11 +2386,11 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			if (r->bin->prefix) {
 				r_cons_printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s.%s %d\n",
 					section->paddr, addr, section->size, section->vsize,
-					r->bin->prefix, section->name, (int)section->srwx);
+					r->bin->prefix, section->name, (int)section->perm);
 			} else {
 				r_cons_printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %d\n",
 					section->paddr, addr, section->size, section->vsize,
-					section->name, (int)section->srwx);
+					section->name, (int)section->perm);
 
 			}
 			if (section->arch || section->bits) {

@@ -60,7 +60,7 @@ static st64 on_map_skyline(RIO *io, ut64 vaddr, ut8 *buf, int len, int match_flg
 		// Now left endpoint <= addr < right endpoint
 		ut64 len1 = R_MIN (vaddr + len - addr, r_itv_end (part->itv) - addr);
 		// The map satisfies the permission requirement or p_cache is enabled
-		if (((part->map->flags & match_flg) == match_flg || io->p_cache)) {
+		if (((part->map->perm & match_flg) == match_flg || io->p_cache)) {
 			st64 result = op (io, part->map->fd, part->map->delta + addr - part->map->itv.addr,
 					buf + (addr - vaddr), len1, part->map, NULL);
 			if (prefix_mode) {
@@ -142,21 +142,21 @@ R_API void r_io_free(RIO *io) {
 	free (io);
 }
 
-R_API RIODesc *r_io_open_buffer(RIO *io, RBuffer *b, int flags, int mode) {
+R_API RIODesc *r_io_open_buffer(RIO *io, RBuffer *b, int perm, int mode) {
 	const int bufSize = r_buf_size (b);
 	char *uri = r_str_newf ("malloc://%d", bufSize);
-	RIODesc *desc = r_io_open_nomap (io, uri, flags, mode);
+	RIODesc *desc = r_io_open_nomap (io, uri, perm, mode);
 	if (desc) {
 		r_io_desc_write (desc, r_buf_get_at (b, 0, NULL), bufSize);
 	}
 	return desc;
 }
 
-R_API RIODesc *r_io_open_nomap(RIO *io, const char *uri, int flags, int mode) {
+R_API RIODesc *r_io_open_nomap(RIO *io, const char *uri, int perm, int mode) {
 	if (!io || !uri) {
 		return NULL;
 	}
-	RIODesc *desc = r_io_desc_open (io, uri, flags, mode);
+	RIODesc *desc = r_io_desc_open (io, uri, perm, mode);
 	if ((io->autofd || !io->desc) && desc) {
 		io->desc = desc;
 	}
@@ -165,26 +165,26 @@ R_API RIODesc *r_io_open_nomap(RIO *io, const char *uri, int flags, int mode) {
 }
 
 /* opens a file and maps it to 0x0 */
-R_API RIODesc* r_io_open(RIO* io, const char* uri, int flags, int mode) {
+R_API RIODesc* r_io_open(RIO* io, const char* uri, int perm, int mode) {
 	if (!io || !io->maps) {
 		return NULL;
 	}
-	RIODesc* desc = r_io_open_nomap (io, uri, flags, mode);
+	RIODesc* desc = r_io_open_nomap (io, uri, perm, mode);
 	if (!desc) {
 		return NULL;
 	}
-	r_io_map_new (io, desc->fd, desc->flags, 0LL, 0LL, r_io_desc_size (desc));
+	r_io_map_new (io, desc->fd, desc->perm, 0LL, 0LL, r_io_desc_size (desc));
 	return desc;
 }
 
 /* opens a file and maps it to an offset specified by the "at"-parameter */
-R_API RIODesc* r_io_open_at(RIO* io, const char* uri, int flags, int mode, ut64 at) {
+R_API RIODesc* r_io_open_at(RIO* io, const char* uri, int perm, int mode, ut64 at) {
 	RIODesc* desc;
 	ut64 size;
 	if (!io || !io->maps) {
 		return NULL;
 	}
-	desc = r_io_open_nomap (io, uri, flags, mode);
+	desc = r_io_open_nomap (io, uri, perm, mode);
 	if (!desc) {
 		return NULL;
 	}
@@ -192,17 +192,17 @@ R_API RIODesc* r_io_open_at(RIO* io, const char* uri, int flags, int mode, ut64 
 	// second map
 	if (size && ((UT64_MAX - size + 1) < at)) {
 		// split map into 2 maps if only 1 big map results into interger overflow
-		io_map_new (io, desc->fd, desc->flags, UT64_MAX - at + 1, 0LL, size - (UT64_MAX - at) - 1, false);
+		io_map_new (io, desc->fd, desc->perm, UT64_MAX - at + 1, 0LL, size - (UT64_MAX - at) - 1, false);
 		// someone pls take a look at this confusing stuff
 		size = UT64_MAX - at + 1;
 	}
 	// skyline not updated
-	r_io_map_new (io, desc->fd, desc->flags, 0LL, at, size);
+	r_io_map_new (io, desc->fd, desc->perm, 0LL, at, size);
 	return desc;
 }
 
 /* opens many files, without mapping them. This should be discussed */
-R_API RList* r_io_open_many(RIO* io, const char* uri, int flags, int mode) {
+R_API RList* r_io_open_many(RIO* io, const char* uri, int perm, int mode) {
 	RList* desc_list;
 	RListIter* iter;
 	RIODesc* desc;
@@ -213,7 +213,7 @@ R_API RList* r_io_open_many(RIO* io, const char* uri, int flags, int mode) {
 	if (!plugin || !plugin->open_many || !plugin->close) {
 		return NULL;
 	}
-	if (!(desc_list = plugin->open_many (io, uri, flags, mode))) {
+	if (!(desc_list = plugin->open_many (io, uri, perm, mode))) {
 		return NULL;
 	}
 	r_list_foreach (desc_list, iter, desc) {
@@ -234,7 +234,7 @@ R_API RList* r_io_open_many(RIO* io, const char* uri, int flags, int mode) {
 	return desc_list;
 }
 
-R_API bool r_io_reopen(RIO* io, int fd, int flags, int mode) {
+R_API bool r_io_reopen(RIO* io, int fd, int perm, int mode) {
 	RIODesc	*old, *new;
 	char *uri;
 	if (!(old = r_io_desc_get (io, fd))) {
@@ -246,13 +246,13 @@ R_API bool r_io_reopen(RIO* io, int fd, int flags, int mode) {
 	if (!r_io_desc_close (old)) {
 		return false; // TODO: this is an unrecoverable scenario
 	}
-	if (!(new = r_io_open_nomap (io, uri, flags, mode))) {
+	if (!(new = r_io_open_nomap (io, uri, perm, mode))) {
 		return false;
 	}
 	r_io_desc_exchange (io, old->fd, new->fd);
 	return true;
 #else
-	if (!(new = r_io_open_nomap (io, uri, flags, mode))) {
+	if (!(new = r_io_open_nomap (io, uri, perm, mode))) {
 		return false;
 	}
 	r_io_desc_exchange (io, old->fd, new->fd);
@@ -304,7 +304,7 @@ R_API bool r_io_vread_at_mapped(RIO* io, ut64 vaddr, ut8* buf, int len) {
 	if (!io->maps) {
 		return false;
 	}
-	return on_map_skyline (io, vaddr, buf, len, R_IO_READ, fd_read_at_wrap, false);
+	return on_map_skyline (io, vaddr, buf, len, R_PERM_R, fd_read_at_wrap, false);
 }
 
 static bool r_io_vwrite_at(RIO* io, ut64 vaddr, const ut8* buf, int len) {
@@ -314,7 +314,7 @@ static bool r_io_vwrite_at(RIO* io, ut64 vaddr, const ut8* buf, int len) {
 	if (!io->maps) {
 		return false;
 	}
-	return on_map_skyline (io, vaddr, (ut8*)buf, len, R_IO_WRITE, fd_write_at_wrap, false);
+	return on_map_skyline (io, vaddr, (ut8*)buf, len, R_PERM_W, fd_write_at_wrap, false);
 }
 
 // Deprecated, use either r_io_read_at_mapped or r_io_nread_at instead.
@@ -332,7 +332,7 @@ R_API bool r_io_read_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 	} else {
 		ret = r_io_pread_at (io, addr, buf, len) > 0;
 	}
-	if (io->cached & R_IO_READ) {
+	if (io->cached & R_PERM_R) {
 		(void)r_io_cache_read (io, addr, buf, len);
 	}
 	return ret;
@@ -351,11 +351,11 @@ R_API bool r_io_read_at_mapped(RIO *io, ut64 addr, ut8 *buf, int len) {
 		memset (buf, io->Oxff, len);
 	}
 	if (io->va) {
-		ret = on_map_skyline (io, addr, buf, len, R_IO_READ, fd_read_at_wrap, false);
+		ret = on_map_skyline (io, addr, buf, len, R_PERM_R, fd_read_at_wrap, false);
 	} else {
 		ret = r_io_pread_at (io, addr, buf, len) > 0;
 	}
-	if (io->cached & R_IO_READ) {
+	if (io->cached & R_PERM_R) {
 		(void)r_io_cache_read(io, addr, buf, len);
 	}
 	return ret;
@@ -373,11 +373,11 @@ R_API int r_io_nread_at(RIO *io, ut64 addr, ut8 *buf, int len) {
 		if (io->ff) {
 			memset (buf, io->Oxff, len);
 		}
-		ret = on_map_skyline (io, addr, buf, len, R_IO_READ, fd_read_at_wrap, true);
+		ret = on_map_skyline (io, addr, buf, len, R_PERM_R, fd_read_at_wrap, true);
 	} else {
 		ret = r_io_pread_at (io, addr, buf, len);
 	}
-	if (ret > 0 && io->cached & R_IO_READ) {
+	if (ret > 0 && io->cached & R_PERM_R) {
 		(void)r_io_cache_read (io, addr, buf, len);
 	}
 	return ret;
@@ -397,7 +397,7 @@ R_API bool r_io_write_at(RIO* io, ut64 addr, const ut8* buf, int len) {
 			mybuf[i] &= io->write_mask[i % io->write_mask_len];
 		}
 	}
-	if (io->cached & R_IO_WRITE) {
+	if (io->cached & R_PERM_W) {
 		ret = r_io_cache_write (io, addr, mybuf, len);
 	} else if (io->va) {
 		ret = r_io_vwrite_at (io, addr, mybuf, len);
@@ -482,7 +482,7 @@ R_API int r_io_extend_at(RIO* io, ut64 addr, ut64 size) {
 		io->off = cur_off;
 		return ret;
 	}
-	if ((io->desc->flags & R_IO_RW) != R_IO_RW) {
+	if ((io->desc->perm & R_PERM_RW) != R_PERM_RW) {
 		return false;
 	}
 	cur_size = r_io_desc_size (io->desc);

@@ -1284,7 +1284,7 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 		args = "";
 	}
 
-	if (!r_core_file_open (core, file, R_IO_READ, 0)) {
+	if (!r_core_file_open (core, file, R_PERM_R, 0)) {
 		eprintf ("Cannot open file (%s)\n", file);
 		return -1;
 	}
@@ -1714,7 +1714,7 @@ static void r_rap_packet_fill(ut8 *buf, const ut8* src, int len) {
 
 static bool r_core_rtr_rap_run(RCore *core, const char *input) {
 	char *file = r_str_newf ("rap://%s", input);
-	int flags = R_IO_READ | R_IO_WRITE;
+	int flags = R_PERM_RW;
 	RIODesc *fd = r_io_open_nomap (core->io, file, flags, 0644);
 	if (fd) {
 		if (r_io_is_listener (core->io)) {

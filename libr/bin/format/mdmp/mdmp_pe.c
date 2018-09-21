@@ -177,22 +177,22 @@ RList *PE_(r_bin_mdmp_pe_get_sections)(struct PE_(r_bin_mdmp_pe_bin) *pe_bin) {
 		ptr->paddr = sections[i].paddr + pe_bin->paddr;
 		ptr->vaddr = sections[i].vaddr + ba;
 		ptr->add = false;
-		ptr->srwx = 0;
-		if (R_BIN_PE_SCN_IS_EXECUTABLE (sections[i].flags)) {
-			ptr->srwx |= R_BIN_SCN_EXECUTABLE;
+		ptr->perm = 0;
+		if (R_BIN_PE_SCN_IS_EXECUTABLE (sections[i].perm)) {
+			ptr->perm |= R_PERM_X;
 		}
-		if (R_BIN_PE_SCN_IS_WRITABLE (sections[i].flags)) {
-			ptr->srwx |= R_BIN_SCN_WRITABLE;
+		if (R_BIN_PE_SCN_IS_WRITABLE (sections[i].perm)) {
+			ptr->perm |= R_PERM_W;
 		}
-		if (R_BIN_PE_SCN_IS_READABLE (sections[i].flags)) {
-			ptr->srwx |= R_BIN_SCN_READABLE;
+		if (R_BIN_PE_SCN_IS_READABLE (sections[i].perm)) {
+			ptr->perm |= R_PERM_X;
 		}
-		if (R_BIN_PE_SCN_IS_SHAREABLE (sections[i].flags)) {
-			ptr->srwx |= R_BIN_SCN_SHAREABLE;
+		if (R_BIN_PE_SCN_IS_SHAREABLE (sections[i].perm)) {
+			ptr->perm |= R_PERM_SHAR;
 		}
 #define X 1
 #define ROW (4 | 2)
-		if (ptr->srwx & ROW && !(ptr->srwx & X) && ptr->size > 0) {
+		if (ptr->perm & ROW && !(ptr->perm & X) && ptr->size > 0) {
 			if (!strcmp (ptr->name, ".rsrc") ||
 				!strcmp (ptr->name, ".data") ||
 				!strcmp (ptr->name, ".rdata")) {

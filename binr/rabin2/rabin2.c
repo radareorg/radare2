@@ -978,7 +978,7 @@ int main(int argc, char **argv) {
 	}
 
 	if (file && *file) {
-		if ((fh = r_core_file_open (&core, file, R_IO_READ, 0))) {
+		if ((fh = r_core_file_open (&core, file, R_PERM_R, 0))) {
 			fd = r_io_fd_get_current (core.io);
 			if (fd == -1) {
 				eprintf ("r_core: Cannot open file '%s'\n", file);

@@ -681,7 +681,7 @@ int main(int argc, char **argv) {
 				ut8 *buf = (ut8 *) r_stdin_slurp (&sz);
 				char *uri = r_str_newf ("malloc://%d", sz);
 				if (sz > 0) {
-					desc = r_io_open_nomap (io, uri, R_IO_READ, 0);
+					desc = r_io_open_nomap (io, uri, R_PERM_R, 0);
 					if (!desc) {
 						eprintf ("rahash2: Cannot open malloc://1024\n");
 						return 1;
@@ -694,7 +694,7 @@ int main(int argc, char **argv) {
 					eprintf ("rahash2: Cannot hash directories\n");
 					return 1;
 				}
-				desc = r_io_open_nomap (io, argv[i], R_IO_READ, 0);
+				desc = r_io_open_nomap (io, argv[i], R_PERM_R, 0);
 				if (!desc) {
 					eprintf ("rahash2: Cannot open '%s'\n", argv[i]);
 					return 1;

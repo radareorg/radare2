@@ -711,7 +711,7 @@ typedef struct {
 	ut32 in_functions;
 	ut32 symbols;
 	ut32 strings;
-	ut32 rwx;
+	ut32 perm;
 } RCoreAnalStatsItem;
 typedef struct {
 	RCoreAnalStatsItem *block;

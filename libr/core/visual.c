@@ -1937,7 +1937,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'a':
 		{
-			if (core->file && core->io && !(r_io_desc_get (core->io, core->file->fd)->flags & 2)) {
+			if (core->file && core->io && !(r_io_desc_get (core->io, core->file->fd)->perm & R_PERM_W)) {
 				r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
 				r_cons_any_key (NULL);
 				return true;
@@ -2148,7 +2148,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				}
 				return true;
 			}
-			if (core->file && core->io && !(r_io_desc_get (core->io, core->file->fd)->flags & 2)) {
+			if (core->file && core->io && !(r_io_desc_get (core->io, core->file->fd)->perm & R_PERM_W)) {
 				r_cons_printf ("\nFile has been opened in read-only mode. Use -w flag\n");
 				r_cons_any_key (NULL);
 				return true;

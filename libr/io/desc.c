@@ -18,7 +18,7 @@ R_API bool r_io_desc_init(RIO* io) {
 
 //shall be used by plugins for creating descs
 //XXX kill mode
-R_API RIODesc* r_io_desc_new(RIO* io, RIOPlugin* plugin, const char* uri, int flags, int mode, void* data) {
+R_API RIODesc* r_io_desc_new(RIO* io, RIOPlugin* plugin, const char* uri, int perm, int mode, void* data) {
 	ut32 fd32 = 0;
 	// this is because emscript is a bitch
 	if (!io || !plugin || !uri) {
@@ -35,7 +35,7 @@ R_API RIODesc* r_io_desc_new(RIO* io, RIOPlugin* plugin, const char* uri, int fl
 		desc->io = io;
 		desc->plugin = plugin;
 		desc->data = data;
-		desc->flags = flags;
+		desc->perm = perm;
 		//because the uri-arg may live on the stack
 		desc->uri = strdup (uri);
 	}
@@ -95,7 +95,7 @@ R_API RIODesc* r_io_desc_get(RIO* io, int fd) {
 	return (RIODesc*) r_id_storage_get (io->files, fd);
 }
 
-R_API RIODesc *r_io_desc_open(RIO *io, const char *uri, int flags, int mode) {
+R_API RIODesc *r_io_desc_open(RIO *io, const char *uri, int perm, int mode) {
 	if (!io || !io->files || !uri) {
 		return NULL;
 	}
@@ -103,7 +103,7 @@ R_API RIODesc *r_io_desc_open(RIO *io, const char *uri, int flags, int mode) {
 	if (!plugin || !plugin->open) {
 		return NULL;
 	}
-	RIODesc *desc = plugin->open (io, uri, flags, mode);
+	RIODesc *desc = plugin->open (io, uri, perm, mode);
 	if (!desc) {
 		return NULL;
 	}
@@ -121,14 +121,14 @@ R_API RIODesc *r_io_desc_open(RIO *io, const char *uri, int flags, int mode) {
 	return desc;
 }
 
-R_API RIODesc *r_io_desc_open_plugin(RIO *io, RIOPlugin *plugin, const char *uri, int flags, int mode) {
+R_API RIODesc *r_io_desc_open_plugin(RIO *io, RIOPlugin *plugin, const char *uri, int perm, int mode) {
 	if (!io || !io->files || !uri) {
 		return NULL;
 	}
 	if (!plugin || !plugin->open || !plugin->check || !plugin->check (io, uri, false)) {
 		return NULL;
 	}
-	RIODesc *desc = plugin->open (io, uri, flags, mode);
+	RIODesc *desc = plugin->open (io, uri, perm, mode);
 	if (!desc) {
 		return NULL;
 	}
@@ -182,7 +182,7 @@ R_API int r_io_desc_write(RIODesc *desc, const ut8* buf, int len) {
 R_API int r_io_desc_read(RIODesc *desc, ut8 *buf, int len) {
 	ut64 seek;
 	// check pointers and permissions
-	if (!buf || !desc || !desc->plugin || len < 1 || !(desc->flags & R_IO_READ)) {
+	if (!buf || !desc || !desc->plugin || len < 1 || !(desc->perm & R_PERM_R)) {
 		return 0;
 	}
 	seek = r_io_desc_seek (desc, 0LL, R_IO_SEEK_CUR);
@@ -243,18 +243,6 @@ R_API bool r_io_desc_is_chardevice(RIODesc *desc) {
 	return desc->plugin->is_chardevice (desc);
 }
 
-
-static bool _map_flags_cb(void *user, void *data, ut32 id) {
-	RIODesc *desc = (RIODesc *)user;
-	RIOMap *map = (RIOMap *)data;
-
-	if(map->fd == desc->fd) {
-		map->flags &= (desc->flags | R_IO_EXEC);
-		return false;	//break
-	}
-	return true;
-}
-
 R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
 	RIODesc* desc, * descx;
 	SdbListIter* iter;
@@ -276,9 +264,9 @@ R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
 	if (io->maps) {
 		ls_foreach (io->maps, iter, map) {
 			if (map->fd == fdx) {
-				map->flags &= (desc->flags | R_IO_EXEC);
+				map->perm &= (desc->perm | R_PERM_X);
 			} else if (map->fd == fd) {
-				map->flags &= (descx->flags | R_IO_EXEC);
+				map->perm &= (descx->perm | R_PERM_X);
 			}
 		}
 	}

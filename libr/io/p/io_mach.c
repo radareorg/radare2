@@ -418,10 +418,10 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		: strdup ("kernel");
 	if (!strncmp (file, "smach://", 8)) {
 		ret = r_io_desc_new (io, &r_io_plugin_mach, &file[1],
-			       rw | R_IO_EXEC, mode, iodd);
+			       rw | R_PERM_X, mode, iodd);
 	} else {
 		ret = r_io_desc_new (io, &r_io_plugin_mach, file,
-			       rw | R_IO_EXEC, mode, iodd);
+			       rw | R_PERM_X, mode, iodd);
 	}
 	ret->name = pidpath;
 	return ret;

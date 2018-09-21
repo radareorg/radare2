@@ -234,8 +234,8 @@ R_API ut64 r_buf_size (RBuffer *b) {
 }
 
 // rename to new?
-R_API RBuffer *r_buf_mmap (const char *file, int flags) {
-	int rw = flags & R_IO_WRITE ? true : false;
+R_API RBuffer *r_buf_mmap (const char *file, int perm) {
+	int rw = perm & R_PERM_W? true : false;
 	RBuffer *b = r_buf_new ();
 	if (!b) {
 		return NULL;
@@ -255,11 +255,8 @@ R_API RBuffer *r_buf_mmap (const char *file, int flags) {
 
 R_API RBuffer *r_buf_new_file(const char *file, bool newFile) {
 	const int mode = 0644;
-	int flags = O_RDWR;
-	if (newFile) {
-		flags |= O_CREAT;
-	}
-	int fd = r_sandbox_open (file, flags, mode);
+	const int perm = newFile? O_RDWR|O_CREAT: O_RDWR;
+	int fd = r_sandbox_open (file, perm, mode);
 	if (fd != -1) {
 		RBuffer *b = r_buf_new ();
 		if (!b) {

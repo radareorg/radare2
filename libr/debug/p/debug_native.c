@@ -938,13 +938,13 @@ static RList *r_debug_native_sysctl_map (RDebug *dbg) {
 static int io_perms_to_prot (int io_perms) {
 	int prot_perms = PROT_NONE;
 
-	if (io_perms & R_IO_READ) {
+	if (io_perms & R_PERM_R) {
 		prot_perms |= PROT_READ;
 	}
-	if (io_perms & R_IO_WRITE) {
+	if (io_perms & R_PERM_W) {
 		prot_perms |= PROT_WRITE;
 	}
-	if (io_perms & R_IO_EXEC) {
+	if (io_perms & R_PERM_X) {
 		prot_perms |= PROT_EXEC;
 	}
 	return prot_perms;
@@ -1043,19 +1043,19 @@ err_linux_map_dealloc:
 static int io_perms_to_prot (int io_perms) {
 	int prot_perms;
 
-	if ((io_perms & R_IO_RWX) == R_IO_RWX) {
+	if ((io_perms & R_PERM_RWX) == R_PERM_RWX) {
 		prot_perms = PAGE_EXECUTE_READWRITE;
-	} else if ((io_perms & (R_IO_WRITE | R_IO_EXEC)) == (R_IO_WRITE | R_IO_EXEC)) {
+	} else if ((io_perms & (R_PERM_W | R_PERM_X)) == (R_PERM_W | R_PERM_X)) {
 		prot_perms = PAGE_EXECUTE_READWRITE;
-	} else if ((io_perms & (R_IO_READ | R_IO_EXEC)) == (R_IO_READ | R_IO_EXEC)) {
+	} else if ((io_perms & (R_PERM_R | R_PERM_X)) == (R_PERM_R | R_PERM_X)) {
 		prot_perms = PAGE_EXECUTE_READ;
-	} else if ((io_perms & R_IO_RW) == R_IO_RW) {
+	} else if ((io_perms & R_PERM_RW) == R_PERM_RW) {
 		prot_perms = PAGE_READWRITE;
-	} else if (io_perms & R_IO_WRITE) {
+	} else if (io_perms & R_PERM_W) {
 		prot_perms = PAGE_READWRITE;
-	} else if (io_perms & R_IO_EXEC) {
+	} else if (io_perms & R_PERM_X) {
 		prot_perms = PAGE_EXECUTE;
-	} else if (io_perms & R_IO_READ) {
+	} else if (io_perms & R_PERM_R) {
 		prot_perms = PAGE_READONLY;
 	} else {
 		prot_perms = PAGE_NOACCESS;
@@ -1250,9 +1250,9 @@ static RList *r_debug_native_map_get (RDebug *dbg) {
 		perm = 0;
 		for (i = 0; i < 5 && perms[i]; i++) {
 			switch (perms[i]) {
-			case 'r': perm |= R_IO_READ; break;
-			case 'w': perm |= R_IO_WRITE; break;
-			case 'x': perm |= R_IO_EXEC; break;
+			case 'r': perm |= R_PERM_R; break;
+			case 'w': perm |= R_PERM_W; break;
+			case 'x': perm |= R_PERM_X; break;
 			case 'p': map_is_shared = false; break;
 			case 's': map_is_shared = true; break;
 			}
@@ -1805,11 +1805,12 @@ static RList *r_debug_desc_native_list (int pid) {
 		case KF_TYPE_UNKNOWN:
 		default: type = '-'; break;
 		}
-		perm = (kve->kf_flags & KF_FLAG_READ)?R_IO_READ:0;
-		perm |= (kve->kf_flags & KF_FLAG_WRITE)?R_IO_WRITE:0;
-		desc = r_debug_desc_new (kve->kf_fd, str, perm, type,
-					kve->kf_offset);
-		if (!desc) break;
+		perm = (kve->kf_flags & KF_FLAG_READ)? R_PERM_R: 0;
+		perm |= (kve->kf_flags & KF_FLAG_WRITE)? R_PERM_W: 0;
+		desc = r_debug_desc_new (kve->kf_fd, str, perm, type, kve->kf_offset);
+		if (!desc) {
+			break;
+		}
 		r_list_append (ret, desc);
 	}
 

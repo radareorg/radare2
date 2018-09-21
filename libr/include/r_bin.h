@@ -14,11 +14,6 @@ extern "C" {
 
 R_LIB_VERSION_HEADER (r_bin);
 
-#define R_BIN_SCN_EXECUTABLE (1 << 0)
-#define R_BIN_SCN_WRITABLE   (1 << 1)
-#define R_BIN_SCN_READABLE   (1 << 2)
-#define R_BIN_SCN_SHAREABLE  (1 << 3)
-
 #define R_BIN_DBG_STRIPPED 0x01
 #define R_BIN_DBG_STATIC   0x02
 #define R_BIN_DBG_LINENUMS 0x04
@@ -445,7 +440,7 @@ typedef struct r_bin_section_t {
 	ut64 vsize;
 	ut64 vaddr;
 	ut64 paddr;
-	ut32 srwx;
+	ut32 perm;
 	// per section platform info
 	const char *arch;
 	char *format;

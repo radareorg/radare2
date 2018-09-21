@@ -2783,9 +2783,9 @@ reaccept:
 					ut64 baddr = r_config_get_i (core->config, "bin.laddr");
 					r_socket_read_block (c, ptr, cmd);
 					ptr[cmd] = 0;
-					ut32 perm = R_IO_READ;
-					if (flg & R_IO_WRITE) {
-						perm |= R_IO_WRITE;
+					ut32 perm = R_PERM_R;
+					if (flg & R_PERM_W) {
+						perm |= R_PERM_W;
 					}
 					if (r_core_file_open (core, (const char *)ptr, perm, 0)) {
 						int fd = r_io_fd_get_current (core->io);

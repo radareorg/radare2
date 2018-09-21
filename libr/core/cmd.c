@@ -3121,7 +3121,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 				ut64 addr = sec->vaddr;
 				ut64 size = sec->vsize;
 				// TODO: 
-				//if (R_BIN_SCN_EXECUTABLE & sec->srwx) {
+				//if (R_BIN_SCN_EXECUTABLE & sec->perm) {
 				//	continue;
 				//}
 				r_core_seek_size (core, addr, size);

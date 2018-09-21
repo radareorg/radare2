@@ -127,7 +127,7 @@ static RList *sections(RBinFile *bf) {
 	text->vsize = text->size;
 	text->paddr = N64_ROM_START;
 	text->vaddr = baddr (bf);
-	text->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE; // r-x
+	text->perm = R_PERM_RX;
 	text->add = true;
 	r_list_append (ret, text);
 	return ret;
