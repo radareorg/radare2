@@ -14,7 +14,7 @@
 #define INSN_BUFFER_SIZE 4
 
 static ut64 offset = 0;
-static char *buf_global = NULL;
+static RStrBuf *buf_global = NULL;
 static ut8 bytes[INSN_BUFFER_SIZE];
 
 static int xtensa_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
@@ -39,34 +39,25 @@ static void print_address(bfd_vma address, struct disassemble_info *info) {
 		return;
 	}
 	sprintf (tmp, "0x%08"PFMT64x"", (ut64)address);
-	strcat (buf_global, tmp);
+	r_strbuf_append (buf_global, tmp);
 }
 
 static int buf_fprintf(void *stream, const char *format, ...) {
 	va_list ap;
+	char tmp[1024];
 	if (!buf_global) {
 		return 0;
 	}
 	va_start (ap, format);
-	int flen = strlen (format);
-	int glen = strlen (buf_global);
-	char *tmp = malloc (flen + glen + 2);
-	if (!tmp) {
-		return 0;
-	}
-	memcpy (tmp, buf_global, glen);
-	memcpy (tmp+glen, format, flen);
-	tmp[flen + glen] = 0;
-// XXX: overflow here?
-	vsprintf (buf_global, tmp, ap);
+	vsprintf (tmp, format, ap);
+	r_strbuf_append (buf_global, tmp);
 	va_end (ap);
-	free (tmp);
 	return 0;
 }
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
-	buf_global = r_strbuf_get (&op->buf_asm);
+	buf_global = &op->buf_asm;
 	offset = a->pc;
 	if (len > INSN_BUFFER_SIZE) {
 		len = INSN_BUFFER_SIZE;
