@@ -5080,10 +5080,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 	}
 	int setBits = r_config_get_i (core->config, "asm.bits");
 	r_cons_break_push (NULL, NULL);
-	while (addr < addr_end) {
-		if (r_cons_is_breaked ()) {
-			break;
-		}
+	while (addr < addr_end && !r_cons_is_breaked ()) {
 		// TODO: too many ioreads here
 		if (bufi > bufi_max) {
 			bufi = 0;
@@ -7006,10 +7003,12 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 'c': // "aac"
 		switch (input[1]) {
-		case '*':
-			cmd_anal_calls (core, input + 1, true); break; // "aac*"
-		default:
-			cmd_anal_calls (core, input + 1, false); break; // "aac"
+		case '*': // "aac*"
+			cmd_anal_calls (core, input + 1, true);
+			break;
+		default: // "aac"
+			cmd_anal_calls (core, input + 1, false);
+			break;
 		}
 	case 'j': cmd_anal_jumps (core, input + 1); break; // "aaj"
 	case '*': // "aa*"
