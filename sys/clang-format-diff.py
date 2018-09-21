@@ -143,7 +143,7 @@ def main():
     if len(diff_string) > 0:
       if args.i:
         f = tempfile.NamedTemporaryFile(delete=False)
-        f.write(diff_string)
+        f.write(diff_string.encode())
         f.close()
         os.system('git apply -p0 < "%s"' % (f.name))
         os.unlink(f.name)
