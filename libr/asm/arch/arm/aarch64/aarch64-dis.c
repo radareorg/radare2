@@ -350,12 +350,13 @@ aarch64_ext_ldst_reglist (const aarch64_operand *self ATTRIBUTE_UNUSED,
   /* Number of elements in each structure to be loaded/stored.  */
   unsigned expected_num = get_opcode_dependent_value (inst->opcode);
 
+#define NDATA 11
   struct
     {
       unsigned is_reserved;
       unsigned num_regs;
       unsigned num_elements;
-    } data [] =
+    } data [NDATA] =
   {   {0, 4, 4},
       {1, 4, 4},
       {0, 4, 1},
@@ -373,6 +374,9 @@ aarch64_ext_ldst_reglist (const aarch64_operand *self ATTRIBUTE_UNUSED,
   info->reglist.first_regno = extract_field (FLD_Rt, code, 0);
   /* opcode */
   value = extract_field (FLD_opcode, code, 0);
+  if (value < 0 || value >= NDATA) {
+    return 0;
+  }
   if (expected_num != data[value].num_elements || data[value].is_reserved) {
 	  return 0;
   }
@@ -586,11 +590,13 @@ aarch64_ext_imm (const aarch64_operand *self, aarch64_opnd_info *info,
   }
 
   if (operand_need_shift_by_two (self)) {
-	  imm <<= 2;
+	  // imm <<= 2;
+	imm *= 4;
   }
 
   if (info->type == AARCH64_OPND_ADDR_ADRP) {
-	  imm <<= 12;
+	  // imm <<= 12;
+	  imm *= 4096;
   }
 
   info->imm.value = imm;

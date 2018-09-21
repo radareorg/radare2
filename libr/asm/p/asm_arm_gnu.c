@@ -67,7 +67,7 @@ static const struct arm_arch_option_table arm_archs[] = {
 
 static int arm_mode = 0;
 static unsigned long Offset = 0;
-static char *buf_global = NULL;
+static RStrBuf *buf_global = NULL;
 static unsigned char bytes[8];
 
 static int arm_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr,
@@ -97,25 +97,18 @@ static void print_address(bfd_vma address, struct disassemble_info *info) {
 		return;
 	}
 	sprintf (tmp, "0x%08"PFMT64x "", (ut64) address);
-	strcat (buf_global, tmp);
+	r_strbuf_append (buf_global, tmp);
 }
 
 static int buf_fprintf(void *stream, const char *format, ...) {
 	va_list ap;
-	char *tmp;
+	char tmp[1024];
 	if (!buf_global || !format) {
 		return false;
 	}
 	va_start (ap, format);
-	tmp = malloc (strlen (format) + strlen (buf_global) + 2);
-	if (!tmp) {
-		va_end (ap);
-		return false;
-	}
-	sprintf (tmp, "%s%s", buf_global, format);
-	vsprintf (buf_global, tmp, ap);
-	va_end (ap);
-	free (tmp);
+	vsnprintf (tmp, sizeof (tmp), format, ap);
+	r_strbuf_append (buf_global, tmp);
 	return true;
 }
 
@@ -134,7 +127,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (a->bits < 64 && len < (a->bits / 8)) {
 		return -1;
 	}
-	buf_global = r_strbuf_get (&op->buf_asm);
+	buf_global = &op->buf_asm;
 	Offset = a->pc;
 
 	/* prepare disassembler */
@@ -195,7 +188,7 @@ cpucode = 66471;
 	if (op->size == -1) {
 		r_strbuf_set (&op->buf_asm, "(data)");
 		op->size = 4;
-	} else if (strstr (buf_global, "UNDEF")) {
+	} else if (strstr (r_strbuf_get (buf_global), "UNDEF")) {
 		r_strbuf_set (&op->buf_asm, "undefined");
 		op->size = 2;
 		opsize = 2;

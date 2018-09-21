@@ -11,7 +11,7 @@
 #include <mybfd.h>
 
 static unsigned long Offset = 0;
-static char *buf_global = NULL;
+static RStrBuf *buf_global = NULL;
 static unsigned char bytes[4];
 
 static int sparc_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
@@ -28,21 +28,21 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 }
 
 static void print_address(bfd_vma address, struct disassemble_info *info) {
-	char tmp[32];
+	char tmp[32] = {0};
 	if (!buf_global) {
 		return;
 	}
 	sprintf (tmp, "0x%08"PFMT64x"", (ut64)address);
-	strcat (buf_global, tmp);
+	r_strbuf_append (buf_global, tmp);
 }
 
 static int buf_fprintf(void *stream, const char *format, ...) {
 	va_list ap;
-	char tmp[1024];
+	char tmp[1024] = {0};
 	va_start (ap, format);
 	if (buf_global) {
 		vsnprintf (tmp, sizeof (tmp), format, ap);
-		strcat (buf_global, tmp);
+		r_strbuf_append (buf_global, tmp);
 	}
 	va_end (ap);
 	return 0;
@@ -53,11 +53,12 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (len < 4) {
 		return -1;
 	}
-	buf_global = r_strbuf_get (&op->buf_asm);
+	buf_global = &op->buf_asm;
 	Offset = a->pc;
 	// disasm inverted
 	r_mem_swapendian (bytes, buf, 4); // TODO handle thumb
 
+	r_strbuf_set (&op->buf_asm, "");
 	/* prepare disassembler */
 	memset (&disasm_obj,'\0', sizeof (struct disassemble_info));
 	disasm_obj.buffer = bytes;
