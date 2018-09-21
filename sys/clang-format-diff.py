@@ -145,7 +145,7 @@ def main():
         f = tempfile.NamedTemporaryFile(delete=False)
         f.write(diff_string)
         f.close()
-        os.system('git apply -p0 < %s' % (f.name))
+        os.system('git apply -p0 < "%s"' % (f.name))
         os.unlink(f.name)
       else:
         sys.stdout.write(diff_string)
