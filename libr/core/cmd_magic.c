@@ -12,12 +12,16 @@ static void r_core_magic_reset(RCore *core) {
 	kw_count = 0;
 }
 
-static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, int v, bool json) {
+static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, int v, bool json, int *hits) {
 	const char *fmt;
 	char *q, *p;
 	const char *str;
 	int found = 0, delta = 0, adelta = 0, ret;
 	ut64 curoffset = core->offset;
+	int maxHits = r_config_get_i (core->config, "search.maxhits");
+	if (maxHits > 0 && *hits >= maxHits) {
+		return 0;
+	}
 #define NAH 32
 
 	if (--depth<0) {
@@ -113,6 +117,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 				strcpy (q + 1, q + ((q[2] == ' ')? 3: 2));
 			}
 		}
+		(*hits)++;
 		cmdhit = r_config_get (core->config, "cmd.hit");
 		if (cmdhit && *cmdhit) {
 			r_core_cmd0 (core, cmdhit);
@@ -152,7 +157,7 @@ static int r_core_magic_at(RCore *core, const char *file, ut64 addr, int depth, 
 					if (!fmt || !*fmt) {
 						fmt = file;
 					}
-					r_core_magic_at (core, fmt, addr, depth, 1, json);
+					r_core_magic_at (core, fmt, addr, depth, 1, json, hits);
 					*q = '@';
 				}
 				break;
@@ -191,8 +196,9 @@ seek_exit:
 
 static void r_core_magic(RCore *core, const char *file, int v) {
 	ut64 addr = core->offset;
+	int hits = 0;
 	magicdepth = r_config_get_i (core->config, "magic.depth"); // TODO: do not use global var here
-	r_core_magic_at (core, file, addr, magicdepth, v, false);
+	r_core_magic_at (core, file, addr, magicdepth, v, false, &hits);
 	if (addr != core->offset) {
 		r_core_seek (core, addr, true);
 	}
