@@ -13,7 +13,7 @@
 
 
 static unsigned long Offset = 0;
-static char *buf_global = NULL;
+static RStrBuf *buf_global = NULL;
 static ut8 bytes[128];
 
 static int tricore_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
@@ -38,7 +38,7 @@ static void print_address(bfd_vma address, struct disassemble_info *info) {
 		return;
 	}
 	sprintf (tmp, "0x%08" PFMT64x, (ut64) address);
-	strcat (buf_global, tmp);
+	r_strbuf_append (buf_global, tmp);
 }
 
 static int buf_fprintf(void *stream, const char *format, ...) {
@@ -96,7 +96,7 @@ static int buf_fprintf(void *stream, const char *format, ...) {
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct disassemble_info disasm_obj;
-	buf_global = r_strbuf_get (&op->buf_asm);
+	buf_global = &op->buf_asm;
 	Offset = a->pc;
 	memcpy (bytes, buf, R_MIN (len, 8)); // TODO handle thumb
 
