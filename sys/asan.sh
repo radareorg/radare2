@@ -40,4 +40,10 @@ if [ "$RET" != 0 ]; then
 	echo "Your compiler doesn't support ASAN."
 	exit 1
 fi
-exec sys/install.sh $*
+
+SCRIPT=install.sh
+if [ "$1" = "-u" ]; then
+	shift
+	SCRIPT=user.sh
+fi
+exec sys/${SCRIPT} $*
