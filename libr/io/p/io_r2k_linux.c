@@ -723,7 +723,7 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 				int j = 0;
 				for (i = 0; i + 1 < buffsize;) {
 					nextstart = 0;
-					if (i + 7 < buffsize) {
+					if (i + 7 <= buffsize) {
 						nextstart = i + 7 + (strlen ((const char *)&(proc_data.vmareastruct[i + 7])) - 1 + sizeof (size_t)) / sizeof (size_t);
 					}
 					if (!proc_data.vmareastruct[i] && (i + 1 < buffsize) &&
