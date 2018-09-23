@@ -17,6 +17,7 @@
  *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <stdlib.h>
 #include <grub/err.h>
 #include <grub/file.h>
 #include <grub/mm.h>
