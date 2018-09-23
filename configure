@@ -451,7 +451,9 @@ if [ 11 = "$WITH_CAPSTONE$HAVE_PKGCFG_CAPSTONE" ]; then
 
 USE_CAPSTONE="1"
 else
-USE_CAPSTONE="0"; fi
+USE_CAPSTONE="0"
+CAPSTONE_CFLAGS=""
+CAPSTONE_LDFLAGS=""; fi
 check_library HAVE_LIB_Z z 0
 check_library HAVE_LIB_ZIP zip 0
 if [ 11 = "$HAVE_LIB_Z$USE_ZIP" ]; then
