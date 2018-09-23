@@ -935,6 +935,11 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 			}
 			r_list_free (list);
 		}
+		RList *bpargs = core->parser->varlist (core->parser, f, 'b');
+		RList *spargs = core->parser->varlist (core->parser, f, 's');
+
+		r_list_free (spargs);
+		r_list_free (bpargs);
 	}
 	char *asm_str = colorize_asm_string (core, ds, print_color);
 	asm_str = ds_sub_jumps (ds, asm_str);
