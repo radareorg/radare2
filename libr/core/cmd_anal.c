@@ -467,7 +467,7 @@ static const char *help_msg_ah[] = {
 };
 
 static const char *help_msg_ahi[] = {
-	"Usage", "ahi [sbodh] [@ offset]", " Define numeric base",
+	"Usage:", "ahi [sbodh] [@ offset]", " Define numeric base",
 	"ahi", " [base]", "set numeric base (1, 2, 8, 10, 16)",
 	"ahi", " b", "set base to binary (2)",
 	"ahi", " d", "set base to decimal (10)",
