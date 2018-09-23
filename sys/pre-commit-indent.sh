@@ -7,25 +7,35 @@
 #
 # To enable this hook, move it to ".git/hooks/pre-commit".
 
-tmpfile="$(mktemp)"
-unstaged_diff="$(mktemp)"
-git diff > "${unstaged_diff}"
-git checkout -- .
-git diff --cached | ./sys/clang-format-diff.py -p1 > "${tmpfile}"
+TMPFILE="$(mktemp)"
+if [ -z "$TMPFILE" ] ; then
+    echo "mktemp returned an empty string for \"TMPFILE\"."
+    exit 1
+fi
+
+UNSTAGED_DIFF="$(mktemp)"
+if [ -z "$UNSTAGED_DIFF" ] ; then
+    echo "mktemp returned an empty string for \"UNSTAGED_DIFF\"."
+    exit 1
+fi
+
+git diff > ${UNSTAGED_DIFF} || exit 1
+git checkout -- . || exit 1
+git diff --cached | ./sys/clang-format-diff.py -p1 > "${TMPFILE}"
 
 restore_exit() {
-	git apply < "${unstaged_diff}" 2>/dev/null
-	rm "${tmpfile}"
-	rm "${unstaged_diff}"
-	exit $1
+	git apply < "${UNSTAGED_DIFF}" 2>/dev/null
+	rm -f "${TMPFILE}"
+	rm -f "${UNSTAGED_DIFF}"
+	exit 1
 }
 
-sz=$(wc -c "${tmpfile}" | cut -d" " -f1)
+sz=$(wc -c "${TMPFILE}" | cut -d" " -f1)
 if [ "${sz}" != "0" ] ; then
 	echo "Please follow the coding style!"
 	echo "Run \`git diff --cached | ./sys/clang-format-diff.py -p1 -i\` to apply the changes listed below and remember to add them to git."
 	echo
-	cat "${tmpfile}"
+	cat "${TMPFILE}"
 	echo
 	echo "If you think the current style is ok, just run \`git commit --no-verify\` to bypass this check."
 	restore_exit 1
