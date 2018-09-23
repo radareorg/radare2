@@ -306,7 +306,6 @@ static void ds_print_opstr(RDisasmState *ds);
 static void ds_print_color_reset(RDisasmState *ds);
 static int ds_print_middle(RDisasmState *ds, int ret);
 static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f);
-static void ds_print_import_name(RDisasmState *ds);
 static void ds_print_sysregs(RDisasmState *ds);
 static void ds_print_fcn_name(RDisasmState *ds);
 static void ds_print_as_string(RDisasmState *ds);
@@ -798,6 +797,7 @@ static void ds_reflines_init(RDisasmState *ds) {
 	}
 }
 
+#if 0
 static void ds_reflines_fcn_init(RDisasmState *ds,  RAnalFunction *fcn, const ut8* buf) {
 	RCore *core = ds->core;
 	RAnal *anal = core->anal;
@@ -813,6 +813,7 @@ static void ds_reflines_fcn_init(RDisasmState *ds,  RAnalFunction *fcn, const ut
 		anal->reflines = anal->reflines2 = NULL;
 	}
 }
+#endif
 
 static void ds_free(RDisasmState *ds) {
 	if (!ds) {
@@ -3039,6 +3040,7 @@ static bool ds_print_labels(RDisasmState *ds, RAnalFunction *f) {
 	return true;
 }
 
+#if 0
 static void ds_print_import_name(RDisasmState *ds) {
 	RListIter *iter = NULL;
 	RBinReloc *rel = NULL;
@@ -3064,6 +3066,7 @@ static void ds_print_import_name(RDisasmState *ds) {
 		}
 	}
 }
+#endif
 
 static void ds_print_sysregs(RDisasmState *ds) {
 	RCore *core = ds->core;
