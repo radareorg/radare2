@@ -13,7 +13,7 @@ R_API void asn1_setformat (int fmt) {
 }
 
 static ut32 asn1_ber_indefinite (const ut8 *buffer, ut32 length) {
-	if (!length || !buffer) {
+	if (!buffer || length < 3) {
 		return 0;
 	}
 	const ut8* next = buffer + 2;
@@ -74,9 +74,24 @@ static RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 	}
 
 	if (object->tag == TAG_BITSTRING && object->sector[0] == 0) {
-		if (object->length > 0){
-			object->sector++; //real sector starts +1
+		if (object->length > 0) {
+			object->sector++; // real sector starts + 1
 			object->length--;
+		}
+	}
+	object->size = object->sector - buffer;
+	// XXX this is wrong way to compute offset
+	if (object->klass == CLASS_UNIVERSAL) {
+		switch (object->tag) {
+		case TAG_SET:
+		case TAG_SEQUENCE:
+			break;
+		case TAG_INTEGER:
+			object->size ++;
+			break;
+		default:
+			object->size += object->length;
+			break;
 		}
 	}
 	if (object->length > length) {
@@ -90,16 +105,13 @@ out_error:
 }
 
 static ut32 r_asn1_count_objects (const ut8 *buffer, ut32 length) {
-	ut32 counter;
-	RASN1Object *object;
-	const ut8 *next, *end;
 	if (!buffer || !length) {
 		return 0;
 	}
-	counter = 0;
-	object = NULL;
-	next = buffer;
-	end = buffer + length;
+	ut32 counter = 0;
+	RASN1Object *object = NULL;
+	const ut8 *next = buffer;
+	const ut8 *end = buffer + length;
 	while (next >= buffer && next < end) {
 		object = asn1_parse_header (next, end - next);
 		if (!object || next == object->sector) {
@@ -117,15 +129,13 @@ static ut32 r_asn1_count_objects (const ut8 *buffer, ut32 length) {
 R_API RASN1Object *r_asn1_create_object (const ut8 *buffer, ut32 length) {
 	RASN1Object *object = asn1_parse_header (buffer, length);
 	if (object && (object->form == FORM_CONSTRUCTED || object->tag == TAG_BITSTRING || object->tag == TAG_OCTETSTRING)) {
-		ut32 i, count;
-		RASN1Object *inner = NULL;
 		const ut8 *next = object->sector;
 		const ut8 *end = next + object->length;
 		if (end > buffer + length) {
 			free (object);
 			return NULL;
 		}
-		count = r_asn1_count_objects (object->sector, object->length);
+		ut32 count = r_asn1_count_objects (object->sector, object->length);
 		if (count > 0) {
 			object->list.length = count;
 			object->list.objects = R_NEWS0 (RASN1Object*, count);
@@ -133,14 +143,15 @@ R_API RASN1Object *r_asn1_create_object (const ut8 *buffer, ut32 length) {
 				r_asn1_free_object (object);
 				return NULL;
 			}
+			ut32 i;
 			for (i = 0; next >= buffer && next < end && i < count; ++i) {
-				inner = r_asn1_create_object (next, end - next);
+				RASN1Object *inner = r_asn1_create_object (next, end - next);
 				if (!inner || next == inner->sector) {
 					r_asn1_free_object (inner);
 					break;
 				}
 				next = inner->sector + inner->length;
-				R_PTR_MOVE (object->list.objects[i], inner);
+				object->list.objects[i] = inner;
 			}
 		}
 	}
@@ -186,7 +197,7 @@ R_API void r_asn1_print_hex (RASN1Object *object, char* buffer, ut32 size) {
 
 #if !ASN1_STD_FORMAT
 static void simplePrinter(RStrBuf *sb, RASN1Object *object, int depth, const char *k, const char *v) {
-	const char *pad = r_str_pad (' ', (depth * 2)-2);
+	const char *pad = r_str_pad (' ', (depth * 2) - 2);
 	if (object->form && !*v) {
 		return;
 	}
@@ -203,7 +214,7 @@ static void simplePrinter(RStrBuf *sb, RASN1Object *object, int depth, const cha
 }
 #endif
 
-// R_API void r_asn1_print_object (RASN1Object *object, ut32 depth) {
+ut64 offset = 0;
 R_API char *r_asn1_to_string (RASN1Object *object, ut32 depth, RStrBuf *sb) {
 	ut32 i;
 	bool root = false;
@@ -355,8 +366,11 @@ R_API char *r_asn1_to_string (RASN1Object *object, ut32 depth, RStrBuf *sb) {
 		string = asn1str->string;
 	}
 	if (ASN1_STD_FORMAT) {
-		r_strbuf_appendf (sb, "%4u:%2d: %s %-20s: %s\n", object->length,
-			depth, object->form ? "cons" : "prim", name, string);
+		// r_strbuf_appendf (sb, "0x%08"PFMT64x"  ", offset);
+		r_strbuf_appendf (sb, "%"PFMT64d"  ", offset);
+		offset += object->size;
+		r_strbuf_appendf (sb, "%4u:%2d: (%d) %s %-20s: %s\n", object->length,
+			depth, object->size, object->form ? "cons" : "prim", name, string);
 		r_asn1_free_string (asn1str);
 		if (object->list.objects) {
 			for (i = 0; i < object->list.length; ++i) {
@@ -381,8 +395,8 @@ R_API void r_asn1_free_object (RASN1Object *object) {
 	if (!object) {
 		return;
 	}
-	//this shall not be freed. it's a pointer into the buffer.
-	object->sector = 0;
+	// This shall not be freed. it's a pointer into the buffer.
+	object->sector = NULL;
 	if (object->list.objects) {
 		for (i = 0; i < object->list.length; ++i) {
 			r_asn1_free_object (object->list.objects[i]);
@@ -391,7 +405,7 @@ R_API void r_asn1_free_object (RASN1Object *object) {
 	}
 	object->list.objects = NULL;
 	object->list.length = 0;
-	R_FREE (object);
+	free (object);
 }
 
 R_API void r_asn1_free_binary (RASN1Binary* bin) {

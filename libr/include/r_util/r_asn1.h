@@ -81,6 +81,7 @@ typedef struct r_asn1_object_t {
 	ut8 undefined; /* set to != 0 if len is undefined */
 	const ut8 *sector; /* Sector containg data */
 	ut32 length; /* Sector Length */
+	ut32 size; /* Object size */
 	ASN1List list; /* List of objects contained in the sector */
 } RASN1Object;
 
