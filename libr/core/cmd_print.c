@@ -13,9 +13,11 @@
 
 static const char *help_msg_pa[] = {
 	"Usage: pa[edD]", "[asm|hex]", "print (dis)assembled",
-	"pae", "", "print assembled ESIL from hexpairs",
-	"pad", "", "print disassembled from hexpairs",
-	"paD", "", "print assembled from hexparis",
+	"pa", " [assembly]", "print hexpairs of the given assembled instruction",
+	"paD", " [assembly]", "print assembled from hexparis",
+	"pad", " [hexpairs]", "print disassembled from hexpairs",
+	"pae", " [assembly]", "print ESIL after assembling given instruction",
+	"pade", " [hexpairs]", "print ESIL expression assembled ESIL from hexpairs",
 	NULL
 };
 
@@ -4020,60 +4022,81 @@ static int cmd_print(void *data, const char *input) {
 	case 'a': // "pa"
 	{
 		const char *arg = NULL;
-
 		if (input[1] != '\0') {
 			arg = r_str_trim_ro (input + 2);
 		}
-
 		if (input[1] == 'e') { // "pae"
 			if (input[2] == '?') {
-				r_cons_printf ("|Usage: pae [hex]       assemble esil from hexpairs\n");
+				r_cons_printf ("|Usage: pae [asm]       assemble instruction and show esil\n");
 			} else {
 				int ret, bufsz;
 				RAnalOp aop = {
 					0
 				};
-				const char *str;
-				char *hex_arg = malloc (strlen (arg));
-
-				bufsz = r_hex_str2bin (arg, (ut8 *) hex_arg);
-				ret = r_anal_op (core->anal, &aop, core->offset,
-					(const ut8 *) hex_arg, bufsz, R_ANAL_OP_MASK_ESIL);
-				if (ret > 0) {
-					str = R_STRBUF_SAFEGET (&aop.esil);
-					r_cons_println (str);
+				r_asm_set_pc (core->assembler, core->offset);
+				RAsmCode *acode = r_asm_massemble (core->assembler, input + 2);
+				if (acode && *acode->buf_hex) {
+					bufsz = strlen (acode->buf_hex) >> 1;
+					ret = r_anal_op (core->anal, &aop, core->offset,
+							(const ut8 *) acode->buf, bufsz, R_ANAL_OP_MASK_ESIL);
+					if (ret > 0) {
+						const char *str = R_STRBUF_SAFEGET (&aop.esil);
+						r_cons_println (str);
+					}
+					r_anal_op_fini (&aop);
 				}
-				r_anal_op_fini (&aop);
-				free (hex_arg);
 			}
-		} else if (input[1] == 'D') {
+		} else if (input[1] == 'D') { // "paD"
 			if (input[2] == '?') {
-				r_cons_printf ("|Usage: paD [asm]       disasm like in pdi\n");
+				r_cons_printf ("|Usage: paD [hex]       disasm like in pdi\n");
 			} else {
 				r_core_cmdf (core, "pdi@x:%s", input + 2);
 			}
-		} else if (input[1] == 'd') { // "pad"
-			if (input[2] == '?') {
-				r_cons_printf ("|Usage: pad [asm]       disasm\n");
-			} else {
-				RAsmCode *c;
-				r_asm_set_pc (core->assembler, core->offset);
-				c = r_asm_mdisassemble_hexstr (core->assembler, arg);
-				if (c) {
-					r_cons_print (c->buf_asm);
-					r_asm_code_free (c);
+		} else if (input[1] == 'd') { // "pad*"
+			switch (input[2]) {
+			case 'e': // "pade"
+				if (input[2] == '?') {
+					r_cons_printf ("|Usage: pade [hex]       show esil from given hexpairs\n");
 				} else {
-					eprintf ("Invalid hexstr\n");
+					int ret, bufsz;
+					RAnalOp aop = {
+						0
+					};
+					char *hex_arg = malloc (strlen (arg));
+					bufsz = r_hex_str2bin (arg + 1, (ut8 *) hex_arg);
+					ret = r_anal_op (core->anal, &aop, core->offset,
+						(const ut8 *) hex_arg, bufsz, R_ANAL_OP_MASK_ESIL);
+					if (ret > 0) {
+						const char *str = R_STRBUF_SAFEGET (&aop.esil);
+						r_cons_println (str);
+					}
+					r_anal_op_fini (&aop);
+					free (hex_arg);
 				}
+				break;
+			case ' ': // "pad"
+				{
+					r_asm_set_pc (core->assembler, core->offset);
+					RAsmCode *c = r_asm_mdisassemble_hexstr (core->assembler, arg);
+					if (c) {
+						r_cons_print (c->buf_asm);
+						r_asm_code_free (c);
+					} else {
+						eprintf ("Invalid hexstr\n");
+					}
+				}
+				break;
+			default:
+				r_cons_printf ("|Usage: pad[e] [asm]       disasm\n");
+				break;
 			}
 		} else if (input[1] == '?') {
 			r_core_cmd_help(core, help_msg_pa);
 		} else {
-			RAsmCode *acode;
 			int i;
 			int bytes;
 			r_asm_set_pc (core->assembler, core->offset);
-			acode = r_asm_massemble (core->assembler, input + 1);
+			RAsmCode *acode = r_asm_massemble (core->assembler, input + 1);
 			if (acode && *acode->buf_hex) {
 				bytes = strlen (acode->buf_hex) >> 1;
 				for (i = 0; i < bytes; i++) {
