@@ -15,7 +15,7 @@ static const char *help_msg_pa[] = {
 	"Usage: pa[edD]", "[asm|hex]", "print (dis)assembled",
 	"pae", "", "print assembled ESIL from hexpairs",
 	"pad", "", "print disassembled from hexpairs",
-	"paD", "", "print assembled from hexparis",
+	"paD", "", "print disassembled from hexpairs (and also show hexpairs)",
 	NULL
 };
 
