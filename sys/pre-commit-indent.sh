@@ -30,8 +30,7 @@ restore_exit() {
 	exit 1
 }
 
-sz=$(wc -c "${TMPFILE}" | cut -d" " -f1)
-if [ "${sz}" != "0" ] ; then
+if [ -s "${TMPFILE}" ] ; then
 	echo "Please follow the coding style!"
 	echo "Run \`git diff --cached | ./sys/clang-format-diff.py -p1 -i\` to apply the changes listed below and remember to add them to git."
 	echo
