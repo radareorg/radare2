@@ -340,13 +340,6 @@ R_API int r_asm_use(RAsm *a, const char *name) {
 	return false;
 }
 
-R_API int r_asm_set_subarch(RAsm *a, const char *name) {
-	if (a->cur && a->cur->set_subarch) {
-		return a->cur->set_subarch(a, name);
-	}
-	return false;
-}
-
 static int has_bits(RAsmPlugin *h, int bits) {
 	return (h && h->bits && (bits & h->bits));
 }

@@ -142,7 +142,6 @@ typedef struct r_asm_plugin_t {
 	int (*disassemble)(RAsm *a, RAsmOp *op, const ut8 *buf, int len);
 	int (*assemble)(RAsm *a, RAsmOp *op, const char *buf);
 	RAsmModifyCallback modify;
-	int (*set_subarch)(RAsm *a, const char *buf);
 	char *(*mnemonics)(RAsm *a, int id, bool json);
 	const char *features;
 } RAsmPlugin;
