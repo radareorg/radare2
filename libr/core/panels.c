@@ -1915,12 +1915,12 @@ static void addMenu(RCore *core, const char *parent, const char *name, RPanelsMe
 	RPanelsMenuItem *item = R_NEW0 (RPanelsMenuItem);
 	RPanelsMenuItem *p_item;
 	if (parent) {
-		ut64 addr = r_num_math (core->num, sdb_ht_find (panels->mht, parent, NULL));
+		ut64 addr = r_num_math (core->num, ht_find (panels->mht, parent, NULL));
 		p_item = (RPanelsMenuItem *)addr;
-		sdb_ht_insert (panels->mht, sdb_fmt ("%s.%s", parent, name), sdb_fmt ("%p", item));
+		ht_insert (panels->mht, sdb_fmt ("%s.%s", parent, name), sdb_fmt ("%p", item));
 	} else {
 		p_item = panels->panelsMenu->root;
-		sdb_ht_insert (panels->mht, sdb_fmt ("%s", name), sdb_fmt ("%p", item));
+		ht_insert (panels->mht, sdb_fmt ("%s", name), sdb_fmt ("%p", item));
 	}
 	item->n_sub = 0;
 	item->selectedIndex = 0;
