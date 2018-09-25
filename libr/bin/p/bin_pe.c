@@ -16,7 +16,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 		 */
 		if (!memcmp (buf, "MZ", 2)) {
 			if (!memcmp (buf+idx, "PE", 2) &&
-				!memcmp (buf+idx+0x18, "\x0b\x01", 2)) {
+				!memcmp (buf + idx + 0x18, "\x0b\x01", 2)) {
 				return true;
 			}
 			// TODO: Add one more indicator, to prevent false positives

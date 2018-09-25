@@ -1529,9 +1529,9 @@ static int cb_io_cache_read(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->i_value) {
-		core->io->cached |= R_IO_READ;
+		core->io->cached |= R_PERM_R;
 	} else {
-		core->io->cached &= ~R_IO_READ;
+		core->io->cached &= ~R_PERM_R;
 	}
 	return true;
 }
@@ -1540,9 +1540,9 @@ static int cb_io_cache_write(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->i_value) {
-		core->io->cached |= R_IO_WRITE;
+		core->io->cached |= R_PERM_W;
 	} else {
-		core->io->cached &= ~R_IO_WRITE;
+		core->io->cached &= ~R_PERM_W;
 	}
 	return true;
 }
@@ -2438,6 +2438,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.calls", "true", "Show callee function related info as comments in disasm");
 	SETPREF ("asm.bbline", "false", "Show empty line after every basic block");
 	SETPREF ("asm.comments", "true", "Show comments in disassembly view");
+	SETPREF ("asm.usercomments", "false", "Show user comments even if asm.comments is false");
 	SETPREF ("asm.jmphints", "true", "Show jump hints [numbers] in disasm");
 	SETPREF ("asm.jmpsub", "false", "Always substitute jump, call and branch targets in disassembly");
 	SETPREF ("asm.leahints", "false", "Show LEA hints [numbers] in disasm");

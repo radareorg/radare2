@@ -195,7 +195,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->vsize = bi->page_size;
 	ptr->paddr = 0;
 	ptr->vaddr = 0;
-	ptr->srwx = R_BIN_SCN_READABLE; // r--
+	ptr->perm = R_PERM_R; // r--
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -207,7 +207,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->vsize = ADD_REMAINDER (ptr->size, bi->page_size);
 	ptr->paddr = bi->page_size;
 	ptr->vaddr = bi->kernel_addr;
-	ptr->srwx = R_BIN_SCN_READABLE; // r--
+	ptr->perm = R_PERM_R; // r--
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -221,7 +221,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->vsize = ADD_REMAINDER (bi->ramdisk_size, bi->page_size);
 		ptr->paddr = ROUND_DOWN (base, bi->page_size);
 		ptr->vaddr = bi->ramdisk_addr;
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE; // r-x
+		ptr->perm = R_PERM_RX; // r-x
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
@@ -236,7 +236,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->vsize = ADD_REMAINDER (bi->second_size, bi->page_size);
 		ptr->paddr = ROUND_DOWN (base, bi->page_size);
 		ptr->vaddr = bi->second_addr;
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE; // r-x
+		ptr->perm = R_PERM_RX; // r-x
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}

@@ -115,7 +115,7 @@ static RList *mem(RBinFile *bf) {
 	}
 	RList *ret;
 	RBinMem *m;
-	if (!(ret = r_list_new())) {
+	if (!(ret = r_list_new ())) {
 		return NULL;
 	}
 	ret->free = free;
@@ -161,7 +161,7 @@ static RList* sections(RBinFile* bf) {
 			ptr->size = 1024 * 8; // (8k)
 			ptr->vaddr = 0xa000;
 			ptr->vsize = 1024 * 8;	// BASIC size (8k)
-			ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE;
+			ptr->perm = R_PERM_RX;
 			ptr->add = true;
 			r_list_append (ret, ptr);
 
@@ -176,7 +176,7 @@ static RList* sections(RBinFile* bf) {
 			ptr->size = 1024 * 8; // (8k)
 			ptr->vaddr = 0xe000;
 			ptr->vsize = 1024 * 8;	// KERNAL size (8k)
-			ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE;
+			ptr->perm = R_PERM_RX;
 			ptr->add = true;
 			r_list_append (ret, ptr);
 
@@ -194,7 +194,7 @@ static RList* sections(RBinFile* bf) {
 			ptr->size = 1024 * 28; // (28k)
 			ptr->vaddr = 0x4000;
 			ptr->vsize = 1024 * 28;	// BASIC size (28k)
-			ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE;
+			ptr->perm = R_PERM_RX;
 			ptr->add = true;
 			r_list_append (ret, ptr);
 
@@ -210,7 +210,7 @@ static RList* sections(RBinFile* bf) {
 			ptr->size = 1024 * 4; // (4k)
 			ptr->vaddr = 0xb000;
 			ptr->vsize = 1024 * 4;	// BASIC size (4k)
-			ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE;
+			ptr->perm = R_PERM_RX;
 			ptr->add = true;
 			r_list_append (ret, ptr);
 
@@ -225,7 +225,7 @@ static RList* sections(RBinFile* bf) {
 			ptr->size = 1024 * 4; // (4k)
 			ptr->vaddr = 0xc000;
 			ptr->vsize = 1024 * 4;	// BASIC size (4k)
-			ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE;
+			ptr->perm = R_PERM_RX;
 			ptr->add = true;
 			r_list_append (ret, ptr);
 
@@ -240,7 +240,7 @@ static RList* sections(RBinFile* bf) {
 			ptr->size = 1024 * 8; // (8k)
 			ptr->vaddr = 0xe000;
 			ptr->vsize = 1024 * 8;	// KERNAL size (8k)
-			ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE;
+			ptr->perm = R_PERM_RX;
 			ptr->add = true;
 			r_list_append (ret, ptr);
 
@@ -261,7 +261,7 @@ static RList* sections(RBinFile* bf) {
 			ptr->size = size;
 			ptr->vaddr = 0x0;
 			ptr->vsize = size;
-			ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_EXECUTABLE;
+			ptr->perm = R_PERM_RWX;
 			ptr->add = true;
 			r_list_append (ret, ptr);
 		} else {
@@ -278,7 +278,7 @@ static RList* sections(RBinFile* bf) {
 			ptr->size = size;
 			ptr->vaddr = 0x0;
 			ptr->vsize = size;
-			ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_EXECUTABLE;
+			ptr->perm = R_PERM_RWX;
 			ptr->add = true;
 			r_list_append (ret, ptr);
 
@@ -290,7 +290,7 @@ static RList* sections(RBinFile* bf) {
 			ptr->size = size;
 			ptr->vaddr = 0x0;
 			ptr->vsize = size;
-			ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_EXECUTABLE;
+			ptr->perm = R_PERM_RWX;
 			ptr->add = true;
 			r_list_append (ret, ptr);
 		}

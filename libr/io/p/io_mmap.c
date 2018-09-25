@@ -113,7 +113,7 @@ static int r_io_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	}
 	mmo = fd->data;
 	addr = io->off;
-	if ( !(mmo->flags & R_IO_WRITE)) {
+	if ( !(mmo->flags & R_PERM_W)) {
 		return -1;
 	}
 	if ( (count + addr > mmo->buf->length) || mmo->buf->empty) {

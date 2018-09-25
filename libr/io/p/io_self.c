@@ -23,10 +23,6 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 #include <process.h>  // to compile getpid for msvc windows
 #endif
 
-#define PERM_READ 4
-#define PERM_WRITE 2
-#define PERM_EXEC 1
-
 typedef struct {
 	char *name;
 	ut64 from;
@@ -99,9 +95,9 @@ static int update_self_regions(RIO *io, int pid) {
 		perm = 0;
 		for (i = 0; i < 4 && perms[i]; i++) {
 			switch (perms[i]) {
-			case 'r': perm |= R_IO_READ; break;
-			case 'w': perm |= R_IO_WRITE; break;
-			case 'x': perm |= R_IO_EXEC; break;
+			case 'r': perm |= R_PERM_R; break;
+			case 'w': perm |= R_PERM_W; break;
+			case 'x': perm |= R_PERM_X; break;
 			}
 		}
 		self_sections[self_sections_count].from = r_num_get (NULL, region);
@@ -145,7 +141,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 	int left, perm;
 	if (self_in_section (io, io->off, &left, &perm)) {
-		if (perm & R_IO_READ) {
+		if (perm & R_PERM_R) {
 			int newlen = R_MIN (len, left);
 			ut8 *ptr = (ut8*)(size_t)io->off;
 			memcpy (buf, ptr, newlen);
@@ -156,7 +152,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
-	if (fd->flags & R_IO_WRITE) {
+	if (fd->perm & R_PERM_W) {
 		int left, perm;
 		if (self_in_section (io, io->off, &left, &perm)) {
 			int newlen = R_MIN (len, left);
@@ -480,9 +476,8 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 
 			self_sections[self_sections_count].from = prev_address;
 			self_sections[self_sections_count].to = prev_address+prev_size;
-			self_sections[self_sections_count].perm = PERM_READ; //prev_info.protection;
+			self_sections[self_sections_count].perm = R_PERM_R; //prev_info.protection;
 			self_sections_count++;
-
 			if (nsubregions > 1) {
 				io->cb_printf (" (%d sub-regions)", nsubregions);
 			}

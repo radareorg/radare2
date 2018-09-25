@@ -102,8 +102,7 @@ static char *r2k__system(RIO *io, RIODesc *fd, const char *cmd) {
 
 static RIODesc *r2k__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (!strncmp (pathname, "r2k://", 6)) {
-		rw |= R_IO_WRITE;
-		rw |= R_IO_EXEC;
+		rw |= R_PERM_WX;
 #if __WINDOWS__
 		RIOW32 *w32 = R_NEW0 (RIOW32);
 		if (Init (&pathname[6]) == FALSE) {

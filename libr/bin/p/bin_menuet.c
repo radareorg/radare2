@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2016 - pancake */
+/* radare2 - LGPL - Copyright 2016-2018 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -132,7 +132,7 @@ static RList* sections(RBinFile *bf) {
 	ptr->vsize = ptr->size + (ptr->size % 4096);
 	ptr->paddr = r_read_ble32 (buf + 12, false);
 	ptr->vaddr = ptr->paddr + baddr (bf);
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE; // r-x
+	ptr->perm = R_PERM_RX; // r-x
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -148,7 +148,7 @@ static RList* sections(RBinFile *bf) {
 		ptr->vsize = ptr->size + (ptr->size % 4096);
 		ptr->paddr = r_read_ble32 (buf + 40, false);
 		ptr->vaddr = ptr->paddr + baddr (bf);
-		ptr->srwx = R_BIN_SCN_READABLE; // r--
+		ptr->perm = R_PERM_R; // r--
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}

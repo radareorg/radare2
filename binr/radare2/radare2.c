@@ -477,7 +477,7 @@ int main(int argc, char **argv, char **envp) {
 	int help = 0;
 	int run_anal = 1;
 	int run_rc = 1;
- 	int ret, c, perms = R_IO_READ | R_IO_EXEC;
+ 	int ret, c, perms = R_PERM_RX;
 	bool sandbox = false;
 	ut64 baddr = UT64_MAX;
 	ut64 seek = UT64_MAX;
@@ -722,10 +722,10 @@ int main(int argc, char **argv, char **envp) {
 		case 'V':
 			return verify_version (1);
 		case 'w':
-			perms |= R_IO_WRITE;
+			perms |= R_PERM_W;
 			break;
 		case 'x':
-			perms &= ~R_IO_EXEC;
+			perms &= ~R_PERM_X;
 			r_config_set (r.config, "io.exec", "false");
 			break;
 		default:
@@ -971,7 +971,7 @@ int main(int argc, char **argv, char **envp) {
 			}
 			r_config_set (r.config, "search.in", "dbg.map"); // implicit?
 			r_config_set (r.config, "cfg.debug", "true");
-			perms = R_IO_READ | R_IO_WRITE | R_IO_EXEC;
+			perms = R_PERM_RWX;
 			if (optind >= argc) {
 				eprintf ("No program given to -d\n");
 				LISTS_FREE ();
@@ -984,7 +984,7 @@ int main(int argc, char **argv, char **envp) {
 					if (!haveRarunProfile) {
 						pfile = strdup (argv[optind++]);
 					}
-					perms = R_IO_READ | R_IO_EXEC; // XXX. should work with rw too
+					perms = R_PERM_RX; // XXX. should work with rw too
 					debug = 2;
 					if (!strstr (pfile, "://")) {
 						optind--; // take filename
@@ -1099,11 +1099,11 @@ int main(int argc, char **argv, char **envp) {
 				while (optind < argc) {
 					pfile = argv[optind++];
 					fh = r_core_file_open (&r, pfile, perms, mapaddr);
-					if (!fh && perms & R_IO_WRITE) {
-						perms |= R_IO_CREAT;
+					if (!fh && perms & R_PERM_W) {
+						perms |= R_PERM_CREAT;
 						fh = r_core_file_open (&r, pfile, perms, mapaddr);
 					}
-					if (perms & R_IO_CREAT) {
+					if (perms & R_PERM_CREAT) {
 						if (fh) {
 							r_config_set_i (r.config, "io.va", false);
 						} else {
@@ -1112,8 +1112,8 @@ int main(int argc, char **argv, char **envp) {
 					}
 					if (fh) {
 						iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
-						if (perms & R_IO_EXEC) {
-							iod->flags |= R_IO_EXEC;
+						if (perms & R_PERM_X) {
+							iod->perm |= R_PERM_X;
 						}
 						if (run_anal > 0) {
 #if USE_THREADS
@@ -1161,7 +1161,7 @@ int main(int argc, char **argv, char **envp) {
 					if (fh) {
 						iod = r.io ? r_io_desc_get (r.io, fh->fd) : NULL;
 						if (iod) {
-							perms = iod->flags;
+							perms = iod->perm;
 							r_io_map_new (r.io, iod->fd, perms, 0LL, 0LL, r_io_desc_size (iod));
 						}
 					}
@@ -1219,7 +1219,7 @@ int main(int argc, char **argv, char **envp) {
 		if (!fh) {
 			if (pfile && *pfile) {
 				r_cons_flush ();
-				if (perms & R_IO_WRITE) {
+				if (perms & R_PERM_W) {
 					eprintf ("[w] Cannot open '%s' for writing.\n", pfile);
 				} else {
 					eprintf ("[r] Cannot open '%s'\n", pfile);
@@ -1380,7 +1380,7 @@ int main(int argc, char **argv, char **envp) {
 	if (fullfile) {
 		r_core_block_size (&r, r_io_desc_size (iod));
 	}
-	if (perms & R_IO_WRITE) {
+	if (perms & R_PERM_W) {
 		r_core_cmd0 (&r, "omfg+w");
 	}
 	ret = run_commands (cmds, files, quiet);

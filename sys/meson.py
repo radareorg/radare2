@@ -48,8 +48,12 @@ def set_global_variables():
         version = f.readline().split()[1].rstrip()
 
     if os.name == 'nt':
-        meson = os.path.join(os.path.dirname(sys.executable), 'Scripts', 'meson.py')
-        MESON = [sys.executable, meson]
+        meson = os.path.join(os.path.dirname(sys.executable), 'Scripts', 'meson.exe')
+        if os.path.exists(meson):
+            MESON = [meson]
+        else:
+            meson = os.path.join(os.path.dirname(sys.executable), 'Scripts', 'meson.py')
+            MESON = [sys.executable, meson]
     else:
         MESON = ['meson']
 

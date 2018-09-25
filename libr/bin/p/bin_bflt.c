@@ -72,7 +72,7 @@ static RList *patch_relocs(RBin *b) {
 	if (!b || !b->iob.io || !b->iob.io->desc) {
 		return NULL;
 	}
-	if (!(b->iob.io->cached & R_IO_WRITE)) {
+	if (!(b->iob.io->cached & R_PERM_W)) {
 		eprintf (
 			"Warning: please run r2 with -e io.cache=true to patch "
 			"relocations\n");

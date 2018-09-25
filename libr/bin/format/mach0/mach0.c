@@ -652,7 +652,7 @@ static void parseCodeDirectory (RBuffer *b, int offset, int datasize) {
 	ut8 *hash = p + cscd.hashOffset;
 	int j = 0;
 	int k = 0;
-	eprintf ("Hashed region: 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", 0, cscd.codeLimit);
+	eprintf ("Hashed region: 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", (ut64)0, (ut64)cscd.codeLimit);
 	for (j = 0; j < cscd.nCodeSlots; j++) {
 		int fof = 4096 * j;
 		int idx = j * hashSize;
@@ -1604,7 +1604,7 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 			sectname[16] = 0;
 			r_str_filter (sectname, -1);
 			// hack to support multiple sections with same name
-			sections[i].srwx = prot2perm (seg->initprot);
+			sections[i].perm = prot2perm (seg->initprot);
 			sections[i].last = 0;
 		}
 		sections[i].last = 1;
@@ -1638,7 +1638,7 @@ struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin) {
 		for (j = 0; j < bin->nsegs; j++) {
 			if (sections[i].addr >= bin->segs[j].vmaddr &&
 				sections[i].addr < (bin->segs[j].vmaddr + bin->segs[j].vmsize)) {
-				sections[i].srwx = prot2perm (bin->segs[j].initprot);
+				sections[i].perm = prot2perm (bin->segs[j].initprot);
 				break;
 			}
 		}

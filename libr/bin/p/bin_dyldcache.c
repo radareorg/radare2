@@ -300,7 +300,7 @@ static RDyldRebaseInfo *get_rebase_info(RBinFile *bf, RDyldCache *cache) {
 	int i;
 	for (i = 0; i < cache->hdr->mappingCount; ++i) {
 		int perm = prot2perm (cache->maps[i].initProt);
-		if (!(perm & R_BIN_SCN_EXECUTABLE)) {
+		if (!(perm & R_PERM_X)) {
 			start_of_data = cache->maps[i].fileOffset;// + bf->o->boffset;
 			break;
 		}
@@ -1044,7 +1044,7 @@ static void sections_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
 		if (!ptr->vaddr) {
 			ptr->vaddr = ptr->paddr;
 		}
-		ptr->srwx = sections[i].srwx;
+		ptr->perm = sections[i].perm;
 		r_list_append (ret, ptr);
 	}
 	free (sections);
@@ -1080,7 +1080,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->paddr = cache->maps[i].fileOffset;// + bf->o->boffset;
 		ptr->vaddr = cache->maps[i].address;
 		ptr->add = true;
-		ptr->srwx = prot2perm (cache->maps[i].initProt);
+		ptr->perm = prot2perm (cache->maps[i].initProt);
 		r_list_append (ret, ptr);
 	}
 

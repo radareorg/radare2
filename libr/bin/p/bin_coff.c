@@ -151,15 +151,15 @@ static RList *sections(RBinFile *bf) {
 			ptr->vsize = obj->scn_hdrs[i].s_size;
 			ptr->paddr = obj->scn_hdrs[i].s_scnptr;
 			ptr->add = true;
-			ptr->srwx = 0;
+			ptr->perm = 0;
 			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_READ) {
-				ptr->srwx |= R_BIN_SCN_READABLE;
+				ptr->perm |= R_PERM_R;
 			}
 			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_WRITE) {
-				ptr->srwx |= R_BIN_SCN_WRITABLE;
+				ptr->perm |= R_PERM_W;
 			}
 			if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_EXECUTE) {
-				ptr->srwx |= R_BIN_SCN_EXECUTABLE;
+				ptr->perm |= R_PERM_X;
 			}
 			r_list_append (ret, ptr);
 		}

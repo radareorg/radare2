@@ -47,7 +47,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		perm = 7;
 	} else {
 		if (!perm) {
-			perm = 4; //R_IO_READ;
+			perm = 4; //R_PERM_R;
 		}
 	}
 	if (!ofilepath) {
@@ -79,7 +79,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		odesc = NULL;
 		//	core->file = file;
 		eprintf ("File %s reopened in %s mode\n", path,
-			(perm & R_IO_WRITE)? "read-write": "read-only");
+			(perm & R_PERM_W)? "read-write": "read-only");
 
 		if (loadbin && (loadbin == 2 || had_rbin_info)) {
 			ut64 baddr = r_config_get_i (core->config, "bin.baddr");
@@ -99,7 +99,7 @@ R_API int r_core_file_reopen(RCore *core, const char *args, int perm, int loadbi
 		eprintf ("r_core_file_reopen: Cannot reopen file: %s with perms 0x%04x,"
 			" attempting to open read-only.\n", path, perm);
 		// lower it down back
-		//ofile = r_core_file_open (core, path, R_IO_READ, addr);
+		//ofile = r_core_file_open (core, path, R_PERM_R, addr);
 		r_core_file_set_by_file (core, ofile);
 	} else {
 		eprintf ("Cannot reopen\n");
@@ -568,7 +568,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 
 	if (plugin && plugin->name) {
 		if (!strncmp (plugin->name, "any", 3)) {
-			r_io_map_new (r->io, desc->fd, desc->flags, 0, laddr, r_io_desc_size (desc));
+			r_io_map_new (r->io, desc->fd, desc->perm, 0, laddr, r_io_desc_size (desc));
 			// set use of raw strings
 			//r_config_set (r->config, "bin.rawstr", "true");
 			// r_config_set_i (r->config, "io.va", false);
@@ -584,7 +584,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 				}
 				//workaround to map correctly malloc:// and raw binaries
 				if (r_io_desc_is_dbg (desc) || (!obj->sections || !va)) {
-					r_io_map_new (r->io, desc->fd, desc->flags, 0, laddr, r_io_desc_size (desc));
+					r_io_map_new (r->io, desc->fd, desc->perm, 0, laddr, r_io_desc_size (desc));
 				}
 
 				RBinInfo *info = obj->info;
@@ -598,7 +598,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			}
 		}
 	} else {
-		r_io_map_new (r->io, desc->fd, desc->flags, 0, laddr, r_io_desc_size (desc));
+		r_io_map_new (r->io, desc->fd, desc->perm, 0, laddr, r_io_desc_size (desc));
 		if (binfile) {
 			r_core_bin_set_arch_bits (r, binfile->file,
 					r_config_get (r->config, "asm.arch"),
@@ -606,7 +606,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		}
 	}
 	if (desc && r_config_get_i (r->config, "io.exec")) {
-		desc->flags |= R_IO_EXEC;
+		desc->perm |= R_PERM_X;
 	}
 	if (plugin && plugin->name && !strcmp (plugin->name, "dex")) {
 		r_core_cmd0 (r, "\"(fix-dex,wx `ph sha1 $s-32 @32` @12 ;"
@@ -743,7 +743,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 	}
 	//if not flags was passed open it with -r--
 	if (!flags) {
-		flags = R_IO_READ;
+		flags = R_PERM_R;
 	}
 	r->io->bits = r->assembler->bits; // TODO: we need an api for this
 	RIODesc *fd = r_io_open_nomap (r->io, file, flags, 0644);
@@ -755,7 +755,7 @@ R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 lo
 		}
 	}
 	if (!fd) {
-		if (flags & R_IO_WRITE) {
+		if (flags & R_PERM_W) {
 		//	flags |= R_IO_CREAT;
 			if (!(fd = r_io_open_nomap (r->io, file, flags, 0644))) {
 				goto beach;
@@ -928,7 +928,7 @@ R_API int r_core_file_list(RCore *core, int mode) {
 				PFMT64d ",\"writable\":%s,\"size\":%d}%s",
 				core->io->desc->fd == f->fd ? "true": "false",
 				(int) f->fd, desc->uri, (ut64) from,
-				desc->flags & R_IO_WRITE? "true": "false",
+				desc->perm & R_PERM_W? "true": "false",
 				(int) r_io_desc_size (desc),
 				iter->n? ",": "");
 			break;
@@ -988,7 +988,7 @@ R_API int r_core_file_list(RCore *core, int mode) {
 				core->io->desc->fd == f->fd ? '*': '-',
 				count,
 				(int) f->fd, desc->uri, (ut64) from,
-				desc->flags & R_IO_WRITE? "rw": "r",
+				desc->perm & R_PERM_W? "rw": "r",
 				r_io_desc_size (desc));
 		}
 		break;
@@ -1039,7 +1039,7 @@ R_API int r_core_file_binlist(RCore *core) {
 		if (cf) {
 			r_cons_printf ("%c %d %s ; %s\n",
 				core->io->desc == desc ? '*': '-',
-				fd, desc->uri, desc->flags & R_IO_WRITE? "rw": "r");
+				fd, desc->uri, desc->perm & R_PERM_W? "rw": "r");
 		}
 	}
 	r_core_file_set_by_file (core, cur_cf);

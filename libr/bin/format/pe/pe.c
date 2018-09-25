@@ -2568,7 +2568,7 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 				"trying to fix it but i do not promise nothing\n");
 		}
 		for (i = 0; i < bin->num_sections; i++) {
-			if (sections[i].flags & PE_IMAGE_SCN_MEM_EXECUTE) {
+			if (sections[i].perm & PE_IMAGE_SCN_MEM_EXECUTE) {
 				entry->paddr = sections[i].paddr;
 				entry->vaddr = sections[i].vaddr + base_addr;
 				paddr = 1;
@@ -2602,7 +2602,7 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 		struct r_bin_pe_section_t* sections = bin->sections;
 		for (i = 0; i < bin->num_sections; i++) {
 			//If there is a section with x without w perm is a good candidate to be the entrypoint
-			if (sections[i].flags & PE_IMAGE_SCN_MEM_EXECUTE && !(sections[i].flags & PE_IMAGE_SCN_MEM_WRITE)) {
+			if (sections[i].perm & PE_IMAGE_SCN_MEM_EXECUTE && !(sections[i].perm & PE_IMAGE_SCN_MEM_WRITE)) {
 				entry->paddr = sections[i].paddr;
 				entry->vaddr = sections[i].vaddr + base_addr;
 				break;
@@ -3247,7 +3247,7 @@ void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_
 			}
 			//look for other segment with x that is already mapped and hold entrypoint
 			for (j = 0; !sections[j].last; j++) {
-				if (sections[j].flags & PE_IMAGE_SCN_MEM_EXECUTE) {
+				if (sections[j].perm & PE_IMAGE_SCN_MEM_EXECUTE) {
 					addr_beg = sections[j].paddr;
 					addr_end = addr_beg + sections[j].size;
 					if (addr_beg <= entry->paddr && entry->paddr < addr_end) {
@@ -3270,7 +3270,7 @@ void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_
 				sections[i].paddr = entry->paddr;
 				sections[i].vaddr = entry->vaddr - base_addr;
 				sections[i].size = sections[i].vsize = new_section_size;
-				sections[i].flags = new_perm;
+				sections[i].perm = new_perm;
 			}
 			goto out_function;
 		}
@@ -3306,7 +3306,7 @@ void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_
 	sections[i].paddr = entry->paddr;
 	sections[i].vaddr = entry->vaddr - base_addr;
 	sections[i].size = sections[i].vsize = new_section_size;
-	sections[i].flags = new_perm;
+	sections[i].perm = new_perm;
 	sections[i + 1].last = 1;
 	*sects = sections;
 out_function:
@@ -3387,7 +3387,7 @@ static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe
 			}
 		}
 		sections[j].paddr = shdr[i].PointerToRawData;
-		sections[j].flags = shdr[i].Characteristics;
+		sections[j].perm = shdr[i].Characteristics;
 		sections[j].last = 0;
 		j++;
 	}

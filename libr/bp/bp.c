@@ -103,17 +103,17 @@ static inline bool inRange(RBreakpointItem *b, ut64 addr) {
 	return (addr >= b->addr && addr < (b->addr + b->size));
 }
 
-static inline bool matchProt(RBreakpointItem *b, int rwx) {
-	return (!rwx || (rwx && b->rwx));
+static inline bool matchProt(RBreakpointItem *b, int perm) {
+	return (!perm || (perm && b->perm));
 }
 
-R_API RBreakpointItem *r_bp_get_in(RBreakpoint *bp, ut64 addr, int rwx) {
+R_API RBreakpointItem *r_bp_get_in(RBreakpoint *bp, ut64 addr, int perm) {
 	RBreakpointItem *b;
 	RListIter *iter;
 	r_list_foreach (bp->bps, iter, b) {
-		// eprintf ("---ataddr--- 0x%08"PFMT64x" %d %d %x\n", b->addr, b->size, b->recoil, b->rwx);
-		// Check addr within range and provided rwx matches (or null)
-		if (inRange (b, addr) && matchProt (b, rwx)) {
+		// eprintf ("---ataddr--- 0x%08"PFMT64x" %d %d %x\n", b->addr, b->size, b->recoil, b->perm);
+		// Check addr within range and provided perm matches (or null)
+		if (inRange (b, addr) && matchProt (b, perm)) {
 			return b;
 		}
 	}
@@ -155,13 +155,13 @@ static void unlinkBreakpoint(RBreakpoint *bp, RBreakpointItem *b) {
 }
 
 /* TODO: detect overlapping of breakpoints */
-static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, int size, int hw, int rwx) {
+static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, int size, int hw, int perm) {
 	int ret;
 	RBreakpointItem *b;
 	if (addr == UT64_MAX || size < 1) {
 		return NULL;
 	}
-	if (r_bp_get_in (bp, addr, rwx)) {
+	if (r_bp_get_in (bp, addr, perm)) {
 		eprintf ("Breakpoint already set at this address.\n");
 		return NULL;
 	}
@@ -169,7 +169,7 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 	b->addr = addr + bp->delta;
 	b->size = size;
 	b->enabled = true;
-	b->rwx = rwx;
+	b->perm = perm;
 	b->hw = hw;
 	// NOTE: for hw breakpoints there are no bytes to save/restore
 	if (!hw) {
@@ -201,12 +201,12 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 *obytes, ut64 addr, 
 	return b;
 }
 
-R_API int r_bp_add_fault(RBreakpoint *bp, ut64 addr, int size, int rwx) {
+R_API int r_bp_add_fault(RBreakpoint *bp, ut64 addr, int size, int perm) {
 	// TODO
 	return false;
 }
 
-R_API RBreakpointItem* r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int rwx) {
+R_API RBreakpointItem* r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int perm) {
 	RBreakpointItem *item;
 	ut8 *bytes;
 	if (size < 1) {
@@ -219,13 +219,13 @@ R_API RBreakpointItem* r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int rwx
 	if (bp->iob.read_at) {
 		bp->iob.read_at (bp->iob.io, addr, bytes, size);
 	}
-	item = r_bp_add (bp, bytes, addr, size, R_BP_TYPE_SW, rwx);
+	item = r_bp_add (bp, bytes, addr, size, R_BP_TYPE_SW, perm);
 	free (bytes);
 	return item;
 }
 
-R_API RBreakpointItem* r_bp_add_hw(RBreakpoint *bp, ut64 addr, int size, int rwx) {
-	return r_bp_add (bp, NULL, addr, size, R_BP_TYPE_HW, rwx);
+R_API RBreakpointItem* r_bp_add_hw(RBreakpoint *bp, ut64 addr, int size, int perm) {
+	return r_bp_add (bp, NULL, addr, size, R_BP_TYPE_HW, perm);
 }
 
 R_API int r_bp_del_all(RBreakpoint *bp) {
@@ -284,9 +284,9 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 				" %d %c%c%c %s %s %s cmd=\"%s\" cond=\"%s\" " \
 				"name=\"%s\" module=\"%s\"\n",
 				b->addr, b->addr + b->size, b->size,
-				((b->rwx & R_BP_PROT_READ) | (b->rwx & R_BP_PROT_ACCESS)) ? 'r' : '-',
-				((b->rwx & R_BP_PROT_WRITE)| (b->rwx & R_BP_PROT_ACCESS)) ? 'w' : '-',
-				(b->rwx & R_BP_PROT_EXEC) ? 'x' : '-',
+				((b->perm & R_BP_PROT_READ) | (b->perm & R_BP_PROT_ACCESS)) ? 'r' : '-',
+				((b->perm & R_BP_PROT_WRITE)| (b->perm & R_BP_PROT_ACCESS)) ? 'w' : '-',
+				(b->perm & R_BP_PROT_EXEC) ? 'x' : '-',
 				b->hw ? "hw": "sw",
 				b->trace ? "trace" : "break",
 				b->enabled ? "enabled" : "disabled",
@@ -316,9 +316,9 @@ R_API int r_bp_list(RBreakpoint *bp, int rad) {
 				"\"cond\":\"%s\"}",
 				iter->p ? "," : "",
 				b->addr, b->size,
-				(b->rwx & R_BP_PROT_READ) ? 'r' : '-',
-				(b->rwx & R_BP_PROT_WRITE) ? 'w' : '-',
-				(b->rwx & R_BP_PROT_EXEC) ? 'x' : '-',
+				(b->perm & R_BP_PROT_READ) ? 'r' : '-',
+				(b->perm & R_BP_PROT_WRITE) ? 'w' : '-',
+				(b->perm & R_BP_PROT_EXEC) ? 'x' : '-',
 				b->hw ? "true" : "false",
 				b->trace ? "true" : "false",
 				b->enabled ? "true" : "false",

@@ -70,7 +70,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		isdev = true;
 	}
 
-	rw |= R_IO_WRITE;
+	rw |= R_PERM_W;
 	if (isdev) {
 		port = strchr (host, '@');
 		if (port) {
@@ -127,7 +127,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		} else if ((i_pid = desc->pid) < 0) {
 			i_pid = -1;
 		}
-		riogdb = r_io_desc_new (io, &r_io_plugin_gdb, file, R_IO_RWX, mode, riog);
+		riogdb = r_io_desc_new (io, &r_io_plugin_gdb, file, R_PERM_RWX, mode, riog);
 	}
 	// Get name
 	if (riogdb) {

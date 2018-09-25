@@ -137,6 +137,7 @@ typedef struct {
 	bool show_reloff;
 	bool show_reloff_flags;
 	bool show_comments;
+	bool show_usercomments;
 	bool show_jmphints;
 	bool show_leahints;
 	bool show_slow;
@@ -640,8 +641,8 @@ static RDisasmState * ds_init(RCore *core) {
 		ut64 addr = r_reg_getv (core->anal->reg, "SP") - (size / 2);
 		emustack_min = addr;
 		emustack_max = addr + size;
-		ds->stackFd = r_io_fd_open (core->io, uri, R_IO_RW, 0);
-		RIOMap *map = r_io_map_add (core->io, ds->stackFd, R_IO_RW, 0LL, addr, size);
+		ds->stackFd = r_io_fd_open (core->io, uri, R_PERM_RW, 0);
+		RIOMap *map = r_io_map_add (core->io, ds->stackFd, R_PERM_RW, 0LL, addr, size);
 		if (!map) {
 			r_io_fd_close (core->io, ds->stackFd);
 			eprintf ("Cannot create map for tha stack, fd %d got closed again\n", ds->stackFd);
@@ -659,6 +660,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_reloff_flags = r_config_get_i (core->config, "asm.reloff.flags");
 	ds->show_lines_fcn = ds->show_lines ? r_config_get_i (core->config, "asm.lines.fcn") : false;
 	ds->show_comments = r_config_get_i (core->config, "asm.comments");
+	ds->show_usercomments = r_config_get_i (core->config, "asm.usercomments");
 	ds->show_jmphints = r_config_get_i (core->config, "asm.jmphints");
 	ds->show_leahints = r_config_get_i (core->config, "asm.leahints");
 	ds->show_slow = r_config_get_i (core->config, "asm.slow");
@@ -1119,6 +1121,7 @@ static void ds_show_refs(RDisasmState *ds) {
 		if (cmt) {
 			_ds_comment_align_ (ds, true, false);
 			ds_comment (ds, true, "; (%s)", cmt);
+			free (cmt);
 		}
 		if (ref->type & R_ANAL_REF_TYPE_CALL) {
 			RAnalOp aop;
@@ -1820,14 +1823,12 @@ static void ds_print_pre(RDisasmState *ds) {
 static void ds_show_comments_right(RDisasmState *ds) {
 	int linelen;
 	RCore *core = ds->core;
-	RFlagItem *item;
 	/* show comment at right? */
 	int scr = ds->show_comment_right;
-	if (!ds->show_comments) {
+	if (!ds->show_comments && !ds->show_usercomments) {
 		return;
 	}
-	//RAnalFunction *f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
-	item = r_flag_get_i (core->flags, ds->at);
+	RFlagItem *item = r_flag_get_i (core->flags, ds->at);
 	char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ds->at);
 	char *vartype = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, ds->at);
 	if (!comment) {
@@ -1845,6 +1846,11 @@ static void ds_show_comments_right(RDisasmState *ds) {
 	} else {
 		ds->comment = r_str_newf ("%s; %s", COLOR_ARG (ds, color_usrcmt), comment);
 	}
+#if 0
+	if (!ds->show_comments) {
+		return;
+	}
+#endif
 	if (!ds->comment || !*ds->comment) {
 		return;
 	}
@@ -1852,7 +1858,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 	if (ds->show_comment_right_default) {
 		if (ds->ocols + linelen < core->cons->columns) {
 			if (!strchr (ds->comment, '\n')) { // more than one line?
-				ds->show_comment_right = 1;
+				ds->show_comment_right = true;
 			}
 		}
 	}
@@ -4385,7 +4391,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 		desc = r_asm_describe (core->assembler, locase);
 		free (locase);
 	}
-	if (ds->show_comments) {
+	if (ds->show_usercomments || ds->show_comments) {
 		if (desc && *desc) {
 			ds_align_comment (ds);
 			if (ds->show_color) {
@@ -4871,7 +4877,7 @@ toro:
 			// ds_print_cc_update (ds);
 
 			ds_cdiv_optimization (ds);
-			if (ds->show_comments && ds->show_comment_right) {
+			if ((ds->show_comments || ds->show_usercomments) && ds->show_comment_right) {
 				ds_instruction_mov_lea (ds, idx);
 				ds_print_ptr (ds, len + 256, idx);
 				ds_print_sysregs (ds);
@@ -4883,13 +4889,12 @@ toro:
 			}
 		} else {
 			ds_end_line_highlight (ds);
-			if (ds->show_comments && ds->show_comment_right) {
+			if ((ds->show_comments || ds->show_usercomments) && ds->show_comment_right) {
 				ds_print_color_reset (ds);
 				ds_print_comments_right (ds);
 			}
 			ds->mi_found = false;
 		}
-
 		core->print->resetbg = true;
 		ds_newline (ds);
 		if (ds->show_bbline && !ds->bblined && !ds->fcn) {
