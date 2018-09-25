@@ -908,7 +908,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 	case 'a':
 		{
 			asn1_setformat (input[1] != 'q');
-			RASN1Object *asn1 = r_asn1_create_object (data, size);
+			RASN1Object *asn1 = r_asn1_create_object (data, size, data);
 			if (asn1) {
 				char *res = r_asn1_to_string (asn1, 0, NULL);
 				r_asn1_free_object (asn1);
@@ -923,7 +923,7 @@ static void cmd_print_fromage(RCore *core, const char *input, const ut8* data, i
 		break;
 	case 'x': // "pFx" x509
 		{
-			RX509Certificate* x509 = r_x509_parse_certificate (r_asn1_create_object (data, size));
+			RX509Certificate* x509 = r_x509_parse_certificate (r_asn1_create_object (data, size, data));
 			if (x509) {
 				RStrBuf *sb = r_strbuf_new ("");
 				r_x509_certificate_dump (x509, NULL, sb);

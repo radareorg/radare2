@@ -78,15 +78,16 @@ typedef struct r_asn1_object_t {
 	ut8 klass; /* class type */
 	ut8 form; /* defines if contains data or objects */
 	ut8 tag; /* tag type */
-	ut8 undefined; /* set to != 0 if len is undefined */
 	const ut8 *sector; /* Sector containg data */
 	ut32 length; /* Sector Length */
-	ut32 size; /* Object size */
+	ut64 offset; /* Object offset */
 	ASN1List list; /* List of objects contained in the sector */
 } RASN1Object;
 
-R_API RASN1Object *r_asn1_create_object (const ut8 *buffer, ut32 length);
+
+R_API RASN1Object *r_asn1_create_object (const ut8 *buffer, ut32 length, const ut8 *start_pointer);
 R_API RASN1Binary *r_asn1_create_binary (const ut8 *buffer, ut32 length);
+R_API RASN1String *r_asn1_create_string (const char *string, bool allocated, ut32 length);
 R_API RASN1String *r_asn1_stringify_bits (const ut8 *buffer, ut32 length);
 R_API RASN1String *r_asn1_stringify_utctime (const ut8 *buffer, ut32 length);
 R_API RASN1String *r_asn1_stringify_time (const ut8 *buffer, ut32 length);
