@@ -5497,7 +5497,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case 'j': // "axj"
 	case 'q': // "axq"
 	case '*': // "ax*"
-		r_core_anal_ref_list (core, input[0]);
+		r_anal_xrefs_list (core->anal, input[0]);
 		break;
 	case 't': { // "axt"
 		const int size = 12;
