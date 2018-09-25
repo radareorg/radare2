@@ -2350,6 +2350,12 @@ static void initSdb(RPanels *panels) {
 	sdb_set (panels->db, "New", "o", 0);
 }
 
+static void mht_free_kv(HtKv *kv) {
+	free (kv->key);
+	free (kv->value);
+	free (kv);
+}
+
 static bool init (RCore *core, RPanels *panels, int w, int h) {
 	panels->panel = NULL;
 	panels->n_panels = 0;
@@ -2360,7 +2366,7 @@ static bool init (RCore *core, RPanels *panels, int w, int h) {
 	panels->isZoom = false;
 	panels->can = createNewCanvas (core, w, h);
 	panels->db = sdb_new0 ();
-	panels->mht = sdb_ht_new ();
+	panels->mht = ht_new ((DupValue)strdup, (HtKvFreeFunc)mht_free_kv, (CalcSize)strlen);
 	initSdb (panels);
 
 	if (w < 140) {
@@ -2646,7 +2652,7 @@ R_API void r_core_panels_free(RPanels *panels) {
 		freeAllPanels (panels);
 		r_cons_canvas_free (panels->can);
 		sdb_free (panels->db);
-		sdb_ht_free (panels->mht);
+		ht_free (panels->mht);
 		free (panels);
 	}
 }
