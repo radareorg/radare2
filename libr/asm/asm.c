@@ -412,12 +412,12 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (!a || !buf || !op) {
 		return -1;
 	}
-	ret = op->payload = 0;
-	op->size = 4;
-	op->bitsize = 0;
 	if (len < 1) {
 		return 0;
 	}
+	ret = op->payload = 0;
+	op->size = 4;
+	op->bitsize = 0;
 	r_asm_op_set_asm (op, "");
 	if (a->pcalign) {
 		const int mod = a->pc % a->pcalign;
