@@ -1915,12 +1915,12 @@ static void addMenu(RCore *core, const char *parent, const char *name, RPanelsMe
 	RPanelsMenuItem *item = R_NEW0 (RPanelsMenuItem);
 	RPanelsMenuItem *p_item;
 	if (parent) {
-		ut64 addr = r_num_math (core->num, sdb_get (panels->mdb, parent, 0));
+		ut64 addr = r_num_math (core->num, sdb_ht_find (panels->mht, parent, NULL));
 		p_item = (RPanelsMenuItem *)addr;
-		sdb_set (panels->mdb, sdb_fmt ("%s.%s", parent, name), sdb_fmt ("%p", item), 0);
+		sdb_ht_insert (panels->mht, sdb_fmt ("%s.%s", parent, name), sdb_fmt ("%p", item));
 	} else {
 		p_item = panels->panelsMenu->root;
-		sdb_set (panels->mdb, sdb_fmt ("%s", name), sdb_fmt ("%p", item), 0);
+		sdb_ht_insert (panels->mht, sdb_fmt ("%s", name), sdb_fmt ("%p", item));
 	}
 	item->n_sub = 0;
 	item->selectedIndex = 0;
@@ -2360,7 +2360,7 @@ static bool init (RCore *core, RPanels *panels, int w, int h) {
 	panels->isZoom = false;
 	panels->can = createNewCanvas (core, w, h);
 	panels->db = sdb_new0 ();
-	panels->mdb = sdb_new0 ();
+	panels->mht = sdb_ht_new ();
 	initSdb (panels);
 
 	if (w < 140) {
@@ -2644,7 +2644,7 @@ R_API void r_core_panels_free(RPanels *panels) {
 		freeAllPanels (panels);
 		r_cons_canvas_free (panels->can);
 		sdb_free (panels->db);
-		sdb_free (panels->mdb);
+		sdb_ht_free (panels->mht);
 		free (panels);
 	}
 }
