@@ -481,7 +481,7 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		r_parse_parse (a->ofilter, buf_asm, buf_asm);
 	}
 	if (op->size > 0) {
-		r_asm_op_set_buf (op, buf, R_MIN (len, R_MAX (0, op->size)));
+		r_asm_op_set_buf (op, buf, R_MAX (0, R_MIN (len, op->size)));
 	} else {
 		r_asm_op_set_buf (op, buf, 1);  // TODO: honor anal size hint
 	}
