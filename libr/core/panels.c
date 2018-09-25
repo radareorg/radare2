@@ -1879,7 +1879,7 @@ static int writeValueCb(void *user) {
 }
 
 static int quitCb(void *user) {
-	return 0;
+	return 1;
 }
 
 static int openMenuCb (void *user) {
@@ -2433,7 +2433,9 @@ static void handleMenu(RCore *core, const int key, int *exit) {
 		case ' ':
 		case '\r':
 		case '\n':
-			child->cb (core);
+			if (child->cb (core)) {
+				*exit = 1;
+			}
 			break;
 		case 9:
 			handleTabKey (core, false);
