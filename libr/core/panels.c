@@ -173,6 +173,7 @@ static int gameCb(void *user);
 static int licenseCb(void *user);
 static int aboutCb(void *user);
 static int quitCb(void *user);
+static void updateDisassemblyAddr (RCore *core);
 static void addMenu(RCore *core, const char *parent, const char *name, RPanelsMenuCallback cb);
 static void removeMenu(RPanels *panels);
 static int file_history_up(RLine *line);
@@ -1752,22 +1753,34 @@ static int continueCb(void *user) {
 
 static int stepCb(void *user) {
 	RCore *core = (RCore *)user;
-	r_core_cmd (core, "ds", 0);
-	r_cons_flush ();
+	panelSingleStepIn (core);
+	updateDisassemblyAddr (core);
 	return 0;
 }
 
 static int stepoverCb(void *user) {
 	RCore *core = (RCore *)user;
-	r_core_cmd (core, "dso", 0);
-	r_cons_flush ();
+	panelSingleStepOver (core);
+	updateDisassemblyAddr (core);
 	return 0;
+}
+
+static void updateDisassemblyAddr (RCore *core) {
+	RPanels *panels = core->panels;
+	int i;
+	for (i = 0; i < panels->n_panels; i++) {
+		if (!strcmp (panels->panel[i].cmd, PANEL_CMD_DISASSEMBLY)) {
+			panels->panel[i].addr = core->offset;
+		}
+	}
+	setRefreshAll (panels);
 }
 
 static int reloadCb(void *user) {
 	RCore *core = (RCore *)user;
-	r_core_cmd (core, "ood", 0);
-	r_cons_flush ();
+	r_core_file_reopen_debug (core, "");
+	updateDisassemblyAddr (core);
+	setRefreshAll (core->panels);
 	return 0;
 }
 
@@ -2263,9 +2276,6 @@ static void panelSingleStepIn(RCore *core) {
 		r_core_cmd (core, "aes", 0);
 		r_core_cmd (core, ".ar*", 0);
 	}
-	if (!strcmp (core->panels->panel[core->panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
-		core->panels->panel[core->panels->curnode].addr = core->offset;
-	}
 }
 
 static void panelSingleStepOver(RCore *core) {
@@ -2279,9 +2289,6 @@ static void panelSingleStepOver(RCore *core) {
 		r_core_cmd (core, ".ar*", 0);
 	}
 	r_config_set_i (core->config, "io.cache", io_cache);
-	if (!strcmp (core->panels->panel[core->panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
-		core->panels->panel[core->panels->curnode].addr = core->offset;
-	}
 }
 
 static void panelBreakpoint(RCore *core) {
@@ -2834,7 +2841,6 @@ repeat:
 		r_core_visual_browse (core);
 		break;
 	case 'o':
-		//if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY))
 		r_core_visual_showcursor (core, true);
 		r_core_visual_offset (core);
 		r_core_visual_showcursor (core, false);
@@ -2843,10 +2849,16 @@ repeat:
 		break;
 	case 's':
 		panelSingleStepIn (core);
+		if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
+			panels->panel[panels->curnode].addr = core->offset;
+		}
 		setRefreshAll (panels);
 		break;
 	case 'S':
 		panelSingleStepOver (core);
+		if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
+			panels->panel[panels->curnode].addr = core->offset;
+		}
 		setRefreshAll (panels);
 		break;
 	case ':':
