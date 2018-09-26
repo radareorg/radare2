@@ -1778,8 +1778,9 @@ static void updateDisassemblyAddr (RCore *core) {
 
 static int reloadCb(void *user) {
 	RCore *core = (RCore *)user;
-	r_core_cmd (core, "ood", 0);
-	r_cons_flush ();
+	r_core_file_reopen_debug (core, "");
+	updateDisassemblyAddr (core);
+	setRefreshAll (core->panels);
 	return 0;
 }
 
