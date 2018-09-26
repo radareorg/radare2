@@ -4059,9 +4059,7 @@ static int cmd_print(void *data, const char *input) {
 					r_cons_printf ("|Usage: pade [hex]       show esil from given hexpairs\n");
 				} else {
 					int ret, bufsz;
-					RAnalOp aop = {
-						0,
-					};
+					RAnalOp aop = {0};
 					char *hex_arg = calloc (0, strlen (arg));
 					if (hex_arg) {
 						bufsz = r_hex_str2bin (arg + 1, (ut8 *)hex_arg);

@@ -7002,7 +7002,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 'f': // "aaf"
 	{
-		int analHasnext = r_config_get_i (core->config, "anal.hasnext");
+		const int analHasnext = r_config_get_i (core->config, "anal.hasnext");
 		r_config_set_i (core->config, "anal.hasnext", true);
 		r_core_cmd0 (core, "afr@@c:isq");
 		r_config_set_i (core->config, "anal.hasnext", analHasnext);
@@ -7086,8 +7086,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			// Usefull when running commands with ";" or via r2 -c,-i
 			run_pending_anal (core);
 			dh_orig = core->dbg->h
-					  ? strdup (core->dbg->h->name)
-					  : strdup ("esil");
+				? strdup (core->dbg->h->name)
+				: strdup ("esil");
 			if (core->io && core->io->desc && core->io->desc->plugin && !core->io->desc->plugin->isdbg) {
 				//use dh_origin if we are debugging
 				R_FREE (dh_orig);
