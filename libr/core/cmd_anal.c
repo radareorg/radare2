@@ -6999,22 +6999,22 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	case '?': r_core_cmd_help (core, help_msg_aa); break;
 	case 'b': // "aab"
 		cmd_anal_blocks (core, input + 1);
-		break; // "aab"
-	case 'f': // "aaf"
-		{
-			int analHasnext = r_config_get_i (core->config, "anal.hasnext");
-			r_config_set_i (core->config, "anal.hasnext", true);
-			r_core_cmd0 (core, "afr@@c:isq");
-			r_config_set_i (core->config, "anal.hasnext", analHasnext);
-		}
 		break;
+	case 'f': // "aaf"
+	{
+		int analHasnext = r_config_get_i (core->config, "anal.hasnext");
+		r_config_set_i (core->config, "anal.hasnext", true);
+		r_core_cmd0 (core, "afr@@c:isq");
+		r_config_set_i (core->config, "anal.hasnext", analHasnext);
+		break;
+	}
 	case 'c': // "aac"
 		switch (input[1]) {
 		case '*': // "aac*"
 			cmd_anal_calls (core, input + 1, true, false);
 			break;
 		case 'i': // "aaci"
-			cmd_anal_calls (core, input + 1, input[2]=='*', true);
+			cmd_anal_calls (core, input + 1, input[2] == '*', true);
 			break;
 		case '?': // "aac?"
 			eprintf ("Usage: aac, aac* or aaci (imports xrefs only)\n");
@@ -7023,7 +7023,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			cmd_anal_calls (core, input + 1, false, false);
 			break;
 		}
-	case 'j': cmd_anal_jumps (core, input + 1); break; // "aaj"
+	case 'j': // "aaj"
+		cmd_anal_jumps (core, input + 1);
+		break;
 	case '*': // "aa*"
 		r_core_cmd0 (core, "af @@ sym.*");
 		r_core_cmd0 (core, "af @@ entry*");
@@ -7084,8 +7086,8 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			// Usefull when running commands with ";" or via r2 -c,-i
 			run_pending_anal (core);
 			dh_orig = core->dbg->h
-					? strdup (core->dbg->h->name)
-					: strdup ("esil");
+					  ? strdup (core->dbg->h->name)
+					  : strdup ("esil");
 			if (core->io && core->io->desc && core->io->desc->plugin && !core->io->desc->plugin->isdbg) {
 				//use dh_origin if we are debugging
 				R_FREE (dh_orig);
@@ -7112,7 +7114,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				}
 
 				rowlog (core, "Analyze function calls (aac)");
-				(void) cmd_anal_calls (core, "", false, false); // "aac"
+				(void)cmd_anal_calls (core, "", false, false); // "aac"
 				r_core_seek (core, curseek, 1);
 				// rowlog (core, "Analyze data refs as code (LEA)");
 				// (void) cmd_anal_aad (core, NULL); // "aad"
@@ -7196,7 +7198,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		ut64 cur = core->offset;
 		bool hasnext = r_config_get_i (core->config, "anal.hasnext");
 		RListIter *iter;
-		RIOMap* map;
+		RIOMap *map;
 		RList *list = r_core_get_boundaries_prot (core, R_PERM_X, NULL, "anal");
 		r_list_foreach (list, iter, map) {
 			r_core_seek (core, map->itv.addr, 1);
@@ -7216,7 +7218,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		break;
 	case 'e': // "aae"
 		if (input[1]) {
-			const char *len = (char *) input + 1;
+			const char *len = (char *)input + 1;
 			char *addr = strchr (input + 2, ' ');
 			if (addr) {
 				*addr++ = 0;
@@ -7224,7 +7226,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_core_anal_esil (core, len, addr);
 		} else {
 			ut64 at = core->offset;
-			RIOMap* map;
+			RIOMap *map;
 			RListIter *iter;
 			RList *list = r_core_get_boundaries_prot (core, -1, NULL, "anal");
 			r_list_foreach (list, iter, map) {
