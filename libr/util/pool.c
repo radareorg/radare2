@@ -9,6 +9,11 @@
 // TODO: add api to serialize/deserialize memory pools from/to disk
 // This can be useful when the application is swapping (userland swapping?)
 // Do user-swapping takes sense?
+// This API have several bugs that wasnt considered at the moment of developing it
+// * pointers are not aligned, so they may result in crashes in arm/mips
+// * extra padding to avoid memory overruns is not considerd either
+// * pool have some hardcoded limits which shouldnt be happening
+// FTR: this was inspired by the GLibSlices API, and its not used in r2 at all
 
 R_API RMemoryPool *r_mem_pool_deinit(RMemoryPool *pool) {
 	int i;
