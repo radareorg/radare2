@@ -4062,16 +4062,20 @@ static int cmd_print(void *data, const char *input) {
 					RAnalOp aop = {
 						0
 					};
-					char *hex_arg = malloc (strlen (arg));
-					bufsz = r_hex_str2bin (arg + 1, (ut8 *) hex_arg);
-					ret = r_anal_op (core->anal, &aop, core->offset,
-						(const ut8 *) hex_arg, bufsz, R_ANAL_OP_MASK_ESIL);
-					if (ret > 0) {
-						const char *str = R_STRBUF_SAFEGET (&aop.esil);
-						r_cons_println (str);
+					char *hex_arg = calloc (0, strlen (arg));
+					if (hex_arg) {
+						bufsz = r_hex_str2bin (arg + 1, (ut8 *) hex_arg);
+						ret = r_anal_op (core->anal, &aop, core->offset,
+								(const ut8 *) hex_arg, bufsz, R_ANAL_OP_MASK_ESIL);
+						if (ret > 0) {
+							const char *str = R_STRBUF_SAFEGET (&aop.esil);
+							r_cons_println (str);
+						} else {
+							eprintf ("Cannot decode instruction\n");
+						}
+						r_anal_op_fini (&aop);
+						free (hex_arg);
 					}
-					r_anal_op_fini (&aop);
-					free (hex_arg);
 				}
 				break;
 			case ' ': // "pad"
