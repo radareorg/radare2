@@ -3267,11 +3267,6 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 	return count;
 }
 
-R_API int r_core_anal_ref_list(RCore *core, int rad) {
-	r_anal_xrefs_list (core->anal, rad);
-	return 0;
-}
-
 static bool isValidSymbol(RBinSymbol *symbol) {
 	if (symbol && symbol->type) {
 		const char *type = symbol->type;

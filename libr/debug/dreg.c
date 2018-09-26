@@ -176,7 +176,7 @@ R_API int r_debug_reg_list(RDebug *dbg, int type, int size, int rad, const char 
 				r_reg_arena_swap (dbg->reg, false);
 				delta = value-diff;
 				if (tolower (rad) == 'j') {
-					snprintf (strvalue, sizeof (strvalue),"%"PFMT64d, value);
+					snprintf (strvalue, sizeof (strvalue),"%"PFMT64u, value);
 				} else {
 					snprintf (strvalue, sizeof (strvalue),"0x%08"PFMT64x, value);
 				}

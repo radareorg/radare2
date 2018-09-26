@@ -245,7 +245,7 @@ RX509Certificate * r_x509_parse_certificate2 (const ut8 *buffer, ut32 length) {
 	if (!buffer || !length) {
 		return NULL;
 	}
-	object = r_asn1_create_object (buffer, length);
+	object = r_asn1_create_object (buffer, length, buffer);
 	certificate = r_x509_parse_certificate (object);
 	//object freed by r_x509_parse_certificate
 	return certificate;

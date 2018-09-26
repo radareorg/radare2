@@ -38,6 +38,7 @@ struct r_bin_mdmp_obj {
 		RList *operations;
 		RList *thread_infos;
 		RList *threads;
+		RList *token_infos;
 		RList *unloaded_modules;
 		struct {
 			rva64_t base_rva;
