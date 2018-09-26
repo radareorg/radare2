@@ -103,7 +103,6 @@ R_API int r_search_begin(RSearch *s) {
 
 // Returns 2 if search.maxhits is reached, 0 on error, otherwise 1
 R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
-	RSearchHit* hit;
 	if (s->align && (addr%s->align)) {
 		eprintf ("0x%08"PFMT64x" unaligned\n", addr);
 		return 1;
@@ -127,10 +126,12 @@ R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
 	}
 	kw->count++;
 	s->nhits++;
-	hit = R_NEW0 (RSearchHit);
-	hit->kw = kw;
-	hit->addr = addr;
-	r_list_append (s->hits, hit);
+	RSearchHit* hit = R_NEW0 (RSearchHit);
+	if (hit) {
+		hit->kw = kw;
+		hit->addr = addr;
+		r_list_append (s->hits, hit);
+	}
 	return s->maxhits && s->nhits >= s->maxhits ? 2 : 1;
 }
 
