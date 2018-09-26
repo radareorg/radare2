@@ -2356,7 +2356,7 @@ static void mht_free_kv(HtKv *kv) {
 	free (kv);
 }
 
-static bool init (RCore *core, RPanels *panels, int w, int h) {
+static bool init(RCore *core, RPanels *panels, int w, int h) {
 	panels->panel = NULL;
 	panels->n_panels = 0;
 	panels->columnWidth = 80;

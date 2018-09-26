@@ -4060,13 +4060,13 @@ static int cmd_print(void *data, const char *input) {
 				} else {
 					int ret, bufsz;
 					RAnalOp aop = {
-						0
+						0,
 					};
 					char *hex_arg = calloc (0, strlen (arg));
 					if (hex_arg) {
-						bufsz = r_hex_str2bin (arg + 1, (ut8 *) hex_arg);
+						bufsz = r_hex_str2bin (arg + 1, (ut8 *)hex_arg);
 						ret = r_anal_op (core->anal, &aop, core->offset,
-								(const ut8 *) hex_arg, bufsz, R_ANAL_OP_MASK_ESIL);
+							(const ut8 *)hex_arg, bufsz, R_ANAL_OP_MASK_ESIL);
 						if (ret > 0) {
 							const char *str = R_STRBUF_SAFEGET (&aop.esil);
 							r_cons_println (str);
@@ -4079,17 +4079,17 @@ static int cmd_print(void *data, const char *input) {
 				}
 				break;
 			case ' ': // "pad"
-				{
-					r_asm_set_pc (core->assembler, core->offset);
-					RAsmCode *c = r_asm_mdisassemble_hexstr (core->assembler, arg);
-					if (c) {
-						r_cons_print (c->buf_asm);
-						r_asm_code_free (c);
-					} else {
-						eprintf ("Invalid hexstr\n");
-					}
+			{
+				r_asm_set_pc (core->assembler, core->offset);
+				RAsmCode *c = r_asm_mdisassemble_hexstr (core->assembler, arg);
+				if (c) {
+					r_cons_print (c->buf_asm);
+					r_asm_code_free (c);
+				} else {
+					eprintf ("Invalid hexstr\n");
 				}
 				break;
+			}
 			default:
 				r_cons_printf ("|Usage: pad[e] [asm]       disasm\n");
 				break;

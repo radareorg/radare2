@@ -5124,7 +5124,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 					}
 #else
 					if (printCommands) {
-						r_cons_printf ("ax 0x%08"PFMT64x" 0x%08"PFMT64x"\n", op.jump, addr);
+						r_cons_printf ("ax 0x%08" PFMT64x " 0x%08" PFMT64x "\n", op.jump, addr);
 					} else {
 						// add xref here
 						r_anal_xrefs_set (core->anal, addr, op.jump, R_ANAL_REF_TYPE_CALL);
