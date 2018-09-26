@@ -32,10 +32,10 @@ AR=`uname -m`
 SF=r2sdk-${OS}-${AR}
 
 (
-cd ${WRKDIR}
-mv r2-sdk ${SF}
-zip -r ${SF}.zip ${SF}
+cd "${WRKDIR}"
+mv r2-sdk "${SF}"
+zip -r "${SF}".zip "${SF}"
 )
-mv ${WRKDIR}/${SF} .
-mv ${WRKDIR}/${SF}.zip .
-ln -fs ${SF} r2sdk
+mv "${WRKDIR}/${SF}" .
+mv "${WRKDIR}/${SF}".zip .
+ln -fs "${SF}" r2sdk

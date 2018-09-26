@@ -77,8 +77,10 @@ endif
 libr.${EXT_AR}: .libr
 	${AR} crs $@ .libr/*.o
 
-E+=../shlr/ar/libr_ar.${EXT_AR}
+ifeq (1,$(WITH_GPL))
 E+=../shlr/grub/libgrubfs.${EXT_AR}
+endif
+E+=../shlr/ar/libr_ar.${EXT_AR}
 E+=../shlr/windbg/libr_windbg.${EXT_AR}
 E+=../shlr/qnx/lib/libqnxr.${EXT_AR}
 E+=../shlr/bochs/lib/libbochs.${EXT_AR}
