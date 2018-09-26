@@ -12,10 +12,11 @@ P=`readlink $0`
 cd `dirname $P`/..
 
 if [ -z "${IFILE}" ]; then
-	echo "Usage: r2-indent [-i|-u] [file] [...]"
+	echo "Usage: r2-indent [-a|-i|-u|-c] [file] [...]"
 	echo " -a    indent all whitelisted files"
 	echo " -i    indent in place (modify file)"
 	echo " -u    unified diff of the file"
+	echo " -c    use clang-format"
 	exit 1
 fi
 
@@ -52,6 +53,12 @@ if [ "${IFILE}" = "-u" ]; then
 	IFILE="$1"
 fi
 
+if [ "${IFILE}" = "-c" ]; then
+	shift
+	UNCRUST=0
+	IFILE="$1"
+fi
+
 if [ "`echo $IFILE | cut -c 1`" != / ]; then
 	IFILE="$OLDPWD/$IFILE"
 fi
@@ -80,11 +87,11 @@ indentFile() {
 	echo "Indenting ${IFILE} ..." >&2
 	(
 	if [ "${UNCRUST}" = 1 ]; then
-		cp -f doc/clang-format ${CWD}/.clang-format
+		cp -f .clang-format ${CWD}/.clang-format
 		cd "$CWD"
-		r2pm -r uncrustify -c ${CWD}/doc/uncrustify.cfg -f "${IFILE}" -o .tmp-format || exit 1
+		r2pm -r uncrustify -c ${CWD}/doc/uncrustify.cfg -f "${IFILE}" -o .tmp-format
 	else
-		cp -f doc/clang-format ${CWD}/.clang-format
+		cp -f .clang-format ${CWD}/.clang-format
 		cd "$CWD"
 		clang-format "${IFILE}"  > .tmp-format
 	fi
@@ -147,12 +154,11 @@ indentFile() {
 	fi
 	rm -f .tmp-format2
 	)
-	rm -f ${CWD}/.clang-format
 }
 
 while : ; do
 	[ "$PWD" = / ] && break
-		if [ -f doc/clang-format ]; then
+		if [ -f .clang-format ]; then
 			ROOTDIR=$PWD
 			while : ; do
 				[ -z "${IFILE}" ] && break
