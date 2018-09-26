@@ -85,7 +85,7 @@ static void remove_second_operand(struct msp430_cmd *cmd)
 }
 
 /* TODO: This is ugly as hell */
-static int decode_emulation(ut16 instr, ut16 op1, struct msp430_cmd *cmd)
+static int decode_emulation(ut16 instr, struct msp430_cmd *cmd)
 {
 	int ret = -1;
 	ut8 as, ad, src, dst, bw, opcode;
@@ -285,7 +285,7 @@ static int decode_addressing_mode(ut16 instr, ut16 op1, ut16 op2, struct msp430_
 	}
 
 	strncat(cmd->operands, dstbuf, MSP430_INSTR_MAXLEN - 1 - strlen(cmd->operands));
-	decode_emulation(instr, op1, cmd);
+	decode_emulation(instr, cmd);
 	return ret;
 }
 

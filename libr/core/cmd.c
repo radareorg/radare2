@@ -1969,16 +1969,15 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 			goto beach;
 		}
 		if (core->break_loop) {
+			free (cr);
 			break;
 		}
-		if (cr && *cr) {
-			if (orep > 1) {
-				// XXX: do not flush here, we need r_cons_push () and r_cons_pop()
-				r_cons_flush ();
-				// XXX: we must import register flags in C
-				(void)r_core_cmd0 (core, ".dr*");
-				(void)r_core_cmd0 (core, cr);
-			}
+		if (cr && *cr && orep > 1) {
+			// XXX: do not flush here, we need r_cons_push () and r_cons_pop()
+			r_cons_flush ();
+			// XXX: we must import register flags in C
+			(void)r_core_cmd0 (core, ".dr*");
+			(void)r_core_cmd0 (core, cr);
 		}
 		free (cr);
 	}

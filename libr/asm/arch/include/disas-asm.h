@@ -280,7 +280,7 @@ extern int print_insn_little_mips	(bfd_vma, disassemble_info *);
 extern int print_insn_little_nios2	(bfd_vma, disassemble_info *);
 extern int print_insn_little_powerpc	(bfd_vma, disassemble_info *);
 extern int print_insn_riscv		(bfd_vma, disassemble_info *);
-extern int print_insn_little_score      (bfd_vma, disassemble_info *); 
+extern int print_insn_little_score      (bfd_vma, disassemble_info *);
 extern int print_insn_lm32		(bfd_vma, disassemble_info *);
 extern int print_insn_m32c	        (bfd_vma, disassemble_info *);
 extern int print_insn_m32r		(bfd_vma, disassemble_info *);
@@ -430,6 +430,27 @@ extern int print_insn_tricore (bfd_vma memaddr, struct disassemble_info *info);
   init_disassemble_info (&(INFO), (STREAM), (fprintf_ftype) (FPRINTF_FUNC))
 #define INIT_DISASSEMBLE_INFO_NO_ARCH(INFO, STREAM, FPRINTF_FUNC) \
   init_disassemble_info (&(INFO), (STREAM), (fprintf_ftype) (FPRINTF_FUNC))
+
+#define DECLARE_GENERIC_FPRINTF_FUNC() \
+static int generic_fprintf_func(void *stream, const char *format, ...) { \
+	int ret; \
+	va_list ap; \
+	if (!buf_global || !format) { \
+		return 0; \
+	} \
+	va_start (ap, format); \
+	ret = r_strbuf_vappendf (buf_global, format, ap); \
+	va_end (ap); \
+	return ret; \
+}
+
+#define DECLARE_GENERIC_PRINT_ADDRESS_FUNC() \
+static void generic_print_address_func(bfd_vma address, struct disassemble_info *info) { \
+	if (!buf_global) { \
+		return; \
+	} \
+	r_strbuf_appendf (buf_global, "0x%08"PFMT64x, (ut64)address); \
+}
 
 
 #ifdef __cplusplus

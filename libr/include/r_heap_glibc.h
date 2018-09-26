@@ -120,6 +120,7 @@ typedef struct r_malloc_state_32 {
 	unsigned int binmap[BINMAPSIZE];        /* bitmap of bins */
 	ut32 next;                              /* double linked list of chunks */
 	ut32 next_free;                         /* double linked list of free chunks */
+	unsigned int attached_threads;          /* threads attached */
 	ut32 system_mem;                        /* current allocated memory of current arena */
 	ut32 max_system_mem;                    /* maximum system memory */
 } RHeap_MallocState_32;
@@ -134,6 +135,7 @@ typedef struct r_malloc_state_64 {
 	unsigned int binmap[BINMAPSIZE];        /* bitmap of bins */
 	ut64 next;                              /* double linked list of chunks */
 	ut64 next_free;                         /* double linked list of free chunks */
+	unsigned int attached_threads;          /* threads attached */
 	ut64 system_mem;                        /* current allocated memory of current arena */
 	ut64 max_system_mem;                    /* maximum system memory */
 } RHeap_MallocState_64;

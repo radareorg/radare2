@@ -91,26 +91,8 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 	// --
 }
 
-static void print_address(bfd_vma address, struct disassemble_info *info) {
-	char tmp[32];
-	if (!buf_global) {
-		return;
-	}
-	sprintf (tmp, "0x%08"PFMT64x "", (ut64) address);
-	r_strbuf_append (buf_global, tmp);
-}
-
-static int buf_fprintf(void *stream, const char *format, ...) {
-	va_list ap;
-	char tmp[1024];
-	if (!buf_global || !format) {
-		return false;
-	}
-	va_start (ap, format);
-	vsnprintf (tmp, sizeof (tmp), format, ap);
-	r_strbuf_append (buf_global, tmp);
-	return true;
-}
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
+DECLARE_GENERIC_FPRINTF_FUNC()
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static char *oldcpu = NULL;
@@ -166,9 +148,9 @@ cpucode = 66471;
 	obj.read_memory_func = &arm_buffer_read_memory;
 	obj.symbol_at_address_func = &symbol_at_address;
 	obj.memory_error_func = &memory_error_func;
-	obj.print_address_func = &print_address;
+	obj.print_address_func = &generic_print_address_func;
 	obj.endian = !a->big_endian;
-	obj.fprintf_func = &buf_fprintf;
+	obj.fprintf_func = &generic_fprintf_func;
 	obj.stream = stdout;
 	obj.bytes_per_chunk =
 		obj.bytes_per_line = (a->bits / 8);

@@ -98,6 +98,7 @@ static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, char *type
 		if (is_default && strncmp (var->type, "signed", 6)) {
 			r_strbuf_setf (sb, "%s %s", type, tmp);
 		} else {
+			r_strbuf_free (sb);
 			return;
 		}
 	} else {

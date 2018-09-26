@@ -467,7 +467,7 @@ static const char *help_msg_ah[] = {
 };
 
 static const char *help_msg_ahi[] = {
-	"Usage", "ahi [sbodh] [@ offset]", " Define numeric base",
+	"Usage:", "ahi [sbodh] [@ offset]", " Define numeric base",
 	"ahi", " [base]", "set numeric base (1, 2, 8, 10, 16)",
 	"ahi", " b", "set base to binary (2)",
 	"ahi", " d", "set base to decimal (10)",
@@ -5055,7 +5055,7 @@ ctrl_c:
 	r_cons_break_pop ();
 }
 
-static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
+static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommands, bool importsOnly) {
 	RAnalOp op;
 	int depth = r_config_get_i (core->config, "anal.depth");
 	const int addrbytes = core->io->addrbytes;
@@ -5107,20 +5107,33 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 				op.size = minop;
 			}
 			if (op.type == R_ANAL_OP_TYPE_CALL) {
-#if JAYRO_03
-				if (!anal_is_bad_call (core, from, to, addr, buf, bufi)) {
-					fcn = r_anal_get_fcn_in (core->anal, op.jump, R_ANAL_FCN_TYPE_ROOT);
-					if (!fcn) {
-						r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_CALL, depth);
+				bool isValidCall = true;
+				if (importsOnly) {
+					RFlagItem *f = r_flag_get_i (core->flags, op.jump);
+					if (!f || !strstr (f->name, "imp.")) {
+						isValidCall = false;
 					}
 				}
+				if (isValidCall) {
+#if JAYRO_03
+					if (!anal_is_bad_call (core, from, to, addr, buf, bufi)) {
+						fcn = r_anal_get_fcn_in (core->anal, op.jump, R_ANAL_FCN_TYPE_ROOT);
+						if (!fcn) {
+							r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_CALL, depth);
+						}
+					}
 #else
-				// add xref here
-				r_anal_xrefs_set (core->anal, addr, op.jump, R_ANAL_REF_TYPE_CALL);
-				if (r_io_is_valid_offset (core->io, op.jump, 1)) {
-					r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_CALL, depth);
-				}
+					if (printCommands) {
+						r_cons_printf ("ax 0x%08"PFMT64x" 0x%08"PFMT64x"\n", op.jump, addr);
+					} else {
+						// add xref here
+						r_anal_xrefs_set (core->anal, addr, op.jump, R_ANAL_REF_TYPE_CALL);
+						if (r_io_is_valid_offset (core->io, op.jump, 1)) {
+							r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_CALL, depth);
+						}
+					}
 #endif
+				}
 			}
 		} else {
 			op.size = minop;
@@ -5138,7 +5151,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end) {
 	free (block1);
 }
 
-static void cmd_anal_calls(RCore *core, const char *input, bool only_print_flag) {
+static void cmd_anal_calls(RCore *core, const char *input, bool printCommands, bool importsOnly) {
 	RList *ranges = NULL;
 	RIOMap *r;
 	RBinFile *binfile;
@@ -5168,12 +5181,7 @@ static void cmd_anal_calls(RCore *core, const char *input, bool only_print_flag)
 		ranges = r_core_get_boundaries_prot (core, 0, NULL, "anal");
 		r_list_foreach (ranges, iter, map) {
 			ut64 addr = map->itv.addr;
-			if (only_print_flag) {
-				r_cons_printf ("f fcn.0x%08"PFMT64x" %d 0x%08"PFMT64x"\n",
-					addr, map->itv.size, addr);
-			} else {
-				_anal_calls (core, addr, r_itv_end (map->itv));
-			}
+			_anal_calls (core, addr, r_itv_end (map->itv), printCommands, importsOnly);
 		}
 	} else {
 		RListIter *iter;
@@ -5185,12 +5193,7 @@ static void cmd_anal_calls(RCore *core, const char *input, bool only_print_flag)
 				if (r_cons_is_breaked ()) {
 					break;
 				}
-				if (only_print_flag) {
-					r_cons_printf ("f fcn.0x%08"PFMT64x" %d 0x%08"PFMT64x"\n",
-						addr, r->itv.size, addr);
-				} else {
-					_anal_calls (core, addr, r_itv_end (r->itv));
-				}
+				_anal_calls (core, addr, r_itv_end (r->itv), printCommands, importsOnly);
 			}
 		}
 	}
@@ -5497,7 +5500,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case 'j': // "axj"
 	case 'q': // "axq"
 	case '*': // "ax*"
-		r_core_anal_ref_list (core, input[0]);
+		r_anal_xrefs_list (core->anal, input[0]);
 		break;
 	case 't': { // "axt"
 		const int size = 12;
@@ -7008,10 +7011,16 @@ static int cmd_anal_all(RCore *core, const char *input) {
 	case 'c': // "aac"
 		switch (input[1]) {
 		case '*': // "aac*"
-			cmd_anal_calls (core, input + 1, true);
+			cmd_anal_calls (core, input + 1, true, false);
+			break;
+		case 'i': // "aaci"
+			cmd_anal_calls (core, input + 1, input[2]=='*', true);
+			break;
+		case '?': // "aac?"
+			eprintf ("Usage: aac, aac* or aaci (imports xrefs only)\n");
 			break;
 		default: // "aac"
-			cmd_anal_calls (core, input + 1, false);
+			cmd_anal_calls (core, input + 1, false, false);
 			break;
 		}
 	case 'j': cmd_anal_jumps (core, input + 1); break; // "aaj"
@@ -7103,7 +7112,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				}
 
 				rowlog (core, "Analyze function calls (aac)");
-				(void) cmd_anal_calls (core, "", false); // "aac"
+				(void) cmd_anal_calls (core, "", false, false); // "aac"
 				r_core_seek (core, curseek, 1);
 				// rowlog (core, "Analyze data refs as code (LEA)");
 				// (void) cmd_anal_aad (core, NULL); // "aad"
