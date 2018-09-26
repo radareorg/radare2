@@ -39,7 +39,6 @@ R_API RSearch *r_search_new(int mode) {
 	s->hits = r_list_newf (free);
 	s->maxhits = 0;
 	// TODO: review those mempool sizes. ensure never gets NULL
-	s->pool = r_mem_pool_new (sizeof (RSearchHit), 1024, 10);
 	s->kws = r_list_newf (free);
 	if (!s->kws) {
 		r_search_free (s);
@@ -53,7 +52,6 @@ R_API RSearch *r_search_free(RSearch *s) {
 	if (!s) {
 		return NULL;
 	}
-	r_mem_pool_free (s->pool);
 	r_list_free (s->hits);
 	r_list_free (s->kws);
 	//r_io_free(s->iob.io); this is suposed to be a weak reference
@@ -129,9 +127,7 @@ R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
 	}
 	kw->count++;
 	s->nhits++;
-	if (!(hit = r_mem_pool_alloc (s->pool))) {
-		return 0;
-	}
+	hit = R_NEW0 (RSearchHit);
 	hit->kw = kw;
 	hit->addr = addr;
 	r_list_append (s->hits, hit);
