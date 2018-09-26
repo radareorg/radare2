@@ -7,6 +7,19 @@
 #
 # To enable this hook, move it to ".git/hooks/pre-commit".
 
+restore_exit() {
+    git apply < "${UNSTAGED_DIFF}" 2>/dev/null
+    rm -f "${TMPFILE}"
+    rm -f "${UNSTAGED_DIFF}"
+    if [ "$#" -ne 1 ] ; then
+	exit 1
+    else
+	exit $1
+    fi
+}
+
+trap restore_exit 1 2 6
+
 TMPFILE="$(mktemp)"
 if [ -z "$TMPFILE" ] ; then
     echo "mktemp returned an empty string for \"TMPFILE\"."
@@ -22,13 +35,6 @@ fi
 git diff > ${UNSTAGED_DIFF} || exit 1
 git checkout -- . || exit 1
 git diff --cached | ./sys/clang-format-diff.py -p1 > "${TMPFILE}"
-
-restore_exit() {
-	git apply < "${UNSTAGED_DIFF}" 2>/dev/null
-	rm -f "${TMPFILE}"
-	rm -f "${UNSTAGED_DIFF}"
-	exit 1
-}
 
 if [ -s "${TMPFILE}" ] ; then
 	echo "Please follow the coding style!"
