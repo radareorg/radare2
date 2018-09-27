@@ -5603,8 +5603,8 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 					int ba_len = r_strbuf_length (&asmop.buf_asm) + 128;
 					char *ba = malloc (ba_len);
+					strcpy (ba, r_strbuf_get (&asmop.buf_asm));
 					if (asm_varsub) {
-						strcpy (ba, r_strbuf_get (&asmop.buf_asm));
 						r_parse_varsub (core->parser, fcn, ref->addr, asmop.size,
 								ba, ba, sizeof (asmop.buf_asm));
 					}
