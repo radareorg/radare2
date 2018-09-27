@@ -1851,7 +1851,7 @@ static char *parse_tmp_evals(RCore *core, const char *str) {
 }
 
 static int r_core_cmd_subst(RCore *core, char *cmd) {
-	int rep = strtoull (cmd, NULL, 10);
+	ut64 rep = strtoull (cmd, NULL, 10);
 	int ret = 0, orep;
 	char *cmt, *colon = NULL, *icmd = strdup (cmd);
 	const char *cmdrep = NULL;
