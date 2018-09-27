@@ -986,6 +986,10 @@ int main(int argc, char **argv) {
 				r_core_fini (&core);
 				return 1;
 			}
+		} else {
+			eprintf ("r_core: Cannot open file '%s'\n", file);
+			r_core_fini (&core);
+			return 1;
 		}
 	}
 	bin->minstrlen = r_config_get_i (core.config, "bin.minstr");
