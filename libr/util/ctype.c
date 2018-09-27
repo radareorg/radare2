@@ -523,8 +523,13 @@ R_API R_OWN char *r_type_func_guess(Sdb *TDB, R_NONNULL char *func_name) {
 	}
 	slen -= offset;
 	str += offset;
+	// strip common prefixes from standard lib functions
 	if (!strncmp (str, "__isoc99_", 9)) {
 		str += 9;
+	} else if (!strncmp (str, "__libc_", 7) && !strstr(str,"_main")) {
+		str += 7;
+	} else if (!strncmp (str, "__GI_", 5)) {
+		str += 5;
 	}
 	if ((result = type_func_try_guess (TDB, str))) {
 		return result;

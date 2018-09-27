@@ -192,6 +192,9 @@ R_API int r_anal_var_retype(RAnal *a, ut64 addr, int scope, int delta, char kind
 }
 
 R_API int r_anal_var_delete_all(RAnal *a, ut64 addr, const char kind) {
+	if (!a){
+		return false;
+	}
 	RAnalFunction *fcn = r_anal_get_fcn_in (a, addr, 0);
 	if (fcn) {
 		RAnalVar *v;

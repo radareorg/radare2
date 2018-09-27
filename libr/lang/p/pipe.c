@@ -143,7 +143,9 @@ static int lang_pipe_run(RLang *lang, const char *code, int len) {
 				break;
 			}
 			memset (buf, 0, sizeof (buf));
+			void *bed = r_cons_sleep_begin ();
 			ret = read (output[0], buf, sizeof (buf) - 1);
+			r_cons_sleep_end (bed);
 			if (ret < 1 || !buf[0]) {
 				break;
 			}

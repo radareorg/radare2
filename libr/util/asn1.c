@@ -13,7 +13,7 @@ R_API void asn1_setformat (int fmt) {
 }
 
 static ut32 asn1_ber_indefinite (const ut8 *buffer, ut32 length) {
-	if (!length || !buffer) {
+	if (!buffer || length < 3) {
 		return 0;
 	}
 	const ut8* next = buffer + 2;
@@ -31,7 +31,7 @@ static ut32 asn1_ber_indefinite (const ut8 *buffer, ut32 length) {
 	return (next - buffer) + 2;
 }
 
-static RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
+static RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length, const ut8 *start_pointer) {
 	ut8 head, length8, byte;
 	ut64 length64;
 	if (!buffer || length < 2) {
@@ -43,10 +43,10 @@ static RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 		return NULL;
 	}
 	head = buffer[0];
+	object->offset = start_pointer ? (buffer - start_pointer) : 0;
 	object->klass = head & ASN1_CLASS;
 	object->form = head & ASN1_FORM;
 	object->tag = head & ASN1_TAG;
-	object->undefined = 0;
 	length8 = buffer[1];
 	if (length8 & ASN1_LENLONG) {
 		length64 = 0;
@@ -74,8 +74,8 @@ static RASN1Object *asn1_parse_header (const ut8 *buffer, ut32 length) {
 	}
 
 	if (object->tag == TAG_BITSTRING && object->sector[0] == 0) {
-		if (object->length > 0){
-			object->sector++; //real sector starts +1
+		if (object->length > 0) {
+			object->sector++; // real sector starts + 1
 			object->length--;
 		}
 	}
@@ -90,18 +90,16 @@ out_error:
 }
 
 static ut32 r_asn1_count_objects (const ut8 *buffer, ut32 length) {
-	ut32 counter;
-	RASN1Object *object;
-	const ut8 *next, *end;
 	if (!buffer || !length) {
 		return 0;
 	}
-	counter = 0;
-	object = NULL;
-	next = buffer;
-	end = buffer + length;
+	ut32 counter = 0;
+	RASN1Object *object = NULL;
+	const ut8 *next = buffer;
+	const ut8 *end = buffer + length;
 	while (next >= buffer && next < end) {
-		object = asn1_parse_header (next, end - next);
+		// i do not care about the offset now.
+		object = asn1_parse_header (next, end - next, 0);
 		if (!object || next == object->sector) {
 			R_FREE (object);
 			break;
@@ -114,18 +112,16 @@ static ut32 r_asn1_count_objects (const ut8 *buffer, ut32 length) {
 	return counter;
 }
 
-R_API RASN1Object *r_asn1_create_object (const ut8 *buffer, ut32 length) {
-	RASN1Object *object = asn1_parse_header (buffer, length);
+R_API RASN1Object *r_asn1_create_object (const ut8 *buffer, ut32 length, const ut8 *start_pointer) {
+	RASN1Object *object = asn1_parse_header (buffer, length, start_pointer);
 	if (object && (object->form == FORM_CONSTRUCTED || object->tag == TAG_BITSTRING || object->tag == TAG_OCTETSTRING)) {
-		ut32 i, count;
-		RASN1Object *inner = NULL;
 		const ut8 *next = object->sector;
 		const ut8 *end = next + object->length;
 		if (end > buffer + length) {
 			free (object);
 			return NULL;
 		}
-		count = r_asn1_count_objects (object->sector, object->length);
+		ut32 count = r_asn1_count_objects (object->sector, object->length);
 		if (count > 0) {
 			object->list.length = count;
 			object->list.objects = R_NEWS0 (RASN1Object*, count);
@@ -133,14 +129,15 @@ R_API RASN1Object *r_asn1_create_object (const ut8 *buffer, ut32 length) {
 				r_asn1_free_object (object);
 				return NULL;
 			}
+			ut32 i;
 			for (i = 0; next >= buffer && next < end && i < count; ++i) {
-				inner = r_asn1_create_object (next, end - next);
+				RASN1Object *inner = r_asn1_create_object (next, end - next, start_pointer);
 				if (!inner || next == inner->sector) {
 					r_asn1_free_object (inner);
 					break;
 				}
 				next = inner->sector + inner->length;
-				R_PTR_MOVE (object->list.objects[i], inner);
+				object->list.objects[i] = inner;
 			}
 		}
 	}
@@ -166,14 +163,18 @@ R_API RASN1Binary *r_asn1_create_binary (const ut8 *buffer, ut32 length) {
 	return bin;
 }
 
-
-R_API void r_asn1_print_hex (RASN1Object *object, char* buffer, ut32 size) {
+R_API void r_asn1_print_hex (RASN1Object *object, char* buffer, ut32 size, ut32 depth) {
 	ut32 i;
 	if (!object || !object->sector) {
 		return;
 	}
 	char* p = buffer;
 	char* end = buffer + size;
+	if (depth > 0 && !ASN1_STD_FORMAT) {
+		const char *pad = r_str_pad (' ', (depth * 2) - 2);
+		snprintf (p, end - p, "%s", pad);
+		p += strlen(pad);
+	}
 	for (i = 0; i < object->length && p < end; ++i) {
 		snprintf (p, end - p, "%02x", object->sector[i]);
 		p += 2;
@@ -185,8 +186,8 @@ R_API void r_asn1_print_hex (RASN1Object *object, char* buffer, ut32 size) {
 }
 
 #if !ASN1_STD_FORMAT
-static void simplePrinter(RStrBuf *sb, RASN1Object *object, int depth, const char *k, const char *v) {
-	const char *pad = r_str_pad (' ', (depth * 2)-2);
+static void r_asn1_print_padded(RStrBuf *sb, RASN1Object *object, int depth, const char *k, const char *v) {
+	const char *pad = r_str_pad (' ', (depth * 2) - 2);
 	if (object->form && !*v) {
 		return;
 	}
@@ -194,6 +195,13 @@ static void simplePrinter(RStrBuf *sb, RASN1Object *object, int depth, const cha
 	case TAG_NULL:
 	case TAG_EOC:
 		break;
+	case TAG_INTEGER:
+	case TAG_REAL:
+		if (*r_str_trim_ro (v)) {
+			r_strbuf_appendf (sb, "%s%s\n%s%s\n", pad, k, pad, v);
+		}
+		break;
+	case TAG_BITSTRING:
 	default:
 		if (*r_str_trim_ro (v)) {
 			r_strbuf_appendf (sb, "%s%s\n", pad, v);
@@ -203,7 +211,46 @@ static void simplePrinter(RStrBuf *sb, RASN1Object *object, int depth, const cha
 }
 #endif
 
-// R_API void r_asn1_print_object (RASN1Object *object, ut32 depth) {
+static RASN1String* r_asn1_print_hexdump_padded (RASN1Object *object, ut32 depth) {
+	const char *pad;
+	ut32 i, j;
+	char readable[20] = {0};
+	if (!object || !object->sector || object->length < 1) {
+		return NULL;
+	}
+	RStrBuf *sb = r_strbuf_new ("");
+	if (ASN1_STD_FORMAT) {
+		pad = "                                        : ";
+	} else {
+		pad = r_str_pad (' ', depth * 2);
+		r_strbuf_appendf (sb, "  ", pad);
+	}
+
+	for (i = 0, j = 0; i < object->length; i++, j++) {
+		ut8 c = object->sector[i];
+		if (i > 0 && (i % 16) == 0) {
+			r_strbuf_appendf (sb, "|%-16s|\n%s", readable, pad);
+			memset (readable, 0, sizeof (readable));
+			j = 0;
+		}
+		r_strbuf_appendf (sb, "%02x ", c);
+		readable[j] = IS_PRINTABLE(c) ? c : '.';
+	}
+
+	while ((i % 16) != 0) {
+		r_strbuf_appendf (sb, "   ");
+		i++;
+	}
+	r_strbuf_appendf (sb, "|%-16s|", readable);
+	char* text = r_strbuf_drain (sb);
+	RASN1String* asn1str = r_asn1_create_string (text, true, strlen (text) + 1);
+	if (!asn1str) {
+		/* no memory left.. */
+		free (text);
+	}
+	return asn1str;
+}
+
 R_API char *r_asn1_to_string (RASN1Object *object, ut32 depth, RStrBuf *sb) {
 	ut32 i;
 	bool root = false;
@@ -234,21 +281,35 @@ R_API char *r_asn1_to_string (RASN1Object *object, ut32 depth, RStrBuf *sb) {
 			break;
 		case TAG_INTEGER:
 			name = "INTEGER";
-			r_asn1_print_hex (object, temp_name, sizeof (temp_name));
-			string = temp_name;
+			if (object->length < 16) {
+				r_asn1_print_hex (object, temp_name, sizeof (temp_name), depth);
+				string = temp_name;
+			} else {
+				asn1str = r_asn1_print_hexdump_padded (object, depth);
+			}
 			break;
 		case TAG_BITSTRING:
 			name = "BIT_STRING";
-			r_asn1_print_hex (object, temp_name, sizeof (temp_name));
-			string = temp_name;
+			if (!object->list.objects) {
+				if (object->length < 16) {
+					r_asn1_print_hex (object, temp_name, sizeof (temp_name), depth);
+					string = temp_name;
+				} else {
+					asn1str = r_asn1_print_hexdump_padded (object, depth);
+				}
+			}
 			break;
 		case TAG_OCTETSTRING:
 			name = "OCTET_STRING";
 			if (r_str_is_printable_limited ((const char *)object->sector, object->length)) {
 				asn1str = r_asn1_stringify_string (object->sector, object->length);
 			} else if (!object->list.objects) {
-				r_asn1_print_hex (object, temp_name, sizeof (temp_name));
-				string = temp_name;
+				if (object->length < 16) {
+					r_asn1_print_hex (object, temp_name, sizeof (temp_name), depth);
+					string = temp_name;
+				} else {
+					asn1str = r_asn1_print_hexdump_padded (object, depth);
+				}
 			}
 			break;
 		case TAG_NULL:
@@ -259,15 +320,14 @@ R_API char *r_asn1_to_string (RASN1Object *object, ut32 depth, RStrBuf *sb) {
 			asn1str = r_asn1_stringify_oid (object->sector, object->length);
 			break;
 		case TAG_OBJDESCRIPTOR:
-			name = "ObjectDescriptor";
+			name = "OBJECT_DESCRIPTOR";
 			break;
 		case TAG_EXTERNAL:
 			name = "EXTERNAL";
 			break;
 		case TAG_REAL:
 			name = "REAL";
-			r_asn1_print_hex (object, temp_name, sizeof (temp_name));
-			string = temp_name;
+			asn1str = r_asn1_print_hexdump_padded (object, depth);
 			break;
 		case TAG_ENUMERATED:
 			name = "ENUMERATED";
@@ -355,6 +415,7 @@ R_API char *r_asn1_to_string (RASN1Object *object, ut32 depth, RStrBuf *sb) {
 		string = asn1str->string;
 	}
 	if (ASN1_STD_FORMAT) {
+		r_strbuf_appendf (sb, "%4"PFMT64d"  ", object->offset);
 		r_strbuf_appendf (sb, "%4u:%2d: %s %-20s: %s\n", object->length,
 			depth, object->form ? "cons" : "prim", name, string);
 		r_asn1_free_string (asn1str);
@@ -364,7 +425,7 @@ R_API char *r_asn1_to_string (RASN1Object *object, ut32 depth, RStrBuf *sb) {
 			}
 		}
 	} else {
-		simplePrinter (sb, object, depth, name, string);
+		r_asn1_print_padded (sb, object, depth, name, string);
 		r_asn1_free_string (asn1str);
 		if (object->list.objects) {
 			for (i = 0; i < object->list.length; ++i) {
@@ -381,8 +442,8 @@ R_API void r_asn1_free_object (RASN1Object *object) {
 	if (!object) {
 		return;
 	}
-	//this shall not be freed. it's a pointer into the buffer.
-	object->sector = 0;
+	// This shall not be freed. it's a pointer into the buffer.
+	object->sector = NULL;
 	if (object->list.objects) {
 		for (i = 0; i < object->list.length; ++i) {
 			r_asn1_free_object (object->list.objects[i]);
@@ -391,7 +452,7 @@ R_API void r_asn1_free_object (RASN1Object *object) {
 	}
 	object->list.objects = NULL;
 	object->list.length = 0;
-	R_FREE (object);
+	free (object);
 }
 
 R_API void r_asn1_free_binary (RASN1Binary* bin) {

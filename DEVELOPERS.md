@@ -36,6 +36,12 @@ static int findMinMax(RList *maps, ut64 *min, ut64 *max, int skip, int width);
 In order to contribute with patches or plugins we encourage you to
 use the same coding style as the rest of the code base.
 
+Please use `./sys/clang-format-diff.py` before submitting a PR, to be sure to
+follow the coding style. If you find a bug in this script, please create an
+issue on GitHub. You can also install the pre-commit hook
+`./sys/pre-commit-indent.sh` by copying it in `.git/hooks/pre-commit`, so it
+will check the coding style of the modified lines before committing them.
+
 You may find some additional notes on this topic in doc/vim.
 
 * Tabs are used for indentation. In a switch statement, the
@@ -51,7 +57,7 @@ default:
 }
 ```
 
-* Lines should be at most 78 chars. A tab is considered as 4 chars.
+* Lines should be at most 78 chars. A tab is considered as 8 chars.
 
 * Braces open on the same line as the for/while/if/else/function/etc. Closing
   braces are put on a line of their own, except in the else of an if statement
@@ -201,7 +207,7 @@ r_core_wrap.cxx:32103:61: error: assigning to 'RDebugReasonType' from incompatib
 
 * See doc/vim for vimrc
 
-* See doc/clang-format for work-in-progress support for automated indentation
+* See .clang-format for work-in-progress support for automated indentation
 
 * Use the r2 types instead of the ones in stdint, which are known to cause some
   portability issues. So, instead of uint8_t, use ut8, etc..

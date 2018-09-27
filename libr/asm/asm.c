@@ -180,6 +180,7 @@ static void plugin_free(RAsmPlugin *p) {
 	if (p && p->fini) {
 		p->fini (NULL);
 	}
+	R_FREE (p);
 }
 
 R_API RAsm *r_asm_new() {
@@ -340,13 +341,6 @@ R_API int r_asm_use(RAsm *a, const char *name) {
 	return false;
 }
 
-R_API int r_asm_set_subarch(RAsm *a, const char *name) {
-	if (a->cur && a->cur->set_subarch) {
-		return a->cur->set_subarch(a, name);
-	}
-	return false;
-}
-
 static int has_bits(RAsmPlugin *h, int bits) {
 	return (h && h->bits && (bits & h->bits));
 }
@@ -419,12 +413,12 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (!a || !buf || !op) {
 		return -1;
 	}
-	ret = op->payload = 0;
-	op->size = 4;
-	op->bitsize = 0;
 	if (len < 1) {
 		return 0;
 	}
+	ret = op->payload = 0;
+	op->size = 4;
+	op->bitsize = 0;
 	r_asm_op_set_asm (op, "");
 	if (a->pcalign) {
 		const int mod = a->pc % a->pcalign;
@@ -488,7 +482,7 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		r_parse_parse (a->ofilter, buf_asm, buf_asm);
 	}
 	if (op->size > 0) {
-		r_asm_op_set_buf (op, buf, R_MAX (0, op->size));
+		r_asm_op_set_buf (op, buf, R_MAX (0, R_MIN (len, op->size)));
 	} else {
 		r_asm_op_set_buf (op, buf, 1);  // TODO: honor anal size hint
 	}

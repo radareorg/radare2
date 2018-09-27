@@ -5,7 +5,7 @@
 
 " my own indentation for C using the coding styles
 set cindent
-set tabstop=4
+set tabstop=8
 set noexpandtab
 set smartindent
 set cino=:0,+0,(2,J0,{1,}0,>4,)1,m2

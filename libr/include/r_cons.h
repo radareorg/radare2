@@ -1037,6 +1037,7 @@ typedef struct r_panels_t {
 	bool isZoom;
 	RPanelsMenu *panelsMenu;
 	Sdb *db;
+	SdbHash *mht;
 } RPanels;
 
 #ifdef __cplusplus

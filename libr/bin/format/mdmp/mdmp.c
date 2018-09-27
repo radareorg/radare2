@@ -352,6 +352,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 	struct minidump_thread_list *thread_list;
 	struct minidump_thread_ex_list *thread_ex_list;
 	struct minidump_thread_info_list *thread_info_list;
+	struct minidump_token_info_list *token_info_list;
 	struct minidump_unloaded_module_list *unloaded_module_list;
 
 	struct avrf_handle_operation *handle_operations;
@@ -362,6 +363,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 	struct minidump_thread *threads;
 	struct minidump_thread_ex *ex_threads;
 	struct minidump_thread_info *thread_infos;
+	struct minidump_token_info *token_infos;
 	struct minidump_unloaded_module *unloaded_modules;
 	int left;
 
@@ -690,6 +692,27 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		}
 
 		break;
+	case TOKEN_STREAM:
+		/* TODO: Not fully parsed or utilised */
+		token_info_list = (struct minidump_token_info_list *)r_buf_get_at (obj->b, entry->location.rva, &left);
+		if (!token_info_list || left < sizeof (struct minidump_token_info_list)) {
+			break;
+		}
+
+		sdb_set (obj->kv, "mdmp_token_info.format", "ddq "
+			"TokenSize TokenId TokenHandle", 0);
+
+		sdb_num_set (obj->kv, "mdmp_token_info_list.offset",
+			entry->location.rva, 0);
+		sdb_set (obj->kv, "mdmp_token_info_list.format", "dddd "
+			"TokenListSize TokenListEntries ListHeaderSize ElementHeaderSize", 0);
+
+		for (i = 0; i < token_info_list->number_of_entries; i++) {
+			token_infos = (struct minidump_token_info *)((ut8 *)token_info_list + sizeof (struct minidump_token_info_list));
+			r_list_append (obj->streams.token_infos, &(token_infos[i]));
+		}
+
+
 	case LAST_RESERVED_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
 		break;

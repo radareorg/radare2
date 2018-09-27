@@ -314,7 +314,7 @@ R_API RCMS *r_pkcs7_parse_cms (const ut8 *buffer, ut32 length) {
 	if (!container) {
 		return NULL;
 	}
-	object = r_asn1_create_object (buffer, length);
+	object = r_asn1_create_object (buffer, length, buffer);
 	if (!object || object->list.length < 2 || !object->list.objects ||
 		!object->list.objects[0] || !object->list.objects[1] ||
 		object->list.objects[1]->list.length < 1) {

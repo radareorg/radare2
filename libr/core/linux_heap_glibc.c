@@ -86,19 +86,27 @@ static bool GH(update_main_arena)(RCore *core, GHT m_arena, MallocState *main_ar
 	return true;
 }
 
-static void GH(update_global_max_fast)(RCore *core, GHT g_max_fast, GHT *global_max_fast) {
-	(void)r_io_read_at (core->io, g_max_fast, (ut8 *)global_max_fast, sizeof (GHT));
-}
-
 static void GH(get_brks)(RCore *core, GHT *brk_start, GHT *brk_end) {
-	RListIter *iter;
-	RDebugMap *map;
-	r_debug_map_sync (core->dbg);
-	r_list_foreach (core->dbg->maps, iter, map) {
-		if (strstr (map->name, "[heap]")) {
-			*brk_start = map->addr;
-			*brk_end = map->addr_end;
-			break;
+	if (r_config_get_i (core->config, "cfg.debug")) {
+		RListIter *iter;
+		RDebugMap *map;
+		r_debug_map_sync (core->dbg);
+		r_list_foreach (core->dbg->maps, iter, map) {
+			if (strstr (map->name, "[heap]")) {
+				*brk_start = map->addr;
+				*brk_end = map->addr_end;
+				break;
+			}
+		}
+	} else {
+		RIOSection *section;
+		SdbListIter *iter;
+		ls_foreach (core->io->sections, iter, section) {
+			if (strstr (section->name, "[heap]")) {
+				*brk_start = section->vaddr;
+				*brk_end = section->vaddr + section->size;
+				break;
+			}
 		}
 	}
 }
@@ -252,177 +260,35 @@ static void GH(print_arena_stats)(RCore *core, GHT m_arena, MallocState *main_ar
 	PRINT_GA ("}\n\n");
 }
 
-static GHT GH(get_vaddr_symbol)(RCore *core, const char *path, const char *symname) {
-	RListIter *iter;
-	RBinSymbol *s;
-	RBinOptions *bo = r_bin_options_new (0LL, 0LL, false);
-	if (!bo) {
-		eprintf ("Failed to create bin options\n");
-		return (GHT) -1;
-	}
-
-	// TODO: avoid loading twice?
-	if (r_bin_open (core->bin, path, bo) == -1) {
-		eprintf ("Failed to open binary\n");
-		r_bin_options_free (bo);
-		return (GHT) -1;
-	}
-
-	RList *syms = r_bin_get_symbols (core->bin);
-	if (!syms) {
-		r_bin_options_free (bo);
-		return (GHT) -1;
-	}
-	GHT vaddr = 0LL;
-	r_list_foreach (syms, iter, s) {
-		if (strstr (s->name, symname)) {
-			vaddr = s->vaddr;
-			break;
-		}
-	}
-	r_bin_options_free (bo);
-	return vaddr;
-}
-
-static bool GH(r_resolve_symbol)(RCore *core, GHT *symbol, const char *symname) {
-	const char *dir_dbg = "/usr/lib/debug";
-	const char *dir_build_id = "/.build-id";
-	const char *libc_ver_end = NULL;
-	char hash[64] = R_EMPTY, *path = NULL;
-	bool is_debug_file[6];
-	GHT libc_addr = GHT_MAX, vaddr = GHT_MAX;
-	RListIter *iter;
-	RDebugMap *map;
-
-	if (!core || !core->dbg || !core->dbg->maps) {
-		return false;
-	}
-
-	r_debug_map_sync (core->dbg);
-	r_list_foreach (core->dbg->maps, iter, map) {
-		if (strstr (map->name, "/libc-")) {
-			libc_addr = map->addr;
-			libc_ver_end = map->name;
-			break;
-		}
-	}
-	if (!libc_ver_end) {
-		eprintf ("Warning: Can't find glibc mapped in memory (see dm)\n");
-		return false;
-	}
-
-	const char *debug_file = r_config_get (core->config, "dbg.libc.dbglib");
-
-	if (r_file_exists (debug_file)) {
-		path = strdup (debug_file);
-		goto found;
-	}
-
-	is_debug_file[0] = str_start_with (libc_ver_end, "/usr/lib/");
-	is_debug_file[1] = str_start_with (libc_ver_end, "/usr/lib32/");
-	is_debug_file[2] = str_start_with (libc_ver_end, "/usr/lib64/");
-	is_debug_file[3] = str_start_with (libc_ver_end, "/lib/");
-	is_debug_file[4] = str_start_with (libc_ver_end, "/lib32/");
-	is_debug_file[5] = str_start_with (libc_ver_end, "/lib64/");
-
-	if (!is_debug_file[0] && !is_debug_file[1] && \
-	!is_debug_file[2] && !is_debug_file[3] && \
-	!is_debug_file[4] && !is_debug_file[5]) {
-		path = r_cons_input ("Is a custom library? (LD_PRELOAD=..) Enter full path glibc: ");
-		if (r_file_exists (path)) {
-			goto found;
-		}
-	}
-
-	if (is_debug_file[0] || is_debug_file[1] || is_debug_file[2]) {
-		free (path);
-		path = r_str_newf ("%s", libc_ver_end);
-		if (r_file_exists (path)) {
-			goto found;
-		}
-	}
-
-	if ((is_debug_file[3] || is_debug_file[4] || is_debug_file[5]) && \
-	r_file_is_directory ("/usr/lib/debug")) {
-		free (path);
-		path = r_str_newf ("%s%s", dir_dbg, libc_ver_end);
-		if (r_file_exists (path)) {
-			goto found;
-		}
-		path = r_str_append (path, ".debug");
-		if (r_file_exists (path)) {
-			goto found;
-		}
-	}
-
-	if ((is_debug_file[3] || is_debug_file[4] || is_debug_file[5]) && \
-	r_file_is_directory ("/usr/lib/debug/.build-id")) {
-		get_hash_debug_file (core, libc_ver_end, hash, sizeof (hash) - 1);
-		libc_ver_end = hash;
-		free (path);
-		path = r_str_newf ("%s%s%s", dir_dbg, dir_build_id, libc_ver_end);
-		if (r_file_exists (path)) {
-			goto found;
-		}
-	}
-
-	goto not_found;
-found:
-	vaddr = GH(get_vaddr_symbol) (core, path, symname);
-	if (libc_addr != GHT_MAX && vaddr && vaddr != GHT_MAX) {
-		const int tcache = r_config_get_i (core->config, "dbg.glibc.tcache");
-		const int offset = r_config_get_i (core->config, "dbg.glibc.ma_offset");
-		if (tcache) {
-			*symbol = libc_addr + vaddr + offset;
-		} else {
-			*symbol = libc_addr + vaddr;
-		}
-		free (path);
-		return true;
-	}
-not_found:
-	eprintf (
-	  "Warning: glibc library with symbol %s could not be "
-	"found. Is libc6-dbg installed?\n", symname);
-	free (path);
-	return false;
-}
-
-static bool GH(r_resolve_global_max_fast)(RCore *core, GHT *g_max_fast, GHT *global_max_fast) {
-	if (!core || !core->dbg || !core->dbg->maps) {
-		return false;
-	}
-	if (*g_max_fast == GHT_MAX) {
-		if (GH(r_resolve_symbol) (core, g_max_fast, "global_max_fast")) {
-			if (global_max_fast) {
-				GH(update_global_max_fast) (core, *g_max_fast, global_max_fast);
-				return true;
-			}
-		}
-		return false;
-	} else {
-		GH(update_global_max_fast) (core, *g_max_fast, global_max_fast);
-	}
-	return true;
-}
-
 static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	if (!core || !core->dbg || !core->dbg->maps) {
 		return false;
 	}
-	RListIter *iter;
-	RDebugMap *map;
 
 	GHT brk_start = GHT_MAX, brk_end = GHT_MAX;
 	GHT libc_addr_sta = GHT_MAX, libc_addr_end;
 	GHT addr_srch = GHT_MAX, heap_sz = GHT_MAX;
 
-	r_debug_map_sync (core->dbg);
-	r_list_foreach (core->dbg->maps, iter, map) {
-		if (strstr (map->name, "/libc-") && map->perm == 6) {
-			libc_addr_sta = map->addr;
-			libc_addr_end = map->addr_end;
-			break;
+	if (!r_config_get_i (core->config, "cfg.debug")) {
+		RIOSection *section;
+		SdbListIter *iter;
+		ls_foreach (core->io->sections, iter, section) {
+			if (strstr (section->name, "arena")) {
+				libc_addr_sta = section->vaddr;
+				libc_addr_end = section->vaddr + section->vsize;
+				break;
+			}
+		}
+	} else {
+		RListIter *iter;
+		RDebugMap *map;
+		r_debug_map_sync (core->dbg);
+		r_list_foreach (core->dbg->maps, iter, map) {
+			if (strstr (map->name, "/libc-") && map->perm == 6) {
+				libc_addr_sta = map->addr;
+				libc_addr_end = map->addr_end;
+				break;
+			}
 		}
 	}
 
@@ -995,7 +861,7 @@ static void GH(print_heap_segment)(RCore *core, MallocState *main_arena,
 	}
 
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX || initial_brk == GHT_MAX) {
-		eprintf ("No heap section\n");
+		eprintf ("No Heap section\n");
 		return;
 	}
 
@@ -1378,12 +1244,15 @@ static const char* GH(help_msg)[] = {
 };
 
 static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
-	static GHT m_arena = GHT_MAX, m_state = GHT_MAX, g_max_fast = GHT_MAX;
+	static GHT m_arena = GHT_MAX, m_state = GHT_MAX;
+
+	GHT global_max_fast = (64 * SZ / 4);
+
 	MallocState *main_arena = R_NEW0 (MallocState);
 	if (!main_arena) {
 		return false;
 	}
-	GHT global_max_fast = GHT_MAX;
+
 	int format = 'c';
 	bool get_state = false;
 
@@ -1392,8 +1261,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 		m_state = r_num_get (NULL, input);
 		get_state = true;
 	case '\0': // dmh
-		if (GH(r_resolve_main_arena) (core, &m_arena) &&
-			GH(r_resolve_global_max_fast) (core, &g_max_fast, &global_max_fast)) {
+		if (GH(r_resolve_main_arena) (core, &m_arena)) {
 
 			if (core->offset != core->prompt_offset) {
 				m_state = core->offset;
@@ -1439,8 +1307,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 		}
 		break;
 	case 'm': // "dmhm"
-		if (GH(r_resolve_main_arena) (core, &m_arena) &&
-				GH(r_resolve_global_max_fast) (core, &g_max_fast, &global_max_fast)) {
+		if (GH(r_resolve_main_arena) (core, &m_arena)) {
 
 			switch (input[1]) {
 			case '*':
@@ -1512,8 +1379,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 		}
 		break;
 	case 'f': // "dmhf"
-		if (GH(r_resolve_main_arena) (core, &m_arena) &&
-			GH(r_resolve_global_max_fast) (core, &g_max_fast, &global_max_fast)) {
+		if (GH(r_resolve_main_arena) (core, &m_arena)) {
 
 				char *m_state_str, *dup = strdup (input + 1);
 				if (!strcmp (dup, "\0")) {
@@ -1556,8 +1422,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 		if (input[0] == 'j') {
 			format = 'j';
 		}
-		if (GH(r_resolve_main_arena) (core, &m_arena) &&
-			GH(r_resolve_global_max_fast) (core, &g_max_fast, &global_max_fast)) {
+		if (GH(r_resolve_main_arena) (core, &m_arena)) {
 
 			input += 1;
 			if (!strcmp (input, "\0")) {
@@ -1583,7 +1448,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 		}
 		break;
 	case 't':
-		if (GH(r_resolve_main_arena) (core, &m_arena) && GH(r_resolve_global_max_fast) (core, &g_max_fast, &global_max_fast)) {
+		if (GH(r_resolve_main_arena) (core, &m_arena)) {
 			if (!GH(update_main_arena) (core, m_arena, main_arena)) {
 				break;
 			}

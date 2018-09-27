@@ -167,9 +167,7 @@ static int r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointItem
 
 	/* inform the user of what happened */
 	if (dbg->hitinfo) {
-		//eprintf ("hit %spoint at: %"PFMT64x "\n",
-		//		b->trace ? "trace" : "break", pc);
-		r_cons_printf ("hit %spoint at: %"PFMT64x "\n",
+		eprintf ("hit %spoint at: %" PFMT64x "\n",
 			b->trace ? "trace" : "break", pc);
 	}
 

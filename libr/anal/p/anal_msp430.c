@@ -39,6 +39,7 @@ static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		}
 		break;
 	case MSP430_TWOOP:
+		switch (cmd.opcode) {
 		case MSP430_BIT: 
 		case MSP430_BIC:
 		case MSP430_BIS:
@@ -57,6 +58,7 @@ static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		case MSP430_CMP: op->type = R_ANAL_OP_TYPE_CMP; break;
 		case MSP430_XOR: op->type = R_ANAL_OP_TYPE_XOR; break;
 		case MSP430_AND: op->type = R_ANAL_OP_TYPE_AND; break;
+		}
 		break;
 	case MSP430_JUMP:
 		if (cmd.jmp_cond == MSP430_JMP) {

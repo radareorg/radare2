@@ -113,6 +113,7 @@ R_API void r_anal_plugin_free (RAnalPlugin *p) {
 	if (p && p->fini) {
 		p->fini (NULL);
 	}
+	R_FREE (p);
 }
 
 R_API RAnal *r_anal_free(RAnal *a) {
@@ -158,15 +159,6 @@ R_API int r_anal_add(RAnal *anal, RAnalPlugin *foo) {
 	}
 	r_list_append (anal->plugins, foo);
 	return true;
-}
-
-// TODO: Must be deprecated
-R_API void r_anal_list(RAnal *anal) {
-	RAnalPlugin *h;
-	RListIter *it;
-	r_list_foreach (anal->plugins, it, h) {
-		anal->cb_printf ("anal %-10s %s\n", h->name, h->desc);
-	}
 }
 
 R_API bool r_anal_use(RAnal *anal, const char *name) {
