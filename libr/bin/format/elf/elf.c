@@ -1649,11 +1649,10 @@ ut64 Elf_(r_bin_elf_get_fini_offset)(ELFOBJ *bin) {
 }
 
 ut64 Elf_(r_bin_elf_get_entry_offset)(ELFOBJ *bin) {
-	ut64 entry;
 	if (!bin) {
 		return 0LL;
 	}
-	entry = bin->ehdr.e_entry;
+	ut64 entry = bin->ehdr.e_entry;
 	if (!entry) {
 		entry = Elf_(r_bin_elf_get_section_offset)(bin, ".init.text");
 		if (entry != UT64_MAX) {
