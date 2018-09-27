@@ -603,17 +603,7 @@ R_API bool r_anal_noreturn_at(RAnal *anal, ut64 addr) {
 			return true;
 		}
 	}
-	int oss = anal->flb.f->space_strict;
-	int ofs = anal->flb.f->space_idx;
-	anal->flb.set_fs (anal->flb.f, "imports");
-	anal->flb.f->space_strict = true;
-	RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
-	if (!fi) {
-		anal->flb.set_fs (anal->flb.f, "symbols");
-		fi = anal->flb.get_at (anal->flb.f, addr, false);
-	}
-	anal->flb.f->space_idx = ofs;
-	anal->flb.f->space_strict = oss;
+	RFlagItem *fi = r_flag_get_i2 (anal->flb.f, addr);
 	if (fi) {
 		if (r_anal_noreturn_at_name (anal, fi->name)) {
 			return true;
