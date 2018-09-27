@@ -163,7 +163,7 @@ R_API RRegex *r_regex_new (const char *pattern, const char *flags) {
 	if (r_regex_comp (&rx, pattern, r_regex_flags (flags))) {
 		return NULL;
 	}
-	r = malloc (sizeof (RRegex));
+	r = R_NEW (RRegex);
 	if (!r) {
 		return NULL;
 	}
