@@ -117,7 +117,12 @@ R_API int r_strbuf_append(RStrBuf *sb, const char *s) {
 
 R_API int r_strbuf_append_n(RStrBuf *sb, const char *s, int l) {
 	r_return_val_if_fail (sb, false);
-	r_return_val_if_fail (s && l > 0, false);
+	r_return_val_if_fail (s && l >= 0, false);
+
+	// fast path if no chars to append
+	if (l == 0) {
+		return true;
+	}
 
 	if ((sb->len + l + 1) <= sizeof (sb->buf)) {
 		memcpy (sb->buf + sb->len, s, l);
