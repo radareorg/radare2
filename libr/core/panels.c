@@ -1787,30 +1787,35 @@ static int reloadCb(void *user) {
 static int functionCb(void *user) {
 	RCore *core = (RCore *)user;
 	r_core_cmdf (core, "af");
+	setRefreshAll (core->panels);
 	return 0;
 }
 
 static int symbolsCb(void *user) {
 	RCore *core = (RCore *)user;
 	r_core_cmdf (core, "aa");
+	setRefreshAll (core->panels);
 	return 0;
 }
 
 static int programCb(void *user) {
 	RCore *core = (RCore *)user;
 	r_core_cmdf (core, "aaa");
+	setRefreshAll (core->panels);
 	return 0;
 }
 
 static int basicblocksCb(void *user) {
 	RCore *core = (RCore *)user;
 	r_core_cmdf (core, "aab");
+	setRefreshAll (core->panels);
 	return 0;
 }
 
 static int callsCb(void *user) {
 	RCore *core = (RCore *)user;
 	r_core_cmdf (core, "aac");
+	setRefreshAll (core->panels);
 	return 0;
 }
 
@@ -1842,6 +1847,7 @@ static int watchpointsCb(void *user) {
 static int referencesCb(void *user) {
 	RCore *core = (RCore *)user;
 	r_core_cmdf (core, "aar");
+	setRefreshAll (core->panels);
 	return 0;
 }
 
