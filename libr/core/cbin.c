@@ -1107,7 +1107,7 @@ static inline bool is_initfini(RBinAddr *entry) {
 
 static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 	char str[R_FLAG_NAME_SIZE];
-	RList *entries;
+	RList *entries = r_bin_get_entries (r->bin);
 	RListIter *iter;
 	RListIter *last_processed = NULL;
 	RBinAddr *entry = NULL;
@@ -1124,11 +1124,6 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 		} else {
 			r_cons_printf ("[Entrypoints]\n");
 		}
-	}
-
-	entries = r_bin_get_entries (r->bin);
-	if (!entries) {
-		return true;
 	}
 	if (r_list_length (entries) > 1024) {
 		eprintf ("Too many entrypoints (%d)\n", r_list_length (entries));
