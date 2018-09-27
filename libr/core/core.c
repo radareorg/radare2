@@ -2201,8 +2201,8 @@ R_API bool r_core_init(RCore *core) {
 	core->print->exists_var = exists_var;
 	core->print->disasm = __disasm;
 	core->print->colorfor = (RPrintColorFor)r_core_anal_optype_colorfor;
-	core->print->hasrefs = (RPrintColorFor)r_core_anal_hasrefs;
-	core->print->get_comments = (RPrintCommentCallback) r_core_anal_get_comments;
+	core->print->hasrefs = (RPrintHasRefs)r_core_anal_hasrefs;
+	core->print->get_comments = (RPrintCommentCallback)r_core_anal_get_comments;
 	core->print->use_comments = false;
 	core->rtr_n = 0;
 	core->blocksize_max = R_CORE_BLOCKSIZE_MAX;
