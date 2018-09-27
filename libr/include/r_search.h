@@ -62,7 +62,6 @@ typedef struct r_search_t {
 	ut64 nhits;
 	ut64 maxhits; // search.maxhits
 	RList *hits;
-	RMemoryPool *pool;
 	int distance;
 	int inverse;
 	bool overlap; // whether two matches can overlap

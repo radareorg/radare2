@@ -438,7 +438,12 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 	}
 	switch (*str) {
 	case '.':
-		if (core->num->nc.curr_tok == '+') {
+		if (str[1] == '.') {
+			if (ok) {
+				*ok = true;
+			}
+			return r_num_tail (core->num, core->offset, str + 2);
+		} else if (core->num->nc.curr_tok == '+') {
 			ut64 off = core->num->nc.number_value.n;
 			if (!off) {
 				off = core->offset;

@@ -389,6 +389,9 @@ R_API int r_bp_del_index(RBreakpoint *bp, int idx) {
 R_API int r_bp_size(RBreakpoint *bp) {
 	RBreakpointArch *bpa;
 	int i, bpsize = 8;
+	if (!bp || !bp->cur) {
+		return 0;
+	}
 	for (i = 0; bp->cur->bps[i].bytes; i++) {
 		bpa = &bp->cur->bps[i];
 		if (bpa->bits && bpa->bits != bp->bits) {
