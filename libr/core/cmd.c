@@ -70,6 +70,8 @@
 		} \
 	}
 
+static int r_core_cmd_subst_i(RCore *core, char *cmd, char* colon, bool *tmpseek);
+
 static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_quit.c"
 #include "cmd_hash.c"
@@ -1848,9 +1850,9 @@ static char *parse_tmp_evals(RCore *core, const char *str) {
 	return res;
 }
 
-static int r_core_cmd_subst_i(RCore *core, char *cmd, char* colon, bool *tmpseek);
 static int r_core_cmd_subst(RCore *core, char *cmd) {
-	int ret = 0, rep = atoi (cmd), orep;
+	ut64 rep = strtoull (cmd, NULL, 10);
+	int ret = 0, orep;
 	char *cmt, *colon = NULL, *icmd = strdup (cmd);
 	const char *cmdrep = NULL;
 	bool tmpseek = false;
@@ -1906,7 +1908,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	} else {
 		if (rep > INTERACTIVE_MAX_REP) {
 			if (r_config_get_i (core->config, "scr.interactive")) {
-				if (!r_cons_yesno ('n', "Are you sure to repeat this %d times? (y/N)", rep)) {
+				if (!r_cons_yesno ('n', "Are you sure to repeat this %"PFMT64d" times? (y/N)", rep)) {
 					goto beach;
 				}
 			}
