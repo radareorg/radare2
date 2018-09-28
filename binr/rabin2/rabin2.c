@@ -577,6 +577,7 @@ int main(int argc, char **argv) {
 		path = r_sys_getenv (R_LIB_ENV);
 		if (path && *path) {
 			r_lib_opendir (l, path);
+			free(path);
 		}
 		r_lib_opendir (l, homeplugindir);
 		r_lib_opendir (l, plugindir);
