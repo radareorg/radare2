@@ -140,24 +140,33 @@ R_API char *r_bin_demangle_cxx(RBinFile *binfile, const char *str, ut64 vaddr) {
 		"reloc.",
 		"sym.imp.",
 		"imp.",
-		NULL
+		NULL,
 	};
-	if (str[0] == str[1] && *str == '_') {
-		str++;
+	char *tmpstr, *tmpptr;
+
+	tmpstr = tmpptr = strdup (str);
+	if (tmpptr[0] == tmpptr[1] && *tmpptr == '_') {
+		tmpptr++;
 	}
 	for (i = 0; prefixes[i]; i++) {
 		int plen = strlen (prefixes[i]);
-		if (!strncmp (str, prefixes[i], plen)) {
-			str += plen;
+		if (!strncmp (tmpptr, prefixes[i], plen)) {
+			tmpptr += plen;
 			break;
 		}
 	}
+	// remove CXXABI suffix
+	char *cxxabi = strstr (tmpptr, "@@CXXABI");
+	if (cxxabi) {
+		*cxxabi = '\0';
+	}
 #if WITH_GPL
-	char *out = cplus_demangle_v3 (str, flags);
+	char *out = cplus_demangle_v3 (tmpptr, flags);
 #else
 	/* TODO: implement a non-gpl alternative to c++v3 demangler */
 	char *out = NULL;
 #endif
+	free (tmpstr);
 	if (out) {
 		r_str_replace_char (out, ' ', 0);
 	}
