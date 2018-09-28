@@ -968,6 +968,10 @@ static int cmd_help(void *data, const char *input) {
 	case 'w': { // "?w"
 		ut64 addr = r_num_math (core->num, input + 1);
 		char *rstr = core->print->hasrefs (core->print->user, addr, true);
+		if (!rstr) {
+			eprintf ("Cannot get refs\n");
+			break;
+		}
 		r_cons_println (rstr);
 		free (rstr);
 		break;

@@ -5368,9 +5368,8 @@ static int cmd_print(void *data, const char *input) {
 						if (core->print->hasrefs) {
 							char *rstr = core->print->hasrefs (core->print->user, val, true);
 							if (rstr && *rstr) {
-								char *ns; // r_str_ansi_trim (ns, -1, 0);
-								ns = r_str_escape (rstr);
-								r_cons_printf (",\"ref\":\"%s\"}", *ns == ' '? ns + 1: ns);
+								char *ns = r_str_escape (rstr);
+								r_cons_printf (",\"ref\":\"%s\"}", *ns == ' ' ? ns + 1 : ns);
 								free (ns);
 								withref = 1;
 							}
