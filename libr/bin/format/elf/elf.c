@@ -3300,7 +3300,7 @@ static int is_in_pphdr(Elf_(Phdr) * p, ut64 addr) {
 }
 
 static int is_in_vphdr(Elf_(Phdr) * p, ut64 addr) {
-	return addr >= p->p_vaddr && addr < p->p_vaddr + p->p_memsz;
+	return addr >= p->p_vaddr && addr < p->p_vaddr + p->p_filesz;
 }
 
 /* Deprecated temporarily. Use r_bin_elf_p2v_new in new code for now. */
