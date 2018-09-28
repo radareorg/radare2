@@ -435,6 +435,7 @@ LIBMAGIC="-lmagic"
 else
 USE_LIB_MAGIC="0"
 LIBMAGIC=""; fi
+if [ "$WITH_CAPSTONE" = "1" ]; then
 [ -z "${PKGCONFIG}" ] && PKGCONFIG=pkg-config
 type ${PKGCONFIG} > /dev/null 2>&1 || echo "ERROR: Cannot find PKGCONFIG ${PKGCONFIG}"
 echo 'Using PKGCONFIG: '${PKGCONFIG}
@@ -446,14 +447,12 @@ CAPSTONE_CFLAGS=$tmp;
 tmp=`${PKGCONFIG} --libs capstone 2>/dev/null`
 if [ $? = 0 ]; then
 echo yes; HAVE_PKGCFG_CAPSTONE=1;
-CAPSTONE_LDFLAGS=$tmp; fi; fi
+CAPSTONE_LDFLAGS=$tmp; fi; fi; fi
 if [ 11 = "$WITH_CAPSTONE$HAVE_PKGCFG_CAPSTONE" ]; then
 
 USE_CAPSTONE="1"
 else
-USE_CAPSTONE="0"
-CAPSTONE_CFLAGS=""
-CAPSTONE_LDFLAGS=""; fi
+USE_CAPSTONE="0"; fi
 check_library HAVE_LIB_Z z 0
 check_library HAVE_LIB_ZIP zip 0
 if [ 11 = "$HAVE_LIB_Z$USE_ZIP" ]; then
