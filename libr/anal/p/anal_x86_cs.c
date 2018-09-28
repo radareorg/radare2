@@ -741,9 +741,10 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				src = getarg (&gop, 1, 0, NULL, SRC_AR);
 				dst = getarg (&gop, 0, 0, NULL, DST_AR);
 				const char *dst64 = r_reg_32_to_64 (a->reg, dst);
-				esilprintf (op, "%s,%s,=", src, dst);
 				if (a->bits == 64 && dst64) {
-					r_strbuf_appendf (&op->esil, ",0xffffffff,%s,&=", dst64);
+					esilprintf (op, "%s,%s,=", src, dst64);
+				} else {
+					esilprintf (op, "%s,%s,=", src, dst);
 				}
 			}
 			break;
