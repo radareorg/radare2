@@ -376,12 +376,7 @@ R_API int r_sys_crash_handler(const char *cmd) {
 
 	free (crash_handler_cmd);
 	crash_handler_cmd = strdup (cmd);
-	sigemptyset (&mask);
-	sigaddset (&mask, SIGINT);
-	sigaddset (&mask, SIGSEGV);
-	sigaddset (&mask, SIGBUS);
-	sigaddset (&mask, SIGQUIT);
-	sigaddset (&mask, SIGHUP);
+	sigfillset (&mask);
 
 	r_sys_sigaction (SIGINT, signal_handler, &mask, 0);
 	r_sys_sigaction (SIGSEGV, signal_handler, &mask, 0);
