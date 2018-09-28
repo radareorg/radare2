@@ -13,11 +13,11 @@
 
 static const char *help_msg_pa[] = {
 	"Usage: pa[edD]", "[asm|hex]", "print (dis)assembled",
-	"pa", " [assembly]", "print hexpairs of the given assembled instruction",
-	"paD", " [assembly]", "print assembled from hexparis",
-	"pad", " [hexpairs]", "print disassembled from hexpairs",
-	"pae", " [assembly]", "print ESIL after assembling given instruction",
-	"pade", " [hexpairs]", "print ESIL expression assembled ESIL from hexpairs",
+	"pa", " [assembly]", "print hexpairs of the given assembly expression",
+	"paD", " [hexpairs]", "print assembly expression from hexpairs and show hexpairs",
+	"pad", " [hexpairs]", "print assembly expression from hexpairs",
+	"pade", " [hexpairs]", "print ESIL expression from hexpairs",
+	"pae", " [assembly]", "print ESIL expression of the given assembly expression",
 	NULL
 };
 
@@ -4027,51 +4027,69 @@ static int cmd_print(void *data, const char *input) {
 		}
 		if (input[1] == 'e') { // "pae"
 			if (input[2] == '?') {
-				r_cons_printf ("|Usage: pae [asm]       assemble instruction and show esil\n");
+				r_cons_printf ("|Usage: pae [asm]       print ESIL expression of the given assembly expression\n");
 			} else {
-				int ret, bufsz;
-				RAnalOp aop = {
-					0
-				};
+				int printed = 0;
+				int bufsz;
+				RAnalOp aop = {0};
 				r_asm_set_pc (core->assembler, core->offset);
 				RAsmCode *acode = r_asm_massemble (core->assembler, input + 2);
 				if (acode && *acode->buf_hex) {
 					bufsz = strlen (acode->buf_hex) >> 1;
-					ret = r_anal_op (core->anal, &aop, core->offset,
-							(const ut8 *) acode->buf, bufsz, R_ANAL_OP_MASK_ESIL);
-					if (ret > 0) {
-						const char *str = R_STRBUF_SAFEGET (&aop.esil);
-						r_cons_println (str);
+					while (printed < bufsz) {
+						aop.size = 0;
+						if (r_anal_op (core->anal, &aop, core->offset,
+							    (const ut8 *)acode->buf + printed, bufsz - printed, R_ANAL_OP_MASK_ESIL) > 0) {
+							const char *str = R_STRBUF_SAFEGET (&aop.esil);
+							r_cons_println (str);
+						} else {
+							eprintf ("Cannot decode instruction\n");
+							break;
+						}
+						if (aop.size < 1) {
+							eprintf ("Cannot decode instruction\n");
+							break;
+						}
+						printed += aop.size;
+						r_anal_op_fini (&aop);
 					}
-					r_anal_op_fini (&aop);
 				}
 			}
 		} else if (input[1] == 'D') { // "paD"
 			if (input[2] == '?') {
-				r_cons_printf ("|Usage: paD [hex]       disasm like in pdi\n");
+				r_cons_printf ("|Usage: paD [hex]       print assembly expression from hexpairs and show hexpairs\n");
 			} else {
 				r_core_cmdf (core, "pdi@x:%s", input + 2);
 			}
 		} else if (input[1] == 'd') { // "pad*"
 			switch (input[2]) {
 			case 'e': // "pade"
-				if (input[2] == '?') {
-					r_cons_printf ("|Usage: pade [hex]       show esil from given hexpairs\n");
+				if (input[3] == '?') {
+					r_cons_printf ("|Usage: pade [hex]       print ESIL expression from hexpairs\n");
 				} else {
-					int ret, bufsz;
+					int printed = 0;
+					int bufsz;
 					RAnalOp aop = {0};
 					char *hex_arg = calloc (0, strlen (arg));
 					if (hex_arg) {
 						bufsz = r_hex_str2bin (arg + 1, (ut8 *)hex_arg);
-						ret = r_anal_op (core->anal, &aop, core->offset,
-							(const ut8 *)hex_arg, bufsz, R_ANAL_OP_MASK_ESIL);
-						if (ret > 0) {
-							const char *str = R_STRBUF_SAFEGET (&aop.esil);
-							r_cons_println (str);
-						} else {
-							eprintf ("Cannot decode instruction\n");
+						while (printed < bufsz) {
+							aop.size = 0;
+							if (r_anal_op (core->anal, &aop, core->offset,
+								    (const ut8 *)hex_arg + printed, bufsz - printed, R_ANAL_OP_MASK_ESIL) > 0) {
+								const char *str = R_STRBUF_SAFEGET (&aop.esil);
+								r_cons_println (str);
+							} else {
+								eprintf ("Cannot decode instruction\n");
+								break;
+							}
+							if (aop.size < 1) {
+								eprintf ("Cannot decode instruction\n");
+								break;
+							}
+							printed += aop.size;
+							r_anal_op_fini (&aop);
 						}
-						r_anal_op_fini (&aop);
 						free (hex_arg);
 					}
 				}
@@ -4088,8 +4106,11 @@ static int cmd_print(void *data, const char *input) {
 				}
 				break;
 			}
+			case '?': // "pad?"
+				r_cons_printf ("|Usage: pad [hex]       print assembly expression from hexpairs\n");
+				break;
 			default:
-				r_cons_printf ("|Usage: pad[e] [asm]       disasm\n");
+				r_cons_printf ("|Usage: pa[edD] [asm|hex]  print (dis)assembled\n");
 				break;
 			}
 		} else if (input[1] == '?') {
