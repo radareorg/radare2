@@ -828,6 +828,7 @@ static int cmd_type(void *data, const char *input) {
 				r_list_foreach (typeoffs, iter, ty) {
 					r_cons_printf ("%s\n", ty);
 				}
+				r_list_free (typeoffs);
 			}
 			free (off);
 			break;
@@ -920,6 +921,7 @@ static int cmd_type(void *data, const char *input) {
 					if (!otype) {
 						eprintf ("wrong type for opcode offset\n");
 					}
+					r_list_free (otypes);
 				}
 			}
 			r_anal_op_fini (&op);

@@ -1474,10 +1474,6 @@ out_error:
 	r_bin_options_free (bo);
 }
 
-static int str_start_with(const char *ptr, const char *str) {
-	return !strncmp (ptr, str, (size_t)strlen (str));
-}
-
 #endif // __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 
 static ut64 addroflib(RCore *core, const char *libname) {
