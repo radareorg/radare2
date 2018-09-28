@@ -435,6 +435,7 @@ R_API void r_type_del(Sdb *TDB, const char *name) {
 			sdb_unset (TDB, sdb_fmt ("enum.%s.0x%x", name, member->val), 0);
 		}
 		sdb_unset (TDB, name, 0);
+		r_list_free (list);
 	} else {
 		eprintf ("Unrecognized type \"%s\"\n", kind);
 	}
