@@ -2456,13 +2456,13 @@ RBinElfReloc* Elf_(r_bin_elf_get_relocs)(ELFOBJ *bin) {
 			if (bin->ehdr.e_type == ET_REL) {
 				if (bin->g_sections[i].info < bin->ehdr.e_shnum && bin->shdr) {
 					ret[rel].rva = bin->shdr[bin->g_sections[i].info].sh_offset + ret[rel].offset;
-					ret[rel].rva = Elf_(r_bin_elf_p2v) (bin, ret[rel].rva);
+					ret[rel].rva = Elf_(r_bin_elf_p2v_new) (bin, ret[rel].rva);
 				} else {
 					ret[rel].rva = ret[rel].offset;
 				}
 			} else {
 				ret[rel].rva = ret[rel].offset;
-				ret[rel].offset = Elf_(r_bin_elf_v2p) (bin, ret[rel].offset);
+				ret[rel].offset = Elf_(r_bin_elf_v2p_new) (bin, ret[rel].offset);
 			}
 			ret[rel].last = 0;
 			if (res < 0) {
