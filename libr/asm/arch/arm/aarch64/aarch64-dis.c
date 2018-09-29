@@ -3069,6 +3069,7 @@ print_mnemonic_name (const aarch64_inst *inst, struct disassemble_info *info)
 static void
 print_comment (const aarch64_inst *inst, struct disassemble_info *info)
 {
+return;
   if (inst->opcode->flags & F_COND)
     {
       char name[8];
