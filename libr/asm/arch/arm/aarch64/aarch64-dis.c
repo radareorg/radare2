@@ -3144,8 +3144,8 @@ print_insn_aarch64_word (bfd_vma pc,
     case ERR_NYI:
       /* Handle undefined instructions.  */
       info->insn_type = dis_noninsn;
-      (*info->fprintf_func) (info->stream,".inst 0x%08x ; %s",
-			     word, err_msg[-ret]);
+      // (*info->fprintf_func) (info->stream,".inst 0x%08x ; %s", word, err_msg[-ret]);
+      (*info->fprintf_func) (info->stream,"%s", err_msg[-ret]);
       break;
     case ERR_OK:
       user_friendly_fixup (&inst);
