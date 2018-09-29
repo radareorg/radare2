@@ -30,6 +30,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		char *str;
 		int max_operands;
 	} ops[] = {
+		{ "add", "1 = 2 + 3", 3},
 		{ "addi",  "1 = 2 + 3", 3},
 		{ "addiu",  "1 = 2 + 3", 3},
 		{ "addu",  "1 = 2 + 3", 3},
