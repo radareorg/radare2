@@ -810,7 +810,7 @@ static inline void
 dump_qualifier_sequence (const aarch64_opnd_qualifier_t *qualifier)
 {
   int i;
-  printf ("#### \t");
+  printf ("####  ");
   for (i = 0; i < AARCH64_MAX_OPND_NUM; ++i, ++qualifier)
     printf ("%s,", aarch64_get_qualifier_name (*qualifier));
   printf ("\n");
@@ -3325,11 +3325,11 @@ aarch64_print_operand (char *buf, size_t size, bfd_vma pc,
 	case 4:	/* e.g. MOV Wd, #<imm32>.  */
 	    {
 	      int imm32 = opnd->imm.value;
-	      snprintf (buf, size, "#0x%-20x\t// #%d", imm32, imm32);
+	      snprintf (buf, size, "#0x%-20x // #%d", imm32, imm32);
 	    }
 	  break;
 	case 8:	/* e.g. MOV Xd, #<imm64>.  */
-	  snprintf (buf, size, "#0x%-20" PRIx64 "\t// #%" PRIi64,
+	  snprintf (buf, size, "#0x%-20" PRIx64 " // #%" PRIi64,
 		    opnd->imm.value, opnd->imm.value);
 	  break;
 	default: assert (0);
