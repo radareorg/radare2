@@ -22,6 +22,7 @@
 #define OPCODES_AARCH64_OPC_H
 
 #include <string.h>
+#include <assert.h>
 #include "aarch64.h"
 
 /* Instruction fields.

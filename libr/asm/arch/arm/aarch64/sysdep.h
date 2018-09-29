@@ -31,7 +31,7 @@
 #error sysdep.h must be included in lieu of config.h
 #endif
 
-#include "config.h"
+// #include "config.h"
 
 #include "ansidecl.h"
 

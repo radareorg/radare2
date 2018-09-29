@@ -24,7 +24,7 @@
 
 #include "mybfd.h"
 // #include "bfd_stdint.h"
-#include <assert.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 #ifdef __cplusplus
