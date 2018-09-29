@@ -852,7 +852,7 @@ decode_limm (uint32_t esize, aarch64_insn value, int64_t *result)
     }
   else
     {
-#ifndef _MSC_VER
+#ifdef _MSC_VER
       if (S >= 0x00 && S <= 0x1f) { simd_size = 32; }
       else if (S >= 0x20 && S <= 0x2f) { simd_size = 16; S &= 0xf; }
       else if (S >= 0x30 && S <= 0x37) { simd_size = 8; S &= 0x7; }
