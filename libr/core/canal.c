@@ -780,7 +780,7 @@ static int core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int depth
 					RAnalFunction *f = r_anal_get_fcn_in (core->anal, from, -1);
 					if (f) {
 						if (!f->fcn_locs) {
-							f->fcn_locs = r_anal_fcn_list_new ();
+							f->fcn_locs = r_list_new ();
 						}
 						r_list_append (f->fcn_locs, fcn);
 						r_list_sort (f->fcn_locs, &cmpfcn);

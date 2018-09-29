@@ -302,7 +302,7 @@ R_API RAnalFunction *r_anal_fcn_new() {
 }
 
 R_API RList *r_anal_fcn_list_new() {
-	return r_list_new ();
+	return r_list_newf (r_anal_fcn_free);
 }
 
 R_API void r_anal_fcn_free(void *_fcn) {
