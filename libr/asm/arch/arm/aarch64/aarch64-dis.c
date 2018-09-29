@@ -852,6 +852,14 @@ decode_limm (uint32_t esize, aarch64_insn value, int64_t *result)
     }
   else
     {
+#ifndef _MSC_VER
+      if (S >= 0x00 && S <= 0x1f) { simd_size = 32; }
+      else if (S >= 0x20 && S <= 0x2f) { simd_size = 16; S &= 0xf; }
+      else if (S >= 0x30 && S <= 0x37) { simd_size = 8; S &= 0x7; }
+      else if (S >= 0x38 && S <= 0x3b) { simd_size = 4; S &= 0x3; }
+      else if (S >= 0x3c && S <= 0x3d) { simd_size = 2; S &= 0x1; }
+      else { return 0; }
+#else
       switch (S)
 	{
 	case 0x00 ... 0x1f: /* 0xxxxx */ simd_size = 32;           break;
@@ -861,6 +869,7 @@ decode_limm (uint32_t esize, aarch64_insn value, int64_t *result)
 	case 0x3c ... 0x3d: /* 11110x */ simd_size =  2; S &= 0x1; break;
 	default: return FALSE;
 	}
+#endif
       mask = (1ull << simd_size) - 1;
       /* Top bits are IGNORED.  */
       R &= simd_size - 1;
