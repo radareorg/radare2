@@ -153,6 +153,7 @@ static void nextpal(RCore *core, int mode) {
 	RList *files = NULL;
 	RListIter *iter;
 	const char *fn;
+	char *path = NULL;
 	int ctr = 0;
 	char *home = r_str_home (R2_HOME_THEMES R_SYS_DIR);
 
@@ -194,7 +195,7 @@ static void nextpal(RCore *core, int mode) {
 		R_FREE (home);
 	}
 
-	char *path = r_str_r2_prefix (R2_THEMES R_SYS_DIR);
+	path = r_str_r2_prefix (R2_THEMES R_SYS_DIR);
 	if (path) {
 		files = r_sys_dir (path);
 		r_list_foreach (files, iter, fn) {
@@ -222,6 +223,7 @@ static void nextpal(RCore *core, int mode) {
 	}
 
 done:
+	free (path);
 	if (getNext) {
 		R_FREE (curtheme);
 		nextpal (core, mode);
