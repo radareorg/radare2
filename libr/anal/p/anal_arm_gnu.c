@@ -361,6 +361,19 @@ static int arm_op64(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *d, int len) 
 	if (d[3] == 0) {
 		return -1;      // invalid
 	}
+	// Hacky support for ARMv8.3
+	if (anal->bits == 64 && len >= 4) {
+		// retaa
+		if (!memcmp (d, "\xff\x0b\x5f\xd6", 4)) {
+			op->type = R_ANAL_OP_TYPE_RET;
+			return op->size = 4;
+		}
+		// retab
+		if (!memcmp (d, "\xff\x0f\x5f\xd6", 4)) {
+			op->type = R_ANAL_OP_TYPE_RET;
+			return op->size = 4;
+		}
+	}
 	op->size = 4;
 	op->type = R_ANAL_OP_TYPE_NULL;
 	if (d[0] == 0xc0 && d[3] == 0xd6) {

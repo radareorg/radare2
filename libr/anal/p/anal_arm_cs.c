@@ -345,37 +345,37 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 
 static int arm64_reg_width(int reg) {
 	switch (reg) {
-		case ARM64_REG_W0:
-		case ARM64_REG_W1:
-		case ARM64_REG_W2:
-		case ARM64_REG_W3:
-		case ARM64_REG_W4:
-		case ARM64_REG_W5:
-		case ARM64_REG_W6:
-		case ARM64_REG_W7:
-		case ARM64_REG_W8:
-		case ARM64_REG_W9:
-		case ARM64_REG_W10:
-		case ARM64_REG_W11:
-		case ARM64_REG_W12:
-		case ARM64_REG_W13:
-		case ARM64_REG_W14:
-		case ARM64_REG_W15:
-		case ARM64_REG_W16:
-		case ARM64_REG_W17:
-		case ARM64_REG_W18:
-		case ARM64_REG_W19:
-		case ARM64_REG_W20:
-		case ARM64_REG_W21:
-		case ARM64_REG_W22:
-		case ARM64_REG_W23:
-		case ARM64_REG_W24:
-		case ARM64_REG_W25:
-		case ARM64_REG_W26:
-		case ARM64_REG_W27:
-		case ARM64_REG_W28:
-		case ARM64_REG_W29:
-		case ARM64_REG_W30:
+	case ARM64_REG_W0:
+	case ARM64_REG_W1:
+	case ARM64_REG_W2:
+	case ARM64_REG_W3:
+	case ARM64_REG_W4:
+	case ARM64_REG_W5:
+	case ARM64_REG_W6:
+	case ARM64_REG_W7:
+	case ARM64_REG_W8:
+	case ARM64_REG_W9:
+	case ARM64_REG_W10:
+	case ARM64_REG_W11:
+	case ARM64_REG_W12:
+	case ARM64_REG_W13:
+	case ARM64_REG_W14:
+	case ARM64_REG_W15:
+	case ARM64_REG_W16:
+	case ARM64_REG_W17:
+	case ARM64_REG_W18:
+	case ARM64_REG_W19:
+	case ARM64_REG_W20:
+	case ARM64_REG_W21:
+	case ARM64_REG_W22:
+	case ARM64_REG_W23:
+	case ARM64_REG_W24:
+	case ARM64_REG_W25:
+	case ARM64_REG_W26:
+	case ARM64_REG_W27:
+	case ARM64_REG_W28:
+	case ARM64_REG_W29:
+	case ARM64_REG_W30:
 		return 32;
 		break;
 	default:
@@ -2952,6 +2952,19 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 		if (ret != CS_ERR_OK) {
 			return -1;
+		}
+	}
+	// Hacky support for ARMv8.3
+	if (a->bits == 64 && len >= 4) {
+		// retaa
+		if (!memcmp (buf, "\xff\x0b\x5f\xd6", 4)) {
+			op->type = R_ANAL_OP_TYPE_RET;
+			return op->size = 4;
+		}
+		// retab
+		if (!memcmp (buf, "\xff\x0f\x5f\xd6", 4)) {
+			op->type = R_ANAL_OP_TYPE_RET;
+			return op->size = 4;
 		}
 	}
 
