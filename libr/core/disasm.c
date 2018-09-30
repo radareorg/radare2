@@ -2039,6 +2039,7 @@ static void ds_show_flags(RDisasmState *ds) {
 
 static void ds_update_ref_lines(RDisasmState *ds) {
 	if (ds->show_lines_bb) {
+		free (ds->line);
 		ds->line = r_anal_reflines_str (ds->core, ds->at, ds->linesopts);
 		free (ds->refline);
 		ds->refline = ds->line? strdup (ds->line): NULL;
