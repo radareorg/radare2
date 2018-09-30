@@ -4,6 +4,7 @@
 #include <r_lib.h>
 #include <capstone/capstone.h>
 #include <capstone/arm.h>
+#include "./anal_arm_hacks.inc"
 
 #define esilprintf(op, fmt, ...) r_strbuf_setf (&op->esil, fmt, ##__VA_ARGS__)
 
@@ -2954,18 +2955,9 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 			return -1;
 		}
 	}
-	// Hacky support for ARMv8.3
-	if (a->bits == 64 && len >= 4) {
-		// retaa
-		if (!memcmp (buf, "\xff\x0b\x5f\xd6", 4)) {
-			op->type = R_ANAL_OP_TYPE_RET;
-			return op->size = 4;
-		}
-		// retab
-		if (!memcmp (buf, "\xff\x0f\x5f\xd6", 4)) {
-			op->type = R_ANAL_OP_TYPE_RET;
-			return op->size = 4;
-		}
+	int haa = hackyArmAnal (a, op, buf, len);
+	if (haa > 0) {
+		return haa;
 	}
 
 	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);

@@ -146,3 +146,5 @@ braa=branch with pointer authentication using A key
 braaz=variant of braa
 brab=branch with pointer authentication using B key
 brabz=variant of brabz
+stadd=atomic add word (arm v8.1)
+staddl=atomic add dword (arm v8.1)

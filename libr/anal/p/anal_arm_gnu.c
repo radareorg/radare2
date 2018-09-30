@@ -10,6 +10,7 @@
 #include "wine-arm.h"
 #include "../asm/arch/arm/asm-arm.h"
 #include "../asm/arch/arm/winedbg/be_arm.h"
+#include "./anal_arm_hacks.inc"
 
 static unsigned int disarm_branch_offset(unsigned int pc, unsigned int insoff) {
 	unsigned int add = insoff << 2;
@@ -361,18 +362,9 @@ static int arm_op64(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *d, int len) 
 	if (d[3] == 0) {
 		return -1;      // invalid
 	}
-	// Hacky support for ARMv8.3
-	if (anal->bits == 64 && len >= 4) {
-		// retaa
-		if (!memcmp (d, "\xff\x0b\x5f\xd6", 4)) {
-			op->type = R_ANAL_OP_TYPE_RET;
-			return op->size = 4;
-		}
-		// retab
-		if (!memcmp (d, "\xff\x0f\x5f\xd6", 4)) {
-			op->type = R_ANAL_OP_TYPE_RET;
-			return op->size = 4;
-		}
+	int haa = hackyArmAnal (anal, op, d, len);
+	if (haa > 0) {
+		return haa;
 	}
 	op->size = 4;
 	op->type = R_ANAL_OP_TYPE_NULL;
