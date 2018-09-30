@@ -1846,6 +1846,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		free (comment);
 	} else {
 		ds->comment = r_str_newf ("%s; %s", COLOR_ARG (ds, color_usrcmt), comment);
+		free (comment);
 	}
 #if 0
 	if (!ds->show_comments) {
