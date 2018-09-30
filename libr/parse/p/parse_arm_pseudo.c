@@ -1,9 +1,8 @@
-/* radare - LGPL - Copyright 2015-2016 - pancake */
+/* radare - LGPL - Copyright 2015-2018 - pancake */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <r_lib.h>
 #include <r_util.h>
 #include <r_flag.h>

@@ -346,6 +346,13 @@ static int cb_asmvarsubmin(void *user, void *data) {
 	return true;
 }
 
+static int cb_asmtailsub(void *user, void *data) {
+	RCore *core = (RCore *) user;
+	RConfigNode *node = (RConfigNode *) data;
+	core->parser->tailsub = node->i_value;
+	return true;
+}
+
 static int cb_scrlast(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *) data;
 	r_cons_singleton ()->context->lastEnabled = node->i_value;
@@ -2486,6 +2493,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.lines.wide", "false", "Put a space between lines");
 	SETICB ("asm.lines.width", 7, &cb_asmlineswidth, "Number of columns for program flow arrows");
 	SETICB ("asm.var.submin", 0x100, &cb_asmvarsubmin, "Minimum value to substitute in instructions (asm.var.sub)");
+	SETCB ("asm.tailsub", "false", &cb_asmtailsub, "Replace addresses with prefix .. syntax");
 	SETPREF ("asm.middle", "false", "Allow disassembling jumps in the middle of an instruction");
 	SETPREF ("asm.noisy", "true", "Show comments considered noisy but possibly useful");
 	SETPREF ("asm.offset", "true", "Show offsets at disassembly");

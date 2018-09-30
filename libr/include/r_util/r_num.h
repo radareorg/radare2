@@ -64,6 +64,7 @@ R_API ut64 r_num_get_input_value(RNum *num, const char *input_value);
 R_API const char *r_num_get_name(RNum *num, ut64 n);
 R_API char* r_num_as_string(RNum *___, ut64 n, bool printable_only);
 R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex);
+R_API ut64 r_num_tail_base(RNum *num, ut64 addr, ut64 off);
 R_API void r_num_minmax_swap(ut64 *a, ut64 *b);
 R_API void r_num_minmax_swap_i(int *a, int *b); // XXX this can be a cpp macro :??
 R_API ut64 r_num_math(RNum *num, const char *str);

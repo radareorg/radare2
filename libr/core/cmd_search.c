@@ -1824,7 +1824,7 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 			r_asm_set_pc (core->assembler, ref->addr);
 			r_asm_disassemble (core->assembler, &asmop, buf, size);
 			fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
-			r_parse_filter (core->parser, core->flags, r_strbuf_get (&asmop.buf_asm),
+			r_parse_filter (core->parser, ref->addr, core->flags, r_strbuf_get (&asmop.buf_asm),
 				str, sizeof (str), core->print->big_endian);
 			comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, ref->addr);
 			char *buf_fcn = comment
@@ -2090,7 +2090,7 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 						char tmp[128] = {
 							0
 						};
-						r_parse_filter (core->parser, core->flags, hit->code, tmp, sizeof (tmp),
+						r_parse_filter (core->parser, hit->addr, core->flags, hit->code, tmp, sizeof (tmp),
 								core->print->big_endian);
 						r_cons_printf ("0x%08"PFMT64x "   # %i: %s\n",
 							hit->addr, hit->len, tmp);
@@ -2102,7 +2102,9 @@ static void do_asm_search(RCore *core, struct search_parameters *param, const ch
 				}
 				if (searchflags) {
 					const char *flagname = sdb_fmt ("%s%d_%d", searchprefix, kwidx, count);
-					r_flag_set (core->flags, flagname, hit->addr, hit->len);
+					if (flagname) {
+						r_flag_set (core->flags, flagname, hit->addr, hit->len);
+					}
 				}
 				count++;
 			}
