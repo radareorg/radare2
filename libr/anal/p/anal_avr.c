@@ -666,6 +666,7 @@ INST_HANDLER (cpse) {	// CPSE Rd, Rr
 			cpu);
 	r_strbuf_fini (&next_op.esil);
 	op->jump = op->addr + next_op.size + 2;
+	op->fail = op->addr + 2;
 
 	// cycles
 	op->cycles = 1;	// XXX: This is a bug, because depends on eval state,
