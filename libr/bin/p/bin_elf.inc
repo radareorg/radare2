@@ -1078,22 +1078,6 @@ static bool has_sanitizers(RBinFile *bf) {
 	return ret;
 }
 
-static bool is_cpp(RBinFile *binfile) {
-	bool ret = false;
-	RList* imports_list = imports (binfile);
-	RListIter *iter;
-	RBinImport *import;
-	r_list_foreach (imports_list, iter, import) {
-		if (strncmp (import->name, "_ZS", 3) == 0 ||
-                    strncmp (import->name, "_ZN", 3) == 0) {
-			ret = true;
-			break;
-		}
-	}
-	r_list_free (imports_list);
-	return ret;
-}
-
 static bool is_golang(RBinFile *binfile) {
 	bool ret = false;
 	RList* section_list = sections (binfile);
@@ -1118,7 +1102,7 @@ static RBinInfo* info(RBinFile *bf) {
 	if (!(ret = R_NEW0 (RBinInfo))) {
 		return NULL;
 	}
-	ret->lang = is_cpp (bf) ? "c++" : "c";
+	ret->lang = r_bin_is_cxx (bf) ? "cxx" : "c";
 	ret->file = bf->file
 		? strdup (bf->file)
 		: NULL;
