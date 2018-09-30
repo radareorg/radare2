@@ -106,6 +106,8 @@ static void changePanelNum(RPanels *panels, int now, int after);
 static void splitPanelVertical(RCore *core);
 static void splitPanelHorizontal(RCore *core);
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color);
+static void menuPanelPrint(RConsCanvas *can, RPanel *panel, int x, int y, int w, int h);
+static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int x, int y, int w, int h, int color);
 static void panelAllClear(RPanels *panels);
 static void addPanelFrame(RCore* core, RPanels* panels, const char *title, const char *cmd);
 static bool checkFunc(RCore *core);
@@ -213,105 +215,106 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 	if (can->w <= panel->pos.x || can->h <= panel->pos.y) {
 		return;
 	}
+	panel->refresh = false;
 	int w = R_MIN (can->w - panel->pos.x, panel->pos.w);
 	int h = R_MIN (can->h - panel->pos.y, panel->pos.h);
-
-	panel->refresh = false;
-	char *text;
-	char title[128];
-	int delta_x, delta_y, graph_pad = 0;
-	delta_x = panel->sx;
-	delta_y = panel->sy;
 	r_cons_canvas_fill (can, panel->pos.x, panel->pos.y, w, h, ' ');
 	if (panel->type == PANEL_TYPE_MENU) {
-		(void) r_cons_canvas_gotoxy (can, panel->pos.x + 2, panel->pos.y + 2);
-		text = r_str_ansi_crop (panel->title,
-				delta_x, delta_y, w + 5, h - delta_y);
-		if (text) {
-			r_cons_canvas_write (can, text);
-			free (text);
-		} else {
-			r_cons_canvas_write (can, panel->title);
-		}
+		menuPanelPrint (can, panel, panel->sx, panel->sy, w, h);
 	} else {
-		if (color) {
-			snprintf (title, sizeof (title) - 1,
-				"%s[x] %s"Color_RESET, core->cons->pal.graph_box2, panel->title);
-		} else {
-			snprintf (title, sizeof (title) - 1,
-				"   %s   ", panel->title);
-		}
-		if (r_cons_canvas_gotoxy (can, panel->pos.x + 1, panel->pos.y + 1)) {
-			r_cons_canvas_write (can, title);
-		}
-		(void) r_cons_canvas_gotoxy (can, panel->pos.x + 2, panel->pos.y + 2);
-		char *cmdStr;
-		if (!strcmp (panel->cmd, PANEL_CMD_DISASSEMBLY)) {
-			core->offset = panel->addr;
-			r_core_seek (core, panel->addr, 1);
-			r_core_block_read (core);
-			cmdStr = r_core_cmd_str (core, panel->cmd);
-		} else if (!strcmp (panel->cmd, PANEL_CMD_STACK)) {
-			const int delta = r_config_get_i (core->config, "stack.delta");
-			const char sign = (delta < 0)? '+': '-';
-			const int absdelta = R_ABS (delta);
-			cmdStr = r_core_cmd_strf (core, "%s%c%d", PANEL_CMD_STACK, sign, absdelta);
-		} else if (!strcmp (panel->cmd, PANEL_CMD_GRAPH)) {
-			if (panel->cmdStrCache) {
-				cmdStr = panel->cmdStrCache;
-			} else {
-				cmdStr = r_core_cmd_str (core, panel->cmd);
-				panel->cmdStrCache = cmdStr;
-			}
-			graph_pad = 1;
-			core->cons->event_resize = NULL; // avoid running old event with new data
-			core->cons->event_data = core;
-			core->cons->event_resize = (RConsEvent) doPanelsRefreshOneShot;
-		} else if (!strcmp (panel->cmd, PANEL_CMD_PSEUDO)) {
-			if (panel->cmdStrCache) {
-				cmdStr = panel->cmdStrCache;
-			} else {
-				cmdStr = r_core_cmd_str (core, panel->cmd);
-				panel->cmdStrCache = cmdStr;
-			}
-		} else {
-			cmdStr = r_core_cmd_str (core, panel->cmd);
-		}
-		if (delta_y < 0) {
-			delta_y = 0;
-		}
-		if (delta_x < 0) {
-			char *white = (char*)r_str_pad (' ', 128);
-			int idx = -delta_x;
-			if (idx >= sizeof (white)) {
-				idx = sizeof (white) - 1;
-			}
-			white[idx] = 0;
-			text = r_str_ansi_crop (cmdStr,
-					0, delta_y + graph_pad, w + delta_x - 3, h - 2 + delta_y);
-			char *newText = r_str_prefix_all (text, white);
-			if (newText) {
-				free (text);
-				text = newText;
-			}
-		} else {
-			text = r_str_ansi_crop (cmdStr,
-					delta_x, delta_y + graph_pad, w + delta_x - 3, h - 2 + delta_y);
-		}
-		if (text) {
-			r_cons_canvas_write (can, text);
-			free (text);
-		} else {
-			r_cons_canvas_write (can, panel->title);
-		}
-		if (!panel->cmdStrCache) {
-			free (cmdStr);
-		}
+		defaultPanelPrint (core, can, panel, panel->sx, panel->sy, w, h, color);
 	}
 	if (color) {
 		r_cons_canvas_box (can, panel->pos.x, panel->pos.y, w, h, core->cons->pal.graph_box2);
 	} else {
 		r_cons_canvas_box (can, panel->pos.x, panel->pos.y, w, h, core->cons->pal.graph_box);
+	}
+}
+
+static void menuPanelPrint(RConsCanvas *can, RPanel *panel, int x, int y, int w, int h) {
+	char *text;
+	(void) r_cons_canvas_gotoxy (can, panel->pos.x + 2, panel->pos.y + 2);
+	text = r_str_ansi_crop (panel->title, x, y, w, h);
+	if (text) {
+		r_cons_canvas_write (can, text);
+		free (text);
+	} else {
+		r_cons_canvas_write (can, panel->title);
+	}
+}
+
+static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int x, int y, int w, int h, int color) {
+	int graph_pad = 0;
+	char title[128], *text, *cmdStr;
+	if (color) {
+		snprintf (title, sizeof (title) - 1,
+				"%s[x] %s"Color_RESET, core->cons->pal.graph_box2, panel->title);
+	} else {
+		snprintf (title, sizeof (title) - 1,
+				"   %s   ", panel->title);
+	}
+	if (r_cons_canvas_gotoxy (can, panel->pos.x + 1, panel->pos.y + 1)) {
+		r_cons_canvas_write (can, title);
+	}
+	(void) r_cons_canvas_gotoxy (can, panel->pos.x + 2, panel->pos.y + 2);
+	if (!strcmp (panel->cmd, PANEL_CMD_DISASSEMBLY)) {
+		core->offset = panel->addr;
+		r_core_seek (core, panel->addr, 1);
+		r_core_block_read (core);
+		cmdStr = r_core_cmd_str (core, panel->cmd);
+	} else if (!strcmp (panel->cmd, PANEL_CMD_STACK)) {
+		const int delta = r_config_get_i (core->config, "stack.delta");
+		const char sign = (delta < 0)? '+': '-';
+		const int absdelta = R_ABS (delta);
+		cmdStr = r_core_cmd_strf (core, "%s%c%d", PANEL_CMD_STACK, sign, absdelta);
+	} else if (!strcmp (panel->cmd, PANEL_CMD_GRAPH)) {
+		if (panel->cmdStrCache) {
+			cmdStr = panel->cmdStrCache;
+		} else {
+			cmdStr = r_core_cmd_str (core, panel->cmd);
+			panel->cmdStrCache = cmdStr;
+		}
+		graph_pad = 1;
+		core->cons->event_resize = NULL; // avoid running old event with new data
+		core->cons->event_data = core;
+		core->cons->event_resize = (RConsEvent) doPanelsRefreshOneShot;
+	} else if (!strcmp (panel->cmd, PANEL_CMD_PSEUDO)) {
+		if (panel->cmdStrCache) {
+			cmdStr = panel->cmdStrCache;
+		} else {
+			cmdStr = r_core_cmd_str (core, panel->cmd);
+			panel->cmdStrCache = cmdStr;
+		}
+	} else {
+		cmdStr = r_core_cmd_str (core, panel->cmd);
+	}
+	if (y < 0) {
+		y = 0;
+	}
+	if (x < 0) {
+		char *white = (char*)r_str_pad (' ', 128);
+		int idx = -x;
+		if (idx >= sizeof (white)) {
+			idx = sizeof (white) - 1;
+		}
+		white[idx] = 0;
+		text = r_str_ansi_crop (cmdStr,
+				0, y + graph_pad, w + x - 3, h - 2 + y);
+		char *newText = r_str_prefix_all (text, white);
+		if (newText) {
+			free (text);
+			text = newText;
+		}
+	} else {
+		text = r_str_ansi_crop (cmdStr,
+				x, y + graph_pad, w + x - 3, h - 2 + y);
+	}
+	if (text) {
+		r_cons_canvas_write (can, text);
+		free (text);
+	}
+	if (!panel->cmdStrCache) {
+		free (cmdStr);
 	}
 }
 
@@ -1519,7 +1522,7 @@ static void addPanelFrame(RCore *core, RPanels* panels, const char *title, const
 		panel[n_panels].title = r_core_cmd_str (core, cmd);
 		panel[n_panels].cmd = NULL;
 	}
-	panel[n_panels].type = PANEL_TYPE_FRAME;
+	panel[n_panels].type = PANEL_TYPE_DEFAULT;
 	panel[n_panels].refresh = true;
 	panel[n_panels].curpos = 0;
 	panel[n_panels].cmdStrCache = NULL;
