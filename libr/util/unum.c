@@ -668,6 +668,28 @@ static bool isHexDigit (const char _ch) {
 	return (ch >= 'a' && ch <= 'f');
 }
 
+static int nth (ut64 n, int i) {
+        int sz = (sizeof (n) << 1) - 1;
+        int s = (sz - i) * 4;
+        return (n >> s) & 0xf;
+}
+
+R_API ut64 r_num_tail_base(RNum *num, ut64 addr, ut64 off) {
+	int i;
+	bool ready = false;
+	ut64 res = 0;
+	for (i = 0; i < 16; i++) {
+		ut64 o = nth (off, i);
+		if (!ready && nth (addr, i) == o) {
+			continue;
+		}
+		ready = true;
+		ut8 pos = (15 - i) * 4;
+		res |= (o << pos);
+	}
+	return res;
+}
+
 R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex) {
 	ut64 mask = 0LL;
 	ut64 n = 0;

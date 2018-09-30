@@ -1442,9 +1442,11 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 				}
 				// 0x33->sym.xx
 				char *p = strdup (strsub);
-				r_parse_filter (core->parser, core->flags, p,
-						strsub, sizeof (strsub), be);
-				free (p);
+				if (p) {
+					r_parse_filter (core->parser, addr, core->flags, p,
+							strsub, sizeof (strsub), be);
+					free (p);
+				}
 				r_cons_printf ("\"disasm\":\"%s\",", strsub);
 			}
 			r_cons_printf ("\"mnemonic\":\"%s\",", mnem);
@@ -5541,7 +5543,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						r_parse_varsub (core->parser, fcn, ref->addr, asmop.size,
 							str, str, sizeof (str));
 					}
-					r_parse_filter (core->parser, core->flags,
+					r_parse_filter (core->parser, ref->addr, core->flags,
 						r_asm_op_get_asm (&asmop), str, sizeof (str), core->print->big_endian);
 					r_cons_printf ("{\"from\":%" PFMT64u ",\"type\":\"%s\",\"opcode\":\"%s\"",
 						ref->addr, r_anal_xrefs_type_tostring (ref->type), str);
@@ -5608,7 +5610,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						r_parse_varsub (core->parser, fcn, ref->addr, asmop.size,
 								ba, ba, sizeof (asmop.buf_asm));
 					}
-					r_parse_filter (core->parser, core->flags,
+					r_parse_filter (core->parser, ref->addr, core->flags,
 							ba, str, sizeof (str), core->print->big_endian);
 					r_asm_op_set_asm (&asmop, ba);
 					free (ba);
@@ -5687,8 +5689,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					r_io_read_at (core->io, ref->at, buf, 12);
 					r_asm_set_pc (core->assembler, ref->at);
 					r_asm_disassemble (core->assembler, &asmop, buf, 12);
-					r_parse_filter (core->parser, core->flags,
-						r_asm_op_get_asm (&asmop),
+					r_parse_filter (core->parser, ref->at, core->flags, r_asm_op_get_asm (&asmop),
 						str, sizeof (str), core->print->big_endian);
 					if (has_color) {
 						buf_asm = r_print_colorize_opcode (core->print, str,

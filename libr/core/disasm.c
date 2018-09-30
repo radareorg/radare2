@@ -980,7 +980,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 					core->parser->relsub_addr = (int)killme;
 				}
 			}
-			r_parse_filter (core->parser, core->flags, asm_str,
+			r_parse_filter (core->parser, ds->vat, core->flags, asm_str,
 				ds->str, sizeof (ds->str), core->print->big_endian);
 			core->parser->flagspace = ofs;
 			free (ds->opstr);
@@ -5161,7 +5161,7 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 				}
 				core->parser->hint = ds->hint;
 				ds->hint = NULL;
-				r_parse_filter (core->parser, core->flags, r_asm_op_get_asm (&ds->asmop),
+				r_parse_filter (core->parser, ds->vat, core->flags, r_asm_op_get_asm (&ds->asmop),
 					ds->str, sizeof (ds->str), core->print->big_endian);
 				ds->opstr = strdup (ds->str);
 				asm_str = colorize_asm_string (core, ds, true);
@@ -5364,7 +5364,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				core->parser->relsub_addr = killme;
 			}
 		}
-		r_parse_filter (core->parser, core->flags, r_asm_op_get_asm (&asmop), str,
+		r_parse_filter (core->parser, ds->vat, core->flags, r_asm_op_get_asm (&asmop), str,
 			sizeof (str), core->print->big_endian);
 
 		r_cons_printf (j > 0 ? ",{" : "{");
@@ -5542,7 +5542,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 			count ++;
 			switch (mode) {
 			case 'i':
-				r_parse_filter (core->parser, core->flags, r_asm_op_get_asm (&asmop),
+				r_parse_filter (core->parser, ds->vat, core->flags, r_asm_op_get_asm (&asmop),
 						str, sizeof (str), core->print->big_endian);
 				if (scr_color) {
 					RAnalOp aop;
@@ -5815,7 +5815,7 @@ toro:
 				}
 				if (filter) {
 					core->parser->hint = r_anal_hint_get (core->anal, at);
-					r_parse_filter (core->parser, core->flags,
+					r_parse_filter (core->parser, at, core->flags,
 						asm_str, opstr, sizeof (opstr) - 1, core->print->big_endian);
 					asm_str = (char *)&opstr;
 				}
