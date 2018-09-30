@@ -991,7 +991,6 @@ static int cmd_open(void *data, const char *input) {
 	int perms = R_PERM_R;
 	ut64 baddr = r_config_get_i (core->config, "bin.baddr");
 	ut64 addr = 0LL;
-	int nowarn = r_config_get_i (core->config, "file.nowarn");
 	int argc, fd = -1;
 	RCoreFile *file;
 	RIODesc *desc;
@@ -1161,7 +1160,7 @@ static int cmd_open(void *data, const char *input) {
 					eprintf ("%d\n", fd);
 				}
 				r_core_bin_load (core, argv0, baddr);
-			} else if (!nowarn) {
+			} else {
 				eprintf ("cannot open file %s\n", argv0);
 			}
 			r_str_argv_free (argv);
@@ -1230,7 +1229,7 @@ static int cmd_open(void *data, const char *input) {
 					eprintf ("%d\n", fd);
 				}
 				r_core_bin_load (core, argv0, baddr);
-			} else if (!nowarn) {
+			} else {
 				eprintf ("cannot open file %s\n", argv0);
 			}
 			r_str_argv_free (argv);
