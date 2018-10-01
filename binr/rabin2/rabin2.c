@@ -549,7 +549,6 @@ int main(int argc, char **argv) {
 	const char *forcebin = NULL;
 	const char *chksum = NULL;
 	const char *op = NULL;
-	const char *path = NULL;
 	RCoreFile *fh = NULL;
 	RCoreBinFilter filter;
 	int xtr_idx = 0; // load all files if extraction is necessary.
@@ -573,8 +572,7 @@ int main(int argc, char **argv) {
 		r_lib_add_handler (l, R_LIB_TYPE_BIN_LDR, "bin ldr plugins",
 			&__lib_bin_ldr_cb, &__lib_bin_ldr_dt, NULL);
 		/* load plugins everywhere */
-
-		path = r_sys_getenv (R_LIB_ENV);
+		char *path = r_sys_getenv (R_LIB_ENV);
 		if (path && *path) {
 			r_lib_opendir (l, path);
 		}

@@ -1521,17 +1521,15 @@ static void printVarSummary(RDisasmState *ds, RList *list) {
 static void ds_show_functions(RDisasmState *ds) {
 	RAnalFunction *f;
 	RCore *core = ds->core;
-	bool demangle, call;
-	const char *lang;
 	char *fcn_name;
 	char *sign;
 
 	if (!ds->show_functions) {
 		return;
 	}
-	demangle = r_config_get_i (core->config, "bin.demangle");
-	call = r_config_get_i (core->config, "asm.calls");
-	lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
+	bool demangle = r_config_get_i (core->config, "bin.demangle");
+	bool call = r_config_get_i (core->config, "asm.calls");
+	const char *lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
 	f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 	if (!f || (f->addr != ds->at)) {
 		return;
@@ -1590,10 +1588,14 @@ static void ds_show_functions(RDisasmState *ds) {
 	ds->stackptr = core->anal->stackptr;
 	if (ds->show_vars && ds->show_varsum) {
 		RList *vars = r_anal_var_list (core->anal, f, 'b');
-		r_list_join(vars, r_anal_var_list (core->anal, f, 'r'));
-		r_list_join(vars, r_anal_var_list (core->anal, f, 's'));
-		printVarSummary(ds, vars);
+		RList *rvars = r_anal_var_list (core->anal, f, 'r');
+		RList *svars = r_anal_var_list (core->anal, f, 's');
+		r_list_join (vars, rvars);
+		r_list_join (vars, svars);
+		printVarSummary (ds, vars);
 		r_list_free (vars);
+		r_list_free (rvars);
+		r_list_free (svars);
 	} else if (ds->show_vars) {
 		char spaces[32];
 		RAnalVar *var;
@@ -1846,6 +1848,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		free (comment);
 	} else {
 		ds->comment = r_str_newf ("%s; %s", COLOR_ARG (ds, color_usrcmt), comment);
+		free (comment);
 	}
 #if 0
 	if (!ds->show_comments) {
@@ -1931,19 +1934,17 @@ static void ds_show_flags(RDisasmState *ds) {
 	//const char *beginch;
 	RFlagItem *flag;
 	RListIter *iter;
-	RAnalFunction *f;
-	const RList /*RFlagList*/ *flaglist;
+	RAnalFunction *f = NULL;
 	if (!ds->show_flags) {
 		return;
 	}
 	RCore *core = ds->core;
-	// f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 	char addr[64];
 	ut64 switch_addr;
 	int case_start = -1, case_prev = 0, case_current = 0;
 	f = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
-	flaglist = r_flag_get_list (core->flags, ds->at);
-	RList *uniqlist = r_list_uniq (flaglist, flagCmp);
+	RList *flaglist = r_flag_get_list (core->flags, ds->at);
+	RList *uniqlist = flaglist? r_list_uniq (flaglist, flagCmp): NULL;
 	r_list_foreach (uniqlist, iter, flag) {
 		if (f && f->addr == flag->offset && !strcmp (flag->name, f->name)) {
 			// do not show flags that have the same name as the function
@@ -2039,6 +2040,7 @@ static void ds_show_flags(RDisasmState *ds) {
 
 static void ds_update_ref_lines(RDisasmState *ds) {
 	if (ds->show_lines_bb) {
+		free (ds->line);
 		ds->line = r_anal_reflines_str (ds->core, ds->at, ds->linesopts);
 		free (ds->refline);
 		ds->refline = ds->line? strdup (ds->line): NULL;

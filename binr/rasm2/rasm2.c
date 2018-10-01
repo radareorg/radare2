@@ -436,7 +436,6 @@ static int print_assembly_output(const char *buf, ut64 offset, ut64 len, int bit
 }
 
 int main (int argc, char *argv[]) {
-	const char *path;
 	const char *env_arch = r_sys_getenv ("RASM2_ARCH");
 	const char *env_bits = r_sys_getenv ("RASM2_BITS");
 	unsigned char buf[R_ASM_BUFSIZE];
@@ -465,7 +464,7 @@ int main (int argc, char *argv[]) {
 		r_lib_add_handler (l, R_LIB_TYPE_ANAL, "analysis/emulation plugins",
 				&__lib_anal_cb, &__lib_anal_dt, NULL);
 
-		path = r_sys_getenv (R_LIB_ENV);
+		char *path = r_sys_getenv (R_LIB_ENV);
 		if (path && *path) {
 			r_lib_opendir (l, path);
 		}
