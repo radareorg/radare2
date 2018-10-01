@@ -232,9 +232,8 @@ static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) 
 }
 
 static void menuPanelPrint(RConsCanvas *can, RPanel *panel, int x, int y, int w, int h) {
-	char *text;
 	(void) r_cons_canvas_gotoxy (can, panel->pos.x + 2, panel->pos.y + 2);
-	text = r_str_ansi_crop (panel->title, x, y, w, h);
+	char *text = r_str_ansi_crop (panel->title, x, y, w, h);
 	if (text) {
 		r_cons_canvas_write (can, text);
 		free (text);
@@ -293,10 +292,7 @@ static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int 
 	}
 	if (x < 0) {
 		char *white = (char*)r_str_pad (' ', 128);
-		int idx = -x;
-		if (idx >= sizeof (white)) {
-			idx = sizeof (white) - 1;
-		}
+		int idx = R_MIN (-x, strlen (white) - 1);
 		white[idx] = 0;
 		text = r_str_ansi_crop (cmdStr,
 				0, y + graph_pad, w + x - 3, h - 2 + y);
