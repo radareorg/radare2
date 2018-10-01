@@ -556,6 +556,7 @@ int main(int argc, char **argv) {
 		if (!strcmp (hashstr, "-")) {
 			hashstr = malloc (INSIZE);
 			if (!hashstr) {
+				free (iv);
 				return 1;
 			}
 			bytes_read = fread ((void *) hashstr, 1, INSIZE - 1, stdin);
@@ -571,6 +572,7 @@ int main(int argc, char **argv) {
 			if (hashstr_len < 1) {
 				eprintf ("Invalid hex string\n");
 				free (out);
+				free (iv);
 				return 1;
 			}
 			hashstr = (char *) out;
@@ -583,6 +585,7 @@ int main(int argc, char **argv) {
 		if (from) {
 			if (from >= hashstr_len) {
 				eprintf ("Invalid -f.\n");
+				free (iv);
 				return 1;
 			}
 		}
@@ -626,6 +629,7 @@ int main(int argc, char **argv) {
 				if (str != hashstr) {
 					free (str);
 				}
+				free (iv);
 				return 1;
 			}
 			for (i = 1; i < R_HASH_ALL; i <<= 1) {
@@ -649,12 +653,14 @@ int main(int argc, char **argv) {
 		}
 	}
 	if (optind >= argc) {
+		free (iv);
 		return do_help (1);
 	}
 	if (numblocks) {
 		bsize = -bsize;
 	} else if (bsize < 0) {
 		eprintf ("rahash2: Invalid block size\n");
+		free (iv);
 		return 1;
 	}
 
@@ -692,11 +698,13 @@ int main(int argc, char **argv) {
 			} else {
 				if (r_file_is_directory (argv[i])) {
 					eprintf ("rahash2: Cannot hash directories\n");
+					free (iv);
 					return 1;
 				}
 				desc = r_io_open_nomap (io, argv[i], R_PERM_R, 0);
 				if (!desc) {
 					eprintf ("rahash2: Cannot open '%s'\n", argv[i]);
+					free (iv);
 					return 1;
 				}
 			}
