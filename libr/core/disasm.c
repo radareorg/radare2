@@ -1521,17 +1521,15 @@ static void printVarSummary(RDisasmState *ds, RList *list) {
 static void ds_show_functions(RDisasmState *ds) {
 	RAnalFunction *f;
 	RCore *core = ds->core;
-	bool demangle, call;
-	const char *lang;
 	char *fcn_name;
 	char *sign;
 
 	if (!ds->show_functions) {
 		return;
 	}
-	demangle = r_config_get_i (core->config, "bin.demangle");
-	call = r_config_get_i (core->config, "asm.calls");
-	lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
+	bool demangle = r_config_get_i (core->config, "bin.demangle");
+	bool call = r_config_get_i (core->config, "asm.calls");
+	const char *lang = demangle ? r_config_get (core->config, "bin.lang") : NULL;
 	f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 	if (!f || (f->addr != ds->at)) {
 		return;
@@ -1590,10 +1588,14 @@ static void ds_show_functions(RDisasmState *ds) {
 	ds->stackptr = core->anal->stackptr;
 	if (ds->show_vars && ds->show_varsum) {
 		RList *vars = r_anal_var_list (core->anal, f, 'b');
-		r_list_join(vars, r_anal_var_list (core->anal, f, 'r'));
-		r_list_join(vars, r_anal_var_list (core->anal, f, 's'));
-		printVarSummary(ds, vars);
+		RList *rvars = r_anal_var_list (core->anal, f, 'r');
+		RList *svars = r_anal_var_list (core->anal, f, 's');
+		r_list_join (vars, rvars);
+		r_list_join (vars, svars);
+		printVarSummary (ds, vars);
 		r_list_free (vars);
+		r_list_free (rvars);
+		r_list_free (svars);
 	} else if (ds->show_vars) {
 		char spaces[32];
 		RAnalVar *var;
