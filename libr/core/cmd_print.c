@@ -4331,8 +4331,12 @@ static int cmd_print(void *data, const char *input) {
 				goto beach;
 			}
 		}
-		if (input[1]) {
-			use_blocksize = (int) r_num_math (core->num, r_str_trim_ro (input + 1));
+		char *sp = strchr (input + 1, ' ');
+		if (!sp && (input[1] == '-' || IS_DIGIT(input[1]))) {
+			sp = input + 1;
+		}
+		if (sp && *sp) {
+			use_blocksize = (int) r_num_math (core->num, r_str_trim_ro (sp)); //input + 1));
 		}
 
 		if (core->blocksize_max < use_blocksize && (int) use_blocksize < -core->blocksize_max) {
