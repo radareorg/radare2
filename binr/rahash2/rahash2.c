@@ -649,6 +649,7 @@ int main(int argc, char **argv) {
 		}
 	}
 	if (optind >= argc) {
+		free (iv);
 		return do_help (1);
 	}
 	if (numblocks) {

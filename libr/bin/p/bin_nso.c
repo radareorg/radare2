@@ -93,6 +93,7 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sd
 	return (void *) bin;
 fail:
 	r_buf_free (newbuf);
+	free (bin);
 	return NULL;
 }
 

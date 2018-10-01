@@ -3598,7 +3598,11 @@ R_API ut64 r_bin_java_signature_attr_calc_size(RBinJavaAttrInfo *attr) {
 R_API RBinJavaAttrInfo *r_bin_java_enclosing_methods_attr_new(ut8 *buffer, ut64 sz, ut64 buf_offset) {
 	ut64 offset = 6;
 	RBinJavaAttrInfo *attr = r_bin_java_default_attr_new (buffer, sz, buf_offset);
-	if (!attr || sz < 10) {
+	if (!attr) {
+		return NULL;
+	}
+	if (sz < 10) {
+		free (attr);
 		return NULL;
 	}
 	attr->type = R_BIN_JAVA_ATTR_TYPE_ENCLOSING_METHOD_ATTR;
@@ -3998,6 +4002,7 @@ R_API RBinJavaAttrInfo *r_bin_java_local_variable_type_table_attr_new(ut8 *buffe
 		}
 		if (offset + 10 > sz) {
 			eprintf ("oob");
+			free (lvattr);
 			break;
 		}
 		lvattr->start_pc = R_BIN_JAVA_USHORT (buffer, offset);
