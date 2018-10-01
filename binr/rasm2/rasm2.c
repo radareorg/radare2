@@ -488,6 +488,7 @@ int main (int argc, char *argv[]) {
 			free (bindingsdir);
 		}
 		free (tmp);
+		free (path);
 	}
 
 	r_asm_use (a, R_SYS_ARCH);
