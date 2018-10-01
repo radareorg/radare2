@@ -435,18 +435,20 @@ LIBMAGIC="-lmagic"
 else
 USE_LIB_MAGIC="0"
 LIBMAGIC=""; fi
+if [ "$WITH_CAPSTONE" = "1" ]; then
 [ -z "${PKGCONFIG}" ] && PKGCONFIG=pkg-config
 type ${PKGCONFIG} > /dev/null 2>&1 || echo "ERROR: Cannot find PKGCONFIG ${PKGCONFIG}"
 echo 'Using PKGCONFIG: '${PKGCONFIG}
 printf 'checking pkg-config flags for capstone... '
 tmp=`${PKGCONFIG} --cflags capstone 2>/dev/null`
 if [ $? != 0 ]; then echo no ; HAVE_PKGCFG_CAPSTONE=0;
+CAPSTONE_CFLAGS='';CAPSTONE_LDFLAGS='';
 else
 CAPSTONE_CFLAGS=$tmp;
 tmp=`${PKGCONFIG} --libs capstone 2>/dev/null`
 if [ $? = 0 ]; then
 echo yes; HAVE_PKGCFG_CAPSTONE=1;
-CAPSTONE_LDFLAGS=$tmp; fi; fi
+CAPSTONE_LDFLAGS=$tmp; fi; fi; fi
 if [ 11 = "$WITH_CAPSTONE$HAVE_PKGCFG_CAPSTONE" ]; then
 
 USE_CAPSTONE="1"
@@ -501,6 +503,7 @@ check_library HAVE_LIB_SSL ssl 0
 printf 'checking pkg-config flags for openssl... '
 tmp=`${PKGCONFIG} --cflags openssl 2>/dev/null`
 if [ $? != 0 ]; then echo no ; HAVE_PKGCFG_OPENSSL=0;
+SSL_CFLAGS='';SSL_LDFLAGS='';
 else
 SSL_CFLAGS=$tmp;
 tmp=`${PKGCONFIG} --libs openssl 2>/dev/null`
@@ -524,6 +527,7 @@ check_library HAVE_LIB_LIBUV libuv 0
 printf 'checking pkg-config flags for libuv... '
 tmp=`${PKGCONFIG} --cflags libuv 2>/dev/null`
 if [ $? != 0 ]; then echo no ; HAVE_PKGCFG_LIBUV=0;
+LIBUV_CFLAGS='';LIBUV_LDFLAGS='';
 else
 LIBUV_CFLAGS=$tmp;
 tmp=`${PKGCONFIG} --libs libuv 2>/dev/null`
