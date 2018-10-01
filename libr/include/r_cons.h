@@ -1025,6 +1025,13 @@ typedef struct r_panels_menu_t {
 	RPanel **refreshPanels;
 } RPanelsMenu;
 
+typedef enum {
+	PANEL_MODE_NONE,
+	PANEL_MODE_DEFAULT,
+	PANEL_MODE_ZOOM,
+	PANEL_MODE_WINDOW,
+} RPanelsMode;
+
 typedef struct r_panels_t {
 	RConsCanvas *can;
 	RPanel *panel;
@@ -1034,10 +1041,11 @@ typedef struct r_panels_t {
 	int menu_pos;
 	int curnode;
 	bool isResizing;
-	bool isZoom;
 	RPanelsMenu *panelsMenu;
 	Sdb *db;
 	SdbHash *mht;
+	RPanelsMode mode;
+	RPanelsMode prevMode;
 } RPanels;
 
 #ifdef __cplusplus

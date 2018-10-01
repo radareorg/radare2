@@ -41,6 +41,13 @@ enum {
 	LAYOUT_BALANCE = 1
 };
 
+typedef enum {
+	LEFT,
+	RIGHT,
+	UP,
+	DOWN
+} Direction;
+
 static const char *menus[] = {
 	"File", "Edit", "View", "Tools", "Search", "Debug", "Analyze", "Help",
 	NULL
@@ -124,6 +131,7 @@ static void dismantlePanel(RPanels *panels);
 static void doPanelsRefresh(RCore *core);
 static void doPanelsRefreshOneShot(RCore *core);
 static void handleZoomMode(RCore *core, const int key);
+static void handleWindowMode(RCore *core, const int key);
 static bool handleCursorMode(RCore *core, const int key);
 static void handleUpKey(RCore *core);
 static void handleDownKey(RCore *core);
@@ -202,9 +210,11 @@ static void savePanelsLayout(RCore* core, bool temp);
 static int loadSavedPanelsLayout(RCore *core, bool temp);
 static void replaceCmd(RPanels* panels, char *title, char *cmd);
 static void handleMenu(RCore *core, const int key, int *exit);
-static void switchMode(RPanels *panels);
+static void toggleZoomMode(RPanels *panels);
+static void toggleWindowMode(RPanels *panels);
 static void maximizePanelSize(RPanels *panels);
 static void insertValue(RCore *core);
+static bool moveToDirection(RPanels *panels, Direction direction);
 static RConsCanvas *createNewCanvas(RCore *core, int w, int h);
 
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) {
@@ -836,7 +846,7 @@ static void handleZoomMode(RCore *core, const int key) {
 		case 'Q':
 		case 'q':
 		case 0x0d:
-			switchMode (panels);
+			toggleZoomMode (panels);
 			break;
 		case 'h':
 			handleLeftKey (core);
@@ -868,6 +878,46 @@ static void handleZoomMode(RCore *core, const int key) {
 			}
 			savePanelPos (&panel[panels->curnode]);
 			maximizePanelSize (panels);
+			break;
+	}
+}
+
+static void handleWindowMode(RCore *core, const int key) {
+	RPanels *panels = core->panels;
+	RPanel *panel = panels->panel;
+	switch (key) {
+		case 'Q':
+		case 'q':
+			toggleWindowMode (panels);
+			break;
+		case 0x0d:
+			toggleZoomMode (panels);
+			break;
+		case 'h':
+			if (moveToDirection (panels, LEFT)) {
+				setRefreshAll (panels);
+			}
+			break;
+		case 'j':
+			if (moveToDirection (panels, DOWN)) {
+				setRefreshAll (panels);
+			}
+			break;
+		case 'k':
+			if (moveToDirection (panels, UP)) {
+				setRefreshAll (panels);
+			}
+			break;
+		case 'l':
+			if (moveToDirection (panels, RIGHT)) {
+				setRefreshAll (panels);
+			}
+			break;
+		case 9:
+			handleTabKey (core, false);
+			break;
+		case 'Z':
+			handleTabKey (core, true);
 			break;
 	}
 }
@@ -2224,8 +2274,11 @@ R_API void r_core_panels_refresh(RCore *core) {
 		strcpy (title, "> ");
 	}
 	const char *color = panels->curnode == panels->menu_pos ? core->cons->pal.graph_box : core->cons->pal.graph_box2;
-	if (panels->isZoom) {
-		snprintf (str, sizeof (title) - 1, "%s Zoom Mode: Press Enter or q to quit"Color_RESET, color);
+	if (panels->mode == PANEL_MODE_ZOOM) {
+		snprintf (str, sizeof (title) - 1, "%s Zoom Mode | Press Enter or q to quit"Color_RESET, color);
+		strcat (title, str);
+	} else if (panels->mode == PANEL_MODE_WINDOW) {
+		snprintf (str, sizeof (title) - 1, "%s Window Mode | hjkl: move around the panels | q: quit the mode | Enter: Zoom mode"Color_RESET, color);
 		strcat (title, str);
 	} else {
 		RPanelsMenuItem *parent = panels->panelsMenu->root;
@@ -2375,10 +2428,11 @@ static bool init(RCore *core, RPanels *panels, int w, int h) {
 	panels->layout = 0;
 	panels->menu_pos = -1;
 	panels->isResizing = false;
-	panels->isZoom = false;
 	panels->can = createNewCanvas (core, w, h);
 	panels->db = sdb_new0 ();
 	panels->mht = ht_new ((DupValue)strdup, (HtKvFreeFunc)mht_free_kv, (CalcSize)strlen);
+	panels->mode = PANEL_MODE_DEFAULT;
+	panels->prevMode = PANEL_MODE_NONE;
 	initSdb (panels);
 
 	if (w < 140) {
@@ -2608,15 +2662,28 @@ static void maximizePanelSize(RPanels *panels) {
 	panel->refresh = true;
 }
 
-static void switchMode(RPanels *panels) {
-	panels->isZoom = !panels->isZoom;
+static void toggleZoomMode(RPanels *panels) {
 	RPanel *curPanel = &panels->panel[panels->curnode];
-	if (panels->isZoom) {
+	if (panels->mode != PANEL_MODE_ZOOM) {
+		panels->prevMode = panels->mode;
+		panels->mode = PANEL_MODE_ZOOM;
 		savePanelPos (curPanel);
 		maximizePanelSize (panels);
 	} else {
+		panels->mode = panels->prevMode;
+		panels->prevMode = PANEL_MODE_NONE;
 		restorePanelPos (curPanel);
 		setRefreshAll (panels);
+	}
+}
+
+static void toggleWindowMode(RPanels *panels) {
+	if (panels->mode != PANEL_MODE_WINDOW) {
+		panels->prevMode = panels->mode;
+		panels->mode = PANEL_MODE_WINDOW;
+	} else {
+		panels->mode = panels->prevMode;
+		panels->prevMode = PANEL_MODE_NONE;
 	}
 }
 
@@ -2667,6 +2734,61 @@ R_API void r_core_panels_free(RPanels *panels) {
 		ht_free (panels->mht);
 		free (panels);
 	}
+}
+
+static bool moveToDirection(RPanels *panels, Direction direction) {
+	RPanel *panel = panels->panel;
+	RPanel *cur = &panel[panels->curnode];
+	int cur_x0 = cur->pos.x, cur_x1 = cur->pos.x + cur->pos.w - 1, cur_y0 = cur->pos.y, cur_y1 = cur->pos.y + cur->pos.h - 1;
+	int temp_x0, temp_x1, temp_y0, temp_y1;
+	int i;
+	for (i = 0; i < panels->n_panels; i++) {
+		temp_x0 = panel[i].pos.x;
+		temp_x1 = panel[i].pos.x + panel[i].pos.w - 1;
+		temp_y0 = panel[i].pos.y;
+		temp_y1 = panel[i].pos.y + panel[i].pos.h - 1;
+		switch (direction) {
+			case LEFT:
+				if (temp_x1 == cur_x0) {
+					if (temp_y1 <= cur_y0 || cur_y1 <= temp_y0) {
+						continue;
+					}
+					panels->curnode = i;
+					return true;
+				}
+				break;
+			case RIGHT:
+				if (temp_x0 == cur_x1) {
+					if (temp_y1 <= cur_y0 || cur_y1 <= temp_y0) {
+						continue;
+					}
+					panels->curnode = i;
+					return true;
+				}
+				break;
+			case UP:
+				if (temp_y1 == cur_y0) {
+					if (temp_x1 <= cur_x0 || cur_x1 <= temp_x0) {
+						continue;
+					}
+					panels->curnode = i;
+					return true;
+				}
+				break;
+			case DOWN:
+				if (temp_y0 == cur_y1) {
+					if (temp_x1 <= cur_x0 || cur_x1 <= temp_x0) {
+						continue;
+					}
+					panels->curnode = i;
+					return true;
+				}
+				break;
+			default:
+				break;
+		}
+	}
+	return false;
 }
 
 R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
@@ -2731,8 +2853,13 @@ repeat:
 		goto repeat;
 	}
 
-	if (panels->isZoom) {
+	if (panels->mode == PANEL_MODE_ZOOM) {
 		handleZoomMode (core, key);
+		goto repeat;
+	}
+
+	if (panels->mode == PANEL_MODE_WINDOW) {
+		handleWindowMode (core, key);
 		goto repeat;
 	}
 
@@ -3019,15 +3146,11 @@ repeat:
 		r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") - 1);
 		break;
 	case 'w':
-		panels->layout++;
-		if (panels->layout >= layoutMaxCount) {
-			panels->layout = 0;
-		}
-		r_core_panels_layout (panels);
+		toggleWindowMode (panels);
 		setRefreshAll (panels);
 		break;
 	case 0x0d:
-		switchMode (panels);
+		toggleZoomMode (panels);
 		break;
 	case '|':
 		splitPanelVertical (core);
