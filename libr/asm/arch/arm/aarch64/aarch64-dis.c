@@ -3108,7 +3108,7 @@ print_insn_aarch64_word (bfd_vma pc,
       [ERR_OK]   = "_",
       [-ERR_UND] = "undefined",
       [-ERR_UNP] = "unpredictable",
-      [-ERR_NYI] = "NYI"
+      [-ERR_NYI] = "not-yet-implemented"
     };
 
   int ret;

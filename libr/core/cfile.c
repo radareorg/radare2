@@ -496,7 +496,6 @@ static void load_scripts_for(RCore *core, const char *name) {
 }
 
 R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
-	bool suppress_warning = r_config_get_i (r->config, "file.nowarn");
 	RCoreFile *cf = r_core_file_cur (r);
 	RIODesc *desc = cf ? r_io_desc_get (r->io, cf->fd) : NULL;
 	int va = 1;
@@ -519,10 +518,8 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			// if the cf does not match the filenameuri then
 			// either that RCoreFIle * needs to be loaded or a
 			// new RCoreFile * should be opened.
-			if (!suppress_warning) {
-				eprintf ("Error: The filenameuri '%s' is not the same as in RCoreFile: %s\n",
-					filenameuri, desc->name);
-			}
+			eprintf ("Error: The filenameuri '%s' is not the same as in RCoreFile: %s\n",
+				filenameuri, desc->name);
 		}
 	} else {
 		is_io_load = false;
@@ -731,7 +728,6 @@ R_API RCoreFile *r_core_file_open_many(RCore *r, const char *file, int flags, ut
 /* loadaddr is r2 -m (mapaddr) */
 R_API RCoreFile *r_core_file_open(RCore *r, const char *file, int flags, ut64 loadaddr) {
 	ut64 prev = r_sys_now ();
-	// bool suppress_warning = r_config_get_i (r->config, "file.nowarn");
 	const int openmany = r_config_get_i (r->config, "file.openmany");
 	RCoreFile *fh = NULL;
 
