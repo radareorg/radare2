@@ -4330,14 +4330,9 @@ static int cmd_print(void *data, const char *input) {
 				ret = 0;
 				goto beach;
 			}
-			char *p = strchr (input, ' ');
-			if (p) {
-				int len = (int) r_num_math (core->num, p);
-				if (len == 0) {
-					break;
-				}
-				use_blocksize = len;
-			}
+		}
+		if (input[1]) {
+			use_blocksize = (int) r_num_math (core->num, r_str_trim_ro (input + 1));
 		}
 
 		if (core->blocksize_max < use_blocksize && (int) use_blocksize < -core->blocksize_max) {
