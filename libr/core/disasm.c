@@ -1934,19 +1934,17 @@ static void ds_show_flags(RDisasmState *ds) {
 	//const char *beginch;
 	RFlagItem *flag;
 	RListIter *iter;
-	RAnalFunction *f;
-	const RList /*RFlagList*/ *flaglist;
+	RAnalFunction *f = NULL;
 	if (!ds->show_flags) {
 		return;
 	}
 	RCore *core = ds->core;
-	// f = r_anal_get_fcn_in (core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 	char addr[64];
 	ut64 switch_addr;
 	int case_start = -1, case_prev = 0, case_current = 0;
 	f = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
-	flaglist = r_flag_get_list (core->flags, ds->at);
-	RList *uniqlist = r_list_uniq (flaglist, flagCmp);
+	RList *flaglist = r_flag_get_list (core->flags, ds->at);
+	RList *uniqlist = flaglist? r_list_uniq (flaglist, flagCmp): NULL;
 	r_list_foreach (uniqlist, iter, flag) {
 		if (f && f->addr == flag->offset && !strcmp (flag->name, f->name)) {
 			// do not show flags that have the same name as the function

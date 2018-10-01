@@ -2993,12 +2993,12 @@ R_API void r_core_visual_title(RCore *core, int color) {
 					core->offset, pcs, core->blocksize, filename, bar, pos);
 			}
 		}
-		const int tabsCount = r_list_length (core->visual.tabs);
+		const int tabsCount = core->visual.tabs? r_list_length (core->visual.tabs): 0;
 		if (tabsCount > 0) {
 			const int curTab = core->visual.tab;
 			r_cons_printf ("[");
 			int i;
-			for (i = 0; i< tabsCount; i++) {
+			for (i = 0; i < tabsCount; i++) {
 				if (i == curTab - 1) {
 					r_cons_printf ("%d", curTab);
 				} else {
