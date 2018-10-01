@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 typedef enum {
-	PANEL_TYPE_FRAME = 0,
+	PANEL_TYPE_DEFAULT = 0,
 	PANEL_TYPE_MENU = 1
 } PanelType;
 
