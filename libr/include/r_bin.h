@@ -675,6 +675,9 @@ R_API RBinFile *r_bin_file_xtr_load_bytes(RBin *bin, RBinXtrPlugin *xtr, const c
 R_API bool r_bin_file_set_bytes(RBinFile *binfile, const ut8 *bytes, ut64 sz, bool steal_ptr);
 R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *binfile);
 
+/* section */
+R_API void r_bin_section_free(RBinSection *bs);
+
 /* obj.c */
 R_API void r_bin_object_free(void /*RBinObject*/ *o_);
 R_API ut64 r_bin_object_get_baddr(RBinObject *o);

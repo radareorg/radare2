@@ -177,7 +177,7 @@ static RList* sections(RBinFile *bf) {
 	RBinSection *ptr = NULL;
 	RList *ret = NULL;
 
-	if (!obj || !(ret = r_list_newf (free))) {
+	if (!obj || !(ret = r_list_newf (r_bin_section_free))) {
 		return NULL;
 	}
 	//there is not leak in section since they are cached by elf.c
@@ -723,7 +723,7 @@ static RBinReloc *reloc_convert(struct Elf_(r_bin_elf_obj_t) *bin, RBinElfReloc 
 	#undef SET
 	#undef ADD
 
-	free(r);
+	free (r);
 	return 0;
 }
 
@@ -1001,7 +1001,6 @@ static RList* patch_relocs(RBin *b) {
 		if (relcs[i].sym) {
 			if (relcs[i].sym < bin->imports_by_ord_size && bin->imports_by_ord[relcs[i].sym]) {
 				bool found;
-
 				sym_addr = ht_find_intu64 (relocs_by_sym, relcs[i].sym, &found);
 			} else if (relcs[i].sym < bin->symbols_by_ord_size && bin->symbols_by_ord[relcs[i].sym]) {
 				sym_addr = bin->symbols_by_ord[relcs[i].sym]->vaddr;

@@ -119,7 +119,7 @@ static RList* sections(RBinFile *bf) {
 	RBinObject *obj = bf ? bf->o : NULL;
 	int i;
 
-	if (!obj || !obj->bin_obj || !(ret = r_list_newf ((RListFree)free))) {
+	if (!obj || !obj->bin_obj || !(ret = r_list_newf ((RListFree)r_bin_section_free))) {
 		return NULL;
 	}
 	if (!(sections = MACH0_(get_sections) (obj->bin_obj))) {

@@ -154,7 +154,7 @@ static RList* sections(RBinFile *bf) {
 	struct PE_(r_bin_pe_obj_t) *bin = (struct PE_(r_bin_pe_obj_t)*)bf->o->bin_obj;
 	ut64 ba = baddr (bf);
 	int i;
-	if (!(ret = r_list_newf ((RListFree)free))) {
+	if (!(ret = r_list_newf ((RListFree)r_bin_section_free))) {
 		return NULL;
 	}
 	if (!bin || !(sections = bin->sections)){
