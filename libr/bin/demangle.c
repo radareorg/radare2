@@ -7,7 +7,7 @@
 #include "mangling/demangler.h"
 
 R_API void r_bin_demangle_list(RBin *bin) {
-	const char *langs[] = { "cxx", "java", "objc", "swift", "dlang", "msvc", NULL };
+	const char *langs[] = { "c++", "java", "objc", "swift", "dlang", "msvc", NULL };
 	RBinPlugin *plugin;
 	RListIter *it;
 	int i;
@@ -415,19 +415,26 @@ R_API char *r_bin_demangle_rust(RBinFile *binfile, const char *sym, ut64 vaddr) 
 R_API int r_bin_demangle_type (const char *str) {
 	if (!str || !*str) {
 		return R_BIN_NM_NONE;
-	} if (!strcmp (str, "swift")) {
+	}
+	if (!strcmp (str, "swift")) {
 		return R_BIN_NM_SWIFT;
-	} if (!strcmp (str, "java")){
+	}
+	if (!strcmp (str, "java")) {
 		return R_BIN_NM_JAVA;
-	} if (!strcmp (str, "objc")){
+	}
+	if (!strcmp (str, "objc")) {
 		return R_BIN_NM_OBJC;
-	} if (!strcmp (str, "cxx")){
+	}
+	if (!strcmp (str, "cxx") || !strcmp (str, "c++")) {
 		return R_BIN_NM_CXX;
-	} if (!strcmp (str, "dlang")){
+	}
+	if (!strcmp (str, "dlang")) {
 		return R_BIN_NM_DLANG;
-	} if (!strcmp (str, "msvc")){
+	}
+	if (!strcmp (str, "msvc")) {
 		return R_BIN_NM_MSVC;
-	} if (!strcmp (str, "rust")){
+	}
+	if (!strcmp (str, "rust")) {
 		return R_BIN_NM_RUST;
 	}
 	return R_BIN_NM_NONE;

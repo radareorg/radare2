@@ -52,7 +52,7 @@ R_API bool r_bin_lang_cxx(RBinFile *binfile) {
 		}
 	}
 	if (hascxx) {
-		info->lang = "cxx";
+		info->lang = "c++";
 	}
 	return hascxx;
 }
