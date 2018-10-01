@@ -12,11 +12,23 @@ static bool is_cxx_symbol (const char *name) {
 	return false;
 }
 
+bool r_bin_is_cxx (RBinFile *binfile) {
+	RListIter *iter;
+	RBinImport *import;
+	RBinObject *o = binfile->o;
+	r_list_foreach (o->imports, iter, import) {
+		if (is_cxx_symbol (import->name)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 R_API bool r_bin_lang_cxx(RBinFile *binfile) {
 	RBinObject *o = binfile ? binfile->o : NULL;
 	RBinInfo *info = o ? o->info : NULL;
-	RBinSymbol *sym;
 	RListIter *iter;
+	RBinSymbol *sym;
 	bool hascxx = false;
 	const char *lib;
 
@@ -24,12 +36,14 @@ R_API bool r_bin_lang_cxx(RBinFile *binfile) {
 		return false;
 	}
 	r_list_foreach (o->libs, iter, lib) {
-		if (strstr (lib, "stdc++")) {
+		if (strstr (lib, "stdc++") ||
+		    strstr (lib, "c++")) {
 			hascxx = true;
 			break;
 		}
 	}
 	if (!hascxx) {
+		hascxx = r_bin_is_cxx (binfile);
 		r_list_foreach (o->symbols, iter, sym) {
 			if (is_cxx_symbol (sym->name)) {
 				hascxx = true;
