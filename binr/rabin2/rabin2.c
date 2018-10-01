@@ -586,6 +586,7 @@ int main(int argc, char **argv) {
 		free (plugindir);
 		free (extrasdir);
 		free (bindingsdir);
+		free (path);
 	}
 	free (tmp);
 
