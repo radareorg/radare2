@@ -2170,9 +2170,21 @@ static void init_autocomplete (RCore* core) {
 	}
 }
 
+static const char *colorfor_cb(void *user, ut64 addr, bool verbose) {
+	return r_core_anal_optype_colorfor ((RCore *)user, addr, verbose);
+}
+
+static char *hasrefs_cb(void *user, ut64 addr, bool verbose) {
+	return r_core_anal_hasrefs ((RCore *)user, addr, verbose);
+}
+
+static char *get_comments_cb(void *user, ut64 addr) {
+	return r_core_anal_get_comments ((RCore *)user, addr);
+}
+
 R_API bool r_core_init(RCore *core) {
 	core->blocksize = R_CORE_BLOCKSIZE;
-	core->block = (ut8*)calloc (R_CORE_BLOCKSIZE + 1, 1);
+	core->block = (ut8 *)calloc (R_CORE_BLOCKSIZE + 1, 1);
 	if (!core->block) {
 		eprintf ("Cannot allocate %d byte(s)\n", R_CORE_BLOCKSIZE);
 		/* XXX memory leak */
@@ -2200,9 +2212,9 @@ R_API bool r_core_init(RCore *core) {
 	core->print->write = mywrite;
 	core->print->exists_var = exists_var;
 	core->print->disasm = __disasm;
-	core->print->colorfor = (RPrintColorFor)r_core_anal_optype_colorfor;
-	core->print->hasrefs = (RPrintColorFor)r_core_anal_hasrefs;
-	core->print->get_comments = (RPrintCommentCallback) r_core_anal_get_comments;
+	core->print->colorfor = colorfor_cb;
+	core->print->hasrefs = hasrefs_cb;
+	core->print->get_comments = get_comments_cb;
 	core->print->use_comments = false;
 	core->rtr_n = 0;
 	core->blocksize_max = R_CORE_BLOCKSIZE_MAX;

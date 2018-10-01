@@ -20,14 +20,19 @@ R_API bool r_strbuf_equals(RStrBuf *sa, RStrBuf *sb) {
 }
 
 R_API int r_strbuf_length(RStrBuf *sb) {
-	return sb? sb->len: 0;
+	r_return_val_if_fail (sb, 0);
+	return sb->len;
 }
 
 R_API void r_strbuf_init(RStrBuf *sb) {
+	r_return_if_fail (sb);
 	memset (sb, 0, sizeof (RStrBuf));
 }
 
 R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, int l) {
+	r_return_val_if_fail (sb && s, false);
+	r_return_val_if_fail (l >= 0, false);
+
 	if (l >= sizeof (sb->buf)) {
 		char *ptr = sb->ptr;
 		if (!ptr || l + 1 > sb->ptrlen) {
@@ -53,9 +58,8 @@ R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, int l) {
 }
 
 R_API bool r_strbuf_set(RStrBuf *sb, const char *s) {
-	if (!sb) {
-		return false;
-	}
+	r_return_val_if_fail (sb, false);
+
 	if (!s) {
 		r_strbuf_init (sb);
 		return true;
@@ -67,9 +71,8 @@ R_API bool r_strbuf_setf(RStrBuf *sb, const char *fmt, ...) {
 	bool ret;
 	va_list ap;
 
-	if (!sb || !fmt) {
-		return false;
-	}
+	r_return_val_if_fail (sb && fmt, false);
+
 	va_start (ap, fmt);
 	ret = r_strbuf_vsetf (sb, fmt, ap);
 	va_end (ap);
@@ -81,6 +84,8 @@ R_API bool r_strbuf_vsetf(RStrBuf *sb, const char *fmt, va_list ap) {
 	bool ret;
 	va_list ap2;
 	char string[1024];
+
+	r_return_val_if_fail (sb && fmt, false);
 
 	va_copy (ap2, ap);
 	rc = vsnprintf (string, sizeof (string), fmt, ap);
@@ -104,14 +109,21 @@ done:
 }
 
 R_API int r_strbuf_append(RStrBuf *sb, const char *s) {
+	r_return_val_if_fail (sb && s, false);
+
 	int l = strlen (s);
 	return r_strbuf_append_n (sb, s, l);
 }
 
 R_API int r_strbuf_append_n(RStrBuf *sb, const char *s, int l) {
-	if (l < 1) {
-		return false;
+	r_return_val_if_fail (sb, false);
+	r_return_val_if_fail (s && l >= 0, false);
+
+	// fast path if no chars to append
+	if (l == 0) {
+		return true;
 	}
+
 	if ((sb->len + l + 1) <= sizeof (sb->buf)) {
 		memcpy (sb->buf + sb->len, s, l);
 		sb->buf[sb->len + l] = 0;
@@ -148,6 +160,8 @@ R_API int r_strbuf_appendf(RStrBuf *sb, const char *fmt, ...) {
 	int ret;
 	va_list ap;
 
+	r_return_val_if_fail (sb && fmt, -1);
+
 	va_start (ap, fmt);
 	ret = r_strbuf_vappendf (sb, fmt, ap);
 	va_end (ap);
@@ -158,6 +172,8 @@ R_API int r_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap) {
 	int ret;
 	va_list ap2;
 	char string[1024];
+
+	r_return_val_if_fail (sb && fmt, -1);
 
 	va_copy (ap2, ap);
 	ret = vsnprintf (string, sizeof (string), fmt, ap);
@@ -181,25 +197,23 @@ R_API int r_strbuf_vappendf(RStrBuf *sb, const char *fmt, va_list ap) {
 }
 
 R_API char *r_strbuf_get(RStrBuf *sb) {
-	return sb? (sb->ptr? sb->ptr: sb->buf) : NULL;
+	r_return_val_if_fail (sb, NULL);
+	return sb->ptr ? sb->ptr : sb->buf;
 }
 
 R_API ut8 *r_strbuf_getbin(RStrBuf *sb, int *len) {
-	if (sb) {
-		if (len) {
-			*len = sb->len;
-		}
-		return (ut8*)(sb->ptr? sb->ptr: sb->buf);
+	r_return_val_if_fail (sb, NULL);
+	if (len) {
+		*len = sb->len;
 	}
-	return NULL;
+	return (ut8 *)(sb->ptr ? sb->ptr : sb->buf);
 }
 
 R_API char *r_strbuf_drain(RStrBuf *sb) {
-	char *ret = NULL;
-	if (sb) {
-		ret = sb->ptr? sb->ptr: strdup (sb->buf);
-		free (sb);
-	}
+	r_return_val_if_fail (sb, NULL);
+
+	char *ret = sb->ptr ? sb->ptr : strdup (sb->buf);
+	free (sb);
 	return ret;
 }
 

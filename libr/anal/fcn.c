@@ -302,12 +302,7 @@ R_API RAnalFunction *r_anal_fcn_new() {
 }
 
 R_API RList *r_anal_fcn_list_new() {
-	RList *list = r_list_new ();
-	if (!list) {
-		return NULL;
-	}
-	list->free = &r_anal_fcn_free;
-	return list;
+	return r_list_newf (r_anal_fcn_free);
 }
 
 R_API void r_anal_fcn_free(void *_fcn) {
@@ -319,16 +314,14 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	free (fcn->name);
 	free (fcn->attr);
 	r_tinyrange_fini (&fcn->bbr);
-	// all functions are freed in anal->fcns
-	fcn->fcn_locs = NULL;
+	r_list_free (fcn->fcn_locs);
 	if (fcn->bbs) {
-		fcn->bbs->free = (RListFree) r_anal_bb_free;
+		fcn->bbs->free = (RListFree)r_anal_bb_free;
 		r_list_free (fcn->bbs);
 		fcn->bbs = NULL;
 	}
 	free (fcn->fingerprint);
 	r_anal_diff_free (fcn->diff);
-	r_list_free (fcn->fcn_locs);
 	free (fcn->args);
 	free (fcn);
 }

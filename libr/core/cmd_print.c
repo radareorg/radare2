@@ -5366,14 +5366,14 @@ static int cmd_print(void *data, const char *input) {
 						// XXX: this only works in little endian
 						withref = 0;
 						if (core->print->hasrefs) {
-							const char *rstr = core->print->hasrefs (core->print->user, val, true);
+							char *rstr = core->print->hasrefs (core->print->user, val, true);
 							if (rstr && *rstr) {
-								char *ns; // r_str_ansi_trim (ns, -1, 0);
-								ns = r_str_escape (rstr);
-								r_cons_printf (",\"ref\":\"%s\"}", *ns == ' '? ns + 1: ns);
+								char *ns = r_str_escape (rstr);
+								r_cons_printf (",\"ref\":\"%s\"}", *ns == ' ' ? ns + 1 : ns);
 								free (ns);
 								withref = 1;
 							}
+							free (rstr);
 						}
 						if (!withref) {
 							r_cons_printf ("}");

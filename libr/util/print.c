@@ -1043,14 +1043,16 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				off &= UT32_MAX;
 			}
 			if (p->hasrefs) {
-				const char *rstr = p->hasrefs (p->user, addr + i, false);
+				char *rstr = p->hasrefs (p->user, addr + i, false);
 				if (rstr && *rstr) {
 					printfmt (" @%s", rstr);
 				}
+				free (rstr);
 				rstr = p->hasrefs (p->user, off, true);
 				if (rstr && *rstr) {
 					printfmt ("%s", rstr);
 				}
+				free (rstr);
 			}
 		}
 		if (p && p->use_comments) {
