@@ -1,18 +1,20 @@
-/* radare - LGPL - Copyright 2013-2015 - pancake */
+/* radare - LGPL - Copyright 2013-2018 - pancake */
 
 #include <r_bin.h>
 
-static bool is_cxx_symbol (const char *name) {
-	if (!strncmp (name, "_Z", 2)) {
-		return true;
-	}
-	if (!strncmp (name, "__Z", 3)) {
-		return true;
+static inline bool is_cxx_symbol (const char *name) {
+	if (name) {
+		if (!strncmp (name, "_Z", 2)) {
+			return true;
+		}
+		if (!strncmp (name, "__Z", 3)) {
+			return true;
+		}
 	}
 	return false;
 }
 
-bool r_bin_is_cxx (RBinFile *binfile) {
+R_API bool r_bin_is_cxx (RBinFile *binfile) {
 	RListIter *iter;
 	RBinImport *import;
 	RBinObject *o = binfile->o;
@@ -45,6 +47,9 @@ R_API bool r_bin_lang_cxx(RBinFile *binfile) {
 	if (!hascxx) {
 		hascxx = r_bin_is_cxx (binfile);
 		r_list_foreach (o->symbols, iter, sym) {
+			if (!sym->name) {
+				continue;
+			}
 			if (is_cxx_symbol (sym->name)) {
 				hascxx = true;
 				break;

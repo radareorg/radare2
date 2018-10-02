@@ -1586,7 +1586,6 @@ struct MACH0_(obj_t)* MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *optio
 	}
 
 	RBuffer * buf_ref = r_buf_ref (buf);
-
 	struct MACH0_(obj_t) *bin = R_NEW0 (struct MACH0_(obj_t));
 	if (!bin) {
 		return NULL;
@@ -1757,25 +1756,7 @@ static int parse_import_stub(struct MACH0_(obj_t)* bin, struct symbol_t *symbol,
 	return false;
 }
 
-#if 0
-static ut64 get_text_base(struct MACH0_(obj_t)* bin) {
-	ut64 ret = 0LL;
-	struct section_t *sections;
-	if ((sections = MACH0_(get_sections) (bin))) {
-		int i;
-		for (i = 0; !sections[i].last; i++) {
-			if (strstr(sections[i].name, "text")) {
-				ret =  sections[i].offset;
-				break;
-			}
-		}
-		free (sections);
-	}
-	return ret;
-}
-#endif
-
-static int inSymtab(SdbHt *hash, struct symbol_t *symbols, const char *name, ut64 addr) {
+static int inSymtab(SdbHt *hash, const char *name, ut64 addr) {
 	bool found;
 	const char *key = sdb_fmt ("%s.%"PFMT64x, name, addr);
 	(void)sdb_ht_find (hash, key, &found);
@@ -1786,24 +1767,46 @@ static int inSymtab(SdbHt *hash, struct symbol_t *symbols, const char *name, ut6
 	return false;
 }
 
-struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
+static char *get_name(struct MACH0_(obj_t)* mo, ut32 stridx, bool filter) {
 	const char *symstr;
+	int i = 0;
+	if (stridx > mo->symstrlen) {
+		return NULL;
+	}
+	int len = mo->symstrlen - stridx;
+	if (stridx >= 0 && stridx < mo->symstrlen) {
+		symstr = (char*)mo->symstr + stridx;
+	} else {
+		symstr = "???";
+	}
+	for (i = 0; i < len; i++) {
+		if ((ut8)(symstr[i] & 0xff) == 0xff || !symstr[i]) {
+			len = i;
+			break;
+		}
+	}
+	if (len > 0) {
+		char * res = r_str_ndup (symstr, len);
+		if (filter) {
+			r_str_filter (res, -1);
+		}
+		return res;
+	}
+	return NULL;
+}
+
+struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 	struct symbol_t *symbols;
 	int j, s, stridx, symbols_size, symbols_count;
 	ut32 to, from, i;
-	SdbHt *hash;
-	//ut64 text_base = get_text_base (bin);
 
-	if (!bin || !bin->symtab || !bin->symstr) {
-		return NULL;
-	}
-	/* parse symbol table */
+	r_return_val_if_fail (bin && bin->symtab && bin->symstr, NULL);
+
 	/* parse dynamic symbol table */
 	symbols_count = (bin->dysymtab.nextdefsym + \
 			bin->dysymtab.nlocalsym + \
 			bin->dysymtab.nundefsym );
 	symbols_count += bin->nsymtab;
-	//symbols_count = bin->nsymtab;
 	symbols_size = (symbols_count + 1) * 2 * sizeof (struct symbol_t);
 
 	if (symbols_size < 1) {
@@ -1812,7 +1815,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 	if (!(symbols = calloc (1, symbols_size))) {
 		return NULL;
 	}
-	hash = sdb_ht_new ();
+	SdbHt *hash = sdb_ht_new ();
 	j = 0; // symbol_idx
 	for (s = 0; s < 2; s++) {
 		switch (s) {
@@ -1834,15 +1837,10 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 		if (from == to) {
 			continue;
 		}
-#define OLD 1
-#if OLD
+
 		from = R_MIN (R_MAX (0, from), symbols_size / sizeof (struct symbol_t));
-		to = R_MIN (to , symbols_size / sizeof (struct symbol_t));
-		to = R_MIN (to, bin->nsymtab);
-#else
-		from = R_MIN (R_MAX (0, from), symbols_size/sizeof (struct symbol_t));
-		to = symbols_count; //symbols_size/sizeof(struct symbol_t);
-#endif
+		to = R_MIN (R_MIN (to, bin->nsymtab), symbols_size / sizeof (struct symbol_t));
+
 		int maxsymbols = symbols_size / sizeof (struct symbol_t);
 		if (to > 0x500000) {
 			bprintf ("WARNING: corrupted mach0 header: symbol table is too big %d\n", to);
@@ -1862,41 +1860,16 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 			} else {
 				symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
 			}
+
 			stridx = bin->symtab[i].n_strx;
-			if (stridx >= 0 && stridx < bin->symstrlen) {
-				symstr = (char*)bin->symstr + stridx;
-			} else {
-				symstr = "???";
+			char *sym_name = get_name (bin, stridx, false);
+			if (sym_name) {
+				r_str_ncpy (symbols[j].name, sym_name, R_BIN_MACH0_STRING_LENGTH);
+				free (sym_name);
 			}
-			{
-				int i = 0;
-				int len = 0;
-				len = bin->symstrlen - stridx;
-				if (len > 0) {
-					for (i = 0; i < len; i++) {
-						if ((ut8)(symstr[i] & 0xff) == 0xff || !symstr[i]) {
-							len = i;
-							break;
-						}
-					}
-					char *symstr_dup = NULL;
-					if (len > 0) {
-						symstr_dup = r_str_ndup (symstr, len);
-					}
-					if (!symstr_dup) {
-						symbols[j].name[0] = 0;
-					} else {
-						r_str_ncpy (symbols[j].name, symstr_dup, R_BIN_MACH0_STRING_LENGTH);
-						r_str_filter (symbols[j].name, -1);
-						symbols[j].name[R_BIN_MACH0_STRING_LENGTH - 2] = 0;
-					}
-					free (symstr_dup);
-				} else {
-					symbols[j].name[0] = 0;
-				}
-				symbols[j].last = 0;
-			}
-			if (inSymtab (hash, symbols, symbols[j].name, symbols[j].addr)) {
+			symbols[j].name[R_BIN_MACH0_STRING_LENGTH - 2] = 0;
+			symbols[j].last = 0;
+			if (inSymtab (hash, symbols[j].name, symbols[j].addr)) {
 				symbols[j].name[0] = 0;
 				j--;
 			}
@@ -1913,27 +1886,16 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 		}
 	}
 
-#if 1
-// symtab is wrongly parsed and produces dupped syms with incorrect vaddr */
 	for (i = 0; i < bin->nsymtab; i++) {
 		struct MACH0_(nlist) *st = &bin->symtab[i];
-#if 0
-		bprintf ("stridx %d -> section %d type %d value = %d\n",
-			st->n_strx, st->n_sect, st->n_type, st->n_value);
-#endif
 		stridx = st->n_strx;
-		if (stridx >= 0 && stridx < bin->symstrlen) {
-			symstr = (char*)bin->symstr + stridx;
-		} else {
-			symstr = "???";
-		}
 		// 0 is for imports
 		// 1 is for symbols
 		// 2 is for func.eh (exception handlers?)
 		int section = st->n_sect;
 		if (section == 1 && j < symbols_count) { // text ??st->n_type == 1)
 			/* is symbol */
-			symbols[j].addr = st->n_value; // + text_base;
+			symbols[j].addr = st->n_value;
 			symbols[j].offset = addr_to_offset (bin, symbols[j].addr);
 			symbols[j].size = 0; /* find next symbol and crop */
 			if (st->n_type & N_EXT) {
@@ -1941,17 +1903,22 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 			} else {
 				symbols[j].type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
 			}
-			strncpy (symbols[j].name, symstr, R_BIN_MACH0_STRING_LENGTH);
+			char *sym_name = get_name (bin, stridx, false);
+			if (sym_name) {
+				strncpy (symbols[j].name, sym_name, R_BIN_MACH0_STRING_LENGTH);
+				free (sym_name);
+			} else {
+				symbols[j].name[0] = 0;
+			}
 			symbols[j].name[R_BIN_MACH0_STRING_LENGTH - 1] = 0;
 			symbols[j].last = 0;
-			if (inSymtab (hash, symbols, symbols[j].name, symbols[j].addr)) {
+			if (inSymtab (hash, symbols[j].name, symbols[j].addr)) {
 				symbols[j].name[0] = 0;
 			} else {
 				j++;
 			}
 		}
 	}
-#endif
 	sdb_ht_free (hash);
 	symbols[j].last = 1;
 	return symbols;
@@ -1975,11 +1942,11 @@ static int parse_import_ptr(struct MACH0_(obj_t)* bin, struct reloc_t *reloc, in
 	reloc->addend = 0;
 #define CASE(T) case ((T) / 8): reloc->type = R_BIN_RELOC_ ## T; break
 	switch (wordsize) {
-		CASE(8);
-		CASE(16);
-		CASE(32);
-		CASE(64);
-		default: return false;
+	CASE(8);
+	CASE(16);
+	CASE(32);
+	CASE(64);
+	default: return false;
 	}
 #undef CASE
 
@@ -2004,17 +1971,16 @@ static int parse_import_ptr(struct MACH0_(obj_t)* bin, struct reloc_t *reloc, in
 }
 
 struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin) {
-	struct import_t *imports;
 	int i, j, idx, stridx;
-	const char *symstr;
 
-	if (!bin->symtab || !bin->symstr || !bin->sects || !bin->indirectsyms) {
-		return NULL;
-	}
+	r_return_val_if_fail (bin && bin->symtab && bin->symstr && bin->sects && bin->indirectsyms, NULL);
+
 	if (bin->dysymtab.nundefsym < 1 || bin->dysymtab.nundefsym > 0xfffff) {
 		return NULL;
 	}
-	if (!(imports = malloc ((bin->dysymtab.nundefsym + 1) * sizeof (struct import_t)))) {
+
+	struct import_t *imports = calloc (bin->dysymtab.nundefsym + 1, sizeof (struct import_t));
+	if (!imports) {
 		return NULL;
 	}
 	for (i = j = 0; i < bin->dysymtab.nundefsym; i++) {
@@ -2025,35 +1991,13 @@ struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin) {
 			return NULL;
 		}
 		stridx = bin->symtab[idx].n_strx;
-		if (stridx >= 0 && stridx < bin->symstrlen) {
-			symstr = (char *)bin->symstr + stridx;
+		char *imp_name = get_name (bin, stridx, false);
+		if (imp_name) {
+			r_str_ncpy (imports[j].name, imp_name, R_BIN_MACH0_STRING_LENGTH);
+			free (imp_name);
 		} else {
-			symstr = "";
-		}
-		if (!*symstr) {
+			//imports[j].name[0] = 0;
 			continue;
-		}
-		{
-			int i = 0;
-			int len = 0;
-			char *symstr_dup = NULL;
-			len = bin->symstrlen - stridx;
-			imports[j].name[0] = 0;
-			if (len > 0) {
-				for (i = 0; i < len; i++) {
-					if ((unsigned char)symstr[i] == 0xff || !symstr[i]) {
-						len = i;
-						break;
-					}
-				}
-				symstr_dup = r_str_ndup (symstr, len);
-				if (symstr_dup) {
-					r_str_ncpy (imports[j].name, symstr_dup, R_BIN_MACH0_STRING_LENGTH);
-					r_str_filter (imports[j].name, - 1);
-					imports[j].name[R_BIN_MACH0_STRING_LENGTH - 2] = 0;
-					free (symstr_dup);
-				}
-			}
 		}
 		imports[j].ord = i;
 		imports[j++].last = 0;
@@ -2289,13 +2233,11 @@ beach:
 }
 
 struct addr_t* MACH0_(get_entrypoint)(struct MACH0_(obj_t)* bin) {
-	struct addr_t *entry;
 	int i;
-
-	if (!bin->entry && !bin->sects) {
-		return NULL;
-	}
-	if (!(entry = calloc (1, sizeof (struct addr_t)))) {
+	r_return_val_if_fail (bin && bin->entry && bin->sects, NULL);
+	
+	struct addr_t *entry = R_NEW0 (struct addr_t);;
+	if (!entry) {
 		return NULL;
 	}
 	if (bin->entry) {
@@ -2477,158 +2419,159 @@ const char* MACH0_(get_cputype)(struct MACH0_(obj_t)* bin) {
 	return bin? MACH0_(get_cputype_from_hdr) (&bin->hdr): "unknown";
 }
 
-// TODO: use const char*
-
-char* MACH0_(get_cpusubtype_from_hdr)(struct MACH0_(mach_header) *hdr) {
-	if (hdr) {
-		switch (hdr->cputype) {
-		case CPU_TYPE_VAX:
-			switch (hdr->cpusubtype) {
-			case CPU_SUBTYPE_VAX_ALL:	return strdup ("all");
-			case CPU_SUBTYPE_VAX780:	return strdup ("vax780");
-			case CPU_SUBTYPE_VAX785:	return strdup ("vax785");
-			case CPU_SUBTYPE_VAX750:	return strdup ("vax750");
-			case CPU_SUBTYPE_VAX730:	return strdup ("vax730");
-			case CPU_SUBTYPE_UVAXI:		return strdup ("uvaxI");
-			case CPU_SUBTYPE_UVAXII:	return strdup ("uvaxII");
-			case CPU_SUBTYPE_VAX8200:	return strdup ("vax8200");
-			case CPU_SUBTYPE_VAX8500:	return strdup ("vax8500");
-			case CPU_SUBTYPE_VAX8600:	return strdup ("vax8600");
-			case CPU_SUBTYPE_VAX8650:	return strdup ("vax8650");
-			case CPU_SUBTYPE_VAX8800:	return strdup ("vax8800");
-			case CPU_SUBTYPE_UVAXIII:	return strdup ("uvaxIII");
-			default:			return strdup ("Unknown vax subtype");
-			}
-		case CPU_TYPE_MC680x0:
-			switch (hdr->cpusubtype) {
-			case CPU_SUBTYPE_MC68030:	return strdup ("mc68030");
-			case CPU_SUBTYPE_MC68040:	return strdup ("mc68040");
-			case CPU_SUBTYPE_MC68030_ONLY:	return strdup ("mc68030 only");
-			default:			return strdup ("Unknown mc680x0 subtype");
-			}
-		case CPU_TYPE_I386:
-			switch (hdr->cpusubtype) {
-			case CPU_SUBTYPE_386: 			return strdup ("386");
-			case CPU_SUBTYPE_486: 			return strdup ("486");
-			case CPU_SUBTYPE_486SX: 		return strdup ("486sx");
-			case CPU_SUBTYPE_PENT: 			return strdup ("Pentium");
-			case CPU_SUBTYPE_PENTPRO: 		return strdup ("Pentium Pro");
-			case CPU_SUBTYPE_PENTII_M3: 		return strdup ("Pentium 3 M3");
-			case CPU_SUBTYPE_PENTII_M5: 		return strdup ("Pentium 3 M5");
-			case CPU_SUBTYPE_CELERON: 		return strdup ("Celeron");
-			case CPU_SUBTYPE_CELERON_MOBILE:	return strdup ("Celeron Mobile");
-			case CPU_SUBTYPE_PENTIUM_3:		return strdup ("Pentium 3");
-			case CPU_SUBTYPE_PENTIUM_3_M:		return strdup ("Pentium 3 M");
-			case CPU_SUBTYPE_PENTIUM_3_XEON:	return strdup ("Pentium 3 Xeon");
-			case CPU_SUBTYPE_PENTIUM_M:		return strdup ("Pentium Mobile");
-			case CPU_SUBTYPE_PENTIUM_4:		return strdup ("Pentium 4");
-			case CPU_SUBTYPE_PENTIUM_4_M:		return strdup ("Pentium 4 M");
-			case CPU_SUBTYPE_ITANIUM:		return strdup ("Itanium");
-			case CPU_SUBTYPE_ITANIUM_2:		return strdup ("Itanium 2");
-			case CPU_SUBTYPE_XEON:			return strdup ("Xeon");
-			case CPU_SUBTYPE_XEON_MP:		return strdup ("Xeon MP");
-			default:				return strdup ("Unknown i386 subtype");
-			}
-		case CPU_TYPE_X86_64:
-			switch (hdr->cpusubtype & 0xff) {
-			case CPU_SUBTYPE_X86_64_ALL:	return strdup ("x86 64 all");
-			case CPU_SUBTYPE_X86_ARCH1:	return strdup ("x86 arch 1");
-			default:			return strdup ("Unknown x86 subtype");
-			}
-		case CPU_TYPE_MC88000:
-			switch (hdr->cpusubtype & 0xff) {
-			case CPU_SUBTYPE_MC88000_ALL:	return strdup ("all");
-			case CPU_SUBTYPE_MC88100:	return strdup ("mc88100");
-			case CPU_SUBTYPE_MC88110:	return strdup ("mc88110");
-			default:			return strdup ("Unknown mc88000 subtype");
-			}
-		case CPU_TYPE_MC98000:
-			switch (hdr->cpusubtype & 0xff) {
-			case CPU_SUBTYPE_MC98000_ALL:	return strdup ("all");
-			case CPU_SUBTYPE_MC98601:	return strdup ("mc98601");
-			default:			return strdup ("Unknown mc98000 subtype");
-			}
-		case CPU_TYPE_HPPA:
-			switch (hdr->cpusubtype & 0xff) {
-			case CPU_SUBTYPE_HPPA_7100:	return strdup ("hppa7100");
-			case CPU_SUBTYPE_HPPA_7100LC:	return strdup ("hppa7100LC");
-			default:			return strdup ("Unknown hppa subtype");
-			}
-		case CPU_TYPE_ARM64:
-			return strdup ("v8");
-		case CPU_TYPE_ARM:
-			switch (hdr->cpusubtype & 0xff) {
-			case CPU_SUBTYPE_ARM_ALL:
-				return strdup ("all");
-			case CPU_SUBTYPE_ARM_V4T:
-				return strdup ("v4t");
-			case CPU_SUBTYPE_ARM_V5:
-				return strdup ("v5");
-			case CPU_SUBTYPE_ARM_V6:
-				return strdup ("v6");
-			case CPU_SUBTYPE_ARM_XSCALE:
-				return strdup ("xscale");
-			case CPU_SUBTYPE_ARM_V7:
-				return strdup ("v7");
-			case CPU_SUBTYPE_ARM_V7F:
-				return strdup ("v7f");
-			case CPU_SUBTYPE_ARM_V7S:
-				return strdup ("v7s");
-			case CPU_SUBTYPE_ARM_V7K:
-				return strdup ("v7k");
-			case CPU_SUBTYPE_ARM_V7M:
-				return strdup ("v7m");
-			case CPU_SUBTYPE_ARM_V7EM:
-				return strdup ("v7em");
-			default:
-				return r_str_newf ("unknown ARM subtype %d", hdr->cpusubtype & 0xff);
-			}
-		case CPU_TYPE_SPARC:
-			switch (hdr->cpusubtype & 0xff) {
-			case CPU_SUBTYPE_SPARC_ALL:	return strdup ("all");
-			default:			return strdup ("Unknown sparc subtype");
-			}
-		case CPU_TYPE_MIPS:
-			switch (hdr->cpusubtype & 0xff) {
-			case CPU_SUBTYPE_MIPS_ALL:	return strdup ("all");
-			case CPU_SUBTYPE_MIPS_R2300:	return strdup ("r2300");
-			case CPU_SUBTYPE_MIPS_R2600:	return strdup ("r2600");
-			case CPU_SUBTYPE_MIPS_R2800:	return strdup ("r2800");
-			case CPU_SUBTYPE_MIPS_R2000a:	return strdup ("r2000a");
-			case CPU_SUBTYPE_MIPS_R2000:	return strdup ("r2000");
-			case CPU_SUBTYPE_MIPS_R3000a:	return strdup ("r3000a");
-			case CPU_SUBTYPE_MIPS_R3000:	return strdup ("r3000");
-			default:			return strdup ("Unknown mips subtype");
-			}
-		case CPU_TYPE_I860:
-			switch (hdr->cpusubtype & 0xff) {
-			case CPU_SUBTYPE_I860_ALL:	return strdup ("all");
-			case CPU_SUBTYPE_I860_860:	return strdup ("860");
-			default:			return strdup ("Unknown i860 subtype");
-			}
-		case CPU_TYPE_POWERPC:
-		case CPU_TYPE_POWERPC64:
-			switch (hdr->cpusubtype & 0xff) {
-			case CPU_SUBTYPE_POWERPC_ALL:	return strdup ("all");
-			case CPU_SUBTYPE_POWERPC_601:	return strdup ("601");
-			case CPU_SUBTYPE_POWERPC_602:	return strdup ("602");
-			case CPU_SUBTYPE_POWERPC_603:	return strdup ("603");
-			case CPU_SUBTYPE_POWERPC_603e:	return strdup ("603e");
-			case CPU_SUBTYPE_POWERPC_603ev:	return strdup ("603ev");
-			case CPU_SUBTYPE_POWERPC_604:	return strdup ("604");
-			case CPU_SUBTYPE_POWERPC_604e:	return strdup ("604e");
-			case CPU_SUBTYPE_POWERPC_620:	return strdup ("620");
-			case CPU_SUBTYPE_POWERPC_750:	return strdup ("750");
-			case CPU_SUBTYPE_POWERPC_7400:	return strdup ("7400");
-			case CPU_SUBTYPE_POWERPC_7450:	return strdup ("7450");
-			case CPU_SUBTYPE_POWERPC_970:	return strdup ("970");
-			default:			return strdup ("Unknown ppc subtype");
-			}
+static const char *cpusubtype_tostring (ut32 cputype, ut32 cpusubtype) {
+	switch (cputype) {
+	case CPU_TYPE_VAX:
+		switch (cpusubtype) {
+		case CPU_SUBTYPE_VAX_ALL:	return "all";
+		case CPU_SUBTYPE_VAX780:	return "vax780";
+		case CPU_SUBTYPE_VAX785:	return "vax785";
+		case CPU_SUBTYPE_VAX750:	return "vax750";
+		case CPU_SUBTYPE_VAX730:	return "vax730";
+		case CPU_SUBTYPE_UVAXI:		return "uvaxI";
+		case CPU_SUBTYPE_UVAXII:	return "uvaxII";
+		case CPU_SUBTYPE_VAX8200:	return "vax8200";
+		case CPU_SUBTYPE_VAX8500:	return "vax8500";
+		case CPU_SUBTYPE_VAX8600:	return "vax8600";
+		case CPU_SUBTYPE_VAX8650:	return "vax8650";
+		case CPU_SUBTYPE_VAX8800:	return "vax8800";
+		case CPU_SUBTYPE_UVAXIII:	return "uvaxIII";
+		default:			return "Unknown vax subtype";
+		}
+	case CPU_TYPE_MC680x0:
+		switch (cpusubtype) {
+		case CPU_SUBTYPE_MC68030:	return "mc68030";
+		case CPU_SUBTYPE_MC68040:	return "mc68040";
+		case CPU_SUBTYPE_MC68030_ONLY:	return "mc68030 only";
+		default:			return "Unknown mc680x0 subtype";
+		}
+	case CPU_TYPE_I386:
+		switch (cpusubtype) {
+		case CPU_SUBTYPE_386: 			return "386";
+		case CPU_SUBTYPE_486: 			return "486";
+		case CPU_SUBTYPE_486SX: 		return "486sx";
+		case CPU_SUBTYPE_PENT: 			return "Pentium";
+		case CPU_SUBTYPE_PENTPRO: 		return "Pentium Pro";
+		case CPU_SUBTYPE_PENTII_M3: 		return "Pentium 3 M3";
+		case CPU_SUBTYPE_PENTII_M5: 		return "Pentium 3 M5";
+		case CPU_SUBTYPE_CELERON: 		return "Celeron";
+		case CPU_SUBTYPE_CELERON_MOBILE:	return "Celeron Mobile";
+		case CPU_SUBTYPE_PENTIUM_3:		return "Pentium 3";
+		case CPU_SUBTYPE_PENTIUM_3_M:		return "Pentium 3 M";
+		case CPU_SUBTYPE_PENTIUM_3_XEON:	return "Pentium 3 Xeon";
+		case CPU_SUBTYPE_PENTIUM_M:		return "Pentium Mobile";
+		case CPU_SUBTYPE_PENTIUM_4:		return "Pentium 4";
+		case CPU_SUBTYPE_PENTIUM_4_M:		return "Pentium 4 M";
+		case CPU_SUBTYPE_ITANIUM:		return "Itanium";
+		case CPU_SUBTYPE_ITANIUM_2:		return "Itanium 2";
+		case CPU_SUBTYPE_XEON:			return "Xeon";
+		case CPU_SUBTYPE_XEON_MP:		return "Xeon MP";
+		default:				return "Unknown i386 subtype";
+		}
+	case CPU_TYPE_X86_64:
+		switch (cpusubtype & 0xff) {
+		case CPU_SUBTYPE_X86_64_ALL:	return "x86 64 all";
+		case CPU_SUBTYPE_X86_ARCH1:	return "x86 arch 1";
+		default:			return "Unknown x86 subtype";
+		}
+	case CPU_TYPE_MC88000:
+		switch (cpusubtype & 0xff) {
+		case CPU_SUBTYPE_MC88000_ALL:	return "all";
+		case CPU_SUBTYPE_MC88100:	return "mc88100";
+		case CPU_SUBTYPE_MC88110:	return "mc88110";
+		default:			return "Unknown mc88000 subtype";
+		}
+	case CPU_TYPE_MC98000:
+		switch (cpusubtype & 0xff) {
+		case CPU_SUBTYPE_MC98000_ALL:	return "all";
+		case CPU_SUBTYPE_MC98601:	return "mc98601";
+		default:			return "Unknown mc98000 subtype";
+		}
+	case CPU_TYPE_HPPA:
+		switch (cpusubtype & 0xff) {
+		case CPU_SUBTYPE_HPPA_7100:	return "hppa7100";
+		case CPU_SUBTYPE_HPPA_7100LC:	return "hppa7100LC";
+		default:			return "Unknown hppa subtype";
+		}
+	case CPU_TYPE_ARM64:
+		return "v8";
+	case CPU_TYPE_ARM:
+		switch (cpusubtype & 0xff) {
+		case CPU_SUBTYPE_ARM_ALL:
+			return "all";
+		case CPU_SUBTYPE_ARM_V4T:
+			return "v4t";
+		case CPU_SUBTYPE_ARM_V5:
+			return "v5";
+		case CPU_SUBTYPE_ARM_V6:
+			return "v6";
+		case CPU_SUBTYPE_ARM_XSCALE:
+			return "xscale";
+		case CPU_SUBTYPE_ARM_V7:
+			return "v7";
+		case CPU_SUBTYPE_ARM_V7F:
+			return "v7f";
+		case CPU_SUBTYPE_ARM_V7S:
+			return "v7s";
+		case CPU_SUBTYPE_ARM_V7K:
+			return "v7k";
+		case CPU_SUBTYPE_ARM_V7M:
+			return "v7m";
+		case CPU_SUBTYPE_ARM_V7EM:
+			return "v7em";
+		default:
+			eprintf ("Unknown arm subtype %d\n", cpusubtype & 0xff);
+			return "unknown arm subtype";
+		}
+	case CPU_TYPE_SPARC:
+		switch (cpusubtype & 0xff) {
+		case CPU_SUBTYPE_SPARC_ALL:	return "all";
+		default:			return "Unknown sparc subtype";
+		}
+	case CPU_TYPE_MIPS:
+		switch (cpusubtype & 0xff) {
+		case CPU_SUBTYPE_MIPS_ALL:	return "all";
+		case CPU_SUBTYPE_MIPS_R2300:	return "r2300";
+		case CPU_SUBTYPE_MIPS_R2600:	return "r2600";
+		case CPU_SUBTYPE_MIPS_R2800:	return "r2800";
+		case CPU_SUBTYPE_MIPS_R2000a:	return "r2000a";
+		case CPU_SUBTYPE_MIPS_R2000:	return "r2000";
+		case CPU_SUBTYPE_MIPS_R3000a:	return "r3000a";
+		case CPU_SUBTYPE_MIPS_R3000:	return "r3000";
+		default:			return "Unknown mips subtype";
+		}
+	case CPU_TYPE_I860:
+		switch (cpusubtype & 0xff) {
+		case CPU_SUBTYPE_I860_ALL:	return "all";
+		case CPU_SUBTYPE_I860_860:	return "860";
+		default:			return "Unknown i860 subtype";
+		}
+	case CPU_TYPE_POWERPC:
+	case CPU_TYPE_POWERPC64:
+		switch (cpusubtype & 0xff) {
+		case CPU_SUBTYPE_POWERPC_ALL:	return "all";
+		case CPU_SUBTYPE_POWERPC_601:	return "601";
+		case CPU_SUBTYPE_POWERPC_602:	return "602";
+		case CPU_SUBTYPE_POWERPC_603:	return "603";
+		case CPU_SUBTYPE_POWERPC_603e:	return "603e";
+		case CPU_SUBTYPE_POWERPC_603ev:	return "603ev";
+		case CPU_SUBTYPE_POWERPC_604:	return "604";
+		case CPU_SUBTYPE_POWERPC_604e:	return "604e";
+		case CPU_SUBTYPE_POWERPC_620:	return "620";
+		case CPU_SUBTYPE_POWERPC_750:	return "750";
+		case CPU_SUBTYPE_POWERPC_7400:	return "7400";
+		case CPU_SUBTYPE_POWERPC_7450:	return "7450";
+		case CPU_SUBTYPE_POWERPC_970:	return "970";
+		default:			return "Unknown ppc subtype";
 		}
 	}
-	return strdup ("Unknown cputype");
+	return "Unknown cputype";
 }
 
+char* MACH0_(get_cpusubtype_from_hdr)(struct MACH0_(mach_header) *hdr) {
+	r_return_val_if_fail (hdr, NULL);
+	return strdup (cpusubtype_tostring (hdr->cputype, hdr->cpusubtype));
+}
 
 char* MACH0_(get_cpusubtype)(struct MACH0_(obj_t)* bin) {
 	if (bin) {
@@ -2637,15 +2580,14 @@ char* MACH0_(get_cpusubtype)(struct MACH0_(obj_t)* bin) {
 	return strdup ("Unknown");
 }
 
-int MACH0_(is_pie)(struct MACH0_(obj_t)* bin) {
+bool MACH0_(is_pie)(struct MACH0_(obj_t)* bin) {
 	return (bin && bin->hdr.filetype == MH_EXECUTE && bin->hdr.flags & MH_PIE);
 }
 
-int MACH0_(has_nx)(struct MACH0_(obj_t)* bin) {
+bool MACH0_(has_nx)(struct MACH0_(obj_t)* bin) {
 	return (bin && bin->hdr.filetype == MH_EXECUTE &&
 		bin->hdr.flags & MH_NO_HEAP_EXECUTION);
 }
-
 
 char* MACH0_(get_filetype_from_hdr)(struct MACH0_(mach_header) *hdr) {
 	const char *mhtype = "Unknown";
