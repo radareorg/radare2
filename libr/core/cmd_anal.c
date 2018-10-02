@@ -98,6 +98,7 @@ static const char *help_msg_ae[] = {
 	"aecu", " [addr]", "continue until address",
 	"aecue", " [esil]", "continue until esil expression match",
 	"aef", " [addr]", "emulate function",
+	"aefa", " [addr]", "emulate function to find out args in given or current offset",
 	"aei", "", "initialize ESIL VM state (aei- to deinitialize)",
 	"aeim", " [addr] [size] [name]", "initialize ESIL VM stack (aeim- remove)",
 	"aeip", "", "initialize ESIL program counter to curseek",
@@ -499,6 +500,7 @@ static const char *help_msg_ar[] = {
 	"ar", "", "Show 'gpr' registers",
 	"ar0", "", "Reset register arenas to 0",
 	"ara", "[?]", "Manage register arenas",
+	"arA", "", "Show values of function argument calls (A0, A1, A2, ..)",
 	"ar", " 16", "Show 16 bit registers",
 	"ar", " 32", "Show 32 bit registers",
 	"ar", " all", "Show all bit registers",
@@ -3033,6 +3035,28 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	case '0': // "ar0"
 		r_reg_arena_zero (core->anal->reg);
 		break;
+	case 'A': // "arA"
+		{
+			int nargs = 4;
+			RReg *reg = core->anal->reg;
+			for (i = 0; i < nargs; i++) {
+				const char *name = r_reg_get_name (reg, r_reg_get_name_idx (sdb_fmt ("A%d", i)));
+				ut64 off = r_reg_getv (core->anal->reg, name);
+				r_cons_printf ("0x%08"PFMT64x" ", off);
+				// XXX very ugly hack
+				char *s = r_core_cmd_strf (core, "pxr 32 @ 0x%08"PFMT64x, off);
+				if (s) {
+					char *nl = strchr (s, '\n');
+					if (nl) {
+						*nl = 0;
+						r_cons_printf ("%s\n", s);
+					}
+					free (s);
+				}
+//				r_core_cmd0 (core, "ar A0,A1,A2,A3");
+			}
+		}
+		break;
 	case 'C': // "arC"
 		if (core->anal->reg->reg_profile_cmt) {
 			r_cons_println (core->anal->reg->reg_profile_cmt);
@@ -4293,6 +4317,60 @@ static int _aeli_iter(dictkv* kv, void* ud) {
 	return 0;
 }
 
+static void r_anal_aefa (RCore *core, const char *arg) {
+	ut64 to = r_num_math (core->num, arg);
+	ut64 at, from = core->offset;
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, to, -1);
+	if (!from || from == UT64_MAX) {
+		if (fcn) {
+			from = fcn->addr;
+		} else {
+			eprintf ("Usage: aefa [from] # if no from address is given, uses fcn.addr\n");
+			return;
+		}
+	}
+	eprintf ("Emulate from 0x%08"PFMT64x" to 0x%08"PFMT64x"\n", from, to);
+	eprintf ("Resolve call args for 0x%08"PFMT64x"\n", to);
+
+	// emulate
+	// XXX do not use commands, here, just use the api
+	r_core_cmd0 (core, "aeim"); // XXX
+	ut64 off = core->offset;
+	for (at = from; at < to ; at++) {
+		r_core_cmdf (core, "aepc 0x%08"PFMT64x, at);
+		r_core_cmd0 (core, "aeso");
+		r_core_seek (core, at, 1);
+		int delta = r_num_get (core->num, "$l");
+		if (delta < 1) {
+			break;
+		}
+		at += delta - 1;
+	}
+	r_core_seek (core, off, 1);
+
+	// the logic of identifying args by function types and
+	// show json format and arg name goes into arA
+	r_core_cmd0 (core, "arA");
+#if 0
+	// get results
+	const char *fcn_type = r_type_func_ret (core->anal->sdb_types, fcn->name);
+	const char *key = resolve_fcn_name (core->anal, fcn->name);
+	RList *list = r_core_get_func_args (core, key);
+	if (!r_list_empty (list)) {
+		eprintf ("HAS signature\n");
+	}
+	int i, nargs = 3; // r_type_func_args_count (core->anal->sdb_types, fcn->name);
+	if (nargs > 0) {
+		int i;
+		eprintf ("NARGS %d (%s)\n", nargs, key);
+		for (i = 0; i < nargs; i++) {
+			ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_STDCALL, i);
+			eprintf ("arg: 0x%08"PFMT64x"\n", v);
+		}
+	}
+#endif
+}
+
 static void cmd_anal_esil(RCore *core, const char *input) {
 	RAnalEsil *esil = core->anal->esil;
 	ut64 addr = core->offset;
@@ -4606,7 +4684,9 @@ static void cmd_anal_esil(RCore *core, const char *input) {
 		}
 		break;
 	case 'f': // "aef"
-	{
+		if (input[1] == 'a') { // "aefa"
+			r_anal_aefa (core, r_str_trim_ro (input + 2));
+		} else {
 		RListIter *iter;
 		RAnalBlock *bb;
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal,
