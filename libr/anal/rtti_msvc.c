@@ -600,6 +600,12 @@ R_API bool r_anal_rtti_msvc_print_at_vtable(RVTableContext *context, ut64 addr, 
 
 
 
+typedef struct recovery_base_descriptor_t {
+	rtti_base_class_descriptor *bcd;
+	struct recovery_type_descriptor_t *td;
+} RecoveryBaseDescriptor;
+
+
 typedef struct recovery_complete_object_locator_t {
 	ut64 addr;
 	bool valid;
@@ -608,7 +614,7 @@ typedef struct recovery_complete_object_locator_t {
 	struct recovery_type_descriptor_t *td;
 	rtti_class_hierarchy_descriptor chd;
 	RList *bcd; // <rtti_base_class_descriptor>
-	RPVector base_td; // <analyzed_type_descriptor_t>
+	RVector base_td; // <RecoveryBaseDescriptor>
 } RecoveryCompleteObjectLocator;
 
 RecoveryCompleteObjectLocator *recovery_complete_object_locator_new() {
@@ -622,7 +628,7 @@ RecoveryCompleteObjectLocator *recovery_complete_object_locator_new() {
 	col->td = NULL;
 	memset (&col->chd, 0, sizeof (col->chd));
 	col->bcd = NULL;
-	r_pvector_init (&col->base_td, NULL);
+	r_vector_init (&col->base_td, sizeof(RecoveryBaseDescriptor), NULL, NULL);
 	return col;
 }
 
@@ -631,7 +637,7 @@ void recovery_complete_object_locator_free(RecoveryCompleteObjectLocator *col) {
 		return;
 	}
 	r_list_free (col->bcd);
-	r_pvector_clear (&col->base_td);
+	r_vector_clear (&col->base_td);
 	free (col);
 }
 
@@ -729,7 +735,7 @@ RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAn
 	}
 
 
-	r_pvector_reserve (&col->base_td, (size_t)col->bcd->length);
+	r_vector_reserve (&col->base_td, (size_t)col->bcd->length);
 	RListIter *bcdIter;
 	rtti_base_class_descriptor *bcd;
 	r_list_foreach (col->bcd, bcdIter, bcd) {
@@ -742,7 +748,9 @@ RecoveryCompleteObjectLocator *recovery_anal_complete_object_locator(RRTTIMSVCAn
 			eprintf("Warning: type descriptor of base is invalid.\n");
 			continue;
 		}
-		r_pvector_push (&col->base_td, td);
+		RecoveryBaseDescriptor *base_desc = r_vector_push (&col->base_td, NULL);
+		base_desc->bcd = bcd;
+		base_desc->td = td;
 	}
 
 	return col;
@@ -820,10 +828,10 @@ static void recovery_apply_vtable(RAnalClass *cls, RVTableInfo *vtable) {
 
 static RAnalClass *recovery_apply_complete_object_locator(RRTTIMSVCAnalContext *context, RecoveryCompleteObjectLocator *col);
 
-static void recovery_apply_bases(RRTTIMSVCAnalContext *context, RAnalClass *cls, RPVector *base_tds) {
-	void **it;
-	r_pvector_foreach (base_tds, it) {
-		RecoveryTypeDescriptor *base_td = (RecoveryTypeDescriptor *)*it;
+static void recovery_apply_bases(RRTTIMSVCAnalContext *context, RAnalClass *cls, RVector *base_descs) {
+	RecoveryBaseDescriptor *base_desc;
+	r_vector_foreach (base_descs, base_desc) {
+		RecoveryTypeDescriptor *base_td = base_desc->td;
 		if (!base_td->valid) {
 			eprintf ("Warning Base td is invalid!\n");
 			continue;
@@ -841,18 +849,8 @@ static void recovery_apply_bases(RRTTIMSVCAnalContext *context, RAnalClass *cls,
 		}
 
 		RAnalBaseClass *base_cls_info = r_vector_push (&cls->base_classes, NULL);
-		base_cls_info->offset = 0; // TODO: we do have this info \o/
+		base_cls_info->offset = (ut64)base_desc->bcd->where.mdisp;
 		base_cls_info->cls = base_cls;
-	}
-}
-
-
-static RAnalClass *recovery_recover_class(RRTTIMSVCAnalContext *context, RecoveryTypeDescriptor *td, RecoveryCompleteObjectLocator *col) {
-	if (!td->valid) {
-		return NULL;
-	}
-	if (!col->valid) {
-		col = NULL;
 	}
 }
 
