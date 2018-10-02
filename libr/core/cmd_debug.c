@@ -311,6 +311,7 @@ static const char *help_msg_dr[] = {
 	"dr8", "[1|2|4|8] [type]", "Display hexdump of gpr arena (WIP)",
 	"dr=", "", "Show registers in columns",
 	"dr?", "<register>", "Show value of given register",
+	"dra", "[?]", "Manage register arenas. see ara?",
 	"drb", "[1|2|4|8] [type]", "Display hexdump of gpr arena (WIP)",
 	"drc", " [name]", "Related to conditional flag registers",
 	"drC", "", "Show register profile comments",
