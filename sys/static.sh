@@ -75,8 +75,10 @@ ${CC} .test.c \
 res=$?
 if [ $res = 0 ]; then
 	echo SUCCESS
+	rm a.out
 else
 	echo FAILURE
 fi
 
+rm .test.c
 exit $res
