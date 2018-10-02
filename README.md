@@ -85,7 +85,7 @@ using root privileges and sudo, simply run:
 
 # Building with meson + ninja
 
-If you don't already have meson and ninja you can install them
+If you don't already have meson and ninja, you can install them
 with your distribution package manager or with r2pm:
 
 	$ r2pm -i meson
@@ -102,8 +102,8 @@ with Makefile is not suitable. If you are lost in any way, just type:
 
 # Update
 
-To update Radare2 system wide you don't need to uninstall or pull,
-just re-run:
+To update Radare2 system-wide, you don't need to uninstall or pull.
+Just re-run:
 
 	$ sys/install.sh
 
@@ -114,7 +114,7 @@ just re-run:
 
 # Uninstall
 
-In case of a polluted filesystem you can uninstall the current
+In case of a polluted filesystem, you can uninstall the current
 version or remove all previous installations:
 
 	$ make uninstall
@@ -126,9 +126,9 @@ To remove all stuff including libraries, use
 
 # Package manager
 
-Radare2 has its own package manager - r2pm. It's packages
+Radare2 has its own package manager - r2pm. Its packages
 repository is on [GitHub too](https://github.com/radare/radare2-pm).
-To start to use it for the first time you need to initialize packages:
+To start to using it for the first time, you need to initialize packages:
 
 	$ r2pm init
 
@@ -136,7 +136,7 @@ Refresh the packages database before installing any package:
 
 	$ r2pm update
 
-To install a package use the following command:
+To install a package, use the following command:
 
 	$ r2pm install [package name]
 
@@ -155,10 +155,10 @@ The easiest way to install the python bindings is to run:
 	$ r2pm install r2api-python
 	$ r2pm install r2pipe-py
 
-In addition there are `r2pipe` bindings, which are an API
+In addition there are `r2pipe` bindings, which is an API
 interface to interact with the prompt, passing commands
 and receivent the output as a string, many commands support
-JSON output, so it's integrated easily with many languages
+JSON output, so its integrated easily with many languages
 in order to deserialize it into native objects.
 
 	$ npm install r2pipe   # NodeJS
@@ -171,9 +171,9 @@ Vala, OCaml, and many more to come!
 
 # Regression Testsuite
 
-Running `make tests` it will fetch the radare2-regressions
+Running `make tests` will fetch the radare2-regressions
 repository and run all the tests in order to verify that no
-changes break a functionality.
+changes break any functionality.
 
 We run those tests on every commit, and they are also
 executed with ASAN and valgrind on different platforms
@@ -188,7 +188,7 @@ appending '?' to every command you are interested in.
 
 Commands are small mnemonics of few characters and there is
 some extra syntax sugar that makes the shell much more pleasant
-for scripting and interacting with the apis.
+for scripting and interacting with the APIs.
 
 You could also checkout the [radare2 book](https://radare.gitbooks.io/radare2book/content/).
 
@@ -198,14 +198,14 @@ Look at [CONTRIBUTING.md](https://github.com/radare/radare2/blob/master/CONTRIBU
 
 # Webserver
 
-radare2 comes with an embedded webserver that serves a pure
+radare2 comes with an embedded webserver which serves a pure
 html/js interface that sends ajax queries to the core and
 aims to implement an usable UI for phones, tablets and desktops.
 
 	$ r2 -c=H /bin/ls
 
 To use the webserver on Windows, you require a cmd instance
-with administrator rights. To start the webserver use command
+with administrator rights. To start the webserver, use the following command
 in the project root.
 
 	> radare2.exe -c=H rax2.exe
