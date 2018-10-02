@@ -141,6 +141,7 @@ static RList* sections(RBinFile *bf) {
 				ptr->format = r_str_newf ("Cd %d[%d]", sz, len);
 			}
 		}
+
 		ptr->name[R_BIN_SIZEOF_STRINGS] = 0;
 		handle_data_sections (ptr);
 		ptr->size = sections[i].size;
@@ -331,6 +332,8 @@ static RList* symbols(RBinFile *bf) {
 		sdb_set (symcache, sdb_fmt ("sym0x%"PFMT64x, ptr->vaddr), "found", 0);
 		if (!strncmp (ptr->name, "type.", 5)) {
 			lang = "go";
+		} else if (!strcmp (ptr->name, "_rust_oom")) {
+			lang = "rust";
 		}
 		r_list_append (ret, ptr);
 	}
