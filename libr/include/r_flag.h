@@ -57,7 +57,7 @@ typedef struct r_flag_t {
 	Sdb *tags;
 	RNum *num;
 	RSkipList *by_off; /* flags sorted by offset, value=RFlagsAtOffset */
-	SdbHash *ht_name; /* hashmap key=item name, value=RList of items */
+	SdbHt *ht_name; /* hashmap key=item name, value=RList of items */
 	RList *flags;   /* list of RFlagItem contained in the flag */
 	RList *spacestack;
 	PrintfCallback cb_printf;

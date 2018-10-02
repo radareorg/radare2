@@ -1043,7 +1043,7 @@ typedef struct r_panels_t {
 	bool isResizing;
 	RPanelsMenu *panelsMenu;
 	Sdb *db;
-	SdbHash *mht;
+	SdbHt *mht;
 	RPanelsMode mode;
 	RPanelsMode prevMode;
 } RPanels;

@@ -26,7 +26,7 @@ typedef struct r_list_t {
 } RList;
 
 typedef struct r_list_range_t {
-	SdbHash *h;
+	SdbHt *h;
 	RList *l;
 	//RListComparator c;
 } RListRange;

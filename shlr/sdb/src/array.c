@@ -500,7 +500,7 @@ SDB_API bool sdb_array_contains(Sdb *s, const char *key, const char *val, ut32 *
 		size_t vlen = strlen (val);
 		while (1) {
 			next = strchr (ptr, SDB_RS);
-			size_t len = next ? (size_t)(next - ptr) : strlen (ptr);
+			size_t len = next ? next - ptr : strlen (ptr);
 			if (len == vlen && !memcmp (ptr, val, len)) {
 				return true;
 			}

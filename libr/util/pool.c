@@ -1,5 +1,8 @@
 /* radare - LGPL - Copyright 2010-2011 pancake<nopcode.org> */
 
+#if 0
+// to be moved into sdb.c maybe? we need to improve the custom heap support
+
 #include <r_util.h>
 #include <stdlib.h>
 
@@ -153,3 +156,4 @@ R_API void r_poolfactory_free(RPoolFactory *pf) {
 	free (pf->pools);
 	free (pf);
 }
+#endif

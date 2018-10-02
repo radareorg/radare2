@@ -2254,7 +2254,7 @@ static char* _resource_type_str(int type) {
 	return strdup (typeName);
 }
 
-static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_resource_directory *dir, ut64 offDir, int type, int id, SdbHash *dirs) {
+static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_resource_directory *dir, ut64 offDir, int type, int id, SdbHt *dirs) {
 	int index = 0;
 	ut32 totalRes = dir->NumberOfNamedEntries + dir->NumberOfIdEntries;
 	ut64 rsrc_base = bin->resource_directory_offset;
@@ -2395,7 +2395,7 @@ R_API void PE_(bin_pe_parse_resource)(struct PE_(r_bin_pe_obj_t) *bin) {
 	Pe_image_resource_directory *rs_directory = bin->resource_directory;
 	ut32 curRes = 0;
 	int totalRes = 0;
-	SdbHash *dirs = sdb_ht_new (); //to avoid infinite loops
+	SdbHt *dirs = sdb_ht_new (); //to avoid infinite loops
 	if (!dirs) {
 		return;
 	}
@@ -3002,7 +3002,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t)* bin) {
 	PE_(image_import_directory) * curr_import_dir = NULL;
 	PE_(image_delay_import_directory) * curr_delay_import_dir = NULL;
 	PE_DWord name_off = 0;
-	SdbHash* lib_map = NULL;
+	SdbHt* lib_map = NULL;
 	ut64 off; //cache value
 	int index = 0;
 	int len = 0;
