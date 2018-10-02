@@ -51,6 +51,8 @@ static const char *help_msg_tf[] = {
 	"Usage: tf[...]", "", "",
 	"tf", "", "List all function definitions loaded",
 	"tf", " <name>", "Show function signature",
+	"tfj", "", "List all function definitions in json",
+	"tfj", " <name>", "Show function signature in json",
 	NULL
 };
 
@@ -257,12 +259,45 @@ static int stdprintifstruct (void *p, const char *k, const char *v) {
 	}
 	return 1;
 }
+
+static void printFunctionType (RCore *core, const char *input) {
+	Sdb *TDB = core->anal->sdb_types;
+	char *res = sdb_querys (TDB, NULL, -1, sdb_fmt ("func.%s.args", input));
+	const char *name = r_str_trim_ro (input);
+	int i, args = sdb_num_get (TDB, sdb_fmt ("func.%s.args", name), 0);
+	r_cons_printf ("{\"name\":\"%s\",\"args\":[", name);
+	for (i = 0; i< args; i++) {
+		char *type = sdb_get (TDB, sdb_fmt ("func.%s.arg.%d", name, i), 0);
+		char *name = strchr (type, ',');
+		if (name) {
+			*name++ = 0;
+		}
+		r_cons_printf ("{\"type\":\"%s\",\"name\":\"%s\"}%s", type, name, i+1==args? "": ",");
+	}
+	r_cons_printf ("]}");
+	free (res);
+	//	r_core_cmdf (core, "tk~func.%s.", input + 2);
+}
+
+static int stdprintiffunc_json (void *p, const char *k, const char *v) {
+	RCore *core = p;
+	if (!strncmp (v, "func", strlen ("func") + 1)) {
+		if (k && *k) {
+			// r_core_cmdf (core, "tfj %s", k);
+			printFunctionType (core, k);
+			r_cons_printf (",");
+		}
+	}
+	return 1;
+}
+
 static int stdprintiffunc (void *p, const char *k, const char *v) {
 	if (!strncmp (v, "func", strlen ("func") + 1)) {
 		r_cons_println (k);
 	}
 	return 1;
 }
+
 static int stdprintifunion (void *p, const char *k, const char *v) {
 	if (!strncmp (v, "union", strlen ("union") + 1)) {
 		r_cons_println (k);
@@ -284,6 +319,7 @@ static int linklist (void *p, const char *k, const char *v) {
 	}
 	return 1;
 }
+
 static int linklist_readable (void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
 	if (!strncmp (k, "link.", strlen ("link."))) {
@@ -298,6 +334,7 @@ static int linklist_readable (void *p, const char *k, const char *v) {
 	return 1;
 
 }
+
 static int typelist_cb(void *p, const char *k, const char *v) {
 	r_cons_printf ("tk %s=%s\n", k, v);
 	return 1;
@@ -1070,13 +1107,28 @@ static int cmd_type(void *data, const char *input) {
 		}
 		break;
 	// tv - get/set type value linked to a given address
-	case 'f':
+	case 'f': // "tf"
 		switch (input[1]) {
 		case 0:
 			sdb_foreach (TDB, stdprintiffunc, core);
 			break;
+		case 'j':
+			if (input[2] == ' ') {
+				printFunctionType (core, input + 2);
+				r_cons_printf ("\n");
+			} else {
+				r_cons_printf ("[");
+				sdb_foreach (TDB, stdprintiffunc_json, core);
+				r_cons_printf ("{}]\n");
+			}
+			break;
 		case ' ':
-			r_core_cmdf (core, "tk~func.%s.", input + 2);
+			{
+				char *res = sdb_querys (TDB, NULL, -1, sdb_fmt ("~~func.%s", input + 2));
+				r_cons_printf ("%s", res);
+				free (res);
+			//	r_core_cmdf (core, "tk~func.%s.", input + 2);
+			}
 			break;
 		default:
 			r_core_cmd_help (core, help_msg_tf);
