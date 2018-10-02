@@ -1026,22 +1026,27 @@ static RList* patch_relocs(RBin *b) {
 	return ret;
 }
 
-static bool has_canary(RBinFile *bf) {
-	bool ret = false;
+static void lookup_symbols(RBinFile *bf, RBinInfo *ret) {
 	RList* symbols_list = symbols (bf);
 	RListIter *iter;
 	RBinSymbol *symbol;
+	bool is_rust = false;
 	if (symbols_list) {
 		r_list_foreach (symbols_list, iter, symbol) {
-			if (!strcmp (symbol->name, "__stack_chk_fail") || !strcmp (symbol->name, "__stack_smash_handler")) {
-				ret = true;
+			if (ret->has_canary == true && is_rust == true) {
 				break;
+			}
+			if (strstr (symbol->name, "__stack_chk_fail") || strstr (symbol->name, "__stack_smash_handler")) {
+				ret->has_canary = true;
+			}
+			if (!strcmp (symbol->name, "__rust_oom")) {
+				is_rust = true;
+				ret->lang = "rust";
 			}
 		}
 		symbols_list->free = r_bin_symbol_free;
 		r_list_free (symbols_list);
 	}
-	return ret;
 }
 
 static int has_retguard(RBinFile *bf) {
@@ -1119,7 +1124,6 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->type = str;
 	ret->has_pi = (strstr (str, "DYN"))? 1: 0;
 	ret->has_lit = true;
-	ret->has_canary = has_canary (bf);
 	ret->has_retguard = has_retguard (bf);
 	ret->has_sanitizers = has_sanitizers (bf);
 	if (!(str = Elf_(r_bin_elf_get_elf_class) (obj))) {
@@ -1168,6 +1172,7 @@ static RBinInfo* info(RBinFile *bf) {
 	if (is_golang (bf)) {
 		ret->lang = "go";
 	}
+	lookup_symbols (bf, ret);
 	return ret;
 }
 
