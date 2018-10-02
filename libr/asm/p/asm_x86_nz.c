@@ -4775,6 +4775,7 @@ static int oprep(RAsm *a, ut8 *data, const Opcode *op) {
 				for (; i < lt_ptr->size; i++) {
 					data[i + l] = ptr[lt_ptr->size - (i + 1)];
 				}
+				free (instr.mnemonic);
 				return l + lt_ptr->size;
 			} else {
 				if (lt_ptr->opdo) {
@@ -4795,6 +4796,7 @@ static int oprep(RAsm *a, ut8 *data, const Opcode *op) {
 			}
 		}
 	}
+	free (instr.mnemonic);
 	return -1;
 }
 

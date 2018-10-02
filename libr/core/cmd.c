@@ -3228,6 +3228,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		r_config_set (core->config, "cmd.hit", cmdhit);
 		free (cmdhit);
 		}
+		free (ostr);
 		return 0;
 	case '?': // "@@?"
 		r_core_cmd_help (core, help_msg_at_at);
