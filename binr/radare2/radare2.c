@@ -798,6 +798,7 @@ int main(int argc, char **argv, char **envp) {
 
 	if (help > 0) {
 		LISTS_FREE ();
+		free (pfile);
 		return main_help (help > 1? 2: 0);
 	}
 	if (customRarunProfile) {

@@ -1480,6 +1480,7 @@ static ut64 get_import_addr(ELFOBJ *bin, int sym) {
 					} else if (plt_section) {
 						const int sizeOfProcedureLinkageTable = 32;
 						const int sizeOfPltEntry = 16;
+						free (REL);
 						return plt_section->rva + sizeOfProcedureLinkageTable + (k * sizeOfPltEntry);
 					} else {
 						eprintf ("Unsupported relocs type %d for arch %d\n",
