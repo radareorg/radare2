@@ -4330,14 +4330,17 @@ static int cmd_print(void *data, const char *input) {
 				ret = 0;
 				goto beach;
 			}
-			char *p = strchr (input, ' ');
-			if (p) {
-				int len = (int) r_num_math (core->num, p);
-				if (len == 0) {
-					break;
-				}
-				use_blocksize = len;
+		}
+		char *sp = strchr (input + 1, ' ');
+		if (!sp && (input[1] == '-' || IS_DIGIT (input[1]))) {
+			sp = input + 1;
+		}
+		if (sp && *sp) {
+			int n = (int) r_num_math (core->num, r_str_trim_ro (sp)); //input + 1));
+			if (!n) {
+				goto beach;
 			}
+			use_blocksize = n;
 		}
 
 		if (core->blocksize_max < use_blocksize && (int) use_blocksize < -core->blocksize_max) {

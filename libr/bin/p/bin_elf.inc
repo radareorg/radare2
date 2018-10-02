@@ -177,7 +177,7 @@ static RList* sections(RBinFile *bf) {
 	RBinSection *ptr = NULL;
 	RList *ret = NULL;
 
-	if (!obj || !(ret = r_list_newf (r_bin_section_free))) {
+	if (!obj || !(ret = r_list_newf ((RListFree)r_bin_section_free))) {
 		return NULL;
 	}
 	//there is not leak in section since they are cached by elf.c
