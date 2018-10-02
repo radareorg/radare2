@@ -322,7 +322,7 @@ R_API void r_core_visual_jump(RCore *core, ut8 ch) {
 	}
 }
 
-R_API int r_core_visual_append_help(RStrBuf *p, const char *title, const char **help) {
+R_API void r_core_visual_append_help(RStrBuf *p, const char *title, const char **help) {
 	int i, max_length = 0, padding = 0;
 	RCons *cons = r_cons_singleton ();
 	const char *pal_args_color = cons->color ? cons->pal.args : "",

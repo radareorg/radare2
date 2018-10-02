@@ -433,6 +433,8 @@ typedef struct r_bin_plugin_t {
 	void *user;
 } RBinPlugin;
 
+typedef void (*RBinSymbollCallback)(RBinObject *obj, void *symbol);
+
 typedef struct r_bin_section_t {
 	char name[R_BIN_SIZEOF_STRINGS + 1]; // TODO: must be char*
 	ut64 size;
@@ -613,6 +615,7 @@ typedef struct r_bin_options_t {
 
 R_API RBinImport *r_bin_import_clone(RBinImport *o);
 R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *o);
+typedef void (*RBinSymbolCallback)(RBinObject *obj, RBinSymbol *symbol);
 
 R_API int r_bin_open(RBin *bin, const char *filename, RBinOptions *bo);
 R_API RBinFile *r_bin_get_file(RBin *bin, int bd);

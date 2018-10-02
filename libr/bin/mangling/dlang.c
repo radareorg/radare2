@@ -33,7 +33,7 @@ R_API bool r_bin_lang_dlang(RBinFile *binfile) {
 	}
 	if (!hasdlang) {
 		r_list_foreach (o->symbols, iter, sym) {
-			if (is_dlang_symbol (sym->name)) {
+			if (sym->name && is_dlang_symbol (sym->name)) {
 				hasdlang = true;
 				break;
 			}
