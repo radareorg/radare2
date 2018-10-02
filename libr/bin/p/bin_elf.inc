@@ -911,7 +911,7 @@ static void _patch_reloc (ut16 e_machine, RIOBind *iob, RBinElfReloc *rel, ut64 
 	}
 }
 
-static bool ht_insert_intu64(SdbHash* ht, int key, ut64 value) {
+static bool ht_insert_intu64(SdbHt* ht, int key, ut64 value) {
 	ut64 *mvalue = malloc (sizeof (ut64));
 	if (!mvalue) {
 		return false;
@@ -920,7 +920,7 @@ static bool ht_insert_intu64(SdbHash* ht, int key, ut64 value) {
 	return ht_insert (ht, sdb_fmt ("%d", key), (void *)mvalue);
 }
 
-static ut64 ht_find_intu64(SdbHash* ht, int key, bool* found) {
+static ut64 ht_find_intu64(SdbHt* ht, int key, bool* found) {
 	ut64 *mvalue = (ut64 *)ht_find (ht, sdb_fmt ("%d", key), found);
 	return *found ? *mvalue : 0;
 }
@@ -937,7 +937,7 @@ static RList* patch_relocs(RBin *b) {
 	RBinObject *obj = NULL;
 	struct Elf_(r_bin_elf_obj_t) *bin = NULL;
 	RIOSection *g = NULL, *s = NULL;
-	SdbHash *relocs_by_sym;
+	SdbHt *relocs_by_sym;
 	SdbListIter *iter;
 	RBinElfReloc *relcs = NULL;
 	RBinInfo *info;

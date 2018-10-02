@@ -2191,7 +2191,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	bool printHere = false;
 	sections = r_bin_get_sections (r->bin);
 	bool inDebugger = r_config_get_i (r->config, "cfg.debug");
-	SdbHash *dup_chk_ht = ht_new (NULL, NULL, NULL);
+	SdbHt *dup_chk_ht = ht_new (NULL, NULL, NULL);
 	bool ret = false;
 	const char *type = print_segments ? "segment" : "section";
 

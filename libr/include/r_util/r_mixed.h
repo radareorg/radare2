@@ -11,8 +11,8 @@ extern "C" {
 typedef struct r_mixed_data_t {
 	int size;
 	union {
-		SdbHash *ht;
-		SdbHash *ht64;
+		SdbHt *ht;
+		SdbHt *ht64;
 	} hash;
 } RMixedData;
 

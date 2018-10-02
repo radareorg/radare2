@@ -1733,7 +1733,7 @@ static ut64 get_text_base(struct MACH0_(obj_t)* bin) {
 }
 #endif
 
-static int inSymtab(SdbHash *hash, struct symbol_t *symbols, const char *name, ut64 addr) {
+static int inSymtab(SdbHt *hash, struct symbol_t *symbols, const char *name, ut64 addr) {
 	bool found;
 	const char *key = sdb_fmt ("%s.%"PFMT64x, name, addr);
 	(void)sdb_ht_find (hash, key, &found);
@@ -1749,7 +1749,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 	struct symbol_t *symbols;
 	int j, s, stridx, symbols_size, symbols_count;
 	ut32 to, from, i;
-	SdbHash *hash;
+	SdbHt *hash;
 	//ut64 text_base = get_text_base (bin);
 
 	if (!bin || !bin->symtab || !bin->symstr) {

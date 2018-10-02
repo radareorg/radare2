@@ -70,7 +70,7 @@ static bool appendRef(RList *list, const char *k, RAnalRef *ref) {
 	return false;
 }
 
-static bool mylistrefs_cb(RList *list, const char *k, SdbHash *ht) {
+static bool mylistrefs_cb(RList *list, const char *k, SdbHt *ht) {
 	ht_foreach (ht, (HtForeachCallback)appendRef, list);
 	return true;
 }
@@ -91,12 +91,12 @@ static int ref_cmp(const RAnalRef *a, const RAnalRef *b) {
 	return 0;
 }
 
-static void listxrefs(SdbHash *m, ut64 addr, RList *list) {
+static void listxrefs(SdbHt *m, ut64 addr, RList *list) {
 	if (addr == UT64_MAX) {
 		ht_foreach (m, (HtForeachCallback)mylistrefs_cb, list);
 	} else {
 		bool found;
-		SdbHash *d = ht_find_u64 (m, addr, &found);
+		SdbHt *d = ht_find_u64 (m, addr, &found);
 		if (!found) {
 			return;
 		}
@@ -106,9 +106,9 @@ static void listxrefs(SdbHash *m, ut64 addr, RList *list) {
 	r_list_sort (list, (RListComparator)ref_cmp);
 }
 
-static void setxref(SdbHash *m, ut64 from, ut64 to, int type) {
+static void setxref(SdbHt *m, ut64 from, ut64 to, int type) {
 	bool found;
-	SdbHash *ht = ht_find_u64 (m, from, &found);
+	SdbHt *ht = ht_find_u64 (m, from, &found);
 	if (!found) {
 		ht = ht_new (NULL, xrefs_ref_free, NULL);
 		if (!ht) {
@@ -310,7 +310,7 @@ R_API bool r_anal_xrefs_init(RAnal *anal) {
 	ht_free (anal->dict_xrefs);
 	anal->dict_xrefs = NULL;
 
-	SdbHash *tmp = ht_new (NULL, xrefs_ht_free, NULL);
+	SdbHt *tmp = ht_new (NULL, xrefs_ht_free, NULL);
 	if (!tmp) {
 		return false;
 	}
@@ -330,7 +330,7 @@ R_API int r_anal_xrefs_count(RAnal *anal) {
 	return anal->dict_xrefs->count;
 }
 
-static RList *fcn_get_refs(RAnalFunction *fcn, SdbHash *ht) {
+static RList *fcn_get_refs(RAnalFunction *fcn, SdbHt *ht) {
 	RListIter *iter;
 	RAnalBlock *bb;
 	RList *list = r_anal_ref_list_new ();

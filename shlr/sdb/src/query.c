@@ -363,20 +363,22 @@ next_quote:
 	// cmd is key and val is value
 	if (*cmd == '.') {
 		if (s->options & SDB_OPTION_FS) {
-			if (!sdb_query_file (s, cmd+1)) {
+			if (!sdb_query_file (s, cmd + 1)) {
 				eprintf ("sdb: cannot open '%s'\n", cmd+1);
 				goto fail;
 			}
 		} else {
 			eprintf ("sdb: filesystem access disabled in config\n");
 		}
-	} else if (*cmd == '~') {
-		if (cmd[1] == '~') {
+	} else if (*cmd == '~') { // delete
+		if (cmd[1] == '~') { // grep
 			SdbKv *kv;
 			SdbListIter *li;
 			SdbList *l = sdb_foreach_match (s, cmd + 2, false);
 			ls_foreach (l, li, kv) {
-				printf ("%s=%s\n", kv->key, kv->value);
+				strbuf_append (out, kv->key, 0);
+				strbuf_append (out, "=", 0);
+				strbuf_append (out, kv->value, 1);
 			}
 			fflush (stdout);
 			ls_free (l);
