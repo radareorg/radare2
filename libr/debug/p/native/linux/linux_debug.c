@@ -305,7 +305,9 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int my_pid) {
 	}
 repeat:
 	for (;;) {
+		void *bed = r_cons_sleep_begin ();
 		int ret = waitpid (pid, &status, flags);
+		r_cons_sleep_end (bed);
 		if (ret < 0) {
 			perror ("waitpid");
 			break;
