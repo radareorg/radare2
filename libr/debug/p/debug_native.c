@@ -220,7 +220,9 @@ static int r_debug_native_continue_syscall (RDebug *dbg, int pid, int num) {
 	return ptrace (PTRACE_SYSCALL, pid, 0, 0);
 #elif __BSD__
 	ut64 pc = r_debug_reg_get (dbg, "PC");
-	return ptrace (PTRACE_SYSCALL, pid, (void*)(size_t)pc, 0);
+	errno = 0;
+	int retVal = ptrace (PTRACE_SYSCALL, pid, (void*)(size_t)pc, 0);
+	return 0==retVal;
 #else
 	eprintf ("TODO: continue syscall not implemented yet\n");
 	return -1;
@@ -483,7 +485,11 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 	}
 
 	/* we don't know what to do yet, let's try harder to figure it out. */
+#if __FreeBSD__
+	if (reason == R_DEBUG_REASON_TRAP) {
+#else
 	if (reason == R_DEBUG_REASON_UNKNOWN) {
+#endif
 		if (WIFEXITED (status)) {
 			eprintf ("child exited with status %d\n", WEXITSTATUS (status));
 			reason = R_DEBUG_REASON_DEAD;
@@ -501,10 +507,14 @@ static RDebugReasonType r_debug_native_wait (RDebug *dbg, int pid) {
 			 *
 			 * this might modify dbg->reason.signum
 			 */
+#if __FreeBSD__
+			reason = R_DEBUG_REASON_BREAKPOINT;
+#else
 			if (!r_debug_handle_signals (dbg)) {
 				return R_DEBUG_REASON_ERROR;
 			}
 			reason = dbg->reason.type;
+#endif
 #ifdef WIFCONTINUED
 		} else if (WIFCONTINUED (status)) {
 			eprintf ("child continued...\n");
