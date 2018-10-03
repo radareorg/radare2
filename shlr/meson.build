@@ -618,3 +618,9 @@ ar_dep = declare_dependency(
   link_with: libr2ar,
   include_directories: ar_inc
 )
+
+
+# handle ptrace-wrap dependency
+if ['linux', 'freebsd'].contains(host_machine.system())
+  subdir('ptrace-wrap')
+endif

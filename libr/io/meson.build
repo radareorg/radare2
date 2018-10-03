@@ -54,19 +54,26 @@ if host_machine.system() == 'windows'
   ]
 endif
 
+
+r_io_deps = [
+  r_util_dep,
+  r_socket_dep,
+  sdb_dep,
+  bochs_dep,
+  gdb_dep,
+  windbg_dep,
+  qnx_dep,
+  zip_dep,
+  ar_dep
+]
+
+if ['linux', 'freebsd'].contains(host_machine.system())
+  r_io_deps += ptrace_wrap_dep
+endif
+
 r_io = library('r_io', files,
   include_directories: platform_inc,
-  dependencies: [
-    r_util_dep,
-    r_socket_dep,
-    sdb_dep,
-    bochs_dep,
-    gdb_dep,
-    windbg_dep,
-    qnx_dep,
-    zip_dep,
-    ar_dep
-  ],
+  dependencies: r_io_deps,
   c_args: library_cflags,
   install: true,
   implicit_include_directories: false,

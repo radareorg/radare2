@@ -83,7 +83,8 @@ r_debug = library('r_debug', files,
     gdb_dep,
     bochs_dep,
     r_socket_dep,
-    sdb_dep
+    sdb_dep,
+    ptrace_wrap_dep
   ],
   install: true,
   implicit_include_directories: false,
