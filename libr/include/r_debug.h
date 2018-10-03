@@ -598,6 +598,13 @@ R_API void r_debug_session_restore(RDebug *dbg, const char *file);
 R_API bool r_debug_step_back(RDebug *dbg);
 R_API bool r_debug_continue_back(RDebug *dbg);
 
+/* ptrace */
+#ifdef R_IO_HAVE_PTRACE
+static inline long r_debug_ptrace(RDebug *dbg, enum __ptrace_request request, pid_t pid, void *addr, void *data) {
+	return dbg->iob.ptrace (dbg->iob.io, request, pid, addr, data);
+}
+#endif
+
 /* plugin pointers */
 extern RDebugPlugin r_debug_plugin_native;
 extern RDebugPlugin r_debug_plugin_esil;
