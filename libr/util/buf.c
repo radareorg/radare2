@@ -520,8 +520,8 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 	ut64 start = addr - b->base + b->offset;
 	ut64 effective_size = r_buf_size (b);
 	int real_len = len;
-	if (start + len > effective_size) {
-		real_len = effective_size - start;
+	if (start - b->offset + len > effective_size) {
+		real_len = effective_size - start + b->offset;
 	}
 	if (real_len < 1) {
 		return 0;
@@ -563,7 +563,7 @@ static int r_buf_cpy(RBuffer *b, ut64 addr, ut8 *dst, const ut8 *src, int len, i
 		return real_len;
 	}
 	addr = (addr == R_BUF_CUR) ? b->cur : start;
-	if (len < 1 || !dst || addr > effective_size) {
+	if (len < 1 || !dst || addr - b->offset > effective_size) {
 		return -1;
 	}
 	if (write) {
@@ -724,11 +724,11 @@ R_API ut8 *r_buf_get_at(RBuffer *b, ut64 addr, int *left) {
 		addr = addr - b->base + b->offset;
 	}
 	ut64 effective_size = r_buf_size (b);
-	if (addr == UT64_MAX || addr > effective_size) {
+	if (addr == UT64_MAX || addr - b->offset > effective_size) {
 		return NULL;
 	}
 	if (left) {
-		*left = effective_size - addr;
+		*left = effective_size - addr + b->offset;
 	}
 	return b->buf + addr;
 }
@@ -748,8 +748,8 @@ R_API int r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, int len) {
 	ut64 start = addr - b->base + b->offset;
 	ut64 effective_size = r_buf_size (b);
 	int real_len = len;
-	if (start + len > effective_size) {
-		real_len = effective_size - start;
+	if (start - b->offset + len > effective_size) {
+		real_len = effective_size - start + b->offset;
 	}
 	if (iob) {
 		if (b->fd != -1) {
@@ -792,8 +792,8 @@ R_API int r_buf_write_at(RBuffer *b, ut64 addr, const ut8 *buf, int len) {
 	ut64 start = addr - b->base + b->offset;
 	ut64 effective_size = r_buf_size (b);
 	int real_len = len;
-	if (start + len > effective_size) {
-		real_len = effective_size - start;
+	if (start - b->offset + len > effective_size) {
+		real_len = effective_size - start + b->offset;
 	}
 	if (iob) {
 		if (b->fd != -1) {
