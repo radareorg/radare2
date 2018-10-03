@@ -7,7 +7,7 @@
 #include <r_cons.h>
 #include <r_debug.h>
 
-#if __linux__ || __BSD__
+#ifdef R_IO_HAVE_PTRACE
 
 #include <sys/ptrace.h>
 #include <sys/types.h>
@@ -43,19 +43,17 @@ static int __waitpid(int pid) {
 	return (waitpid (pid, &st, 0) != -1);
 }
 
+#define debug_read_raw(io,x,y) r_io_ptrace((io), PTRACE_PEEKTEXT, (x), (void *)(y), NULL)
+#define debug_write_raw(io,x,y,z) r_io_ptrace((io), PTRACE_POKEDATA, (x), (void *)(y), (void *)(z))
 #if __OpenBSD__ || __KFBSD__
-#define debug_read_raw(x,y) ptrace(PTRACE_PEEKTEXT, (pid_t)(x), (caddr_t)(y), 0)
-#define debug_write_raw(x,y,z) ptrace(PTRACE_POKEDATA, (pid_t)(x), (caddr_t)(y), (int)(size_t)(z))
 typedef int ptrace_word;   // int ptrace(int request, pid_t pid, caddr_t addr, int data);
 #else
-#define debug_read_raw(x,y) ptrace(PTRACE_PEEKTEXT, x, y, 0)
-#define debug_write_raw(x,y,z) ptrace(PTRACE_POKEDATA, x, y, z)
 typedef size_t ptrace_word; // long ptrace(enum __ptrace_request request, pid_t pid, void *addr, void *data);
 // XXX. using int read fails on some addresses
 // XXX. using long here breaks 'w AAAABBBBCCCCDDDD' in r2 -d
 #endif
 
-static int debug_os_read_at(int pid, ut32 *buf, int sz, ut64 addr) {
+static int debug_os_read_at(RIO *io, int pid, ut32 *buf, int sz, ut64 addr) {
 	ut32 words = sz / sizeof (ut32);
 	ut32 last = sz % sizeof (ut32);
 	ut32 x, lr, *at = (ut32*)(size_t)addr;
@@ -63,10 +61,10 @@ static int debug_os_read_at(int pid, ut32 *buf, int sz, ut64 addr) {
 		return -1;
 	}
 	for (x = 0; x < words; x++) {
-		buf[x] = (ut32)debug_read_raw (pid, (void *)(at++));
+		buf[x] = (ut32)debug_read_raw (io, pid, (void *)(at++));
 	}
 	if (last) {
-		lr = (ut32)debug_read_raw (pid, at);
+		lr = (ut32)debug_read_raw (io, pid, at);
 		memcpy (buf+x, &lr, last) ;
 	}
 	return sz;
@@ -101,10 +99,10 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 		}
 	}
 #endif
-	return debug_os_read_at (RIOPTRACE_PID (desc), (ut32*)buf, len, addr);
+	return debug_os_read_at (io, RIOPTRACE_PID (desc), (ut32*)buf, len, addr);
 }
 
-static int ptrace_write_at(int pid, const ut8 *pbuf, int sz, ut64 addr) {
+static int ptrace_write_at(RIO *io, int pid, const ut8 *pbuf, int sz, ut64 addr) {
 	ptrace_word *buf = (ptrace_word*)pbuf;
 	ut32 words = sz / sizeof (ptrace_word);
 	ut32 last = sz % sizeof (ptrace_word);
@@ -114,15 +112,15 @@ static int ptrace_write_at(int pid, const ut8 *pbuf, int sz, ut64 addr) {
 		return -1;
 	}
 	for (x = 0; x < words; x++) {
-		int rc = debug_write_raw (pid, at++, buf[x]); //((ut32*)(at)), buf[x]);
+		int rc = debug_write_raw (io, pid, at++, buf[x]); //((ut32*)(at)), buf[x]);
 		if (rc) {
 			return -1;
 		}
 	}
 	if (last) {
-		lr = debug_read_raw (pid, (void*)at);
+		lr = debug_read_raw (io, pid, (void*)at);
 		memcpy (&lr, buf + x, last);
-		if (debug_write_raw (pid, (void*)at, lr)) {
+		if (debug_write_raw (io, pid, (void*)at, lr)) {
 			return sz - last;
 		}
 	}
@@ -133,7 +131,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
 	if (!fd || !fd->data) {
 		return -1;
 	}
-	return ptrace_write_at (RIOPTRACE_PID (fd), buf, len, io->off);
+	return ptrace_write_at (io, RIOPTRACE_PID (fd), buf, len, io->off);
 }
 
 static void open_pidmem (RIOPtrace *iop) {
@@ -175,7 +173,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	int ret = -1;
 	if (__plugin_open (io, file,0)) {
 		int pid = atoi (file+9);
-		ret = ptrace (PTRACE_ATTACH, pid, 0, 0);
+		ret = r_io_ptrace (io, PTRACE_ATTACH, pid, 0, 0);
 		if (file[0] == 'p') { //ptrace
 			ret = 0;
 		} else if (ret == -1) {
@@ -237,9 +235,11 @@ static int __close(RIODesc *desc) {
 	if (fd != -1) {
 		close (fd);
 	}
-	free (desc->data);
+	RIOPtrace *riop = desc->data;
 	desc->data = NULL;
-	return ptrace (PTRACE_DETACH, pid, 0, 0);
+	long ret = r_io_ptrace (desc->io, PTRACE_DETACH, pid, 0, 0);
+	free (riop);
+	return ret;
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
@@ -265,7 +265,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			if (cmd[3] == ' ') {
 				pid = atoi (cmd + 4);
 				if (pid > 0 && pid != iop->pid) {
-					(void)ptrace (PTRACE_ATTACH, pid, 0, 0);
+					(void)r_io_ptrace (io, PTRACE_ATTACH, pid, 0, 0);
 					// TODO: do not set pid if attach fails?
 					iop->pid = iop->tid = pid;
 				}

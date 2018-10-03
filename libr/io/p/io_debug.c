@@ -465,69 +465,82 @@ static char *get_and_escape_path (char *str) {
 }
 #endif
 
+typedef struct fork_child_data_t {
+	RIO *io;
+	int bits;
+	bool runprofile;
+	const char *cmd;
+} fork_child_data;
+
+static void fork_child_callback(void *user) {
+	fork_child_data *data = user;
+	if (data->runprofile) {
+		char **argv = r_str_argv (data->cmd, NULL);
+		if (!argv) {
+			exit(1);
+		}
+		RRunProfile *rp = _get_run_profile (data->io, data->bits, argv);
+		if (!rp) {
+			r_str_argv_free (argv);
+			exit (1);
+		}
+		trace_me ();
+		r_run_start (rp);
+		r_run_free (rp);
+		r_str_argv_free (argv);
+		exit (1);
+	} else {
+		char *_cmd = data->io->args ?
+					 r_str_appendf (strdup (data->cmd), " %s", data->io->args) :
+					 strdup (data->cmd);
+		char *path_escaped = get_and_escape_path (_cmd);
+		trace_me ();
+		char **argv = r_str_argv (path_escaped, NULL);
+		if (argv && strstr (argv[0], "\\ ")) {
+			argv[0] = r_str_replace (argv[0], "\\ ", " ", true);
+		}
+		if (!argv) {
+			free (path_escaped);
+			free (_cmd);
+			return;
+		}
+		if (argv && *argv) {
+			int i;
+			for (i = 3; i < 1024; i++) {
+				(void)close (i);
+			}
+			if (execvp (argv[0], argv) == -1) {
+				eprintf ("Could not execvp: %s\n", strerror (errno));
+				exit (MAGIC_EXIT);
+			}
+		} else {
+			eprintf ("Invalid execvp\n");
+		}
+		r_str_argv_free (argv);
+		free (path_escaped);
+		free (_cmd);
+	}
+}
+
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 #if __APPLE__ && !__POWERPC__
 	return fork_and_ptraceme_for_mac(io, bits, cmd);
 #else
 	int ret, status, child_pid;
 	bool runprofile = io->runprofile && *(io->runprofile);
-	char **argv;
-	child_pid = r_sys_fork ();
+
+	fork_child_data child_data;
+	child_data.io = io;
+	child_data.bits = bits;
+	child_data.runprofile = runprofile;
+	child_data.cmd = cmd;
+	child_pid = r_io_ptrace_fork (io, fork_child_callback, &child_data);
 	switch (child_pid) {
 	case -1:
 		perror ("fork_and_ptraceme");
 		break;
 	case 0:
-		if (runprofile) {
-			argv = r_str_argv (cmd, NULL);
-			if (!argv) {
-				exit(1);
-			}
-			RRunProfile *rp = _get_run_profile (io, bits, argv);
-			if (!rp) {
-				r_str_argv_free (argv);
-				exit (1);
-			}
-			trace_me ();
-			r_run_start (rp);
-			r_run_free (rp);
-			r_str_argv_free (argv);
-			exit (1);
-		} else {
-			char *_cmd = io->args ?
-				r_str_appendf (strdup (cmd), " %s", io->args) :
-				strdup (cmd);
-			char *path_escaped = get_and_escape_path (_cmd);
-			trace_me ();
-			argv = r_str_argv (path_escaped, NULL);
-			if (argv && strstr (argv[0], "\\ ")) {
-				argv[0] = r_str_replace (argv[0], "\\ ", " ", true);
-			}
-			if (!argv) {
-				free (path_escaped);
-				free (_cmd);
-				return -1;
-			}
-			if (argv && *argv) {
-				int i;
-				for (i = 3; i < 1024; i++) {
-					(void)close (i);
-				}
-				if (execvp (argv[0], argv) == -1) {
-					eprintf ("Could not execvp: %s\n", strerror (errno));
-					exit (MAGIC_EXIT);
-				}
-			} else {
-				eprintf ("Invalid execvp\n");
-			}
-			r_str_argv_free (argv);
-			free (path_escaped);
-			free (_cmd);
-		}
-		perror ("fork_and_attach: execv");
-		//printf(stderr, "[%d] %s execv failed.\n", getpid(), ps.filename);
-		exit (MAGIC_EXIT); /* error */
-		return 0; // invalid pid // if exit is overriden.. :)
+		return -1;
 	default:
 		/* XXX: clean this dirty code */
 		do {

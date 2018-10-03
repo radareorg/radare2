@@ -209,7 +209,7 @@ static int r_debug_native_detach (RDebug *dbg, int pid) {
 #elif __BSD__
 	return ptrace (PT_DETACH, pid, NULL, 0);
 #else
-	return ptrace (PTRACE_DETACH, pid, NULL, NULL);
+	return r_debug_ptrace (dbg, PTRACE_DETACH, pid, NULL, NULL);
 #endif
 }
 
@@ -217,7 +217,7 @@ static int r_debug_native_continue_syscall (RDebug *dbg, int pid, int num) {
 // XXX: num is ignored
 #if __linux__
 	linux_set_options (dbg, pid);
-	return ptrace (PTRACE_SYSCALL, pid, 0, 0);
+	return r_debug_ptrace (dbg, PTRACE_SYSCALL, pid, 0, 0);
 #elif __BSD__
 	ut64 pc = r_debug_reg_get (dbg, "PC");
 	errno = 0;
@@ -273,7 +273,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 		r_cons_break_push ((RConsBreak)r_debug_native_stop, dbg);
 	}
 
-	int ret = ptrace (PTRACE_CONT, pid, NULL, contsig);
+	int ret = r_debug_ptrace (dbg, PTRACE_CONT, pid, NULL, contsig);
 	if (ret) {
 		perror ("PTRACE_CONT");
 	}
@@ -285,7 +285,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 		if (list) {
 			r_list_foreach (list, it, th) {
 				if (th->pid && th->pid != pid) {
-					ptrace (PTRACE_CONT, tid, NULL, contsig);
+					r_debug_ptrace (dbg, PTRACE_CONT, tid, NULL, contsig);
 				}
 			}
 		}
