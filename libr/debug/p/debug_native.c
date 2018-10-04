@@ -221,8 +221,7 @@ static int r_debug_native_continue_syscall (RDebug *dbg, int pid, int num) {
 #elif __BSD__
 	ut64 pc = r_debug_reg_get (dbg, "PC");
 	errno = 0;
-	int retVal = ptrace (PTRACE_SYSCALL, pid, (void*)(size_t)pc, 0);
-	return 0==retVal;
+	return ptrace (PTRACE_SYSCALL, pid, (void*)(size_t)pc, 0) == 0;
 #else
 	eprintf ("TODO: continue syscall not implemented yet\n");
 	return -1;
