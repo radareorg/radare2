@@ -17,7 +17,7 @@
 
 #define R_IO_UNDOS 64
 
-#ifdef HAVE_PTRACE
+#if HAVE_PTRACE
 #include <sys/ptrace.h>
 #ifdef __APPLE__
 typedef int r_ptrace_request_t;
@@ -494,7 +494,7 @@ R_API bool r_io_addr_is_mapped(RIO *io, ut64 vaddr);
 R_API bool r_io_read_i (RIO* io, ut64 addr, ut64 *val, int size, bool endian);
 R_API bool r_io_write_i (RIO* io, ut64 addr, ut64 *val, int size, bool endian);
 
-#ifdef HAVE_PTRACE
+#if HAVE_PTRACE
 R_API long r_io_ptrace(RIO *io, r_ptrace_request_t request, pid_t pid, void *addr, r_ptrace_data_t data);
 R_API pid_t r_io_ptrace_fork(RIO *io, void (*child_callback)(void *), void *child_callback_user);
 #endif
