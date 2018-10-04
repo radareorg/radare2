@@ -303,7 +303,7 @@ R_API void r_cons_rainbow_new(int sz);
 
 typedef void (*RConsEvent)(void *);
 
-#define CONS_MAX_ATTR_SZ 15
+#define CONS_MAX_ATTR_SZ 16
 typedef struct r_cons_canvas_attr_t {
 	//TODO add support for 256 colors.
 	int loc;

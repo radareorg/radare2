@@ -3620,8 +3620,9 @@ R_API void r_agraph_reset(RAGraph *g) {
 	r_graph_reset (g->graph);
 	r_agraph_set_title (g, NULL);
 	sdb_reset (g->db);
-	r_list_purge (g->edges);
-
+	if (g->edges) {
+		r_list_purge (g->edges);
+	}
 	g->nodes = sdb_new0 ();
 	g->update_seek_on = NULL;
 	g->x = g->y = g->w = g->h = 0;

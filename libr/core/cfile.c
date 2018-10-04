@@ -513,6 +513,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		is_io_load = desc && desc->plugin;
 		if (!filenameuri || !*filenameuri) {
 			filenameuri = desc->name;
+#if 0
 		} else if (desc->name && strcmp (filenameuri, desc->name)) {
 			// XXX - this needs to be handled appropriately
 			// if the cf does not match the filenameuri then
@@ -520,6 +521,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			// new RCoreFile * should be opened.
 			eprintf ("Error: The filenameuri '%s' is not the same as in RCoreFile: %s\n",
 				filenameuri, desc->name);
+#endif
 		}
 	} else {
 		is_io_load = false;
