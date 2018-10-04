@@ -170,7 +170,7 @@ sdb-sync sync-sdb:
 	git add $I/sdb*
 	git add sdb
 
-.PHONY: ptrace-wrap-sync sync-ptrace-wrap
+.PHONY: ptrace-wrap ptrace-wrap-sync sync-ptrace-wrap ptrace-wrap-clean clean-ptrace-wrap
 F=include src README.md COPYING
 SYNCFILES=$(addprefix ptrace-wrap.vc/,${F})
 
@@ -180,7 +180,14 @@ ptrace-wrap-sync sync-ptrace-wrap:
 	mkdir -p ptrace-wrap
 	cp -rf ${SYNCFILES} ptrace-wrap
 	sed -e "s, library(, static_library(," -e "s,project(,# project(," -e "s,subdir(,# subdir(," ptrace-wrap.vc/meson.build > ptrace-wrap/meson.build
+	printf "include ../../libr/config.mk\ninclude ../../mk/platform.mk\ninclude ../../mk/${COMPILER}.mk\n\n" | cat - ptrace-wrap.vc/Makefile > ptrace-wrap/Makefile
 	rm -rf ptrace-wrap.vc
+
+ptrace-wrap:
+	$(MAKE) -C ptrace-wrap all
+
+ptrace-wrap-clean clean-ptrace-wrap:
+	$(MAKE) -C ptrace-wrap clean
 
 $(TCCLIB) libr_tcc/libr_tcc.${EXT_AR}:
 	cd libr_tcc ; $(MAKE)
