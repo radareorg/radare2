@@ -39,7 +39,7 @@ SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
 MODS=sdb zip java tcc
-MODS+=gdb qnx ar
+MODS+=gdb qnx ar ptrace-wrap
 # lz4
 ifneq ($(CC),cccl)
 ifeq (1,$(WITH_GPL))
@@ -61,7 +61,7 @@ all:
 	exit 1
 endif
 
-preall: targets libwindbg capstone-build bochs ptrace-wrap
+preall: targets libwindbg capstone-build bochs
 	@for MOD in ${MODS} ; do \
 		echo $(MAKE) -C $$MOD ; \
 		$(MAKE) -C $$MOD HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \

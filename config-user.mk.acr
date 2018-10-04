@@ -75,6 +75,9 @@ HAVE_LIBUV=@HAVE_LIBUV@
 LIBUV_CFLAGS=@LIBUV_CFLAGS@
 LIBUV_LDFLAGS=@LIBUV_LDFLAGS@
 
+HAVE_PTRACE=@HAVE_PTRACE@
+USE_PTRACE_WRAP=@USE_PTRACE_WRAP@
+
 GIT_TIP:=$(shell (git rev-parse HEAD 2>/dev/null || echo HEAD ))
 GIT_TAP:=$(shell (git describe --tags 2>/dev/null || echo ${VERSION} ))
 
