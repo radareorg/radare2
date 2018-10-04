@@ -7,7 +7,7 @@
 #include <r_cons.h>
 #include <r_debug.h>
 
-#ifdef R_IO_HAVE_PTRACE
+#if __linux__ || __BSD__
 
 #include <sys/ptrace.h>
 #include <sys/types.h>

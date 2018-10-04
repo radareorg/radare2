@@ -599,8 +599,8 @@ R_API bool r_debug_step_back(RDebug *dbg);
 R_API bool r_debug_continue_back(RDebug *dbg);
 
 /* ptrace */
-#ifdef R_IO_HAVE_PTRACE
-static inline long r_debug_ptrace(RDebug *dbg, enum __ptrace_request request, pid_t pid, void *addr, void *data) {
+#if HAVE_PTRACE
+static inline long r_debug_ptrace(RDebug *dbg, r_ptrace_request_t request, pid_t pid, void *addr, r_ptrace_data_t data) {
 	return dbg->iob.ptrace (dbg->iob.io, request, pid, addr, data);
 }
 #endif

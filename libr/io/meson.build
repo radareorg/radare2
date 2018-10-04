@@ -67,7 +67,7 @@ r_io_deps = [
   ar_dep
 ]
 
-if ['linux', 'freebsd'].contains(host_machine.system())
+if use_ptrace_wrap
   r_io_deps += ptrace_wrap_dep
 endif
 

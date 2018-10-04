@@ -561,7 +561,9 @@ R_API int r_io_bind(RIO* io, RIOBind* bnd) {
 	bnd->sections_vget = r_io_sections_vget;
 	bnd->section_add = r_io_section_add;
 	bnd->sect_vget = r_io_section_vget;
+#if HAVE_PTRACE
 	bnd->ptrace = r_io_ptrace;
+#endif
 	return true;
 }
 
@@ -622,10 +624,11 @@ R_API ut64 r_io_seek(RIO* io, ut64 offset, int whence) {
 }
 
 
-#ifdef R_IO_USE_PTRACE_WRAP
+#if HAVE_PTRACE
+
+#if USE_PTRACE_WRAP
 #include <ptrace_wrap.h>
 #include <errno.h>
-#endif
 
 static ptrace_wrap_instance *io_ptrace_wrap_instance(RIO *io) {
 	if (!io->ptrace_wrap) {
@@ -641,9 +644,10 @@ static ptrace_wrap_instance *io_ptrace_wrap_instance(RIO *io) {
 	}
 	return io->ptrace_wrap;
 }
+#endif
 
-R_API long r_io_ptrace(RIO *io, enum __ptrace_request request, pid_t pid, void *addr, void *data) {
-#ifdef R_IO_USE_PTRACE_WRAP
+R_API long r_io_ptrace(RIO *io, r_ptrace_request_t request, pid_t pid, void *addr, r_ptrace_data_t data) {
+#if USE_PTRACE_WRAP
 	ptrace_wrap_instance *wrap = io_ptrace_wrap_instance (io);
 	if (!wrap) {
 		errno = 0;
@@ -656,7 +660,7 @@ R_API long r_io_ptrace(RIO *io, enum __ptrace_request request, pid_t pid, void *
 }
 
 R_API pid_t r_io_ptrace_fork(RIO *io, void (*child_callback)(void *), void *child_callback_user) {
-#ifdef R_IO_USE_PTRACE_WRAP
+#if USE_PTRACE_WRAP
 	ptrace_wrap_instance *wrap = io_ptrace_wrap_instance (io);
 	if (!wrap) {
 		errno = 0;
@@ -671,6 +675,7 @@ R_API pid_t r_io_ptrace_fork(RIO *io, void (*child_callback)(void *), void *chil
 	return r;
 #endif
 }
+#endif
 
 
 //remove all descs and maps
@@ -688,7 +693,7 @@ R_API int r_io_fini(RIO* io) {
 	if (io->runprofile) {
 		R_FREE (io->runprofile);
 	}
-#ifdef R_IO_USE_PTRACE_WRAP
+#if R_IO_USE_PTRACE_WRAP
 	if (io->ptrace_wrap) {
 		ptrace_wrap_instance_stop (io->ptrace_wrap);
 		free (io->ptrace_wrap);
