@@ -2859,7 +2859,9 @@ static void agraph_print_edges(RAGraph *g) {
 					r_cons_canvas_line (g->can, bx, by, bx, b->y + b->h, &style);
 				}
 				if (b->x != a->x || b->layer <= a->layer || (!a->is_dummy && b->is_dummy) || (a->is_dummy && !b->is_dummy)) {
-					tm->edgectr += 1;
+					if (tm) {
+						tm->edgectr++;
+					}
 				}
 				break;
 			case 1:
