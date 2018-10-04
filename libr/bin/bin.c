@@ -1455,15 +1455,15 @@ R_API RBinClass *r_bin_class_new(RBinFile *binfile, const char *name,
 	if (!c) {
 		return NULL;
 	}
+	if (!list) {
+		list = o->classes = r_list_new ();
+	}
 	c->name = strdup (name);
 	c->super = super? strdup (super): NULL;
 	c->index = r_list_length (list);
 	c->methods = r_list_new ();
 	c->fields = r_list_new ();
 	c->visibility = view;
-	if (!list) {
-		list = o->classes = r_list_new ();
-	}
 	r_list_append (list, c);
 	return c;
 }
