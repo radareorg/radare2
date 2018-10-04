@@ -892,7 +892,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 				}
 				anal->cb_printf ("{\"name\":\"%s\","
 					"\"kind\":\"reg\",\"type\":\"%s\",\"ref\":\"%s\"}",
-					var->name, var->type, i->name, anal->reg->name[var->delta]);
+					var->name, var->type, i->name);
 			}
 				break;
 			case R_ANAL_VAR_KIND_SPV:
