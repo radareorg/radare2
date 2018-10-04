@@ -1823,15 +1823,21 @@ ut64 Elf_(r_bin_elf_get_main_offset)(ELFOBJ *bin) {
 	}
 #endif
 	/* linux64 pie main -- probably buggy in some cases */
-	if (buf[29] == 0x48 && buf[30] == 0x8d) { // lea rdi, qword [rip-0x21c4]
-		ut8 *p = buf + 32;
+	int bo = 29; // Begin offset may vary depending on the entry prelude 
+	if (buf[0] == 0xf3 && buf[1] == 0x0f && buf[2] == 0x1e && buf[3] == 0xfa) {
+		// Change begin offset if binary starts with 'endbr64'
+		bo = 33;
+	}
+	if (buf[bo] == 0x48 && buf[bo + 1] == 0x8d) { // lea rdi, qword [rip-0x21c4]
+		ut8 *p = buf + bo + 3;
 		st32 maindelta = (st32)r_read_le32 (p);
-		ut64 vmain = (ut64)(entry + 29 + maindelta) + 7;
+		ut64 vmain = (ut64)(entry + bo + maindelta) + 7;
 		ut64 ventry = Elf_(r_bin_elf_p2v) (bin, entry);
 		if (vmain>>16 == ventry>>16) {
 			return (ut64)vmain;
 		}
 	}
+
 	/* find sym.main if possible */
 	{
 		ut64 m = getmainsymbol (bin);
