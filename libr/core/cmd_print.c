@@ -3916,7 +3916,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 	}
 
-	if (input[0] && input[0] != 'z' && input[1] == 'f') {
+	if (input[0] && input[0] != 'z' && input[1] == 'f' && input[2]!='?') {
 		RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->offset, 0);
 		// R_ANAL_FCN_TYPE_FCN|R_ANAL_FCN_TYPE_SYM);
 		if (f) {
