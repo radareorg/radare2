@@ -14,7 +14,7 @@ R_API RList *r_flag_tags_list(RFlag *f) {
 	SdbListIter *iter;
 	SdbKv *kv;
 	ls_foreach (o, iter, kv) {
-		const char *tag = kv->key;
+		const char *tag = sdbkv_key (kv);
 		if (strlen (tag) < 5) {
 			continue;
 		}

@@ -630,7 +630,7 @@ R_API void r_anal_build_range_on_hints(RAnal *a) {
 		SdbList *sdb_range = sdb_foreach_list (a->sdb_hints, true);
 		//just grab when hint->bit changes with the previous one
 		ls_foreach (sdb_range, iter, kv) {
-			RAnalHint *hint = r_anal_hint_from_string (a, sdb_atoi (kv->key + 5), kv->value);
+			RAnalHint *hint = r_anal_hint_from_string (a, sdb_atoi (sdbkv_key (kv) + 5), sdbkv_value (kv));
 			if (hint->bits && range_bits != hint->bits) {
 				RAnalRange *range = R_NEW0 (RAnalRange);
 				if (range) {

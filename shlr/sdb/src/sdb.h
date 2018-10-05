@@ -163,7 +163,7 @@ int sdb_concat(Sdb *s, const char *key, const char *value, ut32 cas);
 int sdb_uncat(Sdb *s, const char *key, const char *value, ut32 cas);
 int sdb_add(Sdb* s, const char *key, const char *val, ut32 cas);
 bool sdb_sync(Sdb*);
-void sdb_kv_free(SdbKv *kv);
+void sdbkv_free(SdbKv *kv);
 
 /* num.c */
 int  sdb_num_exists(Sdb*, const char *key);

@@ -221,8 +221,8 @@ R_API RList* r_type_get_by_offset(Sdb *TDB, ut64 offset) {
 	SdbKv *kv;
 	ls_foreach (ls, lsi, kv) {
 		// TODO: Add unions support
-		if (!strncmp (kv->value, "struct", 6) && strncmp (kv->key, "struct.", 7)) {
-			char *res = r_type_get_struct_memb (TDB, kv->key, offset);
+		if (!strncmp (sdbkv_value (kv), "struct", 6) && strncmp (sdbkv_key (kv), "struct.", 7)) {
+			char *res = r_type_get_struct_memb (TDB, sdbkv_key (kv), offset);
 			if (res) {
 				r_list_append (offtypes, res);
 			}
@@ -245,13 +245,13 @@ R_API char *r_type_link_at (Sdb *TDB, ut64 addr) {
 		SdbListIter *sdb_iter;
 		SdbList *sdb_list = sdb_foreach_list (TDB, true);
 		ls_foreach (sdb_list, sdb_iter, kv) {
-			if (strncmp (kv->key, "link.", strlen ("link."))) {
+			if (strncmp (sdbkv_key (kv), "link.", strlen ("link."))) {
 				continue;
 			}
-			const char *linkptr = sdb_fmt ("0x%s", kv->key + strlen ("link."));
+			const char *linkptr = sdb_fmt ("0x%s", sdbkv_key (kv) + strlen ("link."));
 			ut64 baseaddr = r_num_math (NULL, linkptr);
 			int delta = (addr > baseaddr)? addr - baseaddr: -1;
-			res = r_type_get_struct_memb (TDB, kv->value, delta);
+			res = r_type_get_struct_memb (TDB, sdbkv_value (kv), delta);
 			if (res) {
 				break;
 			}

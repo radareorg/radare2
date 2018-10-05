@@ -92,3 +92,21 @@ sdb_gen_cmd = [
   '@OUTPUT@',
   '@INPUT@'
 ]
+
+pkgconfig_mod = import('pkgconfig')
+pkgconfig_mod.generate(
+  libraries: [libsdb.get_shared_lib()],
+  subdirs: ['sdb', '.'],
+  version: sdb_version,
+  name: 'sdb',
+  filebase: 'sdb',
+  description: 'Simple DataBase'
+)
+
+make_test_executable = find_program('make')
+test('run tests', make_test_executable,
+  args: 'test',
+  env: ['BASEDIR=' + meson.current_build_dir()],
+  workdir: join_paths(meson.current_build_dir(), '..'),
+  depends: [sdb_exe, libsdb]
+)

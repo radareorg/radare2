@@ -1020,7 +1020,7 @@ R_API void r_core_anal_hint_list(RAnal *a, int mode) {
 	SdbListIter *lsi;
 	SdbKv *kv;
 	ls_foreach (ls, lsi, kv) {
-		cb (&hls, kv->key, kv->value);
+		cb (&hls, sdbkv_key (kv), sdbkv_value (kv));
 	}
 	ls_free (ls);
 #endif
