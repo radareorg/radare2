@@ -875,13 +875,13 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 						"\"kind\":\"arg\",\"type\":\"%s\",\"ref\":"
 						"{\"base\":\"%s\", \"offset\":%"PFMT64d "}}",
 						var->name, var->type, anal->reg->name[R_REG_NAME_BP],
-						var->delta);
+						(st64)var->delta);
 				} else {
 					anal->cb_printf ("{\"name\":\"%s\","
 						"\"kind\":\"var\",\"type\":\"%s\",\"ref\":"
-						"{\"base\":\"%s\", \"offset\":-%"PFMT64d "}}",
+						"{\"base\":\"%s\", \"offset\":%"PFMT64d "}}",
 						var->name, var->type, anal->reg->name[R_REG_NAME_BP],
-						-var->delta);
+						(st64)-R_ABS (var->delta));
 				}
 				break;
 			case R_ANAL_VAR_KIND_REG: {
@@ -907,7 +907,7 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 						"\"kind\":\"var\",\"type\":\"%s\",\"ref\":"
 						"{\"base\":\"%s\", \"offset\":-%"PFMT64d "}}",
 						var->name, var->type, anal->reg->name[R_REG_NAME_SP],
-						var->delta);
+						(st64)R_ABS(var->delta));
 				}
 				break;
 			}
