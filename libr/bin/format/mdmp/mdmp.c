@@ -103,6 +103,7 @@ void r_bin_mdmp_free(struct r_bin_mdmp_obj *obj) {
 	r_list_free (obj->streams.operations);
 	r_list_free (obj->streams.thread_infos);
 	r_list_free (obj->streams.threads);
+	r_list_free (obj->streams.token_infos);
 	r_list_free (obj->streams.unloaded_modules);
 
 	r_list_free (obj->pe32_bins);
