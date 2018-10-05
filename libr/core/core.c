@@ -1573,14 +1573,14 @@ static int autocomplete(RLine *line) {
 			int j = 0;
 			ls_foreach (sls, iter, kv) {
 				int len = strlen (line->buffer.data + chr);
-				int minlen = R_MIN (len,  strlen (kv->key));
-				if (!len || !strncmp (line->buffer.data + chr, kv->key, minlen)) {
+				int minlen = R_MIN (len,  strlen (sdbkv_key (kv)));
+				if (!len || !strncmp (line->buffer.data + chr, sdbkv_key (kv), minlen)) {
 					char *p = strchr (line->buffer.data + chr, '.');
 					if (p) {
-						j += autocomplete_pfele (core, kv->key, pfx, j, p + 1);
+						j += autocomplete_pfele (core, sdbkv_key (kv), pfx, j, p + 1);
 						break;
 					} else {
-						tmp_argv[j++] = r_str_newf ("pf%s.%s", pfx, kv->key);
+						tmp_argv[j++] = r_str_newf ("pf%s.%s", pfx, sdbkv_key (kv));
 					}
 				}
 			}
@@ -1626,10 +1626,10 @@ static int autocomplete(RLine *line) {
 			int chr = (line->buffer.data[1] == ' ')? 2: 3;
 			ls_foreach (l, iter, kv) {
 				int len = strlen (line->buffer.data + chr);
-				if (!len || !strncmp (line->buffer.data + chr, kv->key, len)) {
-					if (!strcmp (kv->value, "type") || !strcmp (kv->value, "enum")
-					|| !strcmp (kv->value, "struct")) {
-						tmp_argv[i++] = strdup (kv->key);
+				if (!len || !strncmp (line->buffer.data + chr, sdbkv_key (kv), len)) {
+					if (!strcmp (sdbkv_value (kv), "type") || !strcmp (sdbkv_value (kv), "enum")
+					|| !strcmp (sdbkv_value (kv), "struct")) {
+						tmp_argv[i++] = strdup (sdbkv_key (kv));
 					}
 				}
 			}
@@ -1648,9 +1648,9 @@ static int autocomplete(RLine *line) {
 			int chr = 3;
 			ls_foreach (l, iter, kv) {
 				int len = strlen (line->buffer.data + chr);
-				if (!len || !strncmp (line->buffer.data + chr, kv->key, len)) {
-					if (!strcmp (kv->value, "enum")) {
-						tmp_argv[i++] = strdup (kv->key);
+				if (!len || !strncmp (line->buffer.data + chr, sdbkv_key (kv), len)) {
+					if (!strcmp (sdbkv_value (kv), "enum")) {
+						tmp_argv[i++] = strdup (sdbkv_key (kv));
 					}
 				}
 			}
@@ -1675,9 +1675,9 @@ static int autocomplete(RLine *line) {
 			int chr = (line->buffer.data[2] == ' ')? 3: 4;
 			ls_foreach (l, iter, kv) {
 				int len = strlen (line->buffer.data + chr);
-				if (!len || !strncmp (line->buffer.data + chr, kv->key, len)) {
-					if (!strncmp (kv->value, "struct", strlen ("struct") + 1)) {
-						tmp_argv[i++] = strdup (kv->key);
+				if (!len || !strncmp (line->buffer.data + chr, sdbkv_key (kv), len)) {
+					if (!strncmp (sdbkv_value (kv), "struct", strlen ("struct") + 1)) {
+						tmp_argv[i++] = strdup (sdbkv_key (kv));
 					}
 				}
 			}

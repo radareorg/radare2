@@ -1025,7 +1025,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 				SdbKv *kv;
 				SdbList *sdbls = sdb_foreach_list (sht, false);
 				ls_foreach (sdbls, iter, kv) {
-					r_cons_println (kv->value);
+					r_cons_println (sdbkv_value (kv));
 				}
 			}
 		} else {
@@ -1117,7 +1117,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			SdbKv *kv;
 			SdbList *sdbls = sdb_foreach_list (core->print->formats, false);
 			ls_foreach (sdbls, iter, kv) {
-				r_cons_printf ("pf.%s %s\n", kv->key, kv->value);
+				r_cons_printf ("pf.%s %s\n", sdbkv_key (kv), sdbkv_value (kv));
 			}
 			/* delete a format */
 		} else if (input[1] && input[2] == '-') {

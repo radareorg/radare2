@@ -375,20 +375,20 @@ static void typesList(RCore *core, int mode) {
 		SdbListIter *it;
 		SdbKv *kv;
 		ls_foreach (ls, it, kv) {
-			if (!strncmp (kv->value, "type", strlen ("type") + 1)) {
+			if (!strncmp (sdbkv_value (kv), "type", strlen ("type") + 1)) {
 				ls_append (filtls, kv);
 			}
 		}
 		if (mode == 'j') {
 			r_cons_print ("[");
 			ls_foreach (filtls, it, kv) {
-				sdbforcb_json ((void *)core->anal->sdb_types, kv->key, kv->value);
+				sdbforcb_json ((void *)core->anal->sdb_types, sdbkv_key (kv), sdbkv_value (kv));
 				if (it->n) { r_cons_print (","); }
 			}
 			r_cons_println ("]");
 		} else {
 			ls_foreach (filtls, it, kv) {
-				sdbforcb_default ((void *)core->anal->sdb_types, kv->key, kv->value);
+				sdbforcb_default ((void *)core->anal->sdb_types, sdbkv_key (kv), sdbkv_value (kv));
 			}
 		}
 		ls_free (ls);
@@ -757,10 +757,10 @@ static int cmd_type(void *data, const char *input) {
 			SdbListIter *iter;
 			SdbList *l = sdb_foreach_list (TDB, true);
 			ls_foreach (l, iter, kv) {
-				if (!strcmp (kv->value, "enum")) {
-					if (!name || strcmp (kv->value, name)) {
+				if (!strcmp (sdbkv_value (kv), "enum")) {
+					if (!name || strcmp (sdbkv_value (kv), name)) {
 						free (name);
-						name = strdup (kv->key);
+						name = strdup (sdbkv_key (kv));
 						r_cons_println (name);
 					}
 				}
@@ -1096,8 +1096,8 @@ static int cmd_type(void *data, const char *input) {
 					snprintf (tmp, tmp_len + 1, "%s.%s.", type, name);
 					SdbList *l = sdb_foreach_list (TDB, true);
 					ls_foreach (l, iter, kv) {
-						if (!strncmp (kv->key, tmp, tmp_len)) {
-							r_type_del (TDB, kv->key);
+						if (!strncmp (sdbkv_key (kv), tmp, tmp_len)) {
+							r_type_del (TDB, sdbkv_key (kv));
 						}
 					}
 					ls_free (l);
@@ -1142,10 +1142,10 @@ static int cmd_type(void *data, const char *input) {
 			SdbListIter *iter;
 			SdbList *l = sdb_foreach_list (TDB, true);
 			ls_foreach (l, iter, kv) {
-				if (!strcmp (kv->value, "typedef")) {
-					if (!name || strcmp (kv->value, name)) {
+				if (!strcmp (sdbkv_value (kv), "typedef")) {
+					if (!name || strcmp (sdbkv_value (kv), name)) {
 						free (name);
-						name = strdup (kv->key);
+						name = strdup (sdbkv_key (kv));
 						r_cons_println (name);
 					}
 				}
