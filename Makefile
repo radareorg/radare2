@@ -461,3 +461,4 @@ include ${MKPLUGINS}
 .PHONY: libr binr install-man w32dist tests dist shot pkgcfg depgraph.png love
 .PHONY: purge system-purge
 .PHONY: shlr/capstone
+
