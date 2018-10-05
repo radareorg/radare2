@@ -18,8 +18,15 @@
 #define R_IO_UNDOS 64
 
 #if HAVE_PTRACE
+
+#if __sun
+#include <unistd.h>
+#include <sys/types.h>
+#else
 #include <sys/ptrace.h>
-#ifdef __APPLE__
+#endif
+
+#if defined(__APPLE__) || __sun
 typedef int r_ptrace_request_t;
 typedef int r_ptrace_data_t;
 #else
