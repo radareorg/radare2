@@ -776,13 +776,9 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			esilprintf (op, "%s,%s,>>>,%s,=", src, dst, dst);
 		}
 		break;
-	case X86_INS_SHL:
 	case X86_INS_SHLD:
 	case X86_INS_SHLX:
-		// TODO: Set CF: Carry flag is the last bit shifted out due to
-		// this operation. It is undefined for SHL and SHR where the
-		// number of bits shifted is greater than the size of the
-		// destination.
+		// TODO: SHLD is not implemented yet.
 		{
 			src = getarg (&gop, 1, 0, NULL, SRC_AR);
 			dst = getarg (&gop, 0, 1, "<<", DST_AR);
@@ -828,6 +824,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			esilprintf (op, "%s,%s,>>>>,%s,=", src2, src, dst);
 		}
 		break;
+	case X86_INS_SHL:
 	case X86_INS_SAL:
 		{
 		ut64 val = 0;
