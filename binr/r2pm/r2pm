@@ -275,6 +275,10 @@ R2PM_TGZ() {
 		TARBALL="$3"
 	fi
 	cd "${R2PM_GITDIR}"
+	if [ "$ACTION" = clean ]; then
+		rm -f "${TARBALL}"
+		exit 0
+	fi
 	${WGET} -O ${TARBALL} -c "${URL}"
 	if [ -d "${DIR}" ]; then
 		echo "Already uncompressed."
@@ -285,6 +289,8 @@ R2PM_TGZ() {
 			tar xjvf "${TARBALL}"
 		elif [ "`echo ${URL} | grep -e .txz -e tar.xz`" ]; then
 			tar xJvf "${TARBALL}"
+		elif [ "`echo ${URL} | grep -e .txz -e tar`" ]; then
+			tar xvf "${TARBALL}"
 		elif [ "`echo ${URL} | grep -e .zip`" ]; then
 			unzip -o "${TARBALL}"
 		else
@@ -536,6 +542,18 @@ case "$1" in
 	;;
 -c|clean)
 	if [ -n "$2" ]; then
+		FILE="$(pkgFilePath "$2")"
+		if [ -f "${FILE}" ]; then
+			NAME="$2"
+			ACTION=clean
+			export PATH="${R2PM_HOMEBINDIR}:${PATH}"
+			. "${FILE}"
+			echo $FILE TGZ=$R2PM_TGZ
+		else
+			echo "Cannot find $FILE"
+			exit 1
+		fi
+
 		if [ -d "${R2PM_GITDIR}/$2" ]; then
 			echo "Cleaning up ${R2PM_GITDIR}/$2..."
 			rm -rf "${R2PM_GITDIR}/$2"
