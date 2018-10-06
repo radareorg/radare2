@@ -1299,7 +1299,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 				esilprintf (op, "%s,%s,^,0xffffffff,&,%s,=,$z,zf,=,$p,pf,=,$s,sf,=,$0,cf,=,$0,of,=",
 						src, dst_reg64, dst_reg64);
 			} else {
-				esilprintf (op, "%s,%s,$z,zf,=,$p,pf,=,$s,sf,=,$0,cf,=,$0,of,=", src, dst);
+				esilprintf (op, "%s,%s,^=,$z,zf,=,$p,pf,=,$s,sf,=,$0,cf,=,$0,of,=", src, dst);
 			}
 		}
 		break;
