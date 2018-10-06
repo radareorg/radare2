@@ -845,13 +845,13 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 			val = 0x8000000000000000;
 			break;
 		default:
-			eprintf("Error: unknown operand size: %d\n", gop.insn->detail->x86.operands[0].size);
+			eprintf ("Error: unknown operand size: %d\n", gop.insn->detail->x86.operands[0].size);
 			val = 256;
 		}
 		src = getarg (&gop, 1, 0, NULL, SRC_AR);
 		dst = getarg (&gop, 0, 0, NULL, DST_AR);
 		dst2 = getarg (&gop, 0, 1, "<<", DST_AR);
-		eprintf("%s,%s,%s",src, dst, dst2);
+		eprintf ("%s,%s,%s",src, dst, dst2);
 		esilprintf (op, "0,%s,!,!,?{,1,%s,-,%s,<<,0x%llx,&,!,!,^,},%s,%s,$z,zf,=,$p,pf,=,$s,sf,=,cf,=", src, src, dst, val, src, dst2);
 	   	}
 		break;
