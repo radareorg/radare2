@@ -142,6 +142,8 @@ static const char *help_msg_tu[] = {
 	"Usage: tu[...]", "", "",
 	"tu", "", "List all loaded unions",
 	"tu", " [type]", "Show pf format string for given union",
+	"tuj", "", "List all loaded unions in json",
+	"tuj", " [type]", "Show pf format string for given union in json",
 	"tu*", " [type]", "Show pf.<name> format string for given union",
 	"tu?", "", "show this help",
 	NULL
@@ -314,7 +316,14 @@ static int stdprintiffunc (void *p, const char *k, const char *v) {
 	return 1;
 }
 
-static int stdprintifunion (void *p, const char *k, const char *v) {
+static int stdprintifunionjson(void *p, const char *k, const char *v) {
+	if (!strncmp (v, "union", strlen ("union") + 1)) {
+		r_cons_printf ("\"%s\"", k);
+	}
+	return 1;
+}
+
+static int stdprintifunion(void *p, const char *k, const char *v) {
 	if (!strncmp (v, "union", strlen ("union") + 1)) {
 		r_cons_println (k);
 	}
@@ -647,6 +656,13 @@ static int cmd_type(void *data, const char *input) {
 		case '*':
 			if (input[2] == ' ') {
 				showFormat (core, r_str_trim_ro (input + 2), 1);
+			}
+			break;
+		case 'j':
+			if (input[2]) {
+				showFormat (core, r_str_trim_ro (input + 2), 'j');
+			} else {
+				sdb_foreach (TDB, stdprintifunionjson, core);
 			}
 			break;
 		case ' ':
