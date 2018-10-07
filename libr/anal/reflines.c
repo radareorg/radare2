@@ -121,6 +121,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 			if (mi) {
 				ptr += mi->size;
 				addr += mi->size;
+				free (mi->str);
 				continue;
 			}
 		}
