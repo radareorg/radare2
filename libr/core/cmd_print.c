@@ -4331,7 +4331,7 @@ static int cmd_print(void *data, const char *input) {
 				goto beach;
 			}
 		}
-		char *sp = strchr (input + 1, ' ');
+		const char *sp = strchr (input + 1, ' ');
 		if (!sp && (input[1] == '-' || IS_DIGIT (input[1]))) {
 			sp = input + 1;
 		}

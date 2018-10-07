@@ -88,12 +88,13 @@ static const char *help_msg_te[] = {
 	"Usage: te[...]", "", "",
 	"te", "", "List all loaded enums",
 	"te", " <enum>", "Print all values of enum for given name",
+	"tej", "", "List all loaded enums in json",
+	"tej", " <enum>", "Show enum in json",
 	"te", " <enum> <value>", "Show name for given enum number",
 	"teb", " <enum> <name>", "Show matching enum bitfield for given name",
 	"te?", "", "show this help",
 	NULL
 };
-
 
 static const char *help_msg_tt[] = {
 	"Usage: tt[...]", "", "",
@@ -733,24 +734,81 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 		switch (input[1]) {
-		case '?' :
+		case '?':
 			r_core_cmd_help (core, help_msg_te);
 			break;
-		case 'b' :
+		case 'j': // "tej"
+			if (input[2] == 0) { // "tej"
+				char *name = NULL;
+				SdbKv *kv;
+				SdbListIter *iter;
+				SdbList *l = sdb_foreach_list (TDB, true);
+				const char *comma = "";
+				r_cons_printf ("{");
+				ls_foreach (l, iter, kv) {
+					if (!strcmp (sdbkv_value (kv), "enum")) {
+						if (!name || strcmp (sdbkv_value (kv), name)) {
+							free (name);
+							name = strdup (sdbkv_key (kv));
+							r_cons_printf ("%s\"%s\":", comma, name);
+							//r_cons_printf ("%s\"%s\"", comma, name);
+							{
+								RList *list = r_type_get_enum (TDB, name);
+								if (list && !r_list_empty (list)) {
+									r_cons_printf ("{");
+									RListIter *iter;
+									RTypeEnum *member;
+									const char *comma = "";
+									r_list_foreach (list, iter, member) {
+										r_cons_printf ("%s\"%s\":%d", comma, member->name, r_num_math (NULL, member->val));
+										comma = ",";
+									}
+									r_cons_printf ("}");
+								}
+								r_list_free (list);
+							}
+							comma = ",";
+						}
+					}
+				}
+				r_cons_printf ("}\n");
+				ls_free (l);
+			} else { // "tej ENUM"
+				RListIter *iter;
+				RTypeEnum *member = R_NEW0 (RTypeEnum);
+				if (member_name) {
+					res = r_type_enum_member (TDB, name, NULL, r_num_math (core->num, member_name));
+					// NEVER REACHED
+				} else {
+					RList *list = r_type_get_enum (TDB, name);
+					if (list && !r_list_empty (list)) {
+						r_cons_printf ("{\"name\":\"%s\",\"values\":{", name);
+						const char *comma = "";
+						r_list_foreach (list, iter, member) {
+							r_cons_printf ("%s\"%s\":%d", comma, member->name, r_num_math (NULL, member->val));
+							comma = ",";
+						}
+						r_cons_printf ("}}\n");
+					}
+					r_list_free (list);
+				}
+			}
+			break;
+		case 'b': // "teb"
 			res = r_type_enum_member (TDB, name, member_name, 0);
 			break;
-		case ' ' : {
-			RListIter *iter;
-			RTypeEnum *member = R_NEW0 (RTypeEnum);
+		case ' ' :
 			if (member_name) {
 				res = r_type_enum_member (TDB, name, NULL, r_num_math (core->num, member_name));
 			} else {
 				RList *list = r_type_get_enum (TDB, name);
+				RListIter *iter;
+				RTypeEnum *member;
 				r_list_foreach (list, iter, member) {
 					r_cons_printf ("%s = %s\n", member->name, member->val);
 				}
 			}
-		} break;
+			break;
 		case '\0' : {
 			char *name = NULL;
 			SdbKv *kv;
