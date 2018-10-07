@@ -192,6 +192,7 @@ static int main_help(int line) {
 		" RCFILE       ~/.radare2rc (user preferences, batch script)\n" // TOO GENERIC
 		" R2_MAGICPATH " R_JOIN_2_PATHS ("%s", R2_SDB_MAGIC) "\n"
 		" R_DEBUG      if defined, show error messages and crash signal\n"
+		" R_DEBUG_ASSERT=1 set a breakpoint when hitting an assert\n"
 		" VAPIDIR      path to extra vapi directory\n"
 		" R2_NOPLUGINS do not load r2 shared plugins\n"
 		"Paths:\n"
@@ -220,10 +221,10 @@ static int main_print_var(const char *var_name) {
 	} r2_vars[] = {
 		{ "R2_PREFIX", R2_PREFIX },
 		{ "R2_MAGICPATH", magicpath },
-		{ "PREFIX", R2_PREFIX },
-		{ "INCDIR", R2_INCDIR },
-		{ "LIBDIR", R2_LIBDIR },
-		{ "LIBEXT", R_LIB_EXT },
+		{ "R2_PREFIX", R2_PREFIX },
+		{ "R2_INCDIR", R2_INCDIR },
+		{ "R2_LIBDIR", R2_LIBDIR },
+		{ "R2_LIBEXT", R_LIB_EXT },
 		{ "R2_RCONFIGHOME", confighome },
 		{ "R2_RDATAHOME", datahome },
 		{ "R2_RCACHEHOME", cachehome },
@@ -232,9 +233,13 @@ static int main_print_var(const char *var_name) {
 		{ "R2_USER_ZIGNS", homezigns },
 		{ NULL, NULL }
 	};
+	int delta = 0;
+	if (var_name && strncmp (var_name, "R2_", 3)) {
+		delta = 3;
+	}
 	if (var_name) {
 		while (r2_vars[i].name) {
-			if (!strcmp (r2_vars[i].name, var_name)) {
+			if (!strcmp (r2_vars[i].name + delta, var_name)) {
 				printf ("%s\n", r2_vars[i].value);
 				break;
 			}

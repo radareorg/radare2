@@ -40,7 +40,7 @@ if [ "${R2PMCACHE_LOADED}" != 1 ]; then
 	export LIBEXT="`r2 -H LIBEXT`"
 	export R2CONFIGHOME="`r2 -H R2_RCONFIGHOME`"
 	export R2DATAHOME="`r2 -H R2_RDATAHOME`"
-	PREFIX="`r2 -H PREFIX`"
+	PREFIX="`r2 -H R2_PREFIX`"
 fi
 BINDIR="${PREFIX}/bin/"
 LIBDIR="${PREFIX}/lib/"
@@ -77,7 +77,7 @@ export LDFLAGS="-L${R2PM_HOMEPREFIX}/lib"
 export R2PM_PYPATH="${R2PM_PREFIX}/python"
 export R2PM_OLDPWD="${PWD}"
 
-export RHOMEDIR="`r2 -H RHOMEDIR`"
+export RHOMEDIR="`r2 -H R2_RCONFIGHOME`"
 
 if [ "`uname`" = Darwin ]; then
 	export LD_LIBRARY_PATH="${R2PM_HOMEPREFIX}/lib"
@@ -661,8 +661,8 @@ cache)
 	if [ -z "$2" ]; then
 		printf "%s\n" \
 			"Usage: r2pm -H [VARNAME]" \
-			" $ r2pm -H LIBDIR   # show LIBDIR" \
-			" $ r2pm -H PREFIX   # show PREFIX"
+			" $ r2pm -H R2_LIBDIR   # show LIBDIR" \
+			" $ r2pm -H R2_PREFIX   # show PREFIX"
 		exit 1
 	fi
 	eval echo "\$$2"
