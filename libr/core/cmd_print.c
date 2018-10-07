@@ -750,7 +750,6 @@ static void cmd_pCx(RCore *core, const char *input, const char *xcmd) {
 	if (user_rows > 0) {
 		rows = user_rows + 1;
 	}
-	r_cons_push ();
 	RConsCanvas *c = r_cons_canvas_new (w, rows);
 	if (!c) {
 		eprintf ("Couldn't allocate a canvas with %d rows\n", rows);
@@ -767,16 +766,17 @@ static void cmd_pCx(RCore *core, const char *input, const char *xcmd) {
 		(void) r_cons_canvas_gotoxy (c, i * (w / columns), 0);
 		char *cmd = r_str_newf ("%s %d @ %"PFMT64u, xcmd, bsize, tsek);
 		char *dis = r_core_cmd_str (core, cmd);
-		r_cons_canvas_write (c, dis);
+		if (dis) {
+			r_cons_canvas_write (c, dis);
+			free (dis);
+		}
 		free (cmd);
-		free (dis);
 		tsek += bsize - 32;
 	}
 
 	r_cons_canvas_print (c);
 	r_cons_canvas_free (c);
  err:
-	r_cons_pop ();
 	r_config_set_i (core->config, "hex.cols", hex_cols);
 }
 
