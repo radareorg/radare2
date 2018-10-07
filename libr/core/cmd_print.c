@@ -5394,7 +5394,7 @@ static int cmd_print(void *data, const char *input) {
 					core->print->flags |= R_PRINT_FLAGS_REFS;
 					r_cons_break_push (NULL, NULL);
 					r_print_hexdump (core->print, core->offset,
-						core->block, len,
+						core->block, R_MIN (len, core->blocksize),
 						bitsize, bitsize / 8, 1);
 					r_cons_break_pop ();
 					core->print->flags &= ~R_PRINT_FLAGS_REFS;
