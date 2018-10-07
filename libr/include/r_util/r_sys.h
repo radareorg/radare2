@@ -82,7 +82,7 @@ R_API bool r_sys_tts(const char *txt, bool bg);
 
 #if __WINDOWS__
 #include <intrin.h>
-#define r_sys_breakpoint() { __debugbreak() }
+#define r_sys_breakpoint() { __debugbreak(); }
 #else
 #if __i386__ || __x86_64__
 #define r_sys_breakpoint() __asm__ volatile("int3");
