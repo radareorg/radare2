@@ -26,7 +26,7 @@
 #include <sys/ptrace.h>
 #endif
 
-#if defined(__APPLE__) || __sun
+#if defined(__APPLE__) || __sun || __FreeBSD__ || __OpenBSD__
 typedef int r_ptrace_request_t;
 typedef int r_ptrace_data_t;
 #else

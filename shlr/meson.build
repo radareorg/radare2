@@ -621,6 +621,6 @@ ar_dep = declare_dependency(
 
 
 # handle ptrace-wrap dependency
-if ['linux', 'freebsd'].contains(host_machine.system())
+if use_ptrace_wrap
   subdir('ptrace-wrap')
 endif

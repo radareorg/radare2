@@ -260,7 +260,7 @@ else
 endif
 
 have_ptrace = not ['windows', 'cygwin', 'sunos'].contains(host_machine.system())
-use_ptrace_wrap = ['linux', 'freebsd'].contains(host_machine.system())
+use_ptrace_wrap = ['linux'].contains(host_machine.system())
 
 message('HAVE_PTRACE: @0@'.format(have_ptrace))
 message('USE_PTRACE_WRAP: @0@'.format(use_ptrace_wrap))

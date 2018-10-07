@@ -58,9 +58,6 @@ all: plugins.cfg libr/include/r_version.h
 	${MAKE} -C libr/util
 	${MAKE} -C libr/socket
 	${MAKE} -C shlr
-ifeq ($(USE_PTRACE_WRAP),1)
-	${MAKE} -C shlr ptrace-wrap
-endif
 	${MAKE} -C libr
 	${MAKE} -C binr
 

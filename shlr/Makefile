@@ -39,12 +39,15 @@ SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
 MODS=sdb zip java tcc
-MODS+=gdb qnx ar ptrace-wrap
+MODS+=gdb qnx ar
 # lz4
 ifneq ($(CC),cccl)
 ifeq (1,$(WITH_GPL))
 MODS+=grub
 endif
+endif
+ifeq (1,$(USE_PTRACE_WRAP))
+MODS+=ptrace-wrap
 endif
 SDB_URL=git://github.com/radare/sdb
 #SDB_URL=/Users/pancake/prg/sdb
