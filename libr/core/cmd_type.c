@@ -130,6 +130,8 @@ static const char *help_msg_ts[] = {
 	"Usage: ts[...]", " [type]", "",
 	"ts", "", "List all loaded structs",
 	"ts", " [type]", "Show pf format string for given struct",
+	"tsj", "", "List all loaded structs in json",
+	"tsj", " [type]", "Show pf format string for given struct in json",
 	"ts*", " [type]", "Show pf.<name> format string for given struct",
 	"tss", " [type]", "Display size of struct",
 	"ts?", "", "show this help",
@@ -171,10 +173,14 @@ static void showFormat(RCore *core, const char *name, int mode) {
 		char *fmt = r_type_format (core->anal->sdb_types, name);
 		if (fmt) {
 			r_str_trim (fmt);
-			if (mode) {
-				r_cons_printf ("pf.%s %s\n", name, fmt);
+			if (mode == 'j') {
+				r_cons_printf ("{\"name\":\"%s\",\"format\":\"%s\"}", name, fmt);
 			} else {
-				r_cons_printf ("pf %s\n", fmt);
+				if (mode) {
+					r_cons_printf ("pf.%s %s\n", name, fmt);
+				} else {
+					r_cons_printf ("pf %s\n", fmt);
+				}
 			}
 			free (fmt);
 		} else {
@@ -254,9 +260,18 @@ static void save_parsed_type(RCore *core, const char *parsed) {
 //TODO
 //look at the next couple of functions
 //can be optimized into one right ... you see it you do it :P
-static int stdprintifstruct (void *p, const char *k, const char *v) {
+static int stdprintifstruct(void *p, const char *k, const char *v) {
 	if (!strncmp (v, "struct", strlen ("struct") + 1)) {
 		r_cons_println (k);
+	}
+	return 1;
+}
+
+static const char *Gcomma = "";
+static int stdprintifstructjson(void *p, const char *k, const char *v) {
+	if (!strncmp (v, "struct", strlen ("struct") + 1)) {
+		r_cons_printf ("%s\"%s\"", Gcomma, k);
+		Gcomma = ",";
 	}
 	return 1;
 }
@@ -717,6 +732,18 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 0:
 			sdb_foreach (TDB, stdprintifstruct, core);
+			break;
+		case 'j': // "tsj"
+			// TODO: current output is a bit poor, will be good to improve
+			if (input[2]) {
+				showFormat (core, r_str_trim_ro (input + 2), 'j');
+				r_cons_newline ();
+			} else {
+				r_cons_printf ("[");
+				Gcomma = "";
+				sdb_foreach (TDB, stdprintifstructjson, core);
+				r_cons_printf ("]\n");
+			}
 			break;
 		}
 	} break;
