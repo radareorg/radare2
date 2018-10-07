@@ -163,6 +163,9 @@ static char *createAccessFlagStr(ut32 flags, AccessFor forWhat) {
 	const int maxSize = (count + 1) * (kLongest + 1);
 	char* str, *cp;
 	// produces a huge number????
+	if (count < 1 || (count * (kLongest+1)) < 1) {
+		return NULL;
+	}
 	cp = str = (char*) calloc (count + 1, (kLongest + 1));
 	if (!str) {
 		return NULL;
