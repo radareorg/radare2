@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "../../libr/bin/pdb/pdb_downloader.h"
-#include "../blob/version.c"
+#include "../../binr/blob/version.c"
 
 static struct r_bin_t *bin = NULL;
 static char* output = NULL;
