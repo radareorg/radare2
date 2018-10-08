@@ -2328,8 +2328,16 @@ static void update_seek(RConsCanvas *can, RANode *n, int force) {
 	doscroll = force || y < 0 || y + 5 > h || x + 5 > w || x + n->w + 5 < 0;
 
 	if (doscroll) {
-		can->sx = -n->x - n->w / 2 + w / 2;
-		can->sy = -n->y - n->h / 8 + h / 4;
+		if (n->w > w) { //too big for centering
+			can->sx = -n->x;
+		} else {
+			can->sx = -n->x - n->w / 2 + w / 2;
+		}
+		if (n->h > h) { //too big for centering
+			can->sy = -n->y;
+		} else {
+			can->sy = -n->y - n->h / 8 + h / 4;
+		}
 	}
 }
 
