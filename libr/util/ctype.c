@@ -45,7 +45,7 @@ R_API int r_type_kind(Sdb *TDB, const char *name) {
 }
 
 R_API RList* r_type_get_enum (Sdb *TDB, const char *name) {
-	char *p, *val, var[130], var2[130];
+	char *p, var[130];
 	int n;
 
 	if (r_type_kind (TDB, name) != R_TYPE_ENUM) {
@@ -55,11 +55,20 @@ R_API RList* r_type_get_enum (Sdb *TDB, const char *name) {
 	snprintf (var, sizeof (var), "enum.%s", name);
 	for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
 		RTypeEnum *member = R_NEW0 (RTypeEnum);
-		snprintf (var2, sizeof (var2), "%s.%s", var, p);
-		val = sdb_array_get (TDB, var2, 0, NULL);
-		member->name = p;
-		member->val = val;
-		r_list_append (res, member);
+		if (member) {
+			char *var2 = r_str_newf ("%s.%s", var, p);
+			if (var2) {
+				char *val = sdb_array_get (TDB, var2, 0, NULL);
+				if (val) {
+					member->name = p;
+					member->val = val;
+					r_list_append (res, member);
+				} else {
+					free (member);
+					free (var2);
+				}
+			}
+		}
 	}
 	return res;
 }
@@ -221,8 +230,8 @@ R_API RList* r_type_get_by_offset(Sdb *TDB, ut64 offset) {
 	SdbKv *kv;
 	ls_foreach (ls, lsi, kv) {
 		// TODO: Add unions support
-		if (!strncmp (kv->value, "struct", 6) && strncmp (kv->key, "struct.", 7)) {
-			char *res = r_type_get_struct_memb (TDB, kv->key, offset);
+		if (!strncmp (sdbkv_value (kv), "struct", 6) && strncmp (sdbkv_key (kv), "struct.", 7)) {
+			char *res = r_type_get_struct_memb (TDB, sdbkv_key (kv), offset);
 			if (res) {
 				r_list_append (offtypes, res);
 			}
@@ -245,13 +254,13 @@ R_API char *r_type_link_at (Sdb *TDB, ut64 addr) {
 		SdbListIter *sdb_iter;
 		SdbList *sdb_list = sdb_foreach_list (TDB, true);
 		ls_foreach (sdb_list, sdb_iter, kv) {
-			if (strncmp (kv->key, "link.", strlen ("link."))) {
+			if (strncmp (sdbkv_key (kv), "link.", strlen ("link."))) {
 				continue;
 			}
-			const char *linkptr = sdb_fmt ("0x%s", kv->key + strlen ("link."));
+			const char *linkptr = sdb_fmt ("0x%s", sdbkv_key (kv) + strlen ("link."));
 			ut64 baseaddr = r_num_math (NULL, linkptr);
 			int delta = (addr > baseaddr)? addr - baseaddr: -1;
-			res = r_type_get_struct_memb (TDB, kv->value, delta);
+			res = r_type_get_struct_memb (TDB, sdbkv_value (kv), delta);
 			if (res) {
 				break;
 			}

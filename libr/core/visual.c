@@ -829,8 +829,9 @@ static void setprintmode(RCore *core, int n) {
 		break;
 	case 1:
 	case 2:
-		core->inc = r_asm_disassemble (core->assembler,
-			&op, core->block, 32);
+		r_asm_op_init (&op);
+		core->inc = r_asm_disassemble (core->assembler, &op, core->block, R_MIN (32, core->blocksize));
+		r_asm_op_fini (&op);
 		break;
 	case 5: // "pxA"
 		core->inc = 256;

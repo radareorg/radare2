@@ -1,7 +1,7 @@
 #include "sdbht.h"
 
 SDB_API SdbHt* sdb_ht_new() {
-	return ht_new ((DupValue)strdup, (HtKvFreeFunc)sdb_kv_free, (CalcSize)strlen);
+	return ht_new ((DupValue)strdup, (HtKvFreeFunc)sdbkv_free, (CalcSize)strlen);
 }
 
 static bool sdb_ht_internal_insert(SdbHt* ht, const char* key,
@@ -13,9 +13,9 @@ static bool sdb_ht_internal_insert(SdbHt* ht, const char* key,
 	if (kvp) {
 		kvp->key = strdup ((void *)key);
 		kvp->value = strdup ((void *)value);
-		kvp->key_len = strlen ((void *)kvp->key);
+		kvp->key_len = strlen (sdbkv_key (kvp));
+		kvp->value_len = strlen (sdbkv_value (kvp));
 		kvp->expire = 0;
-		kvp->value_len = strlen ((void *)kvp->value);
 		return ht_insert_kv (ht, (HtKv*)kvp, update);
 	}
 	return false;

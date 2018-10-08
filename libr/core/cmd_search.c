@@ -2262,7 +2262,7 @@ static void rop_kuery(void *data, const char *input) {
 		ls_foreach (db_rop->ns, it, ns) {
 			sdb_list = sdb_foreach_list (ns->sdb, false);
 			ls_foreach (sdb_list, sdb_iter, kv) {
-				r_cons_printf ("%s ", kv->key);
+				r_cons_printf ("%s ", sdbkv_key (kv));
 			}
 		}
 		break;
@@ -2271,7 +2271,7 @@ static void rop_kuery(void *data, const char *input) {
 		ls_foreach (db_rop->ns, it, ns) {
 			sdb_list = sdb_foreach_list (ns->sdb, false);
 			ls_foreach (sdb_list, sdb_iter, kv) {
-				char *dup = strdup (kv->value);
+				char *dup = strdup (sdbkv_value (kv));
 				bool flag = false; // to free tok when doing strdup
 				char *size = strtok (dup, " ");
 				char *tok = strtok (NULL, "{}");
@@ -2286,7 +2286,7 @@ static void rop_kuery(void *data, const char *input) {
 					r_cons_print (",");
 				}
 				r_cons_printf ("{\"address\":%s, \"size\":%s, \"type\":\"%s\", \"effect\":\"%s\"}",
-					kv->key, size, ns->name, tok);
+					sdbkv_key (kv), size, ns->name, tok);
 				free (dup);
 				if (flag) {
 					free (tok);
@@ -2744,7 +2744,7 @@ reread:
 						goto beach;
 					}
 
-					char *s = kv->value;
+					char *s = sdbkv_value (kv);
 					ut64 addr;
 					int opsz;
 					int mode = 0;

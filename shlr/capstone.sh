@@ -6,7 +6,7 @@ CS_REV="$4" # revert
 
 clone_capstone() {
 	if [ ! -d capstone ]; then 
-		git clone -b "${CS_BRA}" --depth 10 "${CS_URL}" capstone || exit 1
+		git clone -q -b "${CS_BRA}" --depth 10 "${CS_URL}" capstone || exit 1
 	fi
 	cd capstone || exit 1
 	if [ -n "${CS_REV}" ]; then

@@ -190,12 +190,14 @@ static void var_add_range (RAnal *a, RAnalVar *var, int cond, ut64 val) {
 R_API RStrBuf *var_get_constraint (RAnal *a, RAnalVar *var) {
 	const char *key = RKEY (var->addr, var->kind, var->delta);
 	int i, n = sdb_array_length (ADB, key);
-	bool low = false, high = false;
-	RStrBuf *sb = r_strbuf_new ("");
 
 	if (n < 2) {
 		return NULL;
 	}
+
+	bool low = false, high = false;
+	RStrBuf *sb = r_strbuf_new ("");
+
 	for (i = 0; i < n; i += 2) {
 		ut64 cond = sdb_array_get_num (ADB, key, i, 0);
 		ut64 val = sdb_array_get_num (ADB, key, i + 1, 0);

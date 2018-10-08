@@ -1047,7 +1047,7 @@ static int bin_source(RCore *r, int mode) {
 	SdbKv *kv;
 	SdbList *ls = sdb_foreach_list (binfile->sdb_addrinfo, false);
 	ls_foreach (ls, iter, kv) {
-		char *v = kv->value;
+		char *v = sdbkv_value (kv);
 		RList *list = r_str_split_list (v, "|");
 		srcline = r_list_get_bottom (list);
 		if (srcline) {
@@ -3344,8 +3344,8 @@ R_API void r_core_bin_export_info_rad(RCore *core) {
 		// iterate over all keys
 		SdbList *ls = sdb_foreach_list (db, false);
 		ls_foreach (ls, iter, kv) {
-			char *k = kv->key;
-			char *v = kv->value;
+			char *k = sdbkv_key (kv);
+			char *v = sdbkv_value (kv);
 			char *dup = strdup (k);
 			//printf ("?e (%s) (%s)\n", k, v);
 			if ((flagname = strstr (dup, ".offset"))) {
@@ -3362,8 +3362,8 @@ R_API void r_core_bin_export_info_rad(RCore *core) {
 		}
 		R_FREE (offset);
 		ls_foreach (ls, iter, kv) {
-			char *k = kv->key;
-			char *v = kv->value;
+			char *k = sdbkv_key (kv);
+			char *v = sdbkv_value (kv);
 			char *dup = strdup (k);
 			if ((flagname = strstr (dup, ".format"))) {
 				*flagname = 0;
@@ -3376,8 +3376,8 @@ R_API void r_core_bin_export_info_rad(RCore *core) {
 			free (dup);
 		}
 		ls_foreach (ls, iter, kv) {
-			char *k = kv->key;
-			char *v = kv->value;
+			char *k = sdbkv_key (kv);
+			char *v = sdbkv_value (kv);
 			char *dup = strdup (k);
 			if ((flagname = strstr (dup, ".format"))) {
 				*flagname = 0;
@@ -3739,17 +3739,15 @@ R_API char *r_core_bin_method_flags_str(ut64 flags, int mode) {
 		if (!flags) {
 			goto padding;
 		}
-		for (i = 0; i != 64; i++) {
-			ut64 flag = flags & (1L << i);
+		for (i = 0; i < 64; i++) {
+			ut64 flag = flags & (1LL << i);
 			if (flag) {
 				const char *flag_string = r_bin_get_meth_flag_string (flag, true);
-
 				if (flag_string) {
 					r_strbuf_append (buf, flag_string);
 				} else {
 					r_strbuf_append (buf, "?");
 				}
-
 				len++;
 			}
 		}

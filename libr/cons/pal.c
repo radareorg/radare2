@@ -582,7 +582,7 @@ R_API void r_cons_pal_update_event() {
 	r_cons_rainbow_free ();
 	r_cons_rainbow_new (list->length);
 	ls_foreach (list, iter, kv) {
-		r_cons_singleton ()->pal.rainbow[n++] = strdup (kv->key);
+		r_cons_singleton ()->pal.rainbow[n++] = strdup (sdbkv_key (kv));
 	}
 	r_cons_singleton ()->pal.rainbow_sz = n;
 	ls_free (list);

@@ -750,7 +750,6 @@ static void cmd_pCx(RCore *core, const char *input, const char *xcmd) {
 	if (user_rows > 0) {
 		rows = user_rows + 1;
 	}
-	r_cons_push ();
 	RConsCanvas *c = r_cons_canvas_new (w, rows);
 	if (!c) {
 		eprintf ("Couldn't allocate a canvas with %d rows\n", rows);
@@ -767,16 +766,17 @@ static void cmd_pCx(RCore *core, const char *input, const char *xcmd) {
 		(void) r_cons_canvas_gotoxy (c, i * (w / columns), 0);
 		char *cmd = r_str_newf ("%s %d @ %"PFMT64u, xcmd, bsize, tsek);
 		char *dis = r_core_cmd_str (core, cmd);
-		r_cons_canvas_write (c, dis);
+		if (dis) {
+			r_cons_canvas_write (c, dis);
+			free (dis);
+		}
 		free (cmd);
-		free (dis);
 		tsek += bsize - 32;
 	}
 
 	r_cons_canvas_print (c);
 	r_cons_canvas_free (c);
  err:
-	r_cons_pop ();
 	r_config_set_i (core->config, "hex.cols", hex_cols);
 }
 
@@ -1025,7 +1025,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 				SdbKv *kv;
 				SdbList *sdbls = sdb_foreach_list (sht, false);
 				ls_foreach (sdbls, iter, kv) {
-					r_cons_println (kv->value);
+					r_cons_println (sdbkv_value (kv));
 				}
 			}
 		} else {
@@ -1117,7 +1117,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 			SdbKv *kv;
 			SdbList *sdbls = sdb_foreach_list (core->print->formats, false);
 			ls_foreach (sdbls, iter, kv) {
-				r_cons_printf ("pf.%s %s\n", kv->key, kv->value);
+				r_cons_printf ("pf.%s %s\n", sdbkv_key (kv), sdbkv_value (kv));
 			}
 			/* delete a format */
 		} else if (input[1] && input[2] == '-') {
@@ -4069,8 +4069,8 @@ static int cmd_print(void *data, const char *input) {
 				} else {
 					int printed = 0;
 					int bufsz;
-					RAnalOp aop = {0};
-					char *hex_arg = calloc (0, strlen (arg));
+					RAnalOp aop = { 0 };
+					char *hex_arg = calloc (1, strlen (arg));
 					if (hex_arg) {
 						bufsz = r_hex_str2bin (arg + 1, (ut8 *)hex_arg);
 						while (printed < bufsz) {
@@ -4331,7 +4331,7 @@ static int cmd_print(void *data, const char *input) {
 				goto beach;
 			}
 		}
-		char *sp = strchr (input + 1, ' ');
+		const char *sp = strchr (input + 1, ' ');
 		if (!sp && (input[1] == '-' || IS_DIGIT (input[1]))) {
 			sp = input + 1;
 		}
@@ -5394,7 +5394,7 @@ static int cmd_print(void *data, const char *input) {
 					core->print->flags |= R_PRINT_FLAGS_REFS;
 					r_cons_break_push (NULL, NULL);
 					r_print_hexdump (core->print, core->offset,
-						core->block, len,
+						core->block, R_MIN (len, core->blocksize),
 						bitsize, bitsize / 8, 1);
 					r_cons_break_pop ();
 					core->print->flags &= ~R_PRINT_FLAGS_REFS;

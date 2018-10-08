@@ -163,6 +163,9 @@ static char *createAccessFlagStr(ut32 flags, AccessFor forWhat) {
 	const int maxSize = (count + 1) * (kLongest + 1);
 	char* str, *cp;
 	// produces a huge number????
+	if (count < 1 || (count * (kLongest+1)) < 1) {
+		return NULL;
+	}
 	cp = str = (char*) calloc (count + 1, (kLongest + 1));
 	if (!str) {
 		return NULL;
@@ -1069,7 +1072,7 @@ static const ut8 *parse_dex_class_fields(RBinFile *binfile, RBinDexObj *bin,
 			rbin->cb_printf ("      name          : '%s'\n", fieldName);
 			rbin->cb_printf ("      type          : '%s'\n", type_str);
 			rbin->cb_printf ("      access        : 0x%04x (%s)\n",
-					 (unsigned int)accessFlags, accessStr);
+					 (unsigned int)accessFlags, accessStr? accessStr: "");
 		}
 		r_list_append (bin->methods_list, sym);
 

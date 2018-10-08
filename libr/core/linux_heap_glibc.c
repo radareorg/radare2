@@ -1342,21 +1342,20 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 		break;
 	case 'b': // "dmhb"
 		if (GH(r_resolve_main_arena) (core, &m_arena)) {
-
 			char *m_state_str, *dup = strdup (input + 1);
-			if (!strcmp (dup, "\0")) {
+			if (*dup) {
+				strtok (dup, ":");
+				m_state_str = strtok (NULL, ":");
+				m_state = r_num_get (NULL, m_state_str);
+				if (!m_state) {
+					m_state = m_arena;
+				}
+			} else {
 				if (core->offset != core->prompt_offset) {
 					m_state = core->offset;
 				} else {
 					m_state = m_arena;
 				}
-			} else {
-					char *bin = strtok (dup, ":");
-					m_state_str = strtok (NULL, ":");
-					m_state = r_num_get (NULL, m_state_str);
-					if (!m_state) {
-						m_state = m_arena;
-					}
 			}
 			if (GH(is_arena) (core, m_arena, m_state)) {
 				if (!GH(update_main_arena) (core, m_state, main_arena)) {
@@ -1364,51 +1363,49 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 					break;
 				}
 				GH(print_heap_bin) (core, m_state, main_arena, dup);
-				free (dup);
 			} else {
 				PRINT_RA ("This address is is not part of the arenas\n");
 				free (dup);
 				break;
 			}
+			free (dup);
 		}
 		break;
 	case 'c': // "dmhc"
 		if (GH(r_resolve_main_arena)(core, &m_arena)) {
-
 			GH(print_heap_chunk) (core);
 		}
 		break;
 	case 'f': // "dmhf"
 		if (GH(r_resolve_main_arena) (core, &m_arena)) {
-
-				char *m_state_str, *dup = strdup (input + 1);
-				if (!strcmp (dup, "\0")) {
-					if (core->offset != core->prompt_offset) {
-						m_state = core->offset;
-					} else {
-						m_state = m_arena;
-					}
-				} else {
-						char *bin = strtok (dup, ":");
-						m_state_str = strtok (NULL, ":");
-						m_state = r_num_get (NULL, m_state_str);
-						if (!m_state) {
-							m_state = m_arena;
-						}
+			char *m_state_str, *dup = strdup (input + 1);
+			if (*dup) {
+				strtok (dup, ":");
+				m_state_str = strtok (NULL, ":");
+				m_state = r_num_get (NULL, m_state_str);
+				if (!m_state) {
+					m_state = m_arena;
 				}
-				if (GH(is_arena) (core, m_arena, m_state)) {
-					if (!GH(update_main_arena) (core, m_state, main_arena)) {
-						free (dup);
-						break;
-					}
-					GH(print_heap_fastbin) (core, m_state, main_arena, global_max_fast, dup);
-					free (dup);
+			} else {
+				if (core->offset != core->prompt_offset) {
+					m_state = core->offset;
 				} else {
-					PRINT_RA ("This address is is not part of the arenas\n");
+					m_state = m_arena;
+				}
+			}
+			if (GH(is_arena) (core, m_arena, m_state)) {
+				if (!GH(update_main_arena) (core, m_state, main_arena)) {
 					free (dup);
 					break;
 				}
+				GH(print_heap_fastbin) (core, m_state, main_arena, global_max_fast, dup);
+			} else {
+				PRINT_RA ("This address is is not part of the arenas\n");
+				free (dup);
+				break;
 			}
+			free (dup);
+		}
 		break;
 	case 'g': //dmhg
 		if (input[0] == 'g') {

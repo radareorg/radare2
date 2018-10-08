@@ -942,7 +942,7 @@ static void tok_str_add2(TokenString *s, int t, CValue *cv)
 		cstr->size = cv->cstr->size;
 		cstr->data_allocated = NULL;
 		cstr->size_allocated = cstr->size;
-		memcpy ((char *) cstr + sizeof(CString),
+		memcpy ((char *) cstr + sizeof (CString),
 			cv->cstr->data, cstr->size);
 		len += nb_words;
 	}

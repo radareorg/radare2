@@ -40,9 +40,7 @@ R_API bool r_strbuf_setbin(RStrBuf *sb, const ut8 *s, int l) {
 			if (!ptr) {
 				return false;
 			}
-			if (sb->ptr) {
-				R_FREE (sb->ptr);
-			}
+			R_FREE (sb->ptr);
 			sb->ptrlen = l + 1;
 			sb->ptr = ptr;
 		}
@@ -211,7 +209,6 @@ R_API ut8 *r_strbuf_getbin(RStrBuf *sb, int *len) {
 
 R_API char *r_strbuf_drain(RStrBuf *sb) {
 	r_return_val_if_fail (sb, NULL);
-
 	char *ret = sb->ptr ? sb->ptr : strdup (sb->buf);
 	free (sb);
 	return ret;

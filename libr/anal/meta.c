@@ -718,11 +718,11 @@ R_API int r_meta_list_cb(RAnal *a, int type, int rad, SdbForeachCallback cb, voi
 	}
 	isFirst = true; // TODO: kill global
 	ls_foreach (ls, lsi, kv) {
-		if (type == R_META_TYPE_ANY || (strlen (kv->key) > 5 && kv->key[5] == type)) {
+		if (type == R_META_TYPE_ANY || (strlen (sdbkv_key (kv)) > 5 && sdbkv_key (kv)[5] == type)) {
 			if (cb) {
-				cb ((void *)&ui, kv->key, kv->value);
+				cb ((void *)&ui, sdbkv_key (kv), sdbkv_value (kv));
 			} else {
-				meta_print_item ((void *)&ui, kv->key, kv->value);
+				meta_print_item ((void *)&ui, sdbkv_key (kv), sdbkv_value (kv));
 			}
 		}
 	}

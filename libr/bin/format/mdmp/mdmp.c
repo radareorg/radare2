@@ -103,6 +103,7 @@ void r_bin_mdmp_free(struct r_bin_mdmp_obj *obj) {
 	r_list_free (obj->streams.operations);
 	r_list_free (obj->streams.thread_infos);
 	r_list_free (obj->streams.threads);
+	r_list_free (obj->streams.token_infos);
 	r_list_free (obj->streams.unloaded_modules);
 
 	r_list_free (obj->pe32_bins);
@@ -729,7 +730,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 }
 
 static bool r_bin_mdmp_init_directory(struct r_bin_mdmp_obj *obj) {
-	int i;
+	ut32 i;
 	struct minidump_directory entry;
 
 	sdb_num_set (obj->kv, "mdmp_directory.offset",
@@ -738,9 +739,15 @@ static bool r_bin_mdmp_init_directory(struct r_bin_mdmp_obj *obj) {
 			"(mdmp_stream_type)StreamType "
 			"(mdmp_location_descriptor)Location", 0);
 
-	/* Parse each entry in the directory */
 	ut64 rvadir = obj->hdr->stream_directory_rva;
-	for (i = 0; i < (int)obj->hdr->number_of_streams; i++) {
+	ut64 bytes_left = rvadir < obj->size ? obj->size - rvadir : 0;
+	size_t max_entries = R_MIN (obj->hdr->number_of_streams, bytes_left / sizeof (struct minidump_directory));
+	if (max_entries < obj->hdr->number_of_streams) {
+		eprintf ("[ERROR] Number of streams = %u is greater than is supportable by bin size\n",
+		         obj->hdr->number_of_streams);
+	}
+	/* Parse each entry in the directory */
+	for (i = 0; i < max_entries; i++) {
 		ut32 delta = i * sizeof (struct minidump_directory);
 		int r = r_buf_read_at (obj->b, rvadir + delta, (ut8*) &entry, sizeof (struct minidump_directory));
 		if (r) {

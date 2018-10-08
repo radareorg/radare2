@@ -5256,7 +5256,7 @@ static void cmd_anal_calls(RCore *core, const char *input, bool printCommands, b
 		}
 	}
 	r_cons_break_push (NULL, NULL);
-	if (!binfile || !r_list_length (ranges)) {
+	if (!binfile || (ranges && !r_list_length (ranges))) {
 		RListIter *iter;
 		RIOMap *map;
 		r_list_free (ranges);

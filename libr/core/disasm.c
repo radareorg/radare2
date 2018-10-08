@@ -1624,7 +1624,7 @@ static void ds_show_functions(RDisasmState *ds) {
 				// This avoids false positives present in argument recovery
 				// and straight away print arguments fetched from types db
 				for (i = 0; i < argc; i++) {
-					const char *type = r_type_func_args_type (TDB, fname, i);
+					char *type = r_type_func_args_type (TDB, fname, i);
 					const char *name = r_type_func_args_name (TDB, fname, i);
 					if (i == argc - 1) {
 						comma = false;
@@ -1632,6 +1632,7 @@ static void ds_show_functions(RDisasmState *ds) {
 					int len = strlen(type);
 					r_cons_printf ("%s%s%s%s", type, type[len - 1] == '*' ? "" : " ",
 							name, comma?", ":"");
+					free (type);
 				}
 				goto beach;
 			}
@@ -5314,6 +5315,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		} else if (i >= nb_bytes) {
 			break;
 		}
+		memset (&asmop, 0, sizeof (RAsmOp));
 		ret = r_asm_disassemble (core->assembler, &asmop, buf + i, nb_bytes - i);
 		if (ret < 1) {
 			r_cons_printf (j > 0 ? ",{" : "{");
@@ -5325,15 +5327,16 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 			result = true;
 			continue;
 		}
-		char *opstr = strdup (r_asm_op_get_asm (&asmop));
+
+		char opstr[256];
+		strcpy (opstr, r_asm_op_get_asm (&asmop));
 
 		ds->has_description = false;
 		r_anal_op_fini (&ds->analop);
 		r_anal_op (core->anal, &ds->analop, at, buf + i, nb_bytes - i, R_ANAL_OP_MASK_ALL);
 
 		if (ds->pseudo) {
-			char *aba = r_asm_op_get_asm (&asmop);
-			r_parse_parse (core->parser, aba, aba);
+			r_parse_parse (core->parser, opstr, opstr);
 		}
 
 		// f = r_anal_get_fcn_in (core->anal, at,
@@ -5366,8 +5369,17 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 				core->parser->relsub_addr = killme;
 			}
 		}
-		r_parse_filter (core->parser, ds->vat, core->flags, r_asm_op_get_asm (&asmop), str,
-			sizeof (str), core->print->big_endian);
+		{
+			char *aop = r_asm_op_get_asm (&asmop);
+			char *buf = malloc (128);
+			if (buf) {
+				strcpy (buf, aop);
+				r_parse_filter (core->parser, ds->vat, core->flags, buf,
+					str, sizeof (str), core->print->big_endian);
+				r_asm_op_set_asm (&asmop, buf);
+				free (buf);
+			}
+		}
 
 		r_cons_printf (j > 0 ? ",{" : "{");
 		r_cons_printf ("\"offset\":%"PFMT64d, at);
@@ -5482,7 +5494,6 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		j++; // instructions
 		line++;
 
-		free (opstr);
 		end_nbopcodes = dis_opcodes == 1 && nb_opcodes > 0 && line>=nb_opcodes;
 		end_nbbytes = dis_opcodes == 0 && nb_bytes > 0 && i>=nb_bytes;
 		result = true;

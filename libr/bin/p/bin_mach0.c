@@ -202,16 +202,20 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 				continue;
 			}
 			if (bits == 32) {
-				for (i = 0; i < sec->size; i += 4) {
+				for (i = 0; i + 3 < sec->size; i += 4) {
 					ut32 addr32 = r_read_le32 (buf + i);
 					RBinAddr *ba = newEntry (sec->paddr + i, (ut64)addr32, type, bits);
-					r_list_append (ret, ba);
+					if (ba) {
+						r_list_append (ret, ba);
+					}
 				}
 			} else {
-				for (i = 0; i < sec->size; i += 8) {
+				for (i = 0; i + 7 < sec->size; i += 8) {
 					ut64 addr64 = r_read_le64 (buf + i);
 					RBinAddr *ba = newEntry (sec->paddr + i, addr64, type, bits);
-					r_list_append (ret, ba);
+					if (ba) {
+						r_list_append (ret, ba);
+					}
 				}
 			}
 			free (buf);
