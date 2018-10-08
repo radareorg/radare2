@@ -1417,64 +1417,8 @@ beach:
 
 #if __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 
-static int cmd_dbg_map_heap_glibc_32 (RCore *core, const char *input);
-static int cmd_dbg_map_heap_glibc_64 (RCore *core, const char *input);
-
-static void get_hash_debug_file(RCore *core, const char *path, char *hash, int hash_len) {
-	RListIter *iter;
-	ut8 buf[20] = {0};
-	int offset, i, j = 0;
-	int bd = -1;
-	RBinFile *old_cur = r_bin_cur (core->bin);
-
-	RBinOptions *bo = r_bin_options_new (0LL, 0LL, 0);
-	if (!bo) {
-		eprintf ("Could not create RBinOptions\n");
-		goto out_error;
-	}
-	bo->iofd = -1;
-
-	bd = r_bin_open (core->bin, path, bo);
-	if (bd < 0) {
-		eprintf ("Could not open binary\n");
-		goto out_error;
-	}
-
-	RBinFile *binfile = r_bin_file_find_by_id (core->bin, (unsigned int) bd);
-	if (!binfile || !binfile->o) {
-		goto out_error;
-	}
-
-	r_io_map_priorize_for_fd (core->io, binfile->fd);
-
-	RList *sects = binfile->o->sections;
-	RBinSection *s;
-	r_list_foreach (sects, iter, s) {
-		if (strstr (s->name, ".note.gnu.build-id")) {
-			if (r_buf_read_at (binfile->buf, s->vaddr + 16, buf, 20) == 20) {
-				break;
-			}
-			eprintf ("Cannot read from buffer\n");
-			goto out_error;
-		}
-	}
-	for (i = 0; i < 20; i++) {
-		if (i <= 1) {
-			hash[i + 2 * j++] = (ut8) '/';
-		}
-		offset = j + 2 * i;
-		snprintf (hash + offset, hash_len - offset, "%02x", buf[i]);
-	}
-	offset = j + 2 * i;
-	snprintf (hash + offset, hash_len - offset - strlen (".debug"), ".debug");
-out_error:
-	if (bd >= 0) {
-		r_bin_file_delete (core->bin, (unsigned int) bd);
-		r_bin_file_set_cur_binfile (core->bin, old_cur);
-	}
-	r_bin_options_free (bo);
-}
-
+static int cmd_dbg_map_heap_glibc_32(RCore *core, const char *input);
+static int cmd_dbg_map_heap_glibc_64(RCore *core, const char *input);
 #endif // __linux__ && __GNU_LIBRARY__ && __GLIBC__ && __GLIBC_MINOR__
 
 static ut64 addroflib(RCore *core, const char *libname) {

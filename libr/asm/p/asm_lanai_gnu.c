@@ -11,10 +11,9 @@
 
 static unsigned long Offset = 0;
 static RStrBuf *buf_global = NULL;
-static int buf_global_size = 64; // hardcoded sizeof (RStrBuf.buf);
 static unsigned char bytes[4];
 
-static int lanai_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
+static int lanai_buffer_read_memory(bfd_vma memaddr, bfd_byte *myaddr, ut32 length, struct disassemble_info *info) {
 	memcpy (myaddr, bytes, length);
 	return 0;
 }

@@ -97,8 +97,8 @@ static int r_debug_native_reg_write (RDebug *dbg, int type, const ut8* buf, int 
 /* begin of debugger code */
 #if DEBUGGER
 
-#if !__APPLE__
-static int r_debug_handle_signals (RDebug *dbg) {
+#if !__APPLE__ && defined(WAIT_ON_ALL_CHILDREN)
+static int r_debug_handle_signals(RDebug *dbg) {
 #if __linux__
 	return linux_handle_signals (dbg);
 #else

@@ -1351,12 +1351,12 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 					m_state = m_arena;
 				}
 			} else {
-					char *bin = strtok (dup, ":");
-					m_state_str = strtok (NULL, ":");
-					m_state = r_num_get (NULL, m_state_str);
-					if (!m_state) {
-						m_state = m_arena;
-					}
+				strtok (dup, ":");
+				m_state_str = strtok (NULL, ":");
+				m_state = r_num_get (NULL, m_state_str);
+				if (!m_state) {
+					m_state = m_arena;
+				}
 			}
 			if (GH(is_arena) (core, m_arena, m_state)) {
 				if (!GH(update_main_arena) (core, m_state, main_arena)) {
@@ -1389,12 +1389,12 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 						m_state = m_arena;
 					}
 				} else {
-						char *bin = strtok (dup, ":");
-						m_state_str = strtok (NULL, ":");
-						m_state = r_num_get (NULL, m_state_str);
-						if (!m_state) {
-							m_state = m_arena;
-						}
+					strtok (dup, ":");
+					m_state_str = strtok (NULL, ":");
+					m_state = r_num_get (NULL, m_state_str);
+					if (!m_state) {
+						m_state = m_arena;
+					}
 				}
 				if (GH(is_arena) (core, m_arena, m_state)) {
 					if (!GH(update_main_arena) (core, m_state, main_arena)) {
