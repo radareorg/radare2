@@ -7,94 +7,6 @@
 #define SEXT9(imm) (((imm) & 0x100) ? (imm) | 0xFFFFFE00 : (imm))
 #define SEXT26(imm) (((imm) & 0x2000000) ? (imm) | 0xFC000000 : (imm))
 
-// Format I
-#define F1_REG1(instr) ((instr) & 0x1F)
-#define F1_REG2(instr) (((instr) & 0xF800) >> 11)
-
-#define F1_RN1(instr) (V850_REG_NAMES[F1_REG1(instr)])
-#define F1_RN2(instr) (V850_REG_NAMES[F1_REG2(instr)])
-
-// Format II
-#define F2_IMM(instr) F1_REG1(instr)
-#define F2_REG2(instr) F1_REG2(instr)
-
-#define F2_RN2(instr) (V850_REG_NAMES[F2_REG2(instr)])
-
-// Format III
-#define F3_COND(instr) ((instr) & 0xF)
-#define F3_DISP(instr) (((instr) & 0x70) >> 4) | (((instr) & 0xF800) >> 7)
-
-// Format IV
-#define F4_DISP(instr) ((instr) & 0x3F)
-#define F4_REG2(instr) F1_REG2(instr)
-
-#define F4_RN2(instr) (V850_REG_NAMES[F4_REG2(instr)])
-
-// Format V
-#define F5_REG2(instr) F1_REG2(instr)
-#define F5_DISP(instr) ((((ut32)(instr) & 0xffff) << 31) | (((ut32)(instr) & 0xffff0000) << 1))
-#define F5_RN2(instr) (V850_REG_NAMES[F5_REG2(instr)])
-
-// Format VI
-#define F6_REG1(instr) F1_REG1(instr)
-#define F6_REG2(instr) F1_REG2(instr)
-#define F6_IMM(instr) (((instr) & 0xFFFF0000) >> 16)
-
-#define F6_RN1(instr) (V850_REG_NAMES[F6_REG1(instr)])
-#define F6_RN2(instr) (V850_REG_NAMES[F6_REG2(instr)])
-
-// Format VII
-#define F7_REG1(instr) F1_REG1(instr)
-#define F7_REG2(instr) F1_REG2(instr)
-#define F7_DISP(instr) F6_IMM(instr)
-
-#define F7_RN1(instr) (V850_REG_NAMES[F7_REG1(instr)])
-#define F7_RN2(instr) (V850_REG_NAMES[F7_REG2(instr)])
-
-// Format VIII
-#define F8_REG1(instr) F1_REG1(instr)
-#define F8_DISP(instr) F6_IMM(instr)
-#define F8_BIT(instr) (((instr) & 0x3800) >> 11)
-#define F8_SUB(instr) (((instr) & 0xC000) >> 14)
-
-#define F8_RN1(instr) (V850_REG_NAMES[F8_REG1(instr)])
-#define F8_RN2(instr) (V850_REG_NAMES[F8_REG2(instr)])
-
-// Format IX
-// Also regID/cond
-#define F9_REG1(instr) F1_REG1(instr)
-#define F9_REG2(instr) F1_REG2(instr)
-#define F9_SUB(instr) (((instr) & 0x7E00000) >> 21)
-
-#define F9_RN1(instr) (V850_REG_NAMES[F9_REG1(instr)])
-#define F9_RN2(instr) (V850_REG_NAMES[F9_REG2(instr)])
-// TODO: Format X
-
-// Format XI
-#define F11_REG1(instr) F1_REG1(instr)
-#define F11_REG2(instr) F1_REG2(instr)
-#define F11_REG3(instr) (((instr) & 0xF8000000) >> 27)
-#define F11_SUB(instr) ((((instr) & 0x7E00000) >> 20) | (((instr) & 2) >> 1))
-
-#define F11_RN1(instr) (V850_REG_NAMES[F11_REG1(instr)])
-#define F11_RN2(instr) (V850_REG_NAMES[F11_REG2(instr)])
-// Format XII
-#define F12_IMM(instr) (F1_REG1(instr) | (((instr) & 0x7C0000) >> 13))
-#define F12_REG2(instr) F1_REG2(instr)
-#define F12_REG3(instr) (((instr) & 0xF8000000) >> 27)
-#define F12_SUB(instr) ((((instr) & 0x7800001) >> 22) | (((instr) & 2) >> 1))
-
-#define F12_RN2(instr) (V850_REG_NAMES[F12_REG2(instr)])
-#define F12_RN3(instr) (V850_REG_NAMES[F12_REG3(instr)])
-
-// Format XIII
-#define F13_IMM(instr) (((instr) & 0x3E) >> 1)
-// Also a subopcode
-#define F13_REG2(instr) (((instr) & 0x1F0000) >> 16)
-#define F13_LIST(instr) (((instr) && 0xFFE00000) >> 21)
-
-#define F13_RN2(instr) (V850_REG_NAMES[F13_REG2(instr)])
-
 enum v850_cmd_opcodes {
 	V850_MOV	= 0x0,
 	V850_NOT	= 0x1,
@@ -199,15 +111,15 @@ enum v850_extension2 {
 
 enum v850_regs {
 	V850_ZERO = 0x0,
-	V850_R1	= 0x1,
-	V850_R2	= 0x2,
-	V850_SP	= 0x3,
-	V850_GP	= 0x4,
-	V850_TP	= 0x5,
-	V850_R6	= 0x6,
-	V850_R7	= 0x7,
-	V850_R8	= 0x8,
-	V850_R9	= 0x9,
+	V850_R1 = 0x1,
+	V850_R2 = 0x2,
+	V850_SP = 0x3,
+	V850_GP = 0x4,
+	V850_TP = 0x5,
+	V850_R6 = 0x6,
+	V850_R7 = 0x7,
+	V850_R8 = 0x8,
+	V850_R9 = 0x9,
 	V850_R10 = 0xA,
 	V850_R11 = 0xB,
 	V850_R12 = 0xC,
@@ -230,41 +142,6 @@ enum v850_regs {
 	V850_R29 = 0x1D,
 	V850_EP = 0x1E,
 	V850_LP = 0x1F,
-};
-
-static const char* V850_REG_NAMES[] = {
-	"zero",
-	"r1",
-	"r2",
-	"r3",
-	"r4",
-	"r5",
-	"r6",
-	"r7",
-	"r8",
-	"r9",
-	"r10",
-	"r11",
-	"r12",
-	"r13",
-	"r14",
-	"r15",
-	"r16",
-	"r17",
-	"r18",
-	"r19",
-	"r20",
-	"r21",
-	"r22",
-	"r23",
-	"r24",
-	"r25",
-	"r26",
-	"r27",
-	"r28",
-	"r29",
-	"ep",
-	"lp",
 };
 
 enum v850_sysregs {

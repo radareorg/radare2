@@ -34,8 +34,6 @@
 
 #define MENU_NUM(x) ((int)sizeof (x) / (int)sizeof (const char *)) - 1
 
-static const int layoutMaxCount = 2;
-
 enum {
 	LAYOUT_DEFAULT = 0,
 	LAYOUT_BALANCE = 1
@@ -884,41 +882,40 @@ static void handleZoomMode(RCore *core, const int key) {
 
 static void handleWindowMode(RCore *core, const int key) {
 	RPanels *panels = core->panels;
-	RPanel *panel = panels->panel;
 	switch (key) {
-		case 'Q':
-		case 'q':
-			toggleWindowMode (panels);
-			break;
-		case 0x0d:
-			toggleZoomMode (panels);
-			break;
-		case 'h':
-			if (moveToDirection (panels, LEFT)) {
-				setRefreshAll (panels);
-			}
-			break;
-		case 'j':
-			if (moveToDirection (panels, DOWN)) {
-				setRefreshAll (panels);
-			}
-			break;
-		case 'k':
-			if (moveToDirection (panels, UP)) {
-				setRefreshAll (panels);
-			}
-			break;
-		case 'l':
-			if (moveToDirection (panels, RIGHT)) {
-				setRefreshAll (panels);
-			}
-			break;
-		case 9:
-			handleTabKey (core, false);
-			break;
-		case 'Z':
-			handleTabKey (core, true);
-			break;
+	case 'Q':
+	case 'q':
+		toggleWindowMode (panels);
+		break;
+	case 0x0d:
+		toggleZoomMode (panels);
+		break;
+	case 'h':
+		if (moveToDirection (panels, LEFT)) {
+			setRefreshAll (panels);
+		}
+		break;
+	case 'j':
+		if (moveToDirection (panels, DOWN)) {
+			setRefreshAll (panels);
+		}
+		break;
+	case 'k':
+		if (moveToDirection (panels, UP)) {
+			setRefreshAll (panels);
+		}
+		break;
+	case 'l':
+		if (moveToDirection (panels, RIGHT)) {
+			setRefreshAll (panels);
+		}
+		break;
+	case 9:
+		handleTabKey (core, false);
+		break;
+	case 'Z':
+		handleTabKey (core, true);
+		break;
 	}
 }
 

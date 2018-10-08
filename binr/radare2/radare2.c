@@ -477,7 +477,6 @@ int main(int argc, char **argv, char **envp) {
 	int do_connect = 0;
 	bool fullfile = false;
 	int has_project;
-	int prefile = 0;
 	bool zerosep = false;
 	int help = 0;
 	int run_anal = 1;
@@ -542,11 +541,8 @@ int main(int argc, char **argv, char **envp) {
 	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
 	if (argc > 2 && !strcmp (argv[1], "-") && !strcmp (argv[2], "-i")) {
 		argv[1] = argv[0];
-		prefile = 1;
 		argc--;
 		argv++;
-	} else {
-		prefile = 0;
 	}
 
 	// -H option without argument
@@ -854,15 +850,6 @@ int main(int argc, char **argv, char **envp) {
 	r_list_free (prefiles);
 	prefiles = NULL;
 
-#if 0
-	// if "- -i" is used we will open malloc:// instead
-	// HACK TO PERMIT '#!/usr/bin/r2 - -i' hashbangs
-	if (prefile) {
-		optind = 1;
-		argc = 2;
-		argv[1] = "-";
-	}
-#endif
 	r_bin_force_plugin (r.bin, forcebin);
 
 	//cverify_version (0);

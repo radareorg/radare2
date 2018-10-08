@@ -1624,7 +1624,7 @@ static void ds_show_functions(RDisasmState *ds) {
 				// This avoids false positives present in argument recovery
 				// and straight away print arguments fetched from types db
 				for (i = 0; i < argc; i++) {
-					const char *type = r_type_func_args_type (TDB, fname, i);
+					char *type = r_type_func_args_type (TDB, fname, i);
 					const char *name = r_type_func_args_name (TDB, fname, i);
 					if (i == argc - 1) {
 						comma = false;

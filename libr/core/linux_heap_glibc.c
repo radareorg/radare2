@@ -1344,7 +1344,8 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 		if (GH(r_resolve_main_arena) (core, &m_arena)) {
 			char *m_state_str, *dup = strdup (input + 1);
 			if (*dup) {
-				m_state_str = strtok (dup, ":");
+				strtok (dup, ":");
+				m_state_str = strtok (NULL, ":");
 				m_state = r_num_get (NULL, m_state_str);
 				if (!m_state) {
 					m_state = m_arena;
@@ -1379,7 +1380,8 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 		if (GH(r_resolve_main_arena) (core, &m_arena)) {
 			char *m_state_str, *dup = strdup (input + 1);
 			if (*dup) {
-				m_state_str = strtok (dup, ":");
+				strtok (dup, ":");
+				m_state_str = strtok (NULL, ":");
 				m_state = r_num_get (NULL, m_state_str);
 				if (!m_state) {
 					m_state = m_arena;

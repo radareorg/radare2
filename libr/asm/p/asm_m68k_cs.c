@@ -108,13 +108,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		}
 	}
 	cs_free (insn, n);
-	beach:
+beach:
 	//cs_close (&cd);
 	if (op) {
-		const char *bufasm = r_asm_op_get_asm (op);
 		if (!strncmp (buf_asm, "dc.w", 4)) {
 			r_asm_op_set_asm (op, "invalid");
-			bufasm = r_asm_op_get_asm (op);
 		}
 		return op->size;
 	}
