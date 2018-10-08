@@ -439,17 +439,6 @@ static void ds_comment_lineup(RDisasmState *ds) {
 	_ALIGN;
 }
 
-static void ds_begin_comment(RDisasmState *ds) {
-	if (ds->show_comment_right) {
-		_ALIGN;
-	} else {
-		if (ds->use_json) {
-			ds_begin_json_line (ds);
-		}
-		ds_pre_xrefs (ds, false);
-	}
-}
-
 static void ds_comment_(RDisasmState *ds, bool align, bool nl, const char *format, va_list ap) {
 	if (ds->show_comments) {
 		if (ds->show_comment_right && align) {
@@ -1408,6 +1397,17 @@ static void ds_pre_xrefs(RDisasmState *ds, bool no_fcnlines) {
 	ds->line = tmp;
 }
 
+static void ds_begin_comment(RDisasmState *ds) {
+	if (ds->show_comment_right) {
+		_ALIGN;
+	} else {
+		if (ds->use_json) {
+			ds_begin_json_line (ds);
+		}
+		ds_pre_xrefs (ds, false);
+	}
+}
+
 static int var_comparator(const RAnalVar *a, const RAnalVar *b){
 	if (a && b) {
 		return a->delta > b->delta;
@@ -1981,11 +1981,14 @@ static void ds_show_flags(RDisasmState *ds) {
 		}
 		ds_begin_json_line (ds);
 
+
 		bool fake_flag_marks = (!ds->show_offset && ds->show_marks);
-		if (ds->show_flgoff && ds->show_offset) {
+		if (ds->show_flgoff) {
 			ds_beginline (ds);
 			ds_print_offset (ds);
-			r_cons_printf (" ");
+			if (!fake_flag_marks) {
+				r_cons_printf (" ");
+			}
 		} else {
 			bool no_fcn_lines = (f && f->addr == flag->offset);
 			ds_pre_xrefs (ds, no_fcn_lines);
@@ -2007,7 +2010,7 @@ static void ds_show_flags(RDisasmState *ds) {
 			}
 		}
 
-		if (!ds->show_flgoff) {
+		if (!ds->show_flgoff || fake_flag_marks) {
 			r_cons_printf (";-- ");
 		}
 
