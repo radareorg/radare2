@@ -853,8 +853,10 @@ static int cmd_info(void *data, const char *input) {
         			}
 			} else {
 				RBinObject *obj = r_bin_cur_object (core->bin);
-				int len = obj? r_list_length (obj->classes): 0;
-				RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);
+				if (obj && obj->classes) {
+					int len = r_list_length (obj->classes);
+					RBININFO ("classes", R_CORE_BIN_ACC_CLASSES, NULL, len);
+				}
 			}
 			break;
 		case 'D': // "iD"

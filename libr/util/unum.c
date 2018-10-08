@@ -51,7 +51,7 @@ R_API void r_num_minmax_swap(ut64 *a, ut64 *b) {
 }
 
 R_API void r_num_minmax_swap_i(int *a, int *b) {
-	if (*a>*b) {
+	if (*a > *b) {
 		ut64 tmp = *a;
 		*a = *b;
 		*b = tmp;
@@ -145,6 +145,17 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 	}
 	if (!*str) {
 		return 0;
+	}
+	if (!strncmp (str, "1u", 2)) { // '1' is captured by op :(
+		if (num->value == UT64_MAX) {
+			num->value = 0;
+		}
+		switch (atoi (str + 2)) {
+		case 64: return (ut64)UT64_MAX;
+		case 32: return (ut64)UT32_MAX;
+		case 16: return (ut64)UT16_MAX;
+		case 8: return (ut64)UT8_MAX;
+		}
 	}
 	/* resolve string with an external callback */
 	if (num && num->callback) {

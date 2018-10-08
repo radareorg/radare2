@@ -138,12 +138,10 @@ static int dalvik_disassemble (RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			break;
 		case fmtopvAAcBBBBBBBBBBBBBBBB:
 			vA = (int) buf[1];
-			#define llint long long int
-			llint lB = (llint)buf[2] | ((llint)buf[3] << 8)|
-				((llint)buf[4] << 16) | ((llint)buf[5] << 24)|
-				((llint)buf[6] << 32) | ((llint)buf[7] << 40)|
-				((llint)buf[8] << 48) | ((llint)buf[9] << 56);
-			#undef llint
+			ut64 lB = (ut64)buf[2] | ((ut64)buf[3] << 8)|
+				((ut64)buf[4] << 16) | ((ut64)buf[5] << 24)|
+				((ut64)buf[6] << 32) | ((ut64)buf[7] << 40)|
+				((ut64)(buf[8]&0xff) << 48) | ((ut64)(buf[9]&0xff) << 56);
 			snprintf (str, sizeof (str), " v%i:v%i, 0x%"PFMT64x, vA, vA + 1, lB);
 			strasm = r_str_append (strasm, str);
 			break;

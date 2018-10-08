@@ -45,7 +45,7 @@ R_API int r_type_kind(Sdb *TDB, const char *name) {
 }
 
 R_API RList* r_type_get_enum (Sdb *TDB, const char *name) {
-	char *p, *val, var[130], var2[130];
+	char *p, var[130];
 	int n;
 
 	if (r_type_kind (TDB, name) != R_TYPE_ENUM) {
@@ -55,11 +55,20 @@ R_API RList* r_type_get_enum (Sdb *TDB, const char *name) {
 	snprintf (var, sizeof (var), "enum.%s", name);
 	for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
 		RTypeEnum *member = R_NEW0 (RTypeEnum);
-		snprintf (var2, sizeof (var2), "%s.%s", var, p);
-		val = sdb_array_get (TDB, var2, 0, NULL);
-		member->name = p;
-		member->val = val;
-		r_list_append (res, member);
+		if (member) {
+			char *var2 = r_str_newf ("%s.%s", var, p);
+			if (var2) {
+				char *val = sdb_array_get (TDB, var2, 0, NULL);
+				if (val) {
+					member->name = p;
+					member->val = val;
+					r_list_append (res, member);
+				} else {
+					free (member);
+					free (var2);
+				}
+			}
+		}
 	}
 	return res;
 }

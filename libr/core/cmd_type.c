@@ -88,12 +88,13 @@ static const char *help_msg_te[] = {
 	"Usage: te[...]", "", "",
 	"te", "", "List all loaded enums",
 	"te", " <enum>", "Print all values of enum for given name",
+	"tej", "", "List all loaded enums in json",
+	"tej", " <enum>", "Show enum in json",
 	"te", " <enum> <value>", "Show name for given enum number",
 	"teb", " <enum> <name>", "Show matching enum bitfield for given name",
 	"te?", "", "show this help",
 	NULL
 };
-
 
 static const char *help_msg_tt[] = {
 	"Usage: tt[...]", "", "",
@@ -129,6 +130,8 @@ static const char *help_msg_ts[] = {
 	"Usage: ts[...]", " [type]", "",
 	"ts", "", "List all loaded structs",
 	"ts", " [type]", "Show pf format string for given struct",
+	"tsj", "", "List all loaded structs in json",
+	"tsj", " [type]", "Show pf format string for given struct in json",
 	"ts*", " [type]", "Show pf.<name> format string for given struct",
 	"tss", " [type]", "Display size of struct",
 	"ts?", "", "show this help",
@@ -139,6 +142,8 @@ static const char *help_msg_tu[] = {
 	"Usage: tu[...]", "", "",
 	"tu", "", "List all loaded unions",
 	"tu", " [type]", "Show pf format string for given union",
+	"tuj", "", "List all loaded unions in json",
+	"tuj", " [type]", "Show pf format string for given union in json",
 	"tu*", " [type]", "Show pf.<name> format string for given union",
 	"tu?", "", "show this help",
 	NULL
@@ -170,10 +175,14 @@ static void showFormat(RCore *core, const char *name, int mode) {
 		char *fmt = r_type_format (core->anal->sdb_types, name);
 		if (fmt) {
 			r_str_trim (fmt);
-			if (mode) {
-				r_cons_printf ("pf.%s %s\n", name, fmt);
+			if (mode == 'j') {
+				r_cons_printf ("{\"name\":\"%s\",\"format\":\"%s\"}", name, fmt);
 			} else {
-				r_cons_printf ("pf %s\n", fmt);
+				if (mode) {
+					r_cons_printf ("pf.%s %s\n", name, fmt);
+				} else {
+					r_cons_printf ("pf %s\n", fmt);
+				}
 			}
 			free (fmt);
 		} else {
@@ -253,9 +262,18 @@ static void save_parsed_type(RCore *core, const char *parsed) {
 //TODO
 //look at the next couple of functions
 //can be optimized into one right ... you see it you do it :P
-static int stdprintifstruct (void *p, const char *k, const char *v) {
+static int stdprintifstruct(void *p, const char *k, const char *v) {
 	if (!strncmp (v, "struct", strlen ("struct") + 1)) {
 		r_cons_println (k);
+	}
+	return 1;
+}
+
+static const char *Gcomma = "";
+static int stdprintifstructjson(void *p, const char *k, const char *v) {
+	if (!strncmp (v, "struct", strlen ("struct") + 1)) {
+		r_cons_printf ("%s\"%s\"", Gcomma, k);
+		Gcomma = ",";
 	}
 	return 1;
 }
@@ -298,7 +316,14 @@ static int stdprintiffunc (void *p, const char *k, const char *v) {
 	return 1;
 }
 
-static int stdprintifunion (void *p, const char *k, const char *v) {
+static int stdprintifunionjson(void *p, const char *k, const char *v) {
+	if (!strncmp (v, "union", strlen ("union") + 1)) {
+		r_cons_printf ("\"%s\"", k);
+	}
+	return 1;
+}
+
+static int stdprintifunion(void *p, const char *k, const char *v) {
 	if (!strncmp (v, "union", strlen ("union") + 1)) {
 		r_cons_println (k);
 	}
@@ -633,6 +658,13 @@ static int cmd_type(void *data, const char *input) {
 				showFormat (core, r_str_trim_ro (input + 2), 1);
 			}
 			break;
+		case 'j':
+			if (input[2]) {
+				showFormat (core, r_str_trim_ro (input + 2), 'j');
+			} else {
+				sdb_foreach (TDB, stdprintifunionjson, core);
+			}
+			break;
 		case ' ':
 			showFormat (core, r_str_trim_ro (input + 1), 0);
 			break;
@@ -717,6 +749,18 @@ static int cmd_type(void *data, const char *input) {
 		case 0:
 			sdb_foreach (TDB, stdprintifstruct, core);
 			break;
+		case 'j': // "tsj"
+			// TODO: current output is a bit poor, will be good to improve
+			if (input[2]) {
+				showFormat (core, r_str_trim_ro (input + 2), 'j');
+				r_cons_newline ();
+			} else {
+				r_cons_printf ("[");
+				Gcomma = "";
+				sdb_foreach (TDB, stdprintifstructjson, core);
+				r_cons_printf ("]\n");
+			}
+			break;
 		}
 	} break;
 	case 'e': { // "te"
@@ -733,24 +777,81 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 		switch (input[1]) {
-		case '?' :
+		case '?':
 			r_core_cmd_help (core, help_msg_te);
 			break;
-		case 'b' :
+		case 'j': // "tej"
+			if (input[2] == 0) { // "tej"
+				char *name = NULL;
+				SdbKv *kv;
+				SdbListIter *iter;
+				SdbList *l = sdb_foreach_list (TDB, true);
+				const char *comma = "";
+				r_cons_printf ("{");
+				ls_foreach (l, iter, kv) {
+					if (!strcmp (sdbkv_value (kv), "enum")) {
+						if (!name || strcmp (sdbkv_value (kv), name)) {
+							free (name);
+							name = strdup (sdbkv_key (kv));
+							r_cons_printf ("%s\"%s\":", comma, name);
+							//r_cons_printf ("%s\"%s\"", comma, name);
+							{
+								RList *list = r_type_get_enum (TDB, name);
+								if (list && !r_list_empty (list)) {
+									r_cons_printf ("{");
+									RListIter *iter;
+									RTypeEnum *member;
+									const char *comma = "";
+									r_list_foreach (list, iter, member) {
+										r_cons_printf ("%s\"%s\":%d", comma, member->name, r_num_math (NULL, member->val));
+										comma = ",";
+									}
+									r_cons_printf ("}");
+								}
+								r_list_free (list);
+							}
+							comma = ",";
+						}
+					}
+				}
+				r_cons_printf ("}\n");
+				ls_free (l);
+			} else { // "tej ENUM"
+				RListIter *iter;
+				RTypeEnum *member = R_NEW0 (RTypeEnum);
+				if (member_name) {
+					res = r_type_enum_member (TDB, name, NULL, r_num_math (core->num, member_name));
+					// NEVER REACHED
+				} else {
+					RList *list = r_type_get_enum (TDB, name);
+					if (list && !r_list_empty (list)) {
+						r_cons_printf ("{\"name\":\"%s\",\"values\":{", name);
+						const char *comma = "";
+						r_list_foreach (list, iter, member) {
+							r_cons_printf ("%s\"%s\":%d", comma, member->name, r_num_math (NULL, member->val));
+							comma = ",";
+						}
+						r_cons_printf ("}}\n");
+					}
+					r_list_free (list);
+				}
+			}
+			break;
+		case 'b': // "teb"
 			res = r_type_enum_member (TDB, name, member_name, 0);
 			break;
-		case ' ' : {
-			RListIter *iter;
-			RTypeEnum *member = R_NEW0 (RTypeEnum);
+		case ' ' :
 			if (member_name) {
 				res = r_type_enum_member (TDB, name, NULL, r_num_math (core->num, member_name));
 			} else {
 				RList *list = r_type_get_enum (TDB, name);
+				RListIter *iter;
+				RTypeEnum *member;
 				r_list_foreach (list, iter, member) {
 					r_cons_printf ("%s = %s\n", member->name, member->val);
 				}
 			}
-		} break;
+			break;
 		case '\0' : {
 			char *name = NULL;
 			SdbKv *kv;
