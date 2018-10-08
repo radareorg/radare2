@@ -184,7 +184,7 @@ static void sdb_fini(Sdb* s, int donull) {
 	free (s->ndump);
 	free (s->dir);
 	free (sdbkv_value (&s->tmpkv));
-	s->tmpkv.value_len = 0;
+	s->tmpkv.base.value_len = 0;
 	if (donull) {
 		memset (s, 0, sizeof (Sdb));
 	}
@@ -486,25 +486,25 @@ SDB_API SdbKv* sdbkv_new2(const char *k, int kl, const char *v, int vl) {
 		return NULL;
 	}
 	kv = R_NEW0 (SdbKv);
-	kv->key_len = kl;
-	kv->key = malloc (sdbkv_key_len (kv) + 1);
-	if (!sdbkv_key (kv)) {
+	kv->base.key_len = kl;
+	kv->base.key = malloc (kv->base.key_len + 1);
+	if (!kv->base.key) {
 		free (kv);
 		return NULL;
 	}
-	memcpy (sdbkv_key (kv), k, sdbkv_key_len (kv) + 1);
-	kv->value_len = vl;
+	memcpy (kv->base.key, k, kv->base.key_len + 1);
+	kv->base.value_len = vl;
 	if (vl) {
-		kv->value = malloc (vl + 1);
-		if (!sdbkv_value (kv)) {
-			free (sdbkv_key (kv));
+		kv->base.value = malloc (vl + 1);
+		if (!kv->base.value) {
+			free (kv->base.key);
 			free (kv);
 			return NULL;
 		}
-		memcpy (sdbkv_value (kv), v, vl + 1);
+		memcpy (kv->base.value, v, vl + 1);
 	} else {
-		kv->value = NULL;
-		kv->value_len = 0;
+		kv->base.value = NULL;
+		kv->base.value_len = 0;
 	}
 	kv->cas = nextcas ();
 	kv->expire = 0LL;
@@ -559,16 +559,16 @@ static ut32 sdb_set_internal(Sdb* s, const char *key, char *val, int owned, ut32
 			}
 			kv->cas = cas = nextcas ();
 			if (owned) {
-				kv->value_len = vlen;
-				free (sdbkv_value (kv));
-				kv->value = val; // owned
+				kv->base.value_len = vlen;
+				free (kv->base.value);
+				kv->base.value = val; // owned
 			} else {
-				if ((ut32)vlen > sdbkv_value_len (kv)) {
-					free (sdbkv_value (kv));
-					kv->value = malloc (vlen + 1);
+				if ((ut32)vlen > kv->base.value_len) {
+					free (kv->base.value);
+					kv->base.value = malloc (vlen + 1);
 				}
-				memcpy (sdbkv_value (kv), val, vlen + 1);
-				kv->value_len = vlen;
+				memcpy (kv->base.value, val, vlen + 1);
+				kv->base.value_len = vlen;
 			}
 		} else {
 			sdb_ht_delete (s->ht, key);
@@ -581,8 +581,8 @@ static ut32 sdb_set_internal(Sdb* s, const char *key, char *val, int owned, ut32
 	if (owned) {
 		kv = sdbkv_new2 (key, klen, NULL, 0);
 		if (kv) {
-			kv->value = val;
-			kv->value_len = vlen;
+			kv->base.value = val;
+			kv->base.value_len = vlen;
 		}
 	} else {
 		kv = sdbkv_new2 (key, klen, val, vlen);
@@ -609,21 +609,64 @@ static int sdb_foreach_list_cb(void *user, const char *k, const char *v) {
 	SdbList *list = (SdbList *)user;
 	SdbKv *kv = R_NEW0 (SdbKv);
 	/* seems like some k/v are constructed in the stack and cant be used after returning */
-	kv->key = strdup (k);
-	kv->value = strdup (v);
+	kv->base.key = strdup (k);
+	kv->base.value = strdup (v);
 	ls_append (list, kv);
 	return 1;
 }
 
 static int __cmp_asc(const void *a, const void *b) {
-	const SdbKv *ka = a;
-	const SdbKv *kb = b;
+	const SdbKv *ka = a, *kb = b;
 	return strcmp (sdbkv_key (ka), sdbkv_key (kb));
 }
 
 SDB_API SdbList *sdb_foreach_list(Sdb* s, bool sorted) {
 	SdbList *list = ls_newf ((SdbListFree)sdbkv_free);
 	sdb_foreach (s, sdb_foreach_list_cb, list);
+	if (sorted) {
+		ls_sort (list, __cmp_asc);
+	}
+	return list;
+}
+
+struct foreach_list_filter_t {
+	SdbForeachCallback filter;
+	SdbList *list;
+};
+
+static int sdb_foreach_list_filter_cb(void *user, const char *k, const char *v) {
+	struct foreach_list_filter_t *u = (struct foreach_list_filter_t *)user;
+	SdbList *list = u->list;
+	SdbKv *kv = NULL;
+
+	if (!u->filter || u->filter (NULL, k, v)) {
+		kv = R_NEW0 (SdbKv);
+		if (!kv) {
+			goto err;
+		}
+		kv->base.key = strdup (k);
+		kv->base.value = strdup (v);
+		if (!kv->base.key || !kv->base.value) {
+			goto err;
+		}
+		ls_append (list, kv);
+	}
+	return 1;
+ err:
+	sdbkv_free (kv);
+	return 0;
+}
+
+SDB_API SdbList *sdb_foreach_list_filter(Sdb* s, SdbForeachCallback filter, bool sorted) {
+	struct foreach_list_filter_t u;
+	SdbList *list = ls_newf ((SdbListFree)sdbkv_free);
+
+	if (!list) {
+		return NULL;
+	}
+	u.filter = filter;
+	u.list = list;
+	sdb_foreach (s, sdb_foreach_list_filter_cb, &u);
 	if (sorted) {
 		ls_sort (list, __cmp_asc);
 	}
@@ -638,11 +681,11 @@ typedef struct {
 
 static int sdb_foreach_match_cb(void *user, const char *k, const char *v) {
 	_match_sdb_user *o = (_match_sdb_user*)user;
-	SdbKv tkv = { .key = (char*)k, .value = (char*)v };
+	SdbKv tkv = { .base.key = (char*)k, .base.value = (char*)v };
 	if (sdbkv_match (&tkv, o->expr)) {
 		SdbKv *kv = R_NEW0 (SdbKv);
-		kv->key = strdup (k);
-		kv->value = strdup (v);
+		kv->base.key = strdup (k);
+		kv->base.value = strdup (v);
 		ls_append (o->list, kv);
 		if (o->single) {
 			return 0;
@@ -674,9 +717,6 @@ static int getbytes(Sdb *s, char *b, int len) {
 
 static bool sdb_foreach_end(Sdb *s, bool result) {
 	s->depth--;
-	if (!s->depth) {
-		ht_free_deleted (s->ht);
-	}
 	return result;
 }
 
@@ -710,7 +750,7 @@ static bool sdb_foreach_cdb(Sdb *s, SdbForeachCallback cb,
 }
 
 SDB_API bool sdb_foreach(Sdb* s, SdbForeachCallback cb, void *user) {
-	SdbListIter *iter;
+	SdbListIter *iter, *tmp;
 	SdbKv *kv;
 	bool result;
 	if (!s) {
@@ -721,19 +761,9 @@ SDB_API bool sdb_foreach(Sdb* s, SdbForeachCallback cb, void *user) {
 	if (!result) {
 		return sdb_foreach_end (s, false);
 	}
-#if INSERTORDER
-	ls_foreach (s->ht->list, iter, kv) {
-		if (!kv || !sdbkv_value (kv) || !*sdbkv_value (kv)) {
-			continue;
-		}
-		if (!cb (user, sdbkv_key (kv), sdbkv_value (kv))) {
-			return sdb_foreach_end (s, false);
-		}
-	}
-#else
 	ut32 i;
 	for (i = 0; i < s->ht->size; i++) {
-		ls_foreach (s->ht->table[i], iter, kv) {
+		ls_foreach_safe (s->ht->table[i], iter, tmp, kv) {
 			if (!kv || !sdbkv_value (kv) || !*sdbkv_value (kv)) {
 				continue;
 			}
@@ -742,7 +772,6 @@ SDB_API bool sdb_foreach(Sdb* s, SdbForeachCallback cb, void *user) {
 			}
 		}
 	}
-#endif
 	return sdb_foreach_end (s, true);
 }
 
@@ -814,10 +843,10 @@ SDB_API SdbKv *sdb_dump_next(Sdb* s) {
 	}
 	vl--;
 	strncpy (sdbkv_key (&s->tmpkv), k, SDB_KSZ - 1);
-	s->tmpkv.key[SDB_KSZ - 1] = '\0';
+	s->tmpkv.base.key[SDB_KSZ - 1] = '\0';
 	free (sdbkv_value (&s->tmpkv));
-	s->tmpkv.value = v;
-	s->tmpkv.value_len = vl;
+	s->tmpkv.base.value = v;
+	s->tmpkv.base.value_len = vl;
 	return &s->tmpkv;
 }
 

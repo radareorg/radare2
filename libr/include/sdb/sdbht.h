@@ -6,32 +6,29 @@
 /** keyvalue pair **/
 typedef struct sdb_kv {
 	//sub of HtKv so we can cast safely
-	char *key;
-	char *value;
-	ut32 key_len;
-	ut32 value_len;
+	HtKv base;
 	ut32 cas;
 	ut64 expire;
 } SdbKv;
 
 static inline char *sdbkv_key(const SdbKv *kv) {
-	return kv->key;
+	return kv->base.key;
 }
 
 static inline char *sdbkv_value(const SdbKv *kv) {
-	return kv->value;
+	return (char *)kv->base.value;
 }
 
 static inline ut32 sdbkv_key_len(const SdbKv *kv) {
-	return kv->key_len;
+	return kv->base.key_len;
 }
 
 static inline ut32 sdbkv_value_len(const SdbKv *kv) {
-	return kv->value_len;
+	return kv->base.value_len;
 }
 
 SDB_API SdbKv* sdbkv_new2(const char *k, int kl, const char *v, int vl);
-extern SdbKv* sdbkv_new(const char *k, const char *v);
+SDB_API SdbKv* sdbkv_new(const char *k, const char *v);
 extern void sdbkv_free(SdbKv *kv);
 
 extern ut32 sdb_hash(const char *key);
@@ -39,7 +36,6 @@ extern ut32 sdb_hash(const char *key);
 SDB_API SdbHt* sdb_ht_new(void);
 // Destroy a hashtable and all of its entries.
 SDB_API void sdb_ht_free(SdbHt* ht);
-SDB_API void sdb_ht_free_deleted(SdbHt* ht);
 // Insert a new Key-Value pair into the hashtable. If the key already exists, returns false.
 SDB_API bool sdb_ht_insert(SdbHt* ht, const char* key, const char* value);
 // Insert a new Key-Value pair into the hashtable, or updates the value if the key already exists.
