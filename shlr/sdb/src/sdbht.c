@@ -11,10 +11,10 @@ static bool sdb_ht_internal_insert(SdbHt* ht, const char* key,
 	}
 	SdbKv* kvp = calloc (1, sizeof (SdbKv));
 	if (kvp) {
-		kvp->key = strdup ((void *)key);
-		kvp->value = strdup ((void *)value);
-		kvp->key_len = strlen (sdbkv_key (kvp));
-		kvp->value_len = strlen (sdbkv_value (kvp));
+		kvp->base.key = strdup ((void *)key);
+		kvp->base.value = strdup ((void *)value);
+		kvp->base.key_len = strlen (sdbkv_key (kvp));
+		kvp->base.value_len = strlen (sdbkv_value (kvp));
 		kvp->expire = 0;
 		return ht_insert_kv (ht, (HtKv*)kvp, update);
 	}
@@ -47,8 +47,4 @@ SDB_API void sdb_ht_free(SdbHt *ht) {
 
 SDB_API bool sdb_ht_delete(SdbHt* ht, const char *key) {
 	return ht_delete (ht, key);
-}
-
-SDB_API void sdb_ht_free_deleted(SdbHt* ht) {
-	ht_free_deleted (ht);
 }

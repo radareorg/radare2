@@ -49,7 +49,9 @@ SDB_API int sdb_json_num_get (Sdb *s, const char *k, const char *p, ut32 *cas) {
 	char *v = sdb_get (s, k, cas);
 	if (v) {
 		Rangstr rs = json_get (v, p);
-		return rangstr_int (&rs);
+		int ret = rangstr_int (&rs);
+		free (v);
+		return ret;
 	}
 	return 0;
 }
