@@ -1632,10 +1632,9 @@ static void ds_show_functions(RDisasmState *ds) {
 					int len = strlen(type);
 					r_cons_printf ("%s%s%s%s", type, type[len - 1] == '*' ? "" : " ",
 							name, comma?", ":"");
-
-                    if ( type ) {
-                        free(type);
-                    }
+					if (type) {
+						free (type);
+ 					}
 				}
 				goto beach;
 			}
