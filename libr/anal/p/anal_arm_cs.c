@@ -1589,7 +1589,7 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		}
 		break;
 	case ARM_INS_CMP:
-		r_strbuf_appendf (&op->esil, "%s,%s,^,!,zf,=", ARG(1), ARG(0));
+		r_strbuf_appendf (&op->esil, "%s,%s,-,$z,zf,=,$s,nf,=,$b16,cf,=,$o,vf,=", ARG(1), ARG(0));
 		break;
 	case ARM_INS_CMN:
 		r_strbuf_appendf (&op->esil, "%s,%s,^,!,!,zf,=", ARG(1), ARG(0));
