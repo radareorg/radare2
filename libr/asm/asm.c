@@ -695,12 +695,11 @@ static void flag_free_kv(HtKv *kv) {
 	free (kv);
 }
 
-static char* dup_val(void *v) {
-	char *str = strdup ((char *)v);
-	return str;
+static void *dup_val(const void *v) {
+	return (void *)strdup ((char *)v);
 }
 
-R_API RAsmCode* r_asm_massemble(RAsm *a, const char *buf) {
+R_API RAsmCode *r_asm_massemble(RAsm *a, const char *buf) {
 	int labels = 0, num, stage, ret, idx, ctr, i, j, linenum = 0;
 	char *lbuf = NULL, *ptr2, *ptr = NULL, *ptr_start = NULL;
 	char *tokens[R_ASM_BUFSIZE], buf_token[R_ASM_BUFSIZE];
