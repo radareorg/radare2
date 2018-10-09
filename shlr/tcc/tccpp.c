@@ -1073,7 +1073,9 @@ ST_INLN void define_push(int v, int macro_type, int *str, Sym *first_arg)
 	}
 	s->d = str;
 	s->next = first_arg;
-	table_ident[v - TOK_IDENT]->sym_define = s;
+	if (v >= TOK_IDENT) {
+		table_ident[v - TOK_IDENT]->sym_define = s;
+	}
 }
 
 /* undefined a define symbol. Its name is just set to zero */
