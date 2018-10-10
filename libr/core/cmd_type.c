@@ -259,42 +259,6 @@ static void save_parsed_type(RCore *core, const char *parsed) {
 	}
 }
 
-// TODO these are going to be moved in sdb
-static int __cmp_asc(const void *a, const void *b) {
-	const SdbKv *ka = a;
-	const SdbKv *kb = b;
-	return strcmp (sdbkv_key (ka), sdbkv_key (kb));
-}
-
-struct foreach_list_filter_t {
-	SdbForeachCallback filter;
-	SdbList *list;
-};
-
-static int foreach_list_filter_cb(void *user, const char *k, const char *v) {
-	struct foreach_list_filter_t *u = (struct foreach_list_filter_t *)user;
-	SdbList *list = u->list;
-	if (!u->filter || u->filter (NULL, k, v)) {
-		SdbKv *kv = R_NEW0 (SdbKv);
-		kv->key = strdup (k);
-		kv->value = strdup (v);
-		ls_append (list, kv);
-	}
-	return 1;
-}
-
-static SdbList *foreach_list_filter(Sdb *s, SdbForeachCallback filter, bool sorted) {
-	SdbList *list = ls_newf ((SdbListFree)sdbkv_free);
-	struct foreach_list_filter_t u;
-	u.filter = filter;
-	u.list = list;
-	sdb_foreach (s, foreach_list_filter_cb, &u);
-	if (sorted) {
-		ls_sort (list, __cmp_asc);
-	}
-	return list;
-}
-
 static int stdifstruct(void *user, const char *k, const char *v) {
 	return !strncmp (v, "struct", strlen ("struct") + 1);
 }
@@ -396,7 +360,7 @@ static int print_typelist_json_cb(void *p, const char *k, const char *v) {
 }
 
 static void print_keys(Sdb *TDB, RCore *core, SdbForeachCallback filter, SdbForeachCallback printfn_cb, bool json) {
-	SdbList *l = foreach_list_filter (TDB, filter, true);
+	SdbList *l = sdb_foreach_list_filter (TDB, filter, true);
 	SdbListIter *it;
 	SdbKv *kv;
 	const char *comma = "";
