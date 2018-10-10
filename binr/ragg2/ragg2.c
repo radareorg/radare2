@@ -335,7 +335,7 @@ int main(int argc, char **argv) {
 		printf ("Little endian: %d\n", r_debruijn_offset (get_offset, false));
 		printf ("Big endian: %d\n", r_debruijn_offset (get_offset, true));
 		free (sequence);
-        r_egg_free (egg);
+		r_egg_free (egg);
 		return 0;
 	}
 
@@ -423,7 +423,7 @@ int main(int argc, char **argv) {
 		if (len > 0) {
 			if (!r_egg_raw (egg, b, len)) {
 				eprintf ("Unknown '%s'\n", shellcode);
-                r_egg_free (egg);
+				r_egg_free (egg);
 				return 1;
 			}
 		} else {
