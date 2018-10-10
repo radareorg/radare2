@@ -3668,12 +3668,15 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 								refptrstr = s->name;
 							}
 						}
-						ds_comment (ds, true, "; [%s%s0x%" PFMT64x":%d]=%s%s0x%" PFMT64x "%s%s",
-							f2_in_opstr ? f->name : "",  f2_in_opstr ? " " : "",
-							refaddr, refptr, refptrstr, *refptrstr?".":"",
-							n, (flag && *flag) ? " " : "", flag);
 						if (f2_in_opstr) {
+							ds_comment (ds, true, "; [%s:%d]=%s%s0x%" PFMT64x "%s%s",
+								f->name, refptr, refptrstr, *refptrstr ? "." : "",
+								n, (flag && *flag) ? " " : "", flag);
 							flag_printed = true;
+						} else {
+							ds_comment (ds, true, "; [0x%" PFMT64x":%d]=%s%s0x%" PFMT64x "%s%s",
+								refaddr, refptr, refptrstr, *refptrstr ? "." : "",
+								n, (flag && *flag) ? " " : "", flag);
 						}
 					}
 					free (msg2);
