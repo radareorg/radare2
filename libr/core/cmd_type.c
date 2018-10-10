@@ -409,7 +409,6 @@ static void print_keys(Sdb *TDB, RCore *core, SdbForeachCallback filter, SdbFore
 		if (!k || !*k) {
 			continue;
 		}
-
 		if (json) {
 			r_cons_printf ("%s", comma);
 			comma = ",";
@@ -1232,8 +1231,10 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case ' ': {
 			char *res = sdb_querys (TDB, NULL, -1, sdb_fmt ("~~func.%s", input + 2));
-			r_cons_printf ("%s", res);
-			free (res);
+			if (res) {
+				r_cons_printf ("%s", res);
+				free (res);
+			}
 			break;
 		}
 		default:
