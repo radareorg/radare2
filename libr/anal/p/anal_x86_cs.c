@@ -847,7 +847,7 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		}
 		src = getarg (&gop, 1, 0, NULL, SRC_AR);
 		dst = getarg (&gop, 0, 0, NULL, DST_AR);
-		dst2 = getarg (&gop, 0, 1, "<<", DST_AR);
+		dst2 = getarg (&gop, 0, 1, "<<", DST2_AR);
 		esilprintf (op, "0,%s,!,!,?{,1,%s,-,%s,<<,0x%llx,&,!,!,^,},%s,%s,$z,zf,=,$p,pf,=,$s,sf,=,cf,=", src, src, dst, val, src, dst2);
 	   	}
 		break;
@@ -1289,16 +1289,15 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 		{
 			src = getarg (&gop, 1, 0, NULL, SRC_AR);
 			dst = getarg (&gop, 0, 1, "^", DST_AR);			// destination + operation (lol why)
-			char *ddst = dst;
-			char *dst_reg = strtok (ddst, ",");				// destination only
-			const char *dst_reg64 = r_reg_32_to_64 (a->reg, dst_reg);		// 64-bit destination if exists
+			dst2 = getarg (&gop, 0, 0, NULL, DST2_AR);
+			const char *dst_reg64 = r_reg_32_to_64 (a->reg, dst2);		// 64-bit destination if exists
 			if (a->bits == 64 && dst_reg64) {
 				// (64-bit ^ 32-bit) & 0xFFFF FFFF -> 64-bit, it's alright, higher bytes will be eliminated
 				// (consider this is operation with 32-bit regs in 64-bit environment).
 				esilprintf (op, "%s,%s,^,0xffffffff,&,%s,=,$z,zf,=,$p,pf,=,$s,sf,=,$0,cf,=,$0,of,=",
 						src, dst_reg64, dst_reg64);
 			} else {
-				esilprintf (op, "%s,%s,^=,$z,zf,=,$p,pf,=,$s,sf,=,$0,cf,=,$0,of,=", src, dst);
+				esilprintf (op, "%s,%s,$z,zf,=,$p,pf,=,$s,sf,=,$0,cf,=,$0,of,=", src, dst);
 			}
 		}
 		break;
@@ -1402,10 +1401,9 @@ static void anop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len,
 	case X86_INS_ANDNPD:
 	case X86_INS_ANDNPS:
 		src = getarg (&gop, 1, 0, NULL, SRC_AR);
-		dst = getarg (&gop, 0, 1, "&", DST_AR);			// destination + operation (lol why)
-		char *ddst = dst;
-		char *dst_reg = strtok (ddst, ",");				// destination only
-		const char *dst_reg64 = r_reg_32_to_64 (a->reg, dst_reg);		// 64-bit destination if exists
+		dst = getarg (&gop, 0, 1, "&", DST_AR);
+		dst2 = getarg (&gop, 0, 0, NULL, DST2_AR);
+		const char *dst_reg64 = r_reg_32_to_64 (a->reg, dst2);		// 64-bit destination if exists
 		if (a->bits == 64 && dst_reg64) {
 			// (64-bit & 32-bit) & 0xFFFF FFFF -> 64-bit, it's alright, higher bytes will be eliminated
 			// (consider this is operation with 32-bit regs in 64-bit environment).
