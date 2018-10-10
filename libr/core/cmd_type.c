@@ -370,7 +370,7 @@ static int print_link_readable_cb(void *p, const char *k, const char *v) {
 }
 
 static int stdiftype(void *p, const char *k, const char *v) {
-	return !strncmp (k, "type", strlen ("type") + 1);
+	return !strncmp (v, "type", strlen ("type") + 1);
 }
 
 static int print_typelist_r_cb(void *p, const char *k, const char *v) {
