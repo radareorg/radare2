@@ -203,6 +203,7 @@ static int filter(RParse *p, ut64 addr, RFlag *f, char *data, char *str, int len
 	RFlagItem *flag;
 	ut64 off;
 	bool x86 = false;
+	bool arm = false;
 	bool computed = false;
 	if (p && p->cur && p->cur->name) {
 		if (strstr (p->cur->name, "x86")) {
@@ -210,6 +211,9 @@ static int filter(RParse *p, ut64 addr, RFlag *f, char *data, char *str, int len
 		}
 		if (strstr (p->cur->name, "m68k")) {
 			x86 = true;
+		}
+		if (strstr (p->cur->name, "arm")) {
+			arm = true;
 		}
 	}
 	if (!data || !p) {
@@ -271,13 +275,13 @@ static int filter(RParse *p, ut64 addr, RFlag *f, char *data, char *str, int len
 				if (!flag) {
 					flag = r_flag_get_i (f, off);
 				}
-				if (!flag && p->relsub_addr) {
+				if ((!flag || arm) && p->relsub_addr) {
 					computed = true;
 					flag2 = r_flag_get_i2 (f, p->relsub_addr);
 					if (!flag2) {
 						flag2 = r_flag_get_i (f, p->relsub_addr);
 					}
-					if (!flag) {
+					if (!flag || arm) {
 						flag = flag2;
 					}
 				}

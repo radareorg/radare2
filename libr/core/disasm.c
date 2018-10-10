@@ -3524,7 +3524,8 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	ut64 refaddr = p;
 	bool aligned = false;
 	int refptr = ds->analop.refptr;
-	RFlagItem *f;
+	RFlagItem *f, *f2 = NULL;
+	bool f2_in_opstr = false;  /* Also if true, f exists */
 	if (!ds->show_comments || !ds->show_slow) {
 		return;
 	}
@@ -3593,9 +3594,18 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		if (((st64)p) > 0) {
 			f = r_flag_get_i (core->flags, p);
 			if (f) {
+				int relsub_addr = core->parser->relsub_addr;  // TODO: int??
+				if (relsub_addr && relsub_addr != p) {
+					f2 = r_flag_get_i2 (core->flags, relsub_addr);
+					if (!f2) {
+						f2 = r_flag_get_i (core->flags, relsub_addr);
+					}
+					f2_in_opstr = f2 && ds->opstr && strstr (ds->opstr, f2->name);
+				}
 				refaddr = p;
 				if (!flag_printed && !is_filtered_flag (ds, f->name)
-				    && (!ds->opstr || !strstr (ds->opstr, f->name))) {
+				    && (!ds->opstr || !strstr (ds->opstr, f->name))
+				    && !f2_in_opstr) {
 					ds_begin_comment (ds);
 					ds_comment (ds, true, "; %s", f->name);
 					ds->printed_flag_addr = p;
@@ -3621,7 +3631,6 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					}
 				}
 			} else {
-				f = NULL;
 				if (n == UT32_MAX || n == UT64_MAX) {
 					ds_begin_comment (ds);
 					ds_comment (ds, true, "; [0x%" PFMT64x":%d]=-1",
@@ -3633,9 +3642,9 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				} else {
 					const char *kind, *flag = "";
 					char *msg2 = NULL;
-					f = r_flag_get_i (core->flags, n);
-					if (f) {
-						flag = f->name;
+					RFlagItem *f2_ = r_flag_get_i (core->flags, n);
+					if (f2_) {
+						flag = f2_->name;
 					} else {
 						msg2 = calloc (sizeof (char), len);
 						r_io_read_at (core->io, n, (ut8*)msg2, len - 1);
@@ -3659,9 +3668,16 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 								refptrstr = s->name;
 							}
 						}
-						ds_comment (ds, true, "; [0x%" PFMT64x":%d]=%s%s0x%" PFMT64x "%s%s",
-							refaddr, refptr, refptrstr, *refptrstr?".":"",
-							n, (flag && *flag) ? " " : "", flag);
+						if (f2_in_opstr) {
+							ds_comment (ds, true, "; [%s:%d]=%s%s0x%" PFMT64x "%s%s",
+								f->name, refptr, refptrstr, *refptrstr ? "." : "",
+								n, (flag && *flag) ? " " : "", flag);
+							flag_printed = true;
+						} else {
+							ds_comment (ds, true, "; [0x%" PFMT64x":%d]=%s%s0x%" PFMT64x "%s%s",
+								refaddr, refptr, refptrstr, *refptrstr ? "." : "",
+								n, (flag && *flag) ? " " : "", flag);
+						}
 					}
 					free (msg2);
 				}
