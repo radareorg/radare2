@@ -142,6 +142,7 @@ struct MACH0_(obj_t) {
 	int has_canary;
 	int has_retguard;
 	int has_sanitizers;
+	int has_blocks_ext;
 	int dbg_info;
 	const char *lang;
 	int uuidn;

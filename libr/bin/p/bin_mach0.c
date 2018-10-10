@@ -334,6 +334,9 @@ static RList* symbols(RBinFile *bf) {
 		ptr->ordinal = i;
 		bin->dbg_info = strncmp (ptr->name, "radr://", 7)? 0: 1;
 		sdb_set (symcache, sdb_fmt ("sym0x%"PFMT64x, ptr->vaddr), "found", 0);
+		if (!strncmp (ptr->name, "__Z", 3)) {
+			lang = "c++";
+		}
 		if (!strncmp (ptr->name, "type.", 5)) {
 			lang = "go";
 		} else if (!strcmp (ptr->name, "_rust_oom")) {
@@ -376,6 +379,11 @@ static RList* symbols(RBinFile *bf) {
 			}
 		}
 	}
+
+	if (bin->has_blocks_ext) {
+		lang = !strcmp (lang, "c++") ? "c++ blocks ext." : "c blocks ext.";
+	}
+
 	bin->lang = lang;
 	if (isStripped) {
 		bin->dbg_info |= R_BIN_DBG_STRIPPED;
@@ -407,6 +415,7 @@ static RList* imports(RBinFile *bf) {
 	bin->has_canary = false;
 	bin->has_retguard = -1;
 	bin->has_sanitizers = false;
+	bin->has_blocks_ext = false;
 	for (i = 0; !imports[i].last; i++) {
 		if (!(ptr = R_NEW0 (RBinImport))) {
 			break;
@@ -439,6 +448,9 @@ static RList* imports(RBinFile *bf) {
 		if (!strcmp (name, "__asan_init") ||
                    !strcmp (name, "__tsan_init")) {
 			bin->has_sanitizers = true;
+		}
+		if (!strcmp (name, "_NSConcreteGlobalBlock")) {
+			bin->has_blocks_ext = true;
 		}
 		r_list_append (ret, ptr);
 	}
