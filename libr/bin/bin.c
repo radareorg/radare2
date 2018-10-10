@@ -485,9 +485,9 @@ R_API bool r_bin_load_io2(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int x
 		binfile = r_bin_file_new_from_bytes (
 			bin, fname, buf_bytes, sz, file_sz, bin->rawstr,
 			baseaddr, loadaddr, fd, name, NULL, offset, true);
+	} else {
+		R_FREE (buf_bytes);
 	}
-	
-	R_FREE (buf_bytes);
 	return binfile? r_bin_file_set_cur_binfile (bin, binfile): false;
 }
 
