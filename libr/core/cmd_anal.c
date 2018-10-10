@@ -744,7 +744,7 @@ static void find_refs(RCore *core, const char *glob) {
 		glob = "str.";
 	}
 	if (*glob == '?') {
-		eprintf ("Usage: arf [flag-str-filter]\n");
+		eprintf ("Usage: axF [flag-str-filter]\n");
 		return;
 	}
 	eprintf ("Finding references of flags matching '%s'...\n", glob);
@@ -5732,7 +5732,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		} else {
 			addr = core->offset;
 		}
-		if (input[1] == '.') { // axf.
+		if (input[1] == '.') { // "axf."
 			list = list_ = r_anal_xrefs_get_from (core->anal, addr);
 			if (!list) {
 				list = r_anal_fcn_get_refs (core->anal, fcn);
@@ -5742,11 +5742,11 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 		}
 
 		if (list) {
-			if (input[1] == 'q') { // axfq
+			if (input[1] == 'q') { // "axfq"
 				r_list_foreach (list, iter, ref) {
 					r_cons_printf ("0x%" PFMT64x "\n", ref->at);
 				}
-			} else if (input[1] == 'j') { // axfj
+			} else if (input[1] == 'j') { // "axfj"
 				r_cons_print ("[");
 				r_list_foreach (list, iter, ref) {
 					r_io_read_at (core->io, ref->at, buf, 12);
@@ -5756,13 +5756,13 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 						ref->at, ref->addr, r_anal_xrefs_type_tostring (ref->type), r_asm_op_get_asm (&asmop), iter->n? ",": "");
 				}
 				r_cons_print ("]\n");
-			} else if (input[1] == '*') { // axf*
+			} else if (input[1] == '*') { // "axf*"
 				// TODO: implement multi-line comments
 				r_list_foreach (list, iter, ref) {
 					r_cons_printf ("CCa 0x%" PFMT64x " \"XREF from 0x%" PFMT64x "\n",
 						ref->at, ref->type, r_asm_op_get_asm (&asmop), iter->n? ",": "");
 				}
-			} else { // axf
+			} else { // "axf"
 				char str[512];
 				int has_color = core->print->flags & R_PRINT_FLAGS_COLOR;
 				r_list_foreach (list, iter, ref) {
@@ -5792,13 +5792,13 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				}
 			}
 		} else {
-			if (input[1] == 'j') { // axfj
+			if (input[1] == 'j') { // "axfj"
 				r_cons_print ("[]\n");
 			}
 		}
 		r_list_free (list);
 	} break;
-	case 'F':
+	case 'F': // "axF"
 		find_refs (core, input + 1);
 		break;
 	case 'C': // "axC"
