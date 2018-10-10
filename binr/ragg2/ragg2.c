@@ -285,10 +285,13 @@ int main(int argc, char **argv) {
 			break;
 		case 'L':
 			list (egg);
+			r_egg_free (egg);
 			return 0;
 		case 'h':
+			r_egg_free (egg);
 			return usage (1);
 		case 'v':
+			r_egg_free (egg);
 			return blob_version("ragg2");
 		case 'z':
 			show_str = 1;
@@ -299,11 +302,13 @@ int main(int argc, char **argv) {
 			break;
 		default:
 			free (sequence);
+			r_egg_free (egg);
 			return 1;
 		}
 	}
 
 	if (optind == argc && !shellcode && !bytes && !contents && !encoder && !padding && !pattern && !append && !get_offset) {
+		r_egg_free (egg);
 		return usage (0);
 	} else {
 		file = argv[optind];
@@ -322,6 +327,7 @@ int main(int argc, char **argv) {
 		if (strncmp (sequence, "0x", 2)) {
 			eprintf ("Need hex value with `0x' prefix e.g. 0x41414142\n");
 			free (sequence);
+			r_egg_free (egg);
 			return 1;
 		}
 
@@ -329,6 +335,7 @@ int main(int argc, char **argv) {
 		printf ("Little endian: %d\n", r_debruijn_offset (get_offset, false));
 		printf ("Big endian: %d\n", r_debruijn_offset (get_offset, true));
 		free (sequence);
+        r_egg_free (egg);
 		return 0;
 	}
 
@@ -383,6 +390,7 @@ int main(int argc, char **argv) {
 	if (!r_egg_compile (egg)) {
 		if (!fmt) {
 			eprintf ("r_egg_compile: fail\n");
+			r_egg_free (egg);
 			return 1;
 		}
 	}
@@ -403,6 +411,7 @@ int main(int argc, char **argv) {
 	if (shellcode) {
 		if (!r_egg_shellcode (egg, shellcode)) {
 			eprintf ("Unknown shellcode '%s'\n", shellcode);
+			r_egg_free (egg);
 			return 1;
 		}
 	}
@@ -414,6 +423,7 @@ int main(int argc, char **argv) {
 		if (len > 0) {
 			if (!r_egg_raw (egg, b, len)) {
 				eprintf ("Unknown '%s'\n", shellcode);
+                r_egg_free (egg);
 				return 1;
 			}
 		} else {
@@ -462,6 +472,7 @@ int main(int argc, char **argv) {
 	if (encoder) {
 		if (!r_egg_encode (egg, encoder)) {
 			eprintf ("Invalid encoder '%s'\n", encoder);
+			r_egg_free (egg);
 			return 1;
 		}
 	}
