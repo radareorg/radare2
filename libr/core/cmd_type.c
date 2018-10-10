@@ -274,7 +274,7 @@ struct foreach_list_filter_t {
 static int foreach_list_filter_cb(void *user, const char *k, const char *v) {
 	struct foreach_list_filter_t *u = (struct foreach_list_filter_t *)user;
 	SdbList *list = u->list;
-	if (u->filter (NULL, k, v)) {
+	if (!u->filter || u->filter (NULL, k, v)) {
 		SdbKv *kv = R_NEW0 (SdbKv);
 		kv->key = strdup (k);
 		kv->value = strdup (v);
