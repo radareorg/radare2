@@ -3525,7 +3525,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	bool aligned = false;
 	int refptr = ds->analop.refptr;
 	RFlagItem *f, *f2 = NULL;
-	bool f2_in_opstr = false;
+	bool f2_in_opstr = false;  /* Also if true, f exists */
 	if (!ds->show_comments || !ds->show_slow) {
 		return;
 	}
