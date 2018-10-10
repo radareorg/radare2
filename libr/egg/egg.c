@@ -512,7 +512,7 @@ R_API void r_egg_finalize(REgg *egg) {
 	RBuffer *b;
 	RListIter *iter;
 	if (!egg->bin->buf) {
-		free (egg->bin);
+		r_buf_free (egg->bin);
 		egg->bin = r_buf_new ();
 	}
 	r_list_foreach (egg->patches, iter, b) {
