@@ -201,7 +201,7 @@ get_opcode_entry (unsigned int insn,
       memset (opc_table, 0, 65536 * sizeof (const struct cris_opcode *));
 
       dip_prefixes
-	= malloc (65536 * sizeof (const struct cris_opcode **));
+	= malloc (65536 * sizeof (dip_prefixes[0]));
       if (!dip_prefixes) {
 	      return NULL;
       }
@@ -209,7 +209,7 @@ get_opcode_entry (unsigned int insn,
       memset (dip_prefixes, 0, 65536 * sizeof (dip_prefixes[0]));
 
       bdapq_m1_prefixes
-	= malloc (65536 * sizeof (const struct cris_opcode **));
+	= malloc (65536 * sizeof (bdapq_m1_prefixes[0]));
       if (!bdapq_m1_prefixes) {
 	      return NULL;
       }
@@ -217,7 +217,7 @@ get_opcode_entry (unsigned int insn,
       memset (bdapq_m1_prefixes, 0, 65536 * sizeof (bdapq_m1_prefixes[0]));
 
       bdapq_m2_prefixes
-	= malloc (65536 * sizeof (const struct cris_opcode **));
+	= malloc (65536 * sizeof (bdapq_m2_prefixes[0]));
       if (!bdapq_m2_prefixes) {
 	      return NULL;
       }
@@ -225,7 +225,7 @@ get_opcode_entry (unsigned int insn,
       memset (bdapq_m2_prefixes, 0, 65536 * sizeof (bdapq_m2_prefixes[0]));
 
       bdapq_m4_prefixes
-	= malloc (65536 * sizeof (const struct cris_opcode **));
+	= malloc (65536 * sizeof (bdapq_m4_prefixes[0]));
       if (!bdapq_m4_prefixes) {
 	      return NULL;
       }
@@ -233,7 +233,7 @@ get_opcode_entry (unsigned int insn,
       memset (bdapq_m4_prefixes, 0, 65536 * sizeof (bdapq_m4_prefixes[0]));
 
       rest_prefixes
-	= malloc (65536 * sizeof (const struct cris_opcode **));
+	= malloc (65536 * sizeof (rest_prefixes[0]));
       if (!rest_prefixes) {
 	      return NULL;
       }
