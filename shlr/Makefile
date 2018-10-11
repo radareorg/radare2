@@ -137,8 +137,8 @@ endif
 	cp -f sdb/src/.sdb${BUILD_EXT_EXE} $@
 
 .PHONY: sdb-sync sync-sdb sdbclean
-F=README.md config.mk src Makefile meson.build msvc
-SYNCFILES=$(addprefix sdb.vc/,${F})
+SDB_F=README.md config.mk src Makefile meson.build msvc
+SDB_SYNCFILES=$(addprefix sdb.vc/,${SDB_F})
 I=../libr/include
 
 libgdbr:
@@ -159,7 +159,7 @@ sdb-sync sync-sdb:
 	rm -rf sdb sdb.vc
 	git clone --depth 1 ${SDB_URL} sdb.vc
 	mkdir -p sdb
-	cp -rf ${SYNCFILES} sdb
+	cp -rf ${SDB_SYNCFILES} sdb
 	rm -rf sdb.vc $I/sdb
 	mkdir -p $I/sdb
 	rm -f src/sdb_version.h
@@ -174,14 +174,14 @@ sdb-sync sync-sdb:
 	git add sdb
 
 .PHONY: ptrace-wrap ptrace-wrap-sync sync-ptrace-wrap ptrace-wrap-clean clean-ptrace-wrap
-F=include src README.md COPYING
-SYNCFILES=$(addprefix ptrace-wrap.vc/,${F})
+PTRACE_WRAP_F=include src README.md COPYING
+PTRACE_WRAP_SYNCFILES=$(addprefix ptrace-wrap.vc/,${PTRACE_WRAP_F})
 
 ptrace-wrap-sync sync-ptrace-wrap:
 	rm -rf ptrace-wrap ptrace-wrap.vc
 	git clone --depth 1 ${PTRACE_WRAP_URL} ptrace-wrap.vc
 	mkdir -p ptrace-wrap
-	cp -rf ${SYNCFILES} ptrace-wrap
+	cp -rf ${PTRACE_WRAP_SYNCFILES} ptrace-wrap
 	sed -e "s, library(, static_library(," -e "s,project(,# project(," -e "s,subdir(,# subdir(," ptrace-wrap.vc/meson.build > ptrace-wrap/meson.build
 	printf "include ../../libr/config.mk\ninclude ../../mk/platform.mk\ninclude ../../mk/${COMPILER}.mk\n\n" | cat - ptrace-wrap.vc/Makefile > ptrace-wrap/Makefile
 	rm -rf ptrace-wrap.vc

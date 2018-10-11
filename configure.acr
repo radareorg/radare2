@@ -166,21 +166,17 @@ IFEQ USEROSTYPE gnulinux ; {
 	HAVE_PTRACE = 1 ;
 	USE_PTRACE_WRAP = 1 ;
 }{
-IFEQ USEROSTYPE bsd ; {
-	HAVE_PTRACE = 1 ;
-	USE_PTRACE_WRAP = 0 ;
-}{
-IFEQ USEROSTYPE darwin ; {
-	HAVE_PTRACE = 1 ;
-	USE_PTRACE_WRAP = 0 ;
-}{
 IFEQ USEROSTYPE mingw32 ; {
+	HAVE_PTRACE = 0 ;
+	USE_PTRACE_WRAP = 0 ;
+}{
+IFEQ USEROSTYPE solaris ; {
 	HAVE_PTRACE = 0 ;
 	USE_PTRACE_WRAP = 0 ;
 }{
 	HAVE_PTRACE = 1 ;
 	USE_PTRACE_WRAP = 0 ;
-} } } }
+} } }
 
 ARG_WITH R_CHECKS_LEVEL=2 checks-level value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL) ;
 

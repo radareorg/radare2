@@ -578,20 +578,16 @@ if [ "$USEROSTYPE" = "gnulinux" ]; then
 HAVE_PTRACE="1"
 USE_PTRACE_WRAP="1"
 else
-if [ "$USEROSTYPE" = "bsd" ]; then
-HAVE_PTRACE="1"
-USE_PTRACE_WRAP="0"
-else
-if [ "$USEROSTYPE" = "darwin" ]; then
-HAVE_PTRACE="1"
-USE_PTRACE_WRAP="0"
-else
 if [ "$USEROSTYPE" = "mingw32" ]; then
 HAVE_PTRACE="0"
 USE_PTRACE_WRAP="0"
 else
+if [ "$USEROSTYPE" = "solaris" ]; then
+HAVE_PTRACE="0"
+USE_PTRACE_WRAP="0"
+else
 HAVE_PTRACE="1"
-USE_PTRACE_WRAP="0"; fi; fi; fi; fi
+USE_PTRACE_WRAP="0"; fi; fi; fi
 SEDFLAGS=" -e '"
 COUNT=0
 for A in ${ENVWORDS} ; do
