@@ -977,7 +977,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 					ut64 killme = UT64_MAX;
 					const int be = core->assembler->big_endian;
 					r_io_read_i (core->io, ds->analop.ptr, &killme, ds->analop.refptr, be);
-					core->parser->relsub_addr = (int)killme;
+					core->parser->relsub_addr = killme;
 				}
 			}
 			r_parse_filter (core->parser, ds->vat, core->flags, asm_str,
@@ -3594,7 +3594,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		if (((st64)p) > 0) {
 			f = r_flag_get_i (core->flags, p);
 			if (f) {
-				int relsub_addr = core->parser->relsub_addr;  // TODO: int??
+				ut64 relsub_addr = core->parser->relsub_addr;
 				if (relsub_addr && relsub_addr != p) {
 					f2 = r_flag_get_i2 (core->flags, relsub_addr);
 					if (!f2) {
