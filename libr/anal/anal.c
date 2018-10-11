@@ -497,18 +497,21 @@ R_API bool r_anal_noreturn_add(RAnal *anal, const char *name, ut64 addr) {
 	return true;
 }
 
-static int noreturn_dropall(void *p, const char *k, const char *v) {
-	RAnal *anal = (RAnal *)p;
-	if (!strcmp (v, "func")) {
-		sdb_unset (anal->sdb_types, K_NORET_FUNC(k), 0);
-	}
-	return 1;
+static int is_func(void *p, const char *k, const char *v) {
+	return !strcmp (v, "func");
 }
 
 R_API int r_anal_noreturn_drop(RAnal *anal, const char *expr) {
 	Sdb *TDB = anal->sdb_types;
 	if (!strcmp (expr, "*")) {
-		sdb_foreach (TDB, noreturn_dropall, anal);
+		SdbList *noreturns = sdb_foreach_list_filter (TDB, is_func, false);
+		SdbListIter *it;
+		SdbKv *kv;
+
+		ls_foreach (noreturns, it, kv) {
+			sdb_unset (TDB, K_NORET_FUNC(sdbkv_key (kv)), 0);
+		}
+		ls_free (noreturns);
 		return true;
 	} else {
 		const char *fcnname = NULL;
