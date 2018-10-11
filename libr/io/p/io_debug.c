@@ -477,7 +477,7 @@ static void fork_child_callback(void *user) {
 	if (data->runprofile) {
 		char **argv = r_str_argv (data->cmd, NULL);
 		if (!argv) {
-			exit(1);
+			exit (1);
 		}
 		RRunProfile *rp = _get_run_profile (data->io, data->bits, argv);
 		if (!rp) {
