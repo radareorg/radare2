@@ -1009,7 +1009,10 @@ static void adjust_class(const RAGraph *g, int is_left, RList **classes, Sdb *re
 
 			graph_foreach_anode (neigh, itk, gk, ak) {
 				if (ak->klass < c) {
-					r_list_append (heap, (void *) (size_t) (ak->x - an->x));
+					size_t d = (ak->x - an->x);
+					if (d > 0) {
+						r_list_append (heap, (void *) d);
+					}
 				}
 			}
 		}
