@@ -55,9 +55,9 @@ static RList *sections(RBinFile *bf) {
 			sections[i] = R_NEW0 (RBinSection);
 			/* Firmware Type ('0'=ARM9/'1'=ARM11) */
 			if (loaded_header.sections[i].type == 0x0) {
-				strncpy (sections[i]->name, "arm9", 4);
+				strncpy (sections[i]->name, "arm9", R_BIN_SIZEOF_STRINGS);
 			} else if (loaded_header.sections[i].type == 0x1) {
-				strncpy (sections[i]->name, "arm11", 5);
+				strncpy (sections[i]->name, "arm11", R_BIN_SIZEOF_STRINGS);
 			} else {
 				corrupt = true;
 				break;
