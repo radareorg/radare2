@@ -6,12 +6,14 @@
 #include <r_endian.h>
 
 static bool check_bytes(const ut8 *buf, ut64 length) {
-	const ut8* buf_hdr = buf;
+	const ut8 *buf_hdr = buf;
 	ut16 cksum1, cksum2;
 
-	if ((length & 0x8000) == 0x200) {
-		buf_hdr += 0x200;
-	}
+	// FIXME: this was commented out because it always evaluates to false.
+	//        Need to be fixed by someone with SFC knowledge
+	// if ((length & 0x8000) == 0x200) {
+	// 	buf_hdr += 0x200;
+	// }
 	if (length < 0x8000) {
 		return false;
 	}
