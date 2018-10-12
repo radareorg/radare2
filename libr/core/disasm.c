@@ -450,10 +450,7 @@ static void ds_begin_comment(RDisasmState *ds) {
 	}
 }
 
-static void ds_comment(RDisasmState *ds, bool align, const char *format, ...) {
-	va_list ap;
-	va_start (ap, format);
-
+static void ds_comment_(RDisasmState *ds, bool align, bool nl, const char *format, va_list ap) {
 	if (ds->show_comments) {
 		if (ds->show_comment_right && align) {
 			ds_align_comment (ds);
@@ -474,12 +471,29 @@ static void ds_comment(RDisasmState *ds, bool align, const char *format, ...) {
 		}
 	}
 
-	if (!ds->show_comment_right && align) {
+	if (!ds->show_comment_right && nl) {
 		ds_newline (ds);
 	}
+}
 
+static void ds_comment(RDisasmState *ds, bool align, const char *format, ...) {
+	va_list ap;
+	va_start (ap, format);
+	ds_comment_ (ds, align, true, format, ap);
 	va_end (ap);
 }
+
+#define DS_COMMENT_FUNC(name, align, nl) \
+	static void ds_comment_##name(RDisasmState *ds, const char *format, ...) { \
+		va_list ap; \
+		va_start (ap, format); \
+		ds_comment_ (ds, align, nl, format, ap); \
+		va_end (ap); \
+	}
+
+DS_COMMENT_FUNC (start, true, false)
+DS_COMMENT_FUNC (middle, false, false)
+DS_COMMENT_FUNC (end, false, true)
 
 static void ds_comment_esil(RDisasmState *ds, bool up, bool end, const char *format, ...) {
 	va_list ap;
@@ -3668,16 +3682,16 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 								refptrstr = s->name;
 							}
 						}
+						ds_comment_start (ds, "; [");
 						if (f2_in_opstr) {
-							ds_comment (ds, true, "; [%s:%d]=%s%s0x%" PFMT64x "%s%s",
-								f->name, refptr, refptrstr, *refptrstr ? "." : "",
-								n, (flag && *flag) ? " " : "", flag);
+							ds_comment_middle (ds, "%s", f->name);
 							flag_printed = true;
 						} else {
-							ds_comment (ds, true, "; [0x%" PFMT64x":%d]=%s%s0x%" PFMT64x "%s%s",
-								refaddr, refptr, refptrstr, *refptrstr ? "." : "",
-								n, (flag && *flag) ? " " : "", flag);
+							ds_comment_middle (ds, "0x%" PFMT64x, refaddr);
 						}
+						ds_comment_end (ds, ":%d]=%s%s0x%" PFMT64x "%s%s",
+								refptr, refptrstr, *refptrstr ? "." : "",
+								n, (flag && *flag) ? " " : "", flag);
 					}
 					free (msg2);
 				}
