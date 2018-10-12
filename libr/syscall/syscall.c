@@ -68,19 +68,23 @@ static Sdb *openDatabase(Sdb *db, const char *name) {
 }
 
 static inline bool syscall_reload_needed(RSyscall *s, const char *os, const char *arch, int bits) {
-	bool is_equal = true;
-	is_equal &= (s->os && !strcmp (s->os, os));
-	is_equal &= (s->arch && !strcmp (s->arch, arch));
-	is_equal &= (s->bits == bits);
-	return !is_equal;
+	if (!s->os || strcmp (s->os, os)) {
+		return true;
+	}
+	if (!s->arch || strcmp (s->arch, arch)) {
+		return true;
+	}
+	return s->bits != bits;
 }
 
 static inline bool sysregs_reload_needed(RSyscall *s, const char *arch, int bits, const char *cpu) {
-	bool is_equal = true;
-	is_equal &= (s->arch && !strcmp (s->arch, arch));
-	is_equal &= s->bits == bits;
-	is_equal &= (s->cpu && !strcmp (s->cpu, cpu));
-	return !is_equal;
+	if (!s->arch || strcmp (s->arch, arch)) {
+		return true;
+	}
+	if (s->bits != bits) {
+		return true;
+	}
+	return !s->cpu || strcmp (s->cpu, cpu);
 }
 
 // TODO: should be renamed to r_syscall_use();
@@ -150,16 +154,24 @@ R_API bool r_syscall_setup(RSyscall *s, const char *arch, int bits, const char *
 	if (syscall_changed) {
 		char *dbName = r_str_newf (R_JOIN_2_PATHS ("syscall", "%s-%s-%d"),
 			os, arch, bits);
-		s->db = openDatabase (s->db, dbName);
-		free (dbName);
+		if (dbName) {
+			s->db = openDatabase (s->db, dbName);
+			free (dbName);
+		} else {
+			eprintf ("Couldn't create dbName string.\n");
+		}
 	}
 
 	if (sysregs_changed) {
 		char *dbName = r_str_newf (R_JOIN_2_PATHS ("sysregs", "%s-%d-%s"),
 			arch, bits, cpu);
-		sdb_free (s->srdb);
-		s->srdb = openDatabase (NULL, dbName);
-		free (dbName);
+		if (dbName) {
+			sdb_free (s->srdb);
+			s->srdb = openDatabase (NULL, dbName);
+			free (dbName);
+		} else {
+			eprintf ("Couldn't create dbName string.\n");
+		}
 	}
 	if (s->fd) {
 		fclose (s->fd);
