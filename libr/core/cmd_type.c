@@ -393,8 +393,10 @@ static void typesList(RCore *core, int mode) {
 		break;
 	case 'j':
 		print_keys (core->anal->sdb_types, core, stdiftype, print_typelist_json_cb, true);
+		break;
 	default:
 		print_keys (core->anal->sdb_types, core, stdiftype, printkey_cb, false);
+		break;
 	}
 }
 
