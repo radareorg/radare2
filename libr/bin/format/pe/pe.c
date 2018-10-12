@@ -472,8 +472,8 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 					break;
 				}
 				name[PE_NAME_LENGTH] = '\0';
-				int len = snprintf (import_name, PE_NAME_LENGTH, "%s_%s", dll_name, name);
-				if (len >= PE_NAME_LENGTH) {
+				int len = snprintf (import_name, sizeof (import_name), "%s_%s", dll_name, name);
+				if (len >= sizeof (import_name)) {
 					eprintf ("Import name '%s' has been truncated.\n", import_name);
 				}
 			}
