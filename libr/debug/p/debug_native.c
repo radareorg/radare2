@@ -273,7 +273,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 		r_cons_break_push ((RConsBreak)r_debug_native_stop, dbg);
 	}
 
-	int ret = r_debug_ptrace (dbg, PTRACE_CONT, pid, NULL, contsig);
+	int ret = r_debug_ptrace (dbg, PTRACE_CONT, pid, NULL, (r_ptrace_data_t)(size_t)contsig);
 	if (ret) {
 		perror ("PTRACE_CONT");
 	}
@@ -285,7 +285,7 @@ static int r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 		if (list) {
 			r_list_foreach (list, it, th) {
 				if (th->pid && th->pid != pid) {
-					r_debug_ptrace (dbg, PTRACE_CONT, tid, NULL, contsig);
+					r_debug_ptrace (dbg, PTRACE_CONT, tid, NULL, (r_ptrace_data_t)(size_t)contsig);
 				}
 			}
 		}
