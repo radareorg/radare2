@@ -22,16 +22,20 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	}
 	bufn = bufnum;
 	*bufn = 0;
-	for (i=0; i<count; i++) {
-		int bufn_sz = sizeof (bufnum) - (bufn-bufnum);
-		snprintf (bufn, bufn_sz, "%s%d", i?",":"", buf[i]);
+	for (i = 0; i < count; i++) {
+		int bufn_sz = sizeof (bufnum) - (bufn - bufnum);
+		snprintf (bufn, bufn_sz, "%s%d", i ? "," : "", buf[i]);
 		bufn += strlen (bufn);
 	}
-	snprintf (fmt, sizeof (fmt),
-		"{\"op\":\"write\",\"address\":%"PFMT64d",\"data\":[%s]}",
+	int len = snprintf (fmt, sizeof (fmt),
+		"{\"op\":\"write\",\"address\":%" PFMT64d ",\"data\":[%s]}",
 		io->off, bufnum);
+	if (len >= sizeof (fmt)) {
+		eprintf ("r2p_write: error, fmt string has been truncated\n");
+		return -1;
+	}
 	rv = r2p_write (R2P (fd), fmt);
-	if (rv <1) {
+	if (rv < 1) {
 		eprintf ("r2p_write: error\n");
 		return -1;
 	}
