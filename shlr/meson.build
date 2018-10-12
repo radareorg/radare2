@@ -618,3 +618,9 @@ ar_dep = declare_dependency(
   link_with: libr2ar,
   include_directories: ar_inc
 )
+
+
+# handle ptrace-wrap dependency
+if use_ptrace_wrap
+  subdir('ptrace-wrap')
+endif

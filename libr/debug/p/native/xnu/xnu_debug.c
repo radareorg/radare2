@@ -168,7 +168,7 @@ int xnu_wait(RDebug *dbg, int pid) {
 
 bool xnu_step(RDebug *dbg) {
 #if XNU_USE_PTRACE
-	int ret = ptrace (PT_STEP, dbg->pid, (caddr_t)1, 0) == 0; //SIGINT
+	int ret = r_debug_ptrace (dbg, PT_STEP, dbg->pid, (caddr_t)1, 0) == 0; //SIGINT
 	if (!ret) {
 		perror ("ptrace-step");
 		eprintf ("mach-error: %d, %s\n", ret, MACH_ERROR_STRING (ret));
@@ -200,9 +200,9 @@ bool xnu_step(RDebug *dbg) {
 int xnu_attach(RDebug *dbg, int pid) {
 #if XNU_USE_PTRACE
 #if PT_ATTACHEXC
-	if (ptrace (PT_ATTACHEXC, pid, 0, 0) == -1) {
+	if (r_debug_ptrace (dbg, PT_ATTACHEXC, pid, 0, 0) == -1) {
 #else
-	if (ptrace (PT_ATTACH, pid, 0, 0) == -1) {
+	if (r_debug_ptrace (dbg, PT_ATTACH, pid, 0, 0) == -1) {
 #endif
 		perror ("ptrace (PT_ATTACH)");
 		return -1;
@@ -221,7 +221,7 @@ int xnu_attach(RDebug *dbg, int pid) {
 
 int xnu_detach(RDebug *dbg, int pid) {
 #if XNU_USE_PTRACE
-	return ptrace (PT_DETACH, pid, NULL, 0);
+	return r_debug_ptrace (dbg, PT_DETACH, pid, NULL, 0);
 #else
 	kern_return_t kr;
 	//do the cleanup necessary
@@ -298,7 +298,7 @@ int xnu_continue(RDebug *dbg, int pid, int tid, int sig) {
 #if XNU_USE_PTRACE
 	void *data = (void*)(size_t)((sig != -1) ? sig : dbg->reason.signum);
 	task_resume (pid_to_task (pid));
-	return ptrace (PT_CONTINUE, pid, (void*)(size_t)1,
+	return r_debug_ptrace (dbg, PT_CONTINUE, pid, (void*)(size_t)1,
 			(int)(size_t)data) == 0;
 #else
 	task_t task = pid_to_task (pid);

@@ -32,6 +32,27 @@ files = [
   #'p/native/maps/darwin.c',
 ]
 
+r_debug_deps = [
+  r_util_dep,
+  r_hash_dep,
+  r_reg_dep,
+  r_syscall_dep,
+  r_anal_dep,
+  r_flag_dep,
+  r_io_dep,
+  r_bp_dep,
+  r_search_dep,
+  r_cons_dep,
+  r_lang_dep,
+  r_egg_dep,
+  windbg_dep,
+  qnx_dep,
+  gdb_dep,
+  bochs_dep,
+  r_socket_dep,
+  sdb_dep
+]
+
 if host_machine.system() == 'linux'
   files += [
     'p/native/linux/linux_debug.c',
@@ -55,6 +76,10 @@ if host_machine.system() == 'darwin'
   ]
 endif
 
+if ['netbsd', 'freebsd', 'dragonfly'].contains(host_machine.system())
+  r_debug_deps += cc.find_library('kvm', required: true)
+endif
+
 r_debug_inc = [
   platform_inc,
   include_directories(
@@ -65,26 +90,7 @@ r_debug_inc = [
 r_debug = library('r_debug', files,
   include_directories: r_debug_inc,
   c_args: library_cflags,
-  dependencies: [
-    r_util_dep,
-    r_hash_dep,
-    r_reg_dep,
-    r_syscall_dep,
-    r_anal_dep,
-    r_flag_dep,
-    r_io_dep,
-    r_bp_dep,
-    r_search_dep,
-    r_cons_dep,
-    r_lang_dep,
-    r_egg_dep,
-    windbg_dep,
-    qnx_dep,
-    gdb_dep,
-    bochs_dep,
-    r_socket_dep,
-    sdb_dep
-  ],
+  dependencies: r_debug_deps,
   install: true,
   implicit_include_directories: false,
   soversion: r2_libversion
