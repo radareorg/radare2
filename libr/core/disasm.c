@@ -4850,6 +4850,33 @@ toro:
 			if (ds->analop.type == R_ANAL_OP_TYPE_CALL && ds->show_calls) {
 				ds_print_calls_hints (ds);
 			}
+			/* respect asm.describe */
+			char *desc = NULL;
+			if (ds->asm_describe && !ds->has_description) {
+				char *op, *locase = strdup (r_asm_op_get_asm (&ds->asmop));
+				if (!locase) {
+					break;
+				}
+				op = strchr (locase, ' ');
+				if (op) {
+					*op = 0;
+				}
+				r_str_case (locase, 0);
+				desc = r_asm_describe (core->assembler, locase);
+				free (locase);
+			}
+			if (desc && *desc) {
+				ds_begin_comment(ds);
+				ds_align_comment (ds);
+				if (ds->show_color) {
+					r_cons_strcat (ds->color_comment);
+				}
+				r_cons_strcat ("; ");
+				r_cons_strcat (desc);
+				ds_print_color_reset (ds);
+				ds_newline(ds);
+				free(desc);
+			}
 		}
 
 		ds_begin_json_line (ds);
