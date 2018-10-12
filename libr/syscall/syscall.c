@@ -38,6 +38,8 @@ R_API void r_syscall_free(RSyscall *s) {
 		sdb_free (s->srdb);
 		sdb_free (s->db);
 		free (s->os);
+		free (s->cpu);
+		free (s->arch);
 		free (s);
 	}
 }
@@ -65,16 +67,48 @@ static Sdb *openDatabase(Sdb *db, const char *name) {
 	return db;
 }
 
+static inline bool syscall_reload_needed(RSyscall *s, const char *os, const char *arch, int bits) {
+	bool is_equal = true;
+	is_equal &= (s->os && !strcmp (s->os, os));
+	is_equal &= (s->arch && !strcmp (s->arch, arch));
+	is_equal &= (s->bits == bits);
+	return !is_equal;
+}
+
+static inline bool sysregs_reload_needed(RSyscall *s, const char *arch, int bits, const char *cpu) {
+	bool is_equal = true;
+	is_equal &= (s->arch && !strcmp (s->arch, arch));
+	is_equal &= s->bits == bits;
+	is_equal &= (s->cpu && !strcmp (s->cpu, cpu));
+	return !is_equal;
+}
+
 // TODO: should be renamed to r_syscall_use();
 R_API bool r_syscall_setup(RSyscall *s, const char *arch, int bits, const char *cpu, const char *os) {
+	bool syscall_changed, sysregs_changed;
+
 	if (!os || !*os) {
 		os = R_SYS_OS;
 	}
 	if (!arch) {
 		arch = R_SYS_ARCH;
 	}
+	if (!cpu) {
+		cpu = arch;
+	}
+	syscall_changed = syscall_reload_needed (s, os, arch, bits);
+	sysregs_changed = sysregs_reload_needed (s, arch, bits, cpu);
+
 	free (s->os);
 	s->os = strdup (os);
+
+	free (s->cpu);
+	s->cpu = strdup (cpu);
+
+	free (s->arch);
+	s->arch = strdup (arch);
+
+	s->bits = bits;
 
 	if (!strcmp (os, "any")) { // ignored
 		return true;
@@ -113,17 +147,20 @@ R_API bool r_syscall_setup(RSyscall *s, const char *arch, int bits, const char *
 		}
 	}
 
-	char *dbName = r_str_newf (R_JOIN_2_PATHS ("syscall", "%s-%s-%d"),
-		os, arch, bits);
-	s->db = openDatabase (s->db, dbName);
-	free (dbName);
+	if (syscall_changed) {
+		char *dbName = r_str_newf (R_JOIN_2_PATHS ("syscall", "%s-%s-%d"),
+			os, arch, bits);
+		s->db = openDatabase (s->db, dbName);
+		free (dbName);
+	}
 
-	dbName = r_str_newf (R_JOIN_2_PATHS ("sysregs", "%s-%d-%s"),
-		arch, bits, cpu ? cpu: arch);
-	sdb_free (s->srdb);
-	s->srdb = NULL;
-	s->srdb = openDatabase (s->srdb, dbName);
-	free (dbName);
+	if (sysregs_changed) {
+		char *dbName = r_str_newf (R_JOIN_2_PATHS ("sysregs", "%s-%d-%s"),
+			arch, bits, cpu);
+		sdb_free (s->srdb);
+		s->srdb = openDatabase (NULL, dbName);
+		free (dbName);
+	}
 	if (s->fd) {
 		fclose (s->fd);
 		s->fd = NULL;
