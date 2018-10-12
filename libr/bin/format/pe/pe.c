@@ -472,9 +472,12 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 					break;
 				}
 				name[PE_NAME_LENGTH] = '\0';
-				snprintf (import_name, PE_NAME_LENGTH, "%s_%s", dll_name, name);
+				int len = snprintf (import_name, PE_NAME_LENGTH, "%s_%s", dll_name, name);
+				if (len >= PE_NAME_LENGTH) {
+					eprintf ("Import name '%s' has been truncated.\n", import_name);
+				}
 			}
-			if (!(*importp = realloc (*importp, (*nimp + 1) * sizeof(struct r_bin_pe_import_t)))) {
+			if (!(*importp = realloc (*importp, (*nimp + 1) * sizeof (struct r_bin_pe_import_t)))) {
 				r_sys_perror ("realloc (import)");
 				goto error;
 			}
@@ -2713,13 +2716,16 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 			}
 			dll_name[PE_NAME_LENGTH] = '\0';
 			function_name[PE_NAME_LENGTH] = '\0';
-			snprintf (export_name, sizeof (export_name) - 1, "%s_%s", dll_name, function_name);
+			int len = snprintf (export_name, sizeof (export_name), "%s_%s", dll_name, function_name);
+			if (len >= sizeof (export_name)) {
+				eprintf ("Export name '%s' has been truncated\n", export_name);
+			}
 			exports[i].vaddr = bin_pe_rva_to_va (bin, function_rva);
 			exports[i].paddr = bin_pe_rva_to_paddr (bin, function_rva);
 			exports[i].ordinal = function_ordinal;
 			memcpy (exports[i].forwarder, forwarder_name, PE_NAME_LENGTH);
 			exports[i].forwarder[PE_NAME_LENGTH] = '\0';
-			memcpy (exports[i].name,      export_name,    PE_NAME_LENGTH);
+			memcpy (exports[i].name, export_name, PE_NAME_LENGTH);
 			exports[i].name[PE_NAME_LENGTH] = '\0';
 			exports[i].last = 0;
 		}
