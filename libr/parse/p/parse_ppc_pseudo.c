@@ -1718,10 +1718,13 @@ static int parse(RParse *p, const char *data, char *str) {
 #endif
 				if (!strcmp (w1, w2)) {
 					char a[64], b[64];
-#define REPLACE(x,y) \
-					snprintf (a, 64, x, w1, w1); \
-					snprintf (b, 64, y, w1); \
-					p = r_str_replace (p, a, b, 0);
+#define REPLACE(x,y) do { \
+		int snprintf_len1_ = snprintf (a, 64, x, w1, w1); \
+		int snprintf_len2_ = snprintf (b, 64, y, w1); \
+		if (snprintf_len1_ < 64 && snprintf_len2_ < 64) { \
+			p = r_str_replace (p, a, b, 0); \
+		} \
+	} while (0)
 
 					// TODO: optimize
 					REPLACE ("%s = %s +", "%s +=");
