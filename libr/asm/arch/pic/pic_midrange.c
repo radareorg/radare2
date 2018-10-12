@@ -60,7 +60,7 @@ static const PicMidrangeOpInfo
 static const char *PicMidrangeFsrOps[] = {"++FSR%d", "--FSR%d", "FSR%d++",
 					  "FSR%d--"};
 
-PicMidrangeOpcode pic_midrange_get_opcode (ut16 instr) {
+R_API PicMidrangeOpcode pic_midrange_get_opcode (ut16 instr) {
 	if (instr & (1 << 14)) {
 		return PIC_MIDRANGE_OPCODE_INVALID;
 	}
@@ -147,14 +147,14 @@ PicMidrangeOpcode pic_midrange_get_opcode (ut16 instr) {
 	return PIC_MIDRANGE_OPCODE_INVALID;
 }
 
-const PicMidrangeOpInfo *pic_midrange_get_op_info (PicMidrangeOpcode opcode) {
+R_API const PicMidrangeOpInfo *pic_midrange_get_op_info (PicMidrangeOpcode opcode) {
 	if (opcode >= PIC_MIDRANGE_OPCODE_INVALID) {
 		return NULL;
 	}
 	return &pic_midrange_op_info[opcode];
 }
 
-int pic_midrange_disassemble (RAsmOp *op, char *opbuf, const ut8 *b, int l) {
+R_API int pic_midrange_disassemble (RAsmOp *op, char *opbuf, const ut8 *b, int l) {
 	char fsr_op[6];
 	st16 branch;
 
