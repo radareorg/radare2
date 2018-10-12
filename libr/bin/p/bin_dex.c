@@ -170,10 +170,6 @@ static char *createAccessFlagStr(ut32 flags, AccessFor forWhat) {
 	if (!str) {
 		return NULL;
 	}
-	if (count == 0) {
-		*cp = '\0';
-		return cp;
-	}
 	for (i = 0; i < NUM_FLAGS; i++) {
 		if (flags & 0x01) {
 			const char *accessStr = kAccessStrings[forWhat][i];

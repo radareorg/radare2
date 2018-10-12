@@ -147,7 +147,7 @@ R_API ut64 r_num_get(RNum *num, const char *str) {
 		return 0;
 	}
 	if (!strncmp (str, "1u", 2)) { // '1' is captured by op :(
-		if (num->value == UT64_MAX) {
+		if (num && num->value == UT64_MAX) {
 			num->value = 0;
 		}
 		switch (atoi (str + 2)) {
