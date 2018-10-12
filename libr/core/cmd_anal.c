@@ -5636,7 +5636,11 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							r_cons_printf (",\"flag\":\"%s\"", fi->name);
 						}
 						if (fi->realname && strcmp (fi->name, fi->realname)) {
-							r_cons_printf (",\"realname\":\"%s\"", fi->realname);
+							char *escaped = r_str_escape (fi->realname);
+							if (escaped) {
+								r_cons_printf (",\"realname\":\"%s\"", escaped);
+								free (escaped);
+							}
 						}
 					}
 					r_cons_printf ("}%s", iter->n? ",": "");
