@@ -479,7 +479,7 @@ static void ds_comment_(RDisasmState *ds, bool align, bool nl, const char *forma
 static void ds_comment(RDisasmState *ds, bool align, const char *format, ...) {
 	va_list ap;
 	va_start (ap, format);
-	ds_comment_ (ds, align, true, format, ap);
+	ds_comment_ (ds, align, align, format, ap);
 	va_end (ap);
 }
 
