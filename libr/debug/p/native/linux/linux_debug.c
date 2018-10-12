@@ -239,7 +239,7 @@ bool linux_set_options(RDebug *dbg, int pid) {
 	}
 	/* SIGTRAP | 0x80 on signal handler .. not supported on all archs */
 	traceflags |= PTRACE_O_TRACESYSGOOD;
-	if (r_debug_ptrace (dbg, PTRACE_SETOPTIONS, pid, 0, traceflags) == -1) {
+	if (r_debug_ptrace (dbg, PTRACE_SETOPTIONS, pid, 0, (r_ptrace_data_t)(size_t)traceflags) == -1) {
 		return false;
 	}
 	return true;
@@ -787,7 +787,7 @@ int linux_reg_read (RDebug *dbg, int type, ut8 *buf, int size) {
 				continue;
 			}
 			long ret = r_debug_ptrace (dbg, PTRACE_PEEKUSER, pid,
-					r_offsetof (struct user, u_debugreg[i]), 0);
+					(void *)r_offsetof (struct user, u_debugreg[i]), 0);
 			if ((i+1) * sizeof (ret) > size) {
 				eprintf ("linux_reg_get: Buffer too small %d\n", size);
 				break;
@@ -918,8 +918,8 @@ int linux_reg_write (RDebug *dbg, int type, const ut8 *buf, int size) {
 			if (i == 4 || i == 5) {
 				continue;
 			}
-			if (r_debug_ptrace (dbg, PTRACE_POKEUSER, dbg->pid, r_offsetof (
-					struct user, u_debugreg[i]), val[i])) {
+			if (r_debug_ptrace (dbg, PTRACE_POKEUSER, dbg->pid,
+					(void *)r_offsetof (struct user, u_debugreg[i]), (r_ptrace_data_t)val[i])) {
 				eprintf ("ptrace error for dr %d\n", i);
 				r_sys_perror ("ptrace POKEUSER");
 			}
