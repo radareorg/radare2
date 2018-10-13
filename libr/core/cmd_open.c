@@ -1235,6 +1235,7 @@ static int cmd_open(void *data, const char *input) {
 			r_str_argv_free (argv);
 		}
 		r_core_block_read (core);
+		r_core_file_free (file);
 		return 0;
 	}
 
