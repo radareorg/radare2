@@ -1060,7 +1060,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 				printfmt (" ");
 			}
 			for (j = i; j < i + inc; j++) {
-				char *comment = p->get_comments (p->user, addr + j);
+				char *comment = p->get_comments (p->user, addr + j, false);
 				if (comment) {
 					if (p && p->colorfor) {
 						a = p->colorfor (p->user, addr + j, true);

@@ -1505,7 +1505,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 
 		if (core->print->use_comments) {
 			for (j = 0; j < nb_cols; j++) {
-				const char *comment = core->print->get_comments (core->print->user, addr + j);
+				const char *comment = core->print->get_comments (core->print->user, addr + j, false);
 				if (comment) {
 					r_cons_printf (" ; %s", comment);
 				}
@@ -2158,7 +2158,7 @@ r_cons_pop();
 		if (addr != UT64_MAX) {
 			const char *str = NULL;
 			if (show_comments) {
-				char *comment = r_core_anal_get_comments (core, addr);
+				char *comment = r_core_anal_get_comments (core, addr, true);
 				if (comment) {
 					if (show_offset) {
 						r_cons_printf ("%s0x%08"PFMT64x" ", use_color? pal->offset: "", addr);
