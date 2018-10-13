@@ -1099,18 +1099,6 @@ static void ds_newline(RDisasmState *ds) {
 	}
 }
 
-static void ds_pre_xrefs(RDisasmState *ds, bool no_fcnlines) {
-	ds_setup_pre (ds, false, false);
-	if (ds->pre != DS_PRE_NONE && ds->pre != DS_PRE_EMPTY) {
-		ds->pre = no_fcnlines ? DS_PRE_EMPTY : DS_PRE_FCN_MIDDLE;
-	}
-	ds_print_pre (ds);
-	char *tmp = ds->line;
-	ds->line = ds->refline2;
-	ds_print_lines_left (ds);
-	ds->line = tmp;
-}
-
 static void ds_show_refs(RDisasmState *ds) {
 	RAnalRef *ref;
 	RListIter *iter;
@@ -1403,6 +1391,21 @@ static void ds_print_show_cursor(RDisasmState *ds) {
 		}
 	}
 	r_cons_strcat (res);
+}
+
+static void ds_pre_xrefs(RDisasmState *ds, bool no_fcnlines) {
+	ds_setup_pre (ds, false, false);
+	if (ds->pre != DS_PRE_NONE && ds->pre != DS_PRE_EMPTY) {
+		ds->pre = no_fcnlines ? DS_PRE_EMPTY : DS_PRE_FCN_MIDDLE;
+	}
+	ds_print_pre (ds);
+	char *tmp = ds->line;
+	ds->line = ds->refline2;
+	ds_print_lines_left (ds);
+	if (!ds->show_offset && ds->show_marks) {
+		ds_print_show_cursor (ds);
+	}
+	ds->line = tmp;
 }
 
 static int var_comparator(const RAnalVar *a, const RAnalVar *b){
@@ -1703,11 +1706,10 @@ beach:
 				idx = 0;
 			}
 			spaces[idx] = 0;
-			ds_setup_print_pre (ds, false, true);
+			ds_pre_xrefs (ds, false);
 
 			tmp = ds->line;
 			ds->line = ds->refline2;
-			ds_print_lines_left (ds);
 			ds->line = tmp;
 
 			if (ds->show_flgoff) {
@@ -1902,11 +1904,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 			}
 			free (p);
 		} else {
-			if (ds->show_comment_right) {
-				_ALIGN;
-			} else {
-				ds_pre_xrefs (ds, false);
-			}
+			ds_pre_xrefs (ds, false);
 			if (ds->show_color) {
 				r_cons_strcat (ds->color_usrcmt);
 			}
@@ -1983,7 +1981,8 @@ static void ds_show_flags(RDisasmState *ds) {
 		}
 		ds_begin_json_line (ds);
 
-		if (ds->show_flgoff) {
+		bool fake_flag_marks = (!ds->show_offset && ds->show_marks);
+		if (ds->show_flgoff && ds->show_offset) {
 			ds_beginline (ds);
 			ds_print_offset (ds);
 			r_cons_printf (" ");
