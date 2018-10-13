@@ -252,7 +252,7 @@ static void menuPanelPrint(RConsCanvas *can, RPanel *panel, int x, int y, int w,
 
 static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int x, int y, int w, int h, int color) {
 	int graph_pad = 0;
-	char title[128], *text, *cmdStr;
+	char title[128], *text, *cmdStr = NULL;
 	if (color) {
 		snprintf (title, sizeof (title) - 1,
 				"%s[x] %s"Color_RESET, core->cons->pal.graph_box2, panel->title);
