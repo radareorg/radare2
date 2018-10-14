@@ -157,8 +157,6 @@ R_API bool r_syscall_setup(RSyscall *s, const char *arch, int bits, const char *
 		if (dbName) {
 			s->db = openDatabase (s->db, dbName);
 			free (dbName);
-		} else {
-			eprintf ("Couldn't create dbName string.\n");
 		}
 	}
 
@@ -169,8 +167,6 @@ R_API bool r_syscall_setup(RSyscall *s, const char *arch, int bits, const char *
 			sdb_free (s->srdb);
 			s->srdb = openDatabase (NULL, dbName);
 			free (dbName);
-		} else {
-			eprintf ("Couldn't create dbName string.\n");
 		}
 	}
 	if (s->fd) {
