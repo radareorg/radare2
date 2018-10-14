@@ -190,7 +190,7 @@ R_API bool r_asm_code_set_equ (RAsmCode *code, const char *key, const char *valu
 R_API char *r_asm_code_equ_replace (RAsmCode *code, char *str);
 
 /* op.c */
-R_API RAsmOp *r_asm_op_new();
+R_API RAsmOp *r_asm_op_new(void);
 R_API void r_asm_op_free(RAsmOp *op);
 R_API void r_asm_op_init(RAsmOp *op);
 R_API void r_asm_op_fini(RAsmOp *op);
