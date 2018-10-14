@@ -4830,13 +4830,19 @@ toro:
 		}
 		if (ds->pdf) {
 			static bool sparse = false;
-			if (!r_anal_fcn_bbget_in (ds->pdf, ds->at)) {
+			RAnalBlock *bb = r_anal_fcn_bbget_in (ds->pdf, ds->at);
+			if (!bb) {
 				inc = ds->oplen;
 				r_anal_op_fini (&ds->analop);
 				if (!sparse) {
 					r_cons_printf ("..\n");
 					sparse = true;
 				}
+				continue;
+			} else if (sparse && bb->addr < ds->at) {
+				inc = -(ds->at - bb->addr);
+				sparse = false;
+				r_anal_op_fini (&ds->analop);
 				continue;
 			}
 			sparse = false;
