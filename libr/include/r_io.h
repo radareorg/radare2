@@ -17,6 +17,24 @@
 
 #define R_IO_UNDOS 64
 
+#if HAVE_PTRACE
+
+#if __sun
+#include <unistd.h>
+#include <sys/types.h>
+#else
+#include <sys/ptrace.h>
+#endif
+
+#if defined(__APPLE__) || __sun || __FreeBSD__ || __OpenBSD__
+typedef int r_ptrace_request_t;
+typedef int r_ptrace_data_t;
+#else
+typedef enum __ptrace_request r_ptrace_request_t;
+typedef void * r_ptrace_data_t;
+#endif
+#endif
+
 #if __cplusplus
 extern "C" {
 #endif
@@ -79,6 +97,9 @@ typedef struct r_io_t {
 	RIOUndo undo;
 	SdbList *plugins;
 	char *runprofile;
+#ifdef USE_PTRACE_WRAP
+	struct ptrace_wrap_instance_t *ptrace_wrap;
+#endif
 	char *args;
 	void *user;
 	PrintfCallback cb_printf;
@@ -233,6 +254,9 @@ typedef bool (*RIOAddrIsMapped) (RIO *io, ut64 addr);
 typedef SdbList *(*RIOSectionVgetSecsAt) (RIO *io, ut64 vaddr);
 typedef RIOSection *(*RIOSectionVgetSec) (RIO *io, ut64 vaddr);
 typedef RIOSection *(*RIOSectionAdd) (RIO *io, ut64 addr, ut64 vaddr, ut64 size, ut64 vsize, int rwx, const char *name, ut32 bin_id, int fd);
+#if HAVE_PTRACE
+typedef long (*RIOPtraceFn) (RIO *io, r_ptrace_request_t request, pid_t pid, void *addr, r_ptrace_data_t data);
+#endif
 
 typedef struct r_io_bind_t {
 	int init;
@@ -263,6 +287,9 @@ typedef struct r_io_bind_t {
 	RIOSectionVgetSecsAt sections_vget;
 	RIOSectionVgetSec sect_vget;
 	RIOSectionAdd section_add;
+#if HAVE_PTRACE
+	RIOPtraceFn ptrace;
+#endif
 } RIOBind;
 
 //map.c
@@ -473,6 +500,11 @@ R_API bool r_io_is_valid_offset (RIO *io, ut64 offset, int hasperm);
 R_API bool r_io_addr_is_mapped(RIO *io, ut64 vaddr);
 R_API bool r_io_read_i (RIO* io, ut64 addr, ut64 *val, int size, bool endian);
 R_API bool r_io_write_i (RIO* io, ut64 addr, ut64 *val, int size, bool endian);
+
+#if HAVE_PTRACE
+R_API long r_io_ptrace(RIO *io, r_ptrace_request_t request, pid_t pid, void *addr, r_ptrace_data_t data);
+R_API pid_t r_io_ptrace_fork(RIO *io, void (*child_callback)(void *), void *child_callback_user);
+#endif
 
 extern RIOPlugin r_io_plugin_procpid;
 extern RIOPlugin r_io_plugin_malloc;

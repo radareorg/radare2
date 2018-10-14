@@ -2179,6 +2179,11 @@ static char *build_hash_string(int mode, const char *chksum, ut8 *data, ut32 dat
 	return ret;
 }
 
+static void dup_chk_free_kv(HtKv *kv) {
+	free (kv->key);
+	free (kv);
+}
+
 static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments) {
 	char *str = NULL;
 	RBinSection *section;
@@ -2191,7 +2196,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	bool printHere = false;
 	sections = r_bin_get_sections (r->bin);
 	bool inDebugger = r_config_get_i (r->config, "cfg.debug");
-	SdbHt *dup_chk_ht = ht_new (NULL, NULL, NULL);
+	SdbHt *dup_chk_ht = ht_new (NULL, dup_chk_free_kv, NULL);
 	bool ret = false;
 	const char *type = print_segments ? "segment" : "section";
 
@@ -2316,9 +2321,12 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				R_FREE (str);
 			}
 			if (section->add) {
+				bool found;
 				str = r_str_newf ("%"PFMT64x".%"PFMT64x".%"PFMT64x".%"PFMT64x".%"PFMT32u".%s.%"PFMT32u".%d",
 					section->paddr, addr, section->size, section->vsize, section->perm, section->name, r->bin->cur->id, fd);
-				if (!ht_find (dup_chk_ht, str, NULL) && r_io_section_add (r->io, section->paddr, addr,
+
+				ht_find (dup_chk_ht, str, &found);
+				if (!found && r_io_section_add (r->io, section->paddr, addr,
 						section->size, section->vsize,
 						section->perm, section->name,
 						r->bin->cur->id, fd)) {

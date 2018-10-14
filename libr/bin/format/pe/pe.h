@@ -72,7 +72,7 @@ typedef struct _PE_RESOURCE {
 	Pe_image_resource_data_entry *data;
 } r_pe_resource;
 
-#define GUIDSTR_LEN 34
+#define GUIDSTR_LEN 41
 #define DBG_FILE_NAME_LEN 255
 
 typedef struct SDebugInfo {

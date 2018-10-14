@@ -834,7 +834,7 @@ static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	}
 
 	RDyldCache *cache = R_NEW0 (RDyldCache);
-	strncpy ((char*) cache->magic, "dyldcac", 7);
+	memcpy (cache->magic, "dyldcac", 7);
 	cache->buf = fbuf;
 	cache->hdr = read_cache_header (fbuf);
 	if (!cache->hdr) {

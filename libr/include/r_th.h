@@ -92,7 +92,7 @@ R_API int r_th_lock_enter(RThreadLock *thl);
 R_API int r_th_lock_leave(RThreadLock *thl);
 R_API void *r_th_lock_free(RThreadLock *thl);
 
-R_API RThreadCond *r_th_cond_new();
+R_API RThreadCond *r_th_cond_new(void);
 R_API void r_th_cond_signal(RThreadCond *cond);
 R_API void r_th_cond_signal_all(RThreadCond *cond);
 R_API void r_th_cond_wait(RThreadCond *cond, RThreadLock *lock);

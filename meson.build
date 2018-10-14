@@ -84,7 +84,12 @@ cc = meson.get_compiler('c')
 ldl = cc.find_library('dl', required: false)
 pth = cc.find_library('pthread', required: false)
 utl = cc.find_library('util', required: false)
-mth = cc.find_library('m', required: false)
+if host_machine.system() == 'sunos'
+  # workaround for Solaris until https://github.com/mesonbuild/meson/issues/4328 is fixed
+  mth = declare_dependency(link_args: '-lm')
+else
+  mth = cc.find_library('m', required: false)
+endif
 
 platform_deps = []
 platform_inc = ['.', 'libr/include']
@@ -254,6 +259,12 @@ else
   message('Not using libuv, thus using fallback server implementations')
 endif
 
+have_ptrace = not ['windows', 'cygwin', 'sunos'].contains(host_machine.system())
+use_ptrace_wrap = ['linux'].contains(host_machine.system())
+
+message('HAVE_PTRACE: @0@'.format(have_ptrace))
+message('USE_PTRACE_WRAP: @0@'.format(use_ptrace_wrap))
+
 userconf = configuration_data()
 userconf.set('R_CHECKS_LEVEL', get_option('checks_level'))
 userconf.set('HAVE_LIB_MAGIC', sys_magic.found().to_int())
@@ -278,6 +289,8 @@ userconf.set('BINDINGS', r2_bindings)
 userconf.set('HAVE_OPENSSL', use_sys_openssl.to_int())
 userconf.set('HAVE_LIBUV', use_libuv.to_int())
 userconf.set('HAVE_FORK', 1)
+userconf.set('HAVE_PTRACE', have_ptrace.to_int())
+userconf.set('USE_PTRACE_WRAP', use_ptrace_wrap.to_int())
 userconf.set('WITH_GPL', 1)
 if host_machine.system() == 'windows'
   userconf.set('DATADIR_R2', r2_datdir)

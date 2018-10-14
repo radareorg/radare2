@@ -1421,10 +1421,12 @@ R_API int r_core_visual_trackflags(RCore *core) {
 				eprintf ("Rename function '%s' as:\n", fs2);
 				r_line_set_prompt (":> ");
 				if (r_cons_fgets (line, sizeof (line), 0, NULL) < 0) {
-					cmd[0]='\0';
+					cmd[0] = '\0';
 				}
-				snprintf (cmd, sizeof (cmd), "afr %s %s", line, fs2);
-				r_core_cmd (core, cmd, 0);
+				int res = snprintf (cmd, sizeof (cmd), "afr %s %s", line, fs2);
+				if (res < sizeof (cmd)) {
+					r_core_cmd (core, cmd, 0);
+				}
 				r_cons_set_raw (1);
 				r_cons_show_cursor (false);
 			}

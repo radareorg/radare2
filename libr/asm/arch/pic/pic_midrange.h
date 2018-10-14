@@ -96,8 +96,8 @@ typedef enum {
 	PIC_MIDRANGE_OPCODE_INVALID
 } PicMidrangeOpcode;
 
-PicMidrangeOpcode pic_midrange_get_opcode (ut16 instr);
-const PicMidrangeOpInfo *pic_midrange_get_op_info (PicMidrangeOpcode opcode);
-int pic_midrange_disassemble (RAsmOp *op, char *opbuf, const ut8 *b, int l);
+R_API PicMidrangeOpcode pic_midrange_get_opcode (ut16 instr);
+R_API const PicMidrangeOpInfo *pic_midrange_get_op_info (PicMidrangeOpcode opcode);
+R_API int pic_midrange_disassemble (RAsmOp *op, char *opbuf, const ut8 *b, int l);
 
 #endif // PIC_MIDRANGE_H

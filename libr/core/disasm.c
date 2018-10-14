@@ -37,7 +37,7 @@ static const char* r_vline_u[] = {
 	"│", // LINE_VERT
 	"├", // LINE_CROSS
 	"─", // LINE_HORIZ
-	"⁝", // LINE_UP
+	"╎", // LINE_UP
 	// "↑", // LINE_UP
 	//"┌", // LUP_CORNER
 	"┘", // LUP_CORNER
@@ -53,7 +53,7 @@ static const char* r_vline_uc[] = {
 	"├", // LINE_CROSS
 	"─", // LINE_HORIZ
 	// "↑", // LINE_UP
-	"⋮", // LINE_UP
+	"╎", // LINE_UP
 	// "≀", // LINE_UP
 	//"┌", // LUP_CORNER
 	"╯", // LUP_CORNER
@@ -450,10 +450,7 @@ static void ds_begin_comment(RDisasmState *ds) {
 	}
 }
 
-static void ds_comment(RDisasmState *ds, bool align, const char *format, ...) {
-	va_list ap;
-	va_start (ap, format);
-
+static void ds_comment_(RDisasmState *ds, bool align, bool nl, const char *format, va_list ap) {
 	if (ds->show_comments) {
 		if (ds->show_comment_right && align) {
 			ds_align_comment (ds);
@@ -474,12 +471,29 @@ static void ds_comment(RDisasmState *ds, bool align, const char *format, ...) {
 		}
 	}
 
-	if (!ds->show_comment_right && align) {
+	if (!ds->show_comment_right && nl) {
 		ds_newline (ds);
 	}
+}
 
+static void ds_comment(RDisasmState *ds, bool align, const char *format, ...) {
+	va_list ap;
+	va_start (ap, format);
+	ds_comment_ (ds, align, align, format, ap);
 	va_end (ap);
 }
+
+#define DS_COMMENT_FUNC(name, align, nl) \
+	static void ds_comment_##name(RDisasmState *ds, const char *format, ...) { \
+		va_list ap; \
+		va_start (ap, format); \
+		ds_comment_ (ds, align, nl, format, ap); \
+		va_end (ap); \
+	}
+
+DS_COMMENT_FUNC (start, true, false)
+DS_COMMENT_FUNC (middle, false, false)
+DS_COMMENT_FUNC (end, false, true)
 
 static void ds_comment_esil(RDisasmState *ds, bool up, bool end, const char *format, ...) {
 	va_list ap;
@@ -977,7 +991,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 					ut64 killme = UT64_MAX;
 					const int be = core->assembler->big_endian;
 					r_io_read_i (core->io, ds->analop.ptr, &killme, ds->analop.refptr, be);
-					core->parser->relsub_addr = (int)killme;
+					core->parser->relsub_addr = killme;
 				}
 			}
 			r_parse_filter (core->parser, ds->vat, core->flags, asm_str,
@@ -3524,7 +3538,8 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	ut64 refaddr = p;
 	bool aligned = false;
 	int refptr = ds->analop.refptr;
-	RFlagItem *f;
+	RFlagItem *f, *f2 = NULL;
+	bool f2_in_opstr = false;  /* Also if true, f exists */
 	if (!ds->show_comments || !ds->show_slow) {
 		return;
 	}
@@ -3593,9 +3608,18 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		if (((st64)p) > 0) {
 			f = r_flag_get_i (core->flags, p);
 			if (f) {
+				ut64 relsub_addr = core->parser->relsub_addr;
+				if (relsub_addr && relsub_addr != p) {
+					f2 = r_flag_get_i2 (core->flags, relsub_addr);
+					if (!f2) {
+						f2 = r_flag_get_i (core->flags, relsub_addr);
+					}
+					f2_in_opstr = f2 && ds->opstr && strstr (ds->opstr, f2->name);
+				}
 				refaddr = p;
 				if (!flag_printed && !is_filtered_flag (ds, f->name)
-				    && (!ds->opstr || !strstr (ds->opstr, f->name))) {
+				    && (!ds->opstr || !strstr (ds->opstr, f->name))
+				    && !f2_in_opstr) {
 					ds_begin_comment (ds);
 					ds_comment (ds, true, "; %s", f->name);
 					ds->printed_flag_addr = p;
@@ -3621,7 +3645,6 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 					}
 				}
 			} else {
-				f = NULL;
 				if (n == UT32_MAX || n == UT64_MAX) {
 					ds_begin_comment (ds);
 					ds_comment (ds, true, "; [0x%" PFMT64x":%d]=-1",
@@ -3633,9 +3656,9 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 				} else {
 					const char *kind, *flag = "";
 					char *msg2 = NULL;
-					f = r_flag_get_i (core->flags, n);
-					if (f) {
-						flag = f->name;
+					RFlagItem *f2_ = r_flag_get_i (core->flags, n);
+					if (f2_) {
+						flag = f2_->name;
 					} else {
 						msg2 = calloc (sizeof (char), len);
 						r_io_read_at (core->io, n, (ut8*)msg2, len - 1);
@@ -3659,9 +3682,16 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 								refptrstr = s->name;
 							}
 						}
-						ds_comment (ds, true, "; [0x%" PFMT64x":%d]=%s%s0x%" PFMT64x "%s%s",
-							refaddr, refptr, refptrstr, *refptrstr?".":"",
-							n, (flag && *flag) ? " " : "", flag);
+						ds_comment_start (ds, "; [");
+						if (f2_in_opstr) {
+							ds_comment_middle (ds, "%s", f->name);
+							flag_printed = true;
+						} else {
+							ds_comment_middle (ds, "0x%" PFMT64x, refaddr);
+						}
+						ds_comment_end (ds, ":%d]=%s%s0x%" PFMT64x "%s%s",
+								refptr, refptrstr, *refptrstr ? "." : "",
+								n, (flag && *flag) ? " " : "", flag);
 					}
 					free (msg2);
 				}
@@ -4800,13 +4830,19 @@ toro:
 		}
 		if (ds->pdf) {
 			static bool sparse = false;
-			if (!r_anal_fcn_bbget_in (ds->pdf, ds->at)) {
+			RAnalBlock *bb = r_anal_fcn_bbget_in (ds->pdf, ds->at);
+			if (!bb) {
 				inc = ds->oplen;
 				r_anal_op_fini (&ds->analop);
 				if (!sparse) {
 					r_cons_printf ("..\n");
 					sparse = true;
 				}
+				continue;
+			} else if (sparse && bb->addr < ds->at) {
+				inc = -(ds->at - bb->addr);
+				sparse = false;
+				r_anal_op_fini (&ds->analop);
 				continue;
 			}
 			sparse = false;

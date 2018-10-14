@@ -2260,7 +2260,6 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 							r_cons_printf ("%s\n", res);
 							free (res);
 						}
-						free (res);
 					}
 					core->num->value = value;
 					r_list_free (tmpenvs);

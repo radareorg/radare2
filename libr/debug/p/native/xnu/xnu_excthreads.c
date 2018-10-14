@@ -434,7 +434,7 @@ bool xnu_create_exception_thread(RDebug *dbg) {
 			" xnu_start_exception_thread\n");
 		return false;
 	}
-	ptrace (PT_ATTACHEXC, dbg->pid, 0, 0);
+	r_debug_ptrace (dbg, PT_ATTACHEXC, dbg->pid, 0, 0);
 	if (!MACH_PORT_VALID (task_self)) {
 		eprintf ("error to get the task for the current process"
 			" xnu_start_exception_thread\n");

@@ -1073,7 +1073,9 @@ ST_INLN void define_push(int v, int macro_type, int *str, Sym *first_arg)
 	}
 	s->d = str;
 	s->next = first_arg;
-	table_ident[v - TOK_IDENT]->sym_define = s;
+	if (v >= TOK_IDENT) {
+		table_ident[v - TOK_IDENT]->sym_define = s;
+	}
 }
 
 /* undefined a define symbol. Its name is just set to zero */
@@ -1596,9 +1598,9 @@ include_trynext:
 			memcpy (filepath, file->filename, filepath_len);
 			strcpy (filepath + filepath_len, buf);
 			if (tcc_open (s1, filepath) < 0) {
-				snprintf (filepath, sizeof (filepath),
+				int len = snprintf (filepath, sizeof (filepath),
 					"/usr/include/%s", buf);
-				if (tcc_open (s1, filepath) < 0) {
+				if (len >= sizeof (filepath) || tcc_open (s1, filepath) < 0) {
 					tcc_error ("include file '%s' not found", filepath);
 				} else {
 					fprintf (stderr, "#include \"%s\"\n", filepath);

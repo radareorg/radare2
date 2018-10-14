@@ -17,7 +17,7 @@
 static const char cb64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 static const char cd64[] = "|$$$}rstuvwxyz{$$$$$$$>?@ABCDEFGHIJKLMNOPQRSTUVW$$$$$$XYZ[\\]^_`abcdefghijklmnopq";
 
-static void b64_encode(const ut8 in[3], char out[4], int len) {
+static void local_b64_encode(const ut8 in[3], char out[4], int len) {
 	if (len < 1) {
 		return;
 	}
@@ -27,7 +27,7 @@ static void b64_encode(const ut8 in[3], char out[4], int len) {
 	out[3] = (len > 2? cb64[in[2] & 0x3f]: '=');
 }
 
-static int b64_decode(const char in[4], ut8 out[3]) {
+static int local_b64_decode(const char in[4], ut8 out[3]) {
 	int len = 3;
 	ut8 i, v[4] = { 0 };
 	for (i = 0; i < 4; i++) {
@@ -53,7 +53,7 @@ R_API int r_base64_decode(ut8 *bout, const char *bin, int len) {
 		len = strlen (bin);
 	}
 	for (in = out = 0; in + 3 < len; in += 4) {
-		ret = b64_decode (bin + in, bout + out);
+		ret = local_b64_decode (bin + in, bout + out);
 		if (ret < 1) {
 			return -1;
 		}
@@ -86,7 +86,7 @@ R_API int r_base64_encode(char *bout, const ut8 *bin, int len) {
 		len = strlen ((const char *)bin);
 	}
 	for (in = out = 0; in < len; in += 3, out += 4) {
-		b64_encode (bin + in, (char *)bout + out,
+		local_b64_encode (bin + in, (char *)bout + out,
 			(len - in) > 3 ? 3 : len - in);
 	}
 	bout[out] = 0;
@@ -111,7 +111,7 @@ R_API char *r_base64_encode_dyn(const char *str, int len) {
 		return NULL;
 	}
 	for (in = out = 0; in < len; in += 3, out += 4) {
-		b64_encode ((const ut8 *)str + in, (char *)bout + out,
+		local_b64_encode ((const ut8 *)str + in, (char *)bout + out,
 			(len - in) > 3 ? 3 : len - in);
 	}
 	bout[out] = 0;

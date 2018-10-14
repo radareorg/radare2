@@ -327,11 +327,7 @@ next_quote:
 		} else
 		if (!strcmp (cmd, "*")) {
 			ForeachListUser user = { out, encode, NULL };
-#if INSERTORDER
-			SdbList *list = sdb_foreach_list (s, false);
-#else
 			SdbList *list = sdb_foreach_list (s, true);
-#endif
 			SdbListIter *iter;
 			SdbKv *kv;
 			ls_foreach (list, iter, kv) {

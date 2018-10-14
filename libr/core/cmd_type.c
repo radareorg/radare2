@@ -259,26 +259,21 @@ static void save_parsed_type(RCore *core, const char *parsed) {
 	}
 }
 
-//TODO
-//look at the next couple of functions
-//can be optimized into one right ... you see it you do it :P
-static int stdprintifstruct(void *p, const char *k, const char *v) {
-	if (!strncmp (v, "struct", strlen ("struct") + 1)) {
-		r_cons_println (k);
-	}
+static int stdifstruct(void *user, const char *k, const char *v) {
+	return !strncmp (v, "struct", strlen ("struct") + 1);
+}
+
+static int printkey_cb(void *user, const char *k, const char *v) {
+	r_cons_println (k);
 	return 1;
 }
 
-static const char *Gcomma = "";
-static int stdprintifstructjson(void *p, const char *k, const char *v) {
-	if (!strncmp (v, "struct", strlen ("struct") + 1)) {
-		r_cons_printf ("%s\"%s\"", Gcomma, k);
-		Gcomma = ",";
-	}
+static int printkey_json_cb(void *user, const char *k, const char *v) {
+	r_cons_printf ("\"%s\"", k);
 	return 1;
 }
 
-static void printFunctionType (RCore *core, const char *input) {
+static void printFunctionType(RCore *core, const char *input) {
 	Sdb *TDB = core->anal->sdb_types;
 	char *res = sdb_querys (TDB, NULL, -1, sdb_fmt ("func.%s.args", input));
 	const char *name = r_str_trim_ro (input);
@@ -294,43 +289,22 @@ static void printFunctionType (RCore *core, const char *input) {
 	}
 	r_cons_printf ("]}");
 	free (res);
-	//	r_core_cmdf (core, "tk~func.%s.", input + 2);
 }
 
-static int stdprintiffunc_json (void *p, const char *k, const char *v) {
-	RCore *core = p;
-	if (!strncmp (v, "func", strlen ("func") + 1)) {
-		if (k && *k) {
-			// r_core_cmdf (core, "tfj %s", k);
-			printFunctionType (core, k);
-			r_cons_printf (",");
-		}
-	}
+static int printfunc_json_cb(void *user, const char *k, const char *v) {
+	printFunctionType ((RCore *)user, k);
 	return 1;
 }
 
-static int stdprintiffunc (void *p, const char *k, const char *v) {
-	if (!strncmp (v, "func", strlen ("func") + 1)) {
-		r_cons_println (k);
-	}
-	return 1;
+static int stdiffunc(void *p, const char *k, const char *v) {
+	return !strncmp (v, "func", strlen ("func") + 1);
 }
 
-static int stdprintifunionjson(void *p, const char *k, const char *v) {
-	if (!strncmp (v, "union", strlen ("union") + 1)) {
-		r_cons_printf ("\"%s\"", k);
-	}
-	return 1;
+static int stdifunion(void *p, const char *k, const char *v) {
+	return !strncmp (v, "union", strlen ("union") + 1);
 }
 
-static int stdprintifunion(void *p, const char *k, const char *v) {
-	if (!strncmp (v, "union", strlen ("union") + 1)) {
-		r_cons_println (k);
-	}
-	return 1;
-}
-
-static int sdbdeletelink (void *p, const char *k, const char *v) {
+static int sdbdeletelink(void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
 	if (!strncmp (k, "link.", strlen ("link."))) {
 		r_type_del (core->anal->sdb_types, k);
@@ -338,40 +312,39 @@ static int sdbdeletelink (void *p, const char *k, const char *v) {
 	return 1;
 }
 
-static int linklist (void *p, const char *k, const char *v) {
-	if (!strncmp (k, "link.", strlen ("link."))) {
-		r_cons_printf ("tl %s = 0x%s\n", v, k + strlen ("link."));
-	}
+static int stdiflink(void *p, const char *k, const char *v) {
+	return !strncmp (k, "link.", strlen ("link."));
+}
+
+static int print_link_cb(void *p, const char *k, const char *v) {
+	r_cons_printf ("tl %s = 0x%s\n", v, k + strlen ("link."));
 	return 1;
 }
 
-static int linklist_readable (void *p, const char *k, const char *v) {
+static int print_link_readable_cb(void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
-	if (!strncmp (k, "link.", strlen ("link."))) {
-		char *fmt = r_type_format (core->anal->sdb_types, v);
-		if (!fmt) {
-			eprintf("Cant fint type %s", v);
-			return 1;
-		}
-		r_cons_printf ("(%s)\n", v);
-		r_core_cmdf (core, "pf %s @ 0x%s\n", fmt, k + strlen ("link."));
+	char *fmt = r_type_format (core->anal->sdb_types, v);
+	if (!fmt) {
+		eprintf ("Cant fint type %s", v);
+		return 1;
 	}
+	r_cons_printf ("(%s)\n", v);
+	r_core_cmdf (core, "pf %s @ 0x%s\n", fmt, k + strlen ("link."));
 	return 1;
-
 }
 
-static int typelist_cb(void *p, const char *k, const char *v) {
+static int stdiftype(void *p, const char *k, const char *v) {
+	return !strncmp (v, "type", strlen ("type") + 1);
+}
+
+static int print_typelist_r_cb(void *p, const char *k, const char *v) {
 	r_cons_printf ("tk %s=%s\n", k, v);
 	return 1;
 }
 
-static int sdbforcb_default (void *p, const char *k, const char *v) {
-	r_cons_println (k);
-	return 1;
-}
-
-static int sdbforcb_json (void *p, const char *k, const char *v) {
-	Sdb *sdb = (Sdb *)p;
+static int print_typelist_json_cb(void *p, const char *k, const char *v) {
+	RCore *core = (RCore *)p;
+	Sdb *sdb = core->anal->sdb_types;
 	char *sizecmd = r_str_newf ("type.%s.size", k);
 	char *size_s = sdb_querys (sdb, NULL, -1, sizecmd);
 	char *formatcmd = r_str_newf ("type.%s", k);
@@ -386,39 +359,43 @@ static int sdbforcb_json (void *p, const char *k, const char *v) {
 	return 1;
 }
 
+static void print_keys(Sdb *TDB, RCore *core, SdbForeachCallback filter, SdbForeachCallback printfn_cb, bool json) {
+	SdbList *l = sdb_foreach_list_filter (TDB, filter, true);
+	SdbListIter *it;
+	SdbKv *kv;
+	const char *comma = "";
+
+	if (json) {
+		r_cons_printf ("[");
+	}
+	ls_foreach (l, it, kv) {
+		const char *k = sdbkv_key (kv);
+		if (!k || !*k) {
+			continue;
+		}
+		if (json) {
+			r_cons_printf ("%s", comma);
+			comma = ",";
+		}
+		printfn_cb (core, sdbkv_key (kv), sdbkv_value (kv));
+	}
+	if (json) {
+		r_cons_printf ("]\n");
+	}
+	ls_free (l);
+}
+
 static void typesList(RCore *core, int mode) {
 	switch (mode) {
 	case 1:
 	case '*':
-		sdb_foreach (core->anal->sdb_types, typelist_cb, core);
+		print_keys (core->anal->sdb_types, core, NULL, print_typelist_r_cb, false);
 		break;
 	case 'j':
+		print_keys (core->anal->sdb_types, core, stdiftype, print_typelist_json_cb, true);
+		break;
 	default:
-		{
-		SdbList *ls = sdb_foreach_list (core->anal->sdb_types, true);
-		SdbList *filtls = ls_new ();
-		SdbListIter *it;
-		SdbKv *kv;
-		ls_foreach (ls, it, kv) {
-			if (!strncmp (sdbkv_value (kv), "type", strlen ("type") + 1)) {
-				ls_append (filtls, kv);
-			}
-		}
-		if (mode == 'j') {
-			r_cons_print ("[");
-			ls_foreach (filtls, it, kv) {
-				sdbforcb_json ((void *)core->anal->sdb_types, sdbkv_key (kv), sdbkv_value (kv));
-				if (it->n) { r_cons_print (","); }
-			}
-			r_cons_println ("]");
-		} else {
-			ls_foreach (filtls, it, kv) {
-				sdbforcb_default ((void *)core->anal->sdb_types, sdbkv_key (kv), sdbkv_value (kv));
-			}
-		}
-		ls_free (ls);
-		ls_free (filtls);
-		}
+		print_keys (core->anal->sdb_types, core, stdiftype, printkey_cb, false);
 		break;
 	}
 }
@@ -662,14 +639,14 @@ static int cmd_type(void *data, const char *input) {
 			if (input[2]) {
 				showFormat (core, r_str_trim_ro (input + 2), 'j');
 			} else {
-				sdb_foreach (TDB, stdprintifunionjson, core);
+				print_keys (TDB, core, stdifunion, printkey_json_cb, true);
 			}
 			break;
 		case ' ':
 			showFormat (core, r_str_trim_ro (input + 1), 0);
 			break;
 		case 0:
-			sdb_foreach (TDB, stdprintifunion, core);
+			print_keys (TDB, core, stdifunion, printkey_cb, false);
 			break;
 		}
 	} break;
@@ -747,7 +724,7 @@ static int cmd_type(void *data, const char *input) {
 			}
 			break;
 		case 0:
-			sdb_foreach (TDB, stdprintifstruct, core);
+			print_keys (TDB, core, stdifstruct, printkey_cb, false);
 			break;
 		case 'j': // "tsj"
 			// TODO: current output is a bit poor, will be good to improve
@@ -755,10 +732,7 @@ static int cmd_type(void *data, const char *input) {
 				showFormat (core, r_str_trim_ro (input + 2), 'j');
 				r_cons_newline ();
 			} else {
-				r_cons_printf ("[");
-				Gcomma = "";
-				sdb_foreach (TDB, stdprintifstructjson, core);
-				r_cons_printf ("]\n");
+				print_keys (TDB, core, stdifstruct, printkey_json_cb, true);
 			}
 			break;
 		}
@@ -1108,19 +1082,19 @@ static int cmd_type(void *data, const char *input) {
 				eprintf ("unknown type %s\n", type);
 			}
 			free (type);
-			}
 			break;
+		}
 		case 's': {
 			char *ptr = r_str_trim (strdup (input + 2));
 			ut64 addr = r_num_math (NULL, ptr);
-			const char* query = sdb_fmt ("link.%08"PFMT64x, addr);
+			const char *query = sdb_fmt ("link.%08" PFMT64x, addr);
 			const char *link = sdb_const_get (TDB, query, 0);
 			if (link) {
-				linklist_readable (core, query, link);
+				print_link_readable_cb (core, query, link);
 			}
 			free (ptr);
-			}
 			break;
+		}
 		case '-':
 			switch (input[2]) {
 			case '*':
@@ -1130,15 +1104,15 @@ static int cmd_type(void *data, const char *input) {
 				const char *ptr = input + 3;
 				ut64 addr = r_num_math (core->num, ptr);
 				r_type_unlink (TDB, addr);
-				}
 				break;
+			}
 			}
 			break;
 		case '*':
-			sdb_foreach (TDB, linklist, core);
+			print_keys (TDB, core, stdiflink, print_link_cb, false);
 			break;
 		case '\0':
-			sdb_foreach (TDB, linklist_readable, core);
+			print_keys (TDB, core, stdiflink, print_link_readable_cb, false);
 			break;
 		}
 		break;
@@ -1211,26 +1185,24 @@ static int cmd_type(void *data, const char *input) {
 	case 'f': // "tf"
 		switch (input[1]) {
 		case 0:
-			sdb_foreach (TDB, stdprintiffunc, core);
+			print_keys (TDB, core, stdiffunc, printkey_cb, false);
 			break;
 		case 'j':
 			if (input[2] == ' ') {
 				printFunctionType (core, input + 2);
 				r_cons_printf ("\n");
 			} else {
-				r_cons_printf ("[");
-				sdb_foreach (TDB, stdprintiffunc_json, core);
-				r_cons_printf ("{}]\n");
+				print_keys (TDB, core, stdiffunc, printfunc_json_cb, true);
 			}
 			break;
-		case ' ':
-			{
-				char *res = sdb_querys (TDB, NULL, -1, sdb_fmt ("~~func.%s", input + 2));
+		case ' ': {
+			char *res = sdb_querys (TDB, NULL, -1, sdb_fmt ("~~func.%s", input + 2));
+			if (res) {
 				r_cons_printf ("%s", res);
 				free (res);
-			//	r_core_cmdf (core, "tk~func.%s.", input + 2);
 			}
 			break;
+		}
 		default:
 			r_core_cmd_help (core, help_msg_tf);
 			break;

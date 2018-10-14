@@ -1645,11 +1645,11 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 			r_io_read_at (core->io, curpc, arr, bsize);
 		}
 		inslen = r_anal_op (core->anal, &aop, curpc, arr + i, bsize - i, R_ANAL_OP_MASK_BASIC);
-		if (inslen) {	
+		if (inslen) {
  			int incr = (core->search->align > 0)? core->search->align - 1:  inslen - 1;
 			if (incr < 0) {
 				incr = minopcode;
-			}	
+			}
 			i += incr;
 			curpc += incr;
 			if (r_anal_op_nonlinear (aop.type)) {	// skip the instr
@@ -1839,12 +1839,12 @@ static void do_ref_search(RCore *core, ut64 addr,ut64 from, ut64 to, struct sear
 					r_core_cmd (core, param->cmd_hit, 0);
 					r_core_seek (core, here, true);
 				}
-			}	 	
+			}
 			free (buf_fcn);
-		}	
+		}
 	}
 	r_list_free (list);
-}	
+}
 
 static bool do_anal_search(RCore *core, struct search_parameters *param, const char *input) {
 	RSearch *search = core->search;
@@ -2443,7 +2443,7 @@ static ut8 *v_writebuf(RCore *core, RList *nums, int len, char ch, int bsize) {
 		eprintf ("Cannot allocate %d byte(s)\n", bsize);
 		free (buf);
 		return NULL;
-	}	
+	}
 	ptr = buf;
 	for (i = 0; i < len; i++) {
 		switch (ch) {
@@ -2456,22 +2456,22 @@ static ut8 *v_writebuf(RCore *core, RList *nums, int len, char ch, int bsize) {
 			n16 = r_num_math (core->num, r_list_pop_head (nums));
 			r_write_le16 (ptr, n16);
 			ptr = (ut8 *) ptr + sizeof (ut16);
-			break;	
+			break;
 		case '4':
 			n32 = (ut32)r_num_math (core->num, r_list_pop_head (nums));
 			r_write_le32 (ptr, n32);
 			ptr = (ut8 *) ptr + sizeof (ut32);
 			break;
-		default:	
+		default:
 		case '8':
 			n64 = r_num_math (core->num, r_list_pop_head (nums));
 			r_write_le64 (ptr, n64);
 			ptr = (ut8 *) ptr + sizeof (ut64);
-			break;	
+			break;
 		}
 		if (ptr > ptr + bsize) {
 			return NULL;
-		}	
+		}
 	}
 	return buf;
 }
@@ -2853,7 +2853,7 @@ reread:
 					}
 					if (r_cons_is_breaked ()) {
 						break;
-					}	
+					}
 				}
 			}
 			break;
@@ -3131,7 +3131,7 @@ reread:
 		case '8':
 			if (input[param_offset]) {
 				bsize = sizeof (ut64) * len;
-				v_buf = v_writebuf (core, nums, len, '8', bsize);	
+				v_buf = v_writebuf (core, nums, len, '8', bsize);
 			} else {
 				eprintf ("Usage: /v8 value\n");
 			}
@@ -3147,7 +3147,7 @@ reread:
 		case '2':
 			if (input[param_offset]) {
 				bsize = sizeof (ut16) * len;
-				v_buf = v_writebuf (core, nums, len, '2', bsize);	
+				v_buf = v_writebuf (core, nums, len, '2', bsize);
 			} else {
 				eprintf ("Usage: /v2 value\n");
 			}
@@ -3168,7 +3168,7 @@ reread:
 			r_search_kw_add (core->search,
 					r_search_keyword_new ((const ut8 *) v_buf, bsize, NULL, 0, NULL));
 			free (v_buf);
-		}	
+		}
 		r_search_begin (core->search);
 		dosearch = true;
 		break;

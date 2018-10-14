@@ -669,7 +669,6 @@ typedef struct r_anal_t {
 	PrintfCallback cb_printf;
 	//moved from RAnalFcn
 	Sdb *sdb; // root
-	Sdb *sdb_refs;
 	Sdb *sdb_fcns;
 	Sdb *sdb_pins;
 #define DEPRECATE 1
