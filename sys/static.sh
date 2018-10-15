@@ -56,6 +56,8 @@ rm -rf r2-static
 mkdir r2-static || exit 1
 ${MAKE} install DESTDIR="${PWD}/r2-static" || exit 1
 
+echo "Using PREFIX ${PREFIX}"
+
 # testing installation
 cat > .test.c <<EOF
 #include <r_core.h>
