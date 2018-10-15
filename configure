@@ -119,12 +119,12 @@ done
 : ${INSTALL_PROGRAM_STRIP:=${INSTALL} -m 755 -s}
 : ${INSTALL_MAN:=${INSTALL} -m 444}
 : ${INSTALL_LIB:=${INSTALL} -m 755 -c}
- PKGNAME='radare2' ; VERSION='3.0.0-git' ; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
+ PKGNAME='radare2' ; VERSION='3.0.0' ; CONTACT_MAIL="pancake@nopcode.org" ; CONTACT_NAME="pancake" ; CONTACT="pancake <pancake@nopcode.org>" ;
 }
 
 show_usage() {
 cat <<EOF2
-'configure' configures radare2-3.0.0-git to adapt to many kinds of systems.
+'configure' configures radare2-3.0.0 to adapt to many kinds of systems.
 
 Usage: ./configure [OPTION]... [VAR=VALUE]...
 
@@ -164,7 +164,8 @@ System types:
   --target=TARGET        configure for building compilers for TARGET [HOST]
 EOF2
 
-printf "\nOptional Features:
+printf "
+Optional Features:
   --disable-debugger     disable native debugger features
   --with-sysmagic        force to use system's magic
   --disable-loadlibs     disable loading plugins
@@ -181,8 +182,10 @@ printf "\nOptional Features:
   --with-ostype          Choose OS type ( gnulinux windows darwin haiku ) (USEROSTYPE=auto)
   --with-libversion      specify different libversion (LIBVERSION=xxx)
   --without-jemalloc     build without jemalloc
-  --with-checks-level    value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL) (R_CHECKS_LEVEL=2)\n"
-printf "\nSome influential environment variables:
+  --with-checks-level    value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL) (R_CHECKS_LEVEL=2)
+"
+printf "
+Some influential environment variables:
   CC          C compiler command
   CFLAGS      C compiler flags
   CPPFLAGS    C preprocessor flags
@@ -190,8 +193,10 @@ printf "\nSome influential environment variables:
               nonstandard directory <lib dir>
   CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have
               headers in a nonstandard directory <include dir>
-  CPP         C preprocessor\n"
-printf "\nReport bugs to: pancake <pancake@nopcode.org>"
+  CPP         C preprocessor
+"
+printf "
+Report bugs to: pancake <pancake@nopcode.org>"
 echo ""
 exit 0
 }
@@ -204,7 +209,7 @@ take_environ() {
 }
 
 show_version() {
-echo "radare2-3.0.0-git configuration script done with acr v1.7.0.
+echo "radare2-3.0.0 configuration script done with acr v1.7.0.
 The 'Free Software Foundation' message is only for autodetection.
 Originally written by pancake <nopcode.org>."
 exit 0
@@ -228,7 +233,7 @@ case $flag in
 	show_version ; ;;
 -r|--r|--report)
 echo "PKGNAME:   radare2"
-echo "VERSION:   3.0.0-git"
+echo "VERSION:   3.0.0"
 echo "LANGS:     c"
 echo "REQUIRED:  libdl"
 echo "OPTIONAL:  libmagic libz libzip libxxhash libssl liblibuv"
