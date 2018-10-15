@@ -503,6 +503,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	RBinFile *binfile = NULL;
 	RBinPlugin *plugin = NULL;
 	RBinObject *obj = NULL;
+	RBinInfo *pinfo = NULL;
 	int is_io_load;
 	const char *cmd_load;
 	if (!cf) {
@@ -638,12 +639,12 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 
 		// Setting the right arch and bits, so regstate will be shown correctly
 		if (plugin->info) {
-			RBinInfo *inf = plugin->info (binfile);
+			pinfo = plugin->info (binfile);
 			eprintf ("Setting up coredump: asm.arch <-> %s and asm.bits <-> %d\n",
-									inf->arch,
-									inf->bits);
-			r_config_set (r->config, "asm.arch", inf->arch);
-			r_config_set_i (r->config, "asm.bits", inf->bits);
+									pinfo->arch,
+									pinfo->bits);
+			r_config_set (r->config, "asm.arch", pinfo->arch);
+			r_config_set_i (r->config, "asm.bits", pinfo->bits);
                 }
 		if (binfile->o->regstate) {
 			if (r_reg_arena_set_bytes (r->anal->reg, binfile->o->regstate)) {
@@ -680,6 +681,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	}
 
 beach:
+	free (pinfo);
 	return true;
 }
 
