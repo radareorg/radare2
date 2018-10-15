@@ -1981,17 +1981,19 @@ static char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, int depth) {
 	return r_strbuf_drain (s);
 }
 
-R_API char *r_core_anal_get_comments(RCore *core, ut64 addr) {
+R_API char *r_core_anal_get_comments(RCore *core, ut64 addr, bool vartype) {
 	if (core) {
 		char *type = r_meta_get_string (core->anal, R_META_TYPE_VARTYPE, addr);
 		char *cmt = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
-		if (type && cmt) {
-			char *ret = r_str_newf ("%s %s", type, cmt);
-			free (type);
-			free (cmt);
-			return ret;
-		} else if (type) {
-			return type;
+		if (vartype) {
+			if (type && cmt) {
+				char *ret = r_str_newf ("%s %s", type, cmt);
+				free (type);
+				free (cmt);
+				return ret;
+			} else if (type) {
+				return type;
+			}
 		} else if (cmt) {
 			return cmt;
 		}
@@ -2192,8 +2194,8 @@ static char *hasrefs_cb(void *user, ut64 addr, bool verbose) {
 	return r_core_anal_hasrefs ((RCore *)user, addr, verbose);
 }
 
-static char *get_comments_cb(void *user, ut64 addr) {
-	return r_core_anal_get_comments ((RCore *)user, addr);
+static char *get_comments_cb(void *user, ut64 addr, bool vartype) {
+	return r_core_anal_get_comments ((RCore *)user, addr, vartype);
 }
 
 R_API bool r_core_init(RCore *core) {

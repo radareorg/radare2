@@ -29,7 +29,7 @@ extern "C" {
 
 typedef int (*RPrintZoomCallback)(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size);
 typedef const char *(*RPrintNameCallback)(void *user, ut64 addr);
-typedef char *(*RPrintCommentCallback)(void *user, ut64 addr);
+typedef char *(*RPrintCommentCallback)(void *user, ut64 addr, bool vartype);
 typedef const char *(*RPrintColorFor)(void *user, ut64 addr, bool verbose);
 typedef char *(*RPrintHasRefs)(void *user, ut64 addr, bool verbose);
 
