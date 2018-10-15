@@ -137,7 +137,6 @@ R_API int r_reg_fit_arena(RReg* reg) {
 		arena = reg->regset[i].arena;
 		newsize = 0;
 		r_list_foreach (reg->regset[i].regs, iter, r) {
-			//int regsize_in_bytes = r->size / 8;
 			// XXX: bits2bytes doesnt seems to work fine
 			size = BITS2BYTES (r->offset + r->size);
 			newsize = R_MAX (size, newsize);
@@ -196,7 +195,6 @@ R_API void r_reg_arena_swap(RReg* reg, int copy) {
 			ib->data = tmp;
 			reg->regset[i].arena = ia->data;
 		} else {
-			//eprintf ("Cannot pop more\n");
 			break;
 		}
 	}
@@ -306,9 +304,9 @@ R_API int r_reg_arena_set_bytes(RReg* reg, const char* str) {
 	for (i = 0; i < R_REG_TYPE_LAST; ++i) {
 		int sz = reg->regset[i].arena->size;
 		int bl = bin_str_len - n; //bytes left
-		if (bl - n < sz) {
-			//r_reg_set_bytes checks if bl-n==0 :p
-			r_reg_set_bytes (reg, i, bin_str + n, bl - n);
+		int bln = bl -n ;
+		if (bln > 0 && bln < sz) {
+			r_reg_set_bytes (reg, i, bin_str + n, bln);
 			break;
 		}
 		r_reg_set_bytes (reg, i, bin_str + n, bin_str_len - n);
