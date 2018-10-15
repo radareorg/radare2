@@ -14,12 +14,16 @@ R_LIB_VERSION_HEADER(r_sign);
 #define R_SIGN_KEY_MAXSZ 1024
 #define R_SIGN_VAL_MAXSZ 10240
 
+#define ZIGN_HASH "sha256"
+#define R_ZIGN_HASH R_HASH_SHA256
+
 enum {
-	R_SIGN_BYTES  = 'b', // bytes pattern
-	R_SIGN_ANAL   = 'a', // bytes pattern (anal mask)
-	R_SIGN_GRAPH  = 'g', // graph metrics
-	R_SIGN_OFFSET = 'o', // offset
-	R_SIGN_REFS   = 'r', // references
+	R_SIGN_BYTES     = 'b', // bytes pattern
+	R_SIGN_ANAL      = 'a', // bytes pattern (anal mask)
+	R_SIGN_GRAPH     = 'g', // graph metrics
+	R_SIGN_OFFSET    = 'o', // offset
+	R_SIGN_REFS      = 'r', // references
+	R_SIGN_BBHASH    = 'h', // basic block hash
 };
 
 typedef struct r_sign_graph_t {
@@ -35,6 +39,10 @@ typedef struct r_sign_bytes_t {
 	ut8 *mask;
 } RSignBytes;
 
+typedef struct r_sign_hash_t {
+	char *bbhash;
+} RSignHash;
+
 typedef struct r_sign_item_t {
 	char *name;
 	int space;
@@ -43,12 +51,14 @@ typedef struct r_sign_item_t {
 	RSignGraph *graph;
 	ut64 offset;
 	RList *refs;
+	RSignHash *hash;
 } RSignItem;
 
 typedef int (*RSignForeachCallback)(RSignItem *it, void *user);
 typedef int (*RSignSearchCallback)(RSignItem *it, RSearchKeyword *kw, ut64 addr, void *user);
 typedef int (*RSignGraphMatchCallback)(RSignItem *it, RAnalFunction *fcn, void *user);
 typedef int (*RSignOffsetMatchCallback)(RSignItem *it, RAnalFunction *fcn, void *user);
+typedef int (*RSignHashMatchCallback)(RSignItem *it, RAnalFunction *fcn, void *user);
 typedef int (*RSignRefsMatchCallback)(RSignItem *it, RAnalFunction *fcn, void *user);
 
 typedef struct r_sign_search_t {
@@ -66,6 +76,9 @@ R_API bool r_sign_add_offset(RAnal *a, const char *name, ut64 offset);
 R_API bool r_sign_add_refs(RAnal *a, const char *name, RList *refs);
 R_API bool r_sign_delete(RAnal *a, const char *name);
 R_API void r_sign_list(RAnal *a, int format);
+R_API bool r_sign_add_hash(RAnal *a, const char *name, int type, const char *val, int len);
+R_API bool r_sign_add_bb_hash(RAnal *a, RAnalFunction *fcn, const char *name);
+R_API char *r_sign_calc_bbhash(RAnal *a, RAnalFunction *fcn);
 
 R_API bool r_sign_foreach(RAnal *a, RSignForeachCallback cb, void *user);
 
@@ -75,6 +88,7 @@ R_API void r_sign_search_init(RAnal *a, RSignSearch *ss, int minsz, RSignSearchC
 R_API int r_sign_search_update(RAnal *a, RSignSearch *ss, ut64 *at, const ut8 *buf, int len);
 R_API bool r_sign_match_graph(RAnal *a, RAnalFunction *fcn, int mincc, RSignGraphMatchCallback cb, void *user);
 R_API bool r_sign_match_offset(RAnal *a, RAnalFunction *fcn, RSignOffsetMatchCallback cb, void *user);
+R_API bool r_sign_match_hash(RAnal *a, RAnalFunction *fcn, RSignHashMatchCallback cb, void *user);
 R_API bool r_sign_match_refs(RAnal *a, RAnalFunction *fcn, RSignRefsMatchCallback cb, void *user);
 
 R_API bool r_sign_load(RAnal *a, const char *file);

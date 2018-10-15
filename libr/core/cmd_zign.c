@@ -80,6 +80,14 @@ static void cmd_zign_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, zs);
 }
 
+static bool addFcnHash(RCore *core, RAnalFunction *fcn, const char *name) {
+	if (!core || !fcn || !name) {
+		return false;
+	}
+
+	return r_sign_add_bb_hash (core->anal, fcn, name);
+}
+
 static bool addFcnBytes(RCore *core, RAnalFunction *fcn, const char *name) {
 	if (!core || !fcn || !name) {
 		return false;
@@ -143,6 +151,7 @@ static void addFcnZign(RCore *core, RAnalFunction *fcn, const char *name) {
 	addFcnGraph (core, fcn, zigname);
 	addFcnBytes (core, fcn, zigname);
 	addFcnRefs (core, fcn, zigname);
+	addFcnHash (core, fcn, zigname);
 	r_sign_add_offset (core->anal, zigname, fcn->addr);
 
 	free (zigname);
@@ -182,6 +191,17 @@ static bool addGraphZign(RCore *core, const char *name, const char *args0, int n
 		return false;
 	}
 	return r_sign_add_graph (core->anal, name, graph);
+}
+
+static bool addHashZign(RCore *core, const char *name, int type, const char *args0, int nargs) {
+	if (!args0) {
+		return false;
+	}
+	int len = strlen (args0);
+	if (!len) {
+		return false;
+	}
+	return r_sign_add_hash (core->anal, name, type, args0, len);
 }
 
 static bool addBytesZign(RCore *core, const char *name, int type, const char *args0, int nargs) {
@@ -267,6 +287,8 @@ static bool addZign(RCore *core, const char *name, int type, const char *args0, 
 		return addOffsetZign (core, name, args0, nargs);
 	case R_SIGN_REFS:
 		return addRefsZign (core, name, args0, nargs);
+	case R_SIGN_BBHASH:
+		return addHashZign (core, name, type, args0, nargs);
 	default:
 		eprintf ("error: unknown zignature type\n");
 	}
@@ -379,6 +401,7 @@ out_case_fcn:
 				"  g: graph metrics\n"
 				"  o: original offset\n"
 				"  r: references\n\n"
+				"  h: bbhash (hashing of fcn basic blocks)\n\n"
 				"Bytes patterns:\n"
 				"  bytes can contain '..' (dots) to specify a binary mask\n\n"
 				"Graph metrics:\n"
@@ -392,7 +415,8 @@ out_case_fcn:
 				"  za foo g cc=2 nbbs=3 edges=3 ebbs=1\n"
 				"  za foo g nbbs=3 edges=3\n"
 				"  za foo o 0x08048123\n"
-				"  za foo r sym.imp.strcpy sym.imp.sprintf sym.imp.strlen\n");
+				"  za foo r sym.imp.strcpy sym.imp.sprintf sym.imp.strlen\n"
+				"  za foo h 2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae\n");
 		} else {
 			r_core_cmd_help (core, help_msg_za);
 		}
@@ -617,6 +641,7 @@ static bool search(RCore *core, bool rad) {
 	struct ctxSearchCB graph_match_ctx = { core, rad, 0, "graph" };
 	struct ctxSearchCB offset_match_ctx = { core, rad, 0, "offset" };
 	struct ctxSearchCB refs_match_ctx = { core, rad, 0, "refs" };
+	struct ctxSearchCB hash_match_ctx = { core, rad, 0, "bbhash" };
 
 	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
 	int mincc = r_config_get_i (core->config, "zign.mincc");
@@ -625,6 +650,7 @@ static bool search(RCore *core, bool rad) {
 	bool useGraph = r_config_get_i (core->config, "zign.graph");
 	bool useOffset = r_config_get_i (core->config, "zign.offset");
 	bool useRefs = r_config_get_i (core->config, "zign.refs");
+	bool useHash = r_config_get_i (core->config, "zign.hash");
 
 	if (rad) {
 		r_cons_printf ("fs+%s\n", zign_prefix);
@@ -646,7 +672,7 @@ static bool search(RCore *core, bool rad) {
 	}
 
 	// Function search
-	if (useGraph || useOffset || useRefs) {
+	if (useGraph || useOffset || useRefs || useHash) {
 		eprintf ("[+] searching function metrics\n");
 		r_cons_break_push (NULL, NULL);
 		r_list_foreach (core->anal->fcns, iter, fcni) {
@@ -659,8 +685,11 @@ static bool search(RCore *core, bool rad) {
 			if (useOffset) {
 				r_sign_match_offset (core->anal, fcni, fcnMatchCB, &offset_match_ctx);
 			}
-			if (useRefs){
+			if (useRefs) {
 				r_sign_match_refs (core->anal, fcni, fcnMatchCB, &refs_match_ctx);
+			}
+			if (useHash) {
+				r_sign_match_hash (core->anal, fcni, fcnMatchCB, &hash_match_ctx);
 			}
 		}
 		r_cons_break_pop ();
@@ -676,7 +705,7 @@ static bool search(RCore *core, bool rad) {
 	}
 
 	hits = bytes_search_ctx.count + graph_match_ctx.count +
-		offset_match_ctx.count + refs_match_ctx.count;
+		offset_match_ctx.count + refs_match_ctx.count + hash_match_ctx.count;
 	eprintf ("hits: %d\n", hits);
 
 	return retval;
@@ -714,6 +743,7 @@ static int cmdCheck(void *data, const char *input) {
 	struct ctxSearchCB graph_match_ctx = { core, rad, 0, "graph" };
 	struct ctxSearchCB offset_match_ctx = { core, rad, 0, "offset" };
 	struct ctxSearchCB refs_match_ctx = { core, rad, 0, "refs" };
+	struct ctxSearchCB hash_match_ctx = { core, rad, 0, "bbhash" };
 
 	const char *zign_prefix = r_config_get (core->config, "zign.prefix");
 	int minsz = r_config_get_i (core->config, "zign.minsz");
@@ -722,6 +752,7 @@ static int cmdCheck(void *data, const char *input) {
 	bool useGraph = r_config_get_i (core->config, "zign.graph");
 	bool useOffset = r_config_get_i (core->config, "zign.offset");
 	bool useRefs = r_config_get_i (core->config, "zign.refs");
+	bool useHash = r_config_get_i (core->config, "zign.hash");
 
 	if (rad) {
 		r_cons_printf ("fs+%s\n", zign_prefix);
@@ -745,7 +776,7 @@ static int cmdCheck(void *data, const char *input) {
 	}
 
 	// Function search
-	if (useGraph || useOffset || useRefs) {
+	if (useGraph || useOffset || useRefs || useHash) {
 		eprintf ("[+] searching function metrics\n");
 		r_cons_break_push (NULL, NULL);
 		r_list_foreach (core->anal->fcns, iter, fcni) {
@@ -761,6 +792,9 @@ static int cmdCheck(void *data, const char *input) {
 				}
 				if (useRefs){
 					r_sign_match_refs (core->anal, fcni, fcnMatchCB, &refs_match_ctx);
+				}
+				if (useHash){
+					r_sign_match_hash (core->anal, fcni, fcnMatchCB, &hash_match_ctx);
 				}
 				break;
 			}
@@ -778,7 +812,7 @@ static int cmdCheck(void *data, const char *input) {
 	}
 
 	hits = bytes_search_ctx.count + graph_match_ctx.count +
-		offset_match_ctx.count + refs_match_ctx.count;
+		offset_match_ctx.count + refs_match_ctx.count + hash_match_ctx.count;
 	eprintf ("hits: %d\n", hits);
 
 	return retval;
