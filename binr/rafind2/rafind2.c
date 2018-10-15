@@ -110,11 +110,14 @@ static int show_help(char *argv0, int line) {
 static int rafind_open(char *file);
 
 static int rafind_open_file(char *file) {
-	const char *kw;
 	RListIter *iter;
+	RIO *io = NULL;
+	RSearch *rs = NULL;
+	const char *kw;
 	bool last = false;
 	int ret, result;
 
+	buf = NULL;
 	if (!quiet) {
 		printf ("File: %s\n", file);
 	}
@@ -126,7 +129,7 @@ static int rafind_open_file(char *file) {
 		return 0;
 	}
 
-	RIO *io = r_io_new ();
+	io = r_io_new ();
 	if (!io) {
 		return 1;
 	}
@@ -134,30 +137,32 @@ static int rafind_open_file(char *file) {
 	if (!r_io_open_nomap (io, file, R_PERM_R, 0)) {
 		eprintf ("Cannot open file '%s'\n", file);
 		result = 1;
-		goto err_io_open;
+		goto err;
 	}
 
-	if (!r_cons_new ()) {
-		result = 1;
-		goto err_io_open;
-	}
-
-	RSearch *rs = r_search_new (mode);
+	rs = r_search_new (mode);
 	if (!rs) {
 		result = 1;
-		goto err_search;
+		goto err;
 	}
+
 	buf = calloc (1, bsize);
 	if (!buf) {
 		eprintf ("Cannot allocate %"PFMT64d" bytes\n", bsize);
 		result = 1;
-		goto err_buf;
+		goto err;
 	}
 	rs->align = align;
 	r_search_set_callback (rs, &hit, buf);
 	if (to == -1) {
-		to = r_io_size(io);
+		to = r_io_size (io);
 	}
+
+	if (!r_cons_new ()) {
+		result = 1;
+		goto err;
+	}
+
 	if (mode == R_SEARCH_STRING) {
 		/* TODO: implement using api */
 		r_sys_cmdf ("rabin2 -qzzz '%s'", file);
@@ -202,8 +207,8 @@ static int rafind_open_file(char *file) {
 
 	curfile = file;
 	r_search_begin (rs);
-	(void) r_io_seek (io, from, R_IO_SEEK_SET);
-	//printf("; %s 0x%08"PFMT64x"-0x%08"PFMT64x"\n", file, from, to);
+	(void)r_io_seek (io, from, R_IO_SEEK_SET);
+	result = 0;
 	for (cur = from; !last && cur < to; cur += bsize) {
 		if ((cur + bsize) > to) {
 			bsize = to - cur;
@@ -215,7 +220,7 @@ static int rafind_open_file(char *file) {
 				continue;
 			}
 			result = 1;
-			goto err_pread;
+			break;
 		}
 		if (ret != bsize && ret > 0) {
 			bsize = ret;
@@ -227,14 +232,10 @@ static int rafind_open_file(char *file) {
 		}
 	}
 done:
-	result = 0;
-err_pread:
-	free (buf);
-err_buf:
-	r_search_free (rs);
-err_search:
 	r_cons_free ();
-err_io_open:
+err:
+	free (buf);
+	r_search_free (rs);
 	r_io_free (io);
 	return result;
 }
