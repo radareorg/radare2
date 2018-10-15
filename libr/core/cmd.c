@@ -3054,6 +3054,7 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			r_list_foreach (list, iter, imp) {
 				char *impflag = r_str_newf ("sym.imp.%s", imp->name);
 				ut64 addr = r_num_math (core->num, impflag);
+				free (impflag);
 				if (addr && addr != UT64_MAX) {
 					r_core_seek (core, addr, 1);
 					r_core_cmd0 (core, cmd);
