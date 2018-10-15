@@ -1484,6 +1484,7 @@ static int analop_esil(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len
 		break;
 	case ARM_INS_SADD16:
 	case ARM_INS_SADD8:
+	case ARM_INS_ADDW:
 	case ARM_INS_ADD:
 		op->type = R_ANAL_OP_TYPE_ADD;
 		if (REGID(0) == ARM_REG_PC && insn->detail->arm.cc != ARM_CC_AL) {
@@ -1605,6 +1606,9 @@ r4,r5,r6,3,sp,[*],12,sp,+=
 		r_strbuf_appendf (&op->esil, "16,%s,<<,%s,|=", ARG(1), REG(0));
 		break;
 	case ARM_INS_ADR:
+		r_strbuf_appendf (&op->esil, "%d,$$,+,%s,+,0xfffffffc,&,%s,=",
+				  pcdelta, ARG(1), REG(0));
+		break;
 	case ARM_INS_MOV:
 	case ARM_INS_VMOV:
 	case ARM_INS_MOVW:
