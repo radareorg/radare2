@@ -12,12 +12,9 @@
 #include <r_lib.h>
 #include <r_io.h>
 
-static struct r_io_t *io;
-static RIODesc *fd = NULL;
 static int showstr = 0;
 static int rad = 0;
 static int align = 0;
-struct r_search_t *rs;
 static ut64 from = 0LL, to = -1;
 static char *mask = NULL;
 static int nonstop = 0;
@@ -113,11 +110,14 @@ static int show_help(char *argv0, int line) {
 static int rafind_open(char *file);
 
 static int rafind_open_file(char *file) {
-	const char *kw;
 	RListIter *iter;
+	RIO *io = NULL;
+	RSearch *rs = NULL;
+	const char *kw;
 	bool last = false;
-	int ret;
+	int ret, result;
 
+	buf = NULL;
 	if (!quiet) {
 		printf ("File: %s\n", file);
 	}
@@ -130,31 +130,43 @@ static int rafind_open_file(char *file) {
 	}
 
 	io = r_io_new ();
-	fd = r_io_open_nomap (io, file, R_PERM_R, 0);
-	if (!fd) {
-		eprintf ("Cannot open file '%s'\n", file);
+	if (!io) {
 		return 1;
 	}
 
-	r_cons_new ();
+	if (!r_io_open_nomap (io, file, R_PERM_R, 0)) {
+		eprintf ("Cannot open file '%s'\n", file);
+		result = 1;
+		goto err;
+	}
+
 	rs = r_search_new (mode);
 	if (!rs) {
-		return 1;
+		result = 1;
+		goto err;
 	}
+
 	buf = calloc (1, bsize);
 	if (!buf) {
 		eprintf ("Cannot allocate %"PFMT64d" bytes\n", bsize);
-		return 1;
+		result = 1;
+		goto err;
 	}
 	rs->align = align;
 	r_search_set_callback (rs, &hit, buf);
 	if (to == -1) {
-		to = r_io_size(io);
+		to = r_io_size (io);
 	}
+
+	if (!r_cons_new ()) {
+		result = 1;
+		goto err;
+	}
+
 	if (mode == R_SEARCH_STRING) {
 		/* TODO: implement using api */
 		r_sys_cmdf ("rabin2 -qzzz '%s'", file);
-		return 0;
+		goto done;
 	}
 	if (mode == R_SEARCH_MAGIC) {
 		char *tostr = (to && to != UT64_MAX)?
@@ -168,7 +180,7 @@ static int rafind_open_file(char *file) {
 		r_sandbox_system (cmd, 1);
 		free (cmd);
 		free (tostr);
-		return 0;
+		goto done;
 	}
 	if (mode == R_SEARCH_ESIL) {
 		char *cmd;
@@ -177,7 +189,7 @@ static int rafind_open_file(char *file) {
 			r_sandbox_system (cmd, 1);
 			free (cmd);
 		}
-		return 0;
+		goto done;
 	}
 	if (mode == R_SEARCH_KEYWORD) {
 		r_list_foreach (keywords, iter, kw) {
@@ -195,8 +207,8 @@ static int rafind_open_file(char *file) {
 
 	curfile = file;
 	r_search_begin (rs);
-	(void) r_io_seek (io, from, R_IO_SEEK_SET);
-	//printf("; %s 0x%08"PFMT64x"-0x%08"PFMT64x"\n", file, from, to);
+	(void)r_io_seek (io, from, R_IO_SEEK_SET);
+	result = 0;
 	for (cur = from; !last && cur < to; cur += bsize) {
 		if ((cur + bsize) > to) {
 			bsize = to - cur;
@@ -207,8 +219,8 @@ static int rafind_open_file(char *file) {
 			if (nonstop) {
 				continue;
 			}
-		//	eprintf ("Error reading at 0x%08"PFMT64x"\n", cur);
-			return 1;
+			result = 1;
+			break;
 		}
 		if (ret != bsize && ret > 0) {
 			bsize = ret;
@@ -219,9 +231,13 @@ static int rafind_open_file(char *file) {
 			break;
 		}
 	}
-	rs = r_search_free (rs);
+done:
+	r_cons_free ();
+err:
 	free (buf);
-	return 0;
+	r_search_free (rs);
+	r_io_free (io);
+	return result;
 }
 
 static int rafind_open_dir(char *dir) {
