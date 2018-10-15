@@ -66,14 +66,15 @@ fi
 if [ "${UNCRUST}" = 1 ]; then
 	# yell, rather than overwrite an innocent file
 	command -v uncrustify >/dev/null 2>&1 || {
-		if ! r2pm -r type uncrustify >/dev/null; then
+		if ! r2pm -r type uncrustify >/dev/null 2>&1; then
 			echo "This script requires uncrustify to function. Check r2pm -i uncrustify"
-			exit 1
+			UNCRUST=0
 		fi
 	}
-else
+fi
+if [ "${UNCRUST}" = 0 ]; then
 	# yell, rather than overwrite an innocent file
-	if ! type clang-format >/dev/null; then
+	if ! type clang-format >/dev/null 2>&1; then
 		echo "This script requires clang-format to function"
 		exit 1
 	fi

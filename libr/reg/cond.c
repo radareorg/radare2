@@ -41,13 +41,14 @@ R_API RRegItem *r_reg_cond_get(RReg *reg, const char *name) {
 }
 
 R_API int r_reg_cond_get_value(RReg *r, const char *name) {
-	return (int)r_reg_get_value (r, r_reg_cond_get (r, name))? 1: 0;
+	return (int)r_reg_get_value (r, r_reg_cond_get (r, name)) ? 1 : 0;
 }
 
 R_API const char *r_reg_cond_to_string(int n) {
 	const char *cs[] = {
 		"eq", "ne", "cf", "neg", "of", "hi", "he",
-		"lo", "loe", "ge", "gt", "lt", "le"};
+		"lo", "loe", "ge", "gt", "lt", "le"
+	};
 	if (n < 0 || (n > (sizeof (cs) / sizeof (*cs)) - 1)) {
 		return NULL;
 	}
@@ -95,21 +96,21 @@ R_API int r_reg_cond_from_string(const char *str) {
 		return R_REG_COND_LE;
 	}
 	eprintf ("| Usage: drc [condition]\n"
-		"| eq    equal\n"
-		"| ne    not equal\n"
-		"| cf    carry flag set\n"
-		"| neg   negative value (has sign)\n"
-		"| of    overflow\n"
-		"|unsigned:\n"
-		"| hi    higher\n"
-		"| he    higher or equal\n"
-		"| lo    lower\n"
-		"| loe   lower or equal\n"
-		"|signed:\n"
-		"| ge    greater or equal\n"
-		"| gt    greater than\n"
-		"| le    less or equal\n"
-		"| lt    less than\n");
+		 "| eq    equal\n"
+		 "| ne    not equal\n"
+		 "| cf    carry flag set\n"
+		 "| neg   negative value (has sign)\n"
+		 "| of    overflow\n"
+		 "|unsigned:\n"
+		 "| hi    higher\n"
+		 "| he    higher or equal\n"
+		 "| lo    lower\n"
+		 "| loe   lower or equal\n"
+		 "|signed:\n"
+		 "| ge    greater or equal\n"
+		 "| gt    greater than\n"
+		 "| le    less or equal\n"
+		 "| lt    less than\n");
 	return -1;
 }
 
@@ -122,9 +123,9 @@ R_API int r_reg_cond_bits(RReg *r, int type, RRegFlags *f) {
 	case R_REG_COND_OF:
 		return O;
 	// unsigned
-	case R_REG_COND_HI: return (!Z && C);      // HIGUER
+	case R_REG_COND_HI: return (!Z && C); // HIGUER
 	case R_REG_COND_HE: return Z || (!Z && C); // HIGUER OR EQUAL
-	case R_REG_COND_LO: return (Z || !C);      // LOWER
+	case R_REG_COND_LO: return (Z || !C); // LOWER
 	case R_REG_COND_LOE:
 		return (Z || !C); // LOWER OR EQUAL
 	// signed
@@ -149,10 +150,10 @@ R_API RRegFlags *r_reg_cond_retrieve(RReg *r, RRegFlags *f) {
 	if (!f) {
 		return NULL;
 	}
-	f->s = r_reg_cond_get_value (r, "sign");     // sign, negate flag, less than zero
-	f->z = r_reg_cond_get_value (r, "zero");     // zero flag
-	f->c = r_reg_cond_get_value (r, "carry");    // carry flag
+	f->s = r_reg_cond_get_value (r, "sign"); // sign, negate flag, less than zero
+	f->z = r_reg_cond_get_value (r, "zero"); // zero flag
+	f->c = r_reg_cond_get_value (r, "carry"); // carry flag
 	f->o = r_reg_cond_get_value (r, "overflow"); // overflow flag
-	f->p = r_reg_cond_get_value (r, "parity");   // parity // intel only
+	f->p = r_reg_cond_get_value (r, "parity"); // parity // intel only
 	return f;
 }
