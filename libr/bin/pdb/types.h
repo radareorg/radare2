@@ -657,8 +657,8 @@ typedef struct {
 } SParsedPDBStream;
 
 typedef struct {
-	unsigned int size;
 	char *name;
+	unsigned int size;
 } SCString;
 
 typedef struct {
@@ -691,13 +691,13 @@ typedef struct {
 } SVal_LF_ULONG;
 
 typedef struct {
-    int64_t value;
-    SCString name;
+	int64_t value;
+	SCString name;
 } SVal_LF_QUADWORD;
 
 typedef struct {
-    uint64_t value;
-    SCString name;
+	uint64_t value;
+	SCString name;
 } SVal_LF_UQUADWORD;
 
 typedef struct {
@@ -1071,7 +1071,7 @@ typedef struct {
 } SSymbolRange;
 #pragma pack(pop)
 
-#pragma pack(push, 1)
+// #pragma pack(push, 1)
 typedef struct {
 	unsigned int opened;
 	SSymbolRange range;
@@ -1088,7 +1088,7 @@ typedef struct {
 	SCString modName;
 	SCString objName;
 } SDBIExHeader;
-#pragma pack(pop)
+// #pragma pack(pop)
 
 #pragma pack(push, 1)
 typedef struct {
