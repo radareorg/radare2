@@ -115,7 +115,7 @@ static int rafind_open_file(char *file) {
 	RSearch *rs = NULL;
 	const char *kw;
 	bool last = false;
-	int ret, result;
+	int ret, result = 0;
 
 	buf = NULL;
 	if (!quiet) {
@@ -183,11 +183,12 @@ static int rafind_open_file(char *file) {
 		goto done;
 	}
 	if (mode == R_SEARCH_ESIL) {
-		char *cmd;
 		r_list_foreach (keywords, iter, kw) {
-			cmd = r_str_newf ("r2 -qc \"/E %s\" %s", kw, file);
-			r_sandbox_system (cmd, 1);
-			free (cmd);
+			char *cmd = r_str_newf ("r2 -qc \"/E %s\" %s", kw, file);
+			if (cmd) {
+				r_sandbox_system (cmd, 1);
+				free (cmd);
+			}
 		}
 		goto done;
 	}
