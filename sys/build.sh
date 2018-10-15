@@ -59,7 +59,6 @@ A=$(dirname "$PWD/$0")
 cd "$A" && cd .. || exit 1
 
 if [ "`uname`" = Darwin ]; then
-	DEFAULT_PREFIX=/usr/local
 	# purge previous installations on other common paths
 	if [ -f /usr/bin/r2 ]; then
 		type sudo || NOSUDO=1
@@ -67,16 +66,11 @@ if [ "`uname`" = Darwin ]; then
 		[ -n "${NOSUDO}" ] && SUDO=
 		# purge first
 		echo "Purging r2 installation..."
-		./configure --prefix=/usr > /dev/null
+		./configure > /dev/null
 		${SUDO} ${MAKE} uninstall > /dev/null
 	fi
-else
-	DEFAULT_PREFIX=/usr
-	[ -n "${PREFIX}" -a "${PREFIX}" != /usr ] && \
-		CFGARG="${CFGARG} --with-rpath"
 fi
 
-[ -z "${PREFIX}" ] && PREFIX="${DEFAULT_PREFIX}"
 
 case "$1" in
 -h)
@@ -91,7 +85,6 @@ case "$1" in
 	CFGARG="${CFGARG} $*"
 	;;
 *)
-	PREFIX="$1"
 	;;
 esac
 
@@ -140,7 +133,7 @@ if [ -z "${KEEP_PLUGINS_CFG}" ]; then
 fi
 unset DEPS
 pwd
-./configure ${CFGARG} --prefix="${PREFIX}" || exit 1
+./configure ${CFGARG} || exit 1
 ${MAKE} -s -j${MAKE_JOBS} MAKE_JOBS=${MAKE_JOBS} || exit 1
 if [ "`uname`" = Darwin ]; then
 	./sys/macos-cert.sh
