@@ -170,9 +170,6 @@ R_API void r_reg_free_internal(RReg* reg, bool init) {
 		if (init) {
 			r_list_free (reg->regset[i].regs);
 			reg->regset[i].regs = r_list_newf ((RListFree) r_reg_item_free);
-			//r_list_free (reg->regset[i].pool);
-			//reg->regset[i].pool = r_list_newf ((RListFree) r_reg_arena_free);
-			//reg->regset[i].pool = NULL;
 		} else {
 			r_list_free (reg->regset[i].regs);
 			reg->regset[i].regs = NULL;
@@ -256,7 +253,6 @@ R_API RReg* r_reg_new() {
 		}
 		reg->regset[i].pool = r_list_newf ((RListFree) r_reg_arena_free);
 		reg->regset[i].regs = r_list_newf ((RListFree) r_reg_item_free);
-		// 'reg->regset[i].poll->tail->data' should point to the current 'arena'
 		r_list_push (reg->regset[i].pool, arena);
 		reg->regset[i].arena = arena;
 	}
