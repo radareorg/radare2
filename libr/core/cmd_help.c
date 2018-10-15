@@ -176,7 +176,7 @@ static const char *help_msg_question_v[] = {
 	"$B", "", "base address (aligned lowest map address)",
 	"$f", "", "jump fail address (e.g. jz 0x10 => next instruction)",
 	"$fl", "", "flag length (size) at current address (fla; pD $l @ entry0)",
-	"$F", "", "Same as $BS",
+	"$F", "", "Same as $FB",
 	"$Fb", "", "begin of basic block",
 	"$FB", "", "begin of function",
 	"$Fe", "", "end of basic block",
