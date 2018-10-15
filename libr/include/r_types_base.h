@@ -2,6 +2,14 @@
 #define R2_TYPES_BASE_H
 
 #include <ctype.h>
+#include <limits.h>
+
+#ifdef __gnu_hurd__
+#define PATH_MAX MAXPATHLEN
+#endif
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
 
 #define cut8 const unsigned char
 #define ut64 unsigned long long
