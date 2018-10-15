@@ -54,8 +54,8 @@ R_API bool r_reg_set_double(RReg *reg, RRegItem *item, double value) {
 	}
 	if (reg->regset[item->arena].arena->size - BITS2BYTES (item->offset) - BITS2BYTES (item->size) >= 0) {
 		r_mem_copybits (reg->regset[item->arena].arena->bytes +
-					BITS2BYTES (item->offset),
-				src, item->size);
+				BITS2BYTES (item->offset),
+			src, item->size);
 		return true;
 	}
 	eprintf ("r_reg_set_value: Cannot set %s to %lf\n", item->name, value);
@@ -109,12 +109,12 @@ R_API bool r_reg_set_longdouble(RReg *reg, RRegItem *item, long double value) {
 	}
 	if (reg->regset[item->arena].arena->size - BITS2BYTES (item->offset) - BITS2BYTES (item->size) >= 0) {
 		r_mem_copybits (reg->regset[item->arena].arena->bytes +
-					BITS2BYTES (item->offset),
-				src, item->size);
+				BITS2BYTES (item->offset),
+			src, item->size);
 		return true;
 	}
 
-	eprintf ("r_reg_set_value: Cannot set %s to %"LDBLFMT"\n", item->name, CASTLDBL value);
+	eprintf ("r_reg_set_value: Cannot set %s to %" LDBLFMT "\n", item->name, CASTLDBL value);
 	return false;
 }
 
