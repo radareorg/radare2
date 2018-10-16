@@ -87,6 +87,20 @@ static RList *sections(RBinFile *bf) {
 	ptr->perm = R_PERM_RWX;
 	ptr->add = true;
 	r_list_append (ret, ptr);
+	// TODO: Check only if bigger than 128K!
+	if (bf->size > 0x20000) {
+		// program headers is another section
+		if (!(ptr = R_NEW0 (RBinSection))) {
+			return ret;
+		}
+		strcpy (ptr->name, "_e000");
+		ptr->vsize = ptr->size = 0x10000;
+		ptr->paddr = bf->buf->length - 2 * ptr->size;
+		ptr->vaddr = 0xe0000;
+		ptr->perm = R_PERM_RWX;
+		ptr->add = true;
+		r_list_append (ret, ptr);
+	}
 	return ret;
 }
 
