@@ -48,16 +48,16 @@ echo "Changes"
 echo "-------"
 echo
 cat .l | grep -v ^commit | grep -v ^Author | grep -v ^Date > .x
-cat .x | grep · | perl -ne '/·(.*)/; if ($1) {print "$1\n";}' | sort -u > .y
+cat .x | grep '##' | perl -ne '/##(.*)/; if ($1) {print "$1\n";}' | sort -u > .y
 for a in `cat .y` ; do
 	echo "**$a**"
 	echo
-	cat .x | grep "·$a" | sed -e 's/·.*//g' | xargs echo "*"
+	cat .x | grep "##$a" | sed -e 's/##.*//g' | xargs echo "*"
 	echo
 done
 echo "To Review"
 echo "---------"
-cat .x | grep -v · | sed -e 's,\t,,' -e 's,^ *,,g' | grep -v "^$" | \
+cat .x | grep -v '##' | sed -e 's,\t,,' -e 's,^ *,,g' | grep -v "^$" | \
 	perl -ne 'if (/\*/) { print "$_"; } else { print "* $_";}'
 echo
 rm -f .x .y .l .A
