@@ -98,7 +98,7 @@ R_API bool r_sys_tts(const char *txt, bool bg);
 #define r_sys_breakpoint() __asm__ volatile ("bkpt $0");
 #else
 #warning r_sys_breakpoint not implemented for this platform
-#define r_sys_breakpoint() { void *a = NULL; *a = 0; }
+#define r_sys_breakpoint() { char *a = NULL; *a = 0; }
 #endif
 #endif
 
