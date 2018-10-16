@@ -9,11 +9,11 @@
 #define R_SYS_DEVNULL "/dev/null"
 #endif
 
-#if __linux__ || __FreeBSD__ || __NetBSD__
+/* #if __linux__ || __FreeBSD__ || __NetBSD__
 #define HAS_CLOCK_NANOSLEEP 1
 #else
 #define HAS_CLOCK_NANOSLEEP 0
-#endif
+#endif */ 
 
 #ifdef __cplusplus
 extern "C" {
