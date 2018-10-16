@@ -249,7 +249,7 @@ R_API void r_sys_backtrace(void) {
 }
 
 R_API int r_sys_sleep(int secs) {
-#if HAS_CLOCK_NANOSLEEP
+#if __linux__
 	struct timespec rqtp;
 	rqtp.tv_sec = secs;
 	rqtp.tv_nsec = 0;
@@ -263,7 +263,7 @@ R_API int r_sys_sleep(int secs) {
 }
 
 R_API int r_sys_usleep(int usecs) {
-#if HAS_CLOCK_NANOSLEEP
+#if __linux__
 	struct timespec rqtp;
 	rqtp.tv_sec = usecs / 1000000;
 	rqtp.tv_nsec = (usecs - (rqtp.tv_sec * 1000000)) * 1000;
