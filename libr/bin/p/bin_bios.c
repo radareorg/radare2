@@ -80,20 +80,19 @@ static RList *sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strcpy (ptr->name, "bootblk");
+	strcpy (ptr->name, "bootblk"); // Maps to 0xF000:0000 segment
 	ptr->vsize = ptr->size = 0x10000;
 	ptr->paddr = bf->buf->length - ptr->size;
 	ptr->vaddr = 0xf0000;
 	ptr->perm = R_PERM_RWX;
 	ptr->add = true;
 	r_list_append (ret, ptr);
-	// TODO: Check only if bigger than 128K!
-	if (bf->size > 0x20000) {
-		// program headers is another section
+	// If image bigger than 128K - add one more section
+	if (bf->size >= 0x20000) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
-		strcpy (ptr->name, "_e000");
+		strcpy (ptr->name, "_e000"); // Maps to 0xE000:0000 segment
 		ptr->vsize = ptr->size = 0x10000;
 		ptr->paddr = bf->buf->length - 2 * ptr->size;
 		ptr->vaddr = 0xe0000;
