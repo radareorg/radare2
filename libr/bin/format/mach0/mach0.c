@@ -1110,6 +1110,10 @@ static const char *cmd_to_string(ut32 cmd) {
 		return "LC_CODE_SIGNATURE";
 	case LC_RPATH:
 		return "LC_RPATH";
+	case LC_TWOLEVEL_HINTS:
+		return "LC_TWOLEVEL_HINTS";
+	case LC_PREBIND_CKSUM:
+		return "LC_PREBIND_CKSUM";
 	case LC_SEGMENT:
 		return "LC_SEGMENT";
 	case LC_SEGMENT_64:
@@ -1122,10 +1126,26 @@ static const char *cmd_to_string(ut32 cmd) {
 		return "LC_ID_DYLIB";
 	case LC_DYSYMTAB:
 		return "LC_DYSYMTAB";
+	case LC_PREBOUND_DYLIB:
+		return "LC_PREBOUND_DYLIB";
+	case LC_ROUTINES:
+		return "LC_ROUTINES";
+	case LC_ROUTINES_64:
+		return "LC_ROUTINES_64";
+	case LC_SUB_FRAMEWORK:
+		return "LC_SUB_FRAMEWORK";
+	case LC_SUB_UMBRELLA:
+		return "LC_SUB_UMBRELLA";
+	case LC_SUB_CLIENT:
+		return "LC_SUB_CLIENT";
+	case LC_SUB_LIBRARY:
+		return "LC_SUB_LIBRARY";
 	case LC_FUNCTION_STARTS:
 		return "LC_FUNCTION_STARTS";
 	case LC_DYLIB_CODE_SIGN_DRS:
 		return "LC_DYLIB_CODE_SIGN_DRS";
+	case LC_BUILD_VERSION:
+		return "LC_BUILD_VERSION";
 	case LC_VERSION_MIN_MACOSX:
 		return "LC_VERSION_MIN_MACOSX";
 	case LC_VERSION_MIN_IPHONEOS:
@@ -1136,28 +1156,50 @@ static const char *cmd_to_string(ut32 cmd) {
 		return "LC_VERSION_MIN_WATCHOS";
 	case LC_DYLD_INFO:
 		return "LC_DYLD_INFO";
+	case LC_DYLD_INFO_ONLY:
+		return "LC_DYLD_INFO_ONLY";
+	case LC_DYLD_ENVIRONMENT:
+		return "LC_DYLD_ENVIRONMENT";
 	case LC_SOURCE_VERSION:
 		return "LC_SOURCE_VERSION";
 	case LC_MAIN:
 		return "LC_MAIN";
 	case LC_UUID:
 		return "LC_UUID";
-	case LC_ENCRYPTION_INFO_64:
-		return "LC_ENCRYPTION_INFO_64";
+	case LC_LAZY_LOAD_DYLIB:
+		return "LC_LAZY_LOAD_DYLIB";
 	case LC_ENCRYPTION_INFO:
 		return "LC_ENCRYPTION_INFO";
+	case LC_ENCRYPTION_INFO_64:
+		return "LC_ENCRYPTION_INFO_64";
+	case LC_SEGMENT_SPLIT_INFO:
+		return "LC_SEGMENT_SPLIT_INFO";
+	case LC_REEXPORT_DYLIB:
+		return "LC_REEXPORT_DYLIB";
+	case LC_LINKER_OPTION:
+		return "LC_LINKER_OPTION";
+	case LC_LINKER_OPTIMIZATION_HINT:
+		return "LC_LINKER_OPTIMIZATION_HINT";
 	case LC_LOAD_DYLINKER:
 		return "LC_LOAD_DYLINKER";
 	case LC_LOAD_DYLIB:
 		return "LC_LOAD_DYLIB";
+	case LC_LOAD_WEAK_DYLIB:
+		return "LC_LOAD_WEAK_DYLIB";
 	case LC_THREAD:
 		return "LC_THREAD";
 	case LC_UNIXTHREAD:
 		return "LC_UNIXTHREAD";
+	case LC_LOADFVMLIB:
+		return "LC_LOADFVMLIB";
+	case LC_IDFVMLIB:
+		return "LC_IDFVMLIB";
 	case LC_IDENT:
 		return "LC_IDENT";
-	case LC_DYLD_INFO_ONLY:
-		return "LC_DYLD_INFO_ONLY";
+	case LC_FVMFILE:
+		return "LC_FVMFILE";
+	case LC_PREPAGE:
+		return "LC_PREPAGE";
 	}
 	return "";
 }
@@ -2702,15 +2744,14 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 		addr += 4;
 	}
 	for (n = 0; n < mh->ncmds; n++) {
-		printf ("\n# Load Command %d\n", n);
 		READWORD();
 		int lcType = word;
-		eprintf ("0x%08"PFMT64x"  cmd          0x%x %s\n",
-			addr, lcType, cmd_to_string (lcType));
+		eprintf ("0x%08"PFMT64x"  cmd %7d 0x%x %s\n",
+			addr, n, lcType, cmd_to_string (lcType));
 		READWORD();
 		int lcSize = word;
 		word &= 0xFFFFFF;
-		printf ("0x%08"PFMT64x"  cmdsize      %d\n", addr, word);
+		printf ("0x%08"PFMT64x"  cmdsize     %d\n", addr, word);
 		if (lcSize < 1) {
 			eprintf ("Invalid size for a load command\n");
 			break;
@@ -2725,18 +2766,19 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 				addr + 20, r_buf_get_at (buf, addr + 28, NULL));
 			break;
 		case LC_LOAD_DYLIB:
-			printf ("0x%08"PFMT64x"  load_dyilb   %s\n",
+		case LC_LOAD_WEAK_DYLIB:
+			printf ("0x%08"PFMT64x"  load_dylib  %s\n",
 				addr + 16, r_buf_get_at (buf, addr + 16, NULL));
 			break;
 		case LC_RPATH:
-			printf ("0x%08"PFMT64x"  rpath        %s\n",
+			printf ("0x%08"PFMT64x"  rpath       %s\n",
 				addr + 4, r_buf_get_at (buf, addr + 4, NULL));
 			break;
 		case LC_CODE_SIGNATURE:
 			{
 			ut32 *words = (ut32*)r_buf_get_at (buf, addr, NULL);
-			printf ("0x%08"PFMT64x"  dataoff      0x%08x\n", addr, words[0]);
-			printf ("0x%08"PFMT64x"  datasize     %d\n", addr + 4, words[1]);
+			printf ("0x%08"PFMT64x"  dataoff     0x%08x\n", addr, words[0]);
+			printf ("0x%08"PFMT64x"  datasize    %d\n", addr + 4, words[1]);
 			printf ("# wtf mach0.sign %d @ 0x%x\n", words[1], words[0]);
 			}
 			break;

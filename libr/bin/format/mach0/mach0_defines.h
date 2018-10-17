@@ -165,7 +165,19 @@ enum LoadCommandType {
 	LC_LINKER_OPTION        = 0x0000002Du,
 	LC_LINKER_OPTIMIZATION_HINT = 0x0000002Eu,
 	LC_VERSION_MIN_TVOS     = 0x0000002Fu,
-	LC_VERSION_MIN_WATCHOS  = 0x00000030u
+	LC_VERSION_MIN_WATCHOS  = 0x00000030u,
+	LC_BUILD_VERSION = 0x32u
+/*
+Load command 9
+       cmd LC_BUILD_VERSION
+   cmdsize 32
+  platform macos
+       sdk 10.14
+     minos 10.14
+    ntools 1
+      tool ld
+   version 409.11
+*/
 };
 
 enum {
