@@ -181,9 +181,9 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 	}
 	if (IS_MODE_NORMAL (mode)) {
 		r_cons_printf ("[Strings]\n");
-		r_cons_printf ("Num Vaddr      Paddr      Len Size Section  Type  String\n");
+		r_cons_printf ("Num Paddr      Vaddr      Len Size Section  Type  String\n");
 	}
-	RBinString b64 = {0};
+	RBinString b64 = { 0 };
 	r_list_foreach (list, iter, string) {
 		const char *section_name, *type_string;
 		ut64 paddr, vaddr, addr;
@@ -320,20 +320,10 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 					str = no_dbl_bslash_str;
 				}
 			}
-#if 0
-			r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"
-				PFMT64x" ordinal=%03u sz=%u len=%u "
-				"section=%s type=%s string=%s",
-				vaddr, paddr, string->ordinal, string->size,
-				string->length, section_name, type_string, str);
-#else
-			r_cons_printf ("%03u 0x%08"PFMT64x" 0x%08"
-				PFMT64x" %3u %3u "
-				"(%s) %5s %s",
+			r_cons_printf ("%03u 0x%08" PFMT64x " 0x%08" PFMT64x " %3u %3u (%s) %5s %s",
 				string->ordinal, paddr, vaddr,
 				string->length, string->size,
 				section_name, type_string, str);
-#endif
 			if (str == no_dbl_bslash_str) {
 				R_FREE (str);
 			}
