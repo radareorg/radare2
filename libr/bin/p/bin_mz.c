@@ -76,12 +76,12 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return true;
 }
 
-static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz,
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz,
 		ut64 loadaddr, Sdb *sdb) {
-	const struct r_bin_mz_obj_t *res = NULL;
+	struct r_bin_mz_obj_t *res = NULL;
 	RBuffer *tbuf = NULL;
 	if (!buf || !sz || sz == UT64_MAX) {
-		return NULL;
+		return false;
 	}
 	tbuf = r_buf_new ();
 	r_buf_set_bytes (tbuf, buf, sz);
@@ -90,7 +90,8 @@ static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz,
 		sdb_ns_set (sdb, "info", res->kv);
 	}
 	r_buf_free (tbuf);
-	return (void *)res;
+	*bin_obj = res;
+	return true;
 }
 
 static bool load(RBinFile *bf) {
@@ -99,9 +100,7 @@ static bool load(RBinFile *bf) {
 	}
 	const ut8 *bytes = r_buf_buffer (bf->buf);
 	ut64 sz = r_buf_size (bf->buf);
-	const void *res = load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
-	bf->o->bin_obj = (void *)res;
-	return res != NULL;
+	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
 }
 
 static int destroy(RBinFile *bf) {

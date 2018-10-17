@@ -39,10 +39,8 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (length > 7 && !memcmp (buf, "PBLAPP\x00\x00", 8));
 }
 
-static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	check_bytes (buf, sz);
-	// XXX: this may be wrong if check_bytes is true
-	return R_NOTNULL;
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+	return check_bytes (buf, sz);
 }
 
 static bool load(RBinFile *bf) {

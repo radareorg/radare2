@@ -54,7 +54,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return false;
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	RBin *rbin = bf->rbin;
 	RBinNXOObj *bin = R_NEW0 (RBinNXOObj);
 	ut32 toff = readLE32 (bf->buf, NSO_OFF (text_memoffset));
@@ -90,11 +90,12 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sd
 	eprintf ("MOD Offset = 0x%"PFMT64x"\n", (ut64)modoff);
 	parseMod (newbuf, bin, modoff, ba);
 	r_buf_free (newbuf);
-	return (void *) bin;
+	*bin_obj = bin;
+	return true;
 fail:
 	r_buf_free (newbuf);
 	free (bin);
-	return NULL;
+	return false;
 }
 
 static bool load(RBinFile *bf) {
@@ -104,8 +105,7 @@ static bool load(RBinFile *bf) {
 	const ut64 sz = r_buf_size (bf->buf);
 	const ut64 la = bf->o->loadaddr;
 	const ut8 *bytes = r_buf_buffer (bf->buf);
-	bf->o->bin_obj = load_bytes (bf, bytes, sz, la, bf->sdb);
-	return bf->o->bin_obj != NULL;
+	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, la, bf->sdb);
 }
 
 static int destroy(RBinFile *bf) {

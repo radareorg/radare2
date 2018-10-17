@@ -57,9 +57,8 @@ R_API RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 		if (sz < bsz) {
 			bsz = sz;
 		}
-		o->bin_obj = plugin->load_bytes (binfile, bytes + offset, sz,
-						 loadaddr, sdb);
-		if (!o->bin_obj) {
+		if (!plugin->load_bytes (binfile, &o->bin_obj, bytes + offset, sz,
+					 loadaddr, sdb)) {
 			bprintf (
 				"Error in r_bin_object_new: load_bytes failed "
 				"for %s plugin\n",

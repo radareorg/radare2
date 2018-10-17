@@ -6,11 +6,12 @@
 #include <r_bin.h>
 #include "omf/omf.h"
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 size, ut64 loadaddrn, Sdb *sdb) {
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 size, ut64 loadaddrn, Sdb *sdb) {
 	if (!buf || !size || size == UT64_MAX) {
-		return NULL;
+		return false;
 	}
-	return r_bin_internal_omf_load (buf, size);
+	*bin_obj = r_bin_internal_omf_load (buf, size);
+	return true;
 }
 
 static bool load(RBinFile *bf) {
@@ -19,8 +20,7 @@ static bool load(RBinFile *bf) {
 	if (!bf || !bf->o) {
 		return false;
 	}
-	bf->o->bin_obj = load_bytes (bf, byte, size, bf->o->loadaddr, bf->sdb);
-	return bf->o->bin_obj != NULL;
+	return load_bytes (bf, &bf->o->bin_obj, byte, size, bf->o->loadaddr, bf->sdb);
 }
 
 static int destroy(RBinFile *bf) {
