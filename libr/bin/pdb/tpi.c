@@ -438,7 +438,7 @@ static int get_procedure_arglist(void *type, void **ret_type) {
 static int get_member_index(void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *) type;
 	SLF_MEMBER *lf = (SLF_MEMBER *) t->type_info;
-	int curr_idx = lf->inedex;
+	int curr_idx = lf->index;
 
 	if (curr_idx < base_idx) {
 		*ret_type = 0;
@@ -635,7 +635,7 @@ static void get_sval_val(SVal *val, int *res) {
 //	STypeInfo *t = (STypeInfo *) type;
 //	SLF_MEMBER *lf_member = (SLF_MEMBER *)t->type_info;
 
-//	*indx_val = lf_member->inedex;
+//	*indx_val = lf_member->index;
 //}
 
 static void get_onemethod_name_len(void *type, int *res_len) {
@@ -1526,6 +1526,7 @@ void deinit_scstring(SCString *cstr) {
 int parse_sctring(SCString *sctr, unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len) {
 	unsigned int c = 0;
 	sctr->name = NULL;
+	sctr->size = 0;
 	while (*leaf_data) {
 		CAN_READ((*read_bytes + c), 1, len);
 		c++;
@@ -1726,7 +1727,7 @@ static int parse_lf_member(SLF_MEMBER *lf_member, unsigned char *leaf_data, unsi
 	lf_member->offset.name_or_val = 0;
 
 	READ2(*read_bytes, len, lf_member->fldattr.fldattr, leaf_data, ut16);
-	READ4(*read_bytes, len, lf_member->inedex, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_member->index, leaf_data, ut32);
 
 	tmp_read_bytes_before = *read_bytes;
 	parse_sval(&lf_member->offset, leaf_data, read_bytes, len);
