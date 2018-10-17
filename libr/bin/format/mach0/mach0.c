@@ -2393,6 +2393,9 @@ int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header)* hdr) {
 	if (hdr->magic == MH_MAGIC_64 || hdr->magic == MH_CIGAM_64) {
 		return 64;
 	}
+	if (hdr->cputype == CPU_TYPE_ARM64_32) { // new apple watch aka arm64_32
+		return 64;
+	}
 	if ((hdr->cpusubtype & CPU_SUBTYPE_MASK) == (CPU_SUBTYPE_ARM_V7K << 24)) {
 		return 16;
 	}
@@ -2447,6 +2450,7 @@ const char* MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) *hdr) {
 		break;
 	case CPU_TYPE_ARM:
 	case CPU_TYPE_ARM64:
+	case CPU_TYPE_ARM64_32:
 		archstr = "arm";
 		break;
 	case CPU_TYPE_SPARC:
@@ -2461,6 +2465,10 @@ const char* MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) *hdr) {
 	case CPU_TYPE_POWERPC:
 	case CPU_TYPE_POWERPC64:
 		archstr = "ppc";
+		break;
+	default:
+		eprintf ("Unknown arch %d\n", hdr->cputype);
+		break;
 	}
 	return archstr;
 }
