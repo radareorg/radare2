@@ -819,7 +819,6 @@ R_API char *r_sign_calc_bbhash(RAnal *a, RAnalFunction *fcn) {
 	RListIter *iter = NULL;
 	RAnalBlock *bbi = NULL;
 	char *digest_hex = NULL;
-	RCore *core = a->coreb.core;
 	RHash *ctx = r_hash_new (true, R_ZIGN_HASH);
 	if (!ctx) {
 		goto beach;
