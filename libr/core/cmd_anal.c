@@ -7536,6 +7536,7 @@ static int cmd_anal(void *data, const char *input) {
 	case 'f': // "af"
 		{
 		int res = cmd_anal_fcn (core, input);
+		run_pending_anal (core);
 		if (!res) {
 			return false;
 		}

@@ -2517,7 +2517,6 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 				fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH?"MATCH":
 				fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?"UNMATCH":"NEW");
 	}
-
 	r_cons_printf ("\nnum-bbs: %d", r_list_length (fcn->bbs));
 	r_cons_printf ("\nedges: %d", r_anal_fcn_count_edges (fcn, &ebbs));
 	r_cons_printf ("\nend-bbs: %d", ebbs);
@@ -2579,7 +2578,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn) {
 		if (fcn->diff->addr != -1) {
 			r_cons_printf ("addr: 0x%"PFMT64x, fcn->diff->addr);
 		}
-		if (fcn->diff->name != NULL) {
+		if (fcn->diff->name) {
 			r_cons_printf ("function: %s", fcn->diff->name);
 		}
 	}
