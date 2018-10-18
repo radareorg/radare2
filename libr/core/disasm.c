@@ -4285,16 +4285,14 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 				int nargs = r_type_func_args_count (core->anal->sdb_types, key);
 				// remove other comments
 				delete_last_comment (ds);
-				if (ds->show_color) {
-					ds_comment_esil (ds, true, false, ds->pal_comment);
-				}
+				// ds_comment_start (ds, "");
+				ds_comment_esil (ds, true, false, "%s", ds->show_color ? ds->pal_comment : "");
 				if (fcn_type) {
-					ds_comment_esil (ds, ds->show_color? false : true, false,
-							"; %s%s%s(", r_str_get (fcn_type), (*fcn_type &&
-							fcn_type[strlen (fcn_type) - 1] == '*') ? "" : " ",
+					ds_comment_middle (ds, "; %s%s%s(", r_str_get (fcn_type),
+							(*fcn_type && fcn_type[strlen (fcn_type) - 1] == '*') ? "" : " ",
 							r_str_get (key));
 					if (!nargs) {
-						ds_comment_esil (ds, false, true, "void)");
+						ds_comment_end (ds, "void)");
 						break;
 					}
 				}
@@ -4312,25 +4310,25 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 						on_stack = true;
 					}
 					if (!arg->size) {
-						ds_comment_esil (ds, false, false, "%s: unk_size", arg->c_type);
+						ds_comment_middle (ds, "%s: unk_size", arg->c_type);
 						warning = true;
 					}
 					nextele = r_list_iter_get_next (iter);
 					if (!arg->fmt) {
 						if (!warning) {
-							ds_comment_esil (ds, false, false, "%s : unk_format", arg->c_type);
+							ds_comment_middle (ds, "%s : unk_format", arg->c_type);
 						} else {
-							ds_comment_esil (ds, false, false, "_format");
+							ds_comment_middle (ds, "_format");
 						}
-						ds_comment_esil (ds, false, false, nextele?", ":")");
+						ds_comment_middle (ds, nextele?", ":")");
 					} else {
 						//print_fcn_arg may need ds_comment_esil
 						print_fcn_arg (core, arg->orig_c_type,
 								arg->name, arg->fmt, arg->src, on_stack);
-						ds_comment_esil (ds, false, false, nextele?", ":")");
+						ds_comment_middle (ds, nextele?", ":")");
 					}
 				}
-				// ds_comment_esil (ds, false, true, "");
+				ds_comment_end (ds, "");
 				break;
 			} else {
 				// function name not resolved
@@ -4339,12 +4337,12 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 					nargs = fcn->nargs;
 				}
 				if (nargs > 0) {
-					ds_comment_esil (ds, true, false, "; CALL: ");
+					ds_comment_middle (ds, "; CALL: ");
 					for (i = 0; i < nargs; i++) {
 						ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_STDCALL, i);
-						ds_comment_esil (ds, false, false, "%s0x%"PFMT64x, i?", ":"", v);
+						ds_comment_middle (ds, "%s0x%"PFMT64x, i?", ":"", v);
 					}
-					ds_comment_esil (ds, false, true, "");
+					ds_comment_end (ds, "");
 				}
 			}
 			r_reg_setv (core->anal->reg, sp, spv); // reset stack ptr
