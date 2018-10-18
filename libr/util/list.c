@@ -52,8 +52,7 @@ R_API void r_list_init(RList *list) {
 }
 
 R_API int r_list_length(const RList *list) {
-	r_return_val_if_fail (list, 0);
-	return list->length;
+	return list? list->length: 0;
 }
 
 /* remove all elements of a list */
