@@ -590,11 +590,14 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case M68K_INS_ROR:
 	case M68K_INS_ROXL:
 	case M68K_INS_ROXR:
+		break;
 	case M68K_INS_RTD:
 	case M68K_INS_RTE:
 	case M68K_INS_RTM:
 	case M68K_INS_RTR:
 	case M68K_INS_RTS:
+		op->type = R_ANAL_OP_TYPE_RET;
+		break;
 	case M68K_INS_SBCD:
 	case M68K_INS_ST:
 	case M68K_INS_SF:
