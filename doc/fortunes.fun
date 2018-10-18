@@ -254,3 +254,12 @@ AHHHHH!!!! ASSEMBLY CODE!!!!!! HOLD ME I'M SCARED!!!!!!!!!!
 In radare we trust
 We don't make mistakes... just happy little segfaults.
 r2 is for the people
+Use headphones for best experience.
+Starting bitcoin miner in background...
+Downloading and verifying the blockchain...
+The anti-virus database has been updated.
+The motion picture contained in this videodisc is protected under the copyright laws.
+This software is sold for home use only and all other rights are expressly reversed by the copyleft owner.
+Any commercial use or duplication of this copylefted material without prior licensing is forbidden.
+Violators will be prosecuted.
+This shell has been seized by the Internet's Police.
