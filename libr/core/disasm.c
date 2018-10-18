@@ -1697,7 +1697,6 @@ beach:
 		r_list_join (args, regs);
 		r_list_foreach (args, iter, var) {
 			ds_begin_json_line (ds);
-			char *tmp;
 			int idx;
 			RAnal *anal = ds->core->anal;
 			memset (spaces, ' ', sizeof(spaces));
@@ -1707,10 +1706,6 @@ beach:
 			}
 			spaces[idx] = 0;
 			ds_pre_xrefs (ds, false);
-
-			tmp = ds->line;
-			ds->line = ds->refline2;
-			ds->line = tmp;
 
 			if (ds->show_flgoff) {
 				ds_print_offset (ds);
