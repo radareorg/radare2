@@ -56,13 +56,13 @@ static const char *help_msg_i[] = {
 	NULL
 };
 
+// TODO: this command needs a refactoring
 static const char *help_msg_id[] = {
-	"Usage: id", "", "Debug information",
-	"Output mode:", "", "",
-	"'*'", "", "Output in radare commands",
-	"id", "", "Source lines",
+	"Usage: idp", "", "Debug information",
+	"id", "", "Show DWARF source lines information",
 	"idp", " [file.pdb]", "Load pdb file information",
 	"idpi", " [file.pdb]", "Show pdb file information",
+	"idpi*", "", "Show symbols from pdb as flags (prefix with dot to import)",
 	"idpd", "", "Download pdb file on remote server",
 	NULL
 };
