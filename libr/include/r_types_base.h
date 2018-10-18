@@ -60,8 +60,6 @@ typedef struct _utX{
 #include <stdbool.h>
 
 #define R_FAIL -1
-// must be deprecated
-#define R_NOTNULL (void*)(size_t)1
 #define R_EMPTY { 0 }
 #define R_EMPTY2 {{ 0 }}
 

@@ -71,15 +71,15 @@ static bool check_bytes(const ut8 *buf, ut64 bufsz) {
 	return false;
 }
 
-static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	return (void*)(size_t)check_bytes (buf, sz);
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+	return check_bytes (buf, sz);
 }
 
 static bool load(RBinFile *bf) {
 	if (bf && bf->buf) {
 		const ut8 *bytes = r_buf_buffer (bf->buf);
 		ut64 sz = r_buf_size (bf->buf);
-		return load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb) != NULL;
+		return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
 	}
 	return false;
 }

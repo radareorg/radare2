@@ -74,22 +74,22 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return NULL;
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	struct r_bin_java_obj_t *bin_obj = NULL;
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+	struct r_bin_java_obj_t *tmp_bin_obj = NULL;
 	RBuffer *tbuf = NULL;
-	void *res = NULL;
 	if (!buf || sz == 0 || sz == UT64_MAX) {
-		return NULL;
+		return false;
 	}
 	tbuf = r_buf_new ();
 	r_buf_set_bytes (tbuf, buf, sz);
-	res = bin_obj = r_bin_java_new_buf (tbuf, loadaddr, sdb);
-	add_bin_obj_to_sdb (bin_obj);
+	tmp_bin_obj = r_bin_java_new_buf (tbuf, loadaddr, sdb);
+	*bin_obj = tmp_bin_obj;
+	add_bin_obj_to_sdb (tmp_bin_obj);
 	if (bf && bf->file) {
-		bin_obj->file = strdup (bf->file);
+		tmp_bin_obj->file = strdup (bf->file);
 	}
 	r_buf_free (tbuf);
-	return res;
+	return true;
 }
 
 static bool load(RBinFile *bf) {
@@ -102,7 +102,7 @@ static bool load(RBinFile *bf) {
 		return false;
 	}
 
-	bin_obj = load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
+	load_bytes (bf, (void **) &bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
 
 	if (bin_obj) {
 		if (!bf->o->kv) {

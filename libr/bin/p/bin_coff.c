@@ -19,15 +19,15 @@ static Sdb* get_sdb(RBinFile *bf) {
 	return NULL;
 }
 
-static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	if (!buf || !sz || sz == UT64_MAX) {
-		return NULL;
+		return false;
 	}
 	RBuffer *tbuf = r_buf_new();
 	r_buf_set_bytes (tbuf, buf, sz);
-	void *res = r_bin_coff_new_buf (tbuf, bf->rbin->verbose);
+	*bin_obj = r_bin_coff_new_buf (tbuf, bf->rbin->verbose);
 	r_buf_free (tbuf);
-	return res;
+	return true;
 }
 
 static bool load(RBinFile *bf) {
@@ -37,8 +37,7 @@ static bool load(RBinFile *bf) {
 	if (!bf || !bf->o) {
 		return false;
 	}
-	bf->o->bin_obj = load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
-	return bf->o->bin_obj ? true: false;
+	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
 }
 
 static int destroy(RBinFile *bf) {

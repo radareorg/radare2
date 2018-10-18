@@ -82,22 +82,23 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return ao? ao->kv: NULL;
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 la, Sdb *sdb) {
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 la, Sdb *sdb) {
 	BootImageObj *bio = R_NEW0 (BootImageObj);
 	if (!bio) {
-		return NULL;
+		return false;
 	}
 	bio->kv = sdb_new0 ();
 	if (!bio->kv) {
 		free (bio);
-		return NULL;
+		return false;
 	}
 	if (!bootimg_header_load (&bio->bi, bf->buf, bio->kv)) {
 		free(bio);
-		return NULL;
+		return false;
 	}
 	sdb_ns_set (sdb, "info", bio->kv);
-	return bio;
+	*bin_obj = bio;
+	return true;
 }
 
 static bool load(RBinFile *bf) {
