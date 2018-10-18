@@ -46,8 +46,8 @@ static int parseMouseEvent() {
 	int ch = r_cons_readchar ();
 	/* Skip the x/y coordinates */
 #if USE_CLICK
-	int x = r_cons_readchar() - 33;
-	int y = r_cons_readchar() - 33;
+	int x = r_cons_readchar () - 33;
+	int y = r_cons_readchar () - 33;
 #else
 	(void) r_cons_readchar ();
 	(void) r_cons_readchar ();
@@ -89,7 +89,7 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 	I->mouse_event = 0;
 	/* emacs */
 	switch ((ut8)ch) {
-	case 0xc3: r_cons_readchar(); ch='K'; break; // emacs repag (alt + v)
+	case 0xc3: r_cons_readchar (); ch='K'; break; // emacs repag (alt + v)
 	case 0x16: ch='J'; break; // emacs avpag (ctrl + v)
 	case 0x10: ch='k'; break; // emacs up (ctrl + p)
 	case 0x0e: ch='j'; break; // emacs down (ctrl + n)
@@ -194,8 +194,8 @@ R_API int r_cons_arrow_to_hjkl(int ch) {
 				break;
 			} // F9-F12 not yet supported!!
 			break;
-		case '5': ch = 'K'; r_cons_readchar(); break; // repag
-		case '6': ch = 'J'; r_cons_readchar(); break; // avpag
+		case '5': ch = 'K'; r_cons_readchar (); break; // repag
+		case '6': ch = 'J'; r_cons_readchar (); break; // avpag
 		/* arrow keys */
 		case 'A': ch = 'k'; break; // up
 		case 'B': ch = 'j'; break; // down
@@ -503,7 +503,7 @@ R_API int r_cons_readchar() {
 	sigdelset (&sigmask, SIGWINCH);
 	while (pselect (STDIN_FILENO + 1, &readfds, NULL, NULL, NULL, &sigmask) == -1) {
 		if (errno == EBADF) {
-			eprintf ("r_cons_readchar(): EBADF\n");
+			eprintf ("r_cons_readchar (): EBADF\n");
 			return -1;
 		}
 		if (sigwinchFlag) {
