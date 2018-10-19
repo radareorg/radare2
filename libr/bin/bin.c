@@ -223,12 +223,10 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, 
 	if (!iob->desc_get (iob->io, fd)) {
 		fd = iob->fd_open (iob->io, file, R_PERM_R, 0644);
 	}
-	bin->rawstr = rawstr;
-	// Use the current RIODesc otherwise r_io_map_select can swap them later on
 	if (fd < 0) {
 		return false;
 	}
-	//Use the current RIODesc otherwise r_io_map_select can swap them later on
+	bin->rawstr = rawstr;
 	return r_bin_load_io (bin, fd, baseaddr, loadaddr, xtr_idx, 0, NULL, 0);
 }
 
@@ -1544,20 +1542,6 @@ R_API void r_bin_force_plugin(RBin *bin, const char *name) {
 	r_return_if_fail (bin);
 	free (bin->force);
 	bin->force = (name && *name) ? strdup (name) : NULL;
-}
-
-R_API int r_bin_read_at(RBin *bin, ut64 addr, ut8 *buf, int size) {
-	r_return_val_if_fail (bin, false);
-	RIOBind *iob = &(bin->iob);
-	return iob->read_at (iob->io, addr, buf, size);
-}
-
-R_API int r_bin_write_at(RBin *bin, ut64 addr, const ut8 *buf, int size) {
-	RIOBind *iob;
-	if (!bin || !(iob = &(bin->iob))) {
-		return false;
-	}
-	return iob->write_at (iob->io, addr, buf, size);
 }
 
 R_API const char *r_bin_entry_type_string(int etype) {
