@@ -32,18 +32,9 @@ static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS, NULL };
 static RBinXtrPlugin *bin_xtr_static_plugins[] = { R_BIN_XTR_STATIC_PLUGINS, NULL };
 static RBinLdrPlugin *bin_ldr_static_plugins[] = { R_BIN_LDR_STATIC_PLUGINS, NULL };
 
-// TODO: try to deprecate and just call the r_bin_load_io_at_offset_as_az
 R_API bool r_bin_load_io(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name) {
-	// adding file_sz to help reduce the performance impact on the system
-	// in this case the number of bytes read will be limited to 2MB
-	// (MIN_LOAD_SIZE)
-	// if it fails, the whole file is loaded.
 	r_return_val_if_fail (bin, false);
-
-	const ut64 MAX_LOAD_SIZE = 0; // 0xfffff; //128 * (1 << 10 << 10);
-	int res = r_bin_load_io2 (bin, fd, baseaddr,
-		loadaddr, xtr_idx, offset, name, MAX_LOAD_SIZE);
-	return res ? res : r_bin_load_io2 (bin, fd, baseaddr, loadaddr, xtr_idx, offset, name, UT64_MAX);
+	return r_bin_load_io2 (bin, fd, baseaddr, loadaddr, xtr_idx, offset, name, 0);
 }
 
 static int getoffset(RBin *bin, int type, int idx) {
@@ -65,11 +56,7 @@ static const char *getname(RBin *bin, int type, int idx) {
 }
 
 static ut64 binobj_a2b(RBinObject *o, ut64 addr) {
-	return addr + (o? o->baddr_shift: 0);
-}
-
-R_API void r_bin_iobind(RBin *bin, RIO *io) {
-	r_io_bind (io, &bin->iob);
+	return o ? addr + o->baddr_shift : addr;
 }
 
 // TODO: move these two function do a different file
@@ -248,21 +235,6 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, 
 	}
 	//Use the current RIODesc otherwise r_io_map_select can swap them later on
 	return r_bin_load_io (bin, fd, baseaddr, loadaddr, xtr_idx, 0, NULL);
-}
-
-R_API int r_bin_load_as(RBin *bin, const char *file, ut64 baseaddr,
-	ut64 loadaddr, int xtr_idx, int fd, int rawstr,
-	int fileoffset, const char *name) {
-	RIOBind *iob = &(bin->iob);
-
-	r_return_val_if_fail (bin && iob && iob->io, false);
-	if (fd < 0) {
-		fd = iob->fd_open (iob->io, file, R_PERM_R, 0644);
-	}
-	if (fd < 0) {
-		return false;
-	}
-	return r_bin_load_io (bin, fd, baseaddr, loadaddr, xtr_idx, fileoffset, name);
 }
 
 R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
@@ -1556,7 +1528,7 @@ R_API ut64 r_bin_get_vaddr(RBin *bin, ut64 paddr, ut64 vaddr) {
 R_API ut64 r_bin_a2b(RBin *bin, ut64 addr) {
 	r_return_val_if_fail (bin, UT64_MAX);
 	RBinObject *o = r_bin_cur_object (bin);
-	return o ? o->baddr_shift + addr : addr;
+	return binobj_a2b (o, addr);
 }
 
 R_API ut64 r_bin_get_size(RBin *bin) {

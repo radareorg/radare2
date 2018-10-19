@@ -621,7 +621,6 @@ R_API bool r_bin_query(RBin *bin, const char *query);
 
 /* load */
 R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr);
-R_API int r_bin_load_as(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr, int fileoffset, const char *name);
 R_API bool r_bin_load_io(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name);
 R_API bool r_bin_load_io2(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name, ut64 sz);
 
@@ -760,10 +759,9 @@ R_API int r_bin_is_static(RBin *bin);
 R_API int r_bin_has_dbg_linenums(RBin *bin);
 R_API int r_bin_has_dbg_syms(RBin *bin);
 R_API int r_bin_has_dbg_relocs(RBin *bin);
-R_API RBin* r_bin_new(void);
-R_API void r_bin_iobind(RBin *bin, RIO *io);
-R_API RBinFile * r_bin_cur(RBin *bin);
-R_API RBinObject * r_bin_cur_object(RBin *bin);
+R_API RBin *r_bin_new(void);
+R_API RBinFile *r_bin_cur(RBin *bin);
+R_API RBinObject *r_bin_cur_object(RBin *bin);
 R_API int r_bin_io_load(RBin *bin, RIO *io, int fd, ut64 baseaddr, ut64 loadaddr, int dummy);
 
 R_API int r_bin_select(RBin *bin, const char *arch, int bits, const char *name);
