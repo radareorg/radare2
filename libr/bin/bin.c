@@ -726,12 +726,6 @@ R_API void r_bin_set_baddr(RBin *bin, ut64 baddr) {
 	// XXX - update all the infos?
 }
 
-R_API ut64 r_bin_get_boffset(RBin *bin) {
-	r_return_val_if_fail (bin, UT64_MAX);
-	RBinObject *o = r_bin_cur_object (bin);
-	return o ? o->boffset : UT64_MAX;
-}
-
 R_API RBinAddr *r_bin_get_sym(RBin *bin, int sym) {
 	r_return_val_if_fail (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
@@ -881,36 +875,6 @@ R_API int r_bin_is_string(RBin *bin, ut64 va) {
 	return false;
 }
 
-//callee must not free the symbol
-R_API RBinSymbol *r_bin_get_symbol_at_vaddr(RBin *bin, ut64 addr) {
-	r_return_val_if_fail (bin, NULL);
-	//use skiplist here
-	RList *symbols = r_bin_get_symbols (bin);
-	RListIter *iter;
-	RBinSymbol *symbol;
-	r_list_foreach (symbols, iter, symbol) {
-		if (symbol->vaddr == addr) {
-			return symbol;
-		}
-	}
-	return NULL;
-}
-
-//callee must not free the symbol
-R_API RBinSymbol *r_bin_get_symbol_at_paddr(RBin *bin, ut64 addr) {
-	r_return_val_if_fail (bin, NULL);
-	//use skiplist here
-	RList *symbols = r_bin_get_symbols (bin);
-	RListIter *iter;
-	RBinSymbol *symbol;
-	r_list_foreach (symbols, iter, symbol) {
-		if (symbol->paddr == addr) {
-			return symbol;
-		}
-	}
-	return NULL;
-}
-
 R_API RList *r_bin_get_symbols(RBin *bin) {
 	r_return_val_if_fail (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
@@ -929,12 +893,6 @@ R_API int r_bin_is_big_endian(RBin *bin) {
 	return (o && o->info) ? o->info->big_endian : -1;
 }
 
-R_API int r_bin_is_stripped(RBin *bin) {
-	r_return_val_if_fail (bin, -1);
-	RBinObject *o = r_bin_cur_object (bin);
-	return o ? (R_BIN_DBG_STRIPPED & o->info->dbg_info) : 1;
-}
-
 R_API int r_bin_is_static(RBin *bin) {
 	r_return_val_if_fail (bin, false);
 	RBinObject *o = r_bin_cur_object (bin);
@@ -942,25 +900,6 @@ R_API int r_bin_is_static(RBin *bin) {
 		return R_BIN_DBG_STATIC & o->info->dbg_info;
 	}
 	return true;
-}
-
-// TODO: Integrate with r_bin_dbg */
-R_API int r_bin_has_dbg_linenums(RBin *bin) {
-	r_return_val_if_fail (bin, false);
-	RBinObject *o = r_bin_cur_object (bin);
-	return o ? (R_BIN_DBG_LINENUMS & o->info->dbg_info) : false;
-}
-
-R_API int r_bin_has_dbg_syms(RBin *bin) {
-	r_return_val_if_fail (bin, false);
-	RBinObject *o = r_bin_cur_object (bin);
-	return o ? (R_BIN_DBG_SYMS & o->info->dbg_info) : false;
-}
-
-R_API int r_bin_has_dbg_relocs(RBin *bin) {
-	r_return_val_if_fail (bin, false);
-	RBinObject *o = r_bin_cur_object (bin);
-	return o ? (R_BIN_DBG_RELOCS & o->info->dbg_info) : false;
 }
 
 R_API RBin *r_bin_new() {
@@ -1094,19 +1033,6 @@ R_API int r_bin_select_by_ids(RBin *bin, ut32 binfile_id, ut32 binobj_id) {
 		obj = binfile? r_bin_file_object_find_by_id (binfile, binobj_id): NULL;
 	}
 	return r_bin_file_set_cur_binfile_obj (bin, binfile, obj);
-}
-
-R_API int r_bin_select_idx(RBin *bin, const char *name, int idx) {
-	RBinFile *nbinfile = NULL, *binfile = r_bin_cur (bin);
-	RBinObject *obj = NULL;
-	const char *tname = !name && binfile? binfile->file: name;
-	int res = false;
-	if (!tname || !bin) {
-		return res;
-	}
-	nbinfile = r_bin_file_find_by_name_n (bin, tname, idx);
-	obj = nbinfile? r_list_get_n (nbinfile->objs, idx): NULL;
-	return r_bin_file_set_cur_binfile_obj (bin, nbinfile, obj);
 }
 
 static void list_xtr_archs(RBin *bin, int mode) {

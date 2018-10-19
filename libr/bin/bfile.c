@@ -723,19 +723,11 @@ R_API int r_bin_file_set_cur_by_name(RBin *bin, const char *name) {
 }
 
 R_API RBinObject *r_bin_file_object_get_cur(RBinFile *binfile) {
-	return binfile? binfile->o: NULL;
-}
-
-R_API int r_bin_file_cur_set_plugin(RBinFile *binfile, RBinPlugin *plugin) {
-	if (binfile && binfile->o) {
-		binfile->o->plugin = plugin;
-		return true;
-	}
-	return false;
+	return binfile ? binfile->o : NULL;
 }
 
 R_API int r_bin_file_deref_by_bind(RBinBind *binb) {
-	RBin *bin = binb? binb->bin: NULL;
+	RBin *bin = binb ? binb->bin : NULL;
 	RBinFile *a = r_bin_cur (bin);
 	return r_bin_file_deref (bin, a);
 }
