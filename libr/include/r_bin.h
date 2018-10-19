@@ -428,7 +428,7 @@ typedef struct r_bin_plugin_t {
 typedef void (*RBinSymbollCallback)(RBinObject *obj, void *symbol);
 
 typedef struct r_bin_section_t {
-	char name[R_BIN_SIZEOF_STRINGS + 1]; // TODO: must be char*
+	char *name;
 	ut64 size;
 	ut64 vsize;
 	ut64 vaddr;

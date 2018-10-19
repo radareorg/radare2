@@ -145,7 +145,7 @@ static RList *sections(RBinFile *bf) {
 			goto out_error;
 		}
 		tmp[sizeof (tmp) - 1] = 0;
-		snprintf (item->name, R_BIN_SIZEOF_STRINGS, "%s.%i", tmp, i);
+		item->name = r_str_newf ("%s.%i", tmp, i);
 		item->paddr = sect[i].offset;
 		item->vaddr = sect[i].vaddr;
 		item->size = sect[i].size;

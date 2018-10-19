@@ -104,7 +104,7 @@ static RList *sections(RBinFile *bf) {
 			r_list_free (ret);
 			return NULL;
 		}
-		strncpy (ptr->name, (char*)sec->name, R_BIN_SIZEOF_STRINGS);
+		ptr->name = strdup ((char*)sec->name);
 		if (sec->id == R_BIN_WASM_SECTION_DATA || sec->id == R_BIN_WASM_SECTION_MEMORY) {
 			ptr->is_data = true;
 		}

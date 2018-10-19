@@ -165,7 +165,7 @@ static RList* sections(RBinFile *bf) {
 			break;
 		}
 		if (sections[i].name[0]) {
-			strncpy (ptr->name, (char*)sections[i].name, R_BIN_SIZEOF_STRINGS);
+			ptr->name = strdup ((char*)sections[i].name);
 		}
 		ptr->size = sections[i].size;
 		if (ptr->size > bin->size) {

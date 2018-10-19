@@ -186,7 +186,7 @@ static RList *sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strncpy (ptr->name, "header", R_BIN_SIZEOF_STRINGS);
+	ptr->name = strdup ("header");
 	ptr->size = sizeof (BootImage);
 	ptr->vsize = bi->page_size;
 	ptr->paddr = 0;
@@ -198,7 +198,7 @@ static RList *sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strncpy (ptr->name, "kernel", R_BIN_SIZEOF_STRINGS);
+	ptr->name = strdup ("kernel");
 	ptr->size = bi->kernel_size;
 	ptr->vsize = ADD_REMAINDER (ptr->size, bi->page_size);
 	ptr->paddr = bi->page_size;
@@ -212,7 +212,7 @@ static RList *sections(RBinFile *bf) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
-		strncpy (ptr->name, "ramdisk", R_BIN_SIZEOF_STRINGS);
+		ptr->name = strdup ("ramdisk");
 		ptr->size = bi->ramdisk_size;
 		ptr->vsize = ADD_REMAINDER (bi->ramdisk_size, bi->page_size);
 		ptr->paddr = ROUND_DOWN (base, bi->page_size);
@@ -227,7 +227,7 @@ static RList *sections(RBinFile *bf) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
-		strncpy (ptr->name, "second", R_BIN_SIZEOF_STRINGS);
+		ptr->name = strdup ("second");
 		ptr->size = bi->second_size;
 		ptr->vsize = ADD_REMAINDER (bi->second_size, bi->page_size);
 		ptr->paddr = ROUND_DOWN (base, bi->page_size);

@@ -95,7 +95,7 @@ static RList* sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strcpy (ptr->name, "ROM");
+	ptr->name = strdup ("ROM");
 	ptr->paddr = INES_HDR_SIZE;
 	ptr->size = ihdr.prg_page_count_16k * PRG_PAGE_SIZE;
 	ptr->vaddr = ROM_START_ADDRESS;

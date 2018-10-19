@@ -1915,7 +1915,7 @@ static RList *sections(RBinFile *bf) {
 	ret->free = free;
 
 	if ((ptr = R_NEW0 (RBinSection))) {
-		strcpy (ptr->name, "header");
+		ptr->name = strdup ("header");
 		ptr->size = ptr->vsize = sizeof (struct dex_header_t);
 		ptr->paddr= ptr->vaddr = 0;
 		ptr->perm = R_PERM_R;
@@ -1923,7 +1923,7 @@ static RList *sections(RBinFile *bf) {
 		r_list_append (ret, ptr);
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
-		strcpy (ptr->name, "constpool");
+		ptr->name = strdup ("constpool");
 		//ptr->size = ptr->vsize = fsym;
 		ptr->paddr= ptr->vaddr = sizeof (struct dex_header_t);
 		ptr->size = bin->code_from - ptr->vaddr; // fix size
@@ -1933,7 +1933,7 @@ static RList *sections(RBinFile *bf) {
 		r_list_append (ret, ptr);
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
-		strcpy (ptr->name, "code");
+		ptr->name = strdup ("code");
 		ptr->vaddr = ptr->paddr = bin->code_from; //ptr->vaddr = fsym;
 		ptr->size = bin->code_to - ptr->paddr;
 		ptr->vsize = ptr->size;
@@ -1943,7 +1943,7 @@ static RList *sections(RBinFile *bf) {
 	}
 	if ((ptr = R_NEW0 (RBinSection))) {
 		//ut64 sz = bf ? r_buf_size (bf->buf): 0;
-		strcpy (ptr->name, "data");
+		ptr->name = strdup ("data");
 		ptr->paddr = ptr->vaddr = fsymsz+fsym;
 		if (ptr->vaddr > bf->buf->length) {
 			ptr->paddr = ptr->vaddr = bin->code_to;

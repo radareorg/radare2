@@ -126,15 +126,17 @@ R_API void r_bin_filter_symbols(RBinFile *bf, RList *list) {
 
 R_API void r_bin_filter_sections(RBinFile *bf, RList *list) {
 	RBinSection *sec;
-	const int maxlen = 256;
 	Sdb *db = sdb_new0 ();
 	RListIter *iter;
-	if (maxlen > 0) {
-		r_list_foreach (list, iter, sec) {
-			r_bin_filter_name (bf, db, sec->vaddr, sec->name, maxlen);
+	r_list_foreach (list, iter, sec) {
+		int maxlen = strlen (sec->name) + 8;
+		char *newbuf = realloc (sec->name, maxlen);
+		if (!newbuf) {
+			eprintf ("%s: Failed to reallocate buffer\n", __func__);
+			continue;
 		}
-	} else {
-		eprintf ("SectionName is not dynamic\n");
+		sec->name = newbuf;
+		r_bin_filter_name (bf, db, sec->vaddr, sec->name, maxlen);
 	}
 	sdb_free (db);
 }

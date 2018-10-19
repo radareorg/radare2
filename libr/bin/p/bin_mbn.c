@@ -127,7 +127,7 @@ static RList* sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strncpy (ptr->name, "text", R_BIN_SIZEOF_STRINGS);
+	ptr->name = strdup ("text");
 	ptr->size = sb.psize;
 	ptr->vsize = sb.psize;
 	ptr->paddr = sb.paddr + 40;
@@ -140,7 +140,7 @@ static RList* sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strncpy (ptr->name, "sign", R_BIN_SIZEOF_STRINGS);
+	ptr->name = strdup ("sign");
 	ptr->size = sb.sign_sz;
 	ptr->vsize = sb.sign_sz;
 	ptr->paddr = sb.sign_va - sb.vaddr;
@@ -154,7 +154,7 @@ static RList* sections(RBinFile *bf) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			return ret;
 		}
-		strncpy (ptr->name, "cert", R_BIN_SIZEOF_STRINGS);
+		ptr->name = strdup ("cert");
 		ptr->size = sb.cert_sz;
 		ptr->vsize = sb.cert_sz;
 		ptr->paddr = sb.cert_va - sb.vaddr;

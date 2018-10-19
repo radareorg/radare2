@@ -109,7 +109,7 @@ static RList* sections(RBinFile *bf){
 	ret->free = free;
 
 	rombank[0] = R_NEW0 (RBinSection);
-	strncpy (rombank[0]->name, "rombank00", R_BIN_SIZEOF_STRINGS);
+	rombank[0]->name = strdup ("rombank00");
 	rombank[0]->paddr = 0;
 	rombank[0]->size = 0x4000;
 	rombank[0]->vsize = 0x4000;
@@ -121,7 +121,7 @@ static RList* sections(RBinFile *bf){
 
 	for (i = 1; i < bank; i++) {
 		rombank[i] = R_NEW0 (RBinSection);
-		sprintf (rombank[i]->name,"rombank%02x",i);
+		rombank[i]->name = r_str_newf ("rombank%02x", i);
 		rombank[i]->paddr = i*0x4000;
 		rombank[i]->vaddr = i*0x10000-0xc000;			//spaaaaaaaaaaaaaaaace!!!
 		rombank[i]->size = rombank[i]->vsize = 0x4000;

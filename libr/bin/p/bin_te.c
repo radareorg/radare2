@@ -106,14 +106,7 @@ static RList *sections(RBinFile *bf) {
 		if (!(ptr = R_NEW0 (RBinSection))) {
 			break;
 		}
-		if (sections[i].name[sizeof (sections[i].name) - 1]) {
-			memcpy (ptr->name, sections[i].name,
-				sizeof (sections[i].name));
-			ptr->name[sizeof (sections[i].name)] = 0;
-		} else {
-			strncpy (ptr->name, (char *) sections[i].name,
-				R_BIN_SIZEOF_STRINGS);
-		}
+		ptr->name = strdup ((char*)sections[i].name);
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
 		ptr->paddr = sections[i].paddr;

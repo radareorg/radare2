@@ -2303,7 +2303,7 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 			continue;
 		}
 
-		r_name_filter (section->name, sizeof (section->name));
+		r_name_filter (section->name, strlen (section->name) + 1);
 		if (at && (!section->size || !is_in_range (at, addr, section->size))) {
 			continue;
 		}
@@ -2343,7 +2343,6 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				}
 			}
 #endif
-			r_name_filter (section->name, 128);
 			if (section->format) {
 				// This is damn slow if section vsize is HUGE
 				if (section->vsize < 1024 * 1024 * 2) {
