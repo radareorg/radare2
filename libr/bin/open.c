@@ -5,13 +5,14 @@
 R_API int r_bin_open(RBin *bin, const char *filename, RBinOptions *bo) {
 	ut64 baddr = 0LL, laddr = 0LL;
 	int iofd = -1, rawstr = 0, xtr_idx = 0;
-	if (bo) {
-		baddr = bo->baseaddr;
-		laddr = bo->loadaddr;
-		xtr_idx = bo->xtr_idx;
-		iofd = bo->iofd;
-		rawstr = bo->rawstr;
-	}
+
+	r_return_val_if_fail (bo, -1);
+
+	baddr = bo->baseaddr;
+	laddr = bo->loadaddr;
+	xtr_idx = bo->xtr_idx;
+	iofd = bo->iofd;
+	rawstr = bo->rawstr;
 	if (r_bin_load (bin, filename, baddr, laddr, xtr_idx, iofd, rawstr)) {
 		int id = bin->cur->id; // TODO rename to bd?
 		r_id_storage_set (bin->ids, bin->cur, id);
@@ -20,7 +21,7 @@ R_API int r_bin_open(RBin *bin, const char *filename, RBinOptions *bo) {
 	return -1;
 }
 
-R_API RBinFile *r_bin_get_file (RBin *bin, int bd) {
+R_API RBinFile *r_bin_get_file(RBin *bin, int bd) {
 	return r_id_storage_take (bin->ids, bd);
 }
 
@@ -33,50 +34,3 @@ R_API bool r_bin_close(RBin *bin, int bd) {
 	}
 	return false;
 }
-
-#if 0
-// usage example
-
-var bin = new RBin ();
-int fd = bin.open("/bin/ls", null);
-var binfile = bin.get_file(fd);
-binfile.symbols.foreach(sym => {
-  print(sym.name);
-});
-bin.close(fd);
-// binfile is invalid here
-
-int bd = bin->cur;
-r_list_foreach (r_bin_list (bin, bd, R_BIN_REQ_SYMBOLS), iter, sym) {
-	eprintf ("Symbol: %s\n", sym->name);
-}
-
-bool cb(void *user, void *data) {
-}
-r_bin_foreach (bin, bd, R_BIN_REQ_SYMBOLS, cb, user);
-#if 0
-// TODO: rename to r_bin_cmd() to match r2 commands ?
-// TODO: use this api in r2
-// TODO: add queryf api (or cmdf)
-R_API bool r_bin_query(RBin *bin, const char *query) {
-	bool ret = false;
-	char *q = strdup (query);
-	const char *at = strchr (q, '@');
-	if (at) {
-		*at++ = 0;
-	}
-	if (!strcmp (q, "s")) {
-		// symbols
-		ret = true;
-	} else {
-		eprintf ("Unknown command\n");
-	}
-	return ret;
-	// r_bin_query (bin, "o@0x8048080"); // return symbol at given address
-	// r_bin_query (bin, "s@0x8048080"); // return symbol at given address
-	// r_bin_query (bin, "z/str/"); // return list subset of strings matching
-	// r_bin_query (bin, "i\"printf\""); // imports
-}
-#endif
-
-#endif
