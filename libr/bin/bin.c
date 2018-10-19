@@ -32,11 +32,6 @@ static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS, NULL };
 static RBinXtrPlugin *bin_xtr_static_plugins[] = { R_BIN_XTR_STATIC_PLUGINS, NULL };
 static RBinLdrPlugin *bin_ldr_static_plugins[] = { R_BIN_LDR_STATIC_PLUGINS, NULL };
 
-R_API bool r_bin_load_io(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name) {
-	r_return_val_if_fail (bin, false);
-	return r_bin_load_io2 (bin, fd, baseaddr, loadaddr, xtr_idx, offset, name, 0);
-}
-
 static int getoffset(RBin *bin, int type, int idx) {
 	RBinFile *a = r_bin_cur (bin);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (a);
@@ -234,7 +229,7 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, 
 		return false;
 	}
 	//Use the current RIODesc otherwise r_io_map_select can swap them later on
-	return r_bin_load_io (bin, fd, baseaddr, loadaddr, xtr_idx, 0, NULL);
+	return r_bin_load_io (bin, fd, baseaddr, loadaddr, xtr_idx, 0, NULL, 0);
 }
 
 R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
@@ -319,13 +314,13 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 
 	if (r_list_length (the_obj_list) == 1) {
 		RBinObject *old_o = (RBinObject *)r_list_get_n (the_obj_list, 0);
-		res = r_bin_load_io (bin, fd, baseaddr, old_o->loadaddr, 0, old_o->boffset, NULL);
+		res = r_bin_load_io (bin, fd, baseaddr, old_o->loadaddr, 0, old_o->boffset, NULL, 0);
 	} else {
 		RListIter *iter = NULL;
 		RBinObject *old_o;
 		r_list_foreach (the_obj_list, iter, old_o) {
 			// XXX - naive. do we need a way to prevent multiple "anys" from being opened?
-			res = r_bin_load_io (bin, fd, baseaddr, old_o->loadaddr, 0, old_o->boffset, old_o->plugin->name);
+			res = r_bin_load_io (bin, fd, baseaddr, old_o->loadaddr, 0, old_o->boffset, old_o->plugin->name, 0);
 		}
 	}
 	bf->o = r_list_get_n (bf->objs, 0);
@@ -336,9 +331,9 @@ error:
 	return res;
 }
 
-R_API bool r_bin_load_io2(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name, ut64 sz) {
+R_API bool r_bin_load_io(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name, ut64 sz) {
 	RIOBind *iob = &(bin->iob);
-	RIO *io = iob? iob->io: NULL;
+	RIO *io = iob ? iob->io : NULL;
 	RListIter *it;
 	ut8 *buf_bytes = NULL;
 	RBinXtrPlugin *xtr;

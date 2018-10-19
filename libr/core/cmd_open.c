@@ -152,7 +152,7 @@ static const char *help_msg_oonn[] = {
 	NULL
 };
 
-static inline ut32 find_binfile_id_by_fd (RBin *bin, ut32 fd) {
+static inline ut32 find_binfile_id_by_fd(RBin *bin, ut32 fd) {
 	RListIter *it;
 	RBinFile *bf;
 	r_list_foreach (bin->binfiles, it, bf) {
@@ -163,7 +163,7 @@ static inline ut32 find_binfile_id_by_fd (RBin *bin, ut32 fd) {
 	return UT32_MAX;
 }
 
-static RBinObject *find_binfile_by_id (RBin *bin, ut32 id) {
+static RBinObject *find_binfile_by_id(RBin *bin, ut32 id) {
 	RListIter *it, *it2;
 	RBinFile *bf;
 	RBinObject *obj;
@@ -291,7 +291,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				if (desc) {
 					*filename = 0;
 					ut64 addr = r_num_math (core->num, arg);
-					r_bin_load_io (core->bin, desc->fd, addr, 0, 0, 0, NULL);
+					r_bin_load_io (core->bin, desc->fd, addr, 0, 0, 0, NULL, 0);
 					r_io_desc_close (desc);
 					r_core_cmd0 (core, ".is*");
 				} else {
@@ -302,7 +302,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 				int fd = r_io_fd_get_current (core->io);
 				RIODesc *desc = r_io_desc_get (core->io, fd);
 				if (desc) {
-					r_bin_load_io (core->bin, desc->fd, addr, 0, 0, 0, NULL);
+					r_bin_load_io (core->bin, desc->fd, addr, 0, 0, 0, NULL, 0);
 					r_core_cmd0 (core, ".is*");
 				} else {
 					eprintf ("No file to load bin from?\n");
@@ -315,7 +315,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			RIODesc *desc;
 			RListIter *iter;
 			r_list_foreach (files, iter, desc) {
-				r_bin_load_io (core->bin, desc->fd, core->offset, 0, 0, 0, NULL);
+				r_bin_load_io (core->bin, desc->fd, core->offset, 0, 0, 0, NULL, 0);
 				r_core_cmd0 (core, ".is*");
 				break;
 			}
@@ -483,7 +483,7 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 	}
 }
 
-static void cmd_omfg (RCore *core, const char *input) {
+static void cmd_omfg(RCore *core, const char *input) {
 	SdbListIter *iter;
 	RIOMap *map;
 	input = r_str_trim_ro (input);
@@ -513,7 +513,7 @@ static void cmd_omfg (RCore *core, const char *input) {
 	}
 }
 
-static void cmd_omf (RCore *core, const char *input) {
+static void cmd_omf(RCore *core, const char *input) {
 	SdbListIter *iter;
 	RIOMap *map;
 	char *arg = strdup (r_str_trim_ro (input));
@@ -852,13 +852,13 @@ static bool reopen_in_malloc_cb(void *user, void *data, ut32 id) {
 	return true;
 }
 
-R_API void r_core_file_reopen_in_malloc (RCore *core) {
+R_API void r_core_file_reopen_in_malloc(RCore *core) {
 	if (core && core->io && core->io->files) {
 		r_id_storage_foreach (core->io->files, reopen_in_malloc_cb, core->io);
 	}
 }
 
-R_API void r_core_file_reopen_debug (RCore *core, const char *args) {
+R_API void r_core_file_reopen_debug(RCore *core, const char *args) {
 	RCoreFile *ofile = core->file;
 	RBinFile *bf = NULL;
 	RIODesc *desc;

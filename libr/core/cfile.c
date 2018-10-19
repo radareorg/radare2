@@ -379,7 +379,7 @@ static int r_core_file_do_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loada
 		return false;
 	}
 	r_io_use_fd (r->io, fd);
-	if (!r_bin_load_io (r->bin, fd, baseaddr, loadaddr, xtr_idx, 0, NULL)) {
+	if (!r_bin_load_io (r->bin, fd, baseaddr, loadaddr, xtr_idx, 0, NULL, 0)) {
 		//eprintf ("Failed to load the bin with an IO Plugin.\n");
 		return false;
 	}
@@ -1046,7 +1046,7 @@ R_API int r_core_file_binlist(RCore *core) {
 	return count;
 }
 
-static bool close_but_cb (void *user, void *data, ut32 id) {
+static bool close_but_cb(void *user, void *data, ut32 id) {
 	RCore *core = (RCore *)user;
 	RIODesc *desc = (RIODesc *)data;
 	if (core && desc && core->file) {
