@@ -22,7 +22,7 @@
 #endif
 
 static void GH(update_arena_with_tc)(GH(RHeap_MallocState_tcache) *cmain_arena, MallocState *main_arena) {
-		int i = 0;
+	int i = 0;
 	main_arena->mutex = cmain_arena->mutex;
 	main_arena->flags = cmain_arena->flags;
 	for (i = 0; i < BINMAPSIZE; i++) {
