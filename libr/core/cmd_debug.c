@@ -3883,7 +3883,7 @@ static bool cmd_dcu (RCore *core, const char *input) {
 			unsigned long steps = 0;
 			long level = 0;
 			const char *pc_name = core->dbg->reg->name[R_REG_NAME_PC];
-			ut64 prev_pc;
+			ut64 prev_pc = UT64_MAX;
 			bool prev_call = false;
 			bool prev_ret = false;
 			const char *sp_name = core->dbg->reg->name[R_REG_NAME_SP];
