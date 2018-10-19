@@ -868,6 +868,14 @@ static void handleZoomMode(RCore *core, const int key) {
 			changePanelNum (panels, panels->n_panels - 1, 0);
 			setRefreshAll (panels);
 			// pass thru
+			break;
+		case 's':
+			panelSingleStepIn (core);
+			if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
+				panels->panel[panels->curnode].addr = core->offset;
+			}
+			setRefreshAll (panels);
+			break;
 		case 9:
 			restorePanelPos (&panel[panels->curnode]);
 			handleTabKey (core, false);
@@ -2456,8 +2464,10 @@ static int file_history_up(RLine *line) {
 	}
 	line->file_hist_index++;
 	RIODesc *desc = r_list_get_n (files, num_files - line->file_hist_index);
-	strncpy (line->buffer.data, desc->name, R_LINE_BUFSIZE - 1);
-	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
+	if (desc) {
+		strncpy (line->buffer.data, desc->name, R_LINE_BUFSIZE - 1);
+		line->buffer.index = line->buffer.length = strlen (line->buffer.data);
+	}
 	r_list_free (files);
 	return true;
 }
@@ -2476,8 +2486,10 @@ static int file_history_down(RLine *line) {
 		return false;
 	}
 	RIODesc *desc = r_list_get_n (files, num_files - line->file_hist_index);
-	strncpy (line->buffer.data, desc->name, R_LINE_BUFSIZE - 1);
-	line->buffer.index = line->buffer.length = strlen (line->buffer.data);
+	if (desc) {
+		strncpy (line->buffer.data, desc->name, R_LINE_BUFSIZE - 1);
+		line->buffer.index = line->buffer.length = strlen (line->buffer.data);
+	}
 	r_list_free (files);
 	return true;
 }
@@ -2607,11 +2619,10 @@ static void savePanelsLayout(RCore* core, bool temp) {
 		char *configPath = getPanelsConfigPath ();
 		FILE *panelsConfig = r_sandbox_fopen (configPath, "w");
 		free (configPath);
-		if (!panelsConfig) {
-			return;
+		if (panelsConfig) {
+			fprintf (panelsConfig, "%s", buf);
+			fclose (panelsConfig);
 		}
-		fprintf (panelsConfig, "%s", buf);
-		fclose (panelsConfig);
 	} else {
 		core->panels_tmpcfg = strdup (buf);
 	}
@@ -3196,7 +3207,7 @@ repeat:
 		toggleWindowMode (panels);
 		setRefreshAll (panels);
 		break;
-	case 0x0d:
+	case 0x0d: // "\\n"
 		toggleZoomMode (panels);
 		break;
 	case '|':
