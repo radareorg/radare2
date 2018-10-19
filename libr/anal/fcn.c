@@ -1967,7 +1967,10 @@ R_API int r_anal_fcn_cc(RAnalFunction *fcn) {
 
 	r_list_foreach (fcn->bbs, iter, bb) {
 		N++; // nodes
-		if (bb->jump == UT64_MAX) {
+		if (bb->jump == UT64_MAX && bb->fail != UT64_MAX) {
+			eprintf ("Warning: invalid bb jump/fail pair\n");
+		}
+		if (bb->jump == UT64_MAX && bb->fail == UT64_MAX) {
 			P++; // exit nodes
 		} else {
 			E++; // edges
@@ -1975,8 +1978,17 @@ R_API int r_anal_fcn_cc(RAnalFunction *fcn) {
 				E++;
 			}
 		}
+		if (bb->cases) { // dead code ?
+			E += r_list_length (bb->cases);
+		}
+		if (bb->switch_op && bb->switch_op->cases) {
+			E += r_list_length (bb->switch_op->cases);
+		}
 	}
-	return E - N + 2; // (2 * P);
+
+	int result = E - N + (2 * P);
+	r_return_val_if_fail (result > 0, 0);
+	return result;
 }
 
 R_API char *r_anal_fcn_to_string(RAnal *a, RAnalFunction *fs) {
