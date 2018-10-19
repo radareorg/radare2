@@ -529,8 +529,8 @@ R_API bool r_io_set_write_mask(RIO* io, const ut8* mask, int len) {
 	return true;
 }
 
-R_API int r_io_bind(RIO *io, RIOBind *bnd) {
-	r_return_val_if_fail (io && bnd, false);
+R_API void r_io_bind(RIO *io, RIOBind *bnd) {
+	r_return_if_fail (io && bnd);
 
 	bnd->io = io;
 	bnd->init = true;
@@ -563,7 +563,6 @@ R_API int r_io_bind(RIO *io, RIOBind *bnd) {
 #if HAVE_PTRACE
 	bnd->ptrace = r_io_ptrace;
 #endif
-	return true;
 }
 
 /* moves bytes up (+) or down (-) within the specified range */
