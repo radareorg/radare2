@@ -448,10 +448,7 @@ R_API RBinPlugin *r_bin_get_binplugin_by_name(RBin *bin, const char *name) {
 	RBinPlugin *plugin;
 	RListIter *it;
 
-	r_return_val_if_fail (bin, NULL);
-	if (!name) {
-		return NULL;
-	}
+	r_return_val_if_fail (bin && name, NULL);
 
 	r_list_foreach (bin->plugins, it, plugin) {
 		if (!strcmp (plugin->name, name)) {
@@ -934,13 +931,13 @@ R_API RList *r_bin_get_mem(RBin *bin) {
 }
 
 R_API int r_bin_is_big_endian(RBin *bin) {
-	r_return_val_if_fail (bin, false);
+	r_return_val_if_fail (bin, -1);
 	RBinObject *o = r_bin_cur_object (bin);
 	return (o && o->info) ? o->info->big_endian : -1;
 }
 
 R_API int r_bin_is_stripped(RBin *bin) {
-	r_return_val_if_fail (bin, false);
+	r_return_val_if_fail (bin, -1);
 	RBinObject *o = r_bin_cur_object (bin);
 	return o ? (R_BIN_DBG_STRIPPED & o->info->dbg_info) : 1;
 }
