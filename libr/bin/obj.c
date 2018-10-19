@@ -127,7 +127,9 @@ R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o) {
 	}
 
 	if (cp->baddr) {
-		r_bin_object_set_baddr (o, cp->baddr (binfile));
+		ut64 old_baddr = o->baddr;
+		o->baddr = cp->baddr (binfile);
+		r_bin_object_set_baddr (o, old_baddr);
 	}
 	if (cp->boffset) {
 		o->boffset = cp->boffset (binfile);
@@ -374,8 +376,10 @@ R_API int r_bin_object_delete(RBin *bin, ut32 binfile_id, ut32 binobj_id) {
 }
 
 R_API void r_bin_object_set_baddr(RBinObject *o, ut64 baddr) {
-	r_return_if_fail (o && baddr != UT64_MAX);
-	o->baddr_shift = baddr - o->baddr;
+	r_return_if_fail (o);
+	if (baddr != UT64_MAX) {
+		o->baddr_shift = baddr - o->baddr;
+	}
 }
 
 R_API void r_bin_object_filter_strings(RBinObject *bo) {
