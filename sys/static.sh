@@ -30,7 +30,6 @@ if [ 1 = "${DOCFG}" ]; then
 	export CFLAGS="${CFLAGS} -fPIC"
 	#cp -f plugins.static.cfg plugins.cfg
 	cp -f plugins.static.nogpl.cfg plugins.cfg
-#-D__ANDROID__=1"
 	./configure-plugins || exit 1
 	./configure --prefix="$PREFIX" --without-gpl --with-libr --without-libuv --disable-loadlibs || exit 1
 fi
