@@ -235,7 +235,7 @@ R_API void r_bin_string_free(void *_str) {
 // XXX - this is a rather hacky way to do things, there may need to be a better
 // way.
 R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr) {
-	r_return_val_if_fail (bin, false);
+	r_return_val_if_fail (bin && bin->iob.io, false);
 
 	RIOBind *iob = &(bin->iob);
 	if (!iob->desc_get (iob->io, fd)) {
