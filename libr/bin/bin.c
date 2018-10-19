@@ -238,28 +238,12 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, 
 	r_return_val_if_fail (bin, false);
 
 	RIOBind *iob = &(bin->iob);
-	if (!iob->io) {
-		r_warn_if_reached ();
-
-		iob->io = r_io_new (); //wtf
-		if (!iob->io) {
-			return false;
-		}
-		bin->io_owned = true;
-		r_io_bind (iob->io, &bin->iob);		//memleak?
-		iob = &bin->iob;
-	}
 	if (!iob->desc_get (iob->io, fd)) {
 		fd = iob->fd_open (iob->io, file, R_PERM_R, 0644);
 	}
 	bin->rawstr = rawstr;
 	// Use the current RIODesc otherwise r_io_map_select can swap them later on
 	if (fd < 0) {
-		if (bin->io_owned) {
-			r_io_free (iob->io);
-			memset (&bin->iob, 0, sizeof (bin->iob));
-			bin->io_owned = false;
-		}
 		return false;
 	}
 	//Use the current RIODesc otherwise r_io_map_select can swap them later on
@@ -611,9 +595,6 @@ R_API bool r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo) {
 R_API void *r_bin_free(RBin *bin) {
 	if (!bin) {
 		return NULL;
-	}
-	if (bin->io_owned) {
-		r_io_free (bin->iob.io);
 	}
 	bin->file = NULL;
 	free (bin->force);
@@ -1037,7 +1018,6 @@ R_API RBin *r_bin_new() {
 	bin->strpurge = NULL;
 	bin->want_dbginfo = true;
 	bin->cur = NULL;
-	bin->io_owned = false;
 	bin->ids = r_id_storage_new (0, ST32_MAX);
 
 	/* bin parsers */
