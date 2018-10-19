@@ -3256,9 +3256,11 @@ R_API int r_core_visual(RCore *core, const char *input) {
 	core->print->flags |= R_PRINT_FLAGS_ADDRMOD;
 	do {
 dodo:
-		r_core_visual_tab_update(core);
+		r_core_visual_tab_update (core);
 		// update the cursor when it's not visible anymore
 		skip = fix_cursor (core);
+		r_cons_show_cursor (false);
+		r_cons_set_raw (1);
 		const int ref = r_config_get_i (core->config, "dbg.slow");
 		const int bytes = r_config_get_i (core->config, "stack.bytes");
 
