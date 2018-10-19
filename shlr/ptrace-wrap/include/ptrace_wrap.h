@@ -22,6 +22,12 @@
 #include <semaphore.h>
 #include <sys/ptrace.h>
 
+#ifdef __GLIBC__
+typedef enum __ptrace_request ptrace_wrap_ptrace_request;
+#else
+typedef int ptrace_wrap_ptrace_request;
+#endif
+
 typedef enum {
 	PTRACE_WRAP_REQUEST_TYPE_STOP,
 	PTRACE_WRAP_REQUEST_TYPE_PTRACE,
@@ -32,7 +38,7 @@ typedef struct ptrace_wrap_request_t {
 	ptrace_wrap_request_type type;
 	union {
 		struct {
-			enum __ptrace_request request;
+			ptrace_wrap_ptrace_request request;
 			pid_t pid;
 			void *addr;
 			void *data;
@@ -59,7 +65,7 @@ typedef struct ptrace_wrap_instance_t {
 
 int ptrace_wrap_instance_start(ptrace_wrap_instance *inst);
 void ptrace_wrap_instance_stop(ptrace_wrap_instance *inst);
-long ptrace_wrap(ptrace_wrap_instance *inst, enum __ptrace_request request, pid_t pid, void *addr, void *data);
+long ptrace_wrap(ptrace_wrap_instance *inst, ptrace_wrap_ptrace_request request, pid_t pid, void *addr, void *data);
 pid_t ptrace_wrap_fork(ptrace_wrap_instance *inst, void (*child_callback)(void *), void *child_callback_user);
 
 #endif //PTRACE_WRAP_H
