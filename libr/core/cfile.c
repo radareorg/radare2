@@ -291,7 +291,6 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 	RIODesc *desc = cf ? r_io_desc_get (r->io, cf->fd) : NULL;
 	RBinFile *binfile = NULL;
 	RBinPlugin *plugin;
-	RBinOptions *bo = NULL;
 	int xtr_idx = 0; // if 0, load all if xtr is used
 
 	// TODO : Honor file.path eval var too?
@@ -314,21 +313,20 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 	}
 #endif
 	int fd = cf ? cf->fd : -1;
+	RBinOptions bo = {
+		.offset = 0LL,
+		.baseaddr = baseaddr,
+		.rawstr = false,
+		.xtr_idx = xtr_idx,
+		.iofd = fd,
+		.loadaddr = UT64_MAX,
+	};
 
-	bo = r_bin_options_new (0LL, baseaddr, false);
-	if (!bo) {
-		eprintf ("Failed to create bin options\n");
-		return false;
-	}
-
-	bo->xtr_idx = xtr_idx;
-	bo->iofd = fd;
-	if (r_bin_open (r->bin, filenameuri, bo) == -1) {
+	if (r_bin_open (r->bin, filenameuri, &bo) == -1) {
 		eprintf ("RBinLoad: Cannot open %s\n", filenameuri);
 		if (r_config_get_i (r->config, "bin.rawstr")) {
-			bo->rawstr = true;
-			if (r_bin_open (r->bin, filenameuri, bo) == -1) {
-				r_bin_options_free (bo);
+			bo.rawstr = true;
+			if (r_bin_open (r->bin, filenameuri, &bo) == -1) {
 				return false;
 			}
 		}
@@ -367,7 +365,6 @@ static int r_core_file_do_load_for_debug(RCore *r, ut64 baseaddr, const char *fi
 		r_core_cmd0 (r, "\"(fix-dex,wx `ph sha1 $s-32 @32` @12 ; wx `ph adler32 $s-12 @12` @8)\"\n");
 	}
 
-	r_bin_options_free (bo);
 	return true;
 }
 

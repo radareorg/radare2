@@ -2,23 +2,6 @@
 
 #include <r_bin.h>
 
-R_API RBinOptions *r_bin_options_new (ut64 offset, ut64 baddr, int rawstr) {
-	RBinOptions *bo = R_NEW0 (RBinOptions);
-	if (bo) {
-		bo->loadaddr = UT64_MAX;
-		bo->offset = offset;
-		bo->baseaddr = baddr;
-		bo->rawstr = rawstr;
-		bo->iofd = -1;
-	}
-	return bo;
-}
-
-R_API void r_bin_options_free(RBinOptions *bo) {
-	free (bo->name);
-	free (bo);
-}
-
 R_API int r_bin_open(RBin *bin, const char *filename, RBinOptions *bo) {
 	ut64 baddr = 0LL, laddr = 0LL;
 	int iofd = -1, rawstr = 0, xtr_idx = 0;

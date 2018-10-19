@@ -229,14 +229,10 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, 
 	if (!bin) {
 		return false;
 	}
-	// ALIAS?	return r_bin_load_as (bin, file, baseaddr, loadaddr,
-	// xtr_idx, fd, rawstr, 0, file);
 	RIOBind *iob = &(bin->iob);
-	if (!iob) {
-		return false;
-	}
+	r_return_val_if_fail (bin && iob, false);
 	if (!iob->io) {
-		iob->io = r_io_new ();	//wtf
+		iob->io = r_io_new (); //wtf
 		if (!iob->io) {
 			return false;
 		}

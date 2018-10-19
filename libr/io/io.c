@@ -529,10 +529,9 @@ R_API bool r_io_set_write_mask(RIO* io, const ut8* mask, int len) {
 	return true;
 }
 
-R_API int r_io_bind(RIO* io, RIOBind* bnd) {
-	if (!io || !bnd) {
-		return false;
-	}
+R_API int r_io_bind(RIO *io, RIOBind *bnd) {
+	r_return_val_if_fail (io && bnd, false);
+
 	bnd->io = io;
 	bnd->init = true;
 	bnd->desc_use = r_io_use_fd;

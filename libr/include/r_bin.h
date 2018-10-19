@@ -607,20 +607,16 @@ typedef struct r_bin_options_t {
 	ut64 offset; // starting physical address to read from the target file
 	ut64 baseaddr; // where the linker maps the binary in memory
 	ut64 loadaddr; // the desired offset where the binary should be loaded
-	ut64 size; // restrict the size of the target fd
 	int xtr_idx; // load Nth binary
 	int rawstr;
 	int iofd;
-	char *name; // or comment :?
 } RBinOptions;
 
 R_API RBinImport *r_bin_import_clone(RBinImport *o);
 R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *o);
 
-R_API RBinOptions *r_bin_options_new (ut64 offset, ut64 baddr, int rawstr);
-R_API void r_bin_options_free(RBinOptions *bo);
 R_API int r_bin_open(RBin *bin, const char *filename, RBinOptions *bo);
-R_API RBinFile *r_bin_get_file (RBin *bin, int bd);
+R_API RBinFile *r_bin_get_file(RBin *bin, int bd);
 R_API bool r_bin_close(RBin *bin, int bd);
 R_API bool r_bin_query(RBin *bin, const char *query);
 
