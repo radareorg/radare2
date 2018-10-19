@@ -259,20 +259,14 @@ R_API void r_asm_set_user_ptr(RAsm *a, void *user) {
 }
 
 R_API bool r_asm_add(RAsm *a, RAsmPlugin *foo) {
-	RListIter *iter;
-	RAsmPlugin *h;
-	// TODO: cache foo->name length and use memcmp instead of strcmp
 	if (!foo->name) {
 		return false;
 	}
 	if (foo->init) {
 		foo->init (a->user);
 	}
-	r_list_foreach (a->plugins, iter, h) {
-		if (!strcmp (h->name, foo->name)) {
-			return false;
-		}
-	}
+	if (r_asm_is_valid (a, foo->name))
+		return false;
 	r_list_append (a->plugins, foo);
 	return true;
 }
@@ -285,11 +279,13 @@ R_API int r_asm_del(RAsm *a, const char *name) {
 R_API int r_asm_is_valid(RAsm *a, const char *name) {
 	RAsmPlugin *h;
 	RListIter *iter;
+	size_t name_len;
 	if (!name || !*name) {
 		return false;
 	}
+	name_len = strlen (name);
 	r_list_foreach (a->plugins, iter, h) {
-		if (!strcmp (h->name, name)) {
+		if (!memcmp (h->name, name, name_len)) {
 			return true;
 		}
 	}
