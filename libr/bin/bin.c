@@ -238,7 +238,6 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, 
 	r_return_val_if_fail (bin, false);
 
 	RIOBind *iob = &(bin->iob);
-	r_return_val_if_fail (bin && iob, false);
 	if (!iob->io) {
 		iob->io = r_io_new (); //wtf
 		if (!iob->io) {
