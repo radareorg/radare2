@@ -300,7 +300,7 @@ static bool GH(r_resolve_main_arena)(RCore *core, GHT *m_arena) {
 	GH(get_brks) (core, &brk_start, &brk_end);
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX) {
 		eprintf ("No Heap section\n");
-		return -1;
+		return false;
 	}
 
 	addr_srch = libc_addr_sta;
