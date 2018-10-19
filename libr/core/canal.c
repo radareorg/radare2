@@ -3193,6 +3193,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 	}
 	r_cons_break_push (NULL, NULL);
 	at = from;
+	st64 asm_var_submin = r_config_get_i (core->config, "asm.var.submin");
 	while (at < to && !r_cons_is_breaked ()) {
 		int i = 0, ret = bsz;
 		if (!r_io_is_valid_offset (core->io, at, R_PERM_X)) {
@@ -3220,6 +3221,10 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 			i += ret;
 			if (ret <= 0 || i > bsz) {
 				break;
+			}
+			// find references
+			if ((st64)op.val > asm_var_submin && op.val != UT64_MAX && op.val != UT32_MAX) {
+				found_xref (core, op.addr, op.val, R_ANAL_REF_TYPE_DATA, count, rad, cfg_debug, cfg_anal_strings);
 			}
 			// find references
 			if (op.ptr && op.ptr != UT64_MAX && op.ptr != UT32_MAX) {
