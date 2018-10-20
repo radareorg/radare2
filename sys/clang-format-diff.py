@@ -40,7 +40,6 @@ try:
 except ImportError:
   from io import StringIO
 
-
 def main():
   parser = argparse.ArgumentParser(description=
                                    'Reformat changed lines in diff. Without -i '
@@ -130,9 +129,6 @@ def main():
 
     # handle functions definitions/declarations: do not use space before (
     for i, l in enumerate(formatted_code):
-        if lines and i + 1 not in modified_lines:
-            continue
-
         if l.startswith('R_API ') or l.startswith('static '):
             formatted_code[i] = l.replace(' (', '(')
 

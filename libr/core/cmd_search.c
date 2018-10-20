@@ -256,8 +256,7 @@ static void cmd_search_bin(RCore *core, RInterval itv) {
 		r_io_read_at (core->io, from, buf, sz);
 		plug = r_bin_get_binplugin_by_bytes (core->bin, buf, sz);
 		if (plug) {
-			r_cons_printf ("0x%08"PFMT64x "  %s\n", from, plug->name);
-			// TODO: load the bin and calculate its size
+			r_cons_printf ("0x%08" PFMT64x "  %s\n", from, plug->name);
 			if (plug->size) {
 				r_bin_load_io2 (core->bin, core->file->fd,
 					0, 0, 0, core->offset, plug->name, 4096);
@@ -2477,10 +2476,10 @@ static ut8 *v_writebuf(RCore *core, RList *nums, int len, char ch, int bsize) {
 }
 
 // maybe useful as in util/big.c .?
-static void incBuffer (ut8 *buf, int bufsz) {
+static void incBuffer(ut8 *buf, int bufsz) {
 	int i = 0;
 	while (i < bufsz) {
-		buf[i] ++;
+		buf[i]++;
 		if (!buf[i]) {
 			i++;
 			continue;
@@ -2490,7 +2489,7 @@ static void incBuffer (ut8 *buf, int bufsz) {
 	// may overflow/hang/end/stop/whatever here
 }
 
-static void search_collisions (RCore *core, const char *hashName, const ut8 *hashValue, int hashLength) {
+static void search_collisions(RCore *core, const char *hashName, const ut8 *hashValue, int hashLength) {
 	ut8 R_ALIGNED(8) cmphash[128];
 	int i, algoType = R_HASH_CRC32;
 	int bufsz = core->blocksize;

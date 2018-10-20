@@ -997,24 +997,20 @@ int main(int argc, char **argv) {
 	r_bin_force_plugin (bin, forcebin);
 	r_bin_load_filter (bin, action);
 
-	RBinOptions *bo = r_bin_options_new (0LL, baddr, rawstr);
-	if (!bo) {
-		eprintf ("Could not create RBinOptions\n");
-		r_core_file_free (fh);
-		r_core_fini (&core);
-		return 1;
-	}
+	RBinOptions bo = {
+		.offset = 0LL,
+		.baseaddr = baddr,
+		.rawstr = rawstr,
+		.loadaddr = laddr,
+		.xtr_idx = xtr_idx,
+		.iofd = fd,
+	};
 
-	bo->loadaddr = laddr;
-	bo->xtr_idx = xtr_idx;
-	bo->iofd = fd;
-
-	if (!r_bin_open (bin, file, bo)) {
+	if (!r_bin_open (bin, file, &bo)) {
 		//if this return null means that we did not return a valid bin object
 		//but we have yet the chance that this file is a fat binary
 		if (!bin->cur || !bin->cur->xtr_data) {
 			eprintf ("r_bin: Cannot open file\n");
-			r_bin_options_free (bo);
 			r_core_file_free (fh);
 			r_core_fini (&core);
 			return 1;
@@ -1045,7 +1041,6 @@ int main(int argc, char **argv) {
 				sdb_query (bin->cur->sdb, query);
 			}
 		}
-		r_bin_options_free (bo);
 		r_core_file_free (fh);
 		r_core_fini (&core);
 		return 0;
@@ -1090,9 +1085,8 @@ int main(int argc, char **argv) {
 			r_config_set (core.config, "pdb.symstore", tmp);
 			R_FREE (tmp);
 		}
-		pdbopts.symbol_store_path = (char*) r_config_get (core.config, "pdb.symstore");
+		pdbopts.symbol_store_path = (char *)r_config_get (core.config, "pdb.symstore");
 		int r = r_bin_pdb_download (&core, isradjson, &actions_done, &pdbopts);
-		r_bin_options_free (bo);
 		r_core_file_free (fh);
 		r_core_fini (&core);
 		return r;
@@ -1144,7 +1138,6 @@ int main(int argc, char **argv) {
 		r_cons_print ("}");
 	}
 	r_cons_flush ();
-	r_bin_options_free (bo);
 	r_core_file_free (fh);
 	r_core_fini (&core);
 	free (stdin_buf);

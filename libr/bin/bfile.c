@@ -261,7 +261,7 @@ static char *swiftField(const char *dn, const char *cn) {
 	return NULL;
 }
 
-R_API RList *r_bin_classes_from_symbols (RBinFile *bf, RBinObject *o) {
+R_API RList *r_bin_classes_from_symbols(RBinFile *bf, RBinObject *o) {
 	RBinSymbol *sym;
 	RListIter *iter;
 	RList *symbols = o->symbols;
@@ -324,13 +324,13 @@ R_API RBinFile *r_bin_file_new(RBin *bin, const char *file, const ut8 *bytes, ut
 	}
 	int res = r_bin_file_set_bytes (binfile, bytes, sz, steal_ptr);
 	if (!res && steal_ptr) { // we own the ptr, free on error
-		free((void*) bytes);
+		free ((void *)bytes);
 	}
 	binfile->rbin = bin;
-	binfile->file = file? strdup (file): NULL;
+	binfile->file = file ? strdup (file) : NULL;
 	binfile->rawstr = rawstr;
 	binfile->fd = fd;
-	binfile->curxtr = r_bin_get_xtrplugin_by_name (bin, xtrname);
+	binfile->curxtr = xtrname ? r_bin_get_xtrplugin_by_name (bin, xtrname) : NULL;
 	binfile->sdb = sdb;
 	binfile->size = file_sz;
 	binfile->xtr_data = r_list_newf ((RListFree)r_bin_xtrdata_free);
