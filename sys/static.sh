@@ -1,8 +1,13 @@
 #!/bin/sh
 
-if [ "$(uname)" = Linux ]; then
+case "$(uname)" in
+Linux)
 	LDFLAGS="${LDFLAGS} -lpthread -ldl -lutil -lm"
-fi
+	;;
+OpenBSD)
+	LDFLAGS="${LDFLAGS} -lpthread -lkvm -lutil -lm"
+	;;
+esac
 MAKE=make
 gmake --help >/dev/null 2>&1
 [ $? = 0 ] && MAKE=gmake
