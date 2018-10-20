@@ -1697,7 +1697,6 @@ beach:
 		r_list_join (args, regs);
 		r_list_foreach (args, iter, var) {
 			ds_begin_json_line (ds);
-			char *tmp;
 			int idx;
 			RAnal *anal = ds->core->anal;
 			memset (spaces, ' ', sizeof(spaces));
@@ -1707,10 +1706,6 @@ beach:
 			}
 			spaces[idx] = 0;
 			ds_pre_xrefs (ds, false);
-
-			tmp = ds->line;
-			ds->line = ds->refline2;
-			ds->line = tmp;
 
 			if (ds->show_flgoff) {
 				ds_print_offset (ds);
@@ -1953,7 +1948,7 @@ static void ds_show_flags(RDisasmState *ds) {
 	}
 	RCore *core = ds->core;
 	char addr[64];
-	ut64 switch_addr;
+	ut64 switch_addr = UT64_MAX;
 	int case_start = -1, case_prev = 0, case_current = 0;
 	f = fcnIn (ds, ds->at, R_ANAL_FCN_TYPE_NULL);
 	const RList *flaglist = r_flag_get_list (core->flags, ds->at);

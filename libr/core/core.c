@@ -2517,7 +2517,6 @@ static int prompt_flag (RCore *r, char *s, size_t maxlen) {
 	if (!f) {
 		return false;
 	}
-
 	if (f->offset < r->offset) {
 		snprintf (s, maxlen, "%s + %" PFMT64u, f->name, r->offset - f->offset);
 	} else {
@@ -2535,7 +2534,8 @@ static void prompt_sec(RCore *r, char *s, size_t maxlen) {
 	if (!sec) {
 		return;
 	}
-	snprintf (s, maxlen, "%s:", sec->name);
+	r_str_ncpy (s, sec->name, maxlen - 2);
+	strcat (s, ":");
 }
 
 static void chop_prompt (const char *filename, char *tmp, size_t max_tmp_size) {
@@ -3208,7 +3208,7 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 		return -1;
 	}
 	bool maybeThumb = false;
-	if (align) {
+	if (align && core->anal->cur && core->anal->cur->arch) {
 		if (!strcmp (core->anal->cur->arch, "arm") && core->anal->bits != 64) {
 			maybeThumb = true;
 		}

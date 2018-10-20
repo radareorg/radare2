@@ -111,8 +111,6 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 	int i = 0;
 	int pos = 0;
 
-	char *tmp;
-
 	R_PDB7_ROOT_STREAM *root_stream7;
 
 	pdb->root_stream = R_NEW0 (R_PDB7_ROOT_STREAM);
@@ -182,7 +180,7 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 		}
 
 		ut32 size = num_pages * 4;
-		tmp = (char *) calloc (num_pages, 4);
+		ut8 *tmp = (ut8 *) calloc (num_pages, 4);
 		page = R_NEW0 (SPage);
 		if (num_pages != 0) {
 			if ((pos + size) > tmp_data_max_size) {

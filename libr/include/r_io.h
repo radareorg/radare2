@@ -26,12 +26,12 @@
 #include <sys/ptrace.h>
 #endif
 
-#if defined(__APPLE__) || __sun || __FreeBSD__ || __OpenBSD__
-typedef int r_ptrace_request_t;
-typedef int r_ptrace_data_t;
-#else
+#if defined(__GLIBC__) && defined(__linux__)
 typedef enum __ptrace_request r_ptrace_request_t;
 typedef void * r_ptrace_data_t;
+#else
+typedef int r_ptrace_request_t;
+typedef int r_ptrace_data_t;
 #endif
 #endif
 
