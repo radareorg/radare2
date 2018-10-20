@@ -3208,7 +3208,7 @@ R_API int r_core_search_value_in_range(RCore *core, RInterval search_itv, ut64 v
 		return -1;
 	}
 	bool maybeThumb = false;
-	if (align) {
+	if (align && core->anal->cur && core->anal->cur->arch) {
 		if (!strcmp (core->anal->cur->arch, "arm") && core->anal->bits != 64) {
 			maybeThumb = true;
 		}
