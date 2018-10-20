@@ -63,19 +63,20 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return ao? ao->kv: NULL;
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 la, Sdb *sdb){
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 la, Sdb *sdb){
 	ArtObj *ao = R_NEW0 (ArtObj);
 	if (!ao) {
-		return NULL;
+		return false;
 	}
 	ao->kv = sdb_new0 ();
 	if (!ao->kv) {
 		free (ao);
-		return NULL;
+		return false;
 	}
 	art_header_load (&ao->art, bf->buf, ao->kv);
 	sdb_ns_set (sdb, "info", ao->kv);
-	return ao;
+	*bin_obj = ao;
+	return true;
 }
 
 static bool load(RBinFile *bf) {

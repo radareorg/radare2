@@ -17,6 +17,7 @@ include $(SHLR)/qnx/deps.mk
 
 ifeq ($(USE_PTRACE_WRAP),1)
 include $(SHLR)/ptrace-wrap/deps.mk
+OBJS+=$(PTRACEWRAP_OBJS)
 endif
 
 .PHONY: pre

@@ -92,7 +92,7 @@ stop:
 	return NULL;
 }
 
-long ptrace_wrap(ptrace_wrap_instance *inst, enum __ptrace_request request, pid_t pid, void *addr, void *data) {
+long ptrace_wrap(ptrace_wrap_instance *inst, ptrace_wrap_ptrace_request request, pid_t pid, void *addr, void *data) {
 	int _errno = 0;
 	inst->request.type = PTRACE_WRAP_REQUEST_TYPE_PTRACE;
 	inst->request.ptrace.request = request;

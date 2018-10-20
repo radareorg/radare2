@@ -363,6 +363,17 @@ static ut64 getref (RCore *core, int n, char t, int type) {
 	return UT64_MAX;
 }
 
+static ut64 bbInstructions(RAnalFunction *fcn, ut64 addr) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (R_BETWEEN (bb->addr, addr, bb->addr + bb->size - 1)) {
+			return bb->ninstr;
+		}
+	}
+	return UT64_MAX;
+}
+
 static ut64 bbBegin(RAnalFunction *fcn, ut64 addr) {
 	RListIter *iter;
 	RAnalBlock *bb;
@@ -709,15 +720,18 @@ static ut64 num_callback(RNum *userptr, const char *str, int *ok) {
 			fcn = r_anal_get_fcn_in (core->anal, core->offset, 0);
 			if (fcn) {
 				switch (str[2]) {
-				case 'j': return bbJump (fcn, core->offset); // jump
-				case 'f': return bbFail (fcn, core->offset); // fail
+				/* function bounds (uppercase) */
 				case 'B': return fcn->addr; // begin
 				case 'E': return fcn->addr + fcn->_size; // end
-				case 'S': return r_anal_fcn_size (fcn);
+				case 'S': return (str[3]=='S')? r_anal_fcn_realsize (fcn): r_anal_fcn_size (fcn);
 				case 'I': return fcn->ninstr;
-				/* basic blocks */
+				/* basic blocks (lowercase) */
 				case 'b': return bbBegin (fcn, core->offset);
+				case 'e': return bbBegin (fcn, core->offset) + bbSize (fcn, core->offset);
+				case 'i': return bbInstructions (fcn, core->offset);
 				case 's': return bbSize (fcn, core->offset);
+				case 'j': return bbJump (fcn, core->offset); // jump
+				case 'f': return bbFail (fcn, core->offset); // fail
 				}
 				return fcn->addr;
 			}
@@ -808,7 +822,7 @@ static const char *radare_argv[] = {
 	"af", "afa", "afan", "afc", "afC", "afi", "afb", "afbb", "afn", "afr", "afs", "af*", "afv", "afvn",
 	"aga", "agc", "agd", "agl", "agfl",
 	"e", "et", "e-", "e*", "e!", "e?", "env ",
-	"i", "ii", "iI", "is", "iS", "iz",
+	"i", "ie", "ii", "iI", "ir", "iR", "is", "iS", "il", "iz", "id", "idp", "idpi", "idpi*", "idpd",
 	"q", "q!", "q!!", "q!!!",
 	"f", "fl", "fr", "f-", "f*", "fs", "fS", "fr", "fo", "f?",
 	"m", "m*", "ml", "m-", "my", "mg", "md", "mp", "m?",
@@ -2124,6 +2138,8 @@ static void init_autocomplete (RCore* core) {
 	r_core_autocomplete_add (core->autocomplete, "(-", R_CORE_AUTOCMPLT_MACR, true);
 	/* file path */
 	r_core_autocomplete_add (core->autocomplete, "o", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "idp", R_CORE_AUTOCMPLT_FILE, true);
+	r_core_autocomplete_add (core->autocomplete, "idpi", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "L", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, "obf", R_CORE_AUTOCMPLT_FILE, true);
 	r_core_autocomplete_add (core->autocomplete, ".", R_CORE_AUTOCMPLT_FILE, true);
@@ -2501,7 +2517,6 @@ static int prompt_flag (RCore *r, char *s, size_t maxlen) {
 	if (!f) {
 		return false;
 	}
-
 	if (f->offset < r->offset) {
 		snprintf (s, maxlen, "%s + %" PFMT64u, f->name, r->offset - f->offset);
 	} else {
@@ -2519,7 +2534,8 @@ static void prompt_sec(RCore *r, char *s, size_t maxlen) {
 	if (!sec) {
 		return;
 	}
-	snprintf (s, maxlen, "%s:", sec->name);
+	r_str_ncpy (s, sec->name, maxlen - 2);
+	strcat (s, ":");
 }
 
 static void chop_prompt (const char *filename, char *tmp, size_t max_tmp_size) {

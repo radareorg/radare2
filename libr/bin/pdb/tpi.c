@@ -94,8 +94,7 @@ static void print_base_type(EBASE_TYPES base_type, char **name) {
 ///////////////////////////////////////////////////////////////////////////////
 static void get_sval_name_len(SVal *val, int *res_len) {
 	if (val->value_or_type < eLF_CHAR) {
-		SCString *scstr;
-		scstr = (SCString *) val->name_or_val;
+		SCString *scstr = (SCString *) val->name_or_val;
 		*res_len = scstr->size;
 	} else {
 		switch (val->value_or_type) {
@@ -439,7 +438,7 @@ static int get_procedure_arglist(void *type, void **ret_type) {
 static int get_member_index(void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *) type;
 	SLF_MEMBER *lf = (SLF_MEMBER *) t->type_info;
-	int curr_idx = lf->inedex;
+	int curr_idx = lf->index;
 
 	if (curr_idx < base_idx) {
 		*ret_type = 0;
@@ -636,7 +635,7 @@ static void get_sval_val(SVal *val, int *res) {
 //	STypeInfo *t = (STypeInfo *) type;
 //	SLF_MEMBER *lf_member = (SLF_MEMBER *)t->type_info;
 
-//	*indx_val = lf_member->inedex;
+//	*indx_val = lf_member->index;
 //}
 
 static void get_onemethod_name_len(void *type, int *res_len) {
@@ -1513,30 +1512,22 @@ static void get_onemethod_print_type(void *type, char **name) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void init_scstring(SCString *cstr, unsigned int size, char *name)
-{
+void init_scstring(SCString *cstr, unsigned int size, char *name) {
 	cstr->size = size;
-	cstr->name = (char *) malloc (size);
-	if (!cstr->name) {
-		return;
-	}
-	strcpy (cstr->name, name);
+	cstr->name = strdup (name);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void deinit_scstring(SCString *cstr)
-{
+void deinit_scstring(SCString *cstr) {
 	free (cstr->name);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int parse_sctring(SCString *sctr, unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len)
-{
+int parse_sctring(SCString *sctr, unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len) {
 	unsigned int c = 0;
-
-	sctr->name = 0;
-
-	while (*leaf_data != 0) {
+	sctr->name = NULL;
+	sctr->size = 0;
+	while (*leaf_data) {
 		CAN_READ((*read_bytes + c), 1, len);
 		c++;
 		leaf_data++;
@@ -1736,7 +1727,7 @@ static int parse_lf_member(SLF_MEMBER *lf_member, unsigned char *leaf_data, unsi
 	lf_member->offset.name_or_val = 0;
 
 	READ2(*read_bytes, len, lf_member->fldattr.fldattr, leaf_data, ut16);
-	READ4(*read_bytes, len, lf_member->inedex, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_member->index, leaf_data, ut32);
 
 	tmp_read_bytes_before = *read_bytes;
 	parse_sval(&lf_member->offset, leaf_data, read_bytes, len);
@@ -2015,7 +2006,7 @@ static int parse_lf_enum(SLF_ENUM *lf_enum, unsigned char *leaf_data, unsigned i
 
 	lf_enum->prop.cv_property = SWAP_UINT16(lf_enum->prop.cv_property);
 	before_read_bytes = *read_bytes;
-	parse_sctring(&lf_enum->name, leaf_data, read_bytes, len);
+	parse_sctring (&lf_enum->name, leaf_data, read_bytes, len);
 	leaf_data += (*read_bytes - before_read_bytes);
 
 	PEEK_READ1(*read_bytes, len, lf_enum->pad, leaf_data, ut8);

@@ -37,10 +37,10 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return false;
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	RBinNXOObj *bin = R_NEW0 (RBinNXOObj);
 	if (!bin) {
-		return NULL;
+		return false;
 	}
 	ut64 ba = baddr (bf);
 	bin->methods_list = r_list_newf ((RListFree)free);
@@ -48,7 +48,8 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sd
 	bin->classes_list = r_list_newf ((RListFree)free);
 	ut32 mod0 = readLE32 (bf->buf, NRO_OFFSET_MODMEMOFF);
 	parseMod (bf->buf, bin, mod0, ba);
-	return (void *) bin;//(size_t) check_bytes (buf, sz);
+	*bin_obj = bin;
+	return true;
 }
 
 static bool load(RBinFile *bf) {
@@ -58,7 +59,7 @@ static bool load(RBinFile *bf) {
 	const ut64 sz = r_buf_size (bf->buf);
 	const ut64 la = bf->o->loadaddr;
 	const ut8 *bytes = r_buf_buffer (bf->buf);
-	bf->o->bin_obj = load_bytes (bf, bytes, sz, la, bf->sdb);
+	load_bytes (bf, &bf->o->bin_obj, bytes, sz, la, bf->sdb);
 	return bf->o->bin_obj != NULL;
 }
 

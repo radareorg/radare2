@@ -84,10 +84,10 @@ static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return res;
 }
 
-static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	struct Elf_(r_bin_elf_obj_t) *res;
 	if (!buf || !sz || sz == UT64_MAX) {
-		return NULL;
+		return false;
 	}
 	RBuffer *tbuf = r_buf_new ();
 	// NOOOEES must use io!
@@ -97,7 +97,8 @@ static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, S
 		sdb_ns_set (sdb, "info", res->kv);
 	}
 	r_buf_free (tbuf);
-	return res;
+	*bin_obj = res;
+	return true;
 }
 
 static bool load(RBinFile *bf) {
@@ -106,8 +107,7 @@ static bool load(RBinFile *bf) {
 	if (!bf || !bf->o) {
 		return false;
 	}
-	bf->o->bin_obj = load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
-	return bf->o->bin_obj != NULL;
+	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
 }
 
 static int destroy(RBinFile *bf) {
@@ -397,6 +397,7 @@ static RList* entries(RBinFile *bf) {
 	ptr->paddr = Elf_(r_bin_elf_get_entry_offset) (obj);
 	ptr->vaddr = Elf_(r_bin_elf_p2v) (obj, ptr->paddr);
 	ptr->hpaddr = 0x18;  // e_entry offset in ELF header
+	ptr->hvaddr = Elf_(r_bin_elf_p2v_new) (obj, ptr->hpaddr);
 
 	if (obj->ehdr.e_machine == EM_ARM) {
 		int bin_bits = Elf_(r_bin_elf_get_bits) (obj);

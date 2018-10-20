@@ -39,24 +39,24 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (!memcmp (buf, VICE_MAGIC, VICE_MAGIC_LEN));
 }
 
-static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	ut64 offset = 0;
 	struct r_bin_vsf_obj* res = NULL;
 	if (check_bytes (buf, sz)) {
 		int i = 0;
 		if (!(res = R_NEW0 (struct r_bin_vsf_obj))) {
-		    return NULL;
+		    return false;
 		}
 		offset = r_offsetof(struct vsf_hdr, machine);
 		if (offset > bf->size) {
 			free (res);
-			return NULL;
+			return false;
 		}
 		const unsigned char* machine = bf->buf->buf + offset;
 		for (; i < MACHINES_MAX; i++) {
 			if (offset + strlen (_machines[i].name) > bf->size) {
 				free (res);
-				return NULL;
+				return false;
 			}
 			if (!strncmp ((const char *)machine, _machines[i].name,
 				      strlen (_machines[i].name))) {
@@ -67,7 +67,7 @@ static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, S
 		if (i >= MACHINES_MAX) {
 			eprintf ("Unsupported machine type\n");
 			free (res);
-			return NULL;
+			return false;
 		}
 		// read all VSF modules
 		offset = sizeof (struct vsf_hdr);
@@ -77,7 +77,7 @@ static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, S
 			if (read != sizeof(module)) {
 				eprintf ("Truncated Header\n");
 				free (res);
-				return NULL;
+				return false;
 			}
 #define CMP_MODULE(x) memcmp (module.module_name, x, sizeof (x) - 1)
 			if (!CMP_MODULE (VICE_C64MEM) && !module.major) {
@@ -103,8 +103,8 @@ static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, S
 		res->kv = sdb_new0 ();
 		sdb_ns_set (sdb, "info", res->kv);
 	}
-	// res will be assigned to bf->o->bin_obj by the callee
-	return res;
+	*bin_obj = res;
+	return true;
 }
 
 static RList *mem(RBinFile *bf) {

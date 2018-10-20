@@ -9,7 +9,7 @@
 #define R_SYS_DEVNULL "/dev/null"
 #endif
 
-#if __linux__ || __FreeBSD__ || __NetBSD__
+#if __linux__ || (__FreeBSD__ && __FreeBSD_version >= 1101000) || (__NetBSD__ && __NetBSD_Version__ >= 700000000)
 #define HAS_CLOCK_NANOSLEEP 1
 #else
 #define HAS_CLOCK_NANOSLEEP 0
@@ -98,7 +98,7 @@ R_API bool r_sys_tts(const char *txt, bool bg);
 #define r_sys_breakpoint() __asm__ volatile ("bkpt $0");
 #else
 #warning r_sys_breakpoint not implemented for this platform
-#define r_sys_breakpoint() { void *a = NULL; *a = 0; }
+#define r_sys_breakpoint() { char *a = NULL; *a = 0; }
 #endif
 #endif
 

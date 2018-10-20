@@ -111,8 +111,6 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 	int i = 0;
 	int pos = 0;
 
-	char *tmp;
-
 	R_PDB7_ROOT_STREAM *root_stream7;
 
 	pdb->root_stream = R_NEW0 (R_PDB7_ROOT_STREAM);
@@ -182,7 +180,7 @@ static int init_pdb7_root_stream(R_PDB *pdb, int *root_page_list, int pages_amou
 		}
 
 		ut32 size = num_pages * 4;
-		tmp = (char *) calloc (num_pages, 4);
+		ut8 *tmp = (ut8 *) calloc (num_pages, 4);
 		page = R_NEW0 (SPage);
 		if (num_pages != 0) {
 			if ((pos + size) > tmp_data_max_size) {
@@ -270,7 +268,7 @@ static void free_info_stream(void *stream) {
 			stream_parse_func->parse_stream = (parse_func);			\
 			stream_parse_func->free = (free_func);				\
 			if (stream_size) {						\
-				stream_parse_func->stream = malloc (stream_size);	\
+				stream_parse_func->stream = calloc (1, stream_size);	\
 				if (!stream_parse_func->stream) {			\
 					R_FREE (stream_parse_func);			\
 					return;						\
@@ -284,9 +282,9 @@ static void free_info_stream(void *stream) {
 
 ///////////////////////////////////////////////////////////////////////////////
 static void fill_list_for_stream_parsing(RList *l, SDbiStream *dbi_stream) {
-	ADD_INDX_TO_LIST (l, dbi_stream->dbi_header.symrecStream, sizeof(SGDATAStream),
+	ADD_INDX_TO_LIST (l, dbi_stream->dbi_header.symrecStream, sizeof (SGDATAStream),
 		ePDB_STREAM_GSYM, free_gdata_stream, parse_gdata_stream);
-	ADD_INDX_TO_LIST (l, dbi_stream->dbg_header.sn_section_hdr, sizeof(SPEStream),
+	ADD_INDX_TO_LIST (l, dbi_stream->dbg_header.sn_section_hdr, sizeof (SPEStream),
 		ePDB_STREAM_SECT_HDR, free_pe_stream, parse_pe_stream);
 	ADD_INDX_TO_LIST (l, dbi_stream->dbg_header.sn_section_hdr_orig, sizeof(SPEStream),
 		ePDB_STREAM_SECT__HDR_ORIG, free_pe_stream, parse_pe_stream);

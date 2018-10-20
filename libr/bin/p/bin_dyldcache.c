@@ -872,15 +872,15 @@ static void *load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb) {
 	return cache;
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	return (void *) (size_t) check_bytes (buf, sz);
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+	return check_bytes (buf, sz);
 }
 
 static bool load(RBinFile *bf) {
 	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
 	ut64 sz = bf ? r_buf_size (bf->buf): 0;
 	ut64 la = (bf && bf->o) ? bf->o->loadaddr: 0;
-	return load_bytes (bf, bytes, sz, la, bf? bf->sdb: NULL) != NULL;
+	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, la, bf? bf->sdb: NULL);
 }
 
 static RList *entries(RBinFile *bf) {

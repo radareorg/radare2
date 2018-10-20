@@ -102,6 +102,7 @@ static void stamp_attr(RConsCanvas *c, int loc, int length) {
 	s = attr_at (c, loc);
 
 	if (s) {
+#if 0
 		if (*s != 0 && strlen (*s) > 2 && *(*s + 2) == '0') {
 			if (strlen (c->attr) == 5 && *(c->attr + 2) != '0') {
 				char tmp[9];
@@ -112,6 +113,7 @@ static void stamp_attr(RConsCanvas *c, int loc, int length) {
 				c->attr = r_str_const (tmp);
 			}
 		}
+#endif
 		*s = c->attr;
 	} else {
 		for (i = c->attrslen; i > 0 && loc < c->attrs[i - 1].loc; i--) {

@@ -10,6 +10,7 @@ R_API void r_bin_object_free(void /*RBinObject*/ *o_) {
 	if (!o) {
 		return;
 	}
+	free (o->regstate);
 	r_bin_info_free (o->info);
 	r_bin_object_delete_items (o);
 	R_FREE (o);
@@ -25,6 +26,7 @@ R_API RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 	}
 	o->obj_size = bytes && (bytes_sz >= sz + offset)? sz: 0;
 	o->boffset = offset;
+	o->regstate = NULL;
 	if (!r_id_pool_grab_id (binfile->rbin->ids->pool, &o->id)) {
 		free (o);
 		return NULL;
@@ -55,9 +57,8 @@ R_API RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 		if (sz < bsz) {
 			bsz = sz;
 		}
-		o->bin_obj = plugin->load_bytes (binfile, bytes + offset, sz,
-						 loadaddr, sdb);
-		if (!o->bin_obj) {
+		if (!plugin->load_bytes (binfile, &o->bin_obj, bytes + offset, sz,
+					 loadaddr, sdb)) {
 			bprintf (
 				"Error in r_bin_object_new: load_bytes failed "
 				"for %s plugin\n",

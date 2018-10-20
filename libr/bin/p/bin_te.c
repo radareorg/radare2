@@ -16,12 +16,12 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return bin? bin->kv: NULL;
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	struct r_bin_te_obj_t *res = NULL;
 	RBuffer *tbuf = NULL;
 
 	if (!buf || sz == 0 || sz == UT64_MAX) {
-		return NULL;
+		return false;
 	}
 	tbuf = r_buf_new ();
 	r_buf_set_bytes (tbuf, buf, sz);
@@ -30,7 +30,8 @@ static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sd
 		sdb_ns_set (sdb, "info", res->kv);
 	}
 	r_buf_free (tbuf);
-	return res;
+	*bin_obj = res;
+	return true;
 }
 
 static bool load(RBinFile *bf) {
@@ -40,7 +41,7 @@ static bool load(RBinFile *bf) {
 	if (!bf || !bf->o) {
 		return false;
 	}
-	bf->o->bin_obj = load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
+	load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
 	return bf->o->bin_obj? true: false;
 }
 

@@ -32,14 +32,14 @@ static char *entitlements(RBinFile *bf, bool json) {
 	return strdup ((char*) bin->signature);
 }
 
-static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	struct MACH0_(obj_t) *res = NULL;
 	if (!buf || !sz || sz == UT64_MAX) {
-		return NULL;
+		return false;
 	}
 	RBuffer *tbuf = r_buf_new ();
 	if (!tbuf) {
-		return NULL;
+		return false;
 	}
 	r_buf_set_bytes (tbuf, buf, sz);
 	struct MACH0_(opts_t) opts;
@@ -49,7 +49,8 @@ static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, S
 		sdb_ns_set (sdb, "info", res->kv);
 	}
 	r_buf_free (tbuf);
-	return res;
+	*bin_obj = res;
+	return true;
 }
 
 static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb){
@@ -67,19 +68,17 @@ static void * load_buffer(RBinFile *bf, RBuffer *buf, ut64 loadaddr, Sdb *sdb){
 }
 
 static bool load(RBinFile *bf) {
-	void *res;
 	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
 	ut64 sz = bf ? r_buf_size (bf->buf): 0;
 
 	if (!bf || !bf->o) {
 		return false;
 	}
-	res = load_bytes (bf, bytes, sz, bf->o->loadaddr, bf->sdb);
-	if (!bf->o || !res) {
-		MACH0_(mach0_free) (res);
+	load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
+	if (!bf->o || !bf->o->bin_obj) {
+		MACH0_(mach0_free) (bf->o->bin_obj);
 		return false;
 	}
-	bf->o->bin_obj = res;
 	struct MACH0_(obj_t) *mo = bf->o->bin_obj;
 	bf->o->kv = mo->kv; // NOP
 	sdb_ns_set (bf->sdb, "info", mo->kv);

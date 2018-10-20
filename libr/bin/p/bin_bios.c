@@ -21,11 +21,8 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return false;
 }
 
-static void *load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
-	if (!check_bytes (buf, sz)) {
-		return NULL;
-	}
-	return R_NOTNULL;
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+	return check_bytes (buf, sz);
 }
 
 static bool load(RBinFile *bf) {
@@ -80,13 +77,26 @@ static RList *sections(RBinFile *bf) {
 	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
 	}
-	strcpy (ptr->name, "bootblk");
+	strcpy (ptr->name, "bootblk"); // Maps to 0xF000:0000 segment
 	ptr->vsize = ptr->size = 0x10000;
 	ptr->paddr = bf->buf->length - ptr->size;
 	ptr->vaddr = 0xf0000;
 	ptr->perm = R_PERM_RWX;
 	ptr->add = true;
 	r_list_append (ret, ptr);
+	// If image bigger than 128K - add one more section
+	if (bf->size >= 0x20000) {
+		if (!(ptr = R_NEW0 (RBinSection))) {
+			return ret;
+		}
+		strcpy (ptr->name, "_e000"); // Maps to 0xE000:0000 segment
+		ptr->vsize = ptr->size = 0x10000;
+		ptr->paddr = bf->buf->length - 2 * ptr->size;
+		ptr->vaddr = 0xe0000;
+		ptr->perm = R_PERM_RWX;
+		ptr->add = true;
+		r_list_append (ret, ptr);
+	}
 	return ret;
 }
 

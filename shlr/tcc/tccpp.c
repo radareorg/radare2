@@ -932,18 +932,21 @@ static void tok_str_add2(TokenString *s, int t, CValue *cv)
 	case TOK_LSTR:
 	{
 		int nb_words;
-		CString *cstr;
 
 		nb_words = (sizeof(CString) + cv->cstr->size + 3) >> 2;
-		while ((len + nb_words) > s->allocated_len)
+		while ((len + nb_words) > s->allocated_len) {
 			str = tok_str_realloc (s);
-		cstr = (CString *) (str + len);
-		cstr->data = NULL;
-		cstr->size = cv->cstr->size;
-		cstr->data_allocated = NULL;
-		cstr->size_allocated = cstr->size;
-		memcpy ((char *) cstr + sizeof (CString),
-			cv->cstr->data, cstr->size);
+		}
+		CString cstr = {0};
+		cstr.data = NULL;
+		cstr.size = cv->cstr->size;
+		cstr.data_allocated = NULL;
+		cstr.size_allocated = cstr.size;
+
+		ut8 *p = (ut8*)(str + len);
+		memcpy (p, &cstr, sizeof (CString));
+		memcpy (p + sizeof (CString),
+			cv->cstr->data, cstr.size);
 		len += nb_words;
 	}
 	break;

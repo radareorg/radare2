@@ -124,7 +124,7 @@ static int __close(RIODesc *fd) {
 	if (!fd || !fd->data) {
 		return -1;
 	}
-	r2p_free (fd->data);
+	r2p_close (fd->data);
 	fd->data = NULL;
 	return 0;
 }

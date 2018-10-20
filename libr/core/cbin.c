@@ -181,9 +181,9 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 	}
 	if (IS_MODE_NORMAL (mode)) {
 		r_cons_printf ("[Strings]\n");
-		r_cons_printf ("Num Vaddr      Paddr      Len Size Section  Type  String\n");
+		r_cons_printf ("Num Paddr      Vaddr      Len Size Section  Type  String\n");
 	}
-	RBinString b64 = {0};
+	RBinString b64 = { 0 };
 	r_list_foreach (list, iter, string) {
 		const char *section_name, *type_string;
 		ut64 paddr, vaddr, addr;
@@ -258,6 +258,7 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 					if (block_list[0] == 0 && block_list[1] == -1) {
 						/* Don't include block list if
 						   just Basic Latin (0x00 - 0x7F) */
+						R_FREE (block_list);
 						break;
 					}
 					int *block_ptr = block_list;
@@ -319,20 +320,10 @@ static void _print_strings(RCore *r, RList *list, int mode, int va) {
 					str = no_dbl_bslash_str;
 				}
 			}
-#if 0
-			r_cons_printf ("vaddr=0x%08"PFMT64x" paddr=0x%08"
-				PFMT64x" ordinal=%03u sz=%u len=%u "
-				"section=%s type=%s string=%s",
-				vaddr, paddr, string->ordinal, string->size,
-				string->length, section_name, type_string, str);
-#else
-			r_cons_printf ("%03u 0x%08"PFMT64x" 0x%08"
-				PFMT64x" %3u %3u "
-				"(%s) %5s %s",
+			r_cons_printf ("%03u 0x%08" PFMT64x " 0x%08" PFMT64x " %3u %3u (%s) %5s %s",
 				string->ordinal, paddr, vaddr,
 				string->length, string->size,
 				section_name, type_string, str);
-#endif
 			if (str == no_dbl_bslash_str) {
 				R_FREE (str);
 			}
@@ -1156,7 +1147,7 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 		if (!type) {
 			type = "unknown";
 		}
-		const char *hpaddr_key = (entry->type == R_BIN_ENTRY_TYPE_PROGRAM && hvaddr == UT64_MAX)
+		const char *hpaddr_key = (entry->type == R_BIN_ENTRY_TYPE_PROGRAM)
 		                ? "haddr" : "hpaddr";
 		if (IS_MODE_SET (mode)) {
 			r_flag_space_set (r->flags, "symbols");
@@ -1182,7 +1173,7 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 				"\"baddr\":%" PFMT64u ","
 				"\"laddr\":%" PFMT64u ",",
 				last_processed ? "," : "", at, paddr, baddr, laddr);
-			if (is_initfini (entry) && hvaddr != UT64_MAX) {
+			if (hvaddr != UT64_MAX) {
 				r_cons_printf ("\"hvaddr\":%" PFMT64u ",", hvaddr);
 			}
 			r_cons_printf ("\"%s\":%" PFMT64u ","
@@ -1218,6 +1209,9 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 				r_cons_printf ("%"PFMT64d, hpaddr);
 			} else {
 				r_cons_printf ("0x%08"PFMT64x, hpaddr);
+			}
+			if (entry->type == R_BIN_ENTRY_TYPE_PROGRAM && hvaddr != UT64_MAX) {
+				r_cons_printf (" hvaddr=0x%08"PFMT64x, hvaddr);
 			}
 			r_cons_printf (" type=%s\n", type);
 		}
@@ -1900,7 +1894,7 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 	r_list_foreach (symbols, iter, symbol) {
 		ut64 addr = symbol->paddr == UT64_MAX ? symbol->vaddr : rva (r->bin, symbol->paddr, symbol->vaddr, va);
 		int len = symbol->size ? symbol->size : 32;
-		SymName sn;
+		SymName sn = {0};
 
 		if (exponly && !isAnExport (symbol)) {
 			continue;

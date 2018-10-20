@@ -8,7 +8,8 @@ static const char *parse_alias(RReg *reg, char **tok, const int n) {
 	if (n == 2) {
 		int role = r_reg_get_name_idx (tok[0] + 1);
 		return r_reg_set_name (reg, role, tok[1])
-			? NULL : "Invalid alias";
+			? NULL
+			: "Invalid alias";
 	}
 	return "Invalid syntax";
 }
@@ -208,7 +209,6 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 		RRegSet *rs = &reg->regset[i];
 		//eprintf ("* arena %s size %d\n", r_reg_get_type (i), rs->arena->size);
 		reg->size += rs->arena->size;
-
 	}
 	// Align to byte boundary if needed
 	//if (reg->size & 7) {
@@ -248,7 +248,7 @@ static int gdb_to_r2_profile(char *gdb) {
 	char *ptr = gdb, *ptr1, *gptr, *gptr1;
 	char name[16], groups[128], type[16];
 	const int all = 1, gpr = 2, save = 4, restore = 8, float_ = 16,
-		sse = 32, vector = 64, system = 128, mmx = 256;
+		  sse = 32, vector = 64, system = 128, mmx = 256;
 	int number, rel, offset, size, type_bits, ret;
 	// Every line is -
 	// Name Number Rel Offset Size Type Groups
@@ -276,7 +276,7 @@ static int gdb_to_r2_profile(char *gdb) {
 			*ptr1 = '\0';
 		}
 		ret = sscanf (ptr, " %s %d %d %d %d %s %s", name, &number, &rel,
-			      &offset, &size, type, groups);
+			&offset, &size, type, groups);
 		// Groups is optional, others not
 		if (ret < 6) {
 			eprintf ("Could not parse line: %s\n", ptr);
@@ -347,10 +347,9 @@ static int gdb_to_r2_profile(char *gdb) {
 		}
 		// Print line
 		eprintf ("%s\t%s\t.%d\t%d\t0\n",
-			 // Ref: Comment above about more register type mappings
-			 ((type_bits & mmx) || (type_bits & float_)
-			  || (type_bits & sse)) ? "fpu" : "gpr",
-			 name, size * 8, offset);
+			// Ref: Comment above about more register type mappings
+			((type_bits & mmx) || (type_bits & float_) || (type_bits & sse)) ? "fpu" : "gpr",
+			name, size * 8, offset);
 		// Go to next line
 		if (!ptr1) {
 			return true;

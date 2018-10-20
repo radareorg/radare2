@@ -12,9 +12,8 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 }
 
 
-static void * load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	check_bytes (buf, sz);
-	return R_NOTNULL;
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+	return check_bytes (buf, sz);
 }
 
 static RBinInfo* info(RBinFile *bf) {
