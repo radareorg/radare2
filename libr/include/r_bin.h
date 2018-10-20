@@ -212,13 +212,6 @@ typedef struct r_bin_info_t {
 	RBinHash sum[3];
 	ut64 baddr;
 	char *intrp;
-#if 0
-// stored in sdb
-	/* crypto (iOS bins) */
-	int crypt_offset;
-	int crypt_size;
-	int crypt_enabled;
-#endif
 } RBinInfo;
 
 typedef struct r_bin_object_t {
@@ -352,7 +345,6 @@ R_API void r_bin_info_free(RBinInfo *rb);
 R_API void r_bin_import_free(void *_imp);
 R_API void r_bin_symbol_free(void *_sym);
 R_API void r_bin_string_free(void *_str);
-// R_API void r_bin_field_free(void *_fld);
 
 typedef struct r_bin_xtr_plugin_t {
 	char *name;
@@ -360,7 +352,7 @@ typedef struct r_bin_xtr_plugin_t {
 	char *license;
 	int (*init)(void *user);
 	int (*fini)(void *user);
-// XXX: ut64 for size is maybe too much, what about st64? signed sizes are useful for detecting errors
+	// XXX: ut64 for size is maybe too much, what about st64? signed sizes are useful for detecting errors
 	bool (*check_bytes)(const ut8 *bytes, ut64 sz);
 
 	RBinXtrData * (*extract_from_bytes)(RBin *bin, const ut8 *buf, ut64 size, int idx);
@@ -551,9 +543,9 @@ typedef struct r_bin_field_t {
 } RBinField;
 
 R_API RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, int size, const char *name, const char *comment, const char *format);
-R_API void r_bin_field_free(void *); //RBinField *field);
+R_API void r_bin_field_free(void *);
 
-typedef struct r_bin_mem_t {	//new toy for esil-init
+typedef struct r_bin_mem_t {
 	char *name;
 	ut64 addr;
 	int size;
