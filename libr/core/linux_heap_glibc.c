@@ -1218,7 +1218,7 @@ void GH(print_malloc_info)(RCore *core, GHT m_state, GHT malloc_state) {
 		free (heap_info);
 		free (ms);
 	} else {
-		PRINT_RA ("This address is is not part of the arenas\n");
+		PRINT_RA ("This address is not part of the arenas\n");
 	}
 }
 
@@ -1277,7 +1277,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 				GH(print_heap_segment) (core, main_arena, m_arena, m_state, global_max_fast, format);
 				break;
 			} else {
-				PRINT_RA ("This address is is not part of the arenas\n");
+				PRINT_RA ("This address is not part of the arenas\n");
 				break;
 			}
 		}
@@ -1364,7 +1364,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 				}
 				GH(print_heap_bin) (core, m_state, main_arena, dup);
 			} else {
-				PRINT_RA ("This address is is not part of the arenas\n");
+				PRINT_RA ("This address is not part of the arenas\n");
 				free (dup);
 				break;
 			}
@@ -1400,7 +1400,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 				}
 				GH(print_heap_fastbin) (core, m_state, main_arena, global_max_fast, dup);
 			} else {
-				PRINT_RA ("This address is is not part of the arenas\n");
+				PRINT_RA ("This address is not part of the arenas\n");
 				free (dup);
 				break;
 			}
@@ -1440,7 +1440,7 @@ static int GH(cmd_dbg_map_heap_glibc)(RCore *core, const char *input) {
 				}
 				GH(print_heap_segment) (core, main_arena, m_arena, m_state, global_max_fast, format);
 			} else {
-				PRINT_RA ("This address is is not part of the arenas\n");
+				PRINT_RA ("This address is not part of the arenas\n");
 			}
 		}
 		break;
