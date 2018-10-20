@@ -7,6 +7,7 @@
 #endif
 
 #include "r_types.h"
+#include "r_bind.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,7 +44,6 @@ R_LIB_VERSION_HEADER (r_socket);
 #define SD_BOTH 2
 #endif
 typedef struct {
-	int magic;
 	int child;
 #if __WINDOWS__
 	HANDLE pipe;
@@ -51,6 +51,7 @@ typedef struct {
 	int input[2];
 	int output[2];
 #endif
+	RCoreBind coreb;
 } R2Pipe;
 
 typedef struct r_socket_t {
@@ -235,13 +236,15 @@ R_API void r_run_reset(RRunProfile *p);
 R_API int r_run_parsefile(RRunProfile *p, const char *b);
 
 /* r2pipe */
-R_API int r2p_close(R2Pipe *r2p);
 R_API R2Pipe *r2p_open(const char *cmd);
-R_API int r2p_write(R2Pipe *r2p, const char *str);
-R_API char *r2p_read(R2Pipe *r2p);
-R_API void r2p_free(R2Pipe *r2p);
+R_API R2Pipe *r2p_open_corebind(RCoreBind *coreb);
+R_API int r2p_close(R2Pipe *r2p);
+
 R_API char *r2p_cmd(R2Pipe *r2p, const char *str);
 R_API char *r2p_cmdf(R2Pipe *r2p, const char *fmt, ...);
+
+// R_API int r2p_write(R2Pipe *r2p, const char *str);
+// R_API char *r2p_read(R2Pipe *r2p);
 #endif
 
 #ifdef __cplusplus
