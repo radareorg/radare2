@@ -6,7 +6,7 @@ R_API int r_bin_open(RBin *bin, const char *filename, RBinOptions *bo) {
 	ut64 baddr = 0LL, laddr = 0LL;
 	int iofd = -1, rawstr = 0, xtr_idx = 0;
 
-	r_return_val_if_fail (bo, -1);
+	r_return_val_if_fail (bin && filename && bo, -1);
 
 	baddr = bo->baseaddr;
 	laddr = bo->loadaddr;
