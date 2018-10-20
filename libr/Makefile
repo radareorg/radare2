@@ -74,8 +74,24 @@ ifeq ($(OSTYPE),bsd)
 	for LIB in .libr/* ; do $(OBJCOPY) --localize-hidden $$LIB ; done
 endif
 
-libr.${EXT_AR}: .libr
+_libr.${EXT_AR}: .libr
 	${AR} crs $@ .libr/*.o
+
+.libr2: $(wildcard */libr_*.${EXT_AR}) ../shlr/libr_shlr.${EXT_AR}
+	rm -rf .libr2
+	mkdir -p .libr2
+	for LIB in $^ ; do \
+		BN=`basename $$LIB` ; \
+		echo $$BN ; \
+		mkdir -p .libr2/$$BN ; \
+		( cd .libr2/$$BN ; pwd ; du -hs ../../$$LIB; ar x ../../$$LIB ) ; \
+	done
+
+libr.${EXT_AR}: .libr2
+	${AR} crs $@ .libr2/*/*.o
+
+#libr.${EXT_AR}: .libr
+#	${AR} crs $@ .libr/*.o
 
 ifeq (1,$(WITH_GPL))
 E+=../shlr/grub/libgrubfs.${EXT_AR}
