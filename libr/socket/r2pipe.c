@@ -1,4 +1,20 @@
 /* radare - LGPL - Copyright 2015-2016 - pancake */
+/*
+Usage Example:
+
+	#include <r_core.h>
+	int main() {
+		RCoreBind rcb;
+		RCore *core = r_core_new ();
+		r_core_bind (core, &rcb);
+		r2p_open_corebind (&rcb);
+		char *clippy = r2p_cmd ("?E hello");
+		eprintf ("%s\n", clippy);
+		free (clippy);
+		r2p_close (r2p);
+		r_core_free (core);
+	}
+*/
 
 #include <r_util.h>
 #include <r_cons.h>
@@ -174,8 +190,10 @@ static R2Pipe* r2p_open_spawn(R2Pipe* r2p) {
 static R2Pipe *r2p_new() {
 	R2Pipe *r2p = R_NEW0 (R2Pipe);
 	if (r2p) {
+#if __UNIX__ || defined(__CYGWIN__)
 		r2p->input[0] = r2p->input[1] = -1;
 		r2p->output[0] = r2p->output[1] = -1;
+#endif
 		r2p->child = -1;
 	}
 	return r2p;
