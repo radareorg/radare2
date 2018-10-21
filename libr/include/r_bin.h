@@ -612,14 +612,10 @@ R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *o);
 
 R_API RBin *r_bin_new(void);
 R_API void *r_bin_free(RBin *bin);
-R_API bool r_bin_close(RBin *bin, int bd);
 R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, int xtr_idx, int fd, int rawstr);
 R_API bool r_bin_load_io(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name, ut64 sz);
-R_API int r_bin_io_load(RBin *bin, RIO *io, int fd, ut64 baseaddr, ut64 loadaddr, int dummy);
 R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr);
 R_API int r_bin_open(RBin *bin, const char *filename, RBinOptions *bo);
-R_API RBinFile *r_bin_get_file(RBin *bin, int bd);
-R_API bool r_bin_query(RBin *bin, const char *query);
 R_API void r_bin_bind(RBin *b, RBinBind *bnd);
 R_API bool r_bin_add(RBin *bin, RBinPlugin *foo);
 R_API bool r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo);

@@ -20,17 +20,3 @@ R_API int r_bin_open(RBin *bin, const char *filename, RBinOptions *bo) {
 	}
 	return -1;
 }
-
-R_API RBinFile *r_bin_get_file(RBin *bin, int bd) {
-	return r_id_storage_take (bin->ids, bd);
-}
-
-R_API bool r_bin_close(RBin *bin, int bd) {
-	RBinFile *bf = r_bin_get_file (bin, bd);
-	if (bf) {
-		// file_free removes the fd already.. maybe its unnecessary
-		r_id_storage_delete (bin->ids, bd);
-		r_bin_file_free (bf);
-	}
-	return false;
-}
