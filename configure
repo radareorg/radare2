@@ -593,6 +593,8 @@ USE_PTRACE_WRAP="0"
 else
 HAVE_PTRACE="1"
 USE_PTRACE_WRAP="0"; fi; fi; fi
+if [ "$DEBUGGER" = "0" ]; then
+HAVE_PTRACE="0"; fi
 SEDFLAGS=" -e '"
 COUNT=0
 for A in ${ENVWORDS} ; do
