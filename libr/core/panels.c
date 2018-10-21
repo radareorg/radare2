@@ -3193,6 +3193,9 @@ repeat:
 	case '[':
 		r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") - 1);
 		break;
+	case '/':
+		r_core_cmd0 (core, "?i highlight;e scr.highlight=`yp`");
+		break;
 	case 'z':
 		if (panels->curnode > 0) {
 			RPanel p0 = panels->panel[0];
