@@ -3102,6 +3102,11 @@ repeat:
 	case '_':
 		r_core_visual_hud (core);
 		break;
+	case 'x':
+		r_core_visual_refs (core, true);
+		core->panels->panel[core->panels->curnode].addr = core->offset;
+		setRefreshAll (panels);
+		break;
 	case 'X':
 		delCurPanel (panels);
 		setRefreshAll (panels);
