@@ -1,6 +1,6 @@
 include ../config.mk
 
-CFLAGS+=-g
+CFLAGS+=-g -fPIC
 OBJ=cdb.o buffer.o cdb_make.o ls.o sdbht.o ht.o sdb.o num.o base64.o match.o
 OBJ+=json.o ns.o lock.o util.o disk.o query.o array.o fmt.o journal.o
 OBJ+=dict.o
