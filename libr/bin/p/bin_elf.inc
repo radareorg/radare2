@@ -397,7 +397,20 @@ static RList* entries(RBinFile *bf) {
 	ptr->paddr = Elf_(r_bin_elf_get_entry_offset) (obj);
 	ptr->vaddr = Elf_(r_bin_elf_p2v) (obj, ptr->paddr);
 	ptr->hpaddr = 0x18;  // e_entry offset in ELF header
-	ptr->hvaddr = Elf_(r_bin_elf_p2v) (obj, ptr->hpaddr);
+	ptr->hvaddr = UT64_MAX;
+	if (bf->o->sections) {
+		RListIter *iter;
+		RBinSection *section;
+		r_list_foreach_prev (bf->o->sections, iter, section) {
+			if (!strcmp (section->name, "ehdr")) {
+				ptr->hvaddr = section->vaddr + ptr->hpaddr;
+				break;
+			}
+		}
+	}
+	if (ptr->hvaddr == UT64_MAX) {
+		Elf_(r_bin_elf_p2v_new) (obj, ptr->hpaddr);
+	}
 
 	if (obj->ehdr.e_machine == EM_ARM) {
 		int bin_bits = Elf_(r_bin_elf_get_bits) (obj);
