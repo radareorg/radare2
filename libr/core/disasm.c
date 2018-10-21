@@ -1153,10 +1153,15 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		return;
 	}
 	if (r_list_length (xrefs) > ds->maxrefs) {
+		ds_begin_json_line (ds);
 		ds_pre_xrefs (ds, false);
-		ds_comment (ds, false, "%s; XREFS(%d)\n",
+		ds_comment (ds, false, "%s; XREFS(%d)",
 			ds->show_color? ds->pal_comment: "",
 			r_list_length (xrefs));
+		if (ds->show_color) {
+			ds_print_color_reset (ds);
+		}
+		ds_newline (ds);
 		r_list_free (xrefs);
 		return;
 	} else if (r_list_length (xrefs) > ds->foldxrefs) {
@@ -1164,6 +1169,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 		cols -= 15;
 		cols /= 23;
 		cols = cols > 5 ? 5 : cols;
+		ds_begin_json_line (ds);
 		ds_pre_xrefs (ds, false);
 		ds_comment (ds, false, "%s; XREFS: ", ds->show_color? ds->pal_comment: "");
 		r_list_foreach (xrefs, iter, refi) {
@@ -1173,6 +1179,7 @@ static void ds_show_xrefs(RDisasmState *ds) {
 				if (iter->n) {
 					ds_print_color_reset (ds);
 					ds_newline (ds);
+					ds_begin_json_line (ds);
 					ds_pre_xrefs (ds, false);
 					ds_comment (ds, false, "%s; XREFS: ", ds->show_color? ds->pal_comment: "");
 				}
