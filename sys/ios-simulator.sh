@@ -64,7 +64,7 @@ export USE_SIMULATOR=1
 export RANLIB="xcrun --sdk iphoneos ranlib"
 
 if [ "$1" = "-s" ]; then
-	exec sys/ios-shell.sh
+sh
 	exit $?
 fi
 

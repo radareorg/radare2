@@ -35,7 +35,7 @@ iosConfigure() {
 	./configure --with-libr --prefix=${PREFIX} --with-ostype=darwin \
 		--disable-debugger --without-gpl \
 		--without-fork --without-libuv --with-compiler=ios-sdk \
-		--target=arm-unknown-darwin
+		--target=arm64-unknown-darwin
 	return $?
 }
 
@@ -137,38 +137,38 @@ fi
 
 while test $# -gt 0; do
 	case "$1" in 
-		-full|--full|-f)
-			shift
-			ARCHS="armv7s+arm64"
-			USE_SIMULATOR=1
-			;;
-		-shell|--shell|-s)
-			DOSH=1
-			shift
-			;;
-		-archs|-a|--archs)
-			shift
-			if test $# -gt 0; then
-				if [ "$1" == "all" ]; then
-					ARCHS="armv7+armv7s+arm64"
-				else
-					ARCHS=$1
-				fi
+	-full|--full|-f)
+		shift
+		ARCHS="armv7s+arm64"
+		USE_SIMULATOR=1
+		;;
+	-shell|--shell|-s)
+		DOSH=1
+		shift
+		;;
+	-archs|-a|--archs)
+		shift
+		if test $# -gt 0; then
+			if [ "$1" == "all" ]; then
+				ARCHS="armv7+armv7s+arm64"
+			else
+				ARCHS=$1
 			fi
-			shift
-			;;
-		-p|--package)
-			iosPackage
- 			exit 0
-		 	;;
-		-simulator)
-			USE_SIMULATOR=1
-			shift
-			;;
-		*|-h|--help)
-			showHelp
-			exit 0
-			;;
+		fi
+		shift
+		;;
+	-p|--package)
+		iosPackage
+		exit 0
+		;;
+	-simulator)
+		USE_SIMULATOR=1
+		shift
+		;;
+	*|-h|--help)
+		showHelp
+		exit 0
+		;;
 	esac
 done
 
@@ -215,20 +215,24 @@ rm -rf "$INSTALL_DST"
 # Build radare2 for i386 and x86_64
 if [ "${USE_SIMULATOR}" = 1 ]; then
 	iosClean
-	iosConfigure
-	if [ $? = 0 ]; then
-		export CPU="$SIMULATOR_ARCHS"
-		export SDK=iphonesimulator
-		echo "Building for simulator($SIMULATOR_ARCHS)"
-		sleep 1
-		iosBuild
-		# backup lib folder of simulator
-		if [ "${#ARCHS}" -gt 0 ]; then
-			rm -rf "$INSTALL_DST/$PREFIX"/lib_simulator
-			mv "$INSTALL_DST/$PREFIX"/lib "$INSTALL_DST/$PREFIX"/lib_simulator
-		else
-			cp -r "$INSTALL_DST/$PREFIX"/lib "$INSTALL_DST/$PREFIX"/lib_simulator
+	if [ 1 = 0 ]; then
+		iosConfigure
+		if [ $? = 0 ]; then
+			export CPU="$SIMULATOR_ARCHS"
+			export SDK=iphonesimulator
+			echo "Building for simulator($SIMULATOR_ARCHS)"
+			sleep 1
+			iosBuild
 		fi
+	else
+		sys/ios-simulator.sh
+	fi
+	# backup lib folder of simulator
+	if [ "${#ARCHS}" -gt 0 ]; then
+		rm -rf "$INSTALL_DST/$PREFIX"/lib_simulator
+		mv "$INSTALL_DST/$PREFIX"/lib "$INSTALL_DST/$PREFIX"/lib_simulator
+	else
+		cp -r "$INSTALL_DST/$PREFIX"/lib "$INSTALL_DST/$PREFIX"/lib_simulator
 	fi
 fi
 
