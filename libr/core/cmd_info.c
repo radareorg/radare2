@@ -509,7 +509,7 @@ static int cmd_info(void *data, const char *input) {
 			break;
 		case 'l': { // "il"
 			RBinObject *obj = r_bin_cur_object (core->bin);
-			RBININFO ("libs", R_CORE_BIN_ACC_LIBS, NULL, obj? r_list_length (obj->libs): 0);
+			RBININFO ("libs", R_CORE_BIN_ACC_LIBS, NULL, (obj && obj->libs)? r_list_length (obj->libs): 0);
 			break;
 		}
 		case 'L': { // "iL"
@@ -533,9 +533,9 @@ static int cmd_info(void *data, const char *input) {
 			// Case for isj.
 			if (input[1] == 'j' && input[2] == '.') {
 				mode = R_CORE_BIN_JSON;
-				RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 2, obj? r_list_length (obj->symbols): 0);
+				RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 2, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
 			} else {
-				RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, obj? r_list_length (obj->symbols): 0);
+				RBININFO ("symbols", R_CORE_BIN_ACC_SYMBOLS, input + 1, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
 			}
 			while (*(++input)) ;
 			input--;
@@ -660,7 +660,7 @@ static int cmd_info(void *data, const char *input) {
 		case 'i': { // "ii"
 			RBinObject *obj = r_bin_cur_object (core->bin);
 			RBININFO ("imports", R_CORE_BIN_ACC_IMPORTS, NULL,
-				obj? r_list_length (obj->imports): 0);
+				(obj && obj->imports)? r_list_length (obj->imports): 0);
 			break;
 		}
 		case 'I': // "iI"
