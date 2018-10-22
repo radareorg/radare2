@@ -32,6 +32,11 @@ R_LIB_VERSION_HEADER(r_debug);
 #undef trapframe
 #undef rwindow
 
+#ifdef PTRACE_SYSCALL
+/* on freebsd does not have the same meaning */
+#undef PTRACE_SYSCALL
+#endif
+
 #define PTRACE_PEEKTEXT PT_READ_I
 #define PTRACE_POKETEXT PT_WRITE_I
 #define PTRACE_PEEKDATA PT_READ_D
