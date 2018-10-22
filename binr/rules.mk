@@ -48,10 +48,10 @@ all: ${BEXE} ${BINS}
 
 ifeq ($(WITH_LIBR),1)
 ${BINS}: ${OBJS}
-	${CC} ${CFLAGS} $@.c ${OBJS} ../../libr/libr.a -o $@ $(LDFLAGS)
+	${CC} ${CFLAGS} $@.c ${OBJS} -static ../../libr/libr.a -o $@ $(LDFLAGS)
 
 ${BEXE}: ${OBJ} ${SHARED_OBJ}
-	${CC} ${CFLAGS} $+ -L.. -o $@ ../../libr/libr.a $(LDFLAGS)
+	${CC} ${CFLAGS} $+ -L.. -o $@ -static ../../libr/libr.a $(LDFLAGS)
 else
 
 ${BINS}: ${OBJS}
