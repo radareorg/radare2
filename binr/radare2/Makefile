@@ -47,7 +47,7 @@ ios_sdk_sign:
 
 macos-sign macossign:
 	rm -f radare2
-	${CC} radare2.c ${CFLAGS} ${LDFLAGS} -o radare2 \
+	${CC} radare2.c ${CFLAGS} ${LDFLAGS} ${LINK} -o radare2 \
 		-sectcreate __TEXT __info_plist Info.plist \
 		-framework Security -framework CoreFoundation
 	#xcrun --sdk $(MACSDK) codesign -f -s ${CERTID} radare2
