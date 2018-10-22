@@ -119,7 +119,7 @@ bash: r3: command not found
 R2 loves everyone, even Java coders, but less than others
 It's not a bug, it's a work in progress
 Stop swearing!
-I didn't said that it was working, I said that it's implemented
+I didn't say that it was working, I said that it's implemented
 Wrong argument
 Remember that word: C H A I R
 what happens in #radare, stays in #radare
