@@ -3100,7 +3100,11 @@ repeat:
 		}
 		break;
 	case '_':
-		r_core_visual_hud (core);
+		if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
+			r_core_visual_hudstuff (core);
+			panels->panel[panels->curnode].addr = core->offset;
+			setRefreshAll (panels);
+		}
 		break;
 	case 'X':
 		delCurPanel (panels);
