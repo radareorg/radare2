@@ -109,6 +109,49 @@ static const char *menus_Help[] = {
 	NULL
 };
 
+static const char *help_msg_panels[] = {
+	"?",        "show this help",
+	"!",        "run r2048 game",
+	"i",        "insert hex",
+	".",        "seek to PC or entrypoint",
+	"*",        "show pseudo code/r2dec in the current panel",
+	"<>",       "scroll panels vertically by page",
+	"[1-9]",    "follow jmp/call identified by shortcut (like ;[1])",
+	"b",        "browse symbols, flags, configurations, classes, ...",
+	"c",        "toggle cursor",
+	"C",        "toggle color",
+	"d",        "define in the current address. Same as Vd",
+	"D",        "show disassembly in the current panel",
+	"o",        "go/seek to given offset",
+	"pP",       "seek to next or previous scr.nkey",
+	"q",        "quit, back to visual mode",
+	"r",        "toggle jmphints/leahints",
+	"sS",       "step in / step over",
+	"uU",       "undo / redo seek",
+	NULL
+};
+
+static const char *help_msg_panels_window[] = {
+	":",        "run r2 command in prompt",
+	"_",        "start the hud input mode",
+	"|",        "split the current panel vertically",
+	"-",        "split the current panel horizontally",
+	"' '",      "(space) toggle graph / panels",
+	"e",        "change title and command of current panel",
+	"g",        "show graph in the current panel",
+	"hjkl",     "move around (left-down-up-right)",
+	"JK",       "resize panels vertically",
+	"HL",       "resize panels horizontally",
+	"m",        "select the menu panel",
+	"M",        "open new custom frame",
+	"nN",       "create new panel with given command",
+	"V",        "go to the graph mode",
+	"w",        "change the current layout of the panels",
+	"z",        "swap current panel with the first one",
+	"X",        "close current panel",
+	NULL
+};
+
 static void layoutDefault(RPanels *panels);
 static void layoutBalance(RPanels *panels);
 static int layoutSidePanel(void *user);
@@ -2975,47 +3018,18 @@ repeat:
 		break;
 	case '?':
 		{
-		r_cons_clear00 ();
-		r_cons_strcat ("Visual Ascii Art Panels:\n"
-			" ?      - show this help\n"
-			" !      - run r2048 game\n"
-			" i      - insert hex\n"
-			" .      - seek to PC or entrypoint\n"
-			" *      - show pseudo code/r2dec in the current panel\n"
-			" <>     - scroll panels vertically by page\n"
-			" [1-9]  - follow jmp/call identified by shortcut (like ;[1])\n"
-			" b      - browse symbols, flags, configurations, classes, ...\n"
-			" c      - toggle cursor\n"
-			" C      - toggle color\n"
-			" d      - define in the current address. Same as Vd\n"
-			" D      - show disassembly in the current panel\n"
-			" o      - go/seek to given offset\n"
-			" pP     - seek to next or previous scr.nkey\n"
-			" q      - quit, back to visual mode\n"
-			" r      - toggle jmphints/leahints\n"
-			" sS     - step in / step over\n"
-			" uU     - undo / redo seek\n"
-			"Window management\n"
-			" :      - run r2 command in prompt\n"
-			" _      - start the hud input mode\n"
-			" |      - split the current panel vertically\n"
-			" -      - split the current panel horizontally\n"
-			" ' '    - (space) toggle graph / panels\n"
-			" e      - change title and command of current panel\n"
-			" g      - show graph in the current panel\n"
-			" hjkl   - move around (left-down-up-right)\n"
-			" JK     - resize panels vertically\n"
-			" HL     - resize panels horizontally\n"
-			" m      - select the menu panel\n"
-			" M      - open new custom frame\n"
-			" nN     - create new panel with given command\n"
-			" V      - go to the graph mode\n"
-			" w      - change the current layout of the panels\n"
-			" z      - swap current panel with the first one\n"
-			" X      - close current panel\n"
-			);
-		r_cons_less ();
-		r_cons_any_key (NULL);
+			RStrBuf *p = r_strbuf_new (NULL);
+			if (!p) {
+				return 0;
+			}
+			r_cons_clear00 ();
+			r_core_visual_append_help (p, "Visual Ascii Art Panels", help_msg_panels);
+			r_core_visual_append_help (p, "Window management", help_msg_panels_window);
+			int ret = r_cons_less_str (r_strbuf_get (p), "?");
+			r_strbuf_free (p);
+			if (ret == '?') {
+				r_core_visual_hud (core);
+			}
 		}
 		break;
 	case 'b':
@@ -3120,7 +3134,16 @@ repeat:
 		}
 		break;
 	case '_':
-		r_core_visual_hud (core);
+		if (!strcmp (panels->panel[panels->curnode].cmd, PANEL_CMD_DISASSEMBLY)) {
+			r_core_visual_hudstuff (core);
+			panels->panel[panels->curnode].addr = core->offset;
+			setRefreshAll (panels);
+		}
+		break;
+	case 'x':
+		r_core_visual_refs (core, true);
+		core->panels->panel[core->panels->curnode].addr = core->offset;
+		setRefreshAll (panels);
 		break;
 	case 'X':
 		delCurPanel (panels);
@@ -3212,6 +3235,9 @@ repeat:
 		break;
 	case '[':
 		r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") - 1);
+		break;
+	case '/':
+		r_core_cmd0 (core, "?i highlight;e scr.highlight=`yp`");
 		break;
 	case 'z':
 		if (panels->curnode > 0) {

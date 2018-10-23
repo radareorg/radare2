@@ -322,7 +322,7 @@ R_API void r_core_visual_jump(RCore *core, ut8 ch) {
 	}
 }
 
-static void append_help(RStrBuf *p, const char *title, const char **help) {
+R_API int r_core_visual_append_help(RStrBuf *p, const char *title, const char **help) {
 	int i, max_length = 0, padding = 0;
 	RCons *cons = r_cons_singleton ();
 	const char *pal_args_color = cons->color ? cons->pal.args : "",
@@ -348,8 +348,8 @@ static int visual_help() {
 		return 0;
 	}
 	r_cons_clear00 ();
-	append_help (p, "Visual mode help", help_msg_visual);
-	append_help (p, "Function Keys: (See 'e key.'), defaults to", help_msg_visual_fn);
+	r_core_visual_append_help (p, "Visual mode help", help_msg_visual);
+	r_core_visual_append_help (p, "Function Keys: (See 'e key.'), defaults to", help_msg_visual_fn);
 	int ret = r_cons_less_str (r_strbuf_get (p), "?");
 	r_strbuf_free (p);
 	return ret;

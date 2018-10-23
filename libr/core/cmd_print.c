@@ -4767,12 +4767,13 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'i': // "psi"
 			if (l > 0) {
-				ut8 *buf = malloc (1024);
+				ut8 *buf = malloc (1024 + 1);
 				int delta = 512;
 				ut8 *p, *e, *b;
 				if (!buf) {
 					return 0;
 				}
+				buf[1024] = 0;
 				if (core->offset < delta) {
 					delta = core->offset;
 				}
@@ -4809,7 +4810,6 @@ static int cmd_print(void *data, const char *input) {
 				char *s = malloc (core->blocksize + 1);
 				int i, j, hasnl = 0;
 				if (s) {
-					memset (s, 0, core->blocksize);
 					if (!quiet) {
 						r_print_offset (core->print, core->offset, 0, 0, 0, 0, NULL);
 					}
@@ -4847,7 +4847,6 @@ static int cmd_print(void *data, const char *input) {
 				char *s = malloc (core->blocksize + 1);
 				int i, j;
 				if (s) {
-					memset (s, 0, core->blocksize);
 					// TODO: filter more chars?
 					for (i = j = 0; i < core->blocksize; i++) {
 						char ch = (char) core->block[i];
@@ -4858,6 +4857,7 @@ static int cmd_print(void *data, const char *input) {
 							s[j++] = ch;
 						}
 					}
+					s[j] = '\0';
 					r_cons_println (s);
 					free (s);
 				}
