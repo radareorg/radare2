@@ -73,6 +73,7 @@ static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut
 		if (bf && bf->o && bf->o->bin_obj) {
 			*bin_obj = bf->o->bin_obj = dol;
 		}
+		free (dol);
 		return true;
 	}
 	free (dol);
