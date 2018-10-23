@@ -4807,7 +4807,7 @@ static int cmd_print(void *data, const char *input) {
 		case 'b': // "psb"
 			if (l > 0) {
 				int quiet = input[2] == 'q'; // "psbq"
-				char *s = calloc (1, core->blocksize + 1);
+				char *s = malloc (core->blocksize + 1);
 				int i, j, hasnl = 0;
 				if (s) {
 					if (!quiet) {
