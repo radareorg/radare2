@@ -4807,10 +4807,9 @@ static int cmd_print(void *data, const char *input) {
 		case 'b': // "psb"
 			if (l > 0) {
 				int quiet = input[2] == 'q'; // "psbq"
-				char *s = malloc (core->blocksize + 1);
+				char *s = calloc (1, core->blocksize + 1);
 				int i, j, hasnl = 0;
 				if (s) {
-					memset (s, 0, core->blocksize + 1);
 					if (!quiet) {
 						r_print_offset (core->print, core->offset, 0, 0, 0, 0, NULL);
 					}
@@ -4848,7 +4847,6 @@ static int cmd_print(void *data, const char *input) {
 				char *s = malloc (core->blocksize + 1);
 				int i, j;
 				if (s) {
-					memset (s, 0, core->blocksize + 1);
 					// TODO: filter more chars?
 					for (i = j = 0; i < core->blocksize; i++) {
 						char ch = (char) core->block[i];
@@ -4859,6 +4857,7 @@ static int cmd_print(void *data, const char *input) {
 							s[j++] = ch;
 						}
 					}
+					s[j] = '\0';
 					r_cons_println (s);
 					free (s);
 				}
