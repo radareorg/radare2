@@ -14,10 +14,6 @@ extern "C" {
 
 R_LIB_VERSION_HEADER (r_bin);
 
-#define MODE_PRINT 0x000
-#define MODE_RADARE 0x001
-#define MODE_SIMPLE 0x004
-
 #define R_BIN_DBG_STRIPPED 0x01
 #define R_BIN_DBG_STATIC   0x02
 #define R_BIN_DBG_LINENUMS 0x04

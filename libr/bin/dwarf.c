@@ -735,7 +735,7 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 	if (!binfile || !obuf) {
 		return false;
 	}
-	if (mode == R_CORE_BIN_PRINT) {
+	if (mode == R_MODE_PRINT) {
 		f = stdout;
 	}
 	buf = obuf;
@@ -1491,7 +1491,7 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 		curr_unit++;
 	}
 
-	if (mode == R_CORE_BIN_PRINT) {
+	if (mode == R_MODE_PRINT) {
 		r_bin_dwarf_dump_debug_info (NULL, inf);
 	}
 
@@ -1554,7 +1554,7 @@ static RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev_raw(const ut8 *obuf, size_
 		da->length++;
 	}
 
-	if (mode == R_CORE_BIN_PRINT) {
+	if (mode == R_MODE_PRINT) {
 		dump_r_bin_dwarf_debug_abbrev (stdout, da);
 	}
 	return da;
@@ -1716,7 +1716,7 @@ R_API RList *r_bin_dwarf_parse_aranges(RBin *a, int mode) {
 			free (buf);
 			return NULL;
 		}
-		if (mode == R_CORE_BIN_PRINT) {
+		if (mode == R_MODE_PRINT) {
 			r_bin_dwarf_parse_aranges_raw (buf, len, stdout);
 		} else {
 			r_bin_dwarf_parse_aranges_raw (buf, len, DBGFD);

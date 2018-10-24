@@ -27,10 +27,10 @@ static void print_string(RBinString *string, RBinFile *bf) {
 	vaddr = addr = r_bin_get_vaddr (bin, string->paddr, string->vaddr);
 
 	switch (mode) {
-	case MODE_SIMPLE :
+	case R_MODE_SIMPLE :
 		io->cb_printf ("0x%08" PFMT64x " %s\n", addr, string->string);
 		break;
-	case MODE_RADARE :
+	case R_MODE_RADARE :
 		{
 		char *f_name, *nstr;
 		f_name = strdup (string->string);
@@ -52,7 +52,7 @@ static void print_string(RBinString *string, RBinFile *bf) {
 		free (f_name);
 		break;
 		}
-	case MODE_PRINT :
+	case R_MODE_PRINT :
 		io->cb_printf ("%03u 0x%08"PFMT64x" 0x%08"
 				PFMT64x" %3u %3u "
 				"(%s) %5s %s\n",

@@ -11,13 +11,13 @@
 
 #define LOAD_BSS_MALLOC 0
 
-#define IS_MODE_SET(mode) ((mode) & R_CORE_BIN_SET)
-#define IS_MODE_SIMPLE(mode) ((mode) & R_CORE_BIN_SIMPLE)
-#define IS_MODE_SIMPLEST(mode) ((mode) & R_CORE_BIN_SIMPLEST)
-#define IS_MODE_JSON(mode) ((mode) & R_CORE_BIN_JSON)
-#define IS_MODE_RAD(mode) ((mode) & R_CORE_BIN_RADARE)
+#define IS_MODE_SET(mode) ((mode) & R_MODE_SET)
+#define IS_MODE_SIMPLE(mode) ((mode) & R_MODE_SIMPLE)
+#define IS_MODE_SIMPLEST(mode) ((mode) & R_MODE_SIMPLEST)
+#define IS_MODE_JSON(mode) ((mode) & R_MODE_JSON)
+#define IS_MODE_RAD(mode) ((mode) & R_MODE_RADARE)
 #define IS_MODE_NORMAL(mode) (!(mode))
-#define IS_MODE_CLASSDUMP(mode) ((mode) & R_CORE_BIN_CLASSDUMP)
+#define IS_MODE_CLASSDUMP(mode) ((mode) & R_MODE_CLASSDUMP)
 
 // dup from cmd_info
 #define PAIR_WIDTH 9
@@ -121,7 +121,7 @@ R_API int r_core_bin_set_env(RCore *r, RBinFile *binfile) {
 			r_config_set (r->config, "anal.cpu", arch);
 		}
 		r_asm_use (r->assembler, arch);
-		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_CORE_BIN_SET, va, NULL, NULL);
+		r_core_bin_info (r, R_CORE_BIN_ACC_ALL, R_MODE_SET, va, NULL, NULL);
 		r_core_bin_set_cur (r, binfile);
 		return true;
 	}
@@ -606,7 +606,7 @@ static int bin_info(RCore *r, int mode) {
 	bool havecode;
 
 	if (!binfile || !info || !obj) {
-		if (mode & R_CORE_BIN_JSON) {
+		if (mode & R_MODE_JSON) {
 			r_cons_printf ("{}");
 		}
 		return false;
@@ -940,8 +940,8 @@ static int bin_dwarf(RCore *core, int mode) {
 					memmove (file, slash + 1, strlen (slash));
 				}
 			}
-			// TODO: implement internal : if ((mode & R_CORE_BIN_SET))
-			if ((mode & R_CORE_BIN_SET)) {
+			// TODO: implement internal : if ((mode & R_MODE_SET))
+			if ((mode & R_MODE_SET)) {
 				// TODO: use CL here.. but its not necessary.. so better not do anything imho
 				// r_core_cmdf (core, "CL %s:%d 0x%08"PFMT64x, file, (int)row->line, row->address);
 #if 0
@@ -986,16 +986,16 @@ R_API int r_core_pdb_info(RCore *core, const char *file, ut64 baddr, int mode) {
 		pdb.finish_pdb_parse (&pdb);
 		return false;
 	}
-	if (mode == R_CORE_BIN_JSON) {
+	if (mode == R_MODE_JSON) {
 		r_cons_printf ("[");
 	}
 
 	switch (mode) {
-	case R_CORE_BIN_SET:
+	case R_MODE_SET:
 		mode = 's';
 		r_core_cmd0 (core, ".iP*");
 		return true;
-	case R_CORE_BIN_JSON:
+	case R_MODE_JSON:
 		mode = 'j';
 		break;
 	case '*':
@@ -1125,7 +1125,7 @@ static int bin_entry(RCore *r, int mode, ut64 laddr, int va, bool inifin) {
 		ut64 paddr = entry->paddr;
 		ut64 hpaddr = UT64_MAX;
 		ut64 hvaddr = UT64_MAX;
-		if (mode != R_CORE_BIN_SET) {
+		if (mode != R_MODE_SET) {
 			if (inifin) {
 				if (entry->type == R_BIN_ENTRY_TYPE_PROGRAM) {
 					continue;
@@ -2917,7 +2917,7 @@ static int bin_mem(RCore *r, int mode) {
 	}
 	if (IS_MODE_JSON (mode)) {
 		r_cons_print ("[");
-		bin_mem_print (mem, 7, 0, R_CORE_BIN_JSON);
+		bin_mem_print (mem, 7, 0, R_MODE_JSON);
 		r_cons_println ("]");
 		return true;
 	} else if (!(IS_MODE_RAD (mode) || IS_MODE_SET (mode))) {
