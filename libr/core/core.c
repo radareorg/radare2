@@ -2198,6 +2198,10 @@ static char *get_comments_cb(void *user, ut64 addr) {
 	return r_core_anal_get_comments ((RCore *)user, addr);
 }
 
+static void event_log(REvent *ev, REventType type, void *data) {
+	eprintf ("LOG MESSAGE\n");
+}
+
 R_API bool r_core_init(RCore *core) {
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8 *)calloc (R_CORE_BLOCKSIZE + 1, 1);
@@ -2207,6 +2211,8 @@ R_API bool r_core_init(RCore *core) {
 		return false;
 	}
 	r_core_setenv (core);
+	core->ev = r_event_new (core);
+	r_event_hook (core->ev, event_log);
 	core->lock = r_th_lock_new (true);
 	core->max_cmd_depth = R_CORE_CMD_DEPTH + 1;
 	core->cmd_depth = core->max_cmd_depth;
@@ -2302,6 +2308,7 @@ R_API bool r_core_init(RCore *core) {
 	core->assembler->num = core->num;
 	r_asm_set_user_ptr (core->assembler, core);
 	core->anal = r_anal_new ();
+	core->anal->ev = core->ev;
 	core->anal->log = r_core_anal_log;
 	core->anal->read_at = r_core_anal_read_at;
 	core->anal->meta_spaces.cb_printf = r_cons_printf;
@@ -2426,6 +2433,7 @@ R_API RCore *r_core_fini(RCore *c) {
 	//update_sdb (c);
 	// avoid double free
 	r_core_free_autocomplete (c);
+	r_event_free (c->ev);
 	R_FREE (c->cmdlog);
 	r_th_lock_free (c->lock);
 	R_FREE (c->lastsearch);

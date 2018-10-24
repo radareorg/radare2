@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2017 - nibble, pancake */
+/* radare - LGPL - Copyright 2008-2018 - nibble, pancake */
 
 // TODO: rename to r_anal_meta_get() ??
 #if 0
@@ -132,6 +132,15 @@ R_API int r_meta_set_string(RAnal *a, int type, ut64 addr, const char *s) {
 	snprintf (val, sizeof (val)-1, "%d,%d,%s", (int)size, space_idx, e_str);
 	sdb_set (DB, key, val, 0);
 	free ((void*)e_str);
+
+	/* send event */
+	REventMeta rems = {
+		.type = type,
+		.addr = addr,
+		.string = s
+	};
+	r_event_send (a->ev, R_EVENT_META_SET, &rems);
+
 	return ret;
 }
 
@@ -283,8 +292,7 @@ R_API int r_meta_del(RAnal *a, int type, ut64 addr, ut64 size) {
 }
 
 R_API int r_meta_var_comment_del(RAnal *a, int type, ut64 idx, ut64 addr) {
-	char *key;
-	key = r_str_newf ("meta.%c.0x%"PFMT64x"0x%"PFMT64x, type, addr, idx);
+	char *key = r_str_newf ("meta.%c.0x%"PFMT64x"0x%"PFMT64x, type, addr, idx);
 	sdb_unset (DB, key, 0);
 	return 0;
 }
@@ -354,8 +362,7 @@ R_API bool r_meta_deserialize_val(RAnalMetaItem *it, int type, ut64 from, const 
 
 static int meta_add(RAnal *a, int type, int subtype, ut64 from, ut64 to, const char *str) {
 	int space_idx = a->meta_spaces.space_idx;
-	char *e_str, key[100], val[2048];
-	int exists;
+	char key[100], val[2048];
 	if (from > to) {
 		return false;
 	}
@@ -366,10 +373,10 @@ static int meta_add(RAnal *a, int type, int subtype, ut64 from, ut64 to, const c
 		return false;
 	}
 	/* set entry */
-	e_str = sdb_encode ((const void*)str, -1);
+	char *e_str = sdb_encode ((const void*)str, -1);
 	RAnalMetaItem mi = {from, to, (int)(to - from), type, subtype, e_str, space_idx};
 	meta_serialize (&mi, key, sizeof (key), val, sizeof (val));
-	exists = sdb_exists (DB, key);
+	bool exists = sdb_exists (DB, key);
 
 	sdb_set (DB, key, val, 0);
 	free (e_str);
@@ -382,8 +389,12 @@ static int meta_add(RAnal *a, int type, int subtype, ut64 from, ut64 to, const c
 	snprintf (key, sizeof (key) - 1, "meta.0x%"PFMT64x, from);
 	if (exists) {
 		const char *value = sdb_const_get (DB, key, 0);
-		int idx = sdb_array_indexof (DB, key, value, 0);
-		sdb_array_delete (DB, key, idx, 0);
+		if (value) {
+			int idx = sdb_array_indexof (DB, key, value, 0);
+			if (idx >= 0) {
+				sdb_array_delete (DB, key, idx, 0);
+			}
+		}
 	}
 	val[0] = type;
 	val[1] = '\0';

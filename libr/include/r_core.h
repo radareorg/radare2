@@ -269,6 +269,7 @@ typedef struct r_core_t {
 	bool pava;
 	struct r_core_t *c2;
 	RCoreAutocomplete *autocomplete;
+	REvent *ev;
 } RCore;
 
 R_API int r_core_bind(RCore *core, RCoreBind *bnd);
