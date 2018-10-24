@@ -1,5 +1,5 @@
 PKGNAME radare2
-VERSION 3.0.1
+VERSION 3.1.0-git
 CONTACT pancake ; pancake@nopcode.org
 
 LANG_C!
@@ -177,6 +177,10 @@ IFEQ USEROSTYPE solaris ; {
 	HAVE_PTRACE = 1 ;
 	USE_PTRACE_WRAP = 0 ;
 } } }
+
+IFNOT DEBUGGER {
+	HAVE_PTRACE = 0 ;
+}
 
 ARG_WITH R_CHECKS_LEVEL=2 checks-level value between 0 and 3 to enable different level of assert (see R_CHECKS_LEVEL) ;
 

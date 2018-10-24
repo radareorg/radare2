@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2017 - pancake */
+/* radare - LGPL - Copyright 2011-2018 - pancake */
 
 #include <r_bin.h>
 #include <cxx/demangle.h>

@@ -429,6 +429,8 @@ typedef struct r_bin_plugin_t {
 	void *user;
 } RBinPlugin;
 
+typedef void (*RBinSymbollCallback)(RBinObject *obj, void *symbol);
+
 typedef struct r_bin_section_t {
 	char name[R_BIN_SIZEOF_STRINGS + 1]; // TODO: must be char*
 	ut64 size;
@@ -609,6 +611,7 @@ typedef struct r_bin_options_t {
 
 R_API RBinImport *r_bin_import_clone(RBinImport *o);
 R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *o);
+typedef void (*RBinSymbolCallback)(RBinObject *obj, RBinSymbol *symbol);
 
 R_API RBin *r_bin_new(void);
 R_API void *r_bin_free(RBin *bin);

@@ -1030,6 +1030,7 @@ typedef enum {
 	PANEL_MODE_DEFAULT,
 	PANEL_MODE_ZOOM,
 	PANEL_MODE_WINDOW,
+	PANEL_MODE_HELP
 } RPanelsMode;
 
 typedef struct r_panels_t {

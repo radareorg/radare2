@@ -709,7 +709,7 @@ R_API int r_bin_list_plugin(RBin *bin, const char* name, int json) {
 R_API ut64 r_bin_get_baddr(RBin *bin) {
 	r_return_val_if_fail (bin, UT64_MAX);
 	RBinObject *o = r_bin_cur_object (bin);
-	return r_bin_object_get_baddr (o);
+	return o ? r_bin_object_get_baddr (o) : UT64_MAX;
 }
 
 /* returns the load address of bin or UT64_MAX in case of errors */
@@ -896,7 +896,7 @@ R_API int r_bin_is_big_endian(RBin *bin) {
 R_API int r_bin_is_static(RBin *bin) {
 	r_return_val_if_fail (bin, false);
 	RBinObject *o = r_bin_cur_object (bin);
-	if (o && r_list_length (o->libs) > 0) {
+	if (o && o->libs && r_list_length (o->libs) > 0) {
 		return R_BIN_DBG_STATIC & o->info->dbg_info;
 	}
 	return true;

@@ -288,6 +288,8 @@ static RList* symbols(RBinFile *bf) {
 	}
 	bool isStripped = false;
 	wordsize = MACH0_(get_bits) (obj->bin_obj);
+
+	// OLD CODE
 	if (!(symbols = MACH0_(get_symbols) (obj->bin_obj))) {
 		return ret;
 	}

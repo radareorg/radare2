@@ -38,11 +38,12 @@ BuildJobsThrottler(){
 	echo "So, the build will run on $MAKE_JOBS job(s)."
 }
 
-# Identify current platform
-GetPlatform
-
-# Define number of parallel jobs as function of resources and platform 
-BuildJobsThrottler
+if [ "`uname`" = Linux ]; then
+	# Identify current platform
+	GetPlatform
+	# Define number of parallel jobs depending on ncpus and memory
+	BuildJobsThrottler
+fi
 
 if [ -z "${MAKE}" ]; then
 	MAKE=make

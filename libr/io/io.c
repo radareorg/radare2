@@ -621,7 +621,6 @@ R_API ut64 r_io_seek(RIO* io, ut64 offset, int whence) {
 	return io->off;
 }
 
-
 #if HAVE_PTRACE
 
 #if USE_PTRACE_WRAP

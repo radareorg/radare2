@@ -19,6 +19,9 @@ R_API bool r_bin_lang_objc(RBinFile *binfile) {
 		return false;
 	}
 	r_list_foreach (o->symbols, iter, sym) {
+		if (!sym->name) {
+			continue;
+		}
 		if (!hasobjc && !strncmp (sym->name, "_OBJC_", 6)) {
 			hasobjc = true;
 			break;

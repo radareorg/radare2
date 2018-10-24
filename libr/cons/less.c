@@ -264,6 +264,7 @@ R_API int r_cons_less_str(const char *str, const char *exitkeys) {
 		case 'g': from = 0; break;
 		case 'G': from = lines_count-h; break;
 		case -1: // EOF
+		case '\x03': // ^C
 		case 'q': ui = 0; break;
 		case '\r':
 		case '\n':

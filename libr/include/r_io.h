@@ -23,7 +23,9 @@
 #include <unistd.h>
 #include <sys/types.h>
 #else
+#if DEBUGGER && HAVE_PTRACE
 #include <sys/ptrace.h>
+#endif
 #endif
 
 #if defined(__GLIBC__) && defined(__linux__)

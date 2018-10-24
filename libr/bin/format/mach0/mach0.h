@@ -159,6 +159,7 @@ struct MACH0_(obj_t)* MACH0_(new_buf)(RBuffer *buf, struct MACH0_(opts_t) *optio
 void* MACH0_(mach0_free)(struct MACH0_(obj_t)* bin);
 struct section_t* MACH0_(get_sections)(struct MACH0_(obj_t)* bin);
 struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin);
+void MACH0_(pull_symbols)(struct MACH0_(obj_t)* mo, RBinSymbolCallback cb, void *user);
 struct import_t* MACH0_(get_imports)(struct MACH0_(obj_t)* bin);
 struct reloc_t* MACH0_(get_relocs)(struct MACH0_(obj_t)* bin);
 struct addr_t* MACH0_(get_entrypoint)(struct MACH0_(obj_t)* bin);
@@ -167,8 +168,8 @@ ut64 MACH0_(get_baddr)(struct MACH0_(obj_t)* bin);
 char* MACH0_(get_class)(struct MACH0_(obj_t)* bin);
 int MACH0_(get_bits)(struct MACH0_(obj_t)* bin);
 bool MACH0_(is_big_endian)(struct MACH0_(obj_t)* bin);
-int MACH0_(is_pie)(struct MACH0_(obj_t)* bin);
-int MACH0_(has_nx)(struct MACH0_(obj_t)* bin);
+bool MACH0_(is_pie)(struct MACH0_(obj_t)* bin);
+bool MACH0_(has_nx)(struct MACH0_(obj_t)* bin);
 const char* MACH0_(get_intrp)(struct MACH0_(obj_t)* bin);
 const char* MACH0_(get_os)(struct MACH0_(obj_t)* bin);
 const char* MACH0_(get_cputype)(struct MACH0_(obj_t)* bin);

@@ -480,11 +480,8 @@ R_API int r_asm_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		char *buf_asm = r_strbuf_get (&op->buf_asm);
 		r_parse_parse (a->ofilter, buf_asm, buf_asm);
 	}
-	if (op->size > 0) {
-		r_asm_op_set_buf (op, buf, R_MAX (0, R_MIN (len, op->size)));
-	} else {
-		r_asm_op_set_buf (op, buf, 1);  // TODO: honor anal size hint
-	}
+	int opsz = (op->size > 0)? R_MAX (0, R_MIN (len, op->size)): 1;
+	r_asm_op_set_buf (op, buf, opsz);
 	return ret;
 }
 

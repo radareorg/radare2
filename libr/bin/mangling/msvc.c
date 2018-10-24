@@ -1,9 +1,9 @@
-/* radare - LGPL - Copyright 2015 - inisider */
+/* radare - LGPL - Copyright 2015-2018 - inisider */
 
 #include <r_bin.h>
 
-static bool is_cxx_symbol (const char *name) {
-	return (*name == '?');
+static inline bool is_cxx_symbol (const char *name) {
+	return (name && *name == '?');
 }
 
 R_API bool r_bin_lang_msvc(RBinFile *binfile) {

@@ -9,7 +9,7 @@
 
 RBinAddr *r_bflt_get_entry(struct r_bin_bflt_obj *bin) {
         RBinAddr *addr = R_NEW0 (RBinAddr);
-        if (addr) {
+        if (addr && bin && bin->hdr) {
         	addr->paddr = bin->hdr->entry;
         }
         return addr;
