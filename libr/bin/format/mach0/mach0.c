@@ -791,50 +791,35 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 						(int)data + idx.offset + 8, (int)length);
 					eprintf ("pFp@%d!%d\n",
 						(int)data + idx.offset + 8, (int)length);
-#if 0
-					int fd = open ("DUMP", O_RDWR|O_CREAT, 0644);
-					if (fd != -1) {
-						eprintf ("See DUMP file.\n");
-						write (fd, words, length);
-						close (fd);
-					}
-#endif
 					free (p);
 				}
 			}
 			break;
-		case CSSLOT_REQUIREMENTS:
-#if 0
-			// eprintf ("[TODO] CSSLOT_REQUIREMENTS\n");
+		case CSSLOT_REQUIREMENTS: // 2
 			{
-				ut8 p[5000];
-				r_buf_read_at (bin->b, data + idx.offset + 0, p, sizeof (p));
-				ut32 count = r_read_ble32 (p, 1);
-				int i = 0;
-				ut32 *words = (ut32*)p;
-// $ openssl asn1parse -inform der -in x
-				int fd = open ("DUMP", O_RDWR|O_CREAT, 0644);
-				if (fd != -1) {
-					write (fd, words, sizeof(p));
-					close (fd);
+				ut8 p[256];
+				r_buf_read_at (bin->b, data + idx.offset + 16, p, sizeof (p));
+				p[sizeof (p) - 1] = 0;
+				ut32 slot_size = r_read_ble32 (p  + 8, 1);
+				eprintf ("slot size %d\n", slot_size);
+				if (slot_size < sizeof (p)) {
+					ut32 ident_size = r_read_ble32 (p  + 8, 1);
+					char *ident = r_str_ndup ((const char *)p + 28, ident_size);
+					if (ident) {
+						sdb_set (bin->kv, "mach0.ident", ident, 0);
+						free (ident);
+					}
+				} else {
+					eprintf ("Invalid code slot size\n");
 				}
-#if 0
-				for (i = 0; i < count; i++) {
-					int n = i * 3;
-					eprintf ("Type (0x%08x) Offset (0x%08x) Expression (0x%08x)\n",
-						words[n], words[n+1], words[n+2]);
-				}
-#endif
 			}
-#endif
 			break;
-#if 0
 		case CSSLOT_INFOSLOT: // 1;
 		case CSSLOT_RESOURCEDIR: // 3;
 		case CSSLOT_APPLICATION: // 4;
-			// TODO
+			// TODO: parse those codesign slots
+			eprintf ("TODO: Some codesign slots are not yet supported\n");
 			break;
-#endif
 		default:
 			eprintf ("Unknown Code signature slot %d\n", idx.type);
 			break;
@@ -1768,17 +1753,12 @@ static int inSymtab(SdbHt *hash, const char *name, ut64 addr) {
 }
 
 static char *get_name(struct MACH0_(obj_t)* mo, ut32 stridx, bool filter) {
-	const char *symstr;
 	int i = 0;
-	if (stridx > mo->symstrlen) {
+	if (stridx >= mo->symstrlen) {
 		return NULL;
 	}
 	int len = mo->symstrlen - stridx;
-	if (stridx >= 0 && stridx < mo->symstrlen) {
-		symstr = (char*)mo->symstr + stridx;
-	} else {
-		symstr = "???";
-	}
+	const char *symstr = (const char*)mo->symstr + stridx;
 	for (i = 0; i < len; i++) {
 		if ((ut8)(symstr[i] & 0xff) == 0xff || !symstr[i]) {
 			len = i;
@@ -1786,7 +1766,7 @@ static char *get_name(struct MACH0_(obj_t)* mo, ut32 stridx, bool filter) {
 		}
 	}
 	if (len > 0) {
-		char * res = r_str_ndup (symstr, len);
+		char *res = r_str_ndup (symstr, len);
 		if (filter) {
 			r_str_filter (res, -1);
 		}
@@ -1816,6 +1796,10 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 		return NULL;
 	}
 	SdbHt *hash = sdb_ht_new ();
+	if (!hash) {
+		free (symbols);
+		return NULL;
+	}
 	j = 0; // symbol_idx
 	for (s = 0; s < 2; s++) {
 		switch (s) {
@@ -1881,7 +1865,7 @@ struct symbol_t* MACH0_(get_symbols)(struct MACH0_(obj_t)* bin) {
 			bprintf ("mach0-get-symbols: error\n");
 			break;
 		}
-		if (parse_import_stub(bin, &symbols[j], i)) {
+		if (parse_import_stub (bin, &symbols[j], i)) {
 			symbols[j++].last = 0;
 		}
 	}
