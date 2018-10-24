@@ -27,7 +27,7 @@ typedef void (*REventCallback)(REvent *ev, REventType type, void *data);
 R_API REvent *r_event_new(void *user);
 R_API void r_event_free(REvent *ev);
 R_API void r_event_hook(REvent *ev, REventCallback cb);
-R_API void r_event_unhook (REvent *ev, REventCallback cb);
+R_API void r_event_unhook(REvent *ev, REventCallback cb);
 R_API void r_event_send(REvent *ev, int type, void *data);
 
 #endif

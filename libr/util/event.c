@@ -22,7 +22,7 @@ R_API void r_event_hook(REvent *ev, REventCallback cb) {
 	r_list_append (ev->callbacks, cb);
 }
 
-R_API void r_event_unhook (REvent *ev, REventCallback cb) {
+R_API void r_event_unhook(REvent *ev, REventCallback cb) {
 	r_return_if_fail (ev);
 	r_list_delete_data (ev->callbacks, cb);
 }
