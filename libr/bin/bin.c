@@ -458,6 +458,7 @@ R_API RBinPlugin *r_bin_get_binplugin_by_name(RBin *bin, const char *name) {
 	return NULL;
 }
 
+// XXX this api must die. See #11920
 R_API RBinPlugin *r_bin_get_binplugin_by_bytes(RBin *bin, const ut8 *bytes, ut64 sz) {
 	RBinPlugin *plugin;
 	RListIter *it;
