@@ -132,6 +132,8 @@ static const char *help_msg_panels_window[] = {
 	"|",        "split the current panel vertically",
 	"-",        "split the current panel horizontally",
 	"' '",      "(space) toggle graph / panels",
+	"}",        "swap current panel position with the one on the right",
+	"{",        "swap current panel position with the one to the left",
 	"e",        "change title and command of current panel",
 	"g",        "show graph in the current panel",
 	"hjkl",     "move around (left-down-up-right)",
@@ -153,6 +155,8 @@ static int layoutSidePanel(void *user);
 static void changePanelNum(RPanels *panels, int now, int after);
 static void splitPanelVertical(RCore *core);
 static void splitPanelHorizontal(RCore *core);
+static void swapPanelPositionRight(RCore *core);
+static void swapPanelPositionLeft(RCore *core);
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color);
 static void menuPanelPrint(RConsCanvas *can, RPanel *panel, int x, int y, int w, int h);
 static void defaultPanelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int x, int y, int w, int h, int color);
@@ -1423,6 +1427,60 @@ beach:
 	free (targets3);
 	free (targets4);
 }
+
+static void swapPanelPositionRight(RCore *core) {
+    RPanels *panels = core->panels;
+    RPanel *panel = panels->panel;
+    int cx, cy, cw, ch, curnode, nextnode;
+    curnode = panels->curnode;
+    nextnode = (curnode >= panels->n_panels-1) ? 0 : curnode+1;
+    RPanel pc = panel[curnode];
+    cx = pc.pos.x;
+    cy = pc.pos.y;
+    cw = pc.pos.w;
+    ch = pc.pos.h;
+    pc.pos.x = panel[nextnode].pos.x;
+    pc.pos.y = panel[nextnode].pos.y;
+    pc.pos.w = panel[nextnode].pos.w;
+    pc.pos.h = panel[nextnode].pos.h;
+    panel[nextnode].pos.x = cx;
+    panel[nextnode].pos.y = cy;
+    panel[nextnode].pos.w = cw;
+    panel[nextnode].pos.h = ch;
+    panel[curnode] = panel[nextnode];
+    panel[nextnode] = pc;
+    panels->curnode = nextnode;
+
+    r_core_panels_layout_refresh (core);
+    setRefreshAll (panels);
+};
+
+static void swapPanelPositionLeft(RCore *core) {
+    RPanels *panels = core->panels;
+    RPanel *panel = panels->panel;
+    int cx, cy, cw, ch, curnode, prevnode;
+    curnode = panels->curnode;
+    prevnode = (curnode == 0) ? panels->n_panels-1 : curnode-1;
+    RPanel pc = panel[curnode];
+    cx = pc.pos.x;
+    cy = pc.pos.y;
+    cw = pc.pos.w;
+    ch = pc.pos.h;
+    pc.pos.x = panel[prevnode].pos.x;
+    pc.pos.y = panel[prevnode].pos.y;
+    pc.pos.w = panel[prevnode].pos.w;
+    pc.pos.h = panel[prevnode].pos.h;
+    panel[prevnode].pos.x = cx;
+    panel[prevnode].pos.y = cy;
+    panel[prevnode].pos.w = cw;
+    panel[prevnode].pos.h = ch;
+    panel[curnode] = panel[prevnode];
+    panel[prevnode] = pc;
+    panels->curnode = prevnode;
+
+    r_core_panels_layout_refresh (core);
+    setRefreshAll (panels);
+};
 
 static void delPanel(RPanels *panels, int delPanelNum) {
 	int i;
@@ -2948,7 +3006,7 @@ repeat:
 			if (res) {
 				if (*res) {
 					addPanelFrame (core, panels, res, res);
-					// refresh stuff 
+					// refresh stuff
 					changePanelNum (panels, panels->n_panels - 1, 0);
 					r_core_panels_layout (core->panels);
 					setRefreshAll (core->panels);
@@ -2965,7 +3023,7 @@ repeat:
 			if (res) {
 				if (*res) {
 					addPanelFrame (core, panels, NULL, res);
-					// refresh stuff 
+					// refresh stuff
 					r_core_panels_layout (core->panels);
 					setRefreshAll (core->panels);
 					core->panels->panelsMenu->depth = 1;
@@ -3215,6 +3273,12 @@ repeat:
 		break;
 	case '[':
 		r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") - 1);
+		break;
+	case '}':
+		swapPanelPositionRight(core);
+		break;
+	case '{':
+		swapPanelPositionLeft(core);
 		break;
 	case '/':
 		r_core_cmd0 (core, "?i highlight;e scr.highlight=`yp`");
