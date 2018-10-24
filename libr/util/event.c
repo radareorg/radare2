@@ -28,10 +28,12 @@ R_API void r_event_unhook(REvent *ev, REventCallback cb) {
 }
 
 R_API void r_event_send(REvent *ev, int type, void *data) {
-	r_return_if_fail (ev);
+	r_return_if_fail (ev && !ev->incall);
+	ev->incall = true;
 	RListIter *iter;
 	REventCallback cb;
 	r_list_foreach (ev->callbacks, iter, cb) {
 		cb (ev, type, data);
 	}
+	ev->incall = false;
 }

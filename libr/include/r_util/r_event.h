@@ -9,6 +9,7 @@ extern "C" {
 
 typedef struct r_event_t {
 	void *user;
+	bool incall;
 	RList *callbacks;
 } REvent;
 
