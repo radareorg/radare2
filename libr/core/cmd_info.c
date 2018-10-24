@@ -751,7 +751,7 @@ static int cmd_info(void *data, const char *input) {
 				}
 				if (obj) {
 					RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL,
-						obj? r_list_length (obj->strings): 0);
+						(obj && obj->strings)? r_list_length (obj->strings): 0);
 				}
 			}
 			break;
