@@ -214,9 +214,9 @@ static void r_bin_dwarf_header_fini(RBinDwarfLNPHeader *hdr) {
 	}
 }
 
-static const ut8 *r_bin_dwarf_parse_lnp_header (
-		RBinFile *bf, const ut8 *buf, const ut8 *buf_end,
-		RBinDwarfLNPHeader *hdr, FILE *f, int mode) {
+static const ut8 *r_bin_dwarf_parse_lnp_header(
+	RBinFile *bf, const ut8 *buf, const ut8 *buf_end,
+	RBinDwarfLNPHeader *hdr, FILE *f, int mode) {
 	int i;
 	Sdb *s;
 	size_t count;
@@ -713,7 +713,7 @@ static const ut8* r_bin_dwarf_parse_opcodes(const RBin *a, const ut8 *obuf,
 	return buf;
 }
 
-static void r_bin_dwarf_set_regs_default (const RBinDwarfLNPHeader *hdr, RBinDwarfSMRegisters *regs) {
+static void r_bin_dwarf_set_regs_default(const RBinDwarfLNPHeader *hdr, RBinDwarfSMRegisters *regs) {
 	regs->address = 0;
 	regs->file = 1;
 	regs->line = 1;
@@ -735,7 +735,7 @@ R_API int r_bin_dwarf_parse_line_raw2(const RBin *a, const ut8 *obuf,
 	if (!binfile || !obuf) {
 		return false;
 	}
-	if (mode == R_CORE_BIN_PRINT) {
+	if (mode == R_MODE_PRINT) {
 		f = stdout;
 	}
 	buf = obuf;
@@ -1085,7 +1085,7 @@ static void r_bin_dwarf_free_comp_unit(RBinDwarfCompUnit *cu) {
 	R_FREE (cu->dies);
 }
 
-static void r_bin_dwarf_free_debug_info (RBinDwarfDebugInfo *inf) {
+static void r_bin_dwarf_free_debug_info(RBinDwarfDebugInfo *inf) {
 	size_t i;
 	if (!inf) {
 		return;
@@ -1491,7 +1491,7 @@ R_API int r_bin_dwarf_parse_info_raw(Sdb *s, RBinDwarfDebugAbbrev *da,
 		curr_unit++;
 	}
 
-	if (mode == R_CORE_BIN_PRINT) {
+	if (mode == R_MODE_PRINT) {
 		r_bin_dwarf_dump_debug_info (NULL, inf);
 	}
 
@@ -1554,7 +1554,7 @@ static RBinDwarfDebugAbbrev *r_bin_dwarf_parse_abbrev_raw(const ut8 *obuf, size_
 		da->length++;
 	}
 
-	if (mode == R_CORE_BIN_PRINT) {
+	if (mode == R_MODE_PRINT) {
 		dump_r_bin_dwarf_debug_abbrev (stdout, da);
 	}
 	return da;
@@ -1620,7 +1620,7 @@ R_API int r_bin_dwarf_parse_info(RBinDwarfDebugAbbrev *da, RBin *a, int mode) {
 	return false;
 }
 
-static RBinDwarfRow *r_bin_dwarf_row_new (ut64 addr, const char *file, int line, int col) {
+static RBinDwarfRow *r_bin_dwarf_row_new(ut64 addr, const char *file, int line, int col) {
 	RBinDwarfRow *row = R_NEW0 (RBinDwarfRow);
 	if (!row) {
 		return NULL;
@@ -1716,7 +1716,7 @@ R_API RList *r_bin_dwarf_parse_aranges(RBin *a, int mode) {
 			free (buf);
 			return NULL;
 		}
-		if (mode == R_CORE_BIN_PRINT) {
+		if (mode == R_MODE_PRINT) {
 			r_bin_dwarf_parse_aranges_raw (buf, len, stdout);
 		} else {
 			r_bin_dwarf_parse_aranges_raw (buf, len, DBGFD);

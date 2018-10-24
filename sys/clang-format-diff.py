@@ -129,8 +129,19 @@ def main():
 
     # handle functions definitions/declarations: do not use space before (
     for i, l in enumerate(formatted_code):
-        if l.startswith('R_API ') or l.startswith('static '):
-            formatted_code[i] = l.replace(' (', '(')
+        if formatted_code[i].startswith('R_API ') or formatted_code[i].startswith('static '):
+            formatted_code[i] = formatted_code[i].replace(' (', '(')
+
+        if modified_lines and i not in modified_lines:
+            continue
+
+        while ' ? ' in formatted_code[i] and ' : ' in formatted_code[i]:
+            pos_q = formatted_code[i].index(' ? ')
+            pos_c = formatted_code[i].index(' : ')
+            if pos_q >= pos_c:
+                break
+            formatted_code[i] = formatted_code[i].replace(' ? ', '? ', 1)
+            formatted_code[i] = formatted_code[i].replace(' : ', ': ', 1)
 
     diff = difflib.unified_diff(code, formatted_code,
                                 filename, filename,

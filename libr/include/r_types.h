@@ -13,6 +13,15 @@
 #undef __UNIX__
 #undef __WINDOWS__
 
+#define R_MODE_PRINT 0x000
+#define R_MODE_RADARE 0x001
+#define R_MODE_SET 0x002
+#define R_MODE_SIMPLE 0x004
+#define R_MODE_JSON 0x008
+#define R_MODE_ARRAY 0x010
+#define R_MODE_SIMPLEST 0x020
+#define R_MODE_CLASSDUMP 0x040
+
 #define R_IN /* do not use, implicit */
 #define R_OWN /* pointer ownership is transferred */
 #define R_OUT /* parameter is written, not read */
@@ -271,7 +280,7 @@ typedef int (*PrintfCallback)(const char *str, ...);
 #define R_LIB_VERSION_HEADER(x) \
 R_API const char *x##_version(void)
 #define R_LIB_VERSION(x) \
-R_API const char *x##_version () { return "" R2_GITTAP; }
+R_API const char *x##_version() { return "" R2_GITTAP; }
 
 #define BITS2BYTES(x) (((x)/8)+(((x)%8)?1:0))
 #define ZERO_FILL(x) memset (&x, 0, sizeof (x))
@@ -570,65 +579,54 @@ enum {
 }
 #endif
 
-static inline void r_run_call1 (void *fcn, void *arg1) {
+static inline void r_run_call1(void *fcn, void *arg1) {
 	((void (*)(void *))(fcn))(arg1);
 }
 
-static inline void r_run_call2 (void *fcn, void *arg1, void *arg2) {
+static inline void r_run_call2(void *fcn, void *arg1, void *arg2) {
 	((void (*)(void *, void *))(fcn))(arg1, arg2);
 }
 
-static inline void r_run_call3 (void *fcn, void *arg1, void *arg2, void *arg3) {
+static inline void r_run_call3(void *fcn, void *arg1, void *arg2, void *arg3) {
 	((void (*)(void *, void *, void *))(fcn))(arg1, arg2, arg3);
 }
 
-static inline void r_run_call4 (void *fcn, void *arg1, void *arg2, void *arg3, void *arg4) {
+static inline void r_run_call4(void *fcn, void *arg1, void *arg2, void *arg3, void *arg4) {
 	((void (*)(void *, void *, void *, void *))(fcn))(arg1, arg2, arg3, arg4);
 }
 
-static inline void r_run_call5 (void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5) {
+static inline void r_run_call5(void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5) {
 	((void (*)(void *, void *, void *, void *, void *))(fcn))(arg1, arg2, arg3, arg4, arg5);
 }
 
-static inline void r_run_call6 (void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5,
+static inline void r_run_call6(void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5,
 	void *arg6) {
 	((void (*)(void *, void *, void *, void *, void *, void *))(fcn))
 		(arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
-static inline void r_run_call7 (void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5,
+static inline void r_run_call7(void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5,
 	void *arg6, void *arg7) {
 	((void (*)(void *, void *, void *, void *, void *, void *, void *))(fcn))
 		(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 }
 
-static inline void r_run_call8 (void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5,
+static inline void r_run_call8(void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5,
 	void *arg6, void *arg7, void *arg8) {
 	((void (*)(void *, void *, void *, void *, void *, void *, void *, void *))(fcn))
 		(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
 }
 
-static inline void r_run_call9 (void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5,
+static inline void r_run_call9(void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5,
 	void *arg6, void *arg7, void *arg8, void *arg9) {
 	((void (*)(void *, void *, void *, void *, void *, void *, void *, void *, void *))(fcn))
 		(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
 }
 
-static inline void r_run_call10 (void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5,
+static inline void r_run_call10(void *fcn, void *arg1, void *arg2, void *arg3, void *arg4, void *arg5,
 	void *arg6, void *arg7, void *arg8, void *arg9, void *arg10) {
 	((void (*)(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *))(fcn))
 		(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
 }
 
 #endif // R2_TYPES_H
-
-// Usage: R_DEFINE_OBJECT(r_asm);
-#if 0
-#define R_DEFINE_OBJECT(type) \
- R_API struct type##_t* type##_new() { \
-    return type##_init(R_NEW(struct type##_t)); \
- } \
- R_API struct type##_t* type##_free(struct type##_t *foo) { \
-    return (type##_deinit(foo), free(foo), NULL); \
- }
-#endif

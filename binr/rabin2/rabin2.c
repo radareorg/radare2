@@ -424,7 +424,7 @@ static int rabin_do_operation(const char *op) {
 			}
 		}
 		if (plg && plg->signature) {
-			char *sign = plg->signature (cur, rad == R_CORE_BIN_JSON);
+			char *sign = plg->signature (cur, rad == R_MODE_JSON);
 			if (sign) {
 				r_cons_println (sign);
 				r_cons_flush ();
@@ -527,7 +527,7 @@ static char *demangleAs(int type) {
 static int rabin_list_plugins(const char* plugin_name) {
 	int json = 0;
 
-	if (rad == R_CORE_BIN_JSON) {
+	if (rad == R_MODE_JSON) {
 		json = 'j';
 	} else if (rad) {
 		json = 'q';
@@ -646,10 +646,10 @@ int main(int argc, char **argv) {
 			break;
 		case 'V': set_action (R_BIN_REQ_VERSIONINFO); break;
 		case 'q':
-			rad = (rad & R_CORE_BIN_SIMPLE ?
-				R_CORE_BIN_SIMPLEST : R_CORE_BIN_SIMPLE);
+			rad = (rad & R_MODE_SIMPLE ?
+				R_MODE_SIMPLEST : R_MODE_SIMPLE);
 			break;
-		case 'j': rad = R_CORE_BIN_JSON; break;
+		case 'j': rad = R_MODE_JSON; break;
 		case 'A': set_action (R_BIN_REQ_LISTARCHS); break;
 		case 'a': arch = optarg; break;
 		case 'C':
@@ -661,7 +661,7 @@ int main(int argc, char **argv) {
 		case 'K': chksum = optarg; break;
 		case 'c':
 			if (is_active (R_BIN_REQ_CLASSES)) {
-				rad = R_CORE_BIN_CLASSDUMP;
+				rad = R_MODE_CLASSDUMP;
 			} else {
 			  	set_action (R_BIN_REQ_CLASSES);
 			}
@@ -1045,7 +1045,7 @@ int main(int argc, char **argv) {
 		r_core_fini (&core);
 		return 0;
 	}
-#define isradjson (rad==R_CORE_BIN_JSON&&actions>0)
+#define isradjson (rad==R_MODE_JSON&&actions>0)
 #define run_action(n,x,y) {\
 	if (action&(x)) {\
 		if (isradjson) r_cons_printf ("%s\"%s\":",actions_done?",":"",n);\
@@ -1067,10 +1067,10 @@ int main(int argc, char **argv) {
 	// List fatmach0 sub-binaries, etc
 	if (action & R_BIN_REQ_LISTARCHS || ((arch || bits || arch_name) &&
 		!r_bin_select (bin, arch, bits, arch_name))) {
-		if (rad == R_CORE_BIN_SIMPLEST || rad == R_CORE_BIN_SIMPLE) {
+		if (rad == R_MODE_SIMPLEST || rad == R_MODE_SIMPLE) {
 			r_bin_list_archs (bin, 'q');
 		} else {
-			r_bin_list_archs (bin, (rad == R_CORE_BIN_JSON)? 'j': 1);
+			r_bin_list_archs (bin, (rad == R_MODE_JSON)? 'j': 1);
 		}
 		actions_done++;
 		free (arch_name);

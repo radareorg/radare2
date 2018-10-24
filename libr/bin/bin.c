@@ -32,11 +32,6 @@ static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS, NULL };
 static RBinXtrPlugin *bin_xtr_static_plugins[] = { R_BIN_XTR_STATIC_PLUGINS, NULL };
 static RBinLdrPlugin *bin_ldr_static_plugins[] = { R_BIN_LDR_STATIC_PLUGINS, NULL };
 
-R_API bool r_bin_load_io(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name) {
-	r_return_val_if_fail (bin, false);
-	return r_bin_load_io2 (bin, fd, baseaddr, loadaddr, xtr_idx, offset, name, 0);
-}
-
 static int getoffset(RBin *bin, int type, int idx) {
 	RBinFile *a = r_bin_cur (bin);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (a);
@@ -228,13 +223,11 @@ R_API int r_bin_load(RBin *bin, const char *file, ut64 baseaddr, ut64 loadaddr, 
 	if (!iob->desc_get (iob->io, fd)) {
 		fd = iob->fd_open (iob->io, file, R_PERM_R, 0644);
 	}
-	bin->rawstr = rawstr;
-	// Use the current RIODesc otherwise r_io_map_select can swap them later on
 	if (fd < 0) {
 		return false;
 	}
-	//Use the current RIODesc otherwise r_io_map_select can swap them later on
-	return r_bin_load_io (bin, fd, baseaddr, loadaddr, xtr_idx, 0, NULL);
+	bin->rawstr = rawstr;
+	return r_bin_load_io (bin, fd, baseaddr, loadaddr, xtr_idx, 0, NULL, 0);
 }
 
 R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
@@ -319,13 +312,13 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 
 	if (r_list_length (the_obj_list) == 1) {
 		RBinObject *old_o = (RBinObject *)r_list_get_n (the_obj_list, 0);
-		res = r_bin_load_io (bin, fd, baseaddr, old_o->loadaddr, 0, old_o->boffset, NULL);
+		res = r_bin_load_io (bin, fd, baseaddr, old_o->loadaddr, 0, old_o->boffset, NULL, 0);
 	} else {
 		RListIter *iter = NULL;
 		RBinObject *old_o;
 		r_list_foreach (the_obj_list, iter, old_o) {
 			// XXX - naive. do we need a way to prevent multiple "anys" from being opened?
-			res = r_bin_load_io (bin, fd, baseaddr, old_o->loadaddr, 0, old_o->boffset, old_o->plugin->name);
+			res = r_bin_load_io (bin, fd, baseaddr, old_o->loadaddr, 0, old_o->boffset, old_o->plugin->name, 0);
 		}
 	}
 	bf->o = r_list_get_n (bf->objs, 0);
@@ -336,7 +329,7 @@ error:
 	return res;
 }
 
-R_API bool r_bin_load_io2(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name, ut64 sz) {
+R_API bool r_bin_load_io(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name, ut64 sz) {
 	RIOBind *iob = &(bin->iob);
 	RIO *io = iob? iob->io: NULL;
 	RListIter *it;
@@ -734,12 +727,6 @@ R_API void r_bin_set_baddr(RBin *bin, ut64 baddr) {
 	// XXX - update all the infos?
 }
 
-R_API ut64 r_bin_get_boffset(RBin *bin) {
-	r_return_val_if_fail (bin, UT64_MAX);
-	RBinObject *o = r_bin_cur_object (bin);
-	return o ? o->boffset : UT64_MAX;
-}
-
 R_API RBinAddr *r_bin_get_sym(RBin *bin, int sym) {
 	r_return_val_if_fail (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
@@ -889,40 +876,10 @@ R_API int r_bin_is_string(RBin *bin, ut64 va) {
 	return false;
 }
 
-//callee must not free the symbol
-R_API RBinSymbol *r_bin_get_symbol_at_vaddr(RBin *bin, ut64 addr) {
-	r_return_val_if_fail (bin, NULL);
-	//use skiplist here
-	RList *symbols = r_bin_get_symbols (bin);
-	RListIter *iter;
-	RBinSymbol *symbol;
-	r_list_foreach (symbols, iter, symbol) {
-		if (symbol->vaddr == addr) {
-			return symbol;
-		}
-	}
-	return NULL;
-}
-
-//callee must not free the symbol
-R_API RBinSymbol *r_bin_get_symbol_at_paddr(RBin *bin, ut64 addr) {
-	r_return_val_if_fail (bin, NULL);
-	//use skiplist here
-	RList *symbols = r_bin_get_symbols (bin);
-	RListIter *iter;
-	RBinSymbol *symbol;
-	r_list_foreach (symbols, iter, symbol) {
-		if (symbol->paddr == addr) {
-			return symbol;
-		}
-	}
-	return NULL;
-}
-
 R_API RList *r_bin_get_symbols(RBin *bin) {
 	r_return_val_if_fail (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
-	return o ? o->symbols : NULL;
+	return o? o->symbols: NULL;
 }
 
 R_API RList *r_bin_get_mem(RBin *bin) {
@@ -937,12 +894,6 @@ R_API int r_bin_is_big_endian(RBin *bin) {
 	return (o && o->info) ? o->info->big_endian : -1;
 }
 
-R_API int r_bin_is_stripped(RBin *bin) {
-	r_return_val_if_fail (bin, -1);
-	RBinObject *o = r_bin_cur_object (bin);
-	return o ? (R_BIN_DBG_STRIPPED & o->info->dbg_info) : 1;
-}
-
 R_API int r_bin_is_static(RBin *bin) {
 	r_return_val_if_fail (bin, false);
 	RBinObject *o = r_bin_cur_object (bin);
@@ -950,25 +901,6 @@ R_API int r_bin_is_static(RBin *bin) {
 		return R_BIN_DBG_STATIC & o->info->dbg_info;
 	}
 	return true;
-}
-
-// TODO: Integrate with r_bin_dbg */
-R_API int r_bin_has_dbg_linenums(RBin *bin) {
-	r_return_val_if_fail (bin, false);
-	RBinObject *o = r_bin_cur_object (bin);
-	return o ? (R_BIN_DBG_LINENUMS & o->info->dbg_info) : false;
-}
-
-R_API int r_bin_has_dbg_syms(RBin *bin) {
-	r_return_val_if_fail (bin, false);
-	RBinObject *o = r_bin_cur_object (bin);
-	return o ? (R_BIN_DBG_SYMS & o->info->dbg_info) : false;
-}
-
-R_API int r_bin_has_dbg_relocs(RBin *bin) {
-	r_return_val_if_fail (bin, false);
-	RBinObject *o = r_bin_cur_object (bin);
-	return o ? (R_BIN_DBG_RELOCS & o->info->dbg_info) : false;
 }
 
 R_API RBin *r_bin_new() {
@@ -1102,19 +1034,6 @@ R_API int r_bin_select_by_ids(RBin *bin, ut32 binfile_id, ut32 binobj_id) {
 		obj = binfile? r_bin_file_object_find_by_id (binfile, binobj_id): NULL;
 	}
 	return r_bin_file_set_cur_binfile_obj (bin, binfile, obj);
-}
-
-R_API int r_bin_select_idx(RBin *bin, const char *name, int idx) {
-	RBinFile *nbinfile = NULL, *binfile = r_bin_cur (bin);
-	RBinObject *obj = NULL;
-	const char *tname = !name && binfile? binfile->file: name;
-	int res = false;
-	if (!tname || !bin) {
-		return res;
-	}
-	nbinfile = r_bin_file_find_by_name_n (bin, tname, idx);
-	obj = nbinfile? r_list_get_n (nbinfile->objs, idx): NULL;
-	return r_bin_file_set_cur_binfile_obj (bin, nbinfile, obj);
 }
 
 static void list_xtr_archs(RBin *bin, int mode) {
@@ -1550,20 +1469,6 @@ R_API void r_bin_force_plugin(RBin *bin, const char *name) {
 	r_return_if_fail (bin);
 	free (bin->force);
 	bin->force = (name && *name) ? strdup (name) : NULL;
-}
-
-R_API int r_bin_read_at(RBin *bin, ut64 addr, ut8 *buf, int size) {
-	r_return_val_if_fail (bin, false);
-	RIOBind *iob = &(bin->iob);
-	return iob->read_at (iob->io, addr, buf, size);
-}
-
-R_API int r_bin_write_at(RBin *bin, ut64 addr, const ut8 *buf, int size) {
-	RIOBind *iob;
-	if (!bin || !(iob = &(bin->iob))) {
-		return false;
-	}
-	return iob->write_at (iob->io, addr, buf, size);
 }
 
 R_API const char *r_bin_entry_type_string(int etype) {

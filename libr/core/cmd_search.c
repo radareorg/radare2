@@ -258,8 +258,7 @@ static void cmd_search_bin(RCore *core, RInterval itv) {
 		if (plug) {
 			r_cons_printf ("0x%08" PFMT64x "  %s\n", from, plug->name);
 			if (plug->size) {
-				r_bin_load_io2 (core->bin, core->file->fd,
-					0, 0, 0, core->offset, plug->name, 4096);
+				r_bin_load_io (core->bin, core->file->fd, 0, 0, 0, core->offset, plug->name, 4096);
 				size = plug->size (core->bin->cur);
 				if (size > 0) {
 					r_cons_printf ("size %d\n", size);
