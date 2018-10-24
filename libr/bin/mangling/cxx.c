@@ -3,13 +3,12 @@
 #include <r_bin.h>
 
 static inline bool is_cxx_symbol (const char *name) {
-	if (name) {
-		if (!strncmp (name, "_Z", 2)) {
-			return true;
-		}
-		if (!strncmp (name, "__Z", 3)) {
-			return true;
-		}
+	r_return_val_if_fail (name, false);
+	if (!strncmp (name, "_Z", 2)) {
+		return true;
+	}
+	if (!strncmp (name, "__Z", 3)) {
+		return true;
 	}
 	return false;
 }
