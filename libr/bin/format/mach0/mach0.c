@@ -801,7 +801,6 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 				r_buf_read_at (bin->b, data + idx.offset + 16, p, sizeof (p));
 				p[sizeof (p) - 1] = 0;
 				ut32 slot_size = r_read_ble32 (p  + 8, 1);
-				eprintf ("slot size %d\n", slot_size);
 				if (slot_size < sizeof (p)) {
 					ut32 ident_size = r_read_ble32 (p  + 8, 1);
 					char *ident = r_str_ndup ((const char *)p + 28, ident_size);
