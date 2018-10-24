@@ -1475,7 +1475,7 @@ static void swapPanelPositionLeft(RCore *core) {
 	pc.pos.h = panel[prevnode].pos.h;
 	panel[prevnode].pos.x = cx;
 	panel[prevnode].pos.y = cy;
-panel[prevnode].pos.w = cw;
+	panel[prevnode].pos.w = cw;
 	panel[prevnode].pos.h = ch;
 	panel[curnode] = panel[prevnode];
 	panel[prevnode] = pc;
