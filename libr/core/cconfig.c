@@ -1814,7 +1814,9 @@ static int cb_scrnkey(void *user, void *data) {
 }
 
 static int cb_scrprompt(void *user, void *data) {
+	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *) data;
+	core->print->scr_prompt = node->i_value;
 	r_line_singleton()->echo = node->i_value;
 	return true;
 }

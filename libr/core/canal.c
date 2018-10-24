@@ -420,6 +420,7 @@ R_API void r_core_anal_autoname_all_fcns(RCore *core) {
 R_API void r_core_anal_autoname_all_golang_fcns(RCore *core) {
 	RList* section_list = r_bin_get_sections (core->bin);
 	RListIter *iter;
+	const char* oldstr = NULL;
 	RBinSection *section;
 	ut64 gopclntab = 0;
 	r_list_foreach (section_list, iter, section) {
@@ -429,7 +430,8 @@ R_API void r_core_anal_autoname_all_golang_fcns(RCore *core) {
 		}
 	}
 	if (!gopclntab) {
-		eprint ("[x] Could not find .gopclntab section");
+		oldstr = r_print_rowlog (core->print, "Could not find .gopclntab section");
+		r_print_rowlog_done (core->print, oldstr);
 		return;
 	}
 	int ptr_size = core->anal->bits / 8;
@@ -441,7 +443,8 @@ R_API void r_core_anal_autoname_all_golang_fcns(RCore *core) {
 	}
 	ut32 size = r_read_le32 (temp_size);
 	int num_syms = 0;
-	r_cons_print ("[x] Reading .gopclntab...\n");
+	//r_cons_print ("[x] Reading .gopclntab...\n");
+	r_flag_space_push (core->flags, "symbols");
 	while (offset < gopclntab + size) {
 		ut8 temp_delta[4] = {0};
 		ut8 temp_func_addr[4] = {0};
@@ -463,15 +466,18 @@ R_API void r_core_anal_autoname_all_golang_fcns(RCore *core) {
 			break;
 		}
 		r_name_filter ((char *)func_name, 0);
-		r_cons_printf ("[x] Found symbol %s at 0x%x\n", func_name, func_addr);
+		//r_cons_printf ("[x] Found symbol %s at 0x%x\n", func_name, func_addr);
 		r_flag_set (core->flags, sdb_fmt ("sym.go.%s", func_name), func_addr, 1);
 		offset += 2 * ptr_size;
 		num_syms++;
 	}
+	r_flag_space_pop (core->flags);
 	if (num_syms) {
-		r_cons_printf ("\n[x] Found %d symbols and saved them at sym.go.*\n", num_syms);
+		oldstr = r_print_rowlog (core->print, sdb_fmt ("Found %d symbols and saved them at sym.go.*", num_syms));
+		r_print_rowlog_done (core->print, oldstr);
 	} else {
-		r_cons_print ("[x] Found no symbols.\n");
+		oldstr = r_print_rowlog (core->print, "Found no symbols.");
+		r_print_rowlog_done (core->print, oldstr);
 	}
 }
 
