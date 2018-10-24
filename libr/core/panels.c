@@ -1429,58 +1429,60 @@ beach:
 }
 
 static void swapPanelPositionRight(RCore *core) {
-    RPanels *panels = core->panels;
-    RPanel *panel = panels->panel;
-    int cx, cy, cw, ch, curnode, nextnode;
-    curnode = panels->curnode;
-    nextnode = (curnode >= panels->n_panels-1) ? 0 : curnode+1;
-    RPanel pc = panel[curnode];
-    cx = pc.pos.x;
-    cy = pc.pos.y;
-    cw = pc.pos.w;
-    ch = pc.pos.h;
-    pc.pos.x = panel[nextnode].pos.x;
-    pc.pos.y = panel[nextnode].pos.y;
-    pc.pos.w = panel[nextnode].pos.w;
-    pc.pos.h = panel[nextnode].pos.h;
-    panel[nextnode].pos.x = cx;
-    panel[nextnode].pos.y = cy;
-    panel[nextnode].pos.w = cw;
-    panel[nextnode].pos.h = ch;
-    panel[curnode] = panel[nextnode];
-    panel[nextnode] = pc;
-    panels->curnode = nextnode;
-
-    r_core_panels_layout_refresh (core);
-    setRefreshAll (panels);
-};
+	RPanels *panels = core->panels;
+	RPanel *panel = panels->panel;
+	int cx, cy, cw, ch, curnode, nextnode;
+	curnode = panels->curnode;
+	nextnode = (curnode >= panels->n_panels - 1) ?
+		0 :
+		curnode + 1;
+	RPanel pc = panel[curnode];
+	cx = pc.pos.x;
+	cy = pc.pos.y;
+	cw = pc.pos.w;
+	ch = pc.pos.h;
+	pc.pos.x = panel[nextnode].pos.x;
+	pc.pos.y = panel[nextnode].pos.y;
+	pc.pos.w = panel[nextnode].pos.w;
+	pc.pos.h = panel[nextnode].pos.h;
+	panel[nextnode].pos.x = cx;
+	panel[nextnode].pos.y = cy;
+	panel[nextnode].pos.w = cw;
+	panel[nextnode].pos.h = ch;
+	panel[curnode] = panel[nextnode];
+	panel[nextnode] = pc;
+	panels->curnode = nextnode;
+	r_core_panels_layout_refresh (core);
+	setRefreshAll (panels);
+}
 
 static void swapPanelPositionLeft(RCore *core) {
-    RPanels *panels = core->panels;
-    RPanel *panel = panels->panel;
-    int cx, cy, cw, ch, curnode, prevnode;
-    curnode = panels->curnode;
-    prevnode = (curnode == 0) ? panels->n_panels-1 : curnode-1;
-    RPanel pc = panel[curnode];
-    cx = pc.pos.x;
-    cy = pc.pos.y;
-    cw = pc.pos.w;
-    ch = pc.pos.h;
-    pc.pos.x = panel[prevnode].pos.x;
-    pc.pos.y = panel[prevnode].pos.y;
-    pc.pos.w = panel[prevnode].pos.w;
-    pc.pos.h = panel[prevnode].pos.h;
-    panel[prevnode].pos.x = cx;
-    panel[prevnode].pos.y = cy;
-    panel[prevnode].pos.w = cw;
-    panel[prevnode].pos.h = ch;
-    panel[curnode] = panel[prevnode];
-    panel[prevnode] = pc;
-    panels->curnode = prevnode;
-
-    r_core_panels_layout_refresh (core);
-    setRefreshAll (panels);
-};
+	RPanels *panels = core->panels;
+	RPanel *panel = panels->panel;
+	int cx, cy, cw, ch, curnode, prevnode;
+	curnode = panels->curnode;
+	prevnode = (curnode == 0) ?
+		panels->n_panels - 1 :
+		curnode - 1;
+	RPanel pc = panel[curnode];
+	cx = pc.pos.x;
+	cy = pc.pos.y;
+	cw = pc.pos.w;
+	ch = pc.pos.h;
+	pc.pos.x = panel[prevnode].pos.x;
+	pc.pos.y = panel[prevnode].pos.y;
+	pc.pos.w = panel[prevnode].pos.w;
+	pc.pos.h = panel[prevnode].pos.h;
+	panel[prevnode].pos.x = cx;
+	panel[prevnode].pos.y = cy;
+panel[prevnode].pos.w = cw;
+	panel[prevnode].pos.h = ch;
+	panel[curnode] = panel[prevnode];
+	panel[prevnode] = pc;
+	panels->curnode = prevnode;
+	r_core_panels_layout_refresh (core);
+	setRefreshAll (panels);
+}
 
 static void delPanel(RPanels *panels, int delPanelNum) {
 	int i;
@@ -3275,10 +3277,10 @@ repeat:
 		r_config_set_i (core->config, "hex.cols", r_config_get_i (core->config, "hex.cols") - 1);
 		break;
 	case '}':
-		swapPanelPositionRight(core);
+		swapPanelPositionRight (core);
 		break;
 	case '{':
-		swapPanelPositionLeft(core);
+		swapPanelPositionLeft (core);
 		break;
 	case '/':
 		r_core_cmd0 (core, "?i highlight;e scr.highlight=`yp`");
