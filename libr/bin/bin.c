@@ -716,7 +716,7 @@ R_API int r_bin_list_plugin(RBin *bin, const char* name, int json) {
 R_API ut64 r_bin_get_baddr(RBin *bin) {
 	r_return_val_if_fail (bin, UT64_MAX);
 	RBinObject *o = r_bin_cur_object (bin);
-	return r_bin_object_get_baddr (o);
+	return o ? r_bin_object_get_baddr (o) : UT64_MAX;
 }
 
 /* returns the load address of bin or UT64_MAX in case of errors */
