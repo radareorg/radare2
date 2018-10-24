@@ -331,7 +331,7 @@ error:
 
 R_API bool r_bin_load_io(RBin *bin, int fd, ut64 baseaddr, ut64 loadaddr, int xtr_idx, ut64 offset, const char *name, ut64 sz) {
 	RIOBind *iob = &(bin->iob);
-	RIO *io = iob ? iob->io : NULL;
+	RIO *io = iob? iob->io: NULL;
 	RListIter *it;
 	ut8 *buf_bytes = NULL;
 	RBinXtrPlugin *xtr;
@@ -878,7 +878,7 @@ R_API int r_bin_is_string(RBin *bin, ut64 va) {
 R_API RList *r_bin_get_symbols(RBin *bin) {
 	r_return_val_if_fail (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
-	return o ? o->symbols : NULL;
+	return o? o->symbols: NULL;
 }
 
 R_API RList *r_bin_get_mem(RBin *bin) {

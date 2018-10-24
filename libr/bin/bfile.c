@@ -27,11 +27,10 @@ static void print_string(RBinString *string, RBinFile *bf) {
 	vaddr = addr = r_bin_get_vaddr (bin, string->paddr, string->vaddr);
 
 	switch (mode) {
-	case R_MODE_SIMPLE :
+	case R_MODE_SIMPLE:
 		io->cb_printf ("0x%08" PFMT64x " %s\n", addr, string->string);
 		break;
-	case R_MODE_RADARE :
-		{
+	case R_MODE_RADARE: {
 		char *f_name, *nstr;
 		f_name = strdup (string->string);
 		r_name_filter (f_name, 512);
@@ -51,14 +50,13 @@ static void print_string(RBinString *string, RBinFile *bf) {
 		free (nstr);
 		free (f_name);
 		break;
-		}
-	case R_MODE_PRINT :
-		io->cb_printf ("%03u 0x%08"PFMT64x" 0x%08"
-				PFMT64x" %3u %3u "
-				"(%s) %5s %s\n",
-				string->ordinal, string->paddr, vaddr,
-				string->length, string->size,
-				section_name, type_string, string->string);
+	}
+	case R_MODE_PRINT:
+		io->cb_printf ("%03u 0x%08" PFMT64x " 0x%08" PFMT64x " %3u %3u "
+			       "(%s) %5s %s\n",
+			string->ordinal, string->paddr, vaddr,
+			string->length, string->size,
+			section_name, type_string, string->string);
 		break;
 	}
 }
@@ -723,11 +721,11 @@ R_API int r_bin_file_set_cur_by_name(RBin *bin, const char *name) {
 }
 
 R_API RBinObject *r_bin_file_object_get_cur(RBinFile *binfile) {
-	return binfile ? binfile->o : NULL;
+	return binfile? binfile->o: NULL;
 }
 
 R_API int r_bin_file_deref_by_bind(RBinBind *binb) {
-	RBin *bin = binb ? binb->bin : NULL;
+	RBin *bin = binb? binb->bin: NULL;
 	RBinFile *a = r_bin_cur (bin);
 	return r_bin_file_deref (bin, a);
 }
