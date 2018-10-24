@@ -751,15 +751,14 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	const char *section_name = "";
 	const char *link_section_name = "";
 	char *end = NULL;
-	Elf_(Shdr) *link_shdr = NULL;
 	ut8 dfs[sizeof (Elf_(Verdef))] = {0};
 	Sdb *sdb;
 	ut32 cnt;
 	size_t i;
-	if (shdr->sh_link > bin->ehdr.e_shnum) {
+	if (shdr->sh_link >= bin->ehdr.e_shnum) {
 		return false;
 	}
-	link_shdr = &bin->shdr[shdr->sh_link];
+	Elf_(Shdr) *link_shdr = &bin->shdr[shdr->sh_link];
 #ifdef R_BIN_ELF64
 	if ((int)shdr->sh_size < 1 || shdr->sh_size > SIZE_MAX) {
 #else
