@@ -1066,21 +1066,30 @@ static void lookup_symbols(RBinFile *bf, RBinInfo *ret) {
 	}
 }
 
-static int has_retguard(RBinFile *bf) {
-	int ret = -1;
+static void lookup_sections(RBinFile *bf, RBinInfo *ret) {
 	RList* sections_list = sections (bf);
 	RListIter *iter;
 	RBinSection *section;
+	bool is_go = false;
+	ret->has_retguard = -1;
 	r_list_foreach (sections_list, iter, section) {
+		if (ret->has_retguard != -1 && is_go == true) {
+			break;
+		}
+		if (strstr (section->name, "note.go.buildid") ||
+		    strstr (section->name, ".gopclntab") ||
+		    strstr (section->name, ".go_export")) {
+			ret->lang = "go";
+			is_go = true;
+		}
 		# define R_BIN_RANDOMDATA_RETGUARD_SZ 48
 		if (!strcmp (section->name, ".openbsd.randomdata")) {
 			// The retguard cookie adds 8 per return function inst.
-			ret = (section->size >= R_BIN_RANDOMDATA_RETGUARD_SZ);
+			ret->has_retguard = (section->size >= R_BIN_RANDOMDATA_RETGUARD_SZ);
 			break;
 		}
 	}
 	r_list_free (sections_list);
-	return ret;
 }
 
 static bool has_sanitizers(RBinFile *bf) {
@@ -1096,23 +1105,6 @@ static bool has_sanitizers(RBinFile *bf) {
 		}
 	}
 	r_list_free (imports_list);
-	return ret;
-}
-
-static bool is_golang(RBinFile *binfile) {
-	bool ret = false;
-	RList* section_list = sections (binfile);
-	RListIter *iter;
-	RBinSection *section;
-	r_list_foreach (section_list, iter, section) {
-		if (strstr (section->name, "note.go.buildid") ||
-		    strstr (section->name, ".gopclntab") ||
-		    strstr (section->name, ".go_export")) {
-			ret = true;
-			break;
-		}
-	}
-	r_list_free (section_list);
 	return ret;
 }
 
@@ -1141,7 +1133,6 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->type = str;
 	ret->has_pi = (strstr (str, "DYN"))? 1: 0;
 	ret->has_lit = true;
-	ret->has_retguard = has_retguard (bf);
 	ret->has_sanitizers = has_sanitizers (bf);
 	if (!(str = Elf_(r_bin_elf_get_elf_class) (obj))) {
 		free (ret);
@@ -1186,9 +1177,7 @@ static RBinInfo* info(RBinFile *bf) {
 	if (Elf_(r_bin_elf_get_static) (obj)) {
 		ret->dbg_info |= R_BIN_DBG_STATIC;
 	}
-	if (is_golang (bf)) {
-		ret->lang = "go";
-	}
+	lookup_sections (bf, ret);
 	lookup_symbols (bf, ret);
 	return ret;
 }
