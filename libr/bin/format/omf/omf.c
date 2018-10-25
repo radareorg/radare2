@@ -659,19 +659,21 @@ static void free_all_omf_names(r_bin_omf_obj *obj) {
 }
 
 void r_bin_free_all_omf_obj(r_bin_omf_obj *obj) {
-	if (obj->records) {
-		free_all_omf_records(obj);
+	if (obj) {
+		if (obj->records) {
+			free_all_omf_records (obj);
+		}
+		if (obj->sections) {
+			free_all_omf_sections (obj);
+		}
+		if (obj->symbols) {
+			free_all_omf_symbols (obj);
+		}
+		if (obj->names) {
+			free_all_omf_names (obj);
+		}
+		free (obj);
 	}
-	if (obj->sections) {
-		free_all_omf_sections(obj);
-	}
-	if (obj->symbols) {
-		free_all_omf_symbols(obj);
-	}
-	if (obj->names) {
-		free_all_omf_names(obj);
-	}
-	R_FREE(obj);
 }
 
 r_bin_omf_obj *r_bin_internal_omf_load(const ut8 *buf, ut64 size) {
