@@ -7045,14 +7045,6 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	seti ("search.align", o_align);
 }
 
-static bool should_aav(RCore *core) {
-	// Don't aav on x86 for now
-	if (r_str_startswith (r_config_get (core->config, "asm.arch"), "x86")) {
-		return false;
-	}
-	return true;
-}
-
 static int cmd_anal_all(RCore *core, const char *input) {
 	switch (*input) {
 	case '?': r_core_cmd_help (core, help_msg_aa); break;
@@ -7168,8 +7160,17 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					r_core_cmd0 (core, "dL esil");
 				}
 				int c = r_config_get_i (core->config, "anal.calls");
-				if (should_aav (core)) {
+				if (!r_str_startswith (r_config_get (core->config, "asm.arch"), "x86")) {
 					r_core_cmd0 (core, "aav");
+					bool ioCache = r_config_get_i (core->config, "io.pcache");
+					r_config_set_i (core->config, "io.pcache", 1);
+					oldstr = r_print_rowlog (core->print, "Emulate code to find computed references (aae)");
+					r_core_cmd0 (core, "aae $SS @ $S");
+					r_print_rowlog_done (core->print, oldstr);
+					if (!ioCache) {
+						r_core_cmd0 (core, "wc-*");
+					}
+					r_config_set_i (core->config, "io.pcache", ioCache);
 					if (r_cons_is_breaked ()) {
 						goto jacuzzi;
 					}
@@ -7232,19 +7233,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				r_core_cmd0 (core, "afta");
 				r_print_rowlog_done (core->print, oldstr);
 				if (input[1] == 'a') { // "aaaa"
-					bool ioCache = r_config_get_i (core->config, "io.pcache");
-					r_config_set_i (core->config, "io.pcache", 1);
 					oldstr = r_print_rowlog (core->print, "Emulate code to find computed references (aae)");
 					r_core_cmd0 (core, "aae $SS @ $S");
 					r_print_rowlog_done (core->print, oldstr);
-					oldstr = r_print_rowlog (core->print, "Analyze consecutive function (aat)");
-					r_core_cmd0 (core, "aat");
-					r_print_rowlog_done (core->print, oldstr);
-					// drop cache writes is no cache was
-					if (!ioCache) {
-						r_core_cmd0 (core, "wc-*");
-					}
-					r_config_set_i (core->config, "io.pcache", ioCache);
 				} else {
 					oldstr = r_print_rowlog (core->print, "Use -AA or aaaa to perform additional experimental analysis.");
 					r_print_rowlog_done (core->print, oldstr);
