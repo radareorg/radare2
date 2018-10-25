@@ -374,7 +374,9 @@ R_API void r_cons_logging_stub(const char *output, const char *funcname,
  const char *filename, ut32 lineno, ut32 level, const char *fmtstr, ...) {
 	if (!I.null && I.context->logging_callback) {
 		va_list args;
+		va_start (args, fmtstr);
 		I.context->logging_callback (output, funcname, filename, lineno, level, fmtstr, args);
+		va_end (args);
 	} else {
 		r_cons_strcat (output);
 	}

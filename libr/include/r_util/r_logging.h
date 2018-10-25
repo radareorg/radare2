@@ -17,8 +17,7 @@ typedef enum r_logging_level {
 	R_LOGLVL_INFO      = 3,
 	R_LOGLVL_WARN      = 4,
 	R_LOGLVL_ERROR     = 5,
-	R_LOGLVL_FATAL     = 6,
-	R_LOGLVL_FATALTRAP = 7, // This will call r_sys_breakpoint() and trap the process for debugging!
+	R_LOGLVL_FATAL     = 6, // This will call r_sys_breakpoint() and trap the process for debugging!
 	R_LOGLVL_NONE      = 0xFF
 } RLoggingLevel;
 
@@ -41,8 +40,6 @@ typedef void (*RLoggingFuncdef)(const char *output, const char *funcname,
  __LINE__, R_LOGLVL_ERROR, fmtstr, ##__VA_ARGS__);
 #define R_LOG_FATAL(fmtstr, ...) _r_logging_internal (MACRO_LOG_FUNC, __FILE__,\
  __LINE__, R_LOGLVL_FATAL, fmtstr, ##__VA_ARGS__);
-#define R_LOG_FATALTRAP(fmtstr, ...) _r_logging_internal (MACRO_LOG_FUNC, __FILE__,\
- __LINE__, R_LOGLVL_FATALTRAP, fmtstr, ##__VA_ARGS__);
 
 #ifdef __cplusplus
 extern "C" {

@@ -9,7 +9,7 @@
 // TODO: Use thread-local storage to make these variables thread-safe
 static RLoggingFuncdef cb_logfunc_print = NULL; // Function to call when outputting log string
 static int cfg_loglvl = R_LOGLVL_ERROR; // Logging level output
-static int cfg_logtraplvl = R_LOGLVL_FATALTRAP; // Logging trap level
+static int cfg_logtraplvl = R_LOGLVL_FATAL; // Logging trap level
 static bool cfg_logsrcinfo = false; // Print out debug source info with the output
 static bool cfg_logcolors = false; // Output colored log text based on level
 static char cfg_logfile[LOGGING_CONFIGSTR_SIZE] = ""; // Output text to filename
@@ -20,8 +20,7 @@ static const char *level_tags[] = { // Log level to tag string lookup array
 	[R_LOGLVL_INFO]      = "INFO: ",
 	[R_LOGLVL_WARN]      = "WARNING: ",
 	[R_LOGLVL_ERROR]     = "ERROR: ",
-	[R_LOGLVL_FATAL]     = "FATAL: ",
-	[R_LOGLVL_FATALTRAP] = "FATAL: "
+	[R_LOGLVL_FATAL]     = "FATAL: "
 };
 
 // cconfig.c configuration callback functions below
@@ -34,7 +33,7 @@ R_API void r_logging_set_traplevel(RLoggingLevel level) {
 }
 
 R_API void r_logging_set_file(const char *filename) {
-	int value_len = strnlen (filename, LOGGING_CONFIGSTR_SIZE) + 1;
+	int value_len = r_str_nlen (filename, LOGGING_CONFIGSTR_SIZE) + 1;
 	strncpy (cfg_logfile, filename, value_len);
 }
 
@@ -73,8 +72,9 @@ R_API void _r_logging_internal(const char *funcname, const char *filename,
 	}
 
 	// Setup varadic arguments
-	va_list args;
+	va_list args, args_copy;
 	va_start (args, fmtstr);
+	va_copy (args_copy, args);
 
 	// TODO: Colors
 
@@ -89,13 +89,9 @@ R_API void _r_logging_internal(const char *funcname, const char *filename,
 
 	// Actually print out the string with our callbacks
 	if (cb_logfunc_print) {
-		cb_logfunc_print (output_buf, funcname, filename, lineno, level, fmtstr, args);
+		cb_logfunc_print (output_buf, funcname, filename, lineno, level, fmtstr, args_copy);
 	} else {
-		if (level < R_LOGLVL_ERROR) {
-			fprintf (stdout, "%s", output_buf);
-		} else {
-			fprintf (stderr, "%s", output_buf);
-		}
+		fprintf (stderr, "%s", output_buf);
 	}
 
 	// Log to file if enabled
@@ -108,11 +104,12 @@ R_API void _r_logging_internal(const char *funcname, const char *filename,
 			fprintf (file, "%s", output_buf);
 			fclose (file);
 		} else {
-			eprintf ("_r_log_internal failed to write to file: %s\n", cfg_logfile);
+			eprintf ("%s failed to write to file: %s\n", MACRO_LOG_FUNC, cfg_logfile);
 		}
 	}
 
 	va_end (args);
+	va_end (args_copy);
 
 	if (level >= cfg_logtraplvl && level != R_LOGLVL_NONE) {
 		fflush (stdout); // We're about to exit HARD, flush buffers before dying

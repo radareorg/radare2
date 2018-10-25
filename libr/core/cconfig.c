@@ -2694,13 +2694,13 @@ R_API int r_core_config_init(RCore *core) {
 	// R2_LOGLEVEL / cfg.logging.level
 	p = r_sys_getenv ("R2_LOGLEVEL");
 	SETICB ("cfg.logging.level", p ? atoi(p) : R_LOGGING_DEFAULTLEVEL, cb_logging_config_level, "Output logging level "\
-	 "(0:SILLY, 1:VERBOSE, 2:DEBUG, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL, 7:FATALTRAP)"
+	 "(0:SILLY, 1:VERBOSE, 2:DEBUG, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL)"
 	);
 	free (p);
 	// R2_LOGTRAP_LEVEL / cfg.logging.traplevel
 	p = r_sys_getenv ("R2_LOGTRAPLEVEL");
-	SETICB ("cfg.logging.traplevel", p ? atoi(p) : R_LOGLVL_FATALTRAP, cb_logging_config_traplevel, "Log level for trapping R2 when hit (developer use only)"\
-	 "(0:SILLY, 1:VERBOSE, 2:DEBUG, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL, 7:FATALTRAP)"
+	SETICB ("cfg.logging.traplevel", p ? atoi(p) : R_LOGLVL_FATAL, cb_logging_config_traplevel, "Log level for trapping R2 when hit (developer use only)"\
+	 "(0:SILLY, 1:VERBOSE, 2:DEBUG, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL)"
 	);
 	free (p);
 	// R2_LOGFILE / cfg.logging.file
