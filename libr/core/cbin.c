@@ -2324,7 +2324,6 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				bool found;
 				str = r_str_newf ("%"PFMT64x".%"PFMT64x".%"PFMT64x".%"PFMT64x".%"PFMT32u".%s.%"PFMT32u".%d",
 					section->paddr, addr, section->size, section->vsize, section->perm, section->name, r->bin->cur->id, fd);
-
 				ht_find (dup_chk_ht, str, &found);
 				if (!found && r_io_section_add (r->io, section->paddr, addr,
 						section->size, section->vsize,

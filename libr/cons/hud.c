@@ -180,14 +180,21 @@ static RList *hud_filter(RList *list, char *user_input, int top_entry_n, int *cu
 	return res;
 }
 
-// Display a list of entries in the hud, filtered and emphasized based
-// on the user input.
+static void mht_free_kv(HtKv *kv) {
+        free (kv->key);
+        r_list_free (kv->value);
+        free (kv);
+}
+
+// Display a list of entries in the hud, filtered and emphasized based on the user input.
 R_API char *r_cons_hud(RList *list, const char *prompt) {
 	int ch, nch, current_entry_n, i = 0;
 	char user_input[HUD_BUF_SIZE];
 	int top_entry_n = 0;
 	char *selected_entry = NULL;
 	RListIter *iter;
+
+	SdbHt *ht = ht_new (NULL, (HtKvFreeFunc)mht_free_kv, (CalcSize)strlen);
 
 	user_input[0] = 0;
 	r_cons_clear ();
@@ -205,11 +212,19 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 		}
 		r_cons_printf ("%d> %s|\n", top_entry_n, user_input);
 		char *row;
-		RList *filtered_list = hud_filter (list, user_input, top_entry_n, &current_entry_n, &selected_entry);
+		RList *filtered_list = NULL;
+
+		bool found = false;
+		HtKv *kv = ht_find_kv (ht, user_input, &found);
+		if (found) {
+			filtered_list = kv->value;
+		} else {
+			filtered_list = hud_filter (list, user_input, top_entry_n, &current_entry_n, &selected_entry);
+			ht_insert (ht, user_input, filtered_list);
+		}
 		r_list_foreach (filtered_list, iter, row) {
 			r_cons_printf ("%s\n", row);
 		}
-		r_list_free (filtered_list);
 
 		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
@@ -285,6 +300,7 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 			}
 		}
 	}
+	ht_free (ht);
 	return NULL;
 }
 
