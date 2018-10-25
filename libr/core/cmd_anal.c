@@ -6814,33 +6814,7 @@ R_API int r_core_anal_refs(RCore *core, const char *input) {
 	return r_core_anal_search_xrefs (core, from, to, rad);
 }
 
-static const char *oldstr = NULL;
-
-static void rowlog(RCore *core, const char *str) {
-	int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-	bool verbose = r_config_get_i (core->config, "scr.prompt");
-	oldstr = str;
-	if (!verbose) {
-		return;
-	}
-	if (use_color) {
-		eprintf ("[ ] "Color_YELLOW"%s\r["Color_RESET, str);
-	} else {
-		eprintf ("[ ] %s\r[", str);
-	}
-}
-
-static void rowlog_done(RCore *core) {
-	int use_color = core->print->flags & R_PRINT_FLAGS_COLOR;
-	bool verbose = r_config_get_i (core->config, "scr.prompt");
-	if (verbose) {
-		if (use_color) {
-			eprintf ("\r"Color_GREEN"[x]"Color_RESET" %s\n", oldstr);
-		} else {
-			eprintf ("\r[x] %s\n", oldstr);
-		}
-	}
-}
+static const char *oldstr = NULL; 
 
 static int compute_coverage(RCore *core) {
 	RListIter *iter;
@@ -7015,8 +6989,8 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	}
 
 	// body
-	rowlog (core, "Analyze value pointers (aav)");
-	rowlog_done (core);
+	oldstr = r_print_rowlog (core->print, "Analyze value pointers (aav)");
+	r_print_rowlog_done (core->print, oldstr);
 	r_cons_break_push (NULL, NULL);
 	if (is_debug) {
 		RList *list = r_core_get_boundaries_prot (core, 0, "dbg.map", "anal");
@@ -7026,8 +7000,8 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			if (r_cons_is_breaked ()) {
 				break;
 			}
-			rowlog (core, sdb_fmt ("from 0x%"PFMT64x" to 0x%"PFMT64x" (aav)", map->itv.addr, r_itv_end (map->itv)));
-			rowlog_done (core);
+			oldstr = r_print_rowlog (core->print, sdb_fmt ("from 0x%"PFMT64x" to 0x%"PFMT64x" (aav)", map->itv.addr, r_itv_end (map->itv)));
+			r_print_rowlog_done (core->print, oldstr);
 			(void)r_core_search_value_in_range (core, map->itv,
 				map->itv.addr, r_itv_end (map->itv), vsize, asterisk, _CbInRangeAav);
 		}
@@ -7046,8 +7020,8 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 			//TODO: Reduce multiple hits for same addr
 			from = r_itv_begin (map2->itv);
 			to = r_itv_end (map2->itv);
-			rowlog (core, sdb_fmt ("Value from 0x%08"PFMT64x " to 0x%08" PFMT64x " (aav)", from, to));
-			rowlog_done (core);
+			oldstr = r_print_rowlog (core->print, sdb_fmt ("Value from 0x%08"PFMT64x " to 0x%08" PFMT64x " (aav)", from, to));
+			r_print_rowlog_done (core->print, oldstr);
 			r_list_foreach (list, iter, map) {
 				ut64 begin = map->itv.addr;
 				ut64 end = r_itv_end (map->itv);
@@ -7055,12 +7029,12 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 					break;
 				}
 				if (end - begin > UT32_MAX) {
-					rowlog (core, "Skipping huge range");
-					rowlog_done (core);
+					oldstr = r_print_rowlog (core->print, "Skipping huge range");
+					r_print_rowlog_done (core->print, oldstr);
 					continue;
 				}
-				rowlog (core, sdb_fmt ("0x%08"PFMT64x"-0x%08"PFMT64x" in 0x%"PFMT64x"-0x%"PFMT64x" (aav)", from, to, begin, end));
-				rowlog_done (core);
+				oldstr = r_print_rowlog (core->print, sdb_fmt ("0x%08"PFMT64x"-0x%08"PFMT64x" in 0x%"PFMT64x"-0x%"PFMT64x" (aav)", from, to, begin, end));
+				r_print_rowlog_done (core->print, oldstr);
 				(void)r_core_search_value_in_range (core, map->itv, from, to, vsize, asterisk, _CbInRangeAav);
 				}
 		}
@@ -7162,11 +7136,11 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				goto jacuzzi;
 			}
 			ut64 curseek = core->offset;
-			rowlog (core, "Analyze all flags starting with sym. and entry0 (aa)");
+			oldstr = r_print_rowlog (core->print, "Analyze all flags starting with sym. and entry0 (aa)");
 			r_cons_break_push (NULL, NULL);
 			r_cons_break_timeout (r_config_get_i (core->config, "anal.timeout"));
 			r_core_anal_all (core);
-			rowlog_done (core);
+			r_print_rowlog_done (core->print, oldstr);
 			// Run pending analysis immediately after analysis
 			// Usefull when running commands with ";" or via r2 -c,-i
 			run_pending_anal (core);
@@ -7182,6 +7156,14 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			}
 			r_cons_clear_line (1);
 			if (*input == 'a') { // "aaa"
+				if (r_str_startswith (r_config_get (core->config, "bin.lang"), "go")) {
+					oldstr = r_print_rowlog (core->print, "Find function and symbol names from golang binaries (aang)");
+					r_print_rowlog_done (core->print, oldstr);
+					r_core_anal_autoname_all_golang_fcns (core);
+					oldstr = r_print_rowlog (core->print, "Analyze all flags starting with sym.go. (aF @@ sym.go.*)");
+					r_core_cmd0 (core, "aF @@ sym.go.*");
+					r_print_rowlog_done (core->print, oldstr);
+				}
 				if (dh_orig && strcmp (dh_orig, "esil")) {
 					r_core_cmd0 (core, "dL esil");
 				}
@@ -7198,19 +7180,19 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					goto jacuzzi;
 				}
 
-				rowlog (core, "Analyze function calls (aac)");
+				oldstr = r_print_rowlog (core->print, "Analyze function calls (aac)");
 				(void)cmd_anal_calls (core, "", false, false); // "aac"
 				r_core_seek (core, curseek, 1);
-				// rowlog (core, "Analyze data refs as code (LEA)");
+				// oldstr = r_print_rowlog (core->print, "Analyze data refs as code (LEA)");
 				// (void) cmd_anal_aad (core, NULL); // "aad"
-				rowlog_done (core);
+				r_print_rowlog_done (core->print, oldstr);
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
 
-				rowlog (core, "Analyze len bytes of instructions for references (aar)");
+				oldstr = r_print_rowlog (core->print, "Analyze len bytes of instructions for references (aar)");
 				(void)r_core_anal_refs (core, ""); // "aar"
-				rowlog_done (core);
+				r_print_rowlog_done (core->print, oldstr);
 				if (r_cons_is_breaked ()) {
 					goto jacuzzi;
 				}
@@ -7220,9 +7202,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					goto jacuzzi;
 				}
 				if (r_config_get_i (core->config, "anal.autoname")) {
-					rowlog (core, "Constructing a function name for fcn.* and sym.func.* functions (aan)");
+					oldstr = r_print_rowlog (core->print, "Constructing a function name for fcn.* and sym.func.* functions (aan)");
 					r_core_anal_autoname_all_fcns (core);
-					rowlog_done (core);
+					r_print_rowlog_done (core->print, oldstr);
 				}
 				if (core->anal->opt.vars) {
 					RAnalFunction *fcni;
@@ -7242,30 +7224,30 @@ static int cmd_anal_all(RCore *core, const char *input) {
 					}
 				}
 				if (!sdb_isempty (core->anal->sdb_zigns)) {
-					rowlog (core, "Check for zignature from zigns folder (z/)");
+					oldstr = r_print_rowlog (core->print, "Check for zignature from zigns folder (z/)");
 					r_core_cmd0 (core, "z/");
-					rowlog_done (core);
+					r_print_rowlog_done (core->print, oldstr);
 				}
-				rowlog (core, "Type matching analysis for all functions (afta)");
+				oldstr = r_print_rowlog (core->print, "Type matching analysis for all functions (afta)");
 				r_core_cmd0 (core, "afta");
-				rowlog_done (core);
+				r_print_rowlog_done (core->print, oldstr);
 				if (input[1] == 'a') { // "aaaa"
 					bool ioCache = r_config_get_i (core->config, "io.pcache");
 					r_config_set_i (core->config, "io.pcache", 1);
-					rowlog (core, "Emulate code to find computed references (aae)");
+					oldstr = r_print_rowlog (core->print, "Emulate code to find computed references (aae)");
 					r_core_cmd0 (core, "aae $SS @ $S");
-					rowlog_done (core);
-					rowlog (core, "Analyze consecutive function (aat)");
+					r_print_rowlog_done (core->print, oldstr);
+					oldstr = r_print_rowlog (core->print, "Analyze consecutive function (aat)");
 					r_core_cmd0 (core, "aat");
-					rowlog_done (core);
+					r_print_rowlog_done (core->print, oldstr);
 					// drop cache writes is no cache was
 					if (!ioCache) {
 						r_core_cmd0 (core, "wc-*");
 					}
 					r_config_set_i (core->config, "io.pcache", ioCache);
 				} else {
-					rowlog (core, "Use -AA or aaaa to perform additional experimental analysis.");
-					rowlog_done (core);
+					oldstr = r_print_rowlog (core->print, "Use -AA or aaaa to perform additional experimental analysis.");
+					r_print_rowlog_done (core->print, oldstr);
 				}
 				r_core_cmd0 (core, "s-");
 				if (dh_orig) {
