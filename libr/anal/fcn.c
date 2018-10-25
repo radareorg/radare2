@@ -13,6 +13,7 @@
 #define JMPTBLSZ 512
 #define JMPTBL_LEA_SEARCH_SZ 64
 #define JMPTBL_MAXFCNSIZE 4096
+#define BB_ALIGN 0x10
 
 /* speedup analysis by removing some function overlapping checks */
 #define JAYRO_04 0
@@ -1625,10 +1626,8 @@ R_API int r_anal_fcn(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut64 
 		r_list_foreach (fcn->bbs, iter, bb) {
 			if (endaddr == bb->addr) {
 				endaddr += bb->size;
-#if 0
-			} else if (endaddr < bb->addr && bb->addr - endaddr < anal->opt.bbs_alignment) {
+			} else if (endaddr < bb->addr && bb->addr - endaddr < BB_ALIGN) {
 				endaddr = bb->addr + bb->size;
-#endif
 			} else {
 				break;
 			}
