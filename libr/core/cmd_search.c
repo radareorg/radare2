@@ -959,7 +959,7 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int idx, co
 		}
 	}
 
-	if (r_list_contains (badstart, (void *) (intptr_t) idx) || !idx) {
+	if (r_list_contains (badstart, (void *) (intptr_t) idx) && !idx) {
 		valid = false;
 		goto ret;
 	}
