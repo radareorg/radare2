@@ -24,10 +24,6 @@
 
 #include <r_hash.h>
 
-static void MD5Init (MD5_CTX *);
-static void MD5Update (MD5_CTX *, const ut8*, unsigned int);
-static void MD5Final (ut8 [16], MD5_CTX *);
-
 /* F, G, H and I are basic MD5 functions.  */
 #define F(x, y, z) (((x) & (y)) | ((~x) & (z)))
 #define G(x, y, z) (((x) & (z)) | ((y) & (~z)))
@@ -165,7 +161,7 @@ static void MD5Transform(ut32 state[4], const ut8 block[64]) {
 	state[3] += d;
 
 	/* Zeroize sensitive information. check if compiler optimizes out this */
-	memset ((void*)x, 0, sizeof (x));
+	r_mem_memzero ((void*)x, sizeof (x));
 }
 
 static const ut8 PADDING[64] = {
@@ -175,7 +171,7 @@ static const ut8 PADDING[64] = {
 };
 
 /* MD5 initialization. Begins an MD5 operation, writing a new context */
-static void MD5Init(R_MD5_CTX *context) {
+void MD5_Init(R_MD5_CTX *context) {
 	if (context) {
 		context->count[0] = context->count[1] = 0;
 		context->state[0] = 0x67452301;
@@ -187,7 +183,7 @@ static void MD5Init(R_MD5_CTX *context) {
 
 /* MD5 block update operation. Continues an MD5 message-digest operation,
  * processing another message block, and updating the context */
-static void MD5Update(R_MD5_CTX *context, const ut8 *input, ut32 inputLen) {
+void MD5_Update(R_MD5_CTX *context, const ut8 *input, ut32 inputLen) {
 	ut32 i;
 
 	/* Compute number of bytes mod 64 */
@@ -216,7 +212,7 @@ static void MD5Update(R_MD5_CTX *context, const ut8 *input, ut32 inputLen) {
 	memmove ((void*)&context->buffer[index], (void*)&input[i], inputLen - i);
 }
 
-static void MD5Final (ut8 digest[16], R_MD5_CTX *context) {
+void MD5_Final(ut8 digest[16], R_MD5_CTX *context) {
 	ut8 bits[8];
 
 	/* Save number of bits */
@@ -225,37 +221,14 @@ static void MD5Final (ut8 digest[16], R_MD5_CTX *context) {
 	/* Pad out to 56 mod 64.  */
 	ut32 index = (ut32)((context->count[0] >> 3) & 0x3f);
 	ut32 padLen = (index < 56) ? (56 - index) : (120 - index);
-	MD5Update (context, PADDING, padLen);
+	MD5_Update (context, PADDING, padLen);
 
 	/* Append length (before padding) */
-	MD5Update (context, bits, 8);
+	MD5_Update (context, bits, 8);
 
 	/* Store state in digest */
 	Encode (digest, context->state, 16);
 
 	/* Zeroize sensitive information.  */
-	memset ((void*)context, 0, sizeof (*context));
-}
-
-R_API ut8 *r_hash_do_md5(RHash *ctx, const ut8 *input, int len) {
-	if (len < 0) {
-		if (len == -1) {
-			MD5Init (&ctx->md5);
-		} else if (len == -2) {
-			MD5Final (ctx->digest, &ctx->md5);
-		}
-		return NULL;
-	}
-	if (ctx->rst) {
-		MD5Init (&ctx->md5);
-	}
-	if (len > 0) {
-		MD5Update (&ctx->md5, input, len);
-	} else {
-		MD5Update (&ctx->md5, (const ut8 *) "", 0);
-	}
-	if (ctx->rst) {
-		MD5Final (ctx->digest, &ctx->md5);
-	}
-	return ctx->digest;
+	r_mem_memzero ((void*)context, sizeof (*context));
 }

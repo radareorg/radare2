@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake, nikolai */
+/* radare - LGPL - Copyright 2009-2018 - pancake, nikolai */
 
 #include <r_diff.h>
 
@@ -33,14 +33,71 @@ R_API int r_diff_set_delta(RDiff *d, int delta) {
 	return 1;
 }
 
+typedef struct {
+	RDiff *d;
+	char *str;
+} RDiffUser;
+
+#if 0
+// XXX buffers_static doesnt constructs the correct string in this callback
+static int tostring(RDiff *d, void *user, RDiffOp *op) {
+	RDiffUser *u = (RDiffUser*)user;
+	if (op->a_len > 0) {
+		char *a_str = r_str_ndup ((const char *)op->a_buf + op->a_off, op->a_len);
+		u->str = r_str_appendf (u->str, "+(%s)", a_str);
+#if 0
+		char *bufasm = r_str_prefix_all (a_str, "- ");
+		u->str = r_str_appendf (u->str, "-(%s)", bufasm);
+		free (bufasm);
+#endif
+		free (a_str);
+	}
+	if (op->b_len > 0) {
+		char *b_str = r_str_ndup ((const char *)op->b_buf + op->b_off, op->b_len);
+		u->str = r_str_appendf (u->str, "+(%s)", b_str);
+#if 0
+		char *bufasm = r_str_prefix_all (b_str, "+ ");
+		u->str = r_str_appendf (u->str, "+(%s)", bufasm);
+		free (bufasm);
+#endif
+		free (b_str);
+	}
+	if (op->a_len == op->b_len) {
+		char *b_str = r_str_ndup ((const char *)op->a_buf + op->a_off, op->a_len);
+		// char *bufasm = r_str_prefix_all (b_str, "  ");
+		u->str = r_str_appendf (u->str, "%s", b_str);
+		// free (bufasm);
+		free (b_str);
+	}
+	return 1;
+}
+#endif
+
+R_API char *r_diff_buffers_to_string(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
+#if 1
+	return r_diff_buffers_unified (d, a, la, b, lb);
+#else
+	// XXX buffers_static doesnt constructs the correct string in this callback
+	void *c = d->callback;
+	void *u = d->user;
+	RDiffUser du = {d, strdup ("")};
+	d->callback = &tostring;
+	d->user = &du;
+	r_diff_buffers_static (d, a, la, b, lb);
+	d->callback = c;
+	d->user = u;
+	return du.str;
+#endif
+}
+
 R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
 	int i, len;
 	int hit = 0;
 	la = R_ABS (la);
 	lb = R_ABS (lb);
 	if (la != lb) {
-	 	len = R_MIN(la, lb);
-		eprintf ("Buffer truncated to %d bytes (%d not compared)\n", len, R_ABS(lb-la));
+	 	len = R_MIN (la, lb);
+		eprintf ("Buffer truncated to %d byte(s) (%d not compared)\n", len, R_ABS(lb-la));
 	} else {
 		len = la;
 	}
@@ -74,7 +131,10 @@ R_API int r_diff_buffers_static(RDiff *d, const ut8 *a, int la, const ut8 *b, in
 }
 
 // XXX: temporary files are
-R_API int r_diff_buffers_unified(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
+R_API char *r_diff_buffers_unified(RDiff *d, const ut8 *a, int la, const ut8 *b, int lb) {
+		r_file_dump (".a", a, la, 0);
+		r_file_dump (".b", b, lb, 0);
+#if 0
 	if (r_mem_is_printable (a, R_MIN (5, la))) {
 		r_file_dump (".a", a, la, 0);
 		r_file_dump (".b", b, lb, 0);
@@ -82,10 +142,15 @@ R_API int r_diff_buffers_unified(RDiff *d, const ut8 *a, int la, const ut8 *b, i
 		r_file_hexdump (".a", a, la, 0);
 		r_file_hexdump (".b", b, lb, 0);
 	}
-	r_sys_cmd ("diff -ru .a .b");
+#endif
+	char* err = NULL;
+	char* out = NULL;
+	int out_len;
+	(void)r_sys_cmd_str_full ("/usr/bin/diff -u .a .b", NULL, &out, &out_len, &err);
 	r_file_rm (".a");
 	r_file_rm (".b");
-	return 0;
+	free (err);
+	return out;
 }
 
 R_API int r_diff_buffers(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb) {
@@ -221,7 +286,7 @@ R_API bool r_diff_buffers_distance_levenstein(RDiff *d, const ut8 *a, ut32 la, c
 		// the value of v1[start] simply increments.
 		if (start > bLen) {
 			break;
-		} 
+		}
 		v1[start] = v0[start] + 1;
 
 		// need to have a bigger number in colMin than we'll ever encounter in the inner loop
@@ -301,73 +366,129 @@ R_API bool r_diff_buffers_distance_levenstein(RDiff *d, const ut8 *a, ut32 la, c
 	return true;
 }
 
-R_API bool r_diff_buffers_distance_original(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
-	int i, j, tmin, **m;
-	ut64 totalsz = 0;
-
-	if (!a || !b || la < 1 || lb < 1)
-		return false;
-
-	if (la == lb && !memcmp (a, b, la)) {
-		if (distance != NULL)
-			*distance = 0;
-		if (similarity != NULL)
-			*similarity = 1.0;
-		return true;
-	}
-	totalsz = sizeof(int*) * (lb+1);
-	for(i = 0; i <= la; i++) {
-		totalsz += ((lb+1) * sizeof(int));
-	}
-	if (totalsz >= 1024 * 1024 * 1024) { // 1 GB of ram
-		char *szstr = r_num_units (NULL, totalsz);
-		eprintf ("Too much memory required (%s) to run distance diff, Use -c.\n", szstr);
-		free (szstr);
+// Eugene W. Myers' O(ND) diff algorithm
+// Returns edit distance with costs: insertion=1, deletion=1, no substitution
+R_API bool r_diff_buffers_distance_myers(RDiff *diff, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
+	const bool verbose = diff ? diff->verbose: false;
+	if (!a || !b) {
 		return false;
 	}
-	if ((m = malloc ((la+1) * sizeof(int*))) == NULL)
+	const ut32 length = la + lb;
+	const ut8 *ea = a + la, *eb = b + lb;
+	// Strip prefix
+	for (; a < ea && b < eb && *a == *b; a++, b++) {}
+	// Strip suffix
+	for (; a < ea && b < eb && ea[-1] == eb[-1]; ea--, eb--) {}
+	la = ea - a;
+	lb = eb - b;
+	ut32 *v0, *v;
+	st64 m = (st64)la + lb, di = 0, low, high, i, x, y;
+	if (m + 2 > SIZE_MAX / sizeof (st64) || !(v0 = malloc ((m + 2) * sizeof (ut32)))) {
 		return false;
-	for(i = 0; i <= la; i++) {
-		if ((m[i] = malloc ((lb+1) * sizeof(int))) == NULL) {
-			eprintf ("Allocation failed\n");
-			while (i--)
-				free (m[i]);
-			free (m);
-			return false;
+	}
+	v = v0 + lb;
+	v[1] = 0;
+	for (di = 0; di <= m; di++) {
+		low = -di + 2 * R_MAX (0, di - (st64)lb);
+		high = di - 2 * R_MAX (0, di - (st64)la);
+		for (i = low; i <= high; i += 2) {
+			x = i == -di || (i != di && v[i-1] < v[i+1]) ? v[i+1] : v[i-1] + 1;
+			y = x - i;
+			while (x < la && y < lb && a[x] == b[y]) {
+				x++;
+				y++;
+			}
+			v[i] = x;
+			if (x == la && y == lb) {
+				goto out;
+			}
+		}
+		if (verbose && di % 10000 == 0) {
+			eprintf ("\rProcessing dist %" PFMT64d " of max %" PFMT64d "\r", di, m);
 		}
 	}
 
-	for (i = 0; i <= la; i++)
-		m[i][0] = i;
-	for (j = 0; j <= lb; j++)
-		m[0][j] = j;
-
-	for (i = 1; i <= la; i++) {
-		for (j = 1; j <= lb; j++) {
-			int cost = (a[i-1] != b[j-1])? 1: 0;
-			tmin = R_MIN (m[i-1][j] + 1, m[i][j-1] + 1);
-			m[i][j] = R_MIN (tmin, m[i-1][j-1] + cost);
-		}
+out:
+	if (verbose) {
+		eprintf ("\n");
 	}
-
+	free (v0);
+	//Clean up output on loop exit (purely aesthetic)
 	if (distance) {
-		*distance = m[la][lb];
+		*distance = di;
 	}
 	if (similarity) {
-		*similarity = (double)1 - (double)(m[la][lb])/(double)(R_MAX(la, lb));
+		*similarity = length ? 1.0 - (double)di / length : 1.0;
+	}
+	return true;
+}
+
+R_API bool r_diff_buffers_distance_original(RDiff *diff, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
+	if (!a || !b) {
+		return false;
 	}
 
-	for(i = 0; i <= la; i++) {
-		free (m[i]);
+	const bool verbose = diff ? diff->verbose : false;
+	const ut32 length = R_MAX (la, lb);
+	const ut8 *ea = a + la, *eb = b + lb, *t;
+	ut32 *d, i, j;
+	// Strip prefix
+	for (; a < ea && b < eb && *a == *b; a++, b++) {}
+	// Strip suffix
+	for (; a < ea && b < eb && ea[-1] == eb[-1]; ea--, eb--) {}
+	la = ea - a;
+	lb = eb - b;
+	if (la < lb) {
+		i = la;
+		la = lb;
+		lb = i;
+		t = a;
+		a = b;
+		b = t;
 	}
-	free (m);
 
+	if (sizeof (ut32) > SIZE_MAX / (lb + 1) || !(d = malloc ((lb + 1) * sizeof (ut32)))) {
+		return false;
+	}
+	for (i = 0; i <= lb; i++) {
+		d[i] = i;
+	}
+	for (i = 0; i < la; i++) {
+		ut32 ul = d[0];
+		d[0] = i + 1;
+		for (j = 0; j < lb; j++) {
+			ut32 u = d[j + 1];
+			d[j + 1] = a[i] == b[j] ? ul : R_MIN (ul, R_MIN (d[j], u)) + 1;
+			ul = u;
+		}
+		if (verbose && i % 10000 == 0) {
+			eprintf ("\rProcessing %" PFMT32u " of %" PFMT32u "\r", i, la);
+		}
+	}
+
+	if (verbose) {
+		eprintf ("\n");
+	}
+	if (distance) {
+		*distance = d[lb];
+	}
+	if (similarity) {
+		*similarity = length ? 1.0 - (double)d[lb] / length : 1.0;
+	}
+	free (d);
 	return true;
 }
 
 R_API bool r_diff_buffers_distance(RDiff *d, const ut8 *a, ut32 la, const ut8 *b, ut32 lb, ut32 *distance, double *similarity) {
-	if (d && d->levenstein) {
-		return r_diff_buffers_distance_levenstein (d, a, la, b, lb, distance, similarity);
+	if (d) {
+		switch (d->type) {
+		case 'm':
+			return r_diff_buffers_distance_myers (d, a, la, b, lb, distance, similarity);
+		case 'l':
+			return r_diff_buffers_distance_levenstein (d, a, la, b, lb, distance, similarity);
+		default:
+			break;
+		}
 	}
 	return r_diff_buffers_distance_original (d, a, la, b, lb, distance, similarity);
 }

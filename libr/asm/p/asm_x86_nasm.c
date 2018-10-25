@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -16,9 +16,10 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	}
 
 	ifd = r_file_mkstemp ("r_nasm", &ipath);
-	if (ifd == -1)
+	if (ifd == -1) {
 		return -1;
-		
+	}
+
 	ofd = r_file_mkstemp ("r_nasm", &opath);
 	if (ofd == -1) {
 		free (ipath);
@@ -31,8 +32,10 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 
 	close (ifd);
 
-	if ( !r_sys_cmdf ("nasm %s -o %s", ipath, opath)) {
-		len = read (ofd, op->buf, R_ASM_BUFSIZE);
+	if (!r_sys_cmdf ("nasm %s -o %s", ipath, opath)) {
+		ut8 buf[512]; // TODO: remove limits
+		len = read (ofd, buf, sizeof (buf));
+		r_asm_op_set_buf (op, buf, len);
 	} else {
 		eprintf ("Error running 'nasm'\n");
 		len = 0;
@@ -60,7 +63,7 @@ RAsmPlugin r_asm_plugin_x86_nasm = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_x86_nasm,
 	.version = R2_VERSION

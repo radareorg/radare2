@@ -31,12 +31,12 @@ SDB_API int sdb_num_set(Sdb *s, const char *key, ut64 v, ut32 cas) {
 SDB_API ut64 sdb_num_inc(Sdb *s, const char *key, ut64 n2, ut32 cas) {
 	ut32 c;
 	ut64 n = sdb_num_get (s, key, &c);
-	if ((cas && c != cas) || (-n2 < n)) {
+	ut64 res = n + n2;
+	if ((cas && c != cas) || res < n) {
 		return 0LL;
 	}
-	n += n2;
-	sdb_num_set (s, key, n, cas);
-	return n;
+	sdb_num_set (s, key, res, cas);
+	return res;
 }
 
 SDB_API ut64 sdb_num_dec(Sdb *s, const char *key, ut64 n2, ut32 cas) {

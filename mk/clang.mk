@@ -1,6 +1,6 @@
 ifeq (${_INCLUDE_MK_CLANG_},)
 _INCLUDE_MK_CLANG_=1
-CC=clang
+CC?=clang
 LINK=
 RANLIB=ranlib
 ONELIB=0
@@ -17,11 +17,13 @@ CFLAGS_DEBUG=-g
 
 ifeq ($(OSTYPE),darwin)
 ARCH=$(shell uname -m)
+PARTIALLD=ld -r -all_load
 #CFLAGS+=-arch ${ARCH}
 #LDFLAGS+=-arch ${ARCH}
 LDFLAGS_LIB=-dynamiclib
 LDFLAGS_SONAME=-Wl,-install_name,${LIBDIR}/
 else
+PARTIALLD=ld -r --whole-archive
 LDFLAGS_LIB=${LDFLAGS} -shared
 #ifneq (${NAME},)
 #LDFLAGS_LIB+=-Wl,-soname,lib${NAME}.${EXT_SO}.${VERSION}

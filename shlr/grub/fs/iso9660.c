@@ -122,8 +122,10 @@ struct grub_iso9660_susp_entry
   grub_uint8_t sig[2];
   grub_uint8_t len;
   grub_uint8_t version;
-  grub_uint8_t *data;
+  // grub_uint8_t data[0];
 });
+// wtf sizeof not working? R_PACKED is failing here?
+#define ENTRY_DATA(x) ((((grub_uint8_t*)(x)) + 4))
 
 /* The CE entry.  This is used to describe the next block where data
    can be found.  */
@@ -342,7 +344,8 @@ grub_iso9660_mount (grub_disk_t disk)
 	     + (rootdir.namelen % 2) - 1);
   sua_size = rootdir.len - sua_pos;
 
-  sua = grub_malloc (sua_size);
+  //sua = grub_malloc (sua_size + 2);
+  sua = calloc (1, sua_size + 1024);
   if (! sua)
     goto fail;
 
@@ -355,6 +358,7 @@ grub_iso9660_mount (grub_disk_t disk)
       goto fail;
     }
 
+#if 1
   entry = (struct grub_iso9660_susp_entry *) sua;
 
   /* Test if the SUSP protocol is used on this filesystem.  */
@@ -362,7 +366,8 @@ grub_iso9660_mount (grub_disk_t disk)
     {
       /* The 2nd data byte stored how many bytes are skipped every time
 	 to get to the SUA (System Usage Area).  */
-      data->susp_skip = entry->data[2];
+      // grub_uint8_t *data = ENTRY_DATA(entry);
+      data->susp_skip = ENTRY_DATA(entry)[2]; // data[2]; // entry->data[2];
       entry = (struct grub_iso9660_susp_entry *) ((char *) entry + entry->len);
 
       /* Iterate over the entries in the SUA area to detect
@@ -373,6 +378,7 @@ grub_iso9660_mount (grub_disk_t disk)
 				     sua_pos, sua_size, susp_iterate, data))
 	goto fail;
     }
+#endif
 
   return data;
 
@@ -420,17 +426,18 @@ susp_iterate_sl (struct grub_iso9660_susp_entry *entry, void *closure)
 	      c->addslash = 0;
 	    }
 
+          unsigned char *data = ENTRY_DATA(entry);
 	  /* The current position is the `Component Flag'.  */
-	  switch (entry->data[pos] & 30)
+	  switch (data[pos] & 30)
 	    {
 	    case 0:
 	      {
 		/* The data on pos + 2 is the actual data, pos + 1
 		   is the length.  Both are part of the `Component
 		   Record'.  */
-		add_part ((char *) &entry->data[pos + 2],
-			  entry->data[pos + 1], c);
-		if ((entry->data[pos] & 1))
+		add_part ((char *) &data[pos + 2],
+			  data[pos + 1], c);
+		if ((data[pos] & 1))
 		  c->addslash = 1;
 
 		break;
@@ -450,7 +457,7 @@ susp_iterate_sl (struct grub_iso9660_susp_entry *entry, void *closure)
 	    }
 	  /* In pos + 1 the length of the `Component Record' is
 	     stored.  */
-	  pos += entry->data[pos + 1] + 2;
+	  pos += data[pos + 1] + 2;
 	}
 
       /* Check if `grub_realloc' failed.  */
@@ -513,9 +520,10 @@ susp_iterate_dir (struct grub_iso9660_susp_entry *entry, void *closure)
     {
       /* The flags are stored at the data position 0, here the
 	 filename type is stored.  */
-      if (entry->data[0] & GRUB_ISO9660_RR_DOT)
+      grub_uint8_t *data = ENTRY_DATA(entry);
+      if (data[0] & GRUB_ISO9660_RR_DOT)
 	filename = ".";
-      else if (entry->data[0] & GRUB_ISO9660_RR_DOTDOT)
+      else if (data[0] & GRUB_ISO9660_RR_DOTDOT)
 	filename = "..";
       else
 	{
@@ -533,7 +541,7 @@ susp_iterate_dir (struct grub_iso9660_susp_entry *entry, void *closure)
 	      filename = grub_zalloc (size + 1);
 	    }
 	  c->filename_alloc = 1;
-	  grub_strncpy (filename, (char *) &entry->data[1], size);
+	  grub_strncpy (filename, (char *) data + 1, size);
 	  filename[size] = '\0';
 	}
     }
@@ -542,7 +550,8 @@ susp_iterate_dir (struct grub_iso9660_susp_entry *entry, void *closure)
     {
       /* At position 0 of the PX record the st_mode information is
 	 stored (little-endian).  */
-      grub_uint32_t mode = ((entry->data[0] + (entry->data[1] << 8))
+      grub_uint8_t *data = ENTRY_DATA(entry);
+      grub_uint32_t mode = ((data[0] + (data[1] << 8))
 			    & GRUB_ISO9660_FSTYPE_MASK);
 
       switch (mode)
@@ -594,11 +603,7 @@ grub_iso9660_iterate_dir (grub_fshelp_node_t dir,
 	}
 
       {
-#ifndef _MSC_VER
-	char name[dirent.namelen + 1];
-#else
-	char * name = grub_malloc(dirent.namelen + 1);
-#endif
+	char * name = calloc (1, dirent.namelen + 1);
 	int nameoffset = offset + sizeof (dirent);
 	struct grub_fshelp_node *node;
 	int sua_off = (sizeof (dirent) + dirent.namelen + 1
@@ -619,7 +624,7 @@ grub_iso9660_iterate_dir (grub_fshelp_node_t dir,
 					     / GRUB_DISK_SECTOR_SIZE),
 					  sua_off % GRUB_DISK_SECTOR_SIZE,
 					  sua_size, susp_iterate_dir, &c))
-	  return 0;
+	  goto err;
 
 	/* Read the name.  */
 	if (grub_disk_read (dir->data->disk,
@@ -627,11 +632,11 @@ grub_iso9660_iterate_dir (grub_fshelp_node_t dir,
 			    + nameoffset / GRUB_DISK_SECTOR_SIZE,
 			    nameoffset % GRUB_DISK_SECTOR_SIZE,
 			    dirent.namelen, (char *) name))
-	  return 0;
+	  goto err;
 
-	node = grub_malloc (sizeof (struct grub_fshelp_node));
+	node = calloc (1, sizeof (struct grub_fshelp_node));
 	if (!node)
-	  return 0;
+	  goto err;
 
 	/* Setup a new node.  */
 	node->data = dir->data;
@@ -688,18 +693,25 @@ grub_iso9660_iterate_dir (grub_fshelp_node_t dir,
 
 	if (hook (filename, c.type, node, closure))
 	  {
-	    if (c.filename_alloc)
+	    if (c.filename_alloc) {
 	      grub_free (filename);
+            }
+            free (name);
 	    return 1;
 	  }
 	if (c.filename_alloc)
 	  grub_free (filename);
+      err:
+        free (name);
       }
-
+      if (dirent.len < 1) {
+        eprintf ("Invalid dirent.len\n");
+        break;
+      }
       offset += dirent.len;
     }
 
-  return 0;
+    return 0;
 }
 
 struct grub_iso9660_dir_closure

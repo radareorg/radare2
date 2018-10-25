@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2016 - pancake */
+/* radare2 - LGPL - Copyright 2016-2018 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -62,18 +62,18 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return false;
 }
 
-static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	return (void*)(size_t)check_bytes (buf, sz);
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+	return check_bytes (buf, sz);
 }
 
-static bool load(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	ut64 la = (arch && arch->o) ? arch->o->loadaddr: 0;
-	return load_bytes (arch, bytes, sz, la, arch? arch->sdb: NULL) != NULL;
+static bool load(RBinFile *bf) {
+	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
+	ut64 sz = bf ? r_buf_size (bf->buf): 0;
+	ut64 la = (bf && bf->o) ? bf->o->loadaddr: 0;
+	return load_bytes (bf, bf? &bf->o->bin_obj: NULL, bytes, sz, la, bf? bf->sdb: NULL);
 }
 
-static ut64 baddr(RBinFile *arch) {
+static ut64 baddr(RBinFile *bf) {
 	return 0; // 0x800000;
 }
 
@@ -86,13 +86,13 @@ static ut64 menuetEntry (const ut8 *buf, int buf_size) {
 	return UT64_MAX;
 }
 
-static RList* entries(RBinFile *arch) {
+static RList* entries(RBinFile *bf) {
 	RList* ret;
 	ut8 buf[64] = {0};
 	RBinAddr *ptr = NULL;
-	const int buf_size = R_MIN (sizeof (buf), r_buf_size (arch->buf));
+	const int buf_size = R_MIN (sizeof (buf), r_buf_size (bf->buf));
 
-	r_buf_read_at (arch->buf, 0, buf, buf_size);
+	r_buf_read_at (bf->buf, 0, buf, buf_size);
 	ut64 entry = menuetEntry (buf, buf_size);
 	if (entry == UT64_MAX) {
 		return NULL;
@@ -103,20 +103,20 @@ static RList* entries(RBinFile *arch) {
 	ret->free = free;
 	if ((ptr = R_NEW0 (RBinAddr))) {
 		ptr->paddr = r_read_ble32 (buf + 12, false);
-		ptr->vaddr = ptr->paddr + baddr (arch);
+		ptr->vaddr = ptr->paddr + baddr (bf);
 		r_list_append (ret, ptr);
 	}
 	return ret;
 }
 
-static RList* sections(RBinFile *arch) {
+static RList* sections(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	ut8 buf[64] = {0};
-	const int buf_size = R_MIN (sizeof (buf), r_buf_size (arch->buf));
+	const int buf_size = R_MIN (sizeof (buf), r_buf_size (bf->buf));
 
-	r_buf_read_at (arch->buf, 0, buf, buf_size);
-	if (!arch->o->info) {
+	r_buf_read_at (bf->buf, 0, buf, buf_size);
+	if (!bf->o->info) {
 		return NULL;
 	}
 
@@ -131,8 +131,8 @@ static RList* sections(RBinFile *arch) {
 	ptr->size = r_read_ble32 (buf + 16, false);
 	ptr->vsize = ptr->size + (ptr->size % 4096);
 	ptr->paddr = r_read_ble32 (buf + 12, false);
-	ptr->vaddr = ptr->paddr + baddr (arch);
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP; // r-x
+	ptr->vaddr = ptr->paddr + baddr (bf);
+	ptr->perm = R_PERM_RX; // r-x
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -147,8 +147,8 @@ static RList* sections(RBinFile *arch) {
 		ptr->size = idata_end - idata_start;
 		ptr->vsize = ptr->size + (ptr->size % 4096);
 		ptr->paddr = r_read_ble32 (buf + 40, false);
-		ptr->vaddr = ptr->paddr + baddr (arch);
-		ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP; // r--
+		ptr->vaddr = ptr->paddr + baddr (bf);
+		ptr->perm = R_PERM_R; // r--
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
@@ -156,10 +156,10 @@ static RList* sections(RBinFile *arch) {
 	return ret;
 }
 
-static RBinInfo* info(RBinFile *arch) {
+static RBinInfo* info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (ret) {
-		ret->file = strdup (arch->file);
+		ret->file = strdup (bf->file);
 		ret->bclass = strdup ("program");
 		ret->rclass = strdup ("menuet");
 		ret->os = strdup ("MenuetOS");
@@ -176,15 +176,15 @@ static RBinInfo* info(RBinFile *arch) {
 	return ret;
 }
 
-static ut64 size(RBinFile *arch) {
+static ut64 size(RBinFile *bf) {
 	ut8 buf[4] = {0};
-	if (!arch->o->info) {
-		arch->o->info = info (arch);
+	if (!bf->o->info) {
+		bf->o->info = info (bf);
 	}
-	if (!arch->o->info) {
+	if (!bf->o->info) {
 		return 0;
 	}
-	r_buf_read_at (arch->buf, 16, buf, 4);
+	r_buf_read_at (bf->buf, 16, buf, 4);
 	return (ut64)r_read_ble32 (buf, false);
 }
 
@@ -193,7 +193,7 @@ static ut64 size(RBinFile *arch) {
 /* inspired in http://www.phreedom.org/solar/code/tinype/tiny.97/tiny.asm */
 static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen) {
 	RBuffer *buf = r_buf_new ();
-#define B(x,y) r_buf_append_bytes(buf,(const ut8*)x,y)
+#define B(x,y) r_buf_append_bytes(buf,(const ut8*)(x),y)
 #define D(x) r_buf_append_ut32(buf,x)
 	B ("MENUET01", 8);
 	D (1); // header version
@@ -222,7 +222,7 @@ RBinPlugin r_bin_plugin_menuet = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_menuet,
 	.version = R2_VERSION

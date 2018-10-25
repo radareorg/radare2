@@ -1,0 +1,491 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width,user-scalable=no,initial-scale=1">
+<style>
+html {
+	background-color: black;
+	margin:0px;
+	padding:0px;
+	overflow:hidden;
+}
+body {
+	margin:0px;
+	padding:0px;
+	overflow:hidden;
+}
+a {
+    color: #179AB2;
+    font-weight: bold;
+    text-decoration: none;
+}
+a:hover {
+    color: white;
+    text-decoration: underline;
+}
+.terminal {
+	left: auto;
+	margin: auto;
+	border-radius: 5px;
+	background-color:black;
+	font-family: monospace;
+	color:white;
+}
+.output {
+	background-color: black;
+	border-radius: 5px;
+	font-size: 1.2em;
+	font-family: monospace;
+	color: white;
+	position:absolute;
+        top:0px;
+	bottom:2em;
+	line-height:90%;
+	width:70%;
+	overflow:scroll;
+}
+.prompt {
+	overflow:hidden;
+font-size: 1.8em;
+}
+.input {
+	color: white;
+	border: none;
+	position:absolute;
+	background: transparent;
+	outline: 1px white;
+	padding-left:20px;
+	width:69%;
+	margin-left:-20px;
+	overflow:hidden;
+	font-size: 1em;
+        bottom: 0px;
+	font-family: monospace;
+}
+.buttons {
+	background-color:#303030;
+	text-align:center;
+	overflow-x:hidden;
+	overflow-y:scroll;
+	height:100%;
+}
+
+.panel {
+	position:absolute;
+	text-align:center;
+	overflow:hidden;
+	width:100%;
+	background-color:#202020;
+	top:14em;
+	height:100%;
+       overflow-x:hidden;
+       overflow-y:scroll;
+}
+
+.button {
+    -webkit-box-shadow: 0px 4px 0px #101010;
+    -webkit-border-radius:0; 
+    -webkit-appearance: none;
+    -moz-box-shadow: 0px 4px 0px #101010;
+    box-shadow: 0px 4px 0px #101010;
+    background-color:#a0a0a0;
+font-family: Courier;
+outline: none;
+
+	font-size: 1.5em;
+margin:5px;
+padding:4px;
+height:1.5em;
+padding-left:0.5em;
+padding-right:0.5em;
+/* 	width:1.5em; */
+top:3px;
+}
+.buttonrow {
+-webkit-box-shadow: 0px 4px 0px #101010;
+-moz-box-shadow: 0px 4px 0px #101010;
+box-shadow: 0px 4px 0px #101010;
+-webkit-appearance: none;
+background-color:#a0a0a0;
+font-family: Courier;
+outline: none;
+
+font-size: 1.5em;
+margin:8px;
+margin-left:5px;
+margin-right:5px;
+: 0.1em;
+height:1.5em;
+width:100%;
+top:3px;
+}
+</style>
+<script type="application/javascript" src="r2.js"></script>
+<script>
+
+var config = {
+	colors: true,
+	clrscr: true,
+	printcmd: 'pd|H',
+	cancel: false,
+};
+
+function onClick(e, f, s) {
+	var hasTouch = 'ontouchstart' in window;
+	if (hasTouch) {
+		e.ontouchstart = (e) => {
+			config.cancel = false;	
+		}
+		if (s) {
+			e.ontouchstart = f;
+		} else {
+			e.ontouchend = (e) => {
+				if (!config.cancel) {
+					f(e);
+				}
+			}
+		}
+	} else {
+		e.onmouseup = f;
+		// e.onclick = f;
+	}
+}
+document.ontouchmove = function(event) {
+	config.cancel= true;	
+//	event.preventDefault();
+}
+
+var r2ui = {
+seek: function(a) {
+submit('s '+a, 'redraw');
+}
+}
+document.addEventListener('DOMContentLoaded', ready, false);
+
+function filter(x, cmd) {
+if (cmd.substring(0, 2) === 'pd') {
+	return r2.filter_asm(x, cmd);
+}
+return x;
+}
+function submit(cmd, mode) {
+var output = document.getElementById('output');
+var input = document.getElementById('input');
+if (cmd === 'clear' || mode == 'redraw') {
+	output.innerHTML = '';
+	input.value = '';
+	if (!config.printcmd) {
+		return;
+	}
+}
+if (mode == 'prompt') {
+	cmd += ' ' + prompt('input', '');
+}
+if (mode == 'fix') {
+	config.printcmd = cmd + '|H';
+}
+var runCmd = cmd + (config.colors? '|H': '|');
+r2.cmd(runCmd, function(res) {
+	res = filter(res, runCmd);
+	output.innerHTML += ' > '
+		+ cmd + '<br/>\n' + res;
+	input.value = '';
+	if (mode == 'redraw') {
+		r2.cmd(config.printcmd, res => {
+			res = filter(res, config.printcmd);
+			output.innerHTML += ' > '
+			+ config.printcmd + '<br/>\n' + res;
+			output.scrollTo(0, 0);
+		});
+	} else {
+		output.scrollTo(0, output.scrollHeight);
+	}
+});
+}
+
+function update() {
+r2.cmd("e scr.color=" + config.colors);
+}
+
+var $ = document.getElementById;
+
+function button(title, cmd, mode) {
+var b = document.createElement("input");
+b.type='button';
+b.className='button';
+b.setAttribute('value', title);
+if (mode == 'set-input') {
+onClick(b, () => { 
+input.value = cmd || title;
+});
+} else if (!cmd || mode == 'input') {
+onClick(b, () => { 
+input.value += title;
+});
+} else {
+if (typeof cmd === 'function') {
+onClick (b, cmd);
+} else {
+onClick (b, () => { submit(cmd, mode); });
+}
+}
+return b;
+}
+
+function buttonrow(title, cmd, mode) {
+var b = button (title, cmd, mode);
+b.className = 'buttonrow';
+return b;
+}
+
+function hexpad() {
+var div = document.createElement('div');
+div.appendChild(button('0'));
+div.appendChild(button('1'));
+div.appendChild(button('2'));
+div.appendChild(button('3'));
+div.appendChild(button('4'));
+div.appendChild(button('5'));
+div.appendChild(button('6'));
+div.appendChild(button('7'));
+div.appendChild(button('8'));
+div.appendChild(button('9'));
+div.appendChild(button('A'));
+div.appendChild(button('B'));
+div.appendChild(button('C'));
+div.appendChild(button('D'));
+div.appendChild(button('E'));
+div.appendChild(button('F'));
+return div;
+}
+
+function panel(ch) {
+var div = document.createElement('div');
+switch (ch[0]) {
+case 'i':
+	for (let b of [
+		button('i', 'i'),
+		button('ij', 'ij~{}'),
+		button('?', 'i?'),
+		button('A', 'iA'),
+		buttonrow('imports', 'iiq'),
+		buttonrow('entries', 'ieq'),
+		buttonrow('main', 'iMq'),
+		buttonrow('sdb', 'ik'),
+		buttonrow('symbols', 'isq'),
+		buttonrow('exports', 'iEq'),
+		buttonrow('classes', 'ic'),
+		buttonrow('relocs', 'iRq'),
+		buttonrow('libs', 'ilq'),
+		buttonrow('strings', 'izq'),
+		buttonrow('sections', 'iSq'),
+	]) {
+		div.appendChild(b);
+	}
+	break;
+case 'd':
+	for (let b of [
+		button('dr', 'aer='),
+		buttonrow('step', 'aes', 'redraw'),
+		buttonrow('step over', 'aeso', 'redraw'),
+/*
+		buttonrow('bp set', 'db $$'),
+		buttonrow('bp unset', 'db-$$'),
+*/
+	]) {
+		div.appendChild(b);
+	}
+	break;
+case '/':
+	for (let b of [
+		button('/', '/'),
+		button('/x', '/x'),
+	]) {
+		div.appendChild(b);
+	}
+	break;
+case 'w':
+	for (let b of [
+		button('w', 'w', 'prompt'),
+		button('wx', 'wx ', 'set-input'),
+		hexpad(),
+	]) {
+		div.appendChild(b);
+	}
+	break;
+case 'a':
+	for (let b of [
+		button('af', 'af'),
+		button('afi', 'afi'),
+		button('aa', 'aa'),
+		button('aaa', 'aaa'),
+		button('ax', 'ax'),
+		buttonrow('aeim', 'aeim'),
+		buttonrow('/r $$', '/r $$', 'redraw'),
+		buttonrow('aepc $$', 'aepc $$'),
+		button('?', 'a?'),
+	]) {
+		div.appendChild(b);
+	}
+	break;
+case 's':
+	var butts = [
+		button('.', 's', 'redraw'),
+		button('..', 's..', 'hex'),
+		button('-', 's-', 'redraw'),
+		button('+', 's+', 'redraw'),
+		button('--', 's--', 'redraw'),
+		button('++', 's++', 'redraw'),
+		button('so', 'so', 'redraw'),
+		button('so-1', 'so-1', 'redraw'),
+		button('?', 's?'),
+		button('0x', () => {
+			input.value += ' 0x';
+			renderPanel('s0');
+		}),
+		button('<-', () => {
+			input.value = input.value.substring(0, input.value.length - 1);
+		}),
+		button('[>', () => {
+			submit(input.value, 'redraw');
+		}),
+		buttonrow('entry0', 's entry0', 'redraw'),
+		buttonrow('main', 's main', 'redraw'),
+		buttonrow('sr PC', 'sr PC', 'redraw'),
+	];
+	if (ch[1] == '0') {
+		butts.push(hexpad());
+	}
+	for (let b of butts) {
+		div.appendChild(b);
+	}
+	break;
+case 'o':
+	for (let b of [
+		button('?', 'o?'),
+		button('o', 'o'),
+		button('om', 'om'),
+		button('oo+', 'oo+'),
+		button('ood', 'ood'),
+		buttonrow('io.va', 'e!io.va', 'redraw')
+	]) {
+		div.appendChild(b);
+	}
+	break;
+case 'e':
+	for (let b of [
+		button('?', 'e?'),
+		button('??', 'e??'),
+		button('eco', 'eco'),
+		button('ecr', 'ecr', 'redraw'),
+		buttonrow('scr.colors', 'e!scr.color', 'redraw'),
+		buttonrow('scr.utf8', 'e!scr.utf8', 'redraw'),
+		buttonrow('scr.utf8.curvy', 'e!scr.utf8.curvy', 'redraw'),
+		buttonrow('emu.str', 'e!emu.str', 'redraw'),
+		buttonrow('asm.bytes', 'e!asm.bytes', 'redraw'),
+		buttonrow('asm.slow', 'e!asm.slow', 'redraw'),
+		buttonrow('asm.lines', 'e!asm.lines', 'redraw'),
+		buttonrow('asm.cmt.right', 'e!asm.cmt.right', 'redraw'),
+	]) {
+		div.appendChild(b);
+	}
+	break;
+case 'b':
+	for (let b of [
+		button('?', 'b?'),
+		button('b', 'b'),
+		button('b=', 'b', 'prompt'),
+	]) {
+		div.appendChild(b);
+	}
+	break;
+case 'f':
+	for (let b of [
+		button('?', 'p?'),
+		button('f', 'f'),
+		button('fs', 'fs'),
+	]) {
+		div.appendChild(b);
+	}
+	break;
+case 'p':
+	for (let b of [
+		button('?', 'p?'),
+		button('@'),
+		button('~'),
+		button('~{}'),
+		button('8', 'p8'),
+		button('x', 'px', 'fix'),
+		button('xe', 'pxe', 'fix'),
+		button('ds', 'pds', 'fix'),
+		button('dc', 'pdc', 'fix'),
+		button('agf', 'agf', 'fix'),
+		button('d', 'pd', 'fix'),
+		button('di', 'pid', 'fix'),
+		button('i', 'pi', 'fix'),
+		button('m', 'pm', 'fix'),
+	]) {
+		div.appendChild(b);
+	}
+	break;
+}
+return div;
+}
+
+function renderPanel(name) {
+document.getElementById('panel').innerHTML = '';
+document.getElementById('panel').appendChild(panel(name));
+}
+
+function ready() {
+var input = document.getElementById('input');
+for (let n of 'sfiepwadob') {
+	onClick(document.getElementById('b' + n), () => {
+		renderPanel(n);
+		input.value = n;
+	});
+}
+input.focus();
+input.onkeypress = function(e){
+    if (e.keyCode == 13) {
+	submit(input.value);
+    }
+}
+}
+
+</script>
+</head>
+<body>
+<table width="100%" height="100%">
+<tr valign="bottom">
+<td width="70%">
+<div id="terminal" class="terminal">
+<div id='output' class=output></div>
+<div id='prompt' class=prompt>
+&nbsp;&gt;&nbsp;<input class="input" id='input'></input>
+</td>
+<td width="30%" height="100%" class="buttons" valign=top>
+<div style="position:absolute;height:100%;width:30%;overflow:scroll">
+<input class="button" type=button value="a" id="ba"/>
+<input class="button" type=button value="b" id="bb"/>
+<input class="button" type=button value="d" id="bd"/>
+<input class="button" type=button value="e" id="be"/>
+<input class="button" type=button value="f" id="bf"/>
+<input class="button" type=button value="i" id="bi"/>
+<input class="button" type=button value="o" id="bo"/>
+<input class="button" type=button value="p" id="bp"/>
+<input class="button" type=button value="s" id="bs"/>
+<input class="button" type=button value="w" id="bw"/>
+<div id="panel" class="panel">
+..
+</div>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</body>
+</html>

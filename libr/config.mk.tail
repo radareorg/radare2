@@ -1,6 +1,10 @@
 # config.mk.tail
 
 LIBR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+# neat???!? trick to support path with spaces
+null:=
+SPACE:=$(null) $(null)
+
 ifeq ($(LIBR),)
 ifeq ($(R2DIR),)
 $(error ERROR: Cannot find R2DIR. Please define this variable)
@@ -9,6 +13,7 @@ LIBR=$(R2DIR)/libr
 MSVC=$(R2DIR)/msvc
 endif
 endif
+
 SHLR:=$(LIBR)/../shlr
 
 #include $(LIBR)/../config-user.mk
@@ -18,7 +23,8 @@ include $(LIBR)/../mk/${COMPILER}.mk
 CFLAGS+=${CFLAGS_APPEND}
 CFLAGS+=${CPPFLAGS}
 
-ifeq ($(WITHPIC),1)
+ifeq (1,1)
+#$(WITHPIC),1)
 LINK+=$(subst r_,-L$(LIBR)/,$(DEPS))
 LINK+=$(subst r_,-lr_,$(DEPS))
 LINK+=$(subst r_,-L$(LIBR)/,$(BINDEPS))
@@ -29,50 +35,16 @@ else
 ifneq ($(DEPS),)
 LINK+=$(shell echo ${DEPS} | sed -e 's:r_\([^ ]\+\):$(LIBR)/\1/libr_\1.${EXT_AR}:g')
 endif
-ifneq ($(BINDEPS),)
-LDLIBS+=$(shell echo "${BINDEPS} " | sed -e 's:r_\([^ ]*\):$(LIBR)/\1/libr_\1.${EXT_AR}:g')
-endif
-
-#link dependencies of individual r_ libs
-#TODO: move them inside libr/*/subdeps.mk
-ifneq (,$(findstring r_db,$(BINDEPS)))
-LDLIBS+=$(LIBR)/db/sdb/src/libsdb.a
-endif
-ifneq (,$(findstring r_fs,$(BINDEPS)))
-LDLIBS+=$(LIBR)/fs/p/grub/libgrubfs.a
-endif
-ifneq (,$(findstring r_hash,$(BINDEPS)))
-ifneq (${OSTYPE},haiku)
-LDLIBS+=-lm
-endif
-endif
-ifneq (,$(findstring r_socket,$(BINDEPS)))
-ifeq (${HAVE_LIB_SSL},1)
-LDLIBS+=${SSL_LDFLAGS}
-endif
-endif
-ifneq (,$(findstring r_th,$(BINDEPS)))
-LDLIBS+=${TH_LIBS}
-endif
-ifneq (,$(findstring r_util,$(BINDEPS)))
-LDLIBS+=${DL_LIBS}
-ifeq (${HAVE_LIB_GMP},1)
-LDLIBS+=-lgmp
-endif
-endif
-ifneq (,$(findstring r_magic,$(BINDEPS)))
-ifeq (${USE_LIB_MAGIC},1)
-LDLIBS+=-lmagic
-endif
-endif
-
 endif
 
 # Compiler: see mk/gcc.mk
 # CC CFLAGS CC_LIB CC_AR LINK
 
 # Debug
-CFLAGS+=-g -Wall
+ifneq ($(OSTYPE),mingw32)
+CFLAGS+=-g
+endif
+CFLAGS+=-Wall
 
 # libgmp
 ifeq (${HAVE_LIB_GMP},1)

@@ -6,7 +6,7 @@ INCDIR=${PREFIX}/include
 VAPIDIR=${DATADIR}/vala/vapi/
 MANDIR=${DATADIR}/man/man1
 
-SDBVER=1.0.0
+SDBVER=1.2.0
 
 BUILD_MEMCACHE=0
 
@@ -95,6 +95,7 @@ endif
 ifneq (,$(findstring MINGW,${OSTYPE})$(findstring MSYS,${OSTYPE})$(findstring CYGWIN,${OSTYPE}))
 EXT_SO=dll
 SOVER=${EXT_SO}
+CFLAGS+=-DUNICODE -D_UNICODE
 else
 EXT_SO=so
 SOVER=${EXT_SO}.${SDBVER}

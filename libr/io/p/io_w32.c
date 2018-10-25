@@ -8,6 +8,7 @@
 
 typedef struct {
 	HANDLE hnd;
+	ut64 winbase;
 } RIOW32;
 #define RIOW32_HANDLE(x) (((RIOW32*)x)->hnd)
 
@@ -51,14 +52,24 @@ static RIODesc *w32__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (!strncmp (pathname, "w32://", 6)) {
 		RIOW32 *w32 = R_NEW0 (RIOW32);
 		const char *filename = pathname+6;
-		w32->hnd = CreateFileA (filename,
+		LPTSTR filename_ = r_sys_conv_utf8_to_utf16 (filename);
+		w32->hnd = CreateFile (filename_,
 			GENERIC_READ | rw?GENERIC_WRITE:0,
 			FILE_SHARE_READ | rw? FILE_SHARE_WRITE:0,
 			NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		free (filename_);
 		if (w32->hnd != INVALID_HANDLE_VALUE)
-			return r_io_desc_new (&r_io_plugin_w32, getw32fd (w32),
+			return r_io_desc_new (io, &r_io_plugin_w32,
 				pathname, rw, mode, w32);
 		free (w32);
+	}
+	return NULL;
+}
+
+static char *w32__system(RIO *io, RIODesc *fd, const char *cmd) {
+	if (io && fd && fd->data && cmd && !strcmp (cmd, "winbase")) {
+		RIOW32 *w32 = (RIOW32 *)fd->data;
+		io->cb_printf ("%"PFMT64u , w32->winbase);
 	}
 	return NULL;
 }
@@ -72,12 +83,12 @@ RIOPlugin r_io_plugin_w32 = {
 	.read = w32__read,
 	.check = w32__plugin_open,
 	.lseek = w32__lseek,
-	.system = NULL, // w32__system,
+	.system = w32__system,
 	.write = w32__write,
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_w32,
 	.version = R2_VERSION
@@ -86,7 +97,7 @@ struct r_lib_struct_t radare_plugin = {
 
 #else
 struct r_io_plugin_t r_io_plugin_w32 = {
-	.name = (void*)0 
+	.name = (void*)0
 };
 
 #endif

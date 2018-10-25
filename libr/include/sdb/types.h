@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #undef eprintf
 #define eprintf(...) fprintf(stderr,__VA_ARGS__)
@@ -41,11 +42,12 @@
 #endif
 
 #include <inttypes.h>
-#define ULLFMT "ll"
 #if __SDB_WINDOWS__ && !__CYGWIN__
 #define HAVE_MMAN 0
+#define ULLFMT "I64"
 #else
 #define HAVE_MMAN 1
+#define ULLFMT "ll"
 #endif
 
 #ifndef USE_MMAN

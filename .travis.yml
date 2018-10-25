@@ -1,68 +1,54 @@
-# travis.yml for testing radare2. Initially written in 2014-2016, by jn__.
+# travis.yml for testing radare2. Initially written in 2014-2016, by jn__.  Updated 2018 by damo22
 
-os:
-  - linux
-  - osx
+language: generic
+dist: trusty
+conditions: v1
+sudo: required
 
-language: c
+services:
+  - docker
 
-compiler:
-  - gcc
-  - clang
-
+os: osx
 matrix:
-  exclude:
-      - os: osx
-        compiler: gcc
-
-sudo: false
-
-env:
-  - CXX=g++-4.8
-
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - dc
-      - binutils
-      - cabextract
-      - libcurl4-openssl-dev
-      - libelf-dev
-      - libdw-dev
-      - jq
-      - gcc-4.8
-      - g++-4.8
-
+  fast_finish: true
+  include:
+    - os: linux
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc
+    - os: linux
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang
+    - os: linux
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson COVERAGE=1
+    - if: head_branch =~ ^fedora-* OR tag =~ ^release-* OR tag =~ ^fedora-*
+      os: linux
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_SYS_CAPSTONE=true R2_SYS_MAGIC=true R2_SYS_ZIP=true R2_SYS_LZ4=true R2_SYS_ZLIB=true
+    - if: head_branch =~ ^asan-* OR tag =~ ^release-* OR type = push
+      os: linux
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" LDFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0
+    - os: osx
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang
+  allow_failures:
+    - os: linux
+      env: COMPILER_NAME=gcc CXX=g++ CC=gcc INSTALL_SYSTEM=meson R2_SYS_CAPSTONE=true R2_SYS_MAGIC=true R2_SYS_ZIP=true R2_SYS_LZ4=true R2_SYS_ZLIB=true
+    - os: linux
+      env: COMPILER_NAME=clang CXX=clang++ CC=clang CFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" LDFLAGS="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer" ASAN_OPTIONS=detect_odr_violation=0 LSAN_OPTIONS=detect_leaks=0
 cache:
   - ccache
-  - apt
 
-before_script:
-  - rm -rf ~/.nvm && git clone https://github.com/creationix/nvm.git ~/.nvm && (cd ~/.nvm && git checkout `git describe --abbrev=0 --tags`) && source ~/.nvm/nvm.sh && nvm install 7
+before_install:
+  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then docker pull radareorg/r2-travis:latest || docker build -t radareorg/r2-travis:latest -f Dockerfile.travis . ; else rm -rf .nvm && git clone -q https://github.com/creationix/nvm.git .nvm && (cd .nvm && git checkout `git describe --abbrev=0 --tags`) && . .nvm/nvm.sh && nvm install 8.11.3; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install libuv ; fi
 
 script:
-  - git clone --depth 1 `doc/repo REGRESSIONS`
-  - ./configure --prefix=`pwd`/install > /dev/null
-  - make -s -j2 > /dev/null
-  - make install > /dev/null
-  - export PKG_CONFIG_PATH=${TRAVIS_BUILD_DIR}/pkgcfg:${PKG_CONFIG_PATH}
-  - export PATH=${TRAVIS_BUILD_DIR}/install/bin:${PATH}
-  - export LD_LIBRARY_PATH=${TRAVIS_BUILD_DIR}/install/lib:${LD_LIBRARY_PATH}
-  #- [ "$TRAVIS_OS_NAME" != "osx" ] && mkdir -p /tmp/kcov && pushd /tmp/kcov
-  #- [ "$TRAVIS_OS_NAME" != "osx" ] && mkdir ${TRAVIS_BUILD_DIR}/kcov
-  #- [ "$TRAVIS_OS_NAME" != "osx" ] && wget https://github.com/SimonKagstrom/kcov/archive/master.tar.gz && tar xzf master.tar.gz && mkdir kcov-master/build && cd kcov-master/build && cmake .. && make && make install DESTDIR=../tmp && popd
-  #- [ "$TRAVIS_OS_NAME" != "osx" ] && export KCOV="/tmp/kcov/kcov-master/tmp/usr/local/bin/kcov --coveralls-id=$TRAVIS_JOB_ID ${TRAVIS_BUILD_DIR}/kcov"
-  - export NOOK=1
-  - export NOREPORT=1
-  - cd radare2-regressions
-  - cd new
-  - npm install
-  - node bin/r2r.js
-  - cd ..
-  - VERBOSE=1 make -k all
-  - make unit_tests
+  - export PR_NAME=$(echo $TRAVIS_PULL_REQUEST_SLUG | cut -d'/' -f1)
+  - export DEFAULT_NAME=$(echo $TRAVIS_REPO_SLUG | cut -d'/' -f1)
+  - export R2R_DEFAULT_REPO=$(doc/repo PR_REGRESSIONS | sed "s/__USER__/${DEFAULT_NAME}/g")
+  - export R2R_DEFAULT_BRANCH=master
+  - export USER_NAME=$([ -n "${PR_NAME}" ] && echo "${PR_NAME}" || echo "${DEFAULT_NAME}")
+  - export R2R_BRANCH=$([ -n "${TRAVIS_PULL_REQUEST_BRANCH}" ] && echo "${TRAVIS_PULL_REQUEST_BRANCH}" || echo "${R2R_DEFAULT_BRANCH}")
+  - if [ "${R2R_BRANCH}" = master ]; then USER_NAME=radare; fi
+  - export R2R_REPO=$(doc/repo PR_REGRESSIONS | sed "s/__USER__/${USER_NAME}/g")
+  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then bash ./travis-extract-var.sh > ${TRAVIS_BUILD_DIR}/docker-env.sh ; cat ${TRAVIS_BUILD_DIR}/docker-env.sh ; fi
+  - if [ "$TRAVIS_OS_NAME" != "osx" ]; then docker run -v /home/travis/.ccache:/root/.ccache -v ${TRAVIS_BUILD_DIR}:${TRAVIS_BUILD_DIR} --entrypoint "/bin/bash" radareorg/r2-travis:latest -c ". /src/.nvm/nvm.sh; cd ${TRAVIS_BUILD_DIR}; . docker-env.sh; bash travis-script"; else bash travis-script; fi
 
 notifications:
   irc: "chat.freenode.net#radare"

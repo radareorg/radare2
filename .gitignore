@@ -1,6 +1,7 @@
 clang-log/
-.clang-format
+.clang_complete
 .tmp-format
+.#*
 *._d
 *._o
 *.[ado]
@@ -46,13 +47,15 @@ binr/rasm2/rasm2.exe
 binr/rax2/rax2
 binr/rax2/rax2.exe
 binr/*/_CodeSignature/*
-build/*
+build
+build_sdb
 config-user.mk
 libr/bin/d/dll/dll
 libr/config.h
 libr/include/r_userconf.h
 libr/include/r_version.h
 libr/include/r_version.h.tmp
+shlr/capstone/
 shlr/java/out
 shlr/java/out.exe
 shlr/sdb/sdb
@@ -65,15 +68,19 @@ shlr/sdb/src/sdb-version.h
 shlr/sdb/src/sdb_version.h
 shlr/sdb/src/libsdb.so*
 shlr/spp/config.h
-shlr/capstone/
+sys/travis/*.txt
 sys/.mark_python-deps
 sys/.mark_swig
 sys/_work
 radare2-bindings
 radare2-regressions
 radare2-w32-*
-radare2-regressions
+radare2-w64-*
 tags
+**/GPATH
+**/GRTAGS
+**/GTAGS
+**/.gdb_history
 .lvimrc
 .nconfig.tmp
 .ycm_extra_conf.py
@@ -81,3 +88,34 @@ tags
 .kdev4/*
 *.kdev4
 radare2-*.zip
+# Ignore meson related files
+./bin
+ninja.exe
+.DS_Store
+infer_out
+infer-out/
+cscope.out
+r2-static/*
+binr/rasign2/rasign2
+binr/rasign2/rasign2.exe
+compile_commands.json
+libr/flag/d/tags.r2
+# CLion
+.idea/
+# VSCode
+.vscode/
+CMakeLists.txt
+*.cmake
+cmake-build-*
+# Snap packaging
+/parts
+/prime
+/stage
+/snap
+/*.snap
+# doxygen autogen
+doc/doxygen/html
+# Python
+__pycache__
+# Dynamic docker building folder to minimize docker context
+.docker_alpine

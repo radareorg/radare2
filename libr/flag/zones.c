@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016 - pancake */
+/* radare - LGPL - Copyright 2016-2018 - pancake */
 
 #include <r_flag.h>
 #include <r_util.h>
@@ -43,7 +43,7 @@ R_API bool r_flag_zone_add(RFlag *f, const char *name, ut64 addr) {
 		sdb_set (DB, name, newBounds, 0);
 		free (newBounds);
 	} else {
-		sdb_set (DB, name, sdb_fmt (0, "%"PFMT64d",%"PFMT64d, addr, addr), 0);
+		sdb_set (DB, name, sdb_fmt ("%"PFMT64d",%"PFMT64d, addr, addr), 0);
 	}
 #else
 	RFlagZoneItem *zi = r_flag_zone_get (f, name);

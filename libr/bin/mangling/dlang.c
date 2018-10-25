@@ -5,10 +5,12 @@
 // The dlang-demangler is written in D and available at radare2-extras
 
 static int is_dlang_symbol (const char *name) {
-	if (!strncmp (name, "_D2", 3)) 
+	if (!strncmp (name, "_D2", 3)) {
 		return 1;
-	if (!strncmp (name, "_D4", 3))
+	}
+	if (!strncmp (name, "_D4", 3)) {
 		return 1;
+	}
 	return 0;
 }
 
@@ -20,8 +22,9 @@ R_API bool r_bin_lang_dlang(RBinFile *binfile) {
 	RListIter *iter;
 	const char *lib;
 
-	if (!info)
+	if (!info) {
 		return false;
+	}
 	r_list_foreach (o->libs, iter, lib) {
 		if (strstr (lib, "phobos")) {
 			hasdlang = true;
@@ -30,13 +33,14 @@ R_API bool r_bin_lang_dlang(RBinFile *binfile) {
 	}
 	if (!hasdlang) {
 		r_list_foreach (o->symbols, iter, sym) {
-			if (is_dlang_symbol (sym->name)) {
+			if (sym->name && is_dlang_symbol (sym->name)) {
 				hasdlang = true;
 				break;
 			}
 		}
 	}
-	if (hasdlang)
+	if (hasdlang) {
 		info->lang = "dlang";
+	}
 	return hasdlang;
 }

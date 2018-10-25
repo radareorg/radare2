@@ -1,60 +1,97 @@
-files=[
-'buffer.c',
-'cache.c',
-'desc.c',
-'io.c',
-'map.c',
-'plugin.c',
-'section.c',
-'undo.c',
-'p/io_bfdbg.c',
-#'p/io_bochs.c',
-'p/io_debug.c',
-'p/io_default.c',
-#'p/io_gdb.c',
-'p/io_gzip.c',
-'p/io_http.c',
-'p/io_ihex.c',
-'p/io_mach.c',
-'p/io_malloc.c',
-'p/io_mmap.c',
-'p/io_null.c',
-'p/io_procpid.c',
-'p/io_ptrace.c',
-#'p/io_qnx.c',
-'p/io_r2k.c',
-'p/io_r2pipe.c',
-'p/io_r2web.c',
-'p/io_rap.c',
-'p/io_self.c',
-'p/io_shm.c',
-'p/io_sparse.c',
-'p/io_tcp.c',
-#'p/io_w32.c',
-#'p/io_w32dbg.c',
-#'p/io_windbg.c',
-#'p/io_zip.c',
+files = [
+  'cache.c',
+  'desc.c',
+  'fd.c',
+  'io.c',
+  'ioutils.c',
+  'map.c',
+  'plugin.c',
+  'section.c',
+  'undo.c',
+  'p_cache.c',
+  'p/io_ar.c',
+  'p/io_bfdbg.c',
+  'p/io_bochs.c',
+  'p/io_debug.c',
+  'p/io_default.c',
+  'p/io_gdb.c',
+  'p/io_gprobe.c',
+  'p/io_gzip.c',
+  'p/io_http.c',
+  'p/io_ihex.c',
+  'p/io_mach.c',
+  'p/io_malloc.c',
+  'p/io_mmap.c',
+  'p/io_null.c',
+  'p/io_procpid.c',
+  'p/io_ptrace.c',
+  'p/io_qnx.c',
+  'p/io_r2k.c',
+  'p/io_r2pipe.c',
+  'p/io_r2web.c',
+  'p/io_rap.c',
+  'p/io_rbuf.c',
+  'p/io_self.c',
+  'p/io_shm.c',
+  'p/io_sparse.c',
+  'p/io_tcp.c',
+  'p/io_windbg.c',
+  'p/io_winedbg.c',
+  'p/io_zip.c',
 ]
 
-if host_os == 'linux'
-files += [
-  'p/io_r2k_linux.c',
-]
-endif
-
-if host_os == 'windows'
-files += [
-  'p/io_r2k_windows.c',
-]
-endif
-
-r_io = shared_library('r_io', files,
-  include_directories: include_directories([
-    '../include',
-    platform_librinc
+if host_machine.system() == 'linux'
+  files += [
+    'p/io_r2k_linux.c',
   ]
-  ),
-  link_with: [r_util, r_socket],
-  c_args : ['-DCORELIB=1', '-I' + meson.current_build_dir() + '/../..'],
-  install: true
+endif
+
+if host_machine.system() == 'windows'
+  files += [
+    'p/io_r2k_windows.c',
+    'p/io_w32.c',
+    'p/io_w32dbg.c',
+  ]
+endif
+
+
+r_io_deps = [
+  r_util_dep,
+  r_socket_dep,
+  sdb_dep,
+  bochs_dep,
+  gdb_dep,
+  windbg_dep,
+  qnx_dep,
+  zip_dep,
+  ar_dep
+]
+
+if use_ptrace_wrap
+  r_io_deps += ptrace_wrap_dep
+endif
+
+r_io = library('r_io', files,
+  include_directories: platform_inc,
+  dependencies: r_io_deps,
+  c_args: library_cflags,
+  install: true,
+  implicit_include_directories: false,
+  soversion: r2_libversion
+)
+
+r_io_dep = declare_dependency(link_with: r_io,
+                              include_directories: platform_inc)
+
+pkgconfig_mod.generate(
+  libraries: [r_io],
+  subdirs: 'libr',
+  version: r2_version,
+  name: 'r_io',
+  filebase: 'r_io',
+  requires: [
+    'r_util',
+    'r_socket'
+  ],
+  description: 'radare foundation libraries'
 )

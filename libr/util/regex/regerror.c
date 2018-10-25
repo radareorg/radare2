@@ -121,11 +121,14 @@ regatoi(const RRegex *preg, char *localbuf, int localbufsize)
 {
 	struct rerr *r;
 
-	for (r = rerrs; r->code != 0; r++)
-		if (strcmp(r->name, preg->re_endp) == 0)
+	for (r = rerrs; r->code != 0; r++) {
+		if (strcmp (r->name, preg->re_endp) == 0) {
 			break;
-	if (r->code == 0)
-		return("0");
+		}
+	}
+	if (r->code == 0) {
+		return ("0");
+	}
 
 	(void)snprintf(localbuf, localbufsize, "%d", r->code);
 	return(localbuf);

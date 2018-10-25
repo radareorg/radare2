@@ -2,27 +2,29 @@
 
 HANDLE gHandleDriver = NULL;
 
-static BOOL InstallService(const char * rutaDriver, LPCSTR  lpServiceName, LPCSTR  lpDisplayName) {
+static BOOL InstallService(const char * rutaDriver, LPCTSTR  lpServiceName, LPCTSTR  lpDisplayName) {
 	HANDLE hService;
 	BOOL ret = FALSE;
-	HANDLE hSCManager = OpenSCManagerA (NULL, NULL, SC_MANAGER_CREATE_SERVICE);
+	HANDLE hSCManager = OpenSCManager (NULL, NULL, SC_MANAGER_CREATE_SERVICE);
 	if (hSCManager)	{
-		hService = CreateServiceA (hSCManager, lpServiceName, lpDisplayName, SERVICE_START | DELETE | SERVICE_STOP, SERVICE_KERNEL_DRIVER, SERVICE_DEMAND_START, SERVICE_ERROR_IGNORE, rutaDriver, NULL, NULL, NULL, NULL, NULL);
+		LPTSTR rutaDriver_ = r_sys_conv_utf8_to_utf16 (rutaDriver);
+		hService = CreateService (hSCManager, lpServiceName, lpDisplayName, SERVICE_START | DELETE | SERVICE_STOP, SERVICE_KERNEL_DRIVER, SERVICE_DEMAND_START, SERVICE_ERROR_IGNORE, rutaDriver_, NULL, NULL, NULL, NULL, NULL);
 		if (hService) {
 			CloseServiceHandle (hService);
 			ret = TRUE;
 		}
+		free (rutaDriver_);
 		CloseServiceHandle (hSCManager);
 	}
 	return ret;
 }
 
-static BOOL RemoveService(LPCSTR lpServiceName) {
+static BOOL RemoveService(LPCTSTR lpServiceName) {
 	HANDLE hService;
 	BOOL ret = FALSE;
-	HANDLE hSCManager = OpenSCManagerA (NULL, NULL, SC_MANAGER_CREATE_SERVICE);
+	HANDLE hSCManager = OpenSCManager (NULL, NULL, SC_MANAGER_CREATE_SERVICE);
 	if (hSCManager) {
-		hService = OpenServiceA (hSCManager, lpServiceName, SERVICE_START | DELETE | SERVICE_STOP);
+		hService = OpenService (hSCManager, lpServiceName, SERVICE_START | DELETE | SERVICE_STOP);
 		if (hService) {
 			DeleteService (hService);
 			CloseServiceHandle (hService);
@@ -33,17 +35,17 @@ static BOOL RemoveService(LPCSTR lpServiceName) {
 	return ret;
 }
 
-BOOL StartStopService(LPCSTR lpServiceName, BOOL bStop) {
+BOOL StartStopService(LPCTSTR lpServiceName, BOOL bStop) {
 	HANDLE hSCManager;
 	HANDLE hService;
 	SERVICE_STATUS ssStatus;
 	BOOL ret = FALSE;
-	hSCManager = OpenSCManagerA (NULL, NULL, SC_MANAGER_CREATE_SERVICE);
+	hSCManager = OpenSCManager (NULL, NULL, SC_MANAGER_CREATE_SERVICE);
 	if (hSCManager)	{
-		hService = OpenServiceA (hSCManager, lpServiceName, SERVICE_START | DELETE | SERVICE_STOP);
+		hService = OpenService (hSCManager, lpServiceName, SERVICE_START | DELETE | SERVICE_STOP);
 		if (hService) {
 			if (!bStop) {
-				if (StartServiceA (hService, 0, NULL)) {
+				if (StartService (hService, 0, NULL)) {
 					eprintf ("Service started [OK]\n");
 					ret = TRUE;
 				} else {
@@ -68,7 +70,7 @@ BOOL StartStopService(LPCSTR lpServiceName, BOOL bStop) {
 static BOOL InitDriver(VOID) {
 	const int genericFlags = GENERIC_READ | GENERIC_WRITE;
 	const int shareFlags = FILE_SHARE_READ | FILE_SHARE_WRITE;
-	gHandleDriver = CreateFileA (R2K_DEVICE, genericFlags, shareFlags,
+	gHandleDriver = CreateFile (TEXT (R2K_DEVICE), genericFlags, shareFlags,
 		NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_DIRECTORY, 0);
 	return (gHandleDriver != INVALID_HANDLE_VALUE);
 }
@@ -169,11 +171,11 @@ int Init (const char * driverPath) {
 	BOOL ret = FALSE;
 	if (InitDriver () == FALSE) {
 		if (strlen (driverPath)) {
-			StartStopService ("r2k",TRUE);
-			RemoveService ("r2k");
+			StartStopService (TEXT ("r2k"),TRUE);
+			RemoveService (TEXT ("r2k"));
 			eprintf ("Installing driver: %s\n", driverPath);
-			if (InstallService (driverPath, "r2k", "r2k")) {
-				StartStopService ("r2k",FALSE);
+			if (InstallService (driverPath, TEXT ("r2k"), TEXT ("r2k"))) {
+				StartStopService (TEXT ("r2k"),FALSE);
 				ret = InitDriver ();
 			}
 		} else {

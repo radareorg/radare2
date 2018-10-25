@@ -75,6 +75,7 @@ struct r2k_proc_info {
 	char comm[16];
 	size_t vmareastruct[4096];
 	size_t stack;
+	size_t task;
 };
 
 #define R2_TYPE 0x69

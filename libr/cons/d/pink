@@ -21,7 +21,8 @@ ec push rgb:75a
 ec pop rgb:75a
 ec jmp rgb:f5d
 ec cjmp rgb:f5d
-ec call rgb:f5d rgb:502
+ec usrcmt rgb:f5d rgb:502
+ec call rgb:000 rgb:faf
 ec nop rgb:fa5
 ec ret rgb:ffa
 ec trap rgb:a22
@@ -31,6 +32,7 @@ ec reg rgb:f5d
 ec creg rgb:f5d
 ec num rgb:72d
 ec crypto rgb:75d
+ec linehl rgb:fdf
 ec graph.true rgb:f5d
 ec graph.false rgb:715
 ec graph.trufae rgb:f5d
@@ -43,10 +45,15 @@ ec graph.box4 rgb:f5d
 ec gui.cflow rgb:f5d
 ec gui.dataoffset rgb:f5d
 ec gui.background black
-##  ai.read
-##  ai.write
-##  ai.exec
-##  ai.seq
-##  ai.ascii
 ##  gui.alt_background
 ##  gui.border
+
+ec func_var rgb:72d
+ec func_var_type blue
+ec func_var_addr rgb:72d
+
+ec ai.read rgb:f6e
+ec ai.write rgb:f5d
+ec ai.exec rgb:75a
+ec ai.seq rgb:72d
+ec ai.ascii rgb:72d

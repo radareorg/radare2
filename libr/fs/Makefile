@@ -6,7 +6,9 @@ SHLR=../../shlr/
 
 include ../config.mk
 CFLAGS+=-I$(SHLR)/grub/include
+ifeq ($(WITH_GPL),1)
 LDFLAGS+=$(SHLR)/grub/libgrubfs.a
+endif
 
 EXTRA_TARGETS=plugins
 foo:
@@ -14,7 +16,7 @@ foo:
 
 include ${STATIC_FS_PLUGINS}
 STATIC_OBJS=$(subst ..,p/..,$(subst fs_,p/fs_,$(STATIC_OBJ)))
-OBJS=${STATIC_OBJS} fs.o file.o 
+OBJS=${STATIC_OBJS} fs.o file.o shell.o
 #p/grub/main.o
 
 #p/grub/libgrubfs.a:

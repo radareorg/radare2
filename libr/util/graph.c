@@ -61,15 +61,17 @@ static void dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis, int color[])
 		int i;
 
 		if (from && cur) {
-			if (color[cur->idx] == WHITE_COLOR && vis->tree_edge)
+			if (color[cur->idx] == WHITE_COLOR && vis->tree_edge) {
 				vis->tree_edge (cur_edge, vis);
-			else if (color[cur->idx] == GRAY_COLOR && vis->back_edge)
+			} else if (color[cur->idx] == GRAY_COLOR && vis->back_edge) {
 				vis->back_edge (cur_edge, vis);
-			else if (color[cur->idx] == BLACK_COLOR && vis->fcross_edge)
+			} else if (color[cur->idx] == BLACK_COLOR && vis->fcross_edge) {
 				vis->fcross_edge (cur_edge, vis);
+			}
 		} else if (!cur && from) {
-			if (color[from->idx] != BLACK_COLOR && vis->finish_node)
+			if (color[from->idx] != BLACK_COLOR && vis->finish_node) {
 				vis->finish_node (from, vis);
+			}
 			color[from->idx] = BLACK_COLOR;
 		}
 		free (cur_edge);
@@ -100,7 +102,9 @@ static void dfs_node (RGraph *g, RGraphNode *n, RGraphVisitor *vis, int color[])
 
 R_API RGraph *r_graph_new () {
 	RGraph *t = R_NEW0 (RGraph);
-	if (!t) return NULL;
+	if (!t) {
+		return NULL;
+	}
 	t->nodes = r_list_new ();
 	if (!t->nodes) {
 		r_graph_free(t);
@@ -191,7 +195,9 @@ R_API void r_graph_add_edge_at (RGraph *t, RGraphNode *from, RGraphNode *to, int
 }
 
 R_API void r_graph_del_edge (RGraph *t, RGraphNode *from, RGraphNode *to) {
-	if (!from || !to || !r_graph_adjacent (t, from, to)) return;
+	if (!from || !to || !r_graph_adjacent (t, from, to)) {
+		return;
+	}
 	r_list_delete_data (from->out_nodes, to);
 	r_list_delete_data (from->all_neighbours, to);
 	r_list_delete_data (to->in_nodes, from);
@@ -201,14 +207,18 @@ R_API void r_graph_del_edge (RGraph *t, RGraphNode *from, RGraphNode *to) {
 
 /* returns the list of nodes reachable from `n` */
 R_API const RList *r_graph_get_neighbours (const RGraph *g, const RGraphNode *n) {
-	if (!n) return NULL;
+	if (!n) {
+		return NULL;
+	}
 	return n->out_nodes;
 }
 
 /* returns the n-th nodes reachable from the give node `n`.
  * This, of course, depends on the order of the nodes. */
 R_API RGraphNode *r_graph_nth_neighbour (const RGraph *g, const RGraphNode *n, int nth) {
-	if (!n) return NULL;
+	if (!n) {
+		return NULL;
+	}
 	return (RGraphNode *)r_list_get_n (n->out_nodes, nth);
 }
 
@@ -228,7 +238,9 @@ R_API const RList *r_graph_get_nodes (const RGraph *g) {
 
 /* true if there is an edge from the node `from` to the node `to` */
 R_API int r_graph_adjacent (const RGraph *g, const RGraphNode *from, const RGraphNode *to) {
-	if (!g || !from) return false;
+	if (!g || !from) {
+		return false;
+	}
 	return r_list_contains (from->out_nodes, to) ? true : false;
 }
 

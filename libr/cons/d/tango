@@ -26,9 +26,11 @@ ec cjmp rgb:370
 ec jmp rgb:370
 ec cmp rgb:bbb
 ec comment rgb:370
+ec usrcmt rgb:7d1
 ec ret rgb:248
 ec fline rgb:950
 ec flow rgb:248
+ec flow2 rgb:248
 ec fname rgb:ca0
 ec label rgb:c50
 ec math rgb:bbb
@@ -48,3 +50,24 @@ ec trap rgb:a00
 ec swi rgb:950
 ec creg rgb:590
 ec flag rgb:950
+ec linehl rgb:004
+
+ec graph.true rgb:370
+ec graph.false rgb:a00
+ec graph.trufae rgb:bbb
+ec graph.current rgb:7d1
+ec graph.traced rgb:f00
+ec graph.box rgb:950
+ec graph.box2 rgb:7d1
+ec graph.box3 rgb:950
+ec graph.box4 rgb:950
+
+ec func_var rgb:370
+ec func_var_type rgb:a41
+ec func_var_addr rgb:aaa
+
+ec ai.read rgb:a81
+ec ai.write rgb:a41
+ec ai.exec rgb:c50
+ec ai.seq rgb:ca0
+ec ai.ascii rgb:ca0

@@ -176,23 +176,23 @@ char* SHA512_Data(const u_int8_t*, size_t, char[SHA512_DIGEST_STRING_LENGTH]);
 
 #else /* NOPROTO */
 
-void SHA256_Init();
-void SHA256_Update();
-void SHA256_Final();
-char* SHA256_End();
-char* SHA256_Data();
+void SHA256_Init(void);
+void SHA256_Update(void);
+void SHA256_Final(void);
+char* SHA256_End(void);
+char* SHA256_Data(void);
 
-void SHA384_Init();
-void SHA384_Update();
-void SHA384_Final();
-char* SHA384_End();
-char* SHA384_Data();
+void SHA384_Init(void);
+void SHA384_Update(void);
+void SHA384_Final(void);
+char* SHA384_End(void);
+char* SHA384_Data(void);
 
-void SHA512_Init();
-void SHA512_Update();
-void SHA512_Final();
-char* SHA512_End();
-char* SHA512_Data();
+void SHA512_Init(void);
+void SHA512_Update(void);
+void SHA512_Final(void);
+char* SHA512_End(void);
+char* SHA512_Data(void);
 
 #endif /* NOPROTO */
 

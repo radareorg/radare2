@@ -5,16 +5,21 @@ all clean:
 
 .PHONY: all clean install install-symlink symstall
 
+CWD=$(shell pwd)
+
 install: ${F_SDB}
 	rm -rf "$P"
 	mkdir -p "$P"
-	cp -f * "$P"
+	for FILE in * ; do \
+		if [ $$FILE != Makefile -a $$FILE != meson.build -a -f $$FILE ]; then \
+			cp -PRpf "${CWD}/$$FILE" "$P/$$FILE" ; \
+		fi ; \
+	done
 
-CWD=$(shell pwd)
 symstall install-symlink:
 	mkdir -p "$P"
 	for FILE in * ; do \
-		if [ $$FILE != Makefile ]; then \
+		if [ $$FILE != Makefile -a $$FILE != meson.build -a -f $$FILE ]; then \
 			ln -fs "${CWD}/$$FILE" "$P/$$FILE" ; \
 		fi ; \
 	done

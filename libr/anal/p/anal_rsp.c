@@ -245,7 +245,8 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		op->dst->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
 		op->src[0] = parsed_operands[0].value;
 		op->src[1] = parsed_operands[1].value;
-		r_strbuf_setf (&op->esil, "0,%s,<=,$z,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
+		r_strbuf_setf (&op->esil, "%s,!,%s,0x80000000,&,!,!,|,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[0].esil, parsed_operands[1].esil);
+//		r_strbuf_setf (&op->esil, "0,%s,<=,$z,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
 		break;
 	case RSP_OP_BGTZ:
 		op->type = R_ANAL_OP_TYPE_CJMP;
@@ -254,7 +255,8 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		op->dst->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
 		op->src[0] = parsed_operands[0].value;
 		op->src[1] = parsed_operands[1].value;
-		r_strbuf_setf (&op->esil, "0,%s,>,$z,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
+		r_strbuf_setf (&op->esil, "%s,0x80000000,&,!,%s,!,!,&,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[0].esil, parsed_operands[1].esil);
+//		r_strbuf_setf (&op->esil, "0,%s,>,$z,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
 		break;
 	case RSP_OP_BLTZ:
 		op->type = R_ANAL_OP_TYPE_CJMP;
@@ -263,7 +265,8 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		op->dst->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
 		op->src[0] = parsed_operands[0].value;
 		op->src[1] = parsed_operands[1].value;
-		r_strbuf_setf (&op->esil, "0,%s,<,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
+		r_strbuf_setf (&op->esil, "%s,0x80000000,&,!,!,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
+//		r_strbuf_setf (&op->esil, "0,%s,<,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
 		break;
 	case RSP_OP_BGEZ:
 		op->type = R_ANAL_OP_TYPE_CJMP;
@@ -272,7 +275,8 @@ static int rsp_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
 		op->dst->reg = r_reg_get (anal->reg, "PC", R_REG_TYPE_GPR);
 		op->src[0] = parsed_operands[0].value;
 		op->src[1] = parsed_operands[1].value;
-		r_strbuf_setf (&op->esil, "0,%s,>=,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
+		r_strbuf_setf (&op->esil, "%s,0x80000000,&,!,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
+//		r_strbuf_setf (&op->esil, "0,%s,>=,?{,%s,PC,=,}", parsed_operands[0].esil, parsed_operands[1].esil);
 		break;
 	case RSP_OP_BLTZAL:
 		op->type = R_ANAL_OP_TYPE_CCALL;
@@ -699,7 +703,7 @@ RAnalPlugin r_anal_plugin_rsp = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_rsp,
 	.version = R2_VERSION

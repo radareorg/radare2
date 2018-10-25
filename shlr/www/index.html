@@ -115,6 +115,11 @@
 			});
 		});
 		$(document).ready( function() {
+			function encodeHtmlEntity(str) {
+			  return str.replace(/[\u00A0-\u9999\<\>\(\)\{\}\[\]\%\#\&\'\"\\\/]/gim, function(c){
+			    return '&#' + c.charCodeAt(0) + ';' ;
+			  });
+			}
 			function updateProjectList() {
 				window.location.assign("/");
 			}
@@ -135,11 +140,12 @@
 
 			r2.cmdj("oj", function(x) {
 				if(x) {
-				  if(x[0].uri.indexOf("malloc://") !== -1) {
+				  if(encodeHtmlEntity(x[0].uri).indexOf("malloc://") !== -1) {
 					$("#openfile").html('<input type="file" id="filename" name="filename">');
 				  } else {
-				  	$("#openfile").html(x[0].uri);
-				  	filename = x[0].uri;
+
+				  	$("#openfile").html(encodeHtmlEntity(x[0].uri));
+				  	filename = encodeHtmlEntity(x[0].uri);
 				  }
 				}
 			});

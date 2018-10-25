@@ -1,0 +1,14 @@
+diff --git a/arch/Sparc/SparcGenAsmWriter.inc b/arch/Sparc/SparcGenAsmWriter.inc
+index 9ed9760..9694d05 100644
+--- a/arch/Sparc/SparcGenAsmWriter.inc
++++ b/arch/Sparc/SparcGenAsmWriter.inc
+@@ -1202,6 +1202,9 @@ static char *getRegisterName(unsigned RegNo)
+   //for (i = 0; i < sizeof(RegAsmOffset)/2; i++)
+   //     printf("%s = %u\n", AsmStrs+RegAsmOffset[i], i + 1);
+   //printf("*************************\n");
++if (RegNo < 1 || RegNo > sizeof (RegAsmOffset) / sizeof (*RegAsmOffset)) {
++  return NULL;
++}
+   return AsmStrs+RegAsmOffset[RegNo-1];
+ #else
+   return NULL;

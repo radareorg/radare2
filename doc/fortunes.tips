@@ -1,9 +1,10 @@
-Disassembly not pretty enough? Try changing the values with 'e asm.'
-Have you setup your ~/.radare2rc today?
+Tweak the disassembly output with `e asm.`
+Add custom Have you setup your ~/.radare2rc today?
+In visual mode press 'c' to toggle the cursor mode. Use tab to navigate
 You can mark an offset in visual mode with the cursor and the ',' key. Later press '.' to go back
 You can debug a program from the graph view ('ag') using standard radare2 commands
 Use the '[' and ']' keys in visual mode to adjust the screen width
-Choose your architecture by typing: 'e asm.arch=<arch>'
+Select your architecture with: 'e asm.arch=<arch>' or r2 -a from the shell
 Move between your search hits in visual mode using the 'f' and 'F' keys
 Save your projects with 'Ps <project-filename>' and restore then with 'Po <project-filename>'
 Enable asm.trace to see the tracing information inside the disassembly
@@ -27,7 +28,7 @@ Add comments using the ';' key in visual mode or the 'CC' command from the radar
 Assemble opcodes with the 'a' and 'A' keys in visual mode, which are bindings to the 'wa' and 'wA' commands
 Find expanded AES keys in memory with '/Ca'
 Find wide-char strings with the '/w <string>' command
-Enable ascii-art jump lines in disassembly by setting 'e asm.lines=true'. asm.linesout and asm.linestyle may interest you as well
+Enable ascii-art jump lines in disassembly by setting 'e asm.lines=true'. asm.lines.out and asm.linestyle may interest you as well
 Control the signal handlers of the child process with the 'dk' command
 Get a free shell with 'ragg2 -i exec -x'
 Interpret radare2 scripts with '. <path-to-script>'. Similar to the bash source alias command.
@@ -37,9 +38,9 @@ Step through your seek history with the commands 'u' (undo) and 'U' (redo)
 Use hasher to calculate hashes of portion blocks of a file
 Use zoom.byte=entropy and press 'z' in visual mode to zoom out to see the entropy of the whole file
 Use 'zoom.byte=printable' in zoom mode ('z' in Visual mode) to find strings
-Set color to your screen with 'e scr.color=true'
+Add colors to your screen with 'e scr.color=X' where 1 is 16 colors, 2 is 256 colors and 3 is 16M colors
 Trace register changes while debugging with 'e trace.cmtregs=true'
-Move the comments to the right changing their margin with asm.cmtmargin
+Move the comments to the right changing their margin with asm.cmt.margin
 Execute a command on the visual prompt with cmd.vprompt
 Reduce the delta where flag resolving by address is used with cfg.delta
 Disable these messages with 'e cfg.fortunes = false' in your ~/.radare2rc
@@ -76,7 +77,6 @@ Run your own r2 scripts in awk using the r2awk program.
 Use '-e bin.strings=false' to disable automatic string search when loading the binary.
 The unix-like reverse engineering framework.
 This code was intentionally left blank, try 'e asm.arch = ws'
-For a full list of commands see `strings /dev/urandom`
 Thanks for using radare2!
 give | and > a try piping and redirection
 Run .dmm* to load the flags of the symbols of all modules loaded in the debugger
@@ -85,3 +85,4 @@ Toggle between disasm and graph with the space key
 The more 'a' you add after 'aa' the more analysis steps are executed.
 Review all the subcommands of aa to see better ways to analyze your targets.
 Use /m to carve for known magic headers. speedup with search.
+You can use registers in math expressions. For example: 'wx 1234 @ esp - 2'

@@ -16,8 +16,9 @@ the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this file; see the file COPYING.  If not, write to the Free
-Software Foundation, 59 Temple Place - Suite 330, Boston, MA
-02111-1307, USA.  */
+Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+02110-1335 USA.
+*/
 
 #include "ansidecl.h"
 #include "opcode/tricore.h"
@@ -2080,6 +2081,8 @@ struct tricore_opcode tricore_opcodes[] =
   {"st.b",       0, 0x00000024, 0xffff00db, F(SSR),  2, ">d",    "12",
 		 TRICORE_RIDER_B_UP, INDICES},
   {"st.b",       1, 0x00000025, 0x0c0000da, F(ABS),  2, "td",    "12",
+		 TRICORE_GENERIC, INDICES},
+  {"st.b",       1, 0x000000e9, 0x00000016, F(BOL),  3, "@wd",   "213",
 		 TRICORE_GENERIC, INDICES},
   {"st.b",       1, 0x00000089, 0x0fc00076, F(BO),   3, ">0d",   "213",
 		 TRICORE_GENERIC, INDICES},

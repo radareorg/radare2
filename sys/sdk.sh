@@ -1,6 +1,7 @@
 #!/bin/sh
 
-SDKDIR=/tmp/r2-sdk
+WRKDIR=/tmp
+SDKDIR=${WRKDIR}/r2-sdk
 if [ -n "$1" ]; then
 	if [ -f "$1" ]; then
 		echo "Target directory exists. Cant build the SDK in there"
@@ -10,11 +11,14 @@ if [ -n "$1" ]; then
 fi
 
 # Builds an SDK to build stuff for rbin
-export CFLAGS="-Os"
+export CFLAGS="-Os -fPIC"
 make mrproper
-cp -f plugins.bin.cfg plugins.cfg
+if [ -z "${R2_PLUGINS_CFG}" ]; then
+	R2_PLUGINS_CFG=plugins.bin.cfg
+fi
+cp -f "${R2_PLUGINS_CFG}" plugins.cfg
 #./configure-plugins
-./configure --prefix="$PREFIX" --with-nonpic --without-pic || exit 1
+./configure --prefix="$PREFIX" --with-libr --without-libuv --without-gpl || exit 1
 #--disable-loadlibs || exit 1
 make -j8 || exit 1
 rm -rf "${SDKDIR}"
@@ -23,3 +27,15 @@ rm -f libr/libr.a
 cp -rf libr/include "${SDKDIR}"
 FILES=`find libr shlr -iname '*.a'`
 cp -f ${FILES} "${SDKDIR}"/lib
+OS=`uname`
+AR=`uname -m`
+SF=r2sdk-${OS}-${AR}
+
+(
+cd "${WRKDIR}"
+mv r2-sdk "${SF}"
+zip -r "${SF}".zip "${SF}"
+)
+mv "${WRKDIR}/${SF}" .
+mv "${WRKDIR}/${SF}".zip .
+ln -fs "${SF}" r2sdk

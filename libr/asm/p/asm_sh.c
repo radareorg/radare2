@@ -7,10 +7,10 @@
 #include <r_lib.h>
 #include <r_util.h>
 #include <r_asm.h>
-#include "dis-asm.h"
+#include "disas-asm.h"
 
 static unsigned long Offset = 0;
-static char *buf_global = NULL;
+static RStrBuf *buf_global = NULL;
 static unsigned char bytes[4];
 
 static int sh_buffer_read_memory (bfd_vma memaddr, bfd_byte *myaddr, unsigned int length, struct disassemble_info *info) {
@@ -30,35 +30,15 @@ static void memory_error_func(int status, bfd_vma memaddr, struct disassemble_in
 	//--
 }
 
-static void print_address(bfd_vma address, struct disassemble_info *info) {
-	char tmp[32];
-	if (!buf_global)
-		return;
-	sprintf (tmp, "0x%08"PFMT64x"", (ut64)address);
-	strcat (buf_global, tmp);
-}
-
-static int buf_fprintf(void *stream, const char *format, ...) {
-	va_list ap;
-	char *tmp;
-	int ret;
-	if (!buf_global)
-		return 0;
-	tmp = malloc (strlen (format)+strlen (buf_global)+2);
-	if (!tmp)
-		return 0;
-	va_start (ap, format);
-	sprintf (tmp, "%s%s", buf_global, format);
-	ret = vsprintf (buf_global, tmp, ap);
-	va_end (ap);
-	free (tmp);
-	return ret;
-}
+DECLARE_GENERIC_PRINT_ADDRESS_FUNC()
+DECLARE_GENERIC_FPRINTF_FUNC()
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static struct disassemble_info disasm_obj;
-	if (len<2) return -1;
-	buf_global = op->buf_asm;
+	if (len < 2) {
+		return -1;
+	}
+	buf_global = &op->buf_asm;
 	Offset = a->pc;
 	memcpy (bytes, buf, 2);
 
@@ -68,19 +48,19 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	disasm_obj.read_memory_func = &sh_buffer_read_memory;
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
-	disasm_obj.print_address_func = &print_address;
+	disasm_obj.print_address_func = &generic_print_address_func;
 	disasm_obj.endian = !a->big_endian;
-	disasm_obj.fprintf_func = &buf_fprintf;
+	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = stdout;
 
-	op->buf_asm[0] = '\0';
-	if (disasm_obj.endian == BFD_ENDIAN_BIG)
+	if (disasm_obj.endian == BFD_ENDIAN_BIG) {
 		op->size = print_insn_shb ((bfd_vma)Offset, &disasm_obj);
-	else
+	} else {
 		op->size = print_insn_shl ((bfd_vma)Offset, &disasm_obj);
-
-	if (op->size == -1)
-		strncpy (op->buf_asm, " (data)", R_ASM_BUFSIZE);
+	}
+	if (op->size == -1) {
+		r_asm_op_set_asm (op, "(data)");
+	}
 	return op->size;
 }
 
@@ -95,7 +75,7 @@ RAsmPlugin r_asm_plugin_sh = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_sh,
 	.version = R2_VERSION

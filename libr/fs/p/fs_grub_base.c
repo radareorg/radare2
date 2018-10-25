@@ -84,6 +84,7 @@ static void FSP(_umount)(RFSRoot *root) {
 RFSPlugin FSS(r_fs_plugin) = {
 	.name = FSNAME,
 	.desc = FSDESC,
+	.license = "GPL2",
 	.open = FSP(_open),
 	.read = FSP(_read),
 	.close = FSP(_close),

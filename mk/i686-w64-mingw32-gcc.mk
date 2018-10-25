@@ -1,11 +1,14 @@
 ifeq (${_INCLUDE_MK_GCC_},)
 _INCLUDE_MK_GCC_=1
-CC=i686-w64-mingw32-gcc
-RANLIB=i686-w64-mingw32-ranlib
+CROSS=i686-w64-mingw32-
+CC=${CROSS}gcc
+RANLIB=${CROSS}ranlib
 ONELIB=0
 OSTYPE=windows
 LINK=
-CC_AR=i686-w64-mingw32-ar -r ${LIBAR}
+AR=${CROSS}ar
+CC_AR=${AR} -r ${LIBAR}
+PARTIALLD=${CROSS}ld -r --whole-archive
 PICFLAGS=
 CFLAGS+=${PICFLAGS} -MD -D__WINDOWS__=1
 CC_LIB=${CC} -shared -o

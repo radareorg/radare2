@@ -101,6 +101,7 @@ typedef long long int int64_t;
 #endif
 #endif
 
+// TODO: Make it dependable from the r2 asm/anal settings
 #define LDOUBLE_SIZE 12
 #define LDOUBLE_ALIGN 4
 #define MAX_ALIGN 8
@@ -174,6 +175,12 @@ typedef uint64_t addr_t;
 #endif
 
 /* -------------------------------------------- */
+
+// TODO: Read this from the configuration variables in r2
+
+#define STACK_NEW0(type, arg) \
+	type arg; \
+	ZERO_FILL(arg)
 
 #define INCLUDE_STACK_SIZE  32
 #define IFDEF_STACK_SIZE    64
@@ -422,6 +429,10 @@ struct TCCState {
     int output_type;
     /* output format, see TCC_OUTPUT_FORMAT_xxx */
     int output_format;
+	/* Target system */
+	char *arch;
+	int bits;
+	char *os;
 
     /* C language options */
     int char_is_unsigned;
@@ -447,9 +458,7 @@ struct TCCState {
     char *init_symbol; /* symbols to call at load-time (not used currently) */
     char *fini_symbol; /* symbols to call at unload-time (not used currently) */
 
-#ifdef TCC_TARGET_I386
     int seg_size; /* 32. Can be 16 with i386 assembler (.code16) */
-#endif
 
     /* include paths */
     char **include_paths;
@@ -546,9 +555,9 @@ struct TCCState {
 
 /* types */
 #define VT_BTYPE       0x000f  /* mask for basic type */
-#define VT_INT              0  /* integer type */
-#define VT_BYTE             1  /* signed byte type */
-#define VT_SHORT            2  /* short type */
+#define VT_INT32            0  /* int32_t integer type */
+#define VT_INT16            1  /* int16_t short type */
+#define VT_INT8             2  /* int8_t signed byte type */
 #define VT_VOID             3  /* void type */
 #define VT_PTR              4  /* pointer */
 #define VT_ENUM             5  /* enum definition */
@@ -558,7 +567,7 @@ struct TCCState {
 #define VT_DOUBLE           9  /* IEEE double */
 #define VT_LDOUBLE         10  /* IEEE long double */
 #define VT_BOOL            11  /* ISOC99 boolean type */
-#define VT_LLONG           12  /* 64 bit integer */
+#define VT_INT64		   12  /* int64_t */
 #define VT_LONG            13  /* long integer (NEVER USED as type, only
                                   during parsing) */
 #define VT_QLONG           14  /* 128-bit integer. Only used for x86-64 ABI */
@@ -569,16 +578,17 @@ struct TCCState {
 #define VT_CONSTANT    0x0800  /* const modifier */
 #define VT_VOLATILE    0x1000  /* volatile modifier */
 #define VT_SIGNED      0x2000  /* signed type */
-#define VT_VLA     0x00020000  /* VLA type (also has VT_PTR and VT_ARRAY) */
+#define VT_CHAR		   0x4000  /* character type - for strings */
+#define VT_VLA     0x00040000  /* VLA type (also has VT_PTR and VT_ARRAY) */
 
 /* storage */
 #define VT_EXTERN  0x00000080  /* extern definition */
 #define VT_STATIC  0x00000100  /* static variable */
 #define VT_TYPEDEF 0x00000200  /* typedef definition */
 #define VT_INLINE  0x00000400  /* inline definition */
-#define VT_IMPORT  0x00004000  /* win32: extern data imported from dll */
-#define VT_EXPORT  0x00008000  /* win32: data exported from dll */
-#define VT_WEAK    0x00010000  /* weak symbol */
+#define VT_IMPORT  0x00008000  /* win32: extern data imported from dll */
+#define VT_EXPORT  0x00010000  /* win32: data exported from dll */
+#define VT_WEAK    0x00020000  /* weak symbol */
 
 #define VT_STRUCT_SHIFT 18     /* shift for bitfield shift values (max: 32 - 2*6) */
 
@@ -836,6 +846,11 @@ ST_DATA int tcc_ext;
 /* XXX: get rid of this ASAP */
 ST_DATA struct TCCState *tcc_state;
 
+static inline int tcc_nerr() {
+	return tcc_state->nb_errors;
+}
+
+
 #ifdef MEM_DEBUG
 ST_DATA int mem_cur_size;
 ST_DATA int mem_max_size;
@@ -885,8 +900,6 @@ ST_FUNC int tcc_open(TCCState *s1, const char *filename);
 ST_FUNC void tcc_close(void);
 
 ST_FUNC int tcc_add_file_internal(TCCState *s1, const char *filename, int flags);
-ST_FUNC int tcc_add_crt(TCCState *s, const char *filename);
-ST_FUNC int tcc_add_dll(TCCState *s, const char *filename, int flags);
 
 PUB_FUNC void tcc_print_stats(TCCState *s, int64_t total_time);
 PUB_FUNC int tcc_parse_args(TCCState *s, int argc, char **argv);
@@ -969,7 +982,8 @@ ST_DATA Sym *local_stack;
 ST_DATA Sym *local_label_stack;
 ST_DATA Sym *global_label_stack;
 ST_DATA Sym *define_stack;
-ST_DATA CType char_pointer_type, func_old_type, int_type, llong_type, size_type;
+ST_DATA CType char_pointer_type, func_old_type;
+ST_DATA CType int8_type, int16_type, int32_type, int64_type, size_type;
 ST_DATA SValue __vstack[1+/*to make bcheck happy*/ VSTACK_SIZE], *vtop;
 #define vstack  (__vstack + 1)
 ST_DATA int rsym, anon_sym, ind, loc;

@@ -203,4 +203,90 @@ struct cache_header {
 	ut64 localSymbolsSize;
 };
 
+// dupe?
+typedef struct {
+	char     magic[16];
+	uint32_t mappingOffset;
+	uint32_t mappingCount;
+	uint32_t imagesOffset;
+	uint32_t imagesCount;
+	uint64_t dyldBaseAddress;
+	uint64_t codeSignatureOffset;
+	uint64_t codeSignatureSize;
+	uint64_t slideInfoOffset;
+	uint64_t slideInfoSize;
+	uint64_t localSymbolsOffset;
+	uint64_t localSymbolsSize;
+	uint8_t  uuid[16];
+	uint64_t cacheType;
+	uint32_t branchPoolsOffset;
+	uint32_t branchPoolsCount;
+	uint64_t accelerateInfoAddr;
+	uint64_t accelerateInfoSize;
+	uint64_t imagesTextOffset;
+	uint64_t imagesTextCount;
+} cache_hdr_t;
+
+typedef struct {
+	uint64_t address;
+	uint64_t size;
+	uint64_t fileOffset;
+	uint32_t maxProt;
+	uint32_t initProt;
+} cache_map_t;
+
+typedef struct {
+	uint64_t address;
+	uint64_t modTime;
+	uint64_t inode;
+	uint32_t pathFileOffset;
+	uint32_t pad;
+} cache_img_t;
+
+typedef struct {
+	uint32_t version;
+	uint32_t page_size;
+	uint32_t page_starts_offset;
+	uint32_t page_starts_count;
+	uint32_t page_extras_offset;
+	uint32_t page_extras_count;
+	uint64_t delta_mask;
+	uint64_t value_add;
+} cache_slide2_t;
+
+typedef struct
+{
+	uint32_t version;
+	uint32_t imageExtrasCount;
+	uint32_t imagesExtrasOffset;
+	uint32_t bottomUpListOffset;
+	uint32_t dylibTrieOffset;
+	uint32_t dylibTrieSize;
+	uint32_t initializersOffset;
+	uint32_t initializersCount;
+	uint32_t dofSectionsOffset;
+	uint32_t dofSectionsCount;
+	uint32_t reExportListOffset;
+	uint32_t reExportCount;
+	uint32_t depListOffset;
+	uint32_t depListCount;
+	uint32_t rangeTableOffset;
+	uint32_t rangeTableCount;
+	uint64_t dyldSectionAddr;
+} cache_accel_t;
+
+typedef struct
+{
+	uint64_t exportsTrieAddr;
+	uint64_t weakBindingsAddr;
+	uint32_t exportsTrieSize;
+	uint32_t weakBindingsSize;
+	uint32_t dependentsStartArrayIndex;
+	uint32_t reExportsStartArrayIndex;
+} cache_imgxtr_t;
+
+#define DYLD_CACHE_SLIDE_PAGE_ATTRS 0xC000
+#define DYLD_CACHE_SLIDE_PAGE_ATTR_EXTRA 0x8000
+#define DYLD_CACHE_SLIDE_PAGE_ATTR_NO_REBASE 0x4000
+#define DYLD_CACHE_SLIDE_PAGE_ATTR_END 0x8000
 #endif

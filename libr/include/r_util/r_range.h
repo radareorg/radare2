@@ -1,7 +1,9 @@
 #ifndef R_RANGE_H
 #define R_RANGE_H
 
-/* tinyrange.c */
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef struct r_range_tiny_t {
 	int pairs;
@@ -47,5 +49,9 @@ R_API int r_range_list(RRange *rgs, int rad);
 R_API int r_range_get_n(RRange *rgs, int n, ut64 *from, ut64 *to);
 R_API RRange *r_range_inverse(RRange *rgs, ut64 from, ut64 to, int flags);
 R_API int r_range_overlap(ut64 a0, ut64 a1, ut64 b0, ut64 b1, int *d);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //  R_RANGE_H

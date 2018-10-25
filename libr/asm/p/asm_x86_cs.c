@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2016 - pancake */
+/* radare2 - LGPL - Copyright 2013-2018 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -29,12 +29,14 @@ static int check_features(RAsm *a, cs_insn *insn);
 
 #include "cs_mnemonics.c"
 
+#include "asm_x86_vm.c"
+
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	static int omode = 0;
 	int mode, ret;
 	ut64 off = a->pc;
 
-	mode =  (a->bits == 64)? CS_MODE_64: 
+	mode =  (a->bits == 64)? CS_MODE_64:
 		(a->bits == 32)? CS_MODE_32:
 		(a->bits == 16)? CS_MODE_16: 0;
 	if (cd && mode != omode) {
@@ -56,6 +58,11 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	} else {
 		cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
+	// always unsigned immediates (kernel addresses)
+	// maybe r2 should have an option for this too?
+#if CS_API_MAJOR >= 4
+	cs_option (cd, CS_OPT_UNSIGNED, CS_OPT_ON);
+#endif
 	if (a->syntax == R_ASM_SYNTAX_MASM) {
 #if CS_API_MAJOR >= 4
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_MASM);
@@ -65,11 +72,10 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	} else {
 		cs_option (cd, CS_OPT_SYNTAX, CS_OPT_SYNTAX_INTEL);
 	}
-	if (op) {
-		op->size = 1;
-	} else {
+	if (!op) {
 		return true;
 	}
+	op->size = 1;
 	cs_insn *insn = NULL;
 #if USE_ITER_API
 	{
@@ -94,27 +100,51 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	if (a->features && *a->features) {
 		if (!check_features (a, insn)) {
 			op->size = insn->size;
-			strcpy (op->buf_asm, "illegal");
+			r_asm_op_set_asm (op, "illegal");
 		}
 	}
-	if (op->size==0 && n>0 && insn->size>0) {
+	if (op->size == 0 && n > 0 && insn->size > 0) {
 		char *ptrstr;
 		op->size = insn->size;
-		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s%s%s",
+		char *buf_asm = sdb_fmt ("%s%s%s",
 				insn->mnemonic, insn->op_str[0]?" ":"",
 				insn->op_str);
-		ptrstr = strstr (op->buf_asm, "ptr ");
+		ptrstr = strstr (buf_asm, "ptr ");
 		if (ptrstr) {
 			memmove (ptrstr, ptrstr + 4, strlen (ptrstr + 4) + 1);
 		}
+		r_asm_op_set_asm (op, buf_asm);
+	} else {
+		decompile_vm (a, op, buf, len);
 	}
 	if (a->syntax == R_ASM_SYNTAX_JZ) {
-		if (!strncmp (op->buf_asm, "je ", 3)) {
-			memcpy (op->buf_asm, "jz", 2);
-		} else if (!strncmp (op->buf_asm, "jne ", 4)) {
-			memcpy (op->buf_asm, "jnz", 3);
+		char *buf_asm = r_strbuf_get (&op->buf_asm);
+		if (!strncmp (buf_asm, "je ", 3)) {
+			memcpy (buf_asm, "jz", 2);
+		} else if (!strncmp (buf_asm, "jne ", 4)) {
+			memcpy (buf_asm, "jnz", 3);
 		}
 	}
+#if 0
+	// [eax + ebx*4]  =>  [eax + ebx * 4]
+	char *ast = strchr (op->buf_asm, '*');
+	if (ast && ast > op->buf_asm) {
+		ast--;
+		if (ast[0] != ' ') {
+			char *tmp = strdup (ast + 1);
+			if (tmp) {
+				ast[0] = ' ';
+				if (tmp[0] && tmp[1] && tmp[1] != ' ') {
+					strcpy (ast, " * ");
+					strcpy (ast + 3, tmp + 1);
+				} else {
+					strcpy (ast + 1, tmp);
+				}
+				free (tmp);
+			}
+		}
+	}
+#endif
 #if USE_ITER_API
 	/* do nothing because it should be allocated once and freed in the_end */
 #else
@@ -169,7 +199,7 @@ static int check_features(RAsm *a, cs_insn *insn) {
 }
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_x86_cs,
 	.version = R2_VERSION

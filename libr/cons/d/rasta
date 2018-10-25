@@ -1,4 +1,5 @@
 ec comment green
+ec usrcmt yellow
 ec fname yellow
 ec fline green
 ec flag green
@@ -37,6 +38,7 @@ ec trap red
 ec swi red
 ec creg green
 ec flag yellow
+ec linehl rgb:008
 ec graph.box yellow
 ec graph.box2 green
 ec graph.box3 red
@@ -46,3 +48,13 @@ ec graph.false red
 ec graph.trufae green
 ec graph.current green
 ec graph.traced yellow
+
+ec func_var green
+ec func_var_type red
+ec func_var_addr yellow
+
+ec ai.read green
+ec ai.write green
+ec ai.exec yellow
+ec ai.seq red
+ec ai.ascii red

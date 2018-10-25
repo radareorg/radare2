@@ -6,6 +6,6 @@ includedir=${prefix}/include
 Name: r_hash
 Description: radare foundation libraries
 Version: @VERSION@
-Requires:
-Libs: -L${libdir} -lr_hash
-Cflags: -I${includedir}/libr
+Requires: r_util
+Libs: -L${libdir} -lr_hash  @LIBXXHASH@
+Cflags: -I${includedir}/libr 

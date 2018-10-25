@@ -6,6 +6,6 @@ includedir=${prefix}/include
 Name: r_fs
 Description: radare foundation libraries
 Version: @VERSION@
-Requires:
-Libs: -L${libdir} -lr_fs -lr_util -lr_io
-Cflags: -I${includedir}/libr
+Requires: r_util r_io
+Libs: -L${libdir} -lr_fs  
+Cflags: -I${includedir}/libr 

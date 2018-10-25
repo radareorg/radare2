@@ -13,7 +13,7 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335 USA */
 
 #include <stdio.h>
 #include <string.h>
@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.  */
 #define DEFINE_TABLE
 
 #include "sh-opc.h"
-#include "dis-asm.h"
+#include "disas-asm.h"
 #include "mybfd.h"
 
 #define LITTLE_BIT 2
@@ -80,22 +80,25 @@ print_insn_shx (bfd_vma memaddr, struct disassemble_info *info)
 
 	  if (i < 16)
 	    {
-	      if (nibs[n] == i)
-		continue;
-	      goto fail;
+		  if (nibs[n] == i) {
+			  continue;
+		  }
+		  goto fail;
 	    }
 	  switch (i)
 	    {
 	    case BRANCH_8:
 	      imm = (nibs[2] << 4) | (nibs[3]);
-	      if (imm & 0x80)
-		imm |= ~0xff;
-	      imm = ((char)imm) * 2 + 4 ;
+	      if (imm & 0x80) {
+		      imm |= ~0xff;
+	      }
+	      imm = (imm * 2) + 4 ;
 	      goto ok;
 	    case BRANCH_12:
 	      imm = ((nibs[1]) << 8) | (nibs[2] << 4) | (nibs[3]);
-	      if (imm & 0x800)
-		imm |= ~0xfff;
+	      if (imm & 0x800) {
+		      imm |= ~0xfff;
+	      }
 	      imm = imm * 2 + 4;
 	      goto ok;
 	    case IMM_4:
@@ -153,151 +156,150 @@ print_insn_shx (bfd_vma memaddr, struct disassemble_info *info)
       fprintf_fn (stream,"%s ", op->name);
       for (n = 0; n < 3 && op->arg[n] != A_END; n++)
 	{
-	  if (n && op->arg[1] != A_END)
-	    fprintf_fn (stream, ",");
-	  switch (op->arg[n])
-	    {
-	    case A_IMM:
-	      fprintf_fn (stream, "0x%02X", (char)(imm));
-	      break;
-	    case A_R0:
-	      fprintf_fn (stream, "r0");
-	      break;
-	    case A_REG_N:
-	      fprintf_fn (stream, "r%d", rn);
-	      break;
-	    case A_INC_N:
-	      fprintf_fn (stream, "@r%d+", rn);
-	      break;
-	    case A_DEC_N:
-	      fprintf_fn (stream, "@-r%d", rn);
-	      break;
-	    case A_IND_N:
-	      fprintf_fn (stream, "@r%d", rn);
-	      break;
-	    case A_DISP_REG_N:
-	      fprintf_fn (stream, "@(0x%X,r%d)", imm, rn);
-	      break;
-	    case A_REG_M:
-	      fprintf_fn (stream, "r%d", rm);
-	      break;
-	    case A_INC_M:
-	      fprintf_fn (stream, "@r%d+", rm);
-	      break;
-	    case A_DEC_M:
-	      fprintf_fn (stream, "@-r%d", rm);
-	      break;
-	    case A_IND_M:
-	      fprintf_fn (stream, "@r%d", rm);
-	      break;
-	    case A_DISP_REG_M:
-	      fprintf_fn (stream, "@(0x%X,r%d)", imm, rm);
-	      break;
-	    case A_REG_B:
-	      fprintf_fn (stream, "r%d_bank", rb);
-	      break;
-	    case A_DISP_PC:
-	      disp_pc = 1;
-	      disp_pc_addr = imm + 4 + (memaddr & relmask);
-	      fprintf_fn(stream, "@(0x%X,PC)",imm);
-	      break;
-	    case A_IND_R0_REG_N:
-	      fprintf_fn (stream, "@(r0,r%d)", rn);
-	      break;
-	    case A_IND_R0_REG_M:
-	      fprintf_fn (stream, "@(r0,r%d)", rm);
-	      break;
-	    case A_DISP_GBR:
-	      fprintf_fn (stream, "@(0x%X,gbr)",imm);
-	      break;
-	    case A_R0_GBR:
-	      fprintf_fn (stream, "@(r0,gbr)");
-	      break;
-	    case A_BDISP12:
-	    case A_BDISP8:
-	      (*info->print_address_func) (imm + memaddr, info);
-	      break;
-	    case A_SR:
-	      fprintf_fn (stream, "sr");
-	      break;
-	    case A_GBR:
-	      fprintf_fn (stream, "gbr");
-	      break;
-	    case A_VBR:
-	      fprintf_fn (stream, "vbr");
-	      break;
-	    case A_SSR:
-	      fprintf_fn (stream, "ssr");
-	      break;
-	    case A_SPC:
-	      fprintf_fn (stream, "spc");
-	      break;
-	    case A_MACH:
-	      fprintf_fn (stream, "mach");
-	      break;
-	    case A_MACL:
-	      fprintf_fn (stream ,"macl");
-	      break;
-	    case A_PR:
-	      fprintf_fn (stream, "pr");
-	      break;
-	    case A_SGR:
-	      fprintf_fn (stream, "sgr");
-	      break;
-	    case A_DBR:
-	      fprintf_fn (stream, "dbr");
-	      break;
-	    case FD_REG_N:
-	      if (0)
-		goto d_reg_n;
-	    case F_REG_N:
-	      fprintf_fn (stream, "fr%d", rn);
-	      break;
-	    case F_REG_M:
-	      fprintf_fn (stream, "fr%d", rm);
-	      break;
-	    case DX_REG_N:
-	      if (rn & 1)
-		{
-		  fprintf_fn (stream, "xd%d", rn & ~1);
-		  break;
-		}
-	    d_reg_n:
-	    case D_REG_N:
-	      fprintf_fn (stream, "dr%d", rn);
-	      break;
-	    case DX_REG_M:
-	      if (rm & 1)
-		{
-		  fprintf_fn (stream, "xd%d", rm & ~1);
-		  break;
-		}
-	    case D_REG_M:
-	      fprintf_fn (stream, "dr%d", rm);
-	      break;
-	    case FPSCR_M:
-	    case FPSCR_N:
-	      fprintf_fn (stream, "fpscr");
-	      break;
-	    case FPUL_M:
-	    case FPUL_N:
-	      fprintf_fn (stream, "fpul");
-	      break;
-	    case F_FR0:
-	      fprintf_fn (stream, "fr0");
-	      break;
-	    case V_REG_N:
-	      fprintf_fn (stream, "fv%d", rn*4);
-	      break;
-	    case V_REG_M:
-	      fprintf_fn (stream, "fv%d", rm*4);
-	      break;
-	    case XMTRX_M4:
-	      fprintf_fn (stream, "xmtrx");
-	      break;
-	    default:
-	      fprintf(stderr, "sh-dis: abort");
-	      return 0;
+	      if (n && op->arg[1] != A_END) {
+		      fprintf_fn (stream, ",");
+	      }
+	      switch (op->arg[n]) {
+	      case A_IMM:
+		      fprintf_fn (stream, "0x%02X", (unsigned char)(imm));
+		      break;
+	      case A_R0:
+		      fprintf_fn (stream, "r0");
+		      break;
+	      case A_REG_N:
+		      fprintf_fn (stream, "r%d", rn);
+		      break;
+	      case A_INC_N:
+		      fprintf_fn (stream, "@r%d+", rn);
+		      break;
+	      case A_DEC_N:
+		      fprintf_fn (stream, "@-r%d", rn);
+		      break;
+	      case A_IND_N:
+		      fprintf_fn (stream, "@r%d", rn);
+		      break;
+	      case A_DISP_REG_N:
+		      fprintf_fn (stream, "@(0x%X,r%d)", imm, rn);
+		      break;
+	      case A_REG_M:
+		      fprintf_fn (stream, "r%d", rm);
+		      break;
+	      case A_INC_M:
+		      fprintf_fn (stream, "@r%d+", rm);
+		      break;
+	      case A_DEC_M:
+		      fprintf_fn (stream, "@-r%d", rm);
+		      break;
+	      case A_IND_M:
+		      fprintf_fn (stream, "@r%d", rm);
+		      break;
+	      case A_DISP_REG_M:
+		      fprintf_fn (stream, "@(0x%X,r%d)", imm, rm);
+		      break;
+	      case A_REG_B:
+		      fprintf_fn (stream, "r%d_bank", rb);
+		      break;
+	      case A_DISP_PC:
+		      disp_pc = 1;
+		      disp_pc_addr = imm + 4 + (memaddr & relmask);
+		      fprintf_fn (stream, "@(0x%X,PC)", imm);
+		      break;
+	      case A_IND_R0_REG_N:
+		      fprintf_fn (stream, "@(r0,r%d)", rn);
+		      break;
+	      case A_IND_R0_REG_M:
+		      fprintf_fn (stream, "@(r0,r%d)", rm);
+		      break;
+	      case A_DISP_GBR:
+		      fprintf_fn (stream, "@(0x%X,gbr)", imm);
+		      break;
+	      case A_R0_GBR:
+		      fprintf_fn (stream, "@(r0,gbr)");
+		      break;
+	      case A_BDISP12:
+	      case A_BDISP8:
+		      (*info->print_address_func) (imm + memaddr, info);
+		      break;
+	      case A_SR:
+		      fprintf_fn (stream, "sr");
+		      break;
+	      case A_GBR:
+		      fprintf_fn (stream, "gbr");
+		      break;
+	      case A_VBR:
+		      fprintf_fn (stream, "vbr");
+		      break;
+	      case A_SSR:
+		      fprintf_fn (stream, "ssr");
+		      break;
+	      case A_SPC:
+		      fprintf_fn (stream, "spc");
+		      break;
+	      case A_MACH:
+		      fprintf_fn (stream, "mach");
+		      break;
+	      case A_MACL:
+		      fprintf_fn (stream, "macl");
+		      break;
+	      case A_PR:
+		      fprintf_fn (stream, "pr");
+		      break;
+	      case A_SGR:
+		      fprintf_fn (stream, "sgr");
+		      break;
+	      case A_DBR:
+		      fprintf_fn (stream, "dbr");
+		      break;
+	      case FD_REG_N:
+		      if (0) {
+			      goto d_reg_n;
+		      }
+	      case F_REG_N:
+		      fprintf_fn (stream, "fr%d", rn);
+		      break;
+	      case F_REG_M:
+		      fprintf_fn (stream, "fr%d", rm);
+		      break;
+	      case DX_REG_N:
+		      if (rn & 1) {
+			      fprintf_fn (stream, "xd%d", rn & ~1);
+			      break;
+		      }
+	      d_reg_n:
+	      case D_REG_N:
+		      fprintf_fn (stream, "dr%d", rn);
+		      break;
+	      case DX_REG_M:
+		      if (rm & 1) {
+			      fprintf_fn (stream, "xd%d", rm & ~1);
+			      break;
+		      }
+	      case D_REG_M:
+		      fprintf_fn (stream, "dr%d", rm);
+		      break;
+	      case FPSCR_M:
+	      case FPSCR_N:
+		      fprintf_fn (stream, "fpscr");
+		      break;
+	      case FPUL_M:
+	      case FPUL_N:
+		      fprintf_fn (stream, "fpul");
+		      break;
+	      case F_FR0:
+		      fprintf_fn (stream, "fr0");
+		      break;
+	      case V_REG_N:
+		      fprintf_fn (stream, "fv%d", rn * 4);
+		      break;
+	      case V_REG_M:
+		      fprintf_fn (stream, "fv%d", rm * 4);
+		      break;
+	      case XMTRX_M4:
+		      fprintf_fn (stream, "xmtrx");
+		      break;
+	      default:
+		      fprintf (stderr, "sh-dis: abort");
+		      return 0;
 	    }
 	}
 
@@ -329,12 +331,13 @@ print_insn_shx (bfd_vma memaddr, struct disassemble_info *info)
 	  int size;
 	  bfd_byte bytes[4];
 
-	  if (relmask == ~ (bfd_vma) 1)
-	    size = 2;
-	  else
-	    size = 4;
+	  if (relmask == ~(bfd_vma)1) {
+		  size = 2;
+	  } else {
+		  size = 4;
+	  }
 
-	    //read_memory_func() is broken on ALL GNU disassemblers ! see libr/asm/p/asm_sh.c
+	  //read_memory_func() is broken on ALL GNU disassemblers ! see libr/asm/p/asm_sh.c
 	  status = info->read_memory_func (disp_pc_addr, bytes, size, info);
 	  if (status != 0) {
 			info->memory_error_func (status, memaddr, info);

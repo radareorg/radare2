@@ -34,6 +34,9 @@ enum fmt_inst {
 	fmtoptinlineI,			// [opt] inline invoke
 	fmtoptinlineIR,			// [opt] inline invoke/range
 	fmtopvAAcBBBBBBBBBBBBBBBB,	// op vAA, #+BBBBBBBBBBBBBBBB
+	fmtop45CC,
+	fmtop4RCC,
+	fmtoptinvokcustom,
 };
 
 struct dalvik_opcodes_t {
@@ -294,10 +297,10 @@ static const struct dalvik_opcodes_t dalvik_opcodes[256] = {
 	{"+iput-object-quick", 4, fmtoptopvAvBoCCCC},
 	{"+invoke-virtual-quick", 6, fmtoptinvokeVS},
 	{"+invoke-virtual-quick/range", 6, fmtoptinvokeVSR},
-	{"+invoke-super-quick", 6, fmtoptinvokeVS},
-	{"+invoke-super-quick/range", 6, fmtoptinvokeVSR},
-	{"+iput-object-volatile", 4, fmtopvAvBtCCCC},
-	{"+sget-object-volatile", 4, fmtopvAAtBBBB},
+	{"invoke-polymorphic", 8, fmtop45CC},
+	{"invoke-polymorphic/range", 8, fmtop4RCC},
+	{"invoke-custom", 6, fmtopvXtBBBB},
+	{"invoke-custom/range", 6, fmtopvCCCCmBBBB},
 	{"+sput-object-volatile", 4, fmtopvAAtBBBB},
 	{"invalid", 2, fmtop}
 };

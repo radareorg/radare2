@@ -1,40 +1,37 @@
-/* radare - LGPL - Copyright 2014 - pancake */
+/* radare - LGPL - Copyright 2014-2018 - pancake */
 
 #include <r_anal.h>
 
 #define DB anal->sdb_fcns
 
 // list of all the labels for a specific function
-#define LABELS sdb_fmt (0, "fcn.%"PFMT64x".labels", fcn->addr)
+#define LABELS sdb_fmt ("fcn.%"PFMT64x".labels", fcn->addr)
 // value of each element in the labels list
-#define ADDRLABEL(x,y) sdb_fmt (1, "0x%"PFMT64x"/%s", x,y)
+#define ADDRLABEL(x,y) sdb_fmt ("0x%"PFMT64x"/%s", x,y)
 // resolve by name
-#define LABEL(x) sdb_fmt (2, "fcn.%"PFMT64x".label.%s", fcn->addr, x)
+#define LABEL(x) sdb_fmt ("fcn.%"PFMT64x".label.%s", fcn->addr, x)
 // resolve by addr
-#define ADDR(x) sdb_fmt (3, "fcn.%"PFMT64x".label.0x%"PFMT64x, fcn->addr,x)
+#define ADDR(x) sdb_fmt ("fcn.%"PFMT64x".label.0x%"PFMT64x, fcn->addr,x)
 // SDB looks like fcn.0x80480408.labels=0x8048480/patata,0x0405850/potro
 
 R_API ut64 r_anal_fcn_label_get (RAnal *anal, RAnalFunction *fcn, const char *name) {
-	if (!anal || !fcn)
-		return UT64_MAX;
-	return sdb_num_get (DB, LABEL(name), NULL);
+	return (anal && fcn)? sdb_num_get (DB, LABEL (name), NULL): UT64_MAX;
 }
 
 R_API const char *r_anal_fcn_label_at (RAnal *anal, RAnalFunction *fcn, ut64 addr) {
-	if (!anal || !fcn)
-		return NULL;
-	return sdb_const_get (DB, ADDR(addr), NULL);
+	return (anal && fcn)? sdb_const_get (DB, ADDR (addr), NULL): NULL;
 }
 
 R_API int r_anal_fcn_label_set (RAnal *anal, RAnalFunction *fcn, const char *name, ut64 addr) {
-	if (!anal || !fcn)
+	if (!anal || !fcn) {
 		return false;
-	if (sdb_add (DB, ADDR(addr), name, 0)) {
-		if (sdb_num_add (DB, LABEL(name), addr, 0)) {
+	}
+	if (sdb_add (DB, ADDR (addr), name, 0)) {
+		if (sdb_num_add (DB, LABEL (name), addr, 0)) {
 			sdb_array_add (DB, LABELS, ADDRLABEL (addr, name), 0);
 			return true;
 		} else {
-			sdb_unset (DB, ADDR(addr), 0);
+			sdb_unset (DB, ADDR (addr), 0);
 		}
 	} else {
 		eprintf ("Cannot add\n");
@@ -43,18 +40,19 @@ R_API int r_anal_fcn_label_set (RAnal *anal, RAnalFunction *fcn, const char *nam
 }
 
 R_API int r_anal_fcn_label_del (RAnal *anal, RAnalFunction *fcn, const char *name, ut64 addr) {
-	if (!anal || !fcn || !name)
+	if (!anal || !fcn || !name) {
 		return false;
+	}
 	sdb_array_remove (DB, LABELS, ADDRLABEL (addr, name), 0);
-	sdb_unset (DB, LABEL(name), 0);
-	sdb_unset (DB, ADDR(addr), 0);
+	sdb_unset (DB, LABEL (name), 0);
+	sdb_unset (DB, ADDR (addr), 0);
 	return true;
 }
 
 R_API int r_anal_fcn_labels(RAnal *anal, RAnalFunction *fcn, int rad) {
-	if (!anal)
+	if (!anal) {
 		return 0;
-
+	}
 	if (fcn) {
 		char *cur, *token;
 		char *str = sdb_get (DB, LABELS, 0);
@@ -64,8 +62,9 @@ R_API int r_anal_fcn_labels(RAnal *anal, RAnalFunction *fcn, int rad) {
 				char *name;
 			} loc;
 			token = strchr (cur, '/');
-			if (!token)
+			if (!token) {
 				break;
+			}
 			*token = ',';
 			sdb_fmt_tobin (cur, "qz", &loc);
 			switch (rad) {

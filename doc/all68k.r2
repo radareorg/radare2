@@ -3,7 +3,7 @@
 #   r2 -qi all68k - > all68k.txt
 #
 
-e scr.color=false
+e scr.color=0
 e asm.arch=m68k
 e asm.nbytes=16
 

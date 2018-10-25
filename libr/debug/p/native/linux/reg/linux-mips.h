@@ -78,8 +78,9 @@ PC = 272
         "gpr    s5      .32     172     0\n"
         "gpr    s6      .32     180     0\n"
         "gpr    s7      .32     188     0\n"
-        "gpr    s8      .32     196     0\n"
-        "gpr    s9      .32     204     0\n"
+	/* tmp */
+        "gpr    t8      .32     196     0\n"
+        "gpr    t9      .32     204     0\n"
         /* special */
         "gpr    k0      .32     212     0\n"
         "gpr    k1      .32     220     0\n"

@@ -1,19 +1,19 @@
-/* radare - LGPL - Copyright 2016 - pancake */
+/* radare - LGPL - Copyright 2016-2017 - pancake */
 
 #include <r_bin.h>
 
 #define CHECK4INSTR(b, instr, size) \
 	if (!instr (b) ||\
-		!instr (b + size) ||\
-		!instr (b + size * 2) ||\
-		!instr (b + size * 3)) {\
+		!instr ((b) + (size)) ||\
+		!instr ((b) + (size) * 2) ||\
+		!instr ((b) + (size) * 3)) {\
 		return false;\
 	}
 
 #define CHECK3INSTR(b, instr, size) \
-	if (!instr (b + size) ||\
-		!instr (b + size * 2) ||\
-		!instr (b + size * 3)) {\
+	if (!instr ((b) + (size)) ||\
+		!instr ((b) + (size) * 2) ||\
+		!instr ((b) + (size) * 3)) {\
 		return false;\
 	}
 
@@ -38,7 +38,7 @@ static ut64 jmp_dest(const ut8* b) {
 }
 
 static bool check_bytes_rjmp(const ut8 *b, ut64 length) {
-	CHECK3INSTR (b, rjmp, 2);
+	CHECK3INSTR (b, rjmp, 4);
 	ut64 dst = rjmp_dest (0, b);
 	if (dst < 1 || dst > length) {
 		return false;
@@ -68,29 +68,29 @@ static bool check_bytes(const ut8 *b, ut64 length) {
 	return check_bytes_rjmp (b, length);
 }
 
-static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	check_bytes (buf, sz);
-	return R_NOTNULL;
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+	return check_bytes (buf, sz);
 }
 
-static RBinInfo* info(RBinFile *arch) {
+static RBinInfo* info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret || !arch || !arch->buf) {
+	if (!ret || !bf || !bf->buf) {
 		free (ret);
 		return NULL;
 	}
-	ret->file = strdup (arch->file);
+	ret->file = strdup (bf->file);
 	ret->type = strdup ("ROM");
 	ret->machine = strdup ("ATmel");
 	ret->os = strdup ("avr");
 	ret->has_va = 0; // 1;
+	ret->has_lit = false;
 	ret->arch = strdup ("avr");
 	ret->bits = 8;
-	// bs = (const char*)arch->buf->buf;
+	// bs = (const char*)bf->buf->buf;
 	return ret;
 }
 
-static RList* entries(RBinFile *arch) {
+static RList* entries(RBinFile *bf) {
         RList* ret;
         RBinAddr *ptr = NULL;
 	if (tmp_entry == UT64_MAX) {
@@ -110,7 +110,9 @@ static RList* entries(RBinFile *arch) {
 
 static void addsym(RList *ret, const char *name, ut64 addr) {
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
-	if (!ptr) return;
+	if (!ptr) {
+		return;
+	}
 	ptr->name = strdup (name? name: "");
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->size = 0;
@@ -120,21 +122,21 @@ static void addsym(RList *ret, const char *name, ut64 addr) {
 
 static void addptr(RList *ret, const char *name, ut64 addr, const ut8 *b, int len) {
 	if (b && rjmp (b)) {
-		addsym (ret, sdb_fmt (0, "vector.%s", name), addr);
+		addsym (ret, sdb_fmt ("vector.%s", name), addr);
 		ut64 ptr_addr = rjmp_dest (addr, b + addr);
-		addsym (ret, sdb_fmt (0, "syscall.%s", name), ptr_addr);
+		addsym (ret, sdb_fmt ("syscall.%s", name), ptr_addr);
 	}
 }
 
-static RList* symbols(RBinFile *arch) {
+static RList* symbols(RBinFile *bf) {
 	RList *ret = NULL;
-	const ut8 *b = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+	const ut8 *b = bf ? r_buf_buffer (bf->buf) : NULL;
+	ut64 sz = bf ? r_buf_size (bf->buf): 0;
 
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
 	}
-	if (false) { // TODO arch->cpu && !strcmp (arch->cpu, "atmega8")) {
+	if (false) { // TODO bf->cpu && !strcmp (bf->cpu, "atmega8")) {
 		/* ... */
 	} else {
 		/* atmega8 */
@@ -149,7 +151,7 @@ static RList* symbols(RBinFile *arch) {
 	return ret;
 }
 
-static RList* strings (RBinFile *arch) {
+static RList* strings (RBinFile *bf) {
 	return NULL;
 }
 
@@ -166,10 +168,9 @@ RBinPlugin r_bin_plugin_avr = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_avr,
 	.version = R2_VERSION
 };
 #endif
-

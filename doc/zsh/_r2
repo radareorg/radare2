@@ -1,0 +1,89 @@
+#compdef r2
+local context state state_descr line
+local -i ret=1
+
+r2_qc() {
+  r2 -qc $1 --
+}
+
+_r2() {
+  local -a options=(
+  '-\=[perform !=! command to run all commands remotely]'
+  '-0[print \x00 after init and every command]'
+  '-2[close stderr (silent warnings)]'
+  '-a+[set asm.arch]: :->arch'
+  "-A[run 'aaa' command to analyze all referenced code]"
+  '-b+[set asm.bits]:bits:(8 16 32 64)'
+  '-B+[set base address for PIE binaries]:baddr'
+  '-c+[execute radare command]:cmd'
+  '-C[file is host:port (alias for -c+=http://%s/cmd/)]'
+  "-d[debug the executable 'file' or running process 'pid']"
+  '-D+[enable debug mode (e cfg.debug=true)]: :->dbg.backend'
+  '-e+[evaluate config var]: :->config'
+  '-f[block size = file size]'
+  '-F+[force to use that rbin plugin]:binplug'
+  '(-h -hh)-h[show help message]'
+  '(-h -hh)-hh[show long help message]'
+  '-H[display variable]'
+  '-i+[run script file]:script:_files'
+  '-I+[run script file before the file is opened]:script:_files'
+  '-k+[set asm.os (linux, macos, w32, netbsd, ...)]: :->asm.os'
+  '-l+[load plugin file]:lib:_files'
+  '-L[list supported IO plugins]'
+  '-m+[map file at given address (loadaddr)]:addr'
+  '-M[do not demangle symbol names]'
+  '(-n -nn)-n[do not load RBin info]'
+  '(-n -nn)-nn[only load bin structures]'
+  '-N[do not load user settings and scripts]'
+  '(-q -Q)-q[quiet mode (no prompt) and quit after -i]'
+  '(-q -Q)-Q[quiet mode (no prompt) and quit faster (quietLeak=true)]'
+  '-p+[use project, list if no arg, load if no file]: :->project'
+  '-P+[apply rapatch file and quit]:rapatch:_files'
+  '-r+[specify rarun2 profile to load (same as -e dbg.profile=X)]:dbg.profile'
+  '-R+[specify custom rarun2 directive]:rr2rule'
+  '-s+[initial seek]:addr'
+  '-S[start r2 in sandbox mode]'
+  '-t[load rabin2 info in thread]'
+  '-u[set bin.filter=false to get raw sym/sec/cls names]'
+  '(-v -V)-v[show radare2 version]'
+  '(-v -V)-V[show radare2 and lib versions)]'
+  '-w[open file in write mode]'
+  '-x[open without exec-flag, see io.exec]'
+  '(-z -zz)-z[do not load strings]'
+  '(-z -zz)-zz[load strings from raw binary (even if unknown)]'
+  )
+
+  _arguments -S -s : $options '1:file:_files' && ret=0
+
+  case $state in
+    arch)
+      local -a sub=(${(f)"$(r2_qc 'e asm.arch=?')"})
+      _values 'arch' $sub && ret=0
+      ;;
+    asm.os)
+      _values 'asm.os' $(r2_qc 'e asm.os=?') && ret=0
+      ;;
+    config)
+      local -a sub=(${(f)"$(r2_qc 'e??' | sed -E -e 's/\[/\\[/g' -e 's/]/\\]/g' -e 's/\s*([^:]+): (.*)/\1[\2]:value:/')"})
+      _values 'config var' $sub && ret=0
+      ;;
+    dbg.backend)
+      _values 'dbg.backend' $(r2 '-D?') && ret=0
+      ;;
+    project)
+      _values 'project' "${(f)"$(r2 -p)"}" && ret=0
+      ;;
+  esac
+  return ret
+}
+
+_r2 "$@"
+
+# Local Variables:
+# mode: shell-script
+# coding: utf-8-unix
+# indent-tabs-mode: nil
+# sh-indentation: 2
+# sh-basic-offset: 2
+# End:
+# vim: ft=zsh sw=2 sts=2 et

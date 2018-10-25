@@ -37,6 +37,7 @@ export SDK=watchos
 
 export CPU=x86_64
 export SDK=iphonesimulator
+export PLGCFG=plugins.ios-store.cfg
 
 export BUILD=1
 PREFIX="/usr"
@@ -58,26 +59,26 @@ export CC="$(pwd)/sys/ios-sdk-gcc"
 export IOSVER=10.2
 export IOSINC=/
 #$(pwd)/sys/ios-include
-export CFLAGS=-O2
+export CFLAGS="${CFLAGS} -O2"
 export USE_SIMULATOR=1
 export RANLIB="xcrun --sdk iphoneos ranlib"
 
 if [ "$1" = "-s" ]; then
-	exec bash
+sh
 	exit $?
 fi
 
 if true; then
-# make clean
+make mrproper
 cp -f ${PLGCFG} plugins.cfg
-./configure --prefix=${PREFIX} --with-ostype=darwin \
-	--without-fork --without-pic --with-nonpic \
-	--disable-debugger --with-compiler=ios-sdk \
-	--target=arm-unknown-darwin
+./configure --prefix=${PREFIX} --with-ostype=darwin --with-libr \
+	--without-fork --disable-debugger --with-compiler=ios-sdk \
+	--target=arm-unknown-darwin || exit 1
 fi
 
 if [ $? = 0 ]; then
-	time make -j4
+	time make -j4 || exit 1
+	( cd libr ; make libr.dylib )
 	if [ $? = 0 ]; then
 		( cd binr/radare2 ; make ios_sdk_sign )
 		rm -rf /tmp/r2ios

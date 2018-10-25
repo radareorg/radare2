@@ -21,7 +21,9 @@ static int reg_number_to_string(ut8 reg, char *str) {
 		}
 	}
 	//register number not found in array. this shouldn't happen
-	if (match_idx == 0xff) return -1;
+	if (match_idx == 0xff) {
+		return -1;
+	}
 	strcpy (str, RAsmLm32Regs[match_idx].name);
 	return 0;
 }
@@ -83,7 +85,9 @@ static int csr_number_to_string(ut8 csr, char *str) {
 		}
 	}
 	//csr number not found in array
-	if (match_idx == 0xff) return -1;
+	if (match_idx == 0xff) {
+		return -1;
+	}
 	strcpy (str, RAsmLm32Csrs[match_idx].name);
 	return 0;
 }
@@ -153,7 +157,9 @@ static bool is_pseudo_instr_raise(RAsmLm32Instruction *instr) {
 
 static int r_asm_lm32_decode(RAsmLm32Instruction *instr) {
 	instr->op = extract_opcode (instr->value);
-	if (instr->op >= RAsmLm32OpcodeNumber) return -1;
+	if (instr->op >= RAsmLm32OpcodeNumber) {
+		return -1;
+	}
 	instr->op_decode = RAsmLm32OpcodeList[instr->op];
 
 	switch (instr->op_decode.type) {
@@ -175,23 +181,31 @@ static int r_asm_lm32_decode(RAsmLm32Instruction *instr) {
 		instr->immediate = extract_imm16 (instr->value);
 		break;
 	case reg_imm5:
-		if (is_invalid_imm5_instr (instr)) return -1;
+		if (is_invalid_imm5_instr (instr)) {
+			return -1;
+		}
 		instr->dest_reg = extract_reg_v (instr->value);
 		instr->src0_reg = extract_reg_u (instr->value);
 		instr->immediate = extract_imm5 (instr->value);
 		break;
 	case raise_instr:
-		if (is_invalid_imm5_instr (instr)) return -1;
+		if (is_invalid_imm5_instr (instr)) {
+			return -1;
+		}
 		//might be less bits used, but this shouldn't hurt
 		//invalid parameters are catched in print_pseudo_instruction anyway
 		instr->immediate = extract_imm5 (instr->value);
 		break;
 	case one_reg:
-		if (is_invalid_one_reg_instr (instr)) return -1;
+		if (is_invalid_one_reg_instr (instr)) {
+			return -1;
+		}
 		instr->src0_reg = extract_reg_u (instr->value);
 		break;
 	case two_regs:
-		if (is_invalid_two_reg_instr (instr)) return -1;
+		if (is_invalid_two_reg_instr (instr)) {
+			return -1;
+		}
 		instr->dest_reg = extract_reg_w (instr->value);
 		instr->src0_reg = extract_reg_u (instr->value);
 		break;
@@ -201,13 +215,17 @@ static int r_asm_lm32_decode(RAsmLm32Instruction *instr) {
 		instr->src1_reg = extract_reg_u (instr->value);
 		break;
 	case reg_csr: //wcsr
-		if (is_invalid_wcsr_instr (instr)) return -1;
+		if (is_invalid_wcsr_instr (instr)) {
+			return -1;
+		}
 		instr->src0_reg = extract_reg_v (instr->value);
 		instr->csr = extract_reg_u (instr->value);
 		break;
 	case csr_reg: //rcsr
 		//bitmask is the same as the two register one
-		if (is_invalid_two_reg_instr (instr)) return -1;
+		if (is_invalid_two_reg_instr (instr)) {
+			return -1;
+		}
 		instr->dest_reg = extract_reg_w (instr->value);
 		instr->csr = extract_reg_u (instr->value);
 		break;
@@ -235,24 +253,44 @@ static int write_reg_names_to_struct(RAsmLm32Instruction *instr) {
 	case reg_imm16_zeroextend:
 	case reg_imm5:
 	case two_regs:
-		if (reg_number_to_string (instr->dest_reg, instr->dest_reg_str)) return -1;
-		if (reg_number_to_string (instr->src0_reg, instr->src0_reg_str)) return -1;
+		if (reg_number_to_string (instr->dest_reg, instr->dest_reg_str)) {
+			return -1;
+		}
+		if (reg_number_to_string (instr->src0_reg, instr->src0_reg_str)) {
+			return -1;
+		}
 		break;
 	case one_reg:
-		if (reg_number_to_string (instr->src0_reg, instr->src0_reg_str)) return -1;
+		if (reg_number_to_string (instr->src0_reg, instr->src0_reg_str)) {
+			return -1;
+		}
 		break;
 	case three_regs:
-		if (reg_number_to_string (instr->dest_reg, instr->dest_reg_str)) return -1;
-		if (reg_number_to_string (instr->src0_reg, instr->src0_reg_str)) return -1;
-		if (reg_number_to_string (instr->src1_reg, instr->src1_reg_str)) return -1;
+		if (reg_number_to_string (instr->dest_reg, instr->dest_reg_str)) {
+			return -1;
+		}
+		if (reg_number_to_string (instr->src0_reg, instr->src0_reg_str)) {
+			return -1;
+		}
+		if (reg_number_to_string (instr->src1_reg, instr->src1_reg_str)) {
+			return -1;
+		}
 		break;
 	case reg_csr:
-		if (reg_number_to_string (instr->src0_reg, instr->src0_reg_str)) return -1;
-		if (csr_number_to_string (instr->csr, instr->csr_reg_str)) return -1;
+		if (reg_number_to_string (instr->src0_reg, instr->src0_reg_str)) {
+			return -1;
+		}
+		if (csr_number_to_string (instr->csr, instr->csr_reg_str)) {
+			return -1;
+		}
 		break;
 	case csr_reg:
-		if (reg_number_to_string (instr->dest_reg, instr->dest_reg_str)) return -1;
-		if (csr_number_to_string (instr->csr, instr->csr_reg_str)) return -1;
+		if (reg_number_to_string (instr->dest_reg, instr->dest_reg_str)) {
+			return -1;
+		}
+		if (csr_number_to_string (instr->csr, instr->csr_reg_str)) {
+			return -1;
+		}
 		break;
 	case raise_instr:
 	case imm26:
@@ -314,7 +352,9 @@ static int print_pseudo_instruction(RAsmLm32Instruction *instr, char *str) {
 
 
 static int r_asm_lm32_stringify(RAsmLm32Instruction *instr, char *str) {
-	if (write_reg_names_to_struct (instr)) return -1;
+	if (write_reg_names_to_struct (instr)) {
+		return -1;
+	}
 
 	//pseudo instructions need some special handling
 	if (instr->pseudoInstruction) {
@@ -384,7 +424,6 @@ static int assemble(RAsm *a, RAsmOp *ao, const char *str) {
 	//TODO
 	return -1;
 }
-
 #endif
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
@@ -392,13 +431,13 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	instr.value = buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3];
 	instr.addr = a->pc;
 	if (r_asm_lm32_decode (&instr)) {
-		strcpy (op->buf_asm, "invalid");
+		r_strbuf_set (&op->buf_asm, "invalid");
 		a->invhex = 1;
 		return -1;
 	}
 	//op->buf_asm is 256 chars long, which is more than sufficient
-	if (r_asm_lm32_stringify (&instr, op->buf_asm)) {
-		strcpy (op->buf_asm, "invalid");
+	if (r_asm_lm32_stringify (&instr, r_strbuf_get (&op->buf_asm))) {
+		r_strbuf_set (&op->buf_asm, "invalid");
 		a->invhex = 1;
 		return -1;
 	}
@@ -409,6 +448,7 @@ RAsmPlugin r_asm_plugin_lm32 = {
 	.name = "lm32",
 	.arch = "lm32",
 	.desc = "disassembly plugin for Lattice Micro 32 ISA",
+	.author = "Felix Held",
 	.license = "BSD",
 	.bits = 32,
 	.endian = R_SYS_ENDIAN_BIG,
@@ -416,7 +456,7 @@ RAsmPlugin r_asm_plugin_lm32 = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_lm32,
 	.version = R2_VERSION

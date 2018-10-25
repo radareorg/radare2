@@ -6,6 +6,6 @@ includedir=${prefix}/include
 Name: r_bp
 Description: radare foundation libraries
 Version: @VERSION@
-Requires:
-Libs: -L${libdir} -lr_bp -lr_util
-Cflags: -I${includedir}/libr
+Requires: r_util
+Libs: -L${libdir} -lr_bp  
+Cflags: -I${includedir}/libr 

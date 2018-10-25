@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2014-2015 - fedor.sakharov */
+
 #include <stdio.h>
 #include <string.h>
 #include <r_types.h>
@@ -6,24 +8,18 @@
 
 #include <msp430_disas.h>
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len)
-{
-	int ret;
+static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct msp430_cmd cmd;
-
-	ret = msp430_decode_command (buf, &cmd);
-
+	int ret = msp430_decode_command (buf, len, &cmd);
 	if (ret > 0) {
 		if (cmd.operands[0]) {
-			snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %s", cmd.instr, cmd.operands);
+			r_strbuf_set (&op->buf_asm, sdb_fmt ("%s %s", cmd.instr, cmd.operands));
 		} else {
-			snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s", cmd.instr);
+			r_strbuf_set (&op->buf_asm, sdb_fmt ("%s", cmd.instr));
 		}
 	}
 
-	op->size = ret;
-
-	return ret;
+	return op->size = ret;
 }
 
 RAsmPlugin r_asm_plugin_msp430 = {
@@ -37,7 +33,7 @@ RAsmPlugin r_asm_plugin_msp430 = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_msp430,
 	.version = R2_VERSION

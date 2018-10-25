@@ -20,7 +20,8 @@ mips)
 x86)
 	export NDK_ARCH
 	;;
-aarch64)
+aarch64|arm64)
+	NDK_ARCH=arm64
 	export NDK_ARCH
 	AR=aarch64-linux-android-ar
 	RANLIB=aarch64-linux-android-ranlib
@@ -34,7 +35,7 @@ local)
 	export ANDROID=1
 	;;
 *)
-	echo "Usage: $0 [aarch64|arm|mips|mips64|x86]"
+	echo "Usage: $0 [arm64|arm|mips|mips64|x86]"
 	exit 1
 	;;
 esac
@@ -54,6 +55,19 @@ if [ ! -x /work ]; then
 	else
 		#[ -z "${SDK}" ] && SDK="${HOME}/Downloads/android-sdk-${OS}"
 		if [ -z "${NDK}" ]; then
+			# Checking if Android NDK is installed with macOS's brew
+			D=/usr/local/Caskroom/android-ndk/
+			if [ -d "${D}" ]; then
+				for a in $(cd "$D" && ls) ; do
+					N="$D/$a/android-ndk-r$a"
+					if [ -f "$N/README.md" ]; then
+						NDK="$N"
+						break
+					fi
+				done
+			fi
+		fi
+		if [ -z "${NDK}" ]; then
 			if [ "`uname`" = "Darwin" ]; then
 				NDK="${HOME}/Library/Android/sdk/ndk-bundle/"
 			else
@@ -68,59 +82,38 @@ echo ROOT=$ROOT
 echo NDK=$NDK
 echo NDK_ARCH=$NDK_ARCH
 
-#if [ ! -d "${SDK}/tools" ]; then 
-#	echo "Cannot find Android SDK ${SDK}"
-#	echo "Edit ~/.r2androidrc with:"
-#	echo 'SDK=~/Downloads/android-sdk-$(uname)'
-#	echo 'NDK=~/Downloads/android-ndk-r7b'
-#	exit 1
-#fi
+echo "Building the standalone NDK toolchain..."
+${NDK}/build/tools/make_standalone_toolchain.py --arch=${NDK_ARCH} --install-dir=/tmp/ndk/ --api=28 --force
+(
+cd /tmp/ndk/bin/ && \
+ln -fs clang ndk-gcc && \
+ln -fs clang++ ndk-g++
+)
 if [ "${BUILD}" != 0 ]; then
 	if [ ! -d "${NDK}" ]; then
 		echo "Cannot find Android NDK ${NDK}" >&2
 		echo "echo NDK=/path/to/ndk  > ~/.r2androidrc" >&2
-		#echo "echo SDK=/path/to/sdk >> ~/.r2androidrc"
 		exit 1
 	fi
-
-	TOOLCHAIN_MIPS=`ls ${NDK}/toolchains/ |grep "^mips" | grep -v mips64|sort |head -n 1`
-	TOOLCHAIN_MIPS64=`ls ${NDK}/toolchains/ |grep "mips64" |sort |head -n 1`
-	TOOLCHAIN_ARM=`ls ${NDK}/toolchains/ |grep "^arm" |sort |head -n 1`
-	TOOLCHAIN_AARCH64=`ls ${NDK}/toolchains/ |grep "^aarch64" |sort |head -n 1`
-	TOOLCHAIN_X86=`ls ${NDK}/toolchains/ |grep "^x86" |sort |head -n 1`
-
-	NDKPATH_MIPS=`echo ${NDK}/toolchains/${TOOLCHAIN_MIPS}/prebuilt/${OS}-x86*/bin/`
-	NDKPATH_MIPS64=`echo ${NDK}/toolchains/${TOOLCHAIN_MIPS64}/prebuilt/${OS}-x86*/bin/`
-	NDKPATH_ARM=`echo ${NDK}/toolchains/${TOOLCHAIN_ARM}/prebuilt/${OS}-x86*/bin/`
-	NDKPATH_AARCH64=`echo ${NDK}/toolchains/${TOOLCHAIN_AARCH64}/prebuilt/${OS}-x86*/bin/`
-	NDKPATH_X86=`echo ${NDK}/toolchains/${TOOLCHAIN_X86}/prebuilt/${OS}-x86*/bin/`
-
-	# r7b
-	#NDKPATH_ARM=`echo ${NDK}/toolchains/arm-*/prebuilt/$(uname|tr A-Z a-z)-x86/bin/`
-	#INCDIR=${NDK}/platforms/android-8/arch-arm/usr/include/
-	#CFLAGS=-I${INCDIR}
-	#echo $NDKPATH_ARM
-
-	#PATH=$SDK/tools:$SDK/platform-tools:$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:${NDKPATH_MIPS64}:${NDKPATH_AARCH64}:${NDKPATH_MIPS}:$PATH
-	PATH=$NDK:${NDKPATH_X86}:${NDKPATH_ARM}:${NDKPATH_MIPS64}:${NDKPATH_AARCH64}:${NDKPATH_MIPS}:$PATH
+	PATH=/tmp/ndk/bin:$PATH
 	export PATH
 	export CFLAGS
 	export NDK
 	export NDK_ARCH
 	[ -z "${SHELL}" ] && SHELL=sh
 	SHELL=sh
-	cp -f "${ROOT}/ndk-gcc" "${NDK}"
-	chmod +x "${NDK}/ndk-gcc"
 	CC=ndk-gcc
+	CXX=ndk-g++
 	PS1="[r2-android-${NDK_ARCH}]> "
 	export CC
+	export CXX
 	export PS1
 	export AR
 	export RANLIB
 	A=$@
 	if [ -n "$A" ]; then
-			${SHELL} -c "$A"
+		${SHELL} -c "$A"
 	else
-			${SHELL}
+		${SHELL}
 	fi
 fi

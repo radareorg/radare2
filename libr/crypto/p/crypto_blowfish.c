@@ -177,10 +177,12 @@ static void blowfish_crypt(struct blowfish_state *const state, const ut8 *inbuf,
 
 	if (!state || !inbuf || !outbuf || buflen < 0 || buflen%8 != 0) {
 		//let user deal with padding
-		if (buflen%8 != 0) eprintf("Invalid input length %d. Expected length is multiple of 8 bytes.\n", buflen);
+		if (buflen % 8 != 0) {
+			eprintf ("Invalid input length %d. Expected length is multiple of 8 bytes.\n", buflen);
+		}
 		return;
 	}
-	
+
 	for (index1 = 0; index1 < buflen; index1 += 8) {
 		left = (inbuf[index1+0] << 24 | inbuf[index1+1] << 16 | inbuf[index1+2] << 8 | inbuf[index1+3]);
 		right = (inbuf[index1+4] << 24 | inbuf[index1+5] << 16 | inbuf[index1+6] << 8 | inbuf[index1+7]);
@@ -211,7 +213,7 @@ static void blowfish_decrypt(struct blowfish_state *const state, const ut8 *inbu
 	int index1, index2;
 
 	if (!state || !inbuf || !outbuf || buflen < 0 || buflen%8 != 0) {
-		//length of encrypted output of blowfish is multiple of 8 bytes. 
+		//length of encrypted output of blowfish is multiple of 8 bytes.
 		if ((buflen%8) != 0) {
 			eprintf("Invalid input length %d. Expected length is multiple of 8 bytes.\n", buflen);
 		}
@@ -334,7 +336,7 @@ RCryptoPlugin r_crypto_plugin_blowfish = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_blowfish,
 	.version = R2_VERSION

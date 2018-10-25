@@ -1,0 +1,10 @@
+socket
+connect
+bind$
+listen
+accept
+sendto
+recvfrom
+gethostbyname
+htons
+ntohs

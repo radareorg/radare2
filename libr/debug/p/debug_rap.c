@@ -49,7 +49,7 @@ static int r_debug_rap_detach(RDebug *dbg, int pid) {
 }
 
 static char *r_debug_rap_reg_profile(RDebug *dbg) {
-	char *out, *tf = r_file_temp ("/tmp/rap.XXXXXX");
+	char *out, *tf = r_file_temp ("rap.XXXXXX");
 	int fd = r_cons_pipe_open (tf, 1, 0);
 	r_io_system (dbg->iob.io, "drp");
 	r_cons_pipe_close (fd);
@@ -59,7 +59,7 @@ static char *r_debug_rap_reg_profile(RDebug *dbg) {
 	return out;
 }
 
-static int r_debug_rap_breakpoint (RBreakpointItem *bp, int set, void *user){
+static int r_debug_rap_breakpoint (RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	//r_io_system (dbg->iob.io, "db");
 	return false;
 }
@@ -74,7 +74,7 @@ RDebugPlugin r_debug_plugin_rap = {
 	.attach = &r_debug_rap_attach,
 	.detach = &r_debug_rap_detach,
 	.wait = &r_debug_rap_wait,
-	.breakpoint = &r_debug_rap_breakpoint,
+	.breakpoint = r_debug_rap_breakpoint,
 	.reg_read = &r_debug_rap_reg_read,
 	.reg_write = &r_debug_rap_reg_write,
 	.reg_profile = (void *)r_debug_rap_reg_profile,
@@ -83,7 +83,7 @@ RDebugPlugin r_debug_plugin_rap = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_DBG,
 	.data = &r_debug_plugin_rap,
 	.version = R2_VERSION

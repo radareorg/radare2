@@ -16,7 +16,9 @@ R_API RAnalCycleFrame *r_anal_cycle_frame_new() {
 }
 
 R_API void r_anal_cycle_frame_free(RAnalCycleFrame *cf) {
-	if (!cf) return;
+	if (!cf) {
+		return;
+	}
 	r_list_free (cf->hooks);
 	free (cf);
 }

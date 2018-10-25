@@ -13,7 +13,9 @@
 
 static int vax_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	op->size = 1;
-	if (len<1) return -1;
+	if (len < 1) {
+		return -1;
+	}
 	op->type = R_ANAL_OP_TYPE_UNK;
 	switch (buf[0]) {
 	case 0xd0:
@@ -94,7 +96,7 @@ RAnalPlugin r_anal_plugin_vax = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_vax,
 	.version = R2_VERSION

@@ -32,4 +32,4 @@ TARGET_QNX=debug_qnx.${EXT_SO}
 ALL_TARGETS+=${TARGET_QNX}
 
 ${TARGET_QNX}: ${OBJ_QNX}
-	${CC_LIB} $(call libname,debug_qnx) ${OBJ_QNX} ${CFLAGS} ${LDFLAGS}
+	${CC} $(call libname,debug_qnx) ${OBJ_QNX} ${CFLAGS} ${LDFLAGS}

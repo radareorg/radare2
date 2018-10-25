@@ -1,4 +1,4 @@
-.Dd Sep 21, 2016
+.Dd Feb 10, 2018
 .Dt RADIFF2 1
 .Sh NAME
 .Nm RADIFF2
@@ -21,12 +21,14 @@ Analyze binary after loading it with RCore (see -C) and use -AA to run aaaa inst
 Specify architecture (x86, arm, ..)
 .It Fl b
 Select register size bits for given arch
+.It Fl B
+Binary output (GDIFF format)
 .It Fl c
 Count number of differences.
 .It Fl e [k=v]
 Specify eval config vars for all RCore instances created.
 .It Fl C
-Code diffing using graphdiff algorithm. Output columns are: file-a-address, percentatge of most similar function in B file | file-b-address. (Use with -A to analyze the binaries to find more functions)
+Code diffing using graphdiff algorithm. Output columns are: file-a-address, percentage of most similar function in B file | file-b-address. (Use with -A to analyze the binaries to find more functions)
 .It Fl d
 Use delta diffing (slower).
 .It Fl D

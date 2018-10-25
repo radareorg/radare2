@@ -3,6 +3,10 @@
 
 #define V850_INSTR_MAXLEN	24
 
+#define SEXT5(imm) (((imm) & 0x10) ? (imm) | 0xE0 : (imm))
+#define SEXT9(imm) (((imm) & 0x100) ? (imm) | 0xFFFFFE00 : (imm))
+#define SEXT26(imm) (((imm) & 0x2000000) ? (imm) | 0xFC000000 : (imm))
+
 enum v850_cmd_opcodes {
 	V850_MOV	= 0x0,
 	V850_NOT	= 0x1,
@@ -57,22 +61,25 @@ enum v850_cmd_opcodes {
 };
 
 enum v850_conds {
-	V850_COND_V	= 0x0,
-	V850_COND_CL	= 0x1,
-	V850_COND_Z	= 0x2,
-	V850_COND_NH	= 0x3,
-	V850_COND_SN	= 0x4,
-	V850_COND_T	= 0x5,
-	V850_COND_LT	= 0x6,
-	V850_COND_LE	= 0x7,
-	V850_COND_NV	= 0x8,
-	V850_COND_NC	= 0x9,
-	V850_COND_NZ	= 0xA,
-	V850_COND_H	= 0xB,
-	V850_COND_NS	= 0xC,
-	V850_COND_SA	= 0xD,
-	V850_COND_GE	= 0xE,
-	V850_COND_GT	= 0xF,
+	V850_COND_V		= 0x0, // Overflow
+	V850_COND_CL	= 0x1, // Carry/Lower
+	V850_COND_ZE	= 0x2, // Zero/equal
+	V850_COND_NH	= 0x3, // Not higher
+	V850_COND_N		= 0x4, // Negative
+	V850_COND_AL	= 0x5, // Always
+	V850_COND_LT	= 0x6, // Less than signed
+	V850_COND_LE	= 0x7, // Less than or equal signed
+	V850_COND_NV	= 0x8, // No overflow
+	V850_COND_NL	= 0x9, // No carry / not lower
+	V850_COND_NC	= 0x9, // No carry / not lower
+	V850_COND_NE	= 0xA, // Not zero / not equal
+	V850_COND_NZ	= 0xA, // Not zero / not equal
+	V850_COND_H		= 0xB, // Higher/Greater than
+	V850_COND_P		= 0xC, // Positive / not sign
+	V850_COND_NS	= 0xC, // Positive / not sign
+	V850_COND_SA	= 0xD, // Saturated
+	V850_COND_GE	= 0xE, // Greater than or equal signed
+	V850_COND_GT	= 0xF, // Greater than signed
 };
 
 enum v850_bit_ops {
@@ -102,11 +109,86 @@ enum v850_extension2 {
 	V850_EXT_EI	= 0x4,
 };
 
+enum v850_regs {
+	V850_ZERO = 0x0,
+	V850_R1 = 0x1,
+	V850_R2 = 0x2,
+	V850_SP = 0x3,
+	V850_GP = 0x4,
+	V850_TP = 0x5,
+	V850_R6 = 0x6,
+	V850_R7 = 0x7,
+	V850_R8 = 0x8,
+	V850_R9 = 0x9,
+	V850_R10 = 0xA,
+	V850_R11 = 0xB,
+	V850_R12 = 0xC,
+	V850_R13 = 0xD,
+	V850_R14 = 0xE,
+	V850_R15 = 0xF,
+	V850_R16 = 0x10,
+	V850_R17 = 0x11,
+	V850_R18 = 0x12,
+	V850_R19 = 0x13,
+	V850_R20 = 0x14,
+	V850_R21 = 0x15,
+	V850_R22 = 0x16,
+	V850_R23 = 0x17,
+	V850_R24 = 0x18,
+	V850_R25 = 0x19,
+	V850_R26 = 0x1A,
+	V850_R27 = 0x1B,
+	V850_R28 = 0x1C,
+	V850_R29 = 0x1D,
+	V850_EP = 0x1E,
+	V850_LP = 0x1F,
+};
+
+enum v850_sysregs {
+	V850_SREG_EIPC = 0x0,
+	V850_SREG_EIPCW = 0x1,
+	V850_SREG_FEPC = 0x2,
+	V850_SREG_FEPSW = 0x3,
+	V850_SREG_ECR = 0x4,
+	V850_SREG_PSW = 0x5,
+	V850_SREG_CTPC = 0x10,
+	V850_SREG_CTPSW = 0x11,
+	V850_SREG_DBPC = 0x12,
+	V850_SREG_DBPSW = 0x13,
+	V850_SREG_CTBP = 0x14,
+	V850_SREG_DIR = 0x15,
+};
+
+enum v850_flags {
+	V850_FLAG_CY = 1,
+	V850_FLAG_OV,
+	V850_FLAG_S,
+	V850_FLAG_Z,
+};
+
 struct v850_cmd {
+	ut64 addr;
 	unsigned type;
 	char	instr[V850_INSTR_MAXLEN];
 	char	operands[V850_INSTR_MAXLEN];
 };
 
-R_API int v850_decode_command (const ut8 *instr, struct v850_cmd *cmd);
+static inline ut8 get_opcode(const ut16 instr) {
+	return (instr >> 5) & 0x3F;
+}
+
+// FIXME: XXX: Invalid for extended instruction format 4 (Format XII)!
+static inline ut8 get_subopcode(const ut16  instr) {
+	return (instr & 0x7e00000) >> 21;
+}
+
+static inline ut8 get_reg1(const ut16 instr) {
+	return instr & 0x1F;
+}
+
+static inline ut8 get_reg2(const ut16 instr) {
+	return instr >> 11;
+}
+
+int v850_decode_command (const ut8 *instr, int len, struct v850_cmd *cmd);
 #endif /* R2_V850_DISASM_H */

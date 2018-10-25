@@ -622,7 +622,7 @@ typedef union {
 	ut64	data;
 	st64	sdata;
 	ut64	reference;
-	struct str_structt {
+	struct {
 		char	*string;
 		ut64	offset;
 	} str_struct;

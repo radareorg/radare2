@@ -1,10 +1,13 @@
 PREFIX=/usr/src/mxe/usr/
-CC=x86_64-w64-mingw32.static-gcc
-RANLIB=x86_64-w64-mingw32.static-ranlib
+CROSS=x86_64-w64-mingw32.static-
+CC=${CROSS}gcc
+RANLIB=${CROSS}ranlib
 ONELIB=0
 OSTYPE=windows
 LINK=
-CC_AR=x86_64-w64-mingw32.static-ar -r ${LIBAR}
+AR=${CROSS}ar
+CC_AR=${AR} -r ${LIBAR}
+PARTIALLD=${CROSS}ld -r --whole-archive
 PICFLAGS=
 CFLAGS+=${PICFLAGS} -MD -D__WINDOWS__=1
 CC_LIB=${CC} -shared -o

@@ -3,20 +3,7 @@
 #include "spp.h"
 #include "config.h"
 
-// TODO: avoid globals
-
-static char *lbuf = NULL;
-static int lbuf_s = 1024;
-static int lbuf_n = 0;
-static int incmd = 0;
-static int printed = 0;
-static char *tag_pre, *tag_post, *token = NULL;
-
-int lineno = 1;
-int tag_begin, echo[MAXIFL];
-int ifl = 0; /* conditional nest level */
-
-int spp_run(char *buf, Output *out) {
+R_API int spp_run(char *buf, Output *out) {
 	int i, ret = 0;
 	char *tok;
 
@@ -29,8 +16,8 @@ int spp_run(char *buf, Output *out) {
 		}
 	}
 
-	if (token) {
-		tok = strstr (buf, token);
+	if (proc->token) {
+		tok = strstr (buf, proc->token);
 		if (tok) {
 			*tok = '\0';
 			tok = tok + 1;
@@ -46,14 +33,14 @@ int spp_run(char *buf, Output *out) {
 			if (out->fout) {
 				fflush (out->fout);
 			}
-			ret = tags[i].callback (tok, out);
-			ifl += ret;
+			ret = tags[i].callback (&proc->state, out, tok);
+			proc->state.ifl += ret;
 			if (ret == -1) {
 				break;
 			}
 			if (ret) {
 
-				if (ifl < 0 || ifl >= MAXIFL) {
+				if (proc->state.ifl < 0 || proc->state.ifl >= MAXIFL) {
 					fprintf (stderr, "Nested conditionals parsing error.\n");
 					break;
 				}
@@ -78,13 +65,13 @@ static char *spp_run_str(char *buf, int *rv) {
 	return b;
 }
 
-void lbuf_strcat(char *dst, char *src) {
+void lbuf_strcat(SppBuf *dst, char *src) {
 	int len = strlen (src);
-	if (!lbuf || (len + lbuf_n) > lbuf_s) {
-		lbuf = realloc (lbuf, lbuf_s << 1);
+	if (!dst->lbuf || (len + dst->lbuf_n) > dst->lbuf_s) {
+		dst->lbuf = realloc (dst->lbuf, dst->lbuf_s << 1);
 	}
-	memcpy (lbuf + lbuf_n, src, len + 1);
-	lbuf_n += len;
+	memcpy (dst->lbuf + dst->lbuf_n, src, len + 1);
+	dst->lbuf_n += len;
 }
 
 void do_printf(Output *out, char *str, ...) {
@@ -95,16 +82,18 @@ void do_printf(Output *out, char *str, ...) {
 	} else {
 		char tmp[4096];
 		vsnprintf (tmp, sizeof (tmp), str, ap);
+		tmp[sizeof (tmp) - 1] = 0;
 		r_strbuf_append (out->cout, tmp);
 	}
 	va_end (ap);
 }
 
-void do_fputs(Output *out, char *str) {
+int do_fputs(Output *out, char *str) {
 	int i;
-	for (i = 0; i <= ifl; i++) {
-		if (!echo[i]) {
-			return;
+	int printed = 0;
+	for (i = 0; i <= proc->state.ifl; i++) {
+		if (!proc->state.echo[i]) {
+			return printed;
 		}
 	}
 	if (str[0]) {
@@ -117,19 +106,19 @@ void do_fputs(Output *out, char *str) {
 			fprintf (out->fout, "%s", str);
 		}
 	}
+	return printed;
 }
 
-void spp_eval(char *buf, Output *out) {
+R_API void spp_eval(char *buf, Output *out) {
 	char *ptr, *ptr2;
 	char *ptrr = NULL;
 	int delta;
-
-	printed = 0;
+	int printed = 0;
 retry:
 	/* per word */
-	if (!tag_pre && token) {
+	if (!proc->tag_pre && proc->token) {
 		do {
-			ptr = strstr (buf, token);
+			ptr = strstr (buf, proc->token);
 			if (ptr) {
 				*ptr = '\0';
 			}
@@ -145,44 +134,47 @@ retry:
 		return;
 	}
 
-	if (!tag_post) {
+	if (!proc->tag_post) {
 		/* handle per line here ? */
 		return;
 	}
 
 	// TODO: do it in scope!
-	delta = strlen (tag_post);
+	delta = strlen (proc->tag_post);
 
 	/* (pre) tag */
-	ptr = tag_pre? strstr (buf, tag_pre): NULL;
+	ptr = proc->tag_pre? strstr (buf, proc->tag_pre): NULL;
 	if (ptr) {
 		D printf ("==> 0.0 (%s)\n", ptr);
-		incmd = 1;
-		if (!tag_begin || (tag_begin && ptr == buf)) {
+		if (!proc->tag_begin || (proc->tag_begin && ptr == buf)) {
 			*ptr = '\0';
-			ptr = ptr + strlen (tag_pre);
-			do_fputs (out, buf);
+			ptr = ptr + strlen (proc->tag_pre);
+			if (do_fputs (out, buf)) {
+				printed = 1;
+			}
 			D printf ("==> 0 (%s)\n", ptr);
 		}
-		ptrr = strstr (ptr + strlen (tag_pre), tag_pre);
+		ptrr = strstr (ptr + strlen (proc->tag_pre), proc->tag_pre);
 	}
 
 	/* (post) tag */
 	if (!ptr) {
-		do_fputs (out, buf);
+		if (do_fputs (out, buf)) {
+			printed = 1;
+		}
 		return;
 	}
-	ptr2 = strstr (ptr, tag_post);
+	ptr2 = strstr (ptr, proc->tag_post);
 	if (ptr2) {
 		*ptr2 = '\0';
 		if (ptrr) {
 			if (ptrr < ptr2) {
 				char *p = strdup (ptr2 + 2);
-				char *s = spp_run_str (ptrr + strlen (tag_pre), NULL);
+				char *s = spp_run_str (ptrr + strlen (proc->tag_pre), NULL);
 				D fprintf (stderr, "strcpy(%s)(%s)\n", ptrr, s);
 				strcpy (ptrr, s);
 				free (s);
-				ptr[-2] = tag_pre[0]; // XXX -2 check underflow?
+				ptr[-2] = proc->tag_pre[0]; // XXX -2 check underflow?
 
 				D fprintf (stderr, "strcat(%s)(%s)\n", ptrr, p);
 				strcat (ptrr, p);
@@ -193,21 +185,22 @@ retry:
 				goto retry;
 			}
 		}
-		incmd = 0;
-		if (lbuf && lbuf[0]) {
-			D printf("==> 1 (%s)\n", lbuf);
+		if (proc->buf.lbuf && proc->buf.lbuf[0]) {
+			D printf("==> 1 (%s)\n", proc->buf.lbuf);
 			if (ptr) {
-				lbuf_strcat (lbuf, buf);
-				do_fputs (out, lbuf);
+				lbuf_strcat (&proc->buf, buf);
+				if (do_fputs (out, buf)) {
+					printed = 1;
+				}
 				spp_run (ptr, out);
 			} else {
-				lbuf_strcat (lbuf, buf);
-				D printf ("=(1)=> spp_run(%s)\n", lbuf);
-				spp_run (lbuf+delta, out);
-				D printf ("=(1)=> spp_run(%s)\n", lbuf);
+				lbuf_strcat (&proc->buf, buf);
+				D printf ("=(1)=> spp_run(%s)\n", proc->buf.lbuf);
+				spp_run (proc->buf.lbuf + delta, out);
+				D printf ("=(1)=> spp_run(%s)\n", proc->buf.lbuf);
 			}
-			lbuf[0]='\0';
-			lbuf_n = 0;
+			proc->buf.lbuf[0]='\0';
+			proc->buf.lbuf_n = 0;
 		} else {
 			D printf ("==> 2 (%s)\n", ptr);
 			if (ptr) {
@@ -220,28 +213,33 @@ retry:
 				D printf (" ==> 2.1: continue(%s)\n", buf);
 				goto retry;
 			} else {
-				do_fputs (out, "\n");
+				if (do_fputs (out, buf)) {
+					printed = 1;
+				}
 			}
 		}
-		do_fputs (out, ptr2 + delta);
+		if (do_fputs (out, buf)) {
+			printed = 1;
+		}
 	} else {
 		D printf ("==> 3\n");
-		lbuf_strcat (lbuf, ptr);
+		lbuf_strcat (&proc->buf, ptr);
 	}
 }
 
 /* TODO: detect nesting */
-void spp_io(FILE *in, Output *out) {
+R_API void spp_io(FILE *in, Output *out) {
 	char buf[4096];
 	int lines;
-	if (!lbuf) {
-		lbuf = calloc (1, 4096);
+	if (!proc->buf.lbuf) {
+		proc->buf.lbuf = calloc (1, 4096);
 	}
-	if (!lbuf) {
+	if (!proc->buf.lbuf) {
 		fprintf (stderr, "Out of memory.\n");
 		return;
 	}
-	lbuf[0] = '\0';
+	proc->buf.lbuf[0] = '\0';
+	proc->buf.lbuf_s = 1024;
 	while (!feof (in)) {
 		buf[0] = '\0'; // ???
 		fgets (buf, 1023, in);
@@ -268,12 +266,12 @@ void spp_io(FILE *in, Output *out) {
 			}
 		}
 		spp_eval (buf, out);
-		lineno += lines;
+		proc->state.lineno += lines;
 	}
-	do_fputs (out, lbuf);
+	(void)do_fputs (out, proc->buf.lbuf);
 }
 
-int spp_file(const char *file, Output *out) {
+R_API int spp_file(const char *file, Output *out) {
 	FILE *in = fopen (file, "r");
 	D fprintf (stderr, "SPP-FILE(%s)\n", file);
 	if (in) {
@@ -285,21 +283,21 @@ int spp_file(const char *file, Output *out) {
 	return 0;
 }
 
-void spp_proc_list_kw() {
+R_API void spp_proc_list_kw() {
 	int i;
 	for (i = 0; tags[i].name; i++) {
 		printf ("%s\n", tags[i].name);
 	}
 }
 
-void spp_proc_list() {
+R_API void spp_proc_list() {
 	int i;
 	for (i=0; procs[i]; i++) {
 		printf ("%s\n", procs[i]->name);
 	}
 }
 
-void spp_proc_set(struct Proc *p, char *arg, int fail) {
+R_API void spp_proc_set(struct Proc *p, char *arg, int fail) {
 	int i, j;
 	if (arg)
 	for (j = 0; procs[j]; j++) {
@@ -317,15 +315,12 @@ void spp_proc_set(struct Proc *p, char *arg, int fail) {
 		proc = p;
 	}
 	if (proc) {
-		// TODO: wtf!
-		tag_pre = proc->tag_pre;
-		tag_post = proc->tag_post;
+		proc->state.lineno = 1;
+		proc->state.ifl = 0;
 		for (i = 0; i < MAXIFL; i++) {
-			echo[i] = proc->default_echo;
+			proc->state.echo[i] = proc->default_echo;
 		}
-		token = proc->token;
-		tag_begin = proc->tag_begin;
-		args = (struct Arg*)proc->args;
+		//args = (struct Arg*)proc->args;
 		tags = (struct Tag*)proc->tags;
 	}
 }

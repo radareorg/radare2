@@ -1,7 +1,14 @@
 /* radare - LGPL - 2013-2015 - Fedor Sakharov <fedor.sakharov@gmail.com> */
 
-#include <r_types.h>
 #include "ebc_disas.h"
+#include <r_types.h>
+
+#define CHK_SNPRINTF(dst, sz, fmt, ...) do { \
+		int len_chk_snprintf_ = snprintf (dst, sz, fmt, __VA_ARGS__); \
+		if (len_chk_snprintf_ >= sz) { \
+			return -1; \
+		}\
+	} while (0)
 
 static const char *instr_names[] = {
 	"break",
@@ -141,25 +148,28 @@ static int decode_jmp(const ut8 *bytes, ebc_command_t *cmd) {
 		ret = 10;
 		snprintf(cmd->operands, EBC_OPERANDS_MAXLEN, "0x%lx", immed);
 	} else {
-		if ((bytes[1] & 0x7) != 0)
-			snprintf(op1, sizeof (op1), "%sr%u ",
-					TEST_BIT(bytes[1], 3) ? "@" : "", bytes[1] & 0x7);
+		if ((bytes[1] & 0x7) != 0) {
+			{
+				snprintf (op1, sizeof (op1), "%sr%u ",
+					TEST_BIT (bytes[1], 3) ? "@" : "", bytes[1] & 0x7);
+			}
+		}
 		if (TEST_BIT (bytes[0], 7)) {
-			if (TEST_BIT(bytes[1], 3)) {
-				decode_index32(bytes + 2, &idx32);
+			if (TEST_BIT (bytes[1], 3)) {
+				decode_index32 (bytes + 2, &idx32);
 				sign = idx32.sign ? '+' : '-';
 
-				snprintf(cmd->operands, EBC_OPERANDS_MAXLEN,
-						"%s(%c%u, %c%u)",
-						op1, sign, idx32.n, sign, idx32.c);
+				CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN,
+					"%s(%c%u, %c%u)",
+					op1, sign, idx32.n, sign, idx32.c);
 			} else {
-				immed32 = *(int32_t*)(bytes + 2);
-				snprintf(cmd->operands, EBC_OPERANDS_MAXLEN,
-						"%s0x%x", op1, immed32);
+				immed32 = *(int32_t *)(bytes + 2);
+				CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN,
+					"%s0x%x", op1, immed32);
 			}
 			ret = 6;
 		} else {
-			snprintf(cmd->operands, EBC_OPERANDS_MAXLEN, "%s", op1);
+			snprintf (cmd->operands, EBC_OPERANDS_MAXLEN, "%s", op1);
 			ret = 2;
 		}
 	}
@@ -196,42 +206,41 @@ static int decode_call(const ut8 *bytes, ebc_command_t *cmd) {
 			//operand 1 indirect
 			if (TEST_BIT (bytes[0], 7)) {
 				// immediate data is present
-				decode_index32(bytes + 2, &idx32);
+				decode_index32 (bytes + 2, &idx32);
 				sign = idx32.sign ? '+' : '-';
 
-				snprintf (cmd->operands, EBC_OPERANDS_MAXLEN,
-						"@r%d(%c%u, %c%u)",
-						op1, sign, idx32.n, sign, idx32.c);
+				CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN,
+					"@r%d(%c%u, %c%u)",
+					op1, sign, idx32.n, sign, idx32.c);
 				ret = 6;
 			} else {
 				snprintf (cmd->operands, EBC_OPERANDS_MAXLEN,
-						"@r%d", op1);
+					"@r%d", op1);
 			}
 		} else {
 			//operand 1 direct
 			if (TEST_BIT (bytes[0], 7)) {
 				// immediate data present
-				i1 = *(ut32*)(bytes + 2);
-				snprintf (cmd->operands, EBC_OPERANDS_MAXLEN,
-						"r%d(0x%x)", op1, i1);
+				i1 = *(ut32 *)(bytes + 2);
+				CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN,
+					"r%d(0x%x)", op1, i1);
 				ret = 6;
 			} else {
 				// no immediate data present
-				snprintf(cmd->operands, EBC_OPERANDS_MAXLEN,
-						"r%d", op1);
+				CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN,
+					"r%d", op1);
 			}
 		}
 	} else {
 		bits = 64;
 		ret = 10;
-		i2 = *(ut64*)&bytes[2];
-		snprintf (cmd->operands, EBC_OPERANDS_MAXLEN,
-				"0x%lx", i2);
+		i2 = *(ut64 *)&bytes[2];
+		CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN, "0x%lx", i2);
 	}
-	snprintf (cmd->instr, EBC_INSTR_MAXLEN, "%s%d%s%s",
-			instr_names[EBC_CALL], bits,
-			TEST_BIT(bytes[1], 5) ? "ex" : "",
-			TEST_BIT(bytes[1], 4) ? "" : "a");
+	CHK_SNPRINTF (cmd->instr, EBC_INSTR_MAXLEN, "%s%d%s%s",
+		instr_names[EBC_CALL], bits,
+		TEST_BIT (bytes[1], 5) ? "ex" : "",
+		TEST_BIT (bytes[1], 4) ? "" : "a");
 	return ret;
 }
 
@@ -252,22 +261,22 @@ static int decode_cmp(const ut8 *bytes, ebc_command_t *cmd) {
 	op1 = bytes[1] & 0x07;
 	op2 = (bytes[1] >> 4) & 0x07;
 
-	if (TEST_BIT(bytes[0], 7)) {
+	if (TEST_BIT (bytes[0], 7)) {
 		ret += 2;
-		if (TEST_BIT(bytes[1], 7)) {
-			decode_index16(bytes + 2, &idx);
-                        sign = idx.sign ? '+' : '-';
-			snprintf(cmd->operands, EBC_OPERANDS_MAXLEN,
-					"r%d, @r%d (%c%d, %c%d)",
-					op1, op2, sign ,idx.n, sign, idx.c);
+		if (TEST_BIT (bytes[1], 7)) {
+			decode_index16 (bytes + 2, &idx);
+			sign = idx.sign ? '+' : '-';
+			CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN,
+				"r%d, @r%d (%c%d, %c%d)",
+				op1, op2, sign, idx.n, sign, idx.c);
 		} else {
-			immed = *(ut16*)&bytes[2];
-			snprintf(cmd->operands, EBC_OPERANDS_MAXLEN,
-					"r%d, r%d %d", op1, op2, immed);
+			immed = *(ut16 *)&bytes[2];
+			CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN,
+				"r%d, r%d %d", op1, op2, immed);
 		}
 	} else {
-		snprintf(cmd->operands, EBC_OPERANDS_MAXLEN,
-				"r%d, r%d", op1, op2);
+		CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN,
+			"r%d, r%d", op1, op2);
 	}
 
 	return ret;
@@ -336,9 +345,9 @@ static int decode_not(const ut8 *bytes, ebc_command_t *cmd) {
 		}
 	}
 
-	snprintf (cmd->operands, EBC_OPERANDS_MAXLEN, "%sr%d, %sr%d%s",
-			TEST_BIT(bytes[1], 3) ? "@" : "", op1,
-			TEST_BIT(bytes[1], 7) ? "@" : "", op2, index);
+	CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN, "%sr%d, %sr%d%s",
+		TEST_BIT (bytes[1], 3) ? "@" : "", op1,
+		TEST_BIT (bytes[1], 7) ? "@" : "", op2, index);
 	return ret;
 }
 
@@ -377,9 +386,9 @@ static int decode_add(const ut8 *bytes, ebc_command_t *cmd) {
 		}
 	}
 
-	snprintf(cmd->operands, EBC_OPERANDS_MAXLEN, "%sr%d, %sr%d%s",
-			TEST_BIT(bytes[1], 3) ? "@" : "", op1,
-			TEST_BIT(bytes[1], 7) ? "@" : "", op2, index);
+	CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN, "%sr%d, %sr%d%s",
+		TEST_BIT (bytes[1], 3) ? "@" : "", op1,
+		TEST_BIT (bytes[1], 7) ? "@" : "", op2, index);
 	return ret;
 }
 
@@ -503,8 +512,8 @@ static int decode_mov_args(const ut8 *bytes, ebc_command_t *cmd) {
 		break;
 	}
 
-	snprintf(cmd->operands, EBC_OPERANDS_MAXLEN, "%s%s, %s%s",
-			op1c, ind1, op2c, ind2);
+	CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN, "%s%s, %s%s",
+		op1c, ind1, op2c, ind2);
 
 	return ret;
 }
@@ -549,8 +558,8 @@ static int decode_movsn_args(const ut8 *bytes, ebc_command_t *cmd) {
 	case EBC_MOVSND:
 		break;
 	}
-	snprintf (cmd->operands, EBC_OPERANDS_MAXLEN, "%s%s, %s%s",
-			op1c, ind1, op2c, ind2);
+	CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN, "%s%s, %s%s",
+		op1c, ind1, op2c, ind2);
 	return ret;
 }
 
@@ -574,10 +583,10 @@ static int decode_storesp(const ut8 *bytes, ebc_command_t *cmd) {
 	int ret = 2;
 	unsigned op2 = (bytes[1] >> 4) & 0x07;
 	snprintf (cmd->instr, EBC_INSTR_MAXLEN, "%s",
-			instr_names[bytes[0] & EBC_OPCODE_MASK]);
-	snprintf (cmd->operands, EBC_OPERANDS_MAXLEN, "r%u, %s",
-			bytes[1] & 0x7,
-			op2 < 2 ? dedic_regs[op2] : "RESERVED_DEDICATED_REG");
+		instr_names[bytes[0] & EBC_OPCODE_MASK]);
+	CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN, "r%u, %s",
+		bytes[1] & 0x7,
+		op2 < 2 ? dedic_regs[op2] : "RESERVED_DEDICATED_REG");
 	return ret;
 }
 
@@ -602,14 +611,13 @@ static int decode_push_pop(const ut8 *bytes, ebc_command_t *cmd) {
 
 			sign = idx.sign ? '+' : '-';
 
-			snprintf(cmd->operands, EBC_OPERANDS_MAXLEN, "%s (%c%d, %c%d)",
-					op1c, sign, idx.n, sign, idx.c);
-
+			CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN, "%s (%c%d, %c%d)",
+				op1c, sign, idx.n, sign, idx.c);
 		} else {
-			ut16 immed = *(ut16*)(bytes + 2);
+			ut16 immed = *(ut16 *)(bytes + 2);
 
-			snprintf(cmd->operands, EBC_OPERANDS_MAXLEN, "%s %u",
-					op1c, immed);
+			CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN, "%s %u",
+				op1c, immed);
 		}
 	}
 
@@ -657,8 +665,7 @@ static int decode_cmpi(const ut8 *bytes, ebc_command_t *cmd) {
 		ret += 2;
 	}
 
-	snprintf(cmd->operands, EBC_OPERANDS_MAXLEN, "%s%s, %s", op1c, indx, immed);
-
+	CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN, "%s%s, %s", op1c, indx, immed);
 	return ret;
 }
 
@@ -706,10 +713,7 @@ static int decode_movn(const ut8 *bytes, ebc_command_t *cmd) {
 		}
 	}
 
-
-	snprintf(cmd->operands, EBC_OPERANDS_MAXLEN, "%s%s, %s%s",
-			op1c, indx1, op2c, indx2);
-
+	CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN, "%s%s, %s%s", op1c, indx1, op2c, indx2);
 	return ret;
 }
 
@@ -774,9 +778,8 @@ static int decode_movi(const ut8 *bytes, ebc_command_t *cmd) {
 		break;
 	}
 
-	snprintf(op1, 32, "%sr%u", TEST_BIT(bytes[1], 3) ? "@" : "", bytes[1] & 0x7);
-	snprintf(cmd->operands, EBC_OPERANDS_MAXLEN,
-			"%s%s, %lu", op1, indx, immed);
+	snprintf (op1, 32, "%sr%u", TEST_BIT (bytes[1], 3) ? "@" : "", bytes[1] & 0x7);
+	CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN, "%s%s, %lu", op1, indx, immed);
 	return ret;
 }
 
@@ -831,11 +834,10 @@ static int decode_movin(const ut8 *bytes, ebc_command_t *cmd) {
 
 	sign = idx.sign ? '+' : '-';
 
-	snprintf(indx2, 32, "(%c%u, %c%u)", sign, idx.n, sign, idx.c);
+	snprintf (indx2, 32, "(%c%u, %c%u)", sign, idx.n, sign, idx.c);
 
-	snprintf(op1, 32, "%sr%u", TEST_BIT(bytes[1], 3) ? "@" : "", bytes[1] & 0x7);
-	snprintf(cmd->operands, EBC_OPERANDS_MAXLEN,
-			"%s%s, %s", op1, indx1, indx2);
+	snprintf (op1, 32, "%sr%u", TEST_BIT (bytes[1], 3) ? "@" : "", bytes[1] & 0x7);
+	CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN, "%s%s, %s", op1, indx1, indx2);
 	return ret;
 }
 
@@ -885,30 +887,29 @@ static int decode_movrel(const ut8 *bytes, ebc_command_t *cmd) {
 		ret += 2;
 	}
 
+	ut16 v16;
+	ut32 v32;
+	ut64 v64;
 	switch (p1) {
-		ut16 v16;
-		ut32 v32;
-		ut64 v64;
-		case 'w':
-			v16 = *(ut16*)(bytes + 2);
-			immed = v16;
-			ret += 2;
-			break;
-		case 'd':
-			v32 = *(ut32*)(bytes + 2);
-			immed = v32;
-			ret += 4;
-			break;
-		case 'q':
-			v64 = *(ut64*)(bytes + 2);
-			immed = v64;
-			ret += 8;
-			break;
+	case 'w':
+		v16 = *(ut16 *)(bytes + 2);
+		immed = v16;
+		ret += 2;
+		break;
+	case 'd':
+		v32 = *(ut32 *)(bytes + 2);
+		immed = v32;
+		ret += 4;
+		break;
+	case 'q':
+		v64 = *(ut64 *)(bytes + 2);
+		immed = v64;
+		ret += 8;
+		break;
 	}
 
-	snprintf(cmd->operands, EBC_OPERANDS_MAXLEN, "%s%s, 0x%0*lx",
-			op1, indx, formathex, immed);
-
+	CHK_SNPRINTF (cmd->operands, EBC_OPERANDS_MAXLEN, "%s%s, 0x%0*lx",
+		op1, indx, formathex, immed);
 	return ret;
 }
 
@@ -978,7 +979,10 @@ static decode decodes[EBC_COMMAND_NUM] = {
 };
 
 int ebc_decode_command(const ut8 *instr, ebc_command_t *cmd) {
-	if ((instr[0] & EBC_OPCODE_MASK) > 0x39)
-		return -1;
+	if ((instr[0] & EBC_OPCODE_MASK) > 0x39) {
+		{
+			return -1;
+		}
+	}
 	return decodes[instr[0] & EBC_OPCODE_MASK](instr, cmd);
 }

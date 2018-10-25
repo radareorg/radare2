@@ -14,7 +14,7 @@ static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	memset (&cmd, 0, sizeof (cmd));
 	memset (op, 0, sizeof (RAnalOp));
 
-	ret = op->size = msp430_decode_command (buf, &cmd);
+	ret = op->size = msp430_decode_command (buf, len, &cmd);
 
 	if (ret < 0) {
 		return ret;
@@ -39,10 +39,17 @@ static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		}
 		break;
 	case MSP430_TWOOP:
+		switch (cmd.opcode) {
 		case MSP430_BIT: 
 		case MSP430_BIC:
 		case MSP430_BIS:
-		case MSP430_MOV: op->type = R_ANAL_OP_TYPE_MOV; break;
+		case MSP430_MOV: 
+			op->type = R_ANAL_OP_TYPE_MOV;
+			if ((cmd.instr)[0] == 'b' && (cmd.instr)[1] == 'r') {
+				// Emulated branch instruction, moves source operand to PC register.
+				op->type = R_ANAL_OP_TYPE_UJMP;
+			}
+			break;
 		case MSP430_DADD:
 		case MSP430_ADDC:
 		case MSP430_ADD: op->type = R_ANAL_OP_TYPE_ADD; break;
@@ -51,6 +58,7 @@ static int msp430_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		case MSP430_CMP: op->type = R_ANAL_OP_TYPE_CMP; break;
 		case MSP430_XOR: op->type = R_ANAL_OP_TYPE_XOR; break;
 		case MSP430_AND: op->type = R_ANAL_OP_TYPE_AND; break;
+		}
 		break;
 	case MSP430_JUMP:
 		if (cmd.jmp_cond == MSP430_JMP) {

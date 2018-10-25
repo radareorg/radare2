@@ -48,13 +48,16 @@ static int splitlines(const char *a, int len, struct line **lr) {
 
 	/* count the lines */
 	i = 1; /* extra line for sentinel */
-	for (p = a; p < a + len; p++)
-		if (*p == '\n' || p == plast)
+	for (p = a; p < a + len; p++) {
+		if (*p == '\n' || p == plast) {
 			i++;
+		}
+	}
 
 	*lr = l = (struct line *)malloc(sizeof(struct line) * i);
-	if (!l)
+	if (!l) {
 		return -1;
+	}
 
 	/* build the line array and calculate hashes */
 	h = 0;
@@ -88,18 +91,21 @@ static int equatelines(struct line *a, int an, struct line *b, int bn) {
 	struct pos *h = NULL;
 
 	/* build a hash table of the next highest power of 2 */
-	while (buckets < bn + 1)
+	while (buckets < bn + 1) {
 		buckets *= 2;
+	}
 
 	/* try to allocate a large hash table to avoid collisions */
 	for (scale = 4; scale; scale /= 2) {
 		h = (struct pos *)malloc(scale * buckets * sizeof(struct pos));
-		if (h)
+		if (h) {
 			break;
+		}
 	}
 
-	if (!h)
+	if (!h) {
 		return 0;
+	}
 
 	buckets = buckets * scale - 1;
 
@@ -113,9 +119,11 @@ static int equatelines(struct line *a, int an, struct line *b, int bn) {
 	for (i = bn - 1; i >= 0; i--) {
 		/* find the equivalence class */
 		for (j = b[i].h & buckets; h[j].pos != INT_MAX;
-		     j = (j + 1) & buckets)
-			if (!cmp(b + i, b + h[j].pos))
+			j = (j + 1) & buckets) {
+			if (!cmp (b + i, b + h[j].pos)) {
 				break;
+			}
+		}
 
 		/* add to the head of the equivalence class */
 		b[i].n = h[j].pos;
@@ -131,15 +139,18 @@ static int equatelines(struct line *a, int an, struct line *b, int bn) {
 	for (i = 0; i < an; i++) {
 		/* find the equivalence class */
 		for (j = a[i].h & buckets; h[j].pos != INT_MAX;
-		     j = (j + 1) & buckets)
-			if (!cmp(a + i, b + h[j].pos))
+			j = (j + 1) & buckets) {
+			if (!cmp (a + i, b + h[j].pos)) {
 				break;
+			}
+		}
 
 		a[i].e = j; /* use equivalence class for quick compare */
-		if (h[j].len <= t)
+		if (h[j].len <= t) {
 			a[i].n = h[j].pos; /* point to head of match list */
-		else
+		} else {
 			a[i].n = INT_MAX; /* too popular */
+		}
 	}
 
 	/* discard hash tables */
@@ -154,16 +165,18 @@ static int longest_match(struct line *a, struct line *b, struct pos *pos,
 
 	for (i = a1; i < a2; i++) {
 		/* skip things before the current block */
-		for (j = a[i].n; j < b1; j = b[j].n)
+		for (j = a[i].n; j < b1; j = b[j].n) {
 			;
+		}
 
 		/* loop through all lines match a[i] in b */
 		for (; j < b2; j = b[j].n) {
 			/* does this extend an earlier match? */
-			if (i > a1 && j > b1 && pos[j - 1].pos == i - 1)
+			if (i > a1 && j > b1 && pos[j - 1].pos == i - 1) {
 				k = pos[j - 1].len + 1;
-			else
+			} else {
 				k = 1;
+			}
 			pos[j].pos = i;
 			pos[j].len = k;
 
@@ -183,11 +196,13 @@ static int longest_match(struct line *a, struct line *b, struct pos *pos,
 
 	/* expand match to include neighboring popular lines */
 	while (mi - mb > a1 && mj - mb > b1 &&
-	       a[mi - mb - 1].e == b[mj - mb - 1].e)
+		a[mi - mb - 1].e == b[mj - mb - 1].e) {
 		mb++;
+	}
 	while (mi + mk < a2 && mj + mk < b2 &&
-	       a[mi + mk].e == b[mj + mk].e)
+		a[mi + mk].e == b[mj + mk].e) {
 		mk++;
+	}
 
 	*omi = mi - mb;
 	*omj = mj - mb;
@@ -202,8 +217,9 @@ static void recurse(struct line *a, struct line *b, struct pos *pos,
 
 	/* find the longest match in this chunk */
 	k = longest_match(a, b, pos, a1, a2, b1, b2, &i, &j);
-	if (!k)
+	if (!k) {
 		return;
+	}
 
 	/* and recurse on the remaining chunks on either side */
 	recurse(a, b, pos, a1, i, b1, j, l);
@@ -244,19 +260,22 @@ static struct hunklist diff(struct line *a, int an, struct line *b, int bn)
 		struct hunk *next = curr+1;
 		int shift = 0;
 
-		if (next == l.head)
+		if (next == l.head) {
 			break;
+		}
 
-		if (curr->a2 == next->a1)
-			while (curr->a2+shift < an && curr->b2+shift < bn
-			       && !cmp(a+curr->a2+shift, b+curr->b2+shift))
+		if (curr->a2 == next->a1) {
+			while (curr->a2 + shift < an && curr->b2 + shift < bn && !cmp (a + curr->a2 + shift, b + curr->b2 + shift)) {
 				shift++;
-		else if (curr->b2 == next->b1)
-			while (curr->b2+shift < bn && curr->a2+shift < an
-			       && !cmp(b+curr->b2+shift, a+curr->a2+shift))
+			}
+		} else if (curr->b2 == next->b1) {
+			while (curr->b2 + shift < bn && curr->a2 + shift < an && !cmp (b + curr->b2 + shift, a + curr->a2 + shift)) {
 				shift++;
-		if (!shift)
+			}
+		}
+		if (!shift) {
 			continue;
+		}
 		curr->b2 += shift;
 		next->b1 += shift;
 		curr->a2 += shift;
@@ -317,12 +336,13 @@ R_API int r_diff_buffers_delta(RDiff *d, const ut8 *sa, int la, const ut8 *sb, i
 				dop.b_off = offa; // XXX offb not used??
 				dop.b_buf = (ut8 *)bl[lb].l;
 				dop.b_len = len;
-				if (!d->callback (d, d->user, &dop))
+				if (!d->callback (d, d->user, &dop)) {
 					break;
+				}
 			}
 #if 0	
 			if (rlen > 0) {
-				//printf ("Remove %d bytes at %d\n", rlen, offa);
+				//printf ("Remove %d byte(s) at %d\n", rlen, offa);
 				printf ("r-%d @ 0x%"PFMT64x"\n", rlen, (ut64)offa);
 			}
 			printf ("e file.write=true\n"); // XXX

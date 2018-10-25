@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2011-2016 - pancake */
+/* sdb - MIT - Copyright 2011-2018 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -175,21 +175,24 @@ SDB_API char *sdb_querys (Sdb *r, char *buf, size_t len, const char *_cmd) {
 		return NULL;
 	}
 	out = strbuf_new ();
+	if ((int)len < 1 || !buf) {
+		bufset = 1;
+		buf = malloc ((len = 64));
+		if (!buf) {
+			strbuf_free (out);
+			return NULL;
+		}
+	}
 	if (_cmd) {
 		cmd = original_cmd = strdup (_cmd);
 		if (!cmd) {
 			free (out);
+			if (bufset) {
+				free (buf);
+			}
 			return NULL;
 		}
 	} else {
-		if (len < 1 || !buf) {
-			bufset = 1;
-			buf = malloc ((len = 64));
-			if (!buf) {
-				strbuf_free (out);
-				return NULL;
-			}
-		}
 		cmd = buf;
 	}
 	// if cmd is null, we take buf as cmd
@@ -212,7 +215,7 @@ repeat:
 		if (next) {
 			*next = 0;
 		}
-		out_concat (sdb_fmt (0, "0x%08x\n", sdb_hash (p)));
+		out_concat (sdb_fmt ("0x%08x\n", sdb_hash (p)));
 		if (next) {
 			*next = ';';
 		}
@@ -324,16 +327,11 @@ next_quote:
 		} else
 		if (!strcmp (cmd, "*")) {
 			ForeachListUser user = { out, encode, NULL };
-#if INSERTORDER
-			SdbList *list = sdb_foreach_list (s, false);
-#else
 			SdbList *list = sdb_foreach_list (s, true);
-#endif
 			SdbListIter *iter;
 			SdbKv *kv;
 			ls_foreach (list, iter, kv) {
-				//eprintf ("(%s)(%s)\n", kv->key, kv->value);
-				foreach_list_cb (&user, kv->key, kv->value);
+				foreach_list_cb (&user, sdbkv_key (kv), sdbkv_value (kv));
 			}
 			ls_free (list);
 			goto fail;
@@ -360,20 +358,22 @@ next_quote:
 	// cmd is key and val is value
 	if (*cmd == '.') {
 		if (s->options & SDB_OPTION_FS) {
-			if (!sdb_query_file (s, cmd+1)) {
+			if (!sdb_query_file (s, cmd + 1)) {
 				eprintf ("sdb: cannot open '%s'\n", cmd+1);
 				goto fail;
 			}
 		} else {
 			eprintf ("sdb: filesystem access disabled in config\n");
 		}
-	} else if (*cmd == '~') {
-		if (cmd[1] == '~') {
+	} else if (*cmd == '~') { // delete
+		if (cmd[1] == '~') { // grep
 			SdbKv *kv;
 			SdbListIter *li;
 			SdbList *l = sdb_foreach_match (s, cmd + 2, false);
 			ls_foreach (l, li, kv) {
-				printf ("%s=%s\n", kv->key, kv->value);
+				strbuf_append (out, sdbkv_key (kv), 0);
+				strbuf_append (out, "=", 0);
+				strbuf_append (out, sdbkv_value (kv), 1);
 			}
 			fflush (stdout);
 			ls_free (l);
@@ -385,6 +385,9 @@ next_quote:
 		d = 1;
 		if (!buf) {
 			buf = calloc (1, len);
+			if (!buf) {
+				goto fail;
+			}
 			bufset = 1;
 		}
 		*buf = 0;
@@ -834,7 +837,7 @@ fail:
 SDB_API int sdb_query (Sdb *s, const char *cmd) {
 	char buf[1024], *out;
 	int must_save = ((*cmd=='~') || strchr (cmd, '='));
-	out = sdb_querys (s, buf, sizeof (buf)-1, cmd);
+	out = sdb_querys (s, buf, sizeof (buf) - 1, cmd);
 	if (out) {
 		if (*out) {
 			puts (out);

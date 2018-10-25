@@ -7,29 +7,29 @@
 #include <r_io.h>
 #include "bflt/bflt.h"
 
-static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loaddr, Sdb *sdb) {
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loaddr, Sdb *sdb) {
 	if (!buf || !sz || sz == UT64_MAX) {
-		return NULL;
+		return false;
 	}
 	RBuffer *tbuf = r_buf_new ();
 	if (!tbuf) {
-		return NULL;
+		return false;
 	}
 	r_buf_set_bytes (tbuf, buf, sz);
 	struct r_bin_bflt_obj *res = r_bin_bflt_new_buf (tbuf);
 	r_buf_free (tbuf);
-	return res? res: NULL;
+	*bin_obj = res;
+	return true;
 }
 
-static bool load(RBinFile *arch) {
-	const ut8 *bytes = r_buf_buffer (arch->buf);
-	ut64 sz = r_buf_size (arch->buf);
-	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
-	return arch->o->bin_obj? true: false;
+static bool load(RBinFile *bf) {
+	const ut8 *bytes = r_buf_buffer (bf->buf);
+	ut64 sz = r_buf_size (bf->buf);
+	return load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
 }
 
-static RList *entries(RBinFile *arch) {
-	struct r_bin_bflt_obj *obj = (struct r_bin_bflt_obj *) arch->o->bin_obj;
+static RList *entries(RBinFile *bf) {
+	struct r_bin_bflt_obj *obj = (struct r_bin_bflt_obj *) bf->o->bin_obj;
 	RList *ret;
 	RBinAddr *ptr;
 
@@ -38,6 +38,7 @@ static RList *entries(RBinFile *arch) {
 	}
 	ptr = r_bflt_get_entry (obj);
 	if (!ptr) {
+		r_list_free (ret);
 		return NULL;
 	}
 	r_list_append (ret, ptr);
@@ -71,7 +72,7 @@ static RList *patch_relocs(RBin *b) {
 	if (!b || !b->iob.io || !b->iob.io->desc) {
 		return NULL;
 	}
-	if (!b->iob.io->cached) {
+	if (!(b->iob.io->cached & R_PERM_W)) {
 		eprintf (
 			"Warning: please run r2 with -e io.cache=true to patch "
 			"relocations\n");
@@ -154,8 +155,8 @@ static int get_ngot_entries(struct r_bin_bflt_obj *obj) {
 	return n_got;
 }
 
-static RList *relocs(RBinFile *arch) {
-	struct r_bin_bflt_obj *obj = (struct r_bin_bflt_obj *) arch->o->bin_obj;
+static RList *relocs(RBinFile *bf) {
+	struct r_bin_bflt_obj *obj = (struct r_bin_bflt_obj *) bf->o->bin_obj;
 	RList *list = r_list_newf ((RListFree) free);
 	int i, len, n_got, amount;
 	if (!list || !obj) {
@@ -272,17 +273,17 @@ out_error:
 	return NULL;
 }
 
-static RBinInfo *info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *bf) {
 	struct r_bin_bflt_obj *obj = NULL;
 	RBinInfo *info = NULL;
-	if (!arch || !arch->o || !arch->o->bin_obj) {
+	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	obj = (struct r_bin_bflt_obj *) arch->o->bin_obj;
+	obj = (struct r_bin_bflt_obj *) bf->o->bin_obj;
 	if (!(info = R_NEW0 (RBinInfo))) {
 		return NULL;
 	}
-	info->file = arch->file? strdup (arch->file): NULL;
+	info->file = bf->file? strdup (bf->file): NULL;
 	info->rclass = strdup ("bflt");
 	info->bclass = strdup ("bflt" );
 	info->type = strdup ("bFLT (Executable file)");
@@ -301,8 +302,8 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return length > 4 && !memcmp (buf, "bFLT", 4);
 }
 
-static int destroy(RBinFile *arch) {
-	r_bin_bflt_free ((struct r_bin_bflt_obj *) arch->o->bin_obj);
+static int destroy(RBinFile *bf) {
+	r_bin_bflt_free ((struct r_bin_bflt_obj *) bf->o->bin_obj);
 	return true;
 }
 
@@ -321,7 +322,7 @@ RBinPlugin r_bin_plugin_bflt = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_bflt,
 	.version = R2_VERSION

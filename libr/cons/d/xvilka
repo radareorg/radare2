@@ -8,10 +8,11 @@ ec jmp rgb:03f
 ec cjmp rgb:33c
 ec offset rgb:366
 ec comment rgb:0cf
+ec usrcmt rgb:ff0 rgb:06f
 ec push rgb:0c0
 ec pop rgb:0c0
 ec cmp rgb:060
-ec nop rgb:333
+ec nop rgb:777
 ec b0x00 rgb:444
 ec b0x7f rgb:555
 ec b0xff rgb:666
@@ -21,6 +22,7 @@ ec num rgb:f03
 ec reg rgb:6f0
 ec fline rgb:fc0
 ec flow rgb:0f0
+ec flow2 rgb:0f0
 ec args yellow
 ec floc rgb:fc0
 ec flag rgb:0cf
@@ -34,6 +36,7 @@ ec trap red
 ec swi red
 ec mov white
 ec creg rgb:6f0
+ec linehl rgb:004
 ec ai.read green
 ec ai.write blue
 ec ai.exec red
@@ -53,3 +56,7 @@ ec gui.dataoffset yellow
 ec gui.background black
 ec gui.alt_background white
 ec gui.border black
+
+ec func_var rgb:0cf
+ec func_var_type rgb:0c0
+ec func_var_addr rgb:366

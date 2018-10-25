@@ -14,30 +14,30 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return bin? bin->kv: NULL;
 }
 
-static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 size, ut64 loadaddr, Sdb *sdb){
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 size, ut64 loadaddr, Sdb *sdb){
 	void *res = NULL;
 	RBuffer *tbuf = NULL;
 	if (!buf || size == 0 || size == UT64_MAX) {
-		return NULL;
+		return false;
 	}
 	tbuf = r_buf_new ();
 	r_buf_set_bytes (tbuf, buf, size);
 	res = r_bin_zimg_new_buf (tbuf);
 	r_buf_free (tbuf);
-	return res;
+	*bin_obj = res;
+	return true;
 }
 
-static bool load(RBinFile *arch) {
-	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
-	ut64 size = arch? r_buf_size (arch->buf): 0;
-	if (!arch || !arch->o) {
+static bool load(RBinFile *bf) {
+	const ut8 *bytes = bf? r_buf_buffer (bf->buf): NULL;
+	ut64 size = bf? r_buf_size (bf->buf): 0;
+	if (!bf || !bf->o) {
 		return false;
 	}
-	arch->o->bin_obj = load_bytes (arch, bytes, size, arch->o->loadaddr, arch->sdb);
-	return arch->o->bin_obj? true: false;
+	return load_bytes (bf, &bf->o->bin_obj, bytes, size, bf->o->loadaddr, bf->sdb);
 }
 
-static ut64 baddr(RBinFile *arch) {
+static ut64 baddr(RBinFile *bf) {
 	return 0;
 }
 
@@ -52,12 +52,12 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return false;
 }
 
-static RBinInfo *info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
-	ret->file = arch->file? strdup (arch->file): NULL;
+	ret->file = bf->file? strdup (bf->file): NULL;
 	ret->type = strdup ("Linux zImage Kernel");
 	ret->has_va = false;
 	ret->bclass = strdup ("Compressed Linux Kernel");
@@ -86,7 +86,7 @@ RBinPlugin r_bin_plugin_zimg = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_zimg,
 	.version = R2_VERSION

@@ -28,7 +28,7 @@
 
 #include "sysdep.h"
 #include "opcode/sparc.h"
-#include "dis-asm.h"
+#include "disas-asm.h"
 #ifndef _MSC_VER
 #include "libiberty.h"
 #else
@@ -72,8 +72,8 @@ static sparc_opcode_hash *opcode_hash_table[HASH_SIZE];
 
 /* Sign-extend a value which is N bits long.  */
 #define	SEX(value, bits) \
-	((((int)(value)) << ((8 * sizeof (int)) - bits))	\
-			 >> ((8 * sizeof (int)) - bits) )
+	((((int)(value)) << ((8 * sizeof (int)) - (bits)))	\
+			 >> ((8 * sizeof (int)) - (bits)) )
 
 static  char *reg_names[] =
 { "g0", "g1", "g2", "g3", "g4", "g5", "g6", "g7",
@@ -211,9 +211,9 @@ is_delayed_branch (unsigned long insn)
     {
       const sparc_opcode *opcode = op->opcode;
 
-      if ((opcode->match & insn) == opcode->match
-	  && (opcode->lose & insn) == 0)
-	return opcode->flags & F_DELAYED;
+      if ((opcode->match & insn) == opcode->match && (opcode->lose & insn) == 0) {
+	      return opcode->flags & F_DELAYED;
+      }
     }
   return 0;
 }
@@ -274,15 +274,17 @@ compare_opcodes (const void * a, const void * b)
      by comparing the bitmasks).  */
   if (op0->architecture & current_arch_mask)
     {
-      if (! (op1->architecture & current_arch_mask))
-	return -1;
+	  if (!(op1->architecture & current_arch_mask)) {
+		  return -1;
+	  }
     }
   else
     {
-      if (op1->architecture & current_arch_mask)
-	return 1;
-      else if (op0->architecture != op1->architecture)
-	return op0->architecture - op1->architecture;
+	    if (op1->architecture & current_arch_mask) {
+		    return 1;
+	    } else if (op0->architecture != op1->architecture) {
+		    return op0->architecture - op1->architecture;
+	    }
     }
 
   /* If a bit is set in both match and lose, there is something
@@ -317,8 +319,9 @@ compare_opcodes (const void * a, const void * b)
       int x0 = (match0 & x) != 0;
       int x1 = (match1 & x) != 0;
 
-      if (x0 != x1)
-	return x1 - x0;
+      if (x0 != x1) {
+	      return x1 - x0;
+      }
     }
 
   for (i = 0; i < 32; ++i)
@@ -327,8 +330,9 @@ compare_opcodes (const void * a, const void * b)
       int x0 = (lose0 & x) != 0;
       int x1 = (lose1 & x) != 0;
 
-      if (x0 != x1)
-	return x1 - x0;
+      if (x0 != x1) {
+	      return x1 - x0;
+      }
     }
 
   /* They are functionally equal.  So as long as the opcode table is
@@ -338,9 +342,10 @@ compare_opcodes (const void * a, const void * b)
   {
     int alias_diff = (op0->flags & F_ALIAS) - (op1->flags & F_ALIAS);
 
-    if (alias_diff != 0)
-      /* Put the one that isn't an alias first.  */
-      return alias_diff;
+    if (alias_diff != 0) {
+	    /* Put the one that isn't an alias first.  */
+	    return alias_diff;
+    }
   }
 
   /* Except for aliases, two "identical" instructions had
@@ -348,22 +353,24 @@ compare_opcodes (const void * a, const void * b)
   i = strcmp (op0->name, op1->name);
   if (i)
     {
-      if (op0->flags & F_ALIAS) /* If they're both aliases, be arbitrary.  */
-	return i;
-      else
-	fprintf (stderr,
-		 /* xgettext:c-format */
-		 _("Internal error: bad sparc-opcode.h: \"%s\" == \"%s\"\n"),
-		 op0->name, op1->name);
+	  if (op0->flags & F_ALIAS) { /* If they're both aliases, be arbitrary.  */
+		  return i;
+	  } else {
+		  fprintf (stderr,
+			  /* xgettext:c-format */
+			  _ ("Internal error: bad sparc-opcode.h: \"%s\" == \"%s\"\n"),
+			  op0->name, op1->name);
+	  }
     }
 
   /* Fewer arguments are preferred.  */
   {
     int length_diff = strlen (op0->args) - strlen (op1->args);
 
-    if (length_diff != 0)
-      /* Put the one with fewer arguments first.  */
-      return length_diff;
+    if (length_diff != 0) {
+	    /* Put the one with fewer arguments first.  */
+	    return length_diff;
+    }
   }
 
   /* Put 1+i before i+1.  */
@@ -376,12 +383,14 @@ compare_opcodes (const void * a, const void * b)
 	/* There is a plus in both operands.  Note that a plus
 	   sign cannot be the first character in args,
 	   so the following [-1]'s are valid.  */
-	if (p0[-1] == 'i' && p1[1] == 'i')
-	  /* op0 is i+1 and op1 is 1+i, so op1 goes first.  */
-	  return 1;
-	if (p0[1] == 'i' && p1[-1] == 'i')
-	  /* op0 is 1+i and op1 is i+1, so op0 goes first.  */
-	  return -1;
+	if (p0[-1] == 'i' && p1[1] == 'i') {
+		/* op0 is i+1 and op1 is 1+i, so op1 goes first.  */
+		return 1;
+	}
+	if (p0[1] == 'i' && p1[-1] == 'i') {
+		/* op0 is 1+i and op1 is i+1, so op0 goes first.  */
+		return -1;
+	}
       }
   }
 
@@ -390,8 +399,9 @@ compare_opcodes (const void * a, const void * b)
     int i0 = strncmp (op0->args, "i,1", 3) == 0;
     int i1 = strncmp (op1->args, "i,1", 3) == 0;
 
-    if (i0 ^ i1)
-      return i0 - i1;
+    if (i0 ^ i1) {
+	    return i0 - i1;
+    }
   }
 
   /* They are, as far as we can tell, identical.
@@ -420,8 +430,9 @@ build_hash_table (const sparc_opcode **opcode_table,
 
   memset (hash_table, 0, HASH_SIZE * sizeof (hash_table[0]));
   memset (hash_count, 0, HASH_SIZE * sizeof (hash_count[0]));
-  if (hash_buf != NULL)
-    free (hash_buf);
+  if (hash_buf != NULL) {
+	  free (hash_buf);
+  }
   hash_buf = calloc (sizeof (* hash_buf), num_opcodes);
   if (!hash_buf) {
     return;
@@ -485,12 +496,14 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 
       current_arch_mask = compute_arch_mask (info->mach);
 
-      if (!opcodes_initialized)
-	sorted_opcodes =
-	  xmalloc (sparc_num_opcodes * sizeof (sparc_opcode *));
+      if (!opcodes_initialized) {
+	      sorted_opcodes =
+		      xmalloc (sparc_num_opcodes * sizeof (sparc_opcode *));
+      }
       /* Reset the sorted table so we can resort it.  */
-      for (i = 0; i < sparc_num_opcodes; ++i)
-	sorted_opcodes[i] = &sparc_opcodes[i];
+      for (i = 0; i < sparc_num_opcodes; ++i) {
+	      sorted_opcodes[i] = &sparc_opcodes[i];
+      }
       qsort ((char *) sorted_opcodes, sparc_num_opcodes,
 	     sizeof (sorted_opcodes[0]), compare_opcodes);
 
@@ -512,10 +525,11 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 
   /* On SPARClite variants such as DANlite (sparc86x), instructions
      are always big-endian even when the machine is in little-endian mode.  */
-  if (info->endian == BFD_ENDIAN_BIG || info->mach == bfd_mach_sparc_sparclite)
-    getword = bfd_getb32;
-  else
-    getword = bfd_getl32;
+  if (info->endian == BFD_ENDIAN_BIG || info->mach == bfd_mach_sparc_sparclite) {
+	  getword = bfd_getb32;
+  } else {
+	  getword = bfd_getl32;
+  }
 
   insn = getword (buffer);
 
@@ -529,8 +543,9 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
       const sparc_opcode *opcode = op->opcode;
 
       /* If the insn isn't supported by the current architecture, skip it.  */
-      if (! (opcode->architecture & current_arch_mask))
-	continue;
+      if (!(opcode->architecture & current_arch_mask)) {
+	      continue;
+      }
 
       if ((opcode->match & insn) == opcode->match
 	  && (opcode->lose & insn) == 0)
@@ -549,27 +564,27 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 
 	  /* Do we have an `add' or `or' instruction combining an
              immediate with rs1?  */
-	  if (opcode->match == 0x80102000) /* or */
-	    imm_ored_to_rs1 = 1;
-	  if (opcode->match == 0x80002000) /* add */
-	    imm_added_to_rs1 = 1;
+	  if (opcode->match == 0x80102000) { /* or */
+		  imm_ored_to_rs1 = 1;
+	  }
+	  if (opcode->match == 0x80002000) { /* add */
+		  imm_added_to_rs1 = 1;
+	  }
 
-	  if (X_RS1 (insn) != X_RD (insn)
-	      && strchr (opcode->args, 'r') != 0)
-	      /* Can't do simple format if source and dest are different.  */
-	      continue;
-	  if (X_RS2 (insn) != X_RD (insn)
-	      && strchr (opcode->args, 'O') != 0)
-	      /* Can't do simple format if source and dest are different.  */
-	      continue;
+	  if (X_RS1 (insn) != X_RD (insn) && strchr (opcode->args, 'r') != 0) {
+		  /* Can't do simple format if source and dest are different.  */
+		  continue;
+	  }
+	  if (X_RS2 (insn) != X_RD (insn) && strchr (opcode->args, 'O') != 0) {
+		  /* Can't do simple format if source and dest are different.  */
+		  continue;
+	  }
 
 	  (*info->fprintf_func) (stream, "%s", opcode->name);
 
 	  {
 	    const char *s;
-
-	    if (opcode->args[0] != ',')
-	      (*info->fprintf_func) (stream, " ");
+	    int brackets = 0;
 
 	    for (s = opcode->args; *s != '\0'; ++s)
 	      {
@@ -599,7 +614,17 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 		      }
 		  }
 
-		(*info->fprintf_func) (stream, " ");
+		  if (*s != '[' && !brackets) {
+		      (*info->fprintf_func) (stream, " ");
+		  } else if (*s == ']') {
+		      (*info->fprintf_func) (stream, "%c", *s);
+		      brackets = 0;
+		      continue;
+		  } else if (*s == '[') {
+		      (*info->fprintf_func) (stream, " %c", *s);
+		      brackets = 1;
+		      continue;
+		  }
 
 		switch (*s)
 		  {
@@ -685,12 +710,13 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 		    {
 		      int imm;
 
-		      if (*s == 'i')
-		        imm = X_SIMM (insn, 13);
-		      else if (*s == 'I')
-			imm = X_SIMM (insn, 11);
-		      else
-			imm = X_SIMM (insn, 10);
+		      if (*s == 'i') {
+			      imm = X_SIMM (insn, 13);
+		      } else if (*s == 'I') {
+			      imm = X_SIMM (insn, 11);
+		      } else {
+			      imm = X_SIMM (insn, 10);
+		      }
 
 		      /* Check to see whether we have a 1+i, and take
 			 note of that fact.
@@ -699,13 +725,15 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 			 we will be matching 1+i rather than i+1,
 			 so it is OK to assume that i is after +,
 			 not before it.  */
-		      if (found_plus)
-			imm_added_to_rs1 = 1;
+		      if (found_plus) {
+			      imm_added_to_rs1 = 1;
+		      }
 
-		      if (imm <= 9)
-			(*info->fprintf_func) (stream, "%d", imm);
-		      else
-			(*info->fprintf_func) (stream, "%#x", imm);
+		      if (imm <= 9) {
+			      (*info->fprintf_func) (stream, "%d", imm);
+		      } else {
+			      (*info->fprintf_func) (stream, "%#x", imm);
+		      }
 		    }
 		    break;
 
@@ -714,10 +742,11 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 		    {
 		      int imm = X_IMM (insn, *s == 'X' ? 5 : 6);
 
-		      if (imm <= 9)
-			(info->fprintf_func) (stream, "%d", imm);
-		      else
-			(info->fprintf_func) (stream, "%#x", (unsigned) imm);
+		      if (imm <= 9) {
+			      (info->fprintf_func) (stream, "%d", imm);
+		      } else {
+			      (info->fprintf_func) (stream, "%#x", (unsigned)imm);
+		      }
 		    }
 		    break;
 
@@ -731,21 +760,21 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 		      int bit = 0x40, printed_one = 0;
 		      const char *name;
 
-		      if (mask == 0)
-			(info->fprintf_func) (stream, "0");
-		      else
-			while (bit)
-			  {
-			    if (mask & bit)
-			      {
-				if (printed_one)
-				  (info->fprintf_func) (stream, "|");
-				name = sparc_decode_membar (bit);
-				(info->fprintf_func) (stream, "%s", name);
-				printed_one = 1;
+		      if (mask == 0) {
+			      (info->fprintf_func) (stream, "0");
+		      } else {
+			      while (bit) {
+				      if (mask & bit) {
+					      if (printed_one) {
+						      (info->fprintf_func) (stream, "|");
+					      }
+					      name = sparc_decode_membar (bit);
+					      (info->fprintf_func) (stream, "%s", name);
+					      printed_one = 1;
+				      }
+				      bit >>= 1;
 			      }
-			    bit >>= 1;
-			  }
+		      }
 		      break;
 		    }
 
@@ -795,63 +824,70 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 		    break;
 
 		  case '?':
-		    if (X_RS1 (insn) == 31)
-		      (*info->fprintf_func) (stream, "%%ver");
-		    else if ((unsigned) X_RS1 (insn) < 17)
-		      (*info->fprintf_func) (stream, "%%%s",
-					     v9_priv_reg_names[X_RS1 (insn)]);
-		    else
-		      (*info->fprintf_func) (stream, "%%reserved");
-		    break;
+			  if (X_RS1 (insn) == 31) {
+				  (*info->fprintf_func) (stream, "%%ver");
+			  } else if ((unsigned)X_RS1 (insn) < 17) {
+				  (*info->fprintf_func) (stream, "%%%s",
+					  v9_priv_reg_names[X_RS1 (insn)]);
+			  } else {
+				  (*info->fprintf_func) (stream, "%%reserved");
+			  }
+			  break;
 
 		  case '!':
-		    if ((unsigned) X_RD (insn) < 17)
-		      (*info->fprintf_func) (stream, "%%%s",
-					     v9_priv_reg_names[X_RD (insn)]);
-		    else
-		      (*info->fprintf_func) (stream, "%%reserved");
-		    break;
+			  if ((unsigned)X_RD (insn) < 17) {
+				  (*info->fprintf_func) (stream, "%%%s",
+					  v9_priv_reg_names[X_RD (insn)]);
+			  } else {
+				  (*info->fprintf_func) (stream, "%%reserved");
+			  }
+			  break;
 
 		  case '$':
-		    if ((unsigned) X_RS1 (insn) < 32)
-		      (*info->fprintf_func) (stream, "%%%s",
-					     v9_hpriv_reg_names[X_RS1 (insn)]);
-		    else
-		      (*info->fprintf_func) (stream, "%%reserved");
-		    break;
+			  if ((unsigned)X_RS1 (insn) < 32) {
+				  (*info->fprintf_func) (stream, "%%%s",
+					  v9_hpriv_reg_names[X_RS1 (insn)]);
+			  } else {
+				  (*info->fprintf_func) (stream, "%%reserved");
+			  }
+			  break;
 
 		  case '%':
-		    if ((unsigned) X_RD (insn) < 32)
-		      (*info->fprintf_func) (stream, "%%%s",
-					     v9_hpriv_reg_names[X_RD (insn)]);
-		    else
-		      (*info->fprintf_func) (stream, "%%reserved");
-		    break;
+			  if ((unsigned)X_RD (insn) < 32) {
+				  (*info->fprintf_func) (stream, "%%%s",
+					  v9_hpriv_reg_names[X_RD (insn)]);
+			  } else {
+				  (*info->fprintf_func) (stream, "%%reserved");
+			  }
+			  break;
 
 		  case '/':
-		    if (X_RS1 (insn) < 16 || X_RS1 (insn) > 25)
-		      (*info->fprintf_func) (stream, "%%reserved");
-		    else
-		      (*info->fprintf_func) (stream, "%%%s",
-					     v9a_asr_reg_names[X_RS1 (insn)-16]);
-		    break;
+			  if (X_RS1 (insn) < 16 || X_RS1 (insn) > 25) {
+				  (*info->fprintf_func) (stream, "%%reserved");
+			  } else {
+				  (*info->fprintf_func) (stream, "%%%s",
+					  v9a_asr_reg_names[X_RS1 (insn) - 16]);
+			  }
+			  break;
 
 		  case '_':
-		    if (X_RD (insn) < 16 || X_RD (insn) > 25)
-		      (*info->fprintf_func) (stream, "%%reserved");
-		    else
-		      (*info->fprintf_func) (stream, "%%%s",
-					     v9a_asr_reg_names[X_RD (insn)-16]);
-		    break;
+			  if (X_RD (insn) < 16 || X_RD (insn) > 25) {
+				  (*info->fprintf_func) (stream, "%%reserved");
+			  } else {
+				  (*info->fprintf_func) (stream, "%%%s",
+					  v9a_asr_reg_names[X_RD (insn) - 16]);
+			  }
+			  break;
 
 		  case '*':
 		    {
 		      const char *name = sparc_decode_prefetch (X_RD (insn));
 
-		      if (name)
-			(*info->fprintf_func) (stream, "%s", name);
-		      else
-			(*info->fprintf_func) (stream, "%ld", X_RD (insn));
+		      if (name) {
+			      (*info->fprintf_func) (stream, "%s", name);
+		      } else {
+			      (*info->fprintf_func) (stream, "%ld", X_RD (insn));
+		      }
 		      break;
 		    }
 
@@ -882,10 +918,11 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 		    {
 		      const char *name = sparc_decode_asi (X_ASI (insn));
 
-		      if (name)
-			(*info->fprintf_func) (stream, "%s", name);
-		      else
-			(*info->fprintf_func) (stream, "(%ld)", X_ASI (insn));
+		      if (name) {
+			      (*info->fprintf_func) (stream, "%s", name);
+		      } else {
+			      (*info->fprintf_func) (stream, "(%ld)", X_ASI (insn));
+		      }
 		      break;
 		    }
 
@@ -933,10 +970,11 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 		      int val = *s == 'U' ? X_RS1 (insn) : X_RD (insn);
 		      const char *name = sparc_decode_sparclet_cpreg (val);
 
-		      if (name)
-			(*info->fprintf_func) (stream, "%s", name);
-		      else
-			(*info->fprintf_func) (stream, "%%cpreg(%d)", val);
+		      if (name) {
+			      (*info->fprintf_func) (stream, "%s", name);
+		      } else {
+			      (*info->fprintf_func) (stream, "%%cpreg(%d)", val);
+		      }
 		      break;
 		    }
 		  }
@@ -954,12 +992,12 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 	      unsigned long prev_insn;
 	      int errcode;
 
-	      if (memaddr >= 4)
-		errcode =
-		  (*info->read_memory_func)
-		  (memaddr - 4, buffer, sizeof (buffer), info);
-	      else
-		errcode = 1;
+	      if (memaddr >= 4) {
+		      errcode =
+			      (*info->read_memory_func) (memaddr - 4, buffer, sizeof (buffer), info);
+	      } else {
+		      errcode = 1;
+	      }
 
 	      prev_insn = getword (buffer);
 
@@ -975,13 +1013,13 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 
 		  if (is_delayed_branch (prev_insn))
 		    {
-		      if (memaddr >= 8)
-			errcode = (*info->read_memory_func)
-			  (memaddr - 8, buffer, sizeof (buffer), info);
-		      else
-			errcode = 1;
+			  if (memaddr >= 8) {
+				  errcode = (*info->read_memory_func) (memaddr - 8, buffer, sizeof (buffer), info);
+			  } else {
+				  errcode = 1;
+			  }
 
-		      prev_insn = getword (buffer);
+			  prev_insn = getword (buffer);
 		    }
 		}
 
@@ -997,10 +1035,11 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 		      info->target =
 			((unsigned) 0xFFFFFFFF
 			 & ((int) X_IMM22 (prev_insn) << 10));
-		      if (imm_added_to_rs1)
-			info->target += X_SIMM (insn, 13);
-		      else
-			info->target |= X_SIMM (insn, 13);
+		      if (imm_added_to_rs1) {
+			      info->target += X_SIMM (insn, 13);
+		      } else {
+			      info->target |= X_SIMM (insn, 13);
+		      }
 		      (*info->print_address_func) (info->target, info);
 		      info->insn_type = dis_dref;
 		      info->data_size = 4;  /* FIXME!!! */
@@ -1012,14 +1051,18 @@ print_insn_sparc (bfd_vma memaddr, disassemble_info *info)
 	    {
 	      /* FIXME -- check is_annulled flag.  */
 	      (void) is_annulled;
-	      if (opcode->flags & F_UNBR)
-		info->insn_type = dis_branch;
-	      if (opcode->flags & F_CONDBR)
-		info->insn_type = dis_condbranch;
-	      if (opcode->flags & F_JSR)
-		info->insn_type = dis_jsr;
-	      if (opcode->flags & F_DELAYED)
-		info->branch_delay_insns = 1;
+	      if (opcode->flags & F_UNBR) {
+		      info->insn_type = dis_branch;
+	      }
+	      if (opcode->flags & F_CONDBR) {
+		      info->insn_type = dis_condbranch;
+	      }
+	      if (opcode->flags & F_JSR) {
+		      info->insn_type = dis_jsr;
+	      }
+	      if (opcode->flags & F_DELAYED) {
+		      info->branch_delay_insns = 1;
+	      }
 	    }
 
 	  return sizeof (buffer);

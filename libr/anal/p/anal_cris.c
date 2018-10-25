@@ -19,27 +19,34 @@ static int analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 		break;
 	case 0x7f:
 		op->type = R_ANAL_OP_TYPE_LEA;
-		op->ptr = buf[2];
-		op->ptr |= buf[3]<<8;
-		op->ptr |= buf[4]<<16;
-		op->ptr |= ((ut32)(0xff&buf[5]))<<24;
-		op->ptr += addr;
-		opsize = 6;
+		if (len > 5) {
+			op->ptr = buf[2];
+			op->ptr |= buf[3]<<8;
+			op->ptr |= buf[4]<<16;
+			op->ptr |= ((ut32)(0xff&buf[5]))<<24;
+			op->ptr += addr;
+			opsize = 6;
+		} else {
+			// error
+			op->ptr = UT64_MAX;
+		}
 		break;
 	case 0xbf: // bsr
 		op->type = R_ANAL_OP_TYPE_CALL;
-		 {
+		if (len > 5) {
 			st32 delta = buf[2];
 			delta |= buf[3]<<8;
 			delta |= buf[4]<<16;
 			delta |= buf[5]<<24;
-			op->jump = addr + delta; 
-		 }
+			op->jump = addr + delta;
+		} else {
+			op->jump = UT64_MAX;
+		}
 		op->fail = addr + 6;
 		opsize = 6;
 		break;
 	case 0x00:
-		if (buf[1]==0x00) {
+		if (buf[1] == 0x00) {
 			op->type = R_ANAL_OP_TYPE_TRAP;
 		} else {
 			op->type = R_ANAL_OP_TYPE_JMP;
@@ -279,7 +286,7 @@ RAnalPlugin r_anal_plugin_cris = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_cris,
 	.version = R2_VERSION

@@ -1,11 +1,18 @@
 diff --git a/MCInst.c b/MCInst.c
-index d521845..3f75de3 100644
+index 1694e5d..758c43f 100644
 --- a/MCInst.c
 +++ b/MCInst.c
-@@ -16,14 +16,7 @@
- 
+@@ -18,20 +18,10 @@
  void MCInst_Init(MCInst *inst)
  {
+ 	unsigned int i;
+-
++	memset (inst, 0, sizeof (MCInst));
+ 	for (i = 0; i < 48; i++) {
+ 		inst->Operands[i].Kind = kInvalid;
+ 	}
+-
+-	inst->Opcode = 0;
 -	inst->OpcodePub = 0;
 -	inst->size = 0;
 -	inst->has_imm = false;
@@ -14,33 +21,32 @@ index d521845..3f75de3 100644
 -	inst->ac_idx = 0;
 -	inst->popcode_adjust = 0;
 -	inst->assembly[0] = '\0';
-+	memset (inst, 0, sizeof (MCInst));
  }
  
  void MCInst_clear(MCInst *inst)
 diff --git a/cs.c b/cs.c
-index 19c65c7..96f9898 100644
+index d2ffecc..f12051a 100644
 --- a/cs.c
 +++ b/cs.c
-@@ -627,7 +627,7 @@ size_t CAPSTONE_API cs_disasm(csh ud, const uint8_t *buffer, size_t size, uint64
+@@ -840,7 +840,7 @@ size_t CAPSTONE_API cs_disasm(csh ud, const uint8_t *buffer, size_t size, uint64
  	size_org = size;
  
  	total_size = sizeof(cs_insn) * cache_size;
 -	total = cs_mem_malloc(total_size);
-+	total = cs_mem_calloc(total_size, 1);
++	total = cs_mem_calloc(1, total_size);
  	if (total == NULL) {
  		// insufficient memory
  		handle->errnum = CS_ERR_MEM;
-@@ -645,7 +645,7 @@ size_t CAPSTONE_API cs_disasm(csh ud, const uint8_t *buffer, size_t size, uint64
+@@ -858,7 +858,7 @@ size_t CAPSTONE_API cs_disasm(csh ud, const uint8_t *buffer, size_t size, uint64
  
  		if (handle->detail) {
  			// allocate memory for @detail pointer
 -			insn_cache->detail = cs_mem_malloc(sizeof(cs_detail));
-+			insn_cache->detail = cs_mem_calloc(sizeof(cs_detail), 1);
++			insn_cache->detail = cs_mem_calloc(1, sizeof(cs_detail));
  		} else {
  			insn_cache->detail = NULL;
  		}
-@@ -728,6 +728,7 @@ size_t CAPSTONE_API cs_disasm(csh ud, const uint8_t *buffer, size_t size, uint64
+@@ -946,6 +946,7 @@ size_t CAPSTONE_API cs_disasm(csh ud, const uint8_t *buffer, size_t size, uint64
  		if (f == cache_size) {
  			// full cache, so expand the cache to contain incoming insns
  			cache_size = cache_size * 8 / 5; // * 1.6 ~ golden ratio
@@ -48,24 +54,12 @@ index 19c65c7..96f9898 100644
  			total_size += (sizeof(cs_insn) * cache_size);
  			tmp = cs_mem_realloc(total, total_size);
  			if (tmp == NULL) {	// insufficient memory
-@@ -742,6 +743,7 @@ size_t CAPSTONE_API cs_disasm(csh ud, const uint8_t *buffer, size_t size, uint64
+@@ -960,7 +961,7 @@ size_t CAPSTONE_API cs_disasm(csh ud, const uint8_t *buffer, size_t size, uint64
  				handle->errnum = CS_ERR_MEM;
  				return 0;
  			}
-+			memset (total + (sizeof(cs_insn) * old_size), 0, (total_size - old_size));
- 
+-
++			memset ((char *)total + (sizeof(cs_insn) * old_size), 0, (total_size - old_size));
  			total = tmp;
  			// continue to fill in the cache after the last instruction
-diff --git a/utils.c b/utils.c
-index ca2a7ec..647eb57 100644
---- a/utils.c
-+++ b/utils.c
-@@ -17,7 +17,7 @@ static unsigned short *make_id2insn(insn_map *insns, unsigned int size)
- 	unsigned short max_id = insns[size - 1].id;
- 	unsigned short i;
- 
--	unsigned short *cache = (unsigned short *)cs_mem_malloc(sizeof(*cache) * (max_id + 1));
-+	unsigned short *cache = (unsigned short *)cs_mem_calloc(sizeof(*cache), (max_id + 1));
- 
- 	for (i = 1; i < size; i++)
- 		cache[insns[i].id] = i;
+ 			insn_cache = (cs_insn *)((char *)total + sizeof(cs_insn) * c);

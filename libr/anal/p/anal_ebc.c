@@ -24,8 +24,9 @@ static void ebc_anal_jmp8(RAnalOp *op, ut64 addr, const ut8 *buf) {
 static void ebc_anal_jmp(RAnalOp *op, ut64 addr, const ut8 *buf) {
 	op->fail = addr + 6;
 	op->jump = (ut64)*(int32_t*)(buf + 2);
-	if (TEST_BIT(buf[1], 4))
+	if (TEST_BIT (buf[1], 4)) {
 		op->jump += addr + 6;
+	}
 	if (buf[1] & 0x7) {
 		op->type = R_ANAL_OP_TYPE_UJMP;
 	} else {
@@ -61,8 +62,9 @@ static int ebc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 	ebc_command_t cmd;
 	ut8 opcode = buf[0] & EBC_OPCODE_MASK;
 
-	if (!op)
+	if (!op) {
 		return 2;
+	}
 
 	memset(op, 0, sizeof (RAnalOp));
 	op->addr = addr;
@@ -71,8 +73,9 @@ static int ebc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) 
 
 	ret = op->size = ebc_decode_command(buf, &cmd);
 
-	if (ret < 0)
+	if (ret < 0) {
 		return ret;
+	}
 
 	switch (opcode) {
 	case EBC_JMP8:
@@ -171,7 +174,7 @@ RAnalPlugin r_anal_plugin_ebc = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_ebc,
 	.version = R2_VERSION

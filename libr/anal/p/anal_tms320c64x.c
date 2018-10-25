@@ -19,7 +19,6 @@
 
 #if CAPSTONE_HAS_TMS320C64X
 
-#define esilprintf(op, fmt, ...) r_strbuf_setf (&op->esil, fmt, __VA_ARGS__)
 #define INSOP(n) insn->detail->tms320c64x.operands[n]
 #define INSCC insn->detail->tms320c64x.cc
 
@@ -187,12 +186,13 @@ static int tms320c64x_analop(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *buf, i
 	}
 	return op->size;
 }
+#endif
+
+/*
 
 static int archinfo(RAnal *anal, int q) {
-	return 4; /* :D */
+	return 4; // :D
 }
-#endif
-/*
 
 RAnalPlugin r_anal_plugin_tms320c64x = {
 	.name = "tms320c64x",
@@ -215,7 +215,7 @@ RAnalPlugin r_anal_plugin_tms320c64x = {
 #endif
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_tms320c64x,
 	.version = R2_VERSION

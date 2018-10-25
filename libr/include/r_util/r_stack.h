@@ -1,6 +1,10 @@
 #ifndef R_STACK_H
 #define R_STACK_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef void (*RStackFree)(void *ptr);
 
 typedef struct r_stack_t {
@@ -17,4 +21,10 @@ R_API RStack *r_stack_newf(ut32 n, RStackFree f);
 R_API int r_stack_push(RStack *s, void *el);
 R_API void *r_stack_pop(RStack *s);
 R_API unsigned int r_stack_size(RStack *s);
+R_API void *r_stack_peek(RStack *s);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //  R_STACK_H

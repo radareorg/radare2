@@ -12,7 +12,6 @@
 void r_sys_perror_str(const char *fun);
 
 #define ErrorExit(x) { r_sys_perror(x); return NULL; }
-static int CreateChildProcess(const char *szCmdline, HANDLE out);
 char *ReadFromPipe(HANDLE fh);
 
 // HACKY
@@ -27,34 +26,31 @@ static char *getexe(const char *str) {
 
 R_API int r_sys_get_src_dir_w32(char *buf) {
 	int i = 0;
-	char fullpath[MAX_PATH + 1];
+	TCHAR fullpath[MAX_PATH + 1];
+	TCHAR shortpath[MAX_PATH + 1];
+	char *path;
 
-	if (!GetModuleFileNameA (NULL, fullpath, MAX_PATH + 1)) {
+	if (!GetModuleFileName (NULL, fullpath, MAX_PATH + 1) ||
+		!GetShortPathName (fullpath, shortpath, MAX_PATH + 1)) {
 		return false;
 	}
-
-	if (!GetShortPathNameA (fullpath, buf, MAX_PATH+1)) {
-		return false;
-	}
-
-	i = strlen(buf);
-
+	path = r_sys_conv_utf16_to_utf8 (shortpath);
+	memcpy (buf, path, strlen(path) + 1);
+	free (path);
+	i = strlen (buf);
 	while(i > 0 && buf[i-1] != '/' && buf[i-1] != '\\') {
 		buf[--i] = 0;
 	}
-
 	// Remove the last separator in the path.
 	if(i > 0) {
 		buf[--i] = 0;
 	}
-
 	return true;
 }
 
 R_API char *r_sys_cmd_str_w32(const char *cmd) {
 	char *ret = NULL;
 	HANDLE out = NULL;
-	HANDLE in = NULL;
 	SECURITY_ATTRIBUTES saAttr;
 	char *argv0 = getexe (cmd);
 
@@ -72,20 +68,7 @@ R_API char *r_sys_cmd_str_w32(const char *cmd) {
 	if (!SetHandleInformation (fh, HANDLE_FLAG_INHERIT, 0) )
 		ErrorExit ("Stdout SetHandleInformation");
 
-	CreateChildProcess (cmd, out);
-
-	in = CreateFileA (argv0,
-			GENERIC_READ,
-			FILE_SHARE_READ,
-			NULL,
-			OPEN_EXISTING,
-			FILE_ATTRIBUTE_READONLY,
-			NULL);
-
-	if (in == INVALID_HANDLE_VALUE) {
-		eprintf ("CreateFile (%s)\n", argv0);
-		ErrorExit ("CreateFile");
-	}
+	r_sys_create_child_proc_w32 (cmd, out);
 
 	// Close the write end of the pipe before reading from the
 	// read end of the pipe, to control child process execution.
@@ -99,38 +82,38 @@ R_API char *r_sys_cmd_str_w32(const char *cmd) {
 	return ret;
 }
 
-static int CreateChildProcess(const char *szCmdline, HANDLE out) {
-	PROCESS_INFORMATION piProcInfo;
-	STARTUPINFOA siStartInfo;
-	BOOL bSuccess = FALSE;
-
-	ZeroMemory (&piProcInfo, sizeof (PROCESS_INFORMATION) );
+R_API bool r_sys_create_child_proc_w32(const char *cmdline, HANDLE out) {
+	PROCESS_INFORMATION pi = {0};
+	STARTUPINFO si = {0};
+	LPTSTR cmdline_;
+	bool ret;
 
 	// Set up members of the STARTUPINFO structure.
 	// This structure specifies the STDIN and STDOUT handles for redirection.
-	ZeroMemory (&siStartInfo, sizeof (STARTUPINFO) );
-	siStartInfo.cb = sizeof(STARTUPINFO);
-	siStartInfo.hStdError = out;
-	siStartInfo.hStdOutput = out;
-	siStartInfo.hStdInput = NULL;
-	siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
-
-	bSuccess = CreateProcessA (NULL,
-			(LPSTR)szCmdline,// command line
+	si.cb = sizeof (STARTUPINFO);
+	si.hStdError = out;
+	si.hStdOutput = out;
+	si.hStdInput = NULL;
+	si.dwFlags |= STARTF_USESTDHANDLES;
+	cmdline_ = r_sys_conv_utf8_to_utf16 (cmdline);
+	if ((ret = CreateProcess (NULL,
+			cmdline_,// command line
 			NULL,          // process security attributes
 			NULL,          // primary thread security attributes
 			TRUE,          // handles are inherited
 			0,             // creation flags
 			NULL,          // use parent's environment
 			NULL,          // use parent's current directory
-			&siStartInfo,  // STARTUPINFO pointer
-			&piProcInfo);  // receives PROCESS_INFORMATION
-
-	if (bSuccess) {
-		CloseHandle (piProcInfo.hProcess);
-		CloseHandle (piProcInfo.hThread);
-	} else r_sys_perror ("CreateProcess");
-	return bSuccess;
+			&si,  // STARTUPINFO pointer
+			&pi))) {  // receives PROCESS_INFORMATION 
+		ret = 1;
+		CloseHandle (pi.hProcess);
+		CloseHandle (pi.hThread);
+	} else {
+		r_sys_perror ("CreateProcess");
+	}
+	free (cmdline_);
+	return ret;
 }
 
 char *ReadFromPipe(HANDLE fh) {
@@ -142,15 +125,22 @@ char *ReadFromPipe(HANDLE fh) {
 	int strsz = BUFSIZE+1;
 
 	str = malloc (strsz);
+	if (!str) {
+		return NULL;
+	}
 	for (;;) {
 		bSuccess = ReadFile (fh, chBuf, BUFSIZE, &dwRead, NULL);
-		if (! bSuccess || dwRead == 0) break;
-		chBuf[dwRead] = '\0';
+		if (!bSuccess || dwRead == 0) {
+			break;
+		}
 		if (strl+dwRead>strsz) {
+			char *str_tmp = str;
 			strsz += 4096;
 			str = realloc (str, strsz);
-			if (!str)
+			if (!str) {
+				free (str_tmp);
 				return NULL;
+			}
 		}
 		memcpy (str+strl, chBuf, dwRead);
 		strl += dwRead;

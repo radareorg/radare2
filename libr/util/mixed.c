@@ -2,8 +2,8 @@
 
 #include <r_util.h>
 
-#define STR64OFF(x) sdb_fmt (2, "%"PFMT64x, x)
-#define STR32OFF(x) sdb_fmt (3, "%"PFMT32x, x)
+#define STR64OFF(x) sdb_fmt ("%"PFMT64x, x)
+#define STR32OFF(x) sdb_fmt ("%"PFMT32x, x)
 
 R_API RMixed *r_mixed_new () {
 	RMixed *m = R_NEW (RMixed);
@@ -112,8 +112,8 @@ R_API void *r_mixed_get0 (RMixed *m, int key, ut64 value) {
 
 
 R_API int r_mixed_add(RMixed *m, void *p) {
-	SdbHash *ht;
-	SdbHash *ht64;
+	SdbHt *ht;
+	SdbHt *ht64;
 	RList *list = NULL;
 	ut64 value;
 	int i, size, ret = false;;
@@ -182,8 +182,8 @@ R_API bool r_mixed_change_end(RMixed *m, void *p) {
 	void *q;
 	for (i = 0; i < RMIXED_MAXKEYS; i++) {
 		if (m->keys[i]) {
-			SdbHash *ht = m->keys[i]->hash.ht;
-			SdbHash *ht64 = m->keys[i]->hash.ht64;
+			SdbHt *ht = m->keys[i]->hash.ht;
+			SdbHt *ht64 = m->keys[i]->hash.ht64;
 			ut64 newstate = r_mixed_get_value (i, m->keys[i]->size, p);
 			if (newstate != m->state[i]) {
 				// rehash this pointer

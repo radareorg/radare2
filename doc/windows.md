@@ -9,7 +9,7 @@ Crosscompilation
 
 **ArchLinux**
 
-	./configure --with-compiler=i486-mingw32-gcc --with-ostype=windows --host=i486-unknown-windows --without-ssl
+	./configure --with-compiler=i486-mingw32-gcc --with-ostype=windows --host=i486-unknown-windows
 	make
 	make w32dist
 
@@ -43,7 +43,7 @@ Crosscompilation
 Build radare2
 -------------
   
-	./configure --with-compiler=x86_64-w64-mingw32-gcc --with-ostype=windows --host=x86_64-unknown-windows --without-magic --without-ssl
+	./configure --with-compiler=x86_64-w64-mingw32-gcc --with-ostype=windows --host=x86_64-unknown-windows
 
 
 Python bindings:

@@ -8,19 +8,26 @@ R_API void r_socket_http_server_set_breaked(bool *b) {
 	breaked = b;
 }
 
-R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int timeout) {
+R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int accept_timeout, int timeout) {
 	int content_length = 0, xx, yy;
 	int pxx = 1, first = 0;
 	char buf[1500], *p, *q;
 	RSocketHTTPRequest *hr = R_NEW0 (RSocketHTTPRequest);
-	if (!hr) return NULL;
-	hr->s = r_socket_accept (s);
+	if (!hr) {
+		return NULL;
+	}
+	if (accept_timeout > 0) {
+		hr->s = r_socket_accept_timeout (s, 1);
+	} else {
+		hr->s = r_socket_accept (s);
+	}
 	if (!hr->s) {
 		free (hr);
 		return NULL;
 	}
-	if (timeout>0)
+	if (timeout > 0) {
 		r_socket_block_time (hr->s, 1, timeout);
+	}
 	for (;;) {
 #if __WINDOWS__
 		if (breaked)
@@ -42,11 +49,15 @@ R_API RSocketHTTPRequest *r_socket_http_accept (RSocket *s, int timeout) {
 				return NULL;
 			}
 			p = strchr (buf, ' ');
-			if (p) *p = 0;
+			if (p) {
+				*p = 0;
+			}
 			hr->method = strdup (buf);
 			if (p) {
 				q = strstr (p+1, " HTTP"); //strchr (p+1, ' ');
-				if (q) *q = 0;
+				if (q) {
+					*q = 0;
+				}
 				hr->path = strdup (p+1);
 			}
 		} else {
@@ -81,41 +92,60 @@ R_API void r_socket_http_response (RSocketHTTPRequest *rs, int code, const char 
 		code==302?"Found":
 		code==404?"not found":
 		"UNKNOWN";
-	if (len<1) len = out? strlen (out): 0;
-	if (!headers) headers = "";
+	if (len < 1) {
+		len = out ? strlen (out) : 0;
+	}
+	if (!headers) {
+		headers = "";
+	}
 	r_socket_printf (rs->s, "HTTP/1.0 %d %s\r\n%s"
 		"Connection: close\r\nContent-Length: %d\r\n\r\n",
 		code, strcode, headers, len);
-	if (out && len>0) r_socket_write (rs->s, (void*)out, len);
+	if (out && len > 0) {
+		r_socket_write (rs->s, (void *)out, len);
+	}
 }
 
 R_API ut8 *r_socket_http_handle_upload(const ut8 *str, int len, int *retlen) {
-	if (retlen)
+	if (retlen) {
 		*retlen = 0;
+	}
 	if (!strncmp ((const char *)str, "------------------------------", 10)) {
 		int datalen;
 		char *ret;
 		const char *data, *token = (const char *)str+10;
 		const char *end = strchr (token, '\n');
-		if (!end)
+		if (!end) {
 			return NULL;
+		}
 		data = strstr (end, "Content-Disposition: form-data; ");
 		if (data) {
 			data = strchr (data, '\n');
-			if (data) data = strchr (data+1, '\n');
+			if (data) {
+				data = strchr (data + 1, '\n');
+			}
 		}
 		if (data) {
-			while (*data==10 || *data==13) data++;
+			while (*data == 10 || *data == 13) {
+				data++;
+			}
 			end = (const char *)str+len-40;
-			while (*end=='-') end--;
-			if (*end==10 || *end==13) end--;
+			while (*end == '-') {
+				end--;
+			}
+			if (*end == 10 || *end == 13) {
+				end--;
+			}
 			datalen = (size_t)(end-data);
 			ret = malloc (datalen+1);
-			if (!ret) return NULL;
+			if (!ret) {
+				return NULL;
+			}
 			memcpy (ret, data, datalen);
 			ret[datalen] = 0;
-			if (retlen)
+			if (retlen) {
 				*retlen = datalen;
+			}
 			return (ut8*)ret;
 		}
 	}

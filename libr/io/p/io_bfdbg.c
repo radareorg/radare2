@@ -17,9 +17,9 @@ typedef struct {
 	BfvmCPU *bfvm;
 } RIOBfdbg;
 
-#define RIOBFDBG_FD(x) (((RIOBfdbg*)x->data)->fd)
-#define RIOBFDBG_SZ(x) (((RIOBfdbg*)x->data)->size)
-#define RIOBFDBG_BUF(x) (((RIOBfdbg*)x->data)->buf)
+#define RIOBFDBG_FD(x) (((RIOBfdbg*)(x)->data)->fd)
+#define RIOBFDBG_SZ(x) (((RIOBfdbg*)(x)->data)->size)
+#define RIOBFDBG_BUF(x) (((RIOBfdbg*)(x)->data)->buf)
 
 static inline int is_in_screen(ut64 off, BfvmCPU *c) {
 	return (off >= c->screen && off < c->screen+c->screen_size);
@@ -36,39 +36,45 @@ static inline int is_in_base(ut64 off, BfvmCPU *c) {
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	RIOBfdbg *riom;
 	int sz;
-	if (!fd || !fd->data)
+	if (!fd || !fd->data) {
 		return -1;
+	}
 	riom = fd->data;
 	/* data base buffer */
 	if (is_in_base (io->off, riom->bfvm)) {
 		int n = io->off-riom->bfvm->base;
-		if (n>count)
+		if (n > count) {
 			count = n;
+		}
 		memcpy (riom->bfvm->mem+n, buf, count);
 		return count;
 	}
 	/* screen buffer */
 	if (is_in_screen (io->off, riom->bfvm)) {
 		int n = io->off-riom->bfvm->screen;
-		if (n>count)
-			count = riom->bfvm->screen_size-n;
+		if (n > count) {
+			count = riom->bfvm->screen_size - n;
+		}
 		memcpy (riom->bfvm->screen_buf+n, buf, count);
 		return count;
 	}
 	/* input buffer */
 	if (is_in_input (io->off, riom->bfvm)) {
 		int n = io->off-riom->bfvm->input;
-		if (n>count)
-			count = riom->bfvm->input_size-n;
+		if (n > count) {
+			count = riom->bfvm->input_size - n;
+		}
 		memcpy (riom->bfvm->input_buf+n, buf, count);
 		return count;
 	}
 	/* read from file */
 	sz = RIOBFDBG_SZ (fd);
-	if (io->off+count >= sz)
-		count = sz-io->off;
-	if (io->off >= sz)
+	if (io->off + count >= sz) {
+		count = sz - io->off;
+	}
+	if (io->off >= sz) {
 		return -1;
+	}
 	memcpy (RIOBFDBG_BUF (fd)+io->off, buf, count);
 	return count;
 }
@@ -76,54 +82,60 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	RIOBfdbg *riom;
 	int sz;
-	if (!fd || !fd->data)
+	if (!fd || !fd->data) {
 		return -1;
+	}
 	riom = fd->data;
 	/* data base buffer */
 	if (is_in_base (io->off, riom->bfvm)) {
 		int n = io->off-riom->bfvm->base;
-		if (n>count)
+		if (n > count) {
 			count = n;
+		}
 		memcpy (buf, riom->bfvm->mem+n, count);
 		return count;
 	}
 	/* screen buffer */
 	if (is_in_screen (io->off, riom->bfvm)) {
 		int n = io->off-riom->bfvm->screen;
-		if (n>count)
-			count = riom->bfvm->screen_size-n;
+		if (n > count) {
+			count = riom->bfvm->screen_size - n;
+		}
 		memcpy (buf, riom->bfvm->screen_buf+n, count);
 		return count;
 	}
 	/* input buffer */
 	if (is_in_input (io->off, riom->bfvm)) {
 		int n = io->off-riom->bfvm->input;
-		if (n>count)
-			count = riom->bfvm->input_size-n;
+		if (n > count) {
+			count = riom->bfvm->input_size - n;
+		}
 		memcpy (buf, riom->bfvm->input_buf+n, count);
 		return count;
 	}
 	/* read from file */
 	sz = RIOBFDBG_SZ (fd);
-	if (io->off+count >= sz)
-		count = sz-io->off;
-	if (io->off >= sz)
+	if (io->off + count >= sz) {
+		count = sz - io->off;
+	}
+	if (io->off >= sz) {
 		return -1;
+	}
 	memcpy (buf, RIOBFDBG_BUF (fd)+io->off, count);
 	return count;
 }
 
 static int __close(RIODesc *fd) {
 	RIOBfdbg *riom;
-	if (!fd || !fd->data)
+	if (!fd || !fd->data) {
 		return -1;
+	}
 	riom = fd->data;
 	bfvm_free (riom->bfvm);
 	free (riom->buf);
 	riom->buf = NULL;
 	free (fd->data);
 	fd->data = NULL;
-	fd->state = R_IO_DESC_TYPE_CLOSED;
 	return 0;
 }
 
@@ -150,7 +162,9 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__plugin_open (io, pathname, 0)) {
 		RIOBind iob;
 		RIOBfdbg *mal = R_NEW0 (RIOBfdbg);
-		if (!mal) return NULL;
+		if (!mal) {
+			return NULL;
+		}
 		r_io_bind (io, &iob);
 		mal->fd = getmalfd (mal);
 		mal->bfvm = bfvm_new (&iob);
@@ -169,10 +183,10 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		if (mal->buf != NULL) {
 			memcpy (mal->buf, out, rlen);
 			free (out);
-			return r_io_desc_new (&r_io_plugin_bfdbg,
-				mal->fd, pathname, rw, mode, mal);
+			return r_io_desc_new (io, &r_io_plugin_bfdbg,
+				pathname, rw, mode, mal);
 		}
-		eprintf ("Cannot allocate (%s) %d bytes\n",
+		eprintf ("Cannot allocate (%s) %d byte(s)\n",
 			pathname+9, mal->size);
 		free (mal);
 		free (out);
@@ -193,7 +207,7 @@ RIOPlugin r_io_plugin_bfdbg = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_bfdbg,
 	.version = R2_VERSION

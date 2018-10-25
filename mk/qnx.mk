@@ -1,9 +1,12 @@
-CC=arm-unknown-nto-qnx6.5.0eabi-gcc
-RANLIB=arm-unknown-nto-qnx6.5.0eabi-ranlib
+CROSS=arm-unknown-nto-qnx6.5.0eabi-
+CC=${CROSS}gcc
+RANLIB=${CROSS}ranlib
 ONELIB=0
 OSTYPE=qnx
 LINK=
-CC_AR=arm-unknown-nto-qnx6.5.0eabi-ar -r ${LIBAR}
+AR=${CROSS}ar
+CC_AR=${AR} -r ${LIBAR}
+PARTIALLD=${CROSS}ld -r --whole-archive
 PICFLAGS=
 CFLAGS+=${PICFLAGS}
 CC_LIB=${CC} -shared -o

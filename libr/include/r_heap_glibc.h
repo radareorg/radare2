@@ -32,9 +32,19 @@ R_LIB_VERSION_HEADER(r_heap_glibc);
 #define BITSPERMAP (1U << BINMAPSHIFT)
 #define BINMAPSIZE (NBINS / BITSPERMAP)
 #define MAX(a,b) (((a)>(b))?(a):(b))
-#define MALLOC_ALIGNMENT MAX (2 * SZ,  __alignof__ (long double))
-#define MALLOC_ALIGN_MASK (MALLOC_ALIGNMENT - 1)
 #define NPAD -6
+#define TCACHE_MAX_BINS 64
+#define TCACHE_FILL_COUNT 7
+
+#define MMAP_ALIGN_32 0x14
+#define MMAP_ALIGN_64 0x18
+#define MMAP_OFFSET 0x8
+
+#define HDR_SZ_32 0x8
+#define HDR_SZ_64 0x10
+#define TC_HDR_SZ 0x10
+#define TC_SZ_32 0x0
+#define TC_SZ_64 0x10
 
 #define largebin_index_32(size)				       \
 (((((ut32)(size)) >>  6) <= 38)?  56 + (((ut32)(size)) >>  6): \
@@ -100,37 +110,107 @@ typedef RHeapChunk32 *mfastbinptr32;
 typedef RHeapChunk32 *mchunkptr32;
 */
 
-typedef struct r_malloc_state_32 { 
-	int mutex; 				/* serialized access */ 
-	int flags; 				/* flags */
-	ut32 fastbinsY[NFASTBINS];		/* array of fastchunks */
-	ut32 top; 				/* top chunk's base addr */ 
-	ut32 last_remainder;			/* remainder top chunk's addr */
-	ut32 bins[NBINS * 2 - 2];   		/* array of remainder free chunks */
-	unsigned int binmap[BINMAPSIZE]; 	/* bitmap of bins */
+typedef struct r_malloc_state_32 {
+	int mutex;                              /* serialized access */
+	int flags;                              /* flags */
+	ut32 fastbinsY[NFASTBINS];              /* array of fastchunks */
+	ut32 top;                               /* top chunk's base addr */
+	ut32 last_remainder;                    /* remainder top chunk's addr */
+	ut32 bins[NBINS * 2 - 2];               /* array of remainder free chunks */
+	unsigned int binmap[BINMAPSIZE];        /* bitmap of bins */
+	ut32 next;                              /* double linked list of chunks */
+	ut32 next_free;                         /* double linked list of free chunks */
+	unsigned int attached_threads;          /* threads attached */
+	ut32 system_mem;                        /* current allocated memory of current arena */
+	ut32 max_system_mem;                    /* maximum system memory */
+} RHeap_MallocState_32;
 
-	ut32 next; 				/* double linked list of chunks */
-	ut32 next_free; 			/* double linked list of free chunks */
+typedef struct r_malloc_state_64 {
+	int mutex;                              /* serialized access */
+	int flags;                              /* flags */
+	ut64 fastbinsY[NFASTBINS];              /* array of fastchunks */
+	ut64 top;                               /* top chunk's base addr */
+	ut64 last_remainder;                    /* remainder top chunk's addr */
+	ut64 bins[NBINS * 2 - 2];               /* array of remainder free chunks */
+	unsigned int binmap[BINMAPSIZE];        /* bitmap of bins */
+	ut64 next;                              /* double linked list of chunks */
+	ut64 next_free;                         /* double linked list of free chunks */
+	unsigned int attached_threads;          /* threads attached */
+	ut64 system_mem;                        /* current allocated memory of current arena */
+	ut64 max_system_mem;                    /* maximum system memory */
+} RHeap_MallocState_64;
 
-	ut32 system_mem; 			/* current allocated memory of current arena */
-	ut32 max_system_mem;  			/* maximum system memory */
-} RHeap_MallocState_32; 
+typedef struct r_tcache_perthread_struct_32 {
+	ut8 counts[TCACHE_MAX_BINS];
+	ut32 entries[TCACHE_MAX_BINS];
+} RHeapTcache_32;
 
-typedef struct r_malloc_state_64 { 
-	int mutex; 				/* serialized access */ 
-	int flags; 				/* flags */
-	ut64 fastbinsY[NFASTBINS];		/* array of fastchunks */
-	ut64 top; 				/* top chunk's base addr */ 
-	ut64 last_remainder;			/* remainder top chunk's addr */
-	ut64 bins[NBINS * 2 - 2];   		/* array of remainder free chunks */
-	unsigned int binmap[BINMAPSIZE]; 	/* bitmap of bins */
+typedef struct r_tcache_perthread_struct_64 {
+	ut8 counts[TCACHE_MAX_BINS];
+	ut64 entries[TCACHE_MAX_BINS];
+} RHeapTcache_64;
 
-	ut64 next; 				/* double linked list of chunks */
-	ut64 next_free; 			/* double linked list of free chunks */
+typedef struct r_malloc_state_tcache_32 {
+	int mutex;                              /* serialized access */
+	int flags;                              /* flags */
+	int have_fast_chunks;                   /* have fast chunks */
+	ut32 fastbinsY[NFASTBINS + 1];          /* array of fastchunks */
+	ut32 top;                               /* top chunk's base addr */
+	ut32 last_remainder;                    /* remainder top chunk's addr */
+	ut32 bins[NBINS * 2 - 2];               /* array of remainder free chunks */
+	unsigned int binmap[BINMAPSIZE];        /* bitmap of bins */
+	ut32 next;                              /* double linked list of chunks */
+	ut32 next_free;                         /* double linked list of free chunks */
+	unsigned int attached_threads;          /* threads attached */
+	ut32 system_mem;                        /* current allocated memory of current arena */
+	ut32 max_system_mem;                    /* maximum system memory */
+} RHeap_MallocState_tcache_32;
 
-	ut64 system_mem;	 		/* current allocated memory of current arena */
-	ut64 max_system_mem;  			/* maximum system memory */
-} RHeap_MallocState_64; 
+typedef struct r_malloc_state_tcache_64 {
+	int mutex;                              /* serialized access */
+	int flags;                              /* flags */
+	int have_fast_chunks;                   /* have fast chunks */
+	ut64 fastbinsY[NFASTBINS];              /* array of fastchunks */
+	ut64 top;                               /* top chunk's base addr */
+	ut64 last_remainder;                    /* remainder top chunk's addr */
+	ut64 bins[NBINS * 2 - 2];               /* array of remainder free chunks */
+	unsigned int binmap[BINMAPSIZE];        /* bitmap of bins */
+	ut64 next;                              /* double linked list of chunks */
+	ut64 next_free;                         /* double linked list of free chunks */
+	unsigned int attached_threads;          /* threads attached */
+	ut64 system_mem;                        /* current allocated memory of current arena */
+	ut64 max_system_mem;                    /* maximum system memory */
+} RHeap_MallocState_tcache_64;
+
+typedef struct r_malloc_state {
+	int mutex;                              /* serialized access */
+	int flags;                              /* flags */
+	unsigned int binmap[BINMAPSIZE];        /* bitmap of bins */
+
+	/*tcache*/
+	int have_fast_chunks;                   /* have fast chunks */
+	unsigned int attached_threads;          /* threads attached */
+
+	/*32 bits members*/
+	ut32 fastbinsY_32[NFASTBINS + 1];       /* array of fastchunks */
+	ut32 top_32;                            /* top chunk's base addr */
+	ut32 last_remainder_32;                 /* remainder top chunk's addr */
+	ut32 bins_32[NBINS * 2 - 2];            /* array of remainder free chunks */
+	ut32 next_32;                           /* double linked list of chunks */
+	ut32 next_free_32;                      /* double linked list of free chunks */
+	ut32 system_mem_32;                     /* current allocated memory of current arena */
+	ut32 max_system_mem_32;                 /* maximum system memory */
+
+	/*64 bits members */
+	ut64 fastbinsY_64[NFASTBINS];           /* array of fastchunks */
+	ut64 top_64;                            /* top chunk's base addr */
+	ut64 last_remainder_64;                 /* remainder top chunk's addr */
+	ut64 bins_64[NBINS * 2 - 2];            /* array of remainder free chunks */
+	ut64 next_64;                           /* double linked list of chunks */
+	ut64 next_free_64;                      /* double linked list of free chunks */
+	ut64 system_mem_64;                     /* current allocated memory of current arena */
+	ut64 max_system_mem_64;                 /* maximum system memory */
+} MallocState;
 
 typedef struct r_heap_info_32 {
 	ut32 ar_ptr;			/* Arena for this heap. */
@@ -140,7 +220,7 @@ typedef struct r_heap_info_32 {
 
 	/* Make sure the following data is properly aligned, particularly
 	that sizeof (heap_info) + 2 * SZ is a multiple of
-	MALLOC_ALIGNMENT. */	
+	MALLOC_ALIGNMENT. */
 	/* char pad[NPAD * SZ & MALLOC_ALIGN_MASK]; */
 } RHeapInfo_32;
 
@@ -160,4 +240,3 @@ typedef struct r_heap_info_64 {
 }
 #endif
 #endif
-

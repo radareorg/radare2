@@ -16,17 +16,17 @@ static bool check_bytes(const ut8 *buf, ut64 size) {
 	return (size > sizeof (xbe_header) && header->magic == XBE_MAGIC);
 }
 
-static bool load(RBinFile *arch) {
+static bool load(RBinFile *bf) {
 	r_bin_xbe_obj_t *obj = NULL;
-	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
-	if (!arch || !arch->o) {
+	const ut8 *bytes = bf? r_buf_buffer (bf->buf): NULL;
+	if (!bf || !bf->o) {
 		return false;
 	}
-	arch->o->bin_obj = malloc (sizeof (r_bin_plugin_xbe));
-	if (!arch->o->bin_obj) {
+	bf->o->bin_obj = malloc (sizeof (r_bin_plugin_xbe));
+	if (!bf->o->bin_obj) {
 		return false;
 	}
-	obj = arch->o->bin_obj;
+	obj = bf->o->bin_obj;
 
 	if (obj) {
 		obj->header = (xbe_header *) bytes;
@@ -49,21 +49,21 @@ static bool load(RBinFile *arch) {
 	return false;
 }
 
-static int destroy(RBinFile *arch) {
-	free (arch->o->bin_obj);
-	r_buf_free (arch->buf);
-	arch->buf = NULL;
-	arch->o->bin_obj = NULL;
+static int destroy(RBinFile *bf) {
+	free (bf->o->bin_obj);
+	r_buf_free (bf->buf);
+	bf->buf = NULL;
+	bf->o->bin_obj = NULL;
 	return true;
 }
 
-static RBinAddr *binsym(RBinFile *arch, int type) {
+static RBinAddr *binsym(RBinFile *bf, int type) {
 	RBinAddr *ret;
 	r_bin_xbe_obj_t *obj;
-	if (!arch || !arch->buf || type != R_BIN_SYM_MAIN) {
+	if (!bf || !bf->buf || type != R_BIN_SYM_MAIN) {
 		return NULL;
 	}
-	obj = arch->o->bin_obj;
+	obj = bf->o->bin_obj;
 	ret = R_NEW0 (RBinAddr);
 	if (!ret) {
 		return NULL;
@@ -73,11 +73,11 @@ static RBinAddr *binsym(RBinFile *arch, int type) {
 	return ret;
 }
 
-static RList *entries(RBinFile *arch) {
+static RList *entries(RBinFile *bf) {
 	const r_bin_xbe_obj_t *obj;
 	RList *ret;
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
-	if (!arch || !arch->buf || !arch->o->bin_obj || !ptr) {
+	if (!bf || !bf->buf || !bf->o->bin_obj || !ptr) {
 		free (ptr);
 		return NULL;
 	}
@@ -87,14 +87,14 @@ static RList *entries(RBinFile *arch) {
 		return NULL;
 	}
 	ret->free = free;
-	obj = arch->o->bin_obj;
+	obj = bf->o->bin_obj;
 	ptr->vaddr = obj->header->ep ^ obj->ep_key;
 	ptr->paddr = ptr->vaddr - obj->header->base;
 	r_list_append (ret, ptr);
 	return ret;
 }
 
-static RList *sections(RBinFile *arch) {
+static RList *sections(RBinFile *bf) {
 	xbe_section *sect = NULL;
 	r_bin_xbe_obj_t *obj = NULL;
 	xbe_header *h = NULL;
@@ -103,10 +103,10 @@ static RList *sections(RBinFile *arch) {
 	int i, r;
 	ut32 addr;
 
-	if (!arch || !arch->o || !arch->o->bin_obj || !arch->buf) {
+	if (!bf || !bf->o || !bf->o->bin_obj || !bf->buf) {
 		return NULL;
 	}
-	obj = arch->o->bin_obj;
+	obj = bf->o->bin_obj;
 	h = obj->header;
 	if (h->sections < 1) {
 		return NULL;
@@ -124,10 +124,10 @@ static RList *sections(RBinFile *arch) {
 		goto out_error;
 	}
 	addr = h->sechdr_addr - h->base;
-	if (addr > arch->size || addr + (sizeof(xbe_section) * h->sections) > arch->size) {
+	if (addr > bf->size || addr + (sizeof(xbe_section) * h->sections) > bf->size) {
 		goto out_error;
 	}
-	r = r_buf_read_at (arch->buf, addr, (ut8 *) sect, sizeof(xbe_section) * h->sections);
+	r = r_buf_read_at (bf->buf, addr, (ut8 *) sect, sizeof(xbe_section) * h->sections);
 	if (r < 1) {
 		goto out_error;
 	}
@@ -135,11 +135,11 @@ static RList *sections(RBinFile *arch) {
 		RBinSection *item = R_NEW0 (RBinSection);
 		addr = sect[i].name_addr - h->base;
 		tmp[0] = 0;
-		if (addr > arch->size || addr + sizeof (tmp) > arch->size) {
+		if (addr > bf->size || addr + sizeof (tmp) > bf->size) {
 			free (item);
 			goto out_error;
 		}
-		r = r_buf_read_at (arch->buf, addr, (ut8 *) tmp, sizeof (tmp));
+		r = r_buf_read_at (bf->buf, addr, (ut8 *) tmp, sizeof (tmp));
 		if (r < 1) {
 			free (item);
 			goto out_error;
@@ -152,12 +152,12 @@ static RList *sections(RBinFile *arch) {
 		item->vsize = sect[i].vsize;
 		item->add = true;
 
-		item->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;
+		item->perm = R_PERM_R;
 		if (sect[i].flags & SECT_FLAG_X) {
-			item->srwx |= R_BIN_SCN_EXECUTABLE;
+			item->perm |= R_PERM_X;
 		}
 		if (sect[i].flags & SECT_FLAG_W) {
-			item->srwx |= R_BIN_SCN_WRITABLE;
+			item->perm |= R_PERM_W;
 		}
 		r_list_append (ret, item);
 	}
@@ -169,7 +169,7 @@ out_error:
 	return NULL;
 }
 
-static RList *libs(RBinFile *arch) {
+static RList *libs(RBinFile *bf) {
 	r_bin_xbe_obj_t *obj;
 	xbe_header *h = NULL;
 	int i, off, libs, r;
@@ -178,10 +178,10 @@ static RList *libs(RBinFile *arch) {
 	char *s;
 	ut32 addr;
 
-	if (!arch || !arch->o || !arch->o->bin_obj) {
+	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
-	obj = arch->o->bin_obj;
+	obj = bf->o->bin_obj;
 	h = obj->header;
 	ret = r_list_new ();
 	if (!ret) {
@@ -193,10 +193,10 @@ static RList *libs(RBinFile *arch) {
 	} else {
 		off = h->kernel_lib_addr - h->base;
 	}
-	if (off > arch->size || off + sizeof(xbe_lib) > arch->size) {
+	if (off > bf->size || off + sizeof(xbe_lib) > bf->size) {
 		goto out_error;
 	}
-	r = r_buf_read_at (arch->buf, off, (ut8 *) &lib, sizeof(xbe_lib));
+	r = r_buf_read_at (bf->buf, off, (ut8 *) &lib, sizeof(xbe_lib));
 	if (r < 1) {
 		goto out_error;
 	}
@@ -210,10 +210,10 @@ static RList *libs(RBinFile *arch) {
 	} else {
 		off = h->xapi_lib_addr - h->base;
 	}
-	if (off > arch->size || off + sizeof(xbe_lib) > arch->size) {
+	if (off > bf->size || off + sizeof(xbe_lib) > bf->size) {
 		goto out_error;
 	}
-	r = r_buf_read_at (arch->buf, off, (ut8 *) &lib, sizeof(xbe_lib));
+	r = r_buf_read_at (bf->buf, off, (ut8 *) &lib, sizeof(xbe_lib));
 	if (r < 1) {
 		goto out_error;
 	}
@@ -229,10 +229,10 @@ static RList *libs(RBinFile *arch) {
 	}
 	for (i = 0; i < libs; i++) {
 		addr = h->lib_versions_addr - h->base + (i * sizeof (xbe_lib));
-		if (addr > arch->size || addr + sizeof (xbe_lib) > arch->size) {
+		if (addr > bf->size || addr + sizeof (xbe_lib) > bf->size) {
 			goto out_error;
 		}
-		r = r_buf_read_at (arch->buf, addr, (ut8 *) &lib, sizeof (xbe_lib));
+		r = r_buf_read_at (bf->buf, addr, (ut8 *) &lib, sizeof (xbe_lib));
 		if (r < 1) {
 			goto out_error;
 		}
@@ -250,7 +250,7 @@ out_error:
 	return NULL;
 }
 
-static RList *symbols(RBinFile *arch) {
+static RList *symbols(RBinFile *bf) {
 	r_bin_xbe_obj_t *obj;
 	xbe_header *h;
 	RList *ret;
@@ -260,11 +260,11 @@ static RList *symbols(RBinFile *arch) {
 	xbe_section sect;
 	ut32 addr;
 
-	if (!arch || !arch->o || !arch->o->bin_obj) {
+	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
 	}
 
-	obj = arch->o->bin_obj;
+	obj = bf->o->bin_obj;
 	h = obj->header;
 	kt_addr = h->kernel_thunk_addr ^ obj->kt_key;
 	ret = r_list_new ();
@@ -274,15 +274,15 @@ static RList *symbols(RBinFile *arch) {
 	ret->free = free;
 	eprintf ("sections %d\n", h->sections);
 	int limit = h->sections;
-	if (limit * (sizeof(xbe_section)) >= arch->size - h->sechdr_addr) {
+	if (limit * (sizeof(xbe_section)) >= bf->size - h->sechdr_addr) {
 		goto out_error;
 	}
 	for (i = 0; found == false && i < limit; i++) {
 		addr = h->sechdr_addr - h->base + (sizeof (xbe_section) * i);
-		if (addr > arch->size || addr + sizeof(sect) > arch->size) {
+		if (addr > bf->size || addr + sizeof(sect) > bf->size) {
 			goto out_error;
 		}
-		r_buf_read_at (arch->buf, addr, (ut8 *) &sect, sizeof(sect));
+		r_buf_read_at (bf->buf, addr, (ut8 *) &sect, sizeof(sect));
 		if (kt_addr >= sect.vaddr && kt_addr < sect.vaddr + sect.vsize) {
 			found = true;
 		}
@@ -291,10 +291,10 @@ static RList *symbols(RBinFile *arch) {
 		goto out_error;
 	}
 	addr = sect.offset + (kt_addr - sect.vaddr);
-	if (addr > arch->size || addr + sizeof(thunk_addr) > arch->size) {
+	if (addr > bf->size || addr + sizeof(thunk_addr) > bf->size) {
 		goto out_error;
 	}
-	i = r_buf_read_at (arch->buf, addr, (ut8 *) &thunk_addr, sizeof (thunk_addr));
+	i = r_buf_read_at (bf->buf, addr, (ut8 *) &thunk_addr, sizeof (thunk_addr));
 	if (i != sizeof (thunk_addr)) {
 		goto out_error;
 	}
@@ -323,12 +323,12 @@ out_error:
 	return NULL;
 }
 
-static RBinInfo *info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *bf) {
 	r_bin_xbe_obj_t *obj;
 	RBinInfo *ret;
 	ut8 dbg_name[256];
 
-	if (!arch || !arch->buf) {
+	if (!bf || !bf->buf) {
 		return NULL;
 	}
 
@@ -337,10 +337,10 @@ static RBinInfo *info(RBinFile *arch) {
 		return NULL;
 	}
 
-	obj = arch->o->bin_obj;
+	obj = bf->o->bin_obj;
 
 	memset (dbg_name, 0, sizeof (dbg_name));
-	r_buf_read_at (arch->buf, obj->header->debug_name_addr -\
+	r_buf_read_at (bf->buf, obj->header->debug_name_addr -\
 		obj->header->base, dbg_name, sizeof (dbg_name));
 	dbg_name[sizeof(dbg_name) - 1] = 0;
 	ret->file = strdup ((char *) dbg_name);
@@ -357,8 +357,8 @@ static RBinInfo *info(RBinFile *arch) {
 	return ret;
 }
 
-static ut64 baddr(RBinFile *arch) {
-	r_bin_xbe_obj_t *obj = arch->o->bin_obj;
+static ut64 baddr(RBinFile *bf) {
+	r_bin_xbe_obj_t *obj = bf->o->bin_obj;
 	return obj->header->base;
 }
 
@@ -379,7 +379,7 @@ RBinPlugin r_bin_plugin_xbe = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_xbe,
 	.version = R2_VERSION

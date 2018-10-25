@@ -10,7 +10,8 @@ install: ${F_SDB}
 CWD=$(shell pwd)
 symstall install-symlink: ${F_SDB}
 	mkdir -p "$(MAGICDIR)"
-	cd default ; for FILE in * ; do ln -fs "${CWD}/default/$$FILE" \
-		"$(MAGICDIR)/$$FILE" ; done
+	for FILE in $(shell cd default && ls) ; do \
+		ln -fs "${CWD}/default/$$FILE" "$(MAGICDIR)/$$FILE" ; \
+	done
 
 .PHONY: install symstall

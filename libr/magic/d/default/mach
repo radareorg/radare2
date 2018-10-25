@@ -21,3 +21,5 @@
 >8	byte	0x00	Java CLASS
 >8	byte	!0x00	Fat-Mach-O
 
+
+0	lelong&0xffffffff	0xc00cdefa	MacOS Deteched Code Signature

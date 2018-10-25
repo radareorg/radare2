@@ -9,9 +9,11 @@ static int moves = 0;
 static void twok_init() {
 	int i, j;
 	score = 0;
-	for (i = 0; i < 4; i++)
-		for (j = 0; j < 4; j++)
+	for (i = 0; i < 4; i++) {
+		for (j = 0; j < 4; j++) {
 			twok_buf[i][j] = 0;
+		}
+	}
 }
 
 static void twok_add() {
@@ -28,18 +30,27 @@ static void twok_add() {
 
 static bool twok_fin() {
 	int i, j;
-	for (i = 0; i < 4; i++)
-		for (j = 0; j < 4; j++)
-			if (!twok_buf[i][j])
+	for (i = 0; i < 4; i++) {
+		for (j = 0; j < 4; j++) {
+			if (!twok_buf[i][j]) {
 				return true;
-	for (i = 0; i < 4; i++)
-		for (j = 0; j < 3; j++)
-			if (twok_buf[i][j] == twok_buf[i][j + 1])
+			}
+		}
+	}
+	for (i = 0; i < 4; i++) {
+		for (j = 0; j < 3; j++) {
+			if (twok_buf[i][j] == twok_buf[i][j + 1]) {
 				return true;
-	for (i = 0; i < 3; i++)
-		for (j = 0; j < 4; j++)
-			if (twok_buf[i][j] == twok_buf[i + 1][j])
+			}
+		}
+	}
+	for (i = 0; i < 3; i++) {
+		for (j = 0; j < 4; j++) {
+			if (twok_buf[i][j] == twok_buf[i + 1][j]) {
 				return true;
+			}
+		}
+	}
 	return false;
 }
 
@@ -49,9 +60,12 @@ static void twok_move(int u, int v) {
 	int moved = 0;
 	for (k = 0; k < 4; ++k) {
 		for (i = 0; i < 4; ++i) {
-			for (j = i + 1; j < 4 && !twok_buf[nKJ = u? k: v? j: 3 - j][nJK = !u? k: v? j: 3 - j]; ++j)
+			for (j = i + 1; j < 4 && !twok_buf[nKJ = u ? k : v ? j : 3 - j][nJK = !u ? k : v ? j : 3 - j]; ++j) {
 				;
-			if (j == 4) continue;
+			}
+			if (j == 4) {
+				continue;
+			}
 			nKI = u? k: v? i: 3 - i;
 			nIK = !u? k: v? i: 3 - i;
 			if (!twok_buf[nKI][nIK]) {
@@ -164,7 +178,9 @@ R_API void r_cons_2048(bool color) {
 			twok_move (1, 0);
 			break;
 		}
-		if (ch < 1 || ch == 'q') break;
+		if (ch < 1 || ch == 'q') {
+			break;
+		}
 	}
 	r_cons_clear00 ();
 	r_cons_printf ("[r2048] score: %d\n", score);

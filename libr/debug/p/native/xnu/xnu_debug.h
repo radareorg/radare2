@@ -250,6 +250,7 @@ static int coredump_nflavors = 1;
 
 #define MAX_TSTATE_FLAVORS 10
 #define DEFAULT_COREFILE_DEST "core.%u"
+#define R_DEBUG_REASON_MACH_RCV_INTERRUPTED -2
 
 typedef struct {
 	vm_offset_t header;
@@ -260,14 +261,15 @@ typedef struct {
 
 task_t pid_to_task (int pid);
 int xnu_get_vmmap_entries_for_pid (pid_t pid);
-char *xnu_corefile_default_location();
+char *xnu_corefile_default_location(void);
 bool xnu_generate_corefile(RDebug *dbg, RBuffer *dest);
 int xnu_reg_read (RDebug *dbg, int type, ut8 *buf, int size);
 int xnu_reg_write (RDebug *dgb, int type, const ut8 *buf, int size);
-const char *xnu_reg_profile (RDebug *dbg);
+char *xnu_reg_profile (RDebug *dbg);
 int xnu_attach (RDebug *dbg, int pid);
 bool xnu_step (RDebug *dbg);
 int xnu_detach (RDebug *dbg, int pid);
+int xnu_stop (RDebug *dbg, int pid);
 int xnu_continue (RDebug *dbg, int pid, int tid, int sig);
 RDebugMap *xnu_map_alloc (RDebug *dbg, ut64 addr, int size);
 int xnu_map_dealloc (RDebug *dbg, ut64 addr, int size);

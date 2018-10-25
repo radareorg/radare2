@@ -30,10 +30,13 @@
 #define R_BIN_WASM_SECTION_DATA 0xb
 
 typedef enum {
-	R_BIN_WASM_VALUETYPE_i32 = 0x7f,
-	R_BIN_WASM_VALUETYPE_i64 = 0x7e,
-	R_BIN_WASM_VALUETYPE_f32 = 0x7d,
-	R_BIN_WASM_VALUETYPE_f64 = 0x7c,
+	R_BIN_WASM_VALUETYPE_i32 = 0x1,
+	R_BIN_WASM_VALUETYPE_i64 = 0x2,
+	R_BIN_WASM_VALUETYPE_f32 = 0x3,
+	R_BIN_WASM_VALUETYPE_f64 = 0x4,
+	R_BIN_WASM_VALUETYPE_ANYFUNC = 0x10,
+	R_BIN_WASM_VALUETYPE_FUNC = 0x20,
+	R_BIN_WASM_VALUETYPE_EMPTY = 0x40,
 } r_bin_wasm_value_type_t;
 
 typedef enum {
@@ -45,7 +48,7 @@ typedef enum {
 
 typedef enum {
 	R_BIN_WASM_NAMETYPE_Function = 0x1,
-	R_BIN_WASM_NAMETYPELocal = 0x2,
+	R_BIN_WASM_NAMETYPE_Local = 0x2,
 } r_bin_wasm_name_type_t;
 
 struct r_bin_wasm_init_expr_t {
@@ -66,13 +69,13 @@ typedef struct r_bin_wasm_section_t {
 	char name[R_BIN_WASM_STRING_LENGTH];
 	ut32 offset;
 	ut32 payload_data;
-	ut32 payload_len; 
+	ut32 payload_len;
 	ut32 count;
 } RBinWasmSection;
 
 typedef struct r_bin_wasm_type_t {
-	ut8 form; 
-	ut32 param_count; 
+	ut8 form;
+	ut32 param_count;
 	r_bin_wasm_value_type_t *param_types;
 	st8 return_count; // MVP = 1
 	r_bin_wasm_value_type_t return_type;
@@ -106,7 +109,7 @@ typedef struct r_bin_wasm_import_t {
 		struct r_bin_wasm_table_type_t type_t;
 		struct r_bin_wasm_memory_type_t type_m;
 	};
-		
+
 } RBinWasmImportEntry;
 
 typedef struct r_bin_wasm_function_t {
@@ -174,7 +177,7 @@ typedef struct r_bin_wasm_data_t {
 typedef struct r_bin_wasm_custom_name_t {
 	r_bin_wasm_name_type_t name_type;
 	ut32 name_payload_length;
-	ut32 name_payload_data;	
+	ut32 name_payload_data;
 } RBinWasmCustomNameEntry;
 
 typedef struct r_bin_wasm_obj_t {
@@ -200,8 +203,8 @@ typedef struct r_bin_wasm_obj_t {
 
 } RBinWasmObj;
 
-RBinWasmObj *r_bin_wasm_init (RBinFile *arch);
-void r_bin_wasm_destroy (RBinFile *arch);
+RBinWasmObj *r_bin_wasm_init (RBinFile *bf);
+void r_bin_wasm_destroy (RBinFile *bf);
 RList *r_bin_wasm_get_sections (RBinWasmObj *bin);
 RList *r_bin_wasm_get_types (RBinWasmObj *bin);
 RList *r_bin_wasm_get_imports (RBinWasmObj *bin);
@@ -213,5 +216,6 @@ RList *r_bin_wasm_get_elements (RBinWasmObj *bin);
 RList *r_bin_wasm_get_codes (RBinWasmObj *bin);
 RList *r_bin_wasm_get_datas (RBinWasmObj *bin);
 ut32 r_bin_wasm_get_entrypoint (RBinWasmObj *bin);
+const char *r_bin_wasm_valuetype_to_string (r_bin_wasm_value_type_t type);
 
 #endif

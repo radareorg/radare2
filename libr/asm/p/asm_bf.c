@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2018 - pancake, nibble */
 
 #include <stdio.h>
 #include <string.h>
@@ -16,143 +16,126 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			rep++;
 		}
 	}
-
+	const char *buf_asm = "invalid";
 	switch (*buf) {
 	case '[':
-		strcpy (op->buf_asm, "while [ptr]");
+		buf_asm = "while [ptr]";
 		break;
 	case ']':
-		strcpy (op->buf_asm, "loop"); // TODO: detect clause and put label name
+		buf_asm = "loop";
 		break;
 	case '>':
-		if (rep > 1) {
-			strcpy (op->buf_asm, "add ptr");
-		} else {
-			strcpy (op->buf_asm, "inc ptr");
-		}
+		buf_asm = (rep > 1)? "add ptr": "inc ptr";
 		break;
 	case '<':
-		if (rep > 1) {
-			strcpy (op->buf_asm, "sub ptr");
-		} else {
-			strcpy (op->buf_asm, "dec ptr");
-		}
+		buf_asm = (rep > 1)? "sub ptr": "dec ptr";
 		break;
 	case '+':
-		if (rep > 1) {
-			strcpy (op->buf_asm, "add [ptr]");
-		} else {
-			strcpy (op->buf_asm, "inc [ptr]");
-		}
+		buf_asm = (rep > 1)? "add [ptr]": "inc [ptr]";
 		break;
 	case '-':
-		if (rep > 1) {
-			strcpy (op->buf_asm, "sub [ptr]");
-		} else {
-			strcpy (op->buf_asm, "dec [ptr]");
-		}
+		buf_asm = (rep > 1)? "sub [ptr]": "dec [ptr]";
 		break;
 	case ',':
-		strcpy (op->buf_asm, "in [ptr]");
+		buf_asm = "in [ptr]";
 		break;
 	case '.':
-		strcpy (op->buf_asm, "out [ptr]");
+		buf_asm = "out [ptr]";
 		break;
 	case 0xff:
 	case 0x00:
-		strcpy (op->buf_asm, "trap");
+		buf_asm = "trap";
 		break;
 	default:
-		strcpy (op->buf_asm, "nop");
+		buf_asm = "nop";
 		break;
 	}
 
 	if (rep > 1) {
 		/* Note: snprintf's source and destination buffers may not
 		* overlap. */
-		const char *fmt = strchr (op->buf_asm, ' ')? "%s, %d": "%s %d";
-		char buf[sizeof (op->buf_asm)];
-		snprintf (buf, sizeof (buf), fmt, op->buf_asm, rep);
-		strcpy (op->buf_asm, buf);
+		const char *fmt = strchr (buf_asm, ' ')? "%s, %d": "%s %d";
+		buf_asm = sdb_fmt (fmt, buf_asm, rep);
 	}
-
+	r_strbuf_set (&op->buf_asm, buf_asm);
 	op->size = rep;
 	return rep;
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
-	const char *ref, *arg;
 	int n = 0;
 	if (buf[0] && buf[1] == ' ') {
 		buf += 2;
 	}
-	arg = strchr (buf, ',');
-	ref = strchr (buf, '[');
+	const char *arg = strchr (buf, ',');
+	const char *ref = strchr (buf, '[');
+	ut8 opbuf[32];
 	if (!strncmp (buf, "trap", 4)) {
 		if (arg) {
 			n = atoi (arg + 1);
-			memset (op->buf, 0xcc, n);
+			memset (opbuf, 0xcc, n);
 		} else {
-			op->buf[0] = 0x90;
+			opbuf[0] = 0x90;
 			n = 1;
 		}
 	} else if (!strncmp (buf, "nop", 3))        {
 		if (arg) {
 			n = atoi (arg + 1);
-			memset (op->buf, 0x90, n);
+			memset (opbuf, 0x90, n);
 		} else {
-			op->buf[0] = 0x90;
+			opbuf[0] = 0x90;
 			n = 1;
 		}
 	} else if (!strncmp (buf, "inc", 3))        {
 		char ch = ref? '+': '>';
-		op->buf[0] = ch;
+		opbuf[0] = ch;
 		n = 1;
 	} else if (!strncmp (buf, "dec", 3))        {
 		char ch = ref? '-': '<';
-		op->buf[0] = ch;
+		opbuf[0] = ch;
 		n = 1;
 	} else if (!strncmp (buf, "sub", 3))        {
 		char ch = ref? '-': '<';
 		if (arg) {
 			n = atoi (arg + 1);
-			memset (op->buf, ch, n);
+			memset (opbuf, ch, n);
 		} else {
-			op->buf[0] = '<';
+			opbuf[0] = '<';
 			n = 1;
 		}
 	} else if (!strncmp (buf, "add", 3))        {
 		char ch = ref? '+': '>';
 		if (arg) {
 			n = atoi (arg + 1);
-			memset (op->buf, ch, n);
+			memset (opbuf, ch, n);
 		} else {
-			op->buf[0] = '<';
+			opbuf[0] = '<';
 			n = 1;
 		}
 	} else if (!strncmp (buf, "while", 5))        {
-		op->buf[0] = '[';
+		opbuf[0] = '[';
 		n = 1;
 	} else if (!strncmp (buf, "loop", 4))        {
-		op->buf[0] = ']';
+		opbuf[0] = ']';
 		n = 1;
 	} else if (!strncmp (buf, "in", 4))        {
 		if (arg) {
 			n = atoi (arg + 1);
-			memset (op->buf, ',', n);
+			memset (opbuf, ',', n);
 		} else {
-			op->buf[0] = ',';
+			opbuf[0] = ',';
 			n = 1;
 		}
 	} else if (!strncmp (buf, "out", 4))        {
 		if (arg) {
 			n = atoi (arg + 1);
-			memset (op->buf, '.', n);
+			memset (opbuf, '.', n);
 		} else {
-			op->buf[0] = '.';
+			opbuf[0] = '.';
 			n = 1;
 		}
 	}
+	r_strbuf_setbin (&op->buf, opbuf, n);
 	return n;
 }
 
@@ -170,7 +153,7 @@ RAsmPlugin r_asm_plugin_bf = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_bf,
 	.version = R2_VERSION

@@ -1,7 +1,7 @@
 #ifndef SDB_H
 #define SDB_H
 
-#ifndef O_BINARY
+#if !defined(O_BINARY) && !defined(_MSC_VER)
 #define O_BINARY 0
 #endif
 
@@ -12,6 +12,7 @@ extern "C" {
 #include "types.h"
 #include "sdbht.h"
 #include "ls.h"
+#include "dict.h"
 #include "cdb.h"
 #include "cdb_make.h"
 #include "sdb_version.h"
@@ -36,8 +37,15 @@ extern "C" {
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <io.h>
+#ifndef _MSC_VER
 extern __attribute__((dllimport)) void *__cdecl _aligned_malloc(size_t, size_t);
 extern char *strdup (const char *);
+#else
+#include <process.h>
+#include <windows.h>
+#include <malloc.h> // for _aligned_malloc
+#define ftruncate _chsize
+#endif
 #undef r_offsetof
 #define r_offsetof(type, member) ((unsigned long) (ut64)&((type*)0)->member)
 //#define SDB_MODE 0
@@ -79,7 +87,7 @@ typedef struct sdb_t {
 	int journal;
 	struct cdb db;
 	struct cdb_make m;
-	SdbHash *ht;
+	SdbHt *ht;
 	ut32 eod;
 	ut32 pos;
 	int fdump;
@@ -93,6 +101,7 @@ typedef struct sdb_t {
 	SdbKv tmpkv;
 	ut32 depth;
 	bool timestamped;
+	SdbMini mht;
 } Sdb;
 
 typedef struct sdb_ns_t {
@@ -121,6 +130,7 @@ SDB_API bool sdb_dump_hasnext (Sdb* s);
 typedef int (*SdbForeachCallback)(void *user, const char *k, const char *v);
 bool sdb_foreach(Sdb* s, SdbForeachCallback cb, void *user);
 SdbList *sdb_foreach_list(Sdb* s, bool sorted);
+SdbList *sdb_foreach_list_filter(Sdb* s, SdbForeachCallback filter, bool sorted);
 SdbList *sdb_foreach_match(Sdb* s, const char *expr, bool sorted);
 
 int sdb_query(Sdb* s, const char *cmd);
@@ -154,7 +164,7 @@ int sdb_concat(Sdb *s, const char *key, const char *value, ut32 cas);
 int sdb_uncat(Sdb *s, const char *key, const char *value, ut32 cas);
 int sdb_add(Sdb* s, const char *key, const char *val, ut32 cas);
 bool sdb_sync(Sdb*);
-void sdb_kv_free(SdbKv *kv);
+void sdbkv_free(SdbKv *kv);
 
 /* num.c */
 int  sdb_num_exists(Sdb*, const char *key);
@@ -191,8 +201,9 @@ SDB_API bool sdb_journal_clear(Sdb *s);
 SDB_API bool sdb_journal_unlink(Sdb *s);
 
 /* numeric */
-char *sdb_itoa(ut64 n, char *s, int base);
-ut64  sdb_atoi(const char *s);
+SDB_API char *sdb_itoa(ut64 n, char *s, int base);
+SDB_API ut64  sdb_atoi(const char *s);
+SDB_API const char *sdb_itoca(ut64 n);
 
 /* locking */
 SDB_API bool sdb_lock(const char *s);
@@ -202,15 +213,19 @@ SDB_API int sdb_unlink(Sdb* s);
 SDB_API int sdb_lock_wait(const char *s UNUSED);
 
 /* expiration */
-bool sdb_expire_set(Sdb* s, const char *key, ut64 expire, ut32 cas);
-ut64 sdb_expire_get(Sdb* s, const char *key, ut32 *cas);
-ut64 sdb_now(void);
-ut64 sdb_unow(void);
-ut32 sdb_hash(const char *key);
-ut32 sdb_hash_len(const char *key, ut32 *len);
+SDB_API bool sdb_expire_set(Sdb* s, const char *key, ut64 expire, ut32 cas);
+SDB_API ut64 sdb_expire_get(Sdb* s, const char *key, ut32 *cas);
+SDB_API ut64 sdb_now(void);
+SDB_API ut64 sdb_unow(void);
+SDB_API ut32 sdb_hash(const char *key);
+SDB_API ut32 sdb_hash_len(const char *key, ut32 *len);
+SDB_API ut8 sdb_hash_byte(const char *s);
 
 /* json api */
+// SDB_API int sdb_js0n(const unsigned char *js, RangstrType len, RangstrType *out);
 SDB_API bool sdb_isjson(const char *k);
+SDB_API char *sdb_json_get_str (const char *json, const char *path);
+
 SDB_API char *sdb_json_get(Sdb* s, const char *key, const char *p, ut32 *cas);
 SDB_API bool sdb_json_set(Sdb* s, const char *k, const char *p, const char *v, ut32 cas);
 SDB_API int sdb_json_num_get(Sdb* s, const char *k, const char *p, ut32 *cas);
@@ -241,15 +256,15 @@ int sdb_ns_set(Sdb *s, const char *name, Sdb *r);
 bool sdb_ns_unset(Sdb *s, const char *name, Sdb *r);
 
 // array
-int sdb_array_contains(Sdb* s, const char *key, const char *val, ut32 *cas);
-int sdb_array_contains_num(Sdb *s, const char *key, ut64 val, ut32 *cas);
+bool sdb_array_contains(Sdb* s, const char *key, const char *val, ut32 *cas);
+bool sdb_array_contains_num(Sdb *s, const char *key, ut64 val, ut32 *cas);
 int sdb_array_indexof(Sdb *s, const char *key, const char *val, ut32 cas);
 int sdb_array_set(Sdb* s, const char *key, int idx, const char *val, ut32 cas);
 int sdb_array_set_num(Sdb* s, const char *key, int idx, ut64 val, ut32 cas);
 bool sdb_array_append(Sdb *s, const char *key, const char *val, ut32 cas);
 bool sdb_array_append_num(Sdb *s, const char *key, ut64 val, ut32 cas);
-int sdb_array_prepend(Sdb *s, const char *key, const char *val, ut32 cas);
-int sdb_array_prepend_num(Sdb *s, const char *key, ut64 val, ut32 cas);
+bool sdb_array_prepend(Sdb *s, const char *key, const char *val, ut32 cas);
+bool sdb_array_prepend_num(Sdb *s, const char *key, ut64 val, ut32 cas);
 char *sdb_array_get(Sdb* s, const char *key, int idx, ut32 *cas);
 ut64 sdb_array_get_num(Sdb* s, const char *key, int idx, ut32 *cas);
 int sdb_array_get_idx(Sdb *s, const char *key, const char *val, ut32 cas); // agetv
@@ -281,7 +296,7 @@ int sdb_array_remove_num(Sdb* s, const char *key, ut64 val, ut32 cas);
 
 // helpers
 char *sdb_anext(char *str, char **next);
-const char *sdb_const_anext(const char *str, const char **next);
+const char *sdb_const_anext(const char *str);
 int sdb_alen(const char *str);
 int sdb_alen_ignore_empty(const char *str);
 int sdb_array_size(Sdb* s, const char *key);
@@ -290,7 +305,7 @@ int sdb_array_length(Sdb* s, const char *key);
 int sdb_array_list(Sdb* s, const char *key);
 
 // Adds the string `val` to the start of array `key`.
-int sdb_array_push(Sdb *s, const char *key, const char *val, ut32 cas);
+SDB_API bool sdb_array_push(Sdb *s, const char *key, const char *val, ut32 cas);
 
 // Returns the string at the start of array `key` or
 // NULL if there are no elements.
@@ -310,34 +325,35 @@ typedef void (*SdbHook)(Sdb *s, void *user, const char *k, const char *v);
 void sdb_global_hook(SdbHook hook, void *user);
 SDB_API bool sdb_hook(Sdb* s, SdbHook cb, void* user);
 SDB_API bool sdb_unhook(Sdb* s, SdbHook h);
-int sdb_hook_call(Sdb *s, const char *k, const char *v);
-void sdb_hook_free(Sdb *s);
+SDB_API int sdb_hook_call(Sdb *s, const char *k, const char *v);
+SDB_API void sdb_hook_free(Sdb *s);
 /* Util.c */
-int sdb_isnum(const char *s);
+SDB_API int sdb_isnum(const char *s);
+SDB_API bool sdb_isempty(Sdb *s);
 
-const char *sdb_type(const char *k);
-bool sdb_match(const char *str, const char *glob);
-int sdb_bool_set(Sdb *db, const char *str, bool v, ut32 cas);
-bool sdb_bool_get(Sdb *db, const char *str, ut32 *cas);
+SDB_API const char *sdb_type(const char *k);
+SDB_API bool sdb_match(const char *str, const char *glob);
+SDB_API int sdb_bool_set(Sdb *db, const char *str, bool v, ut32 cas);
+SDB_API bool sdb_bool_get(Sdb *db, const char *str, ut32 *cas);
 
 // base64
-ut8 *sdb_decode(const char *in, int *len);
-char *sdb_encode(const ut8 *bin, int len);
-void sdb_encode_raw(char *bout, const ut8 *bin, int len);
-int sdb_decode_raw(ut8 *bout, const char *bin, int len);
+SDB_API ut8 *sdb_decode(const char *in, int *len);
+SDB_API char *sdb_encode(const ut8 *bin, int len);
+SDB_API void sdb_encode_raw(char *bout, const ut8 *bin, int len);
+SDB_API int sdb_decode_raw(ut8 *bout, const char *bin, int len);
 
 // binfmt
-char *sdb_fmt(int n, const char *fmt, ...);
-int sdb_fmt_init(void *p, const char *fmt);
-void sdb_fmt_free(void *p, const char *fmt);
-int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru);
-char *sdb_fmt_tostr(void *stru, const char *fmt);
+SDB_API char *sdb_fmt(const char *fmt, ...);
+SDB_API int sdb_fmt_init(void *p, const char *fmt);
+SDB_API void sdb_fmt_free(void *p, const char *fmt);
+SDB_API int sdb_fmt_tobin(const char *_str, const char *fmt, void *stru);
+SDB_API char *sdb_fmt_tostr(void *stru, const char *fmt);
 SDB_API char** sdb_fmt_array(const char *list);
 SDB_API ut64* sdb_fmt_array_num(const char *list);
 
 // raw array helpers
-char *sdb_array_compact(char *p);
-char *sdb_aslice(char *out, int from, int to);
+SDB_API char *sdb_array_compact(char *p);
+SDB_API char *sdb_aslice(char *out, int from, int to);
 #define sdb_aforeach(x,y) \
 	{ char *next; \
 	if (y) for (x=y;;) { \

@@ -1,3 +1,5 @@
+/* radare - LGPL - Copyright 2014 - fedor.sakharov */
+
 #include <stdio.h>
 #include <string.h>
 #include <r_types.h>
@@ -6,23 +8,19 @@
 
 #include <propeller_disas.h>
 
-static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len)
-{
-	int ret;
+static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
+	const char *buf_asm;
 	struct propeller_cmd cmd;
-
-	ret = propeller_decode_command (buf, &cmd);
-
+	int ret = propeller_decode_command (buf, &cmd);
 	if (cmd.prefix[0] && cmd.operands[0]) {
-		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %s %s", cmd.prefix, cmd.instr, cmd.operands);
+		buf_asm = sdb_fmt ("%s %s %s", cmd.prefix, cmd.instr, cmd.operands);
 	} else if (cmd.operands[0]) {
-		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %s", cmd.instr, cmd.operands);
+		buf_asm = sdb_fmt ("%s %s", cmd.instr, cmd.operands);
 	} else {
-		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s", cmd.instr);
+		buf_asm = sdb_fmt ("%s", cmd.instr);
 	}
-
+	r_asm_op_set_asm (op, buf_asm);
 	op->size = 4;
-
 	return ret;
 }
 
@@ -37,7 +35,7 @@ RAsmPlugin r_asm_plugin_propeller = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_propeller,
 	.version = R2_VERSION

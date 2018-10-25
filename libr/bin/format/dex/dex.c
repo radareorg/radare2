@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake, h4ng3r */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -15,6 +15,9 @@ char* r_bin_dex_get_version(RBinDexObj *bin) {
 
 #define FAIL(x) { eprintf(x"\n"); goto fail; }
 RBinDexObj *r_bin_dex_new_buf(RBuffer *buf) {
+	if (!buf) {
+		return NULL;
+	}
 	RBinDexObj *bin = R_NEW0 (RBinDexObj);
 	int i;
 	ut8 *bufptr;
@@ -234,8 +237,9 @@ int dex_read_uleb128(const ut8 *ptr, int size) {
 	while(shift < 29 && len > 0) {
 		byte = *(in--);
 		result |= (byte & 0x7f << shift);
-		if (byte > 0x7f)
+		if (byte > 0x7f) {
 			break;
+		}
 		shift += 7;
 		len--;
 	}
@@ -252,7 +256,7 @@ int dex_uleb128_len(const ut8 *ptr, int size) {
 	return i;
 }
 
-#define SIG_EXTEND(X,Y) X = (X << Y) >> Y
+#define SIG_EXTEND(X,Y) X = ((X) << (Y)) >> Y
 int dex_read_sleb128(const char *ptr, int size) {
 	int cur, result;
 	ut8 len = dex_uleb128_len ((const ut8*)ptr, size);

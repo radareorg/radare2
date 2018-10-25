@@ -7,6 +7,7 @@
 	static int __lib_ ## x ## _cb (RLibPlugin * pl, void *user, void *data) {\
 		struct r_ ## x ## _plugin_t *hand = (struct r_ ## x ## _plugin_t *)data;\
 		RCore *core = (RCore *) user;\
+		pl->free = NULL; \
 		r_ ## x ## _add (core->y, hand);\
 		return true;\
 	}\
@@ -85,24 +86,25 @@ R_API int r_core_loadlibs(RCore *core, int where, const char *path) {
 		free (p);
 	}
 	if (where & R_CORE_LOADLIBS_HOME) {
-		char *homeplugindir = r_str_home (R2_HOMEDIR "/plugins");
+		char *homeplugindir = r_str_home (R2_HOME_PLUGINS);
 		// eprintf ("OPENDIR (%s)\n", homeplugindir);
 		r_lib_opendir (core->lib, homeplugindir);
 		free (homeplugindir);
 	}
 	if (where & R_CORE_LOADLIBS_SYSTEM) {
-#if __WINDOWS__
-		r_lib_opendir (core->lib, "plugins");
-		r_lib_opendir (core->lib, "share/radare2/"R2_VERSION "/plugins");
-#else
-		r_lib_opendir (core->lib, R2_LIBDIR "/radare2/"R2_VERSION);
-		r_lib_opendir (core->lib, R2_LIBDIR "/radare2-extras/"R2_VERSION);
-		r_lib_opendir (core->lib, R2_LIBDIR "/radare2-bindings/"R2_VERSION);
-#endif
+		char *plugindir = r_str_r2_prefix (R2_PLUGINS);
+		char *extrasdir = r_str_r2_prefix (R2_EXTRAS);
+		char *bindingsdir = r_str_r2_prefix (R2_BINDINGS);
+		r_lib_opendir (core->lib, plugindir);
+		r_lib_opendir (core->lib, extrasdir);
+		r_lib_opendir (core->lib, bindingsdir);
+		free (plugindir);
+		free (extrasdir);
+		free (bindingsdir);
 	}
 #endif
 	// load script plugins
-	char *homeplugindir = r_str_home (R2_HOMEDIR "/plugins");
+	char *homeplugindir = r_str_home (R2_HOME_PLUGINS);
         RList *files = r_sys_dir (homeplugindir);
 	RListIter *iter;
 	char *file;

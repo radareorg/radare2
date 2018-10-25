@@ -30,13 +30,17 @@ void memFree(memChunk *chunk) {
 }
 void memInit() {
 	mInfo = (memInfo*) malloc (sizeof (memInfo));
-	if (!mInfo) return;
+	if (!mInfo) {
+		return;
+	}
 	memset (mInfo, 0, sizeof (memInfo));
 	mInfo->state = MEM_STATE_OK;
 	mInfo->allocated += sizeof (memInfo);
 }
 void memCheckState() {
-	if (!mInfo) memInit();
+	if (!mInfo) {
+		memInit ();
+	}
 	if (mInfo->state != MEM_STATE_OK){
 		fprintf (stderr,"\rMemory not initialized :p\n");
 		exit (0);
@@ -58,7 +62,7 @@ memChunk *memReserve(long size) {
 		perror ("memReserve");
 		exit (0);
   	}
-	//printf("- reservando %d bytes\n",size);
+	//printf("- reservando %d byte(s)\n",size);
 	buffer->size = size;
 	memset (buffer->address, 0, buffer->size);
 	mInfo->allocated += buffer->size;
@@ -81,10 +85,12 @@ memChunk *memString(char *string) {
 void memCopy(memChunk *dest,memChunk *source) {
 	long nbytes;
 	memCheckState ();
-	if ((!source->address) || (!dest->address)) return;
+	if ((!source->address) || (!dest->address)) {
+		return;
+	}
 	nbytes=dest->size > source->size ? source->size : dest->size;
 	#if DEBUG3
-	eprintf ("Copying %d bytes to dest (size %d)\n", nbytes, dest->address, dest->size);
+	eprintf ("Copying %d byte(s) to dest (size %d)\n", nbytes, dest->address, dest->size);
 	#endif
 	memcpy (dest->address, source->address, nbytes);
 }

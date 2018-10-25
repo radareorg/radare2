@@ -6,6 +6,6 @@ includedir=${prefix}/include
 Name: r_bin
 Description: radare foundation libraries
 Version: @VERSION@
-Requires:
-Libs: -L${libdir} -lr_bin -lr_util -lr_io -lr_socket @LIBMAGIC@
-Cflags: -I${includedir}/libr
+Requires: r_util r_io r_socket r_magic
+Libs: -L${libdir} -lr_bin  
+Cflags: -I${includedir}/libr 

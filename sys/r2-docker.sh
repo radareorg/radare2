@@ -21,7 +21,7 @@ showHelp() {
 }
 
 # Check if docker is present
-[[ ! $(command -v docker) ]] && (
+[ -z "$(command -v docker)" ] && (
 	echo "You must install docker first. (see https://docs.docker.com/engine/installation/)"
 ) && exit 1
 

@@ -14,7 +14,6 @@ int r_sys_setenv(const char *key, const char *value);
 
 #ifdef __WINDOWS__
 #include <io.h>
-#include <r_types_base.h>
 #define popen    _popen
 #define pclose   _pclose
 #define srandom  srand
@@ -28,6 +27,15 @@ int r_sys_setenv(const char *key, const char *value);
 extern int ifl;
 extern int echo[MAXIFL];
 extern int lineno;
+
+#ifndef HAVE_FORK
+#define HAVE_FORK 1
+#endif
+
+#ifndef HAVE_FORK
+#define HAVE_FORK 1
+#endif
+
 #ifndef DLL_LOCAL
 #ifdef _MSC_VER
 #define DLL_LOCAL
@@ -49,9 +57,21 @@ typedef struct {
 	int size;
 } Output;
 
+typedef struct SppState {
+	int lineno;
+	int echo[MAXIFL];
+	int ifl;
+} SppState;
+
+typedef struct SppBuf {
+    char *lbuf;
+    int lbuf_s;
+    int lbuf_n;
+} SppBuf;
+
 #define ARG_CALLBACK(x) int x (char *arg)
 /* XXX swap arguments ?? */
-#define TAG_CALLBACK(x) int x (char *buf, Output *out)
+#define TAG_CALLBACK(x) int x (SppState *state, Output *out, char *buf)
 #define PUT_CALLBACK(x) int x (Output *out, char *buf)
 #define IS_SPACE(x) ((x==' ')||(x=='\t')||(x=='\r')||(x=='\n'))
 
@@ -80,22 +100,23 @@ struct Proc {
 	int chop;
 	int tag_begin;
 	int default_echo;
+	SppState state;
+    SppBuf buf;
 };
 
-
-
-int spp_file(const char *file, Output *out);
-int spp_run(char *buf, Output *out);
-void spp_eval(char *buf, Output *out);
-void spp_io(FILE *in, Output *out);
+R_API int spp_file(const char *file, Output *out);
+R_API int spp_run(char *buf, Output *out);
+R_API void spp_eval(char *buf, Output *out);
+R_API void spp_io(FILE *in, Output *out);
 #ifdef _MSC_VER
-void do_printf (Output *out, char *str, ...);
+void do_printf(Output *out, char *str, ...);
 #else
 void do_printf(Output *out, char *str, ...) __attribute__ ((format (printf, 2, 3)));
 #endif
-void spp_proc_list();
-void spp_proc_list_kw();
-void spp_proc_set(struct Proc *p, char *arg, int fail);
+
+R_API void spp_proc_list(void);
+R_API void spp_proc_list_kw(void);
+R_API void spp_proc_set(struct Proc *p, char *arg, int fail);
 
 #if DEBUG
 #define D if (1)

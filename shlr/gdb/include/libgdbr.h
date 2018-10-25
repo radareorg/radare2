@@ -11,17 +11,13 @@ typedef unsigned int ssize_t;
 #include "r_types_base.h"
 #include "r_socket.h"
 
-#define X86_64 ARCH_X86_64
-#define X86_32 ARCH_X86_32
-#define ARM_32 ARCH_ARM_32
-#define ARM_64 ARCH_ARM_64
-#define MIPS ARCH_MIPS
-#define AVR ARCH_AVR
-#define LM32 ARCH_LM32
-
 #define MSG_OK 0
 #define MSG_NOT_SUPPORTED -1
 #define MSG_ERROR_1 -2
+
+#define GDB_REMOTE_TYPE_GDB 0
+#define GDB_REMOTE_TYPE_LLDB 1
+#define GDB_MAX_PKTSZ 4
 
 /*!
  * Structure that saves a gdb message
@@ -89,6 +85,19 @@ typedef struct libgdbr_stub_features_t {
 	bool EnableDisableTracepoints;
 	bool tracenz;
 	bool BreakpointCommands;
+	// lldb-specific features
+	struct {
+		bool g;
+		bool QThreadSuffixSupported;
+		bool QListThreadsInStopReply;
+		bool qEcho;
+	} lldb;
+	// Cannot be determined with qSupported, found out on query
+	bool qC;
+	int extended_mode;
+	struct {
+		bool c, C, s, S, t, r;
+	} vcont;
 } libgdbr_stub_features_t;
 
 /*!
@@ -112,6 +121,35 @@ typedef struct libgdbr_fstat_t {
 }) libgdbr_fstat_t;
 
 /*!
+ * Stores information from the stop-reply packet (why target stopped)
+ */
+typedef struct libgdbr_stop_reason {
+	unsigned signum;
+	int core;
+	int reason;
+	bool syscall;
+	bool library;
+	bool swbreak;
+	bool hwbreak;
+	bool create;
+	bool vforkdone;
+	bool is_valid;
+	struct {
+		bool present;
+		ut64 addr;
+	} watchpoint;
+	struct {
+		bool present;
+		char *path;
+	} exec;
+	struct {
+		bool present;
+		int pid;
+		int tid;
+	} thread, fork, vfork;
+} libgdbr_stop_reason_t;
+
+/*!
  * Core "object" that saves
  * the instance of the lib
  */
@@ -121,6 +159,7 @@ typedef struct libgdbr_t {
 	ssize_t send_max; // defines the maximal len for the given buffer
 	char *read_buff;
 	ssize_t read_max; // defines the maximal len for the given buffer
+	ssize_t read_len; // len of read_buff (if read_buff not fully consumed)
 
 	// is already handled (i.e. already send or ...)
 	RSocket *sock;
@@ -129,30 +168,44 @@ typedef struct libgdbr_t {
 	char *data;
 	ssize_t data_len;
 	ssize_t data_max;
-	uint8_t architecture;
-	registers_t *registers;
+	gdb_reg_t *registers;
 	int last_code;
-	ssize_t pid; // little endian
-	ssize_t tid; // little endian
+	int pid; // little endian
+	int tid; // little endian
+	int page_size; // page size for target (useful for qemu)
 	bool attached; // Remote server attached to process or created
 	libgdbr_stub_features_t stub_features;
-	char *exec_file_name;
-	int exec_fd;
-	uint64_t exec_file_sz;
+
+	int remote_file_fd; // For remote file I/O
+	int num_retries; // number of retries for packet reading
+
+	int remote_type;
+	bool no_ack;
+	bool is_server;
+	bool server_debug;
+	bool get_baddr;
+	libgdbr_stop_reason_t stop_reason;
+
+	// parsed from target
+	struct {
+		char *regprofile;
+		int arch, bits;
+		bool valid;
+	} target;
 } libgdbr_t;
 
 /*!
  * \brief Function initializes the libgdbr lib
  * \returns a failure code (currently -1) or 0 if call successfully
  */
-int gdbr_init(libgdbr_t *g);
+int gdbr_init(libgdbr_t *g, bool is_server);
 
 /*!
  * \brief Function initializes the architecture of the gdbsession
  * \param architecture defines the architecure used (registersize, and such)
  * \returns a failure code
  */
-int gdbr_set_architecture(libgdbr_t *g, uint8_t architecture);
+int gdbr_set_architecture(libgdbr_t *g, const char *arch, int bits);
 
 /*!
  * \brief frees all buffers and cleans the libgdbr instance stuff

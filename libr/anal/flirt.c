@@ -257,6 +257,10 @@ typedef struct idasig_v8_v9_t {
 	ut16 pattern_size;
 } idasig_v8_v9_t;
 
+typedef struct idasig_v10_t {
+	ut16 unknown;
+} idasig_v10_t;
+
 #if DEBUG
 static int header_size = 0;
 #endif
@@ -580,8 +584,6 @@ static int module_match_buffer(const RAnal *anal, const RFlirtModule *module,
 				r_list_foreach_safe (anal->fcns, iter, iter_tmp, fcn) {
 					if (fcn->addr >= next_module_function->addr + next_module_function_size &&
 					fcn->addr < next_module_function->addr + flirt_fcn_size) {
-						r_list_join (next_module_function->refs, fcn->refs);
-						r_list_join (next_module_function->xrefs, fcn->xrefs);
 						r_list_join (next_module_function->bbs, fcn->bbs);
 						r_list_join (next_module_function->locs, fcn->locs);
 						// r_list_join (next_module_function->vars, r_anal_var_all_list (anal, fcn);
@@ -589,9 +591,9 @@ static int module_match_buffer(const RAnal *anal, const RFlirtModule *module,
 						r_anal_fcn_del ((RAnal *) anal, fcn->addr);
 					}
 				}
-				r_anal_fcn_resize (next_module_function, flirt_fcn_size);
+				r_anal_fcn_resize (anal, next_module_function, flirt_fcn_size);
 				next_module_function_size = r_anal_fcn_size (next_module_function);
-				r_anal_trim_jmprefs (next_module_function);
+				r_anal_trim_jmprefs ((RAnal *)anal, next_module_function);
 			}
 
 
@@ -660,7 +662,7 @@ static int node_match_functions(const RAnal *anal, const RFlirtNode *root_node) 
 	ut8 *func_buf = NULL;
 	RAnalFunction *func;
 	RFlirtNode *child;
-	int size, ret = true;
+	int ret = true;
 
 	if (r_list_length (anal->fcns) == 0) {
 		anal->cb_printf ("There is no analyzed functions. Have you run 'aa'?\n");
@@ -675,8 +677,7 @@ static int node_match_functions(const RAnal *anal, const RFlirtNode *root_node) 
 
 		int func_size = r_anal_fcn_size (func);
 		func_buf = malloc (func_size);
-		size = anal->iob.read_at (anal->iob.io, func->addr, func_buf, func_size);
-		if (size != func_size) {
+		if (!anal->iob.read_at (anal->iob.io, func->addr, func_buf, func_size)) {
 			eprintf ("Couldn't read function\n");
 			ret = false;
 			goto exit;
@@ -793,7 +794,7 @@ static ut8 read_module_referenced_functions(RFlirtModule *module, RBuffer *b) {
 				goto err_exit;
 			}
 		}
-		if ((int) ref_function_name_length < 0) {
+		if ((int) ref_function_name_length < 0 || ref_function_name_length >= R_FLIRT_NAME_MAX) {
 			goto err_exit;
 		}
 		for (j = 0; j < ref_function_name_length; j++) {
@@ -1276,6 +1277,14 @@ static int parse_v8_v9_header(RBuffer *buf, idasig_v8_v9_t *header) {
 	return true;
 }
 
+static int parse_v10_header(RBuffer *buf, idasig_v10_t *header) {
+	if (r_buf_read_at (buf, buf->cur, (unsigned char *) &header->unknown, sizeof(header->unknown)) != sizeof(header->unknown)) {
+		return false;
+	}
+
+	return true;
+}
+
 static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 	ut8 *name = NULL;
 	ut8 *buf = NULL, *decompressed_buf = NULL;
@@ -1286,6 +1295,7 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 	idasig_v5_t *header = NULL;
 	idasig_v6_v7_t *v6_v7 = NULL;
 	idasig_v8_v9_t *v8_v9 = NULL;
+	idasig_v10_t *v10 = NULL;
 
 	buf_eof = false;
 	buf_err = false;
@@ -1294,7 +1304,7 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 		goto exit;
 	}
 
-	if (version < 5 || version > 9) {
+	if (version < 5 || version > 10) {
 		eprintf ("Unsupported flirt signature version\n");
 		goto exit;
 	}
@@ -1319,6 +1329,15 @@ static RFlirtNode *flirt_parse(const RAnal *anal, RBuffer *flirt_buf) {
 			}
 			if (!parse_v8_v9_header (flirt_buf, v8_v9)) {
 				goto exit;
+			}
+
+			if (version >= 9) {
+				if (!(v10 = R_NEW0 (idasig_v10_t))) {
+					goto exit;
+				}
+				if (!parse_v10_header (flirt_buf, v10)) {
+					goto exit;
+				}
 			}
 		}
 	}
@@ -1385,6 +1404,7 @@ exit:
 	free (header);
 	free (v6_v7);
 	free (v8_v9);
+	free (v10);
 	free (name);
 	return ret;
 }
@@ -1451,12 +1471,12 @@ R_API void r_sign_flirt_scan(const RAnal *anal, const char *flirt_file) {
 	r_buf_free (flirt_buf);
 	if (node) {
 		if (!node_match_functions (anal, node)) {
-			eprintf ("Error while scanning the file\n");
+			eprintf ("Error while scanning the file %s\n", flirt_file);
 		}
 		node_free (node);
 		return;
 	} else {
-		eprintf ("We encountered an error while parsing the file. Sorry.\n");
+		eprintf ("We encountered an error while parsing the file %s. Sorry.\n", flirt_file);
 		return;
 	}
 }

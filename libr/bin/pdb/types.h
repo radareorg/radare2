@@ -6,7 +6,8 @@
 
 #define READ_PAGE_FAIL 0x01
 
-//TODO: MOVE TO GENERAL MACROSE
+// TODO: Move to a general macroses in r_util/r_types
+
 ///////////////////////////////////////////////////////////////////////////////
 #define GET_PAGE(pn, off, pos, page_size)	{ \
 	(pn) = (pos) / (page_size); \
@@ -42,15 +43,41 @@
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-#define PEEK_READ(curr_read_bytes, bytes_for_read, max_len, dst, src, type_name) { \
-	CAN_READ((curr_read_bytes), (bytes_for_read), (max_len)); \
+#define PEEK_READ1(curr_read_bytes, max_len, dst, src, type_name) { \
+	CAN_READ((curr_read_bytes), 1, (max_len)); \
 	(dst) = *(type_name *) (src); \
 }
-
+#define PEEK_READ2(curr_read_bytes, max_len, dst, src, type_name) { \
+	CAN_READ((curr_read_bytes), 2, (max_len)); \
+	(dst) = (type_name) r_read_le16 (src); \
+}
+#define PEEK_READ4(curr_read_bytes, max_len, dst, src, type_name) { \
+	CAN_READ((curr_read_bytes), 4, (max_len)); \
+	(dst) = (type_name) r_read_le32 (src); \
+}
+#define PEEK_READ8(curr_read_bytes, max_len, dst, src, type_name) { \
+	CAN_READ((curr_read_bytes), 8, (max_len)); \
+	(dst) = (type_name) r_read_le64 (src); \
+}
 ///////////////////////////////////////////////////////////////////////////////
-#define READ(curr_read_bytes, bytes_for_read, max_len, dst, src, type_name) { \
-	PEEK_READ((curr_read_bytes), (bytes_for_read), (max_len), (dst), (src), type_name); \
-	UPDATE_DATA((src), (curr_read_bytes), (bytes_for_read)); \
+#define READ1(curr_read_bytes, max_len, dst, src, type_name) { \
+	PEEK_READ1((curr_read_bytes), (max_len), (dst), (src), type_name); \
+	UPDATE_DATA((src), (curr_read_bytes), 1); \
+}
+
+#define READ2(curr_read_bytes, max_len, dst, src, type_name) { \
+	PEEK_READ2((curr_read_bytes), (max_len), (dst), (src), type_name); \
+	UPDATE_DATA((src), (curr_read_bytes), 2); \
+}
+
+#define READ4(curr_read_bytes, max_len, dst, src, type_name) { \
+	PEEK_READ4((curr_read_bytes), (max_len), (dst), (src), type_name); \
+	UPDATE_DATA((src), (curr_read_bytes), 4); \
+}
+
+#define READ8(curr_read_bytes, max_len, dst, src, type_name) { \
+	PEEK_READ8((curr_read_bytes), (max_len), (dst), (src), type_name); \
+	UPDATE_DATA((src), (curr_read_bytes), 8); \
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -439,18 +466,18 @@ typedef enum {
 
 typedef union {
 	struct {
-		unsigned char scoped : 1;
-		unsigned char reserved : 7; // swapped
-		unsigned char packed : 1;
-		unsigned char ctor : 1;
-		unsigned char ovlops : 1;
-		unsigned char isnested : 1;
-		unsigned char cnested : 1;
-		unsigned char opassign : 1;
-		unsigned char opcast : 1;
-		unsigned char fwdref : 1;
+		ut8 scoped : 1;
+		ut8 reserved : 7; // swapped
+		ut8 packed : 1;
+		ut8 ctor : 1;
+		ut8 ovlops : 1;
+		ut8 isnested : 1;
+		ut8 cnested : 1;
+		ut8 opassign : 1;
+		ut8 opcast : 1;
+		ut8 fwdref : 1;
 	} bits;
-	unsigned short cv_property;
+	ut16 cv_property;
 } UCV_PROPERTY;
 
 typedef enum {
@@ -476,58 +503,62 @@ typedef enum {
 //# ordering for BitStructs
 typedef union {
 	struct {
-		unsigned char access : 2;
-		unsigned char mprop : 3;
-		unsigned char pseudo : 1;
-		unsigned char noinherit : 1;
-		unsigned char noconstruct : 1;
-		unsigned char padding : 7;
-		unsigned char compgenx : 1;
+		ut8 access : 2;
+		ut8 mprop : 3;
+		ut8 pseudo : 1;
+		ut8 noinherit : 1;
+		ut8 noconstruct : 1;
+		ut8 padding : 7;
+		ut8 compgenx : 1;
 	} bits;
-	unsigned short fldattr;
+	ut16 fldattr;
 } UCV_fldattr;
 
+R_PACKED(
 typedef struct {
-	unsigned int return_type;
+	ut32 return_type;
 	ECV_CALL call_conv;
-	unsigned char reserved;
-	unsigned short parm_count;
-	unsigned int arg_list;
-	unsigned char pad;
-} SLF_PROCEDURE;
+	ut8 reserved;
+	ut16 parm_count;
+	ut32 arg_list;
+	ut8 pad;
+}) SLF_PROCEDURE;
 
+R_PACKED(
 typedef struct {
-	unsigned int return_type;
-	unsigned int class_type;
-	unsigned int this_type;
+	ut32 return_type;
+	ut32 class_type;
+	ut32 this_type;
 	ECV_CALL call_conv; // 1 byte
-	unsigned char reserved;
-	unsigned short parm_count;
-	unsigned int arglist;
-	int this_adjust;
-	unsigned char pad;
-} SLF_MFUNCTION;
+	ut8 reserved;
+	ut16 parm_count;
+	ut32 arglist;
+	st32 this_adjust;
+	ut8 pad;
+}) SLF_MFUNCTION;
 
+R_PACKED(
 typedef struct {
-	unsigned int count;
-	unsigned int *arg_type;
-	unsigned char pad;
-} SLF_ARGLIST;
+	ut32 count;
+	ut32 *arg_type;
+	ut8 pad;
+}) SLF_ARGLIST;
 
+R_PACKED(
 typedef struct {
-	unsigned int modified_type;
+	ut32 modified_type;
 	union {
 		struct {
-			unsigned char pad2 : 8;
-			unsigned char const_ : 1;
-			unsigned char volatile_ : 1;
-			unsigned char unaligned : 1;
-			unsigned char pad1 : 5;
+			ut8 pad2 : 8;
+			ut8 const_ : 1;
+			ut8 volatile_ : 1;
+			ut8 unaligned : 1;
+			ut8 pad1 : 5;
 		} bits;
-		unsigned short modifier;
+		ut16 modifier;
 	} umodifier;
-	unsigned char pad;
-} SLF_MODIFIER;
+	ut8 pad;
+}) SLF_MODIFIER;
 
 typedef enum {
 	ePTR_MODE_PTR         = 0x00000000,
@@ -556,32 +587,35 @@ typedef enum {
 	eTypeMax
 } EType;
 
+R_PACKED(
 typedef union {
 	struct {
-		unsigned char pad[2];
-		unsigned char flat32 : 1;
-		unsigned char volatile_ : 1;
-		unsigned char const_ : 1;
-		unsigned char unaligned : 1;
-		unsigned char restrict_ : 1;
-		unsigned char pad1 : 3;
-		unsigned char type : 5;
-		unsigned char mode : 3;
+		ut8 pad[2];
+		ut8 flat32 : 1;
+		ut8 volatile_ : 1;
+		ut8 const_ : 1;
+		ut8 unaligned : 1;
+		ut8 restrict_ : 1;
+		ut8 pad1 : 3;
+		ut8 type : 5;
+		ut8 mode : 3;
 	} bits;
-	unsigned int ptr_attr;
-} UPTR_ATTR;
+	ut32 ptr_attr;
+}) UPTR_ATTR;
 
+R_PACKED(
 typedef struct {
-	unsigned int utype;
+	ut32 utype;
 	UPTR_ATTR ptr_attr;
-	unsigned char pad;
-} SLF_POINTER;
+	ut8 pad;
+}) SLF_POINTER;
 
+R_PACKED(
 typedef struct {
-	int stream_size;
-	int num_pages;
-	char *stream_pages;
-} SPage;
+	st32 stream_size;
+	st32 num_pages;
+	ut8 *stream_pages;
+}) SPage;
 
 typedef struct {
 //	FILE *fp;
@@ -630,138 +664,166 @@ typedef struct {
 	f_load load;
 } SParsedPDBStream;
 
+R_PACKED(
 typedef struct {
-	unsigned int size;
 	char *name;
-} SCString;
+	ut32 size;
+}) SCString;
 
+R_PACKED(
 typedef struct {
 	SCString name;
-} SNoVal;
+}) SNoVal;
 
+R_PACKED(
 typedef struct {
 	char value;
 	SCString name;
-} SVal_LF_CHAR;
+}) SVal_LF_CHAR;
 
+R_PACKED(
 typedef struct {
-	short value;
+	st16 value;
 	SCString name;
-} SVal_LF_SHORT;
+}) SVal_LF_SHORT;
 
+R_PACKED(
 typedef struct {
-	unsigned short value;
+	ut16 value;
 	SCString name;
-} SVal_LF_USHORT;
+}) SVal_LF_USHORT;
 
 typedef struct {
-	long value;
+	st32 value;
 	SCString name;
 } SVal_LF_LONG;
 
 typedef struct {
-	unsigned long value;
+	ut32 value;
 	SCString name;
 } SVal_LF_ULONG;
 
 typedef struct {
-	unsigned short value_or_type;
-	void *name_or_val;
-} SVal;
-
-typedef struct {
-	unsigned int element_type;
-	unsigned int index_type;
-	SVal size;
-	unsigned char pad;
-} SLF_ARRAY;
-
-typedef struct {
-	unsigned short count;
-	UCV_PROPERTY prop;
-	unsigned int field_list;
-	unsigned int derived;
-	unsigned int vshape;
-	SVal size;
-	unsigned char pad;
-} SLF_STRUCTURE, SLF_CLASS;
-
-typedef struct {
-	unsigned short count;
-	UCV_PROPERTY prop;
-	unsigned int field_list;
-	SVal size;
-	unsigned pad;
-} SLF_UNION;
-
-typedef struct {
-	unsigned int base_type;
-	unsigned char length;
-	unsigned char position;
-	unsigned char pad;
-} SLF_BITFIELD;
-
-typedef struct {
-	unsigned short count;
-	char *vt_descriptors;
-	unsigned char pad;
-} SLF_VTSHAPE;
-
-typedef struct {
-	unsigned short count;
-	UCV_PROPERTY prop;
-	unsigned int utype;
-	unsigned int field_list;
+	st64 value;
 	SCString name;
-	unsigned char pad;
-} SLF_ENUM;
+} SVal_LF_QUADWORD;
 
+typedef struct {
+	ut64 value;
+	SCString name;
+} SVal_LF_UQUADWORD;
+
+R_PACKED(
+typedef struct {
+	ut16 value_or_type;
+	void *name_or_val;
+}) SVal;
+
+R_PACKED(
+typedef struct {
+	ut32 element_type;
+	ut32 index_type;
+	SVal size;
+	ut8 pad;
+}) SLF_ARRAY;
+
+R_PACKED(
+typedef struct {
+	ut16 count;
+	UCV_PROPERTY prop;
+	ut32 field_list;
+	ut32 derived;
+	ut32 vshape;
+	SVal size;
+	ut8 pad;
+}) SLF_STRUCTURE, SLF_CLASS;
+
+R_PACKED(
+typedef struct {
+	ut16 count;
+	UCV_PROPERTY prop;
+	ut32 field_list;
+	SVal size;
+	ut32 pad;
+}) SLF_UNION;
+
+R_PACKED(
+typedef struct {
+	ut32 base_type;
+	ut8 length;
+	ut8 position;
+	ut8 pad;
+}) SLF_BITFIELD;
+
+R_PACKED(
+typedef struct {
+	ut16 count;
+	char *vt_descriptors;
+	ut8 pad;
+}) SLF_VTSHAPE;
+
+R_PACKED(
+typedef struct {
+	ut16 count;
+	UCV_PROPERTY prop;
+	ut32 utype;
+	ut32 field_list;
+	SCString name;
+	ut8 pad;
+}) SLF_ENUM;
+
+R_PACKED(
 typedef struct {
 	UCV_fldattr fldattr;
 	SVal enum_value;
-	unsigned char pad;
+	ut8 pad;
 
 	free_func free_;
-} SLF_ENUMERATE;
+}) SLF_ENUMERATE;
 
+R_PACKED(
 typedef struct {
-	unsigned short pad;
-	unsigned int index;
+	ut16 pad;
+	ut32 index;
 	SCString name;
 
 	free_func free_;
-} SLF_NESTTYPE;
+}) SLF_NESTTYPE;
 
+R_PACKED(
 typedef struct {
-	unsigned short count;
-	unsigned int mlist;
+	ut16 count;
+	ut32 mlist;
 	SCString name;
-	unsigned char pad;
+	ut8 pad;
 
 	free_func free_;
-} SLF_METHOD;
+}) SLF_METHOD;
 
+R_PACKED(
 typedef struct {
 	UCV_fldattr fldattr;
-	unsigned int inedex;
+	ut32 index;
 	SVal offset;
-	unsigned char pad;
+	ut8 pad;
 
 	// TODO: remove free_
 	free_func free_;
-} SLF_MEMBER;
+}) SLF_MEMBER;
 
+R_PACKED(
 typedef struct {
-	unsigned int val;
+	ut32 val;
 	SCString str_data;
-} SLF_ONEMETHOD_VAL;
+}) SLF_ONEMETHOD_VAL;
 
+R_PACKED(
 typedef struct {
 	UCV_fldattr fldattr;
-	unsigned int index;
+	ut32 index;
 	SLF_ONEMETHOD_VAL val;
-	unsigned char pad;
-} SLF_ONEMETHOD;
+	ut8 pad;
+}) SLF_ONEMETHOD;
 
 typedef struct {
 //	ELeafType leaf_type;
@@ -769,26 +831,26 @@ typedef struct {
 } SLF_FIELDLIST;
 
 typedef struct {
-	int off;
-	int cb;
+	st32 off;
+	st32 cb;
 } SOffCb;
 
 typedef struct {
-	short sn;
-	short padding;
-	int hash_key;
-	int buckets;
+	st16 sn;
+	st16 padding;
+	st32 hash_key;
+	st32 buckets;
 	SOffCb hash_vals;
 	SOffCb ti_off;
 	SOffCb hash_adj;
 } STPI;
 
 typedef struct {
-	unsigned int version;
-	int hdr_size;
-	unsigned int ti_min;
-	unsigned int ti_max;
-	unsigned int follow_size;
+	ut32 version;
+	st32 hdr_size;
+	ut32 ti_min;
+	ut32 ti_max;
+	ut32 follow_size;
 	STPI tpi;
 } STPIHeader;
 
@@ -950,6 +1012,7 @@ typedef enum {
 	eLF_MAX                  = 0xFFFFFFFF
 } ELeafType;
 
+R_PACKED(
 typedef struct {
 	ELeafType leaf_type;
 	void *type_info;
@@ -976,15 +1039,16 @@ typedef struct {
 	get_value is_fwdref;
 	get_print_type_ get_print_type;
 
-} STypeInfo;
+}) STypeInfo;
 
+R_PACKED(
 typedef struct {
-	unsigned short length;
-	unsigned int tpi_idx;
+	ut16 length;
+	ut32 tpi_idx;
 	STypeInfo type_data;
 
 //	free_func free_;
-} SType;
+}) SType;
 
 typedef struct {
 	STPIHeader header;
@@ -994,18 +1058,18 @@ typedef struct {
 } STpiStream;
 
 typedef struct {
-	unsigned int data1;
-	unsigned short data2;
-	unsigned short data3;
-	char data4[8];
+	ut32 data1;
+	ut16 data2;
+	ut16 data3;
+	ut8 data4[8];
 } SGUID;
 
 typedef struct {
-	unsigned int version;
-	unsigned int time_date_stamp;
-	unsigned int age;
+	ut32 version;
+	ut32 time_date_stamp;
+	ut32 age;
 	SGUID guid;
-	unsigned int cb_names;
+	ut32 cb_names;
 	char *names;
 
 	free_func free_;
@@ -1021,79 +1085,75 @@ typedef enum {
 	eMaxMachine
 } EMachine;
 
-#pragma pack(push, 1)
+R_PACKED(
 typedef struct {
-	short section;
-	short padding1;
-	int offset;
-	int size;
-	unsigned int flags;
-	int module;
-	short padding2;
-	unsigned int data_crc;
-	unsigned int reloc_crc;
-} SSymbolRange;
-#pragma pack(pop)
+	ut16 section;
+	ut16 padding1;
+	st32 offset;
+	st32 size;
+	ut32 flags;
+	st32 module;
+	st16 padding2;
+	ut32 data_crc;
+	ut32 reloc_crc;
+}) SSymbolRange;
 
-#pragma pack(push, 1)
+R_PACKED(
 typedef struct {
-	unsigned int opened;
+	ut32 opened;
 	SSymbolRange range;
-	unsigned short flags;
-	short stream;
-	unsigned int symSize;
-	unsigned int oldLineSize;
-	unsigned int lineSize;
-	short nSrcFiles;
-	short padding1;
-	unsigned int offsets;
-	unsigned int niSource;
-	unsigned int niCompiler;
+	ut16 flags;
+	st16 stream;
+	ut32 symSize;
+	ut32 oldLineSize;
+	ut32 lineSize;
+	st16 nSrcFiles;
+	st16 padding1;
+	ut32 offsets;
+	ut32 niSource;
+	ut32 niCompiler;
 	SCString modName;
 	SCString objName;
-} SDBIExHeader;
-#pragma pack(pop)
+}) SDBIExHeader;
 
-#pragma pack(push, 1)
+R_PACKED(
 typedef struct {
-	short sn_fpo;
-	short sn_exception;
-	short sn_fixup;
-	short sn_omap_to_src;
-	short sn_omap_from_src;
-	short sn_section_hdr;
-	short sn_token_rid_map;
-	short sn_xdata;
-	short sn_pdata;
-	short sn_new_fpo;
-	short sn_section_hdr_orig;
-} SDbiDbgHeader;
-#pragma pack(pop)
+	st16 sn_fpo;
+	st16 sn_exception;
+	st16 sn_fixup;
+	st16 sn_omap_to_src;
+	st16 sn_omap_from_src;
+	st16 sn_section_hdr;
+	st16 sn_token_rid_map;
+	st16 sn_xdata;
+	st16 sn_pdata;
+	st16 sn_new_fpo;
+	st16 sn_section_hdr_orig;
+}) SDbiDbgHeader;
 
-#pragma pack(push, 1)
+R_PACKED(
 typedef struct {
-	unsigned int magic;
-	unsigned int version;
-	unsigned int age;
-	short gssymStream;
-	unsigned short vers;
-	short pssymStream;
-	unsigned short pdbver;
-	short symrecStream;
-	unsigned short pdbver2;
-	unsigned int module_size;
-	unsigned int seccon_size;
-	unsigned int secmap_size;
-	unsigned int filinf_size;
-	unsigned int tsmap_size;
-	unsigned int mfc_index;
-	unsigned int dbghdr_size;
-	unsigned int ecinfo_size;
-	unsigned short flags;
+	ut32 magic;
+	ut32 version;
+	ut32 age;
+	st16 gssymStream;
+	ut16 vers;
+	st16 pssymStream;
+	ut16 pdbver;
+	st16 symrecStream;
+	ut16 pdbver2;
+	ut32 module_size;
+	ut32 seccon_size;
+	ut32 secmap_size;
+	ut32 filinf_size;
+	ut32 tsmap_size;
+	ut32 mfc_index;
+	ut32 dbghdr_size;
+	ut32 ecinfo_size;
+	ut16 flags;
 	EMachine machine; // read just 2 bytes
-	unsigned int resvd;
-} SDBIHeader;
-#pragma pack(pop)
+	ut32 resvd;
+}) SDBIHeader;
 
 typedef struct {
 	SDBIHeader dbi_header;
@@ -1107,23 +1167,24 @@ typedef struct {
 // start of FPO stream structures
 typedef union {
 	struct {
-		unsigned char cbRegs : 3;
-		unsigned char fHashSEH : 1;
-		unsigned char fUseBp : 1;
-		unsigned char reserved : 1;
-		unsigned char cbFrame : 2;
-		unsigned char cbProlog : 8;
+		ut8 cbRegs : 3;
+		ut8 fHashSEH : 1;
+		ut8 fUseBp : 1;
+		ut8 reserved : 1;
+		ut8 cbFrame : 2;
+		ut8 cbProlog : 8;
 	} bits;
-	unsigned short bit_values;
+	ut16 bit_values;
 } UBit_values;
 
+R_PACKED(
 typedef struct {
-	unsigned int ul_off_start;
-	unsigned int cb_proc_size;
-	unsigned int cdw_locals;
-	unsigned short cdw_params;
+	ut32 ul_off_start;
+	ut32 cb_proc_size;
+	ut32 cdw_locals;
+	ut16 cdw_params;
 	UBit_values bit_values;
-} SFPO_DATA;
+}) SFPO_DATA;
 
 typedef struct {
 	RList *fpo_data_list;
@@ -1136,17 +1197,18 @@ typedef enum {
 	eFPO_DATA_FLAGS_MAX
 } EFPO_DATA_FLAGS;
 
+R_PACKED(
 typedef struct {
-	unsigned int ul_off_start;
-	unsigned int cb_proc_size;
-	unsigned int cdw_locals;
-	unsigned int cdw_params;
-	unsigned int max_stack;
-	unsigned int programm_string_offset;
-	unsigned short cb_prolog;
-	unsigned short cb_save_regs;
+	ut32 ul_off_start;
+	ut32 cb_proc_size;
+	ut32 cdw_locals;
+	ut32 cdw_params;
+	ut32 max_stack;
+	ut32 programm_string_offset;
+	ut16 cb_prolog;
+	ut16 cb_save_regs;
 	EFPO_DATA_FLAGS flags;
-} SFPO_DATA_V2;
+}) SFPO_DATA_V2;
 
 typedef struct {
 	RList *fpo_data_list;
@@ -1158,33 +1220,38 @@ typedef struct {
 	RList *globals_list;
 } SGDATAStream;
 
+R_PACKED (
 typedef struct {
-	unsigned short leaf_type;
-	unsigned int symtype;
-	unsigned int offset;
-	unsigned short segment;
+	ut16 leaf_type;
+	ut32 symtype;
+	ut32 offset;
+	ut16 segment;
 	SCString name;
-} SGlobal;
+}) SGlobal;
 // end GDATA structures
 
 // PE stream structures
+// TODO: Support 64bit addressing!
 typedef union {
-	unsigned int physical_address;
-	unsigned int virtual_address;
+	ut32 physical_address;
+	ut32 virtual_address;
 } UMISC;
 
+#define PDB_SIZEOF_SECTION_NAME 8
+
+R_PACKED(
 typedef struct {
-	char name[8];
+	char name[PDB_SIZEOF_SECTION_NAME];
 	UMISC misc;
-	unsigned int virtual_address;
-	unsigned int size_of_raw_data;
-	unsigned int pointer_to_raw_data;
-	unsigned int pointer_to_relocations;
-	unsigned int pointer_to_line_numbers;
-	unsigned short number_of_relocations;
-	unsigned short number_of_line_numbers;
-	unsigned int charactestics;
-} SIMAGE_SECTION_HEADER;
+	ut32 virtual_address;
+	ut32 size_of_raw_data;
+	ut32 pointer_to_raw_data;
+	ut32 pointer_to_relocations;
+	ut32 pointer_to_line_numbers;
+	ut16 number_of_relocations;
+	ut16 number_of_line_numbers;
+	ut32 charactestics;
+}) SIMAGE_SECTION_HEADER;
 
 typedef struct {
 	RList *sections_hdrs;
@@ -1193,13 +1260,13 @@ typedef struct {
 
 // omap structures
 typedef struct {
-	unsigned int from;
-	unsigned int to;
+	ut32 from;
+	ut32 to;
 } SOmapEntry;
 
 typedef struct {
 	RList *omap_entries;
-	unsigned int *froms;
+	ut32 *froms;
 } SOmapStream;
 // end of omap structures
 

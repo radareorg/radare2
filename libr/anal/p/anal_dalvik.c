@@ -1,10 +1,9 @@
-/* radare - LGPL - Copyright 2010-2016 - pancake */
+/* radare - LGPL - Copyright 2010-2018 - pancake */
 
 #include <r_types.h>
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include "esil.h"
 
 #include "../../asm/arch/dalvik/opcode.h"
 #include "../../bin/format/dex/dex.h"
@@ -47,7 +46,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		}
 		break;
 	case 0x01: // move
-	case 0x07: // move-object		
+	case 0x07: // move-object
 	case 0x04: // mov-wide
 		op->type = R_ANAL_OP_TYPE_MOV;
 		{
@@ -68,7 +67,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x18: // const-wide
 	case 0x19: // const-wide
 		op->type = R_ANAL_OP_TYPE_MOV;
-		{
+		if (len > 2) {
 			int vA = (int) data[1];
 			ut32 vB = (data[3] << 8) | data[2];
 			esilprintf (op, "v%d,v%d,=", vA, vB);
@@ -88,7 +87,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		break;
 	case 0x1a: // const-string
 		op->type = R_ANAL_OP_TYPE_MOV;
-		{
+		if (len > 2) {
 			ut32 vA = data[1];
 			ut32 vB = (data[3]<<8) | data[2];
 			ut64 offset = R_ANAL_GET_OFFSET (anal, 's', vB);
@@ -111,9 +110,9 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		op->family = R_ANAL_OP_FAMILY_FPU;
 		/* pass thru */
 	case 0x81: // int-to-long
-	case 0x82: // 
-	case 0x83: // 
-	case 0x84: // 
+	case 0x82: //
+	case 0x83: //
+	case 0x84: //
 	case 0x8d: // int-to-byte
 	case 0x8f: // int-to-short
 	case 0x20: // instance-of
@@ -141,7 +140,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0xfd: //sget-object
 	case 0x55: //iget-bool
 	case 0x60: // sget
-	case 0x61: // 
+	case 0x61: //
 	case 0x62: //
 	case 0x64: // sget-byte
 	case 0x65: // sget-char
@@ -164,7 +163,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x4c: //aput-wide
 	case 0x4d: // aput-object
 	case 0x4e: // aput-bool
-	case 0x4f: // 
+	case 0x4f: //
 	case 0x5e: //iput-char
 	case 0xfc: //iput-object-volatile
 	case 0xf5: //iput-quick
@@ -278,16 +277,20 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 		esilprintf (op, "0x%"PFMT64x",ip,=", op->jump);
 		break;
 	case 0x29: // goto/16
-		op->jump = addr + (short)(data[2]|data[3]<<8)*2;
-		op->type = R_ANAL_OP_TYPE_JMP;
-		op->eob = true;
-		esilprintf (op, "0x%"PFMT64x",ip,=", op->jump);
+		if (len > 3) {
+			op->jump = addr + (short)(data[2]|data[3]<<8)*2;
+			op->type = R_ANAL_OP_TYPE_JMP;
+			op->eob = true;
+			esilprintf (op, "0x%"PFMT64x",ip,=", op->jump);
+		}
 		break;
 	case 0x2a: // goto/32
-		op->jump = addr + (int)(data[2]|(data[3]<<8)|(data[4]<<16)|(data[5]<<24))*2;
-		op->type = R_ANAL_OP_TYPE_JMP;
-		op->eob = true;
-		esilprintf (op, "0x%"PFMT64x",ip,=", op->jump);
+		if (len > 5) {
+			op->jump = addr + (int)(data[2]|(data[3]<<8)|(data[4]<<16)|(data[5]<<24))*2;
+			op->type = R_ANAL_OP_TYPE_JMP;
+			op->eob = true;
+			esilprintf (op, "0x%"PFMT64x",ip,=", op->jump);
+		}
 		break;
 	case 0x2c:
 	case 0x2b:
@@ -316,9 +319,11 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x3d: // if-lez
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		//XXX fix this better the check is to avoid an oob
-		op->jump = addr + (len>3?(short)(data[2]|data[3]<<8)*2 : 0);
-		op->fail = addr + sz;
-		op->eob = true;
+		if (len > 2) {
+			op->jump = addr + (len>3?(short)(data[2]|data[3]<<8)*2 : 0);
+			op->fail = addr + sz;
+			op->eob = true;
+		}
 		break;
 	case 0xec: // breakpoint
 	case 0x1d: // monitor-enter
@@ -346,16 +351,15 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0xf0: // invoke-object-init-range
 	case 0xf9: // invoke-virtual-quick/range
 	case 0xfb: // invoke-super-quick/range
-		{
-		//XXX fix this better since the check avoid an oob
-		//but the jump will be incorrect
-		ut32 vB = len > 3?(data[3] << 8) | data[2] : 0;
-		op->jump = anal->binb.get_offset (anal->binb.bin, 'm', vB);
-		op->fail = addr + sz;
-		op->type = R_ANAL_OP_TYPE_CALL;
-		// TODO: handle /range instructions
-		esilprintf (op, "8,sp,-=,0x%"PFMT64x",sp,=[8],0x%"PFMT64x",ip,=", addr);
-
+		if (len > 2) {
+			//XXX fix this better since the check avoid an oob
+			//but the jump will be incorrect
+			ut32 vB = len > 3?(data[3] << 8) | data[2] : 0;
+			op->jump = anal->binb.get_offset (anal->binb.bin, 'm', vB);
+			op->fail = addr + sz;
+			op->type = R_ANAL_OP_TYPE_CALL;
+			// TODO: handle /range instructions
+			esilprintf (op, "8,sp,-=,0x%"PFMT64x",sp,=[8],0x%"PFMT64x",ip,=", addr);
 		}
 		break;
 	case 0x27: // throw
@@ -376,7 +380,7 @@ static int dalvik_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int l
 	case 0x26: // filled-new-array-data
 		op->type = R_ANAL_OP_TYPE_NEW;
 		// 0x1c, 0x1f, 0x22
-		{
+		if (len > 2) {
 			//int vA = (int) data[1];
 			int vB = (data[3] << 8) | data[2];
 			// resolve class name for vB
@@ -492,7 +496,7 @@ RAnalPlugin r_anal_plugin_dalvik = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_dalvik,
 	.version = R2_VERSION

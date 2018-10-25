@@ -8,9 +8,11 @@ ec cjmp rgb:890 # b80 #ee8
 ec jmp rgb:e37
 ec cmp rgb:c41 # ffe
 ec comment rgb:28d
+ec usrcmt rgb:890
 ec ret rgb:899
 ec fline rgb:b80
 ec flow rgb:3a9
+ec flow2 rgb:577
 ec fname rgb:d33
 ec label rgb:77c
 ec math rgb:28d
@@ -30,6 +32,27 @@ ec trap rgb:f00
 ec swi rgb:f00
 ec creg rgb:de8
 ec flag rgb:c41
+ec linehl rgb:004
+
+ec graph.box rgb:033
+ec graph.box2 rgb:de8
+ec graph.box3 rgb:033
+ec graph.box4 rgb:033
+ec graph.true rgb:890
+ec graph.false rgb:c41
+ec graph.trufae rgb:899
+ec graph.current rgb:f00
+ec graph.traced red
+
+ec func_var rgb:28d
+ec func_var_type rgb:cc8
+ec func_var_addr rgb:9aa
+
+ec ai.read rgb:39e
+ec ai.write rgb:577
+ec ai.exec rgb:ab4
+ec ai.seq rgb:899
+ec ai.ascii rgb:899
 
 # background of the terminal must be 134 o 033
 # xterm -fn 10x20 -bg rgb:00/30/30 -fg rgb:e0/e0/e0 -e "r2 -c 'eco solarized' /bin/ls"

@@ -6,15 +6,13 @@ GRUB=$(LIBR)../shlr/grub/libgrub.a
 #CFLAGS+=-I../../include
 LDFLAGS+=${LINK}
 
-foo: all
+ifeq ($(WITHPIC),1)
+all:
 
 #FILESYSTEMS=hfs.mk iso9660.mk jfs.mk
 #FILESYSTEMS=hfsplus.mk
-FILESYSTEMS=ext2.mk fat.mk ntfs.mk reiserfs.mk tar.mk udf.mk ufs2.mk ufs.mk xfs.mk hfs.mk squash.mk
-
+FILESYSTEMS=ext2.mk fat.mk ntfs.mk reiserfs.mk tar.mk udf.mk ufs2.mk ufs.mk xfs.mk hfs.mk
 include $(FILESYSTEMS)
-
-all:
 
 clean:
 	-rm -f *.${EXT_SO} *.o ${STATIC_OBJ}
@@ -22,4 +20,9 @@ clean:
 mrproper: clean
 	-rm -f *.d ../arch/*/*/*.d
 
-.PHONY: all clean foo mrproper
+.PHONY: all clean mrproper
+else
+all clean mrproper:
+
+.PHONY: all clean mrproper
+endif

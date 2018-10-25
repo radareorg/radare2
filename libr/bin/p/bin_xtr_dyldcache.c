@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 nibble, pancake */
+/* radare - LGPL - Copyright 2009-2018 nibble, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -14,7 +14,7 @@ static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size);
 static int free_xtr (void *xtr_obj);
 
 static bool check_bytes(const ut8* buf, ut64 sz) {
-	return (buf && sz > 3 && !memcmp (buf, "\x64\x79\x6c\x64", 4));
+	return buf && sz > 3 && !memcmp (buf, "dyld", 4);
 }
 
 // TODO: destroy must be void?
@@ -51,6 +51,7 @@ static RList * extractall(RBin *bin) {
 	nlib = data->file_count;
 	result = r_list_newf (r_bin_xtrdata_free);
 	if (!result) {
+		r_bin_xtrdata_free (data);
 		return NULL;
 	}
 	r_list_append (result, data);
@@ -61,9 +62,8 @@ static RList * extractall(RBin *bin) {
 	return result;
 }
 
-static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta,
-						struct MACH0_ (mach_header) *hdr) {
-	meta->arch = MACH0_(get_cputype_from_hdr) (hdr);
+static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MACH0_ (mach_header) *hdr) {
+	meta->arch = strdup (MACH0_(get_cputype_from_hdr) (hdr));
 	meta->bits = MACH0_(get_bits_from_hdr) (hdr);
 	meta->machine = MACH0_(get_cpusubtype_from_hdr) (hdr);
 	meta->type = MACH0_(get_filetype_from_hdr) (hdr);
@@ -129,7 +129,7 @@ static RBinXtrData *oneshot(RBin *bin, const ut8* buf, ut64 size, int idx) {
 	hdr = MACH0_(get_hdr_from_bytes) (lib->b);
 	if (!hdr) {
 		free (lib);
-		free (hdr);
+		free (metadata);
 		return NULL;
 	}
 	fill_metadata_info_from_hdr (metadata, hdr);
@@ -167,8 +167,8 @@ static RList * oneshotall(RBin *bin, const ut8* buf, ut64 size) {
 	return res;
 }
 
-struct r_bin_xtr_plugin_t r_bin_xtr_plugin_xtr_dyldcache = {
-	.name = "xtr_dyldcache",
+RBinXtrPlugin r_bin_xtr_plugin_xtr_dyldcache = {
+	.name = "xtr.dyldcache",
 	.desc = "dyld cache bin extractor plugin",
 	.license = "LGPL3",
 	.load = &load,
@@ -182,9 +182,9 @@ struct r_bin_xtr_plugin_t r_bin_xtr_plugin_xtr_dyldcache = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN_XTR,
-	.data = &r_bin_xtr_plugin_xtr_dyldcache,
+	.data = &r_bin_xtr_plugin_dyldcache,
 	.version = R2_VERSION
 };
 #endif

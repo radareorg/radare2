@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2016 - pancake */
+/* radare2 - LGPL - Copyright 2013-2018 - pancake */
 
 #include <getopt.c>
 #include <r_core.h>
@@ -78,13 +78,11 @@ int main(int argc, char **argv) {
 	if (dodaemon) {
 #if LIBC_HAVE_FORK
 		int pid = fork ();
-#else
-		int pid = -1;
-#endif
 		if (pid > 0) {
 			printf ("%d\n", pid);
 			return 0;
 		}
+#endif
 	}
 	s = r_socket_new (false);
 	s->local = listenlocal;
@@ -93,44 +91,48 @@ int main(int argc, char **argv) {
 		r_socket_free (s);
 		return 1;
 	}
-	
+
 	eprintf ("http://localhost:%d/\n", s->port);
 	if (dosandbox && !r_sandbox_enable (true)) {
 		eprintf ("sandbox: Cannot be enabled.\n");
 		return 1;
 	}
-	while (!r_cons_singleton ()->breaked) {
+	while (!r_cons_singleton ()->context->breaked) {
 		char *result_heap = NULL;
 		const char *result = page_index;
 
-		rs = r_socket_http_accept (s, timeout);
-		if (!rs) continue;
+		rs = r_socket_http_accept (s, 0, timeout);
+		if (!rs) {
+			continue;
+		}
 		if (!strcmp (rs->method, "GET")) {
 			if (!strncmp (rs->path, "/proc/kill/", 11)) {
 				// TODO: show page here?
 				int pid = atoi (rs->path + 11);
 				if (pid > 0) {
-					kill (pid, 9);
+					kill (pid, SIGKILL);
 				}
 			} else if (!strncmp (rs->path, "/file/open/", 11)) {
 				int pid;
 				int session_port = 3000 + r_num_rand (1024);
 				char *filename = rs->path + 11;
-				int filename_len = strlen (filename);
+				char *escaped_filename = r_str_escape (filename);
+				int escaped_len = strlen (escaped_filename);
 				char *cmd;
 
-				if (!(cmd = malloc (filename_len + 40))) {
+				if (!(cmd = malloc (escaped_len + 40))) {
 					perror ("malloc");
 					return 1;
 				}
 				sprintf (cmd, "r2 -q %s-e http.port=%d -c=h \"%s\"",
 					listenlocal? "": "-e http.bind=public ",
-					session_port, filename);
+					session_port, escaped_filename);
 
 				// TODO: use r_sys api to get pid when running in bg
 				pid = r_sys_cmdbg (cmd);
 				free (cmd);
-				result = result_heap = malloc (1024 + filename_len);
+				free (escaped_filename);
+				result = result_heap = malloc (1024 + escaped_len);
 				if (!result) {
 					perror ("malloc");
 					return 1;

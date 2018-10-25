@@ -30,21 +30,23 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	omode = mode;
 	if (cd == 0) {
 		ret = cs_open (CS_ARCH_SYSZ, mode, &cd);
-		if (ret) return 0;
+		if (ret) {
+			return 0;
+		}
 		cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	}
 	n = cs_disasm (cd, (const ut8*)buf, len, off, 1, &insn);
 	if (n>0) {
 		if (insn->size>0) {
 			op->size = insn->size;
-			char *ptrstr;
-			snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s%s%s",
-					insn->mnemonic, insn->op_str[0]?" ":"",
+			char *buf_asm = sdb_fmt ("%s%s%s",
+					insn->mnemonic, insn->op_str[0]?" ": "",
 					insn->op_str);
-			ptrstr = strstr (op->buf_asm, "ptr ");
+			char *ptrstr = strstr (buf_asm, "ptr ");
 			if (ptrstr) {
-				memmove (ptrstr, ptrstr+4, strlen (ptrstr+4)+1);
+				memmove (ptrstr, ptrstr + 4, strlen (ptrstr + 4) + 1);
 			}
+			r_asm_op_set_asm (op, buf_asm);
 		}
 		cs_free (insn, n);
 	}
@@ -63,7 +65,7 @@ RAsmPlugin r_asm_plugin_sysz = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_sysz,
 	.version = R2_VERSION

@@ -1,116 +1,20 @@
 #!/bin/sh
-fileslist=(
-./autogen.sh
-./binr/ragg2/ragg2-cc
-./binr/rax2/test-rax2.sh
-./binr/r2pm/r2pm
-./configure
-./configure.hook
-./configure-plugins
-./doc/dexdump.sh
-./doc/repo
-./env.sh
-./libr/asm/t/lops.sh
-./libr/asm/t/test.arm
-./libr/asm/t/test.cmp
-./libr/asm/t/test.new
-./libr/asm/t/test.nz
-./libr/depgraph.pl
-./libr/egg/t/t-exit1.sh
-./libr/egg/t/t-fun2.sh
-./libr/egg/t/t-fun3.sh
-./libr/egg/t/t-fun4.sh
-./libr/egg/t/t-fun5.sh
-./libr/egg/t/t-fun6.sh
-./libr/egg/t/t-fun.sh
-./libr/egg/t/t-hello.sh
-./libr/egg/t/t-loop2.sh
-./libr/egg/t/t-loop.sh
-./libr/egg/t/t-looptail.sh
-./libr/egg/t/t-nest2.sh
-./libr/egg/t/t-nest3.sh
-./libr/egg/t/t-nest.sh
-./libr/egg/t/t-strlen.sh
-./libr/fs/p/makeplugin.sh
-./libr/stripsyms.sh
-./libr/symgraph.pl
-./libr/syscall/d/gen.sh
-./libr/syscall/d/par.sh
-./media/Radare2.iosapp/Radare2
-./mk/rapi-list
-./sys/afl.sh
-./sys/android-target.sh
-./sys/android-build.sh
-./sys/android-shell.sh
-./sys/asan.sh
-./sys/bokken.sh
-./sys/build-harden.sh
-./sys/build.sh
-./sys/cherrypull.sh
-./sys/clang-analyzer.sh
-./sys/clean.sh
-./sys/clone-r2-bindings.sh
-./sys/dist-all.sh
-./sys/dist-bin.sh
-./sys/dist.sh
-./sys/duktape.sh
-./sys/emscripten.sh
-./sys/extras.sh
-./sys/farm/bins.sh
-./sys/farm/check.sh
-./sys/farm/daemon.sh
-./sys/farm/html.sh
-./sys/farm/prepare.sh
-./sys/farm/push.sh
-./sys/farm/run.sh
-./sys/farm.sh
-./sys/find-regression.sh
-./sys/full-uninstall.sh
-./sys/gtkaml.sh
-./sys/gtk.sh
-./sys/indent.sh
-./sys/install-rev.sh
-./sys/install.sh
-./sys/ios-cydia.sh
-./sys/ios-sdk-gcc
-./sys/ios-simulator.sh
-./sys/ios-static.sh
-./sys/jam.sh
-./sys/ldconfig.sh
-./sys/locdiff
-./sys/maemo.sh
-./sys/mingw32-deps.sh
-./sys/mingw32-python-deps.sh
-./sys/mingw32-python.sh
-./sys/mingw32.sh
-./sys/mingw64-deps.sh
-./sys/mingw64.sh
-./sys/ndk-gcc
-./sys/osx-pkg.sh
-./sys/osx-pkg-uninstall.sh
-./sys/osx-pkg-uninstall.tool
-./sys/python-bindist.sh
-./sys/python-dist.sh
-./sys/python-r2pipe.sh
-./sys/python.sh
-./sys/rebuild.sh
-./sys/shellcheck.sh
-./sys/static.sh
-./sys/sync.sh
-./sys/tiny.sh
-./sys/uninstall.sh
-./sys/update.sh
-./sys/user.sh
-./sys/vala.sh
-)
 
-FMT=gcc
-if [ -n "${SHELLCHECK_XML}" ]; then
-	FMT=checkstyle
+checkshellscript() {
+	filelist="$1"
+	checkfun="$2"
+
+	printf '%s\n' "$filelist" | while IFS= read -r file 
+	do
+		$checkfun "$file"	
+	done
+}
+
+if [ -f "$1" ]; then
+	SCRIPTS="$1"
+else
+	SCRIPTS=$(git grep '^#!/bin/sh' | cut -d: -f1)
 fi
-SHCHK="shellcheck --format=${FMT}"
 
-for i in "${fileslist[@]}"
-do
-	${SHCHK} $i
-done
+checkshellscript "$SCRIPTS" "shellcheck --format=gcc"
+checkshellscript "$SCRIPTS" checkbashisms

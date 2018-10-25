@@ -5,16 +5,18 @@
 .Nd block based hashing utility
 .Sh SYNOPSIS
 .Nm rahash2
-.Op Fl BdDehjrkvq
+.Op Fl BbdDehjrknvq
 .Op Fl a Ar algorithm
 .Op Fl b Ar size
 .Op Fl D Ar algo
 .Op Fl E Ar algo
-.Op Fl s Ar string
+.Op Fl f Ar from
 .Op Fl i Ar iterations
 .Op Fl I Ar IV
+.Op Fl n Ar blocks
+.Op Fl s Ar string
 .Op Fl S Ar seed
-.Op Fl f Ar from
+.Op Fl p Ar type
 .Op Fl x Ar hexstr
 .Op Fl t Ar to
 .Op Fl c Ar hash
@@ -52,6 +54,8 @@ Show output in JSON (see -r)
 Show per-block hash
 .It Fl k
 Show result using OpenSSH's VisualHostKey randomart algorithm
+.It Fl n
+Amount of blocks to hash
 .It Fl s Ar string
 Hash this string instead of using the 'source' and 'hash-file' arguments.
 .It Fl S Ar [^]s:string|hexstr
@@ -60,6 +64,8 @@ Set seed to hash with, use ^to prefix seed, otherwise its suffixed. If the seed 
 Start hashing at given address
 .It Fl t Ar to
 Stop hashing at given address
+.It Fl p Ar arg
+Show vertical entropy/statistical entropy graphs
 .It Fl q
 Quiet mode (-qq for even quieter!)
 .It Fl r

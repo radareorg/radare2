@@ -33,6 +33,12 @@ static RBuffer *build (REgg *egg) {
 		return NULL;
 	}
 	sc = egg->bin; // hack
+	if (!sc->length) {
+		eprintf ("No shellcode found!\n");
+		free (key);
+		return NULL;
+	}
+
 	for (i = 0; i<sc->length; i++) {
 		// eprintf ("%02x -> %02x\n", sc->buf[i], sc->buf[i] ^nkey);
 		if ((sc->buf[i]^nkey)==0) {
@@ -91,7 +97,7 @@ REggPlugin r_egg_plugin_xor = {
 
 #if 0
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_EGG,
 	.data = &r_egg_plugin_xor,
 	.version = R2_VERSION

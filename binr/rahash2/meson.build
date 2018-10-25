@@ -1,9 +1,12 @@
-
 executable('rahash2', 'rahash2.c',
-  include_directories: include_directories([
-    '../../libr/include',
-	platform_binrinc
-  ]),
-  link_with: [r_util, r_hash, r_io, r_crypto],
-  install: true
+  include_directories: [platform_inc],
+  dependencies: [
+    r_util_dep,
+    r_hash_dep,
+    r_io_dep,
+    r_crypto_dep,
+    r_socket_dep
+  ],
+  install: true,
+  implicit_include_directories: false
 )

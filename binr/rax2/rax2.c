@@ -1,7 +1,8 @@
-/* radare - LGPL - Copyright 2007-2017 - pancake */
+/* radare - LGPL - Copyright 2007-2018 - pancake */
 
 #include "../blob/version.c"
 #include <r_print.h>
+#include <r_util.h>
 
 #define STDIN_BUFFER_SIZE 354096
 #define R_STATIC_ASSERT(x)\
@@ -16,6 +17,7 @@ static ut64 flags = 0;
 static int use_stdin();
 static int force_mode = 0;
 static int rax(char *str, int len, int last);
+static const char *nl = "";
 
 static int format_output(char mode, const char *s) {
 	ut64 n = r_num_math (num, s);
@@ -31,22 +33,20 @@ static int format_output(char mode, const char *s) {
 	case 'I':
 		printf ("%" PFMT64d "\n", n);
 		break;
-	case '0': {
-		int len = strlen (s);
-		if (len > 0 && s[len - 1] == 'f') {
-			R_STATIC_ASSERT (sizeof (float) == 4)
-			float f = (float) num->fvalue;
-			ut8 *p = (ut8 *) &f;
-			printf ("Fx%02x%02x%02x%02x\n", p[3], p[2], p[1], p[0]);
-		} else {
-			printf ("0x%" PFMT64x "\n", n);
-		}
-	} break;
+	case '0':
+		printf ("0x%" PFMT64x "\n", n);
+		break;
 	case 'F': {
 		float *f = (float *) &n;
 		printf ("%ff\n", *f);
 	} break;
 	case 'f': printf ("%.01lf\n", num->fvalue); break;
+	case 'l':
+		R_STATIC_ASSERT (sizeof (float) == 4);
+		float f = (float) num->fvalue;
+		ut8 *p = (ut8 *) &f;
+		printf ("Fx%02x%02x%02x%02x\n", p[3], p[2], p[1], p[0]);
+		break;
 	case 'O': printf ("0%" PFMT64o "\n", n); break;
 	case 'B':
 		if (n) {
@@ -71,50 +71,60 @@ static int format_output(char mode, const char *s) {
 	return true;
 }
 
+static void print_ascii_table() {
+	printf("%s", ret_ascii_table());
+}
+
 static int help() {
 	printf (
-		"  =[base]                 ;  rax2 =10 0x46 -> output in base 10\n"
-		"  int   ->  hex           ;  rax2 10\n"
-		"  hex   ->  int           ;  rax2 0xa\n"
-		"  -int  ->  hex           ;  rax2 -77\n"
-		"  -hex  ->  int           ;  rax2 0xffffffb3\n"
-		"  int   ->  bin           ;  rax2 b30\n"
-		"  int   ->  ternary       ;  rax2 t42\n"
-		"  bin   ->  int           ;  rax2 1010d\n"
-		"  float ->  hex           ;  rax2 3.33f\n"
-		"  hex   ->  float         ;  rax2 Fx40551ed8\n"
-		"  oct   ->  hex           ;  rax2 35o\n"
-		"  hex   ->  oct           ;  rax2 Ox12 (O is a letter)\n"
-		"  bin   ->  hex           ;  rax2 1100011b\n"
-		"  hex   ->  bin           ;  rax2 Bx63\n"
-		"  hex   ->  ternary       ;  rax2 Tx23\n"
-		"  raw   ->  hex           ;  rax2 -S < /binfile\n"
-		"  hex   ->  raw           ;  rax2 -s 414141\n"
-		"  -b    bin -> str        ;  rax2 -b 01000101 01110110\n"
-		"  -B    str -> bin        ;  rax2 -B hello\n"
-		"  -d    force integer     ;  rax2 -d 3 -> 3 instead of 0x3\n"
-		"  -e    swap endianness   ;  rax2 -e 0x33\n"
-		"  -E    base64 encode     ;\n"
-		"  -f    floating point    ;  rax2 -f 6.3+2.1\n"
-		"  -F    stdin slurp C hex ;  rax2 -F < shellcode.c\n"
-		"  -h    help              ;  rax2 -h\n"
-		"  -k    keep base         ;  rax2 -k 33+3 -> 36\n"
-		"  -K    randomart         ;  rax2 -K 0x34 1020304050\n"
-		"  -n    binary number     ;  rax2 -n 0x1234 # 34120000\n"
-		"  -N    binary number     ;  rax2 -N 0x1234 # \\x34\\x12\\x00\\x00\n"
-		"  -r    r2 style output   ;  rax2 -r 0x1234\n"
-		"  -s    hexstr -> raw     ;  rax2 -s 43 4a 50\n"
-		"  -S    raw -> hexstr     ;  rax2 -S < /bin/ls > ls.hex\n"
-		"  -t    tstamp -> str     ;  rax2 -t 1234567890\n"
-		"  -x    hash string       ;  rax2 -x linux osx\n"
-		"  -u    units             ;  rax2 -u 389289238 # 317.0M\n"
-		"  -w    signed word       ;  rax2 -w 16 0xffff\n"
-		"  -v    version           ;  rax2 -v\n");
+		"  =[base]                      ;  rax2 =10 0x46 -> output in base 10\n"
+		"  int     ->  hex              ;  rax2 10\n"
+		"  hex     ->  int              ;  rax2 0xa\n"
+		"  -int    ->  hex              ;  rax2 -77\n"
+		"  -hex    ->  int              ;  rax2 0xffffffb3\n"
+		"  int     ->  bin              ;  rax2 b30\n"
+		"  int     ->  ternary          ;  rax2 t42\n"
+		"  bin     ->  int              ;  rax2 1010d\n"
+		"  ternary ->  int              ;  rax2 1010dt\n"
+		"  float   ->  hex              ;  rax2 3.33f\n"
+		"  hex     ->  float            ;  rax2 Fx40551ed8\n"
+		"  oct     ->  hex              ;  rax2 35o\n"
+		"  hex     ->  oct              ;  rax2 Ox12 (O is a letter)\n"
+		"  bin     ->  hex              ;  rax2 1100011b\n"
+		"  hex     ->  bin              ;  rax2 Bx63\n"
+		"  ternary ->  hex              ;  rax2 212t\n"
+		"  hex     ->  ternary          ;  rax2 Tx23\n"
+		"  raw     ->  hex              ;  rax2 -S < /binfile\n"
+		"  hex     ->  raw              ;  rax2 -s 414141\n"
+		"  -l                           ;  append newline to output (for -E/-D/-r/..\n"
+		"  -a      show ascii table     ;  rax2 -a\n"
+		"  -b      bin -> str           ;  rax2 -b 01000101 01110110\n"
+		"  -B      str -> bin           ;  rax2 -B hello\n"
+		"  -d      force integer        ;  rax2 -d 3 -> 3 instead of 0x3\n"
+		"  -e      swap endianness      ;  rax2 -e 0x33\n"
+		"  -D      base64 decode        ;\n"
+		"  -E      base64 encode        ;\n"
+		"  -f      floating point       ;  rax2 -f 6.3+2.1\n"
+		"  -F      stdin slurp code hex ;  rax2 -F < shellcode.[c/py/js]\n"
+		"  -h      help                 ;  rax2 -h\n"
+		"  -i      dump as C byte array ;  rax2 -i < bytes\n"
+		"  -k      keep base            ;  rax2 -k 33+3 -> 36\n"
+		"  -K      randomart            ;  rax2 -K 0x34 1020304050\n"
+		"  -L      bin -> hex(bignum)   ;  rax2 -L 111111111 # 0x1ff\n"
+		"  -n      binary number        ;  rax2 -n 0x1234 # 34120000\n"
+		"  -N      binary number        ;  rax2 -N 0x1234 # \\x34\\x12\\x00\\x00\n"
+		"  -r      r2 style output      ;  rax2 -r 0x1234\n"
+		"  -s      hexstr -> raw        ;  rax2 -s 43 4a 50\n"
+		"  -S      raw -> hexstr        ;  rax2 -S < /bin/ls > ls.hex\n"
+		"  -t      tstamp -> str        ;  rax2 -t 1234567890\n"
+		"  -x      hash string          ;  rax2 -x linux osx\n"
+		"  -u      units                ;  rax2 -u 389289238 # 317.0M\n"
+		"  -w      signed word          ;  rax2 -w 16 0xffff\n"
+		"  -v      version              ;  rax2 -v\n");
 	return true;
 }
 
 static int rax(char *str, int len, int last) {
-	float f;
 	ut8 *buf;
 	char *p, out_mode = (flags & 128)? 'I': '0';
 	int i;
@@ -138,6 +148,8 @@ static int rax(char *str, int len, int last) {
 	if (*str == '-') {
 		while (str[1] && str[1] != ' ') {
 			switch (str[1]) {
+			case 'l': nl = "\n"; break;
+			case 'a': print_ascii_table (); return 0;
 			case 's': flags ^= 1; break;
 			case 'e': flags ^= 1 << 1; break;
 			case 'S': flags ^= 1 << 2; break;
@@ -157,13 +169,18 @@ static int rax(char *str, int len, int last) {
 			case 'N': flags ^= 1 << 15; break;
 			case 'w': flags ^= 1 << 16; break;
 			case 'r': flags ^= 1 << 18; break;
+			case 'L': flags ^= 1 << 19; break;
+			case 'i': flags ^= 1 << 21; break;
 			case 'v': blob_version ("rax2"); return 0;
 			case '\0': return !use_stdin ();
 			default:
+				/* not as complete as for positive numbers */
 				out_mode = (flags ^ 32)? '0': 'I';
 				if (str[1] >= '0' && str[1] <= '9') {
 					if (str[2] == 'x') {
 						out_mode = 'I';
+					} else if (r_str_endswith (str, "f")) {
+						out_mode = 'l';
 					}
 					return format_output (out_mode, str);
 				}
@@ -199,6 +216,10 @@ dotherax:
 			}
 #if __EMSCRIPTEN__
 			puts ("");
+#else
+			if (nl && *nl) {
+				puts ("");
+			}
 #endif
 			fflush (stdout);
 			free (buf);
@@ -345,21 +366,21 @@ dotherax:
 		return true;
 	} else if (flags & (1 << 12)) { // -E
 		const int len = strlen (str);
-		char *out = calloc (sizeof (char), ((len + 1) * 4) / 3);
+		/* http://stackoverflow.com/questions/4715415/base64-what-is-the-worst-possible-increase-in-space-usage */
+		char *out = calloc (sizeof (char), (len + 2) / 3 * 4 + 1); // ceil(len/3)*4 plus 1 for NUL
 		if (out) {
 			r_base64_encode (out, (const ut8 *) str, len);
-			printf ("%s\n", out);
+			printf ("%s%s", out, nl);
 			fflush (stdout);
 			free (out);
 		}
 		return true;
 	} else if (flags & (1 << 13)) { // -D
 		const int len = strlen (str);
-		/* http://stackoverflow.com/questions/4715415/base64-what-is-the-worst-possible-increase-in-space-usage */
-		ut8 *out = calloc (sizeof (ut8), ((len + 2) / 3) * 4);
+		ut8 *out = calloc (sizeof (ut8), len / 4 * 3 + 1);
 		if (out) {
 			r_base64_decode (out, str, len);
-			printf ("%s\n", out);
+			printf ("%s%s", out, nl);
 			fflush (stdout);
 			free (out);
 		}
@@ -367,7 +388,7 @@ dotherax:
 	} else if (flags & 1 << 14) { // -F
 		char *str = r_stdin_slurp (NULL);
 		if (str) {
-			char *res = r_hex_from_c (str);
+			char *res = r_hex_from_code (str);
 			if (res) {
 				printf ("%s\n", res);
 				fflush (stdout);
@@ -399,6 +420,7 @@ dotherax:
 		s = n >> 16 << 12;
 		a = n & 0x0fff;
 		r_num_units (unit, n);
+#if 0
 		eprintf ("%" PFMT64d " 0x%" PFMT64x " 0%" PFMT64o
 			" %s %04x:%04x ",
 			n, n, n, unit, s, a);
@@ -416,39 +438,88 @@ dotherax:
 		r_str_bits (out, (const ut8 *) &n, sizeof (n), NULL);
 		eprintf ("%s %.01lf %ff %lf\n",
 			out, num->fvalue, f, d);
+#endif
+				printf ("hex     0x%"PFMT64x"\n", n);
+				printf ("octal   0%"PFMT64o"\n", n);
+				printf ("unit    %s\n", unit);
+				printf ("segment %04x:%04x\n", s, a);
+				if (n >> 32) {
+					printf ("int64   %"PFMT64d"\n", (st64)n);
+				} else {
+					printf ("int32   %d\n", (st32)n);
+				}
+				if (asnum) {
+					printf ("string  \"%s\"\n", asnum);
+					free (asnum);
+				}
+				/* binary and floating point */
+				r_str_bits64 (out, n);
+				memcpy (&f, &n, sizeof (f));
+				memcpy (&d, &n, sizeof (d));
+				printf ("binary  0b%s\n", out);
+				printf ("float:  %ff\n", f);
+				printf ("double: %lf\n", d);
 
+				/* ternary */
+				r_num_to_trits (out, n);
+				printf ("trits   0t%s\n", out);
+
+		return true;
+	} else if (flags & (1 << 19)) { // -L
+		r_print_hex_from_bin (NULL, str);
+		return true;
+	} else if (flags & (1 << 21)) { // -i
+		static const char start[] = "unsigned char buf[] = {";
+		printf (start);
+		/* resonable amount of bytes per line */
+		const int byte_per_col = 12;
+		for (i = 0; i < len-1; i++) {
+			/* wrapping every N bytes */
+			if (i % byte_per_col == 0) {
+				printf ("\n  ");
+			}
+			printf ("0x%02x, ", (ut8) str[i]);
+		}
+		/* some care for the last element */
+		if (i % byte_per_col == 0) {
+			printf("\n  ");
+		}
+		printf ("0x%02x\n", (ut8) str[len-1]);
+		printf ("};\n");
+		printf ("unsigned int buf_len = %d;\n", len);
 		return true;
 	}
 
-	if (str[0] == '0' && str[1] == 'x') {
+	if (r_str_startswith (str, "0x")) {
 		out_mode = (flags & 32)? '0': 'I';
-	} else if (str[0] == 'b') {
+	} else if (r_str_startswith (str, "b")) {
 		out_mode = 'B';
 		str++;
-	} else if (str[0] == 't') {
+	} else if (r_str_startswith (str, "t")) {
 		out_mode = 'T';
 		str++;
-	} else if (str[0] == 'F' && str[1] == 'x') {
+	} else if (r_str_startswith (str, "Fx")) {
 		out_mode = 'F';
 		*str = '0';
-	} else if (str[0] == 'B' && str[1] == 'x') {
+	} else if (r_str_startswith (str, "Bx")) {
 		out_mode = 'B';
 		*str = '0';
-	} else if (str[0] == 'T' && str[1] == 'x') {
+	} else if (r_str_startswith (str, "Tx")) {
 		out_mode = 'T';
 		*str = '0';
-	} else if (str[0] == 'O' && str[1] == 'x') {
+	} else if (r_str_startswith (str, "Ox")) {
 		out_mode = 'O';
 		*str = '0';
-	} else if (str[strlen (str) - 1] == 'd') {
+	} else if (r_str_endswith (str, "d")) {
 		out_mode = 'I';
 		str[strlen (str) - 1] = 'b';
 		// TODO: Move print into format_output
-	} else if (str[strlen (str) - 1] == 'f') {
-		ut8 *p = (ut8 *) &f;
-		sscanf (str, "%f", &f);
-		printf ("Fx%02x%02x%02x%02x\n", p[3], p[2], p[1], p[0]);
-		return true;
+	} else if (r_str_endswith (str, "f")) {
+		out_mode = 'l';
+	} else if (r_str_endswith (str, "dt")) {
+		out_mode = 'I';
+		str[strlen (str) - 2] = 't';
+		str[strlen (str) - 1] = '\0';
 	}
 	while ((p = strchr (str, ' '))) {
 		*p = 0;
@@ -467,7 +538,7 @@ static int use_stdin() {
 	if (!buf) {
 		return 0;
 	}
-	if (!(flags & 16384)) {
+	if (!(flags & (1<<14))) {
 		for (l = 0; l >= 0 && l < STDIN_BUFFER_SIZE; l++) {
 			// make sure we don't read beyond boundaries
 			int n = read (0, buf + l, STDIN_BUFFER_SIZE - l);
@@ -481,7 +552,7 @@ static int use_stdin() {
 			}
 			buf[n] = 0;
 			// if (sflag && strlen (buf) < STDIN_BUFFER_SIZE) // -S
-			buf[STDIN_BUFFER_SIZE] = '\0'; 
+			buf[STDIN_BUFFER_SIZE] = '\0';
 			if (!rax (buf, l, 0)) {
 				break;
 			}

@@ -9,8 +9,9 @@
 static int countChar (const ut8 *buf, int len, char ch) {
 	int i;
 	for (i = 0; i < len; i++) {
-		if (buf[i] != ch)
+		if (buf[i] != ch) {
 			break;
+		}
 	}
 	return i;
 }
@@ -21,6 +22,7 @@ static int getid (char ch) {
 	return cidx? cidx - keys + 1: 0;
 }
 
+#define BUFSIZE_INC 32
 static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	ut64 dst = 0LL;
 	if (!op) {
@@ -35,13 +37,18 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	case '[':
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		op->fail = addr+1;
+		buf = r_mem_dup ((void *)buf, len);
+		if (!buf) {
+			break;
+		}
 		{
 			const ut8 *p = buf + 1;
 			int lev = 0, i = 1;
 			len--;
 			while (i < len && *p) {
-				if (*p == '[')
+				if (*p == '[') {
 					lev++;
+				}
 				if (*p == ']') {
 					lev--;
 					if (lev==-1) {
@@ -51,13 +58,30 @@ static int bf_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 						r_strbuf_setf (&op->esil,
 								"$$,brk,=[1],brk,++=,"
 								"ptr,[1],!,?{,0x%"PFMT64x",pc,=,brk,--=,}", dst);
-						break;
+						goto beach;
+					}
+				}
+				if (*p == 0x00 || *p == 0xff) {
+					op->type = R_ANAL_OP_TYPE_ILL;
+					goto beach;
+				}
+				if (i == len - 1 && anal->read_at) {
+					int new_buf_len = len + 1 + BUFSIZE_INC;
+					ut8 *new_buf = calloc (new_buf_len, 1);
+					if (new_buf) {
+						free ((ut8 *)buf);
+						(void)anal->read_at (anal, addr, new_buf, new_buf_len);
+						buf = new_buf;
+						p = buf + i;
+						len += BUFSIZE_INC;
 					}
 				}
 				p++;
 				i++;
 			}
 		}
+beach:
+		free ((ut8 *)buf);
 		break;
 	case ']': op->type = R_ANAL_OP_TYPE_UJMP;
 		// XXX This is wrong esil
@@ -133,7 +157,7 @@ RAnalPlugin r_anal_plugin_bf = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_bf,
 	.version = R2_VERSION

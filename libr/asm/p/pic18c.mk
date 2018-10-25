@@ -1,9 +1,0 @@
-OBJ_PIC18C=asm_pic18c.o
-
-STATIC_OBJ+=${OBJ_PIC18C}
-TARGET_PIC18C=asm_pic18c.${EXT_SO}
-
-ALL_TARGETS+=${TARGET_PIC18C}
-
-${TARGET_PIC18C}: ${OBJ_PIC18C}
-	${CC} $(call libname,asm_pic18c) ${LDFLAGS} ${CFLAGS} -o asm_pic18c.${EXT_SO} ${OBJ_PIC18C}

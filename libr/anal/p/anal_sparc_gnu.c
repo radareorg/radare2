@@ -42,9 +42,9 @@ enum {
 	GPR_I7 = 31,
 };
 
-const char * gpr_regs[] = {"g0", "g1", "g2", "g3", "g4", "g5", "g6", "g7", 
-	"o0", "o1", "o2", "o3", "o4", "o5", "o6", "o7", 
-	"l0", "l1", "l2", "l3", "l4", "l5", "l6", "l7", 
+const char * gpr_regs[] = {"g0", "g1", "g2", "g3", "g4", "g5", "g6", "g7",
+	"o0", "o1", "o2", "o3", "o4", "o5", "o6", "o7",
+	"l0", "l1", "l2", "l3", "l4", "l5", "l6", "l7",
 	"i0", "i1", "i2", "i3", "i4", "i5", "i6","i7"};
 
 enum {
@@ -266,7 +266,7 @@ enum {
 	OP33_INV14 = 0x2e,
 	OP33_INV15 = 0x2f,
 	OP33_INV16 = 0x3f,
-};    
+};
 
 static st64 get_immed_sgnext(const ut64 insn, const ut8 nbit) {
 	const ut64 mask = ~(((ut64)1 << (nbit + 1)) - 1);
@@ -304,8 +304,9 @@ static void anal_call(RAnalOp *op, const ut32 insn, const ut64 addr) {
 
 static void anal_jmpl(RAnal const * const anal, RAnalOp *op, const ut32 insn, const ut64 addr) {
 	st64 disp = 0;
-	if (X_LDST_I(insn))
-		disp = get_immed_sgnext(insn, 12);
+	if (X_LDST_I (insn)) {
+		disp = get_immed_sgnext (insn, 12);
+	}
 
 	if (X_RD(insn) == GPR_O7) {
 		op->type = R_ANAL_OP_TYPE_UCALL;
@@ -470,8 +471,8 @@ static int set_reg_profile(RAnal *anal) {
 	/* As far as I can see, sparc v9 register and instruction set
 	   don't depened  on bits of the running application.
 	   But: They depend on the bits of the consuming application,
-	   that is the bits radare had been compiled with. 
-	   See sys/procfs_isa.h on a Solaris10 Sparc machine and 
+	   that is the bits radare had been compiled with.
+	   See sys/procfs_isa.h on a Solaris10 Sparc machine and
 	   'man 4 core' for reference.
 	 */
 	const char *p =
@@ -619,7 +620,7 @@ RAnalPlugin r_anal_plugin_sparc_gnu = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_sparc_gnu,
 	.version = R2_VERSION

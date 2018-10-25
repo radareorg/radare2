@@ -4,7 +4,7 @@ Authors
 Main developer (author and maintainer)
 --------------------------------------
 
-The author of radare and radare2, is the main contributor and designer of the tool, apis, bindings, etc
+The author of radare and radare2 is the main contributor and designer of the tool, apis, bindings, etc.
 
  - pancake <pancake@nopcode.org>
 
@@ -94,7 +94,7 @@ This release comes with contributions from the following people:
 Previous contributors
 ---------------------
 
-Some people didn't contributed to the last release, but they did it for the past ones. Kudos for them too!
+Some people didn't contribute to the lastest release, but they did it for the past ones. Kudos for them too!
 
  - 0xroot
  - Alexander

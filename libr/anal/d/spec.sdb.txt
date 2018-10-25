@@ -1,0 +1,15 @@
+gcc=spec
+spec.gcc.c=char
+spec.gcc.d=int
+spec.gcc.f=float
+spec.gcc.g=double
+spec.gcc.ld=long int
+spec.gcc.li=long int
+spec.gcc.lf=double
+spec.gcc.lu=unsigned long int
+spec.gcc.llu=unsigned long long int
+spec.gcc.lli=long long int
+spec.gcc.lld=long long int
+spec.gcc.p=void *
+spec.gcc.s=const char *
+spec.gcc.u=unsigned int

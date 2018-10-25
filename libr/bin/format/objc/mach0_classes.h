@@ -17,6 +17,7 @@
 #ifndef MACH0_CLASSES_H
 #define MACH0_CLASSES_H
 
-R_API RList* MACH0_(parse_classes)(RBinFile *arch);
+R_API RList* MACH0_(parse_classes)(RBinFile *bf);
+R_API void MACH0_(get_class_t)(mach0_ut p, RBinFile *bf, RBinClass *klass, bool dupe);
 
 #endif // MACH0_CLASSES_H

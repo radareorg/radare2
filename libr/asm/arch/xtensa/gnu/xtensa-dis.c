@@ -27,13 +27,17 @@
 #include "xtensa-isa.h"
 #include "ansidecl.h"
 #include <setjmp.h>
-#include "dis-asm.h"
+#include "disas-asm.h"
 #include "libiberty.h"
 
+
+#if defined(_MSC_VER)
+__declspec(dllimport)
+#endif
 extern xtensa_isa xtensa_default_isa;
 
 #ifndef MAX
-#define MAX(a,b) (a > b ? a : b)
+#define MAX(a,b) (((a)) > ((b)) ? ((a)) : ((b)))
 #endif
 
 #if 1
@@ -76,8 +80,9 @@ fetch_data (struct disassemble_info *info, bfd_vma memaddr)
     {
       status = (*info->read_memory_func) (memaddr, priv->byte_buf, length,
 					  info);
-      if (status == 0)
-	return length;
+      if (status == 0) {
+	      return length;
+      }
     }
   (*info->memory_error_func) (status, memaddr, info);
   OPCODES_SIGLONGJMP (priv->bailout, 1);
@@ -98,11 +103,12 @@ print_xtensa_operand (bfd_vma memaddr,
     
   if (show_raw_fields)
     {
-      if (operand_val < 0xa)
-	(*info->fprintf_func) (info->stream, "%u", operand_val);
-      else
-	(*info->fprintf_func) (info->stream, "0x%x", operand_val);
-      return;
+	  if (operand_val < 0xa) {
+		  (*info->fprintf_func) (info->stream, "%u", operand_val);
+	  } else {
+		  (*info->fprintf_func) (info->stream, "0x%x", operand_val);
+	  }
+	  return;
     }
 
   (void) xtensa_operand_decode (isa, opc, opnd, &operand_val);
@@ -119,10 +125,11 @@ print_xtensa_operand (bfd_vma memaddr,
 	}
       else
 	{
-	  if ((signed_operand_val > -256) && (signed_operand_val < 256))
-	    (*info->fprintf_func) (info->stream, "%d", signed_operand_val);
-	  else
-	    (*info->fprintf_func) (info->stream, "0x%x", signed_operand_val);
+		if ((signed_operand_val > -256) && (signed_operand_val < 256)) {
+			(*info->fprintf_func) (info->stream, "%d", signed_operand_val);
+		} else {
+			(*info->fprintf_func) (info->stream, "0x%x", signed_operand_val);
+		}
 	}
     }
   else
@@ -161,8 +168,9 @@ print_insn_xtensa (bfd_vma memaddr, struct disassemble_info *info)
   static xtensa_insnbuf slot_buffer = NULL;
   int first, first_slot, valid_insn;
 
-  if (!xtensa_default_isa)
-    xtensa_default_isa = xtensa_isa_init (0, 0);
+  if (!xtensa_default_isa) {
+	  xtensa_default_isa = xtensa_isa_init (0, 0);
+  }
 
   info->target = 0;
   maxsize = xtensa_isa_maxlength (xtensa_default_isa);
@@ -210,24 +218,19 @@ print_insn_xtensa (bfd_vma memaddr, struct disassemble_info *info)
   xtensa_insnbuf_from_chars (isa, insn_buffer, priv.byte_buf, bytes_fetched);
 
   fmt = xtensa_format_decode (isa, insn_buffer);
-  if (fmt == XTENSA_UNDEFINED
-      || ((size = xtensa_format_length (isa, fmt)) > bytes_fetched))
-    valid_insn = 0;
-  else
-    {
-      /* Make sure all the opcodes are valid.  */
-      valid_insn = 1;
-      nslots = xtensa_format_num_slots (isa, fmt);
-      for (n = 0; n < nslots; n++)
-	{
-	  xtensa_format_get_slot (isa, fmt, n, insn_buffer, slot_buffer);
-	  if (xtensa_opcode_decode (isa, fmt, n, slot_buffer)
-	      == XTENSA_UNDEFINED)
-	    {
-	      valid_insn = 0;
-	      break;
-	    }
-	}
+  if (fmt == XTENSA_UNDEFINED || ((size = xtensa_format_length (isa, fmt)) > bytes_fetched)) {
+	  valid_insn = 0;
+  } else {
+	  /* Make sure all the opcodes are valid.  */
+	  valid_insn = 1;
+	  nslots = xtensa_format_num_slots (isa, fmt);
+	  for (n = 0; n < nslots; n++) {
+		  xtensa_format_get_slot (isa, fmt, n, insn_buffer, slot_buffer);
+		  if (xtensa_opcode_decode (isa, fmt, n, slot_buffer) == XTENSA_UNDEFINED) {
+			  valid_insn = 0;
+			  break;
+		  }
+	  }
     }
 
   if (!valid_insn)
@@ -236,49 +239,50 @@ print_insn_xtensa (bfd_vma memaddr, struct disassemble_info *info)
       return 1;
     }
 
-  if (nslots > 1)
-    (*info->fprintf_func) (info->stream, "{ ");
-
-  first_slot = 1;
-  for (n = 0; n < nslots; n++)
-    {
-      if (first_slot)
-	first_slot = 0;
-      else
-	(*info->fprintf_func) (info->stream, "; ");
-
-      xtensa_format_get_slot (isa, fmt, n, insn_buffer, slot_buffer);
-      opc = xtensa_opcode_decode (isa, fmt, n, slot_buffer);
-      (*info->fprintf_func) (info->stream, "%s",
-			     xtensa_opcode_name (isa, opc));
-
-      /* Print the operands (if any).  */
-      noperands = xtensa_opcode_num_operands (isa, opc);
-      first = 1;
-      for (i = 0; i < noperands; i++)
-	{
-	  if (xtensa_operand_is_visible (isa, opc, i) == 0)
-	    continue;
-	  if (first)
-	    {
-	      (*info->fprintf_func) (info->stream, " ");
-	      first = 0;
-	    }
-	  else
-	    (*info->fprintf_func) (info->stream, ", ");
-	  (void) xtensa_operand_get_field (isa, opc, i, fmt, n,
-					   slot_buffer, &operand_val);
-
-	  print_xtensa_operand (memaddr, info, opc, i, operand_val);
-	}
+    if (nslots > 1) {
+	    (*info->fprintf_func) (info->stream, "{ ");
     }
 
-  if (nslots > 1)
-    (*info->fprintf_func) (info->stream, " }");
+    first_slot = 1;
+    for (n = 0; n < nslots; n++) {
+	    if (first_slot) {
+		    first_slot = 0;
+	    } else {
+		    (*info->fprintf_func) (info->stream, "; ");
+	    }
 
-  info->bytes_per_chunk = size;
-  info->display_endian = info->endian;
+	    xtensa_format_get_slot (isa, fmt, n, insn_buffer, slot_buffer);
+	    opc = xtensa_opcode_decode (isa, fmt, n, slot_buffer);
+	    (*info->fprintf_func) (info->stream, "%s",
+		    xtensa_opcode_name (isa, opc));
 
-  return size;
+	    /* Print the operands (if any).  */
+	    noperands = xtensa_opcode_num_operands (isa, opc);
+	    first = 1;
+	    for (i = 0; i < noperands; i++) {
+		    if (xtensa_operand_is_visible (isa, opc, i) == 0) {
+			    continue;
+		    }
+		    if (first) {
+			    (*info->fprintf_func) (info->stream, " ");
+			    first = 0;
+		    } else {
+			    (*info->fprintf_func) (info->stream, ", ");
+		    }
+		    (void)xtensa_operand_get_field (isa, opc, i, fmt, n,
+			    slot_buffer, &operand_val);
+
+		    print_xtensa_operand (memaddr, info, opc, i, operand_val);
+	    }
+    }
+
+    if (nslots > 1) {
+	    (*info->fprintf_func) (info->stream, " }");
+    }
+
+    info->bytes_per_chunk = size;
+    info->display_endian = info->endian;
+
+    return size;
 }
 

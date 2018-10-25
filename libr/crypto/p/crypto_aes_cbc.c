@@ -49,7 +49,9 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 	const int blocks = size / BLOCK_SIZE;
 
 	ut8 *const obuf = calloc (1, size);
-	if (!obuf) return false;
+	if (!obuf) {
+		return false;
+	}
 
 	ut8 *const ibuf = calloc (1, size);
 	if (!ibuf) {
@@ -104,7 +106,7 @@ RCryptoPlugin r_crypto_plugin_aes_cbc = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_aes_cbc,
 	.version = R2_VERSION

@@ -2062,12 +2062,14 @@ static mpc_val_t *mpcf_re_range(mpc_val_t *x) {
   const char *tmp = NULL;
   const char *s = x;
   int comp = s[0] == '^' ? 1 : 0;
-  char *range = calloc(1,1);
+  char *range;
   
   if (s[0] == '\0') { free(x); return mpc_fail("Invalid Regex Range Expression"); } 
   if (s[0] == '^' && 
       s[1] == '\0') { free(x); return mpc_fail("Invalid Regex Range Expression"); }
   
+  range = calloc(1,1);
+
   for (i = comp; i < strlen(s); i++){
     
     /* Regex Range Escape */

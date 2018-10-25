@@ -1,0 +1,62 @@
+name: radare2
+version: '2.6.0'
+summary: Radare2 reverse engineering framework and tool
+description: |
+  Radare2 (also known as r2) is a complete framework for reverse-engineering 
+  and analyzing binaries; composed of a set of small utilities 
+  that can be used together or independently from the command line. 
+  Built around a disassembler for computer software which generates 
+  assembly language source code from machine-executable code, 
+  it supports a variety of executable formats for different processors 
+  and operating systems.
+
+grade: stable # must be 'stable' to release into candidate/stable channels
+confinement: strict # use 'strict' once you have the right plugs and slots
+
+apps:
+  radare2:
+    command: usr/bin/radare2
+    plugs: [home]
+  r2agent:
+    command: usr/bin/r2agent
+    plugs: [home, network-bind]
+  rafind2:
+    command: usr/bin/rafind2
+    plugs: [home]
+  rahash2:
+    command: usr/bin/rahash2
+    plugs: [home]
+  rasm2:
+    command: usr/bin/rasm2
+    plugs: [home]
+  sdb:
+    command: usr/bin/sdb
+    plugs: [home]
+  rabin2:
+    command: usr/bin/rabin2
+    plugs: [home]
+  radiff2:
+    command: usr/bin/radiff2
+    plugs: [home]
+  ragg2:
+    command: usr/bin/ragg2
+    plugs: [home]
+  rarun2:
+    command: usr/bin/rarun2
+    plugs: [home]
+  rax2:
+    command: usr/bin/rax2
+    plugs: [home]
+
+parts:
+  radare2:
+    source: https://github.com/radare/radare2.git
+    source-tag: '2.6.0'
+    plugin: meson
+    meson-parameters: [--prefix=/usr]
+    override-build: |
+      pip3 install --system meson
+      snapcraftctl build
+    build-packages:
+      - python3-pip
+      - python3-setuptools

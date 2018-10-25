@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2011-2017 - pancake */
+/* sdb - MIT - Copyright 2011-2018 - pancake */
 
 #include "sdb.h"
 
@@ -7,7 +7,59 @@
 #if USE_MONOTONIC_CLOCK
 #include <time.h>
 #else
+
+#ifdef _MSC_VER
+#pragma message ("gettimeofday: Windows support is ugly here")
+#include <windows.h>
+#include <time.h>
+
+struct timezone {
+	int  tz_minuteswest; /* minutes W of Greenwich */
+	int  tz_dsttime;     /* type of dst correction */
+};
+
+int gettimeofday (struct timeval* p, struct timezone * tz) {
+	//ULARGE_INTEGER ul; // As specified on MSDN.
+	ut64 ul = 0;
+	static int tzflag = 0;
+	FILETIME ft;
+	if (p) {
+		// Returns a 64-bit value representing the number of
+		// 100-nanosecond intervals since January 1, 1601 (UTC).
+		GetSystemTimeAsFileTime (&ft);
+		// Fill ULARGE_INTEGER low and high parts.
+		//ul.LowPart = ft.dwLowDateTime;
+		//ul.HighPart = ft.dwHighDateTime;
+		ul |= ft.dwHighDateTime;
+		ul <<= 32;
+		ul |= ft.dwLowDateTime;
+		// Convert to microseconds.
+		//ul.QuadPart /= 10ULL;
+		ul /= 10;
+		// Remove Windows to UNIX Epoch delta.
+		//ul.QuadPart -= 11644473600000000ULL;
+		ul -= 11644473600000000ULL;
+		// Modulo to retrieve the microseconds.
+		//p->tv_usec = (long)(ul.QuadPart % 1000000LL);
+		// Divide to retrieve the seconds.
+		//p->tv_sec = (long)(ul.QuadPart / 1000000LL);
+		p->tv_sec = (long)(ul / 1000000LL);
+		p->tv_usec = (long)(ul % 1000000LL);
+	}
+	if (tz) {
+		if (!tzflag) {
+			_tzset ();
+			tzflag++;
+		}
+		tz->tz_minuteswest = _timezone / 60;
+		tz->tz_dsttime = _daylight;
+	}
+	return 0;
+}
+
+#else
 #include <sys/time.h>
+#endif
 #endif
 
 SDB_API ut32 sdb_hash_len(const char *s, ut32 *len) {
@@ -22,7 +74,7 @@ SDB_API ut32 sdb_hash_len(const char *s, ut32 *len) {
 	ut32 count = 0;
 	if (s) {
 		while (*s) {
-			h = (h + (h << 5)) ^* s++;
+			h = (h + (h << 5)) ^ *s++;
 			count++;
 		}
 	}
@@ -37,6 +89,16 @@ SDB_API ut32 sdb_hash(const char *s) {
 	return sdb_hash_len (s, NULL);
 }
 
+SDB_API ut8 sdb_hash_byte(const char *s) {
+	const ut32 hash = sdb_hash_len (s, NULL);
+	const ut8 *h = (const ut8*)&hash;
+	return h[0] ^ h[1] ^ h[2] ^ h[3];
+}
+
+SDB_API const char *sdb_itoca(ut64 n) {
+	return sdb_itoa (n, sdb_fmt (NULL), 16);
+}
+
 // assert (sizeof (s)>64)
 // if s is null, the returned pointer must be freed!!
 SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
@@ -46,6 +108,7 @@ SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
 	int i = imax, copy_string = 1;
 	if (s) {
 		*s = 0;
+		os = NULL;
 	} else {
 		os = s = tmpbuf;
 	}
@@ -65,7 +128,7 @@ SDB_API char *sdb_itoa(ut64 n, char *s, int base) {
 	}
 	s[imax + 1] = '\0';
 	if (base <= 10) {
-		for (; n && i>0; n /= base) {
+		for (; n && i > 0; n /= base) {
 			s[i--] = (n % base) + '0';
 		}
 	} else {
@@ -205,12 +268,9 @@ SDB_API char *sdb_anext(char *str, char **next) {
 	return str;
 }
 
-SDB_API const char *sdb_const_anext(const char *str, const char **next) {
-	if (next) {
-		const char *p = strchr (str, SDB_RS);
-		*next = p? p + 1: NULL;
-	}
-	return str;
+SDB_API const char *sdb_const_anext(const char *str) {
+	const char *p = strchr (str, SDB_RS);
+	return p ? p + 1 : NULL;
 }
 
 SDB_API ut64 sdb_now () {

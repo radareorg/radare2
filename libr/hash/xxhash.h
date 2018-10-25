@@ -68,7 +68,7 @@ extern "C" {
 // Simple Hash Functions
 //****************************
 
-unsigned int XXH32 (const void* input, int len, unsigned int seed);
+unsigned int XXH32 (const void* input, size_t len, unsigned int seed);
 
 /*
 XXH32() :

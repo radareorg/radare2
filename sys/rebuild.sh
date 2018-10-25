@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Requires GNU Make, but some distros probably don't have the gmake symlink.
+[ -z "$MAKE" ] && MAKE=make
+
 while : ; do
 	if [ -f sys/rebuild.sh ]; then
 		break
@@ -13,14 +16,14 @@ done
 
 Rebuild() {
 	cd "$1" || exit 1
-	make clean
-	make -j8 || exit 1
+	$MAKE clean
+	$MAKE -j8 || exit 1
 	cd -
 }
 
 Build() {
 	cd "$1" || exit 1
-	make -j8 || exit 1
+	$MAKE -j8 || exit 1
 	cd -
 }
 
@@ -29,7 +32,7 @@ RebuildIOSDebug() {
 	# Rebuild libr/util
 	# Rebuild libr/core
 	Rebuild binr/radare2
-	make -C binr/radare2 ios-sign
+	$MAKE -C binr/radare2 ios-sign
 	if [ -n "${IOSIP}" ]; then
 		scp binr/radare2/radare2 root@"${IOSIP}:."
 	else
@@ -45,6 +48,9 @@ RebuildJava() {
 }
 
 RebuildCapstone() {
+	if [ ! -d shlr/capstone ]; then
+		make -C shlr capstone
+	fi
 	Rebuild shlr/capstone
 	Rebuild libr/asm
 	Rebuild libr/anal
@@ -53,6 +59,11 @@ RebuildCapstone() {
 RebuildSdb() {
 	Rebuild shlr/sdb
 	Rebuild libr/util
+}
+
+RebuildFs() {
+	Rebuild shlr/grub
+	Rebuild libr/fs
 }
 
 RebuildBin() {
@@ -66,12 +77,24 @@ RebuildGdb() {
 	Rebuild libr/debug
 }
 
+RebuildZip() {
+	Rebuild shlr/zip
+	Rebuild libr/io
+}
+
+RebuildTcc() {
+	Rebuild shlr/tcc
+}
+
 case "$1" in
+grub|fs)RebuildFs; ;;
 bin)    RebuildBin ; ;;
 gdb)    RebuildGdb ; ;;
 sdb)    RebuildSdb ; ;;
 spp)    RebuildSpp ; ;;
+tcc)    RebuildTcc ; ;;
 bin)    RebuildBin ; ;;
+zip)    RebuildZip ; ;;
 java)   RebuildJava ; ;;
 iosdbg) RebuildIOSDebug ; ;;
 capstone|cs) RebuildCapstone ; ;;

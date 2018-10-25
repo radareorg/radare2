@@ -1,0 +1,39 @@
+#compdef rafind2
+local context state state_descr line
+
+_rafind2() {
+  local -a options=(
+  '-a+[only accept aligned hits]:align'
+  '-b+[set block size]:size'
+  '*-e+[search for regular expression string matches]:regex'
+  "-f+[start searching from address 'from']:from"
+  '-h[show this help]'
+  '-i[identify filetype (r2 -nqcpm file)]'
+  '-m[magic search, file-type carver]'
+  '-M+[set a binary mask to be applied on keywords]:str'
+  '-n[do not stop on read errors]'
+  '-q[quiet]'
+  '-r[print using radare commands]'
+  '*-s+[search for a specific string (can be used multiple times)]:str'
+  '*-S+[search for a specific wide string (can be used multiple times)]:str'
+  "-t+[stop search at address 'to']:to"
+  '-v[print version and exit]'
+  '*-x+[search for hexpair string (909090) (can be used multiple times)]:hex'
+  '-X[show hexdump of search results]'
+  '-z[search for zero-terminated strings]'
+  '-Z[show string found on each search hit]'
+  )
+
+  _arguments -S -s : $options '*:file:_files'
+}
+
+_rafind2 "$@"
+
+# Local Variables:
+# mode: shell-script
+# coding: utf-8-unix
+# indent-tabs-mode: nil
+# sh-indentation: 2
+# sh-basic-offset: 2
+# End:
+# vim: ft=zsh sw=2 sts=2 et

@@ -23,7 +23,8 @@ if [ -d "$pfx/usr/bin" ]; then
 fi
 
 new_env='
-LIBR_PLUGINS=${pfx}/lib/radare2
+R2_ENV_IS_SET=1
+R2_LIBR_PLUGINS=${pfx}/lib/radare2
 PATH=$pfx/bin:${PATH}
 LD_LIBRARY_PATH=$pfx/lib:$LD_LIBRARY_PATH
 DYLD_LIBRARY_PATH=$pfx/lib:$DYLD_LIBRARY_PATH
@@ -31,6 +32,11 @@ PKG_CONFIG_PATH=$pfx/lib/pkgconfig:$PKG_CONFIG_PATH
 '
 
 shift
+if [ "$R2_ENV_IS_SET" = 1 ]; then
+	echo "Nested call"
+	exec $*
+	exit $?
+fi
 
 if [ -z "$*" ]; then
 	echo

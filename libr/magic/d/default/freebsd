@@ -139,6 +139,6 @@
 #
 0	string	SCRSHOT_	scrshot(1) screenshot,
 >8	byte	x		version %d,
->9	byte	2		%d bytes in header,
+>9	byte	2		%d byte(s) in header,
 >>10	byte	x		%d chars wide by
 >>11	byte	x		%d chars high

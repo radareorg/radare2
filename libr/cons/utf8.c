@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015 - pancake */
+/* radare - LGPL - Copyright 2015-2018 - pancake */
 
 // Copypasta from http://www.linuxquestions.org/questions/programming-9/get-cursor-position-in-c-947833/
 #include <r_cons.h>
@@ -9,8 +9,8 @@
 #include <termios.h>
 #include <errno.h>
 
-#define   RD_EOF   -1
-#define   RD_EIO   -2
+#define   RD_EOF   (-1)
+#define   RD_EIO   (-2)
 
 /* select utf8 terminal detection method */
 #define UTF8_DETECT_ENV 1
@@ -88,8 +88,9 @@ int current_tty(void) {
 	do {
 		fd = open (dev, O_RDWR | O_NOCTTY);
 	} while (fd == -1 && errno == EINTR);
-	if (fd == -1)
+	if (fd == -1) {
 		return -1;
+	}
 	return fd;
 #endif
 }
@@ -217,8 +218,9 @@ R_API int r_cons_is_utf8() {
 	char *sval = r_sys_getenv ("LC_CTYPE");
 	if (sval) {
 		r_str_case (sval, 0);
-		if (!strcmp (sval, "utf-8"))
+		if (!strcmp (sval, "utf-8")) {
 			ret = 1;
+		}
 		free (sval);
 	}
 #endif
@@ -226,7 +228,7 @@ R_API int r_cons_is_utf8() {
 #include <locale.h>
 	const char *ctype = setlocale(LC_CTYPE, NULL);
 	if ( (ctype != NULL) && (ctype = strchr(ctype, '.')) && ctype++ &&
-		(strcasecmp(ctype, "UTF-8") == 0 || strcasecmp(ctype, "UTF8") == 0)) {
+		(r_str_casecmp(ctype, "UTF-8") == 0 || r_str_casecmp(ctype, "UTF8") == 0)) {
 		return 1;
 	}
 #endif

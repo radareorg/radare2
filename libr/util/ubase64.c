@@ -17,15 +17,17 @@
 static const char cb64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 static const char cd64[] = "|$$$}rstuvwxyz{$$$$$$$>?@ABCDEFGHIJKLMNOPQRSTUVW$$$$$$XYZ[\\]^_`abcdefghijklmnopq";
 
-static void b64_encode(const ut8 in[3], char out[4], int len) {
-	if (len < 1) return;
+static void local_b64_encode(const ut8 in[3], char out[4], int len) {
+	if (len < 1) {
+		return;
+	}
 	out[0] = cb64[in[0] >> 2];
 	out[1] = cb64[((in[0] & 0x03) << 4) | ((len > 1)? ((in[1] & 0xf0) >> 4): 0)];
 	out[2] = (len > 1? cb64[((in[1] & 0x0f) << 2) | (len > 2? ((in[2] & 0xc0) >> 6): 0)]: '=');
 	out[3] = (len > 2? cb64[in[2] & 0x3f]: '=');
 }
 
-static int b64_decode(const char in[4], ut8 out[3], int isz) {
+static int local_b64_decode(const char in[4], ut8 out[3]) {
 	int len = 3;
 	ut8 i, v[4] = { 0 };
 	for (i = 0; i < 4; i++) {
@@ -51,7 +53,7 @@ R_API int r_base64_decode(ut8 *bout, const char *bin, int len) {
 		len = strlen (bin);
 	}
 	for (in = out = 0; in + 3 < len; in += 4) {
-		ret = b64_decode (bin + in, bout + out, len - in - 1);
+		ret = local_b64_decode (bin + in, bout + out);
 		if (ret < 1) {
 			return -1;
 		}
@@ -80,11 +82,13 @@ R_API ut8 *r_base64_decode_dyn(const char *in, int len) {
 
 R_API int r_base64_encode(char *bout, const ut8 *bin, int len) {
 	int in, out;
-	if (len < 0)
+	if (len < 0) {
 		len = strlen ((const char *)bin);
-	for (in = out = 0; in < len; in += 3, out += 4)
-		b64_encode (bin + in, (char *)bout + out,
-			(len - in) > 3? 3: len - in);
+	}
+	for (in = out = 0; in < len; in += 3, out += 4) {
+		local_b64_encode (bin + in, (char *)bout + out,
+			(len - in) > 3 ? 3 : len - in);
+	}
 	bout[out] = 0;
 	return out;
 }
@@ -106,9 +110,10 @@ R_API char *r_base64_encode_dyn(const char *str, int len) {
 	if (!bout) {
 		return NULL;
 	}
-	for (in = out = 0; in < len; in += 3, out += 4)
-		b64_encode ((const ut8 *)str + in, (char *)bout + out,
-			(len - in) > 3? 3: len - in);
+	for (in = out = 0; in < len; in += 3, out += 4) {
+		local_b64_encode ((const ut8 *)str + in, (char *)bout + out,
+			(len - in) > 3 ? 3 : len - in);
+	}
 	bout[out] = 0;
 	return bout;
 }

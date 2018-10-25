@@ -22,13 +22,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "../../include/dis-asm.h"
+#include "../../include/disas-asm.h"
 #include "../../include/sysdep.h"
 //#include "bfd.h"
 //#include "libbfd.h"
 #include "../../include/xtensa-isa.h"
 #include "../../include/xtensa-isa-internal.h"
 #include "r_types.h"
+#include "r_util.h"
 extern int filename_cmp (const char *s1, const char *s2);
 xtensa_isa_status xtisa_errno;
 char xtisa_error_msg[1024];
@@ -138,8 +139,9 @@ xtensa_insnbuf_to_chars (xtensa_isa isa,
   int fence_post, start, increment, i, byte_count;
   xtensa_format fmt;
 
-  if (num_chars == 0)
-    num_chars = insn_size;
+  if (num_chars == 0) {
+	  num_chars = insn_size;
+  }
 
   if (intisa->is_big_endian)
     {
@@ -155,12 +157,14 @@ xtensa_insnbuf_to_chars (xtensa_isa isa,
   /* Find the instruction format.  Do nothing if the buffer does not contain
      a valid instruction since we need to know how many bytes to copy.  */
   fmt = xtensa_format_decode (isa, insn);
-  if (fmt == XTENSA_UNDEFINED)
-    return XTENSA_UNDEFINED;
+  if (fmt == XTENSA_UNDEFINED) {
+	  return XTENSA_UNDEFINED;
+  }
 
   byte_count = xtensa_format_length (isa, fmt);
-  if (byte_count == XTENSA_UNDEFINED)
-    return XTENSA_UNDEFINED;
+  if (byte_count == XTENSA_UNDEFINED) {
+	  return XTENSA_UNDEFINED;
+  }
 
   if (byte_count > num_chars)
     {
@@ -207,13 +211,13 @@ xtensa_insnbuf_from_chars (xtensa_isa isa,
       insn_size = max_size;
     }
 
-  if (num_chars == 0 || num_chars > insn_size)
-    num_chars = insn_size;
+    if (num_chars == 0 || num_chars > insn_size) {
+	    num_chars = insn_size;
+    }
 
-  if (intisa->is_big_endian)
-    {
-      start = max_size - 1;
-      increment = -1;
+    if (intisa->is_big_endian) {
+	    start = max_size - 1;
+	    increment = -1;
     }
   else
     {
@@ -290,8 +294,9 @@ xtensa_isa_init (xtensa_isa_status *errno_p, char **error_msg_p)
       CHECK_ALLOC_FOR_INIT (isa->sysreg_table[is_user], NULL,
 			    errno_p, error_msg_p);
 
-      for (n = 0; n <= isa->max_sysreg_num[is_user]; n++)
-	isa->sysreg_table[is_user][n] = XTENSA_UNDEFINED;
+      for (n = 0; n <= isa->max_sysreg_num[is_user]; n++) {
+	      isa->sysreg_table[is_user][n] = XTENSA_UNDEFINED;
+      }
     }
   for (n = 0; n < isa->num_sysregs; n++)
     {
@@ -391,7 +396,7 @@ xtensa_isa_name_compare (const void *v1, const void *v2)
   xtensa_lookup_entry *e1 = (xtensa_lookup_entry *) v1;
   xtensa_lookup_entry *e2 = (xtensa_lookup_entry *) v2;
 
-  return strcasecmp (e1->key, e2->key);
+  return r_str_casecmp (e1->key, e2->key);
 }
 
 
@@ -421,8 +426,9 @@ xtensa_isa_num_pipe_stages (xtensa_isa isa)
   static int max_stage = XTENSA_UNDEFINED;
 
   /* Only compute the value once.  */
-  if (max_stage != XTENSA_UNDEFINED)
-    return max_stage + 1;
+  if (max_stage != XTENSA_UNDEFINED) {
+	  return max_stage + 1;
+  }
 
   num_opcodes = xtensa_isa_num_opcodes (isa);
   for (opcode = 0; opcode < num_opcodes; opcode++)
@@ -432,8 +438,9 @@ xtensa_isa_num_pipe_stages (xtensa_isa isa)
 	{
 	  use = xtensa_opcode_funcUnit_use (isa, opcode, i);
 	  stage = use->stage;
-	  if (stage > max_stage)
-	    max_stage = stage;
+	  if (stage > max_stage) {
+		  max_stage = stage;
+	  }
 	}
     }
 
@@ -547,8 +554,9 @@ xtensa_format_lookup (xtensa_isa isa, const char *fmtname)
 
   for (fmt = 0; fmt < intisa->num_formats; fmt++)
     {
-      if (strcasecmp (fmtname, intisa->formats[fmt].name) == 0)
-	return fmt;
+	  if (r_str_casecmp (fmtname, intisa->formats[fmt].name) == 0) {
+		  return fmt;
+	  }
     }
 
   xtisa_errno = xtensa_isa_bad_format;
@@ -564,8 +572,9 @@ xtensa_format_decode (xtensa_isa isa, const xtensa_insnbuf insn)
   xtensa_format fmt;
 
   fmt = (intisa->format_decode_fn) (insn);
-  if (fmt != XTENSA_UNDEFINED)
-    return fmt;
+  if (fmt != XTENSA_UNDEFINED) {
+	  return fmt;
+  }
 
   xtisa_errno = xtensa_isa_bad_format;
   strcpy (xtisa_error_msg, "cannot decode instruction format");
@@ -708,8 +717,9 @@ xtensa_opcode_decode (xtensa_isa isa, xtensa_format fmt, int slot,
   slot_id = intisa->formats[fmt].slot_id[slot];
 
   opc = (intisa->slots[slot_id].opcode_decode_fn) (slotbuf);
-  if (opc != XTENSA_UNDEFINED)
-    return opc;
+  if (opc != XTENSA_UNDEFINED) {
+	  return opc;
+  }
 
   xtisa_errno = xtensa_isa_bad_opcode;
   strcpy (xtisa_error_msg, "cannot decode opcode");
@@ -758,8 +768,9 @@ xtensa_opcode_is_branch (xtensa_isa isa, xtensa_opcode opc)
 {
   xtensa_isa_internal *intisa = (xtensa_isa_internal *) isa;
   CHECK_OPCODE (intisa, opc, XTENSA_UNDEFINED);
-  if ((intisa->opcodes[opc].flags & XTENSA_OPCODE_IS_BRANCH) != 0)
-    return 1;
+  if ((intisa->opcodes[opc].flags & XTENSA_OPCODE_IS_BRANCH) != 0) {
+	  return 1;
+  }
   return 0;
 }
 
@@ -769,8 +780,9 @@ xtensa_opcode_is_jump (xtensa_isa isa, xtensa_opcode opc)
 {
   xtensa_isa_internal *intisa = (xtensa_isa_internal *) isa;
   CHECK_OPCODE (intisa, opc, XTENSA_UNDEFINED);
-  if ((intisa->opcodes[opc].flags & XTENSA_OPCODE_IS_JUMP) != 0)
-    return 1;
+  if ((intisa->opcodes[opc].flags & XTENSA_OPCODE_IS_JUMP) != 0) {
+	  return 1;
+  }
   return 0;
 }
 
@@ -780,8 +792,9 @@ xtensa_opcode_is_loop (xtensa_isa isa, xtensa_opcode opc)
 {
   xtensa_isa_internal *intisa = (xtensa_isa_internal *) isa;
   CHECK_OPCODE (intisa, opc, XTENSA_UNDEFINED);
-  if ((intisa->opcodes[opc].flags & XTENSA_OPCODE_IS_LOOP) != 0)
-    return 1;
+  if ((intisa->opcodes[opc].flags & XTENSA_OPCODE_IS_LOOP) != 0) {
+	  return 1;
+  }
   return 0;
 }
 
@@ -791,8 +804,9 @@ xtensa_opcode_is_call (xtensa_isa isa, xtensa_opcode opc)
 {
   xtensa_isa_internal *intisa = (xtensa_isa_internal *) isa;
   CHECK_OPCODE (intisa, opc, XTENSA_UNDEFINED);
-  if ((intisa->opcodes[opc].flags & XTENSA_OPCODE_IS_CALL) != 0)
-    return 1;
+  if ((intisa->opcodes[opc].flags & XTENSA_OPCODE_IS_CALL) != 0) {
+	  return 1;
+  }
   return 0;
 }
 
@@ -898,7 +912,9 @@ xtensa_operand_name (xtensa_isa isa, xtensa_opcode opc, int opnd)
   xtensa_operand_internal *intop;
 
   intop = get_operand (intisa, opc, opnd);
-  if (!intop) return NULL;
+  if (!intop) {
+	  return NULL;
+  }
   return intop->name;
 }
 
@@ -917,14 +933,16 @@ xtensa_operand_is_visible (xtensa_isa isa, xtensa_opcode opc, int opnd)
   CHECK_OPERAND (intisa, opc, iclass, opnd, XTENSA_UNDEFINED);
 
   /* Special case for "sout" operands.  */
-  if (iclass->operands[opnd].inout == 's')
-    return 0;
+  if (iclass->operands[opnd].inout == 's') {
+	  return 0;
+  }
 
   operand_id = iclass->operands[opnd].u.operand_id;
   intop = &intisa->operands[operand_id];
 
-  if ((intop->flags & XTENSA_OPERAND_IS_INVISIBLE) == 0)
-    return 1;
+  if ((intop->flags & XTENSA_OPERAND_IS_INVISIBLE) == 0) {
+	  return 1;
+  }
   return 0;
 }
 
@@ -944,8 +962,9 @@ xtensa_operand_inout (xtensa_isa isa, xtensa_opcode opc, int opnd)
   inout = iclass->operands[opnd].inout;
 
   /* Special case for "sout" operands.  */
-  if (inout == 's')
-    return 'o';
+  if (inout == 's') {
+	  return 'o';
+  }
 
   return inout;
 }
@@ -962,7 +981,9 @@ xtensa_operand_get_field (xtensa_isa isa, xtensa_opcode opc, int opnd,
   xtensa_get_field_fn get_fn;
 
   intop = get_operand (intisa, opc, opnd);
-  if (!intop) return -1;
+  if (!intop) {
+	  return -1;
+  }
 
   CHECK_FORMAT (intisa, fmt, -1);
   CHECK_SLOT (intisa, fmt, slot, -1);
@@ -999,7 +1020,9 @@ xtensa_operand_set_field (xtensa_isa isa, xtensa_opcode opc, int opnd,
   xtensa_set_field_fn set_fn;
 
   intop = get_operand (intisa, opc, opnd);
-  if (!intop) return -1;
+  if (!intop) {
+	  return -1;
+  }
 
   CHECK_FORMAT (intisa, fmt, -1);
   CHECK_SLOT (intisa, fmt, slot, -1);
@@ -1034,8 +1057,9 @@ xtensa_operand_encode (xtensa_isa isa, xtensa_opcode opc, int opnd,
   uint32 test_val, orig_val;
 
   intop = get_operand (intisa, opc, opnd);
-  if (!intop)
-    return -1;
+  if (!intop) {
+	  return -1;
+  }
 
   if (!intop->encode)
     {
@@ -1107,11 +1131,14 @@ xtensa_operand_decode (xtensa_isa isa, xtensa_opcode opc, int opnd,
   xtensa_operand_internal *intop;
 
   intop = get_operand (intisa, opc, opnd);
-  if (!intop) return -1;
+  if (!intop) {
+	  return -1;
+  }
 
   /* Use identity function for "default" operands.  */
-  if (!intop->decode)
-    return 0;
+  if (!intop->decode) {
+	  return 0;
+  }
 
   if ((*intop->decode) (valp))
     {
@@ -1130,10 +1157,13 @@ xtensa_operand_is_register (xtensa_isa isa, xtensa_opcode opc, int opnd)
   xtensa_operand_internal *intop;
 
   intop = get_operand (intisa, opc, opnd);
-  if (!intop) return XTENSA_UNDEFINED;
+  if (!intop) {
+	  return XTENSA_UNDEFINED;
+  }
 
-  if ((intop->flags & XTENSA_OPERAND_IS_REGISTER) != 0)
-    return 1;
+  if ((intop->flags & XTENSA_OPERAND_IS_REGISTER) != 0) {
+	  return 1;
+  }
   return 0;
 }
 
@@ -1145,7 +1175,9 @@ xtensa_operand_regfile (xtensa_isa isa, xtensa_opcode opc, int opnd)
   xtensa_operand_internal *intop;
 
   intop = get_operand (intisa, opc, opnd);
-  if (!intop) return XTENSA_UNDEFINED;
+  if (!intop) {
+	  return XTENSA_UNDEFINED;
+  }
 
   return intop->regfile;
 }
@@ -1158,7 +1190,9 @@ xtensa_operand_num_regs (xtensa_isa isa, xtensa_opcode opc, int opnd)
   xtensa_operand_internal *intop;
 
   intop = get_operand (intisa, opc, opnd);
-  if (!intop) return XTENSA_UNDEFINED;
+  if (!intop) {
+	  return XTENSA_UNDEFINED;
+  }
 
   return intop->num_regs;
 }
@@ -1171,10 +1205,13 @@ xtensa_operand_is_known_reg (xtensa_isa isa, xtensa_opcode opc, int opnd)
   xtensa_operand_internal *intop;
 
   intop = get_operand (intisa, opc, opnd);
-  if (!intop) return XTENSA_UNDEFINED;
+  if (!intop) {
+	  return XTENSA_UNDEFINED;
+  }
 
-  if ((intop->flags & XTENSA_OPERAND_IS_UNKNOWN) == 0)
-    return 1;
+  if ((intop->flags & XTENSA_OPERAND_IS_UNKNOWN) == 0) {
+	  return 1;
+  }
   return 0;
 }
 
@@ -1186,10 +1223,13 @@ xtensa_operand_is_PCrelative (xtensa_isa isa, xtensa_opcode opc, int opnd)
   xtensa_operand_internal *intop;
 
   intop = get_operand (intisa, opc, opnd);
-  if (!intop) return XTENSA_UNDEFINED;
+  if (!intop) {
+	  return XTENSA_UNDEFINED;
+  }
 
-  if ((intop->flags & XTENSA_OPERAND_IS_PCRELATIVE) != 0)
-    return 1;
+  if ((intop->flags & XTENSA_OPERAND_IS_PCRELATIVE) != 0) {
+	  return 1;
+  }
   return 0;
 }
 
@@ -1202,10 +1242,13 @@ xtensa_operand_do_reloc (xtensa_isa isa, xtensa_opcode opc, int opnd,
   xtensa_operand_internal *intop;
 
   intop = get_operand (intisa, opc, opnd);
-  if (!intop) return -1;
+  if (!intop) {
+	  return -1;
+  }
 
-  if ((intop->flags & XTENSA_OPERAND_IS_PCRELATIVE) == 0)
-    return 0;
+  if ((intop->flags & XTENSA_OPERAND_IS_PCRELATIVE) == 0) {
+	  return 0;
+  }
 
   if (!intop->do_reloc)
     {
@@ -1234,10 +1277,13 @@ xtensa_operand_undo_reloc (xtensa_isa isa, xtensa_opcode opc, int opnd,
   xtensa_operand_internal *intop;
 
   intop = get_operand (intisa, opc, opnd);
-  if (!intop) return -1;
+  if (!intop) {
+	  return -1;
+  }
 
-  if ((intop->flags & XTENSA_OPERAND_IS_PCRELATIVE) == 0)
-    return 0;
+  if ((intop->flags & XTENSA_OPERAND_IS_PCRELATIVE) == 0) {
+	  return 0;
+  }
 
   if (!intop->undo_reloc)
     {
@@ -1370,8 +1416,9 @@ xtensa_regfile_lookup (xtensa_isa isa, const char *name)
   /* The expected number of regfiles is small; use a linear search.  */
   for (n = 0; n < intisa->num_regfiles; n++)
     {
-      if (!filename_cmp (intisa->regfiles[n].name, name))
-	return n;
+	  if (!filename_cmp (intisa->regfiles[n].name, name)) {
+		  return n;
+	  }
     }
 
   xtisa_errno = xtensa_isa_bad_regfile;
@@ -1398,10 +1445,12 @@ xtensa_regfile_lookup_shortname (xtensa_isa isa, const char *shortname)
     {
       /* Ignore regfile views since they always have the same shortnames
 	 as their parents.  */
-      if (intisa->regfiles[n].parent != n)
-	continue;
-      if (!filename_cmp (intisa->regfiles[n].shortname, shortname))
-	return n;
+      if (intisa->regfiles[n].parent != n) {
+	      continue;
+      }
+      if (!filename_cmp (intisa->regfiles[n].shortname, shortname)) {
+	      return n;
+      }
     }
 
   xtisa_errno = xtensa_isa_bad_regfile;
@@ -1525,8 +1574,9 @@ xtensa_state_is_exported (xtensa_isa isa, xtensa_state st)
 {
   xtensa_isa_internal *intisa = (xtensa_isa_internal *) isa;
   CHECK_STATE (intisa, st, XTENSA_UNDEFINED);
-  if ((intisa->states[st].flags & XTENSA_STATE_IS_EXPORTED) != 0)
-    return 1;
+  if ((intisa->states[st].flags & XTENSA_STATE_IS_EXPORTED) != 0) {
+	  return 1;
+  }
   return 0;
 }
 
@@ -1536,8 +1586,9 @@ xtensa_state_is_shared_or (xtensa_isa isa, xtensa_state st)
 {
   xtensa_isa_internal *intisa = (xtensa_isa_internal *) isa;
   CHECK_STATE (intisa, st, XTENSA_UNDEFINED);
-  if ((intisa->states[st].flags & XTENSA_STATE_IS_SHARED_OR) != 0)
-    return 1;
+  if ((intisa->states[st].flags & XTENSA_STATE_IS_SHARED_OR) != 0) {
+	  return 1;
+  }
   return 0;
 }
 
@@ -1562,8 +1613,9 @@ xtensa_sysreg_lookup (xtensa_isa isa, int num, int is_user)
 {
   xtensa_isa_internal *intisa = (xtensa_isa_internal *) isa;
 
-  if (is_user != 0)
-    is_user = 1;
+  if (is_user != 0) {
+	  is_user = 1;
+  }
 
   if (num < 0 || num > intisa->max_sysreg_num[is_user]
       || intisa->sysreg_table[is_user][num] == XTENSA_UNDEFINED)
@@ -1632,8 +1684,9 @@ xtensa_sysreg_is_user (xtensa_isa isa, xtensa_sysreg sysreg)
 {
   xtensa_isa_internal *intisa = (xtensa_isa_internal *) isa;
   CHECK_SYSREG (intisa, sysreg, XTENSA_UNDEFINED);
-  if (intisa->sysregs[sysreg].is_user)
-    return 1;
+  if (intisa->sysregs[sysreg].is_user) {
+	  return 1;
+  }
   return 0;
 }
 
@@ -1717,8 +1770,9 @@ xtensa_interface_has_side_effect (xtensa_isa isa, xtensa_interface intf)
 {
   xtensa_isa_internal *intisa = (xtensa_isa_internal *) isa;
   CHECK_INTERFACE (intisa, intf, XTENSA_UNDEFINED);
-  if ((intisa->interfaces[intf].flags & XTENSA_INTERFACE_HAS_SIDE_EFFECT) != 0)
-    return 1;
+  if ((intisa->interfaces[intf].flags & XTENSA_INTERFACE_HAS_SIDE_EFFECT) != 0) {
+	  return 1;
+  }
   return 0;
 }
 

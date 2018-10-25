@@ -8,6 +8,8 @@ DEPS+=r_cons
 LINK+=$(STOP)/tcc/libr_tcc.a
 CFLAGS+=-I$(STOP)/tcc/
 
+include $(SHLR)/zip/deps.mk
+
 foo:
 	@for TARGET in pre libr_parse.${EXT_SO} \
 	libr_parse.${EXT_AR} plugins bins ; do \
@@ -18,16 +20,10 @@ CFLAGS+=-DCORELIB
 STATIC_OBJS=$(subst ..,p/..,$(subst parse_,p/parse_,$(STATIC_OBJ)))
 OBJS=parse.o code.o ${STATIC_OBJS}
 
+pre:
+
 bins:
 #	@cd t && ${MAKE} all
-
-pre:
-ifeq ($(WITHNONPIC),1)
-	@if [ ! -e libr_parse.${EXT_AR} ]; then rm -f ${STATIC_OBJS} ; fi
-endif
-ifeq ($(WITHPIC),1)
-	@if [ ! -e libr_parse.${EXT_SO} ]; then rm -f ${STATIC_OBJS} ; fi
-endif
 
 plugins:
 	@cd p && ${MAKE} all

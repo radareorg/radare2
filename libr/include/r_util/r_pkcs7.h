@@ -1,6 +1,10 @@
 #ifndef R_PKCS7_H
 #define R_PKCS7_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct r_pkcs7_certificaterevocationlists_t {
 	ut32 length;
 	RX509CertificateRevocationList **elements;
@@ -67,8 +71,11 @@ typedef struct r_pkcs7_container_t {
 
 R_API RCMS *r_pkcs7_parse_cms(const ut8 *buffer, ut32 length);
 R_API void r_pkcs7_free_cms(RCMS* container);
-R_API char* r_pkcs7_cms_dump(RCMS* container);
+R_API char *r_pkcs7_cms_to_string(RCMS* container);
 R_API RJSVar *r_pkcs7_cms_json(RCMS* container);
 
-#endif /* R_PKCS7_H */
+#ifdef __cplusplus
+}
+#endif
 
+#endif /* R_PKCS7_H */

@@ -8,8 +8,6 @@
 extern "C" {
 #endif
 
-// TODO: implement r_list_foreach_prev
-
 #ifndef _INCLUDE_R_LIST_HEAD_H_
 #define _INCLUDE_R_LIST_HEAD_H_
 typedef void (*RListFree)(void *ptr);
@@ -28,7 +26,7 @@ typedef struct r_list_t {
 } RList;
 
 typedef struct r_list_range_t {
-	SdbHash *h;
+	SdbHt *h;
 	RList *l;
 	//RListComparator c;
 } RListRange;
@@ -46,19 +44,25 @@ typedef struct r_oflist_t {
 //#define R_LIST_NEW(x,y) x=r_list_new();x->free=(RListFree)y
 #define r_list_foreach(list, it, pos)\
 	if (list)\
-		for (it = list->head; it && (pos = it->data); it = it->n)
+		for (it = list->head; it && (pos = it->data, 1); it = it->n)
+#define r_list_foreach_iter(list, it)\
+	if (list)\
+		for (it = list->head; it; it = it->n)
 /* Safe when calling r_list_delete() while iterating over the list. */
 #define r_list_foreach_safe(list, it, tmp, pos)\
 	if (list)\
-		for (it = list->head; it && (pos = it->data) && ((tmp = it->n) || 1); it = tmp)
+		for (it = list->head; it && (pos = it->data, tmp = it->n, 1); it = tmp)
 #define r_list_foreach_prev(list, it, pos)\
 	if (list)\
-		for (it = list->tail; it && (pos = it->data); it = it->p)
+		for (it = list->tail; it && (pos = it->data, 1); it = it->p)
+#define r_list_foreach_prev_safe(list, it, tmp, pos) \
+	for (it = list->tail; it && (pos = it->data, tmp = it->p, 1); it = tmp)
 #ifndef _R_LIST_C_
 #define r_list_push(x, y) r_list_append (x, y)
 #define r_list_iterator(x) (x)? (x)->head: NULL
-#define r_list_empty(x) (!x || (!(x->head) && !(x->tail)))
-#define r_list_head(x) x->head
+// #define r_list_empty(x) (!x || (!(x->head) && !(x->tail)))
+#define r_list_empty(x) (!(x) || !(x)->length)
+#define r_list_head(x) ((x)? (x)->head: NULL)
 #define r_list_tail(x) x->tail
 
 #define r_list_iter_get(x)\
@@ -81,6 +85,7 @@ R_API int r_list_length(const RList *list);
 R_API void *r_list_first(const RList *list);
 R_API RListIter *r_list_add_sorted(RList *list, void *data, RListComparator cmp);
 R_API void r_list_sort(RList *list, RListComparator cmp);
+R_API RList *r_list_uniq(const RList *list, RListComparator cmp);
 R_API void r_list_merge_sort(RList *list, RListComparator cmp);
 R_API void r_list_insertion_sort(RList *list, RListComparator cmp);
 

@@ -20,10 +20,10 @@ typedef struct {
 
 memChunk *memReserve(long size);
 void      memCopy(memChunk *dest,memChunk *source);
-memInfo  *memInformation();
-long	  memAllocated();
+memInfo  *memInformation(void);
+long	  memAllocated(void);
 void      memFree(memChunk *chunk);
-void      memCheckState();
+void      memCheckState(void);
 
 void      memStrCat(memChunk *dest,char *string);
 memChunk *memString(char *string);

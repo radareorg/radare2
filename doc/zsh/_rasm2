@@ -1,0 +1,64 @@
+#compdef rasm2
+local context state state_descr line
+local -i ret=1
+
+r2_qc() {
+  r2 -qc $1 --
+}
+
+_rasm2() {
+  local -a options=(
+  '-a+[Set architecture to assemble/disassemble (see -L)]: :->arch'
+  '-A[Show Analysis information from given hexpairs]'
+  '-b+[Set cpu register size (8, 16, 32, 64) (RASM2_BITS)]:bits:(8 16 32 64)'
+  '-c+[Select specific CPU (depends on arch)]:cpu'
+  '-C[Output in C format]'
+  '(-d -D)'{-d,-D}'[Disassemble from hexpair bytes (-D show hexpairs)]'
+  '-e[Use big endian instead of little endian]'
+  '-E[Display ESIL expression (same input as in -d)]'
+  '-f+[Read data from file]: :_files'
+  '-F+[Specify input and/or output filters (att2intel, x86.pseudo, ...)]:in\:out'
+  '(-h, -hh)'{-h,-hh}'[show help message, -hh for long]'
+  '-i+[ignore/skip N bytes of the input buffer]:bytes'
+  '(-j -r)-j[output in json format]'
+  '-k+[Select operating system (linux, windows, darwin, ..)]: :->asm.os'
+  '-l+[Input/Output length]:len'
+  '-L[List Asm plugins: (a=asm, d=disasm, A=analyze, e=ESIL)]'
+  '-o+[Set start address for code (default 0)]:offset'
+  '-O+[Output file name (rasm2 -Bf a.asm -O a)]: :_files'
+  '-p[Run SPP over input for assembly]'
+  '(-j -r)-r[output in radare commands]'
+  '-s+[Select syntax (intel, att)]: :->syntax'
+  '-B[Binary input/output (-l is mandatory for binary input)]'
+  '-v[Show version information]'
+  "-w[What's this instruction for? describe opcode]"
+  '-q[quiet mode]'
+  )
+
+  _arguments -S -s : $options '1:code|hex|-' && ret=0
+
+  case $state in
+    arch)
+      local -a sub=(${(f)"$(rasm2 -L | cut -c 18-28 | tr -d ' ')"})
+      _values 'arch' $sub && ret=0
+      ;;
+    asm.os)
+      _values 'asm.os' $(r2_qc 'e asm.os=?') && ret=0
+      ;;
+    syntax)
+      _values 'syntax' $(rasm2 '-s?') && ret=0
+      ;;
+  esac
+  return ret
+}
+
+_rasm2 "$@"
+
+# Local Variables:
+# mode: shell-script
+# coding: utf-8-unix
+# indent-tabs-mode: nil
+# sh-indentation: 2
+# sh-basic-offset: 2
+# End:
+# vim: ft=zsh sw=2 sts=2 et

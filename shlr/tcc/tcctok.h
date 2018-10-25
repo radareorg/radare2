@@ -1,4 +1,17 @@
 /* keywords */
+/* Here we define intN_t as an atoms
+ * due to the specific application of this parser */
+	 DEF(TOK_INT8, "int8_t")
+	 DEF(TOK_UINT8, "uint8_t")
+	 DEF(TOK_INT16, "int16_t")
+	 DEF(TOK_UINT16, "uint16_t")
+	 DEF(TOK_INT32, "int32_t")
+	 DEF(TOK_UINT32, "uint32_t")
+	 DEF(TOK_INT64, "int64_t")
+	 DEF(TOK_UINT64, "uint64_t")
+	 DEF(TOK_INT128, "int128_t")
+	 DEF(TOK_UINT128, "uint128_t")
+/* THose will depend from the target platform */
      DEF(TOK_INT, "int")
      DEF(TOK_VOID, "void")
      DEF(TOK_CHAR, "char")
@@ -36,10 +49,10 @@
      DEF(TOK_RESTRICT2, "__restrict")
      DEF(TOK_RESTRICT3, "__restrict__")
      DEF(TOK_EXTENSION, "__extension__") /* gcc keyword */
-     
      DEF(TOK_FLOAT, "float")
      DEF(TOK_DOUBLE, "double")
      DEF(TOK_BOOL, "_Bool")
+	 DEF(TOK_STDBOOL, "bool")
      DEF(TOK_SHORT, "short")
      DEF(TOK_STRUCT, "struct")
      DEF(TOK_UNION, "union")
@@ -124,106 +137,78 @@
      DEF(TOK_builtin_types_compatible_p, "__builtin_types_compatible_p")
      DEF(TOK_builtin_constant_p, "__builtin_constant_p")
      DEF(TOK_builtin_frame_address, "__builtin_frame_address")
-#ifdef TCC_TARGET_X86_64
-#ifdef TCC_TARGET_PE
      DEF(TOK_builtin_va_start, "__builtin_va_start")
-#else
      DEF(TOK_builtin_va_arg_types, "__builtin_va_arg_types")
-#endif
-#endif
      DEF(TOK_REGPARM1, "regparm")
      DEF(TOK_REGPARM2, "__regparm__")
 
 /* pragma */
      DEF(TOK_pack, "pack")
-#if !defined(TCC_TARGET_I386) && !defined(TCC_TARGET_X86_64)
      /* already defined for assembler */
      DEF(TOK_ASM_push, "push")
      DEF(TOK_ASM_pop, "pop")
-#endif
 
 /* builtin functions or variables */
-#ifdef TCC_ARM_EABI
-     DEF(TOK_memcpy, "__aeabi_memcpy")
-     DEF(TOK_memcpy4, "__aeabi_memcpy4")
-     DEF(TOK_memcpy8, "__aeabi_memcpy8")
-     DEF(TOK_memset, "__aeabi_memset")
+     DEF(TOK___aeabi_memcpy, "__aeabi_memcpy")
+     DEF(TOK___aeabi_memcpy4, "__aeabi_memcpy4")
+     DEF(TOK___aeabi_memcpy8, "__aeabi_memcpy8")
+     DEF(TOK___aeabi_memset, "__aeabi_memset")
      DEF(TOK___aeabi_ldivmod, "__aeabi_ldivmod")
      DEF(TOK___aeabi_uldivmod, "__aeabi_uldivmod")
-#else
      DEF(TOK_memcpy, "memcpy")
      DEF(TOK_memset, "memset")
      DEF(TOK___divdi3, "__divdi3")
      DEF(TOK___moddi3, "__moddi3")
      DEF(TOK___udivdi3, "__udivdi3")
      DEF(TOK___umoddi3, "__umoddi3")
-#endif
-#if defined(TCC_TARGET_ARM)
-#ifdef TCC_ARM_EABI
      DEF(TOK___aeabi_idivmod, "__aeabi_idivmod")
      DEF(TOK___aeabi_uidivmod, "__aeabi_uidivmod")
-     DEF(TOK___divsi3, "__aeabi_idiv")
-     DEF(TOK___udivsi3, "__aeabi_uidiv")
-     DEF(TOK___floatdisf, "__aeabi_l2f")
-     DEF(TOK___floatdidf, "__aeabi_l2d")
-     DEF(TOK___fixsfdi, "__aeabi_f2lz")
-     DEF(TOK___fixdfdi, "__aeabi_d2lz")
-#else
+     DEF(TOK___aeabi_divsi3, "__aeabi_idiv")
+     DEF(TOK___aeabi_udivsi3, "__aeabi_uidiv")
+     DEF(TOK___aeabi_floatdisf, "__aeabi_l2f")
+     DEF(TOK___aeabi_floatdidf, "__aeabi_l2d")
+     DEF(TOK___aeabi_fixsfdi, "__aeabi_f2lz")
+     DEF(TOK___aeabi_fixdfdi, "__aeabi_d2lz")
      DEF(TOK___modsi3, "__modsi3")
      DEF(TOK___umodsi3, "__umodsi3")
      DEF(TOK___divsi3, "__divsi3")
      DEF(TOK___udivsi3, "__udivsi3")
      DEF(TOK___floatdisf, "__floatdisf")
      DEF(TOK___floatdidf, "__floatdidf")
-#ifndef TCC_ARM_VFP
      DEF(TOK___floatdixf, "__floatdixf")
      DEF(TOK___fixunssfsi, "__fixunssfsi")
      DEF(TOK___fixunsdfsi, "__fixunsdfsi")
      DEF(TOK___fixunsxfsi, "__fixunsxfsi")
      DEF(TOK___fixxfdi, "__fixxfdi")
-#endif
      DEF(TOK___fixsfdi, "__fixsfdi")
      DEF(TOK___fixdfdi, "__fixdfdi")
-#endif
-#elif defined(TCC_TARGET_C67)
      DEF(TOK__divi, "_divi")
      DEF(TOK__divu, "_divu")
      DEF(TOK__divf, "_divf")
      DEF(TOK__divd, "_divd")
      DEF(TOK__remi, "_remi")
      DEF(TOK__remu, "_remu")
-#endif
-#ifdef TCC_TARGET_I386
      DEF(TOK___tcc_int_fpu_control, "__tcc_int_fpu_control")
      DEF(TOK___tcc_fpu_control, "__tcc_fpu_control")
-#endif
-#ifdef TCC_ARM_EABI
-     DEF(TOK___ashrdi3, "__aeabi_lasr")
-     DEF(TOK___lshrdi3, "__aeabi_llsr")
-     DEF(TOK___ashldi3, "__aeabi_llsl")
-     DEF(TOK___floatundisf, "__aeabi_ul2f")
-     DEF(TOK___floatundidf, "__aeabi_ul2d")
-     DEF(TOK___fixunssfdi, "__aeabi_f2ulz")
-     DEF(TOK___fixunsdfdi, "__aeabi_d2ulz")
-#else
+     DEF(TOK___aeabi_ashrdi3, "__aeabi_lasr")
+     DEF(TOK___aeabi_lshrdi3, "__aeabi_llsr")
+     DEF(TOK___aeabi_ashldi3, "__aeabi_llsl")
+     DEF(TOK___aeabi_floatundisf, "__aeabi_ul2f")
+     DEF(TOK___aeabi_floatundidf, "__aeabi_ul2d")
+     DEF(TOK___aeabi_fixunssfdi, "__aeabi_f2ulz")
+     DEF(TOK___aeabi_fixunsdfdi, "__aeabi_d2ulz")
      DEF(TOK___ashrdi3, "__ashrdi3")
      DEF(TOK___lshrdi3, "__lshrdi3")
      DEF(TOK___ashldi3, "__ashldi3")
      DEF(TOK___floatundisf, "__floatundisf")
      DEF(TOK___floatundidf, "__floatundidf")
-#ifndef TCC_ARM_VFP
      DEF(TOK___floatundixf, "__floatundixf")
      DEF(TOK___fixunsxfdi, "__fixunsxfdi")
-#endif
      DEF(TOK___fixunssfdi, "__fixunssfdi")
      DEF(TOK___fixunsdfdi, "__fixunsdfdi")
-#endif
-#ifdef TCC_TARGET_PE
      DEF(TOK___chkstk, "__chkstk")
-#endif
 
 /* bound checking symbols */
-#ifdef CONFIG_TCC_BCHECK
      DEF(TOK___bound_ptr_add, "__bound_ptr_add")
      DEF(TOK___bound_ptr_indir1, "__bound_ptr_indir1")
      DEF(TOK___bound_ptr_indir2, "__bound_ptr_indir2")
@@ -233,50 +218,13 @@
      DEF(TOK___bound_ptr_indir16, "__bound_ptr_indir16")
      DEF(TOK___bound_local_new, "__bound_local_new")
      DEF(TOK___bound_local_delete, "__bound_local_delete")
-#ifdef TCC_TARGET_PE
      DEF(TOK_malloc, "malloc")
      DEF(TOK_free, "free")
      DEF(TOK_realloc, "realloc")
      DEF(TOK_memalign, "memalign")
      DEF(TOK_calloc, "calloc")
-#endif
      DEF(TOK_memmove, "memmove")
      DEF(TOK_strlen, "strlen")
      DEF(TOK_strcpy, "strcpy")
-#endif
-#if defined TCC_TARGET_I386 || defined TCC_TARGET_X86_64
      DEF(TOK_alloca, "alloca")
-#endif
 
-/* Tiny Assembler */
- DEF_ASM(byte)
- DEF_ASM(word)
- DEF_ASM(align)
- DEF_ASM(skip)
- DEF_ASM(space)
- DEF_ASM(string)
- DEF_ASM(asciz)
- DEF_ASM(ascii)
- DEF_ASM(file)
- DEF_ASM(globl)
- DEF_ASM(global)
- DEF_ASM(ident)
- DEF_ASM(size)
- DEF_ASM(type)
- DEF_ASM(text)
- DEF_ASM(data)
- DEF_ASM(bss)
- DEF_ASM(previous)
- DEF_ASM(fill)
- DEF_ASM(org)
- DEF_ASM(quad)
-#if defined(TCC_TARGET_I386)
- DEF_ASM(code16)
- DEF_ASM(code32)
-#elif defined(TCC_TARGET_X86_64)
- DEF_ASM(code64)
-#endif
-
-#if defined TCC_TARGET_I386 || defined TCC_TARGET_X86_64
-#include "i386-tok.h"
-#endif

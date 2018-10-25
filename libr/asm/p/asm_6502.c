@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2012-2015 - pancake, condret */
+/* radare - LGPL - Copyright 2012-2018 - pancake, condret */
 
 // copypasta from asm_gb.c
-
 #include <r_types.h>
 #include <r_util.h>
 #include <r_asm.h>
@@ -10,9 +9,7 @@
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int dlen = _6502Disass (a->pc, op, buf, len);
-	if(dlen<0) dlen=0;
-	op->size = dlen;
-	return dlen;
+	return op->size = R_MAX (dlen, 0);
 }
 
 RAsmPlugin r_asm_plugin_6502 = {
@@ -26,7 +23,7 @@ RAsmPlugin r_asm_plugin_6502 = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_6502,
 	.version = R2_VERSION

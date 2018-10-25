@@ -13,18 +13,21 @@ LDFLAGS+=-L$(LTOP)/io -lr_io
 endif
 SHLR=$(LTOP)/../shlr
 
-foo: all
+ifeq ($(WITHPIC),1)
+all: ${ALL_TARGETS}
 
 ALL_TARGETS=
 FORMATS=any.mk elf.mk elf64.mk pe.mk pe64.mk te.mk mach0.mk
-FORMATS+=bios.mk mach064.mk fatmach0.mk dyldcache.mk java.mk
+FORMATS+=bios.mk mach064.mk dyldcache.mk java.mk
 FORMATS+=dex.mk fs.mk ningb.mk coff.mk ningba.mk xbe.mk zimg.mk
 FORMATS+=omf.mk cgc.mk dol.mk nes.mk mbn.mk psxexe.mk spc700.mk
-FORMATS+=vsf.mk nin3ds.mk xtr_dyldcache.mk bflt.mk wasm.mk sfc.mk
-include $(FORMATS)
+FORMATS+=vsf.mk nin3ds.mk bflt.mk wasm.mk sfc.mk
+FORMATS+=mdmp.mk z64.mk
 
-all: ${ALL_TARGETS}
-	@true
+FORMATS+=xtr_dyldcache.mk
+FORMATS+=xtr_fatmach0.mk
+
+include $(FORMATS)
 
 clean:
 	-rm -f *.so *.o ${STATIC_OBJ}
@@ -32,4 +35,9 @@ clean:
 mrproper: clean
 	-rm -f *.d $(TOP)/libr/bin/format/*/*.d
 
-.PHONY: all clean foo mrproper
+.PHONY: all clean mrproper
+else
+all clean mrproper:
+
+.PHONY: all clean mrproper
+endif

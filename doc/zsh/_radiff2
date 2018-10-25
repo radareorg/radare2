@@ -1,0 +1,61 @@
+#compdef radiff2
+local context state state_descr line
+local -i ret=1
+
+r2_qc() {
+  r2 -qc $1 --
+}
+
+_radiff2() {
+  local -a options=(
+  '-a[specify architecture plugin to use (x86, arm, ..)]: :->arch'
+  '(-A -AA)-A[run aaa after loading each binary (see -C)]'
+  '(-A -AA)-AA[run aaaa after loading each binary (see -C)]'
+  '-b+[specify register size for arch (16 (thumb), 32, 64, ..)]:bits:(8 16 32 64)'
+  '-c[count of changes]'
+  '(-C -g -i)-C[graphdiff code (columns: off-A, match-ratio, off-B) (see -A)]'
+  '-d[use delta diffing]'
+  '-D[show disasm instead of hexpairs]'
+  '-e+[set eval config var value for all RCore instances]:config'
+  '(-C -g -i)-g+[graph diff of given symbol, or between two offsets]:sym|off1,off2'
+  '-G+[run an r2 command on every RCore instance created]:cmd'
+  '(-C -g -i)-i[diff imports of target files (see -u, -U and -z)]'
+  '(-j -r -u -U)-j[output in json format]'
+  '-n[print bare addresses only (diff.bare=1)]'
+  '-O[code diffing with opcode bytes only]'
+  '-p[use physical addressing (io.va=0)]'
+  '-q[quiet mode (disable colors, reduce output)]'
+  '(-j -r -u -U)-r[output in radare commands]'
+  '(-s -ss)-s[compute text distance]'
+  '(-s -ss)-ss[compute text distance (using levenstein algorithm)]'
+  '-S+[sort code diff (name, namelen, addr, size, type, dist) (only for -C or -g)]:sort:(addr dist name namelen size type)'
+  '-t+[set threshold for code diff (default is 70%)]:0-100'
+  '-x[show two column hexdump diffing]'
+  '(-j -r -u -U)-u[unified output (---+++)]'
+  "(-j -r -u -U)-U[unified output using system 'diff']"
+  '-v[show version information]'
+  '-V[be verbose (current only for -s)]'
+  '-z[diff on extracted strings]'
+  )
+
+  _arguments -S -s : $options '1:file:_files' '2:file:_files' && ret=0
+
+  case $state in
+    arch)
+      local -a sub=(${(f)"$(r2_qc 'e asm.arch=?')"})
+      _values 'arch' $sub && ret=0
+      ;;
+  esac
+  return ret
+}
+
+_radiff2 "$@"
+
+# Local Variables:
+# mode: shell-script
+# coding: utf-8-unix
+# indent-tabs-mode: nil
+# sh-indentation: 2
+# sh-basic-offset: 2
+# End:
+# vim: ft=zsh sw=2 sts=2 et

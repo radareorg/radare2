@@ -1,0 +1,5 @@
+malloc
+free
+calloc
+kalloc
+realloc

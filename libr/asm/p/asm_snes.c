@@ -10,7 +10,9 @@
 static struct snes_asm_flags* snesflags = NULL;
 
 static bool snes_asm_init (void* user) {
-	if (!snesflags) snesflags = malloc(sizeof( struct snes_asm_flags ));
+	if (!snesflags) {
+		snesflags = malloc (sizeof (struct snes_asm_flags));
+	}
 	memset(snesflags,0,sizeof (struct snes_asm_flags));
 	return 0;
 }
@@ -23,14 +25,24 @@ static bool snes_asm_fini (void* user) {
 
 static int dis(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	int dlen = snesDisass (snesflags->M, snesflags->X, a->pc, op, buf, len);
-	if (dlen<0) dlen=0;
+	if (dlen < 0) {
+		dlen = 0;
+	}
 	op->size = dlen;
 	if (buf[0] == 0xc2) { //REP
-		if ( buf[1] & 0x10 ) snesflags->X = 0;
-		if ( buf[1] & 0x20 ) snesflags->M = 0;
+		if (buf[1] & 0x10) {
+			snesflags->X = 0;
+		}
+		if (buf[1] & 0x20) {
+			snesflags->M = 0;
+		}
 	} else if (buf[0] == 0xe2) { //SEP
-		if ( buf[1] & 0x10 ) snesflags->X = 1;
-		if ( buf[1] & 0x20 ) snesflags->M = 1;
+		if (buf[1] & 0x10) {
+			snesflags->X = 1;
+		}
+		if (buf[1] & 0x20) {
+			snesflags->M = 1;
+		}
 	}
 	return dlen;
 }
@@ -48,7 +60,7 @@ RAsmPlugin r_asm_plugin_snes = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_snes,
 	.version = R2_VERSION

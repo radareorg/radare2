@@ -16,7 +16,7 @@ static RCoreFile *openself(void) {
 	char *out = r_core_cmd_str (core, "o");
 	if (out) {
 		if (!strstr (out, "self://")) {
-			fd = r_core_file_open (core, "self://", R_IO_RW, 0);
+			fd = r_core_file_open (core, "self://", R_PERM_RW, 0);
 		}
 		free (out);
 	}
@@ -33,6 +33,7 @@ static void sigusr2(int s) {
 	(void)openself();
 	r_core_cmd0 (core, "=H&");
 }
+
 static void _libwrap_init() __attribute__ ((constructor));
 static void _libwrap_init() {
 	char *web;
@@ -73,7 +74,7 @@ void alloc_console() {
 static void start_r2() {
 	core = r_core_new ();
 	r_core_loadlibs (core, R_CORE_LOADLIBS_ALL, NULL);
-	RCoreFile *fd = r_core_file_open (core, "self://", R_IO_RW, 0);
+	RCoreFile *fd = r_core_file_open (core, "self://", R_PERM_RW, 0);
 	r_core_prompt_loop (core);
 	r_core_file_close (core, fd);
 }

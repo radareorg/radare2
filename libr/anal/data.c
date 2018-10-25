@@ -5,7 +5,9 @@
 #define MINLEN 1
 static int is_string(const ut8 *buf, int size, int *len) {
 	int i;
-	if (size < 1) return 0;
+	if (size < 1) {
+		return 0;
+	}
 	if (size > 3 && buf[0] && !buf[1] && buf[2] && !buf[3]) {
 		*len = 1; // XXX: TODO: Measure wide string length
 		return 2; // is wide
@@ -42,8 +44,12 @@ static int is_null(const ut8 *buf, int size) {
 }
 
 static int is_invalid(const ut8 *buf, int size) {
-	if (size < 1) return 1;
-	if (size > 8) size = 8;
+	if (size < 1) {
+		return 1;
+	}
+	if (size > 8) {
+		size = 8;
+	}
 	return (!memcmp (buf, "\xff\xff\xff\xff\xff\xff\xff\xff", size))? 1: 0;
 }
 
@@ -52,10 +58,13 @@ static ut64 is_pointer(RAnal *anal, const ut8 *buf, int size) {
 	ut64 n;
 	ut8 buf2[32];
 	RIOBind *iob = &anal->iob;
-	if (size > sizeof (buf2))
+	if (size > sizeof (buf2)) {
 		size = sizeof (buf2);
+	}
 	n = r_mem_get_num (buf, size);
-	if (!n) return 1; // null pointer
+	if (!n) {
+		return 1; // null pointer
+	}
 #if USE_IS_VALID_OFFSET
 	int r = iob->is_valid_offset (iob->io, n, 0);
 	return r? n: 0LL;
@@ -89,16 +98,18 @@ static bool is_bin(const ut8 *buf, int size) {
 // TODO: add is_flag, is comment?
 
 // XXX: optimize by removing all strlens here
-R_API char *r_anal_data_to_string(RAnalData *d, RConsPalette *pal) {
+R_API char *r_anal_data_to_string(RAnalData *d, RConsPrintablePalette *pal) {
 	int i, len, idx, mallocsz = 1024;
 	ut32 n32;
 	char *line;
 
-	if (!d) return NULL;
+	if (!d) {
+		return NULL;
+	}
 
 	line = malloc (mallocsz);
 	if (!line) {
-		eprintf ("Cannot allocate %d bytes\n", mallocsz);
+		eprintf ("Cannot allocate %d byte(s)\n", mallocsz);
 		return NULL;
 	}
 	if (pal) {
@@ -203,7 +214,9 @@ R_API char *r_anal_data_to_string(RAnalData *d, RConsPalette *pal) {
 
 R_API RAnalData *r_anal_data_new_string(ut64 addr, const char *p, int len, int type) {
 	RAnalData *ad = R_NEW0 (RAnalData);
-	if (!ad) return NULL;
+	if (!ad) {
+		return NULL;
+	}
 	ad->str = NULL;
 	ad->addr = addr;
 	ad->type = type;
@@ -224,7 +237,7 @@ R_API RAnalData *r_anal_data_new_string(ut64 addr, const char *p, int len, int t
 		ad->buf = malloc (len + 1);
 		if (!ad->buf) {
 			r_anal_data_free (ad);
-			eprintf ("Cannot allocate %d bytes\n", len + 1);
+			eprintf ("Cannot allocate %d byte(s)\n", len + 1);
 			return NULL;
 		}
 		memcpy (ad->buf, ad->str, len + 1);
@@ -330,7 +343,9 @@ R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size, i
 	}
 	if (size >= word) {
 		n = is_number (buf, word);
-		if (n) return r_anal_data_new (addr, R_ANAL_DATA_TYPE_NUMBER, n, buf, word);
+		if (n) {
+			return r_anal_data_new (addr, R_ANAL_DATA_TYPE_NUMBER, n, buf, word);
+		}
 	}
 	return r_anal_data_new (addr, R_ANAL_DATA_TYPE_UNKNOWN, dst, buf, R_MIN (word, size));
 }
@@ -344,8 +359,9 @@ R_API const char *r_anal_data_kind(RAnal *a, ut64 addr, const ut8 *buf, int len)
 	RAnalData *data;
 	int word = a->bits / 8;
 	for (i = j = 0; i < len; j++) {
-		if (str && !buf[i])
+		if (str && !buf[i]) {
 			str++;
+		}
 		data = r_anal_data (a, addr + i, buf + i, len - i, 0);
 		if (!data) {
 			i += word;
@@ -357,7 +373,9 @@ R_API const char *r_anal_data_kind(RAnal *a, ut64 addr, const ut8 *buf, int len)
 			i += word;
 			break;
 		case R_ANAL_DATA_TYPE_NUMBER:
-			if (data->ptr > 1000) num++;
+			if (data->ptr > 1000) {
+				num++;
+			}
 			i += word;
 			break;
 		case R_ANAL_DATA_TYPE_UNKNOWN:
@@ -367,7 +385,9 @@ R_API const char *r_anal_data_kind(RAnal *a, ut64 addr, const ut8 *buf, int len)
 		case R_ANAL_DATA_TYPE_STRING:
 			if (data->len > 0) {
 				i += data->len;
-			} else i += word;
+			} else {
+				i += word;
+			}
 			str++;
 			break;
 		default:
@@ -375,10 +395,20 @@ R_API const char *r_anal_data_kind(RAnal *a, ut64 addr, const ut8 *buf, int len)
 		}
 		r_anal_data_free (data);
 	}
-	if (j < 1) return "unknown";
-	if ((inv * 100 / j) > 60) return "invalid";
-	if ((unk * 100 / j) > 60) return "code";
-	if ((num * 100 / j) > 60) return "code";
-	if ((str * 100 / j) > 40) return "text";
+	if (j < 1) {
+		return "unknown";
+	}
+	if ((inv * 100 / j) > 60) {
+		return "invalid";
+	}
+	if ((unk * 100 / j) > 60) {
+		return "code";
+	}
+	if ((num * 100 / j) > 60) {
+		return "code";
+	}
+	if ((str * 100 / j) > 40) {
+		return "text";
+	}
 	return "data";
 }

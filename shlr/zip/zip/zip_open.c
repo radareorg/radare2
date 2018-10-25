@@ -208,6 +208,7 @@ _zip_readcdir(FILE *fp, off_t buf_offset, unsigned char *buf, const unsigned cha
     zip_uint64_t i, left;
 
     tail_len = buf + buflen - eocd - EOCDLEN;
+    // eprintf ("[zip] central dir at 0x%08x\n", (int) buf_offset);
     if (tail_len < 0) {
 	/* not enough bytes left for comment */
 	_zip_error_set(error, ZIP_ER_NOZIP, 0);
@@ -412,8 +413,9 @@ _zip_headercomp(const struct zip_dirent *central, const struct zip_dirent *local
 #endif
 	|| (central->comp_method != local->comp_method)
 	|| (central->last_mod != local->last_mod)
-	|| !_zip_string_equal(central->filename, local->filename))
+	|| !_zip_string_equal(central->filename, local->filename)) {
 	return -1;
+    }
 
 
     if ((central->crc != local->crc) || (central->comp_size != local->comp_size)

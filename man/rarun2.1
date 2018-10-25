@@ -6,7 +6,7 @@
 .Sh SYNOPSIS
 .Nm rarun2
 .Op [directives]
-.Op [script.rr2] 
+.Op [script.rr2]
 .Op [--] [program] [args]
 .Sh DESCRIPTION
 This program is used as a launcher for running programs with different environment, arguments, permissions, directories and overridden default filedescriptors.
@@ -20,7 +20,7 @@ It is useful when you have to run a program using long arguments or pass long da
 .Pp
 The rr2 (rarun2) configuration file accepts the following directives, described as key=value entries and comments defined as lines starting with '#'.
 .Bl -tag -width Fl
-.It Ar arg[0-3]
+.It Ar arg[0-N]
 set value for argument N passed to the program
 .It Ar aslr
 enable or disable ASLR
@@ -62,6 +62,10 @@ preload a library (not supported on Windows, only linux,osx,bsd)
 path to program to be executed
 .It Ar execve
 use execve instead of posix_spawn (osx tricks)
+.It Ar runlib
+path to the library to be executed
+.It Ar runlib.fcn
+function name to call from runlib library
 .It Ar r2preload
 preload with libr2, kill -USR1 to get an r2 shell or -USR2 to spawn a webserver in a thread
 .It Ar r2preweb
@@ -105,8 +109,10 @@ Escape characters useful for hex chars
 Run command to store the output in the variable
 .It Ar :102030
 Parse hexpair string and store it in the variable
-.It Ar :!102030
+.It Ar :!cmd
 Parse hexpair string from output of command and store it in the variable
+.It Ar %1234
+Parses the input string and returns it as integer
 .El
 .Sh EXAMPLES
 Sample rarun2 script
@@ -136,16 +142,20 @@ Debugging a program redirecting io to another terminal
   $ tty ; clear ; sleep 999999
   /dev/ttyS010
   ## in another terminal run r2
-  $ r2 \-e dbg.profile=foo.rr2 -d ls
-  ## or you can use -R option
-  $ r2 \-R foo.rr2 -d ls
+  $ r2 \-r foo.rr2 -d ls
   $ cat foo.rr2
   #!/usr/bin/rarun2
   stdio=/dev/ttys010
+  ## Or you can use -R to set a key=value
+  r2 \-R stdio=/dev/ttys010 -d ls
 .Pp
 You can also use the -- flag to specify program and arguments in a more natural way:
 .Pp
   $ rarun2 timeout=2 -- sleep 4
+.Pp
+Run a library function
+.Pp
+  $ rarun2 runlib=/lib/libc-2.25.so runlib.fcn=system arg1="ls /"
 .Sh SEE ALSO
 .Pp
 .Xr radare2(1) ,
