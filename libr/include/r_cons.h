@@ -1033,12 +1033,16 @@ typedef enum {
 	PANEL_MODE_HELP
 } RPanelsMode;
 
+typedef enum {
+	PANEL_LAYOUT_DEFAULT_STATIC = 0,
+	PANEL_LAYOUT_DEFAULT_DYNAMIC = 1
+} RPanelsLayout;
+
 typedef struct r_panels_t {
 	RConsCanvas *can;
 	RPanel *panel;
 	int n_panels;
 	int columnWidth;
-	int layout;
 	int menu_pos;
 	int curnode;
 	bool isResizing;
@@ -1047,6 +1051,7 @@ typedef struct r_panels_t {
 	SdbHt *mht;
 	RPanelsMode mode;
 	RPanelsMode prevMode;
+	RPanelsLayout layout;
 } RPanels;
 
 #ifdef __cplusplus

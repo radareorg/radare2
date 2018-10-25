@@ -15,6 +15,8 @@
 #define PANEL_TITLE_DISASSEMBLY  "Disassembly"
 #define PANEL_TITLE_PSEUDO       "Pseudo"
 #define PANEL_TITLE_GRAPH        "Graph"
+#define PANEL_TITLE_FUNCTIONS    "Functions"
+#define PANEL_TITLE_FCNINFO      "FcnInfo"
 
 #define PANEL_CMD_SYMBOLS        "isq"
 #define PANEL_CMD_STACK          "px 256@r:SP"
@@ -25,6 +27,8 @@
 #define PANEL_CMD_DISASSEMBLY    "pd $r"
 #define PANEL_CMD_PSEUDO         "pdc"
 #define PANEL_CMD_GRAPH          "agf"
+#define PANEL_CMD_FUNCTIONS      "afl"
+#define PANEL_CMD_FCNINFO        "afi"
 
 #define PANEL_CONFIG_MENU_MAX    64
 #define PANEL_CONFIG_PAGE        10
@@ -33,11 +37,6 @@
 #define PANEL_CONFIG_RESIZE_H    4
 
 #define MENU_NUM(x) ((int)sizeof (x) / (int)sizeof (const char *)) - 1
-
-enum {
-	LAYOUT_DEFAULT = 0,
-	LAYOUT_BALANCE = 1
-};
 
 typedef enum {
 	LEFT,
@@ -148,7 +147,6 @@ static const char *help_msg_panels_window[] = {
 };
 
 static void layoutDefault(RPanels *panels);
-static void layoutBalance(RPanels *panels);
 static int layoutSidePanel(void *user);
 static void changePanelNum(RPanels *panels, int now, int after);
 static void splitPanelVertical(RCore *core);
@@ -384,33 +382,31 @@ static void panelAllClear(RPanels *panels) {
 R_API void r_core_panels_layout (RPanels *panels) {
 	panels->can->sx = 0;
 	panels->can->sy = 0;
-	switch (panels->layout) {
-	case LAYOUT_DEFAULT:
-		layoutDefault (panels);
-		break;
-	case LAYOUT_BALANCE:
-		layoutBalance (panels);
-		break;
-	}
+	layoutDefault (panels);
 }
 
 static void layoutDefault(RPanels *panels) {
 	int h, w = r_cons_get_size (&h);
-	int ph = (h - 1) / (panels->n_panels - 1);
+	int ph = (h - 1) / (panels->n_panels - 2);
 	int i;
 	int colpos = w - panels->columnWidth;
 	RPanel *panel = panels->panel;
 	panel[0].pos.x = 0;
 	panel[0].pos.y = 1;
-	if (panels->n_panels > 1) {
-		panel[0].pos.w = colpos + 1;
-	} else {
+	if (panels->n_panels <= 1) {
 		panel[0].pos.w = w;
+		panel[0].pos.h = h - 1;
+		return;
 	}
+	panel[0].pos.w = colpos / 2 + 1;
 	panel[0].pos.h = h - 1;
-	for (i = 1; i < panels->n_panels; i++) {
+	panel[1].pos.x = colpos / 2;
+	panel[1].pos.y = 1;
+	panel[1].pos.w = colpos / 2 + 1;
+	panel[1].pos.h = h - 1;
+	for (i = 2; i < panels->n_panels; i++) {
 		panel[i].pos.x = colpos;
-		panel[i].pos.y = 2 + (ph * (i - 1));
+		panel[i].pos.y = 2 + (ph * (i - 2));
 		panel[i].pos.w = w - colpos;
 		if (panel[i].pos.w < 0) {
 			panel[i].pos.w = 0;
@@ -422,38 +418,6 @@ static void layoutDefault(RPanels *panels) {
 		}
 		panel[i].pos.y--;
 		panel[i].pos.h++;
-	}
-}
-
-static void layoutBalance(RPanels *panels) {
-	int h, w = r_cons_get_size (&h);
-	int i, ii;
-	int panelNum = panels->n_panels;
-	int leftCol = panelNum / 2;
-	int rightCol = panelNum - leftCol;
-	int pw = w / 2;
-	RPanel *panel = panels->panel;
-	for (i = 0; i < leftCol; i++) {
-		panel[i].pos.x = 0;
-		panel[i].pos.y = 1 + i * (h / leftCol - 1);
-		panel[i].pos.w = pw + 2;
-		panel[i].pos.h = h / leftCol;
-		if (i == leftCol - 1) {
-			panel[i].pos.h = h - panel[i].pos.y;
-		} else {
-			panel[i].pos.h = h / leftCol;
-		}
-	}
-	for (i = 0; i < rightCol; i++) {
-		ii = i + leftCol;
-		panel[ii].pos.x = pw + 1;
-		panel[ii].pos.y = 1 + i * (h / rightCol - 1);
-		panel[ii].pos.w = pw - 1;
-		if (i == rightCol - 1) {
-			panel[ii].pos.h = h - panel[ii].pos.y;
-		} else {
-			panel[ii].pos.h = h / rightCol;
-		}
 	}
 }
 
@@ -2019,7 +1983,7 @@ static int openMenuCb (void *user) {
 		RPanelsMenuItem *p = menu->history[menu->depth - 2];
 		RPanelsMenuItem *parent2 = p->sub[p->selectedIndex];
 		child->p->pos.x = parent2->p->pos.x + parent2->p->pos.w - 1;
-		child->p->pos.y = parent2->p->pos.y + 2;
+		child->p->pos.y = menu->depth == 2 ? parent2->p->pos.y + parent2->selectedIndex : parent2->p->pos.y;
 	}
 	RStrBuf *buf = drawMenu (child);
 	if (!buf) {
@@ -2116,8 +2080,9 @@ static bool initPanelsMenu(RCore *core) {
 		addMenu (core, NULL, menus[i], openMenuCb);
 	}
 	char *parent;
+
+	parent = "File";
 	for (i = 0; i < MENU_NUM (menus_File); i++) {
-		parent = "File";
 		if (!strcmp (menus_File[i], "Open")) {
 			addMenu (core, parent, menus_File[i], openFileCb);
 		} else if (!strcmp (menus_File[i], "ReOpen")) {
@@ -2134,8 +2099,9 @@ static bool initPanelsMenu(RCore *core) {
 			addMenu (core, parent, menus_File[i], layoutSidePanel);
 		}
 	}
+
+	parent = "Edit";
 	for (i = 0; i < MENU_NUM (menus_Edit); i++) {
-		parent = "Edit";
 		if (!strcmp (menus_Edit[i], "Copy")) {
 			addMenu (core, parent, menus_Edit[i], copyCb);
 		} else if (!strcmp (menus_Edit[i], "Paste")) {
@@ -2156,16 +2122,18 @@ static bool initPanelsMenu(RCore *core) {
 			addMenu (core, parent, menus_Edit[i], layoutSidePanel);
 		}
 	}
+
+	parent = "View";
 	for (i = 0; i < MENU_NUM (menus_View); i++) {
-		parent = "View";
 		if (!strcmp (menus_View[i], "Colors")) {
 			addMenu (core, parent, menus_View[i], colorsCb);
 		} else {
 			addMenu (core, parent, menus_View[i], layoutSidePanel);
 		}
 	}
+
+	parent = "Tools";
 	for (i = 0; i < MENU_NUM (menus_Tools); i++) {
-		parent = "Tools";
 		if (!strcmp (menus_Tools[i], "Calculator")) {
 			addMenu (core, parent, menus_Tools[i], calculatorCb);
 		} else if (!strcmp (menus_Tools[i], "R2 Shell")) {
@@ -2174,8 +2142,9 @@ static bool initPanelsMenu(RCore *core) {
 			addMenu (core, parent, menus_Tools[i], systemShellCb);
 		}
 	}
+
+	parent = "Search";
 	for (i = 0; i < MENU_NUM (menus_Search); i++) {
-		parent = "Search";
 		if (!strcmp (menus_Search[i], "String")) {
 			addMenu (core, parent, menus_Search[i], stringCb);
 		} else if (!strcmp (menus_Search[i], "ROP")) {
@@ -2186,8 +2155,9 @@ static bool initPanelsMenu(RCore *core) {
 			addMenu (core, parent, menus_Search[i], hexpairsCb);
 		}
 	}
+
+	parent = "Debug";
 	for (i = 0; i < MENU_NUM (menus_Debug); i++) {
-		parent = "Debug";
 		if (!strcmp (menus_Debug[i], "Breakpoints")) {
 			addMenu (core, parent, menus_Debug[i], breakpointsCb);
 		} else if (!strcmp (menus_Debug[i], "Watchpoints")) {
@@ -2204,8 +2174,9 @@ static bool initPanelsMenu(RCore *core) {
 			addMenu (core, parent, menus_Debug[i], layoutSidePanel);
 		}
 	}
+
+	parent = "Analyze";
 	for (i = 0; i < MENU_NUM (menus_Analyze); i++) {
-		parent = "Analyze";
 		if (!strcmp (menus_Analyze[i], "Function")) {
 			addMenu (core, parent, menus_Analyze[i], functionCb);
 		} else if (!strcmp (menus_Analyze[i], "Symbols")) {
@@ -2220,8 +2191,9 @@ static bool initPanelsMenu(RCore *core) {
 			addMenu (core, parent, menus_Analyze[i], referencesCb);
 		}
 	}
+
+	parent = "Help";
 	for (i = 0; i < MENU_NUM (menus_Help); i++) {
-		parent = "Help";
 		if (!strcmp (menus_Help[i], "Fortune")) {
 			addMenu (core, parent, menus_Help[i], fortuneCb);
 		} else if (!strcmp (menus_Help[i], "Commands")) {
@@ -2234,22 +2206,25 @@ static bool initPanelsMenu(RCore *core) {
 			addMenu (core, parent, menus_Help[i], aboutCb);
 		}
 	}
+
+	parent = "File.ReOpen";
 	for (i = 0; i < MENU_NUM (menus_ReOpen); i++) {
-		parent = "File.ReOpen";
 		if (!strcmp (menus_ReOpen[i], "In RW")) {
 			addMenu (core, parent, menus_ReOpen[i], rwCb);
 		} else if (!strcmp (menus_ReOpen[i], "In Debugger")) {
 			addMenu (core, parent, menus_ReOpen[i], debuggerCb);
 		}
 	}
+
+	parent = "File.Load Layout";
 	for (i = 0; i < MENU_NUM (menus_loadLayout); i++) {
-		parent = "File.Load Layout";
 		if (!strcmp (menus_loadLayout[i], "Saved")) {
 			addMenu (core, parent, menus_loadLayout[i], loadLayoutSavedCb);
 		} else if (!strcmp (menus_loadLayout[i], "Default")) {
 			addMenu (core, parent, menus_loadLayout[i], loadLayoutDefaultCb);
 		}
 	}
+
 	root->selectedIndex = 0;
 	panelsMenu->history = calloc (8, sizeof (RPanelsMenuItem *));
 	panelsMenu->history[0] = root;
@@ -2266,10 +2241,22 @@ static bool initPanels(RCore *core, RPanels *panels) {
 	}
 	panels->n_panels = 0;
 	addPanelFrame (core, panels, PANEL_TITLE_DISASSEMBLY, PANEL_CMD_DISASSEMBLY);
-	addPanelFrame (core, panels, PANEL_TITLE_SYMBOLS, PANEL_CMD_SYMBOLS);
-	addPanelFrame (core, panels, PANEL_TITLE_STACKREFS, PANEL_CMD_STACKREFS);
-	addPanelFrame (core, panels, PANEL_TITLE_REGISTERS, PANEL_CMD_REGISTERS);
-	addPanelFrame (core, panels, PANEL_TITLE_REGISTERREFS, PANEL_CMD_REGISTERREFS);
+
+	RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->offset, R_ANAL_FCN_TYPE_NULL);
+	if (fun && !r_list_empty (fun->bbs)) {
+		addPanelFrame (core, panels, PANEL_TITLE_PSEUDO, PANEL_CMD_PSEUDO);
+	}
+
+	if (panels->layout == PANEL_LAYOUT_DEFAULT_DYNAMIC) {
+		addPanelFrame (core, panels, PANEL_TITLE_STACK, PANEL_CMD_STACK);
+		addPanelFrame (core, panels, PANEL_TITLE_STACKREFS, PANEL_CMD_STACKREFS);
+		addPanelFrame (core, panels, PANEL_TITLE_REGISTERS, PANEL_CMD_REGISTERS);
+		addPanelFrame (core, panels, PANEL_TITLE_REGISTERREFS, PANEL_CMD_REGISTERREFS);
+	} else {
+		addPanelFrame (core, panels, PANEL_TITLE_FUNCTIONS, PANEL_CMD_FUNCTIONS);
+		addPanelFrame (core, panels, PANEL_TITLE_FCNINFO, PANEL_CMD_FCNINFO);
+		addPanelFrame (core, panels, PANEL_TITLE_SYMBOLS, PANEL_CMD_SYMBOLS);
+	}
 	panels->curnode = 0;
 	return true;
 }
@@ -2482,7 +2469,11 @@ static bool init(RCore *core, RPanels *panels, int w, int h) {
 	panels->panel = NULL;
 	panels->n_panels = 0;
 	panels->columnWidth = 80;
-	panels->layout = 0;
+	if (r_config_get_i (core->config, "cfg.debug")) {
+		panels->layout = PANEL_LAYOUT_DEFAULT_DYNAMIC;
+	} else {
+		panels->layout = PANEL_LAYOUT_DEFAULT_STATIC;
+	}
 	panels->menu_pos = -1;
 	panels->isResizing = false;
 	panels->can = createNewCanvas (core, w, h);
@@ -2883,7 +2874,7 @@ R_API int r_core_visual_panels(RCore *core, RPanels *panels) {
 
 	if (core->panels_tmpcfg) {
 		loadSavedPanelsLayout (core, true);
-	} else if (!loadSavedPanelsLayout (core, false)) {
+	} else {
 		r_core_panels_layout (panels);
 	}
 repeat:
@@ -3224,7 +3215,6 @@ repeat:
 			RPanel p0 = panels->panel[0];
 			panels->panel[0] = panels->panel[panels->curnode];
 			panels->panel[panels->curnode] = p0;
-			// r_core_panels_layout (core->panels);
 			r_core_panels_layout_refresh (core);
 			setRefreshAll (panels);
 		}
