@@ -639,6 +639,7 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 	const int srsz = COFF_SYMBOL_SIZE; // symbol record size
 	struct r_bin_pe_section_t* sections;
 	struct r_bin_pe_export_t* exp;
+	const size_t export_t_sz = sizeof (struct r_bin_pe_export_t);
 	int bufsz, i, shsz;
 	SymbolRecord* sr;
 	ut64 text_off = 0LL;
@@ -662,11 +663,11 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 	if (!buf) {
 		return NULL;
 	}
-	exports_sz = sizeof(struct r_bin_pe_export_t) * num;
+	exports_sz = export_t_sz * num;
 	if (exports) {
 		int osz = sz;
 		sz += exports_sz;
-		exports = realloc (exports, sz);
+		exports = realloc (exports, sz + export_t_sz);
 		if (!exports) {
 			free (buf);
 			return NULL;
@@ -674,7 +675,7 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 		exp = (struct r_bin_pe_export_t*) (((const ut8*) exports) + osz);
 	} else {
 		sz = exports_sz;
-		exports = malloc (sz);
+		exports = malloc (sz + export_t_sz);
 		exp = exports;
 	}
 
