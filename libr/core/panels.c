@@ -2535,6 +2535,7 @@ static int file_history_down(RLine *line) {
 
 static void handleMenu(RCore *core, const int key, int *exit) {
 	RPanels *panels = core->panels;
+	RPanel *panel = panels->panel;
 	RPanelsMenu *menu = panels->panelsMenu;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
@@ -2572,9 +2573,17 @@ static void handleMenu(RCore *core, const int key, int *exit) {
 	case 'Z':
 		handleTabKey (core, true);
 	case ':':
-		r_core_visual_prompt_input (core);
-		panels->panel[panels->curnode].addr = core->offset;
-		setRefreshAll (panels);
+		{
+			r_core_visual_prompt_input (core);
+			int i;
+			for (i = 0; i < panels->n_panels; i++) {
+				if (!strcmp (panel[i].cmd, PANEL_CMD_DISASSEMBLY)) {
+					panel[i].addr = core->offset;
+					break;
+				}
+			}
+			setRefreshAll (panels);
+		}
 		break;
 	}
 }
