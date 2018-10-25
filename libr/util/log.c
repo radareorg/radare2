@@ -46,8 +46,12 @@ R_API void r_log_set_colors(bool show_info) {
 }
 
 /**
- * \brief Set the main logging callback function for printing
+ * \brief Set the main callback for the logging API
  * \param cbfunc RLogCallback style function to be called
+
+  This is used by cons/cons.c:r_cons_new to set the log output
+  to r_cons. If r_cons is unavailable and this is never called
+  then _r_log_internal will use its fallback to stderr in r_util
 */
 R_API void r_log_set_main_callback(RLogCallback cbfunc) {
 	// TODO: RList of callbacks with setter/remove methods
@@ -61,7 +65,8 @@ R_API void r_log_set_main_callback(RLogCallback cbfunc) {
  * \param lineno The line number that this log call is being made from in filename
  * \param lvl Logging level for output
  * \param fmtstr A printf like string
- * This function is used by the R_LOG_* preprocessor macros for logging/debugging
+
+  This function is used by the R_LOG_* preprocessor macros for logging
 */
 R_API void _r_log_internal(const char *funcname, const char *filename,
 	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...) {

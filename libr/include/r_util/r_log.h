@@ -51,9 +51,10 @@ R_API void r_log_set_file(const char *filename);
 R_API void r_log_set_srcinfo(bool show_info);
 R_API void r_log_set_colors(bool show_colors);
 R_API void r_log_set_traplevel(RLogLevel level);
+// TODO: r_log_set_options(enum RLogOptions)
 
-// Functions for setting logging callbacks externally
-R_API void r_log_set_main_callback(RLogCallback cbfunc);
+// Functions for adding log callbacks
+R_API void r_log_set_main_callback(RLogCallback cbfunc); // Called by cons/cons.c:r_cons_new
 // TODO: r_log_add_callback(cbfunc, *context)
 // TODO: r_log_get_callbacks()
 // TODO: r_log_remove_callback(cbfunc, *context)
