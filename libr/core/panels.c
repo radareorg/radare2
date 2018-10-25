@@ -907,10 +907,9 @@ static void handleZoomMode(RCore *core, const int key) {
 			activateCursor (core);
 			break;
 		case 'X':
+			toggleZoomMode (panels);
 			delCurPanel (panels);
-			changePanelNum (panels, panels->n_panels - 1, 0);
-			setRefreshAll (panels);
-			// pass thru
+			toggleZoomMode (panels);
 			break;
 		case 's':
 			panelSingleStepIn (core);
@@ -1437,10 +1436,11 @@ static void delPanel(RPanels *panels, int delPanelNum) {
 }
 
 static void delCurPanel(RPanels *panels) {
-	dismantlePanel (panels);
-	if (panels->curnode >= 0 && panels->n_panels > 2) {
-		delPanel (panels, panels->curnode);
+	if (panels->n_panels <= 2) {
+		return;
 	}
+	dismantlePanel (panels);
+	delPanel (panels, panels->curnode);
 }
 
 static void delInvalidPanels(RPanels *panels) {
