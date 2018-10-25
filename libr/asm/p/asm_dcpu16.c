@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2012-2015 pancake */
+/* radare2 - LGPL - Copyright 2012-2018 pancake */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -12,15 +12,19 @@
 #include "../arch/dcpu16/asm.c"
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	if (len<2) return -1; // at least 2 bytes!
-	op->size = dcpu16_disasm (op->buf_asm, (const ut16*)buf, len, NULL);
-	if (op->size == -1)
-		strcpy (op->buf_asm, " (data)");
+	char buf_asm[32];
+	if (len < 2) {
+		return -1; // at least 2 bytes!
+	}
+	op->size = dcpu16_disasm (buf_asm, (const ut16*)buf, len, NULL);
+	r_strbuf_set (&op->buf_asm, (op->size > 0) ? buf_asm: "(data)");
 	return op->size;
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
-	return dcpu16_assemble (op->buf, buf);
+	int len = dcpu16_assemble ((ut8*)r_strbuf_get (&op->buf), buf);
+	op->buf.len = len;
+	return len;
 }
 
 RAsmPlugin r_asm_plugin_dcpu16 = {
@@ -31,11 +35,11 @@ RAsmPlugin r_asm_plugin_dcpu16 = {
 	.desc = "Mojang's DCPU-16",
 	.license = "PD",
 	.disassemble = &disassemble,
-	.assemble = &assemble 
+	.assemble = &assemble
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_dcpu16,
 	.version = R2_VERSION

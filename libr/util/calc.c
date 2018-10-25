@@ -1,4 +1,4 @@
-/* ported to C by pancake for r2 in 2012-2014 */
+/* ported to C by pancake for r2 in 2012-2017 */
 // TODO: integrate floating point support
 // TODO: do not use global variables
 /*
@@ -31,16 +31,44 @@ static inline RNumCalcValue Nmul(RNumCalcValue n, RNumCalcValue v) {
 	n.n *= v.n;
 	return n;
 }
+
 static inline RNumCalcValue Nshl(RNumCalcValue n, RNumCalcValue v) { n.d += v.d; n.n <<= v.n; return n; }
 static inline RNumCalcValue Nshr(RNumCalcValue n, RNumCalcValue v) { n.d += v.d; n.n >>= v.n; return n; }
-static inline RNumCalcValue Nmod(RNumCalcValue n, RNumCalcValue v) {
-	if (v.d) n.d = (n.d - (n.d/v.d)); else n.d = 0;
-	if (v.n) n.n %= v.n; else n.n = 0;
+static inline RNumCalcValue Nrol(RNumCalcValue n, RNumCalcValue v) {
+	n.d += v.d;
+	n.n = (n.n << v.n) | (n.n >> (sizeof(n.n) * 8 - v.n));
 	return n;
 }
+static inline RNumCalcValue Nror(RNumCalcValue n, RNumCalcValue v) {
+	n.d += v.d;
+	n.n = (n.n >> v.n) | (n.n << (sizeof(n.n) * 8 - v.n));
+	return n;
+}
+static inline RNumCalcValue Nmod(RNumCalcValue n, RNumCalcValue v) {
+	if (v.d) {
+		n.d = (n.d - (n.d / v.d));
+	} else {
+		n.d = 0;
+	}
+	if (v.n) {
+		n.n %= v.n;
+	} else {
+		n.n = 0;
+	}
+	return n;
+}
+
 static inline RNumCalcValue Ndiv(RNumCalcValue n, RNumCalcValue v) {
-	if (v.d) n.d /= v.d; else n.d = 0;
-	if (v.n) n.n /= v.n; else n.n = 0;
+	if (v.d) {
+		n.d /= v.d;
+	} else {
+		n.d = 0;
+	}
+	if (v.n) {
+		n.n /= v.n;
+	} else {
+		n.n = 0;
+	}
 	return n;
 }
 
@@ -62,6 +90,8 @@ static RNumCalcValue expr(RNum *num, RNumCalc *nc, int get) {
 		switch (nc->curr_tok) {
 		case RNCSHL: left = Nshl (left, term (num, nc, 1)); break;
 		case RNCSHR: left = Nshr (left, term (num, nc, 1)); break;
+		case RNCROL: left = Nrol (left, term (num, nc, 1)); break;
+		case RNCROR: left = Nror (left, term (num, nc, 1)); break;
 		case RNCPLUS: left = Nadd (left, term (num, nc, 1)); break;
 		case RNCMINUS: left = Nsub (left, term (num, nc, 1)); break;
 		case RNCXOR: left = Nxor (left, term (num, nc, 1)); break;
@@ -112,7 +142,7 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 	case RNCNAME:
 		//fprintf (stderr, "error: unknown keyword (%s)\n", nc->string_value);
 		//double& v = table[nc->string_value];
-		r_str_chop (nc->string_value);
+		r_str_trim (nc->string_value);
 		v = Nset (r_num_get (num, nc->string_value));
 		get_token (num, nc);
 		if (nc->curr_tok  == RNCASSIGN) {
@@ -156,6 +186,8 @@ static RNumCalcValue prim(RNum *num, RNumCalc *nc, int get) {
 	case RNCRIGHTP:
 	case RNCSHL:
 	case RNCSHR:
+	case RNCROL:
+	case RNCROR:
 		return v;
 	//default: error (num, nc, "primary expected");
 	}
@@ -198,12 +230,12 @@ static int cin_get(RNum *num, RNumCalc *nc, char *c) {
 
 static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
 	double d;
-	char str[R_NUMCALC_STRSZ]; // TODO: move into the heap?
+	char str[R_NUMCALC_STRSZ + 1]; // TODO: move into the heap?
 	int i = 0;
 	char c;
 	str[0] = 0;
 	while (cin_get (num, nc, &c)) {
-		if (c!=':' && c!='.' && !isalnum ((ut8)c)) {
+		if (c != '_' && c!=':' && c!='.' && !isalnum ((ut8)c)) {
 			cin_putback (num, nc, c);
 			break;
 		}
@@ -228,8 +260,11 @@ static int cin_get_num(RNum *num, RNumCalc *nc, RNumCalcValue *n) {
 static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 	char ch = 0, c = 0;
 
-	do { if (!cin_get (num, nc, &ch)) return nc->curr_tok = RNCEND;
-	} while (ch!='\n' && isspace ((unsigned char)ch));
+	do {
+		if (!cin_get (num, nc, &ch)) {
+			return nc->curr_tok = RNCEND;
+		}
+	} while (ch != '\n' && isspace ((ut8)ch));
 
 	switch (ch) {
 	case 0:
@@ -256,6 +291,26 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 		}
 		cin_putback (num, nc, c);
 		return nc->curr_tok = (RNumCalcToken) ch;
+	case '<':
+		if (cin_get (num, nc, &c) && c == '<') {
+			if (cin_get (num, nc, &c) && c == '<') {
+				return nc->curr_tok = RNCROL;
+			}
+			cin_putback (num, nc, c);
+			return nc->curr_tok = RNCSHL;
+		}
+		cin_putback (num, nc, c);
+		return nc->curr_tok = RNCEND;
+	case '>':
+		if (cin_get (num, nc, &c) && c == '>') {
+			if (cin_get (num, nc, &c) && c == '>') {
+				return nc->curr_tok = RNCROR;
+			}
+			cin_putback (num, nc, c);
+			return nc->curr_tok = RNCSHR;
+		}
+		cin_putback (num, nc, c);
+		return nc->curr_tok = RNCEND;
 	case '^':
 	case '&':
 	case '|':
@@ -264,8 +319,6 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 	case '/':
 	case '(':
 	case ')':
-	case '<':
-	case '>':
 	case '=':
 		return nc->curr_tok = (RNumCalcToken) ch;
 	case '0': case '1': case '2': case '3': case '4':
@@ -279,8 +332,8 @@ static RNumCalcToken get_token(RNum *num, RNumCalc *nc) {
 		return nc->curr_tok = RNCNUMBER;
 
 #define isvalidchar(x) \
-	(isalnum(x) || x==':' || x=='$' || x=='.' || x=='_' || x=='?' || x=='\\' \
-	|| x==' ' || x=='[' || x==']' || x=='}' || x=='{' || (x>='0'&&x<='9'))
+	(isalnum(x) || (x)==':' || (x)=='$' || (x)=='.' || (x)=='_' || (x)=='?' || (x)=='\\' \
+	|| (x)==' ' || (x)=='[' || (x)==']' || (x)=='}' || (x)=='{' || ((x)>='0'&&(x)<='9'))
 
 	default:
 		{
@@ -347,6 +400,7 @@ R_API ut64 r_num_calc(RNum *num, const char *str, const char **err) {
 	nc->calc_i = 0;
 	nc->calc_len = 0;
 	nc->calc_buf = NULL;
+	nc->under_calc = true;
 
 	load_token (num, nc, str);
 	get_token (num, nc);
@@ -357,6 +411,7 @@ R_API ut64 r_num_calc(RNum *num, const char *str, const char **err) {
 	if (num) {
 		num->fvalue = n.d;
 	}
+	nc->under_calc = false;
 	return n.n;
 }
 

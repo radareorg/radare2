@@ -13,7 +13,7 @@ extern "C" {
 R_LIB_VERSION_HEADER(r_egg);
 
 #define R_EGG_INCDIR_ENV "EGG_INCDIR"
-#define R_EGG_INCDIR_PATH R2_PREFIX "/lib/radare2/" R2_VERSION "/egg"
+#define R_EGG_INCDIR_PATH "/lib/radare2/" R2_VERSION "/egg"
 
 // rename to REggShellcode
 #define R_EGG_PLUGIN_SHELLCODE 0
@@ -26,6 +26,70 @@ typedef struct r_egg_plugin_t {
 	RBuffer* (*build) (void *egg);
 } REggPlugin;
 
+typedef struct r_egg_lang_t {
+	int pushargs;
+	int nalias;
+	int nsyscalls;
+	char *conditionstr;
+	char *syscallbody;
+	char *includefile;
+	char *setenviron;
+	char *mathline;
+	// used for confusing mathop
+	int commentmode;
+	int varsize;
+	int varxs;
+	int lastctxdelta;
+	int nargs;
+	int docall;
+	int nfunctions;
+	int nbrackets;
+	int slurpin;
+	int slurp;
+	int line;
+	char elem[1024];
+	int attsyntax;
+	int elem_n;
+	char *callname;
+	char *endframe;
+	char *ctxpush[32];
+	char *file;
+	char *dstvar;
+	char *dstval;
+	char *includedir;
+	char *ifelse_table[32][32];
+	// used to solve if-else problem in a not so ugly way
+	int ndstval;
+	int skipline;// BOOL
+	int quoteline;
+	int quotelinevar;
+	int stackframe;
+	int stackfixed;
+	int oc;
+	int mode;
+ 	int inlinectr;
+	struct {
+		char *name;
+		char *body;
+		// int fastcall; /* TODO: NOT YET USED */
+	} inlines[256];
+	int ninlines;
+	struct {
+		char *name;
+		char *arg;
+	} syscalls[256];
+	struct {
+		char *name;
+		char *content;
+	} aliases[256];
+	char *nested[32];
+	char *nested_callname[32];
+	// char *nestede[32] = {0};
+	// seems nestede are not used any more
+	// (only one place that gives nestede[] value, where could be replaced)
+	int nestedi[32];
+} REggLang;
+
 typedef struct r_egg_t {
 	RBuffer *src;
 	RBuffer *buf;
@@ -34,6 +98,7 @@ typedef struct r_egg_t {
 	//RList *shellcodes; // XXX is plugins nao?
 	RAsm *rasm;
 	RSyscall *syscall;
+	REggLang lang;
 	Sdb *db;
 	RList *plugins;
 	RList *patches; // <RBuffer>
@@ -58,6 +123,7 @@ r2 -q - <<EOF
 ?e #define R_EGG_OS_FREEBSD \`?h freebsd\`
 EOF
 #endif
+
 #define R_EGG_OS_LINUX 0x5ca62a43
 #define R_EGG_OS_OSX 0x0ad593a1
 #define R_EGG_OS_DARWIN 0xd86d1ae2
@@ -105,6 +171,7 @@ typedef struct r_egg_emit_t {
 	void (*restore_stack)(REgg *egg, int size);
 	void (*syscall_args)(REgg *egg, int nargs);
 	void (*get_var)(REgg *egg, int type, char *out, int idx);
+	void (*get_ar)(REgg *egg, char *out, int idx);
 	void (*while_end)(REgg *egg, const char *label);
 	void (*load)(REgg *egg, const char *str, int sz);
 	void (*load_ptr)(REgg *egg, const char *str);
@@ -113,14 +180,10 @@ typedef struct r_egg_emit_t {
 	void (*get_while_end)(REgg *egg, char *out, const char *ctxpush, const char *label);
 } REggEmit;
 
-typedef struct r_egg_lang_t {
-	int nsyscalls;
-	int nargs;
-	int docall;
-} REggLang;
-
 #ifdef R_API
 R_API REgg *r_egg_new (void);
+R_API void r_egg_lang_init(REgg *egg);
+R_API void r_egg_lang_free(REgg *egg);
 R_API char *r_egg_to_string (REgg *egg);
 R_API void r_egg_free (REgg *egg);
 R_API int r_egg_add (REgg *a, REggPlugin *foo);
@@ -142,6 +205,7 @@ R_API void r_egg_printf(REgg *egg, const char *fmt, ...);
 R_API int r_egg_compile(REgg *egg);
 R_API int r_egg_padding (REgg *egg, const char *pad);
 R_API int r_egg_assemble(REgg *egg);
+R_API int r_egg_assemble_asm(REgg *egg, char **asm_list);
 R_API void r_egg_pattern(REgg *egg, int size);
 R_API RBuffer *r_egg_get_bin(REgg *egg);
 //R_API int r_egg_dump (REgg *egg, const char *file) { }
@@ -152,6 +216,9 @@ R_API void r_egg_append(REgg *egg, const char *src);
 R_API int r_egg_run(REgg *egg);
 R_API int r_egg_patch(REgg *egg, int off, const ut8 *b, int l);
 R_API void r_egg_finalize(REgg *egg);
+
+/* r_egg_Cfile.c */
+R_API char* r_egg_Cfile_parser(const char *file, const char *arch, const char *os, int bits);
 
 /* lang.c */
 R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta);

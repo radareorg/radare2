@@ -30,7 +30,9 @@
 int matchs(const char *string, char *pattern) {
 	int status = 0;
 	RRegex *re = r_regex_new (pattern, "");
-	if (!re) return status;
+	if (!re) {
+		return status;
+	}
 	if (r_regex_comp (re, pattern, R_REGEX_EXTENDED|R_REGEX_NOSUB) == 0) {
 		status = r_regex_exec (re, string, (size_t) 0, NULL, 0)? 1: 0;
 	}
@@ -42,7 +44,9 @@ void sreplace(char *s,char *orig,char *rep,char multi,long dsize){
 	char *p;
 	memChunk *buffer,*string,*result;
 
-	if(!(p = strstr (s, orig))) return;
+	if (!(p = strstr (s, orig))) {
+		return;
+	}
 
 	buffer = memReserve (dsize);
 	string = memString (s);
@@ -74,9 +78,15 @@ char *mreplace(char *string, char *se,char *rep) {
 	int status, i;
 	RRegex *re;
 
-	if (!string) return "";
-	if (!strlen (se)) return string;
-	if (!strcmp (se,rep)) return string;
+	if (!string) {
+		return "";
+	}
+	if (!strlen (se)) {
+		return string;
+	}
+	if (!strcmp (se, rep)) {
+		return string;
+	}
 
 	temp = memStringReserve (string,INPUTLINE_BUFFER_REPLACE_SIZE);
 	search = memStringReserve (se,INPUTLINE_BUFFER_REPLACE_SIZE);
@@ -91,11 +101,14 @@ char *mreplace(char *string, char *se,char *rep) {
 #endif
 	re = r_regex_new ("", 0);
 
-	if (r_regex_comp (re, search->address, R_REGEX_EXTENDED) != 0)
-		if(r_regex_comp (re, search->address, R_REGEX_EXTENDED<<1))
+	if (r_regex_comp (re, search->address, R_REGEX_EXTENDED) != 0) {
+		if (r_regex_comp (re, search->address, R_REGEX_EXTENDED << 1)) {
 			noMatch = 1;
-	if ((status = r_regex_exec (re, string, nmatch, pm, 0)))
+		}
+	}
+	if ((status = r_regex_exec (re, string, nmatch, pm, 0))) {
 		noMatch = 1;
+	}
 	if (noMatch) {
 		memFree (temp);
 		memFree (search);
@@ -160,7 +173,9 @@ char *treplace(char *data,char *search,char *replace){
 	memChunk *result,*line;
 	//ulong resultAllocSize;
 
-	if (!strlen(search)) return data;
+	if (!strlen (search)) {
+		return data;
+	}
 
 #if MDEBUG2
 	DBG ("treplace(string,se,re)","string  : %s",data);
@@ -173,12 +188,17 @@ char *treplace(char *data,char *search,char *replace){
 
 	p=data;
 	while (sscanf (p, "%[^\n]", line->address) == 1){
-		if (p - data > strlen (data)) break;
+		if (p - data > strlen (data)) {
+			break;
+		}
 		newline = mreplace (line->address, search, replace);
 
 		memStrCat (result, newline);
-		if (line->address && *(p + strlen (line->address))) memStrCat (result, "\n");
-		else break;
+		if (line->address && *(p + strlen (line->address))) {
+			memStrCat (result, "\n");
+		} else {
+			break;
+		}
 
 		p += strlen (line->address) + 1;
 	}
@@ -239,7 +259,7 @@ void doChecks(){
 	}
 
 	for(n=1;n<=CHECKS_CHUNCK_COUNT;n+=1+CHECKS_CHUNCK_COUNT/10){
-		fprintf(stdout,"\r[ + ] Checking stability for different input sizes consistence %d bytes, memory allocated: %d bytes",n*CHECKS_CHUNCK_COUNT*CHECKS_CHUNCK_SIZE,memAllocated());
+		fprintf(stdout,"\r[ + ] Checking stability for different input sizes consistence %d byte(s), memory allocated: %d byte(s)",n*CHECKS_CHUNCK_COUNT*CHECKS_CHUNCK_SIZE,memAllocated());
 		fflush(stdout);
 		memset(checkBuffer,'.',n*CHECKS_CHUNCK_SIZE-1);
 		checkBuffer[n*CHECKS_CHUNCK_SIZE]=0;
@@ -247,7 +267,7 @@ void doChecks(){
 		treplace(checkBuffer,"_",".");
 	}
 	fprintf(stdout,"\n");
-	fprintf(stdout,"[ m ] Memory allocated final: %d bytes\n",memAllocated());
+	fprintf(stdout,"[ m ] Memory allocated final: %d byte(s)\n",memAllocated());
 }
 
 /*

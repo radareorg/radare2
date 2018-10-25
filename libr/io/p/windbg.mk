@@ -4,9 +4,9 @@ STATIC_OBJ+=${OBJ_WINDBG}
 TARGET_WINDBG=io_windbg.${EXT_SO}
 ALL_TARGETS+=${TARGET_WINDBG}
 
-LIB_PATH=$(SHLR)/wind
-CFLAGS+=-I$(SHLR)/wind
-LDFLAGS+=$(SHLR)/wind/libr_wind.$(EXT_AR)
+LIB_PATH=$(SHLR)/windbg
+CFLAGS+=-I$(SHLR)/windbg
+LDFLAGS+=$(SHLR)/windbg/libr_windbg.$(EXT_AR)
 
 ifeq (${WITHPIC},0)
 LINKFLAGS+=../../util/libr_util.a

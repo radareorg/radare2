@@ -1,0 +1,57 @@
+# requires e scr.color=3
+
+ec b0x00 rgb:431
+ec b0x7f rgb:fd9
+ec b0xff rgb:960
+ec bin rgb:fec
+ec other rgb:ba6
+ec btext rgb:fec
+ec call rgb:fec rgb:320
+ec cjmp rgb:fec
+ec jmp rgb:fec
+ec cmp rgb:ca6
+ec comment rgb:fd9
+ec usrcmt rgb:fff
+ec ret rgb:ab7
+ec fline rgb:ca6
+ec flow rgb:ca6
+ec flow2 rgb:fec
+ec fname rgb:bb7
+ec label rgb:788
+ec math rgb:db7
+ec invalid rgb:c64
+ec mov rgb:db7
+ec nop rgb:788
+ec num rgb:960
+ec offset rgb:960
+ec pop rgb:bb7
+ec prompt rgb:960
+ec push rgb:db7
+ec reg rgb:ca6
+ec args rgb:bb7
+ec help rgb:ab7
+ec input rgb:ca6
+ec trap rgb:431
+ec swi rgb:bb7
+ec creg rgb:960
+ec flag rgb:ffd
+ec linehl rgb:210
+ec graph.true rgb:fd9
+ec graph.false rgb:431
+ec graph.trufae rgb:fd9
+ec graph.current blue
+ec graph.traced blue
+ec graph.box rgb:431
+ec graph.box2 rgb:ca6
+ec graph.box3 rgb:ca6
+ec graph.box4 rgb:ca6
+
+ec func_var rgb:fd9
+ec func_var_type rgb:850
+ec func_var_addr rgb:960
+
+ec ai.read rgb:cb7
+ec ai.write rgb:ca6
+ec ai.exec rgb:db7
+ec ai.seq rgb:960
+ec ai.ascii rgb:fec

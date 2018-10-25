@@ -34,7 +34,9 @@ static int ppc_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *bytes, int len
 			// bctr
 		} else {
 			op->jump = (aa)?(baddr):(addr+baddr);
-			if (lk) op->fail = addr+4;
+			if (lk) {
+				op->fail = addr + 4;
+			}
 		}
 		op->eob = 1;
 		break;
@@ -151,7 +153,7 @@ RAnalPlugin r_anal_plugin_ppc_gnu = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_ppc_gnu,
 	.version = R2_VERSION
@@ -164,7 +166,7 @@ NOTES:
      10000
      AA = absolute address
      LK = link bit
-     BD = bits 16-19 
+     BD = bits 16-19
        address
      if (AA) {
        address = (int32) BD << 2
@@ -177,14 +179,14 @@ NOTES:
      1  0  bca
      0  1  bcl
      1  1  bcla
-    
+
      10011
      BCCTR
      LK = 31
-    
+
      bclr or bcr (Branch Conditional Link Register) Instruction
      10011
-    
+
      6-29 -> LL (addr) ?
      B  10010 -> branch
      30 31

@@ -1,6 +1,5 @@
-/* radare2 - LGPL - Copyright 2017 - wargio */
+/* radare2 - LGPL - Copyright 2017-2018 - wargio */
 
-#include <r_util.h>
 #include <r_types.h>
 #include <r_util.h>
 #include <stdlib.h>
@@ -18,12 +17,13 @@ enum {
 
 R_API void r_json_var_free (RJSVar* var) {
 	ut32 i;
-	if (!var || var->ref > 1) {
-		if (var)
-			var->ref--;
+	if (!var) {
 		return;
 	}
 	var->ref--;
+	if (var->ref > 0) {
+		return;
+	}
 	switch (var->type) {
 	case R_JS_STRING:
 		free ((char*) var->string.s);
@@ -118,52 +118,59 @@ R_API RJSVar* r_json_null_new () {
 	return var;
 }
 
-R_API void r_json_object_add (RJSVar* object, const char* name, RJSVar* value) {
+R_API bool r_json_object_add (RJSVar* object, const char* name, RJSVar* value) {
 	ut32 len;
 	RJSVar** v;
 	char** c;
 	if (!object || !name || !value) {
-		return;
+		return false;
 	}
-	value->ref++;
 	len = object->object.l + 1;
 	if (len <= 0) {
-		return;
+		value->ref--;;
+		return false;
 	}
-	v = (RJSVar**) realloc (object->object.a, len * sizeof (RJSVar*));
+	v = (RJSVar**) malloc (len * sizeof (RJSVar*));
 	if (!v) {
-		return;
+		return false;
 	}
-	c = (char**) realloc (object->object.n, len * sizeof (char*));
+	c = (char**) malloc (len * sizeof (char*));
 	if (!c) {
 		free (v);
-		return;
+		return false;
 	}
+	value->ref++;
+	memcpy (v, object->object.a, (object->object.l * sizeof (RJSVar*)));
+	memcpy (c, object->object.n, (object->object.l * sizeof (char*)));
 	v[len - 1] = value;
 	c[len - 1] = strdup (name);
 	object->object.l = len;
+	free (object->object.a);
 	object->object.a = v;
+	free ((void *)object->object.n);
 	object->object.n = (const char**) c;
+	return true;
 }
 
-R_API void r_json_array_add (RJSVar* array, RJSVar* value) {
+R_API bool r_json_array_add (RJSVar* array, RJSVar* value) {
 	ut32 len;
 	RJSVar** v;
 	if (!array || !value) {
-		return;
+		return false;
 	}
-	value->ref++;
 	len = array->array.l + 1;
 	if (len <= 0) {
-		return;
+		return false;
 	}
 	v = (RJSVar**) realloc (array->array.a, len * sizeof (RJSVar*));
 	if (!v) {
-		return;
+		return false;
 	}
+	value->ref++;
 	v[len - 1] = value;
 	array->array.l = len;
 	array->array.a = v;
+	return true;
 }
 
 R_API RJSVar* r_json_object_get (RJSVar* object, const char* name) {
@@ -247,14 +254,18 @@ R_API char* r_json_var_string (RJSVar* var, bool expanded) {
 			}
 			for (i = 0; i < var->array.l; i++) {
 				t[i] = r_json_var_string (var->array.a[i], expanded);
-				if (!t[i]) continue;
+				if (!t[i]) {
+					continue;
+				}
 				len += strlen (t[i]) + 1;
 			}
 			c = (char*) calloc (len, 1);
 			p = c + 1;
 			e = p + len;
 			for (i = 0; i < var->array.l; i++) {
-				if (!t[i]) continue;
+				if (!t[i]) {
+					continue;
+				}
 				if (c) {
 					p += snprintf (p, e - p, "%s,", t[i]);
 				}
@@ -262,8 +273,9 @@ R_API char* r_json_var_string (RJSVar* var, bool expanded) {
 			}
 			if (c) {
 				c[0] = '[';
-				if (p == c + 1)
+				if (p == c + 1) {
 					p++;
+				}
 				c[len - (e - p)] = ']';
 				c[len - 1] = 0;
 			}
@@ -285,7 +297,9 @@ R_API char* r_json_var_string (RJSVar* var, bool expanded) {
 			len = 3;
 			for (i = 0; i < var->object.l; i++) {
 				t[i] = r_json_var_string (var->object.a[i], expanded);
-				if (!t[i]) continue;
+				if (!t[i]) {
+					continue;
+				}
 				fflush (stdout);
 				len += strlen (t[i]) + strlen (var->object.n[i]) + 4;
 			}
@@ -293,7 +307,9 @@ R_API char* r_json_var_string (RJSVar* var, bool expanded) {
 			p = c + 1;
 			e = p + len;
 			for (i = 0; i < var->object.l; i++) {
-				if (!t[i]) continue;
+				if (!t[i]) {
+					continue;
+				}
 				if (c) {
 					p += snprintf (p, e - p, "\"%s\":%s,", var->object.n[i], t[i]);
 				}
@@ -301,8 +317,9 @@ R_API char* r_json_var_string (RJSVar* var, bool expanded) {
 			}
 			if (c) {
 				c[0] = '{';
-				if (p == c + 1)
+				if (p == c + 1) {
 					p++;
+				}
 				c[len - (e - p)] = '}';
 				c[len - 1] = 0;
 			}

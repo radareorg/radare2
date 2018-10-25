@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2016 nodepad, pancake */
+/* radare - LGPL - Copyright 2015-2018 nodepad, pancake */
 
 #include "mz.h"
 #include <btree.h>
@@ -13,6 +13,9 @@ int r_bin_mz_get_entrypoint (const struct r_bin_mz_obj_t *bin) {
 	ut16 ip = r_read_ble16 (buf + 0x14, false);
 	ut16 pa = ((r_read_ble16 (buf + 8 , false) + cs) << 4) + ip;
 #endif
+	if (!bin || !bin->dos_header) {
+		return -1;
+	}
 	/* Value of CS in DOS header may be negative */
 	const short cs = bin->dos_header->cs;
 	ut32 pa = bin->dos_header->header_paragraphs + cs;
@@ -23,55 +26,38 @@ int r_bin_mz_get_entrypoint (const struct r_bin_mz_obj_t *bin) {
 	return -1;
 }
 
+// This function reads from the file buffer,
+// thus using endian-agnostic functions
 int cmp_segs(const void *a, const void *b) {
 	const ut16 * const ma = (const ut16 * const)a;
 	const ut16 * const mb = (const ut16 * const)b;
 	if (!ma || !mb) {
 		return 0;
 	}
-	return (int)(*ma-*mb);
+	return (int)(r_read_le16 (ma) - r_read_le16 (mb));
 }
 
-void trv_segs (const void *seg, const void *segs) {
-	const ut16 * const mseg = (const ut16 * const)seg;
+// This function reads from the file buffer,
+// thus using endian-agnostic functions
+static void trv_segs (const void *seg, const void *segs) {
+	const ut8 * const mseg = (const ut8 * const)seg;
 	ut16 ** const msegs = (ut16 **)segs;
 	if (mseg && msegs && *msegs) {
-		**msegs = *mseg;
+		r_write_le16(*msegs, r_read_le16(mseg));
 		*msegs = *msegs + 1;
 	}
 }
 
 struct r_bin_mz_segment_t * r_bin_mz_get_segments(const struct r_bin_mz_obj_t *bin) {
-#if 0
-	int i;
-	struct r_bin_mz_segment_t *ret;
-
-	const MZ_image_relocation_entry * const relocs = bin->relocation_entries;
-	const int num_relocs = bin->dos_header->num_relocs;
-
-	eprintf ("cs 0x%x\n", bin->dos_header->cs);
-	eprintf ("ss 0x%x\n", bin->dos_header->ss);
-	for (i = 0; i < num_relocs; i++) {
-		eprintf ("0x%08x segment 0x%08lx\n", relocs[i].offset, relocs[i].segment);
-		// ut65 paddr = r_bin_mz_seg_to_paddr (bin, relocs[i].segment) + relocs[i].offset;
-		// eprintf ("pa 0x%08llx\n", paddr);
-	}
-	btree_add (&tree, (void *)&first_segment, cmp_segs);
-	/* Add segment address of stack segment if it's resides inside dos
-	executable.
-	*/
-	if (r_bin_mz_seg_to_paddr (bin, stack_segment) < bin->dos_file_size) {
-		btree_add (&tree, (void *)&stack_segment, cmp_segs);
-	}
-	return NULL;
-#endif
-#if 1
 	struct btree_node *tree;
 	struct r_bin_mz_segment_t *ret;
-	ut16 *segments, *curr_seg;
+	// ut16 *segments, 
 	int i, num_segs;
 	ut64 paddr;
 	const ut16 first_segment = 0;
+	if (!bin || !bin->dos_header) {
+		return NULL;
+	}
 	const ut16 stack_segment = bin->dos_header->ss;
 	const MZ_image_relocation_entry * const relocs = bin->relocation_entries;
 	const int num_relocs = bin->dos_header->num_relocs;
@@ -82,21 +68,19 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments(const struct r_bin_mz_obj_t *b
 	for (i = 0; i < num_relocs; i++) {
 		paddr = r_bin_mz_seg_to_paddr (bin, relocs[i].segment) + relocs[i].offset;
 		if ((paddr + 2) < bin->dos_file_size) {
-			curr_seg = (ut16 *) (bin->b->buf + paddr);
+			int left;
+			ut16 *curr_seg = (ut16 *)r_buf_get_at (bin->b, paddr, &left);
 			/* Add segment only if it's located inside dos executable data */
-			if (*curr_seg <= last_parag) {
+			if (left >= 2 && r_read_le16 (curr_seg) <= last_parag) {
 				btree_add (&tree, curr_seg, cmp_segs);
 			}
 		}
 	}
 
 	/* Add segment address of first segment to make sure that it will be
-	added. If relocations empty or there isn't first segment in relocations.)
-	*/
+	added. If relocations empty or there isn't first segment in relocations.) */
 	btree_add (&tree, (void *)&first_segment, cmp_segs);
-	/* Add segment address of stack segment if it's resides inside dos
-	executable.
-	*/
+	/* Add segment address of stack segment if it's resides inside dos executable. */
 	if (r_bin_mz_seg_to_paddr (bin, stack_segment) < bin->dos_file_size) {
 		btree_add (&tree, (void *)&stack_segment, cmp_segs);
 	}
@@ -105,13 +89,13 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments(const struct r_bin_mz_obj_t *b
 		btree_cleartree (tree, NULL);
 		return NULL;
 	}
-	segments = calloc (1 + num_relocs, sizeof (*segments));
+	ut16 *segments = calloc (2 + num_relocs, sizeof (*segments));
 	if (!segments) {
 		eprintf ("Error: calloc (segments)\n");
 		btree_cleartree (tree, NULL);
 		return NULL;
 	}
-	curr_seg = segments;
+	ut16 *curr_seg = segments;
 	btree_traverse (tree, 0, &curr_seg, trv_segs);
 	num_segs = curr_seg - segments;
 	ret = calloc (num_segs + 1, sizeof (struct r_bin_mz_segment_t));
@@ -133,28 +117,26 @@ struct r_bin_mz_segment_t * r_bin_mz_get_segments(const struct r_bin_mz_obj_t *b
 	ret[i].last = 1;
 	free (segments);
 	return ret;
-#endif
 }
 
 struct r_bin_mz_reloc_t *r_bin_mz_get_relocs(const struct r_bin_mz_obj_t *bin) {
 	int i, j;
-	struct r_bin_mz_reloc_t *relocs;
 	const int num_relocs = bin->dos_header->num_relocs;
-	const MZ_image_relocation_entry * const rel_entry = \
-		bin->relocation_entries;
+	const MZ_image_relocation_entry * const rel_entry = bin->relocation_entries;
 
-	relocs = calloc (num_relocs + 1, sizeof (*relocs));
+	struct r_bin_mz_reloc_t *relocs = calloc (num_relocs + 1, sizeof (*relocs));
 	if (!relocs) {
 		eprintf ("Error: calloc (struct r_bin_mz_reloc_t)\n");
 		return NULL;
 	}
-
 	for (i = 0, j = 0; i < num_relocs; i++) {
 		relocs[j].paddr =
 			r_bin_mz_seg_to_paddr (bin, rel_entry[i].segment) +
 			rel_entry[i].offset;
 		/* Add only relocations which resides inside dos executable */
-		if (relocs[j].paddr < bin->dos_file_size) j++;
+		if (relocs[j].paddr < bin->dos_file_size) {
+			j++;
+		}
 	}
 	relocs[j].last = 1;
 
@@ -186,7 +168,7 @@ static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t* bin) {
 		eprintf ("Error: read (MZ_image_dos_header)\n");
 		return false;
 	}
-
+	// dos_header is not endian safe here in this point
 	if (bin->dos_header->blocks_in_file < 1) {
 		return false;
 	}
@@ -250,12 +232,10 @@ static int r_bin_mz_init(struct r_bin_mz_obj_t* bin) {
 	bin->dos_extended_header = NULL;
 	bin->relocation_entries = NULL;
 	bin->kv = sdb_new0 ();
-
 	if (!r_bin_mz_init_hdr (bin)) {
 		eprintf ("Warning: File is not MZ\n");
 		return false;
 	}
-
 	return true;
 }
 
@@ -292,4 +272,36 @@ struct r_bin_mz_obj_t* r_bin_mz_new_buf(const struct r_buf_t *buf) {
 		return r_bin_mz_free (bin);
 	}
 	return r_bin_mz_init (bin) ? bin : r_bin_mz_free (bin);
+}
+
+ut64 r_bin_mz_get_main_vaddr(struct r_bin_mz_obj_t *bin) {
+	int n;
+	ut8 b[512];
+	if (!bin || !bin->b) {
+		return 0LL;
+	}
+	int entry = r_bin_mz_get_entrypoint (bin);
+	ZERO_FILL (b);
+	if (r_buf_read_at (bin->b, entry, b, sizeof (b)) < 0) {
+		eprintf ("Warning: Cannot read entry at 0x%08"PFMT32x "\n", (ut32) entry);
+		return 0LL;
+	}
+	// MSVC
+	if (b[0] == 0xb4 && b[1] == 0x30) {
+		// ff 36 XX XX			push	XXXX
+		// ff 36 XX XX			push	argv
+		// ff 36 XX XX			push	argc
+		// 9a XX XX XX XX		lcall	_main
+		// 50				push	ax
+		for (n = 0; n < sizeof (b) - 18; n++) {
+			if (b[n] == 0xff && b[n + 4] == 0xff && b[n + 8] == 0xff && b[n + 12] == 0x9a && b[n + 17] == 0x50) {
+				const ut16 call_addr = r_read_ble16 (b + n + 13, 0);;
+				const ut16 call_seg = r_read_ble16 (b + n + 15, 0);;
+				const ut64 call_dst = r_bin_mz_seg_to_paddr (bin, call_seg) + call_addr;
+				return call_dst;
+			}
+		}
+	}
+
+	return 0LL;
 }

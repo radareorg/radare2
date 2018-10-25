@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2016 - pancake, fenugrec */
+/* radare - LGPL - Copyright 2013-2017 - pancake, fenugrec */
 
 /*
 *** .hex format description : every line follows this pattern
@@ -49,7 +49,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	RBufferSparse *rbs;
 	RListIter *iter;
 
-	if (!fd || !fd->data || (fd->flags & R_IO_WRITE) == 0 || count <= 0) {
+	if (!fd || !fd->data || (fd->perm & R_PERM_W) == 0 || count <= 0) {
 		return -1;
 	}
 	rih = fd->data;
@@ -89,7 +89,7 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 			tsiz = -addl0;
 			addl0 = 0;
 			if (fwblock (out, rbs->data, rbs->from, tsiz)) {
-				eprintf("ihex:fwblock error\n");
+				eprintf ("ihex:fwblock error\n");
 				fclose (out);
 				return -1;
 			}
@@ -123,8 +123,9 @@ static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut16 size) {
 	int j;
 	ut32 i;	//has to be bigger than size !
 
-	if (size <1 || !fd || !b)
+	if (size < 1 || !fd || !b) {
 		return -1;
+	}
 
 	for (i = 0; (i + 0x10) < size; i += 0x10) {
 		cks = 0x10;
@@ -135,16 +136,19 @@ static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut16 size) {
 		}
 		cks = 0 - cks;
 		if (fprintf (fd, ":10%04x00%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n",
-			(i+start_addr)&0xffff, b[0], b[1], b[2], b[3], b[4], b[5], b[6],
-			b[7], b[8], b[9], b[10], b[11], b[12], b[13],
-			b[14], b[15], cks) < 0) return -1;
+				 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n",
+			    (i + start_addr) & 0xffff, b[0], b[1], b[2], b[3], b[4], b[5], b[6],
+			    b[7], b[8], b[9], b[10], b[11], b[12], b[13],
+			    b[14], b[15], cks) < 0) {
+			return -1;
+		}
 		start_addr += 0x10;
 		b += 0x10;
 		if ((start_addr & 0xffff) < 0x10) {
 			//addr rollover: write ext address record
-			if (fw04b (fd, start_addr >> 16) < 0)
+			if (fw04b (fd, start_addr >> 16) < 0) {
 				return -1;
+			}
 		}
 	}
 	if (i == size) {
@@ -160,8 +164,9 @@ static int fwblock(FILE *fd, ut8 *b, ut32 start_addr, ut16 size) {
 	}
 	cks -= j;
 
-	if (fprintf (fd, ":%02X%04X00%.*s%02X\n", j, last_addr, 2*j, linebuf,cks) < 0)
+	if (fprintf (fd, ":%02X%04X00%.*s%02X\n", j, last_addr, 2 * j, linebuf, cks) < 0) {
 		return -1;
+	}
 	return 0;
 }
 
@@ -177,10 +182,8 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		return -1;
 	}
 	Rihex *rih = fd->data;
-	if (r_buf_read_at (rih->rbuf, io->off, buf, count) != count) {
-		return -1; //should never happen with a sparsebuf..
-	}
-	return count;
+	memset (buf, io->Oxff, count);
+	return r_buf_read_at (rih->rbuf, io->off, buf, count);
 }
 
 static int __close(RIODesc *fd) {
@@ -191,7 +194,6 @@ static int __close(RIODesc *fd) {
 	r_buf_free (rih->rbuf);
 	free (rih);
 	fd->data = NULL;
-	fd->state = R_IO_DESC_TYPE_CLOSED;
 	return 0;
 }
 
@@ -316,17 +318,18 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 			}
 			sec_size = 0;
 
-			eol = strchr (str+1, ':');
-			if (eol) *eol = 0;
+			eol = strchr (str + 1, ':');
+			if (eol) {
+				*eol = 0;
+			}
 			cksum = bc;
 			cksum += addr_tmp>>8;
 			cksum += addr_tmp;
 			cksum += type;
-			if ((bc !=2) || (addr_tmp != 0)) {
+			if ((bc != 2) || (addr_tmp != 0)) {
 				eprintf ("invalid type 02/04 record!\n");
 				goto fail;
 			}
-
 			if ((sscanf (str + 9 + 0, "%02x", &extH) !=1) ||
 				(sscanf (str + 9 + 2, "%02x", &extL) !=1)) {
 				eprintf ("unparsable data !\n");
@@ -346,7 +349,9 @@ static bool ihex_parse(RBuffer *rbuf, char *str) {
 			if (eol) {
 				// checksum
 				byte=0;	//break checksum if sscanf failed
-				if (sscanf (str+9+ 4, "%02x", &byte) !=1) cksum=1;
+				if (sscanf (str + 9 + 4, "%02x", &byte) != 1) {
+					cksum = 1;
+				}
 				cksum += byte;
 				if (cksum != 0) {
 					ut8 fixedcksum = 0-(cksum-byte);
@@ -376,14 +381,15 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	char *str = NULL;
 	if (__plugin_open (io, pathname, 0)) {
 		str = r_file_slurp (pathname + 7, NULL);
-		if (!str) return NULL;
-		mal= R_NEW0 (Rihex);
+		if (!str) {
+			return NULL;
+		}
+		mal = R_NEW0 (Rihex);
 		if (!mal) {
 			free (str);
 			return NULL;
 		}
-		mal->fd = -1; /* causes r_io_desc_new() to set the correct fd */
-		mal->rbuf = r_buf_new_sparse ();
+		mal->rbuf = r_buf_new_sparse (io->Oxff);
 		if (!mal->rbuf) {
 			free (str);
 			free (mal);
@@ -397,15 +403,21 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			return NULL;
 		}
 		free (str);
-		return r_io_desc_new (&r_io_plugin_ihex,
-			mal->fd, pathname, rw, mode, mal);
+		return r_io_desc_new (io, &r_io_plugin_ihex,
+			pathname, rw, mode, mal);
 	}
 	return NULL;
 }
 
 static bool __resize(RIO *io, RIODesc *fd, ut64 size) {
+	if (!fd) {
+		return false;
+	}
 	Rihex *rih = fd->data;
-	return r_buf_resize (rih->rbuf, size);
+	if (rih) {
+		return r_buf_resize (rih->rbuf, size);
+	}
+	return false;
 }
 
 RIOPlugin r_io_plugin_ihex = {
@@ -422,7 +434,7 @@ RIOPlugin r_io_plugin_ihex = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_hex,
 	.version = R2_VERSION

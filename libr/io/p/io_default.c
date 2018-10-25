@@ -1,13 +1,14 @@
-/* radare - LGPL - Copyright 2008-2016 - pancake */
+/* radare - LGPL - Copyright 2008-2018 - pancake */
 
 #include <r_userconf.h>
 #include <r_io.h>
 #include <r_lib.h>
+#include <stdio.h>
 
 typedef struct r_io_mmo_t {
 	char * filename;
 	int mode;
-	int flags;
+	int perm;
 	int fd;
 	int opened;
 	bool nocache;
@@ -17,29 +18,36 @@ typedef struct r_io_mmo_t {
 	int rawio;
 } RIOMMapFileObj;
 
-static int __io_posix_open (const char *file, int flags, int mode) {
+static int __io_posix_open(const char *file, int perm, int mode) {
 	int fd;
+	if (r_str_startswith (file, "file://")) {
+		file += strlen ("file://");
+	}
 	if (r_file_is_directory (file)) {
 		return -1;
 	}
 #if __WINDOWS__
-	if (flags & R_IO_WRITE) {
+	// probably unnecessary to have this ifdef nowadays windows is posix enough
+	if (perm & R_PERM_W) {
 		fd = r_sandbox_open (file, O_BINARY | O_RDWR, 0);
-		if (fd == -1) {
+		if (fd == -1 && perm & R_PERM_CREAT) {
 			r_sandbox_creat (file, 0644);
-			fd = r_sandbox_open (file, O_BINARY | O_RDWR, 0);
+			fd = r_sandbox_open (file, O_BINARY | O_RDWR | O_CREAT, 0);
 		}
 	} else {
 		fd = r_sandbox_open (file, O_BINARY, 0);
 	}
 #else
-	fd = r_sandbox_open (file, (flags & R_IO_WRITE)
-		? (O_RDWR|O_CREAT): O_RDONLY, mode);
+	const int posixFlags = (perm & R_PERM_W) ? (perm & R_PERM_CREAT)
+			? (O_RDWR | O_CREAT) : O_RDWR : O_RDONLY;
+	fd = r_sandbox_open (file, posixFlags, mode);
 #endif
 	return fd;
 }
 
 static ut64 r_io_def_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int whence) {
+	ut64 seek_val = UT64_MAX;
+
 	if (!mmo) {
 		return UT64_MAX;
 	}
@@ -49,7 +57,8 @@ static ut64 r_io_def_mmap_seek(RIO *io, RIOMMapFileObj *mmo, ut64 offset, int wh
 	if (!mmo->buf) {
 		return UT64_MAX;
 	}
-	ut64 seek_val = mmo->buf->cur;
+
+	seek_val = mmo->buf->cur;
 	switch (whence) {
 	case SEEK_SET:
 		seek_val = R_MIN (mmo->buf->length, offset);
@@ -76,12 +85,12 @@ static int r_io_def_mmap_refresh_def_mmap_buf(RIOMMapFileObj *mmo) {
 		cur = 0;
 	}
 	st64 sz = r_file_size (mmo->filename);
-	if (sz == 0 || sz > ST32_MAX) {
+	if (sz > ST32_MAX) {
 		// Do not use mmap if the file is huge
 		mmo->rawio = 1;
 	}
 	if (mmo->rawio) {
-		mmo->fd = __io_posix_open (mmo->filename, mmo->flags, mmo->mode);
+		mmo->fd = __io_posix_open (mmo->filename, mmo->perm, mmo->mode);
 		if (mmo->nocache) {
 #ifdef F_NOCACHE
 			fcntl (mmo->fd, F_NOCACHE, 1);
@@ -89,13 +98,13 @@ static int r_io_def_mmap_refresh_def_mmap_buf(RIOMMapFileObj *mmo) {
 		}
 		return (mmo->fd != -1);
 	}
-	mmo->buf = r_buf_mmap (mmo->filename, mmo->flags);
+	mmo->buf = r_buf_mmap (mmo->filename, mmo->perm);
 	if (mmo->buf) {
 		r_io_def_mmap_seek (io, mmo, cur, SEEK_SET);
 		return true;
 	} else {
 		mmo->rawio = 1;
-		mmo->fd = __io_posix_open (mmo->filename, mmo->flags, mmo->mode);
+		mmo->fd = __io_posix_open (mmo->filename, mmo->perm, mmo->mode);
 		if (mmo->nocache) {
 #ifdef F_NOCACHE
 			fcntl (mmo->fd, F_NOCACHE, 1);
@@ -114,12 +123,11 @@ static void r_io_def_mmap_free (RIOMMapFileObj *mmo) {
 	free (mmo);
 }
 
-RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, int mode, int flags) {
-	RIOMMapFileObj *mmo = NULL;
-	if (!io)
+RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, int mode, int perm) {
+	if (!io) {
 		return NULL;
-
-	mmo = R_NEW0 (RIOMMapFileObj);
+	}
+	RIOMMapFileObj *mmo = R_NEW0 (RIOMMapFileObj);
 	if (!mmo) {
 		return NULL;
 	}
@@ -129,12 +137,11 @@ RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, in
 	}
 	mmo->filename = strdup (filename);
 	mmo->mode = mode;
-	mmo->flags = flags;
+	mmo->perm = perm;
 	mmo->io_backref = io;
-	if (flags & R_IO_WRITE)
-		mmo->fd = r_sandbox_open (filename, O_CREAT|O_RDWR, mode);
-	else mmo->fd = r_sandbox_open (filename, O_RDONLY, mode);
-
+	const int posixFlags = (perm & R_PERM_W) ? (perm & R_PERM_CREAT)
+			? (O_RDWR | O_CREAT) : O_RDWR : O_RDONLY;
+	mmo->fd = r_sandbox_open (filename, posixFlags, mode);
 	if (mmo->fd == -1) {
 		free (mmo->filename);
 		free (mmo);
@@ -151,7 +158,9 @@ RIOMMapFileObj *r_io_def_mmap_create_new_file(RIO  *io, const char *filename, in
 }
 
 static int r_io_def_mmap_close(RIODesc *fd) {
-	if (!fd || !fd->data) return -1;
+	if (!fd || !fd->data) {
+		return -1;
+	}
 	r_io_def_mmap_free ((RIOMMapFileObj *) fd->data);
 	fd->data = NULL;
 	return 0;
@@ -159,6 +168,9 @@ static int r_io_def_mmap_close(RIODesc *fd) {
 
 static bool r_io_def_mmap_check_default (const char *filename) {
 	if (filename) {
+		if (r_str_startswith (filename, "file://")) {
+			filename += strlen ("file://");
+		}
 		const char * peekaboo = (!strncmp (filename, "nocache://", 10))
 			? NULL : strstr (filename, "://");
 		if (!peekaboo || (peekaboo-filename) > 10) {
@@ -179,8 +191,9 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		return count;
 	}
 	mmo = fd->data;
-	if (!mmo)
+	if (!mmo) {
 		return -1;
+	}
 	if (mmo->rawio) {
 		if (fd->obsz) {
 			char *a_buf;
@@ -199,7 +212,7 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 			a_buf = malloc (a_count+aligned);
 			if (a_buf) {
 				int i;
-				memset (a_buf, 0xff, a_count+aligned);
+				memset (a_buf, 0xff, a_count + aligned);
 				if (lseek (mmo->fd, a_off, SEEK_SET) < 0) {
 					free (a_buf);
 					return -1;
@@ -214,10 +227,14 @@ static int r_io_def_mmap_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 			free (a_buf);
 			return count;
 		}
+		if (lseek (mmo->fd, io->off, SEEK_SET) < 0) {
+			return -1;
+		}
 		return read (mmo->fd, buf, count);
 	}
-	if (mmo->buf->length < io->off)
+	if (mmo->buf->length < io->off) {
 		io->off = mmo->buf->length;
+	}
 	return r_buf_read_at (mmo->buf, io->off, buf, count);
 }
 
@@ -226,11 +243,13 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 	int len = -1;
 	ut64 addr = io->off;
 
-	if (!fd || !fd->data || !buf) return -1;
-
-	mmo = fd->data;
-	if (!mmo)
+	if (!fd || !fd->data || !buf) {
 		return -1;
+	}
+	mmo = fd->data;
+	if (!mmo) {
+		return -1;
+	}
 	if (mmo->rawio) {
 		if (fd->obsz) {
 			char *a_buf;
@@ -240,36 +259,38 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 			//ut64 a_off = (io->off >> 9 ) << 9; //- (io->off & aligned);
 			ut64 a_off = io->off - (io->off % aligned); //(io->off >> 9 ) << 9; //- (io->off & aligned);
 			int a_delta = io->off - a_off;
-			if (a_delta<0) {
+			if (a_delta < 0) {
 				return -1;
 			}
-			a_count = count + (aligned-(count%aligned));
-
-			a_buf = malloc (a_count+aligned);
+			a_count = count + (aligned - (count % aligned));
+			a_buf = malloc (a_count + aligned);
 			if (a_buf) {
 				int i;
 				memset (a_buf, 0xff, a_count+aligned);
-				for (i=0; i< a_count ; i+= aligned) {
-					(void)lseek (mmo->fd, a_off+i, SEEK_SET);
-					(void)read (mmo->fd, a_buf+i, aligned);
+				for (i = 0; i < a_count; i += aligned) {
+					(void)lseek (mmo->fd, a_off + i, SEEK_SET);
+					(void)read (mmo->fd, a_buf + i, aligned);
 				}
 				memcpy (a_buf+a_delta, buf, count);
-				for (i=0; i< a_count ; i+= aligned) {
-					(void)lseek (mmo->fd, a_off+i, SEEK_SET);
-					(void)write (mmo->fd, a_buf+i, aligned);
+				for (i = 0; i < a_count; i += aligned) {
+					(void)lseek (mmo->fd, a_off + i, SEEK_SET);
+					(void)write (mmo->fd, a_buf + i, aligned);
 				}
 			}
 			free (a_buf);
 			return count;
 		}
-		if (lseek (fd->fd, addr, 0) < 0)
+		if (lseek (mmo->fd, addr, 0) < 0) {
 			return -1;
-		len = write (fd->fd, buf, count);
+		}
+		len = write (mmo->fd, buf, count);
 		return len;
 	}
 
 	if (mmo && mmo->buf) {
-		if (!(mmo->flags & R_IO_WRITE)) return -1;
+		if (!(mmo->perm & R_PERM_W)) {
+			return -1;
+		}
 		if ( (count + addr > mmo->buf->length) || mmo->buf->empty) {
 			ut64 sz = count + addr;
 			r_file_truncate (mmo->filename, sz);
@@ -291,12 +312,14 @@ static int r_io_def_mmap_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) 
 	return len;
 }
 
-static RIODesc *r_io_def_mmap_open(RIO *io, const char *file, int flags, int mode) {
-	RIOMMapFileObj *mmo = r_io_def_mmap_create_new_file (io, file, mode, flags);
-	return (mmo)
-		? r_io_desc_new (&r_io_plugin_default, mmo->fd, mmo->filename, flags, mode, mmo)
-		: NULL;
+static RIODesc *r_io_def_mmap_open(RIO *io, const char *file, int perm, int mode) {
+	RIOMMapFileObj *mmo = r_io_def_mmap_create_new_file (io, file, mode, perm);
+	if (!mmo) {
+		return NULL;
+	}
+	return r_io_desc_new (io, &r_io_plugin_default, mmo->filename, perm, mode, mmo);
 }
+
 
 static ut64 r_io_def_mmap_lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 	return (fd && fd->data)
@@ -319,14 +342,18 @@ static bool __plugin_open_default(RIO *io, const char *file, bool many) {
 	return r_io_def_mmap_check_default (file);
 }
 
-// default open should permit opening 
-static RIODesc *__open_default(RIO *io, const char *file, int flags, int mode) {
-	RIODesc *iod;
-	if (!r_io_def_mmap_check_default (file) ) return NULL;
-	iod = r_io_def_mmap_open (io, file, flags, mode);
+// default open should permit opening
+static RIODesc *__open_default(RIO *io, const char *file, int perm, int mode) {
+	if (r_str_startswith (file, "file://")) {
+		file += strlen ("file://");
+	}
+	if (!r_io_def_mmap_check_default (file)) {
+		return NULL;
+	}
+	RIODesc *iod = r_io_def_mmap_open (io, file, perm, mode);
 	return iod;
 // NTOE: uncomment this line to support loading files in ro as fallback is rw fails
-//	return iod? iod: r_io_def_mmap_open (io, file, R_IO_READ, mode);
+//	return iod? iod: r_io_def_mmap_open (io, file, R_PERM_R, mode);
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
@@ -350,13 +377,32 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 size) {
 		return false;
 	}
 	RIOMMapFileObj *mmo = fd->data;
-	if (!(mmo->flags & R_IO_WRITE)) {
+	if (!(mmo->perm & R_PERM_W)) {
 		return false;
 	}
 	return r_io_def_mmap_truncate (mmo, size);
 }
 
-struct r_io_plugin_t r_io_plugin_default = {
+#if __UNIX__
+static bool __is_blockdevice (RIODesc *desc) {
+	RIOMMapFileObj *mmo;
+	struct stat buf;
+	if (!desc || !desc->data) {
+		return false;
+	}
+	mmo = desc->data;
+	if (fstat (mmo->fd, &buf) == -1) {
+		return false;
+	}
+	return ((buf.st_mode & S_IFBLK) == S_IFBLK);
+}
+#endif
+
+static char *__system(RIO *io, RIODesc *desc, const char *cmd) {
+	return NULL;
+}
+
+RIOPlugin r_io_plugin_default = {
 	.name = "default",
 	.desc = "open local files using def_mmap://",
 	.license = "LGPL3",
@@ -367,10 +413,14 @@ struct r_io_plugin_t r_io_plugin_default = {
 	.lseek = __lseek,
 	.write = __write,
 	.resize = __resize,
+	.system = __system,
+#if __UNIX__
+	.is_blockdevice = __is_blockdevice,
+#endif
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_default,
 	.version = R2_VERSION

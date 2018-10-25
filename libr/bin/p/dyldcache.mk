@@ -1,5 +1,4 @@
 OBJ_DYLDCACHE=bin_dyldcache.o
-# ../format/mach0/dyldcache.o
 
 STATIC_OBJ+=${OBJ_DYLDCACHE}
 TARGET_DYLDCACHE=bin_dyldcache.${EXT_SO}

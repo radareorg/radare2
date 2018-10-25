@@ -4,11 +4,11 @@
 #include <r_bin.h>
 
 // TODO: use proper dwarf api here.. or deprecate
-static int get_line(RBinFile *arch, ut64 addr, char *file, int len, int *line) {
-	if (arch->sdb_addrinfo) {
+static int get_line(RBinFile *bf, ut64 addr, char *file, int len, int *line) {
+	if (bf->sdb_addrinfo) {
 		char offset[64];
 		char *offset_ptr = sdb_itoa (addr, offset, 16);
-		char *ret = sdb_get (arch->sdb_addrinfo, offset_ptr, 0);
+		char *ret = sdb_get (bf->sdb_addrinfo, offset_ptr, 0);
 		if (ret) {
 			char *p = strchr (ret, '|');
 			if (p) {

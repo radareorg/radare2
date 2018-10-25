@@ -5,13 +5,20 @@
 
 #include <stdio.h>
 
-int gdbr_init(libgdbr_t *g) {
+int gdbr_init(libgdbr_t *g, bool is_server) {
 	if (!g) {
 		return -1;
 	}
 	memset (g, 0, sizeof (libgdbr_t));
+	g->no_ack = false;
+	g->stub_features.extended_mode = -1;
+	g->stub_features.pkt_sz = 64;
+	g->remote_file_fd = -1;
+	g->is_server = is_server;
 	g->send_max = 2500;
 	g->send_buff = (char *) calloc (g->send_max, 1);
+	g->page_size = 4096;
+	g->num_retries = 10; // safe number, should be ~2.5 seconds
 	if (!g->send_buff) {
 		return -1;
 	}
@@ -33,38 +40,43 @@ int gdbr_init(libgdbr_t *g) {
 		R_FREE (g->read_buff);
 		return -1;
 	}
+	g->remote_type = GDB_REMOTE_TYPE_GDB;
 	return 0;
 }
 
-int gdbr_set_architecture(libgdbr_t *g, uint8_t architecture) {
+int gdbr_set_architecture(libgdbr_t *g, const char *arch, int bits) {
 	if (!g) {
 		return -1;
 	}
-	g->architecture = architecture;
-	switch (architecture) {
-	case ARCH_X86_32:
-		g->registers = x86_32;
-		break;
-	case ARCH_X86_64:
-		g->registers = x86_64;
-		break;
-	case ARCH_ARM_32:
-		g->registers = arm32;
-		break;
-	case ARCH_ARM_64:
-		g->registers = aarch64;
-		break;
-	case ARCH_MIPS:
-		g->registers = mips;
-		break;
-	case ARCH_AVR:
-		g->registers = avr;
-		break;
-	case ARCH_LM32:
-		g->registers = lm32;
-		break;
-	default:
-		eprintf ("Error unknown architecture set\n");
+	if (g->target.valid && g->registers) {
+		return 0;
+	}
+	if (!strcmp (arch, "mips")) {
+		g->registers = gdb_regs_mips;
+	} else if (!strcmp (arch, "lm32")) {
+		g->registers = gdb_regs_lm32;
+	} else if (!strcmp (arch, "avr")) {
+		g->registers = gdb_regs_avr;
+	} else if (!strcmp (arch, "v850")) {
+		g->registers = gdb_regs_v850;
+	} else if (!strcmp (arch, "x86")) {
+		if (bits == 32) {
+			g->registers = gdb_regs_x86_32;
+		} else if (bits == 64) {
+			g->registers = gdb_regs_x86_64;
+		} else {
+			eprintf ("%s: unsupported x86 bits: %d\n", __func__, bits);
+			return -1;
+		}
+	} else if (!strcmp (arch, "arm")) {
+		if (bits == 32) {
+			g->registers = gdb_regs_arm32;
+		} else if (bits == 64) {
+			g->registers = gdb_regs_aarch64;
+		} else {
+			eprintf ("%s: unsupported arm bits: %d\n", __func__, bits);
+			return -1;
+		}
 	}
 	return 0;
 }
@@ -73,10 +85,9 @@ int gdbr_cleanup(libgdbr_t *g) {
 	if (!g) {
 		return -1;
 	}
-	free (g->data);
-	free (g->send_buff);
+	R_FREE (g->data);
 	g->send_len = 0;
-	free (g->read_buff);
-	free (g->exec_file_name);
+	R_FREE (g->send_buff);
+	R_FREE (g->read_buff);
 	return 0;
 }

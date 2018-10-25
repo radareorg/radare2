@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2015 - pancake */
+/* radare2 - LGPL - Copyright 2014-2018 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -12,21 +12,25 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	memset (op, 0, sizeof (RAsmOp));
 	op->size = 4;
 	ret = cs_open (CS_ARCH_XCORE, mode, &handle);
-	if (ret) goto fin;
+	if (ret) {
+		goto fin;
+	}
 	cs_option (handle, CS_OPT_DETAIL, CS_OPT_OFF);
 	n = cs_disasm (handle, (ut8*)buf, len, a->pc, 1, &insn);
-	if (n<1) {
-		strcpy (op->buf_asm, "invalid");
+	if (n < 1) {
+		r_asm_op_set_asm (op, "invalid");
 		op->size = 4;
 		ret = -1;
 		goto beach;
-	} else ret = 4;
-	if (insn->size<1)
+	}
+	ret = 4;
+	if (insn->size < 1) {
 		goto beach;
+	}
 	op->size = insn->size;
-	snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s%s%s",
+	r_asm_op_set_asm (op, sdb_fmt ("%s%s%s",
 		insn->mnemonic, insn->op_str[0]? " ": "",
-		insn->op_str);
+		insn->op_str));
 	// TODO: remove the '$'<registername> in the string
 	beach:
 	cs_free (insn, n);
@@ -39,6 +43,7 @@ RAsmPlugin r_asm_plugin_xcore_cs = {
 	.name = "xcore",
 	.desc = "Capstone XCore disassembler",
 	.license = "BSD",
+	.author = "pancake",
 	.arch = "xcore",
 	.bits = 32,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
@@ -46,7 +51,7 @@ RAsmPlugin r_asm_plugin_xcore_cs = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_xcore_cs,
 	.version = R2_VERSION

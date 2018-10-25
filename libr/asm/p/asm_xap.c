@@ -16,10 +16,12 @@ static int arch_xap_disasm(char *str, const unsigned char *buf, ut64 seek) {
 	s->s_out = NULL;
 	d = next_inst(s);
 	if (d != NULL) {
-		xap_decode(s, d);
-		strcpy(str, d->d_asm);
-		free(d);
-	} else *str = '\0';
+		xap_decode (s, d);
+		strcpy (str, d->d_asm);
+		free (d);
+	} else {
+		*str = '\0';
+	}
 #if 0
 	if (s->s_ff_quirk) {
 		sprintf(d->d_asm, "DC\t0x%x", i2u16(&d->d_inst));
@@ -29,8 +31,9 @@ static int arch_xap_disasm(char *str, const unsigned char *buf, ut64 seek) {
 	return 0;
 }
 static int disassemble(RAsm *a, struct r_asm_op_t *op, const ut8 *buf, int len) {
-	arch_xap_disasm (op->buf_asm, buf, a->pc);
-	return (op->size=2);
+	char *buf_asm = r_strbuf_get (&op->buf_asm);
+	arch_xap_disasm (buf_asm, buf, a->pc);
+	return (op->size = 2);
 }
 
 RAsmPlugin r_asm_plugin_xap = {
@@ -44,7 +47,7 @@ RAsmPlugin r_asm_plugin_xap = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_xap,
 	.version = R2_VERSION

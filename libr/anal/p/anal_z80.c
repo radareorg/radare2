@@ -8,25 +8,32 @@
 #include <r_anal.h>
 #include "../../asm/arch/z80/z80_tab.h"
 
-static void z80_op_size(const ut8 *data, int *size, int *size_prefix) {
-	int type;
-	switch(data[0]) {
+static void z80_op_size(const ut8 *data, int len, int *size, int *size_prefix) {
+	int type = 0;
+	if (len <1) {
+		return;
+	}
+	switch (data[0]) {
 	case 0xed:
-//		type = dd[data[1]].type;
-		type = ed[data[1]].type;
+		if (len > 1) {
+			int idx = z80_ed_branch_index_res (data[1]);
+			type = ed[idx].type;
+		}
 		break;
 	case 0xcb:
 		type = Z80_OP16;
 		break;
 	case 0xdd:
-		type = dd[data[1]].type;
+		if (len >1) {
+			type = dd[z80_fddd_branch_index_res(data[1])].type;
+		}
 		break;
 	case 0xfd:
-//		type = dd[data[1]].type;
-		type = fd[data[1]].type;
+		if (len > 1) {
+			type = fd[z80_fddd_branch_index_res(data[1])].type;
+		}
 		break;
 	default:
-//		type = dd[data[0]].type;
 		type = z80_op[data[0]].type;
 		break;
 	}
@@ -50,7 +57,7 @@ static void z80_op_size(const ut8 *data, int *size, int *size_prefix) {
 
 static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 	int ilen;
-	z80_op_size (data, &ilen, &op->nopcode);
+	z80_op_size (data, len, &ilen, &op->nopcode);
 
 	memset (op, '\0', sizeof (RAnalOp));
 	op->addr = addr;
@@ -232,7 +239,7 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 	case 0x30:
 	case 0x38:
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = addr + (st8)data[1] + ilen;
+		op->jump = addr + ((len>1)? (st8)data[1]:0) + ilen;
 		op->fail = addr + ilen;
 		break;
 
@@ -246,12 +253,12 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 	case 0xf2:
 	case 0xfa:
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = data[1] | data[2] << 8;
+		op->jump = (len > 2)? data[1] | data[2] << 8: 0;
 		op->fail = addr + ilen;
 		break;
 	case 0xc3: // jp xx
 		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = data[1] | data[2] << 8;
+		op->jump = (len > 2)? data[1] | data[2] << 8: 0;
 		break;
 	case 0xe9: // jp (HL)
 		op->type = R_ANAL_OP_TYPE_UJMP;
@@ -301,7 +308,7 @@ static int z80_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int
 	case 0xec: // pe
 	case 0xfc: // m
 		op->type = R_ANAL_OP_TYPE_CCALL;
-		op->jump = data[1] | data[2] << 8;
+		op->jump = (len>2)? data[1] | data[2] << 8: 0;
 		op->fail = addr + ilen;
 		break;
 
@@ -404,6 +411,10 @@ static int set_reg_profile(RAnal *anal) {
 	return r_reg_set_profile_string (anal->reg, p);
 }
 
+static int archinfo(RAnal *anal, int q) {
+	return 1;
+}
+
 RAnalPlugin r_anal_plugin_z80 = {
 	.name = "z80",
 	.arch = "z80",
@@ -411,11 +422,12 @@ RAnalPlugin r_anal_plugin_z80 = {
 	.bits = 16,
 	.set_reg_profile = &set_reg_profile,
 	.desc = "Z80 CPU code analysis plugin",
+	.archinfo = archinfo,
 	.op = &z80_anal_op,
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_z80,
 	.version = R2_VERSION

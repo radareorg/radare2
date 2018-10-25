@@ -52,7 +52,7 @@ R_API void r_anal_state_insert_bb(RAnalState* state, RAnalBlock *bb) {
 	if (!r_anal_state_search_bb (state, bb->addr) && state->current_fcn) {
 		r_list_append (state->current_fcn->bbs, bb);
 		state->bytes_consumed += state->current_bb->op_sz;
-		const char *key = sdb_fmt (0, "0x%08"PFMT64x, bb->addr);
+		const char *key = sdb_fmt ("0x%08"PFMT64x, bb->addr);
 		if (!ht_insert (state->ht, key, bb)) {
 			eprintf ("Inserted bb 0x%04"PFMT64x" failure\n", bb->addr);
 		}
@@ -63,7 +63,7 @@ R_API RAnalBlock * r_anal_state_search_bb(RAnalState* state, ut64 addr) {
 	/*
 	 *   Return 0 if no rehash is needed, otherwise return 1
 	 */
-	const char *key = sdb_fmt (0, "0x%08"PFMT64x, addr);
+	const char *key = sdb_fmt ("0x%08"PFMT64x, addr);
 	RAnalBlock *tmp_bb = ht_find (state->ht, key, NULL);
 	return tmp_bb;
 }

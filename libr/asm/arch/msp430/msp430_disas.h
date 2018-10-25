@@ -1,8 +1,6 @@
 #ifndef MSP430_DISAS_H
 #define MSP430_DISAS_H
 
-#define MSP430_INSTR_MAXLEN	32
-
 enum msp430_oneop_opcodes {
 	MSP430_RRC,
 	MSP430_SWPB,
@@ -76,13 +74,21 @@ enum msp430_registers {
 
 struct msp430_cmd {
 	ut8 type;
-	ut16	opcode;
+	ut8	opcode;
 	st16	jmp_addr;
 	ut16	call_addr;
 	ut8	jmp_cond;
-	char	instr[MSP430_INSTR_MAXLEN];
-	char	operands[MSP430_INSTR_MAXLEN];
+
+	// Null-delimited string representation of an assembly operation mnemonic.
+	// Length of array: 'i', 'n', 'v', 'a', 'l', 'i', 'd', '\0'
+	// (This is longer than any real assembly mnemonic.)
+	char	instr[7 + 1];
+
+	// Null-delimited string representation of assembly operands.
+	// Length of array: 2 * ('0', 'x', 4-digit hexadecimal numeral, '(', 'r', 2-digit
+	// decimal numeral, ')'), ',', ' ', '\0'
+	char	operands[2 * (2 + 4 + 2 + 3) + 2 + 1];
 };
 
-R_API int msp430_decode_command(const ut8 *instr, struct msp430_cmd *cmd);
+int msp430_decode_command(const ut8 *instr, int len, struct msp430_cmd *cmd);
 #endif /* MSP430_DISAS_H */

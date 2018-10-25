@@ -1,4 +1,4 @@
-/* radare - LGPL - 2016 - a0rtega */
+/* radare - LGPL - 2018 - a0rtega */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -17,27 +17,27 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (!memcmp (buf, "FIRM", 4));
 }
 
-static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
 	return memcpy (&loaded_header, buf, sizeof (struct n3ds_firm_hdr));
 }
 
-static bool load(RBinFile *arch) {
-	const ut8 *bytes = arch? r_buf_buffer (arch->buf): NULL;
-	ut64 sz = arch? r_buf_size (arch->buf): 0;
-	if (!arch || !arch->o) {
+static bool load(RBinFile *bf) {
+	const ut8 *bytes = bf? r_buf_buffer (bf->buf): NULL;
+	ut64 sz = bf? r_buf_size (bf->buf): 0;
+	if (!bf || !bf->o) {
 		return false;
 	}
-	arch->o->bin_obj = load_bytes (arch, bytes, sz, arch->o->loadaddr, arch->sdb);
+	load_bytes (bf, &bf->o->bin_obj, bytes, sz, bf->o->loadaddr, bf->sdb);
 	return check_bytes (bytes, sz);
 }
 
-static int destroy(RBinFile *arch) {
-	r_buf_free (arch->buf);
-	arch->buf = NULL;
+static int destroy(RBinFile *bf) {
+	r_buf_free (bf->buf);
+	bf->buf = NULL;
 	return true;
 }
 
-static RList *sections(RBinFile *arch) {
+static RList *sections(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *sections[4] = {
 		NULL, NULL, NULL, NULL
@@ -55,9 +55,9 @@ static RList *sections(RBinFile *arch) {
 			sections[i] = R_NEW0 (RBinSection);
 			/* Firmware Type ('0'=ARM9/'1'=ARM11) */
 			if (loaded_header.sections[i].type == 0x0) {
-				strncpy (sections[i]->name, "arm9", 4);
+				strncpy (sections[i]->name, "arm9", sizeof (sections[i]->name));
 			} else if (loaded_header.sections[i].type == 0x1) {
-				strncpy (sections[i]->name, "arm11", 5);
+				strncpy (sections[i]->name, "arm11", sizeof (sections[i]->name));
 			} else {
 				corrupt = true;
 				break;
@@ -66,7 +66,7 @@ static RList *sections(RBinFile *arch) {
 			sections[i]->vsize = loaded_header.sections[i].size;
 			sections[i]->paddr = loaded_header.sections[i].offset;
 			sections[i]->vaddr = loaded_header.sections[i].address;
-			sections[i]->srwx = r_str_rwx ("mrwx");
+			sections[i]->perm = r_str_rwx ("rwx");
 			sections[i]->add = true;
 		}
 	}
@@ -89,11 +89,11 @@ static RList *sections(RBinFile *arch) {
 	return ret;
 }
 
-static RList *entries(RBinFile *arch) {
+static RList *entries(RBinFile *bf) {
 	RList *ret = r_list_new ();
 	RBinAddr *ptr9 = NULL, *ptr11 = NULL;
 
-	if (arch && arch->buf) {
+	if (bf && bf->buf) {
 		if (!ret) {
 			return NULL;
 		}
@@ -119,13 +119,13 @@ static RList *entries(RBinFile *arch) {
 	return ret;
 }
 
-static RBinInfo *info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (!ret) {
 		return NULL;
 	}
 
-	if (!arch || !arch->buf) {
+	if (!bf || !bf->buf) {
 		free (ret);
 		return NULL;
 	}
@@ -154,10 +154,9 @@ RBinPlugin r_bin_plugin_nin3ds = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_nin3ds,
 	.version = R2_VERSION
 };
 #endif
-

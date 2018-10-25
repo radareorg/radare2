@@ -1,6 +1,6 @@
 #!/bin/sh
-ASAN="address leak memory undefined"
-ASAN="address"
+# ASAN="address leak memory undefined"
+ASAN=${ASAN:="address undefined signed-integer-overflow"}
 
 printf "\033[32m"
 echo "========================================================================="
@@ -22,12 +22,14 @@ printf "\033[32m"
 echo "========================================================================="
 printf "\033[0m"
 sleep 1
-export LDFLAGS="-lasan"
 
 for a in $ASAN ; do
 	export CFLAGS="${CFLAGS} -fsanitize=$a"
 done
-export CFLAGS="${CFLAGS} -lasan"
+if [ "`uname`" != Darwin ]; then
+	export CFLAGS="${CFLAGS} -lasan"
+	export LDFLAGS="-lasan"
+fi
 
 echo 'int main(){return 0;}' > .a.c
 [ -z "${CC}" ] && CC=gcc
@@ -38,4 +40,10 @@ if [ "$RET" != 0 ]; then
 	echo "Your compiler doesn't support ASAN."
 	exit 1
 fi
-exec sys/install.sh $*
+
+SCRIPT=install.sh
+if [ "$1" = "-u" ]; then
+	shift
+	SCRIPT=user.sh
+fi
+exec sys/${SCRIPT} $*

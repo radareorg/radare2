@@ -3,7 +3,8 @@
 
 #include <r_types.h>
 #include <r_list.h>
-#include <r_io.h>
+#include <r_bind.h> // RCoreBind
+#include <r_io.h> // RIOBind
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,6 +18,7 @@ struct r_fs_t;
 
 typedef struct r_fs_t {
 	RIOBind iob;
+	RCoreBind cob;
 	RList /*<RFSPlugin>*/ *plugins;
 	RList /*<RFSRoot>*/ *roots;
 	int view;
@@ -47,11 +49,13 @@ typedef struct r_fs_root_t {
 	struct r_fs_plugin_t *p;
 	void *ptr;
 	RIOBind iob;
+	RCoreBind cob;
 } RFSRoot;
 
 typedef struct r_fs_plugin_t {
 	const char *name;
 	const char *desc;
+	const char *license;
 	RFSFile* (*slurp)(RFSRoot *root, const char *path);
 	RFSFile* (*open)(RFSRoot *root, const char *path);
 	bool (*read)(RFSFile *fs, ut64 addr, int len);
@@ -71,6 +75,14 @@ typedef struct r_fs_partition_t {
 	int type;
 } RFSPartition;
 
+typedef struct r_fs_shell_t {
+	char **cwd;
+	void (*set_prompt)(const char *prompt);
+	const char* (*readline)(void);
+	int (*hist_add)(const char *line);
+} RFSShell;
+
+#define R_FS_FILE_TYPE_MOUNTPOINT 'm'
 #define R_FS_FILE_TYPE_DIRECTORY 'd'
 #define R_FS_FILE_TYPE_REGULAR 'r'
 #define R_FS_FILE_TYPE_DELETED 'x'
@@ -113,6 +125,8 @@ R_API RList *r_fs_find_off(RFS* fs, const char *name, ut64 off);
 R_API RList *r_fs_partitions(RFS* fs, const char *ptype, ut64 delta);
 R_API char *r_fs_name(RFS *fs, ut64 offset);
 R_API int r_fs_prompt(RFS *fs, const char *root);
+R_API bool r_fs_check(RFS *fs, const char *p);
+R_API int r_fs_shell_prompt(RFSShell *shell, RFS *fs, const char *root); 
 
 /* file.c */
 R_API RFSFile *r_fs_file_new(RFSRoot *root, const char *path);
@@ -126,6 +140,8 @@ R_API const char *r_fs_partition_type_get(int n);
 R_API int r_fs_partition_get_size(void); // WTF. wrong function name
 
 /* plugins */
+extern RFSPlugin r_fs_plugin_io;
+extern RFSPlugin r_fs_plugin_r2;
 extern RFSPlugin r_fs_plugin_ext2;
 extern RFSPlugin r_fs_plugin_fat;
 extern RFSPlugin r_fs_plugin_ntfs;
@@ -148,7 +164,6 @@ extern RFSPlugin r_fs_plugin_xfs;
 extern RFSPlugin r_fs_plugin_fb;
 extern RFSPlugin r_fs_plugin_minix;
 extern RFSPlugin r_fs_plugin_posix;
-extern RFSPlugin r_fs_plugin_squash;
 #endif
 
 #ifdef __cplusplus

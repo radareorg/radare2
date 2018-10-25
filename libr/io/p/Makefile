@@ -12,18 +12,15 @@ ifeq (${OSTYPE},windows)
 CFLAGS+=-lws2_32
 endif
 
-foo: all
+all: ${ALL_TARGETS}
 
 ALL_TARGETS=
-PLUGINS=ptrace.mk debug.mk gdb.mk malloc.mk shm.mk mach.mk w32dbg.mk procpid.mk windbg.mk bochs.mk qnx.mk r2k.mk
+PLUGINS=ptrace.mk debug.mk gdb.mk malloc.mk shm.mk mach.mk w32dbg.mk procpid.mk windbg.mk bochs.mk qnx.mk r2k.mk ar.mk rbuf.mk gprobe.mk
 #zip.mk
 #PLUGINS=ptrace.mk debug.mk gdb.mk malloc.mk mach.mk w32dbg.mk procpid.mk
 include ${PLUGINS}
 
 #ALL_TARGETS+=io_ewf.so
-
-all: ${ALL_TARGETS}
-	@true
 
 BINDEPS=
 
@@ -36,9 +33,9 @@ clean:
 mrproper: clean
 	-rm -f *.d
 
-.PHONY: all clean foo mrproper
+.PHONY: all clean mrproper
 else
-clean all:
+all clean mrproper:
 
-.PHONY: all
+.PHONY: all clean mrproper
 endif

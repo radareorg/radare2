@@ -1,0 +1,90 @@
+#compdef rabin2
+local context state state_descr line
+local -i ret=1
+
+r2_qc() {
+  r2 -qc $1 --
+}
+
+_rabin2() {
+  local -a options=(
+  '-@+[show section, symbol or import at addr]:addr'
+  '-A[list sub-binaries and their arch-bits pairs]'
+  '-a+[set arch (x86, arm, .. or <arch>_<bits>)]: :->arch'
+  '-b+[set bits (32, 64 ...)]:bits:(8 16 32 64)'
+  '-B+[override base address (pie bins)]:addr'
+  '-c[list classes]'
+  '-C[create \[elf,mach0,pe\] with Code and Data hexpairs (see -a)]:fmt\:C\:D'
+  '-d[show debug/dwarf information]'
+  '-D+[demangle symbol name (-D all for bin.demangle=true)]:language'
+  '-e[entrypoint]'
+  '-E[globally exportable symbols]'
+  '-f+[select sub-bin named str]:str'
+  '-F+[force to use that bin plugin (ignore header check)]:binfmt'
+  '-g[same as -SMZIHVResizcld (show all info)]'
+  '-G+[load address . offset to header]:addr'
+  '-h[this help message]'
+  '-H[header fields]'
+  '-i[imports (symbols imported from libraries)]'
+  '-I[binary info]'
+  '(-j -q -qq -r)-j[output in json]'
+  "-k+[run sdb query. for example: '*']:sdb-query"
+  '-K+[calculate checksums (md5, sha1, ..)]: :->checksum'
+  '-l[linked libraries]'
+  '-L[list supported bin plugins or plugin details]: :->plugin'
+  '-m+[show source line at addr]:addr'
+  '-M[main (show address of main symbol)]'
+  '-n+[show section, symbol or import named str]:str'
+  '-N[force min:max number of chars per string (see -z and -zz)]:min\:max'
+  '-o+[output file/folder for write operations (out by default)]:_files'
+  '-O+[write/extract operations (-O help)]:str'
+  '-p[show physical addresses]'
+  '(-P -PP)-P[show debug/pdb information]'
+  '(-P -PP)-PP[download pdb file for binary]'
+  '(-j -q -qq -r)-q[be quiet, just show fewer data]'
+  '(-j -q -qq -r)-qq[show less info (no offset/size for -z for ex.)]'
+  '-Q[show load address used by dlopen (non-aslr libs)]'
+  '-r[radare output]'
+  '-R[relocations]'
+  '-s[symbols]'
+  '-S[sections]'
+  '-u[unfiltered (no rename duplicated symbols/sections)]'
+  '-U[resoUrces]'
+  '-v[display version and quit]'
+  '-V[Show binary version information]'
+  '-x[extract bins contained in file]'
+  '-X+[\[f\] .. package in fat or zip the given files and bins contained in file]:fmt'
+  '(-z -zz -zzz)-z[strings (from data section)]'
+  '(-z -zz -zzz)-zz[strings (from raw bins \[e bin.rawstr=1\])]'
+  '(-z -zz -zzz)-zzz[dump raw strings to stdout (for huge files)]'
+  '-Z[guess size of binary program]'
+  )
+
+  _arguments -S -s : $options '*:file:_files' && ret=0
+
+  case $state in
+    arch)
+      local -a sub=(${(f)"$(r2_qc 'e asm.arch=?')"})
+      _values 'arch' $sub && ret=0
+      ;;
+    checksum)
+      _values 'checksum' all $(r2_qc 'ph?') && ret=0
+      ;;
+    plugin)
+      local -a sub=(${(f)"$(rabin2 -L | grep '^bin ' | sed -E 's/bin +([^ ]+) +(.*)/\1[\2]/')"})
+      _values 'plugin' $sub && ret=0
+      ;;
+  esac
+  return ret
+}
+
+_rabin2 "$@"
+
+# Local Variables:
+# mode: shell-script
+# coding: utf-8-unix
+# indent-tabs-mode: nil
+# sh-indentation: 2
+# sh-basic-offset: 2
+# End:
+# vim: ft=zsh sw=2 sts=2 et

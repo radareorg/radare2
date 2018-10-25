@@ -6,10 +6,12 @@
 #include "objc/mach064_classes.h"
 
 static bool check_bytes(const ut8 *buf, ut64 length) {
-	if (buf && length > 4)
+	if (buf && length > 4) {
 		if (!memcmp (buf, "\xfe\xed\xfa\xcf", 4) ||
-			!memcmp (buf, "\xcf\xfa\xed\xfe", 4))
+			!memcmp (buf, "\xcf\xfa\xed\xfe", 4)) {
 			return true;
+		}
+	}
 	return false;
 }
 
@@ -28,11 +30,11 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 // TODO: baddr must be overriden with -b
 	RBuffer *buf = r_buf_new ();
 
-#define B(x,y) r_buf_append_bytes(buf,(const ut8*)x,y)
+#define B(x,y) r_buf_append_bytes(buf,(const ut8*)(x),y)
 #define D(x) r_buf_append_ut32(buf,x)
 #define Q(x) r_buf_append_ut64(buf,x)
 #define Z(x) r_buf_append_nbytes(buf,x)
-#define W(x,y,z) r_buf_write_at(buf,x,(const ut8*)y,z)
+#define W(x,y,z) r_buf_write_at(buf,x,(const ut8*)(y),z)
 #define WZ(x,y) p_tmp=buf->length;Z(x);W(p_tmp,y,strlen(y))
 
 	/* MACH0 HEADER */
@@ -257,14 +259,15 @@ static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
-static RBinAddr* binsym(RBinFile *arch, int sym) {
+static RBinAddr* binsym(RBinFile *bf, int sym) {
 	ut64 addr;
 	RBinAddr *ret = NULL;
 	switch (sym) {
 	case R_BIN_SYM_MAIN:
-		addr = MACH0_(get_main) (arch->o->bin_obj);
-		if (!addr || !(ret = R_NEW0 (RBinAddr)))
+		addr = MACH0_(get_main) (bf->o->bin_obj);
+		if (!addr || !(ret = R_NEW0 (RBinAddr))) {
 			return NULL;
+		}
 		ret->paddr = ret->vaddr = addr;
 		break;
 	}
@@ -278,6 +281,7 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.get_sdb = &get_sdb,
 	.load = &load,
 	.load_bytes = &load_bytes,
+	.load_buffer = &load_buffer,
 	.destroy = &destroy,
 	.check_bytes = &check_bytes,
 	.baddr = &baddr,
@@ -298,7 +302,7 @@ RBinPlugin r_bin_plugin_mach064 = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_mach064,
 	.version = R2_VERSION

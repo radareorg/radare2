@@ -149,17 +149,21 @@ r_regex_exec(const RRegex *preg, const char *string, size_t nmatch,
 #else
 #	define	GOODFLAGS(f)	((f)&(R_REGEX_NOTBOL|R_REGEX_NOTEOL|R_REGEX_STARTEND))
 #endif
-	if (!preg || !string)
+	if (!preg || !string) {
 		return R_REGEX_ASSERT;
+	}
 
 	g = preg->re_g;
-	if (preg->re_magic != MAGIC1 || g->magic != MAGIC2)
-		return(R_REGEX_BADPAT);
-	if (g->iflags&BAD)		/* backstop for no-debug case */
-		return(R_REGEX_BADPAT);
+	if (preg->re_magic != MAGIC1 || g->magic != MAGIC2) {
+		return (R_REGEX_BADPAT);
+	}
+	if (g->iflags & BAD) { /* backstop for no-debug case */
+		return (R_REGEX_BADPAT);
+	}
 	eflags = GOODFLAGS(eflags);
-	if (g->nstates <= CHAR_BIT*sizeof(states1) && !(eflags&R_REGEX_LARGE))
+	if (g->nstates <= CHAR_BIT * sizeof (states1) && !(eflags & R_REGEX_LARGE)) {
 		return(smatcher(g, (char *)string, nmatch, pmatch, eflags));
-	else
-		return(lmatcher(g, (char *)string, nmatch, pmatch, eflags));
+	} else {
+		return (lmatcher (g, (char *)string, nmatch, pmatch, eflags));
+	}
 }

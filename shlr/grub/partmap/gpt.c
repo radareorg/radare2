@@ -84,12 +84,14 @@ gpt_partition_map_iterate (grub_disk_t disk,
 		       sizeof (grub_gpt_partition_type_empty)))
 	{
 	  /* Calculate the first block and the size of the partition.  */
+          memset (&part, 0, sizeof (struct grub_partition));
 	  part.start = grub_le_to_cpu64 (entry.start);
 	  part.len = (grub_le_to_cpu64 (entry.end)
 		      - grub_le_to_cpu64 (entry.start) + 1);
 	  part.offset = entries;
 	  part.number = i;
 	  part.index = last_offset;
+	  part.msdostype = 0; // TODO entry.type.data1;
 	  part.partmap = &grub_gpt_partition_map;
 
 	  grub_dprintf ("gpt", "GPT entry %d: start=%"PFMT64d", length=%"PFMT64d"\n", i,
@@ -100,8 +102,7 @@ gpt_partition_map_iterate (grub_disk_t disk,
 	}
 
       last_offset += grub_le_to_cpu32 (gpt.partentry_size);
-      if (last_offset == GRUB_DISK_SECTOR_SIZE)
-	{
+      if (last_offset == GRUB_DISK_SECTOR_SIZE) {
 	  last_offset = 0;
 	  entries++;
 	}

@@ -39,45 +39,44 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (length > 7 && !memcmp (buf, "PBLAPP\x00\x00", 8));
 }
 
-static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	check_bytes (buf, sz);
-	// XXX: this may be wrong if check_bytes is true
-	return R_NOTNULL;
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+	return check_bytes (buf, sz);
 }
 
-static bool load(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
+static bool load(RBinFile *bf) {
+	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
+	ut64 sz = bf ? r_buf_size (bf->buf): 0;
 	return check_bytes (bytes, sz);
 }
 
-static int destroy(RBinFile *arch) {
-	//r_bin_pebble_free ((struct r_bin_pebble_obj_t*)arch->o->bin_obj);
+static int destroy(RBinFile *bf) {
+	//r_bin_pebble_free ((struct r_bin_pebble_obj_t*)bf->o->bin_obj);
 	return true;
 }
 
-static ut64 baddr(RBinFile *arch) {
+static ut64 baddr(RBinFile *bf) {
 	return 0LL;
 }
 
 /* accelerate binary load */
-static RList *strings(RBinFile *arch) {
+static RList *strings(RBinFile *bf) {
 	return NULL;
 }
 
-static RBinInfo* info(RBinFile *arch) {
+static RBinInfo* info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
 	PebbleAppInfo pai;
 	memset (&pai, 0, sizeof (pai));
-	int reat = r_buf_read_at (arch->buf, 0, (ut8*)&pai, sizeof (pai));
+	int reat = r_buf_read_at (bf->buf, 0, (ut8*)&pai, sizeof (pai));
 	if (reat != sizeof (pai)) {
 		eprintf ("Truncated Header\n");
 		return NULL;
 	}
-	if (!(ret = R_NEW0 (RBinInfo)))
+	if (!(ret = R_NEW0 (RBinInfo))) {
 		return NULL;
+	}
 	ret->lang = NULL;
-	ret->file = strdup (arch->file);
+	ret->file = strdup (bf->file);
 	ret->type = strdup ("pebble");
 	ret->bclass = r_str_ndup (pai.name, 32);
 	ret->rclass = r_str_ndup (pai.company, 32);
@@ -92,59 +91,64 @@ static RBinInfo* info(RBinFile *arch) {
 	return ret;
 }
 
-static RList* sections(RBinFile *arch) {
+static RList* sections(RBinFile *bf) {
 	ut64 textsize = UT64_MAX;
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
-	PebbleAppInfo pai;
-	memset (&pai, 0, sizeof (pai));
-	if (!r_buf_read_at (arch->buf, 0, (ut8*)&pai, sizeof(pai))) {
+	PebbleAppInfo pai = {{0}};
+	if (!r_buf_read_at (bf->buf, 0, (ut8*)&pai, sizeof(pai))) {
 		eprintf ("Truncated Header\n");
 		return NULL;
 	}
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 	ret->free = free;
 	// TODO: load all relocs
-	if (!(ptr = R_NEW0 (RBinSection)))
+	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
+	}
 	strcpy (ptr->name, "relocs");
 	ptr->vsize = ptr->size = pai.num_reloc_entries * sizeof (ut32);
 	ptr->vaddr = ptr->paddr = pai.reloc_list_start;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE | R_BIN_SCN_MAP;
+	ptr->perm = R_PERM_RW;
 	ptr->add = true;
 	r_list_append (ret, ptr);
-	if (ptr->vaddr<textsize)
+	if (ptr->vaddr < textsize) {
 		textsize = ptr->vaddr;
+	}
 
 	// imho this must be a symbol
-	if (!(ptr = R_NEW0 (RBinSection)))
+	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
+	}
 	strcpy (ptr->name, "symtab");
 	ptr->vsize = ptr->size = 0;
 	ptr->vaddr = ptr->paddr = pai.sym_table_addr;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;
+	ptr->perm = R_PERM_R;
 	ptr->add = true;
 	r_list_append (ret, ptr);
-	if (ptr->vaddr<textsize)
+	if (ptr->vaddr < textsize) {
 		textsize = ptr->vaddr;
+	}
 
-	if (!(ptr = R_NEW0 (RBinSection)))
+	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
+	}
 	strcpy (ptr->name, "text");
 	ptr->vaddr = ptr->paddr = 0x80;
 	ptr->vsize = ptr->size = textsize - ptr->paddr;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_WRITABLE |
-		R_BIN_SCN_EXECUTABLE | R_BIN_SCN_MAP;
+	ptr->perm = R_PERM_RWX;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
-	if (!(ptr = R_NEW0 (RBinSection)))
+	if (!(ptr = R_NEW0 (RBinSection))) {
 		return ret;
+	}
 	strcpy (ptr->name, "header");
 	ptr->vsize = ptr->size = sizeof (PebbleAppInfo);
 	ptr->vaddr = ptr->paddr = 0;
-	ptr->srwx = R_BIN_SCN_READABLE | R_BIN_SCN_MAP;
+	ptr->perm = R_PERM_R;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
@@ -152,7 +156,7 @@ static RList* sections(RBinFile *arch) {
 }
 
 #if 0
-static RList* relocs(RBinFile *arch) {
+static RList* relocs(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinReloc *ptr = NULL;
 	ut64 got_addr;
@@ -165,26 +169,28 @@ static RList* relocs(RBinFile *arch) {
 }
 #endif
 
-static RList* entries(RBinFile *arch) {
+static RList* entries(RBinFile *bf) {
 	RBinAddr *ptr = NULL;
 	RList *ret;
 	PebbleAppInfo pai;
-	if (!r_buf_read_at (arch->buf, 0, (ut8*)&pai, sizeof(pai))) {
+	if (!r_buf_read_at (bf->buf, 0, (ut8*)&pai, sizeof(pai))) {
 		eprintf ("Truncated Header\n");
 		return NULL;
 	}
-	if (!(ret = r_list_new ()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 	ret->free = free;
-	if (!(ptr = R_NEW0 (RBinAddr)))
+	if (!(ptr = R_NEW0 (RBinAddr))) {
 		return ret;
+	}
 	ptr->paddr = pai.offset;
 	ptr->vaddr = pai.offset;
 	r_list_append (ret, ptr);
 	return ret;
 }
 
-struct r_bin_plugin_t r_bin_plugin_pebble = {
+RBinPlugin r_bin_plugin_pebble = {
 	.name = "pebble",
 	.desc = "Pebble Watch App",
 	.license = "LGPL",
@@ -201,7 +207,7 @@ struct r_bin_plugin_t r_bin_plugin_pebble = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_pebble,
 	.version = R2_VERSION

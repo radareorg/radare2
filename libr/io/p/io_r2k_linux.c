@@ -2,7 +2,7 @@
 
 #include "io_r2k_linux.h"
 
-#define fset(num, shift) (((num & (((ut64) 1) << shift)) == 0) ? 0 : 1)
+#define fset(num, shift) ((((num) & (((ut64) 1) << (shift))) == 0) ? 0 : 1)
 
 #if __i386__ || __x86_64__
 static void x86_ctrl_reg_pretty_print (RIO *io, struct r2k_control_reg ctrl) {
@@ -227,23 +227,39 @@ static void print_help (RIO *io, char *cmd, int p_usage) {
 	int i = 0;
 	int cmd_len = cmd ? strlen (cmd) : 0;
 	const char* usage = "Usage:   \\[MprRw][lpP] [args...]";
-	const char* help_msg[] = {"\\M                      Print kernel memory map",
-				  "\\b      beid [pid]      Change r2k backend. pid is required when beid is 1. Possible beid 0: linear address; 1: process address; 2: physical address",
-				  "\\p      pid             Print process information",
-				  "\\rl     addr len        Read from linear address",
-				  "\\rp     pid addr len    Read from process address",
-				  "\\rP     addr len        Read physical address",
-				  "\\R[p]                   Print control registers. Use =!Rp for detailed description",
-				  "\\wl[x]  addr input      Write at linear address. Use =!wlx for input in hex",
-				  "\\wp[x]  pid addr input  Write at process address. Use =!wpx for input in hex",
-				  "\\wP[x]  addr input      Write at physical address. Use =!wPx for input in hex",
-				  "\\W      1|0             Honor arch write protect (1 enable WP, 0 disable WP)"};
+	const char* help_msg[] = {
+		"\\dm              Print kernel memory map (or process if r2k.io==1)",
+		"\\dr              Print control registers",
+		"\\dR              Print control registers in detailed mode",
+		"\\dp [pid]        Print current selected pid or change it",
+		"\\e r2k.io=[012]  Read/Write from 0: Linear, 1: Process, 2: Physical addresses"
+	};
+	const char *help_msg_old[] = {
+		"\\M                      Print kernel memory map",
+		"\\b      beid [pid]      Change r2k backend. pid is required when beid is 1.",
+		"                         0: linear address; 1: process address; 2: physical address",
+		"\\p      pid             Print process information",
+		"\\rl     addr len        Read from linear address",
+		"\\rp     pid addr len    Read from process address",
+		"\\rP     addr len        Read physical address",
+		"\\R[p]                   Print control registers. Use =!Rp for detailed description",
+		"\\wl[x]  addr input      Write at linear address. Use =!wlx for input in hex",
+		"\\wp[x]  pid addr input  Write at process address. Use =!wpx for input in hex",
+		"\\wP[x]  addr input      Write at physical address. Use =!wPx for input in hex",
+		"\\W      1|0             Honor arch write protect (1 enable WP, 0 disable WP)"
+	};
 	if (p_usage) {
 		io->cb_printf ("%s\n", usage);
 	}
 	for (i = 0; i < (sizeof (help_msg) / sizeof (char*)); i++) {
 		if (!cmd || !strncmp (cmd, help_msg[i]+1, cmd_len)) {
-			io->cb_printf ("%s\n",help_msg[i]);
+			io->cb_printf ("%s\n", help_msg[i]);
+		}
+	}
+	io->cb_printf ("\nOld Commands: (deprecated)\n");
+	for (i = 0; i < (sizeof (help_msg_old) / sizeof (char*)); i++) {
+		if (!cmd || !strncmp (cmd, help_msg_old[i]+1, cmd_len)) {
+			io->cb_printf ("%s\n", help_msg_old[i]);
 		}
 	}
 }
@@ -255,7 +271,7 @@ int ReadMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, size_t addres
 	bool flag = 0;
 	ut8 garbage;
 
-	if (iodesc && iodesc->fd > 0 && buf) {
+	if (iodesc && iodesc->data > 0 && buf) {
 		struct r2k_data data;
 
 		data.pid = pid;
@@ -266,12 +282,12 @@ int ReadMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, size_t addres
 			return -1;
 		}
 
-		ret = ioctl (iodesc->fd, ioctl_n, &data);
+		ret = ioctl ((int)(size_t)iodesc->data, ioctl_n, &data);
 		if (!ret) {
 			memcpy (buf, data.buff, len);
 			ret = len;
 		} else {
-			garbage = io->ff ? io->Oxff : 0xff;
+			garbage = 0xff;
 			flag = 0;
 			offset = 0;
 			pagesize = getpagesize();
@@ -279,7 +295,7 @@ int ReadMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, size_t addres
 			pageaddr -= (pageaddr % pagesize);
 			if ((len - (int)(pageaddr - address)) > 0) {
 				data.len = pageaddr - address;
-				ret = ioctl (iodesc->fd, ioctl_n, &data);
+				ret = ioctl ((int)(size_t)iodesc->data, ioctl_n, &data);
 				if (!ret) {
 					memcpy (buf + offset, data.buff, pageaddr - address);
 					flag = 1;
@@ -293,7 +309,7 @@ int ReadMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, size_t addres
 					data.addr = pageaddr;
 					data.len = pagesize;
 
-					ret = ioctl (iodesc->fd, ioctl_n, &data);
+					ret = ioctl ((int)(size_t)iodesc->data, ioctl_n, &data);
 					if (!ret) {
 						memcpy (buf + offset, data.buff, pagesize);
 						flag = 1;
@@ -307,7 +323,7 @@ int ReadMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, size_t addres
 
 				data.addr = pageaddr;
 				data.len = newlen;
-				ret = ioctl (iodesc->fd, ioctl_n, &data);
+				ret = ioctl ((int)(size_t)iodesc->data, ioctl_n, &data);
 				if (!ret) {
 					memcpy (buf + offset, data.buff, newlen);
 					flag = 1;
@@ -330,7 +346,7 @@ int ReadMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, size_t addres
 int WriteMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, ut64 address, const ut8 *buf, int len) {
 	int ret = -1;
 
-	if (iodesc && iodesc->fd > 0 && buf) {
+	if (iodesc && iodesc->data > 0 && buf) {
 		struct r2k_data data;
 
 		data.pid = pid;
@@ -344,7 +360,7 @@ int WriteMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, ut64 address
 		}
 
 		memcpy (data.buff, buf, len);
-		ret = ioctl (iodesc->fd, ioctl_n, &data);
+		ret = ioctl ((int)(size_t)iodesc->data, ioctl_n, &data);
 		if (!ret) {
 			ret = len;
 		} else {
@@ -361,12 +377,10 @@ int WriteMemory (RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, ut64 address
 	return ret;
 }
 
-int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
+int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 	int ret, inphex, ioctl_n;
 	size_t pid, addr, len;
 	ut8 *databuf = NULL;
-	buf = r_str_ichr ((char *) buf, ' ');
-
 	switch (*buf) {
 	case 'W':
 		{
@@ -486,7 +500,7 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			if (databuf) {
 				ret = ReadMemory (io, iodesc, ioctl_n, pid, addr, databuf, len);
 				if (ret > 0) {
-					r_print_hexdump (print, addr, (const ut8 *) databuf, ret, 16, 1);
+					r_print_hexdump (print, addr, (const ut8 *) databuf, ret, 16, 1, 1);
 				}
 			} else {
 				io->cb_printf ("Failed to allocate buffer\n");
@@ -549,9 +563,10 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			ioctl_n = IOCTL_WRITE_PHYSICAL_ADDR;
 			break;
 		default:
-			print_help(io, "w", 0);
+			print_help (io, "w", 0);
 			goto end;
 		}
+		// coverity says this cant happen, but it doesnt hurts to add a check
 		if (!buf) {
 			break;
 		}
@@ -579,7 +594,7 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			long page_size = sysconf (_SC_PAGESIZE);
 
 			ioctl_n = IOCTL_GET_KERNEL_MAP;
-			ret = ioctl (iodesc->fd, ioctl_n, &map_data);
+			ret = ioctl ((int)(size_t)iodesc->data, ioctl_n, &map_data);
 
 			if (ret < 0) {
 				io->cb_printf ("ioctl err: %s\n", strerror (errno));
@@ -587,7 +602,7 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			}
 
 			io->cb_printf ("map_data.size: %d, map_data.n_entries: %d\n", map_data.size, map_data.n_entries);
-			info = mmap (0, map_data.size, PROT_READ, MAP_SHARED, iodesc->fd, 0);
+			info = mmap (0, map_data.size, PROT_READ, MAP_SHARED, (int)(size_t)iodesc->data, 0);
 			if (info == MAP_FAILED) {
 				io->cb_printf ("mmap err: %s\n", strerror (errno));
 				break;
@@ -616,7 +631,7 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			//=! R[p]
 			struct r2k_control_reg reg_data;
 			ioctl_n = IOCTL_READ_CONTROL_REG;
-			ret = ioctl (iodesc->fd, ioctl_n, &reg_data);
+			ret = ioctl ((int)(size_t)iodesc->data, ioctl_n, &reg_data);
 
 			if (ret) {
 				io->cb_printf ("ioctl err: %s\n", strerror (errno));
@@ -697,7 +712,7 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			proc_data.pid = pid;
 			ioctl_n = IOCTL_PRINT_PROC_INFO;
 
-			ret = ioctl (iodesc->fd, ioctl_n, &proc_data);
+			ret = ioctl ((int)(size_t)iodesc->data, ioctl_n, &proc_data);
 			if (ret) {
 				io->cb_printf ("ioctl err: %s\n", strerror (errno));
 				break;
@@ -706,40 +721,43 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 			buffsize = (ut64) (sizeof (proc_data.vmareastruct) / sizeof (proc_data.vmareastruct[0]));
 			if (fflag) {
 				int j = 0;
-				for (i = 0; i < buffsize;) {
+				for (i = 0; i + 1 < buffsize;) {
 					nextstart = 0;
 					if (i + 7 < buffsize) {
-						nextstart = i + 7 + (strlen ((const char *)&(proc_data.vmareastruct[i+7])) - 1 + sizeof (size_t)) / sizeof (size_t);
+						nextstart = i + 7 + (strlen ((const char *)&(proc_data.vmareastruct[i + 7])) - 1 + sizeof (size_t)) / sizeof (size_t);
 					}
-					if (!proc_data.vmareastruct[i] && !proc_data.vmareastruct[i+1] &&
+					if (!proc_data.vmareastruct[i] && (i + 1 < buffsize) &&
+						!proc_data.vmareastruct[i + 1] &&
 					    nextstart > 0 && nextstart - 1 < buffsize) {
 						break;
 					}
-					io->cb_printf ("f pid.%d.%s.%d.start=0x%"PFMT64x"\n", proc_data.pid, &(proc_data.vmareastruct[i+7]), j, (ut64) proc_data.vmareastruct[i]);
-					io->cb_printf ("f pid.%d.%s.%d.end=0x%"PFMT64x"\n", proc_data.pid, &(proc_data.vmareastruct[i+7]), j, (ut64) proc_data.vmareastruct[i+1]);
+					io->cb_printf ("f pid.%d.%s.%d.start=0x%"PFMT64x"\n", proc_data.pid, &(proc_data.vmareastruct[i + 7]), j, (ut64) proc_data.vmareastruct[i]);
+					io->cb_printf ("f pid.%d.%s.%d.end=0x%"PFMT64x"\n", proc_data.pid, &(proc_data.vmareastruct[i + 7]), j, (ut64) proc_data.vmareastruct[i + 1]);
 					j += 1;
 					i = nextstart;
 				}
+				io->cb_printf ("f pid.%d.task_struct = 0x%08"PFMT64x"\n", proc_data.pid, proc_data.task);
 			} else {
 				io->cb_printf ("pid = %d\nprocess name = %s\n", proc_data.pid, proc_data.comm);
+				io->cb_printf ("task_struct = 0x%08"PFMT64x"\n", proc_data.task);
 				for (i = 0; i < buffsize;) {
 					nextstart = 0;
 					if (i + 7 < buffsize) {
-						nextstart = i + 7 + (strlen ((const char *)&(proc_data.vmareastruct[i+7])) - 1 + sizeof (size_t)) / sizeof (size_t);
+						nextstart = i + 7 + (strlen ((const char *)&(proc_data.vmareastruct[i + 7])) - 1 + sizeof (size_t)) / sizeof (size_t);
 					}
-					if (!proc_data.vmareastruct[i] && !proc_data.vmareastruct[i+1] &&
+					if (!proc_data.vmareastruct[i] && !proc_data.vmareastruct[i + 1] &&
 					    nextstart > 0 && nextstart - 1 < buffsize) {
 						break;
 					}
-					io->cb_printf ("%08"PFMT64x"-%08"PFMT64x" %c%c%c%c %08"PFMT64x" %02x:%02x %-8"PFMT64u"",
+					io->cb_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %c%c%c%c 0x%08"PFMT64x" %02x:%02x %-8"PFMT64u"",
 							(ut64) proc_data.vmareastruct[i], (ut64) proc_data.vmareastruct[i+1],
-							proc_data.vmareastruct[i+2] & VM_READ ? 'r' : '-',
-							proc_data.vmareastruct[i+2] & VM_WRITE ? 'w' : '-',
-							proc_data.vmareastruct[i+2] & VM_EXEC ? 'x' : '-',
-							proc_data.vmareastruct[i+2] & VM_MAYSHARE ? 's' : 'p',
-							(ut64) proc_data.vmareastruct[i+3], proc_data.vmareastruct[i+4],
-							proc_data.vmareastruct[i+5], (ut64) proc_data.vmareastruct[i+6]);
-					io->cb_printf ("\t%s\n", &(proc_data.vmareastruct[i+7]));
+							proc_data.vmareastruct[i + 2] & VM_READ ? 'r' : '-',
+							proc_data.vmareastruct[i + 2] & VM_WRITE ? 'w' : '-',
+							proc_data.vmareastruct[i + 2] & VM_EXEC ? 'x' : '-',
+							proc_data.vmareastruct[i + 2] & VM_MAYSHARE ? 's' : 'p',
+							(ut64) proc_data.vmareastruct[i + 3], proc_data.vmareastruct[i + 4],
+							proc_data.vmareastruct[i + 5], (ut64) proc_data.vmareastruct[i + 6]);
+					io->cb_printf ("\t%s\n", &(proc_data.vmareastruct[i + 7]));
 					i = nextstart;
 				}
 				io->cb_printf ("STACK BASE ADDRESS = 0x%"PFMT64x"\n", (void *) proc_data.stack);
@@ -753,6 +771,85 @@ int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
 	}
  end:
 	free (databuf);
+	return 0;
+}
+
+int run_new_command(RIO *io, RIODesc *iodesc, const char *buf) {
+	if (r_str_startswith (buf, "dm")) {
+		if (buf[2] == ' ') {
+			// use \p pid
+			char *cmd = r_str_newf ("p %d", atoi (buf + 2));
+			run_old_command (io, iodesc, cmd);
+			free (cmd);
+		} else if (r2k_struct.beid == 1) {
+			// use \p pid
+			char *cmd = r_str_newf ("p %d", r2k_struct.pid);
+			run_old_command (io, iodesc, cmd);
+			free (cmd);
+		} else {
+			// use \M
+			run_old_command (io, iodesc, "M");
+		}
+		return 1;
+	}
+	if (r_str_startswith (buf, "dr")) {
+		run_old_command (io, iodesc, "R");
+		return 1;
+	}
+	if (r_str_startswith (buf, "dR")) {
+		run_old_command (io, iodesc, "Rp");
+		return 1;
+	}
+	if (r_str_startswith (buf, "dp")) {
+		if (buf[2] == ' ') {
+			r2k_struct.pid = atoi (buf + 3);
+		} else {
+			io->cb_printf ("%d\n", r2k_struct.pid);
+		}
+		return 1;
+	}
+	if (r_str_startswith (buf, "e r2k.io")) {
+		if (strchr (buf, '?')) {
+			io->cb_printf ("0: Linear memory\n");
+			io->cb_printf ("1: Process memory\n");
+			io->cb_printf ("2: Physical memory\n");
+			return 1;
+		}
+		const char *eq = strchr (buf, '=');
+		if (eq) {
+			int v = atoi (eq + 1);
+			int p = r2k_struct.pid;
+			char *cmd = r_str_newf ("b %d %d", v, p);
+			run_old_command (io, iodesc, cmd);
+			free (cmd);
+		} else {
+			run_new_command (io, iodesc, "dp");
+		}
+		return 1;
+	}
+	if (r_str_startswith (buf, "e r2k.wp")) {
+		if (strchr (buf, '?')) {
+			io->cb_printf ("<bool> enable write protection (disabled by default)\n");
+			return 1;
+		}
+		const char *eq = strchr (buf, '=');
+		if (eq) {
+			int v = atoi (eq + 1);
+			r2k_struct.wp = (ut8)v;
+		} else {
+			io->cb_printf ("%s", r_str_bool (r2k_struct.wp));
+		}
+		return 1;
+	}
+	return 0;
+}
+
+int run_ioctl_command(RIO *io, RIODesc *iodesc, const char *buf) {
+	buf = r_str_ichr ((char *) buf, ' ');
+
+	if (!run_new_command (io, iodesc, buf)) {
+		return run_old_command (io, iodesc, buf);
+	}
 	return 0;
 }
 

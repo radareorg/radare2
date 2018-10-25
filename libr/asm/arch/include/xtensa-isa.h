@@ -178,19 +178,19 @@ typedef xtensa_insnbuf_word *xtensa_insnbuf;
 
 /* Get the size in "insnbuf_words" of the xtensa_insnbuf array.  */
 
-R_API extern int
+extern int
 xtensa_insnbuf_size (xtensa_isa isa); 
 
 
 /* Allocate an xtensa_insnbuf of the right size.  */
 
-R_API extern xtensa_insnbuf
+extern xtensa_insnbuf
 xtensa_insnbuf_alloc (xtensa_isa isa);
 
 
 /* Release an xtensa_insnbuf.  */
 
-R_API extern void
+extern void
 xtensa_insnbuf_free (xtensa_isa isa, xtensa_insnbuf buf);
 
 
@@ -208,11 +208,11 @@ xtensa_insnbuf_free (xtensa_isa isa, xtensa_insnbuf buf);
    can be read or written.  Otherwise, if "num_chars" is zero, the
    functions may read or write past the end of the code.  */
 
-R_API extern int
+extern int
 xtensa_insnbuf_to_chars (xtensa_isa isa, const xtensa_insnbuf insn,
 			 unsigned char *cp, int num_chars);
 
-R_API extern void
+extern void
 xtensa_insnbuf_from_chars (xtensa_isa isa, xtensa_insnbuf insn,
 			   const unsigned char *cp, int num_chars);
 
@@ -222,19 +222,19 @@ xtensa_insnbuf_from_chars (xtensa_isa isa, xtensa_insnbuf insn,
 
 /* Initialize the ISA information.  */
 
-R_API extern xtensa_isa
+extern xtensa_isa
 xtensa_isa_init (xtensa_isa_status *errno_p, char **error_msg_p);
 
 
 /* Deallocate an xtensa_isa structure.  */
 
-R_API extern void
+extern void
 xtensa_isa_free (xtensa_isa isa);
 
 
 /* Get the maximum instruction size in bytes.  */
 
-R_API extern int
+extern int
 xtensa_isa_maxlength (xtensa_isa isa); 
 
 
@@ -243,7 +243,7 @@ xtensa_isa_maxlength (xtensa_isa isa);
    required to decode the instruction length.  Returns
    XTENSA_UNDEFINED on error.  */
 
-R_API extern int
+extern int
 xtensa_isa_length_from_chars (xtensa_isa isa, const unsigned char *cp);
 
 
@@ -254,31 +254,31 @@ xtensa_isa_length_from_chars (xtensa_isa isa, const unsigned char *cp);
    actual processor hardware, e.g., the hardware may have additional
    stages before stage 0.  Returns XTENSA_UNDEFINED on error.  */
 
-R_API extern int
+extern int
 xtensa_isa_num_pipe_stages (xtensa_isa isa); 
 
 
 /* Get the number of various entities that are defined for this processor.  */
 
-R_API extern int
+extern int
 xtensa_isa_num_formats (xtensa_isa isa);
 
-R_API extern int
+extern int
 xtensa_isa_num_opcodes (xtensa_isa isa);
 
-R_API extern int
+extern int
 xtensa_isa_num_regfiles (xtensa_isa isa);
 
-R_API extern int
+extern int
 xtensa_isa_num_states (xtensa_isa isa);
 
-R_API extern int
+extern int
 xtensa_isa_num_sysregs (xtensa_isa isa);
 
-R_API extern int
+extern int
 xtensa_isa_num_interfaces (xtensa_isa isa);
 
-R_API extern int
+extern int
 xtensa_isa_num_funcUnits (xtensa_isa isa);
 
 
@@ -287,49 +287,49 @@ xtensa_isa_num_funcUnits (xtensa_isa isa);
 
 /* Get the name of a format.  Returns null on error.  */
 
-R_API extern const char *
+extern const char *
 xtensa_format_name (xtensa_isa isa, xtensa_format fmt);
 
 
 /* Given a format name, return the format number.  Returns
    XTENSA_UNDEFINED if the name is not a valid format.  */
 
-R_API extern xtensa_format
+extern xtensa_format
 xtensa_format_lookup (xtensa_isa isa, const char *fmtname);
 
 
 /* Decode the instruction format from a binary instruction buffer.
    Returns XTENSA_UNDEFINED if the format is not recognized.  */
 
-R_API extern xtensa_format
+extern xtensa_format
 xtensa_format_decode (xtensa_isa isa, const xtensa_insnbuf insn);
 
 
 /* Set the instruction format field(s) in a binary instruction buffer.
    All the other fields are set to zero.  Returns non-zero on error.  */
 
-R_API extern int
+extern int
 xtensa_format_encode (xtensa_isa isa, xtensa_format fmt, xtensa_insnbuf insn);
 
 
 /* Find the length (in bytes) of an instruction.  Returns
    XTENSA_UNDEFINED on error.  */
 
-R_API extern int
+extern int
 xtensa_format_length (xtensa_isa isa, xtensa_format fmt);
 
 
 /* Get the number of slots in an instruction.  Returns XTENSA_UNDEFINED
    on error.  */
 
-R_API extern int
+extern int
 xtensa_format_num_slots (xtensa_isa isa, xtensa_format fmt);
 
 
 /* Get the opcode for a no-op in a particular slot.
    Returns XTENSA_UNDEFINED on error.  */
 
-R_API extern xtensa_opcode
+extern xtensa_opcode
 xtensa_format_slot_nop_opcode (xtensa_isa isa, xtensa_format fmt, int slot);
 
 
@@ -337,11 +337,11 @@ xtensa_format_slot_nop_opcode (xtensa_isa isa, xtensa_format fmt, int slot);
    instruction as a whole and put them into an insnbuf for that one
    slot, and do the opposite to set a slot.  Return non-zero on error.  */
 
-R_API extern int
+extern int
 xtensa_format_get_slot (xtensa_isa isa, xtensa_format fmt, int slot,
 			const xtensa_insnbuf insn, xtensa_insnbuf slotbuf);
 
-R_API extern int
+extern int
 xtensa_format_set_slot (xtensa_isa isa, xtensa_format fmt, int slot,
 			xtensa_insnbuf insn, const xtensa_insnbuf slotbuf);
 
@@ -352,7 +352,7 @@ xtensa_format_set_slot (xtensa_isa isa, xtensa_format fmt, int slot,
 /* Translate a mnemonic name to an opcode.  Returns XTENSA_UNDEFINED if
    the name is not a valid opcode mnemonic.  */
 
-R_API extern xtensa_opcode
+extern xtensa_opcode
 xtensa_opcode_lookup (xtensa_isa isa, const char *opname);
 
 
@@ -360,7 +360,7 @@ xtensa_opcode_lookup (xtensa_isa isa, const char *opname);
    buffer.  Returns the opcode or XTENSA_UNDEFINED if the opcode is
    illegal.  */
 
-R_API extern xtensa_opcode
+extern xtensa_opcode
 xtensa_opcode_decode (xtensa_isa isa, xtensa_format fmt, int slot,
 		      const xtensa_insnbuf slotbuf);
 
@@ -369,14 +369,14 @@ xtensa_opcode_decode (xtensa_isa isa, xtensa_format fmt, int slot,
    in the slot are set to zero.  Returns non-zero if the opcode cannot
    be encoded.  */
 
-R_API extern int
+extern int
 xtensa_opcode_encode (xtensa_isa isa, xtensa_format fmt, int slot,
 		      xtensa_insnbuf slotbuf, xtensa_opcode opc);
 
 
 /* Get the mnemonic name for an opcode.  Returns null on error.  */
 
-R_API extern const char *
+extern const char *
 xtensa_opcode_name (xtensa_isa isa, xtensa_opcode opc);
 
 
@@ -396,16 +396,16 @@ xtensa_opcode_name (xtensa_isa isa, xtensa_opcode opc);
    checking if the instruction has a PC-relative immediate
    operand.  */
 
-R_API extern int
+extern int
 xtensa_opcode_is_branch (xtensa_isa isa, xtensa_opcode opc);
 
-R_API extern int
+extern int
 xtensa_opcode_is_jump (xtensa_isa isa, xtensa_opcode opc);
 
-R_API extern int
+extern int
 xtensa_opcode_is_loop (xtensa_isa isa, xtensa_opcode opc);
 
-R_API extern int
+extern int
 xtensa_opcode_is_call (xtensa_isa isa, xtensa_opcode opc);
 
 
@@ -413,13 +413,13 @@ xtensa_opcode_is_call (xtensa_isa isa, xtensa_opcode opc);
    operands for an instruction.  These return XTENSA_UNDEFINED on
    error.  */
 
-R_API extern int
+extern int
 xtensa_opcode_num_operands (xtensa_isa isa, xtensa_opcode opc);
 
-R_API extern int
+extern int
 xtensa_opcode_num_stateOperands (xtensa_isa isa, xtensa_opcode opc);
 
-R_API extern int
+extern int
 xtensa_opcode_num_interfaceOperands (xtensa_isa isa, xtensa_opcode opc);
 
 
@@ -435,10 +435,10 @@ typedef struct xtensa_funcUnit_use_struct
   int stage;
 } xtensa_funcUnit_use;
 
-R_API extern int
+extern int
 xtensa_opcode_num_funcUnit_uses (xtensa_isa isa, xtensa_opcode opc);
 
-R_API extern xtensa_funcUnit_use *
+extern xtensa_funcUnit_use *
 xtensa_opcode_funcUnit_use (xtensa_isa isa, xtensa_opcode opc, int u);
 
 
@@ -447,7 +447,7 @@ xtensa_opcode_funcUnit_use (xtensa_isa isa, xtensa_opcode opc, int u);
 
 /* Get the name of an operand.  Returns null on error.  */
 
-R_API extern const char *
+extern const char *
 xtensa_operand_name (xtensa_isa isa, xtensa_opcode opc, int opnd);
 
 
@@ -464,7 +464,7 @@ xtensa_operand_name (xtensa_isa isa, xtensa_opcode opc, int opnd);
    "implicit", i.e., whether it is encoded in a field in the
    instruction.  */
 
-R_API extern int
+extern int
 xtensa_operand_is_visible (xtensa_isa isa, xtensa_opcode opc, int opnd);
 
 
@@ -475,7 +475,7 @@ xtensa_operand_is_visible (xtensa_isa isa, xtensa_opcode opc, int opnd);
    properly handle register allocation for conditional assignments.
    Returns 0 on error.  */
 
-R_API extern char
+extern char
 xtensa_operand_inout (xtensa_isa isa, xtensa_opcode opc, int opnd);
 
 
@@ -485,12 +485,12 @@ xtensa_operand_inout (xtensa_isa isa, xtensa_opcode opc, int opnd);
    functions return non-zero on error, e.g., if the field is not defined
    for the specified slot.  */
 
-R_API extern int
+extern int
 xtensa_operand_get_field (xtensa_isa isa, xtensa_opcode opc, int opnd,
 			  xtensa_format fmt, int slot,
 			  const xtensa_insnbuf slotbuf, uint32 *valp);
 
-R_API extern int
+extern int
 xtensa_operand_set_field (xtensa_isa isa, xtensa_opcode opc, int opnd,
 			  xtensa_format fmt, int slot,
 			  xtensa_insnbuf slotbuf, uint32 val);
@@ -501,11 +501,11 @@ xtensa_operand_set_field (xtensa_isa isa, xtensa_opcode opc, int opnd,
    the details of that encoding.  The result values are returned through
    the argument pointer.  The return value is non-zero on error.  */
 
-R_API extern int
+extern int
 xtensa_operand_encode (xtensa_isa isa, xtensa_opcode opc, int opnd,
 		       uint32 *valp);
 
-R_API extern int
+extern int
 xtensa_operand_decode (xtensa_isa isa, xtensa_opcode opc, int opnd,
 		       uint32 *valp);
 
@@ -516,10 +516,10 @@ xtensa_operand_decode (xtensa_isa isa, xtensa_opcode opc, int opnd,
    XTENSA_UNDEFINED on error.  The "regfile" function returns the
    regfile for a register operand, or XTENSA_UNDEFINED on error.  */
 
-R_API extern int
+extern int
 xtensa_operand_is_register (xtensa_isa isa, xtensa_opcode opc, int opnd);
 
-R_API extern xtensa_regfile
+extern xtensa_regfile
 xtensa_operand_regfile (xtensa_isa isa, xtensa_opcode opc, int opnd);
 
 
@@ -530,7 +530,7 @@ xtensa_operand_regfile (xtensa_isa isa, xtensa_opcode opc, int opnd);
    non-register operands, the return value is undefined.  Returns
    XTENSA_UNDEFINED on error.  */
 
-R_API extern int
+extern int
 xtensa_operand_num_regs (xtensa_isa isa, xtensa_opcode opc, int opnd);
 				 
 
@@ -542,7 +542,7 @@ xtensa_operand_num_regs (xtensa_isa isa, xtensa_opcode opc, int opnd);
    register value is unknown, 1 if known, and XTENSA_UNDEFINED on
    error.  */
 
-R_API extern int
+extern int
 xtensa_operand_is_known_reg (xtensa_isa isa, xtensa_opcode opc, int opnd);
 
 
@@ -550,7 +550,7 @@ xtensa_operand_is_known_reg (xtensa_isa isa, xtensa_opcode opc, int opnd);
    operands and non-PC-relative immediates, 1 for PC-relative
    immediates, and XTENSA_UNDEFINED on error.  */
  
-R_API extern int
+extern int
 xtensa_operand_is_PCrelative (xtensa_isa isa, xtensa_opcode opc, int opnd);
 
 
@@ -568,11 +568,11 @@ xtensa_operand_is_PCrelative (xtensa_isa isa, xtensa_opcode opc, int opnd);
    operands must be encoded/decoded separately and the encode functions
    are responsible for detecting invalid operand values.  */
 
-R_API extern int
+extern int
 xtensa_operand_do_reloc (xtensa_isa isa, xtensa_opcode opc, int opnd,
 			 uint32 *valp, uint32 pc);
 
-R_API extern int
+extern int
 xtensa_operand_undo_reloc (xtensa_isa isa, xtensa_opcode opc, int opnd,
 			   uint32 *valp, uint32 pc);
 
@@ -583,14 +583,14 @@ xtensa_operand_undo_reloc (xtensa_isa isa, xtensa_opcode opc, int opnd,
 /* Get the state accessed by a state operand.  Returns XTENSA_UNDEFINED
    on error.  */
 
-R_API extern xtensa_state
+extern xtensa_state
 xtensa_stateOperand_state (xtensa_isa isa, xtensa_opcode opc, int stOp);
 
 
 /* Check if a state operand is an input ('i'), output ('o'), or inout
    ('m') operand.  Returns 0 on error.  */
 
-R_API extern char
+extern char
 xtensa_stateOperand_inout (xtensa_isa isa, xtensa_opcode opc, int stOp);
 
 
@@ -600,7 +600,7 @@ xtensa_stateOperand_inout (xtensa_isa isa, xtensa_opcode opc, int stOp);
 /* Get the external interface accessed by an interface operand.
    Returns XTENSA_UNDEFINED on error.  */
 
-R_API extern xtensa_interface
+extern xtensa_interface
 xtensa_interfaceOperand_interface (xtensa_isa isa, xtensa_opcode opc,
 				   int ifOp);
 
@@ -620,20 +620,20 @@ xtensa_interfaceOperand_interface (xtensa_isa isa, xtensa_opcode opc,
    ignores "view" regfiles since they always have the same shortname as
    their parents.  */
 
-R_API extern xtensa_regfile
+extern xtensa_regfile
 xtensa_regfile_lookup (xtensa_isa isa, const char *name);
 
-R_API extern xtensa_regfile
+extern xtensa_regfile
 xtensa_regfile_lookup_shortname (xtensa_isa isa, const char *shortname);
 
 
 /* Get the name or abbreviated "short name" of a regfile.
    Returns null on error.  */
 
-R_API extern const char *
+extern const char *
 xtensa_regfile_name (xtensa_isa isa, xtensa_regfile rf);
 
-R_API extern const char *
+extern const char *
 xtensa_regfile_shortname (xtensa_isa isa, xtensa_regfile rf);
 
 
@@ -641,21 +641,21 @@ xtensa_regfile_shortname (xtensa_isa isa, xtensa_regfile rf);
    view, the result is the same as the input parameter.  Returns
    XTENSA_UNDEFINED on error.  */
 
-R_API extern xtensa_regfile
+extern xtensa_regfile
 xtensa_regfile_view_parent (xtensa_isa isa, xtensa_regfile rf);
 
 
 /* Get the bit width of a regfile or regfile view.
    Returns XTENSA_UNDEFINED on error.  */
 
-R_API extern int
+extern int
 xtensa_regfile_num_bits (xtensa_isa isa, xtensa_regfile rf);
 
 
 /* Get the number of regfile entries.  Returns XTENSA_UNDEFINED on
    error.  */
 
-R_API extern int
+extern int
 xtensa_regfile_num_entries (xtensa_isa isa, xtensa_regfile rf);
 
 
@@ -664,20 +664,20 @@ xtensa_regfile_num_entries (xtensa_isa isa, xtensa_regfile rf);
 
 /* Look up a state by name.  Returns XTENSA_UNDEFINED on error.  */
 
-R_API extern xtensa_state
+extern xtensa_state
 xtensa_state_lookup (xtensa_isa isa, const char *name);
 
 
 /* Get the name for a processor state.  Returns null on error.  */
 
-R_API extern const char *
+extern const char *
 xtensa_state_name (xtensa_isa isa, xtensa_state st);
 
 
 /* Get the bit width for a processor state.
    Returns XTENSA_UNDEFINED on error.  */
 
-R_API extern int
+extern int
 xtensa_state_num_bits (xtensa_isa isa, xtensa_state st);
 
 
@@ -685,14 +685,14 @@ xtensa_state_num_bits (xtensa_isa isa, xtensa_state st);
    the condition is false, 1 if the condition is true, and
    XTENSA_UNDEFINED on error.  */
 
-R_API extern int
+extern int
 xtensa_state_is_exported (xtensa_isa isa, xtensa_state st);
 
 
 /* Check for a "shared_or" state.  Returns 0 if the condition is false,
    1 if the condition is true, and XTENSA_UNDEFINED on error.  */
 
-R_API extern int
+extern int
 xtensa_state_is_shared_or (xtensa_isa isa, xtensa_state st);
 
 
@@ -703,26 +703,26 @@ xtensa_state_is_shared_or (xtensa_isa isa, xtensa_state st);
    or a "special register".  Returns XTENSA_UNDEFINED if the sysreg does
    not exist.  */
 
-R_API extern xtensa_sysreg
+extern xtensa_sysreg
 xtensa_sysreg_lookup (xtensa_isa isa, int num, int is_user);
 
 
 /* Check if there exists a sysreg with a given name.
    If not, this function returns XTENSA_UNDEFINED.  */
 
-R_API extern xtensa_sysreg
+extern xtensa_sysreg
 xtensa_sysreg_lookup_name (xtensa_isa isa, const char *name);
 
 
 /* Get the name of a sysreg.  Returns null on error.  */
 
-R_API extern const char *
+extern const char *
 xtensa_sysreg_name (xtensa_isa isa, xtensa_sysreg sysreg);
 
 
 /* Get the register number.  Returns XTENSA_UNDEFINED on error.  */
 
-R_API extern int
+extern int
 xtensa_sysreg_number (xtensa_isa isa, xtensa_sysreg sysreg);
 
 
@@ -730,7 +730,7 @@ xtensa_sysreg_number (xtensa_isa isa, xtensa_sysreg sysreg);
    Returns 0 for special registers, 1 for user registers and
    XTENSA_UNDEFINED on error.  */
 
-R_API extern int
+extern int
 xtensa_sysreg_is_user (xtensa_isa isa, xtensa_sysreg sysreg);
 
 
@@ -740,27 +740,27 @@ xtensa_sysreg_is_user (xtensa_isa isa, xtensa_sysreg sysreg);
 /* Find an interface by name.  The return value is XTENSA_UNDEFINED if
    the specified interface is not found.  */
 
-R_API extern xtensa_interface
+extern xtensa_interface
 xtensa_interface_lookup (xtensa_isa isa, const char *ifname);
 
 
 /* Get the name of an interface.  Returns null on error.  */
 
-R_API extern const char *
+extern const char *
 xtensa_interface_name (xtensa_isa isa, xtensa_interface intf);
 
 
 /* Get the bit width for an interface.
    Returns XTENSA_UNDEFINED on error.  */
 
-R_API extern int
+extern int
 xtensa_interface_num_bits (xtensa_isa isa, xtensa_interface intf);
 
 
 /* Check if an interface is an input ('i') or output ('o') with respect
    to the Xtensa processor core.  Returns 0 on error.  */
 
-R_API extern char
+extern char
 xtensa_interface_inout (xtensa_isa isa, xtensa_interface intf);
 
 
@@ -769,7 +769,7 @@ xtensa_interface_inout (xtensa_isa isa, xtensa_interface intf);
    interfaces do not.  Returns 1 if there are side effects, 0 if not,
    and XTENSA_UNDEFINED on error.  */
 
-R_API extern int
+extern int
 xtensa_interface_has_side_effect (xtensa_isa isa, xtensa_interface intf);
 
 
@@ -782,7 +782,7 @@ xtensa_interface_has_side_effect (xtensa_isa isa, xtensa_interface intf);
    interfaces are related; the specific values of the identifiers have
    no particular meaning otherwise.  */
 
-R_API extern int
+extern int
 xtensa_interface_class_id (xtensa_isa isa, xtensa_interface intf);
 
 
@@ -792,20 +792,20 @@ xtensa_interface_class_id (xtensa_isa isa, xtensa_interface intf);
 /* Find a functional unit by name.  The return value is XTENSA_UNDEFINED if
    the specified unit is not found.  */
 
-R_API extern xtensa_funcUnit
+extern xtensa_funcUnit
 xtensa_funcUnit_lookup (xtensa_isa isa, const char *fname);
 
 
 /* Get the name of a functional unit.  Returns null on error.  */
 
-R_API extern const char *
+extern const char *
 xtensa_funcUnit_name (xtensa_isa isa, xtensa_funcUnit fun);
 
 
 /* Functional units may be replicated.  See how many instances of a
    particular function unit exist.  Returns XTENSA_UNDEFINED on error.  */
 
-R_API extern int
+extern int
 xtensa_funcUnit_num_copies (xtensa_isa isa, xtensa_funcUnit fun);
 
 

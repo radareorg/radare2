@@ -140,7 +140,7 @@ extract_signed_integer (const ut8 *addr, int len, int be) {
 
 	if (len > (int)sizeof(LONGEST))
 		eprintf (
-			"This operation is not available on integers of more than %d bytes\n",
+			"This operation is not available on integers of more than %d byte(s)\n",
 			(int)sizeof(LONGEST));
 
 	/* Start at the most significant end of the integer, and work towards
@@ -170,7 +170,7 @@ extract_unsigned_integer (const ut8 *addr, int len, int be) {
 
 	if (len > (int)sizeof(LONGEST))
 		eprintf (
-			"This operation is not available on integers of more than %d bytes\n",
+			"This operation is not available on integers of more than %d byte(s)\n",
 			(int)sizeof(LONGEST));
 
 	/* Start at the most significant end of the integer, and work towards

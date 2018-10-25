@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2016 - shengdi */
+/* radare - LGPL - Copyright 2015-2018 - shengdi */
 
 #include <r_bin.h>
 
@@ -11,68 +11,64 @@ typedef struct gen_hdr {
 	ut8 RegionRomSize; //Low 4 bits RomSize, Top 4 bits Region
 } SMS_Header;
 
-#define CMP8(o,x) strncmp((const char*)bs+o,x,8)
-#define CMP4(o,x) strncmp((const char*)bs+o,x,4)
-static bool check_bytes(const ut8 *bs, ut64 length) {
-	if (length > 0x2000 && !CMP8(0x1ff0, "TMR SEGA")) {
-		return true;
+static int check_buffer(RBuffer *b) {
+	ut32 *off, offs[] = { 0x2000, 0x4000, 0x8000, 0x9000, 0 };
+	ut8 signature[8];
+	for (off = (ut32*)&offs; *off; off++) {
+		r_buf_read_at (b, *off - 16, (ut8*)&signature, 8);
+		if (!strncmp ((const char *)signature, "TMR SEGA", 8)) {
+			return (int)(*off - 16);
+		}
+		if (*off == 0x8000) {
+			if (!strncmp ((const char *)signature, "SDSC", 4)) {
+				return (int)(*off - 16);
+			}
+		}
 	}
-	if (length > 0x4000 && !CMP8(0x3ff0, "TMR SEGA")) {
-		return true;
-	}
-	if (length > 0x8000 && !CMP8(0x7ff0, "TMR SEGA")) {
-		return true;
-	}
-	if (length > 0x9000 && !CMP8(0x8ff0, "TMR SEGA")) {
-		return true;
-	}
-	if (length > 0x8000 && !CMP4(0x7fe0, "SDSC")) {
-		return true;
+	return -1;
+}
+
+static bool check_bytes(const ut8 *buf, ut64 len) {
+	RBuffer *b = r_buf_new_with_pointers (buf, len);
+	if (b) {
+		int res = check_buffer (b);
+		r_buf_free (b);
+		return res > 0;
 	}
 	return false;
 }
 
-static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	check_bytes (buf, sz);
-	return R_NOTNULL;
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb) {
+	return check_buffer (bf->buf);
 }
 
-static RBinInfo* info(RBinFile *arch) {
-	const char *bs;
-	SMS_Header *hdr = NULL;
+static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret || !arch || !arch->buf) {
+	if (!ret || !bf || !bf->buf) {
 		free (ret);
 		return NULL;
 	}
-	ret->file = strdup (arch->file);
+	ret->file = strdup (bf->file);
 	ret->type = strdup ("ROM");
 	ret->machine = strdup ("SEGA MasterSystem");
 	ret->os = strdup ("sms");
 	ret->arch = strdup ("z80");
 	ret->has_va = 1;
 	ret->bits = 8;
-	bs = (const char*)arch->buf->buf;
-	// TODO: figure out sections/symbols for this format and move this there
-	//       also add SDSC headers..and find entry
-	if (!CMP8(0x1ff0, "TMR SEGA")) {
-		hdr = (SMS_Header*)(bs + 0x1ff0);
-	} else if (!CMP8(0x3ff0, "TMR SEGA")) {
-		hdr = (SMS_Header*)(bs + 0x3ff0);
-	} else if (!CMP8(0x7ff0, "TMR SEGA")) {
-		hdr = (SMS_Header*)(bs + 0x7ff0);
-	} else if (!CMP8(0x8ff0, "TMR SEGA")) {
-		hdr = (SMS_Header*)(bs + 0x8ff0);
-	} else {
+	int cb = check_buffer (bf->buf);
+	if (cb < 0) {
 		eprintf ("Cannot find magic SEGA copyright\n");
 		free (ret);
 		return NULL;
 	}
+	SMS_Header hdr = {{0}};
+	r_buf_read_at (bf->buf, cb, (ut8*)&hdr, sizeof (hdr));
+	hdr.CheckSum = r_read_le16 (&hdr.CheckSum);
 
-	eprintf ("Checksum: 0x%04x\n", (ut32)hdr->CheckSum);
-	eprintf ("ProductCode: %02d%02X%02X\n", (hdr->Version >> 4), hdr->ProductCode[1],
-			hdr->ProductCode[0]);
-	switch (hdr->RegionRomSize >> 4) {
+	eprintf ("Checksum: 0x%04x\n", (ut32)hdr.CheckSum); // use endian safe apis here
+	eprintf ("ProductCode: %02d%02X%02X\n", (hdr.Version >> 4), hdr.ProductCode[1],
+		hdr.ProductCode[0]);
+	switch (hdr.RegionRomSize >> 4) {
 	case 3:
 		eprintf ("Console: Sega Master System\n");
 		eprintf ("Region: Japan\n");
@@ -95,7 +91,7 @@ static RBinInfo* info(RBinFile *arch) {
 		break;
 	}
 	int romsize = 0;
-	switch (hdr->RegionRomSize & 0xf) {
+	switch (hdr.RegionRomSize & 0xf) {
 	case 0xa: romsize = 8; break;
 	case 0xb: romsize = 16; break;
 	case 0xc: romsize = 32; break;
@@ -110,7 +106,6 @@ static RBinInfo* info(RBinFile *arch) {
 	return ret;
 }
 
-
 RBinPlugin r_bin_plugin_sms = {
 	.name = "sms",
 	.desc = "SEGA MasterSystem/GameGear",
@@ -123,10 +118,9 @@ RBinPlugin r_bin_plugin_sms = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_sms,
 	.version = R2_VERSION
 };
 #endif
-

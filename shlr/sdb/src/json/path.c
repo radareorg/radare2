@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "rangstr.c"
-#include "json.h"
 #include "../types.h"
 
 SDB_IPI void json_path_first(Rangstr *s) {
@@ -70,7 +69,7 @@ int json_foreach(const char *s, JSONCallback cb UNUSED) {
 	unsigned short *res = NULL;
 	len = strlen (s);
 	res = malloc (len);
-	ret = js0n ((const unsigned char *)s, len, res);
+	ret = sdb_js0n ((const unsigned char *)s, len, res);
 	if (!ret) return 0;
 	if (*s=='[') {
 		for (i=0; res[i]; i+=2) {
@@ -91,7 +90,7 @@ SDB_IPI int json_walk (const char *s) {
 	RangstrType *res;
 	int i, ret, len = strlen (s);
 	res = malloc (len+1);
-	ret = js0n ((const unsigned char *)s, len, res);
+	ret = sdb_js0n ((const unsigned char *)s, len, res);
 	if (!ret) {
 		free (res);
 		return 0;
@@ -126,12 +125,13 @@ SDB_IPI Rangstr json_find (const char *s, Rangstr *rs) {
 	if (len > RESFIXSZ) {
 		res = calloc (len + 1, sizeof (RangstrType));
 		if (!res) {
-			eprintf ("Cannot allocate %d bytes\n", len + 1);
+			eprintf ("Cannot allocate %d byte%s\n",
+				len + 1, (len > 1)? "s": "");
 			return rangstr_null ();
 		}
 	}
 
-	ret = js0n ((const unsigned char *)s, len, res);
+	ret = sdb_js0n ((const unsigned char *)s, len, res);
 #define PFREE(x) if (x && x != resfix) free (x)
 	if (ret > 0) {
 		PFREE (res);

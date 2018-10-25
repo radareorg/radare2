@@ -29,7 +29,9 @@ static int assemble(RParse *p, char *data, char *str) {
 	if (ptr) {
 		*ptr = '\0';
 		sprintf (data, "mov %s, %s", str, ptr+1);
-	} else strcpy (data, str);
+	} else {
+		strcpy (data, str);
+	}
 	return true;
 }
 
@@ -47,14 +49,14 @@ RParsePlugin r_parse_plugin_mreplace = {
 };
 
 #else
-struct r_parse_plugin_t r_parse_plugin_mreplace = {
+RParsePlugin r_parse_plugin_mreplace = {
 	.name = "mreplace",
 	.desc = "mreplace parsing plugin (NOT SUPPORTED FOR THIS PLATFORM)",
 };
 #endif
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_PARSE,
 	.data = &r_parse_plugin_mreplace,
 	.version = R2_VERSION

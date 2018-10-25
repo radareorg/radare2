@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2015 - pancake */
+/* radare - LGPL - Copyright 2012-2018 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -10,14 +10,16 @@
 
 static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	struct v850_cmd cmd = {
+		.addr = a->pc,
 		.instr = "",
 		.operands = ""
 	};
-	if (len < 2) return -1;
-	int ret = v850_decode_command (buf, &cmd);
+	if (len < 2) {
+		return -1;
+	}
+	int ret = v850_decode_command (buf, len, &cmd);
 	if (ret > 0) {
-		snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s %s",
-			  cmd.instr, cmd.operands);
+		r_asm_op_set_asm (op, sdb_fmt ("%s %s", cmd.instr, cmd.operands));
 	}
 	return op->size = ret;
 }
@@ -33,7 +35,7 @@ RAsmPlugin r_asm_plugin_v850 = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_v850,
 	.version = R2_VERSION

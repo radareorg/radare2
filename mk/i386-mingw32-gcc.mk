@@ -1,13 +1,14 @@
 ifeq (${_INCLUDE_MK_GCC_},)
 _INCLUDE_MK_GCC_=1
-# osx port install mingw32-gcc
-CC=i386-mingw32-gcc
-RANLIB=i386-mingw32-ranlib
+CROSS=i386-mingw32-
+CC=${CROSS}gcc
+RANLIB=${CROSS}ranlib
 OSTYPE=windows
 ONELIB=0
 LINK=-shared
-AR=i386-mingw32-ar
-CC_AR=$(AR) -r ${LIBAR}
+AR=${CROSS}ar
+CC_AR=${AR} -r ${LIBAR}
+PARTIALLD=${CROSS}ld -r --whole-archive
 PICFLAGS=
 CFLAGS+=${PICFLAGS} -MD -D__WINDOWS__=1
 CC_LIB=${CC} -shared -o

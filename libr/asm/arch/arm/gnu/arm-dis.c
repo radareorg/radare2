@@ -22,7 +22,7 @@
 
 #include "sysdep.h"
 
-#include "dis-asm.h"
+#include "disas-asm.h"
 #include "opcode-arm.h"
 // #include "opcode/arm.h"
 #include "opintl.h"
@@ -3283,13 +3283,16 @@ arm_decode_bitfield (const char *ptr,
       int start, end;
       int bits;
 
-      for (start = 0; *ptr >= '0' && *ptr <= '9'; ptr++)
-	start = start * 10 + *ptr - '0';
-      if (*ptr == '-')
-	for (end = 0, ptr++; *ptr >= '0' && *ptr <= '9'; ptr++)
-	  end = end * 10 + *ptr - '0';
-      else
-	end = start;
+      for (start = 0; *ptr >= '0' && *ptr <= '9'; ptr++) {
+	      start = start * 10 + *ptr - '0';
+      }
+      if (*ptr == '-') {
+	      for (end = 0, ptr++; *ptr >= '0' && *ptr <= '9'; ptr++) {
+		      end = end * 10 + *ptr - '0';
+	      }
+      } else {
+	      end = start;
+      }
       bits = end - start;
       if (bits < 0) {
 return NULL;
@@ -3299,8 +3302,9 @@ return NULL;
     }
   while (*ptr++ == ',');
   *valuep = value;
-  if (widthp)
-    *widthp = width;
+  if (widthp) {
+	  *widthp = width;
+  }
   return ptr - 1;
 }
 
@@ -3328,18 +3332,19 @@ arm_decode_shift (long given, fprintf_ftype func, void *stream,
 	      amount = 32;
 	    }
 
-	  if (print_shift)
-	    func (stream, ", %s %d", arm_shift[shift], amount);
-	  else
-	    func (stream, ", %d", amount);
-	}
-      else if ((given & 0x80) == 0x80)
-	func (stream, " ; <illegal shifter operand>");
-      else if (print_shift)
-	func (stream, ", %s %s", arm_shift[(given & 0x60) >> 5],
-	      arm_regnames[(given & 0xf00) >> 8]);
-      else
-	func (stream, ", %s", arm_regnames[(given & 0xf00) >> 8]);
+	    if (print_shift) {
+		    func (stream, ", %s %d", arm_shift[shift], amount);
+	    } else {
+		    func (stream, ", %d", amount);
+	    }
+      } else if ((given & 0x80) == 0x80) {
+	      func (stream, " ; <illegal shifter operand>");
+      } else if (print_shift) {
+	      func (stream, ", %s %s", arm_shift[(given & 0x60) >> 5],
+		      arm_regnames[(given & 0xf00) >> 8]);
+      } else {
+	      func (stream, ", %s", arm_regnames[(given & 0xf00) >> 8]);
+      }
     }
 }
 
@@ -3382,26 +3387,24 @@ print_insn_coprocessor (bfd_vma pc,
       // long value_in_comment = 0;
       const char *c;
 
-      if (ARM_FEATURE_ZERO (insn->arch))
-	switch (insn->value)
-	  {
-	  case SENTINEL_IWMMXT_START:
-	    if (info->mach != bfd_mach_arm_XScale
-		&& info->mach != bfd_mach_arm_iWMMXt
-		&& info->mach != bfd_mach_arm_iWMMXt2)
-	      do
-		insn++;
-	      while ((! ARM_FEATURE_ZERO (insn->arch))
-		     && insn->value != SENTINEL_IWMMXT_END);
-	    continue;
+      if (ARM_FEATURE_ZERO (insn->arch)) {
+	      switch (insn->value) {
+	      case SENTINEL_IWMMXT_START:
+		      if (info->mach != bfd_mach_arm_XScale && info->mach != bfd_mach_arm_iWMMXt && info->mach != bfd_mach_arm_iWMMXt2) {
+			      do {
+				      insn++;
+			      } while ((!ARM_FEATURE_ZERO (insn->arch)) && insn->value != SENTINEL_IWMMXT_END);
+		      }
+		      continue;
 
-	  case SENTINEL_IWMMXT_END:
-	    continue;
+	      case SENTINEL_IWMMXT_END:
+		      continue;
 
-	  case SENTINEL_GENERIC_START:
-	    ARM_FEATURE_COPY (allowed_arches, private_data->features);
-	    continue;
-	  }
+	      case SENTINEL_GENERIC_START:
+		      ARM_FEATURE_COPY (allowed_arches, private_data->features);
+		      continue;
+	      }
+      }
 
       mask = insn->mask;
       value = insn->value;
@@ -3414,10 +3417,11 @@ print_insn_coprocessor (bfd_vma pc,
 	     encoding is the same.  */
 	  mask |= 0xf0000000;
 	  value |= 0xe0000000;
-	  if (ifthen_state)
-	    cond = IFTHEN_COND;
-	  else
-	    cond = COND_UNCOND;
+	  if (ifthen_state) {
+		  cond = IFTHEN_COND;
+	  } else {
+		  cond = COND_UNCOND;
+	  }
 	}
       else
 	{
@@ -3431,24 +3435,28 @@ print_insn_coprocessor (bfd_vma pc,
 	  else
 	    {
 	      cond = (given >> 28) & 0xf;
-	      if (cond == 0xe)
-		cond = COND_UNCOND;
+	      if (cond == 0xe) {
+		      cond = COND_UNCOND;
+	      }
 	    }
 	}
 
-      if ((given & mask) != value)
-	continue;
+	if ((given & mask) != value) {
+		continue;
+	}
 
-      if (! ARM_CPU_HAS_FEATURE (insn->arch, allowed_arches))
-	continue;
+	if (!ARM_CPU_HAS_FEATURE (insn->arch, allowed_arches)) {
+		continue;
+	}
 
-      if (insn->value == 0xfe000010     /* mcr2  */
-	  || insn->value == 0xfe100010  /* mrc2  */
-	  || insn->value == 0xfc100000  /* ldc2  */
-	  || insn->value == 0xfc000000) /* stc2  */
+	if (insn->value == 0xfe000010	 /* mcr2  */
+		|| insn->value == 0xfe100010  /* mrc2  */
+		|| insn->value == 0xfc100000  /* ldc2  */
+		|| insn->value == 0xfc000000) /* stc2  */
 	{
-	  if (cp_num == 9 || cp_num == 10 || cp_num == 11)
-	    is_unpredictable = TRUE;
+		if (cp_num == 9 || cp_num == 10 || cp_num == 11) {
+			is_unpredictable = TRUE;
+		}
 	}
       else if (insn->value == 0x0e000000     /* cdp  */
 	       || insn->value == 0xfe000000  /* cdp2  */
@@ -3458,8 +3466,9 @@ print_insn_coprocessor (bfd_vma pc,
 	       || insn->value == 0x0c000000) /* stc  */
 	{
 	  /* Floating-point instructions.  */
-	  if (cp_num == 9 || cp_num == 10 || cp_num == 11)
-	    continue;
+	  if (cp_num == 9 || cp_num == 10 || cp_num == 11) {
+		  continue;
+	  }
 	}
 
       for (c = insn->assembler; *c; c++)
@@ -3482,29 +3491,32 @@ print_insn_coprocessor (bfd_vma pc,
 		    if (PRE_BIT_SET || WRITEBACK_BIT_SET)
 		      {
 			/* Not unindexed.  The offset is scaled.  */
-			if (cp_num == 9)
-			  /* vldr.16/vstr.16 will shift the address
+			if (cp_num == 9) {
+				/* vldr.16/vstr.16 will shift the address
 			     left by 1 bit only.  */
-			  offset = offset * 2;
-			else
-			  offset = offset * 4;
+				offset = offset * 2;
+			} else {
+				offset = offset * 4;
+			}
 
-			if (NEGATIVE_BIT_SET)
-			  offset = - offset;
-		//	if (rn != 15)
-			  // value_in_comment = offset;
+			if (NEGATIVE_BIT_SET) {
+				offset = -offset;
+			}
+			//	if (rn != 15)
+			// value_in_comment = offset;
 		      }
 
 		    if (PRE_BIT_SET)
 		      {
-			if (offset)
-			  func (stream, ", 0x%x]%s",
-				(int) offset,
-				WRITEBACK_BIT_SET ? "!" : "");
-			else if (NEGATIVE_BIT_SET)
-			  func (stream, ", #-0]");
-			else
-			  func (stream, "]");
+			    if (offset) {
+				    func (stream, ", 0x%x]%s",
+					    (int)offset,
+					    WRITEBACK_BIT_SET ? "!" : "");
+			    } else if (NEGATIVE_BIT_SET) {
+				    func (stream, ", #-0]");
+			    } else {
+				    func (stream, "]");
+			    }
 		      }
 		    else
 		      {
@@ -3512,10 +3524,11 @@ print_insn_coprocessor (bfd_vma pc,
 
 			if (WRITEBACK_BIT_SET)
 			  {
-			    if (offset)
-			      func (stream, ", 0x%x", (int) offset);
-			    else if (NEGATIVE_BIT_SET)
-			      func (stream, ", #-0");
+				if (offset) {
+					func (stream, ", 0x%x", (int)offset);
+				} else if (NEGATIVE_BIT_SET) {
+					func (stream, ", #-0");
+				}
 			  }
 			else
 			  {
@@ -3543,26 +3556,29 @@ print_insn_coprocessor (bfd_vma pc,
 		    int regno = ((given >> 12) & 0xf) | ((given >> (22 - 4)) & 0x10);
 		    int offset = (given >> 1) & 0x3f;
 
-		    if (offset == 1)
-		      func (stream, "{d%d}", regno);
-		    else if (regno + offset > 32)
-		      func (stream, "{d%d-<overflow reg d%d>}", regno, regno + offset - 1);
-		    else
-		      func (stream, "{d%d-d%d}", regno, regno + offset - 1);
+		    if (offset == 1) {
+			    func (stream, "{d%d}", regno);
+		    } else if (regno + offset > 32) {
+			    func (stream, "{d%d-<overflow reg d%d>}", regno, regno + offset - 1);
+		    } else {
+			    func (stream, "{d%d-d%d}", regno, regno + offset - 1);
+		    }
 		  }
 		  break;
 
 		case 'u':
-		  if (cond != COND_UNCOND)
-		    is_unpredictable = TRUE;
+			if (cond != COND_UNCOND) {
+				is_unpredictable = TRUE;
+			}
 
-		  /* Fall through.  */
+			/* Fall through.  */
 		case 'c':
-		  if (cond != COND_UNCOND && cp_num == 9)
-		    is_unpredictable = TRUE;
+			if (cond != COND_UNCOND && cp_num == 9) {
+				is_unpredictable = TRUE;
+			}
 
-		  func (stream, "%s", arm_conditional[cond]);
-		  break;
+			func (stream, "%s", arm_conditional[cond]);
+			break;
 
 		case 'I':
 		  /* Print a Cirrus/DSP shift immediate.  */
@@ -3575,8 +3591,9 @@ print_insn_coprocessor (bfd_vma pc,
 		    imm = (given & 0xf) | ((given & 0xe0) >> 1);
 
 		    /* Is ``imm'' a negative number?  */
-		    if (imm & 0x40)
-		      imm -= 0x80;
+		    if (imm & 0x40) {
+			    imm -= 0x80;
+		    }
 
 		    func (stream, "%d", imm);
 		  }
@@ -3663,36 +3680,40 @@ print_insn_coprocessor (bfd_vma pc,
 		    switch (*c)
 		      {
 		      case 'R':
-			if (value == 15)
-			  is_unpredictable = TRUE;
-			/* Fall through.  */
+			      if (value == 15) {
+				      is_unpredictable = TRUE;
+			      }
+			      /* Fall through.  */
 		      case 'r':
 			if (c[1] == 'u')
 			  {
 			    /* Eat the 'u' character.  */
 			    ++ c;
 
-			    if (u_reg == value)
-			      is_unpredictable = TRUE;
+			    if (u_reg == value) {
+				    is_unpredictable = TRUE;
+			    }
 			    u_reg = value;
 			  }
                         func (stream, "%s", arm_regnames [value & 0xf]);
 
 			break;
 		      case 'V':
-			if (given & (1 << 6))
-			  goto Q;
-			/* FALLTHROUGH */
+			      if (given & (1 << 6)) {
+				      goto Q;
+			      }
+			      /* FALLTHROUGH */
 		      case 'D':
 			func (stream, "d%ld", value);
 			break;
 		      case 'Q':
 		      Q:
-			if (value & 1)
-			  func (stream, "<illegal reg q%ld.5>", value >> 1);
-			else
-			  func (stream, "q%ld", value >> 1);
-			break;
+			      if (value & 1) {
+				      func (stream, "<illegal reg q%ld.5>", value >> 1);
+			      } else {
+				      func (stream, "q%ld", value >> 1);
+			      }
+			      break;
 		      case 'd':
 			func (stream, "%ld", value);
 			// value_in_comment = value;
@@ -3711,20 +3732,21 @@ print_insn_coprocessor (bfd_vma pc,
 			    (78125 << (((floatVal >> 23) & 0xFF) - 124)) *
 			    (16 + (value & 0xF));
 
-			  if (!(decVal % 1000000))
-			    func (stream, "%ld ; 0x%08x %c%u.%01u", value,
-				  floatVal, value & 0x80 ? '-' : ' ',
-				  decVal / 10000000,
-				  decVal % 10000000 / 1000000);
-			  else if (!(decVal % 10000))
-			    func (stream, "%ld ; 0x%08x %c%u.%03u", value,
-				  floatVal, value & 0x80 ? '-' : ' ',
-				  decVal / 10000000,
-				  decVal % 10000000 / 10000);
-			  else
-			    func (stream, "%ld ; 0x%08x %c%u.%07u", value,
-				  floatVal, value & 0x80 ? '-' : ' ',
-				  decVal / 10000000, decVal % 10000000);
+			  if (!(decVal % 1000000)) {
+				  func (stream, "%ld ; 0x%08x %c%u.%01u", value,
+					  floatVal, value & 0x80 ? '-' : ' ',
+					  decVal / 10000000,
+					  decVal % 10000000 / 1000000);
+			  } else if (!(decVal % 10000)) {
+				  func (stream, "%ld ; 0x%08x %c%u.%03u", value,
+					  floatVal, value & 0x80 ? '-' : ' ',
+					  decVal / 10000000,
+					  decVal % 10000000 / 10000);
+			  } else {
+				  func (stream, "%ld ; 0x%08x %c%u.%07u", value,
+					  floatVal, value & 0x80 ? '-' : ' ',
+					  decVal / 10000000, decVal % 10000000);
+			  }
 			  break;
 			}
 		      case 'k':
@@ -3735,18 +3757,20 @@ print_insn_coprocessor (bfd_vma pc,
 			break;
 
 		      case 'f':
-			if (value > 7)
-			  func (stream, "%s", arm_fp_const[value & 7]);
-			else
-			  func (stream, "f%ld", value);
-			break;
+			      if (value > 7) {
+				      func (stream, "%s", arm_fp_const[value & 7]);
+			      } else {
+				      func (stream, "f%ld", value);
+			      }
+			      break;
 
 		      case 'w':
-			if (width == 2)
-			  func (stream, "%s", iwmmxt_wwnames[value]);
-			else
-			  func (stream, "%s", iwmmxt_wwssnames[value]);
-			break;
+			      if (width == 2) {
+				      func (stream, "%s", iwmmxt_wwnames[value]);
+			      } else {
+				      func (stream, "%s", iwmmxt_wwssnames[value]);
+			      }
+			      break;
 
 		      case 'g':
 			func (stream, "%s", iwmmxt_regnames[value]);
@@ -3786,13 +3810,15 @@ print_insn_coprocessor (bfd_vma pc,
 
 		      case '`':
 			c++;
-			if (value == 0)
-			  func (stream, "%c", *c);
+			if (value == 0) {
+				func (stream, "%c", *c);
+			}
 			break;
 		      case '\'':
 			c++;
-			if (value == ((1ul << width) - 1))
-			  func (stream, "%c", *c);
+			if (value == ((1ul << width) - 1)) {
+				func (stream, "%c", *c);
+			}
 			break;
 		      case '?':
 			func (stream, "%c", c[(1 << width) - (int) value]);
@@ -3818,9 +3844,9 @@ print_insn_coprocessor (bfd_vma pc,
 			    {
 			      regno <<= 1;
 			      regno += (given >> 5) & 1;
-			    }
-			  else
-			    regno += ((given >> 5) & 1) << 4;
+			  } else {
+				  regno += ((given >> 5) & 1) << 4;
+			  }
 			  break;
 
 			case '1': /* Sd, Dd */
@@ -3829,9 +3855,9 @@ print_insn_coprocessor (bfd_vma pc,
 			    {
 			      regno <<= 1;
 			      regno += (given >> 22) & 1;
-			    }
-			  else
-			    regno += ((given >> 22) & 1) << 4;
+			  } else {
+				  regno += ((given >> 22) & 1) << 4;
+			  }
 			  break;
 
 			case '2': /* Sn, Dn */
@@ -3840,9 +3866,9 @@ print_insn_coprocessor (bfd_vma pc,
 			    {
 			      regno <<= 1;
 			      regno += (given >> 7) & 1;
-			    }
-			  else
-			    regno += ((given >> 7) & 1) << 4;
+			  } else {
+				  regno += ((given >> 7) & 1) << 4;
+			  }
 			  break;
 
 			case '3': /* List */
@@ -3852,9 +3878,9 @@ print_insn_coprocessor (bfd_vma pc,
 			    {
 			      regno <<= 1;
 			      regno += (given >> 22) & 1;
-			    }
-			  else
-			    regno += ((given >> 22) & 1) << 4;
+			  } else {
+				  regno += ((given >> 22) & 1) << 4;
+			  }
 			  break;
 
 			default:
@@ -3867,8 +3893,9 @@ print_insn_coprocessor (bfd_vma pc,
 			{
 			  int count = given & 0xff;
 
-			  if (single == 0)
-			    count >>= 1;
+			  if (single == 0) {
+				  count >>= 1;
+			  }
 
 			  if (--count)
 			    {
@@ -3878,10 +3905,10 @@ print_insn_coprocessor (bfd_vma pc,
 			    }
 
 			  func (stream, "}");
-			}
-		      else if (*c == '4')
-			func (stream, ", %c%d", single ? 's' : 'd',
-			      regno + 1);
+		      } else if (*c == '4') {
+			      func (stream, ", %c%d", single ? 's' : 'd',
+				      regno + 1);
+		      }
 		    }
 		    break;
 
@@ -3926,18 +3953,19 @@ print_insn_coprocessor (bfd_vma pc,
 
 		      if (offset)
 			{
-			  if (PRE_BIT_SET)
-			    func (stream, ", %s%d]%s",
-				  NEGATIVE_BIT_SET ? "-" : "",
-				  offset * multiplier,
-				  WRITEBACK_BIT_SET ? "!" : "");
-			  else
-			    func (stream, "], %s%d",
-				  NEGATIVE_BIT_SET ? "-" : "",
-				  offset * multiplier);
-			}
-		      else
-			func (stream, "]");
+			      if (PRE_BIT_SET) {
+				      func (stream, ", %s%d]%s",
+					      NEGATIVE_BIT_SET ? "-" : "",
+					      offset * multiplier,
+					      WRITEBACK_BIT_SET ? "!" : "");
+			      } else {
+				      func (stream, "], %s%d",
+					      NEGATIVE_BIT_SET ? "-" : "",
+					      offset * multiplier);
+			      }
+		      } else {
+			      func (stream, "]");
+		      }
 		    }
 		    break;
 
@@ -3954,8 +3982,9 @@ print_insn_coprocessor (bfd_vma pc,
 			case 1:
 			case 3:
 			  func (stream, "[%s], %c%s", rn, ubit ? '+' : '-', rm);
-			  if (imm4)
-			    func (stream, ", lsl %d", imm4);
+			  if (imm4) {
+				  func (stream, ", lsl %d", imm4);
+			  }
 			  break;
 
 			case 4:
@@ -3963,11 +3992,13 @@ print_insn_coprocessor (bfd_vma pc,
 			case 6:
 			case 7:
 			  func (stream, "[%s, %c%s", rn, ubit ? '+' : '-', rm);
-			  if (imm4 > 0)
-			    func (stream, ", lsl %d", imm4);
+			  if (imm4 > 0) {
+				  func (stream, ", lsl %d", imm4);
+			  }
 			  func (stream, "]");
-			  if (puw_bits == 5 || puw_bits == 7)
-			    func (stream, "!");
+			  if (puw_bits == 5 || puw_bits == 7) {
+				  func (stream, "!");
+			  }
 			  break;
 
 			default:
@@ -3985,9 +4016,9 @@ print_insn_coprocessor (bfd_vma pc,
 		    break;
 		  }
 		}
-	    }
-	  else
-	    func (stream, "%c", *c);
+	  } else {
+		  func (stream, "%c", *c);
+	  }
 	}
 
 #if 0
@@ -3995,10 +4026,11 @@ print_insn_coprocessor (bfd_vma pc,
 	func (stream, " ; 0x%lx", (value_in_comment & 0xffffffffUL));
 #endif
 
-      if (is_unpredictable)
-	func (stream, UNPREDICTABLE_INSTRUCTION);
+	if (is_unpredictable) {
+		func (stream, UNPREDICTABLE_INSTRUCTION);
+	}
 
-      return TRUE;
+	return TRUE;
     }
   return FALSE;
 }
@@ -4026,11 +4058,13 @@ print_arm_address (bfd_vma pc, struct disassemble_info *info, long given)
 	{
 	  /* Pre-indexed.  Elide offset of positive zero when
 	     non-writeback.  */
-	  if (WRITEBACK_BIT_SET || NEGATIVE_BIT_SET || offset)
-	    func (stream, ", %s%d", NEGATIVE_BIT_SET ? "-" : "", (int) offset);
+	  if (WRITEBACK_BIT_SET || NEGATIVE_BIT_SET || offset) {
+		  func (stream, ", %s%d", NEGATIVE_BIT_SET ? "-" : "", (int)offset);
+	  }
 
-	  if (NEGATIVE_BIT_SET)
-	    offset = -offset;
+	  if (NEGATIVE_BIT_SET) {
+		  offset = -offset;
+	  }
 
 	  offset += pc + 8;
 
@@ -4063,8 +4097,9 @@ print_arm_address (bfd_vma pc, struct disassemble_info *info, long given)
 	    {
 	      /* Elide offset of positive zero when non-writeback.  */
 	      offset = given & 0xfff;
-	      if (WRITEBACK_BIT_SET || NEGATIVE_BIT_SET || offset)
-		func (stream, ", %s%d", NEGATIVE_BIT_SET ? "-" : "", (int) offset);
+	      if (WRITEBACK_BIT_SET || NEGATIVE_BIT_SET || offset) {
+		      func (stream, ", %s%d", NEGATIVE_BIT_SET ? "-" : "", (int)offset);
+	      }
 	    }
 	  else
 	    {
@@ -4091,8 +4126,9 @@ print_arm_address (bfd_vma pc, struct disassemble_info *info, long given)
 	      arm_decode_shift (given, func, stream, TRUE);
 	    }
 	}
-      if (NEGATIVE_BIT_SET)
-	offset = -offset;
+	if (NEGATIVE_BIT_SET) {
+		offset = -offset;
+	}
     }
 
   return (signed long) offset;
@@ -4117,15 +4153,16 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
 	  unsigned long bit28 = given & (1 << 28);
 
 	  given &= 0x00ffffff;
-	  if (bit28)
-            given |= 0xf3000000;
-          else
-	    given |= 0xf2000000;
-	}
-      else if ((given & 0xff000000) == 0xf9000000)
-	given ^= 0xf9000000 ^ 0xf4000000;
-      else
-	return FALSE;
+	  if (bit28) {
+		  given |= 0xf3000000;
+	  } else {
+		  given |= 0xf2000000;
+	  }
+      } else if ((given & 0xff000000) == 0xf9000000) {
+	      given ^= 0xf9000000 ^ 0xf4000000;
+      } else {
+	      return FALSE;
+      }
     }
 
   for (insn = neon_opcodes; insn->assembler; insn++)
@@ -4147,14 +4184,16 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
 		      break;
 
 		    case 'u':
-		      if (thumb && ifthen_state)
-			is_unpredictable = TRUE;
+			    if (thumb && ifthen_state) {
+				    is_unpredictable = TRUE;
+			    }
 
-		      /* Fall through.  */
+			    /* Fall through.  */
 		    case 'c':
-		      if (thumb && ifthen_state)
-			func (stream, "%s", arm_conditional[IFTHEN_COND]);
-		      break;
+			    if (thumb && ifthen_state) {
+				    func (stream, "%s", arm_conditional[IFTHEN_COND]);
+			    }
+			    break;
 
 		    case 'A':
 		      {
@@ -4182,21 +4221,25 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
 			int ix;
 
 			func (stream, "{");
-			if (stride > 1)
-			  for (ix = 0; ix != n; ix++)
-			    func (stream, "%sd%d", ix ? "," : "", rd + ix * stride);
-			else if (n == 1)
-			  func (stream, "d%d", rd);
-			else
-			  func (stream, "d%d-d%d", rd, rd + n - 1);
+			if (stride > 1) {
+				for (ix = 0; ix != n; ix++) {
+					func (stream, "%sd%d", ix ? "," : "", rd + ix * stride);
+				}
+			} else if (n == 1) {
+				func (stream, "d%d", rd);
+			} else {
+				func (stream, "d%d-d%d", rd, rd + n - 1);
+			}
 			func (stream, "}, [%s", arm_regnames[rn]);
-			if (align)
-			  func (stream, " :%d", 32 << align);
+			if (align) {
+				func (stream, " :%d", 32 << align);
+			}
 			func (stream, "]");
-			if (rm == 0xd)
-			  func (stream, "!");
-			else if (rm != 0xf)
-			  func (stream, ", %s", arm_regnames[rm]);
+			if (rm == 0xd) {
+				func (stream, "!");
+			} else if (rm != 0xf) {
+				func (stream, ", %s", arm_regnames[rm]);
+			}
 		      }
 		      break;
 
@@ -4213,62 +4256,70 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
                         int stride = 1;
                         int i;
 
-                        if (length > 1 && size > 0)
-                          stride = (idx_align & (1 << size)) ? 2 : 1;
+			if (length > 1 && size > 0) {
+				stride = (idx_align & (1 << size)) ? 2 : 1;
+			}
 
-                        switch (length)
+			switch (length)
                           {
                           case 1:
                             {
                               int amask = (1 << size) - 1;
-                              if ((idx_align & (1 << size)) != 0)
-                                return FALSE;
-                              if (size > 0)
+			      if ((idx_align & (1 << size)) != 0) {
+				      return FALSE;
+			      }
+			      if (size > 0)
                                 {
-                                  if ((idx_align & amask) == amask)
-                                    align = 8 << size;
-                                  else if ((idx_align & amask) != 0)
-                                    return FALSE;
-                                }
+				      if ((idx_align & amask) == amask) {
+					      align = 8 << size;
+				      } else if ((idx_align & amask) != 0) {
+					      return FALSE;
+				      }
+				}
                               }
                             break;
 
                           case 2:
-                            if (size == 2 && (idx_align & 2) != 0)
-                              return FALSE;
-                            align = (idx_align & 1) ? 16 << size : 0;
-                            break;
+				  if (size == 2 && (idx_align & 2) != 0) {
+					  return FALSE;
+				  }
+				  align = (idx_align & 1) ? 16 << size : 0;
+				  break;
 
                           case 3:
-                            if ((size == 2 && (idx_align & 3) != 0)
-                                || (idx_align & 1) != 0)
-                              return FALSE;
-                            break;
+				  if ((size == 2 && (idx_align & 3) != 0) || (idx_align & 1) != 0) {
+					  return FALSE;
+				  }
+				  break;
 
                           case 4:
                             if (size == 2)
                               {
-                                if ((idx_align & 3) == 3)
-                                  return FALSE;
-                                align = (idx_align & 3) * 64;
-                              }
-                            else
-                              align = (idx_align & 1) ? 32 << size : 0;
-                            break;
+				    if ((idx_align & 3) == 3) {
+					    return FALSE;
+				    }
+				    align = (idx_align & 3) * 64;
+			    } else {
+				    align = (idx_align & 1) ? 32 << size : 0;
+			    }
+			    break;
                           }
 
 			func (stream, "{");
-                        for (i = 0; i < length; i++)
-                          func (stream, "%sd%d[%d]", (i == 0) ? "" : ",",
-                            rd + i * stride, idx);
-                        func (stream, "}, [%s", arm_regnames[rn]);
-			if (align)
-			  func (stream, " :%d", align);
+			for (i = 0; i < length; i++) {
+				func (stream, "%sd%d[%d]", (i == 0) ? "" : ",",
+					rd + i * stride, idx);
+			}
+			func (stream, "}, [%s", arm_regnames[rn]);
+			if (align) {
+				func (stream, " :%d", align);
+			}
 			func (stream, "]");
-			if (rm == 0xd)
-			  func (stream, "!");
-			else if (rm != 0xf)
-			  func (stream, ", %s", arm_regnames[rm]);
+			if (rm == 0xd) {
+				func (stream, "!");
+			} else if (rm != 0xf) {
+				func (stream, ", %s", arm_regnames[rm]);
+			}
 		      }
 		      break;
 
@@ -4284,35 +4335,41 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
 			int stride = ((given >> 5) & 0x1);
 			int ix;
 
-			if (stride && (n == 1))
-			  n++;
-			else
-			  stride++;
+			if (stride && (n == 1)) {
+				n++;
+			} else {
+				stride++;
+			}
 
 			func (stream, "{");
-			if (stride > 1)
-			  for (ix = 0; ix != n; ix++)
-			    func (stream, "%sd%d[]", ix ? "," : "", rd + ix * stride);
-			else if (n == 1)
-			  func (stream, "d%d[]", rd);
-			else
-			  func (stream, "d%d[]-d%d[]", rd, rd + n - 1);
+			if (stride > 1) {
+				for (ix = 0; ix != n; ix++) {
+					func (stream, "%sd%d[]", ix ? "," : "", rd + ix * stride);
+				}
+			} else if (n == 1) {
+				func (stream, "d%d[]", rd);
+			} else {
+				func (stream, "d%d[]-d%d[]", rd, rd + n - 1);
+			}
 			func (stream, "}, [%s", arm_regnames[rn]);
 			if (align)
 			  {
                             align = (8 * (type + 1)) << size;
-                            if (type == 3)
-                              align = (size > 1) ? align >> 1 : align;
-			    if (type == 2 || (type == 0 && !size))
-			      func (stream, " :<bad align %d>", align);
-			    else
-			      func (stream, " :%d", align);
+			    if (type == 3) {
+				    align = (size > 1) ? align >> 1 : align;
+			    }
+			    if (type == 2 || (type == 0 && !size)) {
+				    func (stream, " :<bad align %d>", align);
+			    } else {
+				    func (stream, " :%d", align);
+			    }
 			  }
 			func (stream, "]");
-			if (rm == 0xd)
-			  func (stream, "!");
-			else if (rm != 0xf)
-			  func (stream, ", %s", arm_regnames[rm]);
+			if (rm == 0xd) {
+				func (stream, "!");
+			} else if (rm != 0xf) {
+				func (stream, ", %s", arm_regnames[rm]);
+			}
 		      }
 		      break;
 
@@ -4374,10 +4431,11 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
 				for (ix = 7; ix >= 0; ix--)
 				  {
 				    mask = ((bits >> ix) & 1) ? 0xff : 0;
-                                    if (ix <= 3)
-				      value = (value << 8) | mask;
-                                    else
-                                      hival = (hival << 8) | mask;
+				    if (ix <= 3) {
+					    value = (value << 8) | mask;
+				    } else {
+					    hival = (hival << 8) | mask;
+				    }
 				  }
                                 size = 64;
 			      }
@@ -4438,13 +4496,14 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
 
                                 func (stream, "%.7g ; 0x%.8lx", fvalue,
                                       value);
-                              }
-                            else
-                              func (stream, "%ld ; 0x%.8lx",
-				    (long) (((value & 0x80000000L) != 0)
-					    ? value | ~0xffffffffL : value),
-				    value);
-                            break;
+			    } else {
+				    func (stream, "%ld ; 0x%.8lx",
+					    (long)(((value & 0x80000000L) != 0)
+							    ? value | ~0xffffffffL
+							    : value),
+					    value);
+			    }
+			    break;
 
                           case 64:
                             func (stream, "#0x%.8lx%.8lx", hival, value);
@@ -4458,12 +4517,13 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
 			int regno = ((given >> 16) & 0xf) | ((given >> (7 - 4)) & 0x10);
 			int num = (given >> 8) & 0x3;
 
-			if (!num)
-			  func (stream, "{d%d}", regno);
-			else if (num + regno >= 32)
-			  func (stream, "{d%d-<overflow reg d%d}", regno, regno + num);
-			else
-			  func (stream, "{d%d-d%d}", regno, regno + num);
+			if (!num) {
+				func (stream, "{d%d}", regno);
+			} else if (num + regno >= 32) {
+				func (stream, "{d%d-<overflow reg d%d}", regno, regno + num);
+			} else {
+				func (stream, "{d%d-d%d}", regno, regno + num);
+			}
 		      }
 		      break;
 
@@ -4499,45 +4559,51 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
 			      unsigned low, high;
 
 			      c++;
-			      if (*c >= '0' && *c <= '9')
-				limit = *c - '0';
-			      else if (*c >= 'a' && *c <= 'f')
-				limit = *c - 'a' + 10;
-			      else
-				return FALSE;
+			      if (*c >= '0' && *c <= '9') {
+				      limit = *c - '0';
+			      } else if (*c >= 'a' && *c <= 'f') {
+				      limit = *c - 'a' + 10;
+			      } else {
+				      return FALSE;
+			      }
 			      low = limit >> 2;
 			      high = limit & 3;
 
-			      if (value < low || value > high)
-				func (stream, "<illegal width %d>", base << value);
-			      else
-				func (stream, "%d", base << value);
+			      if (value < low || value > high) {
+				      func (stream, "<illegal width %d>", base << value);
+			      } else {
+				      func (stream, "%d", base << value);
+			      }
 			    }
 			    break;
 			  case 'R':
-			    if (given & (1 << 6))
-			      goto Q;
-			    /* FALLTHROUGH */
+				  if (given & (1 << 6)) {
+					  goto Q;
+				  }
+				  /* FALLTHROUGH */
 			  case 'D':
 			    func (stream, "d%ld", value);
 			    break;
 			  case 'Q':
 			  Q:
-			    if (value & 1)
-			      func (stream, "<illegal reg q%ld.5>", value >> 1);
-			    else
-			      func (stream, "q%ld", value >> 1);
-			    break;
+				  if (value & 1) {
+					  func (stream, "<illegal reg q%ld.5>", value >> 1);
+				  } else {
+					  func (stream, "q%ld", value >> 1);
+				  }
+				  break;
 
 			  case '`':
 			    c++;
-			    if (value == 0)
-			      func (stream, "%c", *c);
+			    if (value == 0) {
+				    func (stream, "%c", *c);
+			    }
 			    break;
 			  case '\'':
 			    c++;
-			    if (value == ((1ul << width) - 1))
-			      func (stream, "%c", *c);
+			    if (value == ((1ul << width) - 1)) {
+				    func (stream, "%c", *c);
+			    }
 			    break;
 			  case '?':
 			    func (stream, "%c", c[(1 << width) - (int) value]);
@@ -4552,9 +4618,9 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
 			return FALSE;
 		      }
 		    }
-		}
-	      else
-		func (stream, "%c", *c);
+	      } else {
+		      func (stream, "%c", *c);
+	      }
 	    }
 
 #if 0
@@ -4562,10 +4628,11 @@ print_insn_neon (struct disassemble_info *info, long given, bfd_boolean thumb)
 	    func (stream, " ; 0x%lx", value_in_comment);
 #endif
 
-	  if (is_unpredictable)
-	    func (stream, UNPREDICTABLE_INSTRUCTION);
+	    if (is_unpredictable) {
+		    func (stream, UNPREDICTABLE_INSTRUCTION);
+	    }
 
-	  return TRUE;
+	    return TRUE;
 	}
     }
   return FALSE;
@@ -4649,515 +4716,511 @@ print_insn_arm (bfd_vma pc, struct disassemble_info *info, long given)
   fprintf_ftype func = info->fprintf_func;
   struct arm_private_data *private_data = info->private_data;
 
-  if (print_insn_coprocessor (pc, info, given, FALSE))
-    return;
+  if (print_insn_coprocessor (pc, info, given, FALSE)) {
+	  return;
+  }
 
-  if (print_insn_neon (info, given, FALSE))
-    return;
+  if (print_insn_neon (info, given, FALSE)) {
+	  return;
+  }
 
   for (insn = arm_opcodes; insn->assembler; insn++)
     {
-      if ((given & insn->mask) != insn->value)
-	continue;
+	  if ((given & insn->mask) != insn->value) {
+		  continue;
+	  }
 
-      if (! ARM_CPU_HAS_FEATURE (insn->arch, private_data->features))
-	continue;
+	  if (!ARM_CPU_HAS_FEATURE (insn->arch, private_data->features)) {
+		  continue;
+	  }
 
-      /* Special case: an instruction with all bits set in the condition field
+	  /* Special case: an instruction with all bits set in the condition field
 	 (0xFnnn_nnnn) is only matched if all those bits are set in insn->mask,
 	 or by the catchall at the end of the table.  */
-      if ((given & 0xF0000000) != 0xF0000000
-	  || (insn->mask & 0xF0000000) == 0xF0000000
-	  || (insn->mask == 0 && insn->value == 0))
-	{
-	  unsigned long u_reg = 16;
-	  unsigned long U_reg = 16;
-	  bfd_boolean is_unpredictable = FALSE;
-	  signed long value_in_comment = 0;
-	  const char *c;
+	  if ((given & 0xF0000000) != 0xF0000000 || (insn->mask & 0xF0000000) == 0xF0000000 || (insn->mask == 0 && insn->value == 0)) {
+		  unsigned long u_reg = 16;
+		  unsigned long U_reg = 16;
+		  bfd_boolean is_unpredictable = FALSE;
+		  signed long value_in_comment = 0;
+		  const char *c;
 
-	  for (c = insn->assembler; *c; c++)
-	    {
-	      if (*c == '%')
-		{
-		  bfd_boolean allow_unpredictable = FALSE;
+		  for (c = insn->assembler; *c; c++) {
+			  if (*c == '%') {
+				  bfd_boolean allow_unpredictable = FALSE;
 
-		  switch (*++c)
-		    {
-		    case '%':
-		      func (stream, "%%");
-		      break;
+				  switch (*++c) {
+				  case '%':
+					  func (stream, "%%");
+					  break;
 
-		    case 'a':
-		      value_in_comment = print_arm_address (pc, info, given);
-		      break;
+				  case 'a':
+					  value_in_comment = print_arm_address (pc, info, given);
+					  break;
 
-		    case 'P':
-		      /* Set P address bit and use normal address
+				  case 'P':
+					  /* Set P address bit and use normal address
 			 printing routine.  */
-		      value_in_comment = print_arm_address (pc, info, given | (1 << P_BIT));
-		      break;
+					  value_in_comment = print_arm_address (pc, info, given | (1 << P_BIT));
+					  break;
 
-		    case 'S':
-		      allow_unpredictable = TRUE;
-		      /* Fall through.  */
-		    case 's':
-                      if ((given & 0x004f0000) == 0x004f0000)
-			{
-                          /* PC relative with immediate offset.  */
-			  bfd_vma offset = ((given & 0xf00) >> 4) | (given & 0xf);
+				  case 'S':
+					  allow_unpredictable = TRUE;
+					  /* Fall through.  */
+				  case 's':
+					  if ((given & 0x004f0000) == 0x004f0000) {
+						  /* PC relative with immediate offset.  */
+						  bfd_vma offset = ((given & 0xf00) >> 4) | (given & 0xf);
 
-			  if (PRE_BIT_SET)
-			    {
-			      /* Elide positive zero offset.  */
-			      if (offset || NEGATIVE_BIT_SET)
-				func (stream, "[pc, %s%d] ; ",
-				      NEGATIVE_BIT_SET ? "-" : "", (int) offset);
-			      else
-				func (stream, "[pc] ; ");
-			      if (NEGATIVE_BIT_SET)
-				offset = -offset;
-			      info->print_address_func (offset + pc + 8, info);
-			    }
-			  else
-			    {
-			      /* Always show the offset.  */
-			      func (stream, "[pc], %s%d",
-				    NEGATIVE_BIT_SET ? "-" : "", (int) offset);
-			      if (! allow_unpredictable)
-				is_unpredictable = TRUE;
-			    }
-			}
-		      else
-			{
-			  int offset = ((given & 0xf00) >> 4) | (given & 0xf);
+						  if (PRE_BIT_SET) {
+							  /* Elide positive zero offset.  */
+							  if (offset || NEGATIVE_BIT_SET) {
+								  func (stream, "[pc, %s%d] ; ",
+									  NEGATIVE_BIT_SET ? "-" : "", (int)offset);
+							  } else {
+								  func (stream, "[pc] ; ");
+							  }
+							  if (NEGATIVE_BIT_SET) {
+								  offset = -offset;
+							  }
+							  info->print_address_func (offset + pc + 8, info);
+						  } else {
+							  /* Always show the offset.  */
+							  func (stream, "[pc], %s%d",
+								  NEGATIVE_BIT_SET ? "-" : "", (int)offset);
+							  if (!allow_unpredictable) {
+								  is_unpredictable = TRUE;
+							  }
+						  }
+					  } else {
+						  int offset = ((given & 0xf00) >> 4) | (given & 0xf);
 
-			  func (stream, "[%s",
-				arm_regnames[(given >> 16) & 0xf]);
+						  func (stream, "[%s",
+							  arm_regnames[(given >> 16) & 0xf]);
 
-			  if (PRE_BIT_SET)
-			    {
-			      if (IMMEDIATE_BIT_SET)
-				{
-				  /* Elide offset for non-writeback
+						  if (PRE_BIT_SET) {
+							  if (IMMEDIATE_BIT_SET) {
+								  /* Elide offset for non-writeback
 				     positive zero.  */
-				  if (WRITEBACK_BIT_SET || NEGATIVE_BIT_SET
-				      || offset)
-				    func (stream, ", %s%d",
-					  NEGATIVE_BIT_SET ? "-" : "", offset);
+								  if (WRITEBACK_BIT_SET || NEGATIVE_BIT_SET || offset) {
+									  func (stream, ", %s%d",
+										  NEGATIVE_BIT_SET ? "-" : "", offset);
+								  }
 
-				  if (NEGATIVE_BIT_SET)
-				    offset = -offset;
+								  if (NEGATIVE_BIT_SET) {
+									  offset = -offset;
+								  }
 
-				  value_in_comment = offset;
-				}
-			      else
-				{
-				  /* Register Offset or Register Pre-Indexed.  */
-				  func (stream, ", %s%s",
-					NEGATIVE_BIT_SET ? "-" : "",
-					arm_regnames[given & 0xf]);
+								  value_in_comment = offset;
+							  } else {
+								  /* Register Offset or Register Pre-Indexed.  */
+								  func (stream, ", %s%s",
+									  NEGATIVE_BIT_SET ? "-" : "",
+									  arm_regnames[given & 0xf]);
 
-				  /* Writing back to the register that is the source/
+								  /* Writing back to the register that is the source/
 				     destination of the load/store is unpredictable.  */
-				  if (! allow_unpredictable
-				      && WRITEBACK_BIT_SET
-				      && ((given & 0xf) == ((given >> 12) & 0xf)))
-				    is_unpredictable = TRUE;
-				}
+								  if (!allow_unpredictable && WRITEBACK_BIT_SET && ((given & 0xf) == ((given >> 12) & 0xf))) {
+									  is_unpredictable = TRUE;
+								  }
+							  }
 
-			      func (stream, "]%s",
-				    WRITEBACK_BIT_SET ? "!" : "");
-			    }
-			  else
-			    {
-			      if (IMMEDIATE_BIT_SET)
-				{
-				  /* Immediate Post-indexed.  */
-				  /* PR 10924: Offset must be printed, even if it is zero.  */
-				  func (stream, "], %s%d",
-					NEGATIVE_BIT_SET ? "-" : "", offset);
-				  if (NEGATIVE_BIT_SET)
-				    offset = -offset;
-				  value_in_comment = offset;
-				}
-			      else
-				{
-				  /* Register Post-indexed.  */
-				  func (stream, "], %s%s",
-					NEGATIVE_BIT_SET ? "-" : "",
-					arm_regnames[given & 0xf]);
+							  func (stream, "]%s",
+								  WRITEBACK_BIT_SET ? "!" : "");
+						  } else {
+							  if (IMMEDIATE_BIT_SET) {
+								  /* Immediate Post-indexed.  */
+								  /* PR 10924: Offset must be printed, even if it is zero.  */
+								  func (stream, "], %s%d",
+									  NEGATIVE_BIT_SET ? "-" : "", offset);
+								  if (NEGATIVE_BIT_SET) {
+									  offset = -offset;
+								  }
+								  value_in_comment = offset;
+							  } else {
+								  /* Register Post-indexed.  */
+								  func (stream, "], %s%s",
+									  NEGATIVE_BIT_SET ? "-" : "",
+									  arm_regnames[given & 0xf]);
 
-				  /* Writing back to the register that is the source/
+								  /* Writing back to the register that is the source/
 				     destination of the load/store is unpredictable.  */
-				  if (! allow_unpredictable
-				      && (given & 0xf) == ((given >> 12) & 0xf))
-				    is_unpredictable = TRUE;
-				}
+								  if (!allow_unpredictable && (given & 0xf) == ((given >> 12) & 0xf)) {
+									  is_unpredictable = TRUE;
+								  }
+							  }
 
-			      if (! allow_unpredictable)
-				{
-				  /* Writeback is automatically implied by post- addressing.
+							  if (!allow_unpredictable) {
+								  /* Writeback is automatically implied by post- addressing.
 				     Setting the W bit is unnecessary and ARM specify it as
 				     being unpredictable.  */
-				  if (WRITEBACK_BIT_SET
-				      /* Specifying the PC register as the post-indexed
+								  if (WRITEBACK_BIT_SET
+									  /* Specifying the PC register as the post-indexed
 					 registers is also unpredictable.  */
-				      || (! IMMEDIATE_BIT_SET && ((given & 0xf) == 0xf)))
-				    is_unpredictable = TRUE;
-				}
-			    }
-			}
-		      break;
+									  || (!IMMEDIATE_BIT_SET && ((given & 0xf) == 0xf))) {
+									  is_unpredictable = TRUE;
+								  }
+							  }
+						  }
+					  }
+					  break;
 
-		    case 'b':
-		      {
-			bfd_vma disp = (((given & 0xffffff) ^ 0x800000) - 0x800000);
-			info->print_address_func (disp * 4 + pc + 8, info);
-		      }
-		      break;
+				  case 'b': {
+					  bfd_vma disp = (((given & 0xffffff) ^ 0x800000) - 0x800000);
+					  info->print_address_func (disp * 4 + pc + 8, info);
+				  } break;
 
-		    case 'c':
-		      if (((given >> 28) & 0xf) != 0xe)
-			func (stream, "%s",
-			      arm_conditional [(given >> 28) & 0xf]);
-		      break;
+				  case 'c':
+					  if (((given >> 28) & 0xf) != 0xe) {
+						  func (stream, "%s",
+							  arm_conditional[(given >> 28) & 0xf]);
+					  }
+					  break;
 
-		    case 'm':
-		      {
-			int started = 0;
-			int reg;
+				  case 'm': {
+					  int started = 0;
+					  int reg;
 
-			func (stream, "{");
-			for (reg = 0; reg < 16; reg++)
-			  if ((given & (1 << reg)) != 0)
-			    {
-			      if (started)
-				func (stream, ", ");
-			      started = 1;
-			      func (stream, "%s", arm_regnames[reg]);
-			    }
-			func (stream, "}");
-			if (! started)
-			  is_unpredictable = TRUE;
-		      }
-		      break;
+					  func (stream, "{");
+					  for (reg = 0; reg < 16; reg++) {
+						  if ((given & (1 << reg)) != 0) {
+							  if (started) {
+								  func (stream, ", ");
+							  }
+							  started = 1;
+							  func (stream, "%s", arm_regnames[reg]);
+						  }
+					  }
+					  func (stream, "}");
+					  if (!started) {
+						  is_unpredictable = TRUE;
+					  }
+				  } break;
 
-		    case 'q':
-		      arm_decode_shift (given, func, stream, FALSE);
-		      break;
+				  case 'q':
+					  arm_decode_shift (given, func, stream, FALSE);
+					  break;
 
-		    case 'o':
-		      if ((given & 0x02000000) != 0)
-			{
-			  unsigned int rotate = (given & 0xf00) >> 7;
-			  unsigned int immed = (given & 0xff);
-			  unsigned int a, i;
+				  case 'o':
+					  if ((given & 0x02000000) != 0) {
+						  unsigned int rotate = (given & 0xf00) >> 7;
+						  unsigned int immed = (given & 0xff);
+						  unsigned int a, i;
 
-			  a = (((immed << (32 - rotate))
-				| (immed >> rotate)) & 0xffffffff);
-			  /* If there is another encoding with smaller rotate,
+						  a = (((immed << (32 - rotate)) | (immed >> rotate)) & 0xffffffff);
+						  /* If there is another encoding with smaller rotate,
 			     the rotate should be specified directly.  */
-			  for (i = 0; i < 32; i += 2)
-			    if ((a << i | a >> (32 - i)) <= 0xff)
-			      break;
+						  for (i = 0; i < 32; i += 2) {
+							  if ((a << i | a >> (32 - i)) <= 0xff) {
+								  break;
+							  }
+						  }
 
-			  if (i != rotate)
-			    func (stream, "%d, %d", immed, rotate);
-			  else
-			    func (stream, "%d", a);
-			  value_in_comment = a;
-			}
-		      else
-			arm_decode_shift (given, func, stream, TRUE);
-		      break;
+						  if (i != rotate) {
+							  func (stream, "%d, %d", immed, rotate);
+						  } else {
+							  func (stream, "%d", a);
+						  }
+						  value_in_comment = a;
+					  } else {
+						  arm_decode_shift (given, func, stream, TRUE);
+					  }
+					  break;
 
-		    case 'p':
-		      if ((given & 0x0000f000) == 0x0000f000)
-			{
-			  arm_feature_set arm_ext_v6 =
-			    ARM_FEATURE_CORE_LOW (ARM_EXT_V6);
+				  case 'p':
+					  if ((given & 0x0000f000) == 0x0000f000) {
+						  arm_feature_set arm_ext_v6 =
+							  ARM_FEATURE_CORE_LOW (ARM_EXT_V6);
 
-			  /* The p-variants of tst/cmp/cmn/teq are the pre-V6
+						  /* The p-variants of tst/cmp/cmn/teq are the pre-V6
 			     mechanism for setting PSR flag bits.  They are
 			     obsolete in V6 onwards.  */
-			  if (! ARM_CPU_HAS_FEATURE (private_data->features, \
-						     arm_ext_v6))
-			    func (stream, "p");
-			  else
-			    is_unpredictable = TRUE;
-			}
-		      break;
+						  if (!ARM_CPU_HAS_FEATURE (private_data->features,
+							      arm_ext_v6)) {
+							  func (stream, "p");
+						  } else {
+							  is_unpredictable = TRUE;
+						  }
+					  }
+					  break;
 
-		    case 't':
-		      if ((given & 0x01200000) == 0x00200000)
-			func (stream, "t");
-		      break;
+				  case 't':
+					  if ((given & 0x01200000) == 0x00200000) {
+						  func (stream, "t");
+					  }
+					  break;
 
-		    case 'A':
-		      {
-			int offset = given & 0xff;
+				  case 'A': {
+					  int offset = given & 0xff;
 
-			value_in_comment = offset * 4;
-			if (NEGATIVE_BIT_SET)
-			  value_in_comment = - value_in_comment;
+					  value_in_comment = offset * 4;
+					  if (NEGATIVE_BIT_SET) {
+						  value_in_comment = -value_in_comment;
+					  }
 
-			func (stream, "[%s", arm_regnames [(given >> 16) & 0xf]);
+					  func (stream, "[%s", arm_regnames[(given >> 16) & 0xf]);
 
-			if (PRE_BIT_SET)
-			  {
-			    if (offset)
-			      func (stream, ", %d]%s",
-				    (int) value_in_comment,
-				    WRITEBACK_BIT_SET ? "!" : "");
-			    else
-			      func (stream, "]");
-			  }
-			else
-			  {
-			    func (stream, "]");
+					  if (PRE_BIT_SET) {
+						  if (offset) {
+							  func (stream, ", %d]%s",
+								  (int)value_in_comment,
+								  WRITEBACK_BIT_SET ? "!" : "");
+						  } else {
+							  func (stream, "]");
+						  }
+					  } else {
+						  func (stream, "]");
 
-			    if (WRITEBACK_BIT_SET)
-			      {
-				if (offset)
-				  func (stream, ", %d", (int) value_in_comment);
-			      }
-			    else
-			      {
-				func (stream, ", {%d}", (int) offset);
-				value_in_comment = offset;
-			      }
-			  }
-		      }
-		      break;
+						  if (WRITEBACK_BIT_SET) {
+							  if (offset) {
+								  func (stream, ", %d", (int)value_in_comment);
+							  }
+						  } else {
+							  func (stream, ", {%d}", (int)offset);
+							  value_in_comment = offset;
+						  }
+					  }
+				  } break;
 
-		    case 'B':
-		      /* Print ARM V5 BLX(1) address: pc+25 bits.  */
-		      {
-			bfd_vma address;
-			bfd_vma offset = 0;
+				  case 'B':
+					  /* Print ARM V5 BLX(1) address: pc+25 bits.  */
+					  {
+						  bfd_vma address;
+						  bfd_vma offset = 0;
 
-			if (! NEGATIVE_BIT_SET)
-			  /* Is signed, hi bits should be ones.  */
-			  offset = (-1) ^ 0x00ffffff;
+						  if (!NEGATIVE_BIT_SET) {
+							  /* Is signed, hi bits should be ones.  */
+							  offset = (-1) ^ 0x00ffffff;
+						  }
 
-			/* Offset is (SignExtend(offset field)<<2).  */
-			offset += given & 0x00ffffff;
-			offset <<= 2;
-			address = offset + pc + 8;
+						  /* Offset is (SignExtend(offset field)<<2).  */
+						  offset += given & 0x00ffffff;
+						  offset <<= 2;
+						  address = offset + pc + 8;
 
-			if (given & 0x01000000)
-			  /* H bit allows addressing to 2-byte boundaries.  */
-			  address += 2;
+						  if (given & 0x01000000) {
+							  /* H bit allows addressing to 2-byte boundaries.  */
+							  address += 2;
+						  }
 
-		        info->print_address_func (address, info);
-		      }
-		      break;
+						  info->print_address_func (address, info);
+					  }
+					  break;
 
-		    case 'C':
-		      if ((given & 0x02000200) == 0x200)
-			{
-			  const char * name;
-			  unsigned sysm = (given & 0x004f0000) >> 16;
+				  case 'C':
+					  if ((given & 0x02000200) == 0x200) {
+						  const char *name;
+						  unsigned sysm = (given & 0x004f0000) >> 16;
 
-			  sysm |= (given & 0x300) >> 4;
-			  name = banked_regname (sysm);
+						  sysm |= (given & 0x300) >> 4;
+						  name = banked_regname (sysm);
 
-			  if (name != NULL)
-			    func (stream, "%s", name);
-			  else
-			    func (stream, "(UNDEF: %lu)", (unsigned long) sysm);
-			}
-		      else
-			{
-			  func (stream, "%cPSR_",
-				(given & 0x00400000) ? 'S' : 'C');
-			  if (given & 0x80000)
-			    func (stream, "f");
-			  if (given & 0x40000)
-			    func (stream, "s");
-			  if (given & 0x20000)
-			    func (stream, "x");
-			  if (given & 0x10000)
-			    func (stream, "c");
-			}
-		      break;
+						  if (name != NULL) {
+							  func (stream, "%s", name);
+						  } else {
+							  func (stream, "(UNDEF: %lu)", (unsigned long)sysm);
+						  }
+					  } else {
+						  func (stream, "%cPSR_",
+							  (given & 0x00400000) ? 'S' : 'C');
+						  if (given & 0x80000) {
+							  func (stream, "f");
+						  }
+						  if (given & 0x40000) {
+							  func (stream, "s");
+						  }
+						  if (given & 0x20000) {
+							  func (stream, "x");
+						  }
+						  if (given & 0x10000) {
+							  func (stream, "c");
+						  }
+					  }
+					  break;
 
-		    case 'U':
-		      if ((given & 0xf0) == 0x60)
-			{
-			  switch (given & 0xf)
-			    {
-			    case 0xf: func (stream, "sy"); break;
-			    default:
-			      func (stream, "%d", (int) given & 0xf);
-			      break;
-			    }
-			}
-		      else
-			{
-			  const char * opt = data_barrier_option (given & 0xf);
-			  if (opt != NULL)
-			    func (stream, "%s", opt);
-			  else
-			      func (stream, "%d", (int) given & 0xf);
-			}
-		      break;
+				  case 'U':
+					  if ((given & 0xf0) == 0x60) {
+						  switch (given & 0xf) {
+						  case 0xf: func (stream, "sy"); break;
+						  default:
+							  func (stream, "%d", (int)given & 0xf);
+							  break;
+						  }
+					  } else {
+						  const char *opt = data_barrier_option (given & 0xf);
+						  if (opt != NULL) {
+							  func (stream, "%s", opt);
+						  } else {
+							  func (stream, "%d", (int)given & 0xf);
+						  }
+					  }
+					  break;
 
-		    case '0': case '1': case '2': case '3': case '4':
-		    case '5': case '6': case '7': case '8': case '9':
-		      {
-			int width;
-			unsigned long value;
+				  case '0':
+				  case '1':
+				  case '2':
+				  case '3':
+				  case '4':
+				  case '5':
+				  case '6':
+				  case '7':
+				  case '8':
+				  case '9': {
+					  int width;
+					  unsigned long value;
 
-			c = arm_decode_bitfield (c, given, &value, &width);
+					  c = arm_decode_bitfield (c, given, &value, &width);
 
-			switch (*c)
-			  {
-			  case 'R':
-			    if (value == 15)
-			      is_unpredictable = TRUE;
-			    /* Fall through.  */
-			  case 'r':
-			  case 'T':
-			    /* We want register + 1 when decoding T.  */
-			    if (*c == 'T')
-			      ++value;
+					  switch (*c) {
+					  case 'R':
+						  if (value == 15) {
+							  is_unpredictable = TRUE;
+						  }
+						  /* Fall through.  */
+					  case 'r':
+					  case 'T':
+						  /* We want register + 1 when decoding T.  */
+						  if (*c == 'T') {
+							  ++value;
+						  }
 
-			    if (c[1] == 'u')
-			      {
-				/* Eat the 'u' character.  */
-				++ c;
+						  if (c[1] == 'u') {
+							  /* Eat the 'u' character.  */
+							  ++c;
 
-				if (u_reg == value)
-				  is_unpredictable = TRUE;
-				u_reg = value;
-			      }
-			    if (c[1] == 'U')
-			      {
-				/* Eat the 'U' character.  */
-				++ c;
+							  if (u_reg == value) {
+								  is_unpredictable = TRUE;
+							  }
+							  u_reg = value;
+						  }
+						  if (c[1] == 'U') {
+							  /* Eat the 'U' character.  */
+							  ++c;
 
-				if (U_reg == value)
-				  is_unpredictable = TRUE;
-				U_reg = value;
-			      }
-			    func (stream, "%s", arm_regnames[value]);
-			    break;
-			  case 'd':
-			    func (stream, "%ld", value);
-			    value_in_comment = value;
-			    break;
-			  case 'b':
-			    func (stream, "%ld", value * 8);
-			    value_in_comment = value * 8;
-			    break;
-			  case 'W':
-			    func (stream, "%ld", value + 1);
-			    value_in_comment = value + 1;
-			    break;
-			  case 'x':
-			    func (stream, "0x%08lx", value);
+							  if (U_reg == value) {
+								  is_unpredictable = TRUE;
+							  }
+							  U_reg = value;
+						  }
+						  func (stream, "%s", arm_regnames[value]);
+						  break;
+					  case 'd':
+						  func (stream, "%ld", value);
+						  value_in_comment = value;
+						  break;
+					  case 'b':
+						  func (stream, "%ld", value * 8);
+						  value_in_comment = value * 8;
+						  break;
+					  case 'W':
+						  func (stream, "%ld", value + 1);
+						  value_in_comment = value + 1;
+						  break;
+					  case 'x':
+						  func (stream, "0x%08lx", value);
 
-			    /* Some SWI instructions have special
+						  /* Some SWI instructions have special
 			       meanings.  */
-			    if ((given & 0x0fffffff) == 0x0FF00000)
-			      func (stream, " ; IMB");
-			    else if ((given & 0x0fffffff) == 0x0FF00001)
-			      func (stream, " ; IMBRange");
-			    break;
-			  case 'X':
-			    func (stream, "%01lx", value & 0xf);
-			    value_in_comment = value;
-			    break;
-			  case '`':
-			    c++;
-			    if (value == 0)
-			      func (stream, "%c", *c);
-			    break;
-			  case '\'':
-			    c++;
-			    if (value == ((1ul << width) - 1))
-			      func (stream, "%c", *c);
-			    break;
-			  case '?':
-			    func (stream, "%c", c[(1 << width) - (int) value]);
-			    c += 1 << width;
-			    break;
-			  default:
-			    return;
-			  }
-			break;
+						  if ((given & 0x0fffffff) == 0x0FF00000) {
+							  func (stream, " ; IMB");
+						  } else if ((given & 0x0fffffff) == 0x0FF00001) {
+							  func (stream, " ; IMBRange");
+						  }
+						  break;
+					  case 'X':
+						  func (stream, "%01lx", value & 0xf);
+						  value_in_comment = value;
+						  break;
+					  case '`':
+						  c++;
+						  if (value == 0) {
+							  func (stream, "%c", *c);
+						  }
+						  break;
+					  case '\'':
+						  c++;
+						  if (value == ((1ul << width) - 1)) {
+							  func (stream, "%c", *c);
+						  }
+						  break;
+					  case '?':
+						  func (stream, "%c", c[(1 << width) - (int)value]);
+						  c += 1 << width;
+						  break;
+					  default:
+						  return;
+					  }
+					  break;
 
-		      case 'e':
-			{
-			  int imm;
+				  case 'e': {
+					  int imm;
 
-			  imm = (given & 0xf) | ((given & 0xfff00) >> 4);
-			  func (stream, "%d", imm);
-			  value_in_comment = imm;
-			}
-			break;
+					  imm = (given & 0xf) | ((given & 0xfff00) >> 4);
+					  func (stream, "%d", imm);
+					  value_in_comment = imm;
+				  } break;
 
-		      case 'E':
-			/* LSB and WIDTH fields of BFI or BFC.  The machine-
+				  case 'E':
+					  /* LSB and WIDTH fields of BFI or BFC.  The machine-
 			   language instruction encodes LSB and MSB.  */
-			{
-			  long msb = (given & 0x001f0000) >> 16;
-			  long lsb = (given & 0x00000f80) >> 7;
-			  long w = msb - lsb + 1;
+					  {
+						  long msb = (given & 0x001f0000) >> 16;
+						  long lsb = (given & 0x00000f80) >> 7;
+						  long w = msb - lsb + 1;
 
-			  if (w > 0)
-			    func (stream, "%lu, %lu", lsb, w);
-			  else
-			    func (stream, "(invalid: %lu:%lu)", lsb, msb);
-			}
-			break;
+						  if (w > 0) {
+							  func (stream, "%lu, %lu", lsb, w);
+						  } else {
+							  func (stream, "(invalid: %lu:%lu)", lsb, msb);
+						  }
+					  }
+					  break;
 
-		      case 'R':
-			/* Get the PSR/banked register name.  */
-			{
-			  const char * name;
-			  unsigned sysm = (given & 0x004f0000) >> 16;
+				  case 'R':
+					  /* Get the PSR/banked register name.  */
+					  {
+						  const char *name;
+						  unsigned sysm = (given & 0x004f0000) >> 16;
 
-			  sysm |= (given & 0x300) >> 4;
-			  name = banked_regname (sysm);
+						  sysm |= (given & 0x300) >> 4;
+						  name = banked_regname (sysm);
 
-			  if (name != NULL)
-			    func (stream, "%s", name);
-			  else
-			    func (stream, "(UNDEF: %lu)", (unsigned long) sysm);
-			}
-			break;
+						  if (name != NULL) {
+							  func (stream, "%s", name);
+						  } else {
+							  func (stream, "(UNDEF: %lu)", (unsigned long)sysm);
+						  }
+					  }
+					  break;
 
-		      case 'V':
-			/* 16-bit unsigned immediate from a MOVT or MOVW
+				  case 'V':
+					  /* 16-bit unsigned immediate from a MOVT or MOVW
 			   instruction, encoded in bits 0:11 and 15:19.  */
-			{
-			  long hi = (given & 0x000f0000) >> 4;
-			  long lo = (given & 0x00000fff);
-			  long imm16 = hi | lo;
+					  {
+						  long hi = (given & 0x000f0000) >> 4;
+						  long lo = (given & 0x00000fff);
+						  long imm16 = hi | lo;
 
-			  func (stream, "%lu", imm16);
-			  value_in_comment = imm16;
-			}
-			break;
-		      }
-		    }
-		}
-	      else
-		func (stream, "%c", *c);
-	    }
+						  func (stream, "%lu", imm16);
+						  value_in_comment = imm16;
+					  }
+					  break;
+				  }
+				  }
+			  } else {
+				  func (stream, "%c", *c);
+			  }
+		  }
 
 #if 0
 	  if (value_in_comment > 32 || value_in_comment < -16)
 	    func (stream, " ; 0x%lx", (value_in_comment & 0xffffffffUL));
 #endif
 
-	  if (is_unpredictable)
-	    func (stream, UNPREDICTABLE_INSTRUCTION);
+		  if (is_unpredictable) {
+			  func (stream, UNPREDICTABLE_INSTRUCTION);
+		  }
 
-	  return;
+		  return;
 	}
     }
 }
@@ -5171,259 +5234,260 @@ print_insn_thumb16 (bfd_vma pc, struct disassemble_info *info, long given)
   void *stream = info->stream;
   fprintf_ftype func = info->fprintf_func;
 
-  for (insn = thumb_opcodes; insn->assembler; insn++)
-    if ((given & insn->mask) == insn->value)
-      {
-	// signed long value_in_comment = 0;
-	const char *c = insn->assembler;
+  for (insn = thumb_opcodes; insn->assembler; insn++) {
+	  if ((given & insn->mask) == insn->value) {
+		  // signed long value_in_comment = 0;
+		  const char *c = insn->assembler;
 
-	for (; *c; c++)
-	  {
-	    int domaskpc = 0;
-	    int domasklr = 0;
+		  for (; *c; c++) {
+			  int domaskpc = 0;
+			  int domasklr = 0;
 
-	    if (*c != '%')
-	      {
-		func (stream, "%c", *c);
-		continue;
-	      }
+			  if (*c != '%') {
+				  func (stream, "%c", *c);
+				  continue;
+			  }
 
-	    switch (*++c)
-	      {
-	      case '%':
-		func (stream, "%%");
-		break;
-
-	      case 'c':
-		if (ifthen_state)
-		  func (stream, "%s", arm_conditional[IFTHEN_COND]);
-		break;
-
-	      case 'C':
-		if (ifthen_state)
-		  func (stream, "%s", arm_conditional[IFTHEN_COND]);
-		else
-		  func (stream, "s");
-		break;
-
-	      case 'I':
-		{
-		  unsigned int tmp;
-
-		  ifthen_next_state = given & 0xff;
-		  for (tmp = given << 1; tmp & 0xf; tmp <<= 1)
-		    func (stream, ((given ^ tmp) & 0x10) ? "e" : "t");
-		  func (stream, " %s", arm_conditional[(given >> 4) & 0xf]);
-		}
-		break;
-
-	      case 'x':
-		if (ifthen_next_state)
-		  func (stream, " ; unpredictable branch in IT block\n");
-		break;
-
-	      case 'X':
-		if (ifthen_state)
-		  func (stream, " ; unpredictable <IT:%s>",
-			arm_conditional[IFTHEN_COND]);
-		break;
-
-	      case 'S':
-		{
-		  long reg;
-
-		  reg = (given >> 3) & 0x7;
-		  if (given & (1 << 6))
-		    reg += 8;
-
-		  func (stream, "%s", arm_regnames[reg]);
-		}
-		break;
-
-	      case 'D':
-		{
-		  long reg;
-
-		  reg = given & 0x7;
-		  if (given & (1 << 7))
-		    reg += 8;
-
-		  func (stream, "%s", arm_regnames[reg]);
-		}
-		break;
-
-	      case 'N':
-		if (given & (1 << 8))
-		  domasklr = 1;
-		/* Fall through.  */
-	      case 'O':
-		if (*c == 'O' && (given & (1 << 8)))
-		  domaskpc = 1;
-		/* Fall through.  */
-	      case 'M':
-		{
-		  int started = 0;
-		  int reg;
-
-		  func (stream, "{");
-
-		  /* It would be nice if we could spot
-		     ranges, and generate the rS-rE format: */
-		  for (reg = 0; (reg < 8); reg++)
-		    if ((given & (1 << reg)) != 0)
-		      {
-			if (started)
-			  func (stream, ", ");
-			started = 1;
-			func (stream, "%s", arm_regnames[reg]);
-		      }
-
-		  if (domasklr)
-		    {
-		      if (started)
-			func (stream, ", ");
-		      started = 1;
-		      func (stream, "%s", arm_regnames[14] /* "lr" */);
-		    }
-
-		  if (domaskpc)
-		    {
-		      if (started)
-			func (stream, ", ");
-		      func (stream, "%s", arm_regnames[15] /* "pc" */);
-		    }
-
-		  func (stream, "}");
-		}
-		break;
-
-	      case 'W':
-		/* Print writeback indicator for a LDMIA.  We are doing a
-		   writeback if the base register is not in the register
-		   mask.  */
-		if ((given & (1 << ((given & 0x0700) >> 8))) == 0)
-		  func (stream, "!");
-	      	break;
-
-	      case 'b':
-		/* Print ARM V6T2 CZB address: pc+4+6 bits.  */
-		{
-		  bfd_vma address = (pc + 4
-				     + ((given & 0x00f8) >> 2)
-				     + ((given & 0x0200) >> 3));
-		  info->print_address_func (address, info);
-		}
-		break;
-
-	      case 's':
-		/* Right shift immediate -- bits 6..10; 1-31 print
-		   as themselves, 0 prints as 32.  */
-		{
-		  long imm = (given & 0x07c0) >> 6;
-		  if (imm == 0)
-		    imm = 32;
-		  func (stream, "%ld", imm);
-		}
-		break;
-
-	      case '0': case '1': case '2': case '3': case '4':
-	      case '5': case '6': case '7': case '8': case '9':
-		{
-		  int bitstart = *c++ - '0';
-		  int bitend = 0;
-
-		  while (*c >= '0' && *c <= '9')
-		    bitstart = (bitstart * 10) + *c++ - '0';
-
-		  switch (*c)
-		    {
-		    case '-':
-		      {
-			bfd_vma reg;
-
-			c++;
-			while (*c >= '0' && *c <= '9')
-			  bitend = (bitend * 10) + *c++ - '0';
-			if (!bitend)
-			  return;
-			reg = given >> bitstart;
-			reg &= (2 << (bitend - bitstart)) - 1;
-
-			switch (*c)
-			  {
-			  case 'r':
-			    func (stream, "%s", arm_regnames[reg]);
-			    break;
-
-			  case 'd':
-			    func (stream, "%ld", (long) reg);
-			    // value_in_comment = reg;
-			    break;
-
-			  case 'H':
-			    func (stream, "%ld", (long) (reg << 1));
-			    // value_in_comment = reg << 1;
-			    break;
-
-			  case 'W':
-			    func (stream, "%ld", (long) (reg << 2));
-			    // value_in_comment = reg << 2;
-			    break;
-
-			  case 'a':
-			    /* PC-relative address -- the bottom two
-			       bits of the address are dropped
-			       before the calculation.  */
-			    info->print_address_func
-			      (((pc + 4) & ~3) + (reg << 2), info);
-			    //value_in_comment = 0;
-			    break;
-
-			  case 'x':
-			    func (stream, "0x%04lx", (long) reg);
-			    break;
-
-			  case 'B':
-			    reg = ((reg ^ (1 << bitend)) - (1 << bitend));
-			    info->print_address_func (reg * 2 + pc + 4, info);
-			    //value_in_comment = 0;
-			    break;
+			  switch (*++c) {
+			  case '%':
+				  func (stream, "%%");
+				  break;
 
 			  case 'c':
-			    func (stream, "%s", arm_conditional [reg]);
-			    break;
+				  if (ifthen_state) {
+					  func (stream, "%s", arm_conditional[IFTHEN_COND]);
+				  }
+				  break;
 
+			  case 'C':
+				  if (ifthen_state) {
+					  func (stream, "%s", arm_conditional[IFTHEN_COND]);
+				  } else {
+					  func (stream, "s");
+				  }
+				  break;
+
+			  case 'I': {
+				  unsigned int tmp;
+
+				  ifthen_next_state = given & 0xff;
+				  for (tmp = given << 1; tmp & 0xf; tmp <<= 1) {
+					  func (stream, ((given ^ tmp) & 0x10) ? "e" : "t");
+				  }
+				  func (stream, " %s", arm_conditional[(given >> 4) & 0xf]);
+			  } break;
+
+			  case 'x':
+				  if (ifthen_next_state) {
+					  func (stream, " ; unpredictable branch in IT block\n");
+				  }
+				  break;
+
+			  case 'X':
+				  if (ifthen_state) {
+					  func (stream, " ; unpredictable <IT:%s>",
+						  arm_conditional[IFTHEN_COND]);
+				  }
+				  break;
+
+			  case 'S': {
+				  long reg;
+
+				  reg = (given >> 3) & 0x7;
+				  if (given & (1 << 6)) {
+					  reg += 8;
+				  }
+
+				  func (stream, "%s", arm_regnames[reg]);
+			  } break;
+
+			  case 'D': {
+				  long reg;
+
+				  reg = given & 0x7;
+				  if (given & (1 << 7)) {
+					  reg += 8;
+				  }
+
+				  func (stream, "%s", arm_regnames[reg]);
+			  } break;
+
+			  case 'N':
+				  if (given & (1 << 8)) {
+					  domasklr = 1;
+				  }
+				  /* Fall through.  */
+			  case 'O':
+				  if (*c == 'O' && (given & (1 << 8))) {
+					  domaskpc = 1;
+				  }
+				  /* Fall through.  */
+			  case 'M': {
+				  int started = 0;
+				  int reg;
+
+				  func (stream, "{");
+
+				  /* It would be nice if we could spot
+		     ranges, and generate the rS-rE format: */
+				  for (reg = 0; (reg < 8); reg++) {
+					  if ((given & (1 << reg)) != 0) {
+						  if (started) {
+							  func (stream, ", ");
+						  }
+						  started = 1;
+						  func (stream, "%s", arm_regnames[reg]);
+					  }
+				  }
+
+				  if (domasklr) {
+					  if (started) {
+						  func (stream, ", ");
+					  }
+					  started = 1;
+					  func (stream, "%s", arm_regnames[14] /* "lr" */);
+				  }
+
+				  if (domaskpc) {
+					  if (started) {
+						  func (stream, ", ");
+					  }
+					  func (stream, "%s", arm_regnames[15] /* "pc" */);
+				  }
+
+				  func (stream, "}");
+			  } break;
+
+			  case 'W':
+				  /* Print writeback indicator for a LDMIA.  We are doing a
+		   writeback if the base register is not in the register
+		   mask.  */
+				  if ((given & (1 << ((given & 0x0700) >> 8))) == 0) {
+					  func (stream, "!");
+				  }
+				  break;
+
+			  case 'b':
+				  /* Print ARM V6T2 CZB address: pc+4+6 bits.  */
+				  {
+					  bfd_vma address = (pc + 4 + ((given & 0x00f8) >> 2) + ((given & 0x0200) >> 3));
+					  info->print_address_func (address, info);
+				  }
+				  break;
+
+			  case 's':
+				  /* Right shift immediate -- bits 6..10; 1-31 print
+		   as themselves, 0 prints as 32.  */
+				  {
+					  long imm = (given & 0x07c0) >> 6;
+					  if (imm == 0) {
+						  imm = 32;
+					  }
+					  func (stream, "%ld", imm);
+				  }
+				  break;
+
+			  case '0':
+			  case '1':
+			  case '2':
+			  case '3':
+			  case '4':
+			  case '5':
+			  case '6':
+			  case '7':
+			  case '8':
+			  case '9': {
+				  int bitstart = *c++ - '0';
+				  int bitend = 0;
+
+				  while (*c >= '0' && *c <= '9') {
+					  bitstart = (bitstart * 10) + *c++ - '0';
+				  }
+
+				  switch (*c) {
+				  case '-': {
+					  bfd_vma reg;
+
+					  c++;
+					  while (*c >= '0' && *c <= '9') {
+						  bitend = (bitend * 10) + *c++ - '0';
+					  }
+					  if (!bitend) {
+						  return;
+					  }
+					  reg = given >> bitstart;
+					  reg &= (2 << (bitend - bitstart)) - 1;
+
+					  switch (*c) {
+					  case 'r':
+						  func (stream, "%s", arm_regnames[reg]);
+						  break;
+
+					  case 'd':
+						  func (stream, "%ld", (long)reg);
+						  // value_in_comment = reg;
+						  break;
+
+					  case 'H':
+						  func (stream, "%ld", (long)(reg << 1));
+						  // value_in_comment = reg << 1;
+						  break;
+
+					  case 'W':
+						  func (stream, "%ld", (long)(reg << 2));
+						  // value_in_comment = reg << 2;
+						  break;
+
+					  case 'a':
+						  /* PC-relative address -- the bottom two
+			       bits of the address are dropped
+			       before the calculation.  */
+						  info->print_address_func (((pc + 4) & ~3) + (reg << 2), info);
+						  //value_in_comment = 0;
+						  break;
+
+					  case 'x':
+						  func (stream, "0x%04lx", (long)reg);
+						  break;
+
+					  case 'B':
+						  reg = ((reg ^ (1 << bitend)) - (1 << bitend));
+						  info->print_address_func (reg * 2 + pc + 4, info);
+						  //value_in_comment = 0;
+						  break;
+
+					  case 'c':
+						  func (stream, "%s", arm_conditional[reg]);
+						  break;
+					  }
+				  } break;
+
+				  case '\'':
+					  c++;
+					  if ((given & (1 << bitstart)) != 0) {
+						  func (stream, "%c", *c);
+					  }
+					  break;
+
+				  case '?':
+					  ++c;
+					  if ((given & (1 << bitstart)) != 0) {
+						  func (stream, "%c", *c++);
+					  } else {
+						  func (stream, "%c", *++c);
+					  }
+					  break;
+				  }
+			  } break;
 			  }
-		      }
-		      break;
-
-		    case '\'':
-		      c++;
-		      if ((given & (1 << bitstart)) != 0)
-			func (stream, "%c", *c);
-		      break;
-
-		    case '?':
-		      ++c;
-		      if ((given & (1 << bitstart)) != 0)
-			func (stream, "%c", *c++);
-		      else
-			func (stream, "%c", *++c);
-		      break;
-
-		    }
-		}
-		break;
-
-	      }
-	  }
+		  }
 #if 0
 	if (value_in_comment > 32 || value_in_comment < -16)
 	  func (stream, " ; 0x%lx", value_in_comment);
 #endif
 	return;
-      }
-
+	  }
+  }
 }
 
 /* Return the name of an V7M special register.  */
@@ -5471,583 +5535,555 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
   void *stream = info->stream;
   fprintf_ftype func = info->fprintf_func;
 
-  if (print_insn_coprocessor (pc, info, given, TRUE))
-    return;
-
-  if (print_insn_neon (info, given, TRUE))
-    return;
-
-  for (insn = thumb32_opcodes; insn->assembler; insn++)
-    if ((given & insn->mask) == insn->value)
-      {
-	bfd_boolean is_unpredictable = FALSE;
-	// signed long value_in_comment = 0;
-	const char *c = insn->assembler;
-
-	for (; *c; c++)
-	  {
-	    if (*c != '%')
-	      {
-		func (stream, "%c", *c);
-		continue;
-	      }
-
-	    switch (*++c)
-	      {
-	      case '%':
-		func (stream, "%%");
-		break;
-
-	      case 'c':
-		if (ifthen_state)
-		  func (stream, "%s", arm_conditional[IFTHEN_COND]);
-		break;
-
-	      case 'x':
-		if (ifthen_next_state)
-		  func (stream, " ; unpredictable branch in IT block\n");
-		break;
-
-	      case 'X':
-		if (ifthen_state)
-		  func (stream, " ; unpredictable <IT:%s>",
-			arm_conditional[IFTHEN_COND]);
-		break;
-
-	      case 'I':
-		{
-		  unsigned int imm12 = 0;
-
-		  imm12 |= (given & 0x000000ffu);
-		  imm12 |= (given & 0x00007000u) >> 4;
-		  imm12 |= (given & 0x04000000u) >> 15;
-		  func (stream, "%u", imm12);
-		  //value_in_comment = imm12;
-		}
-		break;
-
-	      case 'M':
-		{
-		  unsigned int bits = 0, imm, imm8, mod;
-
-		  bits |= (given & 0x000000ffu);
-		  bits |= (given & 0x00007000u) >> 4;
-		  bits |= (given & 0x04000000u) >> 15;
-		  imm8 = (bits & 0x0ff);
-		  mod = (bits & 0xf00) >> 8;
-		  switch (mod)
-		    {
-		    case 0: imm = imm8; break;
-		    case 1: imm = ((imm8 << 16) | imm8); break;
-		    case 2: imm = ((imm8 << 24) | (imm8 << 8)); break;
-		    case 3: imm = ((imm8 << 24) | (imm8 << 16) | (imm8 << 8) | imm8); break;
-		    default:
-		      mod  = (bits & 0xf80) >> 7;
-		      imm8 = (bits & 0x07f) | 0x80;
-		      imm  = (((imm8 << (32 - mod)) | (imm8 >> mod)) & 0xffffffff);
-		    }
-		  func (stream, "%u", imm);
-		  //value_in_comment = imm;
-		}
-		break;
-
-	      case 'J':
-		{
-		  unsigned int imm = 0;
-
-		  imm |= (given & 0x000000ffu);
-		  imm |= (given & 0x00007000u) >> 4;
-		  imm |= (given & 0x04000000u) >> 15;
-		  imm |= (given & 0x000f0000u) >> 4;
-		  func (stream, "%u", imm);
-		  //value_in_comment = imm;
-		}
-		break;
-
-	      case 'K':
-		{
-		  unsigned int imm = 0;
-
-		  imm |= (given & 0x000f0000u) >> 16;
-		  imm |= (given & 0x00000ff0u) >> 0;
-		  imm |= (given & 0x0000000fu) << 12;
-		  func (stream, "%u", imm);
-		  //value_in_comment = imm;
-		}
-		break;
-
-	      case 'H':
-		{
-		  unsigned int imm = 0;
-
-		  imm |= (given & 0x000f0000u) >> 4;
-		  imm |= (given & 0x00000fffu) >> 0;
-		  func (stream, "%u", imm);
-		  //value_in_comment = imm;
-		}
-		break;
-
-	      case 'V':
-		{
-		  unsigned int imm = 0;
-
-		  imm |= (given & 0x00000fffu);
-		  imm |= (given & 0x000f0000u) >> 4;
-		  func (stream, "%u", imm);
-		  //value_in_comment = imm;
-		}
-		break;
-
-	      case 'S':
-		{
-		  unsigned int reg = (given & 0x0000000fu);
-		  unsigned int stp = (given & 0x00000030u) >> 4;
-		  unsigned int imm = 0;
-		  imm |= (given & 0x000000c0u) >> 6;
-		  imm |= (given & 0x00007000u) >> 10;
-
-		  func (stream, "%s", arm_regnames[reg]);
-		  switch (stp)
-		    {
-		    case 0:
-		      if (imm > 0)
-			func (stream, ", lsl %u", imm);
-		      break;
-
-		    case 1:
-		      if (imm == 0)
-			imm = 32;
-		      func (stream, ", lsr %u", imm);
-		      break;
-
-		    case 2:
-		      if (imm == 0)
-			imm = 32;
-		      func (stream, ", asr %u", imm);
-		      break;
-
-		    case 3:
-		      if (imm == 0)
-			func (stream, ", rrx");
-		      else
-			func (stream, ", ror %u", imm);
-		    }
-		}
-		break;
-
-	      case 'a':
-		{
-		  unsigned int Rn  = (given & 0x000f0000) >> 16;
-		  unsigned int U   = ! NEGATIVE_BIT_SET;
-		  unsigned int op  = (given & 0x00000f00) >> 8;
-		  unsigned int i12 = (given & 0x00000fff);
-		  unsigned int i8  = (given & 0x000000ff);
-		  bfd_boolean writeback = FALSE, postind = FALSE;
-		  bfd_vma offset = 0;
-
-		  func (stream, "[%s", arm_regnames[Rn]);
-		  if (U) /* 12-bit positive immediate offset.  */
-		    {
-		      offset = i12;
-		      if (Rn != 15) {
-//			value_in_comment = offset;
-                      }
-		    }
-		  else if (Rn == 15) /* 12-bit negative immediate offset.  */
-		    offset = - (int) i12;
-		  else if (op == 0x0) /* Shifted register offset.  */
-		    {
-		      unsigned int Rm = (i8 & 0x0f);
-		      unsigned int sh = (i8 & 0x30) >> 4;
-
-		      func (stream, ", %s", arm_regnames[Rm]);
-		      if (sh)
-			func (stream, ", lsl %u", sh);
-		      func (stream, "]");
-		      break;
-		    }
-		  else switch (op)
-		    {
-		    case 0xE:  /* 8-bit positive immediate offset.  */
-		      offset = i8;
-		      break;
-
-		    case 0xC:  /* 8-bit negative immediate offset.  */
-		      offset = -i8;
-		      break;
-
-		    case 0xF:  /* 8-bit + preindex with wb.  */
-		      offset = i8;
-		      writeback = TRUE;
-		      break;
-
-		    case 0xD:  /* 8-bit - preindex with wb.  */
-		      offset = -i8;
-		      writeback = TRUE;
-		      break;
-
-		    case 0xB:  /* 8-bit + postindex.  */
-		      offset = i8;
-		      postind = TRUE;
-		      break;
-
-		    case 0x9:  /* 8-bit - postindex.  */
-		      offset = -i8;
-		      postind = TRUE;
-		      break;
-
-		    default:
-		      func (stream, ", <undefined>]");
-		      goto skip;
-		    }
-
-		  if (postind)
-		    func (stream, "], %d", (int) offset);
-		  else
-		    {
-		      if (offset)
-			func (stream, ", %d", (int) offset);
-		      func (stream, writeback ? "]!" : "]");
-		    }
-
-		  if (Rn == 15)
-		    {
-		      func (stream, " ; ");
-		      info->print_address_func (((pc + 4) & ~3) + offset, info);
-		    }
-		}
-	      skip:
-		break;
-
-	      case 'A':
-		{
-		  unsigned int U   = ! NEGATIVE_BIT_SET;
-		  unsigned int W   = WRITEBACK_BIT_SET;
-		  unsigned int Rn  = (given & 0x000f0000) >> 16;
-		  unsigned int off = (given & 0x000000ff);
-
-		  func (stream, "[%s", arm_regnames[Rn]);
-
-		  if (PRE_BIT_SET)
-		    {
-		      if (off || !U)
-			{
-			  func (stream, ", %c%u", U ? '+' : '-', off * 4);
-			  //value_in_comment = (off && U) ? 1 : -1;
-			}
-		      func (stream, "]");
-		      if (W)
-			func (stream, "!");
-		    }
-		  else
-		    {
-		      func (stream, "], ");
-		      if (W)
-			{
-			  func (stream, "%c%u", U ? '+' : '-', off * 4);
-			  //value_in_comment = (off && U) ? 1 : -1;
-			}
-		      else
-			{
-			  func (stream, "{%u}", off);
-			 // value_in_comment = off;
-			}
-		    }
-		}
-		break;
-
-	      case 'w':
-		{
-		  unsigned int Sbit = (given & 0x01000000) >> 24;
-		  unsigned int type = (given & 0x00600000) >> 21;
-
-		  switch (type)
-		    {
-		    case 0: func (stream, Sbit ? "sb" : "b"); break;
-		    case 1: func (stream, Sbit ? "sh" : "h"); break;
-		    case 2:
-		      if (Sbit)
-			func (stream, "??");
-		      break;
-		    case 3:
-		      func (stream, "??");
-		      break;
-		    }
-		}
-		break;
-
-	      case 'm':
-		{
-		  int started = 0;
-		  int reg;
-
-		  func (stream, "{");
-		  for (reg = 0; reg < 16; reg++)
-		    if ((given & (1 << reg)) != 0)
-		      {
-			if (started)
-			  func (stream, ", ");
-			started = 1;
-			func (stream, "%s", arm_regnames[reg]);
-		      }
-		  func (stream, "}");
-		}
-		break;
-
-	      case 'E':
-		{
-		  unsigned int msb = (given & 0x0000001f);
-		  unsigned int lsb = 0;
-
-		  lsb |= (given & 0x000000c0u) >> 6;
-		  lsb |= (given & 0x00007000u) >> 10;
-		  func (stream, "%u, %u", lsb, msb - lsb + 1);
-		}
-		break;
-
-	      case 'F':
-		{
-		  unsigned int width = (given & 0x0000001f) + 1;
-		  unsigned int lsb = 0;
-
-		  lsb |= (given & 0x000000c0u) >> 6;
-		  lsb |= (given & 0x00007000u) >> 10;
-		  func (stream, "%u, %u", lsb, width);
-		}
-		break;
-
-	      case 'b':
-		{
-		  unsigned int S = (given & 0x04000000u) >> 26;
-		  unsigned int J1 = (given & 0x00002000u) >> 13;
-		  unsigned int J2 = (given & 0x00000800u) >> 11;
-		  bfd_vma offset = 0;
-
-		  offset |= !S << 20;
-		  offset |= J2 << 19;
-		  offset |= J1 << 18;
-		  offset |= (given & 0x003f0000) >> 4;
-		  offset |= (given & 0x000007ff) << 1;
-		  offset -= (1 << 20);
-
-		  info->print_address_func (pc + 4 + offset, info);
-		}
-		break;
-
-	      case 'B':
-		{
-		  unsigned int S = (given & 0x04000000u) >> 26;
-		  unsigned int I1 = (given & 0x00002000u) >> 13;
-		  unsigned int I2 = (given & 0x00000800u) >> 11;
-		  bfd_vma offset = 0;
-
-		  offset |= !S << 24;
-		  offset |= !(I1 ^ S) << 23;
-		  offset |= !(I2 ^ S) << 22;
-		  offset |= (given & 0x03ff0000u) >> 4;
-		  offset |= (given & 0x000007ffu) << 1;
-		  offset -= (1 << 24);
-		  offset += pc + 4;
-
-		  /* BLX target addresses are always word aligned.  */
-		  if ((given & 0x00001000u) == 0)
-		      offset &= ~2u;
-
-		  info->print_address_func (offset, info);
-		}
-		break;
-
-	      case 's':
-		{
-		  unsigned int shift = 0;
-
-		  shift |= (given & 0x000000c0u) >> 6;
-		  shift |= (given & 0x00007000u) >> 10;
-		  if (WRITEBACK_BIT_SET)
-		    func (stream, ", asr %u", shift);
-		  else if (shift)
-		    func (stream, ", lsl %u", shift);
-		  /* else print nothing - lsl #0 */
-		}
-		break;
-
-	      case 'R':
-		{
-		  unsigned int rot = (given & 0x00000030) >> 4;
-
-		  if (rot)
-		    func (stream, ", ror %u", rot * 8);
-		}
-		break;
-
-	      case 'U':
-		if ((given & 0xf0) == 0x60)
-		  {
-		    switch (given & 0xf)
-		      {
-			case 0xf: func (stream, "sy"); break;
-			default:
-			  func (stream, "%d", (int) given & 0xf);
-			      break;
-		      }
-		  }
-		else
-		  {
-		    const char * opt = data_barrier_option (given & 0xf);
-		    if (opt != NULL)
-		      func (stream, "%s", opt);
-		    else
-		      func (stream, "%d", (int) given & 0xf);
-		   }
-		break;
-
-	      case 'C':
-		if ((given & 0xff) == 0)
-		  {
-		    func (stream, "%cPSR_", (given & 0x100000) ? 'S' : 'C');
-		    if (given & 0x800)
-		      func (stream, "f");
-		    if (given & 0x400)
-		      func (stream, "s");
-		    if (given & 0x200)
-		      func (stream, "x");
-		    if (given & 0x100)
-		      func (stream, "c");
-		  }
-		else if ((given & 0x20) == 0x20)
-		  {
-		    char const* name;
-		    unsigned sysm = (given & 0xf00) >> 8;
-
-		    sysm |= (given & 0x30);
-		    sysm |= (given & 0x00100000) >> 14;
-		    name = banked_regname (sysm);
-
-		    if (name != NULL)
-		      func (stream, "%s", name);
-		    else
-		      func (stream, "(UNDEF: %lu)", (unsigned long) sysm);
-		  }
-		else
-		  {
-		    func (stream, "%s", psr_name (given & 0xff));
-		  }
-		break;
-
-	      case 'D':
-		if (((given & 0xff) == 0)
-		    || ((given & 0x20) == 0x20))
-		  {
-		    char const* name;
-		    unsigned sm = (given & 0xf0000) >> 16;
-
-		    sm |= (given & 0x30);
-		    sm |= (given & 0x00100000) >> 14;
-		    name = banked_regname (sm);
-
-		    if (name != NULL)
-		      func (stream, "%s", name);
-		    else
-		      func (stream, "(UNDEF: %lu)", (unsigned long) sm);
-		  }
-		else
-		  func (stream, "%s", psr_name (given & 0xff));
-		break;
-
-	      case '0': case '1': case '2': case '3': case '4':
-	      case '5': case '6': case '7': case '8': case '9':
-		{
-		  int width;
-		  unsigned long val;
-
-		  c = arm_decode_bitfield (c, given, &val, &width);
-
-		  switch (*c)
-		    {
-		    case 'd':
-		      func (stream, "%lu", val);
-		      //value_in_comment = val;
-		      break;
-
-		    case 'D':
-		      func (stream, "%lu", val + 1);
-		      // value_in_comment = val + 1;
-		      break;
-
-		    case 'W':
-		      func (stream, "%lu", val * 4);
-		      // value_in_comment = val * 4;
-		      break;
-
-		    case 'S':
-		      if (val == 13)
-			is_unpredictable = TRUE;
-		      /* Fall through.  */
-		    case 'R':
-		      if (val == 15)
-			is_unpredictable = TRUE;
-		      /* Fall through.  */
-		    case 'r':
-		      func (stream, "%s", arm_regnames[val]);
-		      break;
-
-		    case 'c':
-		      func (stream, "%s", arm_conditional[val]);
-		      break;
-
-		    case '\'':
-		      c++;
-		      if (val == ((1ul << width) - 1))
-			func (stream, "%c", *c);
-		      break;
-
-		    case '`':
-		      c++;
-		      if (val == 0)
-			func (stream, "%c", *c);
-		      break;
-
-		    case '?':
-		      func (stream, "%c", c[(1 << width) - (int) val]);
-		      c += 1 << width;
-		      break;
-
-		    case 'x':
-		      func (stream, "0x%lx", val & 0xffffffffUL);
-		      break;
-
-		    }
-		}
-		break;
-
-	      case 'L':
-		/* PR binutils/12534
+  if (print_insn_coprocessor (pc, info, given, TRUE)) {
+	  return;
+  }
+
+  if (print_insn_neon (info, given, TRUE)) {
+	  return;
+  }
+
+  for (insn = thumb32_opcodes; insn->assembler; insn++) {
+	  if ((given & insn->mask) == insn->value) {
+		  bfd_boolean is_unpredictable = FALSE;
+		  // signed long value_in_comment = 0;
+		  const char *c = insn->assembler;
+
+		  for (; *c; c++) {
+			  if (*c != '%') {
+				  func (stream, "%c", *c);
+				  continue;
+			  }
+
+			  switch (*++c) {
+			  case '%':
+				  func (stream, "%%");
+				  break;
+
+			  case 'c':
+				  if (ifthen_state) {
+					  func (stream, "%s", arm_conditional[IFTHEN_COND]);
+				  }
+				  break;
+
+			  case 'x':
+				  if (ifthen_next_state) {
+					  func (stream, " ; unpredictable branch in IT block\n");
+				  }
+				  break;
+
+			  case 'X':
+				  if (ifthen_state) {
+					  func (stream, " ; unpredictable <IT:%s>",
+						  arm_conditional[IFTHEN_COND]);
+				  }
+				  break;
+
+			  case 'I': {
+				  unsigned int imm12 = 0;
+
+				  imm12 |= (given & 0x000000ffu);
+				  imm12 |= (given & 0x00007000u) >> 4;
+				  imm12 |= (given & 0x04000000u) >> 15;
+				  func (stream, "%u", imm12);
+				  //value_in_comment = imm12;
+			  } break;
+
+			  case 'M': {
+				  unsigned int bits = 0, imm, imm8, mod;
+
+				  bits |= (given & 0x000000ffu);
+				  bits |= (given & 0x00007000u) >> 4;
+				  bits |= (given & 0x04000000u) >> 15;
+				  imm8 = (bits & 0x0ff);
+				  mod = (bits & 0xf00) >> 8;
+				  switch (mod) {
+				  case 0: imm = imm8; break;
+				  case 1: imm = ((imm8 << 16) | imm8); break;
+				  case 2: imm = ((imm8 << 24) | (imm8 << 8)); break;
+				  case 3: imm = ((imm8 << 24) | (imm8 << 16) | (imm8 << 8) | imm8); break;
+				  default:
+					  mod = (bits & 0xf80) >> 7;
+					  imm8 = (bits & 0x07f) | 0x80;
+					  imm = (((imm8 << (32 - mod)) | (imm8 >> mod)) & 0xffffffff);
+				  }
+				  func (stream, "%u", imm);
+				  //value_in_comment = imm;
+			  } break;
+
+			  case 'J': {
+				  unsigned int imm = 0;
+
+				  imm |= (given & 0x000000ffu);
+				  imm |= (given & 0x00007000u) >> 4;
+				  imm |= (given & 0x04000000u) >> 15;
+				  imm |= (given & 0x000f0000u) >> 4;
+				  func (stream, "%u", imm);
+				  //value_in_comment = imm;
+			  } break;
+
+			  case 'K': {
+				  unsigned int imm = 0;
+
+				  imm |= (given & 0x000f0000u) >> 16;
+				  imm |= (given & 0x00000ff0u) >> 0;
+				  imm |= (given & 0x0000000fu) << 12;
+				  func (stream, "%u", imm);
+				  //value_in_comment = imm;
+			  } break;
+
+			  case 'H': {
+				  unsigned int imm = 0;
+
+				  imm |= (given & 0x000f0000u) >> 4;
+				  imm |= (given & 0x00000fffu) >> 0;
+				  func (stream, "%u", imm);
+				  //value_in_comment = imm;
+			  } break;
+
+			  case 'V': {
+				  unsigned int imm = 0;
+
+				  imm |= (given & 0x00000fffu);
+				  imm |= (given & 0x000f0000u) >> 4;
+				  func (stream, "%u", imm);
+				  //value_in_comment = imm;
+			  } break;
+
+			  case 'S': {
+				  unsigned int reg = (given & 0x0000000fu);
+				  unsigned int stp = (given & 0x00000030u) >> 4;
+				  unsigned int imm = 0;
+				  imm |= (given & 0x000000c0u) >> 6;
+				  imm |= (given & 0x00007000u) >> 10;
+
+				  func (stream, "%s", arm_regnames[reg]);
+				  switch (stp) {
+				  case 0:
+					  if (imm > 0) {
+						  func (stream, ", lsl %u", imm);
+					  }
+					  break;
+
+				  case 1:
+					  if (imm == 0) {
+						  imm = 32;
+					  }
+					  func (stream, ", lsr %u", imm);
+					  break;
+
+				  case 2:
+					  if (imm == 0) {
+						  imm = 32;
+					  }
+					  func (stream, ", asr %u", imm);
+					  break;
+
+				  case 3:
+					  if (imm == 0) {
+						  func (stream, ", rrx");
+					  } else {
+						  func (stream, ", ror %u", imm);
+					  }
+				  }
+			  } break;
+
+			  case 'a': {
+				  unsigned int Rn = (given & 0x000f0000) >> 16;
+				  unsigned int U = !NEGATIVE_BIT_SET;
+				  unsigned int op = (given & 0x00000f00) >> 8;
+				  unsigned int i12 = (given & 0x00000fff);
+				  unsigned int i8 = (given & 0x000000ff);
+				  bfd_boolean writeback = FALSE, postind = FALSE;
+				  bfd_vma offset = 0;
+
+				  func (stream, "[%s", arm_regnames[Rn]);
+				  if (U) /* 12-bit positive immediate offset.  */
+				  {
+					  offset = i12;
+					  if (Rn != 15) {
+						  //			value_in_comment = offset;
+					  }
+				  } else if (Rn == 15) { /* 12-bit negative immediate offset.  */
+					  offset = -(int)i12;
+				  } else if (op == 0x0) /* Shifted register offset.  */
+				  {
+					  unsigned int Rm = (i8 & 0x0f);
+					  unsigned int sh = (i8 & 0x30) >> 4;
+
+					  func (stream, ", %s", arm_regnames[Rm]);
+					  if (sh) {
+						  func (stream, ", lsl %u", sh);
+					  }
+					  func (stream, "]");
+					  break;
+				  } else {
+					  switch (op) {
+					  case 0xE: /* 8-bit positive immediate offset.  */
+						  offset = i8;
+						  break;
+
+					  case 0xC: /* 8-bit negative immediate offset.  */
+						  offset = -i8;
+						  break;
+
+					  case 0xF: /* 8-bit + preindex with wb.  */
+						  offset = i8;
+						  writeback = TRUE;
+						  break;
+
+					  case 0xD: /* 8-bit - preindex with wb.  */
+						  offset = -i8;
+						  writeback = TRUE;
+						  break;
+
+					  case 0xB: /* 8-bit + postindex.  */
+						  offset = i8;
+						  postind = TRUE;
+						  break;
+
+					  case 0x9: /* 8-bit - postindex.  */
+						  offset = -i8;
+						  postind = TRUE;
+						  break;
+
+					  default:
+						  func (stream, ", <undefined>]");
+						  goto skip;
+					  }
+				  }
+
+				  if (postind) {
+					  func (stream, "], %d", (int)offset);
+				  } else {
+					  if (offset) {
+						  func (stream, ", %d", (int)offset);
+					  }
+					  func (stream, writeback ? "]!" : "]");
+				  }
+
+				  if (Rn == 15) {
+					  func (stream, " ; ");
+					  info->print_address_func (((pc + 4) & ~3) + offset, info);
+				  }
+			  }
+			  skip:
+				  break;
+
+			  case 'A': {
+				  unsigned int U = !NEGATIVE_BIT_SET;
+				  unsigned int W = WRITEBACK_BIT_SET;
+				  unsigned int Rn = (given & 0x000f0000) >> 16;
+				  unsigned int off = (given & 0x000000ff);
+
+				  func (stream, "[%s", arm_regnames[Rn]);
+
+				  if (PRE_BIT_SET) {
+					  if (off || !U) {
+						  func (stream, ", %c%u", U ? '+' : '-', off * 4);
+						  //value_in_comment = (off && U) ? 1 : -1;
+					  }
+					  func (stream, "]");
+					  if (W) {
+						  func (stream, "!");
+					  }
+				  } else {
+					  func (stream, "], ");
+					  if (W) {
+						  func (stream, "%c%u", U ? '+' : '-', off * 4);
+						  //value_in_comment = (off && U) ? 1 : -1;
+					  } else {
+						  func (stream, "{%u}", off);
+						  // value_in_comment = off;
+					  }
+				  }
+			  } break;
+
+			  case 'w': {
+				  unsigned int Sbit = (given & 0x01000000) >> 24;
+				  unsigned int type = (given & 0x00600000) >> 21;
+
+				  switch (type) {
+				  case 0: func (stream, Sbit ? "sb" : "b"); break;
+				  case 1: func (stream, Sbit ? "sh" : "h"); break;
+				  case 2:
+					  if (Sbit) {
+						  func (stream, "??");
+					  }
+					  break;
+				  case 3:
+					  func (stream, "??");
+					  break;
+				  }
+			  } break;
+
+			  case 'm': {
+				  int started = 0;
+				  int reg;
+
+				  func (stream, "{");
+				  for (reg = 0; reg < 16; reg++) {
+					  if ((given & (1 << reg)) != 0) {
+						  if (started) {
+							  func (stream, ", ");
+						  }
+						  started = 1;
+						  func (stream, "%s", arm_regnames[reg]);
+					  }
+				  }
+				  func (stream, "}");
+			  } break;
+
+			  case 'E': {
+				  unsigned int msb = (given & 0x0000001f);
+				  unsigned int lsb = 0;
+
+				  lsb |= (given & 0x000000c0u) >> 6;
+				  lsb |= (given & 0x00007000u) >> 10;
+				  func (stream, "%u, %u", lsb, msb - lsb + 1);
+			  } break;
+
+			  case 'F': {
+				  unsigned int width = (given & 0x0000001f) + 1;
+				  unsigned int lsb = 0;
+
+				  lsb |= (given & 0x000000c0u) >> 6;
+				  lsb |= (given & 0x00007000u) >> 10;
+				  func (stream, "%u, %u", lsb, width);
+			  } break;
+
+			  case 'b': {
+				  unsigned int S = (given & 0x04000000u) >> 26;
+				  unsigned int J1 = (given & 0x00002000u) >> 13;
+				  unsigned int J2 = (given & 0x00000800u) >> 11;
+				  bfd_vma offset = 0;
+
+				  offset |= !S << 20;
+				  offset |= J2 << 19;
+				  offset |= J1 << 18;
+				  offset |= (given & 0x003f0000) >> 4;
+				  offset |= (given & 0x000007ff) << 1;
+				  offset -= (1 << 20);
+
+				  info->print_address_func (pc + 4 + offset, info);
+			  } break;
+
+			  case 'B': {
+				  unsigned int S = (given & 0x04000000u) >> 26;
+				  unsigned int I1 = (given & 0x00002000u) >> 13;
+				  unsigned int I2 = (given & 0x00000800u) >> 11;
+				  bfd_vma offset = 0;
+
+				  offset |= !S << 24;
+				  offset |= !(I1 ^ S) << 23;
+				  offset |= !(I2 ^ S) << 22;
+				  offset |= (given & 0x03ff0000u) >> 4;
+				  offset |= (given & 0x000007ffu) << 1;
+				  offset -= (1 << 24);
+				  offset += pc + 4;
+
+				  /* BLX target addresses are always word aligned.  */
+				  if ((given & 0x00001000u) == 0) {
+					  offset &= ~2u;
+				  }
+
+				  info->print_address_func (offset, info);
+			  } break;
+
+			  case 's': {
+				  unsigned int shift = 0;
+
+				  shift |= (given & 0x000000c0u) >> 6;
+				  shift |= (given & 0x00007000u) >> 10;
+				  if (WRITEBACK_BIT_SET) {
+					  func (stream, ", asr %u", shift);
+				  } else if (shift) {
+					  func (stream, ", lsl %u", shift);
+				  }
+				  /* else print nothing - lsl #0 */
+			  } break;
+
+			  case 'R': {
+				  unsigned int rot = (given & 0x00000030) >> 4;
+
+				  if (rot) {
+					  func (stream, ", ror %u", rot * 8);
+				  }
+			  } break;
+
+			  case 'U':
+				  if ((given & 0xf0) == 0x60) {
+					  switch (given & 0xf) {
+					  case 0xf: func (stream, "sy"); break;
+					  default:
+						  func (stream, "%d", (int)given & 0xf);
+						  break;
+					  }
+				  } else {
+					  const char *opt = data_barrier_option (given & 0xf);
+					  if (opt != NULL) {
+						  func (stream, "%s", opt);
+					  } else {
+						  func (stream, "%d", (int)given & 0xf);
+					  }
+				  }
+				  break;
+
+			  case 'C':
+				  if ((given & 0xff) == 0) {
+					  func (stream, "%cPSR_", (given & 0x100000) ? 'S' : 'C');
+					  if (given & 0x800) {
+						  func (stream, "f");
+					  }
+					  if (given & 0x400) {
+						  func (stream, "s");
+					  }
+					  if (given & 0x200) {
+						  func (stream, "x");
+					  }
+					  if (given & 0x100) {
+						  func (stream, "c");
+					  }
+				  } else if ((given & 0x20) == 0x20) {
+					  char const *name;
+					  unsigned sysm = (given & 0xf00) >> 8;
+
+					  sysm |= (given & 0x30);
+					  sysm |= (given & 0x00100000) >> 14;
+					  name = banked_regname (sysm);
+
+					  if (name != NULL) {
+						  func (stream, "%s", name);
+					  } else {
+						  func (stream, "(UNDEF: %lu)", (unsigned long)sysm);
+					  }
+				  } else {
+					  func (stream, "%s", psr_name (given & 0xff));
+				  }
+				  break;
+
+			  case 'D':
+				  if (((given & 0xff) == 0) || ((given & 0x20) == 0x20)) {
+					  char const *name;
+					  unsigned sm = (given & 0xf0000) >> 16;
+
+					  sm |= (given & 0x30);
+					  sm |= (given & 0x00100000) >> 14;
+					  name = banked_regname (sm);
+
+					  if (name != NULL) {
+						  func (stream, "%s", name);
+					  } else {
+						  func (stream, "(UNDEF: %lu)", (unsigned long)sm);
+					  }
+				  } else {
+					  func (stream, "%s", psr_name (given & 0xff));
+				  }
+				  break;
+
+			  case '0':
+			  case '1':
+			  case '2':
+			  case '3':
+			  case '4':
+			  case '5':
+			  case '6':
+			  case '7':
+			  case '8':
+			  case '9': {
+				  int width;
+				  unsigned long val;
+
+				  c = arm_decode_bitfield (c, given, &val, &width);
+
+				  switch (*c) {
+				  case 'd':
+					  func (stream, "%lu", val);
+					  //value_in_comment = val;
+					  break;
+
+				  case 'D':
+					  func (stream, "%lu", val + 1);
+					  // value_in_comment = val + 1;
+					  break;
+
+				  case 'W':
+					  func (stream, "%lu", val * 4);
+					  // value_in_comment = val * 4;
+					  break;
+
+				  case 'S':
+					  if (val == 13) {
+						  is_unpredictable = TRUE;
+					  }
+					  /* Fall through.  */
+				  case 'R':
+					  if (val == 15) {
+						  is_unpredictable = TRUE;
+					  }
+					  /* Fall through.  */
+				  case 'r':
+					  func (stream, "%s", arm_regnames[val]);
+					  break;
+
+				  case 'c':
+					  func (stream, "%s", arm_conditional[val]);
+					  break;
+
+				  case '\'':
+					  c++;
+					  if (val == ((1ul << width) - 1)) {
+						  func (stream, "%c", *c);
+					  }
+					  break;
+
+				  case '`':
+					  c++;
+					  if (val == 0) {
+						  func (stream, "%c", *c);
+					  }
+					  break;
+
+				  case '?':
+					  func (stream, "%c", c[(1 << width) - (int)val]);
+					  c += 1 << width;
+					  break;
+
+				  case 'x':
+					  func (stream, "0x%lx", val & 0xffffffffUL);
+					  break;
+				  }
+			  } break;
+
+			  case 'L':
+				  /* PR binutils/12534
 		   If we have a PC relative offset in an LDRD or STRD
 		   instructions then display the decoded address.  */
-		if (((given >> 16) & 0xf) == 0xf)
-		  {
-		    bfd_vma offset = (given & 0xff) * 4;
+				  if (((given >> 16) & 0xf) == 0xf) {
+					  bfd_vma offset = (given & 0xff) * 4;
 
-		    if ((given & (1 << 23)) == 0)
-		      offset = - offset;
-		    func (stream, " ; ");
-		    info->print_address_func ((pc & ~3) + 4 + offset, info);
+					  if ((given & (1 << 23)) == 0) {
+						  offset = -offset;
+					  }
+					  func (stream, " ; ");
+					  info->print_address_func ((pc & ~3) + 4 + offset, info);
+				  }
+				  break;
+			  }
 		  }
-		break;
-
-	      }
-	  }
 
 #if 0
 	if (value_in_comment > 32 || value_in_comment < -16)
 	  func (stream, " ; 0x%lx", value_in_comment);
 #endif
 
-	if (is_unpredictable)
-	  func (stream, UNPREDICTABLE_INSTRUCTION);
+		  if (is_unpredictable) {
+			  func (stream, UNPREDICTABLE_INSTRUCTION);
+		  }
 
-	return;
-      }
+		  return;
+	  }
+  }
 
   /* No match.  */
 }
@@ -6085,8 +6121,9 @@ arm_symbol_is_valid (asymbol * sym,
 {
   const char * name;
 
-  if (sym == NULL)
-    return FALSE;
+  if (sym == NULL) {
+	  return FALSE;
+  }
 
   name = bfd_asymbol_name (sym);
 
@@ -6106,13 +6143,16 @@ disassembler_options_cmp (const char *s1, const char *s2)
   do
     {
       c1 = (unsigned char) *s1++;
-      if (c1 == ',')
-        c1 = '\0';
+      if (c1 == ',') {
+	      c1 = '\0';
+      }
       c2 = (unsigned char) *s2++;
-      if (c2 == ',')
-        c2 = '\0';
-      if (c1 == '\0')
-        return c1 - c2;
+      if (c2 == ',') {
+	      c2 = '\0';
+      }
+      if (c1 == '\0') {
+	      return c1 - c2;
+      }
     }
   while (c1 == c2);
 
@@ -6129,22 +6169,23 @@ parse_arm_disassembler_options (char *options)
       if (CONST_STRNEQ (opt, "reg-names-"))
 	{
 	  unsigned int i;
-	  for (i = 0; i < NUM_ARM_OPTIONS; i++)
-	    if (disassembler_options_cmp (opt, regnames[i].name) == 0)
-	      {
-		regname_selected = i;
-		break;
-	      }
+	  for (i = 0; i < NUM_ARM_OPTIONS; i++) {
+		  if (disassembler_options_cmp (opt, regnames[i].name) == 0) {
+			  regname_selected = i;
+			  break;
+		  }
+	  }
 
-	  if (i >= NUM_ARM_OPTIONS)
-	    fprintf (stderr, _("Unrecognised register name set: %s\n"), opt);
-	}
-      else if (CONST_STRNEQ (opt, "force-thumb"))
-	force_thumb = 1;
-      else if (CONST_STRNEQ (opt, "no-force-thumb"))
-	force_thumb = 0;
-      else
-	fprintf (stderr, _("Unrecognised disassembler option: %s\n"), opt);
+	  if (i >= NUM_ARM_OPTIONS) {
+		  fprintf (stderr, _ ("Unrecognised register name set: %s\n"), opt);
+	  }
+      } else if (CONST_STRNEQ (opt, "force-thumb")) {
+	      force_thumb = 1;
+      } else if (CONST_STRNEQ (opt, "no-force-thumb")) {
+	      force_thumb = 0;
+      } else {
+	      fprintf (stderr, _ ("Unrecognised disassembler option: %s\n"), opt);
+      }
     }
 
   return;
@@ -6188,20 +6229,23 @@ find_ifthen_state (bfd_vma pc,
 	{
 	  /* A symbol must be on an instruction boundary, and will not
 	     be within an IT block.  */
-	  if (seen_it && (count & 1))
-	    break;
+	  if (seen_it && (count & 1)) {
+		  break;
+	  }
 
 	  return;
 	}
       addr -= 2;
       status = info->read_memory_func (addr, (bfd_byte *) b, 2, info);
-      if (status)
-	return;
+      if (status) {
+	      return;
+      }
 
-      if (little)
-	insn = (b[0]) | (b[1] << 8);
-      else
-	insn = (b[1]) | (b[0] << 8);
+      if (little) {
+	      insn = (b[0]) | (b[1] << 8);
+      } else {
+	      insn = (b[1]) | (b[0] << 8);
+      }
       if (seen_it)
 	{
 	  if ((insn & 0xf800) < 0xe800)
@@ -6209,8 +6253,9 @@ find_ifthen_state (bfd_vma pc,
 	      /* Addr + 2 is an instruction boundary.  See if this matches
 	         the expected boundary based on the position of the last
 		 IT candidate.  */
-	      if (count & 1)
-		break;
+	      if (count & 1) {
+		      break;
+	      }
 	      seen_it = 0;
 	    }
 	}
@@ -6226,18 +6271,21 @@ find_ifthen_state (bfd_vma pc,
 	      it_count = count >> 1;
 	    }
 	}
-      if ((insn & 0xf800) >= 0xe800)
-	count++;
-      else
-	count = (count + 2) | 1;
-      /* IT blocks contain at most 4 instructions.  */
-      if (count >= 8 && !seen_it)
-	return;
+	if ((insn & 0xf800) >= 0xe800) {
+		count++;
+	} else {
+		count = (count + 2) | 1;
+	}
+	/* IT blocks contain at most 4 instructions.  */
+	if (count >= 8 && !seen_it) {
+		return;
+	}
     }
   /* We found an IT instruction.  */
   ifthen_state = (seen_it & 0xe0) | ((seen_it << it_count) & 0x1f);
-  if ((ifthen_state & 0xf) == 0)
-    ifthen_state = 0;
+  if ((ifthen_state & 0xf) == 0) {
+	  ifthen_state = 0;
+  }
 }
 
 /* Returns nonzero and sets *MAP_TYPE if the N'th symbol is a
@@ -6271,8 +6319,9 @@ get_map_sym_type (struct disassemble_info *info,
 		  enum map_type *map_type)
 {
   /* If the symbol is in a different section, ignore it.  */
-  if (info->section != NULL && info->section != info->symtab[n]->section)
-    return FALSE;
+  if (info->section != NULL && info->section != info->symtab[n]->section) {
+	  return FALSE;
+  }
 
   return is_mapping_symbol (info, n, map_type);
 }
@@ -6332,23 +6381,25 @@ mapping_symbol_for_insn (bfd_vma pc, struct disassemble_info *info,
   enum map_type type = MAP_ARM;
   struct arm_private_data *private_data;
 
-  if (info->private_data == NULL || info->symtab_size == 0
-      || bfd_asymbol_flavour (*info->symtab) != bfd_target_elf_flavour)
-    return FALSE;
+  if (info->private_data == NULL || info->symtab_size == 0 || bfd_asymbol_flavour (*info->symtab) != bfd_target_elf_flavour) {
+	  return FALSE;
+  }
 
   private_data = info->private_data;
-  if (pc == 0)
-    start = 0;
-  else
-    start = private_data->last_mapping_sym;
+  if (pc == 0) {
+	  start = 0;
+  } else {
+	  start = private_data->last_mapping_sym;
+  }
 
   start = (start == -1)? 0 : start;
   addr = bfd_asymbol_value (info->symtab[start]);
 
   if (pc >= addr)
     {
-      if (get_map_sym_type (info, start, &type))
-      found = TRUE;
+	  if (get_map_sym_type (info, start, &type)) {
+		  found = TRUE;
+	  }
     }
   else
     {
@@ -6479,8 +6530,8 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
     {
       static struct arm_private_data private;
 
-      if ((info->flags & USER_SPECIFIED_MACHINE_TYPE) == 0)
-	/* If the user did not use the -m command line switch then default to
+      if ((info->flags & USER_SPECIFIED_MACHINE_TYPE) == 0) {
+	      /* If the user did not use the -m command line switch then default to
 	   disassembling all types of ARM instruction.
 
 	   The info->mach value has to be ignored as this will be based on
@@ -6498,7 +6549,8 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
 	   all ARM instructions then use "-marm".  This will select the
 	   "unknown" arm architecture which is compatible with any ARM
 	   instruction.  */
-	  info->mach = bfd_mach_arm_unknown;
+	      info->mach = bfd_mach_arm_unknown;
+      }
 
       /* Compute the architecture bitmask from the machine number.
 	 Note: This assumes that the machine number will not change
@@ -6535,13 +6587,13 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
 	 executable section (eg because of -ffunction-sections).  Either way
 	 start scanning from the beginning of the symbol table, not where we
 	 left off last time.  */
-      if (pc == 0)
-	start = 0;
-      else
-	{
-	  start = info->symtab_pos + 1;
-	  if (start < private_data->last_mapping_sym)
-	    start = private_data->last_mapping_sym;
+      if (pc == 0) {
+	      start = 0;
+      } else {
+	      start = info->symtab_pos + 1;
+	      if (start < private_data->last_mapping_sym) {
+		      start = private_data->last_mapping_sym;
+	      }
 	}
       found = FALSE;
 
@@ -6552,8 +6604,9 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
 	  for (n = start; n < info->symtab_size; n++)
 	    {
 	      addr = bfd_asymbol_value (info->symtab[n]);
-	      if (addr > pc)
-		break;
+	      if (addr > pc) {
+		      break;
+	      }
 	      if (get_map_sym_type (info, n, &type))
 		{
 		  last_sym = n;
@@ -6576,25 +6629,26 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
 		}
 	    }
 
-	  if (found)
-	    private_data->has_mapping_symbols = 1;
+	    if (found) {
+		    private_data->has_mapping_symbols = 1;
+	    }
 
-	  /* No mapping symbols were found.  A leading $d may be
+	    /* No mapping symbols were found.  A leading $d may be
 	     omitted for sections which start with data; but for
 	     compatibility with legacy and stripped binaries, only
 	     assume the leading $d if there is at least one mapping
 	     symbol in the file.  */
-	  if (!found && private_data->has_mapping_symbols == -1)
-	    {
-	      /* Look for mapping symbols, in any section.  */
-	      for (n = 0; n < info->symtab_size; n++)
-		if (is_mapping_symbol (info, n, &type))
-		  {
-		    private_data->has_mapping_symbols = 1;
-		    break;
-		  }
-	      if (private_data->has_mapping_symbols == -1)
-		private_data->has_mapping_symbols = 0;
+	    if (!found && private_data->has_mapping_symbols == -1) {
+		    /* Look for mapping symbols, in any section.  */
+		    for (n = 0; n < info->symtab_size; n++) {
+			    if (is_mapping_symbol (info, n, &type)) {
+				    private_data->has_mapping_symbols = 1;
+				    break;
+			    }
+		    }
+		    if (private_data->has_mapping_symbols == -1) {
+			    private_data->has_mapping_symbols = 0;
+		    }
 	    }
 
 	  if (!found && private_data->has_mapping_symbols == 1)
@@ -6612,8 +6666,9 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
 	  for (n = start; n < info->symtab_size; n++)
 	    {
 	      addr = bfd_asymbol_value (info->symtab[n]);
-	      if (addr > pc)
-		break;
+	      if (addr > pc) {
+		      break;
+	      }
 	      if (get_sym_code_type (info, n, &type))
 		{
 		  last_sym = n;
@@ -6656,46 +6711,52 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
 		  && (info->section == NULL
 		      || info->section == info->symtab[n]->section))
 		{
-		  if (addr - pc < size)
-		    size = addr - pc;
-		  break;
+		      if (addr - pc < size) {
+			      size = addr - pc;
+		      }
+		      break;
 		}
 	    }
 	  /* If the next symbol is after three bytes, we need to
 	     print only part of the data, so that we can use either
 	     .byte or .short.  */
-	  if (size == 3)
-	    size = (pc & 1) ? 1 : 2;
+	    if (size == 3) {
+		    size = (pc & 1) ? 1 : 2;
+	    }
 	}
     }
 
-  if (force_thumb)
-    is_thumb = TRUE;
+    if (force_thumb) {
+	    is_thumb = TRUE;
+    }
 
-  if (is_data)
-    info->display_endian = little ? BFD_ENDIAN_LITTLE : BFD_ENDIAN_BIG;
-  else
-    info->display_endian = little_code ? BFD_ENDIAN_LITTLE : BFD_ENDIAN_BIG;
+    if (is_data) {
+	    info->display_endian = little ? BFD_ENDIAN_LITTLE : BFD_ENDIAN_BIG;
+    } else {
+	    info->display_endian = little_code ? BFD_ENDIAN_LITTLE : BFD_ENDIAN_BIG;
+    }
 
-  info->bytes_per_line = 4;
+    info->bytes_per_line = 4;
 
-  /* PR 10263: Disassemble data if requested to do so by the user.  */
-  if (is_data && ((info->flags & DISASSEMBLE_DATA) == 0))
-    {
-      int i;
+    /* PR 10263: Disassemble data if requested to do so by the user.  */
+    if (is_data && ((info->flags & DISASSEMBLE_DATA) == 0)) {
+	    int i;
 
-      /* Size was already set above.  */
-      info->bytes_per_chunk = size;
-      printer = print_insn_data;
+	    /* Size was already set above.  */
+	    info->bytes_per_chunk = size;
+	    printer = print_insn_data;
 
-      status = info->read_memory_func (pc, (bfd_byte *) b, size, info);
-      given = 0;
-      if (little)
-	for (i = size - 1; i >= 0; i--)
-	  given = b[i] | (given << 8);
-      else
-	for (i = 0; i < (int) size; i++)
-	  given = b[i] | (given << 8);
+	    status = info->read_memory_func (pc, (bfd_byte *)b, size, info);
+	    given = 0;
+	    if (little) {
+		    for (i = size - 1; i >= 0; i--) {
+			    given = b[i] | (given << 8);
+		    }
+	    } else {
+		    for (i = 0; i < (int)size; i++) {
+			    given = b[i] | (given << 8);
+		    }
+	    }
     }
   else if (!is_thumb)
     {
@@ -6706,10 +6767,12 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
       size = 4;
 
       status = info->read_memory_func (pc, (bfd_byte *) b, 4, info);
-      if (little_code)
-	given = (b[0]) | (b[1] << 8) | (b[2] << 16) | (b[3] << 24);
-      else
-	given = (b[3]) | (b[2] << 8) | (b[1] << 16) | (b[0] << 24);
+#define N(x) (((unsigned long long )(b[x])) & 0xff)
+      if (little_code) {
+	      given = N(0) | N(1) <<8 | N(2) << 16 | N(3) << 24;
+      } else {
+	      given = N(3) | N(2) <<8 | N(1) << 16 | N(0) << 24;
+      }
     }
   else
     {
@@ -6722,10 +6785,11 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
       size = 2;
 
       status = info->read_memory_func (pc, (bfd_byte *) b, 2, info);
-      if (little_code)
-	given = (b[0]) | (b[1] << 8);
-      else
-	given = (b[1]) | (b[0] << 8);
+      if (little_code) {
+	      given = (b[0]) | (b[1] << 8);
+      } else {
+	      given = (b[1]) | (b[0] << 8);
+      }
 
       if (!status)
 	{
@@ -6736,26 +6800,27 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
 	      || (given & 0xF800) == 0xE800)
 	    {
 	      status = info->read_memory_func (pc + 2, (bfd_byte *) b, 2, info);
-	      if (little_code)
-		given = (b[0]) | (b[1] << 8) | (given << 16);
-	      else
-		given = (b[1]) | (b[0] << 8) | (given << 16);
+	      if (little_code) {
+		      given = (b[0]) | (b[1] << 8) | (given << 16);
+	      } else {
+		      given = (b[1]) | (b[0] << 8) | (given << 16);
+	      }
 
 	      printer = print_insn_thumb32;
 	      size = 4;
 	    }
 	}
 
-      if (ifthen_address != pc)
-	find_ifthen_state (pc, info, little_code);
+	if (ifthen_address != pc) {
+		find_ifthen_state (pc, info, little_code);
+	}
 
-      if (ifthen_state)
-	{
-	  if ((ifthen_state & 0xf) == 0x8)
-	    ifthen_next_state = 0;
-	  else
-	    ifthen_next_state = (ifthen_state & 0xe0)
-				| ((ifthen_state & 0xf) << 1);
+	if (ifthen_state) {
+		if ((ifthen_state & 0xf) == 0x8) {
+			ifthen_next_state = 0;
+		} else {
+			ifthen_next_state = (ifthen_state & 0xe0) | ((ifthen_state & 0xf) << 1);
+		}
 	}
     }
 
@@ -6764,20 +6829,20 @@ print_insn (bfd_vma pc, struct disassemble_info *info, bfd_boolean little)
       info->memory_error_func (status, pc, info);
       return -1;
     }
-  if (info->flags & INSN_HAS_RELOC)
-    /* If the instruction has a reloc associated with it, then
+    if (info->flags & INSN_HAS_RELOC) {
+	    /* If the instruction has a reloc associated with it, then
        the offset field in the instruction will actually be the
        addend for the reloc.  (We are using REL type relocs).
        In such cases, we can ignore the pc when computing
        addresses, since the addend is not currently pc-relative.  */
-    pc = 0;
+	    pc = 0;
+    }
 
-  printer (pc, info, given);
+    printer (pc, info, given);
 
-  if (is_thumb)
-    {
-      ifthen_state = ifthen_next_state;
-      ifthen_address += size;
+    if (is_thumb) {
+	    ifthen_state = ifthen_next_state;
+	    ifthen_address += size;
     }
   return size;
 }
@@ -6816,10 +6881,11 @@ disassembler_options_arm (void)
       for (i = 0; i < NUM_ARM_OPTIONS; i++)
 	{
 	  opts->name[i] = regnames[i].name;
-	  if (regnames[i].description != NULL)
-	    opts->description[i] = _(regnames[i].description);
-	  else
-	    opts->description[i] = NULL;
+	  if (regnames[i].description != NULL) {
+		  opts->description[i] = _ (regnames[i].description);
+	  } else {
+		  opts->description[i] = NULL;
+	  }
 	}
       /* The array we return must be NULL terminated.  */
       opts->name[i] = NULL;
@@ -6840,13 +6906,15 @@ the -M switch:\n"));
   for (i = 0; i < NUM_ARM_OPTIONS; i++)
     {
       unsigned int len = strlen (regnames[i].name);
-      if (max_len < len)
-	max_len = len;
+      if (max_len < len) {
+	      max_len = len;
+      }
     }
 
-  for (i = 0, max_len++; i < NUM_ARM_OPTIONS; i++)
-    fprintf (stream, "  %s%*c %s\n",
-	     regnames[i].name,
-	     (int)(max_len - strlen (regnames[i].name)), ' ',
-	     _(regnames[i].description));
+    for (i = 0, max_len++; i < NUM_ARM_OPTIONS; i++) {
+	    fprintf (stream, "  %s%*c %s\n",
+		    regnames[i].name,
+		    (int)(max_len - strlen (regnames[i].name)), ' ',
+		    _ (regnames[i].description));
+    }
 }

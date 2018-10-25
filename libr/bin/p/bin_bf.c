@@ -1,37 +1,37 @@
-/* radare - LGPL - Copyright 2013-2017 - pancake */
+/* radare - LGPL - Copyright 2013-2018 - pancake */
 
 #include <r_types.h>
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
 
-static void *load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	return R_NOTNULL;
-}
-
-static bool load(RBinFile *arch) {
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
 	return true;
 }
 
-static int destroy(RBinFile *arch) {
+static bool load(RBinFile *bf) {
 	return true;
 }
 
-static ut64 baddr(RBinFile *arch) {
+static int destroy(RBinFile *bf) {
+	return true;
+}
+
+static ut64 baddr(RBinFile *bf) {
 	return 0;
 }
 
-static RList *strings(RBinFile *arch) {
+static RList *strings(RBinFile *bf) {
 	return NULL;
 }
 
-static RBinInfo *info(RBinFile *arch) {
+static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
 	if (!(ret = R_NEW0 (RBinInfo))) {
 		return NULL;
 	}
 	ret->lang = NULL;
-	ret->file = arch->file? strdup (arch->file): NULL;
+	ret->file = bf->file? strdup (bf->file): NULL;
 	ret->type = strdup ("brainfuck");
 	ret->bclass = strdup ("1.0");
 	ret->rclass = strdup ("program");
@@ -59,6 +59,8 @@ static RBinInfo *info(RBinFile *arch) {
 	eprintf ("ar ptr=data\n");
 	eprintf ("\"e cmd.vprompt=pxa 32@stack;pxa 32@screen;pxa 32@data\"\n");
 	eprintf ("s 0\n");
+	eprintf ("e asm.bits=32\n");
+	eprintf ("dL bf\n");
 	return ret;
 }
 
@@ -90,7 +92,7 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return is_bf;
 }
 
-static RList *entries(RBinFile *arch) {
+static RList *entries(RBinFile *bf) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
 
@@ -105,7 +107,7 @@ static RList *entries(RBinFile *arch) {
 	return ret;
 }
 
-struct r_bin_plugin_t r_bin_plugin_bf = {
+RBinPlugin r_bin_plugin_bf = {
 	.name = "bf",
 	.desc = "brainfuck",
 	.license = "LGPL3",
@@ -120,7 +122,7 @@ struct r_bin_plugin_t r_bin_plugin_bf = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_bf,
 	.version = R2_VERSION

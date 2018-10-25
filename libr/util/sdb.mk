@@ -16,6 +16,7 @@ SDB_OBJS+=query.o
 SDB_OBJS+=sdb.o
 SDB_OBJS+=base64.o
 SDB_OBJS+=disk.o
+SDB_OBJS+=dict.o
 SDB_OBJS+=array.o
 SDB_OBJS+=fmt.o
 SDB_OBJS+=match.o

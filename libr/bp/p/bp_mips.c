@@ -6,6 +6,8 @@
 static struct r_bp_arch_t r_bp_plugin_mips_bps[] = {
 	{ 32, 4, 0, (const ut8*)"\x0d\x00\x00\x00" },
 	{ 32, 4, 1, (const ut8*)"\x00\x00\x00\x0d" },
+	{ 64, 4, 0, (const ut8*)"\x0d\x00\x00\x00" },
+	{ 64, 4, 1, (const ut8*)"\x00\x00\x00\x0d" },
 	{ 0, 0, 0, NULL }
 };
 
@@ -17,7 +19,7 @@ struct r_bp_plugin_t r_bp_plugin_mips = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BP,
 	.data = &r_bp_plugin_mips,
 	.version = R2_VERSION

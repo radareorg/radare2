@@ -8,11 +8,11 @@ LDFLAGS+=${LINK}
 CURDIR=
 
 ifeq ($(WITHPIC),1)
-all: ${ALL_TARGETS} ;
+all: ${ALL_TARGETS}
 
 ALL_TARGETS=
 # TODO: rename to enabled plugins
-ARCHS=null.mk x86_udis.mk ppc_gnu.mk ppc_cs.mk arm_gnu.mk avr.mk xap.mk dalvik.mk sh.mk ebc.mk gb.mk malbolge.mk ws.mk h8300.mk cr16.mk v850.mk msp430.mk sparc_gnu.mk sparc_cs.mk x86_cs.mk cris.mk 6502.mk snes.mk riscv.mk vax.mk xtensa.mk rsp.mk
+ARCHS=null.mk ppc_gnu.mk ppc_cs.mk arm_gnu.mk avr.mk xap.mk dalvik.mk sh.mk ebc.mk gb.mk malbolge.mk ws.mk h8300.mk cr16.mk v850.mk msp430.mk sparc_gnu.mk sparc_cs.mk x86_cs.mk cris.mk 6502.mk snes.mk riscv.mk vax.mk xtensa.mk rsp.mk mcore.mk
 include $(ARCHS)
 
 clean:

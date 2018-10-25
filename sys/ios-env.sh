@@ -5,7 +5,7 @@ export PATH=$(pwd)/sys:${PATH}
 export CC=$(pwd)/sys/ios-sdk-gcc
 # set only for arm64, otherwise it is armv7
 # select ios sdk version
-export IOSVER=8.3
+export IOSVER=11.0
 export IOSINC=$(pwd)/sys/ios-include
 export CFLAGS=-O2
 

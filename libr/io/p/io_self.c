@@ -23,10 +23,6 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 #include <process.h>  // to compile getpid for msvc windows
 #endif
 
-#define PERM_READ 4
-#define PERM_WRITE 2
-#define PERM_EXEC 1
-
 typedef struct {
 	char *name;
 	ut64 from;
@@ -73,8 +69,9 @@ static int update_self_regions(RIO *io, int pid) {
 	char region[100], region2[100], perms[5];
 	snprintf (path, sizeof (path) - 1, "/proc/%d/maps", pid);
 	FILE *fd = fopen (path, "r");
-	if (!fd)
+	if (!fd) {
 		return false;
+	}
 
 	while (!feof (fd)) {
 		line[0]='\0';
@@ -98,9 +95,9 @@ static int update_self_regions(RIO *io, int pid) {
 		perm = 0;
 		for (i = 0; i < 4 && perms[i]; i++) {
 			switch (perms[i]) {
-			case 'r': perm |= R_IO_READ; break;
-			case 'w': perm |= R_IO_WRITE; break;
-			case 'x': perm |= R_IO_EXEC; break;
+			case 'r': perm |= R_PERM_R; break;
+			case 'w': perm |= R_PERM_W; break;
+			case 'x': perm |= R_PERM_X; break;
 			}
 		}
 		self_sections[self_sections_count].from = r_num_get (NULL, region);
@@ -129,13 +126,14 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 
 static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	int ret, pid = getpid ();
-	if (r_sandbox_enable (0))
+	if (r_sandbox_enable (0)) {
 		return NULL;
+	}
 	io->va = true; // nop
 	ret = update_self_regions (io, pid);
 	if (ret) {
-		return r_io_desc_new (&r_io_plugin_self,
-			pid, file, rw, mode, NULL);
+		return r_io_desc_new (io, &r_io_plugin_self,
+			file, rw, mode, NULL);
 	}
 	return NULL;
 }
@@ -143,7 +141,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 	int left, perm;
 	if (self_in_section (io, io->off, &left, &perm)) {
-		if (perm & R_IO_READ) {
+		if (perm & R_PERM_R) {
 			int newlen = R_MIN (len, left);
 			ut8 *ptr = (ut8*)(size_t)io->off;
 			memcpy (buf, ptr, newlen);
@@ -154,7 +152,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int len) {
 }
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
-	if (fd->flags & R_IO_WRITE) {
+	if (fd->perm & R_PERM_W) {
 		int left, perm;
 		if (self_in_section (io, io->off, &left, &perm)) {
 			int newlen = R_MIN (len, left);
@@ -188,25 +186,25 @@ static void got_alarm(int sig) {
 #endif
 }
 
-static int __system(RIO *io, RIODesc *fd, const char *cmd) {
+static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!strcmp (cmd, "pid")) {
-		eprintf ("%d\n", fd->fd);
+		return r_str_newf ("%d", fd->fd);
 	} else if (!strncmp (cmd, "pid", 3)) {
 		/* do nothing here */
 #if (!defined(__WINDOWS__)) || defined(__CYGWIN__)
 	} else if (!strncmp (cmd, "kill", 4)) {
 		if (r_sandbox_enable (false)) {
 			eprintf ("This is unsafe, so disabled by the sandbox\n");
-			return 1;
+			return NULL;
 		}
 		/* do nothing here */
-		kill (getpid (), 9);
+		kill (getpid (), SIGKILL);
 #endif
 	} else if (!strncmp (cmd, "call ", 5)) {
 		size_t cbptr = 0;
 		if (r_sandbox_enable (false)) {
 			eprintf ("This is unsafe, so disabled by the sandbox\n");
-			return 1;
+			return NULL;
 		}
 		ut64 result = 0;
 		char *argv = strdup (cmd + 5);
@@ -214,7 +212,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		if (argc == 0) {
 			eprintf ("Usage: =!call [fcnptr] [a0] [a1] ...\n");
 			free (argv);
-			return 0;
+			return NULL;
 		}
 		const char *sym = r_str_word_get0 (argv, 0);
 		if (sym) {
@@ -344,7 +342,7 @@ static int __system(RIO *io, RIODesc *fd, const char *cmd) {
 		eprintf ("| =!call [sym] [...]  nativelly call a function\n");
 		eprintf ("| =!mameio            enter mame IO mode\n");
 	}
-	return 0;
+	return NULL;
 }
 
 RIOPlugin r_io_plugin_self = {
@@ -361,7 +359,7 @@ RIOPlugin r_io_plugin_self = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_mach,
 	.version = R2_VERSION
@@ -478,9 +476,8 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 
 			self_sections[self_sections_count].from = prev_address;
 			self_sections[self_sections_count].to = prev_address+prev_size;
-			self_sections[self_sections_count].perm = PERM_READ; //prev_info.protection;
+			self_sections[self_sections_count].perm = R_PERM_R; //prev_info.protection;
 			self_sections_count++;
-
 			if (nsubregions > 1) {
 				io->cb_printf (" (%d sub-regions)", nsubregions);
 			}
@@ -515,7 +512,7 @@ RIOPlugin r_io_plugin_self = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_IO,
 	.data = &r_io_plugin_mach,
 	.version = R2_VERSION

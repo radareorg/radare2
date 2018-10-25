@@ -1,9 +1,6 @@
-
 executable('rax2', 'rax2.c',
-  include_directories: include_directories([
-    '../../libr/include',
-	platform_binrinc
-  ]),
-  link_with: [r_util],
-  install: true
+  include_directories: [platform_inc],
+  dependencies: [r_util_dep],
+  install: true,
+  implicit_include_directories: false
 )

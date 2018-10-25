@@ -1,4 +1,4 @@
-/* sdb - MIT - Copyright 2011-2016 - pancake */
+/* sdb - MIT - Copyright 2011-2018 - pancake */
 
 #include "sdb.h"
 #include <limits.h>
@@ -210,15 +210,9 @@ SDB_API int sdb_array_set_num(Sdb *s, const char *key, int idx, ut64 val,
 }
 
 SDB_API int sdb_array_add_num(Sdb *s, const char *key, ut64 val, ut32 cas) {
-	char valstr10[SDB_NUM_BUFSZ], valstr16[SDB_NUM_BUFSZ];
-	char *v10 = sdb_itoa (val, valstr10, 10);
-	char *v16 = sdb_itoa (val, valstr16, 16);
-	// TODO: optimize
-	// TODO: check cas vs mycas
-	if (sdb_array_contains (s, key, v10, NULL)) {
-		return 0;
-	}
-	return sdb_array_add (s, key, v16, cas); // TODO: v10 or v16
+	char buf[SDB_NUM_BUFSZ];
+	char *v = sdb_itoa (val, buf, SDB_NUM_BASE);
+	return sdb_array_add (s, key, v, cas);
 }
 
 // XXX: index should be supressed here? if its a set we shouldnt change the index
@@ -226,7 +220,7 @@ SDB_API int sdb_array_add(Sdb *s, const char *key, const char *val, ut32 cas) {
 	if (sdb_array_contains (s, key, val, NULL)) {
 		return 0;
 	}
-	return sdb_array_set (s, key, -1, val, cas);
+	return sdb_array_insert (s, key, -1, val, cas);
 }
 
 SDB_API int sdb_array_add_sorted(Sdb *s, const char *key, const char *val, ut32 cas) {
@@ -260,7 +254,7 @@ SDB_API int sdb_array_add_sorted(Sdb *s, const char *key, const char *val, ut32 
 			if (astrcmp (vals[i], str_p) < 0) {
 				break;
 			}
-			sdb_const_anext (str_p, &str_p);
+			str_p = sdb_const_anext (str_p);
 			if (!str_p) {
 				str_p = str_e;
 			}
@@ -301,7 +295,7 @@ SDB_API int sdb_array_add_sorted_num(Sdb *s, const char *key, ut64 val,
 		if (val <= sdb_atoi (n)) {
 			break;
 		}
-		sdb_const_anext (n, &n);
+		n = sdb_const_anext (n);
 	}
 	return sdb_array_insert_num (s, key, n? i: -1, val, cas);
 }
@@ -490,32 +484,33 @@ SDB_API int sdb_array_delete(Sdb *s, const char *key, int idx, ut32 cas) {
 	return 1;
 }
 
-// XXX Doesnt works if numbers are stored in different base
-SDB_API int sdb_array_contains_num(Sdb *s, const char *key, ut64 num,
-				    ut32 *cas) {
+// XXX Doesnt work if numbers are stored in different base
+SDB_API bool sdb_array_contains_num(Sdb *s, const char *key, ut64 num, ut32 *cas) {
 	char val[SDB_NUM_BUFSZ];
 	char *nval = sdb_itoa (num, val, SDB_NUM_BASE);
 	return sdb_array_contains (s, key, nval, cas);
 }
 
-SDB_API int sdb_array_contains(Sdb *s, const char *key, const char *val,
-				ut32 *cas) {
-	const char *list = sdb_const_get (s, key, cas);
-	const char *next, *ptr = list;
-	const int vlen = strlen (val);
-	if (list && *list) {
-		do {
-			const char *str = sdb_const_anext (ptr, &next);
-			int len = next? (int)(size_t)(next - str) - 1 : (int)strlen (str);
-			if (len == vlen) {
-				if (!memcmp (str, val, len)) {
-					return 1;
-				}
-			}
-			ptr = next;
-		} while (next);
+SDB_API bool sdb_array_contains(Sdb *s, const char *key, const char *val, ut32 *cas) {
+	if (!s || !key || !val) {
+		return false;
 	}
-	return 0;
+	const char *next, *ptr = sdb_const_get (s, key, cas);
+	if (ptr && *ptr) {
+		size_t vlen = strlen (val);
+		while (1) {
+			next = strchr (ptr, SDB_RS);
+			size_t len = next ? (size_t)(next - ptr) : strlen (ptr);
+			if (len == vlen && !memcmp (ptr, val, len)) {
+				return true;
+			}
+			if (!next) {
+				break;
+			}
+			ptr = next + 1;
+		}
+	}
+	return false;
 }
 
 SDB_API int sdb_array_size(Sdb *s, const char *key) {
@@ -532,7 +527,7 @@ SDB_API int sdb_array_push_num(Sdb *s, const char *key, ut64 num, ut32 cas) {
 	return sdb_array_push (s, key, n, cas);
 }
 
-SDB_API int sdb_array_push(Sdb *s, const char *key, const char *val, ut32 cas) {
+SDB_API bool sdb_array_push(Sdb *s, const char *key, const char *val, ut32 cas) {
 #if PUSH_PREPENDS
 	return sdb_array_prepend (s, key, val, cas);
 #else
@@ -540,26 +535,28 @@ SDB_API int sdb_array_push(Sdb *s, const char *key, const char *val, ut32 cas) {
 #endif
 }
 
-SDB_API int sdb_array_prepend_num(Sdb *s, const char *key, ut64 num, ut32 cas) {
+SDB_API bool sdb_array_prepend_num(Sdb *s, const char *key, ut64 num, ut32 cas) {
 	char buf[SDB_NUM_BUFSZ];
 	char *n = sdb_itoa (num, buf, SDB_NUM_BASE);
 	return sdb_array_push (s, key, n, cas);
 }
 
-SDB_API int sdb_array_prepend (Sdb *s, const char *key, const char *val,
-			       ut32 cas) {
+SDB_API bool sdb_array_prepend (Sdb *s, const char *key, const char *val, ut32 cas) {
+	if (!s || !key || !val) {
+		return false;
+	}
 	int str_len = 0;
 	ut32 kas = cas;
 	const char *str = sdb_const_get_len (s, key, &str_len, &kas);
 	if (!val || (cas && cas != kas)) {
-		return 0;
+		return false;
 	}
 	cas = kas;
 	if (str && *str) {
 		int val_len = strlen (val);
 		char *newval = malloc (str_len + val_len + 2);
 		if (!newval) {
-			return 0;
+			return false;
 		}
 		memcpy (newval, val, val_len);
 		newval[val_len] = SDB_RS;
@@ -570,7 +567,7 @@ SDB_API int sdb_array_prepend (Sdb *s, const char *key, const char *val,
 	} else {
 		sdb_set (s, key, val, cas);
 	}
-	return 1;
+	return true;
 }
 
 SDB_API ut64 sdb_array_pop_num(Sdb *s, const char *key, ut32 *cas) {
@@ -673,11 +670,9 @@ SDB_API void sdb_array_sort(Sdb *s, const char *key, ut32 cas) {
 }
 
 SDB_API void sdb_array_sort_num(Sdb *s, const char *key, ut32 cas) {
-	char *ret, *nstr, *str;
-	int lstr;
-	ut64 *nums;
+	char *ret, *nstr;
 
-	str = sdb_get_len (s, key, &lstr, 0);
+	char *str = sdb_get (s, key, 0);
 	if (!str) {
 		return;
 	}
@@ -685,7 +680,7 @@ SDB_API void sdb_array_sort_num(Sdb *s, const char *key, ut32 cas) {
 		free (str);
 		return;
 	}
-	nums = sdb_fmt_array_num (str);
+	ut64 *nums = sdb_fmt_array_num (str);
 	free (str);
 	if (!nums) {
 		return;

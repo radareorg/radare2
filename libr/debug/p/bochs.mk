@@ -30,4 +30,4 @@ TARGET_BOCHS=debug_bochs.${EXT_SO}
 ALL_TARGETS+=${TARGET_BOCHS}
 
 ${TARGET_BOCHS}: ${OBJ_BOCHS}
-	${CC_LIB} $(call libname,debug_bochs) ${OBJ_BOCHS} ${CFLAGS} ${LDFLAGS}
+	${CC} $(call libname,debug_bochs) ${OBJ_BOCHS} ${CFLAGS} ${LDFLAGS}

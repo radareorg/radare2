@@ -37,3 +37,4 @@ struct r_bin_mz_reloc_t *r_bin_mz_get_relocs(const struct r_bin_mz_obj_t *bin);
 void *r_bin_mz_free(struct r_bin_mz_obj_t* bin);
 struct r_bin_mz_obj_t* r_bin_mz_new(const char* file);
 struct r_bin_mz_obj_t* r_bin_mz_new_buf(const struct r_buf_t *buf);
+ut64 r_bin_mz_get_main_vaddr(struct r_bin_mz_obj_t *bin);

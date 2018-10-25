@@ -5,8 +5,10 @@
 
 R_LIB_VERSION (r_crypto);
 
-struct { const char *name; ut64 bit; }
-static const crypto_name_bytes[] = {
+static const struct {
+	const char *name;
+	ut64 bit;
+} crypto_name_bytes[] = {
 	{"all", UT64_MAX},
 	{"rc2", R_CRYPTO_RC2},
 	{"rc4", R_CRYPTO_RC4},
@@ -20,6 +22,7 @@ static const crypto_name_bytes[] = {
 	{"cps2", R_CRYPTO_CPS2},
 	{"des-ecb", R_CRYPTO_DES_ECB},
 	{"xor", R_CRYPTO_XOR},
+	{"serpent-ecb", R_CRYPTO_SERPENT},
 	{NULL, 0}
 };
 

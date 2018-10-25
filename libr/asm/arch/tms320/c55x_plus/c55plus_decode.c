@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <r_types.h>
+#include <r_util.h>
 
 #include "ins.h"
 #include "decode.h"
@@ -18,27 +19,27 @@ extern ut32 ins_buff_len;
 static ut32 get_q_bits(ut32 val, char *ins, ut32 ins_len, int *err_code) {
 	ut32 res = 0;
 
-	if (!strncasecmp(ins, "q_MMAP", 6)) {
+	if (!r_str_ncasecmp(ins, "q_MMAP", 6)) {
 		res = val & 1;
-	} else if (!strncasecmp(ins, "q_LOCK", 6)) {
+	} else if (!r_str_ncasecmp(ins, "q_LOCK", 6)) {
 		res = val & 1;
-	} else if (!strncasecmp(ins, "q_LINR", 6)) {
+	} else if (!r_str_ncasecmp(ins, "q_LINR", 6)) {
 		res = (val >> 2) & 1;
-	} else if (!strncasecmp(ins, "q_CIRC", 6)) {
+	} else if (!r_str_ncasecmp(ins, "q_CIRC", 6)) {
 		res = (val >> 3) & 1;
-	} else if (!strncasecmp(ins, "q_PORT_READ", 11)) {
+	} else if (!r_str_ncasecmp(ins, "q_PORT_READ", 11)) {
 		res = (val >> 4) & 1;
-	} else if (!strncasecmp(ins, "q_PORT_WRITE", 12)) {
+	} else if (!r_str_ncasecmp(ins, "q_PORT_WRITE", 12)) {
 		res = (val >> 5) & 1;
-	} else if (!strncasecmp(ins, "q_XPORT_READ", 12)) {
+	} else if (!r_str_ncasecmp(ins, "q_XPORT_READ", 12)) {
 		res = (val >> 6) & 1;
-	} else if (!strncasecmp(ins, "q_XPORT_WRITE", 13)) {
+	} else if (!r_str_ncasecmp(ins, "q_XPORT_WRITE", 13)) {
 		res = (val >> 7) & 1;
-	} else if (!strncasecmp(ins, "q_SAT", 5)) {
+	} else if (!r_str_ncasecmp(ins, "q_SAT", 5)) {
 		res = (val >> 8) & 1;
-	} else if (!strncasecmp(ins, "q_XC0", 5)) {
+	} else if (!r_str_ncasecmp(ins, "q_XC0", 5)) {
 		res = (val >> 9) & 1;
-	} else if (!strncasecmp(ins, "q_XC1", 5)) {
+	} else if (!r_str_ncasecmp(ins, "q_XC1", 5)) {
 		res = (val >> 10) & 1;
 	} else {
 		/* INVALID CONDITION */
@@ -59,8 +60,9 @@ static ut32 get_ins_bits(ut32 hash_code, ut32 ins_pos, char *ins,
 	ut32 len, x, i;
 	char *op_str, *aux;
 
-	if (ins[0] == 'q')
-		return get_q_bits(magic_value, ins, ins_len, err_code);
+	if (ins[0] == 'q') {
+		return get_q_bits (magic_value, ins, ins_len, err_code);
+	}
 
 	op_str = ins_str[1 + hash_code * 4];
 	//printf("OPSTR => %s %d\n", ins, ins_len);
@@ -82,8 +84,9 @@ static ut32 get_ins_bits(ut32 hash_code, ut32 ins_pos, char *ins,
 
 		x = len + 1;
 		res = (res * 2) | ((op_b >> ((1023 - len) % 8)) & 1);
-		if (!op_str[x])
+		if (!op_str[x]) {
 			x = 0;
+		}
 	}
 
 	if (C55PLUS_DEBUG) {
@@ -125,7 +128,7 @@ static char *decode_regis(char *reg_arg, st32 hash_code, ut32 ins_bits,
 					      ((ins_bits & 1) << 6));
 			break;
 		case 100:
-			if (strncasecmp(reg_arg, "d(ALLx", 6)) {
+			if (r_str_ncasecmp(reg_arg, "d(ALLx", 6)) {
 				fprintf(stderr, "invalid register! %s\n", reg_arg);
 				*err_code = -1;
 				return NULL;
@@ -136,7 +139,7 @@ static char *decode_regis(char *reg_arg, st32 hash_code, ut32 ins_bits,
 			}
 			break;
 		case 41:
-			if (strncasecmp(reg_arg, ")ALLx", 5)) {
+			if (r_str_ncasecmp(reg_arg, ")ALLx", 5)) {
 				fprintf(stderr, "invalid register! %s\n", reg_arg);
 				*err_code = -1;
 				return NULL;
@@ -147,13 +150,13 @@ static char *decode_regis(char *reg_arg, st32 hash_code, ut32 ins_bits,
 			}
 			break;
 		case 65:
-			if (!strncasecmp(reg_arg, "ACLH", 4)) {
+			if (!r_str_ncasecmp(reg_arg, "ACLH", 4)) {
 				res = get_reg_name_1(ins_bits + 64);
-			} else if (!strncasecmp(reg_arg, "ACxP", 4)) {
+			} else if (!r_str_ncasecmp(reg_arg, "ACxP", 4)) {
 				res = get_reg_name_1(ins_bits + 1);
-			} else if (!strncasecmp(reg_arg, "ACx", 3) ||
-				  !strncasecmp(reg_arg, "ADR", 3) ||
-				  !strncasecmp(reg_arg, "ALL", 3) /* 430ADC */
+			} else if (!r_str_ncasecmp(reg_arg, "ACx", 3) ||
+				  !r_str_ncasecmp(reg_arg, "ADR", 3) ||
+				  !r_str_ncasecmp(reg_arg, "ALL", 3) /* 430ADC */
 				 ) {
 				res = get_reg_name_1(ins_bits);
 			}
@@ -165,7 +168,7 @@ static char *decode_regis(char *reg_arg, st32 hash_code, ut32 ins_bits,
 			res = get_reg_name_1(ins_bits + 32);
 			break;
 		case 77:
-			if (!strncasecmp(reg_arg, "MA", 2) || !strncasecmp(reg_arg, "MR", 2)) {
+			if (!r_str_ncasecmp(reg_arg, "MA", 2) || !r_str_ncasecmp(reg_arg, "MR", 2)) {
 				res = get_reg_name_1(ins_bits);
 			} else {
 				res = get_reg_name_2(ins_bits);
@@ -175,11 +178,11 @@ static char *decode_regis(char *reg_arg, st32 hash_code, ut32 ins_bits,
 			res = get_reg_name_1(ins_bits);
 			break;
 		case 82:
-			if (!strncasecmp(reg_arg, "RA", 2) || !strncasecmp(reg_arg, "RL", 2)) {
+			if (!r_str_ncasecmp(reg_arg, "RA", 2) || !r_str_ncasecmp(reg_arg, "RL", 2)) {
 				res = get_reg_name_1(ins_bits);
-			} else if (!strncasecmp(reg_arg, "RLP", 3) || !strncasecmp(reg_arg, "RxP", 3)) {
+			} else if (!r_str_ncasecmp(reg_arg, "RLP", 3) || !r_str_ncasecmp(reg_arg, "RxP", 3)) {
 				res = get_reg_name_1(ins_bits + 1);
-			} else if (!strncasecmp(reg_arg, "RX", 2)) {
+			} else if (!r_str_ncasecmp(reg_arg, "RX", 2)) {
 				res = get_reg_name_1(ins_bits);
 			} else {
 				res = get_reg_name_2(ins_bits);
@@ -189,18 +192,18 @@ static char *decode_regis(char *reg_arg, st32 hash_code, ut32 ins_bits,
 			res = get_reg_name_1(ins_bits + 48);
 			break;
 		case 87:
-			if (!strncasecmp(reg_arg, "WD", 2)) {
+			if (!r_str_ncasecmp(reg_arg, "WD", 2)) {
 				res = get_reg_name_2(ins_bits);
-			} else if (!strncasecmp(reg_arg, "WA", 2)) {
+			} else if (!r_str_ncasecmp(reg_arg, "WA", 2)) {
 				res = get_reg_name_1(ins_bits);
 			} else {
 				res = NULL;
 			}
 			break;
 		case 88:
-			if (!strncasecmp(reg_arg, "XR", 2)) {
+			if (!r_str_ncasecmp(reg_arg, "XR", 2)) {
 				res = get_reg_name_3(ins_bits);
-			} else if (!strncasecmp(reg_arg, "XD", 2)) {
+			} else if (!r_str_ncasecmp(reg_arg, "XD", 2)) {
 				res = get_reg_name_2(ins_bits + 32);
 			} else {
 				res = NULL;
@@ -244,8 +247,9 @@ static char *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_le
 		}
 	}
 
-	if (C55PLUS_DEBUG)
-		printf("PSEUDO INS %s\n", ins);
+	if (C55PLUS_DEBUG) {
+		printf ("PSEUDO INS %s\n", ins);
+	}
 
 	pos = ins;
 	// instruction length
@@ -273,8 +277,9 @@ static char *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_le
 			token_aux[len] = '\0';
 			pos = aux;
 
-			if (C55PLUS_DEBUG)
-				printf("TOKEN AUX: %s\n", token_aux);
+			if (C55PLUS_DEBUG) {
+				printf ("TOKEN AUX: %s\n", token_aux);
+			}
 
 			reg = NULL;
 			for (i = 0; i < len; i++) {
@@ -282,8 +287,9 @@ static char *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_le
 					len = (unsigned int)(size_t)(&token_aux[i] - token_aux);
 					reg = &token_aux[i + 1];
 
-					if (C55PLUS_DEBUG)
-						printf("REG : %s\n", reg);
+					if (C55PLUS_DEBUG) {
+						printf ("REG : %s\n", reg);
+					}
 					break;
 				}
 			}
@@ -305,8 +311,9 @@ static char *decode_ins(st32 hash_code, ut32 ins_pos, ut32 ins_off, ut32 *ins_le
 		pos++;
 	}
 
-	if (C55PLUS_DEBUG)
-		printf("RESULT DECODE: %s\n", res_decode);
+	if (C55PLUS_DEBUG) {
+		printf ("RESULT DECODE: %s\n", res_decode);
+	}
 
 	return res_decode;
 }
@@ -578,7 +585,7 @@ static char* get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 			if (*reg_arg == '!') {
 				res = get_reg_pair(ins_bits);
 				break;
-			} else if (!strncasecmp(reg_arg, "ST", 2)) {
+			} else if (!r_str_ncasecmp(reg_arg, "ST", 2)) {
 				res = get_status_regs_and_bits(reg_arg, ins_bits);
 				break;
 			}
@@ -592,8 +599,9 @@ static char* get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 			sprintf(buff_aux, "-#0x%lx", (long unsigned int)ins_bits);
 		}
 		res = strdup(buff_aux);
-		if (!reg_arg || *reg_arg != 'm')
+		if (!reg_arg || *reg_arg != 'm') {
 			break;
+		}
 
 		res = strcat_dup(res, ")", 1);
 		res = strcat_dup("*(", res, 2);
@@ -690,17 +698,21 @@ static char* get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 		if (reg_arg) {
 			if (*reg_arg == '1') {
 				res = get_tc2_tc1(ins_bits >> 1);
-			} else if (*reg_arg == '2')
-				res = get_tc2_tc1(ins_bits & 1);
-		} else res = get_tc2_tc1(ins_bits);
+			} else if (*reg_arg == '2') {
+				res = get_tc2_tc1 (ins_bits & 1);
+			}
+		} else {
+			res = get_tc2_tc1 (ins_bits);
+		}
 		if (!res) {
 			*err_code = -1;
 			return NULL;
 		}
 		break;
 	case 52:
-		if (ins_bits == 0)
+		if (ins_bits == 0) {
 			break;
+		}
 		if (reg_arg) {
 			if (*reg_arg == 'H') {
 				res = "hi(";
@@ -765,8 +777,9 @@ static char* get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 		break;
 	case 0:
 	case 1:
-		if (!ins_bits)
+		if (!ins_bits) {
 			break;
+		}
 		if (!reg_arg) {
 			res = "U";
 		} else {
@@ -774,13 +787,16 @@ static char* get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 				res = "uns(";
 			} else if (*reg_arg == ')') {
 				res = ")";
-			} else res = "<$/#>";
+			} else {
+				res = "<$/#>";
+			}
 		}
 		res = strdup(res);
 		break;
 	case 2:
-		if (!ins_bits)
+		if (!ins_bits) {
 			break;
+		}
 		if (!reg_arg) {
 			res = "R";
 		} else {
@@ -788,13 +804,16 @@ static char* get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 				res = "rnd(";
 			} else if (*reg_arg == ')') {
 				res = ")";
-			} else res = "<%>";
+			} else {
+				res = "<%>";
+			}
 		}
 		res = strdup(res);
 		break;
 	case 12:
-		if (!ins_bits)
+		if (!ins_bits) {
 			break;
+		}
 		if(!reg_arg) {
 			res = "F";
 		} else {
@@ -811,8 +830,9 @@ static char* get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 		res = strdup(res);
 		break;
 	case 29:
-		if (!ins_bits)
+		if (!ins_bits) {
 			break;
+		}
 		if (!reg_arg) {
 			res = "saturate";
 		} else {
@@ -830,8 +850,9 @@ static char* get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 		res = (ins_bits != 0)? strdup("t3 = ") : NULL;
 		break;
 	case 17:
-		if (!ins_bits)
+		if (!ins_bits) {
 			break;
+		}
 		if (!reg_arg) {
 			res = "40";
 		} else {
@@ -846,11 +867,11 @@ static char* get_token_decoded(st32 hash_code, char *ins_token, ut32 ins_token_l
 		res = strdup(res);
 		break;
 	case 78:
-		if (!strncasecmp (ins_token, "q_SAT", 5)) {
+		if (!r_str_ncasecmp (ins_token, "q_SAT", 5)) {
 			res = ins_bits? "s": NULL;
-		} else if (!strncasecmp(ins_token, "q_CIRC", 6)) {
+		} else if (!r_str_ncasecmp(ins_token, "q_CIRC", 6)) {
 			res = ins_bits? ".cr": NULL;
-		} else if (!strncasecmp(ins_token, "q_LINR", 6)) {
+		} else if (!r_str_ncasecmp(ins_token, "q_LINR", 6)) {
 			res = ins_bits? ".lr": NULL;
 		} else {
 			fprintf (stderr, "Invalid instruction %s\n!", ins_token);

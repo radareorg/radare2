@@ -1,23 +1,28 @@
-// by jeremie miller - 2010-2015
+// by jeremie miller - 2010-2018
 // public domain, contributions/improvements welcome via github
 
 // opportunity to further optimize would be having different jump tables for higher depths
 
 #include "rangstr.h"
 
+#ifdef _MSC_VER
+#pragma message ("TODO: json not implemented for this platform")
+int sdb_js0n(const ut8 *js, RangstrType len, RangstrType *out) {
+	return 1;
+}
+#else
 #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 #pragma GCC diagnostic push
 #endif
 #pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #pragma GCC diagnostic ignored "-Wpragmas"
 #pragma GCC diagnostic ignored "-Winitializer-overrides"
-#pragma GCC diagnostic ignored "-Woverride-init"
 
 #define HAVE_RAWSTR 0
 #define PUSH(i) if(depth == 1) prev = *out++ = ((cur+i) - js)
 #define CAP(i) if(depth == 1) prev = *out++ = ((cur+i) - (js + prev) + 1)
 
-int js0n(const ut8 *js, RangstrType len, RangstrType *out) {
+int sdb_js0n(const ut8 *js, RangstrType len, RangstrType *out) {
 	ut32 prev = 0;
 	const ut8 *cur, *end;
 	int depth = 0, utf8_remain = 0;
@@ -145,3 +150,4 @@ l_utf_continue:
 		go = gostring;
 	goto l_loop;
 }
+#endif

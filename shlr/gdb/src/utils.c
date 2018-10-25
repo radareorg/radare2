@@ -1,6 +1,7 @@
 /* libgdbr - LGPL - Copyright 2014 - defragger */
 
 #include "r_types.h"
+#include "r_util.h"
 #include "utils.h"
 
 // XXX: most of those functions are already implemented in r_util. reuse!
@@ -90,7 +91,7 @@ char hex2char(char *hex) {
 	return (char) result;
 }
 
-int unpack_hex(char *src, ut64 len, char *dst) {
+int unpack_hex(const char *src, ut64 len, char *dst) {
 	int i = 0;
 	while (i < (len / 2)) {
 		int val = hex2int (src[(i * 2)]);
@@ -102,7 +103,7 @@ int unpack_hex(char *src, ut64 len, char *dst) {
 	return len;
 }
 
-int pack_hex(char *src, ut64 len, char *dst) {
+int pack_hex(const char *src, ut64 len, char *dst) {
 	int i = 0;
 	int x = 0;
 	while (i < (len * 2)) {
@@ -112,24 +113,6 @@ int pack_hex(char *src, ut64 len, char *dst) {
 	}
 	dst[i] = '\0';
 	return (len / 2);
-}
-
-int pack_hex_uint64(ut64 src, char *dst) {
-	int len = 0;
-	int i;
-	char temp[16];
-	do {
-		temp[len++] = int2hex (src & 0x0F);
-		src >>= 4;
-	} while (src > 0);
-	if (len > 0 && temp[len - 1] == '0') {
-		len--;
-	}
-	for (i = 0; i < len; i++) {
-		dst[i] = temp[len - 1 - i];
-	}
-	dst[len] = '\0';
-	return len;
 }
 
 void hexdump(void *ptr, ut64 len, ut64 offset) {
@@ -151,4 +134,62 @@ void hexdump(void *ptr, ut64 len, ut64 offset) {
 		*c = '\0';
 		eprintf ("0x%016"PFMT64x ": %-48s- %s\n", (curr_offset), hex, txt);
 	}
+}
+
+int write_thread_id(char *dest, int len, int pid, int tid, bool multiprocess) {
+	if (!multiprocess) {
+		if (tid < 0) {
+			strncpy (dest, "-1", len);
+			return 0;
+		}
+		return snprintf (dest, len, "%x", tid);
+	}
+	if (pid <= 0) {
+		return -1;
+	}
+	if (tid < 0) {
+		return snprintf (dest, len, "p%x.-1", pid);
+	}
+	return snprintf (dest, len, "p%x.%x", pid, tid);
+}
+
+int read_thread_id(const char *src, int *pid, int *tid, bool multiprocess) {
+	char *ptr1;
+	if (multiprocess && *src == 'p') {
+		src++;
+		if (!(ptr1 = strchr (src, '.'))) {
+			return -1;
+		}
+		ptr1++;
+		if (r_str_startswith (src, "-1")) {
+			if (r_str_startswith (ptr1, "-1")) {
+				*pid = *tid = -1;
+				return 0;
+			}
+			return -1;
+		}
+		if (!isxdigit (*src)) {
+			return -1;
+		}
+		if (r_str_startswith (ptr1, "-1")) {
+			*pid = (int) strtol (src, NULL, 16);
+			*tid = -1;
+			return 0;
+		}
+		if (!isxdigit (*ptr1)) {
+			return -1;
+		}
+		*pid = (int) strtol (src, NULL, 16);
+		*tid = (int) strtol (ptr1, NULL, 16);
+		return 0;
+	}
+	if (r_str_startswith (src, "-1")) {
+		*tid = -1;
+		return 0;
+	}
+	if (!isxdigit (*src)) {
+		return -1;
+	}
+	*pid = *tid = (int) strtol (src, NULL, 16);
+	return 0;
 }

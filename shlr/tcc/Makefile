@@ -21,6 +21,10 @@ LDFLAGS_SHARED?=-shared
 endif
 endif
 
+LDFLAGS+=-L../../libr/util
+LIBS+=-lr_util
+CFLAGS+=-I../../libr/include
+
 CFLAGS+=-fstrict-aliasing
 CFLAGS+=-I../../libr/include
 CFLAGS+=-Wall -g
@@ -41,7 +45,7 @@ LIBNAME=libr_tcc.${SOEXT}
 all: ${LIBNAME} libr_tcc.$(EXT_AR)
 
 ${LIBNAME}: ${OFILES}
-	${CC} -o ${LIBNAME} ${LDFLAGS} ${OFILES}
+	${CC} $(CFLAGS) -o ${LIBNAME} ${LDFLAGS} ${LIBS} ${OFILES}
 
 libr_tcc.$(EXT_AR): ${OFILES}
 	rm -f libr_tcc.$(EXT_AR)

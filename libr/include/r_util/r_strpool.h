@@ -3,6 +3,10 @@
 
 #define R_STRPOOL_INC 1024
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
 	char *str;
 	int len;
@@ -22,4 +26,9 @@ R_API int r_strpool_get_index(RStrpool *p, const char *s);
 R_API char *r_strpool_next(RStrpool *p, int index);
 R_API char *r_strpool_slice(RStrpool *p, int index);
 R_API char *r_strpool_empty(RStrpool *p);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //  R_STRPOOL_H

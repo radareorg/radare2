@@ -224,9 +224,8 @@ static bool xnu_fill_info_thread (RDebug *dbg, xnu_thread_t *thread) {
 #endif
 	mach_msg_type_number_t count = THREAD_BASIC_INFO_COUNT;
 	thread_identifier_info_data_t identifier_info;
-	kern_return_t kr =
-		thread_info (thread->port, THREAD_BASIC_INFO,
-			     (thread_info_t)&thread->basic_info, &count);
+	kern_return_t kr = thread_info (thread->port, THREAD_BASIC_INFO,
+		(thread_info_t)&thread->basic_info, &count);
 	if (kr != KERN_SUCCESS) {
 		eprintf ("Fail to get thread_basic_info\n");
 		return false;
@@ -238,6 +237,7 @@ static bool xnu_fill_info_thread (RDebug *dbg, xnu_thread_t *thread) {
 		eprintf ("Fail to get thread_identifier_info\n");
 		return false;
 	}
+	R_FREE (thread->name);
 #if TARGET_OS_IPHONE
 	// TODO proc_pidinfo here
 	thread->name = strdup ("unknown");
@@ -257,9 +257,12 @@ static bool xnu_fill_info_thread (RDebug *dbg, xnu_thread_t *thread) {
 
 static xnu_thread_t *xnu_get_thread_with_info (RDebug *dbg, thread_t port) {
 	xnu_thread_t *thread = R_NEW0 (xnu_thread_t);
-	if (!thread) return NULL;
+	if (!thread) {
+		return NULL;
+	}
 	thread->port = port;
 	if (!xnu_fill_info_thread (dbg, thread)) {
+		free (thread->name);
 		thread->name = strdup ("unknown");
 	}
 	return thread;
@@ -297,7 +300,9 @@ static int xnu_update_thread_list (RDebug *dbg) {
 	// ok we have the list that will hold our threads, now is time to get
 	// them
 	task = pid_to_task (dbg->pid);
-	if (!task) return false;
+	if (!task) {
+		return false;
+	}
 	kr = task_threads (task, &thread_list, &thread_count);
 	if (kr != KERN_SUCCESS) {
 		// we can get into this when the process has terminated but we
@@ -361,12 +366,8 @@ static int xnu_update_thread_list (RDebug *dbg) {
 		}
 	}
 	// once that is over we need to free the buffer
-	kr = vm_deallocate (mach_task_self (), (mach_vm_address_t)thread_list,
-			    thread_count * sizeof (thread_t));
-	if (kr != KERN_SUCCESS) {
-		eprintf ("error: vm_deallocate xnu_update_thread_list\n");
-		return false;
-	}
+	(void)vm_deallocate (mach_task_self (), (mach_vm_address_t)thread_list,
+			thread_count * sizeof (thread_t));
 	return true;
 }
 #endif

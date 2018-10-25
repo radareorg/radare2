@@ -6,6 +6,6 @@ includedir=${prefix}/include
 Name: r_parse
 Description: radare foundation libraries
 Version: @VERSION@
-Requires:
-Libs: -L${libdir} -lr_parse -lr_flag -lr_util -lr_anal -lr_syscall -lr_reg -lr_cons
-Cflags: -I${includedir}/libr
+Requires: r_flag r_util r_syscall r_reg r_cons
+Libs: -L${libdir} -lr_parse  
+Cflags: -I${includedir}/libr 

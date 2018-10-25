@@ -1,36 +1,41 @@
 #ifndef R_GRAPH_H
 #define R_GRAPH_H
+
 #include <r_list.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct r_graph_node_t {
-    unsigned int idx;
-    void *data;
-    RList *out_nodes;
-    RList *in_nodes;
-    RList *all_neighbours;
-    RListFree free;
+	unsigned int idx;
+	void *data;
+	RList *out_nodes;
+	RList *in_nodes;
+	RList *all_neighbours;
+	RListFree free;
 } RGraphNode;
 
 typedef struct r_graph_edge_t {
-    RGraphNode *from;
-    RGraphNode *to;
-    int nth;
+	RGraphNode *from;
+	RGraphNode *to;
+	int nth;
 } RGraphEdge;
 
 typedef struct r_graph_t {
-    unsigned int n_nodes;
-    unsigned int n_edges;
-    int last_index;
-    RList *nodes; /* RGraphNode */
+	unsigned int n_nodes;
+	unsigned int n_edges;
+	int last_index;
+	RList *nodes; /* RGraphNode */
 } RGraph;
 
 typedef struct r_graph_visitor_t {
-    void (*discover_node)(RGraphNode *n, struct r_graph_visitor_t *vis);
-    void (*finish_node)(RGraphNode *n, struct r_graph_visitor_t *vis);
-    void (*tree_edge)(const RGraphEdge *e, struct r_graph_visitor_t *vis);
-    void (*back_edge)(const RGraphEdge *e, struct r_graph_visitor_t *vis);
-    void (*fcross_edge)(const RGraphEdge *e, struct r_graph_visitor_t *vis);
-    void *data;
+	void (*discover_node)(RGraphNode *n, struct r_graph_visitor_t *vis);
+	void (*finish_node)(RGraphNode *n, struct r_graph_visitor_t *vis);
+	void (*tree_edge)(const RGraphEdge *e, struct r_graph_visitor_t *vis);
+	void (*back_edge)(const RGraphEdge *e, struct r_graph_visitor_t *vis);
+	void (*fcross_edge)(const RGraphEdge *e, struct r_graph_visitor_t *vis);
+	void *data;
 } RGraphVisitor;
 typedef void (*RGraphNodeCallback)(RGraphNode *n, RGraphVisitor *vis);
 typedef void (*RGraphEdgeCallback)(const RGraphEdge *e, RGraphVisitor *vis);
@@ -57,4 +62,9 @@ R_API const RList *r_graph_get_nodes(const RGraph *g);
 R_API int r_graph_adjacent(const RGraph *g, const RGraphNode *from, const RGraphNode *to);
 R_API void r_graph_dfs_node(RGraph *g, RGraphNode *n, RGraphVisitor *vis);
 R_API void r_graph_dfs(RGraph *g, RGraphVisitor *vis);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //  R_GRAPH_H

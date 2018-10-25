@@ -1,16 +1,54 @@
-/* radare - LGPL - Copyright 2009-2014 - pancake */
-#include <string.h>
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
+#include <string.h>
 #include "r_config.h"
 #include "r_cons.h"
 #include "r_core.h"
+
+// TODO #7967 help refactor: move to another place
+static const char *help_msg_L[] = {
+	"Usage:", "L[acio]", "[-name][ file]",
+	"L",  "", "show this help",
+	"L", " blah."R_LIB_EXT, "load plugin file",
+	"L-", "duk", "unload core plugin by name",
+	"La", "", "list asm/anal plugins (aL, e asm.arch=" "??" ")",
+	"Lc", "", "list core plugins",
+	"Ld", "", "list debug plugins (same as dL)",
+	"Lh", "", "list hash plugins (same as ph)",
+	"Li", "", "list bin plugins (same as iL)",
+	"Lo", "", "list io plugins (same as oL)",
+	NULL
+};
+
+static const char *help_msg_T[] = {
+	"Usage:", "T", "[-][ num|msg]",
+	"T", "", "list all Text log messages",
+	"T", " message", "add new log message",
+	"T", " 123", "list log from 123",
+	"T", " 10 3", "list 3 log messages starting from 10",
+	"T*", "", "list in radare commands",
+	"T-", "", "delete all logs",
+	"T-", " 123", "delete logs before 123",
+	"Tl", "", "get last log message id",
+	"Tj", "", "list in json format",
+	"Tm", " [idx]", "display log messages without index",
+	"Ts", "", "list files in current directory (see pwd, cd)",
+	"TT", "", "enter into the text log chat console",
+	NULL
+};
+
+// TODO #7967 help refactor: move L to another place
+static void cmd_log_init(RCore *core) {
+	DEFINE_CMD_DESCRIPTOR (core, L);
+	DEFINE_CMD_DESCRIPTOR (core, T);
+}
 
 static int textlog_chat(RCore *core) {
 	char prompt[64];
 	char buf[1024];
 	int lastmsg = 0;
 	const char *me = r_config_get (core->config, "cfg.user");
-	char msg[1024];
+	char msg[2048];
 
 	eprintf ("Type '/help' for commands:\n");
 	snprintf (prompt, sizeof (prompt) - 1, "[%s]> ", me);
@@ -49,7 +87,7 @@ static int textlog_chat(RCore *core) {
 		} else if (*buf == '/') {
 			eprintf ("Unknown command: %s\n", buf);
 		} else {
-			snprintf (msg, sizeof (msg) - 1, "[%s] %s", me, buf);
+			snprintf (msg, sizeof (msg), "[%s] %s", me, buf);
 			r_core_log_add (core, msg);
 		}
 	}
@@ -93,56 +131,14 @@ static int cmd_log(void *data, const char *input) {
 	case '-':
 		r_core_log_del (core, n);
 		break;
-	case '?': {
-		const char *help_msg[] = {
-			"Usage:", "T", "[-][ num|msg]",
-			"T", "", "List all Text log messages",
-			"T", " message", "Add new log message",
-			"T", " 123", "List log from 123",
-			"T", " 10 3", "List 3 log messages starting from 10",
-			"T*", "", "List in radare commands",
-			"T-", "", "Delete all logs",
-			"T-", " 123", "Delete logs before 123",
-			"Tl", "", "Get last log message id",
-			"Tj", "", "List in json format",
-			"Tm", " [idx]", "Display log messages without index",
-			"Ts", "", "List files in current directory (see pwd, cd)",
-			"Tp", "[?] [-plug]", "List, load, unload plugins",
-			"TT", "", "Enter into the text log chat console",
-			NULL
-		};
-		r_core_cmd_help (core, help_msg);
-	}
-		  break;
+	case '?':
+		r_core_cmd_help (core, help_msg_T);
+		break;
 	case 'T':
 		if (r_config_get_i (core->config, "scr.interactive")) {
 			textlog_chat (core);
 		} else {
 			eprintf ("Only available when the screen is interactive\n");
-		}
-		break;
-	case 'p':
-		switch (input[1]) {
-		case 0:
-			r_lib_list (core->lib);
-			break;
-		case '-':
-			r_lib_close (core->lib, input + 2);
-			break;
-		case ' ':
-			r_lib_open (core->lib, input + 2);
-			break;
-		case '?': {
-			const char *help_msg[] = {
-				"Usage:", "Tp", "[-name][ file]",
-				"Tp", "", "List all plugins loaded by RCore.lib",
-				"Tp-", "duk", "Unload plugin matching in filename",
-				"Tp", " blah."R_LIB_EXT, "Load plugin file",
-				NULL
-			};
-			r_core_cmd_help (core, help_msg);
-		}
-			  break;
 		}
 		break;
 	case ' ':
@@ -163,6 +159,66 @@ static int cmd_log(void *data, const char *input) {
 	case '*':
 	case '\0':
 		r_core_log_list (core, n, n2, *input);
+		break;
+	}
+	return 0;
+}
+
+static int cmd_plugins(void *data, const char *input) {
+	RCore *core = (RCore *) data;
+	switch (input[0]) {
+	case 0:
+		r_core_cmd_help (core, help_msg_L);
+		// return r_core_cmd0 (core, "Lc");
+		break;
+	case '-':
+		r_lib_close (core->lib, r_str_trim_ro (input + 1));
+		break;
+	case ' ':
+		r_lib_open (core->lib, r_str_trim_ro (input + 1));
+		break;
+	case '?':
+		r_core_cmd_help (core, help_msg_L);
+		break;
+	case 'd': // "Ld"
+		r_core_cmd0 (core, "dL"); // rahash2 -L is more verbose
+		break;
+	case 'h': // "Lh"
+		r_core_cmd0 (core, "ph"); // rahash2 -L is more verbose
+		break;
+	case 'a': // "La"
+		r_core_cmd0 (core, "e asm.arch=??");
+		break;
+	case 'o': // "Lo"
+	case 'i': // "Li"
+		r_core_cmdf (core, "%cL", input[0]);
+		break;
+	case 'c': { // "Lc"
+		RListIter *iter;
+		RCorePlugin *cp;
+		switch (input[1]) {
+		case 'j': {
+			r_cons_printf ("[");
+			bool is_first_element = true;
+			r_list_foreach (core->rcmd->plist, iter, cp) {
+				r_cons_printf ("%s{\"Name\":\"%s\",\"Description\":\"%s\"}",
+					is_first_element? "" : ",", cp->name, cp->desc);
+				is_first_element = false;
+			}
+			r_cons_printf ("]\n");
+			break;
+			}
+		case 0:
+			r_lib_list (core->lib);
+			r_list_foreach (core->rcmd->plist, iter, cp) {
+				r_cons_printf ("%s: %s\n", cp->name, cp->desc);
+			}
+			break;
+		default:
+			eprintf ("oops\n");
+			break;
+		}
+		}
 		break;
 	}
 	return 0;

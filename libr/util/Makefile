@@ -2,19 +2,26 @@ include ../config.mk
 
 NAME=r_util
 CFLAGS+=-DCORELIB -I$(TOP)/shlr
-DEPS=
+PCLIBS=@LIBZIP@ @DL_LIBS@
 
-OBJS=mem.o pool.o unum.o str.o hex.o file.o range.o tinyrange.o
+ifneq ($(OSTYPE),darwin)
+ifneq ($(OSTYPE),haiku)
+LDFLAGS+=-lm
+LINK=-lm
+endif
+endif
+
+OBJS=binheap.o mem.o unum.o str.o hex.o file.o range.o tinyrange.o
 OBJS+=prof.o cache.o sys.o buf.o w32-sys.o ubase64.o base85.o base91.o
 OBJS+=list.o flist.o mixed.o btree.o chmod.o graph.o
 OBJS+=regex/regcomp.o regex/regerror.o regex/regexec.o uleb128.o
-OBJS+=sandbox.o calc.o thread.o thread_lock.o thread_msg.o
-OBJS+=strpool.o bitmap.o p_date.o p_format.o print.o
-OBJS+=p_seven.o slist.o randomart.o log.o zip.o debruijn.o
-OBJS+=utf8.o strbuf.o lib.o name.o spaces.o signal.o syscmd.o
+OBJS+=sandbox.o calc.o thread.o thread_sem.o thread_lock.o thread_cond.o
+OBJS+=strpool.o bitmap.o date.o format.o pie.o print.o ctype.o
+OBJS+=seven.o slist.o randomart.o log.o zip.o debruijn.o
+OBJS+=utf8.o utf16.o utf32.o strbuf.o lib.o name.o spaces.o signal.o syscmd.o
 OBJS+=diff.o bdiff.o stack.o queue.o tree.o des.o idpool.o
-OBJS+=punycode.o r_pkcs7.o r_x509.o r_asn1.o json_indent.o
-OBJS+=r_json.o
+OBJS+=punycode.o pkcs7.o x509.o asn1.o astr.o json_indent.o skiplist.o
+OBJS+=r_json.o rbtree.o qrcode.o trie.o vector.o str_trim.o ascii_table.o assert.o
 
 # DO NOT BUILD r_big api (not yet used and its buggy)
 ifeq (1,0)
@@ -29,15 +36,23 @@ else
 endif
 endif
 
-include $(SHLR)/zip/deps.mk
+include deps.mk
 
 LDFLAGS+=${BN_LIBS}
 LDFLAGS+=${TH_LIBS}
 LDFLAGS+=${DL_LIBS}
+LDFLAGS+=-lm
 
 # NetBSD 7.0 ships with backtrace(3) in -lexecinfo
 ifeq (${BUILD_OS},netbsd)
 ifneq ($(shell expr "`uname -r`" : '[0-6]\.'), 2)
+  LDFLAGS+=-lexecinfo
+endif
+endif
+
+# FreeBSD 10.0 ships with backtrace(3) in -lexecinfo
+ifeq (${BUILD_OS},freebsd)
+ifneq ($(shell expr "`uname -r`" : '[0-9]\.'), 2)
   LDFLAGS+=-lexecinfo
 endif
 endif

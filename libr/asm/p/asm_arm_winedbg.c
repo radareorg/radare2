@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2014 - nibble */
+/* radare - LGPL - Copyright 2009-2018 - nibble, pancake */
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -21,8 +21,14 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		arm_set_input_buffer (arminsn, buf);
 	}
 	op->size = arm_disasm_one_insn (arminsn);
-	strncpy (op->buf_asm, winedbg_arm_insn_asm (arminsn), R_ASM_BUFSIZE-1);
-	strncpy (op->buf_hex, winedbg_arm_insn_hex (arminsn), R_ASM_BUFSIZE-1);
+	const char *asmstr = winedbg_arm_insn_asm (arminsn);
+	if (asmstr) {
+		r_strbuf_set (&op->buf_asm, asmstr);
+		r_strbuf_set (&op->buf_hex, winedbg_arm_insn_hex (arminsn));
+	} else {
+		r_strbuf_set (&op->buf_asm, "invalid");
+		r_strbuf_set (&op->buf_hex, "");
+	}
 	arm_free (arminsn);
 	return op->size;
 }
@@ -38,7 +44,7 @@ RAsmPlugin r_asm_plugin_arm_winedbg = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_arm_winedbg,
 	.version = R2_VERSION

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2017 - pancake */
+/* radare - LGPL - Copyright 2015-2018 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -23,6 +23,13 @@ typedef enum regtype_t {
 	ARM_SIMD = 16
 } RegType;
 
+typedef enum shifttype_t {
+	ARM_NO_SHIFT = -1,
+	ARM_LSL = 0,
+	ARM_LSR = 1,
+	ARM_ASR = 2
+} ShiftType;
+
 typedef struct operand_t {
 	OpType type;
 	union {
@@ -36,8 +43,8 @@ typedef struct operand_t {
 			int sign;
 		};
 		struct {
-			ut64 lsl;
-			ut64 shift;
+			ut64 shift_amount;
+			ShiftType shift;
 		};
 		struct {
 			ut32 mem_option;
@@ -60,15 +67,110 @@ static int get_mem_option(char *token) {
 	// values 4, 8, 12, are unused. XXX to adjust
 	const char *options[] = {"sy", "st", "ld", "xxx", "ish", "ishst",
 	                         "ishld", "xxx", "nsh", "nshst", "nshld",
-				 "xxx", "osh", "oshst", "oshld", NULL};
+	                         "xxx", "osh", "oshst", "oshld", NULL};
 	int i = 0;
 	while (options[i]) {
-		if (!strcasecmp (token, options[i])) {
+		if (!r_str_casecmp (token, options[i])) {
 			return 15 - i;
 		}
 		i++;
 	}
 	return -1;
+}
+
+static int countLeadingZeros(ut32 x) {
+	int count = 0;
+	while (x) {
+		x >>= 1;
+		--count;
+	}
+	return count;
+}
+
+static int countTrailingZeros(ut32 x) {
+	int count = 0;
+	while (x > 0) {
+		if ((x & 1) == 1) {
+			break;
+		} else {
+			count ++;
+			x = x >> 1;
+		}
+	}
+	return count;
+}
+
+static int calcNegOffset(int n, int shift) {
+	int a = n >> shift;
+	if (a == 0) {
+		return 0xff;
+	}
+	// find first set bit then invert it and all
+	// bits below it
+	int t = 0x400;
+	while (!(t & a) && a != 0 && t != 0) {
+		t = t >> 1;
+	}
+	t = t & (t - 1);
+	a = a ^ t;
+	// If bits below 32 are set
+	if (countTrailingZeros(n) > shift) {
+		a--;
+	}
+	return 0xff & (0xff - a);
+}
+
+static int countLeadingOnes(ut32 x) {
+	return countLeadingZeros (~x);
+}
+
+static int countTrailingOnes(ut32 x) {
+	return countTrailingZeros (~x);
+}
+
+static bool isMask(ut32 value) {
+  return value && ((value + 1) & value) == 0;
+}
+
+static bool isShiftedMask (ut32 value) {
+  return value && isMask ((value - 1) | value);
+}
+
+static ut32 decodeBitMasks(ut32 imm) {
+	// get element size
+	int size = 32;
+	// determine rot to make element be 0^m 1^n
+	ut32 cto, i;
+	ut32 mask = ((ut64) - 1LL) >> (64 - size);
+
+	if (isShiftedMask (imm)) {
+		i = countTrailingZeros (imm);
+		cto = countTrailingOnes (imm >> i);
+	} else {
+		imm |= ~mask;
+		if (!isShiftedMask (imm)) {
+			return UT32_MAX;
+		}
+
+		ut32 clo = countLeadingOnes (imm);
+		i = 64 - clo;
+		cto = clo + countTrailingOnes (imm) - (64 - size);
+	}
+
+	// Encode in Immr the number of RORs it would take to get *from* 0^m 1^n
+	// to our target value, where I is the number of RORs to go the opposite
+	// direction
+	ut32 immr = (size - i) & (size - 1);
+	// If size has a 1 in the n'th bit, create a value that has zeroes in
+	// bits [0, n] and ones above that.
+	ut64 nimms = ~(size - 1) << 1;
+	// Or the cto value into the low bits, which must be below the Nth bit
+	// bit mentioned above.
+	nimms |= (cto - 1);
+	// Extract and toggle seventh bit to make N field.
+	ut32 n = ((nimms >> 6) & 1) ^ 1;
+	ut64 encoding = (n << 12) | (immr << 6) | (nimms & 0x3f);
+	return encoding;
 }
 
 static ut32 mov(ArmOp *op) {
@@ -112,13 +214,202 @@ static ut32 mov(ArmOp *op) {
 	}
 
 	data = k;
-	//printf ("Immediate %d\n", op->operands[1].immediate);
 	data |= (op->operands[0].reg << 24); // arg(0)
 	data |= ((op->operands[1].immediate & 7) << 29); // arg(1)
 	data |= (((op->operands[1].immediate >> 3) & 0xff) << 16); // arg(1)
 	data |= ((op->operands[1].immediate >> 10) << 7); // arg(1)
 	return data;
+}
 
+static ut32 cmp(ArmOp *op) {
+	ut32 data = UT32_MAX;
+	int k = 0;
+	if (op->operands[0].reg_type & ARM_REG64 && op->operands[1].reg_type & ARM_REG64) {
+		k =  0x1f0000eb;
+	} else if (op->operands[0].reg_type & ARM_REG32 && op->operands[1].reg_type & ARM_REG32) {
+		if (op->operands[2].shift_amount > 31) {
+			return UT32_MAX;
+		}
+		k =  0x1f00006b;
+	} else {
+		return UT32_MAX;
+	}
+
+	data = k | (op->operands[0].reg & 0x18) << 13 | op->operands[0].reg << 29 | op->operands[1].reg << 8;
+
+	if (op->operands[2].shift != ARM_NO_SHIFT) {
+		data |= op->operands[2].shift_amount << 18 | op->operands[2].shift << 14;
+	}
+	return data;
+}
+
+
+static ut32 regsluop(ArmOp *op, int k) {
+	ut32 data = UT32_MAX;
+
+	if (op->operands[1].reg_type & ARM_REG32) {
+		return data;
+	}
+	if (op->operands[0].reg_type & ARM_REG32) {
+		k -= 0x40;
+	}
+	if (op->operands[2].type & ARM_GPR) {
+		return data;
+	}
+
+	int n = op->operands[2].immediate;
+	if (n > 0xff || n < -0x100) {
+		return data;
+	}
+
+	data = k | op->operands[0].reg << 24 | op->operands[1].reg << 29 | (op->operands[1].reg & 56) << 13;
+
+	if (n < 0) {
+		n *= -1;
+		data |= ( 0xf & (0xf - (n - 1)) ) << 20;
+
+		if (countTrailingZeros(n) > 3) {
+			data |= (0x1f - ((n >> 4) - 1)) << 8;
+		} else {
+			data |= (0x1f - (n >> 4)) << 8;
+		}
+	} else {
+		data |= (0xf & (n & 63)) << 20;
+		if (countTrailingZeros(n) < 4) {
+			data |= (n >> 4) << 8;
+		} else {
+			data |= (0xff & n) << 4;
+		}
+		data |= (n >> 8) << 8;
+	}
+
+	return data;
+}
+
+// Register Load/store ops
+static ut32 reglsop(ArmOp *op, int k) {
+	ut32 data = UT32_MAX;
+
+	if (op->operands[1].reg_type & ARM_REG32) {
+		return data;
+	}
+	if (op->operands[0].reg_type & ARM_REG32) {
+		k -= 0x40;
+	}
+	if (op->operands[2].type & ARM_GPR) {
+		k += 0x00682000;
+		data = k | op->operands[0].reg << 24 | op->operands[1].reg << 29 | (op->operands[1].reg & 56) << 13;
+		data |= op->operands[2].reg << 8;
+	} else {
+		int n = op->operands[2].immediate;
+		if (n > 0x100 || n < -0x100) {
+			return UT32_MAX;
+		}
+
+		if (n == 0 || (n > 0 && countTrailingZeros(n) >= 4)) {
+			k ++;
+		}
+		data = k | op->operands[0].reg << 24 | op->operands[1].reg << 29 | (op->operands[1].reg & 56) << 13;
+
+		if (n < 0) {
+			n *= -1;
+			data |= ( 0xf & (0xf - (n - 1)) ) << 20;
+			if (countTrailingZeros(n) > 3) {
+				data |= (0x1f - ((n >> 4) - 1)) << 8;
+			} else {
+				data |= (0x1f - (n >> 4)) << 8;
+			}
+		} else {
+			if (op->operands[0].reg_type & ARM_REG32) {
+				if (countTrailingZeros(n) < 2) {
+					data |= (0xf & (n & 63)) << 20;
+					data |= (n >> 4) << 8;
+				} else {
+						data++;
+						data |= (0xff & n) << 16;
+				}
+				data |= (n >> 8) << 8;
+			} else {
+				data |= (0xf & (n & 63)) << 20;
+				if (countTrailingZeros(n) < 4) {
+					data |= (n >> 4) << 8;
+				} else {
+					data |= (0xff & n) << 15;
+				}
+				data |= (n >> 8) << 23;
+			}
+		}
+	}
+	return data;
+}
+
+// Byte load/store ops
+static ut32 bytelsop(ArmOp *op, int k) {
+	ut32 data = UT32_MAX;
+
+	if (op->operands[0].reg_type & ARM_REG64) {
+		return data;
+	}
+	if (op->operands[1].reg_type & ARM_REG32) {
+		return data;
+	}
+	if (op->operands[2].type & ARM_GPR) {
+		if ((k & 0xf) != 8) {
+			k--;
+		}
+		k += 0x00682000;
+		data = k | op->operands[0].reg << 24 | op->operands[1].reg << 29 | (op->operands[1].reg & 56) << 13;
+		data |= op->operands[2].reg << 8;
+		return data;
+	}
+
+	int n = op->operands[2].immediate;
+	if (n > 0xfff || n < -0x100) {
+		return UT32_MAX;
+	}
+	// Half ops
+	int halfop = false;
+	if ((k & 0xf) == 8) {
+		halfop = true;
+		if (n == 0 || (countTrailingZeros(n) && n > 0)) {
+			k++;
+		}
+	} else {
+		if (n < 0) {
+			k--;
+		}
+	}
+
+	data = k | op->operands[0].reg << 24 | op->operands[1].reg << 29 | (op->operands[1].reg & 56) << 13;
+
+	int imm = n;
+	int low_shift = 20;
+	int high_shift = 8;
+	int top_shift = 10;
+	if (n < 0) {
+		imm = 0xfff + (n + 1);
+	}
+	if (halfop) {
+		if (imm & 0x1 || n < 0) {
+			data |= (0xf & imm) << low_shift ;
+			data |= (0x7 & (imm >> 4)) << high_shift;
+			data |= (0x7 & (imm >> 6)) << top_shift;
+		} else {
+			data |= (0xf & imm) << (low_shift - 3);
+			data |= (0x7 & (imm >> 4)) << (high_shift + 13);
+			data |= (0x7 & (imm >> 7)) << (top_shift  - 2);
+		}
+	} else {
+		if (n < 0) {
+			data |= (0xf & imm) << 20;
+			data |= (0x1f & (imm >> 4)) << 8;
+		} else {
+			data |= (0xf & imm) << 18;
+			data |= (0x3 & (imm >> 4)) << 22;
+			data |= (0x7 & (imm >> 6)) << 8;
+		}
+	}
+	return data;
 }
 
 static ut32 branch(ArmOp *op, ut64 addr, int k) {
@@ -154,6 +445,36 @@ static ut32 branch(ArmOp *op, ut64 addr, int k) {
 	return data;
 }
 
+static ut32 bdot(ArmOp *op, ut64 addr, int k) {
+	ut32 data = UT32_MAX;
+	int n = 0;
+	int a = 0;
+	n = op->operands[0].immediate;
+	// I am sure there's a logical way to do negative offsets,
+	// but I was unable to find any sensible docs so I did my best
+	if (!(n & 0x3 || n > 0x7ffffff)) {
+		n -= addr;
+		data = k;
+		if (n < 0) {
+			n *= -1;
+			a = (n << 3) - 1;
+			data |= (0xff - a) << 24;
+
+			a = calcNegOffset(n, 5);
+			data |= a << 16;
+
+			a = calcNegOffset(n, 13);
+			data |= a << 8;
+		} else {
+			data |= (n & 31) << 27;
+			data |= (0xff & (n >> 5)) << 16;
+			data |= (0xff & (n >> 13)) << 8;
+		}
+	}
+
+	return data;
+}
+
 static ut32 mem_barrier (ArmOp *op, ut64 addr, int k) {
 	ut32 data = UT32_MAX;
 	data = k;
@@ -166,6 +487,8 @@ static ut32 mem_barrier (ArmOp *op, ut64 addr, int k) {
 	}
 	if (op->operands[0].type == ARM_MEM_OPT) {
 		data |= op->operands[0].mem_option << 16;
+	} else if (op->operands_count == 1 && op->operands[0].type == ARM_CONSTANT) {
+		data |= (op->operands[0].immediate << 16);
 	}
 	return data;
 }
@@ -231,81 +554,6 @@ static ut32 msr(ArmOp *op, int w) {
 	return data;
 }
 
-static int countLeadingZeros(ut32 x) {
-	int count = 0;
-	while (x) {
-		x >>= 1;
-		--count;
-	}
-	return count;
-}
-
-static int countTrailingZeros(ut32 x) {
-	int count = 0;
-	while (x > 0) {
-		if ((x & 1) == 1) {
-			break;
-		} else {
-			count ++;
-			x = x >> 1;
-		}
-	}
-	return count;
-}
-
-static int countLeadingOnes(ut32 x) {
-	return countLeadingZeros (~x);
-}
-
-static int countTrailingOnes(ut32 x) {
-	return countTrailingZeros (~x);
-}
-
-static bool isMask(ut32 value) {
-  return value && ((value + 1) & value) == 0;
-}
-
-static bool isShiftedMask (ut32 value) {
-  return value && isMask ((value - 1) | value);
-}
-
-static ut32 decodeBitMasks(ut32 imm) {
-	// get element size
-	int size = 32;
-	// determine rot to make element be 0^m 1^n
-	ut32 cto, i;
-	ut32 mask = ((ut64) - 1LL) >> (64 - size);
-
-	if (isShiftedMask (imm)) {
-		i = countTrailingZeros (imm);
-		cto = countTrailingOnes (imm >> i);
-	} else {
-		imm |= ~mask;
-		if (!isShiftedMask (imm)) {
-			return UT32_MAX;
-		}
-
-		ut32 clo = countLeadingOnes (imm);
-		i = 64 - clo;
-		cto = clo + countTrailingOnes (imm) - (64 - size);
-	}
-
-	// Encode in Immr the number of RORs it would take to get *from* 0^m 1^n
-	// to our target value, where I is the number of RORs to go the opposite
-	// direction
-	ut32 immr = (size - i) & (size - 1);
-	// If size has a 1 in the n'th bit, create a value that has zeroes in
-	// bits [0, n] and ones above that.
-	ut64 nimms = ~(size - 1) << 1;
-	// Or the cto value into the low bits, which must be below the Nth bit
-	// bit mentioned above.
-	nimms |= (cto - 1);
-	// Extract and toggle seventh bit to make N field.
-	ut32 n = ((nimms >> 6) & 1) ^ 1;
-	ut64 encoding = (n << 12) | (immr << 6) | (nimms & 0x3f);
-	return encoding;
-}
-
 static ut32 orr(ArmOp *op, int addr) {
 	ut32 data = UT32_MAX;
 
@@ -360,6 +608,37 @@ static ut32 orr(ArmOp *op, int addr) {
 	return data;
 }
 
+static ut32 adrp(ArmOp *op, ut64 addr, ut32 k) { //, int reg, ut64 dst) {
+	ut64 at = 0LL;
+	ut32 data = k;
+	if (op->operands[0].type == ARM_GPR) {
+		data += ((op->operands[0].reg & 0xff) << 24);
+	} else {
+		eprintf ("Usage: adrp x0, addr\n");
+		return UT32_MAX;
+	}
+	if (op->operands[1].type == ARM_CONSTANT) {
+		// XXX what about negative values?
+		at = op->operands[1].immediate - addr;
+		at /= 4;
+	} else {
+		eprintf ("Usage: adrp, x0, addr\n");
+		return UT32_MAX;
+	}
+	ut8 b0 = at;
+	ut8 b1 = (at >> 3) & 0xff;
+
+#if 0
+	ut8 b2 = (at >> (8 + 7)) & 0xff;
+	data += b0 << 29;
+	data += b1 << 16;
+	data += b2 << 24;
+#endif
+	data += b0 << 16;
+	data += b1 << 8;
+	return data;
+}
+
 static ut32 adr(ArmOp *op, int addr) {
 	ut32 data = UT32_MAX;
 	ut64 at = 0LL;
@@ -377,6 +656,26 @@ static ut32 adr(ArmOp *op, int addr) {
 	data += b0 << 29;
 	data += b1 << 16;
 	data += b2 << 24;
+	return data;
+}
+
+static ut32 stp(ArmOp *op, int k) {
+	ut32 data = UT32_MAX;
+
+	if (op->operands[3].immediate & 0x7) {
+		return data;
+	}
+	if (k == 0x000040a9 && (op->operands[0].reg == op->operands[1].reg)) {
+		return data;
+	}
+
+	data = k;
+	data += op->operands[0].reg << 24;
+	data += op->operands[1].reg << 18;
+	data += (op->operands[2].reg & 0x7) << 29;
+	data += (op->operands[2].reg >> 3) << 16;
+	data += (op->operands[3].immediate & 0x8) << 20;
+	data += (op->operands[3].immediate >> 4) << 8;
 	return data;
 }
 
@@ -426,115 +725,128 @@ static bool parseOperands(char* str, ArmOp *op) {
 	char *x;
 	int imm_count = 0;
 	int mem_opt = 0;
+	if (!token) {
+		return false;
+	}
 
-	while (token[0] != '\0') {
+	while (token) {
+		char *next = strchr (token, ',');
+		if (next) {
+			*next++ = 0;
+		}
+		while (token[0] == ' ') {
+			token++;
+		}
 		op->operands[operand].type = ARM_NOTYPE;
 		op->operands[operand].reg_type = ARM_UNDEFINED;
+		op->operands[operand].shift = ARM_NO_SHIFT;
+
+		while (token[0] == ' ' || token[0] == '[' || token[0] == ']') {
+			token ++;
+		}
+
+		if (!strncmp (token, "lsl", 3)) {
+			op->operands[operand].shift = ARM_LSL;
+		} else if (!strncmp (token, "lsr", 3)) {
+			op->operands[operand].shift = ARM_LSR;
+		} else if (!strncmp (token, "asr", 3)) {
+			op->operands[operand].shift = ARM_ASR;
+		}
+		if (op->operands[operand].shift != ARM_NO_SHIFT) {
+			op->operands_count ++;
+			op->operands[operand].shift_amount = r_num_math (NULL, token + 4);
+			if (op->operands[operand].shift_amount > 63) {
+				return false;
+			}
+			operand ++;
+			token = next;
+			continue;
+		}
+
 		switch (token[0]) {
-			case ' ':
-				token ++;
-				continue;
-				break;
-			case 'x':
-				x = strchr (token, ',');
-				if (x) {
-					x[0] = '\0';
-				}
-				op->operands_count ++;
-				op->operands[operand].type = ARM_GPR;
-				op->operands[operand].reg_type = ARM_REG64;
-				op->operands[operand].reg = r_num_math (NULL, token + 1);
+		case 'x':
+			x = strchr (token, ',');
+			if (x) {
+				x[0] = '\0';
+			}
+			op->operands_count ++;
+			op->operands[operand].type = ARM_GPR;
+			op->operands[operand].reg_type = ARM_REG64;
+			op->operands[operand].reg = r_num_math (NULL, token + 1);
+			if (op->operands[operand].reg > 31) {
+				return false;
+			}
 			break;
-			case 'w':
-				x = strchr (token, ',');
-				if (x) {
-					x[0] = '\0';
-				}
-				op->operands_count ++;
-				op->operands[operand].type = ARM_GPR;
-				op->operands[operand].reg_type = ARM_REG32;
-				op->operands[operand].reg = r_num_math (NULL, token + 1);
+		case 'w':
+			op->operands_count ++;
+			op->operands[operand].type = ARM_GPR;
+			op->operands[operand].reg_type = ARM_REG32;
+			op->operands[operand].reg = r_num_math (NULL, token + 1);
+			if (op->operands[operand].reg > 31) {
+				return false;
+			}
 			break;
-			case 'v':
-				x = strchr (token, ',');
-				if (x) {
-					x[0] = '\0';
-				}
-				op->operands_count ++;
-				op->operands[operand].type = ARM_FP;
-				op->operands[operand].reg = r_num_math (NULL, token + 1);
+		case 'v':
+			op->operands_count ++;
+			op->operands[operand].type = ARM_FP;
+			op->operands[operand].reg = r_num_math (NULL, token + 1);
 			break;
-			case 's':
-			case 'S':
-				x = strchr (token, ',');
-				if (x) {
-					x[0] = '\0';
-				}
-				if (token[1] == 'P' || token [1] == 'p') {
-					int i;
-					for (i = 0; msr_const[i].name; i++) {
-						if (!strncasecmp (token, msr_const[i].name, strlen (msr_const[i].name))) {
-							op->operands[operand].sp_val = msr_const[i].val;
-							break;
-						}
+		case 's':
+		case 'S':
+			if (token[1] == 'P' || token [1] == 'p') {
+				int i;
+				for (i = 0; msr_const[i].name; i++) {
+					if (!r_str_ncasecmp (token, msr_const[i].name, strlen (msr_const[i].name))) {
+						op->operands[operand].sp_val = msr_const[i].val;
+						break;
 					}
-					op->operands_count ++;
-					op->operands[operand].type = ARM_GPR;
-					op->operands[operand].reg_type = ARM_SP | ARM_REG64;
-					op->operands[operand].reg = r_num_math (NULL, token + 1);
-					break;
-				}
-				mem_opt = get_mem_option (token);
-				if (mem_opt != -1) {
-					op->operands_count ++;
-					op->operands[operand].type = ARM_MEM_OPT;
-					op->operands[operand].mem_option = mem_opt;
-				}
-			break;
-			case 'L':
-			case 'l':
-			case 'I':
-			case 'i':
-			case 'N':
-			case 'n':
-			case 'O':
-			case 'o':
-			case 'p':
-			case 'P':
-				x = strchr (token, ',');
-				if (x) {
-					x[0] = '\0';
-				}
-				mem_opt = get_mem_option (token);
-				if (mem_opt != -1) {
-					op->operands_count ++;
-					op->operands[operand].type = ARM_MEM_OPT;
-					op->operands[operand].mem_option = mem_opt;
-				}
-			break;
-			case '-':
-				op->operands[operand].sign = -1;
-			default:
-				x = strchr (token, ',');
-				if (x) {
-					x[0] = '\0';
 				}
 				op->operands_count ++;
-				op->operands[operand].type = ARM_CONSTANT;
-				op->operands[operand].immediate = r_num_math (NULL, token);
-				imm_count++;
+				op->operands[operand].type = ARM_GPR;
+				op->operands[operand].reg_type = ARM_SP | ARM_REG64;
+				op->operands[operand].reg = 31;
+				break;
+			}
+			mem_opt = get_mem_option (token);
+			if (mem_opt != -1) {
+				op->operands_count ++;
+				op->operands[operand].type = ARM_MEM_OPT;
+				op->operands[operand].mem_option = mem_opt;
+			}
+			break;
+		case 'L':
+		case 'l':
+		case 'I':
+		case 'i':
+		case 'N':
+		case 'n':
+		case 'O':
+		case 'o':
+		case 'p':
+		case 'P':
+			mem_opt = get_mem_option (token);
+			if (mem_opt != -1) {
+				op->operands_count ++;
+				op->operands[operand].type = ARM_MEM_OPT;
+				op->operands[operand].mem_option = mem_opt;
+			}
+			break;
+		case '-':
+			op->operands[operand].sign = -1;
+			// falthru
+		default:
+			op->operands_count ++;
+			op->operands[operand].type = ARM_CONSTANT;
+			op->operands[operand].immediate = r_num_math (NULL, token);
+			imm_count++;
 			break;
 		}
-		//printf ("operand %d type is %d - reg_type %d\n", operand, op->operands[operand].type, op->operands[operand].reg_type);
-		if (x == '\0') {
-			free (t);
-			return true;
-		}
-		token = ++x;
+		token = next;
+
 		operand ++;
 		if (operand > MAX_OPERANDS) {
 			free (t);
-			return false;	
+			return false;
 		}
 	}
 	free (t);
@@ -558,11 +870,67 @@ static bool parseOpcode(const char *str, ArmOp *op) {
 bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	ArmOp ops = {0};
 	if (!parseOpcode (str, &ops)) {
-		return -1;
+		return false;
 	}
 	/* TODO: write tests for this and move out the regsize logic into the mov */
 	if (!strncmp (str, "mov", 3)) {
 		*op = mov (&ops);
+		return *op != -1;
+	}
+	if (!strncmp (str, "cmp", 3)) {
+		*op = cmp (&ops);
+		return *op != -1;
+	}
+	if (!strncmp (str, "ldrb", 4)) {
+		*op = bytelsop (&ops, 0x00004039);
+		return *op != -1;
+	}
+	if (!strncmp (str, "ldrh", 4)) {
+		*op = bytelsop (&ops, 0x00004078);
+		return *op != -1;
+	}
+	if (!strncmp (str, "ldrsh", 5)) {
+		*op = bytelsop (&ops, 0x0000c078);
+		return *op != -1;
+	}
+	if (!strncmp (str, "ldrsw", 5)) {
+		*op = bytelsop (&ops, 0x000080b8);
+		return *op != -1;
+	}
+	if (!strncmp (str, "ldrsb", 5)) {
+		*op = bytelsop (&ops, 0x0000c039);
+		return *op != -1;
+	}
+	if (!strncmp (str, "strb", 4)) {
+		*op = bytelsop (&ops, 0x00000039);
+		return *op != -1;
+	}
+	if (!strncmp (str, "strh", 4)) {
+		*op = bytelsop (&ops, 0x00000078);
+		return *op != -1;
+	}
+	if (!strncmp (str, "ldr", 3)) {
+		*op = reglsop (&ops, 0x000040f8);
+		return *op != -1;
+	}
+	if (!strncmp (str, "stur", 4)) {
+		*op = regsluop (&ops, 0x000000f8);
+		return *op != -1;
+	}
+	if (!strncmp (str, "ldur", 4)) {
+		*op = regsluop (&ops, 0x000040f8);
+		return *op != -1;
+	}
+	if (!strncmp (str, "str", 3)) {
+		*op = reglsop (&ops, 0x000000f8);
+		return *op != -1;
+	}
+	if (!strncmp (str, "stp", 3)) {
+		*op = stp (&ops, 0x000000a9);
+		return *op != -1;
+	}
+	if (!strncmp (str, "ldp", 3)) {
+		*op = stp (&ops, 0x000040a9);
 		return *op != -1;
 	}
 	if (!strncmp (str, "sub", 3)) { // w
@@ -575,6 +943,14 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	}
 	if (!strncmp (str, "adr x", 5)) { // w
 		*op = adr (&ops, addr);
+		return *op != -1;
+	}
+	if (!strncmp (str, "adrp x", 6)) {
+		*op = adrp (&ops, addr, 0x00000090);
+		return *op != -1;
+	}
+	if (!strcmp (str, "isb")) {
+		*op = 0xdf3f03d5;
 		return *op != -1;
 	}
 	if (!strcmp (str, "nop")) {
@@ -623,6 +999,14 @@ bool arm64ass(const char *str, ut64 addr, ut32 *op) {
 	}
 	if (!strncmp (str, "b ", 2)) {
 		*op = branch (&ops, addr, 0x14);
+		return *op != -1;
+	}
+	if (!strncmp (str, "b.eq ", 5)) {
+		*op = bdot (&ops, addr, 0x00000054);
+		return *op != -1;
+	}
+	if (!strncmp (str, "b.hs ", 5)) {
+		*op = bdot (&ops, addr, 0x02000054);
 		return *op != -1;
 	}
 	if (!strncmp (str, "bl ", 3)) {

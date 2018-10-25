@@ -38,6 +38,8 @@ Set bits (32, 64, ...)
 Override baddr
 .It Fl c
 List classes
+.It Fl cc
+List classes in header format
 .It Fl C Ar [fmt:C[:D]]
 Create [elf,mach0,pe] for arm and x86-32/64 tiny binaries where 'C' is an hexpair list of the code bytes and ':D' is an optional concatenation to describe the bytes for the data section.
 .It Fl d
@@ -46,6 +48,8 @@ Show debug/dwarf information
 Demangle symbol name (or - to read from stdin) for lang (cxx, swift, java, cxx, ..)
 .It Fl e
 Show entrypoints for disk and on-memory
+.It Fl ee
+Show constructor/destructors (extended entrypoints)
 .It Fl f Ar subbin
 Select sub-binary architecture. Useful for fat-mach0 binaries
 .It Fl F Ar binfmt
@@ -97,15 +101,15 @@ Show less info (no offset/size for -z for ex.)
 .It Fl Q
 Show load address used by dlopen (non-aslr libs)
 .It Fl r
-Radare output
-.It Fl R
-Show realocations
-.It Fl r
 Show output in radare format
+.It Fl R
+Show relocations
 .It Fl s
 Show exported symbols
 .It Fl S
 Show sections
+.It Fl SS
+Show segments
 .It Fl u
 Unfiltered (no rename duplicated symbols/sections)
 .It Fl v

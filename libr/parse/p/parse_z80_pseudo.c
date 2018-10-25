@@ -52,7 +52,9 @@ static int replace(int argc, const char *argv[], char *newstr) {
 							strcpy (newstr+k, w);
 							k += strlen(w)-1;
 						}
-					} else newstr[k] = ops[i].str[j];
+					} else {
+						newstr[k] = ops[i].str[j];
+					}
 				}
 				newstr[k]='\0';
 			}
@@ -72,7 +74,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	return false;
 }
 
-struct r_parse_plugin_t r_parse_plugin_z80_pseudo = {
+RParsePlugin r_parse_plugin_z80_pseudo = {
 	.name = "z80.pseudo",
 	.desc = "z80 pseudo syntax",
 	.init = NULL,
@@ -81,7 +83,7 @@ struct r_parse_plugin_t r_parse_plugin_z80_pseudo = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_PARSE,
 	.data = &r_parse_plugin_z80_pseudo,
 	.version = R2_VERSION

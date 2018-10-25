@@ -1,8 +1,28 @@
 executable('radare2', 'radare2.c',
-  include_directories: include_directories([
-    '../../libr/include',
-	platform_binrinc
-  ]),
-  link_with: [r_util, r_socket, r_core],
-  install: true
+  include_directories: [platform_inc],
+  dependencies: [
+    r_util_dep,
+    r_socket_dep,
+    r_core_dep,
+    r_io_dep,
+    r_fs_dep,
+    r_bin_dep,
+    r_flag_dep,
+    r_cons_dep,
+    r_asm_dep,
+    r_debug_dep,
+    r_config_dep,
+    r_bp_dep,
+    r_reg_dep,
+    r_syscall_dep,
+    r_anal_dep,
+    r_parse_dep,
+    r_egg_dep,
+    r_search_dep,
+    r_hash_dep,
+    r_crypto_dep,
+    r_magic_dep
+  ],
+  install: true,
+  implicit_include_directories: false
 )

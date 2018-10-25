@@ -38,20 +38,23 @@ int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 
 	if (match(str, "B ")) {
 		op->type = R_ANAL_OP_TYPE_JMP;
-		if (match(str, "B AC"))
+		if (match (str, "B AC")) {
 			op->type = R_ANAL_OP_TYPE_UJMP;
+		}
 	} else if (match(str, "BCC ") || match(str, "BCCU ")) {
 		op->type = R_ANAL_OP_TYPE_CJMP;
 	} else if (match(str, "CALL ")) {
 		op->type = R_ANAL_OP_TYPE_CALL;
-		if (match(str, "CALL AC"))
+		if (match (str, "CALL AC")) {
 			op->type = R_ANAL_OP_TYPE_UCALL;
+		}
 	} else if (match(str, "CALLCC ")) {
 		op->type = R_ANAL_OP_TYPE_CCALL;
 	} else if (match(str, "RET")) {
 		op->type = R_ANAL_OP_TYPE_RET;
-		if (match(str, "RETCC"))
+		if (match (str, "RETCC")) {
 			op->type = R_ANAL_OP_TYPE_CRET;
+		}
 	} else if (match(str, "MOV ")) {
 		op->type = R_ANAL_OP_TYPE_MOV;
 	} else if (match(str, "PSHBOTH ")) {
@@ -80,18 +83,18 @@ int tms320_c55x_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 int tms320_op(RAnal * anal, RAnalOp * op, ut64 addr, const ut8 * buf, int len) {
 	TMS_ANAL_OP_FN aop = tms320_c55x_op;
 
-	if (anal->cpu && strcasecmp(anal->cpu, "c64x") == 0) {
+	if (anal->cpu && r_str_casecmp(anal->cpu, "c64x") == 0) {
 #ifdef CAPSTONE_TMS320C64X_H
 		return tms320c64x_analop (anal, op, addr, buf, len);
 #else
 		return -1;
 #endif
 	}
-	if (anal->cpu && strcasecmp(anal->cpu, "c54x") == 0) {
+	if (anal->cpu && r_str_casecmp(anal->cpu, "c54x") == 0) {
 		aop = tms320_c54x_op;
-	} else if (anal->cpu && strcasecmp(anal->cpu, "c55x") == 0) {
+	} else if (anal->cpu && r_str_casecmp(anal->cpu, "c55x") == 0) {
 		aop = tms320_c55x_op;
-	} else if (anal->cpu && strcasecmp(anal->cpu, "c55x+") == 0) {
+	} else if (anal->cpu && r_str_casecmp(anal->cpu, "c55x+") == 0) {
 		aop = tms320_c55x_plus_op;
 	}
 	return aop (anal, op, addr, buf, len);
@@ -109,7 +112,7 @@ RAnalPlugin r_anal_plugin_tms320 = {
 	.name = "tms320",
 	.arch = "tms320",
 	.bits = 32,
-	.desc = "TMS320 DSP family code analisys plugin",
+	.desc = "TMS320 DSP family code analysis plugin",
 	.init = tms320_init,
 	.fini = tms320_fini,
 	.license = "LGPLv3",
@@ -117,7 +120,7 @@ RAnalPlugin r_anal_plugin_tms320 = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_tms320,
 	.version = R2_VERSION

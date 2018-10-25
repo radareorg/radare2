@@ -26,7 +26,7 @@
 #include <stdlib.h>
 #include "ansidecl.h"
 #include "sysdep.h"
-#include "dis-asm.h"
+#include "disas-asm.h"
 #include "libiberty.h"
 #include "elf/mips.h"
 #include "opintl.h"
@@ -457,10 +457,11 @@ choose_abi_by_name (const char *name, unsigned int namelen)
   const struct mips_abi_choice *c;
   unsigned int i;
 
-  for (i = 0, c = NULL; i < ARRAY_SIZE (mips_abi_choices) && !c; i++)
-    if (strncmp (mips_abi_choices[i].name, name, namelen) == 0
-	&& strlen (mips_abi_choices[i].name) == namelen)
-      c = &mips_abi_choices[i];
+  for (i = 0, c = NULL; i < ARRAY_SIZE (mips_abi_choices) && !c; i++) {
+	  if (strncmp (mips_abi_choices[i].name, name, namelen) == 0 && strlen (mips_abi_choices[i].name) == namelen) {
+		  c = &mips_abi_choices[i];
+	  }
+  }
 
   return c;
 }
@@ -471,10 +472,11 @@ choose_arch_by_name (const char *name, unsigned int namelen)
   const struct mips_arch_choice *c = NULL;
   unsigned int i;
 
-  for (i = 0, c = NULL; i < ARRAY_SIZE (mips_arch_choices) && !c; i++)
-    if (strncmp (mips_arch_choices[i].name, name, namelen) == 0
-	&& strlen (mips_arch_choices[i].name) == namelen)
-      c = &mips_arch_choices[i];
+  for (i = 0, c = NULL; i < ARRAY_SIZE (mips_arch_choices) && !c; i++) {
+	  if (strncmp (mips_arch_choices[i].name, name, namelen) == 0 && strlen (mips_arch_choices[i].name) == namelen) {
+		  c = &mips_arch_choices[i];
+	  }
+  }
 
   return c;
 }
@@ -489,10 +491,9 @@ choose_arch_by_number (unsigned long mach)
 
   /* We optimize this because even if the user specifies no
      flags, this will be done for every instruction!  */
-  if (hint_bfd_mach == mach
-      && hint_arch_choice != NULL
-      && hint_arch_choice->bfd_mach == hint_bfd_mach)
-    return hint_arch_choice;
+  if (hint_bfd_mach == mach && hint_arch_choice != NULL && hint_arch_choice->bfd_mach == hint_bfd_mach) {
+	  return hint_arch_choice;
+  }
 
   for (i = 0, c = NULL; i < ARRAY_SIZE (mips_arch_choices) && !c; i++)
     {
@@ -513,12 +514,14 @@ static int
 is_newabi (Elf_Internal_Ehdr *header)
 {
   /* There are no old-style ABIs which use 64-bit ELF.  */
-  if (header->e_ident[EI_CLASS] == ELFCLASS64)
-    return 1;
+  if (header->e_ident[EI_CLASS] == ELFCLASS64) {
+	  return 1;
+  }
 
   /* If a 32-bit ELF file, n32 is a new-style ABI.  */
-  if ((header->e_flags & EF_MIPS_ABI2) != 0)
-    return 1;
+  if ((header->e_flags & EF_MIPS_ABI2) != 0) {
+	  return 1;
+  }
 
   return 0;
 }
@@ -546,8 +549,9 @@ set_default_mips_dis_options (struct disassemble_info *info)
       Elf_Internal_Ehdr *header;
 
       header = elf_elfheader (info->section->owner);
-      if (is_newabi (header))
-	mips_gpr_names = mips_gpr_names_newabi;
+      if (is_newabi (header)) {
+	      mips_gpr_names = mips_gpr_names_newabi;
+      }
     }
 
   /* Set ISA, architecture, and cp0 register names as best we can.  */
@@ -586,16 +590,21 @@ parse_mips_dis_option (const char *option, unsigned int len)
     } */
   
   /* Look for the = that delimits the end of the option name.  */
-  for (i = 0; i < len; i++)
-    if (option[i] == '=')
-      break;
+  for (i = 0; i < len; i++) {
+	  if (option[i] == '=') {
+		  break;
+	  }
+  }
 
-  if (i == 0)		/* Invalid option: no name before '='.  */
-    return;
-  if (i == len)		/* Invalid option: no '='.  */
-    return;
-  if (i == (len - 1))	/* Invalid option: no value after '='.  */
-    return;
+  if (i == 0) { /* Invalid option: no name before '='.  */
+	  return;
+  }
+  if (i == len) { /* Invalid option: no '='.  */
+	  return;
+  }
+  if (i == (len - 1)) { /* Invalid option: no value after '='.  */
+	  return;
+  }
 
   optionlen = i;
   val = option + (optionlen + 1);
@@ -605,8 +614,9 @@ parse_mips_dis_option (const char *option, unsigned int len)
       && strlen ("gpr-names") == optionlen)
     {
       chosen_abi = choose_abi_by_name (val, vallen);
-      if (chosen_abi != NULL)
-	mips_gpr_names = chosen_abi->gpr_names;
+      if (chosen_abi != NULL) {
+	      mips_gpr_names = chosen_abi->gpr_names;
+      }
       return;
     }
 
@@ -614,8 +624,9 @@ parse_mips_dis_option (const char *option, unsigned int len)
       && strlen ("fpr-names") == optionlen)
     {
       chosen_abi = choose_abi_by_name (val, vallen);
-      if (chosen_abi != NULL)
-	mips_fpr_names = chosen_abi->fpr_names;
+      if (chosen_abi != NULL) {
+	      mips_fpr_names = chosen_abi->fpr_names;
+      }
       return;
     }
 
@@ -636,8 +647,9 @@ parse_mips_dis_option (const char *option, unsigned int len)
       && strlen ("hwr-names") == optionlen)
     {
       chosen_arch = choose_arch_by_name (val, vallen);
-      if (chosen_arch != NULL)
-	mips_hwr_names = chosen_arch->hwr_names;
+      if (chosen_arch != NULL) {
+	      mips_hwr_names = chosen_arch->hwr_names;
+      }
       return;
     }
 
@@ -673,8 +685,9 @@ parse_mips_dis_options (const char *options)
 {
   const char *option_end;
 
-  if (!options)
-    return;
+  if (!options) {
+	  return;
+  }
 
   while (*options != '\0')
     {
@@ -687,8 +700,9 @@ parse_mips_dis_options (const char *options)
 
       /* We know that *options is neither NUL or a comma.  */
       option_end = options + 1;
-      while (*option_end != ',' && *option_end != '\0')
-	option_end++;
+      while (*option_end != ',' && *option_end != '\0') {
+	      option_end++;
+      }
 
       parse_mips_dis_option (options, option_end - options);
 
@@ -706,9 +720,11 @@ lookup_mips_cp0sel_name (const struct mips_cp0sel_name *names,
 {
   unsigned int i;
 
-  for (i = 0; i < len; i++)
-    if (names[i].cp0reg == cp0reg && names[i].sel == sel)
-      return &names[i];
+  for (i = 0; i < len; i++) {
+	  if (names[i].cp0reg == cp0reg && names[i].sel == sel) {
+		  return &names[i];
+	  }
+  }
   return NULL;
 }
 
@@ -802,10 +818,11 @@ print_insn_args (const char *d,
 		   printed.  */
 		n = lookup_mips_cp0sel_name(mips_cp0sel_names,
 					    mips_cp0sel_names_len, cp0reg, sel);
-		if (n != NULL)
-		  (*info->fprintf_func) (info->stream, "%s", n->name);
-		else
-		  (*info->fprintf_func) (info->stream, "$%d,%d", cp0reg, sel);
+		if (n != NULL) {
+			(*info->fprintf_func) (info->stream, "%s", n->name);
+		} else {
+			(*info->fprintf_func) (info->stream, "$%d,%d", cp0reg, sel);
+		}
 		break;
 	      }
 
@@ -845,10 +862,11 @@ print_insn_args (const char *d,
 		   printed.  */
 		n = lookup_mips_cp0sel_name(mips_cp0sel_names,
 					    mips_cp0sel_names_len, cp0reg, sel);
-		if (n != NULL)
-		  (*info->fprintf_func) (info->stream, "%s", n->name);
-		else
-		  (*info->fprintf_func) (info->stream, "$%d,%d", cp0reg, sel);
+		if (n != NULL) {
+			(*info->fprintf_func) (info->stream, "%s", n->name);
+		} else {
+			(*info->fprintf_func) (info->stream, "$%d,%d", cp0reg, sel);
+		}
 		break;
 	      }
 
@@ -903,15 +921,17 @@ print_insn_args (const char *d,
 
 	case '0': /* dsp 6-bit signed immediate in bit 20 */
 	  delta = ((l >> OP_SH_DSPSFT) & OP_MASK_DSPSFT);
-	  if (delta & 0x20) /* test sign bit */
-	    delta |= ~OP_MASK_DSPSFT;
+	  if (delta & 0x20) { /* test sign bit */
+		  delta |= ~OP_MASK_DSPSFT;
+	  }
 	  (*info->fprintf_func) (info->stream, "%d", delta);
 	  break;
 
 	case ':': /* dsp 7-bit signed immediate in bit 19 */
 	  delta = ((l >> OP_SH_DSPSFT_7) & OP_MASK_DSPSFT_7);
-	  if (delta & 0x40) /* test sign bit */
-	    delta |= ~OP_MASK_DSPSFT_7;
+	  if (delta & 0x40) { /* test sign bit */
+		  delta |= ~OP_MASK_DSPSFT_7;
+	  }
 	  (*info->fprintf_func) (info->stream, "%d", delta);
 	  break;
 
@@ -922,8 +942,9 @@ print_insn_args (const char *d,
 
 	case '@': /* dsp 10-bit signed immediate in bit 16 */
 	  delta = ((l >> OP_SH_IMM10) & OP_MASK_IMM10);
-	  if (delta & 0x200) /* test sign bit */
-	    delta |= ~OP_MASK_IMM10;
+	  if (delta & 0x200) { /* test sign bit */
+		  delta |= ~OP_MASK_IMM10;
+	  }
 	  (*info->fprintf_func) (info->stream, "%d", delta);
 	  break;
 
@@ -976,8 +997,9 @@ print_insn_args (const char *d,
 	case 'j': /* Same as i, but sign-extended.  */
 	case 'o':
 	  delta = (l >> OP_SH_DELTA) & OP_MASK_DELTA;
-	  if (delta & 0x8000)
-	    delta |= ~0xffff;
+	  if (delta & 0x8000) {
+		  delta |= ~0xffff;
+	  }
 	  (*info->fprintf_func) (info->stream, "%d",
 				 delta);
 	  break;
@@ -1007,8 +1029,9 @@ print_insn_args (const char *d,
 	case 'p':
 	  /* Sign extend the displacement.  */
 	  delta = (l >> OP_SH_DELTA) & OP_MASK_DELTA;
-	  if (delta & 0x8000)
-	    delta |= ~0xffff;
+	  if (delta & 0x8000) {
+		  delta |= ~0xffff;
+	  }
 	  info->target = (delta << 2) + pc + INSNLEN;
 	  (*info->print_address_func) (info->target, info);
 	  break;
@@ -1022,22 +1045,22 @@ print_insn_args (const char *d,
 	  {
 	    /* First check for both rd and rt being equal.  */
 	    unsigned int reg = (l >> OP_SH_RD) & OP_MASK_RD;
-	    if (reg == ((l >> OP_SH_RT) & OP_MASK_RT))
-	      (*info->fprintf_func) (info->stream, "%s",
-				     mips_gpr_names[reg]);
-	    else
-	      {
-		/* If one is zero use the other.  */
-		if (reg == 0)
-		  (*info->fprintf_func) (info->stream, "%s",
-					 mips_gpr_names[(l >> OP_SH_RT) & OP_MASK_RT]);
-		else if (((l >> OP_SH_RT) & OP_MASK_RT) == 0)
-		  (*info->fprintf_func) (info->stream, "%s",
-					 mips_gpr_names[reg]);
-		else /* Bogus, result depends on processor.  */
-		  (*info->fprintf_func) (info->stream, "%s or %s",
-					 mips_gpr_names[reg],
-					 mips_gpr_names[(l >> OP_SH_RT) & OP_MASK_RT]);
+	    if (reg == ((l >> OP_SH_RT) & OP_MASK_RT)) {
+		    (*info->fprintf_func) (info->stream, "%s",
+			    mips_gpr_names[reg]);
+	    } else {
+		    /* If one is zero use the other.  */
+		    if (reg == 0) {
+			    (*info->fprintf_func) (info->stream, "%s",
+				    mips_gpr_names[(l >> OP_SH_RT) & OP_MASK_RT]);
+		    } else if (((l >> OP_SH_RT) & OP_MASK_RT) == 0) {
+			    (*info->fprintf_func) (info->stream, "%s",
+				    mips_gpr_names[reg]);
+		    } else { /* Bogus, result depends on processor.  */
+			    (*info->fprintf_func) (info->stream, "%s or %s",
+				    mips_gpr_names[reg],
+				    mips_gpr_names[(l >> OP_SH_RT) & OP_MASK_RT]);
+		    }
 	      }
 	  }
 	  break;
@@ -1117,12 +1140,13 @@ print_insn_args (const char *d,
 	     'S' format.  Therefore, we only need to worry about cp0,
 	     cp2, and cp3.  */
 	  op = (l >> OP_SH_OP) & OP_MASK_OP;
-	  if (op == OP_OP_COP0)
-	    (*info->fprintf_func) (info->stream, "%s",
-				   mips_cp0_names[(l >> OP_SH_RD) & OP_MASK_RD]);
-	  else
-	    (*info->fprintf_func) (info->stream, "$%ld",
-				   (l >> OP_SH_RD) & OP_MASK_RD);
+	  if (op == OP_OP_COP0) {
+		  (*info->fprintf_func) (info->stream, "%s",
+			  mips_cp0_names[(l >> OP_SH_RD) & OP_MASK_RD]);
+	  } else {
+		  (*info->fprintf_func) (info->stream, "$%ld",
+			  (l >> OP_SH_RD) & OP_MASK_RD);
+	  }
 	  break;
 
 	case 'K':
@@ -1176,9 +1200,11 @@ print_insn_args (const char *d,
 		int fmt;
 
 		vsel &= 0x0f;
-		for (fmt = 0; fmt < 3; fmt++, vsel >>= 1)
-		  if ((vsel & 1) == 0)
-		    break;
+		for (fmt = 0; fmt < 3; fmt++, vsel >>= 1) {
+			if ((vsel & 1) == 0) {
+				break;
+			}
+		}
 		(*info->fprintf_func) (info->stream, "$v%ld[%d]",
 				       (l >> OP_SH_FT) & OP_MASK_FT,
 				       vsel >> 1);
@@ -1244,13 +1270,12 @@ print_insn_mips (bfd_vma memaddr,
 	{
 	  for (op = mips_opcodes; op < &mips_opcodes[NUMOPCODES]; op++)
 	    {
-	      if (op->pinfo == INSN_MACRO
-		  || (no_aliases && (op->pinfo2 & INSN2_ALIAS)))
-		continue;
-	      if (i == ((op->match >> OP_SH_OP) & OP_MASK_OP))
-		{
-		  mips_hash[i] = op;
-		  break;
+		  if (op->pinfo == INSN_MACRO || (no_aliases && (op->pinfo2 & INSN2_ALIAS))) {
+			  continue;
+		  }
+		  if (i == ((op->match >> OP_SH_OP) & OP_MASK_OP)) {
+			  mips_hash[i] = op;
+			  break;
 		}
 	    }
 	}
@@ -1279,39 +1304,39 @@ print_insn_mips (bfd_vma memaddr,
 	      const char *d;
 
 	      /* We always allow to disassemble the jalx instruction.  */
-	      if (! OPCODE_IS_MEMBER (op, mips_isa, mips_processor)
-		  && strcmp (op->name, "jalx"))
-		continue;
+	      if (!OPCODE_IS_MEMBER (op, mips_isa, mips_processor) && strcmp (op->name, "jalx")) {
+		      continue;
+	      }
 
 	      /* Figure out instruction type and branch delay information.  */
 	      if ((op->pinfo & INSN_UNCOND_BRANCH_DELAY) != 0)
 	        {
-		  if ((info->insn_type & INSN_WRITE_GPR_31) != 0)
-		    info->insn_type = dis_jsr;
-		  else
-		    info->insn_type = dis_branch;
-		  info->branch_delay_insns = 1;
+		      if ((info->insn_type & INSN_WRITE_GPR_31) != 0) {
+			      info->insn_type = dis_jsr;
+		      } else {
+			      info->insn_type = dis_branch;
+		      }
+		      info->branch_delay_insns = 1;
 		}
 	      else if ((op->pinfo & (INSN_COND_BRANCH_DELAY
 				     | INSN_COND_BRANCH_LIKELY)) != 0)
 		{
-		  if ((info->insn_type & INSN_WRITE_GPR_31) != 0)
-		    info->insn_type = dis_condjsr;
-		  else
-		    info->insn_type = dis_condbranch;
-		  info->branch_delay_insns = 1;
+			if ((info->insn_type & INSN_WRITE_GPR_31) != 0) {
+				info->insn_type = dis_condjsr;
+			} else {
+				info->insn_type = dis_condbranch;
+			}
+			info->branch_delay_insns = 1;
+		} else if ((op->pinfo & (INSN_STORE_MEMORY | INSN_LOAD_MEMORY_DELAY)) != 0) {
+			info->insn_type = dis_dref;
 		}
-	      else if ((op->pinfo & (INSN_STORE_MEMORY
-				     | INSN_LOAD_MEMORY_DELAY)) != 0)
-		info->insn_type = dis_dref;
 
-	      (*info->fprintf_func) (info->stream, "%s", op->name);
+		(*info->fprintf_func) (info->stream, "%s", op->name);
 
-	      d = op->args;
-	      if (d != NULL && *d != '\0')
-		{
-		  (*info->fprintf_func) (info->stream, " ");
-		  print_insn_args (d, word, memaddr, info, op);
+		d = op->args;
+		if (d != NULL && *d != '\0') {
+			(*info->fprintf_func) (info->stream, " ");
+			print_insn_args (d, word, memaddr, info, op);
 		}
 
 	      return INSNLEN;
@@ -1581,79 +1606,76 @@ print_mips16_insn_arg (char type,
 
 	if (! use_extend)
 	  {
-	    if (signedp && immed >= (1 << (nbits - 1)))
-	      immed -= 1 << nbits;
-	    immed <<= shift;
-	    if ((type == '<' || type == '>' || type == '[' || type == ']')
-		&& immed == 0)
-	      immed = 8;
+		if (signedp && immed >= (1 << (nbits - 1))) {
+			immed -= 1 << nbits;
+		}
+		immed <<= shift;
+		if ((type == '<' || type == '>' || type == '[' || type == ']') && immed == 0) {
+			immed = 8;
+		}
 	  }
 	else
 	  {
-	    if (extbits == 16)
-	      immed |= ((extend & 0x1f) << 11) | (extend & 0x7e0);
-	    else if (extbits == 15)
-	      immed |= ((extend & 0xf) << 11) | (extend & 0x7f0);
-	    else
-	      immed = ((extend >> 6) & 0x1f) | (extend & 0x20);
-	    immed &= (1 << extbits) - 1;
-	    if (! extu && immed >= (1 << (extbits - 1)))
-	      immed -= 1 << extbits;
+		  if (extbits == 16) {
+			  immed |= ((extend & 0x1f) << 11) | (extend & 0x7e0);
+		  } else if (extbits == 15) {
+			  immed |= ((extend & 0xf) << 11) | (extend & 0x7f0);
+		  } else {
+			  immed = ((extend >> 6) & 0x1f) | (extend & 0x20);
+		  }
+		  immed &= (1 << extbits) - 1;
+		  if (!extu && immed >= (1 << (extbits - 1))) {
+			  immed -= 1 << extbits;
+		  }
 	  }
 
-	if (! pcrel)
-	  (*info->fprintf_func) (info->stream, "%d", immed);
-	else
-	  {
-	    bfd_vma baseaddr;
+	  if (!pcrel) {
+		  (*info->fprintf_func) (info->stream, "%d", immed);
+	  } else {
+		  bfd_vma baseaddr;
 
-	    if (branch)
-	      {
-		immed *= 2;
-		baseaddr = memaddr + 2;
-	      }
-	    else if (use_extend)
-	      baseaddr = memaddr - 2;
-	    else
-	      {
-		int status;
-		bfd_byte buffer[2];
+		  if (branch) {
+			  immed *= 2;
+			  baseaddr = memaddr + 2;
+		  } else if (use_extend) {
+			  baseaddr = memaddr - 2;
+		  } else {
+			  int status;
+			  bfd_byte buffer[2];
 
-		baseaddr = memaddr;
+			  baseaddr = memaddr;
 
-		/* If this instruction is in the delay slot of a jr
+			  /* If this instruction is in the delay slot of a jr
                    instruction, the base address is the address of the
                    jr instruction.  If it is in the delay slot of jalr
                    instruction, the base address is the address of the
                    jalr instruction.  This test is unreliable: we have
                    no way of knowing whether the previous word is
                    instruction or data.  */
-		status = (*info->read_memory_func) (memaddr - 4, buffer, 2,
-						    info);
-		if (status == 0
-		    && (((info->endian == BFD_ENDIAN_BIG
-			  ? bfd_getb16 (buffer)
-			  : bfd_getl16 (buffer))
-			 & 0xf800) == 0x1800))
-		  baseaddr = memaddr - 4;
-		else
-		  {
-		    status = (*info->read_memory_func) (memaddr - 2, buffer,
-							2, info);
-		    if (status == 0
-			&& (((info->endian == BFD_ENDIAN_BIG
-			      ? bfd_getb16 (buffer)
-			      : bfd_getl16 (buffer))
-			     & 0xf81f) == 0xe800))
-		      baseaddr = memaddr - 2;
+			  status = (*info->read_memory_func) (memaddr - 4, buffer, 2,
+				  info);
+			  if (status == 0 && (((info->endian == BFD_ENDIAN_BIG
+							       ? bfd_getb16 (buffer)
+							       : bfd_getl16 (buffer)) &
+						      0xf800) == 0x1800)) {
+				  baseaddr = memaddr - 4;
+			  } else {
+				  status = (*info->read_memory_func) (memaddr - 2, buffer,
+					  2, info);
+				  if (status == 0 && (((info->endian == BFD_ENDIAN_BIG
+								       ? bfd_getb16 (buffer)
+								       : bfd_getl16 (buffer)) &
+							      0xf81f) == 0xe800)) {
+					  baseaddr = memaddr - 2;
+				  }
+			  }
 		  }
-	      }
-	    info->target = (baseaddr & ~((1 << shift) - 1)) + immed;
-	    if (pcrel && branch
-		&& info->flavour == bfd_target_unknown_flavour)
-	      /* For gdb disassembler, maintain odd address.  */
-	      info->target |= 1;
-	    (*info->print_address_func) (info->target, info);
+		  info->target = (baseaddr & ~((1 << shift) - 1)) + immed;
+		  if (pcrel && branch && info->flavour == bfd_target_unknown_flavour) {
+			  /* For gdb disassembler, maintain odd address.  */
+			  info->target |= 1;
+		  }
+		  (*info->print_address_func) (info->target, info);
 	  }
       }
       break;
@@ -1662,12 +1684,14 @@ print_mips16_insn_arg (char type,
       {
 	int jalx = l & 0x400;
 
-	if (! use_extend)
-	  extend = 0;
+	if (!use_extend) {
+		extend = 0;
+	}
 	l = ((l & 0x1f) << 23) | ((l & 0x3e0) << 13) | (extend << 2);
-	if (!jalx && info->flavour == bfd_target_unknown_flavour)
-	  /* For gdb disassembler, maintain odd address.  */
-	  l |= 1;
+	if (!jalx && info->flavour == bfd_target_unknown_flavour) {
+		/* For gdb disassembler, maintain odd address.  */
+		l |= 1;
+	}
       }
       info->target = ((memaddr + 4) & ~(bfd_vma) 0x0fffffff) | l;
       (*info->print_address_func) (info->target, info);
@@ -1689,9 +1713,10 @@ print_mips16_insn_arg (char type,
 	if (amask > 0 && amask < 5)
 	  {
 	    (*info->fprintf_func) (info->stream, "%s", mips_gpr_names[4]);
-	    if (amask > 1)
-	      (*info->fprintf_func) (info->stream, "-%s",
-				     mips_gpr_names[amask + 3]);
+	    if (amask > 1) {
+		    (*info->fprintf_func) (info->stream, "-%s",
+			    mips_gpr_names[amask + 3]);
+	    }
 	    need_comma = 1;
 	  }
 
@@ -1707,9 +1732,10 @@ print_mips16_insn_arg (char type,
 	    (*info->fprintf_func) (info->stream, "%s%s",
 				   need_comma ? ", " : "",
 				   mips_gpr_names[16]);
-	    if (smask > 1)
-	      (*info->fprintf_func) (info->stream, "-%s",
-				     mips_gpr_names[smask + 15]);
+	    if (smask > 1) {
+		    (*info->fprintf_func) (info->stream, "-%s",
+			    mips_gpr_names[smask + 15]);
+	    }
 	    need_comma = 1;
 	  }
 
@@ -1725,8 +1751,9 @@ print_mips16_insn_arg (char type,
 	  {
 	    (*info->fprintf_func) (info->stream, "%s$f0",
 				   need_comma ? ", " : "");
-	    if (amask == 6)
-	      (*info->fprintf_func) (info->stream, "-$f1");
+	    if (amask == 6) {
+		    (*info->fprintf_func) (info->stream, "-$f1");
+	    }
 	  }
       }
       break;
@@ -1742,8 +1769,9 @@ print_mips16_insn_arg (char type,
       int i, j;
 
       l = l & 0x7f;
-      if (use_extend)
-        l |= extend << 16;
+      if (use_extend) {
+	      l |= extend << 16;
+      }
 
       amask = (l >> 16) & 0xf;
       if (amask == MIPS16_ALL_ARGS)
@@ -1764,31 +1792,37 @@ print_mips16_insn_arg (char type,
 
       if (args > 0) {
           (*info->fprintf_func) (info->stream, "%s", mips_gpr_names[4]);
-          if (args > 1)
-            (*info->fprintf_func) (info->stream, "-%s",
-                                   mips_gpr_names[4 + args - 1]);
-          need_comma = 1;
+	  if (args > 1) {
+		  (*info->fprintf_func) (info->stream, "-%s",
+			  mips_gpr_names[4 + args - 1]);
+	  }
+	  need_comma = 1;
       }
 
       framesz = (((l >> 16) & 0xf0) | (l & 0x0f)) * 8;
-      if (framesz == 0 && !use_extend)
-        framesz = 128;
+      if (framesz == 0 && !use_extend) {
+	      framesz = 128;
+      }
 
       (*info->fprintf_func) (info->stream, "%s%d", 
                              need_comma ? ", " : "",
                              framesz);
 
-      if (l & 0x40)                   /* $ra */
-        (*info->fprintf_func) (info->stream, ", %s", mips_gpr_names[31]);
+      if (l & 0x40) { /* $ra */
+	      (*info->fprintf_func) (info->stream, ", %s", mips_gpr_names[31]);
+      }
 
       nsreg = (l >> 24) & 0x7;
       smask = 0;
-      if (l & 0x20)                   /* $s0 */
-        smask |= 1 << 0;
-      if (l & 0x10)                   /* $s1 */
-        smask |= 1 << 1;
-      if (nsreg > 0)                  /* $s2-$s8 */
-        smask |= ((1 << nsreg) - 1) << 2;
+      if (l & 0x20) { /* $s0 */
+	      smask |= 1 << 0;
+      }
+      if (l & 0x10) { /* $s1 */
+	      smask |= 1 << 1;
+      }
+      if (nsreg > 0) { /* $s2-$s8 */
+	      smask |= ((1 << nsreg) - 1) << 2;
+      }
 
       /* Find first set static reg bit.  */
       for (i = 0; i < 9; i++)
@@ -1798,22 +1832,25 @@ print_mips16_insn_arg (char type,
               (*info->fprintf_func) (info->stream, ", %s",
                                      mips_gpr_names[i == 8 ? 30 : (16 + i)]);
               /* Skip over string of set bits.  */
-              for (j = i; smask & (2 << j); j++)
-                continue;
-              if (j > i)
-                (*info->fprintf_func) (info->stream, "-%s",
-                                       mips_gpr_names[j == 8 ? 30 : (16 + j)]);
-              i = j + 1;
+	      for (j = i; smask & (2 << j); j++) {
+		      continue;
+	      }
+	      if (j > i) {
+		      (*info->fprintf_func) (info->stream, "-%s",
+			      mips_gpr_names[j == 8 ? 30 : (16 + j)]);
+	      }
+	      i = j + 1;
             }
         }
 
       /* Statics $ax - $a3.  */
-      if (statics == 1)
-        (*info->fprintf_func) (info->stream, ", %s", mips_gpr_names[7]);
-      else if (statics > 0) 
-        (*info->fprintf_func) (info->stream, ", %s-%s", 
-                               mips_gpr_names[7 - statics + 1],
-                               mips_gpr_names[7]);
+	if (statics == 1) {
+		(*info->fprintf_func) (info->stream, ", %s", mips_gpr_names[7]);
+	} else if (statics > 0) {
+		(*info->fprintf_func) (info->stream, ", %s-%s",
+			mips_gpr_names[7 - statics + 1],
+			mips_gpr_names[7]);
+	}
       }
       break;
 
@@ -1858,10 +1895,11 @@ print_insn_mips16 (bfd_vma memaddr, struct disassemble_info *info)
 
   length = 2;
 
-  if (info->endian == BFD_ENDIAN_BIG)
-    insn = bfd_getb16 (buffer);
-  else
-    insn = bfd_getl16 (buffer);
+  if (info->endian == BFD_ENDIAN_BIG) {
+	  insn = bfd_getb16 (buffer);
+  } else {
+	  insn = bfd_getl16 (buffer);
+  }
 
   /* Plugin the extend opcode specially.  */
   use_extend = FALSE;
@@ -1881,18 +1919,18 @@ print_insn_mips16 (bfd_vma memaddr, struct disassemble_info *info)
 	  return -1;
 	}
 
-      if (info->endian == BFD_ENDIAN_BIG)
-	insn = bfd_getb16 (buffer);
-      else
-	insn = bfd_getl16 (buffer);
+	if (info->endian == BFD_ENDIAN_BIG) {
+		insn = bfd_getb16 (buffer);
+	} else {
+		insn = bfd_getl16 (buffer);
+	}
 
-      /* Check for an extend opcode followed by an extend opcode.  */
-      if ((insn & 0xf800) == 0xf000)
-	{
-	  (*info->fprintf_func) (info->stream, "extend 0x%x",
-				 (unsigned int) extend);
-	  info->insn_type = dis_noninsn;
-	  return length;
+	/* Check for an extend opcode followed by an extend opcode.  */
+	if ((insn & 0xf800) == 0xf000) {
+		(*info->fprintf_func) (info->stream, "extend 0x%x",
+			(unsigned int)extend);
+		info->insn_type = dis_noninsn;
+		return length;
 	}
 
       length += 2;
@@ -1928,17 +1966,19 @@ print_insn_mips16 (bfd_vma memaddr, struct disassemble_info *info)
 	      if (status == 0)
 		{
 		  use_extend = TRUE;
-		  if (info->endian == BFD_ENDIAN_BIG)
-		    extend = bfd_getb16 (buffer);
-		  else
-		    extend = bfd_getl16 (buffer);
+		  if (info->endian == BFD_ENDIAN_BIG) {
+			  extend = bfd_getb16 (buffer);
+		  } else {
+			  extend = bfd_getl16 (buffer);
+		  }
 		  length += 2;
 		}
 	    }
 
 	  (*info->fprintf_func) (info->stream, "%s", op->name);
-	  if (op->args[0] != '\0')
-	    (*info->fprintf_func) (info->stream, " ");
+	  if (op->args[0] != '\0') {
+		  (*info->fprintf_func) (info->stream, " ");
+	  }
 
 	  for (s = op->args; *s != '\0'; s++)
 	    {
@@ -1967,20 +2007,22 @@ print_insn_mips16 (bfd_vma memaddr, struct disassemble_info *info)
 	  if ((op->pinfo & INSN_UNCOND_BRANCH_DELAY) != 0)
 	    {
 	      info->branch_delay_insns = 1;
-	      if (info->insn_type != dis_jsr)
-		info->insn_type = dis_branch;
+	      if (info->insn_type != dis_jsr) {
+		      info->insn_type = dis_branch;
+	      }
 	    }
 
 	  return length;
 	}
     }
 
-  if (use_extend)
-    (*info->fprintf_func) (info->stream, "0x%x", extend | 0xf000);
-  (*info->fprintf_func) (info->stream, "0x%x", insn);
-  info->insn_type = dis_noninsn;
+    if (use_extend) {
+	    (*info->fprintf_func) (info->stream, "0x%x", extend | 0xf000);
+    }
+    (*info->fprintf_func) (info->stream, "0x%x", insn);
+    info->insn_type = dis_noninsn;
 
-  return length;
+    return length;
 }
 
 /* In an environment where we do not know the symbol type of the
@@ -2003,17 +2045,15 @@ _print_insn_mips (bfd_vma memaddr,
 #if 1
   /* FIXME: If odd address, this is CLEARLY a mips 16 instruction.  */
   /* Only a few tools will work this way.  */
-  if (memaddr & 0x01)
-    return print_insn_mips16 (memaddr, info);
+  if (memaddr & 0x01) {
+	  return print_insn_mips16 (memaddr, info);
+  }
 #endif
 
 #if SYMTAB_AVAILABLE
-  if (info->mach == bfd_mach_mips16
-      || (info->flavour == bfd_target_elf_flavour
-	  && info->symbols != NULL
-	  && ((*(elf_symbol_type **) info->symbols)->internal_elf_sym.st_other
-	      == STO_MIPS16)))
-    return print_insn_mips16 (memaddr, info);
+  if (info->mach == bfd_mach_mips16 || (info->flavour == bfd_target_elf_flavour && info->symbols != NULL && ((*(elf_symbol_type **)info->symbols)->internal_elf_sym.st_other == STO_MIPS16))) {
+	  return print_insn_mips16 (memaddr, info);
+  }
 #endif
 
   status = (*info->read_memory_func) (memaddr, buffer, INSNLEN, info);
@@ -2021,10 +2061,11 @@ _print_insn_mips (bfd_vma memaddr,
     {
       unsigned long insn;
 
-      if (endianness == BFD_ENDIAN_BIG)
-	insn = (unsigned long) bfd_getb32 (buffer);
-      else
-	insn = (unsigned long) bfd_getl32 (buffer);
+      if (endianness == BFD_ENDIAN_BIG) {
+	      insn = (unsigned long)bfd_getb32 (buffer);
+      } else {
+	      insn = (unsigned long)bfd_getl32 (buffer);
+      }
 
       return print_insn_mips (memaddr, insn, info);
     }
@@ -2085,16 +2126,19 @@ with the -M switch (multiple options should be separated by commas):\n"));
   fprintf (stream, _("\n\
   For the options above, the following values are supported for \"ABI\":\n\
    "));
-  for (i = 0; i < ARRAY_SIZE (mips_abi_choices); i++)
-    fprintf (stream, " %s", mips_abi_choices[i].name);
+  for (i = 0; i < ARRAY_SIZE (mips_abi_choices); i++) {
+	  fprintf (stream, " %s", mips_abi_choices[i].name);
+  }
   fprintf (stream, _("\n"));
 
   fprintf (stream, _("\n\
   For the options above, The following values are supported for \"ARCH\":\n\
    "));
-  for (i = 0; i < ARRAY_SIZE (mips_arch_choices); i++)
-    if (*mips_arch_choices[i].name != '\0')
-      fprintf (stream, " %s", mips_arch_choices[i].name);
+  for (i = 0; i < ARRAY_SIZE (mips_arch_choices); i++) {
+	  if (*mips_arch_choices[i].name != '\0') {
+		  fprintf (stream, " %s", mips_arch_choices[i].name);
+	  }
+  }
   fprintf (stream, _("\n"));
 
   fprintf (stream, _("\n"));

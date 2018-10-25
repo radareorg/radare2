@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2016 - pancake, nibble */
+/* radare - LGPL - Copyright 2010-2018 - pancake, nibble */
 
 #include <r_anal.h>
 #include <r_util.h>
@@ -62,7 +62,11 @@ R_API void r_anal_bb_free(RAnalBlock *bb) {
 		bb->failbb->prev = NULL;
 		bb->failbb = NULL;
 	}
-	R_FREE (bb);
+	if (bb->next) {
+		// avoid double free
+		bb->next->prev = NULL;
+	}
+	R_FREE (bb); // double free
 }
 
 R_API RList *r_anal_bb_list_new() {
@@ -87,7 +91,7 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 			eprintf ("Error: new (op)\n");
 			return R_ANAL_RET_ERROR;
 		}
-		if ((oplen = r_anal_op (anal, op, addr + idx, buf + idx, len - idx)) == 0) {
+		if ((oplen = r_anal_op (anal, op, addr + idx, buf + idx, len - idx, R_ANAL_OP_MASK_VAL)) == 0) {
 			r_anal_op_free (op);
 			op = NULL;
 			if (idx == 0) {
@@ -144,7 +148,7 @@ R_API int r_anal_bb(RAnal *anal, RAnalBlock *bb, ut64 addr, ut8 *buf, ut64 len, 
 					ut8 b[8];
 					ut64 ptr = idx+addr+src->delta;
 					anal->iob.read_at (anal->iob.io, ptr, b, memref);
-					r_anal_ref_add (anal, ptr, addr+idx-op->size, 'd');
+					r_anal_xrefs_set (anal, addr+idx-op->size, ptr, R_ANAL_REF_TYPE_DATA);
 				}
 			}
 		}
@@ -217,7 +221,9 @@ R_API RAnalBlock *r_anal_bb_get_failbb(RAnalFunction *fcn, RAnalBlock *bb) {
 /* return the offset of the i-th instruction in the basicblock bb.
  * If the index of the instruction is not valid, it returns UT16_MAX */
 R_API ut16 r_anal_bb_offset_inst(RAnalBlock *bb, int i) {
-	if (i < 0 || i >= bb->ninstr) return UT16_MAX;
+	if (i < 0 || i >= bb->ninstr) {
+		return UT16_MAX;
+	}
 	return (i > 0 && (i - 1) < bb->op_pos_size) ? bb->op_pos[i - 1] : 0;
 }
 

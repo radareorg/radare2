@@ -72,7 +72,8 @@ install-dirs:
 	$(INSTALL_DIR) ${DESTDIR}${DATADIR}/vala/vapi ${DESTDIR}${INCDIR}/sdb
 
 INCFILES=src/sdb.h src/sdb_version.h src/cdb.h src/ht.h src/types.h
-INCFILES+=src/ls.h src/cdb_make.h src/buffer.h src/config.h
+INCFILES+=src/ls.h src/cdb_make.h src/buffer.h src/config.h src/sdbht.h
+INCFILES+=src/dict.h
 
 install: pkgconfig install-dirs
 	$(INSTALL_MAN) src/sdb.1 ${DESTDIR}${MANDIR}
@@ -95,6 +96,7 @@ ifeq ($(BUILD_MEMCACHE),1)
 endif
 	$(INSTALL_DATA) pkgconfig/sdb.pc ${DESTDIR}${LIBDIR}/pkgconfig
 ifneq (${HAVE_VALA},)
+	test -f ${VALADIR}/types/sdbtypes.h || $(MAKE) -C $(VALADIR)/types
 	$(INSTALL_DATA) ${VALADIR}/sdb.vapi ${DESTDIR}${DATADIR}/vala/vapi
 	cd ${VALADIR}/types && ${MAKE} install DESTDIR=${DESTDIR} PREFIX=${PREFIX}
 ifeq ($(BUILD_MEMCACHE),1)

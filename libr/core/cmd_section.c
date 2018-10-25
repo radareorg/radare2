@@ -1,74 +1,182 @@
-/* radare - LGPL - Copyright 2009-2017 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include "r_cons.h"
 #include "r_core.h"
 #include "r_types.h"
 #include "r_io.h"
 
-static bool dumpSectionsToDisk(RCore *core) {
-	char file[512];
-	RListIter *iter;
-	RIOSection *s;
+static const char *help_msg_S[] = {
+	"Usage:","S[?-.*=adlr] [...]","",
+	"S","","list sections",
+	"S"," paddr va sz [vsz] name rwx","add new section (if(!vsz)vsz=sz)",
+	"S.","","show current section name",
+	"S.-*","","remove all sections in current offset",
+	"S*","","list sections (in radare commands)",
+	"S-[id]","","remove section identified by id",
+	"S-.","","remove section at core->offset (can be changed with @)",
+	"S=","","list sections (ascii-art bars) (io.va to display paddr or vaddr)",
+	"Sa","[-] [A] [B] [[off]]","Specify arch and bits for given section",
+	"Sf"," [baddr]","Alias for S 0 0 $s $s foo rwx",
+	"Sl"," [file]","load contents of file into current section (see dml)",
+	"Sr"," [name]","rename section on current seek",
+	"SR", "[?]", "Remap sections with different mode of operation", 
+	NULL
+};
 
-	r_list_foreach (core->io->sections, iter, s) {
-		ut8 *buf = malloc (s->size);
-		r_io_read_at (core->io, s->paddr, buf, s->size);
-		snprintf (file, sizeof (file),
-			"0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
-			s->vaddr, s->vaddr+s->size,
-			r_str_rwx_i (s->flags));
-		if (!r_file_dump (file, buf, s->size, 0)) {
-			eprintf ("Cannot write '%s'\n", file);
-			free (buf);
-			return false;
-		}
-		eprintf ("Dumped %d bytes into %s\n", (int)s->size, file);
-		free (buf);
-	}
-	return true;
+static const char *help_msg_Sl[] = {
+	"Usage:", "Sl", "[file]",
+	NULL
+};
+
+static const char *help_msg_Sr[] = {
+	"Usage:", "Sr", "[name] ([offset])",
+	NULL
+};
+
+static const char* help_msg_SR[] = {
+	"Usage:","SR[b|s][a|p|e] [id]","",
+	"SRb", "[a|p|e] binid", "Remap sections of binid for Analysis, Patch or Emulation", 
+	"SRs","[a|p|e] secid","Remap section with sectid for Analysis, Patch or Emulation",
+	NULL
+};
+
+static void cmd_section_init(RCore *core) {
+	DEFINE_CMD_DESCRIPTOR (core, S);
+	DEFINE_CMD_DESCRIPTOR (core, Sl);
+	DEFINE_CMD_DESCRIPTOR (core, Sr);
 }
 
-static bool dumpSectionToDisk(RCore *core, char *file) {
-	char *heapfile = NULL;
-	RListIter *iter;
+#define PRINT_CURRENT_SEEK \
+        if (i > 0 && len != 0) { \
+                if (seek == UT64_MAX) seek = 0; \
+                io->cb_printf ("=>  0x%08"PFMT64x" |", seek); \
+                for (j = 0; j < width; j++) { \
+                        io->cb_printf ( \
+                                ((j*mul) + min >= seek && \
+                                (j*mul) + min <= seek + len) \
+                                ? "^" : "-"); \
+                } \
+                io->cb_printf ("| 0x%08"PFMT64x"\n", seek+len); \
+        }
+
+static void list_section_visual(RIO *io, ut64 seek, ut64 len, int use_color, int cols) {
+	ut64 mul, min = -1, max = -1;
+	SdbListIter *iter;
 	RIOSection *s;
-	int len = 128;
-	if (!core || !file) {
-		return false;
+	int j, i = 0;
+	int width = cols - 70;
+	if (width < 1) {
+		width = 30;
 	}
-	ut64 o = core->offset;
-	if (core->io->va || core->io->debug) {
-		o = r_io_section_vaddr_to_maddr_try (core->io, o);
-	}
-	r_list_foreach (core->io->sections, iter, s) {
-		if (o >= s->paddr && o < s->paddr + s->size) {
-			ut8 *buf = malloc (s->size);
-			r_io_read_at (core->io, s->paddr, buf, s->size);
-			if (!file) {
-				heapfile = (char *)malloc (len);
-				if (!heapfile) {
-					free (buf);
-					return false;
-				}
-				file = heapfile;
-				snprintf (file, len,
-					"0x%08"PFMT64x"-0x%08"PFMT64x"-%s.dmp",
-					s->vaddr, s->vaddr + s->size,
-					r_str_rwx_i (s->flags));
-			}
-			if (!r_file_dump (file, buf, s->size, 0)) {
-				eprintf ("Cannot write '%s'\n", file);
-				free (buf);
-				free (heapfile);
-				return false;
-			}
-			eprintf ("Dumped %d bytes into %s\n", (int)s->size, file);
-			free (buf);
-			free (heapfile);
-			return true;
+	// seek = r_io_section_vaddr_to_maddr_try (io, seek);
+	// seek = r_io_section_vaddr_to_maddr_try (io, seek);
+	ls_foreach (io->sections, iter, s) {
+		if (min == -1 || s->paddr < min) {
+			min = s->paddr;
+		}
+		if (max == -1 || s->paddr+s->size > max) {
+			max = s->paddr + s->size;
 		}
 	}
-	return false;
+	mul = (max-min) / width;
+	if (min != -1 && mul != 0) {
+		const char * color = "", *color_end = "";
+		char buf[128];
+		i = 0;
+		ls_foreach (io->sections, iter, s) {
+			r_num_units (buf, s->size);
+			if (use_color) {
+				color_end = Color_RESET;
+				if (s->perm & R_PERM_X) { // exec bit
+					color = Color_GREEN;
+				} else if (s->perm & R_PERM_W) { // write bit
+					color = Color_RED;
+				} else {
+					color = "";
+					color_end = "";
+				}
+			} else {
+				color = "";
+				color_end = "";
+			}
+			if (io->va) {
+				io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", s->id,
+						(seek >= s->vaddr && seek < s->vaddr + s->vsize) ? '*' : ' ',
+						color, s->vaddr, color_end);
+			} else {
+				io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", s->id,
+						(seek >= s->paddr && seek < s->paddr + s->size) ? '*' : ' ',
+						color, s->paddr, color_end);
+			}
+			for (j = 0; j < width; j++) {
+				ut64 pos = min + (j * mul);
+				ut64 npos = min + ((j + 1) * mul);
+				if (s->paddr < npos && (s->paddr + s->size) > pos)
+					io->cb_printf ("#");
+				else io->cb_printf ("-");
+			}
+			if (io->va) {
+				io->cb_printf ("| %s0x%08"PFMT64x"%s %5s %s  %04s\n",
+						color, s->vaddr + s->vsize, color_end, buf,
+						r_str_rwx_i (s->perm), s->name);
+			} else {
+				io->cb_printf ("| %s0x%08"PFMT64x"%s %5s %s  %04s\n",
+						color, s->paddr+s->size, color_end, buf,
+						r_str_rwx_i (s->perm), s->name);
+			}
+
+			i++;
+		}
+		PRINT_CURRENT_SEEK;
+	}
+}
+
+static void __section_list (RIO *io, ut64 offset, RPrint *print, int rad) {
+	SdbListIter *iter;
+	RIOSection *s;
+
+	if (!io || !io->sections || !print || !print->cb_printf) {
+		return;
+	}
+	if (rad == '=') { // "S="
+		int cols = r_cons_get_size (NULL);
+		list_section_visual (io, offset, -1, print->flags & R_PRINT_FLAGS_COLOR, cols);
+	} else if (rad) {
+		ls_foreach (io->sections, iter, s) {
+			char *n = strdup (s->name);
+			r_name_filter (n, strlen (n));
+			print->cb_printf ("f section.%s %"PFMT64d" 0x%"PFMT64x"\n", n, s->size, s->vaddr);
+			print->cb_printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"
+				PFMT64x" 0x%08"PFMT64x" %s %s\n", s->paddr,
+				s->vaddr, s->size, s->vsize, n, r_str_rwx_i (s->perm));
+			free (n);
+		}
+	} else {
+		ls_foreach (io->sections, iter, s) {
+			print->cb_printf ("[%02d:%02d]", s->bin_id, s->id);
+			if (io->va) {
+				if ((s->vaddr <= offset) && ((offset - s->vaddr) < s->vsize)) {
+					print->cb_printf (" * ");
+				} else {
+					print->cb_printf (" . ");
+				}
+			} else {
+				if ((s->paddr <= offset) && ((offset - s->paddr) < s->size)) {
+					print->cb_printf (" * ");
+				} else {
+					print->cb_printf (" . ");
+				}
+			}
+			print->cb_printf ("pa=0x%08"PFMT64x" %s va=0x%08"PFMT64x
+				" sz=0x%04"PFMT64x" vsz=0x%04"PFMT64x" %s", s->paddr,
+				r_str_rwx_i (s->perm), s->vaddr, s->size, s->vsize, s->name);
+			if (s->arch && s->bits) {
+				print->cb_printf ("  ; %s %d", r_sys_arch_str (s->arch),
+					s->bits);
+			}
+			print->cb_printf ("\n");
+		}
+	}
 }
 
 static void update_section_flag_at_with_oldname(RIOSection *s, RFlag *flags, ut64 off, char *oldname) {
@@ -78,7 +186,7 @@ static void update_section_flag_at_with_oldname(RIOSection *s, RFlag *flags, ut6
 	int len = 0;
 	char *secname = NULL;
 	list = r_flag_get_list (flags, s->vaddr);
-	secname = sdb_fmt (-1, "section.%s", oldname);
+	secname = sdb_fmt ("section.%s", oldname);
 	len = strlen (secname);
 	r_list_foreach (list, iter, item) {
 		if (!item->name)  {
@@ -86,15 +194,15 @@ static void update_section_flag_at_with_oldname(RIOSection *s, RFlag *flags, ut6
 		}
 		if (!strncmp (item->name, secname, R_MIN (strlen (item->name), len))) {
 			free (item->realname);
-			item->name = strdup (sdb_fmt (-1, "section.%s", s->name));
-			r_str_chop (item->name);
+			item->name = strdup (sdb_fmt ("section.%s", s->name));
+			r_str_trim (item->name);
 			r_name_filter (item->name, 0);
 			item->realname = item->name;
 			break;
 		}
 	}
 	list = r_flag_get_list (flags, s->vaddr + s->size);
-	secname = sdb_fmt (-1, "section_end.%s", oldname);
+	secname = sdb_fmt ("section_end.%s", oldname);
 	len = strlen (secname);
 	r_list_foreach (list, iter, item) {
 		if (!item->name)  {
@@ -102,8 +210,8 @@ static void update_section_flag_at_with_oldname(RIOSection *s, RFlag *flags, ut6
 		}
 		if (!strncmp (item->name, secname, R_MIN (strlen (item->name), len))) {
 			free (item->realname);
-			item->name = strdup (sdb_fmt (-1, "section_end.%s", s->name));
-			r_str_chop (item->name);
+			item->name = strdup (sdb_fmt ("section_end.%s", s->name));
+			r_str_trim (item->name);
 			r_name_filter (item->name, 0);
 			item->realname = item->name;
 			break;
@@ -111,41 +219,64 @@ static void update_section_flag_at_with_oldname(RIOSection *s, RFlag *flags, ut6
 	}
 }
 
-static int cmd_section(void *data, const char *input) {
-	RCore *core = (RCore *)data;
-	const char* help_msg[] = {
-		"Usage:","S[?-.*=adlr] [...]","",
-		"S","","list sections",
-		"S.","","show current section name",
-		"S*","","list sections (in radare commands)",
-		"S=","","list sections (ascii-art bars) (io.va to display paddr or vaddr)",
-		"Sa","[-] [A] [B] [[off]]","Specify arch and bits for given section",
-		"Sd[a]"," [file]","dump current (all) section to a file (see dmd)",
-		"Sl"," [file]","load contents of file into current section (see dml)",
-		"Sf"," [baddr]","Alias for S 0 0 $s $s foo mrwx",
-		"Sj","","list sections in JSON (alias for iSj)",
-		"Sr"," [name]","rename section on current seek",
-		"S"," off va sz vsz name mrwx","add new section (if(!vsz)vsz=sz)",
-		"S-[id]","","remove section identified by id",
-		"S-.","","remove section at core->offset (can be changed with @)",
-		"S.-*","","remove all sections in current offset",
-		NULL
-	};
+static int cmd_section_reapply(RCore *core, const char *input) {
+	int mode = 0;
+	ut32 id;
 	switch (*input) {
 	case '?':
-		r_core_cmd_help (core, help_msg);
+		r_core_cmd_help (core, help_msg_SR);
+		break;
+	case 'b':
+	case 's':
+		switch (input[1]) {
+		case 'e':
+			mode = R_IO_SECTION_APPLY_FOR_EMULATOR;
+			break;
+		case 'p':
+			mode = R_IO_SECTION_APPLY_FOR_PATCH;
+			break;
+		case 'a':
+			mode = R_IO_SECTION_APPLY_FOR_ANALYSIS;
+			break;
+		default:
+			r_core_cmd_help (core, help_msg_SR);
+			return 0;
+		}
+		if (*input == 'b') {
+			id = (ut32)r_num_math (core->num, input + 2);
+			if (!r_io_section_reapply_bin (core->io, id, mode)) {
+				eprintf ("Cannot reapply section with binid %d\n", id);
+			}
+		} else {
+			id = (ut32)r_num_math (core->num, input + 2);
+			if (!r_io_section_reapply (core->io, id, mode)) {
+				eprintf ("Cannot reapply section with secid %d\n", id);
+			}
+		}
+		break;
+	default:
+		r_core_cmd_help (core, help_msg_SR);
+		break;
+	}
+	return 0;
+}
+
+static int cmd_section(void *data, const char *input) {
+	RCore *core = (RCore *)data;
+	switch (*input) {
+	case '?': // "S?"
+		r_core_cmd_help (core, help_msg_S);
 // TODO: add command to resize current section
 		break;
+	case 'R' : // "SR"
+		return cmd_section_reapply (core, input + 1);	
 	case 'f': // "Sf"
 		if (input[1] == ' ') {
 			ut64 n = r_num_math (core->num, input + 1);
-			r_core_cmdf (core, "S 0x%"PFMT64x" 0x%"PFMT64x" $s $s foo mrwx", n, n);
+			r_core_cmdf (core, "S 0x%"PFMT64x" 0x%"PFMT64x" $s $s foo rwx", n, n);
 		} else {
-			r_core_cmd0 (core, "S 0 0 $s $s foo mrwx");
+			r_core_cmd0 (core, "S 0 0 $s $s foo rwx");
 		}
-		break;
-	case 'j': // "Sj"
-		r_core_cmd0 (core, "iSj");
 		break;
 	case 'a': // "Sa"
 		switch (input[1]) {
@@ -158,14 +289,14 @@ static int cmd_section(void *data, const char *input) {
 			}
 			}
 			break;
-		case '-':
+		case '-': // "Sa-"
 			r_io_section_set_archbits (core->io, core->offset, NULL, 0);
 			break;
-		case '?':
+		case '?': // "Sa?"
 		default:
 			eprintf ("Usage: Sa[-][arch] [bits] [[off]]\n");
 			break;
-		case ' ':
+		case ' ': // "Sa "
 			{
 				int i;
 				char *ptr = strdup (input+2);
@@ -194,7 +325,7 @@ static int cmd_section(void *data, const char *input) {
 			}
 		}
 		break;
-	case 'r':
+	case 'r': // "Sr"
 		if (input[1] == ' ') {
 			RIOSection *s;
 			// int len = 0;
@@ -218,46 +349,23 @@ static int cmd_section(void *data, const char *input) {
 				eprintf ("No section found in  0x%08"PFMT64x"\n", core->offset);
 			}
 		} else {
-			eprintf ("Usage: Sr [name] ([offset])\n");
+			r_core_cmd_help (core, help_msg_Sr);
 		}
 		break;
-	case 'd':
-		{
-		char *file = NULL;
-		int len = 128;
-		switch (input[1]) {
-		case 0:
-			(void) dumpSectionToDisk (core, NULL);
-			break;
-		case ' ':
-			if (input[2]) {
-				file = (char *)calloc (len, sizeof (char));
-				if (file) {
-					snprintf (file, len, "%s", input + 2);
-				}
-			}
-			(void) dumpSectionToDisk (core, file);
-			free (file);
-			break;
-		case 'a':
-			(void)dumpSectionsToDisk (core);
-			break;
-		}
-		}
-		break;
-	case 'l':
+	case 'l': // "Sl"
 		{
 		ut64 o = core->offset;
-		RListIter *iter;
+		SdbListIter *iter;
 		RIOSection *s;
 		if (input[1] != ' ') {
-			eprintf ("Usage: Sl [file]\n");
+			r_core_cmd_help (core, help_msg_Sl);
 			return false;
 		}
 		if (core->io->va || core->io->debug) {
-			o = r_io_section_vaddr_to_maddr_try (core->io, o);
+			s = r_io_section_vget (core->io, core->offset); 
+			o = s ? core->offset - s->vaddr + s->paddr : core->offset;
 		}
-		r_list_foreach (core->io->sections, iter, s) {
+		ls_foreach (core->io->sections, iter, s) {
 			if (o >= s->paddr && o < s->paddr + s->size) {
 				int sz;
 				char *buf = r_file_slurp (input + 2, &sz);
@@ -268,7 +376,7 @@ static int cmd_section(void *data, const char *input) {
 					return false;
 				}
 				r_io_write_at (core->io, s->vaddr, (const ut8*)buf, sz);
-				eprintf ("Loaded %d bytes into the map region "
+				eprintf ("Loaded %d byte(s) into the map region "
 					" at 0x%08"PFMT64x"\n", sz, s->vaddr);
 				free (buf);
 				return true;
@@ -278,7 +386,7 @@ static int cmd_section(void *data, const char *input) {
 		return false;
 		}
 		break;
-	case '-':
+	case '-': // "S-"
 		// remove all sections
 		if (input[1] == '*') {
 			r_io_section_init (core->io);
@@ -295,9 +403,9 @@ static int cmd_section(void *data, const char *input) {
 			r_io_section_rm (core->io, atoi (input + 1));
 		}
 		break;
-	case ' ':
+	case ' ': // "S "
 		switch (input[1]) {
-		case '-': // remove
+		case '-': // "S -" remove
 			if (input[2] == '?' || input[2] == '\0') {
 				eprintf ("Usage: S -N   # where N is the "
 					" section index\n");
@@ -312,27 +420,27 @@ static int cmd_section(void *data, const char *input) {
 			const char *name = NULL;
 			char vname[64];
 			ut64 vaddr = 0LL;
-			ut64 offset = 0LL;
+			ut64 paddr = 0LL;
 			ut64 size = 0LL;
 			ut64 vsize = 0LL;
-			int fd = r_core_file_cur_fd(core);
+			int bin_id = -1;
+			int fd = r_core_file_cur_fd (core);
 			i = r_str_word_set0 (ptr);
 			switch (i) {
+			case 7: //get bin id
+				bin_id = r_num_math (core->num, r_str_word_get0 (ptr, 6));
 			case 6: // get rwx
 				rwx = r_str_rwx (r_str_word_get0 (ptr, 5));
 			case 5: // get name
 				name = r_str_word_get0 (ptr, 4);
 			case 4: // get vsize
 				vsize = r_num_math (core->num, r_str_word_get0 (ptr, 3));
-				if (!vsize) {
-					vsize = size;
-				}
 			case 3: // get size
 				size = r_num_math (core->num, r_str_word_get0 (ptr, 2));
 			case 2: // get vaddr
 				vaddr = r_num_math (core->num, r_str_word_get0 (ptr, 1));
-			case 1: // get offset
-				offset = r_num_math (core->num, r_str_word_get0 (ptr, 0));
+			case 1: // get paddr
+				paddr = r_num_math (core->num, r_str_word_get0 (ptr, 0));
 			}
 			if (!vsize) {
 				vsize = size;
@@ -344,29 +452,26 @@ static int cmd_section(void *data, const char *input) {
 				}
 			}
 			if (!name || !*name) {
-				sprintf (vname, "area%d", r_list_length (core->io->sections));
+				sprintf (vname, "area%d", (int)ls_length (core->io->sections));
 				name = vname;
 			}
-			r_io_section_add (core->io, offset, vaddr, size, vsize, rwx, name, 0, fd);
+			RIOSection *sec = r_io_section_add (core->io, paddr, vaddr, size, vsize, rwx, name, bin_id, fd);
+			r_io_create_mem_for_section (core->io, sec);
 			free (ptr);
 			}
 			break;
 		}
 		break;
-	case '=': // "S="
-		r_io_section_list_visual (core->io, core->offset, core->blocksize,
-					r_config_get_i (core->config, "scr.color"),
-					r_cons_get_size (NULL));
-		break;
-	case '.':
-		if (input[1] == '-') {
+	case '.': // "S."
+		if (input[1] == '-') { // "S.-"
 			ut64 o = core->offset;
-			RListIter *iter, *iter2;
+			SdbListIter *iter, *iter2;
 			RIOSection *s;
 			if (core->io->va || core->io->debug) {
-				o = r_io_section_vaddr_to_maddr_try (core->io, o);
+				s = r_io_section_vget (core->io, o); 
+				o = s ? o - s->vaddr + s->paddr : o;
 			}
-			r_list_foreach_safe (core->io->sections, iter, iter2, s) {
+			ls_foreach_safe (core->io->sections, iter, iter2, s) {
 				if (o >= s->paddr && o < s->paddr + s->size) {
 					r_io_section_rm (core->io, s->id);
 					if (input[2] != '*') {
@@ -376,14 +481,15 @@ static int cmd_section(void *data, const char *input) {
 			}
 		} else {
 			ut64 o = core->offset;
-			RListIter *iter;
+			SdbListIter *iter;
 			RIOSection *s;
 			if (core->io->va || core->io->debug) {
-				o = r_io_section_vaddr_to_maddr_try (core->io, o);
+				s = r_io_section_vget (core->io, o); 
+				o = s ? o - s->vaddr + s->paddr : o;
 			}
 			if (input[1] == 'j') { // "S.j"
 				r_cons_printf ("[");
-				r_list_foreach (core->io->sections, iter, s) {
+				ls_foreach (core->io->sections, iter, s) {
 					if (o >= s->paddr && o < s->paddr + s->size) {
 						char *name = r_str_escape (s->name);
 						r_cons_printf ("{\"start\":%" PFMT64u ",\"end\":%" PFMT64u ",\"name\":\"%s\"}",
@@ -391,12 +497,11 @@ static int cmd_section(void *data, const char *input) {
 							s->paddr + s->vaddr + s->size,
 							name);
 						free (name);
-						break;
 					}
 				}
 				r_cons_printf ("]");
 			} else {
-				r_list_foreach (core->io->sections, iter, s) {
+				ls_foreach (core->io->sections, iter, s) {
 					if (o >= s->paddr && o < s->paddr + s->size) {
 						r_cons_printf ("0x%08"PFMT64x" 0x%08"PFMT64x" %s\n",
 							s->paddr + s->vaddr,
@@ -408,11 +513,10 @@ static int cmd_section(void *data, const char *input) {
 			}
 		}
 		break;
-	case '\0':
-		r_io_section_list (core->io, core->offset, false);
-		break;
-	case '*':
-		r_io_section_list (core->io, core->offset, true);
+	case '\0': // "S"
+	case '=': // "S="
+	case '*': // "S*"
+		__section_list (core->io, core->offset, core->print, *input);
 		break;
 	}
 	return 0;

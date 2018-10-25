@@ -9,15 +9,24 @@
 
 R_LIB_VERSION (r_search);
 
+typedef struct {
+	ut64 end;
+	int len;
+	ut8 data[];
+} RSearchLeftover;
+
 R_API RSearch *r_search_new(int mode) {
 	RSearch *s = R_NEW0 (RSearch);
-	if (!s) return NULL;
+	if (!s) {
+		return NULL;
+	}
 	if (!r_search_set_mode (s, mode)) {
 		free (s);
 		eprintf ("Cannot init search for mode %d\n", mode);
 		return false;
 	}
 	s->inverse = false;
+	s->data = NULL;
 	s->user = NULL;
 	s->callback = NULL;
 	s->align = 0;
@@ -27,10 +36,10 @@ R_API RSearch *r_search_new(int mode) {
 	s->pattern_size = 0;
 	s->string_max = 255;
 	s->string_min = 3;
-	s->hits = r_list_new ();
+	s->hits = r_list_newf (free);
+	s->maxhits = 0;
 	// TODO: review those mempool sizes. ensure never gets NULL
-	s->pool = r_mem_pool_new (sizeof (RSearchHit), 1024, 10);
-	s->kws = r_list_new ();
+	s->kws = r_list_newf (free);
 	if (!s->kws) {
 		r_search_free (s);
 		return NULL;
@@ -40,25 +49,27 @@ R_API RSearch *r_search_new(int mode) {
 }
 
 R_API RSearch *r_search_free(RSearch *s) {
-	if (!s) return NULL;
-	// TODO: it leaks
-	r_mem_pool_free (s->pool);
+	if (!s) {
+		return NULL;
+	}
 	r_list_free (s->hits);
 	r_list_free (s->kws);
 	//r_io_free(s->iob.io); this is suposed to be a weak reference
+	free (s->data);
 	free (s);
 	return NULL;
 }
 
 R_API int r_search_set_string_limits(RSearch *s, ut32 min, ut32 max) {
-	if (max < min)
+	if (max < min) {
 		return false;
+	}
 	s->string_min = min;
 	s->string_max = max;
 	return true;
 }
 
-R_API int r_search_magic_update(void *_s, ut64 from, const ut8 *buf, int len) {
+R_API int r_search_magic_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 	eprintf ("TODO: import libr/core/cmd_search.c /m implementation into rsearch\n");
 	return false;
 }
@@ -86,297 +97,363 @@ R_API int r_search_begin(RSearch *s) {
 	RSearchKeyword *kw;
 	r_list_foreach (s->kws, iter, kw) {
 		kw->count = 0;
-		kw->idx[0] = 0;
-		kw->distance = 0; //s->distance;
 		kw->last = 0;
 	}
-#if 0
-	/* TODO: compile regexpes */
-	switch(s->mode) {
-	case R_SEARCH_REGEXP:
-		break;
-	}
-#endif
 	return true;
 }
 
+// Returns 2 if search.maxhits is reached, 0 on error, otherwise 1
 R_API int r_search_hit_new(RSearch *s, RSearchKeyword *kw, ut64 addr) {
-	RSearchHit* hit;
 	if (s->align && (addr%s->align)) {
 		eprintf ("0x%08"PFMT64x" unaligned\n", addr);
-		return true;
+		return 1;
 	}
 	if (!s->contiguous) {
 		if (kw->last && addr == kw->last) {
 			kw->count--;
-			kw->last = addr + kw->keyword_length;
+			kw->last = s->bckwrds ? addr : addr + kw->keyword_length;
 			eprintf ("0x%08"PFMT64x" Sequencial hit ignored.\n", addr);
-			return true;
+			return 1;
 		}
-		kw->last = addr + kw->keyword_length;
 	}
-	if (s->callback)
-		return s->callback (kw, s->user, addr);
-	if (!(hit = r_mem_pool_alloc (s->pool)))
-		return false;
-	hit->kw = kw;
-	hit->addr = addr;
-	r_list_append (s->hits, hit);
-	return true;
+	// kw->last is used by string search, the right endpoint of last matcch (forward search), to honor search.overlap
+	kw->last = s->bckwrds ? addr : addr + kw->keyword_length;
+	if (s->callback) {
+		int ret = s->callback (kw, s->user, addr);
+		kw->count++;
+		s->nhits++;
+		// If callback returns 0 or larger than 1, forwards it; otherwise returns 2 if search.maxhits is reached
+		return !ret || ret > 1 ? ret : s->maxhits && s->nhits >= s->maxhits ? 2 : 1;
+	}
+	kw->count++;
+	s->nhits++;
+	RSearchHit* hit = R_NEW0 (RSearchHit);
+	if (hit) {
+		hit->kw = kw;
+		hit->addr = addr;
+		r_list_append (s->hits, hit);
+	}
+	return s->maxhits && s->nhits >= s->maxhits ? 2 : 1;
 }
 
-R_API int r_search_deltakey_update(void *_s, ut64 from, const ut8 *buf, int len) {
+// TODO support search across block boundaries
+// Supported search variants: backward, overlap
+R_API int r_search_deltakey_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 	RListIter *iter;
-	unsigned char pch = 0;
-	int i, j, count = 0;
-	RSearch *s = (RSearch*)_s;
+	int longest = 0, i, j;
+	RSearchKeyword *kw;
+	RSearchLeftover *left;
+	const int old_nhits = s->nhits;
+	r_list_foreach (s->kws, iter, kw) {
+		longest = R_MAX (longest, kw->keyword_length + 1);
+	}
+	if (!longest) {
+		return 0;
+	}
+	if (s->data) {
+		left = s->data;
+		if (left->end != from) {
+			left->len = 0;
+		}
+	} else {
+		left = malloc (sizeof(RSearchLeftover) + (size_t)2 * (longest - 1));
+		if (!left) {
+			return -1;
+		}
+		s->data = left;
+		left->len = 0;
+		if (s->bckwrds) {
+			r_list_foreach (s->kws, iter, kw) {
+				ut8 *i = kw->bin_keyword, *j = kw->bin_keyword + kw->keyword_length;
+				for (; i < j; i++) {
+					*i = -*i;
+				}
+			}
+		}
+	}
+	if (s->bckwrds) {
+		// XXX Change function signature from const ut8 * to ut8 *
+		ut8 *i = (ut8 *)buf, *j = i + len;
+		while (i < j) {
+			ut8 t = *i;
+			*i++ = *--j;
+			*j = t;
+		}
+	}
 
-	for (i=0; i<len; i++) {
-		RSearchKeyword *kw;
-		r_list_foreach (s->kws, iter, kw) {
-			for (j=0; j<=kw->distance; j++) {
-				char ch = kw->bin_keyword[kw->idx[j]]; // signed char
-				ut8 ch2 = buf[i];
-				/* no icase in delta keys */
-				/* no binmask in delta keys */
-				/* no inverse support for delta keys */
-				if (pch+ch == ch2) {
-					kw->idx[j]++;
-					if (kw->idx[j] == kw->keyword_length) {
-						if (!r_search_hit_new (s, kw, (ut64)
-							from + i - kw->keyword_length + 1))
-							return -1;
-						kw->idx[j] = 0;
-						//kw->idx[0] = 0;
-						kw->distance = 0;
-						kw->count++;
-						count++;
-						//s->nhits++;
+	ut64 len1 = left->len + R_MIN (longest - 1, len);
+	memcpy (left->data + left->len, buf, len1 - left->len);
+	r_list_foreach (s->kws, iter, kw) {
+		ut8 *a = kw->bin_keyword;
+		i = s->overlap || !kw->count ? 0 :
+				s->bckwrds
+				? kw->last - from < left->len ? from + left->len - kw->last : 0
+				: from - kw->last < left->len ? kw->last + left->len - from : 0;
+		for (; i + kw->keyword_length < len1 && i < left->len; i++) {
+			if ((ut8)(left->data[i+1] - left->data[i]) == a[0]) {
+				j = 1;
+				while (j < kw->keyword_length && (ut8)(left->data[i+j+1] - left->data[i+j]) == a[j]) {
+					j++;
+				}
+				if (j == kw->keyword_length) {
+					int t = r_search_hit_new (s, kw, s->bckwrds ? from - kw->keyword_length - 1 - i + left->len : from + i - left->len);
+					kw->last += s->bckwrds ? 0 : 1;
+					if (!t) {
+						return -1;
+					}
+					if (t > 1) {
+						return s->nhits - old_nhits;
+					}
+					if (!s->overlap) {
+						i += kw->keyword_length;
 					}
 				}
-				pch = ch2;
 			}
 		}
-		count = 0;
+		i = s->overlap || !kw->count ? 0 :
+				s->bckwrds
+				? from > kw->last ? from - kw->last : 0
+				: from < kw->last ? kw->last - from : 0;
+		for (; i + kw->keyword_length < len; i++) {
+			if ((ut8)(buf[i+1] - buf[i]) == a[0]) {
+				j = 1;
+				while (j < kw->keyword_length && (ut8)(buf[i+j+1] - buf[i+j]) == a[j]) {
+					j++;
+				}
+				if (j == kw->keyword_length) {
+					int t = r_search_hit_new (s, kw, s->bckwrds ? from - kw->keyword_length - 1 - i : from + i);
+					kw->last += s->bckwrds ? 0 : 1;
+					if (!t) {
+						return -1;
+					}
+					if (t > 1) {
+						return s->nhits - old_nhits;
+					}
+					if (!s->overlap) {
+						i += kw->keyword_length;
+					}
+				}
+			}
+		}
 	}
-	return count;
+	if (len < longest - 1) {
+		if (len1 < longest) {
+			left->len = len1;
+		} else {
+			left->len = longest - 1;
+			memmove (left->data, left->data + len1 - longest + 1, longest - 1);
+		}
+	} else {
+		left->len = longest - 1;
+		memcpy (left->data, buf + len - longest + 1, longest - 1);
+	}
+	left->end = s->bckwrds ? from - len : from + len;
+
+	return s->nhits - old_nhits;
 }
 
-/* Boyer-Moore-Horspool pattern matching */
-#if USE_BMH
-R_API int r_search_bmh (const RSearchKeyword *kw, const ut64 from, const ut8 *buf, const int len, ut64 *out) {
+#if 0
+// Boyer-Moore-Horspool pattern matching
+// Supported search variants: icase, overlap
+static int r_search_horspool(RSearch *s, RSearchKeyword *kw, ut64 from, const ut8 *buf, int len) {
 	ut64 bad_char_shift[UT8_MAX + 1];
-	ut64 pos = from;
-	int i, kw_len;
+	int i, j, m = kw->keyword_length - 1, count = 0;
 	ut8 ch;
 
-	kw_len = kw->keyword_length - 1;
-
-	if (kw_len < 0)
-		return false;
-
-	for (i = 0; i < 256; i++)
+	for (i = 0; i < R_ARRAY_SIZE (bad_char_shift); i++) {
 		bad_char_shift[i] = kw->keyword_length;
-
-	for (i = 0; i < kw_len; i++) {
+	}
+	for (i = 0; i < m; i++) {
 		ch = kw->bin_keyword[i];
-		bad_char_shift[kw->icase?tolower(ch):ch] = kw_len - i;
+		bad_char_shift[kw->icase ? tolower (ch) : ch] = m - i;
 	}
 
-	while (pos < len) {
-		for (i = kw_len; ; i--) {
-			ut8 ch1 = buf[pos + i];
-			ut8 ch2 = kw->bin_keyword[i];
+	for (i = 0; i + m < len; ) {
+	next:
+		for (j = m; ; j--) {
+			ut8 a = buf[i + j], b = kw->bin_keyword[j];
 			if (kw->icase) {
-				ch1 = tolower(ch1);
-				ch2 = tolower(ch2);
+				a = tolower (a);
+				b = tolower (b);
 			}
-			if (kw->binmask_length && i < kw->binmask_length) {
-				ch1 &= kw->bin_binmask[i];
-				ch2 &= kw->bin_binmask[i];
-			}
-			if (ch1 != ch2)
-				break;
+			if (a != b) break;
 			if (i == 0) {
-				if (out)
-					*out = pos;
-				return true;
+				if (!r_search_hit_new (s, kw, from + i)) {
+					return -1;
+				}
+				kw->count++;
+				count++;
+				if (!s->overlap) {
+					i += kw->keyword_length;
+					goto next;
+				}
 			}
 		}
-		ch = buf[pos + kw_len];
-		pos += bad_char_shift[kw->icase?tolower(ch):ch];
+		ch = buf[i + m];
+		i += bad_char_shift[kw->icase ? tolower (ch) : ch];
 	}
 
 	return false;
 }
 #endif
 
-static int maskcmp(RSearchKeyword *kw, const ut8* buf, int kwidx) {
-	int k;
-	ut8 a, b;
-
-	kwidx = kw->idx[kwidx];
-	k = (kwidx % kw->binmask_length);
-	a = *buf;
-	b = kw->bin_keyword[kwidx];
-	if (kw->icase) {
-		a = tolower (a);
-		b = tolower (b);
+static bool brute_force_match(RSearch *s, RSearchKeyword *kw, const ut8 *buf, int i) {
+	int j = 0;
+	if (s->distance) { // slow path, more work in the loop
+		int dist = 0;
+		if (kw->binmask_length > 0) {
+			for (; j < kw->keyword_length; j++) {
+				int k = j % kw->binmask_length;
+				ut8 a = buf[i + j], b = kw->bin_keyword[j];
+				if (kw->icase) {
+					a = tolower (a);
+					b = tolower (b);
+				}
+				if ((a & kw->bin_binmask[k]) != (b & kw->bin_binmask[k])) {
+					dist++;
+				}
+			}
+		} else if (kw->icase) {
+			for (; j < kw->keyword_length; j++) {
+				if (tolower (buf[i + j]) != tolower (kw->bin_keyword[j])) {
+					dist++;
+				}
+			}
+		} else {
+			for (; j < kw->keyword_length; j++) {
+				if (buf[i + j] != kw->bin_keyword[j]) {
+					dist++;
+				}
+			}
+		}
+		return dist <= s->distance;
 	}
-	a &= kw->bin_binmask[k];
-	b &= kw->bin_binmask[k];
-	return (a == b)? 1: 0;
+
+	if (kw->binmask_length > 0) {
+		for (; j < kw->keyword_length; j++) {
+			int k = j % kw->binmask_length;
+			ut8 a = buf[i + j], b = kw->bin_keyword[j];
+			if (kw->icase) {
+				a = tolower (a);
+				b = tolower (b);
+			}
+			if ((a & kw->bin_binmask[k]) != (b & kw->bin_binmask[k])) {
+				break;
+			}
+		}
+	} else if (kw->icase) {
+		while (j < kw->keyword_length &&
+			tolower (buf[i + j]) == tolower (kw->bin_keyword[j])) {
+			j++;
+		}
+	} else {
+		while (j < kw->keyword_length && buf[i + j] == kw->bin_keyword[j]) {
+			j++;
+		}
+	}
+	return j == kw->keyword_length;
 }
 
-R_API int r_search_mybinparse_update(void *_s, ut64 from, const ut8 *buf, int len) {
-	RSearch *s = (RSearch*)_s;
+// Supported search variants: backward, binmask, icase, inverse, overlap
+R_API int r_search_mybinparse_update(RSearch *s, ut64 from, const ut8 *buf, int len) {
 	RSearchKeyword *kw;
 	RListIter *iter;
-	int count = 0;
+	RSearchLeftover *left;
+	int longest = 0, i;
+	const int old_nhits = s->nhits;
 
-#if USE_BMH
-	ut64 offset;
-	ut64 match_pos;
-	RSearchKeyword *kw;
 	r_list_foreach (s->kws, iter, kw) {
-		offset = 0;
-		while (offset < len && r_search_bmh (kw, offset, buf, len, &match_pos)) {
-			if (!r_search_hit_new (s, kw, from + match_pos)) {
-				eprintf ("Something very bad has happened...\n");
-				return -1;
-			}
-			offset += match_pos + kw->keyword_length;
-			kw->count++;
-			count++;
-			/* Stop at the first occurrence */
-			if (s->inverse) {
-				return -1;
-			}
+		longest = R_MAX (longest, kw->keyword_length);
+	}
+	if (!longest) {
+		return 0;
+	}
+	if (s->data) {
+		left = s->data;
+		if (left->end != from) {
+			left->len = 0;
+		}
+	} else {
+		left = malloc (sizeof(RSearchLeftover) + (size_t)2 * (longest - 1));
+		if (!left) {
+			return -1;
+		}
+		s->data = left;
+		left->len = 0;
+	}
+	if (s->bckwrds) {
+		// XXX Change function signature from const ut8 * to ut8 *
+		ut8 *i = (ut8 *)buf, *j = i + len;
+		while (i < j) {
+			ut8 t = *i;
+			*i++ = *--j;
+			*j = t;
 		}
 	}
-#else
-	int i, j, hit;
-#if 0
-	int hasmask;
-	// XXX this shouldnt be necessary
-	/** remove unnecesary binmasks here */
-	r_list_foreach (s->kws, iter, kw) {
-		if (kw->binmask_length) {
-			hasmask = 1;
-			for (i=0;i<kw->binmask_length; i++) {
-				if (kw->bin_binmask[i] != 0xff) {
-					hasmask = 0;
-					break;
-				}
-			}
-			if (!hasmask)
-				kw->binmask_length = 0;
-		}
-	}
-#endif
-	for (i = 0; i < len; i++) {
-		r_list_foreach (s->kws, iter, kw) {
-			if (s->inverse && s->nhits > 0) {
-				//eprintf ("nhits = %d\n", s->nhits);
-				return -1;
-			}
-			for (j = 0; j <= kw->distance; j++) {
-				// TODO: refactor: hit = checkKeyword()
-				// TODO: assert len(kw) == len(bm)
-				ut8 ch, ch2;
-				bool match = false;
-				hit = false;
 
-				if (kw->binmask_length > 0) {
-					match = (maskcmp (kw, buf + i, j) > 0);
-				} else {
-					ch = kw->bin_keyword[kw->idx[j]];
-					ch2 = buf[i];
-					if (kw->icase) {
-						ch = tolower (ch);
-						ch2 = tolower (ch2);
-					}
-					match = (ch == ch2);
+	ut64 len1 = left->len + R_MIN (longest - 1, len);
+	memcpy (left->data + left->len, buf, len1 - left->len);
+	r_list_foreach (s->kws, iter, kw) {
+		i = s->overlap || !kw->count ? 0 :
+				s->bckwrds
+				? kw->last - from < left->len ? from + left->len - kw->last : 0
+				: from - kw->last < left->len ? kw->last + left->len - from : 0;
+		for (; i + kw->keyword_length <= len1 && i < left->len; i++) {
+			if (brute_force_match (s, kw, left->data, i) != s->inverse) {
+				int t = r_search_hit_new (s, kw, s->bckwrds ? from - kw->keyword_length - i + left->len : from + i - left->len);
+				if (!t) {
+					return -1;
 				}
-				if (match) {
-					hit = true;
-				} else {
-					if (s->inverse) {
-						if (!r_search_hit_new (s, kw, (ut64)from + i - kw->keyword_length + 1))
-							return -1;
-						kw->idx[j] = 0;
-						//kw->idx[0] = 0;
-						kw->distance = 0;
-						//eprintf ("HIT FOUND !!! %x %x 0x%llx %d\n", ch, ch2, from+i, i);
-						kw->count++;
-						s->nhits++;
-						return 1; // only return 1 keyword if inverse mode
-					}
-					if (kw->distance < s->distance) {
-						kw->idx[kw->distance + 1] = kw->idx[kw->distance];
-						kw->distance++;
-						hit = true;
-					} else {
-						// Works for 0a0a0a0b
-						bool isTail = false;
-						int k = kw->idx[j];
-						if (k > 0) {
-							int q = 1;
-							int model = kw->bin_keyword[0];
-							for (isTail = true; q < k; q++) {
-								if (kw->bin_keyword[q] != model)
-									isTail = false;
-							}
-						}
-						if (isTail) {
-							kw->idx[j]--;
-						} else {
-							kw->idx[j] = 0;
-						}
-						kw->distance = 0;
-						if (kw->binmask_length > 0) {
-							hit = (maskcmp (kw, buf + i, j) > 0);
-						} else {
-							ch = kw->bin_keyword[kw->idx[j]];
-							hit = (ch == ch2);
-						}
-					}
+				if (t > 1) {
+					return s->nhits - old_nhits;
 				}
-				if (hit) {
-					kw->idx[j]++;
-					if (kw->idx[j] == kw->keyword_length) {
-						if (s->inverse) {
-							kw->idx[j] = 0;
-							continue;
-						}
-						if (!r_search_hit_new (s, kw, (ut64)from + i - kw->keyword_length + 1)) {
-							return -1;
-						}
-						kw->idx[j] = 0;
-						kw->distance = 0;
-						kw->count++;
-						count++;
-						if (s->overlap) {
-							if (kw->keyword_length > 1) {
-								i -= kw->keyword_length - 1;
-							}
-						}
-						//s->nhits++;
-					}
+				if (!s->overlap) {
+					i += kw->keyword_length - 1;
 				}
 			}
 		}
-		count = 0;
+		i = s->overlap || !kw->count ? 0 :
+				s->bckwrds
+				? from > kw->last ? from - kw->last : 0
+				: from < kw->last ? kw->last - from : 0;
+		for (; i + kw->keyword_length <= len; i++) {
+			if (brute_force_match (s, kw, buf, i) != s->inverse) {
+				int t = r_search_hit_new (s, kw, s->bckwrds ? from - kw->keyword_length - i : from + i);
+				if (!t) {
+					return -1;
+				}
+				if (t > 1) {
+					return s->nhits - old_nhits;
+				}
+				if (!s->overlap) {
+					i += kw->keyword_length - 1;
+				}
+			}
+		}
 	}
-#endif
-	return count;
+	if (len < longest - 1) {
+		if (len1 < longest) {
+			left->len = len1;
+		} else {
+			left->len = longest - 1;
+			memmove (left->data, left->data + len1 - longest + 1, longest - 1);
+		}
+	} else {
+		left->len = longest - 1;
+		memcpy (left->data, buf + len - longest + 1, longest - 1);
+	}
+	left->end = s->bckwrds ? from - len : from + len;
+
+	return s->nhits - old_nhits;
 }
 
 R_API void r_search_set_distance(RSearch *s, int dist) {
 	if (dist>=R_SEARCH_DISTANCE_MAX) {
 		eprintf ("Invalid distance\n");
 		s->distance = 0;
-	} else s->distance = (dist>0)?dist:0;
+	} else {
+		s->distance = (dist>0)?dist:0;
+	}
 }
 
 // deprecate? or standarize with ->align ??
@@ -389,11 +466,15 @@ R_API void r_search_set_callback(RSearch *s, RSearchCallback(callback), void *us
 	s->user = user;
 }
 
-/* TODO: initialize update callback in _init or begin... */
-R_API int r_search_update(RSearch *s, ut64 *from, const ut8 *buf, long len) {
+// backward search: from points to the right endpoint
+// forward search: from points to the left endpoint
+R_API int r_search_update(RSearch *s, ut64 from, const ut8 *buf, long len) {
 	int ret = -1;
 	if (s->update) {
-		ret = s->update (s, *from, buf, len);
+		if (s->maxhits && s->nhits >= s->maxhits) {
+			return 0;
+		}
+		ret = s->update (s, from, buf, len);
 		if (s->mode == R_SEARCH_AES) {
 			ret = R_MIN (R_SEARCH_AES_BOX_SIZE, len);
 		}
@@ -404,47 +485,68 @@ R_API int r_search_update(RSearch *s, ut64 *from, const ut8 *buf, long len) {
 }
 
 R_API int r_search_update_i(RSearch *s, ut64 from, const ut8 *buf, long len) {
-	return r_search_update (s, &from, buf, len);
+	return r_search_update (s, from, buf, len);
 }
 
 static int listcb(RSearchKeyword *k, void *user, ut64 addr) {
 	RSearchHit *hit = R_NEW0 (RSearchHit);
 	if (!hit) {
-		return false;
+		return 0;
 	}
 	hit->kw = k;
 	hit->addr = addr;
 	r_list_append (user, hit);
-	return true;
+	return 1;
 }
 
 R_API RList *r_search_find(RSearch *s, ut64 addr, const ut8 *buf, int len) {
 	RList *ret = r_list_new ();
 	r_search_set_callback (s, listcb, ret);
-	r_search_update (s, &addr, buf, len);
+	r_search_update (s, addr, buf, len);
 	return ret;
 }
 
 /* --- keywords --- */
 R_API int r_search_kw_add(RSearch *s, RSearchKeyword *kw) {
-	if (!kw) return false;
+	if (!kw || !kw->keyword_length) {
+		return false;
+	}
 	kw->kwidx = s->n_kws++;
 	r_list_append (s->kws, kw);
 	return true;
 }
 
-R_API void r_search_kw_reset(RSearch *s) {
-	r_list_free (s->kws);
-	s->kws = r_list_new ();
+// Reverse bin_keyword & bin_binmask for backward search
+R_API void r_search_string_prepare_backward(RSearch *s) {
+	RListIter *iter;
+	RSearchKeyword *kw;
+	// Precondition: !kw->binmask_length || kw->keyword_length % kw->binmask_length == 0
+	r_list_foreach (s->kws, iter, kw) {
+		ut8 *i = kw->bin_keyword, *j = kw->bin_keyword + kw->keyword_length;
+		while (i < j) {
+			ut8 t = *i;
+			*i++ = *--j;
+			*j = t;
+		}
+		i = kw->bin_binmask;
+		j = kw->bin_binmask + kw->binmask_length;
+		while (i < j) {
+			ut8 t = *i;
+			*i++ = *--j;
+			*j = t;
+		}
+	}
 }
 
 R_API void r_search_reset(RSearch *s, int mode) {
-	r_list_purge (s->hits);
 	s->nhits = 0;
-	s->hits = r_list_new ();
-	if (!s->hits) return;
-	s->hits->free = free;
-	r_search_kw_reset (s);
-	if (!r_search_set_mode (s, mode))
+	if (!r_search_set_mode (s, mode)) {
 		eprintf ("Cannot init search for mode %d\n", mode);
+	}
+}
+
+R_API void r_search_kw_reset(RSearch *s) {
+	r_list_purge (s->kws);
+	r_list_purge (s->hits);
+	R_FREE (s->data);
 }

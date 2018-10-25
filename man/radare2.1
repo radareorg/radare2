@@ -1,4 +1,4 @@
-.Dd Jun 20, 2016
+.Dd Aug 24, 2017
 .Dt RADARE2 1
 .Sh NAME
 .Nm radare2
@@ -16,9 +16,10 @@
 .Op Fl m Ar addr
 .Op Fl p Ar project
 .Op Fl P Ar patch
-.Op Fl R Ar rarun2
+.Op Fl r Ar rarun2
+.Op Fl R Ar rr2rule
 .Op Fl s Ar addr
-.Op Fl 0AdDwntLquvVX
+.Op Fl 0AdDwntLquvVxX
 .Ar -|--|=|file
 .Sh DESCRIPTION
 radare2 is a commandline hexadecimal editor.
@@ -83,8 +84,10 @@ Same as q, but exiting without freeing RCore, this produces leaks at exit time, 
 Set project file
 .It Fl P Ar file
 Apply rapatch file and quit (see doc/rapatch.md for more details)
-.It Fl R Ar rarun2
+.It Fl r Ar rarun2
 Specify dbg.profile rarun2 profile to use when spawning a program for debugging
+.It Fl R Ar rarun2-directive
+Specify custom rarun2 directives without having to create a rarun2 profile
 .It Fl s Ar addr
 Start seeking at this address
 .It Fl S
@@ -103,8 +106,10 @@ Open in write mode
 Show help message
 .It Fl H
 Show files and environment help
-.It Fl X Ar rarun2-directive
-Specify custom rarun2 directives without having to create a rarun2 profile
+.It Fl x
+Open the file map without executable permissions
+.It Fl X
+Same as -e bin.usextr=false, do not use extract plugins, useful for dyldcache
 .El
 .Sh SHELL
 Type '?' for help
@@ -116,7 +121,7 @@ In r2 the debugger commands are implemented under the 'd' command. Type 'd?' for
 .Sh ENVIRONMENT
  RHOMEDIR     ~/.config/radare2
  RCFILE       ~/.radare2rc (user preferences, batch script)
- MAGICPATH    /usr/lib/radare2/0.10.0-git/magic
+ R2_MAGICPATH /usr/lib/radare2/0.10.0-git/magic
  R_DEBUG      if defined, show error messages and crash signal
  VAPIDIR      path to extra vapi directory
 .Ar FILE

@@ -1,0 +1,2735 @@
+unsigned int=type
+type.unsigned int=i
+type.unsigned int.size=32
+
+unsigned char=type
+type.unsigned char=b
+type.unsigned char.size=8
+
+unsigned short=type
+type.unsigned short=w
+type.unsigned short.size=16
+
+short=type
+type.short=w
+type.short.size=16
+
+int=type
+type.int=d
+type.int.size=32
+
+long=type
+type.long=x
+type.long.size=64
+
+float=type
+type.float=f
+type.float.size=32
+
+double=type
+type.double=f
+type.double.size=64
+
+long long=type
+type.long long=q
+type.long long.size=64
+
+void *=type
+type.void *=p
+
+char=type
+type.char=c
+type.char.size=8
+
+char *=type
+type.char *=z
+
+uint8_t=type
+type.uint8_t=b
+type.uint8_t.size=8
+
+uint16_t=type
+type.uint16_t=w
+type.uint16_t.size=16
+
+uint32_t=type
+type.uint32_t=d
+type.uint32_t.size=32
+
+uint64_t=type
+type.uint64_t=q
+type.uint64_t.size=64
+
+int8_t=type
+type.int8_t=b
+type.int8_t.size=8
+
+int16_t=type
+type.int16_t=w
+type.int16_t.size=16
+
+int32_t=type
+type.int32_t=d
+type.int32_t.size=32
+
+int64_t=type
+type.int64_t=q
+type.int64_t.size=64
+
+uid_t=type
+type.uid_t=i
+type.uid_t.size=64
+
+arc4random=func
+func.arc4random.args=0
+func.arc4random.ret=uint32_t
+
+calloc=func
+func.calloc.args=2
+func.calloc.arg.0=size_t,nmeb
+func.calloc.arg.1=size_t,size
+func.calloc.ret=void *
+
+fgetc=func
+func.fgetc.args=1
+func.fgetc.arg.0=FILE *,steam
+func.fgetc.ret=int
+
+fgets=func
+func.fgets.args=3
+func.fgets.arg.0=char *,s
+func.fgets.arg.1=int,size
+func.fgets.arg.2=FILE *,stream
+func.fgets.ret=char *
+
+free=func
+func.free.args=1
+func.free.arg.0=void *,ptr
+func.free.ret=void
+
+getc=func
+func.getc.args=1
+func.getc.arg.0=FILE *,steam
+func.getc.ret=int
+
+getchar=func
+func.getchar.args=0
+func.getchar.ret=int
+
+getenv=func
+func.getenv.args=1
+func.getenv.arg.0=const char *,name
+func.getenv.ret=char *
+
+getopt=func
+func.getopt.args=3
+func.getopt.arg.0=int,argc
+func.getopt.arg.1=const char * *,argv
+func.getopt.arg.2=const char *,optstring
+func.getopt.ret=int
+
+getuid=func
+func.getuid.args=0
+func.getuid.ret=uid_t
+
+geteuid=func
+func.geteuid.args=0
+func.geteuid.ret=uid_t
+
+atoi=func
+func.atoi.args=1
+func.atoi.arg.0=const char *,str
+func.atoi.ret=int
+
+ioctl=func
+func.ioctl.args=2
+func.ioctl.arg.0=int,fd
+func.ioctl.arg.1=unsigned long,request
+func.ioctl.ret=int
+
+isatty=func
+func.isatty.args=1
+func.isatty.arg.0=int,fd
+func.isatty.ret=int
+
+malloc=func
+func.malloc.args=1
+func.malloc.arg.0=size_t,size
+func.malloc.ret= void *
+
+main=func
+func.main.args=3
+func.main.arg.0=int,argc
+func.main.arg.1=char **,argv
+func.main.arg.2=char **,envp
+func.main.ret=int
+
+xmalloc=func
+func.xmalloc.args=1
+func.xmalloc.arg.0=size_t,size
+func.xmalloc.ret= void *
+
+realloc=func
+func.realloc.args=2
+func.realloc.arg.0=void *,ptr
+func.realloc.arg.1=size_t,size
+func.realloc.ret=void *
+
+setlocale=func
+func.setlocale.args=2
+func.setlocale.arg.0=int,category
+func.setlocale.arg.1=const char *,locale
+func.setlocale.ret=char *
+
+strcpy=func
+func.strcpy.args=2
+func.strcpy.arg.0=char *,dest
+func.strcpy.arg.1=const char *,src
+func.strcpy.ret=char *
+
+compat_mode=func
+func.compat_mode.args=2
+func.compat_mode.arg.0=const char *,function
+func.compat_mode.arg.1=const char *,mode
+func.compat_mode.ret=bool
+
+strdup=func
+func.strdup.args=1
+func.strdup.arg.0=const char *,src
+func.strdup.ret=char *
+
+strndup=func
+func.strndup.args=2
+func.strndup.arg.0=const char *,src
+func.strndup.arg.1=int,n
+func.strndup.ret=char *
+
+getprogname=func
+func.getprogname.args=0
+func.getprogname.ret=const char *
+
+strncpy=func
+func.strncpy.args=3
+func.strncpy.arg.0=char *,dest
+func.strncpy.arg.1=const char *,src
+func.strncpy.arg.2=size_t, n
+func.strncpy.ret=char *
+
+strlcpy=func
+func.strlcpy.args=3
+func.strlcpy.arg.0=char *,dest
+func.strlcpy.arg.1=const char *,src
+func.strlcpy.arg.2=size_t, n
+func.strlcpy.ret=char *
+
+ungetc=func
+func.ungetc.args=2
+func.ungetc.arg.0=int,c
+func.ungetc.arg.1=FILE *,stream
+func.ungetc.ret=int
+
+sleep=func
+func.sleep.args=1
+func.sleep.arg.0=int,s
+func.sleep.ret=int
+
+close=func
+func.close.args=1
+func.close.arg.0=int,fildes
+func.close.ret=int
+
+fclose=func
+func.fclose.args=1
+func.fclose.arg.0=FILE *,stream
+func.fclose.ret=int
+
+fileno=func
+func.fileno.args=1
+func.fileno.arg.0=FILE *,stream
+func.fileno.ret=int
+
+fwrite=func
+func.fwrite.args=4
+func.fwrite.arg.0=const void *,ptr
+func.fwrite.arg.1=size_t,size
+func.fwrite.arg.2=size_t,nitems
+func.fwrite.arg.3=FILE *,stream
+func.fwrite.ret=size_t
+
+open=func
+func.open.args=2
+func.open.arg.0=const char *,path
+func.open.arg.1=int,oflag
+func.open.ret=int
+
+read=func
+func.read.args=3
+func.read.arg.0=int,fildes
+func.read.arg.1=void *,buf
+func.read.arg.2=size_t,nbyte
+func.read.ret=ssize_t
+
+strcmp=func
+func.strcmp.args=2
+func.strcmp.arg.0=const char *,s1
+func.strcmp.arg.1=const char *,s2
+func.strcmp.ret=int
+
+strcasecmp=func
+func.strcasecmp.args=2
+func.strcasecmp.arg.0=const char *,s1
+func.strcasecmp.arg.1=const char *,s2
+func.strcasecmp.ret=int
+
+strncmp=func
+func.strncmp.args=3
+func.strncmp.arg.0=const char *,s1
+func.strncmp.arg.1=const char *,s2
+func.strncmp.arg.2=size_t,n
+func.strncmp.ret=int
+
+strncasecmp=func
+func.strncasecmp.args=3
+func.strncasecmp.arg.0=const char *,s1
+func.strncasecmp.arg.1=const char *,s2
+func.strncasecmp.arg.2=size_t,n
+func.strncasecmp.ret=int
+
+imaxabs=func
+func.imaxabs.args=1
+func.imaxabs.arg.0=intmax_t,j
+func.imaxabs.ret=intmax_t
+
+imaxdiv=func
+func.imaxdiv.args=2
+func.imaxdiv.arg.0=intmax_t,numer
+func.imaxdiv.arg.1=intmax_t,denom
+func.imaxdiv.ret=imaxdiv_t
+
+strtoimax=func
+func.strtoimax.args=3
+func.strtoimax.arg.0=const char *,str
+func.strtoimax.arg.1=char * *,endptr
+func.strtoimax.arg.2=int,base
+func.strtoimax.ret=intmax_t
+
+strtoumax=func
+func.strtoumax.args=3
+func.strtoumax.arg.0=const char *,str
+func.strtoumax.arg.1=char * *,endptr
+func.strtoumax.arg.2=int,base
+func.strtoumax.ret=uintmax_t
+
+wcstoimax=func
+func.wcstoimax.args=3
+func.wcstoimax.arg.0=const,wchar_t*
+func.wcstoimax.arg.1=wchar_t* *,endptr
+func.wcstoimax.arg.2=int,base
+func.wcstoimax.ret=intmax_t
+
+wcstoumax=func
+func.wcstoumax.args=3
+func.wcstoumax.arg.0=const,wchar_t*
+func.wcstoumax.arg.1=wchar_t* *,endptr
+func.wcstoumax.arg.2=int,base
+func.wcstoumax.ret=uintmax_t
+
+isalnum=func
+func.isalnum.args=1
+func.isalnum.arg.0=int,c
+func.isalnum.ret=int
+
+isalpha=func
+func.isalpha.args=1
+func.isalpha.arg.0=int,c
+func.isalpha.ret=int
+
+isblank=func
+func.isblank.args=1
+func.isblank.arg.0=int,c
+func.isblank.ret=int
+
+iscntrl=func
+func.iscntrl.args=1
+func.iscntrl.arg.0=int,c
+func.iscntrl.ret=int
+
+isdigit=func
+func.isdigit.args=1
+func.isdigit.arg.0=int,c
+func.isdigit.ret=int
+
+isgraph=func
+func.isgraph.args=1
+func.isgraph.arg.0=int,c
+func.isgraph.ret=int
+
+islower=func
+func.islower.args=1
+func.islower.arg.0=int,c
+func.islower.ret=int
+
+isprint=func
+func.isprint.args=1
+func.isprint.arg.0=int,c
+func.isprint.ret=int
+
+ispunct=func
+func.ispunct.args=1
+func.ispunct.arg.0=int,c
+func.ispunct.ret=int
+
+isspace=func
+func.isspace.args=1
+func.isspace.arg.0=int,c
+func.isspace.ret=int
+
+isupper=func
+func.isupper.args=1
+func.isupper.arg.0=int,c
+func.isupper.ret=int
+
+isxdigit=func
+func.isxdigit.args=1
+func.isxdigit.arg.0=int,c
+func.isxdigit.ret=int
+
+tolower=func
+func.tolower.args=1
+func.tolower.arg.0=int,c
+func.tolower.ret=int
+
+toupper=func
+func.toupper.args=1
+func.toupper.arg.0=int,c
+func.toupper.ret=int
+
+feclearexcept=func
+func.feclearexcept.args=1
+func.feclearexcept.arg.0=int,excepts
+func.feclearexcept.ret=int
+
+fegetexceptflag=func
+func.fegetexceptflag.args=2
+func.fegetexceptflag.arg.0=fexcept_t *,flagp
+func.fegetexceptflag.arg.1=int,excepts
+func.fegetexceptflag.ret=int
+
+feraiseexcept=func
+func.feraiseexcept.args=1
+func.feraiseexcept.arg.0=int,excepts
+func.feraiseexcept.ret=int
+
+fesetexceptflag=func
+func.fesetexceptflag.args=2
+func.fesetexceptflag.arg.0=const,fexcept_t*
+func.fesetexceptflag.arg.1=int,excepts
+func.fesetexceptflag.ret=int
+
+fetestexcept=func
+func.fetestexcept.args=1
+func.fetestexcept.arg.0=int,excepts
+func.fetestexcept.ret=int
+
+fegetround=func
+func.fegetround.args=0
+func.fegetround.ret=int
+
+fesetround=func
+func.fesetround.args=1
+func.fesetround.arg.0=int,round
+func.fesetround.ret=int
+
+fegetenv=func
+func.fegetenv.args=1
+func.fegetenv.arg.0=fenv_t *,envp
+func.fegetenv.ret=int
+
+feholdexcept=func
+func.feholdexcept.args=1
+func.feholdexcept.arg.0=fenv_t *,envp
+func.feholdexcept.ret=int
+
+fesetenv=func
+func.fesetenv.args=1
+func.fesetenv.arg.0=const,fenv_t*
+func.fesetenv.ret=int
+
+feupdateenv=func
+func.feupdateenv.args=1
+func.feupdateenv.arg.0=const,fenv_t*
+func.feupdateenv.ret=int
+
+localeconv=func
+func.localeconv.args=0
+func.localeconv.ret=lconv*
+
+abs=func
+func.abs.args=1
+func.abs.arg.0=floating_point,x
+func.abs.ret=floating_point
+
+acos=func
+func.acos.args=1
+func.acos.arg.0=arithmetic,x
+func.acos.ret=floating_point
+
+acosf=func
+func.acosf.args=1
+func.acosf.arg.0=float,x
+func.acosf.ret=float
+
+acosl=func
+func.acosl.args=1
+func.acosl.arg.0=long double,x
+func.acosl.ret=long double
+
+asin=func
+func.asin.args=1
+func.asin.arg.0=arithmetic,x
+func.asin.ret=floating_point
+
+asinf=func
+func.asinf.args=1
+func.asinf.arg.0=float,x
+func.asinf.ret=float
+
+asinl=func
+func.asinl.args=1
+func.asinl.arg.0=long double,x
+func.asinl.ret=long double
+
+atan=func
+func.atan.args=1
+func.atan.arg.0=arithmetic,x
+func.atan.ret=floating_point
+
+atanf=func
+func.atanf.args=1
+func.atanf.arg.0=float,x
+func.atanf.ret=float
+
+atanl=func
+func.atanl.args=1
+func.atanl.arg.0=long double,x
+func.atanl.ret=long double
+
+atan2=func
+func.atan2.args=2
+func.atan2.arg.0=arithmetic,y
+func.atan2.arg.1=arithmetic,x
+func.atan2.ret=floating_point
+
+atan2f=func
+func.atan2f.args=2
+func.atan2f.arg.0=float,y
+func.atan2f.arg.1=float,x
+func.atan2f.ret=float
+
+atan2l=func
+func.atan2l.args=2
+func.atan2l.arg.0=long double,y
+func.atan2l.arg.1=long double,x
+func.atan2l.ret=long double
+
+ceil=func
+func.ceil.args=1
+func.ceil.arg.0=arithmetic,x
+func.ceil.ret=floating_point
+
+ceilf=func
+func.ceilf.args=1
+func.ceilf.arg.0=float,x
+func.ceilf.ret=float
+
+ceill=func
+func.ceill.args=1
+func.ceill.arg.0=long double,x
+func.ceill.ret=long double
+
+cos=func
+func.cos.args=1
+func.cos.arg.0=arithmetic,x
+func.cos.ret=floating_point
+
+cosf=func
+func.cosf.args=1
+func.cosf.arg.0=float,x
+func.cosf.ret=float
+
+cosl=func
+func.cosl.args=1
+func.cosl.arg.0=long double,x
+func.cosl.ret=long double
+
+cosh=func
+func.cosh.args=1
+func.cosh.arg.0=arithmetic,x
+func.cosh.ret=floating_point
+
+coshf=func
+func.coshf.args=1
+func.coshf.arg.0=float,x
+func.coshf.ret=float
+
+coshl=func
+func.coshl.args=1
+func.coshl.arg.0=long double,x
+func.coshl.ret=long double
+
+exp=func
+func.exp.args=1
+func.exp.arg.0=arithmetic,x
+func.exp.ret=floating_point
+
+expf=func
+func.expf.args=1
+func.expf.arg.0=float,x
+func.expf.ret=float
+
+expl=func
+func.expl.args=1
+func.expl.arg.0=long double,x
+func.expl.ret=long double
+
+fabs=func
+func.fabs.args=1
+func.fabs.arg.0=arithmetic,x
+func.fabs.ret=floating_point
+
+fabsf=func
+func.fabsf.args=1
+func.fabsf.arg.0=float,x
+func.fabsf.ret=float
+
+fabsl=func
+func.fabsl.args=1
+func.fabsl.arg.0=long double,x
+func.fabsl.ret=long double
+
+floor=func
+func.floor.args=1
+func.floor.arg.0=arithmetic,x
+func.floor.ret=floating_point
+
+floorf=func
+func.floorf.args=1
+func.floorf.arg.0=float,x
+func.floorf.ret=float
+
+floorl=func
+func.floorl.args=1
+func.floorl.arg.0=long double,x
+func.floorl.ret=long double
+
+fmod=func
+func.fmod.args=2
+func.fmod.arg.0=arithmetic,x
+func.fmod.arg.1=arithmetic,y
+func.fmod.ret=floating_point
+
+fmodf=func
+func.fmodf.args=2
+func.fmodf.arg.0=float,x
+func.fmodf.arg.1=float,y
+func.fmodf.ret=float
+
+fmodl=func
+func.fmodl.args=2
+func.fmodl.arg.0=long double,x
+func.fmodl.arg.1=long double,y
+func.fmodl.ret=long double
+
+frexp=func
+func.frexp.args=2
+func.frexp.arg.0=arithmetic,value
+func.frexp.arg.1=int *,exp
+func.frexp.ret=floating_point
+
+frexpf=func
+func.frexpf.args=2
+func.frexpf.arg.0=float,value
+func.frexpf.arg.1=int *,exp
+func.frexpf.ret=float
+
+frexpl=func
+func.frexpl.args=2
+func.frexpl.arg.0=long double,value
+func.frexpl.arg.1=int *,exp
+func.frexpl.ret=long double
+
+ldexp=func
+func.ldexp.args=2
+func.ldexp.arg.0=arithmetic,value
+func.ldexp.arg.1=int,exp
+func.ldexp.ret=floating_point
+
+ldexpf=func
+func.ldexpf.args=2
+func.ldexpf.arg.0=float,value
+func.ldexpf.arg.1=int,exp
+func.ldexpf.ret=float
+
+ldexpl=func
+func.ldexpl.args=2
+func.ldexpl.arg.0=long double,value
+func.ldexpl.arg.1=int,exp
+func.ldexpl.ret=long double
+
+log=func
+func.log.args=1
+func.log.arg.0=arithmetic,x
+func.log.ret=floating_point
+
+logf=func
+func.logf.args=1
+func.logf.arg.0=float,x
+func.logf.ret=float
+
+logl=func
+func.logl.args=1
+func.logl.arg.0=long double,x
+func.logl.ret=long double
+
+log10=func
+func.log10.args=1
+func.log10.arg.0=arithmetic,x
+func.log10.ret=floating_point
+
+log10f=func
+func.log10f.args=1
+func.log10f.arg.0=float,x
+func.log10f.ret=float
+
+log10l=func
+func.log10l.args=1
+func.log10l.arg.0=long double,x
+func.log10l.ret=long double
+
+modf=func
+func.modf.args=2
+func.modf.arg.0=floating_point,value
+func.modf.arg.1=floating_point *,iptr
+func.modf.ret=floating_point
+
+modff=func
+func.modff.args=2
+func.modff.arg.0=float,value
+func.modff.arg.1=float *,iptr
+func.modff.ret=float
+
+modfl=func
+func.modfl.args=2
+func.modfl.arg.0=long double,value
+func.modfl.arg.1=long double *,iptr
+func.modfl.ret=long double
+
+pow=func
+func.pow.args=2
+func.pow.arg.0=arithmetic,x
+func.pow.arg.1=arithmetic,y
+func.pow.ret=floating_point
+
+powf=func
+func.powf.args=2
+func.powf.arg.0=float,x
+func.powf.arg.1=float,y
+func.powf.ret=float
+
+powl=func
+func.powl.args=2
+func.powl.arg.0=long double,x
+func.powl.arg.1=long double,y
+func.powl.ret=long double
+
+sin=func
+func.sin.args=1
+func.sin.arg.0=arithmetic,x
+func.sin.ret=floating_point
+
+sinf=func
+func.sinf.args=1
+func.sinf.arg.0=float,x
+func.sinf.ret=float
+
+sinl=func
+func.sinl.args=1
+func.sinl.arg.0=long double,x
+func.sinl.ret=long double
+
+sinh=func
+func.sinh.args=1
+func.sinh.arg.0=arithmetic,x
+func.sinh.ret=floating_point
+
+sinhf=func
+func.sinhf.args=1
+func.sinhf.arg.0=float,x
+func.sinhf.ret=float
+
+sinhl=func
+func.sinhl.args=1
+func.sinhl.arg.0=long double,x
+func.sinhl.ret=long double
+
+sqrt=func
+func.sqrt.args=1
+func.sqrt.arg.0=arithmetic,x
+func.sqrt.ret=floating_point
+
+sqrtf=func
+func.sqrtf.args=1
+func.sqrtf.arg.0=float,x
+func.sqrtf.ret=float
+
+sqrtl=func
+func.sqrtl.args=1
+func.sqrtl.arg.0=long double,x
+func.sqrtl.ret=long double
+
+tan=func
+func.tan.args=1
+func.tan.arg.0=arithmetic,x
+func.tan.ret=floating_point
+
+tanf=func
+func.tanf.args=1
+func.tanf.arg.0=float,x
+func.tanf.ret=float
+
+tanl=func
+func.tanl.args=1
+func.tanl.arg.0=long double,x
+func.tanl.ret=long double
+
+tanh=func
+func.tanh.args=1
+func.tanh.arg.0=arithmetic,x
+func.tanh.ret=floating_point
+
+tanhf=func
+func.tanhf.args=1
+func.tanhf.arg.0=float,x
+func.tanhf.ret=float
+
+tanhl=func
+func.tanhl.args=1
+func.tanhl.arg.0=long double,x
+func.tanhl.ret=long double
+
+signbit=func
+func.signbit.args=1
+func.signbit.arg.0=arithmetic,x
+func.signbit.ret=bool
+
+fpclassify=func
+func.fpclassify.args=1
+func.fpclassify.arg.0=arithmetic,x
+func.fpclassify.ret=int
+
+isfinite=func
+func.isfinite.args=1
+func.isfinite.arg.0=arithmetic,x
+func.isfinite.ret=bool
+
+isinf=func
+func.isinf.args=1
+func.isinf.arg.0=arithmetic,x
+func.isinf.ret=bool
+
+isnan=func
+func.isnan.args=1
+func.isnan.arg.0=arithmetic,x
+func.isnan.ret=bool
+
+isnormal=func
+func.isnormal.args=1
+func.isnormal.arg.0=arithmetic,x
+func.isnormal.ret=bool
+
+isgreater=func
+func.isgreater.args=2
+func.isgreater.arg.0=arithmetic,x
+func.isgreater.arg.1=arithmetic,y
+func.isgreater.ret=bool
+
+isgreaterequal=func
+func.isgreaterequal.args=2
+func.isgreaterequal.arg.0=arithmetic,x
+func.isgreaterequal.arg.1=arithmetic,y
+func.isgreaterequal.ret=bool
+
+isless=func
+func.isless.args=2
+func.isless.arg.0=arithmetic,x
+func.isless.arg.1=arithmetic,y
+func.isless.ret=bool
+
+islessequal=func
+func.islessequal.args=2
+func.islessequal.arg.0=arithmetic,x
+func.islessequal.arg.1=arithmetic,y
+func.islessequal.ret=bool
+
+islessgreater=func
+func.islessgreater.args=2
+func.islessgreater.arg.0=arithmetic,x
+func.islessgreater.arg.1=arithmetic,y
+func.islessgreater.ret=bool
+
+isunordered=func
+func.isunordered.args=2
+func.isunordered.arg.0=arithmetic,x
+func.isunordered.arg.1=arithmetic,y
+func.isunordered.ret=bool
+
+acosh=func
+func.acosh.args=1
+func.acosh.arg.0=arithmetic,x
+func.acosh.ret=floating_point
+
+acoshf=func
+func.acoshf.args=1
+func.acoshf.arg.0=float,x
+func.acoshf.ret=float
+
+acoshl=func
+func.acoshl.args=1
+func.acoshl.arg.0=long double,x
+func.acoshl.ret=long double
+
+asinh=func
+func.asinh.args=1
+func.asinh.arg.0=arithmetic,x
+func.asinh.ret=floating_point
+
+asinhf=func
+func.asinhf.args=1
+func.asinhf.arg.0=float,x
+func.asinhf.ret=float
+
+asinhl=func
+func.asinhl.args=1
+func.asinhl.arg.0=long double,x
+func.asinhl.ret=long double
+
+atanh=func
+func.atanh.args=1
+func.atanh.arg.0=arithmetic,x
+func.atanh.ret=floating_point
+
+atanhf=func
+func.atanhf.args=1
+func.atanhf.arg.0=float,x
+func.atanhf.ret=float
+
+atanhl=func
+func.atanhl.args=1
+func.atanhl.arg.0=long double,x
+func.atanhl.ret=long double
+
+cbrt=func
+func.cbrt.args=1
+func.cbrt.arg.0=arithmetic,x
+func.cbrt.ret=floating_point
+
+cbrtf=func
+func.cbrtf.args=1
+func.cbrtf.arg.0=float,x
+func.cbrtf.ret=float
+
+cbrtl=func
+func.cbrtl.args=1
+func.cbrtl.arg.0=long double,x
+func.cbrtl.ret=long double
+
+copysign=func
+func.copysign.args=2
+func.copysign.arg.0=arithmetic,x
+func.copysign.arg.1=arithmetic,y
+func.copysign.ret=floating_point
+
+copysignf=func
+func.copysignf.args=2
+func.copysignf.arg.0=float,x
+func.copysignf.arg.1=float,y
+func.copysignf.ret=float
+
+copysignl=func
+func.copysignl.args=2
+func.copysignl.arg.0=long double,x
+func.copysignl.arg.1=long double,y
+func.copysignl.ret=long double
+
+erf=func
+func.erf.args=1
+func.erf.arg.0=arithmetic,x
+func.erf.ret=floating_point
+
+erff=func
+func.erff.args=1
+func.erff.arg.0=float,x
+func.erff.ret=float
+
+erfl=func
+func.erfl.args=1
+func.erfl.arg.0=long double,x
+func.erfl.ret=long double
+
+erfc=func
+func.erfc.args=1
+func.erfc.arg.0=arithmetic,x
+func.erfc.ret=floating_point
+
+erfcf=func
+func.erfcf.args=1
+func.erfcf.arg.0=float,x
+func.erfcf.ret=float
+
+erfcl=func
+func.erfcl.args=1
+func.erfcl.arg.0=long double,x
+func.erfcl.ret=long double
+
+exp2=func
+func.exp2.args=1
+func.exp2.arg.0=arithmetic,x
+func.exp2.ret=floating_point
+
+exp2f=func
+func.exp2f.args=1
+func.exp2f.arg.0=float,x
+func.exp2f.ret=float
+
+exp2l=func
+func.exp2l.args=1
+func.exp2l.arg.0=long double,x
+func.exp2l.ret=long double
+
+expm1=func
+func.expm1.args=1
+func.expm1.arg.0=arithmetic,x
+func.expm1.ret=floating_point
+
+expm1f=func
+func.expm1f.args=1
+func.expm1f.arg.0=float,x
+func.expm1f.ret=float
+
+expm1l=func
+func.expm1l.args=1
+func.expm1l.arg.0=long double,x
+func.expm1l.ret=long double
+
+fdim=func
+func.fdim.args=2
+func.fdim.arg.0=arithmetic,x
+func.fdim.arg.1=arithmetic,y
+func.fdim.ret=floating_point
+
+fdimf=func
+func.fdimf.args=2
+func.fdimf.arg.0=float,x
+func.fdimf.arg.1=float,y
+func.fdimf.ret=float
+
+fdiml=func
+func.fdiml.args=2
+func.fdiml.arg.0=long double,x
+func.fdiml.arg.1=long double,y
+func.fdiml.ret=long double
+
+fma=func
+func.fma.args=3
+func.fma.arg.0=arithmetic,x
+func.fma.arg.1=arithmetic,y
+func.fma.arg.2=arithmetic,z
+func.fma.ret=floating_point
+
+fmaf=func
+func.fmaf.args=3
+func.fmaf.arg.0=float,x
+func.fmaf.arg.1=float,y
+func.fmaf.arg.2=float,z
+func.fmaf.ret=float
+
+fmal=func
+func.fmal.args=3
+func.fmal.arg.0=long double,x
+func.fmal.arg.1=long double,y
+func.fmal.arg.2=long double,z
+func.fmal.ret=long double
+
+fmax=func
+func.fmax.args=2
+func.fmax.arg.0=arithmetic,x
+func.fmax.arg.1=arithmetic,y
+func.fmax.ret=floating_point
+
+fmaxf=func
+func.fmaxf.args=2
+func.fmaxf.arg.0=float,x
+func.fmaxf.arg.1=float,y
+func.fmaxf.ret=float
+
+fmaxl=func
+func.fmaxl.args=2
+func.fmaxl.arg.0=long double,x
+func.fmaxl.arg.1=long double,y
+func.fmaxl.ret=long double
+
+fmin=func
+func.fmin.args=2
+func.fmin.arg.0=arithmetic,x
+func.fmin.arg.1=arithmetic,y
+func.fmin.ret=floating_point
+
+fminf=func
+func.fminf.args=2
+func.fminf.arg.0=float,x
+func.fminf.arg.1=float,y
+func.fminf.ret=float
+
+fminl=func
+func.fminl.args=2
+func.fminl.arg.0=long double,x
+func.fminl.arg.1=long double,y
+func.fminl.ret=long double
+
+hypot=func
+func.hypot.args=2
+func.hypot.arg.0=arithmetic,x
+func.hypot.arg.1=arithmetic,y
+func.hypot.ret=floating_point
+
+hypotf=func
+func.hypotf.args=2
+func.hypotf.arg.0=float,x
+func.hypotf.arg.1=float,y
+func.hypotf.ret=float
+
+hypotl=func
+func.hypotl.args=2
+func.hypotl.arg.0=long double,x
+func.hypotl.arg.1=long double,y
+func.hypotl.ret=long double
+
+ilogb=func
+func.ilogb.args=1
+func.ilogb.arg.0=arithmetic,x
+func.ilogb.ret=int
+
+ilogbf=func
+func.ilogbf.args=1
+func.ilogbf.arg.0=float,x
+func.ilogbf.ret=int
+
+ilogbl=func
+func.ilogbl.args=1
+func.ilogbl.arg.0=long double,x
+func.ilogbl.ret=int
+
+lgamma=func
+func.lgamma.args=1
+func.lgamma.arg.0=arithmetic,x
+func.lgamma.ret=floating_point
+
+lgammaf=func
+func.lgammaf.args=1
+func.lgammaf.arg.0=float,x
+func.lgammaf.ret=float
+
+lgammal=func
+func.lgammal.args=1
+func.lgammal.arg.0=long double,x
+func.lgammal.ret=long double
+
+llrint=func
+func.llrint.args=1
+func.llrint.arg.0=arithmetic,x
+func.llrint.ret=long long
+
+llrintf=func
+func.llrintf.args=1
+func.llrintf.arg.0=float,x
+func.llrintf.ret=long long
+
+llrintl=func
+func.llrintl.args=1
+func.llrintl.arg.0=long double,x
+func.llrintl.ret=long long
+
+llround=func
+func.llround.args=1
+func.llround.arg.0=arithmetic,x
+func.llround.ret=long long
+
+llroundf=func
+func.llroundf.args=1
+func.llroundf.arg.0=float,x
+func.llroundf.ret=long long
+
+llroundl=func
+func.llroundl.args=1
+func.llroundl.arg.0=long double,x
+func.llroundl.ret=long long
+
+log1p=func
+func.log1p.args=1
+func.log1p.arg.0=arithmetic,x
+func.log1p.ret=floating_point
+
+log1pf=func
+func.log1pf.args=1
+func.log1pf.arg.0=float,x
+func.log1pf.ret=float
+
+log1pl=func
+func.log1pl.args=1
+func.log1pl.arg.0=long double,x
+func.log1pl.ret=long double
+
+log2=func
+func.log2.args=1
+func.log2.arg.0=arithmetic,x
+func.log2.ret=floating_point
+
+log2f=func
+func.log2f.args=1
+func.log2f.arg.0=float,x
+func.log2f.ret=float
+
+log2l=func
+func.log2l.args=1
+func.log2l.arg.0=long double,x
+func.log2l.ret=long double
+
+logb=func
+func.logb.args=1
+func.logb.arg.0=arithmetic,x
+func.logb.ret=floating_point
+
+logbf=func
+func.logbf.args=1
+func.logbf.arg.0=float,x
+func.logbf.ret=float
+
+logbl=func
+func.logbl.args=1
+func.logbl.arg.0=long double,x
+func.logbl.ret=long double
+
+lrint=func
+func.lrint.args=1
+func.lrint.arg.0=arithmetic,x
+func.lrint.ret=long
+
+lrintf=func
+func.lrintf.args=1
+func.lrintf.arg.0=float,x
+func.lrintf.ret=long
+
+lrintl=func
+func.lrintl.args=1
+func.lrintl.arg.0=long double,x
+func.lrintl.ret=long
+
+lround=func
+func.lround.args=1
+func.lround.arg.0=arithmetic,x
+func.lround.ret=long
+
+lroundf=func
+func.lroundf.args=1
+func.lroundf.arg.0=float,x
+func.lroundf.ret=long
+
+lroundl=func
+func.lroundl.args=1
+func.lroundl.arg.0=long double,x
+func.lroundl.ret=long
+
+nan=func
+func.nan.args=1
+func.nan.arg.0=const char *,str
+func.nan.ret=double
+
+nanf=func
+func.nanf.args=1
+func.nanf.arg.0=const char *,str
+func.nanf.ret=float
+
+nanl=func
+func.nanl.args=1
+func.nanl.arg.0=const char *,str
+func.nanl.ret=long double
+
+nearbyint=func
+func.nearbyint.args=1
+func.nearbyint.arg.0=arithmetic,x
+func.nearbyint.ret=floating_point
+
+nearbyintf=func
+func.nearbyintf.args=1
+func.nearbyintf.arg.0=float,x
+func.nearbyintf.ret=float
+
+nearbyintl=func
+func.nearbyintl.args=1
+func.nearbyintl.arg.0=long double,x
+func.nearbyintl.ret=long double
+
+nextafter=func
+func.nextafter.args=2
+func.nextafter.arg.0=arithmetic,x
+func.nextafter.arg.1=arithmetic,y
+func.nextafter.ret=floating_point
+
+nextafterf=func
+func.nextafterf.args=2
+func.nextafterf.arg.0=float,x
+func.nextafterf.arg.1=float,y
+func.nextafterf.ret=float
+
+nextafterl=func
+func.nextafterl.args=2
+func.nextafterl.arg.0=long double,x
+func.nextafterl.arg.1=long double,y
+func.nextafterl.ret=long double
+
+nexttoward=func
+func.nexttoward.args=2
+func.nexttoward.arg.0=arithmetic,x
+func.nexttoward.arg.1=long double,y
+func.nexttoward.ret=floating_point
+
+nexttowardf=func
+func.nexttowardf.args=2
+func.nexttowardf.arg.0=float,x
+func.nexttowardf.arg.1=long double,y
+func.nexttowardf.ret=float
+
+nexttowardl=func
+func.nexttowardl.args=2
+func.nexttowardl.arg.0=long double,x
+func.nexttowardl.arg.1=long double,y
+func.nexttowardl.ret=long double
+
+remainder=func
+func.remainder.args=2
+func.remainder.arg.0=arithmetic,x
+func.remainder.arg.1=arithmetic,y
+func.remainder.ret=floating_point
+
+remainderf=func
+func.remainderf.args=2
+func.remainderf.arg.0=float,x
+func.remainderf.arg.1=float,y
+func.remainderf.ret=float
+
+remainderl=func
+func.remainderl.args=2
+func.remainderl.arg.0=long double,x
+func.remainderl.arg.1=long double,y
+func.remainderl.ret=long double
+
+remquo=func
+func.remquo.args=3
+func.remquo.arg.0=arithmetic,x
+func.remquo.arg.1=arithmetic,y
+func.remquo.arg.2=int *,pquo
+func.remquo.ret=floating_point
+
+remquof=func
+func.remquof.args=3
+func.remquof.arg.0=float,x
+func.remquof.arg.1=float,y
+func.remquof.arg.2=int *,pquo
+func.remquof.ret=float
+
+remquol=func
+func.remquol.args=3
+func.remquol.arg.0=long double,x
+func.remquol.arg.1=long double,y
+func.remquol.arg.2=int *,pquo
+func.remquol.ret=long double
+
+rint=func
+func.rint.args=1
+func.rint.arg.0=arithmetic,x
+func.rint.ret=floating_point
+
+rintf=func
+func.rintf.args=1
+func.rintf.arg.0=float,x
+func.rintf.ret=float
+
+rintl=func
+func.rintl.args=1
+func.rintl.arg.0=long double,x
+func.rintl.ret=long double
+
+round=func
+func.round.args=1
+func.round.arg.0=arithmetic,x
+func.round.ret=floating_point
+
+roundf=func
+func.roundf.args=1
+func.roundf.arg.0=float,x
+func.roundf.ret=float
+
+roundl=func
+func.roundl.args=1
+func.roundl.arg.0=long double,x
+func.roundl.ret=long double
+
+scalbln=func
+func.scalbln.args=2
+func.scalbln.arg.0=arithmetic,x
+func.scalbln.arg.1=long,ex
+func.scalbln.ret=floating_point
+
+scalblnf=func
+func.scalblnf.args=2
+func.scalblnf.arg.0=float,x
+func.scalblnf.arg.1=long,ex
+func.scalblnf.ret=float
+
+scalblnl=func
+func.scalblnl.args=2
+func.scalblnl.arg.0=long double,x
+func.scalblnl.arg.1=long,ex
+func.scalblnl.ret=long double
+
+scalbn=func
+func.scalbn.args=2
+func.scalbn.arg.0=arithmetic,x
+func.scalbn.arg.1=int,ex
+func.scalbn.ret=floating_point
+
+scalbnf=func
+func.scalbnf.args=2
+func.scalbnf.arg.0=float,x
+func.scalbnf.arg.1=int,ex
+func.scalbnf.ret=float
+
+scalbnl=func
+func.scalbnl.args=2
+func.scalbnl.arg.0=long double,x
+func.scalbnl.arg.1=int,ex
+func.scalbnl.ret=long double
+
+tgamma=func
+func.tgamma.args=1
+func.tgamma.arg.0=arithmetic,x
+func.tgamma.ret=floating_point
+
+tgammaf=func
+func.tgammaf.args=1
+func.tgammaf.arg.0=float,x
+func.tgammaf.ret=float
+
+tgammal=func
+func.tgammal.args=1
+func.tgammal.arg.0=long double,x
+func.tgammal.ret=long double
+
+trunc=func
+func.trunc.args=1
+func.trunc.arg.0=arithmetic,x
+func.trunc.ret=floating_point
+
+truncf=func
+func.truncf.args=1
+func.truncf.arg.0=float,x
+func.truncf.ret=float
+
+truncl=func
+func.truncl.args=1
+func.truncl.arg.0=long double,x
+func.truncl.ret=long double
+
+longjmp=func
+func.longjmp.args=2
+func.longjmp.arg.0=jmp_buf,env
+func.longjmp.arg.1=int,val
+func.longjmp.ret=void
+
+raise=func
+func.raise.args=1
+func.raise.arg.0=int,sig
+func.raise.ret=int
+
+atof=func
+func.atof.args=1
+func.atof.arg.0=const char *,str
+func.atof.ret=double
+
+atol=func
+func.atol.args=1
+func.atol.arg.0=const char *,str
+func.atol.ret=long
+
+atoll=func
+func.atoll.args=1
+func.atoll.arg.0=const char *,str
+func.atoll.ret=long long
+
+strtod=func
+func.strtod.args=2
+func.strtod.arg.0=const char *,str
+func.strtod.arg.1=char * *,endptr
+func.strtod.ret=double
+
+strtof=func
+func.strtof.args=2
+func.strtof.arg.0=const char *,str
+func.strtof.arg.1=char * *,endptr
+func.strtof.ret=float
+
+strtold=func
+func.strtold.args=2
+func.strtold.arg.0=const char *,str
+func.strtold.arg.1=char * *,endptr
+func.strtold.ret=long double
+
+strtol=func
+func.strtol.args=3
+func.strtol.arg.0=const char *,str
+func.strtol.arg.1=char * *,endptr
+func.strtol.arg.2=int,base
+func.strtol.ret=long
+
+raise=func
+func.raise.args=1
+func.raise.arg.0=int,sig
+func.raise.ret=int
+
+atof=func
+func.atof.args=1
+func.atof.arg.0=const char *,str
+func.atof.ret=double
+
+atol=func
+func.atol.args=1
+func.atol.arg.0=const char *,str
+func.atol.ret=long
+
+atoll=func
+func.atoll.args=1
+func.atoll.arg.0=const char *,str
+func.atoll.ret=long long
+
+strtoll=func
+func.strtoll.args=3
+func.strtoll.arg.0=const char *,str
+func.strtoll.arg.1=char * *,endptr
+func.strtoll.arg.2=int,base
+func.strtoll.ret=long long
+
+strtoul=func
+func.strtoul.args=3
+func.strtoul.arg.0=const char *,str
+func.strtoul.arg.1=char * *,endptr
+func.strtoul.arg.2=int,base
+func.strtoul.ret=long
+
+strtoull=func
+func.strtoull.args=3
+func.strtoull.arg.0=const char *,str
+func.strtoull.arg.1=char * *,endptr
+func.strtoull.arg.2=int,base
+func.strtoull.ret=long long
+
+rand=func
+func.rand.args=0
+func.rand.ret=int
+
+srand=func
+func.srand.args=1
+func.srand.arg.0=int,seed
+func.srand.ret=void
+
+system=func
+func.system.args=1
+func.system.arg.0=const char *,string
+func.system.ret=int
+
+bsearch=func
+func.bsearch.args=5
+func.bsearch.arg.0=const void *,key
+func.bsearch.arg.1=const void *,base
+func.bsearch.arg.2=size_t,nmemb
+func.bsearch.arg.3=size_t,size
+func.bsearch.arg.4=int,(*compar)(const void *,const void *)
+
+qsort=func
+func.qsort.args=4
+func.qsort.arg.0=void *,base
+func.qsort.arg.1=size_t,nmemb
+func.qsort.arg.2=size_t,size
+func.qsort.arg.3=int(*compar)(const void *,const void *)
+
+abs=func
+func.abs.args=1
+func.abs.arg.0=int,j
+func.abs.ret=int
+
+labs=func
+func.labs.args=1
+func.labs.arg.0=long,j
+func.labs.ret=long
+
+llabs=func
+func.llabs.args=1
+func.llabs.arg.0=long long,j
+func.llabs.ret=long long
+
+div=func
+func.div.args=2
+func.div.arg.0=int,numer
+func.div.arg.1=int,denom
+func.div.ret=div_t
+
+ldiv=func
+func.ldiv.args=2
+func.ldiv.arg.0=long,numer
+func.ldiv.arg.1=long,denom
+func.ldiv.ret=ldiv_t
+
+lldiv=func
+func.lldiv.args=2
+func.lldiv.arg.0=long long,numer
+func.lldiv.arg.1=long long,denom
+func.lldiv.ret=lldiv_t
+
+mblen=func
+func.mblen.args=2
+func.mblen.arg.0=const char *,s
+func.mblen.arg.1=size_t,n
+func.mblen.ret=int
+
+mbtowc=func
+func.mbtowc.args=3
+func.mbtowc.arg.0=wchar_t *,pwc
+func.mbtowc.arg.1=const char *,s
+func.mbtowc.arg.2=size_t,n
+func.mbtowc.ret=int
+
+wctomb=func
+func.wctomb.args=2
+func.wctomb.arg.0=char *,s
+func.wctomb.arg.1=wchar_t,wchar
+func.wctomb.ret=int
+
+mbstowcs=func
+func.mbstowcs.args=3
+func.mbstowcs.arg.0=wchar_t *,pwcs
+func.mbstowcs.arg.1=const char *,s
+func.mbstowcs.arg.2=size_t,n
+func.mbstowcs.ret=size_t
+
+wcstombs=func
+func.wcstombs.args=3
+func.wcstombs.arg.0=char *,s
+func.wcstombs.arg.1=const wchar_t *,pwcs
+func.wcstombs.arg.2=size_t,n
+func.wcstombs.ret=size_t
+
+at_quick_exit=func
+func.at_quick_exit.args=0
+func.at_quick_exit.ret=int
+
+quick_exit=func
+func.quick_exit.args=1
+func.quick_exit.arg.0=int,status
+func.quick_exit.ret=void
+
+*aligned_alloc=func
+func.*aligned_alloc.args=2
+func.*aligned_alloc.arg.0=size_t,alignment
+func.*aligned_alloc.arg.1=size_t,size
+func.*aligned_alloc.ret=void
+
+memcpy=func
+func.memcpy.args=3
+func.memcpy.arg.0=void *,s1
+func.memcpy.arg.1=const void *,s2
+func.memcpy.arg.2=size_t,n
+func.memcpy.ret=void *
+
+memmove=func
+func.memmove.args=3
+func.memmove.arg.0=void *,s1
+func.memmove.arg.1=const void *,s2
+func.memmove.arg.2=size_t,n
+func.memmove.ret=void *
+
+strcat=func
+func.strcat.args=2
+func.strcat.arg.0=char *,s1
+func.strcat.arg.1=const char *,s2
+func.strcat.ret=char *
+
+strncat=func
+func.strncat.args=3
+func.strncat.arg.0=char *,s1
+func.strncat.arg.1=const char *,s2
+func.strncat.arg.2=size_t,n
+func.strncat.ret=char *
+
+memcmp=func
+func.memcmp.args=3
+func.memcmp.arg.0=const void *,s1
+func.memcmp.arg.1=const void *,s2
+func.memcmp.arg.2=size_t,n
+func.memcmp.ret=int
+
+strcoll=func
+func.strcoll.args=2
+func.strcoll.arg.0=const char *,s1
+func.strcoll.arg.1=const char *,s2
+func.strcoll.ret=int
+
+strxfrm=func
+func.strxfrm.args=3
+func.strxfrm.arg.0=char *,s1
+func.strxfrm.arg.1=const char *,s2
+func.strxfrm.arg.2=size_t,n
+func.strxfrm.ret=size_t
+
+memchr=func
+func.memchr.args=3
+func.memchr.arg.0=const void *,s
+func.memchr.arg.1=int,c
+func.memchr.arg.2=size_t,n
+func.memchr.ret=void *
+
+memchr=func
+func.memchr.args=3
+func.memchr.arg.0=void *,s
+func.memchr.arg.1=int,c
+func.memchr.arg.2=size_t,n
+func.memchr.ret=void *
+
+strchr=func
+func.strchr.args=2
+func.strchr.arg.0=const char *,s
+func.strchr.arg.1=int,c
+func.strchr.ret=char *
+
+strcspn=func
+func.strcspn.args=2
+func.strcspn.arg.0=const char *,s1
+func.strcspn.arg.1=const char *,s2
+func.strcspn.ret=size_t
+
+strpbrk=func
+func.strpbrk.args=2
+func.strpbrk.arg.0=const char *,s1
+func.strpbrk.arg.1=const char *,s2
+func.strpbrk.ret=char *
+
+strrchr=func
+func.strrchr.args=2
+func.strrchr.arg.0=const char *,s
+func.strrchr.arg.1=int,c
+func.strrchr.ret=char *
+
+strspn=func
+func.strspn.args=2
+func.strspn.arg.0=const char *,s1
+func.strspn.arg.1=const char *,s2
+func.strspn.ret=size_t
+
+strstr=func
+func.strstr.args=2
+func.strstr.arg.0=const char *,s1
+func.strstr.arg.1=const char *,s2
+func.strstr.ret=char *
+
+strtok=func
+func.strtok.args=2
+func.strtok.arg.0=char *,s1
+func.strtok.arg.1=const char *,s2
+func.strtok.ret=char *
+
+memset=func
+func.memset.args=3
+func.memset.arg.0=void *,s
+func.memset.arg.1=int,c
+func.memset.arg.2=size_t,n
+func.memset.ret=void *
+
+strerror=func
+func.strerror.args=1
+func.strerror.arg.0=int,errnum
+func.strerror.ret=char *
+
+strlen=func
+func.strlen.args=1
+func.strlen.arg.0=const char *,s
+func.strlen.ret=size_t
+
+symlink=func
+func.symlink.args=2
+func.symlink.arg.0=const char *,path1
+func.symlink.arg.1=const char *,path2
+func.symlink.ret=int
+
+umask=func
+func.umask.args=1
+func.umask.arg.0=int,m
+func.umask.ret=int
+
+fstat=func
+func.fstat.args=2
+func.fstat.arg.0=int,fildes
+func.fstat.arg.1=void *,buf
+func.fstat.ret=int
+
+clock=func
+func.clock.args=0
+func.clock.ret=clock_t
+
+difftime=func
+func.difftime.args=2
+func.difftime.arg.0=time_t,time1
+func.difftime.arg.1=time_t,time0
+func.difftime.ret=double
+
+mktime=func
+func.mktime.args=1
+func.mktime.arg.0=tm *,timeptr
+func.mktime.ret=time_t
+
+time=func
+func.time.args=1
+func.time.arg.0=time_t *,timer
+func.time.ret=time_t
+
+asctime=func
+func.asctime.args=1
+func.asctime.arg.0=const tm *,timeptr
+func.asctime.ret=char *
+
+ctime=func
+func.ctime.args=1
+func.ctime.arg.0=const time_t *,timer
+func.ctime.ret=char *
+
+gmtime=func
+func.gmtime.args=1
+func.gmtime.arg.0=const time_t *,timer
+func.gmtime.ret=tm*
+
+localtime=func
+func.localtime.args=1
+func.localtime.arg.0=const time_t *,timer
+func.localtime.ret=tm*
+
+strftime=func
+func.strftime.args=4
+func.strftime.arg.0=char *,s
+func.strftime.arg.1=size_t,maxsize
+func.strftime.arg.2=const char *,format
+func.strftime.arg.3=const tm *,timeptr
+func.strftime.ret=size_t
+
+fwprintf=func
+func.fwprintf.args=2
+func.fwprintf.arg.0=FILE *,stream
+func.fwprintf.arg.1=const wchar_t *,format
+func.fwprintf.ret=int
+
+fwscanf=func
+func.fwscanf.args=2
+func.fwscanf.arg.0=FILE *,stream
+func.fwscanf.arg.1=const wchar_t *,format
+func.fwscanf.ret=int
+
+swprintf=func
+func.swprintf.args=3
+func.swprintf.arg.0=wchar_t *,s
+func.swprintf.arg.1=size_t,n
+func.swprintf.arg.2=const wchar_t *,format
+func.swprintf.ret=int
+
+swscanf=func
+func.swscanf.args=2
+func.swscanf.arg.0=const wchar_t *,s
+func.swscanf.arg.1=const wchar_t *,format
+func.swscanf.ret=int
+
+vfwprintf=func
+func.vfwprintf.args=3
+func.vfwprintf.arg.0=FILE *,stream
+func.vfwprintf.arg.1=const wchar_t *,format
+func.vfwprintf.arg.2=va_list,arg
+func.vfwprintf.ret=int
+
+vfwscanf=func
+func.vfwscanf.args=3
+func.vfwscanf.arg.0=FILE *,stream
+func.vfwscanf.arg.1=const wchar_t *,format
+func.vfwscanf.arg.2=va_list,arg
+func.vfwscanf.ret=int
+
+vswprintf=func
+func.vswprintf.args=4
+func.vswprintf.arg.0=wchar_t *,s
+func.vswprintf.arg.1=size_t,n
+func.vswprintf.arg.2=const wchar_t *,format
+func.vswprintf.arg.3=va_list,arg
+func.vswprintf.ret=int
+
+vswscanf=func
+func.vswscanf.args=3
+func.vswscanf.arg.0=const wchar_t *,s
+func.vswscanf.arg.1=const wchar_t *,format
+func.vswscanf.arg.2=va_list,arg
+func.vswscanf.ret=int
+
+vwprintf=func
+func.vwprintf.args=2
+func.vwprintf.arg.0=const wchar_t *,format
+func.vwprintf.arg.1=va_list,arg
+func.vwprintf.ret=int
+
+vwscanf=func
+func.vwscanf.args=2
+func.vwscanf.arg.0=const wchar_t *,format
+func.vwscanf.arg.1=va_list,arg
+func.vwscanf.ret=int
+
+wprintf=func
+func.wprintf.args=1
+func.wprintf.arg.0=const wchar_t *,format
+func.wprintf.ret=int
+
+wscanf=func
+func.wscanf.args=1
+func.wscanf.arg.0=const wchar_t *,format
+func.wscanf.ret=int
+
+fgetwc=func
+func.fgetwc.args=1
+func.fgetwc.arg.0=FILE *,stream
+func.fgetwc.ret=wint_t
+
+fgetws=func
+func.fgetws.args=3
+func.fgetws.arg.0=wchar_t *,s
+func.fgetws.arg.1=int,n
+func.fgetws.arg.2=FILE *,stream
+func.fgetws.ret=wchar_t*
+
+fputwc=func
+func.fputwc.args=2
+func.fputwc.arg.0=wchar_t,c
+func.fputwc.arg.1=FILE *,stream
+func.fputwc.ret=wint_t
+
+fputws=func
+func.fputws.args=2
+func.fputws.arg.0=const wchar_t *,s
+func.fputws.arg.1=FILE *,stream
+func.fputws.ret=int
+
+fwide=func
+func.fwide.args=2
+func.fwide.arg.0=FILE *,stream
+func.fwide.arg.1=int,mode
+func.fwide.ret=int
+
+getwc=func
+func.getwc.args=1
+func.getwc.arg.0=FILE *,stream
+func.getwc.ret=wint_t
+
+getwchar=func
+func.getwchar.args=0
+func.getwchar.ret=wint_t
+
+putwc=func
+func.putwc.args=2
+func.putwc.arg.0=wchar_t,c
+func.putwc.arg.1=FILE *,stream
+func.putwc.ret=wint_t
+
+putwchar=func
+func.putwchar.args=1
+func.putwchar.arg.0=wchar_t,c
+func.putwchar.ret=wint_t
+
+ungetwc=func
+func.ungetwc.args=2
+func.ungetwc.arg.0=wint_t,c
+func.ungetwc.arg.1=FILE *,stream
+func.ungetwc.ret=wint_t
+
+wcstod=func
+func.wcstod.args=2
+func.wcstod.arg.0=const wchar_t *,nptr
+func.wcstod.arg.1=wchar_t* *,endptr
+func.wcstod.ret=double
+
+wcstof=func
+func.wcstof.args=2
+func.wcstof.arg.0=const wchar_t *,nptr
+func.wcstof.arg.1=wchar_t* *,endptr
+func.wcstof.ret=float
+
+wcstold=func
+func.wcstold.args=2
+func.wcstold.arg.0=const wchar_t *,nptr
+func.wcstold.arg.1=wchar_t* *,endptr
+func.wcstold.ret=long double
+
+wcstol=func
+func.wcstol.args=3
+func.wcstol.arg.0=const wchar_t *,nptr
+func.wcstol.arg.1=wchar_t* *,endptr
+func.wcstol.arg.2=int,base
+func.wcstol.ret=long
+
+wcstoll=func
+func.wcstoll.args=3
+func.wcstoll.arg.0=const wchar_t *,nptr
+func.wcstoll.arg.1=wchar_t* *,endptr
+func.wcstoll.arg.2=int,base
+func.wcstoll.ret=long long
+
+wcstoul=func
+func.wcstoul.args=3
+func.wcstoul.arg.0=const wchar_t *,nptr
+func.wcstoul.arg.1=wchar_t* *,endptr
+func.wcstoul.arg.2=int,base
+func.wcstoul.ret=long
+
+wcstoull=func
+func.wcstoull.args=3
+func.wcstoull.arg.0=const wchar_t *,nptr
+func.wcstoull.arg.1=wchar_t* *,endptr
+func.wcstoull.arg.2=int,base
+func.wcstoull.ret=long long
+
+wcscpy=func
+func.wcscpy.args=2
+func.wcscpy.arg.0=wchar_t *,s1
+func.wcscpy.arg.1=const wchar_t *,s2
+func.wcscpy.ret=wchar_t*
+
+wcsncpy=func
+func.wcsncpy.args=3
+func.wcsncpy.arg.0=wchar_t *,s1
+func.wcsncpy.arg.1=const wchar_t *,s2
+func.wcsncpy.arg.2=size_t,n
+func.wcsncpy.ret=wchar_t*
+
+wcscat=func
+func.wcscat.args=2
+func.wcscat.arg.0=wchar_t *,s1
+func.wcscat.arg.1=const wchar_t *,s2
+func.wcscat.ret=wchar_t*
+
+wcsncat=func
+func.wcsncat.args=3
+func.wcsncat.arg.0=wchar_t *,s1
+func.wcsncat.arg.1=const wchar_t *,s2
+func.wcsncat.arg.2=size_t,n
+func.wcsncat.ret=wchar_t*
+
+wcscmp=func
+func.wcscmp.args=2
+func.wcscmp.arg.0=const wchar_t *,s1
+func.wcscmp.arg.1=const wchar_t *,s2
+func.wcscmp.ret=int
+
+wcscoll=func
+func.wcscoll.args=2
+func.wcscoll.arg.0=const wchar_t *,s1
+func.wcscoll.arg.1=const wchar_t *,s2
+func.wcscoll.ret=int
+
+wcsncmp=func
+func.wcsncmp.args=3
+func.wcsncmp.arg.0=const wchar_t *,s1
+func.wcsncmp.arg.1=const wchar_t *,s2
+func.wcsncmp.arg.2=size_t,n
+func.wcsncmp.ret=int
+
+wcsxfrm=func
+func.wcsxfrm.args=3
+func.wcsxfrm.arg.0=wchar_t *,s1
+func.wcsxfrm.arg.1=const wchar_t *,s2
+func.wcsxfrm.arg.2=size_t,n
+func.wcsxfrm.ret=size_t
+
+wcschr=func
+func.wcschr.args=2
+func.wcschr.arg.0=const wchar_t *,s
+func.wcschr.arg.1=wchar_t,c
+func.wcschr.ret=const wchar_t*
+
+wcschr=func
+func.wcschr.args=2
+func.wcschr.arg.0=wchar_t *,s
+func.wcschr.arg.1=wchar_t,c
+func.wcschr.ret=wchar_t*
+
+wcscspn=func
+func.wcscspn.args=2
+func.wcscspn.arg.0=const wchar_t *,s1
+func.wcscspn.arg.1=const wchar_t *,s2
+func.wcscspn.ret=size_t
+
+wcslen=func
+func.wcslen.args=1
+func.wcslen.arg.0=const wchar_t *,s
+func.wcslen.ret=size_t
+
+wcspbrk=func
+func.wcspbrk.args=2
+func.wcspbrk.arg.0=const wchar_t *,s1
+func.wcspbrk.arg.1=const wchar_t *,s2
+func.wcspbrk.ret=const wchar_t*
+
+wcspbrk=func
+func.wcspbrk.args=2
+func.wcspbrk.arg.0=wchar_t *,s1
+func.wcspbrk.arg.1=const wchar_t *,s2
+func.wcspbrk.ret=wchar_t*
+
+wcsrchr=func
+func.wcsrchr.args=2
+func.wcsrchr.arg.0=const wchar_t *,s
+func.wcsrchr.arg.1=wchar_t,c
+func.wcsrchr.ret=const wchar_t*
+
+wcsrchr=func
+func.wcsrchr.args=2
+func.wcsrchr.arg.0=wchar_t *,s
+func.wcsrchr.arg.1=wchar_t,c
+func.wcsrchr.ret=wchar_t*
+
+wcsspn=func
+func.wcsspn.args=2
+func.wcsspn.arg.0=const wchar_t *,s1
+func.wcsspn.arg.1=const wchar_t *,s2
+func.wcsspn.ret=size_t
+
+wcsstr=func
+func.wcsstr.args=2
+func.wcsstr.arg.0=const wchar_t *,s1
+func.wcsstr.arg.1=const wchar_t *,s2
+func.wcsstr.ret=const wchar_t*
+
+wcsstr=func
+func.wcsstr.args=2
+func.wcsstr.arg.0=wchar_t *,s1
+func.wcsstr.arg.1=const wchar_t *,s2
+func.wcsstr.ret=wchar_t*
+
+wcstok=func
+func.wcstok.args=3
+func.wcstok.arg.0=wchar_t *,s1
+func.wcstok.arg.1=const wchar_t *,s2
+func.wcstok.arg.2=wchar_t* *,ptr
+func.wcstok.ret=wchar_t*
+
+wmemchr=func
+func.wmemchr.args=3
+func.wmemchr.arg.0=const wchar_t *,s
+func.wmemchr.arg.1=wchar_t,c
+func.wmemchr.arg.2=size_t,n
+func.wmemchr.ret=const wchar_t*
+
+wmemchr=func
+func.wmemchr.args=3
+func.wmemchr.arg.0=wchar_t *,s
+func.wmemchr.arg.1=wchar_t,c
+func.wmemchr.arg.2=size_t,n
+func.wmemchr.ret=wchar_t*
+
+wmemcmp=func
+func.wmemcmp.args=3
+func.wmemcmp.arg.0=wchar_t *,s1
+func.wmemcmp.arg.1=const wchar_t *,s2
+func.wmemcmp.arg.2=size_t,n
+func.wmemcmp.ret=int
+
+wmemcpy=func
+func.wmemcpy.args=3
+func.wmemcpy.arg.0=wchar_t *,s1
+func.wmemcpy.arg.1=const wchar_t *,s2
+func.wmemcpy.arg.2=size_t,n
+func.wmemcpy.ret=wchar_t*
+
+wmemmove=func
+func.wmemmove.args=3
+func.wmemmove.arg.0=wchar_t *,s1
+func.wmemmove.arg.1=const wchar_t *,s2
+func.wmemmove.arg.2=size_t,n
+func.wmemmove.ret=wchar_t*
+
+wmemset=func
+func.wmemset.args=3
+func.wmemset.arg.0=wchar_t *,s
+func.wmemset.arg.1=wchar_t,c
+func.wmemset.arg.2=size_t,n
+func.wmemset.ret=wchar_t*
+
+wcsftime=func
+func.wcsftime.args=4
+func.wcsftime.arg.0=wchar_t *,s
+func.wcsftime.arg.1=size_t,maxsize
+func.wcsftime.arg.2=const wchar_t *,format
+func.wcsftime.arg.3=const tm *,timeptr
+func.wcsftime.ret=size_t
+
+btowc=func
+func.btowc.args=1
+func.btowc.arg.0=int,c
+func.btowc.ret=wint_t
+
+wctob=func
+func.wctob.args=1
+func.wctob.arg.0=wint_t,c
+func.wctob.ret=int
+
+mbsinit=func
+func.mbsinit.args=1
+func.mbsinit.arg.0=const mbstate_t *,ps
+func.mbsinit.ret=int
+
+mbrlen=func
+func.mbrlen.args=3
+func.mbrlen.arg.0=const char *,s
+func.mbrlen.arg.1=size_t,n
+func.mbrlen.arg.2=mbstate_t *,ps
+func.mbrlen.ret=size_t
+
+mbrtowc=func
+func.mbrtowc.args=4
+func.mbrtowc.arg.0=wchar_t *,pwc
+func.mbrtowc.arg.1=const char *,s
+func.mbrtowc.arg.2=size_t,n
+func.mbrtowc.arg.3=mbstate_t *,ps
+func.mbrtowc.ret=size_t
+
+wcrtomb=func
+func.wcrtomb.args=3
+func.wcrtomb.arg.0=char *,s
+func.wcrtomb.arg.1=wchar_t,wc
+func.wcrtomb.arg.2=mbstate_t *,ps
+func.wcrtomb.ret=size_t
+
+mbsrtowcs=func
+func.mbsrtowcs.args=4
+func.mbsrtowcs.arg.0=wchar_t *,dst
+func.mbsrtowcs.arg.1=const char * *,src
+func.mbsrtowcs.arg.2=size_t,len
+func.mbsrtowcs.arg.3=mbstate_t *,ps
+func.mbsrtowcs.ret=size_t
+
+wcsrtombs=func
+func.wcsrtombs.args=4
+func.wcsrtombs.arg.0=char *,dst
+func.wcsrtombs.arg.1=const wchar_t* *,src
+func.wcsrtombs.arg.2=size_t,len
+func.wcsrtombs.arg.3=mbstate_t *,ps
+func.wcsrtombs.ret=size_t
+
+iswalnum=func
+func.iswalnum.args=1
+func.iswalnum.arg.0=wint_t,wc
+func.iswalnum.ret=int
+
+iswalpha=func
+func.iswalpha.args=1
+func.iswalpha.arg.0=wint_t,wc
+func.iswalpha.ret=int
+
+iswblank=func
+func.iswblank.args=1
+func.iswblank.arg.0=wint_t,wc
+func.iswblank.ret=int
+
+iswcntrl=func
+func.iswcntrl.args=1
+func.iswcntrl.arg.0=wint_t,wc
+func.iswcntrl.ret=int
+
+iswdigit=func
+func.iswdigit.args=1
+func.iswdigit.arg.0=wint_t,wc
+func.iswdigit.ret=int
+
+iswgraph=func
+func.iswgraph.args=1
+func.iswgraph.arg.0=wint_t,wc
+func.iswgraph.ret=int
+
+iswlower=func
+func.iswlower.args=1
+func.iswlower.arg.0=wint_t,wc
+func.iswlower.ret=int
+
+iswprint=func
+func.iswprint.args=1
+func.iswprint.arg.0=wint_t,wc
+func.iswprint.ret=int
+
+iswpunct=func
+func.iswpunct.args=1
+func.iswpunct.arg.0=wint_t,wc
+func.iswpunct.ret=int
+
+iswspace=func
+func.iswspace.args=1
+func.iswspace.arg.0=wint_t,wc
+func.iswspace.ret=int
+
+iswupper=func
+func.iswupper.args=1
+func.iswupper.arg.0=wint_t,wc
+func.iswupper.ret=int
+
+iswxdigit=func
+func.iswxdigit.args=1
+func.iswxdigit.arg.0=wint_t,wc
+func.iswxdigit.ret=int
+
+iswctype=func
+func.iswctype.args=2
+func.iswctype.arg.0=wint_t,wc
+func.iswctype.arg.1=wctype_t,desc
+func.iswctype.ret=int
+
+wctype=func
+func.wctype.args=1
+func.wctype.arg.0=const char *,property
+func.wctype.ret=wctype_t
+
+towlower=func
+func.towlower.args=1
+func.towlower.arg.0=wint_t,wc
+func.towlower.ret=wint_t
+
+towupper=func
+func.towupper.args=1
+func.towupper.arg.0=wint_t,wc
+func.towupper.ret=wint_t
+
+towctrans=func
+func.towctrans.args=2
+func.towctrans.arg.0=wint_t,wc
+func.towctrans.arg.1=wctrans_t,desc
+func.towctrans.ret=wint_t
+
+wctrans=func
+func.wctrans.args=1
+func.wctrans.arg.0=const char *,property
+func.wctrans.ret=wctrans_t
+
+remove=func
+func.remove.args=1
+func.remove.arg.0=const char *,filename
+func.remove.ret=int
+
+rename=func
+func.rename.args=2
+func.rename.arg.0=const char *,oldpath
+func.rename.arg.1=const char *,newpath
+func.rename.ret=int
+
+tmpfile=func
+func.tmpfile.args=0
+func.tmpfile.ret=file*
+
+tmpnam=func
+func.tmpnam.args=1
+func.tmpnam.arg.0=char *,s
+func.tmpnam.ret=char *
+
+fflush=func
+func.fflush.args=1
+func.fflush.arg.0=FILE *,stream
+func.fflush.ret=int
+
+fopen=func
+func.fopen.args=2
+func.fopen.arg.0=const char *,filename
+func.fopen.arg.1=const char *,mode
+func.fopen.ret=file*
+
+freopen=func
+func.freopen.args=3
+func.freopen.arg.0=const char *,filename
+func.freopen.arg.1=const char *,mode
+func.freopen.arg.2=FILE *,stream
+func.freopen.ret=file*
+
+setbuf=func
+func.setbuf.args=2
+func.setbuf.arg.0=FILE *,stream
+func.setbuf.arg.1=char *,buf
+func.setbuf.ret=void
+
+setvbuf=func
+func.setvbuf.args=4
+func.setvbuf.arg.0=FILE*,stream
+func.setvbuf.arg.1=char *,buf
+func.setvbuf.arg.2=int,mode
+func.setvbuf.arg.3=size_t,size
+func.setvbuf.ret=int
+
+fprintf=func
+func.fprintf.args=3
+func.fprintf.arg.0=FILE *,stream
+func.fprintf.arg.1=const char *,format
+func.fprintf.arg.2= ,...
+func.fprintf.ret=int
+
+fscanf=func
+func.fscanf.args=3
+func.fscanf.arg.0=FILE *,stream
+func.fscanf.arg.1=const char *,format
+func.fscanf.arg.2=,...
+func.fscanf.ret=int
+
+printf=func
+func.printf.args=1
+func.printf.arg.0=const char *,format
+func.printf.ret=int
+
+warn=func
+func.warn.args=1
+func.warn.arg.0=const char *,format
+func.warn.ret=void
+
+lstat=func
+func.lstat.args=2
+func.lstat.arg.0=const char *,path
+func.lstat.arg.1=void *,buf
+func.lstat.ret=void
+
+scanf=func
+func.scanf.args=1
+func.scanf.arg.0=const char *,format
+func.scanf.ret=int
+
+snprintf=func
+func.snprintf.args=4
+func.snprintf.arg.0=char *,s
+func.snprintf.arg.1=size_t,size
+func.snprintf.arg.2=const char *,format
+func.snprintf.arg.3=,...
+func.snprintf.ret=int
+
+sprintf=func
+func.sprintf.args=3
+func.sprintf.arg.0=char *,s
+func.sprintf.arg.1=const char *,format
+func.sprintf.arg.2=,...
+func.sprintf.ret=int
+
+sscanf=func
+func.sscanf.args=3
+func.sscanf.arg.0=const char *,s
+func.sscanf.arg.1=const char *,format
+func.sscanf.arg.2= ,...
+func.sscanf.ret=int
+
+vfprintf=func
+func.vfprintf.args=3
+func.vfprintf.arg.0=FILE *,stream
+func.vfprintf.arg.1=const char *,format
+func.vfprintf.arg.2=va_list,ap
+func.vfprintf.ret=int
+
+vfscanf=func
+func.vfscanf.args=3
+func.vfscanf.arg.0=FILE *,stream
+func.vfscanf.arg.1=const char *,format
+func.vfscanf.arg.2=va_list,ap
+func.vfscanf.ret=int
+
+vprintf=func
+func.vprintf.args=2
+func.vprintf.arg.0=const char *,format
+func.vprintf.arg.1=va_list,ap
+func.vprintf.ret=int
+
+vscanf=func
+func.vscanf.args=2
+func.vscanf.arg.0=const char *,format
+func.vscanf.arg.1=va_list,ap
+func.vscanf.ret=int
+
+vsnprintf=func
+func.vsnprintf.args=4
+func.vsnprintf.arg.0=char *,s
+func.vsnprintf.arg.1=size_t,size
+func.vsnprintf.arg.2=const char *,format
+func.vsnprintf.arg.3=va_list,arg
+func.vsnprintf.ret=int
+
+vsprintf=func
+func.vsprintf.args=3
+func.vsprintf.arg.0=char *,s
+func.vsprintf.arg.1=const char *,format
+func.vsprintf.arg.2=va_list,arg
+func.vsprintf.ret=int
+
+vsscanf=func
+func.vsscanf.args=3
+func.vsscanf.arg.0=const char *,s
+func.vsscanf.arg.1=const char *,format
+func.vsscanf.arg.2=va_list,arg
+func.vsscanf.ret=int
+
+fputc=func
+func.fputc.args=2
+func.fputc.arg.0=int,c
+func.fputc.arg.1=FILE *,stream
+func.fputc.ret=int
+
+fputs=func
+func.fputs.args=2
+func.fputs.arg.0=const char *,s
+func.fputs.arg.1=FILE *,stream
+func.fputs.ret=int
+
+gets=func
+func.gets.args=1
+func.gets.arg.0=char *,s
+func.gets.ret=char *
+
+putc=func
+func.putc.args=2
+func.putc.arg.0=int,c
+func.putc.arg.1=FILE *,stream
+func.putc.ret=int
+
+putchar=func
+func.putchar.args=1
+func.putchar.arg.0=int,c
+func.putchar.ret=int
+
+puts=func
+func.puts.args=1
+func.puts.arg.0=const char *,s
+func.puts.ret=int
+
+fread=func
+func.fread.args=4
+func.fread.arg.0=void *,ptr
+func.fread.arg.1=size_t,size
+func.fread.arg.2=size_t,nmemb
+func.fread.arg.3=FILE *,stream
+func.fread.ret=size_t
+
+fgetpos=func
+func.fgetpos.args=2
+func.fgetpos.arg.0=FILE *,stream
+func.fgetpos.arg.1=fpos_t*,pos
+func.fgetpos.ret=int
+
+fseek=func
+func.fseek.args=3
+func.fseek.arg.0=FILE *,stream
+func.fseek.arg.1=long,offset
+func.fseek.arg.2=int,whence
+func.fseek.ret=int
+
+fsetpos=func
+func.fsetpos.args=2
+func.fsetpos.arg.0=FILE *,stream
+func.fsetpos.arg.1=const fpos_t*,pos
+func.fsetpos.ret=int
+
+ftell=func
+func.ftell.args=1
+func.ftell.arg.0=FILE *,stream
+func.ftell.ret=long
+
+rewind=func
+func.rewind.args=1
+func.rewind.arg.0=FILE *,stream
+func.rewind.ret=void
+
+clearerr=func
+func.clearerr.args=1
+func.clearerr.arg.0=FILE *,stream
+func.clearerr.ret=void
+
+feof=func
+func.feof.args=1
+func.feof.arg.0=FILE *,stream
+func.feof.ret=int
+
+ferror=func
+func.ferror.args=1
+func.ferror.arg.0=FILE *,stream
+func.ferror.ret=int
+
+perror=func
+func.perror.args=1
+func.perror.arg.0=const char *,s
+func.perror.ret=void
+
+signal=func
+func.signal.args=2
+func.signal.arg.0=int,sig
+func.signal.arg.1=void *,func
+func.signal.ret=void
+
+write=func
+func.write.args=3
+func.write.arg.0=int,fd
+func.write.arg.1=void *,ptr
+func.write.arg.2=size_t,nbytes
+func.write.ret=ssize_t
+
+getpid=func
+func.getpid.args=0
+func.getpid.ret=int
+
+bzero=func
+func.bzero.args=2
+func.bzero.arg.0=void *,s
+func.bzero.arg.1=size_t,n
+func.bzero.ret=void
+
+maskrune=func
+func.maskrune.args=2
+func.maskrune.arg.0=uint32_t,c
+func.maskrune.arg.1=unsigned long,f
+func.maskrune.ret=int
+
+strmode=func
+func.strmode.args=2
+func.strmode.arg.0=int,mode
+func.strmode.arg.1=char *,bp
+func.strmode.ret=void
+
+tgoto=func
+func.tgoto.args=3
+func.tgoto.arg.0=const char *,cap
+func.tgoto.arg.1=int,col
+func.tgoto.arg.2=int,row
+func.tgoto.ret=char *
+
+basename=func
+func.basename.args=1
+func.basename.arg.0=char *,path
+func.basename.ret=char *
+
+unlink=func
+func.unlink.args=1
+func.unlink.arg.0=const char *,path
+func.unlink.ret=int
+
+chmod=func
+func.chmod.args=2
+func.chmod.arg.0=const char *,path
+func.chmod.arg.1=int,mode
+func.chmod.ret=int
+
+fchmod=func
+func.fchmod.args=2
+func.fchmod.arg.0=int,fd
+func.fchmod.arg.1=int,mode
+func.fchmod.ret=int
+
+humanize_number=func
+func.humanize_number.args=1
+func.humanize_number.arg.0=char *,buf
+func.humanize_number.arg.1=size_t,len
+func.humanize_number.arg.2=int64_t,number
+func.humanize_number.arg.3=const char *,suffix
+func.humanize_number.arg.4=int,scale
+func.humanize_number.arg.5=int,flags
+func.humanize_number.ret=int
+
+pututxline=func
+func.pututxline.args=1
+func.pututxline.arg.0=void *,utx
+func.pututxline.ret=void *
+
+mkstemp=func
+func.mkstemp.args=1
+func.mkstemp.arg.0=char *,template
+func.mkstemp.ret=int
+
+mktemp=func
+func.mktemp.args=1
+func.mktemp.arg.0=char *,template
+func.mktemp.ret=char *
+
+objc_msgSend=func
+func.objc_msgSend.args=2
+func.objc_msgSend.arg.0=void *,instance
+func.objc_msgSend.arg.1=char *,selector
+func.objc_msgSend.ret=void *
+
+bindtextdomain=func
+func.bindtextdomain.args=2
+func.bindtextdomain.arg.0=char *,domainname
+func.bindtextdomain.arg.1=char *,dirname
+func.bindtextdomain.ret=char *
+
+textdomain=func
+func.textdomain.args=1
+func.textdomain.arg.0=char *,domainname
+func.textdomain.ret=char *
+
+error=func
+func.error.args=3
+func.error.arg.0=int,status
+func.error.arg.1=int,errname
+func.error.arg.2=char *,format
+func.error.ret=void
+
+nl_langinfo=func
+func.nl_langinfo.args=1
+func.nl_langinfo.arg.0=nl_item,item
+func.nl_langinfo.ret=char *
+
+nl_langinfo_l=func
+func.nl_langinfo_l.args=2
+func.nl_langinfo_l.arg.0=nl_item,item
+func.nl_langinfo_l.arg.1=locale_t locale
+func.nl_langinfo_l.ret=char *
+
+setjmp=func
+func.setjmp.args=1
+func.setjmp.arg.0=jmpbuf,env
+func.setjmp.ret=int
+
+mmap=func
+func.mmap.args=6
+func.mmap.arg.0=void*,addr
+func.mmap.arg.1=size_t,length
+func.mmap.arg.2=int,prot
+func.mmap.arg.3=int,flags
+func.mmap.arg.4=int,fd
+func.mmap.arg.5=size_t,offset
+func.mmap.ret=void*
+
+munmap=func
+func.munmap.args=2
+func.munmap.arg.0=void*,addr
+func.munmap.arg.1=size_t,length
+func.munmap.ret=int
+
+ptrace=func
+func.ptrace.args=4
+func.ptrace.arg.0=__ptrace_request,request
+func.ptrace.arg.1=pid_t,pid
+func.ptrace.arg.2=void*,addr
+func.ptrace.arg.3=void*,data
+func.ptrace.ret=long

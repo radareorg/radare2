@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2016 - pancake */
+/* radare2 - LGPL - Copyright 2013-2018 - pancake */
 
 #include <r_asm.h>
 #include <r_lib.h>
@@ -23,9 +23,13 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 			mode |= CS_MODE_MIPS32R6;
 		} else if (!strcmp (a->cpu, "v3")) {
 			mode |= CS_MODE_MIPS3;
+		} else if (!strcmp (a->cpu, "v2")) {
+#if CS_API_MAJOR > 3
+			mode |= CS_MODE_MIPS2;
+#endif
 		}
 	}
-	mode |= (a->bits == 64)? CS_MODE_64: CS_MODE_32;
+	mode |= (a->bits == 64)? CS_MODE_MIPS64 : CS_MODE_MIPS32;
 	memset (op, 0, sizeof (RAsmOp));
 	op->size = 4;
 	if (cd != 0) {
@@ -43,7 +47,7 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 	cs_option (cd, CS_OPT_DETAIL, CS_OPT_OFF);
 	n = cs_disasm (cd, (ut8*)buf, len, a->pc, 1, &insn);
 	if (n < 1) {
-		strcpy (op->buf_asm, "invalid");
+		r_asm_op_set_asm (op, "invalid");
 		op->size = 4;
 		goto beach;
 	} else {
@@ -53,11 +57,13 @@ static int disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
 		goto beach;
 	}
 	op->size = insn->size;
-	snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s%s%s",
-		insn->mnemonic, insn->op_str[0]? " ": "",
-		insn->op_str);
-	// remove the '$'<registername> in the string
-	r_str_replace_char (op->buf_asm, '$', 0);
+	char *str = r_str_newf ("%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
+	if (str) {
+		r_str_replace_char (str, '$', 0);
+		// remove the '$'<registername> in the string
+		r_asm_op_set_asm (op, str);
+		free (str);
+	}
 	cs_free (insn, n);
 beach:
 	// cs_close (&cd);
@@ -66,14 +72,16 @@ fin:
 }
 
 static int assemble(RAsm *a, RAsmOp *op, const char *str) {
-	int ret = mips_assemble (str, a->pc, op->buf);
+	ut8 *opbuf = (ut8*)r_strbuf_get (&op->buf);
+	int ret = mips_assemble (str, a->pc, opbuf);
 	if (a->big_endian) {
-		ut8 tmp = op->buf[0];
-		op->buf[0] = op->buf[3];
-		op->buf[3] = tmp;
-		tmp = op->buf[1];
-		op->buf[1] = op->buf[2];
-		op->buf[2] = tmp;
+		ut8 *buf = opbuf;
+		ut8 tmp = buf[0];
+		buf[0] = buf[3];
+		buf[3] = tmp;
+		tmp = buf[1];
+		buf[1] = buf[2];
+		buf[2] = tmp;
 	}
 	return ret;
 }
@@ -83,7 +91,7 @@ RAsmPlugin r_asm_plugin_mips_cs = {
 	.desc = "Capstone MIPS disassembler",
 	.license = "BSD",
 	.arch = "mips",
-	.cpus = "gp64,micro,r6,v3",
+	.cpus = "mips32/64,micro,r6,v3,v2",
 	.bits = 16|32|64,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.disassemble = &disassemble,
@@ -92,7 +100,7 @@ RAsmPlugin r_asm_plugin_mips_cs = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_mips_cs,
 	.version = R2_VERSION

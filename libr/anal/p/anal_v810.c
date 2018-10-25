@@ -17,17 +17,33 @@ enum {
 };
 
 static void update_flags(RAnalOp *op, int flags) {
-	if (flags & V810_FLAG_CY) r_strbuf_append(&op->esil, ",$c31,cy,=");
-	if (flags & V810_FLAG_OV) r_strbuf_append(&op->esil, ",$o,ov,=");
-	if (flags & V810_FLAG_S) r_strbuf_append(&op->esil, ",$s,s,=");
-	if (flags & V810_FLAG_Z) r_strbuf_append(&op->esil, ",$z,z,=");
+	if (flags & V810_FLAG_CY) {
+		r_strbuf_append (&op->esil, ",$c31,cy,=");
+	}
+	if (flags & V810_FLAG_OV) {
+		r_strbuf_append (&op->esil, ",$o,ov,=");
+	}
+	if (flags & V810_FLAG_S) {
+		r_strbuf_append (&op->esil, ",$s,s,=");
+	}
+	if (flags & V810_FLAG_Z) {
+		r_strbuf_append (&op->esil, ",$z,z,=");
+	}
 }
 
 static void clear_flags(RAnalOp *op, int flags) {
-	if (flags & V810_FLAG_CY) r_strbuf_append(&op->esil, ",0,cy,=");
-	if (flags & V810_FLAG_OV) r_strbuf_append(&op->esil, ",0,ov,=");
-	if (flags & V810_FLAG_S) r_strbuf_append(&op->esil, ",0,s,=");
-	if (flags & V810_FLAG_Z) r_strbuf_append(&op->esil, ",0,z,=");
+	if (flags & V810_FLAG_CY) {
+		r_strbuf_append (&op->esil, ",0,cy,=");
+	}
+	if (flags & V810_FLAG_OV) {
+		r_strbuf_append (&op->esil, ",0,ov,=");
+	}
+	if (flags & V810_FLAG_S) {
+		r_strbuf_append (&op->esil, ",0,s,=");
+	}
+	if (flags & V810_FLAG_Z) {
+		r_strbuf_append (&op->esil, ",0,z,=");
+	}
 }
 
 static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
@@ -43,20 +59,24 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 	r_strbuf_set (&op->esil, "");
 
 	ret = op->size = v810_decode_command (buf, len, &cmd);
-	if (ret <= 0) return ret;
+	if (ret <= 0) {
+		return ret;
+	}
 
 	word1 = r_read_ble16 (buf, anal->big_endian);
 
-	if (ret == 4)
+	if (ret == 4) {
 		word2 = r_read_ble16 (buf+2, anal->big_endian);
+	}
 
 	op->addr = addr;
 	op->jump = op->fail = -1;
 	op->ptr = op->val = -1;
 
 	opcode = OPCODE(word1);
-	if (opcode>>3 == 0x4)
+	if (opcode >> 3 == 0x4) {
 		opcode &= 0x20;
+	}
 
 	switch (opcode) {
 	case V810_MOV:
@@ -101,10 +121,11 @@ static int v810_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len)
 		update_flags (op, V810_FLAG_OV | V810_FLAG_S | V810_FLAG_Z);
 		break;
 	case V810_JMP:
-		if (REG1(word1) == 31)
+		if (REG1 (word1) == 31) {
 			op->type = R_ANAL_OP_TYPE_RET;
-		else
+		} else {
 			op->type = R_ANAL_OP_TYPE_UJMP;
+		}
 		r_strbuf_appendf (&op->esil, "r%u,pc,=",
 						 REG1(word1));
 		break;
@@ -438,7 +459,7 @@ RAnalPlugin r_anal_plugin_v810 = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ANAL,
 	.data = &r_anal_plugin_v810,
 	.version = R2_VERSION

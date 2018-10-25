@@ -47,7 +47,9 @@
 #  endif
 # endif
 #endif
+#ifndef ZIP_EXTERN
 #define ZIP_EXTERN extern
+#endif
 
 #ifdef __cplusplus
 extern "C" {

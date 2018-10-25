@@ -4,6 +4,42 @@
 #include "r_core.h"
 #include "r_print.h"
 
+static const char *help_msg_P[] = {
+	"Usage:", "P[?osi] [file]", "Project management",
+	"P", "", "list all projects",
+	"Pc", " [file]", "show project script to console",
+	"Pd", " [file]", "delete project",
+	"Pi", " [file]", "show project information",
+	"Pn", "[j]", "show project notes (Pnj for json)",
+	"Pn", " [base64]", "set notes text",
+	"Pn", " -", "edit notes with cfg.editor",
+	"Po", " [file]", "open project",
+	"Ps", " [file]", "save project",
+	"PS", " [file]", "save script file",
+	"P-", " [file]", "delete project (alias for Pd)",
+	"NOTE:", "", "See 'e??prj.'",
+	"NOTE:", "", "project are stored in " R_JOIN_2_PATHS ("~", R2_HOME_PROJECTS),
+	NULL
+};
+
+static const char *help_msg_Pn[] = {
+	"Usage:", "Pn[j-?] [...]", "Project Notes",
+	"Pn", "", "show project notes",
+	"Pn", " -", "edit notes with cfg.editor",
+	"Pn-", "", "delete notes",
+	"Pn-", "str", "delete lines matching /str/ in notes",
+	"Pn+", "str", "append one line to the notes",
+	"Pnj", "", "show notes in base64",
+	"Pnj", " [base64]", "set notes in base64",
+	"Pnx", "", "run project note commands",
+	NULL
+};
+
+static void cmd_project_init(RCore *core) {
+	DEFINE_CMD_DESCRIPTOR (core, P);
+	DEFINE_CMD_DESCRIPTOR (core, Pn);
+}
+
 static int cmd_project(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	const char *file, *arg = (input && *input)? input + 1: NULL;
@@ -46,9 +82,6 @@ static int cmd_project(void *data, const char *input) {
 			}
 		}
 		break;
-	case 'l':
-		r_core_project_list (core, input[1]);
-		break;
 	case 'd':
 	case '-':
 		r_core_project_delete (core, file);
@@ -70,19 +103,7 @@ static int cmd_project(void *data, const char *input) {
 		break;
 	case 'n': // "Pn"
 		if (input[1] == '?') {
-			const char *help_msg[] = {
-				"Usage:", "Pn[j-?] [...]", "Project Notes",
-				"Pn", "", "show project notes",
-				"Pn", " -", "edit notes with cfg.editor",
-				"Pn-", "", "delete notes",
-				"Pn-", "str", "delete lines matching /str/ in notes",
-				"Pn+", "str", "append one line to the notes",
-				"Pnx", "", "run project note commands",
-				"Pnj", "", "show notes in base64",
-				"Pnj", " [base64]", "set notes in base64",
-				NULL
-			};
-			r_core_cmd_help (core, help_msg);
+			r_core_cmd_help (core, help_msg_Pn);
 		} else if (!fileproject || !*fileproject) {
 			eprintf ("No project\n");
 		} else {
@@ -210,26 +231,12 @@ static int cmd_project(void *data, const char *input) {
 			free (prjName);
 		}
 		break;
-	default: {
-		const char *help_msg[] = {
-			"Usage:", "P[?osi] [file]", "Project management",
-			"Pc", " [file]", "show project script to console",
-			"Pd", " [file]", "delete project",
-			"Pi", " [file]", "show project information",
-			"Pl", "", "list all projects",
-			"Pn", "[j]", "show project notes (Pnj for json)",
-			"Pn", " [base64]", "set notes text",
-			"Pn", " -", "edit notes with cfg.editor",
-			"Po", " [file]", "open project",
-			"Ps", " [file]", "save project",
-			"PS", " [file]", "save script file",
-			"P-", " [file]", "delete project (alias for Pd)",
-			"NOTE:", "", "See 'e??prj.'",
-			"NOTE:", "", "project are stored in ~/.config/radare2/projects",
-			NULL
-		};
-		r_core_cmd_help (core, help_msg);
-	}
+	case 0:
+	case 'j':
+		r_core_project_list (core, input[0]);
+		break;
+	default:
+		r_core_cmd_help (core, help_msg_P);
 		break;
 	}
 	free (str);

@@ -30,7 +30,7 @@ REggPlugin r_egg_plugin_shya = {
 
 #if 0
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_EGG,
 	.data = &r_egg_plugin_shya,
 	.version = R2_VERSION

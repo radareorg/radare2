@@ -11,9 +11,9 @@ static const char *instrs[] = {
 	[PROP_ADDS]		= "adds",
 	[PROP_ADDSX]	= "addsx",
 	[PROP_ADDX]		= "addx",
-	[PROP_AND]		= "and",
-	[PROP_ANDN]		= "andn",
-	[PROP_CALL]		= "call",
+	[PROP_AND]		= "and", // or TEST
+	[PROP_ANDN]		= "andn", // or TESTN
+	[PROP_CALL]		= "call", // or JMP JMPRET RET
 	[PROP_CMP]		= "cmp",
 	[PROP_CMPS]		= "cmps",
 	[PROP_CMPSUB]	= "cmpsub",
@@ -44,7 +44,6 @@ static const char *instrs[] = {
 	[PROP_RDBYTE]	= "rdbyte",
 	[PROP_RDLONG]	= "rdlong",
 	[PROP_RDWORD]	= "rdword",
-	[PROP_RET]		= "ret",
 	[PROP_REV]		= "rev",
 	[PROP_ROL]		= "rol",
 	[PROP_ROR]		= "ror",
@@ -58,8 +57,6 @@ static const char *instrs[] = {
 	[PROP_SUMNC]	= "sumnc",
 	[PROP_SUMNZ]	= "sumnz",
 	[PROP_SUMZ]		= "sumz",
-	[PROP_TEST]		= "test",
-	[PROP_TESTN]	= "testn",
 	[PROP_TJZ]		= "tjz",
 	[PROP_WAITCNT]	= "waitcnt",
 	[PROP_WAITVID]	= "waitvid",
@@ -280,8 +277,7 @@ int propeller_decode_command(const ut8 *instr, struct propeller_cmd *cmd)
 		case PROP_WAITPNE:
 		case PROP_WAITVID:
 		case PROP_XOR:
-			snprintf (cmd->instr, PROP_INSTR_MAXLEN - 1, "%s",
-					instrs[opcode]);
+			snprintf (cmd->instr, sizeof cmd->instr, "%s", instrs[opcode]);
 
 			if ((opcode == PROP_RDBYTE || opcode == PROP_RDLONG ||
 						opcode == PROP_RDWORD) && (!(get_zcri (in) & 0x2))) {

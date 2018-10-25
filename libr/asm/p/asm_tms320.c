@@ -7,16 +7,16 @@
  */
 
 #include <stdio.h>
-
 #include <r_types.h>
 #include <r_lib.h>
 #include <r_asm.h>
 #include <capstone/capstone.h>
+
 static csh cd = 0;
-#include "cs_mnemonics.c"
 
 #ifdef CAPSTONE_TMS320C64X_H
 #define CAPSTONE_HAS_TMS320C64X 1
+//#include "cs_mnemonics.c"
 #else
 #define CAPSTONE_HAS_TMS320C64X 0
 #warning Cannot find capstone-tms320c64x support
@@ -45,7 +45,7 @@ static int tms320c64x_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) 
 	}
 	n = cs_disasm (cd, buf, len, a->pc, 1, &insn);
 	if (n < 1) {
-		strcpy (op->buf_asm, "invalid");
+		r_asm_op_set_asm (op, "invalid");
 		op->size = 4;
 		ret = -1;
 		goto beach;
@@ -56,11 +56,10 @@ static int tms320c64x_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) 
 		goto beach;
 	}
 	op->size = insn->size;
-	snprintf (op->buf_asm, R_ASM_BUFSIZE, "%s%s%s",
-		insn->mnemonic, insn->op_str[0]? " ": "",
-		insn->op_str);
-	r_str_replace_char (op->buf_asm, '%', 0);
-	r_str_case (op->buf_asm, false);
+	char *buf_asm = sdb_fmt ("%s%s%s", insn->mnemonic, insn->op_str[0]? " ": "", insn->op_str);
+	r_str_replace_char (buf_asm, '%', 0);
+	r_str_case (buf_asm, false);
+	r_asm_op_set_asm (op, buf_asm);
 	cs_free (insn, n);
 	beach:
 	// cs_close (&cd);
@@ -74,23 +73,23 @@ static int tms320c64x_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) 
 static tms320_dasm_t engine = { 0 };
 
 static int tms320_disassemble(RAsm *a, RAsmOp *op, const ut8 *buf, int len) {
-	if (a->cpu && strcasecmp (a->cpu, "c54x") == 0) {
+	if (a->cpu && r_str_casecmp (a->cpu, "c54x") == 0) {
 		tms320_f_set_cpu (&engine, TMS320_F_CPU_C54X);
-	} else if (a->cpu && strcasecmp(a->cpu, "c55x+") == 0) {
+	} else if (a->cpu && r_str_casecmp(a->cpu, "c55x+") == 0) {
 		tms320_f_set_cpu (&engine, TMS320_F_CPU_C55X_PLUS);
-	} else if (a->cpu && strcasecmp(a->cpu, "c55x") == 0) {
+	} else if (a->cpu && r_str_casecmp(a->cpu, "c55x") == 0) {
 		tms320_f_set_cpu (&engine, TMS320_F_CPU_C55X);
 	} else {
 #if CAPSTONE_HAS_TMS320C64X
-		if (a->cpu && !strcasecmp (a->cpu, "c64x")) {
+		if (a->cpu && !r_str_casecmp (a->cpu, "c64x")) {
 			return tms320c64x_disassemble (a, op, buf, len);
 		}
 #endif
-		snprintf (op->buf_asm, R_ASM_BUFSIZE - 1, "Unknown asm.cpu");
+		r_asm_op_set_asm (op, "unknown asm.cpu");
 		return op->size = -1;
 	}
 	op->size = tms320_dasm (&engine, buf, len);
-	snprintf (op->buf_asm, R_ASM_BUFSIZE-1, "%s", engine.syntax);
+	r_asm_op_set_asm (op, engine.syntax);
 	return op->size;
 }
 
@@ -121,7 +120,7 @@ RAsmPlugin r_asm_plugin_tms320 = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_tms320,
 	.version = R2_VERSION

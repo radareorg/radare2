@@ -13,7 +13,7 @@ Attribute list
 
 Note that you will substitute `x` for the calling convention name you will use.
 
-`default.cc=x` : used to set the the default calling convention used for all functions in `RAnal` instance for which this key is set, string of this calling convention `"x"` will be returned for every call of `R_API const char *r_anal_cc_default(RAnal *anal)`.
+`default.cc=x` : used to set the default calling convention used for all functions in `RAnal` instance for which this key is set, string of this calling convention `"x"` will be returned for every call of `R_API const char *r_anal_cc_default(RAnal *anal)`.
 
 `x=cc`: used to initialize calling convention (think of it as their is calling convention called x).
 

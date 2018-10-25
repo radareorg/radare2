@@ -12,16 +12,15 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 }
 
 
-static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	check_bytes (buf, sz);
-	return R_NOTNULL;
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+	return check_bytes (buf, sz);
 }
 
-static RBinInfo* info(RBinFile *arch) {
+static RBinInfo* info(RBinFile *bf) {
 	RBinInfo *ret = NULL;
 	spc_hdr spchdr;
 	memset (&spchdr, 0, SPC_HDR_SIZE);
-	int reat = r_buf_read_at (arch->buf, 0, (ut8*)&spchdr, SPC_HDR_SIZE);
+	int reat = r_buf_read_at (bf->buf, 0, (ut8*)&spchdr, SPC_HDR_SIZE);
 	if (reat != SPC_HDR_SIZE) {
 		eprintf ("Truncated Header\n");
 		return NULL;
@@ -29,7 +28,7 @@ static RBinInfo* info(RBinFile *arch) {
 	if (!(ret = R_NEW0 (RBinInfo))) {
 		return NULL;
 	}
-	ret->file = strdup (arch->file);
+	ret->file = strdup (bf->file);
 	ret->type = strdup ("Sound File Data");
 	ret->machine = strdup ("SPC700");
 	ret->os = strdup ("spc700");
@@ -39,12 +38,12 @@ static RBinInfo* info(RBinFile *arch) {
 	return ret;
 }
 
-static RList* sections(RBinFile *arch) {
+static RList* sections(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSection *ptr = NULL;
 	spc_hdr spchdr;
 	memset (&spchdr, 0, SPC_HDR_SIZE);
-	int reat = r_buf_read_at (arch->buf, 0, (ut8*)&spchdr, SPC_HDR_SIZE);
+	int reat = r_buf_read_at (bf->buf, 0, (ut8*)&spchdr, SPC_HDR_SIZE);
 	if (reat != SPC_HDR_SIZE) {
 		eprintf ("Truncated Header\n");
 		return NULL;
@@ -61,13 +60,13 @@ static RList* sections(RBinFile *arch) {
 	ptr->size = RAM_SIZE;
 	ptr->vaddr = 0x0;
 	ptr->vsize = RAM_SIZE;
-	ptr->srwx = R_BIN_SCN_MAP;
+	ptr->perm = R_PERM_R;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 	return ret;
 }
 
-static RList* entries(RBinFile *arch) {
+static RList* entries(RBinFile *bf) {
 	RList *ret;
 	RBinAddr *ptr = NULL;
 	if (!(ret = r_list_new ())) {
@@ -94,7 +93,7 @@ RBinPlugin r_bin_plugin_spc700 = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_spc700,
 	.version = R2_VERSION

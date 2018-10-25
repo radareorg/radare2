@@ -1,0 +1,9 @@
+#ifndef R_VERSION_H
+#define R_VERSION_H 1
+#define R_MESON_VERSION "@MESON_VERSION@"
+#define R2_VERSION_COMMIT @VERSIONCOMMIT@
+#define R2_VERSION "@R2_VERSION@"
+#define R2_GITTAP "@R2_GITTAP@"
+#define R2_GITTIP "@R2_GITTIP@"
+#define R2_BIRTH "@R2_BIRTH@"
+#endif

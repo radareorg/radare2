@@ -1,0 +1,56 @@
+#compdef rahash2
+local context state state_descr line
+local -i ret=1
+
+r2_qc() {
+  r2 -qc $1 --
+}
+
+_rahash2() {
+  local -a options=(
+  "-a+[comma separated list of algorithms (default is 'sha256')]: :->algo"
+  '-b+[specify the size of the block (instead of full file)]:bsize'
+  '-B[show per-block hash]'
+  '-c+[compare with this hash]:hash'
+  '-e[swap endian (use little endian)]'
+  '-E[encrypt. Use -S to set key and -I to set IV]: :->coder'
+  '-D[decrypt. Use -S to set key and -I to set IV]: :->coder'
+  '-f+[start hashing at given address]:from'
+  '-i+[repeat hash N iterations]:num'
+  '-I[use give initialization vector (IV) (hexa or s:string)]:iv'
+  '-S[use given seed (hexa or s:string) use ^ to prefix (key for -E)]:seed'
+  "-k[show hash using the openssh's randomkey algorithm]"
+  '-q[run in quiet mode (-qq to show only the hash)]'
+  '-L[list all available algorithms (see -a)]'
+  '-r[output radare commands]'
+  '-s[hash this string instead of files]:string'
+  '-t[stop hashing at given address]:to'
+  '-x[hash this hexpair string instead of files]:hexstr'
+  '-v[show version information]'
+  )
+
+  _arguments -S -s : $options '*:file:_files' && ret=0
+
+  case $state in
+    algo)
+      _values 'algo' all $(r2_qc 'ph?') && ret=0
+      ;;
+    coder)
+      local -a crypto=(rc2 rc4 rc6 aes-ecb aes-cbc ror rol rot blowfish cps2 des-ecb xor)
+      local -a coder=(base64 base91 punycode)
+      _values 'encoder/decoder' $crypto $coder && ret=0
+      ;;
+  esac
+  return ret
+}
+
+_rahash2 "$@"
+
+# Local Variables:
+# mode: shell-script
+# coding: utf-8-unix
+# indent-tabs-mode: nil
+# sh-indentation: 2
+# sh-basic-offset: 2
+# End:
+# vim: ft=zsh sw=2 sts=2 et

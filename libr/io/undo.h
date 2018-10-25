@@ -15,16 +15,16 @@ enum {
 	UNDO_WRITE_SET   = 1
 };
 
-void undo_seek();
-void undo_redo();
-void undo_reset();
-void undo_list();
-void undo_push();
+void undo_seek(void);
+void undo_redo(void);
+void undo_reset(void);
+void undo_list(void);
+void undo_push(void);
 
 void undo_write_set_all(int set);
 void undo_write_new(ut64 off, const ut8 *data, int len);
 int undo_write_set(int n, int set);
-void undo_write_list();
-int undo_write_size();
+void undo_write_list(void);
+int undo_write_size(void);
 
 #endif

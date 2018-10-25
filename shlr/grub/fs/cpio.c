@@ -212,13 +212,11 @@ grub_cpio_dir (grub_device_t device, const char *path,
 {
   struct grub_cpio_data *data;
   grub_uint32_t ofs = 0;
-  char *prev, *name = NULL;
+  char *prev = NULL, *name = NULL;
   const char *np;
   int len;
 
   grub_dl_ref (my_mod);
-
-  prev = 0;
 
   data = grub_cpio_mount (device->disk);
   if (!data)
@@ -259,12 +257,15 @@ grub_cpio_dir (grub_device_t device, const char *path,
 	      if (prev) {
 			grub_free (prev);
 			prev = NULL;
-		  }
+	      }
 	      prev = name;
 	    }
 	  else {
+if (prev == name) {
+prev = NULL;
+}
 	    grub_free (name);
-		name = NULL;
+	    name = NULL;
 	  }
 	}
       data->hofs = ofs;
@@ -272,11 +273,9 @@ grub_cpio_dir (grub_device_t device, const char *path,
 
 fail:
 
-  if (prev)
-    grub_free (prev);
+  grub_free (prev);
 
-  if (data)
-    grub_free (data);
+  grub_free (data);
 
   grub_dl_unref (my_mod);
 

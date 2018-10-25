@@ -12,7 +12,7 @@ static int spp_var_set(const char *var, const char *val) {
 
 /* Should be dynamic buffer */
 static char *cmd_to_str(const char *cmd) {
-	char *out = (char *)calloc (4096, 0);
+	char *out = (char *)calloc (4096, 1);
 	int ret = 0, len = 0, outlen = 4096;
 	FILE *fd = popen (cmd, "r");
 	while (fd) {
@@ -33,7 +33,7 @@ static char *cmd_to_str(const char *cmd) {
 
 static TAG_CALLBACK(spp_set) {
 	char *eq, *val = "";
-	if (!echo[ifl]) {
+	if (!state->echo[state->ifl]) {
 		return 0;
 	}
 	for (eq=buf; eq[0]; eq++) {
@@ -50,14 +50,14 @@ static TAG_CALLBACK(spp_set) {
 		val = eq + 1;
 	}
 	if (spp_var_set (buf, val) == -1) {
-		fprintf (stderr, "Invalid variable name '%s' at line %d\n", buf, lineno);
+		fprintf (stderr, "Invalid variable name '%s' at line %d\n", buf, state->lineno);
 	}
 	return 0;
 }
 
 static TAG_CALLBACK(spp_get) {
 	char *var;
-	if (!echo[ifl]) {
+	if (!state->echo[state->ifl]) {
 		return 0;
 	}
 	var = spp_var_get (buf);
@@ -69,7 +69,7 @@ static TAG_CALLBACK(spp_get) {
 
 static TAG_CALLBACK(spp_getrandom) {
 	int max;
-	if (!echo[ifl]) {
+	if (!state->echo[state->ifl]) {
 		return 0;
 	}
 	// XXX srsly? this is pretty bad random
@@ -86,7 +86,7 @@ static TAG_CALLBACK(spp_add) {
 	char res[32];
 	char *var, *eq = strchr (buf, ' ');
 	int ret = 0;
-	if (!echo[ifl]) {
+	if (!state->echo[state->ifl]) {
 		return 0;
 	}
 	if (eq) {
@@ -108,7 +108,7 @@ static TAG_CALLBACK(spp_sub) {
 	char *eq = strchr(buf, ' ');
 	char *var;
 	int ret = 0;
-	if (!echo[ifl]) {
+	if (!state->echo[state->ifl]) {
 		return 0;
 	}
 	if (eq) {
@@ -125,39 +125,43 @@ static TAG_CALLBACK(spp_sub) {
 
 // XXX This method needs some love
 static TAG_CALLBACK(spp_trace) {
+#if HAVE_SYSTEM
 	char b[1024];
-	if (!echo[ifl]) return 0;
-	snprintf(b, 1023, "echo '%s' >&2 ", buf);
-	system(b);
+	if (state->echo[state->ifl]) {
+		snprintf (b, 1023, "echo '%s' >&2 ", buf);
+		system (b);
+	}
+#endif
 	return 0;
 }
 
 /* TODO: deprecate */
 static TAG_CALLBACK(spp_echo) {
-	if (!echo[ifl]) return 0;
-	do_printf (out, "%s", buf);
+	if (state->echo[state->ifl]) {
+		do_printf (out, "%s", buf);
+	}
 	// TODO: add variable replacement here?? not necessary, done by {{get}}
 	return 0;
 }
 
 static TAG_CALLBACK(spp_error) {
-	if (!echo[ifl]) {
+	if (!state->echo[state->ifl]) {
 		return 0;
 	}
-	fprintf (stderr, "ERROR: %s (line=%d)\n", buf, lineno);
+	fprintf (stderr, "ERROR: %s (line=%d)\n", buf, state->lineno);
 	return -1;
 }
 
 static TAG_CALLBACK(spp_warning) {
-	if (!echo[ifl]) {
+	if (!state->echo[state->ifl]) {
 		return 0;
 	}
-	fprintf (stderr, "WARNING: %s (line=%d)\n", buf, lineno);
+	fprintf (stderr, "WARNING: %s (line=%d)\n", buf, state->lineno);
 	return 0;
 }
 
 static TAG_CALLBACK(spp_system) {
-	if (!echo[ifl]) {
+	if (!state->echo[state->ifl]) {
 		return 0;
 	}
 	char *str = cmd_to_str (buf);
@@ -168,7 +172,7 @@ static TAG_CALLBACK(spp_system) {
 
 static TAG_CALLBACK(spp_include) {
 	char *incdir;
-	if (!echo[ifl]) {
+	if (!state->echo[state->ifl]) {
 		return 0;
 	}
 	incdir = getenv("SPP_INCDIR");
@@ -190,7 +194,7 @@ static TAG_CALLBACK(spp_include) {
 
 static TAG_CALLBACK(spp_if) {
 	char *var = spp_var_get(buf);
-	echo[ifl + 1] = (var && *var != '0' && *var != '\0') ? 1 : 0;
+	state->echo[state->ifl + 1] = (var && *var != '0' && *var != '\0') ? 1 : 0;
 	return 1;
 }
 
@@ -202,14 +206,14 @@ static TAG_CALLBACK(spp_ifeq) {
 		*eq = '\0';
 		value = spp_var_get(value);
 		if (value && !strcmp(value, eq+1)) {
-			echo[ifl+1] = 1;
-		} else echo[ifl+1] = 0;
+			state->echo[state->ifl + 1] = 1;
+		} else state->echo[state->ifl + 1] = 0;
 //fprintf(stderr, "IFEQ(%s)(%s)=%d\n", buf, eq+1, echo[ifl]);
 	} else {
 		value = spp_var_get(buf);
 		if (!value || *value=='\0')
-			echo[ifl+1] = 1;
-		else echo[ifl+1] = 0;
+			state->echo[state->ifl + 1] = 1;
+		else state->echo[state->ifl + 1] = 0;
 //fprintf(stderr, "IFEQ(%s)(%s)=%d\n", buf, value, echo[ifl]);
 	}
 	return 1;
@@ -238,15 +242,16 @@ static TAG_CALLBACK(spp_grepline) {
 	char *ptr;
 	int line;
 
-	if (!echo[ifl]) return 1;
+	if (!state->echo[state->ifl]) return 1;
 	ptr = strchr(buf, ' ');
 	if (ptr) {
 		*ptr= '\0';
 		fd = fopen (buf, "r");
 		line = atoi (ptr+1);
 		if (fd) {
-			while (!feof (fd) && line--)
+			while (!feof (fd) && line--) {
 				fgets(b, 1023, fd);
+			}
 			fclose (fd);
 			do_printf (out, "%s", b);
 		} else {
@@ -257,28 +262,28 @@ static TAG_CALLBACK(spp_grepline) {
 }
 
 static TAG_CALLBACK(spp_else) {
-	echo[ifl] = echo[ifl] ? 0 : 1;
+	state->echo[state->ifl] = state->echo[state->ifl] ? 0 : 1;
 	return 0;
 }
 
 static TAG_CALLBACK(spp_ifnot) {
-	spp_if (buf, out);
-	spp_else (buf, out);
+	spp_if (state, out, buf);
+	spp_else (state, out, buf);
 	return 1;
 }
 
 static TAG_CALLBACK(spp_ifin) {
 	char *var, *ptr;
-	if (!echo[ifl]) {
+	if (!state->echo[state->ifl]) {
 		return 1;
 	}
 	ptr = strchr (buf, ' ');
-	echo[ifl + 1] = 0;
+	state->echo[state->ifl + 1] = 0;
 	if (ptr) {
 		*ptr='\0';
 		var = getenv(buf);
 		if (strstr (ptr + 1, var)) {
-			echo[ifl + 1] = 1;
+			state->echo[state->ifl + 1] = 1;
 		}
 	}
 	return 1;
@@ -289,11 +294,11 @@ static TAG_CALLBACK(spp_endif) {
 }
 
 static TAG_CALLBACK(spp_default) {
-	if (!echo[ifl]) {
+	if (!state->echo[state->ifl]) {
 		return 0;
 	}
 	if (buf[-1] != ';') { /* commented tag */
-		fprintf (stderr, "WARNING: invalid command: '%s' at line %d\n", buf, lineno);
+		fprintf (stderr, "WARNING: invalid command: '%s' at line %d\n", buf, state->lineno);
 	}
 	return 0;
 }
@@ -318,7 +323,7 @@ static TAG_CALLBACK(spp_switch) {
 }
 
 static TAG_CALLBACK(spp_case) {
-	echo[ifl] = strcmp (buf, spp_switch_str)?0:1;
+	state->echo[state->ifl] = strcmp (buf, spp_switch_str)?0:1;
 	return 0;
 }
 

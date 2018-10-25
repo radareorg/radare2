@@ -50,7 +50,7 @@
 >8	byte		>4		\b, invalid extra flags
 >3      byte            &0x02           \b, has header CRC
 >3      byte&0x04       0x04
->>10	leshort		x		\b, has %d bytes of extra data
+>>10	leshort		x		\b, has %d byte(s) of extra data
 >3      byte&0xC        =0x08		\b, has original file name
 >>10	string		x		\b{file-name:%s}
 >>10    string          x               \b: "%s"

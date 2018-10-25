@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2017 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
@@ -8,7 +8,8 @@ static const char *parse_alias(RReg *reg, char **tok, const int n) {
 	if (n == 2) {
 		int role = r_reg_get_name_idx (tok[0] + 1);
 		return r_reg_set_name (reg, role, tok[1])
-			? NULL : "Invalid alias";
+			? NULL
+			: "Invalid alias";
 	}
 	return "Invalid syntax";
 }
@@ -17,20 +18,17 @@ static const char *parse_alias(RReg *reg, char **tok, const int n) {
 // strtoul with base 0 allows the input to be in decimal/octal/hex format
 
 static ut64 parse_size(char *s, char **end) {
-	ut64 r = 0;
 	if (*s == '.') {
-		r = strtoul (s + 1, end, 10);
-	} else {
-		char *has_dot = strchr (s, '.');
-		if (has_dot) {
-			*has_dot = 0;
-			r = strtoul (s, end, 0) << 3;
-			r += strtoul (has_dot + 1, end, 0);
-		} else {
-			r = strtoul (s, end, 0) << 3;
-		}
+		return strtoul (s + 1, end, 10);
 	}
-	return r;
+	char *has_dot = strchr (s, '.');
+	if (has_dot) {
+		*has_dot++ = 0;
+		ut64 a = strtoul (s, end, 0) << 3;
+		ut64 b = strtoul (has_dot, end, 0);
+		return a + b;
+	}
+	return strtoul (s, end, 0) << 3;
 }
 
 static const char *parse_def(RReg *reg, char **tok, const int n) {
@@ -51,12 +49,16 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 		free (tok0);
 	} else {
 		type2 = type = r_reg_type_by_name (tok[0]);
+		/* Hack to put flags in the same arena as gpr */
 		if (type == R_REG_TYPE_FLG) {
 			type2 = R_REG_TYPE_GPR;
 		}
 	}
 	if (type < 0 || type2 < 0) {
 		return "Invalid register type";
+	}
+	if (r_reg_get (reg, tok[1], R_REG_TYPE_ALL)) {
+		return "Duplicate register definition";
 	}
 
 	item = R_NEW0 (RRegItem);
@@ -65,7 +67,6 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	}
 
 	item->type = type;
-	item->arena = type2;
 	item->name = strdup (tok[1]);
 	// All the numeric arguments are strictly checked
 	item->size = parse_size (tok[2], &end);
@@ -73,7 +74,11 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 		r_reg_item_free (item);
 		return "Invalid size";
 	}
-	item->offset = parse_size (tok[3], &end);
+	if (!strcmp (tok[3], "?")) {
+		item->offset = -1;
+	} else {
+		item->offset = parse_size (tok[3], &end);
+	}
 	if (*end != '\0') {
 		r_reg_item_free (item);
 		return "Invalid offset";
@@ -92,16 +97,7 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 		item->flags = strdup (tok[5]);
 	}
 
-	// Don't allow duplicate registers
-	if (r_reg_get (reg, item->name, R_REG_TYPE_ALL)) {
-		r_reg_item_free (item);
-		return "Duplicate register definition";
-	}
-	/* Hack to put flags in the same arena as gpr */
-	if (type == R_REG_TYPE_FLG) {
-		type2 = R_REG_TYPE_GPR;
-	}
-
+	item->arena = type2;
 	r_list_append (reg->regset[type2].regs, item);
 
 	// Update the overall profile size
@@ -213,7 +209,6 @@ R_API int r_reg_set_profile_string(RReg *reg, const char *str) {
 		RRegSet *rs = &reg->regset[i];
 		//eprintf ("* arena %s size %d\n", r_reg_get_type (i), rs->arena->size);
 		reg->size += rs->arena->size;
-
 	}
 	// Align to byte boundary if needed
 	//if (reg->size & 7) {
@@ -245,6 +240,142 @@ R_API int r_reg_set_profile(RReg *reg, const char *profile) {
 		return false;
 	}
 	ret = r_reg_set_profile_string (reg, str);
+	free (str);
+	return ret;
+}
+
+static int gdb_to_r2_profile(char *gdb) {
+	char *ptr = gdb, *ptr1, *gptr, *gptr1;
+	char name[16], groups[128], type[16];
+	const int all = 1, gpr = 2, save = 4, restore = 8, float_ = 16,
+		  sse = 32, vector = 64, system = 128, mmx = 256;
+	int number, rel, offset, size, type_bits, ret;
+	// Every line is -
+	// Name Number Rel Offset Size Type Groups
+
+	// Skip whitespace at beginning of line and empty lines
+	while (isspace (*ptr)) {
+		ptr++;
+	}
+	// It's possible someone includes the heading line too. Skip it
+	if (r_str_startswith (ptr, "Name")) {
+		if (!(ptr = strchr (ptr, '\n'))) {
+			return false;
+		}
+		ptr++;
+	}
+	while (1) {
+		// Skip whitespace at beginning of line and empty lines
+		while (isspace (*ptr)) {
+			ptr++;
+		}
+		if (!*ptr) {
+			break;
+		}
+		if ((ptr1 = strchr (ptr, '\n'))) {
+			*ptr1 = '\0';
+		}
+		ret = sscanf (ptr, " %s %d %d %d %d %s %s", name, &number, &rel,
+			&offset, &size, type, groups);
+		// Groups is optional, others not
+		if (ret < 6) {
+			eprintf ("Could not parse line: %s\n", ptr);
+			if (!ptr1) {
+				return true;
+			}
+			ptr = ptr1 + 1;
+			continue;
+		}
+		// If name is '', then skip
+		if (r_str_startswith (name, "''")) {
+			if (!ptr1) {
+				return true;
+			}
+			ptr = ptr1 + 1;
+			continue;
+		}
+		// If size is 0, skip
+		if (size == 0) {
+			if (!ptr1) {
+				return true;
+			}
+			ptr = ptr1 + 1;
+			continue;
+		}
+		// Parse group
+		gptr = groups;
+		type_bits = 0;
+		while (1) {
+			if ((gptr1 = strchr (gptr, ','))) {
+				*gptr1 = '\0';
+			}
+			if (r_str_startswith (gptr, "general")) {
+				type_bits |= gpr;
+			} else if (r_str_startswith (gptr, "all")) {
+				type_bits |= all;
+			} else if (r_str_startswith (gptr, "save")) {
+				type_bits |= save;
+			} else if (r_str_startswith (gptr, "restore")) {
+				type_bits |= restore;
+			} else if (r_str_startswith (gptr, "float")) {
+				type_bits |= float_;
+			} else if (r_str_startswith (gptr, "sse")) {
+				type_bits |= sse;
+			} else if (r_str_startswith (gptr, "mmx")) {
+				type_bits |= mmx;
+			} else if (r_str_startswith (gptr, "vector")) {
+				type_bits |= vector;
+			} else if (r_str_startswith (gptr, "system")) {
+				type_bits |= system;
+			}
+			if (!gptr1) {
+				break;
+			}
+			gptr = gptr1 + 1;
+		}
+		// If type is not defined, skip
+		if (!*type) {
+			if (!ptr1) {
+				return true;
+			}
+			ptr = ptr1 + 1;
+			continue;
+		}
+		// TODO: More mappings between gdb and r2 reg groups. For now, either fpu or gpr
+		if (!(type_bits & sse) && !(type_bits & float_)) {
+			type_bits |= gpr;
+		}
+		// Print line
+		eprintf ("%s\t%s\t.%d\t%d\t0\n",
+			// Ref: Comment above about more register type mappings
+			((type_bits & mmx) || (type_bits & float_) || (type_bits & sse)) ? "fpu" : "gpr",
+			name, size * 8, offset);
+		// Go to next line
+		if (!ptr1) {
+			return true;
+		}
+		ptr = ptr1 + 1;
+		continue;
+	}
+	return true;
+}
+
+R_API int r_reg_parse_gdb_profile(const char *profile_file) {
+	int ret;
+	char *base, *file, *str;
+	if (!(str = r_file_slurp (profile_file, NULL))) {
+		if ((base = r_sys_getenv (R_LIB_ENV))) {
+			if ((file = r_str_append (base, profile_file))) {
+				str = r_file_slurp (file, NULL);
+				free (file);
+			}
+		}
+	}
+	if (!str) {
+		eprintf ("r_reg_parse_gdb_profile: Cannot find '%s'\n", profile_file);
+		return false;
+	}
+	ret = gdb_to_r2_profile (str);
 	free (str);
 	return ret;
 }

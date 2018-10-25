@@ -478,8 +478,9 @@ static void expand_1st_key(ut32 *dstkey, const ut32 *srckey) {
 	dstkey[2] = 0;
 	dstkey[3] = 0;
 
-	for (i = 0; i < 96; ++i)
-		dstkey[i / 24] |= BIT(srckey[bits[i] / 32], bits[i] % 32) << (i % 24);
+	for (i = 0; i < 96; ++i) {
+		dstkey[i / 24] |= BIT (srckey[bits[i] / 32], bits[i] % 32) << (i % 24);
+	}
 }
 
 // srckey is the 64-bit master key (2x32 bits) XORed with the subkey
@@ -706,7 +707,7 @@ main(cps_state,cps2crypt) {
 	upper = strtoll(supper.c_str(), nullptr, 16);
 
 	// we have a proper key so use it to decrypt
-	if (lower != 0xff0000) {// don't run the decrypt on 'dead key' games for now 
+	if (lower != 0xff0000) {// don't run the decrypt on 'dead key' games for now
 		cps2_decrypt( (ut16 *)memregion("maincpu")->base(), m_decrypted_opcodes, memregion("maincpu")->bytes(), key, lower,upper);
 	}
 }
@@ -753,7 +754,7 @@ RCryptoPlugin r_crypto_plugin_cps2 = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_rol,
 	.version = R2_VERSION

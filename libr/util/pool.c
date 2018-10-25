@@ -1,5 +1,8 @@
 /* radare - LGPL - Copyright 2010-2011 pancake<nopcode.org> */
 
+#if 0
+// to be moved into sdb.c maybe? we need to improve the custom heap support
+
 #include <r_util.h>
 #include <stdlib.h>
 
@@ -9,6 +12,11 @@
 // TODO: add api to serialize/deserialize memory pools from/to disk
 // This can be useful when the application is swapping (userland swapping?)
 // Do user-swapping takes sense?
+// This API have several bugs that wasnt considered at the moment of developing it
+// * pointers are not aligned, so they may result in crashes in arm/mips
+// * extra padding to avoid memory overruns is not considerd either
+// * pool have some hardcoded limits which shouldnt be happening
+// FTR: this was inspired by the GLibSlices API, and its not used in r2 at all
 
 R_API RMemoryPool *r_mem_pool_deinit(RMemoryPool *pool) {
 	int i;
@@ -104,12 +112,11 @@ R_API RPoolFactory *r_poolfactory_new(int limit) {
 			return NULL;
 		}
 		pf->limit = limit + 1;
-		pf->pools = malloc (size);
+		pf->pools = calloc (1, size);
 		if (!pf->pools) {
 			r_poolfactory_free (pf);
 			return NULL;
 		}
-		memset (pf->pools, 0, size);
 		return pf;
 	}
 	return NULL;
@@ -149,3 +156,4 @@ R_API void r_poolfactory_free(RPoolFactory *pf) {
 	free (pf->pools);
 	free (pf);
 }
+#endif

@@ -7,6 +7,8 @@ BIN=spp
 
 CFLAGS?=-Wall -O2
 
+CFLAGS+=-fvisibility=hidden
+
 all: ${BIN}
 
 config.h:

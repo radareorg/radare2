@@ -1,6 +1,8 @@
+// NOTE: Keep in sync with debug/p/debug_gdb.c (it isn't as of now)
+
 #include "arch.h"
 
-registers_t x86_64[] = {
+gdb_reg_t gdb_regs_x86_64[] = {
 	{ "rax", 0, 8 },
 	{ "rbx", 8, 8 },
 	{ "rcx", 16, 8 },
@@ -25,6 +27,7 @@ registers_t x86_64[] = {
 	{ "es", 152, 4 },
 	{ "fs", 156, 4 },
 	{ "gs", 160, 4 },
+/* Commented until the long registers are implemented
 	{ "st0", 164, 10 },
 	{ "st1", 174, 10 },
 	{ "st2", 184, 10 },
@@ -58,11 +61,12 @@ registers_t x86_64[] = {
 	{ "xmm14", 500, 16 },
 	{ "xmm15", 516, 16 },
 	{ "mxcsr", 532, 4 },
+*/
 	{ "", 0, 0 }
 };
 
 
-registers_t x86_32[] = {
+gdb_reg_t gdb_regs_x86_32[] = {
 	{ "eax", 0, 4 },
 	{ "ecx", 4, 4 },
 	{ "edx", 8, 4 },
@@ -79,6 +83,7 @@ registers_t x86_32[] = {
 	{ "es", 52, 4 },
 	{ "fs", 56, 4 },
 	{ "gs", 60, 4 },
+/* Commented until the long registers are implemented
 	{ "st0", 64, 10 },
 	{ "st1", 74, 10 },
 	{ "st2", 84, 10 },
@@ -104,10 +109,11 @@ registers_t x86_32[] = {
 	{ "xmm6", 272, 16 },
 	{ "xmm7", 288, 16 },
 	{ "mxcsr", 304, 4 },
+*/
 	{ "", 0, 0 }
 };
 
-registers_t arm32[] = {
+gdb_reg_t gdb_regs_arm32[] = {
 	{ "r0", 0, 4 },
 	{ "r1", 4, 4 },
 	{ "r2", 8, 4 },
@@ -137,7 +143,7 @@ registers_t arm32[] = {
 	{ "", 0, 0 }
 };
 
-registers_t aarch64[] = {
+gdb_reg_t gdb_regs_aarch64[] = {
 	{ "x0", 0, 8 },
 	{ "x1", 8, 8 },
 	{ "x2", 16, 8 },
@@ -209,7 +215,7 @@ registers_t aarch64[] = {
 	{ "", 0, 0 }
 };
 
-registers_t lm32[] = {
+gdb_reg_t gdb_regs_lm32[] = {
 	{ "r0", 0, 4 },
 	{ "r1", 4, 4 },
 	{ "r2", 8, 4 },
@@ -252,7 +258,7 @@ registers_t lm32[] = {
 	{ "", 0, 0 }
 };
 
-registers_t mips[] = {
+gdb_reg_t gdb_regs_mips[] = {
 	{ "zero", 0, 0 },
 	{ "at", 4, 0 },
 	{ "v0", 8, 0 },
@@ -329,7 +335,7 @@ registers_t mips[] = {
 	{ "", 0, 0 }
 };
 
-registers_t avr[] = {
+gdb_reg_t gdb_regs_avr[] = {
 	{ "r0", 0, 1 },
 	{ "r1", 1, 1 },
 	{ "r2", 2, 1 },
@@ -366,5 +372,48 @@ registers_t avr[] = {
 	{ "sp", 33, 2 },
 	{ "pc2", 35, 4 },
 	{ "pc", 39, 4 },
+	{ "", 0, 0 }
+};
+
+gdb_reg_t gdb_regs_v850[] = {
+	{ "r0", 0, 4 },
+	{ "r1", 4, 4 },
+	{ "r2", 8, 4 },
+	{ "sp", 12, 4 },
+	{ "gp", 16, 4 },
+	{ "r5", 20, 4 },
+	{ "r6", 24, 4 },
+	{ "r7", 28, 4 },
+	{ "r8", 32, 4 },
+	{ "r9", 36, 4 },
+	{ "r10", 40, 4 },
+	{ "r11", 44, 4 },
+	{ "r12", 48, 4 },
+	{ "r13", 52, 4 },
+	{ "r14", 56, 4 },
+	{ "r15", 60, 4 },
+	{ "r16", 64, 4 },
+	{ "r17", 68, 4 },
+	{ "r18", 72, 4 },
+	{ "r19", 76, 4 },
+	{ "r20", 80, 4 },
+	{ "r21", 84, 4 },
+	{ "r22", 88, 4 },
+	{ "r23", 92, 4 },
+	{ "r24", 96, 4 },
+	{ "r25", 100, 4 },
+	{ "r26", 104, 4 },
+	{ "r27", 108, 4 },
+	{ "r28", 112, 4 },
+	{ "r29", 116, 4 },
+	{ "ep", 120, 4 },
+	{ "lp", 124, 4 },
+	{ "eipc", 128, 4 },
+	{ "eipsw", 132, 4 },
+	{ "fepc", 136, 4 },
+	{ "fepsw", 140, 4 },
+	{ "ecr", 144, 4 },
+	{ "psw", 148, 4 },
+	{ "pc", 256, 4 },
 	{ "", 0, 0 }
 };

@@ -834,7 +834,7 @@
 
 # romfs filesystems - Juan Cespedes <cespedes@debian.org>
 0	string		-rom1fs-\0	romfs filesystem, version 1
->8	belong	x			%d bytes,
+>8	belong	x			%d byte(s),
 >16	string	x			named %s.
 
 # netboot image - Juan Cespedes <cespedes@debian.org>
@@ -1206,30 +1206,30 @@
 >28	beshort	x	version %d.
 >30	beshort x	\b%d,
 >28	beshort <3
->>8	belong	x	%d bytes,
+>>8	belong	x	%d byte(s),
 >28	beshort >2
 >>63	bequad x	%lld bytes,
-#>>67	belong	x	%d bytes,
+#>>67	belong	x	%d byte(s),
 >4	belong	x	%d inodes,
 >28	beshort <2
->>32	beshort	x	blocksize: %d bytes,
+>>32	beshort	x	blocksize: %d byte(s),
 >28	beshort >1
->>51	belong	x	blocksize: %d bytes,
+>>51	belong	x	blocksize: %d byte(s),
 >39	bedate	x	created: %s
 
 0	string	hsqs	Squashfs filesystem, little endian,
 >28	leshort	x	version %d.
 >30	leshort	x	\b%d,
 >28	leshort <3
->>8	lelong	x	%d bytes,
+>>8	lelong	x	%d byte(s),
 >28	leshort >2
 >>63	lequad x	%lld bytes,
-#>>63	lelong	x	%d bytes,
+#>>63	lelong	x	%d byte(s),
 >4	lelong	x	%d inodes,
 >28	leshort <2
->>32	leshort	x	blocksize: %d bytes,
+>>32	leshort	x	blocksize: %d byte(s),
 >28	leshort >1
->>51	lelong	x	blocksize: %d bytes,
+>>51	lelong	x	blocksize: %d byte(s),
 >39	ledate	x	created: %s
 
 # Squashfs
@@ -1237,44 +1237,44 @@
 >28	leshort	x	version %d.
 >30	leshort	x	\b%d,
 >28	leshort <3
->>8	lelong	x	%d bytes,
+>>8	lelong	x	%d byte(s),
 >28	leshort >2
 >>63	lequad x	%lld bytes,
-#>>63	lelong	x	%d bytes,
+#>>63	lelong	x	%d byte(s),
 >4	lelong	x	%d inodes,
 >28	leshort <2
->>32	leshort	x	blocksize: %d bytes,
+>>32	leshort	x	blocksize: %d byte(s),
 >28	leshort >1
->>51	lelong	x	blocksize: %d bytes,
+>>51	lelong	x	blocksize: %d byte(s),
 >39	ledate	x	created: %s
 0	string	hsqt	Squashfs filesystem, little endian,
 >28	beshort	x	version %d.
 >30	beshort x	\b%d,
 >28	beshort <3
->>8	belong	x	%d bytes,
+>>8	belong	x	%d byte(s),
 >28	beshort >2
 >>63	bequad x	%lld bytes,
-#>>67	belong	x	%d bytes,
+#>>67	belong	x	%d byte(s),
 >4	belong	x	%d inodes,
 >28	beshort <2
->>32	beshort	x	blocksize: %d bytes,
+>>32	beshort	x	blocksize: %d byte(s),
 >28	beshort >1
->>51	belong	x	blocksize: %d bytes,
+>>51	belong	x	blocksize: %d byte(s),
 >39	bedate	x	created: %s
 
 #  0	string	hsqs	Squashfs filesystem, little endian,
 #  >28	leshort	x	version %d.
 #  >30	leshort	x	\b%d,
 #  >28	leshort <3
-#  >>8	lelong	x	%d bytes,
+#  >>8	lelong	x	%d byte(s),
 #  >28	leshort >2
 #  >>63	lequad x	%lld bytes,
-#  #>>63	lelong	x	%d bytes,
+#  #>>63	lelong	x	%d byte(s),
 #  >4	lelong	x	%d inodes,
 #  >28	leshort <2
-#  >>32	leshort	x	blocksize: %d bytes,
+#  >>32	leshort	x	blocksize: %d byte(s),
 #  >28	leshort >1
-#  >>51	lelong	x	blocksize: %d bytes,
+#  >>51	lelong	x	blocksize: %d byte(s),
 #  >39	ledate	x	created: %s
 
 #0	string		td\000		floppy image data (TeleDisk)

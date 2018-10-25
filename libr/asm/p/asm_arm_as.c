@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015 pancake */
+/* radare - LGPL - Copyright 2015-2018 pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -18,16 +18,16 @@
 static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 	const char *bitconfig = "";
 	char *ipath, *opath;
-	int ifd, ofd;
 	char *as = NULL;
 	char asm_buf[R_ASM_BUFSIZE];
 	int len = 0;
 
-	ifd = r_file_mkstemp ("r_as", &ipath);
-	if (ifd == -1)
+	int ifd = r_file_mkstemp ("r_as", &ipath);
+	if (ifd == -1) {
 		return -1;
+	}
 
-	ofd = r_file_mkstemp ("r_as", &opath);
+	int ofd = r_file_mkstemp ("r_as", &opath);
 	if (ofd == -1) {
 		free (ipath);
 		return -1;
@@ -52,30 +52,33 @@ static int assemble(RAsm *a, RAsmOp *op, const char *buf) {
 			"%s\n"
 			".ascii \"ENDMARK\"\n",
 			bitconfig, buf); // a->pc ??
-	write (ifd, asm_buf, len);
-	close (ifd);
+	(void)write (ifd, asm_buf, len);
+	(void)close (ifd);
 
 	if (!r_sys_cmdf ("%s %s -o %s", as, ipath, opath)) {
 		const ut8 *begin, *end;
 		close (ofd);
-		ofd = open (opath, O_BINARY|O_RDONLY);
+		ofd = r_sandbox_open (opath, O_BINARY|O_RDONLY, 0644);
 		if (ofd < 0) {
 			free (as);
 			free (ipath);
 			free (opath);
 			return -1;
 		}
-		len = read (ofd, op->buf, R_ASM_BUFSIZE);
-		begin = r_mem_mem (op->buf, len, (const ut8*)"BEGINMARK", 9);
-		end = r_mem_mem (op->buf, len, (const ut8*)"ENDMARK", 7);
+		ut8 buf[4096];
+		len = read (ofd, buf, sizeof (buf));
+		begin = r_mem_mem (buf, len, (const ut8*)"BEGINMARK", 9);
+		end = r_mem_mem (buf, len, (const ut8*)"ENDMARK", 7);
 		if (!begin || !end) {
 			eprintf ("Cannot find water marks\n");
 			len = 0;
 		} else {
-			len = (int)(size_t)(end-begin-9);
-			if (len>0) {
-				memcpy (op->buf, begin+9, len);
-			} else len = 0;
+			len = (int)(size_t)(end - begin - 9);
+			if (len > 0) {
+				r_strbuf_setbin (&op->buf, begin + 9, len);
+			} else {
+				len = 0;
+			}
 		}
 	} else {
 		eprintf ("Error running: %s %s -o %s", as, ipath, opath);
@@ -99,6 +102,7 @@ RAsmPlugin r_asm_plugin_arm_as = {
 	.name = "arm.as",
 	.desc = "as ARM Assembler (use ARM_AS environment)",
 	.arch = "arm",
+	.author = "pancake",
 	.license = "LGPL3",
 	.bits = 16|32|64,
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
@@ -109,7 +113,7 @@ RAsmPlugin r_asm_plugin_arm_as = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_arm_as,
 	.version = R2_VERSION

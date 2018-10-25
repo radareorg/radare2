@@ -7,8 +7,8 @@
 #include <string.h>
 #include "../format/nin/nin.h"
 
-static void * load_bytes(RBinFile *arch, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
-	return R_NOTNULL;
+static bool load_bytes(RBinFile *bf, void **bin_obj, const ut8 *buf, ut64 sz, ut64 loadaddr, Sdb *sdb){
+	return true;
 }
 
 static bool check_bytes(const ut8 *buf, ut64 length) {
@@ -20,33 +20,35 @@ static bool check_bytes(const ut8 *buf, ut64 length) {
 	return (!memcmp (lict, lic, 48))? 1: 0;
 }
 
-static bool load(RBinFile *arch) {
-	const ut8 *bytes = arch ? r_buf_buffer (arch->buf) : NULL;
-	ut64 sz = arch ? r_buf_size (arch->buf): 0;
-	ut64 la = (arch && arch->o) ? arch->o->loadaddr: 0;
-	if (!arch || !arch->o) {
+static bool load(RBinFile *bf) {
+	const ut8 *bytes = bf ? r_buf_buffer (bf->buf) : NULL;
+	ut64 sz = bf ? r_buf_size (bf->buf): 0;
+	ut64 la = (bf && bf->o) ? bf->o->loadaddr: 0;
+	if (!bf || !bf->o) {
 		return false;
 	}
-	arch->o->bin_obj = load_bytes (arch, bytes, sz, la, arch->sdb);
+	load_bytes (bf, &bf->o->bin_obj, bytes, sz, la, bf->sdb);
 	return check_bytes (bytes, sz);
 }
 
-static int destroy(RBinFile *arch) {
-	r_buf_free (arch->buf);
-	arch->buf = NULL;
+static int destroy(RBinFile *bf) {
+	r_buf_free (bf->buf);
+	bf->buf = NULL;
 	return true;
 }
 
-static ut64 baddr(RBinFile *arch) {
+static ut64 baddr(RBinFile *bf) {
 	return 0LL;
 }
 
-static RBinAddr* binsym(RBinFile *arch, int type) {
-	if (type == R_BIN_SYM_MAIN && arch && arch->buf) {
+static RBinAddr* binsym(RBinFile *bf, int type) {
+	if (type == R_BIN_SYM_MAIN && bf && bf->buf) {
 		ut8 init_jmp[4];
 		RBinAddr *ret = R_NEW0 (RBinAddr);
-		if (!ret) return NULL;
-		r_buf_read_at (arch->buf, 0x100, init_jmp, 4);
+		if (!ret) {
+			return NULL;
+		}
+		r_buf_read_at (bf->buf, 0x100, init_jmp, 4);
 		if (init_jmp[1] == 0xc3) {
 			ret->paddr = ret->vaddr = init_jmp[3]*0x100 + init_jmp[2];
 			return ret;
@@ -56,35 +58,39 @@ static RBinAddr* binsym(RBinFile *arch, int type) {
 	return NULL;
 }
 
-static RList* entries(RBinFile *arch) {
+static RList* entries(RBinFile *bf) {
 	RList *ret = r_list_new ();
 	RBinAddr *ptr = NULL;
 
-	if (arch && arch->buf != NULL) {
-		if (!ret)
+	if (bf && bf->buf != NULL) {
+		if (!ret) {
 			return NULL;
+		}
 		ret->free = free;
-		if (!(ptr = R_NEW0 (RBinAddr)))
+		if (!(ptr = R_NEW0 (RBinAddr))) {
 			return ret;
-		ptr->paddr = ptr->vaddr = ptr->haddr = 0x100;
+		}
+		ptr->paddr = ptr->vaddr = ptr->hpaddr = 0x100;
 		r_list_append (ret, ptr);
 	}
 	return ret;
 }
 
-static RList* sections(RBinFile *arch){
+static RList* sections(RBinFile *bf){
 	ut8 bank;
 	int i;
 	RList *ret;
 
-	if (!arch)
+	if (!bf) {
 		return NULL;
+	}
 
 	ret = r_list_new();
-	if (!ret )
+	if (!ret) {
 		return NULL;
+	}
 
-	r_buf_read_at (arch->buf, 0x148, &bank, 1);
+	r_buf_read_at (bf->buf, 0x148, &bank, 1);
 	bank = gb_get_rombanks(bank);
 #ifdef _MSC_VER
 	RBinSection **rombank = (RBinSection**) malloc (sizeof (RBinSection*) * bank);
@@ -92,7 +98,7 @@ static RList* sections(RBinFile *arch){
 	RBinSection *rombank[bank];
 #endif
 
-	if (!arch->buf) {
+	if (!bf->buf) {
 		free (ret);
 #ifdef _MSC_VER
 		free (rombank);
@@ -108,7 +114,7 @@ static RList* sections(RBinFile *arch){
 	rombank[0]->size = 0x4000;
 	rombank[0]->vsize = 0x4000;
 	rombank[0]->vaddr = 0;
-	rombank[0]->srwx = r_str_rwx ("mrx");
+	rombank[0]->perm = r_str_rwx ("rx");
 	rombank[0]->add = true;
 
 	r_list_append (ret, rombank[0]);
@@ -119,7 +125,7 @@ static RList* sections(RBinFile *arch){
 		rombank[i]->paddr = i*0x4000;
 		rombank[i]->vaddr = i*0x10000-0xc000;			//spaaaaaaaaaaaaaaaace!!!
 		rombank[i]->size = rombank[i]->vsize = 0x4000;
-		rombank[i]->srwx = r_str_rwx ("mrx");
+		rombank[i]->perm = r_str_rwx ("rx");
 		rombank[i]->add = true;
 		r_list_append (ret,rombank[i]);
 	}
@@ -129,12 +135,13 @@ static RList* sections(RBinFile *arch){
 	return ret;
 }
 
-static RList* symbols(RBinFile *arch) {
+static RList* symbols(RBinFile *bf) {
 	RList *ret = NULL;
 	RBinSymbol *ptr[13];
 	int i;
-	if (!(ret = r_list_new()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 	ret->free = free;
 
 	for (i = 0; i < 8; i++) {
@@ -149,8 +156,9 @@ static RList* symbols(RBinFile *arch) {
 		r_list_append (ret, ptr[i]);
 	}
 
-	if (!(ptr[8] = R_NEW0 (RBinSymbol)))
+	if (!(ptr[8] = R_NEW0 (RBinSymbol))) {
 		return ret;
+	}
 
 	ptr[8]->name = strdup ("Interrupt_Vblank");
 	ptr[8]->paddr = ptr[8]->vaddr = 64;
@@ -158,8 +166,9 @@ static RList* symbols(RBinFile *arch) {
 	ptr[8]->ordinal = 8;
 	r_list_append (ret, ptr[8]);
 
-	if (!(ptr[9] = R_NEW0 (RBinSymbol)))
+	if (!(ptr[9] = R_NEW0 (RBinSymbol))) {
 		return ret;
+	}
 
 	ptr[9]->name = strdup ("Interrupt_LCDC-Status");
 	ptr[9]->paddr = ptr[9]->vaddr = 72;
@@ -167,8 +176,9 @@ static RList* symbols(RBinFile *arch) {
 	ptr[9]->ordinal = 9;
 	r_list_append (ret, ptr[9]);
 
-	if (!(ptr[10] = R_NEW0 (RBinSymbol)))
+	if (!(ptr[10] = R_NEW0 (RBinSymbol))) {
 		return ret;
+	}
 
 	ptr[10]->name = strdup ("Interrupt_Timer-Overflow");
 	ptr[10]->paddr = ptr[10]->vaddr = 80;
@@ -176,8 +186,9 @@ static RList* symbols(RBinFile *arch) {
 	ptr[10]->ordinal = 10;
 	r_list_append (ret, ptr[10]);
 
-	if (!(ptr[11] = R_NEW0 (RBinSymbol)))
+	if (!(ptr[11] = R_NEW0 (RBinSymbol))) {
 		return ret;
+	}
 
 	ptr[11]->name = strdup ("Interrupt_Serial-Transfere");
 	ptr[11]->paddr = ptr[11]->vaddr = 88;
@@ -185,8 +196,9 @@ static RList* symbols(RBinFile *arch) {
 	ptr[11]->ordinal = 11;
 	r_list_append (ret, ptr[11]);
 
-	if (!(ptr[12] = R_NEW0 (RBinSymbol)))
+	if (!(ptr[12] = R_NEW0 (RBinSymbol))) {
 		return ret;
+	}
 
 	ptr[12]->name = strdup ("Interrupt_Joypad");
 	ptr[12]->paddr = ptr[12]->vaddr = 96;
@@ -197,14 +209,14 @@ static RList* symbols(RBinFile *arch) {
 	return ret;
 }
 
-static RBinInfo* info(RBinFile *arch) {
+static RBinInfo* info(RBinFile *bf) {
 	ut8 rom_header[76];
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret || !arch || !arch->buf) {
+	if (!ret || !bf || !bf->buf) {
 		free (ret);
 		return NULL;
 	}
-	r_buf_read_at (arch->buf, 0x104, rom_header, 76);
+	r_buf_read_at (bf->buf, 0x104, rom_header, 76);
 	ret->file = calloc (1, 17);
 	strncpy (ret->file, (const char*)&rom_header[48], 16);
 	ret->type = malloc (128);
@@ -221,11 +233,12 @@ static RBinInfo* info(RBinFile *arch) {
 	return ret;
 }
 
-RList *mem (RBinFile *arch) {
+RList *mem (RBinFile *bf) {
 	RList *ret;
 	RBinMem *m, *n;
-	if (!(ret = r_list_new()))
+	if (!(ret = r_list_new ())) {
 		return NULL;
+	}
 	ret->free = free;
 	if (!(m = R_NEW0 (RBinMem))) {
 		r_list_free (ret);
@@ -237,39 +250,44 @@ RList *mem (RBinFile *arch) {
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
 
-	if (!(m = R_NEW0 (RBinMem)))
+	if (!(m = R_NEW0 (RBinMem))) {
 		return ret;
+	}
 	m->name = strdup ("ioports");
 	m->addr = 0xff00LL;
 	m->size = 0x4c;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
 
-	if (!(m = R_NEW0 (RBinMem)))
+	if (!(m = R_NEW0 (RBinMem))) {
 		return ret;
+	}
 	m->name = strdup ("oam");
 	m->addr = 0xfe00LL;
 	m->size = 0xa0;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
 
-	if (!(m = R_NEW0 (RBinMem)))
+	if (!(m = R_NEW0 (RBinMem))) {
 		return ret;
+	}
 	m->name = strdup ("videoram");
 	m->addr = 0x8000LL;
 	m->size = 0x2000;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
 
-	if (!(m = R_NEW0 (RBinMem)))
+	if (!(m = R_NEW0 (RBinMem))) {
 		return ret;
+	}
 	m->name = strdup ("iram");
 	m->addr = 0xc000LL;
 	m->size = 0x2000;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
-	if (!(m->mirrors = r_list_new()))
+	if (!(m->mirrors = r_list_new ())) {
 		return ret;
+	}
 	if (!(n = R_NEW0 (RBinMem))) {
 		r_list_free (m->mirrors);
 		m->mirrors = NULL;
@@ -284,7 +302,7 @@ RList *mem (RBinFile *arch) {
 	return ret;
 }
 
-struct r_bin_plugin_t r_bin_plugin_ningb = {
+RBinPlugin r_bin_plugin_ningb = {
 	.name = "ningb",
 	.desc = "Gameboy format r_bin plugin",
 	.license = "LGPL3",
@@ -302,7 +320,7 @@ struct r_bin_plugin_t r_bin_plugin_ningb = {
 };
 
 #ifndef CORELIB
-struct r_lib_struct_t radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN,
 	.data = &r_bin_plugin_ningb,
 	.version = R2_VERSION

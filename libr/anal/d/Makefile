@@ -8,10 +8,11 @@ F+= types-windows
 F+= types-x86-windows-32
 F+= types-x86-windows-64
 F+= types-linux
-F+= types-x86-osx-64
+F+= types-x86-macos-64
 F+= types-arm-ios-16
 F+= types-arm-ios-32
 F+= types-arm-ios-64
+F+= spec
 F+= cc-x86-64
 F+= cc-x86-32
 F+= cc-mips-32
@@ -38,7 +39,7 @@ BUILD_EXT_EXE=
 endif
 SDB=$(SDBPATH)/sdb${BUILD_EXT_EXE}
 
-FCNSIGNPATH=${DESTDIR}${DATADIR}/radare2/${VERSION}/fcnsign
+FCNSIGNPATH=$(DESTDIR)$(DATADIR)/radare2/$(VERSION)/fcnsign
 
 all: ${SDB}
 	@$(MAKE) compile
@@ -47,16 +48,16 @@ compile: ${F_SDB}
 
 linux-x86-32.sdb: linux-x86-32
 
-%.sdb:%
+%.sdb:%.sdb.txt
 ifneq ($(SILENT),)
-	@echo SDB $<
-	@rm -f $<.sdb
-	@cat $< | ${SDB} $<.sdb =
-	@test -f $<.sdb
+	@echo SDB $@
+	@rm -f $@
+	@cat $< | ${SDB} $@ =
+	@test -f $@
 else
-	rm -f $<.sdb
-	cat $< | ${SDB} $<.sdb =
-	test -f $<.sdb
+	rm -f $@
+	cat $< | ${SDB} $@ =
+	test -f $@
 endif
 
 clean:
@@ -69,14 +70,16 @@ ${SDB}:
 .PHONY: all clean install install-symlink symstall
 
 install: ${F_SDB}
-	-rm -rf "${FCNSIGNPATH}"
+	rm -rf "${FCNSIGNPATH}"
 	mkdir -p "${FCNSIGNPATH}"
 	cp -f *.sdb "${FCNSIGNPATH}"
 
 CWD=$(shell pwd)
 symstall install-symlink: ${F_SDB}
-	mkdir -p "${FCNSIGNPATH}"
-	for FILE in *.sdb ; do ln -fs "${CWD}/$$FILE" "${FCNSIGNPATH}/$$FILE" ; done
+	cd ../../.. && mkdir -p "${FCNSIGNPATH}" && \
+	for FILE in $(shell cd $(TOP)/libr/anal/d ; ls *.sdb); do \
+		ln -fs "$(CWD)/$$FILE" "$(FCNSIGNPATH)/$$FILE" ; \
+	done
 
 uninstall:
 	rm -rf "${FCNSIGNPATH}"

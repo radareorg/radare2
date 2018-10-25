@@ -1,44 +1,69 @@
-/* radare - LGPL - Copyright 2008-2015 - pancake */
+/* radare - LGPL - Copyright 2008-2018 - pancake */
 
 // TODO: implement a more inteligent way to store cached memory
-// TODO: define limit of max mem to cache
 
 #include "r_io.h"
 
+#if 0
+#define CACHE_CONTAINER(x) container_of ((RBNode*)x, RCache, rb)
+
+static void _fcn_tree_calc_max_addr(RBNode *node) {
+	RIOCache *c = CACHE_CONTAINER (node);
+}
+#endif // 0
+
 static void cache_item_free(RIOCache *cache) {
-	if (!cache)
+	if (!cache) {
 		return;
+	}
 	free (cache->data);
 	free (cache->odata);
 	free (cache);
 }
 
-R_API void r_io_cache_init(RIO *io) {
-	io->cache = r_list_newf ((RListFree)cache_item_free);
-	io->cached = false; // cache write ops
-	io->cached_read = false; // cached read ops
+R_API bool r_io_cache_at(RIO *io, ut64 addr) {
+	RIOCache *c;
+	RListIter *iter;
+	r_list_foreach (io->cache, iter, c) {
+		if (r_itv_contain (c->itv, addr)) {
+			return true;
+		}
+	}
+	return false;
 }
 
-R_API void r_io_cache_enable(RIO *io, int read, int write) {
-	io->cached = read | write;
-	io->cached_read = read;
+R_API void r_io_cache_init(RIO *io) {
+	io->cache = r_list_newf ((RListFree)cache_item_free);
+	io->buffer = r_cache_new ();
+	io->cached = 0;
+}
+
+R_API void r_io_cache_fini (RIO *io) {
+	r_list_free (io->cache);
+	r_cache_free (io->buffer);
+	io->cache = NULL;
+	io->buffer = NULL;
+	io->cached = 0;
 }
 
 R_API void r_io_cache_commit(RIO *io, ut64 from, ut64 to) {
 	RListIter *iter;
 	RIOCache *c;
-	int ioc = io->cached;
-	io->cached = 2;
+	RInterval range = (RInterval){from, to - from};
 	r_list_foreach (io->cache, iter, c) {
-		if (c->from >= from && c->to <= to) {
-			if (!r_io_write_at (io, c->from, c->data, c->size))
-				eprintf ("Error writing change at 0x%08"PFMT64x"\n", c->from);
-			else 
+		// if (from <= c->to - 1 && c->from <= to - 1) {
+		if (r_itv_overlap (c->itv, range)) {
+			int cached = io->cached;
+			io->cached = 0;
+			if (r_io_write_at (io, r_itv_begin (c->itv), c->data, r_itv_size (c->itv))) {
 				c->written = true;
-			break;
+			} else {
+				eprintf ("Error writing change at 0x%08"PFMT64x"\n", r_itv_begin (c->itv));
+			}
+			io->cached = cached;
+			break; // XXX old behavior, revisit this
 		}
 	}
-	io->cached = ioc;
 }
 
 R_API void r_io_cache_reset(RIO *io, int set) {
@@ -47,27 +72,22 @@ R_API void r_io_cache_reset(RIO *io, int set) {
 }
 
 R_API int r_io_cache_invalidate(RIO *io, ut64 from, ut64 to) {
-	RListIter *iter;
+	int invalidated = 0;
+	RListIter *iter, *tmp;
 	RIOCache *c;
-	int done = false;
-
-	if (from<to) {
-		//r_list_foreach_safe (io->cache, iter, iter_tmp, c) {
-		r_list_foreach (io->cache, iter, c) {
-			if (c->from >= from && c->to <= to) {
-				int ioc = io->cached;
-				io->cached = 2; // magic number to skip caching this write
-				r_io_write_at (io, c->from, c->odata, c->size);
-				io->cached = ioc;
-				if (!c->written)
-					r_list_delete (io->cache, iter);
-				c->written = false;
-				done = true;
-				break;
-			}
+	RInterval range = (RInterval){from, to - from};
+	r_list_foreach_prev_safe (io->cache, iter, tmp, c) {
+		if (r_itv_overlap (c->itv, range)) {
+			int cached = io->cached;
+			io->cached = 0;
+			r_io_write_at (io, r_itv_begin (c->itv), c->odata, r_itv_size (c->itv));
+			io->cached = cached;
+			c->written = false;
+			r_list_delete (io->cache, iter);
+			invalidated++;
 		}
 	}
-	return done;
+	return invalidated;
 }
 
 R_API int r_io_cache_list(RIO *io, int rad) {
@@ -78,127 +98,110 @@ R_API int r_io_cache_list(RIO *io, int rad) {
 		io->cb_printf ("[");
 	}
 	r_list_foreach (io->cache, iter, c) {
+		const int dataSize = r_itv_size (c->itv);
 		if (rad == 1) {
 			io->cb_printf ("wx ");
-			for (i = 0; i < c->size; i++) {
+			for (i = 0; i < dataSize; i++) {
 				io->cb_printf ("%02x", (ut8)(c->data[i] & 0xff));
 			}
-			io->cb_printf (" @ 0x%08"PFMT64x, c->from);
+			io->cb_printf (" @ 0x%08"PFMT64x, r_itv_begin (c->itv));
 			io->cb_printf (" # replaces: ");
-		  	for (i = 0; i < c->size; i++) {
+		  	for (i = 0; i < dataSize; i++) {
 				io->cb_printf ("%02x", (ut8)(c->odata[i] & 0xff));
 			}
 			io->cb_printf ("\n");
 		} else if (rad == 2) {
-			io->cb_printf ("{\"idx\":%"PFMT64d",\"addr\":%"PFMT64d",\"size\":%d,", j, c->from, c->size);
+			io->cb_printf ("{\"idx\":%"PFMT64d",\"addr\":%"PFMT64d",\"size\":%d,",
+				j, r_itv_begin (c->itv), dataSize);
 			io->cb_printf ("\"before\":\"");
-		  	for (i = 0; i < c->size; i++) {
+		  	for (i = 0; i < dataSize; i++) {
 				io->cb_printf ("%02x", c->odata[i]);
 			}
 			io->cb_printf ("\",\"after\":\"");
-		  	for (i = 0; i < c->size; i++) {
+		  	for (i = 0; i < dataSize; i++) {
 				io->cb_printf ("%02x", c->data[i]);
 			}
-			io->cb_printf ("\",\"written\":%s}%s", c->written? "true": "false",iter->n? ",": "");
+			io->cb_printf ("\",\"written\":%s}%s", c->written
+				? "true": "false", iter->n? ",": "");
 		} else if (rad == 0) {
-			io->cb_printf ("idx=%d addr=0x%08"PFMT64x" size=%d ", j, c->from, c->size);
-			for (i = 0; i < c->size; i++) {
+			io->cb_printf ("idx=%d addr=0x%08"PFMT64x" size=%d ", j, r_itv_begin (c->itv), dataSize);
+			for (i = 0; i < dataSize; i++) {
 				io->cb_printf ("%02x", c->odata[i]);
 			}
 			io->cb_printf (" -> ");
-			for (i = 0; i < c->size; i++) {
+			for (i = 0; i < dataSize; i++) {
 				io->cb_printf ("%02x", c->data[i]);
 			}
 			io->cb_printf (" %s\n", c->written? "(written)": "(not written)");
 		}
 		j++;
 	}
-	if (rad == 2)
-		io->cb_printf ("]");
+	if (rad == 2) {
+		io->cb_printf ("]\n");
+	}
 	return false;
 }
 
-R_API int r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
-//	int i;
+R_API bool r_io_cache_write(RIO *io, ut64 addr, const ut8 *buf, int len) {
 	RIOCache *ch;
-	if (io->cached == 2) {
-		/* do not allow to use the cache write in debugger mode */
-		/* this is a hack to solve issues */
-		return 0;
-	}
-	if (len < 1) {
-		return 0;
-	}
-#if 0
-	for (i = 0; i<len; i++) {
-		if (buf[i] != 0xff)
-			break;
-	}
-	if (i == len) {
-		return -1;
-	}
-#endif
 	ch = R_NEW0 (RIOCache);
 	if (!ch) {
-		return 0;
+		return false;
 	}
-	ch->from = addr;
-	ch->to = addr + len;
-	ch->size = len;
-	ch->odata = (ut8*)malloc (len);
+	ch->itv = (RInterval){addr, len};
+	ch->odata = (ut8*)calloc (1, len + 1);
 	if (!ch->odata) {
 		free (ch);
-		return 0;
+		return false;
 	}
-	ch->data = (ut8*)malloc (len);
-	if (!ch->odata) {
-		free (ch->data);
+	ch->data = (ut8*)calloc (1, len + 1);
+	if (!ch->data) {
+		free (ch->odata);
 		free (ch);
-		return 0;
+		return false;
 	}
-	ch->written = io->cached? 0: 1;
-#if 1
-	// we must use raw io here to avoid calling to cacheread and get wrong reads
-	if (r_io_seek (io, addr, R_IO_SEEK_SET)==UT64_MAX)
-		memset (ch->odata, 0xff, len);
-	r_io_read_internal (io, ch->odata, len);
-#else
-	r_io_read_at (io, addr, ch->odata, len);
-#endif
+	ch->written = false;
+	{
+		bool cm = io->cachemode;
+		io->cachemode = false;
+		r_io_read_at (io, addr, ch->odata, len);
+		io->cachemode = cm;
+	}
 	memcpy (ch->data, buf, len);
 	r_list_append (io->cache, ch);
-	return len;
+	return true;
 }
 
-R_API int r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
-	int l, ret, da, db;
-	int covered = 0;
+R_API bool r_io_cache_read(RIO *io, ut64 addr, ut8 *buf, int len) {
+	int l, covered = 0;
 	RListIter *iter;
 	RIOCache *c;
-	if (len < 0) {
-		return 0;
-	}
-
+	RInterval range = (RInterval){ addr, len };
 	r_list_foreach (io->cache, iter, c) {
-		if (r_range_overlap (addr, addr+len-1, c->from, c->to, &ret)) {
-			if (ret>0) {
-				da = ret;
-				db = 0;
-				l = c->size;
-			} else if (ret<0) {
-				da = 0;
-				db = -ret;
-				l = c->size - db;
+		if (r_itv_overlap (c->itv, range)) {
+			const ut64 begin = r_itv_begin (c->itv);
+			if (addr < begin) {
+				l = R_MIN (addr + len - begin, r_itv_size (c->itv));
+				memcpy (buf + begin - addr, c->data, l);
 			} else {
-				da = 0;
-				db = 0;
-				l = c->size;
+				l = R_MIN (r_itv_end (c->itv) - addr, len);
+				memcpy (buf, c->data + addr - begin, l);
 			}
-			if ((l+da)>len) l = len-da;					//say hello to integer overflow, but this won't happen in realistic scenarios because malloc will fail befor
-			if (l<1) l = 1; // XXX: fail
-			else memcpy (buf+da, c->data+db, l);
 			covered += l;
 		}
 	}
-	return covered;
+	return (covered == 0) ? false: true;
 }
+
+////////////////////////////////////////////////////////////////////
+#if 0
+R_API bool r_io_cache_ll_read(RIO *io, ut64 addr, ut8 *buf, int len) {
+//	UnownedRList *list = r
+}
+
+R_API bool r_io_cache_ll_write(RIO *io, ut64 addr, ut8 *buf, int len) {
+}
+
+R_API bool r_io_cache_ll_invalidate(RIO *io, ut64 addr, int len) {
+}
+#endif

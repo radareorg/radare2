@@ -79,6 +79,7 @@ extern RCryptoPlugin r_crypto_plugin_aes_cbc;
 extern RCryptoPlugin r_crypto_plugin_punycode;
 extern RCryptoPlugin r_crypto_plugin_rc6;
 extern RCryptoPlugin r_crypto_plugin_cps2;
+extern RCryptoPlugin r_crypto_plugin_serpent;
 
 #define R_CRYPTO_NONE 0
 #define R_CRYPTO_RC2 1
@@ -93,6 +94,7 @@ extern RCryptoPlugin r_crypto_plugin_cps2;
 #define R_CRYPTO_CPS2 1<<9
 #define R_CRYPTO_DES_ECB 1<<10
 #define R_CRYPTO_XOR 1<<11
+#define R_CRYPTO_SERPENT 1<<12
 #define R_CRYPTO_ALL 0xFFFF
 
 #ifdef __cplusplus

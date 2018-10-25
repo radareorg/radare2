@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -86,7 +86,7 @@ static void do_hash_hexprint(const ut8 *c, int len, int ule, int rad) {
 	}
 }
 
-static void do_hash_print(RHash *ctx, int hash, int dlen, int rad, int ule) {
+static void do_hash_print(RHash *ctx, ut64 hash, int dlen, int rad, int ule) {
 	char *o;
 	const ut8 *c = ctx->digest;
 	const char *hname = r_hash_name (hash);
@@ -96,7 +96,11 @@ static void do_hash_print(RHash *ctx, int hash, int dlen, int rad, int ule) {
 			printf ("0x%08"PFMT64x "-0x%08"PFMT64x " %s: ",
 				from, to > 0? to - 1: 0, hname);
 		}
-		do_hash_hexprint (c, dlen, ule, rad);
+		if (dlen == R_HASH_SIZE_ENTROPY) {
+			printf("%.8f\n", ctx->entropy);
+		} else {
+			do_hash_hexprint (c, dlen, ule, rad);
+		}
 		break;
 	case 1:
 		printf ("e file.%s=", hname);
@@ -119,33 +123,17 @@ static void do_hash_print(RHash *ctx, int hash, int dlen, int rad, int ule) {
 }
 
 static int do_hash_internal(RHash *ctx, ut64 hash, const ut8 *buf, int len, int rad, int print, int le) {
-	int dlen;
 	if (len < 0) {
 		return 0;
 	}
-	dlen = r_hash_calculate (ctx, hash, buf, len);
-	if (!dlen) {
-		return 0;
-	}
+	int dlen = r_hash_calculate (ctx, hash, buf, len);
 	if (!print) {
 		return 1;
 	}
-	if (hash == R_HASH_ENTROPY) {
-		double e = r_hash_entropy (buf, len);
-		if (rad) {
-			eprintf ("entropy: %10f\n", e);
-		} else {
-			printf ("0x%08"PFMT64x "-0x%08"PFMT64x " %10f: ",
-				from, to > 0? to - 1: 0, e);
-			r_print_progressbar (NULL, 12.5 * e, 60);
-			printf ("\n");
-		}
-	} else {
-		if (iterations > 0) {
-			r_hash_do_spice (ctx, hash, iterations, _s);
-		}
-		do_hash_print (ctx, hash, dlen, rad, le);
+	if (iterations > 0) {
+		r_hash_do_spice (ctx, hash, iterations, _s);
 	}
+	do_hash_print (ctx, hash, dlen, rad, le);
 	return 1;
 }
 
@@ -160,7 +148,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 		eprintf ("rahash2: Invalid hashing algorithm specified\n");
 		return 1;
 	}
-	fsize = r_io_size (io);
+	fsize = r_io_desc_size (io->desc);
 	if (fsize < 1) {
 		eprintf ("rahash2: Invalid file size\n");
 		return 1;
@@ -202,7 +190,7 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 				}
 				for (j = from; j < to; j += bsize) {
 					int len = ((j + bsize) > to)? (to - j): bsize;
-					r_io_pread (io, j, buf, len);
+					r_io_pread_at (io, j, buf, len);
 					do_hash_internal (ctx, hashbit, buf, len, rad, 0, ule);
 				}
 				if (s.buf && !s.prefix) {
@@ -253,14 +241,15 @@ static int do_hash(const char *file, const char *algo, RIO *io, int bsize, int r
 				t = to;
 				for (j = f; j < t; j += bsize) {
 					int nsize = (j + bsize < fsize)? bsize: (fsize - j);
-					r_io_pread (io, j, buf, bsize);
+					r_io_pread_at (io, j, buf, bsize);
 					from = j;
 					to = j + bsize;
 					if (to > fsize) {
 						to = fsize;
 					}
-					do_hash_internal (ctx, hashbit, buf, nsize, rad, 1, ule);
+					do_hash_internal (ctx, hashbit, buf, nsize, rad, 0, ule);
 				}
+				do_hash_internal (ctx, hashbit, NULL, 0, rad, 1, ule);
 				from = ofrom;
 				to = oto;
 			}
@@ -313,14 +302,14 @@ static void algolist() {
 		bits = 1ULL << i;
 		const char *name = r_hash_name (bits);
 		if (name && *name) {
-			printf ("  %s\n", name);
+			printf ("h  %s\n", name);
 		}
 	}
 	eprintf ("\nAvailable Encoders/Decoders: \n");
 	// TODO: do not hardcode
-	printf ("  base64\n");
-	printf ("  base91\n");
-	printf ("  punycode\n");
+	printf ("e  base64\n");
+	printf ("e  base91\n");
+	printf ("e  punycode\n");
 	eprintf ("\nAvailable Crypto Algos: \n");
 	for (i = 0;; i++) {
 		bits = ((ut64) 1) << i;
@@ -328,7 +317,7 @@ static void algolist() {
 		if (!name || !*name) {
 			break;
 		}
-		printf ("  %s\n", name);
+		printf ("c  %s\n", name);
 	}
 }
 
@@ -440,6 +429,7 @@ int main(int argc, char **argv) {
 	int ivlen = -1;
 	char *ivseed = NULL;
 	const char *compareStr = NULL;
+	const char *ptype = NULL;
 	ut8 *compareBin = NULL;
 	int hashstr_len = -1;
 	int hashstr_hex = 0;
@@ -448,7 +438,7 @@ int main(int argc, char **argv) {
 	RHash *ctx;
 	RIO *io;
 
-	while ((c = getopt (argc, argv, "jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:")) != -1) {
+	while ((c = getopt (argc, argv, "p:jD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:")) != -1) {
 		switch (c) {
 		case 'q': quiet++; break;
 		case 'i':
@@ -468,6 +458,7 @@ int main(int argc, char **argv) {
 		case 'e': ule = 1; break;
 		case 'r': rad = 1; break;
 		case 'k': rad = 2; break;
+		case 'p': ptype = optarg; break;
 		case 'a': algo = optarg; break;
 		case 'B': incremental = 0; break;
 		case 'b': bsize = (int) r_num_math (NULL, optarg); break;
@@ -518,7 +509,7 @@ int main(int argc, char **argv) {
 			return 1;
 		} else if (compareBin_len != r_hash_size (algobit))   {
 			eprintf (
-				"rahash2: Given -c hash has %d bytes but the selected algorithm returns %d bytes.\n",
+				"rahash2: Given -c hash has %d byte(s) but the selected algorithm returns %d byte(s).\n",
 				compareBin_len,
 				r_hash_size (algobit));
 			free (compareBin);
@@ -533,6 +524,16 @@ int main(int argc, char **argv) {
 			eprintf ("Invalid -f or -t offsets\n");
 			return 1;
 		}
+	}
+	if (ptype) {
+		// TODO: support p=%s (horizontal bars)
+		// TODO: list supported statistical metrics
+		// TODO: support -f and -t
+		for (i = optind; i < argc; i++) {
+			printf ("%s:\n", argv[i]);
+			r_sys_cmdf ("r2 -qfnc \"p==%s 100\" \"%s\"", ptype, argv[i]);
+		}
+		return 0;
 	}
 	// convert iv to hex or string.
 	if (ivseed) {
@@ -555,6 +556,7 @@ int main(int argc, char **argv) {
 		if (!strcmp (hashstr, "-")) {
 			hashstr = malloc (INSIZE);
 			if (!hashstr) {
+				free (iv);
 				return 1;
 			}
 			bytes_read = fread ((void *) hashstr, 1, INSIZE - 1, stdin);
@@ -570,6 +572,7 @@ int main(int argc, char **argv) {
 			if (hashstr_len < 1) {
 				eprintf ("Invalid hex string\n");
 				free (out);
+				free (iv);
 				return 1;
 			}
 			hashstr = (char *) out;
@@ -582,6 +585,7 @@ int main(int argc, char **argv) {
 		if (from) {
 			if (from >= hashstr_len) {
 				eprintf ("Invalid -f.\n");
+				free (iv);
 				return 1;
 			}
 		}
@@ -622,6 +626,10 @@ int main(int argc, char **argv) {
 			algobit = r_hash_name_to_bits (algo);
 			if (algobit == 0) {
 				eprintf ("Invalid algorithm. See -E, -D maybe?\n");
+				if (str != hashstr) {
+					free (str);
+				}
+				free (iv);
 				return 1;
 			}
 			for (i = 1; i < R_HASH_ALL; i <<= 1) {
@@ -636,19 +644,23 @@ int main(int argc, char **argv) {
 				}
 			}
 			if (_s) {
-				free (str);
+				if (str != hashstr) {
+					free (str);
+				}
 				free (s.buf);
 			}
 			return ret;
 		}
 	}
 	if (optind >= argc) {
+		free (iv);
 		return do_help (1);
 	}
 	if (numblocks) {
 		bsize = -bsize;
 	} else if (bsize < 0) {
 		eprintf ("rahash2: Invalid block size\n");
+		free (iv);
 		return 1;
 	}
 
@@ -669,29 +681,36 @@ int main(int argc, char **argv) {
 				return rt;
 			}
 		} else {
+			RIODesc *desc = NULL;
 			if (!strcmp (argv[i], "-")) {
 				int sz = 0;
 				ut8 *buf = (ut8 *) r_stdin_slurp (&sz);
 				char *uri = r_str_newf ("malloc://%d", sz);
 				if (sz > 0) {
-					if (!r_io_open_nomap (io, uri, 0, 0)) {
+					desc = r_io_open_nomap (io, uri, R_PERM_R, 0);
+					if (!desc) {
 						eprintf ("rahash2: Cannot open malloc://1024\n");
 						return 1;
 					}
-					r_io_pwrite (io, 0, buf, sz);
+					r_io_pwrite_at (io, 0, buf, sz);
 				}
 				free (uri);
 			} else {
 				if (r_file_is_directory (argv[i])) {
 					eprintf ("rahash2: Cannot hash directories\n");
+					free (iv);
 					return 1;
 				}
-				if (!r_io_open_nomap (io, argv[i], 0, 0)) {
+				desc = r_io_open_nomap (io, argv[i], R_PERM_R, 0);
+				if (!desc) {
 					eprintf ("rahash2: Cannot open '%s'\n", argv[i]);
+					free (iv);
 					return 1;
 				}
 			}
 			ret |= do_hash (argv[i], algo, io, bsize, rad, ule, compareBin);
+			to = 0;
+			r_io_desc_close (desc);
 		}
 	}
 	free (hashstr);

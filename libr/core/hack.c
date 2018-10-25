@@ -16,15 +16,46 @@ void r_core_hack_help(const RCore *core) {
 		"wao", " ret1", "make the current opcode return 1",
 		"wao", " ret0", "make the current opcode return 0",
 		"wao", " retn", "make the current opcode return -1",
-		"wao", " un-cjmp", "remove conditional operation to branch",
+		"wao", " nocj", "remove conditional operation from branch (make it unconditional)",
 		"wao", " trap", "make the current opcode a trap",
-		"wao", " swap-cjmp", "swap conditional branch",
+		"wao", " recj", "reverse (swap) conditional branch instruction",
 		"NOTE:", "", "those operations are only implemented for x86 and arm atm.", //TODO
 		NULL
 	};
-	r_core_cmd_help(core, help_msg);
+	r_core_cmd_help (core, help_msg);
 }
 
+R_API bool r_core_hack_arm64(RCore *core, const char *op, const RAnalOp *analop) {
+	if (!strcmp (op, "nop")) {
+		r_core_cmdf (core, "wx 1f2003d5");
+	} else if (!strcmp (op, "ret")) {
+		r_core_cmdf (core, "wx c0035fd6t");
+	} else if (!strcmp (op, "trap")) {
+		r_core_cmdf (core, "wx 000020d4");
+	} else if (!strcmp (op, "jz")) {
+		eprintf ("ARM jz hack not supported\n");
+		return false;
+	} else if (!strcmp (op, "jnz")) {
+		eprintf ("ARM jnz hack not supported\n");
+		return false;
+	} else if (!strcmp (op, "nocj")) {
+		eprintf ("ARM jnz hack not supported\n");
+		return false;
+	} else if (!strcmp (op, "recj")) {
+		eprintf ("TODO: use jnz or jz\n");
+		return false;
+	} else if (!strcmp (op, "ret1")) {
+		r_core_cmdf (core, "wa mov x0, 1,,ret");
+	} else if (!strcmp (op, "ret0")) {
+		r_core_cmdf (core, "wa mov x0, 0,,ret");
+	} else if (!strcmp (op, "retn")) {
+		r_core_cmdf (core, "wa mov x0, -1,,ret");
+	} else {
+		eprintf ("Invalid operation '%s'\n", op);
+		return false;
+	}
+	return true;
+}
 R_API bool r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
 	const int bits = core->assembler->bits;
 	const ut8 *b = core->block;
@@ -94,7 +125,7 @@ R_API bool r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
 			eprintf ("ARM jnz hack not supported\n");
 			return false;
 		}
-	} else if (!strcmp (op, "un-cjmp")) {
+	} else if (!strcmp (op, "nocj")) {
 		// TODO: drop conditional bit instead of that hack
 		if (bits == 16) {
 			switch (b[1]) {
@@ -114,24 +145,27 @@ R_API bool r_core_hack_arm(RCore *core, const char *op, const RAnalOp *analop) {
 			eprintf ("ARM un-cjmp hack not supported\n");
 			return false;
 		}
-	} else if (!strcmp (op, "swap-cjmp")) {
+	} else if (!strcmp (op, "recj")) {
 		eprintf ("TODO: use jnz or jz\n");
 		return false;
 	} else if (!strcmp (op, "ret1")) {
-		if (bits == 16)
+		if (bits == 16) {
 			r_core_cmd0 (core, "wx 01207047 @@ $$+1\n"); // mov r0, 1; bx lr
-		else
+		} else {
 			r_core_cmd0 (core, "wx 0100b0e31eff2fe1 @@ $$+1\n"); // movs r0, 1; bx lr
+		}
 	} else if (!strcmp (op, "ret0")) {
-		if (bits == 16)
+		if (bits == 16) {
 			r_core_cmd0 (core, "wx 00207047 @@ $$+1\n"); // mov r0, 0; bx lr
-		else
+		} else {
 			r_core_cmd0 (core, "wx 0000a0e31eff2fe1 @@ $$+1\n"); // movs r0, 0; bx lr
+		}
 	} else if (!strcmp (op, "retn")) {
-		if (bits == 16)
+		if (bits == 16) {
 			r_core_cmd0 (core, "wx ff207047 @@ $$+1\n"); // mov r0, -1; bx lr
-		else
+		} else {
 			r_core_cmd0 (core, "wx ff00a0e31eff2fe1 @@ $$+1\n"); // movs r0, -1; bx lr
+		}
 	} else {
 		eprintf ("Invalid operation\n");
 		return false;
@@ -143,16 +177,19 @@ R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 	const ut8 *b = core->block;
 	int i, size = analop->size;
 	if (!strcmp (op, "nop")) {
-		if (size * 2 + 1 < size) return false;
+		if (size * 2 + 1 < size) {
+			return false;
+		}
 		char *str = malloc (size * 2 + 1);
 		if (!str) {
 			return false;
 		}
-		for (i = 0; i < size; i++)
-			memcpy(str + (i * 2), "90", 2);
+		for (i = 0; i < size; i++) {
+			memcpy (str + (i * 2), "90", 2);
+		}
 		str[size*2] = '\0';
-		r_core_cmdf(core, "wx %s\n", str);
-		free(str);
+		r_core_cmdf (core, "wx %s\n", str);
+		free (str);
 	} else if (!strcmp (op, "trap")) {
 		r_core_cmd0 (core, "wx cc\n");
 	} else if (!strcmp (op, "jz")) {
@@ -169,18 +206,23 @@ R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 			eprintf ("Current opcode is not conditional\n");
 			return false;
 		}
-	} else if (!strcmp (op, "un-cjmp")) {
-		if (b[0] >= 0x70 && b[0] <= 0x7f) {
-			r_core_cmd0 (core, "wx eb\n");
+	} else if (!strcmp (op, "nocj")) {
+		if (*b == 0xf) {
+			r_core_cmd0 (core, "wx 90e9");
+		} else if (b[0] >= 0x70 && b[0] <= 0x7f) {
+			r_core_cmd0 (core, "wx eb");
 		} else {
 			eprintf ("Current opcode is not conditional\n");
 			return false;
 		}
-	} else if (!strcmp (op, "swap-cjmp")) {
-		if (b[0] < 0x80 && b[0] >= 0x70){ // jo, jno, jb, jae, je, jne, jbe, ja, js, jns
-			r_core_cmdf (core, "wx %x\n", (b[0]%2)? b[0] - 1: b[0] + 1);
+	} else if (!strcmp (op, "recj")) {
+		int is_near = (*b == 0xf);
+		if (b[0] < 0x80 && b[0] >= 0x70) { // short jmps: jo, jno, jb, jae, je, jne, jbe, ja, js, jns
+				r_core_cmdf (core, "wx %x\n", (b[0]%2)? b[0] - 1: b[0] + 1);
+		} else if (is_near && b[1] < 0x90 && b[1] >= 0x80) { // near jmps: jo, jno, jb, jae, je, jne, jbe, ja, js, jns
+				r_core_cmdf (core, "wx 0f%x\n", (b[1]%2)? b[1] - 1: b[1] + 1);
 		} else {
-			eprintf ("Invalid opcode\n");
+			eprintf ("Invalid conditional jump opcode\n");
 			return false;
 		}
 	} else if (!strcmp (op, "ret1")) {
@@ -190,7 +232,7 @@ R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 	} else if (!strcmp (op, "retn")) {
 		r_core_cmd0 (core, "wx c2ffff\n");
 	} else {
-		eprintf ("Invalid operation\n");
+		eprintf ("Invalid operation '%s'\n", op);
 		return false;
 	}
 	return true;
@@ -199,7 +241,7 @@ R_API bool r_core_hack_x86(RCore *core, const char *op, const RAnalOp *analop) {
 R_API int r_core_hack(RCore *core, const char *op) {
 	bool (*hack)(RCore *core, const char *op, const RAnalOp *analop) = NULL;
 	const char *asmarch = r_config_get (core->config, "asm.arch");
-	RAnalOp analop;
+	const int asmbits = core->assembler->bits;
 
 	if (!asmarch) {
 		return false;
@@ -207,12 +249,17 @@ R_API int r_core_hack(RCore *core, const char *op) {
 	if (strstr (asmarch, "x86")) {
 		hack = r_core_hack_x86;
 	} else if (strstr (asmarch, "arm")) {
-		hack = r_core_hack_arm;
+		if (asmbits == 64) {
+			hack = r_core_hack_arm64;
+		} else {
+			hack = r_core_hack_arm;
+		}
 	} else {
 		eprintf ("TODO: write hacks are only for x86\n");
 	}
 	if (hack) {
-		if (!r_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize)) {
+		RAnalOp analop;
+		if (!r_anal_op (core->anal, &analop, core->offset, core->block, core->blocksize, R_ANAL_OP_MASK_BASIC)) {
 			eprintf ("anal op fail\n");
 			return false;
 		}

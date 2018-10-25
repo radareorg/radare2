@@ -12,7 +12,7 @@ unset LDFLAGS
 export CC="emcc -Os -s WASM=1 -s SIDE_MODULE=1"
 export AR="emar"
 
-CFGFLAGS="./configure --prefix=/usr --disable-debugger --with-compiler=wasm --without-pic --with-nonpic"
+CFGFLAGS="./configure --prefix=/usr --disable-debugger --with-compiler=wasm --with-libr"
 
 make mrproper
 cp -f plugins.emscripten.cfg plugins.cfg

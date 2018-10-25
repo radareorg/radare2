@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2017 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2018 - nibble, pancake */
 
 #include <getopt.c>
 #include <r_core.h>
@@ -25,9 +25,9 @@ static ut64 at = 0LL;
 static RLib *l;
 
 static int rabin_show_help(int v) {
-	printf ("Usage: rabin2 [-AcdeEghHiIjlLMqrRsSvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
+	printf ("Usage: rabin2 [-AcdeEghHiIjlLMqrRsSUvVxzZ] [-@ at] [-a arch] [-b bits] [-B addr]\n"
 		"              [-C F:C:D] [-f str] [-m addr] [-n str] [-N m:M] [-P[-P] pdb]\n"
-		"              [-o str] [-O str] [-k query] [-D lang symname] | file\n");
+		"              [-o str] [-O str] [-k query] [-D lang symname] file\n");
 	if (v) {
 		printf (
 		" -@ [addr]       show section, symbol or import at addr\n"
@@ -36,14 +36,16 @@ static int rabin_show_help(int v) {
 		" -b [bits]       set bits (32, 64 ...)\n"
 		" -B [addr]       override base address (pie bins)\n"
 		" -c              list classes\n"
+		" -cc             list classes in header format\n"
 		" -C [fmt:C:D]    create [elf,mach0,pe] with Code and Data hexpairs (see -a)\n"
 		" -d              show debug/dwarf information\n"
 		" -D lang name    demangle symbol name (-D all for bin.demangle=true)\n"
 		" -e              entrypoint\n"
+		" -ee             constructor/destructor entrypoints\n"
 		" -E              globally exportable symbols\n"
 		" -f [str]        select sub-bin named str\n"
 		" -F [binfmt]     force to use that bin plugin (ignore header check)\n"
-		" -g              same as -SMZIHVResizcld (show all info)\n"
+		" -g              same as -SMZIHVResizcld -SS -ee (show all info)\n"
 		" -G [addr]       load address . offset to header\n"
 		" -h              this help message\n"
 		" -H              header fields\n"
@@ -70,7 +72,9 @@ static int rabin_show_help(int v) {
 		" -R              relocations\n"
 		" -s              symbols\n"
 		" -S              sections\n"
+		" -SS             segments\n"
 		" -u              unfiltered (no rename duplicated symbols/sections)\n"
+		" -U              resoUrces\n"
 		" -v              display version and quit\n"
 		" -V              Show binary version information\n"
 		" -x              extract bins contained in file\n"
@@ -89,8 +93,10 @@ static int rabin_show_help(int v) {
 		" RABIN2_MAXSTRBUF: e bin.maxstrbuf    # specify maximum buffer size\n"
 		" RABIN2_STRFILTER: e bin.strfilter    # r2 -qe bin.strfilter=? -c '' --\n"
 		" RABIN2_STRPURGE:  e bin.strpurge     # try to purge false positives\n"
-		" RABIN2_DEBASE64:  e bin.debase64     # Try to debase64 all strings\n"
+		" RABIN2_DEBASE64:  e bin.debase64     # try to debase64 all strings\n"
 		" RABIN2_DMNGLRCMD: e bin.demanglercmd # try to purge false positives\n"
+		" RABIN2_PDBSERVER: e pdb.server       # use alternative PDB server\n"
+		" RABIN2_SYMSTORE:  e pdb.symstore     # path to downstream symbol store\n"
 		" RABIN2_PREFIX:    e bin.prefix       # prefix symbols/sections/relocs with a specific string\n");
 	}
 	return 1;
@@ -141,12 +147,12 @@ static bool isBinopHelp(const char *op) {
 static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 	ut64 bin_size = data ? data->size : 0;
 	ut8 *bytes;
+	const char *xtr_type = "";
 	char *arch = "unknown";
 	int bits = 0;
 	char *libname = NULL;
 	const char *filename = bf ? bf->file : NULL;
-	char *path = NULL, *outpath = NULL, *outfile = NULL, *ptr = NULL;
-	ut32 outfile_sz = 0, outpath_sz = 0;
+	char *path = NULL, *ptr = NULL;
 	bool res = false;
 
 	if (!bf || !data || !filename) {
@@ -156,8 +162,9 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 		arch = data->metadata->arch;
 		bits = data->metadata->bits;
 		libname = data->metadata->libname;
+		xtr_type = data->metadata->xtr_type;
 	}
-	if (bin_size == bf->size && bin_size) {
+	if (!strcmp (xtr_type, "fat") && bin_size == bf->size && bin_size) {
 		eprintf ("This is not a fat bin\n");
 		return false;
 	}
@@ -180,14 +187,7 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 	} else {
 		ptr = path;
 	}
-	outpath_sz = strlen (path) + 20;
-	if (outpath_sz > 0) {
-		outpath = malloc (outpath_sz);
-	}
-
-	if (outpath) {
-		snprintf (outpath, outpath_sz, "%s.fat", ptr);
-	}
+	char *outpath = r_str_newf ("%s.fat", ptr);
 	if (!outpath || !r_sys_mkdirp (outpath)) {
 		free (path);
 		free (outpath);
@@ -195,20 +195,9 @@ static bool extract_binobj(const RBinFile *bf, RBinXtrData *data, int idx) {
 		return false;
 	}
 
-	outfile_sz = outpath_sz + strlen (ptr) + strlen (arch) + 23;
-	if (outfile_sz) {
-		outfile = malloc (outfile_sz);
-	}
-
-	if (outfile) {
-		if (libname) {
-			snprintf (outfile, outfile_sz, "%s/%s.%s.%s_%i.%d",
-					  outpath, ptr, arch, libname, bits, idx);
-		} else {
-			snprintf (outfile, outfile_sz, "%s/%s.%s_%i.%d",
-					  outpath, ptr, arch, bits, idx);
-		}
-	}
+	char *outfile = libname
+		? r_str_newf ("%s/%s.%s.%s_%i.%d", outpath, ptr, arch, libname, bits, idx)
+		: r_str_newf ("%s/%s.%s_%i.%d", outpath, ptr, arch, bits, idx);
 
 	if (!outfile || !r_file_dump (outfile, bytes, bin_size, 0)) {
 		eprintf ("Error extracting %s\n", outfile);
@@ -272,16 +261,19 @@ static int rabin_dump_symbols(int len) {
 		} else {
 			len = olen;
 		}
-		if (!(buf = malloc (len))) {
+		if (!(buf = calloc (1, len))) {
 			return false;
 		}
-		if (!(ret = malloc (len * 2 + 1))) {
+		if (!(ret = malloc ((len * 2) + 1))) {
 			free (buf);
 			return false;
 		}
-		r_buf_read_at (bin->cur->buf, symbol->paddr, buf, len);
-		r_hex_bin2str (buf, len, ret);
-		printf ("%s %s\n", symbol->name, ret);
+		if (r_buf_read_at (bin->cur->buf, symbol->paddr, buf, len) == len) {
+			r_hex_bin2str (buf, len, ret);
+			printf ("%s %s\n", symbol->name, ret);
+		} else {
+			eprintf ("Cannot read from buffer\n");
+		}
 		free (buf);
 		free (ret);
 	}
@@ -414,12 +406,12 @@ static int rabin_do_operation(const char *op) {
 		break;
 	case 'C':
 		{
-		RBinFile *cur   = r_bin_cur (bin);
+		RBinFile *cur = r_bin_cur (bin);
 		RBinPlugin *plg = r_bin_file_cur_plugin (cur);
-		if (!plg) {
-			//are we in xtr?
+		if (!plg && cur) {
+			// are we in xtr?
 			if (cur->xtr_data) {
-				//load the first one
+				// load the first one
 				RBinXtrData *xtr_data = r_list_get_n (cur->xtr_data, 0);
 				if (!r_bin_file_object_new_from_xtr_data (bin, cur,
 						  UT64_MAX, r_bin_get_laddr (bin), xtr_data)) {
@@ -431,11 +423,13 @@ static int rabin_do_operation(const char *op) {
 				break;
 			}
 		}
-		if (plg->signature) {
-			const char *sign = plg->signature (cur, rad == R_CORE_BIN_JSON);
-			r_cons_println (sign);
-			r_cons_flush ();
-			free ((char*) sign);
+		if (plg && plg->signature) {
+			char *sign = plg->signature (cur, rad == R_MODE_JSON);
+			if (sign) {
+				r_cons_println (sign);
+				r_cons_flush ();
+				free (sign);
+			}
 		}
 		}
 		break;
@@ -479,26 +473,38 @@ static int rabin_show_srcline(ut64 at) {
 }
 
 /* bin callback */
-static int __lib_bin_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
+static int __lib_bin_cb(RLibPlugin *pl, void *user, void *data) {
 	struct r_bin_plugin_t *hand = (struct r_bin_plugin_t *)data;
 	//printf(" * Added (dis)assembly plugin\n");
 	r_bin_add (bin, hand);
 	return true;
 }
 
-static int __lib_bin_dt(struct r_lib_plugin_t *pl, void *p, void *u) {
+static int __lib_bin_dt(RLibPlugin *pl, void *p, void *u) {
 	return true;
 }
 
 /* binxtr callback */
-static int __lib_bin_xtr_cb(struct r_lib_plugin_t *pl, void *user, void *data) {
+static int __lib_bin_xtr_cb(RLibPlugin *pl, void *user, void *data) {
 	struct r_bin_xtr_plugin_t *hand = (struct r_bin_xtr_plugin_t *)data;
 	//printf(" * Added (dis)assembly plugin\n");
 	r_bin_xtr_add (bin, hand);
 	return true;
 }
 
-static int __lib_bin_xtr_dt(struct r_lib_plugin_t *pl, void *p, void *u) {
+static int __lib_bin_xtr_dt(RLibPlugin *pl, void *p, void *u) {
+	return true;
+}
+
+/* binldr callback */
+static int __lib_bin_ldr_cb(RLibPlugin *pl, void *user, void *data) {
+	struct r_bin_ldr_plugin_t *hand = (struct r_bin_ldr_plugin_t *)data;
+	//printf(" * Added (dis)assembly plugin\n");
+	r_bin_ldr_add (bin, hand);
+	return true;
+}
+
+static int __lib_bin_ldr_dt(RLibPlugin *pl, void *p, void *u) {
 	return true;
 }
 
@@ -521,7 +527,7 @@ static char *demangleAs(int type) {
 static int rabin_list_plugins(const char* plugin_name) {
 	int json = 0;
 
-	if (rad == R_CORE_BIN_JSON) {
+	if (rad == R_MODE_JSON) {
 		json = 'j';
 	} else if (rad) {
 		json = 'q';
@@ -543,9 +549,8 @@ int main(int argc, char **argv) {
 	const char *forcebin = NULL;
 	const char *chksum = NULL;
 	const char *op = NULL;
-	const char *path = NULL;
+	RCoreFile *fh = NULL;
 	RCoreBinFilter filter;
-	RCoreFile *cf = NULL;
 	int xtr_idx = 0; // load all files if extraction is necessary.
 	int rawstr = 0;
 	int fd = -1;
@@ -555,24 +560,31 @@ int main(int argc, char **argv) {
 	bin = core.bin;
 
 	if (!(tmp = r_sys_getenv ("RABIN2_NOPLUGINS"))) {
-		char *homeplugindir = r_str_home (R2_HOMEDIR "/plugins");
+		char *homeplugindir = r_str_home (R2_HOME_PLUGINS);
+		char *plugindir = r_str_r2_prefix (R2_PLUGINS);
+		char *extrasdir = r_str_r2_prefix (R2_EXTRAS);
+		char *bindingsdir = r_str_r2_prefix (R2_BINDINGS);
 		l = r_lib_new ("radare_plugin");
-	
 		r_lib_add_handler (l, R_LIB_TYPE_BIN, "bin plugins",
-		  &__lib_bin_cb, &__lib_bin_dt, NULL);
+			&__lib_bin_cb, &__lib_bin_dt, NULL);
 		r_lib_add_handler (l, R_LIB_TYPE_BIN_XTR, "bin xtr plugins",
-		  &__lib_bin_xtr_cb, &__lib_bin_xtr_dt, NULL);
+			&__lib_bin_xtr_cb, &__lib_bin_xtr_dt, NULL);
+		r_lib_add_handler (l, R_LIB_TYPE_BIN_LDR, "bin ldr plugins",
+			&__lib_bin_ldr_cb, &__lib_bin_ldr_dt, NULL);
 		/* load plugins everywhere */
-
-		path = r_sys_getenv (R_LIB_ENV);
+		char *path = r_sys_getenv (R_LIB_ENV);
 		if (path && *path) {
 			r_lib_opendir (l, path);
 		}
 		r_lib_opendir (l, homeplugindir);
+		r_lib_opendir (l, plugindir);
+		r_lib_opendir (l, extrasdir);
+		r_lib_opendir (l, bindingsdir);
 		free (homeplugindir);
-		r_lib_opendir (l, R2_LIBDIR "/radare2/" R2_VERSION);
-		r_lib_opendir (l, R2_LIBDIR "/radare2-extras/" R2_VERSION);
-		r_lib_opendir (l, R2_LIBDIR "/radare2-bindings/" R2_VERSION);
+		free (plugindir);
+		free (extrasdir);
+		free (bindingsdir);
+		free (path);
 	}
 	free (tmp);
 
@@ -604,23 +616,29 @@ int main(int argc, char **argv) {
 		r_config_set (core.config, "bin.debase64", tmp);
 		free (tmp);
 	}
+	if ((tmp = r_sys_getenv ("RABIN2_PDBSERVER"))) {
+		r_config_set (core.config, "pdb.server", tmp);
+		free (tmp);
+	}
 
-#define is_active(x) (action & x)
-#define set_action(x) actions++; action |= x
+#define is_active(x) (action & (x))
+#define set_action(x) { actions++; action |= (x); }
 #define unset_action(x) action &= ~x
-	while ((c = getopt (argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeElRwO:o:pPqQrvLhuxXzZ")) != -1) {
+	while ((c = getopt (argc, argv, "DjgAf:F:a:B:G:b:cC:k:K:dD:Mm:n:N:@:isSVIHeEUlRwO:o:pPqQrvLhuxXzZ")) != -1) {
 		switch (c) {
 		case 'g':
 			set_action (R_BIN_REQ_CLASSES);
 			set_action (R_BIN_REQ_IMPORTS);
 			set_action (R_BIN_REQ_SYMBOLS);
 			set_action (R_BIN_REQ_SECTIONS);
+			set_action (R_BIN_REQ_SEGMENTS);
 			set_action (R_BIN_REQ_STRINGS);
 			set_action (R_BIN_REQ_SIZE);
 			set_action (R_BIN_REQ_INFO);
 			set_action (R_BIN_REQ_FIELDS);
 			set_action (R_BIN_REQ_DWARF);
 			set_action (R_BIN_REQ_ENTRIES);
+			set_action (R_BIN_REQ_INITFINI);
 			set_action (R_BIN_REQ_MAIN);
 			set_action (R_BIN_REQ_LIBS);
 			set_action (R_BIN_REQ_RELOCS);
@@ -628,10 +646,10 @@ int main(int argc, char **argv) {
 			break;
 		case 'V': set_action (R_BIN_REQ_VERSIONINFO); break;
 		case 'q':
-			rad = (rad & R_CORE_BIN_SIMPLE ?
-				R_CORE_BIN_SIMPLEST : R_CORE_BIN_SIMPLE);
+			rad = (rad & R_MODE_SIMPLE ?
+				R_MODE_SIMPLEST : R_MODE_SIMPLE);
 			break;
-		case 'j': rad = R_CORE_BIN_JSON; break;
+		case 'j': rad = R_MODE_JSON; break;
 		case 'A': set_action (R_BIN_REQ_LISTARCHS); break;
 		case 'a': arch = optarg; break;
 		case 'C':
@@ -641,7 +659,13 @@ int main(int argc, char **argv) {
 		case 'u': bin->filter = 0; break;
 		case 'k': query = optarg; break;
 		case 'K': chksum = optarg; break;
-		case 'c': set_action (R_BIN_REQ_CLASSES); break;
+		case 'c':
+			if (is_active (R_BIN_REQ_CLASSES)) {
+				rad = R_MODE_CLASSDUMP;
+			} else {
+			  	set_action (R_BIN_REQ_CLASSES);
+			}
+			break;
 		case 'f': arch_name = strdup (optarg); break;
 		case 'F': forcebin = optarg; break;
 		case 'b': bits = r_num_math (NULL, optarg); break;
@@ -651,7 +675,14 @@ int main(int argc, char **argv) {
 			break;
 		case 'i': set_action (R_BIN_REQ_IMPORTS); break;
 		case 's': set_action (R_BIN_REQ_SYMBOLS); break;
-		case 'S': set_action (R_BIN_REQ_SECTIONS); break;
+		case 'S':
+			if (is_active (R_BIN_REQ_SECTIONS)) {
+				action &= ~R_BIN_REQ_SECTIONS;
+				action |= R_BIN_REQ_SEGMENTS;
+			} else {
+				set_action (R_BIN_REQ_SECTIONS);
+			}
+			break;
 		case 'z':
 			if (is_active (R_BIN_REQ_STRINGS)) {
 				if (rawstr) {
@@ -659,7 +690,7 @@ int main(int argc, char **argv) {
 					/* to store them just dump'm all to stdout */
 					rawstr = 2;
 				} else {
-					rawstr = true;
+					rawstr = 1;
 				}
 			} else {
 				set_action (R_BIN_REQ_STRINGS);
@@ -688,8 +719,16 @@ int main(int argc, char **argv) {
 				do_demangle = argv[optind];
 			}
 			break;
-		case 'e': set_action (R_BIN_REQ_ENTRIES); break;
+		case 'e':
+			if (action & R_BIN_REQ_ENTRIES) {
+				action &= ~R_BIN_REQ_ENTRIES;
+				action |= R_BIN_REQ_INITFINI;
+			} else {
+				set_action (R_BIN_REQ_ENTRIES);
+			}
+			break;
 		case 'E': set_action (R_BIN_REQ_EXPORTS); break;
+		case 'U': set_action (R_BIN_REQ_RESOURCES); break;
 		case 'Q': set_action (R_BIN_REQ_DLOPEN); break;
 		case 'M': set_action (R_BIN_REQ_MAIN); break;
 		case 'l': set_action (R_BIN_REQ_LIBS); break;
@@ -700,16 +739,17 @@ int main(int argc, char **argv) {
 		case 'O':
 			op = optarg;
 			set_action (R_BIN_REQ_OPERATION);
+			r_sys_setenv ("RABIN2_CODESIGN_VERBOSE", "1");
 			if (isBinopHelp (op)) {
-				printf ("Operation string:\n"
-					"  Change Entrypoint: e/0x8048000\n"
-					"  Dump Symbols: d/s/1024\n"
-					"  Dump Section: d/S/.text\n"
-					"  Resize Section: r/.data/1024\n"
-					"  Remove RPATH: R\n"
-					"  Add Library: a/l/libfoo.dylib\n"
-					"  Change Permissions: p/.data/rwx\n"
-					"  Show LDID entitlements: C\n");
+				printf ("Usage: iO [expression]:\n"
+					" e/0x8048000       change entrypoint\n"
+					" d/s/1024          dump symbols\n"
+					" d/S/.text         dump section\n"
+					" r/.data/1024      resize section\n"
+					" R                 remove RPATH\n"
+					" a/l/libfoo.dylib  add library\n"
+					" p/.data/rwx       change section permissions\n"
+					" C                 show LDID entitlements\n");
 				r_core_fini (&core);
 				return 0;
 			}
@@ -725,6 +765,7 @@ int main(int argc, char **argv) {
 		case 'v': return blob_version ("rabin2");
 		case 'L':
 			set_action (R_BIN_REQ_LISTPLUGINS);
+			break;
 		case 'G':
 			laddr = r_num_math (NULL, optarg);
 			if (laddr == UT64_MAX) {
@@ -748,9 +789,11 @@ int main(int argc, char **argv) {
 			}
 			break;
 		case 'h':
-			  r_core_fini (&core);
-			  return rabin_show_help (1);
-		default: action |= R_BIN_REQ_HELP;
+			r_core_fini (&core);
+			return rabin_show_help (1);
+		default:
+			action |= R_BIN_REQ_HELP;
+			break;
 		}
 	}
 
@@ -836,7 +879,9 @@ int main(int argc, char **argv) {
 			*p2++ = 0;
 			data = malloc (strlen (p2)+1);
 			datalen = r_hex_str2bin (p2, data);
-			if (datalen < 0) datalen = -datalen;
+			if (datalen < 0) {
+				datalen = -datalen;
+			}
 		} else {
 			data = NULL;
 			datalen = 0;
@@ -884,6 +929,15 @@ int main(int argc, char **argv) {
 	}
 
 	if (file && *file && action & R_BIN_REQ_DLOPEN) {
+#if __UNIX__
+		int child = r_sys_fork ();
+		if (child == -1) {
+			return 1;
+		}
+		if (child == 0) {
+			return waitpid (child, NULL, 0);
+		}
+#endif
 		void *addr = r_lib_dl_open (file);
 		if (addr) {
 			eprintf ("%s is loaded at 0x%"PFMT64x"\n", file, (ut64)(size_t)(addr));
@@ -891,7 +945,7 @@ int main(int argc, char **argv) {
 			return 0;
 		}
 		eprintf ("Cannot open the '%s' library\n", file);
-		return 1;
+		return 0;
 	}
 	if (action & R_BIN_REQ_PACKAGE) {
 		RList *files = r_list_newf (NULL);
@@ -923,9 +977,15 @@ int main(int argc, char **argv) {
 	}
 
 	if (file && *file) {
-		cf = r_core_file_open (&core, file, R_IO_READ, 0);
-		fd = cf ? r_core_file_cur_fd (&core) : -1;
-		if (!cf || fd == -1) {
+		if ((fh = r_core_file_open (&core, file, R_PERM_R, 0))) {
+			fd = r_io_fd_get_current (core.io);
+			if (fd == -1) {
+				eprintf ("r_core: Cannot open file '%s'\n", file);
+				r_core_file_free (fh);
+				r_core_fini (&core);
+				return 1;
+			}
+		} else {
 			eprintf ("r_core: Cannot open file '%s'\n", file);
 			r_core_fini (&core);
 			return 1;
@@ -936,11 +996,22 @@ int main(int argc, char **argv) {
 
 	r_bin_force_plugin (bin, forcebin);
 	r_bin_load_filter (bin, action);
-	if (!r_bin_load (bin, file, baddr, laddr, xtr_idx, fd, rawstr)) {
+
+	RBinOptions bo = {
+		.offset = 0LL,
+		.baseaddr = baddr,
+		.rawstr = rawstr,
+		.loadaddr = laddr,
+		.xtr_idx = xtr_idx,
+		.iofd = fd,
+	};
+
+	if (!r_bin_open (bin, file, &bo)) {
 		//if this return null means that we did not return a valid bin object
 		//but we have yet the chance that this file is a fat binary
 		if (!bin->cur || !bin->cur->xtr_data) {
 			eprintf ("r_bin: Cannot open file\n");
+			r_core_file_free (fh);
 			r_core_fini (&core);
 			return 1;
 		}
@@ -953,7 +1024,11 @@ int main(int argc, char **argv) {
 	}
 	if (rawstr == 2) {
 		rawstr = false;
-		r_bin_dump_strings (core.bin->cur, bin->minstrlen);
+		RBinFile *bf = r_core_bin_cur (&core);
+		if (bf) {
+			bf->strmode = rad;
+			r_bin_dump_strings (bf, bin->minstrlen, bf->rawstr);
+		}
 	}
 	if (query) {
 		if (rad) {
@@ -966,12 +1041,13 @@ int main(int argc, char **argv) {
 				sdb_query (bin->cur->sdb, query);
 			}
 		}
+		r_core_file_free (fh);
 		r_core_fini (&core);
 		return 0;
 	}
-#define isradjson (rad==R_CORE_BIN_JSON&&actions>0)
+#define isradjson (rad==R_MODE_JSON&&actions>0)
 #define run_action(n,x,y) {\
-	if (action&x) {\
+	if (action&(x)) {\
 		if (isradjson) r_cons_printf ("%s\"%s\":",actions_done?",":"",n);\
 		if (!r_core_bin_info (&core, y, rad, va, &filter, chksum)) {\
 			if (isradjson) r_cons_print ("false");\
@@ -991,70 +1067,29 @@ int main(int argc, char **argv) {
 	// List fatmach0 sub-binaries, etc
 	if (action & R_BIN_REQ_LISTARCHS || ((arch || bits || arch_name) &&
 		!r_bin_select (bin, arch, bits, arch_name))) {
-		if (rad == R_CORE_BIN_SIMPLEST || rad == R_CORE_BIN_SIMPLE) {
+		if (rad == R_MODE_SIMPLEST || rad == R_MODE_SIMPLE) {
 			r_bin_list_archs (bin, 'q');
 		} else {
-			r_bin_list_archs (bin, (rad == R_CORE_BIN_JSON)? 'j': 1);
+			r_bin_list_archs (bin, (rad == R_MODE_JSON)? 'j': 1);
 		}
 		actions_done++;
 		free (arch_name);
 	}
 	if (action & R_BIN_REQ_PDB_DWNLD) {
-		int ret;
-		char *path;
-		SPDBDownloaderOpt opt;
-		SPDBDownloader pdb_downloader;
-		RBinInfo *info = r_bin_get_info (core.bin);
-		char *env_pdbserver = r_sys_getenv ("PDB_SERVER");
-		char *env_pdbextract = r_sys_getenv("PDB_EXTRACT");
-		char *env_useragent = r_sys_getenv("PDB_USER_AGENT");
+		SPDBOptions pdbopts;
+		pdbopts.user_agent = (char*) r_config_get (core.config, "pdb.useragent");
+		pdbopts.symbol_server = (char*) r_config_get (core.config, "pdb.server");
+		pdbopts.extract = r_config_get_i (core.config, "pdb.extract");
 
-		if (!info || !info->debug_file_name) {
-			eprintf ("Can't find debug filename\n");
-			r_core_fini (&core);
-			return 1;
+		if ((tmp = r_sys_getenv ("RABIN2_SYMSTORE"))) {
+			r_config_set (core.config, "pdb.symstore", tmp);
+			R_FREE (tmp);
 		}
-
-		if (info->file) {
-			path = r_file_dirname (info->file);
-		} else {
-			path = strdup (".");
-		}
-
-		if (env_pdbserver && *env_pdbserver) {
-			r_config_set (core.config, "pdb.server", env_pdbserver);
-		}
-		if (env_useragent && *env_useragent) {
-			r_config_set (core.config, "pdb.useragent", env_useragent);
-		}
-		if (env_pdbextract && *env_pdbextract) {
-			r_config_set_i (core.config, "pdb.extract", !(*env_pdbextract == '0'));
-		}
-		free (env_pdbextract);
-		free (env_useragent);
-
-		opt.dbg_file = info->debug_file_name;
-		opt.guid = info->guid;
-		opt.symbol_server = (char *)r_config_get (core.config, "pdb.server");
-		opt.user_agent = (char *)r_config_get (core.config, "pdb.useragent");
-		opt.path = path;
-		opt.extract = r_config_get_i(core.config, "pdb.extract");
-
-		init_pdb_downloader (&opt, &pdb_downloader);
-		ret = pdb_downloader.download (&pdb_downloader);
-		if (isradjson) {
-			printf ("%s\"pdb\":{\"file\":\"%s\",\"download\":%s}",
-				actions_done?",":"", opt.dbg_file, ret?"true":"false");
-		} else {
-			printf ("PDB \"%s\" download %s\n",
-				opt.dbg_file, ret? "success": "failed");
-		}
-		actions_done++;
-		deinit_pdb_downloader (&pdb_downloader);
-
-		free (path);
+		pdbopts.symbol_store_path = (char *)r_config_get (core.config, "pdb.symstore");
+		int r = r_bin_pdb_download (&core, isradjson, &actions_done, &pdbopts);
+		r_core_file_free (fh);
 		r_core_fini (&core);
-		return 0;
+		return r;
 	}
 
 	if ((tmp = r_sys_getenv ("RABIN2_PREFIX"))) {
@@ -1063,12 +1098,15 @@ int main(int argc, char **argv) {
 	}
 
 	run_action ("sections", R_BIN_REQ_SECTIONS, R_CORE_BIN_ACC_SECTIONS);
+	run_action ("segments", R_BIN_REQ_SEGMENTS, R_CORE_BIN_ACC_SEGMENTS);
 	run_action ("entries", R_BIN_REQ_ENTRIES, R_CORE_BIN_ACC_ENTRIES);
+	run_action ("initfini", R_BIN_REQ_INITFINI, R_CORE_BIN_ACC_INITFINI);
 	run_action ("main", R_BIN_REQ_MAIN, R_CORE_BIN_ACC_MAIN);
 	run_action ("imports", R_BIN_REQ_IMPORTS, R_CORE_BIN_ACC_IMPORTS);
 	run_action ("classes", R_BIN_REQ_CLASSES, R_CORE_BIN_ACC_CLASSES);
 	run_action ("symbols", R_BIN_REQ_SYMBOLS, R_CORE_BIN_ACC_SYMBOLS);
 	run_action ("exports", R_BIN_REQ_EXPORTS, R_CORE_BIN_ACC_EXPORTS);
+	run_action ("resources", R_BIN_REQ_RESOURCES, R_CORE_BIN_ACC_RESOURCES);
 	run_action ("strings", R_BIN_REQ_STRINGS, R_CORE_BIN_ACC_STRINGS);
 	run_action ("info", R_BIN_REQ_INFO, R_CORE_BIN_ACC_INFO);
 	run_action ("fields", R_BIN_REQ_FIELDS, R_CORE_BIN_ACC_FIELDS);
@@ -1097,9 +1135,10 @@ int main(int argc, char **argv) {
 		rabin_do_operation (op);
 	}
 	if (isradjson) {
-		printf ("}");
+		r_cons_print ("}");
 	}
 	r_cons_flush ();
+	r_core_file_free (fh);
 	r_core_fini (&core);
 	free (stdin_buf);
 

@@ -6,6 +6,6 @@ includedir=${prefix}/include
 Name: r_asm
 Description: radare foundation libraries
 Version: @VERSION@
-Requires:
-Libs: -L${libdir} -lr_asm -lr_syscall -lr_lang -lr_util -lr_parse -lr_flag -lr_cons -lr_reg -lr_anal
-Cflags: -I${includedir}/libr
+Requires: r_syscall r_lang r_util r_parse r_flag r_cons r_reg
+Libs: -L${libdir} -lr_asm  
+Cflags: -I${includedir}/libr 

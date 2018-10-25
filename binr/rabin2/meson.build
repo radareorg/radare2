@@ -1,13 +1,17 @@
-
 executable('rabin2', 'rabin2.c',
-  include_directories: include_directories([
-    '../../libr/include',
-	platform_binrinc
-  ]),
-  link_with: [r_util, r_cons, r_config, r_hash, r_io, r_crypto, r_core],
-  objects: [
-    r_sdb.extract_all_objects(),
-	r_bin.extract_all_objects()
+  include_directories: [platform_inc],
+  dependencies: [
+    r_util_dep,
+    r_cons_dep,
+    r_config_dep,
+    r_hash_dep,
+    r_io_dep,
+    r_crypto_dep,
+    r_core_dep,
+    r_magic_dep,
+    r_bin_dep,
+    sdb_dep
   ],
-  install: true
+  install: true,
+  implicit_include_directories: false
 )

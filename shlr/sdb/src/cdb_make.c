@@ -20,7 +20,7 @@ char *cdb_alloc(ut32 n) {
 #endif
 }
 
-#if __SDB_WINDOWS && !__CYGWIN__
+#if __SDB_WINDOWS__ && !__CYGWIN__
 extern void _aligned_free(void *memblock);
 #endif
 

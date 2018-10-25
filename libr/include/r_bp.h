@@ -47,20 +47,23 @@ typedef struct r_bp_item_t {
 	int size; /* size of breakpoint area */
 	int recoil; /* recoil */
 	bool swstep; 	/* is this breakpoint from a swstep? */
-	int rwx;
+	int perm;
 	int hw;
 	int trace;
 	int internal; /* used for internal purposes */
 	int enabled;
+	int togglehits; /* counter that toggles breakpoint on reaching 0 */
 	int hits;
 	ut8 *obytes; /* original bytes */
 	ut8 *bbytes; /* breakpoint bytes */
 	int pids[R_BP_MAXPIDS];
 	char *data;
 	char *cond; /* used for conditional breakpoints */
+	char *expr; /* to be used for named breakpoints (see r_debug_bp_update) */
 } RBreakpointItem;
 
-typedef int (*RBreakpointCallback)(RBreakpointItem *bp, int set, void *user);
+struct r_bp_t;
+typedef int (*RBreakpointCallback)(struct r_bp_t *bp, RBreakpointItem *b, bool set);
 
 typedef struct r_bp_t {
 	void *user;
@@ -75,16 +78,19 @@ typedef struct r_bp_t {
 	RBreakpointCallback breakpoint;
 	/* storage of breakpoints */
 	int nbps;
+	int nhwbps;
 	RList *bps; // list of breakpoints
 	RBreakpointItem **bps_idx;
 	int bps_idx_count;
 	st64 delta;
 } RBreakpoint;
 
+// DEPRECATED: USE R_PERM
 enum {
-	R_BP_PROT_READ = 1,
+	R_BP_PROT_EXEC = 1,
 	R_BP_PROT_WRITE = 2,
-	R_BP_PROT_EXEC = 4,
+	R_BP_PROT_READ = 4,
+	R_BP_PROT_ACCESS = 8,
 };
 
 typedef struct r_bp_trace_t {
@@ -109,31 +115,33 @@ R_API int r_bp_use(RBreakpoint *bp, const char *name, int bits);
 R_API int r_bp_plugin_del(RBreakpoint *bp, const char *name);
 R_API void r_bp_plugin_list(RBreakpoint *bp);
 
-R_API int r_bp_in(RBreakpoint *bp, ut64 addr, int rwx);
+R_API int r_bp_in(RBreakpoint *bp, ut64 addr, int perm);
 // deprecate?
 R_API int r_bp_list(RBreakpoint *bp, int rad);
+R_API int r_bp_size(RBreakpoint *bp);
 
 /* bp item attribs setters */
 R_API int r_bp_get_bytes(RBreakpoint *bp, ut8 *buf, int len, int endian, int idx);
 R_API int r_bp_set_trace(RBreakpoint *bp, ut64 addr, int set);
 R_API int r_bp_set_trace_all(RBreakpoint *bp, int set);
-R_API RBreakpointItem *r_bp_enable(RBreakpoint *bp, ut64 addr, int set);
+R_API RBreakpointItem *r_bp_enable(RBreakpoint *bp, ut64 addr, int set, int count);
 R_API int r_bp_enable_all(RBreakpoint *bp, int set);
 
 /* index api */
 R_API int r_bp_del_index(RBreakpoint *bp, int idx);
 R_API RBreakpointItem *r_bp_get_index(RBreakpoint *bp, int idx);
+R_API int r_bp_get_index_at (RBreakpoint *bp, ut64 addr);
 R_API RBreakpointItem *r_bp_item_new (RBreakpoint *bp);
 
 R_API RBreakpointItem *r_bp_get_at (RBreakpoint *bp, ut64 addr);
-R_API RBreakpointItem *r_bp_get_in (RBreakpoint *bp, ut64 addr, int rwx);
+R_API RBreakpointItem *r_bp_get_in (RBreakpoint *bp, ut64 addr, int perm);
 
 R_API int r_bp_add_cond(RBreakpoint *bp, const char *cond);
 R_API int r_bp_del_cond(RBreakpoint *bp, int idx);
-R_API int r_bp_add_fault(RBreakpoint *bp, ut64 addr, int size, int rwx);
+R_API int r_bp_add_fault(RBreakpoint *bp, ut64 addr, int size, int perm);
 
-R_API RBreakpointItem *r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int rwx);
-R_API RBreakpointItem *r_bp_add_hw(RBreakpoint *bp, ut64 addr, int size, int rwx);
+R_API RBreakpointItem *r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int perm);
+R_API RBreakpointItem *r_bp_add_hw(RBreakpoint *bp, ut64 addr, int size, int perm);
 R_API void r_bp_restore_one(RBreakpoint *bp, RBreakpointItem *b, bool set);
 R_API int r_bp_restore(RBreakpoint *bp, bool set);
 R_API bool r_bp_restore_except(RBreakpoint *bp, bool set, ut64 addr);
@@ -149,6 +157,9 @@ R_API void r_bp_traptrace_list(RBreakpoint *bp);
 R_API int r_bp_traptrace_at(RBreakpoint *bp, ut64 from, int len);
 R_API RList *r_bp_traptrace_new(void);
 R_API void r_bp_traptrace_enable(RBreakpoint *bp, int enable);
+
+/* watchpoint */
+R_API RBreakpointItem *r_bp_watch_add(RBreakpoint *bp, ut64 addr, int size, int hw, int rw);
 
 /* plugin pointers */
 extern RBreakpointPlugin r_bp_plugin_x86;

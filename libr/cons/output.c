@@ -1,7 +1,7 @@
-/* radare - LGPL - Copyright 2009-2016 - pancake */
+/* radare - LGPL - Copyright 2009-2018 - pancake */
 
 #include <r_cons.h>
-#define I r_cons_singleton()
+#define I r_cons_singleton ()
 
 #if __WINDOWS__
 static void fill_tail (int cols, int lines) {
@@ -24,9 +24,7 @@ static void w32_clear() {
 	const COORD startCoords = { 0, 0 };
 	DWORD dummy;
 	if (I->is_wine == 1) {
-		write (1, "\x1b[0;0H", 6);
-		write (1, "\x1b[0m", 4);
-		write (1, "\x1b[2J", 4);
+		write (1, "\033[0;0H\033[0m\033[2J", 6 + 4 + 4);
 	}
 	if (!hStdout) {
 		hStdout = GetStdHandle (STD_OUTPUT_HANDLE);

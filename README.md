@@ -1,13 +1,15 @@
 ```
     ____  ___  ___  ___ ____  ___    ____
-   |  _ \/   \|   \/   \  _ \/ _ \  |__  \
-   |    (  V  | |  ) V  |   (   _/   / __/ 
+   |  _ \/   \|   \/   \  _ \/ _ \  (__  \
+   |    (  -  | |  ) -  |   (   _/  /  __/
    |__\__|_|__|___/__|__|_\__|___|  |____|
 
-                www.radare.org
+                https://www.radare.org
 
                                   --pancake
 ```
+
+
 
 | | |
 |----------|---------------------------------------------------------------------|
@@ -15,6 +17,12 @@
 | **TravisCI** 	| [![Build Status](https://travis-ci.org/radare/radare2.svg?branch=master)](https://travis-ci.org/radare/radare2)|
 | **AppVeyor**  | [![Build Status](https://ci.appveyor.com/api/projects/status/v9bxvsb1p6c3cmf9/branch/master?svg=true)](https://ci.appveyor.com/project/radare/radare2-shvdd)|
 | **Coverity** 	| [![Build Status](https://scan.coverity.com/projects/416/badge.svg)](https://scan.coverity.com/projects/416) |
+| **Infrastructure** |  [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/741/badge)](https://bestpractices.coreinfrastructure.org/projects/741) |
+| **Codecov** | [![codecov](https://codecov.io/gh/radare/radare2/branch/master/graph/badge.svg)](https://codecov.io/gh/radare/radare2)
+<a href="https://repology.org/metapackage/radare2">
+<img src="https://repology.org/badge/vertical-allrepos/radare2.svg" alt="Packaging status" align="right" width="150px">
+</a>
+
 # Introduction
 
 r2 is a rewrite from scratch of radare in order to provide
@@ -25,26 +33,34 @@ commandline hexadecimal editor able to open disk files,
 but later support for analyzing binaries, disassembling
 code, debugging programs, attaching to remote gdb servers, ..
 
-   radare2 is portable.
+radare2 is portable.
 
-   * **Architectures:**
-	* 6502, 8051, CRIS, H8/300, LH5801, T8200, arc, arm, avr, bf, blackfin, xap,
-   dalvik, dcpu16, gameboy, i386, i4004, i8080, m68k, malbolge, mips, msil,
-   msp430, nios II, powerpc, rar, sh, snes, sparc, tms320 (c54x c55x c55+), V810,
-   x86-64, zimg, risc-v.
+## Architectures
 
-   * **File Formats:**
-	* bios, CGC, dex, elf, elf64, filesystem, java, fatmach0, mach0,
-   mach0-64, MZ, PE, PE+, TE, COFF, plan9, dyldcache, Commodore VICE emulator, 
-   Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs.
+i386, x86-64, ARM, MIPS, PowerPC, SPARC, RISC-V, SH, m68k, AVR, XAP,
+System Z, XCore, CR16, HPPA, ARC, Blackfin, Z80, H8/300, V810, V850,
+CRIS, XAP, PIC, LM32, 8051, 6502, i4004, i8080, Propeller, Tricore, Chip8
+LH5801, T8200, GameBoy, SNES, MSP430, Xtensa, NIOS II,
+Dalvik, WebAssembly, MSIL, EBC, TMS320 (c54x, c55x, c55+, c66),
+Hexagon, Brainfuck, Malbolge, DCPU16
 
-   * **Operating Systems:**
-	* Android, GNU/Linux, [Net|Free|Open]BSD, iOS, OSX, QNX, w32,
-   w64, Solaris, Haiku, FirefoxOS
+## File Formats
 
-   * **Bindings:**
-	* Vala/Genie, Python (2, 3), NodeJS, Lua, Go, Perl,
-   Guile, php5, newlisp, Ruby, Java, OCaml, ...
+ELF, Mach-O, Fatmach-O, PE, PE+, MZ, COFF, OMF, TE, XBE, BIOS/UEFI,
+Dyldcache, DEX, ART, CGC, Java class, Android boot image, Plan9 executable,
+ZIMG, MBN/SBL bootloader, ELF coredump, MDMP (Windows minidump),
+WASM (WebAssembly binary), Commodore VICE emulator, 
+Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs, various filesystems.
+
+## Operating Systems
+
+Windows (since XP), GNU/Linux, OS X, [Net|Free|Open]BSD,
+Android, iOS, OSX, QNX, Solaris, Haiku, FirefoxOS
+
+## Bindings
+
+Vala/Genie, Python (2, 3), NodeJS, Lua, Go, Perl,
+Guile, PHP, Newlisp, Ruby, Java, OCaml, ...
 
 # Dependencies
 
@@ -69,46 +85,50 @@ using root privileges and sudo, simply run:
 
 # Building with meson + ninja
 
-The sys/install.sh method uses acr+make to build r2 from sources, which is the default
-and recommended way, but there's also a work-in-progress support for Meson.
-
-You can install last version of meson and ninja using r2pm:
+If you don't already have meson and ninja, you can install them
+with your distribution package manager or with r2pm:
 
 	$ r2pm -i meson
-	$ r2pm -r make meson
-	$ r2pm -r make meson-symstall
 
-Or just run those lines if you have them available in PATH:
+If you already have them installed, you can run this line to
+compile radare2:
 
-	$ make meson                # will run make meson-config automatically
-	$ sudo make meson-symstall  # symstall the meson build into PREFIX (/usr)
-	$ sudo make meson-uninstall # uninstall the meson installation
+	$ python ./sys/meson.py --prefix=/usr --shared --install
 
-The PREFIX is inherited from the last run of ./configure, so it's recommended to run
-sys/install.sh at least once to autodetect this, this step will end up into meson.
+This method is mostly useful on Windows because the initial building
+with Makefile is not suitable. If you are lost in any way, just type:
 
-At the moment, the meson build system doesnt supports much configuration options and it
-is not able to build all the plugins, it has been tested to work on the following hosts:
+	$ python ./sys/meson.py --help
 
-* Rpi3-arm32
-* macOS-x86-64
-* Termux/Android-arm64
-* VoidLinux-x86-64
-* Windows-x86-64
+# Update
+
+To update Radare2 system-wide, you don't need to uninstall or pull.
+Just re-run:
+
+	$ sys/install.sh
+
+If you installed Radare2 in the home directory,
+just re-run:
+
+	$ sys/user.sh
 
 # Uninstall
 
-In case of a polluted filesystem you can uninstall the current
+In case of a polluted filesystem, you can uninstall the current
 version or remove all previous installations:
 
 	$ make uninstall
 	$ make purge
+	
+To remove all stuff including libraries, use
+
+	$ make system-purge
 
 # Package manager
 
-Radare2 has its own package manager - r2pm. It's packages 
+Radare2 has its own package manager - r2pm. Its packages
 repository is on [GitHub too](https://github.com/radare/radare2-pm).
-To start to use it for the first time you need to initialize packages:
+To start to using it for the first time, you need to initialize packages:
 
 	$ r2pm init
 
@@ -116,7 +136,7 @@ Refresh the packages database before installing any package:
 
 	$ r2pm update
 
-To install a package use the following command:
+To install a package, use the following command:
 
 	$ r2pm install [package name]
 
@@ -131,14 +151,14 @@ to swig interfaces, nodejs-ffi or other and then compiled.
 
 The easiest way to install the python bindings is to run:
 
-	$ r2pm install lang-python
+	$ r2pm install lang-python2 #lang-python3 for python3 bindings
 	$ r2pm install r2api-python
-	$ r2pm install r2pipe-python
+	$ r2pm install r2pipe-py
 
-In addition there are `r2pipe` bindings, which are an API
+In addition there are `r2pipe` bindings, which is an API
 interface to interact with the prompt, passing commands
 and receivent the output as a string, many commands support
-JSON output, so it's integrated easily with many languages
+JSON output, so its integrated easily with many languages
 in order to deserialize it into native objects.
 
 	$ npm install r2pipe   # NodeJS
@@ -151,9 +171,9 @@ Vala, OCaml, and many more to come!
 
 # Regression Testsuite
 
-Running `make tests` it will fetch the radare2-regressions
+Running `make tests` will fetch the radare2-regressions
 repository and run all the tests in order to verify that no
-changes break a functionality.
+changes break any functionality.
 
 We run those tests on every commit, and they are also
 executed with ASAN and valgrind on different platforms
@@ -168,7 +188,7 @@ appending '?' to every command you are interested in.
 
 Commands are small mnemonics of few characters and there is
 some extra syntax sugar that makes the shell much more pleasant
-for scripting and interacting with the apis.
+for scripting and interacting with the APIs.
 
 You could also checkout the [radare2 book](https://radare.gitbooks.io/radare2book/content/).
 
@@ -178,21 +198,21 @@ Look at [CONTRIBUTING.md](https://github.com/radare/radare2/blob/master/CONTRIBU
 
 # Webserver
 
-radare2 comes with an embedded webserver that serves a pure
+radare2 comes with an embedded webserver which serves a pure
 html/js interface that sends ajax queries to the core and
 aims to implement an usable UI for phones, tablets and desktops.
 
 	$ r2 -c=H /bin/ls
 
 To use the webserver on Windows, you require a cmd instance
-with administrator rights. To start the webserver use command
+with administrator rights. To start the webserver, use the following command
 in the project root.
 
 	> radare2.exe -c=H rax2.exe
 
 # Pointers
 
-Website: http://www.radare.org/
+Website: https://www.radare.org/
 
 IRC: irc.freenode.net #radare
 

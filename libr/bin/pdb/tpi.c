@@ -94,8 +94,7 @@ static void print_base_type(EBASE_TYPES base_type, char **name) {
 ///////////////////////////////////////////////////////////////////////////////
 static void get_sval_name_len(SVal *val, int *res_len) {
 	if (val->value_or_type < eLF_CHAR) {
-		SCString *scstr;
-		scstr = (SCString *) val->name_or_val;
+		SCString *scstr = (SCString *) val->name_or_val;
 		*res_len = scstr->size;
 	} else {
 		switch (val->value_or_type) {
@@ -115,7 +114,7 @@ static void get_sval_name_len(SVal *val, int *res_len) {
 		}
 		default:
 			*res_len = 0;
-			printf("get_sval_name::oops\n");
+			printf("get_sval_name_len: Skipping unsupported type (%d)\n", val->value_or_type);
 			break;
 		}
 	}
@@ -130,6 +129,20 @@ static void get_sval_name(SVal *val, char **name) {
 //		strcpy(name, scstr->name);
 	} else {
 		switch (val->value_or_type) {
+		case eLF_UQUADWORD:
+		{
+			SVal_LF_UQUADWORD *lf_uquadword;
+			lf_uquadword = (SVal_LF_UQUADWORD *) val->name_or_val;
+			*name = lf_uquadword->name.name;
+			break;
+		}
+		case eLF_QUADWORD:
+		{
+			SVal_LF_QUADWORD *lf_quadword;
+			lf_quadword = (SVal_LF_QUADWORD *) val->name_or_val;
+			*name = lf_quadword->name.name;
+			break;
+		}
 		case eLF_CHAR:
 		{
 			SVal_LF_CHAR *lf_char;
@@ -162,9 +175,16 @@ static void get_sval_name(SVal *val, char **name) {
 //			strcpy(name, lf_ushort->name.name);
 			break;
 		}
+		case eLF_SHORT:
+		{
+			SVal_LF_SHORT *lf_short;
+			lf_short = (SVal_LF_SHORT *) val->name_or_val;
+			*name = lf_short->name.name;
+			break;
+		}
 		default:
 			*name = 0;
-			printf("get_sval_name::oops\n");
+			printf("get_sval_name: Skipping unsupported type (%d)\n", val->value_or_type);
 			break;
 		}
 	}
@@ -418,7 +438,7 @@ static int get_procedure_arglist(void *type, void **ret_type) {
 static int get_member_index(void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *) type;
 	SLF_MEMBER *lf = (SLF_MEMBER *) t->type_info;
-	int curr_idx = lf->inedex;
+	int curr_idx = lf->index;
 
 	if (curr_idx < base_idx) {
 		*ret_type = 0;
@@ -551,6 +571,20 @@ static void get_sval_val(SVal *val, int *res) {
 		*res = val->value_or_type;
 	} else {
 		switch (val->value_or_type) {
+		case eLF_UQUADWORD:
+		{
+			SVal_LF_UQUADWORD *lf_uqword;
+			lf_uqword = (SVal_LF_UQUADWORD *) val->name_or_val;
+			*res = lf_uqword->value;
+			break;
+		}
+		case eLF_QUADWORD:
+		{
+			SVal_LF_QUADWORD *lf_qword;
+			lf_qword = (SVal_LF_QUADWORD *) val->name_or_val;
+			*res = lf_qword->value;
+			break;
+		}
 		case eLF_ULONG:
 		{
 			SVal_LF_ULONG *lf_ulong;
@@ -572,6 +606,13 @@ static void get_sval_val(SVal *val, int *res) {
 			*res = lf_ushort->value;
 			break;
 		}
+		case eLF_SHORT:
+		{
+			SVal_LF_SHORT *lf_short;
+			lf_short = (SVal_LF_SHORT *) val->name_or_val;
+			*res = lf_short->value;
+			break;
+		}
 		case eLF_CHAR:
 		{
 			SVal_LF_CHAR *lf_char;
@@ -582,7 +623,7 @@ static void get_sval_val(SVal *val, int *res) {
 
 		default:
 			*res = 0;
-			printf("get_sval_val::oops\n");
+			printf("get_sval_val: Skipping unsupported type (%d)\n", val->value_or_type);
 			break;
 		}
 	}
@@ -594,7 +635,7 @@ static void get_sval_val(SVal *val, int *res) {
 //	STypeInfo *t = (STypeInfo *) type;
 //	SLF_MEMBER *lf_member = (SLF_MEMBER *)t->type_info;
 
-//	*indx_val = lf_member->inedex;
+//	*indx_val = lf_member->index;
 //}
 
 static void get_onemethod_name_len(void *type, int *res_len) {
@@ -869,8 +910,9 @@ static void free_lf_fieldlist(void *type) {
 	it = r_list_iterator(lf_fieldlist->substructs);
 	while (r_list_iter_next(it)) {
 		type_info = (STypeInfo *) r_list_iter_get(it);
-		if (type_info->free_)
-			type_info->free_(type_info);
+		if (type_info->free_) {
+			type_info->free_ (type_info);
+		}
 		if (type_info->type_info) {
 			free(type_info->type_info);
 		}
@@ -968,8 +1010,9 @@ static void get_array_print_type(void *type, char **name) {
 	}
 
 	name_len = strlen ("array: ");
-	if (tmp_name)
+	if (tmp_name) {
 		name_len += strlen (tmp_name);
+	}
 	*name = (char *) malloc (name_len + 1);
 	if (!(*name)) {
 		if (need_to_free) {
@@ -1065,7 +1108,9 @@ static void get_modifier_print_type(void *type, char **name) {
 static void get_procedure_print_type(void *type, char **name) {
 	const int name_len = strlen ("proc ");
 	*name = (char *) malloc (name_len + 1);
-	if (!(*name)) return;
+	if (!(*name)) {
+		return;
+	}
 	// name[name_len] = '\0';
 	strcpy (*name, "proc ");
 }
@@ -1089,12 +1134,15 @@ static void get_bitfield_print_type(void *type, char **name) {
 	}
 
 	name_len = strlen ("bitfield ");
-	if (tmp_name)
+	if (tmp_name) {
 		name_len += strlen (tmp_name);
+	}
 	name_len += 4;
 	*name = (char *) malloc (name_len + 1 + 1);
 	if (!(*name)) {
-		if (need_to_free) free (tmp_name);
+		if (need_to_free) {
+			free (tmp_name);
+		}
 		return;
 	}
 
@@ -1115,7 +1163,9 @@ static void get_fieldlist_print_type(void *type, char **name) {
 
 	name_len = strlen ("fieldlist ");
 	*name = (char *) malloc (name_len + 1);
-	if (!(*name)) return;
+	if (!(*name)) {
+		return;
+	}
 	// name[name_len] = '\0';
 	strcpy (*name, "fieldlist ");
 }
@@ -1138,20 +1188,25 @@ static void get_enum_print_type(void *type, char **name) {
 	}
 
 	name_len = strlen ("enum ");
-	if (tmp_name)
+	if (tmp_name) {
 		name_len += strlen (tmp_name);
+	}
 	*name = (char *) malloc (name_len + 1);
 	if (!(*name)) {
-		if (need_to_free) free (tmp_name);
+		if (need_to_free) {
+			free (tmp_name);
+		}
 		return;
 	}
 	// name[name_len] = '\0';
 	strcpy (*name, "enum ");
-	if (tmp_name)
-		strcat( *name, tmp_name);
+	if (tmp_name) {
+		strcat (*name, tmp_name);
+	}
 
-	if (need_to_free)
+	if (need_to_free) {
 		free (tmp_name);
+	}
 }
 
 static void get_class_struct_print_type(void *type, char **name) {
@@ -1169,19 +1224,23 @@ static void get_class_struct_print_type(void *type, char **name) {
 		tmp1 = "struct ";
 	}
 	name_len = strlen(tmp1);
-	if (tmp_name)
-		name_len += strlen(tmp_name);
+	if (tmp_name) {
+		name_len += strlen (tmp_name);
+	}
 	*name = (char *) malloc(name_len + 1);
-	if (!(*name)) return;
+	if (!(*name)) {
+		return;
+	}
 	// name[name_len] = '\0';
 	strcpy(*name, tmp1);
-	if (tmp_name)
-		strcat(*name, tmp_name);
+	if (tmp_name) {
+		strcat (*name, tmp_name);
+	}
 
-//	if (need_to_free) {
-//		free(tmp_name);
-//		tmp_name = 0;
-//	}
+	//	if (need_to_free) {
+	//		free(tmp_name);
+	//		tmp_name = 0;
+	//	}
 }
 
 static void get_arglist_print_type(void *type, char **name) {
@@ -1190,7 +1249,9 @@ static void get_arglist_print_type(void *type, char **name) {
 
 	name_len = strlen ("arg_list");
 	*name = (char *) malloc (name_len + 1);
-	if (!(*name)) return;
+	if (!(*name)) {
+		return;
+	}
 	// name[name_len] = '\0';
 	strcpy (*name, "arg_list");
 //	STypeInfo *ti = (STypeInfo *) type;
@@ -1225,7 +1286,9 @@ static void get_mfunction_print_type(void *type, char **name) {
 
 	name_len = strlen("mfunction ");
 	*name = (char *) malloc (name_len + 1);
-	if (!(*name)) return;
+	if (!(*name)) {
+		return;
+	}
 	// name[name_len] = '\0';
 	strcpy (*name, "mfunction ");
 }
@@ -1242,19 +1305,23 @@ static void get_union_print_type(void *type, char **name) {
 
 	tmp1 = "union ";
 	name_len = strlen (tmp1);
-	if (tmp_name)
+	if (tmp_name) {
 		name_len += strlen (tmp_name);
+	}
 	*name = (char *) malloc (name_len + 1);
-	if (!(*name)) return;
+	if (!(*name)) {
+		return;
+	}
 	// name[name_len] = '\0';
 	strcpy (*name, tmp1);
-	if (tmp_name)
+	if (tmp_name) {
 		strcat (*name, tmp_name);
+	}
 
-//	if (need_to_free) {
-//		free(tmp_name);
-//		tmp_name = 0;
-//	}
+	//	if (need_to_free) {
+	//		free(tmp_name);
+	//		tmp_name = 0;
+	//	}
 }
 
 static void get_vtshape_print_type(void *type, char **name) {
@@ -1262,7 +1329,9 @@ static void get_vtshape_print_type(void *type, char **name) {
 
 	name_len = strlen ("vtshape");
 	*name = (char *) malloc (name_len + 1);
-	if (!(*name)) return;
+	if (!(*name)) {
+		return;
+	}
 	// name[name_len] = '\0';
 	strcpy (*name, "vthape");
 }
@@ -1276,17 +1345,21 @@ static void get_enumerate_print_type(void *type, char **name) {
 
 	tmp1 = "enumerate ";
 	name_len = strlen (tmp1);
-	if (tmp_name)
+	if (tmp_name) {
 		name_len += strlen (tmp_name);
+	}
 	*name = (char *) malloc (name_len + 1);
-	if (!(*name)) return;
+	if (!(*name)) {
+		return;
+	}
 	// name[name_len] = '\0';
 	strcpy (*name, tmp1);
-	if (tmp_name)
+	if (tmp_name) {
 		strcat (*name, tmp_name);
+	}
 
-//	if (need_to_free)
-//		free(tmp_name);
+	//	if (need_to_free)
+	//		free(tmp_name);
 }
 
 static void get_nesttype_print_type(void *type, char **name) {
@@ -1310,25 +1383,30 @@ static void get_nesttype_print_type(void *type, char **name) {
 			//	this is possible because there is no support for
 			// parsing METHODLIST...
 			// need to investigate for this theme
-			eprintf ("warning: strange for nesttype\n");
+			//eprintf ("warning: strange for nesttype\n");
 		}
 	}
 
 	name_len = strlen ("nesttype ");
-	if (tmp_name)
+	if (tmp_name) {
 		name_len += strlen (tmp_name);
+	}
 	*name = (char *) malloc (name_len + 1);
 	if (!(*name)) {
-		if (need_to_free) free (tmp_name);
+		if (need_to_free) {
+			free (tmp_name);
+		}
 		return;
 	}
 	// name[name_len] = '\0';
 	strcpy (*name, "nesttype ");
-	if (tmp_name)
+	if (tmp_name) {
 		strcat (*name, tmp_name);
+	}
 
-	if (need_to_free)
+	if (need_to_free) {
 		free (tmp_name);
+	}
 }
 
 static void get_method_print_type(void *type, char **name) {
@@ -1340,17 +1418,21 @@ static void get_method_print_type(void *type, char **name) {
 
 	tmp1 = "method ";
 	name_len = strlen (tmp1);
-	if (tmp_name)
+	if (tmp_name) {
 		name_len += strlen (tmp_name);
+	}
 	*name = (char *) malloc (name_len + 1);
-	if (!(*name)) return;
+	if (!(*name)) {
+		return;
+	}
 	// name[name_len] = '\0';
 	strcpy (*name, tmp1);
-	if (tmp_name)
+	if (tmp_name) {
 		strcat (*name, tmp_name);
+	}
 
-//	if (need_to_free)
-//		free(tmp_name);
+	//	if (need_to_free)
+	//		free(tmp_name);
 }
 
 static void get_member_print_type(void *type, char **name) {
@@ -1371,8 +1453,9 @@ static void get_member_print_type(void *type, char **name) {
 	}
 
 	name_len = strlen ("(member) ");
-	if (tmp_name)
+	if (tmp_name) {
 		name_len += strlen (tmp_name);
+	}
 	*name = (char *) malloc (name_len + 1);
 	if (!(*name)) {
 		if (need_to_free) R_FREE (tmp_name);
@@ -1380,8 +1463,9 @@ static void get_member_print_type(void *type, char **name) {
 	}
 	// name[name_len] = '\0';
 	strcpy(*name, "(member) ");
-	if (tmp_name)
+	if (tmp_name) {
 		strcat (*name, tmp_name);
+	}
 
 	if (need_to_free) {
 		R_FREE (tmp_name);
@@ -1406,45 +1490,44 @@ static void get_onemethod_print_type(void *type, char **name) {
 	}
 
 	name_len = strlen ("onemethod ");
-	if (tmp_name)
+	if (tmp_name) {
 		name_len += strlen (tmp_name);
+	}
 	*name = (char *) malloc (name_len + 1);
 	if (!(*name)) {
-		if (need_to_free) free (tmp_name);
+		if (need_to_free) {
+			free (tmp_name);
+		}
 		return;
 	}
 	// name[name_len] = '\0';
 	strcpy (*name, "onemethod ");
-	if (tmp_name)
+	if (tmp_name) {
 		strcat (*name, tmp_name);
+	}
 
-	if (need_to_free)
+	if (need_to_free) {
 		free (tmp_name);
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void init_scstring(SCString *cstr, unsigned int size, char *name)
-{
+void init_scstring(SCString *cstr, unsigned int size, char *name) {
 	cstr->size = size;
-	cstr->name = (char *) malloc (size);
-	if (!cstr->name) return;
-	strcpy (cstr->name, name);
+	cstr->name = strdup (name);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void deinit_scstring(SCString *cstr)
-{
+void deinit_scstring(SCString *cstr) {
 	free (cstr->name);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int parse_sctring(SCString *sctr, unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len)
-{
+int parse_sctring(SCString *sctr, unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len) {
 	unsigned int c = 0;
-
-	sctr->name = 0;
-
-	while (*leaf_data != 0) {
+	sctr->name = NULL;
+	sctr->size = 0;
+	while (*leaf_data) {
 		CAN_READ((*read_bytes + c), 1, len);
 		c++;
 		leaf_data++;
@@ -1462,25 +1545,52 @@ static int parse_sval(SVal *val, unsigned char *leaf_data, unsigned int *read_by
 {
 	val->name_or_val = 0;
 
-	READ(*read_bytes, 2, len, val->value_or_type, leaf_data, unsigned short);
+	READ2(*read_bytes, len, val->value_or_type, leaf_data, ut16);
 
 	if (val->value_or_type < eLF_CHAR) {
 		SCString *sctr = (SCString *) malloc (sizeof (SCString));
-		if (!sctr) return 0;
+		if (!sctr) {
+			return 0;
+		}
 		parse_sctring (sctr, leaf_data, read_bytes, len);
 		val->name_or_val = sctr;
 	} else {
 		switch (val->value_or_type) {
+		case eLF_UQUADWORD:
+		{
+		    SVal_LF_UQUADWORD lf_uqword;
+		    READ8(*read_bytes, len, lf_uqword.value, leaf_data, st64);
+		    parse_sctring(&lf_uqword.name, leaf_data, read_bytes, len);
+		    val->name_or_val = malloc(sizeof(SVal_LF_UQUADWORD));
+		    if (!val->name_or_val) {
+			    break;
+		    }
+		    memcpy(val->name_or_val, &lf_uqword, sizeof(SVal_LF_UQUADWORD));
+		    break;
+		}
+		case eLF_QUADWORD:
+		{
+			SVal_LF_QUADWORD lf_qword;
+			READ8(*read_bytes, len, lf_qword.value, leaf_data, st64);
+			parse_sctring (&lf_qword.name, leaf_data, read_bytes, len);
+			val->name_or_val = malloc (sizeof (SVal_LF_QUADWORD));
+			if (!val->name_or_val) {
+				break;
+			}
+			memcpy (val->name_or_val, &lf_qword, sizeof (SVal_LF_QUADWORD));
+			break;
+		}
 		case eLF_CHAR:
 		{
 			SVal_LF_CHAR lf_char;
-			READ (*read_bytes, 2, len, lf_char.value, leaf_data, char);
+			READ2(*read_bytes, len, lf_char.value, leaf_data, st16);
 			parse_sctring (&lf_char.name, leaf_data, read_bytes, len);
 			val->name_or_val = malloc (sizeof (SVal_LF_CHAR));
-			if (!val->name_or_val) break;
+			if (!val->name_or_val) {
+				break;
+			}
 			memcpy (val->name_or_val, &lf_char, sizeof (SVal_LF_CHAR));
 			break;
-
 		}
 		case eLF_LONG:
 		{
@@ -1489,10 +1599,12 @@ static int parse_sval(SVal *val, unsigned char *leaf_data, unsigned int *read_by
 			// long = 4 bytes for Windows, but not in Linux x64,
 			// so here is using int instead of long when
 			// reading long value
-			READ (*read_bytes, 4, len, lf_long.value, leaf_data, int);
+			READ4(*read_bytes, len, lf_long.value, leaf_data, st32);
 			parse_sctring (&lf_long.name, leaf_data, read_bytes, len);
 			val->name_or_val = malloc (sizeof (SVal_LF_LONG));
-			if (!val->name_or_val) break;
+			if (!val->name_or_val) {
+				break;
+			}
 			memcpy (val->name_or_val, &lf_long, sizeof (SVal_LF_LONG));
 			break;
 		}
@@ -1503,35 +1615,41 @@ static int parse_sval(SVal *val, unsigned char *leaf_data, unsigned int *read_by
 			// unsinged long = 4 bytes for Windows, but not in Linux x64,
 			// so here is using unsinged int instead of unsigned long when
 			// reading ulong value
-			READ(*read_bytes, 4, len, lf_ulong.value, leaf_data, unsigned int);
+			READ4(*read_bytes, len, lf_ulong.value, leaf_data, ut32);
 			parse_sctring (&lf_ulong.name, leaf_data, read_bytes, len);
 			val->name_or_val = malloc (sizeof (SVal_LF_ULONG));
-			if (!val->name_or_val) break;
+			if (!val->name_or_val) {
+				break;
+			}
 			memcpy(val->name_or_val, &lf_ulong, sizeof (SVal_LF_ULONG));
 			break;
 		}
 		case eLF_SHORT:
 		{
 			SVal_LF_SHORT lf_short;
-			READ (*read_bytes, 2, len, lf_short.value, leaf_data, short);
+			READ2(*read_bytes, len, lf_short.value, leaf_data, st16);
 			parse_sctring (&lf_short.name, leaf_data, read_bytes, len);
 			val->name_or_val = malloc (sizeof (SVal_LF_SHORT));
-			if (!val->name_or_val) break;
+			if (!val->name_or_val) {
+				break;
+			}
 			memcpy (val->name_or_val, &lf_short, sizeof (SVal_LF_SHORT));
 			break;
 		}
 		case eLF_USHORT:
 		{
 			SVal_LF_USHORT lf_ushort;
-			READ (*read_bytes, 2, len, lf_ushort.value, leaf_data, unsigned short);
+			READ2(*read_bytes, len, lf_ushort.value, leaf_data, ut16);
 			parse_sctring (&lf_ushort.name, leaf_data, read_bytes, len);
 			val->name_or_val = malloc (sizeof(SVal_LF_USHORT));
-			if (!val->name_or_val) break;
+			if (!val->name_or_val) {
+				break;
+			}
 			memcpy(val->name_or_val, &lf_ushort, sizeof (SVal_LF_USHORT));
 			break;
 		}
 		default:
-			printf ("parse_sval()::oops\n");
+			printf ("parse_sval: Skipping unsupported type (%d)\n", val->value_or_type);
 			return 0;
 		}
 	}
@@ -1547,13 +1665,13 @@ static int parse_lf_enumerate(SLF_ENUMERATE *lf_enumerate, unsigned char *leaf_d
 	lf_enumerate->enum_value.name_or_val = 0;
 
 	read_bytes_before = *read_bytes;
-	READ(*read_bytes, 2, len, lf_enumerate->fldattr.fldattr, leaf_data, unsigned short);
+	READ2(*read_bytes, len, lf_enumerate->fldattr.fldattr, leaf_data, ut16);
 
 	tmp_read_bytes_before = *read_bytes;
 	parse_sval(&lf_enumerate->enum_value, leaf_data, read_bytes, len);
 	leaf_data += (*read_bytes - tmp_read_bytes_before);
 
-	PEEK_READ(*read_bytes, 1, len, lf_enumerate->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_enumerate->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_enumerate->pad, *read_bytes, leaf_data, len);
 
 //	printf("%s:", "parse_lf_enumerate()");
@@ -1570,8 +1688,8 @@ static int parse_lf_nesttype(SLF_NESTTYPE *lf_nesttype, unsigned char *leaf_data
 
 	lf_nesttype->name.name = 0;
 
-	READ(*read_bytes, 2, len, lf_nesttype->pad, leaf_data, unsigned short);
-	READ(*read_bytes, 4, len, lf_nesttype->index, leaf_data, unsigned short);
+	READ2(*read_bytes, len, lf_nesttype->pad, leaf_data, ut16);
+	READ4(*read_bytes, len, lf_nesttype->index, leaf_data, ut16);
 
 	parse_sctring(&lf_nesttype->name, leaf_data, read_bytes, len);
 //	printf("parse_lf_nesttype(): name = %s\n", lf_nesttype->name.name);
@@ -1586,14 +1704,14 @@ static int parse_lf_method(SLF_METHOD *lf_method, unsigned char *leaf_data, unsi
 
 	lf_method->name.name = 0;
 
-	READ(*read_bytes, 2, len, lf_method->count, leaf_data, unsigned short);
-	READ(*read_bytes, 4, len, lf_method->mlist, leaf_data, unsigned int);
+	READ2(*read_bytes, len, lf_method->count, leaf_data, ut16);
+	READ4(*read_bytes, len, lf_method->mlist, leaf_data, ut32);
 
 	tmp_read_bytes_before = *read_bytes;
 	parse_sctring(&lf_method->name, leaf_data, read_bytes, len);
 	leaf_data += (*read_bytes - tmp_read_bytes_before);
 
-	PEEK_READ(*read_bytes, 1, len, lf_method->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_method->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_method->pad, *read_bytes, leaf_data, len);
 
 //	printf("parse_lf_method(): name = %s\n", lf_method->name.name);
@@ -1608,14 +1726,14 @@ static int parse_lf_member(SLF_MEMBER *lf_member, unsigned char *leaf_data, unsi
 
 	lf_member->offset.name_or_val = 0;
 
-	READ(*read_bytes, 2, len, lf_member->fldattr.fldattr, leaf_data, unsigned short);
-	READ(*read_bytes, 4, len, lf_member->inedex, leaf_data, unsigned int);
+	READ2(*read_bytes, len, lf_member->fldattr.fldattr, leaf_data, ut16);
+	READ4(*read_bytes, len, lf_member->index, leaf_data, ut32);
 
 	tmp_read_bytes_before = *read_bytes;
 	parse_sval(&lf_member->offset, leaf_data, read_bytes, len);
 	leaf_data += (*read_bytes - tmp_read_bytes_before);
 
-	PEEK_READ(*read_bytes, 1, len, lf_member->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_member->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_member->pad, *read_bytes, leaf_data, len);
 
 //	printf("parse_lf_member(): name = ");
@@ -1633,21 +1751,21 @@ static int parse_lf_onemethod(SLF_ONEMETHOD *lf_onemethod, unsigned char *leaf_d
 	lf_onemethod->val.str_data.name = 0;
 	lf_onemethod->val.val = 0;
 
-	READ(*read_bytes, 2, len, lf_onemethod->fldattr.fldattr, leaf_data, unsigned short);
-	READ(*read_bytes, 4, len, lf_onemethod->index, leaf_data, unsigned int);
+	READ2(*read_bytes, len, lf_onemethod->fldattr.fldattr, leaf_data, ut16);
+	READ4(*read_bytes, len, lf_onemethod->index, leaf_data, ut32);
 
 	lf_onemethod->fldattr.fldattr = SWAP_UINT16(lf_onemethod->fldattr.fldattr);
 
 	if((lf_onemethod->fldattr.bits.mprop == eMTintro) ||
 		(lf_onemethod->fldattr.bits.mprop == eMTpureintro)) {
-		READ(*read_bytes, 4, len, lf_onemethod->val.val, leaf_data, unsigned int);
+		READ4(*read_bytes, len, lf_onemethod->val.val, leaf_data, ut32);
 	}
 
 	tmp_before_read_bytes = *read_bytes;
 	parse_sctring(&(lf_onemethod->val.str_data), leaf_data, read_bytes, len);
 	leaf_data += (*read_bytes - tmp_before_read_bytes);
 
-	PEEK_READ(*read_bytes, 1, len, lf_onemethod->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_onemethod->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_onemethod->pad, *read_bytes, leaf_data, len);
 
 	return (*read_bytes - read_bytes_before);
@@ -1842,7 +1960,7 @@ static int parse_lf_fieldlist(SLF_FIELDLIST *lf_fieldlist,  unsigned char *leaf_
 	lf_fieldlist->substructs = r_list_new();
 
 	while (*read_bytes <= len) {
-		READ(*read_bytes, 2, len, leaf_type, p, unsigned short);
+		READ2(*read_bytes, len, leaf_type, p, ut16);
 		switch (leaf_type) {
 		case eLF_ENUMERATE:
 			PARSE_LF2(SLF_ENUMERATE, lf_enumerate, eLF_ENUMERATE);
@@ -1866,7 +1984,9 @@ static int parse_lf_fieldlist(SLF_FIELDLIST *lf_fieldlist,  unsigned char *leaf_
 
 		if (curr_read_bytes != 0) {
 			p += curr_read_bytes;
-		} else return 0;
+		} else {
+			return 0;
+		}
 	}
 	return 0;
 }
@@ -1879,17 +1999,17 @@ static int parse_lf_enum(SLF_ENUM *lf_enum, unsigned char *leaf_data, unsigned i
 
 	lf_enum->name.name = 0;
 
-	READ(*read_bytes, 2, len, lf_enum->count, leaf_data, unsigned short);
-	READ(*read_bytes, 2, len, lf_enum->prop.cv_property, leaf_data, unsigned short);
-	READ(*read_bytes, 4, len, lf_enum->utype, leaf_data, unsigned int);
-	READ(*read_bytes, 4, len, lf_enum->field_list, leaf_data, unsigned int);
+	READ2(*read_bytes, len, lf_enum->count, leaf_data, ut16);
+	READ2(*read_bytes, len, lf_enum->prop.cv_property, leaf_data, ut16);
+	READ4(*read_bytes, len, lf_enum->utype, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_enum->field_list, leaf_data, ut32);
 
 	lf_enum->prop.cv_property = SWAP_UINT16(lf_enum->prop.cv_property);
 	before_read_bytes = *read_bytes;
-	parse_sctring(&lf_enum->name, leaf_data, read_bytes, len);
+	parse_sctring (&lf_enum->name, leaf_data, read_bytes, len);
 	leaf_data += (*read_bytes - before_read_bytes);
 
-	PEEK_READ(*read_bytes, 1, len, lf_enum->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_enum->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_enum->pad, *read_bytes, leaf_data, len);
 
 //	printf("parse_lf_enum(): name = %s\n", lf_enum->name.name);
@@ -1905,18 +2025,18 @@ static int parse_lf_class(SLF_CLASS *lf_class, unsigned char *leaf_data, unsigne
 
 	lf_class->size.name_or_val = 0;
 
-	READ(*read_bytes, 2, len, lf_class->count, leaf_data, unsigned short);
-	READ(*read_bytes, 2, len, lf_class->prop.cv_property, leaf_data, unsigned short);
-	READ(*read_bytes, 4, len, lf_class->field_list, leaf_data, unsigned int);
-	READ(*read_bytes, 4, len, lf_class->derived, leaf_data, unsigned int);
-	READ(*read_bytes, 4, len, lf_class->vshape, leaf_data, unsigned int);
+	READ2(*read_bytes, len, lf_class->count, leaf_data, ut16);
+	READ2(*read_bytes, len, lf_class->prop.cv_property, leaf_data, ut16);
+	READ4(*read_bytes, len, lf_class->field_list, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_class->derived, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_class->vshape, leaf_data, ut32);
 
 	before_read_bytes = *read_bytes;
 	parse_sval(&lf_class->size, leaf_data, read_bytes, len);
 	before_read_bytes = *read_bytes - before_read_bytes;
 	leaf_data = (unsigned char *)leaf_data + before_read_bytes;
 
-	PEEK_READ(*read_bytes, 1, len, lf_class->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_class->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_class->pad, *read_bytes, leaf_data, len);
 
 //	printf("%s:", "parse_lf_class()");
@@ -1934,11 +2054,11 @@ static int parse_lf_structure(SLF_STRUCTURE *lf_structure, unsigned char *leaf_d
 
 	lf_structure->size.name_or_val = 0;
 
-	READ(*read_bytes, 2, len, lf_structure->count, leaf_data, unsigned short);
-	READ(*read_bytes, 2, len, lf_structure->prop.cv_property, leaf_data, unsigned short);
-	READ(*read_bytes, 4, len, lf_structure->field_list, leaf_data, unsigned int);
-	READ(*read_bytes, 4, len, lf_structure->derived, leaf_data, unsigned int);
-	READ(*read_bytes, 4, len, lf_structure->vshape, leaf_data, unsigned int);
+	READ2(*read_bytes, len, lf_structure->count, leaf_data, ut16);
+	READ2(*read_bytes, len, lf_structure->prop.cv_property, leaf_data, ut16);
+	READ4(*read_bytes, len, lf_structure->field_list, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_structure->derived, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_structure->vshape, leaf_data, ut32);
 
 	lf_structure->prop.cv_property = SWAP_UINT16(lf_structure->prop.cv_property);
 
@@ -1946,7 +2066,7 @@ static int parse_lf_structure(SLF_STRUCTURE *lf_structure, unsigned char *leaf_d
 	parse_sval(&lf_structure->size, leaf_data, read_bytes, len);
 	leaf_data += (*read_bytes - before_read_bytes);
 
-	PEEK_READ(*read_bytes, 1, len, lf_structure->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_structure->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_structure->pad, *read_bytes, leaf_data, len);
 
 //	printf("parse_lf_structure(): name = ");
@@ -1960,12 +2080,12 @@ static int parse_lf_pointer(SLF_POINTER *lf_pointer, unsigned char *leaf_data, u
 {
 	unsigned int tmp_before_read_bytes = *read_bytes;
 
-	READ(*read_bytes, 4, len, lf_pointer->utype, leaf_data, unsigned int);
-	READ(*read_bytes, 4, len, lf_pointer->ptr_attr.ptr_attr, leaf_data, unsigned int);
+	READ4(*read_bytes, len, lf_pointer->utype, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_pointer->ptr_attr.ptr_attr, leaf_data, ut32);
 
 	lf_pointer->ptr_attr.ptr_attr = SWAP_UINT32(lf_pointer->ptr_attr.ptr_attr);
 
-	PEEK_READ(*read_bytes, 1, len, lf_pointer->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_pointer->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_pointer->pad, *read_bytes, leaf_data, len);
 
 	return *read_bytes - tmp_before_read_bytes;
@@ -1979,14 +2099,14 @@ static int parse_lf_array(SLF_ARRAY *lf_array, unsigned char *leaf_data, unsigne
 
 	lf_array->size.name_or_val = 0;
 
-	READ(*read_bytes, 4, len, lf_array->element_type, leaf_data, unsigned int);
-	READ(*read_bytes, 4, len, lf_array->index_type, leaf_data, unsigned int);
+	READ4(*read_bytes, len, lf_array->element_type, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_array->index_type, leaf_data, ut32);
 
 	before_read_bytes = *read_bytes;
 	parse_sval(&lf_array->size, leaf_data, read_bytes, len);
 	leaf_data += (*read_bytes - before_read_bytes);
 
-	PEEK_READ(*read_bytes, 1, len, lf_array->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_array->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_array->pad, *read_bytes, leaf_data, len);
 
 //	printf("parse_lf_array(): name = ");
@@ -2000,11 +2120,11 @@ static int parse_lf_modifier(SLF_MODIFIER *lf_modifier, unsigned char *leaf_data
 {
 	unsigned int tmp_before_read_bytes = *read_bytes;
 
-	READ(*read_bytes, 4, len, lf_modifier->modified_type, leaf_data, unsigned int);
-	READ(*read_bytes, 2, len, lf_modifier->umodifier.modifier, leaf_data, unsigned short);
+	READ4(*read_bytes, len, lf_modifier->modified_type, leaf_data, ut32);
+	READ2(*read_bytes, len, lf_modifier->umodifier.modifier, leaf_data, ut16);
 	lf_modifier->umodifier.modifier = SWAP_UINT16(lf_modifier->umodifier.modifier);
 
-	PEEK_READ(*read_bytes, 1, len, lf_modifier->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_modifier->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_modifier->pad, *read_bytes, leaf_data, len);
 
 	return *read_bytes - tmp_before_read_bytes;
@@ -2017,15 +2137,17 @@ static int parse_lf_arglist(SLF_ARGLIST *lf_arglist, unsigned char *leaf_data, u
 
 	lf_arglist->arg_type = 0;
 
-	READ (*read_bytes, 4, len, lf_arglist->count, leaf_data, unsigned int);
+	READ4(*read_bytes, len, lf_arglist->count, leaf_data, ut32);
 
 	lf_arglist->arg_type = (unsigned int *) malloc (lf_arglist->count * 4);
-	if (!lf_arglist->arg_type) return 0;
+	if (!lf_arglist->arg_type) {
+		return 0;
+	}
 	memcpy (lf_arglist->arg_type, leaf_data, lf_arglist->count * 4);
 	leaf_data += (lf_arglist->count * 4);
 	*read_bytes += (lf_arglist->count * 4);
 
-	PEEK_READ (*read_bytes, 1, len, lf_arglist->pad, leaf_data, unsigned char);
+	PEEK_READ1 (*read_bytes, len, lf_arglist->pad, leaf_data, ut8);
 	PAD_ALIGN (lf_arglist->pad, *read_bytes, leaf_data, len);
 
 	return *read_bytes - tmp_before_read_bytes;
@@ -2036,16 +2158,16 @@ static int parse_lf_mfunction(SLF_MFUNCTION *lf_mfunction, unsigned char *leaf_d
 {
 	unsigned int tmp_before_read_bytes = *read_bytes;
 
-	READ(*read_bytes, 4, len, lf_mfunction->return_type, leaf_data, unsigned int);
-	READ(*read_bytes, 4, len, lf_mfunction->class_type, leaf_data, unsigned int);
-	READ(*read_bytes, 4, len, lf_mfunction->this_type, leaf_data, unsigned int);
-	READ(*read_bytes, 1, len, lf_mfunction->call_conv, leaf_data, unsigned char);
-	READ(*read_bytes, 1, len, lf_mfunction->reserved, leaf_data, unsigned char);
-	READ(*read_bytes, 2, len, lf_mfunction->parm_count, leaf_data, unsigned short);
-	READ(*read_bytes, 4, len, lf_mfunction->arglist, leaf_data, unsigned int);
-	READ(*read_bytes, 4, len, lf_mfunction->this_adjust, leaf_data, int);
+	READ4(*read_bytes, len, lf_mfunction->return_type, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_mfunction->class_type, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_mfunction->this_type, leaf_data, ut32);
+	READ1(*read_bytes, len, lf_mfunction->call_conv, leaf_data, ut8);
+	READ1(*read_bytes, len, lf_mfunction->reserved, leaf_data, ut8);
+	READ2(*read_bytes, len, lf_mfunction->parm_count, leaf_data, ut8);
+	READ4(*read_bytes, len, lf_mfunction->arglist, leaf_data, ut32);
+	READ4(*read_bytes, len, lf_mfunction->this_adjust, leaf_data, st32);
 
-	PEEK_READ(*read_bytes, 1, len, lf_mfunction->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_mfunction->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_mfunction->pad, *read_bytes, leaf_data, len);
 
 	return *read_bytes - tmp_before_read_bytes;
@@ -2054,13 +2176,13 @@ static int parse_lf_mfunction(SLF_MFUNCTION *lf_mfunction, unsigned char *leaf_d
 static int parse_lf_procedure(SLF_PROCEDURE *lf_procedure, unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len) {
 	unsigned int tmp_before_read_bytes = *read_bytes;
 
-	READ(*read_bytes, 4, len, lf_procedure->return_type, leaf_data, unsigned int);
-	READ(*read_bytes, 1, len, lf_procedure->call_conv, leaf_data, unsigned char);
-	READ(*read_bytes, 1, len, lf_procedure->reserved, leaf_data, unsigned char);
-	READ(*read_bytes, 2, len, lf_procedure->parm_count, leaf_data, unsigned short);
-	READ(*read_bytes, 4, len, lf_procedure->arg_list, leaf_data, unsigned int);
+	READ4(*read_bytes, len, lf_procedure->return_type, leaf_data, ut32);
+	READ1(*read_bytes, len, lf_procedure->call_conv, leaf_data, ut8);
+	READ1(*read_bytes, len, lf_procedure->reserved, leaf_data, ut8);
+	READ2(*read_bytes, len, lf_procedure->parm_count, leaf_data, ut16);
+	READ4(*read_bytes, len, lf_procedure->arg_list, leaf_data, ut32);
 
-	PEEK_READ(*read_bytes, 1, len, lf_procedure->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_procedure->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_procedure->pad, *read_bytes, leaf_data, len);
 
 	return *read_bytes - tmp_before_read_bytes;
@@ -2072,16 +2194,16 @@ static int parse_lf_union(SLF_UNION *lf_union, unsigned char *leaf_data, unsigne
 
 	lf_union->size.name_or_val = 0;
 
-	READ(*read_bytes, 2, len, lf_union->count, leaf_data, unsigned short);
-	READ(*read_bytes, 2, len, lf_union->prop.cv_property, leaf_data, unsigned short);
-	READ(*read_bytes, 4, len, lf_union->field_list, leaf_data, unsigned int);
+	READ2(*read_bytes, len, lf_union->count, leaf_data, ut16);
+	READ2(*read_bytes, len, lf_union->prop.cv_property, leaf_data, ut16);
+	READ4(*read_bytes, len, lf_union->field_list, leaf_data, ut32);
 
 	before_read_bytes = *read_bytes;
 	parse_sval(&lf_union->size, leaf_data, read_bytes, len);
 	before_read_bytes = *read_bytes - before_read_bytes;
 	leaf_data = (unsigned char *)leaf_data + before_read_bytes;
 
-	PEEK_READ(*read_bytes, 1, len, lf_union->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_union->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_union->pad, *read_bytes, leaf_data, len);
 
 //	printf("%s:", "parse_lf_union()");
@@ -2093,11 +2215,11 @@ static int parse_lf_union(SLF_UNION *lf_union, unsigned char *leaf_data, unsigne
 static int parse_lf_bitfield(SLF_BITFIELD *lf_bitfield, unsigned char *leaf_data, unsigned int *read_bytes, unsigned int len) {
 	unsigned int tmp_before_read_bytes = *read_bytes;
 
-	READ(*read_bytes, 4, len, lf_bitfield->base_type, leaf_data, unsigned int);
-	READ(*read_bytes, 1, len, lf_bitfield->length, leaf_data, unsigned char);
-	READ(*read_bytes, 1, len, lf_bitfield->position, leaf_data, unsigned char);
+	READ4(*read_bytes, len, lf_bitfield->base_type, leaf_data, ut32);
+	READ1(*read_bytes, len, lf_bitfield->length, leaf_data, ut8);
+	READ1(*read_bytes, len, lf_bitfield->position, leaf_data, ut8);
 
-	PEEK_READ(*read_bytes, 1, len, lf_bitfield->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_bitfield->pad, leaf_data, ut8);
 	PAD_ALIGN(lf_bitfield->pad, *read_bytes, leaf_data, len);
 
 	return *read_bytes - tmp_before_read_bytes;
@@ -2109,16 +2231,18 @@ static int parse_lf_vtshape(SLF_VTSHAPE *lf_vtshape, unsigned char *leaf_data, u
 
 	lf_vtshape->vt_descriptors = 0;
 
-	READ (*read_bytes, 2, len, lf_vtshape->count, leaf_data, unsigned short);
+	READ2(*read_bytes, len, lf_vtshape->count, leaf_data, ut16);
 
 	size = (4 * lf_vtshape->count + (lf_vtshape->count % 2) * 4) / 8;
 	lf_vtshape->vt_descriptors = (char *) malloc (size);
-	if (!lf_vtshape->vt_descriptors) return 0;
+	if (!lf_vtshape->vt_descriptors) {
+		return 0;
+	}
 	memcpy (lf_vtshape->vt_descriptors, leaf_data, size);
 	leaf_data += size;
 	*read_bytes += size;
 
-	PEEK_READ (*read_bytes, 1, len, lf_vtshape->pad, leaf_data, unsigned char);
+	PEEK_READ1(*read_bytes, len, lf_vtshape->pad, leaf_data, ut8);
 	PAD_ALIGN (lf_vtshape->pad, *read_bytes, leaf_data, len);
 
 	return *read_bytes - tmp_before_read_bytes;
@@ -2126,7 +2250,7 @@ static int parse_lf_vtshape(SLF_VTSHAPE *lf_vtshape, unsigned char *leaf_data, u
 
 #define PARSE_LF(lf_type, lf_func) { \
 	lf_type *lf = (lf_type *) malloc(sizeof(lf_type)); \
-	if (!lf) return 0; \
+	if (!lf) { free (leaf_data); return 0; }\
 	parse_##lf_func(lf, leaf_data + 2, &read_bytes, type->length); \
 	type->type_data.type_info = (void *) lf; \
 	init_stype_info(&type->type_data); \
@@ -2138,10 +2262,13 @@ static int parse_tpi_stypes(R_STREAM_FILE *stream, SType *type) {
 	unsigned int read_bytes = 0;
 
 	stream_file_read(stream, 2, (char *)&type->length);
-	if (type->length<1)
+	if (type->length < 1) {
 		return 0;
+	}
 	leaf_data = (unsigned char *) malloc(type->length);
-	if (!leaf_data) return 0;
+	if (!leaf_data) {
+		return 0;
+	}
 	stream_file_read (stream, type->length, (char *)leaf_data);
 	type->type_data.leaf_type = *(unsigned short *)leaf_data;
 	read_bytes += 2;
@@ -2234,7 +2361,9 @@ int parse_tpi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream) {
 
 	for (i = tpi_stream->header.ti_min; i < tpi_stream->header.ti_max; i++) {
 		type = (SType *) malloc (sizeof (SType));
-		if (!type) return 0;
+		if (!type) {
+			return 0;
+		}
 		type->tpi_idx = i;
 		type->type_data.type_info = 0;
 		type->type_data.leaf_type = eLF_MAX;

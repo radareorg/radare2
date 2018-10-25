@@ -6,6 +6,6 @@ includedir=${prefix}/include
 Name: r_lang
 Description: radare foundation libraries
 Version: @VERSION@
-Requires:
-Libs: -L${libdir} -lr_lang -lr_util -lr_cons
-Cflags: -I${includedir}/libr
+Requires: r_util r_cons
+Libs: -L${libdir} -lr_lang  
+Cflags: -I${includedir}/libr 

@@ -38,7 +38,6 @@
 #define S_ISFIFO(m)	(((m) & S_IFIFO) == S_IFIFO)
 #define MAXPATHLEN 255
 #endif
-R_LIB_VERSION (r_magic);
 
 #if USE_LIB_MAGIC
 #include <magic.h>
@@ -97,14 +96,16 @@ R_API int r_magic_errno(RMagic* m) {
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
+#include <unistd.h>
 #ifndef _MSC_VER
-#include <sys/param.h>	/* for MAXPATHLEN */
+#include <sys/param.h> /* for MAXPATHLEN */
 #endif
-#include <sys/stat.h>
 #include <r_magic.h>
+#include <sys/stat.h>
+
+R_LIB_VERSION (r_magic);
 
 #include "file.h"
 
@@ -136,8 +137,9 @@ R_API int r_magic_errno(RMagic* m) {
 
 static void free_mlist(struct mlist *mlist) {
 	struct mlist *ml;
-	if (!mlist)
+	if (!mlist) {
 		return;
+	}
 	for (ml = mlist->next; ml != mlist;) {
 		struct mlist *next = ml->next;
 		struct r_magic *mg = ml->magic;
@@ -150,23 +152,31 @@ static void free_mlist(struct mlist *mlist) {
 
 static int info_from_stat(RMagic *ms, unsigned short md) {
 	/* We cannot open it, but we were able to stat it. */
-	if (md & 0222)
-		if (file_printf (ms, "writable, ") == -1)
+	if (md & 0222) {
+		if (file_printf (ms, "writable, ") == -1) {
 			return -1;
-	if (md & 0111)
-		if (file_printf (ms, "executable, ") == -1)
+		}
+	}
+	if (md & 0111) {
+		if (file_printf (ms, "executable, ") == -1) {
 			return -1;
-	if (S_ISREG (md))
-		if (file_printf (ms, "regular file, ") == -1)
+		}
+	}
+	if (S_ISREG (md)) {
+		if (file_printf (ms, "regular file, ") == -1) {
 			return -1;
-	if (file_printf (ms, "no read permission") == -1)
+		}
+	}
+	if (file_printf (ms, "no read permission") == -1) {
 		return -1;
+	}
 	return 0;
 }
 
 static void close_and_restore (const RMagic *ms, const char *name, int fd, const struct stat *sb) {
-	if (fd>0)
+	if (fd > 0) {
 		close (fd);
+	}
 }
 
 static const char *file_or_fd(RMagic *ms, const char *inname, int fd) {
@@ -180,11 +190,13 @@ static const char *file_or_fd(RMagic *ms, const char *inname, int fd) {
 	 * some overlapping space for matches near EOF
 	 */
 #define SLOP (1 + sizeof(union VALUETYPE))
-	if (!(buf = malloc (HOWMANY + SLOP)))
+	if (!(buf = malloc (HOWMANY + SLOP))) {
 		return NULL;
+	}
 
-	if (file_reset (ms) == -1)
+	if (file_reset (ms) == -1) {
 		goto done;
+	}
 
 	switch (file_fsmagic (ms, inname, &sb)) {
 	case -1: goto done;		/* error */
@@ -193,8 +205,9 @@ static const char *file_or_fd(RMagic *ms, const char *inname, int fd) {
 	}
 
 	if (!inname) {
-		if (fstat (fd, &sb) == 0 && S_ISFIFO (sb.st_mode))
+		if (fstat (fd, &sb) == 0 && S_ISFIFO (sb.st_mode)) {
 			ispipe = 1;
+		}
 	} else {
 		int flags = O_RDONLY|O_BINARY;
 
@@ -207,8 +220,9 @@ static const char *file_or_fd(RMagic *ms, const char *inname, int fd) {
 		errno = 0;
 		if ((fd = open (inname, flags)) < 0) {
 			eprintf ("couldn't open file\n");
-			if (info_from_stat (ms, sb.st_mode) == -1)
+			if (info_from_stat (ms, sb.st_mode) == -1) {
 				goto done;
+			}
 			rv = 0;
 			goto done;
 		}
@@ -231,13 +245,16 @@ static const char *file_or_fd(RMagic *ms, const char *inname, int fd) {
 		while ((r = read(fd, (void *)&buf[nbytes],
 		    (size_t)(HOWMANY - nbytes))) > 0) {
 			nbytes += r;
-			if (r < PIPE_BUF) break;
+			if (r < PIPE_BUF) {
+				break;
+			}
 		}
 
 		if (nbytes == 0) {
 			/* We can not read it, but we were able to stat it. */
-			if (info_from_stat(ms, sb.st_mode) == -1)
+			if (info_from_stat (ms, sb.st_mode) == -1) {
 				goto done;
+			}
 			rv = 0;
 			goto done;
 		}
@@ -252,8 +269,9 @@ static const char *file_or_fd(RMagic *ms, const char *inname, int fd) {
 #endif
 
 	(void)memset (buf + nbytes, 0, SLOP); /* NUL terminate */
-	if (file_buffer (ms, fd, inname, buf, (size_t)nbytes) == -1)
+	if (file_buffer (ms, fd, inname, buf, (size_t)nbytes) == -1) {
 		goto done;
+	}
 	rv = 0;
 done:
 	free (buf);
@@ -266,7 +284,9 @@ done:
 // TODO: reinitialize all the time
 R_API RMagic* r_magic_new(int flags) {
 	RMagic *ms = R_NEW0 (RMagic);
-	if (!ms) return NULL;
+	if (!ms) {
+		return NULL;
+	}
 	r_magic_setflags (ms, flags);
 	ms->o.buf = ms->o.pbuf = NULL;
 	ms->c.li = malloc ((ms->c.len = 10) * sizeof (*ms->c.li));
@@ -282,7 +302,9 @@ R_API RMagic* r_magic_new(int flags) {
 }
 
 R_API void r_magic_free(RMagic *ms) {
-	if (!ms) return;
+	if (!ms) {
+		return;
+	}
 	free_mlist (ms->mlist);
 	free (ms->o.pbuf);
 	free (ms->o.buf);
@@ -321,28 +343,36 @@ R_API const char * r_magic_file(RMagic *ms, const char *inname) {
 }
 
 R_API const char * r_magic_buffer(RMagic *ms, const void *buf, size_t nb) {
-	if (file_reset (ms) == -1)
+	if (file_reset (ms) == -1) {
 		return NULL;
+	}
 	/*
 	 * The main work is done here!
 	 * We have the file name and/or the data buffer to be identified. 
 	 */
-	if (file_buffer (ms, -1, NULL, buf, nb) == -1)
+	if (file_buffer (ms, -1, NULL, buf, nb) == -1) {
 		return NULL;
+	}
 	return file_getbuffer (ms);
 }
 
 R_API const char * r_magic_error(RMagic *ms) {
-	if (!ms) return 0;
+	if (!ms) {
+		return 0;
+	}
 	return ms->haderr ? ms->o.buf : NULL;
 }
 
 R_API int r_magic_errno(RMagic *ms) {
-	if (!ms) return 0;
+	if (!ms) {
+		return 0;
+	}
 	return ms->haderr ? ms->error : 0;
 }
 
 R_API void r_magic_setflags(RMagic *ms, int flags) {
-	if (ms) ms->flags = flags;
+	if (ms) {
+		ms->flags = flags;
+	}
 }
 #endif

@@ -55,6 +55,7 @@ R_API RFSPartition* r_fs_partition_new(int num, ut64 start, ut64 length) {
 		return NULL;
 	}
 	p->number = num;
+	p->type = 0; // TODO we need an enum with all the partition types
 	p->start = start;
 	p->length = length;
 	return p;

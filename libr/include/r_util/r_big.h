@@ -1,5 +1,10 @@
 #ifndef R_BIG_H
 #define R_BIG_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if HAVE_LIB_GMP
 #define RNumBig mpz_t
 #elif HAVE_LIB_SSL
@@ -31,4 +36,9 @@ R_API void r_big_div(RNumBig *c, RNumBig *a, RNumBig *b);
 R_API void r_big_div_ut(RNumBig *a, RNumBig *b, ut32 c);
 R_API int r_big_divisible_ut(RNumBig *n, ut32 v);
 R_API void r_big_mod(RNumBig *c, RNumBig *a, RNumBig *b);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //  R_BIG_H

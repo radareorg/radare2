@@ -182,10 +182,11 @@ floatformat_i387_ext_is_valid (const struct floatformat *fmt, const void *from)
   int_bit = get_field (ufrom, fmt->byteorder, fmt->totalsize,
 		       fmt->man_start, 1);
 
-  if ((exponent == 0) != (int_bit == 0))
-    return 0;
-  else
-    return 1;
+  if ((exponent == 0) != (int_bit == 0)) {
+	  return 0;
+  } else {
+	  return 1;
+  }
 }
 
 const struct floatformat floatformat_i387_ext =
@@ -297,21 +298,24 @@ floatformat_ibm_long_double_is_valid (const struct floatformat *fmt,
   bot_exp = get_field (ufrom + 8, hfmt->byteorder, hfmt->totalsize,
 		       hfmt->exp_start, hfmt->exp_len);
 
-  if ((unsigned long) top_exp == hfmt->exp_nan)
-    top_nan = mant_bits_set (hfmt, ufrom);
+  if ((unsigned long)top_exp == hfmt->exp_nan) {
+	  top_nan = mant_bits_set (hfmt, ufrom);
+  }
 
   /* A NaN is valid with any low part.  */
-  if (top_nan)
-    return 1;
+  if (top_nan) {
+	  return 1;
+  }
 
   /* An infinity, zero or denormal requires low part 0 (positive or
      negative).  */
   if ((unsigned long) top_exp == hfmt->exp_nan || top_exp == 0)
     {
-      if (bot_exp != 0)
-	return 0;
+	  if (bot_exp != 0) {
+		  return 0;
+	  }
 
-      return !mant_bits_set (hfmt, ufrom + 8);
+	  return !mant_bits_set (hfmt, ufrom + 8);
     }
 
   /* The top part is now a finite normal value.  The long double value
@@ -320,42 +324,46 @@ floatformat_ibm_long_double_is_valid (const struct floatformat *fmt,
      the bottom part must be <= 0.5ulp of the top part in absolute
      value, and if it is < 0.5ulp then the long double is definitely
      valid.  */
-  if (bot_exp < top_exp - 53)
-    return 1;
-  if (bot_exp > top_exp - 53 && bot_exp != 0)
-    return 0;
-  if (bot_exp == 0)
-    {
-      /* The bottom part is 0 or denormal.  Determine which, and if
+    if (bot_exp < top_exp - 53) {
+	    return 1;
+    }
+    if (bot_exp > top_exp - 53 && bot_exp != 0) {
+	    return 0;
+    }
+    if (bot_exp == 0) {
+	    /* The bottom part is 0 or denormal.  Determine which, and if
 	 denormal the first two set bits.  */
-      int first_bit = -1, second_bit = -1, cur_bit;
-      for (cur_bit = 0; (unsigned int) cur_bit < hfmt->man_len; cur_bit++)
-	if (get_field (ufrom + 8, hfmt->byteorder, hfmt->totalsize,
-		       hfmt->man_start + cur_bit, 1))
-	  {
-	    if (first_bit == -1)
-	      first_bit = cur_bit;
-	    else
-	      {
-		second_bit = cur_bit;
-		break;
-	      }
-	  }
-      /* Bottom part 0 is OK.  */
-      if (first_bit == -1)
-	return 1;
-      /* The real exponent of the bottom part is -first_bit.  */
-      if (-first_bit < top_exp - 53)
-	return 1;
-      if (-first_bit > top_exp - 53)
-	return 0;
-      /* The bottom part is at least 0.5ulp of the top part.  For this
+	    int first_bit = -1, second_bit = -1, cur_bit;
+	    for (cur_bit = 0; (unsigned int)cur_bit < hfmt->man_len; cur_bit++) {
+		    if (get_field (ufrom + 8, hfmt->byteorder, hfmt->totalsize,
+				hfmt->man_start + cur_bit, 1)) {
+			    if (first_bit == -1) {
+				    first_bit = cur_bit;
+			    } else {
+				    second_bit = cur_bit;
+				    break;
+			    }
+		    }
+	    }
+	    /* Bottom part 0 is OK.  */
+	    if (first_bit == -1) {
+		    return 1;
+	    }
+	    /* The real exponent of the bottom part is -first_bit.  */
+	    if (-first_bit < top_exp - 53) {
+		    return 1;
+	    }
+	    if (-first_bit > top_exp - 53) {
+		    return 0;
+	    }
+	    /* The bottom part is at least 0.5ulp of the top part.  For this
 	 to be OK, the bottom part must be exactly 0.5ulp (i.e. no
 	 more bits set) and the top part must have last bit 0.  */
-      if (second_bit != -1)
-	return 0;
-      return !get_field (ufrom, hfmt->byteorder, hfmt->totalsize,
-			 hfmt->man_start + hfmt->man_len - 1, 1);
+	    if (second_bit != -1) {
+		    return 0;
+	    }
+	    return !get_field (ufrom, hfmt->byteorder, hfmt->totalsize,
+		    hfmt->man_start + hfmt->man_len - 1, 1);
     }
   else
     {
@@ -363,8 +371,9 @@ floatformat_ibm_long_double_is_valid (const struct floatformat *fmt,
 	 to be OK, it must be exactly 0.5ulp (i.e. no explicit bits
 	 set) and the top part must have last bit 0.  */
       if (get_field (ufrom, hfmt->byteorder, hfmt->totalsize,
-		     hfmt->man_start + hfmt->man_len - 1, 1))
-	return 0;
+		  hfmt->man_start + hfmt->man_len - 1, 1)) {
+	      return 0;
+      }
       return !mant_bits_set (hfmt, ufrom + 8);
     }
 }
@@ -407,8 +416,9 @@ mant_bits_set (const struct floatformat *fmt, const unsigned char *ufrom)
       mant_bits = min (mant_bits_left, 32);
 
       if (get_field (ufrom, fmt->byteorder, fmt->totalsize,
-		     mant_off, mant_bits) != 0)
-	return 1;
+		  mant_off, mant_bits) != 0) {
+	      return 1;
+      }
 
       mant_off += mant_bits;
       mant_bits_left -= mant_bits;
@@ -431,10 +441,11 @@ get_field (const unsigned char *data, enum floatformat_byteorders order,
   start = total_len - (start + len);
 
   /* Start at the least significant part of the field.  */
-  if (order == floatformat_little)
-    cur_byte = start / FLOATFORMAT_CHAR_BIT;
-  else
-    cur_byte = (total_len - start - 1) / FLOATFORMAT_CHAR_BIT;
+  if (order == floatformat_little) {
+	  cur_byte = start / FLOATFORMAT_CHAR_BIT;
+  } else {
+	  cur_byte = (total_len - start - 1) / FLOATFORMAT_CHAR_BIT;
+  }
 
   lo_bit = start % FLOATFORMAT_CHAR_BIT;
   hi_bit = min (lo_bit + len, FLOATFORMAT_CHAR_BIT);
@@ -492,13 +503,15 @@ floatformat_to_double (const struct floatformat *fmt,
 	 conjunction with the GNU/C99 extension for hexadecimal
 	 floating point constants and will issue a warning when
 	 compiling with -pedantic.  */
-      if (nan)
-	dto = NAN;
-      else
-	dto = INFINITY;
+      if (nan) {
+	      dto = NAN;
+      } else {
+	      dto = INFINITY;
+      }
 
-      if (get_field (ufrom, fmt->byteorder, fmt->totalsize, fmt->sign_start, 1))
-	dto = -dto;
+      if (get_field (ufrom, fmt->byteorder, fmt->totalsize, fmt->sign_start, 1)) {
+	      dto = -dto;
+      }
 
       *to = dto;
 
@@ -513,20 +526,20 @@ floatformat_to_double (const struct floatformat *fmt,
      who cares. */
 
   /* For denorms use minimum exponent.  */
-  if (exponent == 0)
-    exponent = 1 - fmt->exp_bias;
-  else
-    {
-      exponent -= fmt->exp_bias;
+  if (exponent == 0) {
+	  exponent = 1 - fmt->exp_bias;
+  } else {
+	  exponent -= fmt->exp_bias;
 
-      /* If this format uses a hidden bit, explicitly add it in now.
+	  /* If this format uses a hidden bit, explicitly add it in now.
 	 Otherwise, increment the exponent by one to account for the
 	 integer bit.  */
 
-      if (fmt->intbit == floatformat_intbit_no)
-	dto = ldexp (1.0, exponent);
-      else
-	exponent++;
+	  if (fmt->intbit == floatformat_intbit_no) {
+		  dto = ldexp (1.0, exponent);
+	  } else {
+		  exponent++;
+	  }
     }
 
   while (mant_bits_left > 0)
@@ -543,9 +556,10 @@ floatformat_to_double (const struct floatformat *fmt,
     }
 
   /* Negate it if negative.  */
-  if (get_field (ufrom, fmt->byteorder, fmt->totalsize, fmt->sign_start, 1))
-    dto = -dto;
-  *to = dto;
+    if (get_field (ufrom, fmt->byteorder, fmt->totalsize, fmt->sign_start, 1)) {
+	    dto = -dto;
+    }
+    *to = dto;
 }
 
 static void put_field (unsigned char *, enum floatformat_byteorders,
@@ -569,10 +583,11 @@ put_field (unsigned char *data, enum floatformat_byteorders order,
   start = total_len - (start + len);
 
   /* Start at the least significant part of the field.  */
-  if (order == floatformat_little)
-    cur_byte = start / FLOATFORMAT_CHAR_BIT;
-  else
-    cur_byte = (total_len - start - 1) / FLOATFORMAT_CHAR_BIT;
+  if (order == floatformat_little) {
+	  cur_byte = start / FLOATFORMAT_CHAR_BIT;
+  } else {
+	  cur_byte = (total_len - start - 1) / FLOATFORMAT_CHAR_BIT;
+  }
 
   lo_bit = start % FLOATFORMAT_CHAR_BIT;
   hi_bit = min (lo_bit + len, FLOATFORMAT_CHAR_BIT);
@@ -653,16 +668,15 @@ floatformat_from_double (const struct floatformat *fmt,
 #else
   mant = frexp (dfrom, &exponent);
 #endif
-  if (exponent + fmt->exp_bias - 1 > 0)
-    put_field (uto, fmt->byteorder, fmt->totalsize, fmt->exp_start,
-	       fmt->exp_len, exponent + fmt->exp_bias - 1);
-  else
-    {
-      /* Handle a denormalized number.  FIXME: What should we do for
+  if (exponent + fmt->exp_bias - 1 > 0) {
+	  put_field (uto, fmt->byteorder, fmt->totalsize, fmt->exp_start,
+		  fmt->exp_len, exponent + fmt->exp_bias - 1);
+  } else {
+	  /* Handle a denormalized number.  FIXME: What should we do for
 	 non-IEEE formats?  */
-      put_field (uto, fmt->byteorder, fmt->totalsize, fmt->exp_start,
-		 fmt->exp_len, 0);
-      mant = ldexp (mant, exponent + fmt->exp_bias - 1);
+	  put_field (uto, fmt->byteorder, fmt->totalsize, fmt->exp_start,
+		  fmt->exp_len, 0);
+	  mant = ldexp (mant, exponent + fmt->exp_bias - 1);
     }
 
   mant_bits_left = fmt->man_len;

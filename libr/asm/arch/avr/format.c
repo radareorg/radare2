@@ -27,9 +27,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "format.h"
-#ifdef _MSC_VER
-#define strcasecmp stricmp
-#endif
+
 /* Formats a disassembled operand with its prefix (such as 'R' to indicate a register) into the
  * pointer to a C-string strOperand, which must be free'd after it has been used.
  * I decided to format the disassembled operands individually into strings for maximum flexibility,
@@ -37,7 +35,6 @@
  * If an addressLabelPrefix is specified in formattingOptions (option is set and string is not NULL),
  * it will print the relative branch/jump/call with this prefix and the destination address as the label. */
 static int formatDisassembledOperand(char *strOperand, int operandNum, const disassembledInstruction dInstruction, formattingOptions fOptions);
-
 
 /* Prints a disassembled instruction, formatted with options set in the formattingOptions structure. */
 static int printDisassembledInstruction(char *out, const disassembledInstruction dInstruction, formattingOptions fOptions) {

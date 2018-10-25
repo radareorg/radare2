@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2016 - nibble, pancake */
+/* radare - LGPL - Copyright 2010-2018 - nibble, pancake */
 
 #include <stdio.h>
 #include <string.h>
@@ -11,6 +11,17 @@ R_API int r_core_gdiff_fcn(RCore *c, ut64 addr, ut64 addr2) {
 	RList *la, *lb;
 	RAnalFunction *fa = r_anal_get_fcn_at (c->anal, addr, 0);
 	RAnalFunction *fb = r_anal_get_fcn_at (c->anal, addr2, 0);
+	if (!fa || !fb) {
+		return false;
+	}
+	RAnalBlock *bb;
+	RListIter *iter;
+	r_list_foreach (fa->bbs, iter, bb) {
+		r_anal_diff_fingerprint_bb (c->anal, bb);
+	}
+	r_list_foreach (fb->bbs, iter, bb) {
+		r_anal_diff_fingerprint_bb (c->anal, bb);
+	}
 	la = r_list_new ();
 	r_list_append (la, fa);
 	lb = r_list_new ();
@@ -18,7 +29,7 @@ R_API int r_core_gdiff_fcn(RCore *c, ut64 addr, ut64 addr2) {
 	r_anal_diff_fcn (c->anal, la, lb);
 	r_list_free (la);
 	r_list_free (lb);
-	return false;
+	return true;
 }
 
 /* Fingerprint functions and blocks, then diff. */
@@ -29,12 +40,14 @@ R_API int r_core_gdiff(RCore *c, RCore *c2) {
 	RListIter *iter, *iter2;
 	int i;
 
-	if (!c || !c2)
+	if (!c || !c2) {
 		return false;
+	}
 	for (i = 0; i < 2; i++) {
 		/* remove strings */
 		r_list_foreach_safe (cores[i]->anal->fcns, iter, iter2, fcn) {
 			if (!strncmp (fcn->name, "str.", 4)) {
+				r_anal_fcn_tree_delete (&cores[i]->anal->fcn_tree, fcn);
 				r_list_delete (cores[i]->anal->fcns, iter);
 			}
 		}
@@ -47,7 +60,7 @@ R_API int r_core_gdiff(RCore *c, RCore *c2) {
 		/* Fingerprint fcn */
 		r_list_foreach (cores[i]->anal->fcns, iter, fcn) {
 			int newsize = r_anal_diff_fingerprint_fcn (cores[i]->anal, fcn);
-			r_anal_fcn_set_size (fcn, newsize);
+			r_anal_fcn_set_size (cores[i]->anal, fcn, newsize);
 		}
 	}
 	/* Diff functions */
@@ -88,7 +101,6 @@ R_API void r_core_diff_show(RCore *c, RCore *c2) {
         int maxsize = 0;
         int digits = 1;
         int len;
-
 
         r_list_foreach (fcns, iter, f) {
                 if (f->name && (len = strlen (f->name)) > maxnamelen) {

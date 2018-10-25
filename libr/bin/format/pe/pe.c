@@ -11,6 +11,7 @@
 #define PE_IMAGE_FILE_MACHINE_RPI2 452
 #define MAX_METADATA_STRING_LENGTH 256
 #define bprintf if(bin->verbose) eprintf
+#define COFF_SYMBOL_SIZE 18
 
 struct SCV_NB10_HEADER;
 typedef struct {
@@ -79,8 +80,9 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin) {
 			// 68 00 00 40 00  push    0x400000
 			// E8 3E F9 FF FF  call    0x44B4FF
 			ut32 imageBase = bin->nt_headers->optional_header.ImageBase;
-			for (n = 0; n < sizeof (b) - 5; n++) {
-				if (b[n] == 0x68 && *((ut32*) &b[n + 1]) == imageBase && b[n + 5] == 0xe8) {
+			for (n = 0; n < sizeof (b) - 6; n++) {
+				const ut32 tmp_imgbase = r_read_ble32 (b + n + 1, bin->big_endian);
+				if (b[n] == 0x68 && tmp_imgbase == imageBase && b[n + 5] == 0xe8) {
 					const st32 call_dst = r_read_ble32 (b + n + 6, bin->big_endian);
 					entry->paddr += (n + 5 + 5 + call_dst);
 					entry->vaddr += (n + 5 + 5 + call_dst);
@@ -93,7 +95,7 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin) {
 			//FF 37			 push    dword ptr[edi]
 			//FF 36          push    dword ptr[esi]
 			//E8 6F FC FF FF call    _main
-			for (n = 0; n < sizeof (b) - 5; n++) {
+			for (n = 0; n < sizeof (b) - 6; n++) {
 				if (b[n] == 0x50 && b[n+1] == 0xff && b[n + 3] == 0xff && b[n + 5] == 0xe8) {
 					const st32 call_dst = r_read_ble32 (b + n + 6, bin->big_endian);
 					entry->paddr += (n + 5 + 5 + call_dst);
@@ -106,11 +108,24 @@ struct r_bin_pe_addr_t *PE_(check_msvcseh) (struct PE_(r_bin_pe_obj_t) *bin) {
 			//FF 35 0C E2 40 00                          push    xxxxxxxx
 			//FF 35 08 E2 40 00                          push    xxxxxxxx
 			//E8 2B FD FF FF                             call    _main
-			for (n = 0; n < sizeof (b) - 17; n++) {
+			for (n = 0; n < sizeof (b) - 20; n++) {
 				if (b[n] == 0x50 && b[n + 1] == 0xff && b[n + 7] == 0xff && b[n + 13] == 0xe8) {
 					const st32 call_dst = r_read_ble32 (b + n + 14, bin->big_endian);
 					entry->paddr += (n + 5 + 13 + call_dst);
 					entry->vaddr += (n + 5 + 13 + call_dst);
+					return entry;
+				}
+			}
+			//case4:
+			//50                                        push    eax
+			//57                                        push    edi
+			//FF 36                                     push    dword ptr[esi]
+			//E8 D9 FD FF FF                            call    _main
+			for (n = 0; n < sizeof (b) - 5; n++) {
+				if (b[n] == 0x50 && b[n + 1] == 0x57 && b[n + 2] == 0xff && b[n + 4] == 0xe8) {
+					const st32 call_dst = r_read_ble32 (b + n + 5, bin->big_endian);
+					entry->paddr += (n + 5 + 4 + call_dst);
+					entry->vaddr += (n + 5 + 4 + call_dst);
 					return entry;
 				}
 			}
@@ -195,7 +210,7 @@ struct r_bin_pe_addr_t *PE_(check_mingw) (struct PE_(r_bin_pe_obj_t) *bin) {
 	//FF 15 C8 63 41 00                          call    ds : __imp____set_app_type
 	//E8 B8 FE FF FF                             call    ___mingw_CRTStartup
 	if (b[0] == 0x55 && b[1] == 0x89 && b[3] == 0x83 && b[6] == 0xc7 && b[13] == 0xff && b[19] == 0xe8) {
-		const st32 jmp_dst = b[20] | (b[21] << 8) | (b[22] << 16) | (b[23] << 24);
+		const st32 jmp_dst = (st32) r_read_le32 (&b[20]);
 		entry->paddr += (5 + 19 + jmp_dst);
 		entry->vaddr += (5 + 19 + jmp_dst);
 		sw = 1;
@@ -205,7 +220,7 @@ struct r_bin_pe_addr_t *PE_(check_mingw) (struct PE_(r_bin_pe_obj_t) *bin) {
 	//FF 15 F8 60 40 00                          call    ds : __imp____set_app_type
 	//E8 6B FD FF FF                             call    ___mingw_CRTStartup
 	if (b[0] == 0x83 && b[3] == 0xc7 && b[10] == 0xff && b[16] == 0xe8) {
-		const st32 jmp_dst = b[17] | (b[18] << 8) | (b[19] << 16) | (b[20] << 24);
+		const st32 jmp_dst = (st32) r_read_le32 (&b[17]);
 		entry->paddr += (5 + 16 + jmp_dst);
 		entry->vaddr += (5 + 16 + jmp_dst);
 		sw = 1;
@@ -216,7 +231,7 @@ struct r_bin_pe_addr_t *PE_(check_mingw) (struct PE_(r_bin_pe_obj_t) *bin) {
 	//F2 83 C4 0C                                            add     esp, 0Ch
 	//F5 E9 86 FC FF FF                                      jmp     ___tmainCRTStartup
 	if (b[0] == 0x83 && b[3] == 0xc7 && b[13] == 0xe8 && b[18] == 0x83 && b[21] == 0xe9) {
-		const st32 jmp_dst = b[22] | (b[23] << 8) | (b[24] << 16) | (b[25] << 24);
+		const st32 jmp_dst = (st32) r_read_le32 (&b[22]);
 		entry->paddr += (5 + 21 + jmp_dst);
 		entry->vaddr += (5 + 21 + jmp_dst);
 		sw = 1;
@@ -231,7 +246,7 @@ struct r_bin_pe_addr_t *PE_(check_mingw) (struct PE_(r_bin_pe_obj_t) *bin) {
 			// ut32 imageBase = bin->nt_headers->optional_header.ImageBase;
 			for (n = 0; n < sizeof (b) - 12; n++) {
 				if (b[n] == 0xa1 && b[n + 5] == 0x89 && b[n + 8] == 0xe8) {
-					const st32 call_dst = b[n + 9] | (b[n + 10] << 8) | (b[n + 11] << 16) | (b[n + 12] << 24);
+					const st32 call_dst = (st32) r_read_le32 (&b[n + 9]);
 					entry->paddr += (n + 5 + 8 + call_dst);
 					entry->vaddr += (n + 5 + 8 + call_dst);
 					return entry;
@@ -265,7 +280,7 @@ struct r_bin_pe_addr_t *PE_(check_unknow) (struct PE_(r_bin_pe_obj_t) *bin) {
 	   write down. */
 	// this is dirty only a single byte check, can return false positives
 	if (b[367] == 0xe8) {
-		const st32 jmp_dst = b[368] | (b[369] << 8) | (b[370] << 16) | (b[371] << 24);
+		const st32 jmp_dst = (st32) r_read_le32 (&b[368]);
 		entry->paddr += 367 + 5 + jmp_dst;
 		entry->vaddr += 367 + 5 + jmp_dst;
 		free (b);
@@ -277,7 +292,7 @@ struct r_bin_pe_addr_t *PE_(check_unknow) (struct PE_(r_bin_pe_obj_t) *bin) {
 		if (!memcmp (b + i, "\xff\x15", 2)) {
 			if (b[i+6] == 0x50) {
 				if (b[i+7] == 0xe8) {
-					const st32 call_dst = b[i + 8] | (b[i + 9] << 8) | (b[i + 10] << 16) | (b[i + 11] << 24);
+					const st32 call_dst = (st32) r_read_le32 (&b[i + 8]);
 					entry->paddr = entry->vaddr - entry->paddr;
 					entry->vaddr += (i + 7 + 5 + (long)call_dst);
 					entry->paddr += entry->vaddr;
@@ -293,14 +308,14 @@ struct r_bin_pe_addr_t *PE_(check_unknow) (struct PE_(r_bin_pe_obj_t) *bin) {
 }
 
 struct r_bin_pe_addr_t *PE_(r_bin_pe_get_main_vaddr)(struct PE_(r_bin_pe_obj_t) *bin) {
-	struct r_bin_pe_addr_t *main = PE_(check_msvcseh) (bin);
-	if (!main) {
-		main = PE_(check_mingw) (bin);
+	struct r_bin_pe_addr_t *winmain = PE_(check_msvcseh) (bin);
+	if (!winmain) {
+		winmain = PE_(check_mingw) (bin);
+		if (!winmain) {
+			winmain = PE_(check_unknow) (bin);
+		}
 	}
-	if (!main) {
-		main = PE_(check_unknow) (bin);
-	}
-	return main;
+	return winmain;
 }
 
 #define RBinPEObj struct PE_(r_bin_pe_obj_t)
@@ -308,10 +323,10 @@ static PE_DWord bin_pe_rva_to_paddr(RBinPEObj* bin, PE_DWord rva) {
 	PE_DWord section_base;
 	int i, section_size;
 	for (i = 0; i < bin->num_sections; i++) {
-		section_base = bin->section_header[i].VirtualAddress;
-		section_size = bin->section_header[i].Misc.VirtualSize;
+		section_base = bin->sections[i].vaddr;
+		section_size = bin->sections[i].vsize;
 		if (rva >= section_base && rva < section_base + section_size) {
-			return bin->section_header[i].PointerToRawData + (rva - section_base);
+			return bin->sections[i].paddr + (rva - section_base);
 		}
 	}
 	return rva;
@@ -328,9 +343,6 @@ ut64 PE_(r_bin_pe_get_image_base)(struct PE_(r_bin_pe_obj_t)* bin) {
 		//XXX this value should be user defined by bin.baddr
 		//but from here we can not access config API
 		imageBase = 0x10000;
-	}
-	if (imageBase < bin->size) {
-		imageBase = 0x8000000;
 	}
 	return imageBase;
 }
@@ -349,7 +361,7 @@ static PE_DWord bin_pe_va_to_rva(RBinPEObj* bin, PE_DWord va) {
 
 static char* resolveModuleOrdinal(Sdb* sdb, const char* module, int ordinal) {
 	Sdb* db = sdb;
-	char* foo = sdb_get (db, sdb_fmt (0, "%d", ordinal), 0);
+	char* foo = sdb_get (db, sdb_fmt ("%d", ordinal), 0);
 	if (foo && *foo) {
 		return foo;
 	} else {
@@ -411,23 +423,19 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 
 				if (!sdb_module || strcmp (symdllname, sdb_module)) {
 					sdb_free (db);
+					if (db) {
+						sdb_free (db);
+					}
 					db = NULL;
 					free (sdb_module);
 					sdb_module = strdup (symdllname);
-					filename = sdb_fmt (1, "%s.sdb", symdllname);
+					filename = sdb_fmt ("%s.sdb", symdllname);
 					if (r_file_exists (filename)) {
 						db = sdb_new (NULL, filename, 0);
 					} else {
-#if __WINDOWS__
-						char invoke_dir[MAX_PATH];
-						if (r_sys_get_src_dir_w32(invoke_dir)) {
-							filename = sdb_fmt (1, "%s/share/radare2/"R2_VERSION "/format/dll/%s.sdb", invoke_dir, symdllname);
-						} else {
-							filename = sdb_fmt (1, "share/radare2/"R2_VERSION "/format/dll/%s.sdb", symdllname);
-						}
-#else
-						filename = sdb_fmt (1, R2_PREFIX "/share/radare2/" R2_VERSION "/format/dll/%s.sdb", symdllname);
-#endif
+						const char *dirPrefix = r_sys_prefix (NULL);
+						filename = sdb_fmt (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"),
+							dirPrefix, symdllname);
 						if (r_file_exists (filename)) {
 							db = sdb_new (NULL, filename, 0);
 						}
@@ -437,6 +445,7 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 					symname = resolveModuleOrdinal (db, symdllname, import_ordinal);
 					if (symname) {
 						snprintf (import_name, PE_NAME_LENGTH, "%s_%s", dll_name, symname);
+						R_FREE (symname);
 					}
 				} else {
 					bprintf ("Cannot find %s\n", filename);
@@ -463,9 +472,12 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 					break;
 				}
 				name[PE_NAME_LENGTH] = '\0';
-				snprintf (import_name, PE_NAME_LENGTH, "%s_%s", dll_name, name);
+				int len = snprintf (import_name, sizeof (import_name), "%s_%s", dll_name, name);
+				if (len >= sizeof (import_name)) {
+					eprintf ("Import name '%s' has been truncated.\n", import_name);
+				}
 			}
-			if (!(*importp = realloc (*importp, (*nimp + 1) * sizeof(struct r_bin_pe_import_t)))) {
+			if (!(*importp = realloc (*importp, (*nimp + 1) * sizeof (struct r_bin_pe_import_t)))) {
 				r_sys_perror ("realloc (import)");
 				goto error;
 			}
@@ -481,17 +493,33 @@ static int bin_pe_parse_imports(struct PE_(r_bin_pe_obj_t)* bin,
 		}
 	} while (import_table);
 
+	if (db) {
+		sdb_free (db);
+		db = NULL;
+	}
 	free (symdllname);
 	free (sdb_module);
 	return i;
 
 error:
+	if (db) {
+		sdb_free (db);
+		db = NULL;
+	}
 	free (symdllname);
 	free (sdb_module);
 	return false;
 }
 
 static char *_time_stamp_to_str(ut32 timeStamp) {
+#ifdef _MSC_VER
+	time_t rawtime;
+	struct tm *tminfo;
+	rawtime = (time_t)timeStamp;
+	tminfo = localtime (&rawtime);
+	//tminfo = gmtime (&rawtime);
+	return r_str_trim (strdup (asctime (tminfo)));
+#else
 	struct my_timezone {
 		int tz_minuteswest;     /* minutes west of Greenwich */
 		int tz_dsttime;         /* type of DST correction */
@@ -501,8 +529,9 @@ static char *_time_stamp_to_str(ut32 timeStamp) {
 	time_t ts = (time_t) timeStamp;
 	gettimeofday (&tv, (void*) &tz);
 	gmtoff = (int) (tz.tz_minuteswest * 60); // in seconds
-	ts += gmtoff;
-	return r_str_chop (strdup (ctime (&ts)));
+	ts += (time_t)gmtoff;
+	return r_str_trim (strdup (ctime (&ts)));
+#endif
 }
 
 static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
@@ -588,7 +617,9 @@ static int bin_pe_init_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->data_directory = (PE_(image_data_directory*)) & bin->optional_header->DataDirectory;
 
 	if (strncmp ((char*) &bin->dos_header->e_magic, "MZ", 2) ||
-	strncmp ((char*) &bin->nt_headers->Signature, "PE", 2)) {
+	(strncmp ((char*) &bin->nt_headers->Signature, "PE", 2) &&
+	/* Check also for Phar Lap TNT DOS extender PL executable */
+	strncmp ((char*) &bin->nt_headers->Signature, "PL", 2))) {
 		return false;
 	}
 	return true;
@@ -605,9 +636,10 @@ typedef struct {
 
 static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_pe_export_t* exports, int sz) {
 	ut64 sym_tbl_off, num = 0;
-	const int srsz = 18; // symbol record size
+	const int srsz = COFF_SYMBOL_SIZE; // symbol record size
 	struct r_bin_pe_section_t* sections;
 	struct r_bin_pe_export_t* exp;
+	const size_t export_t_sz = sizeof (struct r_bin_pe_export_t);
 	int bufsz, i, shsz;
 	SymbolRecord* sr;
 	ut64 text_off = 0LL;
@@ -631,11 +663,11 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 	if (!buf) {
 		return NULL;
 	}
-	exports_sz = sizeof(struct r_bin_pe_export_t) * num;
+	exports_sz = export_t_sz * num;
 	if (exports) {
 		int osz = sz;
 		sz += exports_sz;
-		exports = realloc (exports, sz);
+		exports = realloc (exports, sz + export_t_sz);
 		if (!exports) {
 			free (buf);
 			return NULL;
@@ -643,11 +675,11 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 		exp = (struct r_bin_pe_export_t*) (((const ut8*) exports) + osz);
 	} else {
 		sz = exports_sz;
-		exports = malloc (sz);
+		exports = malloc (sz + export_t_sz);
 		exp = exports;
 	}
 
-	sections = PE_(r_bin_pe_get_sections) (bin);
+	sections = bin->sections;
 	for (i = 0; i < bin->num_sections; i++) {
 		//XXX search by section with +x permission since the section can be left blank
 		if (!strcmp ((char*) sections[i].name, ".text")) {
@@ -656,7 +688,6 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 			textn = i + 1;
 		}
 	}
-	free (sections);
 	symctr = 0;
 	if (r_buf_read_at (bin->b, sym_tbl_off, (ut8*) buf, bufsz)) {
 		for (i = 0; i < shsz; i += srsz) {
@@ -696,13 +727,13 @@ static struct r_bin_pe_export_t* parse_symbol_table(struct PE_(r_bin_pe_obj_t)* 
 	return exports;
 }
 
+static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)* bin);
 static int bin_pe_init_sections(struct PE_(r_bin_pe_obj_t)* bin) {
 	bin->num_sections = bin->nt_headers->file_header.NumberOfSections;
-	int sections_size;
 	if (bin->num_sections < 1) {
 		return true;
 	}
-	sections_size = sizeof (PE_(image_section_header)) * bin->num_sections;
+	int sections_size = sizeof (PE_(image_section_header)) * bin->num_sections;
 	if (sections_size > bin->size) {
 		sections_size = bin->size;
 		bin->num_sections = bin->size / sizeof (PE_(image_section_header));
@@ -786,10 +817,7 @@ int PE_(bin_pe_get_actual_checksum)(struct PE_(r_bin_pe_obj_t)* bin) {
 	buf = bin->b->buf;
 	checksum_offset = bin->nt_header_offset + 4 + sizeof(PE_(image_file_header)) + 0x40;
 	for (i = 0; i < bin->size / 4; i++) {
-		cur = (buf[i * 4] << 0) |
-		(buf[i * 4 + 1] << 8) |
-		(buf[i * 4 + 2] << 16) |
-		(buf[i * 4 + 3] << 24);
+		cur = r_read_le32 (&buf[i * 4]);
 
 		// skip the checksum bytes
 		if (i * 4 == checksum_offset) {
@@ -854,8 +882,7 @@ int PE_(bin_pe_get_overlay)(struct PE_(r_bin_pe_obj_t)* bin, ut64* size) {
 				&largest_size);
 	}
 
-	struct r_bin_pe_section_t *sects = NULL;
-	sects = PE_(r_bin_pe_get_sections) (bin);
+	struct r_bin_pe_section_t *sects = bin->sections;
 	for (i = 0; !sects[i].last; i++) {
 		computeOverlayOffset(
 				sects[i].paddr,
@@ -868,9 +895,13 @@ int PE_(bin_pe_get_overlay)(struct PE_(r_bin_pe_obj_t)* bin, ut64* size) {
 
 	if (bin->optional_header) {
 		for (i = 0; i < PE_IMAGE_DIRECTORY_ENTRIES; i++) {
+			if (i == PE_IMAGE_DIRECTORY_ENTRY_SECURITY) {
+				continue;
+			}
+
 			computeOverlayOffset (
-				bin_pe_rva_to_paddr (bin, bin->optional_header->DataDirectory[i].VirtualAddress),
-				bin->optional_header->DataDirectory[i].Size,
+				bin_pe_rva_to_paddr (bin, bin->data_directory[i].VirtualAddress),
+				bin->data_directory[i].Size,
 				bin->size,
 				&largest_offset,
 				&largest_size);
@@ -882,7 +913,6 @@ int PE_(bin_pe_get_overlay)(struct PE_(r_bin_pe_obj_t)* bin, ut64* size) {
 		*size = bin->size - largest_offset - largest_size;
 		return largest_offset + largest_size;
 	}
-
 	return 0;
 }
 
@@ -976,11 +1006,13 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	while (count < metadata->NumberOfStreams) {
 		stream = R_NEW0 (PE_(image_metadata_stream));
 		if (!stream) {
+			free (streams);
 			goto fail;
 		}
 
 		if (r_buf_fread_at (bin->b, start_of_stream, (ut8*) stream, bin->big_endian? "2I": "2i", 1) < 1) {
 			free (stream);
+			free (streams);
 			goto fail;
 		}
 		eprintf ("DirectoryAddress: %x Size: %x\n", stream->Offset, stream->Size);
@@ -988,12 +1020,14 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 
 		if (!stream_name) {
 			free (stream);
+			free (streams);
 			goto fail;
 		}
 
 		if (r_buf_size (bin->b) < (start_of_stream + 8 + MAX_METADATA_STRING_LENGTH)) {
 			free (stream_name);
 			free (stream);
+			free (streams);
 			goto fail;
 		}
 		int c = bin_pe_read_metadata_string (stream_name,
@@ -1001,6 +1035,7 @@ static int bin_pe_init_metadata_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 		if (c == 0) {
 			free (stream_name);
 			free (stream);
+			free (streams);
 			goto fail;
 		}
 		eprintf ("Stream name: %s %d\n", stream_name, c);
@@ -1029,7 +1064,7 @@ static int bin_pe_init_overlay(struct PE_(r_bin_pe_obj_t)* bin) {
 
 static int bin_pe_init_clr_hdr(struct PE_(r_bin_pe_obj_t)* bin) {
 	PE_(image_data_directory) * clr_dir = &bin->data_directory[PE_IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR];
-	PE_DWord image_clr_hdr_paddr = clr_dir? bin_pe_rva_to_paddr (bin, clr_dir->VirtualAddress): 0;
+	PE_DWord image_clr_hdr_paddr = bin_pe_rva_to_paddr (bin, clr_dir->VirtualAddress);
 	// int clr_dir_size = clr_dir? clr_dir->Size: 0;
 	PE_(image_clr_header) * clr_hdr = R_NEW0 (PE_(image_clr_header));
 	int rr, len = sizeof (PE_(image_clr_header));
@@ -1258,12 +1293,12 @@ static void bin_pe_store_tls_callbacks(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord
 				break;
 			}
 		}
-		key = sdb_fmt (0, "pe.tls_callback%d_vaddr", count);
+		key = sdb_fmt ("pe.tls_callback%d_vaddr", count);
 		sdb_num_set (bin->kv, key, addressOfTLSCallback, 0);
-		key = sdb_fmt (0, "pe.tls_callback%d_paddr", count);
+		key = sdb_fmt ("pe.tls_callback%d_paddr", count);
 		paddr = bin_pe_rva_to_paddr (bin, bin_pe_va_to_rva (bin, (PE_DWord) addressOfTLSCallback));
 		sdb_num_set (bin->kv, key, paddr,                0);
-		key = sdb_fmt (0, "pe.tls_callback%d_haddr", count);
+		key = sdb_fmt ("pe.tls_callback%d_haddr", count);
 		haddr = callbacks;
 		sdb_num_set (bin->kv, key, haddr,                0);
 		count++;
@@ -1353,7 +1388,7 @@ static void free_StringFileInfo(StringFileInfo* stringFileInfo) {
 	}
 }
 
-#define align32(x) x = ((x & 0x3) == 0)? x: (x & ~0x3) + 0x4;
+#define align32(x) x = (((x) & 0x3) == 0)? (x): ((x) & ~0x3) + 0x4;
 
 static void free_VS_VERSIONINFO(PE_VS_VERSIONINFO* vs_VersionInfo) {
 	if (vs_VersionInfo) {
@@ -1398,7 +1433,7 @@ static Var* Pe_r_bin_pe_parse_var(struct PE_(r_bin_pe_obj_t)* bin, PE_DWord* cur
 		free_Var (var);
 		return NULL;
 	}
-	
+
 	var->szKey = (ut16*) malloc (UT16_ALIGN (TRANSLATION_UTF_16_LEN));  //L"Translation"
 	if (!var->szKey) {
 		bprintf ("Warning: malloc (Var szKey)\n");
@@ -1526,6 +1561,7 @@ static String* Pe_r_bin_pe_parse_string(struct PE_(r_bin_pe_obj_t)* bin, PE_DWor
 		return NULL;
 	}
 	if (begAddr > bin->size || begAddr + sizeof(string->wLength) > bin->size) {
+		free_String (string);
 		return NULL;
 	}
 	if (r_buf_read_at (bin->b, *curAddr, (ut8*) &string->wLength, sizeof(string->wLength)) != sizeof(string->wLength)) {
@@ -1957,6 +1993,8 @@ static Sdb* Pe_r_bin_store_string(String* string) {
 	}
 	sdb_set (sdb, "key",   encodedKey, 0);
 	sdb_set (sdb, "value", encodedVal, 0);
+	free (encodedKey);
+	free (encodedVal);
 	return sdb;
 }
 
@@ -1978,6 +2016,7 @@ static Sdb* Pe_r_bin_store_string_table(StringTable* stringTable) {
 		return NULL;
 	}
 	sdb_set (sdb, "key", encodedKey, 0);
+	free (encodedKey);
 	for (; i < stringTable->numOfChildren; i++) {
 		snprintf (key, 20, "string%d", i);
 		sdb_ns_set (sdb, key, Pe_r_bin_store_string (stringTable->Children[i]));
@@ -2056,128 +2095,172 @@ static char* _resource_lang_str(int id) {
 	case 0x36: return "LANG_AFRIKAANS";
 	case 0x1c: return "LANG_ALBANIAN ";
 	case 0x01: return "LANG_ARABIC";
-	case 0x2b: return "LANG_ARMENIAN"; 
-	case 0x4d: return "LANG_ASSAMESE"; 
-	case 0x2c: return "LANG_AZERI"; 
-	case 0x2d: return "LANG_BASQUE"; 
-	case 0x23: return "LANG_BELARUSIAN"; 
-	case 0x45: return "LANG_BENGALI"; 
-	case 0x02: return "LANG_BULGARIAN"; 
-	case 0x03: return "LANG_CATALAN"; 
-	case 0x04: return "LANG_CHINESE"; 
-	case 0x1a: return "LANG_CROATIAN"; 
-	case 0x05: return "LANG_CZECH"; 
-	case 0x06: return "LANG_DANISH"; 
-	case 0x65: return "LANG_DIVEHI"; 
-	case 0x13: return "LANG_DUTCH"; 
-	case 0x09: return "LANG_ENGLISH"; 
-	case 0x25: return "LANG_ESTONIAN"; 
-	case 0x38: return "LANG_FAEROESE"; 
-	case 0x29: return "LANG_FARSI"; 
-	case 0x0b: return "LANG_FINNISH"; 
-	case 0x0c: return "LANG_FRENCH"; 
-	case 0x56: return "LANG_GALICIAN"; 
-	case 0x37: return "LANG_GEORGIAN"; 
-	case 0x07: return "LANG_GERMAN"; 
-	case 0x08: return "LANG_GREEK"; 
-	case 0x47: return "LANG_GUJARATI"; 
-	case 0x0d: return "LANG_HEBREW"; 
-	case 0x39: return "LANG_HINDI"; 
-	case 0x0e: return "LANG_HUNGARIAN"; 
-	case 0x0f: return "LANG_ICELANDIC"; 
-	case 0x21: return "LANG_INDONESIAN"; 
-	case 0x10: return "LANG_ITALIAN"; 
-	case 0x11: return "LANG_JAPANESE"; 
-	case 0x4b: return "LANG_KANNADA"; 
-	case 0x60: return "LANG_KASHMIRI"; 
-	case 0x3f: return "LANG_KAZAK"; 
-	case 0x57: return "LANG_KONKANI"; 
-	case 0x12: return "LANG_KOREAN"; 
-	case 0x40: return "LANG_KYRGYZ"; 
-	case 0x26: return "LANG_LATVIAN"; 
-	case 0x27: return "LANG_LITHUANIAN"; 
-	case 0x2f: return "LANG_MACEDONIAN"; 
-	case 0x3e: return "LANG_MALAY"; 
-	case 0x4c: return "LANG_MALAYALAM"; 
-	case 0x58: return "LANG_MANIPURI"; 
-	case 0x4e: return "LANG_MARATHI"; 
-	case 0x50: return "LANG_MONGOLIAN"; 
-	case 0x61: return "LANG_NEPALI"; 
-	case 0x14: return "LANG_NORWEGIAN"; 
-	case 0x48: return "LANG_ORIYA"; 
-	case 0x15: return "LANG_POLISH"; 
-	case 0x16: return "LANG_PORTUGUESE"; 
-	case 0x46: return "LANG_PUNJABI"; 
-	case 0x18: return "LANG_ROMANIAN"; 
-	case 0x19: return "LANG_RUSSIAN"; 
-	case 0x4f: return "LANG_SANSKRIT"; 
-	case 0x59: return "LANG_SINDHI"; 
-	case 0x1b: return "LANG_SLOVAK"; 
-	case 0x24: return "LANG_SLOVENIAN"; 
-	case 0x0a: return "LANG_SPANISH "; 
-	case 0x41: return "LANG_SWAHILI"; 
-	case 0x1d: return "LANG_SWEDISH"; 
-	case 0x5a: return "LANG_SYRIAC"; 
-	case 0x49: return "LANG_TAMIL"; 
-	case 0x44: return "LANG_TATAR"; 
-	case 0x4a: return "LANG_TELUGU"; 
-	case 0x1e: return "LANG_THAI"; 
-	case 0x1f: return "LANG_TURKISH"; 
-	case 0x22: return "LANG_UKRAINIAN"; 
-	case 0x20: return "LANG_URDU"; 
-	case 0x43: return "LANG_UZBEK"; 
-	case 0x2a: return "LANG_VIETNAMESE"; 
-	case 0x3c: return "LANG_GAELIC"; 
-	case 0x3a: return "LANG_MALTESE"; 
-	case 0x28: return "LANG_MAORI"; 
-	case 0x17: return "LANG_RHAETO_ROMANCE"; 
-	case 0x3b: return "LANG_SAAMI"; 
-	case 0x2e: return "LANG_SORBIAN"; 
-	case 0x30: return "LANG_SUTU"; 
-	case 0x31: return "LANG_TSONGA"; 
-	case 0x32: return "LANG_TSWANA"; 
-	case 0x33: return "LANG_VENDA"; 
-	case 0x34: return "LANG_XHOSA"; 
-	case 0x35: return "LANG_ZULU"; 
-	case 0x8f: return "LANG_ESPERANTO"; 
-	case 0x90: return "LANG_WALON"; 
-	case 0x91: return "LANG_CORNISH"; 
-	case 0x92: return "LANG_WELSH"; 
-	case 0x93: return "LANG_BRETON"; 
+	case 0x2b: return "LANG_ARMENIAN";
+	case 0x4d: return "LANG_ASSAMESE";
+	case 0x2c: return "LANG_AZERI";
+	case 0x2d: return "LANG_BASQUE";
+	case 0x23: return "LANG_BELARUSIAN";
+	case 0x45: return "LANG_BENGALI";
+	case 0x02: return "LANG_BULGARIAN";
+	case 0x03: return "LANG_CATALAN";
+	case 0x04: return "LANG_CHINESE";
+	case 0x1a: return "LANG_CROATIAN";
+	case 0x05: return "LANG_CZECH";
+	case 0x06: return "LANG_DANISH";
+	case 0x65: return "LANG_DIVEHI";
+	case 0x13: return "LANG_DUTCH";
+	case 0x09: return "LANG_ENGLISH";
+	case 0x25: return "LANG_ESTONIAN";
+	case 0x38: return "LANG_FAEROESE";
+	case 0x29: return "LANG_FARSI";
+	case 0x0b: return "LANG_FINNISH";
+	case 0x0c: return "LANG_FRENCH";
+	case 0x56: return "LANG_GALICIAN";
+	case 0x37: return "LANG_GEORGIAN";
+	case 0x07: return "LANG_GERMAN";
+	case 0x08: return "LANG_GREEK";
+	case 0x47: return "LANG_GUJARATI";
+	case 0x0d: return "LANG_HEBREW";
+	case 0x39: return "LANG_HINDI";
+	case 0x0e: return "LANG_HUNGARIAN";
+	case 0x0f: return "LANG_ICELANDIC";
+	case 0x21: return "LANG_INDONESIAN";
+	case 0x10: return "LANG_ITALIAN";
+	case 0x11: return "LANG_JAPANESE";
+	case 0x4b: return "LANG_KANNADA";
+	case 0x60: return "LANG_KASHMIRI";
+	case 0x3f: return "LANG_KAZAK";
+	case 0x57: return "LANG_KONKANI";
+	case 0x12: return "LANG_KOREAN";
+	case 0x40: return "LANG_KYRGYZ";
+	case 0x26: return "LANG_LATVIAN";
+	case 0x27: return "LANG_LITHUANIAN";
+	case 0x2f: return "LANG_MACEDONIAN";
+	case 0x3e: return "LANG_MALAY";
+	case 0x4c: return "LANG_MALAYALAM";
+	case 0x58: return "LANG_MANIPURI";
+	case 0x4e: return "LANG_MARATHI";
+	case 0x50: return "LANG_MONGOLIAN";
+	case 0x61: return "LANG_NEPALI";
+	case 0x14: return "LANG_NORWEGIAN";
+	case 0x48: return "LANG_ORIYA";
+	case 0x15: return "LANG_POLISH";
+	case 0x16: return "LANG_PORTUGUESE";
+	case 0x46: return "LANG_PUNJABI";
+	case 0x18: return "LANG_ROMANIAN";
+	case 0x19: return "LANG_RUSSIAN";
+	case 0x4f: return "LANG_SANSKRIT";
+	case 0x59: return "LANG_SINDHI";
+	case 0x1b: return "LANG_SLOVAK";
+	case 0x24: return "LANG_SLOVENIAN";
+	case 0x0a: return "LANG_SPANISH ";
+	case 0x41: return "LANG_SWAHILI";
+	case 0x1d: return "LANG_SWEDISH";
+	case 0x5a: return "LANG_SYRIAC";
+	case 0x49: return "LANG_TAMIL";
+	case 0x44: return "LANG_TATAR";
+	case 0x4a: return "LANG_TELUGU";
+	case 0x1e: return "LANG_THAI";
+	case 0x1f: return "LANG_TURKISH";
+	case 0x22: return "LANG_UKRAINIAN";
+	case 0x20: return "LANG_URDU";
+	case 0x43: return "LANG_UZBEK";
+	case 0x2a: return "LANG_VIETNAMESE";
+	case 0x3c: return "LANG_GAELIC";
+	case 0x3a: return "LANG_MALTESE";
+	case 0x28: return "LANG_MAORI";
+	case 0x17: return "LANG_RHAETO_ROMANCE";
+	case 0x3b: return "LANG_SAAMI";
+	case 0x2e: return "LANG_SORBIAN";
+	case 0x30: return "LANG_SUTU";
+	case 0x31: return "LANG_TSONGA";
+	case 0x32: return "LANG_TSWANA";
+	case 0x33: return "LANG_VENDA";
+	case 0x34: return "LANG_XHOSA";
+	case 0x35: return "LANG_ZULU";
+	case 0x8f: return "LANG_ESPERANTO";
+	case 0x90: return "LANG_WALON";
+	case 0x91: return "LANG_CORNISH";
+	case 0x92: return "LANG_WELSH";
+	case 0x93: return "LANG_BRETON";
 	default: return "UNKNOWN";
 	}
 }
 
 static char* _resource_type_str(int type) {
+	char * typeName;
 	switch (type) {
-	case 1: return "CURSOR";
-	case 2: return "BITMAP";
-	case 3: return "ICON";
-	case 4: return "MENU";
-	case 5: return "DIALOG";
-	case 6: return "STRING";
-	case 7: return "FONTDIR";
-	case 8: return "FONT";
-	case 9: return "ACCELERATOR";
-	case 10: return "RCDATA";
-	case 11: return "MESSAGETABLE";
-	case 12: return "GROUP_CURSOR";
-	case 14: return "GROUP_ICON";
-	case 16: return "VERSION";
-	case 17: return "DLGINCLUDE";
-	case 19: return "PLUGPLAY";
-	case 20: return "VXD";
-	case 21: return "ANICURSOR";
-	case 22: return "ANIICON";
-	case 23: return "HTML";
-	case 24: return "MANIFEST";
-	default: return "UNKNOWN";
+	case 1:
+		typeName = "CURSOR";
+		break;
+	case 2:
+		typeName = "BITMAP";
+		break;
+	case 3:
+		typeName = "ICON";
+		break;
+	case 4:
+		typeName = "MENU";
+		break;
+	case 5:
+		typeName = "DIALOG";
+		break;
+	case 6:
+		typeName = "STRING";
+		break;
+	case 7:
+		typeName = "FONTDIR";
+		break;
+	case 8:
+		typeName = "FONT";
+		break;
+	case 9:
+		typeName = "ACCELERATOR";
+		break;
+	case 10:
+		typeName = "RCDATA";
+		break;
+	case 11:
+		typeName = "MESSAGETABLE";
+		break;
+	case 12:
+		typeName = "GROUP_CURSOR";
+		break;
+	case 14:
+		typeName = "GROUP_ICON";
+		break;
+	case 16:
+		typeName = "VERSION";
+		break;
+	case 17:
+		typeName = "DLGINCLUDE";
+		break;
+	case 19:
+		typeName = "PLUGPLAY";
+		break;
+	case 20:
+		typeName = "VXD";
+		break;
+	case 21:
+		typeName = "ANICURSOR";
+		break;
+	case 22:
+		typeName = "ANIICON";
+		break;
+	case 23:
+		typeName = "HTML";
+		break;
+	case 24:
+		typeName = "MANIFEST";
+		break;
+	default: return r_str_newf ("UNKNOWN (%d)",type);
 	}
+	return strdup (typeName);
 }
 
-static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_resource_directory *dir, ut64 offDir, int type, int id, SdbHash *dirs) {
+static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_resource_directory *dir, ut64 offDir, int type, int id, SdbHt *dirs) {
 	int index = 0;
-	int totalRes = dir->NumberOfNamedEntries + dir->NumberOfIdEntries;
+	ut32 totalRes = dir->NumberOfNamedEntries + dir->NumberOfIdEntries;
 	ut64 rsrc_base = bin->resource_directory_offset;
 	ut64 off;
 	if (totalRes > R_PE_MAX_RESOURCES) {
@@ -2186,12 +2269,12 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 	for (index = 0; index < totalRes; index++) {
 		Pe_image_resource_directory_entry entry;
 		off = rsrc_base + offDir + sizeof(*dir) + index * sizeof(entry);
-		char *key = sdb_fmt (0, "0x%08"PFMT64x, off);
+		char *key = sdb_fmt ("0x%08"PFMT64x, off);
 		if (sdb_ht_find (dirs, key, NULL)) {
 			break;
 		}
 		sdb_ht_insert (dirs, key, "1");
-		if (off > bin->size || off + sizeof(entry) > bin->size) {
+		if (off > bin->size || off + sizeof (entry) > bin->size) {
 			break;
 		}
 		if (r_buf_read_at (bin->b, off, (ut8*)&entry, sizeof(entry)) < 1) {
@@ -2202,11 +2285,12 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			//detect here malicious file trying to making us infinite loop
 			Pe_image_resource_directory identEntry;
 			off = rsrc_base + entry.u2.s.OffsetToDirectory;
-			int len = r_buf_read_at (bin->b, off, (ut8*) &identEntry, sizeof(identEntry));
+			int len = r_buf_read_at (bin->b, off, (ut8*) &identEntry, sizeof (identEntry));
 			if (len < 1 || len != sizeof (Pe_image_resource_directory)) {
 				eprintf ("Warning: parsing resource directory\n");
 			}
-			_parse_resource_directory (bin, &identEntry, entry.u2.s.OffsetToDirectory, type, entry.u1.Id, dirs);
+			_parse_resource_directory (bin, &identEntry,
+				entry.u2.s.OffsetToDirectory, type, entry.u1.Id, dirs);
 			continue;
 		}
 
@@ -2247,12 +2331,16 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 				sdb_free (sdb);
 				continue;
 			}
-			while (cur_paddr < data_paddr + data->Size && cur_paddr < bin->size) {
+			while (cur_paddr < (data_paddr + data->Size) && cur_paddr < bin->size) {
 				PE_VS_VERSIONINFO* vs_VersionInfo = Pe_r_bin_pe_parse_version_info (bin, cur_paddr);
 				if (vs_VersionInfo) {
 					snprintf (key, 30, "VS_VERSIONINFO%d", counter++);
 					sdb_ns_set (sdb, key, Pe_r_bin_store_resource_version_info (vs_VersionInfo));
 				} else {
+					break;
+				}
+				if (vs_VersionInfo->wLength < 1) {
+					// Invalid version length
 					break;
 				}
 				cur_paddr += vs_VersionInfo->wLength;
@@ -2266,8 +2354,8 @@ static void _parse_resource_directory(struct PE_(r_bin_pe_obj_t) *bin, Pe_image_
 			free (data);
 			break;
 		}
-		rs->timestr = _time_stamp_to_str (dir->TimeDateStamp); 	
-		rs->type = strdup (_resource_type_str (type));
+		rs->timestr = _time_stamp_to_str (dir->TimeDateStamp);
+		rs->type = _resource_type_str (type);
 		rs->language = strdup (_resource_lang_str (entry.u1.Name & 0x3ff));
 		rs->data = data;
 		rs->name = id;
@@ -2279,25 +2367,25 @@ static void _store_resource_sdb(struct PE_(r_bin_pe_obj_t) *bin) {
 	RListIter *iter;
 	r_pe_resource *rs;
 	int index = 0;
-	ut64 paddr = 0;
+	ut64 vaddr = 0;
 	char *key;
 	Sdb *sdb = sdb_new0 ();
 	if (!sdb) {
 		return;
 	}
 	r_list_foreach (bin->resources, iter, rs) {
-		key = sdb_fmt (0, "resource.%d.timestr", index);
+		key = sdb_fmt ("resource.%d.timestr", index);
 		sdb_set (sdb, key, rs->timestr, 0);
-		key = sdb_fmt (0, "resource.%d.paddr", index);
-		paddr = bin_pe_rva_to_paddr (bin, rs->data->OffsetToData);
-		sdb_num_set (sdb, key, paddr, 0);
-		key = sdb_fmt (0, "resource.%d.name", index);
+		key = sdb_fmt ("resource.%d.vaddr", index);
+		vaddr = bin_pe_rva_to_va (bin, rs->data->OffsetToData);
+		sdb_num_set (sdb, key, vaddr, 0);
+		key = sdb_fmt ("resource.%d.name", index);
 		sdb_num_set (sdb, key, rs->name, 0);
-		key = sdb_fmt (0, "resource.%d.size", index);
+		key = sdb_fmt ("resource.%d.size", index);
 		sdb_num_set (sdb, key, rs->data->Size, 0);
-		key = sdb_fmt (0, "resource.%d.type", index);
+		key = sdb_fmt ("resource.%d.type", index);
 		sdb_set (sdb, key, rs->type, 0);
-		key = sdb_fmt (0, "resource.%d.language", index);
+		key = sdb_fmt ("resource.%d.language", index);
 		sdb_set (sdb, key, rs->language, 0);
 		index++;
 	}
@@ -2310,8 +2398,8 @@ R_API void PE_(bin_pe_parse_resource)(struct PE_(r_bin_pe_obj_t) *bin) {
 	ut64 off = 0, rsrc_base = bin->resource_directory_offset;
 	Pe_image_resource_directory *rs_directory = bin->resource_directory;
 	ut32 curRes = 0;
-	ut32 totalRes = 0;
-	SdbHash *dirs = sdb_ht_new (); //to avoid infinite loops
+	int totalRes = 0;
+	SdbHt *dirs = sdb_ht_new (); //to avoid infinite loops
 	if (!dirs) {
 		return;
 	}
@@ -2329,7 +2417,7 @@ R_API void PE_(bin_pe_parse_resource)(struct PE_(r_bin_pe_obj_t) *bin) {
 	for (index = 0; index < totalRes; index++) {
 		Pe_image_resource_directory_entry typeEntry;
 		off = rsrc_base + sizeof (*rs_directory) + index * sizeof (typeEntry);
-		sdb_ht_insert (dirs, sdb_fmt (0, "0x%08"PFMT64x, off), "1");
+		sdb_ht_insert (dirs, sdb_fmt ("0x%08"PFMT64x, off), "1");
 		if (off > bin->size || off + sizeof(typeEntry) > bin->size) {
 			break;
 		}
@@ -2400,6 +2488,7 @@ static int bin_pe_init(struct PE_(r_bin_pe_obj_t)* bin) {
 		eprintf ("Warning: Cannot initialize sections\n");
 		return false;
 	}
+	bin->sections = PE_(r_bin_pe_get_sections) (bin);
 	bin_pe_init_imports (bin);
 	bin_pe_init_exports (bin);
 	bin_pe_init_resource (bin);
@@ -2476,14 +2565,14 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 	entry->haddr = bin->dos_header->e_lfanew + 4 + sizeof (PE_(image_file_header)) + 16;
 
 	if (entry->paddr >= bin->size) {
-		struct r_bin_pe_section_t* sections = PE_(r_bin_pe_get_sections) (bin);
+		struct r_bin_pe_section_t* sections = bin->sections;
 		ut64 paddr = 0;
 		if (!debug) {
 			bprintf ("Warning: Invalid entrypoint ... "
 				"trying to fix it but i do not promise nothing\n");
 		}
 		for (i = 0; i < bin->num_sections; i++) {
-			if (sections[i].flags & PE_IMAGE_SCN_MEM_EXECUTE) {
+			if (sections[i].perm & PE_IMAGE_SCN_MEM_EXECUTE) {
 				entry->paddr = sections[i].paddr;
 				entry->vaddr = sections[i].vaddr + base_addr;
 				paddr = 1;
@@ -2509,24 +2598,21 @@ struct r_bin_pe_addr_t* PE_(r_bin_pe_get_entrypoint)(struct PE_(r_bin_pe_obj_t)*
 				entry->vaddr = entry->paddr + base_addr;
 			}
 		}
-		free (sections);
-
 	}
 	if (!entry->paddr) {
 		if (!debug) {
 			bprintf ("Warning: NULL entrypoint\n");
 		}
-		struct r_bin_pe_section_t* sections = PE_(r_bin_pe_get_sections) (bin);
+		struct r_bin_pe_section_t* sections = bin->sections;
 		for (i = 0; i < bin->num_sections; i++) {
 			//If there is a section with x without w perm is a good candidate to be the entrypoint
-			if (sections[i].flags & PE_IMAGE_SCN_MEM_EXECUTE && !(sections[i].flags & PE_IMAGE_SCN_MEM_WRITE)) {
+			if (sections[i].perm & PE_IMAGE_SCN_MEM_EXECUTE && !(sections[i].perm & PE_IMAGE_SCN_MEM_WRITE)) {
 				entry->paddr = sections[i].paddr;
 				entry->vaddr = sections[i].vaddr + base_addr;
 				break;
 			}
 
 		}
-		free (sections);
 	}
 
 	if (is_arm (bin) && entry->vaddr & 1) {
@@ -2565,7 +2651,9 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 			return NULL;
 		}
 		exports_sz = (bin->export_directory->NumberOfFunctions + 1) * sizeof (struct r_bin_pe_export_t);
-		if (exports_sz < 0 || exports_sz > bin->size) {
+		// we cant exit with export_sz > bin->size, us r_bin_pe_export_t is 256+256+8+8+8+4 bytes is easy get over file size
+		// to avoid fuzzing we can abort on export_directory->NumberOfFunctions>0xffff
+		if (exports_sz < 0 || bin->export_directory->NumberOfFunctions + 1 > 0xffff) {
 			return NULL;
 		}
 		if (!(exports = malloc (exports_sz))) {
@@ -2607,8 +2695,8 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 					name_paddr = bin_pe_rva_to_paddr (bin, name_vaddr);
 					if (r_buf_read_at (bin->b, name_paddr, (ut8*) function_name, PE_NAME_LENGTH) < 1) {
 						bprintf ("Warning: read (function name)\n");
-						free (exports);
-						return NULL;
+						exports[i].last = 1;
+						return exports;
 					}
 				} else { // No name export, get the ordinal
 					snprintf (function_name, PE_NAME_LENGTH, "Ordinal_%i", i + 1);
@@ -2621,22 +2709,24 @@ struct r_bin_pe_export_t* PE_(r_bin_pe_get_exports)(struct PE_(r_bin_pe_obj_t)* 
 			if (function_rva >= export_dir_rva && function_rva < (export_dir_rva + export_dir_size)) {
 				// if forwarder, the VA point to Forwarded name
 				if (r_buf_read_at (bin->b, bin_pe_rva_to_paddr (bin, function_rva), (ut8*) forwarder_name, PE_NAME_LENGTH) < 1) {
-					bprintf ("Warning: read (magic)\n");
-					free (exports);
-					return NULL;
+					exports[i].last = 1;
+					return exports;
 				}
 			} else { // no forwarder export
 				snprintf (forwarder_name, PE_NAME_LENGTH, "NONE");
 			}
 			dll_name[PE_NAME_LENGTH] = '\0';
 			function_name[PE_NAME_LENGTH] = '\0';
-			snprintf (export_name, sizeof (export_name) - 1, "%s_%s", dll_name, function_name);
+			int len = snprintf (export_name, sizeof (export_name), "%s_%s", dll_name, function_name);
+			if (len >= sizeof (export_name)) {
+				eprintf ("Export name '%s' has been truncated\n", export_name);
+			}
 			exports[i].vaddr = bin_pe_rva_to_va (bin, function_rva);
 			exports[i].paddr = bin_pe_rva_to_paddr (bin, function_rva);
 			exports[i].ordinal = function_ordinal;
 			memcpy (exports[i].forwarder, forwarder_name, PE_NAME_LENGTH);
 			exports[i].forwarder[PE_NAME_LENGTH] = '\0';
-			memcpy (exports[i].name,      export_name,    PE_NAME_LENGTH);
+			memcpy (exports[i].name, export_name, PE_NAME_LENGTH);
 			exports[i].name[PE_NAME_LENGTH] = '\0';
 			exports[i].last = 0;
 		}
@@ -2677,8 +2767,11 @@ static bool get_rsds(ut8* dbg_data, int dbg_data_len, SCV_RSDS_HEADER* res) {
 	return true;
 }
 
-static void get_nb10(ut8* dbg_data, SCV_NB10_HEADER* res) {
+static void get_nb10(ut8* dbg_data, int dbg_data_len, SCV_NB10_HEADER* res) {
 	const int nb10sz = 16;
+	if (dbg_data_len < nb10sz) {
+		return;
+	}
 	memcpy (res, dbg_data, nb10sz);
 	res->file_name = (ut8*) strdup ((const char*) dbg_data + nb10sz);
 }
@@ -2686,6 +2779,7 @@ static void get_nb10(ut8* dbg_data, SCV_NB10_HEADER* res) {
 static int get_debug_info(struct PE_(r_bin_pe_obj_t)* bin, PE_(image_debug_directory_entry)* dbg_dir_entry, ut8* dbg_data, int dbg_data_len, SDebugInfo* res) {
 	#define SIZEOF_FILE_NAME 255
 	int i = 0;
+	const char* dbgname;
 	if (!dbg_data) {
 		return 0;
 	}
@@ -2712,18 +2806,26 @@ static int get_debug_info(struct PE_(r_bin_pe_obj_t)* bin, PE_(image_debug_direc
 				rsds_hdr.guid.data4[6],
 				rsds_hdr.guid.data4[7],
 				rsds_hdr.age);
+			dbgname = (char*) rsds_hdr.file_name;
 			strncpy (res->file_name, (const char*)
-				rsds_hdr.file_name, sizeof (res->file_name));
+				dbgname, sizeof (res->file_name));
 			res->file_name[sizeof (res->file_name) - 1] = 0;
 			rsds_hdr.free ((struct SCV_RSDS_HEADER*) &rsds_hdr);
 		} else if (strncmp ((const char*) dbg_data, "NB10", 4) == 0) {
-			SCV_NB10_HEADER nb10_hdr;
+			if (dbg_data_len < 20) {
+				eprintf ("Truncated NB10 entry, not enough data to parse\n");
+				return 0;
+			}
+			SCV_NB10_HEADER nb10_hdr = {{0}};
 			init_cv_nb10_header (&nb10_hdr);
-			get_nb10 (dbg_data, &nb10_hdr);
+			get_nb10 (dbg_data, dbg_data_len, &nb10_hdr);
 			snprintf (res->guidstr, sizeof (res->guidstr),
 				"%x%x", nb10_hdr.timestamp, nb10_hdr.age);
-			strncpy (res->file_name, (const char*)
-				nb10_hdr.file_name, sizeof(res->file_name) - 1);
+			res->file_name[0] = 0;
+			if (nb10_hdr.file_name) {
+				strncpy (res->file_name, (const char*)
+						nb10_hdr.file_name, sizeof (res->file_name) - 1);
+			}
 			res->file_name[sizeof (res->file_name) - 1] = 0;
 			nb10_hdr.free ((struct SCV_NB10_HEADER*) &nb10_hdr);
 		} else {
@@ -2828,20 +2930,18 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t)* 
 			dll_name_offset = curr_import_dir->Name;
 			paddr = bin_pe_rva_to_paddr (bin, dll_name_offset);
 			if (paddr > bin->size) {
-				return NULL;
+				goto beach;
 			}
 			if (paddr + PE_NAME_LENGTH > bin->size) {
 				rr = r_buf_read_at (bin->b, paddr, (ut8*) dll_name, bin->size - paddr);
 				if (rr != bin->size - paddr) {
-					bprintf ("Warning: read (magic)\n");
-					return NULL;
+					goto beach;
 				}
 				dll_name[bin->size - paddr] = '\0';
 			}else {
 				rr = r_buf_read_at (bin->b, paddr, (ut8*) dll_name, PE_NAME_LENGTH);
 				if (rr != PE_NAME_LENGTH) {
-					bprintf ("Warning: read (magic)\n");
-					return NULL;
+					goto beach;
 				}
 				dll_name[PE_NAME_LENGTH] = '\0';
 			}
@@ -2856,7 +2956,7 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t)* 
 	off = bin->delay_import_directory_offset;
 	if (off < bin->size && off > 0) {
 		if (off + sizeof(PE_(image_delay_import_directory)) > bin->size) {
-			return NULL;
+			goto beach;
 		}
 		curr_delay_import_dir = (PE_(image_delay_import_directory)*)(bin->b->buf + off);
 		if (!curr_delay_import_dir->Attributes) {
@@ -2870,12 +2970,11 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t)* 
 		}
 		while ((curr_delay_import_dir->Name != 0) && (curr_delay_import_dir->DelayImportAddressTable !=0)) {
 			if (dll_name_offset > bin->size || dll_name_offset + PE_NAME_LENGTH > bin->size) {
-				return NULL;
+				goto beach;
 			}
 			int rr = r_buf_read_at (bin->b, dll_name_offset, (ut8*) dll_name, PE_NAME_LENGTH);
 			if (rr < 5) {
-				bprintf ("Warning: read (magic)\n");
-				return NULL;
+				goto beach;
 			}
 
 			dll_name[PE_NAME_LENGTH] = '\0';
@@ -2884,13 +2983,12 @@ struct r_bin_pe_import_t* PE_(r_bin_pe_get_imports)(struct PE_(r_bin_pe_obj_t)* 
 				break;
 			}
 			if ((char*) (curr_delay_import_dir + 2) > (char*) (bin->b->buf + bin->size)) {
-				bprintf ("Warning: malformed pe\n");
-				return NULL;
+				goto beach;
 			}
 			curr_delay_import_dir++;
 		}
 	}
-
+beach:
 	if (nimp) {
 		imps = realloc (imports, (nimp + 1) * sizeof(struct r_bin_pe_import_t));
 		if (!imps) {
@@ -2911,7 +3009,7 @@ struct r_bin_pe_lib_t* PE_(r_bin_pe_get_libs)(struct PE_(r_bin_pe_obj_t)* bin) {
 	PE_(image_import_directory) * curr_import_dir = NULL;
 	PE_(image_delay_import_directory) * curr_delay_import_dir = NULL;
 	PE_DWord name_off = 0;
-	SdbHash* lib_map = NULL;
+	SdbHt* lib_map = NULL;
 	ut64 off; //cache value
 	int index = 0;
 	int len = 0;
@@ -3156,7 +3254,7 @@ void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_
 			}
 			//look for other segment with x that is already mapped and hold entrypoint
 			for (j = 0; !sections[j].last; j++) {
-				if (sections[j].flags & PE_IMAGE_SCN_MEM_EXECUTE) {
+				if (sections[j].perm & PE_IMAGE_SCN_MEM_EXECUTE) {
 					addr_beg = sections[j].paddr;
 					addr_end = addr_beg + sections[j].size;
 					if (addr_beg <= entry->paddr && entry->paddr < addr_end) {
@@ -3179,7 +3277,7 @@ void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_
 				sections[i].paddr = entry->paddr;
 				sections[i].vaddr = entry->vaddr - base_addr;
 				sections[i].size = sections[i].vsize = new_section_size;
-				sections[i].flags = new_perm;
+				sections[i].perm = new_perm;
 			}
 			goto out_function;
 		}
@@ -3204,14 +3302,18 @@ void PE_(r_bin_pe_check_sections)(struct PE_(r_bin_pe_obj_t)* bin, struct r_bin_
 		}
 	}
 	//we need to create another section in order to load the entrypoint
-	sections = realloc (sections, (bin->num_sections + 2) * sizeof(struct r_bin_pe_section_t));
+	void *ss = realloc (sections, (bin->num_sections + 2) * sizeof(struct r_bin_pe_section_t));
+	if (!ss) {
+		goto out_function;
+	}
+	bin->sections = sections = ss;
 	i = bin->num_sections;
 	sections[i].last = 0;
 	strcpy ((char*) sections[i].name, "blob");
 	sections[i].paddr = entry->paddr;
 	sections[i].vaddr = entry->vaddr - base_addr;
 	sections[i].size = sections[i].vsize = new_section_size;
-	sections[i].flags = new_perm;
+	sections[i].perm = new_perm;
 	sections[i + 1].last = 1;
 	*sects = sections;
 out_function:
@@ -3220,7 +3322,7 @@ out_function:
 
 }
 
-struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)* bin) {
+static struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)* bin) {
 	struct r_bin_pe_section_t* sections = NULL;
 	PE_(image_section_header) * shdr;
 	int i, j, section_count = 0;
@@ -3249,22 +3351,50 @@ struct r_bin_pe_section_t* PE_(r_bin_pe_get_sections)(struct PE_(r_bin_pe_obj_t)
 			char* new_name = r_str_newf ("sect_%d", j);
 			strncpy ((char*) sections[j].name, new_name, R_ARRAY_SIZE (sections[j].name) - 1);
 			free (new_name);
+		} else if (shdr[i].Name[0] == '/') {
+			//long name is something deprecated but still used
+			int idx = atoi ((const char *)shdr[i].Name + 1);
+			ut64 sym_tbl_off = bin->nt_headers->file_header.PointerToSymbolTable;
+			int num_symbols = bin->nt_headers->file_header.NumberOfSymbols;
+			int off = num_symbols * COFF_SYMBOL_SIZE;
+			if (sym_tbl_off &&
+			    sym_tbl_off + off + idx < bin->size &&
+			    sym_tbl_off + off + idx > off) {
+				int sz = PE_IMAGE_SIZEOF_SHORT_NAME * 3;
+				char* buf[64] = {0};
+				if (r_buf_read_at (bin->b,
+						   sym_tbl_off + off + idx,
+						   (ut8*)buf, 64)) {
+					memcpy (sections[j].name, buf, sz);
+					sections[j].name[sz - 1] = '\0';
+				}
+			}
 		} else {
 			memcpy (sections[j].name, shdr[i].Name, PE_IMAGE_SIZEOF_SHORT_NAME);
-			sections[j].name[PE_IMAGE_SIZEOF_SHORT_NAME - 1] = '\0';
+			sections[j].name[PE_IMAGE_SIZEOF_SHORT_NAME] = '\0';
 		}
 		sections[j].vaddr = shdr[i].VirtualAddress;
 		sections[j].size = shdr[i].SizeOfRawData;
-		sections[j].vsize = shdr[i].Misc.VirtualSize;
+		if (shdr[i].Misc.VirtualSize) {
+			sections[j].vsize = shdr[i].Misc.VirtualSize;
+		} else {
+			sections[j].vsize = shdr[i].SizeOfRawData;
+		}
 		if (bin->optional_header) {
-			int sa = R_MAX (bin->optional_header->SectionAlignment, 0x1000);
-			ut64 diff = sections[j].vsize % sa;
-			if (diff) {
-				sections[j].vsize += sa - diff;
+			ut32 sa = bin->optional_header->SectionAlignment;
+			if (sa) {
+				ut64 diff = sections[j].vsize % sa;
+				if (diff) {
+					sections[j].vsize += sa - diff;
+				}
+				if (sections[j].vaddr % sa) {
+					bprintf ("Warning: section %s not aligned to SectionAlignment.\n",
+							sections[j].name);
+				}
 			}
 		}
 		sections[j].paddr = shdr[i].PointerToRawData;
-		sections[j].flags = shdr[i].Characteristics;
+		sections[j].perm = shdr[i].Characteristics;
 		sections[j].last = 0;
 		j++;
 	}
@@ -3304,7 +3434,7 @@ char* PE_(r_bin_pe_get_subsystem)(struct PE_(r_bin_pe_obj_t)* bin) {
 	return subsystem? strdup (subsystem): NULL;
 }
 
-#define HASCHR(x) bin->nt_headers->file_header.Characteristics & x
+#define HASCHR(x) (bin->nt_headers->file_header.Characteristics & (x))
 
 int PE_(r_bin_pe_is_dll)(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!bin || !bin->nt_headers) {
@@ -3366,7 +3496,6 @@ int PE_(r_bin_pe_is_stripped_debug)(struct PE_(r_bin_pe_obj_t)* bin) {
 	return HASCHR (PE_IMAGE_FILE_DEBUG_STRIPPED);
 }
 
-
 void* PE_(r_bin_pe_free)(struct PE_(r_bin_pe_obj_t)* bin) {
 	if (!bin) {
 		return NULL;
@@ -3378,6 +3507,8 @@ void* PE_(r_bin_pe_free)(struct PE_(r_bin_pe_obj_t)* bin) {
 	free (bin->import_directory);
 	free (bin->resource_directory);
 	free (bin->delay_import_directory);
+	free (bin->tls_directory);
+	free (bin->sections);
 	r_list_free (bin->resources);
 	r_pkcs7_free_cms (bin->cms);
 	r_buf_free (bin->b);

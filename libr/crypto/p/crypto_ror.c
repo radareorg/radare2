@@ -1,7 +1,9 @@
 #include <r_lib.h>
 #include <r_crypto.h>
 
-#define MAX_ror_KEY_SIZE 32768
+#define NAME "ror"
+
+enum { MAX_ror_KEY_SIZE = 32768 };
 
 struct ror_state {
 	ut8 key[MAX_ror_KEY_SIZE];
@@ -23,7 +25,9 @@ static bool ror_init(struct ror_state *const state, const ut8 *key, int keylen) 
 static void ror_crypt(struct ror_state *const state, const ut8 *inbuf, ut8 *outbuf, int buflen) {
 	int i;
 	for (i = 0; i < buflen; i++) {
-		outbuf[i] = inbuf[i] >> state->key[i%state->key_size];
+		ut8 count = state->key[i % state->key_size] & 7;
+		ut8 inByte = inbuf[i];
+		outbuf[i] = (inByte >> count) | (inByte << ((8 - count) & 7));
 	}
 }
 
@@ -40,7 +44,7 @@ static int ror_get_key_size(RCrypto *cry) {
 }
 
 static bool ror_use(const char *algo) {
-	return !strcmp (algo, "ror");
+	return !strcmp (algo, NAME);
 }
 
 static bool update(RCrypto *cry, const ut8 *buf, int len) {
@@ -49,28 +53,26 @@ static bool update(RCrypto *cry, const ut8 *buf, int len) {
 		return false;
 	}
 	ut8 *obuf = calloc (1, len);
-	if (!obuf) return false;
+	if (!obuf) {
+		return false;
+	}
 	ror_crypt (&st, buf, obuf, len);
 	r_crypto_append (cry, obuf, len);
 	free (obuf);
 	return true;
 }
 
-static bool final(RCrypto *cry, const ut8 *buf, int len) {
-	return update (cry, buf, len);
-}
-
 RCryptoPlugin r_crypto_plugin_ror = {
-	.name = "ror",
+	.name = NAME,
 	.set_key = ror_set_key,
 	.get_key_size = ror_get_key_size,
 	.use = ror_use,
 	.update = update,
-	.final = final
+	.final = update,
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CRYPTO,
 	.data = &r_crypto_plugin_ror,
 	.version = R2_VERSION

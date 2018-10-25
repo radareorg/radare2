@@ -4,11 +4,9 @@
 #include <r_socket.h>
 #include "../libgdbr.h"
 
-// Read command from socket, parse into r2 debugger command in buffer. Return 0
-// on success, failure code (currently -1) on failure
-int gdbr_server_read(libgdbr_t *g, char *buf, size_t max_len);
+typedef int (*gdbr_server_cmd_cb) (libgdbr_t*, void*, const char*, char*, size_t);
 
-// Send command to the remote gdb instance
-int gdbr_server_send(libgdbr_t *g, const char *buf, size_t max_len);
+int gdbr_server_serve(libgdbr_t *g, gdbr_server_cmd_cb cmd_cb, void *core_ptr);
+
 
 #endif  // GDB_SERVER_CORE_H

@@ -29,6 +29,7 @@
 #include <grub/fshelp.h>
 #include <grub/hfs.h>
 #include <grub/charset.h>
+#include <r_util.h>
 
 #define GRUB_HFSPLUS_MAGIC 0x482B
 #define GRUB_HFSPLUSX_MAGIC 0x4858
@@ -1039,7 +1040,7 @@ grub_hfsplus_uuid (grub_device_t device, char **uuid)
   data = grub_hfsplus_mount (disk);
   if (data)
     {
-      *uuid = grub_xasprintf ("%016llx",
+      *uuid = grub_xasprintf ("%016"PFMT64x,
 			     (unsigned long long)
 			     grub_be_to_cpu64 (data->volheader.num_serial));
     }

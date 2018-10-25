@@ -1,11 +1,11 @@
-/* radare - LGPL - Copyright 2015 - pancake */
+/* radare - LGPL - Copyright 2015-2018 - pancake */
 
 #include <r_anal.h>
 
 #define DB esil->db_trace
-#define KEY(x) sdb_fmt (0, "%d."x, esil->trace_idx)
-#define KEYAT(x,y) sdb_fmt (0, "%d."x".0x%"PFMT64x, esil->trace_idx, y)
-#define KEYREG(x,y) sdb_fmt (0, "%d."x".%s", esil->trace_idx, y)
+#define KEY(x) sdb_fmt ("%d."x, esil->trace_idx)
+#define KEYAT(x,y) sdb_fmt ("%d."x".0x%"PFMT64x, esil->trace_idx, y)
+#define KEYREG(x,y) sdb_fmt ("%d."x".%s", esil->trace_idx, y)
 
 static int ocbs_set = false;
 static RAnalEsilCallbacks ocbs = {0};
@@ -97,8 +97,9 @@ R_API void r_anal_esil_trace (RAnalEsil *esil, RAnalOp *op) {
 	}
 	ocbs = esil->cb;
 	ocbs_set = true;
-	if (!DB) DB = sdb_new0 ();
-
+	if (!DB) {
+		DB = sdb_new0 ();
+	}
 	sdb_num_set (DB, "idx", esil->trace_idx, 0);
 	sdb_num_set (DB, KEY ("addr"), op->addr, 0);
 //	sdb_set (DB, KEY ("opcode"), op->mnemonic, 0);
@@ -115,6 +116,7 @@ R_API void r_anal_esil_trace (RAnalEsil *esil, RAnalOp *op) {
 	esil->cb.hook_mem_write = trace_hook_mem_write;
 	/* evaluate esil expression */
 	r_anal_esil_parse (esil, expr);
+	r_anal_esil_stack_free (esil);
 	/* restore hooks */
 	esil->cb = ocbs;
 	ocbs_set = false;
@@ -127,7 +129,7 @@ R_API void r_anal_esil_trace_list (RAnalEsil *esil) {
 	SdbListIter *iter;
 	SdbList *list = sdb_foreach_list (esil->db_trace, true);
 	ls_foreach (list, iter, kv) {
-		eprintf ("%s=%s\n", kv->key, kv->value);
+		eprintf ("%s=%s\n", sdbkv_key (kv), sdbkv_value (kv));
 	}
 	ls_free (list);
 }
@@ -151,10 +153,10 @@ R_API void r_anal_esil_trace_show(RAnalEsil *esil, int idx) {
 		const char *next, *ptr = str;
 		if (ptr && *ptr) {
 			do {
-				const char *ztr = sdb_const_anext (ptr, &next);
-				int len = next? (int)(size_t)(next-ztr)-1 : strlen (ztr);
+				next = sdb_const_anext (ptr);
+				int len = next? (int)(size_t)(next-ptr)-1 : strlen (ptr);
 				if (len <sizeof(regname)) {
-					memcpy (regname, ztr, len);
+					memcpy (regname, ptr, len);
 					regname[len] = 0;
 					str2 = sdb_const_get (DB, KEYREG ("reg.read", regname), 0);
 					p ("dr %s = %s\n", regname, str2);
@@ -172,10 +174,10 @@ R_API void r_anal_esil_trace_show(RAnalEsil *esil, int idx) {
 		const char *next, *ptr = str;
 		if (ptr && *ptr) {
 			do {
-				const char *ztr = sdb_const_anext (ptr, &next);
-				int len = next? (int)(size_t)(next-ztr)-1 : strlen (ztr);
+				next = sdb_const_anext (ptr);
+				int len = next? (int)(size_t)(next-ptr)-1 : strlen (ptr);
 				if (len <sizeof(addr)) {
-					memcpy (addr, ztr, len);
+					memcpy (addr, ptr, len);
 					addr[len] = 0;
 					str2 = sdb_const_get (DB, KEYAT ("mem.read.data",
 						r_num_get (NULL, addr)), 0);

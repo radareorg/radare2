@@ -8,9 +8,9 @@ Compilation
 
 There are different ways to build r2 for iOS, use the sys/ script you need:
 
-	* sys/ios-cydia.sh
-	* sys/ios-static.sh
-	* sys/ios-simulator.sh
+* `sys/ios-cydia.sh`
+* `sys/ios-static.sh`
+* `sys/ios-simulator.sh`
 
 It is also possible to build r2 natively on your iDevice by following the standard `./configure ; make ; make install` steps. But if you own a Mac is better to use the XCode toolchain to get better build times.
 

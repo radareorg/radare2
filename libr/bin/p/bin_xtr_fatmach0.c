@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2016 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2018 - nibble, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -13,12 +13,12 @@ static RBinXtrData * oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx);
 static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size );
 static int free_xtr (void *xtr_obj) ;
 
-static bool checkHeader(const ut8 *h, int sz) {
+static bool checkHeader(const ut8 *h, ut64 sz) {
 	ut8 buf[4];
 	if (sz >= 0x300 && !memcmp (h, "\xca\xfe\xba\xbe", 4)) {
 		// XXX assuming BE
-		int off = r_read_at_be32 (h, 4 * sizeof (int));
-		if (off > 0 && off < sz) {
+		ut64 off = (ut64)r_read_at_be32 (h, 4 * sizeof (ut32));
+		if (off > 0 && off + 4 < sz) {
 			memcpy (buf, h + off, 4);
 			if (!memcmp (buf, "\xce\xfa\xed\xfe", 4) ||
 				!memcmp (buf, "\xfe\xed\xfa\xce", 4) ||
@@ -58,11 +58,12 @@ static int size(RBin *bin) {
 }
 
 static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MACH0_(mach_header) *hdr) {
-	meta->arch = MACH0_(get_cputype_from_hdr) (hdr);
+	meta->arch = strdup (MACH0_(get_cputype_from_hdr) (hdr));
 	meta->bits = MACH0_(get_bits_from_hdr) (hdr);
 	meta->machine = MACH0_(get_cpusubtype_from_hdr) (hdr);
 	meta->type = MACH0_(get_filetype_from_hdr) (hdr);
 	meta->libname = NULL;
+	meta->xtr_type = "fat";
 }
 
 static RBinXtrData * extract(RBin* bin, int idx) {
@@ -152,8 +153,8 @@ static RList * extractall(RBin *bin) {
 	narch = data->file_count;
 	res = r_list_newf (r_bin_xtrdata_free);
 	if (!res) {
-		return NULL;	
-	}	
+		return NULL;
+	}
 	r_list_append (res, data);
 	for (i = 1; data && i < narch; i++) {
 		data = extract (bin, i);
@@ -182,8 +183,8 @@ static RList * oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
 	return res;
 }
 
-RBinXtrPlugin r_bin_xtr_plugin_fatmach0 = {
-	.name = "fatmach0",
+RBinXtrPlugin r_bin_xtr_plugin_xtr_fatmach0 = {
+	.name = "xtr.fatmach0",
 	.desc = "fat mach0 bin extractor plugin",
 	.license = "LGPL3",
 	.load = &load,
@@ -198,7 +199,7 @@ RBinXtrPlugin r_bin_xtr_plugin_fatmach0 = {
 };
 
 #ifndef CORELIB
-RLibStruct radare_plugin = {
+R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_BIN_XTR,
 	.data = &r_bin_xtr_plugin_fatmach0,
 	.version = R2_VERSION
