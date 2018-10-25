@@ -1,0 +1,32 @@
+diff --git i/new/db/cmd/cmd_search w/new/db/cmd/cmd_search
+index bdf91ca..52666c2 100644
+--- i/new/db/cmd/cmd_search
++++ w/new/db/cmd/cmd_search
+@@ -122,11 +122,13 @@ EXPECT64=MHgwMDQwMTlkMiAgICMgMjogcm9yIGVzcCwgY2wKMHgwMDQwMTlkNSAgICMgMjogcm9yIGJ
+ CMDS64=ZSBhc20uYXJjaCA9IHg4Ng0KZSBhbmFsLmFyY2ggPSB4ODYNCmUgYXNtLmJpdHM9MzINCiIvYy8gcm9yIChiaHwuLi4pLCAoY2x8LikiDQpx
+ RUN
+ NAME=/m search from/to (seek 0)
++BROKEN=1
+ FILE=../bins/pe/standard.exe
+ EXPECT64=MHgwMDAwMDAwMCAxIFBFICBmb3IgTVMgV2luZG93cyBJbnRlbCA4MDM4NiAzMi1iaXQKCg==
+ CMDS64=CmUgaW8udmEgPSBmYWxzZQpzIDAKZSBzZWFyY2guZnJvbSA9IDAKZSBzZWFyY2gudG8gPSAweDEwCi9tCgo=
+ RUN
+ NAME=/m search from/to (seek beyond data)
++BROKEN=1
+ FILE=../bins/pe/standard.exe
+ EXPECT64=MHgwMDAwMDAwMCAxIFBFICBmb3IgTVMgV2luZG93cyBJbnRlbCA4MDM4NiAzMi1iaXQKCg==
+ CMDS64=CmUgaW8udmEgPSBmYWxzZQpzIDB4MTAwMAplIHNlYXJjaC5mcm9tID0gMAplIHNlYXJjaC50byA9IDB4MTAKL20KCg==
+@@ -148,11 +150,13 @@ EXPECT64=MHgwMDAwMDEwMCBoaXQwXzAgNDE0MjQzNDQKCg==
+ CMDS64=CncgQUJDRCBAIDB4MTAwCnMgMHgxMDAwCmUgc2VhcmNoLmZyb20gPSAwCmUgc2VhcmNoLnRvID0gMHgyMDAKL3ggNDE0MjQzNDQKCg==
+ RUN
+ NAME=/m search seek
++BROKEN=1
+ FILE=../bins/pe/standard.exe
+ EXPECT64=MHgwMDAwMDAwMAoweDEwMDAKCg==
+ CMDS64=CmUgaW8udmEgPSBmYWxzZQpzIDB4MTAwMAovbX5bMF0KcwovZm0KCg==
+ RUN
+ NAME=/mj test json output
++BROKEN=1
+ FILE=../bins/elf/analysis/x86-simple
+ EXPECT64=W3sib2Zmc2V0IjoxMzQ1MTI2NDAsImRlcHRoIjoxLCJpbmZvIjoiRUxGIDMyLWJpdCBMU0IgZXhlY3V0YWJsZSwgSW50ZWwgODAzODYsIHZlcnNpb24gMSJ9XQo=
+ CMDS64=L21qCg==
