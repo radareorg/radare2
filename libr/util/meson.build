@@ -25,7 +25,7 @@ files = [
   'json_indent.c',
   'lib.c',
   'list.c',
-  'logging.c',
+  'log.c',
   'mem.c',
   'name.c',
   'date.c',

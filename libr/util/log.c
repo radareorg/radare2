@@ -1,57 +1,57 @@
 /* radare - LGPL - Copyright 2007-2013 - pancake */
 
-#define LOGGING_CONFIGSTR_SIZE 512
-#define LOGGING_OUTPUTBUF_SIZE 512
+#define LOG_CONFIGSTR_SIZE 512
+#define LOG_OUTPUTBUF_SIZE 512
 
 #include <r_core.h>
 #include <stdarg.h>
 
 // TODO: Use thread-local storage to make these variables thread-safe
-static RLoggingFuncdef cb_logfunc_print = NULL; // Function to call when outputting log string
-static int cfg_loglvl = R_LOGLVL_ERROR; // Logging level output
-static int cfg_logtraplvl = R_LOGLVL_FATAL; // Logging trap level
+static RLogCallback cb_main_output = NULL; // Function to call when outputting log string
+static int cfg_loglvl = R_LOGLVL_ERROR; // Log level output
+static int cfg_logtraplvl = R_LOGLVL_FATAL; // Log trap level
 static bool cfg_logsrcinfo = false; // Print out debug source info with the output
 static bool cfg_logcolors = false; // Output colored log text based on level
-static char cfg_logfile[LOGGING_CONFIGSTR_SIZE] = ""; // Output text to filename
+static char cfg_logfile[LOG_CONFIGSTR_SIZE] = ""; // Output text to filename
 static const char *level_tags[] = { // Log level to tag string lookup array
-	[R_LOGLVL_SILLY]     = "SILLY: ",
-	[R_LOGLVL_VERBOSE]   = "VERBOSE: ",
-	[R_LOGLVL_DEBUG]     = "DEBUG: ",
-	[R_LOGLVL_INFO]      = "INFO: ",
-	[R_LOGLVL_WARN]      = "WARNING: ",
-	[R_LOGLVL_ERROR]     = "ERROR: ",
-	[R_LOGLVL_FATAL]     = "FATAL: "
+	[R_LOGLVL_SILLY]     = "SILLY",
+	[R_LOGLVL_VERBOSE]   = "VERBOSE",
+	[R_LOGLVL_DEBUG]     = "DEBUG",
+	[R_LOGLVL_INFO]      = "INFO",
+	[R_LOGLVL_WARN]      = "WARNING",
+	[R_LOGLVL_ERROR]     = "ERROR",
+	[R_LOGLVL_FATAL]     = "FATAL"
 };
 
 // cconfig.c configuration callback functions below
-R_API void r_logging_set_level(RLoggingLevel level) {
+R_API void r_log_set_level(RLogLevel level) {
 	cfg_loglvl = level;
 }
 
-R_API void r_logging_set_traplevel(RLoggingLevel level) {
+R_API void r_log_set_traplevel(RLogLevel level) {
 	cfg_logtraplvl = level;
 }
 
-R_API void r_logging_set_file(const char *filename) {
-	int value_len = r_str_nlen (filename, LOGGING_CONFIGSTR_SIZE) + 1;
+R_API void r_log_set_file(const char *filename) {
+	int value_len = r_str_nlen (filename, LOG_CONFIGSTR_SIZE) + 1;
 	strncpy (cfg_logfile, filename, value_len);
 }
 
-R_API void r_logging_set_srcinfo(bool show_info) {
+R_API void r_log_set_srcinfo(bool show_info) {
 	cfg_logsrcinfo = show_info;
 }
 
-R_API void r_logging_set_colors(bool show_info) {
+R_API void r_log_set_colors(bool show_info) {
 	cfg_logcolors = show_info;
 }
 
 /**
- * \brief Set the logging callback function for printing
- * \param cbfunc RLoggingFuncdef style function to be called
+ * \brief Set the main logging callback function for printing
+ * \param cbfunc RLogCallback style function to be called
 */
-R_API void r_logging_set_callback(RLoggingFuncdef cbfunc) {
+R_API void r_log_set_main_callback(RLogCallback cbfunc) {
 	// TODO: RList of callbacks with setter/remove methods
-	cb_logfunc_print = cbfunc;
+	cb_main_output = cbfunc;
 }
 
 /**
@@ -63,8 +63,8 @@ R_API void r_logging_set_callback(RLoggingFuncdef cbfunc) {
  * \param fmtstr A printf like string
  * This function is used by the R_LOG_* preprocessor macros for logging/debugging
 */
-R_API void _r_logging_internal(const char *funcname, const char *filename,
-	ut32 lineno, ut32 level, const char *fmtstr, ...) {
+R_API void _r_log_internal(const char *funcname, const char *filename,
+	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...) {
 	if (level < cfg_loglvl && level < cfg_logtraplvl) {
 		// Don't print if output level is lower than current level
 		// Don't ignore fatal/trap errors
@@ -79,17 +79,20 @@ R_API void _r_logging_internal(const char *funcname, const char *filename,
 	// TODO: Colors
 
 	// Build output string with src info, and formatted output
-	char output_buf[LOGGING_OUTPUTBUF_SIZE] = ""; // Big buffer for building the output string
-	const char *tag = R_BETWEEN (0, level, sizeof (level_tags) - 1) ? level_tags[level] : "";
-	int offset = snprintf (output_buf, LOGGING_OUTPUTBUF_SIZE, "%s", tag);
-	if (cfg_logsrcinfo) {
-		offset += snprintf (output_buf + offset, LOGGING_OUTPUTBUF_SIZE - offset, "%s in %s:%i: ", funcname, filename, lineno);
+	char output_buf[LOG_OUTPUTBUF_SIZE] = ""; // Big buffer for building the output string
+	const char *default_tag = R_BETWEEN (0, level, sizeof (level_tags) - 1) ? level_tags[level] : "";
+	if (!tag) {
+		tag = default_tag;
 	}
-	vsnprintf (output_buf + offset, LOGGING_OUTPUTBUF_SIZE - offset, fmtstr, args);
+	int offset = snprintf (output_buf, LOG_OUTPUTBUF_SIZE, "%s: ", tag);
+	if (cfg_logsrcinfo) {
+		offset += snprintf (output_buf + offset, LOG_OUTPUTBUF_SIZE - offset, "%s in %s:%i: ", funcname, filename, lineno);
+	}
+	vsnprintf (output_buf + offset, LOG_OUTPUTBUF_SIZE - offset, fmtstr, args);
 
 	// Actually print out the string with our callbacks
-	if (cb_logfunc_print) {
-		cb_logfunc_print (output_buf, funcname, filename, lineno, level, fmtstr, args_copy);
+	if (cb_main_output) {
+		cb_main_output (output_buf, funcname, filename, lineno, level, NULL, fmtstr, args_copy);
 	} else {
 		fprintf (stderr, "%s", output_buf);
 	}

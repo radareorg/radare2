@@ -952,7 +952,7 @@ static int cb_timezone(void *user, void *data) {
 	return true;
 }
 
-static int cb_cfglog(void *user, void *data) {
+static int cb_cfgcorelog(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->cfglog = node->i_value;
@@ -2285,7 +2285,7 @@ static int cb_dbgsnap(void *user, void *data) {
 	return true;
 }
 
-static int cb_logging_config_level(void *coreptr, void *nodeptr) {
+static int cb_log_config_level(void *coreptr, void *nodeptr) {
 	RConfigNode *node = (RConfigNode *)nodeptr;
 	const char *value = node->value;
 	char *bad_data = NULL;
@@ -2293,11 +2293,11 @@ static int cb_logging_config_level(void *coreptr, void *nodeptr) {
 	if (*bad_data) {
 		return false;
 	}
-	r_logging_set_level (ival);
+	r_log_set_level (ival);
 	return true;
 }
 
-static int cb_logging_config_traplevel(void *coreptr, void *nodeptr) {
+static int cb_log_config_traplevel(void *coreptr, void *nodeptr) {
 	RConfigNode *node = (RConfigNode *)nodeptr;
 	const char *value = node->value;
 	char *bad_data = NULL;
@@ -2305,41 +2305,41 @@ static int cb_logging_config_traplevel(void *coreptr, void *nodeptr) {
 	if (*bad_data) {
 		return false;
 	}
-	r_logging_set_traplevel (ival);
+	r_log_set_traplevel (ival);
 	return true;
 }
 
-static int cb_logging_config_file(void *coreptr, void *nodeptr) {
+static int cb_log_config_file(void *coreptr, void *nodeptr) {
 	RConfigNode *node = (RConfigNode *)nodeptr;
 	const char *value = node->value;
-	r_logging_set_file (value);
+	r_log_set_file (value);
 	return true;
 }
 
-static int cb_logging_config_srcinfo(void *coreptr, void *nodeptr) {
+static int cb_log_config_srcinfo(void *coreptr, void *nodeptr) {
 	RConfigNode *node = (RConfigNode *)nodeptr;
 	const char *value = node->value;
 	switch (value[0]) {
 	case 't':
 	case 'T':
-		r_logging_set_srcinfo (true);
+		r_log_set_srcinfo (true);
 		break;
 	default:
-		r_logging_set_srcinfo (false);
+		r_log_set_srcinfo (false);
 	}
 	return true;
 }
 
-static int cb_logging_config_colors(void *coreptr, void *nodeptr) {
+static int cb_log_config_colors(void *coreptr, void *nodeptr) {
 	RConfigNode *node = (RConfigNode *)nodeptr;
 	const char *value = node->value;
 	switch (value[0]) {
 	case 't':
 	case 'T':
-		r_logging_set_colors (true);
+		r_log_set_colors (true);
 		break;
 	default:
-		r_logging_set_colors (false);
+		r_log_set_colors (false);
 	}
 	return true;
 }
@@ -2663,7 +2663,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cfg.plugins", "true", "Load plugins at startup");
 	SETCB ("time.fmt", "%Y-%m-%d %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %z)");
 	SETICB ("time.zone", 0, &cb_timezone, "Time zone, in hours relative to GMT: +2, -1,..");
-	SETCB ("cfg.log", "false", &cb_cfglog, "Log changes using the T api needed for realtime syncing");
+	SETCB ("cfg.corelog", "false", &cb_cfgcorelog, "Log changes using the T api needed for realtime syncing");
 	SETPREF ("cfg.newtab", "false", "Show descriptions in command completion");
 	SETCB ("cfg.debug", "false", &cb_cfgdebug, "Debugger mode");
 	p = r_sys_getenv ("EDITOR");
@@ -2685,35 +2685,30 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
 
-	/* cfg.logging */
-#if DEBUG
-#define R_LOGGING_DEFAULTLEVEL R_LOGLVL_WARN
-#else
-#define R_LOGGING_DEFAULTLEVEL R_LOGLVL_ERROR
-#endif
-	// R2_LOGLEVEL / cfg.logging.level
+	/* cfg.log */
+	// R2_LOGLEVEL / cfg.log.level
 	p = r_sys_getenv ("R2_LOGLEVEL");
-	SETICB ("cfg.logging.level", p ? atoi(p) : R_LOGGING_DEFAULTLEVEL, cb_logging_config_level, "Output logging level "\
-	 "(0:SILLY, 1:VERBOSE, 2:DEBUG, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL)"
+	SETICB ("cfg.log.level", p ? atoi(p) : R_LOGLVL_ERROR, cb_log_config_level, "Target log level/severity"\
+	 " (0:SILLY, 1:VERBOSE, 2:DEBUG, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL)"
 	);
 	free (p);
-	// R2_LOGTRAP_LEVEL / cfg.logging.traplevel
+	// R2_LOGTRAP_LEVEL / cfg.log.traplevel
 	p = r_sys_getenv ("R2_LOGTRAPLEVEL");
-	SETICB ("cfg.logging.traplevel", p ? atoi(p) : R_LOGLVL_FATAL, cb_logging_config_traplevel, "Log level for trapping R2 when hit (developer use only)"\
-	 "(0:SILLY, 1:VERBOSE, 2:DEBUG, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL)"
+	SETICB ("cfg.log.traplevel", p ? atoi(p) : R_LOGLVL_FATAL, cb_log_config_traplevel, "Log level for trapping R2 when hit"\
+	 " (0:SILLY, 1:VERBOSE, 2:DEBUG, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL)"
 	);
 	free (p);
-	// R2_LOGFILE / cfg.logging.file
+	// R2_LOGFILE / cfg.log.file
 	p = r_sys_getenv ("R2_LOGFILE");
-	SETCB ("cfg.logging.file", p ? p : "", cb_logging_config_file, "Logging output filename / path");
+	SETCB ("cfg.log.file", p ? p : "", cb_log_config_file, "Logging output filename / path");
 	free (p);
-	// R2_LOGSRCINFO / cfg.logging.srcinfo
+	// R2_LOGSRCINFO / cfg.log.srcinfo
 	p = r_sys_getenv ("R2_LOGSRCINFO");
-	SETCB ("cfg.logging.srcinfo", p ? p : "false", cb_logging_config_srcinfo, "Should the logging output contain src info (filename:lineno)");
+	SETCB ("cfg.log.srcinfo", p ? p : "false", cb_log_config_srcinfo, "Should the log output contain src info (filename:lineno)");
 	free (p);
-	// R2_LOGCOLORS / cfg.logging.colors
+	// R2_LOGCOLORS / cfg.log.colors
 	p = r_sys_getenv ("R2_LOGCOLORS");
-	SETCB ("cfg.logging.colors", p ? p : "false", cb_logging_config_colors, "Should the logging output use colors (TODO)");
+	SETCB ("cfg.log.colors", p ? p : "false", cb_log_config_colors, "Should the log output use colors (TODO)");
 	free (p);
 
 	// zign

@@ -1,0 +1,71 @@
+#ifndef R_LOG_H
+#define R_LOG_H
+
+#if (defined(_WIN32) || defined(_WIN64)) && !defined(__GNUC__)
+#define MACRO_LOG_FUNC __FUNCTION__
+#define MACRO_WEAK_SYM
+// TODO: Windows weak symbols?
+#else
+#define MACRO_LOG_FUNC __func__
+#define MACRO_WEAK_SYM __attribute__ ((weak))
+#endif
+
+typedef enum r_log_level {
+	R_LOGLVL_SILLY     = 0,
+	R_LOGLVL_DEBUG     = 1,
+	R_LOGLVL_VERBOSE   = 2,
+	R_LOGLVL_INFO      = 3,
+	R_LOGLVL_WARN      = 4,
+	R_LOGLVL_ERROR     = 5,
+	R_LOGLVL_FATAL     = 6, // This will call r_sys_breakpoint() and trap the process for debugging!
+	R_LOGLVL_NONE      = 0xFF
+} RLogLevel;
+
+typedef void (*RLogCallback)(const char *output, const char *funcname, const char *filename,
+	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...);
+
+#define R_LOG(lvl, tag, fmtstr, ...) _r_log_internal (MACRO_LOG_FUNC, __FILE__,\
+ __LINE__, lvl, tag, fmtstr, ##__VA_ARGS__);
+#define R_LOG_SILLY(fmtstr, ...) _r_log_internal (MACRO_LOG_FUNC, __FILE__,\
+ __LINE__, R_LOGLVL_SILLY, NULL, fmtstr, ##__VA_ARGS__);
+#define R_LOG_DEBUG(fmtstr, ...) _r_log_internal (MACRO_LOG_FUNC, __FILE__,\
+ __LINE__, R_LOGLVL_DEBUG, NULL, fmtstr, ##__VA_ARGS__);
+#define R_LOG_VERBOSE(fmtstr, ...) _r_log_internal (MACRO_LOG_FUNC, __FILE__,\
+ __LINE__, R_LOGLVL_VERBOSE, NULL, fmtstr, ##__VA_ARGS__);
+#define R_LOG_INFO(fmtstr, ...) _r_log_internal (MACRO_LOG_FUNC, __FILE__,\
+ __LINE__, R_LOGLVL_INFO, NULL, fmtstr, ##__VA_ARGS__);
+#define R_LOG_WARN(fmtstr, ...) _r_log_internal (MACRO_LOG_FUNC, __FILE__,\
+ __LINE__, R_LOGLVL_WARN, NULL, fmtstr, ##__VA_ARGS__);
+#define R_LOG_ERROR(fmtstr, ...) _r_log_internal (MACRO_LOG_FUNC, __FILE__,\
+ __LINE__, R_LOGLVL_ERROR, NULL, fmtstr, ##__VA_ARGS__);
+#define R_LOG_FATAL(fmtstr, ...) _r_log_internal (MACRO_LOG_FUNC, __FILE__,\
+ __LINE__, R_LOGLVL_FATAL, NULL, fmtstr, ##__VA_ARGS__);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+// Called by r_core to set the configuration variables
+R_API void r_log_set_level(RLogLevel level);
+R_API void r_log_set_file(const char *filename);
+R_API void r_log_set_srcinfo(bool show_info);
+R_API void r_log_set_colors(bool show_colors);
+R_API void r_log_set_traplevel(RLogLevel level);
+
+// Functions for setting logging callbacks externally
+R_API void r_log_set_main_callback(RLogCallback cbfunc);
+// TODO: r_log_add_callback(cbfunc, *context)
+// TODO: r_log_get_callbacks()
+// TODO: r_log_remove_callback(cbfunc, *context)
+
+/* Define _r_log_internal as weak so it can be 'overwritten' externally
+   This allows another method of output redirection on POSIX (Windows?)
+   You can override this function to handle all logging logic / output yourself */
+R_API MACRO_WEAK_SYM void _r_log_internal(const char *funcname, const char *filename,
+	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif //  R_LOG_H

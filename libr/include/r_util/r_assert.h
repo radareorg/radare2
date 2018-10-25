@@ -1,9 +1,9 @@
 #ifndef R_ASSERT_H
 #define R_ASSERT_H
 
-#include "r_logging.h"
+#include "r_log.h"
 
-R_API void r_assert_log(RLoggingLevel level, const char *fmt, ...);
+R_API void r_assert_log(RLogLevel level, const char *fmt, ...);
 
 #if defined (__GNUC__) && defined (__cplusplus)
 #define R_FUNCTION ((const char*) (__PRETTY_FUNCTION__))

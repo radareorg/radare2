@@ -44,7 +44,7 @@ files = [
   'hack.c',
   'libs.c',
   #'linux_heap_glibc.c',
-  'log.c',
+  'corelog.c',
   'panels.c',
   'patch.c',
   'plugin.c',
