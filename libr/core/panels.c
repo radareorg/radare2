@@ -105,17 +105,18 @@ static const char *menus_Help[] = {
 
 static const char *help_msg_panels[] = {
 	"?",        "show this help",
+	"??",       "show the user-friendly hud",
 	"!",        "run r2048 game",
-	"i",        "insert hex",
 	".",        "seek to PC or entrypoint",
 	"*",        "show pseudo code/r2dec in the current panel",
-	"<>",       "scroll panels vertically by page",
+	"/",        "highlight the keyword",
 	"[1-9]",    "follow jmp/call identified by shortcut (like ;[1])",
 	"b",        "browse symbols, flags, configurations, classes, ...",
 	"c",        "toggle cursor",
 	"C",        "toggle color",
 	"d",        "define in the current address. Same as Vd",
 	"D",        "show disassembly in the current panel",
+	"i",        "insert hex",
 	"o",        "go/seek to given offset",
 	"pP",       "seek to next or previous scr.nkey",
 	"q",        "quit, back to visual mode",
@@ -130,6 +131,7 @@ static const char *help_msg_panels_window[] = {
 	"_",        "start the hud input mode",
 	"|",        "split the current panel vertically",
 	"-",        "split the current panel horizontally",
+	"<>",       "scroll panels vertically by page",
 	"' '",      "(space) toggle graph / panels",
 	"e",        "change title and command of current panel",
 	"g",        "show graph in the current panel",
@@ -140,7 +142,7 @@ static const char *help_msg_panels_window[] = {
 	"M",        "open new custom frame",
 	"nN",       "create new panel with given command",
 	"V",        "go to the graph mode",
-	"w",        "change the current layout of the panels",
+	"w",        "start the window mode",
 	"z",        "swap current panel with the first one",
 	"X",        "close current panel",
 	NULL
@@ -254,6 +256,7 @@ static void toggleWindowMode(RPanels *panels);
 static void maximizePanelSize(RPanels *panels);
 static void insertValue(RCore *core);
 static bool moveToDirection(RPanels *panels, Direction direction);
+static void showHelp(RCore *core);
 static RConsCanvas *createNewCanvas(RCore *core, int w, int h);
 
 static void panelPrint(RCore *core, RConsCanvas *can, RPanel *panel, int color) {
@@ -902,6 +905,9 @@ static void handleZoomMode(RCore *core, const int key) {
 			r_core_visual_prompt_input (core);
 			panels->panel[panels->curnode].addr = core->offset;
 			setRefreshAll (panels);
+			break;
+		case '?':
+			showHelp(core);
 			break;
 	}
 }
@@ -2572,6 +2578,7 @@ static void handleMenu(RCore *core, const int key, int *exit) {
 		break;
 	case 'Z':
 		handleTabKey (core, true);
+		break;
 	case ':':
 		{
 			r_core_visual_prompt_input (core);
@@ -2584,6 +2591,9 @@ static void handleMenu(RCore *core, const int key, int *exit) {
 			}
 			setRefreshAll (panels);
 		}
+		break;
+	case '?':
+		showHelp(core);
 		break;
 	}
 }
@@ -2754,6 +2764,21 @@ static void toggleWindowMode(RPanels *panels) {
 	} else {
 		panels->mode = panels->prevMode;
 		panels->prevMode = PANEL_MODE_NONE;
+	}
+}
+
+static void showHelp(RCore *core) {
+	RStrBuf *p = r_strbuf_new (NULL);
+	if (!p) {
+		return 0;
+	}
+	r_cons_clear00 ();
+	r_core_visual_append_help (p, "Visual Ascii Art Panels", help_msg_panels);
+	r_core_visual_append_help (p, "Window management", help_msg_panels_window);
+	int ret = r_cons_less_str (r_strbuf_get (p), "?");
+	r_strbuf_free (p);
+	if (ret == '?') {
+		r_core_visual_hud (core);
 	}
 }
 
@@ -3007,20 +3032,7 @@ repeat:
 		}
 		break;
 	case '?':
-		{
-			RStrBuf *p = r_strbuf_new (NULL);
-			if (!p) {
-				return 0;
-			}
-			r_cons_clear00 ();
-			r_core_visual_append_help (p, "Visual Ascii Art Panels", help_msg_panels);
-			r_core_visual_append_help (p, "Window management", help_msg_panels_window);
-			int ret = r_cons_less_str (r_strbuf_get (p), "?");
-			r_strbuf_free (p);
-			if (ret == '?') {
-				r_core_visual_hud (core);
-			}
-		}
+		showHelp(core);
 		break;
 	case 'b':
 		r_core_visual_browse (core);
