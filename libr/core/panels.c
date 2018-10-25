@@ -2770,7 +2770,7 @@ static void toggleWindowMode(RPanels *panels) {
 static void showHelp(RCore *core) {
 	RStrBuf *p = r_strbuf_new (NULL);
 	if (!p) {
-		return 0;
+		return;
 	}
 	r_cons_clear00 ();
 	r_core_visual_append_help (p, "Visual Ascii Art Panels", help_msg_panels);
