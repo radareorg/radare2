@@ -898,6 +898,11 @@ static void handleZoomMode(RCore *core, const int key) {
 			savePanelPos (&panel[panels->curnode]);
 			maximizePanelSize (panels);
 			break;
+		case ':':
+			r_core_visual_prompt_input (core);
+			panels->panel[panels->curnode].addr = core->offset;
+			setRefreshAll (panels);
+			break;
 	}
 }
 
@@ -2566,6 +2571,11 @@ static void handleMenu(RCore *core, const int key, int *exit) {
 		break;
 	case 'Z':
 		handleTabKey (core, true);
+	case ':':
+		r_core_visual_prompt_input (core);
+		panels->panel[panels->curnode].addr = core->offset;
+		setRefreshAll (panels);
+		break;
 	}
 }
 
@@ -3047,13 +3057,8 @@ repeat:
 			}
 		break;
 	case ':':
-		core->vmode = false;
 		r_core_visual_prompt_input (core);
-		core->vmode = true;
-
-		// FIX: Issue with visual mode instruction highlighter
-		// not updating after 'ds' or 'dcu' commands.
-		r_core_cmd0 (core, ".dr*");
+		panels->panel[panels->curnode].addr = core->offset;
 		setRefreshAll (panels);
 		break;
 	case 'c':
