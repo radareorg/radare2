@@ -1131,7 +1131,6 @@ int main(int argc, char **argv, char **envp) {
 							if (run_anal < 0) {
 								// PoC -- must move -rk functionalitiy into rcore
 								// this may be used with caution (r2 -nn $FILE)
-								r_core_cmdf (&r, "Sf");
 								r_core_cmdf (&r, ".!rabin2 -rk. \"%s\"", iod->name);
 							}
 						}

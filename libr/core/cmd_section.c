@@ -16,7 +16,6 @@ static const char *help_msg_S[] = {
 	"S-.","","remove section at core->offset (can be changed with @)",
 	"S=","","list sections (ascii-art bars) (io.va to display paddr or vaddr)",
 	"Sa","[-] [A] [B] [[off]]","Specify arch and bits for given section",
-	"Sf"," [baddr]","Alias for S 0 0 $s $s foo rwx",
 	"Sl"," [file]","load contents of file into current section (see dml)",
 	"Sr"," [name]","rename section on current seek",
 	"SR", "[?]", "Remap sections with different mode of operation", 
@@ -270,13 +269,6 @@ static int cmd_section(void *data, const char *input) {
 		break;
 	case 'R' : // "SR"
 		return cmd_section_reapply (core, input + 1);	
-	case 'f': // "Sf"
-		if (input[1] == ' ') {
-			ut64 n = r_num_math (core->num, input + 1);
-			r_core_cmdf (core, "S 0x%"PFMT64x" 0x%"PFMT64x" $s $s foo rwx", n, n);
-		} else {
-			r_core_cmd0 (core, "S 0 0 $s $s foo rwx");
-		}
 		break;
 	case 'a': // "Sa"
 		switch (input[1]) {
