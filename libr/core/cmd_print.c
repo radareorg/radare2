@@ -3444,6 +3444,9 @@ static void disasm_recursive(RCore *core, ut64 addr, int count, char type_print)
 			break;
 		case R_ANAL_OP_TYPE_UCJMP:
 			break;
+		case R_ANAL_OP_TYPE_RET:
+			count = 0;	// stop disassembling when hitting RET
+			break;
 		}
 		addr += aop.size;
 	}
