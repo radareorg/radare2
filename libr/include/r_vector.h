@@ -160,9 +160,13 @@ R_API void **r_pvector_contains(RPVector *vec, void *x);
 // removes and returns the pointer at the given index. Does not call free.
 R_API void *r_pvector_remove_at(RPVector *vec, size_t index);
 
+// removes the element x, if present. Does not call free.
+R_API void r_pvector_remove_data(RPVector *vec, void *x);
+
 // like r_vector_insert, but the pointer x is the actual data to be inserted.
 static inline void **r_pvector_insert(RPVector *vec, size_t index, void *x) {
-	return (void **)r_vector_insert (&vec->v, index, &x); }
+	return (void **)r_vector_insert (&vec->v, index, &x);
+}
 
 // like r_vector_insert_range.
 static inline void **r_pvector_insert_range(RPVector *vec, size_t index, void **first, size_t count) {
