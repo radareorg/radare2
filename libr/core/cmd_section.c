@@ -57,7 +57,7 @@ static void cmd_section_init(RCore *core) {
                 } \
                 io->cb_printf ("| 0x%08"PFMT64x"\n", seek+len); \
         }
-
+#if 0
 static void list_section_visual(RIO *io, ut64 seek, ut64 len, int use_color, int cols) {
 	ut64 mul, min = -1, max = -1;
 	SdbListIter *iter;
@@ -129,6 +129,8 @@ static void list_section_visual(RIO *io, ut64 seek, ut64 len, int use_color, int
 		PRINT_CURRENT_SEEK;
 	}
 }
+
+
 
 static void __section_list (RIO *io, ut64 offset, RPrint *print, int rad) {
 	SdbListIter *iter;
@@ -260,7 +262,10 @@ static int cmd_section_reapply(RCore *core, const char *input) {
 	return 0;
 }
 
+#endif
+
 static int cmd_section(void *data, const char *input) {
+	#if 0
 	RCore *core = (RCore *)data;
 	switch (*input) {
 	case '?': // "S?"
@@ -511,5 +516,6 @@ static int cmd_section(void *data, const char *input) {
 		__section_list (core->io, core->offset, core->print, *input);
 		break;
 	}
+	#endif
 	return 0;
 }
