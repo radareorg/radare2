@@ -689,7 +689,6 @@ R_API RAsmCode* r_asm_assemble_file(RAsm *a, const char *file) {
 static void flag_free_kv(HtKv *kv) {
 	free (kv->key);
 	free (kv->value);
-	free (kv);
 }
 
 static void *dup_val(const void *v) {

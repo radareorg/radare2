@@ -1146,7 +1146,6 @@ static insn_head_t c55x_list[] = {
 
 static void tsm320_free_kv(HtKv *kv) {
 	free (kv->key);
-	free (kv);
 }
 
 int tms320_dasm_init(tms320_dasm_t * dasm) {

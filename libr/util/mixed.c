@@ -46,7 +46,6 @@ R_API int r_mixed_key_check(RMixed *m, int key, int sz) {
 static void _mixed_free_kv(HtKv *kv) {
 	free (kv->key);
 	r_list_free (kv->value);
-	free (kv);
 }
 
 #define R_MIXED_KEY(m,x,y,z) r_mixed_key(m, r_offsetof(x,z), sizeof(y->z))

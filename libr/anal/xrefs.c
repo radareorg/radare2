@@ -52,13 +52,11 @@ R_API RList *r_anal_ref_list_new() {
 void xrefs_ht_free(HtKv *kv) {
 	free (kv->key);
 	ht_free (kv->value);
-	free (kv);
 }
 
 void xrefs_ref_free(HtKv *kv) {
 	free (kv->key);
 	r_anal_ref_free (kv->value);
-	free (kv);
 }
 
 static bool appendRef(RList *list, const char *k, RAnalRef *ref) {

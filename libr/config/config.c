@@ -666,8 +666,6 @@ R_API int r_config_readonly(RConfig *cfg, const char *key) {
 
 static void _ht_node_free_kv(HtKv *kv) {
 	free (kv->key);
-	//we do not free kv->value because there is other reference 
-	free (kv);
 }
 
 R_API RConfig* r_config_new(void *user) {

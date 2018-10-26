@@ -1115,7 +1115,7 @@ static void cmd_print_format(RCore *core, const char *_input, const ut8* block, 
 		if (!input[1] || !input[2]) {
 			SdbListIter *iter;
 			SdbKv *kv;
-			SdbList *sdbls = sdb_foreach_list (core->print->formats, false);
+			SdbList *sdbls = sdb_foreach_list (core->print->formats, true);
 			ls_foreach (sdbls, iter, kv) {
 				r_cons_printf ("pf.%s %s\n", sdbkv_key (kv), sdbkv_value (kv));
 			}

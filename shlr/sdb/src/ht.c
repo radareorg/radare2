@@ -1,4 +1,4 @@
-/* radare2 - BSD 3 Clause License - crowell, pancake 2016 */
+/* radare2 - BSD 3 Clause License - crowell, pancake, ret2libc 2016-2018 */
 
 #include "ht.h"
 #include "sdb.h"
@@ -20,7 +20,7 @@ static const ut32 ht_primes_sizes[] = {
 };
 
 static inline ut32 hashfn(SdbHt *ht, const void *k) {
-	return ht->hashfn ? ht->hashfn (k) : (ut32)(ut64)(k);
+	return ht->hashfn ? ht->hashfn (k) : (ut32)(size_t)(k);
 }
 
 static inline ut32 bucketfn(SdbHt *ht, const void *k) {
@@ -67,6 +67,28 @@ static inline bool is_kv_equal(SdbHt *ht, const char *key, const ut32 key_len, c
 	return res;
 }
 
+static inline HtKv *kv_at(SdbHt *ht, HtBucket *bt, ut32 i) {
+	return (HtKv *)((char *)bt->arr + i * ht->elem_size);
+}
+
+static inline HtKv *next_kv(SdbHt *ht, HtKv *kv) {
+	return (HtKv *)((char *)kv + ht->elem_size);
+}
+
+static inline HtKv *prev_kv(SdbHt *ht, HtKv *kv) {
+	return (HtKv *)((char *)kv - ht->elem_size);
+}
+
+#define BUCKET_FOREACH(ht, bt, j, kv)					\
+	if ((bt)->arr)							\
+		for ((j) = 0, (kv) = (bt)->arr; (j) < (bt)->count; (j)++, (kv) = next_kv (ht, kv))
+
+#define BUCKET_FOREACH_SAFE(ht, bt, j, count, kv)			\
+	if ((bt)->arr)							\
+		for ((j) = 0, (kv) = (bt)->arr, (count) = (ht)->count;	\
+		     (j) < (bt)->count;					\
+		     (j) = (count) == (ht)->count? j + 1: j, (kv) = (count) == (ht)->count? next_kv (ht, kv): kv, (count) = (ht)->count)
+
 // Create a new hashtable and return a pointer to it.
 // size - number of buckets in the hashtable
 // hashfunction - the function that does the hashing, must not be null.
@@ -77,9 +99,9 @@ static inline bool is_kv_equal(SdbHt *ht, const char *key, const ut32 key_len, c
 // pair_free - function for freeing a keyvaluepair - if NULL just does free.
 // calcsize - function to calculate the size of a value. if NULL, just stores 0.
 static SdbHt* internal_ht_new(ut32 size, ut32 prime_idx, HashFunction hashfunction,
-				 ListComparator comparator, DupKey keydup,
-				 DupValue valdup, HtKvFreeFunc pair_free,
-				 CalcSize calcsizeK, CalcSize calcsizeV) {
+				ListComparator comparator, DupKey keydup,
+				DupValue valdup, HtKvFreeFunc pair_free,
+				CalcSize calcsizeK, CalcSize calcsizeV, size_t elem_size) {
 	SdbHt* ht = calloc (1, sizeof (*ht));
 	if (!ht) {
 		return NULL;
@@ -91,35 +113,22 @@ static SdbHt* internal_ht_new(ut32 size, ut32 prime_idx, HashFunction hashfuncti
 	ht->cmp = comparator;
 	ht->dupkey = keydup;
 	ht->dupvalue = valdup;
-	ht->table = calloc (ht->size, sizeof (SdbList*));
+	ht->table = calloc (ht->size, sizeof (struct ht_bucket_t));
+	if (!ht->table) {
+		free (ht);
+		return NULL;
+	}
 	ht->calcsizeK = calcsizeK;
 	ht->calcsizeV = calcsizeV;
 	ht->freefn = pair_free;
-	// Because we use calloc, each listptr will be NULL until used */
+	ht->elem_size = elem_size;
 	return ht;
-}
-
-SDB_API bool ht_delete_internal(SdbHt* ht, const char* key, ut32* hash) {
-	HtKv* kv;
-	SdbListIter* iter;
-	ut32 computed_hash = hash ? *hash : hashfn (ht, key);
-	ut32 key_len = calcsize_key (ht, key);
-	ut32 bucket = computed_hash % ht->size;
-	SdbList* list = ht->table[bucket];
-	ls_foreach (list, iter, kv) {
-		if (is_kv_equal (ht, key, key_len, kv)) {
-			ls_delete (list, iter);
-			ht->count--;
-			return true;
-		}
-	}
-	return false;
 }
 
 SDB_API SdbHt* ht_new(DupValue valdup, HtKvFreeFunc pair_free, CalcSize calcsizeV) {
 	return internal_ht_new (ht_primes_sizes[0], 0, (HashFunction)sdb_hash,
 		(ListComparator)strcmp, (DupKey)strdup,
-		valdup, pair_free, (CalcSize)strlen, calcsizeV);
+		valdup, pair_free, (CalcSize)strlen, calcsizeV, sizeof (HtKv));
 }
 
 SDB_API SdbHt* ht_new_size(ut32 initial_size, DupValue valdup, HtKvFreeFunc pair_free, CalcSize calcsizeV) {
@@ -136,7 +145,7 @@ SDB_API SdbHt* ht_new_size(ut32 initial_size, DupValue valdup, HtKvFreeFunc pair
 	ut32 sz = compute_size (i, (ut32)(initial_size * (2 - LOAD_FACTOR)));
 	return internal_ht_new (sz, i, (HashFunction)sdb_hash,
 		(ListComparator)strcmp, (DupKey)strdup,
-		valdup, pair_free, (CalcSize)strlen, calcsizeV);
+		valdup, pair_free, (CalcSize)strlen, calcsizeV, sizeof (HtKv));
 }
 
 SDB_API void ht_free(SdbHt* ht) {
@@ -146,129 +155,141 @@ SDB_API void ht_free(SdbHt* ht) {
 
 	ut32 i;
 	for (i = 0; i < ht->size; i++) {
-		ls_free (ht->table[i]);
+		HtBucket *bt = &ht->table[i];
+		HtKv *kv;
+		ut32 j;
+
+		if (ht->freefn) {
+			BUCKET_FOREACH (ht, bt, j, kv) {
+				ht->freefn (kv);
+			}
+		}
+
+		free (bt->arr);
 	}
 	free (ht->table);
 	free (ht);
 }
 
-static bool internal_ht_insert_kv(SdbHt *ht, HtKv *kv, bool update);
-
 // Increases the size of the hashtable by 2.
 static void internal_ht_grow(SdbHt* ht) {
 	SdbHt* ht2;
 	SdbHt swap;
-	HtKv* kv;
-	SdbListIter* iter, *tmp;
 	ut32 idx = ht->prime_idx != UT32_MAX ? ht->prime_idx + 1 : UT32_MAX;
 	ut32 sz = compute_size (idx, ht->size * 2);
 	ut32 i;
 
 	ht2 = internal_ht_new (sz, idx, ht->hashfn, ht->cmp, ht->dupkey, ht->dupvalue,
-		ht->freefn, ht->calcsizeK, ht->calcsizeV);
+		ht->freefn, ht->calcsizeK, ht->calcsizeV, ht->elem_size);
 
 	for (i = 0; i < ht->size; i++) {
-		if (!ht->table[i]) {
-			continue;
-		}
+		HtBucket *bt = &ht->table[i];
+		HtKv *kv;
+		ut32 j;
 
-		ht->table[i]->free = NULL;
-		ls_foreach_safe (ht->table[i], iter, tmp, kv) {
-			internal_ht_insert_kv (ht2, kv, false);
-			ls_delete (ht->table[i], iter);
+		BUCKET_FOREACH (ht, bt, j, kv) {
+			ht_insert_kv (ht2, kv, false);
 		}
 	}
 	// And now swap the internals.
 	swap = *ht;
 	*ht = *ht2;
 	*ht2 = swap;
+
+	ht2->freefn = NULL;
 	ht_free (ht2);
 }
 
-static bool internal_ht_insert_kv(SdbHt *ht, HtKv *kv, bool update) {
-	bool found = false;
-	if (!ht || !kv) {
+static void check_growing(SdbHt *ht) {
+	if (ht->count >= LOAD_FACTOR * ht->size) {
+		internal_ht_grow (ht);
+	}
+}
+
+static HtKv *reserve_kv(SdbHt *ht, const char *key, const int key_len, bool update) {
+	HtBucket *bt = &ht->table[bucketfn (ht, key)];
+	HtKv *kvtmp;
+	ut32 j;
+
+	BUCKET_FOREACH (ht, bt, j, kvtmp) {
+		if (is_kv_equal (ht, key, key_len, kvtmp)) {
+			if (update) {
+				freefn (ht, kvtmp);
+				return kvtmp;
+			}
+			return NULL;
+		}
+	}
+
+	HtKv *newkvarr = realloc (bt->arr, (bt->count + 1) * ht->elem_size);
+	if (!newkvarr) {
+		return NULL;
+	}
+
+	bt->arr = newkvarr;
+	bt->count++;
+	ht->count++;
+	return kv_at (ht, bt, bt->count - 1);
+}
+
+bool ht_insert_kv(SdbHt *ht, HtKv *kv, bool update) {
+	HtKv *kv_dst = reserve_kv (ht, kv->key, kv->key_len, update);
+	if (!kv_dst) {
 		return false;
 	}
-	ut32 bucket, hash = hashfn (ht, kv->key);
-	if (update) {
-		(void)ht_delete_internal (ht, kv->key, &hash);
-	} else {
-		(void)ht_find (ht, kv->key, &found);
-	}
-	if (update || !found) {
-		bucket = hash % ht->size;
-		if (!ht->table[bucket]) {
-			ht->table[bucket] = ls_newf ((SdbListFree)ht->freefn);
-		}
-		ls_prepend (ht->table[bucket], kv);
-		ht->count++;
-		// Check if we need to grow the table.
-		if (ht->count >= LOAD_FACTOR * ht->size) {
-			internal_ht_grow (ht);
-		}
-		return true;
-	}
-	return false;
+
+	memcpy (kv_dst, kv, ht->elem_size);
+	check_growing (ht);
+	return true;
 }
 
-static bool internal_ht_insert(SdbHt* ht, bool update, const char* key, void* value) {
-	if (!ht) {
+static bool insert_update(SdbHt *ht, const char *key, void *value, bool update) {
+	ut32 key_len = calcsize_key (ht, key);
+	HtKv* kv_dst = reserve_kv (ht, key, key_len, update);
+	if (!kv_dst) {
 		return false;
 	}
-	HtKv* kv = calloc (1, sizeof (HtKv));
-	if (kv) {
-		kv->key = dupkey (ht, key);
-		kv->value = dupval (ht, value);
-		kv->key_len = calcsize_key (ht, kv->key);
-		kv->value_len = calcsize_val (ht, kv->value);
 
-		if (!internal_ht_insert_kv (ht, kv, update)) {
-			freefn (ht, kv);
-			return false;
-		}
-		return true;
-	}
-	return false;
+	kv_dst->key = dupkey (ht, key);
+	kv_dst->key_len = key_len;
+	kv_dst->value = dupval (ht, value);
+	kv_dst->value_len = calcsize_val (ht, value);
+	check_growing (ht);
+	return true;
 }
 
-SDB_API bool ht_insert_kv(SdbHt *ht, HtKv *kv, bool update) {
-	return internal_ht_insert_kv (ht, kv, update);
-}
 // Inserts the key value pair key, value into the hashtable.
 // Doesn't allow for "update" of the value.
 SDB_API bool ht_insert(SdbHt* ht, const char* key, void* value) {
-	return internal_ht_insert (ht, false, key, value);
+	return insert_update (ht, key, value, false);
 }
 
 // Inserts the key value pair key, value into the hashtable.
 // Does allow for "update" of the value.
 SDB_API bool ht_update(SdbHt* ht, const char* key, void* value) {
-	return internal_ht_insert (ht, true, key, value);
+	return insert_update (ht, key, value, true);
 }
 
 // Returns the corresponding SdbKv entry from the key.
 // If `found` is not NULL, it will be set to true if the entry was found, false
 // otherwise.
 SDB_API HtKv* ht_find_kv(SdbHt* ht, const char* key, bool* found) {
-	if (!ht) {
-		return NULL;
+	if (found) {
+		*found = false;
 	}
-	ut32 bucket = bucketfn (ht, key);
-	SdbListIter* iter;
-	HtKv* kv;
-	ut32 key_len = calcsize_key (ht, key);
 
-	ls_foreach (ht->table[bucket], iter, kv) {
+	HtBucket *bt = &ht->table[bucketfn (ht, key)];
+	ut32 key_len = calcsize_key (ht, key);
+	HtKv *kv;
+	ut32 j;
+
+	BUCKET_FOREACH (ht, bt, j, kv) {
 		if (is_kv_equal (ht, key, key_len, kv)) {
 			if (found) {
 				*found = true;
 			}
 			return kv;
 		}
-	}
-	if (found) {
-		*found = false;
 	}
 	return NULL;
 }
@@ -277,28 +298,39 @@ SDB_API HtKv* ht_find_kv(SdbHt* ht, const char* key, bool* found) {
 // If `found` is not NULL, it will be set to true if the entry was found, false
 // otherwise.
 SDB_API void* ht_find(SdbHt* ht, const char* key, bool* found) {
-	bool _found = false;
-	if (!found) {
-		found = &_found;
-	}
-	HtKv* kv = ht_find_kv (ht, key, found);
-	return (kv && *found)? kv->value : NULL;
+	HtKv *res = ht_find_kv (ht, key, found);
+	return res ? res->value : NULL;
 }
 
 // Deletes a entry from the hash table from the key, if the pair exists.
 SDB_API bool ht_delete(SdbHt* ht, const char* key) {
-	return ht_delete_internal (ht, key, NULL);
+	HtBucket *bt = &ht->table[bucketfn (ht, key)];
+	ut32 key_len = calcsize_key (ht, key);
+	HtKv *kv;
+	ut32 j;
+
+	BUCKET_FOREACH (ht, bt, j, kv) {
+		if (is_kv_equal (ht, key, key_len, kv)) {
+			freefn (ht, kv);
+			void *src = next_kv (ht, kv);
+			memmove (kv, src, (bt->count - j - 1) * ht->elem_size);
+			bt->count--;
+			ht->count--;
+			return true;
+		}
+	}
+	return false;
 }
 
 SDB_API void ht_foreach(SdbHt *ht, HtForeachCallback cb, void *user) {
-	if (!ht) {
-		return;
-	}
-	ut32 i = 0;
-	HtKv *kv;
-	SdbListIter *iter, *tmp;
-	for (i = 0; i < ht->size; i++) {
-		ls_foreach_safe (ht->table[i], iter, tmp, kv) {
+	ut32 i;
+
+	for (i = 0; i < ht->size; ++i) {
+		HtBucket *bt = &ht->table[i];
+		HtKv *kv;
+		ut32 j, count;
+
+		BUCKET_FOREACH_SAFE (ht, bt, j, count, kv) {
 			if (!cb (user, kv->key, kv->value)) {
 				return;
 			}
