@@ -723,6 +723,7 @@ R_API const char *r_bin_entry_type_string(int etype);
 
 R_API char *r_bin_demangle(RBinFile *binfile, const char *lang, const char *str, ut64 vaddr);
 R_API int r_bin_demangle_type(const char *str);
+R_API const char *r_bin_lang_tostring (int lang);
 R_API char *r_bin_demangle_java(const char *str);
 R_API char *r_bin_demangle_cxx(RBinFile *binfile, const char *str, ut64 vaddr);
 R_API char *r_bin_demangle_msvc(const char *str);
@@ -773,10 +774,10 @@ R_API RList *r_bin_get_mem(RBin *bin);
 
 /* filter.c */
 R_API void r_bin_load_filter(RBin *bin, ut64 rules);
-R_API void r_bin_filter_name(Sdb *db, ut64 addr, char *name, int maxlen);
-R_API void r_bin_filter_symbols(RList *list);
-R_API void r_bin_filter_sections(RList *list);
-R_API void r_bin_filter_classes(RList *list);
+R_API void r_bin_filter_name(RBinFile *bf, Sdb *db, ut64 addr, char *name, int maxlen);
+R_API void r_bin_filter_symbols(RBinFile *bf, RList *list);
+R_API void r_bin_filter_sections(RBinFile *bf, RList *list);
+R_API void r_bin_filter_sym(RBinFile *bf, Sdb *db, ut64 vaddr, RBinSymbol *sym);
 R_API bool r_bin_strpurge(RBin *bin, const char *str, ut64 addr);
 R_API bool r_bin_string_filter(RBin *bin, const char *str, ut64 addr);
 R_API bool r_bin_is_cxx(RBinFile *binfile);

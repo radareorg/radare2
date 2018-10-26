@@ -701,7 +701,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 					r_cons_printf ("%s\n", map->name);
 					break;
 				default:
-					r_io_map_set_name (map, input + 3);
+					r_io_map_set_name (map, r_str_trim_ro (input + 3));
 					break;
 				}
 			}

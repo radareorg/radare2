@@ -1949,12 +1949,9 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 			}
 			/* If that's a Classed symbol (method or so) */
 			if (sn.classname) {
-				RFlagItem *fi = NULL;
-				char *comment = NULL;
-				fi = r_flag_get (r->flags, sn.methflag);
+				RFlagItem *fi = r_flag_get (r->flags, sn.methflag);
 				if (r->bin->prefix) {
-					char *prname;
-					prname = r_str_newf ("%s.%s", r->bin->prefix, sn.methflag);
+					char *prname = r_str_newf ("%s.%s", r->bin->prefix, sn.methflag);
 					r_name_filter (sn.methflag, -1);
 					free (sn.methflag);
 					sn.methflag = prname;
@@ -1962,26 +1959,24 @@ static int bin_symbols_internal(RCore *r, int mode, ut64 laddr, int va, ut64 at,
 				if (fi) {
 					r_flag_item_set_realname (fi, sn.methname);
 					if ((fi->offset - r->flags->base) == addr) {
-						comment = fi->comment ? strdup (fi->comment) : NULL;
+				//		char *comment = fi->comment ? strdup (fi->comment) : NULL;
 						r_flag_unset (r->flags, fi);
 					}
 				} else {
 					fi = r_flag_set (r->flags, sn.methflag, addr, symbol->size);
-					comment = fi->comment ? strdup (fi->comment) : NULL;
+					char *comment = fi->comment ? strdup (fi->comment) : NULL;
 					if (comment) {
 						r_flag_item_set_comment (fi, comment);
 						R_FREE (comment);
 					}
 				}
 			} else {
-				const char *fn, *n;
-				RFlagItem *fi;
-				n = sn.demname ? sn.demname : sn.name;
-				fn = sn.demflag ? sn.demflag : sn.nameflag;
+				const char *n = sn.demname ? sn.demname : sn.name;
+				const char *fn = sn.demflag ? sn.demflag : sn.nameflag;
 				char *fnp = (r->bin->prefix) ?
 					r_str_newf ("%s.%s", r->bin->prefix, fn):
 					strdup (fn);
-				fi = r_flag_set (r->flags, fnp, addr, symbol->size);
+				RFlagItem *fi = r_flag_set (r->flags, fnp, addr, symbol->size);
 				if (fi) {
 					r_flag_item_set_realname (fi, n);
 				} else {
@@ -3746,7 +3741,7 @@ R_API char *r_core_bin_method_flags_str(ut64 flags, int mode) {
 			goto padding;
 		}
 		for (i = 0; i < 64; i++) {
-			ut64 flag = flags & (1LL << i);
+			ut64 flag = flags & (1ULL << i);
 			if (flag) {
 				const char *flag_string = r_bin_get_meth_flag_string (flag, true);
 				if (flag_string) {

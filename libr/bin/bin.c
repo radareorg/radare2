@@ -116,31 +116,6 @@ R_API RList *r_bin_dump_strings(RBinFile *bf, int min, int raw) {
 	return r_bin_file_get_strings (bf, min, 1, raw);
 }
 
-/* This is very slow if there are lot of symbols */
-R_API int r_bin_load_languages(RBinFile *binfile) {
-	r_return_val_if_fail (binfile, R_BIN_NM_NONE);
-
-	if (r_bin_lang_rust (binfile)) {
-		return R_BIN_NM_RUST;
-	}
-	if (r_bin_lang_swift (binfile)) {
-		return R_BIN_NM_SWIFT;
-	}
-	if (r_bin_lang_objc (binfile)) {
-		return R_BIN_NM_OBJC;
-	}
-	if (r_bin_lang_cxx (binfile)) {
-		return R_BIN_NM_CXX;
-	}
-	if (r_bin_lang_dlang (binfile)) {
-		return R_BIN_NM_DLANG;
-	}
-	if (r_bin_lang_msvc (binfile)) {
-		return R_BIN_NM_MSVC;
-	}
-	return R_BIN_NM_NONE;
-}
-
 R_API void r_bin_info_free(RBinInfo *rb) {
 	if (!rb) {
 		return;
@@ -260,6 +235,7 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 		res = false;
 		goto error;
 	}
+#if 0
 	// TODO: deprecate, the code in the else should be enough
 	if (sz == UT64_MAX && iob->fd_is_dbg (iob->io, fd)) {
 		// attempt a local open and read
@@ -296,6 +272,7 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 		}
 		iob->fd_close (iob->io, tfd);
 	} else {
+#endif
 		buf_bytes = calloc (1, sz + 1);
 		if (!buf_bytes) {
 			res = false;
@@ -306,7 +283,9 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 			res = false;
 			goto error;
 		}
+#if 0
 	}
+#endif
 	bool yes_plz_steal_ptr = true;
 	r_bin_file_set_bytes (bf, buf_bytes, sz, yes_plz_steal_ptr);
 
