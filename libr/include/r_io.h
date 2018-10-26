@@ -448,9 +448,7 @@ R_API int r_io_section_bin_set_archbits (RIO *io, ut32 bin_id, const char *arch,
 R_API bool r_io_section_priorize (RIO *io, ut32 id);
 R_API bool r_io_section_priorize_bin (RIO *io, ut32 bin_id);
 R_API bool r_io_section_apply (RIO *io, ut32 id, RIOSectionApplyMethod method);
-R_API bool r_io_section_reapply (RIO *io, ut32 id, RIOSectionApplyMethod method);
 R_API bool r_io_section_apply_bin (RIO *io, ut32 bin_id, RIOSectionApplyMethod method);
-R_API bool r_io_section_reapply_bin (RIO *io, ut32 bin_id, RIOSectionApplyMethod method);
 R_API RIOSection* r_io_section_get(RIO *io, ut64 paddr);
 R_API RIOSection* r_io_section_vget(RIO *io, ut64 vaddr);
 R_API ut64 r_io_section_get_paddr_at(RIO *io, ut64 addr);

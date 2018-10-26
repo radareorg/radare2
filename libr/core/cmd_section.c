@@ -18,7 +18,6 @@ static const char *help_msg_S[] = {
 	"Sa","[-] [A] [B] [[off]]","Specify arch and bits for given section",
 	"Sl"," [file]","load contents of file into current section (see dml)",
 	"Sr"," [name]","rename section on current seek",
-	"SR", "[?]", "Remap sections with different mode of operation", 
 	NULL
 };
 
@@ -29,13 +28,6 @@ static const char *help_msg_Sl[] = {
 
 static const char *help_msg_Sr[] = {
 	"Usage:", "Sr", "[name] ([offset])",
-	NULL
-};
-
-static const char* help_msg_SR[] = {
-	"Usage:","SR[b|s][a|p|e] [id]","",
-	"SRb", "[a|p|e] binid", "Remap sections of binid for Analysis, Patch or Emulation", 
-	"SRs","[a|p|e] secid","Remap section with sectid for Analysis, Patch or Emulation",
 	NULL
 };
 
@@ -218,57 +210,12 @@ static void update_section_flag_at_with_oldname(RIOSection *s, RFlag *flags, ut6
 	}
 }
 
-static int cmd_section_reapply(RCore *core, const char *input) {
-	int mode = 0;
-	ut32 id;
-	switch (*input) {
-	case '?':
-		r_core_cmd_help (core, help_msg_SR);
-		break;
-	case 'b':
-	case 's':
-		switch (input[1]) {
-		case 'e':
-			mode = R_IO_SECTION_APPLY_FOR_EMULATOR;
-			break;
-		case 'p':
-			mode = R_IO_SECTION_APPLY_FOR_PATCH;
-			break;
-		case 'a':
-			mode = R_IO_SECTION_APPLY_FOR_ANALYSIS;
-			break;
-		default:
-			r_core_cmd_help (core, help_msg_SR);
-			return 0;
-		}
-		if (*input == 'b') {
-			id = (ut32)r_num_math (core->num, input + 2);
-			if (!r_io_section_reapply_bin (core->io, id, mode)) {
-				eprintf ("Cannot reapply section with binid %d\n", id);
-			}
-		} else {
-			id = (ut32)r_num_math (core->num, input + 2);
-			if (!r_io_section_reapply (core->io, id, mode)) {
-				eprintf ("Cannot reapply section with secid %d\n", id);
-			}
-		}
-		break;
-	default:
-		r_core_cmd_help (core, help_msg_SR);
-		break;
-	}
-	return 0;
-}
-
 static int cmd_section(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (*input) {
 	case '?': // "S?"
 		r_core_cmd_help (core, help_msg_S);
 // TODO: add command to resize current section
-		break;
-	case 'R' : // "SR"
-		return cmd_section_reapply (core, input + 1);	
 		break;
 	case 'a': // "Sa"
 		switch (input[1]) {
