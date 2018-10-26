@@ -1182,7 +1182,7 @@ beach:
 static void resizePanelDown(RPanels *panels) {
 	RPanel *panel = panels->panel;
 	RPanel *curPanel = &panel[panels->curnode];
-	int i, tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0i;
+	int i, tx0, tx1, ty0, ty1, cur1 = 0, cur2 = 0;
 	int cx0 = curPanel->pos.x;
 	int cx1 = curPanel->pos.x + curPanel->pos.w - 1;
 	int cy1 = curPanel->pos.y + curPanel->pos.h - 1;
