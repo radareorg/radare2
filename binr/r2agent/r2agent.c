@@ -97,6 +97,9 @@ int main(int argc, char **argv) {
 		eprintf ("sandbox: Cannot be enabled.\n");
 		return 1;
 	}
+
+	(void)r_cons_new ();
+
 	while (!r_cons_singleton ()->context->breaked) {
 		char *result_heap = NULL;
 		const char *result = page_index;
@@ -151,6 +154,7 @@ int main(int argc, char **argv) {
 		free (result_heap);
 		result_heap = NULL;
 	}
+	r_cons_free ();
 	r_socket_free (s);
 	return 0;
 }
