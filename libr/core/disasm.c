@@ -128,6 +128,8 @@ typedef struct {
 	bool show_emu_write;
 	bool show_section;
 	int show_section_col;
+	bool show_section_perm;
+	bool show_section_name;
 	bool show_symbols;
 	int show_symbols_col;
 	bool show_offseg;
@@ -360,13 +362,12 @@ static void get_bits_comment(RCore *core, RAnalFunction *f, char *cmt, int cmt_s
 static const char * get_section_name(RCore *core, ut64 addr) {
 	static char section[128] = "";
 	static ut64 oaddr = UT64_MAX;
-	RIOSection *s;
 	if (oaddr == addr) {
 		return section;
 	}
-	s = r_io_section_vget (core->io, addr);
+	RIOSection *s = r_io_section_vget (core->io, addr);
 	if (s) {
-		snprintf (section, sizeof (section)-1, "%10s ", s->name);
+		snprintf (section, sizeof (section) - 1, "%10s ", s->name);
 	} else {
 		RListIter *iter;
 		RDebugMap *map;
@@ -626,6 +627,8 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->show_bbline = r_config_get_i (core->config, "asm.bbline");
 	ds->show_section = r_config_get_i (core->config, "asm.section");
 	ds->show_section_col = r_config_get_i (core->config, "asm.section.col");
+	ds->show_section_perm = r_config_get_i (core->config, "asm.section.perm");
+	ds->show_section_name = r_config_get_i (core->config, "asm.section.name");
 	ds->show_symbols = r_config_get_i (core->config, "asm.symbol");
 	ds->show_symbols_col = r_config_get_i (core->config, "asm.symbol.col");
 	ds->show_emu = r_config_get_i (core->config, "asm.emu");
@@ -1339,7 +1342,11 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 			} else if (!strncmp (fi->name, "reloc.", 6)) {
 				if (print) {
 					ds_begin_json_line (ds);
-					r_cons_printf ("(%s)", fi->name);
+					if (!strstr (fi->name, "reloc")) {
+						// this reloc is displayed already as a flag comment
+						// this is unnecessary imho
+						r_cons_printf ("(%s)", fi->name);
+					}
 					ds_newline (ds);
 				}
 				continue;
@@ -2319,7 +2326,20 @@ static void ds_print_lines_left(RDisasmState *ds) {
 	RCore *core = ds->core;
 
 	if (ds->show_section) {
-		char *sect = strdup (get_section_name (core, ds->at));
+		char *str = NULL;
+		if (ds->show_section_perm) {
+			// iosections must die, this should be rbin_section_get
+			RIOSection *s = r_io_section_vget (core->io, ds->at);
+			if (s) {
+				str = strdup (r_str_rwx_i (s->perm));
+			} else {
+				str = strdup ("---");
+			}
+		}
+		if (ds->show_section_name) {
+			str = r_str_appendf (str, " %s", get_section_name (core, ds->at));
+		}
+		char *sect = str? str: strdup ("");
 		printCol (ds, sect, ds->show_section_col, ds->color_reg);
 		free (sect);
 	}
