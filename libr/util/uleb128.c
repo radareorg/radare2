@@ -14,7 +14,7 @@ R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v) {
 	if (datalen == ST32_MAX) {
 		// WARNING; possible overflow
 		datalen = 0xffff;
-	} 
+	}
 	if (datalen < 0) {
 		return NULL;
 	}
@@ -115,7 +115,7 @@ R_API st64 r_sleb128(const ut8 **data, const ut8 *end) {
 	int offset = 0;
 	ut8 value;
 	bool cond;
- 	do {
+	do {
 		st64 chunk;
 		value = *p;
 		chunk = value & 0x7f;
@@ -127,7 +127,7 @@ R_API st64 r_sleb128(const ut8 **data, const ut8 *end) {
 	if ((value & 0x40) != 0) {
 		result |= ~0UL << offset;
 	}
- 	*data = p;
+	*data = p;
 	return result;
 }
 
@@ -289,7 +289,7 @@ R_API size_t read_i64_leb128 (const ut8* p, const ut8* max, st64* out_value) {
 		bool sign_bit_set = (p[9] & 0x1);
 		int top_bits = p[9] & 0xfe;
 		if ((sign_bit_set && top_bits != 0x7e) || (!sign_bit_set && top_bits != 0)) {
-			return 0;	
+			return 0;
 		}
 		ut64 result = LEB128_10 (ut64);
 		*out_value = result;
