@@ -2496,6 +2496,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("asm.reloff", "false", "Show relative offsets instead of absolute address in disasm");
 	SETPREF ("asm.reloff.flags", "false", "Show relative offsets to flags (not only functions)");
 	SETPREF ("asm.section", "false", "Show section name before offset");
+	SETPREF ("asm.section.perm", "false", "Show section permissions in the disasm");
+	SETPREF ("asm.section.name", "true", "Show section name in the disasm");
 	SETI ("asm.section.col", 20, "Columns width to show asm.section");
 	SETCB ("asm.section.sub", "false", &cb_asmsecsub, "Show offsets in disasm prefixed with section/map name");
 	SETPREF ("asm.pseudo", "false", "Enable pseudo syntax");
