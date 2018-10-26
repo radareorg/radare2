@@ -10,11 +10,13 @@ extern "C" {
 typedef struct r_event_t {
 	void *user;
 	bool incall;
-	RList *callbacks;
+	SdbHt *callbacks;
 } REvent;
 
 typedef enum {
-	R_EVENT_META_SET = 0,
+	R_EVENT_ALL = 0,
+	R_EVENT_META_SET,
+	R_EVENT_MAX,
 } REventType;
 
 typedef struct r_event_meta_t {
@@ -27,8 +29,8 @@ typedef void (*REventCallback)(REvent *ev, REventType type, void *data);
 
 R_API REvent *r_event_new(void *user);
 R_API void r_event_free(REvent *ev);
-R_API void r_event_hook(REvent *ev, REventCallback cb);
-R_API void r_event_unhook(REvent *ev, REventCallback cb);
-R_API void r_event_send(REvent *ev, int type, void *data);
+R_API void r_event_hook(REvent *ev, REventType type, REventCallback cb);
+R_API void r_event_unhook(REvent *ev, REventType type, REventCallback cb);
+R_API void r_event_send(REvent *ev, REventType type, void *data);
 
 #endif
