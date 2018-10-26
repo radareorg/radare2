@@ -1342,11 +1342,9 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 			} else if (!strncmp (fi->name, "reloc.", 6)) {
 				if (print) {
 					ds_begin_json_line (ds);
-					if (!strstr (fi->name, "reloc")) {
-						// this reloc is displayed already as a flag comment
-						// this is unnecessary imho
-						r_cons_printf ("(%s)", fi->name);
-					}
+					// this reloc is displayed already as a flag comment
+					// this is unnecessary imho
+					r_cons_printf ("(%s)", fi->name);
 					ds_newline (ds);
 				}
 				continue;
