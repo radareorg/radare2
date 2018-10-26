@@ -114,7 +114,7 @@ R_API st64 r_sleb128(const ut8 **data, const ut8 *end) {
 	st64 result = 0;
 	int offset = 0;
 	ut8 value;
-	bool _;
+	bool cond;
  	do {
 		st64 chunk;
 		value = *p;
@@ -122,7 +122,7 @@ R_API st64 r_sleb128(const ut8 **data, const ut8 *end) {
 		result |= (chunk << offset);
 		offset += 7;
 	}
-	while (_ = *p & 0x80 && p + 1 < end, p++, _);
+	while (cond = *p & 0x80 && p + 1 < end, p++, cond);
 
 	if ((value & 0x40) != 0) {
 		result |= ~0UL << offset;
