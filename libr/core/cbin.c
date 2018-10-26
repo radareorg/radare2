@@ -2181,7 +2181,6 @@ static char *build_hash_string(int mode, const char *chksum, ut8 *data, ut32 dat
 
 static void dup_chk_free_kv(HtKv *kv) {
 	free (kv->key);
-	free (kv);
 }
 
 static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments) {

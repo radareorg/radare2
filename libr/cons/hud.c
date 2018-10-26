@@ -183,7 +183,6 @@ static RList *hud_filter(RList *list, char *user_input, int top_entry_n, int *cu
 static void mht_free_kv(HtKv *kv) {
         free (kv->key);
         r_list_free (kv->value);
-        free (kv);
 }
 
 // Display a list of entries in the hud, filtered and emphasized based on the user input.

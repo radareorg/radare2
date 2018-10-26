@@ -17,7 +17,6 @@ static void kv_anal_bb_free(HtKv *kv) {
 	if (kv) {
 		free (kv->key);
 		r_anal_bb_free (kv->value);
-		free (kv);
 	}
 }
 

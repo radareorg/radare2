@@ -1,7 +1,16 @@
 #include "sdbht.h"
 
+void sdbkv_fini(SdbKv *kv) {
+	free (kv->base.key);
+	free (kv->base.value);
+}
+
 SDB_API SdbHt* sdb_ht_new() {
-	return ht_new ((DupValue)strdup, (HtKvFreeFunc)sdbkv_free, (CalcSize)strlen);
+	SdbHt *ht = ht_new ((DupValue)strdup, (HtKvFreeFunc)sdbkv_fini, (CalcSize)strlen);
+	if (ht) {
+		ht->elem_size = sizeof (SdbKv);
+	}
+	return ht;
 }
 
 static bool sdb_ht_internal_insert(SdbHt* ht, const char* key,
@@ -9,15 +18,23 @@ static bool sdb_ht_internal_insert(SdbHt* ht, const char* key,
 	if (!ht || !key || !value) {
 		return false;
 	}
-	SdbKv* kvp = calloc (1, sizeof (SdbKv));
-	if (kvp) {
-		kvp->base.key = strdup ((void *)key);
-		kvp->base.value = strdup ((void *)value);
-		kvp->base.key_len = strlen (sdbkv_key (kvp));
-		kvp->base.value_len = strlen (sdbkv_value (kvp));
-		kvp->expire = 0;
-		return ht_insert_kv (ht, (HtKv*)kvp, update);
+	SdbKv kvp = { 0 };
+	kvp.base.key = strdup ((void *)key);
+	if (!kvp.base.key) {
+		goto err;
 	}
+	kvp.base.value = strdup ((void *)value);
+	if (!kvp.base.value) {
+		goto err;
+	}
+	kvp.base.key_len = strlen ((void *)kvp.base.key);
+	kvp.base.value_len = strlen ((void *)kvp.base.value);
+	kvp.expire = 0;
+	return ht_insert_kv (ht, (HtKv*)&kvp, update);
+
+ err:
+	free (kvp.base.key);
+	free (kvp.base.value);
 	return false;
 }
 

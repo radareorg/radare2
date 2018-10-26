@@ -2473,7 +2473,6 @@ static void initSdb(RPanels *panels) {
 static void mht_free_kv(HtKv *kv) {
 	free (kv->key);
 	free (kv->value);
-	free (kv);
 }
 
 static bool init(RCore *core, RPanels *panels, int w, int h) {

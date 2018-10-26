@@ -32,8 +32,6 @@ static const char *str_callback(RNum *user, ut64 off, int *ok) {
 
 static void flag_free_kv(HtKv *kv) {
 	free (kv->key);
-	//we do not free kv->value since there is a reference in other list
-	free (kv);
 }
 
 static void flag_skiplist_free(void *data) {
