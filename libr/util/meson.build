@@ -17,6 +17,7 @@ files = [
   'debruijn.c',
   'des.c',
   'diff.c',
+  'event.c',
   'file.c',
   'flist.c',
   'graph.c',
