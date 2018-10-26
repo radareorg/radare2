@@ -187,6 +187,8 @@ static void mht_free_kv(HtKv *kv) {
 }
 
 // Display a list of entries in the hud, filtered and emphasized based on the user input.
+
+#define HUD_CACHE 0
 R_API char *r_cons_hud(RList *list, const char *prompt) {
 	int ch, nch, current_entry_n, i = 0;
 	char user_input[HUD_BUF_SIZE];
@@ -219,12 +221,18 @@ R_API char *r_cons_hud(RList *list, const char *prompt) {
 		if (found) {
 			filtered_list = kv->value;
 		} else {
-			filtered_list = hud_filter (list, user_input, top_entry_n, &current_entry_n, &selected_entry);
+			filtered_list = hud_filter (list, user_input,
+				top_entry_n, &current_entry_n, &selected_entry);
+#if HUD_CACHE
 			ht_insert (ht, user_input, filtered_list);
+#endif
 		}
 		r_list_foreach (filtered_list, iter, row) {
 			r_cons_printf ("%s\n", row);
 		}
+#if !HUD_CACHE
+		r_list_free (filtered_list);
+#endif
 
 		r_cons_visual_flush ();
 		ch = r_cons_readchar ();
