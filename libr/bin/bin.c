@@ -278,7 +278,8 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 	RBinObject *bo;
 	r_list_foreach (the_obj_list, iter, bo) {
 		// XXX - naive. do we need a way to prevent multiple "anys" from being opened?
-		res = r_bin_load_io (bin, fd, baseaddr, bo->loadaddr, 0, bo->boffset, bo->plugin->name, 0);
+		// TODO: use of bo->plugin->name seems to  be bad
+		res = r_bin_load_io (bin, fd, baseaddr, bo->loadaddr, 0, bo->boffset, NULL, 0);
 	}
 	bf->o = r_list_get_n (bf->objs, 0);
 	free (buf_bytes);
