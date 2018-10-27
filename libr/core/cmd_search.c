@@ -1891,9 +1891,9 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 				break;
 			}
 			return false;
-		case 'f':
-		case 's':
-		case 't':
+		case 'f': // "/af"
+		case 's': // "/as"
+		case 't': // "/at"
 		case ' ':
 			type = *input;
 			break;
@@ -1950,8 +1950,26 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 				} else {
 					const char *type = r_anal_optype_to_string (aop.type);
 					if (type) {
-						if (!*input || !strcmp (input, type)) {
-							match = true;
+						bool isCandidate = !*input;
+						if (!strcmp (input, "cswi")) {
+							if (!strcmp (input + 1, type)) {
+								isCandidate = true;
+							}
+						} else {
+							if (!strcmp (input, type)) {
+								isCandidate = true;
+							}
+						}
+						if (isCandidate) {
+							if (strstr (input, "swi")) {
+								if (*input  == 'c') {
+									match = true; // aop.cond;
+								} else {
+									match = !aop.cond;
+								}
+							} else {
+								match = true;
+							}
 						}
 					}
 				}
