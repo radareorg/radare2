@@ -773,7 +773,10 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 				parseCodeDirectory (bin->b, data + idx.offset, link.datasize);
 			}
 			break;
-		case 0x10000: // ASN1/DER certificate
+		case 0x1000:
+			// unknown
+			break;
+		case CSSLOT_CMS_SIGNATURE: // ASN1/DER certificate
 			if (isVerbose) {
 				ut8 header[8] = {0};
 				r_buf_read_at (bin->b, data + idx.offset, header, sizeof (header));

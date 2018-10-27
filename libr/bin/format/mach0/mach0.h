@@ -17,12 +17,23 @@
 #define CSMAGIC_REQUIREMENT        0xfade0c00 /* single Requirement blob */
 #define CSMAGIC_REQUIREMENTS       0xfade0c01 /* Requirements vector (internal requirements) */
 
+#define CS_PAGE_SIZE 4096
+
+#define CS_HASHTYPE_SHA1 1
+#define CS_HASHTYPE_SHA256 2
+#define CS_HASHTYPE_SHA256_TRUNCATED 3
+
+#define CS_HASH_SIZE_SHA1 20
+#define CS_HASH_SIZE_SHA256 32
+#define CS_HASH_SIZE_SHA256_TRUNCATED 20
+
 #define CSSLOT_CODEDIRECTORY 0
 #define CSSLOT_INFOSLOT 1
 #define CSSLOT_REQUIREMENTS  2
 #define CSSLOT_RESOURCEDIR 3
 #define CSSLOT_APPLICATION 4
 #define CSSLOT_ENTITLEMENTS  5
+#define CSSLOT_CMS_SIGNATURE 0x10000
 
 struct section_t {
 	ut64 offset;
