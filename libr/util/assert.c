@@ -7,7 +7,7 @@
 R_API void r_assert_log(RLogLevel level, const char *fmt, ...) {
 	va_list args;
 	va_start (args, fmt);
-	r_vlogf (level, fmt, args);
+	R_LOG (level, NULL, fmt, args);
 	va_end (args);
 	char *env = r_sys_getenv ("R_DEBUG_ASSERT");
 	if (env) {

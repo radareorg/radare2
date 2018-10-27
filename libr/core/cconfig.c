@@ -952,7 +952,7 @@ static int cb_timezone(void *user, void *data) {
 	return true;
 }
 
-static int cb_cfglog(void *user, void *data) {
+static int cb_cfgcorelog(void *user, void *data) {
 	RCore *core = (RCore *) user;
 	RConfigNode *node = (RConfigNode *) data;
 	core->cfglog = node->i_value;
@@ -2285,6 +2285,65 @@ static int cb_dbgsnap(void *user, void *data) {
 	return true;
 }
 
+static int cb_log_config_level(void *coreptr, void *nodeptr) {
+	RConfigNode *node = (RConfigNode *)nodeptr;
+	const char *value = node->value;
+	char *bad_data = NULL;
+	long int ival = strtol (value, &bad_data, 10);
+	if (*bad_data) {
+		return false;
+	}
+	r_log_set_level (ival);
+	return true;
+}
+
+static int cb_log_config_traplevel(void *coreptr, void *nodeptr) {
+	RConfigNode *node = (RConfigNode *)nodeptr;
+	const char *value = node->value;
+	char *bad_data = NULL;
+	long int ival = strtol (value, &bad_data, 10);
+	if (*bad_data) {
+		return false;
+	}
+	r_log_set_traplevel (ival);
+	return true;
+}
+
+static int cb_log_config_file(void *coreptr, void *nodeptr) {
+	RConfigNode *node = (RConfigNode *)nodeptr;
+	const char *value = node->value;
+	r_log_set_file (value);
+	return true;
+}
+
+static int cb_log_config_srcinfo(void *coreptr, void *nodeptr) {
+	RConfigNode *node = (RConfigNode *)nodeptr;
+	const char *value = node->value;
+	switch (value[0]) {
+	case 't':
+	case 'T':
+		r_log_set_srcinfo (true);
+		break;
+	default:
+		r_log_set_srcinfo (false);
+	}
+	return true;
+}
+
+static int cb_log_config_colors(void *coreptr, void *nodeptr) {
+	RConfigNode *node = (RConfigNode *)nodeptr;
+	const char *value = node->value;
+	switch (value[0]) {
+	case 't':
+	case 'T':
+		r_log_set_colors (true);
+		break;
+	default:
+		r_log_set_colors (false);
+	}
+	return true;
+}
+
 #define SLURP_LIMIT (10*1024*1024)
 R_API int r_core_config_init(RCore *core) {
 	int i;
@@ -2606,7 +2665,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETPREF ("cfg.plugins", "true", "Load plugins at startup");
 	SETCB ("time.fmt", "%Y-%m-%d %H:%M:%S %z", &cb_cfgdatefmt, "Date format (%Y-%m-%d %H:%M:%S %z)");
 	SETICB ("time.zone", 0, &cb_timezone, "Time zone, in hours relative to GMT: +2, -1,..");
-	SETCB ("cfg.log", "false", &cb_cfglog, "Log changes using the T api needed for realtime syncing");
+	SETCB ("cfg.corelog", "false", &cb_cfgcorelog, "Log changes using the T api needed for realtime syncing");
 	SETPREF ("cfg.newtab", "false", "Show descriptions in command completion");
 	SETCB ("cfg.debug", "false", &cb_cfgdebug, "Debugger mode");
 	p = r_sys_getenv ("EDITOR");
@@ -2627,6 +2686,32 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("cfg.sandbox", "false", &cb_cfgsanbox, "Sandbox mode disables systems and open on upper directories");
 	SETPREF ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "Use little (false) or big (true) endianness");
+
+	/* cfg.log */
+	// R2_LOGLEVEL / cfg.log.level
+	p = r_sys_getenv ("R2_LOGLEVEL");
+	SETICB ("cfg.log.level", p ? atoi(p) : R_LOGLVL_ERROR, cb_log_config_level, "Target log level/severity"\
+	 " (0:SILLY, 1:VERBOSE, 2:DEBUG, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL)"
+	);
+	free (p);
+	// R2_LOGTRAP_LEVEL / cfg.log.traplevel
+	p = r_sys_getenv ("R2_LOGTRAPLEVEL");
+	SETICB ("cfg.log.traplevel", p ? atoi(p) : R_LOGLVL_FATAL, cb_log_config_traplevel, "Log level for trapping R2 when hit"\
+	 " (0:SILLY, 1:VERBOSE, 2:DEBUG, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL)"
+	);
+	free (p);
+	// R2_LOGFILE / cfg.log.file
+	p = r_sys_getenv ("R2_LOGFILE");
+	SETCB ("cfg.log.file", p ? p : "", cb_log_config_file, "Logging output filename / path");
+	free (p);
+	// R2_LOGSRCINFO / cfg.log.srcinfo
+	p = r_sys_getenv ("R2_LOGSRCINFO");
+	SETCB ("cfg.log.srcinfo", p ? p : "false", cb_log_config_srcinfo, "Should the log output contain src info (filename:lineno)");
+	free (p);
+	// R2_LOGCOLORS / cfg.log.colors
+	p = r_sys_getenv ("R2_LOGCOLORS");
+	SETCB ("cfg.log.colors", p ? p : "false", cb_log_config_colors, "Should the log output use colors (TODO)");
+	free (p);
 
 	// zign
 	SETPREF ("zign.prefix", "sign", "Default prefix for zignatures matches");
