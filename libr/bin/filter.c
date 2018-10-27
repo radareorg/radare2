@@ -53,15 +53,12 @@ R_API void r_bin_filter_name(RBinFile *bf, Sdb *db, ut64 vaddr, char *name, int 
 }
 
 R_API void r_bin_filter_sym(RBinFile *bf, Sdb *db, ut64 vaddr, RBinSymbol *sym) {
-	if (!db || !sym) {
+	if (!db || !sym || !sym->name) {
 		return;
 	}
 	char *name = sym->name;
-	if (!name) {
-		return;
-	}
-#if 1
-//		if (!strncmp (sym->name, "imp.", 4)) {
+	// if (!strncmp (sym->name, "imp.", 4)) {
+	// demangle symbol name depending on the language specs if any
 	if (bf && bf->o && bf->o->lang) {
 		const char *lang = r_bin_lang_tostring (bf->o->lang);
 		char *dn = r_bin_demangle (bf, lang, sym->name, sym->vaddr);
@@ -70,12 +67,12 @@ R_API void r_bin_filter_sym(RBinFile *bf, Sdb *db, ut64 vaddr, RBinSymbol *sym) 
 			// XXX this is wrong but is required for this test to pass
 			// pmb:new pancake$ bin/r2r.js db/formats/mangling/swift
 			sym->name = dn;
-#if 1
+			// extract class information from demangled symbol name
 			char *p = strchr (dn, '.');
 			if (p) {
-				if (IS_UPPER (sym->name[0])) {
-					sym->classname = strdup (sym->name);
-					sym->classname[p - sym->name] = 0;
+				if (IS_UPPER (*dn)) {
+					sym->classname = strdup (dn);
+					sym->classname[p - dn] = 0;
 				} else if (IS_UPPER (p[1])) {
 					sym->classname = strdup (p + 1);
 					p = strchr (sym->classname, '.');
@@ -84,14 +81,13 @@ R_API void r_bin_filter_sym(RBinFile *bf, Sdb *db, ut64 vaddr, RBinSymbol *sym) 
 					}
 				}
 			}
-#endif
 		}
 	}
-#endif
+
 	// XXX this is very slow, must be optimized
 	const char *uname = sdb_fmt ("%" PFMT64x ".%s", vaddr, name);
 	ut32 vhash = sdb_hash (uname); // vaddr hash - unique
-	ut32 hash = sdb_hash (name);   // name hash - if dupped and not in unique hash must insert
+	ut32 hash = sdb_hash (name); // name hash - if dupped and not in unique hash must insert
 	int count = sdb_num_inc (db, sdb_fmt ("%x", hash), 1, 0);
 	if (sdb_exists (db, sdb_fmt ("%x", vhash))) {
 		// TODO: symbol is dupped, so symbol can be removed!
