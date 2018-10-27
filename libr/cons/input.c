@@ -546,6 +546,40 @@ R_API int r_cons_yesno(int def, const char *fmt, ...) {
 	return key == 'y';
 }
 
+R_API char *r_cons_password(const char *msg) {
+	int i = 0;
+	char buf[256] = {0};
+	printf ("\r%s", msg);
+	fflush (stdout);
+	r_cons_set_raw (1);
+#if 0 && __UNIX__
+	// required to make therm/iterm show the key
+	// cannot read when enabled in this way
+	RCons *a = r_cons_singleton();
+	a->term_raw.c_lflag &= ~(ECHO|ECHONL);
+	a->term_raw.c_lflag |= ICANON;
+	tcsetattr (0, TCSANOW, &a->term_raw);
+#endif
+	while (i < sizeof (buf)) {
+		int ch = r_cons_readchar ();
+		if (ch == 127) { // backspace
+			if (i < 1) {
+				break;
+			}
+			i--;
+			continue;
+		}
+		if (ch == '\r' || ch == '\n') {
+			break;
+		}
+		buf[i++] = ch;
+	}
+	buf[i] = 0;
+	r_cons_set_raw (0);
+	printf ("\n");
+	return strdup (buf);
+}
+
 R_API char *r_cons_input(const char *msg) {
 	char *oprompt = r_line_get_prompt (); //r_cons_singleton ()->line->prompt);
 	if (!oprompt) {

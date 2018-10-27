@@ -11,6 +11,7 @@ static const char *help_msg_L[] = {
 	"L",  "", "show this help",
 	"L", " blah."R_LIB_EXT, "load plugin file",
 	"L-", "duk", "unload core plugin by name",
+	"LL", "", "lock screen",
 	"La", "", "list asm/anal plugins (aL, e asm.arch=" "??" ")",
 	"Lc", "", "list core plugins",
 	"Ld", "", "list debug plugins (same as dL)",
@@ -42,6 +43,32 @@ static void cmd_log_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, L);
 	DEFINE_CMD_DESCRIPTOR (core, T);
 }
+
+static void screenlock(RCore *core) {
+	//  char *pass = r_cons_input ("Enter new password: ");
+	char *pass = r_cons_password (Color_INVERT "Enter new password:"Color_INVERT_RESET);
+	if (!pass || !*pass) {
+		return;
+	}
+	bool running = true;
+	r_cons_clear_buffer ();
+	r_cons_clear00 ();
+	r_cons_flush ();
+	do {
+		char *msg = r_cons_password ("Password: ");
+		if (!strcmp (msg, pass)) {
+			running = false;
+			eprintf ("Correct!\n");
+		} else {
+			r_sys_sleep (1);
+			eprintf ("Invalid password.\n");
+		}
+		free (msg);
+	} while (running);
+	r_cons_set_cup (true);
+	free (pass);
+}
+
 
 static int textlog_chat(RCore *core) {
 	char prompt[64];
@@ -188,6 +215,9 @@ static int cmd_plugins(void *data, const char *input) {
 		break;
 	case 'a': // "La"
 		r_core_cmd0 (core, "e asm.arch=??");
+		break;
+	case 'L': // "LL"
+		screenlock (core);
 		break;
 	case 'o': // "Lo"
 	case 'i': // "Li"

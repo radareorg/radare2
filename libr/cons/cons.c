@@ -1263,17 +1263,10 @@ R_API void r_cons_invert(int set, int color) {
 */
 R_API void r_cons_set_cup(int enable) {
 #if __UNIX__ || __CYGWIN__
-	if (enable) {
-		const char *code =
-			"\x1b[?1049h" // xterm
-			"\x1b" "7\x1b[?47h"; // xterm-color
-		write (2, code, strlen (code));
-	} else {
-		const char *code =
-			"\x1b[?1049l" // xterm
-			"\x1b[?47l""\x1b""8"; // xterm-color
-		write (2, code, strlen (code));
-	}
+	const char *code = enable
+		? "\x1b[?1049h" "\x1b" "7\x1b[?47h"
+		: "\x1b[?1049l" "\x1b[?47l" "\x1b" "8";
+	write (2, code, strlen (code));
 	fflush (stdout);
 #elif __WINDOWS__ && !__CYGWIN__
 	if (I.ansicon) {
@@ -1556,4 +1549,10 @@ R_API void r_cons_cmd_help(const char *help[], bool use_color) {
 				padding, "", pal_help_color, help[i + 2], pal_reset);
 		}
 	}
+}
+
+R_API void r_cons_clear_buffer(void) {
+#if __UNIX__ || __CYGWIN__
+	write (1, "\x1b" "c\x1b[3J",  6);
+#endif
 }
