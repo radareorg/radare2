@@ -16,18 +16,11 @@ static const char *help_msg_S[] = {
 	"S-.","","remove section at core->offset (can be changed with @)",
 	"S=","","list sections (ascii-art bars) (io.va to display paddr or vaddr)",
 	"Sa","[-] [A] [B] [[off]]","Specify arch and bits for given section",
-	"Sl"," [file]","load contents of file into current section (see dml)",
-	NULL
-};
-
-static const char *help_msg_Sl[] = {
-	"Usage:", "Sl", "[file]",
 	NULL
 };
 
 static void cmd_section_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, S);
-	DEFINE_CMD_DESCRIPTOR (core, Sl);
 }
 
 #define PRINT_CURRENT_SEEK \
@@ -215,40 +208,6 @@ static int cmd_section(void *data, const char *input) {
 				free (ptr);
 				break;
 			}
-		}
-		break;
-	case 'l': // "Sl"
-		{
-		ut64 o = core->offset;
-		SdbListIter *iter;
-		RIOSection *s;
-		if (input[1] != ' ') {
-			r_core_cmd_help (core, help_msg_Sl);
-			return false;
-		}
-		if (core->io->va || core->io->debug) {
-			s = r_io_section_vget (core->io, core->offset); 
-			o = s ? core->offset - s->vaddr + s->paddr : core->offset;
-		}
-		ls_foreach (core->io->sections, iter, s) {
-			if (o >= s->paddr && o < s->paddr + s->size) {
-				int sz;
-				char *buf = r_file_slurp (input + 2, &sz);
-				// TODO: use mmap here. we need a portable implementation
-				if (!buf) {
-					eprintf ("Cannot allocate 0x%08"PFMT64x""
-						" bytes\n", s->size);
-					return false;
-				}
-				r_io_write_at (core->io, s->vaddr, (const ut8*)buf, sz);
-				eprintf ("Loaded %d byte(s) into the map region "
-					" at 0x%08"PFMT64x"\n", sz, s->vaddr);
-				free (buf);
-				return true;
-			}
-		}
-		eprintf ("No debug region found here\n");
-		return false;
 		}
 		break;
 	case '-': // "S-"
