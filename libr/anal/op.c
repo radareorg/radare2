@@ -359,6 +359,7 @@ R_API const char *r_anal_optype_to_string(int t) {
 	case R_ANAL_OP_TYPE_STORE : return "store";
 	case R_ANAL_OP_TYPE_SUB   : return "sub";
 	case R_ANAL_OP_TYPE_SWI   : return "swi";
+	case R_ANAL_OP_TYPE_CSWI  : return "cswi";
 	case R_ANAL_OP_TYPE_SWITCH: return "switch";
 	case R_ANAL_OP_TYPE_TRAP  : return "trap";
 	case R_ANAL_OP_TYPE_UCALL : return "ucall";
