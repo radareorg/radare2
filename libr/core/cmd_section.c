@@ -17,7 +17,6 @@ static const char *help_msg_S[] = {
 	"S=","","list sections (ascii-art bars) (io.va to display paddr or vaddr)",
 	"Sa","[-] [A] [B] [[off]]","Specify arch and bits for given section",
 	"Sl"," [file]","load contents of file into current section (see dml)",
-	"Sr"," [name]","rename section on current seek",
 	NULL
 };
 
@@ -26,15 +25,9 @@ static const char *help_msg_Sl[] = {
 	NULL
 };
 
-static const char *help_msg_Sr[] = {
-	"Usage:", "Sr", "[name] ([offset])",
-	NULL
-};
-
 static void cmd_section_init(RCore *core) {
 	DEFINE_CMD_DESCRIPTOR (core, S);
 	DEFINE_CMD_DESCRIPTOR (core, Sl);
-	DEFINE_CMD_DESCRIPTOR (core, Sr);
 }
 
 #define PRINT_CURRENT_SEEK \
@@ -170,46 +163,6 @@ static void __section_list (RIO *io, ut64 offset, RPrint *print, int rad) {
 	}
 }
 
-static void update_section_flag_at_with_oldname(RIOSection *s, RFlag *flags, ut64 off, char *oldname) {
-	RFlagItem *item = NULL;
-	RListIter *iter;
-	const RList *list = NULL;
-	int len = 0;
-	char *secname = NULL;
-	list = r_flag_get_list (flags, s->vaddr);
-	secname = sdb_fmt ("section.%s", oldname);
-	len = strlen (secname);
-	r_list_foreach (list, iter, item) {
-		if (!item->name)  {
-			continue;
-		}
-		if (!strncmp (item->name, secname, R_MIN (strlen (item->name), len))) {
-			free (item->realname);
-			item->name = strdup (sdb_fmt ("section.%s", s->name));
-			r_str_trim (item->name);
-			r_name_filter (item->name, 0);
-			item->realname = item->name;
-			break;
-		}
-	}
-	list = r_flag_get_list (flags, s->vaddr + s->size);
-	secname = sdb_fmt ("section_end.%s", oldname);
-	len = strlen (secname);
-	r_list_foreach (list, iter, item) {
-		if (!item->name)  {
-			continue;
-		}
-		if (!strncmp (item->name, secname, R_MIN (strlen (item->name), len))) {
-			free (item->realname);
-			item->name = strdup (sdb_fmt ("section_end.%s", s->name));
-			r_str_trim (item->name);
-			r_name_filter (item->name, 0);
-			item->realname = item->name;
-			break;
-		}
-	}
-}
-
 static int cmd_section(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	switch (*input) {
@@ -262,33 +215,6 @@ static int cmd_section(void *data, const char *input) {
 				free (ptr);
 				break;
 			}
-		}
-		break;
-	case 'r': // "Sr"
-		if (input[1] == ' ') {
-			RIOSection *s;
-			// int len = 0;
-			ut64 vaddr;
-			char *p = strchr (input + 2, ' ');
-			if (p) {
-				*p = 0;
-				vaddr = r_num_math (core->num, p + 1);
-			//	len = (int)(size_t)(p-input + 2);
-			} else {
-				vaddr = core->offset;
-			}
-			s = r_io_section_vget (core->io, vaddr);
-			if (s) {
-				char *oldname = s->name;
-				s->name = strdup (input + 2);
-				//update flag space for the given section
-				update_section_flag_at_with_oldname (s, core->flags, s->vaddr, oldname);
-				free (oldname);
-			} else {
-				eprintf ("No section found in  0x%08"PFMT64x"\n", core->offset);
-			}
-		} else {
-			r_core_cmd_help (core, help_msg_Sr);
 		}
 		break;
 	case 'l': // "Sl"
