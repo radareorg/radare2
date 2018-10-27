@@ -51,35 +51,23 @@ R_API void r_log_set_colors(bool show_info) {
 
   This is used by cons/cons.c:r_cons_new to set the log output
   to r_cons. If r_cons is unavailable and this is never called
-  then _r_log_internal will use its fallback to stderr in r_util
+  then r_log will use its fallback to stderr in r_util
 */
 R_API void r_log_set_main_callback(RLogCallback cbfunc) {
 	// TODO: RList of callbacks with setter/remove methods
 	cb_main_output = cbfunc;
 }
 
-/**
- * \brief Internal logging function used by preprocessor macros
- * \param funcname Contains the function name of the calling function
- * \param filename Contains the filename that funcname is defined in
- * \param lineno The line number that this log call is being made from in filename
- * \param lvl Logging level for output
- * \param fmtstr A printf like string
+R_API void r_vlog(const char *funcname, const char *filename,
+	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, va_list args) {
+	va_list args_copy;
+	va_copy (args_copy, args);
 
-  This function is used by the R_LOG_* preprocessor macros for logging
-*/
-R_API void _r_log_internal(const char *funcname, const char *filename,
-	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...) {
 	if (level < cfg_loglvl && level < cfg_logtraplvl) {
 		// Don't print if output level is lower than current level
 		// Don't ignore fatal/trap errors
 		return;
 	}
-
-	// Setup varadic arguments
-	va_list args, args_copy;
-	va_start (args, fmtstr);
-	va_copy (args_copy, args);
 
 	// TODO: Colors
 
@@ -101,6 +89,7 @@ R_API void _r_log_internal(const char *funcname, const char *filename,
 	} else {
 		fprintf (stderr, "%s", output_buf);
 	}
+	va_end (args_copy);
 
 	// Log to file if enabled
 	if (cfg_logfile[0] != 0x00) {
@@ -116,13 +105,29 @@ R_API void _r_log_internal(const char *funcname, const char *filename,
 		}
 	}
 
-	va_end (args);
-	va_end (args_copy);
-
 	if (level >= cfg_logtraplvl && level != R_LOGLVL_NONE) {
 		fflush (stdout); // We're about to exit HARD, flush buffers before dying
 		fflush (stderr);
 		// TODO: call r_cons_flush if libr_cons is being used
 		r_sys_breakpoint (); // *oof*
 	}
+}
+
+/**
+ * \brief Internal logging function used by preprocessor macros
+ * \param funcname Contains the function name of the calling function
+ * \param filename Contains the filename that funcname is defined in
+ * \param lineno The line number that this log call is being made from in filename
+ * \param lvl Logging level for output
+ * \param fmtstr A printf like string
+
+  This function is used by the R_LOG_* preprocessor macros for logging
+*/
+R_API void r_log(const char *funcname, const char *filename,
+	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...) {
+	va_list args;
+
+	va_start (args, fmtstr);
+	r_vlog (funcname, filename, lineno, level, tag, fmtstr, args);
+	va_end (args);
 }

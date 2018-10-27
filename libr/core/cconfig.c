@@ -2690,7 +2690,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* cfg.log */
 	// R2_LOGLEVEL / cfg.log.level
 	p = r_sys_getenv ("R2_LOGLEVEL");
-	SETICB ("cfg.log.level", p ? atoi(p) : R_LOGLVL_ERROR, cb_log_config_level, "Target log level/severity"\
+	SETICB ("cfg.log.level", p ? atoi(p) : R_DEFAULT_LOGLVL, cb_log_config_level, "Target log level/severity"\
 	 " (0:SILLY, 1:VERBOSE, 2:DEBUG, 3:INFO, 4:WARN, 5:ERROR, 6:FATAL)"
 	);
 	free (p);
