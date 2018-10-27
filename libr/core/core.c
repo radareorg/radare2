@@ -810,7 +810,7 @@ static const char *radare_argv[] = {
 	"db ", "db-", "dbd", "dbe", "dbs", "dbte", "dbtd", "dbts",
 	"dp", "dr", "dcu", "dmd", "dmp", "dml",
 	"ec","ecs", "eco",
-	"S", "S.", "S*", "S-", "S=", "Sa", "Sa-", "Sd", "Sl", "SSj", "Sr",
+	"S", "S.", "S*", "S-", "S=", "Sa", "Sa-", "Sd", "Sl", "SSj",
 	"s", "s+", "s++", "s-", "s--", "s*", "sa", "sb", "sr",
 	"!", "!!", "!!!", "!!!-",
 	"#sha1", "#crc32", "#pcprint", "#sha256", "#sha512", "#md4", "#md5",
