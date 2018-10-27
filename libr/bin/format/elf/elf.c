@@ -2971,6 +2971,7 @@ static int Elf_(fix_symbols)(ELFOBJ *bin, int nsym, int type, RBinElfSymbol **sy
 	return nsym;
 }
 
+// TODO: return RList<RBinSymbol*> .. or run a callback with that symbol constructed, so we dont have to do it twice
 static RBinElfSymbol* Elf_(_r_bin_elf_get_symbols_imports)(ELFOBJ *bin, int type) {
 	ut32 shdr_size;
 	int tsize, nsym, ret_ctr = 0, i, j, r, k, newsize;

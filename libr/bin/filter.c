@@ -22,7 +22,7 @@ static void hashify(char *s, ut64 vaddr) {
 
 // TODO: optimize this api:
 // - bin plugins should call r_bin_filter_name() before appending
-R_API void r_bin_filter_name(Sdb *db, ut64 vaddr, char *name, int maxlen) {
+R_API void r_bin_filter_name(RBinFile *bf, Sdb *db, ut64 vaddr, char *name, int maxlen) {
 	const char *uname;
 	ut32 vhash, hash;
 	int count;
@@ -52,17 +52,42 @@ R_API void r_bin_filter_name(Sdb *db, ut64 vaddr, char *name, int maxlen) {
 	}
 }
 
-R_API void r_bin_filter_sym(Sdb *db, ut64 vaddr, RBinSymbol *sym) {
-	if (!db || !sym) {
+R_API void r_bin_filter_sym(RBinFile *bf, Sdb *db, ut64 vaddr, RBinSymbol *sym) {
+	if (!db || !sym || !sym->name) {
 		return;
 	}
 	char *name = sym->name;
-	if (!name) {
-		return;
+	// if (!strncmp (sym->name, "imp.", 4)) {
+	// demangle symbol name depending on the language specs if any
+	if (bf && bf->o && bf->o->lang) {
+		const char *lang = r_bin_lang_tostring (bf->o->lang);
+		char *dn = r_bin_demangle (bf, lang, sym->name, sym->vaddr);
+		if (dn && *dn) {
+			sym->dname = dn;
+			// XXX this is wrong but is required for this test to pass
+			// pmb:new pancake$ bin/r2r.js db/formats/mangling/swift
+			sym->name = dn;
+			// extract class information from demangled symbol name
+			char *p = strchr (dn, '.');
+			if (p) {
+				if (IS_UPPER (*dn)) {
+					sym->classname = strdup (dn);
+					sym->classname[p - dn] = 0;
+				} else if (IS_UPPER (p[1])) {
+					sym->classname = strdup (p + 1);
+					p = strchr (sym->classname, '.');
+					if (p) {
+						*p = 0;
+					}
+				}
+			}
+		}
 	}
+
+	// XXX this is very slow, must be optimized
 	const char *uname = sdb_fmt ("%" PFMT64x ".%s", vaddr, name);
 	ut32 vhash = sdb_hash (uname); // vaddr hash - unique
-	ut32 hash = sdb_hash (name);   // name hash - if dupped and not in unique hash must insert
+	ut32 hash = sdb_hash (name); // name hash - if dupped and not in unique hash must insert
 	int count = sdb_num_inc (db, sdb_fmt ("%x", hash), 1, 0);
 	if (sdb_exists (db, sdb_fmt ("%x", vhash))) {
 		// TODO: symbol is dupped, so symbol can be removed!
@@ -75,7 +100,7 @@ R_API void r_bin_filter_sym(Sdb *db, ut64 vaddr, RBinSymbol *sym) {
 	sym->dup_count = count - 1;
 }
 
-R_API void r_bin_filter_symbols(RList *list) {
+R_API void r_bin_filter_symbols(RBinFile *bf, RList *list) {
 	RListIter *iter;
 	RBinSymbol *sym;
 	const int maxlen = sizeof (sym->name) - 8;
@@ -85,61 +110,31 @@ R_API void r_bin_filter_symbols(RList *list) {
 	}
 	if (maxlen > 0) {
 		r_list_foreach (list, iter, sym) {
-			if (sym && sym->name) {
-				r_bin_filter_name (db, sym->vaddr, sym->name, maxlen);
+			if (sym && sym->name && *sym->name) {
+				r_bin_filter_name (bf, db, sym->vaddr, sym->name, maxlen);
 			}
 		}
 	} else {
 		r_list_foreach (list, iter, sym) {
-			if (sym && sym->name) {
-				r_bin_filter_sym (db, sym->vaddr, sym);
+			if (sym && sym->name && *sym->name) {
+				r_bin_filter_sym (bf, db, sym->vaddr, sym);
 			}
 		}
 	}
 	sdb_free (db);
 }
 
-R_API void r_bin_filter_sections(RList *list) {
+R_API void r_bin_filter_sections(RBinFile *bf, RList *list) {
 	RBinSection *sec;
 	const int maxlen = 256;
 	Sdb *db = sdb_new0 ();
 	RListIter *iter;
 	if (maxlen > 0) {
 		r_list_foreach (list, iter, sec) {
-			r_bin_filter_name (db, sec->vaddr, sec->name, maxlen);
+			r_bin_filter_name (bf, db, sec->vaddr, sec->name, maxlen);
 		}
 	} else {
 		eprintf ("SectionName is not dynamic\n");
-	}
-	sdb_free (db);
-}
-
-R_API void r_bin_filter_classes(RList *list) {
-	int namepad_len;
-	char *namepad;
-	Sdb *db = sdb_new0 ();
-	RListIter *iter, *iter2;
-	RBinClass *cls;
-	RBinSymbol *sym;
-	r_list_foreach (list, iter, cls) {
-		if (!cls->name) {
-			continue;
-		}
-		namepad_len = strlen (cls->name) + 32;
-		namepad = calloc (1, namepad_len + 1);
-		if (namepad) {
-			strcpy (namepad, cls->name);
-			r_bin_filter_name (db, cls->index, namepad, namepad_len);
-			free (cls->name);
-			cls->name = namepad;
-			r_list_foreach (cls->methods, iter2, sym) {
-				if (sym->name) {
-					r_bin_filter_sym (db, sym->vaddr, sym);
-				}
-			}
-		} else {
-			eprintf ("Cannot alloc %d byte(s)\n", namepad_len);
-		}
 	}
 	sdb_free (db);
 }

@@ -119,7 +119,6 @@ static RList *strings(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	// BootImageObj *bio;
 	RBinInfo *ret;
 	if (!bf || !bf->o || !bf->o->bin_obj) {
 		return NULL;
@@ -138,14 +137,10 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->arch = strdup ("arm");
 	ret->has_va = 1;
 	ret->has_pi = 0;
-	ret->bits = 16; // 32? 64?
+	ret->bits = 16;
 	ret->big_endian = 0;
 	ret->dbg_info = 0;
 	ret->rclass = strdup ("image");
-#if 0
-	// bootimg_header_load (&art, bf->buf);
-	bio = bf->o->bin_obj;
-#endif
 	return ret;
 }
 

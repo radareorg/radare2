@@ -358,22 +358,3 @@ R_API char *r_cons_message(const char *msg) {
 	r_cons_any_key (NULL);
 	return NULL;
 }
-
-#ifdef MAIN
-main () {
-	char *res;
-	RFList fl = r_flist_new (3);
-	r_flist_set (fl, 0, "foo is pure cow");
-	r_flist_set (fl, 1, "bla is kinda crazy");
-	r_flist_set (fl, 2, "funny to see you here");
-	r_cons_new ();
-	res = r_cons_hud (fl, NULL, 0);
-	r_cons_clear ();
-	if (res) {
-		r_cons_println (res);
-		free (res);
-	}
-	r_cons_flush ();
-	r_cons_free ();
-}
-#endif

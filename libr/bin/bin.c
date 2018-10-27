@@ -93,17 +93,16 @@ R_API const char *r_bin_string_type(int type) {
 
 R_API void r_bin_xtrdata_free(void /*RBinXtrData*/ *data_) {
 	RBinXtrData *data = data_;
-	if (data) {
-		if (data->metadata) {
-			free (data->metadata->libname);
-			free (data->metadata->arch);
-			free (data->metadata->machine);
-			free (data->metadata);
-		}
-		free (data->file);
-		free (data->buffer);
-		free (data);
+	r_return_if_fail (data);
+	if (data->metadata) {
+		free (data->metadata->libname);
+		free (data->metadata->arch);
+		free (data->metadata->machine);
+		free (data->metadata);
 	}
+	free (data->file);
+	free (data->buffer);
+	free (data);
 }
 
 R_API RList *r_bin_raw_strings(RBinFile *bf, int min) {
@@ -114,31 +113,6 @@ R_API RList *r_bin_raw_strings(RBinFile *bf, int min) {
 R_API RList *r_bin_dump_strings(RBinFile *bf, int min, int raw) {
 	r_return_val_if_fail (bf, NULL);
 	return r_bin_file_get_strings (bf, min, 1, raw);
-}
-
-/* This is very slow if there are lot of symbols */
-R_API int r_bin_load_languages(RBinFile *binfile) {
-	r_return_val_if_fail (binfile, R_BIN_NM_NONE);
-
-	if (r_bin_lang_rust (binfile)) {
-		return R_BIN_NM_RUST;
-	}
-	if (r_bin_lang_swift (binfile)) {
-		return R_BIN_NM_SWIFT;
-	}
-	if (r_bin_lang_objc (binfile)) {
-		return R_BIN_NM_OBJC;
-	}
-	if (r_bin_lang_cxx (binfile)) {
-		return R_BIN_NM_CXX;
-	}
-	if (r_bin_lang_dlang (binfile)) {
-		return R_BIN_NM_DLANG;
-	}
-	if (r_bin_lang_msvc (binfile)) {
-		return R_BIN_NM_MSVC;
-	}
-	return R_BIN_NM_NONE;
 }
 
 R_API void r_bin_info_free(RBinInfo *rb) {
@@ -246,22 +220,19 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 		res = false;
 		goto error;
 	}
-
 	the_obj_list = bf->objs;
-
 	bf->objs = r_list_newf ((RListFree)r_bin_object_free);
 	// invalidate current object reference
 	bf->o = NULL;
-
 	sz = iob->fd_size (iob->io, fd);
-	if (sz == UT64_MAX) { // || sz > (64 * 1024 * 1024)) {
-		// too big, probably wrong
-		eprintf ("Too big\n");
-		res = false;
-		goto error;
-	}
 	// TODO: deprecate, the code in the else should be enough
-	if (sz == UT64_MAX && iob->fd_is_dbg (iob->io, fd)) {
+	if (sz == UT64_MAX) {
+		if (!iob->fd_is_dbg (iob->io, fd)) {
+			// too big, probably wrong
+			eprintf ("Too big\n");
+			res = false;
+			goto error;
+		}
 		// attempt a local open and read
 		// This happens when a plugin like debugger does not have a
 		// fixed size.
@@ -281,20 +252,13 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 			res = false;
 			goto error;
 		}
-		// OMG NOES we want to use io, not this shit. 
-		buf_bytes = calloc (1, sz + 1);
-		if (!buf_bytes) {
-			iob->fd_close (iob->io, tfd);
-			res = false;
-			goto error;
-		}
-		if (!iob->read_at (iob->io, 0LL, buf_bytes, sz)) {
-			free (buf_bytes);
-			iob->fd_close (iob->io, tfd);
-			res = false;
-			goto error;
+		if (r_list_length (the_obj_list) == 1) {
+			RBinObject *bo = (RBinObject *)r_list_get_n (the_obj_list, 0);
+			res = r_bin_load_io (bin, fd, baseaddr,
+				bo->loadaddr, 0, bo->boffset, NULL, 0);
 		}
 		iob->fd_close (iob->io, tfd);
+		goto error;
 	} else {
 		buf_bytes = calloc (1, sz + 1);
 		if (!buf_bytes) {
@@ -310,19 +274,15 @@ R_API int r_bin_reload(RBin *bin, int fd, ut64 baseaddr) {
 	bool yes_plz_steal_ptr = true;
 	r_bin_file_set_bytes (bf, buf_bytes, sz, yes_plz_steal_ptr);
 
-	if (r_list_length (the_obj_list) == 1) {
-		RBinObject *old_o = (RBinObject *)r_list_get_n (the_obj_list, 0);
-		res = r_bin_load_io (bin, fd, baseaddr, old_o->loadaddr, 0, old_o->boffset, NULL, 0);
-	} else {
-		RListIter *iter = NULL;
-		RBinObject *old_o;
-		r_list_foreach (the_obj_list, iter, old_o) {
-			// XXX - naive. do we need a way to prevent multiple "anys" from being opened?
-			res = r_bin_load_io (bin, fd, baseaddr, old_o->loadaddr, 0, old_o->boffset, old_o->plugin->name, 0);
-		}
+	RListIter *iter = NULL;
+	RBinObject *bo;
+	r_list_foreach (the_obj_list, iter, bo) {
+		// XXX - naive. do we need a way to prevent multiple "anys" from being opened?
+		// TODO: use of bo->plugin->name seems to  be bad
+		res = r_bin_load_io (bin, fd, baseaddr, bo->loadaddr, 0, bo->boffset, NULL, 0);
 	}
 	bf->o = r_list_get_n (bf->objs, 0);
-
+	free (buf_bytes);
 error:
 	r_list_free (the_obj_list);
 
@@ -1326,17 +1286,15 @@ R_API void r_bin_class_free(RBinClass *c) {
 
 R_API RBinClass *r_bin_class_new(RBinFile *binfile, const char *name,
 				  const char *super, int view) {
-	RBinObject *o = binfile? binfile->o: NULL;
-	RList *list = NULL;
-	RBinClass *c;
-	if (!o) {
+	if (!binfile || !binfile->o) {
 		return NULL;
 	}
-	list = o->classes;
+	RBinObject *o = binfile->o;
+	RList *list = o->classes;
 	if (!name) {
 		return NULL;
 	}
-	c = r_bin_class_get (binfile, name);
+	RBinClass *c = r_bin_class_get (binfile, name);
 	if (c) {
 		if (super) {
 			free (c->super);
@@ -1412,11 +1370,10 @@ R_API void r_bin_class_add_field(RBinFile *binfile, const char *classname, const
 R_API ut64 r_bin_file_get_vaddr(RBinFile *binfile, ut64 paddr, ut64 vaddr) {
 	r_return_val_if_fail (binfile, paddr);
 
-	int use_va = 0;
-	if (binfile->o && binfile->o->info) {
-		use_va = binfile->o->info->has_va;
+	if (binfile->o && binfile->o->info && binfile->o->info->has_va) {
+		return binobj_a2b (binfile->o, vaddr);
 	}
-	return use_va ? binobj_a2b (binfile->o, vaddr) : paddr;
+	return paddr;
 }
 
 /* returns vaddr, rebased with the baseaddr of bin, if va is enabled for bin,
