@@ -378,7 +378,7 @@ R_API void r_cons_log_stub(const char *output, const char *funcname, const char 
 		I.context->log_callback (output, funcname, filename, lineno, level, tag, fmtstr, args);
 		va_end (args);
 	} else {
-		r_cons_strcat (output);
+		eprintf (output);
 	}
 }
 

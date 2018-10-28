@@ -159,7 +159,7 @@ static RBinAddr* binsym(RBinFile *bf, int sym) {
 		struct Elf_(r_bin_elf_obj_t) *bin = bf->o->bin_obj;
 		bool is_arm = bin->ehdr.e_machine == EM_ARM;
 		ret->paddr = addr;
-		ret->vaddr = Elf_(r_bin_elf_p2v) (obj, addr);
+		ret->vaddr = Elf_(r_bin_elf_p2v_new) (obj, addr);
 		if (is_arm && addr & 1) {
 			ret->bits = 16;
 			ret->vaddr--;
@@ -317,7 +317,7 @@ static RBinAddr* newEntry(RBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, in
 	obj = bf->o->bin_obj;
 	ptr = R_NEW0 (RBinAddr);
 	if (ptr) {
-		ptr->paddr = Elf_(r_bin_elf_v2p) (obj, vaddr);
+		ptr->paddr = Elf_(r_bin_elf_v2p_new) (obj, vaddr);
 		ptr->vaddr = vaddr;
 		ptr->hpaddr = hpaddr;
 		ptr->hvaddr = hvaddr;
@@ -395,7 +395,7 @@ static RList* entries(RBinFile *bf) {
 		return ret;
 	}
 	ptr->paddr = Elf_(r_bin_elf_get_entry_offset) (obj);
-	ptr->vaddr = Elf_(r_bin_elf_p2v) (obj, ptr->paddr);
+	ptr->vaddr = Elf_(r_bin_elf_p2v_new) (obj, ptr->paddr);
 	ptr->hpaddr = 0x18;  // e_entry offset in ELF header
 	ptr->hvaddr = UT64_MAX;
 	if (bf->o->sections) {
@@ -440,7 +440,7 @@ static RList* entries(RBinFile *bf) {
 					return ret;
 				}
 				ptr->paddr = symbol[i].offset;
-				ptr->vaddr = Elf_(r_bin_elf_p2v) (obj, ptr->paddr);
+				ptr->vaddr = Elf_(r_bin_elf_p2v_new) (obj, ptr->paddr);
 				ptr->hpaddr = UT64_MAX;
 				ptr->type = R_BIN_ENTRY_TYPE_INIT;
 				r_list_append (ret, ptr);
