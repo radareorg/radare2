@@ -33,4 +33,8 @@ R_API void r_event_hook(REvent *ev, REventType type, REventCallback cb);
 R_API void r_event_unhook(REvent *ev, REventType type, REventCallback cb);
 R_API void r_event_send(REvent *ev, REventType type, void *data);
 
+#ifdef __cplusplus
+}
+#endif
+
 #endif
