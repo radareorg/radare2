@@ -27,8 +27,7 @@
 #endif
 
 
-static int file_stat (const char *file, struct stat* const pStat)
-{
+static int file_stat (const char *file, struct stat* const pStat) {
 	if (!file || !pStat) {
 		return -1;
 	}
