@@ -1376,7 +1376,7 @@ static int handleMidBB(RCore *core, RDisasmState *ds) {
 					ds->hasMidbb = true;
 					return bb->addr - ds->at;
 				} else {
-					i += bb->size;
+					i += bb->size - (ds->at - bb->addr);
 					continue;
 				}
 			}
