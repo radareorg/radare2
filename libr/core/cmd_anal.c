@@ -574,6 +574,7 @@ static const char *help_msg_ax[] = {
 	"axc", " addr [at]", "add generic code ref",
 	"axC", " addr [at]", "add code call ref",
 	"axg", " [addr]", "show xrefs graph to reach current function",
+	"axg*", " [addr]", "show xrefs graph to given address, use .axg*;aggv",
 	"axgj", " [addr]", "show xrefs graph to reach current function in json format",
 	"axd", " addr [at]", "add data ref",
 	"axq", "", "list refs in quiet/human-readable format",
@@ -5425,7 +5426,8 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db, int op
 	RListIter *iter;
 	RAnalRef *ref;
 	ut64 addr = core->offset;
-	int is_json = opts & R_CORE_ANAL_JSON;
+	bool is_json = opts & R_CORE_ANAL_JSON;
+	bool is_r2 = opts & R_CORE_ANAL_GRAPHBODY;
 	if (input && *input) {
 		addr = r_num_math (core->num, input);
 	}
@@ -5441,7 +5443,9 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db, int op
 	if (!r_list_empty (xrefs)) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
 		if (fcn) {
-			if (is_json) {
+			if (is_r2) {
+				r_cons_printf ("agn 0x%08"PFMT64x" %s\n", fcn->addr, fcn->name);
+			} else if (is_json) {
 				r_cons_printf ("{\"%"PFMT64u"\":{\"type\":\"fcn\","
 					"\"fcn_addr\":%"PFMT64u",\"name\":\"%s\",\"refs\":[",
 					addr, fcn->addr, fcn->name);
@@ -5452,7 +5456,9 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db, int op
 				//}
 			}
 		} else {
-			if (is_json) {
+			if (is_r2) {
+				r_cons_printf ("age 0x%08"PFMT64x"\n", fcn->addr);
+			} else if (is_json) {
 				r_cons_printf ("{\"%"PFMT64u"\":{\"refs\":[", addr);
 			} else {
 			//snprintf (arg, sizeof (arg), "0x%08"PFMT64x, addr);
@@ -5465,7 +5471,10 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db, int op
 	r_list_foreach (xrefs, iter, ref) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ref->addr, -1);
 		if (fcn) {
-			if (is_json) {
+			if (is_r2) {
+				r_cons_printf ("agn 0x%08"PFMT64x" %s\n", fcn->addr, fcn->name);
+				r_cons_printf ("age 0x%08"PFMT64x" 0x%08"PFMT64x"\n", fcn->addr, addr);
+			} else if (is_json) {
 				if (level == 0) {
 					r_cons_printf ("{\"%"PFMT64u"\":{\"type\":\"fcn\",\"fcn_addr\": %"PFMT64u",\"name\":\"%s\",\"refs\":[", ref->addr, fcn->addr, fcn->name);
 				} else {
@@ -5489,14 +5498,17 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db, int op
 				}
 			}
 		} else {
-			if (is_json) {
+			if (is_r2) {
+				r_cons_printf ("agn 0x%08"PFMT64x" ???\n", ref->addr);
+				r_cons_printf ("age 0x%08"PFMT64x" 0x%08"PFMT64x"\n", ref->addr, addr);
+			} else if (is_json) {
 				r_cons_printf ("{\"%"PFMT64u"\":{\"type\":\"???\",\"refs\":[", ref->addr);
 			} else {
 				r_cons_printf ("%s0x%08"PFMT64x" ???\n", pre, ref->addr);
 			}
 			snprintf (arg, sizeof (arg), "0x%08"PFMT64x, ref->addr);
 			if (sdb_add (db, arg, "1", 0)) {
-				anal_axg (core, arg, level +1, db, opts);
+				anal_axg (core, arg, level + 1, db, opts);
 			} else {
 				if (is_json) {
 					r_cons_printf ("]}}");
@@ -5570,8 +5582,10 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case 'g': // "axg"
 		{
 			Sdb *db = sdb_new0 ();
-			if(input[1] == 'j') {
-				anal_axg (core, input[1] ? input + 2 : NULL, 0, db, R_CORE_ANAL_JSON);
+			if (input[1] == '*') {
+				anal_axg (core, input + 2, 0, db, R_CORE_ANAL_GRAPHBODY); // r2 commands
+			} else if (input[1] == 'j') {
+				anal_axg (core, input + 2, 0, db, R_CORE_ANAL_JSON);
 			} else {
 				anal_axg (core, input[1] ? input + 2 : NULL, 0, db, 0);
 			}
