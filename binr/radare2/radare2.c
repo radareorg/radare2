@@ -802,6 +802,9 @@ int main(int argc, char **argv, char **envp) {
 		free (pfile);
 		return main_help (help > 1? 2: 0);
 	}
+#if __WINDOWS__
+	pfile = r_acp_to_utf8 (pfile);
+#endif // __WINDOWS__
 	if (customRarunProfile) {
 		char *tfn = r_file_temp (".rarun2");
 		if (!r_file_dump (tfn, (const ut8*)customRarunProfile, strlen (customRarunProfile), 0)) {
@@ -982,6 +985,9 @@ int main(int argc, char **argv, char **envp) {
 					if (!strstr (pfile, "://")) {
 						optind--; // take filename
 					}
+#if __WINDOWS__
+					pfile = r_acp_to_utf8 (pfile);
+#endif // __WINDOWS__
 					fh = r_core_file_open (&r, pfile, perms, mapaddr);
 					iod = (r.io && fh) ? r_io_desc_get (r.io, fh->fd) : NULL;
 					if (!strcmp (debugbackend, "gdb")) {
@@ -1051,6 +1057,9 @@ int main(int argc, char **argv, char **envp) {
 					R_FREE (path);
 				}
 #else
+#	if __WINDOWS__
+				f = r_acp_to_utf8 (f);
+#	endif // __WINDOWS__
 				if (f) {
 					char *escaped_path = r_str_arg_escape (f);
 					pfile = r_str_append (pfile, escaped_path);
@@ -1091,6 +1100,9 @@ int main(int argc, char **argv, char **envp) {
 				R_FREE (pfile);
 				while (optind < argc) {
 					pfile = argv[optind++];
+#if __WINDOWS__
+					pfile = r_acp_to_utf8 (pfile);
+#endif // __WINDOWS__
 					fh = r_core_file_open (&r, pfile, perms, mapaddr);
 					if (!fh && perms & R_PERM_W) {
 						perms |= R_PERM_CREAT;

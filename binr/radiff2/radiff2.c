@@ -61,6 +61,9 @@ static RCore *opencore(const char *f) {
 		r_config_eval (c->config, e);
 	}
 	if (f) {
+#if __WINDOWS__
+		f = r_acp_to_utf8 (f);
+#endif
 		if (!r_core_file_open (c, f, 0, 0)) {
 			r_core_free (c);
 			return NULL;

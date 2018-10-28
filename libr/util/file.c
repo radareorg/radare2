@@ -26,6 +26,26 @@
 #include <process.h>
 #endif
 
+
+static int file_stat (const char *file, struct stat* const pStat)
+{
+	if (!file || !pStat) {
+		return -1;
+	}
+#if __WINDOWS__
+	wchar_t *wfile = r_utf8_to_utf16 (file);
+	int ret = -1;
+	if (!wfile) {
+		return -1;
+	}
+	ret = _wstat (wfile, pStat);
+	free (wfile);
+	return ret;
+#else // __WINDOWS__
+	return stat (file, pStat);
+#endif // __WINDOWS__
+}
+
 R_API bool r_file_truncate (const char *filename, ut64 newsize) {
 	int fd;
 	if (r_file_is_directory (filename)) {
@@ -93,7 +113,7 @@ R_API char *r_file_dirname (const char *path) {
 
 R_API bool r_file_is_regular(const char *str) {
 	struct stat buf = {0};
-	if (!str || !*str || stat (str, &buf) == -1) {
+	if (!str || !*str || file_stat (str, &buf) == -1) {
 		return false;
 	}
 	return ((S_IFREG & buf.st_mode) == S_IFREG)? true: false;
@@ -104,7 +124,7 @@ R_API bool r_file_is_directory(const char *str) {
 	if (!str || !*str) {
 		return false;
 	}
-	if (stat (str, &buf) == -1) {
+	if (file_stat (str, &buf) == -1) {
 		return false;
 	}
 #ifdef S_IFBLK
@@ -139,20 +159,11 @@ R_API bool r_file_exists(const char *str) {
 		}
 	}
 #endif
-#ifdef _MSC_VER
-	WIN32_FIND_DATAA FindFileData;
-	HANDLE handle = FindFirstFileA (str, &FindFileData);
-	int found = handle != INVALID_HANDLE_VALUE;
-	if (found) {
-		FindClose (handle);
-	}
-	return found > 0;
-#else
-	if (stat (str, &buf) == -1) {
+
+	if (file_stat (str, &buf) == -1) {
 		return false;
 	}
-	return (S_ISREG (buf.st_mode))? true: false;
-#endif
+	return S_IFREG == (S_IFREG & buf.st_mode)? true: false;
 }
 
 R_API long r_file_proc_size(FILE *fd) {
@@ -165,7 +176,7 @@ R_API long r_file_proc_size(FILE *fd) {
 
 R_API ut64 r_file_size(const char *str) {
 	struct stat buf = {0};
-	if (stat (str, &buf) == -1) {
+	if (file_stat (str, &buf) == -1) {
 		return 0;
 	}
 	return (ut64)buf.st_size;

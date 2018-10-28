@@ -249,18 +249,31 @@ R_API int r_sandbox_open (const char *path, int mode, int perm) {
 		return -1;
 	}
 	char *epath = expand_home (path);
+	int ret = -1;
 #if __WINDOWS__
 	mode |= O_BINARY;
 #endif
 	if (enabled) {
 		if ((mode & O_CREAT)
-		|| (mode & O_RDWR)
-		|| (!r_sandbox_check_path (epath))) {
+			|| (mode & O_RDWR)
+			|| (!r_sandbox_check_path (epath))) {
 			free (epath);
 			return -1;
 		}
 	}
-	int ret = open (epath, mode, perm);
+#if __WINDOWS__
+	{
+		wchar_t *wepath = r_utf8_to_utf16 (epath);
+		if (!wepath) {
+			free (epath);
+			return -1;
+		}
+		ret = _wopen (wepath, mode, perm);
+		free (wepath);
+	}
+#else // __WINDOWS__
+	ret = open (epath, mode, perm);
+#endif // __WINDOWS__
 	free (epath);
 	return ret;
 }
@@ -285,7 +298,24 @@ R_API FILE *r_sandbox_fopen (const char *path, const char *mode) {
 		epath = expand_home (path);
 	}
 	if ((strchr (mode, 'w') || r_file_is_regular (epath))) {
+#if __WINDOWS__
+		wchar_t *wepath = r_utf8_to_utf16 (epath);
+		if (!wepath) {
+			free (epath);
+			return ret;
+		}
+		wchar_t *wmode = r_utf8_to_utf16 (mode);
+		if (!wmode) {
+			free (wepath);
+			free (epath);
+			return ret;
+		}
+		ret = _wfopen (wepath, wmode);
+		free (wmode);
+		free (wepath);
+#else // __WINDOWS__
 		ret = fopen (epath, mode);
+#endif // __WINDOWS__
 	}
 	free (epath);
 	return ret;
