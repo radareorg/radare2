@@ -5422,7 +5422,6 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 
 static void anal_axg (RCore *core, const char *input, int level, Sdb *db, int opts) {
 	char arg[32], pre[128];
-	RList *xrefs;
 	RListIter *iter;
 	RAnalRef *ref;
 	ut64 addr = core->offset;
@@ -5430,14 +5429,15 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db, int op
 	if (input && *input) {
 		addr = r_num_math (core->num, input);
 	}
+	// eprintf ("Path between 0x%08"PFMT64x" .. 0x%08"PFMT64x"\n", core->offset, addr);
 	int spaces = (level + 1) * 2;
 	if (spaces > sizeof (pre) - 4) {
 		spaces = sizeof (pre) - 4;
 	}
 	memset (pre, ' ', sizeof (pre));
-	strcpy (pre+spaces, "- ");
+	strcpy (pre + spaces, "- ");
 
-	xrefs = r_anal_xrefs_get (core->anal, addr);
+	RList *xrefs = r_anal_xrefs_get (core->anal, addr);
 	if (!r_list_empty (xrefs)) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
 		if (fcn) {
@@ -5477,10 +5477,10 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db, int op
 			}
 			if (sdb_add (db, fcn->name, "1", 0)) {
 				snprintf (arg, sizeof (arg), "0x%08"PFMT64x, fcn->addr);
-				anal_axg (core, arg, level+1, db, opts);
+				anal_axg (core, arg, level + 1, db, opts);
 			} else {
 				if (is_json) {
-					r_cons_printf("]}}");
+					r_cons_printf ("]}}");
 				}
 			}
 			if (is_json) {
@@ -5499,7 +5499,7 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db, int op
 				anal_axg (core, arg, level +1, db, opts);
 			} else {
 				if (is_json) {
-					r_cons_printf("]}}");
+					r_cons_printf ("]}}");
 				}
 			}
 			if (is_json) {
@@ -5510,9 +5510,9 @@ static void anal_axg (RCore *core, const char *input, int level, Sdb *db, int op
 		}
 	}
 	if (is_json) {
-		r_cons_printf("]}}");
+		r_cons_printf ("]}}");
 		if (level == 0) {
-			r_cons_printf("\n");
+			r_cons_printf ("\n");
 		}
 	}
 	r_list_free (xrefs);
@@ -5570,10 +5570,10 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 	case 'g': // "axg"
 		{
 			Sdb *db = sdb_new0 ();
-			if(input[1] == '\0') {
-				anal_axg (core, input[1] ? input + 2 : NULL, 0, db, 0);
-			} else if(input[1] == 'j') {
+			if(input[1] == 'j') {
 				anal_axg (core, input[1] ? input + 2 : NULL, 0, db, R_CORE_ANAL_JSON);
+			} else {
+				anal_axg (core, input[1] ? input + 2 : NULL, 0, db, 0);
 			}
 			sdb_free (db);
 		}
