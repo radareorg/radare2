@@ -87,6 +87,7 @@ typedef struct {
 	bool capitalize;
 	bool show_flgoff;
 	bool hasMidflag;
+	bool hasMidbb;
 	int atabs;
 	int atabsonce;
 	int atabsoff;
@@ -177,6 +178,7 @@ typedef struct {
 	bool show_vars;
 	int show_varsum;
 	int midflags;
+	bool midbb;
 	bool midcursor;
 	bool show_noisy_comments;
 	ut64 asm_highlight;
@@ -586,6 +588,7 @@ static RDisasmState * ds_init(RCore *core) {
 	ds->atabsonce = r_config_get_i (core->config, "asm.tabs.once");
 	ds->atabsoff = r_config_get_i (core->config, "asm.tabs.off");
 	ds->midflags = r_config_get_i (core->config, "asm.flags.middle");
+	ds->midbb = r_config_get_i (core->config, "asm.bb.middle");
 	ds->midcursor = r_config_get_i (core->config, "asm.midcursor");
 	ds->decode = r_config_get_i (core->config, "asm.decode");
 	core->parser->pseudo = ds->pseudo = r_config_get_i (core->config, "asm.pseudo");
@@ -1360,6 +1363,24 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 	return 0;
 }
 
+static int handleMidBB(RCore *core, RDisasmState *ds) {
+	int i;
+	// Unfortunately, can't just check the addr of the last insn byte since
+	// a bb (and fcn) can be as small as 1 byte
+	for (i = 1; i < ds->oplen; i++) {
+		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ds->at + i, 0);
+		if (fcn) {
+			RAnalBlock *bb = r_anal_fcn_bbget_in (fcn, ds->at + i);
+			if (bb && bb->addr > ds->at) {
+				ds->hasMidbb = true;
+				return bb->addr - ds->at;
+			}
+		}
+	}
+	ds->hasMidbb = false;
+	return 0;
+}
+
 static void ds_print_show_cursor(RDisasmState *ds) {
 	RCore *core = ds->core;
 	char res[] = "     ";
@@ -1374,10 +1395,13 @@ static void ds_print_show_cursor(RDisasmState *ds) {
 	if (ds->midflags) {
 		(void)handleMidFlags (core, ds, false);
 	}
+	if (ds->midbb) {
+		(void)handleMidBB (core, ds);
+	}
 	if (p) {
 		res[0] = 'b';
 	}
-	if (ds->hasMidflag) {
+	if (ds->hasMidflag || ds->hasMidbb) {
 		res[1] = '~';
 	}
 	if (q) {
@@ -4625,7 +4649,7 @@ R_API int r_core_print_disasm(RPrint *p, RCore *core, ut64 addr, ut8 *buf, int l
 	RAnalFunction *of = NULL;
 	RAnalFunction *f = NULL;
 	bool calc_row_offsets = p->calc_row_offsets;
-	int ret, i, inc, skip_bytes = 0, idx = 0;
+	int ret, i, inc, skip_bytes = 0, skip_bytes_bb = 0, idx = 0;
 	int dorepeat = 1;
 	ut8 *nbuf = NULL;
 	const int addrbytes = core->io->addrbytes;
@@ -4848,6 +4872,9 @@ toro:
 		if (skip_bytes && ds->midflags == R_MIDFLAGS_SHOW) {
 			ds->at -= skip_bytes;
 		}
+		if (ds->midbb) {
+			skip_bytes_bb = handleMidBB (core, ds);
+		}
 		if (ds->pdf) {
 			static bool sparse = false;
 			RAnalBlock *bb = r_anal_fcn_bbget_in (ds->pdf, ds->at);
@@ -5018,6 +5045,9 @@ toro:
 
 		if (ds->midflags == R_MIDFLAGS_REALIGN && skip_bytes) {
 			inc = skip_bytes;
+		}
+		if (ds->midbb && skip_bytes_bb && skip_bytes_bb < inc) {
+			inc = skip_bytes_bb;
 		}
 		if (inc < 1) {
 			inc = 1;

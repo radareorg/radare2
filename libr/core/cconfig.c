@@ -2536,6 +2536,7 @@ R_API int r_core_config_init(RCore *core) {
 		"3 = realign at middle flag if sym.*", NULL);
 	SETDESC (n, "Realign disassembly if there is a flag in the middle of an instruction");
 	SETCB ("asm.flags.real", "false", &cb_flag_realnames, "Show flags unfiltered realnames instead of names");
+	SETPREF ("asm.bb.middle", "true", "Realign disassembly if a basic block starts in the middle of an instruction");
 	SETPREF ("asm.lbytes", "true", "Align disasm bytes to left");
 	SETPREF ("asm.lines", "true", "Show ASCII-art lines at disassembly");
 	SETPREF ("asm.lines.bb", "true", "Show flow lines at jumps");
