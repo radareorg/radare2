@@ -36,21 +36,21 @@ typedef void (*RLogCallback) (const char *output, const char *funcname, const ch
 	__LINE__, lvl, tag, fmtstr, args);
 
 #define R_LOG(lvl, tag, fmtstr, ...) r_log (MACRO_LOG_FUNC, __FILE__, \
-	__LINE__, lvl, tag, fmtstr, __VA_ARGS__);
+	__LINE__, lvl, tag, fmtstr, ##__VA_ARGS__);
 #define R_LOG_SILLY(fmtstr, ...) r_log (MACRO_LOG_FUNC, __FILE__, \
-	__LINE__, R_LOGLVL_SILLY, NULL, fmtstr, __VA_ARGS__);
+	__LINE__, R_LOGLVL_SILLY, NULL, fmtstr, ##__VA_ARGS__);
 #define R_LOG_DEBUG(fmtstr, ...) r_log (MACRO_LOG_FUNC, __FILE__, \
-	__LINE__, R_LOGLVL_DEBUG, NULL, fmtstr, __VA_ARGS__);
+	__LINE__, R_LOGLVL_DEBUG, NULL, fmtstr, ##__VA_ARGS__);
 #define R_LOG_VERBOSE(fmtstr, ...) r_log (MACRO_LOG_FUNC, __FILE__, \
-	__LINE__, R_LOGLVL_VERBOSE, NULL, fmtstr, __VA_ARGS__);
+	__LINE__, R_LOGLVL_VERBOSE, NULL, fmtstr, ##__VA_ARGS__);
 #define R_LOG_INFO(fmtstr, ...) r_log (MACRO_LOG_FUNC, __FILE__, \
-	__LINE__, R_LOGLVL_INFO, NULL, fmtstr, __VA_ARGS__);
+	__LINE__, R_LOGLVL_INFO, NULL, fmtstr, ##__VA_ARGS__);
 #define R_LOG_WARN(fmtstr, ...) r_log (MACRO_LOG_FUNC, __FILE__, \
-	__LINE__, R_LOGLVL_WARN, NULL, fmtstr, __VA_ARGS__);
+	__LINE__, R_LOGLVL_WARN, NULL, fmtstr, ##__VA_ARGS__);
 #define R_LOG_ERROR(fmtstr, ...) r_log (MACRO_LOG_FUNC, __FILE__, \
-	__LINE__, R_LOGLVL_ERROR, NULL, fmtstr, __VA_ARGS__);
+	__LINE__, R_LOGLVL_ERROR, NULL, fmtstr, ##__VA_ARGS__);
 #define R_LOG_FATAL(fmtstr, ...) r_log (MACRO_LOG_FUNC, __FILE__, \
-	__LINE__, R_LOGLVL_FATAL, NULL, fmtstr, __VA_ARGS__);
+	__LINE__, R_LOGLVL_FATAL, NULL, fmtstr, ##__VA_ARGS__);
 
 #ifdef __cplusplus
 extern "C" {
