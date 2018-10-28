@@ -218,7 +218,7 @@ static const char *help_msg_dm[] = {
 	"dmi.", "", "List closest symbol to the current address",
 	"dmiv", "", "Show address of given symbol for given lib",
 	"dmj", "", "List memmaps in JSON format",
-	"dml", " <file>", "Load contents of file into the current map region (see Sl)",
+	"dml", " <file>", "Load contents of file into the current map region",
 	"dmm", "[?][j*]", "List modules (libraries, binaries loaded in memory)",
 	"dmp", "[?] <address> <size> <perms>", "Change page at <address> with <size>, protection <perms> (perm)",
 	"dms", "[?] <id> <mapaddr>", "Take memory snapshot",

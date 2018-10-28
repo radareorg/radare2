@@ -1865,15 +1865,26 @@ static void addMenu(RCore *core, const char *parent, const char *name, RPanelsMe
 		p_item = panels->panelsMenu->root;
 		ht_insert (panels->mht, sdb_fmt ("%s", name), sdb_fmt ("%p", item));
 	}
+	if (!item) {
+		return;
+	}
 	item->n_sub = 0;
 	item->selectedIndex = 0;
 	item->name = name ? strdup (name) : NULL;
 	item->sub = NULL;
 	item->cb = cb;
 	item->p = R_NEW0 (RPanel);
+	if (!item->p) {
+		free (item);
+	}
 	p_item->n_sub++;
-	p_item->sub = realloc (p_item->sub, sizeof (RPanelsMenuItem *) * p_item->n_sub);
-	p_item->sub[p_item->n_sub - 1] = item;
+	struct r_panels_menu_item **sub = realloc (p_item->sub, sizeof (RPanelsMenuItem *) * p_item->n_sub);
+	if (sub) {
+		p_item->sub = sub;
+		p_item->sub[p_item->n_sub - 1] = item;
+	} else {
+		free (item);
+	}
 }
 
 static void removeMenu(RPanels *panels) {

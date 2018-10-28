@@ -810,7 +810,7 @@ static const char *radare_argv[] = {
 	"db ", "db-", "dbd", "dbe", "dbs", "dbte", "dbtd", "dbts",
 	"dp", "dr", "dcu", "dmd", "dmp", "dml",
 	"ec","ecs", "eco",
-	"S", "S.", "S*", "S-", "S=", "Sa", "Sa-", "Sd", "Sl", "SSj", "Sr",
+	"S", "S.", "S*", "S-", "S=", "Sa", "Sa-", "Sd",
 	"s", "s+", "s++", "s-", "s--", "s*", "sa", "sb", "sr",
 	"!", "!!", "!!!", "!!!-",
 	"#sha1", "#crc32", "#pcprint", "#sha256", "#sha512", "#md4", "#md5",
@@ -2102,6 +2102,7 @@ static void init_autocomplete (RCore* core) {
 	r_core_autocomplete_add (core->autocomplete, "aef", R_CORE_AUTOCMPLT_FLAG, true);
 	r_core_autocomplete_add (core->autocomplete, "afb", R_CORE_AUTOCMPLT_FLAG, true);
 	r_core_autocomplete_add (core->autocomplete, "afc", R_CORE_AUTOCMPLT_FLAG, true);
+	r_core_autocomplete_add (core->autocomplete, "axg", R_CORE_AUTOCMPLT_FLAG, true);
 	r_core_autocomplete_add (core->autocomplete, "axt", R_CORE_AUTOCMPLT_FLAG, true);
 	r_core_autocomplete_add (core->autocomplete, "axf", R_CORE_AUTOCMPLT_FLAG, true);
 	r_core_autocomplete_add (core->autocomplete, "dcu", R_CORE_AUTOCMPLT_FLAG, true);
@@ -2198,10 +2199,6 @@ static char *get_comments_cb(void *user, ut64 addr) {
 	return r_core_anal_get_comments ((RCore *)user, addr);
 }
 
-static void event_log(REvent *ev, REventType type, void *data) {
-	eprintf ("LOG MESSAGE\n");
-}
-
 R_API bool r_core_init(RCore *core) {
 	core->blocksize = R_CORE_BLOCKSIZE;
 	core->block = (ut8 *)calloc (R_CORE_BLOCKSIZE + 1, 1);
@@ -2212,7 +2209,6 @@ R_API bool r_core_init(RCore *core) {
 	}
 	r_core_setenv (core);
 	core->ev = r_event_new (core);
-	r_event_hook (core->ev, R_EVENT_ALL, event_log);
 	core->lock = r_th_lock_new (true);
 	core->max_cmd_depth = R_CORE_CMD_DEPTH + 1;
 	core->cmd_depth = core->max_cmd_depth;

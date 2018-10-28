@@ -2534,8 +2534,8 @@ R_API int r_core_config_init(RCore *core) {
 	n = NODEICB ("asm.flags.middle", 2, &cb_midflags);
 	SETOPTIONS (n, "0 = do not show flag", "1 = show without realign", "2 = realign at middle flag",
 		"3 = realign at middle flag if sym.*", NULL);
-	SETCB ("asm.flags.real", "false", &cb_flag_realnames, "Show flags unfiltered realnames instead of names");
 	SETDESC (n, "Realign disassembly if there is a flag in the middle of an instruction");
+	SETCB ("asm.flags.real", "false", &cb_flag_realnames, "Show flags unfiltered realnames instead of names");
 	SETPREF ("asm.lbytes", "true", "Align disasm bytes to left");
 	SETPREF ("asm.lines", "true", "Show ASCII-art lines at disassembly");
 	SETPREF ("asm.lines.bb", "true", "Show flow lines at jumps");
