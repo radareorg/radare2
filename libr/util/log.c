@@ -7,7 +7,7 @@
 #include <stdarg.h>
 
 // TODO: Use thread-local storage to make these variables thread-safe
-static RLogCallback cb_main_output = NULL; // Function to call when outputting log string
+static RList *log_cbs = NULL; // Functions to call when outputting log string
 static int cfg_loglvl = R_LOGLVL_ERROR; // Log level output
 static int cfg_logtraplvl = R_LOGLVL_FATAL; // Log trap level
 static bool cfg_logsrcinfo = false; // Print out debug source info with the output
@@ -46,16 +46,26 @@ R_API void r_log_set_colors(bool show_info) {
 }
 
 /**
- * \brief Set the main callback for the logging API
+ * \brief Add a logging callback
  * \param cbfunc RLogCallback style function to be called
+ */
+R_API void r_log_add_callback(RLogCallback cbfunc) {
+	if (!log_cbs) {
+		log_cbs = r_list_new ();
+	}
+	if (!r_list_contains (log_cbs, cbfunc)) {
+		r_list_append (log_cbs, cbfunc);
+	}
+}
 
-  This is used by cons/cons.c:r_cons_new to set the log output
-  to r_cons. If r_cons is unavailable and this is never called
-  then r_log will use its fallback to stderr in r_util
-*/
-R_API void r_log_set_main_callback(RLogCallback cbfunc) {
-	// TODO: RList of callbacks with setter/remove methods
-	cb_main_output = cbfunc;
+/**
+ * \brief Remove a logging callback
+ * \param cbfunc RLogCallback style function to be called
+ */
+R_API void r_log_del_callback(RLogCallback cbfunc) {
+	if (log_cbs) {
+		r_list_delete_data (log_cbs, cbfunc);
+	}
 }
 
 R_API void r_vlog(const char *funcname, const char *filename,
@@ -84,8 +94,13 @@ R_API void r_vlog(const char *funcname, const char *filename,
 	vsnprintf (output_buf + offset, LOG_OUTPUTBUF_SIZE - offset, fmtstr, args);
 
 	// Actually print out the string with our callbacks
-	if (cb_main_output) {
-		cb_main_output (output_buf, funcname, filename, lineno, level, NULL, fmtstr, args_copy);
+	if (log_cbs && r_list_length (log_cbs) > 0) {
+		RListIter *it;
+		RLogCallback cb;
+
+		r_list_foreach (log_cbs, it, cb) {
+			cb (output_buf, funcname, filename, lineno, level, NULL, fmtstr, args_copy);
+		}
 	} else {
 		fprintf (stderr, "%s", output_buf);
 	}

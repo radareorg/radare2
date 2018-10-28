@@ -65,10 +65,9 @@ R_API void r_log_set_traplevel(RLogLevel level);
 // TODO: r_log_set_options(enum RLogOptions)
 
 // Functions for adding log callbacks
-R_API void r_log_set_main_callback(RLogCallback cbfunc); // Called by cons/cons.c:r_cons_new
-// TODO: r_log_add_callback(cbfunc, *context)
+R_API void r_log_add_callback(RLogCallback cbfunc);
+R_API void r_log_del_callback(RLogCallback cbfunc);
 // TODO: r_log_get_callbacks()
-// TODO: r_log_remove_callback(cbfunc, *context)
 
 /* Define r_log as weak so it can be 'overwritten' externally
    This allows another method of output redirection on POSIX (Windows?)
