@@ -480,6 +480,10 @@ static int cmd_info(void *data, const char *input) {
 					action = R_CORE_BIN_ACC_SEGMENTS;
 					param_shift = 1;
 				}
+				// case for iSq.
+				if (input[1] == 'q' && input[2] == '.') {
+					mode = R_MODE_SIMPLE;
+				}
 				// case for iSj.
 				if (input[1] == 'j' && input[2] == '.') {
 					mode = R_MODE_JSON;
