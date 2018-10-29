@@ -1,6 +1,6 @@
 #include <r_util.h>
 
-#ifdef ASSERT_STDOUT
+#ifdef R2_ASSERT_STDOUT
 static void stdout_log(const char *output, const char *funcname, const char *filename,
 	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...) {
 	printf ("%s", output);
