@@ -13,7 +13,7 @@ typedef struct _ulebr {
 } ulebr;
 
 // OMG; THIS SHOULD BE KILLED; this var exposes the local native endian, which is completely unnecessary
-static bool little_ = false;
+#define mach0_endian 1
 
 static ut64 read_uleb128(ulebr *r, ut8 *end) {
 	ut64 result = 0;
@@ -713,9 +713,9 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 		bin->signature = (ut8 *)strdup ("Malformed entitlement");
 		return true;
 	}
-	super.blob.magic = r_read_ble32 (bin->b->buf + data, little_);
-	super.blob.length = r_read_ble32 (bin->b->buf + data + 4, little_);
-	super.count = r_read_ble32 (bin->b->buf + data + 8, little_);
+	super.blob.magic = r_read_ble32 (bin->b->buf + data, mach0_endian);
+	super.blob.length = r_read_ble32 (bin->b->buf + data + 4, mach0_endian);
+	super.count = r_read_ble32 (bin->b->buf + data + 8, mach0_endian);
 	char *verbose = r_sys_getenv ("RABIN2_CODESIGN_VERBOSE");
 	bool isVerbose = false;
 	if (verbose) {
@@ -737,8 +737,8 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 			(ut8*)&bi, sizeof (struct blob_index_t)) < sizeof (struct blob_index_t)) {
 			break;
 		}
-		idx.type = r_read_ble32 (&bi.type, little_);
-		idx.offset = r_read_ble32 (&bi.offset, little_);
+		idx.type = r_read_ble32 (&bi.type, mach0_endian);
+		idx.offset = r_read_ble32 (&bi.offset, mach0_endian);
 		switch (idx.type) {
 		case CSSLOT_ENTITLEMENTS:
 			if (true || isVerbose) {
@@ -748,8 +748,8 @@ static bool parse_signature(struct MACH0_(obj_t) *bin, ut64 off) {
 				break;
 			}
 			struct blob_t entitlements = {0};
-			entitlements.magic = r_read_ble32 (bin->b->buf + off, little_);
-			entitlements.length = r_read_ble32 (bin->b->buf + off + 4, little_);
+			entitlements.magic = r_read_ble32 (bin->b->buf + off, mach0_endian);
+			entitlements.length = r_read_ble32 (bin->b->buf + off + 4, mach0_endian);
 			len = entitlements.length - sizeof (struct blob_t);
 			if (len <= bin->size && len > 1) {
 				bin->signature = calloc (1, len + 1);
@@ -1486,11 +1486,6 @@ static int init_items(struct MACH0_(obj_t)* bin) {
 }
 
 static int init(struct MACH0_(obj_t)* bin) {
-	union {
-		ut16 word;
-		ut8 byte[2];
-	} endian = { 1 };
-	little_ = endian.byte[0];
 	if (!init_hdr (bin)) {
 		bprintf ("Warning: File is not MACH0\n");
 		return false;
@@ -2233,9 +2228,10 @@ struct addr_t* MACH0_(get_entrypoint)(struct MACH0_(obj_t)* bin) {
 		sdb_num_set (bin->kv, "mach0.entry.vaddr", entry->addr, 0);
 		sdb_num_set (bin->kv, "mach0.entry.paddr", bin->entry, 0);
 	}
-	if (!bin->entry || entry->offset == 0) {
-		// XXX: section name doesnt matters at all.. just check for exec flags
+	if (entry->offset == 0) {
+		int i;
 		for (i = 0; i < bin->nsects; i++) {
+			// XXX: section name shoudnt matter .. just check for exec flags
 			if (!strncmp (bin->sects[i].sectname, "__text", 6)) {
 				entry->offset = (ut64)bin->sects[i].offset;
 				sdb_num_set (bin->kv, "mach0.entry", entry->offset, 0);
@@ -2680,11 +2676,11 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 		addr += 4;
 	}
 	for (n = 0; n < mh->ncmds; n++) {
-		READWORD();
+		READWORD ();
 		int lcType = word;
 		eprintf ("0x%08"PFMT64x"  cmd %7d 0x%x %s\n",
 			addr, n, lcType, cmd_to_string (lcType));
-		READWORD();
+		READWORD ();
 		int lcSize = word;
 		word &= 0xFFFFFF;
 		printf ("0x%08"PFMT64x"  cmdsize     %d\n", addr, word);
