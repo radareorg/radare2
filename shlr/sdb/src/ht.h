@@ -60,7 +60,7 @@ SDB_API bool ht_delete(SdbHt* ht, const char* key);
 SDB_API void* ht_find(SdbHt* ht, const char* key, bool* found);
 SDB_API void ht_foreach(SdbHt *ht, HtForeachCallback cb, void *user);
 
-HtKv* ht_find_kv(SdbHt* ht, const char* key, bool* found);
-bool ht_insert_kv(SdbHt *ht, HtKv *kv, bool update);
+SDB_API HtKv* ht_find_kv(SdbHt* ht, const char* key, bool* found);
+SDB_API bool ht_insert_kv(SdbHt *ht, HtKv *kv, bool update);
 
 #endif // __HT_H

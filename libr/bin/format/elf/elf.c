@@ -578,7 +578,6 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 	const ut64 num_entries = sz / sizeof (Elf_(Versym));
 	const char *section_name = "";
 	const char *link_section_name = "";
-	Elf_(Shdr) *link_shdr = NULL;
 	Sdb *sdb = sdb_new0();
 	if (!sdb) {
 		return NULL;
@@ -587,11 +586,11 @@ static Sdb *store_versioninfo_gnu_versym(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 		sdb_free (sdb);
 		return NULL;
 	}
-	if (shdr->sh_link > bin->ehdr.e_shnum) {
+	if (shdr->sh_link >= bin->ehdr.e_shnum) {
 		sdb_free (sdb);
 		return NULL;
 	}
-	link_shdr = &bin->shdr[shdr->sh_link];
+	Elf_(Shdr) *link_shdr = &bin->shdr[shdr->sh_link];
 	ut8 *edata = (ut8*) calloc (R_MAX (1, num_entries), sizeof (ut16));
 	if (!edata) {
 		sdb_free (sdb);

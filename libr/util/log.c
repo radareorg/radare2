@@ -7,7 +7,7 @@
 #include <stdarg.h>
 
 // TODO: Use thread-local storage to make these variables thread-safe
-static RLogCallback cb_main_output = NULL; // Function to call when outputting log string
+static RList *log_cbs = NULL; // Functions to call when outputting log string
 static int cfg_loglvl = R_LOGLVL_ERROR; // Log level output
 static int cfg_logtraplvl = R_LOGLVL_FATAL; // Log trap level
 static bool cfg_logsrcinfo = false; // Print out debug source info with the output
@@ -46,40 +46,38 @@ R_API void r_log_set_colors(bool show_info) {
 }
 
 /**
- * \brief Set the main callback for the logging API
+ * \brief Add a logging callback
  * \param cbfunc RLogCallback style function to be called
-
-  This is used by cons/cons.c:r_cons_new to set the log output
-  to r_cons. If r_cons is unavailable and this is never called
-  then _r_log_internal will use its fallback to stderr in r_util
-*/
-R_API void r_log_set_main_callback(RLogCallback cbfunc) {
-	// TODO: RList of callbacks with setter/remove methods
-	cb_main_output = cbfunc;
+ */
+R_API void r_log_add_callback(RLogCallback cbfunc) {
+	if (!log_cbs) {
+		log_cbs = r_list_new ();
+	}
+	if (!r_list_contains (log_cbs, cbfunc)) {
+		r_list_append (log_cbs, cbfunc);
+	}
 }
 
 /**
- * \brief Internal logging function used by preprocessor macros
- * \param funcname Contains the function name of the calling function
- * \param filename Contains the filename that funcname is defined in
- * \param lineno The line number that this log call is being made from in filename
- * \param lvl Logging level for output
- * \param fmtstr A printf like string
+ * \brief Remove a logging callback
+ * \param cbfunc RLogCallback style function to be called
+ */
+R_API void r_log_del_callback(RLogCallback cbfunc) {
+	if (log_cbs) {
+		r_list_delete_data (log_cbs, cbfunc);
+	}
+}
 
-  This function is used by the R_LOG_* preprocessor macros for logging
-*/
-R_API void _r_log_internal(const char *funcname, const char *filename,
-	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...) {
+R_API void r_vlog(const char *funcname, const char *filename,
+	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, va_list args) {
+	va_list args_copy;
+	va_copy (args_copy, args);
+
 	if (level < cfg_loglvl && level < cfg_logtraplvl) {
 		// Don't print if output level is lower than current level
 		// Don't ignore fatal/trap errors
 		return;
 	}
-
-	// Setup varadic arguments
-	va_list args, args_copy;
-	va_start (args, fmtstr);
-	va_copy (args_copy, args);
 
 	// TODO: Colors
 
@@ -96,11 +94,17 @@ R_API void _r_log_internal(const char *funcname, const char *filename,
 	vsnprintf (output_buf + offset, LOG_OUTPUTBUF_SIZE - offset, fmtstr, args);
 
 	// Actually print out the string with our callbacks
-	if (cb_main_output) {
-		cb_main_output (output_buf, funcname, filename, lineno, level, NULL, fmtstr, args_copy);
+	if (log_cbs && r_list_length (log_cbs) > 0) {
+		RListIter *it;
+		RLogCallback cb;
+
+		r_list_foreach (log_cbs, it, cb) {
+			cb (output_buf, funcname, filename, lineno, level, NULL, fmtstr, args_copy);
+		}
 	} else {
 		fprintf (stderr, "%s", output_buf);
 	}
+	va_end (args_copy);
 
 	// Log to file if enabled
 	if (cfg_logfile[0] != 0x00) {
@@ -116,13 +120,29 @@ R_API void _r_log_internal(const char *funcname, const char *filename,
 		}
 	}
 
-	va_end (args);
-	va_end (args_copy);
-
 	if (level >= cfg_logtraplvl && level != R_LOGLVL_NONE) {
 		fflush (stdout); // We're about to exit HARD, flush buffers before dying
 		fflush (stderr);
 		// TODO: call r_cons_flush if libr_cons is being used
 		r_sys_breakpoint (); // *oof*
 	}
+}
+
+/**
+ * \brief Internal logging function used by preprocessor macros
+ * \param funcname Contains the function name of the calling function
+ * \param filename Contains the filename that funcname is defined in
+ * \param lineno The line number that this log call is being made from in filename
+ * \param lvl Logging level for output
+ * \param fmtstr A printf like string
+
+  This function is used by the R_LOG_* preprocessor macros for logging
+*/
+R_API void r_log(const char *funcname, const char *filename,
+	ut32 lineno, RLogLevel level, const char *tag, const char *fmtstr, ...) {
+	va_list args;
+
+	va_start (args, fmtstr);
+	r_vlog (funcname, filename, lineno, level, tag, fmtstr, args);
+	va_end (args);
 }

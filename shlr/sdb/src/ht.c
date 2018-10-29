@@ -232,7 +232,7 @@ static HtKv *reserve_kv(SdbHt *ht, const char *key, const int key_len, bool upda
 	return kv_at (ht, bt, bt->count - 1);
 }
 
-bool ht_insert_kv(SdbHt *ht, HtKv *kv, bool update) {
+SDB_API bool ht_insert_kv(SdbHt *ht, HtKv *kv, bool update) {
 	HtKv *kv_dst = reserve_kv (ht, kv->key, kv->key_len, update);
 	if (!kv_dst) {
 		return false;

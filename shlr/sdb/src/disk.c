@@ -35,7 +35,7 @@ static wchar_t *r_utf8_to_utf16_l (const char *cstring, int len) {
 
 #define r_sys_conv_utf8_to_utf16(buf) r_utf8_to_utf16_l ((buf), -1)
 
-static bool r_sys_mkdir(char *path) {
+static bool r_sys_mkdir(const char *path) {
 	LPTSTR path_ = r_sys_conv_utf8_to_utf16 (path);
 	bool ret = CreateDirectory (path_, NULL);
 
@@ -107,8 +107,12 @@ SDB_API bool sdb_disk_create(Sdb* s) {
 	}
 #if __SDB_WINDOWS__ && UNICODE
 	wchar_t *wstr = r_sys_conv_utf8_to_utf16 (str);
-	s->fdump = _wopen (wstr, O_BINARY | O_RDWR | O_CREAT | O_TRUNC, SDB_MODE);
-	free (wstr);
+	if (wstr) {
+		s->fdump = _wopen (wstr, O_BINARY | O_RDWR | O_CREAT | O_TRUNC, SDB_MODE);
+		free (wstr);
+	} else {
+		s->fdump = -1;
+	}
 #else
 	s->fdump = open (str, O_BINARY | O_RDWR | O_CREAT | O_TRUNC, SDB_MODE);
 #endif
