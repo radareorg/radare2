@@ -16,7 +16,8 @@ R_API REvent *r_event_new(void *user) {
 	ev->callbacks->calcsizeK = NULL;
 	// skip R_EVENT_ALL and R_EVENT_MAX, so that they don't have a mapping
 	// and if used in hook/unhook/send APIs will raise a warning
-	for (ut32 i = 1; i < R_EVENT_MAX; ++i) {
+	ut32 i;
+	for (i = 1; i < R_EVENT_MAX; ++i) {
 		ht_insert (ev->callbacks, (char *)(size_t)i, r_pvector_new (NULL));
 	}
 	ev->user = user;
