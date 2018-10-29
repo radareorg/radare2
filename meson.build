@@ -265,8 +265,19 @@ use_ptrace_wrap = ['linux'].contains(host_machine.system())
 message('HAVE_PTRACE: @0@'.format(have_ptrace))
 message('USE_PTRACE_WRAP: @0@'.format(use_ptrace_wrap))
 
+checks_level = get_option('checks_level')
+if checks_level == 9999
+  if get_option('buildtype') == 'release'
+    checks_level = 1
+  else
+    checks_level = 2
+  endif
+endif
+
+message('R2_CHECKS_LEVEL: @0@'.format(checks_level))
+
 userconf = configuration_data()
-userconf.set('R_CHECKS_LEVEL', get_option('checks_level'))
+userconf.set('R_CHECKS_LEVEL', checks_level)
 userconf.set('HAVE_LIB_MAGIC', sys_magic.found().to_int())
 userconf.set('USE_LIB_MAGIC', use_syslib_magic.to_int())
 userconf.set('HAVE_LIB_XXHASH', sys_xxhash.found().to_int())
