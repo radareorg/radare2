@@ -21,6 +21,7 @@
 #define R_MODE_ARRAY 0x010
 #define R_MODE_SIMPLEST 0x020
 #define R_MODE_CLASSDUMP 0x040
+#define R_MODE_EQUAL 0x080
 
 #define R_IN /* do not use, implicit */
 #define R_OWN /* pointer ownership is transferred */

@@ -480,8 +480,12 @@ static int cmd_info(void *data, const char *input) {
 					action = R_CORE_BIN_ACC_SEGMENTS;
 					param_shift = 1;
 				}
-				// case for iSj.
-				if (input[1] == 'j' && input[2] == '.') {
+				// case for iS=
+				if (input[1] == '=') {
+					mode = R_MODE_EQUAL;
+				} else if (input[1] == 'q' && input[2] == '.') {
+					mode = R_MODE_SIMPLE;
+				} else if (input[1] == 'j' && input[2] == '.') {
 					mode = R_MODE_JSON;
 				}
 				RBinObject *obj = r_bin_cur_object (core->bin);
