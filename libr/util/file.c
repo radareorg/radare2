@@ -33,11 +33,10 @@ static int file_stat (const char *file, struct stat* const pStat) {
 	}
 #if __WINDOWS__
 	wchar_t *wfile = r_utf8_to_utf16 (file);
-	int ret = -1;
 	if (!wfile) {
 		return -1;
 	}
-	ret = _wstat (wfile, pStat);
+	int ret = _wstat (wfile, pStat);
 	free (wfile);
 	return ret;
 #else // __WINDOWS__
