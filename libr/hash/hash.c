@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2018 pancake */
+/* radare2 - LGPL - Copyright 2007-2018 pancake */
 
 #include <r_hash.h>
 #include "r_util.h"
