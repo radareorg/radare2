@@ -16,6 +16,7 @@
 #define IS_MODE_SIMPLEST(mode) ((mode) & R_MODE_SIMPLEST)
 #define IS_MODE_JSON(mode) ((mode) & R_MODE_JSON)
 #define IS_MODE_RAD(mode) ((mode) & R_MODE_RADARE)
+#define IS_MODE_EQUAL(mode) ((mode) & R_MODE_EQUAL)
 #define IS_MODE_NORMAL(mode) (!(mode))
 #define IS_MODE_CLASSDUMP(mode) ((mode) & R_MODE_CLASSDUMP)
 
@@ -2174,6 +2175,89 @@ static void dup_chk_free_kv(HtKv *kv) {
 	free (kv->key);
 }
 
+#define PRINT_CURRENT_SEEK \
+        if (i > 0 && len != 0) { \
+                if (seek == UT64_MAX) seek = 0; \
+                io->cb_printf ("=>  0x%08"PFMT64x" |", seek); \
+                for (j = 0; j < width; j++) { \
+                        io->cb_printf ( \
+                                ((j*mul) + min >= seek && \
+                                (j*mul) + min <= seek + len) \
+                                ? "^" : "-"); \
+                } \
+                io->cb_printf ("| 0x%08"PFMT64x"\n", seek+len); \
+        }
+
+static void list_section_visual(RIO *io, RList *sections, ut64 seek, ut64 len, int use_color, int cols) {
+	ut64 mul, min = -1, max = -1;
+	RListIter *iter;
+	RBinSection *s;
+	int j, i = 0;
+	int width = cols - 70;
+	if (width < 1) {
+		width = 30;
+	}
+	ls_foreach (sections, iter, s) {
+		if (min == -1 || s->paddr < min) {
+			min = s->paddr;
+		}
+		if (max == -1 || s->paddr+s->size > max) {
+			max = s->paddr + s->size;
+		}
+	}
+	mul = (max-min) / width;
+	if (min != -1 && mul != 0) {
+		const char * color = "", *color_end = "";
+		char buf[128];
+		i = 0;
+		ls_foreach (sections, iter, s) {
+			r_num_units (buf, s->size);
+			if (use_color) {
+				color_end = Color_RESET;
+				if (s->perm & R_PERM_X) { // exec bit
+					color = Color_GREEN;
+				} else if (s->perm & R_PERM_W) { // write bit
+					color = Color_RED;
+				} else {
+					color = "";
+					color_end = "";
+				}
+			} else {
+				color = "";
+				color_end = "";
+			}
+			if (io->va) {
+				io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
+						(seek >= s->vaddr && seek < s->vaddr + s->vsize) ? '*' : ' ',
+						color, s->vaddr, color_end);
+			} else {
+				io->cb_printf ("%02d%c %s0x%08"PFMT64x"%s |", i,
+						(seek >= s->paddr && seek < s->paddr + s->size) ? '*' : ' ',
+						color, s->paddr, color_end);
+			}
+			for (j = 0; j < width; j++) {
+				ut64 pos = min + (j * mul);
+				ut64 npos = min + ((j + 1) * mul);
+				if (s->paddr < npos && (s->paddr + s->size) > pos)
+					io->cb_printf ("#");
+				else io->cb_printf ("-");
+			}
+			if (io->va) {
+				io->cb_printf ("| %s0x%08"PFMT64x"%s %5s %s  %04s\n",
+						color, s->vaddr + s->vsize, color_end, buf,
+						r_str_rwx_i (s->perm), s->name);
+			} else {
+				io->cb_printf ("| %s0x%08"PFMT64x"%s %5s %s  %04s\n",
+						color, s->paddr+s->size, color_end, buf,
+						r_str_rwx_i (s->perm), s->name);
+			}
+
+			i++;
+		}
+		PRINT_CURRENT_SEEK;
+	}
+}
+
 static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const char *name, const char *chksum, bool print_segments) {
 	char *str = NULL;
 	RBinSection *section;
@@ -2196,6 +2280,11 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 
 	if (chksum && *chksum == '.') {
 		printHere = true;
+	}
+	if (IS_MODE_EQUAL (mode)) {
+		int cols = r_cons_get_size (NULL);
+		list_section_visual (r->io, sections, r->offset, -1, r->print->flags & R_PRINT_FLAGS_COLOR, cols);
+		goto out;
 	}
 	if (IS_MODE_JSON (mode) && !printHere) {
 		r_cons_printf ("[");
