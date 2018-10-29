@@ -2693,6 +2693,23 @@ void MACH0_(mach_headerfields)(RBinFile *file) {
 			break;
 		}
 		switch (lcType) {
+		case LC_MAIN:
+			{
+				ut8 data[64];
+				r_buf_read_at (buf, addr, data, sizeof (data));
+#if R_BIN_MACH064
+				ut64 ep = r_read_ble64 (&data, false); //  bin->big_endian);
+				printf ("0x%08"PFMT64x"  entry0      0x%" PFMT64x "\n", addr, ep);
+				ut64 ss = r_read_ble64 (&data[8], false); //  bin->big_endian);
+				printf ("0x%08"PFMT64x"  stacksize   0x%" PFMT64x "\n", addr +  8, ss);
+#else
+				ut32 ep = r_read_ble32 (&data, false); //  bin->big_endian);
+				printf ("0x%08"PFMT32x"  entry0      0x%" PFMT32x "\n", (ut32)addr, ep);
+				ut32 ss = r_read_ble32 (&data[4], false); //  bin->big_endian);
+				printf ("0x%08"PFMT32x"  stacksize   0x%" PFMT32x "\n", (ut32)addr +  4, ss);
+#endif
+			}
+			break;
 		case LC_ID_DYLIB: // install_name_tool
 			printf ("0x%08"PFMT64x"  id           %s\n",
 				addr + 20, r_buf_get_at (buf, addr + 20, NULL));
