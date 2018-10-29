@@ -2281,9 +2281,9 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 	if (chksum && *chksum == '.') {
 		printHere = true;
 	}
-	if (IS_MODE_EQUAL(mode)) {
+	if (IS_MODE_EQUAL (mode)) {
 		int cols = r_cons_get_size (NULL);
-		list_section_visual(r->io, sections, r->offset, -1, r->print->flags & R_PRINT_FLAGS_COLOR, cols);
+		list_section_visual (r->io, sections, r->offset, -1, r->print->flags & R_PRINT_FLAGS_COLOR, cols);
 		goto out;
 	}
 	if (IS_MODE_JSON (mode) && !printHere) {
