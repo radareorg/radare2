@@ -2,7 +2,9 @@
 #define R2_REG_H
 
 #include <r_types.h>
-#include <r_util.h>
+#include <r_list.h>
+#include <r_util/r_hex.h>
+#include <r_util/r_assert.h>
 
 #ifdef __cplusplus
 extern "C" {

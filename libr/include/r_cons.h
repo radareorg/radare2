@@ -6,7 +6,17 @@ extern "C" {
 #endif
 
 #include <r_types.h>
-#include <r_util.h>
+#include <r_util/r_graph.h>
+#include <r_util/r_hex.h>
+#include <r_util/r_log.h>
+#include <r_util/r_num.h>
+#include <r_util/r_panels.h>
+#include <r_util/r_sandbox.h>
+#include <r_util/r_signal.h>
+#include <r_util/r_stack.h>
+#include <r_util/r_str.h>
+#include <r_util/r_sys.h>
+#include <r_util/r_file.h>
 #include <sdb.h>
 
 #include <stdio.h>

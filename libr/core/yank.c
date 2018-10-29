@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2009-2014 - pancake & dso */
 
 #include "r_core.h"
-#include "r_print.h"
+#include "r_util.h"
 #include "r_io.h"
 
 /*

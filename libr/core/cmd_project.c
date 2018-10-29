@@ -2,7 +2,7 @@
 
 #include "r_config.h"
 #include "r_core.h"
-#include "r_print.h"
+#include "r_util.h"
 
 static const char *help_msg_P[] = {
 	"Usage:", "P[?osi] [file]", "Project management",

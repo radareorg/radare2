@@ -1,7 +1,7 @@
 /* radare - LGPL - Copyright 2006-2014 - esteve, pancake */
 
 #include "r_search.h"
-#include "r_print.h"
+#include "r_util.h"
 
 #include <stdio.h>
 #include <unistd.h>

@@ -24,7 +24,7 @@ Keys:
 
 #include <r_anal.h>
 #include <r_core.h>
-#include <r_print.h>
+#include <r_util.h>
 
 #define META_RANGE_BASE(x) ((x)>>12)
 #undef DB

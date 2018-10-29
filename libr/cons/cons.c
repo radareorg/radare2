@@ -1,7 +1,7 @@
 /* radare2 - LGPL - Copyright 2008-2018 - pancake, Jody Frankowski */
 
 #include <r_cons.h>
-#include <r_print.h>
+#include <r_util.h>
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
