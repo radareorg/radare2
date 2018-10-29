@@ -5,6 +5,7 @@
 #include <r_lib.h>
 #include <r_types.h>
 #include <r_util.h>
+#include <r_util/r_print.h>
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
