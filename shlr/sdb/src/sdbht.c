@@ -18,7 +18,7 @@ static bool sdb_ht_internal_insert(SdbHt* ht, const char* key,
 	if (!ht || !key || !value) {
 		return false;
 	}
-	SdbKv kvp = { 0 };
+	SdbKv kvp = {{ 0 }};
 	kvp.base.key = strdup ((void *)key);
 	if (!kvp.base.key) {
 		goto err;
