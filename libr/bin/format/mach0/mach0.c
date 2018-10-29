@@ -2214,10 +2214,14 @@ beach:
 }
 
 struct addr_t* MACH0_(get_entrypoint)(struct MACH0_(obj_t)* bin) {
-	int i;
-	r_return_val_if_fail (bin && bin->entry && bin->sects, NULL);
+	r_return_val_if_fail (bin && bin->sects, NULL);
+
+	/* it's probably a dylib */
+	if (!bin->entry) {
+		return NULL;
+	}
 	
-	struct addr_t *entry = R_NEW0 (struct addr_t);;
+	struct addr_t *entry = R_NEW0 (struct addr_t);
 	if (!entry) {
 		return NULL;
 	}
