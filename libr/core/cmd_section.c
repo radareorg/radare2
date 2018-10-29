@@ -15,7 +15,6 @@ static const char *help_msg_S[] = {
 	"S-[id]","","remove section identified by id",
 	"S-.","","remove section at core->offset (can be changed with @)",
 	"S=","","list sections (ascii-art bars) (io.va to display paddr or vaddr)",
-	"Sa","[-] [A] [B] [[off]]","Specify arch and bits for given section",
 	NULL
 };
 
@@ -161,54 +160,6 @@ static int cmd_section(void *data, const char *input) {
 	switch (*input) {
 	case '?': // "S?"
 		r_core_cmd_help (core, help_msg_S);
-// TODO: add command to resize current section
-		break;
-	case 'a': // "Sa"
-		switch (input[1]) {
-		case '\0':
-			{
-			int b = 0;
-			const char *n = r_io_section_get_archbits (core->io, core->offset, &b);
-			if (n) {
-				r_cons_printf ("%s %d\n", n, b);
-			}
-			}
-			break;
-		case '-': // "Sa-"
-			r_io_section_set_archbits (core->io, core->offset, NULL, 0);
-			break;
-		case '?': // "Sa?"
-		default:
-			eprintf ("Usage: Sa[-][arch] [bits] [[off]]\n");
-			break;
-		case ' ': // "Sa "
-			{
-				int i;
-				char *ptr = strdup (input+2);
-				const char *arch = NULL;
-				char bits = 0;
-				ut64 offset = core->offset;
-				i = r_str_word_set0 (ptr);
-				if (i < 2) {
-					eprintf ("Missing argument\n");
-					free (ptr);
-					break;
-				}
-				if (i == 3) {
-					offset = r_num_math (core->num, r_str_word_get0 (ptr, 2));
-				}
-				bits = r_num_math (core->num, r_str_word_get0 (ptr, 1));
-				arch = r_str_word_get0 (ptr, 0);
-				if (r_io_section_set_archbits (core->io, offset, arch, bits)) {
-					core->section = NULL;
-					r_core_seek (core, core->offset, 0);
-				} else {
-					eprintf ("Cannot set arch/bits at 0x%08"PFMT64x"\n",offset);
-				}
-				free (ptr);
-				break;
-			}
-		}
 		break;
 	case '-': // "S-"
 		// remove all sections
