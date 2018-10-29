@@ -22,6 +22,8 @@
 
 #include <r_hash.h>
 
+#if WITH_GPL
+
 static inline ut32 F(ut32 X, ut32 Y, ut32 Z) {
 	return (X & Y) | ((~X) & Z);
 }
@@ -185,3 +187,9 @@ void MD4(const ut8 *in, int n, ut8 *out) {
 
 	A = B = C = D = 0;
 }
+
+#else
+void MD4(const ut8 *in, int n, ut8 *out) {
+	eprintf ("md4: only available on GPL builds.\n");
+}
+#endif
