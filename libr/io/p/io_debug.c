@@ -46,7 +46,6 @@
 
 
 static void trace_me (void);
-static char *get_and_escape_path (char *str);
 
 /*
  * Creates a new process and returns the result:
@@ -381,9 +380,7 @@ static int fork_and_ptraceme_for_mac(RIO *io, int bits, const char *cmd) {
 			}
 		}
 		// XXX: this is a workaround to fix spawning programs with spaces in path
-		if (strstr (argv[0], "\\ ")) {
-			argv[0] = r_str_replace (argv[0], "\\ ", " ", true);
-		}
+		r_str_arg_unescape (argv[0]);
 
 		ret = posix_spawnp (&p, argv[0], &fileActions, &attr, argv, NULL);
 		handle_posix_error (ret);
@@ -426,46 +423,6 @@ static int fork_and_ptraceme_for_mac(RIO *io, int bits, const char *cmd) {
 }
 #endif
 
-static char *get_and_escape_path (char *str) {
-#if __APPLE__ && !__POWERPC__
-// wat
-	return NULL;
-#else
-	char *path_bin = strdup (str);
-	if (!path_bin) {
-		return NULL;
-	}
-	char *p = (char*) r_str_lchr (str, '/');
-	char *pp = (char*) r_str_tok (p, ' ', -1);
-
-	if (!pp) {
-		// There is nothing more to parse
-		free (path_bin);
-		return str;
-	}
-
-	path_bin[pp - str] = '\0';
-	if (strstr (path_bin, "\\ ")) {
-		path_bin = r_str_replace (path_bin, "\\ ", " ", true);
-	}
-	char *args = path_bin + (pp - str) + 1;
-	char *path_bin_escaped = r_str_arg_escape (path_bin);
-	int len = strlen (path_bin_escaped);
-
-	char *pbe = realloc (path_bin_escaped, len + 2);
-	if (pbe) {
-		path_bin_escaped = pbe;
-		strcpy (path_bin_escaped + len, " ");
-		char *final = r_str_append (path_bin_escaped, args);
-		free (path_bin);
-		return final;
-	}
-	free (path_bin_escaped);
-	free (path_bin);
-	return NULL;
-#endif
-}
-
 typedef struct fork_child_data_t {
 	RIO *io;
 	int bits;
@@ -494,14 +451,9 @@ static void fork_child_callback(void *user) {
 		char *_cmd = data->io->args ?
 					 r_str_appendf (strdup (data->cmd), " %s", data->io->args) :
 					 strdup (data->cmd);
-		char *path_escaped = get_and_escape_path (_cmd);
 		trace_me ();
-		char **argv = r_str_argv (path_escaped, NULL);
-		if (argv && strstr (argv[0], "\\ ")) {
-			argv[0] = r_str_replace (argv[0], "\\ ", " ", true);
-		}
+		char **argv = r_str_argv (_cmd, NULL);
 		if (!argv) {
-			free (path_escaped);
 			free (_cmd);
 			return;
 		}
@@ -509,6 +461,9 @@ static void fork_child_callback(void *user) {
 			int i;
 			for (i = 3; i < 1024; i++) {
 				(void)close (i);
+			}
+			for (i = 0; argv[i]; i++) {
+				r_str_arg_unescape (argv[i]);
 			}
 			if (execvp (argv[0], argv) == -1) {
 				eprintf ("Could not execvp: %s\n", strerror (errno));
@@ -518,7 +473,6 @@ static void fork_child_callback(void *user) {
 			eprintf ("Invalid execvp\n");
 		}
 		r_str_argv_free (argv);
-		free (path_escaped);
 		free (_cmd);
 	}
 }
