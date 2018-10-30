@@ -3130,7 +3130,7 @@ static void found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, in
 		// Add to SDB
 		if (xref_to) {
 			r_anal_xrefs_set (core->anal, at, xref_to, type);
-		}	
+		}
 	} else if (rad == 'j') {
 		// Output JSON
 		if (count > 0) {
@@ -3193,7 +3193,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, int rad) {
 		eprintf ("Error: cannot allocate a temp block\n");
 		free (buf);
 		return -1;
-	}	
+	}
 	if (rad == 'j') {
 		r_cons_printf ("{");
 	}

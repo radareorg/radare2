@@ -4379,15 +4379,22 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 				// function name not resolved
 				nargs = DEFAULT_NARGS;
 				if (fcn) {
-					nargs = fcn->nargs;
+					// @TODO: fcn->nargs should be updated somewhere and used here instead
+					nargs = r_anal_var_count (core->anal, fcn, 's', 1) +
+							r_anal_var_count (core->anal, fcn, 'b', 1) +
+							r_anal_var_count (core->anal, fcn, 'r', 1);
 				}
 				if (nargs > 0) {
-					ds_comment_middle (ds, "; CALL: ");
+					if (fcn_name) {
+						ds_comment_middle (ds, "; %s(", fcn_name);
+					} else {
+						ds_comment_middle (ds, "; 0x%"PFMT64x"(", pcv);
+					}
 					for (i = 0; i < nargs; i++) {
-						ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_STDCALL, i);
+						ut64 v = r_debug_arg_get (core->dbg, R_ANAL_CC_TYPE_FASTCALL, i);
 						ds_comment_middle (ds, "%s0x%"PFMT64x, i?", ":"", v);
 					}
-					ds_comment_end (ds, "");
+					ds_comment_end (ds, ")");
 				}
 			}
 			r_reg_setv (core->anal->reg, sp, spv); // reset stack ptr
