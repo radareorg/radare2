@@ -1366,7 +1366,8 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 static int handleMidBB(RCore *core, RDisasmState *ds) {
 	int i;
 	// Unfortunately, can't just check the addr of the last insn byte since
-	// a bb (and fcn) can be as small as 1 byte
+	// a bb (and fcn) can be as small as 1 byte, and advancing i based on
+	// bb->size is unsound if basic blocks can nest or overlap
 	for (i = 1; i < ds->oplen; i++) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ds->at + i, 0);
 		if (fcn) {
