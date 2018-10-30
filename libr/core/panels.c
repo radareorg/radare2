@@ -1874,7 +1874,6 @@ static void addMenu(RCore *core, const char *parent, const char *name, RPanelsMe
 	item->cb = cb;
 	item->p = R_NEW0 (RPanel);
 	if (!item->p) {
-		free (item->name);
 		free (item);
 		return;
 	}

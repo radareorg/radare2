@@ -2928,17 +2928,17 @@ static bool opiscall(RCore *core, RAnalOp *aop, ut64 addr, const ut8* buf, int l
 				return true;
 			}
 		}
-		return false;
+		break;
 	default:
 		aop->size = 1;
-		if (!r_anal_op (core->anal, aop, addr, buf, len, R_ANAL_OP_MASK_BASIC)) {
-			switch (aop->type) {
+		if (r_anal_op (core->anal, aop, addr, buf, len, R_ANAL_OP_MASK_BASIC)) {
+			switch (aop->type & R_ANAL_OP_TYPE_MASK) {
 			case R_ANAL_OP_TYPE_CALL:
 			case R_ANAL_OP_TYPE_CCALL:
 				return true;
 			}
-			return false;
 		}
+		break;
 	}
 	return false;
 }
