@@ -29,9 +29,9 @@ r2 is a rewrite from scratch of radare in order to provide
 a set of libraries and tools to work with binary files.
 
 Radare project started as a forensics tool, a scriptable
-commandline hexadecimal editor able to open disk files,
-but later support for analyzing binaries, disassembling
-code, debugging programs, attaching to remote gdb servers, ..
+command-line hexadecimal editor able to open disk files,
+but later added support for analyzing binaries, disassembling
+code, debugging programs, attaching to remote gdb servers...
 
 radare2 is portable.
 
@@ -42,7 +42,7 @@ System Z, XCore, CR16, HPPA, ARC, Blackfin, Z80, H8/300, V810, V850,
 CRIS, XAP, PIC, LM32, 8051, 6502, i4004, i8080, Propeller, Tricore, Chip8
 LH5801, T8200, GameBoy, SNES, MSP430, Xtensa, NIOS II,
 Dalvik, WebAssembly, MSIL, EBC, TMS320 (c54x, c55x, c55+, c66),
-Hexagon, Brainfuck, Malbolge, DCPU16
+Hexagon, Brainfuck, Malbolge, DCPU16.
 
 ## File Formats
 
@@ -55,17 +55,17 @@ Game Boy (Advance), Nintendo DS ROMs and Nintendo 3DS FIRMs, various filesystems
 ## Operating Systems
 
 Windows (since XP), GNU/Linux, OS X, [Net|Free|Open]BSD,
-Android, iOS, OSX, QNX, Solaris, Haiku, FirefoxOS
+Android, iOS, OSX, QNX, Solaris, Haiku, FirefoxOS.
 
 ## Bindings
 
 Vala/Genie, Python (2, 3), NodeJS, Lua, Go, Perl,
-Guile, PHP, Newlisp, Ruby, Java, OCaml, ...
+Guile, PHP, Newlisp, Ruby, Java, OCaml...
 
 # Dependencies
 
 radare2 can be built without any special dependency, just
-use make and get a working toolchain (gcc, clang, tcc, ..)
+get a working toolchain (gcc, clang, tcc...) and use make.
 
 Optionally you can use libewf for loading EnCase disk images.
 
@@ -220,4 +220,4 @@ Telegram: https://t.me/radare
 
 Matrix: @radare2:matrix.org
 
-Twitter: @radareorg
+Twitter: [@radareorg](https://twitter.com/radareorg)
