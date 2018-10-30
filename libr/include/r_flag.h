@@ -87,7 +87,7 @@ typedef struct r_flag_bind_t {
 } RFlagBind;
 
 #define r_flag_bind_init(x) memset(&x,0,sizeof(x))
-R_API int r_flag_bind(RFlag *io, RFlagBind *bnd);
+R_API void r_flag_bind(RFlag *io, RFlagBind *bnd);
 
 #ifdef R_API
 R_API RFlag * r_flag_new(void);
@@ -100,13 +100,13 @@ R_API RFlagItem *r_flag_get_i2(RFlag *f, ut64 off);
 R_API RFlagItem *r_flag_get_at(RFlag *f, ut64 off, bool closest);
 R_API const RList* /*<RFlagItem*>*/ r_flag_get_list(RFlag *f, ut64 off);
 R_API char *r_flag_get_liststr(RFlag *f, ut64 off);
-R_API int r_flag_unset(RFlag *f, RFlagItem *item);
-R_API int r_flag_unset_name(RFlag *f, const char *name);
-R_API int r_flag_unset_off(RFlag *f, ut64 addr);
+R_API bool r_flag_unset(RFlag *f, RFlagItem *item);
+R_API bool r_flag_unset_name(RFlag *f, const char *name);
+R_API bool r_flag_unset_off(RFlag *f, ut64 addr);
 R_API void r_flag_unset_all (RFlag *f);
 R_API RFlagItem *r_flag_set(RFlag *fo, const char *name, ut64 addr, ut32 size);
 R_API RFlagItem *r_flag_set_next(RFlag *fo, const char *name, ut64 addr, ut32 size);
-R_API int r_flag_sort(RFlag *f, int namesort);
+R_API bool r_flag_sort(RFlag *f, int namesort);
 R_API void r_flag_item_set_alias(RFlagItem *item, const char *alias);
 R_API void r_flag_item_free (RFlagItem *item);
 R_API void r_flag_item_set_comment(RFlagItem *item, const char *comment);
@@ -114,8 +114,8 @@ R_API void r_flag_item_set_realname(RFlagItem *item, const char *realname);
 R_API RFlagItem *r_flag_item_clone(RFlagItem *item);
 R_API int r_flag_unset_glob(RFlag *f, const char *name);
 R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name);
-R_API int r_flag_relocate (RFlag *f, ut64 off, ut64 off_mask, ut64 to);
-R_API int r_flag_move (RFlag *f, ut64 at, ut64 to);
+R_API int r_flag_relocate(RFlag *f, ut64 off, ut64 off_mask, ut64 to);
+R_API bool r_flag_move (RFlag *f, ut64 at, ut64 to);
 R_API const char *r_flag_color(RFlag *f, RFlagItem *it, const char *color);
 
 /* spaces */
@@ -124,12 +124,12 @@ R_API const char *r_flag_space_get_i(RFlag *f, int idx);
 R_API const char *r_flag_space_cur(RFlag *f);
 R_API int r_flag_space_set(RFlag *f, const char *name);
 R_API bool r_flag_space_set_i(RFlag *f, int idx);
-R_API int r_flag_count (RFlag *f, const char *name);
-R_API int r_flag_space_unset (RFlag *f, const char *fs);
+R_API int r_flag_count(RFlag *f, const char *name);
+R_API int r_flag_space_unset(RFlag *f, const char *fs);
 R_API int r_flag_space_list(RFlag *f, int mode);
-R_API int r_flag_space_rename (RFlag *f, const char *oname, const char *nname);
+R_API bool r_flag_space_rename(RFlag *f, const char *oname, const char *nname);
 R_API bool r_flag_space_pop(RFlag *f);
-R_API int r_flag_space_push(RFlag *f, const char *name);
+R_API bool r_flag_space_push(RFlag *f, const char *name);
 R_API int r_flag_space_stack_list(RFlag *f, int mode);
 
 /* tags */

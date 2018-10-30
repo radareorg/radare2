@@ -3,12 +3,14 @@
 #include <r_flag.h>
 
 R_API RList *r_flag_tags_set(RFlag *f, const char *name, const char *words) {
+	r_return_val_if_fail (f && name && words, NULL);
 	const char *k = sdb_fmt ("tag.%s", name);
 	sdb_set (f->tags, k, words, -1);
 	return NULL;
 }
 
 R_API RList *r_flag_tags_list(RFlag *f) {
+	r_return_val_if_fail (f, NULL);
 	RList *res = r_list_newf (free);
 	SdbList *o = sdb_foreach_list (f->tags, false);
 	SdbListIter *iter;
@@ -25,10 +27,13 @@ R_API RList *r_flag_tags_list(RFlag *f) {
 }
 
 R_API void r_flag_tags_reset(RFlag *f, const char *name) {
+	// TODO: use name
+	r_return_if_fail (f);
 	sdb_reset (f->tags);
 }
 
 R_API RList *r_flag_tags_get(RFlag *f, const char *name) {
+	r_return_val_if_fail (f && name, NULL);
 	const char *k = sdb_fmt ("tag.%s", name);
 	RListIter *iter, *iter2;
 	const char *word;

@@ -1366,7 +1366,11 @@ static void set_bin_relocs(RCore *r, RBinReloc *reloc, ut64 addr, Sdb **db, char
 		}
 	} else {
 		char *reloc_name = get_reloc_name (reloc, addr);
-		r_flag_set (r->flags, reloc_name, addr, bin_reloc_size (reloc));
+		if (reloc_name) {
+			r_flag_set (r->flags, reloc_name, addr, bin_reloc_size (reloc));
+		} else {
+			// eprintf ("Cannot find a name for 0x%08"PFMT64x"\n", addr);
+		}
 	}
 }
 
