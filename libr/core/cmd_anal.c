@@ -3888,13 +3888,6 @@ static void cmd_esil_mem(RCore *core, const char *input) {
 	pc = r_reg_get_name (core->dbg->reg, R_REG_NAME_PC);
 	r_debug_reg_set (core->dbg, pc, curoff);
 	r_core_cmd0 (core, ".ar*");
-#if 0
-	if (!r_io_section_get_name (core->io, ESIL_STACK_NAME)) {
-		r_core_cmdf (core, "om %d 0x%"PFMT64x, cf->fd, addr);
-		r_core_cmdf (core, "S 0x%"PFMT64x" 0x%"PFMT64x" %d %d "
-			ESIL_STACK_NAME, addr, addr, size, size);
-	}
-#endif
 	if (esil) {
 		esil->stack_addr = addr;
 		esil->stack_size = size;

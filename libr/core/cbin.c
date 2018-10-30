@@ -2442,58 +2442,6 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 				section->paddr,
 				addr);
 			free (hashstr);
-		} else if (IS_MODE_RAD (mode)) {
-			if (!strcmp (section->name, ".bss") && !inDebugger) {
-#if LOAD_BSS_MALLOC
-				r_cons_printf ("on malloc://%d 0x%"PFMT64x" # bss\n",
-						section->vsize, addr);
-#endif
-			}
-			if (r->bin->prefix) {
-				r_cons_printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s.%s %d\n",
-					section->paddr, addr, section->size, section->vsize,
-					r->bin->prefix, section->name, (int)section->perm);
-			} else {
-				r_cons_printf ("S 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %d\n",
-					section->paddr, addr, section->size, section->vsize,
-					section->name, (int)section->perm);
-
-			}
-			if (section->arch || section->bits) {
-				const char *arch = section->arch;
-				int bits = section->bits;
-				if (info) {
-					if (!arch) {
-						arch = info->arch;
-					}
-					if (!bits) {
-						bits = info->bits;
-					}
-				}
-				if (!arch) {
-					arch = r_config_get (r->config, "asm.arch");
-				}
-				r_cons_printf ("Sa %s %d @ 0x%08"
-					PFMT64x"\n", arch, bits, addr);
-			}
-			if (r->bin->prefix) {
-				ut64 size = r->io->va? section->vsize: section->size;
-				r_cons_printf ("f %s.%s.%s %"PFMT64d" 0x%08"PFMT64x"\n",
-						r->bin->prefix, type, section->name, size, addr);
-				r_cons_printf ("CC %s %i va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
-						"rwx=%s %s.%s @ 0x%08"PFMT64x"\n",
-						type, i, addr, section->paddr, section->size, section->vsize,
-						perms, r->bin->prefix, section->name, addr);
-
-			} else {
-				ut64 size = r->io->va? section->vsize: section->size;
-				r_cons_printf ("f %s.%s %"PFMT64d" 0x%08"PFMT64x"\n",
-						type, section->name, size, addr);
-				r_cons_printf ("CC %s %i va=0x%08"PFMT64x" pa=0x%08"PFMT64x" sz=%"PFMT64d" vsz=%"PFMT64d" "
-						"rwx=%s %s @ 0x%08"PFMT64x"\n",
-						type, i, addr, section->paddr, section->size, section->vsize,
-						perms, section->name, addr);
-			}
 		} else {
 			char *hashstr = NULL, str[128];
 			if (chksum) {
@@ -2644,10 +2592,6 @@ static int bin_fields(RCore *r, int mode, int va) {
 	}
 	if (IS_MODE_JSON (mode)) {
 		r_cons_printf ("]");
-	} else if (IS_MODE_RAD (mode)) {
-		/* add program header section */
-		r_cons_printf ("S 0 0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x" ehdr rwx\n",
-			baddr, size, size);
 	} else if (IS_MODE_NORMAL (mode)) {
 		r_cons_printf ("\n%i fields\n", i);
 	}

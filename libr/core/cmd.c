@@ -78,7 +78,6 @@ static void cmd_debug_reg(RCore *core, const char *str);
 #include "cmd_debug.c"
 #include "cmd_log.c"
 #include "cmd_zign.c"
-#include "cmd_section.c"
 #include "cmd_flag.c"
 #include "cmd_project.c"
 #include "cmd_write.c"
@@ -4046,7 +4045,6 @@ R_API void r_core_cmd_init(RCore *core) {
 		{"Q",        "alias for q!", cmd_Quit},
 		{"resize",   "change file size", cmd_resize},
 		{"seek",     "seek to an offset", cmd_seek, cmd_seek_init},
-		{"Section",  "setup section io information", cmd_section, cmd_section_init},
 		{"t",        "type information (cparse)", cmd_type, cmd_type_init},
 		{"Text",     "Text log utility", cmd_log, cmd_log_init},
 		{"u",        "uname/undo", cmd_uname},
