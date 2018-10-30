@@ -2369,7 +2369,6 @@ static int bin_sections(RCore *r, int mode, ut64 laddr, int va, ut64 at, const c
 						bits = info->bits;
 					}
 				}
-				//r_io_section_set_archbits (r->io, addr, arch, bits);
 			}
 			if (!section->is_segment) {
 				char *pfx = r->bin->prefix;
