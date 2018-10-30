@@ -13,7 +13,7 @@ static void _interrupt_free_cb(void *user) {
 
 static bool _set_interrupt(RAnalEsil *esil, RAnalEsilInterrupt *intr) {
 	return intr->handler->num ?
-		dict_set(esil->interrupts, intr->handler->num, intr->handler->num, intr) :
+		dict_set (esil->interrupts, intr->handler->num, intr->handler->num, intr) :
 		(esil->intr0 = intr, true);
 }
 
@@ -32,28 +32,21 @@ static void _del_interrupt(RAnalEsil *esil, ut32 intr_num) {
 }
 
 R_API void r_anal_esil_interrupts_init(RAnalEsil *esil) {
-	if (!esil) {
-		return;
-	}
-	esil->interrupts = dict_new (sizeof(ut32), NULL);
-	esil->intr0 = NULL;	//is this needed?
+	r_return_if_fail (esil);
+	esil->interrupts = dict_new (sizeof (ut32), NULL);
+	esil->intr0 = NULL; // is this needed?
 }
 
 R_API RAnalEsilInterrupt *r_anal_esil_interrupt_new(RAnalEsil *esil, ut32 src_id,  RAnalEsilInterruptHandler *ih) {
-	RAnalEsilInterrupt *intr;
-
-	if (!esil || !ih || !ih->cb) {
-		return NULL;
-	}
-
-	intr = R_NEW0(RAnalEsilInterrupt);
+	r_return_val_if_fail (esil && ih && ih->cb, NULL);
+	RAnalEsilInterrupt *intr = R_NEW0 (RAnalEsilInterrupt);
 	if (!intr) {
 		return NULL;
 	}
 
 	intr->handler = ih;
 	if (ih->init && ih->fini) {
-		intr->user = ih->init(esil);
+		intr->user = ih->init (esil);
 	}
 	intr->src_id = src_id;
 	r_anal_esil_claim_source (esil, src_id);
@@ -66,34 +59,26 @@ R_API void r_anal_esil_interrupt_free(RAnalEsil *esil, RAnalEsilInterrupt *intr)
 	}
 	if (intr) {
 		if (intr->user) {
-			intr->handler->fini(intr->user);	//fini must exist when user is !NULL
+			intr->handler->fini (intr->user);	//fini must exist when user is !NULL
 		}
 		r_anal_esil_release_source (esil, intr->src_id);
 	}
-	free(intr);
+	free. (intr);
 }
 
 R_API bool r_anal_esil_set_interrupt(RAnalEsil *esil, RAnalEsilInterrupt *intr) {
-	RAnalEsilInterrupt *o_intr;
-
-	if (!esil || !esil->interrupts || !intr || !intr->handler || !intr->handler->cb) {
-		return false;
-	}
-
-// check if interrupt is already set
-	o_intr = _get_interrupt(esil, intr->handler->num);
+	r_return_val_if_fail (esil && esil->interrupts && intr && intr->handler && intr->handler->cb, false);
+	// check if interrupt is already set
+	RAnalEsilInterrupt *o_intr = _get_interrupt(esil, intr->handler->num);
 	if (o_intr) {
-		r_anal_esil_interrupt_free(esil, o_intr);
+		r_anal_esil_interrupt_free (esil, o_intr);
 	}
-
-//set the new interrupt
+	//set the new interrupt
 	return _set_interrupt(esil, intr);
 }
 
 R_API int r_anal_esil_fire_interrupt(RAnalEsil *esil, ut32 intr_num) {
-	if (!esil) {
-		return false;
-	}
+	r_return_val_if_fail (esil, false);
 
 	if (esil->cmd && esil->cmd (esil, esil->cmd_intr, intr_num, 0)) {	//compatibility
 		return true;
@@ -115,9 +100,7 @@ R_API bool r_anal_esil_load_interrupts (RAnalEsil *esil, RAnalEsilInterruptHandl
 	RAnalEsilInterrupt *intr;
 	ut32 i = 0;
 
-	if (!esil || !esil->interrupts || !handlers) {
-		return false;
-	}
+	r_return_val_if_fail (esil && esil->interrupts && handlers, false);
 
 	while (handlers[i]) {
 		intr = _get_interrupt(esil, handlers[i]->num);
@@ -138,16 +121,16 @@ R_API bool r_anal_esil_load_interrupts (RAnalEsil *esil, RAnalEsilInterruptHandl
 }
 
 R_API bool r_anal_esil_load_interrupts_from_lib(RAnalEsil *esil, const char *path) {
-	RAnalEsilInterruptHandler **handlers;
+	r_return_val_if_fail (esil, false);
 	ut32 src_id = r_anal_esil_load_source (esil, path);
 
 	if (!src_id) {
 		return false;
 	}
-
-	handlers = (RAnalEsilInterruptHandler **)r_lib_dl_sym (r_anal_esil_get_source (esil, src_id), "interrupts");
+	RAnalEsilInterruptHandler **handlers = (RAnalEsilInterruptHandler **)\
+		r_lib_dl_sym (r_anal_esil_get_source (esil, src_id), "interrupts");
 	if (!handlers) {
-		r_anal_esil_release_source(esil, src_id);	//unload
+		r_anal_esil_release_source(esil, src_id); //unload
 		return false;
 	}
 	return r_anal_esil_load_interrupts (esil, handlers, src_id);
