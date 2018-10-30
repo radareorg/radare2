@@ -88,11 +88,29 @@ R_API char *r_bin_demangle(RBinFile *binfile, const char *def, const char *str, 
 		return NULL;
 	}
 	RBin *bin = binfile? binfile->rbin: NULL;
+	RBinObject *o = binfile? binfile->o: NULL;
+	RListIter *iter;
+	const char *lib;
+	if (!strncmp (str, "reloc.", 6)) {
+		str += 6;
+	}
 	if (!strncmp (str, "sym.", 4)) {
 		str += 4;
 	}
 	if (!strncmp (str, "imp.", 4)) {
 		str += 4;
+	}
+	if (o) {
+		r_list_foreach (o->libs, iter, lib) {
+			size_t len = strlen(lib);
+			if (!strncasecmp (str, lib, len)) {
+				str += len;
+				if (*str == '_') {
+					str++;
+				}
+				break;
+			}
+		}
 	}
 	if (!strncmp (str, "__", 2)) {
 		if (str[2] == 'T') {
@@ -115,6 +133,7 @@ R_API char *r_bin_demangle(RBinFile *binfile, const char *def, const char *str, 
 	case R_BIN_NM_OBJC: return r_bin_demangle_objc (NULL, str);
 	case R_BIN_NM_SWIFT: return r_bin_demangle_swift (str, bin? bin->demanglercmd: false);
 	case R_BIN_NM_CXX: return r_bin_demangle_cxx (binfile, str, vaddr);
+	case R_BIN_NM_MSVC: return r_bin_demangle_msvc (str);
 	case R_BIN_NM_DLANG: return r_bin_demangle_plugin (bin, "dlang", str);
 	}
 	return NULL;
