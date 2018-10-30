@@ -203,13 +203,13 @@ static void _fcn_tree_print_dot(RBNode *n) {
 #endif
 
 // Find RAnalFunction whose addr is equal to addr
-static RAnalFunction *_fcn_tree_find_addr(RBNode *x_, ut64 addr) {
-	while (x_) {
-		RAnalFunction *x = FCN_CONTAINER (x_);
+static RAnalFunction *_fcn_tree_find_addr(RBNode *n, ut64 addr) {
+	while (n) {
+		RAnalFunction *x = FCN_CONTAINER (n);
 		if (x->addr == addr) {
 			return x;
 		}
-		x_ = x_->child[x->addr < addr];
+		n = n->child[x->addr < addr];
 	}
 	return NULL;
 }
@@ -255,7 +255,8 @@ R_API int r_anal_fcn_resize(const RAnal *anal, RAnalFunction *fcn, int newsize) 
 	ut64 eof; /* end of function */
 	RAnalBlock *bb;
 	RListIter *iter, *iter2;
-	if (!fcn || newsize < 1) {
+	r_return_val_if_fail (anal && fcn, false);
+	if (newsize < 1) {
 		return false;
 	}
 	r_anal_fcn_set_size (anal, fcn, newsize);
@@ -326,20 +327,6 @@ R_API void r_anal_fcn_free(void *_fcn) {
 	free (fcn->args);
 	free (fcn);
 }
-
-#if 0
-static bool refExists(RList *refs, RAnalRef *ref) {
-	RAnalRef *r;
-	RListIter *iter;
-	r_list_foreach (refs, iter, r) {
-		if (r && r->at == ref->at && ref->addr == r->addr) {
-			r->type = ref->type;
-			return true;
-		}
-	}
-	return false;
-}
-#endif
 
 static RAnalBlock *bbget(RAnalFunction *fcn, ut64 addr) {
 	RListIter *iter;
@@ -790,26 +777,21 @@ static bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAna
 			isValid = tmp_aop.refptr < 0x200;
 			*table_size = tmp_aop.refptr + 1;
 		}
-
 		r_anal_op_fini (&tmp_aop);
 		// TODO: check the jmp for whether val is included in valid range or not (ja vs jae)
 		break;
 	}
 	free (bb_buf);
-	if (!isValid) {
-		return false;
-	}
-
 	// eprintf ("switch at 0x%" PFMT64x "\n\tdefault case 0x%" PFMT64x "\n\t#cases: %d\n",
 	// 		addr,
 	// 		*default_case,
 	// 		*table_size);
-
- 	return true;
+	return isValid;
 }
 
 static bool regs_exist(RAnalValue *src, RAnalValue *dst) {
-	return src && dst && src->reg && dst->reg && src->reg->name && dst->reg->name;
+	r_return_val_if_fail (src && dst, false);
+	return src->reg && dst->reg && src->reg->name && dst->reg->name;
 }
 
 // 0 if not skipped; 1 if skipped; 2 if skipped before
