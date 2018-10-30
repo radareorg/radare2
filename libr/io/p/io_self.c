@@ -18,6 +18,11 @@
 #include <mach/task.h>
 #include <mach/task_info.h>
 void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int max);
+#elif __FreeBSD__
+#include <sys/sysctl.h>
+#include <sys/user.h>
+#include <libutil.h>
+bool bsd_proc_vmmaps(RIO *io, int pid);
 #endif
 #ifdef _MSC_VER
 #include <process.h>  // to compile getpid for msvc windows
@@ -110,6 +115,8 @@ static int update_self_regions(RIO *io, int pid) {
 	fclose (fd);
 
 	return true;
+#elif __FreeBSD__
+	return bsd_proc_vmmaps(io, pid);
 #else
 #ifdef _MSC_VER
 #pragma message ("Not yet implemented for this platform")
@@ -502,6 +509,91 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 			break;
 		}
 	 }
+}
+#elif __FreeBSD__
+bool bsd_proc_vmmaps(RIO *io, int pid) {
+	int mib[4] = {
+		CTL_KERN, KERN_PROC, KERN_PROC_VMMAP, pid
+	};
+	size_t size;
+	bool ret = false;
+	int s = sysctl (mib, sizeof (mib), NULL, &size, NULL, 0);
+	if (s == -1) {
+		eprintf ("sysctl failed\n");
+		return false;
+	}
+	ut8 *p = malloc (size);
+	if (p) {
+		size = size * 4 / 3;
+		s = sysctl (mib, sizeof (mib), p, &size, NULL, 0);
+		if (s == -1) {
+			eprintf ("sysctl failed\n");
+			goto exit;
+		}
+		ut8 *p_start = p;
+		ut8 *p_end = p + size;
+		int n = 0;
+
+		while (p_start < p_end) {
+			struct kinfo_vmentry *entry = (struct kinfo_vmentry *)p_start;
+			size_t sz = entry->kve_structsize;
+			if (sz == 0) {
+				break;
+			}
+			p_start += sz;
+			n ++;
+		}
+
+		struct kinfo_vmentry *entries = calloc(n, sizeof(*entries));
+		if (!entries) {
+			eprintf ("entries allocation failed\n");
+			goto exit;
+		}
+
+		p_start = p;
+
+		while (p_start < p_end) {
+			struct kinfo_vmentry *entry = (struct kinfo_vmentry *)p_start;
+			size_t sz = entry->kve_structsize;
+			int perm = 0;
+			if (sz == 0) {
+				break;
+			}
+
+			if (entry->kve_protection & KVME_PROT_READ) {
+				perm |= R_PERM_R;
+			}
+			if (entry->kve_protection & KVME_PROT_WRITE) {
+				perm |= R_PERM_W;
+			}
+			if (entry->kve_protection & KVME_PROT_EXEC) {
+				perm |= R_PERM_X;
+			}
+
+			if (entry->kve_path[0] != '\0') {
+				io->cb_printf (" %p - %p (%s)\n",
+					(void *)entry->kve_start,
+					(void *)entry->kve_end,
+					entry->kve_path);
+			}
+
+			self_sections[self_sections_count].from = entry->kve_start;
+			self_sections[self_sections_count].to = entry->kve_end;
+			self_sections[self_sections_count].name = strdup (entry->kve_path);
+			self_sections[self_sections_count].perm = perm;
+			self_sections_count++;
+			p_start += sz;
+		}
+
+		free (entries);
+		ret = true;
+	} else {
+		eprintf ("buffer allocation failed\n");
+	}
+
+exit:
+	free (p);
+	return ret;
 }
 #endif
 
