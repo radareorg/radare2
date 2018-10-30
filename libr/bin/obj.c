@@ -313,9 +313,7 @@ static void r_bin_mem_free(void *data) {
 
 R_API void r_bin_object_delete_items(RBinObject *o) {
 	ut32 i = 0;
-	if (!o) {
-		return;
-	}
+	r_return_if_fail (o);
 	sdb_free (o->addr2klassmethod);
 	r_list_free (o->entries);
 	r_list_free (o->fields);
@@ -354,21 +352,19 @@ R_API void r_bin_object_delete_items(RBinObject *o) {
 R_API RBinObject *r_bin_object_find_by_arch_bits(RBinFile *binfile, const char *arch, int bits, const char *name) {
 	RBinObject *obj = NULL;
 	RListIter *iter = NULL;
-	RBinInfo *info = NULL;
 
 	r_return_val_if_fail (binfile && arch && name, NULL);
 
 	r_list_foreach (binfile->objs, iter, obj) {
-		info = obj->info;
+		RBinInfo *info = obj->info;
 		if (info && info->arch && info->file &&
 			(bits == info->bits) &&
 			!strcmp (info->arch, arch) &&
 			!strcmp (info->file, name)) {
-			break;
+			return obj;
 		}
-		obj = NULL;
 	}
-	return obj;
+	return NULL;
 }
 
 R_API ut64 r_bin_object_get_baddr(RBinObject *o) {
@@ -376,10 +372,10 @@ R_API ut64 r_bin_object_get_baddr(RBinObject *o) {
 	return o->baddr + o->baddr_shift;
 }
 
-R_API int r_bin_object_delete(RBin *bin, ut32 binfile_id, ut32 binobj_id) {
+R_API bool r_bin_object_delete(RBin *bin, ut32 binfile_id, ut32 binobj_id) {
 	RBinFile *binfile = NULL;
 	RBinObject *obj = NULL;
-	int res = false;
+	bool res = false;
 
 	r_return_val_if_fail (bin, false);
 
