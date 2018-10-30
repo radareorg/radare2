@@ -2795,7 +2795,12 @@ reread:
 		goto beach;
 	case 'r': // "/r" and "/re"
 		{
-		ut64 n = input[2]==' '? r_num_math (core->num, input + 2): UT64_MAX;
+		ut64 n = (input[1] == ' ' || (input[1] && input[2]==' '))
+			? r_num_math (core->num, input + 2): UT64_MAX;
+		if (n == 0LL) {
+			eprintf ("Cannot find null references.\n");
+			break;
+		}
 		switch (input[1]) {
 		case 'c': // "/rc"
 			{

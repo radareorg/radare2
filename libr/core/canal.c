@@ -3003,10 +3003,9 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 				}
 				switch (mode) {
 				case 'c':
-					if (!opiscall (core, &op, at + i, buf + i, core->blocksize - i, arch)) {
-						i += op.size;
-						r_anal_op_fini (&op);
-						continue;
+					(void)opiscall (core, &op, at + i, buf + i, core->blocksize - i, arch);
+					if (op.size <1) {
+						op.size = 1;
 					}
 					break;
 				case 'r':
