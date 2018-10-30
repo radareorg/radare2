@@ -468,7 +468,7 @@ static RBinInfo* info(RBinFile *bf) {
 		return NULL;
 	}
 	bin = bf->o->bin_obj;
-	bf->file = strdup (bf->file);
+	ret->file = strdup (bf->file);
 	ret->bclass = PE_(r_bin_pe_get_class) (bf->o->bin_obj);
 	ret->rclass = strdup ("pe");
 	ret->os = PE_(r_bin_pe_get_os) (bf->o->bin_obj);
