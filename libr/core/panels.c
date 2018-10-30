@@ -1855,8 +1855,10 @@ static int openMenuCb (void *user) {
 
 static void addMenu(RCore *core, const char *parent, const char *name, RPanelsMenuCallback cb) {
 	RPanels *panels = core->panels;
-	RPanelsMenuItem *item = R_NEW0 (RPanelsMenuItem);
-	RPanelsMenuItem *p_item;
+	RPanelsMenuItem *p_item, *item = R_NEW0 (RPanelsMenuItem);
+	if (!item) {
+		return;
+	}
 	if (parent) {
 		ut64 addr = r_num_math (core->num, ht_find (panels->mht, parent, NULL));
 		p_item = (RPanelsMenuItem *)addr;
@@ -1865,9 +1867,6 @@ static void addMenu(RCore *core, const char *parent, const char *name, RPanelsMe
 		p_item = panels->panelsMenu->root;
 		ht_insert (panels->mht, sdb_fmt ("%s", name), sdb_fmt ("%p", item));
 	}
-	if (!item) {
-		return;
-	}
 	item->n_sub = 0;
 	item->selectedIndex = 0;
 	item->name = name ? strdup (name) : NULL;
@@ -1875,7 +1874,9 @@ static void addMenu(RCore *core, const char *parent, const char *name, RPanelsMe
 	item->cb = cb;
 	item->p = R_NEW0 (RPanel);
 	if (!item->p) {
+		free (item->name);
 		free (item);
+		return;
 	}
 	p_item->n_sub++;
 	struct r_panels_menu_item **sub = realloc (p_item->sub, sizeof (RPanelsMenuItem *) * p_item->n_sub);
