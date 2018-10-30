@@ -2791,6 +2791,8 @@ reread:
 		}
 		goto beach;
 	case 'r': // "/r" and "/re"
+		{
+		ut64 n = input[2]==' '? r_num_math (core->num, input + 2): UT64_MAX;
 		switch (input[1]) {
 		case 'c': // "/rc"
 			{
@@ -2798,7 +2800,7 @@ reread:
 				RIOMap *map;
 				r_list_foreach (param.boundaries, iter, map) {
 					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
-					r_core_anal_search (core, map->itv.addr, r_itv_end (map->itv), UT64_MAX, 'c');
+					r_core_anal_search (core, map->itv.addr, r_itv_end (map->itv), n, 'c');
 				}
 			}
 			break;
@@ -2808,7 +2810,7 @@ reread:
 				RIOMap *map;
 				r_list_foreach (param.boundaries, iter, map) {
 					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
-					r_core_anal_search (core, map->itv.addr, r_itv_end (map->itv), UT64_MAX, 0);
+					r_core_anal_search (core, map->itv.addr, r_itv_end (map->itv), n, 0);
 				}
 			}
 			break;
@@ -2838,7 +2840,7 @@ reread:
 				RIOMap *map;
 				r_list_foreach (param.boundaries, iter, map) {
 					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
-					r_core_anal_search (core, map->itv.addr, r_itv_end (map->itv), UT64_MAX, 'r');
+					r_core_anal_search (core, map->itv.addr, r_itv_end (map->itv), n, 'r');
 				}
 			}
 			break;
@@ -2848,7 +2850,7 @@ reread:
 				RIOMap *map;
 				r_list_foreach (param.boundaries, iter, map) {
 					eprintf ("-- 0x%"PFMT64x" 0x%"PFMT64x"\n", map->itv.addr, r_itv_end (map->itv));
-					r_core_anal_search (core, map->itv.addr, r_itv_end (map->itv), UT64_MAX, 'w');
+					r_core_anal_search (core, map->itv.addr, r_itv_end (map->itv), n, 'w');
 				}
 			}
 			break;
@@ -2877,6 +2879,7 @@ reread:
 		case '?':
 			r_core_cmd_help (core, help_msg_slash_r);
 			break;
+		}
 		}
 		break;
 	case 'a': // "/a"
