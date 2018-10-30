@@ -255,7 +255,7 @@ R_API int r_anal_fcn_resize(const RAnal *anal, RAnalFunction *fcn, int newsize) 
 	ut64 eof; /* end of function */
 	RAnalBlock *bb;
 	RListIter *iter, *iter2;
-	r_return_val_if_fail (anal && fcn, false);
+	r_return_val_if_fail (fcn, false);
 	if (newsize < 1) {
 		return false;
 	}
@@ -2134,12 +2134,8 @@ R_API bool r_anal_fcn_bbadd(RAnalFunction *fcn, RAnalBlock *bb) {
  * if fcn is in ana RAnal's fcn_tree, the anal MUST be passed,
  * otherwise it can be NULL */
 R_API void r_anal_fcn_set_size(const RAnal *anal, RAnalFunction *fcn, ut32 size) {
-	if (!fcn) {
-		return;
-	}
-
+	r_return_if_fail (fcn);
 	fcn->_size = size;
-
 	if (anal) {
 		_fcn_tree_update_size (anal->fcn_tree, fcn);
 	}
