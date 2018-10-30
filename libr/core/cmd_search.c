@@ -353,6 +353,9 @@ R_API int r_core_search_preludes(RCore *core) {
 			case 16:
 				ret = r_core_search_prelude (core, from, to,
 					(const ut8 *) "\xf0\xb5", 2, NULL, 0);
+				// push {r4, r6, r7, lr}
+				ret = r_core_search_prelude (core, from, to,
+					(const ut8 *) "\xd0\xb5", 2, NULL, 0);
 				break;
 			case 32:
 				ret = r_core_search_prelude (core, from, to,
