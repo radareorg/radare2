@@ -144,6 +144,7 @@ R_API int r_print_date_w32(RPrint *p, const ut8 *buf, int len) {
 }
 
 R_API const char *r_time_to_string (ut64 ts) {
+	static char str[128];
 #if __UNIX__
         struct tm curt; /* current time */
         time_t l;
@@ -153,7 +154,6 @@ R_API const char *r_time_to_string (ut64 ts) {
 		"Jan", "Feb", "Mar", "Apr", "May", "Jun",
 		"Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
 
-	static char str[128];
         *str = 0;
         l = ts >> 20;
         localtime_r (&l, &curt);
@@ -171,9 +171,9 @@ R_API const char *r_time_to_string (ut64 ts) {
 #else
         *str = 0;
 #ifdef _MSC_VER
-#pragma message ("r_print_date_now NOT IMPLEMENTED FOR THIS PLATFORM")
+#pragma message ("r_time_to_string NOT IMPLEMENTED FOR THIS PLATFORM")
 #else
-#warning r_print_date_now NOT IMPLEMENTED FOR THIS PLATFORM
+#warning r_time_to_string NOT IMPLEMENTED FOR THIS PLATFORM
 #endif
 #endif
 	return str;
