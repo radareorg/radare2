@@ -716,7 +716,7 @@ R_API RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 b
 R_API int r_bin_object_set_items(RBinFile *binfile, RBinObject *o);
 R_API RBinObject *r_bin_object_get_cur(RBin *bin);
 R_API RBinObject *r_bin_object_find_by_arch_bits(RBinFile *binfile, const char *arch, int bits, const char *name);
-R_API int r_bin_object_delete(RBin *bin, ut32 binfile_id, ut32 binobj_id);
+R_API bool r_bin_object_delete(RBin *bin, ut32 binfile_id, ut32 binobj_id);
 R_API void r_bin_object_delete_items(RBinObject *o);
 
 R_API const char *r_bin_entry_type_string(int etype);
