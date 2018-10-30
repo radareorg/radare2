@@ -1860,12 +1860,12 @@ static void addMenu(RCore *core, const char *parent, const char *name, RPanelsMe
 		return;
 	}
 	if (parent) {
-		ut64 addr = r_num_math (core->num, ht_find (panels->mht, parent, NULL));
+		ut64 addr = ht_find (panels->mht, parent, NULL);
 		p_item = (RPanelsMenuItem *)addr;
-		ht_insert (panels->mht, sdb_fmt ("%s.%s", parent, name), sdb_fmt ("%p", item));
+		ht_insert (panels->mht, sdb_fmt ("%s.%s", parent, name), item);
 	} else {
 		p_item = panels->panelsMenu->root;
-		ht_insert (panels->mht, sdb_fmt ("%s", name), sdb_fmt ("%p", item));
+		ht_insert (panels->mht, sdb_fmt ("%s", name), item);
 	}
 	item->n_sub = 0;
 	item->selectedIndex = 0;
@@ -2342,7 +2342,7 @@ static bool init(RCore *core, RPanels *panels, int w, int h) {
 	panels->isResizing = false;
 	panels->can = createNewCanvas (core, w, h);
 	panels->db = sdb_new0 ();
-	panels->mht = ht_new ((DupValue)strdup, (HtKvFreeFunc)mht_free_kv, (CalcSize)strlen);
+	panels->mht = ht_new (NULL, (HtKvFreeFunc)mht_free_kv, (CalcSize)strlen);
 	panels->mode = PANEL_MODE_DEFAULT;
 	panels->prevMode = PANEL_MODE_NONE;
 	initSdb (panels);
