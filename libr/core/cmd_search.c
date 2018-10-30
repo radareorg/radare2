@@ -2959,19 +2959,17 @@ reread:
 			break;
 		case 'd': // "Cd"
 			{
-				char *p = strdup ("30800609");
 				param.crypto_search = false;
-				r_search_reset (core->search, R_SEARCH_KEYWORD);
-				r_search_set_distance (core->search, 0);
-				RSearchKeyword *kw = r_search_keyword_new_hex (p, NULL, NULL);
+				RSearchKeyword *kw;
+				kw = r_search_keyword_new_hex ("308200003082", "ffff0000ffff", NULL);
 				if (kw) {
 					r_search_kw_add (core->search, kw);
+					// eprintf ("Searching %d byte(s)...\n", kw->keyword_length);
 					r_search_begin (core->search);
-					dosearch = true;
 				} else {
-					eprintf ("no keyword\n");
+					eprintf ("bad pointer\n");
+					dosearch = false;
 				}
-				free (p);
 			}
 			break;
 		case 'a':
