@@ -5485,7 +5485,7 @@ R_API int r_core_print_disasm_json(RCore *core, ut64 addr, ut8 *buf, int nb_byte
 		}
 		{
 			char *aop = r_asm_op_get_asm (&asmop);
-			char *buf = malloc (128);
+			char *buf = malloc (strlen (aop) + 128);
 			if (buf) {
 				strcpy (buf, aop);
 				r_parse_filter (core->parser, ds->vat, core->flags, buf,
