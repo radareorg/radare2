@@ -801,6 +801,9 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *bin, Elf_(Shdr) *shdr, int sz) 
 		int j = 0;
 		int isum = 0;
 
+		if (vstart + sizeof (*verdef) > end) {
+			break;
+		}
 		r_buf_read_at (bin->b, shdr->sh_offset + i, dfs, sizeof (Elf_(Verdef)));
 		verdef->vd_version = READ16 (dfs, j)
 		verdef->vd_flags = READ16 (dfs, j)
