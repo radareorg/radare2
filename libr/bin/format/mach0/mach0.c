@@ -2225,13 +2225,12 @@ struct addr_t* MACH0_(get_entrypoint)(struct MACH0_(obj_t)* bin) {
 	if (!entry) {
 		return NULL;
 	}
-	if (bin->entry) {
-		entry->addr = entry_to_vaddr (bin);
-		entry->offset = addr_to_offset (bin, entry->addr);
-		entry->haddr = sdb_num_get (bin->kv, "mach0.entry.offset", 0);
-		sdb_num_set (bin->kv, "mach0.entry.vaddr", entry->addr, 0);
-		sdb_num_set (bin->kv, "mach0.entry.paddr", bin->entry, 0);
-	}
+	entry->addr = entry_to_vaddr (bin);
+	entry->offset = addr_to_offset (bin, entry->addr);
+	entry->haddr = sdb_num_get (bin->kv, "mach0.entry.offset", 0);
+	sdb_num_set (bin->kv, "mach0.entry.vaddr", entry->addr, 0);
+	sdb_num_set (bin->kv, "mach0.entry.paddr", bin->entry, 0);
+
 	if (entry->offset == 0) {
 		int i;
 		for (i = 0; i < bin->nsects; i++) {

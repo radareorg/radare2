@@ -168,7 +168,9 @@ R_API RFlagItem *r_flag_item_clone(RFlagItem *item) {
 }
 
 R_API void r_flag_item_free(RFlagItem *item) {
-	r_return_if_fail (item);
+	if (!item) {
+		return;
+	}
 	free (item->color);
 	free (item->comment);
 	free (item->alias);
