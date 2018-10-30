@@ -1114,6 +1114,8 @@ typedef struct r_anal_esil_t {
 	Sdb *ops;
 	RIDStorage *sources;
 	SdbMini *interrupts;
+	//this is a disgusting workaround, because we have no ht-like storage without magic keys, that you cannot use, with int-keys
+	RAnalEsilInterrupt *intr0;
 	/* deep esil parsing fills this */
 	Sdb *stats;
 	Sdb *db_trace;
