@@ -24,10 +24,10 @@ static RAnalEsilInterrupt *_get_interrupt(RAnalEsil *esil, ut32 intr_num) {
 }
 
 static void _del_interrupt(RAnalEsil *esil, ut32 intr_num) {
-	if (!intr_num) {
-		esil->intr0 = NULL;
-	} else {
+	if (intr_num) {
 		dict_del (esil->interrupts, intr_num);
+	} else {
+		esil->intr0 = NULL;
 	}
 }
 
@@ -43,7 +43,6 @@ R_API RAnalEsilInterrupt *r_anal_esil_interrupt_new(RAnalEsil *esil, ut32 src_id
 	if (!intr) {
 		return NULL;
 	}
-
 	intr->handler = ih;
 	if (ih->init && ih->fini) {
 		intr->user = ih->init (esil);
@@ -63,7 +62,7 @@ R_API void r_anal_esil_interrupt_free(RAnalEsil *esil, RAnalEsilInterrupt *intr)
 		}
 		r_anal_esil_release_source (esil, intr->src_id);
 	}
-	free. (intr);
+	free (intr);
 }
 
 R_API bool r_anal_esil_set_interrupt(RAnalEsil *esil, RAnalEsilInterrupt *intr) {
@@ -88,7 +87,7 @@ R_API int r_anal_esil_fire_interrupt(RAnalEsil *esil, ut32 intr_num) {
 		eprintf ("no interrupts initialized\n");
 		return false;
 	}
-	RAnalEsilInterrupt *intr = _get_interrupt(esil, intr_num);
+	RAnalEsilInterrupt *intr = _get_interrupt (esil, intr_num);
 	if (!intr) {
 		eprintf ("no handler registered for 0x%x\n", intr_num);
 	}
@@ -103,17 +102,16 @@ R_API bool r_anal_esil_load_interrupts (RAnalEsil *esil, RAnalEsilInterruptHandl
 	r_return_val_if_fail (esil && esil->interrupts && handlers, false);
 
 	while (handlers[i]) {
-		intr = _get_interrupt(esil, handlers[i]->num);
+		intr = _get_interrupt (esil, handlers[i]->num);
 		if (intr) {
 			//first free, then load the new handler or stuff might break in the handlers
 			r_anal_esil_interrupt_free (esil, intr);
 		}
 		intr = r_anal_esil_interrupt_new (esil, src_id, handlers[i]);
-		if (intr) {
-			r_anal_esil_set_interrupt (esil, intr);
-		} else {
+		if (!intr) {
 			return false;
 		}
+		r_anal_esil_set_interrupt (esil, intr);
 		i++;
 	}
 
@@ -123,14 +121,13 @@ R_API bool r_anal_esil_load_interrupts (RAnalEsil *esil, RAnalEsilInterruptHandl
 R_API bool r_anal_esil_load_interrupts_from_lib(RAnalEsil *esil, const char *path) {
 	r_return_val_if_fail (esil, false);
 	ut32 src_id = r_anal_esil_load_source (esil, path);
-
-	if (!src_id) {
+	if (!src_id) { // why id=0 is invalid?
 		return false;
 	}
 	RAnalEsilInterruptHandler **handlers = (RAnalEsilInterruptHandler **)\
 		r_lib_dl_sym (r_anal_esil_get_source (esil, src_id), "interrupts");
 	if (!handlers) {
-		r_anal_esil_release_source(esil, src_id); //unload
+		r_anal_esil_release_source (esil, src_id); //unload
 		return false;
 	}
 	return r_anal_esil_load_interrupts (esil, handlers, src_id);
