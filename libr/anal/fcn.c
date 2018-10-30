@@ -1863,6 +1863,7 @@ R_API int r_anal_fcn_split_bb(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 			bb->jump = bbi->jump;
 			bb->fail = bbi->fail;
 			bb->conditional = bbi->conditional;
+			FITFCNSZ ();
 			bbi->size = addr - bbi->addr;
 			bbi->jump = addr;
 			bbi->fail = -1;
