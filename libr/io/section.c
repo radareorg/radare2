@@ -100,22 +100,6 @@ R_API RIOSection *r_io_section_get_i(RIO *io, ut32 id) {
 	return NULL;
 }
 
-R_API int r_io_section_rm(RIO *io, ut32 id) {
-	SdbListIter *iter;
-	RIOSection *s;
-	if (!io || !io->sections || !io->sec_ids) {
-		return false;
-	}
-	ls_foreach (io->sections, iter, s) {
-		if (s->id == id) {
-			ls_delete (io->sections, iter);
-			r_id_pool_kick_id (io->sec_ids, id);
-			return true;
-		}
-	}
-	return false;
-}
-
 //List return does not have assigned free function only 
 //the list will be freed. However, caller will might hold
 //an old reference

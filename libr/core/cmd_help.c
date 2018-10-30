@@ -100,7 +100,6 @@ static const char *help_msg_root[] = {
 	"q","[?] [ret]", "quit program with a return value",
 	"r","[?] [len]", "resize file",
 	"s","[?] [addr]", "seek to address (also for '0x', '0x1' == 's 0x1')",
-	"S","[?]", "io section manipulation information",
 	"t","[?]", "types, noreturn, signatures, C parser and more",
 	"T","[?] [-] [num|msg]", "Text log utility",
 	"u","[?]", "uname/undo seek/write",

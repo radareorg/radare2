@@ -29,7 +29,6 @@ files = [
   #'cmd_quit.c',
   #'cmd_search.c',
   #'cmd_search_rop.c',
-  #'cmd_section.c',
   #'cmd_seek.c',
   #'cmd_type.c',
   #'cmd_write.c',

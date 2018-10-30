@@ -118,28 +118,6 @@ bool io_create_file_map(RIO *io, RIOSection *sec, ut64 size, bool patch, bool do
 	return false;
 }
 
-
-R_API bool r_io_create_mem_for_section(RIO *io, RIOSection *sec) {
-	if (!io || !sec) {
-		return false;
-	}
-	if (sec->vsize - sec->size > 0) {
-		ut64 at = sec->vaddr + sec->size;
-		if (!io_create_mem_map (io, sec, at, false, true)) {
-			return false;
-		}
-		RIOMap *map = r_io_map_get (io, at);
-		r_io_map_set_name (map, sdb_fmt ("mem.%s", sec->name));
-	}
-	if (sec->size) {
-		if (!io_create_file_map (io, sec, sec->size, false, true)) {
-			return false;
-		}
-		RIOMap *map = r_io_map_get (io, sec->vaddr);
-		r_io_map_set_name (map, sdb_fmt ("fmap.%s", sec->name));
-	}
-	return true;
-}
 //This helper function only check if the given vaddr is mapped, it does not account
 //for map perms
 R_API bool r_io_addr_is_mapped(RIO *io, ut64 vaddr) {
