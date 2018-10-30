@@ -122,37 +122,6 @@ R_API SdbList *r_io_section_bin_get(RIO *io, ut32 bin_id) {
 	return ret;
 }
 
-R_API bool r_io_section_bin_rm(RIO *io, ut32 bin_id) {
-	if (!io || !io->sections || !io->sections->head || !io->sec_ids) {
-		return false;
-	}
-	bool has_changed = false;
-	RIOSection *s;
-	SdbListIter *iter, *niter;
-	ls_foreach_safe (io->sections, iter, niter, s) {
-		if (s->bin_id == bin_id) {
-			r_id_pool_kick_id (io->sec_ids, s->id);
-			ls_delete (io->sections, iter);
-			has_changed = true;
-		}
-	}
-	return has_changed;
-}
-
-R_API RIOSection *r_io_section_get_name(RIO *io, const char *name) {
-	RIOSection *s;
-	SdbListIter *iter;
-	if (!io || !name || !io->sections) {
-		return NULL;
-	}
-	ls_foreach (io->sections, iter, s) {
-		if (s->name && (!strcmp (s->name, name))) {
-			return s;
-		}
-	}
-	return NULL;
-}
-
 R_API void r_io_section_cleanup(RIO *io) {
 	if (!io || !io->sections || !io->sec_ids) {
 		return;
@@ -248,22 +217,6 @@ R_API RIOSection* r_io_section_get(RIO *io, ut64 vaddr) {
 	return NULL;
 }
 
-R_API ut64 r_io_section_get_vaddr_at(RIO *io, ut64 paddr) {
-	if (io) {
-		SdbList *sects = r_io_sections_vget (io, paddr);
-		ut64 ret = UT64_MAX;
-		if (sects) {
-			if (!ls_empty (sects)) {
-				RIOSection *s = ls_pop (sects);
-				ret = s->vaddr;
-			}
-		}
-		ls_free (sects);
-		return ret;
-	}
-	return UT64_MAX;
-}
-
 R_API ut64 r_io_section_get_paddr_at(RIO *io, ut64 paddr) {
 	if (io) {
 		SdbList *sects = r_io_sections_get (io, paddr);
@@ -280,20 +233,6 @@ R_API ut64 r_io_section_get_paddr_at(RIO *io, ut64 paddr) {
 	return UT64_MAX;
 }
 
-R_API int r_io_section_set_archbits(RIO *io, ut32 id, const char *arch, int bits) {
-	RIOSection *s;
-	if (!(s = r_io_section_get_i (io, id))) {
-		return false;
-	}
-	if (arch) {
-		s->arch = r_sys_arch_id (arch);
-		s->bits = bits;
-	} else {
-		s->arch = s->bits = 0;
-	}
-	return true;
-}
-
 R_API const char *r_io_section_get_archbits(RIO *io, ut64 vaddr, int *bits) {
 	if (!io) {
 		return NULL;
@@ -306,25 +245,6 @@ R_API const char *r_io_section_get_archbits(RIO *io, ut64 vaddr, int *bits) {
 		*bits = s->bits;
 	}
 	return r_sys_arch_str (s->arch);
-}
-
-R_API int r_io_section_bin_set_archbits(RIO *io, ut32 bin_id, const char *arch, int bits) {
-	SdbList *bin_sections;
-	SdbListIter *iter;
-	RIOSection *s;
-	if (!(bin_sections = r_io_section_bin_get (io, bin_id))) {
-		return false;
-	}
-	int a = arch? r_sys_arch_id (arch): 0;
-	if (a < 1) {
-		a = bits = 0;
-	}
-	ls_foreach (bin_sections, iter, s) {
-		s->arch = a;
-		s->bits = bits;
-	}
-	ls_free (bin_sections);
-	return true;
 }
 
 R_API bool r_io_section_priorize(RIO *io, ut32 id) {
