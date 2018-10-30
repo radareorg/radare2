@@ -548,7 +548,7 @@ static int cmd_hash_bang (RCore *core, const char *input) {
 			}
 		}
 	} else {
-		eprintf ("Invalid hashbang. See '#!' for help.\n");
+		eprintf ("Invalid hashbang. Please install the corresponding rlang plugin.\nSee '#!' for help.\n");
 	}
 	return true;
 }
