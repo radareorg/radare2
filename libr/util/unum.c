@@ -9,7 +9,8 @@
 
 static ut64 r_num_tailff(RNum *num, const char *hex);
 
-void r_srand (int seed) {
+//  TODO: rename to r_num_srand()
+static void r_srand (int seed) {
 #if HAVE_ARC4RANDOM_UNIFORM
 	// no-op
 	(void)seed;
@@ -18,7 +19,7 @@ void r_srand (int seed) {
 #endif
 }
 
-int r_rand (int mod) {
+static int r_rand (int mod) {
 #if HAVE_ARC4RANDOM_UNIFORM
 	return (int)arc4random_uniform (mod);
 #else

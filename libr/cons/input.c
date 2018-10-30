@@ -552,13 +552,14 @@ R_API char *r_cons_password(const char *msg) {
 	printf ("\r%s", msg);
 	fflush (stdout);
 	r_cons_set_raw (1);
-#if 0 && __UNIX__
-	// required to make therm/iterm show the key
-	// cannot read when enabled in this way
+#if __UNIX__
 	RCons *a = r_cons_singleton();
-	a->term_raw.c_lflag &= ~(ECHO|ECHONL);
-	a->term_raw.c_lflag |= ICANON;
-	tcsetattr (0, TCSANOW, &a->term_raw);
+	a->term_raw.c_lflag &= ~ECHO;
+	a->term_raw.c_lflag |= ECHONL;
+	// //  required to make therm/iterm show the key
+	// // cannot read when enabled in this way
+	// a->term_raw.c_lflag |= ICANON;
+	tcsetattr (0, TCSADRAIN, &a->term_raw);
 #endif
 	while (i < sizeof (buf)) {
 		int ch = r_cons_readchar ();
@@ -581,13 +582,12 @@ R_API char *r_cons_password(const char *msg) {
 }
 
 R_API char *r_cons_input(const char *msg) {
-	char *oprompt = r_line_get_prompt (); //r_cons_singleton ()->line->prompt);
+	char *oprompt = r_line_get_prompt ();
 	if (!oprompt) {
 		return NULL;
 	}
 	char buf[1024];
 	if (msg) {
-		//r_cons_printf ("%s\n", msg);
 		r_line_set_prompt (msg);
 	} else {
 		r_line_set_prompt ("");

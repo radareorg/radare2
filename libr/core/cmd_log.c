@@ -50,25 +50,44 @@ static void screenlock(RCore *core) {
 	if (!pass || !*pass) {
 		return;
 	}
+	char *again = r_cons_password (Color_INVERT "Type it again:"Color_INVERT_RESET);
+	if (!again || !*again) {
+		return;
+	}
+	if (strcmp (pass, again)) {
+		eprintf ("Password mismatch!\n");
+		return;
+	}
 	bool running = true;
 	r_cons_clear_buffer ();
-	r_cons_clear00 ();
-	r_cons_flush ();
+	ut64 begin = r_sys_now ();
+	ut64 last = UT64_MAX;
+	ut64 tries = 0;
 	do {
-		char *msg = r_cons_password ("Password: ");
-		if (!strcmp (msg, pass)) {
+		r_cons_clear00 ();
+		r_cons_printf ("Retries: %d\n", tries);
+		r_cons_printf ("Locked ts: %s\n", r_time_to_string (begin));
+		if (last != UT64_MAX) {
+			r_cons_printf ("Last try: %s\n", r_time_to_string (last));
+		}
+		r_cons_newline ();
+		r_cons_flush ();
+		char *msg = r_cons_password ("radare2 password: ");
+		if (msg && !strcmp (msg, pass)) {
 			running = false;
-			eprintf ("Correct!\n");
 		} else {
-			r_sys_sleep (1);
-			eprintf ("Invalid password.\n");
+			eprintf ("\nInvalid password.\n");
+			last = r_sys_now ();
+			tries++;
 		}
 		free (msg);
+		int n = r_num_rand (10) + 1;
+		r_sys_usleep (n * 100000);
 	} while (running);
 	r_cons_set_cup (true);
 	free (pass);
+	eprintf ("Unlocked!\n");
 }
-
 
 static int textlog_chat(RCore *core) {
 	char prompt[64];
