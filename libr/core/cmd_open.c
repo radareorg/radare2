@@ -466,7 +466,7 @@ static void map_list(RIO *io, int mode, RPrint *print, int fd) {
 		case 1:
 		case '*':
 		case 'r':
-			print->cb_printf ("om %d 0x%"PFMT64x" 0x%"PFMT64x" 0x%"PFMT64x" %s%s%s\n", map->fd,
+			print->cb_printf ("om %d 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s%s%s\n", map->fd,
 					map->itv.addr, map->itv.size, map->delta, r_str_rwx_i(map->perm),
 					map->name ? " " : "", map->name ? map->name : "");
 			break;
