@@ -406,7 +406,10 @@ R_API void r_core_anal_autoname_all_fcns(RCore *core) {
 		char *name = anal_fcn_autoname (core, fcn, 0);
 		if (name && (!strncmp (fcn->name, "fcn.", 4) || \
 				!strncmp (fcn->name, "sym.func.", 9))) {
-			r_flag_rename (core->flags, r_flag_get (core->flags, fcn->name), name);
+			RFlagItem *item = r_flag_get (core->flags, fcn->name);
+			if (item) {
+				r_flag_rename (core->flags, item, name);
+			} // else if there's no flag, we will use the function to resolve the name from off
 			free (fcn->name);
 			fcn->name = name;
 		} else {
