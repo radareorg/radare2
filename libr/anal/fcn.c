@@ -912,7 +912,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut8 *buf, ut6
 	if (r_anal_get_fcn_at (anal, addr, 0)) {
 		return R_ANAL_RET_ERROR; // MUST BE NOT FOUND
 	}
-	bb = bbget (fcn, addr);
+	bb = bbget (fcn, addr); // TODO: bbget_all()
 	if (bb) {
 		if (!anal->opt.jmpmid || !x86 || r_anal_bb_op_starts_at (bb, addr)) {
 			r_anal_fcn_split_bb (anal, fcn, bb, addr);
@@ -975,7 +975,7 @@ repeat:
 			r_anal_hint_set_bits (anal, op.jump, op.hint.new_bits);
 		}
 		if (idx > 0 && !overlapped) {
-			bbg = bbget (fcn, addr + idx);
+			bbg = bbget (fcn, addr + idx); // TODO: bbget_all()
 			if (bbg && bbg != bb
 			    && (!anal->opt.jmpmid || !x86 || r_anal_bb_op_starts_at (bbg, addr + idx))) {
 				bb->jump = addr + idx;
