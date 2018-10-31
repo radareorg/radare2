@@ -2529,8 +2529,6 @@ static int bin_fields(RCore *r, int mode, int va) {
 	int i = 0;
 	RBin *bin = r->bin;
 	RBinFile *binfile = r_core_bin_cur (r);
-	ut64 size = binfile ? binfile->size : UT64_MAX;
-	ut64 baddr = r_bin_get_baddr (r->bin);
 
 	if (!(fields = r_bin_get_fields (bin))) {
 		return false;
@@ -2548,6 +2546,8 @@ static int bin_fields(RCore *r, int mode, int va) {
 	else if (IS_MODE_SET (mode)) {
 		// XXX: Need more flags??
 		// this will be set even if the binary does not have an ehdr
+		ut64 size = binfile ? binfile->size : UT64_MAX;
+		ut64 baddr = r_bin_get_baddr (r->bin);
 		int fd = r_core_file_cur_fd(r);
 		r_io_section_add (r->io, 0, baddr, size, size, 7, "ehdr", 0, fd);
 	}

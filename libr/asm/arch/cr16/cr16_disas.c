@@ -90,11 +90,6 @@ static const char *ops_biti[] = {
 	[0x2]		= "tbit",
 };
 
-static inline ut8 cr16_get_opcode_biti(const ut8 instr)
-{
-	return (instr >> 6) & 0x3;
-}
-
 static inline ut8 cr16_get_opcode_low(const ut16 instr)
 {
 	return (instr >> 9) & 0xF;
@@ -137,14 +132,6 @@ static inline int cr16_check_instrs_4bit_bndrs(const ut8 opcode)
 static inline ut16 cr16_get_opcode_159_0(const ut16 opc)
 {
 	return (opc & 1) | ((opc >> 8) & 0xFE);
-}
-
-static inline int cr16_check_biti_boundaries(const ut8 opcode)
-{
-	if (opcode >= sizeof(ops_biti)/sizeof(void*) || !ops_biti[opcode]) {
-		return -1;
-	}
-	return 0;
 }
 
 static inline int cr16_check_reg_boundaries(const ut8 reg)
@@ -218,21 +205,6 @@ static inline int cr16_print_reg_med(struct cr16_cmd *cmd, ut16 med, ut8 reg)
 
 	snprintf(cmd->operands, CR16_INSTR_MAXLEN - 1,
 			"%s,$0x%04x", cr16_regs_names[reg], med);
-
-	return 0;
-}
-
-static inline int cr16_print_biti_opcode(struct cr16_cmd *cmd, ut16 instr)
-{
-	ut8 opcode = cr16_get_opcode_biti(instr);
-
-	if (cr16_check_biti_boundaries(opcode)) {
-		return -1;
-	}
-
-	snprintf(cmd->instr, CR16_INSTR_MAXLEN - 1, "%s%c",
-			ops_biti[opcode],
-			cr16_get_opcode_i(instr) ? 'w' : 'b');
 
 	return 0;
 }
