@@ -554,12 +554,12 @@ R_API char *r_cons_password(const char *msg) {
 	r_cons_set_raw (1);
 #if __UNIX__
 	RCons *a = r_cons_singleton();
-	a->term_raw.c_lflag &= ~ECHO;
-	a->term_raw.c_lflag |= ECHONL;
+	a->term_raw.c_lflag &= ~(ECHO | ECHONL);
 	// //  required to make therm/iterm show the key
 	// // cannot read when enabled in this way
 	// a->term_raw.c_lflag |= ICANON;
 	tcsetattr (0, TCSADRAIN, &a->term_raw);
+	signal (SIGTSTP, SIG_IGN);
 #endif
 	while (i < sizeof (buf)) {
 		int ch = r_cons_readchar ();
@@ -578,6 +578,9 @@ R_API char *r_cons_password(const char *msg) {
 	buf[i] = 0;
 	r_cons_set_raw (0);
 	printf ("\n");
+#if __UNIX__
+	signal (SIGTSTP, SIG_DFL);
+#endif
 	return strdup (buf);
 }
 

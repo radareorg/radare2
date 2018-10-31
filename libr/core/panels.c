@@ -1860,7 +1860,7 @@ static void addMenu(RCore *core, const char *parent, const char *name, RPanelsMe
 		return;
 	}
 	if (parent) {
-		ut64 addr = ht_find (panels->mht, parent, NULL);
+		void *addr = ht_find (panels->mht, parent, NULL);
 		p_item = (RPanelsMenuItem *)addr;
 		ht_insert (panels->mht, sdb_fmt ("%s.%s", parent, name), item);
 	} else {
