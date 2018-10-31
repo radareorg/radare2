@@ -18,10 +18,15 @@
 #include <mach/task.h>
 #include <mach/task_info.h>
 void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int max);
-#elif __FreeBSD__
+#elif __BSD__
+#if __FreeBSD__
 #include <sys/sysctl.h>
 #include <sys/user.h>
 #include <libutil.h>
+#elif __OpenBSD__
+#include <sys/sysctl.h>
+#endif
+#include <errno.h>
 bool bsd_proc_vmmaps(RIO *io, int pid);
 #endif
 #ifdef _MSC_VER
@@ -115,7 +120,8 @@ static int update_self_regions(RIO *io, int pid) {
 	fclose (fd);
 
 	return true;
-#elif __FreeBSD__
+#elif __BSD__
+	// TODO NetBSD should be doable
 	return bsd_proc_vmmaps(io, pid);
 #else
 #ifdef _MSC_VER
@@ -510,24 +516,35 @@ void macosx_debug_regions (RIO *io, task_t task, mach_vm_address_t address, int 
 		}
 	 }
 }
-#elif __FreeBSD__
+#elif __BSD__
 bool bsd_proc_vmmaps(RIO *io, int pid) {
+	size_t size;
+#if __FreeBSD__
+	bool ret = false;
 	int mib[4] = {
 		CTL_KERN, KERN_PROC, KERN_PROC_VMMAP, pid
 	};
-	size_t size;
-	bool ret = false;
-	int s = sysctl (mib, sizeof (mib), NULL, &size, NULL, 0);
+	int s = sysctl (mib, 4, NULL, &size, NULL, 0);
+#elif __OpenBSD__
+	int mib[3] = {
+		CTL_KERN, KERN_PROC_VMMAP, pid
+	};
+	size = sizeof (struct kinfo_vmentry);
+	struct kinfo_vmentry entry = { .kve_start = 0 };
+	ut64 endq = 0;
+	int s = sysctl (mib, 3, &entry, &size, NULL, 0);
+#endif
 	if (s == -1) {
-		eprintf ("sysctl failed\n");
+		eprintf ("sysctl failed: %s\n", strerror (errno));
 		return false;
 	}
+#if __FreeBSD__
 	ut8 *p = malloc (size);
 	if (p) {
 		size = size * 4 / 3;
-		s = sysctl (mib, sizeof (mib), p, &size, NULL, 0);
+		s = sysctl (mib, 4, p, &size, NULL, 0);
 		if (s == -1) {
-			eprintf ("sysctl failed\n");
+			eprintf ("sysctl failed: %s\n", strerror (errno));
 			goto exit;
 		}
 		ut8 *p_start = p;
@@ -594,6 +611,38 @@ bool bsd_proc_vmmaps(RIO *io, int pid) {
 exit:
 	free (p);
 	return ret;
+#elif __OpenBSD__
+	while (sysctl (mib, 3, &entry, &size, NULL, 0) != -1) {
+		int perm = 0;
+		if (entry.kve_end == endq) {
+			break;
+		}
+
+		if (entry.kve_protection & KVE_PROT_READ) {
+			perm |= R_PERM_R;
+		}
+		if (entry.kve_protection & KVE_PROT_WRITE) {
+			perm |= R_PERM_W;
+		}
+		if (entry.kve_protection & KVE_PROT_EXEC) {
+			perm |= R_PERM_X;
+		}
+
+		io->cb_printf (" %p - %p [off. %zu]\n",
+				(void *)entry.kve_start,
+				(void *)entry.kve_end,
+				entry.kve_offset);
+
+		self_sections[self_sections_count].from = entry.kve_start;
+		self_sections[self_sections_count].to = entry.kve_end;
+		self_sections[self_sections_count].perm = perm;
+		self_sections_count++;
+		entry.kve_start = entry.kve_start + 1;
+	}
+
+	return true;
+#endif
+
 }
 #endif
 
