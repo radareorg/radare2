@@ -2,6 +2,7 @@
 files = [
   'ascii_table.c',
   'assert.c',
+  'base64.c',
   'base85.c',
   'base91.c',
   'bdiff.c',
@@ -68,7 +69,6 @@ files = [
   'tree.c',
   'trie.c',
   'r_json.c',
-  'ubase64.c',
   'uleb128.c',
   'unum.c',
   'utf8.c',
